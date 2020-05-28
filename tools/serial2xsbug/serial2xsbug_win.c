@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -130,7 +130,11 @@ void fxOpenSerial(txSerialTool self)
 	sprintf(configuration, "baud=%d parity=%c data=%d stop=%d", self->baud, self->parity, self->data, self->stop);
 
   	self->serialConnection = CreateFile(self->path, GENERIC_READ | GENERIC_WRITE, 0, 0,  OPEN_EXISTING, 0, NULL);
-	mxThrowElse(self->serialConnection != INVALID_HANDLE_VALUE);
+	if (INVALID_HANDLE_VALUE == self->serialConnection) {
+		if (!self->reconnecting)
+			mxThrowElse(self->serialConnection != INVALID_HANDLE_VALUE);
+		return;
+	}
 	memset(&dcb, 0, sizeof(dcb));
 	dcb.DCBlength = sizeof(dcb);
 	BuildCommDCB(configuration, &dcb);
@@ -181,11 +185,16 @@ void fxOpenSerial(txSerialTool self)
 // 	fprintf(stderr, "# WriteTotalTimeoutMultiplier %d\n", timeouts.WriteTotalTimeoutMultiplier);
 // 	fprintf(stderr, "# WriteTotalTimeoutConstant %d\n", timeouts.WriteTotalTimeoutConstant);
    
-	self->serialEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	mxThrowElse(self->serialEvent);
+	if (NULL == self->serialEvent) {
+		self->serialEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		mxThrowElse(self->serialEvent);
+	}
 
-	self->serialOverlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	mxThrowElse(self->serialOverlapped.hEvent);
+	if (NULL == self->serialOverlapped.hEvent) {
+		self->serialOverlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		mxThrowElse(self->serialOverlapped.hEvent);
+	}
+
 	fxReadSerial(self, fxReadSerialAux(self));
 	
 	fxRestart(self);
@@ -237,9 +246,8 @@ void fxRestartSerial(txSerialTool self)
 	mxThrowElse(EscapeCommFunction(self->serialConnection, CLRDTR) != 0);
 	Sleep(5);
 	mxThrowElse(EscapeCommFunction(self->serialConnection, CLRRTS) != 0);
-	if (self->dtr) {
+	if (self->dtr)
 		mxThrowElse(EscapeCommFunction(self->serialConnection, SETDTR) != 0);
-	}
 }
 
 void fxWriteNetwork(txSerialMachine machine, char* buffer, int size)
@@ -284,7 +292,7 @@ static txSerialToolRecord tool;
 static void fxSignalHandler(int s)
 {
 	txSerialTool self = &tool;
-	SetEvent(self->events[10]); //@@
+	SetEvent(self->events[0]);
 }
 
 int main(int argc, char* argv[]) 
@@ -310,11 +318,27 @@ int main(int argc, char* argv[])
 		self->events[0] = self->signalEvent;
 		self->events[1] = self->serialOverlapped.hEvent;
 		for (;;) {
+			if (self->reconnecting) {
+				fxOpenSerial(self);
+				if (INVALID_HANDLE_VALUE == self->serialConnection)
+					Sleep(500);
+				else {
+					self->reconnecting = 0;
+					self->events[0] = self->signalEvent;
+					self->events[1] = self->serialOverlapped.hEvent;
+				}
+				continue;
+			}
 			DWORD which = WaitForMultipleObjects(self->count, self->events, FALSE, INFINITE);
 			if (which == 0)
 				break;
 			if (which == 1) {
-				mxThrowElse(GetOverlappedResult(self->serialConnection, &self->serialOverlapped, &size, FALSE))
+				if (!GetOverlappedResult(self->serialConnection, &self->serialOverlapped, &size, FALSE)) {
+					fxCloseSerial(self);
+					self->reconnecting = 1;
+					Sleep(5000);
+					continue;
+				}
 				fxReadSerial(self, size);
 			}
 			else if (which < self->count) {
