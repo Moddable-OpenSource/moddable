@@ -169,8 +169,8 @@ export default class extends TOOL {
 		const alphaDepth = (this.alpha) ? Bitmap.depth(this.alphaFormat) : 32;
 		const depth = Math.min(colorDepth, alphaDepth);
 		const alignment = this.bm4 ? 8 : 32;
-		const multiple = (depth < alignment) ? (alignment / depth) : 0;
-		let overflow = width & (multiple - 1);
+		const multiple = (depth < alignment) ? (alignment / depth) : 1;
+		const overflow = width & (multiple - 1);
 		if (overflow)
 			width += multiple - overflow;
 		return width;
