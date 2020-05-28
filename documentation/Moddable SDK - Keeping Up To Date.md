@@ -28,6 +28,8 @@ These instructions assume that you have already completed the initial installati
 <a id="host-mac"></a>
 ### Host environment update
 
+> The Moddable SDK requires macOS Sierra version 10.12 or newer and Xcode version 9 or newer. Beta releases of Xcode are not supported.
+
 The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps:
 	
 1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable):
@@ -35,6 +37,15 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	```text
 	cd $MODDABLE
 	git pull
+	```
+
+	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
+
+	```text
+	cd $MODDABLE
+	git stash push
+	git pull
+	git stash pop
 	```
 	
 2. Delete any existing Moddable SDK build outputs:
@@ -180,12 +191,21 @@ To ensure that your build environment is up to date, perform the following steps
 
 The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps:
 
-1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable). For instance,  using `Git Bash`:
+1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable). For instance, using `Git Bash`:
 
 	```text
 	cd $MODDABLE
 	git pull
-	```	
+	```
+
+	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
+
+	```text
+	cd $MODDABLE
+	git stash push
+	git pull
+	git stash pop
+	```
 
 2. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Delete any existing Moddable SDK build outputs:
 
@@ -316,6 +336,15 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	```text
 	cd $MODDABLE
 	git pull
+	```
+
+	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
+
+	```text
+	cd $MODDABLE
+	git stash push
+	git pull
+	git stash pop
 	```
 
 3. Delete any existing Moddable SDK build outputs:
