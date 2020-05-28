@@ -489,7 +489,7 @@ export class MakeFile extends FILE {
 				this.write(source);
 				this.write(" -a");
 				if (result.monochrome)
-					this.write(" -m");
+					this.write(" -m -4");
 				this.write(" -o $(@D) -r ");
 				this.write(tool.rotation);
 				this.line(name);
@@ -544,7 +544,7 @@ export class MakeFile extends FILE {
 			if (!alphaTarget)
 				this.write(" -c");
 			if (result.monochrome)
-				this.write(" -m");
+				this.write(" -m -4");
 			else {
 				this.write(" -f ");
 				this.write(tool.format);
@@ -914,14 +914,14 @@ class ResourcesRule extends Rule {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
 		}
 		else if (suffix == "-color-monochrome") {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
 			colorFile.monochrome = true;
 		}
 		else if (suffix == "-alpha") {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
 		}
 		else if (suffix == "-alpha-monochrome") {
-			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
 			alphaFile.monochrome = true;
 		}
 		else if (suffix == "-mask") {

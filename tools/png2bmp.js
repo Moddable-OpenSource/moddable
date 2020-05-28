@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -23,6 +23,8 @@ import Bitmap from "commodetto/Bitmap";
 import BMPOut from "commodetto/BMPOut";
 import Convert from "commodetto/Convert";
 import PNG from "commodetto/ReadPNG";
+import PixelsOut from "commodetto/PixelsOut";
+import File from "file";
 
 var formatNames = {
 	gray16: "gray16",
@@ -49,6 +51,7 @@ export default class extends TOOL {
 		super(argv);
 		this.alpha = true;
 		this.alphaFormat = formatValues.gray16;
+		this.bm4 = false;
 		this.color = true;
 		this.colorFormat = 0;
 		this.name = "";
@@ -130,6 +133,9 @@ export default class extends TOOL {
 			case "-t":
 				this.temporary = true;
 				break;
+			case "-4":
+				this.bm4 = true;
+				break;
 			default:
 				name = argv[argi];
 				path = this.resolveFilePath(name);
@@ -161,7 +167,9 @@ export default class extends TOOL {
 	pad(width) {
 		const colorDepth = (this.color) ? Bitmap.depth(this.colorFormat) : 32;
 		const alphaDepth = (this.alpha) ? Bitmap.depth(this.alphaFormat) : 32;
-		let multiple = 32 / Math.min(colorDepth, alphaDepth);
+		const depth = Math.min(colorDepth, alphaDepth);
+		const alignment = this.bm4 ? 8 : 32;
+		const multiple = (depth < alignment) ? (alignment / depth) : 0;
 		let overflow = width & (multiple - 1);
 		if (overflow)
 			width += multiple - overflow;
@@ -400,13 +408,13 @@ export default class extends TOOL {
 				parts.name = this.name;
 			parts.directory = this.outputPath;
 			parts.name += "-color";
-			parts.extension = ".bmp";
+			parts.extension = this.bm4 ? ".bm4" : ".bmp";
 			colorPath = this.joinPath(parts);
 			let dictionary = {width, height, pixelFormat:this.colorFormat, path:colorPath};
 			let clut;
 			if (this.clut)
 				clut = dictionary.clut = this.readFileBuffer(this.clut);
-			colorOut = new BMPOut(dictionary);
+			colorOut = new (this.bm4 ? BM4Out : BMPOut)(dictionary);
 			colorConvert = new Convert(Bitmap.RGB24, this.colorFormat, clut);
 			colorLine = new Uint8Array(colorOut.pixelsToBytes(width));
 			colorOut.begin(0, 0, width, height);
@@ -418,10 +426,10 @@ export default class extends TOOL {
 				parts.name = this.name;
 			parts.directory = this.outputPath;
 			parts.name += "-alpha";
-			parts.extension = ".bmp";
+			parts.extension = this.bm4 ? ".bm4" : ".bmp";
 			alphaPath = this.joinPath(parts);
 			let dictionary = {width, height, pixelFormat:this.alphaFormat, path:alphaPath};
-			alphaOut = new BMPOut(dictionary);
+			alphaOut = new (this.bm4 ? BM4Out : BMPOut)(dictionary);
 			alphaConvert = new Convert(Bitmap.Gray256, this.alphaFormat);
 			alphaLine = new Uint8Array(alphaOut.pixelsToBytes(width));
 			alphaOut.begin(0, 0, width, height);
@@ -452,5 +460,50 @@ export default class extends TOOL {
 			colorOut.end();
 		if (this.alpha)
 			alphaOut.end();
+	}
+}
+
+class BM4Out extends PixelsOut {
+	constructor(dictionary) {
+		super(dictionary);
+
+		const pixelFormat = this.pixelFormat;
+		this.depth = Bitmap.depth(pixelFormat);
+
+		if ((Bitmap.Gray16 != pixelFormat) &&
+			(Bitmap.Gray256 != pixelFormat) &&
+			(Bitmap.RGB565LE != pixelFormat) &&
+			(Bitmap.RGB332 != pixelFormat) &&
+			(Bitmap.CLUT16 != pixelFormat) &&
+			(Bitmap.Monochrome != pixelFormat))
+			throw new Error("unsupported BM4 pixel fornat");
+
+		this.file = new File(dictionary.path, 1);
+	}
+	begin(x, y, width, height) {
+		const file = this.file;
+
+		// header: 'md', version, Commodetto pixel format, width and height (big endian)
+		file.write(	'm'.charCodeAt(0),
+					'd'.charCodeAt(0),
+					0,
+					this.pixelFormat,
+					this.width >> 8,
+					this.width & 0xFF,
+					this.height >> 8,
+					this.height & 0xFF);
+	}
+	send(pixels, offset = 0, count = pixels.byteLength - offset) {
+		if ((0 == offset) && (count == pixels.byteLength) && (pixels instanceof ArrayBuffer))		//@@ file.write should support HostBuffer
+			this.file.write(pixels);
+		else {
+			let bytes = new Uint8Array(pixels);
+			while (count--)
+				this.file.write(bytes[offset++]);
+		}
+	}
+	end() {
+		this.file.close();
+		delete this.file;
 	}
 }
