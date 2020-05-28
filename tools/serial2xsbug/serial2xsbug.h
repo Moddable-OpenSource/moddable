@@ -122,6 +122,7 @@ struct txSerialToolStruct {
 	int line;
 	int error;
 	int serialConnection;
+	int reconnecting;
 	struct termios serialConfiguration;
 	char serialBuffer[mxSerialBufferSize];
 	int count;
