@@ -330,13 +330,15 @@ int main(int argc, char* argv[])
 				continue;
 			}
 			DWORD which = WaitForMultipleObjects(self->count, self->events, FALSE, INFINITE);
-			if (which == 0)
+			if (which == 0) {
+				result = 1;
 				break;
+			}
 			if (which == 1) {
 				if (!GetOverlappedResult(self->serialConnection, &self->serialOverlapped, &size, FALSE)) {
 					fxCloseSerial(self);
 					self->reconnecting = 1;
-					Sleep(5000);
+					Sleep(500);
 					continue;
 				}
 				fxReadSerial(self, size);
