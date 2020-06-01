@@ -57,6 +57,16 @@ struct modBLEConnectionRecord {
 	int16_t		conn_id;
 };
 
+typedef struct modBLEDiscoveredRecord modBLEDiscoveredRecord;
+typedef modBLEDiscoveredRecord *modBLEDiscovered;
+
+struct modBLEDiscoveredRecord {
+	struct modBLEDiscoveredRecord		*next;
+
+	struct ble_gap_disc_desc			disc;
+	uint8_t								data[1];
+};
+
 typedef struct {
 	xsMachine *the;
 	xsSlot obj;
@@ -71,6 +81,8 @@ typedef struct {
 	uint8_t terminating;
 	
 	modTimer smTimer;
+
+	modBLEDiscovered discovered;
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -651,21 +663,26 @@ bail:
 
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	struct ble_gap_disc_desc *disc = (struct ble_gap_disc_desc *)message;
-	uint8_t *data = (uint8_t*)refcon;
-	
-	xsBeginHost(gBLE->the);
-	xsmcVars(4);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), data, disc->length_data);
-	xsmcSetArrayBuffer(xsVar(2), disc->addr.val, 6);
-	xsmcSetInteger(xsVar(3), disc->addr.type);
-	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
-	c_free(data);
-	xsEndHost(gBLE->the);
+	while (gBLE->discovered) {
+		modCriticalSectionBegin();
+		modBLEDiscovered discovered = gBLE->discovered;
+		gBLE->discovered = discovered->next;
+		modCriticalSectionEnd();
+		struct ble_gap_disc_desc *disc = &discovered->disc;
+
+		xsBeginHost(gBLE->the);
+		xsmcVars(4);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), disc->data, disc->length_data);
+		xsmcSetArrayBuffer(xsVar(2), disc->addr.val, 6);
+		xsmcSetInteger(xsVar(3), disc->addr.type);
+		xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
+		xsmcSet(xsVar(0), xsID_address, xsVar(2));
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+		xsEndHost(gBLE->the);
+		c_free(discovered);
+	}
 }
 
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -1113,10 +1130,27 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
 		case BLE_GAP_EVENT_DISC:
 			if (0 != event->disc.length_data) {
-				uint8_t *data = c_malloc(event->disc.length_data);
-				if (NULL != data) {
-					c_memmove(data, event->disc.data, event->disc.length_data);
-					modMessagePostToMachine(gBLE->the, (uint8_t*)&event->disc, sizeof(event->disc), scanResultEvent, data);
+				modBLEDiscovered disc = c_malloc(sizeof(modBLEDiscoveredRecord) - 1 + event->disc.length_data);
+				if (disc) {
+					uint8_t doPost = false;
+					disc->next = NULL;
+					disc->disc = event->disc;
+					c_memmove(disc->data, event->disc.data, event->disc.length_data);
+					disc->disc.data = disc->data;
+					modCriticalSectionBegin();
+					if (gBLE->discovered) {
+						modBLEDiscovered walker = gBLE->discovered;
+						while (walker->next)
+							walker = walker->next;
+						walker->next = disc;
+					}
+					else {
+						gBLE->discovered = disc;
+						doPost = true;
+					}
+					modCriticalSectionEnd();
+					if (doPost)
+						modMessagePostToMachine(gBLE->the, NULL, 0, scanResultEvent, NULL);
 				}
 			}
 			break;
