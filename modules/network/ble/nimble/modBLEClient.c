@@ -193,6 +193,12 @@ void xs_ble_client_destructor(void *data)
 		ble_gap_terminate(connection->conn_id, BLE_ERR_REM_USER_CONN_TERM);
 		c_free(connection);
 	}
+	modBLEDiscovered discovered = ble->discovered;
+	while (discovered != NULL) {
+		modBLEDiscovered disc = discovered;
+		discovered = discovered->next;
+		c_free(disc);
+	}
 	c_free(ble);
 	gBLE = NULL;
 
