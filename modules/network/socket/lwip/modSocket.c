@@ -1042,8 +1042,6 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
 		else {
-			tcp_recv(xss->skt, NULL);
-			tcp_sent(xss->skt, NULL);
 			tcp_err(xss->skt, NULL);
 #if ESP32
 			xss->skt = NULL;			// no close on socket if disconnected.
@@ -1052,7 +1050,7 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 			if (xss->reader[0] || xss->buflen)
 				xss->suspendedDisconnect = true;
 			else
-				socketSetPending(xss, kPendingDisconnect | kPendingClose);
+				socketSetPending(xss, kPendingDisconnect);
 		}
 
 		return ERR_OK;
