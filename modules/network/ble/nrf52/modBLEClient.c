@@ -266,10 +266,14 @@ void xs_ble_client_start_scanning(xsMachine *the)
 {
 	ret_code_t err_code;
 	uint8_t active = xsmcToBoolean(xsArg(0));
-	uint16_t interval = xsmcToInteger(xsArg(1));
-	uint16_t window = xsmcToInteger(xsArg(2));
+	uint8_t duplicates = xsmcToBoolean(xsArg(1));
+	uint32_t interval = xsmcToInteger(xsArg(2));
+	uint32_t window = xsmcToInteger(xsArg(3));
 	ble_gap_scan_params_t *scan_params = &gBLE->scan_params;
 	nrf_ble_scan_init_t *scan_init = &gBLE->scan_init;
+
+	if (!duplicates)
+		modLog("filtering duplicate advertisements unsupported");
 
 	c_memset(scan_params, 0, sizeof(ble_gap_scan_params_t));
 	scan_params->active = active;
