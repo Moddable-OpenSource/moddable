@@ -113,6 +113,7 @@ typedef struct {
 	qapi_BLE_BD_ADDR_t localAddress;	
 	
 	// services
+	uint8_t deployServices;
 	serviceHandleTableRecord serviceHandles[service_count];
 	
 	// security
@@ -163,6 +164,14 @@ void xs_ble_server_initialize(xsMachine *the)
 
 	xsRemember(gBLE->obj);
 	
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
 	// Initialize platform Bluetooth modules
 	QAPI_BLE_HCI_DRIVER_SET_COMM_INFORMATION(&HCI_DriverInformation, 1, 115200, QAPI_BLE_COMM_PROTOCOL_UART_E);
 	result = qapi_BLE_BSC_Initialize(&HCI_DriverInformation, 0);
@@ -234,11 +243,15 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);		
-	for (int16_t i = 0; i < service_count; ++i) {
-		if (0 != ble->serviceHandles[i].service_id)
-			qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);
+	qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);	
+	
+	if (gBLE->deployServices) {
+		for (int16_t i = 0; i < service_count; ++i) {
+			if (0 != ble->serviceHandles[i].service_id)
+				qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);
+		}
 	}
+	
 	qapi_BLE_GATT_Cleanup(ble->stackID);
 	qapi_BLE_BSC_Shutdown(ble->stackID);
 	c_free(ble);
@@ -329,6 +342,8 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 
 void xs_ble_server_deploy(xsMachine *the)
 {
+	if (!gBLE->deployServices) return;
+	
 	for (int16_t i = 0; i < service_count; ++i) {
 		int result;
 		qapi_BLE_GATT_Attribute_Handle_Group_t ServiceHandleGroupResult;
