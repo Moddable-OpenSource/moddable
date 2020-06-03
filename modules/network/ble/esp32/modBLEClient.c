@@ -193,8 +193,9 @@ void xs_ble_client_set_local_privacy(xsMachine *the)
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
-	uint32_t interval = xsmcToInteger(xsArg(1));
-	uint32_t window = xsmcToInteger(xsArg(2));
+	uint8_t duplicates = xsmcToBoolean(xsArg(1));
+	uint32_t interval = xsmcToInteger(xsArg(2));
+	uint32_t window = xsmcToInteger(xsArg(3));
 	esp_ble_scan_params_t scan_params;
 	
 	scan_params.scan_type = active ? BLE_SCAN_TYPE_ACTIVE : BLE_SCAN_TYPE_PASSIVE;
@@ -202,6 +203,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	scan_params.scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL;
 	scan_params.scan_interval = interval;
 	scan_params.scan_window = window;
+	scan_params.scan_duplicate = (duplicates ? BLE_SCAN_DUPLICATE_DISABLE : BLE_SCAN_DUPLICATE_ENABLE);
 	esp_ble_gap_set_scan_params(&scan_params);
 }
 

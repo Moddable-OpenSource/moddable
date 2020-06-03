@@ -222,8 +222,9 @@ void xs_ble_client_set_local_privacy(xsMachine *the)
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
-	uint32_t interval = xsmcToInteger(xsArg(1));
-	uint32_t window = xsmcToInteger(xsArg(2));
+	uint8_t duplicates = xsmcToBoolean(xsArg(1));
+	uint32_t interval = xsmcToInteger(xsArg(2));
+	uint32_t window = xsmcToInteger(xsArg(3));
 	uint8_t own_addr_type;
 	struct ble_gap_disc_params disc_params;
 
@@ -231,6 +232,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 
 	c_memset(&disc_params, 0, sizeof(disc_params));
 	disc_params.passive = !active;
+	disc_params.filter_duplicates = !duplicates;
 	disc_params.itvl = interval;
 	disc_params.window = window;
 

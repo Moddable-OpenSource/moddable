@@ -239,9 +239,13 @@ void xs_ble_client_set_local_privacy(xsMachine *the)
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
-	uint16_t interval = xsmcToInteger(xsArg(1));
-	uint16_t window = xsmcToInteger(xsArg(2));
+	uint8_t duplicates = xsmcToBoolean(xsArg(1));
+	uint32_t interval = xsmcToInteger(xsArg(2));
+	uint32_t window = xsmcToInteger(xsArg(3));
 	
+	if (!duplicates)
+		modLog("filtering duplicate advertisements unsupported");
+		
 	gecko_cmd_le_gap_set_scan_parameters(interval, window, active ? 1 : 0);
    	gecko_cmd_le_gap_discover(le_gap_discover_generic);
 }

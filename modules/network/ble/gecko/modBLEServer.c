@@ -98,7 +98,7 @@ void xs_ble_server_initialize(xsMachine *the)
 		gBLE->deployServices = true;
 
 	if (!gBLE->deployServices)
-		xsUnknownError("suppressing deploy services unsupported");
+		modLog("suppressing deploy services unsupported");
 
 	// Initialize platform Bluetooth modules
 	gecko_stack_init(&config);
