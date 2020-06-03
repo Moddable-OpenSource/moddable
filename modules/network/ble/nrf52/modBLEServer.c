@@ -118,6 +118,9 @@ typedef struct {
 	uint8_t adv_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	uint8_t scan_rsp_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	
+	// services
+	uint8_t deployServices;
+
 	// security
 	uint8_t encryption;
 	uint8_t bonding;
@@ -150,6 +153,14 @@ void xs_ble_server_initialize(xsMachine *the)
 	xsmcSetHostData(xsThis, gBLE);
 	xsRemember(gBLE->obj);
 	
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
 	// Initialize platform Bluetooth modules
 	init.p_gatt = &gBLE->m_gatt;
 	init.pm_event_handler = pm_evt_handler;
@@ -316,6 +327,8 @@ void xs_ble_server_deploy(xsMachine *the)
 	uint16_t char_handle;
 	uint16_t att_handle_index = 0;
 					
+	if (!gBLE->deployServices) return;
+	
 	for (uint16_t i = 0; i < service_count; ++i) {
 		gatts_attr_db_t *gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][0];
 		attr_desc_t *att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
