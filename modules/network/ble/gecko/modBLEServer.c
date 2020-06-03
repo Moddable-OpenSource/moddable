@@ -40,6 +40,9 @@ typedef struct {
 	uint8_t mitm;
 	uint8_t iocap;
 
+	// services
+	uint8_t deployServices;
+	
 	modTimer timer;
 	int8_t connection;
 	bd_addr address;
@@ -86,6 +89,17 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
 	
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
+	if (!gBLE->deployServices)
+		xsUnknownError("suppressing deploy services unsupported");
+
 	// Initialize platform Bluetooth modules
 	gecko_stack_init(&config);
 	gecko_bgapi_class_system_init();

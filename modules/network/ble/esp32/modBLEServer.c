@@ -75,6 +75,7 @@ typedef struct {
 	uint8_t deviceNameSet;
 
 	// services
+	uint8_t deployServices;
 	uint16_t handles[service_count][max_attribute_count];
 
 	// security
@@ -120,6 +121,14 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->gatts_if = ESP_GATT_IF_NONE;
 	xsRemember(gBLE->obj);
 
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
 	// Initialize platform Bluetooth modules
 	esp_err_t err = modBLEPlatformInitialize();
 
@@ -151,9 +160,11 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 
-	for (uint16_t i = 0; i < service_count; ++i)
-		if (ble->handles[i][0])
-			esp_ble_gatts_delete_service(ble->handles[i][0]);
+	if (gBLE->deployServices) {
+		for (uint16_t i = 0; i < service_count; ++i)
+			if (ble->handles[i][0])
+				esp_ble_gatts_delete_service(ble->handles[i][0]);
+	}
 	if (-1 != ble->conn_id)
 		esp_ble_gatts_close(ble->gatts_if, ble->conn_id);
 	esp_ble_gatts_app_unregister(ble->gatts_if);
@@ -499,6 +510,8 @@ static void logGAPEvent(esp_gap_ble_cb_event_t event) {
 
 void xs_ble_server_deploy(xsMachine *the)
 {
+	if (!gBLE->deployServices) return;
+	
 	for (uint16_t i = 0; i < service_count; ++i) {
 		esp_gatts_attr_db_t *gatts_attr_db = (esp_gatts_attr_db_t*)&gatt_db[i];
 		esp_attr_desc_t *att_desc = (esp_attr_desc_t*)&gatts_attr_db->att_desc;
