@@ -40,13 +40,13 @@ void xs_parseRLE(xsMachine *the)
 	if (0 != c_read8(bytes + 2))
 		xsUnknownError("unsupported version");
 
-	if ((kCommodettoBitmapGray16 | kCommodettoBitmapPacked) != c_read8(bytes + 3))
-		xsUnknownError("unsupported pixel format");
+//	if ((kCommodettoBitmapGray16 | kCommodettoBitmapPacked) != c_read8(bytes + 3))
+//		xsUnknownError("unsupported pixel format");
 
 	bitmap = xsmcGetHostChunk(xsArg(1));
 	bitmap->w = (c_read8(bytes + 4) << 8) | c_read8(bytes + 5);
 	bitmap->h = (c_read8(bytes + 6) << 8) | c_read8(bytes + 7);
-	bitmap->format = kCommodettoBitmapGray16 | kCommodettoBitmapPacked;
+	bitmap->format = c_read8(bytes + 3);
 	bitmap->havePointer = 1;
 	bitmap->bits.data = bytes + 8;		//@@ only valid if from Resource
 

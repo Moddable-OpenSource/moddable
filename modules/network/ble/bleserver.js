@@ -23,8 +23,8 @@ import {Advertisement, Bytes, typedValueToBuffer, typedBufferToValue} from "btut
 import {IOCapability} from "sm";
 
 export class BLEServer @ "xs_ble_server_destructor" {
-	constructor() {
-		this.initialize();
+	constructor(dictionary = {}) {
+		this.initialize(dictionary);
 		this.device_name = "";
 	}
 	close() @ "xs_ble_server_close"
@@ -59,7 +59,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._startAdvertising(flags, interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
-	initialize() @ "xs_ble_server_initialize"
+	initialize(dictionary) @ "xs_ble_server_initialize"
 	
 	get localAddress() {
 		return new Bytes(this._getLocalAddress());

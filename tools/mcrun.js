@@ -190,7 +190,7 @@ class ToDoFile extends FILE {
 			}
 			line.push("-a");
 			if (result.monochrome)
-				line.push("-m");
+				line.push("-m", "-4");
 			line.push("-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			line.push("-n", parts.name.slice(0, -6));
 			lines.push(line);
@@ -213,7 +213,7 @@ class ToDoFile extends FILE {
 			if (!alphaTarget)
 				line.push("-c");
 			if (result.monochrome)
-				line.push("-m");
+				line.push("-m", "-4");
 			else {
 				line.push("-f", tool.format);
 				if (clutSource)

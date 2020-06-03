@@ -66,6 +66,7 @@ typedef struct {
 	ble_addr_t	bda;
 	
 	// services
+	uint8_t deployServices;
 	uint16_t handles[service_count][max_attribute_count];
 	
 	// requests
@@ -132,6 +133,14 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->conn_id = -1;
 	xsRemember(gBLE->obj);
 	
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
 	ble_hs_cfg.sync_cb = nimble_on_sync;
 	ble_hs_cfg.gatts_register_cb = nimble_on_register;
 	ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
@@ -159,7 +168,7 @@ void xs_ble_server_destructor(void *data)
 	
 	if (-1 != ble->conn_id)
 		ble_gap_terminate(ble->conn_id, BLE_ERR_REM_USER_CONN_TERM);
-	if (0 != service_count)
+	if (gBLE->deployServices && (0 != service_count))
 		ble_gatts_reset();
 	c_free(ble);
 	gBLE = NULL;
@@ -352,7 +361,8 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	ble_hs_id_infer_auto(0, &gBLE->bda.type);
 	ble_hs_id_copy_addr(gBLE->bda.type, gBLE->bda.val, NULL);
 
-	deployServices(the);
+	if (gBLE->deployServices)
+		deployServices(the);
 
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
