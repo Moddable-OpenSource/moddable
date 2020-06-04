@@ -122,6 +122,16 @@ struct modBLEConnectionRecord {
 	uint16_t handles[char_name_count];
 };
 
+typedef struct modBLEScannedPacketRecord modBLEScannedPacketRecord;
+typedef modBLEScannedPacketRecord *modBLEScannedPacket;
+
+struct modBLEScannedPacketRecord {
+	struct modBLEScannedPacketRecord *next;
+
+	uint16_t type;
+	uint8_t addr[6];
+};
+
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
@@ -138,6 +148,10 @@ typedef struct {
 	uint8_t bonding;
 	uint8_t mitm;
 	uint8_t iocap;
+
+	// scanning
+	uint8_t duplicates;
+	modBLEScannedPacket scanned;
 
 	modBLEConnection connections;
 } modBLERecord, *modBLE;
@@ -173,6 +187,8 @@ static void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message
 
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+static void clearScanned(modBLE ble);
+
 static modBLE gBLE = NULL;
 
 NRF_BLE_SCAN_DEF(m_scan);	// device scanning module
@@ -191,6 +207,7 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE->the = the;
 	gBLE->obj = xsThis;
 	gBLE->iocap = 0xFF;
+	gBLE->duplicates = true;
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
@@ -251,6 +268,8 @@ void xs_ble_client_destructor(void *data)
 		connections = connections->next;
 		c_free(connection);
 	}
+	
+	clearScanned(ble);
 
 	c_free(ble);
 	gBLE = NULL;
@@ -272,8 +291,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	ble_gap_scan_params_t *scan_params = &gBLE->scan_params;
 	nrf_ble_scan_init_t *scan_init = &gBLE->scan_init;
 
-	if (!duplicates)
-		modLog("filtering duplicate advertisements unsupported");
+	gBLE->duplicates = duplicates;
 
 	c_memset(scan_params, 0, sizeof(ble_gap_scan_params_t));
 	scan_params->active = active;
@@ -294,6 +312,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 void xs_ble_client_stop_scanning(xsMachine *the)
 {
 	nrf_ble_scan_stop();
+	clearScanned(gBLE);
 }
 
 void xs_ble_client_connect(xsMachine *the)
@@ -717,6 +736,17 @@ bail:
 	return result;
 }
 
+static void clearScanned(modBLE ble)
+{
+	modBLEScannedPacket walker = ble->scanned;
+	while (walker) {
+		modBLEScannedPacket next = walker->next;
+		c_free(walker);
+		walker = next;
+	}
+	ble->scanned = NULL;
+}
+
 void bleClientReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -810,6 +840,38 @@ void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
+	
+	if (!gBLE->duplicates) {
+		uint16_t type =
+			(p_evt_adv_report->type.connectable   << 0) |
+			(p_evt_adv_report->type.scannable     << 1) |
+			(p_evt_adv_report->type.directed      << 2) |
+			(p_evt_adv_report->type.scan_response << 3) |
+			(p_evt_adv_report->type.extended_pdu  << 4) |
+			(p_evt_adv_report->type.status        << 5) |
+			(p_evt_adv_report->type.reserved      << 7);
+			
+		modBLEScannedPacket scanned = gBLE->scanned;
+		while (scanned) {
+			if (type == scanned->type && 0 == c_memcmp(p_evt_adv_report->peer_addr.addr, scanned->addr, 6))
+				goto bail;
+			scanned = scanned->next;
+		}
+		modBLEScannedPacket address = c_calloc(1, sizeof(modBLEScannedPacketRecord));
+		if (!address)
+			xsUnknownError("out of memory");
+		address->type = type;
+		c_memmove(address->addr, p_evt_adv_report->peer_addr.addr, 6);
+		if (!gBLE->scanned)
+			gBLE->scanned = address;
+		else {
+			modBLEScannedPacket walker;
+			for (walker = gBLE->scanned; walker->next; walker = walker->next)
+				;
+			walker->next = address;
+		}
+	}
+
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), p_evt_adv_report->data.p_data, p_evt_adv_report->data.len);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
@@ -818,6 +880,8 @@ void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsmcSetInteger(xsVar(1), p_evt_adv_report->peer_addr.addr_type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+	
+bail:
 	xsEndHost(gBLE->the);
 }
 
