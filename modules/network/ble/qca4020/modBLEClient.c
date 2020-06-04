@@ -257,8 +257,9 @@ void xs_ble_client_set_local_privacy(xsMachine *the)
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
-	uint16_t interval = xsmcToInteger(xsArg(1));
-	uint16_t window = xsmcToInteger(xsArg(2));
+	uint8_t duplicates = xsmcToBoolean(xsArg(1));
+	uint32_t interval = xsmcToInteger(xsArg(2));
+	uint32_t window = xsmcToInteger(xsArg(3));
 	uint32_t result;
 	
 	gBLE->scanInterval = (uint32_t)(interval / 0.625);	// convert to 1 ms units
@@ -271,7 +272,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 		gBLE->scanWindow,
 		QAPI_BLE_LAT_PUBLIC_E,
 		QAPI_BLE_FP_NO_FILTER_E,
-		false,							// no filtering
+		!duplicates,
 		GAP_LE_Event_Callback,
 		0L
 	);
