@@ -166,6 +166,16 @@ struct modBLEConnectionRecord {
 	uint16_t handles[char_name_count];
 };
 
+typedef struct modBLEScannedPacketRecord modBLEScannedPacketRecord;
+typedef modBLEScannedPacketRecord *modBLEScannedPacket;
+
+struct modBLEScannedPacketRecord {
+	struct modBLEScannedPacketRecord *next;
+
+	uint8_t packet_type;
+	uint8_t addr[6];
+};
+
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
@@ -176,6 +186,10 @@ typedef struct {
 	uint8_t encryption;
 	uint8_t bonding;
 	uint8_t mitm;
+	
+	// scanning
+	uint8_t duplicates;
+	modBLEScannedPacket scanned;
 	
 	// client connections
 	modBLEConnection connections;
@@ -191,6 +205,7 @@ static void bufferToUUID(uint8_t *buffer, uuidRecord *uuid, uint16_t length);
 static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
 static void bufferToAddress(uint8_t *buffer, bd_addr *bda);
 static void bleTimerCallback(modTimer timer, void *refcon, int refconSize);
+static void clearScanned(modBLE ble);
 static void ble_event_handler(struct gecko_cmd_packet* evt);
 
 static modBLE gBLE = NULL;
@@ -204,6 +219,7 @@ void xs_ble_client_initialize(xsMachine *the)
 		xsUnknownError("no memory");
 	gBLE->the = the;
 	gBLE->obj = xsThis;
+	gBLE->duplicates = true;
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
@@ -227,6 +243,7 @@ void xs_ble_client_destructor(void *data)
 	modBLE ble = data;
 	if (ble) {
 		modTimerRemove(ble->timer);
+		clearScanned(ble);
 		c_free(ble);
 	}
 	gBLE = NULL;
@@ -243,8 +260,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
 	
-	if (!duplicates)
-		modLog("filtering duplicate advertisements unsupported");
+	gBLE->duplicates = duplicates;
 		
 	gecko_cmd_le_gap_set_scan_parameters(interval, window, active ? 1 : 0);
    	gecko_cmd_le_gap_discover(le_gap_discover_generic);
@@ -253,6 +269,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 void xs_ble_client_stop_scanning(xsMachine *the)
 {
 	gecko_cmd_le_gap_end_procedure();
+	clearScanned(gBLE);
 }
 
 void xs_ble_client_connect(xsMachine *the)
@@ -725,6 +742,17 @@ static void bufferToAddress(uint8_t *buffer, bd_addr *bda)
 		bda->addr[i] = buffer[5 - i];
 }
 
+static void clearScanned(modBLE ble)
+{
+	modBLEScannedPacket walker = ble->scanned;
+	while (walker) {
+		modBLEScannedPacket next = walker->next;
+		c_free(walker);
+		walker = next;
+	}
+	ble->scanned = NULL;
+}
+
 static int modBLEConnectionSaveAttHandle(modBLEConnection connection, uint8_t *uuid, uint16_t uuid_length, uint16_t handle)
 {
 	int result = -1;
@@ -762,6 +790,29 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 	uint8_t addr[6];
 	xsmcVars(4);
 	addressToBuffer(&evt->address, addr);
+
+	if (!gBLE->duplicates) {
+		modBLEScannedPacket scanned = gBLE->scanned;
+		while (scanned) {
+			if (evt->packet_type == scanned->packet_type && 0 == c_memcmp(addr, scanned->addr, 6))
+				goto bail;
+			scanned = scanned->next;
+		}
+		modBLEScannedPacket address = c_calloc(1, sizeof(modBLEScannedPacketRecord));
+		if (!address)
+			xsUnknownError("out of memory");
+		address->packet_type = evt->packet_type;
+		c_memmove(address->addr, addr, 6);
+		if (!gBLE->scanned)
+			gBLE->scanned = address;
+		else {
+			modBLEScannedPacket walker;
+			for (walker = gBLE->scanned; walker->next; walker = walker->next)
+				;
+			walker->next = address;
+		}
+	}
+	
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), evt->data.data, evt->data.len);
 	xsmcSetArrayBuffer(xsVar(2), addr, 6);
@@ -770,6 +821,8 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+	
+bail:
 	xsEndHost(gBLE->the);
 }
 
