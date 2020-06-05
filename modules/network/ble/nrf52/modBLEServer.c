@@ -1013,8 +1013,22 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			ble_gap_evt_passkey_display_t const * p_evt_passkey_display = &p_ble_evt->evt.gap_evt.params.passkey_display;
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_passkey_display, sizeof(ble_gap_evt_passkey_display_t), gapPasskeyDisplayEvent, NULL);
         	break;
+        }	
+        case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
+			ble_gap_phys_t const phys = {
+				.rx_phys = BLE_GAP_PHY_AUTO,
+				.tx_phys = BLE_GAP_PHY_AUTO,
+			};
+			sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
+			break;
         }
-			
+        case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST: {
+			ble_gap_data_length_params_t dl_params;
+			c_memset(&dl_params, 0, sizeof(ble_gap_data_length_params_t));
+			sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, &dl_params, NULL);
+			break;
+        }
+
         case BLE_GATTS_EVT_WRITE: {
 			ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_write, sizeof(ble_gatts_evt_write_t) + p_evt_write->len - 1, gattsWriteEvent, NULL);
