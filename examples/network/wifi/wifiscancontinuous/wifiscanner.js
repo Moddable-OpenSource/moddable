@@ -21,17 +21,16 @@ class Scanner {
 	#interval;
 	#max;
 	#scanOptions;
-	#target;
 	#onLost;
 	#onFound;
 	#onScanning;
 	#timer;
 
 	constructor(options) {
-		this.#target = options.target;
-		this.#onFound = options.onFound ?? this.onFound;
-		this.#onLost = options.onLost ?? this.onLost;
-		this.#onScanning = options.onScanning ?? this.onScanning;
+		this.target = options.target;
+		this.#onFound = options.onFound;
+		this.#onLost = options.onLost;
+		this.#onScanning = options.onScanning;
 		this.#max = options.max ?? 32;
 		this.#interval = options.interval ?? 1000;
 		this.#scanOptions = options.scanOptions ?? {};
@@ -51,7 +50,7 @@ class Scanner {
 				if (i)
 					i.ticks = Time.ticks;
 				else {
-					const result = this.#onFound?.(this.#target, item);
+					const result = this.#onFound?.(item);
 					if ((undefined === result) || result) {
 						this.#items.push({ssid: item.ssid, ticks: Time.ticks});
 						if (this.#items.length > this.#max)
@@ -65,10 +64,10 @@ class Scanner {
 					this.#timer = undefined;
 					this.#scan();
 				}, this.#interval);
-				this.#onScanning?.(this.#target, false);
+				this.#onScanning?.(false);
 			}
 		});
-		this.#onScanning?.(this.#target, true);
+		this.#onScanning?.(true);
 	}
 	#purge() {
 		const items = this.#items;
@@ -78,7 +77,7 @@ class Scanner {
 			if (items[i].ticks > expire)
 				continue;
 
-			this.#onLost?.(this.#target, items[i].ssid);
+			this.#onLost?.(items[i].ssid);
 
 			items.splice(i, 1);
 			i -= 1;
@@ -88,7 +87,7 @@ class Scanner {
 			items.sort((a, b) => b.ticks - a.ticks);		// most recently seen first
 			if (this.#onLost) {
 				for (let i = this.#max; i < items.length; i++)
-					this.#onLost(this.#target, items[i].ssid)
+					this.#onLost(items[i].ssid)
 			}
 			items.length = this.#max;
 		}
