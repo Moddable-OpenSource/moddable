@@ -287,7 +287,8 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)/debugger.c.o \
 	$(TMP_DIR)/ftdi_trace.c.o \
 	$(TMP_DIR)/main.c.o \
-	$(TMP_DIR)/debugger_usbd.c.o
+	$(TMP_DIR)/debugger_usbd.c.o \
+	$(TMP_DIR)/app_usbd_vendor.c.o
 
 SDK_GLUE_DIRS = \
 	$(BUILD_DIR)/devices/nrf52/base \
@@ -518,7 +519,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
 	-DMODGCC=1 \
-	-DUSE_FTDI_TRACE=0
+	-DUSE_FTDI_TRACE=1
 
 C_FLAGS=\
 	-c	\
@@ -611,6 +612,12 @@ all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(DO_COPY)
 	$(WAIT_FOR_NEW_SERIAL)
 
+deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
+	$(WAIT_FOR_M4)
+	$(KILL_SERIAL_2_XSBUG)
+	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
+	$(DO_COPY)
+
 precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
 
 env_vars:
@@ -667,7 +674,7 @@ installDFU: all dfu-package
 	@echo "# Flashing $<"
 	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b 115200 --singlebank --touch 1200
 
-startDebugger:
+xsbug:
 	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)

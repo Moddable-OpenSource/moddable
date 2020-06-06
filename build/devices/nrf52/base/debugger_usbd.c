@@ -36,6 +36,7 @@
 #include "app_usbd_cdc_acm.h"
 #include "app_usbd_serial_num.h"
 #include "sdk_config.h"
+#include "app_usbd_vendor.h"
 
 #include "task.h"
 #include "queue.h"
@@ -48,6 +49,8 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_us
 static void usbd_user_ev_handler(app_usbd_event_type_t event);
 static void usbd_task(void *pvParameter);
 static void usb_new_event_isr_handler(app_usbd_internal_evt_t const * const p_event, bool queued);
+
+static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_vendor_user_event_t event);
 
 #define CDC_ACM_COMM_INTERFACE	0
 #define CDC_ACM_COMM_EPIN		NRF_DRV_USBD_EPIN2
@@ -66,6 +69,25 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(
 	CDC_ACM_DATA_EPOUT,
 	APP_USBD_CDC_COMM_PROTOCOL_AT_V250
 );
+
+#define VENDOR_COMM_INTERFACE	2
+#define VENDOR_COMM_EPIN		NRF_DRV_USBD_EPIN3
+#define VENDOR_DATA_INTERFACE 	3
+#define VENDOR_DATA_EPIN	NRF_DRV_USBD_EPIN4
+#define VENDOR_DATA_EPOUT	NRF_DRV_USBD_EPOUT4
+
+APP_USBD_VENDOR_GLOBAL_DEF(
+	m_app_vendor,
+	vendor_user_ev_handler,
+	VENDOR_COMM_INTERFACE,
+	VENDOR_DATA_INTERFACE,
+	VENDOR_COMM_EPIN,
+	VENDOR_DATA_EPIN,
+	VENDOR_DATA_EPOUT
+);
+		
+
+static uint8_t web_serial_connected = false;
 
 #define USBD_STACK_SIZE			256
 #define USBD_PRIORITY			2
@@ -167,6 +189,9 @@ void usbd_task(void *pvParameter)
     if (0 == ret) {
     	app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     	ret = app_usbd_class_append(class_cdc_acm);
+
+		app_usbd_class_inst_t const * class_vendor = app_usbd_vendor_class_inst_get(&m_app_vendor);
+		ret = app_usbd_class_append(class_vendor);
     }
     if (0 == ret) {
 		ret = app_usbd_power_events_enable();
@@ -193,6 +218,21 @@ void usbd_task(void *pvParameter)
         }
     }
 }
+
+static app_usbd_cdc_acm_ctx_t * cdc_acm_ctx_get(app_usbd_cdc_acm_t const * p_cdc_acm)
+{
+    ASSERT(p_cdc_acm != NULL);
+    ASSERT(p_cdc_acm->specific.p_data != NULL);
+    return &p_cdc_acm->specific.p_data->ctx;
+}
+
+static app_usbd_vendor_ctx_t *vendor_ctx_get(app_usbd_vendor_t const *p_vendor)
+{
+    ASSERT(p_vendor != NULL);
+    ASSERT(p_vendor->specific.p_data != NULL);
+    return &p_vendor->specific.p_data->ctx;
+}
+
 
 void usbd_user_ev_handler(app_usbd_event_type_t event)
 {
@@ -240,7 +280,15 @@ void usbd_user_ev_handler(app_usbd_event_type_t event)
     		ftdiTrace("APP_USBD_EVT_DRV_RESUME");
 			break;
 
+		case APP_USBD_EVT_STATE_CHANGED:
+			break;
+
+		case APP_USBD_EVT_DRV_RESET:
+    		ftdiTrace("APP_USBD_EVT_DRV_RESET");
+			break;
+
 		default:
+    		ftdiTrace("APP_USBD_EVT_    unknown");
 			break;
 	}
 }
@@ -258,13 +306,6 @@ static nrf_drv_usbd_ep_t data_ep_in_addr_get(app_usbd_class_inst_t const * p_ins
     ep_cfg = app_usbd_class_iface_ep_get(class_iface, APP_USBD_CDC_ACM_DATA_EPIN_IDX);
 
     return app_usbd_class_ep_address_get(ep_cfg);
-}
-
-static app_usbd_cdc_acm_ctx_t * cdc_acm_ctx_get(app_usbd_cdc_acm_t const * p_cdc_acm)
-{
-    ASSERT(p_cdc_acm != NULL);
-    ASSERT(p_cdc_acm->specific.p_data != NULL);
-    return &p_cdc_acm->specific.p_data->ctx;
 }
 
 // Send the next queued buffer with ZLP packet
@@ -288,9 +329,49 @@ static ret_code_t sendNextBuffer()
     nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
     
 	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
-	ftdiTrace("sending buffer, size=");
-	ftdiTraceInt(buffer->size);
+//	ftdiTrace("sending buffer, size=");
+//	ftdiTraceInt(buffer->size);
 	return app_usbd_ep_transfer(ep, &transfer);
+}
+
+static uint8_t reboot_style[2] = {0, 0};
+static void checkLineState(uint16_t line_state, uint8_t which) {
+	uint8_t DTR, RTS;
+	DTR = (line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR);
+	RTS = (line_state & APP_USBD_CDC_ACM_LINE_STATE_RTS);
+	uint8_t reboot_seq = (DTR ? 1 : 0) + (RTS ? 2 : 0);
+
+	switch (reboot_seq) {
+		case 3:								 // normal run mode
+//			ftdiTrace("[3] normal run mode");
+			reboot_style[which] = 0;
+			break;
+		case 2:								 // DTR dropped
+			ftdiTrace("[2] dtr dropped");
+			break;
+		case 1:						 // DTR Raised, RTS off - programming mode
+			ftdiTrace("[1] dtr raised, rts dropped - programming mode");
+			reboot_style[which] = 1;
+			break;
+		case 0:
+			if (reboot_style[which]) {
+				ftdiTrace("[0] dtr and rts dropped - REBOOT TO PROGRAMMING");
+				nrf52_rebootToDFU();
+			}
+			else {
+				ftdiTrace("[0] dtr dropped, rts dropped - RESET");
+				nrf52_reset();
+			}
+			break;
+	}
+}
+
+static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_vendor_user_event_t event)
+{
+    app_usbd_vendor_t const * p_vendor = app_usbd_vendor_class_get(p_inst);
+	app_usbd_vendor_ctx_t * p_vendor_ctx = vendor_ctx_get(p_vendor);
+
+	checkLineState(p_vendor_ctx->line_state, 0);
 }
 
 void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event)
@@ -298,6 +379,9 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 	ret_code_t ret;
     app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
 	uint32_t ulPreviousValue;
+	app_usbd_cdc_acm_ctx_t * p_cdc_acm_ctx = cdc_acm_ctx_get(p_cdc_acm);
+
+	checkLineState(p_cdc_acm_ctx->line_state, 1);
 
     switch(event) {
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN: {
@@ -322,7 +406,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     		// in the APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN event.
     		uint16_t count = 0;
     		if (!nrf_queue_is_full(&m_rx_queue)) {
-				ftdiTraceChar(m_rx_buffer[0]);
+//				ftdiTraceChar(m_rx_buffer[0]);
 				nrf_queue_in(&m_rx_queue, &m_rx_buffer[0], 1);
 				++count;
     		}
@@ -330,12 +414,12 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
                 ret = app_usbd_cdc_acm_read(&m_app_cdc_acm, m_rx_buffer, 1);
                 if (NRF_SUCCESS != ret)
                 	break;
-				ftdiTraceChar(m_rx_buffer[0]);
+//				ftdiTraceChar(m_rx_buffer[0]);
 				nrf_queue_in(&m_rx_queue, &m_rx_buffer[0], 1);
 				++count;
 			}
-    		ftdiTrace("Read bytes =");
-    		ftdiTraceInt(count);
+//    		ftdiTrace("Read bytes =");
+//    		ftdiTraceInt(count);
 
 			// Here, we inform the xsMain task that there is data available.
 			// If ulPreviousValue isn't 0, then data hasn't yet been serviced.
@@ -358,7 +442,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
         	break;
         	
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE: {
-    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_TX_DONE");
+//    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_TX_DONE");
 			if (NULL != gTxBufferList) {
 				txBuffer buffer = gTxBufferList;
 				gTxBufferList = gTxBufferList->next;
@@ -429,7 +513,7 @@ void ESP_putc(int c)
 			sendNextBuffer();
 		}
 		else {
-			ftdiTrace("queuing buffer");
+//			ftdiTrace("queuing buffer");
 		}
 	}
 }

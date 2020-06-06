@@ -268,6 +268,7 @@ extern void *my_malloc(size_t size);
 #endif
 
 extern void nrf52_reset(void);
+extern void nrf52_rebootToDFU(void);
 
 #define c_exit(n) { nrf52_reset(); }
 #define c_free free

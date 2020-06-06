@@ -346,7 +346,8 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)\ftdi_trace.o \
 	$(TMP_DIR)\main.o \
 	$(TMP_DIR)\systemclock.o \
-	$(TMP_DIR)\xsmain.o
+	$(TMP_DIR)\xsmain.o \
+	$(TMP_DIR)\app_usbd_vendor.o
 
 STARTUP_OBJ = \
 	$(LIB_DIR)\gcc_startup_nrf52840.o \
@@ -410,7 +411,8 @@ OBJECTS = \
 	$(NRF_LIBRARIES_OBJ) \
 	$(NRF_SOFTDEVICE_OBJ) \
 	$(NRF_USBD_OBJ) \
-	$(STARTUP_OBJ)
+	$(STARTUP_OBJ) \
+	$(WEBUSB_OBJ)
 
 FINAL_LINK_OBJ = \
 	$(LIB_DIR)\buildinfo.o \
