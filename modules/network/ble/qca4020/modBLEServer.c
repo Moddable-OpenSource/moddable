@@ -245,7 +245,7 @@ void xs_ble_server_destructor(void *data)
 	
 	qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);	
 	
-	if (gBLE->deployServices) {
+	if (ble->deployServices) {
 		for (int16_t i = 0; i < service_count; ++i) {
 			if (0 != ble->serviceHandles[i].service_id)
 				qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);

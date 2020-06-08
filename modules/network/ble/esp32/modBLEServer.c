@@ -160,7 +160,7 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 
-	if (gBLE->deployServices) {
+	if (ble->deployServices) {
 		for (uint16_t i = 0; i < service_count; ++i)
 			if (ble->handles[i][0])
 				esp_ble_gatts_delete_service(ble->handles[i][0]);

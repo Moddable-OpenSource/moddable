@@ -168,7 +168,7 @@ void xs_ble_server_destructor(void *data)
 	
 	if (-1 != ble->conn_id)
 		ble_gap_terminate(ble->conn_id, BLE_ERR_REM_USER_CONN_TERM);
-	if (gBLE->deployServices && (0 != service_count))
+	if (ble->deployServices && (0 != service_count))
 		ble_gatts_reset();
 	c_free(ble);
 	gBLE = NULL;
