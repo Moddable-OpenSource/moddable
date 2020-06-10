@@ -80,8 +80,6 @@ typedef struct {
 	modBLEConnection connections;
 	uint8_t terminating;
 	
-	modTimer smTimer;
-
 	modBLEDiscovered discovered;
 } modBLERecord, *modBLE;
 
@@ -280,7 +278,6 @@ void xs_ble_client_connect(xsMachine *the)
 
 void smTimerCallback(modTimer timer, void *refcon, int refconSize)
 {
-	modTimerRemove(timer);
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
@@ -312,8 +309,7 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 		ble_addr_t addr;
 		ble_hs_id_gen_rnd(1, &addr);
 		ble_hs_id_set_rnd(addr.val);
-		
-		gBLE->smTimer = modTimerAdd(20, 0, smTimerCallback, NULL, 0);
+		modTimerAdd(0, 0, smTimerCallback, NULL, 0);
 	}
 }
 
