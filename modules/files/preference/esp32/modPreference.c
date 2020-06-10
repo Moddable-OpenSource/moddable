@@ -38,8 +38,9 @@ void xs_preference_set(xsMachine *the)
 
 	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
 
-	err = nvs_erase_key(handle, key);		// ESP IDF bug: if typ of key changese, new type is ignored. work around by deleting first.
-	if (ESP_OK != err) goto bail;
+	nvs_erase_key(handle, key);		// ESP IDF bug: if typ of key changese, new type is ignored. work around by deleting first.
+	if ((ESP_OK != err) && (ESP_ERR_NVS_NOT_FOUND != err))
+		goto bail;
 
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsBooleanType:
