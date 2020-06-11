@@ -51,10 +51,6 @@ void ModTimerCallback(void* data)
 		}
 	}
 	else {
-		xsBeginHost(self->the);
-		xsForget(self->callback);
-		xsForget(self->slot);
-		xsEndHost(self->the);
 		c_free(self);
 	}
 }
@@ -75,7 +71,13 @@ ModTimer ModTimerCreate(xsMachine* the)
 
 void ModTimerDelete(void* it)
 {
-	// it == NULL
+	ModTimer self = (ModTimer)it;
+	if (self) { // delete machine
+		self->count--;
+		if (self->count == 0) {
+			c_free(self);
+		}
+	}
 }
 
 void xs_timer_set(xsMachine *the)
@@ -115,11 +117,11 @@ void xs_timer_clear(xsMachine *the)
 	if (NULL == self)
 		xsUnknownError("invalid timer");
 	xsResult = xsAccess(self->callback);
+	xsForget(self->callback);
+	xsForget(self->slot);
 	xsSetHostData(xsArg(0), NULL);
 	self->count--;
 	if (self->count == 0) {
-		xsForget(self->callback);
-		xsForget(self->slot);
 		c_free(self);
 	}
 }
