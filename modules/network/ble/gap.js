@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,7 +38,35 @@
  * Portions based on Kinoma LowPAN Framework: Kinoma Bluetooth 4.2 Stack
  */
 
-const GAP = {};
+class GAP {
+	static setWhitelist(whitelist) {
+		if ("string" === typeof whitelist) {
+			let address = this.#addressStringToArray(whitelist);
+			this.#setWhitelist([{ address, addressType: GAP.AddressType.PUBLIC }]);
+		}
+		else if (whitelist instanceof Array) {
+			whitelist.forEach((element, index) => {
+				if ("string" === typeof element) {
+					let address = this.#addressStringToArray(element);
+					element[index] = { address, addressType: GAP.AddressType.PUBLIC };
+				}
+			});
+			this.#setWhitelist(whitelist);
+		}
+		else if ("object" === typeof whitelist) {
+			this.#setWhitelist([whitelist]);
+		}
+		else
+			throw new Error("unknown whitelist format");
+	}
+	static clearWhitelist() @ "xs_gap_clear_whitelist"
+
+	#setWhitelist(whitelist) @ "xs_gap_set_whitelist"
+	
+	#addressStringToArray(address) {
+		return address.split(':').map(hex => parseInt(hex, 16));
+	}
+}
 
 GAP.SCAN_FAST_INTERVAL = 0x0030;		// TGAP(scan_fast_interval)		30ms to 60ms
 GAP.SCAN_FAST_WINDOW = 0x0030;			// TGAP(scan_fast_window)		30ms
@@ -109,6 +137,7 @@ GAP.AddressType = {
 	RPA_PUBLIC: 2,
 	RPA_RANDOM: 3
 };
+
 Object.freeze(GAP, true);
 
 

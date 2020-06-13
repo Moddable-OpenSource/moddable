@@ -39,6 +39,26 @@ typedef enum {
 	LE_BR_EDR_HOST = (1L << 4)
 } AdvertisingFlags;
 
+typedef enum {
+	Public = 0,
+	Random,
+	RPAPublic,
+	RPARandom
+} AddressType;
+
+typedef struct modBLEWhitelistAddressRecord modBLEWhitelistAddressRecord;
+typedef modBLEWhitelistAddressRecord *modBLEWhitelistAddress;
+
+struct modBLEWhitelistAddressRecord {
+	struct modBLEWhitelistAddressRecord *next;
+
+	AddressType addressType;
+	uint8_t address[6];
+};
+
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
+
+modBLEWhitelistAddress modBLEGAPGetWhitelist();
+void modBLEGAPClearWhitelist();
 
 #endif
