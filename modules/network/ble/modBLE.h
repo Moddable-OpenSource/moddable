@@ -58,7 +58,6 @@ struct modBLEWhitelistAddressRecord {
 
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
 
-modBLEWhitelistAddress modBLEGAPGetWhitelist();
-uint8_t modBLEGAPGetWhitelistEnabled();
+modBLEWhitelistAddress modBLEGetWhitelist();
 
 #endif

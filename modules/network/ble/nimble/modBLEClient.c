@@ -77,9 +77,6 @@ typedef struct {
 	uint8_t mitm;
 	uint8_t iocap;
 
-	// scanning
-	uint8_t useWhitelist;
-	
 	modBLEConnection connections;
 	uint8_t terminating;
 	
@@ -237,9 +234,8 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	disc_params.filter_duplicates = !duplicates;
 	disc_params.itvl = interval;
 	disc_params.window = window;
-	
-	gBLE->useWhitelist = whitelist;
-	
+	disc_params.filter_policy = (whitelist ? BLE_HCI_SCAN_FILT_USE_WL : BLE_HCI_SCAN_FILT_NO_WL);
+
 	ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params, nimble_gap_event, NULL);
  }
 
@@ -1140,22 +1136,6 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
 		case BLE_GAP_EVENT_DISC:
 			if (0 != event->disc.length_data) {
-				if (gBLE->useWhitelist) {
-					uint8_t found = false;
-					modBLEWhitelistAddress walker = modBLEGAPGetWhitelist();
-					if (NULL == walker)
-						found = true;
-					else {
-						while (NULL != walker) {
-							if (walker->addressType == event->disc.addr.type && 0 == c_memcmp(event->disc.addr.val, walker->address, 6)) {
-								found = true;
-							}
-							walker = walker->next;
-						}
-					}
-					if (!found)
-						goto bail;
-				}
 				modBLEDiscovered disc = c_malloc(sizeof(modBLEDiscoveredRecord) - 1 + event->disc.length_data);
 				if (disc) {
 					uint8_t doPost = false;

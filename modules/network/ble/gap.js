@@ -38,56 +38,7 @@
  * Portions based on Kinoma LowPAN Framework: Kinoma Bluetooth 4.2 Stack
  */
 
-import {Bytes} from "btutils";
-
-class GAP {
-	static whitelist(op, value) {
-		switch(op) {
-			case "add":
-				this.#whitelistAdd(this.#whitelistEntry(value));
-				break;
-			case "remove":
-				this.#whitelistRemove(this.#whitelistEntry(value));
-				break;
-			case "clear":
-				this.#whitelistClear();
-				break;
-			default:
-				throw new Error("unknown whitelist operation");
-				break;
-		}
-	}
-	
-	static #whitelistEntry(value) {
-		let entry = {};
-		if ("string" === typeof value) {
-			entry.address = new Bytes(value.replaceAll(":", ""));
-			entry.addressType = GAP.AddressType.PUBLIC;
-		}
-		else if ("object" === typeof value) {
-			if ("address" in value) {
-				if ("string" === typeof value.address)
-					entry.address = new Bytes(value.address.replaceAll(":", ""));
-				else if (value.address instanceof ArrayBuffer)
-					entry.address = value.address;
-				entry.addressType = value.addressType;
-			}
-			else if (value.address instanceof ArrayBuffer)
-				entry.address = value;
-		}
-		
-		if (undefined === entry.address)
-			throw new Error("unknown whitelist entry format");
-			
-		if (undefined === entry.addressType)
-			entry.addressType = GAP.AddressType.PUBLIC;
-			
-		return entry;
-	}
-	static #whitelistAdd() @ "xs_gap_whitelist_add"
-	static #whitelistRemove() @ "xs_gap_whitelist_remove"
-	static #whitelistClear() @ "xs_gap_whitelist_clear"
-}
+const GAP = {};
 
 GAP.SCAN_FAST_INTERVAL = 0x0030;		// TGAP(scan_fast_interval)		30ms to 60ms
 GAP.SCAN_FAST_WINDOW = 0x0030;			// TGAP(scan_fast_window)		30ms
@@ -160,6 +111,5 @@ GAP.AddressType = {
 };
 
 Object.freeze(GAP, true);
-
 
 export default GAP;

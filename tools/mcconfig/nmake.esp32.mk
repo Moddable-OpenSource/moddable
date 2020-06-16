@@ -172,6 +172,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\nimble\esp-hci\include \
 	-I$(IDF_PATH)\components\nimble\nimble\nimble\host\include \
 	-I$(IDF_PATH)\components\nimble\nimble\nimble\host\services\gap\include \
+	-I$(IDF_PATH)\components\nimble\nimble\nimble\host\src \
 	-I$(IDF_PATH)\components\nimble\nimble\nimble\include \
 	-I$(IDF_PATH)\components\nimble\nimble\nimble\include\nimble \
 	-I$(IDF_PATH)\components\nimble\nimble\porting\nimble\include \

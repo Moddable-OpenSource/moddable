@@ -108,6 +108,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/nimble/esp-hci/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/services/gap/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/host/src \
  	$(IDF_PATH)/components/nimble/nimble/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/include/nimble \
  	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \

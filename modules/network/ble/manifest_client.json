@@ -3,6 +3,7 @@
 		"*": [
 			"$(MODULES)/network/ble/modBLE",
 			"$(MODULES)/network/ble/bleclient",
+			"$(MODULES)/network/ble/blewhitelist",
 			"$(MODULES)/network/ble/btutils",
 			"$(MODULES)/network/ble/connection",
 			"$(MODULES)/network/ble/gap",
@@ -15,6 +16,7 @@
 	},
 	"preload": [
 		"bleclient",
+		"blewhitelist",
 		"btutils",
 		"connection",
 		"gap",
