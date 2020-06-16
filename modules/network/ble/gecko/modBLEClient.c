@@ -259,6 +259,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
+//	uint8_t whitelist = xsmcToInteger(xsArg(4));
 	
 	gBLE->duplicates = duplicates;
 		

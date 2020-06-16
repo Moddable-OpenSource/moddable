@@ -99,8 +99,3 @@ void xs_gap_whitelist_clear(xsMachine *the)
 		c_free(addr);
 	}
 }
-
-modBLEWhitelistAddress modBLEGetWhitelist()
-{
-	return gWhitelist;
-}

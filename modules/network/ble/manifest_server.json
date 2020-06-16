@@ -9,6 +9,7 @@
 			"$(MODULES)/network/ble/sm",
 			"$(BLEMODULEPATH)/modBLEServer",
 			"$(BLEMODULEPATH)/modBLESM",
+			"$(BLEMODULEPATH)/modBLEGAP"
 		],
 	},
 	"preload": [

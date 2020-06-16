@@ -201,10 +201,11 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
-	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
+	uint8_t whitelist = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(5)) ? xsmcGetArrayBufferLength(xsArg(5)) : 0;
 
 	// Save the advertising and scan response data. The buffers cannot be freed until the GAP callback confirmation.
 	gBLE->advertisingData = (uint8_t*)c_malloc(advertisingDataLength);
@@ -224,7 +225,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	gBLE->adv_params.adv_type = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? ADV_TYPE_IND : ADV_TYPE_NONCONN_IND;
 	gBLE->adv_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
 	gBLE->adv_params.channel_map = ADV_CHNL_ALL;
-	gBLE->adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
+	gBLE->adv_params.adv_filter_policy = (whitelist ? ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST : ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY);
 
 	// Set the advertising and scan response data
 	gBLE->adv_config_done = adv_config_flag;

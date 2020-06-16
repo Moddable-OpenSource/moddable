@@ -156,7 +156,12 @@ static int setWhitelist()
 	count = 0;
 	while (walker != NULL) {
 		addr[count].type = walker->addressType;
-		c_memmove(addr[count].val, walker->address, 6);
+		addr[count].val[0] = walker->address[5];
+		addr[count].val[1] = walker->address[4];
+		addr[count].val[2] = walker->address[3];
+		addr[count].val[3] = walker->address[2];
+		addr[count].val[4] = walker->address[1];
+		addr[count].val[5] = walker->address[0];
 		++count;
 		walker = walker->next;
 	}
@@ -168,9 +173,3 @@ bail:
 		
 	return rc;
 }
-
-modBLEWhitelistAddress modBLEGetWhitelist()
-{
-	return gWhitelist;
-}
-
