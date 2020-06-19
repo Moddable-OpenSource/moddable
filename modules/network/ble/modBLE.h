@@ -46,6 +46,20 @@ typedef enum {
 	kBLEAddressTypeRPARandom
 } BLEAddressType;
 
+typedef enum {
+	kBLEScanFilterPolicyNone = 0,
+	kBLEScanFilterPolicyWhitelist,
+	kBLEScanFilterNotResolvedDirected,
+	kBLEScanFilterWhitelistNotResolvedDirected
+} BLEScanFilterPolicy;
+
+typedef enum {
+	kBLEAdvFilterPolicyNone = 0,
+	kBLEAdvFilterPolicyWhitelistScans,
+	kBLEAdvFilterPolicyWhitelistConnections,
+	kBLEAdvFilterPolicyWhitelistScansConnections
+} BLEAdvFilterPolicy;
+
 typedef struct modBLEWhitelistAddressRecord modBLEWhitelistAddressRecord;
 typedef modBLEWhitelistAddressRecord *modBLEWhitelistAddress;
 

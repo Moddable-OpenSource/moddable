@@ -3,10 +3,10 @@
 		"*": [
 			"$(MODULES)/network/ble/modBLE",
 			"$(MODULES)/network/ble/bleclient",
-			"$(MODULES)/network/ble/blewhitelist",
 			"$(MODULES)/network/ble/btutils",
 			"$(MODULES)/network/ble/connection",
 			"$(MODULES)/network/ble/gap",
+			"$(MODULES)/network/ble/gapwhitelist",
 			"$(MODULES)/network/ble/gatt",
 			"$(MODULES)/network/ble/sm",
 			"$(BLEMODULEPATH)/modBLEClient",
@@ -16,10 +16,10 @@
 	},
 	"preload": [
 		"bleclient",
-		"blewhitelist",
 		"btutils",
 		"connection",
 		"gap",
+		"gapwhitelist",
 		"gatt",
 		"sm"
 	],

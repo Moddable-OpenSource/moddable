@@ -225,9 +225,24 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
-	uint8_t whitelist = xsmcToInteger(xsArg(4));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	uint8_t own_addr_type;
 	struct ble_gap_disc_params disc_params;
+
+	switch(filterPolicy) {
+		case kBLEScanFilterPolicyWhitelist:
+			filterPolicy = BLE_HCI_SCAN_FILT_USE_WL;
+			break;
+		case kBLEScanFilterNotResolvedDirected:
+			filterPolicy = BLE_HCI_SCAN_FILT_NO_WL_INITA;
+			break;
+		case kBLEScanFilterWhitelistNotResolvedDirected:
+			filterPolicy = BLE_HCI_SCAN_FILT_USE_WL_INITA;
+			break;
+		default:
+			filterPolicy = BLE_HCI_SCAN_FILT_NO_WL;
+			break;
+	}
 
 	ble_hs_id_infer_auto(0, &own_addr_type);
 
@@ -236,7 +251,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	disc_params.filter_duplicates = !duplicates;
 	disc_params.itvl = interval;
 	disc_params.window = window;
-	disc_params.filter_policy = (!whitelist ? BLE_HCI_SCAN_FILT_NO_WL : BLE_HCI_SCAN_FILT_USE_WL);
+	disc_params.filter_policy = filterPolicy;
 
 	ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params, nimble_gap_event, NULL);
  }

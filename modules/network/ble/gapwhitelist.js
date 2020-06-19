@@ -21,7 +21,7 @@
 import GAP from "gap";
 import {Bytes} from "btutils";
 
-class BLEWhitelist {
+class GAPWhitelist {
 	static add(value) {
 		this.#whitelistAdd(this.#whitelistEntry(value));
 	}
@@ -66,6 +66,6 @@ class BLEWhitelist {
 	static #whitelistRemove(entry) @ "xs_gap_whitelist_remove"
 	static #whitelistClear() @ "xs_gap_whitelist_clear"
 }
-Object.freeze(BLEWhitelist.prototype);
+Object.freeze(GAPWhitelist.prototype);
 
-export default BLEWhitelist;
+export default GAPWhitelist;

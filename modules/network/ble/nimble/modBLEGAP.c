@@ -29,6 +29,7 @@ static modBLEWhitelistAddress gWhitelist = NULL;
 
 static int setWhitelist(void);
 static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
+static int nimbleClearWhitelist(void);
 
 void xs_gap_whitelist_add(xsMachine *the)
 {
@@ -91,7 +92,11 @@ void xs_gap_whitelist_remove(xsMachine *the)
 		}
 	}
 	
-	rc = setWhitelist();
+	if (NULL == gWhitelist)
+		rc = nimbleClearWhitelist();
+	else
+		rc = setWhitelist();
+		
 	if (0 != rc)
 		xsUnknownError("whitelist remove failed");
 }
@@ -105,10 +110,7 @@ void xs_gap_whitelist_clear(xsMachine *the)
 		walker = walker->next;
 		c_free(addr);
 	}
-	
-	ble_hs_lock();
-	ble_hs_hci_cmd_tx_empty_ack(BLE_HCI_OP(BLE_HCI_OGF_LE, BLE_HCI_OCF_LE_CLEAR_WHITE_LIST), NULL, 0);  
-    ble_hs_unlock();
+	nimbleClearWhitelist();
 }
 
 static int setWhitelist()
@@ -134,12 +136,7 @@ static int setWhitelist()
 		goto bail;
 	}
 		
-	// clear whitelist
-	ble_hs_lock();
-    rc = ble_hs_hci_cmd_tx_empty_ack(
-        BLE_HCI_OP(BLE_HCI_OGF_LE, BLE_HCI_OCF_LE_CLEAR_WHITE_LIST),
-        NULL, 0);
-    ble_hs_unlock();
+	rc = nimbleClearWhitelist();
     
 	if (0 != rc)
 		goto bail;
@@ -194,4 +191,13 @@ static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_
 	}		
 	
 	return NULL;
+}
+
+static int nimbleClearWhitelist()
+{
+	ble_hs_lock();
+	ble_hs_hci_cmd_tx_empty_ack(BLE_HCI_OP(BLE_HCI_OGF_LE, BLE_HCI_OCF_LE_CLEAR_WHITE_LIST), NULL, 0);  
+    ble_hs_unlock();
+    
+    return 0;
 }

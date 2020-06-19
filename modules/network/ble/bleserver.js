@@ -40,7 +40,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	}
 	startAdvertising(params) {
-		let {fast = true, scanResponseData = null, whitelist = false, advertisingData} = params;
+		let {fast = true, scanResponseData = null, filterPolicy = GAP.AdvFilterPolicy.NONE, advertisingData} = params;
 		let flags = "flags" in advertisingData ? advertisingData.flags : GAP.ADFlag.NO_BR_EDR;
 		let interval;
 		if (undefined !== params.interval)
@@ -56,7 +56,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		}
 		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
-		this._startAdvertising(flags, interval.min, interval.max, whitelist, advertisingDataBuffer, scanResponseDataBuffer);
+		this._startAdvertising(flags, interval.min, interval.max, filterPolicy, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
 	initialize(dictionary) @ "xs_ble_server_initialize"

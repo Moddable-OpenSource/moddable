@@ -34,6 +34,7 @@ void xs_gap_whitelist_add(xsMachine *the)
 	BLEAddressType addressType;
 	uint8_t *address;
 	esp_bd_addr_t bda;
+	int ret;
 	
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_addressType);
@@ -61,7 +62,10 @@ void xs_gap_whitelist_add(xsMachine *the)
 	}
 
 	c_memmove(&bda, address, sizeof(bda));
-	esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_ADD, bda);
+	ret = esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_ADD, bda);
+	
+	if (0 != ret)
+		xsUnknownError("whitelist add failed");
 }
 
 void xs_gap_whitelist_remove(xsMachine *the)
@@ -69,6 +73,7 @@ void xs_gap_whitelist_remove(xsMachine *the)
 	BLEAddressType addressType;
 	uint8_t *address;
 	esp_bd_addr_t bda;
+	int ret = 0;
 	
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_addressType);
@@ -84,11 +89,14 @@ void xs_gap_whitelist_remove(xsMachine *the)
 			else
 				prev->next = walker->next;
 			c_memmove(&bda, walker->address, sizeof(bda));
-			esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_REMOVE, bda);
+			ret = esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_REMOVE, bda);
 			c_free(walker);
 			break;
 		}
 	}
+
+	if (0 != ret)
+		xsUnknownError("whitelist remove failed");
 }
 
 void xs_gap_whitelist_clear(xsMachine *the)

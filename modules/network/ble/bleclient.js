@@ -75,8 +75,8 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	
 	startScanning(params) {
 		if (!params) params = {};
-		let {active = true, duplicates = true, interval = 0x50, window = 0x30, whitelist = false} = params;
-		this._startScanning(active, duplicates, interval, window, whitelist);
+		let {active = true, duplicates = true, interval = 0x50, window = 0x30, filterPolicy = GAP.ScanFilterPolicy.NONE } = params;
+		this._startScanning(active, duplicates, interval, window, filterPolicy);
 	}
 	stopScanning() @ "xs_ble_client_stop_scanning"
 	
