@@ -28,6 +28,7 @@
 static modBLEWhitelistAddress gWhitelist = NULL;
 
 static int setWhitelist(void);
+static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
 
 void xs_gap_whitelist_add(xsMachine *the)
 {
@@ -41,26 +42,16 @@ void xs_gap_whitelist_add(xsMachine *the)
 	addressType = xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
+	
+	if (findInWhitelist(addressType, address))
+		return;
+
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
 	if (NULL == entry)
 		xsUnknownError("out of memory");
 		
-	switch(addressType) {
-		case kBLEAddressTypeRandom:
-			entry->addressType = BLE_ADDR_RANDOM;
-			break;
-		case kBLEAddressTypeRPAPublic:
-			entry->addressType = BLE_ADDR_PUBLIC_ID;
-			break;
-		case kBLEAddressTypeRPARandom:
-			entry->addressType = BLE_ADDR_RANDOM_ID;
-			break;
-		case kBLEAddressTypePublic:
-		default:
-			entry->addressType = BLE_ADDR_PUBLIC;
-			break;
-	}
 	c_memmove(entry->address, address, 6);
+	entry->addressType = addressType;
 	
 	if (NULL == gWhitelist)
 		gWhitelist = entry;
@@ -143,6 +134,7 @@ static int setWhitelist()
 		goto bail;
 	}
 		
+	// clear whitelist
 	ble_hs_lock();
     rc = ble_hs_hci_cmd_tx_empty_ack(
         BLE_HCI_OP(BLE_HCI_OGF_LE, BLE_HCI_OCF_LE_CLEAR_WHITE_LIST),
@@ -155,7 +147,21 @@ static int setWhitelist()
 	walker = gWhitelist;
 	count = 0;
 	while (walker != NULL) {
-		addr[count].type = walker->addressType;
+		switch(walker->addressType) {
+			case kBLEAddressTypeRandom:
+				addr[count].type = BLE_ADDR_RANDOM;
+				break;
+			case kBLEAddressTypeRPAPublic:
+				addr[count].type = BLE_ADDR_PUBLIC_ID;
+				break;
+			case kBLEAddressTypeRPARandom:
+				addr[count].type = BLE_ADDR_RANDOM_ID;
+				break;
+			case kBLEAddressTypePublic:
+			default:
+				addr[count].type = BLE_ADDR_PUBLIC;
+				break;
+		}
 		addr[count].val[0] = walker->address[5];
 		addr[count].val[1] = walker->address[4];
 		addr[count].val[2] = walker->address[3];
@@ -172,4 +178,20 @@ bail:
 		c_free(addr);
 		
 	return rc;
+}
+
+static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
+{
+	modBLEWhitelistAddress walker = gWhitelist;
+	
+	if (NULL == walker)
+		return NULL;
+		
+	while (NULL != walker) {
+		if (walker->addressType == addressType && 0 == c_memcmp(walker->address, address, 6))
+			return walker;
+		walker = walker->next;
+	}		
+	
+	return NULL;
 }

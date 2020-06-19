@@ -27,6 +27,7 @@
 static modBLEWhitelistAddress gWhitelist = NULL;
 
 static int setWhitelist(void);
+static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
 
 extern uint32_t gBluetoothStackID;	// @@
 
@@ -42,26 +43,16 @@ void xs_gap_whitelist_add(xsMachine *the)
 	addressType = xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
+	
+	if (findInWhitelist(addressType, address))
+		return;
+
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
 	if (NULL == entry)
 		xsUnknownError("out of memory");
 		
-	switch(addressType) {
-		case kBLEAddressTypeRandom:
-			entry->addressType = QAPI_BLE_LAT_RANDOM_E;
-			break;
-		case kBLEAddressTypeRPAPublic:
-			entry->addressType = QAPI_BLE_LAT_PUBLIC_IDENTITY_E;
-			break;
-		case kBLEAddressTypeRPARandom:
-			entry->addressType = QAPI_BLE_LAT_RANDOM_IDENTITY_E;
-			break;
-		case kBLEAddressTypePublic:
-		default:
-			entry->addressType = QAPI_BLE_LAT_PUBLIC_E;
-			break;
-	}
 	c_memmove(entry->address, address, 6);
+	entry->addressType = addressType;
 	
 	if (NULL == gWhitelist)
 		gWhitelist = entry;
@@ -143,7 +134,8 @@ static int setWhitelist()
 		rc = -1;
 		goto bail;
 	}
-		
+	
+	// clear whitelist	
 	rc = qapi_BLE_GAP_LE_Add_Device_To_White_List(gBluetoothStackID, 0, NULL, &added);
 	if (rc < 0)
 		goto bail;
@@ -151,7 +143,21 @@ static int setWhitelist()
 	walker = gWhitelist;
 	count = 0;
 	while (walker != NULL) {
-		entries[count].Address_Type = walker->addressType;
+		switch(walker->addressType) {
+			case kBLEAddressTypeRandom:
+				entries[count].Address_Type = QAPI_BLE_LAT_RANDOM_E;
+				break;
+			case kBLEAddressTypeRPAPublic:
+				entries[count].Address_Type = QAPI_BLE_LAT_PUBLIC_IDENTITY_E;
+				break;
+			case kBLEAddressTypeRPARandom:
+				entries[count].Address_Type = QAPI_BLE_LAT_RANDOM_IDENTITY_E;
+				break;
+			case kBLEAddressTypePublic:
+			default:
+				entries[count].Address_Type = QAPI_BLE_LAT_PUBLIC_E;
+				break;
+		}
 		entries[count].Address.BD_ADDR0 = walker->address[5];
 		entries[count].Address.BD_ADDR1 = walker->address[4];
 		entries[count].Address.BD_ADDR2 = walker->address[3];
@@ -168,4 +174,20 @@ bail:
 		c_free(entries);
 		
 	return rc;
+}
+
+static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
+{
+	modBLEWhitelistAddress walker = gWhitelist;
+	
+	if (NULL == walker)
+		return NULL;
+		
+	while (NULL != walker) {
+		if (walker->addressType == addressType && 0 == c_memcmp(walker->address, address, 6))
+			return walker;
+		walker = walker->next;
+	}		
+	
+	return NULL;
 }

@@ -26,6 +26,7 @@
 #include "esp_gap_ble_api.h"
 
 static modBLEWhitelistAddress gWhitelist = NULL;
+static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
 
 void xs_gap_whitelist_add(xsMachine *the)
 {
@@ -39,6 +40,10 @@ void xs_gap_whitelist_add(xsMachine *the)
 	addressType = xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
+
+	if (findInWhitelist(addressType, address))
+		return;
+
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
 	if (NULL == entry)
 		xsUnknownError("out of memory");
@@ -98,4 +103,20 @@ void xs_gap_whitelist_clear(xsMachine *the)
 		esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_REMOVE, bda);
 		c_free(addr);
 	}
+}
+
+static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
+{
+	modBLEWhitelistAddress walker = gWhitelist;
+	
+	if (NULL == walker)
+		return NULL;
+		
+	while (NULL != walker) {
+		if (walker->addressType == addressType && 0 == c_memcmp(walker->address, address, 6))
+			return walker;
+		walker = walker->next;
+	}		
+	
+	return NULL;
 }

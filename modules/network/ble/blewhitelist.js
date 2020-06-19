@@ -32,11 +32,16 @@ class BLEWhitelist {
 	
 	static #whitelistEntry(value) {
 		let entry = {};
+		
+		// "XX:XX:XX:XX:XX:XX"
 		if ("string" === typeof value) {
 			entry.address = new Bytes(value.replaceAll(":", ""));
 			entry.addressType = GAP.AddressType.PUBLIC;
 		}
 		else if ("object" === typeof value) {
+			// { address:"XX:XX:XX:XX:XX:XX" }
+			// { address:address`XX:XX:XX:XX:XX:XX`}
+			// { address:address`XX:XX:XX:XX:XX:XX`, addressType:GAP.AddressType.PUBLIC }
 			if ("address" in value) {
 				if ("string" === typeof value.address)
 					entry.address = new Bytes(value.address.replaceAll(":", ""));
@@ -44,6 +49,7 @@ class BLEWhitelist {
 					entry.address = value.address;
 				entry.addressType = value.addressType;
 			}
+			// address`XX:XX:XX:XX:XX:XX`
 			else if (value.address instanceof ArrayBuffer)
 				entry.address = value;
 		}
