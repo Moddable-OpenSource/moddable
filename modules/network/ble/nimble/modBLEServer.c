@@ -197,17 +197,34 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
-	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
+	uint8_t filterPolicy = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(5)) ? xsmcGetArrayBufferLength(xsArg(5)) : 0;
 	struct ble_gap_adv_params adv_params;
 	
+	switch(filterPolicy) {
+		case kBLEAdvFilterPolicyWhitelistScans:
+			filterPolicy = BLE_HCI_ADV_FILT_SCAN;
+			break;
+		case kBLEAdvFilterPolicyWhitelistConnections:
+			filterPolicy = BLE_HCI_ADV_FILT_CONN;
+			break;
+		case kBLEAdvFilterPolicyWhitelistScansConnections:
+			filterPolicy = BLE_HCI_ADV_FILT_BOTH;
+			break;
+		default:
+			filterPolicy = BLE_HCI_ADV_FILT_NONE;
+			break;
+	}
+
 	c_memset(&adv_params, 0, sizeof(adv_params));
 	adv_params.conn_mode = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? BLE_GAP_CONN_MODE_UND : BLE_GAP_CONN_MODE_NON;
 	adv_params.disc_mode = (flags & LE_GENERAL_DISCOVERABLE_MODE) ? BLE_GAP_DISC_MODE_GEN : (flags & LE_LIMITED_DISCOVERABLE_MODE ? BLE_GAP_DISC_MODE_LTD : BLE_GAP_DISC_MODE_NON);
 	adv_params.itvl_min = intervalMin;
 	adv_params.itvl_max = intervalMax;
+	adv_params.filter_policy = filterPolicy;
 	if (NULL != advertisingData)
 		ble_gap_adv_set_data(advertisingData, advertisingDataLength);
 	if (NULL != scanResponseData)

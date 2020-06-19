@@ -39,6 +39,39 @@ typedef enum {
 	LE_BR_EDR_HOST = (1L << 4)
 } AdvertisingFlags;
 
+typedef enum {
+	kBLEAddressTypePublic = 0,
+	kBLEAddressTypeRandom,
+	kBLEAddressTypeRPAPublic,
+	kBLEAddressTypeRPARandom
+} BLEAddressType;
+
+typedef enum {
+	kBLEScanFilterPolicyNone = 0,
+	kBLEScanFilterPolicyWhitelist,
+	kBLEScanFilterNotResolvedDirected,
+	kBLEScanFilterWhitelistNotResolvedDirected
+} BLEScanFilterPolicy;
+
+typedef enum {
+	kBLEAdvFilterPolicyNone = 0,
+	kBLEAdvFilterPolicyWhitelistScans,
+	kBLEAdvFilterPolicyWhitelistConnections,
+	kBLEAdvFilterPolicyWhitelistScansConnections
+} BLEAdvFilterPolicy;
+
+typedef struct modBLEWhitelistAddressRecord modBLEWhitelistAddressRecord;
+typedef modBLEWhitelistAddressRecord *modBLEWhitelistAddress;
+
+struct modBLEWhitelistAddressRecord {
+	struct modBLEWhitelistAddressRecord *next;
+
+	BLEAddressType addressType;
+	uint8_t address[6];
+};
+
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
+
+modBLEWhitelistAddress modBLEGetWhitelist();
 
 #endif

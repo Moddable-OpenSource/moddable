@@ -6,10 +6,12 @@
 			"$(MODULES)/network/ble/btutils",
 			"$(MODULES)/network/ble/connection",
 			"$(MODULES)/network/ble/gap",
+			"$(MODULES)/network/ble/gapwhitelist",
 			"$(MODULES)/network/ble/gatt",
 			"$(MODULES)/network/ble/sm",
 			"$(BLEMODULEPATH)/modBLEClient",
 			"$(BLEMODULEPATH)/modBLESM",
+			"$(BLEMODULEPATH)/modBLEGAP"
 		],
 	},
 	"preload": [
@@ -17,6 +19,7 @@
 		"btutils",
 		"connection",
 		"gap",
+		"gapwhitelist",
 		"gatt",
 		"sm"
 	],

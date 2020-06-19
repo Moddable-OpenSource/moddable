@@ -196,11 +196,27 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	esp_ble_scan_params_t scan_params;
 	
+	switch(filterPolicy) {
+		case kBLEScanFilterPolicyWhitelist:
+			filterPolicy = BLE_SCAN_FILTER_ALLOW_ONLY_WLST;
+			break;
+		case kBLEScanFilterNotResolvedDirected:
+			filterPolicy = BLE_SCAN_FILTER_ALLOW_UND_RPA_DIR;
+			break;
+		case kBLEScanFilterWhitelistNotResolvedDirected:
+			filterPolicy = BLE_SCAN_FILTER_ALLOW_WLIST_PRA_DIR;
+			break;
+		default:
+			filterPolicy = BLE_SCAN_FILTER_ALLOW_ALL;
+			break;
+	}
+
 	scan_params.scan_type = active ? BLE_SCAN_TYPE_ACTIVE : BLE_SCAN_TYPE_PASSIVE;
 	scan_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
-	scan_params.scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL;
+	scan_params.scan_filter_policy = filterPolicy;
 	scan_params.scan_interval = interval;
 	scan_params.scan_window = window;
 	scan_params.scan_duplicate = (duplicates ? BLE_SCAN_DUPLICATE_DISABLE : BLE_SCAN_DUPLICATE_ENABLE);

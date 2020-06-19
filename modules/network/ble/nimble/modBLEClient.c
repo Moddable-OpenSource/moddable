@@ -131,6 +131,8 @@ static modBLEConnection modBLEConnectionFindByAddress(ble_addr_t *bda);
 
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
 static void bufferToUUID(ble_uuid_any_t *uuid, uint8_t *buffer, uint16_t length);
+static void addressToBuffer(ble_addr_t *addr, uint8_t *buffer);
+static void bufferToAddress(uint8_t *buffer, ble_addr_t *addr);
 
 static void nimble_on_sync(void);
 
@@ -223,8 +225,24 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	uint8_t own_addr_type;
 	struct ble_gap_disc_params disc_params;
+
+	switch(filterPolicy) {
+		case kBLEScanFilterPolicyWhitelist:
+			filterPolicy = BLE_HCI_SCAN_FILT_USE_WL;
+			break;
+		case kBLEScanFilterNotResolvedDirected:
+			filterPolicy = BLE_HCI_SCAN_FILT_NO_WL_INITA;
+			break;
+		case kBLEScanFilterWhitelistNotResolvedDirected:
+			filterPolicy = BLE_HCI_SCAN_FILT_USE_WL_INITA;
+			break;
+		default:
+			filterPolicy = BLE_HCI_SCAN_FILT_NO_WL;
+			break;
+	}
 
 	ble_hs_id_infer_auto(0, &own_addr_type);
 
@@ -233,6 +251,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	disc_params.filter_duplicates = !duplicates;
 	disc_params.itvl = interval;
 	disc_params.window = window;
+	disc_params.filter_policy = filterPolicy;
 
 	ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params, nimble_gap_event, NULL);
  }
@@ -247,14 +266,14 @@ void xs_ble_client_connect(xsMachine *the)
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
 	ble_addr_t addr;
-
+	
 	// Ignore duplicate connection attempts
 	if (ble_gap_conn_active()) return;
 	
 	ble_gap_disc_cancel();
 	
 	addr.type = addressType;
-	c_memmove(&addr.val, address, 6);
+	bufferToAddress(address, &addr);
 		
 	// Add a new connection record to be filled as the connection completes
 	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
@@ -317,6 +336,9 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	modBLEConnection connection;
+	ble_addr_t addr;
+	
+	bufferToAddress(address, &addr);
 	for (connection = gBLE->connections; NULL != connection; connection = connection->next)
 		if (0 == c_memcmp(address, &connection->bda.val, 6))
 			break;
@@ -390,6 +412,26 @@ void modBLEConnectionRemove(modBLEConnection connection)
 			break;
 		}
 	}
+}
+
+static void addressToBuffer(ble_addr_t *addr, uint8_t *buffer)
+{
+	buffer[0] = addr->val[5];
+	buffer[1] = addr->val[4];
+	buffer[2] = addr->val[3];
+	buffer[3] = addr->val[2];
+	buffer[4] = addr->val[1];
+	buffer[5] = addr->val[0];
+}
+
+static void bufferToAddress(uint8_t *buffer, ble_addr_t *addr)
+{
+	addr->val[0] = buffer[5];
+	addr->val[1] = buffer[4];
+	addr->val[2] = buffer[3];
+	addr->val[3] = buffer[2];
+	addr->val[4] = buffer[1];
+	addr->val[5] = buffer[0];
 }
 
 void xs_gap_connection_initialize(xsMachine *the)
@@ -668,6 +710,8 @@ bail:
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	while (gBLE->discovered) {
+		uint8_t buffer[6];
+		
 		modCriticalSectionBegin();
 		modBLEDiscovered discovered = gBLE->discovered;
 		gBLE->discovered = discovered->next;
@@ -678,7 +722,8 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetArrayBuffer(xsVar(1), disc->data, disc->length_data);
-		xsmcSetArrayBuffer(xsVar(2), disc->addr.val, 6);
+		addressToBuffer(&disc->addr, buffer);
+		xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 		xsmcSetInteger(xsVar(3), disc->addr.type);
 		xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
@@ -698,6 +743,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsUnknownError("connection not found");
 		
 	if (-1 != desc->conn_handle) {
+		uint8_t buffer[6];
 		if (-1 != connection->conn_id) {
 			LOG_GAP_MSG("Ignoring duplicate connect event");
 			goto bail;
@@ -707,7 +753,8 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), desc->conn_handle);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(2), &desc->peer_id_addr.val, 6);
+		addressToBuffer(&desc->peer_id_addr, buffer);
+		xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
 		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
@@ -931,6 +978,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 {
 	struct ble_gap_event *event = (struct ble_gap_event *)message;
 	struct ble_sm_io pkey = {0};
+	uint8_t buffer[6];
 	
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(event->passkey.conn_handle);
 	if (!connection)
@@ -938,13 +986,15 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		
 	pkey.action = event->passkey.params.action;
 	
+	addressToBuffer(&connection->bda, buffer);
+
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
 
     if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
     	pkey.passkey = (c_rand() % 999999) + 1;
-		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 		xsmcSetInteger(xsVar(2), pkey.passkey);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -952,7 +1002,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
 	}
     else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
-		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		if (gBLE->iocap == KeyboardOnly)
 			xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
@@ -963,7 +1013,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		}
 	}
 	else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
-		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 		xsmcSetInteger(xsVar(2), event->passkey.params.numcmp);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
