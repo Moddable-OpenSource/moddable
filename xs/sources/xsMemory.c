@@ -1327,6 +1327,7 @@ void fxSweep(txMachine* the)
 				aTotal++;
 			}
 			else {
+			#ifndef mxLink
 				if (bSlot->kind == XS_HOST_KIND) {
 					if (bSlot->flag & XS_HOST_HOOKS_FLAG) {
 						if (bSlot->value.host.variant.hooks->destructor)
@@ -1335,6 +1336,7 @@ void fxSweep(txMachine* the)
 					else if (bSlot->value.host.variant.destructor)
 						(*(bSlot->value.host.variant.destructor))(bSlot->value.host.data);
 				}
+			#endif
 // 				if (bSlot->kind == XS_MODULE_KIND) {
 // 					char* name = fxGetKeyName(the, bSlot->value.module.id);
 // 					fprintf(stderr, "gc module %d %s\n", bSlot->value.module.id, name);

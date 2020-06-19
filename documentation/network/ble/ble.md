@@ -1,12 +1,12 @@
 # BLE
-Copyright 2017-19 Moddable Tech, Inc.
+Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: December 4, 2019
+Revised: June 5, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## About This Document
-This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32 and Silicon Labs Blue Gecko devices.
+This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, and Qualcomm QCA4020 devices.
 
 > **Note:** A BLE server/slave is also commonly referred to as a BLE peripheral. The terms *server*, *slave* and *peripheral* in this document are used interchangeably.
 
@@ -185,6 +185,7 @@ The `params` object contains the following properties:
 | Property | Type | Description |
 | --- | --- | :--- |
 | `active` | `boolean` | Set `true` for active scanning, `false` for passing scanning. Default is `true`.
+| `duplicates` | `boolean` | Set `true` to receive all advertising packets, `false` to filter out multiple advertising packets received from the same peripheral device. Default is `true`.
 | `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`. 
 | `window` | `number` | Scan window value in units of 0.625 ms. Default is `0x30`. 
 
@@ -230,7 +231,7 @@ To connect to a device named "Brian" from the `onDiscovered` callback:
 
 ```javascript
 onDiscovered(device) {
-	if ("Brian" == 	device.scanResponse.completeName) {
+	if ("Brian" == device.scanResponse.completeName) {
 		this.connect(device);
 	}
 }
@@ -979,6 +980,14 @@ The `BLEServer` class provides access to the BLE server features.
 ```javascript
 import BLEServer from "bleserver";
 ```
+
+### `constructor([dictionary])`
+
+The `BLEServer` constructor takes a single argument, an optional dictionary of initialization parameters.
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `deployServices` | `boolean` | Optional property to deploy [GATT Services](#gattservices). Default is `true`. Set to `false` to not deploy GATT services.
 
 ### Functions
 

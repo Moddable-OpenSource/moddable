@@ -144,6 +144,8 @@ static void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qa
 static void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Connection_Event_Data_t *GATT_Connection_Event_Data, uint32_t CallbackParameter);
 static void QAPI_BLE_BTPSAPI Server_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Server_Event_Data_t *GATT_Server_Event_Data, uint32_t CallbackParameter);
 
+uint32_t gBluetoothStackID = 0;
+
 void xs_ble_server_initialize(xsMachine *the)
 {
 	qapi_BLE_HCI_DriverInformation_t HCI_DriverInformation;
@@ -177,7 +179,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	result = qapi_BLE_BSC_Initialize(&HCI_DriverInformation, 0);
 	if (result <= 0)
 		xsUnknownError("BLE initialization failed");
-	gBLE->stackID = result;
+	gBluetoothStackID = gBLE->stackID = result;
 	
 	result = qapi_BLE_GATT_Initialize(gBLE->stackID, QAPI_BLE_GATT_INITIALIZATION_FLAGS_SUPPORT_LE | QAPI_BLE_GATT_INITIALIZATION_FLAGS_DISABLE_SERVICE_CHANGED_CHARACTERISTIC, GATT_Connection_Event_Callback, 0);
 	if (result != 0)
@@ -245,7 +247,7 @@ void xs_ble_server_destructor(void *data)
 	
 	qapi_BLE_GAPS_Cleanup_Service(ble->stackID, ble->gapsID);	
 	
-	if (gBLE->deployServices) {
+	if (ble->deployServices) {
 		for (int16_t i = 0; i < service_count; ++i) {
 			if (0 != ble->serviceHandles[i].service_id)
 				qapi_BLE_GATT_Un_Register_Service(ble->stackID, ble->serviceHandles[i].service_id);
@@ -256,6 +258,7 @@ void xs_ble_server_destructor(void *data)
 	qapi_BLE_BSC_Shutdown(ble->stackID);
 	c_free(ble);
 
+	gBluetoothStackID = 0;
 	gBLE = NULL;
 }
 
@@ -278,10 +281,11 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
-	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
+	uint8_t filterPolicy = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(5)) ? xsmcGetArrayBufferLength(xsArg(5)) : 0;
 	qapi_BLE_GAP_LE_Advertising_Parameters_t AdvertisingParameters;
 	qapi_BLE_GAP_LE_Connectability_Parameters_t ConnectabilityParameters;
 	
@@ -300,8 +304,24 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	}
 
 	AdvertisingParameters.Advertising_Channel_Map   = QAPI_BLE_HCI_LE_ADVERTISING_CHANNEL_MAP_DEFAULT;
-	AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_NO_FILTER_E;
-	AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_NO_FILTER_E;
+	
+	if (kBLEAdvFilterPolicyWhitelistScansConnections == filterPolicy) {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_WHITE_LIST_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_WHITE_LIST_E;
+	}
+	else if (kBLEAdvFilterPolicyWhitelistConnections == filterPolicy) {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_NO_FILTER_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_WHITE_LIST_E;
+	}
+	else if (kBLEAdvFilterPolicyWhitelistScans == filterPolicy) {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_WHITE_LIST_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_NO_FILTER_E;
+	}
+	else {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_NO_FILTER_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_NO_FILTER_E;
+	}
+	
 	AdvertisingParameters.Advertising_Interval_Min  = (uint32_t)(intervalMin / 0.625);	// convert to 1 ms units;
 	AdvertisingParameters.Advertising_Interval_Max  = (uint32_t)(intervalMax / 0.625);
 	

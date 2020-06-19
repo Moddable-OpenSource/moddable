@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -109,7 +109,19 @@ GAP.AddressType = {
 	RPA_PUBLIC: 2,
 	RPA_RANDOM: 3
 };
-Object.freeze(GAP, true);
+GAP.ScanFilterPolicy = {
+	NONE: 0,
+	WHITELIST: 1,
+	NOT_RESOLVED_DIRECTED: 2,
+	WHITELIST_NOT_RESOLVED_DIRECTED: 3
+};
+GAP.AdvFilterPolicy = {
+	NONE: 0,
+	WHITELIST_SCANS: 1,
+	WHITELIST_CONNECTIONS: 2,
+	WHITELIST_SCANS_CONNECTIONS: 3
+};
 
+Object.freeze(GAP, true);
 
 export default GAP;

@@ -60,7 +60,33 @@ extern int mainXSC(int argc, char* argv[]) ;
 int main(int argc, char* argv[]) 
 {
 	int error = 0;
-	if (!strcmp(argv[1], "xsa")) {
+	if (!strcmp(argv[1], "cp")) {
+#ifdef XSTOOLS
+		char buffer[1024];
+		FILE* src = NULL;
+		FILE* dst = NULL;
+		size_t srcSize;
+		size_t dstSize;
+		
+		src = fopen(argv[2], "rb");
+		if (!src) { error = errno; goto END; };
+		dst = fopen(argv[3], "wb");
+		if (!dst) { error = errno; goto END; };
+		for (;;) {
+			srcSize = fread(buffer, 1, sizeof(buffer), src);
+			if (!srcSize)
+				break;
+			dstSize = fwrite(buffer, 1, srcSize, dst);
+			if (srcSize != dstSize) { error = errno; goto END; };
+		}
+	END:
+		if (dst)
+			fclose(dst);
+		if (src)
+			fclose(src);
+#endif
+	}
+	else if (!strcmp(argv[1], "xsa")) {
 #ifdef XSTOOLS
 		error = mainXSA(argc - 1, &argv[1]);
 #endif

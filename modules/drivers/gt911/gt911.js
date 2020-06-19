@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -23,12 +23,15 @@ import Time from "time";
 
 class GT911 extends I2C {
 	constructor(dictionary) {
-		super(Object.assign({address: 0x14}, dictionary));
+		super({
+			address: 0x14,
+			...dictionary
+		});
 
 		// check id
 		super.write(0x81, 0x40);
 		let data = super.read(6);
-		let id = String.fromCharCode(data[0]) + String.fromCharCode(data[1]) + String.fromCharCode(data[2]);
+		const id = String.fromCharCode(data[0]) + String.fromCharCode(data[1]) + String.fromCharCode(data[2]);
 		if ("911" !== id)
 			throw new Error("unrecognized");
 
@@ -36,7 +39,7 @@ class GT911 extends I2C {
 		super.write(0x80, 0x47);
 		data = super.read(40);		//@@ 186
 
-		let view = new DataView(data.buffer);
+		const view = new DataView(data.buffer);
 		this.maxX = view.getInt16(1, true);
 		this.maxY = view.getInt16(3, true);
 		this.maxTouch = view.getUint8(5) & 0x0F;
@@ -46,12 +49,12 @@ class GT911 extends I2C {
 
 	read(target) {
 		this.write(0x81, 0x4E); 		// GOODIX_READ_COOR_ADDR
-		let data = super.read(9);
+		const data = super.read(9);
 
 		if (!(data[0] & 0x80) && target[0].state && (Time.ticks < this.until))
 			return;						// can take 10 to 15 ms for the next reading to be available
 
-		let count = data[0][0] & 0x0F;
+//		const count = data[0] & 0x0F;
 		target[0].x = (data[3] << 8) | data[2];
 		target[0].y = (data[5] << 8) | data[4];
 

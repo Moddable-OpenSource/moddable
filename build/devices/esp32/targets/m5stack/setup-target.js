@@ -6,7 +6,7 @@ import Resource from "Resource";
 
 class Button extends Monitor {
 	constructor(pin) {
-		super({pin, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge});
+		super({pin, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 		this.onChanged = this.nop;
 	}
 	nop() {

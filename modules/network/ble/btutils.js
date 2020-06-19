@@ -257,7 +257,7 @@ class AdvertisementSerializer {
 	}
 	static connectionInterval(param) {
 		return {
-			type: GAP.ADType.MANUFACTURER_SPECIFIC_DATA,
+			type: GAP.ADType.SLAVE_CONNECTION_INTERVAL_RANGE,
 			data: serializeConnectionInterval(param)
 		};
 	}
