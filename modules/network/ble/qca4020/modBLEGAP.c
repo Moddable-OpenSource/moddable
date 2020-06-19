@@ -28,6 +28,7 @@ static modBLEWhitelistAddress gWhitelist = NULL;
 
 static int setWhitelist(void);
 static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
+static int qca4020ClearWhitelist(void);
 
 extern uint32_t gBluetoothStackID;	// @@
 
@@ -92,7 +93,11 @@ void xs_gap_whitelist_remove(xsMachine *the)
 		}
 	}
 	
-	rc = setWhitelist();
+	if (NULL == gWhitelist)
+		rc = qca4020ClearWhitelist();
+	else
+		rc = setWhitelist();
+		
 	if (0 != rc)
 		xsUnknownError("whitelist remove failed");
 }
@@ -100,7 +105,6 @@ void xs_gap_whitelist_remove(xsMachine *the)
 void xs_gap_whitelist_clear(xsMachine *the)
 {
 	modBLEWhitelistAddress walker = gWhitelist;
-	uint32_t removed;
 	
 	while (walker != NULL) {
 		modBLEWhitelistAddress addr = walker;
@@ -108,7 +112,7 @@ void xs_gap_whitelist_clear(xsMachine *the)
 		c_free(addr);
 	}
 	
-	qapi_BLE_GAP_LE_Add_Device_To_White_List(gBluetoothStackID, 0, NULL, &removed);
+	qca4020ClearWhitelist();
 }
 
 static int setWhitelist()
@@ -135,8 +139,7 @@ static int setWhitelist()
 		goto bail;
 	}
 	
-	// clear whitelist	
-	rc = qapi_BLE_GAP_LE_Add_Device_To_White_List(gBluetoothStackID, 0, NULL, &added);
+	rc = qca4020ClearWhitelist();
 	if (rc < 0)
 		goto bail;
 		
@@ -191,3 +194,10 @@ static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_
 	
 	return NULL;
 }
+
+static int qca4020ClearWhitelist(void)
+{
+	uint32_t removed;
+	return qapi_BLE_GAP_LE_Remove_Device_From_White_List(gBluetoothStackID, 0, NULL, &removed);
+}
+
