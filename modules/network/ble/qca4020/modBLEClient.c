@@ -263,9 +263,24 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
-	uint8_t whitelist = xsmcToBoolean(xsArg(4));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	uint32_t result;
 	
+	switch(filterPolicy) {
+		case kBLEScanFilterPolicyWhitelist:
+			filterPolicy = QAPI_BLE_FP_WHITE_LIST_E;
+			break;
+		case kBLEScanFilterNotResolvedDirected:
+			filterPolicy = QAPI_BLE_FP_NO_WHITE_LIST_DIRECTED_RPA_E;
+			break;
+		case kBLEScanFilterWhitelistNotResolvedDirected:
+			filterPolicy = QAPI_BLE_FP_WHITE_LIST_DIRECTED_RPA_E;
+			break;
+		default:
+			filterPolicy = QAPI_BLE_FP_NO_FILTER_E;
+			break;
+	}
+
 	gBLE->scanInterval = (uint32_t)(interval / 0.625);	// convert to 1 ms units
 	gBLE->scanWindow = (uint32_t)(window / 0.625);
 
@@ -275,7 +290,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 		gBLE->scanInterval,
 		gBLE->scanWindow,
 		QAPI_BLE_LAT_PUBLIC_E,
-		whitelist ? QAPI_BLE_FP_WHITE_LIST_E : QAPI_BLE_FP_NO_FILTER_E,
+		filterPolicy,
 		!duplicates,
 		GAP_LE_Event_Callback,
 		0L

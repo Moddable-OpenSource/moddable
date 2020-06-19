@@ -281,7 +281,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t whitelist = xsmcToBoolean(xsArg(3));
+	uint8_t filterPolicy = xsmcToInteger(xsArg(3));
 	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
 	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
 	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
@@ -304,8 +304,24 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	}
 
 	AdvertisingParameters.Advertising_Channel_Map   = QAPI_BLE_HCI_LE_ADVERTISING_CHANNEL_MAP_DEFAULT;
-	AdvertisingParameters.Scan_Request_Filter       = whitelist ? QAPI_BLE_FP_WHITE_LIST_E : QAPI_BLE_FP_NO_FILTER_E;
-	AdvertisingParameters.Connect_Request_Filter    = whitelist ? QAPI_BLE_FP_WHITE_LIST_E : QAPI_BLE_FP_NO_FILTER_E;
+	
+	if (kBLEAdvFilterPolicyWhitelistScansConnections == filterPolicy) {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_WHITE_LIST_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_WHITE_LIST_E;
+	}
+	else if (kBLEAdvFilterPolicyWhitelistConnections == filterPolicy) {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_NO_FILTER_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_WHITE_LIST_E;
+	}
+	else if (kBLEAdvFilterPolicyWhitelistScans == filterPolicy) {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_WHITE_LIST_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_NO_FILTER_E;
+	}
+	else {
+		AdvertisingParameters.Scan_Request_Filter       = QAPI_BLE_FP_NO_FILTER_E;
+		AdvertisingParameters.Connect_Request_Filter    = QAPI_BLE_FP_NO_FILTER_E;
+	}
+	
 	AdvertisingParameters.Advertising_Interval_Min  = (uint32_t)(intervalMin / 0.625);	// convert to 1 ms units;
 	AdvertisingParameters.Advertising_Interval_Max  = (uint32_t)(intervalMax / 0.625);
 	
