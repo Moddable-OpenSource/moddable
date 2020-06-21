@@ -106,6 +106,7 @@ typedef struct {
 } readDataRequestRecord, *readDataRequest;
 
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
+static void addressToBuffer(ble_addr_t *addr, uint8_t *buffer);
 static const char_name_table *handleToCharName(uint16_t handle);
 static const ble_uuid16_t *handleToUUID(uint16_t handle);
 
@@ -184,7 +185,9 @@ void xs_ble_server_disconnect(xsMachine *the)
 
 void xs_ble_server_get_local_address(xsMachine *the)
 {
-	xsmcSetArrayBuffer(xsResult, (void*)gBLE->bda.val, 6);
+	uint8_t buffer[6];
+	addressToBuffer(&gBLE->bda, buffer);
+	xsmcSetArrayBuffer(xsResult, buffer, 6);
 }
 
 void xs_ble_server_set_device_name(xsMachine *the)
@@ -298,6 +301,16 @@ void xs_ble_server_deploy(xsMachine *the)
 	// services deployed from readyEvent(), since stack requires deploy before advertising
 }
 
+static void addressToBuffer(ble_addr_t *addr, uint8_t *buffer)
+{
+	buffer[0] = addr->val[5];
+	buffer[1] = addr->val[4];
+	buffer[2] = addr->val[3];
+	buffer[3] = addr->val[2];
+	buffer[4] = addr->val[1];
+	buffer[5] = addr->val[0];
+}
+
 static void deployServices(xsMachine *the)
 {
 	static const ble_uuid16_t BT_UUID_GAP = BLE_UUID16_INIT(0x1800);
@@ -389,7 +402,8 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
-
+	uint8_t buffer[6];
+	
 	if (!gBLE) return;
 	
 	xsBeginHost(gBLE->the);		
@@ -404,7 +418,8 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), desc->conn_handle);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(2), &desc->peer_id_addr.val, 6);
+		addressToBuffer(&desc->peer_id_addr, buffer);
+		xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
 		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
@@ -421,6 +436,7 @@ bail:
 static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
+	uint8_t buffer[6];
 
 	if (!gBLE) return;
 	
@@ -437,7 +453,8 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), desc->conn_handle);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
+	addressToBuffer(&desc->peer_id_addr, buffer);
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 bail:
@@ -563,6 +580,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 {
 	struct ble_gap_event *event = (struct ble_gap_event *)message;
 	struct ble_sm_io pkey = {0};
+	uint8_t buffer[6];
 	
 	if (!gBLE) return;
 	
@@ -575,9 +593,11 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
 
+	addressToBuffer(&gBLE->remote_bda, buffer);
+	
     if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
     	pkey.passkey = (c_rand() % 999999) + 1;
-		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 		xsmcSetInteger(xsVar(2), pkey.passkey);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -585,7 +605,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
 	}
     else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
-		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		if (gBLE->iocap == KeyboardOnly)
 			xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
@@ -596,7 +616,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		}
 	}
 	else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
-		xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 		xsmcSetInteger(xsVar(2), event->passkey.params.numcmp);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
