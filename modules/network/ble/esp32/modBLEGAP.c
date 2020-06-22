@@ -113,6 +113,12 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	}
 }
 
+modBLEWhitelistAddress modBLEGetWhitelist(void)
+{
+	// unused on esp32
+	return NULL;
+}
+
 static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
 {
 	modBLEWhitelistAddress walker = gWhitelist;
