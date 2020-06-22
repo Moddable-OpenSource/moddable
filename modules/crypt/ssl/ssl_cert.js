@@ -154,6 +154,8 @@ class CertificateManager {
 			return true;
 			// else fall thru
 
+		return false;		//@@ code that follows doesn't work...
+
 		spki = this.findCert("ca.subject", new Crypt.Digest("SHA1")).process(X509.decodeTBS(x509.tbs).issuer);
 		return spki && this._verify(spki, x509);
 	}
