@@ -67,11 +67,17 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	cd nrf5
 	```
 
-3. Download version [`8-2018-q4-major`](https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-mac.tar.bz2?revision=b88d4399-9897-465a-9363-ace86610e48c?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Mac%20OS%20X,8-2018-q4-major) of the GNU Arm Embedded Toolchain from the [GNU-RM Downloads](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) website. Untar the archive and copy the `gcc-arm-none-eabi-8-2018-q4-major` directory into the `nrf5` directory.
+3. If you use macOS Catalina (version 10.15), add an exemption to allow Terminal (or your alternate terminal application of choice) to run software locally that does not meet the system's security policy. Without this setting, the precompiled GNU Arm Embedded Toolchain you will download in the next step will not be permitted to run. 
+
+	To set the security policy exemption for Terminal, go into the Security & Privacy System Preferences, select the Privacy tab, choose Developer Tools from the list on the left, and then tick the checkbox for Terminal or the alternate terminal application from which you will be building Moddable SDK apps. The end result should look like this:
+
+	![Catalina Developer Options](../assets/getting-started/catalina-security.png)
+
+4. Download version [`8-2018-q4-major`](https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-mac.tar.bz2?revision=b88d4399-9897-465a-9363-ace86610e48c?product=GNU%20Arm%20Embedded%20Toolchain,64-bit,,Mac%20OS%20X,8-2018-q4-major) of the GNU Arm Embedded Toolchain from the [GNU-RM Downloads](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads) website. Untar the archive and copy the `gcc-arm-none-eabi-8-2018-q4-major` directory into the `nrf5` directory.
 
 	> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
 
-4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file into the `nrf5` directory.
+5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file into the `nrf5` directory.
 
 	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
 	
@@ -80,7 +86,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	chmod 755 uf2conv.py 
 	```
 
-5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+6. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
 	- Select `v15.3.0` from the nRF5 SDK versions section.
 
@@ -96,13 +102,13 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_15.3.0_59ac345` directory into the `nrf5` directory.
 
-6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
+7. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
 	```text
 	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK_15.3.0_59ac345
 	```
 
-7. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+8. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
 
 	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
 
