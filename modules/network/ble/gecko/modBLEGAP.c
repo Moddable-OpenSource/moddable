@@ -37,3 +37,9 @@ void xs_gap_whitelist_clear(xsMachine *the)
 {
 	xsUnknownError("whitelist unsupported");
 }
+
+modBLEWhitelistAddress modBLEGetWhitelist(void)
+{
+	// unused on gecko
+	return NULL;
+}

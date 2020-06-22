@@ -113,6 +113,12 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	nimbleClearWhitelist();
 }
 
+modBLEWhitelistAddress modBLEGetWhitelist(void)
+{
+	// unused on nimble
+	return NULL;
+}
+
 static int setWhitelist()
 {
 	modBLEWhitelistAddress walker;

@@ -160,7 +160,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t whitelist = xsmcToInteger(xsArg(3));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(3));
 	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
 	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
 	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
