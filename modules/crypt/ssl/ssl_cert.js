@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -46,44 +46,43 @@ import BER from "ber";
 import PKCS8 from "pkcs8"
 
 class CertificateManager {
+	#verify;
+	#registeredCerts = [];
+	#clientCertificates;
+	#clientKey;
+
 	constructor(options) {
-		this.registeredCerts = [];
-		this.options = options;
+		this.#verify = options.verify ?? true;
 		if (options.certificate)
 			this.register(options.certificate);
-	};
+		if (options.clientCertificates)
+			this.#clientCertificates = options.clientCertificates;
+		if (options.clientKey)
+			this.#clientKey = options.clientKey;
+	}
 	getCerts() {
 		// return the self certs
 		return [getResource("srvcert.der")];
-	};
+	}
 	getKey(cert) {
-	//@@ use of require here is obsolete... and unused
-		if (!cert) {
-			// return the self key
-			let Configuration = require.weak("config");
-			return PKCS8.decrypt(getResource("srvkey.pk8"), Configuration.pk8Password);
-		}
 		// look for the key corresponding to the cert
 		// first, search in the registed cert
-		for (var i = 0; i < this.registeredCerts.length; i++) {
-			if (Bin.comp(this.registeredCerts[i], cert) == 0) {
-				var x509 = X509.decode(this.registeredCerts[i]);
+		for (var i = 0; i < this.#registeredCerts.length; i++) {
+			if (Bin.comp(this.#registeredCerts[i], cert) == 0) {
+				var x509 = X509.decode(this.#registeredCerts[i]);
 				return x509.spki;	// public key only
 			}
 		}
-		// at the moment there is only one key
-		if (Bin.comp(getResource("clntcert.der"), cert) == 0) {
-			let Configuration = require.weak("config");
-			return PKCS8.decrypt(getResource("clntkey.pk8"), Configuration.pk8Password);
-		}
-	};
-	findPreferredCert(types, names) {
-		// MC has only zero or one key pairs...
-		if (!Resource.exists("clntcert.der"))
-			return [];
 
-		return [getResource("clntcert.der")];
-	};
+		// at the moment there is only one key
+		if (this.#clientCertificates[0]) {
+			if (0 === Bin.comp(this.#clientCertificates[0], cert))
+				return PKCS8.parse(new Uint8Array(this.#clientKey));
+		}
+	}
+	findPreferredCert(types, names) {
+		return this.#clientCertificates;
+	}
 	getIndex(fname, target) {
 		if (undefined === target)
 			return -1;
@@ -94,15 +93,15 @@ class CertificateManager {
 				return i;
 		}
 		return -1;
-	};
+	}
 	findCert(fname, target) {
 		var i = this.getIndex(fname, target);
 		if (i < 0)
 			return;	// undefined
 		let data = getResource("ca" + i + ".der");
-		if ((undefined === this.options.verify) || this.options.verify) {
-			let validity = X509.decodeTBS(X509.decode(new Uint8Array(data)).tbs).validity;
-			let now = Date.now();
+		if (this.#verify) {
+			const validity = X509.decodeTBS(X509.decode(new Uint8Array(data)).tbs).validity;
+			const now = Date.now();
 			if (!((validity.from < now) && (now < validity.to))) {
 				trace("date validation failed on certificate resource\n");
 				return;
@@ -110,9 +109,9 @@ class CertificateManager {
 		}
 
 		return X509.decodeSPKI(data);
-	};
+	}
 	verify(certs) {
-		if (false === this.options.verify)
+		if (!this.#verify)
 			return true;
 
 		let length = certs.length - 1, x509, validity, now = Date.now();
@@ -130,9 +129,9 @@ class CertificateManager {
 				return false;
 
 			let aki = X509.decodeAKI(certs[i + 1]);
-			for (let j = 0; j < this.registeredCerts.length; j++) {
-				if (Bin.comp(X509.decodeSKI(this.registeredCerts[j]), aki) == 0) {
-					let spki = X509.decodeSPKI(this.registeredCerts[j]);
+			for (let j = 0; j < this.#registeredCerts.length; j++) {
+				if (Bin.comp(X509.decodeSKI(this.#registeredCerts[j]), aki) == 0) {
+					let spki = X509.decodeSPKI(this.#registeredCerts[j]);
 					if (spki && this._verify(spki, X509.decode(certs[i + 1])))
 						return true;
 				}
@@ -157,7 +156,7 @@ class CertificateManager {
 
 		spki = this.findCert("ca.subject", new Crypt.Digest("SHA1")).process(X509.decodeTBS(x509.tbs).issuer);
 		return spki && this._verify(spki, x509);
-	};
+	}
 
 	_verify(spki, x509) {
 		var pk;
@@ -213,16 +212,16 @@ class CertificateManager {
 		}
 		var H = (new Crypt.Digest(hash)).process(x509.tbs);
 		return (new pk(spki, false, [] /* any oid */)).verify(H, sig);
-	};
+	}
 	register(cert) {
-		if ((undefined === this.options.verify) || this.options.verify) {
+		if (this.#verify) {
 			let validity = X509.decodeTBS(X509.decode(new Uint8Array(cert)).tbs).validity, now = Date.now();
 			if (!((validity.from < now) && (now < validity.to)))
 				throw new Error("date validation failed");
 		}
 
-		this.registeredCerts.push(cert);
-	};
+		this.#registeredCerts.push(cert);
+	}
 	getDH() {
 		let dh = getResource("dh.der");
 		let ber = new BER(dh);
@@ -232,8 +231,8 @@ class CertificateManager {
 			let g = ber.getInteger();
 			return {p, g};
 		}
-	};
-};
+	}
+}
 
 function getResource(name)
 {
