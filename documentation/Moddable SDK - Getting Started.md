@@ -148,11 +148,19 @@ More detailed getting started guides are available for the following devices:
  
 3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
-4. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+	> Note: If you run macOS Catalina, an extra step is required to enable the VCP driver. If you see a popup that says "System Extension Blocked" during installation, follow the instructions in the dialog to enable the extension in Security & Privacy System Preferences.
 
-5. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
+4. If you use macOS Catalina (version 10.15), add an exemption to allow Terminal (or your alternate terminal application of choice) to run software locally that does not meet the system's security policy. Without this setting, the precompiled Xtensa toolchain you will download in the next step will not be permitted to run. 
 
-6. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
+	To set the security policy exemption for Terminal, go into the Security & Privacy System Preferences, select the Privacy tab, choose Developer Tools from the list on the left, and then tick the checkbox for Terminal or the alternate terminal application from which you will be building Moddable SDK apps. The end result should look like this:
+
+	![Catalina Developer Options](./assets/getting-started/catalina-security.png)
+
+5. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+
+6. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
+
+7. Clone the [ESP8266 SDK based on FreeRTOS](https://github.com/espressif/ESP8266_RTOS_SDK) repository into the `~/esp` directory:
 
 	```text
 	cd ~/esp
@@ -166,7 +174,7 @@ More detailed getting started guides are available for the following devices:
 	git checkout release/v3.2
 	```
 	
-7. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
+8. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
 
 	```text
 	brew install python
@@ -174,9 +182,9 @@ More detailed getting started guides are available for the following devices:
 	pip install --user pyserial
 	```
 	
-8. Connect the ESP8266 to your computer with a USB cable.
+9. Connect the ESP8266 to your computer with a USB cable.
 
-9. Verify the setup by building `helloworld` for the `esp` target:
+10. Verify the setup by building `helloworld` for the `esp` target:
 
 	```text
 	cd ${MODDABLE}/examples/helloworld
@@ -191,6 +199,8 @@ More detailed getting started guides are available for the following devices:
 2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
 3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
+
+	> Note: If you run macOS Catalina, an extra step is required to enable the VCP driver. If you see a popup that says "System Extension Blocked" during installation, follow the instructions in the dialog to enable the extension in Security & Privacy System Preferences.
 
 4. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
