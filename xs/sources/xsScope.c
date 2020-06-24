@@ -80,16 +80,7 @@ static void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closure
 
 static void fxNodeDispatchBind(void* it, void* param);
 static void fxNodeDispatchHoist(void* it, void* param);
-
-static void fxAccessNodeBindCompound(void* it, void* param, txAssignNode* compound);
-static void fxAccessNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
 static void fxFunctionNodeRename(void* it, txSymbol* symbol);
-static void fxMemberNodeBindCompound(void* it, void* param, txAssignNode* compound);
-static void fxMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
-static void fxMemberAtNodeBindCompound(void* it, void* param, txAssignNode* compound);
-static void fxMemberAtNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
-static void fxPrivateMemberNodeBindCompound(void* it, void* param, txAssignNode* compound);
-static void fxPrivateMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound);
 
 void fxParserBind(txParser* parser)
 {
@@ -837,19 +828,6 @@ void fxAccessNodeBind(void* it, void* param)
 	fxScopeLookup(binder->scope, (txAccessNode*)self, 0);
 }
 
-void fxAccessNodeBindCompound(void* it, void* param, txAssignNode* compound) 
-{
-	fxAccessNodeBind(it, param);
-	fxNodeDispatchBind(compound->value, param);
-}
-
-void fxAccessNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound) 
-{
-	fxAccessNodeBind(it, param);
-	fxBinderPushVariables(param, 1);
-	fxBinderPopVariables(param, 1);
-}
-
 void fxArrayNodeBind(void* it, void* param) 
 {
 	txArrayNode* self = it;
@@ -944,17 +922,6 @@ void fxClassNodeBind(void* it, void* param)
 	if (self->symbol)
 		fxScopeBound(self->symbolScope, param);
 	fxBinderPopVariables(param, 2);
-}
-
-void fxCompoundExpressionNodeBind(void* it, void* param) 
-{
-	txAssignNode* self = it;
-	switch (self->reference->description->token) {
-	case XS_TOKEN_ACCESS: fxAccessNodeBindCompound(self->reference, param, self); break;
-	case XS_TOKEN_MEMBER: fxMemberNodeBindCompound(self->reference, param, self); break;
-	case XS_TOKEN_MEMBER_AT: fxMemberAtNodeBindCompound(self->reference, param, self); break;
-	case XS_TOKEN_PRIVATE_MEMBER: fxPrivateMemberNodeBindCompound(self->reference, param, self); break;
-	}
 }
 
 void fxDeclareNodeBind(void* it, void* param) 
@@ -1102,38 +1069,6 @@ void fxHostNodeBind(void* it, void* param)
 {
 }
 
-void fxMemberNodeBindCompound(void* it, void* param, txAssignNode* compound) 
-{
-	txMemberNode* self = it;
-	fxNodeDispatchBind(self->reference, param);
-	fxNodeDispatchBind(compound->value, param);
-}
-
-void fxMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound) 
-{
-	txMemberNode* self = it;
-	fxNodeDispatchBind(self->reference, param);
-	fxBinderPushVariables(param, 1);
-	fxBinderPopVariables(param, 1);
-}
-
-void fxMemberAtNodeBindCompound(void* it, void* param, txAssignNode* compound) 
-{
-	txMemberAtNode* self = it;
-	fxNodeDispatchBind(self->reference, param);
-	fxNodeDispatchBind(self->at, param);
-	fxNodeDispatchBind(compound->value, param);
-}
-
-void fxMemberAtNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound) 
-{
-	txMemberAtNode* self = it;
-	fxNodeDispatchBind(self->reference, param);
-	fxNodeDispatchBind(self->at, param);
-	fxBinderPushVariables(param, 1);
-	fxBinderPopVariables(param, 1);
-}
-
 void fxModuleNodeBind(void* it, void* param) 
 {
 	txModuleNode* self = it;
@@ -1236,12 +1171,9 @@ bail:
 void fxPostfixExpressionNodeBind(void* it, void* param) 
 {
 	txPostfixExpressionNode* self = it;
-	switch (self->left->description->token) {
-	case XS_TOKEN_ACCESS: fxAccessNodeBindPostfix(self->left, param, self); break;
-	case XS_TOKEN_MEMBER: fxMemberNodeBindPostfix(self->left, param, self); break;
-	case XS_TOKEN_MEMBER_AT: fxMemberAtNodeBindPostfix(self->left, param, self); break;
-	case XS_TOKEN_PRIVATE_MEMBER: fxPrivateMemberNodeBindPostfix(self->left, param, self); break;
-	}
+	fxNodeDispatchBind(self->left, param);
+	fxBinderPushVariables(param, 1);
+	fxBinderPopVariables(param, 1);
 }
 
 void fxPrivateMemberNodeBind(void* it, void* param) 
@@ -1252,19 +1184,6 @@ void fxPrivateMemberNodeBind(void* it, void* param)
 	if (!self->declaration)
 		fxReportLineError(binder->parser, self->line, "invalid private identifier");
 	fxNodeDispatchBind(self->reference, param);
-}
-
-void fxPrivateMemberNodeBindCompound(void* it, void* param, txAssignNode* compound) 
-{
-	fxPrivateMemberNodeBind(it, param);
-	fxNodeDispatchBind(compound->value, param);
-}
-
-void fxPrivateMemberNodeBindPostfix(void* it, void* param, txPostfixExpressionNode* compound) 
-{
-	fxPrivateMemberNodeBind(it, param);
-	fxBinderPushVariables(param, 1);
-	fxBinderPopVariables(param, 1);
 }
 
 void fxProgramNodeBind(void* it, void* param) 
