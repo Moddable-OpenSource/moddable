@@ -166,7 +166,7 @@ static int setWhitelist()
 				entries[count].Address_Type = QAPI_BLE_LAT_PUBLIC_E;
 				break;
 		}
-		c_memmove(entries[count].Address, walker->address, 6);
+		c_memmove(&entries[count].Address, walker->address, 6);
 		++count;
 		walker = walker->next;
 	}
