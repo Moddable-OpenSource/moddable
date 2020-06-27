@@ -170,9 +170,6 @@ static void uuidToBuffer(qapi_BLE_GATT_UUID_t *uuid, uint8_t *buffer, uint16_t *
 static void bufferToUUID(uint8_t *buffer, qapi_BLE_GATT_UUID_t *uuid, uint16_t length);
 static uint8_t UUIDEqual(qapi_BLE_GATT_UUID_t *uuid1, qapi_BLE_GATT_UUID_t *uuid2);
 
-static void addressToBuffer(qapi_BLE_BD_ADDR_t BD_ADDR, uint8_t *buffer);
-static void bufferToAddress(uint8_t *buffer, qapi_BLE_BD_ADDR_t *BD_ADDR);
-
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void completeProcedure(uint32_t conn_id, char *which);
@@ -319,7 +316,7 @@ void xs_ble_client_connect(xsMachine *the)
 		gBLE->scanning = 0;
 	}
 
-	bufferToAddress(address, &bd_addr);
+	c_memmove(bd_addr, address, 6);
 
 	// Ignore duplicate connection attempts
 	if (modBLEConnectionFindByAddress(bd_addr)) {
@@ -392,7 +389,7 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 	qapi_BLE_BD_ADDR_t bd_addr;
 	modBLEConnection connection;
 	
-	bufferToAddress(address, &bd_addr);
+	c_memmove(bd_addr, address, 6);
 	connection = modBLEConnectionFindByAddress(bd_addr);
 	if (!connection) return;
 	
@@ -775,26 +772,6 @@ uint8_t UUIDEqual(qapi_BLE_GATT_UUID_t *uuid1, qapi_BLE_GATT_UUID_t *uuid2)
 	return result;
 }
 
-static void addressToBuffer(qapi_BLE_BD_ADDR_t BD_ADDR, uint8_t *buffer)
-{
-	buffer[0] = BD_ADDR.BD_ADDR5;
-	buffer[1] = BD_ADDR.BD_ADDR4;
-	buffer[2] = BD_ADDR.BD_ADDR3;
-	buffer[3] = BD_ADDR.BD_ADDR2;
-	buffer[4] = BD_ADDR.BD_ADDR1;
-	buffer[5] = BD_ADDR.BD_ADDR0;
-}
-
-static void bufferToAddress(uint8_t *buffer, qapi_BLE_BD_ADDR_t *BD_ADDR)
-{
-	BD_ADDR->BD_ADDR5 = buffer[0];
-	BD_ADDR->BD_ADDR4 = buffer[1];
-	BD_ADDR->BD_ADDR3 = buffer[2];
-	BD_ADDR->BD_ADDR2 = buffer[3];
-	BD_ADDR->BD_ADDR1 = buffer[4];
-	BD_ADDR->BD_ADDR0 = buffer[5];
-}
-
 static int modBLEConnectionSaveAttHandle(modBLEConnection connection, qapi_BLE_GATT_UUID_t *uuid, uint16_t handle)
 {
 	int result = -1;
@@ -836,7 +813,6 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	qapi_BLE_GATT_Device_Connection_Data_t *result = (qapi_BLE_GATT_Device_Connection_Data_t*)message;
-	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByAddress(result->RemoteDevice);
 	if (!connection)
@@ -851,8 +827,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), connection->id);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	addressToBuffer(result->RemoteDevice, buffer);
-	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
+	xsmcSetArrayBuffer(xsVar(2), result->RemoteDevice, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
@@ -880,7 +855,6 @@ bail:
 static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	qapi_BLE_GAP_LE_Advertising_Report_Data_t *result = (qapi_BLE_GAP_LE_Advertising_Report_Data_t*)message;
-	uint8_t buffer[6];
 	
 	if (!gBLE->scanning) {
 		c_free(result->Raw_Report_Data);
@@ -891,8 +865,7 @@ static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint
 	xsmcVars(4);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), result->Raw_Report_Data, result->Raw_Report_Length);
-	addressToBuffer(result->BD_ADDR, buffer);
-	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
+	xsmcSetArrayBuffer(xsVar(2), result->BD_ADDR, 6);
 	xsmcSetInteger(xsVar(3), result->Address_Type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
@@ -1138,7 +1111,6 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	qapi_BLE_GAP_LE_Authentication_Event_Data_t *Authentication_Event_data = (qapi_BLE_GAP_LE_Authentication_Event_Data_t*)message;
 	qapi_BLE_GAP_LE_Authentication_Response_Information_t GAP_LE_Authentication_Response_Information;
 	uint32_t passkey;
-	uint8_t buffer[6];
 	modBLEConnection connection;
 	
 	connection = modBLEConnectionFindByAddress(Authentication_Event_data->BD_ADDR);
@@ -1147,8 +1119,7 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
-	addressToBuffer(Authentication_Event_data->BD_ADDR, buffer);
-	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+	xsmcSetArrayBuffer(xsVar(1), Authentication_Event_data->BD_ADDR, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
 	passkey = xsmcToInteger(xsResult);
@@ -1164,7 +1135,6 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 {
 	qapi_BLE_GAP_LE_Authentication_Event_Data_t *Authentication_Event_data = (qapi_BLE_GAP_LE_Authentication_Event_Data_t*)message;
 	uint32_t passkey = Authentication_Event_data->Authentication_Event_Data.Confirmation_Request.Display_Passkey;
-	uint8_t buffer[6];
 	modBLEConnection connection;
 	
 	connection = modBLEConnectionFindByAddress(Authentication_Event_data->BD_ADDR);
@@ -1173,8 +1143,7 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
-	addressToBuffer(Authentication_Event_data->BD_ADDR, buffer);
-	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+	xsmcSetArrayBuffer(xsVar(1), Authentication_Event_data->BD_ADDR, 6);
 	xsmcSetInteger(xsVar(2), passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -1186,7 +1155,6 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 {
 	qapi_BLE_GAP_LE_Authentication_Event_Data_t *Authentication_Event_data = (qapi_BLE_GAP_LE_Authentication_Event_Data_t*)message;
 	uint32_t passkey = Authentication_Event_data->Authentication_Event_Data.Confirmation_Request.Display_Passkey;
-	uint8_t buffer[6];
 	modBLEConnection connection;
 	
 	connection = modBLEConnectionFindByAddress(Authentication_Event_data->BD_ADDR);
@@ -1195,9 +1163,8 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
-	addressToBuffer(Authentication_Event_data->BD_ADDR, buffer);
 	connection->passkey = passkey;
-	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+	xsmcSetArrayBuffer(xsVar(1), Authentication_Event_data->BD_ADDR, 6);
 	xsmcSetInteger(xsVar(2), passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
