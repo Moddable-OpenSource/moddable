@@ -34,23 +34,23 @@ void xs_gap_whitelist_add(xsMachine *the)
 {
 	modBLEWhitelistAddress entry;
 	BLEAddressType addressType;
-	uint8_t *buffer;
+	uint8_t *address;
 	int rc;
 	
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_addressType);
 	addressType = xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
-	buffer = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
+	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
 	
-	if (modBLEWhitelistContains(addressType, buffer))
+	if (modBLEWhitelistContains(addressType, address))
 		return;
 
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
 	if (NULL == entry)
 		xsUnknownError("out of memory");
 		
-	c_memmove(entry->address, buffer, 6);
+	c_memmove(entry->address, address, 6);
 	entry->addressType = addressType;
 	
 	if (NULL == gWhitelist)
@@ -70,14 +70,14 @@ void xs_gap_whitelist_add(xsMachine *the)
 void xs_gap_whitelist_remove(xsMachine *the)
 {
 	BLEAddressType addressType;
-	uint8_t *buffer, address[6];
+	uint8_t *address;
 	int rc;
 	
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_addressType);
 	addressType = xsmcToInteger(xsVar(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
-	buffer = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
+	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
 
 	modBLEWhitelistAddress walker, prev = NULL;
 	for (walker = gWhitelist; NULL != walker; prev = walker, walker = walker->next) {

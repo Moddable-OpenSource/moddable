@@ -164,11 +164,11 @@ export class Bytes extends ArrayBuffer {
 Object.freeze(Bytes.prototype);
 
 function uuid(strings) {
-	return new Bytes(strings[0].split("-").join(""), true);
+	return new Bytes(strings[0].replaceAll("-", ""), true);
 }
 
 function address(strings) {
-	return new Bytes(strings[0].split(":").join(""), true);
+	return new Bytes(strings[0].replaceAll(":", ""), true);
 }
 
 function serializeUUID16List(data) {

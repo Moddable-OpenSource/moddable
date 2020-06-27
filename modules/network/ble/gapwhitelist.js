@@ -22,18 +22,17 @@ import GAP from "gap";
 import {Bytes} from "btutils";
 
 class GAPWhitelist {
-	static add(address, addressType = GAP.AddressType.PUBLIC) {
+	static add(address, addressType) {
 		this.#whitelistAdd(this.#whitelistEntry(address, addressType));
 	}
-	static remove(address, addressType = GAP.AddressType.PUBLIC) {
+	static remove(address, addressType) {
 		this.#whitelistRemove(this.#whitelistEntry(address, addressType));
 	}
 	static clear() @ "xs_gap_whitelist_clear"
 	
-	static #whitelistEntry(address, addressType) {
+	static #whitelistEntry(address, addressType = GAP.AddressType.PUBLIC) {
 		let entry = { addressType };
 		
-		// "XX:XX:XX:XX:XX:XX"
 		if ("string" === typeof address) {
 			entry.address = new Bytes(address.replaceAll(":", ""), true);
 		}
