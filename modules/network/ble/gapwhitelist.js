@@ -22,43 +22,26 @@ import GAP from "gap";
 import {Bytes} from "btutils";
 
 class GAPWhitelist {
-	static add(value) {
-		this.#whitelistAdd(this.#whitelistEntry(value));
+	static add(address, addressType = GAP.AddressType.PUBLIC) {
+		this.#whitelistAdd(this.#whitelistEntry(address, addressType));
 	}
-	static remove(value) {
-		this.#whitelistRemove(this.#whitelistEntry(value));
+	static remove(address, addressType = GAP.AddressType.PUBLIC) {
+		this.#whitelistRemove(this.#whitelistEntry(address, addressType));
 	}
 	static clear() @ "xs_gap_whitelist_clear"
 	
-	static #whitelistEntry(value) {
-		let entry = {};
+	static #whitelistEntry(address, addressType) {
+		let entry = { addressType };
 		
 		// "XX:XX:XX:XX:XX:XX"
-		if ("string" === typeof value) {
-			entry.address = new Bytes(value.replaceAll(":", ""));
-			entry.addressType = GAP.AddressType.PUBLIC;
+		if ("string" === typeof address) {
+			entry.address = new Bytes(address.replaceAll(":", ""), true);
 		}
-		else if ("object" === typeof value) {
-			// { address:"XX:XX:XX:XX:XX:XX" }
-			// { address:address`XX:XX:XX:XX:XX:XX`}
-			// { address:address`XX:XX:XX:XX:XX:XX`, addressType:GAP.AddressType.PUBLIC }
-			if ("address" in value) {
-				if ("string" === typeof value.address)
-					entry.address = new Bytes(value.address.replaceAll(":", ""));
-				else if (value.address instanceof ArrayBuffer)
-					entry.address = value.address;
-				entry.addressType = value.addressType;
-			}
-			// address`XX:XX:XX:XX:XX:XX`
-			else if (value.address instanceof ArrayBuffer)
-				entry.address = value;
-		}
+		else if (address instanceof ArrayBuffer)
+			entry.address = address;
 		
 		if (undefined === entry.address)
 			throw new Error("unknown whitelist entry format");
-			
-		if (undefined === entry.addressType)
-			entry.addressType = GAP.AddressType.PUBLIC;
 			
 		return entry;
 	}
