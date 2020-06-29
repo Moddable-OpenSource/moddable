@@ -144,6 +144,10 @@ void fxAbort(xsMachine* the, int status)
 			xsUnknownError("stack overflow");
 		else if (status == xsDeadStripExit)
 			xsUnknownError("dead strip");
+		else if (status == xsUnhandledExceptionExit) {
+			xsTrace("unhandled exception");
+			return;
+		}
 	}
 	xsCatch {
 	}
