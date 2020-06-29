@@ -288,7 +288,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 		gBLE->scanWindow,
 		QAPI_BLE_LAT_PUBLIC_E,
 		filterPolicy,
-		!duplicates,
+		!duplicates,	// @@ duplicate filtering doesn't seem to work
 		GAP_LE_Event_Callback,
 		0L
 	);

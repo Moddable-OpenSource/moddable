@@ -22,7 +22,7 @@ class Scanner extends BLEClient {
 		let scanResponse = device.scanResponse;
 		let completeName = scanResponse.completeName;
 		if (completeName)
-			trace(`${completeName} - ${device.address.toString()}\n`);
+			trace(`${completeName} - ${device.address}\n`);
 	}
 }
 
