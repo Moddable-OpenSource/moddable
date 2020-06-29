@@ -65,6 +65,17 @@
 	#define LOG_GAP_INT(i)
 #endif
 
+#define LOG_SCAN 0
+#if LOG_SCAN
+	#define LOG_SCAN_EVENT(event) logScanEvent(event)
+	#define LOG_SCAN_MSG(msg) modLog(msg)
+	#define LOG_SCAN_INT(i) modLogInt(i)
+#else
+	#define LOG_SCAN_EVENT(event)
+	#define LOG_SCAN_MSG(msg)
+	#define LOG_SCAN_INT(i)
+#endif
+
 #define LOG_PM 0
 #if LOG_PM
 	#define LOG_PM_EVENT(event) logPMEvent(event)
@@ -165,6 +176,7 @@ static int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_t
 
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
 static void pm_evt_handler(pm_evt_t const * p_evt);
+static void scan_evt_handler(scan_evt_t const * p_scan_evt);
 
 static void bleClientCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void bleClientReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
@@ -288,21 +300,37 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	ble_gap_scan_params_t *scan_params = &gBLE->scan_params;
 	nrf_ble_scan_init_t *scan_init = &gBLE->scan_init;
+
+	switch(filterPolicy) {
+		case kBLEScanFilterPolicyWhitelist:
+			filterPolicy = BLE_GAP_SCAN_FP_WHITELIST;
+			break;
+		case kBLEScanFilterNotResolvedDirected:
+			filterPolicy = BLE_GAP_SCAN_FP_ALL_NOT_RESOLVED_DIRECTED;
+			break;
+		case kBLEScanFilterWhitelistNotResolvedDirected:
+			filterPolicy = BLE_GAP_SCAN_FP_WHITELIST_NOT_RESOLVED_DIRECTED;
+			break;
+		default:
+			filterPolicy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+			break;
+	}
 
 	gBLE->duplicates = duplicates;
 
 	c_memset(scan_params, 0, sizeof(ble_gap_scan_params_t));
 	scan_params->active = active;
-	scan_params->filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+	scan_params->filter_policy = filterPolicy;
 	scan_params->interval = interval;
 	scan_params->window = window;
 
     c_memset(scan_init, 0, sizeof(scan_init));
     scan_init->p_scan_param = scan_params;
 
-    err_code = nrf_ble_scan_init(&m_scan, scan_init, NULL);
+    err_code = nrf_ble_scan_init(&m_scan, scan_init, scan_evt_handler);
     if (NRF_SUCCESS == err_code)
     	err_code = nrf_ble_scan_start(&m_scan);
 	if (NRF_SUCCESS != err_code)
@@ -1535,5 +1563,39 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 			break;    		
         default:
             break;
+    }
+}
+
+static void logScanEvent(uint16_t evt_id) {
+	switch(evt_id) {
+		case NRF_BLE_SCAN_EVT_FILTER_MATCH: modLog("NRF_BLE_SCAN_EVT_FILTER_MATCH"); break;
+		case NRF_BLE_SCAN_EVT_WHITELIST_REQUEST: modLog("NRF_BLE_SCAN_EVT_WHITELIST_REQUEST"); break;
+		case NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT: modLog("NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT"); break;
+		case NRF_BLE_SCAN_EVT_NOT_FOUND: modLog("NRF_BLE_SCAN_EVT_NOT_FOUND"); break;
+		case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT: modLog("NRF_BLE_SCAN_EVT_SCAN_TIMEOUT"); break;
+		case NRF_BLE_SCAN_EVT_SCAN_REQ_REPORT: modLog("NRF_BLE_SCAN_EVT_SCAN_REQ_REPORT"); break;
+		case NRF_BLE_SCAN_EVT_CONNECTING_ERROR: modLog("NRF_BLE_SCAN_EVT_CONNECTING_ERROR"); break;
+		case NRF_BLE_SCAN_EVT_CONNECTED: modLog("NRF_BLE_SCAN_EVT_CONNECTED"); break;
+	}
+}
+
+// This scan_evt_handler() function seems to be required to support the whitelist, even though it is empty.
+static void scan_evt_handler(scan_evt_t const * p_scan_evt)
+{
+	LOG_SCAN_EVENT(p_scan_evt->scan_evt_id);
+
+    switch(p_scan_evt->scan_evt_id) {
+        case NRF_BLE_SCAN_EVT_WHITELIST_REQUEST:
+        	break;
+        case NRF_BLE_SCAN_EVT_CONNECTING_ERROR:
+        	break;
+        case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT:
+        	break;
+        case NRF_BLE_SCAN_EVT_FILTER_MATCH:
+            break;
+        case NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT:
+            break;
+        default:
+			break;
     }
 }

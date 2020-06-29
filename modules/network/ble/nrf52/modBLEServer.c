@@ -249,24 +249,59 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t filterPolicy = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
 
 	c_memset(&adv_data, 0, sizeof(ble_gap_adv_data_t));
 	c_memmove(&gBLE->adv_data[0], advertisingData, advertisingDataLength);
 	adv_data.adv_data.p_data = &gBLE->adv_data[0];
 	adv_data.adv_data.len = advertisingDataLength;
-	if (xsmcTest(xsArg(4))) {
-		uint8_t *scanResponseData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
-		uint32_t scanResponseDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	if (xsmcTest(xsArg(5))) {
+		uint8_t *scanResponseData = (uint8_t*)xsmcToArrayBuffer(xsArg(5));
+		uint32_t scanResponseDataLength = xsmcGetArrayBufferLength(xsArg(5));
 
 		c_memmove(&gBLE->scan_rsp_data[0], scanResponseData, scanResponseDataLength);
 		adv_data.scan_rsp_data.p_data = &gBLE->scan_rsp_data[0];
 		adv_data.scan_rsp_data.len = scanResponseDataLength;
 	}
 
+	switch(filterPolicy) {
+		case kBLEAdvFilterPolicyWhitelistScans:
+			filterPolicy = BLE_GAP_ADV_FP_FILTER_SCANREQ;
+			break;
+		case kBLEAdvFilterPolicyWhitelistConnections:
+			filterPolicy = BLE_GAP_ADV_FP_FILTER_CONNREQ;
+			break;
+		case kBLEAdvFilterPolicyWhitelistScansConnections:
+			filterPolicy = BLE_GAP_ADV_FP_FILTER_BOTH;
+			break;
+		default:
+			filterPolicy = BLE_GAP_ADV_FP_ANY;
+			break;
+	}
+
+	// If whitelist filtering is enabled, we cannot use LE Limited or General discoverable modes
+	// Avoid the resulting BLE_ERROR_GAP_DISCOVERABLE_WITH_WHITELIST error by ensuring these modes are not enabled
+	// https://devzone.nordicsemi.com/f/nordic-q-a/33606/updating-advertising-data-manuf-spec-data-in-sdk15/133504#133504
+	// @@ TBD - Try enforcing this at the app level or binding layer if the behavior is portable
+	if (BLE_GAP_ADV_FP_ANY != filterPolicy) {
+		uint16_t i = 0;
+		uint8_t *adv_ptr = &gBLE->adv_data[0];
+		uint8_t *adv_end = adv_ptr + advertisingDataLength;
+		while (adv_ptr < adv_end) {
+			uint8_t adv_length = adv_ptr[0];
+			uint8_t adv_type = adv_ptr[1];
+			if (BLE_GAP_AD_TYPE_FLAGS == adv_type) {
+				adv_ptr[2] &= ~(BLE_GAP_ADV_FLAG_LE_LIMITED_DISC_MODE | BLE_GAP_ADV_FLAG_LE_GENERAL_DISC_MODE);
+				break;
+			}
+			adv_ptr += adv_length;
+		}
+	}
+	
     c_memset(&adv_params, 0, sizeof(ble_gap_adv_params_t));
-    adv_params.filter_policy   = BLE_GAP_ADV_FP_ANY;
+    adv_params.filter_policy   = filterPolicy;
     adv_params.interval        = intervalMin;
 
 	if (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE))

@@ -22,12 +22,11 @@
 #include "xsmc.h"
 #include "mc.xs.h"
 #include "modBLE.h"
-#include "peer_manager.h"
+#include "nrf_sdh_ble.h"
 
 static modBLEWhitelistAddress gWhitelist = NULL;
 
 static int setWhitelist(void);
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
 static int nrf52ClearWhitelist(void);
 
 void xs_gap_whitelist_add(xsMachine *the)
@@ -43,7 +42,7 @@ void xs_gap_whitelist_add(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
 	
-	if (findInWhitelist(addressType, address))
+	if (modBLEWhitelistContains(addressType, address))
 		return;
 
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
@@ -113,15 +112,27 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	nrf52ClearWhitelist();
 }
 
-static int setWhitelist()
+int modBLEWhitelistContains(uint8_t addressType, uint8_t *address)
+{
+	modBLEWhitelistAddress walker = gWhitelist;
+
+	while (NULL != walker) {
+		if (addressType == walker->addressType && 0 == c_memcmp(address, walker->address, 6))
+			return 1;
+		walker = walker->next;
+	}
+		
+	return 0;
+}
+
+int setWhitelist()
 {
 	modBLEWhitelistAddress walker;
 	uint16_t count;
-	uint32_t added;
+	ble_gap_addr_t const * whitelist_addr_ptrs[BLE_GAP_WHITELIST_ADDR_MAX_COUNT];
+	ble_gap_addr_t whitelist_addrs[BLE_GAP_WHITELIST_ADDR_MAX_COUNT];
 	int rc = 0;
-	
-	// @@ TBD
-	
+
 	if (NULL == gWhitelist)
 		goto bail;
 		
@@ -132,28 +143,46 @@ static int setWhitelist()
 		walker = walker->next;
 	}
 	
-bail:		
-	return rc;
-}
-
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
-{
-	modBLEWhitelistAddress walker = gWhitelist;
-	
-	if (NULL == walker)
-		return NULL;
+	rc = nrf52ClearWhitelist();
+    
+	if (0 != rc)
+		goto bail;
 		
-	while (NULL != walker) {
-		if (walker->addressType == addressType && 0 == c_memcmp(walker->address, address, 6))
-			return walker;
+	walker = gWhitelist;
+	count = 0;
+	while (walker != NULL) {
+		switch(walker->addressType) {
+			case kBLEAddressTypeRandom:
+				whitelist_addrs[count].addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC;
+				break;
+			case kBLEAddressTypeRPAPublic:
+				whitelist_addrs[count].addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE;
+				break;
+			case kBLEAddressTypeRPARandom:
+				whitelist_addrs[count].addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE;
+				break;
+			case kBLEAddressTypePublic:
+			default:
+				whitelist_addrs[count].addr_type = BLE_GAP_ADDR_TYPE_PUBLIC;
+				break;
+		}
+		whitelist_addrs[count].addr_id_peer = 0;
+		c_memmove(whitelist_addrs[count].addr, walker->address, 6);
+		++count;
 		walker = walker->next;
-	}		
+	}
 	
-	return NULL;
+    for (int i = 0; i < BLE_GAP_WHITELIST_ADDR_MAX_COUNT; i++)
+        whitelist_addr_ptrs[i] = &whitelist_addrs[i];
+
+	rc = sd_ble_gap_whitelist_set(whitelist_addr_ptrs, count);
+	
+bail:
+	return rc;
 }
 
 static int nrf52ClearWhitelist(void)
 {
-	return pm_whitelist_set(NULL, 0);
+	return sd_ble_gap_whitelist_set(NULL, 0);
 }
 
