@@ -112,12 +112,6 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	nimbleClearWhitelist();
 }
 
-modBLEWhitelistAddress modBLEWhitelistGet(void)
-{
-	// unused on nimble
-	return NULL;
-}
-
 int modBLEWhitelistContains(uint8_t addressType, uint8_t *address)
 {
 	modBLEWhitelistAddress walker = gWhitelist;

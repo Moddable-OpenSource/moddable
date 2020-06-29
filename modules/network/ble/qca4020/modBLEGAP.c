@@ -114,12 +114,6 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	qca4020ClearWhitelist();
 }
 
-modBLEWhitelistAddress modBLEWhitelistGet(void)
-{
-	// unused on qca4020
-	return NULL;
-}
-
 static int setWhitelist()
 {
 	modBLEWhitelistAddress walker;
