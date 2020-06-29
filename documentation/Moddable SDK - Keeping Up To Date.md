@@ -96,7 +96,13 @@ To ensure that your build environment is up to date, perform the following steps
     rm -rf tmp/esp
     ```
 
-4. Verify the setup by building `helloworld` for the `esp` target:
+4. If you have updated to macOS Catalina (version 10.15), add an exemption to allow Terminal (or your alternate terminal application of choice) to run software locally that does not meet the system's security policy. Without this setting, the precompiled Xtensa toolchain used in builds for the ESP8266 will not be permitted to run. 
+
+	To set the security policy exemption for Terminal, go into the Security & Privacy System Preferences, select the Privacy tab, choose Developer Tools from the list on the left, and then tick the checkbox for Terminal or the alternate terminal application from which you will be building Moddable SDK apps. The end result should look like this:
+
+	![Catalina Developer Options](./assets/getting-started/catalina-security.png)
+
+5. Verify the setup by building `helloworld` for the `esp` target:
 
 	```text
 	cd ${MODDABLE}/examples/helloworld

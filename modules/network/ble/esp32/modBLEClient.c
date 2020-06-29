@@ -113,6 +113,8 @@ static modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id);
 static modBLEConnection modBLEConnectionFindByAppID(uint16_t app_id);
 static modBLEConnection modBLEConnectionFindByAddress(esp_bd_addr_t *bda);
 
+static void addressToBuffer(esp_bd_addr_t *bda, uint8_t *buffer);
+static void bufferToAddress(uint8_t *buffer, esp_bd_addr_t *bda);
 static void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length);
 static void bufferToUUID(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t length);
 
@@ -234,7 +236,7 @@ void xs_ble_client_connect(xsMachine *the)
 	uint8_t addressType = xsmcToInteger(xsArg(1));
 	esp_bd_addr_t bda;
 
-	c_memmove(&bda, address, sizeof(bda));
+	bufferToAddress(address, &bda);
 		
 	// Ignore duplicate connection attempts
 	if (modBLEConnectionFindByAddress(&bda)) {
@@ -282,7 +284,7 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 	esp_bd_addr_t bda;
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
-	c_memmove(&bda, address, sizeof(bda));
+	bufferToAddress(address, &bda);
 	esp_ble_confirm_reply(bda, confirm);
 }
 
@@ -742,6 +744,28 @@ void bufferToUUID(esp_bt_uuid_t *uuid, uint8_t *buffer, uint16_t length)
 	uuid->len = length;
 }
 
+static void addressToBuffer(esp_bd_addr_t *bda, uint8_t *buffer)
+{
+	uint8_t *address = (uint8_t*)bda;
+	buffer[0] = address[5];
+	buffer[1] = address[4];
+	buffer[2] = address[3];
+	buffer[3] = address[2];
+	buffer[4] = address[1];
+	buffer[5] = address[0];
+}
+
+static void bufferToAddress(uint8_t *buffer, esp_bd_addr_t *bda)
+{
+	uint8_t *address = (uint8_t*)bda;
+	address[0] = buffer[5];
+	address[1] = buffer[4];
+	address[2] = buffer[3];
+	address[3] = buffer[2];
+	address[4] = buffer[1];
+	address[5] = buffer[0];
+}
+
 static void localPrivacyCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsBeginHost(gBLE->the);
@@ -760,11 +784,13 @@ static void localPrivacyCompleteEvent(void *the, void *refcon, uint8_t *message,
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_scan_result_evt_param *scan_rst = (struct ble_scan_result_evt_param *)message;
+	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
 	xsmcVars(4);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), scan_rst->ble_adv, scan_rst->adv_data_len + scan_rst->scan_rsp_len);
-	xsmcSetArrayBuffer(xsVar(2), scan_rst->bda, 6);
+	addressToBuffer(&scan_rst->bda, buffer);
+	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 	xsmcSetInteger(xsVar(3), scan_rst->ble_addr_type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
@@ -787,13 +813,15 @@ static void rssiCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_
 static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
+	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByAddress(&key_notif->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), key_notif->bd_addr, 6);
+	addressToBuffer(&key_notif->bd_addr, buffer);
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 	xsmcSetInteger(xsVar(2), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -957,6 +985,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		xsUnknownError("connection not found");
 		
 	if (ESP_GATT_OK == open->status) {
+		uint8_t buffer[6];
 		if (-1 != connection->conn_id) {
 			LOG_GATTC_MSG("Ignoring duplicate connect event");
 			goto bail;
@@ -967,7 +996,8 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), open->conn_id);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(2), open->remote_bda, 6);
+		addressToBuffer(&open->remote_bda, buffer);
+		xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
 		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}

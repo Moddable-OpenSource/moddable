@@ -506,7 +506,10 @@ const handshakeProtocol = {
 		packetize(session, certs) {
 			session.traceProtocol(this);
 			const s = new SSLStream();
-			s.writeChars(certs.length, 3);		// number of certificates
+			let length = 0;
+			for (let i = 0; i < certs.length; i++)
+				length += certs[i].byteLength + 3;
+			s.writeChars(length, 3);		// total size of certificates
 			for (let i = 0; i < certs.length; i++) {
 				const c = certs[i];
 				s.writeChars(c.byteLength, 3);
@@ -916,9 +919,18 @@ const handshakeProtocol = {
 				if (!session.myCert)
 					throw new Error("SSL: certificateVerify: no cert");	// out of sequence
 				var key = session.certificateManager.getKey(cert);
-				var rsa = new PKCS1_5(key, true);
-				var sig = rsa.sign(this.calculateDigest(session));
-				var s = new SSLStream();
+
+				var s = new SSLStream(), rsa, sig;
+				if (session.protocolVersion >= 0x303) {
+					rsa = new PKCS1_5(key, true, [2, 16, 840, 1, 101, 3, 4, 2, 1]);
+					s.writeChars(4, 1);	// hash algorithm SHA256
+					s.writeChars(1, 1);	// hash algorithm signature RSA
+				}
+				else {
+					rsa = new PKCS1_5(key, true);
+				}
+
+				sig = rsa.sign(this.calculateDigest(session));
 				s.writeChars(sig.byteLength, 2);
 				s.writeChunk(sig);
 			}

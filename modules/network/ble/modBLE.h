@@ -66,12 +66,14 @@ typedef modBLEWhitelistAddressRecord *modBLEWhitelistAddress;
 struct modBLEWhitelistAddressRecord {
 	struct modBLEWhitelistAddressRecord *next;
 
-	BLEAddressType addressType;
 	uint8_t address[6];
+	BLEAddressType addressType;
 };
 
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
 
-modBLEWhitelistAddress modBLEGetWhitelist();
+int modBLEWhitelistContains(uint8_t addressType, uint8_t *address);
+modBLEWhitelistAddress modBLEWhitelistGet(void);
+
 
 #endif

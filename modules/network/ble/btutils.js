@@ -124,17 +124,51 @@ export class Bytes extends ArrayBuffer {
 		super(byteLength);
 		this.set(bytes, true === littleEndian);
 	}
+	toString() {
+		// this function assumes the bytes are in little endian order
+		const byteLength = this.byteLength;
+		if (6 == byteLength)
+			return this.#toHexString(this, ':');
+		else if (16 == byteLength) {
+			const bytes = new Uint8Array(this);
+			const string =
+				this.#toHexString(bytes.slice(12, 16)) + '-' +
+				this.#toHexString(bytes.slice(10, 12)) + '-' +
+				this.#toHexString(bytes.slice(8, 10)) + '-' +
+				this.#toHexString(bytes.slice(6, 8)) + '-' +
+				this.#toHexString(bytes.slice(0, 6));
+			return string;
+		}
+		else {
+			return this.#toHexString(this);
+		}
+	}
 	set(bytes, littleEndian) @ "xs_bytes_set"
 	equals(bytes) @ "xs_bytes_equals"
+	
+	#toHexString(buffer, delimeter = '') {
+		const hex = "0123456789ABCDEF";
+		const bytes = new Uint8Array(buffer).reverse();
+		let result = new Array(buffer.byteLength);
+		bytes.forEach((byte, index) => {
+			let i, s;
+			i = byte >> 4;
+			s = hex.slice(i, i + 1);
+			i = byte & 0x0F;
+			s += hex.slice(i, i + 1);
+			result[index] = s;
+		});
+		return result.join(delimeter);
+	}
 }
 Object.freeze(Bytes.prototype);
 
 function uuid(strings) {
-	return new Bytes(strings[0].split("-").join(""), true);
+	return new Bytes(strings[0].replaceAll("-", ""), true);
 }
 
 function address(strings) {
-	return new Bytes(strings[0].split(":").join(""));
+	return new Bytes(strings[0].replaceAll(":", ""), true);
 }
 
 function serializeUUID16List(data) {

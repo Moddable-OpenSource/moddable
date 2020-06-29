@@ -1170,21 +1170,12 @@ struct xsCreationRecord {
 		if (setjmp(__HOST_JUMP__.buffer) == 0) { \
 			xsMachine* the = fxBeginHost(__HOST_THE__)
 
-#ifndef XSLOGEXCEPTION
-	#ifndef __ets__
-		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception arrived in function %s at line %d\n", __FUNCTION__, __LINE__)
-	#else
-		// cannot have __FUNCTION__ as the string is stored in RAM
-		#define XSLOGEXCEPTION xsLogDebug(__HOST_THE__, (xsStringValue)"unhandled exception\n")
-	#endif
-#endif
-
 #define xsEndHost(_THE) \
 			fxEndHost(the); \
 			the = NULL; \
 		} \
 		else \
-			XSLOGEXCEPTION; \
+			fxAbort(__HOST_THE__, xsUnhandledExceptionExit); \
 		(__HOST_THE__)->stack = __HOST_JUMP__.stack, \
 		(__HOST_THE__)->scope = __HOST_JUMP__.scope, \
 		(__HOST_THE__)->frame = __HOST_JUMP__.frame, \
@@ -1262,6 +1253,7 @@ enum {
 	xsStackOverflowExit,
 	xsFatalCheckExit,
 	xsDeadStripExit,
+	xsUnhandledExceptionExit,
 };
 
 #ifndef __XSALL__
@@ -1409,6 +1401,8 @@ mxImport void fxAwaitImport(xsMachine*, xsBooleanValue);
 mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);
 mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data);
 mxImport xsBooleanValue fxMatchRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data, xsStringValue subject, xsIntegerValue offset);
+
+mxImport void fxAbort(xsMachine* the, int status);
 
 #ifdef __cplusplus
 }

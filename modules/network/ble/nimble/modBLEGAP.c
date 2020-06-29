@@ -28,7 +28,6 @@
 static modBLEWhitelistAddress gWhitelist = NULL;
 
 static int setWhitelist(void);
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
 static int nimbleClearWhitelist(void);
 
 void xs_gap_whitelist_add(xsMachine *the)
@@ -44,7 +43,7 @@ void xs_gap_whitelist_add(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
 	
-	if (findInWhitelist(addressType, address))
+	if (modBLEWhitelistContains(addressType, address))
 		return;
 
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
@@ -113,13 +112,26 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	nimbleClearWhitelist();
 }
 
-modBLEWhitelistAddress modBLEGetWhitelist(void)
+modBLEWhitelistAddress modBLEWhitelistGet(void)
 {
 	// unused on nimble
 	return NULL;
 }
 
-static int setWhitelist()
+int modBLEWhitelistContains(uint8_t addressType, uint8_t *address)
+{
+	modBLEWhitelistAddress walker = gWhitelist;
+
+	while (NULL != walker) {
+		if (addressType == walker->addressType && 0 == c_memcmp(address, walker->address, 6))
+			return 1;
+		walker = walker->next;
+	}
+		
+	return 0;
+}
+
+int setWhitelist()
 {
 	modBLEWhitelistAddress walker;
 	uint16_t count;
@@ -165,12 +177,7 @@ static int setWhitelist()
 				addr[count].type = BLE_ADDR_PUBLIC;
 				break;
 		}
-		addr[count].val[0] = walker->address[5];
-		addr[count].val[1] = walker->address[4];
-		addr[count].val[2] = walker->address[3];
-		addr[count].val[3] = walker->address[2];
-		addr[count].val[4] = walker->address[1];
-		addr[count].val[5] = walker->address[0];
+		c_memmove(addr[count].val, walker->address, 6);
 		++count;
 		walker = walker->next;
 	}
@@ -183,23 +190,7 @@ bail:
 	return rc;
 }
 
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
-{
-	modBLEWhitelistAddress walker = gWhitelist;
-	
-	if (NULL == walker)
-		return NULL;
-		
-	while (NULL != walker) {
-		if (walker->addressType == addressType && 0 == c_memcmp(walker->address, address, 6))
-			return walker;
-		walker = walker->next;
-	}		
-	
-	return NULL;
-}
-
-static int nimbleClearWhitelist()
+int nimbleClearWhitelist()
 {
 	ble_hs_lock();
 	ble_hs_hci_cmd_tx_empty_ack(BLE_HCI_OP(BLE_HCI_OGF_LE, BLE_HCI_OCF_LE_CLEAR_WHITE_LIST), NULL, 0);  

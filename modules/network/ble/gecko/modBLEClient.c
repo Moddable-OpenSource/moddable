@@ -202,8 +202,6 @@ static modBLEConnection modBLEConnectionFindByAddress(bd_addr *bda);
 
 static void uuidToBuffer(uint8array *uuid, uint8_t *buffer, uint16_t *length);
 static void bufferToUUID(uint8_t *buffer, uuidRecord *uuid, uint16_t length);
-static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
-static void bufferToAddress(uint8_t *buffer, bd_addr *bda);
 static void bleTimerCallback(modTimer timer, void *refcon, int refconSize);
 static void clearScanned(modBLE ble);
 static void ble_event_handler(struct gecko_cmd_packet* evt);
@@ -279,7 +277,7 @@ void xs_ble_client_connect(xsMachine *the)
 	uint8_t addressType = xsmcToInteger(xsArg(1));
 	bd_addr bda;
 
-	bufferToAddress(address, &bda);
+	c_memmove(bda.addr, address, 6);
 		
 	// Ignore duplicate connection attempts
 	if (modBLEConnectionFindByAddress(&bda)) {
@@ -336,7 +334,8 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 	bd_addr bda;
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
-	bufferToAddress(address, &bda);
+	
+	c_memmove(&bda.addr, address, 6);
 	
 	modBLEConnection connection = modBLEConnectionFindByAddress(&bda);
 	if (!connection) return;
@@ -731,18 +730,6 @@ void bufferToUUID(uint8_t *buffer, uuidRecord *uuid, uint16_t length)
 	uuid->len = length;
 }
 
-static void addressToBuffer(bd_addr *bda, uint8_t *buffer)
-{
-	for (uint8_t i = 0; i < 6; ++i)
-		buffer[i] = bda->addr[5 - i];
-}
-
-static void bufferToAddress(uint8_t *buffer, bd_addr *bda)
-{
-	for (uint8_t i = 0; i < 6; ++i)
-		bda->addr[i] = buffer[5 - i];
-}
-
 static void clearScanned(modBLE ble)
 {
 	modBLEScannedPacket walker = ble->scanned;
@@ -788,14 +775,12 @@ static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
 static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *evt)
 {
 	xsBeginHost(gBLE->the);
-	uint8_t addr[6];
 	xsmcVars(4);
-	addressToBuffer(&evt->address, addr);
 
 	if (!gBLE->duplicates) {
 		modBLEScannedPacket scanned = gBLE->scanned;
 		while (scanned) {
-			if (evt->packet_type == scanned->packet_type && 0 == c_memcmp(addr, scanned->addr, 6))
+			if (evt->packet_type == scanned->packet_type && 0 == c_memcmp(evt->address.addr, scanned->addr, 6))
 				goto bail;
 			scanned = scanned->next;
 		}
@@ -803,7 +788,7 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 		if (!address)
 			xsUnknownError("out of memory");
 		address->packet_type = evt->packet_type;
-		c_memmove(address->addr, addr, 6);
+		c_memmove(address->addr, evt->address.addr, 6);
 		if (!gBLE->scanned)
 			gBLE->scanned = address;
 		else {
@@ -816,7 +801,7 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 	
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), evt->data.data, evt->data.len);
-	xsmcSetArrayBuffer(xsVar(2), addr, 6);
+	xsmcSetArrayBuffer(xsVar(2), evt->address.addr, 6);
 	xsmcSetInteger(xsVar(3), evt->address_type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));

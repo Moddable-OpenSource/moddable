@@ -27,7 +27,6 @@
 static modBLEWhitelistAddress gWhitelist = NULL;
 
 static int setWhitelist(void);
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
 static int qca4020ClearWhitelist(void);
 
 extern uint32_t gBluetoothStackID;	// @@
@@ -45,7 +44,7 @@ void xs_gap_whitelist_add(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
 	
-	if (findInWhitelist(addressType, address))
+	if (modBLEWhitelistContains(addressType, address))
 		return;
 
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
@@ -115,7 +114,7 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	qca4020ClearWhitelist();
 }
 
-modBLEWhitelistAddress modBLEGetWhitelist(void)
+modBLEWhitelistAddress modBLEWhitelistGet(void)
 {
 	// unused on qca4020
 	return NULL;
@@ -167,12 +166,7 @@ static int setWhitelist()
 				entries[count].Address_Type = QAPI_BLE_LAT_PUBLIC_E;
 				break;
 		}
-		entries[count].Address.BD_ADDR0 = walker->address[5];
-		entries[count].Address.BD_ADDR1 = walker->address[4];
-		entries[count].Address.BD_ADDR2 = walker->address[3];
-		entries[count].Address.BD_ADDR3 = walker->address[2];
-		entries[count].Address.BD_ADDR4 = walker->address[1];
-		entries[count].Address.BD_ADDR5 = walker->address[0];
+		c_memmove(&entries[count].Address, walker->address, 6);
 		++count;
 		walker = walker->next;
 	}
@@ -185,23 +179,20 @@ bail:
 	return rc;
 }
 
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
+int modBLEWhitelistContains(uint8_t addressType, uint8_t *address)
 {
 	modBLEWhitelistAddress walker = gWhitelist;
-	
-	if (NULL == walker)
-		return NULL;
-		
+
 	while (NULL != walker) {
-		if (walker->addressType == addressType && 0 == c_memcmp(walker->address, address, 6))
-			return walker;
+		if (addressType == walker->addressType && 0 == c_memcmp(address, walker->address, 6))
+			return 1;
 		walker = walker->next;
-	}		
-	
-	return NULL;
+	}
+		
+	return 0;
 }
 
-static int qca4020ClearWhitelist(void)
+int qca4020ClearWhitelist(void)
 {
 	uint32_t removed;
 	return qapi_BLE_GAP_LE_Remove_Device_From_White_List(gBluetoothStackID, 0, NULL, &removed);

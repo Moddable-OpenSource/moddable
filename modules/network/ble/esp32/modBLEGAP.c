@@ -26,7 +26,6 @@
 #include "esp_gap_ble_api.h"
 
 static modBLEWhitelistAddress gWhitelist = NULL;
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address);
 
 void xs_gap_whitelist_add(xsMachine *the)
 {
@@ -42,7 +41,7 @@ void xs_gap_whitelist_add(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = (uint8_t*)xsmcToArrayBuffer(xsVar(0));
 
-	if (findInWhitelist(addressType, address))
+	if (modBLEWhitelistContains(addressType, address))
 		return;
 
 	entry = c_calloc(1, sizeof(modBLEWhitelistAddressRecord));
@@ -61,7 +60,9 @@ void xs_gap_whitelist_add(xsMachine *the)
 		walker->next = entry;
 	}
 
-	c_memmove(&bda, address, sizeof(bda));
+	for (int i = 0; i < 6; ++i)
+		bda[i] = address[5 - i];
+
 	ret = esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_ADD, bda);
 	
 	if (0 != ret)
@@ -88,8 +89,12 @@ void xs_gap_whitelist_remove(xsMachine *the)
 				gWhitelist = walker->next;
 			else
 				prev->next = walker->next;
-			c_memmove(&bda, walker->address, sizeof(bda));
+
+			for (int i = 0; i < 6; ++i)
+				bda[i] = address[5 - i];
+				
 			ret = esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_REMOVE, bda);
+			
 			c_free(walker);
 			break;
 		}
@@ -107,30 +112,28 @@ void xs_gap_whitelist_clear(xsMachine *the)
 	while (walker != NULL) {
 		modBLEWhitelistAddress addr = walker;
 		walker = walker->next;
-		c_memmove(&bda, addr->address, sizeof(bda));
+		for (int i = 0; i < 6; ++i)
+			bda[i] = addr->address[5 - i];
 		esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_REMOVE, bda);
 		c_free(addr);
 	}
 }
 
-modBLEWhitelistAddress modBLEGetWhitelist(void)
-{
-	// unused on esp32
-	return NULL;
-}
-
-static modBLEWhitelistAddress findInWhitelist(BLEAddressType addressType, uint8_t *address)
+int modBLEWhitelistContains(uint8_t addressType, uint8_t *address)
 {
 	modBLEWhitelistAddress walker = gWhitelist;
-	
-	if (NULL == walker)
-		return NULL;
-		
+
 	while (NULL != walker) {
-		if (walker->addressType == addressType && 0 == c_memcmp(walker->address, address, 6))
-			return walker;
+		if (addressType == walker->addressType && 0 == c_memcmp(address, walker->address, 6))
+			return 1;
 		walker = walker->next;
-	}		
-	
+	}
+		
+	return 0;
+}
+
+modBLEWhitelistAddress modBLEWhitelistGet(void)
+{
+	// unused on esp32
 	return NULL;
 }
