@@ -22,6 +22,8 @@ import I2C from "pins/i2c";
 import Time from "time";
 
 class GT911 extends I2C {
+	#until;
+
 	constructor(dictionary) {
 		super({
 			address: 0x14,
@@ -49,38 +51,46 @@ class GT911 extends I2C {
 
 	read(target) {
 		this.write(0x81, 0x4E); 		// GOODIX_READ_COOR_ADDR
-		const data = super.read(9);
+		const data = super.read(1 * (8 * target.length));
 
-		if (!(data[0] & 0x80) && target[0].state && (Time.ticks < this.until))
+		if (!(data[0] & 0x80) && target[0].state && (Time.ticks < this.#until))
 			return;						// can take 10 to 15 ms for the next reading to be available
 
-//		const count = data[0] & 0x0F;
-		target[0].x = (data[3] << 8) | data[2];
-		target[0].y = (data[5] << 8) | data[4];
-
-		if (data[0] & 0x80) { // down
-			// down
-			super.write(0x81, 0x4E, 0);		// ready for next reading
-			this.until = Time.ticks + 15;	// latest time next reading should be available, otherwise touch up
-
-			switch (target[0].state) {
-				case 0:
-				case 1:
-					target[0].state += 1;
-					break;
-				case 2:
-				case 3:
-					break;
-			}
+		if (data[0] & 0x80)	 {						// down
+			super.write(0x81, 0x4E, 0);			// ready for next reading
+			this.#until = Time.ticks + 15;			// latest time next reading should be available, otherwise touch up
 		}
-		else { // up
-			if ((1 === target[0].state) || (2 === target[0].state))
-				target[0].state = 3;
-			else
-				target[0].state = 0;
+
+		const count = data[0] & 0x0F;
+		const end = 1 + (8 * count);
+points:
+		for (let i = 0; i < target.length; i++) {
+			const point = target[i];
+			const state = point.state;
+
+			for (let offset = 1; offset < end; offset += 8) {
+				const id = data[offset];
+				if (id !== i)
+					continue;
+
+				// contact
+				point.x = (data[offset + 2] << 8) | data[offset + 1];
+				point.y = (data[offset + 4] << 8) | data[offset + 3];
+
+				if ((0 === state) || (3 === state))		// nothing or up
+					point.state = 1;					//  -> down
+				else									// down or move
+					point.state = 2;					//  -> move
+				continue points;
+			}
+
+			// no contact
+			if ((1 === state) || (2 === state))		// down or moved
+				point.state = 3;					//  -> up
+			else									// nothing or up
+				point.state = 0;					//  -> nothing
 		}
 	}
 }
-Object.freeze(GT911.prototype);
 
 export default GT911;
