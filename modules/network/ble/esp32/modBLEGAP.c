@@ -131,9 +131,3 @@ int modBLEWhitelistContains(uint8_t addressType, uint8_t *address)
 		
 	return 0;
 }
-
-modBLEWhitelistAddress modBLEWhitelistGet(void)
-{
-	// unused on esp32
-	return NULL;
-}

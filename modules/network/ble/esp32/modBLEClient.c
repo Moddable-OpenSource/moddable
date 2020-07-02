@@ -786,15 +786,17 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	struct ble_scan_result_evt_param *scan_rst = (struct ble_scan_result_evt_param *)message;
 	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
-	xsmcVars(4);
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), scan_rst->ble_adv, scan_rst->adv_data_len + scan_rst->scan_rsp_len);
-	addressToBuffer(&scan_rst->bda, buffer);
-	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
-	xsmcSetInteger(xsVar(3), scan_rst->ble_addr_type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
+	addressToBuffer(&scan_rst->bda, buffer);
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), scan_rst->ble_addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSetInteger(xsVar(1), scan_rst->rssi);
+	xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	xsEndHost(gBLE->the);
 }

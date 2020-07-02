@@ -221,7 +221,8 @@ C_DEFINES = \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkPocoRotation=$(ROTATION) \
+	-DMYNEWT_VAL_BLE_LL_CONN_INIT_MAX_TX_BYTES=251
 ifeq ($(DEBUG),1)
 	C_DEFINES += -DmxDebug=1
 endif

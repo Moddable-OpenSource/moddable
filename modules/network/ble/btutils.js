@@ -148,16 +148,13 @@ export class Bytes extends ArrayBuffer {
 	
 	#toHexString(buffer, delimeter = '') {
 		const hex = "0123456789ABCDEF";
-		const bytes = new Uint8Array(buffer).reverse();
-		let result = new Array(buffer.byteLength);
-		bytes.forEach((byte, index) => {
-			let i, s;
-			i = byte >> 4;
-			s = hex.slice(i, i + 1);
-			i = byte & 0x0F;
-			s += hex.slice(i, i + 1);
-			result[index] = s;
-		});
+		const bytes = new Uint8Array(buffer);
+		const length = buffer.byteLength;
+		let result = new Array(length);
+		for (let index = 0; index < length; ++index) {
+			const byte = bytes[index];
+			result[length - index - 1] = hex[byte >> 4] + hex[byte & 0x0F];
+		}
 		return result.join(delimeter);
 	}
 }
@@ -359,58 +356,64 @@ class AdvertisementSerializer {
 };
 
 export class Advertisement {
+	#buffer;
+	#data;
+	
 	constructor(buffer) {
-		this._buffer = buffer;
-		this._data = new Uint8Array(buffer);
+		this.#buffer = buffer;
+		this.#data = new Uint8Array(buffer);
+	}
+	get buffer() {
+		return this.#buffer;
 	}
 	get completeName() {
-		let index = this.find(GAP.ADType.COMPLETE_LOCAL_NAME);
+		const index = this.findIndex(GAP.ADType.COMPLETE_LOCAL_NAME);
 		if (-1 != index) {
-			return this._getStringType(index);
+			return this.#getStringType(index);
 		}
 	}
 	get shortName() {
-		let index = this.find(GAP.ADType.SHORTENED_LOCAL_NAME);
+		const index = this.findIndex(GAP.ADType.SHORTENED_LOCAL_NAME);
 		if (-1 != index)
-			return this._getStringType(index);
+			return this.#getStringType(index);
 	}
 	get manufacturerSpecific() {
-		let index = this.find(GAP.ADType.MANUFACTURER_SPECIFIC_DATA);
+		const index = this.findIndex(GAP.ADType.MANUFACTURER_SPECIFIC_DATA);
 		if (-1 != index) {
-			let data = this._data;
-			let adLength = data[index];
-			let start = index + 2;
-			let identifier = data[start] | (data[start+1] << 8);
+			const data = this.#data;
+			const adLength = data[index];
+			const start = index + 2;
+			const identifier = data[start] | (data[start+1] << 8);
 			start += 2;
 			let end = start + adLength - 1
-			return { identifier, data: new Uint8Array(this._buffer.slice(start, end)) };
+			return { identifier, data: new Uint8Array(this.#buffer.slice(start, end)) };
 		}
 	}
 	get flags() {
-		let index = this.find(GAP.ADType.FLAGS);
+		const index = this.findIndex(GAP.ADType.FLAGS);
 		if (-1 != index)
-			return this._data[index+2];
+			return this.#data[index+2];
 	}
 	get completeUUID16List() {
-		let index = this.find(GAP.ADType.COMPLETE_UUID16_LIST);
+		const index = this.findIndex(GAP.ADType.COMPLETE_UUID16_LIST);
 		if (-1 != index) 
-			return this._getUUID16ListType(index);
+			return this.#getUUID16ListType(index);
 	}
 	get incompleteUUID16List() {
-		let index = this.find(GAP.ADType.INCOMPLETE_UUID16_LIST);
+		const index = this.findIndex(GAP.ADType.INCOMPLETE_UUID16_LIST);
 		if (-1 != index) 
-			return this._getUUID16ListType(index);
+			return this.#getUUID16ListType(index);
 	}
-	find(type) {
-		let data = this._data;
-		let i = 0, length = data.byteLength;
-		while (i < length) {
-			let adLength = data[i]; ++i;
-			let adType = data[i]; ++i;
+	findIndex(type, index = 0) {
+		const data = this.#data;
+		const length = data.byteLength;
+		while (index < length) {
+			const adLength = data[index]; ++index;
+			const adType = data[index]; ++index;
 			if (type == adType)
-				return i - 2;
+				return index - 2;
 			else
-				i += adLength - 1;
+				index += adLength - 1;
 		}
 		return -1;
 	}
@@ -436,17 +439,17 @@ export class Advertisement {
 		return advertisement.buffer;
 	}
 	
-	_getStringType(index) {
-		let adLength = this._data[index];
-		let start = index + 2, end = start + adLength - 1;
-		return String.fromArrayBuffer(this._buffer.slice(start, end));
+	#getStringType(index) {
+		const adLength = this.#data[index];
+		const start = index + 2, end = start + adLength - 1;
+		return String.fromArrayBuffer(this.#buffer.slice(start, end));
 	}
-	_getUUID16ListType(index) {
-		let adLength = this._data[index];
-		let count = (adLength - 1) / 2;
+	#getUUID16ListType(index) {
+		const adLength = this.#data[index];
+		const count = (adLength - 1) / 2;
 		let uuidList = new Array(count);
 		for (let i = 0, start = index + 2; i < count; ++i, start += 2)
-			uuidList[i] = new Bytes(this._buffer.slice(start, start + 2));
+			uuidList[i] = new Bytes(this.#buffer.slice(start, start + 2));
 		return uuidList;
 	}
 }

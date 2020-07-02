@@ -694,14 +694,16 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		struct ble_gap_disc_desc *disc = &discovered->disc;
 
 		xsBeginHost(gBLE->the);
-		xsmcVars(4);
+		xsmcVars(2);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetArrayBuffer(xsVar(1), disc->data, disc->length_data);
-		xsmcSetArrayBuffer(xsVar(2), disc->addr.val, 6);
-		xsmcSetInteger(xsVar(3), disc->addr.type);
 		xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-		xsmcSet(xsVar(0), xsID_address, xsVar(2));
-		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
+		xsmcSetArrayBuffer(xsVar(1), disc->addr.val, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSetInteger(xsVar(1), disc->addr.type);
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+		xsmcSetInteger(xsVar(1), disc->rssi);
+		xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
 		xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 		xsEndHost(gBLE->the);
 		c_free(discovered);

@@ -286,6 +286,8 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 			if ((!(self->flags & mxStrictFlag)) && ((declaration->description->token == XS_TOKEN_VAR) || (declaration->description->token == XS_TOKEN_DEFINE))) {
 				declaration = C_NULL;
 			}
+			else if (closureFlag)
+				declaration->flags |= mxDeclareNodeClosureFlag;
 		}
 		else if ((self->flags & mxStrictFlag) && (access->description->token == XS_TOKEN_PRIVATE_MEMBER)) {
 			declaration = fxDeclareNodeNew(self->parser, XS_TOKEN_PRIVATE, access->symbol);

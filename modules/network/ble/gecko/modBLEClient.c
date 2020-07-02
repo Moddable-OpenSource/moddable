@@ -775,7 +775,6 @@ static void systemBootEvent(struct gecko_msg_system_boot_evt_t *evt)
 static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *evt)
 {
 	xsBeginHost(gBLE->the);
-	xsmcVars(4);
 
 	if (!gBLE->duplicates) {
 		modBLEScannedPacket scanned = gBLE->scanned;
@@ -799,13 +798,16 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 		}
 	}
 	
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), evt->data.data, evt->data.len);
-	xsmcSetArrayBuffer(xsVar(2), evt->address.addr, 6);
-	xsmcSetInteger(xsVar(3), evt->address_type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
+	xsmcSetArrayBuffer(xsVar(1), evt->address.addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), evt->address_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSetInteger(xsVar(1), evt->rssi);
+	xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	
 bail:
