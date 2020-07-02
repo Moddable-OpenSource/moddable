@@ -907,6 +907,8 @@ void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), p_evt_adv_report->peer_addr.addr_type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSetInteger(xsVar(1), p_evt_adv_report->rssi);
+	xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	
 bail:
