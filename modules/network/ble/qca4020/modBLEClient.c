@@ -862,14 +862,16 @@ static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint
 	}
 	
 	xsBeginHost(gBLE->the);
-	xsmcVars(4);
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), result->Raw_Report_Data, result->Raw_Report_Length);
-	xsmcSetArrayBuffer(xsVar(2), &result->BD_ADDR, 6);
-	xsmcSetInteger(xsVar(3), result->Address_Type);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
+	xsmcSetArrayBuffer(xsVar(1), &result->BD_ADDR, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), result->Address_Type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSetInteger(xsVar(1), result->RSSI);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	c_free(result->Raw_Report_Data);
 	xsEndHost(gBLE->the);

@@ -96,17 +96,18 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				this.onSecurityParameters(params);
 				break;
 			case "onDiscovered": {
-				let address = new Bytes(params.address);
-				let addressType = params.addressType;
-				let scanResponse = new Advertisement(params.scanResponse);
-				this.onDiscovered({ address, addressType, scanResponse });
+				const address = new Bytes(params.address);
+				const addressType = params.addressType;
+				const rssi = params.rssi;
+				const scanResponse = new Advertisement(params.scanResponse);
+				this.onDiscovered({ address, addressType, rssi, scanResponse });
 				break;
 			}
 			case "onConnected": {
-				let address = new Bytes(params.address);
-				let ble = this;
-				let client = new Client({ address, connection:params.connection, ble });
-				let connection = new Connection({ address, client, ble });
+				const address = new Bytes(params.address);
+				const ble = this;
+				const client = new Client({ address, connection:params.connection, ble });
+				const connection = new Connection({ address, client, ble });
 				this.onConnected(client);
 				break;
 			}
