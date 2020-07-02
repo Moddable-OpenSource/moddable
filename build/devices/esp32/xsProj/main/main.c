@@ -114,7 +114,7 @@ void setup(void)
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
-	uartConfig.baud_rate = 115200;
+	uartConfig.baud_rate = 115200;		//@@ different from ESP8266
 #endif
 	uartConfig.data_bits = UART_DATA_8_BITS;
 	uartConfig.parity = UART_PARITY_DISABLE;
@@ -215,7 +215,8 @@ uint8_t ESP_setBaud(int baud) {
 void app_main() {
 	modPrelaunch();
 
-	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
+	esp_log_level_set("wifi", ESP_LOG_ERROR);
+	esp_log_level_set("I2S", ESP_LOG_ERROR);
 
 	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED
