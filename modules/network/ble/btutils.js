@@ -367,18 +367,18 @@ export class Advertisement {
 		return this.#buffer;
 	}
 	get completeName() {
-		const index = this.find(GAP.ADType.COMPLETE_LOCAL_NAME);
+		const index = this.findIndex(GAP.ADType.COMPLETE_LOCAL_NAME);
 		if (-1 != index) {
 			return this.#getStringType(index);
 		}
 	}
 	get shortName() {
-		const index = this.find(GAP.ADType.SHORTENED_LOCAL_NAME);
+		const index = this.findIndex(GAP.ADType.SHORTENED_LOCAL_NAME);
 		if (-1 != index)
 			return this.#getStringType(index);
 	}
 	get manufacturerSpecific() {
-		const index = this.find(GAP.ADType.MANUFACTURER_SPECIFIC_DATA);
+		const index = this.findIndex(GAP.ADType.MANUFACTURER_SPECIFIC_DATA);
 		if (-1 != index) {
 			const data = this.#data;
 			const adLength = data[index];
@@ -390,31 +390,30 @@ export class Advertisement {
 		}
 	}
 	get flags() {
-		const index = this.find(GAP.ADType.FLAGS);
+		const index = this.findIndex(GAP.ADType.FLAGS);
 		if (-1 != index)
 			return this.#data[index+2];
 	}
 	get completeUUID16List() {
-		const index = this.find(GAP.ADType.COMPLETE_UUID16_LIST);
+		const index = this.findIndex(GAP.ADType.COMPLETE_UUID16_LIST);
 		if (-1 != index) 
 			return this.#getUUID16ListType(index);
 	}
 	get incompleteUUID16List() {
-		const index = this.find(GAP.ADType.INCOMPLETE_UUID16_LIST);
+		const index = this.findIndex(GAP.ADType.INCOMPLETE_UUID16_LIST);
 		if (-1 != index) 
 			return this.#getUUID16ListType(index);
 	}
-	find(type) {
+	findIndex(type, index = 0) {
 		const data = this.#data;
 		const length = data.byteLength;
-		let i = 0;
-		while (i < length) {
-			const adLength = data[i]; ++i;
-			const adType = data[i]; ++i;
+		while (index < length) {
+			const adLength = data[index]; ++index;
+			const adType = data[index]; ++index;
 			if (type == adType)
-				return i - 2;
+				return index - 2;
 			else
-				i += adLength - 1;
+				index += adLength - 1;
 		}
 		return -1;
 	}
