@@ -319,6 +319,7 @@ An instance of the `Device` class is instantiated by `BLEClient` and provided to
 | `connection` | `number` | Connection identifier.
 | `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
+| `rssi` | `number` | Discovered device signal strength.
 
 ### Functions 
 
