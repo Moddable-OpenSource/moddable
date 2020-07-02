@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: June 5, 2020
+Revised: July 2, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -837,11 +837,23 @@ The `Advertisement` class provides accessor functions to read common advertiseme
 
 | Name | Type | Description
 | --- | --- | :--- |
+| `buffer` | `object` | An `ArrayBuffer` containing the raw advertisement data bytes.
 | `completeName` | `string` | The advertised complete local name.
 | ` shortName` | `string` | The advertised shortened local name.
 | `manufacturerSpecific` | `object` | An object containing the advertised manufacturer specific data.
 | `flags` | `number` | The advertised flags value.
+| `completeUUID16List` | `array` | The advertised complete 16-bit UUID list.
+| `incompleteUUID16List` | `array` | The advertised incomplete 16-bit UUID list.
 
+### Functions
+
+#### `findIndex(type [,index])`
+Use the `findIndex` function to find the index of a specific advertisement data type in the raw advertisement data bytes.
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `type` | `number` | The `GAP.ADType` to search for. |
+| `index` | `number` | The optional starting index to search from. Defaults to 0. |
 
 ### Examples 
 
@@ -870,6 +882,20 @@ onDiscovered(device) {
 			let temperature = (data[3] | (data[4] << 8)) / 10;
 			trace(`Temperature: ${temperature} ˚C\n`);
 		}
+	}
+}
+```
+
+To search for the "TX Power Level" advertisement data type in the scan response data:
+
+```javascript
+onDiscovered(device) {
+	let scanResponse = device.scanResponse;
+	let index = scanResponse.findIndex(GAP.ADType.TX_POWER_LEVEL);
+	if (-1 !== index)
+		trace(`Found advertisement tx power level data at index ${index}\n`);
+		const bytes = new Uint8Array(scanResponse.buffer);
+		const txPowerLevel = bytes[index + 2];
 	}
 }
 ```
@@ -926,6 +952,21 @@ onServices(services) {
 	let found = services[0].uuid.equals(HTM_SERVICE);
 	if (found)
 		trace("found HTM service\n");
+}
+```
+
+#### `toString()`
+
+The `toString` helper function returns a printable hex string of the `Bytes` contents. The string is formatted in big endian order with separators.
+
+```javascript
+onDiscovered(device) {
+	trace(`Found device with address ${device.address}\n`);
+}
+onServices(services) {
+	if (services.length) {
+		trace(`Found service with UUID ${services[0].uuid}\n`);
+	}
 }
 ```
 
