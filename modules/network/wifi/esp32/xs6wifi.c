@@ -148,6 +148,7 @@ void xs_wifi_connect(xsMachine *the)
 	initWiFi();
 
 	gWiFiState = 2;
+	gDisconnectReason = 0;
 	esp_wifi_disconnect();
 
 	if (0 == argc)
@@ -404,13 +405,13 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			gWiFiState = 5;
 			break;
 		case SYSTEM_EVENT_STA_DISCONNECTED: {
-			uint8_t reason = event->event_info.disconnected.reason;
+			wifi_err_reason_t reason = event->event_info.disconnected.reason;
 			gWiFiState = 2;
 			gDisconnectReason =	((WIFI_REASON_MIC_FAILURE == reason) ||
 								(WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
 								(WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
 								(WIFI_REASON_IE_IN_4WAY_DIFFERS == reason) ||
-								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason)) ? -1 : 0;
+								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason)) ? -1 : gDisconnectReason;
 			if (gWiFiConnectRetryRemaining > 0) {
 				if (0 == esp_wifi_connect()) {
 					gWiFiConnectRetryRemaining -= 1;
