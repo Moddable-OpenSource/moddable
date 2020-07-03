@@ -106,6 +106,8 @@
 			"modules": {
 				"*": [
 					"$(BUILD)/simulator/screen",
+					"$(MODULES)/base/timer/timer",
+					"$(MODULES)/base/timer/wasm/*",
 				]
 			},
 			"preload": [

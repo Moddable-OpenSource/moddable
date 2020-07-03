@@ -1,12 +1,12 @@
 # BLE
-Copyright 2017-19 Moddable Tech, Inc.
+Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: December 4, 2019
+Revised: July 2, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## About This Document
-This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32 and Silicon Labs Blue Gecko devices.
+This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, and Qualcomm QCA4020 devices.
 
 > **Note:** A BLE server/slave is also commonly referred to as a BLE peripheral. The terms *server*, *slave* and *peripheral* in this document are used interchangeably.
 
@@ -185,6 +185,7 @@ The `params` object contains the following properties:
 | Property | Type | Description |
 | --- | --- | :--- |
 | `active` | `boolean` | Set `true` for active scanning, `false` for passing scanning. Default is `true`.
+| `duplicates` | `boolean` | Set `true` to receive all advertising packets, `false` to filter out multiple advertising packets received from the same peripheral device. Default is `true`.
 | `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`. 
 | `window` | `number` | Scan window value in units of 0.625 ms. Default is `0x30`. 
 
@@ -230,7 +231,7 @@ To connect to a device named "Brian" from the `onDiscovered` callback:
 
 ```javascript
 onDiscovered(device) {
-	if ("Brian" == 	device.scanResponse.completeName) {
+	if ("Brian" == device.scanResponse.completeName) {
 		this.connect(device);
 	}
 }
@@ -836,11 +837,23 @@ The `Advertisement` class provides accessor functions to read common advertiseme
 
 | Name | Type | Description
 | --- | --- | :--- |
+| `buffer` | `object` | An `ArrayBuffer` containing the raw advertisement data bytes.
 | `completeName` | `string` | The advertised complete local name.
 | ` shortName` | `string` | The advertised shortened local name.
 | `manufacturerSpecific` | `object` | An object containing the advertised manufacturer specific data.
 | `flags` | `number` | The advertised flags value.
+| `completeUUID16List` | `array` | The advertised complete 16-bit UUID list.
+| `incompleteUUID16List` | `array` | The advertised incomplete 16-bit UUID list.
 
+### Functions
+
+#### `findIndex(type [,index])`
+Use the `findIndex` function to find the index of a specific advertisement data type in the raw advertisement data bytes.
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `type` | `number` | The `GAP.ADType` to search for. |
+| `index` | `number` | The optional starting index to search from. Defaults to 0. |
 
 ### Examples 
 
@@ -869,6 +882,20 @@ onDiscovered(device) {
 			let temperature = (data[3] | (data[4] << 8)) / 10;
 			trace(`Temperature: ${temperature} ˚C\n`);
 		}
+	}
+}
+```
+
+To search for the "TX Power Level" advertisement data type in the scan response data:
+
+```javascript
+onDiscovered(device) {
+	let scanResponse = device.scanResponse;
+	let index = scanResponse.findIndex(GAP.ADType.TX_POWER_LEVEL);
+	if (-1 !== index)
+		trace(`Found advertisement tx power level data at index ${index}\n`);
+		const bytes = new Uint8Array(scanResponse.buffer);
+		const txPowerLevel = bytes[index + 2];
 	}
 }
 ```
@@ -928,6 +955,21 @@ onServices(services) {
 }
 ```
 
+#### `toString()`
+
+The `toString` helper function returns a printable hex string of the `Bytes` contents. The string is formatted in big endian order with separators.
+
+```javascript
+onDiscovered(device) {
+	trace(`Found device with address ${device.address}\n`);
+}
+onServices(services) {
+	if (services.length) {
+		trace(`Found service with UUID ${services[0].uuid}\n`);
+	}
+}
+```
+
 <a id="bleserver"></a>
 ## BLE Server
 A BLE server/peripheral can connect to one BLE client and typically performs the following steps to send notifications to a BLE client:
@@ -979,6 +1021,14 @@ The `BLEServer` class provides access to the BLE server features.
 ```javascript
 import BLEServer from "bleserver";
 ```
+
+### `constructor([dictionary])`
+
+The `BLEServer` constructor takes a single argument, an optional dictionary of initialization parameters.
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `deployServices` | `boolean` | Optional property to deploy [GATT Services](#gattservices). Default is `true`. Set to `false` to not deploy GATT services.
 
 ### Functions
 

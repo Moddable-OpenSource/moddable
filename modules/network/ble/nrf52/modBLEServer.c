@@ -118,6 +118,9 @@ typedef struct {
 	uint8_t adv_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	uint8_t scan_rsp_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	
+	// services
+	uint8_t deployServices;
+
 	// security
 	uint8_t encryption;
 	uint8_t bonding;
@@ -150,6 +153,14 @@ void xs_ble_server_initialize(xsMachine *the)
 	xsmcSetHostData(xsThis, gBLE);
 	xsRemember(gBLE->obj);
 	
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
 	// Initialize platform Bluetooth modules
 	init.p_gatt = &gBLE->m_gatt;
 	init.pm_event_handler = pm_evt_handler;
@@ -238,24 +249,59 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
+	uint8_t filterPolicy = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
 
 	c_memset(&adv_data, 0, sizeof(ble_gap_adv_data_t));
 	c_memmove(&gBLE->adv_data[0], advertisingData, advertisingDataLength);
 	adv_data.adv_data.p_data = &gBLE->adv_data[0];
 	adv_data.adv_data.len = advertisingDataLength;
-	if (xsmcTest(xsArg(4))) {
-		uint8_t *scanResponseData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
-		uint32_t scanResponseDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	if (xsmcTest(xsArg(5))) {
+		uint8_t *scanResponseData = (uint8_t*)xsmcToArrayBuffer(xsArg(5));
+		uint32_t scanResponseDataLength = xsmcGetArrayBufferLength(xsArg(5));
 
 		c_memmove(&gBLE->scan_rsp_data[0], scanResponseData, scanResponseDataLength);
 		adv_data.scan_rsp_data.p_data = &gBLE->scan_rsp_data[0];
 		adv_data.scan_rsp_data.len = scanResponseDataLength;
 	}
 
+	switch(filterPolicy) {
+		case kBLEAdvFilterPolicyWhitelistScans:
+			filterPolicy = BLE_GAP_ADV_FP_FILTER_SCANREQ;
+			break;
+		case kBLEAdvFilterPolicyWhitelistConnections:
+			filterPolicy = BLE_GAP_ADV_FP_FILTER_CONNREQ;
+			break;
+		case kBLEAdvFilterPolicyWhitelistScansConnections:
+			filterPolicy = BLE_GAP_ADV_FP_FILTER_BOTH;
+			break;
+		default:
+			filterPolicy = BLE_GAP_ADV_FP_ANY;
+			break;
+	}
+
+	// If whitelist filtering is enabled, we cannot use LE Limited or General discoverable modes
+	// Avoid the resulting BLE_ERROR_GAP_DISCOVERABLE_WITH_WHITELIST error by ensuring these modes are not enabled
+	// https://devzone.nordicsemi.com/f/nordic-q-a/33606/updating-advertising-data-manuf-spec-data-in-sdk15/133504#133504
+	// @@ TBD - Try enforcing this at the app level or binding layer if the behavior is portable
+	if (BLE_GAP_ADV_FP_ANY != filterPolicy) {
+		uint16_t i = 0;
+		uint8_t *adv_ptr = &gBLE->adv_data[0];
+		uint8_t *adv_end = adv_ptr + advertisingDataLength;
+		while (adv_ptr < adv_end) {
+			uint8_t adv_length = adv_ptr[0];
+			uint8_t adv_type = adv_ptr[1];
+			if (BLE_GAP_AD_TYPE_FLAGS == adv_type) {
+				adv_ptr[2] &= ~(BLE_GAP_ADV_FLAG_LE_LIMITED_DISC_MODE | BLE_GAP_ADV_FLAG_LE_GENERAL_DISC_MODE);
+				break;
+			}
+			adv_ptr += adv_length;
+		}
+	}
+	
     c_memset(&adv_params, 0, sizeof(ble_gap_adv_params_t));
-    adv_params.filter_policy   = BLE_GAP_ADV_FP_ANY;
+    adv_params.filter_policy   = filterPolicy;
     adv_params.interval        = intervalMin;
 
 	if (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE))
@@ -316,6 +362,8 @@ void xs_ble_server_deploy(xsMachine *the)
 	uint16_t char_handle;
 	uint16_t att_handle_index = 0;
 					
+	if (!gBLE->deployServices) return;
+	
 	for (uint16_t i = 0; i < service_count; ++i) {
 		gatts_attr_db_t *gatts_attr_db = (gatts_attr_db_t*)&gatt_db[i][0];
 		attr_desc_t *att_desc = (attr_desc_t*)&gatts_attr_db->att_desc;
@@ -1000,8 +1048,22 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			ble_gap_evt_passkey_display_t const * p_evt_passkey_display = &p_ble_evt->evt.gap_evt.params.passkey_display;
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_passkey_display, sizeof(ble_gap_evt_passkey_display_t), gapPasskeyDisplayEvent, NULL);
         	break;
+        }	
+        case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
+			ble_gap_phys_t const phys = {
+				.rx_phys = BLE_GAP_PHY_AUTO,
+				.tx_phys = BLE_GAP_PHY_AUTO,
+			};
+			sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
+			break;
         }
-			
+        case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST: {
+			ble_gap_data_length_params_t dl_params;
+			c_memset(&dl_params, 0, sizeof(ble_gap_data_length_params_t));
+			sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, &dl_params, NULL);
+			break;
+        }
+
         case BLE_GATTS_EVT_WRITE: {
 			ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt_write, sizeof(ble_gatts_evt_write_t) + p_evt_write->len - 1, gattsWriteEvent, NULL);

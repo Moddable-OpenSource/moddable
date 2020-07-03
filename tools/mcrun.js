@@ -89,6 +89,7 @@ class ToDoFile extends FILE {
 	generate(tool) {
 		let lines = [];
 		this.generateModulesRules(tool, lines);
+		this.generateDataRules(tool, lines);
 		this.generateResourcesRules(tool, lines);
 		this.generateArchiveRule(tool, lines);
 		let string = JSON.stringify(lines, null, "\t");
@@ -109,6 +110,9 @@ class ToDoFile extends FILE {
 		}
 		for (var result of tool.resourcesFiles) {
 			line.push(tool.resourcesPath + tool.slash + result.target);
+		}
+		for (var result of tool.dataFiles) {
+			line.push(tool.dataPath + tool.slash + result.target);
 		}
 		for (var result of tool.bmpColorFiles) {
 			line.push(tool.resourcesPath + tool.slash + result.target);
@@ -138,6 +142,15 @@ class ToDoFile extends FILE {
 			line.push(tool.resourcesPath + tool.slash + "locals.mhi");
 		}
 		lines.push(line);
+	}
+	generateDataRules(tool, lines) {
+		for (var result of tool.dataFiles) {
+			var source = result.source;
+			var target = tool.dataPath + tool.slash + result.target;
+			let line = ["cp"];
+			line.push(source, target);
+			lines.push(line);
+		}
 	}
 	generateModulesRules(tool, lines) {
 		for (var result of tool.jsFiles) {
@@ -190,7 +203,7 @@ class ToDoFile extends FILE {
 			}
 			line.push("-a");
 			if (result.monochrome)
-				line.push("-m");
+				line.push("-m", "-4");
 			line.push("-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			line.push("-n", parts.name.slice(0, -6));
 			lines.push(line);
@@ -213,7 +226,7 @@ class ToDoFile extends FILE {
 			if (!alphaTarget)
 				line.push("-c");
 			if (result.monochrome)
-				line.push("-m");
+				line.push("-m", "-4");
 			else {
 				line.push("-f", tool.format);
 				if (clutSource)

@@ -106,9 +106,11 @@ INC_DIRS = \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
  	$(IDF_PATH)/components/nimble/esp-hci/include \
- 	$(IDF_PATH)/components/nimble/nimble/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/services/gap/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/host/src \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/include/nimble \
  	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
  	$(IDF_PATH)/components/nimble/port/include \
@@ -219,7 +221,8 @@ C_DEFINES = \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkPocoRotation=$(ROTATION) \
+	-DMYNEWT_VAL_BLE_LL_CONN_INIT_MAX_TX_BYTES=251
 ifeq ($(DEBUG),1)
 	C_DEFINES += -DmxDebug=1
 endif

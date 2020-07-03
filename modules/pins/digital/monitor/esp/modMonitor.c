@@ -239,3 +239,7 @@ void digitalMonitorDeliver(void *notThe, void *refcon, uint8_t *message, uint16_
 		xsEndHost(walker->the);
 	}
 }
+
+void xs_digital_monitor_get_pwm_duty(xsMachine *the) {}
+void xs_digital_monitor_get_pwm_freq(xsMachine *the) {}
+

@@ -18,11 +18,14 @@ import WiFi from "wifi";
 WiFi.mode = 1;
 
 trace("Scan start\n");
-const scanner = new Scanner({
-	onFound(ap) {
+new Scanner({
+	onFound(target, ap) {
+		if (!ap.ssid)
+			return false;
+
 		trace(`+ ${ap.ssid}\n`);
 	},
-	onLost(ssid) {
+	onLost(target, ssid) {
 		trace(`- ${ssid}\n`);
 	},
 	max: 64,

@@ -123,6 +123,7 @@ static txNode* fxParametersBindingFromExpressions(txParser* parser, txNode* theN
 static void fxRestBinding(txParser* parser, txToken theToken);
 static txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken);
 
+static void fxCheckArrowFunction(txParser* parser, txInteger count);
 static txBoolean fxCheckReference(txParser* parser, txToken theToken);
 static void fxCheckStrictBinding(txParser* parser, txNode* node);
 static void fxCheckStrictFunction(txParser* parser, txFunctionNode* function);
@@ -156,6 +157,7 @@ static txSymbol* fxJSXNamespace(txParser* parser, txSymbol* namespace, txSymbol*
 #define XS_TOKEN_BEGIN_BINDING 16384
 #define XS_TOKEN_IDENTIFIER_NAME 32768
 #define XS_TOKEN_UNARY_EXPRESSION 65536
+#define XS_TOKEN_CALL_EXPRESSION 131072
 
 static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_NO_TOKEN */ 0,
@@ -163,6 +165,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_ADD */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_ADDITIVE_EXPRESSION | XS_TOKEN_UNARY_EXPRESSION,
 	/* XS_TOKEN_ADD_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
 	/* XS_TOKEN_AND */ 0,
+	/* XS_TOKEN_AND_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
 	/* XS_TOKEN_ARG */ 0,
 	/* XS_TOKEN_ARGUMENTS */ 0,
 	/* XS_TOKEN_ARGUMENTS_SLOPPY */ 0,
@@ -187,9 +190,10 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_CALL */ 0,
 	/* XS_TOKEN_CASE */ XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_CATCH */ XS_TOKEN_IDENTIFIER_NAME,
-	/* XS_TOKEN_CHAIN */ 0,
+	/* XS_TOKEN_CHAIN */ XS_TOKEN_CALL_EXPRESSION,
 	/* XS_TOKEN_CLASS */ XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_COALESCE */ 0,
+	/* XS_TOKEN_COALESCE_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
 	/* XS_TOKEN_COLON */ 0,
 	/* XS_TOKEN_COMMA */ XS_TOKEN_END_STATEMENT,
 	/* XS_TOKEN_CONST */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
@@ -204,7 +208,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_DIVIDE */ XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_MULTIPLICATIVE_EXPRESSION,
 	/* XS_TOKEN_DIVIDE_ASSIGN */ XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_ASSIGN_EXPRESSION,
 	/* XS_TOKEN_DO */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
-	/* XS_TOKEN_DOT */ 0,
+	/* XS_TOKEN_DOT */ XS_TOKEN_CALL_EXPRESSION,
 	/* XS_TOKEN_ELISION */ 0,
 	/* XS_TOKEN_ELSE */ XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_ENUM */ XS_TOKEN_IDENTIFIER_NAME,
@@ -242,8 +246,8 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_ITEMS */ 0,
 	/* XS_TOKEN_LABEL */ 0,
 	/* XS_TOKEN_LEFT_BRACE */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_BEGIN_BINDING,
-	/* XS_TOKEN_LEFT_BRACKET */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_BEGIN_BINDING,
-	/* XS_TOKEN_LEFT_PARENTHESIS */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION,
+	/* XS_TOKEN_LEFT_BRACKET */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_BEGIN_BINDING | XS_TOKEN_CALL_EXPRESSION,
+	/* XS_TOKEN_LEFT_PARENTHESIS */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_CALL_EXPRESSION,
 	/* XS_TOKEN_LEFT_SHIFT */ XS_TOKEN_SHIFT_EXPRESSION,
 	/* XS_TOKEN_LEFT_SHIFT_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
 	/* XS_TOKEN_LESS */ XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_RELATIONAL_EXPRESSION,
@@ -268,6 +272,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_OBJECT_BINDING */ 0,
 	/* XS_TOKEN_OPTION */ 0,
 	/* XS_TOKEN_OR */ 0,
+	/* XS_TOKEN_OR_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
 	/* XS_TOKEN_PACKAGE */ XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_PARAMS */ 0,
 	/* XS_TOKEN_PARAMS_BINDING */ 0,
@@ -309,8 +314,8 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_SUPER */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_SWITCH */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_TARGET */ 0,
-	/* XS_TOKEN_TEMPLATE */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION,
-	/* XS_TOKEN_TEMPLATE_HEAD */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION,
+	/* XS_TOKEN_TEMPLATE */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_CALL_EXPRESSION,
+	/* XS_TOKEN_TEMPLATE_HEAD */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_CALL_EXPRESSION,
 	/* XS_TOKEN_TEMPLATE_MIDDLE */ 0,
 	/* XS_TOKEN_TEMPLATE_TAIL */ 0,
 	/* XS_TOKEN_THIS */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
@@ -334,6 +339,7 @@ static txString const gxTokenNames[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	/* XS_TOKEN_ADD */ "+",
 	/* XS_TOKEN_ADD_ASSIGN */ "+=",
 	/* XS_TOKEN_AND */ "&&",
+	/* XS_TOKEN_AND_ASSIGN */ "&&=",
 	/* XS_TOKEN_ARG */ "arg",
 	/* XS_TOKEN_ARGUMENTS */ "arguments",
 	/* XS_TOKEN_ARGUMENTS_SLOPPY */ "arguments_sloppy",
@@ -361,6 +367,7 @@ static txString const gxTokenNames[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	/* XS_TOKEN_CHAIN */ "?.",
 	/* XS_TOKEN_CLASS */ "class",
 	/* XS_TOKEN_COALESCE */ "??",
+	/* XS_TOKEN_COALESCE_ASSIGN */ "\?\?=",
 	/* XS_TOKEN_COLON */ ":",
 	/* XS_TOKEN_COMMA */ ",",
 	/* XS_TOKEN_CONST */ "const",
@@ -439,6 +446,7 @@ static txString const gxTokenNames[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	/* XS_TOKEN_OBJECT_BINDING */ "object_binding",
 	/* XS_TOKEN_OPTION */ "?.",
 	/* XS_TOKEN_OR */ "||",
+	/* XS_TOKEN_OR_ASSIGN */ "||=",
 	/* XS_TOKEN_PACKAGE */ "package",
 	/* XS_TOKEN_PARAMS */ "params",
 	/* XS_TOKEN_PARAMS_BINDING */ "params_binding",
@@ -1675,6 +1683,7 @@ void fxConditionalExpression(txParser* parser)
 	if (parser->token == XS_TOKEN_QUESTION_MARK) {
 		txInteger aLine = parser->line;
 		txUnsigned flags;
+		fxCheckArrowFunction(parser, 1);
 		fxGetNextToken(parser);
 		flags = parser->flags & mxForFlag;
 		parser->flags &= ~mxForFlag;
@@ -1693,6 +1702,7 @@ void fxCoalesceExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxOrExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_COALESCE, aLine);
 	}
 }
@@ -1704,6 +1714,7 @@ void fxOrExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxAndExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_OR, aLine);
 	}
 }
@@ -1715,6 +1726,7 @@ void fxAndExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxBitOrExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_AND, aLine);
 	}
 }
@@ -1726,6 +1738,7 @@ void fxBitOrExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxBitXorExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_BIT_OR, aLine);
 	}
 }
@@ -1737,6 +1750,7 @@ void fxBitXorExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxBitAndExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_BIT_XOR, aLine);
 	}
 }
@@ -1748,6 +1762,7 @@ void fxBitAndExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxEqualExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_BIT_AND, aLine);
 	}
 }
@@ -1760,6 +1775,7 @@ void fxEqualExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxRelationalExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, aToken, aLine);
 	}
 }
@@ -1774,6 +1790,7 @@ void fxRelationalExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxMatchToken(parser, aToken);
 		fxShiftExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, aToken, aLine);
 	}
 }
@@ -1786,6 +1803,7 @@ void fxShiftExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxAdditiveExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, aToken, aLine);
 	}
 }
@@ -1798,6 +1816,7 @@ void fxAdditiveExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxMultiplicativeExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, aToken, aLine);
 	}
 }
@@ -1810,6 +1829,7 @@ void fxMultiplicativeExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxExponentiationExpression(parser);
+		fxCheckArrowFunction(parser, 2);
 		fxPushNodeStruct(parser, 2, aToken, aLine);
 	}
 }
@@ -1825,6 +1845,7 @@ void fxExponentiationExpression(txParser* parser)
 			txInteger aLine = parser->line;
 			fxGetNextToken(parser);
 			fxExponentiationExpression(parser);
+			fxCheckArrowFunction(parser, 2);
 			fxPushNodeStruct(parser, 2, aToken, aLine);
 		}
 	}
@@ -1837,6 +1858,7 @@ void fxUnaryExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxMatchToken(parser, aToken);
 		fxUnaryExpression(parser);
+		fxCheckArrowFunction(parser, 1);
 		if (aToken == XS_TOKEN_ADD)
 			fxPushNodeStruct(parser, 1, XS_TOKEN_PLUS, aLine);
 		else if (aToken == XS_TOKEN_SUBTRACT)
@@ -1871,6 +1893,7 @@ void fxPrefixExpression(txParser* parser)
 		txInteger aLine = parser->line;
 		fxGetNextToken(parser);
 		fxPrefixExpression(parser);
+		fxCheckArrowFunction(parser, 1);
 		if (!fxCheckReference(parser, aToken)) 
 			fxReportParserError(parser, "no reference");
 		fxPushNodeStruct(parser, 1, aToken, aLine);
@@ -1884,6 +1907,7 @@ void fxPostfixExpression(txParser* parser)
 {
 	fxCallExpression(parser);
 	if ((!parser->crlf) && (gxTokenFlags[parser->token] & XS_TOKEN_POSTFIX_EXPRESSION)) {
+		fxCheckArrowFunction(parser, 1);
 		if (!fxCheckReference(parser, parser->token)) 
 			fxReportParserError(parser, "no reference");
 		fxPushNodeStruct(parser, 1, parser->token, parser->line);
@@ -1893,99 +1917,102 @@ void fxPostfixExpression(txParser* parser)
 
 void fxCallExpression(txParser* parser)
 {
-	txBoolean chainFlag = 0;
 	txInteger chainLine = parser->line;
 	fxLiteralExpression(parser, 0);
-	for (;;) {
-		txInteger aLine = parser->line;
-		if (parser->token == XS_TOKEN_DOT) {
-			fxGetNextToken(parser);
-			if (parser->token == XS_TOKEN_IDENTIFIER) {
-				fxPushSymbol(parser, parser->symbol);
-				fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER, aLine);
+	if (gxTokenFlags[parser->token] & XS_TOKEN_CALL_EXPRESSION) {
+		txBoolean chainFlag = 0;
+		fxCheckArrowFunction(parser, 1);
+		for (;;) {
+			txInteger aLine = parser->line;
+			if (parser->token == XS_TOKEN_DOT) {
 				fxGetNextToken(parser);
-			}
-			else if (parser->token == XS_TOKEN_PRIVATE_IDENTIFIER) {
-				if (parser->root->flags & mxSuperFlag)
-					fxReportParserError(parser, "invalid super");
-				fxPushSymbol(parser, parser->symbol);
-				fxSwapNodes(parser);
-				fxPushNodeStruct(parser, 2, XS_TOKEN_PRIVATE_MEMBER, aLine);
-				fxGetNextToken(parser);
-			}
-			else
-				fxReportParserError(parser, "missing property");
-		}
-		//else if (parser->crlf)
-		//	break;
-		else if (parser->token == XS_TOKEN_LEFT_BRACKET) {
-			fxGetNextToken(parser);
-			fxCommaExpression(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER_AT, aLine);
-			fxMatchToken(parser, XS_TOKEN_RIGHT_BRACKET);
-		}
-		else if (parser->token == XS_TOKEN_LEFT_PARENTHESIS) {
-			if (parser->root->description->token == XS_TOKEN_ACCESS) {
-				txAccessNode* access = (txAccessNode*)parser->root;
-				if (access->symbol == parser->evalSymbol) {
-					parser->flags |= mxEvalFlag;
+				if (parser->token == XS_TOKEN_IDENTIFIER) {
+					fxPushSymbol(parser, parser->symbol);
+					fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER, aLine);
+					fxGetNextToken(parser);
 				}
+				else if (parser->token == XS_TOKEN_PRIVATE_IDENTIFIER) {
+					if (parser->root->flags & mxSuperFlag)
+						fxReportParserError(parser, "invalid super");
+					fxPushSymbol(parser, parser->symbol);
+					fxSwapNodes(parser);
+					fxPushNodeStruct(parser, 2, XS_TOKEN_PRIVATE_MEMBER, aLine);
+					fxGetNextToken(parser);
+				}
+				else
+					fxReportParserError(parser, "missing property");
 			}
-			fxParameters(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
-		}
-		else if (parser->token == XS_TOKEN_TEMPLATE) {
-			if (chainFlag)
-				fxReportParserError(parser, "invalid template");
-			fxPushStringNode(parser, parser->stringLength, parser->string, aLine);
-			fxPushStringNode(parser, parser->rawLength, parser->raw, aLine);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE_MIDDLE, aLine);
-			fxGetNextToken(parser);
-			fxPushNodeList(parser, 1);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE, aLine);
-		}
-		else if (parser->token == XS_TOKEN_TEMPLATE_HEAD) {
-			if (chainFlag)
-				fxReportParserError(parser, "invalid template");
-			fxTemplateExpression(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE, aLine);
-		}
-		else if (parser->token == XS_TOKEN_CHAIN) {
-			fxGetNextToken(parser);
-			chainFlag = 1;
-			if (parser->token == XS_TOKEN_IDENTIFIER) {
-				fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
-				fxPushSymbol(parser, parser->symbol);
-				fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER, aLine);
-				fxGetNextToken(parser);
-			}
-			else if (parser->token == XS_TOKEN_PRIVATE_IDENTIFIER) {
-				fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
-				fxPushSymbol(parser, parser->symbol);
-				fxSwapNodes(parser);
-				fxPushNodeStruct(parser, 2, XS_TOKEN_PRIVATE_MEMBER, aLine);
-				fxGetNextToken(parser);
-			}
+			//else if (parser->crlf)
+			//	break;
 			else if (parser->token == XS_TOKEN_LEFT_BRACKET) {
-				fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
 				fxGetNextToken(parser);
 				fxCommaExpression(parser);
 				fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER_AT, aLine);
 				fxMatchToken(parser, XS_TOKEN_RIGHT_BRACKET);
 			}
 			else if (parser->token == XS_TOKEN_LEFT_PARENTHESIS) {
-				fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
+				if (parser->root->description->token == XS_TOKEN_ACCESS) {
+					txAccessNode* access = (txAccessNode*)parser->root;
+					if (access->symbol == parser->evalSymbol) {
+						parser->flags |= mxEvalFlag;
+					}
+				}
 				fxParameters(parser);
 				fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
 			}
+			else if (parser->token == XS_TOKEN_TEMPLATE) {
+				if (chainFlag)
+					fxReportParserError(parser, "invalid template");
+				fxPushStringNode(parser, parser->stringLength, parser->string, aLine);
+				fxPushStringNode(parser, parser->rawLength, parser->raw, aLine);
+				fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE_MIDDLE, aLine);
+				fxGetNextToken(parser);
+				fxPushNodeList(parser, 1);
+				fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE, aLine);
+			}
+			else if (parser->token == XS_TOKEN_TEMPLATE_HEAD) {
+				if (chainFlag)
+					fxReportParserError(parser, "invalid template");
+				fxTemplateExpression(parser);
+				fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE, aLine);
+			}
+			else if (parser->token == XS_TOKEN_CHAIN) {
+				fxGetNextToken(parser);
+				chainFlag = 1;
+				if (parser->token == XS_TOKEN_IDENTIFIER) {
+					fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
+					fxPushSymbol(parser, parser->symbol);
+					fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER, aLine);
+					fxGetNextToken(parser);
+				}
+				else if (parser->token == XS_TOKEN_PRIVATE_IDENTIFIER) {
+					fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
+					fxPushSymbol(parser, parser->symbol);
+					fxSwapNodes(parser);
+					fxPushNodeStruct(parser, 2, XS_TOKEN_PRIVATE_MEMBER, aLine);
+					fxGetNextToken(parser);
+				}
+				else if (parser->token == XS_TOKEN_LEFT_BRACKET) {
+					fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
+					fxGetNextToken(parser);
+					fxCommaExpression(parser);
+					fxPushNodeStruct(parser, 2, XS_TOKEN_MEMBER_AT, aLine);
+					fxMatchToken(parser, XS_TOKEN_RIGHT_BRACKET);
+				}
+				else if (parser->token == XS_TOKEN_LEFT_PARENTHESIS) {
+					fxPushNodeStruct(parser, 1, XS_TOKEN_OPTION, aLine);
+					fxParameters(parser);
+					fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
+				}
+				else
+					fxReportParserError(parser, "invalid ?.");
+			}
 			else
-				fxReportParserError(parser, "invalid ?.");
-		}
-		else
-			break;
+				break;
+		} 
+		if (chainFlag)
+			fxPushNodeStruct(parser, 1, XS_TOKEN_CHAIN, chainLine);
 	} 
-	if (chainFlag)
-		fxPushNodeStruct(parser, 1, XS_TOKEN_CHAIN, chainLine);
 }
 
 void fxLiteralExpression(txParser* parser, txUnsigned flag)
@@ -2251,6 +2278,7 @@ void fxArrowExpression(txParser* parser, txUnsigned flag)
 {
 	txInteger aLine = parser->line;
 	txUnsigned flags = parser->flags;
+	parser->flags &= ~mxAsyncFlag;
 	parser->flags |= mxArrowFlag | flag;
 	fxMatchToken(parser, XS_TOKEN_ARROW);
 	fxPushNULL(parser);
@@ -2688,6 +2716,7 @@ void fxNewExpression(txParser* parser)
 		return;
 	}
 	fxLiteralExpression(parser, 1);
+	fxCheckArrowFunction(parser, 1);
 	for (;;) {
 		txInteger aMemberLine = parser->line;
 		if (parser->token == XS_TOKEN_DOT) {
@@ -3506,6 +3535,17 @@ txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken t
 	theNode->description = &gxTokenDescriptions[XS_TOKEN_REST_BINDING];
 	((txRestBindingNode*)theNode)->binding = binding;
 	return theNode;
+}
+
+void fxCheckArrowFunction(txParser* parser, txInteger count)
+{
+	txNode* node = parser->root;
+	while (count) {
+		if (node->flags & mxArrowFlag)
+			fxReportParserError(parser, "invalid arrow function");
+		count--;
+		node = node->next;
+	}
 }
 
 txBoolean fxCheckReference(txParser* parser, txToken theToken)

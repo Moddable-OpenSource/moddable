@@ -353,6 +353,11 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
+		for (var result of tool.tsFiles) {
+			this.write("\\\n\t$(MODULES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target);
+		}
 		this.line("");
 		this.line("");
 	}
@@ -374,6 +379,38 @@ export class MakeFile extends FILE {
 			this.line("\t$(XSC) ", source, options, " -e -o $(@D) -r ", targetParts.name);
 		}
 		this.line("");
+		
+		if (tool.tsFiles.length) {
+			let directories = tool.tsFiles.map(item => item.source);
+			let directory;
+			do {
+				directories = directories.map(item => tool.splitPath(item).directory);
+				directory = directories[0];
+			} while(directories.some(item => item != directory));
+			const common = directory.length;
+			var temporaries = [];
+			for (var result of tool.tsFiles) {
+				var source = result.source;
+				var target = result.target;
+				var targetParts = tool.splitPath(target);
+				var temporary = source.slice(common, -3) + ".js"
+				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", temporary);
+				this.echo(tool, "xsc ", target);
+				var options = "";
+				if (result.commonjs)
+					options += " -p";
+				if (tool.debug)
+					options += " -d";
+				if (tool.config)
+					options += " -c";
+				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				temporaries.push("%" + temporary);
+			}
+			this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
+			this.echo(tool, "tsc ", "tsconfig.json");
+			this.line("\ttsc -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
+			this.line("");
+		}
 	}
 	generateObjectsDefinitions(tool) {
 	}
@@ -489,7 +526,7 @@ export class MakeFile extends FILE {
 				this.write(source);
 				this.write(" -a");
 				if (result.monochrome)
-					this.write(" -m");
+					this.write(" -m -4");
 				this.write(" -o $(@D) -r ");
 				this.write(tool.rotation);
 				this.line(name);
@@ -544,7 +581,7 @@ export class MakeFile extends FILE {
 			if (!alphaTarget)
 				this.write(" -c");
 			if (result.monochrome)
-				this.write(" -m");
+				this.write(" -m -4");
 			else {
 				this.write(" -f ");
 				this.write(tool.format);
@@ -669,6 +706,41 @@ export class MakeFile extends FILE {
 		this.generateConfigurationRules(tool);
 		this.generateBLERules(tool);
 		this.generateResourcesRules(tool);
+	}
+}
+
+export class TSConfigFile extends FILE {
+	constructor(path) {
+		super(path);
+	}
+	generate(tool) {
+		let json = {
+			compilerOptions: {
+				baseUrl: "./",
+				module: "es2020",
+				outDir: tool.modulesPath,
+				paths: {
+				},
+				sourceMap: true,
+				target: "ES2020",
+				types: [
+					tool.xsPath + "/includes/xs"
+				]
+			},
+			files: [
+			]
+		}
+		var paths = json.compilerOptions.paths;
+		for (var result of tool.dtsFiles) {
+			var parts = tool.splitPath(result);
+			paths[parts.name.slice(0, -2)] = [ result.slice(0, -5) ];
+		}
+		for (var result of tool.tsFiles) {
+			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
+			json.files.push(result.source);
+		}
+		this.write(JSON.stringify(json, null, "\t"));
+		this.close();
 	}
 }
 
@@ -891,6 +963,14 @@ class ModulesRule extends Rule {
 			this.appendFolder(tool.cFolders, parts.directory);
 			this.appendFolder(tool.hFiles, source);
 		}
+		else if (parts.extension == ".ts") {
+			if (parts.name.endsWith(".d")) {
+				this.appendFolder(tool.dtsFiles, source);
+			}
+			else {
+				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
+			}
+		}
 	}
 	appendTarget(target) {
 		this.appendFolder(this.tool.jsFolders, target);
@@ -914,14 +994,14 @@ class ResourcesRule extends Rule {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
 		}
 		else if (suffix == "-color-monochrome") {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
 			colorFile.monochrome = true;
 		}
 		else if (suffix == "-alpha") {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
 		}
 		else if (suffix == "-alpha-monochrome") {
-			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
 			alphaFile.monochrome = true;
 		}
 		else if (suffix == "-mask") {
@@ -1468,6 +1548,11 @@ export class Tool extends TOOL {
 		this.hFiles.already = {};
 		this.javaFiles = [];
 		this.javaFiles.already = {};
+		
+		this.tsFiles = [];
+		this.tsFiles.already = {};
+		this.dtsFiles = [];
+		this.dtsFiles.already = {};
 
 		this.resourcesFiles = [];
 		this.resourcesFiles.already = {};

@@ -57,6 +57,16 @@ struct modBLEConnectionRecord {
 	int16_t		conn_id;
 };
 
+typedef struct modBLEDiscoveredRecord modBLEDiscoveredRecord;
+typedef modBLEDiscoveredRecord *modBLEDiscovered;
+
+struct modBLEDiscoveredRecord {
+	struct modBLEDiscoveredRecord		*next;
+
+	struct ble_gap_disc_desc			disc;
+	uint8_t								data[1];
+};
+
 typedef struct {
 	xsMachine *the;
 	xsSlot obj;
@@ -70,7 +80,7 @@ typedef struct {
 	modBLEConnection connections;
 	uint8_t terminating;
 	
-	modTimer smTimer;
+	modBLEDiscovered discovered;
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -181,6 +191,12 @@ void xs_ble_client_destructor(void *data)
 		ble_gap_terminate(connection->conn_id, BLE_ERR_REM_USER_CONN_TERM);
 		c_free(connection);
 	}
+	modBLEDiscovered discovered = ble->discovered;
+	while (discovered != NULL) {
+		modBLEDiscovered disc = discovered;
+		discovered = discovered->next;
+		c_free(disc);
+	}
 	c_free(ble);
 	gBLE = NULL;
 
@@ -204,17 +220,36 @@ void xs_ble_client_set_local_privacy(xsMachine *the)
 void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
-	uint32_t interval = xsmcToInteger(xsArg(1));
-	uint32_t window = xsmcToInteger(xsArg(2));
+	uint8_t duplicates = xsmcToBoolean(xsArg(1));
+	uint32_t interval = xsmcToInteger(xsArg(2));
+	uint32_t window = xsmcToInteger(xsArg(3));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	uint8_t own_addr_type;
 	struct ble_gap_disc_params disc_params;
+
+	switch(filterPolicy) {
+		case kBLEScanFilterPolicyWhitelist:
+			filterPolicy = BLE_HCI_SCAN_FILT_USE_WL;
+			break;
+		case kBLEScanFilterNotResolvedDirected:
+			filterPolicy = BLE_HCI_SCAN_FILT_NO_WL_INITA;
+			break;
+		case kBLEScanFilterWhitelistNotResolvedDirected:
+			filterPolicy = BLE_HCI_SCAN_FILT_USE_WL_INITA;
+			break;
+		default:
+			filterPolicy = BLE_HCI_SCAN_FILT_NO_WL;
+			break;
+	}
 
 	ble_hs_id_infer_auto(0, &own_addr_type);
 
 	c_memset(&disc_params, 0, sizeof(disc_params));
 	disc_params.passive = !active;
+	disc_params.filter_duplicates = !duplicates;
 	disc_params.itvl = interval;
 	disc_params.window = window;
+	disc_params.filter_policy = filterPolicy;
 
 	ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params, nimble_gap_event, NULL);
  }
@@ -229,14 +264,14 @@ void xs_ble_client_connect(xsMachine *the)
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
 	ble_addr_t addr;
-
+	
 	// Ignore duplicate connection attempts
 	if (ble_gap_conn_active()) return;
 	
 	ble_gap_disc_cancel();
 	
 	addr.type = addressType;
-	c_memmove(&addr.val, address, 6);
+	c_memmove(addr.val, address, 6);
 		
 	// Add a new connection record to be filled as the connection completes
 	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
@@ -260,7 +295,6 @@ void xs_ble_client_connect(xsMachine *the)
 
 void smTimerCallback(modTimer timer, void *refcon, int refconSize)
 {
-	modTimerRemove(timer);
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
@@ -292,8 +326,7 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 		ble_addr_t addr;
 		ble_hs_id_gen_rnd(1, &addr);
 		ble_hs_id_set_rnd(addr.val);
-		
-		gBLE->smTimer = modTimerAdd(20, 0, smTimerCallback, NULL, 0);
+		modTimerAdd(0, 0, smTimerCallback, NULL, 0);
 	}
 }
 
@@ -301,6 +334,8 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	modBLEConnection connection;
+	ble_addr_t addr;
+	
 	for (connection = gBLE->connections; NULL != connection; connection = connection->next)
 		if (0 == c_memcmp(address, &connection->bda.val, 6))
 			break;
@@ -651,21 +686,28 @@ bail:
 
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	struct ble_gap_disc_desc *disc = (struct ble_gap_disc_desc *)message;
-	uint8_t *data = (uint8_t*)refcon;
-	
-	xsBeginHost(gBLE->the);
-	xsmcVars(4);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), data, disc->length_data);
-	xsmcSetArrayBuffer(xsVar(2), disc->addr.val, 6);
-	xsmcSetInteger(xsVar(3), disc->addr.type);
-	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
-	c_free(data);
-	xsEndHost(gBLE->the);
+	while (gBLE->discovered) {
+		modCriticalSectionBegin();
+		modBLEDiscovered discovered = gBLE->discovered;
+		gBLE->discovered = discovered->next;
+		modCriticalSectionEnd();
+		struct ble_gap_disc_desc *disc = &discovered->disc;
+
+		xsBeginHost(gBLE->the);
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), disc->data, disc->length_data);
+		xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
+		xsmcSetArrayBuffer(xsVar(1), disc->addr.val, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSetInteger(xsVar(1), disc->addr.type);
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+		xsmcSetInteger(xsVar(1), disc->rssi);
+		xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+		xsEndHost(gBLE->the);
+		c_free(discovered);
+	}
 }
 
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -686,7 +728,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), desc->conn_handle);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(2), &desc->peer_id_addr.val, 6);
+		xsmcSetArrayBuffer(xsVar(2), desc->peer_id_addr.val, 6);
 		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
 		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
@@ -1113,10 +1155,27 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
 		case BLE_GAP_EVENT_DISC:
 			if (0 != event->disc.length_data) {
-				uint8_t *data = c_malloc(event->disc.length_data);
-				if (NULL != data) {
-					c_memmove(data, event->disc.data, event->disc.length_data);
-					modMessagePostToMachine(gBLE->the, (uint8_t*)&event->disc, sizeof(event->disc), scanResultEvent, data);
+				modBLEDiscovered disc = c_malloc(sizeof(modBLEDiscoveredRecord) - 1 + event->disc.length_data);
+				if (disc) {
+					uint8_t doPost = false;
+					disc->next = NULL;
+					disc->disc = event->disc;
+					c_memmove(disc->data, event->disc.data, event->disc.length_data);
+					disc->disc.data = disc->data;
+					modCriticalSectionBegin();
+					if (gBLE->discovered) {
+						modBLEDiscovered walker = gBLE->discovered;
+						while (walker->next)
+							walker = walker->next;
+						walker->next = disc;
+					}
+					else {
+						gBLE->discovered = disc;
+						doPost = true;
+					}
+					modCriticalSectionEnd();
+					if (doPost)
+						modMessagePostToMachine(gBLE->the, NULL, 0, scanResultEvent, NULL);
 				}
 			}
 			break;

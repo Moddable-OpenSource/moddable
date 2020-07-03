@@ -815,7 +815,7 @@ static const txNodeDispatch gxCoalesceExpressionNodeDispatch ICACHE_FLASH_ATTR =
 };
 static const txNodeDispatch gxCompoundExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxAssignNodeDistribute,
-	fxCompoundExpressionNodeBind,
+	fxNodeBind,
 	fxNodeHoist,
 	fxCompoundExpressionNodeCode,
 	fxNodeCodeAssign,
@@ -1450,6 +1450,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_CODE_ADD, XS_TOKEN_ADD, "Add", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
 	{ XS_CODE_ADD, XS_TOKEN_ADD_ASSIGN, "AddAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_AND, "And", sizeof(txBinaryExpressionNode), &gxAndExpressionNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_AND_ASSIGN, "AndAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_ARG, "Arg", sizeof(txDeclareNode), &gxDeclareNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_ARGUMENTS, "Arguments", sizeof(txNode), &gxArgumentsNodeDispatch },
 	{ XS_CODE_ARGUMENTS_SLOPPY, XS_TOKEN_ARGUMENTS_SLOPPY, "Arguments", sizeof(txNode), &gxValueNodeDispatch },
@@ -1477,6 +1478,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_CHAIN, "Chain", sizeof(txUnaryExpressionNode), &gxChainNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_CLASS, "Class", sizeof(txClassNode), &gxClassNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_COALESCE, "Coalesce", sizeof(txBinaryExpressionNode), &gxCoalesceExpressionNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_COALESCE_ASSIGN, "CoalesceAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_COLON, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_COMMA, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_CONST, "Const", sizeof(txDeclareNode), &gxDeclareNodeDispatch },
@@ -1555,6 +1557,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_OBJECT_BINDING, "ObjectBinding", sizeof(txObjectBindingNode), &gxObjectBindingNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_OPTION, "Option", sizeof(txUnaryExpressionNode), &gxOptionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_OR, "Or", sizeof(txBinaryExpressionNode), &gxOrExpressionNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_OR_ASSIGN, "OrAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PACKAGE, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_PARAMS, "Params", sizeof(txParamsNode), &gxParamsNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PARAMS_BINDING, "ParamsBinding", sizeof(txParamsBindingNode), &gxParamsBindingNodeDispatch },

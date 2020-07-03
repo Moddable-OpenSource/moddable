@@ -37,6 +37,11 @@ void xs_preference_set(xsMachine *the)
 		xsUnknownError("nvs_open fail");
 
 	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
+
+	nvs_erase_key(handle, key);		// ESP IDF bug: if typ of key changese, new type is ignored. work around by deleting first.
+	if ((ESP_OK != err) && (ESP_ERR_NVS_NOT_FOUND != err))
+		goto bail;
+
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsBooleanType:
 			err = nvs_set_u8(handle, key, xsmcToBoolean(xsArg(2)));
@@ -58,7 +63,6 @@ void xs_preference_set(xsMachine *the)
 		case xsStringType:
 			err = nvs_set_str(handle, key, xsmcToString(xsArg(2)));
 			break;
-
 
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))

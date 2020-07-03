@@ -1,7 +1,7 @@
 # Networking
 
 Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: February 3, 2020
+Revised: June 29, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 

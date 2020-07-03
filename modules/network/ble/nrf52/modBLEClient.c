@@ -65,6 +65,17 @@
 	#define LOG_GAP_INT(i)
 #endif
 
+#define LOG_SCAN 0
+#if LOG_SCAN
+	#define LOG_SCAN_EVENT(event) logScanEvent(event)
+	#define LOG_SCAN_MSG(msg) modLog(msg)
+	#define LOG_SCAN_INT(i) modLogInt(i)
+#else
+	#define LOG_SCAN_EVENT(event)
+	#define LOG_SCAN_MSG(msg)
+	#define LOG_SCAN_INT(i)
+#endif
+
 #define LOG_PM 0
 #if LOG_PM
 	#define LOG_PM_EVENT(event) logPMEvent(event)
@@ -122,6 +133,16 @@ struct modBLEConnectionRecord {
 	uint16_t handles[char_name_count];
 };
 
+typedef struct modBLEScannedPacketRecord modBLEScannedPacketRecord;
+typedef modBLEScannedPacketRecord *modBLEScannedPacket;
+
+struct modBLEScannedPacketRecord {
+	struct modBLEScannedPacketRecord *next;
+
+	uint16_t type;
+	uint8_t addr[6];
+};
+
 typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
@@ -139,6 +160,10 @@ typedef struct {
 	uint8_t mitm;
 	uint8_t iocap;
 
+	// scanning
+	uint8_t duplicates;
+	modBLEScannedPacket scanned;
+
 	modBLEConnection connections;
 } modBLERecord, *modBLE;
 
@@ -151,6 +176,7 @@ static int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_t
 
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
 static void pm_evt_handler(pm_evt_t const * p_evt);
+static void scan_evt_handler(scan_evt_t const * p_scan_evt);
 
 static void bleClientCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void bleClientReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
@@ -173,6 +199,8 @@ static void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message
 
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+static void clearScanned(modBLE ble);
+
 static modBLE gBLE = NULL;
 
 NRF_BLE_SCAN_DEF(m_scan);	// device scanning module
@@ -191,6 +219,7 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE->the = the;
 	gBLE->obj = xsThis;
 	gBLE->iocap = 0xFF;
+	gBLE->duplicates = true;
 	xsRemember(gBLE->obj);
 	
 	// Initialize platform Bluetooth modules
@@ -251,6 +280,8 @@ void xs_ble_client_destructor(void *data)
 		connections = connections->next;
 		c_free(connection);
 	}
+	
+	clearScanned(ble);
 
 	c_free(ble);
 	gBLE = NULL;
@@ -266,21 +297,40 @@ void xs_ble_client_start_scanning(xsMachine *the)
 {
 	ret_code_t err_code;
 	uint8_t active = xsmcToBoolean(xsArg(0));
-	uint16_t interval = xsmcToInteger(xsArg(1));
-	uint16_t window = xsmcToInteger(xsArg(2));
+	uint8_t duplicates = xsmcToBoolean(xsArg(1));
+	uint32_t interval = xsmcToInteger(xsArg(2));
+	uint32_t window = xsmcToInteger(xsArg(3));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	ble_gap_scan_params_t *scan_params = &gBLE->scan_params;
 	nrf_ble_scan_init_t *scan_init = &gBLE->scan_init;
 
+	switch(filterPolicy) {
+		case kBLEScanFilterPolicyWhitelist:
+			filterPolicy = BLE_GAP_SCAN_FP_WHITELIST;
+			break;
+		case kBLEScanFilterNotResolvedDirected:
+			filterPolicy = BLE_GAP_SCAN_FP_ALL_NOT_RESOLVED_DIRECTED;
+			break;
+		case kBLEScanFilterWhitelistNotResolvedDirected:
+			filterPolicy = BLE_GAP_SCAN_FP_WHITELIST_NOT_RESOLVED_DIRECTED;
+			break;
+		default:
+			filterPolicy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+			break;
+	}
+
+	gBLE->duplicates = duplicates;
+
 	c_memset(scan_params, 0, sizeof(ble_gap_scan_params_t));
 	scan_params->active = active;
-	scan_params->filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+	scan_params->filter_policy = filterPolicy;
 	scan_params->interval = interval;
 	scan_params->window = window;
 
     c_memset(scan_init, 0, sizeof(scan_init));
     scan_init->p_scan_param = scan_params;
 
-    err_code = nrf_ble_scan_init(&m_scan, scan_init, NULL);
+    err_code = nrf_ble_scan_init(&m_scan, scan_init, scan_evt_handler);
     if (NRF_SUCCESS == err_code)
     	err_code = nrf_ble_scan_start(&m_scan);
 	if (NRF_SUCCESS != err_code)
@@ -290,6 +340,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 void xs_ble_client_stop_scanning(xsMachine *the)
 {
 	nrf_ble_scan_stop();
+	clearScanned(gBLE);
 }
 
 void xs_ble_client_connect(xsMachine *the)
@@ -713,6 +764,17 @@ bail:
 	return result;
 }
 
+static void clearScanned(modBLE ble)
+{
+	modBLEScannedPacket walker = ble->scanned;
+	while (walker) {
+		modBLEScannedPacket next = walker->next;
+		c_free(walker);
+		walker = next;
+	}
+	ble->scanned = NULL;
+}
+
 void bleClientReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -806,6 +868,38 @@ void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
+	
+	if (!gBLE->duplicates) {
+		uint16_t type =
+			(p_evt_adv_report->type.connectable   << 0) |
+			(p_evt_adv_report->type.scannable     << 1) |
+			(p_evt_adv_report->type.directed      << 2) |
+			(p_evt_adv_report->type.scan_response << 3) |
+			(p_evt_adv_report->type.extended_pdu  << 4) |
+			(p_evt_adv_report->type.status        << 5) |
+			(p_evt_adv_report->type.reserved      << 7);
+			
+		modBLEScannedPacket scanned = gBLE->scanned;
+		while (scanned) {
+			if (type == scanned->type && 0 == c_memcmp(p_evt_adv_report->peer_addr.addr, scanned->addr, 6))
+				goto bail;
+			scanned = scanned->next;
+		}
+		modBLEScannedPacket address = c_calloc(1, sizeof(modBLEScannedPacketRecord));
+		if (!address)
+			xsUnknownError("out of memory");
+		address->type = type;
+		c_memmove(address->addr, p_evt_adv_report->peer_addr.addr, 6);
+		if (!gBLE->scanned)
+			gBLE->scanned = address;
+		else {
+			modBLEScannedPacket walker;
+			for (walker = gBLE->scanned; walker->next; walker = walker->next)
+				;
+			walker->next = address;
+		}
+	}
+
 	xsVar(0) = xsmcNewObject();
 	xsmcSetArrayBuffer(xsVar(1), p_evt_adv_report->data.p_data, p_evt_adv_report->data.len);
 	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
@@ -813,7 +907,11 @@ void gapAdvReportEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), p_evt_adv_report->peer_addr.addr_type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSetInteger(xsVar(1), p_evt_adv_report->rssi);
+	xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+	
+bail:
 	xsEndHost(gBLE->the);
 }
 
@@ -1467,5 +1565,39 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 			break;    		
         default:
             break;
+    }
+}
+
+static void logScanEvent(uint16_t evt_id) {
+	switch(evt_id) {
+		case NRF_BLE_SCAN_EVT_FILTER_MATCH: modLog("NRF_BLE_SCAN_EVT_FILTER_MATCH"); break;
+		case NRF_BLE_SCAN_EVT_WHITELIST_REQUEST: modLog("NRF_BLE_SCAN_EVT_WHITELIST_REQUEST"); break;
+		case NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT: modLog("NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT"); break;
+		case NRF_BLE_SCAN_EVT_NOT_FOUND: modLog("NRF_BLE_SCAN_EVT_NOT_FOUND"); break;
+		case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT: modLog("NRF_BLE_SCAN_EVT_SCAN_TIMEOUT"); break;
+		case NRF_BLE_SCAN_EVT_SCAN_REQ_REPORT: modLog("NRF_BLE_SCAN_EVT_SCAN_REQ_REPORT"); break;
+		case NRF_BLE_SCAN_EVT_CONNECTING_ERROR: modLog("NRF_BLE_SCAN_EVT_CONNECTING_ERROR"); break;
+		case NRF_BLE_SCAN_EVT_CONNECTED: modLog("NRF_BLE_SCAN_EVT_CONNECTED"); break;
+	}
+}
+
+// This scan_evt_handler() function seems to be required to support the whitelist, even though it is empty.
+static void scan_evt_handler(scan_evt_t const * p_scan_evt)
+{
+	LOG_SCAN_EVENT(p_scan_evt->scan_evt_id);
+
+    switch(p_scan_evt->scan_evt_id) {
+        case NRF_BLE_SCAN_EVT_WHITELIST_REQUEST:
+        	break;
+        case NRF_BLE_SCAN_EVT_CONNECTING_ERROR:
+        	break;
+        case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT:
+        	break;
+        case NRF_BLE_SCAN_EVT_FILTER_MATCH:
+            break;
+        case NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT:
+            break;
+        default:
+			break;
     }
 }

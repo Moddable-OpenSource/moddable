@@ -40,6 +40,9 @@ typedef struct {
 	uint8_t mitm;
 	uint8_t iocap;
 
+	// services
+	uint8_t deployServices;
+	
 	modTimer timer;
 	int8_t connection;
 	bd_addr address;
@@ -68,7 +71,6 @@ static const gecko_configuration_t config = {
 #endif
 };
 
-static void addressToBuffer(bd_addr *bda, uint8_t *buffer);
 static void uuidToBuffer(uint8array *uuid, uint8_t *buffer, uint16_t *length);
 static void bleTimerCallback(modTimer timer, void *refcon, int refconSize);
 static void ble_event_handler(struct gecko_cmd_packet* evt);
@@ -86,6 +88,17 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
 	
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
+	if (!gBLE->deployServices)
+		modLog("suppressing deploy services unsupported");
+
 	// Initialize platform Bluetooth modules
 	gecko_stack_init(&config);
 	gecko_bgapi_class_system_init();
@@ -128,11 +141,9 @@ void xs_ble_server_disconnect(xsMachine *the)
 
 void xs_ble_server_get_local_address(xsMachine *the)
 {
-	uint8_t buffer[6];
 	struct gecko_msg_system_get_bt_address_rsp_t *rsp;
 	rsp = gecko_cmd_system_get_bt_address();
-	addressToBuffer(&rsp->address, buffer);
-	xsmcSetArrayBuffer(xsResult, (void*)buffer, sizeof(buffer));
+	xsmcSetArrayBuffer(xsResult, rsp->address.addr, 6);
 }
 
 void xs_ble_server_set_device_name(xsMachine *the)
@@ -146,10 +157,11 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
-	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
+	uint16_t filterPolicy = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(5)) ? xsmcGetArrayBufferLength(xsArg(5)) : 0;
 	uint8_t scan_rsp = scanResponseData ? 0 : 1;
 	uint16_t discoverableMode, connectableMode = le_gap_undirected_connectable;
 
@@ -225,12 +237,6 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 void xs_ble_server_get_service_attributes(xsMachine *the)
 {
 	// @@ TBD
-}
-
-void addressToBuffer(bd_addr *bda, uint8_t *buffer)
-{
-	for (uint8_t i = 0; i < 6; ++i)
-		buffer[i] = bda->addr[5 - i];
 }
 
 void uuidToBuffer(uint8array *uuid, uint8_t *buffer, uint16_t *length)
