@@ -380,6 +380,9 @@ int main(int argc, char* argv[])
 					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
+					property = mxBehaviorGetProperty(the, mxCompartmentPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property->kind = mxThrowTypeErrorFunction.kind;
+					property->value = mxThrowTypeErrorFunction.value;
 
 					fxDuplicateInstance(the, mxDateConstructor.value.reference);
 					callback = mxCallback(fx_Date_secure);
