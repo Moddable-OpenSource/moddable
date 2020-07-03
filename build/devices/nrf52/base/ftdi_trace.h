@@ -18,12 +18,23 @@
  *
  */
 
+#include <stdint.h>
+
 #ifndef _FTDI_TRACE_
 #define _FTDI_TRACE_
+
+#include "app_usbd_vendor.h"
 
 void ftdiTraceInit();
 void ftdiTrace(const char *msg);
 void ftdiTraceInt(int i);
+void ftdiTraceInt2(int i, int j);
 void ftdiTraceChar(int c);
+void ftdiTraceHex(uint8_t *data, int num);
+void ftdiTraceAndHex(const char *msg, int i);
+void ftdiTraceAndInt(const char *msg, int i);
+void ftdiTraceAndInt2(const char *msg, int i, int j);
+void ftdiTraceAndbmReq(const char *msg, uint8_t val);
+void ftdiTraceAndCtx(const char *msg, app_usbd_vendor_ctx_t *ctx);
 
 #endif

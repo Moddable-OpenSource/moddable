@@ -290,6 +290,14 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)/debugger_usbd.c.o \
 	$(TMP_DIR)/app_usbd_vendor.c.o
 
+SDK_GLUE_HEADERS = \
+	$(BUILD_DIR)/devices/nrf52/base/app_usbd_vendor.h \
+	$(BUILD_DIR)/devices/nrf52/base/app_usbd_vendor_internal.h \
+	$(BUILD_DIR)/devices/nrf52/base/app_usbd_vendor_types.h \
+	$(BUILD_DIR)/devices/nrf52/base/xsmain.h
+
+HEADERS += $(SDK_GLUE_HEADERS)
+
 SDK_GLUE_DIRS = \
 	$(BUILD_DIR)/devices/nrf52/base \
 
@@ -545,6 +553,7 @@ ifeq ($(DEBUG),1)
 	ASM_FLAGS += $(HW_DEBUG_OPT) -DDEBUG_NRF
 else
 	C_DEFINES += \
+		-DUSE_DEBUGGER_USBD=1 \
 		-Os
 	C_FLAGS += $(HW_OPT)
 	ASM_FLAGS += $(HW_OPT)

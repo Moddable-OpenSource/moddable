@@ -76,6 +76,7 @@ extern const app_usbd_class_methods_t app_usbd_vendor_class_methods;
 									data_ifc, 				\
 									data_ein, 				\
 									data_eout, 				\
+									cdc_protocol,			\
 									ep_list) 				\
     .inst = {										\
         .user_ev_handler = user_event_handler,      \
@@ -84,6 +85,7 @@ extern const app_usbd_class_methods_t app_usbd_vendor_class_methods;
         .data_interface = data_ifc,                 \
         .data_epin = data_ein,                      \
         .data_epout = data_eout,                    \
+		.protocol = cdc_protocol,					\
 		.p_ep_interval = ep_list					\
 	}
 
@@ -99,7 +101,8 @@ extern const app_usbd_class_methods_t app_usbd_vendor_class_methods;
 													data_ifc,			\
 													comm_ein,			\
 													data_ein,			\
-													data_eout)			\
+													data_eout,			\
+													protocol)	\
 		static uint8_t CONCAT_2(instance_name, _ep) = {		\
 			(APP_USBD_EXTRACT_INTERVAL_FLAG(comm_ein) ? APP_USBD_EXTRACT_INTERVAL_VALUE(comm_ein) : APP_USBD_VENDOR_DEFAULT_INTERVAL)};	\
 		APP_USBD_CLASS_INST_GLOBAL_DEF(		\
@@ -113,6 +116,7 @@ extern const app_usbd_class_methods_t app_usbd_vendor_class_methods;
 										 data_ifc,				\
 										 data_ein,				\
 										 data_eout,				\
+										 protocol,				\
 						&CONCAT_2(instance_name, _ep)))			\
 	)
 

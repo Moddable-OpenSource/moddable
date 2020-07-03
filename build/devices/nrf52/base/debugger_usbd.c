@@ -24,7 +24,7 @@
 
 #if USE_DEBUGGER_USBD
 
-#ifdef mxDebug
+//#ifdef mxDebug
 
 #include "nrf.h"
 #include "nrf_queue.h"
@@ -83,7 +83,8 @@ APP_USBD_VENDOR_GLOBAL_DEF(
 	VENDOR_DATA_INTERFACE,
 	VENDOR_COMM_EPIN,
 	VENDOR_DATA_EPIN,
-	VENDOR_DATA_EPOUT
+	VENDOR_DATA_EPOUT,
+	APP_USBD_CDC_COMM_PROTOCOL_AT_V250
 );
 		
 
@@ -116,6 +117,21 @@ static uint8_t m_usb_connected = false;
 static uint8_t m_usb_restarted = false;
 static uint8_t m_usb_reopened = false;
 static uint8_t m_usb_closed = false;
+
+static txBuffer gVendorTxBufferList = NULL;
+//static uint8_t m_vendor_tx_buffer[kTXBufferSize];
+//static int16_t m_vendor_tx_buffer_index = 0;
+
+#define kRXBufferSize	512						// optimize for flash block size?
+static uint32_t m_vendor_rx_buffer_pos = 0;
+static char m_vendor_rx_buffer[kRXBufferSize];
+static uint8_t m_vendor_temp[1];
+static uint8_t m_vendor_first_byte = 0;
+
+static uint8_t m_vendor_usb_connected = false;
+static uint8_t m_vendor_usb_restarted = false;
+static uint8_t m_vendor_usb_reopened = false;
+static uint8_t m_vendor_usb_closed = false;
 
 static TaskHandle_t m_usbd_thread;
 
@@ -322,17 +338,66 @@ static ret_code_t sendNextBuffer()
 
     bool dtr_state = (p_cdc_acm_ctx->line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR) ? true : false;
     if (!dtr_state) {
-		ftdiTrace("DTR line not set!");
+		ftdiTrace("ACM - DTR line not set! port not opened");
         return NRF_ERROR_INVALID_STATE;	// port not opened
     }
     
     nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
     
 	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
-//	ftdiTrace("sending buffer, size=");
-//	ftdiTraceInt(buffer->size);
+	ftdiTraceAndInt("ACM - sending buffer, size=", buffer->size);
+	ftdiTraceHex(buffer, buffer->size);
 	return app_usbd_ep_transfer(ep, &transfer);
 }
+
+static ret_code_t sendNextVendorBuffer()
+{
+	ret_code_t ret;
+	txBuffer buffer = gVendorTxBufferList;
+
+	if (NULL == buffer)
+		return 0;
+
+    app_usbd_class_inst_t const * p_inst = app_usbd_vendor_class_inst_get(&m_app_vendor);
+    app_usbd_vendor_ctx_t * p_vendor_ctx = vendor_ctx_get(&m_app_vendor);
+
+    bool dtr_state = (p_vendor_ctx->line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR) ? true : false;
+    if (!dtr_state) {
+		ftdiTrace("> vendor sendNextBuffer - DTR line not set! port not opened");
+        return NRF_ERROR_INVALID_STATE;	// port not opened
+    }
+    
+    nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
+    
+	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
+	ftdiTraceAndInt("vendor>> - sending buffer, size=", buffer->size);
+	return app_usbd_ep_transfer(ep, &transfer);
+}
+
+void sendAVendorResponse(uint8_t *msg, int len) {
+	if (!m_vendor_usb_connected)
+		return;
+
+	uint8_t doSend = (NULL == gTxBufferList);
+	txBuffer buffer = c_calloc(sizeof(txBufferRecord) + len, 1);
+	if (NULL == buffer) return;
+
+	buffer->size = len;
+	c_memmove(&buffer->buffer[0], msg, buffer->size);
+	if (!gVendorTxBufferList)
+		gVendorTxBufferList = buffer;
+	else {
+		txBuffer walker;
+		for (walker = gVendorTxBufferList; walker->next; walker = walker->next)
+			;
+		walker->next = buffer;
+	}
+
+	if (doSend) {
+		sendNextVendorBuffer();
+	}
+}
+
 
 static uint8_t reboot_style[2] = {0, 0};
 static void checkLineState(uint16_t line_state, uint8_t which) {
@@ -347,19 +412,31 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 			reboot_style[which] = 0;
 			break;
 		case 2:								 // DTR dropped
-			ftdiTrace("[2] dtr dropped");
+			if (which == 1)
+				ftdiTrace("[2] ACM - dtr dropped");
+			else
+				ftdiTrace("[2] VENDOR - dtr dropped");
 			break;
 		case 1:						 // DTR Raised, RTS off - programming mode
-			ftdiTrace("[1] dtr raised, rts dropped - programming mode");
+			if (which == 1)
+				ftdiTrace("[1] ACM - dtr raised, rts dropped - programming mode");
+			else
+				ftdiTrace("[1] VENDOR - dtr raised, rts dropped - programming mode");
 			reboot_style[which] = 1;
 			break;
 		case 0:
 			if (reboot_style[which]) {
-				ftdiTrace("[0] dtr and rts dropped - REBOOT TO PROGRAMMING");
+				if (which == 1)
+					ftdiTrace("[0] ACM - dtr and rts dropped - REBOOT TO PROGRAMMING");
+				else
+					ftdiTrace("[0] VENDOR - dtr and rts dropped - REBOOT TO PROGRAMMING");
 				nrf52_rebootToDFU();
 			}
 			else {
-				ftdiTrace("[0] dtr dropped, rts dropped - RESET");
+				if (which == 1)
+					ftdiTrace("[0] ACM - dtr dropped, rts dropped - RESET");
+				else
+					ftdiTrace("[0] VENDOR - dtr dropped, rts dropped - RESET");
 				nrf52_reset();
 			}
 			break;
@@ -368,10 +445,74 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 
 static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_vendor_user_event_t event)
 {
+	ret_code_t ret;
+	uint32_t ulPreviousValue;
     app_usbd_vendor_t const * p_vendor = app_usbd_vendor_class_get(p_inst);
 	app_usbd_vendor_ctx_t * p_vendor_ctx = vendor_ctx_get(p_vendor);
 
+
 	checkLineState(p_vendor_ctx->line_state, 0);
+    switch(event) {
+        case APP_USBD_VENDOR_USER_EVT_PORT_OPEN: {
+			ftdiTrace("vueh>> - EVT_PORT_OPEN");
+            // Setup the first transfer.
+            // This case is triggered when a remote device connects to the port.
+// queue up a read
+            app_usbd_vendor_read(&m_app_vendor, m_vendor_rx_buffer, 1);
+//			m_vendor_rx_buffer_pos = 1;	// gets inc'd in RX_DONE
+            m_vendor_usb_connected = true;
+#if NRF_USBD_REQUIRE_CLOSED_ON_PORT_OPEN
+            if (!m_vendor_usb_closed)
+                break;
+#endif
+            m_vendor_usb_closed = false;
+            m_vendor_usb_reopened = true;
+            break;
+        }
+		case APP_USBD_VENDOR_USER_EVT_PORT_CLOSE:
+            ftdiTrace("vueh>> - APP_USBD_VENDOR_USER_EVT_PORT_CLOSE");
+    		m_vendor_usb_connected = false;
+    		m_vendor_usb_closed = true;
+			break;
+        case APP_USBD_VENDOR_USER_EVT_TX_DONE: {
+            ftdiTrace("vueh>> - APP_USBD_VENDOR_USER_EVT_TX_DONE");
+			if (NULL != gVendorTxBufferList) {
+				txBuffer buffer = gVendorTxBufferList;
+				gVendorTxBufferList = gVendorTxBufferList->next;
+				c_free(buffer);
+			}
+			
+    		if (!m_vendor_usb_connected)
+    			break;
+    		
+			ret = sendNextVendorBuffer();
+			if (0 != ret)
+    			ftdiTrace("vueh>> - sendNextVendorBuffer failed");
+			break;
+		}
+        case APP_USBD_VENDOR_USER_EVT_RX_DONE: {
+    		// The first byte is already in the buffer due to app_usbd_vendor_read()
+    		// in the APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN event. and subsequent reads that leave a buffer
+
+			do {
+				m_vendor_rx_buffer_pos++;
+				if (m_vendor_rx_buffer_pos == kRXBufferSize) {
+ftdiTrace(">> VENDOR GOT A FULL BLOCK -  should do something with this data");
+					ftdiTraceHex(m_vendor_rx_buffer, kRXBufferSize);
+					sendAVendorResponse(m_vendor_rx_buffer, kRXBufferSize);
+					m_vendor_rx_buffer_pos = 0;
+				}
+			}
+			while (NRF_SUCCESS == (ret = app_usbd_vendor_read(&m_app_vendor, &(m_vendor_rx_buffer[m_vendor_rx_buffer_pos]), 1)));
+			
+			}
+            break;
+		case VENDOR_REQUEST_LINE_STATE:
+ftdiTraceAndInt(">> VENDOR - SET CONTROL_LINE_STATE:", p_vendor_ctx->line_state);
+			break;
+		default:
+			break;
+	}
 }
 
 void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event)
@@ -418,8 +559,8 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 				nrf_queue_in(&m_rx_queue, &m_rx_buffer[0], 1);
 				++count;
 			}
-//    		ftdiTrace("Read bytes =");
-//    		ftdiTraceInt(count);
+    		ftdiTraceAndInt("Read bytes =", count);
+			ftdiTraceHex(m_rx_buffer, count);
 
 			// Here, we inform the xsMain task that there is data available.
 			// If ulPreviousValue isn't 0, then data hasn't yet been serviced.
@@ -463,18 +604,18 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     }
 }
 
+#ifdef mxDebug		// moved from way-up. We want usb for the programmer
+
 void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
-#ifdef mxDebug
 	if (gThe) {
 		while (0 != (c = c_read8(msg++)))
 			fx_putc(gThe, c);
 		fx_putc(gThe, 0);
 	}
 	else
-#endif
 		while (0 != (c = c_read8(msg++)))
 			ESP_putc(c);
 	ESP_putc('\r');
