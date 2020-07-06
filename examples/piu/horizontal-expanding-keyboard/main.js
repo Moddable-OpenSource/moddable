@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -19,16 +19,16 @@ import {KeyboardField} from "common/keyboard";
 const PASSWORDMODE = false;	//Set to true to replace input with asterisks, false for clear text. 
 const TRANSITION = true;	//Set to true to transition keyboard in and out. 
 
-const HeaderSkin = Skin.template({fill:"#0082ff"});
-const FieldSkin = Skin.template({fill:"white"});
-const BackgroundSkin = Skin.template({ fill:"white" });
+const HeaderSkin = Skin.template(Object.freeze({fill:"#0082ff"}));
+const FieldSkin = Skin.template(Object.freeze({fill:"white"}));
+const BackgroundSkin = Skin.template(Object.freeze({ fill:"white" }));
 
-const KeyboardStyle = Style.template({ font: "18px Roboto", color: "black" });
-const FieldStyle = Style.template({ font: "20px Open Sans", color: "black", horizontal:"left", vertical:"middle" });
-const HeaderStyle = Style.template({ font: "20px Open Sans", color: "white", horizontal:"left", vertical:"middle" });
+const KeyboardStyle = Style.template(Object.freeze({ font: "18px Roboto", color: "black" }));
+const FieldStyle = Style.template(Object.freeze({ font: "20px Open Sans", color: "black", horizontal:"left", vertical:"middle" }));
+const HeaderStyle = Style.template(Object.freeze({ font: "20px Open Sans", color: "white", horizontal:"left", vertical:"middle" }));
 
-const ModdableLogoTexture = Texture.template({ path:"moddable-logo-mask.png" });
-const ModdableLogoSkin = Skin.template({ Texture:ModdableLogoTexture, x:0, y:0, width:88, height:34, color:"white" });
+const ModdableLogoTexture = Texture.template(Object.freeze({ path:"moddable-logo-mask.png" }));
+const ModdableLogoSkin = Skin.template(Object.freeze({ Texture:ModdableLogoTexture, x:0, y:0, width:88, height:34, color:"white" }));
 
 const Header = Container.template($ => ({
 	contents: [
@@ -58,12 +58,12 @@ const KeyboardContainer = Column.template($ => ({
 			this.addKeyboard();
 		}
 		onTouchEnded(column){
-			if (1 != this.data["KEYBOARD"].length)
+			if (1 != this.data.KEYBOARD.length)
 				this.addKeyboard();
 		}
 		addKeyboard() {
-			this.data["KEYBOARD"].add(HorizontalExpandingKeyboard(this.data, {
-				style:new KeyboardStyle(), target:this.data["FIELD"], doTransition:TRANSITION
+			this.data.KEYBOARD.add(HorizontalExpandingKeyboard(this.data, {
+				style:new KeyboardStyle(), target:this.data.FIELD, doTransition:TRANSITION
 			}));
 		}
 	}
@@ -81,15 +81,15 @@ class KeyboardAppBehavior extends Behavior {
 	}
 	onKeyboardOK(application, string) {
 		trace(`String is: ${string}\n`);
-		this.data["FIELD"].visible = false;
+		this.data.FIELD.visible = false;
 	}
 	onKeyboardTransitionFinished(application, out) {
 		if (out) {
-			let keyboard = this.data["KEYBOARD"];
+			let keyboard = this.data.KEYBOARD;
 			keyboard.remove(keyboard.first);
 		}
 		else {
-			this.data["FIELD"].visible = true;
+			this.data.FIELD.visible = true;
 		}
 	}
 }

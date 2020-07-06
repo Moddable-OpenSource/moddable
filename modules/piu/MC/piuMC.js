@@ -73,7 +73,8 @@ export class Texture @ "PiuTextureDelete" {
 	_create(alphaBitmap, colorBitmap) @ "PiuTexture_create"
 	get width() @ "PiuTexture_get_width"
 	get height() @ "PiuTexture_get_height"
-	static template(it) {
+	static template(i) {
+		const it = i;
 		return function() {
 			let texture;
 			if (global.assetMap)
