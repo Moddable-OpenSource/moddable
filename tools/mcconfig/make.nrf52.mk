@@ -527,7 +527,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
 	-DMODGCC=1 \
-	-DUSE_FTDI_TRACE=1
+	-DUSE_FTDI_TRACE=0
 
 C_FLAGS=\
 	-c	\

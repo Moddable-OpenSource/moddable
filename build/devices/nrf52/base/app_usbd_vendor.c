@@ -92,13 +92,14 @@ ftdiTraceInt(p_setup_ev->setup.bRequest);
 static ret_code_t setup_req_std_out(app_usbd_class_inst_t const * p_inst,
 									app_usbd_setup_evt_t const *  p_setup_ev) {
 
+ftdiTraceAndInt("setup_req_std_out: ", p_setup_ev->setup.bRequest);
 	switch (p_setup_ev->setup.bRequest) {
-		case VENDOR_REQUEST_LINE_STATE:
+		case VENDOR_REQUEST_LINE_STATE:			// 0
 			if (p_setup_ev->setup.wLength.w != sizeof(app_usbd_vendor_line_coding_t)) {
 				return NRF_ERROR_NOT_SUPPORTED;
 			}
 			return vendor_req_out_datastage(p_inst, p_setup_ev);
-		case VENDOR_SET_LINE_STATE:
+		case VENDOR_SET_LINE_STATE:				// 1
 			return vendor_req_out_datastage(p_inst, p_setup_ev);
 			break;
 		default:
@@ -300,6 +301,7 @@ static ret_code_t setup_event_handler(app_usbd_class_inst_t const *p_inst,
 	ASSERT(p_inst != NULL);
 	ASSERT(p_setup_ev != NULL);
 
+ftdiTraceAndbmReq("vendor req:", p_setup_ev->setup.bmRequestType);
 	if (app_usbd_setup_req_dir(p_setup_ev->setup.bmRequestType) == APP_USBD_SETUP_REQDIR_IN) {
 		switch (app_usbd_setup_req_typ(p_setup_ev->setup.bmRequestType)) {
 			case APP_USBD_SETUP_REQTYPE_STD:

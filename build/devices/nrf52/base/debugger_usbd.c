@@ -70,11 +70,13 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(
 	APP_USBD_CDC_COMM_PROTOCOL_AT_V250
 );
 
+
+// Vendor port is to act similar to cdc/acm
 #define VENDOR_COMM_INTERFACE	2
 #define VENDOR_COMM_EPIN		NRF_DRV_USBD_EPIN3
 #define VENDOR_DATA_INTERFACE 	3
-#define VENDOR_DATA_EPIN	NRF_DRV_USBD_EPIN4
-#define VENDOR_DATA_EPOUT	NRF_DRV_USBD_EPOUT4
+#define VENDOR_DATA_EPIN		NRF_DRV_USBD_EPIN4
+#define VENDOR_DATA_EPOUT		NRF_DRV_USBD_EPOUT4
 
 APP_USBD_VENDOR_GLOBAL_DEF(
 	m_app_vendor,
@@ -118,15 +120,13 @@ static uint8_t m_usb_restarted = false;
 static uint8_t m_usb_reopened = false;
 static uint8_t m_usb_closed = false;
 
-static txBuffer gVendorTxBufferList = NULL;
-//static uint8_t m_vendor_tx_buffer[kTXBufferSize];
-//static int16_t m_vendor_tx_buffer_index = 0;
 
-#define kRXBufferSize	512						// optimize for flash block size?
-static uint32_t m_vendor_rx_buffer_pos = 0;
-static char m_vendor_rx_buffer[kRXBufferSize];
-static uint8_t m_vendor_temp[1];
-static uint8_t m_vendor_first_byte = 0;
+static txBuffer gVendorTxBufferList = NULL;
+static uint8_t m_vendor_tx_buffer[kTXBufferSize];
+static int16_t m_vendor_tx_buffer_index = 0;
+
+static char m_vendor_rx_buffer[1];
+NRF_QUEUE_DEF(uint8_t, m_vendor_rx_queue, 2048, NRF_QUEUE_MODE_OVERFLOW);
 
 static uint8_t m_vendor_usb_connected = false;
 static uint8_t m_vendor_usb_restarted = false;
@@ -345,8 +345,8 @@ static ret_code_t sendNextBuffer()
     nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
     
 	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
-	ftdiTraceAndInt("ACM - sending buffer, size=", buffer->size);
-	ftdiTraceHex(buffer, buffer->size);
+//	ftdiTraceAndInt("ACM - sending buffer, size=", buffer->size);
+//	ftdiTraceHex(&buffer->buffer[0], buffer->size);
 	return app_usbd_ep_transfer(ep, &transfer);
 }
 
@@ -363,22 +363,23 @@ static ret_code_t sendNextVendorBuffer()
 
     bool dtr_state = (p_vendor_ctx->line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR) ? true : false;
     if (!dtr_state) {
-		ftdiTrace("> vendor sendNextBuffer - DTR line not set! port not opened");
+		ftdiTrace("vendor - DTR line not set! port not opened");
         return NRF_ERROR_INVALID_STATE;	// port not opened
     }
     
     nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
     
 	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
-	ftdiTraceAndInt("vendor>> - sending buffer, size=", buffer->size);
+//	ftdiTraceAndInt("vendor - sending buffer, size=", buffer->size);
+//	ftdiTraceHex(&buffer->buffer[0], buffer->size);
 	return app_usbd_ep_transfer(ep, &transfer);
 }
 
-void sendAVendorResponse(uint8_t *msg, int len) {
+void sendAVendorMsg(uint8_t *msg, int len) {
 	if (!m_vendor_usb_connected)
 		return;
 
-	uint8_t doSend = (NULL == gTxBufferList);
+	uint8_t doSend = (NULL == gVendorTxBufferList);
 	txBuffer buffer = c_calloc(sizeof(txBufferRecord) + len, 1);
 	if (NULL == buffer) return;
 
@@ -397,7 +398,6 @@ void sendAVendorResponse(uint8_t *msg, int len) {
 		sendNextVendorBuffer();
 	}
 }
-
 
 static uint8_t reboot_style[2] = {0, 0};
 static void checkLineState(uint16_t line_state, uint8_t which) {
@@ -446,17 +446,17 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_vendor_user_event_t event)
 {
 	ret_code_t ret;
-	uint32_t ulPreviousValue;
     app_usbd_vendor_t const * p_vendor = app_usbd_vendor_class_get(p_inst);
+	uint32_t ulPreviousValue;
 	app_usbd_vendor_ctx_t * p_vendor_ctx = vendor_ctx_get(p_vendor);
 
-
 	checkLineState(p_vendor_ctx->line_state, 0);
+
     switch(event) {
         case APP_USBD_VENDOR_USER_EVT_PORT_OPEN: {
-			ftdiTrace("vueh>> - EVT_PORT_OPEN");
             // Setup the first transfer.
             // This case is triggered when a remote device connects to the port.
+			ftdiTrace("APP_USBD_VENDOR_USER_EVT_PORT_OPEN");
 // queue up a read
             app_usbd_vendor_read(&m_app_vendor, m_vendor_rx_buffer, 1);
 //			m_vendor_rx_buffer_pos = 1;	// gets inc'd in RX_DONE
@@ -470,12 +470,13 @@ static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usb
             break;
         }
 		case APP_USBD_VENDOR_USER_EVT_PORT_CLOSE:
-            ftdiTrace("vueh>> - APP_USBD_VENDOR_USER_EVT_PORT_CLOSE");
+            ftdiTrace("APP_USBD_VENDOR_USER_EVT_PORT_CLOSE");
     		m_vendor_usb_connected = false;
     		m_vendor_usb_closed = true;
 			break;
-        case APP_USBD_VENDOR_USER_EVT_TX_DONE: {
-            ftdiTrace("vueh>> - APP_USBD_VENDOR_USER_EVT_TX_DONE");
+
+        case APP_USBD_VENDOR_USER_EVT_TX_DONE:
+            ftdiTrace("APP_USBD_VENDOR_USER_EVT_TX_DONE");
 			if (NULL != gVendorTxBufferList) {
 				txBuffer buffer = gVendorTxBufferList;
 				gVendorTxBufferList = gVendorTxBufferList->next;
@@ -487,26 +488,42 @@ static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usb
     		
 			ret = sendNextVendorBuffer();
 			if (0 != ret)
-    			ftdiTrace("vueh>> - sendNextVendorBuffer failed");
+    			ftdiTrace("sendNextVendorBuffer failed");
 			break;
-		}
-        case APP_USBD_VENDOR_USER_EVT_RX_DONE: {
-    		// The first byte is already in the buffer due to app_usbd_vendor_read()
-    		// in the APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN event. and subsequent reads that leave a buffer
 
-			do {
-				m_vendor_rx_buffer_pos++;
-				if (m_vendor_rx_buffer_pos == kRXBufferSize) {
-ftdiTrace(">> VENDOR GOT A FULL BLOCK -  should do something with this data");
-					ftdiTraceHex(m_vendor_rx_buffer, kRXBufferSize);
-					sendAVendorResponse(m_vendor_rx_buffer, kRXBufferSize);
-					m_vendor_rx_buffer_pos = 0;
-				}
+        case APP_USBD_VENDOR_USER_EVT_RX_DONE: {
+    		// The first byte is already in the buffer due to
+			// app_usbd_vendor_read() in the USER_EVT_PORT_OPEN event.
+			// Subsequent iopending reads leave a buffer to be filled.
+			uint16_t count = 0;
+			if (!nrf_queue_is_full(&m_vendor_rx_queue)) {
+				nrf_queue_in(&m_vendor_rx_queue, &m_vendor_rx_buffer[0], 1);
+				++count;
 			}
-			while (NRF_SUCCESS == (ret = app_usbd_vendor_read(&m_app_vendor, &(m_vendor_rx_buffer[m_vendor_rx_buffer_pos]), 1)));
+			while (!nrf_queue_is_full(&m_vendor_rx_queue)) {
+				ret = app_usbd_vendor_read(&m_app_vendor, &m_vendor_rx_buffer[0], 1);
+				if (NRF_SUCCESS != ret)
+					break;
+				nrf_queue_in(&m_vendor_rx_queue, &m_vendor_rx_buffer[0], 1);
+				++count;
+			}
+			ftdiTraceAndInt("Read bytes:", count);
+			ftdiTraceHex(m_vendor_rx_buffer, count);
 			
+			// here, we inform the xsMain task that there is data available.
+			// If ulPreviousValue isn't 0, then data hasn't yet been serviced.
+			xTaskNotifyAndQuery(gMainTask, 1, eSetBits, &ulPreviousValue);
+
+			// Drain and toss remaining bytes if queue is full
+			if (nrf_queue_is_full(&m_rx_queue)) {
+				ftdiTrace("vendor rx queue is full!");
+				do {
+					ret = app_usbd_vendor_read(&m_app_vendor, &m_vendor_rx_buffer, 1);
+				} while (NRF_SUCCESS == ret);
 			}
             break;
+		}
+
 		case VENDOR_REQUEST_LINE_STATE:
 ftdiTraceAndInt(">> VENDOR - SET CONTROL_LINE_STATE:", p_vendor_ctx->line_state);
 			break;
@@ -590,7 +607,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 				c_free(buffer);
 			}
 			
-    		if (!m_usb_connected)
+    		if (!m_usb_connected || m_vendor_usb_connected)
     			break;
     		
 			ret = sendNextBuffer();
@@ -626,35 +643,64 @@ void ESP_putc(int c)
 {
 	uint8_t ch = c;
 
-	if (!m_usb_connected)
-		return;
-
-	m_tx_buffer[m_tx_buffer_index++] = ch;
+	if (m_vendor_usb_connected) {
+		m_vendor_tx_buffer[m_vendor_tx_buffer_index++] = ch;
 	
-	// Flush buffer at end of message or when we've reached the buffer size limit
-	if ('\n' == ch || kTXBufferSize == m_tx_buffer_index) {
-		uint8_t doSend = (NULL == gTxBufferList);
-		
-		txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_tx_buffer_index, 1);
-		if (NULL == buffer) return;
-		
-		buffer->size = m_tx_buffer_index;
-		c_memmove(&buffer->buffer[0], m_tx_buffer, buffer->size);
-		m_tx_buffer_index = 0;
-		if (!gTxBufferList)
-			gTxBufferList = buffer;
-		else {
-			txBuffer walker;
-			for (walker = gTxBufferList; walker->next; walker = walker->next)
-				;
-			walker->next = buffer;
-		}
+		// Flush buffer at end of message or when we've reached the buffer size limit
+		if ('\n' == ch || kTXBufferSize == m_vendor_tx_buffer_index) {
+			uint8_t doSend = (NULL == gVendorTxBufferList);
 
-		if (doSend) {
-			sendNextBuffer();
+			txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_vendor_tx_buffer_index, 1);
+			if (NULL == buffer) return;
+		
+			buffer->size = m_vendor_tx_buffer_index;
+			c_memmove(&buffer->buffer[0], m_vendor_tx_buffer, buffer->size);
+			m_vendor_tx_buffer_index = 0;
+			if (!gVendorTxBufferList)
+				gVendorTxBufferList = buffer;
+			else {
+				txBuffer walker;
+				for (walker = gVendorTxBufferList; walker->next; walker = walker->next)
+					;
+				walker->next = buffer;
+			}
+
+			if (doSend) {
+				sendNextVendorBuffer();
+			}
+			else {
+//				ftdiTrace("queuing buffer");
+			}
 		}
-		else {
-//			ftdiTrace("queuing buffer");
+	}
+	else if (m_usb_connected) {
+		m_tx_buffer[m_tx_buffer_index++] = ch;
+	
+		// Flush buffer at end of message or when we've reached the buffer size limit
+		if ('\n' == ch || kTXBufferSize == m_tx_buffer_index) {
+			uint8_t doSend = (NULL == gTxBufferList);
+		
+			txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_tx_buffer_index, 1);
+			if (NULL == buffer) return;
+		
+			buffer->size = m_tx_buffer_index;
+			c_memmove(&buffer->buffer[0], m_tx_buffer, buffer->size);
+			m_tx_buffer_index = 0;
+			if (!gTxBufferList)
+				gTxBufferList = buffer;
+			else {
+				txBuffer walker;
+				for (walker = gTxBufferList; walker->next; walker = walker->next)
+					;
+				walker->next = buffer;
+			}
+
+			if (doSend) {
+				sendNextBuffer();
+			}
+			else {
+//				ftdiTrace("queuing buffer");
+			}
 		}
 	}
 }
@@ -665,15 +711,23 @@ int ESP_getc(void)
 	ret_code_t ret;
 	size_t size;
 
-	if (!m_usb_connected)
-		return -1;
+	if (m_vendor_usb_connected) {
+		if (/*gTxBufferList &&*/ nrf_queue_is_empty(&m_vendor_rx_queue)) {
+			taskYIELD();
+			goto bail;
+		}
 
-	if (/*gTxBufferList &&*/ nrf_queue_is_empty(&m_rx_queue)) {
-		taskYIELD();
-		goto bail;
+		size = nrf_queue_out(&m_vendor_rx_queue, &ch, 1);
+	}
+	else if (m_usb_connected) {
+		if (/*gTxBufferList &&*/ nrf_queue_is_empty(&m_rx_queue)) {
+			taskYIELD();
+			goto bail;
+		}
+
+		size = nrf_queue_out(&m_rx_queue, &ch, 1);
 	}
 
-	size = nrf_queue_out(&m_rx_queue, &ch, 1);
     if (1 == size) {
 		return (int)ch;
     }
