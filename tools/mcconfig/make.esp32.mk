@@ -102,7 +102,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/lwip/lwip/src/include/ \
  	$(IDF_PATH)/components/lwip/port/esp32/ \
  	$(IDF_PATH)/components/lwip/port/esp32/include/ \
- 	$(IDF_PATH)/components/mbedtls/include \
+ 	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
  	$(IDF_PATH)/components/nimble/esp-hci/include \

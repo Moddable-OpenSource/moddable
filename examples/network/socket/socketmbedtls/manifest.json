@@ -1,0 +1,19 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODDABLE)/modules/network/socketmbedtls/*",
+		],
+	},
+	"platforms": {
+		"esp32": {
+		},
+		"...": {
+			"error": "mbedtls module unsupported"
+		}
+	}
+}

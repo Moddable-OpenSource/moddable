@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
+#include "modTimer.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "../socket/modSocket.h"
@@ -92,7 +93,7 @@ struct xsListenerRecord {
 	xsSlot				obj;
 };
 
-static void socketStateMachine(modTimer timer, void *refcon, uint32_t refconSize);
+static void socketStateMachine(modTimer timer, void *refcon, int refconSize);
 static void doFlushWrite(xsSocket xss);
 static void socketMsgError(xsSocket xss);
 
@@ -238,6 +239,12 @@ void xs_socketmbedtls_destructor(void *data)
 		mbedtls_ssl_close_notify(&xss->ssl);
 		mbedtls_ssl_session_reset(&xss->ssl);
 		mbedtls_net_free(&xss->server_fd);
+		mbedtls_ssl_free(&xss->ssl);
+
+		mbedtls_ssl_config_free(&xss->conf);
+		mbedtls_ctr_drbg_free(&xss->ctr_drbg);
+		mbedtls_entropy_free(&xss->entropy);
+		mbedtls_x509_crt_free(&xss->cacert);
 
 		modTimerRemove(xss->timer);
 		c_free(xss);
@@ -405,7 +412,7 @@ void xs_socketmbedtls_write(xsMachine *the)
 	doFlushWrite(xss);
 }
 
-void socketStateMachine(modTimer timer, void *refcon, uint32_t refconSize)
+void socketStateMachine(modTimer timer, void *refcon, int refconSize)
 {
 	xsSocket xss = *(xsSocket *)refcon;
 	xsMachine *the = xss->the;
