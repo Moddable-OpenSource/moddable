@@ -92,6 +92,7 @@ ftdiTraceInt(p_setup_ev->setup.bRequest);
 static ret_code_t setup_req_std_out(app_usbd_class_inst_t const * p_inst,
 									app_usbd_setup_evt_t const *  p_setup_ev) {
 
+/*
 ftdiTraceAndInt("setup_req_std_out: ", p_setup_ev->setup.bRequest);
 	switch (p_setup_ev->setup.bRequest) {
 		case VENDOR_REQUEST_LINE_STATE:			// 0
@@ -106,6 +107,7 @@ ftdiTraceAndInt("setup_req_std_out: ", p_setup_ev->setup.bRequest);
 ftdiTrace(">- need to do something here");
 			break;
 	}
+*/
 	return NRF_ERROR_NOT_SUPPORTED;
 }
 
