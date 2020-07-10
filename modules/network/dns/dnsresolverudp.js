@@ -44,14 +44,18 @@ class Manager {
 
 	constructor(options) {
 		this.socket.callback = this.callback.bind(this);
-		this.timer = Timer.repeat(this.task.bind(this), 3000);
+		this.timer = Timer.repeat(this.task.bind(this), 1000);
 	}
 	add(request) {
 		request.state = 0;
 		request.id = request.host.endsWith(".local") ? 0 : ((Math.random() * 65535) | 1);
 		this.requests.push(request);
 
-		this.send(request);
+		try {
+			this.send(request);
+		}
+		catch {
+		}
 	}
 	remove(request) {
 		for (let i = 0; i < this.requests.length; i++) {
@@ -98,29 +102,33 @@ class Manager {
 
 				if ((question && (question.qname.join(".") === request.host)) || (answer.qname.join(".") === request.host)) {
 					this.remove(request.request);
-					return request.onResolved.call(request.target, answer.rdata);
+					return request.onResolved(request.target, answer.rdata);
 				}
 			}
 
 			if (id) {
 				this.remove(request.request);
-				return request.onError.call(request.target);
+				return request.onError(request.target);
 			}
 		}
 	}
 	task() {
-		for (let i = 0; i < this.requests.length; i++) {
-			const request = this.requests[i];
-			request.state += 1;
-			if (!(request.state % 3)) {
-				if ((request.id ? (Net.get("DNS").length * 3) : 3) === request.state) {
-					this.remove(request.request);
-					request.onError.call(request.target);
-					i -= 1;
-					continue;
+		try {
+			for (let i = 0, length = this.requests.length; i < length; i++) {
+				const request = this.requests[i];
+				request.state += 1;
+				if (!(request.state % 3)) {
+					if ((request.id ? (Net.get("DNS").length * 6) : 6) === request.state) {
+						this.remove(request.request);
+						request.onError(request.target);
+						i -= 1;
+						continue;
+					}
 				}
+				this.send(request);
 			}
-			this.send(request);
+		}
+		catch {
 		}
 	}
 }
@@ -140,8 +148,7 @@ class Resolver {
 		});
 	}
 	close() {
-		if (manager)
-			manager.remove(this);
+		manager?.remove(this);
 	}
 }
 Object.freeze(Resolver.prototype);
