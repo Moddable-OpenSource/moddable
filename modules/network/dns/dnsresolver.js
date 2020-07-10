@@ -23,22 +23,19 @@ import Net from "net";
 class Resolver {
 	#onResolved;
 	#onError;
-	#target;
 	constructor(options) {
-		this.#target = options.target;
-		this.#onResolved = options.onResolved || this.onResolved;
-		this.#onError = options.onError || this.onError;
-
+		this.#onResolved = options.onResolved;
+		this.#onError = options.onError;
 		Net._resolve(options.host, (host, address) => {
 			if (address)
-				this.#onResolved?.(this.#target, address);
-			else {
-				this.#onError?.(this.#target);
-			}
+				this.#onResolved?.(address);
+			else
+				this.#onError?.();
 		});
+
+		this.target ??= options.target;
 	}
 	close() {
-		this.#target = undefined;
 		this.#onResolved = undefined;
 		this.#onError = undefined;
 	}

@@ -86,11 +86,20 @@ class Manager {
 		if (Request.responseComplete === message) {
 			const packet = new Parser(value);
 			try {
+				let address;
+				for (let i = 0, answers = packet.answers; i < answers; i++) {
+					const answer = packet.answer(i);
+					if ((1 === answer.qtype) && (1 === answer.qclass)) {
+						address = answer.rdata;
+						break;
+					}
+				}
+
 				const request = this.requests[0];
-				if (packet.answers)
-					request.onResolved.call(request.target, packet.answer(0).rdata);
+				if (address)
+					request.onResolved?.call(request.request, address);
 				else
-					request.onError.call(request.target);
+					request.onError?.call(request.request);
 			}
 			catch {
 			}
@@ -118,10 +127,11 @@ class Resolver {
 		manager.add({
 			request: this,
 			host: options.host.toString(),
-			target: options.target || this,
-			onResolved: options.onResolved || this.onResolved,
-			onError: options.onError || this.onError,
+			onResolved: options.onResolved,
+			onError: options.onError,
 		});
+
+		this.target ??= options.target;
 	}
 	close() {
 		manager.remove(this);

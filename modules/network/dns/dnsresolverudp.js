@@ -102,13 +102,13 @@ class Manager {
 
 				if ((question && (question.qname.join(".") === request.host)) || (answer.qname.join(".") === request.host)) {
 					this.remove(request.request);
-					return request.onResolved(request.target, answer.rdata);
+					return request.onResolved?.call(request.request, answer.rdata);
 				}
 			}
 
 			if (id) {
 				this.remove(request.request);
-				return request.onError(request.target);
+				return request.onError?.call(request.request);
 			}
 		}
 	}
@@ -120,7 +120,7 @@ class Manager {
 				if (!(request.state % 3)) {
 					if ((request.id ? (Net.get("DNS").length * 6) : 6) === request.state) {
 						this.remove(request.request);
-						request.onError(request.target);
+						request.onError?.call(request.request);
 						i -= 1;
 						continue;
 					}
@@ -142,10 +142,11 @@ class Resolver {
 		manager.add({
 			request: this,
 			host: options.host.toString(),
-			target: options.target || this,
-			onResolved: options.onResolved || this.onResolved,
-			onError: options.onError || this.onError,
+			onResolved: options.onResolved,
+			onError: options.onError,
 		});
+
+		this.target ??= options.target;
 	}
 	close() {
 		manager?.remove(this);
