@@ -24,7 +24,6 @@ import Parser from "dns/parser";
 import Serializer from "dns/serializer";
 import SecureSocket from "securesocket";
 import {Request} from "http";
-import Timer from "timer";
 
 /*
 	note:
@@ -57,8 +56,7 @@ class Manager {
 		}
 		if (!this.requests.length) {
 			manager = null;
-			if (this.request)
-				this.request.close();
+			this?.request.close();
 			delete this.request;
 		}
 	}
@@ -126,11 +124,6 @@ class Resolver {
 		});
 	}
 	close() {
-		if (this.timer) {
-			Timer.clear(this.timer);
-			delete this.timer;
-		}
-
 		manager.remove(this);
 	}
 }

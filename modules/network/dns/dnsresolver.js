@@ -25,14 +25,16 @@ class Resolver {
 	#onError;
 	#target;
 	constructor(options) {
-		this.#target = options.target || this;
+		this.#target = options.target;
 		this.#onResolved = options.onResolved || this.onResolved;
 		this.#onError = options.onError || this.onError;
-		Net.resolve(options.host, (host, address) => {
+
+		Net._resolve(options.host, (host, address) => {
 			if (address)
-				this.#onResolved.call(this.#target, address);
-			else
-				this.#onError.call(this.#target);
+				this.#onResolved?.(this.#target, address);
+			else {
+				this.#onError?.(this.#target);
+			}
 		});
 	}
 	close() {
