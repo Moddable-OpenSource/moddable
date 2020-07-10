@@ -33,6 +33,7 @@
 int8_t gWiFiState = -2;	// -2 = uninitialized, -1 - wifi task uninitialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
 int8_t gDisconnectReason = 0;		// -1 = password rejected
 int8_t gWiFiConnectRetryRemaining;
+int8_t	gWiFiIP;		// 0x01 == IP4, 0x02 == IP6
 
 #define SYSTEM_EVENT_STA_CHANGED_IP (SYSTEM_EVENT_MAX + 1)
 
@@ -398,8 +399,22 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 		case SYSTEM_EVENT_STA_CONNECTED:
 			gWiFiState = 4;
 			gWiFiConnectRetryRemaining = 0;
+			gWiFiIP = 0;
+			if (ESP_OK != tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA))
+				gWiFiIP = 0x02;		// don't wait for IP6 address if tcpip_adapter_create_ip6_linklocal failed
 			break;
+		case SYSTEM_EVENT_AP_STA_GOT_IP6:
+			gWiFiIP |= 0x02;
+			if (0x03 != gWiFiIP)
+				return 0;
+			event_id = SYSTEM_EVENT_STA_GOT_IP;
+			gWiFiState = 5;
+			break;
+
 		case SYSTEM_EVENT_STA_GOT_IP:
+			gWiFiIP |= 0x01;
+			if (0x03 != gWiFiIP)
+				return 0;
 			if (event->event_info.got_ip.ip_changed && (5 == gWiFiState))		// N.B. ip_changed is set when initial IP address received.
 				event_id = SYSTEM_EVENT_STA_CHANGED_IP;
 			gWiFiState = 5;
@@ -407,6 +422,7 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 		case SYSTEM_EVENT_STA_DISCONNECTED: {
 			wifi_err_reason_t reason = event->event_info.disconnected.reason;
 			gWiFiState = 2;
+			gWiFiIP = 0;
 			gDisconnectReason =	((WIFI_REASON_MIC_FAILURE == reason) ||
 								(WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT == reason) ||
 								(WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
