@@ -565,8 +565,14 @@ export default class Client {
 		if ((this.last + this.timeout) > now)
 			return;		// received data within the timeout interval
 
-		if ((this.last + (this.timeout + (this.timeout >> 1))) > now)
-			this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
+		if ((this.last + (this.timeout + (this.timeout >> 1))) > now) {
+			try {
+				this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
+			}
+			catch {
+				this.fail("write failed");
+			}
+		}
 		else
 			this.fail("time out"); // timed out after 1.5x waiting
 	}
