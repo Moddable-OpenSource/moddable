@@ -1971,6 +1971,13 @@ void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, 
 		fxEcho(the, "</bubble>");
 		fxEchoStop(the);
 	}
+#elif defined(mxInstrument)
+	if (!(flags & XS_BUBBLE_BINARY)) {
+		if (conversation)
+			fxReport(the, "%s: %s\n", conversation, message);
+		else
+			fxReport(the, "%s\n", message);
+	}
 #endif
 }
 

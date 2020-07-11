@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -194,7 +194,7 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 
 void fxAbort(txMachine* the, int status)
 {
-#ifdef mxDebug
+#if defined(mxDebug) || defined(mxInstrument)
 	char *msg = NULL;
 
 	switch (status) {
@@ -210,14 +210,18 @@ void fxAbort(txMachine* the, int status)
 		case XS_DEBUGGER_EXIT:
 		case XS_FATAL_CHECK_EXIT:
 			break;
+		case XS_UNHANDLED_EXCEPTION_EXIT:
+			msg = "unhandled exception";
+			break;
 		default:
 			msg = "unknown";
 			break;
 	}
-	if (msg) {
-		fxReport(the, "XS abort: %s\n", msg);
+
+	fxReport(the, "XS abort: %s\n", msg);
+	#if defined(mxDebug)
 		fxDebugger(the, (char *)__FILE__, __LINE__);
-	}
+	#endif
 #endif
 
 	c_exit(status);
@@ -371,6 +375,7 @@ void fxConnect(txMachine* the)
 		goto connected;
 	}
 
+/*
 	if (0 == gXSBUG[0]) {
 		modLog("  fxConnect - NO XSBUG ADDRESS");
 		return;
@@ -421,6 +426,7 @@ void fxConnect(txMachine* the)
 	}
 
 	tcp_err(pcb, didError);
+*/
 connected:
     xmodLog("  fxConnect - EXIT");
 	return;
@@ -430,8 +436,9 @@ void fxDisconnect(txMachine* the)
 {
 	xmodLog("  fxDisconnect - ENTER");
 	if (the->connection) {
+
 		if (kSerialConnection != the->connection) {
-			uint8_t i, closeMsg[2];
+/*			uint8_t i, closeMsg[2];
 			for (i = 0; i < kDebugReaderCount; i++) {
 				if (the->readers[i])
 					pbuf_free(the->readers[i]);
@@ -447,7 +454,7 @@ void fxDisconnect(txMachine* the)
 			tcp_err(the->connection, NULL);
 			if (18 != the->wsState)
 				tcp_close_safe((struct tcp_pcb *)the->connection);
-		}
+*/		}
 		else {
 			fx_putpi(the, '-', true);
 			the->debugConnectionVerified = 0;
@@ -471,6 +478,7 @@ txBoolean fxIsReadable(txMachine* the)
 #endif
 		return NULL != the->debugFragments;
 	}
+/*
 	else {
 		extern uint32_t system_get_rtc_time(void);
 		static uint32_t next = 0, now;
@@ -486,6 +494,7 @@ txBoolean fxIsReadable(txMachine* the)
 
 		return the->readers[0] ? 1 : 0;
 	}
+*/
 }
 
 void fxReceive(txMachine* the)
@@ -496,7 +505,7 @@ void fxReceive(txMachine* the)
 	xmodLog("  fxReceive - ENTER");
 
 	if (kSerialConnection != pcb) {
-		struct pbuf *p;
+/*		struct pbuf *p;
 		uint16_t use;
 
 		modWatchDogReset();
@@ -638,7 +647,7 @@ void fxReceive(txMachine* the)
 				the->readerOffset = 0;
 			}
 		mxDebugMutexGive();
-	}
+*/	}
 	else {
 		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
@@ -849,7 +858,7 @@ void fxSend(txMachine* the, txBoolean flags)
 	if (!pcb) return;
 
 	if (kSerialConnection != pcb) {
-		int length = the->echoOffset;
+/*		int length = the->echoOffset;
 		const char *bytes = the->echoBuffer;
 		err_t err;
 		uint8_t sentHeader = 0;
@@ -910,7 +919,7 @@ void fxSend(txMachine* the, txBoolean flags)
 		}
 		if (!more && the->connection)
 			tcp_output_safe(pcb);
-	}
+*/	}
 	else {
 		char *c;
 		txInteger count;
@@ -939,11 +948,11 @@ void fxSend(txMachine* the, txBoolean flags)
 void fxConnectTo(txMachine *the, struct tcp_pcb *pcb)
 {
 	initializeConnection(the);
-
+/*
 	tcp_arg(pcb, the);
 	tcp_recv(pcb, didReceive);
 	tcp_err(pcb, didError);
-
+*/
 	the->connection = pcb;
 }
 
