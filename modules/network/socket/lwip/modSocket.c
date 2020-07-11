@@ -431,7 +431,7 @@ void xs_socket_close(xsMachine *the)
 	xsSocket xss = xsmcGetHostData(xsThis);
 
 	if (NULL == xss) {
-		xsTrace("close on closed socket");
+		xsTrace("close on closed socket\n");
 		return;
 	}
 
