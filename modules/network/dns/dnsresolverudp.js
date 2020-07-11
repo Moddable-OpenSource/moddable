@@ -114,8 +114,8 @@ class Manager {
 	}
 	task() {
 		try {
-			for (let i = 0, length = this.requests.length; i < length; i++) {
-				const request = this.requests[i];
+			for (let i = 0, requests = this.requests; i < requests.length; i++) {
+				const request = requests[i];
 				request.state += 1;
 				if (!(request.state % 3)) {
 					if ((request.id ? (Net.get("DNS").length * 6) : 6) === request.state) {
@@ -136,8 +136,7 @@ Object.freeze(Manager.prototype);
 
 class Resolver {
 	constructor(options) {
-		if (!manager)
-			manager = new Manager;
+		manager ??= new Manager;
 
 		manager.add({
 			request: this,
@@ -146,7 +145,8 @@ class Resolver {
 			onError: options.onError,
 		});
 
-		this.target ??= options.target;
+		if (options.target)
+			this.target = options.target;
 	}
 	close() {
 		manager?.remove(this);

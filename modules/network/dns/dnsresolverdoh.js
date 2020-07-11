@@ -81,7 +81,7 @@ class Manager {
 		this.request.callback = this.callback.bind(this);
 	}
 	callback(message, value, address, port) {
-		let done;
+		let done = Request.error === message;
 
 		if (Request.responseComplete === message) {
 			const packet = new Parser(value);
@@ -89,7 +89,7 @@ class Manager {
 				let address;
 				for (let i = 0, answers = packet.answers; i < answers; i++) {
 					const answer = packet.answer(i);
-					if ((1 === answer.qtype) && (1 === answer.qclass)) {
+					if (DNS.RR.A === answer.qtype) {
 						address = answer.rdata;
 						break;
 					}
@@ -106,8 +106,6 @@ class Manager {
 
 			done = true;
 		}
-		else if (Request.error === message)
-			done = true;
 
 		if (done) {
 			delete this.request;
@@ -121,8 +119,7 @@ Object.freeze(Manager.prototype);
 
 class Resolver {
 	constructor(options) {
-		if (!manager)
-			manager = new Manager;
+		manager ??= new Manager;
 
 		manager.add({
 			request: this,
@@ -131,7 +128,8 @@ class Resolver {
 			onError: options.onError,
 		});
 
-		this.target ??= options.target;
+		if (options.target)
+			this.target = options.target;
 	}
 	close() {
 		manager.remove(this);
