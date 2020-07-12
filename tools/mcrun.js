@@ -19,7 +19,7 @@
  */
 
 import { FILE } from "tool";
-import { MakeFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
+import { MakeFile, TSConfigFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
 
 var formatStrings = {
 	gray16: "Gray16",
@@ -420,6 +420,10 @@ export default class extends Tool {
 		}
 		
 		if (this.fragmentPath) {
+			if (this.tsFiles.length) {
+				file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig.json");
+				file.generate(this);
+			}
 			var path = this.tmpPath + this.slash + "makefile";
 			file = new MakeFile(path);
 			file.generate(this);
@@ -431,6 +435,9 @@ export default class extends Tool {
 			}
 		}
 		else {
+			if (this.tsFiles.length) {
+				throw new Error("TypeScript unsupported!");
+			}
 			var path = this.tmpPath + this.slash + "make.json";
 			file = new ToDoFile(path);
 			file.generate(this);

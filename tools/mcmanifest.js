@@ -732,8 +732,7 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			var parts = tool.splitPath(result);
-			paths[parts.name.slice(0, -2)] = [ result.slice(0, -5) ];
+			paths[result.target.slice(0, -2)] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
 			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
@@ -965,7 +964,7 @@ class ModulesRule extends Rule {
 		}
 		else if (parts.extension == ".ts") {
 			if (parts.name.endsWith(".d")) {
-				this.appendFolder(tool.dtsFiles, source);
+				this.appendFile(tool.dtsFiles, target, source, include);
 			}
 			else {
 				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
