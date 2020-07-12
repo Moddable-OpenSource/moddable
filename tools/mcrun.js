@@ -357,6 +357,30 @@ export default class extends Tool {
 		this.createDirectory(path);
 		return path;
 	}
+	filterRun(archive) {
+		var jsFiles = [];
+		var tsFiles = [];
+		for (var name in archive) {
+			var target = archive[name] + ".xsb";
+			var result = this.jsFiles.find(result => result.target == target);
+			if (result) {
+				result.target = name + ".xsb";
+				jsFiles.push(result);
+				continue;
+			}
+			var result = this.tsFiles.find(result => result.target == target);
+			if (result) {
+				result.target = name + ".xsb";
+				tsFiles.push(result);
+				continue;
+			}
+			tool.reportError(null, 0, "run module not found: " + archive[name]);
+		}
+		if (jsFiles.length || tsFiles.length) {
+			this.jsFiles = jsFiles;
+			this.tsFiles = tsFiles;
+		}
+	}
 	run() {
 		super.run();
 		if ("URL" in this.config)
@@ -368,6 +392,7 @@ export default class extends Tool {
 			this.mergeProperties(this.config, commandLine);
 		}
 
+		this.filterRun(this.manifest.run);
 		this.creation = null;
 		this.defines = null;
 		this.preloads = null;

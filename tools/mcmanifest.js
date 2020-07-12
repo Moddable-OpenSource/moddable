@@ -1408,6 +1408,7 @@ export class Tool extends TOOL {
 		all.strip = platform.strip ? platform.strip : all.strip;
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
+		this.mergeProperties(all.run, platform.run);
 	}
 	mergeProperties(targets, sources) {
 		if (sources) {
@@ -1517,6 +1518,7 @@ export class Tool extends TOOL {
 			commonjs:[],
 			errors:[],
 			warnings:[],
+			run:{},
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 
