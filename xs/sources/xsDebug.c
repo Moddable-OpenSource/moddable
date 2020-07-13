@@ -73,6 +73,7 @@ static void fxEchoString(txMachine* the, txString theString);
 static txSlot* fxFindFrame(txMachine* the);
 static txSlot* fxFindRealm(txMachine* the);
 static void fxGo(txMachine* the);
+static void fxIndexToString(txMachine* the, txIndex theIndex, txString theBuffer, txSize theSize);
 static txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module);
 static void fxListFrames(txMachine* the);
 static void fxListGlobal(txMachine* the);
@@ -1254,7 +1255,7 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 		if (thePrefix) {
 			fxEchoString(the, thePrefix);
 			if (theSuffix) {
-				fxNumberToString(the->dtoa, theIndex, buffer, sizeof(buffer), 0, 0);
+				fxIndexToString(the, theIndex, buffer, sizeof(buffer));
 				fxEchoString(the, buffer);
 				fxEchoString(the, theSuffix);
 			}
@@ -1463,7 +1464,7 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 		c_strcpy(p, thePrefix);
 		p += c_strlen(thePrefix);
 		if (theSuffix) {
-			fxNumberToString(the->dtoa, theIndex, p, q - p - 1, 0, 0); // assume c_strlen(theSuffix) == 1;
+			fxIndexToString(the, theIndex, p, q - p - 1); // assume c_strlen(theSuffix) == 1;
 			c_strcat(p, theSuffix);
 		}
 	}
@@ -1640,6 +1641,11 @@ void fxGo(txMachine* the)
 		aSlot->flag &= ~(XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG);
 		aSlot = aSlot->next;
 	}
+}
+
+void fxIndexToString(txMachine* the, txIndex theIndex, txString theBuffer, txSize theSize)
+{
+	c_snprintf(theBuffer, theSize, "%u", theIndex);
 }
 
 void fxListFrames(txMachine* the)

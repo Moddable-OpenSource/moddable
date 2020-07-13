@@ -1593,6 +1593,7 @@ ThInfo {
 #ifdef __XS__
 	txMachine* the;
 	txByte* current;
+	int dirty;
 #endif
 	} ThInfo;
 
@@ -6313,7 +6314,7 @@ void fxDelete_dtoa(void* dtoa)
 
 void fxDTOACleanup(txMachine* the, ThInfo* DTOA)
 {
-	if (!the) {
+	if (DTOA->dirty) {
 		int i, c = Kmax +1 ;
 		for (i = 0; i < c; i++) {
 			Bigint* b = DTOA->Freelist[i];
@@ -6336,9 +6337,15 @@ static void* fxDTOAMalloc(size_t size, void* it)
 			block = DTOA->current;
 			DTOA->current += size;
 		}
+        else {
+            block = c_malloc(size);
+			DTOA->dirty = 1;
+        }
 	}
-	else
+	else {
 		block = c_malloc(size);
+		DTOA->dirty = 1;
+	}
 	//fprintf(stderr, "malloc %zu %p\n", size, block);
 	return block;
 }
@@ -6348,7 +6355,13 @@ static void fxDTOAFree(void* block, void* it)
 	ThInfo* DTOA = it;
 	txMachine* the = DTOA->the;
 	//fprintf(stderr, "free %p\n", block);
-	if (!the)
+    if (the) {
+        if (((txByte*)(the->stackBottom) <= (txByte*)block) && ((txByte*)block < DTOA->current)) {
+        }
+        else
+            c_free(block);
+    }
+    else
 		c_free(block);
 }
 
