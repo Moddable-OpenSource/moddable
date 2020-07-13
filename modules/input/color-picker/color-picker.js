@@ -86,7 +86,7 @@ class ColorWheelBehavior extends Behavior {
 
         let buff = this.pocoOff.pixelsOut.buffer;
         let view = new DataView(buff);
-        let testcolor = view.getUint8(1) << 8 | view.getUint8();
+        let testcolor = view.getUint16(0, true);
 
         let red = ((testcolor >> 11) & 0x1F);
         let green = ((testcolor >> 5) & 0x3F);
