@@ -51,8 +51,7 @@ class ColorWheelBehavior extends Behavior {
         this.data = data;
 
         this.wheelGraphic = parseBMP(new Resource("color-color.bmp"));
-        let poco = new Poco(screen);
-        let offscreen = new BufferOut({ width: 1, height: 1, pixelFormat: poco.pixelsOut.pixelFormat });
+        let offscreen = new BufferOut({ width: 1, height: 1, pixelFormat: screen.pixelFormat });
         this.pocoOff = new Poco(offscreen);
     }
     onTouchBegan(wheel, id, x, y, ticks) {
