@@ -40,6 +40,9 @@
 
 #include "xsPlatform.h"
 
+#include "mc.defines.h"
+#include "xsHost.h"
+
 #define XSDEBUG_NONE	0,0,0,0
 #define XSDEBUG_SERIAL	127,0,0,7
 
@@ -235,6 +238,7 @@ txBoolean fxIsConnected(txMachine* the)
 txBoolean fxIsReadable(txMachine* the)
 {
 	if ((txSocket)kSerialConnection == the->connection) {
+//		fxReceiveLoop();
 		return NULL != the->debugFragments;
 	}
 
@@ -477,6 +481,82 @@ void fxSend(txMachine* the, txBoolean flags)
 
 void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 {
+	uint16_t resultID = 0;
+	int16_t resultCode = 0;
+	uint8_t cmdID;
+	int baud = 0;
+
+	if (!cmdLen)
+		return;
+
+	cmdID = *cmd++;
+	cmdLen -= 1;
+
+	if (cmdLen >= 2) {
+		resultID = (cmd[0] << 8) | cmd[1];
+		cmd += 2, cmdLen -= 2;
+
+		the->echoBuffer[0] = 5;
+		the->echoBuffer[1] = resultID >> 8;
+		the->echoBuffer[2] = resultID & 0xff;
+		the->echoBuffer[3] = 0;
+		the->echoBuffer[4] = 0;
+		the->echoOffset = 5;
+	}
+
+	switch (cmdID) {
+		case 1:		// restart
+			break;
+
+		case 9:
+			if (cmdLen >= 4)
+				modSetTime(c_read32be(cmd + 0));
+			if (cmdLen >= 8)
+				modSetTimeZone(c_read32be(cmd + 4));
+			if (cmdLen >= 12)
+				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
+			break;
+
+		case 11:
+			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_MINOR_VERSION;
+			the->echoBuffer[the->echoOffset++] = XS_PATCH_VERSION;
+			break;
+
+		case 12:
+			the->echoBuffer[the->echoOffset++] = kCommodettoBitmapFormat;
+			the->echoBuffer[the->echoOffset++] = kPocoRotation / 90;
+			break;
+
+		case 13:
+			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
+			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
+			break;
+
+		default:
+			resultCode = -1;
+			break;
+	}
+
+	if (resultID) {
+		the->echoBuffer[3] = resultCode >> 8;
+		the->echoBuffer[4] = resultCode & 0xff;
+		fxSend(the, 2);		// send binary
+	}
+
+	// finish command after sending reply
+	switch (cmdID) {
+		case 1:		// restart
+			fxDisconnect(the);
+			modDelayMilliseconds(1000);
+
+			nrf52_reset();
+
+			while (1)
+				modDelayMilliseconds(1000);
+			break;
+	}
+
 }
 
 #endif /* mxDebug */
