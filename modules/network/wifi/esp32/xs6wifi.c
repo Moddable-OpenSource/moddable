@@ -404,6 +404,8 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 				gWiFiIP = 0x02;		// don't wait for IP6 address if tcpip_adapter_create_ip6_linklocal failed
 			break;
 		case SYSTEM_EVENT_AP_STA_GOT_IP6:
+			if (0x03 == gWiFiIP)
+				return 0;
 			gWiFiIP |= 0x02;
 			if (0x03 != gWiFiIP)
 				return 0;
