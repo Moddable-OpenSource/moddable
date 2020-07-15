@@ -217,7 +217,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 	font = PIU(Font, xsResult);
 #if MODDEF_CFE_TTF
 	c_strcat(path, ".ttf");
-	buffer = (uint8_t *)mcGetResource(the, path, &bufferSize);
+	buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
 	if (!buffer)
 		xsURIError("font not found: %s", path);
 	(*font)->next = (*fontList)->first;
@@ -230,10 +230,10 @@ void PiuStyleLookupFont(PiuStyle* self)
 	}
 	name = path + c_strlen(path);
 	c_strcpy(name, ".bf4");
-	buffer = (uint8_t *)mcGetResource(the, path, &bufferSize);
+	buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
 	if (!buffer) {
 		c_strcpy(name, ".fnt");
-		buffer = (uint8_t *)mcGetResource(the, path, &bufferSize);
+		buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
 		if (!buffer)
 			xsURIError("font not found: %s", path);
 		c_strcpy(name, ".png");

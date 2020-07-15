@@ -774,6 +774,8 @@ extern int mcCountResources(xsMachine* the);
 extern const char* mcGetResourceName(xsMachine* the, int i);
 extern const void *mcGetResource(xsMachine* the, const char* path, size_t* size);
 
+extern const void *fxGetResource(xsMachine* the, const char* path, size_t* size);
+
 // XS
 
 extern xsBooleanValue fxFindBoolean(xsMachine* the, xsSlot* slot, xsIndex id, xsBooleanValue* value);

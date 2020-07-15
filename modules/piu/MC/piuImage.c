@@ -155,7 +155,7 @@ void PiuImage_create(xsMachine* the)
 	PiuContentDictionary(the, self);
 	PiuImageDictionary(the, self);
 	path = PiuToString((*self)->path);
-	data = (uint8_t *)mcGetResource(the, path, &dataSize);
+	data = (uint8_t *)fxGetResource(the, path, &dataSize);
 	if (!data)
 		xsURIError("image not found: %s", path);	
 	cch = (ColorCellHeader)data;
