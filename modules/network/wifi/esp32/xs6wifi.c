@@ -146,14 +146,16 @@ void xs_wifi_connect(xsMachine *the)
 	wifi_mode_t mode;
 	int channel;
 
-	initWiFi();
-
-	gWiFiState = 2;
-	gDisconnectReason = 0;
-	esp_wifi_disconnect();
+	if (gWiFiState > 1) {
+		gWiFiState = 2;
+		gDisconnectReason = 0;
+		esp_wifi_disconnect();
+	}
 
 	if (0 == argc)
 		return;
+
+	initWiFi();
 
 	c_memset(&config, 0, sizeof(config));
 
