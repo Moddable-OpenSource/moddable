@@ -1225,7 +1225,6 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txID ID = theProperty->ID;
 	txFlag flag = theProperty->flag;
 	txSlot* instance;
-	char buffer[256];
 	txString name;
 	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
@@ -1255,14 +1254,14 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 		if (thePrefix) {
 			fxEchoString(the, thePrefix);
 			if (theSuffix) {
-				fxIndexToString(the, theIndex, buffer, sizeof(buffer));
-				fxEchoString(the, buffer);
+				fxIndexToString(the, theIndex, the->nameBuffer, sizeof(the->nameBuffer));
+				fxEchoString(the, the->nameBuffer);
 				fxEchoString(the, theSuffix);
 			}
 		}
 		else {
-			fxIDToString(the, ID, buffer, sizeof(buffer));
-			fxEchoString(the, buffer);
+			fxIDToString(the, ID, the->nameBuffer, sizeof(the->nameBuffer));
+			fxEchoString(the, the->nameBuffer);
 		}
 		fxEcho(the, "\"");
 	
@@ -1448,7 +1447,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txString thePrefix, txIndex theIndex, txString theSuffix, txID theID, txFlag theFlag, txSlot* theInstance)
 {
 	txSlot* instanceInspector = fxToInstanceInspector(the, theInstance);
-	char buffer[256];
+	char buffer[128];
 	txString p = buffer;
 	txString q = p + sizeof(buffer);
 
