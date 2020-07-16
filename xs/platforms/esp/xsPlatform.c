@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -194,7 +194,7 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 
 void fxAbort(txMachine* the, int status)
 {
-#ifdef mxDebug
+#if defined(mxDebug) || defined(mxInstrument)
 	char *msg = NULL;
 
 	switch (status) {
@@ -210,14 +210,18 @@ void fxAbort(txMachine* the, int status)
 		case XS_DEBUGGER_EXIT:
 		case XS_FATAL_CHECK_EXIT:
 			break;
+		case XS_UNHANDLED_EXCEPTION_EXIT:
+			msg = "unhandled exception";
+			break;
 		default:
 			msg = "unknown";
 			break;
 	}
-	if (msg) {
-		fxReport(the, "XS abort: %s\n", msg);
+
+	fxReport(the, "XS abort: %s\n", msg);
+	#if defined(mxDebug)
 		fxDebugger(the, (char *)__FILE__, __LINE__);
-	}
+	#endif
 #endif
 
 	c_exit(status);
@@ -371,6 +375,7 @@ void fxConnect(txMachine* the)
 		goto connected;
 	}
 
+/*
 	if (0 == gXSBUG[0]) {
 		modLog("  fxConnect - NO XSBUG ADDRESS");
 		return;
@@ -421,6 +426,7 @@ void fxConnect(txMachine* the)
 	}
 
 	tcp_err(pcb, didError);
+*/
 connected:
     xmodLog("  fxConnect - EXIT");
 	return;
@@ -430,8 +436,9 @@ void fxDisconnect(txMachine* the)
 {
 	xmodLog("  fxDisconnect - ENTER");
 	if (the->connection) {
+
 		if (kSerialConnection != the->connection) {
-			uint8_t i, closeMsg[2];
+/*			uint8_t i, closeMsg[2];
 			for (i = 0; i < kDebugReaderCount; i++) {
 				if (the->readers[i])
 					pbuf_free(the->readers[i]);
@@ -447,7 +454,7 @@ void fxDisconnect(txMachine* the)
 			tcp_err(the->connection, NULL);
 			if (18 != the->wsState)
 				tcp_close_safe((struct tcp_pcb *)the->connection);
-		}
+*/		}
 		else {
 			fx_putpi(the, '-', true);
 			the->debugConnectionVerified = 0;
@@ -471,6 +478,7 @@ txBoolean fxIsReadable(txMachine* the)
 #endif
 		return NULL != the->debugFragments;
 	}
+/*
 	else {
 		extern uint32_t system_get_rtc_time(void);
 		static uint32_t next = 0, now;
@@ -486,6 +494,7 @@ txBoolean fxIsReadable(txMachine* the)
 
 		return the->readers[0] ? 1 : 0;
 	}
+*/
 }
 
 void fxReceive(txMachine* the)
@@ -496,7 +505,7 @@ void fxReceive(txMachine* the)
 	xmodLog("  fxReceive - ENTER");
 
 	if (kSerialConnection != pcb) {
-		struct pbuf *p;
+/*		struct pbuf *p;
 		uint16_t use;
 
 		modWatchDogReset();
@@ -638,7 +647,7 @@ void fxReceive(txMachine* the)
 				the->readerOffset = 0;
 			}
 		mxDebugMutexGive();
-	}
+*/	}
 	else {
 		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
@@ -849,7 +858,7 @@ void fxSend(txMachine* the, txBoolean flags)
 	if (!pcb) return;
 
 	if (kSerialConnection != pcb) {
-		int length = the->echoOffset;
+/*		int length = the->echoOffset;
 		const char *bytes = the->echoBuffer;
 		err_t err;
 		uint8_t sentHeader = 0;
@@ -910,7 +919,7 @@ void fxSend(txMachine* the, txBoolean flags)
 		}
 		if (!more && the->connection)
 			tcp_output_safe(pcb);
-	}
+*/	}
 	else {
 		char *c;
 		txInteger count;
@@ -939,17 +948,22 @@ void fxSend(txMachine* the, txBoolean flags)
 void fxConnectTo(txMachine *the, struct tcp_pcb *pcb)
 {
 	initializeConnection(the);
-
+/*
 	tcp_arg(pcb, the);
 	tcp_recv(pcb, didReceive);
 	tcp_err(pcb, didError);
-
+*/
 	the->connection = pcb;
 }
 
-#if !ESP32
+enum {
+	kPrefsTypeBoolean = 1,
+	kPrefsTypeInteger = 2,
+	kPrefsTypeString = 3,
+	kPrefsTypeBuffer = 4,
+};
 
-#define kPrefsTypeString (3)
+#if !ESP32
 
 extern uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
 extern uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut);
@@ -1039,40 +1053,44 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #endif
 			}
 			break;
-#else
-		case 2:
-		case 3:
-			modLog("mods disabled");
-			resultCode = -1;
-			break;
 #endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-			int zeros = 0;
 			while (cmdLen--) {
 				if (!*cmd++) {
-					zeros += 1;
 					if (NULL == key)
 						key = cmd;
-					else if (NULL == value)
+					else if (NULL == value) {
 						value = cmd;
-					else
 						break;
+					}
 				}
 			}
-			if ((3 == zeros) && key && value) {
+			if (key && value) {
+				uint8_t prefType = c_read8(value++);
+				cmdLen -= 1;
 #if ESP32
 				nvs_handle handle;
 				resultCode = -1;
 
 				if (ESP_OK == nvs_open(domain, NVS_READWRITE, &handle)) {
-					if (ESP_OK == nvs_set_str(handle, key, value))
-						resultCode = 0;
+					int result = -1;
+
+					if (kPrefsTypeBoolean == prefType)
+						result = nvs_set_u8(handle, key, *(uint8_t *)value);
+					else if (kPrefsTypeInteger == prefType)
+						result = nvs_set_i32(handle, key, *(int32_t *)value);
+					else if (kPrefsTypeString == prefType)
+						result = nvs_set_str(handle, key, value);
+					else if (kPrefsTypeBuffer == prefType)
+						result = nvs_set_blob(handle, key, value, cmdLen);
+
+					resultCode = result ? -1 : 0;
 					nvs_close(handle);
 				}
 #else
-				if (!modPreferenceSet(domain, key, kPrefsTypeString, value, c_strlen(value) + 1))
+				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
 					resultCode = -1;
 #endif
 			}
@@ -1092,27 +1110,48 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				}
 			}
 			if ((2 == zeros) && key) {
+				if (NULL != c_strstr(key, "password")) {
+					resultCode = -4;
+					break;
+				}
 #if ESP32
 				nvs_handle handle;
 				resultCode = -1;
 
 				if (ESP_OK == nvs_open(domain, NVS_READONLY, &handle)) {
 					int32_t size = 64;
-					if (ESP_OK == nvs_get_str(handle, key, the->echoBuffer + the->echoOffset, &size)) {
-						the->echoOffset += size;
-						resultCode = 0;
+					uint8_t *buffer = the->echoBuffer + the->echoOffset + 1;
+					resultCode = 0;
+					if (!nvs_get_u8(handle, key, buffer)) {
+						buffer[-1] = kPrefsTypeBoolean;
+						the->echoOffset += 1 + 1;
 					}
+					else if (!nvs_get_i32(handle, key, (int32_t *)buffer)) {
+						buffer[-1] = kPrefsTypeInteger;
+						the->echoOffset += 1 + 4;
+					}
+					else if (!nvs_get_str(handle, key, buffer, &size)) {
+						buffer[-1] = kPrefsTypeString;
+						the->echoOffset += 1 + size;
+					}
+					else if (!nvs_get_blob(handle, key, buffer, &size)) {
+						buffer[-1] = kPrefsTypeBuffer;
+						the->echoOffset += 1 + size;
+					}
+					else
+						resultCode = -2;
+
 					nvs_close(handle);
 				}
 #else
-				uint8_t buffer[64];
+				uint8_t buffer[65];
 				uint8_t type;
 				uint16_t byteCountOut;
-				if (!modPreferenceGet(domain, key, &type, buffer, sizeof(buffer), &byteCountOut) || (kPrefsTypeString != type))
+				if (!modPreferenceGet(domain, key, &buffer[0], buffer + 1, sizeof(buffer), &byteCountOut))
 					resultCode = -1;
 				else {
-					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut);
-					the->echoOffset += byteCountOut;
+					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
+					the->echoOffset += byteCountOut + 1;
 				}
 #endif
 			}
@@ -1176,23 +1215,25 @@ void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->echoOffset += 6;
 			break;
 
-		case 15:
 #if MODDEF_XS_MODS
+		case 15:
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
-#else
-			the->echoBuffer[the->echoOffset++] = 0;
-			the->echoBuffer[the->echoOffset++] = 0;
-			the->echoBuffer[the->echoOffset++] = 0;
-			the->echoBuffer[the->echoOffset++] = 0;
-#endif
 			break;
 
+		case 16: {
+			int atomSize;
+			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
+				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
+				the->echoOffset += atomSize;
+			}
+			} break;
+#endif
+
 		default:
-			modLog("unrecognized command");
-			modLogInt(cmdID);
 			resultCode = -1;
 			break;
 	}

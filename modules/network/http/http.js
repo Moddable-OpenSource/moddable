@@ -189,9 +189,6 @@ function callback(message, value) {
 				status = this.line + status;
 
 			if ((10 !== status.charCodeAt(status.length - 1)) || (13 !== status.charCodeAt(status.length - 2))) {
-				if (socket.read())
-					throw new Error("didn't receive full status line!?!");
-
 				this.line = status;
 				return;
 			}
@@ -231,6 +228,8 @@ function callback(message, value) {
 				if ("\r\n" === line) {							// empty line is end of headers
 					this.callback(Request.headersComplete);		// all response headers received
 					delete this.line;
+					if (this.state >= 11)
+						return;		// callback closed instance
 					this.state = 5;								// advance to receiving response headers state
 
 					if (this.response)
@@ -311,6 +310,8 @@ function callback(message, value) {
 						}
 						else {
 							this.callback(Request.responseFragment, count);
+							if (this.state >= 11)
+								return;		// callback closed instance
 							this.read(null);		// skip whatever the callback didn't read
 						}
 					}

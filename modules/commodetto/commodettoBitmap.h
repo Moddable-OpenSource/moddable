@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -72,6 +72,9 @@ typedef struct {
 		void				*data;
 		int32_t				offset;
 	} bits;
+#if COMMODETTO_BITMAP_ID
+	uint32_t				id;
+#endif
 } CommodettoBitmapRecord, *CommodettoBitmap;
 
 uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format);

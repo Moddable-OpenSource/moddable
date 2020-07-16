@@ -419,7 +419,7 @@ void fx_Number_prototype_toString(txMachine* the)
 	if (radix == 10)
 		fxToString(the, mxResult);
 	else {
-		static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
 		txString string = buffer + sizeof(buffer);
 		txNumber value;
 		txBoolean minus;

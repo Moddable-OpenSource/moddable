@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODDABLE)/modules/data/inflate/inflate",
+			"$(MODDABLE)/modules/data/inflate/miniz",
+		],
+	},
+	"preload": [
+		"inflate"
+	],
+}

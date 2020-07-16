@@ -97,9 +97,12 @@ int modBLEPlatformInitialize(void)
 	ble_hs_cfg.reset_cb = nimble_on_reset;
 
 	esp_err_t err = _esp_nimble_hci_and_controller_init();
+	
 	if (ESP_OK == err) {
 		nimble_port_init();
 	
+		ble_store_config_init();
+		
 #if USE_EVENT_TIMER
 		gTimer = modTimerAdd(0, 20, ble_event_timer_callback, NULL, 0);
 #else

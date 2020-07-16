@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -392,6 +392,9 @@ void xs_poco_drawBitmap(xsMachine *the)
 	bits.width = cb->w;
 	bits.height = cb->h;
 	bits.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+	bits.id = cb->id;
+#endif
 
 	if (cb->havePointer)
 		bits.pixels = cb->bits.data;
@@ -440,6 +443,9 @@ void xs_poco_drawMonochrome(xsMachine *the)
 	bits.width = cb->w;
 	bits.height = cb->h;
 	bits.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+	bits.id = cb->id;
+#endif
 
 	if (cb->havePointer)
 		bits.pixels = cb->bits.data;
@@ -494,6 +500,9 @@ void xs_poco_drawGray(xsMachine *the)
 	bits.width = cb->w;
 	bits.height = cb->h;
 	bits.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+	bits.id = cb->id;
+#endif
 
 	if (cb->havePointer)
 		bits.pixels = cb->bits.data;
@@ -545,6 +554,9 @@ void xs_poco_drawMasked(xsMachine *the)
 	bits.width = cb->w;
 	bits.height = cb->h;
 	bits.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+	bits.id = cb->id;
+#endif
 
 	if (cb->havePointer)
 		bits.pixels = cb->bits.data;
@@ -565,6 +577,9 @@ void xs_poco_drawMasked(xsMachine *the)
 	mask.width = cb->w;
 	mask.height = cb->h;
 	mask.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+	mask.id = cb->id;
+#endif
 
 	if (cb->havePointer)
 		mask.pixels = cb->bits.data;
@@ -600,6 +615,9 @@ void xs_poco_fillPattern(xsMachine *the)
 	bits.width = cb->w;
 	bits.height = cb->h;
 	bits.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+	bits.id = cb->id;
+#endif
 
 	if (cb->havePointer)
 		bits.pixels = cb->bits.data;
@@ -809,6 +827,10 @@ void xs_poco_drawText(xsMachine *the)
 #endif
 			bits.format = glyph->format;
 			bits.pixels = (PocoPixel *)glyph->bits;
+#if COMMODETTO_BITMAP_ID
+			bits.id = glyph->id;		//@@ hack that barely works for a single font..
+#endif
+
 			PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, cx, cy, sx, sy, sw, sh);
 		}
 		else {
@@ -819,6 +841,9 @@ void xs_poco_drawText(xsMachine *the)
 				bits.width = cb->w;
 				bits.height = cb->h;
 				bits.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+				bits.id = cb->id;
+#endif
 
 				if (cb->havePointer)
 					bits.pixels = cb->bits.data;
@@ -837,6 +862,9 @@ void xs_poco_drawText(xsMachine *the)
 						mask.width = cb->w;
 						mask.height = cb->h;
 						mask.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+						mask.id = cb->id;
+#endif
 						if (cb->havePointer)
 							mask.pixels = cb->bits.data;
 						else {

@@ -290,7 +290,7 @@ class SSLSession {
 	}
 	stopTrace() {
 		if (this.alert) {
-			trace("ALERT! (" + this.alert.level + ", " + htis.alert.description + "\n");
+			trace("ALERT! (" + this.alert.level + ", " + this.alert.description + "\n");
 			return;
 		}
 		if (undefined === this.traceLevel)

@@ -29,6 +29,10 @@ export class DeviceBehavior extends Behavior {
 	onCreate(container, device) {
 		this.device = device;
 	}
+	onLaunch(container) {
+		if (container.application)
+			this.onConfigure(container);
+	}
 	onMessage(container, buffer) {
 	}
 	postMessage(container, buffer) {

@@ -96,7 +96,7 @@ void xs_onewire_search(xsMachine *the)
 
   uint8_t buffer[] = {0x28, 0xCA, 0x00, 0xA9, 0x04, 0x00, 0x00, 0xEA};
   xsmcSetArrayBuffer(xsVar(0), buffer, 8);
-  xsCall1(xsResult, xsID_push, xsVars(0));
+  xsCall1(xsResult, xsID_push, xsVar(0));
 
   buffer[6] = 0x78;
   buffer[3] = 0x92;

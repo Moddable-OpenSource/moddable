@@ -80,6 +80,8 @@ const alert = {
 		session.alert = {level: s.readChar(), description: s.readChar()};
 		if (session.alert.description != close_notify)
 			throw new Error("SSL: alert: " + session.alert.level + ", " + session.alert.description);
+		else
+			trace("SSL: close notify\n");
 	},
 	packetize(session, level, description) {
 		session.traceProtocol(this);

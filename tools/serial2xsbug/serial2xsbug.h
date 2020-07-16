@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -122,6 +122,7 @@ struct txSerialToolStruct {
 	int line;
 	int error;
 	int serialConnection;
+	int reconnecting;
 	struct termios serialConfiguration;
 	char serialBuffer[mxSerialBufferSize];
 	int count;
@@ -138,6 +139,7 @@ struct txSerialToolStruct {
 	DWORD error;
 	HANDLE serialConnection;
 	HANDLE serialEvent;
+	int reconnecting;
 	OVERLAPPED serialOverlapped;
 	char serialBuffer[mxSerialBufferSize];
 	HANDLE signalEvent;
@@ -151,6 +153,7 @@ struct txSerialToolStruct {
 	int stop;
 	char* host;
 	int port;
+	int dtr;
 	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	int index;

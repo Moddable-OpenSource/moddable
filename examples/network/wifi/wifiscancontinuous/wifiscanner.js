@@ -2,11 +2,11 @@
  * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
- * 
+ *
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <http://creativecommons.org/licenses/by/4.0>.
+ *       <https://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -23,16 +23,22 @@ class Scanner {
 	#scanOptions;
 	#onLost;
 	#onFound;
+	#onScanning;
 	#timer;
 
 	constructor(options) {
+		this.target = options.target;
 		this.#onFound = options.onFound;
 		this.#onLost = options.onLost;
+		this.#onScanning = options.onScanning;
 		this.#max = options.max ?? 32;
 		this.#interval = options.interval ?? 1000;
 		this.#scanOptions = options.scanOptions ?? {};
 
-		this.#scan();
+		this.#timer = Timer.set(() => {
+			this.#timer = undefined;
+			this.#scan();
+		});
 	}
 	#scan() {
 		WiFi.scan(this.#scanOptions, item => {
@@ -44,12 +50,13 @@ class Scanner {
 				if (i)
 					i.ticks = Time.ticks;
 				else {
-					this.#items.push({ssid: item.ssid, ticks: Time.ticks});
-					this.#onFound?.(item);
+					const result = this.#onFound?.(item);
+					if ((undefined === result) || result) {
+						this.#items.push({ssid: item.ssid, ticks: Time.ticks});
+						if (this.#items.length > this.#max)
+							this.#purge();
+					}
 				}
-
-				if (this.#items.length > this.#max)
-					this.#purge();
 			}
 			else {
 				this.#purge();
@@ -57,8 +64,10 @@ class Scanner {
 					this.#timer = undefined;
 					this.#scan();
 				}, this.#interval);
+				this.#onScanning?.(false);
 			}
 		});
+		this.#onScanning?.(true);
 	}
 	#purge() {
 		const items = this.#items;
@@ -68,7 +77,7 @@ class Scanner {
 			if (items[i].ticks > expire)
 				continue;
 
-			this.#onLost?.(items[i].ssid);		//@@ check
+			this.#onLost?.(items[i].ssid);
 
 			items.splice(i, 1);
 			i -= 1;

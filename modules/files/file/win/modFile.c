@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <direct.h>
 
 #define PATH_MAX 1024
 
@@ -198,16 +199,60 @@ void xs_file_exists(xsMachine *the)
 
 void xs_file_rename(xsMachine *the)
 {
-	char* path;
-	char name[PATH_MAX + 1];
-	int32_t result;
+    char* path;
+    char toPath[PATH_MAX + 1];
+    int32_t result;
+    char* slash;
+    size_t pathLength = 0;
 
-	xsmcToStringBuffer(xsArg(1), name, sizeof(name));
-	path = xsmcToString(xsArg(0));
+    path = xsmcToString(xsArg(0));
+    slash = c_strrchr(path, '/');
+    if (slash){
+        pathLength = slash - path + 1;
+		if (pathLength >= sizeof(toPath)) xsUnknownError("path is too long");
+        c_memcpy(toPath, path, pathLength);
+        toPath[pathLength] = '\0';
+    }
 
-	result = rename(path, name);
+    xsmcToStringBuffer(xsArg(1), toPath + pathLength, sizeof(toPath) - pathLength);
+    path = xsmcToString(xsArg(0));
 
-	xsResult = xsBoolean(result == 0);
+    result = rename(path, toPath);
+    xsResult = xsBoolean(result == 0);
+}
+
+void xs_directory_create(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+	int result = _mkdir(path);
+	if (result && (EEXIST != errno)){
+		if (errno == ENOENT){
+			xsUnknownError("path not found");
+		}else{
+			xsUnknownError("failed");
+		}
+	}
+}
+
+void xs_directory_delete(xsMachine *the)
+{
+	char *path = xsmcToString(xsArg(0));
+	int result = _rmdir(path);
+	if (result){
+		switch (errno){
+			case ENOTEMPTY:
+				xsUnknownError("path is not a directory, is not empty, or is the current working directory");
+				break;
+			case ENOENT:
+				xsUnknownError("path is invalid");
+				break;
+			case EACCES:
+				xsUnknownError("a program has an open handle to path");
+				break;
+			default:
+				xsUnknownError("failed");
+		}
+	}
 }
 
 void xs_file_iterator_destructor(void *data)

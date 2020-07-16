@@ -123,6 +123,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-load") && !gModuleName && ((argi + 1) < argc)) {
 			gModuleName = argv[++argi];
 		}
+		else if (!strcmp(argv[argi], "-dtr")) {
+			self->dtr = 1;
+		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
 			return 1;

@@ -139,12 +139,14 @@ static void ccGray256toRGB565LE(uint32_t pixelCount, void *src, void *dst, void 
 
 static void ccRGB565LEtoGray256(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
+static void cc24RGBtoMonochrome(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc24RGBtoGray16(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc24RGBtoGray256(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc24RGBtoRGB332(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc24RGBtoRGB565LE(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc24RGBtoCLUT16(uint32_t pixelCount, void *src, void *dst, void *clut);
 
+static void cc32RGBAtoMonochrome(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoGray16(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoGray256(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoRGB332(uint32_t pixelCount, void *src, void *dst, void *clut);
@@ -188,7 +190,7 @@ static const CommodettoConverter gFromRGB565LE[] ICACHE_XS6RO_ATTR = {
 };
 
 static const CommodettoConverter gFrom24RGB[] ICACHE_XS6RO_ATTR = {
-	NULL,					// toMonochrome
+	cc24RGBtoMonochrome,	// toMonochrome
 	cc24RGBtoGray16,		// toGray16
 	cc24RGBtoGray256,		// toGray256
 	cc24RGBtoRGB332,		// toRGB332
@@ -200,7 +202,7 @@ static const CommodettoConverter gFrom24RGB[] ICACHE_XS6RO_ATTR = {
 };
 
 static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-multiplied alpha
-	NULL,					// toMonochrome
+	cc32RGBAtoMonochrome,	// toMonochrome
 	cc32RGBAtoGray16,		// toGray16
 	cc32RGBAtoGray256,		// toGray256
 	cc32RGBAtoRGB332,		// toRGB332
@@ -273,7 +275,7 @@ void ccGray256toMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels
 	uint8_t mask = 0x80;
 
 	while (pixelCount--) {
-		if (*src++ >= 128)
+		if (*src++ < 128)
 			mono |= mask;
 
 		mask >>= 1;
@@ -406,6 +408,36 @@ void ccGray16toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, v
 	}
 }
 
+void cc24RGBtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+	uint8_t mono = 0;
+	uint8_t mask = 0x80;
+
+	while (pixelCount--) {
+		uint8_t r = src[0];
+		uint8_t g = src[1];
+		uint8_t b = src[2];
+		uint8_t gray = toGray(r, g, b);
+		src += 3;
+		if (gray < 128)
+			mono |= mask;
+
+		mask >>= 1;
+		if (0 == mask) {
+			*dst++ = mono;
+			mono = 0;
+			mask = 0x80;
+		}
+	}
+
+	if (0x80 != mask)
+		*dst++ = mono;
+}
+
+
+
 void cc24RGBtoGray16(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
 {
 	uint8_t *src = srcPixels;
@@ -461,6 +493,35 @@ void cc24RGBtoRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, vo
 		src += 3;
 	}
 }
+
+void cc32RGBAtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+	uint8_t mono = 0;
+	uint8_t mask = 0x80;
+
+	while (pixelCount--) {
+		uint8_t r = src[0];
+		uint8_t g = src[1];
+		uint8_t b = src[2];
+		uint8_t gray = toGray(r, g, b);
+		src += 4;
+		if (gray < 128)
+			mono |= mask;
+
+		mask >>= 1;
+		if (0 == mask) {
+			*dst++ = mono;
+			mono = 0;
+			mask = 0x80;
+		}
+	}
+
+	if (0x80 != mask)
+		*dst++ = mono;
+}
+
 
 void cc32RGBAtoGray16(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
 {

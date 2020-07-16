@@ -1091,6 +1091,7 @@ void fxRunPromiseJobs(txMachine* the)
 // 			fxEndJob(the);
 		}
 		mxCatch(the) {
+			fxAbort(the, XS_UNHANDLED_EXCEPTION_EXIT);
 		}
 		job = job->next;
 	}

@@ -6,7 +6,7 @@
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <http://creativecommons.org/licenses/by/4.0>.
+ *       <https://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -59,7 +59,7 @@ let DragApplication = Application.template($ => ({
 					left:2, right:2, top:2, bottom:2, clip:true,
 					contents: [
 						Label($, { left:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 1", active:true, Behavior:DragBehavior }),
-						Label($, { right:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 2 ", active:true, Behavior:DragBehavior }),
+						Label($, { right:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 2", active:true, Behavior:DragBehavior }),
 						Label($, { right:10, bottom:10, width:120, height:40, skin:buttonSkin, string:"Drag 3", active:true, Behavior:DragBehavior }),
 						Label($, { left:10, bottom:10, width:120, height:40, skin:buttonSkin, string:"Drag 4", active:true, Behavior:DragBehavior }),
 					],

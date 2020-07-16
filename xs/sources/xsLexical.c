@@ -970,6 +970,10 @@ void fxGetNextTokenAux(txParser* parser)
 			else if (parser->character == '?') {		
 				parser->token2 = XS_TOKEN_COALESCE;
 				fxGetNextCharacter(parser);
+				if (parser->character == '=') {	
+					parser->token2 = XS_TOKEN_COALESCE_ASSIGN;
+					fxGetNextCharacter(parser);
+				}
 			}
 			else	
 				parser->token2 = XS_TOKEN_QUESTION_MARK;
@@ -1088,6 +1092,10 @@ void fxGetNextTokenAux(txParser* parser)
 			else if (parser->character == '&') {
 				parser->token2 = XS_TOKEN_AND;
 				fxGetNextCharacter(parser);
+				if (parser->character == '=') {	
+					parser->token2 = XS_TOKEN_AND_ASSIGN;
+					fxGetNextCharacter(parser);
+				}
 			}
 			else
 				parser->token2 = XS_TOKEN_BIT_AND;
@@ -1101,6 +1109,10 @@ void fxGetNextTokenAux(txParser* parser)
 			else if (parser->character == '|') {
 				parser->token2 = XS_TOKEN_OR;
 				fxGetNextCharacter(parser);
+				if (parser->character == '=') {	
+					parser->token2 = XS_TOKEN_OR_ASSIGN;
+					fxGetNextCharacter(parser);
+				}
 			}
 			else
 				parser->token2 = XS_TOKEN_BIT_OR;

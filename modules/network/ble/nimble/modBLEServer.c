@@ -66,6 +66,7 @@ typedef struct {
 	ble_addr_t	bda;
 	
 	// services
+	uint8_t deployServices;
 	uint16_t handles[service_count][max_attribute_count];
 	
 	// requests
@@ -132,6 +133,14 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->conn_id = -1;
 	xsRemember(gBLE->obj);
 	
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
+
 	ble_hs_cfg.sync_cb = nimble_on_sync;
 	ble_hs_cfg.gatts_register_cb = nimble_on_register;
 	ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
@@ -159,7 +168,7 @@ void xs_ble_server_destructor(void *data)
 	
 	if (-1 != ble->conn_id)
 		ble_gap_terminate(ble->conn_id, BLE_ERR_REM_USER_CONN_TERM);
-	if (0 != service_count)
+	if (ble->deployServices && (0 != service_count))
 		ble_gatts_reset();
 	c_free(ble);
 	gBLE = NULL;
@@ -175,7 +184,7 @@ void xs_ble_server_disconnect(xsMachine *the)
 
 void xs_ble_server_get_local_address(xsMachine *the)
 {
-	xsmcSetArrayBuffer(xsResult, (void*)gBLE->bda.val, 6);
+	xsmcSetArrayBuffer(xsResult, gBLE->bda.val, 6);
 }
 
 void xs_ble_server_set_device_name(xsMachine *the)
@@ -188,17 +197,34 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
-	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
+	uint8_t filterPolicy = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(5)) ? xsmcGetArrayBufferLength(xsArg(5)) : 0;
 	struct ble_gap_adv_params adv_params;
 	
+	switch(filterPolicy) {
+		case kBLEAdvFilterPolicyWhitelistScans:
+			filterPolicy = BLE_HCI_ADV_FILT_SCAN;
+			break;
+		case kBLEAdvFilterPolicyWhitelistConnections:
+			filterPolicy = BLE_HCI_ADV_FILT_CONN;
+			break;
+		case kBLEAdvFilterPolicyWhitelistScansConnections:
+			filterPolicy = BLE_HCI_ADV_FILT_BOTH;
+			break;
+		default:
+			filterPolicy = BLE_HCI_ADV_FILT_NONE;
+			break;
+	}
+
 	c_memset(&adv_params, 0, sizeof(adv_params));
 	adv_params.conn_mode = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? BLE_GAP_CONN_MODE_UND : BLE_GAP_CONN_MODE_NON;
 	adv_params.disc_mode = (flags & LE_GENERAL_DISCOVERABLE_MODE) ? BLE_GAP_DISC_MODE_GEN : (flags & LE_LIMITED_DISCOVERABLE_MODE ? BLE_GAP_DISC_MODE_LTD : BLE_GAP_DISC_MODE_NON);
 	adv_params.itvl_min = intervalMin;
 	adv_params.itvl_max = intervalMax;
+	adv_params.filter_policy = filterPolicy;
 	if (NULL != advertisingData)
 		ble_gap_adv_set_data(advertisingData, advertisingDataLength);
 	if (NULL != scanResponseData)
@@ -277,7 +303,6 @@ static void deployServices(xsMachine *the)
 	static const ble_uuid16_t BT_UUID_GAP = BLE_UUID16_INIT(0x1800);
 	static const ble_uuid16_t BT_UUID_GAP_DEVICE_NAME = BLE_UUID16_INIT(0x2A00);
 	static const ble_uuid16_t BT_UUID_GAP_APPEARANCE = BLE_UUID16_INIT(0x2A01);
-	uint8_t hasGAP = false;
 	char *device_name = NULL;
 	uint16_t appearance = BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER;
 	struct ble_gatt_access_ctxt ctxt = {0};
@@ -293,7 +318,6 @@ static void deployServices(xsMachine *the)
 	for (int service_index = 0; service_index < service_count; ++service_index) {
 		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
 		if (0 == ble_uuid_cmp((const ble_uuid_t*)service->uuid, &BT_UUID_GAP.u)) {
-			hasGAP = true;
 			for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
 				const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
 				if (0 == ble_uuid_cmp((const ble_uuid_t*)characteristic->uuid, &BT_UUID_GAP_DEVICE_NAME.u)) {
@@ -322,6 +346,12 @@ static void deployServices(xsMachine *the)
 	
 	int rc = ble_gatts_reset();
 
+	if (0 == rc)
+		rc = ble_gatts_count_cfg(gatt_svr_svcs);
+	if (0 == rc)
+		rc = ble_gatts_add_svcs(gatt_svr_svcs);
+	if (0 == rc)
+		rc = ble_gatts_start();
 	if (0 == rc) {
 		ble_svc_gap_device_appearance_set(appearance);
 		if (NULL != device_name) {
@@ -330,17 +360,8 @@ static void deployServices(xsMachine *the)
 		}
 		else
 			ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
-
-		if (!hasGAP)
-			ble_svc_gap_init();
 	}
-	if (0 == rc)
-		rc = ble_gatts_count_cfg(gatt_svr_svcs);
-	if (0 == rc)
-		rc = ble_gatts_add_svcs(gatt_svr_svcs);
-	if (0 == rc)
-		rc = ble_gatts_start();
-		
+	
 	if (0 != rc)
 		xsUnknownError("failed to start services");
 }
@@ -349,10 +370,12 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 {
 	if (!gBLE) return;
 	
+	ble_hs_util_ensure_addr(0);
 	ble_hs_id_infer_auto(0, &gBLE->bda.type);
 	ble_hs_id_copy_addr(gBLE->bda.type, gBLE->bda.val, NULL);
 
-	deployServices(the);
+	if (gBLE->deployServices)
+		deployServices(the);
 
 	xsBeginHost(gBLE->the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
@@ -362,7 +385,7 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
-
+	
 	if (!gBLE) return;
 	
 	xsBeginHost(gBLE->the);		
@@ -377,7 +400,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), desc->conn_handle);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(2), &desc->peer_id_addr.val, 6);
+		xsmcSetArrayBuffer(xsVar(2), desc->peer_id_addr.val, 6);
 		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
 		xsmcSet(xsVar(0), xsID_address, xsVar(2));
 		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
@@ -593,6 +616,10 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
 	
 	if (!gBLE)
 		return;
+		
+		
+	LOG_GAP_MSG("Encryption change status=");
+	LOG_GAP_INT(event->enc_change.status);
 		
 	if (0 == event->enc_change.status) {
 		struct ble_gap_conn_desc desc;

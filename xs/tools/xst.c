@@ -243,14 +243,16 @@ int main(int argc, char* argv[])
 		machine = xsCreateMachine(creation, "xsr", NULL);
 		xsBeginHost(machine);
 		{
+			xsVars(1);
 			xsTry {
 				fxBuildAgent(the);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
 					if (option == 1) {
+						xsVar(0) = xsGet(xsGlobal, xsID("$262"));
 						xsResult = xsString(argv[argi]);
-						xsCall1(xsGet(xsGlobal, xsID("$262")), xsID("evalScript"), xsResult);
+						xsCall1(xsVar(0), xsID("evalScript"), xsResult);
 					}
 					else {	
 						if (!c_realpath(argv[argi], path))
@@ -722,7 +724,6 @@ void fxRunFile(txContext* context, char* path)
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
  			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
- 			||	!strcmp((char*)node->data.scalar.value, "logical-assignment-operators")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif

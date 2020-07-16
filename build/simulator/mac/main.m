@@ -473,6 +473,9 @@ static void fxScreenStop(txScreen* screen);
 @synthesize touchImage;
 @synthesize touches;
 @synthesize touching;
+- (BOOL)acceptsFirstResponder {
+    return YES;
+}
 - (void)dealloc {
 	if (screen)
     	free(screen);
@@ -502,6 +505,29 @@ static void fxScreenStop(txScreen* screen);
 			}
 		}
 	}
+}
+- (void)keyDown:(NSEvent *)event {
+	NSString* string = [event charactersIgnoringModifiers];
+	NSEventModifierFlags flags = [event modifierFlags];
+	NSTimeInterval when = 1000 * (time + [event timestamp]);
+	int modifiers = 0;
+	if ([event isARepeat]) modifiers |= keyEventRepeat;
+	if (flags & NSEventModifierFlagCommand) modifiers |= keyEventCommand;
+	if (flags & NSEventModifierFlagOption) modifiers |= keyEventOption;
+	if (flags & NSEventModifierFlagShift) modifiers |= keyEventShift;
+	if (self.screen->key) 
+		(*self.screen->key)(self.screen, keyEventDown, (char*)[string UTF8String], modifiers, when);
+}
+- (void)keyUp:(NSEvent *)event {
+	NSString* string = [event charactersIgnoringModifiers];
+	NSEventModifierFlags flags = [event modifierFlags];
+	NSTimeInterval when = 1000 * (time + [event timestamp]);
+	int modifiers = 0;
+	if (flags & NSEventModifierFlagCommand) modifiers |= keyEventCommand;
+	if (flags & NSEventModifierFlagOption) modifiers |= keyEventOption;
+	if (flags & NSEventModifierFlagShift) modifiers |= keyEventShift;
+	if (self.screen->key) 
+		(*self.screen->key)(self.screen, keyEventUp, (char*)[string UTF8String], modifiers, when);
 }
 - (void)launchMachine {
 	NSString *name = nil;

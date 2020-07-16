@@ -72,6 +72,8 @@ void fxParserSourceMap(txParser* parser, void* theStream, txGetter theGetter, tx
 	parser->symbol2 = C_NULL;
 	parser->token2 = XS_NO_TOKEN;
 	
+	parser->lookahead = 0;
+	fxGetNextCharacter(parser);
 	fxGetNextCharacter(parser);
 	fxGetNextTokenJSON(parser);
 	fxGetNextTokenJSON(parser);

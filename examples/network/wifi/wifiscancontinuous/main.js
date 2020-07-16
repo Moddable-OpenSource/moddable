@@ -6,7 +6,7 @@
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <http://creativecommons.org/licenses/by/4.0>.
+ *       <https://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -18,11 +18,14 @@ import WiFi from "wifi";
 WiFi.mode = 1;
 
 trace("Scan start\n");
-const scanner = new Scanner({
-	onFound(ap) {
+new Scanner({
+	onFound(target, ap) {
+		if (!ap.ssid)
+			return false;
+
 		trace(`+ ${ap.ssid}\n`);
 	},
-	onLost(ssid) {
+	onLost(target, ssid) {
 		trace(`- ${ssid}\n`);
 	},
 	max: 64,
