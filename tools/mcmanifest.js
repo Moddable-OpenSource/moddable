@@ -671,7 +671,7 @@ export class MakeFile extends FILE {
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", definesPath);
+			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "wav2maud ", target);
 			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
 		}

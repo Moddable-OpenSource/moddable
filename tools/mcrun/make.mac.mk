@@ -24,6 +24,7 @@ MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
 MCREZ = $(BUILD_DIR)/bin/mac/release/mcrez
 PNG2BMP = $(BUILD_DIR)/bin/mac/release/png2bmp
 RLE4ENCODE = $(BUILD_DIR)/bin/mac/release/rle4encode
+WAV2MAUD = $(BUILD_DIR)/bin/mac/release/wav2maud
 XSC = $(MODDABLE)/build/bin/mac/release/xsc
 XSL = $(MODDABLE)/build/bin/mac/release/xsl
 
