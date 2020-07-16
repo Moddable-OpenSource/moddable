@@ -42,6 +42,8 @@
 #include "queue.h"
 #include "ftdi_trace.h"
 
+#include "semphr.h"
+
 // LED to blink when device is ready for host serial connection
 #define LED 7
 
@@ -135,6 +137,11 @@ static uint8_t m_vendor_usb_closed = false;
 
 static TaskHandle_t m_usbd_thread;
 
+#define usbMutexTake() xSemaphoreTake(gUSBMutex, portMAX_DELAY)
+#define usbMutexGive() xSemaphoreGive(gUSBMutex)
+static SemaphoreHandle_t gUSBMutex = NULL;
+
+
 static void blink(uint16_t times)
 {
 	nrf_gpio_cfg_output(LED);
@@ -150,6 +157,9 @@ static void blink(uint16_t times)
 void setupDebugger()
 {
 	uint32_t count;
+
+	if (!gUSBMutex)
+		gUSBMutex = xSemaphoreCreateMutex();
 
 	m_usb_connected = false;
 	m_usb_restarted = false;
@@ -345,8 +355,8 @@ static ret_code_t sendNextBuffer()
     nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
     
 	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
-//	ftdiTraceAndInt("ACM - sending buffer, size=", buffer->size);
-//	ftdiTraceHex(&buffer->buffer[0], buffer->size);
+	ftdiTraceAndInt("ACM - sending buffer, size=", buffer->size);
+	ftdiTraceHex(&buffer->buffer[0], buffer->size);
 	return app_usbd_ep_transfer(ep, &transfer);
 }
 
@@ -370,8 +380,8 @@ static ret_code_t sendNextVendorBuffer()
     nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
     
 	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
-//	ftdiTraceAndInt("vendor - sending buffer, size=", buffer->size);
-//	ftdiTraceHex(&buffer->buffer[0], buffer->size);
+	ftdiTraceAndInt("vendor - sending buffer, size=", buffer->size);
+	ftdiTraceHex(&buffer->buffer[0], buffer->size);
 	return app_usbd_ep_transfer(ep, &transfer);
 }
 
@@ -379,12 +389,13 @@ void sendAVendorMsg(uint8_t *msg, int len) {
 	if (!m_vendor_usb_connected)
 		return;
 
-	uint8_t doSend = (NULL == gVendorTxBufferList);
 	txBuffer buffer = c_calloc(sizeof(txBufferRecord) + len, 1);
 	if (NULL == buffer) return;
 
 	buffer->size = len;
 	c_memmove(&buffer->buffer[0], msg, buffer->size);
+
+	usbMutexTake();
 	if (!gVendorTxBufferList)
 		gVendorTxBufferList = buffer;
 	else {
@@ -393,10 +404,9 @@ void sendAVendorMsg(uint8_t *msg, int len) {
 			;
 		walker->next = buffer;
 	}
+	usbMutexGive();
 
-	if (doSend) {
-		sendNextVendorBuffer();
-	}
+	sendNextVendorBuffer();
 }
 
 static uint8_t reboot_style[2] = {0, 0};
@@ -476,19 +486,40 @@ static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usb
 			break;
 
         case APP_USBD_VENDOR_USER_EVT_TX_DONE:
-            ftdiTrace("APP_USBD_VENDOR_USER_EVT_TX_DONE");
+            ftdiTraceAndInt("APP_USBD_VENDOR_USER_EVT_TX_DONE - mutex take (cur owned:", uxSemaphoreGetCount(gUSBMutex));
+			usbMutexTake();
 			if (NULL != gVendorTxBufferList) {
 				txBuffer buffer = gVendorTxBufferList;
 				gVendorTxBufferList = gVendorTxBufferList->next;
 				c_free(buffer);
 			}
 			
-    		if (!m_vendor_usb_connected)
+    		if (!m_vendor_usb_connected) {
+				ftdiTrace("VENDOR not connected - ignore tx done");
+				usbMutexGive();
     			break;
+			}
     		
+			if (NULL == gVendorTxBufferList && m_vendor_tx_buffer_index > 0) {
+				// no TxBufferList, but data in queue - send
+				txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_vendor_tx_buffer_index, 1);
+				if (NULL == buffer) {
+					usbMutexGive();
+					return;	
+				}
+				buffer->size = m_vendor_tx_buffer_index;
+				c_memmove(&buffer->buffer[0], m_vendor_tx_buffer, buffer->size);
+//ftdiTraceAndInt("adding incomplete buffer to vendorTxBufferList sized:", buffer->size);
+//ftdiTraceHex(buffer->buffer, buffer->size);
+				m_vendor_tx_buffer_index = 0;
+				gVendorTxBufferList = buffer;
+			}
+			usbMutexGive();
+
 			ret = sendNextVendorBuffer();
 			if (0 != ret)
     			ftdiTrace("sendNextVendorBuffer failed");
+
 			break;
 
         case APP_USBD_VENDOR_USER_EVT_RX_DONE: {
@@ -507,8 +538,6 @@ static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usb
 				nrf_queue_in(&m_vendor_rx_queue, &m_vendor_rx_buffer[0], 1);
 				++count;
 			}
-			ftdiTraceAndInt("Read bytes:", count);
-			ftdiTraceHex(m_vendor_rx_buffer, count);
 			
 			// here, we inform the xsMain task that there is data available.
 			// If ulPreviousValue isn't 0, then data hasn't yet been serviced.
@@ -525,7 +554,7 @@ static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usb
 		}
 
 		case VENDOR_REQUEST_LINE_STATE:
-ftdiTraceAndInt(">> VENDOR - SET CONTROL_LINE_STATE:", p_vendor_ctx->line_state);
+			ftdiTraceAndInt(">> VENDOR - SET CONTROL_LINE_STATE:", p_vendor_ctx->line_state);
 			break;
 		default:
 			break;
@@ -656,6 +685,8 @@ void ESP_putc(int c)
 			buffer->size = m_vendor_tx_buffer_index;
 			c_memmove(&buffer->buffer[0], m_vendor_tx_buffer, buffer->size);
 			m_vendor_tx_buffer_index = 0;
+
+			usbMutexTake();
 			if (!gVendorTxBufferList)
 				gVendorTxBufferList = buffer;
 			else {
@@ -664,12 +695,13 @@ void ESP_putc(int c)
 					;
 				walker->next = buffer;
 			}
+			usbMutexGive();
 
 			if (doSend) {
 				sendNextVendorBuffer();
 			}
 			else {
-//				ftdiTrace("queuing buffer");
+				ftdiTrace("queuing buffer");
 			}
 		}
 	}

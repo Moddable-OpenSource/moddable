@@ -126,7 +126,7 @@ void ftdiTraceHex(uint8_t *data, int num) {
 			pos += snprintf(ftBuf + pos, sizeof(ftBuf) - pos, "%c ", data[i]);
 		else
 			pos += snprintf(ftBuf + pos, sizeof(ftBuf) - pos, "%02x ", data[i]);
-		if (i%16 == 15) {
+		if (i%32 == 31) {
 			ftBuf[pos++] = '\n';
 			ftBuf[pos++] = '\0';
 			ftdiTx(ftBuf);
