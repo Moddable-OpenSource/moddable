@@ -875,10 +875,13 @@ void PiuViewUpdate(PiuView* self, PiuApplication* application)
 {
 	PiuRectangleRecord area;
 #if MODDEF_POCO_EVE
+	if (!(*self)->ready)
+		return;
 	if ((*self)->dirty) {
 		Poco poco = (*self)->poco;
 		PiuRectangleSet(&area, 0, 0, poco->width, poco->height);
 		(*self)->dirty = 0;
+		(*self)->ready = 0;
 #else
 	PiuCoordinate* data = (*((*self)->dirty))->data;
 	PiuRectangleSet(&area, data[1], data[2], data[3], data[4]);
@@ -1258,6 +1261,8 @@ void PiuView_create(xsMachine* the)
 	(*self)->_end = xsGet(xsArg(2), xsID_end);
 	(*self)->_send = xsGet(xsArg(2), xsID_send);
 #if MODDEF_POCO_EVE
+	(*self)->dirty = 0;
+	(*self)->ready = 1;
 #else
 	PiuRegionNew(the, (PiuCoordinate)regionLength);
 	(*self)->dirty = PIU(Region, xsResult);
@@ -1279,6 +1284,14 @@ void PiuView_get_rotation(xsMachine* the)
 #elif 270 == kPocoRotation
 	xsResult = xsInteger(270);
 #endif
+}
+
+void PiuView_onDisplayReady(xsMachine* the)
+{
+	PiuView* self = PIU(View, xsThis);
+	PiuApplication* application = (*self)->application;
+	(*self)->ready = 1;
+	PiuViewUpdate(self, application);
 }
 
 void PiuView_onIdle(xsMachine* the)

@@ -179,6 +179,7 @@ class View @ "PiuViewDelete" {
 	
 	get rotation() @ "PiuView_get_rotation" 
 	
+	onDisplayReady() @ "PiuView_onDisplayReady"
 	onIdle() @ "PiuView_onIdle"
 	onMessage() @ "PiuView_onMessage"
 	onTouchBegan(index, x, y, ticks) @ "PiuView_onTouchBegan"

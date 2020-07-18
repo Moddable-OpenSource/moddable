@@ -178,6 +178,7 @@ struct PiuViewStruct {
 	xsSlot _send;
 #if MODDEF_POCO_EVE
 	uint8_t dirty;
+	uint8_t ready;
 #else
 	PiuRegion* dirty;
 	PiuRegion* swap;
