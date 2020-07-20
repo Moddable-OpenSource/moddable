@@ -1288,10 +1288,12 @@ void PiuView_get_rotation(xsMachine* the)
 
 void PiuView_onDisplayReady(xsMachine* the)
 {
+#if MODDEF_POCO_EVE
 	PiuView* self = PIU(View, xsThis);
 	PiuApplication* application = (*self)->application;
 	(*self)->ready = 1;
 	PiuViewUpdate(self, application);
+#endif		
 }
 
 void PiuView_onIdle(xsMachine* the)
