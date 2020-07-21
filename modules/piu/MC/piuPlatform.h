@@ -26,6 +26,9 @@
 	#include "xsHost.h"
 #endif
 
+#if COMMODETTO_BITMAP_ID
+#define piuGPU 1
+#endif
 #define piuMC 1
 typedef PocoCoordinate PiuCoordinate;
 typedef PocoDimension PiuDimension;

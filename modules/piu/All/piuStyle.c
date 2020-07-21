@@ -512,6 +512,24 @@ void PiuStyleOverride(PiuStyle* self, PiuStyle* result)
 	}
 }
 
+#ifdef piuGPU
+void PiuStyleBind(PiuStyle* self)
+{
+	PiuFont* font = (*self)->font;
+	if (font) {
+		PiuFontBind(font);
+	}
+}
+
+void PiuStyleUnbind(PiuStyle* self)
+{
+	PiuFont* font = (*self)->font;
+	if (font) {
+		PiuFontUnbind(font);
+	}
+}
+#endif			
+
 void PiuStyle_get_bottom(xsMachine* the)
 {
 	PiuStyle* self = PIU(Style, xsThis);

@@ -80,7 +80,14 @@ struct PiuTextureStruct {
 	PocoBitmapRecord mask;
 	PiuDimension width;
 	PiuDimension height;
+#ifdef piuGPU
+	uint32_t usage;
+#endif
 };
+
+#ifdef piuGPU
+extern int piuTextureSize;
+#endif
 
 // PiuRegion.c
 
@@ -176,7 +183,7 @@ struct PiuViewStruct {
 	xsSlot _continue;
 	xsSlot _end;
 	xsSlot _send;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	uint8_t dirty;
 	uint8_t ready;
 #else

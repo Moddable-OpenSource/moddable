@@ -149,6 +149,22 @@ void PiuFontListUnlockCache(xsMachine* the)
 		CFELockCache(gCFE, 0);
 }
 
+#ifdef piuGPU
+void PiuFontBind(PiuFont* self)
+{
+	PiuTexture* texture = (*self)->texture;
+	if (texture)
+		PiuTextureBind(texture);
+}
+
+void PiuFontUnbind(PiuFont* self)
+{
+	PiuTexture* texture = (*self)->texture;
+	if (texture)
+		PiuTextureUnbind(texture);
+}
+#endif
+
 void PiuStyleLookupFont(PiuStyle* self)
 {
 	xsMachine* the = (*self)->the;
