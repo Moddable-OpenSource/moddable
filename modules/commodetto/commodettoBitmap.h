@@ -25,6 +25,12 @@
 #include <stdint.h>
 
 #include "commodettoBitmapFormat.h"
+#if !XSTOOLS
+	#include "mc.defines.h"
+	#ifdef MODDEF_COMMODETTO_BITMAP_ID
+		#define COMMODETTO_BITMAP_ID MODDEF_COMMODETTO_BITMAP_ID
+	#endif
+#endif
 
 #ifndef kCommodettoBitmapFormat
 	#define kCommodettoBitmapFormat kCommodettoBitmapRGB565LE
