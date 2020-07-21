@@ -397,6 +397,14 @@ extern void nrf52_rebootToDFU(void);
 #define c_read32(POINTER) *((txU4*)(POINTER))
 #define c_read32be(POINTER) ((((txU4)((txU1*)POINTER)[0]) << 24) | (((txU4)((txU1*)POINTER)[1]) << 16) | (((txU4)((txU1*)POINTER)[2]) << 8) | ((txU4)((txU1*)POINTER)[3]))
 
+/* FLASH */
+
+extern uint8_t modSPIFlashInit(void);
+extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
+extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
+extern uint8_t modSPIErase(uint32_t offset, uint32_t size);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -168,3 +168,11 @@ SECTIONS
 /* located in the nRF52 sdk at modules/nrfx/mdk/nrf_common.ld */
 
 INCLUDE "nrf_common.ld"
+
+SECTIONS
+{
+  .end_of_image :
+  {
+    PROVIDE(__start_unused_space = .);
+  } > FLASH
+}

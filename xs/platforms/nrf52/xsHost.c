@@ -937,8 +937,147 @@ void fxQueuePromiseJobs(txMachine* the)
 	modMessagePostToMachine(the, NULL, 0, doRunPromiseJobs, NULL);
 }
 
+/*
+	flash
+ */
 
+#include "nrf_fstorage_sd.h"
 
+NRF_FSTORAGE_DEF(nrf_fstorage_t fstorage) =
+{
+//    .evt_handler = NULL,		// don't need this?
+    .start_addr = 1,
+    .end_addr   = 0x100000,
+};
+
+uint8_t modSPIFlashInit(void)
+{
+	if (!fstorage.start_addr)
+		return 1;
+
+	fstorage.start_addr = 0;
+    if (NRF_SUCCESS != nrf_fstorage_init(&fstorage, &nrf_fstorage_sd, NULL))
+		return 0;
+
+	fstorage.start_addr = 1;
+
+	return 1;
+}
+
+static void wait_for_flash_ready(void)
+{
+    while (nrf_fstorage_is_busy(&fstorage))
+		sd_app_evt_wait();
+}
+
+uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
+{
+	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint32_t toAlign;
+
+	if (!modSPIFlashInit())
+		return 0;
+
+	if (offset & 3) {		// long align offset
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset & ~3, temp, 4))
+			return 0;
+		wait_for_flash_ready();
+
+		toAlign = 4 - (offset & 3);
+		c_memcpy(dst, temp + 4 - toAlign, (size < toAlign) ? size : toAlign);
+
+		if (size <= toAlign)
+			return 1;
+
+		dst += toAlign;
+		offset += toAlign;
+		size -= toAlign;
+	}
+
+	toAlign = size & ~3;
+	if (toAlign) {
+		size -= toAlign;
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, dst, toAlign))
+			return 0;
+		wait_for_flash_ready();
+
+		dst += toAlign;
+		offset += toAlign;
+	}
+
+	if (size) {				// long align tail
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, temp, 4))
+			return 0;
+		wait_for_flash_ready();
+
+		c_memcpy(dst, temp, size);
+	}
+
+	return 1;
+}
+
+uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
+{
+	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint32_t toAlign;
+
+	if (!modSPIFlashInit())
+		return 0;
+
+	if (offset & 3) {		// long align offset
+		toAlign = 4 - (offset & 3);
+		c_memset(temp, 0xFF, 4);
+		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
+		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset & ~3, temp, 4, NULL))
+			return 0;
+		wait_for_flash_ready();
+
+		if (size <= toAlign)
+			return 1;
+
+		src += toAlign;
+		offset += toAlign;
+		size -= toAlign;
+	}
+
+	toAlign = size & ~3;
+	if (toAlign) {
+		size -= toAlign;
+		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL))
+			return 0;
+		wait_for_flash_ready();
+
+		src += toAlign;
+		offset += toAlign;
+	}
+
+	if (size) {			// long align tail
+		c_memset(temp, 0xFF, 4);
+		c_memcpy(temp, src, size);
+		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, 4, NULL))
+			return 0;
+		wait_for_flash_ready();
+	}
+
+	return 1;
+}
+
+uint8_t modSPIErase(uint32_t offset, uint32_t size)
+{
+	if (!modSPIFlashInit())
+		return 0;
+
+	if ((offset & (fstorage.p_flash_info->erase_unit - 1)) || (size & (fstorage.p_flash_info->erase_unit - 1)))
+		return 0;
+
+	size /= fstorage.p_flash_info->erase_unit;
+
+	if (NRF_SUCCESS != nrf_fstorage_erase(&fstorage, offset, size, NULL))
+		return 0;
+	wait_for_flash_ready();
+
+	return 1;
+}
 
 #if MY_MALLOC
 char synergyDebugStr[256];
