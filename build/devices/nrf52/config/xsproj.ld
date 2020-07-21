@@ -22,17 +22,17 @@ SECTIONS
 {
   . = ALIGN(4);
 
-  .rodata.str : { KEEP(*(.rodata.str.1.4)) } > FLASH
-  .xs6ro2 : { KEEP(*(.xs6ro*)) } > FLASH
+  .rodata.str : { *(.rodata.str.1.4) } > FLASH
+  .xs6ro2 : { *(.xs6ro*) } > FLASH
   .irom.text : {
-		KEEP(*(.irom.str))
-		KEEP(*(.irom0.str.*))
-		KEEP(*(.irom2.literal))
-		KEEP(*(.irom2.text.literal))
-		KEEP(*(.irom2.text))
-		KEEP(*(.irom1.literal))
-		KEEP(*(.irom1.text.literal))
-		KEEP(*(.irom1.text))
+		*(.irom.str)
+		*(.irom0.str.*)
+		*(.irom2.literal)
+		*(.irom2.text.literal)
+		*(.irom2.text)
+		*(.irom1.literal)
+		*(.irom1.text.literal)
+		*(.irom1.text)
 	} > FLASH
 	
 } INSERT AFTER .data;
@@ -159,7 +159,7 @@ SECTIONS
   .xs_lib_flash :
   {
     PROVIDE(__start_xs_lib = .);
-    KEEP(*(SORT(.flash*)))
+    *(SORT(.flash*))
     PROVIDE(__stop_xs_lib = .);
   } > FLASH
 
