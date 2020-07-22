@@ -22,11 +22,6 @@
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
-#include "nrf_fstorage_sd.h"
-
-extern nrf_fstorage_t fstorage;
-extern int __start_unused_space;
-
 struct modFlashRecord {
 	uint32_t partitionStart;
 	uint32_t partitionByteLength;

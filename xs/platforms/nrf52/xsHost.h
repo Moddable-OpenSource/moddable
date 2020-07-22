@@ -45,6 +45,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "nrf_fstorage_sd.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -399,14 +401,16 @@ extern void nrf52_rebootToDFU(void);
 
 /* FLASH */
 
+extern nrf_fstorage_t fstorage;
+
 // it appears that the flash offsets aree placeed into the memory map without any offset
-#define kFlashStart (0)
+#define kFlashStart ((uint8_t *)0)
 #define SPI_FLASH_SEC_SIZE (modSPIFlashInit() ? fstorage.p_flash_info->erase_unit : 0)
 
 extern uint8_t *espFindUnusedFlashStart(void);
 #define kModulesStart (espFindUnusedFlashStart())
 
-#define kModulesEnd (0xF4000)
+#define kModulesEnd ((uint8_t *)0xF4000)
 #define kModulesByteLength (kModulesEnd - kModulesStart)
 
 extern uint8_t modSPIFlashInit(void);
