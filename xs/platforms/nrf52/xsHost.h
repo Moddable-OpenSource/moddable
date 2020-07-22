@@ -399,6 +399,16 @@ extern void nrf52_rebootToDFU(void);
 
 /* FLASH */
 
+// it appears that the flash offsets aree placeed into the memory map without any offset
+#define kFlashStart (0)
+#define SPI_FLASH_SEC_SIZE (modSPIFlashInit() ? fstorage.p_flash_info->erase_unit : 0)
+
+extern uint8_t *espFindUnusedFlashStart(void);
+#define kModulesStart (espFindUnusedFlashStart())
+
+#define kModulesEnd (0xF4000)
+#define kModulesByteLength (kModulesEnd - kModulesStart)
+
 extern uint8_t modSPIFlashInit(void);
 extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);

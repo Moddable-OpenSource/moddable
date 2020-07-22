@@ -1079,6 +1079,29 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 	return 1;
 }
 
+uint8_t *espFindUnusedFlashStart(void)
+{
+	uintptr_t modStart;
+	extern uint32_t __start_unused_space;
+
+	if (!modSPIFlashInit())
+		return NULL;
+
+	modStart = (uintptr_t)&__start_unused_space;
+	modStart += fstorage.p_flash_info->erase_unit - 1;
+	modStart -= modStart % fstorage.p_flash_info->erase_unit;
+
+	/*
+		this assumes:
+		- the .data. section follows the application image
+		- it is no bigger than 4096 bytes
+		- empty space follows the .data. section
+	*/
+	modStart += 4096;
+
+	return (uint8_t *)modStart;
+}
+
 #if MY_MALLOC
 char synergyDebugStr[256];
 void *my_calloc(size_t nitems, size_t size) {

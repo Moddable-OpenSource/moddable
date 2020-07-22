@@ -60,9 +60,7 @@ void xs_flash(xsMachine *the)
 
 	if (xsStringType == xsmcTypeOf(xsArg(0))) {
 		char *partition = xsmcToString(xsArg(0));
-		uint32_t modStart = (uint32_t)&__start_unused_space;
-		modStart += fstorage.p_flash_info->erase_unit - 1;
-		modStart -= modStart % fstorage.p_flash_info->erase_unit;
+		uint32_t modStart = (uintptr_t)(kModulesStart - kFlashStart);
 
 		if (0 == c_strcmp(partition, "xs")) {
 			flash.partitionStart = modStart;
