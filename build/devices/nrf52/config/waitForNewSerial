@@ -70,4 +70,5 @@ while [ $newOne -eq 0 ]; do
 done
 
 echo "Debug build installed."
-${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
+# ${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
+${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1

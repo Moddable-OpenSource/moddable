@@ -415,17 +415,20 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 	DTR = (line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR);
 	RTS = (line_state & APP_USBD_CDC_ACM_LINE_STATE_RTS);
 	uint8_t reboot_seq = (DTR ? 1 : 0) + (RTS ? 2 : 0);
+//ftdiTraceAndInt2("checkLineState for intf: ", which, line_state);
+//ftdiTraceAndInt("   previously: ", reboot_style[which]);
 
 	switch (reboot_seq) {
 		case 3:								 // normal run mode
 //			ftdiTrace("[3] normal run mode");
-			reboot_style[which] = 0;
+			reboot_style[which] = 3;
 			break;
 		case 2:								 // DTR dropped
 			if (which == 1)
 				ftdiTrace("[2] ACM - dtr dropped");
 			else
 				ftdiTrace("[2] VENDOR - dtr dropped");
+			reboot_style[which] = 2;
 			break;
 		case 1:						 // DTR Raised, RTS off - programming mode
 			if (which == 1)
@@ -435,7 +438,7 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 			reboot_style[which] = 1;
 			break;
 		case 0:
-			if (reboot_style[which]) {
+			if (reboot_style[which] == 1) {
 				if (which == 1)
 					ftdiTrace("[0] ACM - dtr and rts dropped - REBOOT TO PROGRAMMING");
 				else
