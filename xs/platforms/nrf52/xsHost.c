@@ -996,6 +996,7 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 
 	toAlign = size & ~3;
 	if (toAlign) {
+//@@ need case here for misaligned destination
 		size -= toAlign;
 		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, dst, toAlign))
 			return 0;
@@ -1018,7 +1019,7 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 
 uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 {
-	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
 	if (!modSPIFlashInit())
@@ -1043,12 +1044,26 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	toAlign = size & ~3;
 	if (toAlign) {
 		size -= toAlign;
-		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL))
-			return 0;
-		wait_for_flash_ready();
+		if (((uintptr_t)src) & ~3) {	// src is not long aligned, copy through stack
+			while (toAlign) {
+				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
+				c_memcpy(temp, src, use);
+				if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, use, NULL))
+					return 0;
 
-		src += toAlign;
-		offset += toAlign;
+				toAlign -= use;
+				src += use;
+				offset += use;
+			}
+		}
+		else {
+			if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL))
+				return 0;
+			wait_for_flash_ready();
+
+			src += toAlign;
+			offset += toAlign;
+		}
 	}
 
 	if (size) {			// long align tail
