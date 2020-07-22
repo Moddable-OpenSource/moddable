@@ -163,6 +163,9 @@ struct PiuImageStruct {
 	xsIntegerValue frameIndex;
 	uint32_t frameOffset;
 	uint32_t frameSize;
+#ifdef piuGPU
+	uint32_t frameID;
+#endif
 };
 
 // PiuView.c
