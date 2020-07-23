@@ -23,7 +23,6 @@
 #include "mc.xs.h"			// for xsID_ values
 
 extern uint8_t _MODPREF_start;
-extern uint8_t _MODPREF_end;
 
 #define kPreferencesStartOffset ((uint8_t *)&_MODPREF_start - kFlashStart)
 #define kPreferencesMagic 0x81213141
@@ -149,7 +148,7 @@ void xs_preference_keys(xsMachine *the)
 		uint8_t *b = buffer;
 		const char *domain;
 		uint8_t match;
-		uint32 use = endOffset - offset;
+		uint32_t use = endOffset - offset;
 		if (use > kBufferSize)
 			use = kBufferSize;
 
@@ -234,7 +233,7 @@ uint8_t findPrefOffset(const char *domain, const char *key, uint32_t *entryOffse
 		uint8_t *b = buffer;
 		uint8_t match;
 		uint32_t valueSize;
-		uint32 use = endOffset - offset;
+		uint32_t use = endOffset - offset;
 		if (use > kBufferSize)
 			use = kBufferSize;
 
