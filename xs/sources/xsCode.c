@@ -163,6 +163,7 @@ static void fxNodeDispatchCodeDelete(void* it, void* param);
 static void fxNodeDispatchCodeReference(void* it, void* param);
 static txFlag fxNodeDispatchCodeThis(void* it, void* param, txFlag flag);
 
+static void fxCompoundExpressionNodeCodeName(void* it, void* param);
 static void fxSpreadNodeCode(void* it, void* param, txInteger counter);
 
 txScript* fxParserCode(txParser* parser)
@@ -2494,11 +2495,13 @@ void fxCompoundExpressionNodeCode(void* it, void* param)
 		fxCoderAddBranch(param, -1, XS_CODE_BRANCH_ELSE_1, elseTarget);
 		fxCoderAddByte(param, -1, XS_CODE_POP);
 		fxNodeDispatchCode(self->value, param);
+		fxCompoundExpressionNodeCodeName(it, param);
 		stackLevel = coder->stackLevel;
 		break;
 	case XS_TOKEN_COALESCE_ASSIGN:
 		fxCoderAddBranch(param, -1, XS_CODE_BRANCH_COALESCE_1, elseTarget);
 		fxNodeDispatchCode(self->value, param);
+		fxCompoundExpressionNodeCodeName(it, param);
 		stackLevel = coder->stackLevel;
 		break;
 	case XS_TOKEN_OR_ASSIGN:
@@ -2506,6 +2509,7 @@ void fxCompoundExpressionNodeCode(void* it, void* param)
 		fxCoderAddBranch(param, -1, XS_CODE_BRANCH_IF_1, elseTarget);
 		fxCoderAddByte(param, -1, XS_CODE_POP);
 		fxNodeDispatchCode(self->value, param);
+		fxCompoundExpressionNodeCodeName(it, param);
 		stackLevel = coder->stackLevel;
 		break;
 	default:
@@ -2526,6 +2530,34 @@ void fxCompoundExpressionNodeCode(void* it, void* param)
 		}
 		fxCoderAdd(param, 0, endTarget);
 	}
+}
+
+void fxCompoundExpressionNodeCodeName(void* it, void* param) 
+{
+	txAssignNode* self = it;
+	txAccessNode* reference = (txAccessNode*)(self->reference);
+	txFlag token = reference->description->token;
+	txNode* value = self->value;
+	if (token != XS_TOKEN_ACCESS)
+		return;
+	token = value->description->token;
+	if (token == XS_TOKEN_EXPRESSIONS) {
+		value = ((txExpressionsNode*)self)->items->first;
+		if (value->next)
+			return;
+		token = value->description->token;
+	}
+	if (token == XS_TOKEN_CLASS) {
+		txClassNode* node = (txClassNode*)value;
+		if (node->symbol)
+			return;
+	}
+	else if ((token == XS_TOKEN_FUNCTION) || (token == XS_TOKEN_GENERATOR) || (token == XS_TOKEN_HOST)) {
+		txFunctionNode* node = (txFunctionNode*)value;
+		if (node->symbol)
+			return;
+	}
+	fxCoderAddSymbol(param, 0, XS_CODE_NAME, reference->symbol);
 }
 
 void fxDebuggerNodeCode(void* it, void* param) 
