@@ -2483,7 +2483,7 @@ void fxCompoundExpressionNodeCode(void* it, void* param)
 {
 	txAssignNode* self = it;
 	txCoder* coder = param;
-	txFlag token = self->description->token;
+	txToken token = self->description->token;
 	txFlag shortcut = ((token == XS_TOKEN_AND_ASSIGN) || (token == XS_TOKEN_COALESCE_ASSIGN) || (token == XS_TOKEN_OR_ASSIGN)) ? 1 : 0;
 	txTargetCode* elseTarget = (shortcut) ? fxCoderCreateTarget(param) : C_NULL;
 	txTargetCode* endTarget = (shortcut) ? fxCoderCreateTarget(param) : C_NULL;
@@ -2536,7 +2536,7 @@ void fxCompoundExpressionNodeCodeName(void* it, void* param)
 {
 	txAssignNode* self = it;
 	txAccessNode* reference = (txAccessNode*)(self->reference);
-	txFlag token = reference->description->token;
+	txToken token = reference->description->token;
 	txNode* value = self->value;
 	if (token != XS_TOKEN_ACCESS)
 		return;
