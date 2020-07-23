@@ -642,6 +642,19 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     		if (!m_usb_connected || m_vendor_usb_connected)
     			break;
     		
+			if (NULL == gTxBufferList && m_tx_buffer_index > 0) {
+				// data remaining
+				txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_tx_buffer_index, 1);
+				if (NULL == buffer)
+					return;
+				buffer->size = m_tx_buffer_index;
+				c_memmove(&buffer->buffer[0], m_tx_buffer, buffer->size);
+//ftdiTraceAndInt("sending incomplete buffer sized:", buffer->size);
+//ftdiTraceHex(buffer->buffer, buffer->size);
+				m_tx_buffer_index = 0;
+				gTxBufferList = buffer;
+			}
+
 			ret = sendNextBuffer();
 			if (0 != ret)
     			ftdiTrace("sendNextBuffer failed");
