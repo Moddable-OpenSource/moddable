@@ -1044,12 +1044,13 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	toAlign = size & ~3;
 	if (toAlign) {
 		size -= toAlign;
-		if (((uintptr_t)src) & ~3) {	// src is not long aligned, copy through stack
+		if (3 & (uintptr_t)src) {	// src is not long aligned, copy through stack
 			while (toAlign) {
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
 				if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, use, NULL))
 					return 0;
+				wait_for_flash_ready();
 
 				toAlign -= use;
 				src += use;

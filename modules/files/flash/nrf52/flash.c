@@ -47,12 +47,6 @@ void xs_flash(xsMachine *the)
 	if (!modSPIFlashInit())
 		xsUnknownError("init failed");
 
-//	uint32_t lastAddr = nrf5_flash_end_addr_get();
-//	xsLog("  flash end addreess = %d\n", lastAddr);
-//
-//	xsLog("  &__start_unused_space = %d\n", &__start_unused_space);
-
-
 	if (xsStringType == xsmcTypeOf(xsArg(0))) {
 		char *partition = xsmcToString(xsArg(0));
 		uint32_t modStart = (uintptr_t)(kModulesStart - kFlashStart);

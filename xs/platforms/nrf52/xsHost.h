@@ -405,7 +405,7 @@ extern nrf_fstorage_t fstorage;
 
 // it appears that the flash offsets aree placeed into the memory map without any offset
 #define kFlashStart ((uint8_t *)0)
-#define SPI_FLASH_SEC_SIZE (modSPIFlashInit() ? fstorage.p_flash_info->erase_unit : 0)
+#define kFlashSectorSize (modSPIFlashInit() ? fstorage.p_flash_info->erase_unit : 0)
 
 extern uint8_t *espFindUnusedFlashStart(void);
 #define kModulesStart (espFindUnusedFlashStart())

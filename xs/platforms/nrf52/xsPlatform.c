@@ -519,18 +519,18 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		case 3: {	// install some
 			uint32_t offset = c_read32be(cmd);
 			cmd += 4, cmdLen -= 4;
-			if ((offset + cmdLen) > (kModulesEnd - kModulesStart)) {
-				resultCode = -1;
+			if ((offset + cmdLen) > kModulesByteLength) {
+				resultCode = -2;
 				break;
 			}
 
 			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 
-			int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
-			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
-				modSPIErase(offset, SPI_FLASH_SEC_SIZE * ((lastSector - firstSector) + 1));
+			int firstSector = offset / kFlashSectorSize, lastSector = (offset + cmdLen) / kFlashSectorSize;
+			if (!(offset % kFlashSectorSize))			// starts on sector boundary
+				modSPIErase(offset, kFlashSectorSize * ((lastSector - firstSector) + 1));
 			else if (firstSector != lastSector)
-				modSPIErase((firstSector + 1) * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE * (lastSector - firstSector));	// crosses into a new sector
+				modSPIErase((firstSector + 1) * kFlashSectorSize, kFlashSectorSize * (lastSector - firstSector));	// crosses into a new sector
 
 			if (!modSPIWrite(offset, cmdLen, cmd))
 				resultCode = -1;
@@ -564,7 +564,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 		default:
-			resultCode = -1;
+			resultCode = -3;
 			break;
 	}
 
