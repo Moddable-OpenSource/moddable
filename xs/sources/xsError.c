@@ -183,6 +183,7 @@ void fx_AggregateError(txMachine* the)
 	txSlot* property = fx_Error_aux(the, &mxAggregateErrorPrototype, 1);
 	txSlot* array;
 	txSlot** address;
+	txIndex length = 0;
 	txSlot* iterator;
 	txSlot* next;
 	txSlot* value;
@@ -202,12 +203,14 @@ void fx_AggregateError(txMachine* the)
 			slot->kind = value->kind;
 			slot->value = value->value;
 			address = &slot->next;
+			length++;
 		}
 		mxCatch(the) {
 			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
+	array->next->value.array.length = length;
 	fxCacheArray(the, array);
 	
 	the->stack = stack;
