@@ -9,10 +9,13 @@ GROUP(-lgcc -lc -lnosys)
 */
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xce000
+  FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xcc000
+  PREFERENCE (rx) : ORIGIN = 0xF2000, LENGTH = 0x2000
   RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a384
   NOINIT (rwx) :  ORIGIN = 0x2003fb3c, LENGTH = 0x100
 }
+
+PROVIDE(_MODPREF_start = 0xF2000);
 
 /* much of Moddable code goes into flash */
 /* this is in nrf_common.h */
