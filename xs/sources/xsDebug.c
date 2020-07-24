@@ -73,6 +73,7 @@ static void fxEchoString(txMachine* the, txString theString);
 static txSlot* fxFindFrame(txMachine* the);
 static txSlot* fxFindRealm(txMachine* the);
 static void fxGo(txMachine* the);
+static void fxIndexToString(txMachine* the, txIndex theIndex, txString theBuffer, txSize theSize);
 static txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module);
 static void fxListFrames(txMachine* the);
 static void fxListGlobal(txMachine* the);
@@ -1224,7 +1225,6 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txID ID = theProperty->ID;
 	txFlag flag = theProperty->flag;
 	txSlot* instance;
-	char buffer[256];
 	txString name;
 	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
@@ -1254,14 +1254,14 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 		if (thePrefix) {
 			fxEchoString(the, thePrefix);
 			if (theSuffix) {
-				fxNumberToString(the->dtoa, theIndex, buffer, sizeof(buffer), 0, 0);
-				fxEchoString(the, buffer);
+				fxIndexToString(the, theIndex, the->nameBuffer, sizeof(the->nameBuffer));
+				fxEchoString(the, the->nameBuffer);
 				fxEchoString(the, theSuffix);
 			}
 		}
 		else {
-			fxIDToString(the, ID, buffer, sizeof(buffer));
-			fxEchoString(the, buffer);
+			fxIDToString(the, ID, the->nameBuffer, sizeof(the->nameBuffer));
+			fxEchoString(the, the->nameBuffer);
 		}
 		fxEcho(the, "\"");
 	
@@ -1447,7 +1447,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txString thePrefix, txIndex theIndex, txString theSuffix, txID theID, txFlag theFlag, txSlot* theInstance)
 {
 	txSlot* instanceInspector = fxToInstanceInspector(the, theInstance);
-	char buffer[256];
+	char buffer[128];
 	txString p = buffer;
 	txString q = p + sizeof(buffer);
 
@@ -1463,7 +1463,7 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 		c_strcpy(p, thePrefix);
 		p += c_strlen(thePrefix);
 		if (theSuffix) {
-			fxNumberToString(the->dtoa, theIndex, p, q - p - 1, 0, 0); // assume c_strlen(theSuffix) == 1;
+			fxIndexToString(the, theIndex, p, q - p - 1); // assume c_strlen(theSuffix) == 1;
 			c_strcat(p, theSuffix);
 		}
 	}
@@ -1640,6 +1640,11 @@ void fxGo(txMachine* the)
 		aSlot->flag &= ~(XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG);
 		aSlot = aSlot->next;
 	}
+}
+
+void fxIndexToString(txMachine* the, txIndex theIndex, txString theBuffer, txSize theSize)
+{
+	c_snprintf(theBuffer, theSize, "%u", theIndex);
 }
 
 void fxListFrames(txMachine* the)
@@ -1970,6 +1975,13 @@ void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, 
 			fxEchoString(the, message);
 		fxEcho(the, "</bubble>");
 		fxEchoStop(the);
+	}
+#elif defined(mxInstrument)
+	if (!(flags & XS_BUBBLE_BINARY)) {
+		if (conversation)
+			fxReport(the, "%s: %s\n", conversation, message);
+		else
+			fxReport(the, "%s\n", message);
 	}
 #endif
 }

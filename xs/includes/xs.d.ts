@@ -5,5 +5,7 @@ interface Trace {
 	right(log: string):void;
 }
 declare const trace:Trace;
-
+type HostBuffer = {
+  slice(begin: number, end?: number): ArrayBuffer
+};
 // Compartment?

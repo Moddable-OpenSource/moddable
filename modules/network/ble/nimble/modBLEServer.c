@@ -303,7 +303,6 @@ static void deployServices(xsMachine *the)
 	static const ble_uuid16_t BT_UUID_GAP = BLE_UUID16_INIT(0x1800);
 	static const ble_uuid16_t BT_UUID_GAP_DEVICE_NAME = BLE_UUID16_INIT(0x2A00);
 	static const ble_uuid16_t BT_UUID_GAP_APPEARANCE = BLE_UUID16_INIT(0x2A01);
-	uint8_t hasGAP = false;
 	char *device_name = NULL;
 	uint16_t appearance = BLE_SVC_GAP_APPEARANCE_GEN_COMPUTER;
 	struct ble_gatt_access_ctxt ctxt = {0};
@@ -319,7 +318,6 @@ static void deployServices(xsMachine *the)
 	for (int service_index = 0; service_index < service_count; ++service_index) {
 		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
 		if (0 == ble_uuid_cmp((const ble_uuid_t*)service->uuid, &BT_UUID_GAP.u)) {
-			hasGAP = true;
 			for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
 				const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
 				if (0 == ble_uuid_cmp((const ble_uuid_t*)characteristic->uuid, &BT_UUID_GAP_DEVICE_NAME.u)) {
@@ -348,6 +346,12 @@ static void deployServices(xsMachine *the)
 	
 	int rc = ble_gatts_reset();
 
+	if (0 == rc)
+		rc = ble_gatts_count_cfg(gatt_svr_svcs);
+	if (0 == rc)
+		rc = ble_gatts_add_svcs(gatt_svr_svcs);
+	if (0 == rc)
+		rc = ble_gatts_start();
 	if (0 == rc) {
 		ble_svc_gap_device_appearance_set(appearance);
 		if (NULL != device_name) {
@@ -356,17 +360,8 @@ static void deployServices(xsMachine *the)
 		}
 		else
 			ble_svc_gap_device_name_set(DEVICE_FRIENDLY_NAME);
-
-		if (!hasGAP)
-			ble_svc_gap_init();
 	}
-	if (0 == rc)
-		rc = ble_gatts_count_cfg(gatt_svr_svcs);
-	if (0 == rc)
-		rc = ble_gatts_add_svcs(gatt_svr_svcs);
-	if (0 == rc)
-		rc = ble_gatts_start();
-		
+	
 	if (0 != rc)
 		xsUnknownError("failed to start services");
 }
@@ -375,6 +370,7 @@ static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 {
 	if (!gBLE) return;
 	
+	ble_hs_util_ensure_addr(0);
 	ble_hs_id_infer_auto(0, &gBLE->bda.type);
 	ble_hs_id_copy_addr(gBLE->bda.type, gBLE->bda.val, NULL);
 
@@ -620,6 +616,10 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
 	
 	if (!gBLE)
 		return;
+		
+		
+	LOG_GAP_MSG("Encryption change status=");
+	LOG_GAP_INT(event->enc_change.status);
 		
 	if (0 == event->enc_change.status) {
 		struct ble_gap_conn_desc desc;

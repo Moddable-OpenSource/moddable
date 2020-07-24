@@ -380,9 +380,9 @@ export class Advertisement {
 	get manufacturerSpecific() {
 		const index = this.findIndex(GAP.ADType.MANUFACTURER_SPECIFIC_DATA);
 		if (-1 != index) {
+			let start = index + 2;
 			const data = this.#data;
 			const adLength = data[index];
-			const start = index + 2;
 			const identifier = data[start] | (data[start+1] << 8);
 			start += 2;
 			let end = start + adLength - 1

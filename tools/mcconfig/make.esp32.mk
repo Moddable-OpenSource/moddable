@@ -102,7 +102,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/lwip/lwip/src/include/ \
  	$(IDF_PATH)/components/lwip/port/esp32/ \
  	$(IDF_PATH)/components/lwip/port/esp32/include/ \
- 	$(IDF_PATH)/components/mbedtls/include \
+ 	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
  	$(IDF_PATH)/components/nimble/esp-hci/include \
@@ -221,8 +221,7 @@ C_DEFINES = \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION) \
-	-DMYNEWT_VAL_BLE_LL_CONN_INIT_MAX_TX_BYTES=251
+	-DkPocoRotation=$(ROTATION)
 ifeq ($(DEBUG),1)
 	C_DEFINES += -DmxDebug=1
 endif

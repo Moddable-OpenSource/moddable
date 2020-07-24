@@ -209,7 +209,7 @@ class ExpandingKeyRowBehavior extends KeyRowBehavior {
 		let chars = this.chars;
 		let widths = this.widths;
 		let charHeight = metrics.height;
-		let fading = false;
+		let fading;
 		let fadeKey = keyboard.fadeKey;
 		let x, color, fadeTextColor;
 		//++keyboard.frames;
@@ -228,11 +228,10 @@ class ExpandingKeyRowBehavior extends KeyRowBehavior {
 		port.fillTexture(texture, color, x, 0, width, keyHeight, 0, 0, keyPlusGapWidth, keyHeight);
 		
 		if (fadeKey[0] == index) {
-			fading = true;
-			color = KeyPressKeyColors[expandState];
+			fading = fadeKey[1];
 			if (!this.skipClip)
 				port.pushClip(fadeKey[1] * keyPlusGapWidth + x, 0, keyWidth + innerKeyGap, keyHeight);
-			port.fillTexture(texture, color, x, 0, width, keyHeight, 0, 0, keyPlusGapWidth, keyHeight);
+			port.fillTexture(texture, KeyPressKeyColors[expandState], x, 0, width, keyHeight, 0, 0, keyPlusGapWidth, keyHeight);
 			if (!this.skipClip)
 				port.popClip();
 		}
@@ -241,11 +240,8 @@ class ExpandingKeyRowBehavior extends KeyRowBehavior {
 		fadeTextColor = KeyPressTextColors[expandState];
 		
 		for (let i = tracker ? tracker.index : 0; i < length; ++i, x += keyWidth + innerKeyGap) {
-			let key = chars[i];
-			let charWidth = widths[i];
-			if (fading && (i == fadeKey[1]))
-				color = fadeTextColor;
-			port.drawString(key, style, color, x + ((keyWidth - charWidth) >> 1), 3, charWidth, charHeight);
+			const charWidth = widths[i];
+			port.drawString(chars[i], style, (i === fading) ? fadeTextColor : color, x + ((keyWidth - charWidth) >> 1), 3, charWidth, charHeight);
 		}
 		if (tracker && !tracker.down) {
 			this.tracker = null;

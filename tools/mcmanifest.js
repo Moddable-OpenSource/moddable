@@ -671,7 +671,7 @@ export class MakeFile extends FILE {
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", definesPath);
+			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "wav2maud ", target);
 			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
 		}
@@ -732,8 +732,7 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			var parts = tool.splitPath(result);
-			paths[parts.name.slice(0, -2)] = [ result.slice(0, -5) ];
+			paths[result.target.slice(0, -2)] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
 			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
@@ -965,7 +964,7 @@ class ModulesRule extends Rule {
 		}
 		else if (parts.extension == ".ts") {
 			if (parts.name.endsWith(".d")) {
-				this.appendFolder(tool.dtsFiles, source);
+				this.appendFile(tool.dtsFiles, target, source, include);
 			}
 			else {
 				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
@@ -1409,6 +1408,7 @@ export class Tool extends TOOL {
 		all.strip = platform.strip ? platform.strip : all.strip;
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
+		this.mergeProperties(all.run, platform.run);
 	}
 	mergeProperties(targets, sources) {
 		if (sources) {
@@ -1518,6 +1518,7 @@ export class Tool extends TOOL {
 			commonjs:[],
 			errors:[],
 			warnings:[],
+			run:{},
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 

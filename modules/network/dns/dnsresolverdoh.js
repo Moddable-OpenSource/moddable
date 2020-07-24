@@ -24,7 +24,6 @@ import Parser from "dns/parser";
 import Serializer from "dns/serializer";
 import SecureSocket from "securesocket";
 import {Request} from "http";
-import Timer from "timer";
 
 /*
 	note:
@@ -57,8 +56,7 @@ class Manager {
 		}
 		if (!this.requests.length) {
 			manager = null;
-			if (this.request)
-				this.request.close();
+			this?.request.close();
 			delete this.request;
 		}
 	}
@@ -83,24 +81,31 @@ class Manager {
 		this.request.callback = this.callback.bind(this);
 	}
 	callback(message, value, address, port) {
-		let done;
+		let done = Request.error === message;
 
 		if (Request.responseComplete === message) {
 			const packet = new Parser(value);
 			try {
+				let address;
+				for (let i = 0, answers = packet.answers; i < answers; i++) {
+					const answer = packet.answer(i);
+					if (DNS.RR.A === answer.qtype) {
+						address = answer.rdata;
+						break;
+					}
+				}
+
 				const request = this.requests[0];
-				if (packet.answers)
-					request.onResolved.call(request.target, packet.answer(0).rdata);
+				if (address)
+					request.onResolved?.call(request.request, address);
 				else
-					request.onError.call(request.target);
+					request.onError?.call(request.request);
 			}
 			catch {
 			}
 
 			done = true;
 		}
-		else if (Request.error === message)
-			done = true;
 
 		if (done) {
 			delete this.request;
@@ -114,23 +119,19 @@ Object.freeze(Manager.prototype);
 
 class Resolver {
 	constructor(options) {
-		if (!manager)
-			manager = new Manager;
+		manager ??= new Manager;
 
 		manager.add({
 			request: this,
 			host: options.host.toString(),
-			target: options.target || this,
-			onResolved: options.onResolved || this.onResolved,
-			onError: options.onError || this.onError,
+			onResolved: options.onResolved,
+			onError: options.onError,
 		});
+
+		if (options.target)
+			this.target = options.target;
 	}
 	close() {
-		if (this.timer) {
-			Timer.clear(this.timer);
-			delete this.timer;
-		}
-
 		manager.remove(this);
 	}
 }

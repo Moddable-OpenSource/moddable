@@ -4104,8 +4104,8 @@ void fxRunExtends(txMachine* the)
 	txSlot* prototype;
 	
 	constructor = fxGetInstance(the, the->stack);
-	if (!constructor)
-		mxTypeError("extends: no function");
+	if (!mxIsConstructor(constructor))
+		mxTypeError("extends: no constructor");
 	mxPushUndefined();
 	prototype = the->stack;
 	fxBeginHost(the);

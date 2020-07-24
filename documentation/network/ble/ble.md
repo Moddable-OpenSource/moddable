@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: July 2, 2020
+Revised: July 13, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -26,6 +26,8 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 	* [GATT Services](#gattservices)
 * [BLE Security](#blesecurity)
 	* [Class SM](#classsm)
+* [BLE Whitelisting](#blewhitelisting)
+	* [Class GAPWhitelist](#classgapwhitelist)
 * [BLE Apps on ESP32 Platform](#esp32platform)
 * [BLE Apps on Blue Gecko Platform](#geckoplatform)
 * [BLE Example Apps](#exampleapps)
@@ -186,9 +188,18 @@ The `params` object contains the following properties:
 | --- | --- | :--- |
 | `active` | `boolean` | Set `true` for active scanning, `false` for passing scanning. Default is `true`.
 | `duplicates` | `boolean` | Set `true` to receive all advertising packets, `false` to filter out multiple advertising packets received from the same peripheral device. Default is `true`.
+| `filterPolicy` | `number` | Filter policy applied to scan. Default is `GAP.ScanFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
 | `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`. 
 | `window` | `number` | Scan window value in units of 0.625 ms. Default is `0x30`. 
 
+The `filterPolicy` parameter can be one of the following:
+
+| Name | Description |
+| --- | :--- | 
+| `GAP.ScanFilterPolicy.NONE` | No filtering.
+| `GAP.ScanFilterPolicy.WHITELIST` | Receive advertisements only from whitelist devices.
+| `GAP.ScanFilterPolicy.NOT_RESOLVED_DIRECTED` | Receive all undirected advertisements and all directed advertisements where the initiator address is a resolvable private address.
+| `GAP.ScanFilterPolicy.WHITELIST_NOT_RESOLVED_DIRECTED` | Receive advertisements only from whitelist devices and all directed advertisements where the initiator address is a resolvable private address.
 
 The `startScanning` function enables scanning for nearby peripherals.
 
@@ -319,6 +330,7 @@ An instance of the `Device` class is instantiated by `BLEClient` and provided to
 | `connection` | `number` | Connection identifier.
 | `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
+| `rssi` | `number` | Discovered device signal strength.
 
 ### Functions 
 
@@ -1123,7 +1135,17 @@ The `params` object contains the following properties:
 | `connectable` | `boolean` | Optional property to specify connectable mode. Set to `true` to specify unidirected connectable mode; `false` to specify non-connectable mode. Defaults to `true`.
 | `discoverable` | `object` | Optional property to specify discoverable mode. Set to `true` to use the general discovery procedure; `false` to specify non-discoverable. Defaults to `true`.
 | `fast` | `boolean` | Optional property to specify the GAP advertisement interval. Set to `true` to specify TGAP(adv\_fast\_interval1); `false` to specify TGAP(adv\_slow\_interval). Defaults to `true`.
+| `filterPolicy` | `number` | Optional property to apply a filter policy. Defaults to `GAP.AdvFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
 | `scanResponseData` | `object` | Optional object containing scan response data properties.
+
+The `filterPolicy` property can be one of the following:
+
+| Name | Description |
+| --- | :--- |
+| `GAP.AdvFilterPolicy.NONE` | No filtering.
+| `GAP.AdvFilterPolicy.WHITELIST_SCANS` | Process all connection requests but only scans from devices in the whitelist.
+| `GAP.AdvFilterPolicy.WHITELIST_CONNECTIONS` | Process all scan requests but only connection requests from devices in the whitelist.
+| `GAP.AdvFilterPolicy.WHITELIST_SCANS_CONNECTIONS` | Ignore all scan and connection requests unless peer device is in the whitelist.
 
 The `startAdvertising` function starts broadcasting advertisement and scan response packets. The function is also used to configure discoverable and connectable modes.
 
@@ -1610,7 +1632,75 @@ onPasskeyRequested(params) {
 ```
 > **Note:** Passkey values are integers, but must always include six digits. The host application is responsible for padding with leading zeros for display.
 
+<a id="blewhitelisting"></a>
+## BLE Whitelisting
+
+Whitelisting provides filtering of peer devices by Bluetooth address. A BLE client can use the whitelist to only receive peripheral scan responses and hence subsequent connections to devices in the whitelist. A BLE peripheral can use the whitelist to filter BLE client scans and connections. Whitelist filtering provides enhanced security by limiting communication to known and trusted BLE devices.
+
+There is one BLE whitelist used by both the BLE client and server. The maximum number of whitelist entries allowed is platform-specific.
+
+> **Note:** Whitelisting is not currently supported on the Blue Gecko platform.
+
+<a id="classgapwhitelist"></a>
+## Class GAPWhitelist
+
+The `GAPWhitelist` class provides functions for manipulating the BLE whitelist.
+
+```javascript
+import GAPWhitelist from "gapwhitelist";
+```
+
+### Functions
+
+#### `add(address [,addressType])`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `string` or `object` | The peer address to whitelist.
+| `addressType` | `number` | Optional peer address type. Defaults to `GAP.AddressType.PUBLIC`.
+
+Use the `add` function to add a peer device to the whitelist.
+
+To add a Bluetooth address to the whitelist and receive only scan responses from devices in the whitelist:
+
+```javascript
+onReady() {
+	GAPWhitelist.add("B4:99:4C:34:D7:A7");
+	this.startScanning({ filterPolicy:GAP.ScanFilterPolicy.WHITELIST });
+}
+```
+
+To add a Bluetooth address to the whitelist and limit scan requests and connections to devices in the whitelist using a filter policy:
+
+```javascript
+onReady() {
+	this.deviceName = "Moddable HRM";
+	GAPWhitelist.add("8C:10:21:79:C9:F3");
+	this.onDisconnected();
+}
+onDisconnected() {
+	this.stopMeasurements();
+	this.startAdvertising({
+		filterPolicy: GAP.AdvFilterPolicy.WHITELIST_SCANS_CONNECTIONS,
+		advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [HEART_RATE_SERVIE_UUID, BATTERY_SERVICE_UUID]
+	});
+}
+```
+
 ***
+
+#### `remove(address [,addressType])`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `string` or `object` | The peer address to whitelist.
+| `addressType` | `number` | Optional peer address type. Defaults to `GAP.AddressType.PUBLIC`.
+
+Use the `remove` function to remove a peer device from the whitelist.
+
+#### `clear()`
+
+Use the `clear` function to remove all peer devices from the whitelist.
 
 <a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform

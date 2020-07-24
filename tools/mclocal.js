@@ -94,7 +94,7 @@ export default class extends TOOL {
 			var d = 1, slots = [], slot, used = {};
 			while (i < c) {
 				slot = this.hash(d, bucket[i]) % length;
-				if (H[slot] || used[slot]) {
+				if ((H[slot] !== undefined) || used[slot]) {
 					d++;
 					i = 0;
 					slots = [];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -54,7 +54,8 @@ export class Skin @ "PiuSkinDelete" {
 	get y() @ "PiuSkin_get_y"
 	get width() @ "PiuSkin_get_width"
 	get height() @ "PiuSkin_get_height"
-	static template(it) {
+	static template(i) {
+		const it = i;
 		return function() {
 			let skin;
 			if (global.assetMap)
@@ -93,7 +94,8 @@ export class Style @ "PiuStyleDelete" {
 	get weight() @ "PiuStyle_get_weight"
 	
 	measure(string) @ "PiuStyle_measure"
-	static template(it) {
+	static template(i) {
+		const it = i;
 		return function() {
 			let style;
 			if (global.assetMap)

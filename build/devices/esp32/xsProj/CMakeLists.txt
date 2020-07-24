@@ -20,5 +20,4 @@
 cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-add_definitions(-DMYNEWT_VAL_BLE_LL_CONN_INIT_MAX_TX_BYTES=251)
 project(xs_esp32)

@@ -917,6 +917,9 @@ export default class extends Tool {
 			for (var jsFile of this.jsFiles) {
 				jsFile.preload = false;
 			}
+			for (var tsFile of this.tsFiles) {
+				tsFile.preload = false;
+			}
 			for (var pattern of preload) {
 				pattern = this.resolveSlash(pattern);
 				var star = pattern.lastIndexOf("*");
@@ -933,6 +936,13 @@ export default class extends Tool {
 				else {
 					pattern += ".xsb";
 					for (var result of this.jsFiles) {
+						var target = result.target;
+						if (target == pattern) {
+							result.preload = true;
+							this.preloads.push(result.target);
+						}
+					}
+					for (var result of this.tsFiles) {
 						var target = result.target;
 						if (target == pattern) {
 							result.preload = true;

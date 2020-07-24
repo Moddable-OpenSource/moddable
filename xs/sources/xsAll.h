@@ -967,7 +967,6 @@ extern void fxIDToString(txMachine* the, txInteger id, txString theBuffer, txSiz
 mxExport void fx_Error(txMachine* the);
 mxExport void fx_Error_toString(txMachine* the);
 mxExport void fx_AggregateError(txMachine* the);
-mxExport void fx_AggregateError_prototype_get_errors(txMachine* the);
 mxExport void fx_EvalError(txMachine* the);
 mxExport void fx_RangeError(txMachine* the);
 mxExport void fx_ReferenceError(txMachine* the);

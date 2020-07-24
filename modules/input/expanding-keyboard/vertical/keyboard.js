@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,19 +24,19 @@ import {BottomKeyRowBehavior, ExpandingKeyRowBehavior, ToggleModes, Keys, Colors
 
 const TOPMARGIN = 4;
 const KEYHEIGHT = 40;
-const KEYWIDTHS = [22, 25, 28, 31, 34, 37, 40];
-const KEYOFFSETS = [0, 24, 51, 81, 114, 150, 189];
+const KEYWIDTHS = Object.freeze([22, 25, 28, 31, 34, 37, 40]);
+const KEYOFFSETS = Object.freeze([0, 24, 51, 81, 114, 150, 189]);
 
-const RowTexture0 = Texture.template({ path:"vert-7pt-22w.png" });
-const RowTexture1 = Texture.template({ path:"vert-7pt-25w.png" });
-const RowTexture2 = Texture.template({ path:"vert-7pt-28w.png" });
-const RowTexture3 = Texture.template({ path:"vert-7pt-31w.png" });
-const RowTexture4 = Texture.template({ path:"vert-7pt-34w.png" });
-const RowTexture5 = Texture.template({ path:"vert-7pt-37w.png" });
-const RowTexture6 = Texture.template({ path:"vert-7pt-40w.png" });
+const RowTexture0 = Texture.template(Object.freeze({ path:"vert-7pt-22w.png" }));
+const RowTexture1 = Texture.template(Object.freeze({ path:"vert-7pt-25w.png" }));
+const RowTexture2 = Texture.template(Object.freeze({ path:"vert-7pt-28w.png" }));
+const RowTexture3 = Texture.template(Object.freeze({ path:"vert-7pt-31w.png" }));
+const RowTexture4 = Texture.template(Object.freeze({ path:"vert-7pt-34w.png" }));
+const RowTexture5 = Texture.template(Object.freeze({ path:"vert-7pt-37w.png" }));
+const RowTexture6 = Texture.template(Object.freeze({ path:"vert-7pt-40w.png" }));
 
-const BottomRowTexture = Texture.template({ path:"vert-bottom-row.png" });
-const GlyphsTexture = Texture.template({ path:"vert-glyph-strip.png" });
+const BottomRowTexture = Texture.template(Object.freeze({ path:"vert-bottom-row.png" }));
+const GlyphsTexture = Texture.template(Object.freeze({ path:"vert-glyph-strip.png" }));
 
 class VerticalBottomKeyRowBehavior extends BottomKeyRowBehavior {
 	onDraw(port) {

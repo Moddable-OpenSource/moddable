@@ -59,7 +59,7 @@ let DragApplication = Application.template($ => ({
 					left:2, right:2, top:2, bottom:2, clip:true,
 					contents: [
 						Label($, { left:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 1", active:true, Behavior:DragBehavior }),
-						Label($, { right:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 2 ", active:true, Behavior:DragBehavior }),
+						Label($, { right:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 2", active:true, Behavior:DragBehavior }),
 						Label($, { right:10, bottom:10, width:120, height:40, skin:buttonSkin, string:"Drag 3", active:true, Behavior:DragBehavior }),
 						Label($, { left:10, bottom:10, width:120, height:40, skin:buttonSkin, string:"Drag 4", active:true, Behavior:DragBehavior }),
 					],
