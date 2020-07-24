@@ -39,6 +39,7 @@
 #include "xs.h"
 #include "xsScript.h"
 #include "xsPlatform.h"
+#include "mc.defines.h"
 
 #include <stdio.h>
 
@@ -223,6 +224,8 @@ int32_t modGetDaylightSavingsOffset(void)
 	static void *installModules(txPreparation *preparation);
 	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
+
+	static uint8_t gHasMods;
 #endif
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
@@ -234,7 +237,7 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 	void *archive;
 
 #if MODDEF_XS_MODS
-	archive = installModules(prep);
+	archive = installModules(preparation);
 	gHasMods = NULL != archive;
 #else
 	archive = NULL;
@@ -936,6 +939,85 @@ void fxQueuePromiseJobs(txMachine* the)
 {
 	modMessagePostToMachine(the, NULL, 0, doRunPromiseJobs, NULL);
 }
+
+/*
+	 user installable modules
+*/
+
+#if MODDEF_XS_MODS
+
+static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
+{
+	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
+}
+
+static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
+{
+	offset += (uintptr_t)dst;
+
+	if ((offset + kFlashSectorSize) > (uintptr_t)kModulesEnd)
+		return 0;		// attempted write beyond end of available space
+
+	if (!(offset & (kFlashSectorSize - 1))) {		// if offset is at start of a sector, erase that sector
+		if (!modSPIErase(offset - (uintptr_t)kFlashStart, kFlashSectorSize))
+			return 0;
+	}
+
+	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
+}
+
+void *installModules(txPreparation *preparation)
+{
+	if (fxMapArchive(preparation, (void *)kModulesStart, kModulesStart, kFlashSectorSize, spiRead, spiWrite))
+		return kModulesStart;
+
+	return NULL;
+}
+
+char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut)
+{
+	uint8_t *xsb = (uint8_t *)kModulesStart;
+	if (!xsb || !gHasMods) return NULL;
+
+	return findNthAtom(atomTypeIn, 0, xsb, c_read32be(xsb), atomSizeOut);
+}
+
+char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut)
+{
+	const uint8_t *atom = xsb, *xsbEnd = xsb + xsbSize;
+
+	if (0 == index) {	// hack - only validate XS_A header at root...
+		if (c_read32be(xsb + 4) != FOURCC('X', 'S', '_', 'A'))
+			return NULL;
+
+		atom += 8;
+	}
+
+	while (atom < xsbEnd) {
+		int32_t atomSize = c_read32be(atom);
+		uint32_t atomType = c_read32be(atom + 4);
+
+		if ((atomSize < 8) || ((atom + atomSize) > xsbEnd))
+			return NULL;
+
+		if (atomType == atomTypeIn) {
+			index -= 1;
+			if (index <= 0) {
+				if (atomSizeOut)
+					*atomSizeOut = atomSize - 8;
+				return (char *)(atom + 8);
+			}
+		}
+		atom += atomSize;
+	}
+
+	if (atomSizeOut)
+		*atomSizeOut = 0;
+
+	return NULL;
+}
+
+#endif /* MODDEF_XS_MODS */
 
 /*
 	flash
