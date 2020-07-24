@@ -54,6 +54,7 @@ void xs_flash(xsMachine *the)
 		if (0 == c_strcmp(partition, "xs")) {
 			flash.partitionStart = modStart;
 			flash.partitionByteLength = 0xF4000 - flash.partitionStart;
+			flash.partitionByteLength = 0xF2000 - flash.partitionStart;
 		}
 		else if (0 == c_strcmp(partition, "running")) {
 			flash.partitionStart = 0x26000;
