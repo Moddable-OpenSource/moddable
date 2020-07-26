@@ -92,8 +92,6 @@ APP_USBD_VENDOR_GLOBAL_DEF(
 );
 		
 
-static uint8_t web_serial_connected = false;
-
 #define USBD_STACK_SIZE			256
 #define USBD_PRIORITY			2
 #define USB_THREAD_MAX_BLOCK_TIME portMAX_DELAY
@@ -774,6 +772,12 @@ int ESP_getc(void)
 		}
 
 		size = nrf_queue_out(&m_rx_queue, &ch, 1);
+	}
+	else {
+		if (!nrf_queue_is_empty(&m_rx_queue)) {
+			ftdiTrace(" - getc (not connected) - data remaining");
+			size = nrf_queue_out(&m_rx_queue, &ch, 1);
+		}
 	}
 
     if (1 == size) {
