@@ -1365,6 +1365,7 @@ A new MQTT `Client` is configured using a dictionary of properties. The dictiona
 | `id` | A unique ID for this device |
 | `user` | The username |
 | `password` | The password as an `ArrayBuffer` |
+| `will` | An object with `topic` and `message` properties to be set as the connection's Will. `message` may be a string or `ArrayBuffer`.  |
 | `path` | The endpoint to connect to. If present, the MQTT client communicates established a WebSocket connecting using the `mqtt` sub-protocol. |
 | `timeout` | The keep-alive timeout interval, in milliseconds. If no timeout is provided, the MQTT keep-alive feature is not used. |
 | `Socket` | The socket constructor to use to create the MQTT connection. Use `SecureSocket` to establish a secure connection using TLS. |
