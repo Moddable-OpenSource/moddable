@@ -4,7 +4,7 @@ var v = 0;
 globalThis.g = 0;
 
 const compartment = new Compartment({ e:0 });
-const globals = compartment.global;
+const globals = compartment.globalThis;
 
 compartment.evaluate(`
 	const c = 1;

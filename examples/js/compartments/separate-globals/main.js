@@ -8,6 +8,6 @@ globalThis.test = function() {
 let compartment = new Compartment();
 await compartment.import("mod");
 test();
-compartment.global.test();
+compartment.globalThis.test();
 test();
-compartment.global.test();
+compartment.globalThis.test();

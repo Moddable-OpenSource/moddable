@@ -8,12 +8,10 @@ function test() {
     trace("app " + increment.default() + "\n");
 }
 let compartment = new Compartment({}, { 
-	"*": { 
-		"mod":"mod", 
-		increment
-	} 
+	"mod":"mod", 
+	increment
 });
-let modNS = compartment.importSync("mod");
+let modNS = compartment.importNow("mod");
 test();
 modNS.test();
 test();
