@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,94 +36,92 @@
  */
 
 class SSLStream {
-	constructor(buf) {
-		if (buf) {
-			if (buf instanceof Uint8Array)
-				this.buf = buf;
-			else
-				this.buf = new Uint8Array(buf);
-			this.widx = this.buf.length;
+	#write = 0;
+	#read = 0;
+	#bytes;
+
+	constructor(buffer) {
+		if (buffer) {
+			if (!(buffer instanceof Uint8Array))
+				buffer = new Uint8Array(buffer);
+			this.#bytes = buffer;
+			this.#write = this.#bytes.length;
 		}
-		else {
-			this.buf = new Uint8Array(128);
-			this.widx = 0;
-		}
-		this.ridx = 0;
-	};
+		else
+			this.#bytes = new Uint8Array(32);
+	}
 	morebuf(n) {
-		if (n < 128) n = 128;
-		var nbuf = new Uint8Array(this.buf.length + n);
-		nbuf.set(this.buf);
-		this.buf = nbuf;
+		const bytes = new Uint8Array((this.#write + n + 31) & ~31);
+		bytes.set(this.#bytes);
+		this.#bytes = bytes;
 	}
 	writeChar(c) {
-		if (this.widx >= this.buf.length)
+		if (this.#write >= this.#bytes.length)
 			this.morebuf(1);
-		this.buf[this.widx++] = c;
-	};
+		this.#bytes[this.#write++] = c;
+	}
 	writeChars(v, n) {
-		if (this.widx + n > this.buf.length)
+		if (this.#write + n > this.#bytes.length)
 			this.morebuf(n);
 		while (--n >= 0)
-			this.buf[this.widx++] = (v >>> (n * 8)) & 0xff;
-	};
+			this.#bytes[this.#write++] = (v >>> (n * 8)) & 0xff;
+	}
 	writeChunk(a) {
-		var n = a.byteLength;
+		let n = a.byteLength;
 		if (n <= 0)
 			return;
-		if (this.widx + n > this.buf.length)
+		if (this.#write + n > this.#bytes.length)
 			this.morebuf(n);
-		this.buf.set((a instanceof Uint8Array) ? a : (new Uint8Array(a)), this.widx);
-		this.widx += n;
-	};
+		this.#bytes.set((a instanceof Uint8Array) ? a : (new Uint8Array(a)), this.#write);
+		this.#write += n;
+	}
 	writeString(s) {
-		var n = s.length;
+		let n = s.length;
 		if (n <= 0)
 			return;
-		if (this.widx + n > this.buf.length)
+		if (this.#write + n > this.#bytes.length)
 			this.morebuf(n);
-		this.buf.set(new Uint8Array(ArrayBuffer.fromString(s)), this.widx);
-		this.widx += n;
-	};
+		this.#bytes.set(new Uint8Array(ArrayBuffer.fromString(s)), this.#write);
+		this.#write += n;
+	}
 	readChar() {
-		return this.ridx < this.widx ? this.buf[this.ridx++] : undefined;
-	};
+		return this.#read < this.#write ? this.#bytes[this.#read++] : undefined;
+	}
 	readChars(n) {
-		if (this.ridx + n > this.widx)
-			return undefined;
-		var v = 0;
+		if (this.#read + n > this.#write)
+			return;
+		let v = 0;
 		while (--n >= 0)
-			v = (v << 8) | this.buf[this.ridx++];
+			v = (v << 8) | this.#bytes[this.#read++];
 		return v;
-	};
+	}
 	readChunk(n, reference) {
-		if (this.ridx + n > this.widx)
+		if (this.#read + n > this.#write)
 			return undefined;
-		if (reference) {
-			let result = new Uint8Array(this.buf.buffer, this.buf.byteOffset + this.ridx, n)
-			this.ridx += n;
-			return result;
-		}
 
-		let tbuf = this.buf.slice(this.ridx, this.ridx + n);
-		this.ridx += n;
-		return tbuf.buffer;
-	};
-	getChunk() {
-		let result = new Uint8Array(this.buf.buffer, this.buf.byteOffset, this.widx);
-		delete this.buf;
-		delete this.widx;
-		delete this.ridx;
+		let result;
+		if (reference)
+			result = new Uint8Array(this.#bytes.buffer, this.#bytes.byteOffset + this.#read, n);
+		else
+			result = this.#bytes.slice(this.#read, this.#read + n).buffer;
+
+		this.#read += n;
+
 		return result;
-	};
+	}
+	getChunk() {
+		const bytes = new Uint8Array(this.#bytes.buffer, this.#bytes.byteOffset, this.#write);
+		this.#bytes = undefined;
+		return bytes;
+	}
 	get bytesAvailable() {
-		return this.widx - this.ridx;
-	};
+		return this.#write - this.#read;
+	}
 	get bytesWritten() {
-		return this.widx;
-	};
+		return this.#write;
+	}
 	close() {
-		delete this.buf;
+		this.#bytes = undefined;
 	}
 };
 
