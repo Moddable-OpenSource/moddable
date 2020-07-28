@@ -119,7 +119,6 @@ const X509 = {
 			default:
 				trace("x509: " + spk.algo + " not supported\n");
 				return {};
-			}
 		}
 		throw new Error("x509: bad SPKI");
 	},
