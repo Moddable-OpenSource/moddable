@@ -224,7 +224,21 @@ void fxAbort(txMachine* the, int status)
 	#endif
 #endif
 
+#ifdef MODDEF_XS_RESTARTON
+	static const int restart[] = {
+		#if defined(mxDebug)
+			XS_DEBUGGER_EXIT,
+			XS_FATAL_CHECK_EXIT,
+		#endif
+			MODDEF_XS_RESTARTON };
+	int i;
+	for (i = 0; i < sizeof(restart) / sizeof(int); i++) {
+		if (restart[i] == status)
+			c_exit(status);
+	}
+#else
 	c_exit(status);
+#endif
 }
 
 #ifdef mxDebug
