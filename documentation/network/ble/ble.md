@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: July 13, 2020
+Revised: July 27, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -1786,6 +1786,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [ios-time-sync](../../../examples/network/ble/ios-time-sync) | Demonstrates how to set the device clock by connecting to the iPhone [Current Time Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.current_time.xml).
 | [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
+| [scanner-whitelist](../../../examples/network/ble/scanner-whitelist) | Scans for and displays whitelisted peripheral advertised name.
 | [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.
 | [sensortag](../../../examples/network/ble/sensortag) | Receives sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments) on-board sensors.
 | [tempo](../../../examples/network/ble/tempo) | Reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
@@ -1796,6 +1797,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | Name | Description |
 | :---: | :--- |
 | [advertiser](../../../examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
+| [advertiser-whitelist](../../../examples/network/ble/advertiser-whitelist) | Broadcasts advertisements until the whitelisted BLE client connects.
 | [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
 | [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
 | [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml).
