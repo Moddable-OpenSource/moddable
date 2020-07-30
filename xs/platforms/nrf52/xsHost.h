@@ -271,6 +271,8 @@ extern void *my_malloc(size_t size);
 
 extern void nrf52_reset(void);
 extern void nrf52_rebootToDFU(void);
+extern void nrf52_get_mac(uint8_t *mac);
+
 
 #define c_exit(n) { nrf52_reset(); }
 #define c_free free

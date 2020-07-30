@@ -1261,4 +1261,8 @@ void nrf52_rebootToDFU() {
 #endif
 }
 
+void nrf52_get_mac(uint8_t *mac) {
+	*(uint32_t*)mac = NRF_FICR->DEVICEID[0];
+	*(uint16_t*)(mac + 4) = NRF_FICR->DEVICEID[1] & 0xffff;
+}
 
