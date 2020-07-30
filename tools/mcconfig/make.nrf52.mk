@@ -627,6 +627,9 @@ deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 
+build: precursor $(BIN_DIR)/xs_nrf52.uf2
+	@echo Target built: $(BIN_DIR)/xs_nrf52.uf2
+
 precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
 
 env_vars:
@@ -647,15 +650,15 @@ allclean:
 	@echo "# rm $(MODDABLE)/build/tmp/nrf52"
 	-rm -rf $(MODDABLE)/build/tmp/nrf52
 
-flash: all $(BIN_DIR)/xs_nrf52.hex
-	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
-	$(NRFJPROG) -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
-	$(NRFJPROG) -f nrf52 --reset
+# flash: all $(BIN_DIR)/xs_nrf52.hex
+# 	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
+# 	$(NRFJPROG) -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
+# 	$(NRFJPROG) -f nrf52 --reset
 
-flash_softdevice:
-	@echo Flashing: s140_nrf52_7.0.1_softdevice.hex
-	$(NRFJPROG) -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
-	$(NRFJPROG) -f nrf52 --reset
+# flash_softdevice:
+# 	@echo Flashing: s140_nrf52_7.0.1_softdevice.hex
+# 	$(NRFJPROG) -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
+# 	$(NRFJPROG) -f nrf52 --reset
 
 $(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
 	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
