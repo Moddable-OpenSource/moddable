@@ -140,7 +140,6 @@ void PiuSkinDelete(void* it)
 {
 }
 
-
 void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuAlignment horizontal, PiuAlignment vertical)
 {
 	PiuFlags flags = (*self)->flags;
@@ -279,6 +278,26 @@ void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVarian
 		}
 	}
 }
+
+#ifdef piuGPU
+void PiuSkinBind(PiuSkin* self)
+{
+	if ((*self)->flags & piuSkinPattern) {
+		PiuTexture* texture = (*self)->data.pattern.texture;
+		if (texture)
+			PiuTextureBind(texture);
+	}
+}
+
+void PiuSkinUnbind(PiuSkin* self)
+{
+	if ((*self)->flags & piuSkinPattern) {
+		PiuTexture* texture = (*self)->data.pattern.texture;
+		if (texture)
+			PiuTextureUnbind(texture);
+	}
+}
+#endif			
 
 PiuDimension PiuSkinGetWidth(PiuSkin* self)
 {

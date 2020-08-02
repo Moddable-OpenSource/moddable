@@ -5,5 +5,5 @@ let proxy = new Proxy({ "mod":"mod", "increment":"increment" }, {
 		return target[key];
 	}
 });
-let mod = new Compartment({}, { "*": proxy });
+let mod = new Compartment({}, proxy);
 trace(counts.mod + " " + counts.increment + "\n"); // 1 1

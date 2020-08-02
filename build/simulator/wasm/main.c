@@ -3,6 +3,7 @@
 #include <string.h>
 #include <emscripten.h>
 #include "../screen.h"
+#include "xsCommon.h"
 
 extern void fxScreenLaunch(txScreen* screen);
 
@@ -69,8 +70,8 @@ void fxScreenBufferChanged(txScreen* screen)
 void fxScreenFormatChanged(txScreen* screen)
 {
   EM_ASM({
-     gxView.onFormatChanged($0);
-  }, screen->pixelFormat);
+     gxView.onFormatChanged($0, $1, $2, $3);
+  }, screen->pixelFormat, XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
 }
 
 void fxScreenStart(txScreen* screen, double interval)

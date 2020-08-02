@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,64 +36,69 @@
  */
 
 export default class BER {
-	constructor(buf) {
-		this.i = 0;
-		if (buf instanceof ArrayBuffer)
-			this.a = new Uint8Array(buf)
-		else if (buf instanceof Uint8Array)
-			this.a = buf;
+	#a;
+	#i = 0;
+
+	constructor(buffer) {
+		if (buffer instanceof ArrayBuffer)
+			this.#a = new Uint8Array(buffer)
+		else if (buffer instanceof Uint8Array)
+			this.#a = buffer;
 		else
-			this.a = new Uint8Array(0);
+			this.#a = new Uint8Array(0);
 	};
 	getTag() {
-		return this.a[this.i++];
+		return this.#a[this.#i++];
 	};
 	getLength() {
-		var len = this.a[this.i++];
-		if (len & 0x80) {
-			var lenlen = len & ~0x80;
-			if (lenlen == 0)
-				return -1;	// indefinite length
-			len = 0;
-			while (--lenlen >= 0)
-				len = (len << 8) | this.a[this.i++];
-		}
-		return len;
+		let length = this.#a[this.#i++];
+		if (length < 128)
+			return length;
+
+		length &= 0x7F;
+		if (!length)
+			return -1;	// indefinite length
+
+		let result = 0;
+		while (length--)
+			result = (result << 8) | this.#a[this.#i++];
+
+		return result;
 	};
 	peek() {
-		return this.a[this.i];
+		return this.#a[this.#i];
 	};
-	skip(n) {
-		this.i += n;
+	skip(length) {
+		this.#i += length;
 	};
 	next() {
-		const i = this.i;
-		void this.getTag();
+		const i = this.#i;
+		this.getTag();
 		this.skip(this.getLength());
-		return new Uint8Array(this.a.buffer, this.a.byteOffset + i, this.i - i);
+		return this.#a.subarray(i, this.#i)
 	};
 	getInteger() {
 		if (this.getTag() != 2)
 			throw new Error("BER: not an integer");
 		const length = this.getLength();
-		const offset = this.a.byteOffset + this.i;
+		const offset = this.#a.byteOffset + this.#i;
 		this.skip(length)
-		return BigInt.fromArrayBuffer(this.a.buffer.slice(offset, offset + length));
+		return BigInt.fromArrayBuffer(this.#a.buffer.slice(offset, offset + length));
 	};
 	getBitString() {
 		let result;
 		if (this.getTag() != 3)
 			throw new Error("BER: not a bit string");
 		let length = this.getLength();
-		let pad = this.a[this.i++];
+		let pad = this.#a[this.#i++];
 		if (pad) {
 			result = new Uint8Array(length - 1);
-			for (var i = 0; i < length - 1; i++)
-				bs[i] = this.a[this.i++] >>> pad;
+			for (let i = 0; i < length - 1; i++)
+				bs[i] = this.#a[this.#i++] >>> pad;
 		}
 		else {
-			result = new Uint8Array(this.a.buffer, this.a.byteOffset + this.i, length - 1);
-			this.i += length;
+			result = this.#a.subarray(this.#i, this.#i + length - 1);
+			this.#i += length;
 		}
 		return result;
 	};
@@ -109,49 +114,49 @@ export default class BER {
 	}
 	_getObjectIdentifier(len) {
 		let oid = [];
-		let i = this.a[this.i++];
+		let i = this.#a[this.#i++];
 		let rem = i % 40;
 		oid.push((i - rem) / 40);
 		oid.push(rem);
 		--len;
 		while (len > 0) {
 			let v = 0;
-			while (--len >= 0 && (i = this.a[this.i++]) >= 0x80)
+			while (--len >= 0 && (i = this.#a[this.#i++]) >= 0x80)
 				v = (v << 7) | (i & 0x7f);
 			oid.push((v << 7) | i);
 		}
-		return Int32Array.from(oid);
+		return Uint32Array.from(oid);
 	};
 	getSequence() {
 		if (this.getTag() != 0x30)
 			throw new Error("BER: not a sequence");
-		var len = this.getLength();
-		var seq = new Uint8Array(this.a.buffer, this.a.byteOffset + this.i, len);
-		this.i += len;
-		return seq;
+		const length = this.getLength();
+		const result = this.#a.subarray(this.#i, + this.#i + length);
+		this.#i += length;
+		return result;
 	};
 	getChunk(n) {
-		const result = new Uint8Array(this.a.buffer, this.a.byteOffset + this.i, n);
+		const result = new Uint8Array(this.#a.buffer, this.#a.byteOffset + this.#i, n);
 		this.skip(n);
 		return result;
 	};
 	getBuffer() {
-		return this.a.slice(0, this.i).buffer;
+		return this.#a.slice(0, this.#i).buffer;
 	};
 
-	morebuf(n) {
+	morebuf(n) {		//@@ rework as SSLStream
 		if (n < 128) n = 128;
-		var nbuf = new Uint8Array(this.a.length + n);
-		nbuf.set(this.a);
-		this.a = nbuf;
+		let a = new Uint8Array(this.#a.length + n);
+		a.set(this.#a);
+		this.#a = a;
 	};
 	getc() {
-		return this.a[this.i++];
+		return this.#a[this.#i++];
 	};
 	putc(c) {
-		if (this.i >= this.a.length)
+		if (this.#i >= this.#a.length)
 			this.morebuf(1);
-		this.a[this.i++] = c;
+		this.#a[this.#i++] = c;
 	};
 	putTag(tag) {
 		this.putc(tag);
@@ -170,11 +175,14 @@ export default class BER {
 		}
 	};
 	putChunk(c) {
-		if (this.i + c.byteLength > this.a.length)
+		if (this.#i + c.byteLength > this.#a.length)
 			this.morebuf(c.byteLength);
-		this.a.set(new Uint8Array(c), this.i);
-		this.i += c.byteLength;
+		this.#a.set(new Uint8Array(c), this.#i);
+		this.#i += c.byteLength;
 	};
+	get i() {
+		return this.#i;
+	}
 	static itoa(n) {
 		n = n.toString();
 		if (n.length < 2)
@@ -182,9 +190,9 @@ export default class BER {
 		return n;
 	};
 	static encode(arr) {
-		var b = new BER();
-		var tag = arr[0];
-		var val = arr.length > 1 ? arr[1] : undefined;
+		let b = new BER();
+		let tag = arr[0];
+		let val = arr.length > 1 ? arr[1] : undefined;
 		b.putTag(tag);
 		switch (tag) {
 		case 0x01:	// boolean
@@ -192,16 +200,16 @@ export default class BER {
 			b.putc(val ? 1 : 0);
 			break;
 		case 0x02:	// integer
-			var c = ArrayBuffer.fromBigInt(val, 0, true);	// signess = true
+			let c = ArrayBuffer.fromBigInt(val, 0, true);	// signess = true
 			b.putLength(c.byteLength);
 			b.putChunk(c);
 			break;
 		case 0x03:	// bit string
 			b.putLength(val.byteLength + 1);
-			var pad = val.byteLength * 8 - arr[2];
+			let pad = val.byteLength * 8 - arr[2];
 			b.putc(pad);
 			if (pad != 0) {
-				for (var i = 0; i < val.byteLength; i++)
+				for (let i = 0; i < val.byteLength; i++)
 					b.putc(val[i] << pad);
 			}
 			else
@@ -215,11 +223,11 @@ export default class BER {
 			b.putLength(0);
 			break;
 		case 0x06:	// object identifier
-			var t = new BER();
+			let t = new BER();
 			t.putc(val[0] * 40 + (val.length < 2 ? 0 : val[1]));
-			for (var i = 2; i < val.length; i++) {
-				var x = val[i];
-				var n = 1;
+			for (let i = 2; i < val.length; i++) {
+				let x = val[i];
+				let n = 1;
 				while (x >>>= 7)
 					n++;
 				x = val[i];
@@ -238,16 +246,16 @@ export default class BER {
 		case 0x12:	// numeric string
 		case 0x13:	// printable string
 		case 0x14:	// telex string
-		case 0x16:	// IA5 string
-			var c = ArrayBuffer.fromString(val);
+		case 0x16: {	// IA5 string
+			let c = ArrayBuffer.fromString(val);
 			b.putLength(c.byteLength);
 			b.putChunk(c);
-			break;
+			} break;
 		case 0x17:	// UTC time
-		case 0x18:	// generalized time
-			var date = new Date(val);
+		case 0x18: {	// generalized time
+			let date = new Date(val);
 			/*
-			var s = (date.getUTCFullYear() - (tag == 0x17 ? 1900: 0)).toString() +
+			let s = (date.getUTCFullYear() - (tag == 0x17 ? 1900: 0)).toString() +
 				(date.getUTCMonth()).toString() +
 				(date.getUTCDate()).toString() +
 				(date.getUTCHours()).toString() +
@@ -256,8 +264,8 @@ export default class BER {
 				(tag == 0x18 ? "." + (date.getUTCMilliseconds()).toString(): "") +
 				"Z";
 			*/
-			var s = "";
-			var yy = date.getUTCFullYear();
+			let s = "";
+			let yy = date.getUTCFullYear();
 			if (tag == 0x17)
 				yy -= yy >= 2000 ? 2000 : 1900;
 			s += this.itoa(yy);
@@ -269,10 +277,10 @@ export default class BER {
 			if (tag == 0x18)
 				s += this.itoa(date.getUTCMilliseconds());
 			s += "Z";
-			var c = ArrayBuffer.fromString(s);
+			let c = ArrayBuffer.fromString(s);
 			b.putLength(c.byteLength);
 			b.putChunk(c);
-			break;
+			} break;
 		case 0x19:	// graphics string
 		case 0x1a:	// ISO64 string
 		case 0x1b:	// general string
@@ -283,15 +291,15 @@ export default class BER {
 			break;
 		case 0x30:
 		case 0x31:
-			var len = 0;
-			var seq = [];
-			for (var i = 1; i < arr.length; i++) {
-				var e = this.encode(arr[i]);
+			let len = 0;
+			let seq = [];
+			for (let i = 1; i < arr.length; i++) {
+				let e = this.encode(arr[i]);
 				seq.push(e);
 				len += e.byteLength;
 			}
 			b.putLength(len);
-			for (var i = 0; i < seq.length; i++)
+			for (let i = 0; i < seq.length; i++)
 				b.putChunk(seq[i]);
 			break;
 		default:
@@ -365,8 +373,8 @@ export default class BER {
 				res = [b.getChunk(len - 1), (len - 1) * 8];
 			}
 			else {
-				var c = Uint8Array(len - 1);
-				for (var i = 0; i < len - 1; i++)
+				let c = Uint8Array(len - 1);
+				for (let i = 0; i < len - 1; i++)
 					c[i] = b.getc() >>> pad;
 				res = [c, (len - 1) * 8 - pad];
 			}

@@ -732,8 +732,7 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			var parts = tool.splitPath(result);
-			paths[parts.name.slice(0, -2)] = [ result.slice(0, -5) ];
+			paths[result.target] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
 			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
@@ -965,7 +964,7 @@ class ModulesRule extends Rule {
 		}
 		else if (parts.extension == ".ts") {
 			if (parts.name.endsWith(".d")) {
-				this.appendFolder(tool.dtsFiles, source);
+				this.appendFile(tool.dtsFiles, target, source, include);
 			}
 			else {
 				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
@@ -1164,6 +1163,7 @@ export class Tool extends TOOL {
 		this.outputPath = null;
 		this.platform = null;
 		this.rotation = undefined;
+		this.signature = null;
 		this.verbose = false;
 		this.windows = this.currentPlatform == "win";
 		this.slash = this.windows ? "\\" : "/";
@@ -1243,6 +1243,17 @@ export class Tool extends TOOL {
 				if ((name != 0) && (name != 90) && (name != 180) && (name != 270))
 					throw new Error("-r: " + name + ": invalid rotation!");
 				this.rotation = name;
+				break;
+			case "-s":
+				argi++;
+				if (argi >= argc)
+					throw new Error("-s: no signature!");
+				if (null !== this.signature)
+					throw new Error("-s '" + name + "': too many signatures!");
+				name = argv[argi];
+				if (name.split('.').length != 3)
+					throw new Error("-s: " + name + ": invalid signature!");
+				this.signature = name;
 				break;
 			case "-v":
 				this.verbose = true;
@@ -1588,10 +1599,12 @@ export class Tool extends TOOL {
 		var rule = new BLERule(this);
 		rule.process(this.manifest.ble);
 		
-		if (!this.environment.NAMESPACE)
-			this.environment.NAMESPACE = "moddable.tech"
-		var signature = this.environment.NAME + "." + this.environment.NAMESPACE;
-		signature = signature.split(".").reverse();
+		if (this.signature == null) {
+			if (!this.environment.NAMESPACE)
+				this.environment.NAMESPACE = "moddable.tech"
+			this.signature = this.environment.NAME + "." + this.environment.NAMESPACE;
+		}
+		var signature = this.signature.split(".").reverse();
 		this.environment.DASH_SIGNATURE = signature.join("-");
 		this.environment.DOT_SIGNATURE = signature.join(".");
 		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");

@@ -967,7 +967,6 @@ extern void fxIDToString(txMachine* the, txInteger id, txString theBuffer, txSiz
 mxExport void fx_Error(txMachine* the);
 mxExport void fx_Error_toString(txMachine* the);
 mxExport void fx_AggregateError(txMachine* the);
-mxExport void fx_AggregateError_prototype_get_errors(txMachine* the);
 mxExport void fx_EvalError(txMachine* the);
 mxExport void fx_RangeError(txMachine* the);
 mxExport void fx_ReferenceError(txMachine* the);
@@ -1675,10 +1674,10 @@ extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* 
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
 mxExport void fx_Compartment(txMachine* the);
-mxExport void fx_Compartment_prototype_get_global(txMachine* the);
+mxExport void fx_Compartment_prototype_get_globalThis(txMachine* the);
 mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
 mxExport void fx_Compartment_prototype_import(txMachine* the);
-mxExport void fx_Compartment_prototype_importSync(txMachine* the);
+mxExport void fx_Compartment_prototype_importNow(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile

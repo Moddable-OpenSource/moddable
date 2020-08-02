@@ -241,14 +241,12 @@ again:
 
 void fx_Object_prototype_hasOwnProperty(txMachine* the)
 {
-	txSlot* instance;
 	txSlot* at;
-	if ((mxThis->kind == XS_UNDEFINED_KIND) || (mxThis->kind == XS_NULL_KIND))
-		mxTypeError("invalid this");
+	txSlot* instance;
 	if (mxArgc < 1)
 		mxTypeError("invalid key");
-	instance = fxToInstance(the, mxThis);
 	at = fxAt(the, mxArgv(0));
+	instance = fxToInstance(the, mxThis);
 	mxPushUndefined();
 	mxResult->value.boolean = mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack);
 	mxResult->kind = XS_BOOLEAN_KIND;
@@ -275,15 +273,12 @@ void fx_Object_prototype_isPrototypeOf(txMachine* the)
 
 void fx_Object_prototype_propertyIsEnumerable(txMachine* the)
 {
-	txSlot* instance;
 	txSlot* at;
-	if ((mxThis->kind == XS_UNDEFINED_KIND) || (mxThis->kind == XS_NULL_KIND))
-		mxTypeError("invalid this");
+	txSlot* instance;
 	if (mxArgc < 1)
 		mxTypeError("invalid key");
-	mxResult->value.boolean = 0;
-	instance = fxToInstance(the, mxThis);
 	at = fxAt(the, mxArgv(0));
+	instance = fxToInstance(the, mxThis);
 	mxPushUndefined();
 	mxResult->value.boolean = mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack) && ((the->stack->flag & XS_DONT_ENUM_FLAG) == 0);
 	mxResult->kind = XS_BOOLEAN_KIND;

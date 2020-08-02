@@ -775,7 +775,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 			else if (status == XS_RETURN_STATUS) {
 				mxPushSlot(iterator);
 				fxGetID(the, mxID(_return));
-				if (mxIsUndefined(the->stack)) {
+				if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 					mxPushUndefined();
 					mxPushSlot(resolveFunction);
 					mxCall();
@@ -789,7 +789,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 			else {
 				mxPushSlot(iterator);
 				fxGetID(the, mxID(_throw));
-				if (mxIsUndefined(the->stack)) {
+				if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 					mxPushUndefined();
 					mxPushSlot(rejectFunction);
 					mxCall();

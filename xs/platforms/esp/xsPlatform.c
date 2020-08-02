@@ -58,7 +58,7 @@
 #define kSerialConnection ((void *)0x87654321)
 
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
-static void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
+static void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
 
 #if defined (mxDebug) && ESP32
 	SemaphoreHandle_t gDebugMutex;
@@ -224,7 +224,21 @@ void fxAbort(txMachine* the, int status)
 	#endif
 #endif
 
+#ifdef MODDEF_XS_RESTARTON
+	static const int restart[] = {
+		#if defined(mxDebug)
+			XS_DEBUGGER_EXIT,
+			XS_FATAL_CHECK_EXIT,
+		#endif
+			MODDEF_XS_RESTARTON };
+	int i;
+	for (i = 0; i < sizeof(restart) / sizeof(int); i++) {
+		if (restart[i] == status)
+			c_exit(status);
+	}
+#else
 	c_exit(status);
+#endif
 }
 
 #ifdef mxDebug
@@ -611,7 +625,7 @@ void fxReceive(txMachine* the)
 						if (0 == the->wsLength) {
 							if (the->wsFin) {
 								// received full remote command
-								doRemoteCommmand(the, the->wsCmd + sizeof(uint32_t), the->wsCmdPtr - (the->wsCmd + sizeof(uint32_t)));
+								doRemoteCommand(the, the->wsCmd + sizeof(uint32_t), the->wsCmdPtr - (the->wsCmd + sizeof(uint32_t)));
 								c_free(the->wsCmd);
 								the->wsCmd = the->wsCmdPtr = NULL;
 							}
@@ -671,7 +685,7 @@ void fxReceive(txMachine* the)
 					the->debugOffset = f->count;
 				}
 				else
-					doRemoteCommmand(the, f->bytes, f->count);
+					doRemoteCommand(the, f->bytes, f->count);
 				c_free(f);
 				break;
 			}
@@ -974,7 +988,7 @@ static void doLoadModule(modTimer timer, void *refcon, int refconSize)
 	modLoadModule((txMachine *)*(uintptr_t *)refcon, sizeof(uintptr_t) + (uint8_t *)refcon);
 }
 
-void doRemoteCommmand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
+void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 {
 	uint16_t resultID = 0;
 	int16_t resultCode = 0;

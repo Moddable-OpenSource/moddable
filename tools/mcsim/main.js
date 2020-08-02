@@ -160,8 +160,8 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment({...global, Date, Math});
-						let device = compartment.importSync(info.path).default;
+						let compartment = new Compartment({...globalThis, Date, Math});
+						let device = compartment.importNow(info.path).default;
 						if (device && ("DeviceTemplate" in device)) {
 							device.compartment = compartment;
 							device.default = device;

@@ -47,6 +47,8 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	ble_hs_cfg.sm_sc = 1;	// always enable secure connections
+	ble_hs_cfg.sm_mitm = mitm ? 1 : 0;
+	ble_hs_cfg.sm_bonding = bonding ? 1 : 0;
 
   	switch(ioCapability) {
  		case NoInputNoOutput:
@@ -65,13 +67,11 @@ uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_
  			ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_DISP_YES_NO;
  			break;
  	} 	
-	ble_hs_cfg.sm_bonding = bonding ? 1 : 0;
-	ble_hs_cfg.sm_mitm = mitm ? 1 : 0;
-	if (bonding && (0 == ble_hs_cfg.sm_sc)) {
-		ble_hs_cfg.sm_our_key_dist = 1;
-		ble_hs_cfg.sm_their_key_dist = 1;
+	if (bonding) {
+		ble_hs_cfg.sm_our_key_dist = 1 | BLE_SM_PAIR_KEY_DIST_ID;
+		ble_hs_cfg.sm_their_key_dist = 1 | BLE_SM_PAIR_KEY_DIST_ID;
 	}
-	
+		
 	return 0;
 }
 

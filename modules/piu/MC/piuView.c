@@ -20,7 +20,7 @@
 
 #include "piuMC.h"
 
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 #else
 enum {
 	piuDrawFrameCommand,
@@ -197,7 +197,7 @@ void PiuViewBegin(PiuView* self)
 	poco->xMax = x + w;
 	poco->yMax = y + h;
 
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PocoDrawingBegin(poco, 0, 0, w, h);
 #else
 #if kPocoFrameBuffer
@@ -207,7 +207,7 @@ void PiuViewBegin(PiuView* self)
 #endif
 }
 
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 #else
 void PiuViewCombine(PiuView* self, PiuRectangle area, PiuCoordinate op) 
 {
@@ -366,7 +366,7 @@ void PiuViewDrawFrame(PiuView* self, uint8_t *data, uint32_t dataSize, PiuCoordi
 	Poco poco = (*self)->poco;
 	x += poco->xOrigin;
 	y += poco->yOrigin;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PocoDrawFrame(poco, data, dataSize, x, y, sw, sh);
 #else
 	{
@@ -386,7 +386,7 @@ void PiuViewDrawString(PiuView* self, xsSlot* string, xsIntegerValue offset, xsI
 	Poco poco = (*self)->poco;
 	x += poco->xOrigin;
 	y += poco->yOrigin;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PiuViewDrawStringAux(self, string, offset, length, font, (*self)->pixel, (*self)->blend, x, y, w, sw);
 #else
 	{
@@ -501,7 +501,7 @@ void PiuViewDrawTexture(PiuView* self, PiuTexture* texture, PiuCoordinate x, Piu
 	if ((sw <= 0) || (sh <= 0)) return;
 	x += poco->xOrigin;
 	y += poco->yOrigin;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PiuViewDrawTextureAux(self, texture, (*self)->pixel, (*self)->blend, x, y, sx, sy, sw, sh);
 #else
 	{
@@ -538,7 +538,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 void PiuViewEnd(PiuView* self) 
 {
 	Poco poco = (*self)->poco;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewReceiver, self);
 #else
 	xsMachine* the = (*self)->the;
@@ -591,7 +591,7 @@ void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimens
 	if ((w <= 0) || (h <= 0)) return;
 	x += poco->xOrigin;
 	y += poco->yOrigin;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PocoRectangleFill(poco, (*self)->pixel, (*self)->blend, x, y, w, h);
 #else
 	{
@@ -640,7 +640,7 @@ void PiuViewFillTexture(PiuView* self, PiuTexture* texture, PiuCoordinate x, Piu
 	if ((w <= 0) || (h <= 0) || (sw <= 0) || (sh <= 0)) return;
 	x += poco->xOrigin;
 	y += poco->yOrigin;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PiuViewFillTextureAux(self, texture, (*self)->pixel, (*self)->blend, x, y, w, h, sx, sy, sw, sh); 
 #else
 	{
@@ -736,7 +736,7 @@ void PiuViewIdleCheck(PiuView* self, PiuBoolean idle)
 
 void PiuViewInvalidate(PiuView* self, PiuRectangle area) 
 {
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	(*self)->dirty = 1;
 #else
 	PiuViewCombine(self, area, piuRegionUnionOp);
@@ -745,7 +745,7 @@ void PiuViewInvalidate(PiuView* self, PiuRectangle area)
 
 void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region) 
 {
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	(*self)->dirty = 1;
 #else
 	PiuViewCombineRegion(self, region, piuRegionUnionOp);
@@ -755,7 +755,7 @@ void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region)
 void PiuViewMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuView self = it;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 #else
 	uint32_t current = sizeof(PiuViewRecord);
 	uint32_t limit = self->current;
@@ -799,7 +799,7 @@ void PiuViewMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 
 void PiuViewPopClip(PiuView* self)
 {
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	Poco poco = (*self)->poco;
 	PocoClipPop(poco);
 #else
@@ -826,7 +826,7 @@ void PiuViewPushClip(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDime
 	Poco poco = (*self)->poco;
 	x += poco->xOrigin;
 	y += poco->yOrigin;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	PocoClipPush(poco, x, y, w, h);
 #else
 	{
@@ -874,11 +874,14 @@ PiuTick PiuViewTicks(PiuView* self)
 void PiuViewUpdate(PiuView* self, PiuApplication* application)
 {
 	PiuRectangleRecord area;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
+	if (!(*self)->ready)
+		return;
 	if ((*self)->dirty) {
 		Poco poco = (*self)->poco;
 		PiuRectangleSet(&area, 0, 0, poco->width, poco->height);
 		(*self)->dirty = 0;
+		(*self)->ready = 0;
 #else
 	PiuCoordinate* data = (*((*self)->dirty))->data;
 	PiuRectangleSet(&area, data[1], data[2], data[3], data[4]);
@@ -890,7 +893,7 @@ void PiuViewUpdate(PiuView* self, PiuApplication* application)
 	}
 }
 
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 #else
 void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h, uint8_t flag) 
 {
@@ -1058,7 +1061,7 @@ endStepFrameBuffer:
 
 void PiuViewValidate(PiuView* self, PiuRectangle area) 
 {
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 #else
 	PiuViewCombine(self, area, piuRegionDifferenceOp);
 #endif
@@ -1066,7 +1069,7 @@ void PiuViewValidate(PiuView* self, PiuRectangle area)
 
 void PiuViewValidateRegion(PiuView* self, PiuRegion* region) 
 {
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 #else
 	PiuViewCombineRegion(self, region, piuRegionDifferenceOp);
 #endif
@@ -1231,7 +1234,7 @@ void PiuView_create(xsMachine* the)
 	PiuApplication* application;
 	xsIntegerValue size;
 // 	xsLog("view free %d\n", system_get_free_heap_size());
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	size = sizeof(PiuViewRecord);
 #else
 	xsIntegerValue commandListLength, regionLength;
@@ -1257,7 +1260,10 @@ void PiuView_create(xsMachine* the)
 	(*self)->_continue = xsGet(xsArg(2), xsID_continue);
 	(*self)->_end = xsGet(xsArg(2), xsID_end);
 	(*self)->_send = xsGet(xsArg(2), xsID_send);
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
+	(*self)->poco->next = NULL;
+	(*self)->dirty = 0;
+	(*self)->ready = 1;
 #else
 	PiuRegionNew(the, (PiuCoordinate)regionLength);
 	(*self)->dirty = PIU(Region, xsResult);
@@ -1281,6 +1287,16 @@ void PiuView_get_rotation(xsMachine* the)
 #endif
 }
 
+void PiuView_onDisplayReady(xsMachine* the)
+{
+#ifdef piuGPU
+	PiuView* self = PIU(View, xsThis);
+	PiuApplication* application = (*self)->application;
+	(*self)->ready = 1;
+	PiuViewUpdate(self, application);
+#endif		
+}
+
 void PiuView_onIdle(xsMachine* the)
 {
 	PiuView* self = PIU(View, xsThis);
@@ -1292,6 +1308,9 @@ void PiuView_onIdle(xsMachine* the)
 	PiuApplicationTouchIdle(application);
 	PiuApplicationAdjust(application);
 	PiuViewUpdate(self, application);
+#ifdef piuGPU
+	modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
+#endif		
 }
 
 void PiuView_onMessage(xsMachine* the)

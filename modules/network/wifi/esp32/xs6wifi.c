@@ -146,14 +146,16 @@ void xs_wifi_connect(xsMachine *the)
 	wifi_mode_t mode;
 	int channel;
 
-	initWiFi();
-
-	gWiFiState = 2;
-	gDisconnectReason = 0;
-	esp_wifi_disconnect();
+	if (gWiFiState > 1) {
+		gWiFiState = 2;
+		gDisconnectReason = 0;
+		esp_wifi_disconnect();
+	}
 
 	if (0 == argc)
 		return;
+
+	initWiFi();
 
 	c_memset(&config, 0, sizeof(config));
 
@@ -404,6 +406,8 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 				gWiFiIP = 0x02;		// don't wait for IP6 address if tcpip_adapter_create_ip6_linklocal failed
 			break;
 		case SYSTEM_EVENT_AP_STA_GOT_IP6:
+			if (0x03 == gWiFiIP)
+				return 0;
 			gWiFiIP |= 0x02;
 			if (0x03 != gWiFiIP)
 				return 0;

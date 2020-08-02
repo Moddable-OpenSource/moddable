@@ -27,6 +27,12 @@ static void PiuImageMeasureHorizontally(void* it);
 static void PiuImageMeasureVertically(void* it);
 static void PiuImageSync(void* it);
 
+#ifdef piuGPU
+	static uint32_t gFrameID = 0x8000;
+	extern void PocoDrawImage(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h, 
+			PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh);
+#endif
+
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuImageDispatchRecord = {
 	"Image",
 	PiuContentBind,
@@ -73,7 +79,19 @@ void PiuImageDraw(void* it, PiuView* view, PiuRectangle area)
 		PiuRectangleRecord bounds;
 		PiuRectangleSet(&bounds, 0, 0, (*self)->bounds.width, (*self)->bounds.height);
 		PiuViewPushClip(view, 0, 0, bounds.width, bounds.height);
+#ifdef piuGPU
+		{
+			PocoBitmapRecord bm;
+			bm.width = (*self)->dataWidth;
+			bm.height = (*self)->dataHeight;
+			bm.format = kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked;
+			bm.pixels = (PocoPixel*)((*self)->data + sizeof(uint16_t) + (*self)->frameOffset);
+			bm.id = (*self)->frameID | ((*self)->frameIndex << 16);
+			PocoDrawImage((*view)->poco, &bm, (*view)->poco->xOrigin, (*view)->poco->yOrigin, bounds.width, bounds.height, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
+		}
+#else	
 		PiuViewDrawFrame(view, (*self)->data + sizeof(uint16_t) + (*self)->frameOffset, (*self)->frameSize, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
+#endif		
 		PiuViewPopClip(view);
 	}
 }
@@ -155,7 +173,7 @@ void PiuImage_create(xsMachine* the)
 	PiuContentDictionary(the, self);
 	PiuImageDictionary(the, self);
 	path = PiuToString((*self)->path);
-	data = (uint8_t *)mcGetResource(the, path, &dataSize);
+	data = (uint8_t *)fxGetResource(the, path, &dataSize);
 	if (!data)
 		xsURIError("image not found: %s", path);	
 	cch = (ColorCellHeader)data;
@@ -177,6 +195,9 @@ void PiuImage_create(xsMachine* the)
 	(*self)->frameIndex = 0;
 	(*self)->frameOffset = sizeof(ColorCellHeaderRecord);
 	(*self)->frameSize = c_read16(data + sizeof(ColorCellHeaderRecord));
+#ifdef piuGPU
+	(*self)->frameID = ++gFrameID;
+#endif
 	frameCount = (*self)->frameCount = c_read16(&cch->frameCount);
 	if (frameCount > 1) {
 		uint16_t fps_numerator = c_read16(&cch->fps_numerator);

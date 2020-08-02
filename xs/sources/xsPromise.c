@@ -224,18 +224,14 @@ void fxCombinePromises(txMachine* the, txInteger which)
 				property = fxNextReferenceProperty(the, property, array, XS_NO_ID, XS_NO_FLAG);
 				mxPop();
 			}
+			mxPushSlot(mxThis);
+			fxGetID(the, mxID(_resolve));	
+			resolve = the->stack;
+			if (!fxIsCallable(the, resolve))
+				mxTypeError("resolve is no function");
 			mxTemporary(iterator);
 			mxTemporary(next);
 			fxGetIterator(the, mxArgv(0), iterator, next, 0);
-			mxTry(the) {
-				mxPushSlot(mxThis);
-				fxGetID(the, mxID(_resolve));	
-				resolve = the->stack;
-			}
-			mxCatch(the) {
-				fxIteratorReturn(the, iterator);
-				fxJump(the);
-			}
 			index = 0;
 			mxTemporary(value);
 			while (fxIteratorNext(the, iterator, next, value)) {

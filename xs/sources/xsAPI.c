@@ -1771,6 +1771,7 @@ txMachine* fxBeginHost(txMachine* the)
 	/* RESULT */
 	mxPushUndefined();
 	/* FRAME */
+	fxOverflow(the, -1, C_NULL, 0);
 	--the->stack;
 	the->stack->next = the->frame;
 	the->stack->ID = XS_NO_ID;
@@ -1786,6 +1787,7 @@ txMachine* fxBeginHost(txMachine* the)
 	the->stack->value.frame.scope = the->scope;
 	the->frame = the->stack;
 	/* VARC */
+	fxOverflow(the, -1, C_NULL, 0);
 	--the->stack;
 	the->stack->next = C_NULL;
 	the->stack->ID = XS_NO_ID;
