@@ -6,16 +6,20 @@ GROUP(-lgcc -lc -lnosys)
 /*
   FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xce000
   RAM (rwx) :  ORIGIN = 0x20000000, LENGTH = 0x40000
+
+  FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xcc000	// moddable four sdk 15.3
+  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a384
 */
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xcc000
+  FLASH (rx) : ORIGIN = 0x27000, LENGTH = 0xcb000
   PREFERENCE (rx) : ORIGIN = 0xF2000, LENGTH = 0x2000
-  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a384
+  RAM (rwx) :  ORIGIN = 0x20008000, LENGTH = 0x20040000-0x20008000
   NOINIT (rwx) :  ORIGIN = 0x2003fb3c, LENGTH = 0x100
 }
 
 PROVIDE(_MODPREF_start = 0xF2000);
+PROVIDE(_MODDABLE_start = 0x27000);
 
 /* much of Moddable code goes into flash */
 /* this is in nrf_common.h */

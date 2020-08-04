@@ -58,7 +58,6 @@ else
 	endif
 endif
 
-NRF52_SDK_ROOT = $(NRF_SDK_DIR)
 NRF52_GNU_VERSION = 8.2.1
 NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
 
@@ -71,8 +70,9 @@ BOARD = pca10056
 SOFT_DEVICE = s140
 HWCPU = cortex-m4
 
-BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
-SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
+# BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
+# SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
+SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.1_softdevice.hex
 
 # BOARD_DEF = BOARD_PCA10056
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
@@ -97,14 +97,18 @@ endif
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -D$(BOARD_DEF)
+ASMFLAGS += -DAPP_TIMER_V2
+ASMFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 ASMFLAGS += -DCONFIG_GPIO_AS_PINRESET
 ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += $(FP_OPTS)
 ASMFLAGS += -DFREERTOS
-ASMFLAGS += -DNRF_SD_BLE_API_VERSION=6
+ASMFLAGS += -DNRF_SD_BLE_API_VERSION=7
 ASMFLAGS += -DS140
 ASMFLAGS += -DSOFTDEVICE_PRESENT
+ASMFLAGS += -DNRF_CRYPTO_MAX_INSTANCE_COUNT=1
+ASMFLAGS += -DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION
 
 # Linker flags
 LDFLAGS += -mthumb -mabi=aapcs -L$(NRF52_SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
@@ -119,7 +123,7 @@ LDFLAGS += -Xlinker -no-enum-size-warning -Xlinker -Map=$(BIN_DIR)/xs_lib.map
 
 LIB_FILES += \
 	-lc -lnosys -lm \
-	$(NRF52_SDK_ROOT)/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.12.a
+	$(NRF52_SDK_ROOT)/external/nrf_cc310/lib/cortex-m4/hard-float/no-interrupts/libnrf_cc310_0.9.13.a
 
 INC_DIRS = \
 	$(NRF52_GCC_ROOT)/arm-none-eabi/include \
@@ -179,6 +183,7 @@ INC_DIRS += \
 	$(NRF52_SDK_ROOT)/components/libraries/ringbuf \
 	$(NRF52_SDK_ROOT)/components/libraries/scheduler \
 	$(NRF52_SDK_ROOT)/components/libraries/serial \
+	$(NRF52_SDK_ROOT)/components/libraries/sortlist \
 	$(NRF52_SDK_ROOT)/components/libraries/spi_mngr \
 	$(NRF52_SDK_ROOT)/components/libraries/stack_info \
 	$(NRF52_SDK_ROOT)/components/libraries/strerror \
@@ -425,7 +430,6 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_queue.c.o \
 	$(LIB_DIR)/nrf_ringbuf.c.o \
 	$(LIB_DIR)/nrf_section_iter.c.o \
-	$(LIB_DIR)/nrf_serial.c.o \
 	$(LIB_DIR)/nrf_spi_mngr.c.o \
 	$(LIB_DIR)/nrf_strerror.c.o \
 	$(LIB_DIR)/nrf_twi_mngr.c.o \
@@ -513,11 +517,16 @@ NRF_C_DEFINES= \
 	-DINITIALIZE_USER_SECTIONS \
 	-DNO_VTOR_CONFIG  \
 	-DNRF52840_XXAA \
-	-DNRF_SD_BLE_API_VERSION=6 \
+	-DNRF_SD_BLE_API_VERSION=7 \
 	-DNRF_USBD_REQUIRE_CLOSED_ON_PORT_OPEN=1 \
 	-DS140 \
 	-DSOFTDEVICE_PRESENT \
-	-Dnrf52
+	-Dnrf52 \
+	-DAPP_TIMER_V2 \
+	-DAPP_TIMER_V2_RTC1_ENABLED \
+	-DMBEDTLS_CONFIG_FILE=\"nrf_crypto_mbedtls_config.h\" \
+	-DNRF_CRYPTO_MAX_INSTANCE_COUNT=1 \
+	-DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION
 
 C_DEFINES = \
 	$(NRF_C_DEFINES) \

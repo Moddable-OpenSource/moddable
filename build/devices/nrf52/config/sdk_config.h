@@ -5984,7 +5984,8 @@
 // <i> Vendor ID ordered from USB IF: http://www.usb.org/developers/vendor/
 
 #ifndef APP_USBD_VID
-#define APP_USBD_VID 0x1915
+//#define APP_USBD_VID 0x1915
+#define APP_USBD_VID 0xbeef
 #endif
 
 // <o> APP_USBD_PID - Product ID.  <0x0000-0xFFFF> 
@@ -5994,7 +5995,8 @@
 // <i> Selected Product ID
 
 #ifndef APP_USBD_PID
-#define APP_USBD_PID 0x520F
+//#define APP_USBD_PID 0x520F
+#define APP_USBD_PID 0xcafe
 #endif
 
 // <o> APP_USBD_DEVICE_VER_MAJOR - Device version, major part.  <0-99> 
@@ -6147,7 +6149,7 @@
 // <i> Setting string to NULL disables that string.
 // <i> The order of manufacturer names must be the same like in @ref APP_USBD_STRINGS_LANGIDS.
 #ifndef APP_USBD_STRINGS_MANUFACTURER
-#define APP_USBD_STRINGS_MANUFACTURER APP_USBD_STRING_DESC("Moddable Tech")
+#define APP_USBD_STRINGS_MANUFACTURER APP_USBD_STRING_DESC("Moddable Tech, Inc.")
 #endif
 
 // </e>

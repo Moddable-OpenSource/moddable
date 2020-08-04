@@ -53,11 +53,10 @@ void xs_flash(xsMachine *the)
 
 		if (0 == c_strcmp(partition, "xs")) {
 			flash.partitionStart = modStart;
-			flash.partitionByteLength = 0xF4000 - flash.partitionStart;
-			flash.partitionByteLength = 0xF2000 - flash.partitionStart;
+			flash.partitionByteLength = kModulesEnd - flash.partitionStart;
 		}
 		else if (0 == c_strcmp(partition, "running")) {
-			flash.partitionStart = 0x26000;
+			flash.partitionStart = _MODDABLE_start;			// was 0x26000, 0x27000 for SD 7.0
 			flash.partitionByteLength = modStart - flash.partitionStart;
 		}
 		else
