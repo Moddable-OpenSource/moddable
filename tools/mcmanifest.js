@@ -1318,7 +1318,7 @@ export class Tool extends TOOL {
 			this.mainPath = this.currentDirectory;
 		}
 		var parts = this.splitPath(this.mainPath);
-		this.environment.NAME = parts.name;
+		this.environment.NAME = parts.name + parts.extension;
 		if (!this.outputPath)
 			this.outputPath = this.buildPath;
 		if (!this.platform)
