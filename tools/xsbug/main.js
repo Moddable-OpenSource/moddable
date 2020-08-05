@@ -297,7 +297,7 @@ class ApplicationBehavior extends DebugBehavior {
 		system.openFile({ prompt:"Open File" }, path => { if (path) this.doOpenFileCallback(path); });
 	}
 	doOpenFileCallback(path) {
-		if (path.endsWith(".js") || path.endsWith(".json") || path.endsWith(".xml") || path.endsWith(".xs"))
+		if (path.endsWith(".js") || path.endsWith(".json") || path.endsWith(".ts") || path.endsWith(".xml") || path.endsWith(".xs"))
 			this.selectFile(path);
 	}
 	doCloseDirectory(path) {
