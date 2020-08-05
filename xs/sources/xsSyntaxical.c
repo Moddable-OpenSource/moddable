@@ -2690,8 +2690,10 @@ void fxGroupExpression(txParser* parser, txUnsigned flag)
 		fxArrowExpression(parser, flag);
 	}
 	else {
-		if (aCount == 0)
+        if (aCount == 0) {
+            fxPushNULL(parser);
 			fxReportParserError(parser, "missing expression");
+        }
 		else /*if (aCount > 1)*/ {
 			fxPushNodeList(parser, aCount);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, aLine);
