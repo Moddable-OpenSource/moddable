@@ -14,8 +14,10 @@
 
 import Timer from "timer";
 import LIS3DH from "lis3dh";
+import {DataRate} from "lis3dh";
 
 let sensor = new LIS3DH({});
+sensor.configure({rate: DataRate.DATARATE_10_HZ});
 
 Timer.repeat(() => {
 	let values = sensor.sample();
