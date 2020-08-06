@@ -3553,7 +3553,7 @@ void fxCheckArrowFunction(txParser* parser, txInteger count)
 txBoolean fxCheckReference(txParser* parser, txToken theToken)
 {
 	txNode* node = parser->root;
-	txToken aToken = node ? node->description->token : XS_NO_TOKEN;
+	txToken aToken = (node && node->description) ? node->description->token : XS_NO_TOKEN;
 	if (aToken == XS_TOKEN_EXPRESSIONS) {
 		txNode* item = ((txExpressionsNode*)node)->items->first;
 		if (item && !item->next) {
