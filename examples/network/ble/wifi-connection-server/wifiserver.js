@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -27,8 +27,7 @@ export default class WiFiServer extends BLEServer {
 	}
 	onDisconnected() {
 		this.startAdvertising({
-			advertisingData: {shortName: "Moddable"},
-			scanResponseData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`FF00`]}
+			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`FF00`]}
 		});
 	}
 	onCharacteristicWritten(characteristic, value) {
