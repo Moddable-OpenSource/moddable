@@ -252,7 +252,7 @@ export class FolderTableBehavior extends TableBehavior {
 				current = { depth, kind:"folder", name, path:info.path, expanded:false, currents:[] };
 			}
 			else {
-				if (name.endsWith(".js") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".xs"))
+				if (name.endsWith(".js") || name.endsWith(".json") || name.endsWith(".ts") || name.endsWith(".xml") || name.endsWith(".xs"))
 					current = { depth, kind:"file", name, path:info.path };
 				else
 					current = { depth, kind:"info", name, path:info.path };

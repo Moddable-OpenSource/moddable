@@ -396,7 +396,7 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 				gWiFiState = 2;
 			break;
 		case SYSTEM_EVENT_STA_STOP:
-			gWiFiState = 0;
+			gWiFiState = 1;
 			break;
 		case SYSTEM_EVENT_STA_CONNECTED:
 			gWiFiState = 4;

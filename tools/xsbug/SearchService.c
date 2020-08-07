@@ -154,7 +154,7 @@ void PiuCodeSearchDirectory(xsMachine* the, KprCodeSearch self)
 				}
 				else {
 					char* dot = strrchr(name, '.');
-					if (dot && !strcmp(dot, ".js")) {
+					if (dot && (!strcmp(dot, ".js") || !strcmp(dot, ".ts"))) {
 						int fd = open(path, O_RDONLY);
 						if (fd >= 0) {
 							xsStringValue string = mmap(NULL, _stat.st_size, PROT_READ, MAP_SHARED, fd, 0);
@@ -182,7 +182,7 @@ void PiuCodeSearchDirectory(xsMachine* the, KprCodeSearch self)
 	while (CFURLEnumeratorGetNextURL(enumerator, &fileURL, NULL) == kCFURLEnumeratorSuccess) {
 		CFStringRef path = CFURLCopyFileSystemPath(fileURL, kCFURLPOSIXPathStyle);
 		CFStringRef name = CFURLCopyLastPathComponent(fileURL);
-		if (CFStringHasSuffix(name, CFSTR(".js"))) {
+		if (CFStringHasSuffix(name, CFSTR(".js")) || CFStringHasSuffix(name, CFSTR(".ts"))) {
 			char PATH[1024];
 			char NAME[1024];
 			if (CFStringGetCString(path, PATH, sizeof(PATH), kCFStringEncodingUTF8) && CFStringGetCString(name, NAME, sizeof(NAME), kCFStringEncodingUTF8)) {
@@ -230,7 +230,7 @@ void PiuCodeSearchDirectory(xsMachine* the, KprCodeSearch self)
 				}
 				else {
 					wchar_t* dot = wcsrchr(data.cFileName, L'.');
-					if (dot && (!wcscmp(dot, L".js"))) {
+					if (dot && (!wcscmp(dot, L".js") || !wcscmp(dot, L".ts"))) {
 						HANDLE file = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 						if (file != INVALID_HANDLE_VALUE) {
 							xsIntegerValue size = GetFileSize(file, NULL);
