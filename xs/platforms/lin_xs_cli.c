@@ -52,11 +52,7 @@ int main(int argc, char* argv[])  // here
 
 				fprintf(stderr, "lin_xs_cli: invoking main(argv)\n");
 				xsVar(2) = xsCallFunction1(xsVar(1), xsUndefined, xsVar(0));
-				if (!xsIsInstanceOf(xsVar(2), xsPromisePrototype)) {
-					fprintf(stderr, "main() returned immediate value (not a promise). exiting\n");
-					exit(xsToInteger(xsVar(2)));
-				}
-				fprintf(stderr, " lin_xs_cli: main() returned a promise; entering event loop\n");
+				fprintf(stderr, " lin_xs_cli: main(): entering event loop\n");
 
 				GMainContext *mainctx = g_main_context_default();
 				while (the->promiseJobsFlag || fxPromiseIsPending(the, &xsVar(2))) {
