@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -78,11 +78,11 @@ typedef struct {
 	uint32_t service_id;
 } serviceHandleTableRecord;
 
-typedef struct modBLEConnectionRecord modBLEConnectionRecord;
-typedef modBLEConnectionRecord *modBLEConnection;
+typedef struct modBLEPeerConnectionRecord modBLEPeerConnectionRecord;
+typedef modBLEPeerConnectionRecord *modBLEPeerConnection;
 
-struct modBLEConnectionRecord {
-	struct modBLEConnectionRecord *next;
+struct modBLEPeerConnectionRecord {
+	struct modBLEPeerConnectionRecord *next;
 
 	uint32_t id;
 	qapi_BLE_BD_ADDR_t bd_addr;
@@ -128,7 +128,7 @@ typedef struct {
    	qapi_BLE_GAP_LE_Extended_Pairing_Capabilities_t pairingCapabilities;
 	
 	// connection
-	modBLEConnectionRecord connection;
+	modBLEPeerConnectionRecord connection;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -896,7 +896,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
                      		if ((Authentication_Event_Data->Authentication_Event_Data.Long_Term_Key_Request.EDIV == EDIV) && (QAPI_BLE_COMPARE_RANDOM_NUMBER(Authentication_Event_Data->Authentication_Event_Data.Long_Term_Key_Request.Rand, RandomNumber))) {
 								/* Search for the entry for this slave to store the information into */
 								if (QAPI_BLE_COMPARE_BD_ADDR(gBLE->connection.bd_addr, Authentication_Event_Data->BD_ADDR)) {
-									modBLEConnection DeviceInfo = &gBLE->connection;
+									modBLEPeerConnection DeviceInfo = &gBLE->connection;
 									/* Check to see if the LTK is valid.         */
 									if (DeviceInfo->Flags & DEVICE_INFO_FLAGS_LTK_VALID) {
 										/* Respond with the stored Long Term Key. */
@@ -987,7 +987,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 							/* Search for the entry for this slave to store the*/
 							/* information into.                               */
 							if (QAPI_BLE_COMPARE_BD_ADDR(gBLE->connection.bd_addr, Authentication_Event_Data->BD_ADDR)) {
-								modBLEConnection DeviceInfo = &gBLE->connection;
+								modBLEPeerConnection DeviceInfo = &gBLE->connection;
 								c_memcpy(&(DeviceInfo->LTK), &(Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.LTK), sizeof(DeviceInfo->LTK));
 								DeviceInfo->EDIV              = Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.EDIV;
 								c_memcpy(&(DeviceInfo->Rand), &(Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.Rand), sizeof(DeviceInfo->Rand));
@@ -999,7 +999,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 							/* If this failed due to a LTK issue then we should delete the LTK */
 							if (Authentication_Event_Data->Authentication_Event_Data.Security_Establishment_Complete.Status == QAPI_BLE_GAP_LE_SECURITY_ESTABLISHMENT_STATUS_CODE_LONG_TERM_KEY_ERROR) {
 								if (QAPI_BLE_COMPARE_BD_ADDR(gBLE->connection.bd_addr, Authentication_Event_Data->BD_ADDR)) {
-									modBLEConnection DeviceInfo = &gBLE->connection;
+									modBLEPeerConnection DeviceInfo = &gBLE->connection;
 									/* Clear the flag indicating the LTK is valid */
 									DeviceInfo->Flags &= ~DEVICE_INFO_FLAGS_LTK_VALID;
 								}
@@ -1020,7 +1020,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 							/* Search for the entry for this slave to store the*/
 							/* information into.                               */
 							if (QAPI_BLE_COMPARE_BD_ADDR(gBLE->connection.bd_addr, Authentication_Event_Data->BD_ADDR)) {
-								modBLEConnection DeviceInfo = &gBLE->connection;
+								modBLEPeerConnection DeviceInfo = &gBLE->connection;
 								c_memcpy(&(DeviceInfo->IRK), &(Authentication_Event_Data->Authentication_Event_Data.Identity_Information.IRK), sizeof(DeviceInfo->IRK));
 								DeviceInfo->IdentityAddressBD_ADDR = Authentication_Event_Data->Authentication_Event_Data.Identity_Information.Address;
 								DeviceInfo->IdentityAddressType    = Authentication_Event_Data->Authentication_Event_Data.Identity_Information.Address_Type;

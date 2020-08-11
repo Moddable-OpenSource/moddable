@@ -22,6 +22,7 @@
 #define __mod_ble__
 
 #include "inttypes.h"
+#include "xsmc.h"
 
 typedef enum {
 	NoInputNoOutput = 0,
@@ -60,6 +61,11 @@ typedef enum {
 	kBLEAdvFilterPolicyWhitelistScansConnections
 } BLEAdvFilterPolicy;
 
+typedef enum {
+	kBLEConnectionTypeClient = 0,
+	kBLEConnectionTypeServer
+} BLEConnectionType;
+
 typedef struct modBLEWhitelistAddressRecord modBLEWhitelistAddressRecord;
 typedef modBLEWhitelistAddressRecord *modBLEWhitelistAddress;
 
@@ -70,9 +76,36 @@ struct modBLEWhitelistAddressRecord {
 	BLEAddressType addressType;
 };
 
+typedef struct modBLEConnectionRecord modBLEConnectionRecord;
+typedef modBLEConnectionRecord *modBLEConnection;
+
+struct modBLEConnectionRecord {
+	struct modBLEConnectionRecord *next;
+
+	xsMachine	*the;
+	xsSlot		objConnection;
+	xsSlot		objClient;
+
+	int16_t		id;
+	uint8_t		type;
+	uint8_t		addressType;
+	uint8_t		address[6];
+	
+	uint8_t		mtu_exchange_pending;
+	
+	void		*aux;
+};
+
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
 
 int modBLEWhitelistContains(uint8_t addressType, uint8_t *address);
 
+void modBLEConnectionAdd(modBLEConnection connection);
+void modBLEConnectionRemove(modBLEConnection connection);
+modBLEConnection modBLEConnectionFindByConnectionID(int16_t conn_id);
+modBLEConnection modBLEConnectionFindByAddress(uint8_t *address);
+modBLEConnection modBLEConnectionFindByAddressAndType(uint8_t *address, uint8_t addressType);
+modBLEConnection modBLEConnectionGetFirst(void);
+modBLEConnection modBLEConnectionGetNext(modBLEConnection connection);
 
 #endif

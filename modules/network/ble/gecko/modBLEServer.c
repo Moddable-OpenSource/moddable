@@ -125,8 +125,12 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	if (-1 != ble->connection)
+	if (-1 != ble->connection) {
+		modBLEConnection connection = modBLEConnectionFindByConnectionID(ble->connection);
+		if (NULL != connection)
+			modBLEConnectionRemove(connection);
 		gecko_cmd_le_connection_close(ble->connection);
+	}
 	modTimerRemove(ble->timer);
 	c_free(ble);
 
@@ -281,6 +285,15 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 	gBLE->address = evt->address;
 	gBLE->bond = evt->bonding;
 	
+	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+	if (!connection)
+		xsUnknownError("out of memory");
+		
+	connection->id = gBLE->connection;
+	connection->type = kBLEConnectionTypeServer;
+	c_memmove(connection->address, gBLE->address.addr, 6);
+	modBLEConnectionAdd(connection);
+
 	if (gBLE->encryption || gBLE->mitm)
 		gecko_cmd_sm_increase_security(evt->connection);
 
@@ -300,6 +313,11 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 	xsBeginHost(gBLE->the);
 	if (evt->connection != gBLE->connection)
 		goto bail;
+
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(gBLE->connection);
+	if (NULL != connection)
+		modBLEConnectionRemove(connection);
+
 	gBLE->connection = -1;
 	gBLE->bond = 0xFF;
 	xsmcVars(3);

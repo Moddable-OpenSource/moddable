@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -67,22 +67,12 @@ struct modBLENotificationRecord {
 	uint16_t char_handle;
 };
 
-typedef struct modBLEConnectionRecord modBLEConnectionRecord;
-typedef modBLEConnectionRecord *modBLEConnection;
+typedef struct modBLEConnectionAuxRecord modBLEConnectionAuxRecord;
+typedef modBLEConnectionAuxRecord *modBLEConnectionAux;
 
-struct modBLEConnectionRecord {
-	struct modBLEConnectionRecord *next;
-
-	xsMachine	*the;
-	xsSlot		objConnection;
-	xsSlot		objClient;
-
-	esp_bd_addr_t bda;
-	uint8_t bdaType;
+struct modBLEConnectionAuxRecord {
 	esp_gatt_if_t gattc_if;
-	int16_t conn_id;
 	uint16_t app_id;
-	uint8_t mtu_exchange_pending;
 	
 	// char_name_table handles
 	uint16_t handles[char_name_count];
@@ -100,18 +90,14 @@ typedef struct {
 	uint8_t bonding;
 	uint8_t mitm;
 
-	modBLEConnection connections;
 	uint8_t terminating;
 } modBLERecord, *modBLE;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
 
-static void modBLEConnectionAdd(modBLEConnection connection);
-static void modBLEConnectionRemove(modBLEConnection connection);
-static modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id);
 static modBLEConnection modBLEConnectionFindByAppID(uint16_t app_id);
-static modBLEConnection modBLEConnectionFindByAddress(esp_bd_addr_t *bda);
+static modBLEConnection modBLEConnectionFindByInterface(esp_gatt_if_t gattc_if);
 
 static void addressToBuffer(esp_bd_addr_t *bda, uint8_t *buffer);
 static void bufferToAddress(uint8_t *buffer, esp_bd_addr_t *bda);
@@ -167,19 +153,24 @@ void xs_ble_client_destructor(void *data)
 	if (!ble) return;
 	
 	ble->terminating = true;
-	modBLEConnection connections = ble->connections, next;
-	while (connections != NULL) {
-		modBLEConnection connection = connections;
-		connections = connections->next;
-		esp_ble_gattc_app_unregister(connection->gattc_if);
-		modBLENotification notifications = connection->notifications;
-		while (notifications != NULL) {
-			modBLENotification notification = notifications;
-			notifications = notifications->next;
-			c_free(notification);
+	modBLEConnection connection = modBLEConnectionGetFirst();
+	while (connection != NULL) {
+		modBLEConnection next = connection->next;
+		if (kBLEConnectionTypeClient == connection->type) {
+			modBLEConnectionAux connectionAux = connection->aux;
+			esp_ble_gattc_app_unregister(connectionAux->gattc_if);
+			modBLENotification notifications = connectionAux->notifications;
+			while (notifications != NULL) {
+				modBLENotification notification = notifications;
+				notifications = notifications->next;
+				c_free(notification);
+			}
+			c_free(connectionAux);
+			modBLEConnectionRemove(connection);
 		}
-		c_free(connection);
+		connection = next;
 	}
+	
 	c_free(ble);
 	gBLE = NULL;
 
@@ -234,29 +225,34 @@ void xs_ble_client_connect(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
+	modBLEConnection connection;
+	modBLEConnectionAux connectionAux;
 	esp_bd_addr_t bda;
 
 	bufferToAddress(address, &bda);
-		
+
 	// Ignore duplicate connection attempts
-	if (modBLEConnectionFindByAddress(&bda)) {
+	if (modBLEConnectionFindByAddress(&bda[0])) {
 		LOG_GATTC_MSG("Ignoring duplicate connect attempt");
 		return;
 	};
 	
 	// Add a new connection record to be filled as the connection completes
-	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
-	if (!connection)
+	connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+	connectionAux = c_calloc(sizeof(modBLEConnectionAuxRecord), 1);
+	if (!connection || !connectionAux)
 		xsUnknownError("out of memory");
-	connection->conn_id = -1;
-	connection->app_id = gAPP_ID++;
-	connection->gattc_if = ESP_GATT_IF_NONE;
-	c_memmove(&connection->bda, &bda, sizeof(bda));
-	connection->bdaType = addressType;
+	connection->id = -1;
+	connection->type = kBLEConnectionTypeClient;
+	connection->addressType = addressType;
+	c_memmove(&connection->address, &bda, 6);
+	connectionAux->app_id = gAPP_ID++;
+	connectionAux->gattc_if = ESP_GATT_IF_NONE;
+	connection->aux = connectionAux;
 	modBLEConnectionAdd(connection);
 	
 	// register application client and connect when ESP_GATTC_REG_EVT received
-	esp_ble_gattc_app_register(connection->app_id);
+	esp_ble_gattc_app_register(connectionAux->app_id);
 }
 
 void xs_ble_client_set_security_parameters(xsMachine *the)
@@ -288,73 +284,32 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 	esp_ble_confirm_reply(bda, confirm);
 }
 
-modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (conn_id == walker->conn_id)
-			break;
-	return walker;
-}
-
 modBLEConnection modBLEConnectionFindByAppID(uint16_t app_id)
 {
 	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (app_id == walker->app_id)
-			break;
+	modCriticalSectionBegin();
+	for (walker = modBLEConnectionGetFirst(); NULL != walker; walker = walker->next) {
+		modBLEConnectionAux connectionAux = walker->aux;
+		if (app_id == connectionAux->app_id)
+			goto bail;
+	}
+bail:
+	modCriticalSectionEnd();
 	return walker;
 }
 
 modBLEConnection modBLEConnectionFindByInterface(esp_gatt_if_t gattc_if)
 {
 	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (gattc_if == walker->gattc_if)
-			break;
-	return walker;
-}
-
-modBLEConnection modBLEConnectionFindByAddress(esp_bd_addr_t *bda)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (0 == c_memcmp(bda, walker->bda, sizeof(esp_bd_addr_t)))
-			break;
-	return walker;
-}
-
-void modBLEConnectionAdd(modBLEConnection connection)
-{
-	if (!gBLE->connections)
-		gBLE->connections = connection;
-	else {
-		modBLEConnection walker;
-		for (walker = gBLE->connections; walker->next; walker = walker->next)
-			;
-		walker->next = connection;
+	modCriticalSectionBegin();
+	for (walker = modBLEConnectionGetFirst(); NULL != walker; walker = walker->next) {
+		modBLEConnectionAux connectionAux = walker->aux;
+		if (gattc_if == connectionAux->gattc_if)
+			goto bail;
 	}
-}
-
-void modBLEConnectionRemove(modBLEConnection connection)
-{
-	modBLEConnection walker, prev = NULL;
-	for (walker = gBLE->connections; NULL != walker; prev = walker, walker = walker->next) {
-		if (connection == walker) {
-			if (NULL == prev)
-				gBLE->connections = walker->next;
-			else
-				prev->next = walker->next;
-			while (connection->notifications) {
-				modBLENotification notification = connection->notifications;
-				//esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, notification->char_handle);
-				connection->notifications = notification->next;
-				c_free(notification);
-			}
-			c_free(connection);
-			break;
-		}
-	}
+bail:
+	modCriticalSectionEnd();
+	return walker;
 }
 
 void xs_gap_connection_initialize(xsMachine *the)
@@ -377,7 +332,7 @@ void xs_gap_connection_disconnect(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	esp_ble_gap_disconnect(connection->bda);
+	esp_ble_gap_disconnect(connection->address);
 }
 
 void xs_gap_connection_read_rssi(xsMachine *the)
@@ -385,7 +340,7 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	uint16_t conn_id = xsmcToInteger(xsArg(0));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	esp_ble_gap_read_rssi(connection->bda);
+	esp_ble_gap_read_rssi(connection->address);
 }
 
 void xs_gap_connection_exchange_mtu(xsMachine *the)
@@ -397,8 +352,10 @@ void xs_gap_connection_exchange_mtu(xsMachine *the)
 
 	if (ESP_OK != esp_ble_gatt_set_local_mtu(mtu))
 		xsRangeError("invalid mtu");
+		
+	modBLEConnectionAux connectionAux = connection->aux;
 	connection->mtu_exchange_pending = 1;
-	esp_ble_gattc_send_mtu_req(connection->gattc_if, conn_id);
+	esp_ble_gattc_send_mtu_req(connectionAux->gattc_if, conn_id);
 }
 
 void xs_gatt_client_discover_primary_services(xsMachine *the)
@@ -408,14 +365,16 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	uint16_t argc = xsmcArgc;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	modBLEConnectionAux connectionAux = connection->aux;
 	if (argc > 1)
 		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsmcGetArrayBufferLength(xsArg(1)));
-	esp_ble_gattc_search_service(connection->gattc_if, conn_id, (argc > 1 ? &uuid : NULL));
+	esp_ble_gattc_search_service(connectionAux->gattc_if, conn_id, (argc > 1 ? &uuid : NULL));
 }
 
 static int modBLEConnectionSaveAttHandle(modBLEConnection connection, esp_bt_uuid_t *uuid, uint16_t handle)
 {
 	int result = -1;
+	modBLEConnectionAux connectionAux = connection->aux;
 	for (int service_index = 0; service_index < service_count; ++service_index) {
 		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
 			const esp_gatts_attr_db_t *att_db = &gatt_db[service_index][att_index];
@@ -425,7 +384,7 @@ static int modBLEConnectionSaveAttHandle(modBLEConnection connection, esp_bt_uui
 					for (int k = 0; k < char_name_count; ++k) {
 						const char_name_table *char_name = &char_names[k];
 						if (service_index == char_name->service_index && att_index == char_name->att_index) {
-							connection->handles[k] = handle;
+							connectionAux->handles[k] = handle;
 							result = k;
 							goto bail;
 						}
@@ -488,7 +447,8 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	uint16_t length;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_CHARACTERISTIC, start, end, 0, &count);
+	modBLEConnectionAux connectionAux = connection->aux;
+	esp_ble_gattc_get_attr_count(connectionAux->gattc_if, conn_id, ESP_GATT_DB_CHARACTERISTIC, start, end, 0, &count);
 	if (count > 0) {
 		uint16_t length = sizeof(characteristicSearchRecord) + (sizeof(esp_gattc_char_elem_t) * count);
 		characteristicSearchRecord *csr = c_malloc(length);
@@ -497,11 +457,11 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 		if (argc > 3) {
 			esp_bt_uuid_t uuid;
 			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsmcGetArrayBufferLength(xsArg(3)));
-			if (ESP_OK != esp_ble_gattc_get_char_by_uuid(connection->gattc_if, conn_id, start, end, uuid, &csr->char_elem_result[0], &count))
+			if (ESP_OK != esp_ble_gattc_get_char_by_uuid(connectionAux->gattc_if, conn_id, start, end, uuid, &csr->char_elem_result[0], &count))
 				count = 0;
 		}
 		else {
-			if (ESP_OK != esp_ble_gattc_get_all_char(connection->gattc_if, conn_id, start, end, &csr->char_elem_result[0], &count, 0))
+			if (ESP_OK != esp_ble_gattc_get_all_char(connectionAux->gattc_if, conn_id, start, end, &csr->char_elem_result[0], &count, 0))
 				count = 0;
 		}
 		if (0 != count) {
@@ -563,14 +523,15 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	descriptorSearchRecord *dsr;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	esp_ble_gattc_get_attr_count(connection->gattc_if, conn_id, ESP_GATT_DB_DESCRIPTOR, 0, 0, handle, &count);
+	modBLEConnectionAux connectionAux = connection->aux;
+	esp_ble_gattc_get_attr_count(connectionAux->gattc_if, conn_id, ESP_GATT_DB_DESCRIPTOR, 0, 0, handle, &count);
 	if (count > 0) {
 		uint16_t length = sizeof(descriptorSearchRecord) + (sizeof(esp_gattc_descr_elem_t) * count);
 		descriptorSearchRecord *dsr = c_malloc(length);
 		if (!dsr)
 			xsUnknownError("out of memory");
 		xsmcVars(3);
-		if (ESP_OK != esp_ble_gattc_get_all_descr(connection->gattc_if, conn_id, handle, &dsr->descr_elem_result[0], &count, 0))
+		if (ESP_OK != esp_ble_gattc_get_all_descr(connectionAux->gattc_if, conn_id, handle, &dsr->descr_elem_result[0], &count, 0))
 			count = 0;
 		if (0 != count) {
 			dsr->connection = connection;
@@ -593,6 +554,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	modBLEConnectionAux connectionAux = connection->aux;
 	esp_gatt_write_type_t write_type = ESP_GATT_WRITE_TYPE_NO_RSP;
 	esp_gatt_auth_req_t auth_req = ESP_GATT_AUTH_REQ_NONE;
 	char *str;
@@ -600,11 +562,11 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsStringType:
 			str = xsmcToString(xsArg(2));
-			esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, c_strlen(str), (uint8_t*)str, write_type, auth_req);
+			esp_ble_gattc_write_char(connectionAux->gattc_if, conn_id, handle, c_strlen(str), (uint8_t*)str, write_type, auth_req);
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				esp_ble_gattc_write_char(connection->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
+				esp_ble_gattc_write_char(connectionAux->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
 			else
 				goto unknown;
 			break;
@@ -627,8 +589,9 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	modBLEConnectionAux connectionAux = connection->aux;
 	esp_gatt_auth_req_t auth_req = auth;
-	esp_ble_gattc_read_char(connection->gattc_if, conn_id, handle, auth_req);
+	esp_ble_gattc_read_char(connectionAux->gattc_if, conn_id, handle, auth_req);
 }
 
 void xs_gatt_characteristic_enable_notifications(xsMachine *the)
@@ -637,18 +600,19 @@ void xs_gatt_characteristic_enable_notifications(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	modBLEConnectionAux connectionAux = connection->aux;
 	modBLENotification walker, notification = c_calloc(sizeof(modBLENotificationRecord), 1);
 	if (!notification)
 		xsUnknownError("out of memory");
-	if (!connection->notifications)
-		connection->notifications = notification;
+	if (!connectionAux->notifications)
+		connectionAux->notifications = notification;
 	else {
-		for (walker = connection->notifications; walker->next; walker = walker->next)
+		for (walker = connectionAux->notifications; walker->next; walker = walker->next)
 			;
 		walker->next = notification;
 	}
 	notification->char_handle = handle;
-	esp_ble_gattc_register_for_notify(connection->gattc_if, connection->bda, handle);
+	esp_ble_gattc_register_for_notify(connectionAux->gattc_if, connection->address, handle);
 }
 
 void xs_gatt_characteristic_disable_notifications(xsMachine *the)
@@ -657,7 +621,8 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	esp_ble_gattc_unregister_for_notify(connection->gattc_if, connection->bda, handle);
+	modBLEConnectionAux connectionAux = connection->aux;
+	esp_ble_gattc_unregister_for_notify(connectionAux->gattc_if, connection->address, handle);
 }
 
 void xs_gatt_descriptor_read_value(xsMachine *the)
@@ -672,8 +637,9 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 		
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	modBLEConnectionAux connectionAux = connection->aux;
 	esp_gatt_auth_req_t auth_req = auth;
-	esp_ble_gattc_read_char_descr(connection->gattc_if, conn_id, handle, auth_req);
+	esp_ble_gattc_read_char_descr(connectionAux->gattc_if, conn_id, handle, auth_req);
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
@@ -693,14 +659,15 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	modBLEConnectionAux connectionAux = connection->aux;
 	switch (xsmcTypeOf(xsArg(2))) {
 		case xsStringType:
 			str = xsmcToString(xsArg(2));
-			esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, c_strlen(str), (uint8_t*)str, write_type, auth_req);
+			esp_ble_gattc_write_char_descr(connectionAux->gattc_if, conn_id, handle, c_strlen(str), (uint8_t*)str, write_type, auth_req);
 			break;
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				esp_ble_gattc_write_char_descr(connection->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
+				esp_ble_gattc_write_char_descr(connectionAux->gattc_if, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)), write_type, auth_req);
 			else
 				goto unknown;
 			break;
@@ -805,7 +772,7 @@ static void rssiCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_
 {
 	struct ble_read_rssi_cmpl_evt_param *read_rssi_cmpl = (struct ble_read_rssi_cmpl_evt_param *)message;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(&read_rssi_cmpl->remote_addr);
+	modBLEConnection connection = modBLEConnectionFindByAddress(read_rssi_cmpl->remote_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsCall2(connection->objConnection, xsID_callback, xsString("onRSSI"), xsInteger(read_rssi_cmpl->rssi));
@@ -817,7 +784,7 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
 	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(&key_notif->bd_addr);
+	modBLEConnection connection = modBLEConnectionFindByAddress(key_notif->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(3);
@@ -835,7 +802,7 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 {
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(&key_notif->bd_addr);
+	modBLEConnection connection = modBLEConnectionFindByAddress(key_notif->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(2);
@@ -851,7 +818,7 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	esp_ble_sec_req_t *ble_req = (esp_ble_sec_req_t *)message;
 	uint32_t passkey;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(&ble_req->bd_addr);
+	modBLEConnection connection = modBLEConnectionFindByAddress(ble_req->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsResult = xsCall1(connection->objConnection, xsID_callback, xsString("onPasskeyRequested"));
@@ -864,7 +831,7 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 {
 	esp_ble_auth_cmpl_t *auth_cmpl = (esp_ble_auth_cmpl_t *)message;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(&auth_cmpl->bd_addr);
+	modBLEConnection connection = modBLEConnectionFindByAddress(auth_cmpl->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
@@ -974,7 +941,8 @@ static void gattcRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 	modBLEConnection connection = modBLEConnectionFindByAppID(reg->app_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	esp_ble_gattc_open(connection->gattc_if, connection->bda, connection->bdaType, true);
+	modBLEConnectionAux connectionAux = connection->aux;
+	esp_ble_gattc_open(connectionAux->gattc_if, connection->address, connection->addressType, true);
 	xsEndHost(gBLE->the);
 }
 
@@ -982,25 +950,27 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 {
 	struct gattc_open_evt_param *open = (struct gattc_open_evt_param *)message;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(&open->remote_bda);
+	modBLEConnection connection = modBLEConnectionFindByAddress(open->remote_bda);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
 	if (ESP_GATT_OK == open->status) {
 		uint8_t buffer[6];
-		if (-1 != connection->conn_id) {
+		if (-1 != connection->id) {
 			LOG_GATTC_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}
-		connection->conn_id = open->conn_id;
+		connection->id = open->conn_id;
 
-		xsmcVars(3);
+		xsmcVars(2);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), open->conn_id);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 		addressToBuffer(&open->remote_bda, buffer);
-		xsmcSetArrayBuffer(xsVar(2), buffer, 6);
-		xsmcSet(xsVar(0), xsID_address, xsVar(2));
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSetInteger(xsVar(1), 0);
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}
 	else {
@@ -1008,8 +978,10 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		LOG_GATTC_MSG("ESP_GATTC_OPEN_EVT failed, status =");
 		LOG_GATTC_INT(open->status);
 #endif
-		if (ESP_GATT_IF_NONE != connection->gattc_if)
-			esp_ble_gattc_app_unregister(connection->gattc_if);
+		modBLEConnectionAux connectionAux = connection->aux;
+		if (ESP_GATT_IF_NONE != connectionAux->gattc_if)
+			esp_ble_gattc_app_unregister(connectionAux->gattc_if);
+		c_free(connectionAux);
 		modBLEConnectionRemove(connection);
 		if (gAPP_ID > 1)
 			--gAPP_ID;
@@ -1031,10 +1003,12 @@ static void gattcCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		goto bail;
 	}	
 	
-	esp_ble_gattc_app_unregister(connection->gattc_if);
+	modBLEConnectionAux connectionAux = connection->aux;
+	esp_ble_gattc_app_unregister(connectionAux->gattc_if);
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), close->conn_id);
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	c_free(connectionAux);
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);
@@ -1112,8 +1086,9 @@ static void gattcDescWrittenEvent(void *the, void *refcon, uint8_t *message, uin
 		xsUnknownError("connection not found");
 		
 	// Don't report writes to CCCD handles
+	modBLEConnectionAux connectionAux = connection->aux;
 	modBLENotification walker;
-	for (walker = connection->notifications; walker; walker = walker->next) {
+	for (walker = connectionAux->notifications; walker; walker = walker->next) {
 		if (written->handle == walker->char_handle + 1)
 			break;
 	}
@@ -1133,14 +1108,15 @@ static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, 
 {
 	struct gattc_reg_for_notify_evt_param *reg_for_notify = (struct gattc_reg_for_notify_evt_param *)message;
     modBLEConnection connection = (modBLEConnection)refcon;
+	modBLEConnectionAux connectionAux = connection->aux;
 	esp_gattc_descr_elem_t result;
 	uint16_t count = 1;
 	esp_bt_uuid_t uuid;
 	uuid.len = ESP_UUID_LEN_16;
 	uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
-	if (ESP_GATT_OK == esp_ble_gattc_get_descr_by_char_handle(connection->gattc_if, connection->conn_id, reg_for_notify->handle, uuid, &result, &count)) {
+	if (ESP_GATT_OK == esp_ble_gattc_get_descr_by_char_handle(connectionAux->gattc_if, connection->id, reg_for_notify->handle, uuid, &result, &count)) {
 		uint16_t notify_en = 1;
-		esp_ble_gattc_write_char_descr(connection->gattc_if, connection->conn_id, result.handle, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+		esp_ble_gattc_write_char_descr(connectionAux->gattc_if, connection->id, result.handle, sizeof(notify_en), (uint8_t*)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
 	
 		xsBeginHost(gBLE->the);
 		xsmcVars(2);
@@ -1169,7 +1145,8 @@ static void gattcConfigMTUEvent(void *the, void *refcon, uint8_t *message, uint1
 {
 	struct gattc_cfg_mtu_evt_param *cfg_mtu = (struct gattc_cfg_mtu_evt_param *)message;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(cfg_mtu->conn_id);
-	if (!connection || !connection->mtu_exchange_pending) return;
+	if (!connection || !connection->mtu_exchange_pending)
+		return;
 	
 	connection->mtu_exchange_pending = 0;
 	xsBeginHost(gBLE->the);
@@ -1188,11 +1165,11 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     switch (event) {
 		case ESP_GATTC_REG_EVT:
         	if (param->reg.status == ESP_GATT_OK) {
-				modCriticalSectionBegin();
 				modBLEConnection connection = modBLEConnectionFindByAppID(param->reg.app_id);
-				if (connection)
-					connection->gattc_if = gattc_if;
-				modCriticalSectionEnd();
+				if (connection) {
+					modBLEConnectionAux connectionAux = connection->aux;
+					connectionAux->gattc_if = gattc_if;
+				}
 #if LOG_GATTC
 				if (!connection)
 					LOG_GATTC_MSG("ESP_GATTC_REG_EVT failed to find connection");
@@ -1233,9 +1210,7 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 			break;
 		case ESP_GATTC_REG_FOR_NOTIFY_EVT:
 			if (param->reg_for_notify.status == ESP_GATT_OK) {
- 				modCriticalSectionBegin();
 				modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
- 				modCriticalSectionEnd();
  				if (connection)
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->reg_for_notify, sizeof(struct gattc_reg_for_notify_evt_param), gattcRegisterNotifyEvent, connection);
 #if LOG_GATTC
@@ -1252,9 +1227,7 @@ void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 			break;
 		case ESP_GATTC_UNREG_FOR_NOTIFY_EVT:
 			if (param->unreg_for_notify.status == ESP_GATT_OK) {
- 				modCriticalSectionBegin();
 				modBLEConnection connection = modBLEConnectionFindByInterface(gattc_if);
- 				modCriticalSectionEnd();
  				if (connection)
 					modMessagePostToMachine(gBLE->the, (uint8_t*)&param->unreg_for_notify, sizeof(struct gattc_unreg_for_notify_evt_param), gattcUnregisterNotifyEvent, connection);
 #if LOG_GATTC

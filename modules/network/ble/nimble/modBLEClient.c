@@ -43,20 +43,6 @@
 	#define LOG_GAP_INT(i)
 #endif
 
-typedef struct modBLEConnectionRecord modBLEConnectionRecord;
-typedef modBLEConnectionRecord *modBLEConnection;
-
-struct modBLEConnectionRecord {
-	struct modBLEConnectionRecord *next;
-
-	xsMachine	*the;
-	xsSlot		objConnection;
-	xsSlot		objClient;
-
-	ble_addr_t	bda;
-	int16_t		conn_id;
-};
-
 typedef struct modBLEDiscoveredRecord modBLEDiscoveredRecord;
 typedef modBLEDiscoveredRecord *modBLEDiscovered;
 
@@ -77,7 +63,6 @@ typedef struct {
 	uint8_t mitm;
 	uint8_t iocap;
 
-	modBLEConnection connections;
 	uint8_t terminating;
 	
 	modBLEDiscovered discovered;
@@ -124,11 +109,6 @@ typedef struct {
 	uint16_t mtu;
 } mtuExchangedRecord;
 
-static void modBLEConnectionAdd(modBLEConnection connection);
-static void modBLEConnectionRemove(modBLEConnection connection);
-static modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id);
-static modBLEConnection modBLEConnectionFindByAddress(ble_addr_t *bda);
-
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
 static void bufferToUUID(ble_uuid_any_t *uuid, uint8_t *buffer, uint16_t length);
 
@@ -143,6 +123,7 @@ static int nimble_read_event(uint16_t conn_handle, const struct ble_gatt_error *
 static int nimble_subscribe_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
 static int nimble_mtu_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t mtu, void *arg);
 
+static void onConnected(struct ble_gap_conn_desc *desc);
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void logGAPEvent(struct ble_gap_event *event);
@@ -184,12 +165,14 @@ void xs_ble_client_destructor(void *data)
 	if (!ble) return;
 	
 	ble->terminating = true;
-	modBLEConnection connections = ble->connections;
-	while (connections != NULL) {
-		modBLEConnection connection = connections;
-		connections = connections->next;
-		ble_gap_terminate(connection->conn_id, BLE_ERR_REM_USER_CONN_TERM);
-		c_free(connection);
+	modBLEConnection connection = modBLEConnectionGetFirst();
+	while (connection != NULL) {
+		modBLEConnection next = modBLEConnectionGetNext(connection);
+		if (kBLEConnectionTypeClient == connection->type) {
+			ble_gap_terminate(connection->id, BLE_ERR_REM_USER_CONN_TERM);
+			modBLEConnectionRemove(connection);
+		}
+		connection = next;
 	}
 	modBLEDiscovered discovered = ble->discovered;
 	while (discovered != NULL) {
@@ -273,22 +256,24 @@ void xs_ble_client_connect(xsMachine *the)
 	addr.type = addressType;
 	c_memmove(addr.val, address, 6);
 		
-	// Add a new connection record to be filled as the connection completes
-	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
-	if (!connection)
-		xsUnknownError("out of memory");
-	connection->conn_id = -1;
-	c_memmove(&connection->bda, &addr, sizeof(addr));
-	modBLEConnectionAdd(connection);
-	
 	// Check if there has already been a connection established with this peer.
 	// This can happen if a BLEServer instance connects prior to the BLEClient instance.
 	// If so, skip the connection request below.
 	struct ble_gap_conn_desc desc;
 	if (0 == ble_gap_conn_find_by_addr(&addr, &desc)) {
-		modMessagePostToMachine(gBLE->the, (uint8_t*)&desc, sizeof(desc), connectEvent, NULL);
+		onConnected(&desc);
 		return;
 	}
+
+	// Add a new connection record to be filled as the connection completes
+	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+	if (!connection)
+		xsUnknownError("out of memory");
+	connection->id = -1;
+	connection->type = kBLEConnectionTypeClient;
+	connection->addressType = addr.type;
+	c_memmove(connection->address, addr.val, 6);
+	modBLEConnectionAdd(connection);
 
 	ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
 }
@@ -334,17 +319,14 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	modBLEConnection connection;
-	ble_addr_t addr;
 	
-	for (connection = gBLE->connections; NULL != connection; connection = connection->next)
-		if (0 == c_memcmp(address, &connection->bda.val, 6))
-			break;
+	connection = modBLEConnectionFindByAddress(address);
 	if (!connection)
 		xsUnknownError("connection not found");
 	struct ble_sm_io pkey = {0};
 	pkey.action = BLE_SM_IOACT_NUMCMP;
 	pkey.numcmp_accept = xsmcToBoolean(xsArg(1));
-	ble_sm_inject_io(connection->conn_id, &pkey);
+	ble_sm_inject_io(connection->id, &pkey);
 }
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -364,51 +346,6 @@ void nimble_on_sync(void)
 {
 	ble_hs_util_ensure_addr(0);
 	modMessagePostToMachine(gBLE->the, NULL, 0, readyEvent, NULL);
-}
-
-modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (conn_id == walker->conn_id)
-			break;
-	return walker;
-}
-
-modBLEConnection modBLEConnectionFindByAddress(ble_addr_t *bda)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (0 == ble_addr_cmp(&walker->bda, bda))
-			break;
-	return walker;
-}
-
-void modBLEConnectionAdd(modBLEConnection connection)
-{
-	if (!gBLE->connections)
-		gBLE->connections = connection;
-	else {
-		modBLEConnection walker;
-		for (walker = gBLE->connections; walker->next; walker = walker->next)
-			;
-		walker->next = connection;
-	}
-}
-
-void modBLEConnectionRemove(modBLEConnection connection)
-{
-	modBLEConnection walker, prev = NULL;
-	for (walker = gBLE->connections; NULL != walker; prev = walker, walker = walker->next) {
-		if (connection == walker) {
-			if (NULL == prev)
-				gBLE->connections = walker->next;
-			else
-				prev->next = walker->next;
-			c_free(connection);
-			break;
-		}
-	}
 }
 
 void xs_gap_connection_initialize(xsMachine *the)
@@ -431,7 +368,7 @@ void xs_gap_connection_disconnect(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	ble_gap_terminate(connection->conn_id, BLE_ERR_REM_USER_CONN_TERM);
+	ble_gap_terminate(conn_id, BLE_ERR_REM_USER_CONN_TERM);
 }
 
 void xs_gap_connection_read_rssi(xsMachine *the)
@@ -684,9 +621,25 @@ bail:
 	return NULL;
 }
 
+static void onConnected(struct ble_gap_conn_desc *desc)
+{
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), desc->conn_handle);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	while (gBLE->discovered) {
+		modCriticalSectionDeclare;
 		modCriticalSectionBegin();
 		modBLEDiscovered discovered = gBLE->discovered;
 		gBLE->discovered = discovered->next;
@@ -714,25 +667,26 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(&desc->peer_id_addr);
-	if (!connection)
-		xsUnknownError("connection not found");
+	modBLEConnection connection = modBLEConnectionFindByAddressAndType(desc->peer_id_addr.val, desc->peer_id_addr.type);
+	if (!connection) {
+		// @@ workaround for https://github.com/espressif/esp-idf/issues/5693
+		connection = modBLEConnectionGetFirst();
+		while (NULL != connection) {
+			if (-1 == connection->id)
+				break;
+			connection = modBLEConnectionGetNext(connection);
+		}
+		if (!connection)
+			xsUnknownError("connection not found");
+	}
 		
 	if (-1 != desc->conn_handle) {
-		if (-1 != connection->conn_id) {
+		if (-1 != connection->id) {
 			LOG_GAP_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}
-		connection->conn_id = desc->conn_handle;
-		xsmcVars(4);
-		xsVar(0) = xsmcNewObject();
-		xsmcSetInteger(xsVar(1), desc->conn_handle);
-		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(2), desc->peer_id_addr.val, 6);
-		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
-		xsmcSet(xsVar(0), xsID_address, xsVar(2));
-		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+		connection->id = desc->conn_handle;
+		onConnected(desc);
 	}
 	else {
 		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
@@ -965,7 +919,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 
     if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
     	pkey.passkey = (c_rand() % 999999) + 1;
-		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), connection->address, 6);
 		xsmcSetInteger(xsVar(2), pkey.passkey);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -973,7 +927,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
 	}
     else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
-		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), connection->address, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		if (gBLE->iocap == KeyboardOnly)
 			xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
@@ -984,7 +938,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		}
 	}
 	else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
-		xsmcSetArrayBuffer(xsVar(1), connection->bda.val, 6);
+		xsmcSetArrayBuffer(xsVar(1), connection->address, 6);
 		xsmcSetInteger(xsVar(2), event->passkey.params.numcmp);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -1162,6 +1116,7 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 					disc->disc = event->disc;
 					c_memmove(disc->data, event->disc.data, event->disc.length_data);
 					disc->disc.data = disc->data;
+					modCriticalSectionDeclare;
 					modCriticalSectionBegin();
 					if (gBLE->discovered) {
 						modBLEDiscovered walker = gBLE->discovered;
