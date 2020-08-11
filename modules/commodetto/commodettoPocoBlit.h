@@ -122,7 +122,7 @@ struct PocoRecord {
 
 	char				*displayList;
 	const char			*displayListEnd;
-	PocoCommand			next;
+	PocoCommand		next;
 
 	// clip rectangle of active drawing operation (rotation removed - physical)
 	PocoCoordinate		x;
@@ -166,6 +166,7 @@ typedef struct PocoBitmapRecord {
 	PocoPixel			*pixels;
 #if COMMODETTO_BITMAP_ID
 	uint32_t			id;
+	int32_t			byteLength;
 #endif
 } PocoBitmapRecord, *PocoBitmap;
 
