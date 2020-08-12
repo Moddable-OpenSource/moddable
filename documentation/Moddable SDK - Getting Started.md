@@ -95,7 +95,7 @@ More detailed getting started guides are available for the following devices:
 <a id="host-mac"></a>
 ### Host environment setup
 
-> The Moddable SDK requires macOS Sierra version 10.12 or newer and Xcode version 9 or newer.
+> The Moddable SDK requires macOS Sierra version 10.12 or newer and a full installation of Xcode version 9 or newer.
 
 1. Download and install [Xcode](https://developer.apple.com/xcode/). Launch Xcode to install additional command line components when prompted.
 
@@ -138,6 +138,12 @@ More detailed getting started guides are available for the following devices:
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p mac
 	```
+
+**Troubleshooting:**
+ - If the Moddable SDK build fails with an error like "`xcode-select: error: tool 'ibtool' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance.`" there are three potential issues and fixes:
+     1. You may have a command line tools-only Xcode installation. The Moddable SDK build requires a full installation of Xcode. 
+     2. You may need to launch the Xcode application to accept Xcode's license agreement and install the command line components. 
+     3. If you have a full Xcode installation but your build fails with this error, you need to use the `xcode-select` utility to select your full Xcode installation. This can be done with this command, with the path adjusted as necessary for your environment: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
 
 <a id="esp8266-mac"></a>
 ### ESP8266 setup
