@@ -523,6 +523,17 @@ again:
 		if (alias)
 			instance = alias;
 	}
+	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+		txID color = id & 0x7FFF;
+		if (color < the->keyOffset) {
+			color = the->colors[color];
+			if (color) {
+				result = instance + color;
+				if (result->ID == id)
+					return result;
+			}
+		}
+	}
 	result = instance->next;
 	while (result && (result->flag & XS_INTERNAL_FLAG))
 		result = result->next;
@@ -685,6 +696,17 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 			if (instance->flag & XS_DONT_PATCH_FLAG)
 				return C_NULL;
 			instance = fxAliasInstance(the, instance);
+		}
+	}
+	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+		txID color = id & 0x7FFF;
+		if (color < the->keyOffset) {
+			color = the->colors[color];
+			if (color) {
+				property = instance + color;
+				if (property->ID == id)
+					return property;
+			}
 		}
 	}
 	address = &(instance->next);

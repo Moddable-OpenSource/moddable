@@ -573,7 +573,7 @@ txInteger fxPrepareHeap(txMachine* the)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txID aliasCount = 0;
-	txInteger index = 1;
+	txInteger index = linker->projectionIndex;
 	txSlot *heap, *slot, *limit, *item;
 	txLinkerProjection* projection;
 
@@ -584,18 +584,16 @@ txInteger fxPrepareHeap(txMachine* the)
 	}
 	
 	heap = the->firstHeap;
+	projection = linker->firstProjection;
 	while (heap) {
 		slot = heap + 1;
 		limit = heap->value.reference;
-		projection = fxNewLinkerChunkClear(linker, sizeof(txLinkerProjection) + (limit - slot) * sizeof(txInteger));
-		projection->nextProjection = linker->firstProjection;
-		projection->heap = heap;
-		projection->limit = limit;
-		linker->firstProjection = projection;
 		while (slot < limit) {
 			if (!(slot->flag & XS_MARK_FLAG)) {
-				projection->indexes[slot - heap] = index;
-				index++;
+				if (projection->indexes[slot - heap] == 0) {
+					projection->indexes[slot - heap] = index;
+					index++;
+				}
 				if ((slot->kind == XS_ARRAY_KIND) && ((item = slot->value.array.address))) {
 					index++; // fake chunk
 					index += (txInteger)fxGetIndexSize(the, slot);;
@@ -697,6 +695,7 @@ txInteger fxPrepareHeap(txMachine* the)
 			slot++;
 		}
 		heap = heap->next;
+		projection = projection->nextProjection;
 	}
 	index++;
 	
@@ -805,6 +804,25 @@ void fxPrepareHome(txMachine* the)
 	xsCollectGarbage();
 }
 
+void fxPrepareProjection(txMachine* the)
+{
+	txLinker* linker = (txLinker*)(the->context);
+	txLinkerProjection** projectionAddress = &linker->firstProjection;
+	txLinkerProjection* projection;
+	txSlot* heap = the->firstHeap;
+	while (heap) {
+		txSlot* slot = heap + 1;
+		txSlot* limit = heap->value.reference;
+		projection = fxNewLinkerChunkClear(linker, sizeof(txLinkerProjection) + (limit - slot) * sizeof(txInteger));
+		projection->heap = heap;
+		projection->limit = limit;
+		*projectionAddress = projection;
+		projectionAddress = &projection->nextProjection;
+		heap = heap->next;
+	}
+	linker->projectionIndex = 1;
+}
+
 void fxPrintAddress(txMachine* the, FILE* file, txSlot* slot) 
 {
 	if (slot) {
@@ -848,14 +866,23 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 	fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = XS_NO_FLAG, .kind = XS_REFERENCE_KIND}, ");
 	fprintf(file, ".value = { .reference = (txSlot*)&gxHeap[%d] } },\n", (int)count);
 	index++;
+	while (index < linker->projectionIndex) {
+		fprintf(file, "/* %.4d */", index);
+		slot = linker->layout[index];
+		if (slot)
+			fxPrintSlot(the, file, slot, XS_MARK_FLAG);
+		else
+			fprintf(file, "\t{ NULL, {.ID = XS_NO_ID, .flag = XS_NO_FLAG, .kind = XS_UNINITIALIZED_KIND }, .value = { .number = 0 } },\n");
+		index++;
+	}
 	while (projection) {
 		slot = projection->heap + 1;
 		limit = projection->limit;
 		while (slot < limit) {
 			if (!(slot->flag & XS_MARK_FLAG)) {
-				fprintf(file, "/* %.4d */", index);
-				index++;
 				if ((slot->kind == XS_ARRAY_KIND) && ((item = slot->value.array.address))) {
+					fprintf(file, "/* %.4d */", index);
+					index++;
 					txInteger size = (txInteger)fxGetIndexSize(the, slot);
 					fprintf(file, "\t{ ");
 					fxPrintAddress(the, file, slot->next);
@@ -874,7 +901,9 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 						size--;
 					}
 				}
-				else {
+				else if (projection->indexes[slot - projection->heap] >= linker->projectionIndex) {
+					fprintf(file, "/* %.4d */", index);
+					index++;
 					fxPrintSlot(the, file, slot, XS_MARK_FLAG);
 				}
 			}

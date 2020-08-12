@@ -373,6 +373,7 @@ struct sxMachine {
 	txSize symbolModulo;
 	txSlot** symbolTable;
 
+	txID* colors;
 	txSlot** keyArray;
 	txID keyCount;
 	txID keyIndex;
@@ -479,6 +480,7 @@ struct sxPreparation {
 	txSize stackCount;
 	txSlot* stack;
 
+	txID* colors;
 	txSize keyCount;
 	txSlot** keys;
 	txSize nameModulo;

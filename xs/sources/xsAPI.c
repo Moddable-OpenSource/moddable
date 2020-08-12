@@ -1545,6 +1545,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
 			c_memcpy(the->symbolTable, theMachine->symbolTable, the->symbolModulo * sizeof(txSlot *));
 //			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));		//@@ this is not necessary
+			the->colors = theMachine->colors;
 			the->keyCount = theMachine->keyIndex + (txID)theCreation->keyCount;
 			the->keyIndex = theMachine->keyIndex;
 			the->keyOffset = the->keyIndex;
@@ -1653,6 +1654,7 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 	root->preparation = preparation;
 	root->archive = archive;
 	root->keyArray = preparation->keys;
+	root->colors = preparation->colors;
 	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
 	root->keyIndex = (txID)preparation->keyCount;
 	root->nameModulo = preparation->nameModulo;
