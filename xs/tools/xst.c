@@ -1254,15 +1254,19 @@ void fx_setTimerCallback(txJob* job)
 	txMachine* the = job->the;
 	fxBeginHost(the);
 	{
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPush(job->function);
-		mxCall();
-		mxPush(job->argument);
-		/* ARGC */
-		mxRunCount(1);
-		mxPop();
+		mxTry(the) {
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPush(job->function);
+			mxCall();
+			mxPush(job->argument);
+			/* ARGC */
+			mxRunCount(1);
+			mxPop();
+		}
+		mxCatch(the) {
+		}
 	}
 	fxEndHost(the);
 }
