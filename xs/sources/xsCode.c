@@ -1943,10 +1943,18 @@ void fxArrayNodeCode(void* it, void* param)
 						fxNodeDispatchCode(item, param);
 						fxCoderAddByte(param, -2, XS_CODE_SET_PROPERTY_AT);
 						fxCoderAddByte(param, -1, XS_CODE_POP);
+						fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, counter);
+						fxCoderAddByte(param, 0, XS_CODE_INCREMENT);
+						fxCoderAddIndex(param, -1, XS_CODE_PULL_LOCAL_1, counter);
 					}
-					fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, counter);
-					fxCoderAddByte(param, 0, XS_CODE_INCREMENT);
-					fxCoderAddIndex(param, -1, XS_CODE_PULL_LOCAL_1, counter);
+					else {
+						fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, array);
+						fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, counter);
+						fxCoderAddByte(param, 0, XS_CODE_INCREMENT);
+						fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, counter);
+						fxCoderAddSymbol(param, -1, XS_CODE_SET_PROPERTY, coder->parser->lengthSymbol);
+						fxCoderAddByte(param, -1, XS_CODE_POP);
+					}
 				}
 				item = item->next;
 			}
