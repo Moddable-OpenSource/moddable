@@ -1,4 +1,4 @@
-name: build and release moddable SDK for linux CLI (x-cli-lin)
+name: build and smoke test moddable SDK for linux CLI (x-cli-lin)
 
 on: [push]
 
@@ -30,16 +30,3 @@ jobs:
           test -x $MODDABLE/build/bin/lin/release/helloworld
           mcconfig -d -m -p x-cli-lin
           test -x $MODDABLE/build/bin/lin/debug/helloworld
-      - name: archive linux SDK
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          cd ..
-          tar czf moddable-linux-sdk.tgz moddable/
-          mv moddable-linux-sdk.tgz moddable/
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: moddable-linux-sdk.tgz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
