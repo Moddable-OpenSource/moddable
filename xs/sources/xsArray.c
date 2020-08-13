@@ -2326,9 +2326,16 @@ void fx_Array_prototype_toString(txMachine* the)
 	mxPushSlot(mxThis);
 	mxDub();
 	fxGetID(the, mxID(_join));
-	mxCall();
-	mxRunCount(0);
-	mxPullSlot(mxResult);
+	if (fxIsCallable(the, the->stack)) {
+		mxCall();
+		mxRunCount(0);
+		mxPullSlot(mxResult);
+	}
+	else {
+		mxPop();
+		mxPop();
+		fx_Object_prototype_toString(the);
+	}
 }
 
 void fx_Array_prototype_unshift(txMachine* the)
