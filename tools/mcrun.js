@@ -19,7 +19,7 @@
  */
 
 import { FILE } from "tool";
-import { MakeFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
+import { MakeFile, TSConfigFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
 
 var formatStrings = {
 	gray16: "Gray16",
@@ -89,6 +89,7 @@ class ToDoFile extends FILE {
 	generate(tool) {
 		let lines = [];
 		this.generateModulesRules(tool, lines);
+		this.generateDataRules(tool, lines);
 		this.generateResourcesRules(tool, lines);
 		this.generateArchiveRule(tool, lines);
 		let string = JSON.stringify(lines, null, "\t");
@@ -100,15 +101,18 @@ class ToDoFile extends FILE {
 		line.push("xsa");
 		line.push("-b");
 		line.push(tool.modulesPath);
+		line.push("-n");
+		line.push(tool.environment.DOT_SIGNATURE);
 		line.push("-o");
 		line.push(tool.binPath);
-		line.push("-r");
-		line.push(tool.environment.NAME);
 		for (var result of tool.jsFiles) {
 			line.push(tool.modulesPath + tool.slash + result.target);
 		}
 		for (var result of tool.resourcesFiles) {
 			line.push(tool.resourcesPath + tool.slash + result.target);
+		}
+		for (var result of tool.dataFiles) {
+			line.push(tool.dataPath + tool.slash + result.target);
 		}
 		for (var result of tool.bmpColorFiles) {
 			line.push(tool.resourcesPath + tool.slash + result.target);
@@ -138,6 +142,15 @@ class ToDoFile extends FILE {
 			line.push(tool.resourcesPath + tool.slash + "locals.mhi");
 		}
 		lines.push(line);
+	}
+	generateDataRules(tool, lines) {
+		for (var result of tool.dataFiles) {
+			var source = result.source;
+			var target = tool.dataPath + tool.slash + result.target;
+			let line = ["cp"];
+			line.push(source, target);
+			lines.push(line);
+		}
 	}
 	generateModulesRules(tool, lines) {
 		for (var result of tool.jsFiles) {
@@ -188,7 +201,10 @@ class ToDoFile extends FILE {
 				for (var path of sources)
 					line.push(path);
 			}
-			line.push("-a", "-o", tool.resourcesPath, "-r", tool.rotation.toString());
+			line.push("-a");
+			if (result.monochrome)
+				line.push("-m", "-4");
+			line.push("-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			line.push("-n", parts.name.slice(0, -6));
 			lines.push(line);
 		}
@@ -207,11 +223,16 @@ class ToDoFile extends FILE {
 				for (var path of sources)
 					line.push(path);
 			}
-			line.push("-f", tool.format, "-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			if (!alphaTarget)
 				line.push("-c");
-			if (clutSource)
-				line.push("-clut", clutSource);
+			if (result.monochrome)
+				line.push("-m", "-4");
+			else {
+				line.push("-f", tool.format);
+				if (clutSource)
+					line.push("-clut", clutSource);
+			}
+			line.push("-o", tool.resourcesPath, "-r", tool.rotation.toString());
 			line.push("-n", parts.name.slice(0, -6));
 			lines.push(line);
 		}
@@ -253,7 +274,7 @@ class ToDoFile extends FILE {
 			lines.push(line);
 			lines.push(["rle4encode", bmpSource, "-o", tool.resourcesPath]);
 		}
-
+		
 		for (var result of tool.imageFiles) {
 			var source = result.source;
 			var target = result.target;
@@ -336,6 +357,30 @@ export default class extends Tool {
 		this.createDirectory(path);
 		return path;
 	}
+	filterRun(archive) {
+		var jsFiles = [];
+		var tsFiles = [];
+		for (var name in archive) {
+			var target = archive[name] + ".xsb";
+			var result = this.jsFiles.find(result => result.target == target);
+			if (result) {
+				result.target = name + ".xsb";
+				jsFiles.push(result);
+				continue;
+			}
+			var result = this.tsFiles.find(result => result.target == target);
+			if (result) {
+				result.target = name + ".xsb";
+				tsFiles.push(result);
+				continue;
+			}
+			tool.reportError(null, 0, "run module not found: " + archive[name]);
+		}
+		if (jsFiles.length || tsFiles.length) {
+			this.jsFiles = jsFiles;
+			this.tsFiles = tsFiles;
+		}
+	}
 	run() {
 		super.run();
 		if ("URL" in this.config)
@@ -347,6 +392,7 @@ export default class extends Tool {
 			this.mergeProperties(this.config, commandLine);
 		}
 
+		this.filterRun(this.manifest.run);
 		this.creation = null;
 		this.defines = null;
 		this.preloads = null;
@@ -399,6 +445,10 @@ export default class extends Tool {
 		}
 		
 		if (this.fragmentPath) {
+			if (this.tsFiles.length) {
+				file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig.json");
+				file.generate(this);
+			}
 			var path = this.tmpPath + this.slash + "makefile";
 			file = new MakeFile(path);
 			file.generate(this);
@@ -410,6 +460,9 @@ export default class extends Tool {
 			}
 		}
 		else {
+			if (this.tsFiles.length) {
+				throw new Error("TypeScript unsupported!");
+			}
 			var path = this.tmpPath + this.slash + "make.json";
 			file = new ToDoFile(path);
 			file.generate(this);

@@ -6,7 +6,7 @@
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <http://creativecommons.org/licenses/by/4.0>.
+ *       <https://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -20,7 +20,7 @@ import WipeTransition from "piu/WipeTransition";
 const whiteSkin = new Skin({ fill:"white" });
 const labelSkin = new Skin({ fill:"black", stroke:"white", top:1 });
 const labelStyle = new Style({ font:"semibold 16px Open Sans", color:"black" });
-const teamSkin = new Skin({ texture:new Texture("team.png"), x:0, y:0, width:120, height:120, variants:120 }),
+const teamSkin = new Skin({ texture:new Texture("team.png"), x:0, y:0, width:120, height:120, variants:120 });
 const teamStrings = [
 	"moddable", 
 	"Andy Carle", 

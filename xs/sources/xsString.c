@@ -166,10 +166,10 @@ txSlot* fxNewStringInstance(txMachine* the)
 
 void fxStringAccessorGetter(txMachine* the)
 {
-	txSlot* instance = fxToInstance(the, mxThis);
 	txSlot* string;
 	txID id = the->scratch.value.at.id;
 	txIndex index = the->scratch.value.at.index;
+	txSlot* instance = fxToInstance(the, mxThis);
 	while (instance) {
 		if (instance->flag & XS_EXOTIC_FLAG) {
 			string = instance->next;

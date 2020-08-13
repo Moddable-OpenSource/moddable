@@ -353,6 +353,11 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
+		for (var result of tool.tsFiles) {
+			this.write("\\\n\t$(MODULES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target);
+		}
 		this.line("");
 		this.line("");
 	}
@@ -374,6 +379,38 @@ export class MakeFile extends FILE {
 			this.line("\t$(XSC) ", source, options, " -e -o $(@D) -r ", targetParts.name);
 		}
 		this.line("");
+		
+		if (tool.tsFiles.length) {
+			let directories = tool.tsFiles.map(item => item.source);
+			let directory;
+			do {
+				directories = directories.map(item => tool.splitPath(item).directory);
+				directory = directories[0];
+			} while(directories.some(item => item != directory));
+			const common = directory.length;
+			var temporaries = [];
+			for (var result of tool.tsFiles) {
+				var source = result.source;
+				var target = result.target;
+				var targetParts = tool.splitPath(target);
+				var temporary = source.slice(common, -3) + ".js"
+				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", temporary);
+				this.echo(tool, "xsc ", target);
+				var options = "";
+				if (result.commonjs)
+					options += " -p";
+				if (tool.debug)
+					options += " -d";
+				if (tool.config)
+					options += " -c";
+				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				temporaries.push("%" + temporary);
+			}
+			this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
+			this.echo(tool, "tsc ", "tsconfig.json");
+			this.line("\ttsc -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
+			this.line("");
+		}
 	}
 	generateObjectsDefinitions(tool) {
 	}
@@ -485,7 +522,14 @@ export class MakeFile extends FILE {
 				}
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
 				this.echo(tool, "png2bmp ", target);
-				this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, name);
+				this.write("\t$(PNG2BMP) ");
+				this.write(source);
+				this.write(" -a");
+				if (result.monochrome)
+					this.write(" -m -4");
+				this.write(" -o $(@D) -r ");
+				this.write(tool.rotation);
+				this.line(name);
 			}
 		}
 
@@ -534,16 +578,20 @@ export class MakeFile extends FILE {
 				this.line("\"");
 			this.write("\t$(PNG2BMP) ");
 			this.write(source);
-			this.write(" -f ");
-			this.write(tool.format);
-			this.write(" -o $(@D) -r ");
-			this.write(tool.rotation);
 			if (!alphaTarget)
 				this.write(" -c");
-			if (clutSource) {
-				this.write(" -clut ");
-				this.write(clutSource);
+			if (result.monochrome)
+				this.write(" -m -4");
+			else {
+				this.write(" -f ");
+				this.write(tool.format);
+				if (clutSource) {
+					this.write(" -clut ");
+					this.write(clutSource);
+				}
 			}
+			this.write(" -o $(@D) -r ");
+			this.write(tool.rotation);
 			this.line(name);
 		}
 
@@ -623,7 +671,7 @@ export class MakeFile extends FILE {
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", definesPath);
+			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "wav2maud ", target);
 			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
 		}
@@ -658,6 +706,40 @@ export class MakeFile extends FILE {
 		this.generateConfigurationRules(tool);
 		this.generateBLERules(tool);
 		this.generateResourcesRules(tool);
+	}
+}
+
+export class TSConfigFile extends FILE {
+	constructor(path) {
+		super(path);
+	}
+	generate(tool) {
+		let json = {
+			compilerOptions: {
+				baseUrl: "./",
+				module: "es2020",
+				outDir: tool.modulesPath,
+				paths: {
+				},
+				sourceMap: true,
+				target: "ES2020",
+				types: [
+					tool.xsPath + "/includes/xs"
+				]
+			},
+			files: [
+			]
+		}
+		var paths = json.compilerOptions.paths;
+		for (var result of tool.dtsFiles) {
+			paths[result.target.slice(0, -2)] = [ result.source.slice(0, -5) ];
+		}
+		for (var result of tool.tsFiles) {
+			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
+			json.files.push(result.source);
+		}
+		this.write(JSON.stringify(json, null, "\t"));
+		this.close();
 	}
 }
 
@@ -880,6 +962,14 @@ class ModulesRule extends Rule {
 			this.appendFolder(tool.cFolders, parts.directory);
 			this.appendFolder(tool.hFiles, source);
 		}
+		else if (parts.extension == ".ts") {
+			if (parts.name.endsWith(".d")) {
+				this.appendFile(tool.dtsFiles, target, source, include);
+			}
+			else {
+				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
+			}
+		}
 	}
 	appendTarget(target) {
 		this.appendFolder(this.tool.jsFolders, target);
@@ -902,8 +992,16 @@ class ResourcesRule extends Rule {
 		if (suffix == "-color") {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
 		}
+		else if (suffix == "-color-monochrome") {
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
+			colorFile.monochrome = true;
+		}
 		else if (suffix == "-alpha") {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+		}
+		else if (suffix == "-alpha-monochrome") {
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
+			alphaFile.monochrome = true;
 		}
 		else if (suffix == "-mask") {
 			alphaFile = this.appendFile(tool.bmpMaskFiles, name + "-alpha.bm4", path, include);
@@ -1065,6 +1163,7 @@ export class Tool extends TOOL {
 		this.outputPath = null;
 		this.platform = null;
 		this.rotation = undefined;
+		this.signature = null;
 		this.verbose = false;
 		this.windows = this.currentPlatform == "win";
 		this.slash = this.windows ? "\\" : "/";
@@ -1145,6 +1244,17 @@ export class Tool extends TOOL {
 					throw new Error("-r: " + name + ": invalid rotation!");
 				this.rotation = name;
 				break;
+			case "-s":
+				argi++;
+				if (argi >= argc)
+					throw new Error("-s: no signature!");
+				if (null !== this.signature)
+					throw new Error("-s '" + name + "': too many signatures!");
+				name = argv[argi];
+				if (name.split('.').length != 3)
+					throw new Error("-s: " + name + ": invalid signature!");
+				this.signature = name;
+				break;
 			case "-v":
 				this.verbose = true;
 				break;
@@ -1208,7 +1318,7 @@ export class Tool extends TOOL {
 			this.mainPath = this.currentDirectory;
 		}
 		var parts = this.splitPath(this.mainPath);
-		this.environment.NAME = parts.name;
+		this.environment.NAME = parts.name + parts.extension;
 		if (!this.outputPath)
 			this.outputPath = this.buildPath;
 		if (!this.platform)
@@ -1298,11 +1408,11 @@ export class Tool extends TOOL {
 		this.mergeProperties(all.config, platform.config);
 		this.mergeProperties(all.creation, platform.creation);
 		this.mergeProperties(all.defines, platform.defines);
-		this.mergeProperties(all.ble, platform.ble);
 
 		this.concatProperties(all.data, platform.data, true);
 		this.concatProperties(all.modules, platform.modules, true);
 		this.concatProperties(all.resources, platform.resources, true);
+		this.concatProperties(all.ble, platform.ble, true);
 		this.concatProperties(all.recipes, platform.recipes);
 
 		all.commonjs = this.concatProperty(all.commonjs, platform.commonjs);
@@ -1310,6 +1420,7 @@ export class Tool extends TOOL {
 		all.strip = platform.strip ? platform.strip : all.strip;
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
+		this.mergeProperties(all.run, platform.run);
 	}
 	mergeProperties(targets, sources) {
 		if (sources) {
@@ -1419,6 +1530,7 @@ export class Tool extends TOOL {
 			commonjs:[],
 			errors:[],
 			warnings:[],
+			run:{},
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 
@@ -1449,6 +1561,11 @@ export class Tool extends TOOL {
 		this.hFiles.already = {};
 		this.javaFiles = [];
 		this.javaFiles.already = {};
+		
+		this.tsFiles = [];
+		this.tsFiles.already = {};
+		this.dtsFiles = [];
+		this.dtsFiles.already = {};
 
 		this.resourcesFiles = [];
 		this.resourcesFiles.already = {};
@@ -1483,6 +1600,16 @@ export class Tool extends TOOL {
 		rule.process(this.manifest.resources);
 		var rule = new BLERule(this);
 		rule.process(this.manifest.ble);
+		
+		if (this.signature == null) {
+			if (!this.environment.NAMESPACE)
+				this.environment.NAMESPACE = "moddable.tech"
+			this.signature = this.environment.NAME + "." + this.environment.NAMESPACE;
+		}
+		var signature = this.signature.split(".").reverse();
+		this.environment.DASH_SIGNATURE = signature.join("-");
+		this.environment.DOT_SIGNATURE = signature.join(".");
+		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
 	}
 }
 

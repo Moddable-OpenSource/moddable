@@ -815,7 +815,7 @@ static const txNodeDispatch gxCoalesceExpressionNodeDispatch ICACHE_FLASH_ATTR =
 };
 static const txNodeDispatch gxCompoundExpressionNodeDispatch ICACHE_FLASH_ATTR = {
 	fxAssignNodeDistribute,
-	fxCompoundExpressionNodeBind,
+	fxNodeBind,
 	fxNodeHoist,
 	fxCompoundExpressionNodeCode,
 	fxNodeCodeAssign,
@@ -1450,6 +1450,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_CODE_ADD, XS_TOKEN_ADD, "Add", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
 	{ XS_CODE_ADD, XS_TOKEN_ADD_ASSIGN, "AddAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_AND, "And", sizeof(txBinaryExpressionNode), &gxAndExpressionNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_AND_ASSIGN, "AndAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_ARG, "Arg", sizeof(txDeclareNode), &gxDeclareNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_ARGUMENTS, "Arguments", sizeof(txNode), &gxArgumentsNodeDispatch },
 	{ XS_CODE_ARGUMENTS_SLOPPY, XS_TOKEN_ARGUMENTS_SLOPPY, "Arguments", sizeof(txNode), &gxValueNodeDispatch },
@@ -1477,6 +1478,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_CHAIN, "Chain", sizeof(txUnaryExpressionNode), &gxChainNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_CLASS, "Class", sizeof(txClassNode), &gxClassNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_COALESCE, "Coalesce", sizeof(txBinaryExpressionNode), &gxCoalesceExpressionNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_COALESCE_ASSIGN, "CoalesceAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_COLON, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_COMMA, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_CONST, "Const", sizeof(txDeclareNode), &gxDeclareNodeDispatch },
@@ -1555,6 +1557,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_OBJECT_BINDING, "ObjectBinding", sizeof(txObjectBindingNode), &gxObjectBindingNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_OPTION, "Option", sizeof(txUnaryExpressionNode), &gxOptionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_OR, "Or", sizeof(txBinaryExpressionNode), &gxOrExpressionNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_OR_ASSIGN, "OrAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PACKAGE, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_PARAMS, "Params", sizeof(txParamsNode), &gxParamsNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PARAMS_BINDING, "ParamsBinding", sizeof(txParamsBindingNode), &gxParamsBindingNodeDispatch },
@@ -1635,91 +1638,95 @@ void fxNodePrintTree(void* it, void* param)
 		fprintf(stderr, "\t");
 		tabs--;
 	}
-	switch (node->description->token) {
-	case XS_TOKEN_ACCESS: 
-		fxAccessNodePrintNode(it); 
-		break;
-	case XS_TOKEN_ARG: 
-	case XS_TOKEN_CONST: 
-	case XS_TOKEN_DEFINE: 
-	case XS_TOKEN_LET: 
-	case XS_TOKEN_VAR: 
-		fxDeclareDefineNodePrintNode(it); 
-		break;
-	case XS_TOKEN_EXPORT: 
-		fxExportNodePrintNode(it); 
-		break;
-	case XS_TOKEN_IMPORT: 
-		fxImportNodePrintNode(it); 
-		break;
-	case XS_TOKEN_INTEGER: 
-		fxIntegerNodePrintNode(it); 
-		break;
-	case XS_TOKEN_FUNCTION: 
-		fxFunctionNodePrintNode(it); 
-		break;
-	case XS_TOKEN_LABEL: 
-		fxLabelNodePrintNode(it); 
-		break;
-	case XS_TOKEN_MEMBER: 
-		fxMemberNodePrintNode(it); 
-		break;
-	case XS_TOKEN_NUMBER: 
-		fxNumberNodePrintNode(it); 
-		break;
-	case XS_TOKEN_PROPERTY: 
-		fxPropertyNodePrintNode(it); 
-		break;
-	case XS_TOKEN_PROPERTY_BINDING: 
-		fxPropertyBindingNodePrintNode(it); 
-		break;
-	case XS_TOKEN_SPECIFIER: 
-		fxSpecifierNodePrintNode(it); 
-		break;
-	case XS_TOKEN_STRING: 
-		fxStringNodePrintNode(it); 
-		break;
-	default: 
-		fxNodePrintNode(it); 
-		break;
+	if (node) {
+		switch (node->description->token) {
+		case XS_TOKEN_ACCESS: 
+			fxAccessNodePrintNode(it); 
+			break;
+		case XS_TOKEN_ARG: 
+		case XS_TOKEN_CONST: 
+		case XS_TOKEN_DEFINE: 
+		case XS_TOKEN_LET: 
+		case XS_TOKEN_VAR: 
+			fxDeclareDefineNodePrintNode(it); 
+			break;
+		case XS_TOKEN_EXPORT: 
+			fxExportNodePrintNode(it); 
+			break;
+		case XS_TOKEN_IMPORT: 
+			fxImportNodePrintNode(it); 
+			break;
+		case XS_TOKEN_INTEGER: 
+			fxIntegerNodePrintNode(it); 
+			break;
+		case XS_TOKEN_FUNCTION: 
+			fxFunctionNodePrintNode(it); 
+			break;
+		case XS_TOKEN_LABEL: 
+			fxLabelNodePrintNode(it); 
+			break;
+		case XS_TOKEN_MEMBER: 
+			fxMemberNodePrintNode(it); 
+			break;
+		case XS_TOKEN_NUMBER: 
+			fxNumberNodePrintNode(it); 
+			break;
+		case XS_TOKEN_PROPERTY: 
+			fxPropertyNodePrintNode(it); 
+			break;
+		case XS_TOKEN_PROPERTY_BINDING: 
+			fxPropertyBindingNodePrintNode(it); 
+			break;
+		case XS_TOKEN_SPECIFIER: 
+			fxSpecifierNodePrintNode(it); 
+			break;
+		case XS_TOKEN_STRING: 
+			fxStringNodePrintNode(it); 
+			break;
+		default: 
+			fxNodePrintNode(it); 
+			break;
+		}
+		if (node->flags) {
+			fprintf(stderr, " [");
+			if (node->flags & mxArgumentsFlag)
+				fprintf(stderr, " arguments");
+			if (node->flags & mxArrowFlag)
+				fprintf(stderr, " arrow");
+			if (node->flags & mxAsyncFlag)
+				fprintf(stderr, " async");
+			if (node->flags & mxAwaitingFlag)
+				fprintf(stderr, " await");
+			if (node->flags & mxBaseFlag)
+				fprintf(stderr, " base");
+			if (node->flags & mxDerivedFlag)
+				fprintf(stderr, " derived");
+			if (node->flags & mxEvalFlag)
+				fprintf(stderr, " eval");
+			if (node->flags & mxTargetFlag)
+				fprintf(stderr, " function");
+			if (node->flags & mxGeneratorFlag)
+				fprintf(stderr, " generator");
+			if (node->flags & mxGetterFlag)
+				fprintf(stderr, " getter");
+			if (node->flags & mxMethodFlag)
+				fprintf(stderr, " method");
+			if (node->flags & mxSetterFlag)
+				fprintf(stderr, " setter");
+			if (node->flags & mxStaticFlag)
+				fprintf(stderr, " static");
+			if (node->flags & mxStrictFlag)
+				fprintf(stderr, " strict");
+			if (node->flags & mxSuperFlag)
+				fprintf(stderr, " super");
+			fprintf(stderr, " ]");
+		}
+		printer->tabs++;
+		(*node->description->dispatch->distribute)(node, fxNodePrintTree, param);
+		printer->tabs--;
 	}
-	if (node->flags) {
-		fprintf(stderr, " [");
-		if (node->flags & mxArgumentsFlag)
-			fprintf(stderr, " arguments");
-		if (node->flags & mxArrowFlag)
-			fprintf(stderr, " arrow");
-		if (node->flags & mxAsyncFlag)
-			fprintf(stderr, " async");
-		if (node->flags & mxAwaitingFlag)
-			fprintf(stderr, " await");
-		if (node->flags & mxBaseFlag)
-			fprintf(stderr, " base");
-		if (node->flags & mxDerivedFlag)
-			fprintf(stderr, " derived");
-		if (node->flags & mxEvalFlag)
-			fprintf(stderr, " eval");
-		if (node->flags & mxTargetFlag)
-			fprintf(stderr, " function");
-		if (node->flags & mxGeneratorFlag)
-			fprintf(stderr, " generator");
-		if (node->flags & mxGetterFlag)
-			fprintf(stderr, " getter");
-		if (node->flags & mxMethodFlag)
-			fprintf(stderr, " method");
-		if (node->flags & mxSetterFlag)
-			fprintf(stderr, " setter");
-		if (node->flags & mxStaticFlag)
-			fprintf(stderr, " static");
-		if (node->flags & mxStrictFlag)
-			fprintf(stderr, " strict");
-		if (node->flags & mxSuperFlag)
-			fprintf(stderr, " super");
-		fprintf(stderr, " ]");
-	}
-	printer->tabs++;
-	(*node->description->dispatch->distribute)(node, fxNodePrintTree, param);
-	printer->tabs--;
+	else
+		fprintf(stderr, "NULL");
 }
 
 

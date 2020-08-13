@@ -124,12 +124,16 @@ void fxOpenSerial(txSerialTool self)
 	CFSocketContext context;
 	static uint8_t first = true;
 
-    fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (fd == -1) {
-        fprintf(stderr, "Error opening serial port %s - %s(%d).\n", self->path, strerror(errno), errno);
-        return;
-    }
-
+	fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if (fd == -1) {
+		usleep(500000);
+		fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
+		if (fd == -1) {
+			fprintf(stderr, "Error opening serial port %s - %s(%d).\n", self->path, strerror(errno), errno);
+			return;
+		}
+	}
+	
     if (ioctl(fd, TIOCEXCL) == -1) {
         fprintf(stderr, "Error setting TIOCEXCL on %s - %s(%d).\n", self->path, strerror(errno), errno);
         return;
@@ -215,7 +219,7 @@ void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef 
 	int size = read(handle, buffer, 1024);
 	if (size > 0)
 		fxReadSerialBuffer(self, buffer, size);
-	else if ((size < 0) && (errno != EINPROGRESS)) {
+	else if ((size < 0) && (errno != EINPROGRESS) && (errno != ENXIO)) {
         fprintf(stderr, "Error reading serial - %s(%d).\n", strerror(errno), errno);
         exit(1);
 	}
@@ -259,6 +263,8 @@ void fxRestartSerial(txSerialTool self)
 	usleep(5000);
 
 	flags &= ~TIOCM_RTS;
+	if (self->dtr)
+		flags |= TIOCM_DTR;
 	ioctl(fd, TIOCMSET, &flags);
 }
 
@@ -266,6 +272,7 @@ void fxUnregisterSerial(void *refCon, io_service_t service, natural_t messageTyp
 {
 	txSerialDescription description = refCon;
 	fxCloseSerial(description->tool);
+
 	free(description);
 }
 

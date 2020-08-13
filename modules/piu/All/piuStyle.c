@@ -177,6 +177,10 @@ void PiuStyleCreate(xsMachine* the)
 	c_memset(self, 0, sizeof(record));
 	self->reference = xsToReference(xsThis);
 	self->the = the;
+	self->color[0].a = 255;
+	self->color[1].a = 255;
+	self->color[2].a = 255;
+	self->color[3].a = 255;
 	if ((c > 0) && (xsTest(xsArg(0)))) {
 		if (xsFindString(xsArg(0), xsID_font, &string)) {
     		const PiuStyleBuilder* builder;
@@ -507,6 +511,24 @@ void PiuStyleOverride(PiuStyle* self, PiuStyle* result)
 			(*result)->flags &= ~piuStyleDecorationBits;
 	}
 }
+
+#ifdef piuGPU
+void PiuStyleBind(PiuStyle* self)
+{
+	PiuFont* font = (*self)->font;
+	if (font) {
+		PiuFontBind(font);
+	}
+}
+
+void PiuStyleUnbind(PiuStyle* self)
+{
+	PiuFont* font = (*self)->font;
+	if (font) {
+		PiuFontUnbind(font);
+	}
+}
+#endif			
 
 void PiuStyle_get_bottom(xsMachine* the)
 {

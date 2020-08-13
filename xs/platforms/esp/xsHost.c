@@ -646,9 +646,42 @@ void modSetTime(uint32_t seconds)
 #endif
 }
 
+#if ESP32
+static void updateTZ(void)
+{
+	int32_t offset = gTimeZoneOffset + gDaylightSavings;
+	int32_t hours, minutes;
+	char zone[10];
+
+	zone[0] = 'U';
+	zone[1] = 'T';
+	zone[2] = 'C';
+	zone[3] = (offset >= 0) ? '-' : '+';		// yes, backwards
+
+	if (offset < 0)
+		offset = -offset;
+	offset /= 60;	// seconds to minutes
+	hours = offset / 60;
+	minutes = offset % 60;
+
+	zone[4] = (hours / 10) + '0';
+	zone[5] = (hours % 10) + '0';
+	zone[6] = ':';
+	zone[7] = (minutes / 10) + '0';
+	zone[8] = (minutes % 10) + '0';
+	zone[9] = 0;
+
+	setenv("TZ", zone, 1);
+	tzset();
+}
+#else
+	#define updateTZ()
+#endif
+
 void modSetTimeZone(int32_t timeZoneOffset)
 {
 	gTimeZoneOffset = timeZoneOffset;
+	updateTZ();
 }
 
 int32_t modGetTimeZone(void)
@@ -659,6 +692,7 @@ int32_t modGetTimeZone(void)
 void modSetDaylightSavingsOffset(int32_t daylightSavings)
 {
 	gDaylightSavings = daylightSavings;
+	updateTZ();
 }
 
 int32_t modGetDaylightSavingsOffset(void)
@@ -1776,6 +1810,14 @@ void *installModules(txPreparation *preparation)
 }
 
 #endif
+
+char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut)
+{
+	uint8_t *xsb = (uint8_t *)kModulesStart;
+	if (!xsb || !gHasMods) return NULL;
+
+	return findNthAtom(atomTypeIn, 0, xsb, c_read32be(xsb), atomSizeOut);
+}
 
 char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut)
 {

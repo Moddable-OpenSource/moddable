@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -98,14 +98,16 @@ const X509 = {
 		}
 	},
 	decodeSPKI(buf) {
-		let spk = this.getSPK(buf);
-		if (spk) {
-			let ber = new BER(spk);
-			switch (spk.algo.toString()) {
-			case [1, 2, 840, 113549, 1, 1, 1].toString():
-			case [1, 3, 14, 3, 2, 11].toString():
-			case [2, 5, 8, 1, 1].toString():
+		const spk = this.getSPK(buf);
+		if (!spk)
+			throw new Error("x509: bad SPKI");
+
+		switch (spk.algo.toString()) {
+			case "1,2,840,113549,1,1,1":
+			case "1,3,14,3,2,11":
+			case "2,5,8,1,1":
 				// PKCS1
+				const ber = new BER(spk);
 				if (ber.getTag() != 0x30)
 					throw new Error("x509: bad SPKI");
 				ber.getLength();
@@ -117,7 +119,6 @@ const X509 = {
 			default:
 				trace("x509: " + spk.algo + " not supported\n");
 				return {};
-			}
 		}
 		throw new Error("x509: bad SPKI");
 	},
@@ -159,16 +160,16 @@ function parseDate(date) {
 	if (!date.endsWith("Z"))
 		throw new Error("unexpected timezone");
 
-	let parts = [];
+	const parts = [];
 	if (13 === date.length) {
-		for (let i = 0; (i + 1) < date.length; i += 2)
-			parts.push(parseInt(date.substring(i, i + 2)));
+		for (let i = 0, length = date.length; (i + 1) < length; i += 2)
+			parts.push(parseInt(date.slice(i, i + 2)));
 		parts[0] += (parts[0] < 50) ? 2000 : 1900;
 	}
 	else if (15 === date.length) {
-		parse.push(parseInt(date.substring(0, 4)));
-		for (let i = 4; (i + 1) < date.length; i += 2)
-			parts.push(parseInt(date.substring(i, i + 2)));
+		parts.push(parseInt(date.slice(0, 4)));
+		for (let i = 4, length = date.length; (i + 1) < length; i += 2)
+			parts.push(parseInt(date.slice(i, i + 2)));
 	}
 	else
 		throw new Error("unexpected date");

@@ -23,8 +23,8 @@ import {Advertisement, Bytes, typedValueToBuffer, typedBufferToValue} from "btut
 import {IOCapability} from "sm";
 
 export class BLEServer @ "xs_ble_server_destructor" {
-	constructor() {
-		this.initialize();
+	constructor(dictionary = {}) {
+		this.initialize(dictionary);
 		this.device_name = "";
 	}
 	close() @ "xs_ble_server_close"
@@ -40,7 +40,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	}
 	startAdvertising(params) {
-		let {fast = true, scanResponseData = null, advertisingData} = params;
+		let {fast = true, scanResponseData = null, filterPolicy = GAP.AdvFilterPolicy.NONE, advertisingData} = params;
 		let flags = "flags" in advertisingData ? advertisingData.flags : GAP.ADFlag.NO_BR_EDR;
 		let interval;
 		if (undefined !== params.interval)
@@ -56,10 +56,10 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		}
 		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
-		this._startAdvertising(flags, interval.min, interval.max, advertisingDataBuffer, scanResponseDataBuffer);
+		this._startAdvertising(flags, interval.min, interval.max, filterPolicy, advertisingDataBuffer, scanResponseDataBuffer);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
-	initialize() @ "xs_ble_server_initialize"
+	initialize(dictionary) @ "xs_ble_server_initialize"
 	
 	get localAddress() {
 		return new Bytes(this._getLocalAddress());

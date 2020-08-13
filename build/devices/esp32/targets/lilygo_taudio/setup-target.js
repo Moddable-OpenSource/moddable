@@ -11,9 +11,9 @@ export default function (done) {
 	global.lights = new NeoPixel({});
 
 	global.button = {
-		a: new Monitor({pin: 35, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge}),
-		b: new Monitor({pin: 34, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge}),
-		c: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.RisingEdge | Monitor.FallingEdge}),
+		a: new Monitor({pin: 35, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
+		b: new Monitor({pin: 34, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
+		c: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
 	};
 	button.a.onChanged = button.b.onChanged = button.c.onChanged = nop;
 

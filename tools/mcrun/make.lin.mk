@@ -24,6 +24,7 @@ MCLOCAL = $(BUILD_DIR)/bin/lin/release/mclocal
 MCREZ = $(BUILD_DIR)/bin/lin/release/mcrez
 PNG2BMP = $(BUILD_DIR)/bin/lin/release/png2bmp
 RLE4ENCODE = $(BUILD_DIR)/bin/lin/release/rle4encode
+WAV2MAUD = $(BUILD_DIR)/bin/lin/release/wav2maud
 XSC = $(MODDABLE)/build/bin/lin/release/xsc
 XSL = $(MODDABLE)/build/bin/lin/release/xsl
 
@@ -34,7 +35,7 @@ all: $(BIN_DIR)/mc.xsa
 
 $(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"
-	$(XSL) -a -b $(MODULES_DIR) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
+	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
 
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent

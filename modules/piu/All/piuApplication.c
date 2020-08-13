@@ -734,6 +734,15 @@ void PiuApplication_invalidateMenus(xsMachine* the)
 
 #endif
 
+extern const void* fxGetArchiveData(xsMachine* the, const char* path, size_t* size);
+const void *fxGetResource(xsMachine* the, const char* path, size_t* size)
+{
+	const void* data = fxGetArchiveData(the, path, size);
+	if (!data)
+		data = mcGetResource(the, path, size);
+	return data;
+}
+
 xsBooleanValue fxFindBoolean(xsMachine* the, xsSlot* slot, xsIndex id, xsBooleanValue* value)
 {
 	xsBooleanValue result;

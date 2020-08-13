@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,6 +25,12 @@
 #include <stdint.h>
 
 #include "commodettoBitmapFormat.h"
+#if !XSTOOLS
+	#include "mc.defines.h"
+	#ifdef MODDEF_COMMODETTO_BITMAP_ID
+		#define COMMODETTO_BITMAP_ID MODDEF_COMMODETTO_BITMAP_ID
+	#endif
+#endif
 
 #ifndef kCommodettoBitmapFormat
 	#define kCommodettoBitmapFormat kCommodettoBitmapRGB565LE
@@ -72,6 +78,9 @@ typedef struct {
 		void				*data;
 		int32_t				offset;
 	} bits;
+#if COMMODETTO_BITMAP_ID
+	uint32_t				id;
+#endif
 } CommodettoBitmapRecord, *CommodettoBitmap;
 
 uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format);

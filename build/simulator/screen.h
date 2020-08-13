@@ -74,6 +74,7 @@ typedef void (*txScreenAbortProc)(txScreen* screen);
 typedef void (*txScreenBufferChangedProc)(txScreen* screen);
 typedef void (*txScreenFormatChangedProc)(txScreen* screen);
 typedef void (*txScreenIdleProc)(txScreen* screen);
+typedef void (*txScreenKeyProc)(txScreen* screen, int kind, char* string, int modifiers, double when);
 typedef void (*txScreenLaunchProc)(txScreen* screen);
 typedef void (*txScreenMessageProc)(txScreen* screen, char* buffer, int size);
 typedef void (*txScreenQuitProc)(txScreen* screen);
@@ -93,6 +94,7 @@ struct sxScreen {
 	txScreenFormatChangedProc formatChanged;
 	txScreenIdleProc idle;
 	txScreenMessageProc invoke;
+	txScreenKeyProc key;
 	txScreenMessageProc post;
 	txScreenQuitProc quit;
 	txScreenStartProc start;
@@ -133,4 +135,13 @@ enum {
 	touchEventCancelledKind,
 	touchEventEndedKind,
 	touchEventMovedKind,
+};
+
+enum {
+	keyEventDown = 0,
+	keyEventUp = 1,
+	keyEventRepeat = 1,
+	keyEventCommand = 2,
+	keyEventOption = 4,
+	keyEventShift = 8,
 };

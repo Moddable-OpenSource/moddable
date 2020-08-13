@@ -123,6 +123,10 @@ static txPixelFormat gxPixelFormats[pixelFormatCount] = {
 	{ 1, 4, kCommodettoBitmapCLUT16 },
 };
 
+static char* gxKeyEventNames[4] = {
+	"onKeyDown",
+	"onKeyUp",
+};
 static char* gxTouchEventNames[4] = {
 	"onTouchBegan",
 	"onTouchCancelled",
@@ -133,17 +137,16 @@ static char* gxTouchEventNames[4] = {
 void fxAbort(xsMachine* the, int status)
 {
 	txScreen* screen = the->host;
-	xsTry {
-		if (status == xsNotEnoughMemoryExit)
-			xsUnknownError("not enough memory");
-		else if (status == xsStackOverflowExit)
-			xsUnknownError("stack overflow");
-		else if (status == xsDeadStripExit)
-			xsUnknownError("dead strip");
+	if (status == xsNotEnoughMemoryExit)
+		xsUnknownError("not enough memory");
+	else if (status == xsStackOverflowExit)
+		xsUnknownError("stack overflow");
+	else if (status == xsDeadStripExit)
+		xsUnknownError("dead strip");
+	else if (status == xsUnhandledExceptionExit) {
+		xsTrace("unhandled exception\n");
+		(*screen->abort)(screen);
 	}
-	xsCatch {
-	}
-	(*screen->abort)(screen);
 }
 
 void debugBreak(xsMachine* the, uint8_t stop)
@@ -205,6 +208,24 @@ void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 	xsEndHost(screen->machine);
 }
 
+void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double when)
+{
+	if (screen->machine) {
+		xsBeginHost(screen->machine);
+		{
+			xsVars(2);
+			xsVar(0) = xsGet(xsGlobal, xsID_screen);
+			xsVar(1) = xsGet(xsVar(0), xsID_context);
+			if (xsTest(xsVar(1))) {
+				if (xsFindResult(xsVar(1), xsID(gxKeyEventNames[kind]))) {
+					xsCallFunction3(xsResult, xsVar(1), xsString(string), xsInteger(modifiers), xsNumber(when));
+				}
+			}
+		}
+		xsEndHost(screen->machine);
+	}
+}
+
 void fxScreenLaunch(txScreen* screen)
 {
 	void* preparation = xsPreparation();
@@ -215,6 +236,7 @@ void fxScreenLaunch(txScreen* screen)
 	((txMachine*)(screen->machine))->host = screen;
 	screen->idle = fxScreenIdle;
 	screen->invoke = fxScreenInvoke;
+	screen->key = fxScreenKey;
 	screen->quit = fxScreenQuit;
 	screen->touch = fxScreenTouch;
 	screen->mainThread = mxCurrentThread();

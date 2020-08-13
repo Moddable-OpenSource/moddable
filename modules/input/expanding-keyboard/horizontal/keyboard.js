@@ -24,19 +24,19 @@ import {BottomKeyRowBehavior, ExpandingKeyRowBehavior, ToggleModes, Keys, Colors
 
 const TOPMARGIN = 4;
 const KEYHEIGHT = 36;
-const KEYWIDTHS = [28, 30, 32, 34, 36, 38, 40];
-const KEYOFFSETS = [0, 31, 64, 99, 136, 175, 216];
+const KEYWIDTHS = Object.freeze([28, 30, 32, 34, 36, 38, 40]);
+const KEYOFFSETS = Object.freeze([0, 31, 64, 99, 136, 175, 216]);
 
-const RowTexture0 = Texture.template({ path:"horz-7pt-28w.png" });
-const RowTexture1 = Texture.template({ path:"horz-7pt-30w.png" });
-const RowTexture2 = Texture.template({ path:"horz-7pt-32w.png" });
-const RowTexture3 = Texture.template({ path:"horz-7pt-34w.png" });
-const RowTexture4 = Texture.template({ path:"horz-7pt-36w.png" });
-const RowTexture5 = Texture.template({ path:"horz-7pt-38w.png" });
-const RowTexture6 = Texture.template({ path:"horz-7pt-40w.png" });
+const RowTexture0 = Texture.template(Object.freeze({ path:"horz-7pt-28w.png" }));
+const RowTexture1 = Texture.template(Object.freeze({ path:"horz-7pt-30w.png" }));
+const RowTexture2 = Texture.template(Object.freeze({ path:"horz-7pt-32w.png" }));
+const RowTexture3 = Texture.template(Object.freeze({ path:"horz-7pt-34w.png" }));
+const RowTexture4 = Texture.template(Object.freeze({ path:"horz-7pt-36w.png" }));
+const RowTexture5 = Texture.template(Object.freeze({ path:"horz-7pt-38w.png" }));
+const RowTexture6 = Texture.template(Object.freeze({ path:"horz-7pt-40w.png" }));
 
-const BottomRowTexture = Texture.template({ path:"horz-bottom-row.png" });
-const GlyphsTexture = Texture.template({ path:"horz-glyph-strip.png" });
+const BottomRowTexture = Texture.template(Object.freeze({ path:"horz-bottom-row.png" }));
+const GlyphsTexture = Texture.template(Object.freeze({ path:"horz-glyph-strip.png" }));
 
 class HorizontalBottomKeyRowBehavior extends BottomKeyRowBehavior {
 	onDraw(port) {

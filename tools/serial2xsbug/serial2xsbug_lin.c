@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -64,6 +64,7 @@ void fxCloseSerial(txSerialTool self)
 {
 	if (self->serialConnection >= 0) {
 		close(self->serialConnection);
+		self->serialConnection = -1;
 	}
 }
 
@@ -122,8 +123,13 @@ void fxOpenSerial(txSerialTool self)
 {
 	speed_t speed;
 	struct termios term;
-  	self->serialConnection = open(self->path, O_RDWR | O_NOCTTY | O_NDELAY);
-	mxThrowElse(self->serialConnection >= 0);
+
+	self->serialConnection = open(self->path, O_RDWR | O_NOCTTY | O_NDELAY);
+	if (self->serialConnection < 0) {
+		if (!self->reconnecting)
+			mxThrowElse(self->serialConnection >= 0);
+		return;
+	}
 	fcntl(self->serialConnection, F_SETFL, 0);
 	switch (self->baud) {
 	case 921600: speed = B921600; break;
@@ -184,6 +190,8 @@ void fxRestartSerial(txSerialTool self)
 	usleep(5000);
 
 	flags &= ~TIOCM_RTS;
+	if (self->dtr)
+		flags |= TIOCM_DTR;
 	ioctl(fd, TIOCMSET, &flags);
 }
 
@@ -237,24 +245,39 @@ int main(int argc, char* argv[])
 		self->fds[0].events = POLLIN;
 		self->fds[0].revents = 0;
 		for (;;) {
-			int res;
-			res = poll(self->fds, self->count, 1000);
-			mxThrowElse(res >= 0);
-			if (res) {
-				if (self->fds[0].revents & (POLLERR | POLLHUP))
-					mxThrowError(EPIPE);
-				if (self->fds[0].revents & POLLIN)
-					fxReadSerial(self);
-				if (self->count > 1) {
-					txSerialMachine machine = self->firstMachine;
-					int index = 1;
-					while (index < self->count) {
-						if (self->fds[index].revents & (POLLERR | POLLHUP)) 
-							mxThrowError(EPIPE);
-						if (self->fds[index].revents & POLLIN)
-							fxReadNetwork(machine);
-						machine = machine->nextMachine;
-						index++;
+			if (self->reconnecting) {
+				fxOpenSerial(self);
+				if (self->serialConnection >= 0) {
+					self->reconnecting = 0;
+					self->fds[0].fd = self->serialConnection;
+				}
+				else
+					usleep(500000);
+			}
+			else {
+				int res;
+				res = poll(self->fds, self->count, 1000);
+				mxThrowElse(res >= 0);
+				if (res) {
+					if (self->fds[0].revents & (POLLERR | POLLHUP)) {
+						fxCloseSerial(self);
+						self->reconnecting = 1;
+						usleep(500000);
+						continue;
+					}
+					if (self->fds[0].revents & POLLIN)
+						fxReadSerial(self);
+					if (self->count > 1) {
+						txSerialMachine machine = self->firstMachine;
+						int index = 1;
+						while (index < self->count) {
+							if (self->fds[index].revents & (POLLERR | POLLHUP)) 
+								mxThrowError(EPIPE);
+							if (self->fds[index].revents & POLLIN)
+								fxReadNetwork(machine);
+							machine = machine->nextMachine;
+							index++;
+						}
 					}
 				}
 			}
@@ -267,3 +290,4 @@ int main(int argc, char* argv[])
 	fxCloseSerial(self);
 	return result;
 }
+

@@ -28,6 +28,8 @@ These instructions assume that you have already completed the initial installati
 <a id="host-mac"></a>
 ### Host environment update
 
+> The Moddable SDK requires macOS Sierra version 10.12 or newer and Xcode version 9 or newer. Beta releases of Xcode are not supported.
+
 The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps:
 	
 1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable):
@@ -35,6 +37,15 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	```text
 	cd $MODDABLE
 	git pull
+	```
+
+	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
+
+	```text
+	cd $MODDABLE
+	git stash push
+	git pull
+	git stash pop
 	```
 	
 2. Delete any existing Moddable SDK build outputs:
@@ -85,7 +96,13 @@ To ensure that your build environment is up to date, perform the following steps
     rm -rf tmp/esp
     ```
 
-4. Verify the setup by building `helloworld` for the `esp` target:
+4. If you have updated to macOS Catalina (version 10.15), add an exemption to allow Terminal (or your alternate terminal application of choice) to run software locally that does not meet the system's security policy. Without this setting, the precompiled Xtensa toolchain used in builds for the ESP8266 will not be permitted to run. 
+
+	To set the security policy exemption for Terminal, go into the Security & Privacy System Preferences, select the Privacy tab, choose Developer Tools from the list on the left, and then tick the checkbox for Terminal or the alternate terminal application from which you will be building Moddable SDK apps. The end result should look like this:
+
+	![Catalina Developer Options](./assets/getting-started/catalina-security.png)
+
+5. Verify the setup by building `helloworld` for the `esp` target:
 
 	```text
 	cd ${MODDABLE}/examples/helloworld
@@ -104,8 +121,7 @@ To ensure that your build environment is up to date, perform the following steps
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.2
-    git submodule update
+    git checkout --recurse-submodules v3.3.2
     ```
 	
 2. Update homebrew and then verify that you have all the necessary tools and that they are up to date:
@@ -181,12 +197,21 @@ To ensure that your build environment is up to date, perform the following steps
 
 The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps:
 
-1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable). For instance,  using `Git Bash`:
+1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable). For instance, using `Git Bash`:
 
 	```text
 	cd $MODDABLE
 	git pull
-	```	
+	```
+
+	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
+
+	```text
+	cd $MODDABLE
+	git stash push
+	git pull
+	git stash pop
+	```
 
 2. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Delete any existing Moddable SDK build outputs:
 
@@ -261,8 +286,7 @@ To ensure that your build environment is up to date, perform the following steps
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.2
-    git submodule update
+    git checkout --recurse-submodules v3.3.2
     ```
 
 3. Verify the `IDF_PATH` and `PATH` Windows environment variables are set correctly. Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding. Setting environment variables in Windows is generally done [through System Properties](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/).
@@ -318,6 +342,15 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	```text
 	cd $MODDABLE
 	git pull
+	```
+
+	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
+
+	```text
+	cd $MODDABLE
+	git stash push
+	git pull
+	git stash pop
 	```
 
 3. Delete any existing Moddable SDK build outputs:
@@ -403,8 +436,7 @@ To ensure that your build environment is up to date, perform the following steps
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.2
-    git submodule update
+    git checkout --recurse-submodules v3.3.2
     ```
 
 2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`:

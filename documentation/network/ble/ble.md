@@ -1,12 +1,12 @@
 # BLE
-Copyright 2017-19 Moddable Tech, Inc.
+Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: December 4, 2019
+Revised: July 27, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## About This Document
-This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32 and Silicon Labs Blue Gecko devices.
+This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, and Qualcomm QCA4020 devices.
 
 > **Note:** A BLE server/slave is also commonly referred to as a BLE peripheral. The terms *server*, *slave* and *peripheral* in this document are used interchangeably.
 
@@ -26,6 +26,8 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 	* [GATT Services](#gattservices)
 * [BLE Security](#blesecurity)
 	* [Class SM](#classsm)
+* [BLE Whitelisting](#blewhitelisting)
+	* [Class GAPWhitelist](#classgapwhitelist)
 * [BLE Apps on ESP32 Platform](#esp32platform)
 * [BLE Apps on Blue Gecko Platform](#geckoplatform)
 * [BLE Example Apps](#exampleapps)
@@ -185,9 +187,19 @@ The `params` object contains the following properties:
 | Property | Type | Description |
 | --- | --- | :--- |
 | `active` | `boolean` | Set `true` for active scanning, `false` for passing scanning. Default is `true`.
+| `duplicates` | `boolean` | Set `true` to receive all advertising packets, `false` to filter out multiple advertising packets received from the same peripheral device. Default is `true`.
+| `filterPolicy` | `number` | Filter policy applied to scan. Default is `GAP.ScanFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
 | `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`. 
 | `window` | `number` | Scan window value in units of 0.625 ms. Default is `0x30`. 
 
+The `filterPolicy` parameter can be one of the following:
+
+| Name | Description |
+| --- | :--- | 
+| `GAP.ScanFilterPolicy.NONE` | No filtering.
+| `GAP.ScanFilterPolicy.WHITELIST` | Receive advertisements only from whitelist devices.
+| `GAP.ScanFilterPolicy.NOT_RESOLVED_DIRECTED` | Receive all undirected advertisements and all directed advertisements where the initiator address is a resolvable private address.
+| `GAP.ScanFilterPolicy.WHITELIST_NOT_RESOLVED_DIRECTED` | Receive advertisements only from whitelist devices and all directed advertisements where the initiator address is a resolvable private address.
 
 The `startScanning` function enables scanning for nearby peripherals.
 
@@ -230,7 +242,7 @@ To connect to a device named "Brian" from the `onDiscovered` callback:
 
 ```javascript
 onDiscovered(device) {
-	if ("Brian" == 	device.scanResponse.completeName) {
+	if ("Brian" == device.scanResponse.completeName) {
 		this.connect(device);
 	}
 }
@@ -318,6 +330,7 @@ An instance of the `Device` class is instantiated by `BLEClient` and provided to
 | `connection` | `number` | Connection identifier.
 | `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
+| `rssi` | `number` | Discovered device signal strength.
 
 ### Functions 
 
@@ -836,11 +849,23 @@ The `Advertisement` class provides accessor functions to read common advertiseme
 
 | Name | Type | Description
 | --- | --- | :--- |
+| `buffer` | `object` | An `ArrayBuffer` containing the raw advertisement data bytes.
 | `completeName` | `string` | The advertised complete local name.
 | ` shortName` | `string` | The advertised shortened local name.
 | `manufacturerSpecific` | `object` | An object containing the advertised manufacturer specific data.
 | `flags` | `number` | The advertised flags value.
+| `completeUUID16List` | `array` | The advertised complete 16-bit UUID list.
+| `incompleteUUID16List` | `array` | The advertised incomplete 16-bit UUID list.
 
+### Functions
+
+#### `findIndex(type [,index])`
+Use the `findIndex` function to find the index of a specific advertisement data type in the raw advertisement data bytes.
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `type` | `number` | The `GAP.ADType` to search for. |
+| `index` | `number` | The optional starting index to search from. Defaults to 0. |
 
 ### Examples 
 
@@ -869,6 +894,20 @@ onDiscovered(device) {
 			let temperature = (data[3] | (data[4] << 8)) / 10;
 			trace(`Temperature: ${temperature} ˚C\n`);
 		}
+	}
+}
+```
+
+To search for the "TX Power Level" advertisement data type in the scan response data:
+
+```javascript
+onDiscovered(device) {
+	let scanResponse = device.scanResponse;
+	let index = scanResponse.findIndex(GAP.ADType.TX_POWER_LEVEL);
+	if (-1 !== index)
+		trace(`Found advertisement tx power level data at index ${index}\n`);
+		const bytes = new Uint8Array(scanResponse.buffer);
+		const txPowerLevel = bytes[index + 2];
 	}
 }
 ```
@@ -928,6 +967,21 @@ onServices(services) {
 }
 ```
 
+#### `toString()`
+
+The `toString` helper function returns a printable hex string of the `Bytes` contents. The string is formatted in big endian order with separators.
+
+```javascript
+onDiscovered(device) {
+	trace(`Found device with address ${device.address}\n`);
+}
+onServices(services) {
+	if (services.length) {
+		trace(`Found service with UUID ${services[0].uuid}\n`);
+	}
+}
+```
+
 <a id="bleserver"></a>
 ## BLE Server
 A BLE server/peripheral can connect to one BLE client and typically performs the following steps to send notifications to a BLE client:
@@ -979,6 +1033,14 @@ The `BLEServer` class provides access to the BLE server features.
 ```javascript
 import BLEServer from "bleserver";
 ```
+
+### `constructor([dictionary])`
+
+The `BLEServer` constructor takes a single argument, an optional dictionary of initialization parameters.
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `deployServices` | `boolean` | Optional property to deploy [GATT Services](#gattservices). Default is `true`. Set to `false` to not deploy GATT services.
 
 ### Functions
 
@@ -1073,7 +1135,17 @@ The `params` object contains the following properties:
 | `connectable` | `boolean` | Optional property to specify connectable mode. Set to `true` to specify unidirected connectable mode; `false` to specify non-connectable mode. Defaults to `true`.
 | `discoverable` | `object` | Optional property to specify discoverable mode. Set to `true` to use the general discovery procedure; `false` to specify non-discoverable. Defaults to `true`.
 | `fast` | `boolean` | Optional property to specify the GAP advertisement interval. Set to `true` to specify TGAP(adv\_fast\_interval1); `false` to specify TGAP(adv\_slow\_interval). Defaults to `true`.
+| `filterPolicy` | `number` | Optional property to apply a filter policy. Defaults to `GAP.AdvFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
 | `scanResponseData` | `object` | Optional object containing scan response data properties.
+
+The `filterPolicy` property can be one of the following:
+
+| Name | Description |
+| --- | :--- |
+| `GAP.AdvFilterPolicy.NONE` | No filtering.
+| `GAP.AdvFilterPolicy.WHITELIST_SCANS` | Process all connection requests but only scans from devices in the whitelist.
+| `GAP.AdvFilterPolicy.WHITELIST_CONNECTIONS` | Process all scan requests but only connection requests from devices in the whitelist.
+| `GAP.AdvFilterPolicy.WHITELIST_SCANS_CONNECTIONS` | Ignore all scan and connection requests unless peer device is in the whitelist.
 
 The `startAdvertising` function starts broadcasting advertisement and scan response packets. The function is also used to configure discoverable and connectable modes.
 
@@ -1560,7 +1632,75 @@ onPasskeyRequested(params) {
 ```
 > **Note:** Passkey values are integers, but must always include six digits. The host application is responsible for padding with leading zeros for display.
 
+<a id="blewhitelisting"></a>
+## BLE Whitelisting
+
+Whitelisting provides filtering of peer devices by Bluetooth address. A BLE client can use the whitelist to only receive peripheral scan responses and hence subsequent connections to devices in the whitelist. A BLE peripheral can use the whitelist to filter BLE client scans and connections. Whitelist filtering provides enhanced security by limiting communication to known and trusted BLE devices.
+
+There is one BLE whitelist used by both the BLE client and server. The maximum number of whitelist entries allowed is platform-specific.
+
+> **Note:** Whitelisting is not currently supported on the Blue Gecko platform.
+
+<a id="classgapwhitelist"></a>
+## Class GAPWhitelist
+
+The `GAPWhitelist` class provides functions for manipulating the BLE whitelist.
+
+```javascript
+import GAPWhitelist from "gapwhitelist";
+```
+
+### Functions
+
+#### `add(address [,addressType])`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `string` or `object` | The peer address to whitelist.
+| `addressType` | `number` | Optional peer address type. Defaults to `GAP.AddressType.PUBLIC`.
+
+Use the `add` function to add a peer device to the whitelist.
+
+To add a Bluetooth address to the whitelist and receive only scan responses from devices in the whitelist:
+
+```javascript
+onReady() {
+	GAPWhitelist.add("B4:99:4C:34:D7:A7");
+	this.startScanning({ filterPolicy:GAP.ScanFilterPolicy.WHITELIST });
+}
+```
+
+To add a Bluetooth address to the whitelist and limit scan requests and connections to devices in the whitelist using a filter policy:
+
+```javascript
+onReady() {
+	this.deviceName = "Moddable HRM";
+	GAPWhitelist.add("8C:10:21:79:C9:F3");
+	this.onDisconnected();
+}
+onDisconnected() {
+	this.stopMeasurements();
+	this.startAdvertising({
+		filterPolicy: GAP.AdvFilterPolicy.WHITELIST_SCANS_CONNECTIONS,
+		advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [HEART_RATE_SERVIE_UUID, BATTERY_SERVICE_UUID]
+	});
+}
+```
+
 ***
+
+#### `remove(address [,addressType])`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `string` or `object` | The peer address to whitelist.
+| `addressType` | `number` | Optional peer address type. Defaults to `GAP.AddressType.PUBLIC`.
+
+Use the `remove` function to remove a peer device from the whitelist.
+
+#### `clear()`
+
+Use the `clear` function to remove all peer devices from the whitelist.
 
 <a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform
@@ -1646,6 +1786,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [ios-time-sync](../../../examples/network/ble/ios-time-sync) | Demonstrates how to set the device clock by connecting to the iPhone [Current Time Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.current_time.xml).
 | [powermate](../../../examples/network/ble/powermate) | Receives button spin and press notifications from the [Griffin BLE Multimedia Control Knob](https://griffintechnology.com/us/powermate-bluetooth).
 | [scanner](../../../examples/network/ble/scanner) | Scans for and displays peripheral advertised names.
+| [scanner-whitelist](../../../examples/network/ble/scanner-whitelist) | Scans for and displays whitelisted peripheral advertised name.
 | [security-client](../../../examples/network/ble/security-client) | Demonstrates how to implement a secure health thermometer BLE client using SMP. The `security-client` can connect to the [security-server](../../../examples/network/ble/security-server) app.
 | [sensortag](../../../examples/network/ble/sensortag) | Receives sensor notifications from the [TI CC2541 SensorTag](http://www.ti.com/tool/CC2541DK-SENSOR#technicaldocuments) on-board sensors.
 | [tempo](../../../examples/network/ble/tempo) | Reads temperature, humidity and barometric pressure from a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/product/tempo-environment-monitor/) beacon.
@@ -1656,6 +1797,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | Name | Description |
 | :---: | :--- |
 | [advertiser](../../../examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
+| [advertiser-whitelist](../../../examples/network/ble/advertiser-whitelist) | Broadcasts advertisements until the whitelisted BLE client connects.
 | [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
 | [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
 | [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml).

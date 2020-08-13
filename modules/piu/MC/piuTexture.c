@@ -36,6 +36,55 @@ void PiuTextureMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 }
 
+#ifdef piuGPU
+int piuTextureSize = 0;
+
+int PiuTextureComputeBitmapSize(PocoBitmap bits)
+{
+	int result;
+	if ((kCommodettoBitmapGray16 | kCommodettoBitmapPacked) == bits->format)
+		result = (bits->width * bits->height) >> 1;
+	else
+		result = ((CommodettoBitmapGetDepth(bits->format) * bits->width) >> 3) * bits->height;
+	result = (result + 3) & ~3;
+	return result;
+}
+
+int PiuTextureComputeSize(PiuTexture* self)
+{
+	int result = 0;
+	if ((*self)->flags & piuTextureAlpha) {
+		result += PiuTextureComputeBitmapSize(&((*self)->bits));
+	}
+	if ((*self)->flags & piuTextureColor) {
+		result += PiuTextureComputeBitmapSize(&((*self)->mask));
+	}
+	return result;
+}
+
+void PiuTextureBind(PiuTexture* self)
+{
+	if ((*self)->usage == 0) {
+		piuTextureSize += PiuTextureComputeSize(self);
+	#ifdef mxInstrument
+		modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
+	#endif
+	}
+	(*self)->usage++;
+}
+
+void PiuTextureUnbind(PiuTexture* self)
+{
+	(*self)->usage--;
+	if ((*self)->usage == 0) {
+		piuTextureSize -= PiuTextureComputeSize(self);
+	#ifdef mxInstrument
+		modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
+	#endif
+	}
+}
+#endif
+
 void PiuTexture_create(xsMachine* the) 
 {
 	PiuTextureRecord record;
@@ -48,6 +97,9 @@ void PiuTexture_create(xsMachine* the)
 		self->mask.width = cb->w;
 		self->mask.height = cb->h;
 		self->mask.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+		self->mask.id = cb->id;
+#endif
 		self->mask.pixels = cb->bits.data;
 		#if (90 == kPocoRotation) || (270 == kPocoRotation)
 			self->width = cb->h;
@@ -63,6 +115,9 @@ void PiuTexture_create(xsMachine* the)
 		self->bits.width = cb->w;
 		self->bits.height = cb->h;
 		self->bits.format = cb->format;
+#if COMMODETTO_BITMAP_ID
+		self->bits.id = cb->id;
+#endif
 		self->bits.pixels = cb->bits.data;
 		#if (90 == kPocoRotation) || (270 == kPocoRotation)
 			self->width = cb->h;

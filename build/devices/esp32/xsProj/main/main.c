@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -63,7 +63,7 @@ static xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
-		
+
 	IP address either:
 		0,0,0,0 - no xsbug connection
 		127,0,0,7 - xsbug over serial
@@ -91,14 +91,15 @@ static xsMachine *gThe;		// the main XS virtual machine running
 #endif
 
 #ifdef mxDebug
-static QueueHandle_t gUARTQueue;
 
 static void debug_task(void *pvParameter)
 {
+	extern uint8_t fxIsConnected(xsMachine* the);
+
 	while (true) {
 		uart_event_t event;
 
-		if (!xQueueReceive(gUARTQueue, (void * )&event, portMAX_DELAY))
+		if (!xQueueReceive((QueueHandle_t)pvParameter, (void * )&event, portMAX_DELAY))
 			continue;
 
 		if (UART_DATA == event.type)
@@ -114,7 +115,7 @@ void setup(void)
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
-	uartConfig.baud_rate = 115200;
+	uartConfig.baud_rate = 115200;		//@@ different from ESP8266
 #endif
 	uartConfig.data_bits = UART_DATA_8_BITS;
 	uartConfig.parity = UART_PARITY_DISABLE;
@@ -131,15 +132,11 @@ void setup(void)
 		printf("uart_set_pin err %d\n", err);
 
 #ifdef mxDebug
-	err = uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &gUARTQueue, 0);
+	QueueHandle_t uartQueue;
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
+	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
 #else
-	err = uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
-#endif
-	if (err)
-		printf("uart_driver_install err %d\n", err);
-
-#ifdef mxDebug
-	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), NULL, 8, NULL);
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 
 	gThe = ESP_cloneMachine(0, 0, 0, NULL);
@@ -215,7 +212,8 @@ uint8_t ESP_setBaud(int baud) {
 void app_main() {
 	modPrelaunch();
 
-	esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
+	esp_log_level_set("wifi", ESP_LOG_ERROR);
+	esp_log_level_set("I2S", ESP_LOG_ERROR);
 
 	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED

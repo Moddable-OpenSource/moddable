@@ -29,6 +29,7 @@ static void PiuLabelMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuLabelMeasureHorizontally(void* it);
 static void PiuLabelMeasureVertically(void* it);
 static void PiuLabelUnbind(void* it, PiuApplication* application, PiuView* view);
+static void PiuLabelUncomputeStyle(PiuLabel* self);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuLabelDispatchRecord = {
 	"Label",
@@ -69,6 +70,7 @@ void PiuLabelBind(void* it, PiuApplication* application, PiuView* view)
 void PiuLabelCascade(void* it)
 {
 	PiuLabel* self = it;
+	PiuLabelUncomputeStyle(self);
 	PiuContentCascade(it);
 	PiuLabelComputeStyle(self);
 	PiuContentReflow(self, piuSizeChanged);
@@ -92,6 +94,9 @@ void PiuLabelComputeStyle(PiuLabel* self)
 	if (chain) {
 		PiuStyle* result = PiuStyleLinkCompute(the, chain, application);
 		(*self)->computedStyle = result;
+	#ifdef piuGPU
+		PiuStyleBind((*self)->computedStyle);
+	#endif
 	}
 }
 
@@ -164,8 +169,18 @@ void PiuLabelMeasureVertically(void* it)
 void PiuLabelUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuLabel* self = it;
-	(*self)->computedStyle = NULL;
+	PiuLabelUncomputeStyle(self);
 	PiuContentUnbind(it, application, view);
+}
+
+void PiuLabelUncomputeStyle(PiuLabel* self)
+{
+	if ((*self)->computedStyle) {
+	#ifdef piuGPU
+		PiuStyleUnbind((*self)->computedStyle);
+	#endif
+		(*self)->computedStyle = NULL;
+	}
 }
 
 void PiuLabel_create(xsMachine* the)

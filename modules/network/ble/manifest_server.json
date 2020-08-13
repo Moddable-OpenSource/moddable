@@ -5,15 +5,18 @@
 			"$(MODULES)/network/ble/bleserver",
 			"$(MODULES)/network/ble/btutils",
 			"$(MODULES)/network/ble/gap",
+			"$(MODULES)/network/ble/gapwhitelist",
 			"$(MODULES)/network/ble/sm",
 			"$(BLEMODULEPATH)/modBLEServer",
 			"$(BLEMODULEPATH)/modBLESM",
+			"$(BLEMODULEPATH)/modBLEGAP"
 		],
 	},
 	"preload": [
 		"bleserver",
 		"btutils",
 		"gap",
+		"gapwhitelist",
 		"sm"
 	],
 	"defines": {

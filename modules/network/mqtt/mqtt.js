@@ -70,6 +70,8 @@ export default class Client {
 			this.connect.user = dictionary.user;
 		if (dictionary.password)
 			this.connect.password = dictionary.password;
+		if (dictionary.will)
+			this.connect.will = dictionary.will;
 
 //		// set default callbacks to be overridden by caller
 //		this.onConnected = function() {};
@@ -442,10 +444,21 @@ export default class Client {
 			0x02,									// flags : CleanSession
 			(timeout >> 8) & 0xFF, timeout & 0xFF	// keepalive in seconds
 		);
-		const id = makeStringBuffer(this.connect.id);
-		const user = makeStringBuffer(this.connect.user);
-		const password = makeStringBuffer(this.connect.password);
-		const payload = header.length + id.length + user.length + password.length
+		const connect = this.connect;
+		const id = makeStringBuffer(connect.id);
+		const user = makeStringBuffer(connect.user);
+		const password = makeStringBuffer(connect.password);
+		let will = new Uint8Array(0);
+		if (connect.will) {
+			const topic = makeStringBuffer(connect.will.topic);
+			const payload = new Uint8Array(("string" === typeof connect.will.message) ? ArrayBuffer.fromString(connect.will.message) : connect.will.message);
+			will = new Uint8Array(topic.length + 2 + payload.length);
+			will.set(topic, 0);
+			will[topic.length] = payload.length >> 8;
+			will[topic.length + 1] = payload.length & 0xFF;
+			will.set(payload, topic.length + 2);
+		}
+		const payload = header.length + id.length + user.length + password.length + will.length;
 
 		let length = 1;	// CONNECT
 		length += getRemainingLength(payload);
@@ -456,10 +469,11 @@ export default class Client {
 		position = writeRemainingLength(payload, msg, position);
 
 		msg.set(header, position);
-		msg[position + 7] |= (user.length ? 0x80 : 0) | (password.length ? 0x40 : 0);
+		msg[position + 7] |= (user.length ? 0x80 : 0) | (password.length ? 0x40 : 0) | (will.length ? 0x04 : 0);
 		position += header.length;
 
 		msg.set(id, position); position += id.length;
+		msg.set(will, position); position += will.length;
 		msg.set(user, position); position += user.length;
 		msg.set(password, position); position += password.length;
 
@@ -551,8 +565,14 @@ export default class Client {
 		if ((this.last + this.timeout) > now)
 			return;		// received data within the timeout interval
 
-		if ((this.last + (this.timeout + (this.timeout >> 1))) > now)
-			this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
+		if ((this.last + (this.timeout + (this.timeout >> 1))) > now) {
+			try {
+				this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
+			}
+			catch {
+				this.fail("write failed");
+			}
+		}
 		else
 			this.fail("time out"); // timed out after 1.5x waiting
 	}
@@ -621,6 +641,11 @@ function socket_callback(state, message) {
 
 		default:	
 			if (state < 0) {
+				try {
+					this.ws.close();
+				}
+				catch {
+				}
 				delete this.ws;
 				this.fail(`socket error ${state}`);
 			}

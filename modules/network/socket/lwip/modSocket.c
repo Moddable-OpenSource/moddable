@@ -171,8 +171,6 @@ static void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const 
 	static u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr);
 #endif
 
-static uint8 parseAddress(char *address, uint8 *ip);
-
 static void socketUpUseCount(xsMachine *the, xsSocket xss)
 {
 	modCriticalSectionBegin();
@@ -207,10 +205,10 @@ void xs_socket(xsMachine *the)
 	int port = 0;
 	err_t err;
 	char temp[DNS_MAX_NAME_LENGTH];
-	unsigned char ip[4];
 	int len, i;
-	unsigned char multicastIP[4];
+	ip_addr_t multicastIP;
 	int ttl = 0;
+	char addr[64];
 
 	xsmcVars(2);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
@@ -285,13 +283,20 @@ void xs_socket(xsMachine *the)
 			xss->kind = kUDP;
 			if (xsmcHas(xsArg(0), xsID_multicast)) {
 				xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
-				if (!parseAddress(xsmcToString(xsVar(0)), multicastIP))
+				if (!ipaddr_aton(xsmcToStringBuffer(xsVar(0), addr, sizeof(addr)), &multicastIP))
 					xsUnknownError("invalid multicast IP address");
-				if ((255 != multicastIP[0]) || (255 != multicastIP[1]) || (255 != multicastIP[2]) || (255 != multicastIP[3])) {		// ignore broadcast address (255.255.255.255) as lwip fails when trying to use it for multicast
-					ttl = 1;
-					if (xsmcHas(xsArg(0), xsID_ttl)) {
-						xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
-						ttl = xsmcToInteger(xsVar(0));
+#if LWIP_IPV4 && LWIP_IPV6
+				if (IP_IS_V4(&multicastIP)) {
+					if ((255 != ip4_addr1(&multicastIP.u_addr.ip4)) || (255 != ip4_addr2(&multicastIP.u_addr.ip4)) || (255 != ip4_addr3(&multicastIP.u_addr.ip4)) || (255 != ip4_addr4(&multicastIP.u_addr.ip4))) {		// ignore broadcast address (255.255.255.255) as lwip fails when trying to use it for multicast
+#else
+				if (true) {
+					if ((255 != ip4_addr1(&multicastIP)) || (255 != ip4_addr2(&multicastIP)) || (255 != ip4_addr3(&multicastIP)) || (255 != ip4_addr4(&multicastIP))) {		// ignore broadcast address (255.255.255.255) as lwip fails when trying to use it for multicast
+#endif
+						ttl = 1;
+						if (xsmcHas(xsArg(0), xsID_ttl)) {
+							xsmcGet(xsVar(0), xsArg(0), xsID_ttl);
+							ttl = xsmcToInteger(xsVar(0));
+						}
 					}
 				}
 			}
@@ -352,11 +357,8 @@ void xs_socket(xsMachine *the)
 			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
 			ifaddr.addr = staIpInfo.ip.addr;
 	#endif
-			ip_addr_t multicast_addr;
-			IP_ADDR4(&multicast_addr, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
-			igmp_joingroup(&ifaddr, &multicast_addr);
-
-			IP_ADDR4(&(xss->udp)->multicast_ip, multicastIP[0], multicastIP[1], multicastIP[2], multicastIP[3]);
+			igmp_joingroup(&ifaddr, &multicastIP);
+			(xss->udp)->multicast_ip = multicastIP;
 			xss->udp->ttl = 1;
 		}
 	}
@@ -371,34 +373,18 @@ void xs_socket(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_host)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_host);
 		xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-		ip_addr_t resolved;
-		if (ERR_OK == dns_gethostbyname_safe(temp, &resolved, didFindDNS, xss)) {
-#if LWIP_IPV4 && LWIP_IPV6
-			ip[0] = ip4_addr1(&resolved.u_addr.ip4);
-			ip[1] = ip4_addr2(&resolved.u_addr.ip4);
-			ip[2] = ip4_addr3(&resolved.u_addr.ip4);
-			ip[3] = ip4_addr4(&resolved.u_addr.ip4);
-#else
-			ip[0] = ip4_addr1(&resolved);
-			ip[1] = ip4_addr2(&resolved);
-			ip[2] = ip4_addr3(&resolved);
-			ip[3] = ip4_addr4(&resolved);
-#endif
-		}
-		else
+		if (ERR_OK != dns_gethostbyname_safe(temp, &ipaddr, didFindDNS, xss))
 			return;
 	}
 	else
 	if (xsmcHas(xsArg(0), xsID_address)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_address);
-		xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-		if (!parseAddress(temp, ip))
+		if (!ipaddr_aton(xsmcToStringBuffer(xsVar(0), addr, sizeof(addr)), &ipaddr))
 			xsUnknownError("invalid IP address");
 	}
 	else
 		xsUnknownError("invalid dictionary");
 
-	IP_ADDR4(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
 	err = tcp_connect_safe(xss->skt, &ipaddr, port, didConnect);
 	if (err)
 		xsUnknownError("socket connect failed");
@@ -445,8 +431,10 @@ void xs_socket_close(xsMachine *the)
 {
 	xsSocket xss = xsmcGetHostData(xsThis);
 
-	if (NULL == xss)
-		xsUnknownError("close on closed socket");
+	if (NULL == xss) {
+		xsTrace("close on closed socket\n");
+		return;
+	}
 
 	if (!(xss->pending & kPendingClose))
 		socketSetPending(xss, kPendingClose);
@@ -458,23 +446,8 @@ void xs_socket_get(xsMachine *the)
 	const char *name = xsmcToString(xsArg(0));
 
 	if (0 == c_strcmp(name, "REMOTE_IP")) {
-		char *out;
-		ip_addr_t remote_ip = xss->skt->remote_ip;
-
-		xsResult = xsStringBuffer(NULL, 4 * 5);
-		out = xsmcToString(xsResult);
-
-	#if LWIP_IPV4 && LWIP_IPV6
-		itoa(ip4_addr1(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr2(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr3(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr4(&remote_ip.u_addr.ip4), out, 10); out += strlen(out); *out = 0;
-	#else
-		itoa(ip4_addr1(&remote_ip), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr2(&remote_ip), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr3(&remote_ip), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr4(&remote_ip), out, 10); out += strlen(out); *out = 0;
-	#endif
+		xsResult = xsStringBuffer(NULL, 40);
+		ipaddr_ntoa_r(&xss->skt->remote_ip, xsmcToString(xsResult), 40);
 	}
 }
 
@@ -593,6 +566,7 @@ void xs_socket_write(xsMachine *the)
 	u16_t available, needed = 0;
 	err_t err;
 	unsigned char pass, arg;
+	char addr[64];
 
 	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || xss->writeDisabled) {
 		if (0 == argc) {
@@ -604,14 +578,12 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->udp) {
-		uint8 ip[4];
 		unsigned char *data;
 		uint16 port = xsmcToInteger(xsArg(1));
 		ip_addr_t dst;
 
-		if (!parseAddress(xsmcToString(xsArg(0)), ip))
+		if (!ipaddr_aton(xsmcToStringBuffer(xsArg(0), addr, sizeof(addr)), &dst))
 			xsUnknownError("invalid IP address");
-		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
 		needed = xsmcGetArrayBufferLength(xsArg(2));
 		data = xsmcToArrayBuffer(xsArg(2));
@@ -626,14 +598,12 @@ void xs_socket_write(xsMachine *the)
 	}
 
 	if (xss->raw) {
-		uint8 ip[4];
 		unsigned char *data;
 		ip_addr_t dst = {0};
 		struct pbuf *p;
 
-		if (!parseAddress(xsmcToString(xsArg(0)), ip))
+		if (!ipaddr_aton(xsmcToStringBuffer(xsArg(0), addr, sizeof(addr)), &dst))
 			xsUnknownError("invalid IP address");
-		IP_ADDR4(&dst, ip[0], ip[1], ip[2], ip[3]);
 
 		needed = xsmcGetArrayBufferLength(xsArg(1));
 		data = xsmcToArrayBuffer(xsArg(1));
@@ -946,21 +916,9 @@ callback:
 #endif
 	}
 	else {
-		char *out;
-
-		xsResult = xsStringBuffer(NULL, 4 * 5);
-		out = xsmcToString(xsResult);
-#if LWIP_IPV4 && LWIP_IPV6
-		itoa(ip4_addr1(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr2(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr3(&address.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr4(&address.u_addr.ip4), out, 10); out += strlen(out); *out = 0;
-#else
-		itoa(ip4_addr1(&address), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr2(&address), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr3(&address), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr4(&address), out, 10); out += strlen(out); *out = 0;
-#endif
+		char addrStr[40];
+		ipaddr_ntoa_r(&address, addrStr, sizeof(addrStr));
+		xsResult = xsString(addrStr);
 
 		if (kUDP == xss->kind)
 			xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen), xsResult, xsInteger(port));
@@ -1042,8 +1000,6 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		if (xss->suspended)
 			xss->suspendedDisconnect = true;
 		else {
-			tcp_recv(xss->skt, NULL);
-			tcp_sent(xss->skt, NULL);
 			tcp_err(xss->skt, NULL);
 #if ESP32
 			xss->skt = NULL;			// no close on socket if disconnected.
@@ -1052,7 +1008,7 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 			if (xss->reader[0] || xss->buflen)
 				xss->suspendedDisconnect = true;
 			else
-				socketSetPending(xss, kPendingDisconnect | kPendingClose);
+				socketSetPending(xss, kPendingDisconnect);
 		}
 
 		return ERR_OK;
@@ -1147,30 +1103,6 @@ u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *ad
 	return 1;
 }
 
-static uint8 parseAddress(char *address, uint8_t *ip)
-{
-	char temp[4];
-	char *p = address;
-	uint8_t i;
-	for (i = 0; i < 3; i++) {
-		char *t = temp;
-		char *separator = c_strchr(p, '.');
-		if (!separator || ((separator - p) > 3))
-			return 0;
-		while (p < separator)
-			*t++ = c_read8(p++);
-		*t++ = 0;
-		ip[i] = (unsigned char)atoi(temp);
-		p += 1;		// skip separator
-	}
-	if (c_strlen(p) > 3)
-		return 0;
-
-	c_strcpy(temp, p);
-	ip[3] = (unsigned char)atoi(temp);
-	return 1;
-}
-
 static err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err);
 
 // to accept an incoming connection: let incoming = new Socket({listener});
@@ -1209,12 +1141,11 @@ void xs_listener(xsMachine *the)
 
 	ip_addr_t address = *(IP_ADDR_ANY);
 	if (xsmcHas(xsArg(0), xsID_address)) {
-		uint8_t ip[4];
+		char addr[64];
 		xsmcGet(xsVar(0), xsArg(0), xsID_address);
 		if (xsmcTest(xsVar(0))) {
-			if (!parseAddress(xsmcToString(xsVar(0)), ip))
+			if (!ipaddr_aton(xsmcToStringBuffer(xsVar(0), addr, sizeof(addr)), &address))
 				xsUnknownError("invalid IP address");
-			IP_ADDR4(&address, ip[0], ip[1], ip[2], ip[3]);
 		}
 	}
 
@@ -1254,8 +1185,10 @@ void xs_listener_close(xsMachine *the)
 {
 	xsListener xsl = xsmcGetHostData(xsThis);
 
-	if ((NULL == xsl) || (xsl->pending & kPendingClose))
-		xsUnknownError("close on closed listener");
+	if ((NULL == xsl) || (xsl->pending & kPendingClose)) {
+		xsTrace("close on closed listener");
+		return;
+	}
 
 	socketSetPending((xsSocket)xsl, kPendingClose);
 }

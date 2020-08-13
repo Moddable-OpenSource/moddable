@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -28,13 +28,14 @@ static void fxCommandReceived(txSerialTool self, void *buffer, int size);
 static int fxInitializeTarget(txSerialTool self);
 static uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value);
 static void fxSetTime(txSerialTool self, txSerialMachine machine);
-static void fxInstallFragment(txSerialTool self, uint32_t offset);
+static void fxInstallFragment(txSerialTool self);
 
 static uint8_t gReset = 0;
 static uint8_t gRestarting = 0;
 static char *gCmd = NULL;
 static char *gModuleName = NULL;
 static FILE *gInstallFD = 0;
+static int gInstallOffset = 0;
 static uint8_t gBinaryState = 0;
 static uint16_t gBinaryLength;
 
@@ -123,6 +124,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-load") && !gModuleName && ((argi + 1) < argc)) {
 			gModuleName = argv[++argi];
 		}
+		else if (!strcmp(argv[argi], "-dtr")) {
+			self->dtr = 1;
+		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
 			return 1;
@@ -183,7 +187,8 @@ int fxInitializeTarget(txSerialTool self)
 #if mxTraceCommands
 		fprintf(stderr, "### install\n");
 #endif
-		fxInstallFragment(self, 0);
+		gInstallOffset = 0;
+		fxInstallFragment(self);
 
 		gCmd = NULL;
 		return 1;
@@ -229,11 +234,11 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		return;
 	}
 
-	if (0xe0 == (resultId >> 8)) {	// installed fragment
-		fxInstallFragment(self, kInstallInitialFragmentSize + kInstallSkipFragmentSize + ((resultId & 255) * kInstallFragmentSize));
+	if (0xe0e0 == resultId) {	// installed fragment
+		fxInstallFragment(self);
 		return;
 	}
-	if (0xe8 == (resultId >> 8)) {	// install complete
+	if (0xe8e8 == resultId) {	// install complete
 #if mxTraceCommands
 		fprintf(stderr, "### install complete\n");
 #endif
@@ -623,27 +628,27 @@ void fxSetTime(txSerialTool self, txSerialMachine machine)
 // this ensures that the mod header is only valid if all bytes are received
 //@@ add GET MOD SPACE
 //@@ add GET VERSION
-void fxInstallFragment(txSerialTool self, uint32_t offset)
+void fxInstallFragment(txSerialTool self)
 {
 	char preamble[32];
 	char out[kInstallFragmentSize + 16];
-	int use = (0 == offset) ? kInstallInitialFragmentSize : kInstallFragmentSize;
+	int use = (0 == gInstallOffset) ? kInstallInitialFragmentSize : kInstallFragmentSize;
 	uint8_t id = 0xe0;
 
-	fseek(gInstallFD, offset, SEEK_SET);
+	fseek(gInstallFD, gInstallOffset, SEEK_SET);
 	use = fread(out + 9, 1, use, gInstallFD);
 	if (0 == use) {
 #if mxTraceCommands
 		fprintf(stderr, "### update install header\n");
 #endif
-		offset = kInstallInitialFragmentSize;
-		fseek(gInstallFD, offset, SEEK_SET);
+		gInstallOffset = kInstallInitialFragmentSize;
+		fseek(gInstallFD, gInstallOffset, SEEK_SET);
 		use = fread(out + 9, 1, kInstallSkipFragmentSize, gInstallFD);
 		id = 0xe8;
 	}
 
 #if mxTraceCommands
-	fprintf(stderr, "### install fragment @ %d size %d\n", offset, use);
+	fprintf(stderr, "### install fragment @ %d size %d\n", gInstallOffset, use);
 #endif
 
 	sprintf(preamble, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
@@ -653,12 +658,14 @@ void fxInstallFragment(txSerialTool self, uint32_t offset)
 	out[1] = (use + 7) & 0xff;		// length low
 	out[2] = 3;		// install cmd
 	out[3] = id;	// id high
-	out[4] = (0 == offset) ? 0 : (1 + (offset - kInstallInitialFragmentSize) / kInstallFragmentSize);
-	out[5] = (offset >> 24) & 255;
-	out[6] = (offset >> 16) & 255;
-	out[7] = (offset >> 8) & 255;
-	out[8] = offset & 255;
+	out[4] = id;	// id low
+	out[5] = (gInstallOffset >> 24) & 255;
+	out[6] = (gInstallOffset >> 16) & 255;
+	out[7] = (gInstallOffset >> 8) & 255;
+	out[8] = gInstallOffset & 255;
 
 	fxWriteSerial(self, out, use + 4 + 5);
+
+	gInstallOffset += use;
 }
 

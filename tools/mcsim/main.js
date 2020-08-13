@@ -135,7 +135,7 @@ class ApplicationBehavior extends Behavior {
 		if (this.screenPath) {
 			system.copyFile(this.screenPath, this.localScreenPath);
 			this.SCREEN.launch(this.localScreenPath);
-			this.DEVICE.first.defer("onConfigure");
+			this.DEVICE.first.defer("onLaunch");
 		}
 		application.updateMenus();
 	}
@@ -160,8 +160,8 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment({...global, Date, Math});
-						let device = compartment.importSync(info.path).default;
+						let compartment = new Compartment({...globalThis, Date, Math});
+						let device = compartment.importNow(info.path).default;
 						if (device && ("DeviceTemplate" in device)) {
 							device.compartment = compartment;
 							device.default = device;
@@ -212,7 +212,9 @@ class ApplicationBehavior extends Behavior {
 		let path = device.applicationPath;
 		if (path && system.fileExists(path))
 			this.screenPath = path;
-		
+		else
+			this.screenPath = "";
+			
 		application.distribute("onDeviceSelected", device);
 		application.updateMenus();
 	}
@@ -299,12 +301,12 @@ class ApplicationBehavior extends Behavior {
 	doOpenFileCallback(path) {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
 		if (path.endsWith(extension)) {
-			this.quitScreen();
 			let index = this.devices.findIndex(device => device.applicationPath == path);
-			if ((index >= 0) && (index != this.deviceIndex))
+			if ((index >= 0) && (index != this.deviceIndex)) {
+				this.quitScreen();
 				this.selectDevice(application, index);
-			this.screenPath = path;
-			this.launchScreen();
+				this.launchScreen();
+			}
 		}
 	}
 	doReloadFile() {

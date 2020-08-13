@@ -191,6 +191,13 @@ struct PiuAssetStruct {
 	PiuAssetPart;
 };
 
+// PiuTexture.c
+
+#ifdef piuGPU
+extern void PiuTextureBind(PiuTexture* self);
+extern void PiuTextureUnbind(PiuTexture* self);
+#endif
+
 // PiuSkin.c
 
 enum {
@@ -223,6 +230,10 @@ struct PiuSkinStruct {
 extern void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant variant, PiuState state, PiuAlignment horizontal, PiuAlignment vertical);
 extern PiuDimension PiuSkinGetWidth(PiuSkin* self);
 extern PiuDimension PiuSkinGetHeight(PiuSkin* self);
+#ifdef piuGPU
+extern void PiuSkinBind(PiuSkin* self);
+extern void PiuSkinUnbind(PiuSkin* self);
+#endif
 
 // PiuFont.c
 
@@ -239,6 +250,10 @@ extern PiuDimension PiuFontGetWidth(PiuFont* self, xsSlot* string, xsIntegerValu
 extern void PiuStyleLookupFont(PiuStyle* self);
 #ifdef piuPC
 extern double PiuFontGetWidthSubPixel(PiuFont* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length);
+#endif
+#ifdef piuGPU
+extern void PiuFontBind(PiuFont* self);
+extern void PiuFontUnbind(PiuFont* self);
 #endif
 
 // PiuStyle.c
@@ -303,6 +318,10 @@ extern void PiuStyleDraw(PiuStyle* self, xsSlot* string, PiuView* view, PiuRecta
 extern PiuDimension PiuStyleGetWidth(PiuStyle* self, xsSlot* string);
 extern PiuDimension PiuStyleGetHeight(PiuStyle* self, xsSlot* string);
 extern void PiuStyleOverride(PiuStyle* self, PiuStyle* result);
+#ifdef piuGPU
+extern void PiuStyleBind(PiuStyle* self);
+extern void PiuStyleUnbind(PiuStyle* self);
+#endif
 
 // BEHAVIOR
 
@@ -773,6 +792,8 @@ extern void PiuTransitionComplete(PiuTransition* self, PiuContainer* container);
 extern int mcCountResources(xsMachine* the);
 extern const char* mcGetResourceName(xsMachine* the, int i);
 extern const void *mcGetResource(xsMachine* the, const char* path, size_t* size);
+
+extern const void *fxGetResource(xsMachine* the, const char* path, size_t* size);
 
 // XS
 

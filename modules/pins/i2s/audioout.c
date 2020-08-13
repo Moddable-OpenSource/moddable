@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -59,12 +59,7 @@
 	#endif
 	#if MODDEF_AUDIOOUT_I2S_DAC
 		#ifndef MODDEF_AUDIOOUT_I2S_DAC_CHANNEL
-			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL I2S_DAC_CHANNEL_BOTH_EN
-		#endif
-	#endif
-	#if MODDEF_AUDIOOUT_I2S_DAC
-		#ifndef MODDEF_AUDIOOUT_I2S_DAC_CHANNEL
-			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL I2S_DAC_CHANNEL_BOTH_EN
+			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL 3
 		#endif
 	#endif
 #endif
@@ -1128,8 +1123,17 @@ void audioOutLoop(void *pvParameter)
 		int16_t *src = (int16_t *)out->buffer;
 		int32_t *dst = out->buffer32;
 
-		while (i--)
-			*dst++ = *src++ ^ 0x8000;
+		while (i--){
+			uint16_t s = (uint16_t)(*src++ ^ 0x8000);
+#if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 3 //I2S_DAC_CHANNEL_BOTH_EN
+			*dst++ = (s << 16) | s;
+#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1 //I2S_DAC_CHANNEL_RIGHT_EN
+			*dst++ = s << 16;
+#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 2 //I2S_DAC_CHANNEL_LEFT_EN
+			*dst++ = s;
+#endif
+		}
+			
 
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE

@@ -19,6 +19,8 @@
  */
 
 #include "piuAll.h"
+#include "mc.defines.h"
+#include "commodettoPoco.h"
 #include "commodettoFontEngine.h"
 
 typedef struct PiuGlyphStruct PiuGlyphRecord, *PiuGlyph;
@@ -78,7 +80,14 @@ struct PiuTextureStruct {
 	PocoBitmapRecord mask;
 	PiuDimension width;
 	PiuDimension height;
+#ifdef piuGPU
+	uint32_t usage;
+#endif
 };
+
+#ifdef piuGPU
+extern int piuTextureSize;
+#endif
 
 // PiuRegion.c
 
@@ -154,6 +163,9 @@ struct PiuImageStruct {
 	xsIntegerValue frameIndex;
 	uint32_t frameOffset;
 	uint32_t frameSize;
+#ifdef piuGPU
+	uint32_t frameID;
+#endif
 };
 
 // PiuView.c
@@ -162,10 +174,6 @@ struct PiuViewStruct {
 	PiuHandlePart;
 	xsMachine* the;
 	PiuApplication* application;
-	PiuRegion* dirty;
-	PiuRegion* swap;
-	uint32_t current;
-	uint32_t limit;
 	Poco poco;
 	PocoColor pixel;
 	uint8_t blend;
@@ -178,7 +186,16 @@ struct PiuViewStruct {
 	xsSlot _continue;
 	xsSlot _end;
 	xsSlot _send;
+#ifdef piuGPU
+	uint8_t dirty;
+	uint8_t ready;
+#else
+	PiuRegion* dirty;
+	PiuRegion* swap;
+	uint32_t current;
+	uint32_t limit;
 	// commands...
+#endif		
 };
 
 extern void PiuViewDrawFrame(PiuView* self, uint8_t *data, uint32_t dataSize, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);

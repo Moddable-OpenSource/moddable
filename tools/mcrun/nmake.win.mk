@@ -30,6 +30,7 @@ MCLOCAL = $(BUILD_DIR)\bin\win\debug\mclocal
 MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
 PNG2BMP = $(BUILD_DIR)\bin\win\debug\png2bmp
 RLE4ENCODE = $(BUILD_DIR)\bin\win\debug\rle4encode
+WAV2MAUD = $(BUILD_DIR)\bin\win\debug\wav2maud
 XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 
@@ -38,4 +39,4 @@ all: $(BIN_DIR)\mc.xsa
 
 $(BIN_DIR)\mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo # xsl mc.xsa
-	$(XSL) -a -b $(MODULES_DIR) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
+	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)

@@ -55,11 +55,16 @@ export class Iterator @ "xs_file_iterator_destructor" {
 	}
 };
 
+export class Directory {
+	static create(path) @ "xs_directory_create";
+	static delete(path) @ "xs_directory_delete";
+};
+
 export class System {
 	static config() @ "xs_file_system_config";
 	static info() @ "xs_file_system_info";
 };
 
 export default Object.freeze({
-	File, Iterator, System
+	File, Iterator, System, Directory
 });

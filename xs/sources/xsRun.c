@@ -1357,8 +1357,12 @@ XS_CODE_JUMP:
 				mxNextCode(mxStack->value.boolean ? (txS4)index : (txS4)index + offset)
 			else if (XS_INTEGER_KIND == byte)
 				mxNextCode(mxStack->value.integer ? (txS4)index : (txS4)index + offset)
-			else if (XS_NUMBER_KIND == byte)
+			else if (XS_NUMBER_KIND == byte) {
 				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? (txS4)index + offset : (txS4)index)
+				mxFloatingPointOp("else");
+			}
+			else if ((XS_BIGINT_KIND == byte) || (XS_BIGINT_X_KIND == byte))
+				mxNextCode(((mxStack->value.bigint.size == 1) && (mxStack->value.bigint.data[0] == 0)) ? (txS4)index + offset : (txS4)index)
 			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
 				mxNextCode(c_isEmpty(mxStack->value.string) ? (txS4)index + offset : (txS4)index)
 			else
@@ -1386,6 +1390,8 @@ XS_CODE_JUMP:
 				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? (txS4)index : (txS4)index + offset)
 				mxFloatingPointOp("if");
 			}
+			else if ((XS_BIGINT_KIND == byte) || (XS_BIGINT_X_KIND == byte))
+				mxNextCode(((mxStack->value.bigint.size == 1) && (mxStack->value.bigint.data[0] == 0)) ? (txS4)index : (txS4)index + offset)
 			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
 				mxNextCode(c_isEmpty(mxStack->value.string) ? (txS4)index : (txS4)index + offset)
 			else
@@ -4098,8 +4104,8 @@ void fxRunExtends(txMachine* the)
 	txSlot* prototype;
 	
 	constructor = fxGetInstance(the, the->stack);
-	if (!constructor)
-		mxTypeError("extends: no function");
+	if (!mxIsConstructor(constructor))
+		mxTypeError("extends: no constructor");
 	mxPushUndefined();
 	prototype = the->stack;
 	fxBeginHost(the);

@@ -533,11 +533,13 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#define kModulesEnd kFlashEnd
 	#define kModulesByteLength (kModulesEnd - kModulesStart)
 #endif
+#define kFlashSectorSize (4096)
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
+char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 #ifdef __cplusplus
 }

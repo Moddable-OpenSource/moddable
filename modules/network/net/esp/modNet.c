@@ -88,13 +88,13 @@ void xs_net_get(xsMachine *the)
 
 		if (wifi_get_ip_info(nif, &info) && (ip4_addr1(&info.ip) || ip4_addr2(&info.ip) || ip4_addr3(&info.ip) || ip4_addr4(&info.ip))) {
 #endif
-			char *out;
-			xsResult = xsStringBuffer(NULL, 4 * 5);
-			out = xsToString(xsResult);
-			itoa(ip4_addr1(&info.ip), out, 10); out += strlen(out); *out++ = '.';
-			itoa(ip4_addr2(&info.ip), out, 10); out += strlen(out); *out++ = '.';
-			itoa(ip4_addr3(&info.ip), out, 10); out += strlen(out); *out++ = '.';
-			itoa(ip4_addr4(&info.ip), out, 10); out += strlen(out); *out = 0;
+			char addrStr[40];
+#if LWIP_IPV4 && LWIP_IPV6
+			ip4addr_ntoa_r(&info.ip, addrStr, sizeof(addrStr));
+#else
+			ipaddr_ntoa_r(&info.ip, addrStr, sizeof(addrStr));
+#endif
+			xsResult = xsString(addrStr);
 		}
 
 	}
@@ -177,6 +177,7 @@ void xs_net_get(xsMachine *the)
 		xsResult = xsNewArray(0);
 		xsVars(1);
 		do {
+			char addrStr[40];
 #if ESP32
 			const ip_addr_t* addr = dns_getserver(i);
 #else
@@ -190,8 +191,8 @@ void xs_net_get(xsMachine *the)
 #endif
 				break;
 
-			xsVar(0) = xsStringBuffer(NULL, 32);
-			ipaddr_ntoa_r(addr, xsToString(xsVar(0)), 32);
+			ipaddr_ntoa_r(addr, addrStr, sizeof(addrStr));
+			xsVar(0) = xsStringBuffer(addrStr, c_strlen(addrStr));
 			xsSet(xsResult, i++, xsVar(0));
 		} while (true);
 	}

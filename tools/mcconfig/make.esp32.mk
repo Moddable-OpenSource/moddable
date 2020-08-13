@@ -102,13 +102,15 @@ INC_DIRS = \
  	$(IDF_PATH)/components/lwip/lwip/src/include/ \
  	$(IDF_PATH)/components/lwip/port/esp32/ \
  	$(IDF_PATH)/components/lwip/port/esp32/include/ \
- 	$(IDF_PATH)/components/mbedtls/include \
+ 	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
  	$(IDF_PATH)/components/nimble/esp-hci/include \
- 	$(IDF_PATH)/components/nimble/nimble/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
  	$(IDF_PATH)/components/nimble/nimble/nimble/host/services/gap/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/host/src \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/include \
+ 	$(IDF_PATH)/components/nimble/nimble/nimble/include/nimble \
  	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
  	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
  	$(IDF_PATH)/components/nimble/port/include \
@@ -116,6 +118,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/soc/esp32/include/soc \
  	$(IDF_PATH)/components/soc/include \
  	$(IDF_PATH)/components/spiffs/include \
+	$(IDF_PATH)/components/fatfs/src \
+	$(IDF_PATH)/components/wear_levelling/include \
  	$(IDF_PATH)/components/spi_flash/include \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
@@ -270,7 +274,7 @@ MEM_USAGE = \
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
-.PHONY: all	
+.PHONY: all partitionsFileCheck
 
 PARTITIONS_FILE ?= $(PROJ_DIR_TEMPLATE)/partitions.csv
 
@@ -295,7 +299,8 @@ ifeq ($(ESP32_CMAKE),1)
 	DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	IDF_RECONFIGURE_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	RELEASE_LAUNCH_CMD = idf.py -B $(IDF_BUILD_DIR) $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL)
-	PARTITIONS_BIN = $(IDF_BUILD_DIR)/partition_table/partition-table.bin
+	PARTITIONS_BIN = partition-table.bin
+	PARTITIONS_PATH = $(IDF_BUILD_DIR)/partition_table/$(PARTITIONS_BIN)
 else
 	BUILD_AND_FLASH_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
 	BUILD_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make --silent
@@ -303,7 +308,8 @@ else
 	DEPLOY_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash
 	IDF_RECONFIGURE_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) BATCH_BUILD=1 DEBUG=$(DEBUG) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) make defconfig
 	RELEASE_LAUNCH_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make monitor
-	PARTITIONS_BIN = $(IDF_BUILD_DIR)/partitions.bin
+	PARTITIONS_BIN = partitions.bin
+	PARTITIONS_PATH = $(IDF_BUILD_DIR)/$(PARTITIONS_BIN)
 	ifeq ($(HOST_OS),Darwin)
 		SERIAL2XSBUG_PORT = `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'`
 	else
@@ -339,18 +345,38 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
-	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(PARTITIONS_BIN) $(BIN_DIR)
+	-cp $(PARTITIONS_PATH) $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
+	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
 	cd $(PROJ_DIR); \
 	$(DO_LAUNCH)
 
-deploy:
+DEPLOY_PRE:
+	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to esp32"
+	-@mv $(IDF_BUILD_DIR)/xs_esp32.bin $(IDF_BUILD_DIR)/xs_esp32.bin_prev 2>/dev/null
+	-@mv $(PARTITIONS_PATH) $(PARTITIONS_BIN)_prev 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(IDF_BUILD_DIR)/bootloader/bootloader.bin_prev 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/ota_data_initial.bin $(IDF_BUILD_DIR)/ota_data_initial.bin_prev 2>&1
+
+DEPLOY_START:
+	-cp $(BIN_DIR)/xs_esp32.bin $(IDF_BUILD_DIR)
+	-cp $(BIN_DIR)/$(PARTITIONS_BIN) $(PARTITIONS_PATH)
+	-cp $(BIN_DIR)/bootloader.bin $(IDF_BUILD_DIR)/bootloader/bootloader.bin
+	-cp $(BIN_DIR)/ota_data_initial.bin $(IDF_BUILD_DIR)/ota_data_initial.bin
 	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
+
+DEPLOY_END:
+	-@mv $(IDF_BUILD_DIR)/xs_esp32.bin_prev $(IDF_BUILD_DIR)/xs_esp32.bin 2>/dev/null
+	-@mv $(PARTITIONS_BIN)_prev $(PARTITIONS_PATH) 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/bootloader/bootloader.bin_prev $(IDF_BUILD_DIR)/bootloader/bootloader.bin 2>/dev/null
+	-@mv $(IDF_BUILD_DIR)/ota_data_initial.bin_prev $(IDF_BUILD_DIR)/ota_data_initial.bin 2>/dev/null
+
+deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 xsbug:
 	@echo "# starting xsbug"
@@ -364,7 +390,7 @@ prepareOutput:
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
 	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
 
-precursor: prepareOutput projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
+precursor: partitionsFileCheck prepareOutput projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_esp32.a
 	cp $(BIN_DIR)/xs_esp32.a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
@@ -373,7 +399,7 @@ build: precursor
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
-	-cp $(PARTITIONS_BIN) $(BIN_DIR)
+	-cp $(PARTITIONS_PATH) $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>&1
 	echo "#"
 	echo "# Built files at $(BIN_DIR)"
@@ -414,7 +440,14 @@ $(BIN_DIR)/xs_esp32.a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_esp32.a $^ $(LIB_DIR)/buildinfo.c.o
 
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PARTITIONS_FILE)
+projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)/partitions.csv
+
+partitionsFileCheck:
+	if test -e $(PROJ_DIR)/partitions.csv ; then \
+		if ! cmp -s $(PROJ_DIR)/partitions.csv $(PARTITIONS_FILE) ; then \
+			touch $(PARTITIONS_FILE); \
+		fi ; \
+	fi
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)

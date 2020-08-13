@@ -732,6 +732,8 @@ void fxGetNextString(txParser* parser, int c)
 				case '5':
 				case '6':
 				case '7':
+				case '8':
+				case '9':
 					character = *s++ - '0';
 					if ((parser->flags & mxStrictFlag) || (c == '`')) {
 						if ((character == 0) && ((*s < '0') || ('9' < *s)))
@@ -970,6 +972,10 @@ void fxGetNextTokenAux(txParser* parser)
 			else if (parser->character == '?') {		
 				parser->token2 = XS_TOKEN_COALESCE;
 				fxGetNextCharacter(parser);
+				if (parser->character == '=') {	
+					parser->token2 = XS_TOKEN_COALESCE_ASSIGN;
+					fxGetNextCharacter(parser);
+				}
 			}
 			else	
 				parser->token2 = XS_TOKEN_QUESTION_MARK;
@@ -1088,6 +1094,10 @@ void fxGetNextTokenAux(txParser* parser)
 			else if (parser->character == '&') {
 				parser->token2 = XS_TOKEN_AND;
 				fxGetNextCharacter(parser);
+				if (parser->character == '=') {	
+					parser->token2 = XS_TOKEN_AND_ASSIGN;
+					fxGetNextCharacter(parser);
+				}
 			}
 			else
 				parser->token2 = XS_TOKEN_BIT_AND;
@@ -1101,6 +1111,10 @@ void fxGetNextTokenAux(txParser* parser)
 			else if (parser->character == '|') {
 				parser->token2 = XS_TOKEN_OR;
 				fxGetNextCharacter(parser);
+				if (parser->character == '=') {	
+					parser->token2 = XS_TOKEN_OR_ASSIGN;
+					fxGetNextCharacter(parser);
+				}
 			}
 			else
 				parser->token2 = XS_TOKEN_BIT_OR;

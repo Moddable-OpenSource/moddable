@@ -437,7 +437,7 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 void modSPIFlush(void)
 {
 	while (gSPIDataCount >= 0)
-		;
+		taskYIELD();
 
 	reduceTransactionsPending(0);
 }

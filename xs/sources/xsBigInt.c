@@ -563,7 +563,7 @@ txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
 
 void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 {
-	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
 	txU4 data[1] = { 10 };
 	txBigInt divider = { .sign=0, .size=1, .data=data };
 	txSize length, offset;

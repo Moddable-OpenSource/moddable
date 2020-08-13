@@ -136,7 +136,7 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: precursor
-	open -a $(SIMULATOR) $(BIN_DIR)/mc.so
+	open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 

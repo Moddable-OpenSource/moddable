@@ -197,7 +197,8 @@ static void* fxCharSetUnicodeProperty(txPatternParser* parser);
 static void* fxCharSetWords(txPatternParser* parser);
 static void* fxDisjunctionParse(txPatternParser* parser, txInteger character);
 static void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIndex);
-static txInteger fxQuantifierParseDigits(txPatternParser* parser);
+static txBoolean fxQuantifierParseBrace(txPatternParser* parser, txInteger* min, txInteger* max);
+static txBoolean fxQuantifierParseDigits(txPatternParser* parser, txInteger* result);
 static void* fxSequenceParse(txPatternParser* parser, txInteger character);
 static void* fxTermCreate(txPatternParser* parser, size_t size, txTermMeasure measure);
 
@@ -889,23 +890,12 @@ void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIn
 		fxPatternParserNext(parser);
 		break;
 	case '{':
-		fxPatternParserNext(parser);
-		min = fxQuantifierParseDigits(parser);
-		if (parser->character == ',') {
-			fxPatternParserNext(parser);
-			if (parser->character == '}')
-				max = 0x7FFFFFFF;
-			else
-				max = fxQuantifierParseDigits(parser);
+		if (fxQuantifierParseBrace(parser, &min, &max)) {
+			if (min > max)
+				fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
+			break;
 		}
-		else
-			max = min;
-		if (parser->character != '}')
-			fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
-		if (min > max)
-			fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
-		fxPatternParserNext(parser);
-		break;
+		// continue
 	default:
 		return term;
 	}
@@ -926,7 +916,32 @@ void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIn
 	return quantifier;
 }
 
-txInteger fxQuantifierParseDigits(txPatternParser* parser)
+txBoolean fxQuantifierParseBrace(txPatternParser* parser, txInteger* min, txInteger* max)
+{
+	txInteger offset = parser->offset;
+	fxPatternParserNext(parser);
+	if (!fxQuantifierParseDigits(parser, min))
+		goto BACKTRACK;
+	if (parser->character == ',') {
+		fxPatternParserNext(parser);
+		if (parser->character == '}')
+			*max = 0x7FFFFFFF;
+		else if (!fxQuantifierParseDigits(parser, max))
+			goto BACKTRACK;
+	}
+	else
+		*max = *min;
+	if (parser->character != '}')
+		goto BACKTRACK;
+	fxPatternParserNext(parser);
+	return 1;
+BACKTRACK:
+	parser->character = '{';
+	parser->offset = offset;
+	return 0;
+}
+
+txBoolean fxQuantifierParseDigits(txPatternParser* parser, txInteger* result)
 {
 	txU4 value = 0;
 	if (fxPatternParserDecimal(parser, &value)) {
@@ -935,10 +950,11 @@ txInteger fxQuantifierParseDigits(txPatternParser* parser)
 			fxPatternParserNext(parser);
 	}
 	else
-		fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
+		return 0;
 	if (value > 0x7FFFFFFF)
 		value = 0x7FFFFFFF;
-	return (txInteger)value;
+	*result = value;
+	return 1;
 }
 
 void* fxSequenceParse(txPatternParser* parser, txInteger character)
@@ -1101,19 +1117,23 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 			fxPatternParserNext(parser);
 			current = fxQuantifierParse(parser, current, currentIndex);
 		}
-		else if (parser->character == ']') {
+		else if ((parser->character == ']') && (parser->flags & XS_REGEXP_U)) {
 			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
-		else if (parser->character == '{') {
-			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
-		}
-		else if (parser->character == '}') {
+		else if ((parser->character == '}') && (parser->flags & XS_REGEXP_U)) {
 			fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
 		}
 		else if (parser->character == '|') {
 			break;
 		}
 		else {
+			if (parser->character == '{') {
+				txInteger min, max;
+				if ((parser->flags & XS_REGEXP_U))
+					fxPatternParserError(parser, gxErrors[mxInvalidCharacter]);
+				if (fxQuantifierParseBrace(parser, &min, &max))
+					fxPatternParserError(parser, gxErrors[mxInvalidQuantifier]);
+			}
 			current = fxCharSetCanonicalizeSingle(parser, fxCharSetSingle(parser, parser->character));
 			fxPatternParserNext(parser);
 			current = fxQuantifierParse(parser, current, currentIndex);
@@ -1482,6 +1502,10 @@ void fxPatternParserError(txPatternParser* parser, txString format, ...)
 	txString pattern = parser->pattern;
 	txString error = parser->error;
 	txInteger offset = parser->offset;
+    if (offset > 80) {
+        pattern += offset - 80;
+        offset = 80;
+    }
 	while (offset) {
 		*error++ = c_read8(pattern++);
 		offset--;

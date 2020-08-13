@@ -75,6 +75,7 @@ typedef struct {
 	uint8_t deviceNameSet;
 
 	// services
+	uint8_t deployServices;
 	uint16_t handles[service_count][max_attribute_count];
 
 	// security
@@ -92,6 +93,8 @@ typedef struct {
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
+static void addressToBuffer(esp_bd_addr_t *bda, uint8_t *buffer);
+static void bufferToAddress(uint8_t *buffer, esp_bd_addr_t *bda);
 static void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length);
 
 static const char_name_table *handleToCharName(uint16_t handle);
@@ -119,6 +122,14 @@ void xs_ble_server_initialize(xsMachine *the)
 	gBLE->conn_id = -1;
 	gBLE->gatts_if = ESP_GATT_IF_NONE;
 	xsRemember(gBLE->obj);
+
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_deployServices)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_deployServices);
+		gBLE->deployServices = xsmcToBoolean(xsVar(0));
+	}
+	else
+		gBLE->deployServices = true;
 
 	// Initialize platform Bluetooth modules
 	esp_err_t err = modBLEPlatformInitialize();
@@ -151,9 +162,11 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 
-	for (uint16_t i = 0; i < service_count; ++i)
-		if (ble->handles[i][0])
-			esp_ble_gatts_delete_service(ble->handles[i][0]);
+	if (ble->deployServices) {
+		for (uint16_t i = 0; i < service_count; ++i)
+			if (ble->handles[i][0])
+				esp_ble_gatts_delete_service(ble->handles[i][0]);
+	}
 	if (-1 != ble->conn_id)
 		esp_ble_gatts_close(ble->gatts_if, ble->conn_id);
 	esp_ble_gatts_app_unregister(ble->gatts_if);
@@ -176,7 +189,9 @@ void xs_ble_server_disconnect(xsMachine *the)
 void xs_ble_server_get_local_address(xsMachine *the)
 {
 	const uint8_t *addr = (const uint8_t *)esp_bt_dev_get_address();
-	xsmcSetArrayBuffer(xsResult, (void*)addr, 6);
+	uint8_t buffer[6];
+	addressToBuffer((esp_bd_addr_t*)addr, buffer);
+	xsmcSetArrayBuffer(xsResult, (void*)buffer, 6);
 }
 
 void xs_ble_server_set_device_name(xsMachine *the)
@@ -190,10 +205,26 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	AdvertisingFlags flags = xsmcToInteger(xsArg(0));
 	uint16_t intervalMin = xsmcToInteger(xsArg(1));
 	uint16_t intervalMax = xsmcToInteger(xsArg(2));
-	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(3));
-	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(3));
-	uint8_t *scanResponseData = xsmcTest(xsArg(4)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(4)) : NULL;
-	uint32_t scanResponseDataLength = xsmcTest(xsArg(4)) ? xsmcGetArrayBufferLength(xsArg(4)) : 0;
+	uint8_t filterPolicy = xsmcToInteger(xsArg(3));
+	uint8_t *advertisingData = (uint8_t*)xsmcToArrayBuffer(xsArg(4));
+	uint32_t advertisingDataLength = xsmcGetArrayBufferLength(xsArg(4));
+	uint8_t *scanResponseData = xsmcTest(xsArg(5)) ? (uint8_t*)xsmcToArrayBuffer(xsArg(5)) : NULL;
+	uint32_t scanResponseDataLength = xsmcTest(xsArg(5)) ? xsmcGetArrayBufferLength(xsArg(5)) : 0;
+
+	switch(filterPolicy) {
+		case kBLEAdvFilterPolicyWhitelistScans:
+			filterPolicy = ADV_FILTER_ALLOW_SCAN_WLST_CON_ANY;
+			break;
+		case kBLEAdvFilterPolicyWhitelistConnections:
+			filterPolicy = ADV_FILTER_ALLOW_SCAN_ANY_CON_WLST;
+			break;
+		case kBLEAdvFilterPolicyWhitelistScansConnections:
+			filterPolicy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
+			break;
+		default:
+			filterPolicy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
+			break;
+	}
 
 	// Save the advertising and scan response data. The buffers cannot be freed until the GAP callback confirmation.
 	gBLE->advertisingData = (uint8_t*)c_malloc(advertisingDataLength);
@@ -213,7 +244,7 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	gBLE->adv_params.adv_type = (flags & (LE_LIMITED_DISCOVERABLE_MODE | LE_GENERAL_DISCOVERABLE_MODE)) ? ADV_TYPE_IND : ADV_TYPE_NONCONN_IND;
 	gBLE->adv_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
 	gBLE->adv_params.channel_map = ADV_CHNL_ALL;
-	gBLE->adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
+	gBLE->adv_params.adv_filter_policy = filterPolicy;
 
 	// Set the advertising and scan response data
 	gBLE->adv_config_done = adv_config_flag;
@@ -266,7 +297,7 @@ void xs_ble_server_passkey_reply(xsMachine *the)
 	esp_bd_addr_t bda;
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
-	c_memmove(&bda, address, sizeof(bda));
+	bufferToAddress(address, &bda);
 	esp_ble_confirm_reply(bda, confirm);
 }
 
@@ -342,6 +373,28 @@ void uuidToBuffer(uint8_t *buffer, esp_bt_uuid_t *uuid, uint16_t *length)
 	}
 }
 
+static void addressToBuffer(esp_bd_addr_t *bda, uint8_t *buffer)
+{
+	uint8_t *address = (uint8_t*)bda;
+	buffer[0] = address[5];
+	buffer[1] = address[4];
+	buffer[2] = address[3];
+	buffer[3] = address[2];
+	buffer[4] = address[1];
+	buffer[5] = address[0];
+}
+
+static void bufferToAddress(uint8_t *buffer, esp_bd_addr_t *bda)
+{
+	uint8_t *address = (uint8_t*)bda;
+	address[0] = buffer[5];
+	address[1] = buffer[4];
+	address[2] = buffer[3];
+	address[3] = buffer[2];
+	address[4] = buffer[1];
+	address[5] = buffer[0];
+}
+
 static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	modBLE ble = refcon;
@@ -354,10 +407,12 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 	if (!gBLE) return;
 
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
+	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), key_notif->bd_addr, 6);
+	addressToBuffer(&key_notif->bd_addr, buffer);
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 	xsmcSetInteger(xsVar(2), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -370,10 +425,12 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 	if (!gBLE) return;
 
 	esp_ble_sec_key_notif_t *key_notif = (esp_ble_sec_key_notif_t *)message;
+	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), key_notif->bd_addr, 6);
+	addressToBuffer(&key_notif->bd_addr, buffer);
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 	xsmcSetInteger(xsVar(2), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -387,10 +444,12 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 
 	esp_ble_sec_req_t *ble_req = (esp_ble_sec_req_t *)message;
 	uint32_t passkey;
+	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda, 6);
+	addressToBuffer(&gBLE->remote_bda, buffer);
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	if (gBLE->iocap == KeyboardOnly)
 		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
@@ -499,6 +558,8 @@ static void logGAPEvent(esp_gap_ble_cb_event_t event) {
 
 void xs_ble_server_deploy(xsMachine *the)
 {
+	if (!gBLE->deployServices) return;
+	
 	for (uint16_t i = 0; i < service_count; ++i) {
 		esp_gatts_attr_db_t *gatts_attr_db = (esp_gatts_attr_db_t*)&gatt_db[i];
 		esp_attr_desc_t *att_desc = (esp_attr_desc_t*)&gatts_attr_db->att_desc;
@@ -553,6 +614,7 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_connect_evt_param *connect = (struct gatts_connect_evt_param *)message;
+	uint8_t buffer[6];
 	if (!gBLE) return;
 	xsBeginHost(gBLE->the);
 	if (-1 != gBLE->conn_id)
@@ -563,7 +625,8 @@ static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), connect->conn_id);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), connect->remote_bda, 6);
+	addressToBuffer(&connect->remote_bda, buffer);
+	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
@@ -573,6 +636,7 @@ bail:
 static void gattsDisconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gatts_disconnect_evt_param *disconnect = (struct gatts_disconnect_evt_param *)message;
+	uint8_t buffer[6];
 	if (!gBLE) return;
 	xsBeginHost(gBLE->the);
 	if (disconnect->conn_id != gBLE->conn_id)
@@ -582,7 +646,8 @@ static void gattsDisconnectEvent(void *the, void *refcon, uint8_t *message, uint
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), disconnect->conn_id);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), disconnect->remote_bda, 6);
+	addressToBuffer(&disconnect->remote_bda, buffer);
+	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 bail:

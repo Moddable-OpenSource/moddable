@@ -57,7 +57,6 @@ void fxBuildError(txMachine* the)
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "AggregateError", mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_AggregateError_prototype_get_errors), C_NULL, mxID(_errors), XS_DONT_ENUM_FLAG);
 	mxAggregateErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_AggregateError), 2, mxID(_AggregateError));
 	instance->value.instance.prototype = prototype;
@@ -140,7 +139,7 @@ txSlot* fx_Error_aux(txMachine* the, txSlot* prototype, txInteger i)
 	slot->kind = XS_ERROR_KIND;
 	if ((mxArgc > i) && (mxArgv(i)->kind != XS_UNDEFINED_KIND)) {
 		fxToString(the, mxArgv(i));
-		fxNextSlotProperty(the, slot, mxArgv(i), mxID(_message), XS_DONT_ENUM_FLAG);
+		slot = fxNextSlotProperty(the, slot, mxArgv(i), mxID(_message), XS_DONT_ENUM_FLAG);
 	}
 	return slot;
 }
@@ -181,15 +180,19 @@ void fx_Error_toString(txMachine* the)
 void fx_AggregateError(txMachine* the)
 {
 	txSlot* stack = the->stack;
-	txSlot* internal = fx_Error_aux(the, &mxAggregateErrorPrototype, 1);
-	txSlot** address = &internal->value.errors.first;
+	txSlot* property = fx_Error_aux(the, &mxAggregateErrorPrototype, 1);
+	txSlot* array;
+	txSlot** address;
+	txIndex length = 0;
 	txSlot* iterator;
 	txSlot* next;
 	txSlot* value;
 	txSlot* slot;
-	internal->kind = XS_ERRORS_KIND;
-	internal->value.errors.first = C_NULL;
-	internal->value.errors.length = 0;
+	
+	mxPush(mxArrayPrototype);
+	array = fxNewArrayInstance(the);
+	fxNextSlotProperty(the, property, the->stack, mxID(_errors), XS_DONT_ENUM_FLAG);
+	address = &array->next->next;
 	mxTemporary(iterator);
 	mxTemporary(next);
 	fxGetIterator(the, mxArgv(0), iterator, next, 0);
@@ -200,53 +203,17 @@ void fx_AggregateError(txMachine* the)
 			slot->kind = value->kind;
 			slot->value = value->value;
 			address = &slot->next;
-			internal->value.errors.length++;
+			length++;
 		}
 		mxCatch(the) {
 			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
 	}
+	array->next->value.array.length = length;
+	fxCacheArray(the, array);
+	
 	the->stack = stack;
-}
-
-txSlot* fxCheckAggregateErrorInstance(txMachine* the, txSlot* slot)
-{
-	if (slot->kind == XS_REFERENCE_KIND) {
-		txSlot* instance = slot->value.reference;
-		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_ERRORS_KIND)) {
-			return slot;
-		}
-	}
-	mxTypeError("this is no AggregateError instance");
-	return C_NULL;
-}
-
-void fx_AggregateError_prototype_get_errors(txMachine* the)
-{
-	txSlot* internal = fxCheckAggregateErrorInstance(the, mxThis);
-	txSlot* instance;
-	txSlot* array;
-	txIndex index;
-	txSlot* slot;
-	txSlot* item;
-	mxPush(mxArrayPrototype);
-	instance = fxNewArrayInstance(the);
-	array = instance->next;
-	fxSetIndexSize(the, array, internal->value.errors.length);
-	slot = internal->value.errors.first;
-	item = array->value.array.address;
-	index = 0;
-	while (slot) {
-		*((txIndex*)item) = index;
-		item->ID = XS_NO_ID;
-		item->kind = slot->kind;
-		item->value = slot->value;
-		slot = slot->next;
-		item++;
-		index++;
-	}
-	mxPullSlot(mxResult);
 }
 
 void fx_EvalError(txMachine* the)
