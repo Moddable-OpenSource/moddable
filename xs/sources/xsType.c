@@ -423,8 +423,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 			if (mxIsFunction(slot->value.accessor.getter) && ((slot->value.accessor.getter->flag & XS_MARK_FLAG) == 0)) {
 				txSlot* home = mxFunctionInstanceHome(slot->value.accessor.getter);
 				home->value.home.object = instance;
-				if (id)
-					fxRenameFunction(the, slot->value.accessor.getter, id, mxID(_get), "get ");
+				fxRenameFunction(the, slot->value.accessor.getter, id, index, mxID(_get), "get ");
 			}
 		}
 		if (mask & XS_SETTER_FLAG) {
@@ -432,8 +431,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 			if (mxIsFunction(slot->value.accessor.setter) && ((slot->value.accessor.setter->flag & XS_MARK_FLAG) == 0)) {
 				txSlot* home = mxFunctionInstanceHome(slot->value.accessor.setter);
 				home->value.home.object = instance;
-				if (id)
-					fxRenameFunction(the, slot->value.accessor.setter, id, mxID(_set), "set ");
+				fxRenameFunction(the, slot->value.accessor.setter, id, index, mxID(_set), "set ");
 			}
 		}
 	}
@@ -448,8 +446,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 						txSlot* home = mxFunctionInstanceHome(function);
 						home->value.home.object = instance;
 					}
-					if (id)
-						fxRenameFunction(the, function, id, mxID(_value), C_NULL);
+					fxRenameFunction(the, function, id, index, mxID(_value), C_NULL);
 				}
 			}
 		}

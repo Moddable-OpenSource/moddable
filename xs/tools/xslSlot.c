@@ -505,7 +505,7 @@ txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, 
 	return property;
 }
 
-txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix)
+txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix)
 {
 	txSlot* property;
 	txSlot* key;
@@ -515,21 +515,27 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
 	if (!property)
         property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	key = fxGetKey(the, (txID)id);
-	if (key) {
-		txKind kind = mxGetKeySlotKind(key);
-		if (kind == XS_KEY_KIND) {
-			property->kind = XS_STRING_KIND;
-			property->value.string = key->value.key.string;
-		}
-		else if (kind == XS_KEY_X_KIND) {
-			property->kind = XS_STRING_X_KIND;
-			property->value.string = key->value.key.string;
-		}
-		else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
-			property->kind = kind;
-			property->value.string = key->value.string;
-			fxAdornStringC(the, "[", property, "]");
+    if (id) {
+		key = fxGetKey(the, (txID)id);
+		if (key) {
+			txKind kind = mxGetKeySlotKind(key);
+			if (kind == XS_KEY_KIND) {
+				property->kind = XS_STRING_KIND;
+				property->value.string = key->value.key.string;
+			}
+			else if (kind == XS_KEY_X_KIND) {
+				property->kind = XS_STRING_X_KIND;
+				property->value.string = key->value.key.string;
+			}
+			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
+				property->kind = kind;
+				property->value.string = key->value.string;
+				fxAdornStringC(the, "[", property, "]");
+			}
+			else {
+				property->kind = mxEmptyString.kind;
+				property->value = mxEmptyString.value;
+			}
 		}
 		else {
 			property->kind = mxEmptyString.kind;
@@ -537,8 +543,8 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 		}
 	}
 	else {
-		property->kind = mxEmptyString.kind;
-		property->value = mxEmptyString.value;
+		char buffer[16];
+		fxCopyStringC(the, property, fxNumberToString(the->dtoa, index, buffer, sizeof(buffer), 0, 0));	
 	}
 	if (prefix) 
 		fxAdornStringC(the, prefix, property, C_NULL);

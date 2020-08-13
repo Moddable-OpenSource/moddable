@@ -114,7 +114,7 @@ typedef struct {
 	void (*initializeSharedCluster)();
 	void (*terminateSharedCluster)();
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
-	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
+	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
     void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
     void (*runImport)(txMachine* the, txSlot* realm, txID id);
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
@@ -925,8 +925,8 @@ extern txBoolean fxIsCallable(txMachine* the, txSlot* slot);
 extern txBoolean fxIsFunction(txMachine* the, txSlot* slot);
 extern txSlot* fxNewFunctionInstance(txMachine* the, txID name);
 extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
-extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
-extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txInteger former, txString prefix);
+extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
+extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txIndex index, txInteger former, txString prefix);
 
 mxExport void fx_AsyncFunction(txMachine* the);
 

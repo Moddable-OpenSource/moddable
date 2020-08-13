@@ -170,9 +170,9 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 		
 	/* NAME */
 	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, XS_NO_ID, C_NULL);
+		fxRenameFunction(the, instance, name, XS_NO_ID, XS_NO_ID, C_NULL);
 	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, C_NULL);
+		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -224,28 +224,34 @@ txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, 
 	return property;
 }
 
-txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix)
+txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix)
 {
 	txSlot* property;
 	txSlot* key;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
 	if (!property)
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	key = fxGetKey(the, (txID)id);
-	if (key) {
-		txKind kind = mxGetKeySlotKind(key);
-		if (kind == XS_KEY_KIND) {
-			property->kind = XS_STRING_KIND;
-			property->value.string = key->value.key.string;
-		}
-		else if (kind == XS_KEY_X_KIND) {
-			property->kind = XS_STRING_X_KIND;
-			property->value.string = key->value.key.string;
-		}
-		else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
-			property->kind = kind;
-			property->value.string = key->value.string;
-			fxAdornStringC(the, "[", property, "]");
+	if (id) {
+		key = fxGetKey(the, (txID)id);
+		if (key) {
+			txKind kind = mxGetKeySlotKind(key);
+			if (kind == XS_KEY_KIND) {
+				property->kind = XS_STRING_KIND;
+				property->value.string = key->value.key.string;
+			}
+			else if (kind == XS_KEY_X_KIND) {
+				property->kind = XS_STRING_X_KIND;
+				property->value.string = key->value.key.string;
+			}
+			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
+				property->kind = kind;
+				property->value.string = key->value.string;
+				fxAdornStringC(the, "[", property, "]");
+			}
+			else {
+				property->kind = mxEmptyString.kind;
+				property->value = mxEmptyString.value;
+			}
 		}
 		else {
 			property->kind = mxEmptyString.kind;
@@ -253,8 +259,8 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 		}
 	}
 	else {
-		property->kind = mxEmptyString.kind;
-		property->value = mxEmptyString.value;
+		char buffer[16];
+		fxCopyStringC(the, property, fxNumberToString(the->dtoa, index, buffer, sizeof(buffer), 0, 0));	
 	}
 	if (prefix) 
 		fxAdornStringC(the, prefix, property, C_NULL);
@@ -262,18 +268,20 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInte
 }
 #endif
 
-void fxRenameFunction(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix)
+void fxRenameFunction(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix)
 {
 	txSlot* property;
 	if (instance->flag & XS_MARK_FLAG)
 		return;
 	property = mxFunctionInstanceCode(instance);
-	if ((property->ID == XS_NO_ID) || (property->ID == former))
-		property->ID = (txID)id;
+	if ((property->ID == XS_NO_ID) || (property->ID == former)) {
+		if (id)
+			property->ID = (txID)id;
+	}
 	else
 		return;
 	if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, id, former, prefix);
+		property = gxDefaults.newFunctionName(the, instance, id, index, former, prefix);
 }
 
 void fx_Function(txMachine* the)

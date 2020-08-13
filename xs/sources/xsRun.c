@@ -2562,7 +2562,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_NAME)
 			offset = mxRunS2(1);
 			mxSaveState;
-			fxRenameFunction(the, mxStack->value.reference, (txID)offset, XS_NO_ID, C_NULL);
+			fxRenameFunction(the, mxStack->value.reference, (txID)offset, XS_NO_ID, XS_NO_ID, C_NULL);
 			mxRestoreState;
 			mxNextCode(3);
 			mxBreak;
