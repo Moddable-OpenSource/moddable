@@ -24,9 +24,9 @@ extern void fxRunPromiseJobs(void* machine);
 extern txS1 fxPromiseIsPending(xsMachine* the, xsSlot* promise);
 extern txS1 fxPromiseIsRejected(xsMachine* the, xsSlot* promise);
 
-void fxAbort(xsMachine* the)
+void fxAbort(xsMachine* the, int status)
 {
-	exit(1);
+	exit(status);
 }
 
 int main(int argc, char* argv[])  // here
