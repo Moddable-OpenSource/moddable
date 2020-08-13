@@ -69,7 +69,7 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 			goto *bytes[byte]
 	#elif defined(mxTrace)
 		#define mxBreak \
-			if (gxDoTrace) fxTraceCode(the, byte); \
+			if (gxDoTrace) fxTraceCode(the, stack, byte); \
 			goto *bytes[byte]
 	#else
 		#define mxBreak \
@@ -248,12 +248,12 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #ifdef mxTrace
 short gxDoTrace = 1;
 
-static void fxTraceCode(txMachine* the, txU1 theCode) 
+static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode) 
 {
 	if (((XS_NO_CODE < theCode) && (theCode < XS_CODE_COUNT)))
-		fprintf(stderr, "\n%s", gxCodeNames[theCode]);
+		fprintf(stderr, "\n%ld: %s", the->stackTop - stack, gxCodeNames[theCode]);
 	else
-		fprintf(stderr, "\n?");
+		fprintf(stderr, "\n%ld: ?", the->stackTop - stack);
 }
 
 static void fxTraceID(txMachine* the, txInteger id) 
@@ -637,7 +637,7 @@ XS_CODE_JUMP:
 	for (;;) {
 
 #ifdef mxTrace
-		if (gxDoTrace) fxTraceCode(the, byte);
+		if (gxDoTrace) fxTraceCode(the, stack, byte);
 #endif
 		//fxCheckStack(the, mxStack);
 		
