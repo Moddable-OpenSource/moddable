@@ -213,6 +213,8 @@
 	#define EPAPER kePaperBlackWhiteGrayRed
 #elif (128 == MODDEF_DESTM32S_WIDTH) && (296 == MODDEF_DESTM32S_HEIGHT)
 	#define EPAPER kePaperBlackWhiteRed
+#elif (400 == MODDEF_DESTM32S_WIDTH) && (300 == MODDEF_DESTM32S_HEIGHT)
+	#define EPAPER kePaperBlackWhiteRed
 #else
 	#error
 #endif
@@ -1174,10 +1176,11 @@ void destm32sInit_bw1r(spiDisplay sd)
 	data[0] = 0x29;
 	destm32sCommand_bw1r(sd, SET_PLL, data, 1);
 
-	data[0] = 128;
-	data[1] = 296>>8;
-	data[2] = 296&0xff;
-	destm32sCommand_bw1r(sd, SET_RES, data, 3);
+	data[0] = MODDEF_DESTM32S_WIDTH>>8;
+	data[1] = MODDEF_DESTM32S_WIDTH&0xf8;
+	data[2] = MODDEF_DESTM32S_HEIGHT>>8;
+	data[3] = MODDEF_DESTM32S_HEIGHT&0xff;
+	destm32sCommand_bw1r(sd, SET_RES, data, 4);
 
 	data[0] = 0x0a;
 	destm32sCommand_bw1r(sd, VCOM_DC, data, 1);
@@ -1227,7 +1230,7 @@ void destm32sSend_bw1r(PocoPixel *pixels, int byteLength, void *refcon)
 
 	if (byteLength < 0) byteLength = -byteLength;
 	while (byteLength > 0) {
-		uint8_t i;
+		uint16_t i;
 		uint8_t bits[MODDEF_DESTM32S_WIDTH / 8];
 
 		for (i = 0; i < MODDEF_DESTM32S_WIDTH; i += 8) {
