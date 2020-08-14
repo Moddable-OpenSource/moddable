@@ -91,7 +91,7 @@ static void getRAMRetentionSlaveAndPowerset(uint32_t address, uint32_t *slave, u
 void xs_sleep_set_retained_buffer(xsMachine *the)
 {
 	uint8_t *buffer = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint16_t bufferLength = xsGetArrayBufferLength(xsArg(0));
+	uint16_t bufferLength = xsmcGetArrayBufferLength(xsArg(0));
 	uint8_t *ram = &gRamRetentionBuffer[0];
 	uint32_t ram_slave_n, ram_powerset;
 
