@@ -2,12 +2,12 @@
 
 # wait for the M4 to go away
 NAME=/Volumes/MODDABLE4
-echo -n "Installing to $NAME.."
-while [ -d "$NAME" ]; do
-     echo -n "."
-     sleep 0.1
-done
-echo
+echo "Installing to $NAME"
+# while [ -d "$NAME" ]; do
+#      echo -n "."
+#      sleep 0.1
+# done
+# echo
 
 if [ $1 -eq 0 ]; then
 	echo "Release build installed."
@@ -15,7 +15,7 @@ if [ $1 -eq 0 ]; then
 fi
 
 # save original serial port
-original=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
+original=( $(find /dev -type c -name "cu.usbmodem*" 2> /dev/null) )
 
 fileToCompare=""
 
@@ -60,7 +60,7 @@ newOne=0
 # wait for usbd serial port to enumerate
 while [ $newOne -eq 0 ]; do
 	sleep 0.1
-	compare=( $(find /dev -type c -name "cu.*" 2> /dev/null) )
+	compare=( $(find /dev -type c -name "cu.usbmodem*" 2> /dev/null) )
 
 	findNew "${compare[@]}"
 	if [ 1 -eq $? ]; then
@@ -69,6 +69,8 @@ while [ $newOne -eq 0 ]; do
 	
 done
 
-echo "Debug build installed."
+echo "Debug build installed"
+echo "Connecting to xsbug using serial port at ${fileToCompare}"
 # ${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
 ${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1
+
