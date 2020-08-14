@@ -407,14 +407,18 @@ void sendAVendorMsg(uint8_t *msg, int len) {
 	sendNextVendorBuffer();
 }
 
+#define PROGRAMMING_TRIGGER_DELAY 500
 static uint8_t reboot_style[2] = {0, 0};
+static uint32_t reboot_changeTime[2] = {0, 0};
 static void checkLineState(uint16_t line_state, uint8_t which) {
+	uint32_t now = modMilliseconds();
 	uint8_t DTR, RTS;
 	DTR = (line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR);
 	RTS = (line_state & APP_USBD_CDC_ACM_LINE_STATE_RTS);
 	uint8_t reboot_seq = (DTR ? 1 : 0) + (RTS ? 2 : 0);
 //ftdiTraceAndInt2("checkLineState for intf: ", which, line_state);
 //ftdiTraceAndInt("   previously: ", reboot_style[which]);
+
 
 	switch (reboot_seq) {
 		case 3:								 // normal run mode
@@ -436,7 +440,7 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 			reboot_style[which] = 1;
 			break;
 		case 0:
-			if (reboot_style[which] == 1) {
+			if ((reboot_style[which] == 1) && ((now - reboot_changeTime[which]) < PROGRAMMING_TRIGGER_DELAY)) {
 				if (which == 1)
 					ftdiTrace("[0] ACM - dtr and rts dropped - REBOOT TO PROGRAMMING");
 				else
@@ -452,6 +456,8 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 			}
 			break;
 	}
+
+	reboot_changeTime[which] = modMilliseconds();
 }
 
 static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_vendor_user_event_t event)
