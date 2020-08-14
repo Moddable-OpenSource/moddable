@@ -15,5 +15,8 @@
 		"mc/*": [
 			"$(TYPINGS)/mc/*",
 		],
+		"pins/*": [
+			"$(TYPINGS)/pins/*",
+		],
 	},
 }
