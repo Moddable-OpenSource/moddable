@@ -811,18 +811,20 @@ trace(`no rtc\n`);
 		let d = new Date();
 		d.setHours(tx.slice(0, 2));
 		d.setMinutes(tx.slice(-2));
-		let dst = (this.prefs.dst == 2) ? this.checkDSTObserved() : this.prefs.dst;
-		let tz = this.prefs.tz + dst - 8;
-		let time = (d.getTime()/1000) - (tz *3600);
+		let time = d.getTime()/1000;
 		this.setTime(time, 1);
 	}
 
 	setTime(v, forceRTC=0) {
+		let tz = this.prefs.tz - 11;
+		Time.timezone = tz * 3600;
+
 		Time.set(v + Time.timezone);
 		let dst = (this.prefs.dst == 2) ? this.checkDSTObserved() : this.prefs.dst;
-		let tz = this.prefs.tz + dst - 8;
-		Time.timezone = tz * 3600;
-		Time.set(v + Time.timezone);
+		Time.dst = dst * 3600;
+
+		Time.set(v);
+
 		if (this.rtc.exists && (forceRTC || !this.rtc.valid)) {
 			if (!this.rtc.enabled) {
 				this.rtc.enabled = 1;
