@@ -812,7 +812,7 @@ trace(`no rtc\n`);
 		d.setHours(tx.slice(0, 2));
 		d.setMinutes(tx.slice(-2));
 		let dst = (this.prefs.dst == 2) ? this.checkDSTObserved() : this.prefs.dst;
-		let tz = this.prefs.tz + dst - 11;
+		let tz = this.prefs.tz + dst - 8;
 		let time = (d.getTime()/1000) - (tz *3600);
 		this.setTime(time, 1);
 	}
@@ -820,7 +820,7 @@ trace(`no rtc\n`);
 	setTime(v, forceRTC=0) {
 		Time.set(v + Time.timezone);
 		let dst = (this.prefs.dst == 2) ? this.checkDSTObserved() : this.prefs.dst;
-		let tz = this.prefs.tz + dst - 11;
+		let tz = this.prefs.tz + dst - 8;
 		Time.timezone = tz * 3600;
 		Time.set(v + Time.timezone);
 		if (this.rtc.exists && (forceRTC || !this.rtc.valid)) {
