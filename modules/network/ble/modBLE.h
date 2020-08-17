@@ -83,7 +83,7 @@ typedef modBLEConnectionRecord *modBLEConnection;
 	struct modBLEConnectionRecord *next; \
 	xsMachine	*the; \
 	xsSlot		objConnection; \
-	int16_t		id; \
+	uint16_t	id; \
 	uint8_t		type; \
 	uint8_t		addressType; \
 	uint8_t		address[6]; \

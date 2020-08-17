@@ -237,7 +237,7 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = -1;
+	connection->id = 0xFFFF;
 	c_memmove(&connection->address, address, 6);
 	connection->addressType = addressType;
 	connection->bond = 0xFF;
@@ -611,7 +611,7 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 		xsUnknownError("connection not found");
 		
 	// Ignore duplicate connection events
-	if (-1 != connection->id) goto bail;
+	if (0xFFFF != connection->id) goto bail;
 
 	connection->id = evt->connection;
 	connection->bond = evt->bonding;

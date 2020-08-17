@@ -241,7 +241,7 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = -1;
+	connection->id = 0xFFFF;
 	connection->type = kBLEConnectionTypeClient;
 	connection->addressType = addressType;
 	c_memmove(&connection->address, &bda, 6);
@@ -940,7 +940,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		
 	if (ESP_GATT_OK == open->status) {
 		uint8_t buffer[6];
-		if (-1 != connection->id) {
+		if (0xFFFF != connection->id) {
 			LOG_GATTC_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}

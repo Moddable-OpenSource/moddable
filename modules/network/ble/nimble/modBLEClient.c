@@ -43,6 +43,17 @@
 	#define LOG_GAP_INT(i)
 #endif
 
+#define OBJ_CLIENT(_c) ((modBLEClientConnection)_c)->objClient
+
+typedef struct modBLEClientConnectionRecord modBLEClientConnectionRecord;
+typedef modBLEClientConnectionRecord *modBLEClientConnection;
+
+struct modBLEClientConnectionRecord {
+	modBLEConnectionPart;
+	
+	xsSlot objClient;
+};
+
 typedef struct modBLEDiscoveredRecord modBLEDiscoveredRecord;
 typedef modBLEDiscoveredRecord *modBLEDiscovered;
 
@@ -266,14 +277,14 @@ void xs_ble_client_connect(xsMachine *the)
 	}
 
 	// Add a new connection record to be filled as the connection completes
-	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = -1;
+	connection->id = 0xFFFF;
 	connection->type = kBLEConnectionTypeClient;
 	connection->addressType = addr.type;
 	c_memmove(connection->address, addr.val, 6);
-	modBLEConnectionAdd(connection);
+	modBLEConnectionAdd((modBLEConnection)connection);
 
 	ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
 }
@@ -359,7 +370,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 		xsUnknownError("connection not found");
 	connection->the = the;
 	connection->objConnection = xsThis;
-	connection->objClient = xsArg(0);
+	OBJ_CLIENT(connection) = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -672,7 +683,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		// @@ workaround for https://github.com/espressif/esp-idf/issues/5693
 		connection = modBLEConnectionGetFirst();
 		while (NULL != connection) {
-			if (-1 == connection->id)
+			if (0xFFFF == connection->id)
 				break;
 			connection = modBLEConnectionGetNext(connection);
 		}
@@ -680,8 +691,8 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 			xsUnknownError("connection not found");
 	}
 		
-	if (-1 != desc->conn_handle) {
-		if (-1 != connection->id) {
+	if (0xFFFF != desc->conn_handle) {
+		if (0xFFFF != connection->id) {
 			LOG_GAP_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}
@@ -737,10 +748,10 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 		xsmcSet(xsVar(0), xsID_start, xsVar(2));
 		xsmcSet(xsVar(0), xsID_end, xsVar(3));
-		xsCall2(connection->objClient, xsID_callback, xsString("onService"), xsVar(0));
+		xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onService"), xsVar(0));
 	}
 	else
-		xsCall1(connection->objClient, xsID_callback, xsString("onService"));
+		xsCall1(OBJ_CLIENT(connection), xsID_callback, xsString("onService"));
 	xsEndHost(gBLE->the);
 }
 
@@ -863,7 +874,7 @@ static void attributeReadEvent(void *the, void *refcon, uint8_t *message, uint16
 	xsmcSetInteger(xsVar(2), value->handle);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->objClient, xsID_callback, value->isCharacteristic ? xsString("onCharacteristicValue") : xsString("onDescriptorValue"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, value->isCharacteristic ? xsString("onCharacteristicValue") : xsString("onDescriptorValue"), xsVar(0));
 	c_free(value);
 	xsEndHost(gBLE->the);
 }
@@ -879,7 +890,7 @@ static void notificationEnabledEvent(void *the, void *refcon, uint8_t *message, 
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), cne->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(connection->objClient, xsID_callback, cne->enable ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, cne->enable ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"), xsVar(0));
 	c_free(cne);
 	xsEndHost(gBLE->the);
 }
@@ -897,7 +908,7 @@ static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsmcSetInteger(xsVar(2), notification->handle);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
 	c_free(notification);
 	xsEndHost(gBLE->the);
 }
@@ -1144,7 +1155,7 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 				}
 			}
 			c_memset(&desc, 0, sizeof(desc));
-			desc.conn_handle = -1;
+			desc.conn_handle = 0xFFFF;
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&desc, sizeof(desc), connectEvent, NULL);
 			break;
 		case BLE_GAP_EVENT_DISCONNECT:
