@@ -65,8 +65,8 @@ import ClockPrefs from "prefs";
 import ClockButton from "buttons";
 
 const PROD_NAME = "ModClock";
-const UPDATE_URL = "http://wildclocks.com/superclock/clock.update.current";
-const REMOTE_SCRIPTS = "http://wildclocks.com/superclock/";
+const UPDATE_URL = "http://wildclocks.com/superclock2/clock.update.current";
+const REMOTE_SCRIPTS = "http://wildclocks.com/superclock2/";
 const LOCAL_SCRIPTS = "http://192.168.4.1/";
 
 const AP_NAME = "clock";
