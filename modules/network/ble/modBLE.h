@@ -79,21 +79,18 @@ struct modBLEWhitelistAddressRecord {
 typedef struct modBLEConnectionRecord modBLEConnectionRecord;
 typedef modBLEConnectionRecord *modBLEConnection;
 
-struct modBLEConnectionRecord {
-	struct modBLEConnectionRecord *next;
-
-	xsMachine	*the;
-	xsSlot		objConnection;
-	xsSlot		objClient;
-
-	int16_t		id;
-	uint8_t		type;
-	uint8_t		addressType;
-	uint8_t		address[6];
-	
+#define modBLEConnectionPart \
+	struct modBLEConnectionRecord *next; \
+	xsMachine	*the; \
+	xsSlot		objConnection; \
+	int16_t		id; \
+	uint8_t		type; \
+	uint8_t		addressType; \
+	uint8_t		address[6]; \
 	uint8_t		mtu_exchange_pending;
-	
-	void		*aux;
+
+struct modBLEConnectionRecord {
+	modBLEConnectionPart;
 };
 
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
