@@ -280,21 +280,21 @@ void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVarian
 }
 
 #ifdef piuGPU
-void PiuSkinBind(PiuSkin* self)
+void PiuSkinBind(PiuSkin* self, PiuApplication* application, PiuView* view)
 {
 	if ((*self)->flags & piuSkinPattern) {
 		PiuTexture* texture = (*self)->data.pattern.texture;
 		if (texture)
-			PiuTextureBind(texture);
+			PiuTextureBind(texture, application, view);
 	}
 }
 
-void PiuSkinUnbind(PiuSkin* self)
+void PiuSkinUnbind(PiuSkin* self, PiuApplication* application, PiuView* view)
 {
 	if ((*self)->flags & piuSkinPattern) {
 		PiuTexture* texture = (*self)->data.pattern.texture;
 		if (texture)
-			PiuTextureUnbind(texture);
+			PiuTextureUnbind(texture, application, view);
 	}
 }
 #endif			

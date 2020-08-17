@@ -20,22 +20,22 @@
 
 #include "piuMC.h"
 
+static void PiuImageBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuImageDictionary(xsMachine* the, void* it);
 static void PiuImageDraw(void* it, PiuView* view, PiuRectangle area);
 static void PiuImageMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuImageMeasureHorizontally(void* it);
 static void PiuImageMeasureVertically(void* it);
 static void PiuImageSync(void* it);
+static void PiuImageUnbind(void* it, PiuApplication* application, PiuView* view);
 
 #ifdef piuGPU
 	static uint32_t gFrameID = 0x8000;
-	extern void PocoDrawImage(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h, 
-			PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh);
 #endif
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuImageDispatchRecord = {
 	"Image",
-	PiuContentBind,
+	PiuImageBind,
 	PiuContentCascade,
 	PiuImageDraw,
 	PiuContentFitHorizontally,
@@ -52,7 +52,7 @@ const PiuDispatchRecord ICACHE_FLASH_ATTR PiuImageDispatchRecord = {
 	PiuContentShowing,
 	PiuContentShown,
 	PiuImageSync,
-	PiuContentUnbind,
+	PiuImageUnbind,
 	PiuContentUpdate
 };
 
@@ -61,6 +61,22 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuImageHooks = {
 	PiuImageMark,
 	NULL
 };
+
+void PiuImageBind(void* it, PiuApplication* application, PiuView* view)
+{
+#ifdef piuGPU
+	PiuImage* self = it;
+	PocoBitmapRecord bm;
+	bm.width = (*self)->dataWidth;
+	bm.height = (*self)->dataHeight;
+	bm.format = kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked;
+	bm.pixels = (PocoPixel*)((*self)->data + sizeof(uint16_t) + (*self)->frameOffset);
+	bm.id = (*self)->frameID;
+	bm.byteLength = 0;
+	PocoBitmapAdd((*view)->poco, &bm, PiuViewReceiver, view);
+#endif
+	PiuContentBind(it, application, view);
+}
 
 void PiuImageDictionary(xsMachine* the, void* it) 
 {
@@ -82,12 +98,17 @@ void PiuImageDraw(void* it, PiuView* view, PiuRectangle area)
 #ifdef piuGPU
 		{
 			PocoBitmapRecord bm;
+			if ((*self)->frameChanged) {
+				(*self)->frameChanged = 0;
+				PocoBitmapChanged((*view)->poco, (*self)->frameID, PiuViewReceiver, view);
+			}
 			bm.width = (*self)->dataWidth;
 			bm.height = (*self)->dataHeight;
 			bm.format = kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked;
 			bm.pixels = (PocoPixel*)((*self)->data + sizeof(uint16_t) + (*self)->frameOffset);
-			bm.id = (*self)->frameID | ((*self)->frameIndex << 16);
-			PocoDrawImage((*view)->poco, &bm, (*view)->poco->xOrigin, (*view)->poco->yOrigin, bounds.width, bounds.height, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
+			bm.id = (*self)->frameID;
+			bm.byteLength = 0;
+			PocoDrawImage((*view)->poco, &bm, 255, (*view)->poco->xOrigin, (*view)->poco->yOrigin, bounds.width, bounds.height, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
 		}
 #else	
 		PiuViewDrawFrame(view, (*self)->data + sizeof(uint16_t) + (*self)->frameOffset, (*self)->frameSize, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
@@ -150,8 +171,20 @@ void PiuImageSync(void* it)
 			(*self)->frameOffset = frameOffset;
 			(*self)->frameSize = frameSize;
 			PiuContentInvalidate(self, NULL);
+		#ifdef piuGPU
+			(*self)->frameChanged = 1;
+		#endif
 		}
 	}
+}
+
+void PiuImageUnbind(void* it, PiuApplication* application, PiuView* view)
+{
+#ifdef piuGPU
+	PiuImage* self = it;
+	PocoBitmapRemove((*view)->poco, (*self)->frameID, PiuViewReceiver, view);
+#endif
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuImage_create(xsMachine* the)
@@ -197,6 +230,7 @@ void PiuImage_create(xsMachine* the)
 	(*self)->frameSize = c_read16(data + sizeof(ColorCellHeaderRecord));
 #ifdef piuGPU
 	(*self)->frameID = ++gFrameID;
+	(*self)->frameChanged = 0;
 #endif
 	frameCount = (*self)->frameCount = c_read16(&cch->frameCount);
 	if (frameCount > 1) {
