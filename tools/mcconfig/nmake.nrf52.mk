@@ -318,7 +318,6 @@ NRF_LIBRARIES_OBJ = \
 	$(LIB_DIR)\nrf_queue.o \
 	$(LIB_DIR)\nrf_ringbuf.o \
 	$(LIB_DIR)\nrf_section_iter.o \
-	$(LIB_DIR)\nrf_serial.o \
 	$(LIB_DIR)\nrf_spi_mngr.o \
 	$(LIB_DIR)\nrf_strerror.o \
 	$(LIB_DIR)\nrf_twi_mngr.o \
@@ -445,7 +444,7 @@ LIB_FILES = \
 	-lc \
 	-lnosys \
 	-lm \
-	$(NRF52_SDK_ROOT)\external\nrf_cc310\lib\cortex-m4\hard-float\no-interrupts\libnrf_cc310_0.9.12.a
+	$(NRF52_SDK_ROOT)\external\nrf_cc310\lib\cortex-m4\hard-float\no-interrupts\libnrf_cc310_0.9.13.a
 
 NRF_C_DEFINES = \
 	-D__SIZEOF_WCHAR_T=4 \

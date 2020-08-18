@@ -15,7 +15,7 @@ IF %1 == 0 (echo Release build installed. && EXIT /b 0)
 
 REM Wait for serial port with Vendor ID 0x1915 and Product ID 0x520F.
 :SerialWhile
-wmic path Win32_SerialPort where "PNPDeviceID like '%%VID_1915&PID_520F%%'" get DeviceID 2> nul | (find /i "COM" > %3)
+wmic path Win32_SerialPort where "PNPDeviceID like '%%VID_BEEF&PID_CAFE%%'" get DeviceID 2> nul | (find /i "COM" > %3)
 IF %ERRORLEVEL% == 0 (GOTO SerialDone)
 GOTO SerialWhile
 :SerialDone
