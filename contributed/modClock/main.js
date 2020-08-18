@@ -504,25 +504,25 @@ trace(`uiState: SHOW_TIME\n`);
 					break;
 
 				case Server.prepareResponse:
-					let msg;
+					let msg = [];
 
 					if (this.userReq) {
 						name = clock.checkName(this.userReq.clock_name, clock.prefs.name);
 						if (0 === name)
 							name = clock.prefs.name;
 						else {
-							msg = `${html_content.redirectHead(name, 90)} ${html_content.bodyPrefix() } Changing clock name to <b>${name}</b>.<br>Please allow up to 90 seconds for restart.<p><a href="http://${name}.local">http://${name}.local</a><p>${html_content.bodySuffix(this.server.clock.suffixLine)}`;
+							msg.push(html_content.redirectHead(name, 90), " ", html_content.bodyPrefix(), ` Changing clock name to <b>${name}</b>.<br>Please allow up to 90 seconds for restart.<p><a href="http://${name}.local">http://${name}.local</a><p>`, html_content.bodySuffix(this.server.clock.suffixLine));
 							this.redirect = 0;
 						}
 					}
 
 					if (this.redirect) {
-						msg = html_content.redirectHead(clock.prefs.name, 0, this.path) + html_content.bodyPrefix() + "One moment please." + html_content.bodySuffix(this.server.clock.suffixLine);
+						msg.push(html_content.redirectHead(clock.prefs.name, 0, this.path), html_content.bodyPrefix(), "One moment please.", html_content.bodySuffix(this.server.clock.suffixLine));
 					}
 
 					if (this.path == "/set-ssid") {
 						if (this.userReq.ssid) {
-							msg = html_content.head(name, scriptServer) + html_content.bodyPrefix() + html_content.changeSSIDResp(this.userReq.ssid, name) + html_content.bodySuffix(this.server.clock.suffixLine);
+							msg.push(html_content.head(name, scriptServer), html_content.bodyPrefix(), html_content.changeSSIDResp(this.userReq.ssid, name), html_content.bodySuffix(this.server.clock.suffixLine));
 						}
 						trace("new ssid requested");
 					}
@@ -538,11 +538,10 @@ trace(`uiState: SHOW_TIME\n`);
 						return {headers: ["Content-type", "image/vnd.microsoft.icon", "Cache-Control", "public, max-age=31536000"], body: favico.slice(0)};
 					}
 					else if (this.path == "/reset") {
-						msg = html_content.head(name, scriptServer) + html_content.bodyPrefix() + html_content.resetPrefsResp();
+						msg.push(html_content.head(name, scriptServer), html_content.bodyPrefix(), html_content.resetPrefsResp());
 					}
-					else if (!this.redirect && undefined === msg) {
+					else if (!this.redirect && !msg.length) {
 						let impliedPath = this.path;
-						msg = "";
 						let head = html_content.head(name, scriptServer) + html_content.bodyPrefix() + html_content.clockScripts(clock.currentStyle, scriptServer) + html_content.masthead(PROD_NAME, name);
 						if (undefined !== clock.ota)
 							head += html_content.ota_status(clock.ota.received, clock.ota.length);
@@ -555,47 +554,54 @@ trace(`uiState: SHOW_TIME\n`);
 						switch (impliedPath) {
 							case "/tail":
 								clock.selectionBarSelected = 1;
-								msg += html_content.clockTailSection(clock);
+								msg.push(html_content.clockTailSection(clock));
 								break;
 							case "/options":
 							case "/setTime":
 								clock.selectionBarSelected = 2;
-								msg += `${html_content.clockOptionsSection(clock)}${html_content.clockSetTimeSection(clock)}${html_content.clockResetPrefsSection(clock)}`;
+								msg.push(html_content.clockOptionsSection(clock), html_content.clockSetTimeSection(clock), html_content.clockResetPrefsSection(clock));
 								break;
 							case "/network":
 							case "/rescanSSID":
 								clock.selectionBarSelected = 3;
-								msg += html_content.accessPointSection(accessPointList, clock.prefs.ssid, clock.prefs.name);
+								msg.push(html_content.accessPointSection(accessPointList, clock.prefs.ssid, clock.prefs.name));
 								if (!this.usingAP)
-									msg += html_content.clockUpdateCheck(clock);
+									msg.push(html_content.clockUpdateCheck(clock));
 								break;
 							case "/style":
 							default:
 								clock.selectionBarSelected = 0;
-								msg += html_content.clockStyleSection(clock, scriptServer);
+								msg.push(html_content.clockStyleSection(clock, scriptServer));
 								break;
 						}
 
 						head += html_content.selection_bar(SELECTION_BAR, clock.selectionBarSelected);
-						msg = head + msg + html_content.bodySuffix(this.server.clock.suffixLine);
+						msg.unshift(head);
+						msg.push(html_content.bodySuffix(this.server.clock.suffixLine));
 					}
-					if (undefined !== msg && (msg.length > 1024)) {
-						this.msg = msg;
-						this.msgPosition = 0;
-						msg = true;
-					}
-					return {headers: ["Content-type", "text/html"], body: msg};		//@@ utf-8 hell
+					let byteLength = 0;
+					msg = msg.map(item => new Uint8Array(ArrayBuffer.fromString(item)));
+					msg.forEach(item => byteLength += item.byteLength);
+					let b = new Uint8Array(byteLength);
+					b.position = 0;
+					msg.forEach(item => {
+						b.set(item, b.position);
+						b.position += item.byteLength;
+					});
+					msg = b;
+
+					msg.position = 0;
+					this.msg = msg;
+					return {headers: ["Content-type", "text/html", "Content-length", msg.byteLength], body: true};
 					break;
 
 				case Server.responseFragment:
 					let ret;
 					if (this.msg) {
-						ret = this.msg.slice(this.msgPosition, value + this.msgPosition);		//@@ utf-8 hell
-						this.msgPosition += value;
-						if (this.msgPosition >= this.msg.length) {
+						ret = this.msg.subarray(this.msg.position, value + this.msg.position);
+						this.msg.position += value;
+						if (this.msg.position >= this.msg.length)
 							delete this.msg;
-							delete this.msgPosition;
-						}
 					}
 					return ret;
 	
