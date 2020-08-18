@@ -581,22 +581,21 @@ trace(`uiState: SHOW_TIME\n`);
 					}
 					if (undefined !== msg && (msg.length > 1024)) {
 						this.msg = msg;
+						this.msgPosition = 0;
 						msg = true;
 					}
-					return {headers: ["Content-type", "text/html"], body: msg};
+					return {headers: ["Content-type", "text/html"], body: msg};		//@@ utf-8 hell
 					break;
 
 				case Server.responseFragment:
-					let ret = this.msg;
-					if (undefined === this.msg) {
-					}
-					else if (this.msg.length > 1024) {
-						ret = this.msg.slice(0, 1024);
-						this.msg = this.msg.slice(1024);
-					}
-					else {
-						ret = this.msg;
-						this.msg = undefined;
+					let ret;
+					if (this.msg) {
+						ret = this.msg.slice(this.msgPosition, value + this.msgPosition);		//@@ utf-8 hell
+						this.msgPosition += value;
+						if (this.msgPosition >= this.msg.length) {
+							delete this.msg;
+							delete this.msgPosition;
+						}
 					}
 					return ret;
 	
