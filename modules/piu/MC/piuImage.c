@@ -69,10 +69,10 @@ void PiuImageBind(void* it, PiuApplication* application, PiuView* view)
 	PocoBitmapRecord bm;
 	bm.width = (*self)->dataWidth;
 	bm.height = (*self)->dataHeight;
-	bm.format = kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked;
+	bm.format = (*self)->frameFormat;
 	bm.pixels = (PocoPixel*)((*self)->data + sizeof(uint16_t) + (*self)->frameOffset);
 	bm.id = (*self)->frameID;
-	bm.byteLength = 0;
+	bm.byteLength = (bm.format == (kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked)) ? 0 : (*self)->frameSize;
 	PocoBitmapAdd((*view)->poco, &bm, PiuViewReceiver, view);
 #endif
 	PiuContentBind(it, application, view);
@@ -104,10 +104,10 @@ void PiuImageDraw(void* it, PiuView* view, PiuRectangle area)
 			}
 			bm.width = (*self)->dataWidth;
 			bm.height = (*self)->dataHeight;
-			bm.format = kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked;
+			bm.format = (*self)->frameFormat;
 			bm.pixels = (PocoPixel*)((*self)->data + sizeof(uint16_t) + (*self)->frameOffset);
 			bm.id = (*self)->frameID;
-			bm.byteLength = 0;
+			bm.byteLength = (bm.format == (kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked)) ? 0 : (*self)->frameSize;
 			PocoDrawImage((*view)->poco, &bm, 255, (*view)->poco->xOrigin, (*view)->poco->yOrigin, bounds.width, bounds.height, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
 		}
 #else	
@@ -212,8 +212,7 @@ void PiuImage_create(xsMachine* the)
 	cch = (ColorCellHeader)data;
 	if (('c' != c_read8(&cch->id_c)) || ('s' != c_read8(&cch->id_s)))
 		xsUnknownError("invalid image data");
-	if (kCommodettoBitmapRGB565LE != c_read8(&cch->bitmapFormat))
-		xsUnknownError("invalid image pixel format");
+	(*self)->frameFormat = 	c_read8(&cch->bitmapFormat);
 	if (0 != c_read8(&cch->reserved))
 		xsUnknownError("invalid image reserved");
 	(*self)->data = data;
@@ -231,6 +230,11 @@ void PiuImage_create(xsMachine* the)
 #ifdef piuGPU
 	(*self)->frameID = ++gFrameID;
 	(*self)->frameChanged = 0;
+	if ((*self)->frameFormat == kCommodettoBitmapRGB565LE)
+		(*self)->frameFormat |= kCommodettoBitmapPacked;
+#else
+	if ((*self)->frameFormat != kCommodettoBitmapRGB565LE)
+		xsUnknownError("invalid image pixel format");
 #endif
 	frameCount = (*self)->frameCount = c_read16(&cch->frameCount);
 	if (frameCount > 1) {

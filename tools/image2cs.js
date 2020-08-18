@@ -29,6 +29,7 @@ export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 		this.directory = false;
+		this.format = Bitmap.RGB565LE;
 		this.quality = undefined;
 		this.rotation = 0;
 		this.inputPath = null;
@@ -182,6 +183,13 @@ export default class extends TOOL {
 		var jpeg = new JPEG(data, { pixelFormat:Bitmap.RGB565LE });
 		var jpegWidth = jpeg.width;
 		var jpegHeight = jpeg.height;
+		if (this.quality == 0) {
+			this.format = Bitmap.JPEG;
+			frames.push(data);
+			frames.width = jpegWidth;
+			frames.height = jpegHeight;
+			return;
+		}
 		var padWidth = this.pad(jpegWidth);
 		var padHeight = this.pad(jpegHeight);
 		var copy, width, height;
@@ -227,6 +235,13 @@ export default class extends TOOL {
 		let pngHeight = png.height;
 		if (((pngChannels != 3) && (pngChannels != 4)) || (pngDepth != 8))
 			throw new Error("'" + pngPath + "': invalid PNG format!");
+		if (this.quality == 0) {
+			this.format = Bitmap.PNG;
+			frames.push(data);
+			frames.width = pngWidth;
+			frames.height = pngHeight;
+			return;
+		}
 		let padWidth = this.pad(pngWidth);
 		let padHeight = this.pad(pngHeight);
 		let bufferRGBA32 = new Uint8Array(padWidth * padHeight * 4);
@@ -438,7 +453,7 @@ export default class extends TOOL {
 		let output = new FILE(this.joinPath(parts), "wb");
 		output.writeByte('c'.charCodeAt(0));
 		output.writeByte('s'.charCodeAt(0));
-		output.writeByte(Bitmap.RGB565LE);
+		output.writeByte(this.format);
 		output.writeByte(0);
 		output.writeByte(width & 0xFF);
 		output.writeByte(width >> 8);
