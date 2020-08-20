@@ -16,6 +16,7 @@ import BLEServer from "bleserver";
 import {uuid} from "btutils";
 import WiFi from "wifi";
 import Net from "net";
+import Timer from "timer";
 
 export default class WiFiServer extends BLEServer {
 	onReady() {
@@ -30,24 +31,33 @@ export default class WiFiServer extends BLEServer {
 			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`FF00`]}
 		});
 	}
+	onCharacteristicNotifyDisabled(characteristic) {
+		if ("status" == characteristic.name)
+			delete this.notify;
+	}
+	onCharacteristicNotifyEnabled(characteristic) {
+		if ("status" == characteristic.name)
+			this.notify = characteristic;
+	}
 	onCharacteristicWritten(characteristic, value) {
 		switch(characteristic.name) {
 			case "SSID":
 				this.ssid = value;
+				this.doStatusNotification(`Setting SSID to ${this.ssid}\n`);
 				break;
 			case "password":
 				this.password = value;
+				this.doStatusNotification(`Setting password to ${this.password}\n`);
 				break;
 			case "control":
 				if ((1 == value) && this.ssid) {
-					this.close();
+					this.doStatusNotification(`Connecting to ${this.ssid}...\n`);
 					this.connectToWiFiNetwork();
 				}
 				break;
 		}
 	}
 	connectToWiFiNetwork() {
-		trace(`Connecting to ${this.ssid}...\n`);
 		let dictionary = { ssid:this.ssid };
 		if (this.password)
 			dictionary.password = this.password;
@@ -56,12 +66,19 @@ export default class WiFiServer extends BLEServer {
 				case "connect":
 					break; // still waiting for IP address
 				case "gotIP":
-					trace(`IP address ${Net.get("IP")}\n`);
+					this.doStatusNotification(`IP address ${Net.get("IP")}\n`);
+					Timer.set(() => this.close, 500);
 					break;
 				case "disconnect":
+					this.doStatusNotification(`Connection lost\n`);
 					break;  // connection lost
 			}
 		})
+	}
+	doStatusNotification(message) {
+		trace(message);
+		if (this.notify)
+			this.notifyValue(this.notify, message);
 	}
 }
 Object.freeze(WiFiServer.prototoype);
