@@ -121,7 +121,7 @@ static txNode* fxObjectBindingFromExpression(txParser* parser, txNode* theNode, 
 static void fxParametersBinding(txParser* parser);
 static txNode* fxParametersBindingFromExpressions(txParser* parser, txNode* theNode);
 static void fxRestBinding(txParser* parser, txToken theToken);
-static txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken);
+static txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken, txUnsigned flag);
 
 static void fxCheckArrowFunction(txParser* parser, txInteger count);
 static txBoolean fxCheckReference(txParser* parser, txToken theToken);
@@ -3280,7 +3280,7 @@ txNode* fxArrayBindingFromExpression(txParser* parser, txNode* theNode, txToken 
 				parser->errorSymbol = parser->SyntaxErrorSymbol;
 				return NULL;
 			}
-			binding = fxRestBindingFromExpression(parser, item, theToken);
+			binding = fxRestBindingFromExpression(parser, item, theToken, 0);
 			if (!binding) {
 				parser->errorSymbol = parser->SyntaxErrorSymbol;
 				return NULL;
@@ -3436,7 +3436,7 @@ txNode* fxObjectBindingFromExpression(txParser* parser, txNode* theNode, txToken
 			((txPropertyBindingAtNode*)property)->binding = binding;
 		}
 		else if (property->description->token == XS_TOKEN_SPREAD) {
-			binding = fxRestBindingFromExpression(parser, property, theToken);
+			binding = fxRestBindingFromExpression(parser, property, theToken, 1);
 			if (!binding) {
 				parser->errorSymbol = parser->SyntaxErrorSymbol;
 				return NULL;
@@ -3523,7 +3523,7 @@ void fxRestBinding(txParser* parser, txToken theToken)
 	fxPushNodeStruct(parser, 1, XS_TOKEN_REST_BINDING, aLine);
 }
 
-txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken)
+txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken, txUnsigned flag)
 {
 	txNode* expression = ((txSpreadNode*)theNode)->expression;
 	txNode* binding;
@@ -3542,6 +3542,10 @@ txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken t
 			return NULL;
 		}
 		if (binding->description->token == XS_TOKEN_BINDING) {
+			fxReportParserError(parser, "invalid rest");
+			return NULL;
+		}
+		if (flag && ((binding->description->token == XS_TOKEN_ARRAY_BINDING) || (binding->description->token == XS_TOKEN_OBJECT_BINDING))) {
 			fxReportParserError(parser, "invalid rest");
 			return NULL;
 		}
