@@ -12,6 +12,7 @@
             "width": 122,
             "height": 250,
             "moddable_three": 1,
+            "colors": "kePaperBlackWhite",
             "cs_pin": 15,
             "dc_pin": 2,
             "rst_pin": 0,
