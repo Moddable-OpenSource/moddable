@@ -32,7 +32,7 @@
 		"nrf52": {
 			"modules": {
 				"*": [
-					"$(MODULES)/files/preference/esp/*"
+					"$(MODULES)/files/preference/nrf52/*"
 				]
 			}
 		},
