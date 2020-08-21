@@ -45,26 +45,7 @@ const EXPECTED_WHO_AM_I = 0x68;
 const GYRO_SCALER = (1 / 131); //Datasheet Section 6.1
 const ACCEL_SCALER = (1 / 16384); //Datasheet Section 6.2
 
-class SMBHold extends SMBus { //SMBus implementation that holds the i2c bus between the i2c.read and i2c.write on read operations.
-    constructor(dictionary) {
-        super(dictionary);
-    }
-    readByte(register) {
-        super.write(register, false);
-        return super.read(1)[0];
-    }
-    readWord(register) {
-        super.write(register, false);
-        let value = super.read(2);
-        return value[0] | (value[1] << 8);
-    }
-    readBlock(register, count, buffer) {
-        super.write(register, false);
-        return buffer ? super.read(count, buffer) : super.read(count);
-    }
-}
-
-class Gyro_Accelerometer extends SMBHold {
+class Gyro_Accelerometer extends SMBus {
     constructor(dictionary) {
         super(Object.assign({ address: 0x68 }, dictionary));
         this.xlRaw = new ArrayBuffer(6);
