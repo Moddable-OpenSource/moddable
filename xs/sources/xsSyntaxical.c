@@ -3148,6 +3148,18 @@ txNode* fxBindingFromExpression(txParser* parser, txNode* theNode, txToken theTo
 {
 	txToken aToken = theNode->description->token;
 	txNode* binding;
+	if (aToken == XS_TOKEN_EXPRESSIONS) {
+		txNode* item = ((txExpressionsNode*)theNode)->items->first;
+		if (item && !item->next) {
+			aToken = item->description->token;
+			if ((aToken == XS_TOKEN_ACCESS) || (aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT) || (aToken == XS_TOKEN_PRIVATE_MEMBER) || (aToken == XS_TOKEN_UNDEFINED)) {
+				item->next = theNode->next;
+				theNode = item;
+			}
+			else
+				return NULL;
+		}
+	}
 	if (aToken == XS_TOKEN_BINDING) {
 		binding = fxBindingFromExpression(parser, ((txBindingNode*)theNode)->target, theToken);
 		((txBindingNode*)theNode)->target = binding;
