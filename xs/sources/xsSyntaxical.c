@@ -2620,7 +2620,7 @@ void fxFunctionExpression(txParser* parser, txInteger theLine, txSymbol** theSym
 void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol, txUnsigned flag)
 {
 	txUnsigned flags = parser->flags;
-	parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxGeneratorFlag | flag;
+	parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxGeneratorFlag | mxTargetFlag | flag;
 	if (parser->token == XS_TOKEN_IDENTIFIER) {
 		fxPushSymbol(parser, parser->symbol);
 		if (theSymbol)
