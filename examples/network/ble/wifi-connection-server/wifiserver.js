@@ -43,15 +43,15 @@ export default class WiFiServer extends BLEServer {
 		switch(characteristic.name) {
 			case "SSID":
 				this.ssid = value;
-				this.doStatusNotification(`Setting SSID to ${this.ssid}\n`);
+				this.doStatusNotification(`Setting SSID to <${this.ssid}>`);
 				break;
 			case "password":
 				this.password = value;
-				this.doStatusNotification(`Setting password to ${this.password}\n`);
+				this.doStatusNotification(`Setting password to <${this.password}>`);
 				break;
 			case "control":
 				if ((1 == value) && this.ssid) {
-					this.doStatusNotification(`Connecting to ${this.ssid}...\n`);
+					this.doStatusNotification(`Connecting to <${this.ssid}>...`);
 					this.connectToWiFiNetwork();
 				}
 				break;
@@ -66,17 +66,17 @@ export default class WiFiServer extends BLEServer {
 				case "connect":
 					break; // still waiting for IP address
 				case "gotIP":
-					this.doStatusNotification(`IP address ${Net.get("IP")}\n`);
+					this.doStatusNotification(`IP address: ${Net.get("IP")}`);
 					Timer.set(() => this.close, 500);
 					break;
 				case "disconnect":
-					this.doStatusNotification(`Connection lost\n`);
+					this.doStatusNotification(`Connection lost`);
 					break;  // connection lost
 			}
 		})
 	}
 	doStatusNotification(message) {
-		trace(message);
+		trace(message, "\n");
 		if (this.notify)
 			this.notifyValue(this.notify, message);
 	}
