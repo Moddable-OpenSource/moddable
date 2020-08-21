@@ -159,7 +159,7 @@ txSlot* fxNewGeneratorInstance(txMachine* the)
 	}
 	
     property = property->next = fxNewSlot(the);
-	property->flag = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	property->kind = XS_INTEGER_KIND;
 	property->value.integer = XS_CODE_START_GENERATOR;
 	
