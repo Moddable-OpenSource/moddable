@@ -425,8 +425,10 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	}
 	else
 		mxPushUndefined();
-	if (the->stack->kind == XS_UNDEFINED_KIND)
+    if (the->stack->kind == XS_UNDEFINED_KIND) {
 		*the->stack = mxArrayConstructor;
+        flag = 0;
+    }
 	else if (mxIsReference(the->stack) && mxIsConstructor(the->stack->value.reference)) {
 		if (the->stack->value.reference != mxArrayConstructor.value.reference)
 			flag = 0;
