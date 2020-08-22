@@ -122,10 +122,10 @@ LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0)
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = -fPIC
 
-XSC = $(BUILD_DIR)/bin/lin/debug/xsc
-XSID = $(BUILD_DIR)/bin/lin/debug/xsid
-XSL = $(BUILD_DIR)/bin/lin/debug/xsl
-MCREZ = $(BUILD_DIR)/bin/lin/debug/mcrez
+XSC = $(BUILD_DIR)/bin/lin/release/xsc
+XSID = $(BUILD_DIR)/bin/lin/release/xsid
+XSL = $(BUILD_DIR)/bin/lin/release/xsl
+MCREZ = $(BUILD_DIR)/bin/lin/release/mcrez
 
 VPATH += $(XS_DIRECTORIES)
 
