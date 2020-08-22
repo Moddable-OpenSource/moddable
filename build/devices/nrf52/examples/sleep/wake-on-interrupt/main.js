@@ -15,7 +15,7 @@
 	This application demonstrates how to use the Sleep object to trigger wakeup on an interrupt.
 	The LIS3DH accelerometer is configured to generate an interrupt on motion.
 	The application turns on the LED while running and turns off the LED when asleep.
-	Upon wakeup, the application re-launches and the reset reason is traced to the console.
+	Upon wakeup, the application re-launches and blinks the LED if the motion interrupt was used to wakeup the device.
 
 	https://devzone.nordicsemi.com/f/nordic-q-a/35408/lis2dh-int1-interrupt-for-wake-up/152144#152144
 */
@@ -30,9 +30,6 @@ const led_pin = config.led1_pin;
 const int_pin = config.lis3dh_int1_pin;
 const ON = 1;
 const OFF = 0;
-
-let str = valueToString(ResetReason, Sleep.resetReason);
-trace(`Good morning. Reset reason: ${str}\n`);
 
 class lis3dh extends Sensor {
 	configure(dictionary) {
@@ -52,6 +49,16 @@ let sensor = new lis3dh({});
 // Turn on LED upon wakeup
 Digital.write(led_pin, ON);
 
+// Blink LED upon wakeup from digital input pin
+if (ResetReason.GPIO == Sleep.resetReason) {
+	for (let i = 0; i < 10; ++i) {
+		Digital.write(led_pin, OFF);
+		Timer.delay(50);
+		Digital.write(led_pin, ON);
+		Timer.delay(50);
+	}
+}
+
 let count = 3;
 Timer.repeat(id => {
 	if (0 == count) {
@@ -65,14 +72,5 @@ Timer.repeat(id => {
 		
 		Sleep.deep();
 	}
-	if (count > 1)
-		trace(`Going to deep sleep in ${count - 1} seconds...\n`);
-	else
-		trace(`Good night. Move accelerometer to wake me up.\n\n`);
 	--count;
 }, 1000);
-
-function valueToString(obj, value) {
-	let result = Object.keys(obj).find(element => obj[element] == value);
-	return (result ? result : "Unknown");
-}

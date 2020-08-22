@@ -13,8 +13,7 @@
  */
 /*
 	This application demonstrates how to use the Sleep object to prevent the device from entering System Off power saving mode (deep sleep).
-	The LED blinks when the app prevents the device from entering deep sleep;
-	Upon wakeup, the application re-launches and the reset reason is traced to the console.
+	Upon wakeup, the application re-launches and blinks the LED if the reset pin was pressed to wakeup the device.
 	Press the device reset button to wakeup from deep sleep.
 */
 
@@ -27,11 +26,18 @@ const led_pin = config.led1_pin;
 const ON = 1;
 const OFF = 0;
 
-let str = valueToString(ResetReason, Sleep.resetReason);
-trace(`Good morning. Reset reason: ${str}\n`);
-
 // Turn on LED upon wakeup
 Digital.write(led_pin, ON);
+
+// Blink LED upon wakeup from reset pin
+if (ResetReason.RESETPIN == Sleep.resetReason) {
+	for (let i = 0; i < 10; ++i) {
+		Digital.write(led_pin, OFF);
+		Timer.delay(50);
+		Digital.write(led_pin, ON);
+		Timer.delay(50);
+	}
+}
 
 // Prevent deep sleep
 Sleep.prevent();
@@ -49,14 +55,5 @@ Timer.repeat(id => {
 
 		Sleep.allow();
 	}
-	if (count > 1)
-		trace(`Going to deep sleep in ${count - 1} seconds...\n`);
-	else
-		trace(`Good night. Press the reset button to wake me up.\n\n`);
 	--count;
 }, 1000);
-
-function valueToString(obj, value) {
-	let result = Object.keys(obj).find(element => obj[element] == value);
-	return (result ? result : "Unknown");
-}

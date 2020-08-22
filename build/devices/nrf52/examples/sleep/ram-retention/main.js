@@ -50,7 +50,6 @@ if (undefined !== buffer) {
 else
 	valid = false;
 
-
 // Blink LED to confirm retention buffer
 if (valid) {
 	for (let i = 0; i < 5; ++i) {

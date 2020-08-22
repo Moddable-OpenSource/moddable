@@ -14,7 +14,7 @@
 /*
 	This application demonstrates how to use the Sleep object to trigger wakeup on analog change detection.
 	The application turns on the LED while running and turns off the LED when asleep.
-	Upon wakeup, the application re-launches and the reset reason is traced to the console.
+	Upon wakeup, the application re-launches and blinks the LED if the analog value change woke up the device.
 	Change the voltage connected to the analog input pin to wakeup the device.
 */
 
@@ -29,14 +29,18 @@ const led_pin = config.led1_pin;
 const ON = 1;
 const OFF = 0;
 
-let str = valueToString(ResetReason, Sleep.resetReason);
-let value = Analog.read(wakeup_channel);
-
-trace(`Good morning. Reset reason: ${str}\n`);
-trace(`Analog value: ${value}\n`);
-
 // Turn on LED upon wakeup
 Digital.write(led_pin, ON);
+
+// Blink LED upon wakeup from analog value trigger
+if (ResetReason.LPCOMP == Sleep.resetReason) {
+	for (let i = 0; i < 10; ++i) {
+		Digital.write(led_pin, OFF);
+		Timer.delay(50);
+		Digital.write(led_pin, ON);
+		Timer.delay(50);
+	}
+}
 
 let count = 3;
 Timer.repeat(id => {
@@ -53,14 +57,6 @@ Timer.repeat(id => {
 		
 		Sleep.deep();
 	}
-	if (count > 1)
-		trace(`Going to deep sleep in ${count - 1} seconds...\n`);
-	else
-		trace(`Good night. Adjust analog channel ${wakeup_channel} to wake me up.\n\n`);
 	--count;
 }, 1000);
 
-function valueToString(obj, value) {
-	let result = Object.keys(obj).find(element => obj[element] == value);
-	return (result ? result : "Unknown");
-}
