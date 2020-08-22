@@ -196,7 +196,7 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 uint8_t modI2CActivate(modI2CConfiguration config)
 {
 
-return 0;
+//return 0;
 	if (gConfig == config)
 		return 0;
 
