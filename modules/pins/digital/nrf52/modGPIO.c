@@ -73,6 +73,10 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 			config->direction = 1;
 			nrf_gpio_cfg_output(config->pin);
 			break;
+		case kModGPIOOutputOpenDrain:
+			config->direction = 1;
+			nrf_gpio_cfg(config->pin, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
+			break;
 		default:
 			return -1;
 	}
