@@ -32,15 +32,12 @@ export default function (done) {
 		address: 0x34
 	});
 
-	//@@ microphone
-
-	try {
-		state.accelerometerGyro = new MPU6886;
-	} catch {
+	if (!config.imu || config.imu === 'SH200Q' ) {
 		state.accelerometerGyro = new SH200Q;
 	}
-
-	trace('The Temp:', state.accelerometerGyro.sampleTemp(), '\n');
+	if (config.imu === 'MPU6886' ) {
+		state.accelerometerGyro = new MPU6886
+	}
 
 	global.accelerometer = {
 		onreading: nop

@@ -28,16 +28,16 @@ import I2C from "pins/i2c";
 
 export default class SMBus extends I2C {
 	readByte(register) {
-		super.write(register);				// set address
+		super.write(register, false);				// set address
 		return super.read(1)[0];				// read one byte
 	}
 	readWord(register, endian) {
-		super.write(register);				// set address
+		super.write(register, false);				// set address
 		const value = super.read(2);			// read two bytes
 		return endian ? (value[1] | (value[0] << 8)) : (value[0] | (value[1] << 8));
 	}
 	readBlock(register, count, buffer) {
-		super.write(register);				// set address
+		super.write(register,false);				// set address
 		return buffer ? super.read(count, buffer) : super.read(count);
 	}
 	writeByte(register, value) {

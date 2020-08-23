@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Daisuke Sato
+ * Copyright (c) 2020 Daisuke Sato, Wilberforce
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,9 +20,9 @@
 
 /*
  * MPU6886 Accelerometer + Gyro
- *          Datasheet: 	    https://github.com/m5stack/M5-Schematic/blob/afd7409be8593a0199a0617325dda171f3b2b44c/datasheet/MPU-6886-000193%2Bv1.1_GHIC.PDF.pdf
- *          Register Map:   https://github.com/m5stack/M5StickC/blob/fbabae1d836e497cd50cfae9f7d1e5c05015eb77/src/utility/MPU6886.h
- *                          https://github.com/m5stack/M5StickC/blob/fbabae1d836e497cd50cfae9f7d1e5c05015eb77/src/utility/MPU6886.cpp
+ *          Datasheet: 	    https://github.com/m5stack/M5-Schematic/blob/master/datasheet/MPU-6886-000193%2Bv1.1_GHIC.PDF.pdf
+ *          Register Map:   https://github.com/m5stack/M5StickC/blob/master/src/utility/MPU6886.h
+ *                          https://github.com/m5stack/M5StickC/blob/master/src/utility/MPU6886.cpp
  */
 
 import SMBus from "pins/smbus";
@@ -67,41 +67,25 @@ Object.freeze(REGISTERS);
 
 const EXPECTED_WHO_AM_I = 0x19;
 const GYRO_SCALER = {
-    GFS_250DPS: (250.0/32768.0),
-    GFS_500DPS: (500.0/32768.0),
-    GFS_1000DPS: (1000.0/32768.0),
-    GFS_2000DPS: (2000.0/32768.0)
+    GFS_250DPS: (250.0 / 32768.0),
+    GFS_500DPS: (500.0 / 32768.0),
+    GFS_1000DPS: (1000.0 / 32768.0),
+    GFS_2000DPS: (2000.0 / 32768.0)
 }
 const ACCEL_SCALER = {
-    AFS_2G: (2.0/32768.0),
-    AFS_4G: (4.0/32768.0),
-    AFS_8G: (8.0/32768.0),
-    AFS_16G: (16.0/32768.0)
+    AFS_2G: (2.0 / 32768.0),
+    AFS_4G: (4.0 / 32768.0),
+    AFS_8G: (8.0 / 32768.0),
+    AFS_16G: (16.0 / 32768.0)
 }
 
-class SMBHold extends SMBus { //SMBus implementation that holds the i2c bus between the i2c.read and i2c.write on read operations.
-    constructor(dictionary) {
-        super(dictionary);
-    }
-    readByte(register) {
-        super.write(register, false);
-        return super.read(1)[0];
-    }
-    readWord(register) {
-        super.write(register, false);
-        let value = super.read(2);
-        return value[0] | (value[1] << 8);
-    }
-    readBlock(register, count, buffer) {
-        super.write(register, false);
-        return buffer ? super.read(count, buffer) : super.read(count);
-    }
-}
+class Gyro_Accelerometer extends SMBus {
+    #gyroScale = GYRO_SCALER.GFS_2000DPS;
+    #accelScale = ACCEL_SCALER.AFS_8G;
 
-class Gyro_Accelerometer extends SMBHold {
     constructor(dictionary) {
         super(Object.assign({
-            address:0x68
+            address: 0x68
         }, dictionary));
         this.xlRaw = new ArrayBuffer(6);
         this.xlView = new DataView(this.xlRaw);
@@ -110,10 +94,8 @@ class Gyro_Accelerometer extends SMBHold {
         this.tempRaw = new ArrayBuffer(2);
         this.tempView = new DataView(this.tempRaw);
         this.operation = "gyroscope";
-        this.gyroScale = 0.0;
-        this.accelScale = 0.0;
         this.checkIdentification();
-        this.reboot();
+        this.enable();
     }
 
     checkIdentification() {
@@ -126,11 +108,18 @@ class Gyro_Accelerometer extends SMBHold {
             switch (property) {
                 case "operation":
                     this.operation = dictionary.operation;
+                    break;
+                case "GYRO_SCALER":
+                    this.#gyroScale = dictionary.GYRO_SCALER;
+                    break;
+                case "ACCEL_SCALER":
+                    this.#accelScale = dictionary.ACCEL_SCALER;
+                    break;
             }
         }
     }
 
-    reboot() {
+    enable() {
 
         Timer.delay(1);
 
@@ -160,34 +149,30 @@ class Gyro_Accelerometer extends SMBHold {
         this.writeByte(REGISTERS.INT_ENABLE, 0x01)
         Timer.delay(1);
 
-        // Set default scalers
-        this.gyroScale = GYRO_SCALER.GFS_2000DPS;
-        this.accelScale = ACCEL_SCALER.AFS_8G;
-
         Timer.delay(100);
     }
 
     sampleXL() {
         this.readBlock(REGISTERS.ACCEL_XOUT_H, 6, this.xlRaw);
         return {
-            x: this.xlView.getInt16(0, true) * this.accelScale,
-            y: this.xlView.getInt16(2, true) * this.accelScale,
-            z: this.xlView.getInt16(4, true) * this.accelScale
+            x: this.xlView.getInt16(0) * this.#accelScale,
+            y: this.xlView.getInt16(2) * this.#accelScale,
+            z: this.xlView.getInt16(4) * this.#accelScale
         }
     }
 
     sampleGyro() {
         this.readBlock(REGISTERS.GYRO_XOUT_H, 6, this.gyroRaw);
         return {
-            x: this.gyroView.getInt16(0, true) * this.gyroScale,
-            y: this.gyroView.getInt16(2, true) * this.gyroScale,
-            z: this.gyroView.getInt16(4, true) * this.gyroScale
+            x: this.gyroView.getInt16(0) * this.#gyroScale,
+            y: this.gyroView.getInt16(2) * this.#gyroScale,
+            z: this.gyroView.getInt16(4) * this.#gyroScale
         }
     }
 
     sampleTemp() {
         this.readBlock(REGISTERS.TEMP_OUT_H, 2, this.tempRaw);
-        return this.tempView.getInt16(0, true) / 326.8 + 25.0
+        return this.tempView.getInt16(0) / 326.8 + 25.0
     }
 
     sample() {
