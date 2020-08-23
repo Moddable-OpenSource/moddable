@@ -54,10 +54,25 @@ const REGISTERS = {
 Object.freeze(REGISTERS);
 
 const EXPECTED_WHO_AM_I = 0x18;
-const GYRO_SCALER = (1 / 16.4); // at +/- 2000 degree/sec range, per datasheet section 2.1
-const ACCEL_SCALER = (1 / 4096); // at +/- 8g range, per datasheet section 2.2
+
+const GYRO_SCALER = {
+    GFS_125DPS: (125.0 / 32768.0),
+    GFS_250DPS: (250.0 / 32768.0),
+    GFS_500DPS: (500.0 / 32768.0),
+    GFS_1000DPS: (1000.0 / 32768.0),
+    GFS_2000DPS: (2000.0 / 32768.0)
+}
+const ACCEL_SCALER = {
+    AFS_2G: (2.0 / 32768.0),
+    AFS_4G: (4.0 / 32768.0),
+    AFS_8G: (8.0 / 32768.0),
+    AFS_16G: (16.0 / 32768.0)
+}
 
 class Gyro_Accelerometer extends SMBus {
+    #gyroScale = GYRO_SCALER.GFS_2000DPS;
+    #accelScale = ACCEL_SCALER.AFS_8G;
+
     constructor(dictionary) {
         super(Object.assign({
             address:0x6C
@@ -69,7 +84,7 @@ class Gyro_Accelerometer extends SMBus {
         this.tempRaw = new ArrayBuffer(2);
         this.tempView = new DataView(this.tempRaw);
         this.operation = "gyroscope";
-        this.reboot();
+        this.enable();
         this.checkIdentification();
     }
 
@@ -83,11 +98,18 @@ class Gyro_Accelerometer extends SMBus {
             switch (property) {
                 case "operation":
                     this.operation = dictionary.operation;
+                    break;
+                case "GYRO_SCALER":
+                    this.#gyroScale = dictionary.GYRO_SCALER;
+                    break;
+                case "ACCEL_SCALER":
+                    this.#accelScale = dictionary.ACCEL_SCALER;
+                    break;
             }
         }
     }
 
-    reboot() {
+    enable() {
 
         Timer.delay(1);
 
@@ -131,18 +153,18 @@ class Gyro_Accelerometer extends SMBus {
     sampleXL() {
         this.readBlock(REGISTERS.ACCEL_XOUT, 6, this.xlRaw);
         return {
-            x: this.xlView.getInt16(0, true) * ACCEL_SCALER,
-            y: this.xlView.getInt16(2, true) * ACCEL_SCALER,
-            z: this.xlView.getInt16(4, true) * ACCEL_SCALER
+            x: this.xlView.getInt16(0, true) * this.#accelScale,
+            y: this.xlView.getInt16(2, true) * this.#accelScale,
+            z: this.xlView.getInt16(4, true) * this.#accelScale
         }
     }
 
     sampleGyro() {
         this.readBlock(REGISTERS.GYRO_XOUT, 6, this.gyroRaw);
         return {
-            x: this.gyroView.getInt16(0, true) * GYRO_SCALER,
-            y: this.gyroView.getInt16(2, true) * GYRO_SCALER,
-            z: this.gyroView.getInt16(4, true) * GYRO_SCALER
+            x: this.gyroView.getInt16(0, true) * this.#gyroScale,
+            y: this.gyroView.getInt16(2, true) * this.#gyroScale,
+            z: this.gyroView.getInt16(4, true) * this.#gyroScale
         }
     }
 
