@@ -6,7 +6,7 @@
 	"config": {
 		"screen": "st7735",
 		"touch": "",
-		"imu" : "mpu6886"
+		"imu" : "MPU6886"
 	},
 	"defines": {
 		"spi": {
