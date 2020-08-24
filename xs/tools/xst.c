@@ -269,6 +269,7 @@ int main(int argc, char* argv[])
 				if (xsTypeOf(xsException) != xsUndefinedType) {
 					fprintf(stderr, "%s\n", xsToString(xsException));
 					error = 1;
+					xsException = xsUndefined;
 				}
 			}
 		}

@@ -1341,6 +1341,8 @@ void fxDoStatement(txParser* parser)
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
 	fxCommaExpression(parser);
 	fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
+	if (parser->token == XS_TOKEN_SEMICOLON)
+		fxGetNextToken(parser);
 	fxPushNodeStruct(parser, 2, XS_TOKEN_DO, aLine);
 	fxPushNodeStruct(parser, 2, XS_TOKEN_LABEL, aLine);
 }
