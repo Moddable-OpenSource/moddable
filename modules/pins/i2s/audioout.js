@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,18 +18,28 @@
  *
  */
 
-class AudioOut @ "xs_audioout_destructor" {
-	constructor(dictionary) @ "xs_audioout"
-	close() @ "xs_audioout_close"
+export class Mixer @ "xs_audioout_destructor" {
+	constructor(dictionary) @ "xs_audioout";
+	close() @ "xs_audioout_close";
+	enqueue(stream, kind, buffer, repeat, offset, count) @ "xs_audioout_enqueue";
+	mix(samples) @ "xs_audioout_mix";
+}
+Mixer.Samples = 1;
+Mixer.Flush = 2;
+Mixer.Callback = 3;
+Mixer.Volume = 4;
+Mixer.RawSamples = 5;
+
+function build(dictionary) @ "xs_audioout_build";
+
+class AudioOut extends Mixer {
+	constructor(dictionary) {
+		super(dictionary);
+		build.call(this, dictionary);
+	}
 	start() @ "xs_audioout_start"
 	stop() @ "xs_audioout_stop"
-	enqueue(stream, kind, buffer, repeat, offset, count) @ "xs_audioout_enqueue";
-};
-AudioOut.Samples = 1;
-AudioOut.Flush = 2;
-AudioOut.Callback = 3;
-AudioOut.Volume = 4;
-AudioOut.RawSamples = 5;
-Object.freeze(AudioOut.prototype);
+	get mix() {}		// unavailable
+}
 
 export default AudioOut;

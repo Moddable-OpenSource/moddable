@@ -155,6 +155,7 @@ typedef struct {
 	uint8_t					bitsPerSample;
 	uint8_t					bytesPerFrame;
 	uint8_t					applyVolume;		// one or more active streams is not at 1.0 volume
+	uint8_t					built;
 
 	int						activeStreamCount;
 	modAudioOutStream		activeStream[MODDEF_AUDIOOUT_STREAMS];
@@ -227,6 +228,10 @@ static void updateActiveStreams(modAudioOut out);
 	void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 	void queueCallback(modAudioOut out, xsIntegerValue id);
 #endif
+
+static void doLock(modAudioOut out);
+static void doUnlock(modAudioOut out);
+
 static void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output);
 static void endOfElement(modAudioOut out, modAudioOutStream stream);
 static void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume);
@@ -357,15 +362,21 @@ void xs_audioout(xsMachine *the)
 
 	for (i = 0; i < streamCount; i++)
 		out->stream[i].volume = 256 / MODDEF_AUDIOOUT_VOLUME_DIVIDER;
+}
+
+void xs_audioout_build(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostData(xsThis);
+	int i;
 
 #if defined(__APPLE__)
 	OSStatus err;
 	AudioStreamBasicDescription desc = {0};
 
-	desc.mBitsPerChannel = bitsPerSample;
+	desc.mBitsPerChannel = out->bitsPerSample;
 	desc.mBytesPerFrame = out->bytesPerFrame;
 	desc.mBytesPerPacket = desc.mBytesPerFrame;
-	desc.mChannelsPerFrame = numChannels;
+	desc.mChannelsPerFrame = out->numChannels;
 #if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
 	desc.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
 #elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
@@ -373,7 +384,7 @@ void xs_audioout(xsMachine *the)
 #endif
 	desc.mFormatID = kAudioFormatLinearPCM;
 	desc.mFramesPerPacket = 1;
-	desc.mSampleRate = sampleRate;
+	desc.mSampleRate = out->sampleRate;
 
 	pthread_mutex_init(&out->mutex, NULL);
 
@@ -426,6 +437,8 @@ void xs_audioout(xsMachine *the)
 		xsUnknownError("out of memory");
 #endif
 #endif
+
+	out->built = 1;
 }
 
 void xs_audioout_close(xsMachine *the)
@@ -565,17 +578,9 @@ void xs_audioout_enqueue(xsMachine *the)
 
 				sampleFormat = kSampleFormatUncompressed;
 			}
-			
-#if defined(__APPLE__)
-			pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-			EnterCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-			modCriticalSectionBegin();
-#endif
-			
+
+			doLock(out);
+
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->position = 0;
 			element->repeat = repeat;
@@ -608,30 +613,14 @@ void xs_audioout_enqueue(xsMachine *the)
 				updateActiveStreams(out);
 			}
 
-#if defined(__APPLE__)
-			pthread_mutex_unlock(&out->mutex);
-#elif defined(_WIN32)
-			LeaveCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreGive(out->mutex);
-			xTaskNotify(out->task, 0, eNoAction);		// notify up audio task - will be waiting if no active streams
-#elif defined(__ets__)
-			modCriticalSectionEnd();
-#endif
+			doUnlock(out);
 			break;
 
 		case kKindFlush: {
 				int elementCount, i;
 
-#if defined(__APPLE__)
-				pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-				EnterCriticalSection(&out->cs);
-#elif ESP32
-				xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-				modCriticalSectionBegin();
-#endif
+				doLock(out);
+
 				elementCount = out->stream[stream].elementCount;
 				out->stream[stream].elementCount = 0;		// flush queue
 				updateActiveStreams(out);
@@ -642,15 +631,7 @@ void xs_audioout_enqueue(xsMachine *the)
 						queueCallback(out, (xsIntegerValue)element->samples);
 				}
 
-#if defined(__APPLE__)
-				pthread_mutex_unlock(&out->mutex);
-#elif defined(_WIN32)
-				LeaveCriticalSection(&out->cs);
-#elif ESP32
-				xSemaphoreGive(out->mutex);
-#elif defined(__ets__)
-				modCriticalSectionEnd();
-#endif
+				doUnlock(out);
 
 #if defined(__APPLE__)
 				invokeCallbacks(NULL, out);
@@ -660,15 +641,8 @@ void xs_audioout_enqueue(xsMachine *the)
 		} break;
 
 		case kKindCallback:
-#if defined(__APPLE__)
-			pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-			EnterCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-			modCriticalSectionBegin();
-#endif
+			doLock(out);
+
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->samples = (void *)(uintptr_t)xsmcToInteger(xsArg(2));
 			element->sampleCount = 0;
@@ -683,15 +657,8 @@ void xs_audioout_enqueue(xsMachine *the)
 				break;
 			}
 
-#if defined(__APPLE__)
-			pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-			EnterCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-			modCriticalSectionBegin();
-#endif
+			doLock(out);
+
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->samples = NULL;
 			element->sampleCount = 0;
@@ -704,6 +671,25 @@ void xs_audioout_enqueue(xsMachine *the)
 	}
 
 	xsResult = xsThis;
+}
+
+void xs_audioout_mix(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostData(xsThis);
+	int samplesNeeded = xsmcToInteger(xsArg(0));
+	int bytesNeeded = samplesNeeded * out->bytesPerFrame;
+	void *result = c_malloc(bytesNeeded);
+
+	if (!result)
+		xsUnknownError("no memory");
+
+	audioMix(out, samplesNeeded, result);
+	xsResult = xsNewHostObject(c_free);
+	xsmcSetHostData(xsResult, result);
+
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), bytesNeeded);
+	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
 }
 
 // note: updateActiveStreams relies on caller to lock mutex
@@ -1282,6 +1268,36 @@ void queueCallback(modAudioOut out, xsIntegerValue id)
 		printf("audio callback queue full\n");
 }
 #endif
+
+void doLock(modAudioOut out)
+{
+	if (out->built) {
+#if defined(__APPLE__)
+		pthread_mutex_lock(&out->mutex);
+#elif defined(_WIN32)
+		EnterCriticalSection(&out->cs);
+#elif ESP32
+		xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif defined(__ets__)
+		modCriticalSectionBegin();
+#endif
+	}
+}
+
+void doUnlock(modAudioOut out)
+{
+	if (out->built) {
+#if defined(__APPLE__)
+		pthread_mutex_unlock(&out->mutex);
+#elif defined(_WIN32)
+		LeaveCriticalSection(&out->cs);
+#elif ESP32
+		xSemaphoreGive(out->mutex);
+#elif defined(__ets__)
+		modCriticalSectionEnd();
+#endif
+	}
+}
 
 #if defined(__ets__)
 	#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
