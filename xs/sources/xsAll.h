@@ -113,7 +113,7 @@ typedef struct {
 	void (*runProgramEnvironment)(txMachine*);
 	void (*initializeSharedCluster)();
 	void (*terminateSharedCluster)();
-	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
+	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txNumber length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
     void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
     void (*runImport)(txMachine* the, txSlot* realm, txID id);
@@ -924,7 +924,7 @@ extern txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultProt
 extern txBoolean fxIsCallable(txMachine* the, txSlot* slot);
 extern txBoolean fxIsFunction(txMachine* the, txSlot* slot);
 extern txSlot* fxNewFunctionInstance(txMachine* the, txID name);
-extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
+extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length);
 extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
 extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txIndex index, txInteger former, txString prefix);
 
@@ -2177,9 +2177,6 @@ enum {
 #define mxFunctionInstanceHome(INSTANCE) 		((INSTANCE)->next->next)
 #ifdef mxProfile
 #define mxFunctionInstanceProfile(INSTANCE) 	((INSTANCE)->next->next->next)
-#define mxFunctionInstanceLength(INSTANCE)		((INSTANCE)->next->next->next->next)
-#else
-#define mxFunctionInstanceLength(INSTANCE)		((INSTANCE)->next->next->next)
 #endif
 
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)

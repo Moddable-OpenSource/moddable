@@ -492,24 +492,31 @@ void fxLinkerScriptCallback(txMachine* the)
 	mxPop();
 }
 
-txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length)
+txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length)
 {
 	txLinker* linker = (txLinker*)(the->context);
+	txSlot* property;
 	if (linker->stripFlag)
-		return property;
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-	property->ID = mxID(_length);
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = length;
+		return C_NULL;
+	property = mxBehaviorGetProperty(the, instance, mxID(_length), XS_NO_ID, XS_OWN);
+	if (!property)
+		property = fxNextIntegerProperty(the, fxLastProperty(the, instance), 0, mxID(_length), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	if (length <= 0x7FFFFFFF) {
+		property->kind = XS_INTEGER_KIND;
+		property->value.integer = (txInteger)length;
+	}
+	else {
+		property->kind = XS_NUMBER_KIND;
+		property->value.number = length;
+	}
 	return property;
 }
 
 txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix)
 {
+	txLinker* linker = (txLinker*)(the->context);
 	txSlot* property;
 	txSlot* key;
-	txLinker* linker = (txLinker*)(the->context);
 	if (linker->stripFlag)
 		return C_NULL;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);

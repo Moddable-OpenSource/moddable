@@ -614,7 +614,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
-		property = gxDefaults.newFunctionLength(the, instance, property, theLength);
+		gxDefaults.newFunctionLength(the, instance, theLength);
 
 	/* NAME */
 	if (name != XS_NO_ID)
