@@ -3215,7 +3215,7 @@ txNode* fxBindingFromExpression(txParser* parser, txNode* theNode, txToken theTo
 		fxPushNodeStruct(parser, 1, theToken, ((txAccessNode*)theNode)->line);
 		return fxPopNode(parser);
 	}
-	if ((aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT)) {
+	if ((aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT) || (aToken == XS_TOKEN_UNDEFINED)) {
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_ASSIGN) {
