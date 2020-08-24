@@ -82,10 +82,12 @@ const ACCEL_SCALER = {
 class Gyro_Accelerometer extends SMBus {
     #gyroScale = GYRO_SCALER.GFS_2000DPS;
     #accelScale = ACCEL_SCALER.AFS_8G;
+    #ok=false;
 
     constructor(dictionary) {
         super(Object.assign({
-            address: 0x68
+            address: 0x68,
+            throw:false
         }, dictionary));
         this.xlRaw = new ArrayBuffer(6);
         this.xlView = new DataView(this.xlRaw);
@@ -94,13 +96,21 @@ class Gyro_Accelerometer extends SMBus {
         this.tempRaw = new ArrayBuffer(2);
         this.tempView = new DataView(this.tempRaw);
         this.operation = "gyroscope";
-        this.checkIdentification();
-        this.enable();
+        this.#ok=this.checkIdentification();
+        if (this.#ok ) this.enable();
+    }
+
+    ok() {
+        return this.#ok;
     }
 
     checkIdentification() {
-        let gxlID = this.readByte(REGISTERS.WHO_AM_I);
-        if (gxlID != EXPECTED_WHO_AM_I) throw ("bad WHO_AM_I ID for MPU6886.");
+        super.write(REGISTERS.WHO_AM_I, false);
+        let gxlID=super.read(1);
+        if ( gxlID ) {
+            return gxlID[0] == EXPECTED_WHO_AM_I;
+        }
+        return false;
     }
 
     configure(dictionary) {
@@ -190,5 +200,7 @@ class Gyro_Accelerometer extends SMBus {
     }
 }
 Object.freeze(Gyro_Accelerometer.prototype);
+Object.freeze(GYRO_SCALER);
+Object.freeze(ACCEL_SCALER);
 
 export default Gyro_Accelerometer;

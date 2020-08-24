@@ -21,9 +21,9 @@
  */
 /*
 	sh200q Accelerometer + Gyro
-            Datasheet: 			http://senodia.com/Uploads/Product/5b2b6ef1216e8.pdf
-            Register Map:   https://github.com/m5stack/M5StickC/blob/master/src/IMU.h#L6-L21
-            https://github.com/m5stack/M5StickC/blob/master/src/IMU.cpp
+            Datasheet: 	http://senodia.com/Uploads/Product/5b2b6ef1216e8.pdf
+            Register Map:   https://github.com/m5stack/M5StickC/blob/master/src/utility/SH200Q.h#L7-L22
+            https://github.com/m5stack/M5StickC/blob/master/src/utility/SH200Q.cpp
            
 */
 
@@ -72,6 +72,7 @@ const ACCEL_SCALER = {
 class Gyro_Accelerometer extends SMBus {
     #gyroScale = GYRO_SCALER.GFS_2000DPS;
     #accelScale = ACCEL_SCALER.AFS_8G;
+    #ok=false;
 
     constructor(dictionary) {
         super(Object.assign({
@@ -84,13 +85,21 @@ class Gyro_Accelerometer extends SMBus {
         this.tempRaw = new ArrayBuffer(2);
         this.tempView = new DataView(this.tempRaw);
         this.operation = "gyroscope";
-        this.enable();
-        this.checkIdentification();
+        this.#ok=this.checkIdentification();
+        if (this.#ok ) this.enable();
+    }
+
+    ok() {
+        return this.#ok;
     }
 
     checkIdentification() {
-        let gxlID = this.readByte(REGISTERS.WHO_AM_I);
-        if (gxlID != EXPECTED_WHO_AM_I) throw ("bad WHO_AM_I ID for sh200Q.");
+        super.write(REGISTERS.WHO_AM_I, false);
+        let gxlID=super.read(1);
+        if ( gxlID ) {
+            return gxlID[0] == EXPECTED_WHO_AM_I;
+        }
+        return false;
     }
 
     configure(dictionary) {
@@ -101,9 +110,13 @@ class Gyro_Accelerometer extends SMBus {
                     break;
                 case "GYRO_SCALER":
                     this.#gyroScale = dictionary.GYRO_SCALER;
+                    // 
+                    //this.writeByte(REGISTERS.GYRO_RANGE, 0x00);
                     break;
                 case "ACCEL_SCALER":
                     this.#accelScale = dictionary.ACCEL_SCALER;
+                    // 
+                    //this.writeByte(REGISTERS.ACC_RANGE, 0x00);
                     break;
             }
         }
@@ -188,5 +201,7 @@ class Gyro_Accelerometer extends SMBus {
     }
 }
 Object.freeze(Gyro_Accelerometer.prototype);
+Object.freeze(GYRO_SCALER);
+Object.freeze(ACCEL_SCALER);
 
 export default Gyro_Accelerometer;

@@ -53,7 +53,7 @@ class Gyro_Accelerometer extends SMBus {
         this.gyroRaw = new ArrayBuffer(6);
         this.gyroView = new DataView(this.gyroRaw);
         this.operation = "gyroscope";
-        this.reboot();
+        this.enable();
         this.checkIdentification();
     }
 
@@ -71,7 +71,7 @@ class Gyro_Accelerometer extends SMBus {
         }
     }
 
-    reboot() {
+    enable() {
         this.writeByte(REGISTERS.PWR_MGMT_1, 0b10000000);
         Timer.delay(150);
         this.writeByte(REGISTERS.PWR_MGMT_1, 0);

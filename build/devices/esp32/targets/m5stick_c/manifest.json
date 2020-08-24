@@ -5,8 +5,7 @@
 	],
 	"config": {
 		"screen": "st7735",
-		"touch": "",
-		"imu" : "MPU6886"
+		"touch": ""
 	},
 	"defines": {
 		"spi": {
@@ -59,8 +58,9 @@
 		"*": [
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
-			"$(MODULES)/drivers/sh200q/*",
-			"$(MODULES)/drivers/mpu6886/*"
+			"$(MODULES)/drivers/mpu6886/*",
+			"$(MODULES)/drivers/sh200q/*"
+			
 		],
 		"setup/target": "./setup-target",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
@@ -68,9 +68,8 @@
 	"preload": [
 		"monitor",
 		"setup/target",
-		"sh200q",
 		"mpu6886",
+		"sh200q",
 		"pins/smbus"
 	]
 }
-
