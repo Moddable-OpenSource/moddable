@@ -19,6 +19,8 @@ import Net from "net";
 import Timer from "timer";
 
 export default class WiFiServer extends BLEServer {
+	#monitor;
+
 	onReady() {
 		this.deviceName = "Moddable Device";
 		this.onDisconnected();
@@ -30,6 +32,9 @@ export default class WiFiServer extends BLEServer {
 		this.startAdvertising({
 			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [uuid`FF00`]}
 		});
+
+		this.#monitor?.close();
+		this.#monitor = undefined;
 	}
 	onCharacteristicNotifyDisabled(characteristic) {
 		if ("status" == characteristic.name)
@@ -51,7 +56,7 @@ export default class WiFiServer extends BLEServer {
 				break;
 			case "control":
 				if ((1 == value) && this.ssid) {
-					this.doStatusNotification(`Connecting to <${this.ssid}>...`);
+					this.doStatusNotification(`Connecting to Wi-Fi <${this.ssid}>...`);
 					this.connectToWiFiNetwork();
 				}
 				break;
@@ -61,17 +66,23 @@ export default class WiFiServer extends BLEServer {
 		let dictionary = { ssid:this.ssid };
 		if (this.password)
 			dictionary.password = this.password;
-		let monitor = new WiFi(dictionary, msg => {
+
+		this.#monitor?.close();
+		this.#monitor = new WiFi(dictionary, msg => {
 			switch (msg) {
-				case "connect":
-					break; // still waiting for IP address
-				case "gotIP":
-					this.doStatusNotification(`IP address: ${Net.get("IP")}`);
-					Timer.set(() => this.close, 500);
+				case WiFi.connected:
+					this.doStatusNotification(`Wi-Fi connected. Waiting for IP addreess...`);
 					break;
-				case "disconnect":
-					this.doStatusNotification(`Connection lost`);
-					break;  // connection lost
+				case WiFi.gotIP:
+					this.doStatusNotification(`IP address: ${Net.get("IP")}`);
+					Timer.set(() => {
+						this.doStatusNotification(`BLE disconnecting.`);
+						this.disconnect();
+					}, 500);
+					break;
+				case WiFi.disconnected:
+					this.doStatusNotification(`Wi-Fi disconnected`);
+					break;
 			}
 		})
 	}
