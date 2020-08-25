@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: February 27, 2020
+Revised: August 25, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -210,7 +210,18 @@ More detailed getting started guides are available for the following devices:
 
 4. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
+	Note that the extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name. Your directory tree structure should look like this:
+	
+	```text
+	~/esp32
+	├── xtensa-esp32-elf
+	│   ├── bin
+	│   ├── include
+	│   ├── lib
+	│   ├── libexec
+	│   ├── share
+	│   └── xtensa-esp32-elf
+	```
 
 5. Clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
@@ -227,7 +238,7 @@ More detailed getting started guides are available for the following devices:
     git checkout v3.3.2
     git submodule update
     ```
-	
+
 6. Update homebrew and then install Python, cmake, ninja, and the pip package management system. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
 
 	```text
@@ -609,8 +620,19 @@ More detailed getting started guides are available for the following devices:
 
 3. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
-
+	Note that the extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name. Your directory tree structure should look like this:
+	
+	```text
+	~/esp32
+	├── xtensa-esp32-elf
+	│   ├── bin
+	│   ├── include
+	│   ├── lib
+	│   ├── libexec
+	│   ├── share
+	│   └── xtensa-esp32-elf
+	```
+	
 4. Clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
