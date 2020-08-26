@@ -72,12 +72,12 @@ const ACCEL_SCALER = {
 class Gyro_Accelerometer extends SMBus {
     #gyroScale = GYRO_SCALER.GFS_2000DPS;
     #accelScale = ACCEL_SCALER.AFS_8G;
-    #ok=false;
 
     constructor(dictionary) {
-        super(Object.assign({
-            address:0x6C
-        }, dictionary));
+        super({
+            address:0x6C,
+            ...dictionary
+		});
         this.xlRaw = new ArrayBuffer(6);
         this.xlView = new DataView(this.xlRaw);
         this.gyroRaw = new ArrayBuffer(6);
@@ -85,21 +85,13 @@ class Gyro_Accelerometer extends SMBus {
         this.tempRaw = new ArrayBuffer(2);
         this.tempView = new DataView(this.tempRaw);
         this.operation = "gyroscope";
-        this.#ok=this.checkIdentification();
-        if (this.#ok ) this.enable();
-    }
-
-    ok() {
-        return this.#ok;
+        if (!this.checkIdentification())
+			throw new Error("unrecongized")
+        this.enable();
     }
 
     checkIdentification() {
-        super.write(REGISTERS.WHO_AM_I, false);
-        let gxlID=super.read(1);
-        if ( gxlID ) {
-            return gxlID[0] == EXPECTED_WHO_AM_I;
-        }
-        return false;
+		return super.readByte(REGISTERS.WHO_AM_I) == EXPECTED_WHO_AM_I;
     }
 
     configure(dictionary) {
