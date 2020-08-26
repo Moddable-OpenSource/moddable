@@ -587,13 +587,23 @@ More detailed getting started guides are available for the following devices:
 	git checkout release/v3.2
 	```
 
-6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
+6. Install Python and the required Python packages. We've used [pip](https://pypi.org/project/pip/) to install the additional components.
+
+	For Ubuntu 20:
+
+	```text
+	sudo apt-get install python-is-python3 python3-pip python3-serial
+	```
+
+	For Ubuntu versions prior to 20:
 
 	```text
 	sudo apt-get install python
 	sudo easy_install pip
 	pip install --user pyserial
 	```
+
+
 	
 7. Connect the ESP8266 to your computer with a USB cable.
 
@@ -649,7 +659,15 @@ More detailed getting started guides are available for the following devices:
     git submodule update
     ```
 
-5. Install the packages required to compile with the `ESP-IDF`:
+5. Install the packages required to compile with the `ESP-IDF`.
+
+	For Ubuntu 20:
+
+	```text
+	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
+	```
+
+	For Ubuntu versions prior to 20:
 
 	```text
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
