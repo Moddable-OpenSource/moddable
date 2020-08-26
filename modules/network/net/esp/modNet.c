@@ -39,7 +39,12 @@ void twoHex(uint8_t value, char *out)
 	*out++ = espRead8(gHex + (value & 15));
 }
 
-uint8_t getNIF(xsMachine *the)
+#if ESP32
+tcpip_adapter_if_t
+#else
+uint8_t
+#endif
+getNIF(xsMachine *the)
 {
 	uint8_t wantsAP = 0, wantsStation = 0;
 
@@ -49,7 +54,20 @@ uint8_t getNIF(xsMachine *the)
 	}
 
 #if ESP32
-	//@@
+	wifi_mode_t mode;
+	if (ESP_OK != esp_wifi_get_mode(&mode))
+		return 255;
+
+	if (wantsStation && ((WIFI_MODE_STA == mode) || (WIFI_MODE_APSTA == mode)))
+		return TCPIP_ADAPTER_IF_STA;
+	if (wantsAP && ((WIFI_MODE_AP == mode) || (WIFI_MODE_APSTA == mode)))
+		return TCPIP_ADAPTER_IF_AP;
+	if (wantsAP || wantsStation)
+		return 255;
+	if (WIFI_MODE_AP == mode)
+		return TCPIP_ADAPTER_IF_AP;
+	if (WIFI_MODE_STA == mode)
+		return TCPIP_ADAPTER_IF_STA;
 #else
 	uint8 mode = wifi_get_opmode();
 	if (wantsStation && ((STATION_MODE == mode) || (STATIONAP_MODE == mode)))
@@ -62,8 +80,8 @@ uint8_t getNIF(xsMachine *the)
 		return SOFTAP_IF;
 	if (STATION_MODE == mode)
 		return STATION_IF;
-	return 255;
 #endif
+	return 255;
 }
 
 void xs_net_get(xsMachine *the)
@@ -72,13 +90,13 @@ void xs_net_get(xsMachine *the)
 
 	if (0 == espStrCmp(prop, "IP")) {
 #if ESP32
-		wifi_mode_t mode;
 		tcpip_adapter_ip_info_t info = {0};
+		tcpip_adapter_if_t nif = getNIF(the);
 
-		if ((ESP_OK != esp_wifi_get_mode(&mode)) || (WIFI_MODE_NULL == mode))
+		if (255 == nif)
 			return;
 
-		if ((ESP_OK == tcpip_adapter_get_ip_info(mode == WIFI_MODE_AP ? TCPIP_ADAPTER_IF_AP : TCPIP_ADAPTER_IF_STA, &info)) && info.ip.addr) {
+		if ((ESP_OK == tcpip_adapter_get_ip_info(nif, &info)) && info.ip.addr) {
 #else
 		struct ip_info info;
 		uint8_t nif = getNIF(the);
@@ -101,7 +119,16 @@ void xs_net_get(xsMachine *the)
 	else if (0 == espStrCmp(prop, "MAC")) {
 		uint8_t macaddr[6];
 #if ESP32
-		if (ESP_OK == esp_wifi_get_mac(ESP_IF_WIFI_STA, macaddr))
+		tcpip_adapter_if_t nif = getNIF(the);
+		wifi_interface_t ifx;
+		if (TCPIP_ADAPTER_IF_STA == nif)
+			ifx = ESP_IF_WIFI_STA;
+		else if (TCPIP_ADAPTER_IF_AP == nif)
+			ifx = ESP_IF_WIFI_AP;
+		else
+			return;
+
+		if (ESP_OK == esp_wifi_get_mac(ifx, macaddr))
 #else
 		if (wifi_get_macaddr(getNIF(the), macaddr))
 #endif
