@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -91,54 +91,83 @@ const DataRate = {
 Object.freeze(DataRate);
 
 class Sensor extends SMBus {
-	constructor(dictionary) {
-		super(Object.assign({address: 0x18}, dictionary));
+	#values = new Int16Array(3);
+	#multiplier;
+	#rate = DataRate.DATARATE_400_HZ;
+	#range = Range.RANGE_4_G;
 
-		if (0x33 != this.readByte(Register.WHOAMI))
+	constructor(dictionary) {
+		super({address: 0x18, throw: false, ...dictionary});
+
+		if (0x33 === this.readByte(Register.WHOAMI))
+			;
+		else if (0x33 !== this.readByte(Register.WHOAMI))
 			throw new Error("unexpected device ID");
 
-		this.values = new Int16Array(3);
-		this.configure({rate: DataRate.DATARATE_400_HZ, range: Range.RANGE_4_G});
+		this.configure({rate: dictionary.rate ?? this.#rate, range:dictionary.range ?? this.#range});
+
+		const interrupt = dictionary.interrupt;
+		if (interrupt) {
+			this.writeByte(Register.CTRL6, (interrupt.polarity ?? 1) ? 0b00000000 : 0b00000010);
+
+			this.writeByte(Register.INT1THS, (interrupt.threshold ?? 0) & 0x7f);
+			this.writeByte(Register.INT1DUR, (interrupt.duration ?? 0) & 0x7f);
+
+			this.writeByte(Register.INT1CFG, interrupt.enable);
+			this.writeByte(Register.CTRL2, 0x01);		// HP filter for INT1
+			this.writeByte(Register.CTRL3, 0x40);		// interrupt to INT1
+			this.writeByte(Register.CTRL5, interrupt.latch ? 0x08 : 0);		// latch interrupt LIR_INT1
+		}
+		else {
+			this.writeByte(Register.INT1CFG, 0);
+		}
 	}
+
+	get irq_fired() { return 0 != (this.readByte(Register.INT1SRC) & 64); }
 
 	configure(dictionary) {
 		for (let property in dictionary) {
 			switch (property) {
 				case "rate":
-				case "range":
-					this[property] = parseInt(dictionary[property]);
+					this.#rate = parseInt(dictionary.rate);
 					break;
+
+				case "range":
+					this.#range = parseInt(dictionary.range);
+					break;
+
 				default:
 					throw new Error(`invalid property "${property}"`);
-					break;
 			}
 		}
 		// Enable all axes, normal mode @ rate
-		this.writeByte(Register.CTRL1, 0x07 | (this.rate << 4));
+		this.writeByte(Register.CTRL1, 0x07 | (this.#rate << 4));
 
 		// High res & BDU enabled
-		this.writeByte(Register.CTRL4, 0x88 | (this.range << 4));
+		this.writeByte(Register.CTRL4, 0x88 | (this.#range << 4));
 
-		if (this.range === Range.RANGE_16_G)
-			this.divider = 1365; // different sensitivity at 16g
-		else if (this.range === Range.RANGE_8_G)
-			this.divider = 4096;
-		else if (this.range === Range.RANGE_4_G)
-			this.divider = 8190;
+		if (this.#range === Range.RANGE_16_G)
+			this.#multiplier = 1 / 1365; // different sensitivity at 16g
+		else if (this.#range === Range.RANGE_8_G)
+			this.#multiplier = 1 / 4096;
+		else if (this.#range === Range.RANGE_4_G)
+			this.#multiplier = 1 / 8190;
 		else
-			this.divider = 16380;
+			this.#multiplier = 1 / 16380;
 	}
 
 	sample() {
-		this.readBlock(Register.OUT_X_L | 0x80, 6, this.values.buffer);
+		const values = this.#values, multiplier = this.#multiplier;
+
+		this.readBlock(Register.OUT_X_L | 0x80, 6, values.buffer);
 
 		return {
-			x: this.values[0] / this.divider,
-			y: this.values[1] / this.divider,
-			z: this.values[2] / this.divider
+			x: values[0] * multiplier,
+			y: values[1] * multiplier,
+			z: values[2] * multiplier
 		};
 	}
 }
 Object.freeze(Sensor.prototype);
 
-export {Sensor as default, Sensor, DataRate, Range, Register};
+export {Sensor as default, Sensor, DataRate, Range};

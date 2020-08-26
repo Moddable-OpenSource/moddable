@@ -64,12 +64,14 @@ void xs_digital_monitor_destructor(void *data)
 		walker = walker->next;
 	}
 	
-	nrf_drv_gpiote_in_event_enable(monitor->pin, false);
+	nrf_drv_gpiote_in_event_disable(monitor->pin);
+	nrf_drv_gpiote_in_uninit(monitor->pin);
 
 	c_free(monitor);
 
-	if (!gMonitors)
+	if (!gMonitors) {
 		nrf_drv_gpiote_uninit();
+	}
 }
 
 void xs_digital_monitor(xsMachine *the)
@@ -146,6 +148,7 @@ void xs_digital_monitor(xsMachine *the)
 void xs_digital_monitor_close(xsMachine *the)
 {
 	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
+	nrf_drv_gpiote_in_event_disable(monitor->pin);
 	xsForget(monitor->obj);
 	monitor->closed = true;
 	if (!monitor->triggered)
