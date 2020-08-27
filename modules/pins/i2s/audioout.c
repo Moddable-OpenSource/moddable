@@ -237,6 +237,19 @@ static void endOfElement(modAudioOut out, modAudioOutStream stream);
 static void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume);
 static int streamDecompressNext(modAudioOutStream stream);
 
+
+#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
+	#define MIXSAMPLETYPE int16_t
+	#define ClampSample(s, streams) ((s < -128) ? -128 : ((s > 127) ? 127 : s))
+//	#define ClampSample(s, streams) (s / streams)
+//	#define ClampSample(s, streams) (s)
+#elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
+	#define MIXSAMPLETYPE int32_t
+	#define ClampSample(s, streams) ((s < -32768) ? -32768 : ((s > 32767) ? 32767 : s))
+//	#define ClampSample(s, streams) (s / streams)
+//	#define ClampSample(s, streams) (s)
+#endif
+
 void xs_audioout_destructor(void *data)
 {
 	modAudioOut out = data;
@@ -1299,7 +1312,7 @@ void doUnlock(modAudioOut out)
 	}
 }
 
-#if defined(__ets__)
+#if defined(__ets__) && !ESP32
 	#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
 		#define readSample(x) ((int16_t)c_read16(x))
 	#else
@@ -1369,14 +1382,18 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s1 = (OUTPUTSAMPLETYPE *)((element1->position * bytesPerFrame) + (uint8_t *)element1->samples);
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
-					while (count--)
-						*output++ = readSample(s0++) + readSample(s1++);
+					while (count--) {
+						MIXSAMPLETYPE s = readSample(s0++) + readSample(s1++);
+						*output++ = ClampSample(s, 2);
+					}
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
-					while (count--)
-						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1)) >> 8;
+					while (count--) {
+						MIXSAMPLETYPE s = ((readSample(s0++) * v0) + (readSample(s1++) * v1)) >> 8;
+						*output++ = ClampSample(s, 2);
+					}
 				}
 
 				samplesToGenerate -= use;
@@ -1412,15 +1429,19 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s2 = (OUTPUTSAMPLETYPE *)((element2->position * bytesPerFrame) + (uint8_t *)element2->samples);
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
-					while (count--)
-						*output++ = readSample(s0++) + readSample(s1++) + readSample(s2++);
+					while (count--) {
+						MIXSAMPLETYPE s = readSample(s0++) + readSample(s1++) + readSample(s2++);
+						*output++ = ClampSample(s, 3);
+					}
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					uint16_t v2 = stream2->volume;
-					while (count--)
-						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2)) >> 8;
+					while (count--) {
+						MIXSAMPLETYPE s = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2)) >> 8;
+						*output++ = ClampSample(s, 3);
+					}
 				}
 
 				samplesToGenerate -= use;
@@ -1464,16 +1485,20 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s3 = (OUTPUTSAMPLETYPE *)((element3->position * bytesPerFrame) + (uint8_t *)element3->samples);
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
-					while (count--)
-						*output++ = readSample(s0++) + readSample(s1++) + readSample(s2++) + readSample(s3++);
+					while (count--) {
+						MIXSAMPLETYPE s = readSample(s0++) + readSample(s1++) + readSample(s2++) + readSample(s3++);
+						*output++ = ClampSample(s, 4);
+					}
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					uint16_t v2 = stream2->volume;
 					uint16_t v3 = stream3->volume;
-					while (count--)
-						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2) + (readSample(s3++) * v3)) >> 8;
+					while (count--) {
+						MIXSAMPLETYPE s = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2) + (readSample(s3++) * v3)) >> 8;
+						*output++ = ClampSample(s, 4);
+					}
 				}
 
 				samplesToGenerate -= use;
