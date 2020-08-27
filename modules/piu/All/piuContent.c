@@ -62,6 +62,11 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuContentHooks = {
 void PiuContentBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContent* self = it;
+#ifdef piuGPU
+	PiuSkin* skin = (*self)->skin;
+	if (skin)
+		PiuSkinBind(skin, application, view);
+#endif
 	(*self)->application = application;
 	if ((*self)->flags & piuIdling)
 		PiuApplicationStartContent((*self)->application, self);
@@ -229,7 +234,7 @@ void PiuContentDictionary(xsMachine* the, void* it)
 		xsVar(0) = xsGet(xsGlobal, xsID_Style);
 		xsVar(1) = xsGet(xsVar(0), xsID_prototype);
 		if (!xsIsInstanceOf(xsResult, xsVar(1)))
-			xsUnknownError("Style is no skin template");
+			xsUnknownError("Style is no style template");
 		(*self)->style = PIU(Style, xsResult);
 	}
 	else if (xsFindResult(xsArg(1), xsID_style)) {
@@ -608,6 +613,11 @@ void PiuContentToApplicationCoordinates(void* it, PiuCoordinate x0, PiuCoordinat
 void PiuContentUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuContent* self = it;
+#ifdef piuGPU
+	PiuSkin* skin = (*self)->skin;
+	if (skin)
+		PiuSkinUnbind(skin, application, view);
+#endif
 #ifdef piuPC
 	if ((*application)->hover == self)
 		(*application)->hover = NULL;
@@ -1105,10 +1115,21 @@ void PiuContent_set_size(xsMachine *the)
 void PiuContent_set_skin(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
+#ifdef piuGPU
+	PiuApplication* application = (*self)->application;	
+#endif
 	PiuSkin* skin = NULL;
 	if (xsTest(xsArg(0)))
 		skin = PIU(Skin, xsArg(0));
+#ifdef piuGPU
+	if (application && (*self)->skin)
+		PiuSkinUnbind((*self)->skin, application, (*application)->view);
+#endif
 	(*self)->skin = skin;
+#ifdef piuGPU
+	if (application && (*self)->skin)
+		PiuSkinBind((*self)->skin, application, (*application)->view);
+#endif
 	PiuContentReflow(self, piuSizeChanged);
 }
 

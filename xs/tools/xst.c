@@ -266,6 +266,11 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsCatch {
+				if (xsTypeOf(xsException) != xsUndefinedType) {
+					fprintf(stderr, "%s\n", xsToString(xsException));
+					error = 1;
+					xsException = xsUndefined;
+				}
 			}
 		}
 		xsEndHost(machine);
@@ -1254,15 +1259,19 @@ void fx_setTimerCallback(txJob* job)
 	txMachine* the = job->the;
 	fxBeginHost(the);
 	{
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPush(job->function);
-		mxCall();
-		mxPush(job->argument);
-		/* ARGC */
-		mxRunCount(1);
-		mxPop();
+		mxTry(the) {
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPush(job->function);
+			mxCall();
+			mxPush(job->argument);
+			/* ARGC */
+			mxRunCount(1);
+			mxPop();
+		}
+		mxCatch(the) {
+		}
 	}
 	fxEndHost(the);
 }

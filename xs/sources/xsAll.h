@@ -113,8 +113,8 @@ typedef struct {
 	void (*runProgramEnvironment)(txMachine*);
 	void (*initializeSharedCluster)();
 	void (*terminateSharedCluster)();
-	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
-	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
+	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txNumber length);
+	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
     void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
     void (*runImport)(txMachine* the, txSlot* realm, txID id);
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
@@ -373,6 +373,7 @@ struct sxMachine {
 	txSize symbolModulo;
 	txSlot** symbolTable;
 
+	txID* colors;
 	txSlot** keyArray;
 	txID keyCount;
 	txID keyIndex;
@@ -479,6 +480,7 @@ struct sxPreparation {
 	txSize stackCount;
 	txSlot* stack;
 
+	txID* colors;
 	txSize keyCount;
 	txSlot** keys;
 	txSize nameModulo;
@@ -922,9 +924,9 @@ extern txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultProt
 extern txBoolean fxIsCallable(txMachine* the, txSlot* slot);
 extern txBoolean fxIsFunction(txMachine* the, txSlot* slot);
 extern txSlot* fxNewFunctionInstance(txMachine* the, txID name);
-extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txSlot* property, txInteger length);
-extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInteger former, txString prefix);
-extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txInteger former, txString prefix);
+extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length);
+extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
+extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txIndex index, txInteger former, txString prefix);
 
 mxExport void fx_AsyncFunction(txMachine* the);
 
@@ -967,7 +969,6 @@ extern void fxIDToString(txMachine* the, txInteger id, txString theBuffer, txSiz
 mxExport void fx_Error(txMachine* the);
 mxExport void fx_Error_toString(txMachine* the);
 mxExport void fx_AggregateError(txMachine* the);
-mxExport void fx_AggregateError_prototype_get_errors(txMachine* the);
 mxExport void fx_EvalError(txMachine* the);
 mxExport void fx_RangeError(txMachine* the);
 mxExport void fx_ReferenceError(txMachine* the);
@@ -1018,13 +1019,19 @@ mxExport void fx_Math_expm1(txMachine* the);
 mxExport void fx_Math_floor(txMachine* the);
 mxExport void fx_Math_fround(txMachine* the);
 mxExport void fx_Math_hypot(txMachine* the);
+mxExport void fx_Math_idiv(txMachine* the);
+mxExport void fx_Math_idivmod(txMachine* the);
+mxExport void fx_Math_imod(txMachine* the);
 mxExport void fx_Math_imul(txMachine* the);
+mxExport void fx_Math_imuldiv(txMachine* the);
+mxExport void fx_Math_irem(txMachine* the);
 mxExport void fx_Math_log(txMachine* the);
 mxExport void fx_Math_log1p(txMachine* the);
 mxExport void fx_Math_log10(txMachine* the);
 mxExport void fx_Math_log2(txMachine* the);
 mxExport void fx_Math_max(txMachine* the);
 mxExport void fx_Math_min(txMachine* the);
+mxExport void fx_Math_mod(txMachine* the);
 mxExport void fx_Math_pow(txMachine* the);
 mxExport void fx_Math_random(txMachine* the);
 mxExport void fx_Math_random_secure(txMachine* the);
@@ -1675,10 +1682,10 @@ extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* 
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
 mxExport void fx_Compartment(txMachine* the);
-mxExport void fx_Compartment_prototype_get_global(txMachine* the);
+mxExport void fx_Compartment_prototype_get_globalThis(txMachine* the);
 mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
 mxExport void fx_Compartment_prototype_import(txMachine* the);
-mxExport void fx_Compartment_prototype_importSync(txMachine* the);
+mxExport void fx_Compartment_prototype_importNow(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
@@ -1860,6 +1867,7 @@ enum {
 	XS_FATAL_CHECK_EXIT,
 	XS_DEAD_STRIP_EXIT,
 	XS_UNHANDLED_EXCEPTION_EXIT,
+	XS_NO_MORE_KEYS_EXIT,
 };
 
 #if mxBigEndian
@@ -2169,9 +2177,6 @@ enum {
 #define mxFunctionInstanceHome(INSTANCE) 		((INSTANCE)->next->next)
 #ifdef mxProfile
 #define mxFunctionInstanceProfile(INSTANCE) 	((INSTANCE)->next->next->next)
-#define mxFunctionInstanceLength(INSTANCE)		((INSTANCE)->next->next->next->next)
-#else
-#define mxFunctionInstanceLength(INSTANCE)		((INSTANCE)->next->next->next)
 #endif
 
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)

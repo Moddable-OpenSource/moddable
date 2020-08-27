@@ -614,13 +614,13 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
-		property = gxDefaults.newFunctionLength(the, instance, property, theLength);
+		gxDefaults.newFunctionLength(the, instance, theLength);
 
 	/* NAME */
 	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, XS_NO_ID, C_NULL);
+		fxRenameFunction(the, instance, name, XS_NO_ID, XS_NO_ID, C_NULL);
 	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, C_NULL);
+		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -1545,6 +1545,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
 			c_memcpy(the->symbolTable, theMachine->symbolTable, the->symbolModulo * sizeof(txSlot *));
 //			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));		//@@ this is not necessary
+			the->colors = theMachine->colors;
 			the->keyCount = theMachine->keyIndex + (txID)theCreation->keyCount;
 			the->keyIndex = theMachine->keyIndex;
 			the->keyOffset = the->keyIndex;
@@ -1653,6 +1654,7 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 	root->preparation = preparation;
 	root->archive = archive;
 	root->keyArray = preparation->keys;
+	root->colors = preparation->colors;
 	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
 	root->keyIndex = (txID)preparation->keyCount;
 	root->nameModulo = preparation->nameModulo;
@@ -1771,6 +1773,7 @@ txMachine* fxBeginHost(txMachine* the)
 	/* RESULT */
 	mxPushUndefined();
 	/* FRAME */
+	fxOverflow(the, -1, C_NULL, 0);
 	--the->stack;
 	the->stack->next = the->frame;
 	the->stack->ID = XS_NO_ID;
@@ -1786,6 +1789,7 @@ txMachine* fxBeginHost(txMachine* the)
 	the->stack->value.frame.scope = the->scope;
 	the->frame = the->stack;
 	/* VARC */
+	fxOverflow(the, -1, C_NULL, 0);
 	--the->stack;
 	the->stack->next = C_NULL;
 	the->stack->ID = XS_NO_ID;

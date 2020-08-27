@@ -24,6 +24,7 @@ MCLOCAL = $(BUILD_DIR)/bin/lin/release/mclocal
 MCREZ = $(BUILD_DIR)/bin/lin/release/mcrez
 PNG2BMP = $(BUILD_DIR)/bin/lin/release/png2bmp
 RLE4ENCODE = $(BUILD_DIR)/bin/lin/release/rle4encode
+WAV2MAUD = $(BUILD_DIR)/bin/lin/release/wav2maud
 XSC = $(MODDABLE)/build/bin/lin/release/xsc
 XSL = $(MODDABLE)/build/bin/lin/release/xsl
 

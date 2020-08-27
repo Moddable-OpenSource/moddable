@@ -60,13 +60,19 @@ void fxBuildMath(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_floor), 1, mxID(_floor), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_fround), 1, mxID(_fround), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_hypot), 2, mxID(_hypot_), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_idiv), 2, mxID(_idiv), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_idivmod), 2, mxID(_idivmod), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_imod), 2, mxID(_imod), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_imul), 2, mxID(_imul), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_imuldiv), 2, mxID(_imuldiv), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_irem), 2, mxID(_irem), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_log), 1, mxID(_log), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_log1p), 1, mxID(_log1p), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_log10), 1, mxID(_log10), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_log2), 1, mxID(_log2), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_max), 2, mxID(_max), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_min), 2, mxID(_min), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_mod), 2, mxID(_mod), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_pow), 2, mxID(_pow), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_random), 0, mxID(_random), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_round), 1, mxID(_round), XS_DONT_ENUM_FLAG);
@@ -287,12 +293,91 @@ void fx_Math_hypot(txMachine* the)
 	}
 }
 
+void fx_Math_idiv(txMachine* the)
+{
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	if (y == 0) {
+		mxResult->kind = XS_NUMBER_KIND;
+		mxResult->value.number = C_NAN;
+	}
+	else {
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = x / y;
+	}
+}
+
+void fx_Math_idivmod(txMachine* the)
+{
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	if (y == 0) {
+		mxPushNumber(C_NAN);
+		mxPushNumber(C_NAN);
+	}
+	else {
+		mxPushInteger(x / y);
+		mxPushInteger((x % y + y) % y);
+	}
+	fxConstructArrayEntry(the, mxResult);
+}
+
+void fx_Math_imod(txMachine* the)
+{
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	if (y == 0) {
+		mxResult->kind = XS_NUMBER_KIND;
+		mxResult->value.number = C_NAN;
+	}
+	else {
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = (x % y + y) % y;
+	}
+}
+
 void fx_Math_imul(txMachine* the)
 {
 	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
 	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
 	mxResult->kind = XS_INTEGER_KIND;
 	mxResult->value.integer = x * y;
+}
+
+void fx_Math_imuldiv(txMachine* the)
+{
+	txS8 x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txS8 y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	txS8 z = (mxArgc > 2) ? fxToInteger(the, mxArgv(2)) : 0;
+	if (z == 0) {
+		mxResult->kind = XS_NUMBER_KIND;
+		mxResult->value.number = C_NAN;
+	}
+	else {
+		txS8 r = (x * y) / z;
+		if ((-2147483648 <= r) && (r <= 2147483647)) {
+			mxResult->kind = XS_INTEGER_KIND;
+			mxResult->value.integer = (txInteger)r;
+		}
+		else {
+			mxResult->kind = XS_NUMBER_KIND;
+			mxResult->value.number = (txNumber)r;
+		}
+	}
+}
+
+void fx_Math_irem(txMachine* the)
+{
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	if (y == 0) {
+		mxResult->kind = XS_NUMBER_KIND;
+		mxResult->value.number = C_NAN;
+	}
+	else {
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = x % y;
+	}
 }
 
 void fx_Math_log(txMachine* the)
@@ -369,6 +454,14 @@ void fx_Math_min(txMachine* the)
 				mxResult->value.number = -0.0;
 		}
 	}
+}
+
+void fx_Math_mod(txMachine* the)
+{
+	txNumber x = (mxArgc > 0) ? fxToNumber(the, mxArgv(0)) : 0;
+	txNumber y = (mxArgc > 1) ? fxToNumber(the, mxArgv(1)) : 0;
+	mxResult->kind = XS_NUMBER_KIND;
+	mxResult->value.number = c_fmod((c_fmod(x, y) + y), y);
 }
 
 txNumber fx_pow(txNumber x, txNumber y)

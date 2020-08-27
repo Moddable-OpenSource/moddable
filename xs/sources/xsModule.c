@@ -102,7 +102,7 @@ void fxBuildModule(txMachine* the)
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringProperty(the, slot, "Module", mxID(_Symbol_toStringTag), XS_GET_ONLY);
+	slot = fxNextStringXProperty(the, slot, "Module", mxID(_Symbol_toStringTag), XS_GET_ONLY);
 	mxModulePrototype = *the->stack;
 	
 	mxPush(mxObjectPrototype);
@@ -111,11 +111,11 @@ void fxBuildModule(txMachine* the)
 
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Compartment_prototype_get_global), C_NULL, mxID(_global), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Compartment_prototype_get_globalThis), C_NULL, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_evaluate), 1, mxID(_evaluate), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_import), 1, mxID(_import), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_importSync), 1, mxID(_importSync), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringProperty(the, slot, "Compartment", mxID(_Symbol_toStringTag), XS_GET_ONLY);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_importNow), 1, mxID(_importNow), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "Compartment", mxID(_Symbol_toStringTag), XS_GET_ONLY);
 	mxCompartmentPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
 	mxCompartmentConstructor = *the->stack;
@@ -1526,8 +1526,6 @@ void fx_Compartment(txMachine* the)
 			target = fxNewInstance(the);
 			own = fxNewInstance(the);
 			mxPushSlot(mxArgv(1));
-			fxToInstance(the, the->stack);
-			fxGetID(the, fxNewNameC(the, "*"));
 			source = fxToInstance(the, the->stack);
 			at = fxNewInstance(the);
 			mxBehaviorOwnKeys(the, source, XS_EACH_NAME_FLAG, at);
@@ -1613,7 +1611,7 @@ void fx_Compartment(txMachine* the)
 	}
 }
 
-void fx_Compartment_prototype_get_global(txMachine* the)
+void fx_Compartment_prototype_get_globalThis(txMachine* the)
 {
 	txSlot* program = fxCheckCompartmentInstance(the, mxThis);
 	txSlot* realm = mxModuleInstanceInternal(program)->value.module.realm;
@@ -1649,7 +1647,7 @@ void fx_Compartment_prototype_import(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
-void fx_Compartment_prototype_importSync(txMachine* the)
+void fx_Compartment_prototype_importNow(txMachine* the)
 {
 	txSlot* program = fxCheckCompartmentInstance(the, mxThis);
 	txSlot* realm = mxModuleInstanceInternal(program)->value.module.realm;

@@ -1,0 +1,22 @@
+{
+	"build": {
+		"TYPINGS": "$(MODDABLE)/typings",
+	},
+	"modules": {
+		"*": [
+			"$(TYPINGS)/*",
+		],
+		"commodetto/*": [
+			"$(TYPINGS)/commodetto/*",
+		],
+		"dns/*": [
+			"$(TYPINGS)/dns/*",
+		],
+		"mc/*": [
+			"$(TYPINGS)/mc/*",
+		],
+		"pins/*": [
+			"$(TYPINGS)/pins/*",
+		],
+	},
+}

@@ -25,6 +25,12 @@
 #include <stdint.h>
 
 #include "commodettoBitmapFormat.h"
+#if !XSTOOLS
+	#include "mc.defines.h"
+	#ifdef MODDEF_COMMODETTO_BITMAP_ID
+		#define COMMODETTO_BITMAP_ID MODDEF_COMMODETTO_BITMAP_ID
+	#endif
+#endif
 
 #ifndef kCommodettoBitmapFormat
 	#define kCommodettoBitmapFormat kCommodettoBitmapRGB565LE
@@ -63,11 +69,14 @@ typedef struct {
 	#error
 #endif
 
+#define kCommodettoBitmapHaveByteLength (1)
+
 typedef struct {
 	CommodettoDimension		w;
 	CommodettoDimension		h;
 	CommodettoBitmapFormat	format;
 	int8_t					havePointer;
+	int8_t					flags;
 	union {
 		void				*data;
 		int32_t				offset;
@@ -75,6 +84,7 @@ typedef struct {
 #if COMMODETTO_BITMAP_ID
 	uint32_t				id;
 #endif
+	int32_t					byteLength;			// must be last
 } CommodettoBitmapRecord, *CommodettoBitmap;
 
 uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format);

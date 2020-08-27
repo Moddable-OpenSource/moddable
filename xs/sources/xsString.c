@@ -1179,15 +1179,17 @@ void fx_String_prototype_split(txMachine* the)
 	anArray = fxNewArrayInstance(the);
 	mxPullSlot(mxResult);
 	fxGetInstance(the, mxResult);
-	if (!aLimit)
-		goto bail;
 	anItem = fxLastProperty(the, anArray);
 	if ((mxArgc < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND)) {
+		if (!aLimit)
+			goto bail;
 		fx_String_prototype_split_aux(the, mxThis, anArray, anItem, 0, aLength);
 		goto bail;
 	}
 	aSubString = fxToString(the, mxArgv(0));
 	aSubLength = c_strlen(aSubString);
+	if (!aLimit)
+		goto bail;
 	if (aSubLength == 0) {
 		anOffset = 0;
 		while (anOffset < aLength) {

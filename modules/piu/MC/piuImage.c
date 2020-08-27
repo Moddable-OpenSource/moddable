@@ -20,16 +20,22 @@
 
 #include "piuMC.h"
 
+static void PiuImageBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuImageDictionary(xsMachine* the, void* it);
 static void PiuImageDraw(void* it, PiuView* view, PiuRectangle area);
 static void PiuImageMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuImageMeasureHorizontally(void* it);
 static void PiuImageMeasureVertically(void* it);
 static void PiuImageSync(void* it);
+static void PiuImageUnbind(void* it, PiuApplication* application, PiuView* view);
+
+#ifdef piuGPU
+	static uint32_t gFrameID = 0x8000;
+#endif
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuImageDispatchRecord = {
 	"Image",
-	PiuContentBind,
+	PiuImageBind,
 	PiuContentCascade,
 	PiuImageDraw,
 	PiuContentFitHorizontally,
@@ -46,7 +52,7 @@ const PiuDispatchRecord ICACHE_FLASH_ATTR PiuImageDispatchRecord = {
 	PiuContentShowing,
 	PiuContentShown,
 	PiuImageSync,
-	PiuContentUnbind,
+	PiuImageUnbind,
 	PiuContentUpdate
 };
 
@@ -55,6 +61,22 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuImageHooks = {
 	PiuImageMark,
 	NULL
 };
+
+void PiuImageBind(void* it, PiuApplication* application, PiuView* view)
+{
+#ifdef piuGPU
+	PiuImage* self = it;
+	PocoBitmapRecord bm;
+	bm.width = (*self)->dataWidth;
+	bm.height = (*self)->dataHeight;
+	bm.format = (*self)->frameFormat;
+	bm.pixels = (PocoPixel*)((*self)->data + sizeof(uint16_t) + (*self)->frameOffset);
+	bm.id = (*self)->frameID;
+	bm.byteLength = (bm.format == (kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked)) ? 0 : (*self)->frameSize;
+	PocoBitmapAdd((*view)->poco, &bm, PiuViewReceiver, view);
+#endif
+	PiuContentBind(it, application, view);
+}
 
 void PiuImageDictionary(xsMachine* the, void* it) 
 {
@@ -73,7 +95,24 @@ void PiuImageDraw(void* it, PiuView* view, PiuRectangle area)
 		PiuRectangleRecord bounds;
 		PiuRectangleSet(&bounds, 0, 0, (*self)->bounds.width, (*self)->bounds.height);
 		PiuViewPushClip(view, 0, 0, bounds.width, bounds.height);
+#ifdef piuGPU
+		{
+			PocoBitmapRecord bm;
+			if ((*self)->frameChanged) {
+				(*self)->frameChanged = 0;
+				PocoBitmapChanged((*view)->poco, (*self)->frameID, PiuViewReceiver, view);
+			}
+			bm.width = (*self)->dataWidth;
+			bm.height = (*self)->dataHeight;
+			bm.format = (*self)->frameFormat;
+			bm.pixels = (PocoPixel*)((*self)->data + sizeof(uint16_t) + (*self)->frameOffset);
+			bm.id = (*self)->frameID;
+			bm.byteLength = (bm.format == (kCommodettoBitmapRGB565LE | kCommodettoBitmapPacked)) ? 0 : (*self)->frameSize;
+			PocoDrawImage((*view)->poco, &bm, 255, (*view)->poco->xOrigin, (*view)->poco->yOrigin, bounds.width, bounds.height, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
+		}
+#else	
 		PiuViewDrawFrame(view, (*self)->data + sizeof(uint16_t) + (*self)->frameOffset, (*self)->frameSize, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
+#endif		
 		PiuViewPopClip(view);
 	}
 }
@@ -132,8 +171,20 @@ void PiuImageSync(void* it)
 			(*self)->frameOffset = frameOffset;
 			(*self)->frameSize = frameSize;
 			PiuContentInvalidate(self, NULL);
+		#ifdef piuGPU
+			(*self)->frameChanged = 1;
+		#endif
 		}
 	}
+}
+
+void PiuImageUnbind(void* it, PiuApplication* application, PiuView* view)
+{
+#ifdef piuGPU
+	PiuImage* self = it;
+	PocoBitmapRemove((*view)->poco, (*self)->frameID, PiuViewReceiver, view);
+#endif
+	PiuContentUnbind(it, application, view);
 }
 
 void PiuImage_create(xsMachine* the)
@@ -155,14 +206,15 @@ void PiuImage_create(xsMachine* the)
 	PiuContentDictionary(the, self);
 	PiuImageDictionary(the, self);
 	path = PiuToString((*self)->path);
-	data = (uint8_t *)mcGetResource(the, path, &dataSize);
+	data = (uint8_t *)fxGetResource(the, path, &dataSize);
 	if (!data)
 		xsURIError("image not found: %s", path);	
 	cch = (ColorCellHeader)data;
 	if (('c' != c_read8(&cch->id_c)) || ('s' != c_read8(&cch->id_s)))
 		xsUnknownError("invalid image data");
-	if (kCommodettoBitmapRGB565LE != c_read8(&cch->bitmapFormat))
-		xsUnknownError("invalid image pixel format");
+#if piuGPU
+	(*self)->frameFormat = 	c_read8(&cch->bitmapFormat);
+#endif
 	if (0 != c_read8(&cch->reserved))
 		xsUnknownError("invalid image reserved");
 	(*self)->data = data;
@@ -177,6 +229,17 @@ void PiuImage_create(xsMachine* the)
 	(*self)->frameIndex = 0;
 	(*self)->frameOffset = sizeof(ColorCellHeaderRecord);
 	(*self)->frameSize = c_read16(data + sizeof(ColorCellHeaderRecord));
+#ifdef piuGPU
+	(*self)->frameID = ++gFrameID;
+	(*self)->frameChanged = 0;
+	if ((*self)->frameFormat == kCommodettoBitmapRGB565LE)
+		(*self)->frameFormat |= kCommodettoBitmapPacked;
+#else
+#if piuGPU
+	if ((*self)->frameFormat != kCommodettoBitmapRGB565LE)
+		xsUnknownError("invalid image pixel format");
+#endif
+#endif
 	frameCount = (*self)->frameCount = c_read16(&cch->frameCount);
 	if (frameCount > 1) {
 		uint16_t fps_numerator = c_read16(&cch->fps_numerator);

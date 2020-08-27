@@ -23,6 +23,15 @@
 #include "commodettoPoco.h"
 #include "commodettoFontEngine.h"
 
+#ifdef piuGPU
+	extern void PocoBitmapAdd(Poco poco, PocoBitmap bits, PocoRenderedPixelsReceiver pixelReceiver, void *refCon);
+	extern void PocoBitmapChanged(Poco poco, uint16_t id, PocoRenderedPixelsReceiver pixelReceiver, void *refCon);
+	extern void PocoBitmapRemove(Poco poco, uint16_t id, PocoRenderedPixelsReceiver pixelReceiver, void *refCon);
+	extern void PocoCompact(Poco poco, PocoRenderedPixelsReceiver pixelReceiver, void *refCon);
+	extern void PocoDrawImage(Poco poco, PocoBitmap bits, uint8_t blend, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h,
+			PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh);
+#endif
+
 typedef struct PiuGlyphStruct PiuGlyphRecord, *PiuGlyph;
 typedef struct PiuDieStruct PiuDieRecord, *PiuDie;
 typedef struct PiuImageStruct PiuImageRecord, *PiuImage;
@@ -80,7 +89,14 @@ struct PiuTextureStruct {
 	PocoBitmapRecord mask;
 	PiuDimension width;
 	PiuDimension height;
+#ifdef piuGPU
+	uint32_t usage;
+#endif
 };
+
+#ifdef piuGPU
+extern int piuTextureSize;
+#endif
 
 // PiuRegion.c
 
@@ -156,6 +172,11 @@ struct PiuImageStruct {
 	xsIntegerValue frameIndex;
 	uint32_t frameOffset;
 	uint32_t frameSize;
+#ifdef piuGPU
+	uint32_t frameID;
+	uint8_t frameChanged;
+	uint8_t frameFormat;
+#endif
 };
 
 // PiuView.c
@@ -176,8 +197,9 @@ struct PiuViewStruct {
 	xsSlot _continue;
 	xsSlot _end;
 	xsSlot _send;
-#if MODDEF_POCO_EVE
+#ifdef piuGPU
 	uint8_t dirty;
+	uint8_t ready;
 #else
 	PiuRegion* dirty;
 	PiuRegion* swap;
@@ -189,4 +211,5 @@ struct PiuViewStruct {
 
 extern void PiuViewDrawFrame(PiuView* self, uint8_t *data, uint32_t dataSize, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);
 extern void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region);
+extern void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon);
 extern void PiuViewValidateRegion(PiuView* self, PiuRegion* region);

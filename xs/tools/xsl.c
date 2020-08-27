@@ -447,7 +447,7 @@ int main(int argc, char* argv[])
 			mxBreakpoints = mxUndefined;
 			mxHostInspectors = mxUndefined;
 			mxInstanceInspectors = mxUndefined;
-		
+			
 			if (linker->stripFlag) {
 				fxPrepareHome(the);
 				fxStripCallbacks(linker, the);
@@ -455,6 +455,11 @@ int main(int argc, char* argv[])
 			else
 				fxUnstripCallbacks(linker);
 			
+			if (optimizing)
+				fxOptimize(the);
+			else
+				fxPrepareProjection(the);
+		
 			linker->bigintSize = 0;
 			linker->slotSize = 0;
 			count = fxPrepareHeap(the);
@@ -603,6 +608,16 @@ int main(int argc, char* argv[])
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount] ICACHE_FLASH1_ATTR = {\n");
 // 			fxPrintTable(the, file, globalCount, the->stackTop[-1].value.reference->next->value.table.address);
 // 			fprintf(file, "};\n\n");
+
+			if (linker->colors) {
+				txID keyIndex = 0;
+				fprintf(file, "static const txID gxColors[mxKeysCount] ICACHE_FLASH1_ATTR = {\n");
+				while (keyIndex < the->keyIndex) {
+					fprintf(file, "\t%d,\n", linker->colors[keyIndex]);
+					keyIndex++;
+				}
+				fprintf(file, "};\n\n");
+			}
 			fprintf(file, "static const txSlot* const gxKeys[mxKeysCount] ICACHE_FLASH1_ATTR = {\n");
 			fxPrintTable(the, file, the->keyIndex, the->keyArray);
 			fprintf(file, "};\n\n");
@@ -619,6 +634,10 @@ int main(int argc, char* argv[])
 			fprintf(file, "\t(txSlot*)gxHeap,\n");
 			fprintf(file, "\tmxStackCount,\n");
 			fprintf(file, "\t(txSlot*)gxStack,\n");
+			if (linker->colors)
+				fprintf(file, "\t(txID*)gxColors,\n");
+			else
+				fprintf(file, "\tNULL,\n");
 			fprintf(file, "\tmxKeysCount,\n");
 			fprintf(file, "\t(txSlot**)gxKeys,\n");
 			fprintf(file, "\tmxNamesCount,\n");

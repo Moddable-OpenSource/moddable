@@ -37,7 +37,7 @@ Object.freeze(REGISTERS);
 
 const EXPECTED_WHO_AM_I = 0xC4;
 
-class SMBHoldBus extends SMBus { //SMBBus implementation that holds the i2c bus between the i2c.read and i2c.write on read operations.
+class SMBIgnoreErrors extends SMBus { //SMBus implementation that skips reads without throwing if the peripheral does not respond to the command write.
     constructor(dictionary) {
         super(dictionary);
     }
@@ -53,7 +53,7 @@ class SMBHoldBus extends SMBus { //SMBBus implementation that holds the i2c bus 
     }
 }
 
-class Magnetometer extends SMBHoldBus {
+class Magnetometer extends SMBIgnoreErrors {
     constructor(dictionary) {
         super(Object.assign({ address: 0x0E, throw: false}, dictionary));
         this.checkIdentification();

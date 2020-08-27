@@ -95,8 +95,8 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 10
-#define XS_MINOR_VERSION 2
-#define XS_PATCH_VERSION 1
+#define XS_MINOR_VERSION 3
+#define XS_PATCH_VERSION 2
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -858,15 +858,20 @@ enum {
 	_hasOwnProperty,
 	_hypot_,
 	_id,
+	_idiv,
+	_idivmod,
 	_ignoreCase,
+	_imod,
 	_import,
-	_importSync,
+	_importNow,
 	_imul,
+	_imuldiv,
 	_includes,
 	_index,
 	_indexOf,
 	_indices,
 	_input,
+	_irem,
 	_is,
 	_isArray,
 	_isConcatSpreadable,
@@ -901,6 +906,7 @@ enum {
 	_max,
 	_message,
 	_min,
+	_mod,
 	_multiline,
 	_name,
 	_new_target,
@@ -946,7 +952,6 @@ enum {
 	_round,
 	_seal,
 	_search,
-	_serialize,
 	_set,
 	_setBigInt64,
 	_setBigUint64,

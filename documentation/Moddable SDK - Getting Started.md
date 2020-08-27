@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: February 27, 2020
+Revised: August 25, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -95,7 +95,7 @@ More detailed getting started guides are available for the following devices:
 <a id="host-mac"></a>
 ### Host environment setup
 
-> The Moddable SDK requires macOS Sierra version 10.12 or newer and Xcode version 9 or newer.
+> The Moddable SDK requires macOS Sierra version 10.12 or newer and a full installation of Xcode version 9 or newer.
 
 1. Download and install [Xcode](https://developer.apple.com/xcode/). Launch Xcode to install additional command line components when prompted.
 
@@ -138,6 +138,12 @@ More detailed getting started guides are available for the following devices:
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p mac
 	```
+
+**Troubleshooting:**
+ - If the Moddable SDK build fails with an error like "`xcode-select: error: tool 'ibtool' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance.`" there are three potential issues and fixes:
+     1. You may have a command line tools-only Xcode installation. The Moddable SDK build requires a full installation of Xcode. 
+     2. You may need to launch the Xcode application to accept Xcode's license agreement and install the command line components. 
+     3. If you have a full Xcode installation but your build fails with this error, you need to use the `xcode-select` utility to select your full Xcode installation. This can be done with this command, with the path adjusted as necessary for your environment: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
 
 <a id="esp8266-mac"></a>
 ### ESP8266 setup
@@ -204,7 +210,18 @@ More detailed getting started guides are available for the following devices:
 
 4. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
+	Note that the extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name. Your directory tree structure should look like this:
+	
+	```text
+	~/esp32
+	├── xtensa-esp32-elf
+	│   ├── bin
+	│   ├── include
+	│   ├── lib
+	│   ├── libexec
+	│   ├── share
+	│   └── xtensa-esp32-elf
+	```
 
 5. Clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
@@ -221,7 +238,7 @@ More detailed getting started guides are available for the following devices:
     git checkout v3.3.2
     git submodule update
     ```
-	
+
 6. Update homebrew and then install Python, cmake, ninja, and the pip package management system. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
 
 	```text
@@ -570,13 +587,23 @@ More detailed getting started guides are available for the following devices:
 	git checkout release/v3.2
 	```
 
-6. Install Python and the required Python packages. We've used [brew](https://brew.sh/) and [pip](https://pypi.org/project/pip/) to install the additional components:
+6. Install Python and the required Python packages. We've used [pip](https://pypi.org/project/pip/) to install the additional components.
+
+	For Ubuntu 20:
+
+	```text
+	sudo apt-get install python-is-python3 python3-pip python3-serial
+	```
+
+	For Ubuntu versions prior to 20:
 
 	```text
 	sudo apt-get install python
 	sudo easy_install pip
 	pip install --user pyserial
 	```
+
+
 	
 7. Connect the ESP8266 to your computer with a USB cable.
 
@@ -603,8 +630,19 @@ More detailed getting started guides are available for the following devices:
 
 3. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
 
-	> Note: The extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name.
-
+	Note that the extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name. Your directory tree structure should look like this:
+	
+	```text
+	~/esp32
+	├── xtensa-esp32-elf
+	│   ├── bin
+	│   ├── include
+	│   ├── lib
+	│   ├── libexec
+	│   ├── share
+	│   └── xtensa-esp32-elf
+	```
+	
 4. Clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
@@ -621,7 +659,15 @@ More detailed getting started guides are available for the following devices:
     git submodule update
     ```
 
-5. Install the packages required to compile with the `ESP-IDF`:
+5. Install the packages required to compile with the `ESP-IDF`.
+
+	For Ubuntu 20:
+
+	```text
+	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
+	```
+
+	For Ubuntu versions prior to 20:
 
 	```text
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build

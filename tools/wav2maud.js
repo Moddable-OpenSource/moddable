@@ -218,6 +218,11 @@ class WavReader {
 		if ("WAVE" !== this.readFourCC())
 			throw new Error("expected WAVE");
 
+		if ("JUNK" === this.readFourCC())
+			this.seekBy(this.readUint32())
+		else
+			this.seekBy(-4);
+
 		if ("fmt " !== this.readFourCC())
 			throw new Error("expected fmt");
 		let next = this.readUint32();

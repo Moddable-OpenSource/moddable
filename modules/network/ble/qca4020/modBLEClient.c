@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -63,6 +63,8 @@
 	#define LOG_GAP_AUTHENTICATION_MSG(msg)
 #endif
 
+#define OBJ_CLIENT(_c) ((modBLEClientConnection)_c)->objClient
+
 enum {
 	GATT_PROCEDURE_NONE = 0,
 	GATT_PROCEDURE_DISCOVER_SERVICES,
@@ -78,22 +80,16 @@ typedef struct {
 	uint8_t what;
 	uint32_t transaction_id;
 	uint32_t refcon;
-	xsSlot obj;
-} GATTProcedureRecord;
+	xsSlot target;
+} GATTProcedureRecord, *GATTProcedure;
 
-typedef struct modBLEConnectionRecord modBLEConnectionRecord;
-typedef modBLEConnectionRecord *modBLEConnection;
+typedef struct modBLEClientConnectionRecord modBLEClientConnectionRecord;
+typedef modBLEClientConnectionRecord *modBLEClientConnection;
 
-struct modBLEConnectionRecord {
-	struct modBLEConnectionRecord *next;
-
-	xsMachine *the;
-	xsSlot objConnection;
+struct modBLEClientConnectionRecord {
+	modBLEConnectionPart;
 	xsSlot objClient;
 
-	uint32_t id;
-	qapi_BLE_BD_ADDR_t bd_addr;
-	qapi_BLE_GAP_LE_Address_Type_t bd_addr_type;
 	uint8_t bond;
 	
 	uint8_t Flags;
@@ -109,8 +105,6 @@ struct modBLEConnectionRecord {
 
 	uint32_t passkey;
 
-	uint8_t mtu_exchange_pending;
-	
 	// char_name_table handles
 	uint16_t handles[char_name_count];
 
@@ -141,7 +135,6 @@ typedef struct {
 	qapi_BLE_GAP_LE_Connection_Parameters_t connectionParams;
 	uint32_t scanInterval;
 	uint32_t scanWindow;
-	modBLEConnection connections;
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -161,17 +154,13 @@ typedef struct {
 	uint8_t enable;
 } CharacteristicNotificationRequest;
 
-static void modBLEConnectionAdd(modBLEConnection connection);
-static void modBLEConnectionRemove(modBLEConnection connection);
-static modBLEConnection modBLEConnectionFindByConnectionID(uint32_t conn_id);
-static modBLEConnection modBLEConnectionFindByAddress(qapi_BLE_BD_ADDR_t bd_addr);
-
 static void uuidToBuffer(qapi_BLE_GATT_UUID_t *uuid, uint8_t *buffer, uint16_t *length);
 static void bufferToUUID(uint8_t *buffer, qapi_BLE_GATT_UUID_t *uuid, uint16_t length);
 static uint8_t UUIDEqual(qapi_BLE_GATT_UUID_t *uuid1, qapi_BLE_GATT_UUID_t *uuid2);
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+static void setGATTProcedure(modBLEConnection connection, uint8_t what, xsSlot target, uint32_t transaction_id, uint32_t refcon);
 static void completeProcedure(uint32_t conn_id, char *which);
 
 static void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Connection_Event_Data_t *GATT_Connection_Event_Data, uint32_t CallbackParameter);
@@ -235,17 +224,19 @@ void xs_ble_client_close(xsMachine *the)
 void xs_ble_client_destructor(void *data)
 {
 	modBLE ble = data;
-	if (ble) {
-		qapi_BLE_GATT_Cleanup(ble->stackID);
-		qapi_BLE_BSC_Shutdown(ble->stackID);
-		modBLEConnection connections = ble->connections;
-		while (connections != NULL) {
-			modBLEConnection connection = connections;
-			connections = connections->next;
-			c_free(connection);
-		}
-		c_free(ble);
+	if (!ble) return;
+	
+	qapi_BLE_GATT_Cleanup(ble->stackID);
+	qapi_BLE_BSC_Shutdown(ble->stackID);
+	modBLEConnection connection = modBLEConnectionGetFirst();
+	while (connection != NULL) {
+		modBLEConnection next = connection->next;
+		if (kBLEConnectionTypeClient == connection->type)
+			modBLEConnectionRemove(connection);
+		connection = next;
 	}
+	
+	c_free(ble);
 	gBluetoothStackID = 0;
 	gBLE = NULL;
 }
@@ -308,7 +299,7 @@ void xs_ble_client_connect(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
-	qapi_BLE_BD_ADDR_t bd_addr;
+	qapi_BLE_BD_ADDR_t remote_addr;
 	int result;
 
 	if (gBLE->scanning) {
@@ -316,29 +307,29 @@ void xs_ble_client_connect(xsMachine *the)
 		gBLE->scanning = 0;
 	}
 
-	c_memmove(&bd_addr, address, 6);
-
 	// Ignore duplicate connection attempts
-	if (modBLEConnectionFindByAddress(bd_addr)) {
-		return;
-	};
+	if (modBLEConnectionFindByAddress(address)) return;
 	
 	// Add a new connection record to be filled as the connection completes
-	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
 	connection->id = 0;
+	c_memmove(&connection->address, address, 6);
+	connection->addressType = addressType;
 	connection->bond = 0xFF;
-	connection->bd_addr = bd_addr;
-	modBLEConnectionAdd(connection);
+
+	modBLEConnectionAdd((modBLEConnection)connection);
 	
+	c_memmove(&remote_addr, address, 6);
+
 	result = qapi_BLE_GAP_LE_Create_Connection(
 		gBLE->stackID,
 		gBLE->scanInterval,
 		gBLE->scanWindow,
 		QAPI_BLE_FP_NO_FILTER_E,
 		addressType,			// remote address type
-		&bd_addr,				// remote address
+		&remote_addr,			// remote address
 		QAPI_BLE_LAT_PUBLIC_E,	// local address type
 		&gBLE->connectionParams,
 		GAP_LE_Event_Callback,
@@ -386,62 +377,18 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 	qapi_BLE_GAP_LE_Authentication_Response_Information_t GAP_LE_Authentication_Response_Information;
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t confirm = xsmcToBoolean(xsArg(1));
-	qapi_BLE_BD_ADDR_t bd_addr;
-	modBLEConnection connection;
+	qapi_BLE_BD_ADDR_t remote_addr;
+	modBLEClientConnection connection;
 	
-	c_memmove(&bd_addr, address, 6);
-	connection = modBLEConnectionFindByAddress(bd_addr);
+	connection = (modBLEClientConnection)modBLEConnectionFindByAddress(address);
 	if (!connection) return;
 	
+	c_memmove(&remote_addr, address, 6);
+
 	GAP_LE_Authentication_Response_Information.GAP_LE_Authentication_Type = (confirm ? QAPI_BLE_LAR_CONFIRMATION_E : QAPI_BLE_LAR_ERROR_E);
 	GAP_LE_Authentication_Response_Information.Authentication_Data_Length = sizeof(uint32_t);
 	GAP_LE_Authentication_Response_Information.Authentication_Data.Passkey = connection->passkey;											
-	qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, bd_addr, &GAP_LE_Authentication_Response_Information);									
-}
-
-modBLEConnection modBLEConnectionFindByConnectionID(uint32_t conn_id)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (conn_id == walker->id)
-			break;
-	return walker;
-}
-
-modBLEConnection modBLEConnectionFindByAddress(qapi_BLE_BD_ADDR_t bd_addr)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (QAPI_BLE_COMPARE_BD_ADDR(bd_addr, walker->bd_addr))
-			break;
-	return walker;
-}
-
-void modBLEConnectionAdd(modBLEConnection connection)
-{
-	if (!gBLE->connections)
-		gBLE->connections = connection;
-	else {
-		modBLEConnection walker;
-		for (walker = gBLE->connections; walker->next; walker = walker->next)
-			;
-		walker->next = connection;
-	}
-}
-
-void modBLEConnectionRemove(modBLEConnection connection)
-{
-	modBLEConnection walker, prev = NULL;
-	for (walker = gBLE->connections; NULL != walker; prev = walker, walker = walker->next) {
-		if (connection == walker) {
-			if (NULL == prev)
-				gBLE->connections = walker->next;
-			else
-				prev->next = walker->next;
-			c_free(connection);
-			break;
-		}
-	}
+	qapi_BLE_GAP_LE_Authentication_Response(gBLE->stackID, remote_addr, &GAP_LE_Authentication_Response_Information);									
 }
 
 void xs_gap_connection_initialize(xsMachine *the)
@@ -455,16 +402,18 @@ void xs_gap_connection_initialize(xsMachine *the)
 		xsUnknownError("connection not found");
 	connection->the = the;
 	connection->objConnection = xsThis;
-	connection->objClient = xsArg(0);
+	OBJ_CLIENT(connection) = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
 {
 	uint32_t conn_id = xsmcToInteger(xsArg(0));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	qapi_BLE_BD_ADDR_t remote_addr;
 	if (!connection)
 		xsUnknownError("connection not found");
-	qapi_BLE_GAP_LE_Disconnect(gBLE->stackID, connection->bd_addr);
+	c_memmove(&remote_addr, connection->address, 6);
+	qapi_BLE_GAP_LE_Disconnect(gBLE->stackID, remote_addr);
 }
 
 void xs_gap_connection_read_rssi(xsMachine *the)
@@ -490,8 +439,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
-	connection->procedure.what = GATT_PROCEDURE_DISCOVER_SERVICES;
-	connection->procedure.obj = connection->objClient;
+	setGATTProcedure(connection, GATT_PROCEDURE_DISCOVER_SERVICES, OBJ_CLIENT(connection), 0, 0);
 	
 	if (argc > 1) {
 		qapi_BLE_GATT_UUID_t uuid;
@@ -512,7 +460,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	CharacteristicDiscoveryRequest *request;
 	uint32_t transaction_id;
 	
-   	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+   	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
 	request = c_calloc(1, sizeof(CharacteristicDiscoveryRequest));
@@ -524,9 +472,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	if (argc > 3)
 		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &request->uuid, xsmcGetArrayBufferLength(xsArg(3)));
 	
-	connection->procedure.what = GATT_PROCEDURE_DISCOVER_CHARACTERISTICS;
-	connection->procedure.obj = xsThis;
-	connection->procedure.refcon = (uint32_t)request;	
+	setGATTProcedure((modBLEConnection)connection, GATT_PROCEDURE_DISCOVER_CHARACTERISTICS, xsThis, 0, (uint32_t)request);
 	
 	transaction_id = qapi_BLE_GATT_Discover_Characteristics(gBLE->stackID, conn_id, start, end, GATT_Client_Event_Callback, 0);
 	if (transaction_id < 0)
@@ -552,9 +498,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	request->handle = handle;
 	request->conn_id = conn_id;
 		
-	connection->procedure.what = GATT_PROCEDURE_DISCOVER_DESCRIPTORS;
-	connection->procedure.obj = xsThis;
-	connection->procedure.refcon = (uint32_t)request;
+	setGATTProcedure(connection, GATT_PROCEDURE_DISCOVER_DESCRIPTORS, xsThis, 0, (uint32_t)request);
 
 	// we use service discovery to discover all descriptors by matching the parent characteristic in the discovery results
 	xsmcVars(2);
@@ -578,9 +522,7 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
-	connection->procedure.what = GATT_PROCEDURE_READ_CHARACTERISTIC;
-	connection->procedure.obj = connection->objClient;
-	connection->procedure.refcon = handle;
+	setGATTProcedure(connection, GATT_PROCEDURE_READ_CHARACTERISTIC, OBJ_CLIENT(connection), 0, handle);
 	
 	qapi_BLE_GATT_Read_Value_Request(gBLE->stackID, conn_id, handle, GATT_Client_Event_Callback, conn_id);
 }
@@ -599,9 +541,7 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
-	connection->procedure.what = GATT_PROCEDURE_READ_DESCRIPTOR;
-	connection->procedure.obj = connection->objClient;
-	connection->procedure.refcon = handle;
+	setGATTProcedure(connection, GATT_PROCEDURE_READ_DESCRIPTOR, OBJ_CLIENT(connection), 0, handle);
 	
 	qapi_BLE_GATT_Read_Value_Request(gBLE->stackID, conn_id, handle, GATT_Client_Event_Callback, conn_id);
 }
@@ -623,9 +563,7 @@ void xs_gatt_characteristic_enable_notifications(xsMachine *the)
 	request->conn_id = conn_id;
 	request->enable = true;
 
-	connection->procedure.what = GATT_PROCEDURE_ENABLE_CHARACTERISTIC_NOTIFICATIONS;
-	connection->procedure.obj = connection->objClient;
-	connection->procedure.refcon = (uint32_t)request;
+	setGATTProcedure(connection, GATT_PROCEDURE_ENABLE_CHARACTERISTIC_NOTIFICATIONS, OBJ_CLIENT(connection), 0, (uint32_t)request);
 
 	qapi_BLE_GATT_Write_Request(gBLE->stackID, conn_id, characteristic + 1, sizeof(data), data, GATT_Client_Event_Callback, conn_id);
 }
@@ -647,9 +585,7 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 	request->conn_id = conn_id;
 	request->enable = false;
 	
-	connection->procedure.what = GATT_PROCEDURE_DISABLE_CHARACTERISTIC_NOTIFICATIONS;
-	connection->procedure.obj = connection->objClient;
-	connection->procedure.refcon = (uint32_t)request;
+	setGATTProcedure(connection, GATT_PROCEDURE_DISABLE_CHARACTERISTIC_NOTIFICATIONS, OBJ_CLIENT(connection), 0, (uint32_t)request);
 
 	qapi_BLE_GATT_Write_Request(gBLE->stackID, conn_id, characteristic + 1, sizeof(data), data, GATT_Client_Event_Callback, conn_id);
 }
@@ -660,12 +596,12 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	char *str;
 	switch (xsmcTypeOf(xsArg(2))) {
-		case xsStringType:
-			str = xsmcToString(xsArg(2));
+		case xsStringType: {
+			char *str = xsmcToString(xsArg(2));
 			qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, c_strlen(str), (uint8_t*)str);
 			break;
+		}
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
 				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
@@ -686,13 +622,12 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	char *str;
-
 	switch (xsmcTypeOf(xsArg(2))) {
-		case xsStringType:
-			str = xsmcToString(xsArg(2));
+		case xsStringType: {
+			char *str = xsmcToString(xsArg(2));
 			qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, c_strlen(str), (uint8_t*)str);
 			break;
+		}
 		case xsReferenceType:
 			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
 				qapi_BLE_GATT_Write_Without_Response_Request(gBLE->stackID, conn_id, handle, xsmcGetArrayBufferLength(xsArg(2)), (uint8_t*)xsmcToArrayBuffer(xsArg(2)));
@@ -707,12 +642,21 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	}
 }
 
+static void setGATTProcedure(modBLEConnection connection, uint8_t what, xsSlot target, uint32_t transaction_id, uint32_t refcon)
+{
+	GATTProcedure procedure = &((modBLEClientConnection)connection)->procedure;
+	procedure->what = what;
+	procedure->transaction_id = transaction_id;
+	procedure->target = target;
+	procedure->refcon = refcon;
+}
+
 static void completeProcedure(uint32_t conn_id, char *which)
 {
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
-	xsSlot obj = connection->procedure.obj;
+	xsSlot obj = connection->procedure.target;
 	
 	c_memset(&connection->procedure, 0, sizeof(connection->procedure));
 	
@@ -788,7 +732,7 @@ static int modBLEConnectionSaveAttHandle(modBLEConnection connection, qapi_BLE_G
 					for (int k = 0; k < char_name_count; ++k) {
 						const char_name_table *char_name = &char_names[k];
 						if (service_index == char_name->service_index && att_index == char_name->att_index) {
-							connection->handles[k] = handle;
+							((modBLEClientConnection)connection)->handles[k] = handle;
 							result = k;
 							break;
 						}
@@ -814,7 +758,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 {
 	qapi_BLE_GATT_Device_Connection_Data_t *result = (qapi_BLE_GATT_Device_Connection_Data_t*)message;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByAddress(result->RemoteDevice);
+	modBLEConnection connection = modBLEConnectionFindByAddress((uint8_t*)&result->RemoteDevice);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
@@ -841,9 +785,8 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(result->ConnectionID);
 	
 	// ignore multiple disconnects on same connection
-	if (!connection) {
-		goto bail;
-	}	
+	if (!connection) goto bail;
+
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), connection->id);
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
@@ -871,7 +814,7 @@ static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint
 	xsmcSetInteger(xsVar(1), result->Address_Type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsmcSetInteger(xsVar(1), result->RSSI);
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 	c_free(result->Raw_Report_Data);
 	xsEndHost(gBLE->the);
@@ -886,7 +829,7 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 	uint16_t length;
 		
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
@@ -900,7 +843,7 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_start, xsVar(2));
 	xsmcSet(xsVar(0), xsID_end, xsVar(3));
-	xsCall2(connection->procedure.obj, xsID_callback, xsString("onService"), xsVar(0));
+	xsCall2(connection->procedure.target, xsID_callback, xsString("onService"), xsVar(0));
 
 	xsEndHost(gBLE->the);
 }
@@ -914,7 +857,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 	uint16_t i, length;
 		
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
@@ -922,7 +865,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 
 	for (i = 0; i < characteristicInfo->NumberOfDescriptors; ++i) {
 		qapi_BLE_GATT_Characteristic_Descriptor_Information_t *descriptorInfo = &characteristicInfo->DescriptorList[i];
-		int index = modBLEConnectionSaveAttHandle(connection, &descriptorInfo->Characteristic_Descriptor_UUID, descriptorInfo->Characteristic_Descriptor_Handle);
+		int index = modBLEConnectionSaveAttHandle((modBLEConnection)connection, &descriptorInfo->Characteristic_Descriptor_UUID, descriptorInfo->Characteristic_Descriptor_Handle);
 		xsVar(0) = xsmcNewObject();
 		uuidToBuffer(&descriptorInfo->Characteristic_Descriptor_UUID, buffer, &length);
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
@@ -935,7 +878,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 			xsmcSetString(xsVar(2), (char*)char_names[index].type);
 			xsmcSet(xsVar(0), xsID_type, xsVar(2));
 		}
-		xsCall2(connection->procedure.obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
+		xsCall2(connection->procedure.target, xsID_callback, xsString("onDescriptor"), xsVar(0));
 	}
 	c_free(characteristicInfo->DescriptorList);
 
@@ -962,7 +905,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 	uint32_t conn_id = result->ConnectionID;
 		
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
@@ -976,7 +919,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 			if (!UUIDEqual(&request->uuid, &characteristic->CharacteristicValue.CharacteristicUUID))
 				continue;
 		}
-		int index = modBLEConnectionSaveAttHandle(connection, &characteristic->CharacteristicValue.CharacteristicUUID, characteristic->CharacteristicValue.CharacteristicValueHandle);
+		int index = modBLEConnectionSaveAttHandle((modBLEConnection)connection, &characteristic->CharacteristicValue.CharacteristicUUID, characteristic->CharacteristicValue.CharacteristicValueHandle);
 		uuidToBuffer(&characteristic->CharacteristicValue.CharacteristicUUID, buffer, &length);
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
 		xsmcSetInteger(xsVar(2), characteristic->CharacteristicValue.CharacteristicValueHandle);
@@ -990,7 +933,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 			xsmcSetString(xsVar(2), (char*)char_names[index].type);
 			xsmcSet(xsVar(0), xsID_type, xsVar(2));
 		}
-		xsCall2(connection->procedure.obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+		xsCall2(connection->procedure.target, xsID_callback, xsString("onCharacteristic"), xsVar(0));
 	}
 		
 	c_free(result->CharacteristicEntryList);
@@ -1016,7 +959,7 @@ static void characteristicReadValueEvent(void *the, void *refcon, uint8_t *messa
 	qapi_BLE_GATT_Read_Response_Data_t *result = (qapi_BLE_GATT_Read_Response_Data_t*)message;
 	uint32_t conn_id = result->ConnectionID;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
@@ -1026,7 +969,7 @@ static void characteristicReadValueEvent(void *the, void *refcon, uint8_t *messa
 	xsmcSetInteger(xsVar(2), connection->procedure.refcon);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->procedure.obj, xsID_callback, xsString("onCharacteristicValue"), xsVar(0));
+	xsCall2(connection->procedure.target, xsID_callback, xsString("onCharacteristicValue"), xsVar(0));
 	
 	completeProcedure(conn_id, NULL);
 	c_free(result->AttributeValue);
@@ -1040,7 +983,7 @@ static void characteristicWriteValueEvent(void *the, void *refcon, uint8_t *mess
 	CharacteristicNotificationRequest *request = NULL;
 	
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
@@ -1075,7 +1018,7 @@ static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsmcSetInteger(xsVar(2), result->AttributeHandle);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
 	c_free(result->AttributeValue);
 	xsEndHost(gBLE->the);
 }
@@ -1084,7 +1027,7 @@ static void clientErrorEvent(void *the, void *refcon, uint8_t *message, uint16_t
 {
 	qapi_BLE_GATT_Request_Error_Data_t *result = (qapi_BLE_GATT_Request_Error_Data_t*)message;
 	uint32_t conn_id = result->ConnectionID;
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	
 	if (result->TransactionID == connection->procedure.transaction_id) {
@@ -1115,7 +1058,7 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	uint32_t passkey;
 	modBLEConnection connection;
 	
-	connection = modBLEConnectionFindByAddress(Authentication_Event_data->BD_ADDR);
+	connection = modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_data->BD_ADDR);
 	if (!connection) return;
 	
 	xsBeginHost(gBLE->the);
@@ -1139,7 +1082,7 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 	uint32_t passkey = Authentication_Event_data->Authentication_Event_Data.Confirmation_Request.Display_Passkey;
 	modBLEConnection connection;
 	
-	connection = modBLEConnectionFindByAddress(Authentication_Event_data->BD_ADDR);
+	connection = modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_data->BD_ADDR);
 	if (!connection) return;
 		
 	xsBeginHost(gBLE->the);
@@ -1157,16 +1100,15 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 {
 	qapi_BLE_GAP_LE_Authentication_Event_Data_t *Authentication_Event_data = (qapi_BLE_GAP_LE_Authentication_Event_Data_t*)message;
 	uint32_t passkey = Authentication_Event_data->Authentication_Event_Data.Confirmation_Request.Display_Passkey;
-	modBLEConnection connection;
 	
-	connection = modBLEConnectionFindByAddress(Authentication_Event_data->BD_ADDR);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_data->BD_ADDR);
 	if (!connection) return;
 	
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
 	xsVar(0) = xsmcNewObject();
 	connection->passkey = passkey;
-	xsmcSetArrayBuffer(xsVar(1), &Authentication_Event_data->BD_ADDR, 6);
+	xsmcSetArrayBuffer(xsVar(1), &Authentication_Event_data->BD_ADDR.BD_ADDR0, 6);
 	xsmcSetInteger(xsVar(2), passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
@@ -1178,19 +1120,21 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 {
 	qapi_BLE_GAP_LE_Authentication_Event_Data_t *Authentication_Event_Data = (qapi_BLE_GAP_LE_Authentication_Event_Data_t *)message;
 	qapi_BLE_GAP_LE_Pairing_Status_t *Pairing_Status = &Authentication_Event_Data->Authentication_Event_Data.Pairing_Status;
+	qapi_BLE_BD_ADDR_t remote_addr;
 	modBLEBondedDevice device;
-	modBLEConnection connection = modBLEConnectionFindByAddress(Authentication_Event_Data->BD_ADDR);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_Data->BD_ADDR);
 	if (NULL == connection) return;
+	c_memmove(&remote_addr, connection->address, 6);
 	if (QAPI_BLE_GAP_LE_PAIRING_STATUS_NO_ERROR == Pairing_Status->Status) {
 		if (gBLE->bonding && ((connection->Flags & (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID)) == (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID))) {
-			device = modBLEBondedDevicesFindByAddress(connection->bd_addr);
+			device = modBLEBondedDevicesFindByAddress(remote_addr);
 			if (NULL != device)
 				modBLEBondedDevicesRemove(device);
 			device = c_calloc(sizeof(modBLEBondedDeviceRecord), 1);
 			if (NULL != device) {
 				device->Flags = connection->Flags;
-				device->LastAddress = connection->bd_addr;
-				device->LastAddressType = connection->bd_addr_type;
+				device->LastAddress = remote_addr;
+				device->LastAddressType = connection->addressType;
 				device->IdentityAddress = connection->IdentityAddressBD_ADDR;
 				device->IdentityAddressType = connection->IdentityAddressType;
 				device->EncryptionKeySize = connection->EncryptionKeySize;
@@ -1204,7 +1148,7 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 		xsEndHost(gBLE->the);
 	}
 	else {
-		device = modBLEBondedDevicesFindByAddress(connection->bd_addr);
+		device = modBLEBondedDevicesFindByAddress(remote_addr);
 		if (NULL != device)
 			modBLEBondedDevicesRemove(device);
 	}
@@ -1251,9 +1195,9 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 			case QAPI_BLE_ET_LE_CONNECTION_COMPLETE_E: {
 				qapi_BLE_GAP_LE_Connection_Complete_Event_Data_t *Connection_Complete_Event_Data = GAP_LE_Event_Data->Event_Data.GAP_LE_Connection_Complete_Event_Data;
 				if (QAPI_BLE_HCI_ERROR_CODE_NO_ERROR == Connection_Complete_Event_Data->Status) {
-					modBLEConnection connection = modBLEConnectionFindByAddress(Connection_Complete_Event_Data->Peer_Address);
+					modBLEConnection connection = modBLEConnectionFindByAddress((uint8_t*)&Connection_Complete_Event_Data->Peer_Address);
 					if (connection)
-						connection->bd_addr_type = Connection_Complete_Event_Data->Peer_Address_Type;
+						connection->addressType = Connection_Complete_Event_Data->Peer_Address_Type;
 				}
 				break;
 			}
@@ -1266,7 +1210,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 					qapi_BLE_Long_Term_Key_t GeneratedLTK;
      				uint16_t EDIV, LocalDiv;
 					int Result;
-					modBLEConnection connection;
+					modBLEClientConnection connection;
 					
 					LOG_GAP_AUTHENTICATION_EVENT(Authentication_Event_Data->GAP_LE_Authentication_Event_Type);
 					
@@ -1281,16 +1225,15 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 							/* Check to see if this is a request for a SC generated Long Term Key */
                      		if ((Authentication_Event_Data->Authentication_Event_Data.Long_Term_Key_Request.EDIV == EDIV) && (QAPI_BLE_COMPARE_RANDOM_NUMBER(Authentication_Event_Data->Authentication_Event_Data.Long_Term_Key_Request.Rand, RandomNumber))) {
 								/* Search for the entry for this slave to store the information into */
-								connection = modBLEConnectionFindByAddress(Authentication_Event_Data->BD_ADDR);
+								connection = (modBLEClientConnection)modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_Data->BD_ADDR);
 								if (connection) {
-									modBLEConnection DeviceInfo = connection;
 									/* Check to see if the LTK is valid.         */
-									if (DeviceInfo->Flags & DEVICE_INFO_FLAGS_LTK_VALID) {
+									if (connection->Flags & DEVICE_INFO_FLAGS_LTK_VALID) {
 										/* Respond with the stored Long Term Key. */
 										GAP_LE_Authentication_Response_Information.Authentication_Data_Length                                        = QAPI_BLE_GAP_LE_LONG_TERM_KEY_INFORMATION_DATA_SIZE;
-										GAP_LE_Authentication_Response_Information.Authentication_Data.Long_Term_Key_Information.Encryption_Key_Size = DeviceInfo->EncryptionKeySize;
+										GAP_LE_Authentication_Response_Information.Authentication_Data.Long_Term_Key_Information.Encryption_Key_Size = connection->EncryptionKeySize;
 
-										c_memcpy(&(GAP_LE_Authentication_Response_Information.Authentication_Data.Long_Term_Key_Information.Long_Term_Key), &(DeviceInfo->LTK), QAPI_BLE_LONG_TERM_KEY_SIZE);
+										c_memcpy(&(GAP_LE_Authentication_Response_Information.Authentication_Data.Long_Term_Key_Information.Long_Term_Key), &(connection->LTK), QAPI_BLE_LONG_TERM_KEY_SIZE);
 									}
 								}
 							}
@@ -1317,7 +1260,7 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 							/* exchanged LTK.                                  */
 							modBLEBondedDevice device = modBLEBondedDevicesFindByAddress(Authentication_Event_Data->BD_ADDR);
 							if (device) {
-								modBLEConnection connection = modBLEConnectionFindByAddress(Authentication_Event_Data->BD_ADDR);
+								modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_Data->BD_ADDR);
 								
 								/* Determine if a Valid Long Term Key is stored */
 								/* for this device.                             */
@@ -1366,7 +1309,8 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 
 									/* Try this again.                                       */
 									Result = qapi_BLE_GAP_LE_Extended_Pair_Remote_Device(gBLE->stackID, Authentication_Event_Data->BD_ADDR, &ExtendedCapabilities, GAP_LE_Event_Callback, 0);
-								}							}
+								}							
+							}
 							break;
 						}
 						case QAPI_BLE_LAT_CONFIRMATION_REQUEST_E:
@@ -1422,24 +1366,22 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 						case QAPI_BLE_LAT_ENCRYPTION_INFORMATION_E:
 							/* Search for the entry for this slave to store the*/
 							/* information into.                               */
-							connection = modBLEConnectionFindByAddress(Authentication_Event_Data->BD_ADDR);
+							connection = (modBLEClientConnection)modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_Data->BD_ADDR);
 							if (connection) {
-								modBLEConnection DeviceInfo = connection;
-								c_memcpy(&(DeviceInfo->LTK), &(Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.LTK), sizeof(DeviceInfo->LTK));
-								DeviceInfo->EDIV              = Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.EDIV;
-								c_memcpy(&(DeviceInfo->Rand), &(Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.Rand), sizeof(DeviceInfo->Rand));
-								DeviceInfo->EncryptionKeySize = Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.Encryption_Key_Size;
-								DeviceInfo->Flags            |= DEVICE_INFO_FLAGS_LTK_VALID;
+								c_memcpy(&(connection->LTK), &(Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.LTK), sizeof(connection->LTK));
+								connection->EDIV              = Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.EDIV;
+								c_memcpy(&(connection->Rand), &(Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.Rand), sizeof(connection->Rand));
+								connection->EncryptionKeySize = Authentication_Event_Data->Authentication_Event_Data.Encryption_Information.Encryption_Key_Size;
+								connection->Flags            |= DEVICE_INFO_FLAGS_LTK_VALID;
 							}
 							break;
 						case QAPI_BLE_LAT_SECURITY_ESTABLISHMENT_COMPLETE_E:
 							/* If this failed due to a LTK issue then we should delete the LTK */
 							if (Authentication_Event_Data->Authentication_Event_Data.Security_Establishment_Complete.Status == QAPI_BLE_GAP_LE_SECURITY_ESTABLISHMENT_STATUS_CODE_LONG_TERM_KEY_ERROR) {
-								connection = modBLEConnectionFindByAddress(Authentication_Event_Data->BD_ADDR);
+								connection = (modBLEClientConnection)modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_Data->BD_ADDR);
 								if (connection) {
-									modBLEConnection DeviceInfo = connection;
 									/* Clear the flag indicating the LTK is valid */
-									DeviceInfo->Flags &= ~DEVICE_INFO_FLAGS_LTK_VALID;
+									connection->Flags &= ~DEVICE_INFO_FLAGS_LTK_VALID;
 								}
 							}
 							break;
@@ -1457,20 +1399,19 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 						case QAPI_BLE_LAT_IDENTITY_INFORMATION_E:
 							/* Search for the entry for this slave to store the*/
 							/* information into.                               */
-							connection = modBLEConnectionFindByAddress(Authentication_Event_Data->BD_ADDR);
+							connection = (modBLEClientConnection)modBLEConnectionFindByAddress((uint8_t*)&Authentication_Event_Data->BD_ADDR);
 							if (connection) {
-								modBLEConnection DeviceInfo = connection;
-								c_memcpy(&(DeviceInfo->IRK), &(Authentication_Event_Data->Authentication_Event_Data.Identity_Information.IRK), sizeof(DeviceInfo->IRK));
-								DeviceInfo->IdentityAddressBD_ADDR = Authentication_Event_Data->Authentication_Event_Data.Identity_Information.Address;
-								DeviceInfo->IdentityAddressType    = Authentication_Event_Data->Authentication_Event_Data.Identity_Information.Address_Type;
-								DeviceInfo->Flags                 |= DEVICE_INFO_FLAGS_IRK_VALID;
+								c_memcpy(&(connection->IRK), &(Authentication_Event_Data->Authentication_Event_Data.Identity_Information.IRK), sizeof(connection->IRK));
+								connection->IdentityAddressBD_ADDR = Authentication_Event_Data->Authentication_Event_Data.Identity_Information.Address;
+								connection->IdentityAddressType    = Authentication_Event_Data->Authentication_Event_Data.Identity_Information.Address_Type;
+								connection->Flags                 |= DEVICE_INFO_FLAGS_IRK_VALID;
 
 								/* Setup the resolving list entry to add to the */
 								/* resolving list.                              */
-								DeviceInfo->ResolvingListEntry.Peer_Identity_Address      = DeviceInfo->IdentityAddressBD_ADDR;
-								DeviceInfo->ResolvingListEntry.Peer_Identity_Address_Type = DeviceInfo->IdentityAddressType;
-								DeviceInfo->ResolvingListEntry.Peer_IRK                   = DeviceInfo->IRK;
-								DeviceInfo->ResolvingListEntry.Local_IRK                  = gBLE->IRK;
+								connection->ResolvingListEntry.Peer_Identity_Address      = connection->IdentityAddressBD_ADDR;
+								connection->ResolvingListEntry.Peer_Identity_Address_Type = connection->IdentityAddressType;
+								connection->ResolvingListEntry.Peer_IRK                   = connection->IRK;
+								connection->ResolvingListEntry.Local_IRK                  = gBLE->IRK;
 							}
 							break;
 						case QAPI_BLE_LAT_EXTENDED_CONFIRMATION_REQUEST_E:

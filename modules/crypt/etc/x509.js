@@ -98,14 +98,16 @@ const X509 = {
 		}
 	},
 	decodeSPKI(buf) {
-		let spk = this.getSPK(buf);
-		if (spk) {
-			let ber = new BER(spk);
-			switch (spk.algo.toString()) {
-			case [1, 2, 840, 113549, 1, 1, 1].toString():
-			case [1, 3, 14, 3, 2, 11].toString():
-			case [2, 5, 8, 1, 1].toString():
+		const spk = this.getSPK(buf);
+		if (!spk)
+			throw new Error("x509: bad SPKI");
+
+		switch (spk.algo.toString()) {
+			case "1,2,840,113549,1,1,1":
+			case "1,3,14,3,2,11":
+			case "2,5,8,1,1":
 				// PKCS1
+				const ber = new BER(spk);
 				if (ber.getTag() != 0x30)
 					throw new Error("x509: bad SPKI");
 				ber.getLength();
@@ -117,7 +119,6 @@ const X509 = {
 			default:
 				trace("x509: " + spk.algo + " not supported\n");
 				return {};
-			}
 		}
 		throw new Error("x509: bad SPKI");
 	},

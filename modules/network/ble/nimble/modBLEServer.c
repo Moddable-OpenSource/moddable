@@ -166,8 +166,11 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	if (-1 != ble->conn_id)
-		ble_gap_terminate(ble->conn_id, BLE_ERR_REM_USER_CONN_TERM);
+	if (-1 != ble->conn_id) {
+		modBLEConnection connection = modBLEConnectionFindByConnectionID(ble->conn_id);
+		if (NULL != connection)
+			modBLEConnectionRemove(connection);
+	}
 	if (ble->deployServices && (0 != service_count))
 		ble_gatts_reset();
 	c_free(ble);
@@ -396,14 +399,25 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		}
 		gBLE->conn_id = desc->conn_handle;
 		gBLE->remote_bda = desc->peer_id_addr;
-		xsmcVars(4);
+		
+		modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+		if (!connection)
+			xsUnknownError("out of memory");
+			
+		connection->id = gBLE->conn_id;
+		connection->type = kBLEConnectionTypeServer;
+		connection->addressType = gBLE->remote_bda.type;
+		c_memmove(connection->address, gBLE->remote_bda.val, 6);
+		modBLEConnectionAdd(connection);
+		
+		xsmcVars(2);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), desc->conn_handle);
 		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(2), desc->peer_id_addr.val, 6);
-		xsmcSetInteger(xsVar(3), desc->peer_id_addr.type);
-		xsmcSet(xsVar(0), xsID_address, xsVar(2));
-		xsmcSet(xsVar(0), xsID_addressType, xsVar(3));
+		xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}
 	else {
@@ -428,6 +442,10 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		goto bail;
 	}	
 	
+	modBLEConnection connection = modBLEConnectionFindByConnectionID(gBLE->conn_id);
+	if (NULL != connection)
+		modBLEConnectionRemove(connection);
+
 	gBLE->conn_id = -1;
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();

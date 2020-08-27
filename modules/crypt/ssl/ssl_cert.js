@@ -83,13 +83,13 @@ class CertificateManager {
 	findPreferredCert(types, names) {
 		return this.#clientCertificates;
 	}
-	getIndex(fname, target) {
-		if (undefined === target)
+	getIndex(name, target) {
+		if (!target)
 			return -1;
 
-		let f = new Resource(fname);
-		for (let i = 0; ((i + 1) * 20) <= f.byteLength; i++) {
-			if (Bin.comp(f.slice(i * 20, (i + 1) * 20), target) == 0)
+		const data = new Resource(name);
+		for (let i = 0; ((i + 1) * 20) <= data.byteLength; i++) {
+			if (!Bin.comp(data.slice(i * 20, (i + 1) * 20, false), target))
 				return i;
 		}
 		return -1;
@@ -161,58 +161,59 @@ class CertificateManager {
 	}
 
 	_verify(spki, x509) {
-		var pk;
-		var hash;
-		var sig;
+		let pk;
+		let hash;
+		let sig;
+
 		switch (x509.algo.toString()) {
-		case [1, 2, 840, 113549, 1, 1, 4].toString():	// PKCS-1 MD5 with RSA encryption
+		case "1,2,840,113549,1,1,4":	// PKCS-1 MD5 with RSA encryption
 			hash = "MD5";
 			pk = PKCS1_5;
 			sig = x509.sig;
 			break;
-		case [1, 2, 840, 113549, 1, 1, 5].toString():	// PKCS-1 SHA1 with RSA encryption
+		case "1,2,840,113549,1,1,5":	// PKCS-1 SHA1 with RSA encryption
 			hash = "SHA1";
 			pk = PKCS1_5;
 			sig = x509.sig;
 			break;
-		case [1, 2, 840, 113549, 1, 1, 11].toString():	// PKCS-1 SHA256 with RSA encryption
+		case "1,2,840,113549,1,1,11":	// PKCS-1 SHA256 with RSA encryption
 			hash = "SHA256";
 			pk = PKCS1_5;
 			sig = x509.sig;
 			break;
-		case [1, 2, 840, 113549, 1, 1, 12].toString():	// PKCS-1 SHA384 with RSA encryption
+		case "1,2,840,113549,1,1,12":	// PKCS-1 SHA384 with RSA encryption
 			hash = "SHA384";
 			pk = PKCS1_5;
 			sig = x509.sig;
 			break;
-		case [1, 2, 840, 113549, 1, 1, 13].toString():	// PKCS-1 SHA512 with RSA encryption
+		case "1,2,840,113549,1,1,13":	// PKCS-1 SHA512 with RSA encryption
 			hash = "SHA512";
 			pk = PKCS1_5;
 			sig = x509.sig;
 			break;
-		case [1, 2, 840, 113549, 1, 1, 14].toString():	// PKCS-1 SHA224 with RSA encryption
+		case "1,2,840,113549,1,1,14":	// PKCS-1 SHA224 with RSA encryption
 			hash = "SHA224";
 			pk = PKCS1_5;
 			sig = x509.sig;
 			break;
-		case [1, 2, 840, 10040, 4, 3].toString():
-		case [1, 3, 14, 3, 2, 27].toString():
+		case "1,2,840,10040,4,3":
+		case "1,3,14,3,2,27": {
 			hash = "SHA1";
 			pk = DSA;
 			// needs to decode the sig value into <r, s>
-			var ber = new BER(x509.sig);
+			const ber = new BER(x509.sig);
 			if (ber.getTag() == 0x30) {
 				ber.getLength();
-				var r = ber.getInteger();
-				var s = ber.getInteger();
+				let r = ber.getInteger();
+				let s = ber.getInteger();
 				sig = r.concat(s);
 			}
-			break;
+			} break;
 		default:
 			throw new Error("Cert: unsupported algorithm: " + x509.algo.toString());
 			break;
 		}
-		var H = (new Crypt.Digest(hash)).process(x509.tbs);
+		let H = (new Crypt.Digest(hash)).process(x509.tbs);
 		return (new pk(spki, false, [] /* any oid */)).verify(H, sig);
 	}
 	register(cert) {

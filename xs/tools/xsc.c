@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
 	txByte byte;
 	txBoolean embed = 0;
 
-	fxInitializeParser(parser, C_NULL, 32*1024, 1993);
+	fxInitializeParser(parser, C_NULL, 1024*1024, 1993);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
 		for (argi = 1; argi < argc; argi++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,15 +22,9 @@
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
-#include "spi_flash.h"
-#include "user_interface.h"
-
-//static const int FLASH_INT_MASK = ((B10 << 8) | B00111010);
-static const int FLASH_INT_MASK = ((2 << 8) | 0x3A);
-
 extern uint8_t _MODPREF_start;
-extern uint8_t _MODPREF_end;
 
+#define kPreferencesStartOffset ((uint8_t *)&_MODPREF_start - kFlashStart)
 #define kPreferencesMagic 0x81213141
 
 enum {
@@ -147,18 +141,18 @@ void xs_preference_keys(xsMachine *the)
 
 	xsmcVars(1);
 
-	endOffset = offset + SPI_FLASH_SEC_SIZE;
+	endOffset = offset + kFlashSectorSize;
 	offset += sizeof(uint32_t);	// skip signature
 
 	while (offset < endOffset) {
 		uint8_t *b = buffer;
 		const char *domain;
 		uint8_t match;
-		uint32 use = endOffset - offset;
+		uint32_t use = endOffset - offset;
 		if (use > kBufferSize)
 			use = kBufferSize;
 
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, use);
+		modSPIRead(offset, use, buffer);
 		while (use) {
 			if (0xff == *b)		// uninitialized
 				return;
@@ -172,19 +166,19 @@ void xs_preference_keys(xsMachine *the)
 		}
 		if (0 == use) continue;		// end of buffer with nothing
 
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, kBufferSize);
+		modSPIRead(offset, kBufferSize, buffer);
 		domain = xsmcToString(xsArg(0));
 		match = 0 == c_strcmp(buffer, domain);
 		offset += c_strlen(buffer) + 1;
 
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, kBufferSize);
+		modSPIRead(offset, kBufferSize, buffer);
 		if (match) {
 			xsVar(0) = xsString(buffer);
 			xsCall1(xsResult, xsID_push, xsVar(0));
 		}
 		offset += c_strlen(buffer) + 1;
 
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, kBufferSize);
+		modSPIRead(offset, kBufferSize, buffer);
 		offset += getPrefSize(buffer);
 		offset = (offset + 3) & ~3;			// round to a long
 	}
@@ -198,29 +192,26 @@ void xs_preference_reset(xsMachine *the)
 void resetPrefs(void)
 {
 	uint32_t magic = kPreferencesMagic;
-	uint32_t sector = ((uint8_t *)&_MODPREF_start - kFlashStart) / SPI_FLASH_SEC_SIZE;
 
-	ets_isr_mask(FLASH_INT_MASK);
-	spi_flash_erase_sector(sector);
-	spi_flash_erase_sector(sector + 1);
-	ets_isr_unmask(FLASH_INT_MASK);
-
-	spi_flash_write(0 + &_MODPREF_start - kFlashStart, (uint32 *)&magic, sizeof(magic));
+	modSPIErase(kPreferencesStartOffset, kFlashSectorSize << 1);
+	modSPIWrite(kPreferencesStartOffset, sizeof(magic), (uint8_t *)&magic);
 }
 
 uint8_t findPrefsBlock(uint32_t *offset)
 {
 	uint32_t magic;
 
-	*offset = 0;
-	spi_flash_read(0 + (uint8_t *)&_MODPREF_start - kFlashStart, &magic, sizeof(magic));
-	if (kPreferencesMagic == magic)
+	modSPIRead(kPreferencesStartOffset, sizeof(magic), (uint8_t *)&magic);
+	if (kPreferencesMagic == magic) {
+		*offset = kPreferencesStartOffset;
 		return 1;
+	}
 
-	*offset = SPI_FLASH_SEC_SIZE;
-	spi_flash_read(SPI_FLASH_SEC_SIZE + (uint8_t *)&_MODPREF_start - kFlashStart, &magic, sizeof(magic));
-	if (kPreferencesMagic == magic)
+	modSPIRead(kPreferencesStartOffset + kFlashSectorSize, sizeof(magic), (uint8_t *)&magic);
+	if (kPreferencesMagic == magic) {
+		*offset = kPreferencesStartOffset + kFlashSectorSize;
 		return 1;
+	}
 
 	resetPrefs();
 
@@ -236,17 +227,17 @@ uint8_t findPrefOffset(const char *domain, const char *key, uint32_t *entryOffse
 			return 0;
 	}
 
-	endOffset = offset + SPI_FLASH_SEC_SIZE;
+	endOffset = offset + kFlashSectorSize;
 	offset += sizeof(uint32_t); // skip signature
 	while (offset < endOffset) {
 		uint8_t *b = buffer;
 		uint8_t match;
 		uint32_t valueSize;
-		uint32 use = endOffset - offset;
+		uint32_t use = endOffset - offset;
 		if (use > kBufferSize)
 			use = kBufferSize;
 
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, use);
+		modSPIRead(offset, use, buffer);
 		while (use) {
 			if (0xff == *b)	{		// uninitialized
 				if (!domain && !key) {
@@ -266,17 +257,17 @@ uint8_t findPrefOffset(const char *domain, const char *key, uint32_t *entryOffse
 		if (0 == use) continue;		// end of buffer with nothing
 
 		*entryOffset = offset;
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, kBufferSize);
+		modSPIRead(offset, kBufferSize, buffer);
 		match = domain && (0 == c_strcmp(buffer, domain));
 		offset += c_strlen(buffer) + 1;
 
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, kBufferSize);
+		modSPIRead(offset, kBufferSize, buffer);
 		if (match)
 			match = 0 == c_strcmp(buffer, key);
 		offset += c_strlen(buffer) + 1;
 		*valueOffset = offset;
 
-		spi_flash_read(offset + (uint8_t *)&_MODPREF_start - kFlashStart, (uint32 *)buffer, kBufferSize);
+		modSPIRead(offset, kBufferSize, buffer);
 		valueSize = getPrefSize(buffer);
 		offset += valueSize;
 		offset = (offset + 3) & ~3;			// round to a long
@@ -304,7 +295,7 @@ uint8_t erasePref(const char *domain, const char *key, uint8_t *buffer)
 	offset = entryOffset;
 	while (entrySize) {
 		int use = (entrySize > kBufferSize) ? kBufferSize : entrySize;
-		if (SPI_FLASH_RESULT_OK != spi_flash_write(offset + &_MODPREF_start - kFlashStart, (uint32 *)buffer, use))
+		if (!modSPIWrite(offset, use, buffer))
 			return 0;
 		offset += use;
 		entrySize -= use;
@@ -329,17 +320,17 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 	if (!findPrefOffset(NULL, NULL, &prefsEnd, &valueOffset, &entrySize, buffer))
 		return 0;
 
-	prefsFree = SPI_FLASH_SEC_SIZE - (prefsEnd & (SPI_FLASH_SEC_SIZE - 1));
+	prefsFree = kFlashSectorSize - (prefsEnd & (kFlashSectorSize - 1));
 	if (prefsFree < prefSize) { // compact
-		uint32_t srcOffset = (prefsEnd < SPI_FLASH_SEC_SIZE) ? 0 : SPI_FLASH_SEC_SIZE;
-		uint32_t dstOffset = (prefsEnd < SPI_FLASH_SEC_SIZE) ? SPI_FLASH_SEC_SIZE : 0;
+		uint32_t srcOffset = (prefsEnd < kFlashSectorSize) ? 0 : kFlashSectorSize;
+		uint32_t dstOffset = (prefsEnd < kFlashSectorSize) ? kFlashSectorSize : 0;
 		uint32_t srcOffsetSave = srcOffset;
 
-		if (SPI_FLASH_RESULT_OK != spi_flash_erase_sector((dstOffset + &_MODPREF_start - kFlashStart) / SPI_FLASH_SEC_SIZE))
+		if (!modSPIErase(dstOffset, kFlashSectorSize))
 			return 0;
 
 		*(uint32_t *)buffer = kPreferencesMagic;
-		spi_flash_write(dstOffset + &_MODPREF_start - kFlashStart, (uint32 *)buffer, sizeof(uint32_t));
+		modSPIWrite(dstOffset, sizeof(uint32_t), buffer);
 		dstOffset += sizeof(uint32_t);
 		srcOffset += sizeof(uint32_t);
 
@@ -350,7 +341,7 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 			if (use > sizeof(buffer))
 				use = sizeof(buffer);
 
-			spi_flash_read(srcOffset + &_MODPREF_start - kFlashStart, (uint32 *)buffer, use);
+			modSPIRead(srcOffset, use, buffer);
 			while (use--) {
 				if (0xff == *b)
 					break;
@@ -361,14 +352,14 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 					continue;
 				}
 
-				spi_flash_read(srcOffset + &_MODPREF_start - kFlashStart, (uint32 *)buffer, sizeof(buffer));		// will always hold a full preference record
+				modSPIRead(srcOffset, sizeof(buffer), buffer);		// will always hold a full preference record
 				b = buffer;
 				entrySize = c_strlen(b) + 1;
 				b += entrySize;
 				entrySize += c_strlen(b) + 1;
 				entrySize += getPrefSize(buffer + entrySize);
 				entrySize = (entrySize + 3) & ~3;
-				spi_flash_write(dstOffset + &_MODPREF_start - kFlashStart, (uint32 *)buffer, entrySize);
+				modSPIWrite(dstOffset, entrySize, buffer);
 				dstOffset += entrySize;
 				srcOffset += entrySize;
 				break;
@@ -376,12 +367,12 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 		}
 
 		*(uint32_t *)buffer = 0;	// invalidated previous block
-		spi_flash_write(srcOffsetSave + &_MODPREF_start - kFlashStart, (uint32 *)buffer, sizeof(uint32_t));
+		modSPIWrite(srcOffsetSave, sizeof(uint32_t), buffer);
 
 		if (!findPrefOffset(NULL, NULL, &prefsEnd, &valueOffset, &entrySize, buffer))
 			return 0;
 
-		prefsFree = SPI_FLASH_SEC_SIZE - (prefsEnd & (SPI_FLASH_SEC_SIZE - 1));
+		prefsFree = kFlashSectorSize - (prefsEnd & (kFlashSectorSize - 1));
 		if (prefsFree < prefSize)
 			return 0;		// not enough space
 	}
@@ -400,7 +391,7 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 	}
 	c_memcpy(pref, value, byteCount);
 
-	return (SPI_FLASH_RESULT_OK == spi_flash_write(prefsEnd + &_MODPREF_start - kFlashStart, (uint32 *)buffer, prefSize)) ? 1 : 0;
+	return modSPIWrite(prefsEnd, prefSize, buffer);
 }
 
 int getPrefSize(const uint8_t *pref)
@@ -412,7 +403,7 @@ int getPrefSize(const uint8_t *pref)
 		case kPrefsTypeBuffer:  return 1 + 2 + c_read16(pref + 1);
 	}
 
-	return SPI_FLASH_SEC_SIZE;		// force to skip to end of preferences
+	return kFlashSectorSize;		// force to skip to end of preferences
 }
 
 uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut)

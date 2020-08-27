@@ -732,6 +732,8 @@ void fxGetNextString(txParser* parser, int c)
 				case '5':
 				case '6':
 				case '7':
+				case '8':
+				case '9':
 					character = *s++ - '0';
 					if ((parser->flags & mxStrictFlag) || (c == '`')) {
 						if ((character == 0) && ((*s < '0') || ('9' < *s)))
