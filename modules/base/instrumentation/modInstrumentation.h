@@ -60,6 +60,12 @@ enum {
 	/* system */
 	kModInstrumentationSystemFreeMemory,
 
+#if ESP32
+	/* CPU utilization */
+	kModInstrumentationCPU0,
+	kModInstrumentationCPU1,
+#endif
+
 	/* XS */
 	kModInstrumentationSlotHeapSize,
 	kModInstrumentationChunkHeapSize,
