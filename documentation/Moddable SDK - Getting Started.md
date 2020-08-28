@@ -118,6 +118,8 @@ More detailed getting started guides are available for the following devices:
 	```
 	
 	> Note: These instructions assume that your shell sources from `~/.profile` when a new terminal is opened. That may not be the case depending on what shell you use and how you have it configured. Starting with macOS Catalina, the [default shell is `zsh`](https://support.apple.com/en-us/HT208050) which uses `~/.zshrc` instead.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 	
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
@@ -256,7 +258,7 @@ More detailed getting started guides are available for the following devices:
 
 8. Connect the ESP32 device to your macOS host with a USB cable.
 		
-9. Set the `IDF_PATH` and `PATH` environment variables in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
+9. Set the `IDF_PATH` and `PATH` environment variables in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system.
 
 	```
 	export IDF_PATH=$HOME/esp32/esp-idf
@@ -283,6 +285,8 @@ More detailed getting started guides are available for the following devices:
 	```
 
 	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 10. Verify the setup by building `helloworld` for the `esp32` target:
 
@@ -326,7 +330,7 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
-4. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
+4. Set the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
 
 	```text
 	set MODDABLE=C:\Users\<user>\Projects\moddable
@@ -526,7 +530,9 @@ More detailed getting started guides are available for the following devices:
 	MODDABLE=~/Projects/moddable
 	export MODDABLE
 	```
-	
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
+
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```text
@@ -539,6 +545,8 @@ More detailed getting started guides are available for the following devices:
 	```text
 	export PATH=$PATH:$MODDABLE/build/bin/lin/release
 	```
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 7. Install the Screen Test desktop simulator and `xsbug` debugger applications:
 
@@ -602,8 +610,6 @@ More detailed getting started guides are available for the following devices:
 	sudo easy_install pip
 	pip install --user pyserial
 	```
-
-
 	
 7. Connect the ESP8266 to your computer with a USB cable.
 
@@ -675,7 +681,7 @@ More detailed getting started guides are available for the following devices:
 
 6. Connect the ESP32 device to your Linux host with a USB cable.
 
-7. Set the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
+7. Set the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system.
 
 	```
     export IDF_PATH=~/esp32/esp-idf
@@ -702,6 +708,8 @@ More detailed getting started guides are available for the following devices:
 	```
 	
 	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 8. Install the required Python packages:
 
