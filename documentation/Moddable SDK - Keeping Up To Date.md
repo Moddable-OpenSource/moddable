@@ -1,6 +1,6 @@
 # Moddable SDK – Keeping Up To Date
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: April 15, 2020
+Revised: August 27, 2020
 
 This document describes the steps that you should take to update the Moddable SDK. By following the steps in this guide, you can update your Moddable SDK git repository, rebuild the Moddable SDK tools, and update the target-specific build environments needed for the ESP8266 and ESP32.
 

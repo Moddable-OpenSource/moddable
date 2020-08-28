@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: August 25, 2020
+Revised: August 27, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -315,7 +315,7 @@ More detailed getting started guides are available for the following devices:
 <a id="host-windows"></a>
 #### Host environment setup
 
-> The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2017 or newer.
+> The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Community 2017 or newer.
 
 1. Download [Microsoft Visual Studio 2019 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option, and install. 
 
