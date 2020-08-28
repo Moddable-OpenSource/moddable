@@ -95,13 +95,9 @@ class Gyro_Accelerometer extends SMBus {
         this.tempRaw = new ArrayBuffer(2);
         this.tempView = new DataView(this.tempRaw);
         this.operation = "gyroscope";
-        if (!this.checkIdentification())
-			throw new Error("unrecongized")
+        if (super.readByte(REGISTERS.WHO_AM_I) != EXPECTED_WHO_AM_I)
+			throw new Error("unrecognized")
         this.enable();
-    }
-
-    checkIdentification() {
-		return super.readByte(REGISTERS.WHO_AM_I) == EXPECTED_WHO_AM_I;
     }
 
     configure(dictionary) {
