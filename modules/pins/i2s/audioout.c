@@ -1557,8 +1557,14 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 		}
 
 		stream->elementCount -= 1;
-		if (stream->elementCount)
+		if (stream->elementCount) {
 			c_memcpy(element, element + 1, sizeof(modAudioQueueElementRecord) * stream->elementCount);
+			if (element->repeat) {		// first element has audio. if compressed, decompress first chunk
+				if (element->sampleFormat != kSampleFormatUncompressed)
+					streamDecompressNext(stream);
+				break;
+			}
+		}
 		else {
 			updateActiveStreams(out);
 			break;
