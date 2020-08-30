@@ -92,13 +92,13 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 		![](../assets/devices/nrf5-sdk-versions.png)
 
-	- Uncheck all SoftDevices.
+	- Uncheck all SoftDevices. A _+_ will remain.
 
 		![](../assets/devices/softdevices.png)
 
 	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
 
-		![](../assets/devices/selected.png)
+		![](../assets/devices/nrf5-sdk-selected.png)
 
 	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_17.0.0_9d13099` directory into the `nrf5` directory.
 
