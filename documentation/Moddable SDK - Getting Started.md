@@ -164,7 +164,7 @@ More detailed getting started guides are available for the following devices:
 
 	![Catalina Developer Options](./assets/getting-started/catalina-security.png)
 
-5. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+5. Download and untar the [Xtensa lx106 architecture GCC toolchain](https://www.moddable.com/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
 
 6. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
 
@@ -375,9 +375,9 @@ More detailed getting started guides are available for the following devices:
 
 4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.13/esptool-0.4.13-win32.zip). Unzip the archive and copy the `esptool.exe` executable from the `esptool-0.4.13-win32` directory into the `esp` directory.
 
-5. Download and unzip the [Cygwin toolchain support package](http://www.moddable.tech/private/cygwin.win32.zip). Copy the `cygwin` directory into the `esp` directory.
+5. Download and unzip the [Cygwin toolchain support package](https://www.moddable.com/private/cygwin.win32.zip). Copy the `cygwin` directory into the `esp` directory.
 	
-6. Download and unzip the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.win32.zip). Copy the `xtensa-lx106-elf` directory into the `esp` directory.
+6. Download and unzip the [Xtensa lx106 architecture GCC toolchain](https://www.moddable.com/private/esp8266.toolchain.win32.zip). Copy the `xtensa-lx106-elf` directory into the `esp` directory.
 
 7. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `esp` directory.
 
@@ -577,7 +577,7 @@ More detailed getting started guides are available for the following devices:
 
 2. Create an `esp` directory in your home directory at `~/esp` for required third party SDKs and tools.
  
-3. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.linux.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+3. Download and untar the [Xtensa lx106 architecture GCC toolchain](https://www.moddable.com/private/esp8266.toolchain.linux.tgz). Copy the `toolchain` directory into the `~/esp` directory.
 
 4. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
 
