@@ -19,9 +19,9 @@
  */
 
 export default class Resource @ "Resource_destructor" {
-	constructor(path) @ "Resource_constructor";
-	static exists(path) @ "Resource_exists";
-	slice(begin, end) @ "Resource_slice";
+     constructor(path) @ "Resource_constructor";
+     static exists(path) @ "Resource_exists";
+     slice(begin, end) @ "Resource_slice";
+     static name(index) @ "Resource_name";
 }
 Object.freeze(Resource.prototype);
-
