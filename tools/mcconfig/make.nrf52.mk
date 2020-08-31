@@ -93,6 +93,10 @@ else
 	endif
 endif
 
+ifeq ($(MAKEFLAGS_JOBS),)
+	MAKEFLAGS_JOBS = --jobs 8
+endif
+
 # Assembler flags common to all targets
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
@@ -790,7 +794,7 @@ $(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
 
-MAKEFLAGS += --jobs 8
+MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
