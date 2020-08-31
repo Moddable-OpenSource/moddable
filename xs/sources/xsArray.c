@@ -425,8 +425,10 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	}
 	else
 		mxPushUndefined();
-	if (the->stack->kind == XS_UNDEFINED_KIND)
+    if (the->stack->kind == XS_UNDEFINED_KIND) {
 		*the->stack = mxArrayConstructor;
+        flag = 0;
+    }
 	else if (mxIsReference(the->stack) && mxIsConstructor(the->stack->value.reference)) {
 		if (the->stack->value.reference != mxArrayConstructor.value.reference)
 			flag = 0;
@@ -2326,9 +2328,16 @@ void fx_Array_prototype_toString(txMachine* the)
 	mxPushSlot(mxThis);
 	mxDub();
 	fxGetID(the, mxID(_join));
-	mxCall();
-	mxRunCount(0);
-	mxPullSlot(mxResult);
+	if (fxIsCallable(the, the->stack)) {
+		mxCall();
+		mxRunCount(0);
+		mxPullSlot(mxResult);
+	}
+	else {
+		mxPop();
+		mxPop();
+		fx_Object_prototype_toString(the);
+	}
 }
 
 void fx_Array_prototype_unshift(txMachine* the)

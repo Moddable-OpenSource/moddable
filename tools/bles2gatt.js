@@ -997,6 +997,8 @@ class GeckoGATTFile extends GATTFile {
 		let attributes_dynamic_max = 0;
 		let needs_cccd = true;
 		services.forEach((service, index) => {
+			if (4 != service.uuid.length)
+				throw new Error("128-bit UUIDs not supported");
 			uuidtable_16_map.push('0x' + service.uuid);
 			let characteristics = service.characteristics;
 			let length = Object.keys(characteristics).length;
@@ -1009,6 +1011,8 @@ class GeckoGATTFile extends GATTFile {
 					characteristic.properties = "read";
 				if (!characteristic.hasOwnProperty("value"))
 					attributes_dynamic_max += 1;
+				if (4 != characteristic.uuid.length)
+					throw new Error("128-bit UUIDs not supported");
 				uuidtable_16_map.push('0x' + characteristic.uuid);
 				let properties = characteristic.properties;
 				if (properties.includes("notify") || properties.includes("indicate")) {

@@ -76,8 +76,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	}
 	
-	startScanning(params) {
-		if (!params) params = {};
+	startScanning(params = {}) {
 		let {active = true, duplicates = true, interval = 0x50, window = 0x30, filterPolicy = GAP.ScanFilterPolicy.NONE } = params;
 		this._startScanning(active, duplicates, interval, window, filterPolicy);
 	}

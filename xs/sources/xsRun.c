@@ -69,7 +69,7 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 			goto *bytes[byte]
 	#elif defined(mxTrace)
 		#define mxBreak \
-			if (gxDoTrace) fxTraceCode(the, byte); \
+			if (gxDoTrace) fxTraceCode(the, stack, byte); \
 			goto *bytes[byte]
 	#else
 		#define mxBreak \
@@ -248,12 +248,12 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #ifdef mxTrace
 short gxDoTrace = 1;
 
-static void fxTraceCode(txMachine* the, txU1 theCode) 
+static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode) 
 {
 	if (((XS_NO_CODE < theCode) && (theCode < XS_CODE_COUNT)))
-		fprintf(stderr, "\n%s", gxCodeNames[theCode]);
+		fprintf(stderr, "\n%ld: %s", the->stackTop - stack, gxCodeNames[theCode]);
 	else
-		fprintf(stderr, "\n?");
+		fprintf(stderr, "\n%ld: ?", the->stackTop - stack);
 }
 
 static void fxTraceID(txMachine* the, txInteger id) 
@@ -637,7 +637,7 @@ XS_CODE_JUMP:
 	for (;;) {
 
 #ifdef mxTrace
-		if (gxDoTrace) fxTraceCode(the, byte);
+		if (gxDoTrace) fxTraceCode(the, stack, byte);
 #endif
 		//fxCheckStack(the, mxStack);
 		
@@ -2562,7 +2562,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_NAME)
 			offset = mxRunS2(1);
 			mxSaveState;
-			fxRenameFunction(the, mxStack->value.reference, (txID)offset, XS_NO_ID, C_NULL);
+			fxRenameFunction(the, mxStack->value.reference, (txID)offset, XS_NO_ID, XS_NO_ID, C_NULL);
 			mxRestoreState;
 			mxNextCode(3);
 			mxBreak;
@@ -2592,9 +2592,9 @@ XS_CODE_JUMP:
 			slot = mxFunctionInstanceCode(variable);
 			slot->kind = XS_CODE_KIND;
 			slot->value.code.address = scratch.value.code.address;
-			slot = mxFunctionInstanceLength(variable);
-			if (slot && (slot->ID == mxID(_length)))
-				slot->value.integer = *(scratch.value.code.address + 1);
+			if (gxDefaults.newFunctionLength) {
+				gxDefaults.newFunctionLength(the, variable, *(scratch.value.code.address + 1));
+			}
 			mxNextCode(offset);
 			mxBreak;
 		mxCase(XS_CODE_CODE_ARCHIVE_4)
@@ -2613,9 +2613,9 @@ XS_CODE_JUMP:
 			slot = mxFunctionInstanceCode(variable);
 			slot->kind = XS_CODE_X_KIND;
 			slot->value.code.address = mxCode;
-			slot = mxFunctionInstanceLength(variable);
-			if (slot && (slot->ID == mxID(_length)))
-				slot->value.integer = mxRunU1(1);
+			if (gxDefaults.newFunctionLength) {
+				gxDefaults.newFunctionLength(the, variable, mxRunU1(1));
+			}
 			mxNextCode(offset);
 			mxBreak;
 

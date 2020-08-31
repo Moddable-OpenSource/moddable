@@ -318,8 +318,9 @@ void fx_Enumerator(txMachine* the)
 	slot->ID = mxID(_iterable);
 	slot->kind = mxThis->kind;
 	slot->value = mxThis->value;
-	if (!mxIsReference(slot))
+	if (mxIsUndefined(slot) || mxIsNull(slot))
 		return;
+	fxToInstance(the, slot);
 		
 	keys = fxNewInstance(the);
 	mxBehaviorOwnKeys(the, slot->value.reference, XS_EACH_NAME_FLAG, keys);

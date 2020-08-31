@@ -46,6 +46,15 @@
 	#define rtctime_gettimeofday(a) gettimeofday(a, NULL)
 
 	portMUX_TYPE gCriticalMux = portMUX_INITIALIZER_UNLOCKED;
+
+	#define INSTRUMENT_CPULOAD 1
+	#if INSTRUMENT_CPULOAD
+		#include "driver/timer.h"
+
+		static uint16_t gCPUCounts[4];
+		static TaskHandle_t gIdles[2];
+		static void IRAM_ATTR timer_group0_isr(void *para);
+	#endif
 #else
 	#include "Arduino.h"
 	#include "rtctime.h"
@@ -64,7 +73,7 @@
 	void espInstrumentMachineEnd(txMachine *the);
 	void espInstrumentMachineReset(txMachine *the);
 
-	#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
+	#define espInstrumentCount kModInstrumentationSlotHeapSize - kModInstrumentationPixelsDrawn
 	static char* const espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)"Pixels drawn",
 		(char *)"Frames drawn",
@@ -79,6 +88,10 @@
 		(char *)"SPI flash erases",
 	#endif
 		(char *)"System bytes free",
+	#if ESP32
+		(char *)"CPU 0",
+		(char *)"CPU 1",
+	#endif
 	};
 
 	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
@@ -95,6 +108,10 @@
 		(char *)" sectors",
 	#endif
 		(char *)" bytes",
+	#if ESP32
+		(char *)" percent",
+		(char *)" percent",
+	#endif
 	};
 #endif
 
@@ -1210,6 +1227,28 @@ static int32_t modInstrumentationStackRemain(void *theIn)
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
 
+#if INSTRUMENT_CPULOAD
+static int32_t modInstrumentationCPU0(void *theIn)
+{
+	int32_t result, total = (gCPUCounts[0] + gCPUCounts[1]);
+	if (!total)
+		return 0;
+	result = (100 * gCPUCounts[0]) / total;
+	gCPUCounts[0] = gCPUCounts[1] = 0;
+	return result;
+}
+
+static int32_t modInstrumentationCPU1(void *theIn)
+{
+	int32_t result, total = (gCPUCounts[2] + gCPUCounts[3]);
+	if (!total)
+		return 0;
+	result = (100 * gCPUCounts[2]) / total;
+	gCPUCounts[2] = gCPUCounts[3] = 0;
+	return result;
+}
+#endif
+
 #ifdef mxDebug
 void espDebugBreak(txMachine* the, uint8_t stop)
 {
@@ -1237,6 +1276,32 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(GarbageCollectionCount, modInstrumentationGarbageCollectionCount);
 	modInstrumentationSetCallback(ModulesLoaded, modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, modInstrumentationStackRemain);
+
+#if INSTRUMENT_CPULOAD
+	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
+	modInstrumentationSetCallback(CPU1, modInstrumentationCPU1);
+
+	timer_config_t config = {
+		.divider = 16,
+		.counter_dir = TIMER_COUNT_UP,
+		.counter_en = TIMER_PAUSE,
+		.alarm_en = TIMER_ALARM_EN,
+		.auto_reload = 1,
+	};
+
+	gIdles[0] = xTaskGetIdleTaskHandleForCPU(0);
+	gIdles[1] = xTaskGetIdleTaskHandleForCPU(1);
+
+	timer_init(TIMER_GROUP_0, TIMER_0, &config);
+
+	timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+
+	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / (config.divider * 1000));
+	timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+	timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *)TIMER_0, ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_IRAM, NULL);
+
+	timer_start(TIMER_GROUP_0, TIMER_0);
+#endif
 }
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
@@ -1245,7 +1310,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	int what;
 	xsMachine *the = *(xsMachine **)refcon;
 
-	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
+	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
 	fxSampleInstrumentation(the, espInstrumentCount, values);
@@ -1290,6 +1355,17 @@ void espInstrumentMachineReset(txMachine *the)
 	the->peakParserSize = 0;
 	the->floatingPointOps = 0;
 }
+
+#if INSTRUMENT_CPULOAD
+void IRAM_ATTR timer_group0_isr(void *para)
+{
+	TIMERG0.int_clr_timers.t0 = 1;
+    TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
+
+	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
+	gCPUCounts[2 + (xTaskGetCurrentTaskHandleForCPU(1) == gIdles[1])] += 1;
+}
+#endif
 #endif
 
 #if ESP32

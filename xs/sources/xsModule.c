@@ -102,7 +102,7 @@ void fxBuildModule(txMachine* the)
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringProperty(the, slot, "Module", mxID(_Symbol_toStringTag), XS_GET_ONLY);
+	slot = fxNextStringXProperty(the, slot, "Module", mxID(_Symbol_toStringTag), XS_GET_ONLY);
 	mxModulePrototype = *the->stack;
 	
 	mxPush(mxObjectPrototype);
@@ -115,7 +115,7 @@ void fxBuildModule(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_evaluate), 1, mxID(_evaluate), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_import), 1, mxID(_import), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_importNow), 1, mxID(_importNow), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringProperty(the, slot, "Compartment", mxID(_Symbol_toStringTag), XS_GET_ONLY);
+	slot = fxNextStringXProperty(the, slot, "Compartment", mxID(_Symbol_toStringTag), XS_GET_ONLY);
 	mxCompartmentPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
 	mxCompartmentConstructor = *the->stack;

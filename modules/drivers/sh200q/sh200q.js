@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Wilberforce
  
- * Copyright (c) 2019 Moddable Tech, Inc.
+ * Copyright (c) 2019-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -21,9 +21,9 @@
  */
 /*
 	sh200q Accelerometer + Gyro
-            Datasheet: 			http://senodia.com/Uploads/Product/5b2b6ef1216e8.pdf
-            Register Map:   https://github.com/m5stack/M5StickC/blob/master/src/IMU.h#L6-L21
-            https://github.com/m5stack/M5StickC/blob/master/src/IMU.cpp
+            Datasheet: 	http://senodia.com/Uploads/Product/5b2b6ef1216e8.pdf
+            Register Map:   https://github.com/m5stack/M5StickC/blob/master/src/utility/SH200Q.h#L7-L22
+            https://github.com/m5stack/M5StickC/blob/master/src/utility/SH200Q.cpp
            
 */
 
@@ -54,59 +54,73 @@ const REGISTERS = {
 Object.freeze(REGISTERS);
 
 const EXPECTED_WHO_AM_I = 0x18;
-const GYRO_SCALER = (1 / 16.4); // at +/- 2000 degree/sec range, per datasheet section 2.1
-const ACCEL_SCALER = (1 / 4096); // at +/- 8g range, per datasheet section 2.2
 
-class SMBHold extends SMBus { //SMBus implementation that holds the i2c bus between the i2c.read and i2c.write on read operations.
+const GYRO_SCALER = {
+    GFS_125DPS: (125.0 / 32768.0),
+    GFS_250DPS: (250.0 / 32768.0),
+    GFS_500DPS: (500.0 / 32768.0),
+    GFS_1000DPS: (1000.0 / 32768.0),
+    GFS_2000DPS: (2000.0 / 32768.0)
+};
+Object.freeze(GYRO_SCALER);
+
+const ACCEL_SCALER = {
+    AFS_2G: (2.0 / 32768.0),
+    AFS_4G: (4.0 / 32768.0),
+    AFS_8G: (8.0 / 32768.0),
+    AFS_16G: (16.0 / 32768.0)
+};
+Object.freeze(ACCEL_SCALER);
+
+class Gyro_Accelerometer extends SMBus {
+    #gyroScale = GYRO_SCALER.GFS_2000DPS;
+    #accelScale = ACCEL_SCALER.AFS_8G;
+    #view = new DataView(new ArrayBuffer(6));
+    #operation = this.sampleGyro;
+
     constructor(dictionary) {
-        super(dictionary);
-    }
-    readByte(register) {
-        super.write(register, false);
-        return super.read(1)[0];
-    }
-    readWord(register) {
-        super.write(register, false);
-        let value = super.read(2);
-        return value[0] | (value[1] << 8);
-    }
-    readBlock(register, count, buffer) {
-        super.write(register, false);
-        return buffer ? super.read(count, buffer) : super.read(count);
-    }
-}
-
-class Gyro_Accelerometer extends SMBHold {
-    constructor(dictionary) {
-        super(Object.assign({
-            address:0x6C
-        }, dictionary));
-        this.xlRaw = new ArrayBuffer(6);
-        this.xlView = new DataView(this.xlRaw);
-        this.gyroRaw = new ArrayBuffer(6);
-        this.gyroView = new DataView(this.gyroRaw);
-        this.tempRaw = new ArrayBuffer(2);
-        this.tempView = new DataView(this.tempRaw);
-        this.operation = "gyroscope";
-        this.reboot();
-        this.checkIdentification();
-    }
-
-    checkIdentification() {
-        let gxlID = this.readByte(REGISTERS.WHO_AM_I);
-        if (gxlID != EXPECTED_WHO_AM_I) throw ("bad WHO_AM_I ID for sh200Q.");
+        super({
+            address:0x6C,
+            ...dictionary
+		});
+        if (super.readByte(REGISTERS.WHO_AM_I) != EXPECTED_WHO_AM_I)
+			throw new Error("unrecognized")
+        this.enable();
     }
 
     configure(dictionary) {
         for (let property in dictionary) {
             switch (property) {
                 case "operation":
-                    this.operation = dictionary.operation;
+					switch (dictionary.operation) {
+						case "gyroscope":
+							this.#operation = this.sampleGyro;
+							break;
+						case "accelerometer":
+							this.#operation = this.sampleXL;
+							break;
+						case "temp":
+							this.#operation = this.sampleTemp;
+							break;
+						default:
+							throw new Error("invalid");
+					}
+                    break;
+                case "GYRO_SCALER":
+                    this.#gyroScale = dictionary.GYRO_SCALER;
+                    // 
+                    //this.writeByte(REGISTERS.GYRO_RANGE, 0x00);
+                    break;
+                case "ACCEL_SCALER":
+                    this.#accelScale = dictionary.ACCEL_SCALER;
+                    // 
+                    //this.writeByte(REGISTERS.ACC_RANGE, 0x00);
+                    break;
             }
         }
     }
 
-    reboot() {
+    enable() {
 
         Timer.delay(1);
 
@@ -133,55 +147,42 @@ class Gyro_Accelerometer extends SMBHold {
 
         this.writeByte(REGISTERS.REG_SET1, 0xC0);
 
-        let tempdata = this.readByte(REGISTERS.REG_SET2);
-
         //ADC Reset
-        tempdata = tempdata | 0x10;
-        this.writeByte(REGISTERS.REG_SET2, tempdata);
+        const temp = this.readByte(REGISTERS.REG_SET2);
+        this.writeByte(REGISTERS.REG_SET2, temp | 0x10);
 
         Timer.delay(1);
 
-        tempdata = tempdata & 0xEF;
-        this.writeByte(REGISTERS.REG_SET2, tempdata);
+        this.writeByte(REGISTERS.REG_SET2, temp & 0xEF);
 
         Timer.delay(10);
     }
 
     sampleXL() {
-        this.readBlock(REGISTERS.ACCEL_XOUT, 6, this.xlRaw);
+        this.readBlock(REGISTERS.ACCEL_XOUT, 6, this.#view.buffer);
         return {
-            x: this.xlView.getInt16(0, true) * ACCEL_SCALER,
-            y: this.xlView.getInt16(2, true) * ACCEL_SCALER,
-            z: this.xlView.getInt16(4, true) * ACCEL_SCALER
+            x: this.#view.getInt16(0, true) * this.#accelScale,
+            y: this.#view.getInt16(2, true) * this.#accelScale,
+            z: this.#view.getInt16(4, true) * this.#accelScale
         }
     }
 
     sampleGyro() {
-        this.readBlock(REGISTERS.GYRO_XOUT, 6, this.gyroRaw);
+        this.readBlock(REGISTERS.GYRO_XOUT, 6, this.#view.buffer);
         return {
-            x: this.gyroView.getInt16(0, true) * GYRO_SCALER,
-            y: this.gyroView.getInt16(2, true) * GYRO_SCALER,
-            z: this.gyroView.getInt16(4, true) * GYRO_SCALER
+            x: this.#view.getInt16(0, true) * this.#gyroScale,
+            y: this.#view.getInt16(2, true) * this.#gyroScale,
+            z: this.#view.getInt16(4, true) * this.#gyroScale
         }
     }
 
     sampleTemp() {
-        this.readBlock(REGISTERS.TEMP_OUT, 2, this.tempRaw);
-        return this.tempView.getInt16(0, true) / 333.87 + 21.0
+        this.readBlock(REGISTERS.TEMP_OUT, 2, this.#view.buffer);
+        return this.#view.getInt16(0, true) / 333.87 + 21.0
     }
 
     sample() {
-        switch (this.operation) {
-            case "gyroscope":
-                return this.sampleGyro();
-            case "accelerometer":
-                return this.sampleXL();
-            case "temp":
-                return this.sampleTemp();
-            default:
-                trace("Invalid operation for sh200Q.");
-                throw ("Invalid operation for sh200Q.");
-        }
+		return this.#operation();
     }
 }
 Object.freeze(Gyro_Accelerometer.prototype);

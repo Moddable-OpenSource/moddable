@@ -116,47 +116,56 @@ export class MakeFile extends FILE {
 	generateConfigurationRules(tool) {
 		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
 		
-		// Read base sdkconfig file
-		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
-		let baseConfigFile = baseConfigDirectory + "sdkconfig.defaults";
+		// Read base debug build sdkconfig.defaults file
+		let mergedConfig = [];
+		let regex = /[\r\n]+/gm;
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj";
+		let baseConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
 		let baseConfigLength = baseConfig.length;
 
-		// Read app sdkconfig file
-		let sdkconfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
-		if (tool.debug) {
-			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
-				sdkconfigFile += ".debug";
-		}
-		else {
-			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
-				sdkconfigFile += ".release";
+		// For release builds merge base sdkconfig.defaults.release file
+		if (tool.debug === false) {
+			let releaseBaseConfigFile = baseConfigFile + ".release";
+			let entries = tool.readFileString(releaseBaseConfigFile);
+			mergedConfig = entries.split(regex);
+
+			// For instrumented release builds merge base "sdkconfig.inst" file
+			if (tool.instrument === true) {
+				let instConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.inst";
+				let instConfig = tool.readFileString(instConfigFile);
+				mergedConfig = mergedConfig.concat(instConfig.split(regex));
+			}
 		}
 		
-		let appConfig;
-		if (baseConfigFile != sdkconfigFile) {
-			appConfig = tool.readFileString(sdkconfigFile);
-			appConfig = appConfig.split(/[\r\n]+/gm);
+		// Merge any application sdkconfig files
+		if (tool.environment.SDKCONFIGPATH != baseConfigDirectory) {
+			let appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
+			if ((false === tool.debug) && (1 == tool.isDirectoryOrFile(appConfigFile + ".release")))
+				appConfigFile += ".release";
+			if (1 == tool.isDirectoryOrFile(appConfigFile)) {
+				let entries = tool.readFileString(appConfigFile);
+				mergedConfig = mergedConfig.concat(entries.split(regex));
+			}
+			if (tool.debug === false && tool.instrument === true) {
+				appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.inst";
+				if (1 == tool.isDirectoryOrFile(appConfigFile)) {
+					let entries = tool.readFileString(appConfigFile);
+					mergedConfig = mergedConfig.concat(entries.split(regex));
+				}
+			}
 		}
-		else
-			appConfig = [];
-
-		if (tool.instrument === true && tool.debug === false) {
-			let instConfigFile = baseConfigDirectory + "sdkconfig.inst";
-			let instConfig = tool.readFileString(instConfigFile);
-			appConfig = appConfig.concat(appConfig, instConfig.split(/[\r\n]+/gm));
-		}
-			
+		
 		let port = tool.getenv("UPLOAD_PORT");
 		if (port) {
 			if (port.charAt(0) != '"')
 				port = `"${port}"`;
-			appConfig.push("CONFIG_ESPTOOLPY_PORT=" + port);
+			mergedConfig.push("CONFIG_ESPTOOLPY_PORT=" + port);
 		}
 
 		// Merge differences
 		let appended = false;
-		appConfig.forEach(option => {
+		mergedConfig.forEach(option => {
 			if (option.length && ('#' != option.charAt(0))) {
 				let parts = option.split('=');
 				let name = parts[0];
@@ -231,7 +240,7 @@ export class MakeFile extends FILE {
 		}
 		
 		// Write the result, if it has changed
-		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
+		let buildConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.mc";
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
 		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
 			const oldConfig = tool.readFileString(buildConfigFile);
@@ -671,7 +680,7 @@ export class MakeFile extends FILE {
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", definesPath);
+			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "wav2maud ", target);
 			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
 		}
@@ -732,7 +741,7 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			paths[result.target] = [ result.source.slice(0, -5) ];
+			paths[result.target.slice(0, -2)] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
 			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
@@ -1318,7 +1327,7 @@ export class Tool extends TOOL {
 			this.mainPath = this.currentDirectory;
 		}
 		var parts = this.splitPath(this.mainPath);
-		this.environment.NAME = parts.name;
+		this.environment.NAME = parts.name + parts.extension;
 		if (!this.outputPath)
 			this.outputPath = this.buildPath;
 		if (!this.platform)
@@ -1420,6 +1429,7 @@ export class Tool extends TOOL {
 		all.strip = platform.strip ? platform.strip : all.strip;
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
+		this.mergeProperties(all.run, platform.run);
 	}
 	mergeProperties(targets, sources) {
 		if (sources) {
@@ -1529,6 +1539,7 @@ export class Tool extends TOOL {
 			commonjs:[],
 			errors:[],
 			warnings:[],
+			run:{},
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 

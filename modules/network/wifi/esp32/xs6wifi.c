@@ -57,6 +57,8 @@ void xs_wifi_set_mode(xsMachine *the)
 		esp_wifi_set_mode(WIFI_MODE_STA);
 	else if (2 == mode)
 		esp_wifi_set_mode(WIFI_MODE_AP);
+	else if (3 == mode)
+		esp_wifi_set_mode(WIFI_MODE_APSTA);
 	else
 		xsUnknownError("invalid mode");
 }
@@ -72,6 +74,8 @@ void xs_wifi_get_mode(xsMachine *the)
 		xsmcSetInteger(xsResult, 1);
 	else if (WIFI_MODE_AP == mode)
 		xsmcSetInteger(xsResult, 2);
+	else if (WIFI_MODE_APSTA == mode)
+		xsmcSetInteger(xsResult, 3);
 }
 
 void xs_wifi_scan(xsMachine *the)
@@ -196,7 +200,7 @@ void xs_wifi_connect(xsMachine *the)
 	}
 
 	esp_wifi_get_mode(&mode);
-	if (WIFI_MODE_STA != mode)
+	if ((WIFI_MODE_STA != mode) && (WIFI_MODE_APSTA != mode))
 		esp_wifi_set_mode(WIFI_MODE_STA);
 
 	esp_wifi_set_config(WIFI_IF_STA, &config);
@@ -396,7 +400,7 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 				gWiFiState = 2;
 			break;
 		case SYSTEM_EVENT_STA_STOP:
-			gWiFiState = 0;
+			gWiFiState = 1;
 			break;
 		case SYSTEM_EVENT_STA_CONNECTED:
 			gWiFiState = 4;
@@ -481,6 +485,7 @@ void xs_wifi_accessPoint(xsMachine *the)
 	wifi_ap_config_t *ap;
 	tcpip_adapter_ip_info_t info;
 	char *str;
+	uint8_t station = 0;
 
 	initWiFi();
 	
@@ -536,9 +541,14 @@ void xs_wifi_accessPoint(xsMachine *the)
 		ap->beacon_interval = xsmcToInteger(xsVar(0));
 	}
 
+	if (xsmcHas(xsArg(0), xsID_station)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_station);
+		station = xsmcToBoolean(xsVar(0));
+	}
+
 	esp_wifi_get_mode(&mode);
-	if (WIFI_MODE_AP != mode) {
-		if (ESP_OK != esp_wifi_set_mode(WIFI_MODE_AP))
+	if ((WIFI_MODE_AP != mode) && (WIFI_MODE_APSTA != mode)) {
+		if (ESP_OK != esp_wifi_set_mode(station ? WIFI_MODE_APSTA : WIFI_MODE_AP))
 			xsUnknownError("esp_wifi_set_mode failed");
 	}
 

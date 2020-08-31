@@ -155,6 +155,7 @@ typedef struct {
 	uint8_t					bitsPerSample;
 	uint8_t					bytesPerFrame;
 	uint8_t					applyVolume;		// one or more active streams is not at 1.0 volume
+	uint8_t					built;
 
 	int						activeStreamCount;
 	modAudioOutStream		activeStream[MODDEF_AUDIOOUT_STREAMS];
@@ -227,10 +228,27 @@ static void updateActiveStreams(modAudioOut out);
 	void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 	void queueCallback(modAudioOut out, xsIntegerValue id);
 #endif
+
+static void doLock(modAudioOut out);
+static void doUnlock(modAudioOut out);
+
 static void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output);
 static void endOfElement(modAudioOut out, modAudioOutStream stream);
 static void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume);
 static int streamDecompressNext(modAudioOutStream stream);
+
+
+#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
+	#define MIXSAMPLETYPE int16_t
+	#define ClampSample(s, streams) ((s < -128) ? -128 : ((s > 127) ? 127 : s))
+//	#define ClampSample(s, streams) (s / streams)
+//	#define ClampSample(s, streams) (s)
+#elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
+	#define MIXSAMPLETYPE int32_t
+	#define ClampSample(s, streams) ((s < -32768) ? -32768 : ((s > 32767) ? 32767 : s))
+//	#define ClampSample(s, streams) (s / streams)
+//	#define ClampSample(s, streams) (s)
+#endif
 
 void xs_audioout_destructor(void *data)
 {
@@ -357,15 +375,21 @@ void xs_audioout(xsMachine *the)
 
 	for (i = 0; i < streamCount; i++)
 		out->stream[i].volume = 256 / MODDEF_AUDIOOUT_VOLUME_DIVIDER;
+}
+
+void xs_audioout_build(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostData(xsThis);
+	int i;
 
 #if defined(__APPLE__)
 	OSStatus err;
 	AudioStreamBasicDescription desc = {0};
 
-	desc.mBitsPerChannel = bitsPerSample;
+	desc.mBitsPerChannel = out->bitsPerSample;
 	desc.mBytesPerFrame = out->bytesPerFrame;
 	desc.mBytesPerPacket = desc.mBytesPerFrame;
-	desc.mChannelsPerFrame = numChannels;
+	desc.mChannelsPerFrame = out->numChannels;
 #if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
 	desc.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
 #elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
@@ -373,7 +397,7 @@ void xs_audioout(xsMachine *the)
 #endif
 	desc.mFormatID = kAudioFormatLinearPCM;
 	desc.mFramesPerPacket = 1;
-	desc.mSampleRate = sampleRate;
+	desc.mSampleRate = out->sampleRate;
 
 	pthread_mutex_init(&out->mutex, NULL);
 
@@ -426,6 +450,8 @@ void xs_audioout(xsMachine *the)
 		xsUnknownError("out of memory");
 #endif
 #endif
+
+	out->built = 1;
 }
 
 void xs_audioout_close(xsMachine *the)
@@ -565,17 +591,9 @@ void xs_audioout_enqueue(xsMachine *the)
 
 				sampleFormat = kSampleFormatUncompressed;
 			}
-			
-#if defined(__APPLE__)
-			pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-			EnterCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-			modCriticalSectionBegin();
-#endif
-			
+
+			doLock(out);
+
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->position = 0;
 			element->repeat = repeat;
@@ -608,30 +626,14 @@ void xs_audioout_enqueue(xsMachine *the)
 				updateActiveStreams(out);
 			}
 
-#if defined(__APPLE__)
-			pthread_mutex_unlock(&out->mutex);
-#elif defined(_WIN32)
-			LeaveCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreGive(out->mutex);
-			xTaskNotify(out->task, 0, eNoAction);		// notify up audio task - will be waiting if no active streams
-#elif defined(__ets__)
-			modCriticalSectionEnd();
-#endif
+			doUnlock(out);
 			break;
 
 		case kKindFlush: {
 				int elementCount, i;
 
-#if defined(__APPLE__)
-				pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-				EnterCriticalSection(&out->cs);
-#elif ESP32
-				xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-				modCriticalSectionBegin();
-#endif
+				doLock(out);
+
 				elementCount = out->stream[stream].elementCount;
 				out->stream[stream].elementCount = 0;		// flush queue
 				updateActiveStreams(out);
@@ -642,15 +644,7 @@ void xs_audioout_enqueue(xsMachine *the)
 						queueCallback(out, (xsIntegerValue)element->samples);
 				}
 
-#if defined(__APPLE__)
-				pthread_mutex_unlock(&out->mutex);
-#elif defined(_WIN32)
-				LeaveCriticalSection(&out->cs);
-#elif ESP32
-				xSemaphoreGive(out->mutex);
-#elif defined(__ets__)
-				modCriticalSectionEnd();
-#endif
+				doUnlock(out);
 
 #if defined(__APPLE__)
 				invokeCallbacks(NULL, out);
@@ -660,15 +654,8 @@ void xs_audioout_enqueue(xsMachine *the)
 		} break;
 
 		case kKindCallback:
-#if defined(__APPLE__)
-			pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-			EnterCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-			modCriticalSectionBegin();
-#endif
+			doLock(out);
+
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->samples = (void *)(uintptr_t)xsmcToInteger(xsArg(2));
 			element->sampleCount = 0;
@@ -683,15 +670,8 @@ void xs_audioout_enqueue(xsMachine *the)
 				break;
 			}
 
-#if defined(__APPLE__)
-			pthread_mutex_lock(&out->mutex);
-#elif defined(_WIN32)
-			EnterCriticalSection(&out->cs);
-#elif ESP32
-			xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-			modCriticalSectionBegin();
-#endif
+			doLock(out);
+
 			element = &out->stream[stream].element[out->stream[stream].elementCount];
 			element->samples = NULL;
 			element->sampleCount = 0;
@@ -704,6 +684,25 @@ void xs_audioout_enqueue(xsMachine *the)
 	}
 
 	xsResult = xsThis;
+}
+
+void xs_audioout_mix(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostData(xsThis);
+	int samplesNeeded = xsmcToInteger(xsArg(0));
+	int bytesNeeded = samplesNeeded * out->bytesPerFrame;
+	void *result = c_malloc(bytesNeeded);
+
+	if (!result)
+		xsUnknownError("no memory");
+
+	audioMix(out, samplesNeeded, result);
+	xsResult = xsNewHostObject(c_free);
+	xsmcSetHostData(xsResult, result);
+
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), bytesNeeded);
+	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
 }
 
 // note: updateActiveStreams relies on caller to lock mutex
@@ -1283,7 +1282,37 @@ void queueCallback(modAudioOut out, xsIntegerValue id)
 }
 #endif
 
-#if defined(__ets__)
+void doLock(modAudioOut out)
+{
+	if (out->built) {
+#if defined(__APPLE__)
+		pthread_mutex_lock(&out->mutex);
+#elif defined(_WIN32)
+		EnterCriticalSection(&out->cs);
+#elif ESP32
+		xSemaphoreTake(out->mutex, portMAX_DELAY);
+#elif defined(__ets__)
+		modCriticalSectionBegin();
+#endif
+	}
+}
+
+void doUnlock(modAudioOut out)
+{
+	if (out->built) {
+#if defined(__APPLE__)
+		pthread_mutex_unlock(&out->mutex);
+#elif defined(_WIN32)
+		LeaveCriticalSection(&out->cs);
+#elif ESP32
+		xSemaphoreGive(out->mutex);
+#elif defined(__ets__)
+		modCriticalSectionEnd();
+#endif
+	}
+}
+
+#if defined(__ets__) && !ESP32
 	#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
 		#define readSample(x) ((int16_t)c_read16(x))
 	#else
@@ -1353,14 +1382,18 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s1 = (OUTPUTSAMPLETYPE *)((element1->position * bytesPerFrame) + (uint8_t *)element1->samples);
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
-					while (count--)
-						*output++ = readSample(s0++) + readSample(s1++);
+					while (count--) {
+						MIXSAMPLETYPE s = readSample(s0++) + readSample(s1++);
+						*output++ = ClampSample(s, 2);
+					}
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
-					while (count--)
-						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1)) >> 8;
+					while (count--) {
+						MIXSAMPLETYPE s = ((readSample(s0++) * v0) + (readSample(s1++) * v1)) >> 8;
+						*output++ = ClampSample(s, 2);
+					}
 				}
 
 				samplesToGenerate -= use;
@@ -1396,15 +1429,19 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s2 = (OUTPUTSAMPLETYPE *)((element2->position * bytesPerFrame) + (uint8_t *)element2->samples);
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
-					while (count--)
-						*output++ = readSample(s0++) + readSample(s1++) + readSample(s2++);
+					while (count--) {
+						MIXSAMPLETYPE s = readSample(s0++) + readSample(s1++) + readSample(s2++);
+						*output++ = ClampSample(s, 3);
+					}
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					uint16_t v2 = stream2->volume;
-					while (count--)
-						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2)) >> 8;
+					while (count--) {
+						MIXSAMPLETYPE s = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2)) >> 8;
+						*output++ = ClampSample(s, 3);
+					}
 				}
 
 				samplesToGenerate -= use;
@@ -1448,16 +1485,20 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 				OUTPUTSAMPLETYPE *s3 = (OUTPUTSAMPLETYPE *)((element3->position * bytesPerFrame) + (uint8_t *)element3->samples);
 				int count = use * out->numChannels;
 				if (!out->applyVolume) {
-					while (count--)
-						*output++ = readSample(s0++) + readSample(s1++) + readSample(s2++) + readSample(s3++);
+					while (count--) {
+						MIXSAMPLETYPE s = readSample(s0++) + readSample(s1++) + readSample(s2++) + readSample(s3++);
+						*output++ = ClampSample(s, 4);
+					}
 				}
 				else {
 					uint16_t v0 = stream0->volume;
 					uint16_t v1 = stream1->volume;
 					uint16_t v2 = stream2->volume;
 					uint16_t v3 = stream3->volume;
-					while (count--)
-						*output++ = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2) + (readSample(s3++) * v3)) >> 8;
+					while (count--) {
+						MIXSAMPLETYPE s = ((readSample(s0++) * v0) + (readSample(s1++) * v1) + (readSample(s2++) * v2) + (readSample(s3++) * v3)) >> 8;
+						*output++ = ClampSample(s, 4);
+					}
 				}
 
 				samplesToGenerate -= use;
@@ -1516,8 +1557,14 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 		}
 
 		stream->elementCount -= 1;
-		if (stream->elementCount)
+		if (stream->elementCount) {
 			c_memcpy(element, element + 1, sizeof(modAudioQueueElementRecord) * stream->elementCount);
+			if (element->repeat) {		// first element has audio. if compressed, decompress first chunk
+				if (element->sampleFormat != kSampleFormatUncompressed)
+					streamDecompressNext(stream);
+				break;
+			}
+		}
 		else {
 			updateActiveStreams(out);
 			break;

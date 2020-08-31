@@ -25,15 +25,10 @@ const DEFAULT_NUM_PIXELS = 56;	// (2 pixels per 7 segments * 4 digits)
 
 const DisplayWidth = 17;
 const DisplayHeight = 7;
-const DigitWidth = 4;
-const DigitHeight = 7;
 
 const REFRESH_RATE = 10;		// ms refresh rate
 
-const SAT = 1.0;
-const TwoPI = (Math.PI * 2);
-const RAD2DEG = (180 / Math.PI);
-const TenPow = [ 1, 10, 100, 1000 ];
+const TenPow = Object.freeze([ 1, 10, 100, 1000 ]);
 
 const CYCLE_DURATION = (10000);
 
@@ -47,7 +42,7 @@ const CYCLE_DURATION = (10000);
 //
 //     'a', 'b', 'c', 'd', 'e', 'f', 'g', dp
 // bit  7    6    5    4    3    2    1    0
-const sevenSegments = [
+const sevenSegments = Object.freeze([
 		0b11111100,		// 0 - abcdef
 		0b01100000,		// 1 -  bc
 		0b11011010,		// 2 - ab de g
@@ -58,9 +53,9 @@ const sevenSegments = [
 		0b11100000,		// 7 - abc    
 		0b11111110,		// 8 - abcdefg
 		0b11110110,		// 9 - abcd fg
-];
+]);
 
-const letterSegments = [
+const letterSegments_ = [
 	"?", 0b11001010,		// ? - ab  e g
 	" ", 0b00000000,		// space is nothing
 	"-", 0b00000010,		// - -       g
@@ -95,6 +90,14 @@ const letterSegments = [
 	"z", 0b11011010,		// Z - ab de g
 ];
 
+// create 8-bit integer array for lookups that merge letters and numbers
+const letterSegments = new Uint8Array(256);
+letterSegments.fill(letterSegments_[1]);
+for (let i=0; i <letterSegments_.length; i+=2)
+	letterSegments[letterSegments_[i].charCodeAt()] = letterSegments_[i +1];
+for (let i=0; i <10; i+=1)
+	letterSegments[i + '0'.charCodeAt()] = sevenSegments[i];
+
 export class SevenSegDisplay {
     constructor(dict) {
 		this.supportedFormats = [ "RGB", "GRB", "RGBW" ];
@@ -102,40 +105,39 @@ export class SevenSegDisplay {
 		this._pin = dict.pin;
 		this.timing = dict.timing;
 		this.order = "RGB"; // dict.order ? dict.order : "RGB";
-		this._main_order = dict.order ? dict.order : "RGB";
-		this._tail_on = (undefined !== dict.tail_on) ? dict.tail_on : 1;
-		this._tail_order = dict.tail_order ? dict.tail_order : "RGB";
+		this._main_order = dict.order ?? "RGB";
+		this._tail_on = dict.tail_on ?? 1;
+		this._tail_order = dict.tail_order ?? "RGB";
 
 		this.width = DisplayWidth;
 		this.height = DisplayHeight;
 
-		this.dur = dict.duration ? dict.duration : CYCLE_DURATION;
+		this.dur = dict.duration ?? CYCLE_DURATION;
 
-		this.rgb = (undefined !== dict.rgb) ? dict.rgb : 0x0000ff;
-		this.bg_rgb = (undefined !== dict.bg_rgb) ? dict.bg_rgb : 0x000000;
+		this.rgb = dict.rgb ?? 0x0000ff;
+		this.bg_rgb = dict.bg_rgb ?? 0x000000;
 
-		
-		this.twelve = dict.twelve ? dict.twelve : 0;
-		this._layout = dict.layout !== undefined ? dict.layout : 0;
+		this.twelve = dict.twelve ?? 0;
+		this._layout = dict.layout ?? 0;
 			this.segment_pixels = config.seven_segments[this._layout].segments;
 			this.colonSegments = config.seven_segments[this._layout].colon;
 			this.setupPixels();
-		this._zero = dict.zero !== undefined ? dict.zero : 0;
-		this.tail_length = (undefined !== dict.tail) ? dict.tail : 0;
+		this._zero = dict.zero ?? 0;
+		this.tail_length = dict.tail ?? 0;
 		this.tail_start = DEFAULT_NUM_PIXELS + this.colonSegments.length;
 		this.length = this.tail_start + this.tail_length;
 
 		this.setup_neopixels();
 
-		this.tail_only = (undefined !== dict.tail_only) ? dict.tail_only : 0;
+		this.tail_only = dict.tail_only ?? 0;
 
-		this.tail_sched = (undefined !== dict.tail_sched) ? dict.tail_sched : 0;
-		this.tail_time_on = (undefined !== dict.tail_time_on) ? dict.tail_time_on : 0;
-		this.tail_time_off = (undefined !== dict.tail_time_off) ? dict.tail_time_off : 0;
+		this.tail_sched = dict.tail_sched ?? 0;
+		this.tail_time_on = dict.tail_time_on ?? 0;
+		this.tail_time_off = dict.tail_time_off ?? 0;
 
-		this._brightness = (dict.brightness !== undefined) ? dict.brightness : 96;
-		this._tail_brightness = (dict.tail_brightness !== undefined) ? dict.tail_brightness : 32;
-		this._style = (undefined !== dict.style) ? dict.style : new ClockStyle.OneColor(this, {});
+		this._brightness = dict.brightness ?? 96;
+		this._tail_brightness = dict.tail_brightness ?? 32;
+		this._style = dict.style ?? new ClockStyle.OneColor(this, {});
 
 		this.lastMS = 0;
 		this.blinkDisplayOn = 1;
@@ -305,14 +307,6 @@ export class SevenSegDisplay {
 			this._zero = val;
 	}
 
-	findLetterSegment(letter) {
-		for (let i=0; i<letterSegments.length; i+=2) {
-			if (letterSegments[i] == letter)
-				return letterSegments[i+1];
-		}
-		return letterSegment[1];
-	}
-
     set effectValue(value) {
 		let doColons = 1;
 		let color, bgColor;
@@ -357,12 +351,8 @@ export class SevenSegDisplay {
 				let skipDigit = 0;
 
 				if (undefined !== this.userValue) {
-					let v = this.userValue[3-digits];
-					if (v >= "0" && v <= "9")
-						d = sevenSegments[parseInt(v)];
-					else if (v >= "a" && v <= "z")
-						d = this.findLetterSegment(v);
-					else
+					d = letterSegments[this.userValue[3-digits].charCodeAt()]
+					if (!d)
 						skipDigit = 1;
 				}
 				else {

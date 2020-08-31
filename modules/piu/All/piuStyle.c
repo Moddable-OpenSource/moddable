@@ -513,19 +513,19 @@ void PiuStyleOverride(PiuStyle* self, PiuStyle* result)
 }
 
 #ifdef piuGPU
-void PiuStyleBind(PiuStyle* self)
+void PiuStyleBind(PiuStyle* self, PiuApplication* application, PiuView* view)
 {
 	PiuFont* font = (*self)->font;
 	if (font) {
-		PiuFontBind(font);
+		PiuFontBind(font, application, view);
 	}
 }
 
-void PiuStyleUnbind(PiuStyle* self)
+void PiuStyleUnbind(PiuStyle* self, PiuApplication* application, PiuView* view)
 {
 	PiuFont* font = (*self)->font;
 	if (font) {
-		PiuFontUnbind(font);
+		PiuFontUnbind(font, application, view);
 	}
 }
 #endif			

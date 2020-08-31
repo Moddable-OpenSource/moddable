@@ -10,6 +10,15 @@
 		],
 	},
 	"platforms": {
+		"esp": {
+			"config": {
+				"led1_pin": 2,
+				"button1_pin": 0,
+			},
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/esp/*",
+			},
+		},
 		"esp32": {
 			"config": {
 				"led1_pin": 2,

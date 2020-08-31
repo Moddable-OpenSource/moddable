@@ -208,6 +208,7 @@ void xs_socket(xsMachine *the)
 	int len, i;
 	ip_addr_t multicastIP;
 	int ttl = 0;
+	char addr[64];
 
 	xsmcVars(2);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
@@ -282,7 +283,7 @@ void xs_socket(xsMachine *the)
 			xss->kind = kUDP;
 			if (xsmcHas(xsArg(0), xsID_multicast)) {
 				xsmcGet(xsVar(0), xsArg(0), xsID_multicast);
-				if (!ipaddr_aton(xsmcToString(xsVar(0)), &multicastIP))
+				if (!ipaddr_aton(xsmcToStringBuffer(xsVar(0), addr, sizeof(addr)), &multicastIP))
 					xsUnknownError("invalid multicast IP address");
 #if LWIP_IPV4 && LWIP_IPV6
 				if (IP_IS_V4(&multicastIP)) {
@@ -378,7 +379,7 @@ void xs_socket(xsMachine *the)
 	else
 	if (xsmcHas(xsArg(0), xsID_address)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_address);
-		if (!ipaddr_aton(xsmcToString(xsVar(0)), &ipaddr))
+		if (!ipaddr_aton(xsmcToStringBuffer(xsVar(0), addr, sizeof(addr)), &ipaddr))
 			xsUnknownError("invalid IP address");
 	}
 	else
@@ -565,6 +566,7 @@ void xs_socket_write(xsMachine *the)
 	u16_t available, needed = 0;
 	err_t err;
 	unsigned char pass, arg;
+	char addr[64];
 
 	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || xss->writeDisabled) {
 		if (0 == argc) {
@@ -580,7 +582,7 @@ void xs_socket_write(xsMachine *the)
 		uint16 port = xsmcToInteger(xsArg(1));
 		ip_addr_t dst;
 
-		if (!ipaddr_aton(xsmcToString(xsArg(0)), &dst))
+		if (!ipaddr_aton(xsmcToStringBuffer(xsArg(0), addr, sizeof(addr)), &dst))
 			xsUnknownError("invalid IP address");
 
 		needed = xsmcGetArrayBufferLength(xsArg(2));
@@ -600,7 +602,7 @@ void xs_socket_write(xsMachine *the)
 		ip_addr_t dst = {0};
 		struct pbuf *p;
 
-		if (!ipaddr_aton(xsmcToString(xsArg(0)), &dst))
+		if (!ipaddr_aton(xsmcToStringBuffer(xsArg(0), addr, sizeof(addr)), &dst))
 			xsUnknownError("invalid IP address");
 
 		needed = xsmcGetArrayBufferLength(xsArg(1));
@@ -1139,10 +1141,10 @@ void xs_listener(xsMachine *the)
 
 	ip_addr_t address = *(IP_ADDR_ANY);
 	if (xsmcHas(xsArg(0), xsID_address)) {
-		uint8_t ip[4];
+		char addr[64];
 		xsmcGet(xsVar(0), xsArg(0), xsID_address);
 		if (xsmcTest(xsVar(0))) {
-			if (!ipaddr_aton(xsmcToString(xsVar(0)), &address))
+			if (!ipaddr_aton(xsmcToStringBuffer(xsVar(0), addr, sizeof(addr)), &address))
 				xsUnknownError("invalid IP address");
 		}
 	}

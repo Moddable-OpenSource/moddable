@@ -22,6 +22,7 @@
 #define __mod_ble__
 
 #include "inttypes.h"
+#include "xsmc.h"
 
 typedef enum {
 	NoInputNoOutput = 0,
@@ -60,6 +61,8 @@ typedef enum {
 	kBLEAdvFilterPolicyWhitelistScansConnections
 } BLEAdvFilterPolicy;
 
+/* whitelist */
+
 typedef struct modBLEWhitelistAddressRecord modBLEWhitelistAddressRecord;
 typedef modBLEWhitelistAddressRecord *modBLEWhitelistAddress;
 
@@ -70,9 +73,70 @@ struct modBLEWhitelistAddressRecord {
 	BLEAddressType addressType;
 };
 
-uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
-
 int modBLEWhitelistContains(uint8_t addressType, uint8_t *address);
 
+/* security */
+
+uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability);
+
+/* connections */
+
+typedef enum {
+	kBLEConnectionTypeClient = 0,
+	kBLEConnectionTypeServer
+} BLEConnectionType;
+
+typedef struct modBLEConnectionRecord modBLEConnectionRecord;
+typedef modBLEConnectionRecord *modBLEConnection;
+
+#define modBLEConnectionPart \
+	struct modBLEConnectionRecord *next; \
+	xsMachine	*the; \
+	xsSlot		objConnection; \
+	uint16_t	id; \
+	uint8_t		type; \
+	uint8_t		addressType; \
+	uint8_t		address[6]; \
+	uint8_t		mtu_exchange_pending;
+
+struct modBLEConnectionRecord {
+	modBLEConnectionPart;
+};
+
+void modBLEConnectionAdd(modBLEConnection connection);
+void modBLEConnectionRemove(modBLEConnection connection);
+modBLEConnection modBLEConnectionFindByConnectionID(int16_t conn_id);
+modBLEConnection modBLEConnectionFindByAddress(uint8_t *address);
+modBLEConnection modBLEConnectionFindByAddressAndType(uint8_t *address, uint8_t addressType);
+modBLEConnection modBLEConnectionGetFirst(void);
+modBLEConnection modBLEConnectionGetNext(modBLEConnection connection);
+
+/* message queue */
+
+typedef struct modBLEMessageQueueRecord modBLEMessageQueueRecord;
+typedef modBLEMessageQueueRecord *modBLEMessageQueue;
+
+typedef struct modBLEMessageQueueEntryRecord modBLEMessageQueueEntryRecord;
+typedef modBLEMessageQueueEntryRecord *modBLEMessageQueueEntry;
+
+struct modBLEMessageQueueRecord {
+	xsMachine *the;
+	modMessageDeliver callback;
+	void *refcon;
+	struct modBLEMessageQueueEntryRecord *entries;
+};
+
+#define modBLEMessageQueueEntryPart \
+	struct modBLEMessageQueueEntryRecord *next; \
+	uint16_t conn_id; \
+
+struct modBLEMessageQueueEntryRecord {
+	modBLEMessageQueueEntryPart;
+};
+
+void modBLEMessageQueueEnqueue(modBLEMessageQueue queue, modBLEMessageQueueEntry entry);
+modBLEMessageQueueEntry modBLEMessageQueueDequeue(modBLEMessageQueue queue);
+void modBLEMessageQueueConfigure(modBLEMessageQueue queue, xsMachine *the, modMessageDeliver callback, void *refcon);
+void modBLEMessageQueueEmpty(modBLEMessageQueue queue);
 
 #endif

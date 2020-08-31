@@ -192,16 +192,18 @@ void FILE_prototype_dump(xsMachine* the)
 		fseek(file, 0, SEEK_SET);
 		i = 0;
 		fprintf(output, "\t");
-		for (;;) {
-			byte = fgetc(file);
-			fprintf(output, "0x%02x", byte);
-			i++;
-			if (i == c)
-				break;
-			if (i % 16)
-				fprintf(output, ", ");
-			else
-				fprintf(output, ",\n\t");
+		if (c) {
+			for (;;) {
+				byte = fgetc(file);
+				fprintf(output, "0x%02x", byte);
+				i++;
+				if (i == c)
+					break;
+				if (i % 16)
+					fprintf(output, ", ");
+				else
+					fprintf(output, ",\n\t");
+			}
 		}
 		fprintf(output, "\n");
 		fclose(file);

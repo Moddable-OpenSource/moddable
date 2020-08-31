@@ -150,18 +150,18 @@ void PiuFontListUnlockCache(xsMachine* the)
 }
 
 #ifdef piuGPU
-void PiuFontBind(PiuFont* self)
+void PiuFontBind(PiuFont* self, PiuApplication* application, PiuView* view)
 {
 	PiuTexture* texture = (*self)->texture;
 	if (texture)
-		PiuTextureBind(texture);
+		PiuTextureBind(texture, application, view);
 }
 
-void PiuFontUnbind(PiuFont* self)
+void PiuFontUnbind(PiuFont* self, PiuApplication* application, PiuView* view)
 {
 	PiuTexture* texture = (*self)->texture;
 	if (texture)
-		PiuTextureUnbind(texture);
+		PiuTextureUnbind(texture, application, view);
 }
 #endif
 
