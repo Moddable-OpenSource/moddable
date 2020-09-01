@@ -20,6 +20,7 @@
 
 #include "xsAll.h"
 #include "xsScript.h"
+#include "xsSnapshot.h"
 #include "xs.h"
 #include "yaml.h"
 
@@ -182,9 +183,40 @@ static void fx_setTimerCallback(txJob* job);
 
 static txAgentCluster gxAgentCluster;
 
+#define mxSnapshotCallbackCount 15
+txCallback gxSnapshotCallbacks[mxSnapshotCallbackCount] = {
+	fx_agent_broadcast,
+	fx_agent_get_safeBroadcast,
+	fx_agent_getReport,
+	fx_agent_set_safeBroadcast,
+	fx_agent_sleep,
+	fx_agent_start,
+	fx_agent_stop,
+	fx_clearTimer,
+	fx_createRealm,
+	fx_detachArrayBuffer,
+	fx_evalScript,
+	fx_gc,
+	fx_print,
+	fx_setInterval,
+	fx_setTimeout,
+};
+
+static int fxSnapshopRead(void* stream, void* address, size_t size)
+{
+	return (fread(address, size, 1, stream) == 1) ? 0 : errno;
+}
+
+static int fxSnapshopWrite(void* stream, void* address, size_t size)
+{
+	return (fwrite(address, size, 1, stream) == 1) ? 0 : errno;
+}
+
 int main(int argc, char* argv[]) 
 {
 	int argi;
+	int argr = 0;
+	int argw = 0;
 	int error = 0;
 	int option = 0;
 	char path[C_PATH_MAX];
@@ -207,12 +239,30 @@ int main(int argc, char* argv[])
 			option = 1;
 		else if (!strcmp(argv[argi], "-m"))
 			option = 2;
+		else if (!strcmp(argv[argi], "-r")) {
+			argi++;
+			if (argi < argc)
+				argr = argi;
+			else {
+				fxPrintUsage();
+				return 1;
+			}
+		}
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
 			option = 4;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
+		else if (!strcmp(argv[argi], "-w")) {
+			argi++;
+			if (argi < argc)
+				argw = argi;
+			else {
+				fxPrintUsage();
+				return 1;
+			}
+		}
 		else {
 			fxPrintUsage();
 			return 1;
@@ -238,9 +288,40 @@ int main(int argc, char* argv[])
 			1993,				/* parserTableModulo */
 		};
 		xsCreation* creation = &_creation;
+		txSnapshot snapshot = {
+			"xst",
+			3,
+			gxSnapshotCallbacks,
+			mxSnapshotCallbackCount,
+			NULL,
+			fxSnapshopRead,
+			fxSnapshopWrite,
+			0,
+			NULL,
+			NULL,
+			NULL,
+		};
 		xsMachine* machine;
 		fxInitializeSharedCluster();
-		machine = xsCreateMachine(creation, "xsr", NULL);
+		if (argr) {
+			if (c_realpath(argv[argr], path)) {
+				snapshot.stream = fopen(path, "rb");
+				if (snapshot.stream) {
+					machine = fxLoadMachine(&snapshot, "xst", NULL);
+					fclose(snapshot.stream);
+				}
+				else
+					snapshot.error = errno;
+			}
+			else
+				snapshot.error = errno;
+			if (snapshot.error) {
+				fprintf(stderr, "cannot read snapshot %s: %s\n", argv[argr], strerror(snapshot.error));
+				return 1;
+			}
+		}
+        else
+            machine = xsCreateMachine(creation, "xst", NULL);
 		xsBeginHost(machine);
 		{
 			xsVars(1);
@@ -248,6 +329,10 @@ int main(int argc, char* argv[])
 				fxBuildAgent(the);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
+						continue;
+					if (argi == argr)
+						continue;
+					if (argi == argw)
 						continue;
 					if (option == 1) {
 						xsVar(0) = xsGet(xsGlobal, xsID("$262"));
@@ -283,8 +368,24 @@ int main(int argc, char* argv[])
 			}
 		}
 		xsEndHost(machine);
-		fxTerminateSharedCluster();
+		if (argw) {
+			if (c_realpath(argv[argw], path)) {
+				snapshot.stream = fopen(path, "wb");
+				if (snapshot.stream) {
+					snapshot.error = fxWriteSnapshot(machine, &snapshot);
+					fclose(snapshot.stream);
+				}
+				else
+					snapshot.error = errno;
+			}
+			else
+				snapshot.error = errno;
+			if (snapshot.error) {
+				fprintf(stderr, "cannot write snapshot %s: %s\n", argv[argw], strerror(snapshot.error));
+			}
+		}
 		xsDeleteMachine(machine);
+		fxTerminateSharedCluster();
 	}
 	return error;
 }

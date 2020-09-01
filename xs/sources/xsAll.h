@@ -2047,11 +2047,19 @@ enum {
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
 	fxCopyStringC(the, the->stack, THE_STRING))
+#ifdef mxSnapshot
+#define mxPushStringX(THE_STRING) \
+	(fxOverflow(the, -1, C_NULL, 0), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
+	fxCopyStringC(the, the->stack, THE_STRING))
+#else
 #define mxPushStringX(THE_STRING) \
 	(fxOverflow(the, -1, C_NULL, 0), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
 	the->stack->value.string = (THE_STRING))
+#endif
 #define mxPushUndefined() \
 	(fxOverflow(the, -1, C_NULL, 0), \
 	(--the->stack)->next = C_NULL, \
@@ -2129,10 +2137,17 @@ enum {
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
 	(fxCopyStringC(the, the->stack, THE_STRING))
+#ifdef mxSnapshot
+#define mxPushStringX(THE_STRING) \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
+	(fxCopyStringC(the, the->stack, THE_STRING))
+#else
 #define mxPushStringX(THE_STRING) \
 	((--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
 	the->stack->value.string = (THE_STRING))
+#endif
 #define mxPushUndefined() \
 	((--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND))
