@@ -721,7 +721,6 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	else {
 		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
 		modBLEConnectionRemove(connection);
-		xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 	}
 bail:
 	xsEndHost(gBLE->the);
