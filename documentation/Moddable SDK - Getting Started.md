@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: August 27, 2020
+Revised: September 1, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -595,15 +595,15 @@ More detailed getting started guides are available for the following devices:
 	git checkout release/v3.2
 	```
 
-6. Install Python and the required Python packages. We've used [pip](https://pypi.org/project/pip/) to install the additional components.
+6. Install Python and the required Python packages. We've used [pip](https://pypi.org/project/pip/) to install the additional components. The packages to install vary based on your distribution's default Python version.
 
-	For Ubuntu 20:
+	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
 
 	```text
 	sudo apt-get install python-is-python3 python3-pip python3-serial
 	```
 
-	For Ubuntu versions prior to 20:
+	For Ubuntu versions prior to 20.04 (and other Linux distributions that default to Python 2):
 
 	```text
 	sudo apt-get install python
@@ -665,15 +665,15 @@ More detailed getting started guides are available for the following devices:
     git submodule update
     ```
 
-5. Install the packages required to compile with the `ESP-IDF`.
+5. Install the packages required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
 
-	For Ubuntu 20:
+	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
 
 	```text
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
 	```
 
-	For Ubuntu versions prior to 20:
+	For Ubuntu versions prior to 20.04 (and other Linux distributions that default to Python 2):
 
 	```text
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
