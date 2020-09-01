@@ -18,8 +18,8 @@
  *
  */
 
-#include "xsPlatform.h"
 #include "xsmc.h"
+#include "xsHost.h"
 #include "modBLE.h"
 
 static void hexStringToBytes(xsMachine *the, uint8_t *buffer, const char *string, uint16_t length, uint8_t reverse)
