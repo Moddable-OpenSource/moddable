@@ -1762,8 +1762,6 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 
 txMachine* fxBeginHost(txMachine* the)
 {
-	/* ARGC */
-	mxPushInteger(0);
 	/* THIS */
 	mxPushUndefined();
 	/* FUNCTION */
@@ -1788,6 +1786,8 @@ txMachine* fxBeginHost(txMachine* the)
 	the->stack->value.frame.code = the->code;
 	the->stack->value.frame.scope = the->scope;
 	the->frame = the->stack;
+	/* COUNT */
+	mxPushInteger(0);
 	/* VARC */
 	fxOverflow(the, -1, C_NULL, 0);
 	--the->stack;
@@ -1804,7 +1804,7 @@ txMachine* fxBeginHost(txMachine* the)
 
 void fxEndHost(txMachine* the)
 {
-	the->stack = the->frame + 6;
+	the->stack = the->frame + 5;
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;

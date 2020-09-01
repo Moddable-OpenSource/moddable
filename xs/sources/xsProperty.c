@@ -172,8 +172,12 @@ txSlot* fxNextStringXProperty(txMachine* the, txSlot* property, txString string,
 	property = property->next = fxNewSlot(the);
 	property->flag = flag;
 	property->ID = id;
+#ifdef mxSnapshot
+	fxCopyStringC(the, property, string);
+#else
 	property->kind = XS_STRING_X_KIND;
 	property->value.string = string;
+#endif
 	return property;
 }
 
