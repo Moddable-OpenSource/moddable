@@ -98,6 +98,11 @@ typedef enum {
 	DESCRIPTOR_READ_VALUE
 } gattProcedureID;
 
+#define OBJ_CLIENT(_c) ((modBLEClientConnection)_c)->objClient
+
+typedef struct modBLEClientConnectionRecord modBLEClientConnectionRecord;
+typedef modBLEClientConnectionRecord *modBLEClientConnection;
+
 typedef struct {
 	xsSlot obj;
 	gattProcedureID id;
@@ -106,25 +111,10 @@ typedef struct {
 	uint16_t discovery_handle;
 } gattProcedureRecord;
 
-typedef struct {
-	uint16_t conn_handle;
-	uint16_t gatt_status;
-	uint8_t rsp[1];
-} gattDiscoveryRecord;
-
-typedef struct modBLEConnectionRecord modBLEConnectionRecord;
-typedef modBLEConnectionRecord *modBLEConnection;
-
-struct modBLEConnectionRecord {
-	struct modBLEConnectionRecord *next;
-
-	xsMachine	*the;
-	xsSlot		objConnection;
-	xsSlot		objClient;
-
-	ble_gap_addr_t addr;
-	uint16_t conn_handle;
-	uint8_t mtu_exchange_pending;
+struct modBLEClientConnectionRecord {
+	modBLEConnectionPart;
+	
+	xsSlot objClient;
 	
 	// gatt procedure
 	gattProcedureRecord gattProcedure;
@@ -132,6 +122,12 @@ struct modBLEConnectionRecord {
 	// char_name_table handles
 	uint16_t handles[char_name_count];
 };
+
+typedef struct {
+	uint16_t conn_handle;
+	uint16_t gatt_status;
+	uint8_t rsp[1];
+} gattDiscoveryRecord;
 
 typedef struct modBLEScannedPacketRecord modBLEScannedPacketRecord;
 typedef modBLEScannedPacketRecord *modBLEScannedPacket;
@@ -163,16 +159,7 @@ typedef struct {
 	// scanning
 	uint8_t duplicates;
 	modBLEScannedPacket scanned;
-
-	modBLEConnection connections;
 } modBLERecord, *modBLE;
-
-static void modBLEConnectionAdd(modBLEConnection connection);
-static void modBLEConnectionRemove(modBLEConnection connection);
-static modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id);
-static modBLEConnection modBLEConnectionFindByAddress(ble_gap_addr_t *addr);
-static modBLEConnection modBLEConnectionFindByAddressBytes(uint8_t *addr);
-static int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_t *uuid, uint16_t handle);
 
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
 static void pm_evt_handler(pm_evt_t const * p_evt);
@@ -274,11 +261,12 @@ void xs_ble_client_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
-	modBLEConnection connections = ble->connections, next;
-	while (connections != NULL) {
-		modBLEConnection connection = connections;
-		connections = connections->next;
-		c_free(connection);
+	modBLEConnection connection = modBLEConnectionGetFirst();
+	while (connection != NULL) {
+		modBLEConnection next = modBLEConnectionGetNext(connection);
+		if (kBLEConnectionTypeClient == connection->type)
+			modBLEConnectionRemove(connection);
+		connection = next;
 	}
 	
 	clearScanned(ble);
@@ -357,18 +345,20 @@ void xs_ble_client_connect(xsMachine *the)
 	c_memmove(&addr.addr, address, BLE_GAP_ADDR_LEN);
 		
 	// Ignore duplicate connection attempts
-	if (modBLEConnectionFindByAddress(&addr)) {
+	if (modBLEConnectionFindByAddressAndType(address, addressType)) {
 		LOG_GATTC_MSG("Ignoring duplicate connect attempt");
 		return;
-	};
+	}
 	
 	// Add a new connection record to be filled as the connection completes
-	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
+	modBLEConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->conn_handle = BLE_CONN_HANDLE_INVALID;
-	connection->addr = addr;
-	modBLEConnectionAdd(connection);
+	connection->id = BLE_CONN_HANDLE_INVALID;
+	connection->type = kBLEConnectionTypeClient;
+	connection->addressType = addressType;
+	c_memmove(connection->address, address, 6);
+	modBLEConnectionAdd((modBLEConnection)connection);
 	
 	err_code = sd_ble_gap_connect(&addr, &m_scan.scan_params, &m_scan.conn_params, APP_BLE_CONN_CFG_TAG);
 	
@@ -424,12 +414,12 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 	uint32_t digits = xsmcToInteger(xsArg(1));
 	char passkey[7];
 	
-	modBLEConnection connection = modBLEConnectionFindByAddressBytes(address);
+	modBLEConnection connection = modBLEConnectionFindByAddress(address);
 	if (!connection)
 		xsUnknownError("connection not found");
 
 	itoa(digits, passkey, 10);
-	sd_ble_gap_auth_key_reply(connection->conn_handle, BLE_GAP_AUTH_KEY_TYPE_PASSKEY, passkey);
+	sd_ble_gap_auth_key_reply(connection->id, BLE_GAP_AUTH_KEY_TYPE_PASSKEY, passkey);
 }
 
 void xs_gap_connection_initialize(xsMachine *the)
@@ -443,7 +433,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 		xsUnknownError("connection not found");
 	connection->the = the;
 	connection->objConnection = xsThis;
-	connection->objClient = xsArg(0);
+	OBJ_CLIENT(connection) = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -474,7 +464,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	uint8_t conn_handle = xsmcToInteger(xsArg(0));
 	uint16_t argc = xsmcArgc;
 
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
 	if (argc > 1)
@@ -491,7 +481,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	uint16_t argc = xsmcArgc;
 	uint8_t conn_handle = xsmcToInteger(xsArg(0));
 
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 	
 	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
@@ -514,7 +504,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	ble_uuid_t uuid;
 	uint16_t start, end;
 
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 	
 	// Discover all service characteristics to find the range of characteristic handles for searching descriptors
@@ -545,13 +535,13 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 	if (argc > 2)
 		auth = xsmcToInteger(xsArg(2));
 #endif
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 	
 	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
 	connection->gattProcedure.id = CHARACTERISTIC_READ_VALUE;
 	
-	sd_ble_gattc_read(connection->conn_handle, handle, 0);
+	sd_ble_gattc_read(connection->id, handle, 0);
 }
 
 static void writeAttribute(uint16_t conn_handle, uint16_t attribute, uint8_t write_op, uint8_t *data, uint16_t len)
@@ -600,7 +590,7 @@ void xs_gatt_descriptor_write_value(xsMachine *the)
 	uint8_t *data;
 	uint16_t len;
 
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 
 	if (argc > 3)
@@ -638,7 +628,7 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	uint8_t *data;
 	uint16_t len;
 
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 
 	switch (xsmcTypeOf(xsArg(2))) {
@@ -676,7 +666,7 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 	if (argc > 2)
 		auth = xsmcToInteger(xsArg(2));
 #endif
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection) return;
 	
 	c_memset(&connection->gattProcedure, 0, sizeof(gattProcedureRecord));
@@ -685,61 +675,7 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 	sd_ble_gattc_read(conn_handle, handle, 0);
 }
 
-modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_handle)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (conn_handle == walker->conn_handle)
-			break;
-	return walker;
-}
-
-modBLEConnection modBLEConnectionFindByAddress(ble_gap_addr_t *addr)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (0 == c_memcmp(addr, (uint8_t*)&walker->addr, sizeof(ble_gap_addr_t)))
-			break;
-	return walker;
-}
-
-modBLEConnection modBLEConnectionFindByAddressBytes(uint8_t *addr)
-{
-	modBLEConnection walker;
-	for (walker = gBLE->connections; NULL != walker; walker = walker->next)
-		if (0 == c_memcmp(addr, (uint8_t*)&walker->addr.addr, BLE_GAP_ADDR_LEN))
-			break;
-	return walker;
-}
-
-void modBLEConnectionAdd(modBLEConnection connection)
-{
-	if (!gBLE->connections)
-		gBLE->connections = connection;
-	else {
-		modBLEConnection walker;
-		for (walker = gBLE->connections; walker->next; walker = walker->next)
-			;
-		walker->next = connection;
-	}
-}
-
-void modBLEConnectionRemove(modBLEConnection connection)
-{
-	modBLEConnection walker, prev = NULL;
-	for (walker = gBLE->connections; NULL != walker; prev = walker, walker = walker->next) {
-		if (connection == walker) {
-			if (NULL == prev)
-				gBLE->connections = walker->next;
-			else
-				prev->next = walker->next;
-			c_free(connection);
-			break;
-		}
-	}
-}
-
-int modBLEConnectionSaveAttHandle(modBLEConnection connection, ble_uuid_t *uuid, uint16_t handle)
+int modBLEConnectionSaveAttHandle(modBLEClientConnection connection, ble_uuid_t *uuid, uint16_t handle)
 {
 	int result = -1;
 	for (int service_index = 0; service_index < service_count; ++service_index) {
@@ -813,14 +749,14 @@ void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	
 	xsBeginHost(gBLE->the);
 	
-	modBLEConnection connection = modBLEConnectionFindByAddress((ble_gap_addr_t*)&p_evt_connected->peer_addr);
+	modBLEConnection connection = modBLEConnectionFindByAddressAndType((uint8_t*)&p_evt_connected->peer_addr.addr, p_evt_connected->peer_addr.addr_type);
 	if (!connection)
 		xsUnknownError("connection not found");
 		
-	if (BLE_CONN_HANDLE_INVALID != connection->conn_handle)
+	if (BLE_CONN_HANDLE_INVALID != connection->id)
 		goto bail;
 		
-	connection->conn_handle = conn_handle;
+	connection->id = conn_handle;
 
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
@@ -828,6 +764,8 @@ void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(1), (uint8_t*)&p_evt_connected->peer_addr.addr[0], BLE_GAP_ADDR_LEN);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), p_evt_connected->peer_addr.addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 
 bail:
@@ -929,7 +867,7 @@ void gapAuthKeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		xsUnknownError("connection not found");
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), connection->addr.addr, BLE_GAP_ADDR_LEN);
+	xsmcSetArrayBuffer(xsVar(1), connection->address, BLE_GAP_ADDR_LEN);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
 	xsEndHost(gBLE->the);
@@ -949,7 +887,7 @@ void gapPasskeyDisplayEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		xsUnknownError("connection not found");
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), connection->addr.addr, BLE_GAP_ADDR_LEN);
+	xsmcSetArrayBuffer(xsVar(1), connection->address, BLE_GAP_ADDR_LEN);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), atoi(p_evt_passkey_display->passkey));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(1));
@@ -1005,7 +943,7 @@ void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint1
 	}
 	
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
 		xsUnknownError("connection not found");
 
@@ -1044,7 +982,7 @@ void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint1
 		xsCall1(connection->gattProcedure.obj, xsID_callback, xsString("onService"));
 	}
 	else {
-		err_code = sd_ble_gattc_primary_services_discover(connection->conn_handle, end_handle + 1, NULL);
+		err_code = sd_ble_gattc_primary_services_discover(connection->id, end_handle + 1, NULL);
 		if (NRF_SUCCESS != err_code) {
 			xsCall1(connection->gattProcedure.obj, xsID_callback, xsString("onService"));
 		}
@@ -1070,7 +1008,7 @@ void gattcCharacteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message
 	}
 	
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
 		xsUnknownError("connection not found");
     
@@ -1138,7 +1076,7 @@ void gattcCharacteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message
 	}
 
 	connection->gattProcedure.handle_range.start_handle = end_handle + 1;
-	err_code = sd_ble_gattc_characteristics_discover(connection->conn_handle, &connection->gattProcedure.handle_range);
+	err_code = sd_ble_gattc_characteristics_discover(connection->id, &connection->gattProcedure.handle_range);
 	if (NRF_SUCCESS != err_code)
 		xsCall1(connection->gattProcedure.obj, xsID_callback, xsString("onCharacteristic"));
 		
@@ -1163,7 +1101,7 @@ void gattcCharacteristicsForDescriptorsDiscoveryEvent(void *the, void *refcon, u
 	}
 	
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
 		xsUnknownError("connection not found");
     
@@ -1196,7 +1134,7 @@ void gattcCharacteristicsForDescriptorsDiscoveryEvent(void *the, void *refcon, u
 			end_handle = characteristic->handle_value;
 	}
 	connection->gattProcedure.handle_range.start_handle = end_handle + 1;
-	sd_ble_gattc_characteristics_discover(connection->conn_handle, &connection->gattProcedure.handle_range);
+	sd_ble_gattc_characteristics_discover(connection->id, &connection->gattProcedure.handle_range);
 
 bail:
 	c_free(gdr);
@@ -1219,7 +1157,7 @@ void gattcDescriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, ui
 	}
 	
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
 		xsUnknownError("connection not found");
     
@@ -1283,7 +1221,7 @@ void gattcCharacteristicReadEvent(void *the, void *refcon, uint8_t *message, uin
 	uint32_t conn_handle = (uint32_t)refcon;
 
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
 		xsUnknownError("connection not found");
 	
@@ -1294,7 +1232,7 @@ void gattcCharacteristicReadEvent(void *the, void *refcon, uint8_t *message, uin
 	xsmcSetInteger(xsVar(1), read_rsp->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
 	
-	xsCall2(connection->objClient, xsID_callback, xsString(connection->gattProcedure.id == CHARACTERISTIC_READ_VALUE ? "onCharacteristicValue" : "onDescriptorValue"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString(connection->gattProcedure.id == CHARACTERISTIC_READ_VALUE ? "onCharacteristicValue" : "onDescriptorValue"), xsVar(0));
 	
 	xsEndHost(gBLE->the);
 }
@@ -1317,7 +1255,7 @@ static void gattcCharacteristicNotificationEvent(void *the, void *refcon, uint8_
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSetInteger(xsVar(1), hvx->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
 
 	xsEndHost(gBLE->the);
 }
@@ -1338,7 +1276,7 @@ static void gattcCharacteristicWriteEvent(void *the, void *refcon, uint8_t *mess
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), write_rsp->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(connection->objClient, xsID_callback, xsString("onDescriptorWritten"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onDescriptorWritten"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -1454,7 +1392,7 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 				gdr->gatt_status = p_ble_evt->evt.gattc_evt.gatt_status;	
 				c_memmove(gdr->rsp, char_disc_rsp, len);
 				
-				modBLEConnection connection = modBLEConnectionFindByConnectionID(gdr->conn_handle);
+				modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(gdr->conn_handle);
 				if (NULL != connection) {
 					if (0 != connection->gattProcedure.discovery_handle)
 						modMessagePostToMachine(gBLE->the, NULL, 0, gattcCharacteristicsForDescriptorsDiscoveryEvent, (void*)gdr);
