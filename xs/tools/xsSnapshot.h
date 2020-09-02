@@ -12,18 +12,18 @@ struct sxProjection {
 };
 
 struct sxSnapshot {
-	txString signature;
-	txSize signatureSize;
+	char* signature;
+	int signatureLength;
 	txCallback* callbacks;
-	txSize callbackCount;
-	void* stream;
+	int callbacksLength;
 	int (*read)(void* stream, void* address, size_t size);
 	int (*write)(void* stream, void* address, size_t size);
+	void* stream;
 	int error;
 	txByte* firstChunk;
 	txProjection* firstProjection;
 	txSlot* firstSlot;
 };
 
-extern txMachine* fxLoadMachine(txSnapshot* snapshot, txString theName, void* theContext);
+extern txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theContext);
 extern int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot);

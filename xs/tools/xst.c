@@ -172,6 +172,8 @@ static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
 
 static void fxQueuePromiseJobsCallback(txJob* job);
+static void fxFulfillModuleFile(txMachine* the);
+static void fxRejectModuleFile(txMachine* the);
 static void fxRunModuleFile(txMachine* the, txString path);
 static void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags);
 static void fxRunLoop(txMachine* the);
@@ -293,9 +295,9 @@ int main(int argc, char* argv[])
 			3,
 			gxSnapshotCallbacks,
 			mxSnapshotCallbackCount,
-			NULL,
 			fxSnapshopRead,
 			fxSnapshopWrite,
+			NULL,
 			0,
 			NULL,
 			NULL,
@@ -304,14 +306,10 @@ int main(int argc, char* argv[])
 		xsMachine* machine;
 		fxInitializeSharedCluster();
 		if (argr) {
-			if (c_realpath(argv[argr], path)) {
-				snapshot.stream = fopen(path, "rb");
-				if (snapshot.stream) {
-					machine = fxLoadMachine(&snapshot, "xst", NULL);
-					fclose(snapshot.stream);
-				}
-				else
-					snapshot.error = errno;
+			snapshot.stream = fopen(argv[argr], "rb");
+			if (snapshot.stream) {
+				machine = fxReadSnapshot(&snapshot, "xst", NULL);
+				fclose(snapshot.stream);
 			}
 			else
 				snapshot.error = errno;
@@ -320,13 +318,14 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 		}
-        else
+        else {
             machine = xsCreateMachine(creation, "xst", NULL);
+ 			fxBuildAgent(machine);
+		}
 		xsBeginHost(machine);
 		{
 			xsVars(1);
 			xsTry {
-				fxBuildAgent(the);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
@@ -369,14 +368,10 @@ int main(int argc, char* argv[])
 		}
 		xsEndHost(machine);
 		if (argw) {
-			if (c_realpath(argv[argw], path)) {
-				snapshot.stream = fopen(path, "wb");
-				if (snapshot.stream) {
-					snapshot.error = fxWriteSnapshot(machine, &snapshot);
-					fclose(snapshot.stream);
-				}
-				else
-					snapshot.error = errno;
+			snapshot.stream = fopen(argv[argw], "wb");
+			if (snapshot.stream) {
+				snapshot.error = fxWriteSnapshot(machine, &snapshot);
+				fclose(snapshot.stream);
 			}
 			else
 				snapshot.error = errno;
