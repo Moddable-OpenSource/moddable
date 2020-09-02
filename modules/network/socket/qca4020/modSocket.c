@@ -869,6 +869,11 @@ void xs_listener(xsMachine *the)
 		xsUnknownError("listen failed");
 }
 
+void xs_socket_suspend(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 void xs_listener_destructor(void *data)
 {
 	xsListener xsl = data;
