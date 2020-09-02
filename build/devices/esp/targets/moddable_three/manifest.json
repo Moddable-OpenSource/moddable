@@ -2,6 +2,10 @@
     "include": [
         "$(MODULES)/drivers/destm32s/manifest.json",
     ],
+	"build": {
+		"FLASH_MODE": "qio",
+		"FLASH_SPEED": "80"
+	},
     "config": {
         "screen": "destm32s",
         "touch": "",

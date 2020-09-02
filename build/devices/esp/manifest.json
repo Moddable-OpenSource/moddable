@@ -4,12 +4,12 @@
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/esp/*",
 			"$(MODULES)/base/timer/*",
-			"$(MODULES)/base/timer/mc/*",
+			"$(MODULES)/base/timer/mc/*"
 		]
 	},
 	"preload": [
 		"time",
-		"timer",
+		"timer"
 	],
 	"recipes": {
 		"strings-in-flash": [
@@ -18,16 +18,16 @@
 			"Resource*",
 			"mod*",
 			"i2c*",
-			"digital*",
+			"digital*"
 		],
 		"c++11": [
 			"*.cc.o",
-			"*.cpp.o",
+			"*.cpp.o"
 		],
 	},
 	"platforms": {
 		"esp/*": {
 			"include": "./targets/$(SUBPLATFORM)/manifest.json"
-		},
+		}
 	}
 }
