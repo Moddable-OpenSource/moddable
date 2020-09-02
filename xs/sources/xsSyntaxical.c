@@ -1953,7 +1953,7 @@ void fxCallExpression(txParser* parser)
 				fxMatchToken(parser, XS_TOKEN_RIGHT_BRACKET);
 			}
 			else if (parser->token == XS_TOKEN_LEFT_PARENTHESIS) {
-				if (parser->root->description->token == XS_TOKEN_ACCESS) {
+				if (parser->root->description && (parser->root->description->token == XS_TOKEN_ACCESS)) {
 					txAccessNode* access = (txAccessNode*)parser->root;
 					if (access->symbol == parser->evalSymbol) {
 						parser->flags |= mxEvalFlag;
