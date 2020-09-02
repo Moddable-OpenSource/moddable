@@ -639,9 +639,7 @@ void fxPushNodeList(txParser* parser, txInteger count)
 
 void fxPushNULL(txParser* parser)
 {
-    txNodeLink* node = fxNewParserChunk(parser, sizeof(txNodeLink));
-	node->description = NULL;	
-	node->symbol = NULL;	
+    txNodeLink* node = fxNewParserChunkClear(parser, sizeof(txNodeLink));
 	fxPushNode(parser, (txNode*)node);
 }
 
@@ -670,8 +668,7 @@ void fxPushStringNode(txParser* parser, txInteger length, txString value, txInte
 
 void fxPushSymbol(txParser* parser, txSymbol* symbol)
 {
-    txNodeLink* node = fxNewParserChunk(parser, sizeof(txNodeLink));
-	node->description = NULL;	
+    txNodeLink* node = fxNewParserChunkClear(parser, sizeof(txNodeLink));
 	node->symbol = symbol;	
 	fxPushNode(parser, (txNode*)node);
 }
