@@ -50,6 +50,7 @@ C_OPTIONS = \
 	/D mxParse=1 \
 	/D mxRun=1 \
 	/D mxSloppy=1 \
+	/D mxSnapshot=1 \
 	/D mxRegExpUnicodePropertyEscapes=1 \
 	/I$(INC_DIR) \
 	/I$(PLT_DIR) \
@@ -131,7 +132,8 @@ OBJECTS = \
 	$(TMP_DIR)\reader.o \
 	$(TMP_DIR)\scanner.o \
 	$(TMP_DIR)\writer.o \
-	$(TMP_DIR)\xst.o
+	$(TMP_DIR)\xst.o \
+	$(TMP_DIR)\xsSnapshot.o
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -150,6 +152,7 @@ $(BIN_DIR)\$(NAME).exe : $(OBJECTS)
 		/out:$(BIN_DIR)\$(NAME).exe
 
 $(OBJECTS) : $(TLS_DIR)\xst.h
+$(OBJECTS) : $(TLS_DIR)\xsSnapshot.h
 $(OBJECTS) : $(PLT_DIR)\xsPlatform.h
 $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h
