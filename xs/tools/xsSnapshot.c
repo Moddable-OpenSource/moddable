@@ -649,7 +649,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
 	if (the) {
 		txJump aJump;
-
+		snapshot->error = 0;
 		aJump.nextJump = C_NULL;
 		aJump.stack = C_NULL;
 		aJump.scope = C_NULL;
@@ -754,6 +754,9 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			if (gxDefaults.terminateSharedCluster)
 				gxDefaults.terminateSharedCluster();
 		}
+	}
+	else {
+		snapshot->error = C_ENOMEM;
 	}
 	return the;
 }
@@ -1205,6 +1208,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	txCreation creation;
 	
 	mxTry(the) {
+		snapshot->error = 0;
 		fxCollectGarbage(the);
 	
 		heap = the->freeHeap;
@@ -1345,7 +1349,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		heap = heap->next;
 	}
 	
-	return snapshot->error;
+	return (snapshot->error) ? 0 : 1;
 }
 
 

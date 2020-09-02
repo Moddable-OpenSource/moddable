@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
 		if (argw) {
 			snapshot.stream = fopen(argv[argw], "wb");
 			if (snapshot.stream) {
-				snapshot.error = fxWriteSnapshot(machine, &snapshot);
+				fxWriteSnapshot(machine, &snapshot);
 				fclose(snapshot.stream);
 			}
 			else
