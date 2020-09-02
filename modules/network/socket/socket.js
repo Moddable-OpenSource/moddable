@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -30,6 +30,7 @@ export class Socket @ "xs_socket_destructor" {
 
 	close() @ "xs_socket_close";
 	get(name) @ "xs_socket_get";
+	suspend() @ "xs_socket_suspend";
 
 	// callback()		// connected, error/disconnected, read ready (bytes ready), write ready (bytes can write)
 };
