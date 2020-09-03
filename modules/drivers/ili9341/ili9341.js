@@ -46,6 +46,9 @@ export default class ILI9341 @ "xs_ILI9341_destructor" {
 	set rotation() @ "xs_ILI9341_set_rotation";
 
 	get c_dispatch() @ "xs_ILI9341_get_c_dispatch";
+
+	// driver specific
+	command(id, data) @ "xs_ILI9341_command";
 }
 
 Object.freeze(ILI9341.prototype);

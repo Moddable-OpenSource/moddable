@@ -478,6 +478,8 @@ void fxAbort(txMachine* the, int status)
 			mxUnknownError("stack overflow");
 		else if (status == XS_DEAD_STRIP_EXIT)
 			mxUnknownError("dead strip");
+		else if (status == XS_NO_MORE_KEYS_EXIT)
+			mxUnknownError("not enough keys");
 	}
 	mxCatch(the) {
 	}

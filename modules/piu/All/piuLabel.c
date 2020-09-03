@@ -22,14 +22,14 @@
 
 static void PiuLabelBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuLabelCascade(void* it);
-static void PiuLabelComputeStyle(PiuLabel* self);
+static void PiuLabelComputeStyle(PiuLabel* self, PiuApplication* application, PiuView* view);
 static void PiuLabelDictionary(xsMachine* the, void* it);
 static void PiuLabelDraw(void* it, PiuView* view, PiuRectangle area);
 static void PiuLabelMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuLabelMeasureHorizontally(void* it);
 static void PiuLabelMeasureVertically(void* it);
 static void PiuLabelUnbind(void* it, PiuApplication* application, PiuView* view);
-static void PiuLabelUncomputeStyle(PiuLabel* self);
+static void PiuLabelUncomputeStyle(PiuLabel* self, PiuApplication* application, PiuView* view);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuLabelDispatchRecord = {
 	"Label",
@@ -64,22 +64,22 @@ void PiuLabelBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuLabel* self = it;
 	PiuContentBind(it, application, view);
-	PiuLabelComputeStyle(self);
+	PiuLabelComputeStyle(self, application, view);
 }
 
 void PiuLabelCascade(void* it)
 {
 	PiuLabel* self = it;
-	PiuLabelUncomputeStyle(self);
+	PiuApplication* application = (*self)->application;
+	PiuLabelUncomputeStyle(self, application, (*application)->view);
 	PiuContentCascade(it);
-	PiuLabelComputeStyle(self);
+	PiuLabelComputeStyle(self, application, (*application)->view);
 	PiuContentReflow(self, piuSizeChanged);
 }
 
-void PiuLabelComputeStyle(PiuLabel* self)
+void PiuLabelComputeStyle(PiuLabel* self, PiuApplication* application, PiuView* view)
 {
 	xsMachine* the = (*self)->the;
-	PiuApplication* application = (*self)->application;
 	PiuContainer* container = (PiuContainer*)self;
 	PiuStyleLink* list = (*application)->styleList;
 	PiuStyleLink* chain = NULL;
@@ -95,7 +95,7 @@ void PiuLabelComputeStyle(PiuLabel* self)
 		PiuStyle* result = PiuStyleLinkCompute(the, chain, application);
 		(*self)->computedStyle = result;
 	#ifdef piuGPU
-		PiuStyleBind((*self)->computedStyle);
+		PiuStyleBind((*self)->computedStyle, application, view);
 	#endif
 	}
 }
@@ -169,15 +169,15 @@ void PiuLabelMeasureVertically(void* it)
 void PiuLabelUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuLabel* self = it;
-	PiuLabelUncomputeStyle(self);
+	PiuLabelUncomputeStyle(self, application, view);
 	PiuContentUnbind(it, application, view);
 }
 
-void PiuLabelUncomputeStyle(PiuLabel* self)
+void PiuLabelUncomputeStyle(PiuLabel* self, PiuApplication* application, PiuView* view)
 {
 	if ((*self)->computedStyle) {
 	#ifdef piuGPU
-		PiuStyleUnbind((*self)->computedStyle);
+		PiuStyleUnbind((*self)->computedStyle, application, view);
 	#endif
 		(*self)->computedStyle = NULL;
 	}

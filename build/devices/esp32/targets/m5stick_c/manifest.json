@@ -1,4 +1,8 @@
 {
+	"build": {
+		"UPLOAD_SPEED": "1500000",
+		"DEBUGGER_SPEED": "1500000"
+	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7735/manifest.json",
 		"$(MODDABLE)/modules/drivers/axp192/manifest.json"
@@ -58,7 +62,9 @@
 		"*": [
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
+			"$(MODULES)/drivers/mpu6886/*",
 			"$(MODULES)/drivers/sh200q/*"
+			
 		],
 		"setup/target": "./setup-target",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
@@ -66,8 +72,8 @@
 	"preload": [
 		"monitor",
 		"setup/target",
+		"mpu6886",
 		"sh200q",
 		"pins/smbus"
 	]
 }
-

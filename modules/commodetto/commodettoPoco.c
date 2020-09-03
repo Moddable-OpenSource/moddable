@@ -394,6 +394,7 @@ void xs_poco_drawBitmap(xsMachine *the)
 	bits.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 	bits.id = cb->id;
+	bits.byteLength = (cb->flags & kCommodettoBitmapHaveByteLength) ? cb->byteLength : 0;
 #endif
 
 	if (cb->havePointer)
@@ -445,6 +446,7 @@ void xs_poco_drawMonochrome(xsMachine *the)
 	bits.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 	bits.id = cb->id;
+	bits.byteLength = 0;
 #endif
 
 	if (cb->havePointer)
@@ -502,6 +504,7 @@ void xs_poco_drawGray(xsMachine *the)
 	bits.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 	bits.id = cb->id;
+	bits.byteLength = 0;
 #endif
 
 	if (cb->havePointer)
@@ -556,6 +559,7 @@ void xs_poco_drawMasked(xsMachine *the)
 	bits.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 	bits.id = cb->id;
+	bits.byteLength = 0;
 #endif
 
 	if (cb->havePointer)
@@ -579,6 +583,7 @@ void xs_poco_drawMasked(xsMachine *the)
 	mask.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 	mask.id = cb->id;
+	mask.byteLength = 0;
 #endif
 
 	if (cb->havePointer)
@@ -617,6 +622,7 @@ void xs_poco_fillPattern(xsMachine *the)
 	bits.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 	bits.id = cb->id;
+	bits.byteLength = 0;
 #endif
 
 	if (cb->havePointer)
@@ -829,6 +835,7 @@ void xs_poco_drawText(xsMachine *the)
 			bits.pixels = (PocoPixel *)glyph->bits;
 #if COMMODETTO_BITMAP_ID
 			bits.id = glyph->id;		//@@ hack that barely works for a single font..
+			bits.byteLength = 0;
 #endif
 
 			PocoGrayBitmapDraw(poco, &bits, color, kPocoOpaque, cx, cy, sx, sy, sw, sh);
@@ -843,6 +850,7 @@ void xs_poco_drawText(xsMachine *the)
 				bits.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 				bits.id = cb->id;
+				bits.byteLength = 0;
 #endif
 
 				if (cb->havePointer)
@@ -864,6 +872,7 @@ void xs_poco_drawText(xsMachine *the)
 						mask.format = cb->format;
 #if COMMODETTO_BITMAP_ID
 						mask.id = cb->id;
+						mask.byteLength = 0;
 #endif
 						if (cb->havePointer)
 							mask.pixels = cb->bits.data;

@@ -1046,9 +1046,9 @@ txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable)
 	result = fxNewObjectInstance(the);
 	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
 	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_GET_ONLY);
-	property = fxNextSlotProperty(the, property, iterable, mxID(_iterable), XS_GET_ONLY);
-	property = fxNextNullProperty(the, property, mxID(_index), XS_GET_ONLY);
+	property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextSlotProperty(the, property, iterable, mxID(_iterable), XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextNullProperty(the, property, mxID(_index), XS_INTERNAL_FLAG | XS_GET_ONLY);
 	property->kind = XS_CLOSURE_KIND;
 	property->value.closure = iterable->value.reference->next->next->value.list.first;
     the->stack++;

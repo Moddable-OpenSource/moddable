@@ -80,6 +80,9 @@ struct sxLinker {
 	txLinkerInclude* firstInclude;
 	txLinkerPreload* firstPreload;
 	txLinkerProjection* firstProjection;
+	txInteger projectionIndex;
+	txID* colors;
+	txSlot** layout;
 	
 	txLinkerResource* firstResource;
 	
@@ -250,13 +253,14 @@ extern void fxWriteSymbols(txLinker* linker, txString path, FILE** fileAddress);
 extern void fxWriteStrips(txLinker* linker, FILE* file);
 
 /* xslOpt.c */
-extern void fxOptimize(txLinker* linker);
+extern void fxOptimize(txMachine*);
 
 /* xslSlot.c */
 extern txInteger fxCheckAliases(txMachine* the);
 extern void fxLinkerScriptCallback(txMachine* the);
 extern txInteger fxPrepareHeap(txMachine* the);
 extern void fxPrepareHome(txMachine* the);
+extern void fxPrepareProjection(txMachine* the);
 extern void fxPrintBuilders(txMachine* the, FILE* file);
 extern void fxPrintHeap(txMachine* the, FILE* file, txInteger count);
 extern void fxPrintStack(txMachine* the, FILE* file);

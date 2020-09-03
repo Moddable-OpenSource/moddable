@@ -20,7 +20,6 @@
 
 #include "xsHost.h"
 #include "modBLECommon.h"
-#include "modTimer.h"
 #include "mc.defines.h"
 
 #include "nimble/ble.h"
@@ -29,25 +28,6 @@
 #include "esp_nimble_hci.h"
 
 static int16_t useCount = 0;
-
-// https://github.com/espressif/esp-idf/issues/3555
-#define USE_EVENT_TIMER 0
-#if USE_EVENT_TIMER
-	modTimer gTimer = NULL;
-#endif
-
-#if USE_EVENT_TIMER
-static void ble_event_timer_callback(modTimer timer, void *refcon, int refconSize)
-{
-	struct ble_npl_eventq *eventq = nimble_port_get_dflt_eventq();
-	struct ble_npl_event *ev;
-	ev = ble_npl_eventq_get(eventq, 0);
-	while (NULL != ev) {
-    	ble_npl_event_run(ev);
-		ev = ble_npl_eventq_get(eventq, 0);
-	}
-}
-#endif
 
 static void nimble_on_reset(int reason)
 {
@@ -60,7 +40,6 @@ static void nimble_on_reset(int reason)
 #endif
 }
 
-#if !USE_EVENT_TIMER
 static void nimble_host_task(void *param)
 {
 	nimble_port_run();
@@ -71,7 +50,6 @@ static void ble_host_task(void *param)
 {
 	nimble_host_task(param);
 }
-#endif
 
 static esp_err_t _esp_nimble_hci_and_controller_init(void)
 {
@@ -103,11 +81,7 @@ int modBLEPlatformInitialize(void)
 	
 		ble_store_config_init();
 		
-#if USE_EVENT_TIMER
-		gTimer = modTimerAdd(0, 20, ble_event_timer_callback, NULL, 0);
-#else
 		nimble_port_freertos_init(ble_host_task);
-#endif
 	}
 
 	return err;
@@ -118,13 +92,6 @@ int modBLEPlatformTerminate(void)
 	if (0 != --useCount)
 		return 0;
 		
-#if USE_EVENT_TIMER
-	if (NULL != gTimer) {
-		modTimerRemove(gTimer);
-		gTimer = NULL;
-	}
-#endif
-
 	int rc = nimble_port_stop();
 	if (0 == rc) {
 		nimble_port_deinit();

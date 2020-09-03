@@ -207,7 +207,9 @@
 #define kePaperBlackWhiteGrayRed (2)
 #define kePaperBlackWhiteRed (3)
 
-#if (122 == MODDEF_DESTM32S_WIDTH) && (250 == MODDEF_DESTM32S_HEIGHT)
+#ifdef MODDEF_DESTM32S_COLORS
+	#define EPAPER MODDEF_DESTM32S_COLORS
+#elif (122 == MODDEF_DESTM32S_WIDTH) && (250 == MODDEF_DESTM32S_HEIGHT)
 	#define EPAPER kePaperBlackWhite
 #elif (104 == MODDEF_DESTM32S_WIDTH) && (212 == MODDEF_DESTM32S_HEIGHT)
 	#define EPAPER kePaperBlackWhiteGrayRed

@@ -127,7 +127,6 @@ static void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor 
 static void PiuViewEnd(PiuView* view);
 static void PiuViewFillTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
 static void PiuViewMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon);
 static void PiuViewUpdate(PiuView* self, PiuApplication* application);
 
 static const xsHostHooks PiuViewHooks ICACHE_RODATA_ATTR = {
@@ -1200,6 +1199,9 @@ void PiuApplication_purge(xsMachine* the)
 	(*self)->styleList = PIU(StyleLink, xsResult);
 	xsSet(xsGlobal, xsID_assetMap, xsNull);
 	xsCollectGarbage();
+#ifdef piuGPU
+	PocoCompact((*((*self)->view))->poco, PiuViewReceiver, (*self)->view);
+#endif		
 }
 
 void PiuCLUT_get_colors(xsMachine* the) 
