@@ -26,7 +26,7 @@ import Sleep from "sleep";
 import Timer from "timer";
 import config from "mc/config";
 
-const wakeup_pin = 22;
+const wakeup_pin = config.button1_pin;
 const led_pin = config.led1_pin;
 const ON = 1;
 const OFF = 0;
