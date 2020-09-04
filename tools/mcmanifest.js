@@ -413,9 +413,14 @@ export class MakeFile extends FILE {
 				if (tool.config)
 					options += " -c";
 				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				if (tool.windows)
+					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
-			this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
+			if (tool.windows)
+				this.line("TSCONFIG:");
+			else
+				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
 			this.echo(tool, "tsc ", "tsconfig.json");
 			this.line("\ttsc -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
