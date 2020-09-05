@@ -5,6 +5,7 @@
 	],
 	"config": {
 		"screen": "ili9341",
+		"rotation": 180
 	},
 	"defines": {
 		"i2c": {
