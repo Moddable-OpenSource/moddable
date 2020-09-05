@@ -141,6 +141,7 @@ export default class AXP192 extends SMBus {
 		Timer.delay(20);
 
 		this.setBusPowerMode(0); //  bus power mode_output
+		Timer.delay(200);
 	}
 
 	/**
