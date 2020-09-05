@@ -10,7 +10,8 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "ft6206",
+		"rotation": 180,
+		"touch": "ft6206"
 	},
 	"defines": {
 		"i2c": {
@@ -50,12 +51,14 @@
 		"ft6206": {
 			"width": 320,
 			"height": 280,
+			"hz": 400000,
 			"sda": 21,
 			"scl": 22,
-			"dy": 40,
+			"dy": -40,
 			"threshold": 128,
 			"flipX": true,
-			"flipY": true,
+			"fitX": false,
+			"fitY": false
 		},
 	},
 	"modules": {
