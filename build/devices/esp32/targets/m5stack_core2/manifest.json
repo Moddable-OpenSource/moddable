@@ -11,7 +11,8 @@
 	"config": {
 		"screen": "ili9341",
 		"rotation": 180,
-		"touch": "ft6206"
+		"touch": "ft6206",
+		"autorotate": 300
 	},
 	"defines": {
 		"i2c": {
@@ -63,17 +64,19 @@
 	},
 	"modules": {
 		"setup/target": "./setup-target",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"*": [
+			"$(MODULES)/drivers/mpu6886/*",
+		]
 	},
 	"preload": [
 		"monitor",
 		"pins/audioout",
 		"setup/target",
-		"mpu6050",
+		"mpu6886",
 		"pins/smbus"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
 	},
 }
-

@@ -1,9 +1,8 @@
 import AXP192 from "axp192";
-//import MPU6886 from "mpu6886";
+import MPU6886 from "mpu6886";
 //import I2C from "pins/i2c";
-//import Timer from "timer";
-
-//import config from "mc/config";
+import Timer from "timer";
+import config from "mc/config";
 
 const state = {
 	handleRotation: nop
@@ -16,8 +15,10 @@ export default function (done) {
 		address: 0x34
 	});
 
-	/*
-	state.accelerometerGyro = new IMU;
+	state.accelerometerGyro = new MPU6886({
+		sda: 21,
+		scl: 22
+	});
 
 	global.accelerometer = {
 		onreading: nop
@@ -101,23 +102,8 @@ export default function (done) {
 		}
 		accelerometer.start(300);
 	}
-	*/
+	
 	done();
 }
 
 function nop() {}
-
-/*
-class IMU {
-	constructor() {
-		const probe = new I2C({
-			address: 0x68,		// MPU6886
-			throw: false
-		});
-		const result = probe.write(0x75);
-		probe.close();
-
-		return new MPU6886;
-	}
-}
-*/
