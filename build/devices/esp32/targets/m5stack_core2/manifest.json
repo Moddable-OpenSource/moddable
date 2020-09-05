@@ -5,10 +5,12 @@
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
 		"$(MODDABLE)/modules/drivers/axp192/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
+		"touch": "ft6206",
 	},
 	"defines": {
 		"i2c": {
@@ -44,6 +46,16 @@
 				"0x21, 0,",
 				"0xFF, 0"
 			],
+		},
+		"ft6206": {
+			"width": 320,
+			"height": 280,
+			"sda": 21,
+			"scl": 22,
+			"dy": 40,
+			"threshold": 128,
+			"flipX": true,
+			"flipY": true,
 		},
 	},
 	"modules": {
