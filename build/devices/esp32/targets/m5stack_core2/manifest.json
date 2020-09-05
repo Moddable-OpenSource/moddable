@@ -10,13 +10,9 @@
 	],
 	"config": {
 		"screen": "ili9341",
-<<<<<<< HEAD
-		"rotation": 180
-=======
 		"rotation": 180,
 		"touch": "ft6206",
 		"autorotate": 300
->>>>>>> 1aa1953e9811f954181664250fc14ff1a438ebbd
 	},
 	"defines": {
 		"i2c": {
