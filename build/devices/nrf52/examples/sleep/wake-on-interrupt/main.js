@@ -23,7 +23,7 @@
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
 import Digital from "pins/digital";
-import {Sensor, Register} from "lis3dh";
+import {Sensor, Range, DataRate} from "lis3dh";
 import config from "mc/config";
 
 const led_pin = config.led1_pin;
@@ -31,20 +31,17 @@ const int_pin = config.lis3dh_int1_pin;
 const ON = 1;
 const OFF = 0;
 
-class lis3dh extends Sensor {
-	configure(dictionary) {
-		super.configure(dictionary);
-
-		// configure to generate interrupt on motion
-		this.writeByte(Register.CTRL3, 0x40);	// route interrupt activity 1 to INT1
-		this.writeByte(Register.CTRL4, 0x00);	// full scale selection +/- 2g
-		this.writeByte(Register.INT1THS, 0x10);	// 250 mg threshold
-		this.writeByte(Register.INT1DUR, 0x00);	// 0 duration
-		this.writeByte(Register.INT1CFG, 0x0A);	// enable XH and YH interrupts
-	}
-}
-
-let sensor = new lis3dh({});
+// configure motion sensor
+let sensor = new Sensor({
+		range:Range.RANGE_2_G,
+		rate:DataRate.DATARATE_10_HZ,
+		interrupt: {
+			polarity: 0,
+			enable: 0x2a,
+			threshold: 0x06,
+			duration: 0x02
+			}
+		});
 
 // Turn on LED upon wakeup
 Digital.write(led_pin, ON);
@@ -74,3 +71,4 @@ Timer.repeat(id => {
 	}
 	--count;
 }, 1000);
+
