@@ -390,13 +390,21 @@ export class MakeFile extends FILE {
 		this.line("");
 		
 		if (tool.tsFiles.length) {
-			let directories = tool.tsFiles.map(item => item.source);
-			let directory;
-			do {
-				directories = directories.map(item => tool.splitPath(item).directory);
-				directory = directories[0];
-			} while(directories.some(item => item != directory));
-			const common = directory.length;
+			let directories = tool.tsFiles.map(item => tool.splitPath(item.source).directory);
+			const length = directories.length;
+			let common;
+			if (length > 1) {
+				directories.sort();
+				const first =  directories[0];
+				const last = directories[length - 1];
+				const firstLength = first.length;
+				const lastLength = last.length;
+				common = 0;
+    			while ((common < firstLength) && (common < lastLength) && (first.charAt(common) === last.charAt(common))) 
+    				common++;
+			}
+			else
+				common = directories[0].length;
 			var temporaries = [];
 			for (var result of tool.tsFiles) {
 				var source = result.source;
@@ -413,9 +421,14 @@ export class MakeFile extends FILE {
 				if (tool.config)
 					options += " -c";
 				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				if (tool.windows)
+					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
-			this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
+			if (tool.windows)
+				this.line("TSCONFIG:");
+			else
+				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
 			this.echo(tool, "tsc ", "tsconfig.json");
 			this.line("\ttsc -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
@@ -733,7 +746,7 @@ export class TSConfigFile extends FILE {
 				sourceMap: true,
 				target: "ES2020",
 				types: [
-					tool.xsPath + "/includes/xs"
+					tool.xsPath + tool.slash + "includes" + tool.slash +"xs"
 				]
 			},
 			files: [
@@ -741,10 +754,16 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			paths[result.target.slice(0, -2)] = [ result.source.slice(0, -5) ];
+			var specifier = result.target.slice(0, -2);
+			if (tool.windows)
+				specifier = specifier.replaceAll("\\", "/");
+			paths[specifier] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
-			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
+			var specifier = result.target.slice(0, -4);
+			if (tool.windows)
+				specifier = specifier.replaceAll("\\", "/");
+			paths[specifier] = [ result.source.slice(0, -3) ];
 			json.files.push(result.source);
 		}
 		this.write(JSON.stringify(json, null, "\t"));

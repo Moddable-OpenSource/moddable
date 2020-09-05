@@ -791,6 +791,11 @@ int doFlushWrite(xsSocket xss)
 	return 0;
 }
 
+void xs_socket_suspend(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 gboolean listenerServiceTimerCallback(gpointer data)
 {
 	xsListener xsl = (xsListener)data;

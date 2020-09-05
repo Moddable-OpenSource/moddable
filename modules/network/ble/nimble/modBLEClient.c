@@ -43,8 +43,6 @@
 	#define LOG_GAP_INT(i)
 #endif
 
-#define OBJ_CLIENT(_c) ((modBLEClientConnection)_c)->objClient
-
 typedef struct modBLEClientConnectionRecord modBLEClientConnectionRecord;
 typedef modBLEClientConnectionRecord *modBLEClientConnection;
 
@@ -384,12 +382,12 @@ void xs_gap_connection_initialize(xsMachine *the)
 	xsmcVars(1);	// xsArg(0) is client
 	xsmcGet(xsVar(0), xsArg(0), xsID_connection);
 	conn_id = xsmcToInteger(xsVar(0));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	connection->the = the;
 	connection->objConnection = xsThis;
-	OBJ_CLIENT(connection) = xsArg(0);
+	connection->objClient = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -721,7 +719,6 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	else {
 		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
 		modBLEConnectionRemove(connection);
-		xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 	}
 bail:
 	xsEndHost(gBLE->the);
@@ -752,11 +749,11 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 	serviceSearchRecord *entry;
 	xsBeginHost(gBLE->the);
 	while (NULL != (entry = (serviceSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
-		modBLEConnection connection = modBLEConnectionFindByConnectionID(entry->conn_id);
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
 		if (!connection)
 			xsUnknownError("connection not found");
 		if (entry->completed) {
-			xsCall1(OBJ_CLIENT(connection), xsID_callback, xsString("onService"));
+			xsCall1(connection->objClient, xsID_callback, xsString("onService"));
 		}
 		else {
 			struct ble_gatt_svc *service = &entry->service;
@@ -771,7 +768,7 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 			xsmcSet(xsVar(0), xsID_start, xsVar(2));
 			xsmcSet(xsVar(0), xsID_end, xsVar(3));
-			xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onService"), xsVar(0));
+			xsCall2(connection->objClient, xsID_callback, xsString("onService"), xsVar(0));
 		}	
 		c_free(entry);
 	}
@@ -891,7 +888,7 @@ static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_
 	attributeNotificationRecord *entry;
 	xsBeginHost(gBLE->the);
 	while (NULL != (entry = (attributeNotificationRecord*)modBLEMessageQueueDequeue(&gBLE->notificationQueue))) {
-		modBLEConnection connection = modBLEConnectionFindByConnectionID(entry->conn_id);
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
 		if (!connection)
 			xsUnknownError("connection not found");
 		xsmcVars(3);
@@ -900,7 +897,7 @@ static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_
 		xsmcSetInteger(xsVar(2), entry->handle);
 		xsmcSet(xsVar(0), xsID_value, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+		xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
 		c_free(entry);
 	}	
 	xsEndHost(gBLE->the);
@@ -910,7 +907,7 @@ static void attributeReadEvent(void *the, void *refcon, uint8_t *message, uint16
 {
 	attributeReadData value = (attributeReadData)refcon;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(value->conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(value->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(3);
@@ -919,7 +916,7 @@ static void attributeReadEvent(void *the, void *refcon, uint8_t *message, uint16
 	xsmcSetInteger(xsVar(2), value->handle);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, value->isCharacteristic ? xsString("onCharacteristicValue") : xsString("onDescriptorValue"), xsVar(0));
+	xsCall2(connection->objClient, xsID_callback, value->isCharacteristic ? xsString("onCharacteristicValue") : xsString("onDescriptorValue"), xsVar(0));
 	c_free(value);
 	xsEndHost(gBLE->the);
 }
@@ -928,14 +925,14 @@ static void notificationEnabledEvent(void *the, void *refcon, uint8_t *message, 
 {
 	characteristicNotificationEnabled cne = (characteristicNotificationEnabled)refcon;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(cne->conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(cne->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), cne->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, cne->enable ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"), xsVar(0));
+	xsCall2(connection->objClient, xsID_callback, cne->enable ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"), xsVar(0));
 	c_free(cne);
 	xsEndHost(gBLE->the);
 }

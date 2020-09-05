@@ -5,7 +5,7 @@ export default class extends ILI9341 {
 	constructor(dictionary) {
 		super(dictionary);
 
-		if (false /* Digital.read(5) */)
+		if (Digital.read(33))		// TFT_RST
 			super.command(0x21);	// invert
 	}
 }

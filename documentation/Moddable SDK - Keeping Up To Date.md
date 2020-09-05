@@ -1,6 +1,6 @@
 # Moddable SDK – Keeping Up To Date
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: August 27, 2020
+Revised: September 1, 2020
 
 This document describes the steps that you should take to update the Moddable SDK. By following the steps in this guide, you can update your Moddable SDK git repository, rebuild the Moddable SDK tools, and update the target-specific build environments needed for the ESP8266 and ESP32.
 
@@ -414,7 +414,13 @@ To ensure that your build environment is up to date, perform the following steps
     rm -rf tmp/esp
     ```
 
-4. Verify the setup by building `helloworld` for the `esp` target:
+4. If you have updated to Ubuntu 20.04 or newer (or to any Linux distribution that defaults to Python 3) since initially installing the Moddable SDK, install additional Python 3 components:
+
+	```text
+	sudo apt-get install python-is-python3 python3-pip python3-serial
+	```
+
+5. Verify the setup by building `helloworld` for the `esp` target:
 
 	```text
 	cd $MODDABLE/examples/helloworld
@@ -443,7 +449,17 @@ To ensure that your build environment is up to date, perform the following steps
     git checkout --recurse-submodules v3.3.2
     ```
 
-2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`:
+2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
+
+	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
+
+	```text
+	sudo apt-get update
+	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
+	sudo apt-get upgrade gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
+	```
+
+	For Ubuntu prior to 20.04 (and other Linux distributions that default to Python 2):
 
 	```text
     sudo apt-get update

@@ -47,7 +47,7 @@ export default class AXP192 extends SMBus {
 			case 2:
 				this.writeByte(0x34, (this.readByte(0x28) & 0x0f) | vdata << 4)
 				break
-		  case 3:
+			case 3:
 				this.writeByte(0x34, (this.readByte(0x28) & 0xf0) | vdata)
 				break
 		}
@@ -79,7 +79,7 @@ export default class AXP192 extends SMBus {
 		if (n < 2 || n > 3) {
 			return
 		}
-		mask << n
+		mask <<= n
 		if (enable) {
 			this.writeByte(0x12, this.readByte(0x12) | mask)
 		} else {
@@ -121,7 +121,7 @@ export default class AXP192 extends SMBus {
 		this.writeByte(0x30, (this.readByte(0x30) & 0x04) | 0x02) //AXP192 30H
 		this.writeByte(0x92, this.readByte(0x92) & 0xf8) //AXP192 GPIO1:OD OUTPUT
 
-    this.writeByte(0x93, this.readByte(0x93) & 0xf8)//AXP192 GPIO2:OD OUTPUT
+        this.writeByte(0x93, this.readByte(0x93) & 0xf8)//AXP192 GPIO2:OD OUTPUT
 		this.writeByte(0x35, (this.readByte(0x35) & 0x1c) | 0xa3)//AXP192 RTC CHG
 		this.setVoltage(3350) // Voltage 3.35V
 		this.setLcdVoltage(2800) // LCD backlight voltage 2.80V
@@ -149,6 +149,6 @@ export default class AXP192 extends SMBus {
 	 */
 	setBrightness(brightness) {
 		const b = (brightness & 0x0f) << 4;
-		this.write(0x28, b);
+		this.writeByte(0x28, b);
 	}
 }
