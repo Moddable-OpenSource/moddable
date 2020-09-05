@@ -1,5 +1,7 @@
 import AXP192 from "axp192";
 import MPU6886 from "mpu6886";
+import AudioOut from "pins/audioout";
+import Resource from "Resource";
 //import I2C from "pins/i2c";
 import Timer from "timer";
 import config from "mc/config";
@@ -14,6 +16,13 @@ export default function (done) {
 		scl: 22,
 		address: 0x34
 	});
+
+	global.power.setSpeakerEnable(true)
+	global.speaker = new AudioOut({streams: 4});
+	speaker.callback = function() { this.stop() };
+	speaker.enqueue(0, AudioOut.Samples, new Resource("bflatmajor.maud"));
+	speaker.enqueue(0, AudioOut.Callback, 0);
+	speaker.start();
 
 	state.accelerometerGyro = new MPU6886({
 		sda: 21,

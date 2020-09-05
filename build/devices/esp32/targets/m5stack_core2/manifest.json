@@ -61,9 +61,24 @@
 			"fitX": false,
 			"fitY": false
 		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 11025,
+			"volume_divider": 1,
+			"i2s": {
+				"DAC": 1,
+				"DAC_CHANNEL": 3,
+				"bitsPerSample": 16,
+				"bck_pin": 12,
+				"lr_pin": 0,
+				"dataout_pin": 2
+			}
+		}
 	},
 	"modules": {
 		"setup/target": "./setup-target",
+		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
 			"$(MODULES)/drivers/mpu6886/*",

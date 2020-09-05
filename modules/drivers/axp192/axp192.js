@@ -28,6 +28,20 @@ export default class AXP192 extends SMBus {
 		this.initialize();
 	}
 
+	//set led state(GPIO high active,set 1 to enable amplifier)
+	setSpeakerEnable(state) {
+		const register = 0x94;
+		const gpioBit = 0x04;
+		let data = this.readByte(register);
+		if (state) {
+			data |= gpioBit;
+		}
+		else {
+			data &= ~gpioBit;
+		}
+		this.writeByte(register, data);
+	}
+
 	setVoltage(v) {
 		if (v >= 3000 && v <= 3400) {
 			this.setDCVoltage(0, v)
@@ -42,8 +56,7 @@ export default class AXP192 extends SMBus {
 
 	setLdoVoltage(ch, v) {
 		const vdata = (v > 3300) ? 15 : (v / 100) - 18;
-		switch(ch)
-		{
+		switch (ch) {
 			case 2:
 				this.writeByte(0x34, (this.readByte(0x28) & 0x0f) | vdata << 4)
 				break
@@ -60,14 +73,14 @@ export default class AXP192 extends SMBus {
 		}
 		const vdata = (v < 700) ? 0 : (v - 700) / 25
 		let register
-		switch(ch) {
+		switch (ch) {
 			case 0:
 				register = 0x26
 				break
 			case 1:
 				register = 0x25
 				break
-		  case 2:
+			case 2:
 				register = 0x27
 				break
 		}
@@ -121,23 +134,23 @@ export default class AXP192 extends SMBus {
 		this.writeByte(0x30, (this.readByte(0x30) & 0x04) | 0x02) //AXP192 30H
 		this.writeByte(0x92, this.readByte(0x92) & 0xf8) //AXP192 GPIO1:OD OUTPUT
 
-        this.writeByte(0x93, this.readByte(0x93) & 0xf8)//AXP192 GPIO2:OD OUTPUT
+		this.writeByte(0x93, this.readByte(0x93) & 0xf8) //AXP192 GPIO2:OD OUTPUT
 		this.writeByte(0x35, (this.readByte(0x35) & 0x1c) | 0xa3)//AXP192 RTC CHG
 		this.setVoltage(3350) // Voltage 3.35V
 		this.setLcdVoltage(2800) // LCD backlight voltage 2.80V
 		this.setLdoVoltage(2, 3300) //Periph power voltage preset (LCD_logic, SD card)
-    this.setLdoVoltage(3, 2000) //Vibrator power voltage preset
+		this.setLdoVoltage(3, 2000) //Vibrator power voltage preset
 		this.setLdoEnable(2, true)
 		this.setChargeCurrent(kCHG_100mA)
 
 		//AXP192 GPIO4
 		this.writeByte(0x95, (this.readByte(0x95) & 0x72) | 0x84)
-    this.writeByte(0x36, 0x4c)
-    this.writeByte(0x82, 0xff)
+		this.writeByte(0x36, 0x4c)
+		this.writeByte(0x82, 0xff)
 
-    this.setLcdReset(0);
-    Timer.delay(20);
-    this.setLcdReset(1);
+		this.setLcdReset(0);
+		Timer.delay(20);
+		this.setLcdReset(1);
 		Timer.delay(20);
 
 		this.setBusPowerMode(0); //  bus power mode_output
