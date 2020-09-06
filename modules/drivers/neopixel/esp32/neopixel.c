@@ -107,8 +107,10 @@ void copyPixelData(pixel_settings_t *px);
 
 #if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
 	#define NEOPIXEL_PREPARE_DATA(px) copyPixelData(px)
+	static void copyPixelData(pixel_settings_t *px);
 #else
 	#define NEOPIXEL_PREPARE_DATA(px) convertAllPixelData(px)
+	static void convertAllPixelData(pixel_settings_t *px);
 #endif
 
 
