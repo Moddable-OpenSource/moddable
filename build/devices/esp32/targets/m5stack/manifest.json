@@ -6,6 +6,7 @@
 		"screen": "m5stack/screen",
 		"rotation": 90,
 		"touch": "",
+		"startupSound": "bflatmajor.maud"
 	},
 	"defines": {
 		"i2c": {
