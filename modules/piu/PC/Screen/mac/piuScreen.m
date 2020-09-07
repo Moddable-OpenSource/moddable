@@ -79,6 +79,7 @@ struct PiuScreenStruct {
     NSPiuClipView *nsClipView;
     NSPiuScreenView *nsScreenView;
     txScreen* screen;
+	PiuRectangleRecord hole;
 };
 
 struct PiuScreenMessageStruct {
@@ -107,7 +108,45 @@ struct PiuScreenMessageStruct {
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
 	CGDataProviderRef provider = CGDataProviderCreateWithData(nil, screen->buffer, screen->width * screen->height * screenBytesPerPixel, nil);
     CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big | kCGImageAlphaNoneSkipLast, provider, nil, NO, kCGRenderingIntentDefault);
-	CGContextDrawImage(context, bounds, image);
+	if (PiuRectangleIsEmpty(&(*piuScreen)->hole)) {
+		CGContextDrawImage(context, bounds, image);
+	}
+	else {
+        PiuRectangleRecord s, r;
+        PiuRectangleSet(&s, 0, 0, screen->width, screen->height);
+        if (PiuRectangleIntersect(&r, &s, &(*piuScreen)->hole)) {
+        	if (!PiuRectangleIsEqual(&r, &s)) {
+// 				r.y = s.height - (r.y + r.height);
+				if (r.x > 0) {
+					CGRect clip = CGRectMake(0, 0, r.x, s.height);
+					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
+					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y), part);
+					CGImageRelease(part);
+				}
+				if (r.y > 0) {
+					CGRect clip = CGRectMake(r.x, 0, r.width, r.y);
+					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
+					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y + bounds.size.height - r.y), part);
+					CGImageRelease(part);
+				}
+				if (r.y + r.height < s.height) {
+					CGRect clip = CGRectMake(r.x, r.y + r.height, r.width, s.height - (r.y + r.height));
+					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
+					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y - (r.y + r.height)), part);
+					CGImageRelease(part);
+				}
+				if (r.x + r.width < s.width) {
+					CGRect clip = CGRectMake(r.x + r.width, 0, s.width - (r.x + r.width), s.height);
+					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
+					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y), part);
+					CGImageRelease(part);
+				}
+			}
+		}
+		else {
+			CGContextDrawImage(context, bounds, image);
+		}
+	}
 	CGImageRelease(image);
 	CGDataProviderRelease(provider);
 	CGColorSpaceRelease(colorSpace);
@@ -459,6 +498,36 @@ void PiuScreen_create(xsMachine* the)
 	PiuContentDictionary(the, self);
 	PiuScreenDictionary(the, self);
 	PiuBehaviorOnCreate(self);
+}
+
+void PiuScreen_get_hole(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsNewObject();
+	xsDefine(xsResult, xsID_x, xsPiuCoordinate((*self)->hole.x), xsDefault);
+	xsDefine(xsResult, xsID_y, xsPiuCoordinate((*self)->hole.y), xsDefault);
+	xsDefine(xsResult, xsID_width, xsPiuDimension((*self)->hole.width), xsDefault);
+	xsDefine(xsResult, xsID_height, xsPiuDimension((*self)->hole.height), xsDefault);
+}
+
+void PiuScreen_set_hole(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsIntegerValue value;
+	if (xsFindInteger(xsArg(0), xsID_x, &value)) {
+		(*self)->hole.x = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_y, &value)) {
+		(*self)->hole.y = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_width, &value)) {
+		(*self)->hole.width = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_height, &value)) {
+		(*self)->hole.height = value;
+	}
+	PiuContentInvalidate(self, NULL);
+	[(*self)->nsScreenView display];
 }
 
 void PiuScreen_get_running(xsMachine* the)
