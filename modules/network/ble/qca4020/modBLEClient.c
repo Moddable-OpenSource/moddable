@@ -947,15 +947,14 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 			xsUnknownError("connection not found");
 		uint16_t start;
 		CharacteristicDiscoveryRequest *request = (CharacteristicDiscoveryRequest*)connection->procedure.refcon;
+		uint8_t discoverOneCharacteristic = (0 != request->uuid.UUID.UUID_16.UUID_Byte0);
 		for (uint16_t i = 0; i < entry->count; ++i) {
 			uint8_t buffer[16];
 			uint16_t length;
 			qapi_BLE_GATT_Characteristic_Entry_t *characteristic = &entry->CharacteristicEntryList[i];
-			if (0 != request->uuid.UUID.UUID_16.UUID_Byte0) {
-				if (!UUIDEqual(&request->uuid, &characteristic->CharacteristicValue.CharacteristicUUID)) {
-					modLog("No match, continuing");
+			if (discoverOneCharacteristic) {
+				if (!UUIDEqual(&request->uuid, &characteristic->CharacteristicValue.CharacteristicUUID))
 					continue;
-				}
 			}
 			int index = modBLEConnectionSaveAttHandle(connection, &characteristic->CharacteristicValue.CharacteristicUUID, characteristic->CharacteristicValue.CharacteristicValueHandle);
 			uuidToBuffer(&characteristic->CharacteristicValue.CharacteristicUUID, buffer, &length);
@@ -973,6 +972,8 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 				xsmcSet(xsVar(0), xsID_type, xsVar(1));
 			}
 			xsCall2(connection->procedure.target, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+			if (discoverOneCharacteristic)
+				entry->count = 0;	// done
 		}
 		if (0 == entry->count)
 			start = request->end;
@@ -1736,4 +1737,5 @@ static void logGAPAuthenticationEvent(qapi_BLE_GAP_LE_Authentication_Event_Type_
 	}
 }
 #endif
+
 
