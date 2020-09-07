@@ -40,6 +40,7 @@ struct PiuScreenStruct {
     HBITMAP bitmap;
     BITMAPINFO* bitmapInfo;
 	HMODULE library;
+	PiuRectangleRecord hole;
 };
 
 struct PiuScreenMessageStruct {
@@ -93,6 +94,9 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 				(*screen->touch)(screen, touchEventMovedKind, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
 		}
 	} break;
+	case WM_ERASEBKGND: {
+		return 1;
+	} break;
 	case WM_PAINT: {
 		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 		txScreen* screen = (*self)->screen;
@@ -100,7 +104,32 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		HDC hdc = BeginPaint(window, &ps);
 		HGDIOBJ object = SelectObject((*self)->dc, (*self)->bitmap);
 		SetDIBits((*self)->dc, (*self)->bitmap, 0, screen->height, screen->buffer, (*self)->bitmapInfo, DIB_RGB_COLORS);
-		BitBlt(hdc, 0, 0, screen->width, screen->height, (*self)->dc, 0, 0, SRCCOPY);
+		if (PiuRectangleIsEmpty(&(*self)->hole)) {
+			BitBlt(hdc, 0, 0, screen->width, screen->height, (*self)->dc, 0, 0, SRCCOPY);
+		}
+		else {
+			PiuRectangleRecord s, r;
+			PiuRectangleSet(&s, 0, 0, screen->width, screen->height);
+			if (PiuRectangleIntersect(&r, &s, &(*self)->hole)) {
+				if (!PiuRectangleIsEqual(&r, &s)) {
+					if (r.x > 0) {
+						BitBlt(hdc, 0, 0, r.x, s.height, (*self)->dc, 0, 0, SRCCOPY);
+					}
+					if (r.y > 0) {
+						BitBlt(hdc, r.x, 0, r.width, r.y, (*self)->dc, r.x, 0, SRCCOPY);
+					}
+					if (r.y + r.height < s.height) {
+						BitBlt(hdc, r.x, r.y + r.height, r.width, s.height - (r.y + r.height), (*self)->dc, r.x, r.y + r.height, SRCCOPY);
+					}
+					if (r.x + r.width < s.width) {
+						BitBlt(hdc, r.x + r.width, 0, s.width - (r.x + r.width), s.height, (*self)->dc, r.x + r.width, 0, SRCCOPY);
+					}
+				}
+			}
+			else {
+				BitBlt(hdc, 0, 0, screen->width, screen->height, (*self)->dc, 0, 0, SRCCOPY);
+			}
+		}
 		SelectObject((*self)->dc, object);
 		EndPaint(window, &ps);
 		return TRUE;
@@ -327,6 +356,35 @@ void PiuScreen_create(xsMachine* the)
 	PiuContentDictionary(the, self);
 	PiuScreenDictionary(the, self);
 	PiuBehaviorOnCreate(self);
+}
+
+void PiuScreen_get_hole(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsNewObject();
+	xsDefine(xsResult, xsID_x, xsPiuCoordinate((*self)->hole.x), xsDefault);
+	xsDefine(xsResult, xsID_y, xsPiuCoordinate((*self)->hole.y), xsDefault);
+	xsDefine(xsResult, xsID_width, xsPiuDimension((*self)->hole.width), xsDefault);
+	xsDefine(xsResult, xsID_height, xsPiuDimension((*self)->hole.height), xsDefault);
+}
+
+void PiuScreen_set_hole(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsIntegerValue value;
+	if (xsFindInteger(xsArg(0), xsID_x, &value)) {
+		(*self)->hole.x = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_y, &value)) {
+		(*self)->hole.y = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_width, &value)) {
+		(*self)->hole.width = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_height, &value)) {
+		(*self)->hole.height = value;
+	}
+	PiuContentInvalidate(self, NULL);
 }
 
 void PiuScreen_get_running(xsMachine* the)

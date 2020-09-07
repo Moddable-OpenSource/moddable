@@ -39,6 +39,7 @@ struct PiuScreenStruct {
 	gboolean timerRunning;
 	gboolean touching;
 	PiuScreenMessage firstMessage;
+	PiuRectangleRecord hole;
 };
 
 struct PiuScreenMessageStruct {
@@ -77,8 +78,38 @@ gboolean onScreenDraw(GtkWidget *widget, cairo_t *cr, gpointer data)
 	gint width = cairo_image_surface_get_width(surface);
 	gint height = cairo_image_surface_get_height(surface);
 	cairo_set_source_surface(cr, surface, 0, 0);
-	cairo_rectangle(cr, 0, 0, width, height);
-	cairo_fill(cr);
+	if (PiuRectangleIsEmpty(&(*self)->hole)) {
+		cairo_rectangle(cr, 0, 0, width, height);
+		cairo_fill(cr);
+	}
+	else {
+		PiuRectangleRecord s, r;
+		PiuRectangleSet(&s, 0, 0, width, height);
+		if (PiuRectangleIntersect(&r, &s, &(*self)->hole)) {
+			if (!PiuRectangleIsEqual(&r, &s)) {
+				if (r.x > 0) {
+					cairo_rectangle(cr, 0, 0, r.x, height);
+					cairo_fill(cr);
+				}
+				if (r.y > 0) {
+					cairo_rectangle(cr, r.x, 0, r.width, r.y);
+					cairo_fill(cr);
+				}
+				if (r.y + r.height < s.height) {
+					cairo_rectangle(cr, r.x, r.y + r.height, r.width, height - (r.y + r.height));
+					cairo_fill(cr);
+				}
+				if (r.x + r.width < s.width) {
+					cairo_rectangle(cr, r.x + r.width, 0, width - (r.x + r.width), height);
+					cairo_fill(cr);
+				}
+			}
+		}
+		else {
+			cairo_rectangle(cr, 0, 0, width, height);
+			cairo_fill(cr);
+		}
+	}
 	return TRUE;
 }
 
@@ -329,6 +360,36 @@ void PiuScreen_get_running(xsMachine* the)
 	xsResult = (*self)->library ? xsTrue : xsFalse;
 }
 	
+void PiuScreen_get_hole(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsNewObject();
+	xsDefine(xsResult, xsID_x, xsPiuCoordinate((*self)->hole.x), xsDefault);
+	xsDefine(xsResult, xsID_y, xsPiuCoordinate((*self)->hole.y), xsDefault);
+	xsDefine(xsResult, xsID_width, xsPiuDimension((*self)->hole.width), xsDefault);
+	xsDefine(xsResult, xsID_height, xsPiuDimension((*self)->hole.height), xsDefault);
+}
+
+void PiuScreen_set_hole(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsIntegerValue value;
+	if (xsFindInteger(xsArg(0), xsID_x, &value)) {
+		(*self)->hole.x = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_y, &value)) {
+		(*self)->hole.y = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_width, &value)) {
+		(*self)->hole.width = value;
+	}
+	if (xsFindInteger(xsArg(0), xsID_height, &value)) {
+		(*self)->hole.height = value;
+	}
+	PiuContentInvalidate(self, NULL);
+	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, (*self)->screen->width, (*self)->screen->height);
+}
+
 void PiuScreen_launch(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
