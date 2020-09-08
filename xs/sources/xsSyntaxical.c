@@ -3416,6 +3416,10 @@ txNode* fxObjectBindingFromExpression(txParser* parser, txNode* theNode, txToken
 	txNode* binding;
 	txUnsigned flags = 0;
 	while (property) {
+		if (!property->description) {
+			parser->errorSymbol = parser->SyntaxErrorSymbol;
+			return NULL;
+		}
 		if (property->description->token == XS_TOKEN_PROPERTY) {
 			binding = fxBindingFromExpression(parser, ((txPropertyNode*)property)->value, theToken);
 			if (!binding) {
