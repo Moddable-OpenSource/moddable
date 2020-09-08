@@ -188,9 +188,9 @@ int dvi_adpcm_encode(void *in_buf, int in_size, void *out_buf, int *out_size)
 
     /* Step 6 - Output value */
     if ( bufferstep ) {
-      outputbuffer = (delta << 4) & 0xf0;
+      outputbuffer = delta & 0x0F;
     } else {
-      *out_sbuf++ = (delta & 0x0f) | outputbuffer;
+      *out_sbuf++ = ((delta << 4) & 0xf0) | outputbuffer;
     }
     bufferstep = !bufferstep;
   }
