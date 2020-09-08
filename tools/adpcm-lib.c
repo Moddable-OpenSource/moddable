@@ -337,7 +337,7 @@ int adpcm_decode_block (int16_t *outbuf, const uint8_t *inbuf, size_t inbufsize,
     int32_t pcmdata[2];
     int8_t index[2];
 
-    if (inbufsize < channels * 4)
+    if (inbufsize < (uint32_t)channels * 4)
         return 0;
 
     for (ch = 0; ch < channels; ch++) {
