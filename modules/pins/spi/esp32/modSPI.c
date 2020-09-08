@@ -133,8 +133,12 @@ void modSPIInit(modSPIConfiguration config)
 		buscfg.quadhd_io_num = -1;
 
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
-		if (ret) return;
-		gSPIInited = 1;
+		if (ret) {
+			free(gSPITransactionBuffer);
+			gSPITransactionBuffer = NULL;
+			return;
+		}
+
 		gSPIData = NULL;
 		gSPIDataCount = -1;
 	}
@@ -149,12 +153,16 @@ void modSPIInit(modSPIConfiguration config)
 	devcfg.post_cb = postTransfer;
 	devcfg.input_delay_ns = config->miso_delay;
 
-
 	ret = spi_bus_add_device(config->spiPort, &devcfg, &config->spi_dev);
 	if (ret) {
-		printf("spi_bus_add_device failed %d\n", ret);
+		modLog("spi_bus_add_device failed");
+		free(gSPITransactionBuffer);
+		gSPITransactionBuffer = NULL;
+		spi_bus_free(config->spiPort);
 		return;
 	}
+
+	gSPIInited += 1;
 }
 
 void modSPIUninit(modSPIConfiguration config)
@@ -162,13 +170,20 @@ void modSPIUninit(modSPIConfiguration config)
 	if (config == gConfig)
 		modSPIActivateConfiguration(NULL);
 
-//@@ should only be done on last SPI client closing
-	if (config->spi_dev)
+	if (config->spi_dev) {
 		spi_bus_remove_device(config->spi_dev);
+		config->spi_dev = NULL;
+	}
+
+	gSPIInited -= 1;
+	if (gSPIInited)
+		return;
+
+	spi_bus_free(config->spiPort);
 
 	free(gSPITransactionBuffer);
 	gSPITransactionBuffer = NULL;
-	config->spi_dev = NULL;
+
 }
 
 void modSPIActivateConfiguration(modSPIConfiguration config)
@@ -431,7 +446,7 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 	ret = spi_device_transmit(config->spi_dev, &t);
 
 	if (0 > ret)
-		printf("problems sending spi message: ret: %d\n", ret);
+		modLog("problems sending spi message");
 }
 
 void modSPIFlush(void)
@@ -490,6 +505,6 @@ void modSPITxCLUT16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t co
 {
 //	gCLUT16 = colors;
 //	modSPITxCommon(config, data, count, modSpiLoadBufferGray16To16BE);
-	printf("need to implement CLUT16to16BE\n");
+	modLog("need to implement CLUT16to16BE");
 }
 
