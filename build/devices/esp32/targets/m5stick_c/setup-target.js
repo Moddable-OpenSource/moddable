@@ -30,7 +30,6 @@ export default function (done) {
 	global.power = new AXP192({
 		sda: 21,
 		scl: 22,
-		address: 0x34
 	});
 
 	state.accelerometerGyro = new IMU;

@@ -24,6 +24,9 @@ const kCHG_100mA = 0
 
 export default class AXP192 extends SMBus {
 	constructor(it) {
+		if (it.address == null) {
+			it.address = 0x34
+		}
 		super(it);
 		this.initialize();
 	}
