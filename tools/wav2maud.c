@@ -1,18 +1,25 @@
 #include "mc.xs.h"
-
-extern int dvi_adpcm_encode(void *in_buf, int in_size, void *out_buf, int *out_size);
+#include "adpcm-lib.h"
 
 void Tool_compressIMA(xsMachine* the)
 {
+	static void *context;
 	size_t inputBufferBytes = xsToInteger(xsArg(1)) << 1;
 	void *uncompressedSamples = xsToArrayBuffer(xsArg(0));
-	int outputSize;
-	unsigned char imaBuffer[256];
+	size_t outputSize = 0;
+	uint8_t imaBuffer[256];
 
 	if ((inputBufferBytes >> 1) > sizeof(imaBuffer))		// very conservative check
 		xsUnknownError("too many samples");
 
-	dvi_adpcm_encode(uncompressedSamples, inputBufferBytes, imaBuffer, &outputSize);
+	if (!context) {
+		const int lookahead = 3;
+		const int noise_shaping = NOISE_SHAPING_DYNAMIC;
+		const int32_t average_deltas [2] = {0, 0};
+		context = adpcm_create_context(1, lookahead, noise_shaping, (int32_t *)average_deltas);
+	}
+
+	adpcm_encode_block(context, imaBuffer, &outputSize, uncompressedSamples, inputBufferBytes >> 1);
 
 	xsResult = xsArrayBuffer(imaBuffer, outputSize);
 }
