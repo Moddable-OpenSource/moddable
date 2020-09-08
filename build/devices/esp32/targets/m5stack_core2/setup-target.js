@@ -38,8 +38,6 @@ export default function (done) {
 		onreading: nop
 	}
 
-	//trace('The Temp:', state.accelerometerGyro.sampleTemp(), '\n');
-
 	accelerometer.start = function (frequency) {
 		accelerometer.stop();
 		state.accelerometerTimerID = Timer.repeat(id => {
@@ -48,8 +46,6 @@ export default function (done) {
 			});
 			const sample = state.accelerometerGyro.sample();
 			if (sample) {
-				sample.y *= -1;
-				sample.z *= -1;
 				state.handleRotation(sample);
 				accelerometer.onreading(sample);
 			}
@@ -97,16 +93,16 @@ export default function (done) {
 	if (config.autorotate && global.Application) {
 		state.handleRotation = function (reading) {
 			if (Math.abs(reading.y) > Math.abs(reading.x)) {
-				if (reading.y < -0.7 && application.rotation != 90) {
-					application.rotation = 90;
-				} else if (reading.y > 0.7 && application.rotation != 270) {
-					application.rotation = 270;
+				if (reading.y < -0.7 && application.rotation != 180) {
+					application.rotation = 180;
+				} else if (reading.y > 0.7 && application.rotation != 0) {
+					application.rotation = 0;
 				}
 			} else {
-				if (reading.x < -0.7 && application.rotation != 180) {
-					application.rotation = 180;
-				} else if (reading.x > 0.7 && application.rotation != 0) {
-					application.rotation = 0;
+				if (reading.x < -0.7 && application.rotation != 270) {
+					application.rotation = 270;
+				} else if (reading.x > 0.7 && application.rotation != 90) {
+					application.rotation = 90;
 				}
 			}
 		}
