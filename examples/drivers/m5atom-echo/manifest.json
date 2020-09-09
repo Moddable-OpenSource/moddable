@@ -28,6 +28,6 @@
 	},
 	"resources": {
 		"*":
-			"./wav/*"
+			"$(MODDABLE)/examples/assets/sounds/*"
 	}
 }
