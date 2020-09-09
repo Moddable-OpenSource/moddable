@@ -34,14 +34,11 @@ speaker.callback = function () {
 	trace('Speaker Stopped!');
 };
 
-let clips = [];
-
-for (let i = 0; true; i++) {
-	const name = Resource.name(i);
-	if (!name) break;
-	if( name.endsWith('.maud'))
-		clips.push(name);
-}
+let clips = [
+	'bflatmajor.maud',
+	'wilhelm-scream.maud',
+	'magic-sound.maud'
+];
 
 button.a.onChanged = function () {
 	if (button.a.read()) {
