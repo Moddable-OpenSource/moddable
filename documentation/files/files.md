@@ -522,22 +522,6 @@ if (Resource.exists(path))
 
 ***
 
-#### `static name( index)`
-
-The static `name` returns the resource name at the specified `index` argument.
-
-```js
-import Resource from "Resource";
-
-for (let i = 0; true; i++) {
-	const name = Resource.name(i);
-	if (!name) break;
-	trace(name, "\n");
-}
-```
-
-***
-
 ### `slice(begin[, end])`
 
 The `slice` function returns a portion of the resource in an `ArrayBuffer`. The default value of `end` is the resource size.
