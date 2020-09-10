@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,28 +18,37 @@
  *
  */
 
-import {
-	Content,
-	Template,
-} from "piu/All";
+#include "xsmc.h"
+#include "xsHost.h"
 
-export const Screen = Template(Object.freeze({
-	__proto__: Content.prototype,
-	_create($, it) @ "PiuScreen_create",
-	
-	get hole() @ "PiuScreen_get_hole",
-	get running() @ "PiuScreen_get_running",
-	
-	set hole(it) @ "PiuScreen_set_hole",
-	
-	launch(path) @ "PiuScreen_launch",
-	postMessage(json) @ "PiuScreen_postMessage",
-	quit() @ "PiuScreen_quit",
-}));
+#if ESP32
 
-export class ScreenWorker @ "PiuScreenWorkerDelete" {
-	constructor(name, screen) @ "PiuScreenWorkerCreate"
-	close()  @ "PiuScreenWorker_close"
-	onmessage()  { debugger }
-	postMessage(message)  @ "PiuScreenWorker_postMessage"
+#include "esp_timer.h"
+
+void xs_time_microseconds(xsMachine *the)
+{
+	xsNumberValue microseconds = (xsNumberValue)esp_timer_get_time();
+	xsmcSetNumber(xsResult, microseconds);
 }
+
+#elif defined(__ets__)
+
+void xs_time_microseconds(xsMachine *the)
+{
+	modTimeVal tv;
+	modGetTimeOfDay(&tv, NULL);
+	xsmcSetNumber(xsResult, ((xsNumberValue)tv.tv_sec * 1000000.0) + (xsNumberValue)tv.tv_usec);
+}
+
+#elif mxMacOSX
+
+void xs_time_microseconds(xsMachine *the)
+{
+	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+	xsmcSetNumber(xsResult, now * 1000000.0);
+}
+
+#else
+	#error microseconds unsupported
+#endif
+

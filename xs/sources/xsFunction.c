@@ -348,7 +348,7 @@ void fx_Function_prototype_apply(txMachine* the)
 		fxToInstance(the, mxArgv(1));
 		mxPushSlot(mxArgv(1));
 		fxGetID(the, mxID(_length));
-		c = fxToInteger(the, the->stack);
+		c = (txInteger)fxToLength(the, the->stack);
 		the->stack++;
 		for (i = 0; i < c; i++) {
 			mxPushSlot(mxArgv(1));
