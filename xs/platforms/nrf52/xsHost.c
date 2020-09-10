@@ -108,7 +108,7 @@ int getDOY(int year, int month, int day) {
     int dayCount[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
     int dayOfYear = dayCount[month] + day;
     if(month > 1 && isLeapYear(year)) dayOfYear++;
-    return dayOfYear;
+    return dayOfYear - 1;		// tm_yday is 0-365
 };
 
 struct modTm *modGmTime(const modTime_t *timep)
@@ -128,6 +128,7 @@ struct modTm *modGmTime(const modTime_t *timep)
 		int daysInYear = 365;
 		if (isLeapYear(gTM.tm_year))
 			daysInYear += 1;
+
 		if ((days + daysInYear) >= t)
 			break;
 		gTM.tm_year += 1;
@@ -159,17 +160,20 @@ struct modTm *modLocalTime(const modTime_t *timep)
 modTime_t modMkTime(struct modTm *tm)
 {
 	modTime_t t;
-//** MDK **  needs verification
+	uint16_t yday;
+
+	yday = getDOY(tm->tm_year + 1900, tm->tm_mon, tm->tm_mday);
 
 	t =      tm->tm_sec
 		+   (tm->tm_min * 60)
 		+   (tm->tm_hour * 3600)
-		+   (tm->tm_yday * 86400)
+		+   (yday * 86400)
 		+  ((tm->tm_year-70) * 31536000)
 		+ (((tm->tm_year-69)/4) * 86400)
 		- (((tm->tm_year-1)/100) * 86400)
 		+ (((tm->tm_year+299)/400)*86400);
-//	t = t - (gTimeZoneOffset + gDaylightSavings);
+	t = t - (gTimeZoneOffset + gDaylightSavings);
+
 	return t;
 }
 
