@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,35 +18,9 @@
  *
  */
 
-/*
-	socket
-*/
 
-export class Socket @ "xs_socket_destructor" {
-	constructor(dictionary) @ "xs_socket";		// {address: "IPv4.0.1.2", host: "foo.com", port: 80, kind: "TCP/UDP"}
+import Time from "time";
 
-	read() @ "xs_socket_read";
-	write() @ "xs_socket_write";
+function microseconds() @ "xs_time_microseconds";
 
-	close() @ "xs_socket_close";
-	get(name) @ "xs_socket_get";
-	suspend() @ "xs_socket_suspend";
-
-	// callback()		// connected, error/disconnected, read ready (bytes ready), write ready (bytes can write)
-};
-
-export class Listener @ "xs_listener_destructor" {
-	constructor(dictionary) @ "xs_listener";		// {port: 80}
-
-	close() @ "xs_listener_close";
-
-	// callback()		// new socket arrived
-};
-
-Object.freeze(Socket.prototype);
-Object.freeze(Listener.prototype);
-
-export default Object.freeze({
-	Socket,
-	Listener
-});
+Time.__defineGetter__("microseconds", microseconds);

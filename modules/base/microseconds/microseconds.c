@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,35 +18,37 @@
  *
  */
 
-/*
-	socket
-*/
+#include "xsmc.h"
+#include "xsHost.h"
 
-export class Socket @ "xs_socket_destructor" {
-	constructor(dictionary) @ "xs_socket";		// {address: "IPv4.0.1.2", host: "foo.com", port: 80, kind: "TCP/UDP"}
+#if ESP32
 
-	read() @ "xs_socket_read";
-	write() @ "xs_socket_write";
+#include "esp_timer.h"
 
-	close() @ "xs_socket_close";
-	get(name) @ "xs_socket_get";
-	suspend() @ "xs_socket_suspend";
+void xs_time_microseconds(xsMachine *the)
+{
+	xsNumberValue microseconds = (xsNumberValue)esp_timer_get_time();
+	xsmcSetNumber(xsResult, microseconds);
+}
 
-	// callback()		// connected, error/disconnected, read ready (bytes ready), write ready (bytes can write)
-};
+#elif defined(__ets__)
 
-export class Listener @ "xs_listener_destructor" {
-	constructor(dictionary) @ "xs_listener";		// {port: 80}
+void xs_time_microseconds(xsMachine *the)
+{
+	modTimeVal tv;
+	modGetTimeOfDay(&tv, NULL);
+	xsmcSetNumber(xsResult, ((xsNumberValue)tv.tv_sec * 1000000.0) + (xsNumberValue)tv.tv_usec);
+}
 
-	close() @ "xs_listener_close";
+#elif mxMacOSX
 
-	// callback()		// new socket arrived
-};
+void xs_time_microseconds(xsMachine *the)
+{
+	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+	xsmcSetNumber(xsResult, now * 1000000.0);
+}
 
-Object.freeze(Socket.prototype);
-Object.freeze(Listener.prototype);
+#else
+	#error microseconds unsupported
+#endif
 
-export default Object.freeze({
-	Socket,
-	Listener
-});

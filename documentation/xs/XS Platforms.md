@@ -1,8 +1,8 @@
 # XS Platforms
 
-Copyright 2016-2017 Moddable Tech, Inc.
+Copyright 2016-2020 Moddable Tech, Inc.
 
-Revised: September 9, 2017
+Revised: September 2, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -58,7 +58,6 @@ The Xtensa instruction set and architecture, used most notably in microcontrolle
 	#define c_read32(POINTER) *((txU4 *)(POINTER))
 	
 	#define ICACHE_FLASH_ATTR
-	#define ICACHE_STORE_ATTR
 	#define ICACHE_RODATA_ATTR
 	#define ICACHE_XS6RO_ATTR
 	#define ICACHE_XS6RO2_ATTR

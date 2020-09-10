@@ -146,7 +146,7 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->currentChunksSize = 0;
 	the->peakChunksSize = 0;
 	the->maximumChunksSize = 0;
-	the->minimumChunksSize = theCreation->incrementalChunkSize - sizeof(txBlock);
+	the->minimumChunksSize = theCreation->incrementalChunkSize;
 	
 	the->currentHeapCount = 0;
 	the->peakHeapCount = 0;
@@ -379,6 +379,9 @@ void fxGrowChunks(txMachine* the, txSize theSize)
 		theSize = roundup(theSize, the->minimumChunksSize);
 	theSize += sizeof(txBlock);
 	aData = fxAllocateChunks(the, theSize);
+#ifdef mxSnapshot
+	c_memset(aData, 0, theSize);
+#endif
 	if (!aData) {
 		fxReport(the, "# Chunk allocation: failed for %ld bytes\n", theSize);
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);

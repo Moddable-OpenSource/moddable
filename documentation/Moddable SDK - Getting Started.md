@@ -1,6 +1,6 @@
 # Moddable SDK – Getting Started
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: August 25, 2020
+Revised: September 1, 2020
 
 This document provides an introduction to getting started building apps with the Moddable SDK. It describes how to configure the host build environments, install the required SDKs, drivers and development tools, build applications, and use `xsbug`, the JavaScript source code debugger.
 
@@ -118,6 +118,8 @@ More detailed getting started guides are available for the following devices:
 	```
 	
 	> Note: These instructions assume that your shell sources from `~/.profile` when a new terminal is opened. That may not be the case depending on what shell you use and how you have it configured. Starting with macOS Catalina, the [default shell is `zsh`](https://support.apple.com/en-us/HT208050) which uses `~/.zshrc` instead.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 	
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
@@ -162,7 +164,7 @@ More detailed getting started guides are available for the following devices:
 
 	![Catalina Developer Options](./assets/getting-started/catalina-security.png)
 
-5. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+5. Download and untar the [Xtensa lx106 architecture GCC toolchain](https://www.moddable.com/private/esp8266.toolchain.darwin.tgz). Copy the `toolchain` directory into the `~/esp` directory.
 
 6. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
 
@@ -256,7 +258,7 @@ More detailed getting started guides are available for the following devices:
 
 8. Connect the ESP32 device to your macOS host with a USB cable.
 		
-9. Set the `IDF_PATH` and `PATH` environment variables in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
+9. Set the `IDF_PATH` and `PATH` environment variables in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system.
 
 	```
 	export IDF_PATH=$HOME/esp32/esp-idf
@@ -283,6 +285,8 @@ More detailed getting started guides are available for the following devices:
 	```
 
 	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 10. Verify the setup by building `helloworld` for the `esp32` target:
 
@@ -311,7 +315,7 @@ More detailed getting started guides are available for the following devices:
 <a id="host-windows"></a>
 #### Host environment setup
 
-> The Moddable SDK requires Windows 7 Pro SP1 or newer and Microsoft Visual Studio Community 2017 or newer.
+> The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Community 2017 or newer.
 
 1. Download [Microsoft Visual Studio 2019 Community Edition installer](https://www.visualstudio.com/downloads/). Launch the installer, choose the "Desktop development for C++" option, and install. 
 
@@ -326,7 +330,7 @@ More detailed getting started guides are available for the following devices:
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
-4. Setup the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
+4. Set the `MODDABLE` environment variable to point at your local Moddable SDK repository directory:
 
 	```text
 	set MODDABLE=C:\Users\<user>\Projects\moddable
@@ -371,9 +375,9 @@ More detailed getting started guides are available for the following devices:
 
 4. Download the [esptool](https://github.com/igrr/esptool-ck/releases/download/0.4.13/esptool-0.4.13-win32.zip). Unzip the archive and copy the `esptool.exe` executable from the `esptool-0.4.13-win32` directory into the `esp` directory.
 
-5. Download and unzip the [Cygwin toolchain support package](http://www.moddable.tech/private/cygwin.win32.zip). Copy the `cygwin` directory into the `esp` directory.
+5. Download and unzip the [Cygwin toolchain support package](https://www.moddable.com/private/cygwin.win32.zip). Copy the `cygwin` directory into the `esp` directory.
 	
-6. Download and unzip the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.win32.zip). Copy the `xtensa-lx106-elf` directory into the `esp` directory.
+6. Download and unzip the [Xtensa lx106 architecture GCC toolchain](https://www.moddable.com/private/esp8266.toolchain.win32.zip). Copy the `xtensa-lx106-elf` directory into the `esp` directory.
 
 7. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `esp` directory.
 
@@ -526,7 +530,9 @@ More detailed getting started guides are available for the following devices:
 	MODDABLE=~/Projects/moddable
 	export MODDABLE
 	```
-	
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
+
 5. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```text
@@ -539,6 +545,8 @@ More detailed getting started guides are available for the following devices:
 	```text
 	export PATH=$PATH:$MODDABLE/build/bin/lin/release
 	```
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 7. Install the Screen Test desktop simulator and `xsbug` debugger applications:
 
@@ -569,7 +577,7 @@ More detailed getting started guides are available for the following devices:
 
 2. Create an `esp` directory in your home directory at `~/esp` for required third party SDKs and tools.
  
-3. Download and untar the [Xtensa lx106 architecture GCC toolchain](http://www.moddable.tech/private/esp8266.toolchain.linux.tgz). Copy the `toolchain` directory into the `~/esp` directory.
+3. Download and untar the [Xtensa lx106 architecture GCC toolchain](https://www.moddable.com/private/esp8266.toolchain.linux.tgz). Copy the `toolchain` directory into the `~/esp` directory.
 
 4. Download the [ESP8266 core for Arduino repository](https://github.com/esp8266/Arduino/releases/download/2.3.0/esp8266-2.3.0.zip). Copy the extracted `esp8266-2.3.0` folder into your `~/esp` directory.
 
@@ -587,23 +595,21 @@ More detailed getting started guides are available for the following devices:
 	git checkout release/v3.2
 	```
 
-6. Install Python and the required Python packages. We've used [pip](https://pypi.org/project/pip/) to install the additional components.
+6. Install Python and the required Python packages. We've used [pip](https://pypi.org/project/pip/) to install the additional components. The packages to install vary based on your distribution's default Python version.
 
-	For Ubuntu 20:
+	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
 
 	```text
 	sudo apt-get install python-is-python3 python3-pip python3-serial
 	```
 
-	For Ubuntu versions prior to 20:
+	For Ubuntu versions prior to 20.04 (and other Linux distributions that default to Python 2):
 
 	```text
 	sudo apt-get install python
 	sudo easy_install pip
 	pip install --user pyserial
 	```
-
-
 	
 7. Connect the ESP8266 to your computer with a USB cable.
 
@@ -659,15 +665,15 @@ More detailed getting started guides are available for the following devices:
     git submodule update
     ```
 
-5. Install the packages required to compile with the `ESP-IDF`.
+5. Install the packages required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
 
-	For Ubuntu 20:
+	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
 
 	```text
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
 	```
 
-	For Ubuntu versions prior to 20:
+	For Ubuntu versions prior to 20.04 (and other Linux distributions that default to Python 2):
 
 	```text
 	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
@@ -675,7 +681,7 @@ More detailed getting started guides are available for the following devices:
 
 6. Connect the ESP32 device to your Linux host with a USB cable.
 
-7. Set the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
+7. Set the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system.
 
 	```
     export IDF_PATH=~/esp32/esp-idf
@@ -702,6 +708,8 @@ More detailed getting started guides are available for the following devices:
 	```
 	
 	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 8. Install the required Python packages:
 

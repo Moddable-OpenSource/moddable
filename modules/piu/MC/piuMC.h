@@ -175,8 +175,8 @@ struct PiuImageStruct {
 #ifdef piuGPU
 	uint32_t frameID;
 	uint8_t frameChanged;
-	uint8_t frameFormat;
 #endif
+	uint8_t frameFormat;
 };
 
 // PiuView.c

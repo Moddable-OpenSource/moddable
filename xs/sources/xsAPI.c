@@ -1762,20 +1762,21 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 
 txMachine* fxBeginHost(txMachine* the)
 {
-	/* ARGC */
-	mxPushInteger(0);
+	fxOverflow(the, -7, C_NULL, 0);
 	/* THIS */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* FUNCTION */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* TARGET */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* RESULT */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* FRAME */
-	fxOverflow(the, -1, C_NULL, 0);
-	--the->stack;
-	the->stack->next = the->frame;
+	(--the->stack)->next = the->frame;
 	the->stack->ID = XS_NO_ID;
 	the->stack->flag = XS_C_FLAG;
 #ifdef mxDebug
@@ -1788,10 +1789,12 @@ txMachine* fxBeginHost(txMachine* the)
 	the->stack->value.frame.code = the->code;
 	the->stack->value.frame.scope = the->scope;
 	the->frame = the->stack;
+	/* COUNT */
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_INTEGER_KIND);
+	the->stack->value.integer = 0;
 	/* VARC */
-	fxOverflow(the, -1, C_NULL, 0);
-	--the->stack;
-	the->stack->next = C_NULL;
+	(--the->stack)->next = C_NULL;
 	the->stack->ID = XS_NO_ID;
 	the->stack->flag = XS_NO_FLAG;
 	the->stack->kind = XS_VAR_KIND;
@@ -1804,7 +1807,7 @@ txMachine* fxBeginHost(txMachine* the)
 
 void fxEndHost(txMachine* the)
 {
-	the->stack = the->frame + 6;
+	the->stack = the->frame + 5;
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;

@@ -107,10 +107,10 @@ int dvi_adpcm_decode(void *in_buf, int in_size, void *out_buf)
   
     /* Step 1 - get the delta value */
     if ( bufferstep ) {
-      delta = inputbuffer & 0xf;
+      delta = (inputbuffer >> 4) & 0xf;
     } else {
       inputbuffer = *in_sbuf++;
-      delta = (inputbuffer >> 4) & 0xf;
+      delta = inputbuffer & 0xf;
     }
     bufferstep = !bufferstep;
 

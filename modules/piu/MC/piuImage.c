@@ -212,9 +212,7 @@ void PiuImage_create(xsMachine* the)
 	cch = (ColorCellHeader)data;
 	if (('c' != c_read8(&cch->id_c)) || ('s' != c_read8(&cch->id_s)))
 		xsUnknownError("invalid image data");
-#if piuGPU
 	(*self)->frameFormat = 	c_read8(&cch->bitmapFormat);
-#endif
 	if (0 != c_read8(&cch->reserved))
 		xsUnknownError("invalid image reserved");
 	(*self)->data = data;
@@ -235,10 +233,8 @@ void PiuImage_create(xsMachine* the)
 	if ((*self)->frameFormat == kCommodettoBitmapRGB565LE)
 		(*self)->frameFormat |= kCommodettoBitmapPacked;
 #else
-#if piuGPU
 	if ((*self)->frameFormat != kCommodettoBitmapRGB565LE)
 		xsUnknownError("invalid image pixel format");
-#endif
 #endif
 	frameCount = (*self)->frameCount = c_read16(&cch->frameCount);
 	if (frameCount > 1) {

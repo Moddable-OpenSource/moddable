@@ -213,6 +213,7 @@ void app_main() {
 	modPrelaunch();
 
 	esp_log_level_set("wifi", ESP_LOG_ERROR);
+	esp_log_level_set("phy_init", ESP_LOG_ERROR);
 	esp_log_level_set("I2S", ESP_LOG_ERROR);
 
 	ESP_ERROR_CHECK(nvs_flash_init());

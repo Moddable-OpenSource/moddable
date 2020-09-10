@@ -43,8 +43,6 @@
 	#define LOG_GAP_INT(i)
 #endif
 
-#define OBJ_CLIENT(_c) ((modBLEClientConnection)_c)->objClient
-
 typedef struct modBLEClientConnectionRecord modBLEClientConnectionRecord;
 typedef modBLEClientConnectionRecord *modBLEClientConnection;
 
@@ -52,16 +50,6 @@ struct modBLEClientConnectionRecord {
 	modBLEConnectionPart;
 	
 	xsSlot objClient;
-};
-
-typedef struct modBLEDiscoveredRecord modBLEDiscoveredRecord;
-typedef modBLEDiscoveredRecord *modBLEDiscovered;
-
-struct modBLEDiscoveredRecord {
-	struct modBLEDiscoveredRecord		*next;
-
-	struct ble_gap_disc_desc			disc;
-	uint8_t								data[1];
 };
 
 typedef struct {
@@ -76,7 +64,8 @@ typedef struct {
 
 	uint8_t terminating;
 	
-	modBLEDiscovered discovered;
+	modBLEMessageQueueRecord discoveryQueue;
+	modBLEMessageQueueRecord notificationQueue;
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -86,14 +75,6 @@ typedef struct {
 	uint8_t isCharacteristic;
 	uint8_t data[1];
 } attributeReadDataRecord, *attributeReadData;
-
-typedef struct {
-	uint8_t isNotification;
-	uint16_t conn_id;
-	uint16_t handle;
-	uint16_t length;
-	uint8_t data[1];
-} attributeNotificationRecord, *attributeNotification;
 
 typedef struct {
 	uint16_t conn_id;
@@ -120,6 +101,38 @@ typedef struct {
 	uint16_t mtu;
 } mtuExchangedRecord;
 
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	struct ble_gatt_svc service;
+	uint8_t completed;
+} serviceSearchRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	struct ble_gatt_chr characteristic;
+	uint8_t completed;
+} characteristicSearchRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	struct ble_gatt_dsc descriptor;
+	uint8_t completed;
+} descriptorSearchRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	struct ble_gap_disc_desc disc;
+	uint8_t data[1];
+} deviceDiscoveryRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	uint8_t isNotification;
+	uint16_t handle;
+	uint16_t length;
+	uint8_t data[1];
+} attributeNotificationRecord, *attributeNotification;
+
 static void uuidToBuffer(uint8_t *buffer, ble_uuid_any_t *uuid, uint16_t *length);
 static void bufferToUUID(ble_uuid_any_t *uuid, uint8_t *buffer, uint16_t length);
 
@@ -128,7 +141,6 @@ static void nimble_on_sync(void);
 static int nimble_gap_event(struct ble_gap_event *event, void *arg);
 static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg);
 static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg);
-static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg);
 static int nimble_descriptor_event(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t chr_def_handle, const struct ble_gatt_dsc *dsc, void *arg);
 static int nimble_read_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
 static int nimble_subscribe_event(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg);
@@ -136,6 +148,12 @@ static int nimble_mtu_event(uint16_t conn_handle, const struct ble_gatt_error *e
 
 static void onConnected(struct ble_gap_conn_desc *desc);
 static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void characteristicHandleDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void logGAPEvent(struct ble_gap_event *event);
 
@@ -153,6 +171,8 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
 	
+	modBLEMessageQueueConfigure(&gBLE->notificationQueue, the, notificationEvent, NULL);
+
 	ble_hs_cfg.sync_cb = nimble_on_sync;
 
 	esp_err_t err = modBLEPlatformInitialize();
@@ -185,12 +205,8 @@ void xs_ble_client_destructor(void *data)
 		}
 		connection = next;
 	}
-	modBLEDiscovered discovered = ble->discovered;
-	while (discovered != NULL) {
-		modBLEDiscovered disc = discovered;
-		discovered = discovered->next;
-		c_free(disc);
-	}
+	modBLEMessageQueueEmpty(&ble->discoveryQueue);
+	modBLEMessageQueueEmpty(&ble->notificationQueue);
 	c_free(ble);
 	gBLE = NULL;
 
@@ -245,6 +261,7 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	disc_params.window = window;
 	disc_params.filter_policy = filterPolicy;
 
+	modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, scanResultEvent, NULL);
 	ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params, nimble_gap_event, NULL);
  }
 
@@ -365,12 +382,12 @@ void xs_gap_connection_initialize(xsMachine *the)
 	xsmcVars(1);	// xsArg(0) is client
 	xsmcGet(xsVar(0), xsArg(0), xsID_connection);
 	conn_id = xsmcToInteger(xsVar(0));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	connection->the = the;
 	connection->objConnection = xsThis;
-	OBJ_CLIENT(connection) = xsArg(0);
+	connection->objClient = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -413,6 +430,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 	uint16_t argc = xsmcArgc;
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
+	modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, serviceDiscoveryEvent, NULL);
 	if (argc > 1) {
 		ble_uuid_any_t uuid;
 		bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(1)), xsmcGetArrayBufferLength(xsArg(1)));
@@ -433,16 +451,18 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 	csr = c_malloc(sizeof(attributeSearchRecord));
+	
 	if (NULL != csr) {
 		csr->conn_id = conn_id;
 		csr->obj = xsThis;
+		modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, characteristicDiscoveryEvent, csr);
 		if (argc > 3) {
 			ble_uuid_any_t uuid;
 			bufferToUUID(&uuid, (uint8_t*)xsmcToArrayBuffer(xsArg(3)), xsmcGetArrayBufferLength(xsArg(3)));
-			ble_gattc_disc_chrs_by_uuid(conn_id, start, end, (const ble_uuid_t *)&uuid, nimble_characteristic_event, csr);
+			ble_gattc_disc_chrs_by_uuid(conn_id, start, end, (const ble_uuid_t *)&uuid, nimble_characteristic_event, NULL);
 		}
 		else {
-			ble_gattc_disc_all_chrs(conn_id, start, end, nimble_characteristic_event, csr);
+			ble_gattc_disc_all_chrs(conn_id, start, end, nimble_characteristic_event, NULL);
 		}
 	}
 }
@@ -469,7 +489,8 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 		dsr->serviceEndHandle = xsmcToInteger(xsVar(1));
 		
 		// discover all service characteristics to find last handle in this characteristic
-		ble_gattc_disc_all_chrs(conn_id, dsr->serviceStartHandle, dsr->serviceEndHandle, nimble_characteristic_handle_event, dsr);
+		modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, characteristicHandleDiscoveryEvent, dsr);
+		ble_gattc_disc_all_chrs(conn_id, dsr->serviceStartHandle, dsr->serviceEndHandle, nimble_characteristic_event, NULL);
 	}
 }
 
@@ -649,18 +670,13 @@ static void onConnected(struct ble_gap_conn_desc *desc)
 
 static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	while (gBLE->discovered) {
-		modCriticalSectionDeclare;
-		modCriticalSectionBegin();
-		modBLEDiscovered discovered = gBLE->discovered;
-		gBLE->discovered = discovered->next;
-		modCriticalSectionEnd();
-		struct ble_gap_disc_desc *disc = &discovered->disc;
-
+	deviceDiscoveryRecord *entry;
+	while (NULL != (entry = (deviceDiscoveryRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {
+		struct ble_gap_disc_desc *disc = &entry->disc;
 		xsBeginHost(gBLE->the);
 		xsmcVars(2);
 		xsVar(0) = xsmcNewObject();
-		xsmcSetArrayBuffer(xsVar(1), disc->data, disc->length_data);
+		xsmcSetArrayBuffer(xsVar(1), entry->data, disc->length_data);
 		xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 		xsmcSetArrayBuffer(xsVar(1), disc->addr.val, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
@@ -670,7 +686,8 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
 		xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
 		xsEndHost(gBLE->the);
-		c_free(discovered);
+		
+		c_free(entry);
 	}
 }
 
@@ -702,7 +719,6 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	else {
 		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
 		modBLEConnectionRemove(connection);
-		xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 	}
 bail:
 	xsEndHost(gBLE->the);
@@ -730,134 +746,160 @@ bail:
 
 static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	struct ble_gatt_svc *service = (struct ble_gatt_svc*)message;
-	uint16_t conn_id = (uint16_t)(uint32_t)refcon;
+	serviceSearchRecord *entry;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-	if (NULL != service) {
-		uint16_t length;
-		uint8_t buffer[16];
-		uuidToBuffer(buffer, &service->uuid, &length);
-		xsmcVars(4);
-		xsVar(0) = xsmcNewObject();
-		xsmcSetArrayBuffer(xsVar(1), buffer, length);
-		xsmcSetInteger(xsVar(2), service->start_handle);
-		xsmcSetInteger(xsVar(3), service->end_handle);
-		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-		xsmcSet(xsVar(0), xsID_start, xsVar(2));
-		xsmcSet(xsVar(0), xsID_end, xsVar(3));
-		xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onService"), xsVar(0));
+	while (NULL != (entry = (serviceSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		if (entry->completed) {
+			xsCall1(connection->objClient, xsID_callback, xsString("onService"));
+		}
+		else {
+			struct ble_gatt_svc *service = &entry->service;
+			uint16_t length;
+			uint8_t buffer[16];
+			uuidToBuffer(buffer, &service->uuid, &length);
+			xsmcVars(4);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), buffer, length);
+			xsmcSetInteger(xsVar(2), service->start_handle);
+			xsmcSetInteger(xsVar(3), service->end_handle);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSet(xsVar(0), xsID_start, xsVar(2));
+			xsmcSet(xsVar(0), xsID_end, xsVar(3));
+			xsCall2(connection->objClient, xsID_callback, xsString("onService"), xsVar(0));
+		}	
+		c_free(entry);
 	}
-	else
-		xsCall1(OBJ_CLIENT(connection), xsID_callback, xsString("onService"));
 	xsEndHost(gBLE->the);
 }
 
 static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	attributeSearchRecord *csr = (attributeSearchRecord *)refcon;
-	struct ble_gatt_chr *chr = (struct ble_gatt_chr *)message;
-	
+	characteristicSearchRecord *entry;
 	xsBeginHost(gBLE->the);
-	
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(csr->conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-		
-	if (NULL != chr) {
-		uint16_t length;
-		uint8_t buffer[16];
-		const char_name_table *char_name = uuidToCharName(&chr->uuid);
-		uuidToBuffer(buffer, &chr->uuid, &length);
-		xsmcVars(4);
-		xsVar(0) = xsmcNewObject();
-		xsmcSetArrayBuffer(xsVar(1), buffer, length);
-		xsmcSetInteger(xsVar(2), chr->val_handle);
-		xsmcSetInteger(xsVar(3), chr->properties);
-		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
-		if (NULL != char_name) {
-			xsmcSetString(xsVar(2), (char*)char_name->name);
-			xsmcSet(xsVar(0), xsID_name, xsVar(2));
-			xsmcSetString(xsVar(2), (char*)char_name->type);
-			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+	while (NULL != (entry = (characteristicSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
+		modBLEConnection connection = modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		attributeSearchRecord *csr = (attributeSearchRecord *)refcon;
+		if (entry->completed) {
+			xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));
+			c_free(csr);
 		}
-		xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+		else {
+			struct ble_gatt_chr *chr = &entry->characteristic;
+			const char_name_table *char_name = uuidToCharName(&chr->uuid);
+			uint16_t length;
+			uint8_t buffer[16];
+			uuidToBuffer(buffer, &chr->uuid, &length);
+			xsmcVars(4);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), buffer, length);
+			xsmcSetInteger(xsVar(2), chr->val_handle);
+			xsmcSetInteger(xsVar(3), chr->properties);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+			xsmcSet(xsVar(0), xsID_properties, xsVar(3));
+			if (NULL != char_name) {
+				xsmcSetString(xsVar(2), (char*)char_name->name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(2));
+				xsmcSetString(xsVar(2), (char*)char_name->type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(2));
+			}
+			xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+		}
+		c_free(entry);
 	}
-	else {
-		xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));
-		c_free(csr);
-	}
-	
-	xsEndHost(gBLE->the);
+	xsEndHost(gBLE->the);	
 }
 
 static void characteristicHandleDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	descriptorHandleSearchRecord *dsr = (descriptorHandleSearchRecord *)refcon;
-	struct ble_gatt_chr *chr = (struct ble_gatt_chr *)message;
-	
+	characteristicSearchRecord *entry;
 	xsBeginHost(gBLE->the);
+	while (NULL != (entry = (characteristicSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
+		modBLEConnection connection = modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		descriptorHandleSearchRecord *dsr = (descriptorHandleSearchRecord *)refcon;
+		if (entry->completed) {
+			if (0 == dsr->characteristicEndHandle)
+				dsr->characteristicEndHandle = dsr->serviceEndHandle;
 	
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(dsr->conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-		
-	if (NULL != chr) {
-		if (chr->def_handle > dsr->characteristicStartHandle && 0 == dsr->characteristicEndHandle)
-			dsr->characteristicEndHandle = chr->def_handle - 1;
+			attributeSearchRecord *dsr2 = c_calloc(1, sizeof(attributeSearchRecord));
+			dsr2->conn_id = dsr->conn_id;
+			dsr2->obj = dsr->obj;
+			modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, descriptorDiscoveryEvent, dsr2);
+			ble_gattc_disc_all_dscs(dsr->conn_id, dsr->characteristicStartHandle, dsr->characteristicEndHandle, nimble_descriptor_event, NULL);
+			c_free(dsr);
+		}
+		else {
+			struct ble_gatt_chr *chr = &entry->characteristic;
+			if (chr->def_handle > dsr->characteristicStartHandle && 0 == dsr->characteristicEndHandle)
+				dsr->characteristicEndHandle = chr->def_handle - 1;
+		}
+		c_free(entry);
 	}
-	else {
-		if (0 == dsr->characteristicEndHandle)
-			dsr->characteristicEndHandle = dsr->serviceEndHandle;
-			
-		attributeSearchRecord *dsr2 = c_calloc(1, sizeof(attributeSearchRecord));
-		dsr2->conn_id = dsr->conn_id;
-		dsr2->obj = dsr->obj;
-		ble_gattc_disc_all_dscs(dsr->conn_id, dsr->characteristicStartHandle, dsr->characteristicEndHandle, nimble_descriptor_event, dsr2);
-		c_free(dsr);
-	}
-	
-	xsEndHost(gBLE->the);
+	xsEndHost(gBLE->the);	
 }
 
 static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	attributeSearchRecord *dsr = (attributeSearchRecord *)refcon;
-	struct ble_gatt_dsc *dsc = (struct ble_gatt_dsc *)message;
-	
+	descriptorSearchRecord *entry;
 	xsBeginHost(gBLE->the);
-	
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(dsr->conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-			
-	if (NULL != dsc) {
-		uint16_t length;
-		uint8_t buffer[16];
-		const char_name_table *char_name = uuidToCharName(&dsc->uuid);
-		uuidToBuffer(buffer, &dsc->uuid, &length);
-		xsmcVars(4);
-		xsVar(0) = xsmcNewObject();
-		xsmcSetArrayBuffer(xsVar(1), buffer, length);
-		xsmcSetInteger(xsVar(2), dsc->handle);
-		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		if (NULL != char_name) {
-			xsmcSetString(xsVar(2), (char*)char_name->name);
-			xsmcSet(xsVar(0), xsID_name, xsVar(2));
-			xsmcSetString(xsVar(2), (char*)char_name->type);
-			xsmcSet(xsVar(0), xsID_type, xsVar(2));
+	while (NULL != (entry = (descriptorSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
+		modBLEConnection connection = modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		attributeSearchRecord *dsr = (attributeSearchRecord *)refcon;
+		if (entry->completed) {
+			xsCall1(dsr->obj, xsID_callback, xsString("onDescriptor"));
+			c_free(dsr);
 		}
-		xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
+		else {
+			struct ble_gatt_dsc *dsc = &entry->descriptor;
+			const char_name_table *char_name = uuidToCharName(&dsc->uuid);
+			uint16_t length;
+			uint8_t buffer[16];
+			uuidToBuffer(buffer, &dsc->uuid, &length);
+			xsmcVars(4);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), buffer, length);
+			xsmcSetInteger(xsVar(2), dsc->handle);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+			if (NULL != char_name) {
+				xsmcSetString(xsVar(2), (char*)char_name->name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(2));
+				xsmcSetString(xsVar(2), (char*)char_name->type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(2));
+			}
+			xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
+		}
+		c_free(entry);
 	}
-	else {
-		xsCall1(dsr->obj, xsID_callback, xsString("onDescriptor"));
-		c_free(dsr);
-	}
+	xsEndHost(gBLE->the);
+}
+
+static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	attributeNotificationRecord *entry;
+	xsBeginHost(gBLE->the);
+	while (NULL != (entry = (attributeNotificationRecord*)modBLEMessageQueueDequeue(&gBLE->notificationQueue))) {
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		xsmcVars(3);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), entry->data, entry->length);
+		xsmcSetInteger(xsVar(2), entry->handle);
+		xsmcSet(xsVar(0), xsID_value, xsVar(1));
+		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+		xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+		c_free(entry);
+	}	
 	xsEndHost(gBLE->the);
 }
 
@@ -865,7 +907,7 @@ static void attributeReadEvent(void *the, void *refcon, uint8_t *message, uint16
 {
 	attributeReadData value = (attributeReadData)refcon;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(value->conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(value->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(3);
@@ -874,7 +916,7 @@ static void attributeReadEvent(void *the, void *refcon, uint8_t *message, uint16
 	xsmcSetInteger(xsVar(2), value->handle);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, value->isCharacteristic ? xsString("onCharacteristicValue") : xsString("onDescriptorValue"), xsVar(0));
+	xsCall2(connection->objClient, xsID_callback, value->isCharacteristic ? xsString("onCharacteristicValue") : xsString("onDescriptorValue"), xsVar(0));
 	c_free(value);
 	xsEndHost(gBLE->the);
 }
@@ -883,33 +925,15 @@ static void notificationEnabledEvent(void *the, void *refcon, uint8_t *message, 
 {
 	characteristicNotificationEnabled cne = (characteristicNotificationEnabled)refcon;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(cne->conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(cne->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), cne->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, cne->enable ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"), xsVar(0));
+	xsCall2(connection->objClient, xsID_callback, cne->enable ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"), xsVar(0));
 	c_free(cne);
-	xsEndHost(gBLE->the);
-}
-
-static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	attributeNotification notification = (attributeNotification)refcon;
-	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(notification->conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), notification->data, notification->length);
-	xsmcSetInteger(xsVar(2), notification->handle);
-	xsmcSet(xsVar(0), xsID_value, xsVar(1));
-	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
-	c_free(notification);
 	xsEndHost(gBLE->the);
 }
 
@@ -994,23 +1018,30 @@ static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_
 static int nimble_service_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg)
 {
 	int rc = 0;
-	uint32_t conn_id = conn_handle;
 	
+	serviceSearchRecord *entry = c_malloc(sizeof(serviceSearchRecord));
+	if (NULL == entry)
+		goto bail;
+	entry->conn_id = conn_handle;
+	entry->completed = false;
+	if (NULL != service)
+		entry->service = *service;
+
     switch (error->status) {
 		case 0:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)service, sizeof(struct ble_gatt_svc), serviceDiscoveryEvent, (void*)conn_id);
         	break;
     	case BLE_HS_EDONE:
-			modMessagePostToMachine(gBLE->the, NULL, 0, serviceDiscoveryEvent, (void*)conn_id);
+    		entry->completed = true;
 			break;
     	default:
+    		entry->completed = true;
         	rc = error->status;
         	break;
     }
 
-    if (rc != 0)
-		modMessagePostToMachine(gBLE->the, NULL, 0, serviceDiscoveryEvent, (void*)conn_id);
+	modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
 
+bail:
     return rc;
 }
 
@@ -1018,43 +1049,29 @@ static int nimble_characteristic_event(uint16_t conn_handle, const struct ble_ga
 {
 	int rc = 0;
 	
+	characteristicSearchRecord *entry = c_malloc(sizeof(characteristicSearchRecord));
+	if (NULL == entry)
+		goto bail;
+	entry->conn_id = conn_handle;
+	entry->completed = false;
+	if (NULL != chr)
+		entry->characteristic = *chr;
+
     switch (error->status) {
 		case 0:
-			modMessagePostToMachine(gBLE->the, (void*)chr, sizeof(struct ble_gatt_chr), characteristicDiscoveryEvent, arg);
         	break;
     	case BLE_HS_EDONE:
-			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, arg);
+    		entry->completed = true;
 			break;
     	default:
+    		entry->completed = true;
         	rc = error->status;
         	break;
     }
 
-    if (rc != 0)
-		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicDiscoveryEvent, arg);
+	modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
 
-    return rc;
-}
-
-static int nimble_characteristic_handle_event(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg)
-{
-	int rc = 0;
-	
-    switch (error->status) {
-		case 0:
-			modMessagePostToMachine(gBLE->the, (void*)chr, sizeof(struct ble_gatt_chr), characteristicHandleDiscoveryEvent, arg);
-        	break;
-    	case BLE_HS_EDONE:
-			modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, arg);
-			break;
-    	default:
-        	rc = error->status;
-        	break;
-    }
-
-    if (rc != 0)
-		modMessagePostToMachine(gBLE->the, NULL, 0, characteristicHandleDiscoveryEvent, arg);
-
+bail:
     return rc;
 }
 
@@ -1062,20 +1079,27 @@ static int nimble_descriptor_event(uint16_t conn_handle, const struct ble_gatt_e
 {
 	int rc = 0;
 	
+	descriptorSearchRecord *entry = c_malloc(sizeof(descriptorSearchRecord));
+	if (NULL == entry)
+		goto bail;
+	entry->conn_id = conn_handle;
+	entry->completed = false;
+	if (NULL != dsc)
+		entry->descriptor = *dsc;
+
     switch (error->status) {
 		case 0:
-			modMessagePostToMachine(gBLE->the, (void*)dsc, sizeof(struct ble_gatt_dsc), descriptorDiscoveryEvent, arg);
         	break;
     	case BLE_HS_EDONE:
-			modMessagePostToMachine(gBLE->the, NULL, 0, descriptorDiscoveryEvent, arg);
+    		entry->completed = true;
 			break;
     	default:
+    		entry->completed = true;
         	rc = error->status;
         	break;
     }
 
-    if (rc != 0)
-		modMessagePostToMachine(gBLE->the, NULL, 0, descriptorDiscoveryEvent, arg);
+	modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
 
 bail:
     return rc;
@@ -1085,8 +1109,7 @@ static int nimble_read_event(uint16_t conn_handle, const struct ble_gatt_error *
 {
 	uint32_t isCharacteristic = ((uint32_t)arg) == 1L;
     if (error->status == 0) {
-    	uint16_t length = sizeof(attributeReadDataRecord) + attr->om->om_len;
-    	attributeReadData value = c_malloc(length);
+    	attributeReadData value = c_malloc(sizeof(attributeReadDataRecord) + attr->om->om_len);
     	if (NULL != value) {
     		value->isCharacteristic = (uint8_t)isCharacteristic;
     		value->conn_id = conn_handle;
@@ -1120,28 +1143,11 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
 		case BLE_GAP_EVENT_DISC:
 			if (0 != event->disc.length_data) {
-				modBLEDiscovered disc = c_malloc(sizeof(modBLEDiscoveredRecord) - 1 + event->disc.length_data);
-				if (disc) {
-					uint8_t doPost = false;
-					disc->next = NULL;
-					disc->disc = event->disc;
-					c_memmove(disc->data, event->disc.data, event->disc.length_data);
-					disc->disc.data = disc->data;
-					modCriticalSectionDeclare;
-					modCriticalSectionBegin();
-					if (gBLE->discovered) {
-						modBLEDiscovered walker = gBLE->discovered;
-						while (walker->next)
-							walker = walker->next;
-						walker->next = disc;
-					}
-					else {
-						gBLE->discovered = disc;
-						doPost = true;
-					}
-					modCriticalSectionEnd();
-					if (doPost)
-						modMessagePostToMachine(gBLE->the, NULL, 0, scanResultEvent, NULL);
+				deviceDiscoveryRecord *entry = c_malloc(sizeof(deviceDiscoveryRecord) - 1 + event->disc.length_data);
+				if (entry) {
+					entry->disc = event->disc;
+					c_memmove(entry->data, event->disc.data, event->disc.length_data);
+					modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
 				}
 			}
 			break;
@@ -1162,15 +1168,14 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&event->disconnect.conn, sizeof(event->disconnect.conn), disconnectEvent, NULL);
 			break;
 		case BLE_GAP_EVENT_NOTIFY_RX: {
-			uint16_t length = sizeof(attributeNotificationRecord) + event->notify_rx.om->om_len;
-			attributeNotification notification = (attributeNotification)c_malloc(length);
-			if (NULL != notification) {
-				notification->isNotification = !event->notify_rx.indication;
-				notification->conn_id = event->notify_rx.conn_handle;
-				notification->handle = event->notify_rx.attr_handle;
-				notification->length = event->notify_rx.om->om_len;
-				c_memmove(notification->data, event->notify_rx.om->om_data, event->notify_rx.om->om_len);
-				modMessagePostToMachine(gBLE->the, NULL, 0, notificationEvent, notification);
+			attributeNotificationRecord *entry = c_malloc(sizeof(attributeNotificationRecord) + event->notify_rx.om->om_len);
+			if (NULL != entry) {
+				entry->isNotification = !event->notify_rx.indication;
+				entry->conn_id = event->notify_rx.conn_handle;
+				entry->handle = event->notify_rx.attr_handle;
+				entry->length = event->notify_rx.om->om_len;
+				c_memmove(entry->data, event->notify_rx.om->om_data, event->notify_rx.om->om_len);
+				modBLEMessageQueueEnqueue(&gBLE->notificationQueue, (modBLEMessageQueueEntry)entry);
 			}
 			break;
 		}

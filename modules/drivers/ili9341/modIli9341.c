@@ -358,6 +358,21 @@ void xs_ILI9341_set_rotation(xsMachine *the)
 	ili9341Command(sd, 0x36, &value, 1);
 }
 
+void xs_ILI9341_command(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	uint8_t command = (uint8_t)xsmcToInteger(xsArg(0));
+	uint16_t dataSize = 0;
+	uint8_t *data = NULL;
+
+	if (xsmcArgc > 1) {
+		dataSize = (uint16_t)xsmcGetArrayBufferLength(xsArg(1));
+		data = xsmcToArrayBuffer(xsArg(1));
+	}
+
+	ili9341Command(sd, command, data, dataSize);
+}
+
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 // caller provides little-endian pixels, convert to big-endian for display
 void ili9341Send_16LE(PocoPixel *pixels, int byteLength, void *refcon)

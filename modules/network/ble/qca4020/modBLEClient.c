@@ -63,8 +63,6 @@
 	#define LOG_GAP_AUTHENTICATION_MSG(msg)
 #endif
 
-#define OBJ_CLIENT(_c) ((modBLEClientConnection)_c)->objClient
-
 enum {
 	GATT_PROCEDURE_NONE = 0,
 	GATT_PROCEDURE_DISCOVER_SERVICES,
@@ -135,6 +133,9 @@ typedef struct {
 	qapi_BLE_GAP_LE_Connection_Parameters_t connectionParams;
 	uint32_t scanInterval;
 	uint32_t scanWindow;
+
+	modBLEMessageQueueRecord discoveryQueue;
+	modBLEMessageQueueRecord notificationQueue;
 } modBLERecord, *modBLE;
 
 typedef struct {
@@ -154,13 +155,44 @@ typedef struct {
 	uint8_t enable;
 } CharacteristicNotificationRequest;
 
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	qapi_BLE_GAP_LE_Advertising_Report_Data_t disc;
+	uint8_t data[1];
+} deviceDiscoveryRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	qapi_BLE_GATT_Service_Information_t service;
+	uint8_t completed;
+} serviceSearchRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	uint8_t completed;
+	uint16_t count;
+	qapi_BLE_GATT_Characteristic_Descriptor_Information_t descriptorList[1];
+} descriptorSearchRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	uint16_t count;
+	qapi_BLE_GATT_Characteristic_Entry_t CharacteristicEntryList[1];
+} characteristicSearchRecord;
+
+typedef struct {
+	modBLEMessageQueueEntryPart;
+	qapi_BLE_GATT_Server_Notification_Data_t notification;
+	uint8_t data[1];
+} attributeNotificationRecord;
+
 static void uuidToBuffer(qapi_BLE_GATT_UUID_t *uuid, uint8_t *buffer, uint16_t *length);
 static void bufferToUUID(uint8_t *buffer, qapi_BLE_GATT_UUID_t *uuid, uint16_t length);
 static uint8_t UUIDEqual(qapi_BLE_GATT_UUID_t *uuid1, qapi_BLE_GATT_UUID_t *uuid2);
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
-static void setGATTProcedure(modBLEConnection connection, uint8_t what, xsSlot target, uint32_t transaction_id, uint32_t refcon);
+static void setGATTProcedure(modBLEClientConnection connection, uint8_t what, xsSlot target, uint32_t transaction_id, uint32_t refcon);
 static void completeProcedure(uint32_t conn_id, char *which);
 
 static void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Connection_Event_Data_t *GATT_Connection_Event_Data, uint32_t CallbackParameter);
@@ -168,6 +200,12 @@ static void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qa
 static void QAPI_BLE_BTPSAPI GATT_Client_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Client_Event_Data_t *GATT_Client_Event_Data, uint32_t CallbackParameter);
 static void QAPI_BLE_BTPSAPI GATT_Service_Discovery_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Service_Discovery_Event_Data_t *GATT_Service_Discovery_Event_Data, uint32_t CallbackParameter);
 static void QAPI_BLE_BTPSAPI GATT_Descriptor_Discovery_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GATT_Service_Discovery_Event_Data_t *GATT_Service_Discovery_Event_Data, uint32_t CallbackParameter);
+
+static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static modBLE gBLE = NULL;
 
@@ -188,6 +226,8 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE->obj = xsThis;
 	xsRemember(gBLE->obj);
 	
+	modBLEMessageQueueConfigure(&gBLE->notificationQueue, the, notificationEvent, NULL);
+
 	// Set defaults (based on QCLI ble_demo.c)
 	gBLE->scanWindow = 50;
 	gBLE->scanInterval = 100;
@@ -236,6 +276,8 @@ void xs_ble_client_destructor(void *data)
 		connection = next;
 	}
 	
+	modBLEMessageQueueEmpty(&ble->discoveryQueue);
+	modBLEMessageQueueEmpty(&ble->notificationQueue);
 	c_free(ble);
 	gBluetoothStackID = 0;
 	gBLE = NULL;
@@ -271,6 +313,8 @@ void xs_ble_client_start_scanning(xsMachine *the)
 
 	gBLE->scanInterval = (uint32_t)(interval / 0.625);	// convert to 1 ms units
 	gBLE->scanWindow = (uint32_t)(window / 0.625);
+
+	modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, deviceDiscoveryEvent, NULL);
 
 	result = qapi_BLE_GAP_LE_Perform_Scan(
 		gBLE->stackID,
@@ -397,12 +441,12 @@ void xs_gap_connection_initialize(xsMachine *the)
 	xsmcVars(1);	// xsArg(0) is client
 	xsmcGet(xsVar(0), xsArg(0), xsID_connection);
 	conn_id = xsmcToInteger(xsVar(0));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
 	connection->the = the;
 	connection->objConnection = xsThis;
-	OBJ_CLIENT(connection) = xsArg(0);
+	connection->objClient = xsArg(0);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -436,11 +480,12 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
 	uint32_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t argc = xsmcArgc;
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
-	setGATTProcedure(connection, GATT_PROCEDURE_DISCOVER_SERVICES, OBJ_CLIENT(connection), 0, 0);
-	
+	setGATTProcedure(connection, GATT_PROCEDURE_DISCOVER_SERVICES, connection->objClient, 0, 0);
+	modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, serviceDiscoveryEvent, NULL);
+		
 	if (argc > 1) {
 		qapi_BLE_GATT_UUID_t uuid;
 		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(1)), &uuid, xsmcGetArrayBufferLength(xsArg(1)));
@@ -472,8 +517,9 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 	if (argc > 3)
 		bufferToUUID((uint8_t*)xsmcToArrayBuffer(xsArg(3)), &request->uuid, xsmcGetArrayBufferLength(xsArg(3)));
 	
-	setGATTProcedure((modBLEConnection)connection, GATT_PROCEDURE_DISCOVER_CHARACTERISTICS, xsThis, 0, (uint32_t)request);
-	
+	setGATTProcedure(connection, GATT_PROCEDURE_DISCOVER_CHARACTERISTICS, xsThis, 0, (uint32_t)request);
+	modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, characteristicDiscoveryEvent, NULL);
+			
 	transaction_id = qapi_BLE_GATT_Discover_Characteristics(gBLE->stackID, conn_id, start, end, GATT_Client_Event_Callback, 0);
 	if (transaction_id < 0)
 		xsUnknownError("discover characteristics failed");
@@ -488,7 +534,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	DescriptorDiscoveryRequest *request;
 	qapi_BLE_GATT_UUID_t uuid;
 	
-   	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+   	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
 	request = c_calloc(1, sizeof(DescriptorDiscoveryRequest));
@@ -499,7 +545,8 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 	request->conn_id = conn_id;
 		
 	setGATTProcedure(connection, GATT_PROCEDURE_DISCOVER_DESCRIPTORS, xsThis, 0, (uint32_t)request);
-
+	modBLEMessageQueueConfigure(&gBLE->discoveryQueue, the, descriptorDiscoveryEvent, NULL);
+	
 	// we use service discovery to discover all descriptors by matching the parent characteristic in the discovery results
 	xsmcVars(2);
 	xsmcGet(xsVar(0), xsThis, xsID_service);
@@ -519,12 +566,12 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 	if (argc > 2)
 		auth = xsmcToInteger(xsArg(2));
 #endif		
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
-	setGATTProcedure(connection, GATT_PROCEDURE_READ_CHARACTERISTIC, OBJ_CLIENT(connection), 0, handle);
+	setGATTProcedure(connection, GATT_PROCEDURE_READ_CHARACTERISTIC, connection->objClient, 0, handle);
 	
-	qapi_BLE_GATT_Read_Value_Request(gBLE->stackID, conn_id, handle, GATT_Client_Event_Callback, conn_id);
+	qapi_BLE_GATT_Read_Value_Request(gBLE->stackID, conn_id, handle, GATT_Client_Event_Callback, 0);
 }
 
 void xs_gatt_descriptor_read_value(xsMachine *the)
@@ -538,12 +585,12 @@ void xs_gatt_descriptor_read_value(xsMachine *the)
 	if (argc > 2)
 		auth = xsmcToInteger(xsArg(2));
 #endif
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
 
-	setGATTProcedure(connection, GATT_PROCEDURE_READ_DESCRIPTOR, OBJ_CLIENT(connection), 0, handle);
+	setGATTProcedure(connection, GATT_PROCEDURE_READ_DESCRIPTOR, connection->objClient, 0, handle);
 	
-	qapi_BLE_GATT_Read_Value_Request(gBLE->stackID, conn_id, handle, GATT_Client_Event_Callback, conn_id);
+	qapi_BLE_GATT_Read_Value_Request(gBLE->stackID, conn_id, handle, GATT_Client_Event_Callback, 0);
 }
 
 void xs_gatt_characteristic_enable_notifications(xsMachine *the)
@@ -552,7 +599,7 @@ void xs_gatt_characteristic_enable_notifications(xsMachine *the)
     uint8_t data[2] = {0x01, 0x00};
 	uint8_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t characteristic = xsmcToInteger(xsArg(1));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;    
 	
 	request = c_calloc(1, sizeof(CharacteristicNotificationRequest));
@@ -563,9 +610,9 @@ void xs_gatt_characteristic_enable_notifications(xsMachine *the)
 	request->conn_id = conn_id;
 	request->enable = true;
 
-	setGATTProcedure(connection, GATT_PROCEDURE_ENABLE_CHARACTERISTIC_NOTIFICATIONS, OBJ_CLIENT(connection), 0, (uint32_t)request);
+	setGATTProcedure(connection, GATT_PROCEDURE_ENABLE_CHARACTERISTIC_NOTIFICATIONS, connection->objClient, 0, (uint32_t)request);
 
-	qapi_BLE_GATT_Write_Request(gBLE->stackID, conn_id, characteristic + 1, sizeof(data), data, GATT_Client_Event_Callback, conn_id);
+	qapi_BLE_GATT_Write_Request(gBLE->stackID, conn_id, characteristic + 1, sizeof(data), data, GATT_Client_Event_Callback, 0);
 }
 
 void xs_gatt_characteristic_disable_notifications(xsMachine *the)
@@ -574,7 +621,7 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 	uint8_t data[2] = {0x00, 0x00};
 	uint8_t conn_id = xsmcToInteger(xsArg(0));
 	uint16_t characteristic = xsmcToInteger(xsArg(1));
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
+	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;    
 
 	request = c_calloc(1, sizeof(CharacteristicNotificationRequest));
@@ -585,9 +632,9 @@ void xs_gatt_characteristic_disable_notifications(xsMachine *the)
 	request->conn_id = conn_id;
 	request->enable = false;
 	
-	setGATTProcedure(connection, GATT_PROCEDURE_DISABLE_CHARACTERISTIC_NOTIFICATIONS, OBJ_CLIENT(connection), 0, (uint32_t)request);
+	setGATTProcedure(connection, GATT_PROCEDURE_DISABLE_CHARACTERISTIC_NOTIFICATIONS, connection->objClient, 0, (uint32_t)request);
 
-	qapi_BLE_GATT_Write_Request(gBLE->stackID, conn_id, characteristic + 1, sizeof(data), data, GATT_Client_Event_Callback, conn_id);
+	qapi_BLE_GATT_Write_Request(gBLE->stackID, conn_id, characteristic + 1, sizeof(data), data, GATT_Client_Event_Callback, 0);
 }
 
 void xs_gatt_descriptor_write_value(xsMachine *the)
@@ -642,9 +689,9 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	}
 }
 
-static void setGATTProcedure(modBLEConnection connection, uint8_t what, xsSlot target, uint32_t transaction_id, uint32_t refcon)
+static void setGATTProcedure(modBLEClientConnection connection, uint8_t what, xsSlot target, uint32_t transaction_id, uint32_t refcon)
 {
-	GATTProcedure procedure = &((modBLEClientConnection)connection)->procedure;
+	GATTProcedure procedure = &connection->procedure;
 	procedure->what = what;
 	procedure->transaction_id = transaction_id;
 	procedure->target = target;
@@ -716,7 +763,7 @@ uint8_t UUIDEqual(qapi_BLE_GATT_UUID_t *uuid1, qapi_BLE_GATT_UUID_t *uuid2)
 	return result;
 }
 
-static int modBLEConnectionSaveAttHandle(modBLEConnection connection, qapi_BLE_GATT_UUID_t *uuid, uint16_t handle)
+static int modBLEConnectionSaveAttHandle(modBLEClientConnection connection, qapi_BLE_GATT_UUID_t *uuid, uint16_t handle)
 {
 	int result = -1;
 	for (int service_index = 0; service_index < service_count; ++service_index) {
@@ -732,7 +779,7 @@ static int modBLEConnectionSaveAttHandle(modBLEConnection connection, qapi_BLE_G
 					for (int k = 0; k < char_name_count; ++k) {
 						const char_name_table *char_name = &char_names[k];
 						if (service_index == char_name->service_index && att_index == char_name->att_index) {
-							((modBLEClientConnection)connection)->handles[k] = handle;
+							connection->handles[k] = handle;
 							result = k;
 							break;
 						}
@@ -797,160 +844,151 @@ bail:
 
 static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	qapi_BLE_GAP_LE_Advertising_Report_Data_t *result = (qapi_BLE_GAP_LE_Advertising_Report_Data_t*)message;
-	
 	if (!gBLE->scanning) {
-		c_free(result->Raw_Report_Data);
-		return;
+		modBLEMessageQueueEmpty(&gBLE->discoveryQueue);
 	}
-	
-	xsBeginHost(gBLE->the);
-	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), result->Raw_Report_Data, result->Raw_Report_Length);
-	xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(1), &result->BD_ADDR, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsmcSetInteger(xsVar(1), result->Address_Type);
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsmcSetInteger(xsVar(1), result->RSSI);
-	xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
-	c_free(result->Raw_Report_Data);
-	xsEndHost(gBLE->the);
+	else {
+		deviceDiscoveryRecord *entry;
+		xsBeginHost(gBLE->the);
+		xsmcVars(2);
+		while (NULL != (entry = (deviceDiscoveryRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {
+			qapi_BLE_GAP_LE_Advertising_Report_Data_t *disc = &entry->disc;
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), entry->data, disc->Raw_Report_Length);
+			xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
+			xsmcSetArrayBuffer(xsVar(1), &disc->BD_ADDR, 6);
+			xsmcSet(xsVar(0), xsID_address, xsVar(1));
+			xsmcSetInteger(xsVar(1), disc->Address_Type);
+			xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+			xsmcSetInteger(xsVar(1), disc->RSSI);
+			xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
+			xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+			c_free(entry);
+		}
+		xsEndHost(gBLE->the);
+	}
 }
 
 static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	qapi_BLE_GATT_Service_Discovery_Indication_Data_t *GATT_Service_Discovery_Indication_Data = (qapi_BLE_GATT_Service_Discovery_Indication_Data_t*)message;
-	qapi_BLE_GATT_Service_Information_t *serviceInformation = &GATT_Service_Discovery_Indication_Data->ServiceInformation;
-	uint32_t conn_id = GATT_Service_Discovery_Indication_Data->ConnectionID;
-	uint8_t buffer[16];
-	uint16_t length;
-		
+	serviceSearchRecord *entry;
 	xsBeginHost(gBLE->the);
-	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-		
-	xsmcVars(4);
-	
-	xsVar(0) = xsmcNewObject();
-	uuidToBuffer(&serviceInformation->UUID, buffer, &length);
-	xsmcSetArrayBuffer(xsVar(1), buffer, length);
-	xsmcSetInteger(xsVar(2), serviceInformation->Service_Handle);
-	xsmcSetInteger(xsVar(3), serviceInformation->End_Group_Handle);
-	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-	xsmcSet(xsVar(0), xsID_start, xsVar(2));
-	xsmcSet(xsVar(0), xsID_end, xsVar(3));
-	xsCall2(connection->procedure.target, xsID_callback, xsString("onService"), xsVar(0));
-
+	xsmcVars(2);
+	while (NULL != (entry = (serviceSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		if (entry->completed)
+			completeProcedure(entry->conn_id, "onService");
+		else {
+			qapi_BLE_GATT_Service_Information_t *service = &entry->service;
+			uint8_t buffer[16];
+			uint16_t length;
+			xsVar(0) = xsmcNewObject();
+			uuidToBuffer(&service->UUID, buffer, &length);
+			xsmcSetArrayBuffer(xsVar(1), buffer, length);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSetInteger(xsVar(1), service->Service_Handle);
+			xsmcSet(xsVar(0), xsID_start, xsVar(1));
+			xsmcSetInteger(xsVar(1), service->End_Group_Handle);
+			xsmcSet(xsVar(0), xsID_end, xsVar(1));
+			xsCall2(connection->procedure.target, xsID_callback, xsString("onService"), xsVar(0));
+		}	
+		c_free(entry);
+	}
 	xsEndHost(gBLE->the);
 }
 
 static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	qapi_BLE_GATT_Characteristic_Information_t *characteristicInfo = (qapi_BLE_GATT_Characteristic_Information_t*)message;
-	DescriptorDiscoveryRequest *request = (DescriptorDiscoveryRequest*)refcon;
-	uint32_t conn_id = (uint32_t)request->conn_id;
-	uint8_t buffer[16];
-	uint16_t i, length;
-		
+	descriptorSearchRecord *entry;
 	xsBeginHost(gBLE->the);
-	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-		
-	xsmcVars(3);
-
-	for (i = 0; i < characteristicInfo->NumberOfDescriptors; ++i) {
-		qapi_BLE_GATT_Characteristic_Descriptor_Information_t *descriptorInfo = &characteristicInfo->DescriptorList[i];
-		int index = modBLEConnectionSaveAttHandle((modBLEConnection)connection, &descriptorInfo->Characteristic_Descriptor_UUID, descriptorInfo->Characteristic_Descriptor_Handle);
-		xsVar(0) = xsmcNewObject();
-		uuidToBuffer(&descriptorInfo->Characteristic_Descriptor_UUID, buffer, &length);
-		xsmcSetArrayBuffer(xsVar(1), buffer, length);
-		xsmcSetInteger(xsVar(2), descriptorInfo->Characteristic_Descriptor_Handle);
-		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		if (-1 != index) {
-			xsmcSetString(xsVar(2), (char*)char_names[index].name);
-			xsmcSet(xsVar(0), xsID_name, xsVar(2));
-			xsmcSetString(xsVar(2), (char*)char_names[index].type);
-			xsmcSet(xsVar(0), xsID_type, xsVar(2));
-		}
-		xsCall2(connection->procedure.target, xsID_callback, xsString("onDescriptor"), xsVar(0));
+	xsmcVars(2);
+	while (NULL != (entry = (descriptorSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		if (entry->completed)
+			completeProcedure(entry->conn_id, "onDescriptor");
+		else {
+			uint8_t buffer[16];
+			uint16_t i, length;
+			for (i = 0; i < entry->count; ++i) {
+				qapi_BLE_GATT_Characteristic_Descriptor_Information_t *descriptorInfo = &entry->descriptorList[i];
+				int index = modBLEConnectionSaveAttHandle(connection, &descriptorInfo->Characteristic_Descriptor_UUID, descriptorInfo->Characteristic_Descriptor_Handle);
+				xsVar(0) = xsmcNewObject();
+				uuidToBuffer(&descriptorInfo->Characteristic_Descriptor_UUID, buffer, &length);
+				xsmcSetArrayBuffer(xsVar(1), buffer, length);
+				xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+				xsmcSetInteger(xsVar(1), descriptorInfo->Characteristic_Descriptor_Handle);
+				xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+				if (-1 != index) {
+					xsmcSetString(xsVar(1), (char*)char_names[index].name);
+					xsmcSet(xsVar(0), xsID_name, xsVar(1));
+					xsmcSetString(xsVar(1), (char*)char_names[index].type);
+					xsmcSet(xsVar(0), xsID_type, xsVar(1));
+				}
+				xsCall2(connection->procedure.target, xsID_callback, xsString("onDescriptor"), xsVar(0));
+			}
+		}	
+		c_free(entry);
 	}
-	c_free(characteristicInfo->DescriptorList);
-
 	xsEndHost(gBLE->the);
-}
-
-static void serviceDiscoveryCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	qapi_BLE_GATT_Service_Discovery_Complete_Data_t *GATT_Service_Discovery_Complete_Data = (qapi_BLE_GATT_Service_Discovery_Complete_Data_t*)message;
-	completeProcedure(GATT_Service_Discovery_Complete_Data->ConnectionID, "onService");
-}
-
-static void descriptorDiscoveryCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	qapi_BLE_GATT_Service_Discovery_Complete_Data_t *GATT_Service_Discovery_Complete_Data = (qapi_BLE_GATT_Service_Discovery_Complete_Data_t*)message;
-	completeProcedure(GATT_Service_Discovery_Complete_Data->ConnectionID, "onDescriptor");
 }
 
 static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	uint8_t buffer[16];
-	uint16_t i, start, length;
-	qapi_BLE_GATT_Characteristic_Discovery_Response_Data_t *result = (qapi_BLE_GATT_Characteristic_Discovery_Response_Data_t*)message;
-	uint32_t conn_id = result->ConnectionID;
-		
+	characteristicSearchRecord *entry;
 	xsBeginHost(gBLE->the);
-	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
-	if (!connection)
-		xsUnknownError("connection not found");
-		
-	CharacteristicDiscoveryRequest *request = (CharacteristicDiscoveryRequest*)connection->procedure.refcon;
-	
-	xsmcVars(4);
-	xsVar(0) = xsmcNewObject();
-	for (i = 0; i < result->NumberOfCharacteristics; ++i) {
-		qapi_BLE_GATT_Characteristic_Entry_t *characteristic = &result->CharacteristicEntryList[i];
-		if (0 != request->uuid.UUID.UUID_16.UUID_Byte0) {
-			if (!UUIDEqual(&request->uuid, &characteristic->CharacteristicValue.CharacteristicUUID))
-				continue;
+	xsmcVars(2);
+	while (NULL != (entry = (characteristicSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		uint16_t start;
+		CharacteristicDiscoveryRequest *request = (CharacteristicDiscoveryRequest*)connection->procedure.refcon;
+		uint8_t discoverOneCharacteristic = (0 != request->uuid.UUID.UUID_16.UUID_Byte0);
+		for (uint16_t i = 0; i < entry->count; ++i) {
+			uint8_t buffer[16];
+			uint16_t length;
+			qapi_BLE_GATT_Characteristic_Entry_t *characteristic = &entry->CharacteristicEntryList[i];
+			if (discoverOneCharacteristic) {
+				if (!UUIDEqual(&request->uuid, &characteristic->CharacteristicValue.CharacteristicUUID))
+					continue;
+			}
+			int index = modBLEConnectionSaveAttHandle(connection, &characteristic->CharacteristicValue.CharacteristicUUID, characteristic->CharacteristicValue.CharacteristicValueHandle);
+			uuidToBuffer(&characteristic->CharacteristicValue.CharacteristicUUID, buffer, &length);
+			xsVar(0) = xsmcNewObject();
+			xsmcSetArrayBuffer(xsVar(1), buffer, length);
+			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+			xsmcSetInteger(xsVar(1), characteristic->CharacteristicValue.CharacteristicValueHandle);
+			xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+			xsmcSetInteger(xsVar(1), characteristic->CharacteristicValue.CharacteristicProperties);
+			xsmcSet(xsVar(0), xsID_properties, xsVar(1));
+			if (-1 != index) {
+				xsmcSetString(xsVar(1), (char*)char_names[index].name);
+				xsmcSet(xsVar(0), xsID_name, xsVar(1));
+				xsmcSetString(xsVar(1), (char*)char_names[index].type);
+				xsmcSet(xsVar(0), xsID_type, xsVar(1));
+			}
+			xsCall2(connection->procedure.target, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+			if (discoverOneCharacteristic)
+				entry->count = 0;	// done
 		}
-		int index = modBLEConnectionSaveAttHandle((modBLEConnection)connection, &characteristic->CharacteristicValue.CharacteristicUUID, characteristic->CharacteristicValue.CharacteristicValueHandle);
-		uuidToBuffer(&characteristic->CharacteristicValue.CharacteristicUUID, buffer, &length);
-		xsmcSetArrayBuffer(xsVar(1), buffer, length);
-		xsmcSetInteger(xsVar(2), characteristic->CharacteristicValue.CharacteristicValueHandle);
-		xsmcSetInteger(xsVar(3), characteristic->CharacteristicValue.CharacteristicProperties);
-		xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		xsmcSet(xsVar(0), xsID_properties, xsVar(3));
-		if (-1 != index) {
-			xsmcSetString(xsVar(2), (char*)char_names[index].name);
-			xsmcSet(xsVar(0), xsID_name, xsVar(2));
-			xsmcSetString(xsVar(2), (char*)char_names[index].type);
-			xsmcSet(xsVar(0), xsID_type, xsVar(2));
-		}
-		xsCall2(connection->procedure.target, xsID_callback, xsString("onCharacteristic"), xsVar(0));
-	}
-		
-	c_free(result->CharacteristicEntryList);
+		if (0 == entry->count)
+			start = request->end;
+		else
+			start = entry->CharacteristicEntryList[entry->count-1].CharacteristicValue.CharacteristicValueHandle + 1;
 	
-	if (0 == result->NumberOfCharacteristics)
-		start = request->end;
-	else
-		start = result->CharacteristicEntryList[result->NumberOfCharacteristics-1].CharacteristicValue.CharacteristicValueHandle + 1;
-		
-	if (start < request->end) {
-		connection->procedure.transaction_id = qapi_BLE_GATT_Discover_Characteristics(gBLE->stackID, conn_id, start, request->end, GATT_Client_Event_Callback, conn_id);
+		if (start < request->end) {
+			connection->procedure.transaction_id = qapi_BLE_GATT_Discover_Characteristics(gBLE->stackID, entry->conn_id, start, request->end, GATT_Client_Event_Callback, 0);
+		}
+		else {
+			c_free(request);
+			completeProcedure(entry->conn_id, "onCharacteristic");
+		}
+		c_free(entry);
 	}
-	else {
-		c_free(request);
-		completeProcedure(conn_id, "onCharacteristic");
-	}
-
 	xsEndHost(gBLE->the);
 }
 
@@ -1007,19 +1045,22 @@ bail:
 
 static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	qapi_BLE_GATT_Server_Notification_Data_t *result = (qapi_BLE_GATT_Server_Notification_Data_t*)message;
+	attributeNotificationRecord *entry;
 	xsBeginHost(gBLE->the);
-	modBLEConnection connection = modBLEConnectionFindByConnectionID(result->ConnectionID);
-	if (!connection)
-		xsUnknownError("connection not found");
-	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), result->AttributeValue, result->AttributeValueLength);
-	xsmcSetInteger(xsVar(2), result->AttributeHandle);
-	xsmcSet(xsVar(0), xsID_value, xsVar(1));
-	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
-	c_free(result->AttributeValue);
+	xsmcVars(2);
+	while (NULL != (entry = (attributeNotificationRecord*)modBLEMessageQueueDequeue(&gBLE->notificationQueue))) {
+		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
+		if (!connection)
+			xsUnknownError("connection not found");
+		qapi_BLE_GATT_Server_Notification_Data_t *notification = &entry->notification;
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), entry->data, notification->AttributeValueLength);
+		xsmcSet(xsVar(0), xsID_value, xsVar(1));
+		xsmcSetInteger(xsVar(1), notification->AttributeHandle);
+		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
+		xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+		c_free(entry);
+	}	
 	xsEndHost(gBLE->the);
 }
 
@@ -1173,10 +1214,13 @@ void QAPI_BLE_BTPSAPI GATT_Connection_Event_Callback(uint32_t BluetoothStackID, 
 			case QAPI_BLE_ET_GATT_CONNECTION_SERVER_NOTIFICATION_E:
 				if (GATT_Connection_Event_Data->Event_Data.GATT_Server_Notification_Data) {
 					qapi_BLE_GATT_Server_Notification_Data_t GATT_Server_Notification_Data = *GATT_Connection_Event_Data->Event_Data.GATT_Server_Notification_Data;
-					uint8_t *value = c_malloc(GATT_Server_Notification_Data.AttributeValueLength);
-					c_memmove(value, GATT_Server_Notification_Data.AttributeValue, GATT_Server_Notification_Data.AttributeValueLength);
-					GATT_Server_Notification_Data.AttributeValue = value;
-					modMessagePostToMachine(gBLE->the, (uint8_t*)&GATT_Server_Notification_Data, sizeof(GATT_Server_Notification_Data), notificationEvent, NULL);				
+					attributeNotificationRecord *entry = (attributeNotificationRecord*)c_malloc(sizeof(attributeNotificationRecord) - 1 + GATT_Server_Notification_Data.AttributeValueLength);
+					if (NULL != entry) {
+						entry->notification = GATT_Server_Notification_Data;
+						entry->conn_id = GATT_Server_Notification_Data.ConnectionID;
+						c_memmove(entry->data, GATT_Server_Notification_Data.AttributeValue, GATT_Server_Notification_Data.AttributeValueLength);
+						modBLEMessageQueueEnqueue(&gBLE->notificationQueue, (modBLEMessageQueueEntry)entry);
+					}
 				}
 				break;
 			default:
@@ -1474,12 +1518,14 @@ void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_
 				break;
 			case QAPI_BLE_ET_LE_ADVERTISING_REPORT_E:
 				for (uint16_t i = 0; i < GAP_LE_Event_Data->Event_Data.GAP_LE_Advertising_Report_Event_Data->Number_Device_Entries; i++) {
-					qapi_BLE_GAP_LE_Advertising_Report_Data_t Advertising_Data = GAP_LE_Event_Data->Event_Data.GAP_LE_Advertising_Report_Event_Data->Advertising_Data[i];
-					if (Advertising_Data.Raw_Report_Length) {
-						uint8_t *value = c_malloc(Advertising_Data.Raw_Report_Length);
-						c_memmove(value, Advertising_Data.Raw_Report_Data, Advertising_Data.Raw_Report_Length);
-						Advertising_Data.Raw_Report_Data = value;
-						modMessagePostToMachine(gBLE->the, (uint8_t*)&Advertising_Data, sizeof(Advertising_Data), deviceDiscoveryEvent, NULL);
+					qapi_BLE_GAP_LE_Advertising_Report_Data_t *Advertising_Data = &GAP_LE_Event_Data->Event_Data.GAP_LE_Advertising_Report_Event_Data->Advertising_Data[i];
+					if (Advertising_Data->Raw_Report_Length) {
+						deviceDiscoveryRecord *entry = c_malloc(sizeof(deviceDiscoveryRecord) - 1 + Advertising_Data->Raw_Report_Length);
+						if (NULL != entry) {
+							entry->disc = *Advertising_Data;
+							c_memmove(entry->data, Advertising_Data->Raw_Report_Data, Advertising_Data->Raw_Report_Length);
+							modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
+						}
 					}
 				}
 				break;
@@ -1513,11 +1559,19 @@ void QAPI_BLE_BTPSAPI GATT_Client_Event_Callback(uint32_t BluetoothStackID, qapi
 				break;
 			case QAPI_BLE_ET_GATT_CLIENT_CHARACTERISTIC_DISCOVERY_RESPONSE_E: {
 				if (GATT_Client_Event_Data->Event_Data.GATT_Characteristic_Discovery_Response_Data) {
+					characteristicSearchRecord *entry;
 					qapi_BLE_GATT_Characteristic_Discovery_Response_Data_t GATT_Characteristic_Discovery_Response_Data = *GATT_Client_Event_Data->Event_Data.GATT_Characteristic_Discovery_Response_Data;
-					uint8_t *characteristics = c_malloc(GATT_Characteristic_Discovery_Response_Data.NumberOfCharacteristics * sizeof(qapi_BLE_GATT_Characteristic_Entry_t));
-					c_memmove(characteristics, GATT_Characteristic_Discovery_Response_Data.CharacteristicEntryList, GATT_Characteristic_Discovery_Response_Data.NumberOfCharacteristics * sizeof(qapi_BLE_GATT_Characteristic_Entry_t));
-					GATT_Characteristic_Discovery_Response_Data.CharacteristicEntryList = (qapi_BLE_GATT_Characteristic_Entry_t*)characteristics;
-					modMessagePostToMachine(gBLE->the, (uint8_t*)&GATT_Characteristic_Discovery_Response_Data, sizeof(GATT_Characteristic_Discovery_Response_Data), characteristicDiscoveryEvent, NULL);					
+					if (0 == GATT_Characteristic_Discovery_Response_Data.NumberOfCharacteristics)
+						entry = c_malloc(sizeof(characteristicSearchRecord));
+					else
+						entry = c_malloc(sizeof(characteristicSearchRecord) + ((GATT_Characteristic_Discovery_Response_Data.NumberOfCharacteristics - 1) * sizeof(qapi_BLE_GATT_Characteristic_Entry_t)));
+					if (NULL != entry) {
+						entry->conn_id = GATT_Characteristic_Discovery_Response_Data.ConnectionID;
+						entry->count = GATT_Characteristic_Discovery_Response_Data.NumberOfCharacteristics;
+						if (0 != entry->count)
+							c_memmove(entry->CharacteristicEntryList, GATT_Characteristic_Discovery_Response_Data.CharacteristicEntryList, entry->count * sizeof(qapi_BLE_GATT_Characteristic_Entry_t));
+						modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
+					}
 				}
 				break;
 			}
@@ -1545,14 +1599,18 @@ void QAPI_BLE_BTPSAPI GATT_Service_Discovery_Event_Callback(uint32_t BluetoothSt
 {
 	if (BluetoothStackID && GATT_Service_Discovery_Event_Data) {
 		switch(GATT_Service_Discovery_Event_Data->Event_Data_Type) {
+			case QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_COMPLETE_E:
             case QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_INDICATION_E: {
-				qapi_BLE_GATT_Service_Discovery_Indication_Data_t GATT_Service_Discovery_Indication_Data = *GATT_Service_Discovery_Event_Data->Event_Data.GATT_Service_Discovery_Indication_Data;
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&GATT_Service_Discovery_Indication_Data, sizeof(GATT_Service_Discovery_Indication_Data), serviceDiscoveryEvent, NULL);
-				break;
-			}
-            case QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_COMPLETE_E: {
-				qapi_BLE_GATT_Service_Discovery_Complete_Data_t GATT_Service_Discovery_Complete_Data = *GATT_Service_Discovery_Event_Data->Event_Data.GATT_Service_Discovery_Complete_Data;
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&GATT_Service_Discovery_Complete_Data, sizeof(GATT_Service_Discovery_Complete_Data), serviceDiscoveryCompleteEvent, NULL);
+				serviceSearchRecord *entry = c_malloc(sizeof(serviceSearchRecord));
+				if (NULL != entry) {
+					qapi_BLE_GATT_Service_Discovery_Indication_Data_t GATT_Service_Discovery_Indication_Data = *GATT_Service_Discovery_Event_Data->Event_Data.GATT_Service_Discovery_Indication_Data;
+					qapi_BLE_GATT_Service_Information_t *serviceInformation = &GATT_Service_Discovery_Indication_Data.ServiceInformation;
+					entry->conn_id = GATT_Service_Discovery_Indication_Data.ConnectionID;
+					entry->completed = (QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_COMPLETE_E == GATT_Service_Discovery_Event_Data->Event_Data_Type);
+					if (!entry->completed)
+						entry->service = *serviceInformation;
+					modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
+				}
 				break;
 			}
 			default:
@@ -1567,27 +1625,39 @@ void QAPI_BLE_BTPSAPI GATT_Descriptor_Discovery_Event_Callback(uint32_t Bluetoot
 	
 	if (BluetoothStackID && GATT_Service_Discovery_Event_Data) {
 		switch(GATT_Service_Discovery_Event_Data->Event_Data_Type) {
+			case QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_COMPLETE_E:
             case QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_INDICATION_E: {
 				qapi_BLE_GATT_Service_Discovery_Indication_Data_t *GATT_Service_Discovery_Indication_Data = GATT_Service_Discovery_Event_Data->Event_Data.GATT_Service_Discovery_Indication_Data;
-				uint32_t i, NumberOfCharacteristics = GATT_Service_Discovery_Indication_Data->NumberOfCharacteristics;
-				qapi_BLE_GATT_Characteristic_Information_t *CharacteristicInformationList = GATT_Service_Discovery_Indication_Data->CharacteristicInformationList;					
-				for (i = 0; i < NumberOfCharacteristics; ++i) {
-					if (request->handle == CharacteristicInformationList[i].Characteristic_Handle) {
-						qapi_BLE_GATT_Characteristic_Descriptor_Information_t *descriptorList = c_malloc(CharacteristicInformationList[i].NumberOfDescriptors * sizeof(qapi_BLE_GATT_Characteristic_Descriptor_Information_t));
-						if (descriptorList) {
-							qapi_BLE_GATT_Characteristic_Information_t characteristicInfo = CharacteristicInformationList[i];
-							c_memmove(descriptorList, CharacteristicInformationList[i].DescriptorList, CharacteristicInformationList[i].NumberOfDescriptors * sizeof(qapi_BLE_GATT_Characteristic_Descriptor_Information_t));
-							characteristicInfo.DescriptorList = descriptorList;
-							modMessagePostToMachine(gBLE->the, (uint8_t*)&characteristicInfo, sizeof(characteristicInfo), descriptorDiscoveryEvent, (void*)request);
+            	descriptorSearchRecord *entry = NULL;
+				if (QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_COMPLETE_E == GATT_Service_Discovery_Event_Data->Event_Data_Type) {
+					entry = c_malloc(sizeof(descriptorSearchRecord));
+					if (NULL != entry)
+						entry->completed = true;
+				}
+				else {
+					qapi_BLE_GATT_Characteristic_Information_t *CharacteristicInformationList = GATT_Service_Discovery_Indication_Data->CharacteristicInformationList;					
+					uint32_t i, NumberOfCharacteristics = GATT_Service_Discovery_Indication_Data->NumberOfCharacteristics;
+					for (i = 0; i < NumberOfCharacteristics; ++i) {
+						if (request->handle == CharacteristicInformationList[i].Characteristic_Handle) {
+							if (0 == CharacteristicInformationList[i].NumberOfDescriptors)
+								entry = c_malloc(sizeof(descriptorSearchRecord));
+							else
+								entry = c_malloc(sizeof(descriptorSearchRecord) + ((CharacteristicInformationList[i].NumberOfDescriptors - 1) * sizeof(qapi_BLE_GATT_Characteristic_Descriptor_Information_t)));
+							if (NULL != entry) {
+								entry->count = CharacteristicInformationList[i].NumberOfDescriptors;
+								entry->completed = false;	
+								if (0 != entry->count)
+									c_memmove(entry->descriptorList, CharacteristicInformationList[i].DescriptorList, entry->count * sizeof(qapi_BLE_GATT_Characteristic_Descriptor_Information_t));
+							}
+							break;
 						}
-						break;
-					}
+					}				
+				}
+				if (NULL != entry) {
+					entry->conn_id = GATT_Service_Discovery_Indication_Data->ConnectionID;
+					modBLEMessageQueueEnqueue(&gBLE->discoveryQueue, (modBLEMessageQueueEntry)entry);
 				}
 				break;
-			}
-            case QAPI_BLE_ET_GATT_SERVICE_DISCOVERY_COMPLETE_E: {
-				qapi_BLE_GATT_Service_Discovery_Complete_Data_t GATT_Service_Discovery_Complete_Data = *GATT_Service_Discovery_Event_Data->Event_Data.GATT_Service_Discovery_Complete_Data;
-				modMessagePostToMachine(gBLE->the, (uint8_t*)&GATT_Service_Discovery_Complete_Data, sizeof(GATT_Service_Discovery_Complete_Data), descriptorDiscoveryCompleteEvent, NULL);
 			}
 			default:
 				break;

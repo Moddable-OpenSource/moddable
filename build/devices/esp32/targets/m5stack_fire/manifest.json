@@ -6,7 +6,8 @@
 	"config": {
 		"screen": "ili9341",
 		"touch": "",
-		"autorotate": 300
+		"autorotate": 300,
+		"startupSound": "bflatmajor.maud"
 	},
 	"defines": {
 		"i2c":{

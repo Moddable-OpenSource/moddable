@@ -1,6 +1,6 @@
 # Moddable SDK – Keeping Up To Date
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: April 15, 2020
+Revised: September 1, 2020
 
 This document describes the steps that you should take to update the Moddable SDK. By following the steps in this guide, you can update your Moddable SDK git repository, rebuild the Moddable SDK tools, and update the target-specific build environments needed for the ESP8266 and ESP32.
 
@@ -139,7 +139,7 @@ To ensure that your build environment is up to date, perform the following steps
 	python -m pip install --user -r ~/esp32/esp-idf/requirements.txt
 	```
 		
-4. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
+4. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system.
 
 	```
 	export IDF_PATH=$HOME/esp32/esp-idf
@@ -160,6 +160,8 @@ To ensure that your build environment is up to date, perform the following steps
 	```
 
 	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 5. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
@@ -301,6 +303,8 @@ To ensure that your build environment is up to date, perform the following steps
 
 	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `MinGW`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `MinGW`-based build. Support for `MinGW`-based builds will be removed in a future Moddable SDK update.
 
+	> Note: Remember to open a new Command Prompt before proceeding. Setting the environment variables in System Properties does not update the environment variables in active Command Prompt instances.
+
 4. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2019" command line console:
 
     ```text
@@ -410,7 +414,13 @@ To ensure that your build environment is up to date, perform the following steps
     rm -rf tmp/esp
     ```
 
-4. Verify the setup by building `helloworld` for the `esp` target:
+4. If you have updated to Ubuntu 20.04 or newer (or to any Linux distribution that defaults to Python 3) since initially installing the Moddable SDK, install additional Python 3 components:
+
+	```text
+	sudo apt-get install python-is-python3 python3-pip python3-serial
+	```
+
+5. Verify the setup by building `helloworld` for the `esp` target:
 
 	```text
 	cd $MODDABLE/examples/helloworld
@@ -439,7 +449,17 @@ To ensure that your build environment is up to date, perform the following steps
     git checkout --recurse-submodules v3.3.2
     ```
 
-2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`:
+2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
+
+	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
+
+	```text
+	sudo apt-get update
+	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
+	sudo apt-get upgrade gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
+	```
+
+	For Ubuntu prior to 20.04 (and other Linux distributions that default to Python 2):
 
 	```text
     sudo apt-get update
@@ -447,7 +467,7 @@ To ensure that your build environment is up to date, perform the following steps
     sudo apt-get upgrade gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
 	```
 
-3. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system and remember to open a new shell instance to pick up these changes before proceeding.
+3. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell). Update the paths for your system.
 
 	```
     export IDF_PATH=~/esp32/esp-idf
@@ -468,6 +488,8 @@ To ensure that your build environment is up to date, perform the following steps
 	```
 	
 	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+
+	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
 4. Each version of the ESP-IDF comes with an updated set of python dependencies. To keep up to date, run this command to install the required Python packages::
 
