@@ -384,6 +384,29 @@ void xs_socket(xsMachine *the)
 		xsUnknownError("socket connect failed");
 }
 
+static void closeSocket(xsSocket xss)
+{
+	if (xss->skt) {
+		tcp_recv(xss->skt, NULL);
+		tcp_sent(xss->skt, NULL);
+		tcp_err(xss->skt, NULL);
+		tcp_close_safe(xss->skt);
+		xss->skt = NULL;
+	}
+
+	if (xss->udp) {
+		udp_recv(xss->udp, NULL, NULL);
+		udp_remove_safe(xss->udp);
+		xss->udp = NULL;
+	}
+
+	if (xss->raw) {
+		raw_recv(xss->raw, NULL, NULL);
+		raw_remove(xss->raw);
+		xss->raw = NULL;
+	}
+}
+
 void xs_socket_destructor(void *data)
 {
 	xsSocket xss = data;
@@ -391,22 +414,7 @@ void xs_socket_destructor(void *data)
 
 	if (!xss) return;
 
-	if (xss->skt) {
-		tcp_recv(xss->skt, NULL);
-		tcp_sent(xss->skt, NULL);
-		tcp_err(xss->skt, NULL);
-		tcp_close_safe(xss->skt);
-	}
-
-	if (xss->udp) {
-		udp_recv(xss->udp, NULL, NULL);
-		udp_remove_safe(xss->udp);
-	}
-
-	if (xss->raw) {
-		raw_recv(xss->raw, NULL, NULL);
-		raw_remove(xss->raw);
-	}
+	closeSocket(xss);
 
 	if (xss->pb)
 		pbuf_free_safe(xss->pb);
@@ -429,6 +437,8 @@ void xs_socket_close(xsMachine *the)
 		xsTrace("close on closed socket\n");
 		return;
 	}
+
+	closeSocket(xss);
 
 	if (!(xss->pending & kPendingClose))
 		socketSetPending(xss, kPendingClose);
