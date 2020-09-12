@@ -152,6 +152,7 @@ static void cc32RGBAtoGray256(uint32_t pixelCount, void *src, void *dst, void *c
 static void cc32RGBAtoRGB332(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoRGB565LE(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoCLUT16(uint32_t pixelCount, void *src, void *dst, void *clut);
+static void cc32RGBAtoRGBA4444(uint32_t pixelCount, void *src, void *dst, void *clut);
 
 static const CommodettoConverter gFromGray16[] ICACHE_XS6RO_ATTR = {
 	NULL,					// toMonochrome
@@ -210,7 +211,11 @@ static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-mu
 	NULL,					// toRGB565BE
 	NULL,					// to24RGB
 	NULL,					// to32RGBA
-	cc32RGBAtoCLUT16		// toCLUT16
+	cc32RGBAtoCLUT16,		// toCLUT16
+	NULL,					// toRGB444
+	NULL,					// toJPEG
+	NULL,					// toPNG
+	cc32RGBAtoRGBA4444		// toRGBA4444
 };
 
 static const CommodettoConverter *gFromConverters[] ICACHE_RODATA_ATTR = {
@@ -622,4 +627,15 @@ void cc32RGBAtoCLUT16(uint32_t pixelCount, void *srcPixels, void *dstPixels, voi
 
 	if (pixelCount)
 		*dst++ = inverse[((src[0] & 0xF0) << 4) | (src[1] & 0xF0) | (src[2] >> 4)] << 4;
+}
+
+void cc32RGBAtoRGBA4444(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint16_t *dst = dstPixels;
+
+	while (pixelCount--) {
+		*dst++ = ((src[0] >> 4) << 12) | ((src[1] >> 4) << 8) | ((src[2] >> 4) << 4) | (src[3] >> 4);
+		src += 4;
+	}
 }

@@ -36,6 +36,7 @@
 #define kCommodettoBitmapRGB444 (12)
 #define kCommodettoBitmapJPEG (13)
 #define kCommodettoBitmapPNG (14)
+#define kCommodettoBitmapRGBA4444 (15)
 
 
 #define kCommodettoBitmapPacked (0x80)
