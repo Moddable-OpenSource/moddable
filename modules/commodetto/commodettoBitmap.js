@@ -41,6 +41,7 @@ Bitmap.CLUT16 = 11;
 Bitmap.RGB444 = 12;
 Bitmap.JPEG = 13;
 Bitmap.PNG = 14;
+Bitmap.RGBA4444 = 15;
 
 Bitmap.RLE = 0x80;	// flag applied to pixel types
 
