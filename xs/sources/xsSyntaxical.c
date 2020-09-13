@@ -3274,6 +3274,10 @@ txNode* fxArrayBindingFromExpression(txParser* parser, txNode* theNode, txToken 
 	txNode* item;
 	txNode* binding;
 	while ((item = *address)) {
+        if (!item->description) {
+            parser->errorSymbol = parser->SyntaxErrorSymbol;
+            return NULL;
+        }
 		if (item->description->token == XS_TOKEN_SPREAD) {
 			if (theNode->flags & mxElisionFlag) {
 				parser->errorSymbol = parser->SyntaxErrorSymbol;
