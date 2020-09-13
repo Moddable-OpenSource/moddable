@@ -103,6 +103,13 @@ export default class AXP192 extends SMBus {
 		}
 	}
 
+	isLdoEnable(n) {
+		if (n < 2 || n > 3) {
+			return
+		}
+		return Boolean((this.readByte(0x12) >> n) & 1)
+	}
+
 	setLcdReset(enable) {
 		const register = 0x96
 		const gpioBit = 0x02
