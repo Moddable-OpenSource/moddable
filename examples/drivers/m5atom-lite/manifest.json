@@ -1,0 +1,14 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"platforms": {
+		"esp32/m5atom": {},
+		"...": {
+			"error": "unsupported"
+		}
+	}
+}

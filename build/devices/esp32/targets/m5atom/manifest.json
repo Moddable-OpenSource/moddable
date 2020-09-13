@@ -1,0 +1,33 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+	],
+	"build": {
+		"UPLOAD_SPEED": "1500000",
+		"DEBUGGER_SPEED": "1500000"
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/neopixel/*",
+			"$(MODULES)/drivers/neopixel/esp32/*",
+			
+			"$(MODULES)/pins/digital/monitor/*",
+			"$(MODULES)/pins/digital/monitor/esp32/*",
+		],
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"monitor",
+		"setup/target",
+		"neopixel"
+	],
+	"defines": {
+		"neopixel": {
+			"length": 1,
+			"pin": 27,
+			"order": "#RGB",
+			"rmt_channel": "RMT_CHANNEL_0"
+		}
+	}	
+}
+
