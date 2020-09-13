@@ -329,7 +329,7 @@ void fx_Function(txMachine* the)
 
 void fx_Function_prototype_apply(txMachine* the)
 {
-	txInteger c, i;
+	txIndex c, i;
 	fxCheckCallable(the, mxThis);
 	/* THIS */
 	if (mxArgc < 1)
@@ -348,7 +348,7 @@ void fx_Function_prototype_apply(txMachine* the)
 		fxToInstance(the, mxArgv(1));
 		mxPushSlot(mxArgv(1));
 		fxGetID(the, mxID(_length));
-		c = (txInteger)fxToLength(the, the->stack);
+		c = (txIndex)fxToLength(the, the->stack);
 		the->stack++;
 		for (i = 0; i < c; i++) {
 			mxPushSlot(mxArgv(1));
