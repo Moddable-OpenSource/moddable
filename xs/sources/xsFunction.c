@@ -386,7 +386,7 @@ void fx_Function_prototype_bind(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
-	property->value.home.module = mxFunctionInstanceHome(function)->value.home.module;
+	property->value.home.module = C_NULL;
 
 	property = fxNextSlotProperty(the, property, mxThis, mxID(_boundFunction), XS_INTERNAL_FLAG | XS_GET_ONLY);
 	if (c > 0)
