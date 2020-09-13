@@ -51,6 +51,7 @@ C_OPTIONS = \
 	-DmxParse=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
+	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
@@ -73,6 +74,9 @@ LINK_OPTIONS = $(MACOS_VERSION_MIN) $(MACOS_ARCH)
 ifneq ("x$(SDKROOT)", "x")
 	LINK_OPTIONS += -isysroot $(SDKROOT)
 endif
+
+# C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+# LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 
 OBJECTS = \
 	$(TMP_DIR)/xsAll.o \
@@ -126,7 +130,8 @@ OBJECTS = \
 	$(TMP_DIR)/reader.o \
 	$(TMP_DIR)/scanner.o \
 	$(TMP_DIR)/writer.o \
-	$(TMP_DIR)/xst.o
+	$(TMP_DIR)/xst.o \
+	$(TMP_DIR)/xsSnapshot.o
 
 VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml
 
@@ -143,6 +148,7 @@ $(BIN_DIR)/$(NAME): $(OBJECTS)
 	$(CC) $(LINK_OPTIONS) $(LIBRARIES) $(OBJECTS) -o $@
 	
 $(OBJECTS): $(TLS_DIR)/xst.h
+$(OBJECTS): $(TLS_DIR)/xsSnapshot.h
 $(OBJECTS): $(PLT_DIR)/xsPlatform.h
 $(OBJECTS): $(SRC_DIR)/xsCommon.h
 $(OBJECTS): $(SRC_DIR)/xsAll.h

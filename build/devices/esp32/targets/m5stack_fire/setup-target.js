@@ -28,10 +28,12 @@ export default function (done) {
 	button.a.onChanged = button.b.onChanged = button.c.onChanged = nop;
 
 	global.speaker = new AudioOut({streams: 4});
-	speaker.callback = function() {this.stop()};
-	speaker.enqueue(0, AudioOut.Samples, new Resource("bflatmajor.maud"));
-	speaker.enqueue(0, AudioOut.Callback, 0);
-	speaker.start();
+	if (config.startupSound) {
+		speaker.callback = function() {this.stop()};
+		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
+		speaker.enqueue(0, AudioOut.Callback, 0);
+		speaker.start();
+	}
 
 	//@@ microphone
 

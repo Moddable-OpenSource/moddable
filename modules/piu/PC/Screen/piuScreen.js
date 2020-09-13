@@ -27,7 +27,10 @@ export const Screen = Template(Object.freeze({
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuScreen_create",
 	
+	get hole() @ "PiuScreen_get_hole",
 	get running() @ "PiuScreen_get_running",
+	
+	set hole(it) @ "PiuScreen_set_hole",
 	
 	launch(path) @ "PiuScreen_launch",
 	postMessage(json) @ "PiuScreen_postMessage",

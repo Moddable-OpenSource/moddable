@@ -21,7 +21,7 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
-#include "servo.h"
+#include "Servo.h"
 
 typedef struct {
 	Servo		*s;

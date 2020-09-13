@@ -544,6 +544,11 @@ int doFlushWrite(xsSocket xss)
 	return 0;
 }
 
+void xs_socket_suspend(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 // to accept an incoming connection: let incoming = new Socket({listener});
 void xs_listener(xsMachine *the)
 {

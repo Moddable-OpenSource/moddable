@@ -168,6 +168,7 @@ HEADERS = \
 	$(COMMODETTO)/commodettoPocoBlit.h \
 	$(INSTRUMENTATION)/modInstrumentation.h
 OBJECTS = \
+	$(TMP_DIR)/adpcm-lib.o \
 	$(TMP_DIR)/commodettoBitmap.c.o \
 	$(TMP_DIR)/commodettoBufferOut.c.o \
 	$(TMP_DIR)/commodettoColorCellOut.c.o \
@@ -179,7 +180,6 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
 	$(TMP_DIR)/cfeBMF.c.o \
-	$(TMP_DIR)/dvi_adpcm_encode.c.o \
 	$(TMP_DIR)/image2cs.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \

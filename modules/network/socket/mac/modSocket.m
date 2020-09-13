@@ -61,6 +61,7 @@ struct xsSocketRecord {
 	uint8_t						useCount;
 	uint8_t						done;
 	uint8_t						kind;		// kTCP or kUDP
+	uint8_t						suspended;
 
 	uint8_t						*readBuffer;
 	int32_t						readBytes;
@@ -69,6 +70,7 @@ struct xsSocketRecord {
 	int32_t						unreportedSent;		// bytes sent to the socket but not yet reported to object as sent
 
 	uint8_t						writeBuf[1024];
+	uint8_t						readBuf[2048];
 };
 
 typedef struct xsListenerRecord xsListenerRecord;
@@ -542,6 +544,16 @@ void xs_socket_write(xsMachine *the)
 		xsUnknownError("write failed");
 }
 
+void xs_socket_suspend(xsMachine *the)
+{
+	xsSocket xss = xsmcGetHostData(xsThis);
+
+	if (xsmcArgc)
+		xss->suspended = xsmcToBoolean(xsArg(0));
+
+	xsmcSetBoolean(xsResult, xss->suspended);
+}
+
 void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, const void *data, void *info)
 {
 	xsSocket xss = info;
@@ -553,11 +565,16 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 	xss->useCount += 1;
 
 	if (cbType & kCFSocketReadCallBack) {
-		unsigned char buffer[2048];
 		int count;
 
+		if (xss->readBytes)
+			goto bail;
+
 		if (kTCP == xss->kind) {
-			count = read(xss->skt, buffer, sizeof(buffer));
+			if (xss->suspended)
+				goto bail;
+
+			count = read(xss->skt, xss->readBuf, sizeof(xss->readBuf));
 
 			if (count <= 0) {
 				xsBeginHost(the);
@@ -571,29 +588,29 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 
 			modInstrumentationAdjust(NetworkBytesRead, count);
 
-			xss->readBuffer = buffer;
+			xss->readBuffer = xss->readBuf;
 			xss->readBytes = count;
 
 			xsBeginHost(the);
 				xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count));
 			xsEndHost(the);
-
-			xss->readBuffer = NULL;
-			xss->readBytes = 0;
 		}
 		else {
 			struct sockaddr_in srcAddr;
 			socklen_t srcAddrLen = sizeof(srcAddr);
 			char srcAddrStr[INET_ADDRSTRLEN];
 
-			count = recvfrom(xss->skt, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr *)&srcAddr, &srcAddrLen);
+			count = recvfrom(xss->skt, xss->readBuf, sizeof(xss->readBuf), MSG_DONTWAIT, (struct sockaddr *)&srcAddr, &srcAddrLen);
 
 			if (count <= 0)
-				return;
+				goto bail;
+
+			if (xss->suspended)
+				goto bail;
 
 			modInstrumentationAdjust(NetworkBytesRead, count);
 
-			xss->readBuffer = buffer;
+			xss->readBuffer = xss->readBuf;
 			xss->readBytes = count;
 
 			inet_ntop(srcAddr.sin_family, &srcAddr.sin_addr, srcAddrStr, sizeof(srcAddrStr));
@@ -602,11 +619,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 				xsmcSetString(xsResult, srcAddrStr);
 				xsCall4(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count), xsResult, xsInteger(ntohs(srcAddr.sin_port)));		//@@ port
 			xsEndHost(the);
-
-			xss->readBuffer = NULL;
-			xss->readBytes = 0;
 		}
-
 	}
 
 	if (cbType & kCFSocketConnectCallBack) {
@@ -616,6 +629,9 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 	}
 
 	if (cbType & kCFSocketWriteCallBack) {
+		if (xss->suspended)
+			goto bail;
+
 		if (xss->unreportedSent) {
 			xss->unreportedSent = 0;
 			xsBeginHost(the);
@@ -626,6 +642,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 			CFSocketDisableCallBacks(xss->cfSkt, kCFSocketWriteCallBack);
 	}
 
+bail:
 	socketDownUseCount(the, xss);
 }
 

@@ -1,0 +1,27 @@
+{
+	"config": {
+		"autorotate": 300
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/i2c/manifest.json"
+	],
+	"modules": {
+		"*": ["./main",
+			"$(MODULES)/drivers/mpu6886/*"
+		],
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"pins/i2c": "$(MODULES)/pins/i2c/i2c"
+	},
+	"platforms": {
+		"esp32/m5atom": {},
+		"...": {
+			"error": "unsupported"
+		}
+	},
+	"defines": {
+		"neopixel": {
+			"length": 25
+		}
+	}
+}

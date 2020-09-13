@@ -142,6 +142,8 @@ typedef struct {
 	txNode* next;
 	const txNodeDescription* description;
 	txSymbol* symbol;
+	txInteger line;
+	txUnsigned flags;
 } txNodeLink;
 
 typedef struct {
