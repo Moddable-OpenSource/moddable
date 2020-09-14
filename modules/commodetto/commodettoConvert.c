@@ -251,7 +251,7 @@ CommodettoConverter CommodettoPixelsConverterGet(CommodettoBitmapFormat srcForma
 	if ((srcFormat < kCommodettoBitmapMonochrome) || (dstFormat < kCommodettoBitmapMonochrome))
 		return 0;
 
-	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmapCLUT16))
+	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmapRGBA4444))
 		return 0;
 
 	return (gFromConverters[srcFormat - kCommodettoBitmapMonochrome])[dstFormat - kCommodettoBitmapMonochrome];
@@ -635,7 +635,7 @@ void cc32RGBAtoRGBA4444(uint32_t pixelCount, void *srcPixels, void *dstPixels, v
 	uint16_t *dst = dstPixels;
 
 	while (pixelCount--) {
-		*dst++ = ((src[0] >> 4) << 12) | ((src[1] >> 4) << 8) | ((src[2] >> 4) << 4) | (src[3] >> 4);
+		*dst++ = ((src[3] >> 4) << 12) | ((src[0] >> 4) << 8) | ((src[1] >> 4) << 4) | (src[2] >> 4);
 		src += 4;
 	}
 }
