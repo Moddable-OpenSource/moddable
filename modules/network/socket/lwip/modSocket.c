@@ -80,19 +80,21 @@ typedef struct xsSocketUDPRemoteRecord xsSocketUDPRemoteRecord;
 typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
 #define kReadQueueLength MODDEF_SOCKET_READQUEUE
+
+#define xsSocketCommon \
+	xsMachine			*the; 				\
+											\
+	xsSlot				obj;				\
+	struct tcp_pcb		*skt;				\
+											\
+	int8				useCount;			\
+	uint8				kind;				\
+	uint8				pending;			\
+	uint8				constructed;		\
+	uint8				suspended;
+
 struct xsSocketRecord {
-	xsMachine			*the;
-
-	xsSlot				obj;
-	struct tcp_pcb		*skt;
-
-	int8				useCount;
-	uint8				kind;
-	uint8				pending;
-	uint8				writeDisabled;
-	uint8				constructed;
-
-	// above here same as xsListenerRecord
+	xsSocketCommon
 
 	struct udp_pcb		*udp;
 	struct raw_pcb		*raw;
@@ -107,7 +109,6 @@ struct xsSocketRecord {
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
-	uint8				suspended;
 
 	xsSocketUDPRemoteRecord
 						remote[1];
@@ -118,18 +119,7 @@ typedef xsListenerRecord *xsListener;
 
 #define kListenerPendingSockets MODDEF_SOCKET_LISTENERQUEUE
 struct xsListenerRecord {
-	xsMachine			*the;
-
-	xsSlot				obj;
-	struct tcp_pcb		*skt;
-
-	int8				useCount;
-	uint8				kind;
-	uint8				pending;
-	uint8				writeDisabled;
-	uint8				constructed;
-
-	// above here same as xsSocketRecord
+	xsSocketCommon
 
 	xsSocket			accept[kListenerPendingSockets];
 };
@@ -576,7 +566,7 @@ void xs_socket_write(xsMachine *the)
 	if (xss->suspended)
 		xsUnknownError("suspended");
 
-	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || xss->writeDisabled) {
+	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || (xss->pending & (kPendingError | kPendingDisconnect))) {
 		if (0 == argc) {
 			xsResult = xsInteger(0);
 			return;
@@ -1260,9 +1250,6 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 
 	doSchedule = 0 == xss->pending;
 	xss->pending |= pending;
-
-	if (xss->pending & (kPendingError | kPendingDisconnect))
-		xss->writeDisabled = true;
 
 	if (doSchedule && (xss->constructed || (pending & kPendingAcceptListener))) {
 		socketUpUseCount(xss->the, xss);
