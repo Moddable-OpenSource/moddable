@@ -78,7 +78,8 @@ SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.1
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
 BOARD_DEF = BOARD_MODDABLE_FOUR
 
-HEAP_SIZE = 0x13000
+#HEAP_SIZE = 0x13000
+HEAP_SIZE = 0x32F00
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
@@ -113,6 +114,7 @@ ASMFLAGS += -DS140
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DNRF_CRYPTO_MAX_INSTANCE_COUNT=1
 ASMFLAGS += -DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION
+ASMFLAGS += -D__HEAP_SIZE=$(HEAP_SIZE)
 
 # Linker flags
 LDFLAGS += -mthumb -mabi=aapcs -L$(NRF52_SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
@@ -315,10 +317,11 @@ BOARD_SUPPORT = \
 	$(LIB_DIR)/bsp.c.o \
 	$(LIB_DIR)/bsp_btn_ble.c.o \
 
+# was heap_1
 FREERTOS_OBJECTS = \
 	$(LIB_DIR)/croutine.c.o \
 	$(LIB_DIR)/event_groups.c.o \
-	$(LIB_DIR)/heap_1.c.o \
+	$(LIB_DIR)/heap_3.c.o \
 	$(LIB_DIR)/list.c.o \
 	$(LIB_DIR)/port_cmsis_systick.c.o \
 	$(LIB_DIR)/port_cmsis.c.o \
