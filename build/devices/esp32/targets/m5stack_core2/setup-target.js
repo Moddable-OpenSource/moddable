@@ -53,6 +53,20 @@ export default function (done) {
 	speaker.enqueue(0, AudioOut.Callback, 0);
 	speaker.start();
 
+	// bibration
+	global.bibration = {
+		read: function() {
+			return global.power.getLdoEnable(3)
+		},
+		write: function(v) {
+			global.power.setLdoEnable(3, v)
+		}
+	}
+	bibratioin.write(true)
+	Timer.set(() => {
+		bibration.write(false)
+	}, 600)
+
 	state.accelerometerGyro = new MPU6886({
 		sda: INTERNAL_I2C_SDA,
 		scl: INTERNAL_I2C_SCL
