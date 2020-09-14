@@ -34,7 +34,7 @@ var formatNames = {
 	rgb565le: "rgb565le",
 	rgb565be: "rgb565be",
 	clut16: "clut16",
-	rgba4444: "rgba4444",
+	argb4444: "argb4444",
 };
 
 var formatValues = {
@@ -45,7 +45,7 @@ var formatValues = {
 	rgb565le: 7,
 	rgb565be: 8,
 	clut16: 11,
-	rgba4444: 15,
+	argb4444: 12,
 };
 
 export default class extends TOOL {

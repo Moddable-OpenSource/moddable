@@ -120,7 +120,7 @@ void xs_parseBMP(xsMachine *the)
 				(0x00f0 == c_read32(58 + bytes)) &&
 				(0x000f == c_read32(62 + bytes)) &&
 				(0xf000 == c_read32(66 + bytes)))
-				bitmap->format = kCommodettoBitmapRGBA4444;
+				bitmap->format = kCommodettoBitmapARGB4444;
 			else
 				bitmap->format = kCommodettoBitmapRGB565LE;
 			break;
