@@ -1237,25 +1237,15 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 	while (out->pendingCallbackCount) {
 		int id;
 
-#if ESP32
-		xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-		modCriticalSectionBegin();
-#elif defined(_WIN32)
-		EnterCriticalSection(&out->cs);
-#endif
+		doLock(out);
+
 		id = out->pendingCallbacks[0];
 
 		out->pendingCallbackCount -= 1;
 		if (out->pendingCallbackCount)
 			c_memcpy(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
-#if ESP32
-		xSemaphoreGive(out->mutex);
-#elif defined(__ets__)
-		modCriticalSectionEnd();
-#elif defined(_WIN32)
-		LeaveCriticalSection(&out->cs);
-#endif
+
+		doUnlock(out);
 
 		xsmcSetInteger(xsVar(0), id);
 		xsCall1(out->obj, xsID_callback, xsVar(0));		//@@ unsafe to close inside callback
