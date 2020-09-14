@@ -67,6 +67,7 @@ export default function (done) {
 		bibration.write(false)
 	}, 600)
 
+	// accelerometer and gyrometer
 	state.accelerometerGyro = new MPU6886({
 		sda: INTERNAL_I2C_SDA,
 		scl: INTERNAL_I2C_SCL
@@ -132,6 +133,7 @@ export default function (done) {
 		delete state.gyroTimerID;
 	}
 
+	// autorotate
 	if (config.autorotate && global.Application) {
 		state.handleRotation = function (reading) {
 			if (Math.abs(reading.y) > Math.abs(reading.x)) {
