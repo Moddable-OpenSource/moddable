@@ -27,7 +27,7 @@ var formatStrings = {
 	rgb565le: "RGB565LE",
 	rgb565be: "RGB565BE",
 	clut16: "CLUT16",
-	rgba4444: "RGBA4444",
+	argb4444: "ARGB4444",
 	x: "",
 };
 
@@ -38,7 +38,7 @@ var formatValues = {
 	rgb565le: 7,
 	rgb565be: 8,
 	clut16: 11,
-	rgba4444: 15,
+	argb4444: 12,
 	x: 0,
 };
 

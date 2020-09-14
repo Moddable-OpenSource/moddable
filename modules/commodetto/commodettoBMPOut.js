@@ -38,7 +38,7 @@ export default class BMPOut extends PixelsOut {
 		this.depth = Bitmap.depth(dictionary.pixelFormat);
 
 		if ((Bitmap.Gray16 != dictionary.pixelFormat) && (Bitmap.Gray256 != dictionary.pixelFormat) && (Bitmap.RGB565LE != dictionary.pixelFormat) && (Bitmap.RGB332 != dictionary.pixelFormat) && (Bitmap.CLUT16 != dictionary.pixelFormat) && (Bitmap.Monochrome != dictionary.pixelFormat) &&
-			(Bitmap.RGBA4444 != dictionary.pixelFormat))
+			(Bitmap.ARGB4444 != dictionary.pixelFormat))
 			throw new Error("unsupported BMP pixel fornat");
 
 		this.file = new File(dictionary.path, 1);
@@ -75,7 +75,7 @@ export default class BMPOut extends PixelsOut {
 			this.write32(0);							// biClrUsed
 			this.write32(0);							// biClrImportant
 
-			if (Bitmap.RGBA4444 == this.pixelFormat)
+			if (Bitmap.ARGB4444 == this.pixelFormat)
 				this.file.write(0x00, 0x0F, 0x00, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x00, 0x00);	// masks for RGBA444 pixels
 			else
 				this.file.write(0x00, 0xF8, 0x00, 0x00, 0xE0, 0x07, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);	// masks for 565 pixels
