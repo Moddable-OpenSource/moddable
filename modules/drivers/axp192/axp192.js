@@ -18,9 +18,8 @@
  *
  */
 import SMBus from 'pins/smbus';
-import Timer from 'timer';
 
-const kCHG_100mA = 0
+export const kCHG_100mA = 0
 
 export default class AXP192 extends SMBus {
 	constructor(it) {
@@ -28,7 +27,9 @@ export default class AXP192 extends SMBus {
 			it.address = 0x34
 		}
 		super(it);
-		this.initialize();
+		if (it.onInit != null) {
+			it.onInit.apply(this)
+	}
 	}
 
 	//set led state(GPIO high active,set 1 to enable amplifier)
@@ -139,32 +140,18 @@ export default class AXP192 extends SMBus {
 
 	/**
 	 * initialize axp192
+	 * @deprecated use onInit() instead
 	 */
 	initialize() {
-		this.writeByte(0x30, (this.readByte(0x30) & 0x04) | 0x02) //AXP192 30H
-		this.writeByte(0x92, this.readByte(0x92) & 0xf8) //AXP192 GPIO1:OD OUTPUT
-
-		this.writeByte(0x93, this.readByte(0x93) & 0xf8) //AXP192 GPIO2:OD OUTPUT
-		this.writeByte(0x35, (this.readByte(0x35) & 0x1c) | 0xa3)//AXP192 RTC CHG
-		this.setVoltage(3350) // Voltage 3.35V
-		this.setLcdVoltage(2800) // LCD backlight voltage 2.80V
-		this.setLdoVoltage(2, 3300) //Periph power voltage preset (LCD_logic, SD card)
-		this.setLdoVoltage(3, 2000) //Vibrator power voltage preset
-		this.setLdoEnable(2, true)
-		this.setChargeCurrent(kCHG_100mA)
-
-		//AXP192 GPIO4
-		this.writeByte(0x95, (this.readByte(0x95) & 0x72) | 0x84)
-		this.writeByte(0x36, 0x4c)
-		this.writeByte(0x82, 0xff)
-
-		this.setLcdReset(0);
-		Timer.delay(20);
-		this.setLcdReset(1);
-		Timer.delay(20);
-
-		this.setBusPowerMode(0); //  bus power mode_output
-		Timer.delay(200);
+		// NOTE: below is M5StickC specific flow left for backward compatibility
+		this.write(0x10, 0xff); // OLED VPP Enable
+		this.write(0x28, 0xff); // Enable LDO2&LDO3, LED&TFT 3.3V
+		this.write(0x82, 0xff); // Enable all the ADCs
+		this.write(0x33, 0xc0); // Enable Charging, 100mA, 4.2V End at 0.9
+		this.write(0xB8, 0x80); // Enable Colume Counter
+		this.write(0x12, 0x4d); // Enable DC-DC1, OLED VDD, 5B V EXT
+		this.write(0x36, 0x5c); // PEK
+		this.write(0x90, 0x02); // gpio0
 	}
 
 	/**

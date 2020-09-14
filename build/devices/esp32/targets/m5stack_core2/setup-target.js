@@ -1,4 +1,4 @@
-import AXP192 from "axp192";
+import AXP192, { kCHG_100mA } from "axp192";
 import MPU6886 from "mpu6886";
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
@@ -13,11 +13,39 @@ const state = {
 };
 
 export default function (done) {
+	// power
 	global.power = new AXP192({
 		sda: INTERNAL_I2C_SDA,
 		scl: INTERNAL_I2C_SCL,
+		onInit: function () {
+			// TODO: encapsulate direct register access by class method
+			this.writeByte(0x30, (this.readByte(0x30) & 0x04) | 0x02) //AXP192 30H
+			this.writeByte(0x92, this.readByte(0x92) & 0xf8) //AXP192 GPIO1:OD OUTPUT
+			this.writeByte(0x93, this.readByte(0x93) & 0xf8) //AXP192 GPIO2:OD OUTPUT
+			this.writeByte(0x35, (this.readByte(0x35) & 0x1c) | 0xa3)//AXP192 RTC CHG
+			this.setVoltage(3350) // Voltage 3.35V
+			this.setLcdVoltage(2800) // LCD backlight voltage 2.80V
+			this.setLdoVoltage(2, 3300) //Periph power voltage preset (LCD_logic, SD card)
+			this.setLdoVoltage(3, 2000) //Vibrator power voltage preset
+			this.setLdoEnable(2, true)
+			this.setChargeCurrent(kCHG_100mA)
+
+			//AXP192 GPIO4
+			this.writeByte(0x95, (this.readByte(0x95) & 0x72) | 0x84)
+			this.writeByte(0x36, 0x4c)
+			this.writeByte(0x82, 0xff)
+
+			this.setLcdReset(0);
+			Timer.delay(20);
+			this.setLcdReset(1);
+			Timer.delay(20);
+
+			this.setBusPowerMode(0); //  bus power mode_output
+			Timer.delay(200);
+		}
 	});
 
+	// speaker
 	global.power.setSpeakerEnable(true)
 	global.speaker = new AudioOut({streams: 4});
 	speaker.callback = function() { this.stop() };

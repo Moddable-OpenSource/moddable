@@ -30,6 +30,16 @@ export default function (done) {
 	global.power = new AXP192({
 		sda: 21,
 		scl: 22,
+		onInit: function () {
+			this.write(0x10, 0xff); // OLED VPP Enable
+			this.write(0x28, 0xff); // Enable LDO2&LDO3, LED&TFT 3.3V
+			this.write(0x82, 0xff); // Enable all the ADCs
+			this.write(0x33, 0xc0); // Enable Charging, 100mA, 4.2V End at 0.9
+			this.write(0xB8, 0x80); // Enable Colume Counter
+			this.write(0x12, 0x4d); // Enable DC-DC1, OLED VDD, 5B V EXT
+			this.write(0x36, 0x5c); // PEK
+			this.write(0x90, 0x02); // gpio0
+		}
 	});
 
 	state.accelerometerGyro = new IMU;
