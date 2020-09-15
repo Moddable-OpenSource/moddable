@@ -25,6 +25,7 @@
 #include "nrf_sdh_freertos.h"
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
+#include "sdk_config.h"
 
 const uint16_t primary_service_uuid = 0x2800;
 const uint16_t character_declaration_uuid = 0x2803;
@@ -52,13 +53,14 @@ ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init)
 	ret_code_t err_code;
     ble_cfg_t ble_cfg;
 	uint32_t ram_start = 0;
+	static uint8_t pm_initialized = false;
 	
 	if (0 != useCount++)
 		return NRF_SUCCESS;
 
 	// Initialize platform Bluetooth modules
     err_code = nrf_sdh_enable_request();
-    
+
 	// Configure the BLE stack using the default BLE settings defined in the sdk_config.h file.
 	// Fetch the start address of the application RAM.
     if (NRF_SUCCESS == err_code)
@@ -79,17 +81,24 @@ ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init)
     if (NRF_SUCCESS == err_code)
 		err_code = nrf_ble_gatt_init(init->p_gatt, NULL);
     
-	// Initialize connection parameters (required)
-    if (NRF_SUCCESS == err_code)
+    // @@ We disable the connection parameters module, since otherwise the Nordic SDK is unable to successfully and reinitialize the BLE stack.
+    // @@ https://devzone.nordicsemi.com/f/nordic-q-a/57834/reenable-ble-after-disabling-fails-in-ble_conn_params_init-on-freertos
+#if NRF_BLE_CONN_PARAMS_ENABLED
+	// Initialize connection parameters
+	if (NRF_SUCCESS == err_code)
 		err_code = ble_conn_params_init(&init->cp_init);
+#endif
 
-	// Initialize the peer manager
-    if (NRF_SUCCESS == err_code)
+	// Initialize the peer manager - this can only happen once
+    if (!pm_initialized && (NRF_SUCCESS == err_code)) {
 		err_code = pm_init();
 
-	// Register peer manager event handler
-	if (NRF_SUCCESS == err_code)
-		err_code = pm_register(init->pm_event_handler);
+		// Register peer manager event handler
+		if (NRF_SUCCESS == err_code)
+			err_code = pm_register(init->pm_event_handler);
+		if (NRF_SUCCESS == err_code)
+			pm_initialized = 1;
+    }
 
 	// Create a FreeRTOS task for the BLE stack.
     if (NRF_SUCCESS == err_code)
@@ -102,6 +111,10 @@ ret_code_t modBLEPlatformTerminate(void)
 {
 	if (0 != --useCount)
 		return NRF_SUCCESS;
+
+#if NRF_BLE_CONN_PARAMS_ENABLED
+	ble_conn_params_stop();
+#endif
 
 	return nrf_sdh_disable_request();
 }
