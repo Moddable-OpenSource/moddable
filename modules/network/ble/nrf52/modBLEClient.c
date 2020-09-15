@@ -235,9 +235,11 @@ void xs_ble_client_initialize(xsMachine *the)
 	gBLE->obj = xsThis;
 	gBLE->iocap = 0xFF;
 	gBLE->duplicates = true;
-	modBLEMessageQueueConfigure(&gBLE->notificationQueue, the, gattcCharacteristicNotificationEvent, NULL);
+	xsmcSetHostData(xsThis, gBLE);
 	xsRemember(gBLE->obj);
 	
+	modBLEMessageQueueConfigure(&gBLE->notificationQueue, the, gattcCharacteristicNotificationEvent, NULL);
+
 	// Initialize platform Bluetooth modules
 	init.p_gatt = &gBLE->m_gatt;
 	init.pm_event_handler = pm_evt_handler;
@@ -305,7 +307,7 @@ void xs_ble_client_destructor(void *data)
 	c_free(ble);
 	gBLE = NULL;
 
-	nrf_sdh_disable_request();
+	modBLEPlatformTerminate();
 }
 
 void xs_ble_client_set_local_privacy(xsMachine *the)
