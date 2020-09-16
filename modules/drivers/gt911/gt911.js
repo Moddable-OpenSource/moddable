@@ -23,7 +23,7 @@ import Time from "time";
 
 class GT911 extends I2C {
 	#until;
-	#data = new Uint8Array(17);		// 2 touch points
+	#data;
 
 	constructor(dictionary) {
 		super({
@@ -52,8 +52,11 @@ class GT911 extends I2C {
 
 	read(target) {
 		this.write(0x81, 0x4E); 		// GOODIX_READ_COOR_ADDR
-		const data = this.#data;
-		super.read(1 * (8 * target.length), data.buffer);
+		let data = this.#data;
+		const byteLength = 1 + (target.length) * 8;
+		if (!data || (data.byteLength !== byteLength))
+			this.#data = data = new Uint8Array(byteLength);
+		super.read(byteLength, data.buffer);
 
 		if (!(data[0] & 0x80) && target[0].state && (Time.ticks < this.#until)) {
 			for (let i = 0; i < target.length; i++)
