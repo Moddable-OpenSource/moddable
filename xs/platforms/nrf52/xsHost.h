@@ -406,15 +406,15 @@ extern void nrf52_get_mac(uint8_t *mac);
 extern nrf_fstorage_t fstorage;
 
 // it appears that the flash offsets aree placeed into the memory map without any offset
-#define kFlashStart ((uint8_t *)0)
+#define kFlashStart ((uintptr_t)0)
 #define kFlashSectorSize (modSPIFlashInit() ? fstorage.p_flash_info->erase_unit : 0)
 
 extern uint8_t *espFindUnusedFlashStart(void);
-#define kModulesStart (espFindUnusedFlashStart())
+#define kModulesStart ((uintptr_t)espFindUnusedFlashStart())
 
-extern uint8_t *_MODPREF_start;		// from linker
-extern uint8_t *_MODDABLE_start;	// from linker
-#define kModulesEnd ((uint8_t *)_MODPREF_start)
+extern uint32_t _MODPREF_start;		// from linker
+extern uint32_t _MODDABLE_start;	// from linker
+#define kModulesEnd ((uintptr_t)&_MODPREF_start)
 #define kModulesByteLength (kModulesEnd - kModulesStart)
 
 extern uint8_t modSPIFlashInit(void);
