@@ -1031,11 +1031,19 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 	
     switch (p_ble_evt->header.evt_id)
     {
-		case BLE_GAP_EVT_CONNECTED:
-			if (0xFF != gBLE->iocap)
-				pm_handler_secure_on_connection(p_ble_evt);
+		case BLE_GAP_EVT_CONNECTED: {
+			uint8_t encrypted = 0;
+			if (0xFF != gBLE->iocap) {
+				pm_conn_sec_status_t status = {0};
+				encrypted = ((NRF_SUCCESS == pm_conn_sec_status_get(p_ble_evt->evt.gap_evt.conn_handle, &status)) && status.encrypted);
+				if (!encrypted)
+					pm_handler_secure_on_connection(p_ble_evt);
+			}
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
+			if (encrypted)
+				modMessagePostToMachine(gBLE->the, NULL, 0, pmConnSecSucceededEvent, NULL);
 			break;
+		}
 		case BLE_GAP_EVT_DISCONNECTED:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapDisconnectedEvent, NULL);
 			break;

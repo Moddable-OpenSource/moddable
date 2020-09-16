@@ -1398,11 +1398,19 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 		case BLE_GAP_EVT_AUTH_KEY_REQUEST:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapAuthKeyRequestEvent, NULL);
 			break;
-		case BLE_GAP_EVT_CONNECTED:
-			if (0xFF != gBLE->iocap)
-				pm_handler_secure_on_connection(p_ble_evt);
+		case BLE_GAP_EVT_CONNECTED: {
+			uint8_t encrypted = 0;
+			if (0xFF != gBLE->iocap) {
+				pm_conn_sec_status_t status = {0};
+				encrypted = ((NRF_SUCCESS == pm_conn_sec_status_get(p_ble_evt->evt.gap_evt.conn_handle, &status)) && status.encrypted);
+				if (!encrypted)
+					pm_handler_secure_on_connection(p_ble_evt);
+			}
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
+			if (encrypted)
+				modMessagePostToMachine(gBLE->the, NULL, 0, pmConnSecSucceededEvent, NULL);
 			break;
+		}
 		case BLE_GAP_EVT_DISCONNECTED:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapDisconnectedEvent, NULL);
 			break;
@@ -1420,6 +1428,14 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			dlp.max_rx_time_us = BLE_GAP_DATA_LENGTH_AUTO;
 			dlp.max_tx_time_us = BLE_GAP_DATA_LENGTH_AUTO;
 			sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, &dlp, NULL);
+			break;
+		}
+		case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
+			ble_gap_phys_t const phys = {
+				.rx_phys = BLE_GAP_PHY_AUTO,
+				.tx_phys = BLE_GAP_PHY_AUTO,
+			};
+			sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
 			break;
 		}
 			
