@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -176,6 +176,7 @@ void ESP_putc(int c);
 extern void nrf52_delay(uint32_t ms);
 #define nrf52_delay_us	nrf_delay_us
 extern uint32_t nrf52_milliseconds();
+extern uint32_t nrf52_memory_remaining();
 
 #define delay(x)            nrf52_delay(x)
 

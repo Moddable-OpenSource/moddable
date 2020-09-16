@@ -591,5 +591,28 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 #endif /* mxDebug */
 
+extern char __HeapLimit;		// from linker
+extern char end;				// from linker
+static char *heap_end;
+
+void *_sbrk(int incr) {
+	char *prev_heap_end;
+
+	if (heap_end == 0)
+		heap_end = &end;
+
+	prev_heap_end = heap_end;
+	if ((heap_end + incr) > &__HeapLimit) {
+		modLog("out of heap");
+		return NULL;
+	}
+
+	heap_end += incr;
+	return (void*)prev_heap_end;
+}
+
+uint32_t nrf52_memory_remaining() {
+	return (&__HeapLimit - heap_end);
+}
 
 

@@ -99,8 +99,11 @@ void xs_flash_read(xsMachine *the)
 
 	xsmcSetArrayBuffer(xsResult, NULL, byteLength);
 
+	flash = xsmcGetHostChunk(xsThis);	// xsmcSetArrayBuffer may have moved the handle
+
 	if (!modSPIRead(offset + flash->partitionStart, byteLength, xsmcToArrayBuffer(xsResult)))
 		xsUnknownError("read failed");
+
 }
 
 void xs_flash_write(xsMachine *the)

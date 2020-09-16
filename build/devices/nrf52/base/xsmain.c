@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -72,7 +72,13 @@ void xs_loop(void)
 	modMessageService(gThe, modTimersNext());
 }
 
+
 void xs_start() {
+
+#if MODINSTRUMENTATION
+	modInstrumentationSetCallback(SystemFreeMemory, nrf52_memory_remaining);
+#endif
+
 	while (1) {
 #ifdef mxDebug
 		uint32_t num;
