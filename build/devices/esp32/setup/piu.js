@@ -26,10 +26,15 @@ if (!config.Screen)
 	throw new Error("no screen configured");
 
 class Screen extends config.Screen {
-	start(interval) {
-		this.timer = Timer.repeat(() => {
-			let touch = this.touch;
-			if (touch) {
+	constructor(dictionary) {
+		super(dictionary);
+		if (config.Touch) {
+			let touch = new config.Touch;
+			touch.points = [];
+			let touchCount = config.touchCount ? config.touchCount : 1;
+			while (touchCount--)
+				touch.points.push({});
+			Timer.repeat(() => {
 				let points = touch.points;
 				touch.read(points);
 				for (let i = 0; i < points.length; i++) {
@@ -39,7 +44,7 @@ class Screen extends config.Screen {
 					switch (point.state) {
 						  case 0:
 						  case 3:
-						  		if (point.down) {
+								if (point.down) {
 									delete point.down;
 									this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
 									delete point.x;
@@ -56,17 +61,7 @@ class Screen extends config.Screen {
 								break;
 					}
 				}
-			}
-			this.context.onIdle();
-		}, interval);
-
-		if (config.Touch) {
-			let touch = new config.Touch;
-			touch.points = [];
-			let touchCount = config.touchCount ? config.touchCount : 1;
-			while (touchCount--)
-				touch.points.push({});
-			this.touch = touch;
+			}, 5);
 		}
 	}
 	get rotation() {
@@ -94,14 +89,20 @@ class Screen extends config.Screen {
 				point.y = x;
 			};
 	}
-	stop() {
-		Timer.clear(this.timer);
-		delete this.timer;
-
-		if (this.touch)
-			delete this.touch;
-	}
 	clear() {
+	}
+	start(interval) {
+		if (this.timer)
+			return;
+		this.timer = Timer.repeat(() => {
+			this.context.onIdle();
+		}, interval);
+	}
+	stop() {
+		if (this.timer) {
+			Timer.clear(this.timer);
+			delete this.timer;
+		}
 	}
 }
 

@@ -45,8 +45,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 // modified May 30 2018 by jph for use in Moddable SDK]
+// modified September 15 2020 by jph for 8-bit output]
 
 #include "stdint.h"
+
+#include "mc.defines.h"
+
+#ifndef MODDEF_AUDIOOUT_BITSPERSAMPLE
+	#define MODDEF_AUDIOOUT_BITSPERSAMPLE (16)
+#endif
+#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
+	#define OUTPUTSAMPLETYPE int8_t
+#elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
+	#define OUTPUTSAMPLETYPE int16_t
+#endif
 
 /* Intel ADPCM step variation table */
 static const int indexTable[16] = {
@@ -87,7 +99,7 @@ int dvi_adpcm_decode(void *in_buf, int in_size, void *out_buf)
   int index;           /* Current step change index */
   int inputbuffer = 0; /* place to keep next 4-bit value */
   int bufferstep;      /* toggle between inputbuffer/input */
-  int16_t *s;          /* output buffer for linear encoding */
+  OUTPUTSAMPLETYPE *s; /* output buffer for linear encoding */
 
   /* State to decode is kept in the packet */
   valpred = ((struct dvi_adpcm_state *)in_buf)->valpred;		//@@ convert from little endian to host
@@ -96,9 +108,12 @@ int dvi_adpcm_decode(void *in_buf, int in_size, void *out_buf)
   in_size -= sizeof(struct dvi_adpcm_state);
 
   in_size *= 2;  /* convert to sample count */
-  s = (int16_t *)out_buf;
+  s = (OUTPUTSAMPLETYPE *)out_buf;
+#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
+  *s++ = valpred >> 8;
+#else
   *s++ = valpred;
-
+#endif
   step = stepsizeTable[index];
 
   bufferstep = 0;
@@ -148,7 +163,11 @@ int dvi_adpcm_decode(void *in_buf, int in_size, void *out_buf)
     step = stepsizeTable[index];
 
     /* Step 7 - Output value */
+#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
+    *s++ = valpred >> 8;
+#else
     *s++ = valpred;
+#endif
   }
   return 0;
 } /* dvi_adpcm_decode */

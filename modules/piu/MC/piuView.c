@@ -731,6 +731,13 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 
 void PiuViewIdleCheck(PiuView* self, PiuBoolean idle)
 {
+	xsMachine *the = (*self)->the;
+	if (idle) {
+		xsCall1(xsReference((*self)->screen), xsID_start, xsInteger(5));
+	}
+	else {
+		xsCall0(xsReference((*self)->screen), xsID_stop);
+	}
 }
 
 void PiuViewInvalidate(PiuView* self, PiuRectangle area) 
@@ -1291,12 +1298,12 @@ void PiuView_get_rotation(xsMachine* the)
 
 void PiuView_onDisplayReady(xsMachine* the)
 {
-#ifdef piuGPU
 	PiuView* self = PIU(View, xsThis);
 	PiuApplication* application = (*self)->application;
+#ifdef piuGPU
 	(*self)->ready = 1;
-	PiuViewUpdate(self, application);
 #endif		
+	PiuViewUpdate(self, application);
 }
 
 void PiuView_onIdle(xsMachine* the)
