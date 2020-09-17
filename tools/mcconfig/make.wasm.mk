@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -16,6 +16,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+HOST_OS := $(shell uname)
 
 CC = emcc
 OPT = wasm-opt
@@ -125,17 +127,23 @@ LINK_OPTIONS = \
 
 LINK_LIBRARIES = -ldl -lm
 
-BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
-IMAGE2CS = $(BUILD_DIR)/bin/mac/release/image2cs
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/mac/release/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
-RLE4ENCODE = $(BUILD_DIR)/bin/mac/release/rle4encode
-WAV2MAUD = $(BUILD_DIR)/bin/mac/release/wav2maud
-XSC = $(BUILD_DIR)/bin/mac/release/xsc
-XSID = $(BUILD_DIR)/bin/mac/release/xsid
-XSL = $(BUILD_DIR)/bin/mac/release/xsl
+ifeq ($(HOST_OS),Darwin)
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac
+else
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin
+endif
+
+BUILDCLUT = $(MODDABLE_TOOLS_DIR)/release/buildclut
+COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/release/compressbmf
+IMAGE2CS = $(MODDABLE_TOOLS_DIR)/release/image2cs
+MCLOCAL = $(MODDABLE_TOOLS_DIR)/debug/mclocal
+MCREZ = $(MODDABLE_TOOLS_DIR)/release/mcrez
+PNG2BMP = $(MODDABLE_TOOLS_DIR)/debug/png2bmp
+RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/release/rle4encode
+WAV2MAUD = $(MODDABLE_TOOLS_DIR)/release/wav2maud
+XSC = $(MODDABLE_TOOLS_DIR)/release/xsc
+XSID = $(MODDABLE_TOOLS_DIR)/release/xsid
+XSL = $(MODDABLE_TOOLS_DIR)/release/xsl
 
 VPATH += $(XS_DIRECTORIES)
 
