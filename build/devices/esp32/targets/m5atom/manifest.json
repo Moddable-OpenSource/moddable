@@ -23,7 +23,7 @@
 	],
 	"defines": {
 		"neopixel": {
-			"length": 1,
+			"length": 25,
 			"pin": 27,
 			"order": "#RGB",
 			"rmt_channel": "RMT_CHANNEL_0"
