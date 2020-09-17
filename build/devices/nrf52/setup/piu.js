@@ -45,6 +45,6 @@ class Screen extends config.Screen {
 }
 
 export default function (done) {
-	global.screen = new Screen({});
+	globalThis.screen = new Screen({});
 	done();
 }
