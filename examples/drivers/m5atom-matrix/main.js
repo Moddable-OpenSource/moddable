@@ -15,48 +15,50 @@ import NeoPixel from "neopixel";
 import Timer from "timer";
 import MPU6886 from "mpu6886";
 
-const state = {};
-
-state.accelerometerGyro = new MPU6886({
+const accelerometerGyro = new MPU6886({
 	sda: 25,
 	scl: 21
 });
 
-const np = new NeoPixel({
-	length: 25,
-	pin: 27,
-	order: "RGB"
-});
+const np = new NeoPixel({});
 
-global.accelerometer = {
-	onreading: nop
-}
+let accelerometerTimerID;
 
-accelerometer.start = function (frequency) {
-	accelerometer.stop();
-	state.accelerometerTimerID = Timer.repeat(id => {
-		state.accelerometerGyro.configure({
-			operation: "accelerometer"
-		});
-		const sample = state.accelerometerGyro.sample();
-		if (sample) {
-			sample.y *= -1;
-			sample.z *= -1;
-			accelerometer.onreading(sample);
+const accelerometer = {
+	start(frequency) {
+		accelerometer.stop();
+		accelerometerTimerID = Timer.repeat(id => {
+			accelerometerGyro.configure({
+				operation: "accelerometer"
+			});
+			const sample = accelerometerGyro.sample();
+			if (sample) {
+				sample.y *= -1;
+				sample.z *= -1;
+				accelerometer.onreading(sample);
+			}
+		}, frequency);
+	},
+	stop() {
+		if (undefined !== accelerometerTimerID)
+			Timer.clear(accelerometerTimerID);
+		accelerometerTimerID = undefined;
+	},
+	onreading(values) {
+		if (button.a.read()) {
+			// Change colour of 5x5 matrix depending on orientation
+			const x = Math.min(Math.max(values.x, -1), 1) / 2;
+			const y = Math.min(Math.max(values.y, -1), 1) / 2;
+			const z = Math.min(Math.max(values.z, -1), 1) / 2;
+			np.fill(np.makeRGB((128 + x * 255) | 0, (128 + y * 255) | 0, (128 + z * 255) | 0));
 		}
-	}, frequency);
-}
-
-accelerometer.stop = function () {
-	if (undefined !== state.accelerometerTimerID)
-		Timer.clear(state.accelerometerTimerID);
-	delete state.accelerometerTimerID;
+		else {
+			// random colours
+			for (let i = 0, length = np.length; i < length; i++)
+				np.setPixel(i, np.makeRGB(255 * Math.random(), 255 * Math.random(), 255 * Math.random()));
+		}
+		np.update();
+	}
 }
 
 accelerometer.start(50);
-
-// Change colour of 5x5 matrix depending on orientation
-accelerometer.onreading = function (values) {
-	np.fill(np.makeRGB(127 + values.x * 128, 127 + values.y * 128, 127 + values.z * 128));
-	np.update();
-}
