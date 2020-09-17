@@ -27,11 +27,11 @@ const np = new NeoPixel({
 });
 
 global.speaker = new AudioOut({
-	streams: 2
+	streams: 1
 });
 speaker.callback = function () {
 	this.stop();
-	trace('Speaker Stopped!');
+	trace('Speaker Stopped!\n');
 };
 
 let clips = [
@@ -51,6 +51,7 @@ button.a.onChanged = function () {
 
 function play(index) {
 	speaker.stop();
+	speaker.enqueue(0, AudioOut.Flush);
 	speaker.enqueue(0, AudioOut.Samples, new Resource(clips[index]));
 	speaker.enqueue(0, AudioOut.Callback, 0);
 	speaker.start();
