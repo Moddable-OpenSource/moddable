@@ -170,7 +170,7 @@ HEADERS = \
 	$(COMMODETTO)/commodettoPocoBlit.h \
 	$(INSTRUMENTATION)/modInstrumentation.h
 OBJECTS = \
-	$(TMP_DIR)/adpcm-lib.o \
+	$(TMP_DIR)/adpcm-lib.c.o \
 	$(TMP_DIR)/commodettoBitmap.c.o \
 	$(TMP_DIR)/commodettoBufferOut.c.o \
 	$(TMP_DIR)/commodettoColorCellOut.c.o \
