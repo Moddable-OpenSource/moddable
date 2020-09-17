@@ -28,13 +28,17 @@ class Screen extends config.Screen {
 	#timer;
 
 	start(interval) {
+		if (this.#timer)
+			return;
 		this.#timer = Timer.repeat(() => {
 			this.context.onIdle();
-		}, interval, 0);
+		}, interval);
 	}
 	stop() {
-		Timer.clear(this.#timer);
-		this.#timer = undefined;
+		if (this.#timer) {
+			Timer.clear(this.#timer);
+			this.#timer = undefined;
+		}
 	}
 	clear() {
 	}
