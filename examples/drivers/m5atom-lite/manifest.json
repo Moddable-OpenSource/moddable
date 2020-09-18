@@ -6,9 +6,11 @@
 		"*": "./main",
 	},
 	"platforms": {
-		"esp32/m5atom": {},
+		"esp32/m5atom_lite": {},
+		"esp32/m5atom_echo": {},
+		"esp32/m5atom_matrix": {},
 		"...": {
-			"error": "unsupported"
+			"error": "esp32/m5atom_* only"
 		}
 	}
 }

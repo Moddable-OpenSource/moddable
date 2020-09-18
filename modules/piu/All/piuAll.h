@@ -766,6 +766,9 @@ extern void PiuViewPushColorFilter(PiuView* view, PiuColor color);
 extern void PiuViewPushOrigin(PiuView* view, PiuCoordinate x, PiuCoordinate y);
 extern PiuTick PiuViewTicks(PiuView* view);
 extern void PiuViewValidate(PiuView* view, PiuRectangle area);
+#ifdef piuMC
+extern void PiuViewReflow(PiuView* self);
+#endif
 #ifdef piuPC
 extern void PiuViewChangeCursor(PiuView* self, int32_t shape);
 extern void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, double x, double y, PiuDimension w, PiuDimension sw);

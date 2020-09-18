@@ -1,0 +1,42 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/monitor/manifest.json"
+	],
+	"build": {
+		"UPLOAD_SPEED": "1500000",
+		"DEBUGGER_SPEED": "1500000"
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/neopixel/*",
+			"$(MODULES)/drivers/neopixel/esp32/*"
+		],
+		"pins/audioout": "$(MODULES)/pins/i2s/*",
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"neopixel",
+		"pins/audioout",
+		"setup/target"
+	],
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 2,
+			"sampleRate": 11025,
+			"volume_divider": 1,
+			"i2s": {
+				"bitsPerSample": 16,
+				"bck_pin": 19,
+				"dataout_pin": 22,
+				"lr_pin": 33
+			}
+		},
+		"neopixel": {
+			"length": 1,
+			"pin": 27,
+			"order": "#RGB",
+			"rmt_channel": "RMT_CHANNEL_0"
+		}
+	}
+}

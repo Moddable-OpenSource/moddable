@@ -12,34 +12,31 @@
  *
  */
  
-let count=0;
+let count = 0;
 
-import NeoPixel from "neopixel";
 import Timer from "timer";
 
-const np = new NeoPixel({length: 1, pin: 27, order: "GRB"});
-
 Timer.delay(1);
-np.fill(np.makeRGB(255, 255, 255)); np.update();
+lights.fill(lights.makeRGB(255, 255, 255)); lights.update();
 Timer.delay(5000);
-np.fill(np.makeRGB(255, 0, 0)); np.update();
+lights.fill(lights.makeRGB(255, 0, 0)); lights.update();
 Timer.delay(5000);
-np.fill(np.makeRGB(0, 255, 0)); np.update();
+lights.fill(lights.makeRGB(0, 255, 0)); lights.update();
 Timer.delay(5000);
-np.fill(np.makeRGB(0, 0, 255)); np.update();
+lights.fill(lights.makeRGB(0, 0, 255)); lights.update();
 Timer.delay(5000);
 
 let value = 0x01;
 Timer.repeat(() => {
 	let v = value;
-	for (let i = 0; i < np.length; i++) {
+	for (let i = 0; i < lights.length; i++) {
 		v <<= 1;
 		if (v == (1 << 24))
 			v = 1;
-		np.setPixel(i, v);
+		lights.setPixel(i, v);
 	}
 
-	np.update();
+	lights.update();
 
 	value <<= 1;
 	if (value == (1 <<24))
@@ -55,5 +52,5 @@ button.a.onChanged = function() {
 		count = 7;
 	}
 	trace(count,'\n');
-	np.fill(np.makeRGB(255, 255, 255)); np.update();
+	lights.fill(lights.makeRGB(255, 255, 255)); lights.update();
 }

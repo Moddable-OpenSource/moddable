@@ -1,6 +1,7 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"build": {
 		"UPLOAD_SPEED": "1500000",
@@ -10,24 +11,28 @@
 		"*": [
 			"$(MODULES)/drivers/neopixel/*",
 			"$(MODULES)/drivers/neopixel/esp32/*",
-			
-			"$(MODULES)/pins/digital/monitor/*",
-			"$(MODULES)/pins/digital/monitor/esp32/*",
+
+			"$(MODULES)/drivers/mpu6886/*"
 		],
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"monitor",
-		"setup/target",
-		"neopixel"
+		"mpu6886",
+		"neopixel",
+		"pins/smbus",
+		"setup/target"
 	],
 	"defines": {
+		"i2c":{
+			"sda_pin": 25,
+			"scl_pin": 21
+		},
 		"neopixel": {
-			"length": 1,
+			"length": 25,
 			"pin": 27,
 			"order": "#RGB",
 			"rmt_channel": "RMT_CHANNEL_0"
-		}
-	}	
+		},
+	}
 }
-

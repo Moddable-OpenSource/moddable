@@ -164,12 +164,9 @@ void PiuApplicationIdleCheck(PiuApplication* self)
 	else {
 		for (index = 0; index < count; index++) {
 			PiuTouchLink* link = (*self)->touchLinks[index];
-			if ((*link)->index) {
-				PiuContent* content = (*link)->content;
-				if (content) {
-					idle = 1;
-				}
-				(*link)->index = 0;
+			PiuContent* content = (*link)->content;
+			if (content) {
+				idle = 1;
 			}
 		}
 	}
@@ -223,6 +220,9 @@ void PiuApplicationReflow(void* it, PiuFlags flags)
 	else if (flags & piuContentsVerticallyChanged)
 		(*self)->flags |= piuContentsVerticallyChanged;
 	(*self)->flags |= piuContentsPlaced;
+#ifdef piuMC
+    PiuViewReflow((*self)->view);
+#endif
 }
 
 void PiuApplicationResize(PiuApplication* self)
