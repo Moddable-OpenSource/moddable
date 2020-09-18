@@ -3274,6 +3274,10 @@ txNode* fxArrayBindingFromExpression(txParser* parser, txNode* theNode, txToken 
 	txNode* item;
 	txNode* binding;
 	while ((item = *address)) {
+        if (!item->description) {
+            parser->errorSymbol = parser->SyntaxErrorSymbol;
+            return NULL;
+        }
 		if (item->description->token == XS_TOKEN_SPREAD) {
 			if (theNode->flags & mxElisionFlag) {
 				parser->errorSymbol = parser->SyntaxErrorSymbol;
@@ -3617,51 +3621,53 @@ txBoolean fxCheckReference(txParser* parser, txToken theToken)
 
 void fxCheckStrictBinding(txParser* parser, txNode* node)
 {
-	if (node->description->token == XS_TOKEN_ACCESS) {
-		fxCheckStrictSymbol(parser, ((txAccessNode*)node)->symbol);
-	}
-	else if (node->description->token == XS_TOKEN_ARG) {
-		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
-	}
-	else if (node->description->token == XS_TOKEN_CONST) {
-		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
-	}
-	else if (node->description->token == XS_TOKEN_LET) {
-		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
-	}
-	else if (node->description->token == XS_TOKEN_VAR) {
-		fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
-	}
-	else if (node->description->token == XS_TOKEN_BINDING) {
-		fxCheckStrictBinding(parser, ((txBindingNode*)node)->target);
-	}
-	else if (node->description->token == XS_TOKEN_ARRAY_BINDING) {
-		node = ((txArrayBindingNode*)node)->items->first;
-		while (node) {
-			fxCheckStrictBinding(parser, node);
-			node = node->next;
+	if (node && node->description) {
+		if (node->description->token == XS_TOKEN_ACCESS) {
+			fxCheckStrictSymbol(parser, ((txAccessNode*)node)->symbol);
 		}
-	}
-	else if (node->description->token == XS_TOKEN_OBJECT_BINDING) {
-		node = ((txObjectBindingNode*)node)->items->first;
-		while (node) {
-			fxCheckStrictBinding(parser, node);
-			node = node->next;
+		else if (node->description->token == XS_TOKEN_ARG) {
+			fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
 		}
-	}
-	else if (node->description->token == XS_TOKEN_PARAMS_BINDING) {
-		node = ((txParamsBindingNode*)node)->items->first;
-		while (node) {
-			fxCheckStrictBinding(parser, node);
-			node = node->next;
+		else if (node->description->token == XS_TOKEN_CONST) {
+			fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
 		}
+		else if (node->description->token == XS_TOKEN_LET) {
+			fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
+		}
+		else if (node->description->token == XS_TOKEN_VAR) {
+			fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
+		}
+		else if (node->description->token == XS_TOKEN_BINDING) {
+			fxCheckStrictBinding(parser, ((txBindingNode*)node)->target);
+		}
+		else if (node->description->token == XS_TOKEN_ARRAY_BINDING) {
+			node = ((txArrayBindingNode*)node)->items->first;
+			while (node) {
+				fxCheckStrictBinding(parser, node);
+				node = node->next;
+			}
+		}
+		else if (node->description->token == XS_TOKEN_OBJECT_BINDING) {
+			node = ((txObjectBindingNode*)node)->items->first;
+			while (node) {
+				fxCheckStrictBinding(parser, node);
+				node = node->next;
+			}
+		}
+		else if (node->description->token == XS_TOKEN_PARAMS_BINDING) {
+			node = ((txParamsBindingNode*)node)->items->first;
+			while (node) {
+				fxCheckStrictBinding(parser, node);
+				node = node->next;
+			}
+		}
+		else if (node->description->token == XS_TOKEN_PROPERTY_BINDING)
+			fxCheckStrictBinding(parser, ((txPropertyBindingNode*)node)->binding);
+		else if (node->description->token == XS_TOKEN_PROPERTY_BINDING_AT)
+			fxCheckStrictBinding(parser, ((txPropertyBindingAtNode*)node)->binding);
+		else if (node->description->token == XS_TOKEN_REST_BINDING)
+			fxCheckStrictBinding(parser, ((txRestBindingNode*)node)->binding);
 	}
-	else if (node->description->token == XS_TOKEN_PROPERTY_BINDING)
-		fxCheckStrictBinding(parser, ((txPropertyBindingNode*)node)->binding);
-	else if (node->description->token == XS_TOKEN_PROPERTY_BINDING_AT)
-		fxCheckStrictBinding(parser, ((txPropertyBindingAtNode*)node)->binding);
-	else if (node->description->token == XS_TOKEN_REST_BINDING)
-		fxCheckStrictBinding(parser, ((txRestBindingNode*)node)->binding);
 }
 
 void fxCheckStrictFunction(txParser* parser, txFunctionNode* function)

@@ -38,9 +38,10 @@ Bitmap.RGB565BE = 8;
 Bitmap.RGB24 = 9;
 Bitmap.RGBA32 = 10;
 Bitmap.CLUT16 = 11;
-Bitmap.RGB444 = 12;
-Bitmap.JPEG = 13;
-Bitmap.PNG = 14;
+Bitmap.ARGB4444 = 12;
+Bitmap.RGB444 = 13;
+Bitmap.JPEG = 14;
+Bitmap.PNG = 15;
 
 Bitmap.RLE = 0x80;	// flag applied to pixel types
 

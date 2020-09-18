@@ -116,7 +116,13 @@ void xs_parseBMP(xsMachine *the)
 			if (width & 1)
 				xsUnknownError("width not multiple of 2");
 
-			bitmap->format = kCommodettoBitmapRGB565LE;
+			if ((0x0f00 == c_read32(54 + bytes)) &&
+				(0x00f0 == c_read32(58 + bytes)) &&
+				(0x000f == c_read32(62 + bytes)) &&
+				(0xf000 == c_read32(66 + bytes)))
+				bitmap->format = kCommodettoBitmapARGB4444;
+			else
+				bitmap->format = kCommodettoBitmapRGB565LE;
 			break;
 
 		default:
