@@ -49,9 +49,9 @@ export default function (done) {
 	global.power.setSpeakerEnable(true)
 	global.speaker = new AudioOut({streams: 4});
 	speaker.callback = function() { this.stop() };
-	speaker.enqueue(0, AudioOut.Samples, new Resource("bflatmajor.maud"));
-	speaker.enqueue(0, AudioOut.Callback, 0);
+	// speaker.enqueue(0, AudioOut.Samples, new Resource("bflatmajor.maud"));
 	speaker.start();
+	// speaker.enqueue(0, AudioOut.Callback, 0);
 
 	// bibration
 	global.bibration = {
@@ -62,7 +62,7 @@ export default function (done) {
 			global.power.setLdoEnable(3, v)
 		}
 	}
-	bibratioin.write(true)
+	bibration.write(true)
 	Timer.set(() => {
 		bibration.write(false)
 	}, 600)
@@ -152,7 +152,7 @@ export default function (done) {
 		}
 		accelerometer.start(300);
 	}
-	
+
 	done();
 }
 
