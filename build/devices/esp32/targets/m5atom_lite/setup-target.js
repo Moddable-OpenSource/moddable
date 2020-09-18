@@ -1,18 +1,15 @@
 import Digital from "pins/digital";
-import Monitor from "monitor";
-
-import config from "mc/config";
+import Monitor from "pins/digital/monitor";
 
 import NeoPixel from "neopixel";
 
 export default function (done) {
-	
-	global.button = {
+	globalThis.button = {
 		a: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
 	};
 	button.a.onChanged = nop;
 	
-	//global.lights = new NeoPixel({});
+	globalThis.lights = new NeoPixel({});
 
 	done();
 }

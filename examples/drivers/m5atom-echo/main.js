@@ -12,35 +12,23 @@
  *
  */
 
+import Timer from "timer";
+import Resource from "Resource";
+import AudioOut from "pins/audioout";
+
+let playing = false;
 let count = 0;
 
-import NeoPixel from "neopixel";
-import Timer from "timer";
-
-import AudioOut from "pins/audioout";
-import Resource from "Resource";
-
-const np = new NeoPixel({
-	length: 1,
-	pin: 27,
-	order: "RGB"
-});
-
-let playing;
-
-global.speaker = new AudioOut({
-	streams: 1
-});
 speaker.callback = function () {
 	this.stop();
 	trace('Speaker Stopped!\n');
 	playing = false;
 };
 
-let clips = [
-	'bflatmajor.maud',
-	'wilhelm-scream.maud',
-	'magic-sound.maud'
+const clips = [
+	'bflatmajor',
+	'wilhelm-scream',
+	'magic-sound'
 ];
 
 button.a.onChanged = function () {
@@ -48,15 +36,15 @@ button.a.onChanged = function () {
 		return;
 	}
 	play(count);
+	trace('Play: ', clips[count], '\n');
 	count = (count + 1) % clips.length;
 	playing = true;
-	trace('play:', count, '\n');
 }
 
 function play(index) {
 	speaker.stop();
 	speaker.enqueue(0, AudioOut.Flush);
-	speaker.enqueue(0, AudioOut.Samples, new Resource(clips[index]));
+	speaker.enqueue(0, AudioOut.Samples, new Resource(clips[index] + ".maud"));
 	speaker.enqueue(0, AudioOut.Callback, 0);
 	speaker.start();
 }
@@ -66,7 +54,7 @@ let step = 15;
 let index = 0;
 Timer.repeat(() => {
 	if (playing)
-		np.setPixel(0, np.makeRGB(255, 255, 255));
+		lights.setPixel(0, lights.makeRGB(255, 255, 255));
 	else {
 		value[index] += step;
 		if (step < 0) {
@@ -77,7 +65,7 @@ Timer.repeat(() => {
 		}
 		else if (255 === value[index])
 			step = -step;
-		np.setPixel(0, np.makeRGB.apply(np, value));
+		lights.setPixel(0, lights.makeRGB.apply(lights, value));
 	}
-	np.update();
+	lights.update();
 }, 17);

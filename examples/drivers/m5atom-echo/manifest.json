@@ -4,30 +4,14 @@
 	],
 	"modules": {
 		"*": "./main",
-		"pins/audioout": "$(MODULES)/pins/i2s/*"
-	},
-	"defines": {
-		"audioOut": {
-			"bitsPerSample": 16,
-			"numChannels": 2,
-			"sampleRate": 11025,
-			"volume_divider": 1,
-			"i2s": {
-				"bitsPerSample": 16,
-				"bck_pin": 19,
-				"dataout_pin": 22,
-				"lr_pin": 33
-			}
-		}
-	},
-	"platforms": {
-		"esp32/m5atom": {},
-		"...": {
-			"error": "unsupported"
-		}
 	},
 	"resources": {
-		"*":
-			"$(MODDABLE)/examples/assets/sounds/*"
+		"*": "$(MODDABLE)/examples/assets/sounds/*"
+	},
+	"platforms": {
+		"esp32/m5atom_echo": {},
+		"...": {
+			"error": "esp32/m5atom_echo only"
+		}
 	}
 }
