@@ -26,12 +26,15 @@ const np = new NeoPixel({
 	order: "RGB"
 });
 
+let playing;
+
 global.speaker = new AudioOut({
 	streams: 1
 });
 speaker.callback = function () {
 	this.stop();
 	trace('Speaker Stopped!\n');
+	playing = false;
 };
 
 let clips = [
@@ -46,6 +49,7 @@ button.a.onChanged = function () {
 	}
 	play(count);
 	count = (count + 1) % clips.length;
+	playing = true;
 	trace('play:', count, '\n');
 }
 
@@ -57,19 +61,23 @@ function play(index) {
 	speaker.start();
 }
 
-let value = 0x01;
+const value = [0, 0, 0];
+let step = 15;
+let index = 0;
 Timer.repeat(() => {
-	let v = value;
-	for (let i = 0; i < np.length; i++) {
-		v <<= 1;
-		if (v == (1 << 24))
-			v = 1;
-		np.setPixel(i, v);
+	if (playing)
+		np.setPixel(0, np.makeRGB(255, 255, 255));
+	else {
+		value[index] += step;
+		if (step < 0) {
+			if (0 === value[index]) {
+				index = (index + 1) % value.length;
+				step = -step;
+			}
+		}
+		else if (255 === value[index])
+			step = -step;
+		np.setPixel(0, np.makeRGB.apply(np, value));
 	}
-
 	np.update();
-
-	value <<= 1;
-	if (value == (1 << 24))
-		value = 1;
-}, 400);
+}, 17);
