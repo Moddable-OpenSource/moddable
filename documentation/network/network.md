@@ -687,20 +687,13 @@ ws.close();
 
 ***
 
-### `write(message)`
-
-The write function transmits a single WebSockets message. The message is either a `String`, which is sent as a text message, or an `ArrayBuffer`, which is sent as a binary message.
-
-```js
-ws.write("hello");
-ws.write(JSON.stringify({text: "hello"}));
-```
-
-***
-
 ### `callback(message, value)`
 
-The WebSocket server callback is the same as the WebSocket client callback with the exception of the "Socket connected" (`1` or `Server.connect`) message. The socket connected message for the server is invoked when the server accepts a new incoming connection. The value of `this` is unique for each new server connect to a client. Like the WebSocket client callback, messages cannot be sent until after the callback receives the WebSocket handshake complete message.
+The WebSocket server callback is the same as the WebSocket client callback with the addition of the "Socket connected" (`1` or `Server.connect`) message. The socket connected message for the server is invoked when the server accepts a new incoming connection.
+
+The value of `this` is unique for each connection made to the server. Messages cannot be sent until after the callback receives the WebSocket handshake complete message (`Server.handshake`).
+
+The `this` instance of the callback has the same `write` and `close` methods as the WebSocket Client. These methods are used to send data and to close the connection.
 
 >**Note**: Text and binary messages received with the mask bit set are unmasked by the server before delivering them to the callback.
 
