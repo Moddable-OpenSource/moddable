@@ -55,8 +55,8 @@ export default function (done) {
 		speaker.start();
 	}
 
-	// bibration
-	global.bibration = {
+	// vibration
+	global.vibration = {
 		read: function() {
 			return global.power.getLdoEnable(3)
 		},
@@ -64,9 +64,9 @@ export default function (done) {
 			global.power.setLdoEnable(3, v)
 		}
 	}
-	bibration.write(true)
+	vibration.write(true)
 	Timer.set(() => {
-		bibration.write(false)
+		vibration.write(false)
 	}, 600)
 
 	// accelerometer and gyrometer
