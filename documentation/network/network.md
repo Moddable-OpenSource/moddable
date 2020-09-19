@@ -1,7 +1,7 @@
 # Networking
 
 Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: August 26, 2020
+Revised: September 19, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -193,9 +193,19 @@ It is more efficient to make a single `write` call with several parameters inste
 
 ***
 
+### `get(what)`
+
+The `get` method returns state information about the socket. The `what` argument is a string indicating the state requested. If the state is unavailable, `get` returns `undefined`.
+
+| `what` | Description |
+| :---: | :--- |
+| `"REMOTE_IP"` | Returns the IP address of the remote endpoint. Only available for TCP sockets. |
+
+***
+
 ### `callback(message [, value])`
 
-The user of the socket receives status information through the callback function. The callback receives messages and, for some messages, a data value. Positive `message` values indicate normal operation and negative `message` values indicate an error.
+The user of the socket receives status information through the callback function. The first argument to the callback is the messages identifier. Positive `message` values indicate normal operation and negative `message` values indicate an error. Depending on the message, there may be additional arguments.
 
 | `message` | Description |
 | :---: | :--- |
@@ -204,6 +214,19 @@ The user of the socket receives status information through the callback function
 | 1 | **connect:** The socket successfully connected to the remote host.
 | 2 | **dataReceived:** The socket has received data. The `value` argument contains the number of bytes available to read.
 | 3 | **dataSent:** The socket has successfully transmitted some or all of the data written to it. The `value` argument contains the number of bytes that can be safely written.
+
+For UDP sockets, the callback for `dataReceived` has three additional arguments after the message identifier . The first is the number of bytes available to read, as with TCP sockets. The second is a string containing the IP address of the sender. The third is the port number of the sender.
+
+```js
+callback(message, byteLength, remoteIP, remotePort) {}
+}
+```
+
+For RAW sockets, the callback for `dataReceived` has two additional arguments after the message identifier . The first is the number of bytes available to read, as with TCP sockets. The second is a string containing the IP address of the sender.
+
+```js
+callback(message, byteLength, remoteIP) {}
+```
 
 ***
 
