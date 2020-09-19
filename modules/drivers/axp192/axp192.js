@@ -17,11 +17,11 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import SMBus from 'pins/smbus';
+import SMBus from "pins/smbus";
 
 class DCDC {
-	#parent;
-	#register;
+  #parent;
+  #register;
   constructor({ register, parent }) {
     this.#parent = parent;
     this.#register = register;
@@ -32,49 +32,51 @@ class DCDC {
       this.#register,
       (this.#parent.readByte(this.#register) & 0x80) | (vdata & 0x7f)
     );
-	}
-	get voltage() {
-		return (this.#parent.readByte(this.#register) & 0x7f) * 25 + 700
-	}
+  }
+  get voltage() {
+    return (this.#parent.readByte(this.#register) & 0x7f) * 25 + 700;
+  }
 }
 
 class LDO {
-	#parent
-	#register
-	#offsetV
-	#offsetEn
-	constructor({ register, parent, offsetV, offsetEn }) {
-		this.#parent = parent;
-		this.#register = register;
-		this.#offsetV = offsetV;
-		this.#offsetEn = offsetEn;
-	}
+  #parent;
+  #register;
+  #offsetV;
+  #offsetEn;
+  constructor({ register, parent, offsetV, offsetEn }) {
+    this.#parent = parent;
+    this.#register = register;
+    this.#offsetV = offsetV;
+    this.#offsetEn = offsetEn;
+  }
 
-	set voltage(v) {
-		const vdata = v > 3300 ? 15 : v / 100 - 18;
-		const mask = ~(0xff << this.#offsetV)
+  set voltage(v) {
+    const vdata = v > 3300 ? 15 : v / 100 - 18;
+    const mask = ~(0xff << this.#offsetV);
     this.#parent.writeByte(
       this.#register,
       (this.#parent.readByte(this.#register) & mask) | (vdata << this.#offsetV)
     );
-	}
+  }
 
-	get voltage() {
-		return ((this.#parent.readByte(this.#register) >> this.#offsetV) + 18) * 100;
-	}
+  get voltage() {
+    return (
+      ((this.#parent.readByte(this.#register) >> this.#offsetV) + 18) * 100
+    );
+  }
 
-	set enable(enable) {
-		const mask = 0x01 << this.#offsetEn;
-		if (enable) {
-			this.#parent.writeByte(0x12, this.#parent.readByte(0x12) | mask)
-		} else {
-			this.#parent.writeByte(0x12, this.#parent.readByte(0x12) & ~mask)
-		}
-	}
+  set enable(enable) {
+    const mask = 0x01 << this.#offsetEn;
+    if (enable) {
+      this.#parent.writeByte(0x12, this.#parent.readByte(0x12) | mask);
+    } else {
+      this.#parent.writeByte(0x12, this.#parent.readByte(0x12) & ~mask);
+    }
+  }
 
-	get enable() {
-		return Boolean((this.#parent.readByte(0x12) >> this.#offsetEn) & 1);
-	}
+  get enable() {
+    return Boolean((this.#parent.readByte(0x12) >> this.#offsetEn) & 1);
+  }
 }
 
 export default class AXP192 extends SMBus {
@@ -85,31 +87,41 @@ export default class AXP192 extends SMBus {
     super(it);
     this._dcdc1 = new DCDC({ register: 0x26, parent: this });
     this._dcdc2 = new DCDC({ register: 0x23, parent: this });
-		this._dcdc3 = new DCDC({ register: 0x27, parent: this });
-		this._ldo2 = new LDO({ register: 0x34, parent: this, offsetV: 4, offsetEn: 2})
-		this._ldo3 = new LDO({ register: 0x34, parent: this, offsetV: 0, offsetEn: 3})
+    this._dcdc3 = new DCDC({ register: 0x27, parent: this });
+    this._ldo2 = new LDO({
+      register: 0x34,
+      parent: this,
+      offsetV: 4,
+      offsetEn: 2,
+    });
+    this._ldo3 = new LDO({
+      register: 0x34,
+      parent: this,
+      offsetV: 0,
+      offsetEn: 3,
+    });
   }
 
-  set chargeCurrent (state) {
+  set chargeCurrent(state) {
     this.writeByte(0x33, (this.readByte(0x33) & 0xf0) | (state & 0x0f));
-	}
+  }
 }
 
 AXP192.CHARGE_CURRENT = {
-	Ch_100mA: 0b0000,
-	Ch_190mA: 0b0001,
-	Ch_280mA: 0b0010,
-	Ch_360mA: 0b0011,
-	Ch_450mA: 0b0100,
-	Ch_550mA: 0b0101,
-	Ch_630mA: 0b0110,
-	Ch_700mA: 0b0111,
-	Ch_780mA: 0b1000,
-	Ch_880mA: 0b1001,
-	Ch_960mA: 0b1010,
-	Ch_1000mA: 0b1011,
-	Ch_1080mA: 0b1100,
-	Ch_1160mA: 0b1101,
-	Ch_1240mA: 0b1110,
-	Ch_1320mA: 0b1111
-}
+  Ch_100mA: 0b0000,
+  Ch_190mA: 0b0001,
+  Ch_280mA: 0b0010,
+  Ch_360mA: 0b0011,
+  Ch_450mA: 0b0100,
+  Ch_550mA: 0b0101,
+  Ch_630mA: 0b0110,
+  Ch_700mA: 0b0111,
+  Ch_780mA: 0b1000,
+  Ch_880mA: 0b1001,
+  Ch_960mA: 0b1010,
+  Ch_1000mA: 0b1011,
+  Ch_1080mA: 0b1100,
+  Ch_1160mA: 0b1101,
+  Ch_1240mA: 0b1110,
+  Ch_1320mA: 0b1111,
+};
