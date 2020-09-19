@@ -79,6 +79,31 @@ class LDO {
   }
 }
 
+class GPIO {
+	#register
+	#parent
+	#mask
+	constructor({ register, parent, offset }) {
+    this.#parent = parent;
+		this.#register = register;
+		this.#mask = 0x01 << offset;
+	}
+
+	get enable() {
+		return Boolean(this.#parent.readByte(this.#register) & this.#mask);
+	}
+
+	set enable(enable) {
+    let data = this.#parent.readByte(this.#register);
+    if (enable) {
+      data |= this.#mask;
+    } else {
+      data &= ~this.#mask;
+    }
+    this.#parent.writeByte(this.#register, data);
+	}
+}
+
 export default class AXP192 extends SMBus {
   constructor(it) {
     if (it.address == null) {
@@ -99,7 +124,12 @@ export default class AXP192 extends SMBus {
       parent: this,
       offsetV: 0,
       offsetEn: 3,
-    });
+		});
+		this._gpio0 = new GPIO({ register: 0x94, parent: this, offset: 0 })
+		this._gpio1 = new GPIO({ register: 0x94, parent: this, offset: 1 })
+		this._gpio2 = new GPIO({ register: 0x94, parent: this, offset: 2 })
+		this._gpio3 = new GPIO({ register: 0x95, parent: this, offset: 0 })
+		this._gpio4 = new GPIO({ register: 0x95, parent: this, offset: 1 })
   }
 
   set chargeCurrent(state) {

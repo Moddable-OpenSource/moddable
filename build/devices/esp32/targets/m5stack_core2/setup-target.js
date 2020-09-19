@@ -17,7 +17,7 @@ export default function (done) {
   global.power = new Power();
 
   // speaker
-  global.power.setSpeakerEnable(true);
+  global.power.speaker.enable = true;
   global.speaker = new AudioOut({ streams: 4 });
   if (config.startupSound) {
     speaker.callback = function () {
@@ -155,27 +155,25 @@ class Power extends AXP192 {
     this.vibration = this._ldo3;
     this.vibration.voltage = 2000;
 
+    // Speaker
+    this.speaker = this._gpio2;
+
     // AXP192 GPIO4
     this.writeByte(0x95, (this.readByte(0x95) & 0x72) | 0x84);
     this.writeByte(0x36, 0x4c);
     this.writeByte(0x82, 0xff);
     this.resetLcd();
-    this.setBusPowerMode(0); //  bus power mode_output
+    this.busPowerMode = 0; //  bus power mode_output
     Timer.delay(200);
   }
 
   resetLcd() {
-    const register = 0x96;
-    const gpioBit = 0x02;
-    const data = this.readByte(register);
-    const off = data & ~gpioBit;
-    const on = data | gpioBit;
-    this.writeByte(register, off);
+    this._gpio4.enable = false
     Timer.delay(20);
-    this.writeByte(register, on);
+    this._gpio4.enable = true
   }
 
-  setBusPowerMode(mode) {
+  set busPowerMode(mode) {
     if (mode == 0) {
       this.writeByte(0x91, (this.readByte(0x91) & 0x0f) | 0xf0);
       this.writeByte(0x90, (this.readByte(0x90) & 0xf8) | 0x02); //set GPIO0 to LDO OUTPUT , pullup N_VBUSEN to disable supply from BUS_5V
@@ -184,19 +182,6 @@ class Power extends AXP192 {
       this.writeByte(0x12, this.readByte(0x12) & 0xbf); //set EXTEN to disable 5v boost
       this.writeByte(0x90, (this.readByte(0x90) & 0xf8) | 0x01); //set GPIO0 to float , using enternal pulldown resistor to enable supply from BUS_5VS
     }
-  }
-
-  //set led state(GPIO high active,set 1 to enable amplifier)
-  setSpeakerEnable(state) {
-    const register = 0x94;
-    const gpioBit = 0x04;
-    let data = this.readByte(register);
-    if (state) {
-      data |= gpioBit;
-    } else {
-      data &= ~gpioBit;
-    }
-    this.writeByte(register, data);
   }
 }
 
