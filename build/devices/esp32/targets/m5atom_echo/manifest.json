@@ -22,7 +22,7 @@
 	"defines": {
 		"audioOut": {
 			"bitsPerSample": 16,
-			"numChannels": 2,
+			"numChannels": 1,
 			"sampleRate": 11025,
 			"volume_divider": 1,
 			"i2s": {
