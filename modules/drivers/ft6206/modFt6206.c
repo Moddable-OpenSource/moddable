@@ -184,7 +184,7 @@ void xs_FT6202_read(xsMachine *the)
 
 		// reflect
 		if (MODDEF_FT6206_FLIPX)
-		  x = MODDEF_FT6206_WIDTH - x;
+			x = MODDEF_FT6206_WIDTH - x;
 
 		if (MODDEF_FT6206_FLIPY)
 			y = MODDEF_FT6206_HEIGHT - y;
