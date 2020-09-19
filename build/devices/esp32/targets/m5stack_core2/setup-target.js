@@ -9,12 +9,12 @@ const INTERNAL_I2C_SDA = 21;
 const INTERNAL_I2C_SCL = 22;
 
 const state = {
-	handleRotation: nop
+  handleRotation: nop,
 };
 
 export default function (done) {
   // power
-  global.power = new Power;
+  global.power = new Power();
 
   // speaker
   global.power.setSpeakerEnable(true);
@@ -36,7 +36,7 @@ export default function (done) {
     write: function (v) {
       global.power.vibration.enable = v;
     },
-	};
+  };
 
   vibration.write(true);
   Timer.set(() => {
@@ -137,42 +137,42 @@ class Power extends AXP192 {
     this.writeByte(0x30, (this.readByte(0x30) & 0x04) | 0x02); //AXP192 30H
     this.writeByte(0x92, this.readByte(0x92) & 0xf8); //AXP192 GPIO1:OD OUTPUT
     this.writeByte(0x93, this.readByte(0x93) & 0xf8); //AXP192 GPIO2:OD OUTPUT
-		this.writeByte(0x35, (this.readByte(0x35) & 0x1c) | 0xa3); //AXP192 RTC CHG
+    this.writeByte(0x35, (this.readByte(0x35) & 0x1c) | 0xa3); //AXP192 RTC CHG
 
-		// main power line
-		this._dcdc1.voltage = 3350;
-		this.chargeCurrent = AXP192.CHARGE_CURRENT.Ch_100mA
+    // main power line
+    this._dcdc1.voltage = 3350;
+    this.chargeCurrent = AXP192.CHARGE_CURRENT.Ch_100mA;
 
-		// LCD
-		this.lcd = this._dcdc3;
-		this.lcd.voltage = 2800;
+    // LCD
+    this.lcd = this._dcdc3;
+    this.lcd.voltage = 2800;
 
-		// internal LCD logic
-		this._ldo2.voltage = 3300;
-		this._ldo2.enable = true
+    // internal LCD logic
+    this._ldo2.voltage = 3300;
+    this._ldo2.enable = true;
 
-		// Vibration
-		this.vibration = this._ldo3;
-		this.vibration.voltage = 2000
+    // Vibration
+    this.vibration = this._ldo3;
+    this.vibration.voltage = 2000;
 
     // AXP192 GPIO4
     this.writeByte(0x95, (this.readByte(0x95) & 0x72) | 0x84);
     this.writeByte(0x36, 0x4c);
     this.writeByte(0x82, 0xff);
-		this.resetLcd();
+    this.resetLcd();
     this.setBusPowerMode(0); //  bus power mode_output
     Timer.delay(200);
-	}
+  }
 
   resetLcd() {
     const register = 0x96;
     const gpioBit = 0x02;
-		const data = this.readByte(register);
-		const off = data & ~gpioBit
-		const on = data | gpioBit
+    const data = this.readByte(register);
+    const off = data & ~gpioBit;
+    const on = data | gpioBit;
     this.writeByte(register, off);
-		Timer.delay(20);
-		this.writeByte(register, on);
+    Timer.delay(20);
+    this.writeByte(register, on);
   }
 
   setBusPowerMode(mode) {
@@ -186,19 +186,18 @@ class Power extends AXP192 {
     }
   }
 
-	//set led state(GPIO high active,set 1 to enable amplifier)
-	setSpeakerEnable(state) {
-		const register = 0x94;
-		const gpioBit = 0x04;
-		let data = this.readByte(register);
-		if (state) {
-			data |= gpioBit;
-		}
-		else {
-			data &= ~gpioBit;
-		}
-		this.writeByte(register, data);
-	}
+  //set led state(GPIO high active,set 1 to enable amplifier)
+  setSpeakerEnable(state) {
+    const register = 0x94;
+    const gpioBit = 0x04;
+    let data = this.readByte(register);
+    if (state) {
+      data |= gpioBit;
+    } else {
+      data &= ~gpioBit;
+    }
+    this.writeByte(register, data);
+  }
 }
 
 function nop() {}
