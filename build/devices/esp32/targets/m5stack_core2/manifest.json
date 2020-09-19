@@ -83,7 +83,6 @@
 		]
 	},
 	"preload": [
-		"monitor",
 		"pins/audioout",
 		"setup/target",
 		"mpu6886",
