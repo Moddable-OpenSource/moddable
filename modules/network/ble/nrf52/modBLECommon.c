@@ -81,9 +81,10 @@ ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init)
     if (NRF_SUCCESS == err_code)
 		err_code = nrf_ble_gatt_init(init->p_gatt, NULL);
     
-    // @@ We disable the connection parameters module, since otherwise the Nordic SDK is unable to successfully and reinitialize the BLE stack.
-    // @@ https://devzone.nordicsemi.com/f/nordic-q-a/57834/reenable-ble-after-disabling-fails-in-ble_conn_params_init-on-freertos
+    // @@ We disable the connection parameters module by default, since otherwise the Nordic SDK is unable to successfully reinitialize the BLE stack.
 #if NRF_BLE_CONN_PARAMS_ENABLED
+	modLog("warning: unable to reinitialize ble when connection parameters module is enabled");
+	modLog("https://devzone.nordicsemi.com/f/nordic-q-a/57834/reenable-ble-after-disabling-fails-in-ble_conn_params_init-on-freertos");
 	// Initialize connection parameters
 	if (NRF_SUCCESS == err_code)
 		err_code = ble_conn_params_init(&init->cp_init);
