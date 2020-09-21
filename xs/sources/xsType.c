@@ -892,7 +892,7 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 		if (writable)
 			mxTypeError("get and writable");
 		if (get->kind != XS_UNDEFINED_KIND) {
-			getFunction = fxGetInstance(the, get);
+			getFunction = fxToInstance(the, get);
 			if (!getFunction || !mxIsFunction(getFunction))
 				mxTypeError("get is no function");
 		}
@@ -904,7 +904,7 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 		if (writable)
 			mxTypeError("set and writable");
 		if (set->kind != XS_UNDEFINED_KIND) {
-			setFunction = fxGetInstance(the, set);
+			setFunction = fxToInstance(the, set);
 			if (!setFunction || !mxIsFunction(setFunction))
 				mxTypeError("set is no function");
 		}
