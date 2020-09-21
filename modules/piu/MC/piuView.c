@@ -749,6 +749,7 @@ void PiuViewInvalidate(PiuView* self, PiuRectangle area)
 #endif
 	if (!((*self)->updating)) {
 		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
 	}
 }
 
@@ -761,6 +762,7 @@ void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region)
 #endif
 	if (!((*self)->updating)) {
 		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
 	}
 }
 
@@ -882,13 +884,15 @@ void PiuViewReflow(PiuView* self)
 {
 	if (!((*self)->updating)) {
 		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
 	}
 }
 
 void PiuViewReschedule(PiuView* self)
 {
 	if (!((*self)->updating)) {
-		PiuApplicationIdleCheck((*self)->application);
+		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
 	}
 }
 
@@ -1339,7 +1343,7 @@ void PiuView_onIdle(xsMachine* the)
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
-	PiuViewReschedule(self);
+	PiuApplicationIdleCheck(application);
 #ifdef piuGPU
 	modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
 #endif		
@@ -1362,7 +1366,7 @@ void PiuView_onMessage(xsMachine* the)
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
-	PiuViewReschedule(self);
+	PiuApplicationIdleCheck(application);
 }
 
 void PiuView_onTouchBegan(xsMachine* the)
@@ -1391,7 +1395,7 @@ void PiuView_onTouchBegan(xsMachine* the)
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
-	PiuViewReschedule(self);
+	PiuApplicationIdleCheck(application);
 }
 
 void PiuView_onTouchEnded(xsMachine* the)
@@ -1420,7 +1424,7 @@ void PiuView_onTouchEnded(xsMachine* the)
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
-	PiuViewReschedule(self);
+	PiuApplicationIdleCheck(application);
 }
 
 void PiuView_onTouchMoved(xsMachine* the)
