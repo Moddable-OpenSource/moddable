@@ -63,6 +63,9 @@ class Screen extends config.Screen {
 				}
 			}, 5);
 		}
+		this.timer = Timer.set(() => {
+			this.context.onIdle();
+		}, 0x7FFFFFFF, 0x7FFFFFFF);
 	}
 	get rotation() {
 		return super.rotation;
@@ -92,17 +95,10 @@ class Screen extends config.Screen {
 	clear() {
 	}
 	start(interval) {
-		if (this.timer)
-			return;
-		this.timer = Timer.repeat(() => {
-			this.context.onIdle();
-		}, interval);
+		Timer.schedule(this.timer, interval, 0x7FFFFFFF);
 	}
 	stop() {
-		if (this.timer) {
-			Timer.clear(this.timer);
-			delete this.timer;
-		}
+		Timer.schedule(this.timer, 0x7FFFFFFF, 0x7FFFFFFF);
 	}
 }
 

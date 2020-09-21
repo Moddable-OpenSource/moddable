@@ -767,7 +767,7 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 	*height = rect.size.height;
 }
 
-void PiuViewIdleCheck(PiuView* self, PiuBoolean idle)
+void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 {
 }
 
@@ -840,6 +840,15 @@ void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)
 	CGContextRef context = (*self)->context;
     CGContextSaveGState(context);
 	CGContextTranslateCTM(context, x, y);
+}
+
+void PiuViewReflow(PiuView* self)
+{
+}
+
+void PiuViewReschedule(PiuView* self)
+{
+	PiuApplicationIdleCheck((*self)->application);
 }
 
 double PiuViewTicks(PiuView* self)
