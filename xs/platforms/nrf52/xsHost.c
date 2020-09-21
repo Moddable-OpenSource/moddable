@@ -667,7 +667,7 @@ static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSiz
 static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
 	txMachine *the = theIn;
-	return (int32_t)0;
+	return (int32_t)nrf52_memory_remaining();
 }
 
 static int32_t modInstrumentationSlotHeapSize(void *theIn)

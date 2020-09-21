@@ -74,11 +74,6 @@ void xs_loop(void)
 
 
 void xs_start() {
-
-#if MODINSTRUMENTATION
-	modInstrumentationSetCallback(SystemFreeMemory, nrf52_memory_remaining);
-#endif
-
 	while (1) {
 #ifdef mxDebug
 		uint32_t num;

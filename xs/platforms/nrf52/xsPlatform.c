@@ -597,7 +597,7 @@ static char *heap_end;
 
 void *_sbrk(int incr) {
 	char *prev_heap_end;
-
+	
 	if (heap_end == 0)
 		heap_end = &end;
 
