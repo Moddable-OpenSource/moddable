@@ -7,7 +7,8 @@
 		"screen": "ili9341",
 		"touch": "",
 		"autorotate": 300,
-		"startupSound": "bflatmajor.maud"
+		"startupSound": "bflatmajor.maud",
+		"speaker": true
 	},
 	"defines": {
 		"i2c":{
@@ -60,6 +61,13 @@
 			"order": "#GRB",
 			"pin": 15,
 		},
+		"audioIn": {
+			"sampleRate": 11025,
+			"bitsPerSample": 16,
+			"i2s": {
+				"adc": 1
+			}
+		},
 		"audioOut": {
 			"bitsPerSample": 16,
 			"numChannels": 1,
@@ -79,8 +87,10 @@
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
 			"$(MODULES)/drivers/mpu6050/*",
-			"$(MODULES)/drivers/mag3110/*"
+			"$(MODULES)/drivers/mag3110/*",
 			
+			"$(MODULES)/pins/audioin/*",
+			"$(MODULES)/pins/audioin/esp32/*"
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
@@ -90,6 +100,7 @@
 		"neopixel",
 		"monitor",
 		"pins/audioout",
+		"audioin",
 		"setup/target",
 		"mpu6050",
 		"mag3110",

@@ -26,6 +26,7 @@
 
 #include "xsmc.h"
 #include "mc.defines.h"
+#include "mc.xs.h"
 
 #if ESP32
 	#include "freertos/FreeRTOS.h"
@@ -88,6 +89,10 @@ void xs_audioin(xsMachine *the)
 		  dma_buf_len: 1024
 	};
 
+#if MODDEF_AUDIOIN_I2S_PDM
+	i2s_config.mode |= I2S_MODE_PDM;
+#endif
+
 	i2s_pin_config_t pin_config = {
 		.bck_io_num = MODDEF_AUDIOIN_I2S_BCK_PIN,
 		.ws_io_num = MODDEF_AUDIOIN_I2S_LR_PIN,
@@ -146,6 +151,7 @@ void xs_audioin_close(xsMachine *the)
 
 void xs_audioin_read(xsMachine *the)
 {
+	int argc = xsmcArgc;
 	int sampleCount = xsmcToInteger(xsArg(0));
 	int i, byteCount;
 #if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
@@ -157,44 +163,56 @@ void xs_audioin_read(xsMachine *the)
 
 	byteCount = sampleCount * sizeof(int8_t);
 #endif
-	xsmcSetArrayBuffer(xsResult, NULL, byteCount);
-	samples = xsmcToArrayBuffer(xsResult);
+	if (1 == argc) {
+		xsmcSetArrayBuffer(xsResult, NULL, byteCount);
+		samples = xsmcToArrayBuffer(xsResult);
+	}
+	else {
+		int offset = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
+		int byteLength;
 
-#if !MODDEF_AUDIOIN_I2S_ADC
+		xsmcGet(xsResult, xsArg(1), xsID_byteLength);
+		byteLength = xsmcToInteger(xsResult);
+
+		if ((byteLength <= 0) || (offset < 0) || ((offset + byteCount) > byteLength))
+			xsRangeError("invalid");
+
+		if (xsmcIsInstanceOf(xsArg(1), xsArrayBufferPrototype))
+			samples = xsmcToArrayBuffer(xsArg(1));
+		else
+			samples = xsmcGetHostData(xsArg(1));
+
+		samples = (void *)(offset + (uintptr_t)samples);
+
+		xsResult = xsArg(1);
+	}
+
 	for (i = 0; i < sampleCount; ) {
+		size_t bytes_read = 0;
 		int32_t buf32[64];
 		int j;
 		int need = sampleCount - i;
 		if (need > 64)
 			need = 64;
 
-		i2s_read_bytes(MODDEF_AUDIOIN_I2S_NUM, (void *)buf32, sizeof(buf32), portMAX_DELAY);
+		i2s_read(MODDEF_AUDIOIN_I2S_NUM, (void *)buf32, need << 2, &bytes_read, portMAX_DELAY);
+		need = bytes_read >> 2;
 		for (j = 0; j < need; j++) {
+#if MODDEF_AUDIOIN_I2S_ADC
+#if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
+			samples[i++] = (buf32[j] << 4) ^ 0x8000;
+#else	/* 8-bit */
+			samples[i++] = buf32[j] >> 4;
+#endif
+#else	/* !MODDEF_AUDIOIN_I2S_ADC */
 #if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
 			samples[i++] = buf32[j] >> 15;	// "The Data Format is I2S, 24 bit, 2’s compliment, MSB first. The Data Precision is 18 bits, unused bits are zeros"
-#else
+#else	/* 8-bit */
 			samples[i++] = (buf32[j] >> (15 + 8)) ^ 0x80;
 #endif
-		}
-	}
-#else
-	for (i = 0; i < sampleCount; ) {
-		int16_t buf16[64];
-		int j;
-		int need = sampleCount - i;
-		if (need > 64)
-			need = 64;
-
-		i2s_read_bytes(MODDEF_AUDIOIN_I2S_NUM, (void *)buf16, sizeof(buf16), portMAX_DELAY);
-		for (j = 0; j < need; j++) {
-#if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
-			samples[i++] = (buf16[j] << 4) ^ 0x8000;
-#else
-			samples[i++] = buf16[j] >> 4;
 #endif
 		}
 	}
-#endif
 }
 
 void xs_audioin_get_sampleRate(xsMachine *the)
