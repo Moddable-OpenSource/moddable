@@ -373,7 +373,6 @@ void xs_ble_client_connect(xsMachine *the)
 	uint8_t addressType = xsmcToInteger(xsArg(1));
 	
 	ble_gap_addr_t addr;
-	ret_code_t err_code;
 
 	addr.addr_id_peer = 0;
 	addr.addr_type = addressType;
@@ -394,17 +393,18 @@ void xs_ble_client_connect(xsMachine *the)
 	connection->addressType = addressType;
 	c_memmove(connection->address, address, 6);
 	modBLEConnectionAdd((modBLEConnection)connection);
-	
-	err_code = sd_ble_gap_connect(&addr, &m_scan.scan_params, &m_scan.conn_params, APP_BLE_CONN_CFG_TAG);
-	
+		
 	// The third argument is an existing connection handle, when available.
 	// This can happen when the server establishes a connection that gets passed to the client.
 	// When there is an existing connection handle, post the gapConnectedEvent so this client can populate the connection record and notify the application.
-	if (NRF_SUCCESS == err_code && argc > 2) {
-		ble_gap_evt_t gap_evt;
+	if (argc > 2) {
+		ble_gap_evt_t gap_evt = {0};
 		gap_evt.conn_handle = xsmcToInteger(xsArg(2));
 		gap_evt.params.connected.peer_addr = addr;
 		modMessagePostToMachine(the, (uint8_t*)&gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
+	}
+	else {
+		sd_ble_gap_connect(&addr, &m_scan.scan_params, &m_scan.conn_params, APP_BLE_CONN_CFG_TAG);
 	}
 }
 
@@ -1398,19 +1398,11 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 		case BLE_GAP_EVT_AUTH_KEY_REQUEST:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapAuthKeyRequestEvent, NULL);
 			break;
-		case BLE_GAP_EVT_CONNECTED: {
-			uint8_t encrypted = 0;
-			if (0xFF != gBLE->iocap) {
-				pm_conn_sec_status_t status = {0};
-				encrypted = ((NRF_SUCCESS == pm_conn_sec_status_get(p_ble_evt->evt.gap_evt.conn_handle, &status)) && status.encrypted);
-				if (!encrypted)
-					pm_handler_secure_on_connection(p_ble_evt);
-			}
+		case BLE_GAP_EVT_CONNECTED:
+			if (0xFF != gBLE->iocap)
+				pm_conn_secure(p_ble_evt->evt.gap_evt.conn_handle, true);
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
-			if (encrypted)
-				modMessagePostToMachine(gBLE->the, NULL, 0, pmConnSecSucceededEvent, NULL);
 			break;
-		}
 		case BLE_GAP_EVT_DISCONNECTED:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapDisconnectedEvent, NULL);
 			break;
