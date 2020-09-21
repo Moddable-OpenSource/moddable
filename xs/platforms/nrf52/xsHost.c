@@ -667,7 +667,7 @@ static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSiz
 static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
 	txMachine *the = theIn;
-	return 0;
+	return (int32_t)0;
 }
 
 static int32_t modInstrumentationSlotHeapSize(void *theIn)
@@ -792,7 +792,7 @@ void espInstrumentMachineReset(txMachine *the)
 */
 void modWatchDogReset(void)
 {
-#if !mxDebug
+#if USE_WATCHDOG
 	nrf_drv_wdt_feed();
 #endif
 }
@@ -870,22 +870,17 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
 
-#if !mxDebug
+#if USE_WATCHDOG
 	modWatchDogReset();
-	if (maxDelayMS >= NRFX_WDT_CONFIG_RELOAD_VALUE) {
-		#if NRFX_WDT_CONFIG_RELOAD_VALUE <= 1000
-			maxDelayMS = 500;
-		#else
-			maxDelayMS = NRFX_WDT_CONFIG_RELOAD_VALUE - 1000;
-		#endif
-	}
 #endif
 
 	while (true) {
 		modMessageRecord msg;
 
 		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
+#if USE_WATCHDOG
 			modWatchDogReset();
+#endif
 			return;
 		}
 

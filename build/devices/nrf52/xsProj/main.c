@@ -103,7 +103,7 @@ static void timer_init(void)
 	APP_ERROR_CHECK(err_code);
 }
 
-#ifndef mxDebug
+#if USE_WATCHDOG
 static nrf_drv_wdt_channel_id wdt_channel_id;
 
 static void wdt_event_handler(void)
@@ -119,6 +119,8 @@ static void watchdog_init(void)
 	nrf_drv_clock_lfclk_request(NULL);
 	ret_code_t err_code = nrf_drv_wdt_init(&config, wdt_event_handler);
 	APP_ERROR_CHECK(err_code);
+	NRF_WDT->CONFIG = 0;
+	NRF_WDT->CRV = 0x18000;	// ~2s as measured by the PPK
 	nrf_drv_wdt_channel_alloc(&wdt_channel_id);
 	nrf_drv_wdt_enable();
 }
@@ -142,7 +144,7 @@ int main(void)
 	nrf_drv_power_init(NULL);
 #endif
 
-#ifndef mxDebug
+#if USE_WATCHDOG
 	watchdog_init();
 #endif
 
