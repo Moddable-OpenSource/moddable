@@ -23,4 +23,9 @@ import Time from "time";
 
 function microseconds() @ "xs_time_microseconds";
 
-Time.__defineGetter__("microseconds", microseconds);
+Object.defineProperties(Time, {
+	microseconds: {
+		enumerable: true,
+		get: microseconds
+	}
+});
