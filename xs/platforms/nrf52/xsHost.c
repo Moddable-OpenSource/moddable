@@ -788,16 +788,6 @@ void espInstrumentMachineReset(txMachine *the)
 #endif
 
 /*
-	watchdog
-*/
-void modWatchDogReset(void)
-{
-#if USE_WATCHDOG
-	nrf_drv_wdt_feed();
-#endif
-}
-
-/*
 	messages
 */
 typedef struct modMessageRecord modMessageRecord;
@@ -870,17 +860,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
 
-#if USE_WATCHDOG
 	modWatchDogReset();
-#endif
 
 	while (true) {
 		modMessageRecord msg;
 
 		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
-#if USE_WATCHDOG
 			modWatchDogReset();
-#endif
 			return;
 		}
 
