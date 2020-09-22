@@ -1,17 +1,15 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/pins/i2c/manifest.json",
+		"$(MODULES)/pins/smbus/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
 			"$(MODULES)/drivers/lis3dh/*",
-		],
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		]
 	},
 	"preload": [
-		"lis3dh",
-		"pins/smbus",
+		"lis3dh"
 	],
 }

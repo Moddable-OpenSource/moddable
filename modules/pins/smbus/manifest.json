@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODULES)/pins/i2c/manifest.json"
+	],
+	"modules": {
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
+	},
+	"preload": "pins/smbus"
+}

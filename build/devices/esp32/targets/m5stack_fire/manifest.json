@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/pins/i2c/manifest.json"
+		"$(MODDABLE)/modules/pins/smbus/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
@@ -94,7 +94,6 @@
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"neopixel",
@@ -104,7 +103,6 @@
 		"setup/target",
 		"mpu6050",
 		"mag3110",
-		"pins/smbus"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",

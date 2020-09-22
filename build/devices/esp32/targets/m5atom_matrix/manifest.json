@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(MODULES)/pins/i2c/manifest.json"
+		"$(MODULES)/pins/smbus/manifest.json"
 	],
 	"build": {
 		"UPLOAD_SPEED": "1500000",
@@ -14,13 +14,11 @@
 
 			"$(MODULES)/drivers/mpu6886/*"
 		],
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"mpu6886",
 		"neopixel",
-		"pins/smbus",
 		"setup/target"
 	],
 	"defines": {
