@@ -6,6 +6,7 @@
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7735/manifest.json",
 		"$(MODDABLE)/modules/drivers/axp192/manifest.json"
+		"$(MODDABLE)/modules/pins/smbus/manifest.json"
 	],
 	"config": {
 		"screen": "st7735",
@@ -71,13 +72,11 @@
 			
 		],
 		"setup/target": "./setup-target",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"monitor",
 		"setup/target",
 		"mpu6886",
 		"sh200q",
-		"pins/smbus"
 	]
 }

@@ -714,7 +714,7 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 	*height = area.bottom - area.top;
 }
 
-void PiuViewIdleCheck(PiuView* self, PiuBoolean idle)
+void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 {
 }
 
@@ -784,6 +784,15 @@ void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)
 	(*self)->graphicsStates[(*self)->graphicsStatesIndex] = graphics->Save();
 	(*self)->graphicsStatesIndex++;
 	graphics->TranslateTransform((REAL)x, (REAL)y, MatrixOrderAppend);
+}
+
+void PiuViewReflow(PiuView* self)
+{
+}
+
+void PiuViewReschedule(PiuView* self)
+{
+	PiuApplicationIdleCheck((*self)->application);
 }
 
 double PiuViewTicks(PiuView* self)

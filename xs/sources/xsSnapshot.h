@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,14 +18,32 @@
  *
  */
 
+#include "xsAll.h"
+#include "xsScript.h"
 
-import Time from "time";
+typedef struct sxProjection txProjection;
+typedef struct sxSnapshot txSnapshot;
 
-function microseconds() @ "xs_time_microseconds";
+struct sxProjection {
+	txProjection* nextProjection;
+	txSlot* heap;
+	txSlot* limit;
+	size_t indexes[1];
+};
 
-Object.defineProperties(Time, {
-	microseconds: {
-		enumerable: true,
-		get: microseconds
-	}
-});
+struct sxSnapshot {
+	char* signature;
+	int signatureLength;
+	txCallback* callbacks;
+	int callbacksLength;
+	int (*read)(void* stream, void* address, size_t size);
+	int (*write)(void* stream, void* address, size_t size);
+	void* stream;
+	int error;
+	txByte* firstChunk;
+	txProjection* firstProjection;
+	txSlot* firstSlot;
+};
+
+extern txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theContext);
+extern int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot);

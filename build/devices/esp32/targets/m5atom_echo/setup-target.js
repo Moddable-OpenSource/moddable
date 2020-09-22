@@ -6,6 +6,8 @@ import Monitor from "pins/digital/monitor";
 import NeoPixel from "neopixel";
 import AudioOut from "pins/audioout";
 
+import config from "mc/config";
+
 export default function (done) {
 	globalThis.button = {
 		a: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
@@ -14,9 +16,11 @@ export default function (done) {
 	
 	globalThis.lights = new NeoPixel({});
 
-	globalThis.speaker = new AudioOut({
-		streams: 2
-	});
+	if (config.speaker) {
+		globalThis.speaker = new AudioOut({
+			streams: 2
+		});
+	}
 
 	done();
 }

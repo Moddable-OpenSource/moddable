@@ -439,7 +439,7 @@ void xs_socket_get(xsMachine *the)
 	xsSocket xss = xsmcGetHostData(xsThis);
 	const char *name = xsmcToString(xsArg(0));
 
-	if (0 == c_strcmp(name, "REMOTE_IP")) {
+	if (xss->skt && (0 == c_strcmp(name, "REMOTE_IP"))) {
 		xsResult = xsStringBuffer(NULL, 40);
 		ipaddr_ntoa_r(&xss->skt->remote_ip, xsmcToString(xsResult), 40);
 	}

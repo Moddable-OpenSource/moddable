@@ -18,38 +18,38 @@ const state = {
 
 
 export default function (done) {
-	global.lights = new NeoPixel({});
+	globalThis.lights = new NeoPixel({});
 
-	global.button = {
+	globalThis.button = {
 		a: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
 		b: new Monitor({pin: 38, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
 		c: new Monitor({pin: 37, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
 	};
 	button.a.onChanged = button.b.onChanged = button.c.onChanged = nop;
 
-	global.speaker = new AudioOut({streams: 4});
-	if (config.startupSound) {
-		speaker.callback = function() {this.stop()};
-		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
-		speaker.enqueue(0, AudioOut.Callback, 0);
-		speaker.start();
+	if (config.speaker) {
+		globalThis.speaker = new AudioOut({streams: 4});
+		if (config.startupSound) {
+			speaker.callback = function() {this.stop()};
+			speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
+			speaker.enqueue(0, AudioOut.Callback, 0);
+			speaker.start();
+		}
 	}
-
-	//@@ microphone
 
 	try {
 		state.accelerometerGyro = new MPU6050;
 		state.magnetometer = new MAG3110;
 
-		global.accelerometer = {
+		globalThis.accelerometer = {
 			onreading: nop
 		}
 
-		global.gyro = {
+		globalThis.gyro = {
 			onreading: nop
 		}
 
-		global.magnetometer = {
+		globalThis.magnetometer = {
 			onreading: nop
 		}
 
@@ -115,7 +115,7 @@ export default function (done) {
 		trace(`Error initializing: ${e}\n`);
 	}
 
-	if (config.autorotate && global.Application && global.accelerometer) {
+	if (config.autorotate && globalThis.Application && globalThis.accelerometer) {
 		state.handleRotation = function (reading) {
 			if (Math.abs(reading.y) > Math.abs(reading.x)) {
 				if (reading.y < -0.7 && application.rotation != 90) {

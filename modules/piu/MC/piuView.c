@@ -729,11 +729,11 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 	*height = poco->height;
 }
 
-void PiuViewIdleCheck(PiuView* self, PiuBoolean idle)
+void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 {
 	xsMachine *the = (*self)->the;
 	if (idle) {
-		xsCall1(xsReference((*self)->screen), xsID_start, xsInteger(5));
+		xsCall1(xsReference((*self)->screen), xsID_start, xsNumber(idle));
 	}
 	else {
 		xsCall0(xsReference((*self)->screen), xsID_stop);
@@ -749,6 +749,7 @@ void PiuViewInvalidate(PiuView* self, PiuRectangle area)
 #endif
 	if (!((*self)->updating)) {
 		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
 	}
 }
 
@@ -761,6 +762,7 @@ void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region)
 #endif
 	if (!((*self)->updating)) {
 		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
 	}
 }
 
@@ -882,6 +884,15 @@ void PiuViewReflow(PiuView* self)
 {
 	if (!((*self)->updating)) {
 		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
+	}
+}
+
+void PiuViewReschedule(PiuView* self)
+{
+	if (!((*self)->updating)) {
+		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
 	}
 }
 
@@ -910,7 +921,6 @@ void PiuViewUpdate(PiuView* self, PiuApplication* application)
 		(*(*application)->dispatch->update)(application, self, &area);
 		PiuViewEnd(self);
 	}
-	(*self)->updating = 0;
 }
 
 #ifdef piuGPU
@@ -1331,6 +1341,7 @@ void PiuView_onIdle(xsMachine* the)
 	PiuApplicationIdleContents(application);
 	PiuApplicationTouchIdle(application);
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
 #ifdef piuGPU
@@ -1353,7 +1364,9 @@ void PiuView_onMessage(xsMachine* the)
 		}
 	}
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
+	PiuApplicationIdleCheck(application);
 }
 
 void PiuView_onTouchBegan(xsMachine* the)
@@ -1380,7 +1393,9 @@ void PiuView_onTouchBegan(xsMachine* the)
 	(*self)->updating = 1;
 	PiuApplicationTouchBegan(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
+	PiuApplicationIdleCheck(application);
 }
 
 void PiuView_onTouchEnded(xsMachine* the)
@@ -1407,7 +1422,9 @@ void PiuView_onTouchEnded(xsMachine* the)
 	(*self)->updating = 1;
 	PiuApplicationTouchEnded(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
+	PiuApplicationIdleCheck(application);
 }
 
 void PiuView_onTouchMoved(xsMachine* the)
