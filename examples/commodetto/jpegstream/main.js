@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -74,7 +74,7 @@ async function main() {
 	let index = 0;
 	while (true) {
 		try {
-			await display(poco, "www.moddable.com", paths[index]);
+			await display(poco, "test.moddable.com", paths[index]);
 		}
 		catch {
 		}
