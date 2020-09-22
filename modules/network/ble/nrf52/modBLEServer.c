@@ -1033,7 +1033,7 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
     {
 		case BLE_GAP_EVT_CONNECTED:
 			if (0xFF != gBLE->iocap)
-				pm_conn_secure(p_ble_evt->evt.gap_evt.conn_handle, true);
+				pm_conn_secure(p_ble_evt->evt.gap_evt.conn_handle, false);
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&p_ble_evt->evt.gap_evt, sizeof(ble_gap_evt_t), gapConnectedEvent, NULL);
 			break;
 		case BLE_GAP_EVT_DISCONNECTED:

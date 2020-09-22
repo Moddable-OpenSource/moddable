@@ -23,7 +23,6 @@
 
 #include "xsPlatform.h"
 
-extern void xs_setup();
-extern void xs_start();
+extern void xs_setup(void);
 
 #endif

@@ -65,6 +65,8 @@ static TaskHandle_t m_logger_thread;
 
 #include "nrf_drv_power.h"
 
+#include "xsmain.h"
+
 /**@brief A function which is hooked to idle task.
  * @note Idle hook must be enabled in FreeRTOS configuration (configUSE_IDLE_HOOK).
  */
@@ -104,32 +106,39 @@ static void timer_init(void)
 }
 
 #if USE_WATCHDOG
-static nrf_drv_wdt_channel_id wdt_channel_id;
+	static nrf_drv_wdt_channel_id wdt_channel_id;
 
-static void wdt_event_handler(void)
-{
-	// Watchdog expired.
-	// System RESET!!!
-	// NOTE: The max amount of time we can spend in WDT interrupt is two cycles of 32768[Hz] clock - after that, reset occurs
-}
+	static void wdt_event_handler(void)
+	{
+		// Watchdog expired.
+		// System RESET!!!
+		// NOTE: The max amount of time we can spend in WDT interrupt is two cycles of 32768[Hz] clock - after that, reset occurs
+	}
 
-static void watchdog_init(void)
-{
-	nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
-	nrf_drv_clock_lfclk_request(NULL);
-	ret_code_t err_code = nrf_drv_wdt_init(&config, wdt_event_handler);
-	APP_ERROR_CHECK(err_code);
-	NRF_WDT->CONFIG = 0;
-	NRF_WDT->CRV = 0x18000;	// ~2s as measured by the PPK
-	nrf_drv_wdt_channel_alloc(&wdt_channel_id);
-	nrf_drv_wdt_enable();
-}
+	static void watchdog_init(void)
+	{
+		nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
+		
+		nrf_drv_clock_lfclk_request(NULL);
+
+		// If the WDT is enabled (but not expired), after a soft reset (NVIC_SystemReset) the RTC no longer runs.
+		// This scenario occurs when using the RTC to wakeup from light sleep (wake on timer).
+		// The workaround is to start the low frequency clock here before initializing the WDT driver.
+		// Reference: https://devzone.nordicsemi.com/f/nordic-q-a/65361/rtc-stops-running-after-soft-reset-with-wdt-enabled
+		nrfx_clock_lfclk_start();
+		
+		ret_code_t err_code = nrf_drv_wdt_init(&config, wdt_event_handler);
+		APP_ERROR_CHECK(err_code);
+		NRF_WDT->CONFIG = 0;	// pause on sleep and halt
+		nrf_drv_wdt_channel_alloc(&wdt_channel_id);
+		nrf_drv_wdt_enable();
+	}
+#else
+	#define watchdog_init()
 #endif
 
 /**@brief Function for application main entry.
  */
-void xs_setup();
-void xs_main();
 
 int main(void)
 {
@@ -144,9 +153,7 @@ int main(void)
 	nrf_drv_power_init(NULL);
 #endif
 
-#if USE_WATCHDOG
 	watchdog_init();
-#endif
 
     // Activate deep sleep mode.
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
@@ -158,7 +165,8 @@ int main(void)
     }
 #endif
 
-    xs_setup();
+	xs_setup();
+	vTaskStartScheduler();
    
     for (;;)
     {

@@ -63,8 +63,9 @@ extern "C" {
 #define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
 #define ICACHE_XS6STRING_ATTR __attribute__((section(".rodata.xs6string"))) __attribute__((aligned(4)))
 
-void xs_setup();
-void xs_loop();
+#if defined(__XS__)
+	extern void mc_setup(xsMachine *the);
+#endif
 
 /*
     timer
@@ -166,7 +167,11 @@ extern void ESP_putc(int c);
 	watchdog timer
 */
 
-void modWatchDogReset(void);
+#if USE_WATCHDOG
+	#define modWatchDogReset() nrf_drv_wdt_feed()
+#else
+	#define modWatchDogReset()
+#endif
 
 /*
     VM
