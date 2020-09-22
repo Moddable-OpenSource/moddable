@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
+#include "xsPlatform.h"
 
 #include "nrf_soc.h"
 #include "nrf_sdh.h"
@@ -80,7 +81,7 @@ enum {
 static uint8_t softdevice_enabled();
 static void clear_retained_buffer();
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
-static void getRAMRetentionSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
+static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
 /**
 	Retention buffer format:
@@ -114,7 +115,7 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	ram += 2;
 	c_memmove(ram, buffer, bufferLength);
 
-	getRAMRetentionSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
+	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
 	
 	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)); 
 
@@ -211,7 +212,7 @@ void xs_sleep_set_retained_value(xsMachine *the)
 	if (index < 0 || index > 31)
 		xsRangeError("invalid index");
 	
-	getRAMRetentionSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
+	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
 
 	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)); 
 
@@ -364,16 +365,11 @@ void xs_sleep_wake_on_interrupt(xsMachine *the)
 	nrf_delay_ms(1);
 }
 
+extern char __HeapLimit;		// from linker
+
 void xs_sleep_wake_on_timer(xsMachine *the)
 {
 	uint32_t ms = xsmcToInteger(xsArg(0));
-	// configure rtc for wakeup
-	// read clock
-	// save clock value in retained memory
-	// power off ram
-	// wait for event
-	// system reset
-	
     TickType_t enterTime, exitTime, wakeupTime;
 
     /* Block all the interrupts globally */
@@ -388,7 +384,12 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		__disable_irq();
     }
 
+	// read clock
     enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
+    
+    // @@ save clock into retained ram
+    
+    // calculate wake up time
 	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
 
 	// stop tick events
@@ -399,6 +400,54 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
 
+	// calculate ram slaves and sections not in use that can be powered off
+	uint32_t heap_end = (uint32_t)&__HeapLimit;
+	uint32_t heap_free = nrf52_memory_remaining();
+	uint32_t heap_unused_base = heap_end - heap_free;
+	uint32_t heap_start_slave, heap_start_section;
+	uint32_t heap_end_slave, heap_end_section;
+	getRAMSlaveAndSection(heap_unused_base, &heap_start_slave, &heap_start_section);
+	getRAMSlaveAndSection(heap_end, &heap_end_slave, &heap_end_section);
+	
+	// The heap_end_slave and heap_end_section values correspond to the slave/section containing the top of the heap.
+	// We don't want to power down this area because it lives in the same slave/section as the stack.
+	if (8 == heap_end_slave && 5 == heap_end_section)
+		--heap_end_section;
+	
+	// The heap_start_slave and heap_start section values corresponds to the slave/section containing the start of free heap space.
+	// We don't want to power down this section, since ram is in use immediately below within the same section.
+	++heap_start_section;
+	if (8 == heap_start_slave) {
+		if (heap_start_section >= heap_end_section) {
+			heap_start_section = heap_end_section;
+		}
+	}
+	else {
+		if (heap_start_section > 1) {
+			heap_start_section = 0;
+			++heap_start_slave;
+		}
+	}
+	
+	// power off ram not in use
+	// note that slaves 0-7 have two 4 KB sections and slave 8 has six 32 KB sections
+	uint32_t i, j, bits;
+	for (i = heap_start_slave; i <= heap_end_slave; ++i) {
+		uint32_t bits = 0;
+		if (heap_start_slave == i) {
+			for (j = heap_start_section; j <= (heap_start_slave < 8 ? 1 : 5); ++j)
+				bits |= 1L << j;
+		}
+		else if (heap_end_slave == i) {
+			for (j = heap_end_section; j <= (heap_end_slave < 8 ? 1 : 5); ++j)
+				bits |= 1L << j;
+		}
+		else {
+			bits = (8 == i) ? 0x1f : 0x3;	// power off all sections in slaves between start and end slave
+		}
+		NRF_POWER->RAM[i].POWERCLR = bits;
+	}
+	
 	// wait for event - hopefully the rtc
 	if (softdevice_enabled()) {
 		uint32_t err_code = sd_app_evt_wait();
@@ -414,8 +463,11 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
 	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 
+	// read clock again
 	exitTime = nrf_rtc_counter_get(portNRF_RTC_REG);
 
+	// @@ set clock based on the amount of time we slept and the clock value retained before sleep
+	
 	/* It is important that we clear pending here so that our corrections are latest and in sync with tick_interrupt handler */
 	NVIC_ClearPendingIRQ(portNRF_RTC_IRQn);
 
@@ -456,7 +508,7 @@ void lpcomp_event_handler(nrf_lpcomp_event_t event)
 	}
 }
 
-void getRAMRetentionSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)
+void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)
 {
 	// From the nRF52840 Product Specification:
 	// The RAM interface is divided into 9 RAM AHB slaves.
