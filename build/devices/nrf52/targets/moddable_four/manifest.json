@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
 		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/i2c/manifest.json"
+		"$(MODULES)/pins/smbus/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",
@@ -27,11 +27,9 @@
 	},
     "modules": {
 		"setup/target": "./setup-target",
-        "pins/smbus": "$(MODULES)/pins/smbus/smbus"
     },
     "preload": [
-		"setup/target",
-		"pins/smbus"
+		"setup/target"
     ],
 	"defines": {
 		"debugger": {
