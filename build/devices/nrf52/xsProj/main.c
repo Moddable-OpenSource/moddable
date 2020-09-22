@@ -118,7 +118,15 @@ static void timer_init(void)
 	static void watchdog_init(void)
 	{
 		nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
+		
 		nrf_drv_clock_lfclk_request(NULL);
+
+		// If the WDT is enabled (but not expired), after a soft reset (NVIC_SystemReset) the RTC no longer runs.
+		// This scenario occurs when using the RTC to wakeup from light sleep (wake on timer).
+		// The workaround is to start the low frequency clock here before initializing the WDT driver.
+		// Reference: https://devzone.nordicsemi.com/f/nordic-q-a/65361/rtc-stops-running-after-soft-reset-with-wdt-enabled
+		nrfx_clock_lfclk_start();
+		
 		ret_code_t err_code = nrf_drv_wdt_init(&config, wdt_event_handler);
 		APP_ERROR_CHECK(err_code);
 		NRF_WDT->CONFIG = 0;	// pause on sleep and halt
