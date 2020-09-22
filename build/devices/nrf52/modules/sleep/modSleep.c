@@ -27,6 +27,8 @@
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_lpcomp.h"
+#include "nrf_rtc.h"
+#include "FreeRTOS.h"
 
 #define RAM_START_ADDRESS  0x20000000
 #define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size 0x100
@@ -78,7 +80,7 @@ enum {
 static uint8_t softdevice_enabled();
 static void clear_retained_buffer();
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
-static void getRAMRetentionSlaveAndPowerset(uint32_t address, uint32_t *slave, uint32_t *powerset);
+static void getRAMRetentionSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
 /**
 	Retention buffer format:
@@ -93,7 +95,7 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	uint8_t *buffer = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint16_t bufferLength = xsmcGetArrayBufferLength(xsArg(0));
 	uint8_t *ram = &gRamRetentionBuffer[0];
-	uint32_t ram_slave_n, ram_powerset;
+	uint32_t ram_slave, ram_section, ram_powerset;
 
 	uint32_t retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
 
@@ -112,15 +114,17 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 	ram += 2;
 	c_memmove(ram, buffer, bufferLength);
 
-	getRAMRetentionSlaveAndPowerset((uint32_t)&gRamRetentionBuffer[0], &ram_slave_n, &ram_powerset);
+	getRAMRetentionSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
+	
+	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)); 
 
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
-		sd_power_ram_power_set(ram_slave_n, ram_powerset);
+		sd_power_ram_power_set(ram_slave, ram_powerset);
 	}
 	else {
     	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
-		NRF_POWER->RAM[ram_slave_n].POWERSET = ram_powerset;
+		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
 	}
 }
 
@@ -202,20 +206,22 @@ void xs_sleep_set_retained_value(xsMachine *the)
 	int16_t index = xsmcToInteger(xsArg(0));
 	int32_t value = xsmcToInteger(xsArg(1));
 	int32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
-	uint32_t ram_slave_n, ram_powerset;
+	uint32_t ram_slave, ram_section, ram_powerset;
 	
 	if (index < 0 || index > 31)
 		xsRangeError("invalid index");
 	
-	getRAMRetentionSlaveAndPowerset((uint32_t)&gRamRetentionBuffer[0], &ram_slave_n, &ram_powerset);
+	getRAMRetentionSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
+
+	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)); 
 
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
-		sd_power_ram_power_set(ram_slave_n, ram_powerset);
+		sd_power_ram_power_set(ram_slave, ram_powerset);
 	}
 	else {
     	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
-		NRF_POWER->RAM[ram_slave_n].POWERSET = ram_powerset;
+		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
 	}
 
 	slots[index * 2] = kRamRetentionValueMagic;
@@ -358,6 +364,66 @@ void xs_sleep_wake_on_interrupt(xsMachine *the)
 	nrf_delay_ms(1);
 }
 
+void xs_sleep_wake_on_timer(xsMachine *the)
+{
+	uint32_t ms = xsmcToInteger(xsArg(0));
+	// configure rtc for wakeup
+	// read clock
+	// save clock value in retained memory
+	// power off ram
+	// wait for event
+	// system reset
+	
+    TickType_t enterTime, exitTime, wakeupTime;
+
+    /* Block all the interrupts globally */
+    if (softdevice_enabled()) {
+		do {
+			uint8_t dummy = 0;
+			uint32_t err_code = sd_nvic_critical_region_enter(&dummy);
+			APP_ERROR_CHECK(err_code);
+		} while (0);
+    }
+    else {
+		__disable_irq();
+    }
+
+    enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
+	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
+
+	// stop tick events
+	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
+
+	// configure CTC interrupt
+	nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTime);
+	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
+	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
+
+	// wait for event - hopefully the rtc
+	if (softdevice_enabled()) {
+		uint32_t err_code = sd_app_evt_wait();
+		APP_ERROR_CHECK(err_code);
+	}
+	else {
+		do {
+			__WFE();
+		} while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
+	}
+
+	// disable rtc interrupts and event
+	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
+	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
+
+	exitTime = nrf_rtc_counter_get(portNRF_RTC_REG);
+
+	/* It is important that we clear pending here so that our corrections are latest and in sync with tick_interrupt handler */
+	NVIC_ClearPendingIRQ(portNRF_RTC_IRQn);
+
+	__enable_irq();
+
+	NVIC_SystemReset();
+}
+
 uint8_t softdevice_enabled()
 {
 #ifdef SOFTDEVICE_PRESENT
@@ -390,41 +456,19 @@ void lpcomp_event_handler(nrf_lpcomp_event_t event)
 	}
 }
 
-void getRAMRetentionSlaveAndPowerset(uint32_t address, uint32_t *slave, uint32_t *powerset)
+void getRAMRetentionSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)
 {
-	uint32_t ram_section_n;
-	
 	// From the nRF52840 Product Specification:
 	// The RAM interface is divided into 9 RAM AHB slaves.
 	// RAM AHB slave 0-7 is connected to 2x4 kB RAM sections each and RAM AHB slave 8 is connected to 6x32 kB sections
 	uint32_t p_offset = address - RAM_START_ADDRESS;
 	if (address < 0x20010000L) {
 		*slave = (p_offset / 8192);  
-		ram_section_n = (p_offset % 8192) / 4096;
+		*section = (p_offset % 8192) / 4096;
 	}
 	else {
 		*slave = 8;
 		address -= 0x20010000L;
-		ram_section_n = address / 32768L;
-	}
-
-	switch(ram_section_n) {
-		case 0: *powerset = (1L  << POWER_RAM_POWER_S0RETENTION_Pos); break;
-		case 1: *powerset = (1L  << POWER_RAM_POWER_S1RETENTION_Pos); break;
-		case 2: *powerset = (1L  << POWER_RAM_POWER_S2RETENTION_Pos); break;
-		case 3: *powerset = (1L  << POWER_RAM_POWER_S3RETENTION_Pos); break;
-		case 4: *powerset = (1L  << POWER_RAM_POWER_S4RETENTION_Pos); break;
-		case 5: *powerset = (1L  << POWER_RAM_POWER_S5RETENTION_Pos); break;
-		case 6: *powerset = (1L  << POWER_RAM_POWER_S6RETENTION_Pos); break;
-		case 7: *powerset = (1L  << POWER_RAM_POWER_S7RETENTION_Pos); break;
-		case 8: *powerset = (1L  << POWER_RAM_POWER_S8RETENTION_Pos); break;
-		case 9: *powerset = (1L  << POWER_RAM_POWER_S9RETENTION_Pos); break;
-		case 10: *powerset = (1L  << POWER_RAM_POWER_S10RETENTION_Pos); break;
-		case 11: *powerset = (1L  << POWER_RAM_POWER_S11RETENTION_Pos); break;
-		case 12: *powerset = (1L  << POWER_RAM_POWER_S12RETENTION_Pos); break;
-		case 13: *powerset = (1L  << POWER_RAM_POWER_S13RETENTION_Pos); break;
-		case 14: *powerset = (1L  << POWER_RAM_POWER_S14RETENTION_Pos); break;
-		case 15: *powerset = (1L  << POWER_RAM_POWER_S15RETENTION_Pos); break;
-		default: *powerset = 0; break;
+		*section = address / 32768L;
 	}
 }
