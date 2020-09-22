@@ -22,9 +22,8 @@ import config from "mc/config";
 import Digital from "pins/digital";
 
 export default function (done) {
-	if (config.autobacklight) {
+	if (config.autobacklight)
 		Digital.write(config.lcd_power_pin, 0);
-	}
 	Digital.write(config.led1_pin, 0);
 
 	done();

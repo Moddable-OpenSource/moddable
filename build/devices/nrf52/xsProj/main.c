@@ -65,6 +65,8 @@ static TaskHandle_t m_logger_thread;
 
 #include "nrf_drv_power.h"
 
+#include "xsmain.h"
+
 /**@brief A function which is hooked to idle task.
  * @note Idle hook must be enabled in FreeRTOS configuration (configUSE_IDLE_HOOK).
  */
@@ -128,8 +130,6 @@ static void watchdog_init(void)
 
 /**@brief Function for application main entry.
  */
-void xs_setup();
-void xs_main();
 
 int main(void)
 {
@@ -158,7 +158,8 @@ int main(void)
     }
 #endif
 
-    xs_setup();
+	xs_setup();
+	vTaskStartScheduler();
    
     for (;;)
     {

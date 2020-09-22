@@ -18,72 +18,51 @@
  *
  */
 
-#define __XS6PLATFORMMINIMAL__
 #include "xs.h"
 #include "xsmain.h"
 #include "modTimer.h"
 
 #include "xsPlatform.h"
 #include "xsHost.h"
-#include "modInstrumentation.h"
 
-xsMachine *gThe = NULL;        // the one XS6 virtual machine running
-
-xsCallback xsHostModuleAt(xsIndex i)
-{
-    return NULL;
-}
-
-extern void mc_setup(xsMachine *the);
 #ifdef mxDebug
-TaskHandle_t gMainTask = NULL;
+	xsMachine *gThe = NULL;		// main VM
+	TaskHandle_t gMainTask = NULL;
 #endif
 
-void xsTask(void *pvParameter);
+static void xsTask(void *pvParameter);
 
 #define kStack ((10 * 1024) / sizeof(StackType_t))
 
-void xs_setup() {
+void xs_setup(void)
+{
 	xTaskCreate(xsTask, "main", kStack, NULL, 4, NULL);
-	vTaskStartScheduler();
 }
 
-void xsTask(void *pvParameter) {
+void xsTask(void *pvParameter)
+{
+	xsMachine *the;
 
-	taskYIELD();
 #ifdef mxDebug
 	gMainTask = xTaskGetCurrentTaskHandle();
 	setupDebugger();
 #endif
 
-    gThe = ESP_cloneMachine(0, 0, 0, 0);
+	the = ESP_cloneMachine(0, 0, 0, 0);
+#ifdef mxDebug
+	gThe = the;
+#endif
 
-	mc_setup(gThe);
+	mc_setup(the);
 
-	xs_start();
-}
-
-void xs_loop(void)
-{
-    if (!gThe)
-        return;
-
-    modTimersExecute();
-	modMessageService(gThe, modTimersNext());
-}
-
-
-void xs_start() {
 	while (1) {
 #ifdef mxDebug
-		uint32_t num;
-		num = ulTaskNotifyTake(pdTRUE, 0);
-		if (num) {
-			// got notification from usb driver that there is data available.
+		uint32_t num = ulTaskNotifyTake(pdTRUE, 0);
+		if (num)	// notification from usb driver that there is data available.
 			fxReceiveLoop();
-		}
 #endif
-		xs_loop();
+
+		modTimersExecute();
+		modMessageService(the, modTimersNext());
 	}
 }
-
