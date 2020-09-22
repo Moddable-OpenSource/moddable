@@ -127,6 +127,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-dtr")) {
 			self->dtr = 1;
 		}
+		else if (!strcmp(argv[argi], "-programming")) {
+			self->programming = 1;
+		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
 			return 1;

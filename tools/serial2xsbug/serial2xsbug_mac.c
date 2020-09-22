@@ -28,6 +28,7 @@ struct txSerialDescriptionStruct {
 	char path[1];
 };
 
+static void fxProgrammingModeSerial(txSerialTool self);
 static void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
 static void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
 static void fxRegisterSerial(void *refcon, io_iterator_t iterator);
@@ -191,10 +192,40 @@ void fxOpenSerial(txSerialTool self)
 	self->serialSource = CFSocketCreateRunLoopSource(NULL, self->serialSocket, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), self->serialSource, kCFRunLoopCommonModes);
 
+	if (self->programming) {
+#if mxTraceCommands
+		fprintf(stderr, "### programming mode\n");
+#endif
+		fxProgrammingModeSerial(self);
+		exit(0);
+	}
+
 	if (first) {
 		first = false;
 		fxRestart(self);
 	}
+}
+
+void fxProgrammingModeSerial(txSerialTool self)
+{
+	int fd = CFSocketGetNative(self->serialSocket), flags;
+	ioctl(fd, TIOCMGET, &flags);
+
+	flags |= TIOCM_RTS | TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(10 * 1000);
+
+	flags &= ~TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(100 * 1000);
+
+	flags &= ~TIOCM_RTS;
+	flags |= TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(50 * 1000);
+
+	flags &= ~TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
 }
 
 void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context)

@@ -154,6 +154,7 @@ struct txSerialToolStruct {
 	char* host;
 	int port;
 	int dtr;
+	int programming;
 	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	int index;
