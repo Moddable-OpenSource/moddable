@@ -37,11 +37,9 @@ ifeq ($(HOST_OS),Darwin)
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
-		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial 1
 	else
 		DO_XSBUG =
 		KILL_SERIAL_2_XSBUG =
-		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerial 0
 	endif
 else
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
@@ -630,17 +628,22 @@ VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 %.d:
 .PRECIOUS: %.d %.o
 
+PROGRAMMING_MODE=serial2xsbug BEEF:CAFE 921600 8N1 -programming
+CONNECT_XSBUG=serial2xsbug BEEF:CAFE 921600 8N1
+
 all: precursor $(BIN_DIR)/xs_nrf52.uf2
-	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
+	$(PROGRAMMING_MODE)
+	$(WAIT_FOR_M4)
 	$(DO_XSBUG)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
-	$(WAIT_FOR_NEW_SERIAL)
+	$(CONNECT_XSBUG)
 
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
-	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
+	$(PROGRAMMING_MODE)
+	$(WAIT_FOR_M4)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 
