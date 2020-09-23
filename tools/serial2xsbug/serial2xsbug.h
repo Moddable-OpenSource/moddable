@@ -147,6 +147,8 @@ struct txSerialToolStruct {
 	HANDLE events[2 + mxMachinesCount];
 #endif
 	char* path;
+	int vendorID;
+	int productID;
 	int baud;
 	int data;
 	int parity;

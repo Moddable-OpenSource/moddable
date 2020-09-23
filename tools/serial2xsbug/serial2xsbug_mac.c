@@ -262,7 +262,22 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
     io_service_t usbDevice;
     while ((usbDevice = IOIteratorNext(iterator))) {
 		kern_return_t kr;
-		CFTypeRef typeRef;
+		CFTypeRef typeRef, vendorRef, productRef;
+		int vendorID = 0, productID = 0;
+		int match = 0;
+
+		vendorRef = IORegistryEntrySearchCFProperty(usbDevice, kIOServicePlane, CFSTR("idVendor"),
+											kCFAllocatorDefault, kIORegistryIterateRecursively | kIORegistryIterateParents);
+		if (vendorRef)
+			CFNumberGetValue(vendorRef , kCFNumberIntType, &vendorID);
+
+		productRef = IORegistryEntrySearchCFProperty(usbDevice, kIOServicePlane, CFSTR("idProduct"),
+											kCFAllocatorDefault, kIORegistryIterateRecursively | kIORegistryIterateParents);
+		if (productRef)
+			CFNumberGetValue(productRef , kCFNumberIntType, &productID);
+
+		match = (!self->productID || (productID == self->productID)) &&
+			 		(!self->vendorID || (vendorID == self->vendorID));
 
 		if ((typeRef = IORegistryEntryCreateCFProperty(usbDevice, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0))) {
 			CFIndex length = CFStringGetLength(typeRef);
@@ -271,6 +286,13 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 			if (description) {
 				description->tool = self;
 				CFStringGetCString(typeRef, &description->path[0], maxSize + 1, kCFStringEncodingUTF8);
+				if (!strcmp(self->path, "") && match) {
+					self->path = malloc(strlen(description->path) + 1);
+					strcpy(self->path, description->path);
+					// fprintf(stderr, "product/vendor match: %s\n", description->path);
+					fxOpenSerial(self);
+				}
+				else
 				if (!strcmp(self->path, description->path)
 						&& IOServiceAddInterestNotification(self->notificationPort, usbDevice, kIOGeneralInterest, fxUnregisterSerial, description, &description->notification) == KERN_SUCCESS) {
 					fxOpenSerial(self);
@@ -279,6 +301,7 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 					free(description);
 			}
 		}
+
 		kr = IOObjectRelease(usbDevice);
 	}
 }
@@ -339,10 +362,10 @@ int main(int argc, char* argv[])
 	int result = fxArguments(self, argc, argv);
 	if (result)
 		return result;
-    CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOSerialBSDServiceValue);
+	CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOSerialBSDServiceValue);
 	self->notificationPort = IONotificationPortCreate(kIOMasterPortDefault);
-    CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(self->notificationPort);
-    CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopDefaultMode);
+	CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(self->notificationPort);
+	CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopDefaultMode);
 	IOServiceAddMatchingNotification(self->notificationPort, kIOPublishNotification, matchingDict, fxRegisterSerial, self, &self->ioIterator);
 	fxRegisterSerial(self, self->ioIterator);
 
