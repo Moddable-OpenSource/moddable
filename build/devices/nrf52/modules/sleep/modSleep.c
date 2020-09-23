@@ -400,54 +400,23 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
 
-	// calculate ram slaves and sections not in use that can be powered off
-	uint32_t heap_end = (uint32_t)&__HeapLimit;
-	uint32_t heap_free = nrf52_memory_remaining();
-	uint32_t heap_unused_base = heap_end - heap_free;
-	uint32_t heap_start_slave, heap_start_section;
-	uint32_t heap_end_slave, heap_end_section;
-	getRAMSlaveAndSection(heap_unused_base, &heap_start_slave, &heap_start_section);
-	getRAMSlaveAndSection(heap_end, &heap_end_slave, &heap_end_section);
-	
-	// The heap_end_slave and heap_end_section values correspond to the slave/section containing the top of the heap.
-	// We don't want to power down this area because it lives in the same slave/section as the stack.
-	if (8 == heap_end_slave && 5 == heap_end_section)
-		--heap_end_section;
-	
-	// The heap_start_slave and heap_start section values corresponds to the slave/section containing the start of free heap space.
-	// We don't want to power down this section, since ram is in use immediately below within the same section.
-	++heap_start_section;
-	if (8 == heap_start_slave) {
-		if (heap_start_section >= heap_end_section) {
-			heap_start_section = heap_end_section;
-		}
+	// power off all ram except for stack and heap areas
+	// note that slaves 0-7 have two 4 KB sections and slave 8 has six 32 KB sections
+	if (softdevice_enabled()) {
+		sd_power_ram_power_clr(4, 0x03);
+		sd_power_ram_power_clr(5, 0x03);
+		sd_power_ram_power_clr(6, 0x03);
+		sd_power_ram_power_clr(7, 0x03);
+		sd_power_ram_power_clr(8, 0x1F);
 	}
 	else {
-		if (heap_start_section > 1) {
-			heap_start_section = 0;
-			++heap_start_slave;
-		}
+		NRF_POWER->RAM[4].POWERCLR = 0x03;	// sections 0-1
+		NRF_POWER->RAM[5].POWERCLR = 0x03;
+		NRF_POWER->RAM[6].POWERCLR = 0x03;
+		NRF_POWER->RAM[7].POWERCLR = 0x03;
+		NRF_POWER->RAM[8].POWERCLR = 0x1F;	// sections 0-4
 	}
-	
-	// power off ram not in use
-	// note that slaves 0-7 have two 4 KB sections and slave 8 has six 32 KB sections
-	uint32_t i, j, bits;
-	for (i = heap_start_slave; i <= heap_end_slave; ++i) {
-		uint32_t bits = 0;
-		if (heap_start_slave == i) {
-			for (j = heap_start_section; j <= (heap_start_slave < 8 ? 1 : 5); ++j)
-				bits |= 1L << j;
-		}
-		else if (heap_end_slave == i) {
-			for (j = heap_end_section; j <= (heap_end_slave < 8 ? 1 : 5); ++j)
-				bits |= 1L << j;
-		}
-		else {
-			bits = (8 == i) ? 0x1f : 0x3;	// power off all sections in slaves between start and end slave
-		}
-		NRF_POWER->RAM[i].POWERCLR = bits;
-	}
-	
+		
 	// wait for event - hopefully the rtc
 	if (softdevice_enabled()) {
 		uint32_t err_code = sd_app_evt_wait();
