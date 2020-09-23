@@ -234,9 +234,7 @@ void PiuApplicationReflow(void* it, PiuFlags flags)
 	else if (flags & piuContentsVerticallyChanged)
 		(*self)->flags |= piuContentsVerticallyChanged;
 	(*self)->flags |= piuContentsPlaced;
-#ifdef piuMC
     PiuViewReflow((*self)->view);
-#endif
 }
 
 void PiuApplicationResize(PiuApplication* self)
@@ -257,7 +255,7 @@ void PiuApplicationResize(PiuApplication* self)
 	PiuContainerMeasureVertically(self);
 	PiuContainerFitVertically(self);
 	(*self)->flags &= ~piuAdjusting;
-	PiuApplicationAdjust(self);
+    PiuViewReflow(view);
 }
 
 void PiuApplicationSetFocus(PiuApplication* self, void* it)

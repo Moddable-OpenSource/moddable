@@ -63,9 +63,13 @@ class Screen extends config.Screen {
 				}
 			}, 5);
 		}
+// 		this.ticks = Time.ticks;
 		this.timer = Timer.set(() => {
+// 			const ticks = Time.ticks;
+// 			trace(`onIdle ${ticks - this.ticks}\n`);
+// 			this.ticks = ticks;
 			this.context.onIdle();
-		}, 0x7FFFFFFF, 0x7FFFFFFF);
+		}, 0x7FFF, 0x7FFF);
 	}
 	get rotation() {
 		return super.rotation;
@@ -95,10 +99,18 @@ class Screen extends config.Screen {
 	clear() {
 	}
 	start(interval) {
-		Timer.schedule(this.timer, interval, 0x7FFFFFFF);
+		if (interval <= 5)
+			interval = 5;
+		if (this.timer.interval === interval)
+			return;
+// 		trace(`schedule ${interval}\n`);
+		Timer.schedule(this.timer, interval, interval);
+		this.timer.interval = interval;
 	}
 	stop() {
-		Timer.schedule(this.timer, 0x7FFFFFFF, 0x7FFFFFFF);
+// 		trace(`schedule 0x7FFF\n`);
+		Timer.schedule(this.timer, 0x7FFF, 0x7FFF);
+		delete this.timer.interval;
 	}
 }
 
