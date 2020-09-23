@@ -28,18 +28,22 @@ PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
 
 UF2_VOLUME_NAME ?= MODDABLE4
+M4_VID ?= BEEF
+M4_PID ?= CAFE
 
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
-	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForFile $(UF2_VOLUME_PATH)
+	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(M4_VID) $(M4_PID) $(UF2_VOLUME_PATH)
+	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
-		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+		CONNECT_XSBUG=serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
 	else
 		DO_XSBUG =
-		KILL_SERIAL_2_XSBUG =
+		CONNECT_XSBUG =
 	endif
 else
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
@@ -628,13 +632,9 @@ VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 %.d:
 .PRECIOUS: %.d %.o
 
-PROGRAMMING_MODE=serial2xsbug BEEF:CAFE 921600 8N1 -programming
-CONNECT_XSBUG=serial2xsbug BEEF:CAFE 921600 8N1
-
 all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(KILL_SERIAL_2_XSBUG)
 	$(PROGRAMMING_MODE)
-	$(WAIT_FOR_M4)
 	$(DO_XSBUG)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
@@ -643,7 +643,6 @@ all: precursor $(BIN_DIR)/xs_nrf52.uf2
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(KILL_SERIAL_2_XSBUG)
 	$(PROGRAMMING_MODE)
-	$(WAIT_FOR_M4)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 
@@ -707,10 +706,9 @@ installDFU: all dfu-package
 	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b 115200 --singlebank --touch 1200
 
 xsbug:
-	$(WAIT_FOR_M4)
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
-	$(WAIT_FOR_NEW_SERIAL)
+	$(CONNECT_XSBUG)
 	
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(KILL_SERIAL_2_XSBUG)
