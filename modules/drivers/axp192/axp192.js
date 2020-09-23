@@ -106,10 +106,7 @@ class GPIO {
 
 export default class AXP192 extends SMBus {
   constructor(it) {
-    if (it.address == null) {
-      it.address = 0x34;
-    }
-    super(it);
+    super({ address: 0x34, ...it });
     this._dcdc1 = new DCDC({ register: 0x26, parent: this });
     this._dcdc2 = new DCDC({ register: 0x23, parent: this });
     this._dcdc3 = new DCDC({ register: 0x27, parent: this });
