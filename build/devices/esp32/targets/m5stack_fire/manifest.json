@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/pins/smbus/manifest.json"
+		"$(MODDABLE)/modules/pins/smbus/manifest.json",
+		"$(MODDABLE)/modules/pins/digital/monitor/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
@@ -84,25 +85,24 @@
 		"*": [
 			"$(MODULES)/drivers/neopixel/*",
 			"$(MODULES)/drivers/neopixel/esp32/*",
-			"$(MODULES)/pins/digital/monitor/*",
-			"$(MODULES)/pins/digital/monitor/esp32/*",
 			"$(MODULES)/drivers/mpu6050/*",
 			"$(MODULES)/drivers/mag3110/*",
 			
 			"$(MODULES)/pins/audioin/*",
-			"$(MODULES)/pins/audioin/esp32/*"
+			"$(MODULES)/pins/audioin/esp32/*",
+			"./m5button"
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
 	},
 	"preload": [
 		"neopixel",
-		"monitor",
 		"pins/audioout",
 		"audioin",
 		"setup/target",
 		"mpu6050",
 		"mag3110",
+		"m5button"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",

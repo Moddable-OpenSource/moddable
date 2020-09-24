@@ -15,13 +15,16 @@
 			"$(MODULES)/drivers/neopixel/esp32/*",
 
 			"$(MODULES)/pins/audioin/*",
-			"$(MODULES)/pins/audioin/esp32/*"
+			"$(MODULES)/pins/audioin/esp32/*",
+
+			"../m5stack_fire/m5button"
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"audioin",
+		"m5button",
 		"neopixel",
 		"pins/audioout",
 		"setup/target"
@@ -52,7 +55,7 @@
 		"neopixel": {
 			"length": 1,
 			"pin": 27,
-			"order": "#RGB",
+			"order": "#GRB",
 			"rmt_channel": "RMT_CHANNEL_0"
 		}
 	}

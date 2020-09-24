@@ -9,11 +9,13 @@
 	"modules": {
 		"*": [
 			"$(MODULES)/drivers/neopixel/*",
-			"$(MODULES)/drivers/neopixel/esp32/*"
+			"$(MODULES)/drivers/neopixel/esp32/*",
+			"../m5stack_fire/m5button"
 		],
 		"setup/target": "./setup-target"
 	},
 	"preload": [
+		"m5button",
 		"neopixel",
 		"setup/target"
 	],

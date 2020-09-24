@@ -3,12 +3,6 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 	],
 	"modules": {
-		"*": "./main",
-	},
-	"platforms": {
-		"esp32/m5atom_matrix": {},
-		"...": {
-			"error": "esp32/m5atom_matrix only"
-		}
-	},
+		"*": "./main"
+	}
 }

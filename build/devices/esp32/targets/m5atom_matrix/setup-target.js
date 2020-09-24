@@ -1,7 +1,6 @@
 import Timer from "timer";
 
-import Digital from "pins/digital";
-import Monitor from "pins/digital/monitor";
+import M5Button from "m5button";
 
 import NeoPixel from "neopixel";
 import MPU6886 from "mpu6886";
@@ -21,11 +20,8 @@ class Accelerometer {
 
 			this.#sensor.configure({ operation: "accelerometer" });
 			const sample = this.#sensor.sample();
-			if (sample) {
-				sample.y *= -1;
-				sample.z *= -1;
+			if (sample)
 				this.onreading(sample);
-			}
 		}, frequency);
 	}
 	stop() {
@@ -50,14 +46,8 @@ class Gyro {
 
 			this.#sensor.configure({ operation: "gyroscope" });
 			const sample = this.#sensor.sample();
-			if (sample) {
-				let {x, y, z} = sample;
-				const temp = x;
-				x = y * -1;
-				y = temp * -1;
-				z *= -1;
-				this.onreading({ x, y, z });
-			}
+			if (sample)
+				this.onreading({x: -sample.y, y: -sample.x, z: sample.z});
 		}, frequency);
 	}
 	stop() {
@@ -69,10 +59,9 @@ class Gyro {
 
 export default function (done) {
 	globalThis.button = {
-		a: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
+		a: new M5Button(39)
 	};
-	button.a.onChanged = nop;
-	
+
 	globalThis.lights = new NeoPixel({});
 
 	const sensor = new MPU6886;
@@ -80,7 +69,4 @@ export default function (done) {
 	globalThis.gyro = new Gyro(sensor);
 
 	done();
-}
-
-function nop() {
 }
