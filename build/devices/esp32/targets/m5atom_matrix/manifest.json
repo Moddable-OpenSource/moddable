@@ -29,7 +29,7 @@
 		"neopixel": {
 			"length": 25,
 			"pin": 27,
-			"order": "#RGB",
+			"order": "#GRB",
 			"rmt_channel": "RMT_CHANNEL_0"
 		},
 	}
