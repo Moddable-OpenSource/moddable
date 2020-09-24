@@ -5,7 +5,7 @@
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7735/manifest.json",
-		"$(MODDABLE)/modules/drivers/axp192/manifest.json"
+		"$(MODDABLE)/modules/drivers/axp192/manifest.json",
 		"$(MODDABLE)/modules/pins/smbus/manifest.json"
 	],
 	"config": {
@@ -71,12 +71,12 @@
 			"$(MODULES)/drivers/sh200q/*"
 			
 		],
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"monitor",
 		"setup/target",
 		"mpu6886",
-		"sh200q",
+		"sh200q"
 	]
 }

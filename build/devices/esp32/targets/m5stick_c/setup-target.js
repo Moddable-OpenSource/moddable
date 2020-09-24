@@ -27,13 +27,9 @@ export default function (done) {
 	};
 	button.a.onChanged = button.b.onChanged = nop;
 
-	global.power = new AXP192({
-		sda: 21,
-		scl: 22,
-		address: 0x34
-	});
+  global.power = new Power();
 
-	state.accelerometerGyro = new IMU;
+  state.accelerometerGyro = new IMU();
 
 	global.accelerometer = {
 		onreading: nop
@@ -122,6 +118,48 @@ export default function (done) {
 }
 
 function nop() {}
+
+class Power extends AXP192 {
+  constructor() {
+    super({
+      sda: 21,
+      scl: 22,
+    });
+    // TODO: Use class method rather than directly accessing register
+    this.write(0x10, 0xff); // OLED VPP Enable
+    this.write(0x28, 0xff); // Enable LDO2&LDO3, LED&TFT 3.3V
+    this.write(0x82, 0xff); // Enable all the ADCs
+    this.write(0x33, 0xc0); // Enable Charging, 100mA, 4.2V End at 0.9
+    this.write(0xb8, 0x80); // Enable Colume Counter
+    this.write(0x12, 0x4d); // Enable DC-DC1, OLED VDD, 5B V EXT
+    this.write(0x36, 0x5c); // PEK
+    this.write(0x90, 0x02); // gpio0
+  }
+
+  set brightness(brightness) {
+    const b = (brightness & 0x0f) << 4;
+    this.writeByte(0x28, b);
+  }
+
+  /**
+   * sets the screen brightness
+   * @param {*} brightness brightness between 7-15
+   * @deprecated Use setter
+   */
+  setBrightness(brightness) {
+    trace("WARNING: AXP192#setBrightness is deprecated. use setter");
+    this.brightness = brightness;
+  }
+
+  /**
+   * @deprecated
+   */
+  initialize() {
+    trace(
+      "WARNING: AXP192#initialize is deprecated. no need to initialize explicitly"
+    );
+  }
+}
 
 class IMU {
 	constructor() {
