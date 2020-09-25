@@ -1,7 +1,5 @@
 import NeoPixel from "neopixel";
 
-import Digital from "pins/digital";
-import Monitor from "monitor";
 
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
@@ -9,6 +7,7 @@ import Resource from "Resource";
 import Timer from "timer";
 import MPU6050 from "mpu6050";
 import MAG3110 from "mag3110";
+import M5Button from "m5button";
 
 import config from "mc/config";
 
@@ -16,16 +15,14 @@ const state = {
 	handleRotation: nop
 };
 
-
 export default function (done) {
 	globalThis.lights = new NeoPixel({});
 
 	globalThis.button = {
-		a: new Monitor({pin: 39, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
-		b: new Monitor({pin: 38, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
-		c: new Monitor({pin: 37, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling}),
+		a: new M5Button(39),
+		b: new M5Button(38),
+		c: new M5Button(37)
 	};
-	button.a.onChanged = button.b.onChanged = button.c.onChanged = nop;
 
 	if (config.speaker) {
 		globalThis.speaker = new AudioOut({streams: 4});

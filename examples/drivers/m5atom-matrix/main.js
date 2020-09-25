@@ -12,10 +12,16 @@
  *
  */
 
+if (!globalThis.lights || !globalThis.accelerometer || !globalThis.button)
+	throw new Error("this M5 example requires lights, accelerometer, and a button");
+
 let random = false;
+
 
 let brightness = 126;
 lights.brightness = brightness;
+
+let buttonPressed = false;
 
 accelerometer.onreading = function(values) {
 	if (random) {
@@ -24,14 +30,14 @@ accelerometer.onreading = function(values) {
 			lights.setPixel(i, lights.makeRGB(255 * Math.random(), 255 * Math.random(), 255 * Math.random()));
 	}
 	else {
-		// Change colour of 5x5 matrix depending on orientation
+		// Change colour of lights depending on orientation
 		const x = Math.min(Math.max(values.x, -1), 1) / 2;
 		const y = Math.min(Math.max(values.y, -1), 1) / 2;
 		const z = Math.min(Math.max(values.z, -1), 1) / 2;
 		lights.fill(lights.makeRGB((128 + x * 255) | 0, (128 + y * 255) | 0, (128 + z * 255) | 0));
 	}
 
-	if (!button.a.read()) {
+	if (buttonPressed) {
 		// adjust brightness
 		brightness += 5;
 		if (brightness >= 255)
@@ -47,7 +53,8 @@ accelerometer.start(50);
 // double click of button toggles random lights
 let last = 0;
 button.a.onChanged = function() {
-	if (button.a.read())
+	buttonPressed = !button.a.read();
+	if (!buttonPressed)
 		return;
 
 	const now = Date.now();

@@ -1,0 +1,94 @@
+{
+	"build": {
+		"UPLOAD_SPEED": "1500000",
+		"DEBUGGER_SPEED": "921600"
+	},
+	"include": [
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
+		"$(MODDABLE)/modules/drivers/axp192/manifest.json"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "ft6206",
+		"startupSound": "bflatmajor.maud"
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 32,
+			"scl_pin": 33
+		},
+		"spi": {
+			"mosi_pin": 23,
+			"miso_pin": 38,
+			"sck_pin": 18
+		},
+		"ili9341": {
+			"hz": 32000000,
+			"width": 320,
+			"height": 240,
+			"cs_pin": 5,
+			"dc_pin": 15,
+			"spi_port": "VSPI_HOST",
+			"registers": [
+				"0x01, 0,",
+				"0xC8, 3, 0xFF, 0x93, 0x42,",
+				"0xC0, 2, 0x12, 0x12,",
+				"0xC1, 1, 0x03,",
+				"0xB0, 1, 0xE0,",
+				"0xF6, 3, 0x00, 0x01, 0x01,",
+				"0x36, 1, 0x08,",
+				"0x3A, 1, 0x55,",
+				"0xB6, 3, 0x08, 0x82, 0x27,",
+				"0xE0, 15, 0x00 ,0x0C ,0x11 ,0x04 ,0x11 ,0x08 ,0x37 ,0x89 ,0x4C ,0x06 ,0x0C ,0x0A ,0x2E ,0x34 ,0x0F,",
+				"0xE1, 15 ,0x00 ,0x0B ,0x11 ,0x05 ,0x13 ,0x09 ,0x33 ,0x67 ,0x48 ,0x07 ,0x0E ,0x0B ,0x2E ,0x33 ,0x0F,",
+				"0x11, 0,",
+				"0x29, 0,",
+				"0x21, 0,",
+				"0xFF, 0"
+			],
+		},
+		"ft6206": {
+			"width": 320,
+			"height": 280,
+			"hz": 400000,
+			"sda": 21,
+			"scl": 22,
+			"threshold": 128,
+			"flipX": false,
+			"flipY": false,
+			"fitX": false,
+			"fitY": false
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 11025,
+			"volume_divider": 1,
+			"i2s": {
+				"DAC_CHANNEL": 1,
+				"bitsPerSample": 16,
+				"bck_pin": 12,
+				"lr_pin": 0,
+				"dataout_pin": 2
+			}
+		}
+	},
+	"modules": {
+		"setup/target": "./setup-target",
+		"pins/audioout": "$(MODULES)/pins/i2s/*",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"*": [
+			"$(MODULES)/drivers/mpu6886/*",
+		]
+	},
+	"preload": [
+		"pins/audioout",
+		"setup/target",
+		"mpu6886",
+		"pins/smbus"
+	],
+	"resources": {
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
+	},
+}

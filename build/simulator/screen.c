@@ -179,7 +179,6 @@ void fxScreenIdle(txScreen* screen)
 				xsVar(0) = xsGet(xsGlobal, xsID_screen);
 				when = xsToNumber(xsGet(xsVar(0), xsID_when));
 				if (!c_isnan(when) && (when <= fxDateNow())) {
-					fprintf(stderr, "# IDLE\n");
 					xsVar(1) = xsGet(xsVar(0), xsID_context);
 					if (xsTest(xsVar(1))) {
 						if (xsFindResult(xsVar(1), xsID_onIdle)) {

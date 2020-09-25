@@ -898,6 +898,8 @@ void PiuViewReschedule(PiuView* self)
 
 PiuTick PiuViewTicks(PiuView* self)
 {
+	if ((*self)->idleTicks)
+		return (*self)->idleTicks;
 	return modMilliseconds();
 }
 
@@ -1337,6 +1339,7 @@ void PiuView_onIdle(xsMachine* the)
 	if (!application) return;
 	xsVars(2);
 	(*self)->updating = 1;
+	(*self)->idleTicks = PiuViewTicks(self);
 	PiuApplicationDeferContents(the, application);
 	PiuApplicationIdleContents(application);
 	PiuApplicationTouchIdle(application);
@@ -1344,6 +1347,7 @@ void PiuView_onIdle(xsMachine* the)
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 #ifdef piuGPU
 	modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
 #endif		
@@ -1355,6 +1359,7 @@ void PiuView_onMessage(xsMachine* the)
 	PiuApplication* application = (*self)->application;
 	if (!application) return;
 	(*self)->updating = 1;
+	(*self)->idleTicks = PiuViewTicks(self);
 	if ((*application)->behavior) {
 		xsVars(2);
 		xsVar(0) = xsReference((*application)->behavior);
@@ -1367,6 +1372,7 @@ void PiuView_onMessage(xsMachine* the)
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchBegan(xsMachine* the)
@@ -1391,11 +1397,13 @@ void PiuView_onTouchBegan(xsMachine* the)
 	y = c; 
 #endif
 	(*self)->updating = 1;
+	(*self)->idleTicks = ticks;
 	PiuApplicationTouchBegan(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchEnded(xsMachine* the)
@@ -1420,11 +1428,13 @@ void PiuView_onTouchEnded(xsMachine* the)
 	y = c; 
 #endif
 	(*self)->updating = 1;
+	(*self)->idleTicks = ticks;
 	PiuApplicationTouchEnded(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchMoved(xsMachine* the)

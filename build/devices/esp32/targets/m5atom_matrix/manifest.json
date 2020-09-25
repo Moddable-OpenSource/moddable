@@ -12,11 +12,13 @@
 			"$(MODULES)/drivers/neopixel/*",
 			"$(MODULES)/drivers/neopixel/esp32/*",
 
-			"$(MODULES)/drivers/mpu6886/*"
+			"$(MODULES)/drivers/mpu6886/*",
+			"../m5stack_fire/m5button"
 		],
 		"setup/target": "./setup-target"
 	},
 	"preload": [
+		"m5button",
 		"mpu6886",
 		"neopixel",
 		"setup/target"
@@ -29,7 +31,7 @@
 		"neopixel": {
 			"length": 25,
 			"pin": 27,
-			"order": "#RGB",
+			"order": "#GRB",
 			"rmt_channel": "RMT_CHANNEL_0"
 		},
 	}
