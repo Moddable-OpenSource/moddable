@@ -1138,8 +1138,8 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		buffer.value.proxy.target = fxProjectSlot(the, snapshot->firstProjection, slot->value.proxy.target);
 		break;
 	case XS_REGEXP_KIND:
-		buffer.value.regexp.code = (void*)fxProjectChunk(the, the);
-		buffer.value.regexp.data = (void*)fxProjectChunk(the, the);
+		buffer.value.regexp.code = (void*)fxProjectChunk(the, slot->value.regexp.code);
+		buffer.value.regexp.data = (void*)fxProjectChunk(the, slot->value.regexp.data);
 		break;
 		
 	case XS_ACCESSOR_KIND:
