@@ -57,8 +57,7 @@ void xsTask(void *pvParameter)
 
 	while (1) {
 #ifdef mxDebug
-		uint32_t num = ulTaskNotifyTake(pdTRUE, 0);
-		if (num)	// notification from usb driver that there is data available.
+		if (ulTaskNotifyTake(pdTRUE, 0))	// notification from usb driver that there is data available.
 			fxReceiveLoop();
 #endif
 
