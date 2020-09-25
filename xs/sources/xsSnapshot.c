@@ -1005,10 +1005,17 @@ void fxWriteChunkZero(txMachine* the, txSnapshot* snapshot, txSize size)
 
 void fxWriteChunks(txMachine* the, txSnapshot* snapshot)
 {
-	txSlot* heap = the->firstHeap;
+	txSlot* heap;
+	txSlot* stack;
+	stack = the->stackTop - 1;
+	while (stack >= the->stack) {
+		fxWriteChunk(the, snapshot, stack);
+		stack--;
+	}
+	heap = the->firstHeap;
 	while (heap) {
-		txSlot* slot = heap + 1;
-		txSlot* limit = heap->value.reference;
+			txSlot* slot = heap + 1;
+			txSlot* limit = heap->value.reference;
 		while (slot < limit) {
 			if (!(slot->flag & XS_MARK_FLAG)) {
 				fxWriteChunk(the, snapshot, slot);
@@ -1215,6 +1222,7 @@ void fxWriteStack(txMachine* the, txSnapshot* snapshot)
 int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 {
 	txSlot* heap;
+	txSlot* stack;
 	txSize size;
 	txByte byte;
 	txProjection** projectionAddress = &(snapshot->firstProjection);
@@ -1230,13 +1238,18 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	mxTry(the) {
 		snapshot->error = 0;
 		fxCollectGarbage(the);
-	
+				
 		heap = the->freeHeap;
 		while (heap) {
 			heap->flag |= XS_MARK_FLAG;
 			heap = heap->next;
 		}
 	
+		stack = the->stackTop - 1;
+		while (stack >= the->stack) {
+			fxMeasureSlot(the, snapshot, stack, &chunkSize);
+			stack--;
+		}
 		heap = the->firstHeap;
 		while (heap) {
 			txSlot* slot = heap + 1;
@@ -1259,6 +1272,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		}
 		slotSize--;
 		slotSize *= sizeof(txSlot);
+		
 	
 		creation.initialChunkSize = the->maximumChunksSize;
 		creation.incrementalChunkSize = the->minimumChunksSize;
