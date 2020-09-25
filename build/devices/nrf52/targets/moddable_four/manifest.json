@@ -2,7 +2,9 @@
 	"include": [
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
 		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(MODULES)/pins/pulsecount/manifest.json",
+		"$(MODULES)/drivers/jogdial/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
 		"$(MODULES)/pins/smbus/manifest.json"
 	],
 	"config": {
@@ -27,16 +29,12 @@
 		}
 	},
    "modules": {
-		"driver/jogdial": "./jogdial",
-		"true/jogdial": "$(MODULES)/drivers/jogdial/*",
 		"setup/target": "./setup-target",
 		"*": [
 			"$(MODULES)/drivers/lis3dh/*"
 		]
    },
     "preload": [
-		"driver/jogdial",
-		"true/jogdial",
 		"lis3dh",
 		"setup/target"
    ],

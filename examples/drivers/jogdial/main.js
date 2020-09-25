@@ -1,6 +1,4 @@
-import JogDial from "driver/jogdial";
-
-const jog = new JogDial({
+new Host.JogDial({
 	onTurn(delta) {
 		trace(`Turn ${delta}\n`);
 	},
