@@ -26,7 +26,7 @@
 		}
 	},
     "modules": {
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
     },
     "preload": [
 		"setup/target"
@@ -59,12 +59,7 @@
 			"cs_pin": "NRF_GPIO_PIN_MAP(1,13)",
 			"disp_pin": "NRF_GPIO_PIN_MAP(1,1)",
 			"dither": 1,
-			"updateAll": 0,
-		},
-		"click_wheel": {
-			"enc_a": "NRF_GPIO_PIN_MAP(0,6)",
-			"enc_b": "NRF_GPIO_PIN_MAP(0,8)",
-			"enc_sw": "NRF_GPIO_PIN_MAP(0,11)"
+			"updateAll": 0
 		}
 	}
 }

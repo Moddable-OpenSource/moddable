@@ -1,32 +1,31 @@
-import Timer from "timer";
 import Digital from "pins/digital";
-import Monitor from "monitor";
-import PulseCount from "pins/pulsecount";
+import Monitor from "pins/digital/monitor";
+import PulseCosunt from "pins/pulsecount";
 import config from "mc/config";
 
-let pulse = new PulseCount({signal: config.click_wheel_a, control: config.click_wheel_b});
-let last = 0;
+new PulseCount({
+		signal: config.jogdial.signal,
+		control: config.jogdial.control,
+		onReadable() {
+			const value = this.read();
+			trace(`pulse changed ${this.read()}\n`);
 
-pulse.onChanged = function() {
-	trace(`pulse changed ${pulse.get()}\n`);
-}
+			// wrap around from -20 to +20
+			if (value < -20)
+				this.write(20);
+			else if (value > 20)
+				this.write(-20);
+		}
+});
 
-let monitor = new Monitor({pin: config.click_wheel_sw, mode: Digital.InputPullUp, edge: Monitor.Falling | Monitor.Rising});
-
+const monitor = new Monitor({
+		pin: config.jogdial.button,
+		mode: Digital.InputPullUp,
+		edge: Monitor.Falling | Monitor.Rising
+});
 monitor.onChanged = function() {
-	if (this.read())						// pulled high. Low when pressed.
-		trace(`click_wheel released\n`);
+	if (this.read())						// Pulled high. Low when pressed.
+		trace(`button released\n`);
 	else
-		trace(`click_wheel pressed\n`);
+		trace(`button pressed\n`);
 }
-
-Timer.repeat(() => {
-	let value = pulse.get();
-	if (value === last) return;
-
-	last = value;
-	trace(value, "\n");
-
-	if (value > 20)
-		pulse.set(0);
-}, 17);
