@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
-		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/pins/pulsecount/manifest.json",
 		"$(MODULES)/pins/smbus/manifest.json"
 	],
 	"config": {
@@ -15,7 +16,7 @@
 		"led1_pin": 7,
 
 		"button1_pin": 13,
-		
+
 		"lis3dh_int1_pin": 14,
 		"lis3dh_int2_pin": 16,
 
@@ -25,12 +26,20 @@
 			"button": 11
 		}
 	},
-    "modules": {
-		"setup/target": "./setup-target"
-    },
+   "modules": {
+		"driver/jogdial": "./jogdial",
+		"true/jogdial": "$(MODULES)/drivers/jogdial/*",
+		"setup/target": "./setup-target",
+		"*": [
+			"$(MODULES)/drivers/lis3dh/*"
+		]
+   },
     "preload": [
+		"driver/jogdial",
+		"true/jogdial",
+		"lis3dh",
 		"setup/target"
-    ],
+   ],
 	"defines": {
 		"debugger": {
 			"xtx_pin": "NRF_GPIO_PIN_MAP(0,30)",

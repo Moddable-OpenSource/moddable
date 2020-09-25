@@ -1,4 +1,4 @@
-import JogDial from "pins/jogdial";
+import JogDial from "driver/jogdial";
 
 const jog = new JogDial({
 	onTurn(delta) {
