@@ -37,10 +37,11 @@ ifeq ($(HOST_OS),Darwin)
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(M4_VID) $(M4_PID) $(UF2_VOLUME_PATH)
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
-		CONNECT_XSBUG=serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+		CONNECT_XSBUG=@echo "Connect to xsbug." ; serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
@@ -638,6 +639,7 @@ all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(DO_XSBUG)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
+	$(WAIT_FOR_COPY_COMPLETE)
 	$(CONNECT_XSBUG)
 
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
@@ -645,6 +647,7 @@ deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(PROGRAMMING_MODE)
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
+	$(WAIT_FOR_COPY_COMPLETE)
 
 build: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Target built: $(BIN_DIR)/xs_nrf52.uf2
