@@ -40,20 +40,19 @@ void xs_microseconds_start(xsMachine *the)
 		NRF_CLOCK->TASKS_HFCLKSTART = 1;
 		while (0 == NRF_CLOCK->EVENTS_HFCLKSTARTED) {}
 	}
-    TIMER->TASKS_STOP = 1;
-    TIMER->TASKS_CLEAR = 1;
-    TIMER->MODE = NRF_TIMER_MODE_TIMER;
+	TIMER->TASKS_STOP = 1;
+	TIMER->TASKS_CLEAR = 1;
+	TIMER->MODE = NRF_TIMER_MODE_TIMER;
 	TIMER->PRESCALER = NRF_TIMER_FREQ_1MHz;
 	TIMER->BITMODE = NRF_TIMER_BIT_WIDTH_32;
-    TIMER->TASKS_START = 1;
+	TIMER->TASKS_START = 1;
 }
 
 void xs_microseconds_stop(xsMachine *the)
 {
 	TIMER->TASKS_CAPTURE[CHANNEL] = 1;
 	xsmcSetInteger(xsResult, TIMER->CC[CHANNEL]);
-	TIMER->TASKS_CAPTURE[CHANNEL] = 0;
-    TIMER->TASKS_STOP = 1;
+	TIMER->TASKS_STOP = 1;
 	NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 	if (softdevice_enabled())
 		sd_clock_hfclk_release();
@@ -65,7 +64,6 @@ void xs_microseconds_get(xsMachine *the)
 {
 	TIMER->TASKS_CAPTURE[CHANNEL] = 1;
 	xsmcSetInteger(xsResult, TIMER->CC[CHANNEL]);
-	TIMER->TASKS_CAPTURE[CHANNEL] = 0;
 }
 
 uint8_t softdevice_enabled(void)
