@@ -1,8 +1,6 @@
-import config from "mc/config";
-import JogDial from "jogdial";
+import JogDial from "pins/jogdial";
 
 const jog = new JogDial({
-	jogdial: config.jogdial,
 	onTurn(delta) {
 		trace(`Turn ${delta}\n`);
 	},

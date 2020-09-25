@@ -28,7 +28,7 @@ typedef struct {
 	xsMachine	*the;
 	xsSlot		obj;
 	xsSlot		onReadable;
-	int			current;		// current value
+	int32_t		current;		// current value
 	uint8_t		changeQueued;
 	uint8_t		hasOnReadable;
 } PulseCountRecord, *PulseCount;
@@ -60,8 +60,8 @@ static void qdec_event_handler(nrfx_qdec_event_t event)
 void xs_pulsecount_destructor(void *data)
 {
 	if (data) {
-		nrfx_qdec_uninit();
 		gPCR = NULL;
+		nrfx_qdec_uninit();
 		c_free(data);
 	}
 }
@@ -89,8 +89,10 @@ void xs_pulsecount(xsMachine *the)
 	pc->the = the;
 
 	pc->obj = xsThis;
-	if (xsmcHas(xsArg(0), xsID_target))
-		xsmcGet(pc->obj, xsArg(0), xsID_target);
+	if (xsmcHas(xsArg(0), xsID_target)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_target);
+		xsmcSet(xsThis, xsID_target, xsVar(0));
+	}
 
 	pc->hasOnReadable = false;
 	if (xsmcHas(xsArg(0), xsID_onReadable)) {

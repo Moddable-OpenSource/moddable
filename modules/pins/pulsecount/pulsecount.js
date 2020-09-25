@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,46 +18,11 @@
  *
  */
 
-import Digital from "pins/digital";
-
 class PulseCount @ "xs_pulsecount_destructor" {
-	#onChanged;
-	#pin;
-	constructor(dictionary) {
-		build.call(this, dictionary);
-		this.#pin = dictionary.signal;
-	}
-	close() {
-		terminate.call(this);
-	}
+	constructor(dictionary) @ "xs_pulsecount";
+	close() @ "xs_pulsecount_close";
 	read() @ "xs_pulsecount_read";
 	write() @ "xs_pulsecount_write";
-	set onChanged(value) {
-		this.#onChanged = value;
-/*
-		if (this.#onChanged) {
-			this.#monitor.onChanged = () => {
-				const value = this.get();
-				if (value === this.#monitor.previous)
-					return;
-
-				this.#monitor.previous = value;
-				this.#onChanged();
-			}
-		}
-		else if (this.#monitor) {
-			this.#monitor.close();
-			this.#monitor = undefined;
-		}
-*/
-	}
-	get onChanged() {
-		return this.#onChanged;
-	}
-};
-Object.freeze(PulseCount.prototype);
-
-function build(dictionary) @ "xs_pulsecount"
-function terminate() @ "xs_pulsecount_close";
+}
 
 export default PulseCount;

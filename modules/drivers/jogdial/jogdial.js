@@ -3,14 +3,14 @@ import Digital from "pins/digital";
 import Monitor from "pins/digital/monitor";
 
 class JogDial {
-	#target;
 	#pulse;
 	#button;
 	#onPush;
 	#onTurn;
 	#onPushAndTurn;
-	constructor(options) {
-		this.#target = options.target ?? this;
+	constructor(options = {}) {
+		if (options.target)
+			this.target = options.target;
 		this.#onPush = options.onPush ?? this.onPush;
 		this.#onTurn = options.onTurn ?? this.onTurn;
 		this.#onPushAndTurn = options.onPushAndTurn ?? this.onPushAndTurn ?? this.#onTurn;
@@ -21,14 +21,15 @@ class JogDial {
 			filter: 1000,
 			target: this,
 			onReadable() {
-				const value = -this.#pulse.read();
-				const delta = value - this.#pulse.previous;
-				this.#pulse.previous = value;
+				const target = this.target, pulse = target.#pulse;
+				const value = -pulse.read();
+				const delta = value - pulse.previous;
+				pulse.previous = value;
 
-				if (this.#button.previous)
-					this.#onTurn.call(this.#target, delta);
+				if (target.#button.previous)
+					target.#onTurn(delta);
 				else
-					this.#onPushAndTurn.call(this.#target, delta);
+					target.#onPushAndTurn(delta);
 			}
 		});
 		this.#pulse.previous = -this.#pulse.read();
@@ -53,7 +54,7 @@ class JogDial {
 			return;
 
 		this.#button.previous = value;
-		this.#onPush.call(this.#target, value);
+		this.#onPush(value);
 	}
 }
 

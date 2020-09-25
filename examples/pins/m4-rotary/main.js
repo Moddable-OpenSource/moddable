@@ -1,6 +1,6 @@
 import Digital from "pins/digital";
 import Monitor from "pins/digital/monitor";
-import PulseCosunt from "pins/pulsecount";
+import PulseCount from "pins/pulsecount";
 import config from "mc/config";
 
 new PulseCount({
