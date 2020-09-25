@@ -28,8 +28,8 @@ PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
 
 UF2_VOLUME_NAME ?= MODDABLE4
-M4_VID ?= BEEF
-M4_PID ?= CAFE
+M4_VID ?= beef
+M4_PID ?= cafe
 
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH)
@@ -49,15 +49,16 @@ ifeq ($(HOST_OS),Darwin)
 else
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
-	WAIT_FOR_M4 = $(PLATFORM_DIR)/config/waitForVolume $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(M4_VID) $(M4_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
-		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerialLinux 1 $(TMP_DIR)/volumename
+		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
 	else
 		DO_XSBUG =
-		KILL_SERIAL_2_XSBUG =
-		WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)/config/waitForNewSerialLinux 0 $(TMP_DIR)/volumename
+		CONNECT_XSBUG =
 	endif
 endif
 
@@ -652,7 +653,13 @@ deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 build: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Target built: $(BIN_DIR)/xs_nrf52.uf2
 
-precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
+SCRIPTS=\
+	$(MODDABLE_TOOLS_DIR)/findUSBLinux
+
+$(MODDABLE_TOOLS_DIR)/findUSBLinux: $(PLATFORM_DIR)/config/findUSBLinux
+	cp  $(PLATFORM_DIR)/config/findUSBLinux $(MODDABLE_TOOLS_DIR)/findUSBLinux
+
+precursor: $(SCRIPTS) $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
 
 env_vars:
 ifndef NRF_SDK_DIR
@@ -712,7 +719,7 @@ xsbug:
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	$(CONNECT_XSBUG)
-	
+
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
