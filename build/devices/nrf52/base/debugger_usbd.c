@@ -20,7 +20,6 @@
 
 #include "xs.h"
 #include "xsPlatform.h"
-#include "mc.defines.h"
 
 #if USE_DEBUGGER_USBD
 
@@ -43,9 +42,6 @@
 #include "ftdi_trace.h"
 
 #include "semphr.h"
-
-// LED to blink when device is ready for host serial connection
-#define LED 7
 
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_acm_user_event_t event);
 static void usbd_user_ev_handler(app_usbd_event_type_t event);
@@ -115,10 +111,9 @@ static int16_t m_tx_buffer_index = 0;
 static char m_rx_buffer[1];
 NRF_QUEUE_DEF(uint8_t, m_rx_queue, 2048, NRF_QUEUE_MODE_OVERFLOW);
 
-static uint8_t m_usb_connected = false;
-static uint8_t m_usb_restarted = false;
-static uint8_t m_usb_reopened = false;
-static uint8_t m_usb_closed = false;
+static volatile uint8_t m_usb_connected = false;
+static volatile uint8_t m_usb_reopened = false;
+static volatile uint8_t m_usb_closed = false;
 
 
 static txBuffer gVendorTxBufferList = NULL;
@@ -139,20 +134,7 @@ static TaskHandle_t m_usbd_thread;
 #define usbMutexGive() xSemaphoreGive(gUSBMutex)
 static SemaphoreHandle_t gUSBMutex = NULL;
 
-
-static void blink(uint16_t times)
-{
-	nrf_gpio_cfg_output(LED);
-	for (uint16_t i = 0; i < times; ++i) {
-		nrf_gpio_pin_write(LED, 0);
-		modDelayMilliseconds(100);
-		nrf_gpio_pin_write(LED, 1);
-		modDelayMilliseconds(100);
-	}
-	nrf_gpio_pin_write(LED, 0);
-}
-
-void setupDebugger()
+void setupDebugger(void)
 {
 	uint32_t count;
 
@@ -160,9 +142,8 @@ void setupDebugger()
 		gUSBMutex = xSemaphoreCreateMutex();
 
 	m_usb_connected = false;
-	m_usb_restarted = false;
 	m_usb_reopened = false;
-	m_usb_closed = false;
+	m_usb_closed = true;
 
 	app_usbd_serial_num_generate();
 
@@ -171,9 +152,11 @@ void setupDebugger()
         
     ftdiTrace("Waiting for USBD port connection");
 	
-	// Wait for host serial port initialization and connection
-    count = 0;
-	while ((!m_usb_connected || !m_usb_reopened) && (count++ < 700)) {
+	// Wait up to 7000 ms for host serial port initialization and connection
+	for (count = 0; count < 700; count++) {
+		if (m_usb_connected && m_usb_reopened)
+			break;
+
 		taskYIELD();
 		modDelayMilliseconds(10);
 	}
@@ -412,9 +395,8 @@ static uint8_t reboot_style[2] = {0, 0};
 static uint32_t reboot_changeTime[2] = {0, 0};
 static void checkLineState(uint16_t line_state, uint8_t which) {
 	uint32_t now = modMilliseconds();
-	uint8_t DTR, RTS;
-	DTR = (line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR);
-	RTS = (line_state & APP_USBD_CDC_ACM_LINE_STATE_RTS);
+	uint8_t DTR = (line_state & APP_USBD_CDC_ACM_LINE_STATE_DTR);
+	uint8_t RTS = (line_state & APP_USBD_CDC_ACM_LINE_STATE_RTS);
 	uint8_t reboot_seq = (DTR ? 1 : 0) + (RTS ? 2 : 0);
 //ftdiTraceAndInt2("checkLineState for intf: ", which, line_state);
 //ftdiTraceAndInt("   previously: ", reboot_style[which]);
@@ -457,7 +439,7 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 			break;
 	}
 
-	reboot_changeTime[which] = modMilliseconds();
+	reboot_changeTime[which] = now;
 }
 
 static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_vendor_user_event_t event)
@@ -595,7 +577,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE: {
     		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_RX_DONE");
-    		
+
     		// The first byte is already in the buffer due to app_usbd_cdc_acm_read()
     		// in the APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN event.
     		uint16_t count = 0;
@@ -681,11 +663,12 @@ void modLog_transmit(const char *msg)
 			fx_putc(gThe, c);
 		fx_putc(gThe, 0);
 	}
-	else
+	else {
 		while (0 != (c = c_read8(msg++)))
 			ESP_putc(c);
-	ESP_putc('\r');
-	ESP_putc('\n');
+		ESP_putc('\r');
+		ESP_putc('\n');
+	}
 }
 
 void ESP_putc(int c)
@@ -780,10 +763,11 @@ int ESP_getc(void)
 		size = nrf_queue_out(&m_rx_queue, &ch, 1);
 	}
 	else {
-		if (!nrf_queue_is_empty(&m_rx_queue)) {
-			ftdiTrace(" - getc (not connected) - data remaining");
-			size = nrf_queue_out(&m_rx_queue, &ch, 1);
-		}
+		if (nrf_queue_is_empty(&m_rx_queue))
+			goto bail;
+
+		ftdiTrace(" - getc (not connected) - data remaining");
+		size = nrf_queue_out(&m_rx_queue, &ch, 1);
 	}
 
     if (1 == size) {

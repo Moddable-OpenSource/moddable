@@ -172,7 +172,10 @@ void fxOpenSerial(txSerialTool self)
 		exit(0);
 	}
 
-	fxRestart(self);
+	if (self->restartOnConnect) {
+		self->restartOnConnect = 0;
+		fxRestart(self);
+	}
 }
 
 void fxProgrammingModeSerial(txSerialTool self)

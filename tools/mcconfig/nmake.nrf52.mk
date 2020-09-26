@@ -564,7 +564,7 @@ all: precursor $(BIN_DIR)\xs_nrf52.uf2
 	@echo Copying: $(BIN_DIR)\xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 	$(WAIT_FOR_NEW_SERIAL)
-	$(SERIAL_2_XSBUG)
+	$(SERIAL_2_XSBUG) -norestart
 
 clean:
 	echo # Clean project

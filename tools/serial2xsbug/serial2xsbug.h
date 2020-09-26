@@ -157,6 +157,7 @@ struct txSerialToolStruct {
 	int port;
 	int dtr;
 	int programming;
+	int restartOnConnect;
 	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	int index;

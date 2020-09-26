@@ -641,7 +641,7 @@ all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 	$(WAIT_FOR_COPY_COMPLETE)
-	$(CONNECT_XSBUG)
+	$(CONNECT_XSBUG) -norestart
 
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(KILL_SERIAL_2_XSBUG)

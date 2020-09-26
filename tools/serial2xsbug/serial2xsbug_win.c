@@ -197,7 +197,10 @@ void fxOpenSerial(txSerialTool self)
 
 	fxReadSerial(self, fxReadSerialAux(self));
 	
-	fxRestart(self);
+	if (self->restartOnConnect) {
+		self->restartOnConnect = 0;
+		fxRestart(self);
+	}
 }
 
 void fxReadNetwork(txSerialMachine machine, DWORD size)

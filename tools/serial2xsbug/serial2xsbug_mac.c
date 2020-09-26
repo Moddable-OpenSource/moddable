@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -123,7 +123,6 @@ void fxOpenSerial(txSerialTool self)
 	int fd = -1;
 	struct termios options;
 	CFSocketContext context;
-	static uint8_t first = true;
 
 	fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (fd == -1) {
@@ -200,8 +199,11 @@ void fxOpenSerial(txSerialTool self)
 		exit(0);
 	}
 
-	if (first) {
-		first = false;
+	if (self->restartOnConnect) {
+#if mxTraceCommands
+		fprintf(stderr, "### restart\n");
+#endif
+		self->restartOnConnect = 0;
 		fxRestart(self);
 	}
 }
@@ -347,7 +349,7 @@ void fxWriteSerial(txSerialTool self, char* buffer, int size)
 	size = write(CFSocketGetNative(self->serialSocket), buffer, size);
 	if (size < 0) {
         fprintf(stderr, "Error writing serial - %s(%d).\n", strerror(errno), errno);
-        exit(1);
+//      exit(1);		// device disconnected and may return (nrf52 after restart)
 	}
 }
 

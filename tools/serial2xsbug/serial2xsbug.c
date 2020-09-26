@@ -100,6 +100,7 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 	self->stop = argv[3][2] - '0';
 	self->host = "localhost";
 	self->port = 5002;
+	self->restartOnConnect = 1;
 	
 	if (9 == strlen(self->path) && (':' == self->path[4])) {
 			self->vendorID = (mapHex(self->path[0]) << 12) | (mapHex(self->path[1]) << 8) | (mapHex(self->path[2]) << 4) | mapHex(self->path[3]);
@@ -136,6 +137,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		}
 		else if (!strcmp(argv[argi], "-programming")) {
 			self->programming = 1;
+		}
+		else if (!strcmp(argv[argi], "-norestart")) {
+			self->restartOnConnect = 0;
 		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
