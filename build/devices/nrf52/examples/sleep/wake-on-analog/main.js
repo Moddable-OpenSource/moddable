@@ -20,7 +20,6 @@
 
 import {Sleep, AnalogDetectMode, ResetReason} from "sleep";
 import Timer from "timer";
-import Analog from "pins/analog";
 
 const wakeup_channel = 5;		// AIN5
 const led = new Host.LED;
