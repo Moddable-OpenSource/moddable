@@ -403,6 +403,8 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	// power off all ram except for stack and heap areas
 	// note that slaves 0-7 have two 4 KB sections and slave 8 has six 32 KB sections
 	if (softdevice_enabled()) {
+		sd_power_ram_power_clr(0, 0x03);
+		sd_power_ram_power_clr(1, 0x03);
 		sd_power_ram_power_clr(4, 0x03);
 		sd_power_ram_power_clr(5, 0x03);
 		sd_power_ram_power_clr(6, 0x03);
@@ -410,7 +412,9 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		sd_power_ram_power_clr(8, 0x1F);
 	}
 	else {
-		NRF_POWER->RAM[4].POWERCLR = 0x03;	// sections 0-1
+		NRF_POWER->RAM[0].POWERCLR = 0x03;	// sections 0-1
+		NRF_POWER->RAM[1].POWERCLR = 0x03;
+		NRF_POWER->RAM[4].POWERCLR = 0x03;
 		NRF_POWER->RAM[5].POWERCLR = 0x03;
 		NRF_POWER->RAM[6].POWERCLR = 0x03;
 		NRF_POWER->RAM[7].POWERCLR = 0x03;
