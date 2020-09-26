@@ -21,46 +21,31 @@
 */
 
 import WakeableAnalog from "builtin/wakeableanalog";
-import Digital from "pins/digital";
 import Sleep from "sleep";
 import Timer from "timer";
-import config from "mc/config";
 
 const wakeup_pin = 1;	// channel 1, P.03
-const led_pin = config.led1_pin;
-const ON = 1;
-const OFF = 0;
+const led = new Host.LED;
 
 // Turn on LED upon wakeup
-Digital.write(led_pin, ON);
+led.write(1);
 
 //let wakeable = new WakeableAnalog({ pin: "RST" });
 //if (wakeable.read())
 //	blink();
 
 let wakeable = new WakeableAnalog({ pin:wakeup_pin, mode:"crossing", value:512 });
-if ("analog" == wakeable.wakeupReason)
-	blink();
-
-let count = 3;
-Timer.repeat(id => {
-	if (0 == count) {
-		Timer.clear(id);
-		
-		// turn off led while asleep
-		Digital.write(led_pin, OFF);
-		
-		Sleep.deep();
-	}
-	--count;
-}, 1000);
-
-function blink()
-{
-	for (let i = 0; i < 5; ++i) {
-		Digital.write(led_pin, ON);
-		Timer.delay(100);
-		Digital.write(led_pin, OFF);
-		Timer.delay(100);
+if ("analog" == wakeable.wakeupReason) {
+	for (let i = 0; i < 10; ++i) {
+		led.write(1);
+		Timer.delay(50);
+		led.write(0);
+		Timer.delay(50);
 	}
 }
+
+Timer.set(() => {
+	led.write(0);
+	Sleep.deep();
+}, 3000);
+

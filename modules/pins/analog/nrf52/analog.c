@@ -23,7 +23,7 @@
 
 #include "nrfx_saadc.h"
 
-sint8_t gAnalogInited = 0;
+uint8_t gAnalogInited = 0;
 
 void saadc_handler(nrfx_saadc_evt_t const *event)
 {

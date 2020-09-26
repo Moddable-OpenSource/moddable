@@ -14,32 +14,19 @@
 
 import {Sleep} from "sleep";
 import Timer from "timer";
-import Digital from "pins/digital";
-import config from "mc/config";
 
-const led_pin = config.led1_pin;
-const ON = 1;
-const OFF = 0;
+const led = new Host.LED;
 
 // Blink LED upon wakeup
 for (let i = 0; i < 10; ++i) {
-	Digital.write(led_pin, OFF);
+	led.write(0);
 	Timer.delay(50);
-	Digital.write(led_pin, ON);
+	led.write(1);
 	Timer.delay(50);
 }
 
-let count = 3;
-Timer.repeat(id => {
-	if (0 == count) {
-		Timer.clear(id);
-		
-		// turn off led while asleep
-		Digital.write(led_pin, OFF);
-		
-		// wakeup on pin
-		Sleep.wakeOnTimer(5000);
-	}
-	--count;
-}, 1000);
+Timer.set(() => {
+	led.write(0);
+	Sleep.wakeOnTimer(5000);
+}, 3000);
 

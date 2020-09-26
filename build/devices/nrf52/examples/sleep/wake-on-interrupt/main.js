@@ -22,53 +22,40 @@
 
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
-import Digital from "pins/digital";
-import {Sensor, Range, DataRate} from "lis3dh";
+import {Range, DataRate} from "lis3dh";
 import config from "mc/config";
 
-const led_pin = config.led1_pin;
 const int_pin = config.lis3dh_int1_pin;
-const ON = 1;
-const OFF = 0;
+const led = new Host.LED;
 
 // configure motion sensor
-let sensor = new Sensor({
-		range:Range.RANGE_2_G,
-		rate:DataRate.DATARATE_10_HZ,
-		interrupt: {
-			polarity: 0,
-			enable: 0x2a,
-			threshold: 0x06,
-			duration: 0x02
-			}
-		});
+let sensor = new Host.Accelerometer({
+	range:Range.RANGE_2_G,
+	rate:DataRate.DATARATE_10_HZ,
+	interrupt: {
+		polarity: 0,
+		enable: 0x2a,
+		threshold: 0x06,
+		duration: 0x02
+	}
+});
 
 // Turn on LED upon wakeup
-Digital.write(led_pin, ON);
+led.write(1);
 
 // Blink LED upon wakeup from digital input pin
 if (ResetReason.GPIO == Sleep.resetReason) {
 	for (let i = 0; i < 10; ++i) {
-		Digital.write(led_pin, OFF);
+		led.write(0);
 		Timer.delay(50);
-		Digital.write(led_pin, ON);
+		led.write(1);
 		Timer.delay(50);
 	}
 }
 
-let count = 3;
-Timer.repeat(id => {
-	if (0 == count) {
-		Timer.clear(id);
-		
-		// wakeup on interrupt pin
-		Sleep.wakeOnInterrupt(int_pin);
-
-		// turn off led while asleep
-		Digital.write(led_pin, OFF);
-		
-		Sleep.deep();
-	}
-	--count;
-}, 1000);
+Timer.set(() => {
+	Sleep.wakeOnInterrupt(int_pin);
+	led.write(0);
+	Sleep.deep();
+}, 3000);
 

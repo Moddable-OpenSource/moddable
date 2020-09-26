@@ -21,18 +21,15 @@
 */
 
 import WakeableDigital from "builtin/wakeabledigital";
-import Digital from "pins/digital";
 import Sleep from "sleep";
 import Timer from "timer";
 import config from "mc/config";
 
 const wakeup_pin = config.button1_pin;
-const led_pin = config.led1_pin;
-const ON = 1;
-const OFF = 0;
+const led = new Host.LED;
 
 // Turn on LED upon wakeup
-Digital.write(led_pin, ON);
+led.write(1);
 
 //let wakeable = new WakeableDigital({ pin: "RST" });
 //if (wakeable.read())
@@ -43,28 +40,16 @@ Digital.write(led_pin, ON);
 //	blink();
 
 let wakeable = new WakeableDigital({ pin: wakeup_pin });
-if ("digital" == wakeable.wakeupReason)
-	blink();
-
-let count = 3;
-Timer.repeat(id => {
-	if (0 == count) {
-		Timer.clear(id);
-		
-		// turn off led while asleep
-		Digital.write(led_pin, OFF);
-		
-		Sleep.deep();
-	}
-	--count;
-}, 1000);
-
-function blink()
-{
-	for (let i = 0; i < 5; ++i) {
-		Digital.write(led_pin, ON);
-		Timer.delay(100);
-		Digital.write(led_pin, OFF);
-		Timer.delay(100);
+if ("digital" == wakeable.wakeupReason) {
+	for (let i = 0; i < 10; ++i) {
+		led.write(1);
+		Timer.delay(50);
+		led.write(0);
+		Timer.delay(50);
 	}
 }
+
+Timer.set(id => {
+	led.write(0);
+	Sleep.deep();
+}, 3000);

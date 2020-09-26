@@ -21,16 +21,13 @@
 
 import Sleep from "sleep";
 import Timer from "timer";
-import Digital from "pins/digital";
 import config from "mc/config";
 
 const wakeup_pin = config.button1_pin;
-const led_pin = config.led1_pin;
-const ON = 1;
-const OFF = 0;
+const led = new Host.LED;
 
 // Turn on LED upon wakeup
-Digital.write(led_pin, ON);
+led.write(1);
 
 // Check if retained ram buffer is available
 let buffer = Sleep.getRetainedBuffer();
@@ -41,7 +38,7 @@ if (undefined !== buffer) {
 	for (let i = 0; i < 100; ++i) {
 		if (retained[i] != i) {
 			// Turn off LED if retention buffer invalid
-			Digital.write(led_pin, OFF);
+			led.write(0);
 			valid = false;
 			break;
 		}
@@ -52,35 +49,24 @@ else
 
 // Blink LED to confirm retention buffer
 if (valid) {
-	for (let i = 0; i < 5; ++i) {
-		Digital.write(led_pin, ON);
-		Timer.delay(100);
-		Digital.write(led_pin, OFF);
-		Timer.delay(100);
+	for (let i = 0; i < 10; ++i) {
+		led.write(0);
+		Timer.delay(50);
+		led.write(1);
+		Timer.delay(50);
 	}
-	Digital.write(led_pin, ON);
 	Sleep.clearRetainedBuffer();
 }
 else {
-	let count = 3;
-	Timer.repeat(id => {
-		if (0 == count) {
-			Timer.clear(id);
-			Sleep.install(preSleep);
-			Sleep.deep();
-		}
-		--count;
-	}, 1000);
+	Timer.set(() => {
+		Sleep.install(preSleep);
+		Sleep.deep();
+	}, 3000);
 }
 
 function preSleep() {
-	// Turn off LED while asleep
-	Digital.write(led_pin, OFF);
-
-	// Wakeup on digital pin
+	led.write(0);
 	Sleep.wakeOnDigital(wakeup_pin);
-	
-	// Retain buffer
 	let retained = new Uint8Array(100);
 	for (let i = 0; i < 100; ++i)
 		retained[i] = i;

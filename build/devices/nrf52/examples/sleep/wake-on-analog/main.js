@@ -21,42 +21,28 @@
 import {Sleep, AnalogDetectMode, ResetReason} from "sleep";
 import Timer from "timer";
 import Analog from "pins/analog";
-import Digital from "pins/digital";
-import config from "mc/config";
 
 const wakeup_channel = 5;		// AIN5
-const led_pin = config.led1_pin;
-const ON = 1;
-const OFF = 0;
+const led = new Host.LED;
 
 // Turn on LED upon wakeup
-Digital.write(led_pin, ON);
+led.write(1);
 
 // Blink LED upon wakeup from analog value trigger
 if (ResetReason.LPCOMP == Sleep.resetReason) {
 	for (let i = 0; i < 10; ++i) {
-		Digital.write(led_pin, OFF);
+		led.write(0);
 		Timer.delay(50);
-		Digital.write(led_pin, ON);
+		led.write(1);
 		Timer.delay(50);
 	}
 }
 
-let count = 3;
-Timer.repeat(id => {
-	if (0 == count) {
-		Timer.clear(id);
-		
-		// wakeup on analog value change
-		Sleep.wakeOnAnalog(wakeup_channel, { value:512, mode:AnalogDetectMode.Crossing });
-		//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Up });
-		//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:mode:AnalogDetectMode.Down });
-
-		// turn off led while asleep
-		Digital.write(led_pin, OFF);
-		
-		Sleep.deep();
-	}
-	--count;
-}, 1000);
+Timer.set(() => {
+	Sleep.wakeOnAnalog(wakeup_channel, { value:512, mode:AnalogDetectMode.Crossing });
+	//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Up });
+	//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:mode:AnalogDetectMode.Down });
+	led.write(0);
+	Sleep.deep();
+}, 3000);
 

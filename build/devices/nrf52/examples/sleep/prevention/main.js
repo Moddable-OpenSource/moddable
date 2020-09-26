@@ -19,22 +19,18 @@
 
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
-import Digital from "pins/digital";
-import config from "mc/config";
 
-const led_pin = config.led1_pin;
-const ON = 1;
-const OFF = 0;
+const led = new Host.LED;
 
 // Turn on LED upon wakeup
-Digital.write(led_pin, ON);
+led.write(1);
 
 // Blink LED upon wakeup from reset pin
 if (ResetReason.RESETPIN == Sleep.resetReason) {
 	for (let i = 0; i < 10; ++i) {
-		Digital.write(led_pin, OFF);
+		led.write(0);
 		Timer.delay(50);
-		Digital.write(led_pin, ON);
+		led.write(1);
 		Timer.delay(50);
 	}
 }
@@ -45,15 +41,7 @@ Sleep.prevent();
 // Queue sleep request for when we allow sleep
 Sleep.deep();
  
-let count = 3;
-Timer.repeat(id => {
-	if (0 == count) {
-		Timer.clear(id);
-
-		// turn off led while asleep
-		Digital.write(led_pin, OFF);
-
-		Sleep.allow();
-	}
-	--count;
-}, 1000);
+Timer.set(() => {
+	led.write(0);
+	Sleep.allow();
+}, 3000);
