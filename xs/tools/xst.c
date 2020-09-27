@@ -20,7 +20,6 @@
 
 #include "xsAll.h"
 #include "xsScript.h"
-#include "xsSnapshot.h"
 #include "xs.h"
 #include "yaml.h"
 
@@ -185,35 +184,6 @@ static void fx_setTimerCallback(txJob* job);
 
 static txAgentCluster gxAgentCluster;
 
-#define mxSnapshotCallbackCount 15
-txCallback gxSnapshotCallbacks[mxSnapshotCallbackCount] = {
-	fx_agent_broadcast,
-	fx_agent_get_safeBroadcast,
-	fx_agent_getReport,
-	fx_agent_set_safeBroadcast,
-	fx_agent_sleep,
-	fx_agent_start,
-	fx_agent_stop,
-	fx_clearTimer,
-	fx_createRealm,
-	fx_detachArrayBuffer,
-	fx_evalScript,
-	fx_gc,
-	fx_print,
-	fx_setInterval,
-	fx_setTimeout,
-};
-
-static int fxSnapshopRead(void* stream, void* address, size_t size)
-{
-	return (fread(address, size, 1, stream) == 1) ? 0 : errno;
-}
-
-static int fxSnapshopWrite(void* stream, void* address, size_t size)
-{
-	return (fwrite(address, size, 1, stream) == 1) ? 0 : errno;
-}
-
 int main(int argc, char* argv[]) 
 {
 	int argi;
@@ -290,38 +260,10 @@ int main(int argc, char* argv[])
 			1993,				/* parserTableModulo */
 		};
 		xsCreation* creation = &_creation;
-		txSnapshot snapshot = {
-			"xst",
-			3,
-			gxSnapshotCallbacks,
-			mxSnapshotCallbackCount,
-			fxSnapshopRead,
-			fxSnapshopWrite,
-			NULL,
-			0,
-			NULL,
-			NULL,
-			NULL,
-		};
 		xsMachine* machine;
 		fxInitializeSharedCluster();
-		if (argr) {
-			snapshot.stream = fopen(argv[argr], "rb");
-			if (snapshot.stream) {
-				machine = fxReadSnapshot(&snapshot, "xst", NULL);
-				fclose(snapshot.stream);
-			}
-			else
-				snapshot.error = errno;
-			if (snapshot.error) {
-				fprintf(stderr, "cannot read snapshot %s: %s\n", argv[argr], strerror(snapshot.error));
-				return 1;
-			}
-		}
-        else {
-            machine = xsCreateMachine(creation, "xst", NULL);
- 			fxBuildAgent(machine);
-		}
+        machine = xsCreateMachine(creation, "xst", NULL);
+ 		fxBuildAgent(machine);
 		xsBeginHost(machine);
 		{
 			xsVars(1);
@@ -367,18 +309,6 @@ int main(int argc, char* argv[])
 			}
 		}
 		xsEndHost(machine);
-		if (argw) {
-			snapshot.stream = fopen(argv[argw], "wb");
-			if (snapshot.stream) {
-				fxWriteSnapshot(machine, &snapshot);
-				fclose(snapshot.stream);
-			}
-			else
-				snapshot.error = errno;
-			if (snapshot.error) {
-				fprintf(stderr, "cannot write snapshot %s: %s\n", argv[argw], strerror(snapshot.error));
-			}
-		}
 		xsDeleteMachine(machine);
 		fxTerminateSharedCluster();
 	}

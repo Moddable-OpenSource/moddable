@@ -26,10 +26,15 @@ if (!config.Screen)
 	throw new Error("no screen configured");
 
 class Screen extends config.Screen {
-	start(interval) {
-		this.timer = Timer.repeat(() => {
-			let touch = this.touch;
-			if (touch) {
+	constructor(dictionary) {
+		super(dictionary);
+		if (config.Touch) {
+			let touch = new config.Touch;
+			touch.points = [];
+			let touchCount = config.touchCount ? config.touchCount : 1;
+			while (touchCount--)
+				touch.points.push({});
+			Timer.repeat(() => {
 				let points = touch.points;
 				touch.read(points);
 				for (let i = 0; i < points.length; i++) {
@@ -39,7 +44,7 @@ class Screen extends config.Screen {
 					switch (point.state) {
 						  case 0:
 						  case 3:
-						  		if (point.down) {
+								if (point.down) {
 									delete point.down;
 									this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
 									delete point.x;
@@ -56,18 +61,15 @@ class Screen extends config.Screen {
 								break;
 					}
 				}
-			}
-			this.context.onIdle();
-		}, interval);
-
-		if (config.Touch) {
-			let touch = new config.Touch;
-			touch.points = [];
-			let touchCount = config.touchCount ? config.touchCount : 1;
-			while (touchCount--)
-				touch.points.push({});
-			this.touch = touch;
+			}, 5);
 		}
+// 		this.ticks = Time.ticks;
+		this.timer = Timer.set(() => {
+// 			const ticks = Time.ticks;
+// 			trace(`onIdle ${ticks - this.ticks}\n`);
+// 			this.ticks = ticks;
+			this.context.onIdle();
+		}, 0x7FFF, 0x7FFF);
 	}
 	get rotation() {
 		return super.rotation;
@@ -94,14 +96,21 @@ class Screen extends config.Screen {
 				point.y = x;
 			};
 	}
-	stop() {
-		Timer.clear(this.timer);
-		delete this.timer;
-
-		if (this.touch)
-			delete this.touch;
-	}
 	clear() {
+	}
+	start(interval) {
+		if (interval <= 5)
+			interval = 5;
+		if (this.timer.interval === interval)
+			return;
+// 		trace(`schedule ${interval}\n`);
+		Timer.schedule(this.timer, interval, interval);
+		this.timer.interval = interval;
+	}
+	stop() {
+// 		trace(`schedule 0x7FFF\n`);
+		Timer.schedule(this.timer, 0x7FFF, 0x7FFF);
+		delete this.timer.interval;
 	}
 }
 

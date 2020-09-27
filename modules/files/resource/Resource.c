@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -85,4 +85,15 @@ void Resource_slice(xsMachine *the)
 		xsSetHostData(xsResult, data + start);
 		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));
 	}
+}
+
+void Resource_name(xsMachine *the)
+{
+	extern const char *mcGetResourceName(void* it, int i);
+	extern int mcCountResources(void* it);
+	int index = xsToInteger(xsArg(0));
+	if ((index < 0) || (index >= mcCountResources(NULL)))
+		return;
+
+	xsResult = xsString(mcGetResourceName(NULL, index));
 }

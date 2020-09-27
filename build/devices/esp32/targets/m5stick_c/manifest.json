@@ -5,13 +5,18 @@
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7735/manifest.json",
-		"$(MODDABLE)/modules/drivers/axp192/manifest.json"
+		"$(MODDABLE)/modules/drivers/axp192/manifest.json",
+		"$(MODDABLE)/modules/pins/smbus/manifest.json"
 	],
 	"config": {
 		"screen": "st7735",
 		"touch": ""
 	},
 	"defines": {
+		"i2c": {
+			"sda_pin": 21,
+			"scl_pin": 22
+		},
 		"spi": {
 			"mosi_pin": 15,
 			"sck_pin": 13
@@ -66,14 +71,12 @@
 			"$(MODULES)/drivers/sh200q/*"
 			
 		],
-		"setup/target": "./setup-target",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
+		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"monitor",
 		"setup/target",
 		"mpu6886",
-		"sh200q",
-		"pins/smbus"
+		"sh200q"
 	]
 }

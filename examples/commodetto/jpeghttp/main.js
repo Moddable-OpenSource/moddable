@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -19,7 +19,7 @@ import Poco from "commodetto/Poco";
 function fetch(filename) {
 	return new Promise((resolve, reject) => {
 		let request = new Request({
-			host: "www.moddable.com", 
+			host: "test.moddable.com", 
 			path: "/example/images/"+filename,
 			response: ArrayBuffer });
 		

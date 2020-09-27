@@ -174,12 +174,16 @@ void fxScreenIdle(txScreen* screen)
 		if (screen->flags & mxScreenIdling) {
 			xsBeginHost(screen->machine);
 			{
+				xsNumberValue when;
 				xsVars(2);
 				xsVar(0) = xsGet(xsGlobal, xsID_screen);
-				xsVar(1) = xsGet(xsVar(0), xsID_context);
-				if (xsTest(xsVar(1))) {
-					if (xsFindResult(xsVar(1), xsID_onIdle)) {
-						xsCallFunction0(xsResult, xsVar(1));
+				when = xsToNumber(xsGet(xsVar(0), xsID_when));
+				if (!c_isnan(when) && (when <= fxDateNow())) {
+					xsVar(1) = xsGet(xsVar(0), xsID_context);
+					if (xsTest(xsVar(1))) {
+						if (xsFindResult(xsVar(1), xsID_onIdle)) {
+							xsCallFunction0(xsResult, xsVar(1));
+						}
 					}
 				}
 			}
@@ -296,6 +300,7 @@ void fxScreenLaunch(txScreen* screen)
 		xsDefine(xsVar(0), xsID_frameBuffer, xsVar(1), xsIsGetter);
 #endif
 		xsSet(xsVar(0), xsID_pixelFormat, xsInteger(kCommodettoBitmapFormat));
+		xsSet(xsVar(0), xsID_when, xsNumber(C_NAN));
 		xsSet(xsGlobal, xsID_screen, xsVar(0));
 
 		xsVar(1) = xsAwaitImport("main", XS_IMPORT_DEFAULT);
@@ -712,12 +717,15 @@ void screen_start(xsMachine* the)
 {
 	txScreen* screen = xsGetHostData(xsThis);
 	screen->flags |= mxScreenIdling;
+	xsNumberValue when = fxDateNow() + xsToNumber(xsArg(0));
+	xsSet(xsThis, xsID_when, xsNumber(when));
 }
 
 void screen_stop(xsMachine* the)
 {
 	txScreen* screen = xsGetHostData(xsThis);
 	screen->flags &= ~mxScreenIdling;
+	xsSet(xsThis, xsID_when, xsNumber(C_NAN));
 }
 
 void screen_get_clut(xsMachine* the)

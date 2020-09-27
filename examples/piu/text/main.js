@@ -45,6 +45,7 @@ class TextBehavior extends Behavior {
 	onDisplaying(text) {
 		this.index = 0;
 		text.duration = 1000;
+		text.interval = 1000;
 		text.start();
 	}
 	onFinished(text) {

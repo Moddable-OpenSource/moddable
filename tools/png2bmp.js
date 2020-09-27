@@ -27,23 +27,25 @@ import PixelsOut from "commodetto/PixelsOut";
 import File from "file";
 
 var formatNames = {
+	monochrome: "monochrome",
 	gray16: "gray16",
 	gray256: "gray256",
 	rgb332: "rgb332",
 	rgb565le: "rgb565le",
 	rgb565be: "rgb565be",
 	clut16: "clut16",
-	monochrome: "monochrome",
+	argb4444: "argb4444",
 };
 
 var formatValues = {
+	monochrome: 3,
 	gray16: 4,
 	gray256: 5,
 	rgb332: 6,
 	rgb565le: 7,
 	rgb565be: 8,
 	clut16: 11,
-	monochrome: 3,
+	argb4444: 12,
 };
 
 export default class extends TOOL {
@@ -399,7 +401,7 @@ export default class extends TOOL {
 		let colorPath, colorOut, colorConvert, colorLine;
 		let alphaPath, alphaOut, alphaConvert, alphaLine;
 		
-		let convertRGB24Line = new Uint8Array(width * 3);
+		let convertRGBA32Line = new Uint8Array(width * 4);
 		let convertGray256Line = new Uint8Array(width);
 
 		if (this.color) {
@@ -415,7 +417,7 @@ export default class extends TOOL {
 			if (this.clut)
 				clut = dictionary.clut = this.readFileBuffer(this.clut);
 			colorOut = new (this.bm4 ? BM4Out : BMPOut)(dictionary);
-			colorConvert = new Convert(Bitmap.RGB24, this.colorFormat, clut);
+			colorConvert = new Convert(Bitmap.RGBA32, this.colorFormat, clut);
 			colorLine = new Uint8Array(colorOut.pixelsToBytes(width));
 			colorOut.begin(0, 0, width, height);
 		}
@@ -441,13 +443,14 @@ export default class extends TOOL {
 			let colorIndex = 0;
 			let alphaIndex = 0;
 			while (alphaIndex < width) {
-				let r = convertRGB24Line[colorIndex++] = buffer[offset++];
-				let g = convertRGB24Line[colorIndex++] = buffer[offset++];
-				let b = convertRGB24Line[colorIndex++] = buffer[offset++];
-				let a = convertGray256Line[alphaIndex++] = 255 - buffer[offset++];
+				let r = convertRGBA32Line[colorIndex++] = buffer[offset++];
+				let g = convertRGBA32Line[colorIndex++] = buffer[offset++];
+				let b = convertRGBA32Line[colorIndex++] = buffer[offset++];
+				let a = convertRGBA32Line[colorIndex++] = buffer[offset++];
+				convertGray256Line[alphaIndex++] = 255 - a;
 			}
 			if (this.color) {
-				colorConvert.process(convertRGB24Line.buffer, colorLine.buffer);
+				colorConvert.process(convertRGBA32Line.buffer, colorLine.buffer);
 				colorOut.send(colorLine.buffer);
 			}
 			if (this.alpha) {

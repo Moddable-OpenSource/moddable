@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,53 +18,14 @@
  *
  */
 
-class TweenProperty {
-	constructor(name, from, to) {
-		if (name == "x")
-			this.tweenValue = this.tweenX;
-		else if (name == "y")
-			this.tweenValue = this.tweenY;
-		else if (name == "state")
-			this.tweenValue = this.tweenState;
-		else {
-			this.tweenValue = this.tweenName;
-			this.name = name;
-		}
-		this.from = from;
-		this.to = to;
-	}
-	tween(target, fraction) {
-		this.tweenValue(target, fraction, this.from, this.to);
-	}
-	tweenName(target, fraction, from, to) {
-		target[this.name] = from + (fraction * (to - from));
-	}
-	tweenState(target, fraction, from, to) {
-		target.state = from + (fraction * (to - from));
-	}
-	tweenX(target, fraction, from, to) {
-		target.x = from + (fraction * (to - from));
-	}
-	tweenY(target, fraction, from, to) {
-		target.y = from + (fraction * (to - from));
-	}
+class TweenProperty @ "xs_TweenProperty_destructor" {
+	constructor(name, from, to) @ "xs_TweenProperty";
+	tween(target, fraction) @ "xs_TweenProperty_tween";
 }
 
-class TweenOnProperty extends TweenProperty {
-	constructor(name, values) {
-		let length = values.length - 1;
-		super(name, values[0], values[length]);
-		this.length = length;
-		this.values = values;
-	}
-	tween(target, fraction) {
-		let values = this.values;
-		let length = this.length;
-		let index = length * fraction;
-		let from = Math.floor(index);
-		let to = Math.min(from + 1, length);
-		this.tweenValue(target, index - from, values[from], values[to]);
-	}
+class TweenOnProperty @ "xs_TweenOnProperty_destructor" {
+	constructor(name, values) @ "xs_TweenOnProperty";
+	tween(target, fraction) @ "xs_TweenOnProperty_tween";
 }
 
 export class Tween {

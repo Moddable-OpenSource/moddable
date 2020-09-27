@@ -38,7 +38,7 @@ button.a.onChanged = function() {
 	if (count >= 16) {
 		count = 7;
 	}
-	global.power.setBrightness(count);
+	global.power.brightness = count;
 }
 
 render.begin();

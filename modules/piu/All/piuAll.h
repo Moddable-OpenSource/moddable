@@ -754,7 +754,7 @@ extern void PiuViewDrawTexture(PiuView* self, PiuTexture* texture, PiuCoordinate
 extern void PiuViewFillColor(PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h);
 extern void PiuViewFillTexture(PiuView* self, PiuTexture* texture, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
 extern void PiuViewGetSize(PiuView* view, PiuDimension *width, PiuDimension *height);
-extern void PiuViewIdleCheck(PiuView* view, PiuBoolean idle);
+extern void PiuViewIdleCheck(PiuView* view, PiuInterval idle);
 extern void PiuViewInvalidate(PiuView* view, PiuRectangle area);
 extern void PiuViewPopClip(PiuView* view);
 extern void PiuViewPopColor(PiuView* view);
@@ -764,6 +764,8 @@ extern void PiuViewPushClip(PiuView* view, PiuCoordinate x, PiuCoordinate y, Piu
 extern void PiuViewPushColor(PiuView* view, PiuColor color);
 extern void PiuViewPushColorFilter(PiuView* view, PiuColor color);
 extern void PiuViewPushOrigin(PiuView* view, PiuCoordinate x, PiuCoordinate y);
+extern void PiuViewReflow(PiuView* self);
+extern void PiuViewReschedule(PiuView* self);
 extern PiuTick PiuViewTicks(PiuView* view);
 extern void PiuViewValidate(PiuView* view, PiuRectangle area);
 #ifdef piuPC

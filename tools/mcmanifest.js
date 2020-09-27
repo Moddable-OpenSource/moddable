@@ -27,6 +27,7 @@ var formatNames = {
 	rgb565le: "rgb565le",
 	rgb565be: "rgb565be",
 	clut16: "clut16",
+	argb4444: "argb4444",
 	x: "x",
 };
 
@@ -37,6 +38,7 @@ var formatValues = {
 	rgb565le: 7,
 	rgb565be: 8,
 	clut16: 11,
+	argb4444: 12,
 	x: 0,
 };
 
@@ -606,7 +608,10 @@ export class MakeFile extends FILE {
 				this.write(" -m -4");
 			else {
 				this.write(" -f ");
-				this.write(tool.format);
+				if (result.format)
+					this.write(result.format);
+				else
+					this.write(tool.format);
 				if (clutSource) {
 					this.write(" -clut ");
 					this.write(clutSource);
@@ -1023,6 +1028,10 @@ class ResourcesRule extends Rule {
 		else if (suffix == "-color-monochrome") {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
 			colorFile.monochrome = true;
+		}
+		else if (suffix == "-color-argb4444") {
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile.format = "argb4444";
 		}
 		else if (suffix == "-alpha") {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);

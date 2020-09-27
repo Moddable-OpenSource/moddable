@@ -73,6 +73,14 @@
 				"rotation": 90
 			}
 		},
+		"esp32/m5stack_core2": {
+			"creation":{
+				"static": 50000,
+			},
+			"config": {
+				"rotation": 180
+			}
+		},
         "...": {
             "error": "unsupported platform"
         }

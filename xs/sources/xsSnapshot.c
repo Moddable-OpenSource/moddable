@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "xsSnapshot.h"
 
 static void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* chunkSize);
@@ -985,10 +1005,17 @@ void fxWriteChunkZero(txMachine* the, txSnapshot* snapshot, txSize size)
 
 void fxWriteChunks(txMachine* the, txSnapshot* snapshot)
 {
-	txSlot* heap = the->firstHeap;
+	txSlot* heap;
+	txSlot* stack;
+	stack = the->stackTop - 1;
+	while (stack >= the->stack) {
+		fxWriteChunk(the, snapshot, stack);
+		stack--;
+	}
+	heap = the->firstHeap;
 	while (heap) {
-		txSlot* slot = heap + 1;
-		txSlot* limit = heap->value.reference;
+			txSlot* slot = heap + 1;
+			txSlot* limit = heap->value.reference;
 		while (slot < limit) {
 			if (!(slot->flag & XS_MARK_FLAG)) {
 				fxWriteChunk(the, snapshot, slot);
@@ -1111,8 +1138,8 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		buffer.value.proxy.target = fxProjectSlot(the, snapshot->firstProjection, slot->value.proxy.target);
 		break;
 	case XS_REGEXP_KIND:
-		buffer.value.regexp.code = (void*)fxProjectChunk(the, the);
-		buffer.value.regexp.data = (void*)fxProjectChunk(the, the);
+		buffer.value.regexp.code = (void*)fxProjectChunk(the, slot->value.regexp.code);
+		buffer.value.regexp.data = (void*)fxProjectChunk(the, slot->value.regexp.data);
 		break;
 		
 	case XS_ACCESSOR_KIND:
@@ -1195,6 +1222,7 @@ void fxWriteStack(txMachine* the, txSnapshot* snapshot)
 int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 {
 	txSlot* heap;
+	txSlot* stack;
 	txSize size;
 	txByte byte;
 	txProjection** projectionAddress = &(snapshot->firstProjection);
@@ -1210,13 +1238,18 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	mxTry(the) {
 		snapshot->error = 0;
 		fxCollectGarbage(the);
-	
+				
 		heap = the->freeHeap;
 		while (heap) {
 			heap->flag |= XS_MARK_FLAG;
 			heap = heap->next;
 		}
 	
+		stack = the->stackTop - 1;
+		while (stack >= the->stack) {
+			fxMeasureSlot(the, snapshot, stack, &chunkSize);
+			stack--;
+		}
 		heap = the->firstHeap;
 		while (heap) {
 			txSlot* slot = heap + 1;
@@ -1239,6 +1272,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		}
 		slotSize--;
 		slotSize *= sizeof(txSlot);
+		
 	
 		creation.initialChunkSize = the->maximumChunksSize;
 		creation.incrementalChunkSize = the->minimumChunksSize;

@@ -80,19 +80,21 @@ typedef struct xsSocketUDPRemoteRecord xsSocketUDPRemoteRecord;
 typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
 #define kReadQueueLength MODDEF_SOCKET_READQUEUE
+
+#define xsSocketCommon \
+	xsMachine			*the; 				\
+											\
+	xsSlot				obj;				\
+	struct tcp_pcb		*skt;				\
+											\
+	int8				useCount;			\
+	uint8				kind;				\
+	uint8				pending;			\
+	uint8				constructed;		\
+	uint8				suspended;
+
 struct xsSocketRecord {
-	xsMachine			*the;
-
-	xsSlot				obj;
-	struct tcp_pcb		*skt;
-
-	int8				useCount;
-	uint8				kind;
-	uint8				pending;
-	uint8				writeDisabled;
-	uint8				constructed;
-
-	// above here same as xsListenerRecord
+	xsSocketCommon
 
 	struct udp_pcb		*udp;
 	struct raw_pcb		*raw;
@@ -107,7 +109,6 @@ struct xsSocketRecord {
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
-	uint8				suspended;
 
 	xsSocketUDPRemoteRecord
 						remote[1];
@@ -118,18 +119,7 @@ typedef xsListenerRecord *xsListener;
 
 #define kListenerPendingSockets MODDEF_SOCKET_LISTENERQUEUE
 struct xsListenerRecord {
-	xsMachine			*the;
-
-	xsSlot				obj;
-	struct tcp_pcb		*skt;
-
-	int8				useCount;
-	uint8				kind;
-	uint8				pending;
-	uint8				writeDisabled;
-	uint8				constructed;
-
-	// above here same as xsSocketRecord
+	xsSocketCommon
 
 	xsSocket			accept[kListenerPendingSockets];
 };
@@ -384,6 +374,29 @@ void xs_socket(xsMachine *the)
 		xsUnknownError("socket connect failed");
 }
 
+static void closeSocket(xsSocket xss)
+{
+	if (xss->skt) {
+		tcp_recv(xss->skt, NULL);
+		tcp_sent(xss->skt, NULL);
+		tcp_err(xss->skt, NULL);
+		tcp_close_safe(xss->skt);
+		xss->skt = NULL;
+	}
+
+	if (xss->udp) {
+		udp_recv(xss->udp, NULL, NULL);
+		udp_remove_safe(xss->udp);
+		xss->udp = NULL;
+	}
+
+	if (xss->raw) {
+		raw_recv(xss->raw, NULL, NULL);
+		raw_remove(xss->raw);
+		xss->raw = NULL;
+	}
+}
+
 void xs_socket_destructor(void *data)
 {
 	xsSocket xss = data;
@@ -391,22 +404,7 @@ void xs_socket_destructor(void *data)
 
 	if (!xss) return;
 
-	if (xss->skt) {
-		tcp_recv(xss->skt, NULL);
-		tcp_sent(xss->skt, NULL);
-		tcp_err(xss->skt, NULL);
-		tcp_close_safe(xss->skt);
-	}
-
-	if (xss->udp) {
-		udp_recv(xss->udp, NULL, NULL);
-		udp_remove_safe(xss->udp);
-	}
-
-	if (xss->raw) {
-		raw_recv(xss->raw, NULL, NULL);
-		raw_remove(xss->raw);
-	}
+	closeSocket(xss);
 
 	if (xss->pb)
 		pbuf_free_safe(xss->pb);
@@ -430,6 +428,8 @@ void xs_socket_close(xsMachine *the)
 		return;
 	}
 
+	closeSocket(xss);
+
 	if (!(xss->pending & kPendingClose))
 		socketSetPending(xss, kPendingClose);
 }
@@ -439,7 +439,7 @@ void xs_socket_get(xsMachine *the)
 	xsSocket xss = xsmcGetHostData(xsThis);
 	const char *name = xsmcToString(xsArg(0));
 
-	if (0 == c_strcmp(name, "REMOTE_IP")) {
+	if (xss->skt && (0 == c_strcmp(name, "REMOTE_IP"))) {
 		xsResult = xsStringBuffer(NULL, 40);
 		ipaddr_ntoa_r(&xss->skt->remote_ip, xsmcToString(xsResult), 40);
 	}
@@ -566,7 +566,7 @@ void xs_socket_write(xsMachine *the)
 	if (xss->suspended)
 		xsUnknownError("suspended");
 
-	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || xss->writeDisabled) {
+	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || (xss->pending & (kPendingError | kPendingDisconnect))) {
 		if (0 == argc) {
 			xsResult = xsInteger(0);
 			return;
@@ -1250,9 +1250,6 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 
 	doSchedule = 0 == xss->pending;
 	xss->pending |= pending;
-
-	if (xss->pending & (kPendingError | kPendingDisconnect))
-		xss->writeDisabled = true;
 
 	if (doSchedule && (xss->constructed || (pending & kPendingAcceptListener))) {
 		socketUpUseCount(xss->the, xss);

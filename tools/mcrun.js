@@ -228,7 +228,10 @@ class ToDoFile extends FILE {
 			if (result.monochrome)
 				line.push("-m", "-4");
 			else {
-				line.push("-f", tool.format);
+				if (result.format)
+					this.write(result.format);
+				else
+					line.push("-f", tool.format);
 				if (clutSource)
 					line.push("-clut", clutSource);
 			}

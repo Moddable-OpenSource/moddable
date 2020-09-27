@@ -151,28 +151,39 @@ void PiuApplicationDeferContents(xsMachine* the, PiuApplication* self)
 
 void PiuApplicationIdleCheck(PiuApplication* self)
 {
-	xsBooleanValue idle = 0;
+	PiuInterval idle = 0;
 	xsIntegerValue count = (*self)->touchLinkCount;
 	xsIntegerValue index;
 	
-	if ((*self)->idleChain) {
+	if ((*self)->deferChain) {
 		idle = 1;
+		goto bail;
 	}
-	else if ((*self)->deferChain) {
-		idle = 1;
-	}
-	else {
-		for (index = 0; index < count; index++) {
-			PiuTouchLink* link = (*self)->touchLinks[index];
-			if ((*link)->index) {
-				PiuContent* content = (*link)->content;
-				if (content) {
-					idle = 1;
-				}
-				(*link)->index = 0;
-			}
+	for (index = 0; index < count; index++) {
+		PiuTouchLink* link = (*self)->touchLinks[index];
+		PiuContent* content = (*link)->content;
+		if (content) {
+			idle = 1;
+			goto bail;
 		}
 	}
+	if ((*self)->idleChain) {
+		PiuIdleLink* link = (*self)->idleChain;
+		PiuTick ticks = PiuViewTicks((*self)->view);
+		while (link) {
+			PiuInterval interval = (*link)->ticks + (*link)->interval - ticks;
+			if (interval <= 0) {
+				idle = 1;
+				goto bail;
+			}
+			else if (idle == 0)
+				idle = interval;
+			else if (idle > interval)
+				idle = interval;
+			link = (*self)->idleLink;
+		}
+	}
+bail:
 	PiuViewIdleCheck((*self)->view, idle);
 }
 
@@ -223,6 +234,7 @@ void PiuApplicationReflow(void* it, PiuFlags flags)
 	else if (flags & piuContentsVerticallyChanged)
 		(*self)->flags |= piuContentsVerticallyChanged;
 	(*self)->flags |= piuContentsPlaced;
+    PiuViewReflow((*self)->view);
 }
 
 void PiuApplicationResize(PiuApplication* self)
@@ -243,7 +255,7 @@ void PiuApplicationResize(PiuApplication* self)
 	PiuContainerMeasureVertically(self);
 	PiuContainerFitVertically(self);
 	(*self)->flags &= ~piuAdjusting;
-	PiuApplicationAdjust(self);
+    PiuViewReflow(view);
 }
 
 void PiuApplicationSetFocus(PiuApplication* self, void* it)
@@ -274,7 +286,7 @@ void PiuApplicationStartContent(PiuApplication* self, void* it)
 		(*self)->idleChain = link;
 	}
 	(*link)->ticks = PiuViewTicks((*self)->view);
-	PiuApplicationIdleCheck(self);
+	PiuViewReschedule((*self)->view);
 }
 
 void PiuApplicationStopContent(PiuApplication* self, void* it)
@@ -297,7 +309,7 @@ void PiuApplicationStopContent(PiuApplication* self, void* it)
 		former = current;
 		current = (*current)->idleLink;
 	}
-	PiuApplicationIdleCheck(self);
+	PiuViewReschedule((*self)->view);
 }
 
 void PiuApplicationTouchBegan(PiuApplication* self, xsIntegerValue index, PiuCoordinate x, PiuCoordinate y, xsNumberValue ticks)
@@ -331,7 +343,7 @@ void PiuApplicationTouchBegan(PiuApplication* self, xsIntegerValue index, PiuCoo
 			}
 		}
 	}
-	PiuApplicationIdleCheck(self);
+	PiuViewReschedule((*self)->view);
 }
 
 void PiuApplicationTouchEnded(PiuApplication* self, xsIntegerValue index, PiuCoordinate x, PiuCoordinate y, xsNumberValue ticks)
@@ -353,7 +365,7 @@ void PiuApplicationTouchEnded(PiuApplication* self, xsIntegerValue index, PiuCoo
 		}
 		(*link)->index = 0;
 	}
-	PiuApplicationIdleCheck(self);
+	PiuViewReschedule((*self)->view);
 }
 
 void PiuApplicationTouchIdle(PiuApplication* self)

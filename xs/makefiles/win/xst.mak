@@ -132,8 +132,7 @@ OBJECTS = \
 	$(TMP_DIR)\reader.o \
 	$(TMP_DIR)\scanner.o \
 	$(TMP_DIR)\writer.o \
-	$(TMP_DIR)\xst.o \
-	$(TMP_DIR)\xsSnapshot.o
+	$(TMP_DIR)\xst.o
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -152,7 +151,6 @@ $(BIN_DIR)\$(NAME).exe : $(OBJECTS)
 		/out:$(BIN_DIR)\$(NAME).exe
 
 $(OBJECTS) : $(TLS_DIR)\xst.h
-$(OBJECTS) : $(TLS_DIR)\xsSnapshot.h
 $(OBJECTS) : $(PLT_DIR)\xsPlatform.h
 $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h

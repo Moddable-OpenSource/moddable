@@ -1,0 +1,17 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"resources": {
+		"*": "$(MODDABLE)/examples/assets/sounds/*"
+	},
+	"platforms": {
+		"esp32/m5atom_echo": {},
+		"...": {
+			"error": "esp32/m5atom_echo only"
+		}
+	}
+}

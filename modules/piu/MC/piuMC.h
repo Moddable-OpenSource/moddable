@@ -188,6 +188,8 @@ struct PiuViewStruct {
 	Poco poco;
 	PocoColor pixel;
 	uint8_t blend;
+	uint8_t updating;
+	PiuInterval idleTicks;
 	// cache references to accelerate the update loop
 	xsSlot* screen;
 	xsSlot* pixels;

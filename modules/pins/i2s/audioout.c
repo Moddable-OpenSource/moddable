@@ -123,7 +123,7 @@
 #endif
 
 #define kIMABytesPerChunk (68)
-#define kIMASamplesPerChunk (129)
+#define kIMASamplesPerChunk (129)	/* (kIMABytesPerChunk - 4) / 2 + 1 */
 extern int dvi_adpcm_decode(void *in_buf, int in_size, void *out_buf);
 
 typedef struct {
@@ -572,7 +572,9 @@ void xs_audioout_enqueue(xsMachine *the)
 				numChannels = c_read8(buffer + 6);
 				sampleFormat = c_read8(buffer + 7);
 				bufferSamples = c_read32(buffer + 8);
-				if ((bitsPerSample != out->bitsPerSample) || (sampleRate != out->sampleRate) || (numChannels != out->numChannels))
+				if ((kSampleFormatUncompressed == sampleFormat) && (bitsPerSample != out->bitsPerSample))
+					xsUnknownError("format doesn't match output");
+				if ((sampleRate != out->sampleRate) || (numChannels != out->numChannels))
 					xsUnknownError("format doesn't match output");
 				if ((kSampleFormatUncompressed != sampleFormat) && (kSampleFormatIMA != sampleFormat))
 					xsUnknownError("unsupported compression");
@@ -1237,25 +1239,15 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 	while (out->pendingCallbackCount) {
 		int id;
 
-#if ESP32
-		xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
-		modCriticalSectionBegin();
-#elif defined(_WIN32)
-		EnterCriticalSection(&out->cs);
-#endif
+		doLock(out);
+
 		id = out->pendingCallbacks[0];
 
 		out->pendingCallbackCount -= 1;
 		if (out->pendingCallbackCount)
 			c_memcpy(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
-#if ESP32
-		xSemaphoreGive(out->mutex);
-#elif defined(__ets__)
-		modCriticalSectionEnd();
-#elif defined(_WIN32)
-		LeaveCriticalSection(&out->cs);
-#endif
+
+		doUnlock(out);
 
 		xsmcSetInteger(xsVar(0), id);
 		xsCall1(out->obj, xsID_callback, xsVar(0));		//@@ unsafe to close inside callback

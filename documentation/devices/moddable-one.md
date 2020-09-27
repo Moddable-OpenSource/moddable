@@ -1,7 +1,7 @@
 # Getting Started with Moddable One
 
 Copyright 2019-2020 Moddable Tech, Inc.<BR>
-Revised: February 27, 2020
+Revised: September 14, 2020
 
 This document describes how to start building Moddable applications for Moddable One. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable One.
 
@@ -35,6 +35,19 @@ The two main components of Moddable One are the ESP8266 module and capacitive to
 ### Pinout
 
 <img src="../assets/devices/moddable-one-pinout.png">
+
+
+#### Touch panel
+
+The touch panel uses pins 4 and 5 to connect to the I<sup>2</sup>C bus. You cannot use these pins as GPIO if your app uses the touch panel.
+
+You can use other I<sup>2</sup>C sensors even if your app uses the touch panel as long as they don't use the same address. The touch panel uses address 0x38 (7-bit address).
+
+#### Display
+
+The display uses pins 13 and 14 to connect to the SPI bus. You cannot use these pins as GPIO if your app uses the display.
+
+You can use other SPI sensors even if your app uses the display.
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup

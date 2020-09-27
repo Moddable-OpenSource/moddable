@@ -40,7 +40,7 @@ void xs_Bitmap(xsMachine *the)
 {
 	int offset;
 	int32_t byteLength = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 0;
-	CommodettoBitmap cb = xsmcSetHostChunk(xsThis, NULL, sizeof(CommodettoBitmapRecord) - (byteLength ? 4 : 0));
+	CommodettoBitmap cb = xsmcSetHostChunk(xsThis, NULL, sizeof(CommodettoBitmapRecord) /* - (byteLength ? sizeof(int32_t) : 0) */);
 
 	cb->w = (CommodettoDimension)xsmcToInteger(xsArg(0));
 	cb->h = (CommodettoDimension)xsmcToInteger(xsArg(1));
@@ -141,7 +141,7 @@ uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format)
 		depth = 4;
 	else if ((kCommodettoBitmapGray256 == format) || (kCommodettoBitmapRGB332 == format))
 		depth = 8;
-	else if ((kCommodettoBitmapRGB565LE == format) || (kCommodettoBitmapRGB565BE == format))
+	else if ((kCommodettoBitmapRGB565LE == format) || (kCommodettoBitmapRGB565BE == format) || (kCommodettoBitmapARGB4444 == format))
 		depth = 16;
 	else if (kCommodettoBitmap24RGB == format)
 		depth = 24;
