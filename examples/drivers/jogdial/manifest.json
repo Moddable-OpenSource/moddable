@@ -1,10 +1,8 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/drivers/jogdial/manifest.json",
+		"$(MODDABLE)/examples/manifest_base.json"
 	],
 	"modules": {
-		"*": "./main",
-
-	},
+		"*": "./main"
+	}
 }
