@@ -67,6 +67,7 @@
 		(char *)"Files",
 		(char *)"Poco display list used",
 		(char *)"Piu command List used",
+		(char *)"Event loop",
 		(char *)"System bytes free",
 	};
 
@@ -80,6 +81,7 @@
 		(char *)" files",
 		(char *)" bytes",
 		(char *)" bytes",
+		(char *)" turns",
 		(char *)" bytes",
 	};
 #endif
@@ -746,6 +748,9 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
+	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
+		values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;		// ignore the turn that generates instrumentation
+
 	fxSampleInstrumentation(the, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
@@ -754,6 +759,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
+	modInstrumentationSet(Turns, 0);
 	espInstrumentMachineReset(the);
 }
 

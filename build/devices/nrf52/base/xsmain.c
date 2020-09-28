@@ -21,6 +21,7 @@
 #include "xs.h"
 #include "xsmain.h"
 #include "modTimer.h"
+#include "modInstrumentation.h"
 
 #include "xsPlatform.h"
 #include "xsHost.h"
@@ -63,5 +64,7 @@ void xsTask(void *pvParameter)
 
 		modTimersExecute();
 		modMessageService(the, modTimersNext());
+
+		modInstrumentationAdjust(Turns, +1);
 	}
 }

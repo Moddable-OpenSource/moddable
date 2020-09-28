@@ -54,6 +54,10 @@ enum {
 	/* SPI flash */
 	kModInstrumentationSPIFlashErases,
 #endif
+#if nrf52
+	/* turns */
+	kModInstrumentationTurns,
+#endif
 
 	// Callbacks
 
