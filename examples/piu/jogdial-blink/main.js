@@ -11,9 +11,6 @@
  *   Mountain View, CA 94042, USA.
  *
  */
-import config from "mc/config";
-import JogDial from "jogdial";
-import Digital from "pins/digital";
 import {} from "piu/MC";
 
 const BLACK = "black";
@@ -34,8 +31,7 @@ class BlinkAppBehavior extends Behavior {
 		this.data["VALUE"].string = column.interval + "ms";
 		column.start();
 		let last = 1;
-		this.jogDial = new JogDial({
-			jogdial: config.jogdial,
+		this.jogDial = new Host.JogDial({
 			onTurn(delta) {
 				column.delegate("onTurn", delta);
 			},
@@ -47,10 +43,11 @@ class BlinkAppBehavior extends Behavior {
 				}
 			}
 		});
+		this.led = new Host.LED;
 	}
 	onTimeChanged(column) {
 		this.state = !this.state;
-		Digital.write(7, this.state);
+		this.led.write(this.state ? 1 : 0);
 	}
 	onClick(column) {
 		this.editing = !this.editing;
