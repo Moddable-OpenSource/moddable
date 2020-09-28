@@ -42,9 +42,11 @@ ifeq ($(HOST_OS),Darwin)
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 		CONNECT_XSBUG=@echo "Connect to xsbug." ; serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+		NORESTART=-norestart
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
+		NORESTART =
 	endif
 else
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
@@ -56,9 +58,11 @@ else
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
 		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+		NORESTART=-norestart
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
+		NORESTART =
 	endif
 endif
 
@@ -641,7 +645,7 @@ all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 	$(WAIT_FOR_COPY_COMPLETE)
-	$(CONNECT_XSBUG) -norestart
+	$(CONNECT_XSBUG) $(NORESTART)
 
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(KILL_SERIAL_2_XSBUG)

@@ -112,9 +112,6 @@ static char m_rx_buffer[1];
 NRF_QUEUE_DEF(uint8_t, m_rx_queue, 2048, NRF_QUEUE_MODE_OVERFLOW);
 
 static volatile uint8_t m_usb_connected = false;
-static volatile uint8_t m_usb_reopened = false;
-static volatile uint8_t m_usb_closed = false;
-
 
 static txBuffer gVendorTxBufferList = NULL;
 static uint8_t m_vendor_tx_buffer[kTXBufferSize];
@@ -141,10 +138,6 @@ void setupDebugger(void)
 	if (!gUSBMutex)
 		gUSBMutex = xSemaphoreCreateMutex();
 
-	m_usb_connected = false;
-	m_usb_reopened = false;
-	m_usb_closed = true;
-
 	app_usbd_serial_num_generate();
 
 	if (pdPASS != xTaskCreate(usbd_task, "USBD", USBD_STACK_SIZE, NULL, USBD_PRIORITY, &m_usbd_thread))
@@ -154,7 +147,7 @@ void setupDebugger(void)
 	
 	// Wait up to 7000 ms for host serial port initialization and connection
 	for (count = 0; count < 700; count++) {
-		if (m_usb_connected && m_usb_reopened)
+		if (m_usb_connected)
 			break;
 
 		taskYIELD();
@@ -566,12 +559,6 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN");
 			app_usbd_cdc_acm_read(&m_app_cdc_acm, m_rx_buffer, 1);
 			m_usb_connected = true;
-#if NRF_USBD_REQUIRE_CLOSED_ON_PORT_OPEN
-			if (!m_usb_closed)
-				break;
-#endif
-			m_usb_closed = false;
-			m_usb_reopened = true;
 			break;
         }
 
@@ -614,7 +601,6 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
         case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
     		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE");
     		m_usb_connected = false;
-    		m_usb_closed = true;
         	break;
         	
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE: {
