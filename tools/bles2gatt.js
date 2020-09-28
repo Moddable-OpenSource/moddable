@@ -1260,6 +1260,7 @@ class GeckoGATTFile extends GATTFile {
 class NRF52GATTFile extends GATTFile {
 	constructor(dictionary) {
 		super(dictionary);
+		this.vendorSpecificUUIDs = [];
 	}
 	generate() {
 		let tool = this.tool;
@@ -1290,6 +1291,7 @@ class NRF52GATTFile extends GATTFile {
 			file.line("static const uint8_t attribute_counts[0] = {};");
 			file.line("static const gatts_attr_db_t gatt_db[0][0] = {};");
 			file.line("static const char_name_table char_names[0] = {};");
+			file.line("static const vendor_specific_uuid_t vendor_uuids[0] = {};");
 			if (this.server) {
 				file.line("");
 				file.line("#define handles_count 0");
@@ -1305,7 +1307,6 @@ class NRF52GATTFile extends GATTFile {
 		var attributeCounts = new Array(services.length);
 		var characteristicIndex = 0;
 		var descriptorIndex = 0;
-		var vendorSpecificUUIDs = [];
 		
 		services.forEach((service, index) => {
 			let attributeCount = 1;
@@ -1331,13 +1332,9 @@ class NRF52GATTFile extends GATTFile {
 				maxAttributeCount = attributeCount;
 			attributeCounts[index] = attributeCount;
 			this.writeAttributeUUID(file, service, index, "service");
-			if (36 == service.uuid.length)
-				this.addUniqueVendorSpecificUUID(service.uuid, vendorSpecificUUIDs);
 			for (let key in characteristics) {
 				let characteristic = characteristics[key];
 				this.writeAttributeUUID(file, characteristic, characteristicIndex, "char");
-				if (36 == characteristic.uuid.length)
-					this.addUniqueVendorSpecificUUID(characteristic.uuid, vendorSpecificUUIDs);
 				if ("value" in characteristic) {
 					this.writeAttributeValue(file, characteristic, characteristicIndex, "char");
 				}
@@ -1350,8 +1347,6 @@ class NRF52GATTFile extends GATTFile {
 					for (let key2 in characteristic.descriptors) {
 						let descriptor = characteristic.descriptors[key2];
 						this.writeAttributeUUID(file, descriptor, descriptorIndex, "desc");
-						if (36 == descriptor.uuid.length)
-							this.addUniqueVendorSpecificUUID(descriptor.uuid, vendorSpecificUUIDs);
 						if ("value" in descriptor) {
 							this.writeAttributeValue(file, descriptor, descriptorIndex, "desc");
 						}
@@ -1371,7 +1366,6 @@ class NRF52GATTFile extends GATTFile {
 		
 		file.line(`#define service_count ${services.length}`);
 		file.line(`#define max_attribute_count ${maxAttributeCount}`);
-		file.line(`#define vendor_specific_uuid_count ${vendorSpecificUUIDs.length}`);
 		file.write(`static const uint8_t attribute_counts[${services.length}] = { `);
 		file.write(buffer2hexlist(attributeCounts));
 		file.write(" };");
@@ -1389,6 +1383,7 @@ class NRF52GATTFile extends GATTFile {
 			file.line("\t\t[", attributeIndex, "] = {");
 			file.line(`\t\t\t{UUID_LEN_16, (uint8_t*)&primary_service_uuid, GATT_PERM_READ, sizeof(uint16_t), sizeof(service_uuid${index}), (uint8_t*)&service_uuid${index}}`);
 			file.line("\t\t},");
+			this.addUniqueVendorSpecificUUID(service.uuid, index, "service");
 			++attributeIndex;
 			
 			let characteristics = service.characteristics;
@@ -1425,6 +1420,7 @@ class NRF52GATTFile extends GATTFile {
 					file.write("0, NULL}");
 				file.line("");
 				file.line("\t\t},");
+				this.addUniqueVendorSpecificUUID(characteristic.uuid, characteristicIndex, "char");
 				++attributeIndex;
 				
 				// characteristic configuration descriptor
@@ -1458,6 +1454,7 @@ class NRF52GATTFile extends GATTFile {
 							file.write("0, NULL}");
 						file.line("");
 						file.line("\t\t},");
+						this.addUniqueVendorSpecificUUID(descriptor.uuid, descriptorIndex, "desc");
 						++descriptorIndex;
 						++attributeIndex;
 					}
@@ -1469,6 +1466,14 @@ class NRF52GATTFile extends GATTFile {
 		file.line("};");
 		file.line("");
 		
+		let vendorSpecificUUIDs = this.vendorSpecificUUIDs;
+		file.line(`#define vendor_specific_uuid_count ${vendorSpecificUUIDs.length}`);
+		file.line(`static const vendor_specific_uuid_t vendor_uuids[${vendorSpecificUUIDs.length}] = {`);
+		vendorSpecificUUIDs.forEach(entry => {
+			file.line(`\t(uint8_t*)&${entry.prefix}_uuid${entry.index},`);
+		});
+		file.line("};");
+		file.line("");
 		file.line(`#define char_name_count ${char_names.length}`);
 		file.line(`static const char_name_table char_names[${char_names.length}] = {`);
 		char_names.forEach(entry => {
@@ -1573,23 +1578,27 @@ class NRF52GATTFile extends GATTFile {
 	writeAttributeHandle(file, attribute, index, prefix) {
 		file.line(`static const uint16_t ${prefix}_handle${index};`);
 	}
-	addUniqueVendorSpecificUUID(uuid, list) {
-		let array = new Uint8Array(uuid128toBuffer(uuid));
-		if (0 == list.length)
-			list.push(array);
+	addUniqueVendorSpecificUUID(uuid, index, prefix) {
+		if (36 !== uuid.length) return;
+		let vendorSpecificUUIDs = this.vendorSpecificUUIDs;
+		let buffer = new Uint8Array(uuid128toBuffer(uuid));
+		let match;
+		if ("service" == prefix) {
+			match = vendorSpecificUUIDs.find(entry => { entry.buffer[12] == buffer[12] && entry.buffer[13] == buffer[13] });
+		}
 		else {
-			let item = list.find(element => {
+			match = vendorSpecificUUIDs.find(entry => {
 				let equal = true;
 				for (let i = 0; equal && (i < 16); ++i) {
 					if (12 == i || 13 == i)
 						continue;
-					equal = element[i] == array[i];
+					equal = entry.buffer[i] == buffer[i];
 				}
 				return equal;
 			});
-			if (undefined === item)
-				list.push(array);
 		}
+		if (!match)
+			vendorSpecificUUIDs.push({ index, prefix, buffer });
 	}
 };
 

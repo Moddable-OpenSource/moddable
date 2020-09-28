@@ -60,10 +60,15 @@ typedef struct {
 } gatts_attr_db_t;
 
 typedef struct {
+	uint8_t *uuid;
+} vendor_specific_uuid_t;
+
+typedef struct {
 	nrf_ble_gatt_t *p_gatt;
 	ble_conn_params_init_t cp_init;
 	pm_evt_handler_t pm_event_handler;
 	uint16_t vs_uuid_count;
+	const vendor_specific_uuid_t *p_vs_uuids;
 } modBLEPlatformInitializeDataRecord, *modBLEPlatformInitializeData;
 
 extern const uint16_t primary_service_uuid;

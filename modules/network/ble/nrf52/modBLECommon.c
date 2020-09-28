@@ -90,6 +90,13 @@ ret_code_t modBLEPlatformInitialize(modBLEPlatformInitializeData init)
 		err_code = ble_conn_params_init(&init->cp_init);
 #endif
 
+	// Add vendor-specific 128-bit uuids
+	for (int i = 0; NRF_SUCCESS == err_code && i < init->vs_uuid_count; ++i) {
+		uint8_t uuid_type;
+		ble_uuid128_t ble_uuid_128 = *(ble_uuid128_t*)init->p_vs_uuids[i].uuid;
+		err_code = sd_ble_uuid_vs_add(&ble_uuid_128, &uuid_type);
+	}
+
 	// Initialize the peer manager - this can only happen once
     if (!pm_initialized && (NRF_SUCCESS == err_code)) {
 		err_code = pm_init();

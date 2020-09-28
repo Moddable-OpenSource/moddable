@@ -244,6 +244,7 @@ void xs_ble_client_initialize(xsMachine *the)
 	init.p_gatt = &gBLE->m_gatt;
 	init.pm_event_handler = pm_evt_handler;
 	init.vs_uuid_count = vendor_specific_uuid_count;
+	init.p_vs_uuids = vendor_uuids;
 	p_cp_init = &init.cp_init;
 	c_memset(p_cp_init, 0, sizeof(ble_conn_params_init_t));
 	p_cp_init->first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
@@ -760,19 +761,6 @@ void bleClientReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 {
 	if (!gBLE) return;
 	
-	for (int service_index = 0; service_index < service_count; ++service_index) {
-		const gatts_attr_db_t *att_db = &gatt_db[service_index][0];
-		const attr_desc_t *att_desc = &att_db->att_desc;
-		
-		// register vendor specific 128-bit uuids
-		if (UUID_LEN_128 == att_desc->length) {
-			uint8_t uuid_type;
-			ble_uuid128_t ble_uuid_128;
-			ble_uuid_128 = *(ble_uuid128_t*)att_desc->value;
-			sd_ble_uuid_vs_add(&ble_uuid_128, &uuid_type);
-		}
-	}
-
 	xsBeginHost(the);
 	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
 	xsEndHost(the);

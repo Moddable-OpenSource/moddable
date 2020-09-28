@@ -165,6 +165,7 @@ void xs_ble_server_initialize(xsMachine *the)
 	init.p_gatt = &gBLE->m_gatt;
 	init.pm_event_handler = pm_evt_handler;
 	init.vs_uuid_count = vendor_specific_uuid_count;
+	init.p_vs_uuids = vendor_uuids;
 	p_cp_init = &init.cp_init;
 	c_memset(p_cp_init, 0, sizeof(ble_conn_params_init_t));
 	p_cp_init->first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
