@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,18 +18,8 @@
  *
  */
 
-// @@ How to make these writable within the class when preloaded?
-let suspended = 0;
-let pending = false;
-
 class Sleep {
-	static install(handler) {
-		// this dance allows handlers to be installed both at preload and run time
-		if (Object.isFrozen(Sleep.prototype.handlers))
-			Sleep.prototype.handlers = Array.from(Sleep.prototype.handlers);
-		Sleep.prototype.handlers.push(handler);
-	}
-
+	static install(handler) @ "xs_sleep_install";
 	static clearRetainedBuffer() @ "xs_sleep_clear_retained_buffer";
 	static getRetainedBuffer() @ "xs_sleep_get_retained_buffer";
 	static setRetainedBuffer() @ "xs_sleep_set_retained_buffer";
@@ -41,30 +31,13 @@ class Sleep {
 	
 	static set powerMode() @ "xs_sleep_set_power_mode";
 
-	static deep() {
-		if (0 == suspended) {
-			pending = false;
-			Sleep.prototype.handlers.forEach(handler => (handler)());
-			Sleep.#deep();
-		}
-		else
-			pending = true;
-	}
+	static deep() @ "xs_sleep_deep";
 	
 	static get resetReason() @ "xs_sleep_get_reset_reason";
 	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
-	static prevent() {
-		++suspended;
-	}
-	static allow() {
-		--suspended;
-		if (suspended <= 0) {
-			suspended = 0;
-			if (pending)
-				Sleep.deep();
-		}
-	}
+	static prevent() @ "xs_sleep_prevent";
+	static allow() @ "xs_sleep_allow";
 	
 	static wakeOnAnalog(channel, configuration) {
 		switch(configuration.mode) {
@@ -83,11 +56,8 @@ class Sleep {
 	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt"
 	static wakeOnTimer(ms) @ "xs_sleep_wake_on_timer"
 	
-	static #deep() @ "xs_sleep_deep";	// System OFF sleep mode
-
 	static #wakeOnAnalog() @ "xs_sleep_wake_on_analog"
 };
-Sleep.prototype.handlers = [];
 
 const PowerMode = {
 	ConstantLatency: 1,

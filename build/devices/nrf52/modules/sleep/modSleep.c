@@ -78,8 +78,25 @@ enum {
 	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
 #endif
 
+typedef struct modSleepHandlerRecord modSleepHandlerRecord;
+typedef modSleepHandlerRecord *modSleepHandler;
+
+struct modSleepHandlerRecord {
+	struct modSleepHandlerRecord *next;
+	xsSlot callback;
+};
+
+typedef struct {
+	uint8_t suspended;
+	uint8_t pending;
+	modSleepHandler handlers;
+} modSleepRecord, *modSleep;
+
+static modSleepRecord gSleep = {0};
+
 static uint8_t softdevice_enabled();
 static void clear_retained_buffer();
+static void sleep_deep(xsMachine *the);
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
@@ -90,6 +107,42 @@ static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *s
 	16-bit buffer length
 	buffer
 **/
+
+void xs_sleep_install(xsMachine *the)
+{
+	uint16_t argc = xsmcArgc;
+	modSleepHandler handler;
+	if (0 == argc) {
+		while (NULL != (handler = gSleep.handlers)) {
+			gSleep.handlers = handler->next;
+			xsForget(handler->callback);
+			c_free(handler);
+		}
+	}
+	else {
+		handler = c_malloc(sizeof(modSleepHandlerRecord));
+		handler->next = NULL;
+		handler->callback = xsArg(0);
+		xsRemember(handler->callback);
+		handler->next = gSleep.handlers;
+		gSleep.handlers = handler;
+	}
+}
+
+void xs_sleep_prevent(xsMachine *the)
+{
+	++gSleep.suspended;
+}
+
+void xs_sleep_allow(xsMachine *the)
+{
+	--gSleep.suspended;
+	if (gSleep.suspended <= 0) {
+		gSleep.suspended = 0;
+		if (gSleep.pending)
+			sleep_deep(the);
+	}
+}
 
 void xs_sleep_set_retained_buffer(xsMachine *the)
 {
@@ -117,8 +170,10 @@ void xs_sleep_set_retained_buffer(xsMachine *the)
 
 	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
 	
-	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)); 
-
+	ram_powerset =
+		(1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
+		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
+	
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
 		sd_power_ram_power_set(ram_slave, ram_powerset);
@@ -214,7 +269,9 @@ void xs_sleep_set_retained_value(xsMachine *the)
 	
 	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
 
-	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)); 
+	ram_powerset =
+		(1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
+		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
 
 	if (softdevice_enabled()) {
 		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
@@ -256,28 +313,12 @@ void xs_sleep_deep(xsMachine *the)
 	return;
 #endif
 
-	if (softdevice_enabled())
-		sd_power_system_off();
-	else
-		NRF_POWER->SYSTEMOFF = 1;
-
-	// Use data synchronization barrier and a delay to ensure that no failure
-	// indication occurs before System OFF is actually entered.
-	__DSB();
-	__NOP();
-
-	// System Off mode is emulated in debug mode. It is therefore suggested to include an
-	// infinite loop right after System OFF to prevent the CPU from executing code that shouldn't
-	// normally be executed. 
-	// https://devzone.nordicsemi.com/f/nordic-q-a/55486/gpio-wakeup-from-system-off-under-freertos-restarts-at-address-0x00000a80
-	// https://infocenter.nordicsemi.com/index.jsp?topic=%2Fps_nrf52840%2Fpower.html&cp=4_0_0_4_2_2_0&anchor=unique_142049681
-
-	// Note that even with this loop, on debug builds, the application ends up in what appears to be 
-	// the Hardfault_Handler at restart after a wakeup from a digital pin.
-	// This code should never be reached on release builds.
-#ifdef mxDebug
-	for (;;) {}
-#endif
+	if (gSleep.suspended > 0) {
+		gSleep.pending = true;
+		return;
+	}
+	
+	sleep_deep(the);
 }
 
 void xs_sleep_get_reset_reason(xsMachine *the)
@@ -365,8 +406,6 @@ void xs_sleep_wake_on_interrupt(xsMachine *the)
 	nrf_delay_ms(1);
 }
 
-extern char __HeapLimit;		// from linker
-
 void xs_sleep_wake_on_timer(xsMachine *the)
 {
 	uint32_t ms = xsmcToInteger(xsArg(0));
@@ -440,13 +479,42 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	exitTime = nrf_rtc_counter_get(portNRF_RTC_REG);
 
 	// @@ set clock based on the amount of time we slept and the clock value retained before sleep
-	
-	/* It is important that we clear pending here so that our corrections are latest and in sync with tick_interrupt handler */
-	NVIC_ClearPendingIRQ(portNRF_RTC_IRQn);
-
-	__enable_irq();
 
 	NVIC_SystemReset();
+}
+
+void sleep_deep(xsMachine *the)
+{
+	modSleepHandler walker;
+
+	walker = gSleep.handlers;
+	while (NULL != walker) {
+		xsCallFunction0(walker->callback, xsGlobal);
+		walker = walker->next;
+	}
+
+	if (softdevice_enabled())
+		sd_power_system_off();
+	else
+		NRF_POWER->SYSTEMOFF = 1;
+
+	// Use data synchronization barrier and a delay to ensure that no failure
+	// indication occurs before System OFF is actually entered.
+	__DSB();
+	__NOP();
+
+	// System Off mode is emulated in debug mode. It is therefore suggested to include an
+	// infinite loop right after System OFF to prevent the CPU from executing code that shouldn't
+	// normally be executed. 
+	// https://devzone.nordicsemi.com/f/nordic-q-a/55486/gpio-wakeup-from-system-off-under-freertos-restarts-at-address-0x00000a80
+	// https://infocenter.nordicsemi.com/index.jsp?topic=%2Fps_nrf52840%2Fpower.html&cp=4_0_0_4_2_2_0&anchor=unique_142049681
+
+	// Note that even with this loop, on debug builds, the application ends up in what appears to be 
+	// the Hardfault_Handler at restart after a wakeup from a digital pin.
+	// This code should never be reached on release builds.
+#ifdef mxDebug
+	for (;;) {}
+#endif
 }
 
 uint8_t softdevice_enabled()
