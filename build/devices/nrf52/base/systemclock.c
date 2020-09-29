@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -25,11 +25,6 @@
 
 #include "task.h"
 
-#define TIMER_RESOLUTION_IN_MS	1
-#define TICK_INTERVAL_MS		1
-
-volatile uint32_t gTicksMS = 0;
-
 void nrf52_delay(uint32_t delayMS) {
 
 	nrf_delay_us(delayMS * 1000);
@@ -37,8 +32,5 @@ void nrf52_delay(uint32_t delayMS) {
 
 uint32_t nrf52_milliseconds() {
 	return xTaskGetTickCount();
-}
-
-void nrf52_watchdog() {
 }
 
