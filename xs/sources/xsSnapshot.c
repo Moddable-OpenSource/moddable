@@ -745,7 +745,9 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			mxThrowIf((*snapshot->read)(snapshot->stream, the->freeHeap, atom.atomSize));
 			the->freeHeap = the->freeHeap + (atom.atomSize / sizeof(txSlot));
 	
-			slot = the->firstHeap + 1;
+			slot = the->firstHeap;
+			slot->value.reference = the->freeHeap;
+			slot++;
 			while (slot < the->freeHeap) {
 				fxReadSlot(the, snapshot, slot, 1);
 				slot++;
