@@ -1,7 +1,7 @@
 # Manifest
 
-Copyright 2017-2019 Moddable Tech, Inc.<BR>
-Revised: August 28, 2020
+Copyright 2017-2020 Moddable Tech, Inc.<BR>
+Revised: September 29, 2020
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -64,6 +64,14 @@ The `build` object defines the environment variables used to build paths in othe
 },
 ```
 
+When you build an application, the default output directory name is taken from the directory name containing the manifest. You can specify a different output directory name by specifying a `NAME` environment variable in the `build` object.
+
+```js
+"build": {
+	"NAME": "balls"
+}
+```
+	
 #### `ESP32-specific environment variables`
 
 The `esp32` platform object supports a number of optional environment variables applications can use to customize the Moddable SDK ESP32 build:
