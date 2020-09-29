@@ -260,8 +260,12 @@ void fxString(txMachine* the, txSlot* theSlot, txString theValue)
 
 void fxStringX(txMachine* the, txSlot* theSlot, txString theValue)
 {
+#ifdef mxSnapshot
+	fxCopyStringC(the, theSlot, theValue);
+#else
 	theSlot->value.string = theValue;
 	theSlot->kind = XS_STRING_X_KIND;
+#endif
 }
 
 void fxStringBuffer(txMachine* the, txSlot* theSlot, txString theValue, txSize theSize)

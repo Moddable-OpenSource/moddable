@@ -60,7 +60,7 @@ static txSlot* fxGetEntry(txMachine* the, txSlot* table, txSlot* slot);
 static txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable);
 //static void fxPurgeEntries(txMachine* the, txSlot* list);
 static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txSlot* pair); 
-static txU4 fxSumEntry(txMachine* the, txSlot* slot); 
+extern txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 
 static void fxKeepDuringJobs(txMachine* the, txSlot* target);
@@ -1254,12 +1254,12 @@ void fx_WeakRef(txMachine* the)
 	txSlot* target;
 	txSlot* instance;
 	if (mxIsUndefined(mxTarget))
-		mxTypeError("call: WeakSet");
+		mxTypeError("call: WeakRef");
 	if (mxArgc < 1)
-		mxTypeError("new WeakSet: no target");
+		mxTypeError("new WeakRef: no target");
 	target = mxArgv(0);
 	if (!mxIsReference(target))
-		mxTypeError("new WeakSet: target is no object");
+		mxTypeError("new WeakRef: target is no object");
 	target = target->value.reference;
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxWeakRefPrototype);

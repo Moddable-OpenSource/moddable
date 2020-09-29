@@ -567,8 +567,8 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 
 	PocoBitmapDraw(poco, bits, x, y, sx, sy, sw, sh);
 
-	if (kPocoCommandMonochromeBitmapDraw != pc->command)
-		return;
+	if (poco->next == pc)
+		return;		// didn't queue anything to draw
 
 	rmb->mode = mode;
 #if kPocoPixelFormat != kCommodettoBitmapCLUT16

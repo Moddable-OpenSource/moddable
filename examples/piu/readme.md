@@ -1,5 +1,8 @@
 # Moddable SDK - Piu Examples
 
+Copyright 2020 Moddable Tech, Inc.<BR>
+Revised: September 28, 2020
+
 These examples demonstrate how to use features of the [Piu user interface framework](../../documentation/piu/piu.md). Piu is an object-based framework that makes it easier to create complex, responsive layouts.
 
 Most of the examples are designed for a QVGA (320x240) screen, but many feature responsive layouts that work on a variety of screen sizes. All of the examples in this folder run on the desktop simulator with the exception of the `one-line` and `one-line-keyboard` examples.
@@ -45,6 +48,16 @@ The `cards` example uses the Piu `Timeline` object to animate Moddable employees
 ***
 -->
 
+### `color-picker`
+
+![](http://www.moddable.com/assets/piu-gifs/color-picker.gif)
+
+The `color-picker` example provides a simple user interface for selecting a color. Drag the picker around the colored image to select a color. The selected color is displayed in the header bar.
+
+> For more information about the color picker implementation, see our blog post [A Color Picker for Microcontrollers](https://blog.moddable.com/blog/colorpicker/).
+
+***
+
 ### `countdown`
 
 ![](http://www.moddable.com/assets/piu-gifs/countdown.gif)
@@ -69,11 +82,31 @@ The `easing-equations` example demonstrates the use of the easing equations buil
 
 ***
 
+### `hardware-rotation`
+
+The `hardware-rotation` example rotates the image and text on the display every three seconds. This example is only compatible with display controllers that support hardware rotation.
+
+> For more information about hardware rotation, see our blog post [Run-time Display Rotation](https://blog.moddable.com/blog/rotate/).
+
+***
+
 ### `heartrate`
 
 ![](http://www.moddable.com/assets/piu-gifs/heartrate.gif)
 
 The `heartrate` example generates a random number each second and displays it as part of a sample UI for a heartrate monitor.
+
+***
+
+### `horizontal-expanding-keyboard`
+
+![](http://www.moddable.com/assets/piu-gifs/horizontal-expanding-keyboard.gif)
+
+The `horizontal-expanding-keyboard` example demonstrates the use of the expanding keyboard module to create an on-screen keyboard for a touch screen. The horizontal expanding keyboard is designed to make touch input easier on 320x240 displays..
+
+*See also the `keyboard` and `vertical-expanding-keyboard` examples.*
+
+> For more information about the expanding keyboard, see our blog post [Introducing an Expanding Keyboard for Small Screens](https://blog.moddable.com/blog/expanding-keyboard/).
 
 ***
 
@@ -90,6 +123,8 @@ The `images` example demonstrates how to render GIFs, JPEGs, and PNGs.
 ![](http://www.moddable.com/assets/piu-gifs/keyboard.gif)
 
 The `keyboard` example demonstrates the use of the keyboard module to create an on-screen keyboard for a touch screen. The keyboard module may be used on many screen sizes.
+
+*See also the `horizontal-expanding-keyboard` and `vertical-expanding-keyboard` examples.*
 
 ***
 
@@ -150,17 +185,23 @@ The `one-line` and `one-line-keyboard` examples are designed to work together. T
 
 ***
 
-<!--
 ### `preferences`
 
+The `preferences` example demonstrates how to set preferences that are saved across boot. Tap a color to change the background color and set a background color preference. When the device is rebooted, the background color will be the last color selected.
+
 ***
--->
 
 ### `scroller`
 
 ![](http://www.moddable.com/assets/piu-gifs/scroller.gif)
 
 The `scroller` example shows how to create vertical and horizontal scrolling content. Tap the title bar to toggle between the two directions. 
+
+***
+
+### `sound`
+
+The `sound` example demonstrates how to use the Piu `Sound` object. Tap the play button to play a sound. Tap the volume buttons to adjust the volume.
 
 ***
 
@@ -203,6 +244,19 @@ The `timeline` example demonstrates the use of the `to`, `from`, and `on` functi
 The `transitions example demonstrates the use of the Piu comb and wipe transitions. These are useful for creating full screen transitions.
 
 ***
+
+### `vertical-expanding-keyboard`
+
+![](http://www.moddable.com/assets/piu-gifs/vertical-expanding-keyboard.gif)
+
+The `vertical-expanding-keyboard` example demonstrates the use of the expanding keyboard module to create an on-screen keyboard for a touch screen. The vertical expanding keyboard is designed to make touch input easier on 240x320 displays.
+
+*See also the `keyboard` and `horizontal-expanding-keyboard` examples.*
+
+> For more information about the expanding keyboard, see our blog post [Introducing an Expanding Keyboard for Small Screens](https://blog.moddable.com/blog/expanding-keyboard/).
+
+***
+
 
 ### `weather` and `mini-weather`
 
