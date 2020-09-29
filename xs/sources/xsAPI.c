@@ -1701,6 +1701,19 @@ void fxShareMachine(txMachine* the)
 			mxException.value.reference = mxRealmClosures(realm)->value.reference;
 			mxProgram.value.reference = modules; //@@
 			
+			{
+				txSlot* target = fxNewInstance(the);
+				txSlot* modules = mxOwnModules(realm)->value.reference;
+				txSlot* module = modules->next;
+				while (module) {
+					target = target->next = fxNewSlot(the);
+					target->value.symbol = mxModuleInstanceInternal(module->value.reference)->value.module.id;
+					target->kind = XS_SYMBOL_KIND;
+					target->ID = mxModuleInstanceInternal(module->value.reference)->value.module.id;
+					module = module->next;
+				}
+				mxPull(mxHosts); //@@
+			}
 			mxDuringJobs = mxUndefined;
 			mxFinalizationRegistries = mxUndefined;
 			mxPendingJobs = mxUndefined;
