@@ -2135,7 +2135,8 @@ again:
 			for (j = i; (j > 0) && (COMPARE(j - 1) > 0); j--) {
 				CHECK;
 				MOVE(j - 1, j);
-			}	
+			}
+            CHECK;
 			PULL(j);
 		}
 	}
