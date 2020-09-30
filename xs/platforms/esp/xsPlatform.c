@@ -1220,12 +1220,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 14:
 #if ESP32
-			if (ESP_ERR_WIFI_NOT_INIT == esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset)) {
-				wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-				cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
-				esp_wifi_init(&cfg);
-				esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset);
-			}
+			esp_efuse_mac_get_default(the->echoBuffer + the->echoOffset);
 #else
 			wifi_get_macaddr(0 /* STATION_IF */, the->echoBuffer + the->echoOffset);
 #endif
