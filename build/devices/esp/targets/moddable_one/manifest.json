@@ -1,7 +1,9 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/ft6206/manifest.json"
+		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
 	],
 	"build": {
 		"FLASH_MODE": "qio",
@@ -34,5 +36,11 @@
 			"flipX": false,
 			"flipY": false,
 		},
-	}
+	},
+	"modules": {
+		 "setup/target": "./setup-target"
+	},
+	 "preload": [
+		 "setup/target"
+	]
 }
