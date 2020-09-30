@@ -1084,7 +1084,8 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 	}
 	while (aProperty) {
 		if (aProperty->ID < -1) {
-			fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
+			if (!(aProperty->flag & XS_INTERNAL_FLAG))
+				fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
 		}
 		else {
 			if (aProperty->kind == XS_ARRAY_KIND) {

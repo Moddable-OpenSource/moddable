@@ -857,11 +857,11 @@ mxExport void fx_trace_left(txMachine* the);
 mxExport void fx_trace_right(txMachine* the);
 mxExport void fx_unescape(txMachine* the);
 
-extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot);
+extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id);
 extern txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
 extern txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value);
 extern void fxIteratorReturn(txMachine* the, txSlot* iterator);
-extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable);
+extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
 
