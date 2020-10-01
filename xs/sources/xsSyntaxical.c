@@ -3145,7 +3145,7 @@ void fxBinding(txParser* parser, txToken theToken, txFlag initializeIt)
 
 txNode* fxBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken)
 {
-	txToken aToken = theNode->description->token;
+	txToken aToken = (theNode && theNode->description) ? theNode->description->token : XS_NO_TOKEN;
 	txNode* binding;
 	if (aToken == XS_TOKEN_EXPRESSIONS) {
 		txNode* item = ((txExpressionsNode*)theNode)->items->first;
