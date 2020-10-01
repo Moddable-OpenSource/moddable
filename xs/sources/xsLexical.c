@@ -662,6 +662,7 @@ void fxGetNextString(txParser* parser, int c)
 	}
 	parser->rawLength2 = p - parser->buffer;
 	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
+	fprintf(stderr, "%s\n", parser->raw2);
 	if (parser->escaped2) {
 		txInteger character;
 		int errorCount = 0;
@@ -678,6 +679,8 @@ void fxGetNextString(txParser* parser, int c)
 			if (*s == '\\') {
 				s++;
 				switch (*s) {
+				case 0:
+					break;
 				case 10:
 					s++;
 					break;
