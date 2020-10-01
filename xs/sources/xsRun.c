@@ -1113,7 +1113,7 @@ XS_CODE_JUMP:
 			
 	/* FRAMES */		
 		mxCase(XS_CODE_ARGUMENT)
-			offset = mxRunS1(1);
+			offset = mxRunU1(1);
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, offset);
 #endif
@@ -1128,7 +1128,7 @@ XS_CODE_JUMP:
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS)
-			offset = mxRunS1(1);
+			offset = mxRunU1(1);
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, offset);
 #endif
@@ -1151,7 +1151,7 @@ XS_CODE_JUMP:
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_SLOPPY)
-			offset = mxRunS1(1);
+			offset = mxRunU1(1);
 			mxOverflow(1);
 			*mxStack = mxArgumentsSloppyPrototype;
 			mxSaveState;
@@ -1160,7 +1160,7 @@ XS_CODE_JUMP:
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_STRICT)
-			offset = mxRunS1(1);
+			offset = mxRunU1(1);
 			mxOverflow(1);
 			*mxStack = mxArgumentsStrictPrototype;
 			mxSaveState;
@@ -2593,7 +2593,7 @@ XS_CODE_JUMP:
 			slot->kind = XS_CODE_KIND;
 			slot->value.code.address = scratch.value.code.address;
 			if (gxDefaults.newFunctionLength) {
-				gxDefaults.newFunctionLength(the, variable, *(scratch.value.code.address + 1));
+				gxDefaults.newFunctionLength(the, variable, *(((txU1*)scratch.value.code.address + 1)));
 			}
 			mxNextCode(offset);
 			mxBreak;
