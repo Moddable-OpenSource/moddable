@@ -43,6 +43,8 @@
 #include "mc.defines.h"
 #include "xsHost.h"
 
+#include "nrf_ficr.h"
+
 #define XSDEBUG_NONE	0,0,0,0
 #define XSDEBUG_SERIAL	127,0,0,7
 
@@ -563,6 +565,13 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
 			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
 			break;
+		
+		case 14:  {
+			uint32_t *id = (uint32_t *)(the->echoBuffer + the->echoOffset);
+			id[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
+			id[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+			the->echoOffset += 8;
+			} break;
 
 		default:
 			resultCode = -3;
