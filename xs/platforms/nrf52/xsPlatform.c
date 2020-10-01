@@ -205,6 +205,9 @@ void fxConnect(txMachine* the)
 			static const char *piReset = "<?xs-00000000?>\r\n";
 			const char *cp = piReset;
 
+			modDelayMilliseconds(200);
+			taskYIELD();
+
 			while (true) {
 				char c = c_read8(cp++);
 				if (!c) break;
