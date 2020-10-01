@@ -34,7 +34,6 @@
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_freertos.h"
 #include "nrf_ble_gatt.h"
-#include "nrf_sdh.h"
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 
