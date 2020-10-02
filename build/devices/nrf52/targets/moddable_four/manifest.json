@@ -5,7 +5,8 @@
 		"$(MODULES)/drivers/jogdial/manifest.json",
 		"$(MODULES)/drivers/button/manifest.json",
 		"$(MODULES)/drivers/led/manifest.json",
-		"$(MODULES)/pins/smbus/manifest.json"
+		"$(MODULES)/pins/smbus/manifest.json",
+		"$(MODULES)/files/preference/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",

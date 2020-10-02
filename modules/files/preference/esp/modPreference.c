@@ -22,9 +22,9 @@
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
-extern uint8_t _MODPREF_start;
+extern uint32_t _MODPREF_start;
 
-#define kPreferencesStartOffset ((uint8_t *)&_MODPREF_start - kFlashStart)
+#define kPreferencesStartOffset ((uintptr_t)&_MODPREF_start - kFlashStart)
 #define kPreferencesMagic 0x81213141
 
 enum {

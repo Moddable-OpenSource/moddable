@@ -483,6 +483,16 @@ void fxSend(txMachine* the, txBoolean flags)
 	}
 }
 
+enum {
+	kPrefsTypeBoolean = 1,
+	kPrefsTypeInteger = 2,
+	kPrefsTypeString = 3,
+	kPrefsTypeBuffer = 4,
+};
+
+extern uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
+extern uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut);
+
 void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 {
 	uint16_t resultID = 0;
@@ -541,6 +551,55 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 			break;
 #endif /* MODDEF_XS_MODS */
+
+		case 4: {	// set preference
+			uint8_t *domain = cmd, *key = NULL, *value = NULL;
+			while (cmdLen--) {
+				if (!*cmd++) {
+					if (NULL == key)
+						key = cmd;
+					else if (NULL == value) {
+						value = cmd;
+						break;
+					}
+				}
+			}
+			if (key && value) {
+				uint8_t prefType = c_read8(value++);
+				cmdLen -= 1;
+				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
+					resultCode = -1;
+			}
+			} break;
+
+		case 6: {		// get preference
+			uint8_t *domain = cmd, *key = NULL, *value = NULL;
+			int zeros = 0;
+			while (cmdLen--) {
+				if (!*cmd++) {
+					zeros += 1;
+					if (NULL == key)
+						key = cmd;
+					else
+						break;
+				}
+			}
+			if ((2 == zeros) && key) {
+				if (NULL != c_strstr(key, "password")) {
+					resultCode = -4;
+					break;
+				}
+				uint8_t buffer[65];
+				uint8_t type;
+				uint16_t byteCountOut;
+				if (!modPreferenceGet(domain, key, &buffer[0], buffer + 1, sizeof(buffer), &byteCountOut))
+					resultCode = -1;
+				else {
+					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
+					the->echoOffset += byteCountOut + 1;
+				}
+			}
+		} break;
 
 		case 9:
 			if (cmdLen >= 4)
