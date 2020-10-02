@@ -37,16 +37,17 @@ ifeq ($(HOST_OS),Darwin)
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(M4_VID) $(M4_PID) $(UF2_VOLUME_PATH)
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
-	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 		CONNECT_XSBUG=@echo "Connect to xsbug." ; serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
 		NORESTART=-norestart
+		WAIT_FOR_COPY_COMPLETE =
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
 		NORESTART =
+		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 else
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
@@ -87,7 +88,7 @@ SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.1
 BOARD_DEF = BOARD_MODDABLE_FOUR
 
 #HEAP_SIZE = 0x13000
-HEAP_SIZE = 0x32F00
+HEAP_SIZE ?= 0x32F00
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
