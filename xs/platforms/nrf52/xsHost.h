@@ -410,7 +410,7 @@ extern void nrf52_get_mac(uint8_t *mac);
 
 extern nrf_fstorage_t fstorage;
 
-// it appears that the flash offsets aree placeed into the memory map without any offset
+// it appears that the flash offsets aree placed into the memory map without any offset
 #define kFlashStart ((uintptr_t)0)
 #define kFlashSectorSize (modSPIFlashInit() ? fstorage.p_flash_info->erase_unit : 0)
 
@@ -427,6 +427,7 @@ extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 extern uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
+char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 #ifdef __cplusplus
 }

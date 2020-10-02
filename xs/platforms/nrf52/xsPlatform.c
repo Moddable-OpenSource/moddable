@@ -512,7 +512,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		case 1:		// restart
 			break;
 
-//#if MODDEF_XS_MODS
+#if MODDEF_XS_MODS
 		case 2: {		// uninstall
 			uint8_t erase[16] = {0};
 			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
@@ -540,7 +540,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				resultCode = -1;
 			}
 			break;
-//#endif /* MODDEF_XS_MODS */
+#endif /* MODDEF_XS_MODS */
 
 		case 9:
 			if (cmdLen >= 4)
@@ -573,6 +573,24 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			id[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
 			the->echoOffset += 8;
 			} break;
+
+#if MODDEF_XS_MODS
+		case 15:
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
+			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
+			break;
+
+		case 16: {
+			int atomSize;
+			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
+				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
+				the->echoOffset += atomSize;
+			}
+			} break;
+#endif
 
 		default:
 			resultCode = -3;
