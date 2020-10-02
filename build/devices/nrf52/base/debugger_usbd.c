@@ -131,12 +131,19 @@ static TaskHandle_t m_usbd_thread;
 #define usbMutexGive() xSemaphoreGive(gUSBMutex)
 static SemaphoreHandle_t gUSBMutex = NULL;
 
+static void debug_task(void *pvParameter);
+#define DEBUG_TASK_PRIORITY		2
+static QueueHandle_t uartQueue;
+
 void setupDebugger(void)
 {
 	uint32_t count;
 
 	if (!gUSBMutex)
 		gUSBMutex = xSemaphoreCreateMutex();
+
+	uartQueue = xQueueCreate(5, sizeof(uint32_t));
+	xTaskCreate(debug_task, "debug", configMINIMAL_STACK_SIZE, uartQueue, 4, NULL);
 
 	app_usbd_serial_num_generate();
 
@@ -150,7 +157,6 @@ void setupDebugger(void)
 		if (m_usb_connected)
 			break;
 
-		taskYIELD();
 		modDelayMilliseconds(10);
 	}
 }
@@ -160,8 +166,22 @@ void flushDebugger()
 	uint32_t count = 0;
 	
 	while ((NULL != gTxBufferList) && (count++ < 10)) {
-		taskYIELD();
 		modDelayMilliseconds(100);
+	}
+}
+
+static void debug_task(void *pvParameter)
+{
+	extern uint8_t fxIsConnected(xsMachine *the);
+
+	while (true) {
+		uint32_t event;
+
+		if (!xQueueReceive((QueueHandle_t)pvParameter, (void *)&event, portMAX_DELAY))
+			continue;
+		if (1 == event) {
+			fxReceiveLoop();
+		}
 	}
 }
 
@@ -584,9 +604,11 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     		ftdiTraceAndInt("Read bytes =", count);
 			ftdiTraceHex(m_rx_buffer, count);
 
-			// Here, we inform the xsMain task that there is data available.
-			// If ulPreviousValue isn't 0, then data hasn't yet been serviced.
-			xTaskNotifyAndQuery(gMainTask, 1, eSetBits, &ulPreviousValue);
+			// let the debug_task know that there is data to process
+			uint32_t val = 1;
+			if (pdPASS != xQueueSend(uartQueue, (void*)&val, (TickType_t)10) ) {
+				ftdiTrace("Send to uartQueue failed\n");
+			}
     		
     		// Drain and toss remaining bytes if queue is full
     		if (nrf_queue_is_full(&m_rx_queue)) {

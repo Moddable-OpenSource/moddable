@@ -242,6 +242,7 @@ txBoolean fxIsReadable(txMachine* the)
 {
 	if ((txSocket)kSerialConnection == the->connection) {
 //		fxReceiveLoop();
+		taskYIELD();
 		return NULL != the->debugFragments;
 	}
 
