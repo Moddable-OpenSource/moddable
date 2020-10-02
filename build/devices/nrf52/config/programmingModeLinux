@@ -13,8 +13,13 @@ if [ -d "$volume" ];
 then
 	echo "Already in programming mode."
 else
-echo "Kicking serial port $serial"
-	serial2xsbug $serial 921600 8N1 -programming
+	if [ -z "$serial" ];
+	then
+		echo "If led is not blinking, please double-tap the reset button to enter programming mode."
+	else
+		echo "Triggering serial port $serial."
+		serial2xsbug $serial 921600 8N1 -programming
+	fi
 
 echo -n "Waiting for $name."
 # echo -n "Double-tap the reset button to enter programming mode."
