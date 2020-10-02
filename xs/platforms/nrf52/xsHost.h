@@ -77,7 +77,7 @@ extern int modTimersNext(void);
 extern uint32_t nrf52_milliseconds();
 extern void nrf52_delay(uint32_t delayMS);
 
-#define modDelayMilliseconds(ms) nrf52_delay(ms)
+#define modDelayMilliseconds(ms) vTaskDelay(ms) // nrf52_delay(ms)
 #define modDelayMicroseconds(us) nrf52_delay(((us) + 500) / 1000)
 #define modMilliseconds() nrf52_milliseconds()
 #define modMicroseconds() (uint32_t)(nrf52_milliseconds() * 1000)
