@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <https://creativecommons.org/licenses/by/4.0>.
+ *       <https://creativecommons.org/licenses/by/4.0>
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -139,7 +139,13 @@ let TestApplication = Application.template($ => ({
 				Port($, {left:0, right:0, top:0, active:true, Behavior:ListBehavior }),
 			]
 		}),
-	]
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(application) {
+			if (!(application.height >= 128) || !(application.width >= 128))
+				trace("WARNING: This application was designed to run on a screen larger than 128x128.\n");
+		}
+	}
 }));
 
 let data = lorem.split(".").map((item, index) => ({ ssid:item.trim(), variant:(index % 10) - 5 }));

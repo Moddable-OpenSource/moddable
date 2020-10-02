@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <https://creativecommons.org/licenses/by/4.0>.
+ *       <https://creativecommons.org/licenses/by/4.0>
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -56,7 +56,13 @@ let DragApplication = Application.template($ => ({
 				Content({ x:0, y:160 }, { left:0, top:40, width:120, height:120, skin:swSkin, active:true, Behavior:DragBehavior }),
 			],
 		}),
-	]
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(application) {
+			if (application.height != 320 || application.width != 240)
+				trace("WARNING: This application was designed to run on a 240x320 screen.\n");
+		}
+	}
 }));
 
 export default function() {
