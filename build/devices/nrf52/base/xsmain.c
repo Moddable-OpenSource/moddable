@@ -57,11 +57,6 @@ void xsTask(void *pvParameter)
 	mc_setup(the);
 
 	while (1) {
-#ifdef mxDebug
-		if (ulTaskNotifyTake(pdTRUE, 0))	// notification from usb driver that there is data available.
-			fxReceiveLoop();
-#endif
-
 		modTimersExecute();
 		modMessageService(the, modTimersNext());
 
