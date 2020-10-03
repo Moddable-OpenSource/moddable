@@ -95,18 +95,9 @@ typedef struct {
 static modSleepRecord gSleep = {0};
 
 static uint8_t softdevice_enabled();
-static void clear_retained_buffer();
 static void sleep_deep(xsMachine *the);
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
-
-/**
-	Retention buffer format:
-	
-	kRamRetentionBufferMagic
-	16-bit buffer length
-	buffer
-**/
 
 void xs_sleep_install(xsMachine *the)
 {
@@ -144,84 +135,10 @@ void xs_sleep_allow(xsMachine *the)
 	}
 }
 
-void xs_sleep_set_retained_buffer(xsMachine *the)
-{
-	uint8_t *buffer = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint16_t bufferLength = xsmcGetArrayBufferLength(xsArg(0));
-	uint8_t *ram = &gRamRetentionBuffer[0];
-	uint32_t ram_slave, ram_section, ram_powerset;
-
-	uint32_t retainedSize = sizeof(kRamRetentionBufferMagic) + 2 + bufferLength;
-
-	if (retainedSize > kRamRetentionBufferSize)
-		xsRangeError("invalid buffer size");
-
-	clear_retained_buffer();
-	
-	ram[0] = (uint8_t)(kRamRetentionBufferMagic & 0xFF);
-	ram[1] = (uint8_t)((kRamRetentionBufferMagic >> 8) & 0xFF);
-	ram[2] = (uint8_t)((kRamRetentionBufferMagic >> 16) & 0xFF);
-	ram[3] = (uint8_t)((kRamRetentionBufferMagic >> 24) & 0xFF);
-	ram += sizeof(kRamRetentionBufferMagic);
-	ram[0] = (uint8_t)(bufferLength & 0xFF);
-	ram[1] = (uint8_t)((bufferLength >> 8) & 0xFF);
-	ram += 2;
-	c_memmove(ram, buffer, bufferLength);
-
-	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
-	
-	ram_powerset =
-		(1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
-		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
-	
-	if (softdevice_enabled()) {
-		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
-		sd_power_ram_power_set(ram_slave, ram_powerset);
-	}
-	else {
-    	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
-		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
-	}
-}
-
-void xs_sleep_get_retained_buffer(xsMachine *the)
-{
-	uint8_t *ram;
-	uint16_t bufferLength;
-	uint32_t gpreg;
-	uint8_t sd_enabled = softdevice_enabled();
-	
-	if (sd_enabled)
-		sd_power_gpregret_get(0, &gpreg);
-	else
-		gpreg = NRF_POWER->GPREGRET;
-
-	// If retention register doesn't contain the magic value there is no retained ram
-	if (kRamRetentionRegisterMagic != gpreg)
-		return;
-
-	ram = &gRamRetentionBuffer[0];
-	if (kRamRetentionBufferMagic != c_read32(ram)) {
-		clear_retained_buffer();	// clear retained ram on failure
-		return;
-	}
-	ram += 4;
-	bufferLength = c_read16(ram);
-	ram += 2;
-
-	xsmcSetArrayBuffer(xsResult, (uint8_t*)ram, bufferLength);
-}
-
-void xs_sleep_clear_retained_buffer(xsMachine *the)
-{
-	clear_retained_buffer();
-}
-
 /**
 	Retained value format (each value requires 8 bytes):
-	
-	32-bit kRamRetentionValueMagic
-	32-bit value
+		- 32-bit kRamRetentionValueMagic
+		- 32-bit value
 **/
 
 void xs_sleep_clear_retained_value(xsMachine *the)
@@ -269,8 +186,7 @@ void xs_sleep_set_retained_value(xsMachine *the)
 	
 	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
 
-	ram_powerset =
-		(1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
+	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
 		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
 
 	if (softdevice_enabled()) {
@@ -379,6 +295,9 @@ void xs_sleep_wake_on_analog(xsMachine *the)
 	if (input < NRF_LPCOMP_INPUT_0 || input > NRF_LPCOMP_INPUT_7)
 		xsRangeError("invalid analog channel number");
 
+	if (detection < kAnalogWakeModeCrossing || detection > kAnalogWakeModeDown)
+		xsRangeError("invalid analog detect mode");
+
 	scaledValue = ((double)value) / (1L << kAnalogResolution);
 	reference = (uint16_t)(scaledValue * (LPCOMP_REFSEL_REFSEL_SupplySevenEighthsPrescaling - LPCOMP_REFSEL_REFSEL_SupplyOneEighthPrescaling + 1));
 
@@ -410,6 +329,9 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 {
 	uint32_t ms = xsmcToInteger(xsArg(0));
     TickType_t enterTime, exitTime, wakeupTime;
+    uint32_t ram_slave, ram_section, ram_powerset;
+
+	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
 
     /* Block all the interrupts globally */
     if (softdevice_enabled()) {
@@ -423,12 +345,10 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		__disable_irq();
     }
 
-	// read clock
-    enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
-    
-    // @@ save clock into retained ram
-    
+	// @@ read our clock and save on stack
+	
     // calculate wake up time
+    enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
 	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
 
 	// stop tick events
@@ -439,11 +359,15 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
 
-	// power off all ram except for stack and heap areas
+    __DSB();
+    
+	// power off all ram sections except for stack and ram retention
 	// note that slaves 0-7 have two 4 KB sections and slave 8 has six 32 KB sections
 	if (softdevice_enabled()) {
 		sd_power_ram_power_clr(0, 0x03);
 		sd_power_ram_power_clr(1, 0x03);
+		sd_power_ram_power_clr(2, 0x02);
+		sd_power_ram_power_clr(3, 0x03);
 		sd_power_ram_power_clr(4, 0x03);
 		sd_power_ram_power_clr(5, 0x03);
 		sd_power_ram_power_clr(6, 0x03);
@@ -451,36 +375,38 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		sd_power_ram_power_clr(8, 0x1F);
 	}
 	else {
-		NRF_POWER->RAM[0].POWERCLR = 0x03;	// sections 0-1
-		NRF_POWER->RAM[1].POWERCLR = 0x03;
-		NRF_POWER->RAM[4].POWERCLR = 0x03;
-		NRF_POWER->RAM[5].POWERCLR = 0x03;
+//		NRF_POWER->RAM[0].POWERCLR = 0x03;	// sections 0-1
+//		NRF_POWER->RAM[1].POWERCLR = 0x03;
+//		NRF_POWER->RAM[2].POWERCLR = 0x02;	// section 1
+//		NRF_POWER->RAM[3].POWERCLR = 0x03;
+//		NRF_POWER->RAM[4].POWERCLR = 0x03;
+//		NRF_POWER->RAM[5].POWERCLR = 0x03;
 		NRF_POWER->RAM[6].POWERCLR = 0x03;
-		NRF_POWER->RAM[7].POWERCLR = 0x03;
-		NRF_POWER->RAM[8].POWERCLR = 0x1F;	// sections 0-4
+//		NRF_POWER->RAM[7].POWERCLR = 0x03;
+//		NRF_POWER->RAM[8].POWERCLR = 0x1F;	// sections 0-4, stack lives in section 5 at top of memory
 	}
 		
-	// wait for event - hopefully the rtc
+	// keep power on ram retention section
+	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
+		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
+
 	if (softdevice_enabled()) {
-		uint32_t err_code = sd_app_evt_wait();
-		APP_ERROR_CHECK(err_code);
+		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
+		sd_power_ram_power_set(ram_slave, ram_powerset);
 	}
 	else {
-		do {
-			__WFE();
-		} while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
+    	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
+		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
 	}
 
-	// disable rtc interrupts and event
-	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
-	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
+	// wait for event - hopefully the RTC interrupt
+	__SEV();
+	__WFE();
+	__WFE();
 
-	// read clock again
-	exitTime = nrf_rtc_counter_get(portNRF_RTC_REG);
+	// @@ retain clock value based on the amount of time we slept and the clock value saved on stack
 
-	// @@ set clock based on the amount of time we slept and the clock value retained before sleep
-
-	NVIC_SystemReset();
+	nrf52_reset();
 }
 
 void sleep_deep(xsMachine *the)
@@ -526,15 +452,6 @@ uint8_t softdevice_enabled()
 #endif
 }
 
-void clear_retained_buffer()
-{
-	if (softdevice_enabled())
-		sd_power_gpregret_set(0, 0);
-	else
-		NRF_POWER->GPREGRET = 0x00;
-	c_memset(&gRamRetentionBuffer[0], 0, kRamRetentionBufferSize);
-}
-
 void lpcomp_event_handler(nrf_lpcomp_event_t event)
 {
 	switch(event) {
@@ -565,3 +482,4 @@ void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)
 		*section = address / 32768L;
 	}
 }
+

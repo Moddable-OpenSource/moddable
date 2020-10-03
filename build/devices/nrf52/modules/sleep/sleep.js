@@ -20,11 +20,8 @@
 
 class Sleep {
 	static install(handler) @ "xs_sleep_install";
-	static clearRetainedBuffer() @ "xs_sleep_clear_retained_buffer";
-	static getRetainedBuffer() @ "xs_sleep_get_retained_buffer";
-	static setRetainedBuffer() @ "xs_sleep_set_retained_buffer";
 
-	// alternate slot-based ram retention api
+	// slot-based ram retention api
 	static clearRetainedValue(index) @ "xs_sleep_clear_retained_value";
 	static getRetainedValue(index) @ "xs_sleep_get_retained_value";
 	static setRetainedValue(index, value) @ "xs_sleep_set_retained_value";
@@ -39,24 +36,10 @@ class Sleep {
 	static prevent() @ "xs_sleep_prevent";
 	static allow() @ "xs_sleep_allow";
 	
-	static wakeOnAnalog(channel, configuration) {
-		switch(configuration.mode) {
-			case AnalogDetectMode.Crossing:
-			case AnalogDetectMode.Up:
-			case AnalogDetectMode.Down:
-				break;
-			default:
-				throw new Error("invalid analog detect mode");
-				break;
-		}
-		Sleep.#wakeOnAnalog(channel, configuration.mode, configuration.value);
-	}
-	
-	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital"
-	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt"
-	static wakeOnTimer(ms) @ "xs_sleep_wake_on_timer"
-	
-	static #wakeOnAnalog() @ "xs_sleep_wake_on_analog"
+	static wakeOnAnalog(channel, configuration) @ "xs_sleep_wake_on_analog";
+	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital";
+	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt";
+	static wakeOnTimer(ms) @ "xs_sleep_wake_on_timer";
 };
 
 const PowerMode = {
