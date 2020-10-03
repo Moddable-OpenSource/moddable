@@ -345,6 +345,19 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		__disable_irq();
     }
 
+	// keep power on ram retention section
+	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
+		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
+
+	if (softdevice_enabled()) {
+		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
+		sd_power_ram_power_set(ram_slave, ram_powerset);
+	}
+	else {
+    	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
+		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
+	}
+
 	// @@ read our clock and save on stack
 	
     // calculate wake up time
@@ -361,8 +374,7 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 
     __DSB();
     
-	// power off all ram sections except for stack and ram retention
-	// note that slaves 0-7 have two 4 KB sections and slave 8 has six 32 KB sections
+	// power off all ram sections except for ram retention
 	if (softdevice_enabled()) {
 		sd_power_ram_power_clr(0, 0x03);
 		sd_power_ram_power_clr(1, 0x03);
@@ -372,33 +384,20 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		sd_power_ram_power_clr(5, 0x03);
 		sd_power_ram_power_clr(6, 0x03);
 		sd_power_ram_power_clr(7, 0x03);
-		sd_power_ram_power_clr(8, 0x1F);
+		sd_power_ram_power_clr(8, 0x3F);
 	}
 	else {
-//		NRF_POWER->RAM[0].POWERCLR = 0x03;	// sections 0-1
-//		NRF_POWER->RAM[1].POWERCLR = 0x03;
-//		NRF_POWER->RAM[2].POWERCLR = 0x02;	// section 1
-//		NRF_POWER->RAM[3].POWERCLR = 0x03;
-//		NRF_POWER->RAM[4].POWERCLR = 0x03;
-//		NRF_POWER->RAM[5].POWERCLR = 0x03;
+		NRF_POWER->RAM[0].POWERCLR = 0x03;	// sections 0-1
+		NRF_POWER->RAM[1].POWERCLR = 0x03;
+		NRF_POWER->RAM[2].POWERCLR = 0x02;	// section 1, section 0 is ram retention area
+		NRF_POWER->RAM[3].POWERCLR = 0x03;
+		NRF_POWER->RAM[4].POWERCLR = 0x03;
+		NRF_POWER->RAM[5].POWERCLR = 0x03;
 		NRF_POWER->RAM[6].POWERCLR = 0x03;
-//		NRF_POWER->RAM[7].POWERCLR = 0x03;
-//		NRF_POWER->RAM[8].POWERCLR = 0x1F;	// sections 0-4, stack lives in section 5 at top of memory
+		NRF_POWER->RAM[7].POWERCLR = 0x03;
+		NRF_POWER->RAM[8].POWERCLR = 0x3F;	// sections 0-5
 	}
 		
-	// keep power on ram retention section
-	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
-		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
-
-	if (softdevice_enabled()) {
-		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
-		sd_power_ram_power_set(ram_slave, ram_powerset);
-	}
-	else {
-    	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
-		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
-	}
-
 	// wait for event - hopefully the RTC interrupt
 	__SEV();
 	__WFE();
