@@ -12,8 +12,11 @@
  *
  */
 
-import {Sleep} from "sleep";
+import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
+
+// read clock value from retained memory and set clock
+// if no clock value available then set clock to 0
 
 const led = new Host.LED;
 
@@ -25,8 +28,9 @@ for (let i = 0; i < 10; ++i) {
 	Timer.delay(50);
 }
 
+//	led.write(0);
+//	Sleep.wakeOnTimer(5000);
 Timer.set(() => {
 	led.write(0);
 	Sleep.wakeOnTimer(5000);
 }, 3000);
-
