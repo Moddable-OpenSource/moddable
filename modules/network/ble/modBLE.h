@@ -110,7 +110,7 @@ typedef modBLEConnectionRecord *modBLEConnection;
 	uint8_t		mtu_exchange_pending;
 
 struct modBLEConnectionRecord {
-	modBLEConnectionPart;
+	modBLEConnectionPart
 };
 
 void modBLEConnectionAdd(modBLEConnection connection);
@@ -141,7 +141,7 @@ struct modBLEMessageQueueRecord {
 	uint16_t conn_id; \
 
 struct modBLEMessageQueueEntryRecord {
-	modBLEMessageQueueEntryPart;
+	modBLEMessageQueueEntryPart
 };
 
 void modBLEMessageQueueEnqueue(modBLEMessageQueue queue, modBLEMessageQueueEntry entry);
