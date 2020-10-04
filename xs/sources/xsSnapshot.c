@@ -19,7 +19,6 @@
  */
 
 #include "xsSnapshot.h"
-extern txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 
 static void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* chunkSize);
 static void fxMeasureChunk(txMachine* the, txSnapshot* snapshot, void* address, txSize* chunkSize);
@@ -57,7 +56,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxAssert(_ASSERTION,...) { if (!(_ASSERTION)) { fxReport(the, __VA_ARGS__); snapshot->error = C_EINVAL; fxJump(the); } }
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 
-#define mxCallbacksLength 455
+#define mxCallbacksLength 471
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -501,8 +500,14 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_WeakSet_prototype_delete,
 	fx_WeakSet_prototype_has,
 	fx_WeakSet,
+	fxAsyncGeneratorRejectAwait,
+	fxAsyncGeneratorRejectYield,
+	fxAsyncGeneratorResolveAwait,
+	fxAsyncGeneratorResolveYield,
+	fxAsyncFromSyncIteratorDone,
 	fxArrayLengthGetter,
 	fxArrayLengthSetter,
+	fxFulfillModule,
 	fxInitializeRegExp,
 	fxOnRejectedPromise,
 	fxOnResolvedPromise,
@@ -514,6 +519,16 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxThrowTypeError,
 	fxTypedArrayGetter,
 	fxTypedArraySetter,
+	fxCombinePromisesCallback,
+	fxNewPromiseCapabilityCallback,
+	fxRejectAwait,
+	fxRejectModule,
+	fxRejectPromise,
+	fxResolveAwait,
+	fxResolvePromise,
+	fx_Promise_prototype_finallyAux,
+	fx_Promise_prototype_finallyReturn,
+	fx_Promise_prototype_finallyThrow,
 };
 extern const txTypeDispatch gxTypeDispatches[];
 extern const txTypeAtomics gxTypeAtomics[];
@@ -565,9 +580,9 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 	case XS_HOST_KIND:
 		mxAssert((slot->value.host.data == C_NULL) && (slot->value.host.variant.destructor == C_NULL), "# snapshot: no host instances!\n");
 		break;
-	case XS_PROMISE_KIND:
-		mxAssert(slot->value.integer != mxPendingStatus, "# snapshot: no pending promise instances!\n");
-		break;
+// 	case XS_PROMISE_KIND:
+// 		mxAssert(slot->value.integer != mxPendingStatus, "# snapshot: no pending promise instances!\n");
+// 		break;
 	case XS_STRING_X_KIND:
 		mxAssert(0, "# snapshot: external string %s!\n", slot->value.string);
 		break;

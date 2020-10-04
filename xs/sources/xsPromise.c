@@ -40,16 +40,9 @@
 //#define mxPromisePrint 1
 
 static void fxCombinePromises(txMachine* the, txInteger which);
-static void fxCombinePromisesCallback(txMachine* the);
 static txSlot* fxNewCombinePromisesFunction(txMachine* the, txInteger which, txSlot* already, txSlot* object);
-static void fxNewPromiseCapabilityCallback(txMachine* the);
-static void fxRejectPromise(txMachine* the);
-static void fxResolvePromise(txMachine* the);
 
 static void fx_Promise_resolveAux(txMachine* the);
-static void fx_Promise_prototype_finallyAux(txMachine* the);
-static void fx_Promise_prototype_finallyReturn(txMachine* the);
-static void fx_Promise_prototype_finallyThrow(txMachine* the);
 
 enum {
 	XS_PROMISE_COMBINE_NONE = 0,

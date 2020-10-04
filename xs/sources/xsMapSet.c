@@ -60,7 +60,6 @@ static txSlot* fxGetEntry(txMachine* the, txSlot* table, txSlot* slot);
 static txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 //static void fxPurgeEntries(txMachine* the, txSlot* list);
 static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txSlot* pair); 
-extern txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 
 static void fxKeepDuringJobs(txMachine* the, txSlot* target);

@@ -38,8 +38,6 @@
 #include "xsAll.h"
 
 static txSlot* fxCheckFunctionInstance(txMachine* the, txSlot* slot);
-static void fxResolveAwait(txMachine* the);
-static void fxRejectAwait(txMachine* the);
 static void fxStepAsync(txMachine* the, txSlot* instance, txFlag status);
 
 void fxBuildFunction(txMachine* the)
