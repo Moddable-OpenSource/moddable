@@ -1098,8 +1098,14 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 						result = nvs_set_u8(handle, key, *(uint8_t *)value);
 					else if (kPrefsTypeInteger == prefType)
 						result = nvs_set_i32(handle, key, *(int32_t *)value);
-					else if (kPrefsTypeString == prefType)
-						result = nvs_set_str(handle, key, value);
+					else if (kPrefsTypeString == prefType) {
+						char *str = c_calloc(1, cmdLen + 1);
+						if (str) {
+							c_memcpy(str, value, cmdLen);
+							result = nvs_set_str(handle, key, str);
+							c_free(str);
+						}
+					}
 					else if (kPrefsTypeBuffer == prefType)
 						result = nvs_set_blob(handle, key, value, cmdLen);
 
