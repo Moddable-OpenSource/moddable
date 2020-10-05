@@ -364,6 +364,9 @@ More detailed getting started guides are available for the following devices:
 	mcconfig -d -m -p win
 	```
 
+**Troubleshooting:**
+ - If the Moddable SDK build fails with an error like "`LINK : fatal error LNK1104: cannot open file '<Moddable path>\build\bin\win\release\<tool name>.exe'`", it most likely indicates a conflict with antivirus software as described in [this document from Microsoft](https://docs.microsoft.com/en-us/cpp/error-messages/tool-errors/linker-tools-error-lnk1104?view=vs-2019). Please try excluding the `%MODDABLE%` directory from your antivirus software's live scanning capability during the build process.
+
 <a id="esp8266-windows"></a>
 ### ESP8266 setup
 
