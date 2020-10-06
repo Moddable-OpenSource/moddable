@@ -167,20 +167,26 @@ class MDNS extends Socket {
 		}
 	}
 	monitorTask() {
-		let mdns = this.mdns;
+		const mdns = this.mdns;
 		switch (this.state) {
 			case 0:
 			case 1:
 			case 2:
 			case 3:
-				let query = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
+				const query = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
 
 				query.add(DNS.SECTION.QUESTION, this.service, DNS.RR.PTR, DNS.CLASS.IN | ((0 == this.state) ? MDNS.UNICAST : 0));
 
 				for (let i = 0; i < this.length; i++)
 					query.add(DNS.SECTION.ANSWER, this.service, DNS.RR.PTR, DNS.CLASS.IN, TTL, this[i].name + "." + this.service);
 
-				mdns.write(MDNS.IP, MDNS.PORT, query.build());
+				try {
+					mdns.write(MDNS.IP, MDNS.PORT, query.build());
+				}
+				catch {
+					this.timer = Timer.set(mdns.monitorTask.bind(this), 10 * 1000);
+					return;
+				}
 
 				if (this.state < 3) {
 					this.timer = Timer.set(mdns.monitorTask.bind(this), (2 ** this.state) * 1000);
