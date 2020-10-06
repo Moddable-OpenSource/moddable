@@ -94,6 +94,8 @@ static modSleepRecord gSleep = {0};
 
 static uint8_t softdevice_enabled();
 static void sleep_deep(xsMachine *the);
+void sleep_wake_on_timer(uint32_t ms);
+void sleep_wake_on_timer_sd(uint32_t ms);
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
@@ -326,95 +328,23 @@ void xs_sleep_wake_on_interrupt(xsMachine *the)
 void xs_sleep_wake_on_timer(xsMachine *the)
 {
 	uint32_t ms = xsmcToInteger(xsArg(0));
-    TickType_t enterTime, wakeupTime;
-    uint32_t ram_slave, ram_section;
-	c_timeval tv;
 
+	// Stop tick events
+	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
+
+	// Notify sleep handlers
 	modSleepHandler walker;
-
-	walker = gSleep.handlers;
+    walker = gSleep.handlers;
 	while (NULL != walker) {
 		xsCallFunction0(walker->callback, xsGlobal);
 		walker = walker->next;
 	}
 
-	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
-
-	// Block all the interrupts globally
-    if (softdevice_enabled()) {
-		do {
-			uint8_t dummy = 0;
-			uint32_t err_code = sd_nvic_critical_region_enter(&dummy);
-			APP_ERROR_CHECK(err_code);
-		} while (0);
-    }
-    else {
-		__disable_irq();
-    }
-
-	// Save time of day in retention memory
-	c_gettimeofday(&tv, NULL);
-	*((volatile c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
-	
-    // Calculate wake up time
-    enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
-	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
-
-	// Save enter time in retention memory
-	*(volatile uint32_t*)MOD_TIME_RTC_MEM = enterTime;
-	
-	// Stop tick events
-	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
-
-	// Configure CTC interrupt
-	nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTime);
-	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
-	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
-
-    __DSB();
-    
-	// Power off all ram sections except for retention memory
-	if (softdevice_enabled()) {
-		sd_power_ram_power_clr(0, 0x03);
-		sd_power_ram_power_clr(1, 0x03);
-		sd_power_ram_power_clr(3, 0x03);
-		sd_power_ram_power_clr(4, 0x03);
-		sd_power_ram_power_clr(5, 0x03);
-		sd_power_ram_power_clr(6, 0x03);
-		sd_power_ram_power_clr(7, 0x03);
-		sd_power_ram_power_clr(8, 0x3F);
-	}
-	else {
-		NRF_POWER->RAM[0].POWERCLR = 0x03;
-		NRF_POWER->RAM[1].POWERCLR = 0x03;
-		NRF_POWER->RAM[3].POWERCLR = 0x03;
-		NRF_POWER->RAM[4].POWERCLR = 0x03;
-		NRF_POWER->RAM[5].POWERCLR = 0x03;
-		NRF_POWER->RAM[6].POWERCLR = 0x03;
-		NRF_POWER->RAM[7].POWERCLR = 0x03;
-		NRF_POWER->RAM[8].POWERCLR = 0x3F;
-	}
-
-	// Wait for event - hopefully the RTC interrupt
-	__SEV();
-	__WFE();
-	__WFE();
-
-/**
-	// Disable CTC interrupt
-	portNRF_RTC_REG->INTENCLR = NRF_RTC_INT_COMPARE0_MASK;
-    *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0)) = 0;
-#if __CORTEX_M == 0x04
-    volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0));
-    (void)dummy;
-#endif
-**/
-
-	// Read RTC again and update saved time of day
-	((volatile c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(volatile uint32_t*)MOD_TIME_RTC_MEM)/1000);
-	((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
-	
-	nrf52_reset();
+	// To avoid stack use after RTC timer fires, separate implementation from here based on SoftDevice enabled or not
+	if (softdevice_enabled())
+		sleep_wake_on_timer_sd(ms);
+	else
+		sleep_wake_on_timer(ms);
 }
 
 void xs_sleep_restore_time(xsMachine *the)
@@ -428,6 +358,8 @@ void xs_sleep_restore_time(xsMachine *the)
 		((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
 	}
 	else {
+		modSetTimeZone(-8 * 3600);
+		modSetDaylightSavingsOffset(3600);
 		modSetTime(1601856000L);	// 10/5/2020 12:00:00 AM GMT
 	}
 }
@@ -464,6 +396,124 @@ void sleep_deep(xsMachine *the)
 #ifdef mxDebug
 	for (;;) {}
 #endif
+}
+
+void sleep_wake_on_timer(uint32_t ms)
+{
+	// Block all the interrupts globally
+	__disable_irq();
+
+	// Save time of day in retention memory
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	*((volatile c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
+	
+    // Calculate wake up time
+    uint32_t enterTime, wakeupTime;
+    enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
+	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
+
+	// Save enter time in retention memory
+	*(volatile uint32_t*)MOD_TIME_RTC_MEM = enterTime;
+	
+	// Configure CTC interrupt
+	nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTime);
+	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
+	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
+
+    __DSB();
+    
+	// Power off all ram sections except for retention memory (slave 2, section 0)
+	NRF_POWER->RAM[0].POWERCLR = 0x03;
+	NRF_POWER->RAM[1].POWERCLR = 0x03;
+	NRF_POWER->RAM[2].POWERCLR = 0x02;
+	NRF_POWER->RAM[3].POWERCLR = 0x03;
+	NRF_POWER->RAM[4].POWERCLR = 0x03;
+	NRF_POWER->RAM[5].POWERCLR = 0x03;
+	NRF_POWER->RAM[6].POWERCLR = 0x03;
+	NRF_POWER->RAM[7].POWERCLR = 0x03;
+	NRF_POWER->RAM[8].POWERCLR = 0x3F;
+
+	// Wait for event - hopefully the RTC interrupt
+	do {
+		__WFE();
+	} while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
+
+	// Read RTC again and update saved time of day
+	((volatile c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(volatile uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+
+	// Disable CTC interrupt
+	portNRF_RTC_REG->INTENCLR = NRF_RTC_INT_COMPARE0_MASK;
+    *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0)) = 0;
+#if __CORTEX_M == 0x04
+    //volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0));
+    //(void)dummy;
+#endif
+
+	// Reset device
+	*((volatile uint32_t*)DFU_DBL_RESET_MEM) = 0;
+	NVIC_SystemReset();
+}
+
+void sleep_wake_on_timer_sd(uint32_t ms)
+{
+	// Block all the interrupts globally
+	do {
+		uint8_t dummy = 0;
+		uint32_t err_code = sd_nvic_critical_region_enter(&dummy);
+		APP_ERROR_CHECK(err_code);
+	} while (0);
+
+	// Save time of day in retention memory
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	*((volatile c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
+	
+    // Calculate wake up time
+    TickType_t enterTime, wakeupTime;
+    enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
+	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
+
+	// Save enter time in retention memory
+	*(volatile uint32_t*)MOD_TIME_RTC_MEM = enterTime;
+	
+	// Configure CTC interrupt
+	nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTime);
+	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
+	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
+
+    __DSB();
+
+	// Power off all ram sections except for retention memory (slave 2, section 0)
+	sd_power_ram_power_clr(0, 0x03);
+	sd_power_ram_power_clr(1, 0x03);
+	sd_power_ram_power_clr(2, 0x02);
+	sd_power_ram_power_clr(3, 0x03);
+	sd_power_ram_power_clr(4, 0x03);
+	sd_power_ram_power_clr(5, 0x03);
+	sd_power_ram_power_clr(6, 0x03);
+	sd_power_ram_power_clr(7, 0x03);
+	sd_power_ram_power_clr(8, 0x3F);
+
+	// Wait for event - hopefully the RTC interrupt
+	sd_app_evt_wait();
+
+	// Read RTC again and update saved time of day
+	((volatile c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(volatile uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+
+	// Disable CTC interrupt
+	portNRF_RTC_REG->INTENCLR = NRF_RTC_INT_COMPARE0_MASK;
+    *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0)) = 0;
+#if __CORTEX_M == 0x04
+    //volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0));
+    //(void)dummy;
+#endif
+
+	// Reset device
+	*((volatile uint32_t*)DFU_DBL_RESET_MEM) = 0;
+	sd_nvic_SystemReset();
 }
 
 uint8_t softdevice_enabled()
