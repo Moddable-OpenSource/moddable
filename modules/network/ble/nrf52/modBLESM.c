@@ -38,6 +38,8 @@ uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_
 	ble_gap_sec_params_t sec_param;
 	ret_code_t err_code;
 
+	c_memset(&sec_param, 0, sizeof(ble_gap_sec_params_t));
+	
  	switch(ioCapability) {
  		case NoInputNoOutput:
  			io_caps = BLE_GAP_IO_CAPS_NONE;
@@ -62,9 +64,7 @@ uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_
     sec_param.bond           = bonding;
     sec_param.mitm           = mitm;
     sec_param.lesc           = (mitm && (io_caps == BLE_GAP_IO_CAPS_DISPLAY_YESNO));
-    sec_param.keypress       = 0;
     sec_param.io_caps        = io_caps;
-    sec_param.oob            = 0;
     sec_param.min_key_size   = SEC_PARAM_MIN_KEY_SIZE;
     sec_param.max_key_size   = SEC_PARAM_MAX_KEY_SIZE;
     if (bonding) {
