@@ -857,11 +857,11 @@ mxExport void fx_trace_left(txMachine* the);
 mxExport void fx_trace_right(txMachine* the);
 mxExport void fx_unescape(txMachine* the);
 
-extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot);
+extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id);
 extern txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
 extern txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value);
 extern void fxIteratorReturn(txMachine* the, txSlot* iterator);
-extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable);
+extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
 
@@ -931,6 +931,8 @@ extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txI
 mxExport void fx_AsyncFunction(txMachine* the);
 
 extern txSlot* fxNewAsyncInstance(txMachine* the);
+extern void fxResolveAwait(txMachine* the);
+extern void fxRejectAwait(txMachine* the);
 extern void fxRunAsync(txMachine* the, txSlot* instance);
 
 /* xsBoolean.c */
@@ -1586,6 +1588,7 @@ extern txSlot* fxNewSetInstance(txMachine* the);
 extern txSlot* fxNewWeakMapInstance(txMachine* the);
 extern txSlot* fxNewWeakSetInstance(txMachine* the);
 extern void fxCleanupFinalizationRegistries(txMachine* the);
+extern txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 
 /* xsJSON.c */
 mxExport void fx_JSON_parse(txMachine* the);
@@ -1617,6 +1620,11 @@ extern txSlot* fxNewGeneratorFunctionInstance(txMachine* the, txID name);
 extern txSlot* fxNewAsyncGeneratorInstance(txMachine* the);
 extern txSlot* fxNewAsyncGeneratorFunctionInstance(txMachine* the, txID name);
 extern txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the);
+extern void fxAsyncGeneratorRejectAwait(txMachine* the);
+extern void fxAsyncGeneratorRejectYield(txMachine* the);
+extern void fxAsyncGeneratorResolveAwait(txMachine* the);
+extern void fxAsyncGeneratorResolveYield(txMachine* the);
+extern void fxAsyncFromSyncIteratorDone(txMachine* the);
 
 /* xsPromise.c */
 mxExport void fx_Promise(txMachine* the);
@@ -1633,14 +1641,22 @@ mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
 
+extern void fx_Promise_prototype_finallyAux(txMachine* the);
+extern void fx_Promise_prototype_finallyReturn(txMachine* the);
+extern void fx_Promise_prototype_finallyThrow(txMachine* the);
+
 extern void fxBuildPromise(txMachine* the);
+extern void fxCombinePromisesCallback(txMachine* the);
 extern txSlot* fxNewPromiseCapability(txMachine* the, txSlot* resolveFunction, txSlot* rejectFunction);
+extern void fxNewPromiseCapabilityCallback(txMachine* the);
 extern txSlot* fxNewPromiseInstance(txMachine* the);
 extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* resolveFunction, txSlot* rejectFunction);
 extern void fxPushPromiseFunctions(txMachine* the, txSlot* promise);
-extern void fxRejectException(txMachine* the, txSlot* rejectFunction);
-extern void fxRunPromiseJobs(txMachine* the);
 extern void fxQueueJob(txMachine* the, txInteger count, txID id);
+extern void fxRejectException(txMachine* the, txSlot* rejectFunction);
+extern void fxRejectPromise(txMachine* the);
+extern void fxResolvePromise(txMachine* the);
+extern void fxRunPromiseJobs(txMachine* the);
 
 /* xsProxy.c */
 extern void fxBuildProxy(txMachine* the);
@@ -1674,9 +1690,11 @@ extern void fxBuildModule(txMachine* the);
 
 extern void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
 extern void fxExecuteModulesSync(txMachine* the, txSlot* realm, txFlag flag);
+extern void fxFulfillModule(txMachine* the);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
 extern void fxPrepareModule(txMachine* the);
 extern void fxPrepareTransfer(txMachine* the);
+extern void fxRejectModule(txMachine* the);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);

@@ -29,6 +29,7 @@ static int fxInitializeTarget(txSerialTool self);
 static uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value);
 static void fxSetTime(txSerialTool self, txSerialMachine machine);
 static void fxInstallFragment(txSerialTool self);
+static void fxSetPref(txSerialTool self);
 
 static uint8_t gReset = 0;
 static uint8_t gRestarting = 0;
@@ -47,6 +48,16 @@ static char* gEPC1Buffer;
 static int gStackIndex;
 static int gExceptionNumber = -1;
 static int gdbMode = 0;
+
+typedef struct {
+	void	*next;
+	char	domain[64];
+	char	name[64];
+	char	value[128];
+	char	kind;
+} PrefRecord, *Pref;
+
+Pref gPrefs = NULL;
 
 static char* gExceptionList[33] = {
     "Illegal instruction",
@@ -121,6 +132,49 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 				return 1;
 			}
 		}
+		else if (!strcmp(argv[argi], "-pref") && ((argi + 1) < argc)) {
+			PrefRecord pr;
+			Pref pref;
+			Pref walker = gPrefs;
+			char *p = argv[++argi];
+			char *equal = strstr(p, "="), *dot = strstr(p, ".");
+			if (!equal || (p == equal) || !dot || (dot > equal)) {
+				fprintf(stderr, "### invalid pref - domain.name=value: %s\n", argv[argi]);
+				return 1;
+			}
+			if ((dot - p + 1) > (int)sizeof(pr.domain)) {
+				fprintf(stderr, "### invalid pref - domain too long: %s\n", argv[argi]);
+				return 1;
+			}
+			if ((equal - dot + 1) > (int)sizeof(pr.name)) {
+				fprintf(stderr, "### invalid pref - name too long: %s\n", argv[argi]);
+				return 1;
+			}
+			if ((p + strlen(p) - equal + 1) > (int)sizeof(pr.value)) {
+				fprintf(stderr, "### invalid pref - value too long: %s\n", argv[argi]);
+				return 1;
+			}
+
+			memset(&pr, 0, sizeof(pr));
+			strncpy(pr.domain, p, dot - p);
+			strncpy(pr.name, dot + 1, equal - dot - 1);
+			strncpy(pr.value, equal + 1, p + strlen(p) - equal);
+			if (('"' == pr.value[0]) && ('"' == pr.value[strlen(pr.value) - 1]))
+				strncpy(pr.value, equal + 1 + 1, p + strlen(p) - equal - 2);		// strip quotesso
+
+			pr.next = NULL;
+			pr.kind = 3;		// string
+			pref = malloc(sizeof(pr));
+			memcpy(pref, &pr, sizeof(pr));
+
+			if (!walker)
+				gPrefs = pref;
+			else {
+				while (walker->next)
+					walker = walker->next;
+				walker->next = pref;
+			}
+		}
 		else if (!strcmp(argv[argi], "-load") && !gModuleName && ((argi + 1) < argc)) {
 			gModuleName = argv[++argi];
 		}
@@ -160,6 +214,11 @@ int fxInitializeTarget(txSerialTool self)
 #endif
 
 	fxSetTime(self, self->currentMachine);
+
+	if (gPrefs) {
+		fxSetPref(self);
+		return 0;
+	}
 
 	if (!gCmd) {
 		if (!gModuleName)
@@ -246,6 +305,16 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		gInstallFD = NULL;
 		fxRestart(self);
 		usleep(10000);
+		return;
+	}
+
+	if (0xff03 == resultId) {	// set preference
+		if (gPrefs)
+			fxSetPref(self);
+		else {
+			fxRestart(self);
+			usleep(10000);
+		}
 		return;
 	}
 
@@ -669,3 +738,32 @@ void fxInstallFragment(txSerialTool self)
 	gInstallOffset += use;
 }
 
+void fxSetPref(txSerialTool self)
+{
+	char preamble[32];
+	char out[5];
+	Pref p = gPrefs;
+	if (!p) return;
+
+	gPrefs = p->next;
+
+#if mxTraceCommands
+	fprintf(stderr, "### set preference %s.%s=%s\n", p->domain, p->name, p->value);
+#endif
+
+	sprintf(preamble, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+	fxWriteSerial(self, preamble, strlen(preamble));
+
+	int size = strlen(p->domain) + 1 + strlen(p->name) + 1 + 1 + strlen(p->value);
+	size += 3;
+	out[0] = (size >> 8) & 0xff;	// length high
+	out[1] = size & 0xff;			// length low
+	out[2] = 4;						// set preference cmd
+	out[3] = 0xff;					// id high
+	out[4] = 0x03;					// id low
+	fxWriteSerial(self, out, 5);
+	fxWriteSerial(self, p->domain, strlen(p->domain) + 1);
+	fxWriteSerial(self, p->name, strlen(p->name) + 1);
+	fxWriteSerial(self, &p->kind, 1);
+	fxWriteSerial(self, p->value, strlen(p->value));
+}

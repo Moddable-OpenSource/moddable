@@ -180,7 +180,7 @@ void PiuApplicationIdleCheck(PiuApplication* self)
 				idle = interval;
 			else if (idle > interval)
 				idle = interval;
-			link = (*self)->idleLink;
+			link = (*link)->idleLink;
 		}
 	}
 bail:

@@ -678,6 +678,8 @@ void fxGetNextString(txParser* parser, int c)
 			if (*s == '\\') {
 				s++;
 				switch (*s) {
+				case 0:
+					break;
 				case 10:
 					s++;
 					break;

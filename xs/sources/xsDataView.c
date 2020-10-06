@@ -1528,7 +1528,7 @@ void fx_TypedArray_prototype_entries(txMachine* the)
 	txSlot* property;
 	fxCheckArrayBufferDetached(the, instance->next->next->next, XS_IMMUTABLE);
 	mxPush(mxArrayIteratorPrototype);
-	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis));
+	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
 	property = fxNextIntegerProperty(the, property, 2, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	mxPullSlot(mxResult);
 }
@@ -1769,7 +1769,7 @@ void fx_TypedArray_prototype_keys(txMachine* the)
 	txSlot* property;
 	fxCheckArrayBufferDetached(the, instance->next->next->next, XS_IMMUTABLE);
 	mxPush(mxArrayIteratorPrototype);
-	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis));
+	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
 	property = fxNextIntegerProperty(the, property, 1, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	mxPullSlot(mxResult);
 }
@@ -2223,7 +2223,7 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	txSlot* property;
 	fxCheckArrayBufferDetached(the, instance->next->next->next, XS_IMMUTABLE);
 	mxPush(mxArrayIteratorPrototype);
-	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis));
+	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
 	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	mxPullSlot(mxResult);
 }

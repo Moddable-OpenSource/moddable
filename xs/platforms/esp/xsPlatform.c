@@ -1098,8 +1098,14 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 						result = nvs_set_u8(handle, key, *(uint8_t *)value);
 					else if (kPrefsTypeInteger == prefType)
 						result = nvs_set_i32(handle, key, *(int32_t *)value);
-					else if (kPrefsTypeString == prefType)
-						result = nvs_set_str(handle, key, value);
+					else if (kPrefsTypeString == prefType) {
+						char *str = c_calloc(1, cmdLen + 1);
+						if (str) {
+							c_memcpy(str, value, cmdLen);
+							result = nvs_set_str(handle, key, str);
+							c_free(str);
+						}
+					}
 					else if (kPrefsTypeBuffer == prefType)
 						result = nvs_set_blob(handle, key, value, cmdLen);
 
@@ -1220,12 +1226,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 14:
 #if ESP32
-			if (ESP_ERR_WIFI_NOT_INIT == esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset)) {
-				wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-				cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
-				esp_wifi_init(&cfg);
-				esp_wifi_get_mac(ESP_IF_WIFI_STA, the->echoBuffer + the->echoOffset);
-			}
+			esp_efuse_mac_get_default(the->echoBuffer + the->echoOffset);
 #else
 			wifi_get_macaddr(0 /* STATION_IF */, the->echoBuffer + the->echoOffset);
 #endif

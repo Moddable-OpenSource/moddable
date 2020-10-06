@@ -260,8 +260,12 @@ void fxString(txMachine* the, txSlot* theSlot, txString theValue)
 
 void fxStringX(txMachine* the, txSlot* theSlot, txString theValue)
 {
+#ifdef mxSnapshot
+	fxCopyStringC(the, theSlot, theValue);
+#else
 	theSlot->value.string = theValue;
 	theSlot->kind = XS_STRING_X_KIND;
+#endif
 }
 
 void fxStringBuffer(txMachine* the, txSlot* theSlot, txString theValue, txSize theSize)
@@ -1684,6 +1688,41 @@ void fxShareMachine(txMachine* the)
 	#ifdef mxDebug
 		fxLogout(the);
 	#endif
+		{
+			txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+			txSlot* modules = mxOwnModules(realm)->value.reference;
+			txSlot* module = modules->next;
+			while (module) {
+				mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+				module = module->next;
+			}
+			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+			mxException.kind = XS_REFERENCE_KIND;
+			mxException.value.reference = mxRealmClosures(realm)->value.reference;
+			mxProgram.value.reference = modules; //@@
+			
+			{
+				txSlot* target = fxNewInstance(the);
+				txSlot* modules = mxOwnModules(realm)->value.reference;
+				txSlot* module = modules->next;
+				while (module) {
+					target = target->next = fxNewSlot(the);
+					target->value.symbol = mxModuleInstanceInternal(module->value.reference)->value.module.id;
+					target->kind = XS_SYMBOL_KIND;
+					target->ID = mxModuleInstanceInternal(module->value.reference)->value.module.id;
+					module = module->next;
+				}
+				mxPull(mxHosts); //@@
+			}
+			mxDuringJobs = mxUndefined;
+			mxFinalizationRegistries = mxUndefined;
+			mxPendingJobs = mxUndefined;
+			mxRunningJobs = mxUndefined;
+			mxBreakpoints = mxUndefined;
+			mxHostInspectors = mxUndefined;
+			mxInstanceInspectors = mxUndefined;
+		}
+		fxCollectGarbage(the);
 		fxShare(the);
 		the->shared = 1;
 	#ifdef mxProfile

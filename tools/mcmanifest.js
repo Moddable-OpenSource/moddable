@@ -309,8 +309,10 @@ export class MakeFile extends FILE {
 				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
 				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
-				let sdkconfigFileMinGW = sdkconfigFile.replace(/\\/g, "/");
-				tool.setenv("SDKCONFIG_FILE_MINGW", sdkconfigFileMinGW);
+				if (sdkconfigFile  !== undefined){
+					let sdkconfigFileMinGW = sdkconfigFile.replace(/\\/g, "/");
+					tool.setenv("SDKCONFIG_FILE_MINGW", sdkconfigFileMinGW);
+				}
 				let binDirMinGW = tool.binPath.replace(/\\/g, "/");
 				tool.setenv("BIN_DIR_MINGW", binDirMinGW);
 			}

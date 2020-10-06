@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -142,28 +142,30 @@ render.begin();
 	dragger.draw();
 render.end();
 
-let timer = Timer.repeat(() => {
-	let points = touch.points;
+Timer.repeat(() => {
+	const points = touch.points;
 	touch.read(points);
-	let point = points[0];
+	const point = points[0];
 	switch (point.state) {
 		case 0:
 		case 3:
 			if (point.down) {
 				delete point.down;
-				dragger.onTouchEnded(point.x, point.y);
+				point.target?.onTouchEnded(point.x, point.y);
 				delete point.x;
 				delete point.y;
+				delete point.target;
 			}
 			break;
 		case 1:
-			if (dragger.contains(point.x, point.y) && !point.down) {
-				point.down = true;
-				dragger.onTouchBegan(point.x, point.y);
-			}
-			break;
 		case 2:
-			dragger.onTouchMoved(point.x, point.y);
+			if (!point.down) {
+				point.down = true;
+				point.target = dragger.contains(point.x, point.y) ? dragger : null;
+				point.target?.onTouchBegan(point.x, point.y);
+			}
+			else
+				point.target?.onTouchMoved(point.x, point.y);
 			break;
 	}
 }, 17);

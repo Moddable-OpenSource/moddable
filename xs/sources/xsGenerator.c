@@ -44,15 +44,10 @@ static void fxNewGeneratorResult(txMachine* the, txBoolean done);
 static txSlot* fxCheckGeneratorInstance(txMachine* the, txSlot* slot);
 static void fx_Generator_prototype_aux(txMachine* the, txFlag status);
 
-static void fxAsyncGeneratorRejectAwait(txMachine* the);
-static void fxAsyncGeneratorRejectYield(txMachine* the);
-static void fxAsyncGeneratorResolveAwait(txMachine* the);
-static void fxAsyncGeneratorResolveYield(txMachine* the);
 static void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status);
 static txSlot* fxCheckAsyncGeneratorInstance(txMachine* the, txSlot* slot);
 static void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status);
 
-static void fxAsyncFromSyncIteratorDone(txMachine* the);
 static txSlot* fxCheckAsyncFromSyncIteratorInstance(txMachine* the, txSlot* slot);
 static void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status);
 

@@ -57,10 +57,9 @@ static void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolea
 static txInteger fxCountEntries(txMachine* the, txSlot* list, txBoolean paired);
 static txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txBoolean paired); 
 static txSlot* fxGetEntry(txMachine* the, txSlot* table, txSlot* slot);
-static txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable);
+static txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 //static void fxPurgeEntries(txMachine* the, txSlot* list);
 static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txSlot* pair); 
-static txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 
 static void fxKeepDuringJobs(txMachine* the, txSlot* target);
@@ -314,13 +313,13 @@ void fx_Map_prototype_entries(txMachine* the)
 {
 	fxCheckMapInstance(the, mxThis, XS_IMMUTABLE);
 	mxPush(mxMapEntriesIteratorPrototype);
-	fxNewEntryIteratorInstance(the, mxThis);
+	fxNewEntryIteratorInstance(the, mxThis, mxID(_Map));
 	mxPullSlot(mxResult);
 }
 
 void fx_Map_prototype_entries_next(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_Map));
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
@@ -402,13 +401,13 @@ void fx_Map_prototype_keys(txMachine* the)
 {
 	fxCheckMapInstance(the, mxThis, XS_IMMUTABLE);
 	mxPush(mxMapKeysIteratorPrototype);
-	fxNewEntryIteratorInstance(the, mxThis);
+	fxNewEntryIteratorInstance(the, mxThis, mxID(_Map));
 	mxPullSlot(mxResult);
 }
 
 void fx_Map_prototype_keys_next(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_Map));
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
@@ -456,13 +455,13 @@ void fx_Map_prototype_values(txMachine* the)
 {
 	fxCheckMapInstance(the, mxThis, XS_IMMUTABLE);
 	mxPush(mxMapValuesIteratorPrototype);
-	fxNewEntryIteratorInstance(the, mxThis);
+	fxNewEntryIteratorInstance(the, mxThis, mxID(_Map));
 	mxPullSlot(mxResult);
 }
 
 void fx_Map_prototype_values_next(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_Map));
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
@@ -610,13 +609,13 @@ void fx_Set_prototype_entries(txMachine* the)
 {
 	fxCheckSetInstance(the, mxThis, XS_IMMUTABLE);
 	mxPush(mxSetEntriesIteratorPrototype);
-	fxNewEntryIteratorInstance(the, mxThis);
+	fxNewEntryIteratorInstance(the, mxThis, mxID(_Set));
 	mxPullSlot(mxResult);
 }
 
 void fx_Set_prototype_entries_next(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_Set));
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
@@ -690,13 +689,13 @@ void fx_Set_prototype_values(txMachine* the)
 {
 	fxCheckSetInstance(the, mxThis, XS_IMMUTABLE);
 	mxPush(mxSetValuesIteratorPrototype);
-	fxNewEntryIteratorInstance(the, mxThis);
+	fxNewEntryIteratorInstance(the, mxThis, mxID(_Set));
 	mxPullSlot(mxResult);
 }
 
 void fx_Set_prototype_values_next(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_Set));
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
@@ -1036,22 +1035,14 @@ txSlot* fxGetEntry(txMachine* the, txSlot* table, txSlot* slot)
 	return C_NULL;
 }
 
-txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable) 
+txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable, txID id) 
 {
 	txSlot* instance;
-	txSlot* result;
 	txSlot* property;
-	instance = fxNewObjectInstance(the);
-	mxPush(mxObjectPrototype);
-	result = fxNewObjectInstance(the);
-	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_INTERNAL_FLAG | XS_GET_ONLY);
-	property = fxNextSlotProperty(the, property, iterable, mxID(_iterable), XS_INTERNAL_FLAG | XS_GET_ONLY);
-	property = fxNextNullProperty(the, property, mxID(_index), XS_INTERNAL_FLAG | XS_GET_ONLY);
+	instance = fxNewIteratorInstance(the, iterable, id);
+	property = fxLastProperty(the, instance);
 	property->kind = XS_CLOSURE_KIND;
 	property->value.closure = iterable->value.reference->next->next->value.list.first;
-    the->stack++;
 	return instance;
 }
 
@@ -1254,12 +1245,12 @@ void fx_WeakRef(txMachine* the)
 	txSlot* target;
 	txSlot* instance;
 	if (mxIsUndefined(mxTarget))
-		mxTypeError("call: WeakSet");
+		mxTypeError("call: WeakRef");
 	if (mxArgc < 1)
-		mxTypeError("new WeakSet: no target");
+		mxTypeError("new WeakRef: no target");
 	target = mxArgv(0);
 	if (!mxIsReference(target))
-		mxTypeError("new WeakSet: target is no object");
+		mxTypeError("new WeakRef: target is no object");
 	target = target->value.reference;
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxWeakRefPrototype);

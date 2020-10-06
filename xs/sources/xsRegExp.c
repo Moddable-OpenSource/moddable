@@ -621,7 +621,6 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 	txBoolean global = 0;
 	txSlot* matcher;
 	txSlot* iterator;
-	txSlot* result;
 	txSlot* property;
 	
 	if (!mxIsReference(mxThis))
@@ -652,17 +651,12 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 	fxSetID(the, mxID(_lastIndex));
 	
 	mxPush(mxRegExpStringIteratorPrototype);
-	iterator = fxNewObjectInstance(the);
-	mxPush(mxObjectPrototype);
-	result = fxNewObjectInstance(the);
-	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextSlotProperty(the, iterator, the->stack, mxID(_result), XS_GET_ONLY);
-	mxPop();
-	property = fxNextSlotProperty(the, property, matcher, mxID(_iterable), XS_GET_ONLY);
-	property = fxNextSlotProperty(the, property, argument, mxID(_index), XS_GET_ONLY);
-	property = fxNextBooleanProperty(the, property, global, XS_NO_ID, XS_GET_ONLY);
-	property = fxNextBooleanProperty(the, property, 0, XS_NO_ID, XS_GET_ONLY);
+	iterator = fxNewIteratorInstance(the, matcher, mxID(_RegExp));
+	property = fxLastProperty(the, iterator);
+	property->kind = argument->kind;
+	property->value = argument->value;
+	property = fxNextBooleanProperty(the, property, global, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextBooleanProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	mxPullSlot(mxResult);
 #endif
 }
@@ -670,7 +664,7 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 void fx_RegExp_prototype_matchAll_next(txMachine* the)
 {
 #if mxRegExp
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_RegExp));
 	txSlot* result = iterator->next;
 	txSlot* value = result->value.reference->next;
 	txSlot* done = value->next;
