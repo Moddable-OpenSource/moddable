@@ -18,38 +18,16 @@ import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
-import Preference from "preference";
-
-const MAGIC = 0x12345678;
 
 let render = new Poco(screen);
 let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);
 let font = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
 
-//Preference.delete("SLEEP", "init");
-
-let value = Preference.get("SLEEP", "init");
-if (MAGIC !== value) {
-	let date = new Date('January 1, 1970 12:00:00');
-	Time.set(Math.round(date/1000.0));
-	Preference.set("SLEEP", "init", MAGIC);
-}
-
 render.begin();
 	render.fillRectangle(black, 0, 0, render.width, render.height);
 	drawTime();
 render.end();
-
-// @@ retained memory doesn't seem to work in System ON sleep mode...
-/**
-let value = Sleep.getRetainedValue(0);
-if (MAGIC !== value) {
-	let date = new Date('January 1, 1970 12:00:00');
-	Time.set(Math.round(date/1000.0));
-	Sleep.setRetainedValue(0, MAGIC);
-}
-**/
 
 let count = 0;
 Timer.repeat(id => {

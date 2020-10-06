@@ -427,6 +427,9 @@ void xs_sleep_restore_time(xsMachine *the)
 		modSetTime(tv.tv_sec);
 		((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
 	}
+	else {
+		modSetTime(1601856000L);	// 10/5/2020 12:00:00 AM GMT
+	}
 }
 
 void sleep_deep(xsMachine *the)
