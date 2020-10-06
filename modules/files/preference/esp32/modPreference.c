@@ -32,13 +32,13 @@ void xs_preference_set(xsMachine *the)
 	char *str, key[64];
 	double dbl;
 
+	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
+
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READWRITE, &handle);
 	if (ESP_OK != err)
 		xsUnknownError("nvs_open fail");
 
-	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
-
-	nvs_erase_key(handle, key);		// ESP IDF bug: if typ of key changese, new type is ignored. work around by deleting first.
+	nvs_erase_key(handle, key);		// ESP IDF bug: if typ of key changes, new type is ignored. work around by deleting first.
 	if ((ESP_OK != err) && (ESP_ERR_NVS_NOT_FOUND != err))
 		goto bail;
 
@@ -96,11 +96,12 @@ void xs_preference_get(xsMachine *the)
 	int32_t integer;
 	char *str, key[64];
 
+	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
+
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READONLY, &handle);
 	if (ESP_OK != err)
 		return;  // most likely that domain doesn't exist yet
 
-	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
 	if (ESP_OK == (err = nvs_get_u8(handle, key, &b)))
 		xsmcSetBoolean(xsResult, b);
 	else if (ESP_OK == (err = nvs_get_i32(handle, key, &integer)))
@@ -130,12 +131,15 @@ void xs_preference_delete(xsMachine *the)
 {
 	esp_err_t err;
 	nvs_handle handle;
+	char key[64];
+
+	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
 
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READWRITE, &handle);
 	if (ESP_OK != err)
 		return;  // most likely that domain doesn't exist yet
 
-	err = nvs_erase_key(handle, xsmcToString(xsArg(1)));
+	err = nvs_erase_key(handle, key);
 	if (ESP_ERR_NVS_NOT_FOUND == err) err = ESP_OK;
 	if (ESP_OK != err) goto bail;
 
