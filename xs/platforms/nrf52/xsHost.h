@@ -274,12 +274,9 @@ extern void *my_malloc(size_t size);
 #define c_realloc realloc
 #endif
 
-extern void nrf52_reset(void);
-extern void nrf52_rebootToDFU(void);
-extern void nrf52_get_mac(uint8_t *mac);
+extern void nrf52_reboot(uint32_t kind);
 
-
-#define c_exit(n) { nrf52_reset(); }
+#define c_exit(n) { nrf52_reboot(0); }
 #define c_free free
 #define c_qsort qsort
 #define c_strtod strtod
@@ -429,12 +426,23 @@ extern uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
+
 /* RESERVED MEMORY */
 
 #define DFU_DBL_RESET_MEM		0x200041FC		// uint32_t, defined in bootloader
 #define MOD_TIME_RTC_MEM		0x200041F8		// uint32_t
 #define MOD_TIME_RESTORE_MAGIC	0x200041F4		// uint32_t
 #define MOD_TIME_RESTORE_MEM	0x200041E8		// uint32_t + c_timeval
+
+/* reset */
+#define REBOOT_TO_PROGRAMMING	0xbeefcafe
+#define REBOOT_TO_VENDOR		0xf00dcafe
+
+#define nrf52_reset()			nrf52_reboot(0)
+#define nrf52_rebootToDFU()		nrf52_reboot(REBOOT_TO_PROGRAMMING)
+#define nrf52_rebootToVendor()	nrf52_reboot(REBOOT_TO_VENDOR)
+
+extern void nrf52_get_mac(uint8_t *mac);
 
 #ifdef __cplusplus
 }

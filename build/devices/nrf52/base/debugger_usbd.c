@@ -436,11 +436,14 @@ static void checkLineState(uint16_t line_state, uint8_t which) {
 			break;
 		case 0:
 			if ((reboot_style[which] == 1) && ((now - reboot_changeTime[which]) < PROGRAMMING_TRIGGER_DELAY)) {
-				if (which == 1)
+				if (which == 1) {
 					ftdiTrace("[0] ACM - dtr and rts dropped - REBOOT TO PROGRAMMING");
-				else
-					ftdiTrace("[0] VENDOR - dtr and rts dropped - REBOOT TO PROGRAMMING");
-				nrf52_rebootToDFU();
+					nrf52_rebootToDFU();
+				}
+				else {
+					ftdiTrace("[0] VENDOR - dtr and rts dropped - REBOOT TO PROGRAMMING - VENDOR ONLY");
+					nrf52_rebootToVendor();
+				}
 			}
 			else {
 				if (which == 1)

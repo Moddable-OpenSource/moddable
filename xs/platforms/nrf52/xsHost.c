@@ -1226,21 +1226,9 @@ void *my_malloc(size_t size) {
 #define DFU_MODDABLE_MAGIC	0xBEEFCAFE		// boot directly to DFU
 uint32_t *dbl_reset_mem = ((uint32_t*)DFU_DBL_RESET_MEM);
 
-void nrf52_reset(void)
+void nrf52_reboot(uint32_t kind)
 {
-	(*dbl_reset_mem) = 0;
-#ifdef SOFTDEVICE_PRESENT
-	if (nrf_sdh_is_enabled())
-		sd_nvic_SystemReset();
-	else
-		NVIC_SystemReset();
-#else
-	NVIC_SystemReset();
-#endif
-}
-
-void nrf52_rebootToDFU() {
-	(*dbl_reset_mem) = DFU_MODDABLE_MAGIC;
+	(*dbl_reset_mem) = kind;
 #ifdef SOFTDEVICE_PRESENT
 	if (nrf_sdh_is_enabled())
 		sd_nvic_SystemReset();

@@ -67,7 +67,7 @@ else
 	endif
 endif
 
-NRF52_GNU_VERSION = 8.2.1
+NRF52_GNU_VERSION ?= 8.2.1
 NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
 
 NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
@@ -82,6 +82,7 @@ HWCPU = cortex-m4
 # BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
 # SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
 SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.1_softdevice.hex
+# SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.2.0_softdevice.hex
 
 # BOARD_DEF = BOARD_PCA10056
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
