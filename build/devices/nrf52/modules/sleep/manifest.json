@@ -3,8 +3,10 @@
 		"*": [
 			"$(BUILD)/devices/nrf52/modules/sleep/*",
 		],
+		"setup/power": "$(BUILD)/devices/nrf52/setup/power"
 	},
 	"preload": [
 		"sleep",
+		"setup/power"
 	],
 }

@@ -40,6 +40,8 @@ class Sleep {
 	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital";
 	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt";
 	static wakeOnTimer(ms) @ "xs_sleep_wake_on_timer";
+
+	static restoreTime() @ "xs_sleep_restore_time";
 };
 
 const PowerMode = {

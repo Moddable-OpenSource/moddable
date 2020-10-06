@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -35,8 +35,6 @@
 #define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size 0x100
 
 #define kRamRetentionRegisterMagic 0xBF
-#define kRamRetentionBufferMagic 0x89341057
-
 #define kRamRetentionValueMagic 0x52081543
 
 #define kAnalogResolution 10	// 10 bits
@@ -328,12 +326,21 @@ void xs_sleep_wake_on_interrupt(xsMachine *the)
 void xs_sleep_wake_on_timer(xsMachine *the)
 {
 	uint32_t ms = xsmcToInteger(xsArg(0));
-    TickType_t enterTime, exitTime, wakeupTime;
-    uint32_t ram_slave, ram_section, ram_powerset;
+    TickType_t enterTime, wakeupTime;
+    uint32_t ram_slave, ram_section;
+	c_timeval tv;
+
+	modSleepHandler walker;
+
+	walker = gSleep.handlers;
+	while (NULL != walker) {
+		xsCallFunction0(walker->callback, xsGlobal);
+		walker = walker->next;
+	}
 
 	getRAMSlaveAndSection((uint32_t)&gRamRetentionBuffer[0], &ram_slave, &ram_section);
 
-    /* Block all the interrupts globally */
+	// Block all the interrupts globally
     if (softdevice_enabled()) {
 		do {
 			uint8_t dummy = 0;
@@ -345,40 +352,31 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		__disable_irq();
     }
 
-	// keep power on ram retention section
-	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
-		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
-
-	if (softdevice_enabled()) {
-		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
-		sd_power_ram_power_set(ram_slave, ram_powerset);
-	}
-	else {
-    	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
-		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
-	}
-
-	// @@ read our clock and save on stack
+	// Save time of day in retention memory
+	c_gettimeofday(&tv, NULL);
+	*((volatile c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
 	
-    // calculate wake up time
+    // Calculate wake up time
     enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
 	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
 
-	// stop tick events
+	// Save enter time in retention memory
+	*(volatile uint32_t*)MOD_TIME_RTC_MEM = enterTime;
+	
+	// Stop tick events
 	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
 
-	// configure CTC interrupt
+	// Configure CTC interrupt
 	nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTime);
 	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
 
     __DSB();
     
-	// power off all ram sections except for ram retention
+	// Power off all ram sections except for retention memory
 	if (softdevice_enabled()) {
 		sd_power_ram_power_clr(0, 0x03);
 		sd_power_ram_power_clr(1, 0x03);
-		sd_power_ram_power_clr(2, 0x02);
 		sd_power_ram_power_clr(3, 0x03);
 		sd_power_ram_power_clr(4, 0x03);
 		sd_power_ram_power_clr(5, 0x03);
@@ -387,25 +385,48 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		sd_power_ram_power_clr(8, 0x3F);
 	}
 	else {
-		NRF_POWER->RAM[0].POWERCLR = 0x03;	// sections 0-1
+		NRF_POWER->RAM[0].POWERCLR = 0x03;
 		NRF_POWER->RAM[1].POWERCLR = 0x03;
-		NRF_POWER->RAM[2].POWERCLR = 0x02;	// section 1, section 0 is ram retention area
 		NRF_POWER->RAM[3].POWERCLR = 0x03;
 		NRF_POWER->RAM[4].POWERCLR = 0x03;
 		NRF_POWER->RAM[5].POWERCLR = 0x03;
 		NRF_POWER->RAM[6].POWERCLR = 0x03;
 		NRF_POWER->RAM[7].POWERCLR = 0x03;
-		NRF_POWER->RAM[8].POWERCLR = 0x3F;	// sections 0-5
+		NRF_POWER->RAM[8].POWERCLR = 0x3F;
 	}
-		
-	// wait for event - hopefully the RTC interrupt
+
+	// Wait for event - hopefully the RTC interrupt
 	__SEV();
 	__WFE();
 	__WFE();
 
-	// @@ retain clock value based on the amount of time we slept and the clock value saved on stack
+/**
+	// Disable CTC interrupt
+	portNRF_RTC_REG->INTENCLR = NRF_RTC_INT_COMPARE0_MASK;
+    *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0)) = 0;
+#if __CORTEX_M == 0x04
+    volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)portNRF_RTC_REG + (uint32_t)NRF_RTC_EVENT_COMPARE_0));
+    (void)dummy;
+#endif
+**/
 
+	// Read RTC again and update saved time of day
+	((volatile c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(volatile uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+	
 	nrf52_reset();
+}
+
+void xs_sleep_restore_time(xsMachine *the)
+{
+#ifdef mxDebug
+	return;
+#endif
+	if (kRamRetentionValueMagic == ((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2]) {
+		c_timeval tv = *((volatile c_timeval *)MOD_TIME_RESTORE_MEM);
+		modSetTime(tv.tv_sec);
+		((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
+	}
 }
 
 void sleep_deep(xsMachine *the)

@@ -12,25 +12,73 @@
  *
  */
 
-import {Sleep, ResetReason} from "sleep";
+import {Sleep} from "sleep";
+import Time from "time";
 import Timer from "timer";
+import parseBMF from "commodetto/parseBMF";
+import Poco from "commodetto/Poco";
+import Resource from "Resource";
+import Preference from "preference";
 
-// read clock value from retained memory and set clock
-// if no clock value available then set clock to 0
+const MAGIC = 0x12345678;
 
-const led = new Host.LED;
+let render = new Poco(screen);
+let black = render.makeColor(0, 0, 0);
+let white = render.makeColor(255, 255, 255);
+let font = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
 
-// Blink LED upon wakeup
-for (let i = 0; i < 10; ++i) {
-	led.write(0);
-	Timer.delay(50);
-	led.write(1);
-	Timer.delay(50);
+//Preference.delete("SLEEP", "init");
+
+let value = Preference.get("SLEEP", "init");
+if (MAGIC !== value) {
+	let date = new Date('January 1, 1970 12:00:00');
+	Time.set(Math.round(date/1000.0));
+	Preference.set("SLEEP", "init", MAGIC);
 }
 
-//	led.write(0);
-//	Sleep.wakeOnTimer(5000);
-Timer.set(() => {
-	led.write(0);
-	Sleep.wakeOnTimer(5000);
-}, 3000);
+render.begin();
+	render.fillRectangle(black, 0, 0, render.width, render.height);
+	drawTime();
+render.end();
+
+// @@ retained memory doesn't seem to work in System ON sleep mode...
+/**
+let value = Sleep.getRetainedValue(0);
+if (MAGIC !== value) {
+	let date = new Date('January 1, 1970 12:00:00');
+	Time.set(Math.round(date/1000.0));
+	Sleep.setRetainedValue(0, MAGIC);
+}
+**/
+
+let count = 0;
+Timer.repeat(id => {
+	render.begin();
+		render.fillRectangle(black, 0, (render.height - font.height) >> 1, render.width, font.height);
+		drawTime();
+	render.end();
+	if (++count == 20) {
+		Timer.clear(id);
+		Sleep.wakeOnTimer(5000);
+	}
+}, 500);
+
+function getTime() {
+	let date = new Date();
+	let hours = String(date.getHours());
+	let minutes = String(date.getMinutes());
+	let seconds = String(date.getSeconds());
+	if (1 == minutes.length)
+		minutes = '0' + minutes;
+	if (1 == seconds.length)
+		seconds = '0' + seconds;
+	return hours + ':' + minutes + ':' + seconds;
+}
+
+function drawTime() {
+	let time = getTime();
+	render.drawText(time, font, white,
+		(render.width - render.getTextWidth(time, font)) >> 1,
+		(render.height - font.height) >> 1);
+}
+
