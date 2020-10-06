@@ -41,11 +41,13 @@ Timer.repeat(id => {
 	}
 }, 500);
 
-function getTime() {
+function getTimeString() {
 	let date = new Date();
 	let hours = String(date.getHours());
 	let minutes = String(date.getMinutes());
 	let seconds = String(date.getSeconds());
+	if (1 == hours.length)
+		hours = '0' + hours;
 	if (1 == minutes.length)
 		minutes = '0' + minutes;
 	if (1 == seconds.length)
@@ -54,7 +56,7 @@ function getTime() {
 }
 
 function drawTime() {
-	let time = getTime();
+	let time = getTimeString();
 	render.drawText(time, font, white,
 		(render.width - render.getTextWidth(time, font)) >> 1,
 		(render.height - font.height) >> 1);
