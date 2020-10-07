@@ -1,6 +1,6 @@
 # Base
-Copyright 2017 Moddable Tech, Inc.<BR>
-Revised: September 7, 2020
+Copyright 2017-2020 Moddable Tech, Inc.<BR>
+Revised: October 7, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -65,9 +65,11 @@ The callback function receives the timer id as the first argument.
 
 ***
 
-### `Timer.schedule(id, interval[, repeat])`
+### `Timer.schedule(id [, interval[, repeat]])`
 
 The `schedule` function is used to reschedule an existing timer.
+
+If called with an `interval` but no `repeat`, the timer behaves like a one shot timer created with `Timer.set`. If called with both an `interval` and `repeat`, it behaves like a repeating timer created with `Timer.set` with both `interval` and `repeat` arguments. If called with neither `interval` nor `repeat` arguments, the timer is unscheduled and will not trigger until rescheduled using `Timer.schedule`.
 
 In the following example, the callback function is triggered twice at one second intervals and then rescheduled to once every two seconds.
 
