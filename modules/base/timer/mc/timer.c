@@ -114,7 +114,8 @@ int modTimersNext(void)
 	for (walker = gTimers; NULL != walker; walker = walker->next) {
 		int delta;
 
-		if (!walker->cb
+		if (!walker->cb ||
+			(walker->flags & kTimerFlagUnscheduled)
 #if MOD_TASKS
 			|| (task != walker->task)
 #endif
