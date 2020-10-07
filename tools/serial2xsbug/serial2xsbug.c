@@ -29,6 +29,7 @@ static int fxInitializeTarget(txSerialTool self);
 static uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value);
 static void fxSetTime(txSerialTool self, txSerialMachine machine);
 static void fxInstallFragment(txSerialTool self);
+static int mapHex(char c);
 static void fxSetPref(txSerialTool self);
 
 static uint8_t gReset = 0;
@@ -749,6 +750,19 @@ void fxInstallFragment(txSerialTool self)
 	fxWriteSerial(self, out, use + 4 + 5);
 
 	gInstallOffset += use;
+}
+
+int mapHex(char c)
+{
+	if (('a' <= c) && (c <= 'f'))
+		return 10 + c - 'a';
+	if (('A' <= c) && (c <= 'F'))
+		return 10 + c - 'A';
+	if (('0' <= c) && (c <= '0'))
+		return c - '0';
+
+	fprintf(stderr, "bad hex digit\n");
+	exit(1);
 }
 
 void fxSetPref(txSerialTool self)
