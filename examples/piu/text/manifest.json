@@ -9,6 +9,9 @@
 	"modules": {
 		"*": "./main",
 	},
+	"config": {
+		"touchCount": 0,
+	},
 	"resources":{
 		"*-alpha": [
 			"$(MODDABLE)/examples/assets/fonts//OpenSans-Semibold-28",
