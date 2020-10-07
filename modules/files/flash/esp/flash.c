@@ -45,7 +45,7 @@ void xs_flash(xsMachine *the)
 	modFlashRecord flash;
 	int kind = xsmcTypeOf(xsArg(0));
 
-	if ((xsStringType == kind) || (xsStringXType == kind)) {
+	if (xsStringType == kind) {
 		char *partition = xsmcToString(xsArg(0));
 		if (0 == c_strcmp(partition, "xs")) {
 			flash.partitionStart = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
@@ -117,7 +117,7 @@ void xs_flash_read(xsMachine *the)
 
 	}
 	else {
-		xsmcSetArrayBuffer(xsResul, NULL, byteLength);
+		xsmcSetArrayBuffer(xsResult, NULL, byteLength);
 		buffer = xsmcToArrayBuffer(xsResult);
 	}
 

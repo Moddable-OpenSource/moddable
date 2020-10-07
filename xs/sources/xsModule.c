@@ -43,7 +43,6 @@
 
 static void fxCompleteModule(txMachine* the, txSlot* realm, txSlot* module, txSlot* exception);
 static void fxFulfillImport(txMachine* the, txSlot* realm, txSlot* module);
-static void fxFulfillModule(txMachine* the);
 static txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID);
 static txInteger fxGetModuleStatus(txMachine* the, txSlot* realm, txSlot* module);
 static txSlot* fxLinkModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
@@ -51,7 +50,6 @@ static void fxOrderModule(txMachine* the, txSlot* realm, txSlot* module);
 static txSlot* fxQueueModule(txMachine* the, txSlot* realm, txID moduleID);
 static void fxRecurseExports(txMachine* the, txSlot* realm, txID moduleID, txSlot* circularities, txSlot* exports);
 static void fxRejectImport(txMachine* the, txSlot* realm, txSlot* module);
-static void fxRejectModule(txMachine* the);
 static void fxResolveExports(txMachine* the, txSlot* realm, txSlot* module);
 static void fxResolveFrom(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 static void fxResolveLocals(txMachine* the, txSlot* realm, txSlot* module);

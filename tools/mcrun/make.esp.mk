@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2019  Moddable Tech, Inc.
+# Copyright (c) 2016-2020 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -58,10 +58,19 @@ else
 endif
 endif
 
+ifeq ($(DEBUG),1)
+	ifeq ($(HOST_OS),Darwin)
+		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+	else
+		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+	endif
+endif
+
 all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
+	$(START_XSBUG)
 	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
 
 release: $(ARCHIVE)
@@ -83,4 +92,3 @@ $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
-

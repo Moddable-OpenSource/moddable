@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target",
+	},
+	"preload": "setup/target",
+}

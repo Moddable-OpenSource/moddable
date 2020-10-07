@@ -1178,24 +1178,60 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
 void fxShare(txMachine* the)
 {
 	txID aliasCount = 0;
-	txSlot* aSlot;
-	txSlot* bSlot;
-	txSlot* cSlot;
+	txSlot *heap, *slot, *limit;
 
-	fxCollect(the, 1);
-	aSlot = the->firstHeap;
-	while (aSlot) {
-		bSlot = aSlot + 1;
-		cSlot = aSlot->value.reference;
-		while (bSlot < cSlot) {
-			if (bSlot->kind == XS_INSTANCE_KIND) {
-				bSlot->ID = aliasCount++;
-				bSlot->flag |= XS_MARK_FLAG; 
+	heap = the->firstHeap;
+	while (heap) {
+		slot = heap + 1;
+		limit = heap->value.reference;
+		while (slot < limit) {
+			if (slot->kind == XS_INSTANCE_KIND) {
+				txBoolean frozen = (slot->flag & XS_DONT_PATCH_FLAG) ? 1 : 0;
+				if (frozen) {
+					txSlot *property = slot->next;
+					while (property) {
+						if (property->kind == XS_ARRAY_KIND) {
+							txSlot* item = property->value.array.address;
+							txInteger length = (txInteger)fxGetIndexSize(the, property);
+							while (length > 0) {
+								if (item->kind != XS_ACCESSOR_KIND) 
+									if (!(item->flag & XS_DONT_SET_FLAG))
+										frozen = 0;
+								if (!(item->flag & XS_DONT_DELETE_FLAG))
+									frozen = 0;
+								item++;
+								length--;
+							}
+						}
+						else {
+							if (property->kind != XS_ACCESSOR_KIND) 
+								if (!(property->flag & XS_DONT_SET_FLAG))
+									frozen = 0;
+							if (!(property->flag & XS_DONT_DELETE_FLAG))
+								frozen = 0;
+						}
+						property = property->next;
+					}
+				}
+				if (frozen)
+					slot->ID = XS_NO_ID;
+				else
+					slot->ID = aliasCount++;
 			}
-			
-			bSlot++;
+			else if (slot->kind == XS_CLOSURE_KIND) {
+				txSlot* closure = slot->value.closure;
+				if (closure->flag & XS_DONT_SET_FLAG)
+					closure->flag |= XS_DONT_DELETE_FLAG;
+				else {
+					if (closure->ID == XS_NO_ID)
+						closure->ID = aliasCount++;
+					slot->flag &= ~XS_DONT_SET_FLAG;
+				}
+			}
+			slot->flag |= XS_MARK_FLAG; 
+			slot++;
 		}
-		aSlot = aSlot->next;
+		heap = heap->next;
 	}
 	the->aliasCount = aliasCount;
 	/*

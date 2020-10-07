@@ -109,8 +109,7 @@ export default class extends TOOL {
 		if ("ima" === this.output.format) {
 			if (1 !== this.output.numChannels)
 				throw new Error("ima must be mono");
-			if (16 !== this.output.bitsPerSample)
-				throw new Error("ima requires 16-bit samples");
+			this.output.bitsPerSample = 16;
 		}
 
 		let parts = this.splitPath(this.inputPath);

@@ -23,6 +23,7 @@
 #include "xsHost.h"
 
 #include "mc.xs.h"			// for xsID_ values
+#include "mc.defines.h"
 
 #include "esp_wifi.h"
 
@@ -392,6 +393,10 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 	switch (event_id) {
 		case SYSTEM_EVENT_STA_START:
 			if (ESP_OK == esp_wifi_get_config(WIFI_IF_STA, &wifi_config)) {
+#ifdef MODDEF_WIFI_HOSTNAME
+				tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, MODDEF_WIFI_HOSTNAME);
+#endif
+
 				gWiFiState = 3;
 				gWiFiConnectRetryRemaining = MODDEF_WIFI_ESP32_CONNECT_RETRIES;
 				esp_wifi_connect();

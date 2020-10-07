@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,7 +28,8 @@
 typedef struct modTimerRecord modTimerRecord;
 typedef modTimerRecord *modTimer;
 
-#define kTimerFlagFire (1)
+#define kTimerFlagFire (1 << 0)
+#define kTimerFlagUnscheduled (1 << 1)
 
 struct modTimerRecord {
 	struct modTimerRecord  *next;
@@ -58,8 +59,11 @@ void modTimersExecute(void)
 
 	// determine who is firing this time (timers added during this call are ineligible)
 	modCriticalSectionBegin();
-	for (walker = gTimers; NULL != walker; walker = walker->next)
+	for (walker = gTimers; NULL != walker; walker = walker->next) {
+		if (walker->flags & kTimerFlagUnscheduled)
+			continue;
 		walker->flags |= (walker->triggerTime <= now) ? kTimerFlagFire : 0;
+	}
 
 	// service eligible callbacks. then reschedule (repeating) or remove (one shot)
 	for (walker = gTimers; NULL != walker; ) {
@@ -110,7 +114,8 @@ int modTimersNext(void)
 	for (walker = gTimers; NULL != walker; walker = walker->next) {
 		int delta;
 
-		if (!walker->cb
+		if (!walker->cb ||
+			(walker->flags & kTimerFlagUnscheduled)
 #if MOD_TASKS
 			|| (task != walker->task)
 #endif
@@ -177,6 +182,16 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 	modCriticalSectionBegin();
 	timer->triggerTime = modMilliseconds() + firstInterval;
 	timer->repeatInterval = secondInterval;
+	timer->flags &= ~kTimerFlagUnscheduled;
+	modCriticalSectionEnd();
+}
+
+void modTimerUnschedule(modTimer timer)
+{
+	modCriticalSectionDeclare;
+	modCriticalSectionBegin();
+	timer->flags |= kTimerFlagUnscheduled;
+	timer->repeatInterval = -1;
 	modCriticalSectionEnd();
 }
 

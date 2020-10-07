@@ -194,20 +194,14 @@ txSlot* fxNewGlobalInstance(txMachine* the)
 	return instance;
 }
 
-txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot)
+txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id)
 {
 	txSlot* instance;
 	if (slot->kind == XS_REFERENCE_KIND) {
 		instance = slot->value.reference;
 		slot = instance->next;
-		if (slot && (slot->ID == mxID(_result))) {
-			slot = slot->next;
-			if (slot && (slot->ID == mxID(_iterable))) {
-				slot = slot->next;
-				if (slot && (slot->ID == mxID(_index))) {
-					return instance;
-				}
-			}
+		if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == id)) {
+			return instance;
 		}
 	}
 	mxTypeError("this is no iterator");
@@ -272,7 +266,7 @@ txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSl
 	return 1;
 }
 
-txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable) 
+txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id) 
 {
 	txSlot* instance;
 	txSlot* result;
@@ -282,9 +276,9 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable)
 	result = fxNewObjectInstance(the);
 	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
 	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextSlotProperty(the, instance, the->stack, mxID(_result), XS_INTERNAL_FLAG | XS_GET_ONLY);
-	property = fxNextSlotProperty(the, property, iterable, mxID(_iterable), XS_INTERNAL_FLAG | XS_GET_ONLY);
-	property = fxNextIntegerProperty(the, property, 0, mxID(_index), XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextSlotProperty(the, instance, the->stack, id, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextSlotProperty(the, property, iterable, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
     the->stack++;
 	return instance;
 }

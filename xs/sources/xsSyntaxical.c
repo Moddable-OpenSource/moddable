@@ -3145,7 +3145,7 @@ void fxBinding(txParser* parser, txToken theToken, txFlag initializeIt)
 
 txNode* fxBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken)
 {
-	txToken aToken = theNode->description->token;
+	txToken aToken = (theNode && theNode->description) ? theNode->description->token : XS_NO_TOKEN;
 	txNode* binding;
 	if (aToken == XS_TOKEN_EXPRESSIONS) {
 		txNode* item = ((txExpressionsNode*)theNode)->items->first;
@@ -3496,7 +3496,8 @@ txNode* fxParametersBindingFromExpressions(txParser* parser, txNode* theNode)
 	txNode* item;
 	txBindingNode* binding;
 	while ((item = *address)) {
-		if (item->description->token == XS_TOKEN_SPREAD) {
+		txToken aToken = (item && item->description) ? item->description->token : XS_NO_TOKEN;
+		if (aToken == XS_TOKEN_SPREAD) {
 			if ((!(item->next)) && ((txSpreadNode*)item)->expression && (((txSpreadNode*)item)->expression->description->token == XS_TOKEN_ACCESS)) {
 				parser->flags |= mxNotSimpleParametersFlag;
 				item->description = &gxTokenDescriptions[XS_TOKEN_REST_BINDING];
@@ -3505,7 +3506,7 @@ txNode* fxParametersBindingFromExpressions(txParser* parser, txNode* theNode)
 			}
 			return NULL;
 		}
-		if (item->description->token == XS_TOKEN_REST_BINDING) {
+		if (aToken == XS_TOKEN_REST_BINDING) {
 			parser->flags |= mxNotSimpleParametersFlag;
 			break;
 		}
@@ -3580,7 +3581,7 @@ txBoolean fxCheckReference(txParser* parser, txToken theToken)
 	if (aToken == XS_TOKEN_EXPRESSIONS) {
 		txNode* item = ((txExpressionsNode*)node)->items->first;
 		if (item && !item->next) {
-			aToken = item->description->token;
+			aToken = (item->description) ? item->description->token : XS_NO_TOKEN;
 			if ((aToken == XS_TOKEN_ACCESS) || (aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT) || (aToken == XS_TOKEN_PRIVATE_MEMBER) || (aToken == XS_TOKEN_UNDEFINED)) {
 				item->next = node->next;
 				node = parser->root = item;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -111,15 +111,18 @@ void xs_timer_repeat(xsMachine *the)
 
 void xs_timer_schedule(xsMachine *the)
 {
-	int interval = xsmcToInteger(xsArg(1)), repeat = 0;
+	int argc = xsmcArgc;
 	modTimer timer = xsmcGetHostData(xsArg(0));
 	if (NULL == timer)
 		xsUnknownError("invalid timer");
 
-	if (xsmcArgc > 2)
-		repeat = xsmcToInteger(xsArg(2));
-
-	modTimerReschedule(timer, interval, repeat);
+	if (1 == argc)
+		modTimerUnschedule(timer);
+	else {
+		int interval = xsmcToInteger(xsArg(1));
+		int repeat = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
+		modTimerReschedule(timer, interval, repeat);
+	}
 }
 
 void xs_timer_clear(xsMachine *the)

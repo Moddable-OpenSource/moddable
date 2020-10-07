@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -99,12 +99,22 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 {
 	CFRunLoopTimerContext context = {0};
 
-	CFRunLoopTimerInvalidate(timer->cfTimer);
+	if (timer->cfTimer)
+		CFRunLoopTimerInvalidate(timer->cfTimer);
 
 	context.info = timer;
 	timer->cfTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + (firstInterval / 1000.0),
 					secondInterval / 1000.0, 0, 0, modTimerExcecuteOne, &context);
 	CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer->cfTimer, kCFRunLoopCommonModes);
+}
+
+void modTimerUnschedule(modTimer timer)
+{
+	if (!timer->cfTimer)
+		return;
+
+	CFRunLoopTimerInvalidate(timer->cfTimer);
+	timer->cfTimer = NULL;
 }
 
 uint16_t modTimerGetID(modTimer timer)
@@ -114,27 +124,12 @@ uint16_t modTimerGetID(modTimer timer)
 
 int modTimerGetSecondInterval(modTimer timer)
 {
-	return CFRunLoopTimerGetInterval(timer->cfTimer) * 1000;
+	return timer->cfTimer ? CFRunLoopTimerGetInterval(timer->cfTimer) * 1000 : -1;
 }
 
 void *modTimerGetRefcon(modTimer timer)
 {
 	return timer->refcon;
-}
-
-modTimer modTimerFind(uint16_t id)
-{
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next)
-		if (id == walker->id)
-			break;
-
-	modCriticalSectionEnd();
-
-	return walker;
 }
 
 void modTimerRemove(modTimer timer)
@@ -154,7 +149,8 @@ void modTimerRemove(modTimer timer)
 					gTimers = walker->next;
 				else
 					prev->next = walker->next;
-				CFRunLoopTimerInvalidate(timer->cfTimer);
+				if (timer->cfTimer)
+					CFRunLoopTimerInvalidate(timer->cfTimer);
 				c_free(timer);
 				modInstrumentationAdjust(Timers, -1);
 			}

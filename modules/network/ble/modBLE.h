@@ -61,6 +61,16 @@ typedef enum {
 	kBLEAdvFilterPolicyWhitelistScansConnections
 } BLEAdvFilterPolicy;
 
+/* simulator build */
+
+#if (mxMacOSX || mxWindows || mxLinux)
+	#define modCriticalSectionDeclare
+	#define modCriticalSectionBegin()
+	#define modCriticalSectionEnd()
+	#define modMessagePostToMachine(...)
+	typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+#endif
+
 /* whitelist */
 
 typedef struct modBLEWhitelistAddressRecord modBLEWhitelistAddressRecord;
@@ -100,7 +110,7 @@ typedef modBLEConnectionRecord *modBLEConnection;
 	uint8_t		mtu_exchange_pending;
 
 struct modBLEConnectionRecord {
-	modBLEConnectionPart;
+	modBLEConnectionPart
 };
 
 void modBLEConnectionAdd(modBLEConnection connection);
@@ -131,7 +141,7 @@ struct modBLEMessageQueueRecord {
 	uint16_t conn_id; \
 
 struct modBLEMessageQueueEntryRecord {
-	modBLEMessageQueueEntryPart;
+	modBLEMessageQueueEntryPart
 };
 
 void modBLEMessageQueueEnqueue(modBLEMessageQueue queue, modBLEMessageQueueEntry entry);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -106,6 +106,8 @@ void xs_timer_schedule(xsMachine *the)
 	int argc = xsToInteger(xsArgc);
 	ModTimer self = (ModTimer)xsGetHostData(xsArg(0));
 	ModTimerRemove(self);
+	if (1 == argc)
+		return;
 	self->interval = xsToInteger(xsArg(1));
 	self->repeat = (argc > 2) ? xsToInteger(xsArg(2)) : 0;
 	self->g_timer = g_timeout_add(self->interval, ModTimerCallback, self);
