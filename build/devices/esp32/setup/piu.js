@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,14 +26,26 @@ if (!config.Screen)
 	throw new Error("no screen configured");
 
 class Screen extends config.Screen {
+	#timer;
+
 	constructor(dictionary) {
 		super(dictionary);
+
+		this.#timer = Timer.set(() => {
+			this.context.onIdle();
+		}, 1, 100);
+		Timer.schedule(this.#timer);
+
 		if (config.Touch) {
-			let touch = new config.Touch;
+			let touchCount = config.touchCount ?? 1;
+			if (!touchCount)
+				return;
+
+			const touch = new config.Touch;
 			touch.points = [];
-			let touchCount = config.touchCount ? config.touchCount : 1;
 			while (touchCount--)
 				touch.points.push({});
+
 			Timer.repeat(() => {
 				let points = touch.points;
 				touch.read(points);
@@ -52,24 +64,18 @@ class Screen extends config.Screen {
 								}
 							  break;
 						  case 1:
+						  case 2:
 								if (!point.down) {
 									point.down = true;
 									this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
 								}
-								break;
-							case 2: this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
+								else
+									this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
 								break;
 					}
 				}
-			}, 5);
+			}, 16);
 		}
-// 		this.ticks = Time.ticks;
-		this.timer = Timer.set(() => {
-// 			const ticks = Time.ticks;
-// 			trace(`onIdle ${ticks - this.ticks}\n`);
-// 			this.ticks = ticks;
-			this.context.onIdle();
-		}, 0x7FFF, 0x7FFF);
 	}
 	get rotation() {
 		return super.rotation;
@@ -99,22 +105,24 @@ class Screen extends config.Screen {
 	clear() {
 	}
 	start(interval) {
+		const timer = this.#timer;
+
 		if (interval <= 5)
 			interval = 5;
-		if (this.timer.interval === interval)
+		if (timer.interval === interval)
 			return;
-// 		trace(`schedule ${interval}\n`);
-		Timer.schedule(this.timer, interval, interval);
-		this.timer.interval = interval;
+
+		Timer.schedule(timer, interval, interval);
+		timer.interval = interval;
 	}
 	stop() {
-// 		trace(`schedule 0x7FFF\n`);
-		Timer.schedule(this.timer, 0x7FFF, 0x7FFF);
-		delete this.timer.interval;
+		const timer = this.#timer;
+		Timer.schedule(timer);
+		delete timer.interval;
 	}
 }
 
 export default function (done) {
-	global.screen = new Screen({});
+	globalThis.screen = new Screen({});
 	done();
 }
