@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -266,29 +266,6 @@ struct xsWiFiRecord {
 };
 
 static xsWiFi gWiFi;
-
-void initVariantXXXX(void)
-{
-	struct ip_info info;
-
-	wifi_station_dhcpc_stop();
-	wifi_softap_dhcps_stop();
-
-	IP4_ADDR(&info.ip, 10, 0, 1, 32);
-	IP4_ADDR(&info.gw, 10, 0, 1, 1);
-	IP4_ADDR(&info.netmask, 255, 255, 255, 0);
-
-	wifi_set_ip_info(STATION_IF, &info);
-
-	ip_addr_t d;
-	IP4_ADDR(&d, 8, 8, 8, 8);
-	dns_setserver(0, &d);
-	IP4_ADDR(&d, 8, 8, 4, 4);
-	dns_setserver(1, &d);
-
-	//	wifi_station_dhcpc_start();
-}
-
 
 static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
