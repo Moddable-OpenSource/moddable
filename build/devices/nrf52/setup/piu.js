@@ -25,21 +25,32 @@ if (!config.Screen)
 	throw new Error("no screen configured");
 
 class Screen extends config.Screen {
-	#timer = Timer.set(() => {
-		this.context.onIdle();
-	}, 0x7FFF, 0x7FFF);
+	#timer;
+
+	constructor(dictionary) {
+		super(dictionary);
+
+		this.#timer = Timer.set(() => {
+			this.context.onIdle();
+		}, 1, 100);
+		Timer.schedule(this.#timer);
+	}
 
 	start(interval) {
+		const timer = this.#timer;
+
 		if (interval < 5)
 			interval = 5;
-		if (this.#timer.interval === interval)
+		if (timer.interval === interval)
 			return;
-		Timer.schedule(this.#timer, interval, interval);
-		this.#timer.interval = interval;
+
+		Timer.schedule(timer, interval, interval);
+		timer.interval = interval;
 	}
 	stop() {
-		Timer.schedule(this.#timer, 0x7FFF, 0x7FFF);
-		delete this.#timer.interval;
+		const timer = this.#timer;
+		Timer.schedule(timer);
+		delete timer.interval;
 	}
 	clear() {
 	}
