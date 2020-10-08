@@ -137,6 +137,8 @@ The `xsTypeOf` macro returns the type of a slot. It is similar to the ECMAScript
 
 Returns the type of the slot
 
+> **Note**: The macros in the XS in C API require a reference to the target virtual machine in a variable in the current scope with the name `the` of type `xsMachine *`.
+
 ##### In ECMAScript:
 
 ```javascript
