@@ -534,6 +534,7 @@ void xs_audioout_enqueue(xsMachine *the)
 	uint8_t bitsPerSample;
 	uint8_t sampleFormat;
 	modAudioQueueElement element;
+	int activeStreamCount = out->activeStreamCount;
 
 	xsmcVars(1);
 
@@ -683,6 +684,15 @@ void xs_audioout_enqueue(xsMachine *the)
 
 		default:
 			xsUnknownError("bad kind");
+	}
+
+	if (out->activeStreamCount != activeStreamCount) {
+		uint8_t started = 0 == activeStreamCount;
+		if (started) {
+#if ESP32
+			xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
+#endif
+		}
 	}
 
 	xsResult = xsThis;
