@@ -539,6 +539,7 @@ void PiuViewEnd(PiuView* self)
 	Poco poco = (*self)->poco;
 #ifdef piuGPU
 	PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewReceiver, self);
+	pocoInstrumentationAdjust(FramesDrawn, +1);
 #else
 	xsMachine* the = (*self)->the;
 	PiuRegion* dirty = (*self)->dirty;
