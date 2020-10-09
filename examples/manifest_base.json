@@ -30,12 +30,11 @@
 	"modules": {
 		"*": [
 			"$(MODULES)/files/resource/*",
-			"$(MODULES)/base/instrumentation/*",
+			"$(MODULES)/base/instrumentation/modInstrumentation",
 		],
 	},
 	"preload": [
 		"Resource",
-		"instrumentation",
 	],
 	"strip": "*",
 	"platforms": {
