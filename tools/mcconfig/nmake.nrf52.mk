@@ -102,7 +102,7 @@ BOARD = pca10056
 BOARD_DEF = BOARD_MODDABLE_FOUR
 
 !IF "$(HEAP_SIZE)"==""
-HEAP_SIZE = 0x20000
+HEAP_SIZE = 0x32F00
 !ENDIF
 
 HWCPU = cortex-m4
@@ -223,7 +223,7 @@ BOARD_SUPPORT_OBJ = \
 FREERTOS_OBJ = \
 	$(LIB_DIR)\croutine.o \
 	$(LIB_DIR)\event_groups.o \
-	$(LIB_DIR)\heap_1.o \
+	$(LIB_DIR)\heap_3.o \
 	$(LIB_DIR)\list.o \
 	$(LIB_DIR)\port.o \
 	$(LIB_DIR)\port_cmsis.o \
