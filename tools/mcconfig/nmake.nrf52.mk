@@ -35,6 +35,14 @@ NRF_ROOT = $(USERPROFILE)\nrf5
 NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-7-2017-q4-major-win32
 !ENDIF
 
+!IF "$(M4_VID)"==""
+M4_VID = BEEF
+!ENDIF
+
+!IF "$(M4_PID)"==""
+M4_PID = CAFE
+!ENDIF
+
 NRF52_SDK_ROOT = $(NRF52_SDK_PATH)
 NRF52_GNU_VERSION = 7.2.1
 UF2CONV = $(NRF_ROOT)\uf2conv.py
@@ -71,20 +79,20 @@ SIZE = $(TOOLS_BIN)\arm-none-eabi-size
 
 PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
 UF2_VOLUME_NAME = MODDABLE4
-WAIT_FOR_M4 = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp
+WAIT_FOR_M4 = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
 DO_COPY = -for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)\xs_nrf52.uf2 %%i
 ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DIR)\_size.tmp $(MODDABLE)
 
 !IF "$(DEBUG)"=="1"
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp
+WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
 SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && for /F "tokens=1" %%i in ( $(TMP_DIR)\_port.tmp ) do @$(MODDABLE_TOOLS_DIR)\serial2xsbug %%i 921600 8N1 -dtr
 NORESTART = -norestart
 !ELSE
 DO_XSBUG =
 KILL_SERIAL_2_XSBUG =
-WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 0 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp
+WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 0 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
 SERIAL_2_XSBUG = 
 NORESTART =
 !ENDIF
@@ -92,7 +100,11 @@ NORESTART =
 # nRF52840_xxAA
 BOARD = pca10056
 BOARD_DEF = BOARD_MODDABLE_FOUR
-HEAP_SIZE = 0x13000
+
+!IF "$(HEAP_SIZE)"==""
+HEAP_SIZE = 0x32F00
+!ENDIF
+
 HWCPU = cortex-m4
 SOFT_DEVICE = s140
 
