@@ -5,22 +5,23 @@ import Button from "button";
 import LED from "led";
 
 class Backlight extends PWM {
-	constructor() {
+	constructor(brightness = 100) {
 		super({pin: config.backlight});
-		this.write(parseInt(config.brightness));
+		this.write(brightness);
 	}
 	write(value) {
-		value = 100 - parseInt(value);		// PWM is inverted
-		if (value < 0)
+		value = 100 - value;		// PWM is inverted
+		if (value <= 0)
 			value = 0;
-		else if (value > 100)
-			value = 100;
-		value = (value / 100) * 1023;
+		else if (value >= 100)
+			value = 1023;
+		else
+			value = (value / 100) * 1023;
 		super.write(value);
 	}
 }
 
-globalThis.Host = {
+globalThis.Host = Object.freeze({
 	Backlight,
 	LED: {
 		Default: class {
@@ -43,12 +44,13 @@ globalThis.Host = {
 			}
 		}
 	}
-}
-Object.freeze(globalThis.Host, true);
+}, true);
 
 export default function (done) {
-	if ("none" === config.brightness)
+	if ((undefined === config.brightness) || ("none" === config.brightness))
 		Digital.write(config.backlight, 0);
+	else
+		globalThis.backlight = new Backlight(parseInt(config.brightness));
 
 	done();
 }
