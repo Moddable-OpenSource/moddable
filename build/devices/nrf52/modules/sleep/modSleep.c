@@ -19,17 +19,11 @@
  */
 
 #include "xsmc.h"
-#include "xsHost.h"
 #include "xsPlatform.h"
 
-#include "nrf_soc.h"
 #include "nrf_sdh.h"
-#include "nrf_sdm.h"
-#include "nrf_gpio.h"
-#include "nrf_delay.h"
 #include "nrf_drv_lpcomp.h"
 #include "nrf_rtc.h"
-#include "FreeRTOS.h"
 
 #define RAM_START_ADDRESS  0x20000000
 #define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size 0x100
@@ -352,7 +346,7 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	// Save time of day in retention memory
 	c_timeval tv;
 	c_gettimeofday(&tv, NULL);
-	*((volatile c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
+	*((c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
 	
     // Calculate wake up time
     uint32_t enterTime, wakeupTime;
@@ -360,7 +354,7 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
 
 	// Save enter time in retention memory
-	*(volatile uint32_t*)MOD_TIME_RTC_MEM = enterTime;
+	*(uint32_t*)MOD_TIME_RTC_MEM = enterTime;
 	
 	// Configure CTC interrupt
 	nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTime);
@@ -370,7 +364,7 @@ void xs_sleep_wake_on_timer(xsMachine *the)
     __DSB();
     
 	// Power off all ram sections except for retention memory (slave 2, section 0)
-	// Wait for RTC interrupt event
+	// Then wait for RTC compare interrupt event
 	if (softdevice_enabled()) {
 		sd_power_ram_power_clr(0, 0x03);
 		sd_power_ram_power_clr(1, 0x03);
@@ -382,7 +376,9 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 		sd_power_ram_power_clr(7, 0x03);
 		sd_power_ram_power_clr(8, 0x3F);
 
-		sd_app_evt_wait();
+		do {
+			sd_app_evt_wait();
+		} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
 	}
 	else {
 		NRF_POWER->RAM[0].POWERCLR = 0x03;
@@ -401,8 +397,8 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	}
 
 	// Read RTC again and update saved time of day
-	((volatile c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(volatile uint32_t*)MOD_TIME_RTC_MEM)/1000);
-	((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
 
 	// Reset device
 	nrf52_reset();
@@ -413,16 +409,16 @@ void xs_sleep_restore_time(xsMachine *the)
 #ifdef mxDebug
 	return;
 #endif
-	if (kRamRetentionValueMagic == ((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2]) {
-		c_timeval tv = *((volatile c_timeval *)MOD_TIME_RESTORE_MEM);
+	if (kRamRetentionValueMagic == ((uint32_t *)MOD_TIME_RESTORE_MEM)[2]) {
+		c_timeval tv = *((c_timeval *)MOD_TIME_RESTORE_MEM);
 		modSetTime(tv.tv_sec);
-		((volatile uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
 	}
 	else {
 		modSetTimeZone(-8 * 3600);
 		modSetDaylightSavingsOffset(3600);
 		modSetTime(1601856000L);	// 10/5/2020 12:00:00 AM GMT
 	}
+	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
 }
 
 void sleep_deep(xsMachine *the)
