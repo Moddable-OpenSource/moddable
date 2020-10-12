@@ -15,24 +15,21 @@
 import {} from "piu/MC";
 
 export default function() {
-	const backgroundTexture = new Texture("island.png");
 	const backgroundSkin = new Skin({
-		texture: backgroundTexture,
-		width:240, height:320,
+		texture: new Texture("island.png"),
+		width: 240, height: 320,
 	});
 
-	const dimTexture = new Texture("led-dim.png");
 	const dimSkin = new Skin({
-		texture: dimTexture,
+		texture: new Texture("led-dim.png"),
 		color: "white",
-		width:40, height:40,
+		width: 40, height: 40,
 	});
 
-	const brightTexture = new Texture("led-bright.png");
 	const brightSkin = new Skin({
-		texture: brightTexture,
+		texture: new Texture("led-bright.png"),
 		color: "white",
-		width:48, height:48,
+		width: 48, height: 48,
 	});
 
 	const outlineSkin = new Skin({
@@ -49,22 +46,18 @@ export default function() {
 			this.backlight = new Host.Backlight
 			this.adjustBrightness(content);
 		}
-		onTouchBegan(content, id, x, y, ticks) {
-			let bar = content.next;
-			bar.height = 180-y+bar.coordinates.bottom;
-			this.adjustBrightness(content);
+		onTouchBegan(content, id, x, y) {
+			this.onTouchMoved(content, id, x, y);
 		}
-		onTouchMoved(content, id, x, y, ticks) {
-			if (y < 71) return;
-			let bar = content.next;
-			bar.height = 180-y+bar.coordinates.bottom;
+		onTouchMoved(content, id, x, y) {
+			const bounds = content.bounds;
+			y = Math.max(bounds.y, y);
+			y = Math.min(y, bounds.y + bounds.height);
+			content.first.height = (bounds.y + bounds.height) - y;
 			this.adjustBrightness(content);
 		}
 		adjustBrightness(content) {
-			let bar = content.next;
-			let fraction = bar.height/178;
-			if (fraction < 0) fraction = 0;
-			else if (fraction > 1) fraction = 1;
+			const fraction = content.first.height / content.height;
 			this.backlight.write(fraction * 100);
 		}
 	};
@@ -75,13 +68,15 @@ export default function() {
 			Content($, {
 				skin: brightSkin, top: 5
 			}),
-			Content($, {
+			Container($, {
 				width: 100, height: 200, skin: outlineSkin,
-				active: true, Behavior: DimmingBehavior
-			}),
-			Content($, {
-				left: 80, right: 80, bottom: 71, height: 178 / 2,
-				skin: transparentWhiteSkin
+				active: true, Behavior: DimmingBehavior,
+				contents: [
+					Content($, {
+						left: 0, right: 0, bottom: 0, height: 100,
+						skin: transparentWhiteSkin
+					}),
+				],
 			}),
 			Content($, {
 				skin: dimSkin, bottom: 10
