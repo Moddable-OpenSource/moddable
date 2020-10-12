@@ -50,6 +50,6 @@ class Iterator @ "xs_zip_file_iterator_destructor" {
 	next() @ "xs_zip_file_iterator_next";
 }
 
-export default {
+export default Object.freeze({
 	ZIP
-};
+});
