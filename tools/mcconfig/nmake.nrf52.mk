@@ -595,7 +595,6 @@ clean:
 
 xsbug:
 	$(KILL_SERIAL_2_XSBUG)
-	$(WAIT_FOR_M4)
 	$(DO_XSBUG)
 	$(WAIT_FOR_NEW_SERIAL)
 	$(SERIAL_2_XSBUG)
