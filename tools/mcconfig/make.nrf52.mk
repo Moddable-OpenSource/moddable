@@ -580,7 +580,7 @@ ifeq ($(DEBUG),1)
 else
 	C_DEFINES += \
 		-DUSE_DEBUGGER_USBD=1 \
-		-DUSE_WATCHDOG=1 \
+		-DUSE_WATCHDOG=0 \
 		-Os
 	C_FLAGS += $(HW_OPT)
 	ASM_FLAGS += $(HW_OPT)
