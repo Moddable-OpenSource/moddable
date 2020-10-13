@@ -87,9 +87,12 @@ typedef struct {
 static modSleepRecord gSleep = {0};
 
 static uint8_t softdevice_enabled();
-static void sleep_deep(xsMachine *the);
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
+
+static void sleep_deep(xsMachine *the);
+static void sleep_wake_on_timer();
+static void sleep_wake_on_timer_sd();
 
 void xs_sleep_install(xsMachine *the)
 {
@@ -321,6 +324,14 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 {
 	uint32_t ms = xsmcToInteger(xsArg(0));
 
+	// Notify sleep handlers
+	modSleepHandler walker;
+    walker = gSleep.handlers;
+	while (NULL != walker) {
+		xsCallFunction0(walker->callback, xsGlobal);
+		walker = walker->next;
+	}
+
 	// Stop tick events
 	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
 
@@ -334,14 +345,6 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	}
 	else
 		__disable_irq();
-
-	// Notify sleep handlers
-	modSleepHandler walker;
-    walker = gSleep.handlers;
-	while (NULL != walker) {
-		xsCallFunction0(walker->callback, xsGlobal);
-		walker = walker->next;
-	}
 
 	// Save time of day in retention memory
 	c_timeval tv;
@@ -361,47 +364,14 @@ void xs_sleep_wake_on_timer(xsMachine *the)
 	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
 
+	// Ensure memory access has completed
     __DSB();
-    
-	// Power off all ram sections except for retention memory (slave 2, section 0)
-	// Then wait for RTC compare interrupt event
-	if (softdevice_enabled()) {
-		sd_power_ram_power_clr(0, 0x03);
-		sd_power_ram_power_clr(1, 0x03);
-		sd_power_ram_power_clr(2, 0x02);
-		sd_power_ram_power_clr(3, 0x03);
-		sd_power_ram_power_clr(4, 0x03);
-		sd_power_ram_power_clr(5, 0x03);
-		sd_power_ram_power_clr(6, 0x03);
-		sd_power_ram_power_clr(7, 0x03);
-		sd_power_ram_power_clr(8, 0x3F);
 
-		do {
-			sd_app_evt_wait();
-		} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
-	}
-	else {
-		NRF_POWER->RAM[0].POWERCLR = 0x03;
-		NRF_POWER->RAM[1].POWERCLR = 0x03;
-		NRF_POWER->RAM[2].POWERCLR = 0x02;
-		NRF_POWER->RAM[3].POWERCLR = 0x03;
-		NRF_POWER->RAM[4].POWERCLR = 0x03;
-		NRF_POWER->RAM[5].POWERCLR = 0x03;
-		NRF_POWER->RAM[6].POWERCLR = 0x03;
-		NRF_POWER->RAM[7].POWERCLR = 0x03;
-		NRF_POWER->RAM[8].POWERCLR = 0x3F;
-
-		do {
-			__WFE();
-		} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
-	}
-
-	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM)/1000);
-	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
-
-	// Reset device
-	nrf52_reset();
+	// Complete process depending on whether or not the SoftDevice is enabled
+	if (softdevice_enabled())
+		sleep_wake_on_timer_sd();
+	else
+		sleep_wake_on_timer();		
 }
 
 void xs_sleep_restore_time(xsMachine *the)
@@ -453,6 +423,80 @@ void sleep_deep(xsMachine *the)
 #ifdef mxDebug
 	for (;;) {}
 #endif
+}
+
+void sleep_wake_on_timer()
+{
+	// Power off all ram sections except for retention memory (slave 2, section 0)
+	NRF_POWER->RAM[0].POWERCLR = 0x03;
+	NRF_POWER->RAM[1].POWERCLR = 0x03;
+	NRF_POWER->RAM[2].POWERCLR = 0x02;
+	NRF_POWER->RAM[3].POWERCLR = 0x03;
+	NRF_POWER->RAM[4].POWERCLR = 0x03;
+	NRF_POWER->RAM[5].POWERCLR = 0x03;
+	NRF_POWER->RAM[6].POWERCLR = 0x03;
+	NRF_POWER->RAM[7].POWERCLR = 0x03;
+	NRF_POWER->RAM[8].POWERCLR = 0x3F;
+
+	// Wait for RTC compare interrupt event
+	do {
+		__WFE();
+	} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
+
+	// Read RTC again and update saved time of day
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+
+	// Power on all RAM (seems to be required in order for reset to work)
+	NRF_POWER->RAM[0].POWERSET = 0x03;
+	NRF_POWER->RAM[1].POWERSET = 0x03;
+	NRF_POWER->RAM[2].POWERSET = 0x02;
+	NRF_POWER->RAM[3].POWERSET = 0x03;
+	NRF_POWER->RAM[4].POWERSET = 0x03;
+	NRF_POWER->RAM[5].POWERSET = 0x03;
+	NRF_POWER->RAM[6].POWERSET = 0x03;
+	NRF_POWER->RAM[7].POWERSET = 0x03;
+	NRF_POWER->RAM[8].POWERSET = 0x3F;
+
+	// Reset device
+	nrf52_reset();
+}
+
+void sleep_wake_on_timer_sd()
+{
+	// Power off all ram sections except for retention memory (slave 2, section 0)
+	sd_power_ram_power_clr(0, 0x03);
+	sd_power_ram_power_clr(1, 0x03);
+	sd_power_ram_power_clr(2, 0x02);
+	sd_power_ram_power_clr(3, 0x03);
+	sd_power_ram_power_clr(4, 0x03);
+	sd_power_ram_power_clr(5, 0x03);
+	sd_power_ram_power_clr(6, 0x03);
+	sd_power_ram_power_clr(7, 0x03);
+	sd_power_ram_power_clr(8, 0x3F);
+
+	// Wait for RTC compare interrupt event
+	do {
+		__WFE();
+	} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
+
+	// Read RTC again and update saved time of day
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+
+	// Power on all RAM (seems to be required in order for reset to work)
+	sd_power_ram_power_set(0, 0x03);
+	sd_power_ram_power_set(1, 0x03);
+	sd_power_ram_power_set(2, 0x02);
+	sd_power_ram_power_set(3, 0x03);
+	sd_power_ram_power_set(4, 0x03);
+	sd_power_ram_power_set(5, 0x03);
+	sd_power_ram_power_set(6, 0x03);
+	sd_power_ram_power_set(7, 0x03);
+	sd_power_ram_power_set(8, 0x3F);
+
+	// Reset device
+	nrf52_reset();
 }
 
 uint8_t softdevice_enabled()
