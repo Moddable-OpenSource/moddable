@@ -1078,7 +1078,7 @@ export default class extends Tool {
 			var file = new XcodeFile(path, this);
 			file.generate(this);
 		}
-		else if (this.platform == "x-lin") {
+		else if (this.platform == "x-lin" || this.platform == "x-lin-cli" ) {
 			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
 			this.createDirectory(this.resourcesPath);
 		}	
