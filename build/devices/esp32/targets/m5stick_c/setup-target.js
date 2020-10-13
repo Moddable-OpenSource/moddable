@@ -136,9 +136,15 @@ class Power extends AXP192 {
     this.write(0x90, 0x02); // gpio0
   }
 
-  set brightness(brightness) {
-    const b = (brightness & 0x0f) << 4;
-    this.writeByte(0x28, b);
+  // value 0 - 100 %
+  set brightness(value) {
+    if (value <= 0)
+      value = 7;
+    else if (value >= 100)
+      value = 15;
+    else
+      value = (value / 100) * 8 + 7;
+    this.writeByte(0x28, (this.readByte(0x28) & 0x0F) | (value << 4));
   }
 
   /**
@@ -147,7 +153,7 @@ class Power extends AXP192 {
    * @deprecated Use setter
    */
   setBrightness(brightness) {
-    trace("WARNING: AXP192#setBrightness is deprecated. use setter");
+    trace("WARNING: AXP192#setBrightness is deprecated. use setter. Range now 0-100 %");
     this.brightness = brightness;
   }
 
