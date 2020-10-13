@@ -459,7 +459,8 @@ void sleep_wake_on_timer()
 	NRF_POWER->RAM[8].POWERSET = 0x3F;
 
 	// Reset device
-	nrf52_reset();
+	*((uint32_t*)DFU_DBL_RESET_MEM) = 0;
+	NVIC_SystemReset();
 }
 
 void sleep_wake_on_timer_sd()
@@ -496,7 +497,8 @@ void sleep_wake_on_timer_sd()
 	sd_power_ram_power_set(8, 0x3F);
 
 	// Reset device
-	nrf52_reset();
+	*((uint32_t*)DFU_DBL_RESET_MEM) = 0;
+	sd_nvic_SystemReset();
 }
 
 uint8_t softdevice_enabled()
