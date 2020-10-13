@@ -1641,12 +1641,14 @@ void fxCommaExpression(txParser* parser)
 {
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
-	while (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION) {
+	if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION) {
 		fxAssignmentExpression(parser);
 		aCount++;
-		if (parser->token != XS_TOKEN_COMMA) 
-			break;
-		fxGetNextToken(parser);
+		while (parser->token == XS_TOKEN_COMMA) {
+			fxGetNextToken(parser);
+			fxAssignmentExpression(parser);
+			aCount++;
+		}
 	}
 	if (aCount > 1) {
 		fxPushNodeList(parser, aCount);
