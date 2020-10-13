@@ -296,14 +296,12 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 #endif
 
 		while (data < dest) {
-			uint32_t d0, d1;
-
-			d0 = 0x80808080 & *(uint32_t *)data;
-			d1 = 0x80808080 & *(uint32_t *)(data + 4);
+			uint32_t d =	(0x80808080 & *(uint32_t *)data) |
+								((0x80808080 & *(uint32_t *)(data + 4)) >> 4);
 			data += 8;
-			
-			d0 |= (d0 >> 9) | (d0 >> 18) | (d0 >> 27) | (d1 >> 4) | (d1 >> 13) | (d1 >> 22) | (d1 >> 31);
-			*toSend++ = (uint8_t)d0;
+
+			d |= (d >> 9) | (d >> 18) | (d >> 27);
+			*toSend++ = (uint8_t)d;
 		}
 	}
 
