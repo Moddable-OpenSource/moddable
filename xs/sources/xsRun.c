@@ -608,7 +608,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		}
 		variable = slot - (mxStack++)->value.integer;
 		variable->next = mxFrame;
-		variable->flag = XS_NO_FLAG;
+		variable->flag &= XS_STRICT_FLAG;
 #ifdef mxDebug
 		if (mxFrame && (mxFrame->flag & XS_STEP_INTO_FLAG))
 			variable->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
