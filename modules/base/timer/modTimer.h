@@ -39,8 +39,7 @@ extern uint16_t modTimerGetID(modTimer timer);
 extern int modTimerGetSecondInterval(modTimer timer);
 extern void *modTimerGetRefcon(modTimer timer);
 extern void modTimerRemove(modTimer timer);
-
-extern modTimer modTimerFind(uint16_t id);
+extern void modTimerUnschedule(modTimer timer);
 
 extern void modTimerDelayMS(uint32_t ms);
 

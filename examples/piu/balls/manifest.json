@@ -6,6 +6,9 @@
 	"modules": {
 		"*": "./main",
 	},
+	"config": {
+		"touchCount": 0,
+	},
 	"resources":{
 		"*": [
 			"./main",

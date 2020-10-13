@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,7 +16,7 @@ import {Request} from "http"
 
 let characterCount = 0;
 
-let request = new Request({host: "www.moddable.com", path: "/"});
+let request = new Request({host: "test.moddable.com", path: "/"});
 request.callback = function(message, value, etc)
 {
 	if (Request.responseFragment === message) {

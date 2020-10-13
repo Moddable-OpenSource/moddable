@@ -545,6 +545,11 @@ void xs_socket_write(xsMachine *the)
 		xsUnknownError("write failed");
 }
 
+void xs_socket_suspend(xsMachine *the)
+{
+	xsUnknownError("unimplemented");
+}
+
 void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, const void *data, void *info)
 {
 	xsSocket xss = info;

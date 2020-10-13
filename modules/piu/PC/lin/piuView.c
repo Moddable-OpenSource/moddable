@@ -714,10 +714,11 @@ static gboolean PiuViewIdle(gpointer data)
 	return TRUE;
 }
 
-void PiuViewIdleCheck(PiuView* self, PiuBoolean idle)
+void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 {
-	if ((*self)->running != idle) {
-		(*self)->running = idle;
+	PiuBoolean running = (idle > 0) ? 1 : 0;
+	if ((*self)->running != running) {
+		(*self)->running = running;
 		if (idle)
 			(*self)->timer = g_timeout_add(20, PiuViewIdle, self);
 		else
@@ -784,6 +785,15 @@ void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)
 	cairo_t* cr = (*self)->cairo;
 	cairo_save(cr);
 	cairo_translate(cr, x, y);
+}
+
+void PiuViewReflow(PiuView* self)
+{
+}
+
+void PiuViewReschedule(PiuView* self)
+{
+	PiuApplicationIdleCheck((*self)->application);
 }
 
 double PiuViewTicks(PiuView* self)

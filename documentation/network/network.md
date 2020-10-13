@@ -1,7 +1,7 @@
 # Networking
 
 Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: June 29, 2020
+Revised: September 19, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -193,9 +193,19 @@ It is more efficient to make a single `write` call with several parameters inste
 
 ***
 
+### `get(what)`
+
+The `get` method returns state information about the socket. The `what` argument is a string indicating the state requested. If the state is unavailable, `get` returns `undefined`.
+
+| `what` | Description |
+| :---: | :--- |
+| `"REMOTE_IP"` | Returns the IP address of the remote endpoint. Only available for TCP sockets. |
+
+***
+
 ### `callback(message [, value])`
 
-The user of the socket receives status information through the callback function. The callback receives messages and, for some messages, a data value. Positive `message` values indicate normal operation and negative `message` values indicate an error.
+The user of the socket receives status information through the callback function. The first argument to the callback is the messages identifier. Positive `message` values indicate normal operation and negative `message` values indicate an error. Depending on the message, there may be additional arguments.
 
 | `message` | Description |
 | :---: | :--- |
@@ -204,6 +214,19 @@ The user of the socket receives status information through the callback function
 | 1 | **connect:** The socket successfully connected to the remote host.
 | 2 | **dataReceived:** The socket has received data. The `value` argument contains the number of bytes available to read.
 | 3 | **dataSent:** The socket has successfully transmitted some or all of the data written to it. The `value` argument contains the number of bytes that can be safely written.
+
+For UDP sockets, the callback for `dataReceived` has three additional arguments after the message identifier . The first is the number of bytes available to read, as with TCP sockets. The second is a string containing the IP address of the sender. The third is the port number of the sender.
+
+```js
+callback(message, byteLength, remoteIP, remotePort) {}
+}
+```
+
+For RAW sockets, the callback for `dataReceived` has two additional arguments after the message identifier . The first is the number of bytes available to read, as with TCP sockets. The second is a string containing the IP address of the sender.
+
+```js
+callback(message, byteLength, remoteIP) {}
+```
 
 ***
 
@@ -664,20 +687,13 @@ ws.close();
 
 ***
 
-### `write(message)`
-
-The write function transmits a single WebSockets message. The message is either a `String`, which is sent as a text message, or an `ArrayBuffer`, which is sent as a binary message.
-
-```js
-ws.write("hello");
-ws.write(JSON.stringify({text: "hello"}));
-```
-
-***
-
 ### `callback(message, value)`
 
-The WebSocket server callback is the same as the WebSocket client callback with the exception of the "Socket connected" (`1` or `Server.connect`) message. The socket connected message for the server is invoked when the server accepts a new incoming connection. The value of `this` is unique for each new server connect to a client. Like the WebSocket client callback, messages cannot be sent until after the callback receives the WebSocket handshake complete message.
+The WebSocket server callback is the same as the WebSocket client callback with the addition of the "Socket connected" (`1` or `Server.connect`) message. The socket connected message for the server is invoked when the server accepts a new incoming connection.
+
+The value of `this` is unique for each connection made to the server. Messages cannot be sent until after the callback receives the WebSocket handshake complete message (`Server.handshake`).
+
+The `this` instance of the callback has the same `write` and `close` methods as the WebSocket Client. These methods are used to send data and to close the connection.
 
 >**Note**: Text and binary messages received with the mask bit set are unmasked by the server before delivering them to the callback.
 
@@ -703,15 +719,27 @@ The following properties are available:
 
 | Property | Description | 
 | :---: | :--- |
-| `IP` | The IP address of the network connection as a `String`, e.g. "10.0.1.4"
+| `IP` | The IP address of the network connection as a `String`, e.g. "10.0.1.4". These may be IPv4 or IPv6 addresses.
 | `MAC` | The MAC address of the device as a `String`, e.g. "A4:D1:8C:DB:C0:20"
-| `SSID` | The name of the Wi-Fi access point as a `String`, e.g. "Moddable Wi-Fi"
-| `BSSID` | The MAC address of the Wi-Fi access point as a `String`, e.g. "18:64:72:47:d4:32"
+| `SSID` | The name of the Wi-Fi access point connected to as a `String`, e.g. "Moddable Wi-Fi"
+| `BSSID` | The MAC address of the Wi-Fi access point connected to as a `String`, e.g. "18:64:72:47:d4:32"
 | `RSSI` | The Wi-Fi [received signal strength](https://en.wikipedia.org/wiki/Received_signal_strength_indication) as a `Number`
+| `CHANNEL` | The Wi-Fi channel currently in use as a `Number`
+| `DNS` | The DNS server(s) used to resolve domain names to IP addresses by `Net.resolve` as an `Array` of IP address strings. These may be IPv4 or IPv6 addresses.
+
 
 ```js
-trace(`Connect to Wi-Fi access point: ${Net.get("SSID")}\n`);
+trace(`Connected to Wi-Fi access point: ${Net.get("SSID")}\n`);
 ```
+
+For a device operating as both a Wi-Fi station (client) and a Wi-Fi access point, the static `get` method accepts an optional second argument to indicate if the request is for the station or access point interface. The interface accepts values of `"station"` and `"ap"`. It is used for the `IP` and `MAC` properties. 
+
+```
+trace(`IP default ${Net.get("IP")}\n`);
+trace(`IP station ${Net.get("IP", "station")}\n`);
+trace(`IP AP ${Net.get("IP", "ap")}\n`);
+```
+In station mode, the default value for the interface is `"station"`; in access point mode, `"ap"`. In the combined station and access point mode, there is no default value (because it is ambiguous). Requesting the `IP` or `MAC` properties in this mode returns `undefined`.
 
 ***
 
@@ -754,12 +782,12 @@ The following example begins the process of connecting to a Wi-Fi access point a
 ```js
 let monitor = new WiFi({ssid: "My Wi-Fi", password: "secret"}, msg => {
 	switch (msg) {
-		case "connect":
+		case WiFi.connected:
 			break; // still waiting for IP address
-		case "gotIP":
+		case Wifi.gotIP:
 			trace(`IP address ${Net.get("IP")}\n`);
 			break;
-		case "disconnect":
+		case WiFi.disconnected:
 			break;  // connection lost
 	}
 });
@@ -809,7 +837,7 @@ The Wi-Fi scan runs for a fixed period of time, approximately two seconds. Durin
 
 ### `mode` property
 
-The `mode` property is set to 1 for station mode (e.g. device acts as Wi-Fi client) and 2 for access point mode (e.g. device acts as Wi-Fi base station).
+The `mode` property is set to 1 for station mode (e.g. device acts as Wi-Fi client), 2 for access point mode (e.g. device acts as Wi-Fi base station), and 3 for simultaneous operation of station and access point modes.
 
 ***
 
@@ -821,12 +849,17 @@ The `connect` function begins the process of establishing a connection. The conn
 WiFi.connect({ssid: "Moddable", password: "1234"});
 ```
 
-To disconnect from the current Wi-Fi base station, call `connect` with no parameters.
+> **Note**: Calling `WiFi.connect` with no parameters disconnects. However, it is recommended to use `WiFi.disconnect` insteadm
+
+***
+
+### `static disconnect()`
+
+Disconnects from the current Wi-Fi base station
 
 ```js
-WiFi.connect();
+WiFi.disconnect();
 ```
-
 ***
 
 ### `static accessPoint(dictionary)`
@@ -844,6 +877,7 @@ The dictionary may optionally include the following properties:
 | `hidden` | `false` | A boolean indicating if the channel should be hidden |
 | `interval` | 100 | A number indicating the beacon interval in milliseconds |
 | `max` | 4 | A number indicating the maximum number of simultaneous connections |
+| `station` | `false` | A boolean indicating if station mode should simultaneously be enabled with access point mode. |
 
 ```js
 WiFi.accessPoint({
@@ -1076,20 +1110,20 @@ The `build` function returns a DNS packet suitable for sending using the `write`
 - **Source code:** [dnsserver](../../modules/network/dns)
 - **Relevant Examples:** [dnsserver](../../examples/network/dns/dnsserver)
 
-The DNS `Server` class implements a simple DNS server.
+The `DNSServer` class implements a simple DNS server.
 
 ```js
-import Server from "dns/server";
+import DNSServer from "dns/server";
 ```
 
 The server is indicated for use in devices in Wi-Fi access point mode that wish to act as a captive portal. The DNS server is used to direct look-ups for certain domains to an IP address, typically the device running the DNS server.
 
 ### `constructor(callback)`
 
-The DNS `Server` constructor takes a single argument, a function to call when a look-up request is received. The callback receives two arguments. The first, `message`, is set to 1 when a look-up is performed. The second argument, `value`, is set to the name to be resolved when a look-up request is made.
+The `DNSServer` constructor takes a single argument, a function to call when a look-up request is received. The callback receives two arguments. The first, `message`, is set to 1 when a look-up is performed. The second argument, `value`, is set to the name to be resolved when a look-up request is made.
 
 ```js
-let server = new Server((message, value) => {
+let server = new DNSServer((message, value) => {
 	...
 });
 ```
@@ -1111,20 +1145,22 @@ server.close();
 The following example redirects all DNS look-ups to the IP address of the device running the server.
 
 ```js
-new Server((message, value) => {
-	if (1 == message)
-		return Net.get("IP");
+new DNSServer((message, value) => {
+	if (1 === message)
+		return Net.get("IP", "ap");
 })
 ```
+
+> **Note:**: This example expects to be run on a Wi-Fi connection in access point mode. It passes "ap" for the interface argument to `Net.get` to retrieve the IP address for access point. 
 
 ### Example: DNS server for a single host name
 
 The following example redirects all DNS look-ups for "example.com" to the IP address of the device running the server. All other look-ups are ignored.
 
 ```js
-new Server((message, value) => {
+new DNSServer((message, value) => {
 	if ((1 == message) && ("example.com" == value))
-		return Net.get("IP");
+		return Net.get("IP", 'ap");
 })
 ```
 

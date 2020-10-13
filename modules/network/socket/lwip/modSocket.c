@@ -80,19 +80,21 @@ typedef struct xsSocketUDPRemoteRecord xsSocketUDPRemoteRecord;
 typedef xsSocketUDPRemoteRecord *xsSocketUDPRemote;
 
 #define kReadQueueLength MODDEF_SOCKET_READQUEUE
+
+#define xsSocketCommon \
+	xsMachine			*the; 				\
+											\
+	xsSlot				obj;				\
+	struct tcp_pcb		*skt;				\
+											\
+	int8				useCount;			\
+	uint8				kind;				\
+	uint8				pending;			\
+	uint8				constructed;		\
+	uint8				suspended;
+
 struct xsSocketRecord {
-	xsMachine			*the;
-
-	xsSlot				obj;
-	struct tcp_pcb		*skt;
-
-	int8				useCount;
-	uint8				kind;
-	uint8				pending;
-	uint8				writeDisabled;
-	uint8				constructed;
-
-	// above here same as xsListenerRecord
+	xsSocketCommon
 
 	struct udp_pcb		*udp;
 	struct raw_pcb		*raw;
@@ -107,13 +109,6 @@ struct xsSocketRecord {
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
-	uint8				suspended;
-
-	uint8				suspendedError;		// could overload suspended
-	uint8				suspendedDisconnect;
-	uint16				suspendedBufpos;
-	struct pbuf			*suspendedBuf;
-	struct pbuf			*suspendedFragment;
 
 	xsSocketUDPRemoteRecord
 						remote[1];
@@ -124,18 +119,7 @@ typedef xsListenerRecord *xsListener;
 
 #define kListenerPendingSockets MODDEF_SOCKET_LISTENERQUEUE
 struct xsListenerRecord {
-	xsMachine			*the;
-
-	xsSlot				obj;
-	struct tcp_pcb		*skt;
-
-	int8				useCount;
-	uint8				kind;
-	uint8				pending;
-	uint8				writeDisabled;
-	uint8				constructed;
-
-	// above here same as xsSocketRecord
+	xsSocketCommon
 
 	xsSocket			accept[kListenerPendingSockets];
 };
@@ -390,6 +374,29 @@ void xs_socket(xsMachine *the)
 		xsUnknownError("socket connect failed");
 }
 
+static void closeSocket(xsSocket xss)
+{
+	if (xss->skt) {
+		tcp_recv(xss->skt, NULL);
+		tcp_sent(xss->skt, NULL);
+		tcp_err(xss->skt, NULL);
+		tcp_close_safe(xss->skt);
+		xss->skt = NULL;
+	}
+
+	if (xss->udp) {
+		udp_recv(xss->udp, NULL, NULL);
+		udp_remove_safe(xss->udp);
+		xss->udp = NULL;
+	}
+
+	if (xss->raw) {
+		raw_recv(xss->raw, NULL, NULL);
+		raw_remove(xss->raw);
+		xss->raw = NULL;
+	}
+}
+
 void xs_socket_destructor(void *data)
 {
 	xsSocket xss = data;
@@ -397,22 +404,7 @@ void xs_socket_destructor(void *data)
 
 	if (!xss) return;
 
-	if (xss->skt) {
-		tcp_recv(xss->skt, NULL);
-		tcp_sent(xss->skt, NULL);
-		tcp_err(xss->skt, NULL);
-		tcp_close_safe(xss->skt);
-	}
-
-	if (xss->udp) {
-		udp_recv(xss->udp, NULL, NULL);
-		udp_remove_safe(xss->udp);
-	}
-
-	if (xss->raw) {
-		raw_recv(xss->raw, NULL, NULL);
-		raw_remove(xss->raw);
-	}
+	closeSocket(xss);
 
 	if (xss->pb)
 		pbuf_free_safe(xss->pb);
@@ -436,6 +428,8 @@ void xs_socket_close(xsMachine *the)
 		return;
 	}
 
+	closeSocket(xss);
+
 	if (!(xss->pending & kPendingClose))
 		socketSetPending(xss, kPendingClose);
 }
@@ -445,7 +439,7 @@ void xs_socket_get(xsMachine *the)
 	xsSocket xss = xsmcGetHostData(xsThis);
 	const char *name = xsmcToString(xsArg(0));
 
-	if (0 == c_strcmp(name, "REMOTE_IP")) {
+	if (xss->skt && (0 == c_strcmp(name, "REMOTE_IP"))) {
 		xsResult = xsStringBuffer(NULL, 40);
 		ipaddr_ntoa_r(&xss->skt->remote_ip, xsmcToString(xsResult), 40);
 	}
@@ -462,7 +456,7 @@ void xs_socket_read(xsMachine *the)
 	if (NULL == xss)
 		xsUnknownError("read on closed socket");
 
-	if (!xss->buf || (xss->bufpos >= xss->buflen) || xss->suspended) {
+	if (!xss->buf || (xss->bufpos >= xss->buflen)) {
 		if (0 == argc)
 			xsResult = xsInteger(0);
 		else
@@ -542,6 +536,9 @@ void xs_socket_read(xsMachine *the)
 		if (xss->pbWalker->next)
 			socketSetPending(xss, kPendingReceive);
 		else {
+			if ((kTCP == xss->kind) && xss->skt)
+				tcp_recved_safe(xss->skt, xss->pb->tot_len);
+
 			pbuf_free_safe(xss->pb);
 			xss->pb = NULL;
 			xss->pbWalker = NULL;
@@ -551,8 +548,6 @@ void xs_socket_read(xsMachine *the)
 
 			if (xss->reader[0])
 				socketSetPending(xss, kPendingReceive);
-			else if (xss->suspendedDisconnect)
-				socketSetPending(xss, kPendingDisconnect);
 		}
 	}
 }
@@ -568,7 +563,10 @@ void xs_socket_write(xsMachine *the)
 	unsigned char pass, arg;
 	char addr[64];
 
-	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || xss->writeDisabled) {
+	if (xss->suspended)
+		xsUnknownError("suspended");
+
+	if ((NULL == xss) || !(xss->skt || xss->udp || xss->raw) || (xss->pending & (kPendingError | kPendingDisconnect))) {
 		if (0 == argc) {
 			xsResult = xsInteger(0);
 			return;
@@ -745,35 +743,13 @@ void xs_socket_suspend(xsMachine *the)
 
 	if (xsmcArgc) {
 		uint8_t suspended = xsmcToBoolean(xsArg(0));
-		if (!suspended) {
-			modLog("resume");
-			socketSetPending(xss, kPendingReceive);
-			if (xss->suspendedError) {
-				modLog("resume - has error");
-				socketSetPending(xss, kPendingError);
-			}
-			if (xss->suspendedDisconnect) {
-				modLog("resume - has disconnect");
-				socketSetPending(xss, kPendingDisconnect);
-			}
-			socketSetPending(xss, kPendingReceive);
-			xss->suspendedError = 0;
-			xss->suspendedDisconnect = 0;
+
+		if (suspended != xss->suspended) {
+			xss->suspended = suspended;
+			if (!suspended && xss->pending)
+				modMessagePostToMachine(xss->the, NULL, 0, socketClearPending, xss);
+
 		}
-		else {
-			modLog("suspend");
-			if (xss->pending & kPendingError) {		//@@ critical section
-				modLog("suspend - pending error");
-				xss->pending &= ~kPendingError;
-				xss->suspendedError = 1;
-			}
-			if (xss->pending & kPendingDisconnect) {		//@@ critical section
-				modLog("suspend - pending disconnect");
-				xss->pending &= ~kPendingDisconnect;
-				xss->suspendedDisconnect = 1;
-			}
-		}
-		xss->suspended = suspended;
 	}
 
 	xsmcSetBoolean(xsResult, xss->suspended);
@@ -821,11 +797,6 @@ void socketMsgDisconnect(xsSocket xss)
 {
 	xsMachine *the = xss->the;
 
-	if (xss->suspended) {
-		xss->suspendedDisconnect = 1;
-		return;
-	}
-
 	xsBeginHost(the);
 		xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
 	xsEndHost(the);
@@ -834,11 +805,6 @@ void socketMsgDisconnect(xsSocket xss)
 void socketMsgError(xsSocket xss)
 {
 	xsMachine *the = xss->the;
-
-	if (xss->suspended) {
-		xss->suspendedError = 1;
-		return;
-	}
 
 	xsBeginHost(the);
 		xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgError));		//@@ report the error value
@@ -853,8 +819,9 @@ void socketMsgDataReceived(xsSocket xss)
 	ip_addr_t address;
 	uint16_t port;
 
-	if (xss->buflen && (xss->bufpos < xss->buflen))
+	if (xss->buflen && (xss->bufpos < xss->buflen)) {
 		return;		// haven't finished reading current pbuf
+	}
 
 	if (xss->pb) {
 		if (xss->pbWalker->next) {
@@ -866,6 +833,9 @@ void socketMsgDataReceived(xsSocket xss)
 
 			goto callback;
 		}
+
+		if ((kTCP == xss->kind) && xss->skt)	//@@
+			tcp_recved_safe(xss->skt, xss->pb->tot_len);
 
 		pbuf_free_safe(xss->pb);
 		xss->pb = NULL;
@@ -899,8 +869,6 @@ void socketMsgDataReceived(xsSocket xss)
 	xss->bufpos = 0;
 	xss->buflen = pb->len;
 
-	if ((kTCP == xss->kind) && xss->skt)
-		tcp_recved_safe(xss->skt, pb->tot_len);
 
 callback:
 	xsBeginHost(the);
@@ -997,22 +965,26 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
 
-		if (xss->suspended)
-			xss->suspendedDisconnect = true;
-		else {
-			tcp_err(xss->skt, NULL);
+		tcp_err(xss->skt, NULL);
 #if ESP32
-			xss->skt = NULL;			// no close on socket if disconnected.
+		xss->skt = NULL;			// no close on socket if disconnected.
 #endif
 
-			if (xss->reader[0] || xss->buflen)
-				xss->suspendedDisconnect = true;
-			else
-				socketSetPending(xss, kPendingDisconnect);
-		}
+		if (xss->reader[0] || xss->buflen)
+			;
+		else
+			socketSetPending(xss, kPendingDisconnect);
 
 		return ERR_OK;
 	}
+
+	if (err) {
+		socketSetPending(xss, kPendingError);
+		return ERR_OK;
+	}
+
+//@@	if (xss->suspended)
+//@@		return ERR_MEM;
 
 	modCriticalSectionBegin();
 	for (i = 0; i < kReadQueueLength; i++) {
@@ -1026,14 +998,10 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	if (kReadQueueLength == i)
 		return ERR_MEM;			// no space. return error so lwip will redeliver later
 
+//tcp_recved(xss->skt, p->tot_len);		//@@
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 
-	if (!xss->suspended)
-		socketSetPending(xss, err ? kPendingError : kPendingReceive);
-	else {
-		if (err)
-			xss->suspendedError = true;
-	}
+	socketSetPending(xss, kPendingReceive);
 
 	return ERR_OK;
 }
@@ -1063,6 +1031,10 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 		return;
 	}
 #endif
+	if (xss->suspended) {
+		pbuf_free(p);
+		return;
+	}
 
 	modCriticalSectionBegin();
 
@@ -1279,14 +1251,12 @@ void socketSetPending(xsSocket xss, uint8_t pending)
 	doSchedule = 0 == xss->pending;
 	xss->pending |= pending;
 
-	if (xss->pending & (kPendingError | kPendingDisconnect))
-		xss->writeDisabled = true;
-
 	if (doSchedule && (xss->constructed || (pending & kPendingAcceptListener))) {
 		socketUpUseCount(xss->the, xss);
 		modCriticalSectionEnd();
 
-		modMessagePostToMachine(xss->the, NULL, 0, socketClearPending, xss);
+		if (!xss->suspended)
+			modMessagePostToMachine(xss->the, NULL, 0, socketClearPending, xss);
 	}
 	else
 		modCriticalSectionEnd();
@@ -1296,6 +1266,9 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 {
 	xsSocket xss = refcon;
 	uint8_t pending;
+
+	if (xss->suspended)
+		return;
 
 	modCriticalSectionBegin();
 

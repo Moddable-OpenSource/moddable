@@ -743,6 +743,42 @@ void fx_Object_freeze(txMachine* the)
 								mxPop();
 							}
 						}
+						else if (property->kind == XS_ACCESSOR_KIND) {
+							if (property->value.accessor.getter) {
+								mxPushSlot(mxThis);
+								mxDub();
+								fxGetID(the, mxID(_isFrozen));
+								mxCall();
+								mxPushReference(property->value.accessor.getter);
+								mxRunCount(1);
+								if (!fxRunTest(the)) {
+									mxPushSlot(mxThis);
+									mxPushSlot(mxFunction);
+									mxCall();
+									mxPushReference(property->value.accessor.getter);
+									mxPushBoolean(1);
+									mxRunCount(2);
+									mxPop();
+								}
+							}
+							if (property->value.accessor.setter) {
+								mxPushSlot(mxThis);
+								mxDub();
+								fxGetID(the, mxID(_isFrozen));
+								mxCall();
+								mxPushReference(property->value.accessor.setter);
+								mxRunCount(1);
+								if (!fxRunTest(the)) {
+									mxPushSlot(mxThis);
+									mxPushSlot(mxFunction);
+									mxCall();
+									mxPushReference(property->value.accessor.setter);
+									mxPushBoolean(1);
+									mxRunCount(2);
+									mxPop();
+								}
+							}
+						}
 					}
 				}
 				mxPop();

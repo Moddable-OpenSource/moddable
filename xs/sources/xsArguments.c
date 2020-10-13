@@ -140,8 +140,10 @@ txBoolean fxArgumentsSloppyDefineOwnProperty(txMachine* the, txSlot* instance, t
 				property->flag = closure->flag;
 				property->kind = closure->kind;
 				property->value = closure->value;
-				if (descriptor->kind != XS_UNINITIALIZED_KIND)
+				if (descriptor->kind != XS_UNINITIALIZED_KIND) {
+					closure->kind = descriptor->kind;
 					closure->value = descriptor->value;
+				}
 			}
 		}
 	}

@@ -260,8 +260,12 @@ void fxString(txMachine* the, txSlot* theSlot, txString theValue)
 
 void fxStringX(txMachine* the, txSlot* theSlot, txString theValue)
 {
+#ifdef mxSnapshot
+	fxCopyStringC(the, theSlot, theValue);
+#else
 	theSlot->value.string = theValue;
 	theSlot->kind = XS_STRING_X_KIND;
+#endif
 }
 
 void fxStringBuffer(txMachine* the, txSlot* theSlot, txString theValue, txSize theSize)
@@ -614,13 +618,13 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
-		property = gxDefaults.newFunctionLength(the, instance, property, theLength);
+		gxDefaults.newFunctionLength(the, instance, theLength);
 
 	/* NAME */
 	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, XS_NO_ID, C_NULL);
+		fxRenameFunction(the, instance, name, XS_NO_ID, XS_NO_ID, C_NULL);
 	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, C_NULL);
+		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -1545,6 +1549,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
 			c_memcpy(the->symbolTable, theMachine->symbolTable, the->symbolModulo * sizeof(txSlot *));
 //			c_memset(the->keyArray, 0, theCreation->keyCount * sizeof(txSlot*));		//@@ this is not necessary
+			the->colors = theMachine->colors;
 			the->keyCount = theMachine->keyIndex + (txID)theCreation->keyCount;
 			the->keyIndex = theMachine->keyIndex;
 			the->keyOffset = the->keyIndex;
@@ -1653,6 +1658,7 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 	root->preparation = preparation;
 	root->archive = archive;
 	root->keyArray = preparation->keys;
+	root->colors = preparation->colors;
 	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
 	root->keyIndex = (txID)preparation->keyCount;
 	root->nameModulo = preparation->nameModulo;
@@ -1682,6 +1688,41 @@ void fxShareMachine(txMachine* the)
 	#ifdef mxDebug
 		fxLogout(the);
 	#endif
+		{
+			txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+			txSlot* modules = mxOwnModules(realm)->value.reference;
+			txSlot* module = modules->next;
+			while (module) {
+				mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+				module = module->next;
+			}
+			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
+			mxException.kind = XS_REFERENCE_KIND;
+			mxException.value.reference = mxRealmClosures(realm)->value.reference;
+			mxProgram.value.reference = modules; //@@
+			
+			{
+				txSlot* target = fxNewInstance(the);
+				txSlot* modules = mxOwnModules(realm)->value.reference;
+				txSlot* module = modules->next;
+				while (module) {
+					target = target->next = fxNewSlot(the);
+					target->value.symbol = mxModuleInstanceInternal(module->value.reference)->value.module.id;
+					target->kind = XS_SYMBOL_KIND;
+					target->ID = mxModuleInstanceInternal(module->value.reference)->value.module.id;
+					module = module->next;
+				}
+				mxPull(mxHosts); //@@
+			}
+			mxDuringJobs = mxUndefined;
+			mxFinalizationRegistries = mxUndefined;
+			mxPendingJobs = mxUndefined;
+			mxRunningJobs = mxUndefined;
+			mxBreakpoints = mxUndefined;
+			mxHostInspectors = mxUndefined;
+			mxInstanceInspectors = mxUndefined;
+		}
+		fxCollectGarbage(the);
 		fxShare(the);
 		the->shared = 1;
 	#ifdef mxProfile
@@ -1760,20 +1801,21 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 
 txMachine* fxBeginHost(txMachine* the)
 {
-	/* ARGC */
-	mxPushInteger(0);
+	fxOverflow(the, -7, C_NULL, 0);
 	/* THIS */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* FUNCTION */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* TARGET */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* RESULT */
-	mxPushUndefined();
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);
 	/* FRAME */
-	fxOverflow(the, -1, C_NULL, 0);
-	--the->stack;
-	the->stack->next = the->frame;
+	(--the->stack)->next = the->frame;
 	the->stack->ID = XS_NO_ID;
 	the->stack->flag = XS_C_FLAG;
 #ifdef mxDebug
@@ -1786,10 +1828,12 @@ txMachine* fxBeginHost(txMachine* the)
 	the->stack->value.frame.code = the->code;
 	the->stack->value.frame.scope = the->scope;
 	the->frame = the->stack;
+	/* COUNT */
+	(--the->stack)->next = C_NULL;
+	mxInitSlotKind(the->stack, XS_INTEGER_KIND);
+	the->stack->value.integer = 0;
 	/* VARC */
-	fxOverflow(the, -1, C_NULL, 0);
-	--the->stack;
-	the->stack->next = C_NULL;
+	(--the->stack)->next = C_NULL;
 	the->stack->ID = XS_NO_ID;
 	the->stack->flag = XS_NO_FLAG;
 	the->stack->kind = XS_VAR_KIND;
@@ -1802,7 +1846,7 @@ txMachine* fxBeginHost(txMachine* the)
 
 void fxEndHost(txMachine* the)
 {
-	the->stack = the->frame + 6;
+	the->stack = the->frame + 5;
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;

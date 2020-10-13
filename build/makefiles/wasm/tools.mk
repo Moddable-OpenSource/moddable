@@ -21,6 +21,8 @@
 % : %.c
 %.o : %.c
 
+HOST_OS := $(shell uname)
+
 GOAL ?= debug
 NAME = tools
 ifneq ($(VERBOSE),1)
@@ -168,6 +170,7 @@ HEADERS = \
 	$(COMMODETTO)/commodettoPocoBlit.h \
 	$(INSTRUMENTATION)/modInstrumentation.h
 OBJECTS = \
+	$(TMP_DIR)/adpcm-lib.c.o \
 	$(TMP_DIR)/commodettoBitmap.c.o \
 	$(TMP_DIR)/commodettoBufferOut.c.o \
 	$(TMP_DIR)/commodettoColorCellOut.c.o \
@@ -179,7 +182,6 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
 	$(TMP_DIR)/cfeBMF.c.o \
-	$(TMP_DIR)/dvi_adpcm_encode.c.o \
 	$(TMP_DIR)/image2cs.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
@@ -232,9 +234,15 @@ ifeq ($(GOAL),release)
 	LINK_OPTIONS += -Oz
 endif
 
-XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
-XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid
-XSL = $(BUILD_DIR)/bin/mac/$(GOAL)/xsl
+ifeq ($(HOST_OS),Darwin)
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac
+else
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin
+endif
+
+XSC = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsc
+XSID = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsid
+XSL = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsl
 	
 VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(TOOLS)
 

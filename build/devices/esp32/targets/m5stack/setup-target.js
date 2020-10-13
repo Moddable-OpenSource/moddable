@@ -3,6 +3,7 @@ import Monitor from "monitor";
 
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
+import config from "mc/config";
 
 class Button extends Monitor {
 	constructor(pin) {
@@ -20,11 +21,13 @@ export default function (done) {
 		c: new Button(37),
 	};
 
-	global.speaker = new AudioOut({streams: 4});
-	speaker.callback = function() {this.stop()};
-	speaker.enqueue(0, AudioOut.Samples, new Resource("bflatmajor.maud"));
-	speaker.enqueue(0, AudioOut.Callback, 0);
-	speaker.start();
+	global.speaker = new AudioOut({streams: 4, });
+	if (config.startupSound) {
+		speaker.callback = function() {this.stop()};
+		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
+		speaker.enqueue(0, AudioOut.Callback, 0);
+		speaker.start();
+	}
 
 	//@@ microphone
 

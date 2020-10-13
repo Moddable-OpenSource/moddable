@@ -39,7 +39,8 @@ void xs_Bitmap_destructor(void *data)
 void xs_Bitmap(xsMachine *the)
 {
 	int offset;
-	CommodettoBitmap cb = xsmcSetHostChunk(xsThis, NULL, sizeof(CommodettoBitmapRecord));
+	int32_t byteLength = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 0;
+	CommodettoBitmap cb = xsmcSetHostChunk(xsThis, NULL, sizeof(CommodettoBitmapRecord) /* - (byteLength ? sizeof(int32_t) : 0) */);
 
 	cb->w = (CommodettoDimension)xsmcToInteger(xsArg(0));
 	cb->h = (CommodettoDimension)xsmcToInteger(xsArg(1));
@@ -62,6 +63,11 @@ void xs_Bitmap(xsMachine *the)
 	#if COMMODETTO_BITMAP_ID
 		cb->id = ++gBitmapID;
 	#endif
+
+	if (byteLength) {
+		cb->flags |= kCommodettoBitmapHaveByteLength;
+		cb->byteLength = byteLength;
+	}
 
 	xsmcSet(xsThis, xsID_buffer, xsArg(3));
 }
@@ -99,6 +105,19 @@ void xs_bitmap_get_offset(xsMachine *the)
 	xsmcSetInteger(xsResult, offset);
 }
 
+void xs_bitmap_get_byteLength(xsMachine *the)
+{
+	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	int32_t byteLength;
+
+	if (cb->flags & kCommodettoBitmapHaveByteLength)
+		byteLength = cb->byteLength;
+	else
+		byteLength = (((CommodettoBitmapGetDepth(cb->format) *  cb->w) + 7) >> 3) * cb->h;
+
+	xsmcSetInteger(xsResult, byteLength);
+}
+
 void xs_bitmap_get_depth(xsMachine *the)
 {
 	int format = xsmcToInteger(xsArg(0));
@@ -122,7 +141,7 @@ uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format)
 		depth = 4;
 	else if ((kCommodettoBitmapGray256 == format) || (kCommodettoBitmapRGB332 == format))
 		depth = 8;
-	else if ((kCommodettoBitmapRGB565LE == format) || (kCommodettoBitmapRGB565BE == format))
+	else if ((kCommodettoBitmapRGB565LE == format) || (kCommodettoBitmapRGB565BE == format) || (kCommodettoBitmapARGB4444 == format))
 		depth = 16;
 	else if (kCommodettoBitmap24RGB == format)
 		depth = 24;

@@ -23,6 +23,7 @@
 */
 
 import {Socket, Listener} from "socket";
+import Timer from "timer";
 
 /*
 	Client
@@ -73,28 +74,44 @@ export class Request {
 	}
 
 	read(type, limit) {
+		let available = this.socket.read();
+
 		if (undefined !== this.chunk) {
 			if (undefined === limit)
 				limit = this.chunk;
-			else if (typeof limit !== "number")	//@@ number
+			else if (typeof limit !== "number")
 				throw new Error("http limit only supports number");
+
+			if (undefined === type)
+				return limit;
 
 			if (type === Number)
 				limit = 1;
 			else if (limit > this.chunk)
 				limit = this.chunk;
 
-			let read = this.socket.read();
-			if (read < limit)
-				limit = read;
+			if (available < limit)
+				limit = available;
 
-			if (0 === limit)
+			if (!limit)
 				return;
 
 			this.chunk -= limit;
 		}
+		else if (undefined === type)
+			return available;
 
-		return this.socket.read(type, limit);
+		const result = this.socket.read(type, limit);
+		if (this.total) {
+			this.total -= (available - this.socket.read());
+			if (!this.total) {
+				this.done = Timer.set(() => {
+					if (this.done)
+						done.call(this);
+				});
+			}
+		}
+		return result;
 	}
 
 	close() {
@@ -102,7 +119,32 @@ export class Request {
 		delete this.socket;
 		delete this.buffers;
 		delete this.callback;
+		delete this.done;
+		delete this.suspended;
 		this.state = 11;
+	}
+	suspend(value) {
+		this.socket.suspend(value);
+		if (value)
+			this.suspended = true;
+		else {
+			this.suspended = Timer.set(id => {
+				if (id !== this.suspended) return;
+
+				delete this.suspended;
+
+				let value = this.socket.read();
+				if (value)
+					this.socket.callback(2, value);
+
+				if (this.suspended || !this.socket)
+					return;		// read callback can suspend
+
+				value = this.socket.write();
+				if (value)
+					this.socket.callback(3, value);
+			});
+		}
 	}
 };
 Request.requestFragment = 0;
@@ -205,7 +247,7 @@ function callback(message, value) {
 
 			this.callback(Request.status, parseInt(status[1]));
 
-			if (!socket.read())
+			if (!socket.read() || this.suspended)
 				return;
 		}
 
@@ -236,13 +278,16 @@ function callback(message, value) {
 						this.buffers = [];	// array to hold response fragments
 
 					value = socket.read();	// number of bytes available
-					if (0 == value) {
+					if (0 === value) {
 						if (0 === this.total) {
 							delete this.total;
 							done.call(this);
 						}
 						return;
 					}
+
+					if (this.suspended)
+						return;
 
 					break;
 				}
@@ -263,6 +308,9 @@ function callback(message, value) {
 					else
 						return done.call(this);
 				}
+
+				if (this.suspended)
+					return;
 			}
 		}
 
@@ -272,7 +320,7 @@ function callback(message, value) {
 				while (value) {
 					if ("number" === typeof this.line) {
 						// skip CR/LF at end of last chunk length
-						const skip = Math.min(this.line, value);
+						const skip = (this.line < value) ? this.line : value;
 						socket.read(null, skip);
 						this.line -= skip;
 						value -= skip;
@@ -302,7 +350,7 @@ function callback(message, value) {
 						value = socket.read();
 					}
 
-					let count = Math.min(this.chunk, value);
+					let count = (this.chunk < value) ? this.chunk : value;
 					if (count) {
 						if (this.response) {
 							this.buffers.push(socket.read(this.response, count));
@@ -320,20 +368,24 @@ function callback(message, value) {
 
 					if (0 === this.chunk)
 						this.line = 2;	// should be two more bytes to read (CR/LF)... skip them when they become available
+
+					if (this.suspended)
+						return;
 				}
 			}
 			else if (undefined !== this.total) {
 				// content length
-				let count = Math.min(this.total, value);
-				this.total -= count;
-				if (this.response)
+				const count = (this.total < value) ? this.total : value;
+				if (this.response) {
 					this.buffers.push(socket.read(this.response, count));
+					this.total -= count - socket.read();
+					if (0 === this.total) {
+						delete this.total;
+						done.call(this);
+					}
+				}
 				else
 					this.callback(Request.responseFragment, count);
-				if (0 === this.total) {
-					delete this.total;
-					done.call(this);
-				}
 			}
 			else {
 				// read until connection closed
@@ -360,9 +412,10 @@ function callback(message, value) {
 function done(error = false) {
 	let data;
 
-	if (6 == this.state) return;
+	if (6 === this.state) return;
 
 	this.state = 6;
+	delete this.done;
 
 	if (this.response && !error) {
 		if (String === this.response)
@@ -423,13 +476,14 @@ function done(error = false) {
 */
 
 export class Server {
+	#listener;
+	connections = [];
+
 	constructor(dictionary = {}) {
-		this.connections = [];
-		dictionary = Object.assign({port: 80}, dictionary);
-		this.listener = new Listener(dictionary);
-		this.listener.callback = listener => {
-			let socket = new Socket({listener: this.listener, noDelay: true});
-			let request = new Request({socket});	// request class will work to receive request body
+		this.#listener = new Listener({port: 80, ...dictionary});
+		this.#listener.callback = listener => {
+			const socket = new Socket({listener: this.#listener, noDelay: true});
+			const request = new Request({socket});	// request class will work to receive request body
 			socket.callback = server.bind(request);
 			request.server = this;					// associate server with request
 			request.state = 1;						// already connected socket
@@ -451,8 +505,8 @@ export class Server {
 			});
 			delete this.connections;
 		}
-		this.listener.close();
-		delete this.listener;
+		this.#listener.close();
+		this.#listener = undefined;
 	}
 }
 Server.connection = 1;
@@ -559,7 +613,7 @@ function server(message, value, etc) {
 				}
 			}
 			if (5 === this.state) {		// fragment of request body
-				let count = Math.min(value, this.total);
+				let count = (value < this.total) ? value : this.total;
 				if (0 === count) return;
 				this.total -= count;
 

@@ -65,7 +65,7 @@ void PiuContentBind(void* it, PiuApplication* application, PiuView* view)
 #ifdef piuGPU
 	PiuSkin* skin = (*self)->skin;
 	if (skin)
-		PiuSkinBind(skin);
+		PiuSkinBind(skin, application, view);
 #endif
 	(*self)->application = application;
 	if ((*self)->flags & piuIdling)
@@ -616,7 +616,7 @@ void PiuContentUnbind(void* it, PiuApplication* application, PiuView* view)
 #ifdef piuGPU
 	PiuSkin* skin = (*self)->skin;
 	if (skin)
-		PiuSkinUnbind(skin);
+		PiuSkinUnbind(skin, application, view);
 #endif
 #ifdef piuPC
 	if ((*application)->hover == self)
@@ -1115,17 +1115,20 @@ void PiuContent_set_size(xsMachine *the)
 void PiuContent_set_skin(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
+#ifdef piuGPU
+	PiuApplication* application = (*self)->application;	
+#endif
 	PiuSkin* skin = NULL;
 	if (xsTest(xsArg(0)))
 		skin = PIU(Skin, xsArg(0));
 #ifdef piuGPU
-	if ((*self)->application && (*self)->skin)
-		PiuSkinUnbind((*self)->skin);
+	if (application && (*self)->skin)
+		PiuSkinUnbind((*self)->skin, application, (*application)->view);
 #endif
 	(*self)->skin = skin;
 #ifdef piuGPU
-	if ((*self)->application && (*self)->skin)
-		PiuSkinBind((*self)->skin);
+	if (application && (*self)->skin)
+		PiuSkinBind((*self)->skin, application, (*application)->view);
 #endif
 	PiuContentReflow(self, piuSizeChanged);
 }
@@ -1278,7 +1281,7 @@ void PiuContent_defer(xsMachine *the)
 	while ((former = *address))
 		address = &((*former)->deferLink);
 	*address = link;
-	PiuApplicationIdleCheck(application);
+	PiuViewReschedule((*application)->view);
 }
 
 void PiuContent_delegate(xsMachine *the)

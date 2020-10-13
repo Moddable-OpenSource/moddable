@@ -1084,7 +1084,8 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 	}
 	while (aProperty) {
 		if (aProperty->ID < -1) {
-			fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
+			if (!(aProperty->flag & XS_INTERNAL_FLAG))
+				fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
 		}
 		else {
 			if (aProperty->kind == XS_ARRAY_KIND) {
@@ -1690,6 +1691,7 @@ void fxListLocal(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
 	txSlot* frame = fxFindFrame(the);
+	txSlot* scope = C_NULL;
 	if (!frame) // @@
 		return;
 	fxEcho(the, "<local");
@@ -1703,33 +1705,33 @@ void fxListLocal(txMachine* the)
 	fxEchoProperty(the, frame + 2, &aList, "new.target", -1, C_NULL);
 	fxEchoProperty(the, frame + 3, &aList, "(function)", -1, C_NULL);
 	fxEchoProperty(the, frame + 4, &aList, "this", -1, C_NULL);
+	if (frame == the->frame)
+		scope = the->scope;
+	else {
+		txSlot* current = the->frame;
+		while (current->next != frame)
+			current = current->next;
+		if (current)
+			scope = current->value.frame.scope;
+	}
 	if (frame->flag & XS_C_FLAG) {
 		txInteger aCount, anIndex;
-		aCount = mxArgc;
+		aCount = (frame - 1)->value.integer;
 		for (anIndex = 0; anIndex < aCount; anIndex++) {
-			fxEchoProperty(the, mxArgv(anIndex), &aList, "arg(", anIndex, ")");
+			fxEchoProperty(the, (frame - 2 - anIndex), &aList, "arg(", anIndex, ")");
 		}
-		aCount = mxVarc;
-		for (anIndex = 0; anIndex < aCount; anIndex++) {
-			fxEchoProperty(the, mxVarv(anIndex), &aList, "var(", anIndex, ")");
+		if (scope) {
+			aCount = scope->value.environment.variable.count;
+			for (anIndex = 0; anIndex < aCount; anIndex++) {
+				fxEchoProperty(the, (scope - 1 - anIndex), &aList, "var(", anIndex, ")");
+			}
 		}
 	}
 	else {
-		txSlot* current = the->frame;
-		txSlot* aScope = C_NULL;
-		if (current == frame)
-			aScope = the->scope;
-		else {
-			current = the->frame;
-			while (current->next != frame)
-				current = current->next;
-			if (current)
-				aScope = current->value.frame.scope;
-		}
-		if (aScope) {
+		if (scope) {
 			txSlot* aSlot = mxFrameToEnvironment(frame);
 			txInteger id;
-			while (aSlot > aScope) {
+			while (aSlot > scope) {
 				aSlot--;
 				id = aSlot->ID;
 				if (id < 0) {

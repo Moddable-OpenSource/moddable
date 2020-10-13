@@ -62,18 +62,24 @@ int PiuTextureComputeSize(PiuTexture* self)
 	return result;
 }
 
-void PiuTextureBind(PiuTexture* self)
+void PiuTextureBind(PiuTexture* self, PiuApplication* application, PiuView* view)
 {
 	if ((*self)->usage == 0) {
 		piuTextureSize += PiuTextureComputeSize(self);
 	#ifdef mxInstrument
 		modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
 	#endif
+		if ((*self)->flags & piuTextureAlpha) {
+			PocoBitmapAdd((*view)->poco, &((*self)->mask), PiuViewReceiver, view);
+		}
+		if ((*self)->flags & piuTextureColor) {
+			PocoBitmapAdd((*view)->poco, &((*self)->bits), PiuViewReceiver, view);
+		}
 	}
 	(*self)->usage++;
 }
 
-void PiuTextureUnbind(PiuTexture* self)
+void PiuTextureUnbind(PiuTexture* self, PiuApplication* application, PiuView* view)
 {
 	(*self)->usage--;
 	if ((*self)->usage == 0) {
@@ -81,6 +87,12 @@ void PiuTextureUnbind(PiuTexture* self)
 	#ifdef mxInstrument
 		modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
 	#endif
+		if ((*self)->flags & piuTextureAlpha) {
+			PocoBitmapRemove((*view)->poco, (*self)->mask.id, PiuViewReceiver, view);
+		}
+		if ((*self)->flags & piuTextureColor) {
+			PocoBitmapRemove((*view)->poco, (*self)->bits.id, PiuViewReceiver, view);
+		}
 	}
 }
 #endif

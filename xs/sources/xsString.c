@@ -1179,15 +1179,17 @@ void fx_String_prototype_split(txMachine* the)
 	anArray = fxNewArrayInstance(the);
 	mxPullSlot(mxResult);
 	fxGetInstance(the, mxResult);
-	if (!aLimit)
-		goto bail;
 	anItem = fxLastProperty(the, anArray);
 	if ((mxArgc < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND)) {
+		if (!aLimit)
+			goto bail;
 		fx_String_prototype_split_aux(the, mxThis, anArray, anItem, 0, aLength);
 		goto bail;
 	}
 	aSubString = fxToString(the, mxArgv(0));
 	aSubLength = c_strlen(aSubString);
+	if (!aLimit)
+		goto bail;
 	if (aSubLength == 0) {
 		anOffset = 0;
 		while (anOffset < aLength) {
@@ -1591,14 +1593,14 @@ void fx_String_prototype_iterator(txMachine* the)
 	txString string = fxCoerceToString(the, mxThis);
 	txSlot* property;
 	mxPush(mxStringIteratorPrototype);
-	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis));
-	property = fxNextIntegerProperty(the, property, fxUnicodeLength(string), mxID(_length), XS_GET_ONLY);
+	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_String)));
+	property = fxNextIntegerProperty(the, property, fxUnicodeLength(string), XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	mxPullSlot(mxResult);
 }
 
 void fx_String_prototype_iterator_next(txMachine* the)
 {
-	txSlot* iterator = fxCheckIteratorInstance(the, mxThis);
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_String));
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;

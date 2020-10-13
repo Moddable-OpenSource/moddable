@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,8 +18,9 @@
  *
  */
 
-#include "xsPlatform.h"
 #include "xsmc.h"
+#include "xsHost.h"
+#include "modBLE.h"
 
 static void hexStringToBytes(xsMachine *the, uint8_t *buffer, const char *string, uint16_t length, uint8_t reverse)
 {
@@ -97,4 +98,60 @@ void xs_bytes_equals(xsMachine *the)
 		int result = c_memcmp(xsmcToArrayBuffer(xsThis), xsmcToArrayBuffer(xsArg(0)), length);
 		xsmcSetBoolean(xsResult, (0 == result));
 	}
+}
+
+void modBLEMessageQueueEmpty(modBLEMessageQueue queue)
+{
+	modBLEMessageQueueEntry entry;
+	modCriticalSectionDeclare;
+	modCriticalSectionBegin();
+	while (NULL != (entry = queue->entries)) {
+		queue->entries = entry->next;
+		c_free(entry);
+	}
+	modCriticalSectionEnd();
+}
+
+void modBLEMessageQueueConfigure(modBLEMessageQueue queue, xsMachine *the, modMessageDeliver callback, void *refcon)
+{
+	modBLEMessageQueueEmpty(queue);
+	queue->the = the;
+	queue->callback = callback;
+	queue->refcon = refcon;
+}
+
+void modBLEMessageQueueEnqueue(modBLEMessageQueue queue, modBLEMessageQueueEntry entry)
+{
+	uint8_t post = false;
+	modCriticalSectionDeclare;
+	modCriticalSectionBegin();
+	entry->next = NULL;
+	if (queue->entries) {
+		modBLEMessageQueueEntry walker = queue->entries;
+		while (walker->next)
+			walker = walker->next;
+		walker->next = entry;
+	}
+	else {
+		post = true;
+		queue->entries = entry;
+	}
+	modCriticalSectionEnd();
+	if (post)
+		modMessagePostToMachine(queue->the, NULL, 0, queue->callback, queue->refcon);
+}
+
+modBLEMessageQueueEntry modBLEMessageQueueDequeue(modBLEMessageQueue queue)
+{
+	modBLEMessageQueueEntry entry;
+	modCriticalSectionDeclare;
+	modCriticalSectionBegin();
+	if (queue->entries) {
+		entry = queue->entries;
+		queue->entries = entry->next;
+	}
+	else
+		entry = NULL;
+	modCriticalSectionEnd();
+	return entry;
 }

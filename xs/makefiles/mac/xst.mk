@@ -51,6 +51,7 @@ C_OPTIONS = \
 	-DmxParse=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
+	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
@@ -73,6 +74,9 @@ LINK_OPTIONS = $(MACOS_VERSION_MIN) $(MACOS_ARCH)
 ifneq ("x$(SDKROOT)", "x")
 	LINK_OPTIONS += -isysroot $(SDKROOT)
 endif
+
+# C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+# LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 
 OBJECTS = \
 	$(TMP_DIR)/xsAll.o \

@@ -1,7 +1,7 @@
 # Manifest
 
-Copyright 2017-2019 Moddable Tech, Inc.<BR>
-Revised: August 21, 2019
+Copyright 2017-2020 Moddable Tech, Inc.<BR>
+Revised: September 29, 2020
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -63,6 +63,50 @@ The `build` object defines the environment variables used to build paths in othe
 	"PIU": "$(MODULES)/piu",
 },
 ```
+
+When you build an application, the default output directory name is taken from the directory name containing the manifest. You can specify a different output directory name by specifying a `NAME` environment variable in the `build` object.
+
+```js
+"build": {
+	"NAME": "balls"
+}
+```
+	
+#### `ESP32-specific environment variables`
+
+The `esp32` platform object supports a number of optional environment variables applications can use to customize the Moddable SDK ESP32 build:
+
+| Variable | Description |
+| --- | :--- | 
+| `SDKCONFIGPATH` | Pathname to a directory containing custom [sdkconfig defaults](https://docs.espressif.com/projects/esp-idf/en/v3.3.2/api-guides/build-system-cmake.html?highlight=sdkconfig#custom-sdkconfig-defaults) entries. 
+| `PARTITIONS_FILE` | Full pathname to a [partiion table](https://docs.espressif.com/projects/esp-idf/en/v3.3.2/api-guides/partition-tables.html#) in CSV format
+
+> Note: This document does not cover native code ESP32 and ESP-IDF build details. Refer to the [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/v3.3.2/get-started/index.html) for additional information.
+ 
+The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/modClock) example app leverages both environment variables:
+
+```js
+"build": {
+	"SDKCONFIGPATH": "$(MODDABLE)/contributed/modClock/sdkconfig",
+	"PARTITIONS_FILE": "$(MODDABLE)/contributed/modClock/sdkconfig/partitions.csv"
+},
+```
+
+In this example, the modClock [partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/contributed/modClock/sdkconfig/partitions.csv) file completely replaces the base Moddable SDK [partiions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/partitions.csv) file at build time to provide additional partitions for OTA updates. The `sdkconfig` directory contains sdkconfig files that override and supplement the base Moddable SDK [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults) entries. The following section describes how the Moddable ESP32 build processes sdkconfig files.
+
+#### How sdkconfig files are processed
+
+The Moddable SDK sdkconfig defaults files are located in the `$MODDABLE/build/devices/esp32/xsProj` directory. The [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults) file is the base configuration file used by all ESP32 builds. Release and instrumented release builds merge additional configuration options, on top of the base `sdkconfig.defaults` file, from the [sdkconfig.defaults.release](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults.release) and [sdkconfig.inst](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.inst) files respectively. When merging, configuration options that exist in the base sdkconfig.defaults file are replaced and options that don't exist in the base sdkconfig.defaults file are added. The merge processing order is as follows:
+
+1. All base `sdkconfig.defaults` options are applied to the build.
+2. On release builds, the `sdkconfig.defaults.release` options are merged on top of the `sdkconfig.defaults` options.
+3. On release instrumented builds, the `sdkconfig.inst` options are merged on top of the merge performed in step 2.
+
+	When applications specify optional sdkconfig files using the `SDKCONFIGPATH` manifest environment variable, the merge processing additionally includes the following:
+
+4. On debug builds, the application `sdkconfig.defaults` file, when provided, is merged on top of the base Moddable SDK `sdkconfig.defaults` file.
+5. On release builds, the application `sdkconfig.defaults.release` options, when provided,  are merged on top of the merge performed in step 2.
+6. On release instrumented builds, the `sdkconfig.inst` options, when provided, are merged on top of the merge performed in step 5.
 
 ***
 

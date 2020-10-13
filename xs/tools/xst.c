@@ -171,6 +171,8 @@ static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
 
 static void fxQueuePromiseJobsCallback(txJob* job);
+static void fxFulfillModuleFile(txMachine* the);
+static void fxRejectModuleFile(txMachine* the);
 static void fxRunModuleFile(txMachine* the, txString path);
 static void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags);
 static void fxRunLoop(txMachine* the);
@@ -185,6 +187,8 @@ static txAgentCluster gxAgentCluster;
 int main(int argc, char* argv[]) 
 {
 	int argi;
+	int argr = 0;
+	int argw = 0;
 	int error = 0;
 	int option = 0;
 	char path[C_PATH_MAX];
@@ -207,12 +211,30 @@ int main(int argc, char* argv[])
 			option = 1;
 		else if (!strcmp(argv[argi], "-m"))
 			option = 2;
+		else if (!strcmp(argv[argi], "-r")) {
+			argi++;
+			if (argi < argc)
+				argr = argi;
+			else {
+				fxPrintUsage();
+				return 1;
+			}
+		}
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
 			option = 4;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
+		else if (!strcmp(argv[argi], "-w")) {
+			argi++;
+			if (argi < argc)
+				argw = argi;
+			else {
+				fxPrintUsage();
+				return 1;
+			}
+		}
 		else {
 			fxPrintUsage();
 			return 1;
@@ -240,14 +262,18 @@ int main(int argc, char* argv[])
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
 		fxInitializeSharedCluster();
-		machine = xsCreateMachine(creation, "xsr", NULL);
+        machine = xsCreateMachine(creation, "xst", NULL);
+ 		fxBuildAgent(machine);
 		xsBeginHost(machine);
 		{
 			xsVars(1);
 			xsTry {
-				fxBuildAgent(the);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
+						continue;
+					if (argi == argr)
+						continue;
+					if (argi == argw)
 						continue;
 					if (option == 1) {
 						xsVar(0) = xsGet(xsGlobal, xsID("$262"));
@@ -266,6 +292,11 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsCatch {
+				if (xsTypeOf(xsException) != xsUndefinedType) {
+					fprintf(stderr, "%s\n", xsToString(xsException));
+					error = 1;
+					xsException = xsUndefined;
+				}
 			}
 		}
 		xsEndHost(machine);
@@ -278,8 +309,8 @@ int main(int argc, char* argv[])
 			}
 		}
 		xsEndHost(machine);
-		fxTerminateSharedCluster();
 		xsDeleteMachine(machine);
+		fxTerminateSharedCluster();
 	}
 	return error;
 }
@@ -1254,15 +1285,19 @@ void fx_setTimerCallback(txJob* job)
 	txMachine* the = job->the;
 	fxBeginHost(the);
 	{
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPush(job->function);
-		mxCall();
-		mxPush(job->argument);
-		/* ARGC */
-		mxRunCount(1);
-		mxPop();
+		mxTry(the) {
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPush(job->function);
+			mxCall();
+			mxPush(job->argument);
+			/* ARGC */
+			mxRunCount(1);
+			mxPop();
+		}
+		mxCatch(the) {
+		}
 	}
 	fxEndHost(the);
 }

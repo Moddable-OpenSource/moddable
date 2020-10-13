@@ -1,7 +1,7 @@
 # Getting Started with Moddable Two
 
 Copyright 2019-2020 Moddable Tech, Inc.<BR>
-Revised: February 27, 2020
+Revised: September 14, 2020
 
 This document describes how to start building Moddable applications for Moddable Two. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Two.
 
@@ -10,6 +10,7 @@ This document describes how to start building Moddable applications for Moddable
 - [About Moddable Two](#about-moddable-two)
 	- [Components](#components)
 	- [Pinout](#pinout)
+	- [Pin Information](#pin-info)
 - [SDK and Host Environment Setup](#setup)
 - [Building and Deploying Apps](#building-and-deploying-apps)
 - [Troubleshooting](#troubleshooting)
@@ -36,6 +37,64 @@ The two main components of Moddable Two are the ESP32 module and capacitive touc
 ### Pinout
 
 <img src="../assets/devices/moddable-two-pinout.png">
+
+#### Touch panel
+
+The touch panel uses pins 21 and 22 to connect to the I<sup>2</sup>C bus. You cannot use these pins as GPIO if your app uses the touch panel.
+
+You can use other I<sup>2</sup>C sensors even if your app uses the touch panel as long as they don't use the same address. The touch panel uses address 0x38 (7-bit address).
+
+#### Display
+
+The display uses pins 13 and 14 to connect to the SPI bus. You cannot use these pins as GPIO if your app uses the display.
+
+You can use other SPI sensors even if your app uses the display.
+
+<a id="pin-info"></a>
+### Pin Information
+
+#### 6-pin Programming Header Description
+
+| Name | Function | Description |
+| :---: | :---: | :--- |
+| RTS | I/O | Connects to auto programming and reset circuit |
+| DTR | I/O | Connects to auto programming and reset circuit |
+| TX | I/O | Connects to ESP32 GPIO1 |
+| RX | I/O | Connects to ESP32 GPIO3 |
+| 5V | PWR | 5V input connects to LM1117-3.3 voltage regulator and 5V pin on 16-pin external connector |
+| GND | GND | Connects to GND |
+
+#### 16-pin External Header Description
+
+| Name| Function| Description |
+| :---: | :---: | :--- |
+| SDA GP21 | I/O | Connects to ESP32 GPIO21 (standard SDA, no external pull up resistor) |
+| SCL GP22 | I/O | Connects to ESP32 GPIO22 (standard SCL, no external pull up resistor) |
+| GND      | GND | Connects to GND |
+| 3.3V     | I/O | 3.3V input and output. Connects to ESP32 3.3V input and other 3.3V IC's. Regulated output power if board is 5V powered via micro USB, VIN external connector or programming connector. 3.3V is the output of the LM1117-3.3. Output of the LM1117 is conditioned with a 100uf Tantalum capacitor. |
+| GP13     | I/O | Connects to ESP32 GPIO13 (Also MOSI for display) |
+| GP12     | I/O | Connects to ESP32 GPIO12 |
+| GP14     | I/O | Connects to ESP32 GPIO14 |
+| GP32     | I/O | Connects to ESP32 GPIO32 |
+| GP33     | I/O | Connects to ESP32 GPIO33 |
+| GP35     | I/O | Connects to ESP32 GPIO35 |
+| GP27     | I/O | Connects to ESP32 GPIO27 |
+| GP26     | I/O | Connects to ESP32 GPIO26 |
+| VIN      | I/O | VIN is a 5V pin that can be used to power the Moddable Two. If the board is powered by one of the other 5V inputs this pin can be used for external 5V power. This is an unregulated pin; VIN is a direct connection to the 5V input sources. Connects to other 5V inputs and LM1117-3.3 voltage regulator. |
+| GP17     | I/O | Connects to ESP32 GPIO17 |
+| GP16     | I/O | Connects to ESP32 GPIO16 |
+| GP0      | I/O | Connects to ESP32 GPIO0 |
+
+#### Power
+
+The Moddable Two is a 3.3V device. 5V power is regulated to 3.3V by a LM1117-3.3 voltage regulator (see data sheet for specs). Testing of Moddable Two has been with typical 5V 0.5amp USB source power.
+
+Power can be supplied to the Moddable Two via the following:
+
+* 5V - Micro USB connector
+* 5V - Moddable Programmer connector
+* 5V - VIN on 16 pin external header
+* 3.3V - 3.3V pin external header
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup

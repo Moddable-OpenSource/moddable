@@ -403,14 +403,10 @@ void fx_Number_prototype_toString(txMachine* the)
 	txInteger radix;
 	txSlot* slot = fxCheckNumber(the, mxThis);
 	if (!slot) mxTypeError("this is no number");
-	if (mxArgc > 0) {
+	if ((mxArgc > 0) && (!mxIsUndefined(mxArgv(0)))) {
 		radix = fxToInteger(the, mxArgv(0));
-		if (radix) {
-			if ((radix < 2) || (36 < radix))
-				mxRangeError("invalid radix");
-		}
-		else	
-			radix = 10;
+		if ((radix < 2) || (36 < radix))
+			mxRangeError("invalid radix");
 	}
 	else	
 		radix = 10;

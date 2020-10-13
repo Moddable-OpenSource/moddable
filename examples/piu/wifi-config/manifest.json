@@ -5,8 +5,7 @@
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/modules/input/expanding-keyboard/horizontal/manifest.json",
 	],
-	"creation":{
-		"static": 50000,
+	"creation": {
 		"stack":360,
 		"chunk": {
 			"initial":12000,
@@ -50,16 +49,41 @@
 				"wifi": "./simulator/wifisim"
 			}
 		},
-		"esp": {
+		"lin": {
+			"modules": {
+				"~": [
+					"$(MODULES)/network/wifi/*"
+				],
+				"wifi": "./simulator/wifisim"
+			}
+		},
+		"esp/moddable_one": {
+			"creation":{
+				"static": 35840,
+			},			
 			"config": {
 				"rotation": 90
 			}
 		},
-		"esp32": {
+		"esp32/moddable_two": {
+			"creation":{
+				"static": 50000,
+			},
 			"config": {
 				"rotation": 90
 			}
-		}
+		},
+		"esp32/m5stack_core2": {
+			"creation":{
+				"static": 50000,
+			},
+			"config": {
+				"rotation": 180
+			}
+		},
+        "...": {
+            "error": "unsupported platform"
+        }
 	},
 	"resources":{
 		"*-alpha": [

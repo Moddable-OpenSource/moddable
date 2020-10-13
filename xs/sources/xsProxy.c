@@ -166,7 +166,7 @@ txSlot* fxCheckProxyFunction(txMachine* the, txSlot* proxy, txID index)
 
 void fxProxyGetter(txMachine* the)
 {
-	txSlot* instance = mxThis->value.reference;
+	txSlot* instance = fxToInstance(the, mxThis);
 	while (instance) {
 		if (mxIsProxy(instance))
 			break;
@@ -181,7 +181,7 @@ void fxProxyGetter(txMachine* the)
 
 void fxProxySetter(txMachine* the)
 {
-	txSlot* instance = mxThis->value.reference;
+	txSlot* instance = fxToInstance(the, mxThis);
 	while (instance) {
 		if (mxIsProxy(instance))
 			break;

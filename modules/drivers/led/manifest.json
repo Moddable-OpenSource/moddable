@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+	],
+	"modules": {
+		"led": "$(MODULES)/drivers/led/*",
+	},
+	"preload": "led",
+}

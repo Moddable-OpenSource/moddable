@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2020 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -19,7 +19,11 @@
 
 ifeq ($(DEBUG),1)
 	LIB_DIR = $(BUILD_DIR)/tmp/mac/debug/mc/lib
+	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 else
+	START_XSBUG =
+	KILL_SERIAL2XSBUG =
 	ifeq ($(INSTRUMENT),1)
 		LIB_DIR = $(BUILD_DIR)/tmp/mac/instrument/mc/lib
 	else
@@ -136,6 +140,8 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: precursor
+	$(KILL_SERIAL2XSBUG) 
+	$(START_XSBUG) 
 	open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
@@ -146,8 +152,7 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
 build: precursor
-	
-	
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	

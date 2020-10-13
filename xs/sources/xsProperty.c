@@ -52,13 +52,13 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 		getter = fxBuildHostFunction(the, get, 0, id);
 		slot = mxFunctionInstanceHome(getter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, getter, id, id, "get ");
+		fxRenameFunction(the, getter, id, XS_NO_ID, id, "get ");
 	}
 	if (set) {
 		setter = fxBuildHostFunction(the, set, 1, id);
 		slot = mxFunctionInstanceHome(setter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, setter, id, id, "set ");
+		fxRenameFunction(the, setter, id, XS_NO_ID, id, "set ");
 	}
 	property = property->next = fxNewSlot(the);
 	property->flag = flag;
@@ -172,8 +172,12 @@ txSlot* fxNextStringXProperty(txMachine* the, txSlot* property, txString string,
 	property = property->next = fxNewSlot(the);
 	property->flag = flag;
 	property->ID = id;
+#ifdef mxSnapshot
+	fxCopyStringC(the, property, string);
+#else
 	property->kind = XS_STRING_X_KIND;
 	property->value.string = string;
+#endif
 	return property;
 }
 
@@ -477,13 +481,13 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 			txSlot* function = property->value.accessor.getter = slot->value.accessor.getter;
 			txSlot* home = mxFunctionInstanceHome(function);
 			home->value.home.object = instance;
-			fxRenameFunction(the, function, id, mxID(_get), "get ");
+			fxRenameFunction(the, function, id, XS_NO_ID, mxID(_get), "get ");
 		}
 		else {
 			txSlot* function = property->value.accessor.setter = slot->value.accessor.setter;
 			txSlot* home = mxFunctionInstanceHome(function);
 			home->value.home.object = instance;
-			fxRenameFunction(the, function, id, mxID(_set), "set ");
+			fxRenameFunction(the, function, id, XS_NO_ID, mxID(_set), "set ");
 		}
 	}
 	else {
@@ -502,7 +506,7 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 					home->value.home.object = instance;
 				}
 				if (id)
-					fxRenameFunction(the, function, id, mxID(_value), C_NULL);
+					fxRenameFunction(the, function, id, XS_NO_ID, mxID(_value), C_NULL);
 			}
 		}
 	}

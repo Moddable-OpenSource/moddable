@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2020 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -17,6 +17,14 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+ifeq ($(DEBUG),1)
+	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
+else
+	START_XSBUG =
+	KILL_SERIAL2XSBUG =
+endif
+
 BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
 COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
 IMAGE2CS = $(BUILD_DIR)/bin/mac/release/image2cs
@@ -31,6 +39,8 @@ XSL = $(MODDABLE)/build/bin/mac/release/xsl
 .PHONY: all	
 
 all: $(BIN_DIR)/mc.xsa
+	$(KILL_SERIAL2XSBUG) 
+	$(START_XSBUG) 
 	open -a $(SIMULATOR) $(BIN_DIR)/mc.xsa
 
 $(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)

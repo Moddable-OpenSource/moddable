@@ -86,7 +86,7 @@ void fx_Symbol(txMachine* the)
 	if (mxTarget->kind != XS_UNDEFINED_KIND)
 		mxTypeError("new Symbol");
 	if (id == the->keyCount)
-		mxUnknownError("not enough IDs");
+		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
 		fxToString(the, mxArgv(0));
 		description = fxNewSlot(the);
@@ -129,7 +129,7 @@ void fx_Symbol_for(txMachine* the)
 	if (result == C_NULL) {
 		index = the->keyIndex;
 		if (index == the->keyCount)
-			mxUnknownError("not enough IDs");
+			fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 		result = fxNewSlot(the);
 		result->next = the->symbolTable[modulo];
 		result->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
@@ -308,7 +308,7 @@ txID fxNewName(txMachine* the, txSlot* theSlot)
 
 	index = the->keyIndex;
 	if (index == the->keyCount)
-		mxUnknownError("not enough IDs");
+		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;
@@ -348,7 +348,7 @@ txID fxNewNameC(txMachine* the, txString theString)
 
 	index = the->keyIndex;
 	if (index == the->keyCount)
-		mxUnknownError("not enough IDs");
+		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;
@@ -390,7 +390,7 @@ txID fxNewNameX(txMachine* the, txString theString)
 
 	index = the->keyIndex;
 	if (index == the->keyCount)
-		mxUnknownError("not enough IDs");
+		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;

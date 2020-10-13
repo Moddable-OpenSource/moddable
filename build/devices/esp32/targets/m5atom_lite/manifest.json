@@ -1,0 +1,30 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/monitor/manifest.json"
+	],
+	"build": {
+		"UPLOAD_SPEED": "1500000",
+		"DEBUGGER_SPEED": "1500000"
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/neopixel/*",
+			"$(MODULES)/drivers/neopixel/esp32/*",
+			"../m5stack_fire/m5button"
+		],
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"m5button",
+		"neopixel",
+		"setup/target"
+	],
+	"defines": {
+		"neopixel": {
+			"length": 1,
+			"pin": 27,
+			"order": "#GRB",
+			"rmt_channel": "RMT_CHANNEL_0"
+		}
+	}
+}

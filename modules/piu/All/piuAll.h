@@ -194,8 +194,8 @@ struct PiuAssetStruct {
 // PiuTexture.c
 
 #ifdef piuGPU
-extern void PiuTextureBind(PiuTexture* self);
-extern void PiuTextureUnbind(PiuTexture* self);
+extern void PiuTextureBind(PiuTexture* self, PiuApplication* application, PiuView* view);
+extern void PiuTextureUnbind(PiuTexture* self, PiuApplication* application, PiuView* view);
 #endif
 
 // PiuSkin.c
@@ -231,8 +231,8 @@ extern void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVa
 extern PiuDimension PiuSkinGetWidth(PiuSkin* self);
 extern PiuDimension PiuSkinGetHeight(PiuSkin* self);
 #ifdef piuGPU
-extern void PiuSkinBind(PiuSkin* self);
-extern void PiuSkinUnbind(PiuSkin* self);
+extern void PiuSkinBind(PiuSkin* self, PiuApplication* application, PiuView* view);
+extern void PiuSkinUnbind(PiuSkin* self, PiuApplication* application, PiuView* view);
 #endif
 
 // PiuFont.c
@@ -252,8 +252,8 @@ extern void PiuStyleLookupFont(PiuStyle* self);
 extern double PiuFontGetWidthSubPixel(PiuFont* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length);
 #endif
 #ifdef piuGPU
-extern void PiuFontBind(PiuFont* self);
-extern void PiuFontUnbind(PiuFont* self);
+extern void PiuFontBind(PiuFont* self, PiuApplication* application, PiuView* view);
+extern void PiuFontUnbind(PiuFont* self, PiuApplication* application, PiuView* view);
 #endif
 
 // PiuStyle.c
@@ -319,8 +319,8 @@ extern PiuDimension PiuStyleGetWidth(PiuStyle* self, xsSlot* string);
 extern PiuDimension PiuStyleGetHeight(PiuStyle* self, xsSlot* string);
 extern void PiuStyleOverride(PiuStyle* self, PiuStyle* result);
 #ifdef piuGPU
-extern void PiuStyleBind(PiuStyle* self);
-extern void PiuStyleUnbind(PiuStyle* self);
+extern void PiuStyleBind(PiuStyle* self, PiuApplication* application, PiuView* view);
+extern void PiuStyleUnbind(PiuStyle* self, PiuApplication* application, PiuView* view);
 #endif
 
 // BEHAVIOR
@@ -754,7 +754,7 @@ extern void PiuViewDrawTexture(PiuView* self, PiuTexture* texture, PiuCoordinate
 extern void PiuViewFillColor(PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h);
 extern void PiuViewFillTexture(PiuView* self, PiuTexture* texture, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
 extern void PiuViewGetSize(PiuView* view, PiuDimension *width, PiuDimension *height);
-extern void PiuViewIdleCheck(PiuView* view, PiuBoolean idle);
+extern void PiuViewIdleCheck(PiuView* view, PiuInterval idle);
 extern void PiuViewInvalidate(PiuView* view, PiuRectangle area);
 extern void PiuViewPopClip(PiuView* view);
 extern void PiuViewPopColor(PiuView* view);
@@ -764,6 +764,8 @@ extern void PiuViewPushClip(PiuView* view, PiuCoordinate x, PiuCoordinate y, Piu
 extern void PiuViewPushColor(PiuView* view, PiuColor color);
 extern void PiuViewPushColorFilter(PiuView* view, PiuColor color);
 extern void PiuViewPushOrigin(PiuView* view, PiuCoordinate x, PiuCoordinate y);
+extern void PiuViewReflow(PiuView* self);
+extern void PiuViewReschedule(PiuView* self);
 extern PiuTick PiuViewTicks(PiuView* view);
 extern void PiuViewValidate(PiuView* view, PiuRectangle area);
 #ifdef piuPC

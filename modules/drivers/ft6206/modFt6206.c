@@ -63,6 +63,12 @@
 #ifndef MODDEF_FT6206_DY
     #define MODDEF_FT6206_DY 0
 #endif
+#ifndef MODDEF_FT6206_FITX
+    #define MODDEF_FT6206_FITX 1
+#endif
+#ifndef MODDEF_FT6206_FITY
+    #define MODDEF_FT6206_FITY 1
+#endif
 
 #define FT6206_REG_NUMTOUCHES 0x02
 #define FT6206_REG_THRESHHOLD 0x80
@@ -178,15 +184,15 @@ void xs_FT6202_read(xsMachine *the)
 
 		// reflect
 		if (MODDEF_FT6206_FLIPX)
-			x = 240 - x;
+			x = MODDEF_FT6206_WIDTH - x;
 
 		if (MODDEF_FT6206_FLIPY)
-			y = 320 - y;
+			y = MODDEF_FT6206_HEIGHT - y;
 
 		// scale
-		if (240 != MODDEF_FT6206_WIDTH)
+		if (MODDEF_FT6206_FITX && (240 != MODDEF_FT6206_WIDTH))
 			x = (x * MODDEF_FT6206_WIDTH) / 240;
-		if (320 != MODDEF_FT6206_HEIGHT)
+		if (MODDEF_FT6206_FITY && (320 != MODDEF_FT6206_HEIGHT))
 			y = (y * MODDEF_FT6206_HEIGHT) / 320;
 
 #if MODDEF_FT6206_DX

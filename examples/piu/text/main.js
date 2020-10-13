@@ -45,6 +45,7 @@ class TextBehavior extends Behavior {
 	onDisplaying(text) {
 		this.index = 0;
 		text.duration = 1000;
+		text.interval = 1000;
 		text.start();
 	}
 	onFinished(text) {
@@ -65,7 +66,7 @@ let TestApplication = Application.template($ => ({
 			left:0, right:0, top:0, skin:whiteSkin, style:centerStyle, Behavior:TextBehavior, active:true,
 			blocks: [
 				{ spans: [
-					{ style:redStyle, spans: "Lorém ipsum", link:Link("tutu", { Behavior:LinkBehavior }) },
+					{ style:redStyle, spans: "Lorem ipsum", link:Link("tutu", { Behavior:LinkBehavior }) },
 					" dolor sit amet, consectetur adipiscing elit. ",
 					{ style:otherStyle, spans: "Nulla", link:Link("toto", { Behavior:LinkBehavior }) },
 					" faucibus sodales ligula eu accumsan."

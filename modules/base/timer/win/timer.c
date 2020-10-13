@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -140,6 +140,12 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 	timer->idEvent = SetTimer(NULL, timer->id, firstInterval, TimerProc);
 }
 
+void modTimerUnschedule(modTimer timer)
+{
+	KillTimer(NULL, timer->idEvent);
+	timer->idEvent = 0;
+}
+
 uint16_t modTimerGetID(modTimer timer)
 {
 	return timer->id;
@@ -153,21 +159,6 @@ int modTimerGetSecondInterval(modTimer timer)
 void *modTimerGetRefcon(modTimer timer)
 {
 	return timer->refcon;
-}
-
-modTimer modTimerFind(uint16_t id)
-{
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next)
-		if (id == walker->id)
-			break;
-
-	modCriticalSectionEnd();
-
-	return walker;
 }
 
 void modTimerRemove(modTimer timer)
@@ -187,7 +178,8 @@ void modTimerRemove(modTimer timer)
 					gTimers = walker->next;
 				else
 					prev->next = walker->next;
-				KillTimer(NULL, timer->idEvent);
+				if (timer->idEvent)
+					KillTimer(NULL, timer->idEvent);
 				c_free(timer);
 				modInstrumentationAdjust(Timers, -1);
 			}

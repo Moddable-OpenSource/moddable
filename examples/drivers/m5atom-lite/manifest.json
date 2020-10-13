@@ -1,0 +1,16 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+	],
+	"modules": {
+		"*": "./main",
+	},
+	"platforms": {
+		"esp32/m5atom_lite": {},
+		"esp32/m5atom_echo": {},
+		"esp32/m5atom_matrix": {},
+		"...": {
+			"error": "esp32/m5atom_* only"
+		}
+	}
+}

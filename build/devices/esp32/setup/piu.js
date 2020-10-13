@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,10 +26,27 @@ if (!config.Screen)
 	throw new Error("no screen configured");
 
 class Screen extends config.Screen {
-	start(interval) {
-		this.timer = Timer.repeat(() => {
-			let touch = this.touch;
-			if (touch) {
+	#timer;
+
+	constructor(dictionary) {
+		super(dictionary);
+
+		this.#timer = Timer.set(() => {
+			this.context.onIdle();
+		}, 1, 100);
+		Timer.schedule(this.#timer);
+
+		if (config.Touch) {
+			let touchCount = config.touchCount ?? 1;
+			if (!touchCount)
+				return;
+
+			const touch = new config.Touch;
+			touch.points = [];
+			while (touchCount--)
+				touch.points.push({});
+
+			Timer.repeat(() => {
 				let points = touch.points;
 				touch.read(points);
 				for (let i = 0; i < points.length; i++) {
@@ -39,7 +56,7 @@ class Screen extends config.Screen {
 					switch (point.state) {
 						  case 0:
 						  case 3:
-						  		if (point.down) {
+								if (point.down) {
 									delete point.down;
 									this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
 									delete point.x;
@@ -47,26 +64,17 @@ class Screen extends config.Screen {
 								}
 							  break;
 						  case 1:
+						  case 2:
 								if (!point.down) {
 									point.down = true;
 									this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
 								}
-								break;
-							case 2: this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
+								else
+									this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
 								break;
 					}
 				}
-			}
-			this.context.onIdle();
-		}, interval);
-
-		if (config.Touch) {
-			let touch = new config.Touch;
-			touch.points = [];
-			let touchCount = config.touchCount ? config.touchCount : 1;
-			while (touchCount--)
-				touch.points.push({});
-			this.touch = touch;
+			}, 16);
 		}
 	}
 	get rotation() {
@@ -94,18 +102,27 @@ class Screen extends config.Screen {
 				point.y = x;
 			};
 	}
-	stop() {
-		Timer.clear(this.timer);
-		delete this.timer;
-
-		if (this.touch)
-			delete this.touch;
-	}
 	clear() {
+	}
+	start(interval) {
+		const timer = this.#timer;
+
+		if (interval <= 5)
+			interval = 5;
+		if (timer.interval === interval)
+			return;
+
+		Timer.schedule(timer, interval, interval);
+		timer.interval = interval;
+	}
+	stop() {
+		const timer = this.#timer;
+		Timer.schedule(timer);
+		delete timer.interval;
 	}
 }
 
 export default function (done) {
-	global.screen = new Screen({});
+	globalThis.screen = new Screen({});
 	done();
 }

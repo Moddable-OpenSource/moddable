@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,8 +21,6 @@
 
 #include "xsPlatform.h"
 #include "xsmc.h"
-#include "mc.xs.h"			// for xsID_ values
-#include <string.h>
 
 #include "modInstrumentation.h"
 
@@ -96,7 +94,7 @@ void xs_instrumentation_get(xsMachine *the)
 
 void xs_instrumentation_get(xsMachine *the)
 {
-	xsUnknownError("instrumentation disabled");
+	// returns undefined
 }
 
 #endif

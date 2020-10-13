@@ -3,9 +3,10 @@
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 	],
 	"config": {
-		"screen": "ili9341",
+		"screen": "m5stack/screen",
 		"rotation": 90,
 		"touch": "",
+		"startupSound": "bflatmajor.maud"
 	},
 	"defines": {
 		"i2c": {
@@ -72,11 +73,13 @@
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
+		"m5stack/screen": "./screen",
 	},
 	"preload": [
 		"monitor",
 		"pins/audioout",
 		"setup/target",
+		"m5stack/screen",
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",

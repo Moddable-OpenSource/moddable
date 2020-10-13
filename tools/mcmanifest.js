@@ -27,6 +27,7 @@ var formatNames = {
 	rgb565le: "rgb565le",
 	rgb565be: "rgb565be",
 	clut16: "clut16",
+	argb4444: "argb4444",
 	x: "x",
 };
 
@@ -37,6 +38,7 @@ var formatValues = {
 	rgb565le: 7,
 	rgb565be: 8,
 	clut16: 11,
+	argb4444: 12,
 	x: 0,
 };
 
@@ -116,47 +118,56 @@ export class MakeFile extends FILE {
 	generateConfigurationRules(tool) {
 		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
 		
-		// Read base sdkconfig file
-		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj" + tool.slash;
-		let baseConfigFile = baseConfigDirectory + "sdkconfig.defaults";
+		// Read base debug build sdkconfig.defaults file
+		let mergedConfig = [];
+		let regex = /[\r\n]+/gm;
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj";
+		let baseConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
 		let baseConfigLength = baseConfig.length;
 
-		// Read app sdkconfig file
-		let sdkconfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
-		if (tool.debug) {
-			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".debug"))
-				sdkconfigFile += ".debug";
-		}
-		else {
-			if (1 == tool.isDirectoryOrFile(sdkconfigFile + ".release"))
-				sdkconfigFile += ".release";
+		// For release builds merge base sdkconfig.defaults.release file
+		if (tool.debug === false) {
+			let releaseBaseConfigFile = baseConfigFile + ".release";
+			let entries = tool.readFileString(releaseBaseConfigFile);
+			mergedConfig = entries.split(regex);
+
+			// For instrumented release builds merge base "sdkconfig.inst" file
+			if (tool.instrument === true) {
+				let instConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.inst";
+				let instConfig = tool.readFileString(instConfigFile);
+				mergedConfig = mergedConfig.concat(instConfig.split(regex));
+			}
 		}
 		
-		let appConfig;
-		if (baseConfigFile != sdkconfigFile) {
-			appConfig = tool.readFileString(sdkconfigFile);
-			appConfig = appConfig.split(/[\r\n]+/gm);
+		// Merge any application sdkconfig files
+		if (tool.environment.SDKCONFIGPATH != baseConfigDirectory) {
+			let appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
+			if ((false === tool.debug) && (1 == tool.isDirectoryOrFile(appConfigFile + ".release")))
+				appConfigFile += ".release";
+			if (1 == tool.isDirectoryOrFile(appConfigFile)) {
+				let entries = tool.readFileString(appConfigFile);
+				mergedConfig = mergedConfig.concat(entries.split(regex));
+			}
+			if (tool.debug === false && tool.instrument === true) {
+				appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.inst";
+				if (1 == tool.isDirectoryOrFile(appConfigFile)) {
+					let entries = tool.readFileString(appConfigFile);
+					mergedConfig = mergedConfig.concat(entries.split(regex));
+				}
+			}
 		}
-		else
-			appConfig = [];
-
-		if (tool.instrument === true && tool.debug === false) {
-			let instConfigFile = baseConfigDirectory + "sdkconfig.inst";
-			let instConfig = tool.readFileString(instConfigFile);
-			appConfig = appConfig.concat(appConfig, instConfig.split(/[\r\n]+/gm));
-		}
-			
+		
 		let port = tool.getenv("UPLOAD_PORT");
 		if (port) {
 			if (port.charAt(0) != '"')
 				port = `"${port}"`;
-			appConfig.push("CONFIG_ESPTOOLPY_PORT=" + port);
+			mergedConfig.push("CONFIG_ESPTOOLPY_PORT=" + port);
 		}
 
 		// Merge differences
 		let appended = false;
-		appConfig.forEach(option => {
+		mergedConfig.forEach(option => {
 			if (option.length && ('#' != option.charAt(0))) {
 				let parts = option.split('=');
 				let name = parts[0];
@@ -231,7 +242,7 @@ export class MakeFile extends FILE {
 		}
 		
 		// Write the result, if it has changed
-		let buildConfigFile = baseConfigDirectory + "sdkconfig.mc";
+		let buildConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.mc";
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
 		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
 			const oldConfig = tool.readFileString(buildConfigFile);
@@ -298,8 +309,10 @@ export class MakeFile extends FILE {
 				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
 				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
-				let sdkconfigFileMinGW = sdkconfigFile.replace(/\\/g, "/");
-				tool.setenv("SDKCONFIG_FILE_MINGW", sdkconfigFileMinGW);
+				if (sdkconfigFile  !== undefined){
+					let sdkconfigFileMinGW = sdkconfigFile.replace(/\\/g, "/");
+					tool.setenv("SDKCONFIG_FILE_MINGW", sdkconfigFileMinGW);
+				}
 				let binDirMinGW = tool.binPath.replace(/\\/g, "/");
 				tool.setenv("BIN_DIR_MINGW", binDirMinGW);
 			}
@@ -381,13 +394,21 @@ export class MakeFile extends FILE {
 		this.line("");
 		
 		if (tool.tsFiles.length) {
-			let directories = tool.tsFiles.map(item => item.source);
-			let directory;
-			do {
-				directories = directories.map(item => tool.splitPath(item).directory);
-				directory = directories[0];
-			} while(directories.some(item => item != directory));
-			const common = directory.length;
+			let directories = tool.tsFiles.map(item => tool.splitPath(item.source).directory);
+			const length = directories.length;
+			let common;
+			if (length > 1) {
+				directories.sort();
+				const first =  directories[0];
+				const last = directories[length - 1];
+				const firstLength = first.length;
+				const lastLength = last.length;
+				common = 0;
+    			while ((common < firstLength) && (common < lastLength) && (first.charAt(common) === last.charAt(common))) 
+    				common++;
+			}
+			else
+				common = directories[0].length;
 			var temporaries = [];
 			for (var result of tool.tsFiles) {
 				var source = result.source;
@@ -404,9 +425,14 @@ export class MakeFile extends FILE {
 				if (tool.config)
 					options += " -c";
 				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				if (tool.windows)
+					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
-			this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
+			if (tool.windows)
+				this.line("TSCONFIG:");
+			else
+				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
 			this.echo(tool, "tsc ", "tsconfig.json");
 			this.line("\ttsc -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
@@ -584,7 +610,10 @@ export class MakeFile extends FILE {
 				this.write(" -m -4");
 			else {
 				this.write(" -f ");
-				this.write(tool.format);
+				if (result.format)
+					this.write(result.format);
+				else
+					this.write(tool.format);
 				if (clutSource) {
 					this.write(" -clut ");
 					this.write(clutSource);
@@ -724,7 +753,7 @@ export class TSConfigFile extends FILE {
 				sourceMap: true,
 				target: "ES2020",
 				types: [
-					tool.xsPath + "/includes/xs"
+					tool.xsPath + tool.slash + "includes" + tool.slash +"xs"
 				]
 			},
 			files: [
@@ -732,10 +761,16 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			paths[result.target.slice(0, -2)] = [ result.source.slice(0, -5) ];
+			var specifier = result.target.slice(0, -2);
+			if (tool.windows)
+				specifier = specifier.replaceAll("\\", "/");
+			paths[specifier] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
-			paths[result.target.slice(0, -4)] = [ result.source.slice(0, -3) ];
+			var specifier = result.target.slice(0, -4);
+			if (tool.windows)
+				specifier = specifier.replaceAll("\\", "/");
+			paths[specifier] = [ result.source.slice(0, -3) ];
 			json.files.push(result.source);
 		}
 		this.write(JSON.stringify(json, null, "\t"));
@@ -995,6 +1030,10 @@ class ResourcesRule extends Rule {
 		else if (suffix == "-color-monochrome") {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
 			colorFile.monochrome = true;
+		}
+		else if (suffix == "-color-argb4444") {
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile.format = "argb4444";
 		}
 		else if (suffix == "-alpha") {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);

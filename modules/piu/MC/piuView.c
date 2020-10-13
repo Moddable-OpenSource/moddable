@@ -127,7 +127,6 @@ static void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor 
 static void PiuViewEnd(PiuView* view);
 static void PiuViewFillTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, uint8_t blend, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
 static void PiuViewMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-static void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon);
 static void PiuViewUpdate(PiuView* self, PiuApplication* application);
 
 static const xsHostHooks PiuViewHooks ICACHE_RODATA_ATTR = {
@@ -540,6 +539,7 @@ void PiuViewEnd(PiuView* self)
 	Poco poco = (*self)->poco;
 #ifdef piuGPU
 	PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewReceiver, self);
+	pocoInstrumentationAdjust(FramesDrawn, +1);
 #else
 	xsMachine* the = (*self)->the;
 	PiuRegion* dirty = (*self)->dirty;
@@ -730,8 +730,15 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 	*height = poco->height;
 }
 
-void PiuViewIdleCheck(PiuView* self, PiuBoolean idle)
+void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 {
+	xsMachine *the = (*self)->the;
+	if (idle) {
+		xsCall1(xsReference((*self)->screen), xsID_start, xsNumber(idle));
+	}
+	else {
+		xsCall0(xsReference((*self)->screen), xsID_stop);
+	}
 }
 
 void PiuViewInvalidate(PiuView* self, PiuRectangle area) 
@@ -741,6 +748,10 @@ void PiuViewInvalidate(PiuView* self, PiuRectangle area)
 #else
 	PiuViewCombine(self, area, piuRegionUnionOp);
 #endif
+	if (!((*self)->updating)) {
+		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
+	}
 }
 
 void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region) 
@@ -750,6 +761,10 @@ void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region)
 #else
 	PiuViewCombineRegion(self, region, piuRegionUnionOp);
 #endif
+	if (!((*self)->updating)) {
+		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
+	}
 }
 
 void PiuViewMark(xsMachine* the, void* it, xsMarkRoot markRoot)
@@ -866,8 +881,26 @@ void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 	xsCallFunction3((*self)->_send, xsReference((*self)->screen), xsReference((*self)->pixels), xsInteger((char *)pixels - (char *)poco->pixels), xsInteger(byteLength));
 }
 
+void PiuViewReflow(PiuView* self)
+{
+	if (!((*self)->updating)) {
+		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
+	}
+}
+
+void PiuViewReschedule(PiuView* self)
+{
+	if (!((*self)->updating)) {
+		PiuViewIdleCheck(self, 1);
+		(*self)->updating = 1;
+	}
+}
+
 PiuTick PiuViewTicks(PiuView* self)
 {
+	if ((*self)->idleTicks)
+		return (*self)->idleTicks;
 	return modMilliseconds();
 }
 
@@ -1200,6 +1233,9 @@ void PiuApplication_purge(xsMachine* the)
 	(*self)->styleList = PIU(StyleLink, xsResult);
 	xsSet(xsGlobal, xsID_assetMap, xsNull);
 	xsCollectGarbage();
+#ifdef piuGPU
+	PocoCompact((*((*self)->view))->poco, PiuViewReceiver, (*self)->view);
+#endif		
 }
 
 void PiuCLUT_get_colors(xsMachine* the) 
@@ -1293,7 +1329,8 @@ void PiuView_onDisplayReady(xsMachine* the)
 	PiuView* self = PIU(View, xsThis);
 	PiuApplication* application = (*self)->application;
 	(*self)->ready = 1;
-	PiuViewUpdate(self, application);
+	PiuView_onIdle(the);
+// 	PiuViewUpdate(self, application);
 #endif		
 }
 
@@ -1301,13 +1338,22 @@ void PiuView_onIdle(xsMachine* the)
 {
 	PiuView* self = PIU(View, xsThis);
 	PiuApplication* application = (*self)->application;
-	if (!application) return;
 	xsVars(2);
+	if (!application) return;
+// #ifdef piuGPU
+// 	if (!(*self)->ready)
+// 		return;
+// #endif		
+	(*self)->updating = 1;
+	(*self)->idleTicks = PiuViewTicks(self);
 	PiuApplicationDeferContents(the, application);
 	PiuApplicationIdleContents(application);
 	PiuApplicationTouchIdle(application);
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
+	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 #ifdef piuGPU
 	modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
 #endif		
@@ -1318,6 +1364,8 @@ void PiuView_onMessage(xsMachine* the)
 	PiuView* self = PIU(View, xsThis);
 	PiuApplication* application = (*self)->application;
 	if (!application) return;
+	(*self)->updating = 1;
+	(*self)->idleTicks = PiuViewTicks(self);
 	if ((*application)->behavior) {
 		xsVars(2);
 		xsVar(0) = xsReference((*application)->behavior);
@@ -1327,7 +1375,10 @@ void PiuView_onMessage(xsMachine* the)
 		}
 	}
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
+	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchBegan(xsMachine* the)
@@ -1351,9 +1402,14 @@ void PiuView_onTouchBegan(xsMachine* the)
 	x = (*application)->coordinates.width - y;
 	y = c; 
 #endif
+	(*self)->updating = 1;
+	(*self)->idleTicks = ticks;
 	PiuApplicationTouchBegan(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
+	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchEnded(xsMachine* the)
@@ -1377,9 +1433,14 @@ void PiuView_onTouchEnded(xsMachine* the)
 	x = (*application)->coordinates.width - y;
 	y = c; 
 #endif
+	(*self)->updating = 1;
+	(*self)->idleTicks = ticks;
 	PiuApplicationTouchEnded(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
+	(*self)->updating = 0;
 	PiuViewUpdate(self, application);
+	PiuApplicationIdleCheck(application);
+	(*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchMoved(xsMachine* the)

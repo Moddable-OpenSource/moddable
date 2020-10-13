@@ -1,8 +1,14 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/ft6206/manifest.json"
+		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
 	],
+	"build": {
+		"FLASH_MODE": "qio",
+		"FLASH_SPEED": "80"
+	},
 	"config": {
 		"screen": "ili9341",
 		"touch": "ft6206",
@@ -30,5 +36,11 @@
 			"flipX": false,
 			"flipY": false,
 		},
-	}
+	},
+	"modules": {
+		 "setup/target": "./setup-target"
+	},
+	 "preload": [
+		 "setup/target"
+	]
 }

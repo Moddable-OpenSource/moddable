@@ -423,8 +423,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 			if (mxIsFunction(slot->value.accessor.getter) && ((slot->value.accessor.getter->flag & XS_MARK_FLAG) == 0)) {
 				txSlot* home = mxFunctionInstanceHome(slot->value.accessor.getter);
 				home->value.home.object = instance;
-				if (id)
-					fxRenameFunction(the, slot->value.accessor.getter, id, mxID(_get), "get ");
+				fxRenameFunction(the, slot->value.accessor.getter, id, index, mxID(_get), "get ");
 			}
 		}
 		if (mask & XS_SETTER_FLAG) {
@@ -432,8 +431,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 			if (mxIsFunction(slot->value.accessor.setter) && ((slot->value.accessor.setter->flag & XS_MARK_FLAG) == 0)) {
 				txSlot* home = mxFunctionInstanceHome(slot->value.accessor.setter);
 				home->value.home.object = instance;
-				if (id)
-					fxRenameFunction(the, slot->value.accessor.setter, id, mxID(_set), "set ");
+				fxRenameFunction(the, slot->value.accessor.setter, id, index, mxID(_set), "set ");
 			}
 		}
 	}
@@ -448,8 +446,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 						txSlot* home = mxFunctionInstanceHome(function);
 						home->value.home.object = instance;
 					}
-					if (id)
-						fxRenameFunction(the, function, id, mxID(_value), C_NULL);
+					fxRenameFunction(the, function, id, index, mxID(_value), C_NULL);
 				}
 			}
 		}
@@ -522,6 +519,17 @@ again:
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
+	}
+	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+		txID color = id & 0x7FFF;
+		if (color < the->keyOffset) {
+			color = the->colors[color];
+			if (color) {
+				result = instance + color;
+				if (result->ID == id)
+					return result;
+			}
+		}
 	}
 	result = instance->next;
 	while (result && (result->flag & XS_INTERNAL_FLAG))
@@ -685,6 +693,17 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 			if (instance->flag & XS_DONT_PATCH_FLAG)
 				return C_NULL;
 			instance = fxAliasInstance(the, instance);
+		}
+	}
+	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+		txID color = id & 0x7FFF;
+		if (color < the->keyOffset) {
+			color = the->colors[color];
+			if (color) {
+				property = instance + color;
+				if (property->ID == id)
+					return property;
+			}
 		}
 	}
 	address = &(instance->next);
@@ -873,7 +892,7 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 		if (writable)
 			mxTypeError("get and writable");
 		if (get->kind != XS_UNDEFINED_KIND) {
-			getFunction = fxGetInstance(the, get);
+			getFunction = fxToInstance(the, get);
 			if (!getFunction || !mxIsFunction(getFunction))
 				mxTypeError("get is no function");
 		}
@@ -885,7 +904,7 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 		if (writable)
 			mxTypeError("set and writable");
 		if (set->kind != XS_UNDEFINED_KIND) {
-			setFunction = fxGetInstance(the, set);
+			setFunction = fxToInstance(the, set);
 			if (!setFunction || !mxIsFunction(setFunction))
 				mxTypeError("set is no function");
 		}

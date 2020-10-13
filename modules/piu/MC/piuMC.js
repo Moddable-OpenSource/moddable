@@ -188,6 +188,7 @@ export function Application($, it = {}) {
 	it._View = View;
 	global.application = self;
 	self._create($, it);
+	global.screen.context.onDisplayReady();
 	return self;
 }
 Application.prototype = application;
@@ -206,7 +207,6 @@ class View @ "PiuViewDelete" {
 		let poco = new Poco(screen, it);
 		this._create(application, it, screen, poco, poco.rectangle());
 		screen.context = this;
-		screen.start(5);
 	}
 	_create(application, it, screen, poco, rectangle) @ "PiuView_create"
 	

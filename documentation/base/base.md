@@ -1,6 +1,6 @@
 # Base
-Copyright 2017 Moddable Tech, Inc.<BR>
-Revised: November 7, 2018
+Copyright 2017-2020 Moddable Tech, Inc.<BR>
+Revised: October 7, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -65,9 +65,11 @@ The callback function receives the timer id as the first argument.
 
 ***
 
-### `Timer.schedule(id, interval[, repeat])`
+### `Timer.schedule(id [, interval[, repeat]])`
 
 The `schedule` function is used to reschedule an existing timer.
+
+If called with an `interval` but no `repeat`, the timer behaves like a one shot timer created with `Timer.set`. If called with both an `interval` and `repeat`, it behaves like a repeating timer created with `Timer.set` with both `interval` and `repeat` arguments. If called with neither `interval` nor `repeat` arguments, the timer is unscheduled and will not trigger until rescheduled using `Timer.schedule`.
 
 In the following example, the callback function is triggered twice at one second intervals and then rescheduled to once every two seconds.
 
@@ -112,6 +114,7 @@ Timer.delay(500);	// delay 1/2 second
 ## class Time
 
 - **Source code:** [time](../../modules/base/time)
+- **Source code:** [time](../../modules/base/microseconds)
 - **Relevant Examples:** [sntp](../../examples/network/sntp/), [ntpclient](../../examples/network/mdns/ntpclient), [ios-time-sync](../../examples/network/ble/ios-time-sync)
 
 The `Time` class provides time functions and a tick counter.
@@ -157,6 +160,33 @@ for (let i = 0; i < 1000; i++)
 let stop = Time.ticks;
 trace(`Operation took ${stop - start} milliseconds\n`);
 ```
+
+***
+
+### `microseconds` property  *(optional)*
+
+The `microseconds` property returns the value of a microseconds counter. The value returned does not correspond to the time of day. The microseconds are used to calculate time differences.
+
+To use the `microseconds` property, include its manifest in the project manifest:
+
+```
+	"include": [
+		...
+		"$(MODDABLE)/modules/base/microseconds/manifest.json",
+	],
+```
+
+The `microseconds` property is used in the same way as the `ticks` property.
+
+```js
+const start = Time.microseconds;
+for (let i = 0; i < 1000; i++)
+	;
+const stop = Time.microseconds;
+trace(`Operation took ${stop - start} microseconds\n`);
+```
+
+> **Note**: Not all hosts implement microseconds. Hosts that do not implement microseconds generate an error at build time.
 
 ***
 
