@@ -31,6 +31,9 @@
 #define kRamRetentionRegisterMagic 0xBF
 #define kRamRetentionValueMagic 0x52081543
 
+#define VALID_RETENTION_SLOT(_gpreg, _slots, _index) \
+	(kRamRetentionRegisterMagic == _gpreg) && (kRamRetentionValueMagic == _slots[0]) && ((1L << _index) & _slots[1])
+
 #define kAnalogResolution 10	// 10 bits
 
 enum {
@@ -130,27 +133,42 @@ void xs_sleep_allow(xsMachine *the)
 	}
 }
 
-/**
-	Retained value format (each value requires 8 bytes):
-		- 32-bit kRamRetentionValueMagic
-		- 32-bit value
-**/
+// The gRamRetentionBuffer contains 32-bit retained value slots
+// When values are retained, the slot contents are as follows:
+//    slot[0]: kRamRetentionValueMagic
+//    slot[1]: Bit mask of retained slot indexes
+//    slot[2] - slot[33]: Retained values for slot indexes 0 to 31
 
 void xs_sleep_clear_retained_value(xsMachine *the)
 {
-	int16_t index = xsmcToInteger(xsArg(0));
-	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	int32_t index = xsmcToInteger(xsArg(0));
+	int32_t *slots = (int32_t*)&gRamRetentionBuffer[0];
+	uint32_t gpreg;
 	
 	if (index < 0 || index > 31)
 		xsRangeError("invalid index");
-	
-	slots[index * 2] = 0;
+		
+	if (softdevice_enabled())
+		sd_power_gpregret_get(0, &gpreg);
+	else
+		gpreg = NRF_POWER->GPREGRET;
+
+	if (VALID_RETENTION_SLOT(gpreg, slots, index)) {
+		slots[1] &= ~index;
+		if (0 == slots[1]) {
+			slots[0] = 0;
+			if (softdevice_enabled())
+				sd_power_gpregret_set(0, 0);
+			else
+				NRF_POWER->GPREGRET = 0;
+		}
+	}
 }
 
 void xs_sleep_get_retained_value(xsMachine *the)
 {
-	int16_t index = xsmcToInteger(xsArg(0));
-	int32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	int32_t index = xsmcToInteger(xsArg(0));
+	int32_t *slots = (int32_t*)&gRamRetentionBuffer[0];
 	uint32_t gpreg;
 	
 	if (index < 0 || index > 31)
@@ -161,19 +179,15 @@ void xs_sleep_get_retained_value(xsMachine *the)
 	else
 		gpreg = NRF_POWER->GPREGRET;
 
-	// If retention register doesn't contain the magic value there is no retained ram
-	if (kRamRetentionRegisterMagic != gpreg)
-		return;
-
-	if (kRamRetentionValueMagic == slots[index * 2])
-		xsResult = xsInteger(slots[(index * 2) + 1]);
+	if (VALID_RETENTION_SLOT(gpreg, slots, index))
+		xsResult = xsInteger(slots[index + 2]);
 }
 
 void xs_sleep_set_retained_value(xsMachine *the)
 {
-	int16_t index = xsmcToInteger(xsArg(0));
+	int32_t index = xsmcToInteger(xsArg(0));
 	int32_t value = xsmcToInteger(xsArg(1));
-	int32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
+	int32_t *slots = (int32_t*)&gRamRetentionBuffer[0];
 	uint32_t ram_slave, ram_section, ram_powerset;
 	
 	if (index < 0 || index > 31)
@@ -193,8 +207,9 @@ void xs_sleep_set_retained_value(xsMachine *the)
 		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
 	}
 
-	slots[index * 2] = kRamRetentionValueMagic;
-	slots[(index * 2) + 1] = value;
+	slots[0] = kRamRetentionValueMagic;
+	slots[1] |= (1L << index);
+	slots[index + 2] = value;
 	
 	nrf_delay_ms(1);
 }
