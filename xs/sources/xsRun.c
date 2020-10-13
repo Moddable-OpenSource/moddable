@@ -2222,7 +2222,12 @@ XS_CODE_JUMP:
 				if (!mxBehaviorHasProperty(the, variable, (txID)offset, index))
 					mxRunDebugID(XS_REFERENCE_ERROR, "set %s: undefined variable", (txID)offset);
 			}
-			goto XS_CODE_SET_PROPERTY_ALL;
+			mxSaveState;
+			slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_ANY);
+			mxRestoreState;
+			if (slot->kind < 0)
+				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", (txID)offset);
+			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_SUPER_AT)
 			variable = (mxStack + 2)->value.reference;
 			offset = (mxStack + 1)->value.at.id;
