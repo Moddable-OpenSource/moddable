@@ -501,6 +501,9 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_STRING_2:
 			size += 3 + ((txStringCode*)code)->length;
 			break;
+		case XS_CODE_STRING_4:
+			size += 5 + ((txStringCode*)code)->length;
+			break;
 		case XS_CODE_BIGINT_1:
 			size += 2 + fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
 			break;
@@ -728,6 +731,12 @@ txScript* fxParserCode(txParser* parser)
 			c_memcpy(p, ((txStringCode*)code)->string, u2);
 			p += u2;
 			break;
+		case XS_CODE_STRING_4:
+			s4 = (txS4)(((txStringCode*)code)->length);
+			mxEncode4(p, s4);
+			c_memcpy(p, ((txStringCode*)code)->string, s4);
+			p += s4;
+			break;
 		case XS_CODE_BIGINT_1:
 			u1 = (txU1)fxBigIntMeasure(&((txBigIntCode*)code)->bigint);
 			*((txU1*)p++) = u1;
@@ -911,6 +920,7 @@ txScript* fxParserCode(txParser* parser)
 			break;
 		case XS_CODE_STRING_1:
 		case XS_CODE_STRING_2:
+		case XS_CODE_STRING_4:
 			fprintf(stderr, "%s %d \"%s\"\n", gxCodeNames[code->id], ((txStringCode*)code)->length, ((txStringCode*)code)->string);
 			break;
 		case XS_CODE_BIGINT_1:
@@ -2957,7 +2967,6 @@ void fxForInForOfNodeCode(void* it, void* param)
 	txInteger result;
 	txInteger selector;
 	txInteger selection;
-	txInteger _return;
 	txTargetCode* nextTarget;
 	txTargetCode* returnTarget;
 	txTargetCode* doneTarget;
@@ -2970,7 +2979,6 @@ void fxForInForOfNodeCode(void* it, void* param)
 	done = fxCoderUseTemporaryVariable(param);
 	result = fxCoderUseTemporaryVariable(param);
 	selector = fxCoderUseTemporaryVariable(coder);
-	_return = fxCoderUseTemporaryVariable(coder);
 	fxScopeCodingBlock(self->scope, param);
 	coder->firstBreakTarget = fxCoderAliasTargets(param, coder->firstBreakTarget);
 	coder->firstContinueTarget->nextTarget = fxCoderAliasTargets(param, coder->firstContinueTarget->nextTarget);
@@ -3088,7 +3096,7 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxCoderJumpTargets(param, coder->returnTarget, selector, &selection);
 	
 	fxScopeCoded(self->scope, param);
-	fxCoderUnuseTemporaryVariables(param, 6);
+	fxCoderUnuseTemporaryVariables(param, 5);
 }
 
 void fxFunctionNodeCode(void* it, void* param) 

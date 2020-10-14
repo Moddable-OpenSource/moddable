@@ -1020,7 +1020,6 @@ void fx_String_prototype_replace(txMachine* the)
 
 void fx_String_prototype_replaceAll(txMachine* the)
 {
-	txString string;
 	txSlot* match;
 	txSlot* function = C_NULL;
 	txSlot* replace;
@@ -1033,7 +1032,7 @@ void fx_String_prototype_replaceAll(txMachine* the)
 
 	if (fx_String_prototype_withRegexp(the, mxID(_Symbol_replace), 1, 2))
 		return;
-	string = fxToString(the, mxThis);
+	fxToString(the, mxThis);
 	if (mxArgc <= 0)
 		mxPushUndefined();
 	else
