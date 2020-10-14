@@ -153,7 +153,8 @@ class Power extends AXP192 {
    * @deprecated Use setter
    */
   setBrightness(brightness) {
-    trace("WARNING: AXP192#setBrightness is deprecated. use setter. Range now 0-100 %");
+    brightness=Math.floor((brightness-6)*12.5);
+    trace(`WARNING: AXP192#setBrightness is deprecated. use setter, range now 0-100, now ${brightness}\n`);
     this.brightness = brightness;
   }
 
