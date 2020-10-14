@@ -690,7 +690,8 @@ void xs_audioout_enqueue(xsMachine *the)
 		uint8_t started = 0 == activeStreamCount;
 		if (started) {
 #if ESP32
-			xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
+			if (out->task)
+				xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
 #endif
 		}
 	}
