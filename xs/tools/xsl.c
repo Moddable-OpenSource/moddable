@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
   	txString output = NULL;
   	txString separator = NULL;
   	txBoolean archiving = 0;
-  	txBoolean optimizing = 0;
+  	txBoolean optimizing = 1;
 #if mxWindows
 	txString url = "\\";
 #else
@@ -139,7 +139,10 @@ int main(int argc, char* argv[])
 		scriptAddress = &(linker->firstScript);
 		stripAddress = &(linker->firstStrip);
 		for (argi = 1; argi < argc; argi++) {
-			if (!c_strcmp(argv[argi], "-1")) {
+			if (!c_strcmp(argv[argi], "-0")) {
+				optimizing = 0;
+			}
+			else if (!c_strcmp(argv[argi], "-1")) {
 				optimizing = 1;
 			}
 			else if (!c_strcmp(argv[argi], "-a")) {
