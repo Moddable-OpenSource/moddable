@@ -392,7 +392,7 @@ void fxScreenTouch(txScreen* screen, int kind, int index, int x, int y, double w
 			xsVar(1) = xsGet(xsVar(0), xsID_context);
 			if (xsTest(xsVar(1))) {
 				if (xsFindResult(xsVar(1), xsID(gxTouchEventNames[kind]))) {
-					xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(when));
+					xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(modMilliseconds()));
 				}
 			}
 		}
