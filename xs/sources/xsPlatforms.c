@@ -182,7 +182,11 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		relative = 1;
 	}	
 	else if ((name[0] == '.') && (name[1] == '.') && (name[2] == '/')) {
-		dot = 2;
+		if ((name[3] == '.') && (name[4] == '.') && (name[5] == '/')) {
+			dot = 5;
+		} else {
+			dot = 2;
+		}
 		relative = 1;
 	}
 #if mxWindows
@@ -225,11 +229,17 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			return XS_NO_ID;
 		if (dot == 0)
 			slash++;
-		else if (dot == 2) {
+		else if (dot > 1) {
 			*slash = 0;
 			slash = c_strrchr(path, mxSeparator);
 			if (!slash)
 				return XS_NO_ID;
+			if (dot > 2) {
+				*slash = 0;
+				slash = c_strrchr(path, mxSeparator);
+				if (!slash)
+					return XS_NO_ID;
+                        }
 		}
 		if (preparation) {
 			if (!c_strncmp(path, preparation->base, preparation->baseLength)) {

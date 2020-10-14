@@ -1,0 +1,32 @@
+name: build and smoke test moddable SDK for linux CLI (x-cli-lin)
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install libgtk-3-dev
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install libgtk-3-dev
+      - name: build moddable headless tools
+        run: |
+          export MODDABLE=$PWD
+          export XS_DIR=$MODDABLE/xs
+          cd $MODDABLE/build/makefiles/lin
+          make headless
+      - name: check that helloworld builds
+        run: |
+          export MODDABLE=$PWD
+          export PATH=$MODDABLE/build/bin/lin/release:$PATH
+          cd $MODDABLE/examples/helloworld
+          mcconfig -m -p x-cli-lin
+          # ISSUE: support scripts with no main()?
+          # $MODDABLE/build/bin/lin/release/helloworld
+          test -x $MODDABLE/build/bin/lin/release/helloworld
+          mcconfig -d -m -p x-cli-lin
+          test -x $MODDABLE/build/bin/lin/debug/helloworld

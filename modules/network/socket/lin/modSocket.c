@@ -43,7 +43,7 @@
 #define kRAW (2)
 
 #define kRxBufferSize 1024
-#define kTxBufferSize 1024
+#define kTxBufferSize 4096
 
 typedef struct xsSocketRecord xsSocketRecord;
 typedef xsSocketRecord *xsSocket;
