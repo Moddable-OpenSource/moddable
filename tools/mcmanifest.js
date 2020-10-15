@@ -1339,6 +1339,14 @@ export class Tool extends TOOL {
 			path += this.platform;
 		this.environment.BLEMODULEPATH = path;
 
+		let userHome;
+		if ("win" == this.currentPlatform){
+			userHome = this.getenv("USERPROFILE");
+		}else if ("mac" == this.currentPlatform || "lin" == this.currentPlatform){
+			userHome = this.getenv("HOME");
+		}
+		if (userHome !== undefined) this.environment.USERHOME = userHome; 
+
 		if (this.manifestPath) {
 			var parts = this.splitPath(this.manifestPath);
 			this.currentDirectory = this.mainPath = parts.directory;

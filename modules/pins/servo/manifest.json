@@ -1,6 +1,6 @@
 {
 	"build": {
-		"ARDUINO_ESP8266": "$(HOME)/esp/esp8266-2.3.0/",
+		"ARDUINO_ESP8266": "$(USERHOME)/esp/esp8266-2.3.0/",
 	},
 	"platforms":{
 		"esp": {
