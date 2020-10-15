@@ -83,4 +83,4 @@ const ScreenDimmingApplication = Application.template($ => ({
 	]
 }));
 
-new ScreenDimmingApplication(null, { displayListLength:4096, touchCount:1 });
+export default new ScreenDimmingApplication(null, { displayListLength:4096, touchCount:1 });
