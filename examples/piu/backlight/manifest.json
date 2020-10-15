@@ -4,9 +4,15 @@
 		"$(MODDABLE)/examples/manifest_piu.json",
 	],
 	"modules": {
-		"*": "./main",
+		"*": [
+			"./main",
+			"./check",
+		],
 	},
-	"preload": "main",
+	"preload": [
+		"main",
+		"check",
+	],
 	"resources":{
 		"*": [
 			"./island",

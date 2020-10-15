@@ -86,6 +86,3 @@ export default function() {
 
 	new ScreenDimmingApplication(null, { displayListLength:4096, touchCount:1 });
 }
-
-if (!globalThis.Host || !Host.Backlight)
-	throw new Error("backlight unsupported");
