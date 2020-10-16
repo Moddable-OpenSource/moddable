@@ -101,6 +101,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onPasskeyRequested() {}
 	onAuthenticated() {}
 	onMTUExchanged() {}
+	onBondingsDeleted() {}
 
 	_deploy() @ "xs_ble_server_deploy"
 	_setDeviceName() @ "xs_ble_server_set_device_name"
@@ -159,6 +160,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "onMTUExchanged":
 				this.onMTUExchanged(params);
+				break;
+			case "onBondingsDeleted":
+				this.onBondingsDeleted();
 				break;
 		}
 	}

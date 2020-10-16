@@ -213,6 +213,7 @@ static void gattcMTUExchangedEvent(void *the, void *refcon, uint8_t *message, ui
 static void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void pmPeersDeleteSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void clearScanned(modBLE ble);
 
@@ -966,6 +967,15 @@ static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, u
 	xsEndHost(gBLE->the);
 }
 
+static void pmPeersDeleteSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsCall1(gBLE->obj, xsID_callback, xsString("onBondingsDeleted"));
+	xsEndHost(gBLE->the);
+}
+
 void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	serviceSearchRecord *entry;
@@ -1418,6 +1428,9 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
 			break;
 		}
+		case BLE_GAP_EVT_SEC_INFO_REQUEST:
+			sd_ble_gap_sec_info_reply(p_ble_evt->evt.gap_evt.conn_handle, NULL, NULL, NULL);
+			break;
 			
 		case BLE_GATTC_EVT_CHAR_DISC_RSP: {
 			characteristicSearchRecord *entry;
@@ -1510,6 +1523,8 @@ static void logPMEvent(uint16_t evt_id) {
 		case PM_EVT_PEER_DATA_UPDATE_SUCCEEDED: modLog("PM_EVT_PEER_DATA_UPDATE_SUCCEEDED"); break;
 		case PM_EVT_PEER_DATA_UPDATE_FAILED: modLog("PM_EVT_PEER_DATA_UPDATE_FAILED"); break;
 		case PM_EVT_PEER_DELETE_SUCCEEDED: modLog("PM_EVT_PEER_DELETE_SUCCEEDED"); break;
+		case PM_EVT_PEER_DELETE_FAILED: modLog("PM_EVT_PEER_DELETE_FAILED"); break;
+		case PM_EVT_PEERS_DELETE_SUCCEEDED: modLog("PM_EVT_PEERS_DELETE_SUCCEEDED"); break;
 		case PM_EVT_PEERS_DELETE_FAILED: modLog("PM_EVT_PEERS_DELETE_FAILED"); break;
 		case PM_EVT_LOCAL_DB_CACHE_APPLIED: modLog("PM_EVT_LOCAL_DB_CACHE_APPLIED"); break;
 		case PM_EVT_LOCAL_DB_CACHE_APPLY_FAILED: modLog("PM_EVT_LOCAL_DB_CACHE_APPLY_FAILED"); break;
@@ -1526,20 +1541,20 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 	LOG_PM_EVENT(p_evt->evt_id);
 	
 	pm_handler_on_pm_evt(p_evt);
-	pm_handler_disconnect_on_sec_failure(p_evt);
 	pm_handler_flash_clean(p_evt);
 
     switch (p_evt->evt_id) {
     	case PM_EVT_CONN_SEC_FAILED:
             // Rebond if one party has lost its keys
-            if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING) {
-				ret_code_t err_code;
-                err_code = pm_conn_secure(p_evt->conn_handle, true);
-            }
+            if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING)
+				pm_conn_secure(p_evt->conn_handle, true);
     		break;
 		case PM_EVT_CONN_SEC_SUCCEEDED:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt, sizeof(pm_evt_t), pmConnSecSucceededEvent, NULL);
-			break;    		
+			break;
+		case PM_EVT_PEERS_DELETE_SUCCEEDED:
+			modMessagePostToMachine(gBLE->the, NULL, 0, pmPeersDeleteSucceededEvent, NULL);
+			break;
         default:
             break;
     }

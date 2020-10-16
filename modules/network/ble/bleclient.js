@@ -43,6 +43,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onSecurityParameters() {}
 	onDiscovered() {}
 	onConnected() {}
+	onBondingsDeleted() {}
 	
 	// From Connection object
 	onAuthenticated() {}
@@ -127,6 +128,9 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				break;
 			case "onAuthenticated":
 				return this.onAuthenticated();
+				break;
+			case "onBondingsDeleted":
+				this.onBondingsDeleted();
 				break;
 		}
 	}
