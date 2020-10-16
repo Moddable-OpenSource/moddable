@@ -4,10 +4,10 @@
 		"*": [
 			"./increment",
 			"./main",
-			"./mod",
-		],
+			"./mod"
+		]
 	},
 	"preload": [
-		"increment",
-	],
+		"increment"
+	]
 }

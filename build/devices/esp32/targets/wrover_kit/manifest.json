@@ -4,7 +4,7 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "",
+		"touch": ""
 	},
 	"defines": {
 		"i2c": {
@@ -23,7 +23,7 @@
 			"rst_pin": 18,
 			"spi_port": "HSPI_HOST",
 			"backlight_pin": 5,
-			"backlight_on": 0,
+			"backlight_on": 0
 		},
 	}
 }

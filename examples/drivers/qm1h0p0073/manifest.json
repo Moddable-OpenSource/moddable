@@ -1,11 +1,11 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"*": "./main",
-		"pins/i2c": "$(MODULES)/pins/i2c/i2c",
+		"pins/i2c": "$(MODULES)/pins/i2c/i2c"
 	},
-	"preload": "qm1h0p0073",
+	"preload": "qm1h0p0073"
 }

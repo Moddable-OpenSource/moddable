@@ -1,11 +1,11 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
 		"touch": "",
-		"rotation": 180,
+		"rotation": 180
 	},
 	"defines": {
 		"i2c": {
@@ -21,7 +21,7 @@
 			"flipX": true,
 			"flipY": false,
 			"spi_port": "#HSPI"
-		},
+		}
 	}
 }
 

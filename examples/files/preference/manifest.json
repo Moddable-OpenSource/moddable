@@ -1,11 +1,11 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/files/preference/manifest.json",
+		"$(MODDABLE)/modules/files/preference/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"./main",
+			"./main"
 		]
-	},
+	}
 }

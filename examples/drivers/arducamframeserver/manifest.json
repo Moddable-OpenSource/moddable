@@ -5,17 +5,24 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/i2c/manifest.json",
-		"$(MODULES)/pins/spi/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
 			"$(MODULES)/drivers/arducam/*",
 			"$(MODULES)/network/http/*"
-		],
+		]
 	},
 	"preload": [
 		"arducam",
-		"http",
+		"http"
 	],
+	"defines": {
+		"i2c": {
+			"sda_pin": 5,
+			"scl_pin": 4
+		}
+	}
 }
+

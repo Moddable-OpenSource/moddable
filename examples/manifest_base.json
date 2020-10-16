@@ -3,38 +3,38 @@
 		"BUILD": "$(MODDABLE)/build",
 		"MODULES": "$(MODDABLE)/modules",
 		"COMMODETTO": "$(MODULES)/commodetto",
-		"PIU": "$(MODULES)/piu",
+		"PIU": "$(MODULES)/piu"
 	},
 	"creation": {
 		"static": 32768,
 		"chunk": {
 			"initial": 1536,
-			"incremental": 512,
+			"incremental": 512
 		},
 		"heap": {
 			"initial": 512,
-			"incremental": 64,
+			"incremental": 64
 		},
 		"stack": 256,
 		"keys": {
 			"available": 32,
 			"name": 53,
-			"symbol": 3,
+			"symbol": 3
 		},
 		"parser": {
 			"buffer": 1024,
-			"table": 17,
+			"table": 17
 		},
-		"main": "main",
+		"main": "main"
 	},
 	"modules": {
 		"*": [
 			"$(MODULES)/files/resource/*",
-			"$(MODULES)/base/instrumentation/modInstrumentation",
-		],
+			"$(MODULES)/base/instrumentation/modInstrumentation"
+		]
 	},
 	"preload": [
-		"Resource",
+		"Resource"
 	],
 	"strip": "*",
 	"platforms": {
@@ -43,15 +43,15 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/esp/*",
-					"$(MODULES)/network/socket/lwip/modLwipSafe",
-				],
-			},
+					"$(MODULES)/network/socket/lwip/modLwipSafe"
+				]
+			}
 		},
 		"esp32": {
 			"include": "$(BUILD)/devices/esp32/manifest.json",
 			"modules": {
 				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
-			},
+			}
 		},
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"
@@ -64,7 +64,7 @@
 				"*": [
 					"$(BUILD)/simulator/screen",
 					"$(MODULES)/base/timer/timer",
-					"$(MODULES)/base/timer/lin/*",
+					"$(MODULES)/base/timer/lin/*"
 				]
 			}
 		},
@@ -75,13 +75,13 @@
 					"$(MODULES)/base/time/*",
 					"$(MODULES)/base/time/mac/*",
 					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mac/*",
-				],
+					"$(MODULES)/base/timer/mac/*"
+				]
 			},
 			"preload": [
 				"time",
-				"timer",
-			],
+				"timer"
+			]
 		},
 		"win": {
 			"modules": {
@@ -95,19 +95,19 @@
 			},
 			"preload": [
 				"time",
-				"timer",
-			],
+				"timer"
+			]
 		},
 		"wasm": {
 			"modules": {
 				"*": [
 					"$(BUILD)/simulator/screen",
 					"$(MODULES)/base/timer/timer",
-					"$(MODULES)/base/timer/wasm/*",
+					"$(MODULES)/base/timer/wasm/*"
 				]
 			},
 			"preload": [
-			],
+			]
 		}
-	},
+	}
 }

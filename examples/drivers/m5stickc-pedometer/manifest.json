@@ -12,16 +12,16 @@
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
 		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
 		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
-		"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG",
+		"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG"
 	},
 	"resources": {
 		"*-alpha": [
 			"./steps",
-			"./progress-overlay",
+			"./progress-overlay"
 		],
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16",
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
-		],
-	},
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28"
+		]
+	}
 }

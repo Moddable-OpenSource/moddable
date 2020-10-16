@@ -1,16 +1,16 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
 	],
 	"modules": {
 		"*": "./main",
-		"commodetto/readStream": "$(COMMODETTO)/commodettoReadStream",
+		"commodetto/readStream": "$(COMMODETTO)/commodettoReadStream"
 	},
 	"resources": {
-		"*": "$(MODDABLE)/examples/assets/images/cell-flag",
+		"*": "$(MODDABLE)/examples/assets/images/cell-flag"
 	},
 	"config": {
 		"screen": "ili9341"
-	},
+	}
 }

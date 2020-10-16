@@ -1,23 +1,23 @@
 {
 	"include": [
 		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"$(MODULES)/drivers/si7021/*",
-		],
+			"$(MODULES)/drivers/si7021/*"
+		]
 	},
 	"preload": [
-		"si7021",
+		"si7021"
 	],
 	"platforms": {
 		"gecko": {
 			"modules": {
 				"*": [
-					"$(MODULES)/drivers/si7021/gecko/*",
-				],
-			},
-		},
-	},
+					"$(MODULES)/drivers/si7021/gecko/*"
+				]
+			}
+		}
+	}
 }

@@ -2,14 +2,14 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/pins/analog/manifest.json",
+		"$(MODDABLE)/modules/pins/analog/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources":{
 		"*-mask": [
-			"$(MODDABLE)/examples/assets/fonts/myFont",
-	   ],
-	},
+			"$(MODDABLE)/examples/assets/fonts/myFont"
+	   ]
+	}
 }

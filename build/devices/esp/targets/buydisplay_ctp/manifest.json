@@ -5,30 +5,30 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "ft6206",
+		"touch": "ft6206"
 	},
 	"defines": {
 		"i2c": {
 			"sda_pin": 5,
-			"scl_pin": 4,
+			"scl_pin": 4
 		},
 		"ili9341": {
 			"cs_pin": 15,
 			"dc_pin": 2,
 			"spi_port": "#HSPI",
 			"registers_append": [
-				"0x20, 0,",
-			],
+				"0x20, 0,"
+			]
 		},
 		"ft6206": {
 			"flipX": true,
-			"flipY": true,
+			"flipY": true
 		},
 		"spi": {
 			"mosi_pin": 13,
 			"miso_pin": 12,
-			"sck_pin": 14,
-		},
+			"sck_pin": 14
+		}
 	}
 }
 

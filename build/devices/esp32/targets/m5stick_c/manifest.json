@@ -61,7 +61,7 @@
                  "kDelayMS, 100,",
 				 "kDelayMS, 0"
             ]
-		},
+		}
 	},
 	"modules": {
 		"*": [

@@ -2,10 +2,10 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"platforms":{
 		"esp32": {
@@ -15,7 +15,7 @@
 			},
 			"preload": [
 				"pins/pulsecount"
-			],
+			]
 		}
 	}
 }

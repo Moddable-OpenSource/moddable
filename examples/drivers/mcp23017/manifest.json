@@ -4,6 +4,6 @@
 		"$(MODULES)/drivers/mcp230xx/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	}
 }

@@ -1,18 +1,18 @@
 {
 	"modules": {
 		"~": [
-			"$(MODULES)/network/net/net",
+			"$(MODULES)/network/net/net"
 		],
 		"*": [
 			"./webthings",
 			"$(MODULES)/network/http/*",
 			"$(MODULES)/network/mdns/*",
-			"$(MODULES)/network/dns/moddnsparser",
+			"$(MODULES)/network/dns/moddnsparser"
 		],
 		"net": "$(MODULES)/network/net/netmdns",
 		"dns": "$(MODULES)/network/dns/dns",
 		"dns/parser": "$(MODULES)/network/dns/dnsparser",
-		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer"
 	},
 	"preload": [
 		"http",
@@ -21,11 +21,11 @@
 		"dns",
 		"dns/parser",
 		"dns/serializer",
-		"webthings",
+		"webthings"
 	],
 	"platforms": {
 		"...": {
 			"warning": "Web Thing API support deprecated"
-		},
-	},
+		}
+	}
 }

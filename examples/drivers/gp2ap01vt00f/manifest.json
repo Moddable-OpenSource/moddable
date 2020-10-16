@@ -1,17 +1,17 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/drivers/gp2ap01vt00f/*",
+			"$(MODULES)/drivers/gp2ap01vt00f/*"
 		],
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"gp2ap01vt00f",
-		"pins/smbus",
-	],
+		"pins/smbus"
+	]
 }

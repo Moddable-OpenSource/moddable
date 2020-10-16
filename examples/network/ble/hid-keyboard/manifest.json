@@ -1,17 +1,17 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/network/ble/hid-client/manifest.json",
+		"$(MODDABLE)/modules/network/ble/hid-client/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"./hidkeyboard",
+			"./hidkeyboard"
 		]
 	},
 	"ble":{
 		"*": [
-			"./bleservices/*",
-		],
-	},
+			"./bleservices/*"
+		]
+	}
 }

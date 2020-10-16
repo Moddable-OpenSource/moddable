@@ -15,10 +15,10 @@
 	],
 	"resources":{
 		"*": [
-			"$(MODULES)/crypt/data/ca109",
+			"$(MODULES)/crypt/data/ca109"
 		]
 	},
 	"config": {
-		"sntp": "pool.ntp.org",
-	},
+		"sntp": "pool.ntp.org"
+	}
 }

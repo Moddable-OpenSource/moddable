@@ -3,13 +3,13 @@
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/files/zip/*",
+			"$(MODULES)/files/zip/*"
 		]
 	},
 	"resources": {
 		"*": [
 			"./test"
-		],
+		]
 	},
 	"preload": [
 		"zip"

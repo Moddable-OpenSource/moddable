@@ -1,23 +1,23 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"creation":{
-		"stack":350,
+		"stack":350
 	},
 	"modules": {
 		"*": [
 			"./main",
-			"./scroller",
+			"./scroller"
 		]
 	},
 	"preload": [
-		"scroller",
+		"scroller"
 	],
 	"resources":{
 		"*-alpha": [
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
-		],
-	},
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20"
+		]
+	}
 }

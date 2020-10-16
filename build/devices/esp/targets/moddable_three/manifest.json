@@ -11,7 +11,7 @@
     "config": {
         "screen": "destm32s",
         "touch": "",
-        "format": "Gray256",
+        "format": "Gray256"
     },
     "defines": {
         "destm32s": {

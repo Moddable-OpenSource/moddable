@@ -1,14 +1,14 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
 	],
 	"modules": {
 		"*": "./main",
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
 		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
 		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
-		"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG",
+		"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG"
 	},
 	"resources": {
 		"*": [
@@ -21,13 +21,16 @@
 			"./girl",
 			"./palatino_36",
 			"./OpenSans-SemiboldItalic-18",
-			"./OpenSans-BoldItalic-52",
+			"./OpenSans-BoldItalic-52"
 		]
 
 	},
 	"data": {
 		"*": [
 			"./piano",
-		],
-	},
+			"./piano2",
+			"./test",
+			"./rgba16-4444"
+		]
+	}
 }

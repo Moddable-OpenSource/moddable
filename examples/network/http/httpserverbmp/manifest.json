@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
 	],
 	"modules": {
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
@@ -12,11 +12,11 @@
 		"*": [
 			"./main",
 			"./bmpSpooler",
-			"$(MODULES)/network/http/*",
-		],
+			"$(MODULES)/network/http/*"
+		]
 	},
 	"preload": [
 		"commodetto/*",
-		"http",
+		"http"
 	]
 }

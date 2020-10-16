@@ -1,11 +1,11 @@
 {
 	"include": [
-		"$(MODULES)/drivers/st7735/manifest.json",
+		"$(MODULES)/drivers/st7735/manifest.json"
 	],
 	"config": {
 		"screen": "st7735",
 		"touch": "",
-		"format": "RGB565LE",
+		"format": "RGB565LE"
 	},
 	"defines": {
 		"ili9341": {
@@ -41,7 +41,7 @@
 				"0x29, 0,",
 				"kDelayMS, 100,",
 				"kDelayMS, 0"
-			],
+			]
 		}
 	}
 }

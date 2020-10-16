@@ -3,9 +3,9 @@
 	"modules": {
 		"*": [
 			"./main",
-			"./mod",
-		],
+			"./mod"
+		]
 	},
 	"preload": [
-	],
+	]
 }

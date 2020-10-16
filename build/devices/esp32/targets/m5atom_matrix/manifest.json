@@ -33,6 +33,6 @@
 			"pin": 27,
 			"order": "#GRB",
 			"rmt_channel": "RMT_CHANNEL_0"
-		},
+		}
 	}
 }

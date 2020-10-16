@@ -1,9 +1,9 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_base.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/*"

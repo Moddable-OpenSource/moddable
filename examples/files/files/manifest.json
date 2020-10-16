@@ -1,9 +1,9 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/files/file/manifest.json",
+		"$(MODDABLE)/modules/files/file/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
-	},
+		"*": "./main"
+	}
 }

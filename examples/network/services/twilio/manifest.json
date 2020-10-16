@@ -8,7 +8,7 @@
 		"*": [
 			"./main",
 			"$(MODULES)/network/http/*",
-			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/base64/*"
 		]
 	},
 	"preload": [
@@ -16,12 +16,12 @@
 		"base64"
 	],
 	"config": {
-		"sntp": "pool.ntp.org",
+		"sntp": "pool.ntp.org"
 	},
     "resources": {
         "*": [
-            "$(MODULES)/crypt/data/ca106",
+            "$(MODULES)/crypt/data/ca106"
         ]
-    },
+    }
 }
 

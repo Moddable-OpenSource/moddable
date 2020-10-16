@@ -1,33 +1,33 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json"
 	],
     "creation": {
         "stack": 400,
-        "static": 43008,
+        "static": 43008
     },      
 	"modules": {
 		"*": [
 			"$(MODULES)/drivers/neopixel/*",
 			"$(MODULES)/drivers/neostrand/*",
-			"./main",
+			"./main"
 		],
-		"piu/Timeline": "$(MODULES)/piu/All/piuTimeline",
+		"piu/Timeline": "$(MODULES)/piu/All/piuTimeline"
 	},
 	"preload": [
 		"neopixel",
 		"neostrand",
-		"piu/Timeline",
+		"piu/Timeline"
 	],
     "platforms": {
 	    "esp32": {
             "modules": {
-                "*": "$(MODULES)/drivers/neopixel/esp32/*",
-            },
+                "*": "$(MODULES)/drivers/neopixel/esp32/*"
+            }
         },
         "...": {
             "error": "unsupported platform"
-        },
+        }
     }
 }

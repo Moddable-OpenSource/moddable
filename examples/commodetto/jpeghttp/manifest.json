@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
 	],
 	"modules": {
 		"*": [
@@ -11,10 +11,10 @@
 		],
 		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
-		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut"
 	},
 	"preload": [
 		"http",
-		"main",
-	],
+		"main"
+	]
 }

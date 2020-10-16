@@ -1,12 +1,12 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"modules": {
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"setup/target",
+		"setup/target"
 	],
 	"config": {
 		"screen": "ili9341",
@@ -18,7 +18,7 @@
 
 		"backlight_pin": 32,
 		"gpio_test_a_pin": 5,
-		"gpio_test_b_pin": 25,
+		"gpio_test_b_pin": 25
 	},
 	"defines": {
 		"spi": {

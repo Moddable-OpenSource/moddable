@@ -5,9 +5,9 @@
 			"./decrement",
 			"./increment",
 			"./main",
-			"./mod",
-		],
+			"./mod"
+		]
 	},
 	"preload": [
-	],
+	]
 }

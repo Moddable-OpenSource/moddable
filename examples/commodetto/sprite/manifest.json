@@ -1,14 +1,14 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources": {
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/images/spinner-strip-80px-24cell-blue"
 		]
-	},
+	}
 }

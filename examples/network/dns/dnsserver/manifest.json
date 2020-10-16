@@ -1,17 +1,17 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_net.json"
 	],
 	"modules": {
 		"*": [
-			"./main",
+			"./main"
 		],
 		"net": "$(MODULES)/network/net/netmdns",
-		"dns/server": "$(MODULES)/network/dns/dnsserver",
+		"dns/server": "$(MODULES)/network/dns/dnsserver"
 	},
 	"preload": [
 		"net",
-		"dns/server",
+		"dns/server"
 	]
 }

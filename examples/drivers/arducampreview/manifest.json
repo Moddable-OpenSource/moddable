@@ -4,15 +4,15 @@
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/i2c/manifest.json",
-		"$(MODULES)/pins/spi/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/drivers/arducam/*",
-		],
+			"$(MODULES)/drivers/arducam/*"
+		]
 	},
 	"preload": [
-		"arducam",
-	],
+		"arducam"
+	]
 }

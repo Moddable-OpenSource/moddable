@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/digital/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -8,14 +8,14 @@
 			"$(MODULES)/pins/digital/monitor/esp32/*",
 
 			"$(MODULES)/pins/audioin/*",
-			"$(MODULES)/pins/audioin/esp32/*",
+			"$(MODULES)/pins/audioin/esp32/*"
 		],
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"monitor",
 		"audioin",
-		"setup/target",
+		"setup/target"
 	],
 	"defines": {
 		"audioin": {
@@ -24,7 +24,7 @@
 			"i2s": {
 				"bck_pin": 32,
 				"lr_in": 33,
-				"datain_pin": 27,
+				"datain_pin": 27
 			}
 		}
 	}

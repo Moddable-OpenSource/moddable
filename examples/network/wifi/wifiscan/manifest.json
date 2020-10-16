@@ -3,7 +3,7 @@
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/network/wifi/*",
+			"$(MODULES)/network/wifi/*"
 		]
 	},
 	"preload": [
@@ -13,17 +13,17 @@
 		"esp": {
 			"modules": {
 				"*": "$(MODULES)/network/wifi/esp/*"
-			},
+			}
 		},
 		"esp32": {
 			"modules": {
 				"*": "$(MODULES)/network/wifi/esp32/*"
-			},
+			}
 		},
 		"qca4020": {
 			"modules": {
 				"*": "$(MODULES)/network/wifi/qca4020/*"
-			},
+			}
 		},
 		"...": {
 			"error": "WiFi module unsupported"

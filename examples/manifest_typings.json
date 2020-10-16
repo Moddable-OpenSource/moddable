@@ -1,22 +1,22 @@
 {
 	"build": {
-		"TYPINGS": "$(MODDABLE)/typings",
+		"TYPINGS": "$(MODDABLE)/typings"
 	},
 	"modules": {
 		"*": [
-			"$(TYPINGS)/*",
+			"$(TYPINGS)/*"
 		],
 		"commodetto/*": [
-			"$(TYPINGS)/commodetto/*",
+			"$(TYPINGS)/commodetto/*"
 		],
 		"dns/*": [
-			"$(TYPINGS)/dns/*",
+			"$(TYPINGS)/dns/*"
 		],
 		"mc/*": [
-			"$(TYPINGS)/mc/*",
+			"$(TYPINGS)/mc/*"
 		],
 		"pins/*": [
-			"$(TYPINGS)/pins/*",
-		],
-	},
+			"$(TYPINGS)/pins/*"
+		]
+	}
 }

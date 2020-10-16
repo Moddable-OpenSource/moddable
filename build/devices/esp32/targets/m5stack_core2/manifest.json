@@ -46,7 +46,7 @@
 				"0x29, 0,",
 				"0x21, 0,",
 				"0xFF, 0"
-			],
+			]
 		},
 		"ft6206": {
 			"width": 320,
@@ -79,7 +79,7 @@
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
-			"$(MODULES)/drivers/mpu6886/*",
+			"$(MODULES)/drivers/mpu6886/*"
 		]
 	},
 	"preload": [
@@ -89,6 +89,6 @@
 		"pins/smbus"
 	],
 	"resources": {
-		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
-	},
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
+	}
 }
