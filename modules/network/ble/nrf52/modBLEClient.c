@@ -1555,6 +1555,12 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 		case PM_EVT_PEERS_DELETE_SUCCEEDED:
 			modMessagePostToMachine(gBLE->the, NULL, 0, pmPeersDeleteSucceededEvent, NULL);
 			break;
+		case PM_EVT_CONN_SEC_CONFIG_REQ: {
+			pm_conn_sec_config_t pm_conn_sec_config;
+			pm_conn_sec_config.allow_repairing = true;
+			pm_conn_sec_config_reply(p_evt->conn_handle, &pm_conn_sec_config);
+			break;
+		}
         default:
             break;
     }
