@@ -469,10 +469,12 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
-		for (var result of tool.clutFiles) {
-			this.write("\\\n\t$(RESOURCES_DIR)");
-			this.write(tool.slash);
-			this.write(result.target);
+		if (tool.format?.startsWith("clut")) {
+			for (var result of tool.clutFiles) {
+				this.write("\\\n\t$(RESOURCES_DIR)");
+				this.write(tool.slash);
+				this.write(result.target);
+			}
 		}
 		for (var result of tool.imageFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
@@ -522,6 +524,12 @@ export class MakeFile extends FILE {
 		}
 
 		if (tool.clutFiles) {
+			if (!tool.format?.startsWith("clut")) {
+				tool.clutFiles.length = 0;
+				for (var result of tool.bmpColorFiles)
+					delete result.clutName;
+			}
+
 			for (var result of tool.clutFiles) {
 				var source = result.source;
 				var target = result.target;
@@ -1135,12 +1143,8 @@ class ResourcesRule extends Rule {
 		}
 		if (tool.format) {
 			if (parts.extension == ".act") {
-				if (tool.format.startsWith("clut")) {
-					this.appendFile(tool.clutFiles, target + ".cct", source, include);
-					tool.clutFiles.current = target;
-				}
-				else
-					this.count++;
+				this.appendFile(tool.clutFiles, target + ".cct", source, include);
+				tool.clutFiles.current = target;
 				return;
 			}
 			if (parts.extension == ".fnt") {

@@ -120,6 +120,10 @@ class Screen extends config.Screen {
 		Timer.schedule(timer);
 		delete timer.interval;
 	}
+	animateColors(clut) {
+		this.clut = clut;
+		return true;		// need screen update
+	}
 }
 
 export default function (done) {

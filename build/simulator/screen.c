@@ -768,7 +768,7 @@ void screen_set_clut(xsMachine* the)
 	screen->clut = xsGetHostData(xsArg(0));		// cannot be array buffer
 	//@@ check length
 	screen_clear(the);
-	fxScreenSetPalette(screen, (uint16_t *)(32 + 4096 + (char *)screen->clut));
+	fxScreenSetPalette(screen, (uint16_t *)screen->clut);
 }
 
 void screen_set_pixelFormat(xsMachine* the)

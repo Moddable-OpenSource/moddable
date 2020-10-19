@@ -353,8 +353,13 @@ typedef struct FrameRecord {
 
 	const uint8_t	*data;
 
+#if kPocoPixelFormat != kCommodettoBitmapCLUT16
 	PocoPixel		prev0;
 	PocoPixel		prev1;
+#else
+	uint16_t		prev0;
+	uint16_t		prev1;
+#endif
 	uint16_t		clipLeft;
 	uint16_t		clipRight;
 	uint8_t			yOffset;

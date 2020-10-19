@@ -47,12 +47,13 @@ static uint16_t modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t bytes, 
 static uint16_t modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 static uint16_t modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 static uint16_t modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
+static uint16_t modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 
 static modSPIConfiguration gConfig;
 static uint8_t *gSPIData;
 static volatile int16_t gSPIDataCount = -1;
 static modSPIBufferLoader gSPIBufferLoader;
-static uint16_t *gCLUT16;		//@@ unused
+static uint16_t *gCLUT16;
 
 static spi_transaction_t gTransaction[2];
 static uint8_t gTransactionIndex = 0;
@@ -429,6 +430,32 @@ uint16_t IRAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, u
 	return bytes;		// input bytes consumed
 }
 
+uint16_t IRAM_ATTR modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+{
+	uint16_t *clut16_t = gCLUT16;
+	uint8_t *from = (uint8_t *)data;
+	uint32_t *to = gSPITransactionBuffer;
+	uint16_t i;
+
+	if (bytes > (SPI_BUFFER_SIZE >> 2))
+		bytes = SPI_BUFFER_SIZE >> 2;
+	*bitsOut = bytes << 5;		// output bits are quadruple input bits
+
+	for (i = 0; i < bytes; i++) {
+		uint16_t pixelA, pixelB;
+		uint8_t twoPixels = *from++;
+
+		pixelA = clut16_t[twoPixels >> 4];
+		pixelA = (pixelA >> 8) | (pixelA << 8);
+
+		pixelB = clut16_t[twoPixels & 0x0F];
+		pixelB = (pixelB >> 8) | (pixelB << 8);
+		*to++ = (pixelB << 16) | pixelA;
+	}
+
+	return bytes;		// input bytes consumed
+}
+
 // N.B. callers assume this funtion is synchronous
 void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 {
@@ -503,8 +530,7 @@ void modSPITxGray16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t co
 
 void modSPITxCLUT16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count, uint16_t *colors)
 {
-//	gCLUT16 = colors;
-//	modSPITxCommon(config, data, count, modSpiLoadBufferGray16To16BE);
-	modLog("need to implement CLUT16to16BE");
+	gCLUT16 = colors;
+	modSPITxCommon(config, data, count, modSpiLoadBufferCLUT16To16BE);
 }
 
