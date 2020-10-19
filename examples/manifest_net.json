@@ -84,7 +84,7 @@
 					"$(MODULES)/network/net/win/*",
 					"$(MODULES)/network/sntp/*"
 				]
-			},
+			}
 		},
 		"qca4020": {
 			"modules": {
