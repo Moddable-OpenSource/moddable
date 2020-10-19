@@ -1505,9 +1505,9 @@ export class Tool extends TOOL {
 		}
 		catch (e) {
 			var message = e.toString();
-			var result = /SyntaxError: [^:]+: ([0-9]+): (.+)/.exec(message);
-			if (result.length == 3) {
-				this.reportError(path, parseInt(result[1]), result[2]);
+			var result = /SyntaxError: ([^:]+: )?([0-9]+): (.+)/.exec(message);
+			if (result.length == 4) {
+				this.reportError(path, parseInt(result[2]), result[3]);
 			}
 			throw new Error("'" + path + "': invalid manifest!");;
 		}
