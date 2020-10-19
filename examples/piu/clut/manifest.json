@@ -6,6 +6,9 @@
 	"modules": {
 		"*": "./main"
 	},
+	"config": {
+		"format": "CLUT16"
+	},
 	"resources":{
 		"*": [
 			"./gray",
