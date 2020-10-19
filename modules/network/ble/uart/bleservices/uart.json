@@ -6,14 +6,14 @@
 				"uuid": "6E400002-B5A3-F393-E0A9-E50E24DCCA9E",
 				"maxBytes": 64,
 				"permissions": "read,write",
-				"properties": "write",
+				"properties": "write"
 			},
 			"tx": {
 				"uuid": "6E400003-B5A3-F393-E0A9-E50E24DCCA9E",
 				"maxBytes": 64,
 				"permissions": "read,write",
-				"properties": "read,write,notify",
-			},
+				"properties": "read,write,notify"
+			}
 		}
 	}
 }
