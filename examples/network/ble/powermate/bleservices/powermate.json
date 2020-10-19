@@ -4,8 +4,8 @@
 		"characteristics": {
 			"knob": {
 				"uuid": "9CF53570-DDD9-47F3-BA63-09ACEFC60415",
-				"type": "Uint8",
-			},
+				"type": "Uint8"
+			}
 		}
 	}
 }

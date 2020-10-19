@@ -4,8 +4,8 @@
 		"characteristics": {
 			"level": {
 				"uuid": "2A06",
-				"type": "Uint8Array",
-			},
+				"type": "Uint8Array"
+			}
 		}
 	}
 }

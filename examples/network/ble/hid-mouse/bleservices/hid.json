@@ -4,7 +4,7 @@
 		"characteristics": {
 			"report_map": {
 				"uuid": "2A4B",
-				"type": "Uint8Array",
+				"type": "Uint8Array"
 			},
 			"report": {
 				"uuid": "2A4D",
@@ -15,7 +15,7 @@
 						"type": "Uint8Array"
 					}
 				}
-			},
+			}
 		}
 	}
 }

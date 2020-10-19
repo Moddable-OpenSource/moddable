@@ -4,20 +4,20 @@
 		"characteristics": {
 			"data": {
 				"uuid": "F000AA41-0451-4000-B000-000000000000",
-				"type": "ArrayBuffer",
+				"type": "ArrayBuffer"
 			},
 			"configuration": {
 				"uuid": "F000AA42-0451-4000-B000-000000000000",
-				"type": "Uint8",
+				"type": "Uint8"
 			},
 			"calibration": {
 				"uuid": "F000AA43-0451-4000-B000-000000000000",
-				"type": "Uint16Array",
+				"type": "Uint16Array"
 			},
 			"period": {
 				"uuid": "F000AA44-0451-4000-B000-000000000000",
-				"type": "Uint8",
-			},
+				"type": "Uint8"
+			}
 		}
 	}
 }
