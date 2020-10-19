@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODULES)/drivers/ssd1306/manifest.json"
+		"$(MODULES)/drivers/ssd1306/manifest_i2c.json"
 	],
 	"modules": {
 		"*": "./main"

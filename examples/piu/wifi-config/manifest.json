@@ -81,6 +81,14 @@
 				"rotation": 180
 			}
 		},
+		"esp32/m5stack_fire": {
+			"creation":{
+				"static": 50000
+			},
+			"config": {
+				"rotation": 180
+			}
+		},
         "...": {
             "error": "unsupported platform"
         }
