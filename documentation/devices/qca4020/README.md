@@ -1,8 +1,11 @@
-# QCA4020
+# Using the Moddable SDK with QCA4020
 
-## About This Document
+Copyright 2016-2020 Moddable Tech, Inc.<BR>
+Revised: December 1, 2020
 
 This document describes how to set up and build Moddable applications for the Qualcomm QCA4020 series processors.
+
+<img src="https://blog.moddable.com/blog/wp-content/uploads/2019/04/qca4020-image.png" width=300>
 
 ## Table of Contents
 

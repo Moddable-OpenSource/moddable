@@ -1,6 +1,7 @@
-# Gecko
+# Using the Moddable SDK with Gecko
 
-## About This Document
+Copyright 2016-2020 Moddable Tech, Inc.<BR>
+Revised: December 1, 2020
 
 This document describes how to set up and build Moddable applications for the Silicon Labs Gecko boards and processors.
 
@@ -47,13 +48,12 @@ Moddable on Gecko runs on the bare metal. It is very efficient and gives a great
 
 Four models of Gecko are supported in the Moddable SDK today.
 
-The Giant Gecko is based off of the EFM32 family of devices. Its platform identifier is **gecko/giant**. We've worked with the EFM32GG STK3700 - [Giant Gecko Starter Kit](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit).
-
-The Mighty Gecko is a family of devices based off of the EFR32 that include radio hardware. Its platform identifier is **gecko/mighty**. We've worked with the [EFR32 Mighty Gecko Starter Kit](https://www.silabs.com/products/development-tools/wireless/mesh-networking/mighty-gecko-starter-kit).
-
-The Thunderboard Sense 2 is also a Mighty Gecko based radio device that includes a number of sensors included on the board. Its platform identifier is **gecko/thunderboard2**. [Thunderboard™ Sense 2 IoT Development Kit](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit)
-
-The Blue Gecko is a Bluetooth focused board based off the EFR32 family of devices. Its platform identifier is **gecko/blue**. We've worked with the [EFR32 Blue Gecko Bluetooth Starter Kit](https://www.silabs.com/products/development-tools/wireless/bluetooth/blue-gecko-bluetooth-low-energy-soc-starter-kit).
+| Device | Platform identifier | Key features |
+| :---: |  :--- | :--- |
+| <img src="https://www.silabs.com/content/dam/siliconlabs/images/products/microcontrollers/32-bit_mcus/giant_gecko/giant-gecko-starter-kit.jpg" width=125><BR>Giant Gecko | `gecko/giant` | **EFM32GG**<BR>48 MHz processor<BR>128 KB RAM<BR>1 MB flash<BR>External pins<BR><BR>We've worked with the EFM32GG STK3700 - [Giant Gecko Starter Kit](https://www.silabs.com/products/development-tools/mcu/32-bit/efm32-giant-gecko-starter-kit) |
+| <img src="https://blog.moddable.com/blog/wp-content/uploads/2018/05/gecko-1-300x179.jpg" width=125><BR>Mighty Gecko | `gecko/mighty` | **EFR32MG**<BR>Radio<BR>External pins<BR><BR>We've worked with the [EFR32 Mighty Gecko Starter Kit](https://www.silabs.com/products/development-tools/wireless/mesh-networking/mighty-gecko-starter-kit).
+| <img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/thunderboard/thunderbord-sense-down-2.jpg?" width=125><BR>Thunderboard Sense 2 | `gecko/thunderboard2` |  **EFR32MG**<BR>Radio<BR><BR>Humidity and Temperature Sensor<BR>UV and Ambient Light Sensor<BR>Pressure Sensor<BR>Indoor Air Quality and Gas Sensor<BR>6-axis Inertial Sensor<BR>Digital Microphone<BR>High brightness LEDs<BR>Hall-effect Sensor<BR><BR>We've worked with the [Thunderboard™ Sense 2 IoT Development Kit](https://www.silabs.com/products/development-tools/thunderboard/thunderboard-sense-two-kit). |
+| <img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/bluetooth_low_energy/bluegiga_bluetooth_low_energy_modules/blue-gecko-soc-kit.jpg?" width=125><BR>Blue Gecko | `gecko/blue` | **EFR32BG**<BR>BLE<BR>Radio<BR>External pins<BR><BR>We've worked with the [EFR32 Blue Gecko Bluetooth Starter Kit](https://www.silabs.com/products/development-tools/wireless/bluetooth/blue-gecko-bluetooth-low-energy-soc-starter-kit). |
 
 ### Development workflow
 

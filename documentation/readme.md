@@ -1,17 +1,15 @@
 ## Moddable SDK - Documentation
 
-Copyright 2019 Moddable Tech, Inc.<BR>
-Revised: June 20, 2019
+Copyright 2019-2020 Moddable Tech, Inc.<BR>
+Revised: October 21, 2020
 
 This folder contains documentation for the Moddable SDK.
 
-### Getting Started Guides
+### Getting Started
 
-The [Getting Started Guide](./Moddable%20SDK%20-%20Getting%20Started.md) provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also includes instructions for building and running example applications on the ESP8266 and ESP32 microcontrollers.
+The [Getting Started Guide](./Moddable%20SDK%20-%20Getting%20Started.md) provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also provides instructions for keeping the Moddable SDK tools and build environment up to date over time.
 
-Guides for specific devices supported by the Moddable SDK, including Moddable One and Moddable Two, are available in the [devices](./devices) directory.
-
-The [Keeping Up To Date](Moddable%20SDK%20-%20Keeping%20Up%20To%20Date.md) guide provides instructions for keeping the Moddable SDK tools and build environment up to date over time.
+Developer guides for specific devices supported by the Moddable SDK, including Moddable One and Moddable Two, are available in the [devices](./devices) directory.
 
 ### APIs for Moddable SDK Modules
 
