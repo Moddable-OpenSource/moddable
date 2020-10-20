@@ -871,7 +871,7 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	while (true) {
 		modMessageRecord msg;
 
-		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
+		if (!xQueueReceive(the->msgQueue, &msg, ((uint64_t)maxDelayMS << 10) / 1000)) {
 			modWatchDogReset();
 			return;
 		}

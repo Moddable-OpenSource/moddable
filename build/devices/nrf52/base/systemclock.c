@@ -31,6 +31,6 @@ void nrf52_delay(uint32_t delayMS) {
 }
 
 uint32_t nrf52_milliseconds() {
-	return xTaskGetTickCount();
+	return ((uint64_t)xTaskGetTickCount() * (uint64_t)1000) >> 10;
 }
 
