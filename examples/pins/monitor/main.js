@@ -14,7 +14,7 @@
 
 import Timer from "timer";
 import Digital from "pins/digital";
-import Monitor from "monitor";
+import Monitor from "pins/digital/monitor";
 import config from "mc/config";
 
 let led1 = null;
@@ -36,9 +36,9 @@ let monitor2 = null;
 
 if (undefined != config.button1_pin) {
 	if (config.button1_port)
-		monitor1 = new Monitor({pin: config.button1_pin, port: config.button1_port, mode: Digital.InputPullUp, edge: Monitor.Falling});
+		monitor1 = new Monitor({pin: config.button1_pin, port: config.button1_port, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 	else
-		monitor1 = new Monitor({pin: config.button1_pin, mode: Digital.InputPullUp, edge: Monitor.Falling});
+		monitor1 = new Monitor({pin: config.button1_pin, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
 	monitor1.onChanged = function() {
 		trace(`Button 1: state: ${this.read()}, changed ${this.rises + this.falls} times\n`);
 	}

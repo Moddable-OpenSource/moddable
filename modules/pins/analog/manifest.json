@@ -17,7 +17,7 @@
 		"nrf52": {
 			"modules": {
 				"*": "$(MODULES)/pins/analog/nrf52/*"
-			},
+			}
 		},
 		"gecko": {
 			"modules": {

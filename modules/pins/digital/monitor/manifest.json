@@ -5,6 +5,11 @@
 	},
 	"preload": "pins/digital/monitor",
 	"platforms": {
+		"nrf52": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/nrf52/*"
+			}
+		},
 		"esp": {
 			"modules": {
 				"*": "$(MODULES)/pins/digital/monitor/esp/*"
@@ -25,13 +30,8 @@
 				"*": "$(MODULES)/pins/digital/monitor/qca4020/*"
 			}
 		},
-		"nrf52": {
-			"modules": {
-				"*": "$(MODULES)/pins/digital/monitor/nrf52/*",
-			},
-		},
 		"...": {
-			"error": "pins/digital module unsupported"
+			"error": "pins/digital/monitor module unsupported"
 		}
 	}
 }

@@ -31,19 +31,14 @@
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
-<<<<<<< HEAD
-			},
+			}
 		},
 		"nrf52": {
 			"modules": {
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
-			},
-		},
-=======
 			}
 		}
->>>>>>> origin/master
 	}
 }

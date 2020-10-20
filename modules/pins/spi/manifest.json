@@ -22,8 +22,8 @@
 		},
 		"nrf52": {
 			"modules": {
-				"*": "$(MODULES)/pins/spi/nrf52/*",
-			},
+				"*": "$(MODULES)/pins/spi/nrf52/*"
+			}
 		},
 		"...": {
 			"error": "pins/spi module unsupported"

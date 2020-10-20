@@ -26,8 +26,8 @@
 		},
 		"nrf52": {
 			"modules": {
-				"*": "$(MODULES)/pins/digital/nrf52/*",
-			},
+				"*": "$(MODULES)/pins/digital/nrf52/*"
+			}
 		},
 		"...": {
 			"error": "pins/digital module unsupported"
