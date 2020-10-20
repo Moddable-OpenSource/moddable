@@ -23,6 +23,7 @@ class Digital @ "xs_digital_destructor" {
 	static write(pin, value) @ "xs_digital_static_write";
 
 	constructor(port, pin, mode) @ "xs_digital";// or (pin, mode) where port is implicitly NULL
+	close() @ "xs_digital_close";
 	mode(mode) @ "xs_digital_mode";				// change pin mode
 	read() @ "xs_digital_read";					// read pin
 	write(value) @ "xs_digital_write";			// write pin
