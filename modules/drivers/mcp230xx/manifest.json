@@ -5,10 +5,10 @@
 	],
 	"modules": {
 		"MCP230XX": "$(MODULES)/drivers/mcp230xx/mcp230xx",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"MCP230XX",
-		"pins/smbus",
-	],
+		"pins/smbus"
+	]
 }

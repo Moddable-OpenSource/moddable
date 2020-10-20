@@ -1,27 +1,24 @@
 {
-    "build": {
-        "xMAKE_FRAGMENT": "$(MODDABLE)/tools/mcconfig/make.nrf52.ses.mk"
-    },
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"config": {
-		"touchCount": 0,
+		"touchCount": 0
 	},
 	"resources":{
 		"*": [
 			"./main",
-			"./balls",
+			"./balls"
 		]
 	},
 	"defines": {
 		"ls013b4dn04": {
 			"dither": 1,
-			"updateAll": 1,
-		},
+			"updateAll": 1
+		}
 	}
 }

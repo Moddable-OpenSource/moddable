@@ -42,7 +42,7 @@ let BarsPort = Port.template($ => ({
 			return x;
 		}
 		onCreate(port, $) {
-			this.string = teamStrings[$],
+			this.string = teamStrings[$];
 		}
 		onDraw(port, x, y, w, h) {
 			let string = this.string;

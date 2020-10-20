@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
 		"*": [
@@ -11,7 +11,7 @@
 			"$(MODULES)/data/base64/*",
 			"$(MODULES)/data/logical/*",
 			"$(MODULES)/crypt/digest/*",
-			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/crypt/digest/kcl/*"
 		]
 	},
 	"preload": [
@@ -22,8 +22,8 @@
 	],
 	"resources":{
 		"*-alpha": [
-			"./OpenSans-Semibold-28",
-		],
+			"./OpenSans-Semibold-28"
+		]
 	},
 	"platforms": {
 		"esp": {
@@ -36,5 +36,5 @@
 				"rotation": 90
 			}
 		}
-	},
+	}
 }

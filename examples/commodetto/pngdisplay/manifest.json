@@ -9,21 +9,21 @@
 		"*": [
 			"./main",
 			"$(MODULES)/network/http/*",
-			"$(COMMODETTO)/miniz",
+			"$(COMMODETTO)/miniz"
 		],
 		"commodetto/PNG": "$(COMMODETTO)/commodettoReadPNG",
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
 		"commodetto/Convert": "$(COMMODETTO)/commodettoConvert",
-		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut"
 	},
 	"preload": [
 		"http",
 		"commodetto/*",
-		"main",
+		"main"
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "",
-	},
+		"touch": ""
+	}
 }
 

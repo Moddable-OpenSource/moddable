@@ -12,7 +12,7 @@
 		],
 		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
-		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut"
 	},
 	"resources": {
 		"*-mask": [
@@ -22,17 +22,17 @@
 			"./previous",
 			"./next",
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-18"
 		],
 		"*": [
-			"$(MODULES)/crypt/data/ca107",
+			"$(MODULES)/crypt/data/ca107"
 		]
 	},
 	"creation": {
-		"static":53000,
+		"static":53000
 	},
 	"config": {
-		"sntp": "pool.ntp.org",
+		"sntp": "pool.ntp.org"
 	},
 	"platforms": {
 		"gecko/blue": {

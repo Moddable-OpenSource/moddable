@@ -1,18 +1,18 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"./lorem",
+			"./lorem"
 		]
 	},
 	"resources":{
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
-			"./wifi-strip",
-		],
-	},
+			"./wifi-strip"
+		]
+	}
 }

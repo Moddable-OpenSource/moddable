@@ -49,20 +49,19 @@ void xs_net_resolve(xsMachine *the)
 {
 	xsNetResolve nr;
 	char *name = xsToString(xsArg(0));
-	int nameLen = espStrLen(name);
+	int nameLen = c_strlen(name);
 
-	nr = malloc(sizeof(xsNetResolveRecord) + nameLen);
+	nr = c_malloc(sizeof(xsNetResolveRecord) + nameLen);
 	if (!nr)
 		xsUnknownError("out of memory");
 
+	c_memcpy(nr->name, name, nameLen + 1);
 	nr->next = NULL;
 	nr->the = the;
 	nr->callback = xsArg(1);
 	xsRemember(nr->callback);
 	nr->started = 0;
 	nr->resolved = 0;
-
-	xsToStringBuffer(xsArg(0), nr->name, nameLen + 1);
 
 	modCriticalSectionBegin();
 
@@ -124,22 +123,9 @@ void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsBeginHost(nr->the);
 
 	if (nr->resolved) {
-		char ip[20], *out;
+		char ip[40];
 
-		out = ip;
-
-#if LWIP_IPV4 && LWIP_IPV6
-		itoa(ip4_addr1(&nr->ipaddr.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr2(&nr->ipaddr.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr3(&nr->ipaddr.u_addr.ip4), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr4(&nr->ipaddr.u_addr.ip4), out, 10); out += strlen(out); *out = 0;
-#else
-		itoa(ip4_addr1(&nr->ipaddr), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr2(&nr->ipaddr), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr3(&nr->ipaddr), out, 10); out += strlen(out); *out++ = '.';
-		itoa(ip4_addr4(&nr->ipaddr), out, 10); out += strlen(out); *out = 0;
-#endif
-
+		ipaddr_ntoa_r(&nr->ipaddr, ip, sizeof(ip));
 		xsCallFunction2(nr->callback, xsGlobal, xsString(nr->name), xsString(ip));
 	}
 	else
@@ -152,7 +138,7 @@ void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messa
 	modCriticalSectionEnd();
 
 	xsForget(nr->callback);
-	free(nr);
+	c_free(nr);
 
 	resolveNext();
 }

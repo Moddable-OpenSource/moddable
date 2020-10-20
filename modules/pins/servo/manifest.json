@@ -1,6 +1,6 @@
 {
 	"build": {
-		"ARDUINO_ESP8266": "$(HOME)/esp/esp8266-2.3.0/",
+		"ARDUINO_ESP8266": "$(USERHOME)/esp/esp8266-2.3.0/"
 	},
 	"platforms":{
 		"esp": {
@@ -9,26 +9,26 @@
 				"*": [
 					"$(MODULES)/pins/servo/esp/*",
 					"$(ARDUINO_ESP8266)/libraries/Servo/src/esp8266/*",
-					"$(ARDUINO_ESP8266)/libraries/Servo/src/*",
+					"$(ARDUINO_ESP8266)/libraries/Servo/src/*"
 				]
 			},
 			"preload": [
 				"pins/servo"
-			],
+			]
 		},
 		"esp32": {
 			"modules": {
 				"pins/servo": "$(MODULES)/pins/servo/servo",
-				"*": "$(MODULES)/pins/servo/esp32/*",
+				"*": "$(MODULES)/pins/servo/esp32/*"
 			},
 			"preload": [
 				"pins/servo"
-			],
+			]
 		},
 		"mac": {
 			"modules": {
 				"pins/servo": "$(MODULES)/pins/servo/servo",
-				"*": "$(MODULES)/pins/servo/sim/*",
+				"*": "$(MODULES)/pins/servo/sim/*"
 			}
 		}
 	}

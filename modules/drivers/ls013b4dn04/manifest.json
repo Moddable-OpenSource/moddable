@@ -62,7 +62,7 @@
 			"modules": {
 				"*": "$(MODULES)/drivers/ls013b4dn04/*",
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
-			},
-		},
+			}
+		}
 	}
 }

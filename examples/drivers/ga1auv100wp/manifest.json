@@ -1,17 +1,17 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/drivers/ga1auv100wp/*",
+			"$(MODULES)/drivers/ga1auv100wp/*"
 		],
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"ga1auv100wp",
-		"pins/smbus",
-	],
+		"pins/smbus"
+	]
 }

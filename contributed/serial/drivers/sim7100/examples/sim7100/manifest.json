@@ -6,7 +6,7 @@
 	"modules": {
 		"*": [
 			"./main"
-		],
+		]
 	},
 	"platforms": {
 		"esp32": {

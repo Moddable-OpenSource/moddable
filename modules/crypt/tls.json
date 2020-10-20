@@ -10,8 +10,8 @@
 			"$(MODULES)/crypt/securesocket/*",
 			"$(MODULES)/data/base64/*",
 			"$(MODULES)/data/hex/*",
-			"$(MODULES)/files/resource/*",
-		], 
+			"$(MODULES)/files/resource/*"
+		]
 	},
 	"preload": [
 		"rng",
@@ -21,17 +21,17 @@
 		"crypt",
 		"base64",
 		"hex",
-		"Resource",
+		"Resource"
 	],
 	"config": {
 		"tls": {
 			"DHE_RSA": true,
-			"ECDHE_RSA": true,
+			"ECDHE_RSA": true
 		}
 	},
 	"resources":{
 		"*": [
-			"$(MODULES)/crypt/data/ca",
+			"$(MODULES)/crypt/data/ca"
 		]
 	}
 }

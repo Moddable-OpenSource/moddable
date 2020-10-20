@@ -4,7 +4,7 @@
 		"$(MODULES)/drivers/led/manifest.json"
 	],
 	"modules": {
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
 	},
-	"preload": "setup/target",
+	"preload": "setup/target"
 }

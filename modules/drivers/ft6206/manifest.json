@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/pins/i2c//manifest.json",
+		"$(MODDABLE)/modules/pins/i2c//manifest.json"
 	],
 	"defines": {
 		"ft6206": {
@@ -15,5 +15,5 @@
 	"modules": {
 		"*": "$(MODULES)/drivers/ft6206/*"
 	},
-	"preload": "ft6206",
+	"preload": "ft6206"
 }

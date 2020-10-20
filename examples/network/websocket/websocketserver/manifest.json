@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_net.json"
 	],
 	"modules": {
 		"*": [
@@ -10,7 +10,7 @@
 			"$(MODULES)/data/base64/*",
 			"$(MODULES)/data/logical/*",
 			"$(MODULES)/crypt/digest/*",
-			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/crypt/digest/kcl/*"
 		]
 	},
 	"preload": [

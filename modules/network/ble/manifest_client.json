@@ -12,7 +12,7 @@
 			"$(BLEMODULEPATH)/modBLEClient",
 			"$(BLEMODULEPATH)/modBLESM",
 			"$(BLEMODULEPATH)/modBLEGAP"
-		],
+		]
 	},
 	"preload": [
 		"bleclient",
@@ -35,14 +35,14 @@
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
-			},
+			}
 		},
 		"nrf52": {
 			"modules": {
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
-			},
-		},
+			}
+		}
 	}
 }

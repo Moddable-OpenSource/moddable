@@ -234,6 +234,8 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 				*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_1;
 			else if (XS_CODE_STRING_2 == code)
 				*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_2;
+			else if (XS_CODE_STRING_4 == code)
+				*((txU1*)p) = code = XS_CODE_STRING_ARCHIVE_4;
 		}
 		gxCodeUsages[code]++;	
 		offset = (txS1)sizes[code];
@@ -261,6 +263,11 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 		else if (-2 == offset) {
 			p++;
 			mxDecode2(p, index);
+			p += index;
+		}
+		else if (-4 == offset) {
+			p++;
+			mxDecode4(p, index);
 			p += index;
 		}
 	}

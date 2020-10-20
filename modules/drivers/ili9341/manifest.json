@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/spi/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json"
 	],
 	"defines": {
 		"ili9341": {
@@ -9,15 +9,15 @@
 			"height": 320,
 			"hz": 40000000,
 			"flipX": false,
-			"flipY": false,
+			"flipY": false
 		}
 	},
 	"modules": {
 		"*": "$(MODULES)/drivers/ili9341/*",
-		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
 	},
 	"preload": [
 		"ili9341",
-		"commodetto/Bitmap",
-	],
+		"commodetto/Bitmap"
+	]
 }

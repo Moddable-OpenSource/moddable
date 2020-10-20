@@ -403,9 +403,9 @@ export default class extends Tool {
 		this.strip = null;
 
 		if (this.rotation === undefined)
-			this.rotation = 0;
+			this.rotation = this.config.rotation ?? 0;
 		if (this.format === "UNDEFINED")
-			this.format = "rgb565le";
+			this.format = (this.config.format ?? "rgb565le").toLowerCase();
 
 		var name = this.environment.NAME
 		this.binPath = this.createDirectories(this.outputPath, "bin", name);

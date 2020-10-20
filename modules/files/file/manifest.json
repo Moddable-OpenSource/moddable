@@ -1,6 +1,6 @@
 {
 	"modules": {
-		"*": "$(MODULES)/files/file/*",
+		"*": "$(MODULES)/files/file/*"
 	},
 	"preload": "file",
 	"platforms": {

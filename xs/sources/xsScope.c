@@ -1010,14 +1010,14 @@ void fxForNodeBind(void* it, void* param)
 void fxForInForOfNodeBind(void* it, void* param) 
 {
 	txForInForOfNode* self = it;
-	fxBinderPushVariables(param, 6);
+	fxBinderPushVariables(param, 5);
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
 	fxNodeDispatchBind(self->reference, param);
 	fxNodeDispatchBind(self->expression, param);
 	fxNodeDispatchBind(self->statement, param);
 	fxScopeBound(self->scope, param);
-	fxBinderPopVariables(param, 6);
+	fxBinderPopVariables(param, 5);
 }
 
 void fxFunctionNodeBind(void* it, void* param) 

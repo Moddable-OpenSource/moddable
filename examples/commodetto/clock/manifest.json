@@ -2,15 +2,15 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_net.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources": {
-		"*-alpha": "./digits",
+		"*-alpha": "./digits"
 	},
 	"config": {
-		"sntp": "pool.ntp.org",
-	},
+		"sntp": "pool.ntp.org"
+	}
 }

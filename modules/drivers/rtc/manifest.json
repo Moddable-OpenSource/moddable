@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
@@ -8,7 +8,7 @@
 			"$(MODULES)/drivers/rtc/rtc",
 			"$(MODULES)/drivers/rtc/ds1307",
 			"$(MODULES)/drivers/rtc/ds3231",
-			"$(MODULES)/drivers/rtc/rv3028",
+			"$(MODULES)/drivers/rtc/rv3028"
 		]
 	},
 	"preload": [
@@ -16,6 +16,6 @@
 		"ds3231",
 		"rv3028",
 		"rtc",
-		"smbus",
-	],
+		"smbus"
+	]
 }

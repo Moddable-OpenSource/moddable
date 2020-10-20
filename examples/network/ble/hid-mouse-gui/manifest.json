@@ -2,23 +2,23 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/network/ble/hid-client/manifest.json",
+		"$(MODDABLE)/modules/network/ble/hid-client/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
 			"./mouse",
 			"$(MODDABLE)/modules/network/ble/hid-client/hidclient",
-			"$(MODDABLE)/examples/network/ble/hid-mouse/hidmouse",
+			"$(MODDABLE)/examples/network/ble/hid-mouse/hidmouse"
 		]
 	},
 	"resources":{
 		"*-color": [
 			"./main",
-			"./desktop",
+			"./desktop"
 		],
 		"*-alpha": [
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28"
 		],
 		"*": [
 			"./button",
@@ -27,8 +27,8 @@
 	},
 	"ble":{
 		"*": [
-			"./bleservices/*",
-		],
+			"./bleservices/*"
+		]
 	},
 	"creation": {
 		"static": 37500

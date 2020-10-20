@@ -1,17 +1,17 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources":{
 		"*": [
 			"./ne",
 			"./nw",
 			"./se",
-			"./sw",
+			"./sw"
 		]
-	},
+	}
 }

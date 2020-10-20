@@ -1,10 +1,10 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/pins/analog/manifest.json",
+		"$(MODDABLE)/modules/pins/analog/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"platforms": {
 		"gecko/mighty": {
@@ -13,9 +13,9 @@
 					"interface": { "ADC": 0 },
 					"ref": "adcRefVDD",
 					"input1": "adcPosSelAPORT4YCH0",
-					"input2": "adcPosSelAPORT3YCH1",
-				},
-			},
-		},
-	},
+					"input2": "adcPosSelAPORT3YCH1"
+				}
+			}
+		}
+	}
 }

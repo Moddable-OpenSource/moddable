@@ -8,10 +8,10 @@
 	"config": {
 		"ssid": "Moddable",
 		"password": "12345678",
-		"sntp": false,
+		"sntp": false
 	},
 	"creation":{
-		"stack":350,
+		"stack":350
 	},
 	"modules": {
 		"*": [
@@ -20,7 +20,7 @@
 			"$(MODULES)/data/base64/*",
 			"$(MODULES)/data/logical/*",
 			"$(MODULES)/crypt/digest/*",
-			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/crypt/digest/kcl/*"
 		]
 	},
 	"preload": [
@@ -32,7 +32,7 @@
 	"resources":{
 		"*-alpha": [
 			"./fonts/OpenSans-Regular-20",
-			"./fonts/OpenSans-Semibold-18",
+			"./fonts/OpenSans-Semibold-18"
 		]
 	},
 	"platforms": {
@@ -46,5 +46,5 @@
 				"rotation": 90
 			}
 		}
-	},
+	}
 }

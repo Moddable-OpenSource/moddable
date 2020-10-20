@@ -1,17 +1,17 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
 		"*": [
-			"./main",
+			"./main"
 		]
 	},
 	"defines": {
 		"ls013b4dn04": {
 			"dither": 1,
-			"updateAll": 1,
-		},
+			"updateAll": 1
+		}
 	}
 }

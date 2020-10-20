@@ -13,16 +13,16 @@
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
 		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
-		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit"
 	},
 	"preload": [
 		"commodetto/*",
-		"preference",
+		"preference"
 	],
 	"resources":{
 		"*-mask": [
 			"./assets/crosshair",
-			"./assets/success",
+			"./assets/success"
 		]
 	},
 	"defines": {

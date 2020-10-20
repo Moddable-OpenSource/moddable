@@ -469,10 +469,12 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
-		for (var result of tool.clutFiles) {
-			this.write("\\\n\t$(RESOURCES_DIR)");
-			this.write(tool.slash);
-			this.write(result.target);
+		if (tool.format?.startsWith("clut")) {
+			for (var result of tool.clutFiles) {
+				this.write("\\\n\t$(RESOURCES_DIR)");
+				this.write(tool.slash);
+				this.write(result.target);
+			}
 		}
 		for (var result of tool.imageFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
@@ -522,6 +524,12 @@ export class MakeFile extends FILE {
 		}
 
 		if (tool.clutFiles) {
+			if (!tool.format?.startsWith("clut")) {
+				tool.clutFiles.length = 0;
+				for (var result of tool.bmpColorFiles)
+					delete result.clutName;
+			}
+
 			for (var result of tool.clutFiles) {
 				var source = result.source;
 				var target = result.target;
@@ -1135,12 +1143,8 @@ class ResourcesRule extends Rule {
 		}
 		if (tool.format) {
 			if (parts.extension == ".act") {
-				if (tool.format.startsWith("clut")) {
-					this.appendFile(tool.clutFiles, target + ".cct", source, include);
-					tool.clutFiles.current = target;
-				}
-				else
-					this.count++;
+				this.appendFile(tool.clutFiles, target + ".cct", source, include);
+				tool.clutFiles.current = target;
 				return;
 			}
 			if (parts.extension == ".fnt") {
@@ -1339,6 +1343,14 @@ export class Tool extends TOOL {
 			path += this.platform;
 		this.environment.BLEMODULEPATH = path;
 
+		let userHome;
+		if ("win" == this.currentPlatform){
+			userHome = this.getenv("USERPROFILE");
+		}else if ("mac" == this.currentPlatform || "lin" == this.currentPlatform){
+			userHome = this.getenv("HOME");
+		}
+		if (userHome !== undefined) this.environment.USERHOME = userHome; 
+
 		if (this.manifestPath) {
 			var parts = this.splitPath(this.manifestPath);
 			this.currentDirectory = this.mainPath = parts.directory;
@@ -1493,9 +1505,9 @@ export class Tool extends TOOL {
 		}
 		catch (e) {
 			var message = e.toString();
-			var result = /SyntaxError: [^:]+: ([0-9]+): (.+)/.exec(message);
-			if (result.length == 3) {
-				this.reportError(path, parseInt(result[1]), result[2]);
+			var result = /SyntaxError: ([^:]+: )?([0-9]+): (.+)/.exec(message);
+			if (result.length == 4) {
+				this.reportError(path, parseInt(result[2]), result[3]);
 			}
 			throw new Error("'" + path + "': invalid manifest!");;
 		}

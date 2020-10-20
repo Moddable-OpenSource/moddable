@@ -54,13 +54,13 @@
 				"0x11, 0,",
 				"0xFF, 120,",
 				"0x29, 0,",
-				"0xFF, 0,",
-			],
+				"0xFF, 0,"
+			]
 		},
 		"neopixel": {
 			"length": 10,
 			"order": "#GRB",
-			"pin": 15,
+			"pin": 15
 		},
 		"audioIn": {
 			"sampleRate": 11025,
@@ -77,7 +77,7 @@
 			"i2s": {
 				"DAC": 1,
 				"DAC_CHANNEL": 1,
-				"bitsPerSample": 16,
+				"bitsPerSample": 16
 			}
 		}
 	},
@@ -93,7 +93,7 @@
 			"./m5button"
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"neopixel",
@@ -105,7 +105,7 @@
 		"m5button"
 	],
 	"resources": {
-		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
-	},
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
+	}
 }
 

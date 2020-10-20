@@ -8,7 +8,7 @@
 			"$(MODULES)/crypt/arith/*",
 			"$(MODULES)/crypt/etc/*",
 			"$(MODULES)/crypt/bin/*",
-			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/base64/*"
 		]
-	},
+	}
 }

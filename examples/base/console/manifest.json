@@ -5,20 +5,20 @@
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODDABLE)/modules/pins/i2c/manifest.json",
-		"$(MODDABLE)/modules/files/file/manifest.json",
+		"$(MODDABLE)/modules/files/file/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/base/console/*",
+			"$(MODULES)/base/console/*"
 		],
 		"cli": "$(MODULES)/base/cli/cli",
-		"cli/network": "$(MODULES)/base/cli/commands/network",
+		"cli/network": "$(MODULES)/base/cli/commands/network"
 	},
 	"preload": [
 		"console",
 		"cli",
-		"cli/*",
+		"cli/*"
 	],
 	"platforms":{
 		"esp": {
@@ -35,29 +35,29 @@
 				"*": [
 					"$(MODULES)/files/flash/*",
 					"$(MODULES)/files/flash/esp/*",
-					"$(MODULES)/drivers/lis3dh/*",
-				],
+					"$(MODULES)/drivers/lis3dh/*"
+				]
 			},
 			"preload": [
 				"pins/*",
 				"file",
 				"flash",
-				"lis3dh",
-			],
+				"lis3dh"
+			]
 		},
 		"esp32": {
 			"modules": {
 				"cli/archive": "$(MODULES)/base/cli/commands/archive",
 				"*": [
 					"$(MODULES)/files/flash/*",
-					"$(MODULES)/files/flash/esp32/*",
-				],
+					"$(MODULES)/files/flash/esp32/*"
+				]
 			},
 			"preload": [
 				"pins/*",
 				"file",
-				"flash",
-			],
-		},
+				"flash"
+			]
+		}
 	}
 }

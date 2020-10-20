@@ -1,20 +1,20 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
 	],
 	"modules": {
 		"~": "$(COMMODETTO)/cfeBMF",
 		"commodetto/parseNFNT": "$(COMMODETTO)/commodettoParseNFNT",
 		"*": [
 			"./main",
-			"$(COMMODETTO)/cfeNFNT",
+			"$(COMMODETTO)/cfeNFNT"
 		]
 	},
 	"resources": {
 		"*": [
 			"./assets/chicago12",
-			"./assets/sanfrancisco",
+			"./assets/sanfrancisco"
 		]
-	},
+	}
 }

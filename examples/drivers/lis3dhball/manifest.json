@@ -3,24 +3,24 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/pins/i2c//manifest.json",
+		"$(MODDABLE)/modules/pins/i2c//manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/drivers/lis3dh/*",
+			"$(MODULES)/drivers/lis3dh/*"
 		],
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"config": {
-		"orientation": "180",
+		"orientation": "180"
 	},
 	"preload": [
 		"lis3dh",
-		"pins/*",
+		"pins/*"
 	],
 	"resources": {
 		"*": "./ball",
-		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
-	},
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
+	}
 }

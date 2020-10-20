@@ -176,6 +176,12 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 	for (;;) {
 		if (theParser->token == XS_JSON_TOKEN_RIGHT_BRACKET)
 			break;
+		if (aLength) {
+			if (theParser->token == XS_JSON_TOKEN_COMMA)
+				fxParseJSONToken(the, theParser);
+			else
+				mxSyntaxError("%ld: missing ,", theParser->line);	
+		}	
 		fxParseJSONValue(the, theParser);
 		aLength++;
 		anItem->next = fxNewSlot(the);
@@ -183,14 +189,9 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 		anItem->kind = the->stack->kind;
 		anItem->value = the->stack->value;
 		the->stack++;
-		if (theParser->token != XS_JSON_TOKEN_COMMA)
-			break;
-		fxParseJSONToken(the, theParser);
 	}
 	anArray->next->value.array.length = aLength;
 	fxCacheArray(the, anArray);
-	if (theParser->token != XS_JSON_TOKEN_RIGHT_BRACKET)
-		mxSyntaxError("%ld: missing ]", theParser->line);
 	fxParseJSONToken(the, theParser);
 }
 
@@ -454,6 +455,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 {
 	txSlot* anObject;
+	txBoolean comma = 0;
 	txSlot* at;
 	txIndex index;
 	txID id;
@@ -465,10 +467,14 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 	for (;;) {
 		if (theParser->token == XS_JSON_TOKEN_RIGHT_BRACE)
 			break;
-		if (theParser->token != XS_JSON_TOKEN_STRING) {
+		if (comma) {
+			if (theParser->token == XS_JSON_TOKEN_COMMA)
+				fxParseJSONToken(the, theParser);
+			else
+				mxSyntaxError("%ld: missing ,", theParser->line);	
+		}	
+		if (theParser->token != XS_JSON_TOKEN_STRING)
 			mxSyntaxError("%ld: missing name", theParser->line);
-			break;
-		}
 		mxPushString(theParser->string->value.string);
 		at = the->stack;
 		index = XS_NO_ID;
@@ -503,10 +509,8 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 			at->kind = XS_AT_KIND;
 		}
 		fxParseJSONToken(the, theParser);
-		if (theParser->token != XS_JSON_TOKEN_COLON) {
+		if (theParser->token != XS_JSON_TOKEN_COLON)
 			mxSyntaxError("%ld: missing :", theParser->line);
-			break;
-		}
 		fxParseJSONToken(the, theParser);
 		fxParseJSONValue(the, theParser);
 		if ((at->kind == XS_AT_KIND) && (the->stack->kind != XS_UNDEFINED_KIND)) {
@@ -516,12 +520,8 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 		}
 		the->stack++;
 		the->stack++;
-		if (theParser->token != XS_JSON_TOKEN_COMMA)
-			break;
-		fxParseJSONToken(the, theParser);
+		comma = 1;
 	}
-	if (theParser->token != XS_JSON_TOKEN_RIGHT_BRACE)
-		mxSyntaxError("%ld: missing }", theParser->line);
 	fxParseJSONToken(the, theParser);
 }
 

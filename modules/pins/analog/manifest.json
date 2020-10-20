@@ -1,18 +1,18 @@
 {
 	"modules": {
-		"pins/analog": "$(MODULES)/pins/analog/analog",
+		"pins/analog": "$(MODULES)/pins/analog/analog"
 	},
 	"preload": "pins/analog",
 	"platforms": {
 		"esp": {
 			"modules": {
 				"*": "$(MODULES)/pins/analog/esp/*"
-			},
+			}
 		},
 		"esp32": {
 			"modules": {
 				"*": "$(MODULES)/pins/analog/esp32/*"
-			},
+			}
 		},
 		"nrf52": {
 			"modules": {
@@ -22,7 +22,7 @@
 		"gecko": {
 			"modules": {
 				"*": "$(MODULES)/pins/analog/gecko/*"
-			},
+			}
 		},
 		"...": {
 			"error": "pins/analog module unsupported"

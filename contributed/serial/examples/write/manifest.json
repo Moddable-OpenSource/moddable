@@ -1,12 +1,12 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/contributed/serial/manifest.json",
+		"$(MODDABLE)/contributed/serial/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"./main",
-		],
+			"./main"
+		]
 	},
 	"platforms": {
 		"esp32": {
@@ -16,7 +16,7 @@
 					"baud": 9600,
 					"config": { "dataBits": 8, "parity": "#N", "stopBits": 1 },
 					"tx_pin": 17,
-					"rx_pin": 16,
+					"rx_pin": 1
 				}
 			}
 		},
@@ -28,9 +28,9 @@
 					"baud": 9600,
 					"config": { "dataBits": 8, "parity": "#N", "stopBits": 1 },
 					"tx": { "pin": 6, "port": "gpioPortA" },
-					"rx": { "pin": 7, "port": "gpioPortA" },
+					"rx": { "pin": 7, "port": "gpioPortA" }
 				}
-			},
-		},
-	},
+			}
+		}
+	}
 }

@@ -1,13 +1,13 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_base.json"
 	],
 	"modules": {
 		"*": [
 
 			"$(MODULES)/drivers/onewire/*",
-			"./main",
-		],
+			"./main"
+		]
 	},
 	"preload": [
 		"onewire",
@@ -20,17 +20,17 @@
 			],
 			"modules": {
 				"*": [
-					"$(MODULES)/drivers/onewire/esp/*",
-				],
+					"$(MODULES)/drivers/onewire/esp/*"
+				]
 			},
 			"config": {
 				"onewire": {
 					"pin": "4"
-				},
+				}
 			},
 			"defines": {
 				"onewire": {
-					"driver_gpio": "GPIO",
+					"driver_gpio": "GPIO"
 				}
 			}
 		},
@@ -39,24 +39,24 @@
 				"$(MODULES)/pins/digital/manifest.json"
 			],
 			"modules": {
-				"*": "$(MODULES)/drivers/onewire/esp/*",
+				"*": "$(MODULES)/drivers/onewire/esp/*"
 			},
 			"config": {
 				"onewire": {
 					"pin": "16"
-				},
+				}
 			},
 			"defines": {
 				"onewire": {
 					"driver_rmt": "RMT",
 					"rmt_rx_channel": "RMT_CHANNEL_2",
-					"rmt_tx_channel": "RMT_CHANNEL_3",
-				},
-			},
+					"rmt_tx_channel": "RMT_CHANNEL_3"
+				}
+			}
 		},
 		"win": {
 			"modules": {
-				"*": "$(MODULES)/drivers/onewire/sim/*",
+				"*": "$(MODULES)/drivers/onewire/sim/*"
 			},
 			"config": {
 				"onewire": {
@@ -66,6 +66,6 @@
 		},
 		"...": {
 			"error": "unsupported platform"
-		},
+		}
 	}
 }

@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/network/ble/manifest_server.json",
+		"$(MODDABLE)/modules/network/ble/manifest_server.json"
 	],
 	"modules": {
 		"*": [
@@ -11,12 +11,12 @@
 		]
 	},
 	"preload": [
-		"htmservice",
+		"htmservice"
 	],
 	"ble":{
 		"*": [
-			"./bleservices/*",
-		],
+			"./bleservices/*"
+		]
 	},
 	"resources": {
 		"*-mask": [
@@ -27,8 +27,8 @@
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-72"
 		],
 		"*-color": [
-			"./assets/color-arc",
-		],
+			"./assets/color-arc"
+		]
 	},
 	"platforms": {
 		"gecko/blue": {
