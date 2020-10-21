@@ -286,8 +286,11 @@ void fxBuildDataView(txMachine* the)
 		slot = fxBuildHostConstructor(the, mxCallback(fx_TypedArray), 3, mxID(dispatch->constructorID));
 		the->stackPrototypes[-1 - dispatch->constructorID] = *the->stack; //@@
 		slot->value.instance.prototype = constructor;
+		property = mxFunctionInstanceHome(slot);
+		slot = property->next;
+		property = fxNextTypeDispatchProperty(the, property, (txTypeDispatch*)dispatch, (txTypeAtomics*)atomics, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+		property->next = slot;
 		slot = fxLastProperty(the, slot);
-		slot = fxNextTypeDispatchProperty(the, slot, (txTypeDispatch*)dispatch, (txTypeAtomics*)atomics, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 		slot = fxNextIntegerProperty(the, slot, dispatch->size, mxID(_BYTES_PER_ELEMENT), XS_GET_ONLY);
 		the->stack++;
 	}
@@ -1085,8 +1088,9 @@ txSlot* fxConstructTypedArray(txMachine* the)
 	txSlot* instance;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: TypedArray");
+	dispatch = mxFunctionInstanceHome(mxFunction->value.reference);
+	dispatch = dispatch->next;
 	prototype = mxBehaviorGetProperty(the, mxFunction->value.reference, mxID(_prototype), XS_NO_ID, XS_ANY);
-	dispatch = prototype->next;
 	if (!dispatch || (dispatch->kind != XS_TYPED_ARRAY_KIND))
 		mxTypeError("new: TypedArray");
 	mxPushSlot(mxTarget);
