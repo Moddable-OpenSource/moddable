@@ -35,7 +35,7 @@
 	#include "freertos/task.h"
 
 	static void workerLoop(void *pvParameter);
-#elif qca4020
+#elif qca4020 || nrf52
 	#include "FreeRTOS.h"
 	#include "task.h"
 	static void workerLoop(void *pvParameter);
@@ -54,7 +54,7 @@ struct modWorkerRecord {
 	uint32_t				slotCount;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
-#if ESP32 || qca4020
+#if ESP32 || qca4020 || nrf52
 	TaskHandle_t			task;
 #endif
 	char					module[1];
@@ -89,7 +89,7 @@ void xs_worker_destructor(void *data)
 	if (worker) {
 		modWorker walker, prev;
 
-#if ESP32 || qca4020
+#if ESP32 || qca4020 || nrf52
 		if (worker->task) {
 			vTaskDelete(worker->task);
 			worker->task = NULL;
@@ -208,6 +208,12 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
+
+	modMachineTaskWait(the);
+#elif nrf52
+	#define kStack ((10 * 1024) / sizeof(StackType_t))
+
+	xTaskCreate(workerLoop, worker->module, kStack, worker, 4, &worker->task);
 
 	modMachineTaskWait(the);
 #else
@@ -480,7 +486,7 @@ void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_
 	xs_worker_destructor(worker);
 }
 
-#if ESP32 || qca4020
+#if ESP32 || qca4020 || nrf52
 
 void workerLoop(void *pvParameter)
 {
