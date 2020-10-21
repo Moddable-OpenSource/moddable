@@ -37,7 +37,13 @@ static void xsTask(void *pvParameter);
 
 void xs_setup(void)
 {
+#if configSUPPORT_STATIC_ALLOCATION
+	static StaticTask_t taskBuffer;
+	static StackType_t stackBuffer[kStack];
+	xTaskCreateStatic(xsTask, "main", kStack, NULL, 4, stackBuffer, &taskBuffer);
+#else
 	xTaskCreate(xsTask, "main", kStack, NULL, 4, NULL);
+#endif
 }
 
 void xsTask(void *pvParameter)
