@@ -2,12 +2,12 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(BUILD)/devices/nrf52/modules/sleep/manifest.json",
+		"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources": {
-		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
-	},
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28"
+	}
 }

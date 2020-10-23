@@ -1,9 +1,9 @@
 {
 	"build": {
-		"IO": "$(MODDABLE)/build/devices/nrf52/modules/io",
+		"IO": "$(MODDABLE)/build/devices/nrf52/modules/io"
 	},
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_base.json"
 	],
 	"modules": {
 		"*": [
@@ -11,11 +11,11 @@
 			"$(MODULES)/pins/analog/nrf52/*"
 		],
 		"builtin/wakeabledigital": "$(IO)/wakeabledigital/wakeabledigital",
-		"builtin/wakeableanalog": "$(IO)/wakeableanalog/wakeableanalog",
+		"builtin/wakeableanalog": "$(IO)/wakeableanalog/wakeableanalog"
 	},
 	"preload": [
 		"builtin/wakeabledigital",
-		"builtin/wakeableanalog",
+		"builtin/wakeableanalog"
 	],
 	"platforms": {
 		"esp": {
