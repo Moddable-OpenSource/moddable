@@ -344,18 +344,18 @@ export default class extends Tool {
 		this.createDirectory(path);
 		path += this.slash + first;
 		this.createDirectory(path);
-		path += this.slash + this.platform;
+		var platform = this.platform;
+		path += this.slash + platform;
 		this.createDirectory(path);
+		if ((platform == "mac") || (platform == "win") || (platform == "lin")) {
+			path += this.slash + "mc";
+			this.createDirectory(path);
+		}
 		if (this.debug) 
 			path += this.slash + "debug";
 		else
 			path += this.slash + "release";
 		this.createDirectory(path);
-		var platform = this.platform;
-		if ((platform == "mac") || (platform == "win") || (platform == "lin")) {
-			path += this.slash + "mc";
-			this.createDirectory(path);
-		}
 		path += this.slash + last;
 		this.createDirectory(path);
 		return path;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -75,6 +75,12 @@ void xs_digital(xsMachine *the)
 		xsUnknownError("can't init pin");
 
 	xsmcSetHostChunk(xsThis, &gpio, sizeof(gpio));
+}
+
+void xs_digital_close(xsMachine *the)
+{
+	xs_digital_destructor(xsmcGetHostChunk(xsThis));
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_digital_mode(xsMachine *the)

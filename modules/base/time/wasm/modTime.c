@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2018  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,23 +18,29 @@
  *
  */
 
-class Digital @ "xs_digital_destructor" {
-	static read(pin) @ "xs_digital_static_read";
-	static write(pin, value) @ "xs_digital_static_write";
 
-	constructor(port, pin, mode) @ "xs_digital";// or (pin, mode) where port is implicitly NULL
-	close() @ "xs_digital_close";
-	mode(mode) @ "xs_digital_mode";				// change pin mode
-	read() @ "xs_digital_read";					// read pin
-	write(value) @ "xs_digital_write";			// write pin
+#include "xs.h"
+
+void xs_time_set(xsMachine *the)
+{
 }
-Digital.Input = 0;
-Digital.InputPullUp = 1;
-Digital.InputPullDown = 2;
-Digital.InputPullUpDown = 3;
-Digital.Output = 8;
-Digital.OutputOpenDrain = 9;
 
-Object.freeze(Digital.prototype);
+void xs_time_timezone_get(xsMachine *the)
+{
+}
 
-export default Digital;
+void xs_time_timezone_set(xsMachine *the)
+{
+}
+
+void xs_time_dst_get(xsMachine *the)
+{
+}
+
+void xs_time_dst_set(xsMachine *the)
+{
+}
+
+void xs_time_ticks(xsMachine *the)
+{
+}

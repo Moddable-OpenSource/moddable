@@ -1267,6 +1267,11 @@ export class Tool extends TOOL {
 				this.environment.FULLPLATFORM = name;
 				this.environment.PLATFORMPATH = "";
 				let parts = name.split("/");
+				if (!parts[0]) {
+					parts[0] = this.currentPlatform;
+					this.fullplatform = this.currentPlatform + name;
+					this.environment.FULLPLATFORM = this.currentPlatform + name;
+				}
 				if (parts[1]) {
 					this.subplatform = parts[1];
 					this.environment.SUBPLATFORM = parts[1];
