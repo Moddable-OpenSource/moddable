@@ -19,29 +19,23 @@
  */
 
 class Sleep {
-	static install(handler) @ "xs_sleep_install";
-
-	// slot-based ram retention api
-	static clearRetainedValue(index) @ "xs_sleep_clear_retained_value";
 	static getRetainedValue(index) @ "xs_sleep_get_retained_value";
 	static setRetainedValue(index, value) @ "xs_sleep_set_retained_value";
 	
 	static set powerMode() @ "xs_sleep_set_power_mode";
 
-	static deep() @ "xs_sleep_deep";
+	static deep(ms) @ "xs_sleep_deep";
 	
 	static get resetReason() @ "xs_sleep_get_reset_reason";
 	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
-	static prevent() @ "xs_sleep_prevent";
-	static allow() @ "xs_sleep_allow";
-	
 	static wakeOnAnalog(channel, configuration) @ "xs_sleep_wake_on_analog";
 	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital";
 	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt";
-	static wakeOnTimer(ms) @ "xs_sleep_wake_on_timer";
 
 	static restoreTime() @ "xs_sleep_restore_time";
+
+	static powerOffRam() @ "xs_sleep_power_off_ram";	// @@
 };
 
 const PowerMode = {

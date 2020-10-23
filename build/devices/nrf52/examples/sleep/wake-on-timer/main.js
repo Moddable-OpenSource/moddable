@@ -37,7 +37,7 @@ Timer.repeat(id => {
 	render.end();
 	if (++count == 20) {
 		Timer.clear(id);
-		Sleep.wakeOnTimer(5000);
+		Sleep.deep(5000);
 	}
 }, 500);
 

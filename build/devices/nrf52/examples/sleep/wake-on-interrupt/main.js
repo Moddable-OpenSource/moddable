@@ -56,6 +56,7 @@ if (ResetReason.GPIO == Sleep.resetReason) {
 Timer.set(() => {
 	Sleep.wakeOnInterrupt(int_pin);
 	led.write(0);
+	led.close();
 	Sleep.deep();
 }, 3000);
 

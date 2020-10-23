@@ -33,7 +33,7 @@ led.write(1);
 let valid = true;
 for (let i = 0; i < 32; ++i) {
 	let value = Sleep.getRetainedValue(i);
-	if (i != value) {
+	if (i + 1 != value) {
 		valid = false;
 		break;
 	}
@@ -47,21 +47,16 @@ if (valid) {
 		led.write(1);
 		Timer.delay(50);
 	}
-	for (let i = 0; i < 32; ++i)
-		Sleep.clearRetainedValue(i);
 }
 
 // Retain values and sleep
 else {
 	Timer.set(() => {
-		Sleep.install(preSleep);
+		led.write(0);
+		led.close();
+		for (let i = 0; i < 32; ++i)
+			Sleep.setRetainedValue(i, i + 1);
+		Sleep.wakeOnDigital(wakeup_pin);
 		Sleep.deep();
 	}, 3000);
-}
-
-function preSleep() {
-	led.write(0);
-	for (let i = 0; i < 32; ++i)
-		Sleep.setRetainedValue(i, i);
-	Sleep.wakeOnDigital(wakeup_pin);
 }

@@ -37,5 +37,6 @@ if (ResetReason.RESETPIN == Sleep.resetReason) {
 
 Timer.set(() => {
 	led.write(0);
+	led.close();
 	Sleep.deep();
 }, 3000);

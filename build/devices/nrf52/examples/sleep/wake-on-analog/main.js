@@ -42,6 +42,7 @@ Timer.set(() => {
 	//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Up });
 	//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:mode:AnalogDetectMode.Down });
 	led.write(0);
+	led.close();
 	Sleep.deep();
 }, 3000);
 

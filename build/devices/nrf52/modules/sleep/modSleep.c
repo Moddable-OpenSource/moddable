@@ -28,11 +28,8 @@
 #define RAM_START_ADDRESS  0x20000000
 #define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size 0x100
 
-#define kRamRetentionRegisterMagic 0xBF
 #define kRamRetentionValueMagic 0x52081543
-
-#define VALID_RETENTION_SLOT(_gpreg, _slots, _index) \
-	(kRamRetentionRegisterMagic == _gpreg) && (kRamRetentionValueMagic == _slots[0]) && ((1L << _index) & _slots[1])
+#define kRamRetentionSlots 32
 
 #define kAnalogResolution 10	// 10 bits
 
@@ -73,121 +70,37 @@ enum {
 	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
 #endif
 
-typedef struct modSleepHandlerRecord modSleepHandlerRecord;
-typedef modSleepHandlerRecord *modSleepHandler;
-
-struct modSleepHandlerRecord {
-	struct modSleepHandlerRecord *next;
-	xsSlot callback;
-};
-
-typedef struct {
-	uint8_t suspended;
-	uint8_t pending;
-	modSleepHandler handlers;
-} modSleepRecord, *modSleep;
-
-static modSleepRecord gSleep = {0};
-
 static uint8_t softdevice_enabled();
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
-static void sleep_deep(xsMachine *the);
 static void sleep_wake_on_timer();
 static void sleep_wake_on_timer_sd();
-
-void xs_sleep_install(xsMachine *the)
-{
-	uint16_t argc = xsmcArgc;
-	modSleepHandler handler;
-	if (0 == argc) {
-		while (NULL != (handler = gSleep.handlers)) {
-			gSleep.handlers = handler->next;
-			xsForget(handler->callback);
-			c_free(handler);
-		}
-	}
-	else {
-		handler = c_malloc(sizeof(modSleepHandlerRecord));
-		handler->next = NULL;
-		handler->callback = xsArg(0);
-		xsRemember(handler->callback);
-		handler->next = gSleep.handlers;
-		gSleep.handlers = handler;
-	}
-}
-
-void xs_sleep_prevent(xsMachine *the)
-{
-	++gSleep.suspended;
-}
-
-void xs_sleep_allow(xsMachine *the)
-{
-	--gSleep.suspended;
-	if (gSleep.suspended <= 0) {
-		gSleep.suspended = 0;
-		if (gSleep.pending)
-			sleep_deep(the);
-	}
-}
 
 // The gRamRetentionBuffer contains 32-bit retained value slots
 // When values are retained, the slot contents are as follows:
 //    slot[0]: kRamRetentionValueMagic
-//    slot[1]: Bit mask of retained slot indexes
-//    slot[2] - slot[33]: Retained values for slot indexes 0 to 31
-
-void xs_sleep_clear_retained_value(xsMachine *the)
-{
-	int32_t index = xsmcToInteger(xsArg(0));
-	int32_t *slots = (int32_t*)&gRamRetentionBuffer[0];
-	uint32_t gpreg;
-	
-	if (index < 0 || index > 31)
-		xsRangeError("invalid index");
-		
-	if (softdevice_enabled())
-		sd_power_gpregret_get(0, &gpreg);
-	else
-		gpreg = NRF_POWER->GPREGRET;
-
-	if (VALID_RETENTION_SLOT(gpreg, slots, index)) {
-		slots[1] &= ~index;
-		if (0 == slots[1]) {
-			slots[0] = 0;
-			if (softdevice_enabled())
-				sd_power_gpregret_set(0, 0);
-			else
-				NRF_POWER->GPREGRET = 0;
-		}
-	}
-}
+//    slot[1] - slot[32]: Retained values for slot indexes 0 to 31
 
 void xs_sleep_get_retained_value(xsMachine *the)
 {
 	int32_t index = xsmcToInteger(xsArg(0));
-	int32_t *slots = (int32_t*)&gRamRetentionBuffer[0];
-	uint32_t gpreg;
+	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
 	
 	if (index < 0 || index > 31)
 		xsRangeError("invalid index");
 
-	if (softdevice_enabled())
-		sd_power_gpregret_get(0, &gpreg);
-	else
-		gpreg = NRF_POWER->GPREGRET;
+	if (kRamRetentionValueMagic != slots[0])
+		c_memset(gRamRetentionBuffer, 0, sizeof(gRamRetentionBuffer));
 
-	if (VALID_RETENTION_SLOT(gpreg, slots, index))
-		xsResult = xsInteger(slots[index + 2]);
+	xsResult = xsInteger(slots[index + 1]);
 }
 
 void xs_sleep_set_retained_value(xsMachine *the)
 {
 	int32_t index = xsmcToInteger(xsArg(0));
 	int32_t value = xsmcToInteger(xsArg(1));
-	int32_t *slots = (int32_t*)&gRamRetentionBuffer[0];
+	uint32_t *slots = (uint32_t*)&gRamRetentionBuffer[0];
 	uint32_t ram_slave, ram_section, ram_powerset;
 	
 	if (index < 0 || index > 31)
@@ -198,18 +111,16 @@ void xs_sleep_set_retained_value(xsMachine *the)
 	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
 		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
 
-	if (softdevice_enabled()) {
-		sd_power_gpregret_set(0, kRamRetentionRegisterMagic);
+	if (softdevice_enabled())
 		sd_power_ram_power_set(ram_slave, ram_powerset);
-	}
-	else {
-    	NRF_POWER->GPREGRET = kRamRetentionRegisterMagic;
+	else
 		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
-	}
+
+	if (kRamRetentionValueMagic != slots[0])
+		c_memset(gRamRetentionBuffer, 0, sizeof(gRamRetentionBuffer));
 
 	slots[0] = kRamRetentionValueMagic;
-	slots[1] |= (1L << index);
-	slots[index + 2] = value;
+	slots[index + 1] = value;
 	
 	nrf_delay_ms(1);
 }
@@ -239,12 +150,65 @@ void xs_sleep_deep(xsMachine *the)
 	return;
 #endif
 
-	if (gSleep.suspended > 0) {
-		gSleep.pending = true;
-		return;
+	uint16_t argc = xsmcArgc;
+	if (argc > 0) {
+		// System ON sleep, RAM powered off during sleep, wake on RTC
+		uint32_t ms = xsmcToInteger(xsArg(0));
+		uint32_t waitTicks = ((uint64_t)ms << 10) / 1000;
+		
+		// Stop tick events
+		nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
+
+		// Block all the interrupts globally
+		if (softdevice_enabled()) {
+			do {
+				uint8_t dummy = 0;
+				uint32_t err_code = sd_nvic_critical_region_enter(&dummy);
+				APP_ERROR_CHECK(err_code);
+			} while (0);
+		}
+		else
+			__disable_irq();
+
+		// Save time of day in retention memory
+		c_timeval tv;
+		c_gettimeofday(&tv, NULL);
+		*((c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
+
+		// Calculate wake up time in ticks
+		uint32_t enterTicks, wakeupTicks;
+		enterTicks = nrf_rtc_counter_get(portNRF_RTC_REG);
+		wakeupTicks = (enterTicks + waitTicks) & portNRF_RTC_MAXTICKS;
+
+		// Save enter time in retention memory
+		*(uint32_t*)MOD_TIME_RTC_MEM = enterTicks;
+
+		// Configure CTC interrupt
+		nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTicks);
+		nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
+		nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
+
+		// Ensure memory access has completed
+		__DSB();
+
+		// Complete process depending on whether or not the SoftDevice is enabled
+		if (softdevice_enabled())
+			sleep_wake_on_timer_sd();
+		else
+			sleep_wake_on_timer();		
 	}
-	
-	sleep_deep(the);
+	else {
+		// System OFF sleep, wake on reset or preconfigured analog/digital wake-up trigger
+		if (softdevice_enabled())
+			sd_power_system_off();
+		else
+			NRF_POWER->SYSTEMOFF = 1;
+
+		// Use data synchronization barrier and a delay to ensure that no failure
+		// indication occurs before System OFF is actually entered.
+		__DSB();
+		__NOP();
+	}
 }
 
 void xs_sleep_get_reset_reason(xsMachine *the)
@@ -335,60 +299,6 @@ void xs_sleep_wake_on_interrupt(xsMachine *the)
 	nrf_delay_ms(1);
 }
 
-void xs_sleep_wake_on_timer(xsMachine *the)
-{
-	uint32_t ms = xsmcToInteger(xsArg(0));
-
-	// Notify sleep handlers
-	modSleepHandler walker;
-    walker = gSleep.handlers;
-	while (NULL != walker) {
-		xsCallFunction0(walker->callback, xsGlobal);
-		walker = walker->next;
-	}
-
-	// Stop tick events
-	nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
-
-	// Block all the interrupts globally
-	if (softdevice_enabled()) {
-		do {
-			uint8_t dummy = 0;
-			uint32_t err_code = sd_nvic_critical_region_enter(&dummy);
-			APP_ERROR_CHECK(err_code);
-		} while (0);
-	}
-	else
-		__disable_irq();
-
-	// Save time of day in retention memory
-	c_timeval tv;
-	c_gettimeofday(&tv, NULL);
-	*((c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
-	
-    // Calculate wake up time
-    uint32_t enterTime, wakeupTime;
-    enterTime = nrf_rtc_counter_get(portNRF_RTC_REG);
-	wakeupTime = (enterTime + ms) & portNRF_RTC_MAXTICKS;
-
-	// Save enter time in retention memory
-	*(uint32_t*)MOD_TIME_RTC_MEM = enterTime;
-	
-	// Configure CTC interrupt
-	nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTime);
-	nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
-	nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
-
-	// Ensure memory access has completed
-    __DSB();
-
-	// Complete process depending on whether or not the SoftDevice is enabled
-	if (softdevice_enabled())
-		sleep_wake_on_timer_sd();
-	else
-		sleep_wake_on_timer();		
-}
-
 void xs_sleep_restore_time(xsMachine *the)
 {
 #ifdef mxDebug
@@ -404,40 +314,6 @@ void xs_sleep_restore_time(xsMachine *the)
 		modSetTime(1601856000L);	// 10/5/2020 12:00:00 AM GMT
 	}
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
-}
-
-void sleep_deep(xsMachine *the)
-{
-	modSleepHandler walker;
-
-	walker = gSleep.handlers;
-	while (NULL != walker) {
-		xsCallFunction0(walker->callback, xsGlobal);
-		walker = walker->next;
-	}
-
-	if (softdevice_enabled())
-		sd_power_system_off();
-	else
-		NRF_POWER->SYSTEMOFF = 1;
-
-	// Use data synchronization barrier and a delay to ensure that no failure
-	// indication occurs before System OFF is actually entered.
-	__DSB();
-	__NOP();
-
-	// System Off mode is emulated in debug mode. It is therefore suggested to include an
-	// infinite loop right after System OFF to prevent the CPU from executing code that shouldn't
-	// normally be executed. 
-	// https://devzone.nordicsemi.com/f/nordic-q-a/55486/gpio-wakeup-from-system-off-under-freertos-restarts-at-address-0x00000a80
-	// https://infocenter.nordicsemi.com/index.jsp?topic=%2Fps_nrf52840%2Fpower.html&cp=4_0_0_4_2_2_0&anchor=unique_142049681
-
-	// Note that even with this loop, on debug builds, the application ends up in what appears to be 
-	// the Hardfault_Handler at restart after a wakeup from a digital pin.
-	// This code should never be reached on release builds.
-#ifdef mxDebug
-	for (;;) {}
-#endif
 }
 
 void sleep_wake_on_timer()
@@ -457,9 +333,10 @@ void sleep_wake_on_timer()
 	do {
 		__WFE();
 	} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
-
+//  } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
+    
 	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((uint64_t)(portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * (uint64_t)1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
 
 	// Power on all RAM (seems to be required in order for reset to work)
@@ -495,9 +372,10 @@ void sleep_wake_on_timer_sd()
 	do {
 		__WFE();
 	} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
+//  } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
 
 	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM)/1000);
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((uint64_t)(portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * (uint64_t)1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
 
 	// Power on all RAM (seems to be required in order for reset to work)
@@ -556,3 +434,6 @@ void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)
 	}
 }
 
+void xs_sleep_power_off_ram(xsMachine *the)
+{
+}

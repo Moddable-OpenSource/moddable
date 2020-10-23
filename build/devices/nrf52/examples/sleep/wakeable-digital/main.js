@@ -51,5 +51,6 @@ if ("digital" == wakeable.wakeupReason) {
 
 Timer.set(id => {
 	led.write(0);
+	led.close();
 	Sleep.deep();
 }, 3000);

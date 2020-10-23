@@ -46,6 +46,7 @@ if ("analog" == wakeable.wakeupReason) {
 
 Timer.set(() => {
 	led.write(0);
+	led.close();
 	Sleep.deep();
 }, 3000);
 
