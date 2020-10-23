@@ -365,6 +365,7 @@ static void fxScreenStop(txScreen* screen);
     [customWindow setContentView:customView];
     [customWindow setAlphaValue:1.0];
     [customWindow setOpaque:NO];
+    [customWindow setBackgroundColor: [NSColor clearColor]];
     if (![customWindow setFrameUsingName:@"screen"])
         [customWindow cascadeTopLeftFromPoint:NSMakePoint(20, 20)];
     [customWindow registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType,nil]];
