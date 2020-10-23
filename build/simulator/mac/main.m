@@ -79,8 +79,10 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 
 @interface CustomView : NSView {
     NSImage *screenImage;
+    int screenRotation;
 }
 @property (retain) NSImage *screenImage;
+@property (assign) int screenRotation;
 @end
 
 @interface ScreenView : NSView {
@@ -222,6 +224,23 @@ static void fxScreenStop(txScreen* screen);
 	[item setSubmenu:screenMenu];
 	[menubar addItem:item];
 	
+    NSMenu* rotationMenu = [[[NSMenu alloc] initWithTitle:@"Rotation"] autorelease];
+	item = [[[NSMenuItem alloc] initWithTitle:@"0°" action:@selector(selectRotation:) keyEquivalent:@""] autorelease];
+    item.tag = 0;
+	[rotationMenu addItem:item];
+	item = [[[NSMenuItem alloc] initWithTitle:@"90°" action:@selector(selectRotation:) keyEquivalent:@""] autorelease];
+    item.tag = 90;
+	[rotationMenu addItem:item];
+	item = [[[NSMenuItem alloc] initWithTitle:@"180°" action:@selector(selectRotation:) keyEquivalent:@""] autorelease];
+    item.tag = 180;
+	[rotationMenu addItem:item];
+	item = [[[NSMenuItem alloc] initWithTitle:@"270°" action:@selector(selectRotation:) keyEquivalent:@""] autorelease];
+    item.tag = 270;
+	[rotationMenu addItem:item];
+	item = [[NSMenuItem new] autorelease];
+	[item setSubmenu:rotationMenu];
+	[menubar addItem:item];
+	
 	NSMenu* helpMenu = [[[NSMenu alloc] initWithTitle:@"Help"] autorelease];
 	item = [[[NSMenuItem alloc] initWithTitle:@"Moddable Developer" action:@selector(support:) keyEquivalent:@""] autorelease];
 	[helpMenu addItem:item];
@@ -245,7 +264,17 @@ static void fxScreenStop(txScreen* screen);
     }
     item = [screenMenu itemWithTag:i];
     item.state = 1;
-    [self createScreen:item.representedObject];
+    
+    if ([userDefaults objectForKey:@"rotation"]) {
+    	i = [userDefaults integerForKey:@"rotation"];
+    }
+    else {
+    	i = 0;
+    }
+    item = [rotationMenu itemWithTag:i];
+    item.state = 1;
+
+   [self createScreen];
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     [self.window makeKeyAndOrderFront:NSApp];
@@ -311,20 +340,45 @@ static void fxScreenStop(txScreen* screen);
     self.screenView.archiveName = nil;
     self.screenView.libraryName = nil;
 }
-- (void)createScreen:(NSString *)jsonPath {
+- (void)createScreen {
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSInteger index = [userDefaults integerForKey:@"screenTag"];
+    NSInteger rotation = [userDefaults integerForKey:@"rotation"];
+    Mockup* mockup = mockups[index];
+    NSString *jsonPath = mockup.item.representedObject;
     NSString *screenImagePath = [[jsonPath stringByDeletingPathExtension] stringByAppendingPathExtension:@"png"];
     NSImage *screenImage = [[NSImage alloc] initByReferencingFile:screenImagePath];
     NSSize size = [screenImage size];
-    NSRect contentRect = NSMakeRect(0, 0, size.width, size.height);
-    CustomWindow* customWindow = [[CustomWindow alloc] initWithContentRect:contentRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
-    CustomView *customView = [[[CustomView alloc] initWithFrame:contentRect] autorelease];
     NSData *data = [[NSData alloc] initWithContentsOfFile:jsonPath];
     NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
     NSInteger x = [[json valueForKeyPath:@"x"] integerValue];
     NSInteger y = [[json valueForKeyPath:@"y"] integerValue];
     NSInteger width = [[json valueForKeyPath:@"width"] integerValue];
     NSInteger height = [[json valueForKeyPath:@"height"] integerValue];
-    ScreenView *_screenView = [[[ScreenView alloc] initWithFrame:NSMakeRect(x, size.height - (y + height), width, height)] autorelease];
+   	NSRect customRect, screenRect;
+   	switch (rotation) {
+   	case 0:
+ 		customRect = NSMakeRect(0, 0, size.width, size.height);
+		screenRect = NSMakeRect(x, size.height - (y + height), width, height);
+   		break;
+   	case 90:
+ 		customRect = NSMakeRect(0, 0, size.height, size.width);
+		screenRect = NSMakeRect(y, x, height, width);
+   		break;
+   	case 180:
+ 		customRect = NSMakeRect(0, 0, size.width, size.height);
+		screenRect = NSMakeRect(size.width - (x + width), y, width, height);
+   		break;
+   	case 270:
+ 		customRect = NSMakeRect(0, 0, size.height, size.width);
+		screenRect = NSMakeRect(size.height - (y + height), size.width - (x + width), height, width);
+   		break;
+   	}
+    CustomWindow* customWindow = [[CustomWindow alloc] initWithContentRect:customRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
+    CustomView *customView = [[[CustomView alloc] initWithFrame:customRect] autorelease];
+    customView.screenRotation = rotation;
+    ScreenView *_screenView = [[[ScreenView alloc] initWithFrame:screenRect] autorelease];
+    _screenView.boundsRotation = rotation;
    
     _screenView.archiveURL = archiveURL;
     _screenView.archiveName = nil;
@@ -402,6 +456,27 @@ static void fxScreenStop(txScreen* screen);
     	[self application:[NSApplication sharedApplication] openFiles:filenames];
 	}];
 }
+- (void)selectRotation:(NSMenuItem *)sender {
+    if (sender.state)
+        return;
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSInteger rotation = [userDefaults integerForKey:@"rotation"];
+    NSMenu *menu = [sender menu];
+    NSMenuItem *current = [menu itemWithTag:rotation];
+    current.state = 0;
+    sender.state = 1;
+    [userDefaults setInteger:sender.tag forKey:@"rotation"];
+    
+    NSString* archiveName = self.screenView.archiveName;
+    NSString* libraryName = self.screenView.libraryName;
+	[self.screenView quitMachine];
+    [self deleteScreen];
+    [self createScreen];
+    self.screenView.archiveName = archiveName;
+    self.screenView.libraryName = libraryName;
+	[self.screenView launchMachine];
+    [self.window makeKeyAndOrderFront:NSApp];
+}
 - (void)selectScreen:(NSMenuItem *)sender {
     if (sender.state)
         return;
@@ -417,7 +492,7 @@ static void fxScreenStop(txScreen* screen);
     NSString* libraryName = self.screenView.libraryName;
 	[self.screenView quitMachine];
     [self deleteScreen];
-    [self createScreen:sender.representedObject];
+    [self createScreen];
     self.screenView.archiveName = archiveName;
     self.screenView.libraryName = libraryName;
 	[self.screenView launchMachine];
@@ -502,14 +577,28 @@ static void fxScreenStop(txScreen* screen);
 
 @implementation CustomView
 @synthesize screenImage;
+@synthesize screenRotation;
 - (void)dealloc {
 	[screenImage release];
     [super dealloc];
 }
 - (void)drawRect:(NSRect)rect {
-    [[NSColor clearColor] set];
-    NSRectFill([self frame]);
-    [screenImage drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+    NSGraphicsContext *context = [NSGraphicsContext currentContext];
+ 	NSAffineTransform *rotate = [[NSAffineTransform alloc] init];
+    NSSize size = [screenImage size];
+	[context saveGraphicsState];
+    [rotate rotateByDegrees:screenRotation];
+	[rotate concat];
+	NSPoint at;
+	switch (screenRotation) {
+	case 0: at = NSMakePoint(0, 0); break;
+	case 90: at = NSMakePoint(0, -size.height); break;
+	case 180: at = NSMakePoint(-size.width, -size.height); break;
+	case 270: at = NSMakePoint(-size.width, 0); break;
+	}
+    [screenImage drawAtPoint:at fromRect:NSMakeRect(0, 0, 0, 0) operation:NSCompositeSourceOver fraction:1.0];
+	[rotate release];
+	[context restoreGraphicsState];
 }
 @end
 
@@ -643,13 +732,36 @@ bail:
 		[alert setInformativeText:info];
 	[alert runModal];
 }
+- (NSPoint)rotatePoint:(NSPoint)point {
+	NSSize size = [self bounds].size;
+    NSPoint result;
+    switch ((int)(self.boundsRotation)) {
+    case 0:
+    	result.x = point.x;
+		result.y = size.height - point.y;
+		break;
+    case 90:
+    	result.x = point.x;
+		result.y = 0 - point.y;
+		break;
+    case 180:
+    	result.x = size.width + point.x;
+		result.y = 0 - point.y;
+		break;
+    case 270:
+    	result.x = size.width + point.x;
+        result.y = size.height - point.y;
+		break;
+    }
+    return result;
+}
 - (void)mouseDown:(NSEvent *)event {
 	if (touching)
 		return;
 	NSTimeInterval when = 1000 * (time + [event timestamp]);
 	NSPoint point = [event locationInWindow];
 	point = [self convertPoint:point fromView:nil];
-	point.y = [self frame].size.height - point.y;
+	point = [self rotatePoint:point];
 	if (self.screen->touch) 
 		(*self.screen->touch)(self.screen, touchEventBeganKind, 0, point.x, point.y, when);
 }
@@ -659,7 +771,7 @@ bail:
 	NSTimeInterval when = 1000 * (time + [event timestamp]);
 	NSPoint point = [event locationInWindow];
 	point = [self convertPoint:point fromView:nil];
-	point.y = [self frame].size.height - point.y;
+	point = [self rotatePoint:point];
 	if (self.screen->touch) 
 		(*self.screen->touch)(self.screen, touchEventMovedKind, 0, point.x, point.y, when);
 }
@@ -669,7 +781,7 @@ bail:
 	NSTimeInterval when = 1000 * (time + [event timestamp]);
 	NSPoint point = [event locationInWindow];
 	point = [self convertPoint:point fromView:nil];
-	point.y = [self frame].size.height - point.y;
+	point = [self rotatePoint:point];
 	if (self.screen->touch) 
 		(*self.screen->touch)(self.screen, touchEventEndedKind, 0, point.x, point.y, when);
 }
@@ -717,8 +829,9 @@ bail:
   				break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventBeganKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventBeganKind, i, point.x, point.y, when);
 	}  
 }
 - (void)touchesCancelledWithEvent:(NSEvent *)event {
@@ -742,8 +855,9 @@ bail:
    				break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventCancelledKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventCancelledKind, i, point.x, point.y, when);
 	}
 }
 - (void)touchesEndedWithEvent:(NSEvent *)event {
@@ -767,8 +881,9 @@ bail:
     			break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventEndedKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventEndedKind, i, point.x, point.y, when);
 	}
 }
 - (void)touchesMovedWithEvent:(NSEvent *)event {
@@ -791,8 +906,9 @@ bail:
    				break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventMovedKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventMovedKind, i, point.x, point.y, when);
 	}
 }
 @end
