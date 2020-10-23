@@ -33,6 +33,27 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 	@"4-bit Color Look-up Table",
 };
 
+@interface Mockup : NSObject {
+	NSMenuItem *item;
+	NSString *name;
+}
+@property (retain) NSMenuItem *item;
+@property (retain) NSString *name;
+@end
+
+@implementation Mockup
+@synthesize item;
+@synthesize name;
+- (void)dealloc {
+    [name release];
+    [item release];
+    [super dealloc];
+}
+- (NSComparisonResult)compare:(Mockup*) mockup {
+	return [self.name caseInsensitiveCompare:mockup.name];
+}
+@end
+
 @interface TouchFinger : NSObject {
 	id identity;
 	NSPoint point;
@@ -99,11 +120,13 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 	NSWindow *window;
 	NSURL *libraryURL;
 	NSURL *archiveURL;
+	NSMutableArray *mockups;
 }
 @property (retain) ScreenView *screenView;
 @property (retain) NSWindow *window;
 @property (retain) NSURL *libraryURL;
 @property (retain) NSURL *archiveURL;
+@property (retain) NSMutableArray *mockups;
 @end
 
 static void fxScreenAbort(txScreen* screen);
@@ -117,7 +140,9 @@ static void fxScreenStop(txScreen* screen);
 @synthesize window;
 @synthesize libraryURL;
 @synthesize archiveURL;
+@synthesize mockups;
 - (void)dealloc {
+    [mockups release];
     [archiveURL release];
     [libraryURL release];
     [screenView release];
@@ -169,9 +194,10 @@ static void fxScreenStop(txScreen* screen);
 	[item setSubmenu:fileMenu];
 	[menubar addItem:item];
 
-    NSMenu* screenMenu = [[[NSMenu alloc] initWithTitle:@"Size"] autorelease];
 	NSArray *paths = [[NSBundle mainBundle] pathsForResourcesOfType:@"json" inDirectory:@"screens"];
+    paths = [paths sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
 	NSInteger c = [paths count], i;
+	mockups = [[NSMutableArray alloc] init];
 	for (i = 0; i < c; i++) {
 		NSString *path = [paths objectAtIndex:i];
 		NSData *data = [[NSData alloc] initWithContentsOfFile:path];
@@ -180,7 +206,17 @@ static void fxScreenStop(txScreen* screen);
 		item = [[[NSMenuItem alloc] initWithTitle:title action:@selector(selectScreen:) keyEquivalent:@""] autorelease];
         item.representedObject = path;
         item.tag = i;
-		[screenMenu addItem:item];
+ 		Mockup *mockup = [Mockup alloc];
+		mockup.item = item;
+   		NSString *name = [[path lastPathComponent] stringByDeletingPathExtension];
+		mockup.name = name;
+		[mockups addObject:mockup];
+	}
+	
+    NSMenu* screenMenu = [[[NSMenu alloc] initWithTitle:@"Size"] autorelease];
+	for (i = 0; i < c; i++) {
+ 		Mockup *mockup = [mockups objectAtIndex:i];
+		[screenMenu addItem:mockup.item];
 	}
 	item = [[NSMenuItem new] autorelease];
 	[item setSubmenu:screenMenu];
@@ -240,8 +276,25 @@ static void fxScreenStop(txScreen* screen);
 				launch = YES;
 			}
 		}
-		if (launch)
+		if (launch) {
+			NSString* path = self.screenView.libraryName;
+			NSArray *pathComponents = [path pathComponents];
+			NSInteger c = [pathComponents count], i;
+			NSString* name = [pathComponents objectAtIndex:c - 4];
+			c = [mockups count];
+			for (i = 0; i < c; i++) {
+				Mockup *mockup = [mockups objectAtIndex:i];
+				if ([mockup.name hasSuffix:name]) {
+					NSMenuItem* item = mockup.item;
+					if (item.state)
+						[self.screenView launchMachine];
+					else
+						[self selectScreen:item];
+					return;
+				}
+			}
 			[self.screenView launchMachine];
+		}
 	}
 }
 - (void)about:(NSMenuItem *)sender {

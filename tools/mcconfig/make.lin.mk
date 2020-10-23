@@ -20,7 +20,7 @@
 PKGCONFIG = $(shell which pkg-config)
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/lin/mc/debug/mc/lib
+	LIB_DIR = $(BUILD_DIR)/tmp/lin/mc/debug/lib
 else
 	ifeq ($(INSTRUMENT),1)
 		LIB_DIR = $(BUILD_DIR)/tmp/lin/mc/instrument/lib

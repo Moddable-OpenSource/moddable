@@ -41,6 +41,7 @@ typedef struct {
 	int width;
 	int height;
 	gchar* title;
+	gchar* name;
 	gchar path[1];
 } txMockup;
 
@@ -92,6 +93,7 @@ static gboolean onWindowStateEvent(GtkWidget *widget, GdkEventWindowState *event
 
 static GtkApplication *gxApplication = NULL;
 static GSimpleAction* gxCloseAction = NULL;
+static GSimpleAction* gxSizeAction = NULL;
 
 static char gxConfigPath[PATH_MAX] = "";
 
@@ -112,6 +114,7 @@ static char gxLibraryPath[PATH_MAX] = "";
 
 static txMockup* gxMockups[64];
 static GtkWidget *gxMockupImage = NULL;
+static int gxMockupCount = 0;
 static int gxMockupIndex = -1; 
 
 static const char* gxResourcePrefix = "/tech/moddable/simulator/screens";
@@ -284,6 +287,12 @@ txMockup* fxMockupCreate(gchar* string, gsize size, gchar* path)
 		string++;
 		offset++;
 	}
+	nameFrom = strrchr(path, '/') + 6;
+	nameTo = strrchr(nameFrom, '.');
+	offset = nameTo - nameFrom;
+	mockup->name = (char*)malloc(offset + 1);
+	memcpy(mockup->name, nameFrom, offset);
+	mockup->name[offset] = 0;
 	strcpy(mockup->path, path);
 	return mockup;
 }
@@ -413,8 +422,33 @@ void onApplicationOpen(GtkApplication *app, GFile **files, gint c, const gchar *
 			}
 		}
 	}
-	if (launch)
+	if (launch) {
+		char* slash;
+		int i;
+		for (i = 0; i < 4; i++) {
+			slash = strrchr(path, '/');
+			if (!slash)
+				break;
+			*slash = 0;
+		}
+		if (slash) {
+			slash++;
+			for (i = 0; i < gxMockupCount; i++) {
+				if (!strcmp(gxMockups[i]->name, slash)) {
+					if (gxMockupIndex != i) {
+						txMockup* mockup = gxMockups[i];
+						gxMockupIndex = i;
+						GtkWidget *view = gxScreen->view;
+						g_simple_action_set_state(gxSizeAction, g_variant_new_int32(i));
+						gtk_image_set_from_resource(GTK_IMAGE(gxMockupImage), mockup->path);
+						gtk_widget_set_size_request(view, mockup->width, mockup->height);
+						gtk_fixed_move(GTK_FIXED(gtk_widget_get_parent(view)), view, mockup->x, mockup->y);
+					}
+				}
+			}
+		}
 		fxLibraryOpen();
+	}
 	gtk_window_present(gxWindow);
 }
 
@@ -534,7 +568,6 @@ void onApplicationStartup(GtkApplication *app)
 	g_menu_insert_submenu(menubar, 0, "File", G_MENU_MODEL(menu));
 	g_object_unref(menu);
 	menu = g_menu_new();
-	int index = 0;
 	char **names = g_resource_enumerate_children(gxResource, gxResourcePrefix, G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
 	char **name = names;
 	while (*name) {
@@ -551,12 +584,12 @@ void onApplicationStartup(GtkApplication *app)
 				gconstpointer data = g_bytes_get_data(bytes, &size);
 				txMockup* mockup = fxMockupCreate((gchar*)data, size, path);
 				if (mockup) {
-					gxMockups[index] = mockup;
+					gxMockups[gxMockupCount] = mockup;
 					item = g_menu_item_new(mockup->title, NULL);
-					g_menu_item_set_action_and_target_value(item, "app.size", g_variant_new_int32(index));
+					g_menu_item_set_action_and_target_value(item, "app.size", g_variant_new_int32(gxMockupCount));
 					g_menu_append_item(menu, item);
 					g_object_unref(item);
-					index++;
+					gxMockupCount++;
 				}
 			}
 			g_bytes_unref(bytes);
@@ -565,7 +598,7 @@ void onApplicationStartup(GtkApplication *app)
 	}
 	g_strfreev(names);
 	g_menu_insert_submenu(menubar, 1, "Size", G_MENU_MODEL(menu));
-	if ((gxMockupIndex < 0) || (index <= gxMockupIndex))
+	if ((gxMockupIndex < 0) || (gxMockupCount <= gxMockupIndex))
 		gxMockupIndex = 4;
 	g_object_unref(menu);
 	
@@ -589,10 +622,9 @@ void onApplicationStartup(GtkApplication *app)
 	g_signal_connect(G_OBJECT(gxCloseAction), "activate", G_CALLBACK(onFileClose), app);
 	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(gxCloseAction));
 	g_simple_action_set_enabled(gxCloseAction, FALSE);
-	GSimpleAction* action =  g_simple_action_new_stateful("size", G_VARIANT_TYPE("i"), g_variant_new_int32(gxMockupIndex));
-	g_signal_connect(G_OBJECT(action), "activate", G_CALLBACK(onScreenSelect), app);
-	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action));
-	g_object_unref(action);
+	gxSizeAction =  g_simple_action_new_stateful("size", G_VARIANT_TYPE("i"), g_variant_new_int32(gxMockupIndex));
+	g_signal_connect(G_OBJECT(gxSizeAction), "activate", G_CALLBACK(onScreenSelect), app);
+	g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(gxSizeAction));
 	
 	// WINDOW
 	gxWindow = (GtkWindow*)gtk_application_window_new(app);
