@@ -1,15 +1,15 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/io/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODDABLE)/modules/io/firmata/firmataclient",
+			"$(MODDABLE)/modules/io/firmata/firmataclient"
 		]
 	},
 	"preload": [
 		"main",
-		"firmataclient",
-	],
+		"firmataclient"
+	]
 }

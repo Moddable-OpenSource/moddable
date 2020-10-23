@@ -2,10 +2,10 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODULES)/drivers/destm32s/manifest.json",
+		"$(MODULES)/drivers/destm32s/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources":{
 		"*-color": [
@@ -13,7 +13,7 @@
 			"./coke",
 			"./stormtrooper",
 			"./spiderman",
-			"./flowers",
+			"./flowers"
 		]
 	},
 	"config": {
@@ -23,7 +23,7 @@
 	"defines": {
 		"destm32s": {
 			"width": 104,
-			"height": 212,
+			"height": 212
 		}
 	}
 }

@@ -12,7 +12,7 @@
 			"$(BLEMODULEPATH)/modBLEClient",
 			"$(BLEMODULEPATH)/modBLESM",
 			"$(BLEMODULEPATH)/modBLEGAP"
-		],
+		]
 	},
 	"preload": [
 		"bleclient",
@@ -35,7 +35,7 @@
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
-			},
-		},
+			}
+		}
 	}
 }

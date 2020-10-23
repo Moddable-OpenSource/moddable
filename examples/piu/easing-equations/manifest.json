@@ -1,19 +1,19 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"creation": {
-		"stack": 400,
+		"stack": 400
 	},
 	"modules": {
 		"*": [
-			"./main",
+			"./main"
 		]
 	},
 	"resources":{
 		"*-alpha": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20"
-		],
-	},
+		]
+	}
 }

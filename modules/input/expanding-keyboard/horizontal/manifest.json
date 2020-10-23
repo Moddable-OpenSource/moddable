@@ -18,29 +18,29 @@
 			"./assets/horz-7pt-34w",
 			"./assets/horz-7pt-36w",
 			"./assets/horz-7pt-38w",
-			"./assets/horz-7pt-40w",
-		],
+			"./assets/horz-7pt-40w"
+		]
 	},
 	"platforms": {
 		"esp/moddable_zero": {
 			"config": {
-				"rotation": 90,
-			},
+				"rotation": 90
+			}
 		},
 		"esp/moddable_one": {
 			"config": {
-				"rotation": 90,
-			},
+				"rotation": 90
+			}
 		},
 		"esp32/moddable_zero": {
 			"config": {
-				"rotation": 90,
-			},
+				"rotation": 90
+			}
 		},
 		"esp32/moddable_two": {
 			"config": {
-				"rotation": 90,
-			},
-		},
+				"rotation": 90
+			}
+		}
 	}
 }

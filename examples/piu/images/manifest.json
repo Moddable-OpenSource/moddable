@@ -1,36 +1,36 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources":{
 		"*" : [
-			"$(MODDABLE)/examples/assets/images/street",
+			"$(MODDABLE)/examples/assets/images/street"
 		],
 		"*-image": [
 			"$(MODDABLE)/examples/assets/images/robby",
-			"$(MODDABLE)/examples/assets/images/fish",
+			"$(MODDABLE)/examples/assets/images/fish"
 		],
 		"*-image(100)": [
-			"$(MODDABLE)/examples/assets/images/screen1",
+			"$(MODDABLE)/examples/assets/images/screen1"
 		],
 		"*-image(40)": [
-			"$(MODDABLE)/examples/assets/images/screen2",
-		],
+			"$(MODDABLE)/examples/assets/images/screen2"
+		]
 	},
 	"platforms": {
 		"esp": {
 			"config": {
-				"rotation": 90,
-			},
+				"rotation": 90
+			}
 		},
 		"esp32": {
 			"config": {
-				"rotation": 90,
-			},
-		},
+				"rotation": 90
+			}
+		}
 	}
 }

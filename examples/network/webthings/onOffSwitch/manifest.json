@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/network/webthings/manifest.json",
+		"$(MODDABLE)/modules/network/webthings/manifest.json"
 	],
 	"config": {
 		"ssid": "YOUR_WIFI_SSID_HERE",
@@ -11,23 +11,23 @@
 	},
 	"modules": {
 		"~": [
-			"$(BUILD)/devices/esp/setup/network",
+			"$(BUILD)/devices/esp/setup/network"
 		],
 		"*": [
 			"./main",
-			"./assets",
-		],
+			"./assets"
+		]
 	},
 	"preload": [
 		"main",
-		"assets",
+		"assets"
 	],
 	"resources":{
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
 			"./assets/led_on-disc-mask",
 			"./assets/switch_off-mask",
-			"./assets/switch_on-glyph-mask",
-		],
-	},
+			"./assets/switch_on-glyph-mask"
+		]
+	}
 }

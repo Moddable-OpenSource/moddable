@@ -4,16 +4,16 @@
 		"$(BUILD)/devices/gecko/vdac/manifest.json",
 		"$(MODULES)/drivers/destm32s/manifest.json",
 		"$(MODULES)/pins/analog/manifest.json",
-		"$(MODULES)/base/sleep/manifest.json",
+		"$(MODULES)/base/sleep/manifest.json"
 	],
 	"config": {
 		"screen": "destm32s",
-		"touch": "",
+		"touch": ""
 	},
 	"resources": {
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
-		],
+		]
 	},
 	"modules": {
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
@@ -23,7 +23,7 @@
         "commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
         "commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
         "Resource": "$(MODDABLE)/modules/files/resource/Resource",
-		"*": "./main",
+		"*": "./main"
 	},
 	"preload": [
 		"commodetto/*",
@@ -35,7 +35,7 @@
 		"gecko/mighty": {
 			"defines": {
 				"sleep": {
-					"idleLevel": 1,
+					"idleLevel": 1
 				},
 				"analog": {
 					"interface": { "ADC": 0 },
@@ -43,15 +43,15 @@
 					"input1": "adcPosSelAPORT4YCH0",
 					"input2": "adcPosSelAPORT4XCH15",
 					"input3": "adcPosSelAPORT1XCH30",
-					"input4": "adcPosSelAPORT2XCH31",
+					"input4": "adcPosSelAPORT2XCH31"
 				},
 				"destm32s": {
 					"hz": 5000000,
 					"cs": { "pin": 9, "port": "gpioPortA" },
 					"dc": { "pin": 7, "port": "gpioPortB" },
 					"rst": { "pin": 10, "port": "gpioPortD" },
-					"busy": { "pin": 9, "port": "gpioPortC" },
-				},
+					"busy": { "pin": 9, "port": "gpioPortC" }
+				}
 			}
 		}
 	}

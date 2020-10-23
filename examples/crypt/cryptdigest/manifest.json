@@ -7,7 +7,7 @@
 			"$(MODULES)/crypt/digest/kcl/*",
 			"$(MODULES)/crypt/arith/*",
 			"$(MODULES)/crypt/bin/*",
-			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/base64/*"
 		]
-	},
+	}
 }

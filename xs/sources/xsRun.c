@@ -531,8 +531,10 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_STRICT_NOT_EQUAL,
 		&&XS_CODE_STRING_1,
 		&&XS_CODE_STRING_2,
+		&&XS_CODE_STRING_4,
 		&&XS_CODE_STRING_ARCHIVE_1,
 		&&XS_CODE_STRING_ARCHIVE_2,
+		&&XS_CODE_STRING_ARCHIVE_4,
 		&&XS_CODE_SUBTRACT,
 		&&XS_CODE_SUPER,
 		&&XS_CODE_SWAP,
@@ -608,7 +610,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		}
 		variable = slot - (mxStack++)->value.integer;
 		variable->next = mxFrame;
-		variable->flag = XS_NO_FLAG;
+		variable->flag &= XS_STRICT_FLAG;
 #ifdef mxDebug
 		if (mxFrame && (mxFrame->flag & XS_STEP_INTO_FLAG))
 			variable->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
@@ -2222,7 +2224,12 @@ XS_CODE_JUMP:
 				if (!mxBehaviorHasProperty(the, variable, (txID)offset, index))
 					mxRunDebugID(XS_REFERENCE_ERROR, "set %s: undefined variable", (txID)offset);
 			}
-			goto XS_CODE_SET_PROPERTY_ALL;
+			mxSaveState;
+			slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_ANY);
+			mxRestoreState;
+			if (slot->kind < 0)
+				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", (txID)offset);
+			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_SUPER_AT)
 			variable = (mxStack + 2)->value.reference;
 			offset = (mxStack + 1)->value.at.id;
@@ -2692,6 +2699,10 @@ XS_CODE_JUMP:
 #endif
 			mxBreak;
 			
+		mxCase(XS_CODE_STRING_4)
+			index = mxRunS4(1);
+			mxSkipCode(5);
+			goto XS_CODE_STRING;
 		mxCase(XS_CODE_STRING_2)
 			index = mxRunU2(1);
 			mxSkipCode(3);
@@ -2711,6 +2722,10 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceString(the, mxStack->value.string);
 #endif
 			mxBreak;
+		mxCase(XS_CODE_STRING_ARCHIVE_4)
+			index = mxRunS4(1);
+			mxSkipCode(5);
+			goto XS_CODE_STRING_ARCHIVE;
 		mxCase(XS_CODE_STRING_ARCHIVE_2)
 			index = mxRunU2(1);
 			mxSkipCode(3);
@@ -4390,7 +4405,6 @@ void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theID
 	register txByte* p = codeBuffer;
 	register txByte* q = codeBuffer + codeSize;
 	register txS1 offset;
-	txU2 index;
 	txID id;
 	while (p < q) {
 		//fprintf(stderr, "%s", gxCodeNames[*((txU1*)p)]);
@@ -4408,15 +4422,23 @@ void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theID
 			}
 		}
 		else if (-1 == offset) {
+			txU1 index;
 			p++;
 			index = *((txU1*)p);
 			p += 1 + index;
 		}
-		else if (-2 == offset) {
-			p++;
-			mxDecode2(p, index);
-			p += index;
-		}
+        else if (-2 == offset) {
+			txU2 index;
+            p++;
+            mxDecode2(p, index);
+            p += index;
+        }
+        else if (-4 == offset) {
+			txS4 index;
+            p++;
+            mxDecode4(p, index);
+            p += index;
+        }
 		//fprintf(stderr, "\n");
 	}
 }

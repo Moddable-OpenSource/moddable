@@ -9,9 +9,9 @@
 					"$(MODULES)/network/net/esp/*",
 					"$(MODULES)/network/sntp/*",
 					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/esp/*",
+					"$(MODULES)/network/wifi/esp/*"
 				],
-				"setup/network": "$(BUILD)/devices/esp/setup/network",
+				"setup/network": "$(BUILD)/devices/esp/setup/network"
 			},
 			"preload": [
 				"socket",
@@ -19,7 +19,7 @@
 				"sntp",
 				"wifi",
 				"net"
-			],
+			]
 		},
 		"esp32": {
 			"modules": {
@@ -30,9 +30,9 @@
 					"$(MODULES)/network/net/esp/*",
 					"$(MODULES)/network/sntp/*",
 					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/esp32/*",
+					"$(MODULES)/network/wifi/esp32/*"
 				],
-				"setup/network": "$(BUILD)/devices/esp32/setup/network",
+				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
 			"preload": [
 				"socket",
@@ -40,7 +40,7 @@
 				"sntp",
 				"wifi",
 				"net"
-			],
+			]
 		},
 		"lin": {
 			"modules": {
@@ -48,13 +48,13 @@
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/lin/*",
 					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/lin/*",
-				],
+					"$(MODULES)/network/net/lin/*"
+				]
 			},
 			"preload": [
 				"socket",
 				"net"
-			],
+			]
 		},
 		"mac": {
 			"modules": {
@@ -65,15 +65,15 @@
 					"$(MODULES)/network/net/mac/*",
 					"$(MODULES)/network/sntp/*",
 					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/mac/*",
-				],
+					"$(MODULES)/network/wifi/mac/*"
+				]
 			},
 			"preload": [
 				"socket",
 				"sntp",
 				"wifi",
 				"net"
-			],
+			]
 		},
 		"win": {
 			"modules": {
@@ -84,7 +84,7 @@
 					"$(MODULES)/network/net/win/*",
 					"$(MODULES)/network/sntp/*"
 				]
-			},
+			}
 		},
 		"qca4020": {
 			"modules": {
@@ -95,9 +95,9 @@
 					"$(MODULES)/network/net/qca4020/*",
 					"$(MODULES)/network/sntp/*",
 					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/qca4020/*",
+					"$(MODULES)/network/wifi/qca4020/*"
 				],
-				"setup/network": "$(BUILD)/devices/qca4020/setup/network",
+				"setup/network": "$(BUILD)/devices/qca4020/setup/network"
 			},
 			"preload": [
 				"socket",

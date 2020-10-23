@@ -1,10 +1,10 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources": {
 		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",

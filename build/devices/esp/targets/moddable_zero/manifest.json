@@ -5,7 +5,7 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "xpt2046",
+		"touch": "xpt2046"
 	},
 	"defines": {
 		"i2c": {
@@ -25,7 +25,7 @@
 			"raw_left": 1941,
 			"raw_right": 107,
 			"raw_top": 1980,
-			"raw_bottom": 186,
+			"raw_bottom": 186
 		}
 	}
 }

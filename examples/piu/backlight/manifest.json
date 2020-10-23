@@ -1,19 +1,24 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": [
+			"./main",
+			"./check"
+		]
 	},
-	"preload": "main",
+	"preload": [
+		"check"
+	],
 	"resources":{
 		"*": [
-			"./island",
+			"./island"
 		],
 		"*-mask": [
 			"./led-dim",
-			"./led-bright",
+			"./led-bright"
 		]
-	},
+	}
 }

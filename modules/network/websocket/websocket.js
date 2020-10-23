@@ -275,11 +275,12 @@ trace("partial header!!\n");		//@@ untested
 }
 
 export class Server {
+	#listener;
 	constructor(dictionary = {}) {
-		this.listener = new Listener({port: dictionary.port ? dictionary.port : 80});
-		this.listener.callback = listener => {
-			let socket = new Socket({listener: this.listener});
-			let request = new Client({socket});
+		this.#listener = new Listener({port: dictionary.port ?? 80});
+		this.#listener.callback = () => {
+			const socket = new Socket({listener: this.#listener});
+			const request = new Client({socket});
 			request.doMask = false;
 			socket.callback = server.bind(request);
 			request.state = 1;		// already connected socket
@@ -287,10 +288,9 @@ export class Server {
 			request.callback(Server.connect);		// tell app we have a new connection
 		};
 	}
-
 	close() {
-		this.listener.close();
-		delete this.listener;
+		this.#listener.close();
+		this.#listener = undefined;
 	}
 };
 

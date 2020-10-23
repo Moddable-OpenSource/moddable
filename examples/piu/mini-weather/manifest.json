@@ -2,30 +2,30 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/http/*"
 		]
 	},
 	"preload": [
-		"http",
+		"http"
 	],
 	"resources":{
 		"*-alpha": [
 			"./assets/icons-alpha",
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-52",
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-20",
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28",
-		],
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28"
+		]
 	},
 	"platforms": {
 		"esp/switch_science_reflective_lcd": {
 			"config": {
 				"rotation": 180
 			}
-		},
-	},
+		}
+	}
 }

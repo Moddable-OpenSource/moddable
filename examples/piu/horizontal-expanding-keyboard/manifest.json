@@ -2,24 +2,24 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/input/expanding-keyboard/horizontal/manifest.json",
+		"$(MODDABLE)/modules/input/expanding-keyboard/horizontal/manifest.json"
 	],
 	"creation": {
-		"stack":360,
+		"stack":360
 	},
 	"modules": {
 		"*": [
-			"./main",
+			"./main"
 		]
 	},
     "preload": "main",
 	"resources":{
 		"*-mask": [
-			"./assets/moddable-logo-mask",
+			"./assets/moddable-logo-mask"
 		],
 		"*-alpha": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
-			"$(MODDABLE)/examples/assets/fonts/Roboto-Regular-18",
+			"$(MODDABLE)/examples/assets/fonts/Roboto-Regular-18"
 		]
-	},
+	}
 }

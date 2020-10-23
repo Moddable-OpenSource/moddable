@@ -6,7 +6,7 @@
 			"$(MODULES)/data/base64/*",
 			"$(MODULES)/data/logical/*",
 			"$(MODULES)/network/mqtt/*",
-			"$(MODULES)/network/websocket/*",
+			"$(MODULES)/network/websocket/*"
 		]
 	},
 	"preload": [

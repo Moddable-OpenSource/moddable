@@ -539,6 +539,7 @@ void PiuViewEnd(PiuView* self)
 	Poco poco = (*self)->poco;
 #ifdef piuGPU
 	PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewReceiver, self);
+	pocoInstrumentationAdjust(FramesDrawn, +1);
 #else
 	xsMachine* the = (*self)->the;
 	PiuRegion* dirty = (*self)->dirty;
@@ -1125,7 +1126,9 @@ void PiuApplication_animateColors(xsMachine* the)
 	xsVar(0) = xsReference((*view)->screen);
 	xsVar(1) = xsNewHostObject(NULL);
 	xsSetHostData(xsVar(1), colors);
-	xsCall1(xsVar(0), xsID_animateColors, xsVar(1));
+	xsVar(1) = xsCall1(xsVar(0), xsID_animateColors, xsVar(1));
+	if (xsTest(xsVar(1)))
+		PiuViewInvalidate(view, NULL);
 #endif
 }
 
@@ -1134,9 +1137,10 @@ void PiuApplication_get_clut(xsMachine* the)
 #if kCommodettoBitmapCLUT16 == kPocoPixelFormat
 	PiuApplication* self = PIU(Application, xsThis);
 	PiuView* view = (*self)->view;
+	Poco poco = (*view)->poco;
 	xsVars(1);
-	xsVar(0) = xsReference((*view)->screen);
-	xsResult = xsGet(xsVar(0), xsID_clut);
+	xsResult = xsNewHostObject(NULL);
+	xsSetHostData(xsResult, poco->clut);
 #endif
 }
 
@@ -1146,11 +1150,13 @@ void PiuApplication_set_clut(xsMachine* the)
 	PiuApplication* self = PIU(Application, xsThis);
 	PiuView* view = (*self)->view;
 	Poco poco = (*view)->poco;
-	xsVars(1);
-	xsVar(0) = xsReference((*view)->screen);
-	xsSet(xsVar(0), xsID_clut, xsArg(0));
-	PiuViewInvalidate(view, NULL);
 	poco->clut = xsGetHostData(xsArg(0));
+	xsVars(2);
+	xsVar(0) = xsReference((*view)->screen);
+	xsVar(1) = xsNewHostObject(NULL);
+	xsSetHostData(xsVar(1), (16 * 16 * 16) + (16 * 2) + (uint8_t *)poco->clut);
+	xsSet(xsVar(0), xsID_clut, xsVar(1));
+	PiuViewInvalidate(view, NULL);
 #endif
 }
 
@@ -1247,7 +1253,7 @@ void PiuCLUT_get_colors(xsMachine* the)
 	xsSet(xsResult, xsID_length, xsInteger(16));
 	xsCall0(xsResult, xsID_fill);
 	while (i < 16) {
-		uint16_t src = c_read8(clut);
+		uint16_t src = c_read16(clut);
 		uint8_t r = src >> 11;
 		uint8_t g = (src >> 5) & 0x3F;
 		uint8_t b = src & 0x1F;
@@ -1328,7 +1334,8 @@ void PiuView_onDisplayReady(xsMachine* the)
 	PiuView* self = PIU(View, xsThis);
 	PiuApplication* application = (*self)->application;
 	(*self)->ready = 1;
-	PiuViewUpdate(self, application);
+	PiuView_onIdle(the);
+// 	PiuViewUpdate(self, application);
 #endif		
 }
 
@@ -1336,8 +1343,12 @@ void PiuView_onIdle(xsMachine* the)
 {
 	PiuView* self = PIU(View, xsThis);
 	PiuApplication* application = (*self)->application;
-	if (!application) return;
 	xsVars(2);
+	if (!application) return;
+// #ifdef piuGPU
+// 	if (!(*self)->ready)
+// 		return;
+// #endif		
 	(*self)->updating = 1;
 	(*self)->idleTicks = PiuViewTicks(self);
 	PiuApplicationDeferContents(the, application);

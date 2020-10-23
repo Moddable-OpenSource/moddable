@@ -5,29 +5,29 @@
 		"$(MODULES)/input/keyboard/manifest.json"
 	],
 	"creation":{
-		"stack":350,
+		"stack":350
 	},
 	"modules": {
 		"*": [
-			"./main",
+			"./main"
 		]
 	},
 	"resources":{
 		"*-alpha": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
 		]
 	},
 	"platforms": {
 		"esp": {
 			"config": {
-				"rotation": 90,
-			},
+				"rotation": 90
+			}
 		},
 		"esp32": {
 			"config": {
-				"rotation": 90,
-			},
-		},
+				"rotation": 90
+			}
+		}
 	}
 }

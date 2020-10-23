@@ -2,23 +2,23 @@
 	"platforms": {
 		"esp": {
 			"modules": {
-				"*": "$(MODULES)/pins/spi/esp/*",
-			},
+				"*": "$(MODULES)/pins/spi/esp/*"
+			}
 		},
 		"esp32": {
 			"modules": {
-				"*": "$(MODULES)/pins/spi/esp32/*",
-			},
+				"*": "$(MODULES)/pins/spi/esp32/*"
+			}
 		},
 		"gecko": {
 			"modules": {
-				"*": "$(MODULES)/pins/spi/gecko/*",
-			},
+				"*": "$(MODULES)/pins/spi/gecko/*"
+			}
 		},
 		"qca4020": {
 			"modules": {
-				"*": "$(MODULES)/pins/spi/qca4020/*",
-			},
+				"*": "$(MODULES)/pins/spi/qca4020/*"
+			}
 		},
 		"...": {
 			"error": "pins/spi module unsupported"

@@ -1,7 +1,7 @@
 {
 	"include": "../ili9341/manifest.json",
 	"modules": {
-		"*": "$(MODULES)/drivers/st7735/*",
+		"*": "$(MODULES)/drivers/st7735/*"
 	},
 	"preload": "st7735",
 	"defines": {
@@ -27,7 +27,7 @@
 				"kDelayMS, 100,",
 				"// 0x2C, 0,",
 				"kDelayMS, 0"
-			],
+			]
 		}
 	}
 }

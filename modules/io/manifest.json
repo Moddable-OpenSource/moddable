@@ -1,14 +1,14 @@
 {
 	"build": {
-		"IO": "$(MODDABLE)/modules/io",
+		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_net.json"
 	],
 	"modules": {
 		"*": [
-			"$(IO)/common/builtinCommon",
+			"$(IO)/common/builtinCommon"
 		],
 		"builtin/analog": "$(IO)/analog/*",
 		"builtin/digital": "$(IO)/digital/digital",
@@ -24,7 +24,7 @@
 
 		"expander": "$(IO)/expander/*",
 
-		"system": "$(IO)/system/*",
+		"system": "$(IO)/system/*"
 	},
 	"preload": [
 		"builtin/analog",
@@ -40,7 +40,7 @@
 
 		"expander",
 
-		"system",
+		"system"
 	],
 	"platforms": {
 		"esp": {

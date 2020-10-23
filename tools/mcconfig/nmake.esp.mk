@@ -99,7 +99,7 @@ INC_DIRS = \
 	-I$(CORE_DIR)\spiffs \
 	-I$(PLATFORM_DIR)\lib\rtc \
 	-I$(PLATFORM_DIR)\lib\tinyprintf \
-
+	-I$(PLATFORM_DIR)\lib\tinyi2s
 SDK = \
     -I$(PLATFORM_DIR)\lib\tinyprintf \
     -I$(PLATFORM_DIR)\lib\rtc
@@ -191,7 +191,8 @@ SDK_SRC = \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
 	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
-	$(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
+	$(PLATFORM_DIR)\lib\tinyuart\tinyuart.c \
+	$(PLATFORM_DIR)\lib\tinyi2s\tinyi2s.c 
 
 SDK_OBJ = \
 	$(LIB_DIR)\abi.o \
@@ -222,6 +223,7 @@ SDK_OBJ = \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
 	$(LIB_DIR)\tinyuart.o \
+	$(LIB_DIR)\tinyi2s.o \
 	$(LIB_DIR)\Schedule.o \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c
 
@@ -468,6 +470,11 @@ $(LIB_DIR)\tinyprintf.o: $(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\tinyuart.o: $(PLATFORM_DIR)\lib\tinyuart\tinyuart.c
+	@echo # cc $(@F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
+$(LIB_DIR)\tinyi2s.o: $(PLATFORM_DIR)\lib\tinyi2s\tinyi2s.c
 	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@

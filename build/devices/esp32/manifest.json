@@ -4,12 +4,12 @@
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/esp/*",
 			"$(MODULES)/base/timer/*",
-			"$(MODULES)/base/timer/mc/*",
+			"$(MODULES)/base/timer/mc/*"
 		]
 	},
 	"platforms": {
 		"esp32/*": {
 			"include": "./targets/$(SUBPLATFORM)/manifest.json"
-		},
+		}
 	}
 }

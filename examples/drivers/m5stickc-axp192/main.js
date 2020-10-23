@@ -29,16 +29,16 @@ let x = render.width;
 let y = (render.height - font.height) >> 1;
 
 let loop = true;	// set false to scroll text once across the screen
-let count = 7;		// screen brightness (7-15)
+let brightness = 50;  // screen brightness %
 button.a.onChanged = function() {
 	if (button.a.read()) {
 		return;
 	}
-	count++;
-	if (count >= 16) {
-		count = 7;
+	brightness+=10;
+	if (brightness > 100) {
+		brightness = 0;
 	}
-	global.power.brightness = count;
+	global.power.brightness = brightness;
 }
 
 render.begin();

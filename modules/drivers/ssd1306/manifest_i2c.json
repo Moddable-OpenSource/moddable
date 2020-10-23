@@ -5,45 +5,45 @@
 			"height": 32,
 			"dither": false,
 			"spi": false,
-			"i2c": true,
+			"i2c": true
 		}
 	},
 	"preload": [
 		"ssd1306",
-		"commodetto/Bitmap",
+		"commodetto/Bitmap"
 	],
 	"platforms": {
 		"esp": {
 			"include": [
 				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/i2c/manifest.json",
+				"$(MODULES)/pins/i2c/manifest.json"
 			],
 			"modules": {
 				"*": "$(MODULES)/drivers/ssd1306/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
 			},
 			"defines": {
 				"ssd1306": {
 					"scl_pin": 4,
 					"sda_pin": 5,
-					"address": "0x3c",
+					"address": "0x3c"
 				}
 			}
 		},
 		"esp32": {
 			"include": [
 				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/i2c/manifest.json",
+				"$(MODULES)/pins/i2c/manifest.json"
 			],
 			"modules": {
 				"*": "$(MODULES)/drivers/ssd1306/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
 			},
 			"defines": {
 				"ssd1306": {
 					"scl_pin": 4,
 					"sda_pin": 5,
-					"address": "0x3c",
+					"address": "0x3c"
 				}
 			}
 		}

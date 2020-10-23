@@ -122,21 +122,6 @@ void *modTimerGetRefcon(modTimer timer)
 	return timer->refcon;
 }
 
-modTimer modTimerFind(uint16_t id)
-{
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next)
-		if (id == walker->id)
-			break;
-
-	modCriticalSectionEnd();
-
-	return walker;
-}
-
 void modTimerRemove(modTimer timer)
 {
 	modTimer walker, prev = NULL;

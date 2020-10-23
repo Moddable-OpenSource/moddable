@@ -267,7 +267,7 @@ void xs_arducam_read(xsMachine *the)
 	int i;
 	uint8_t data[4];
 	uint8_t *buffer;
-	int bufferSize = xsGetArrayBufferLength(xsArg(0));
+	int bufferSize = xsmcGetArrayBufferLength(xsArg(0));
 	int readSize;
 
 	if (1 == argc)

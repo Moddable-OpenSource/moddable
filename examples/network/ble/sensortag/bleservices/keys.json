@@ -4,8 +4,8 @@
 		"characteristics": {
 			"keys": {
 				"uuid": "FFE1",
-				"type": "Uint8",
-			},
+				"type": "Uint8"
+			}
 		}
 	}
 }

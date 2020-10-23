@@ -16,37 +16,37 @@
 			  "$(PIU)/MC/piuImage",
 			  "$(PIU)/MC/piuRegion",
 			  "$(PIU)/MC/piuTexture",
-			  "$(PIU)/MC/piuView",
+			  "$(PIU)/MC/piuView"
 		]
 	},
 	"preload": [
 		"commodetto/*",
-		"piu/*",
+		"piu/*"
 	],
 	"platforms":{
 		"esp": {
 			"modules": {
-				"setup/piu": "$(BUILD)/devices/esp/setup/piu",
+				"setup/piu": "$(BUILD)/devices/esp/setup/piu"
 			},
 			"preload": "setup/piu"
 		},
 		"esp32": {
 			"modules": {
-				"setup/piu": "$(BUILD)/devices/esp32/setup/piu",
+				"setup/piu": "$(BUILD)/devices/esp32/setup/piu"
 			},
 			"preload": "setup/piu"
 		},
 		"gecko": {
 			"modules": {
-				"setup/piu": "$(BUILD)/devices/gecko/setup/piu",
+				"setup/piu": "$(BUILD)/devices/gecko/setup/piu"
 			},
 			"preload": "setup/piu"
 		},
 		"qca4020": {
 			"modules": {
-				"setup/piu": "$(BUILD)/devices/qca4020/setup/piu",
+				"setup/piu": "$(BUILD)/devices/qca4020/setup/piu"
 			},
 			"preload": "setup/piu"
-		},
+		}
 	}
 }

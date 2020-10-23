@@ -1,28 +1,28 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"modules": {
-		"*": "./main",
+		"*": "./main"
 	},
 	"resources":{
 		"*-mask": [
 			"./eink",
 			"./love",
-			"./moddable",
-		],
+			"./moddable"
+		]
 	},
 	"platforms": {
 		"esp/crystalfontz_monochrome_epaper": {
 			"config": {
-				"rotation": 270,
-			},
+				"rotation": 270
+			}
 		},
 		"esp/moddable_three": {
 			"config": {
-				"rotation": 270,
-			},
-		},
+				"rotation": 270
+			}
+		}
 	}
 }

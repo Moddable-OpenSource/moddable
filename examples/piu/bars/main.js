@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -43,7 +43,7 @@ let BarsPort = Port.template($ => ({
 			return x;
 		}
 		onCreate(port, $) {
-			this.string = teamStrings[$],
+			this.string = teamStrings[$];
 		}
 		onDraw(port, x, y, w, h) {
 			let string = this.string;

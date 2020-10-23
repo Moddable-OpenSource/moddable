@@ -7,28 +7,28 @@
 				"maxBytes": 32,
 				"type": "String",
 				"permissions": "write",
-				"properties": "write",
+				"properties": "write"
 			},
 			"password": {
 				"uuid": "FF02",
 				"maxBytes": 32,
 				"type": "String",
 				"permissions": "write",
-				"properties": "write",
+				"properties": "write"
 			},
 			"control": {
 				"uuid": "FF03",
 				"maxBytes": 1,
 				"type": "Uint8",
 				"permissions": "write",
-				"properties": "write",
+				"properties": "write"
 			},
 			"status": {
 				"uuid": "FF04",
 				"maxBytes": 32,
 				"type": "String",
 				"permissions": "read",
-				"properties": "notify",
+				"properties": "notify"
 			}
 		}
 	}

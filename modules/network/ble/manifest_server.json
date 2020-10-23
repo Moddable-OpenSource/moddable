@@ -10,7 +10,7 @@
 			"$(BLEMODULEPATH)/modBLEServer",
 			"$(BLEMODULEPATH)/modBLESM",
 			"$(BLEMODULEPATH)/modBLEGAP"
-		],
+		]
 	},
 	"preload": [
 		"bleserver",
@@ -22,16 +22,16 @@
 	"defines": {
 		"ble": {
 			"server": true,
-			"max_connections": 1,
+			"max_connections": 1
 		}
 	},
 	"platforms": {
 		"esp32": {
 			"modules": {
 				"*": [
-					"$(BLEMODULEPATH)/modBLECommon",
+					"$(BLEMODULEPATH)/modBLECommon"
 				]
-			},
-		},
+			}
+		}
 	}
 }

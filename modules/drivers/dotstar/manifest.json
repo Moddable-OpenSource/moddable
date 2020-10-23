@@ -6,36 +6,36 @@
 	},
 	"preload": [
 		"dotstar",
-		"commodetto/Bitmap",
+		"commodetto/Bitmap"
 	],
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json"
 			],
 			"modules": {
 				"*": "$(MODULES)/drivers/dotstar/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
 			},
 			"defines": {
 				"dotstar": {
 					"spi_port": "#HSPI"
-				},
+				}
 			}
 		},
 		"esp32": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json"
 			],
 			"modules": {
 				"*": "$(MODULES)/drivers/dotstar/*",
-				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
 			},
 			"defines": {
 				"dotstar": {
 					"spi_port": "HSPI_HOST"
-				},
+				}
 			}
-		},
+		}
 	}
 }

@@ -1,14 +1,14 @@
 {
 	"include": [
 		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"$(MODULES)/drivers/axp192/*",
-		],
+			"$(MODULES)/drivers/axp192/*"
+		]
 	},
 	"preload": [
-		"axp192",
-	],
+		"axp192"
+	]
 }

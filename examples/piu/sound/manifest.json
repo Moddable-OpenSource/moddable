@@ -1,11 +1,11 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
 	],
 	"config": {
 		"rotation": 90,
-		"autorotate": false,
+		"autorotate": false
 	},
 	"modules": {
 		"*": [
@@ -41,13 +41,13 @@
 						"dac": 1
 					}
 				}
-			},
+			}
 		},
 		"mac": {},
 		"win": {},
 		"...": {
 			"error": "Platform not supported"
-		},
+		}
 	}
 }
 

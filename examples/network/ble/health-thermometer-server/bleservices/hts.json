@@ -7,8 +7,8 @@
 				"maxBytes": 2,
 				"type": "Array",
 				"permissions": "read",
-				"properties": "notify",
-			},
+				"properties": "notify"
+			}
 		}
 	}
 }

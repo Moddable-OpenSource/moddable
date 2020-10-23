@@ -6,34 +6,34 @@
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
-		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
+		"commodetto/cfe": "$(COMMODETTO)/cfeBMF"
 	},
 	"preload": "commodetto/*",
 	"platforms": {
 		"esp": {
 			"modules": {
-				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto",
+				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto"
 			},
-			"preload": "setup/commodetto",
+			"preload": "setup/commodetto"
 		},
 		"esp32": {
 			"modules": {
-				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto",
+				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto"
 			},
-			"preload": "setup/commodetto",
+			"preload": "setup/commodetto"
 		},
 		"gecko": {
 			"modules": {
-				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto",
+				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto"
 			},
-			"preload": "setup/commodetto",
+			"preload": "setup/commodetto"
 		},
 		"qca4020": {
 			"modules": {
-				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto",
+				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto"
 			},
-			"preload": "setup/commodetto",
-		},
+			"preload": "setup/commodetto"
+		}
 
 	}
 }

@@ -4,16 +4,16 @@
 		"characteristics": {
 			"data": {
 				"uuid": "F000AA11-0451-4000-B000-000000000000",
-				"type": "Int8Array",
+				"type": "Int8Array"
 			},
 			"configuration": {
 				"uuid": "F000AA12-0451-4000-B000-000000000000",
-				"type": "Uint8",
+				"type": "Uint8"
 			},
 			"period": {
 				"uuid": "F000AA13-0451-4000-B000-000000000000",
-				"type": "Uint8",
-			},
+				"type": "Uint8"
+			}
 		}
 	}
 }

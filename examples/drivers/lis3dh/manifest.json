@@ -6,10 +6,10 @@
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODULES)/drivers/lis3dh/*",
+			"$(MODULES)/drivers/lis3dh/*"
 		]
 	},
 	"preload": [
 		"lis3dh"
-	],
+	]
 }

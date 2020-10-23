@@ -4,8 +4,8 @@
 		"characteristics": {
 			"temperature": {
 				"uuid": "2A1C",
-				"type": "Uint8Array",
-			},
+				"type": "Uint8Array"
+			}
 		}
 	}
 }

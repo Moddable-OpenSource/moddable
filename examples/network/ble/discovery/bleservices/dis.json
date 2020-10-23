@@ -4,8 +4,8 @@
 		"characteristics": {
 			"manufacturer": {
 				"uuid": "2A29",
-				"type": "String",
-			},
+				"type": "String"
+			}
 		}
 	}
 }

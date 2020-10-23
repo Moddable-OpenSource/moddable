@@ -98,7 +98,8 @@ typedef struct {
 	modSPIConfigurationRecord	spiConfig;
 
 #if kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
-	uint8_t						*clut;
+	uint16_t					clut[16];
+	uint8_t						haveCLUT;
 #endif
 
 	modGPIOConfigurationRecord	cs;
@@ -314,7 +315,7 @@ void xs_ILI9341_get_clut(xsMachine *the)
 {
 #if kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 	spiDisplay sd = xsmcGetHostData(xsThis);
-	if (sd->clut) {
+	if (sd->haveCLUT) {
 		xsResult = xsNewHostObject(NULL);
 		xsmcSetHostData(xsResult, sd->clut);
 	}
@@ -327,7 +328,11 @@ void xs_ILI9341_set_clut(xsMachine *the)
 {
 #if kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 	spiDisplay sd = xsmcGetHostData(xsThis);
-	sd->clut = xsmcGetHostData(xsArg(0));		// cannot be array buffer
+	sd->haveCLUT = 1;
+	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
+		xsmcGetArrayBufferData(xsArg(0), 0, sd->clut, sizeof(sd->clut));
+	else
+		c_memmove(sd->clut, xsmcGetHostData(xsArg(0)), sizeof(sd->clut));
 #else
 	xsUnknownError("unsupported");
 #endif
@@ -419,7 +424,7 @@ void ili9341Send_CLUT16(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
 	modSPISetSync(&sd->spiConfig, byteLength > 0);
-	modSPITxCLUT16To16BE(&sd->spiConfig, (void *)pixels, byteLength, (uint16_t *)(sd->clut + ((16 * 16 * 16) + (16 * 2))));
+	modSPITxCLUT16To16BE(&sd->spiConfig, (void *)pixels, (byteLength < 0) ? -byteLength : byteLength, sd->clut);
 }
 #endif
 

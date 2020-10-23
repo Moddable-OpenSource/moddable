@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
 	"config": {
 		"screen": "m5stack/screen",
@@ -51,8 +51,8 @@
 				"0x11, 0,",
 				"0xFF, 120,",
 				"0x29, 0,",
-				"0xFF, 0,",
-			],
+				"0xFF, 0,"
+			]
 		},
 		"audioOut": {
 			"bitsPerSample": 16,
@@ -62,27 +62,27 @@
 			"i2s": {
 				"DAC": 1,
 				"DAC_CHANNEL": 1,
-				"bitsPerSample": 16,
+				"bitsPerSample": 16
 			}
 		}
 	},
 	"modules": {
 		"*": [
 			"$(MODULES)/pins/digital/monitor/*",
-			"$(MODULES)/pins/digital/monitor/esp32/*",
+			"$(MODULES)/pins/digital/monitor/esp32/*"
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
-		"m5stack/screen": "./screen",
+		"m5stack/screen": "./screen"
 	},
 	"preload": [
 		"monitor",
 		"pins/audioout",
 		"setup/target",
-		"m5stack/screen",
+		"m5stack/screen"
 	],
 	"resources": {
-		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
-	},
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
+	}
 }
 

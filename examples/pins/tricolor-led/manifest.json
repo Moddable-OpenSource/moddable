@@ -1,9 +1,9 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/pins/pwm/manifest.json",
+		"$(MODDABLE)/modules/pins/pwm/manifest.json"
 	],
 	"modules": {
-		"*":  "./main",
-	},
+		"*":  "./main"
+	}
 }

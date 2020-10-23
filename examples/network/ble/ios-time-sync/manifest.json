@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/network/ble/manifest_client.json",
-		"$(MODDABLE)/modules/network/ble/manifest_server.json",
+		"$(MODDABLE)/modules/network/ble/manifest_server.json"
 	],
 	"modules": {
 		"*": [
@@ -14,13 +14,13 @@
 	"resources": {
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-52",
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20"
 		]
 	},
 	"ble":{
 		"*": [
-			"./bleservices/*",
-		],
+			"./bleservices/*"
+		]
 	},
 	"platforms": {
 		"esp32": {

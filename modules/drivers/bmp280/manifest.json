@@ -1,24 +1,24 @@
 {
 	"include": [
 		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"$(MODULES)/drivers/bmp280/*",
-		],
+			"$(MODULES)/drivers/bmp280/*"
+		]
 	},
 	"preload": [
-		"bmp280",
+		"bmp280"
 	],
 	"platforms": {
 		"gecko": {
 			"modules": {
-				"*": "$(MODULES)/drivers/bmp280/gecko/*",
-			},
+				"*": "$(MODULES)/drivers/bmp280/gecko/*"
+			}
 		},
 		"...": {
 			"error": "bmp280 unsupported"
 		}
-	},
+	}
 }

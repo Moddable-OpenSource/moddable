@@ -16,10 +16,10 @@
 	"resources": {
 		"*": [
 			"$(MODULES)/crypt/data/ca56",
-			"$(MODULES)/crypt/data/ca23",
+			"$(MODULES)/crypt/data/ca23"
 		]
 	},
 	"config": {
-		"sntp": "pool.ntp.org",
-	},
+		"sntp": "pool.ntp.org"
+	}
 }

@@ -3,18 +3,18 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/input/expanding-keyboard/horizontal/manifest.json",
+		"$(MODDABLE)/modules/input/expanding-keyboard/horizontal/manifest.json"
 	],
 	"creation": {
 		"stack":360,
 		"chunk": {
 			"initial":12000,
-			"incremental":1024,
+			"incremental":1024
 		},
         "heap": {
             "initial":1024,
-            "incremental":64,
-        },
+            "incremental":64
+        }
 	},
 	"modules": {
 		"~": [
@@ -25,12 +25,12 @@
 		"*": [
 			"./main",
 			"./wifi-screens",
-			"./assets",
+			"./assets"
 		]
 	},
 	"preload": [
 		"wifi-screens",
-		"assets",
+		"assets"
 	],
 	"platforms": {
 		"mac": {
@@ -59,7 +59,7 @@
 		},
 		"esp/moddable_one": {
 			"creation":{
-				"static": 35840,
+				"static": 35840
 			},			
 			"config": {
 				"rotation": 90
@@ -67,7 +67,7 @@
 		},
 		"esp32/moddable_two": {
 			"creation":{
-				"static": 50000,
+				"static": 50000
 			},
 			"config": {
 				"rotation": 90
@@ -75,7 +75,15 @@
 		},
 		"esp32/m5stack_core2": {
 			"creation":{
-				"static": 50000,
+				"static": 50000
+			},
+			"config": {
+				"rotation": 180
+			}
+		},
+		"esp32/m5stack_fire": {
+			"creation":{
+				"static": 50000
 			},
 			"config": {
 				"rotation": 180
@@ -92,7 +100,7 @@
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
 			"./assets/header-arrow",
 			"./assets/wifi-strip",
-			"./assets/page-1",
-		],
-	},
+			"./assets/page-1"
+		]
+	}
 }

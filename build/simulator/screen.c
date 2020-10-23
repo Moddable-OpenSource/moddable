@@ -392,7 +392,7 @@ void fxScreenTouch(txScreen* screen, int kind, int index, int x, int y, double w
 			xsVar(1) = xsGet(xsVar(0), xsID_context);
 			if (xsTest(xsVar(1))) {
 				if (xsFindResult(xsVar(1), xsID(gxTouchEventNames[kind]))) {
-					xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(when));
+					xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(modMilliseconds()));
 				}
 			}
 		}
@@ -768,7 +768,7 @@ void screen_set_clut(xsMachine* the)
 	screen->clut = xsGetHostData(xsArg(0));		// cannot be array buffer
 	//@@ check length
 	screen_clear(the);
-	fxScreenSetPalette(screen, (uint16_t *)(32 + 4096 + (char *)screen->clut));
+	fxScreenSetPalette(screen, (uint16_t *)screen->clut);
 }
 
 void screen_set_pixelFormat(xsMachine* the)
