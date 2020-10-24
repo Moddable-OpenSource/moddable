@@ -221,6 +221,7 @@ INC_DIRS += \
 	$(NRF52_SDK_ROOT)/components/softdevice/common \
 	$(NRF52_SDK_ROOT)/components/ble/common \
 	$(NRF52_SDK_ROOT)/components/ble/ble_advertising \
+	$(NRF52_SDK_ROOT)/components/ble/ble_radio_notification \
 	$(NRF52_SDK_ROOT)/components/ble/nrf_ble_gatt \
 	$(NRF52_SDK_ROOT)/components/ble/nrf_ble_qwr \
 	$(NRF52_SDK_ROOT)/components/ble/nrf_ble_scan \
@@ -353,6 +354,7 @@ NRF_BLE_OBJECTS = \
 	$(LIB_DIR)/ble_advertising.c.o \
 	$(LIB_DIR)/ble_conn_params.c.o \
 	$(LIB_DIR)/ble_conn_state.c.o \
+	$(LIB_DIR)/ble_radio_notification.c.o \
 	$(LIB_DIR)/ble_srv_common.c.o \
 	$(LIB_DIR)/gatt_cache_manager.c.o \
 	$(LIB_DIR)/gatts_cache_manager.c.o \

@@ -147,6 +147,7 @@ SDK_INCLUDES = \
 	-I$(NRF52_SDK_ROOT)\components \
 	-I$(NRF52_SDK_ROOT)\components\ble\common \
 	-I$(NRF52_SDK_ROOT)\components\ble\ble_advertising \
+	-I$(NRF52_SDK_ROOT)\components\ble\ble_radio_notification \
 	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_gatt \
 	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_qwr \
 	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_scan \
@@ -239,6 +240,7 @@ NRF_BLE_OBJ = \
 	$(LIB_DIR)\ble_advertising.o \
 	$(LIB_DIR)\ble_conn_params.o \
 	$(LIB_DIR)\ble_conn_state.o \
+	$(LIB_DIR)\ble_radio_notification.o \
 	$(LIB_DIR)\ble_srv_common.o \
 	$(LIB_DIR)\gatt_cache_manager.o \
 	$(LIB_DIR)\gatts_cache_manager.o \

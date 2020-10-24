@@ -30,6 +30,7 @@
 #include "ble.h"
 #include "ble_conn_params.h"
 #include "ble_gap.h"
+#include "ble_radio_notification.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_freertos.h"
@@ -81,6 +82,7 @@
 
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
 static void pm_evt_handler(pm_evt_t const * p_evt);
+static void ble_radio_evt(bool active);
 
 static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void bleServerReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
@@ -96,6 +98,8 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void pmPeersDeleteSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
+static void bleRadioOffEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void setAttributePermissions(security_req_t *read_access, security_req_t *write_access, security_req_t *cccd_write_access, uint8_t permissions);
 static void setAttributeProperties(ble_gatt_char_props_t *char_props, uint16_t properties);
@@ -117,6 +121,7 @@ typedef struct {
 	
 	// advertising
 	uint8_t adv_handle;
+	uint8_t adv_notify;
 	uint8_t adv_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	uint8_t scan_rsp_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];
 	
@@ -312,6 +317,14 @@ void xs_ble_server_start_advertising(xsMachine *the)
 	else
 		adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_NONSCANNABLE_UNDIRECTED;
 
+	
+	if (xsmcTest(xsArg(6))) {
+		uint8_t notify = xsmcToBoolean(xsArg(6));
+		if (notify) {
+			gBLE->adv_notify = 1;
+			ble_radio_notification_init(APP_IRQ_PRIORITY_LOW, NRF_RADIO_NOTIFICATION_DISTANCE_800US, ble_radio_evt);
+		}
+	}
 	err_code = sd_ble_gap_adv_set_configure(&gBLE->adv_handle, &adv_data, &adv_params);
 	if (NRF_SUCCESS == err_code)
 		err_code = sd_ble_gap_adv_start(gBLE->adv_handle, APP_BLE_CONN_CFG_TAG);
@@ -323,10 +336,19 @@ void xs_ble_server_start_advertising(xsMachine *the)
 void xs_ble_server_stop_advertising(xsMachine *the)
 {
     ret_code_t err_code;
+    uint8_t notify = gBLE->adv_notify;
+    
+    gBLE->adv_notify = 0;
     
 	err_code = sd_ble_gap_adv_stop(gBLE->adv_handle);
 	if (NRF_ERROR_INVALID_STATE != err_code)
 		xsUnknownError("ble stop advertising failed");
+
+	if (notify) {
+		sd_nvic_ClearPendingIRQ(SWI1_IRQn);
+		sd_nvic_DisableIRQ(SWI1_IRQn);
+		sd_radio_notification_cfg_set(NRF_RADIO_NOTIFICATION_TYPE_NONE, NRF_RADIO_NOTIFICATION_DISTANCE_NONE);
+	}
 }
 
 void xs_ble_server_characteristic_notify_value(xsMachine *the)
@@ -993,6 +1015,15 @@ static void pmPeersDeleteSucceededEvent(void *the, void *refcon, uint8_t *messag
 	xsEndHost(gBLE->the);
 }
 
+static void bleRadioOffEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsCall1(gBLE->obj, xsID_callback, xsString("onAdvertisementSent"));
+	xsEndHost(gBLE->the);
+}
+
 static void logGAPEvent(uint16_t evt_id) {
 	switch(evt_id) {
 		case BLE_GAP_EVT_CONNECTED: modLog("BLE_GAP_EVT_CONNECTED"); break;
@@ -1105,9 +1136,18 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 			modMessagePostToMachine(gBLE->the, (uint8_t*)&mtu_reply, sizeof(mtu_reply), gattsMTUExchangedEvent, NULL);
         	break;
         }
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+			sd_ble_gatts_sys_attr_set(gBLE->conn_handle, NULL, 0, 0);
+            break;
         default:
             break;
     }
+}
+
+void ble_radio_evt(bool active)
+{
+	if (!active && gBLE->adv_notify)
+		modMessagePostToMachineFromISR(gBLE->the, bleRadioOffEvent, NULL);
 }
 
 static void logPMEvent(uint16_t evt_id) {
