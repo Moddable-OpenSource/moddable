@@ -112,6 +112,12 @@ Reads the [Adafruit LIS3DH Triple-Axis Accelerometer](https://www.adafruit.com/p
 
 ***
 
+### [`m5stickc-rtc`](./m5stickc-rtc)
+
+[Commodetto](../../documentation/commodetto/commodetto.md) app for the [M5Stick-C](https://www.adafruit.com/product/4290). Demonstrates using the RTC BM8563 on the version 2 of the hardware.
+
+***
+
 ### [`mcp23008`](./mcp23008)
 
 Leverages the [MCP23008 GPIO expander](https://www.adafruit.com/product/593) to control multiple LEDs from a single I<sup>2</sup>C device.
