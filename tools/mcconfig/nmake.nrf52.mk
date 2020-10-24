@@ -657,6 +657,10 @@ $(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
+{$(NRF52_SDK_ROOT)\components\ble\ble_radio_notification\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
 {$(NRF52_SDK_ROOT)\components\ble\common\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
