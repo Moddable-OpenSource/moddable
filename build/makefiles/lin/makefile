@@ -18,6 +18,14 @@
 #
 .NOTPARALLEL:
 
+ifndef MODDABLE
+$(error MODDABLE environment variable not set)
+endif
+
+ifneq ($(MODDABLE), $(abspath $(MODDABLE)))
+$(error MODDABLE environment variable is set to an invalid path: "$(MODDABLE)")
+endif
+
 XS_DIR ?= $(MODDABLE)/xs
 export XS_DIR
 BUILD_DIR ?= $(MODDABLE)/build

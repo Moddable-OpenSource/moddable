@@ -18,6 +18,17 @@ REM   You should have received a copy of the GNU General Public License
 REM   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 REM
 REM
+
+IF "%MODDABLE%"=="" (
+    echo MODDABLE environment variable not set
+    EXIT /B 1
+)
+
+IF NOT EXIST %MODDABLE%\xs (
+    echo MODDABLE environment variable is set to an incorrect path: %MODDABLE%
+    EXIT /B 1
+)
+
 SET BUILD_DIR=%MODDABLE%\build
 SET XS_DIR=%MODDABLE%\xs
 @echo on
