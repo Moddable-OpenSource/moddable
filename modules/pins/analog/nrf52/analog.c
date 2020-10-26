@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-20  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,15 +18,158 @@
  *
  */
 
-#include "xs.h"
+#include "xsmc.h"
 #include "xsHost.h"
+#include "mc.xs.h"
 
+#include "nrf_delay.h"
+#include "nrf_drv_lpcomp.h"
 #include "nrfx_saadc.h"
+
+#define kAnalogResolution 10	// 10 bits
+#define kResetReasonLPCOMP (1L << 17)
+
+enum {
+	kAnalogWakeCrossingUnknown = -1,
+	kAnalogWakeCrossingUp,
+	kAnalogWakeCrossingDown,
+	kAnalogWakeCrossingUpDown
+};
+
+typedef struct modAnalogConfigurationRecord modAnalogConfigurationRecord;
+typedef struct modAnalogConfigurationRecord *modAnalogConfiguration;
+
+struct modAnalogConfigurationRecord {
+	xsSlot obj;
+	xsSlot onWake;
+	uint8_t channel;
+	uint8_t hasOnWake;
+};
+
+static void lpcomp_event_handler(nrf_lpcomp_event_t event);
+static void wakeableAnalogDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 uint8_t gAnalogInited = 0;
 
+void xs_analog(xsMachine *the)
+{
+	modAnalogConfiguration analog;
+	xsmcVars(1);
+
+	if (!xsmcHas(xsArg(0), xsID_pin))
+		xsUnknownError("pin missing");
+
+	analog = c_malloc(sizeof(modAnalogConfigurationRecord));
+	if (NULL == analog)
+		xsUnknownError("out of memory");
+		
+	xsmcSetHostData(xsThis, analog);
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
+	analog->channel = xsmcToInteger(xsVar(0));
+
+	analog->hasOnWake = false;
+	if (xsmcHas(xsArg(0), xsID_onWake)) {
+		xsmcGet(analog->onWake, xsArg(0), xsID_onWake);
+		xsRemember(analog->onWake);
+		analog->hasOnWake = true;
+	}
+
+	if (analog->hasOnWake) {
+		nrf_drv_lpcomp_config_t config;
+		uint16_t reference, detection;
+		int wakeValue, wakeCrossing;
+		uint32_t resetReason = 0;
+		double scaledValue;
+		ret_code_t err_code;
+
+		if (nrf52_softdevice_enabled())
+			sd_power_reset_reason_get(&resetReason);
+		else
+			resetReason = NRF_POWER->RESETREAS;
+	
+		analog->obj = xsThis;
+		if (xsmcHas(xsArg(0), xsID_target)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_target);
+			xsmcSet(xsThis, xsID_target, xsVar(0));
+		}
+
+		if (kResetReasonLPCOMP == resetReason) {
+			if (nrf52_softdevice_enabled())
+				sd_power_reset_reason_clr(resetReason);
+			else
+				NRF_POWER->RESETREAS = resetReason;
+				
+			modMessagePostToMachine(the, NULL, 0, wakeableAnalogDeliver, analog);
+		}
+
+		if (!xsmcHas(xsArg(0), xsID_wakeCrossing))
+			xsUnknownError("wakeCrossing missing");
+
+		if (!xsmcHas(xsArg(0), xsID_wakeValue))
+			xsUnknownError("wakeValue missing");
+		
+		xsmcGet(xsVar(0), xsArg(0), xsID_wakeCrossing);
+		wakeCrossing = xsmcToInteger(xsVar(0));
+		if (wakeCrossing < kAnalogWakeCrossingUp || wakeCrossing > kAnalogWakeCrossingUpDown)
+			xsRangeError("invalid wakeCrossing");
+		detection = wakeCrossing;
+
+		xsmcGet(xsVar(0), xsArg(0), xsID_wakeValue);
+		wakeValue = xsmcToInteger(xsVar(0));
+
+		scaledValue = ((double)wakeValue) / (1L << kAnalogResolution);
+		reference = (uint16_t)(scaledValue * (LPCOMP_REFSEL_REFSEL_SupplySevenEighthsPrescaling - LPCOMP_REFSEL_REFSEL_SupplyOneEighthPrescaling + 1));
+
+		config.hal.reference = reference;
+		config.hal.detection = detection;
+		config.hal.hyst = 0;
+		config.input = analog->channel;
+		config.interrupt_priority = 6;
+		err_code = nrf_drv_lpcomp_init(&config, lpcomp_event_handler);
+		if (NRF_SUCCESS != err_code)
+			xsUnknownError("wakeable analog config failure");
+
+		nrf_drv_lpcomp_enable();
+	}
+}
+
+void xs_analog_destructor(void *data)
+{
+	modAnalogConfiguration analog = data;
+	if (analog) {
+		if (analog->hasOnWake)
+			nrf_drv_lpcomp_disable();
+		c_free(analog);
+	}
+}
+
+void xs_analog_close(xsMachine *the)
+{
+	modAnalogConfiguration analog = xsmcGetHostData(xsThis);
+	if (!analog) return;
+
+	if (analog->hasOnWake)
+		xsForget(analog->onWake);
+	xs_analog_destructor(analog);
+	xsmcSetHostData(xsThis, NULL);
+}
+
 void saadc_handler(nrfx_saadc_evt_t const *event)
 {
+}
+
+void lpcomp_event_handler(nrf_lpcomp_event_t event)
+{
+}
+
+void wakeableAnalogDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	modAnalogConfiguration analog = refcon;
+
+	xsBeginHost(the);
+		xsCallFunction0(analog->onWake, analog->obj);
+	xsEndHost(the);
 }
 
 void init_analog()
@@ -86,19 +229,41 @@ void init_analog_channel(int channel)
 	APP_ERROR_CHECK(err_code);
 }
 
-void xs_analog_read(xsMachine *the)
+nrf_saadc_value_t read_analog(int channel)
 {
+	nrf_saadc_value_t value;
 	ret_code_t err_code;
-	int channel = xsToInteger(xsArg(0));
-
-	if (channel < 0 || channel > (NRF_SAADC_CHANNEL_COUNT -1))
-		xsRangeError("invalid analog channel number");
 
 	init_analog_channel(channel);
 
+	err_code = nrfx_saadc_sample_convert(channel, &value);
+	
+	return value;
+}
+
+void xs_analog_read(xsMachine *the)
+{
+	modAnalogConfiguration analog = xsmcGetHostChunk(xsThis);
+	int channel = analog->channel;
 	nrf_saadc_value_t value;
 
-	err_code = nrfx_saadc_sample_convert(channel, &value);
+	if (channel < 0 || channel > (NRF_SAADC_CHANNEL_COUNT -1))
+		xsRangeError("invalid analog channel number");
+		
+	value = read_analog(channel);
+	
+	xsResult = xsInteger(value);
+}
+
+void xs_analog_static_read(xsMachine *the)
+{
+	int channel = xsmcToInteger(xsArg(0));
+	nrf_saadc_value_t value;
+
+	if (channel < 0 || channel > (NRF_SAADC_CHANNEL_COUNT -1))
+		xsRangeError("invalid analog channel number");
+		
+	value = read_analog(channel);
 	
 	xsResult = xsInteger(value);
 }

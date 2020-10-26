@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,9 +18,17 @@
  *
  */
 
-class Analog {
-	static read(pin) @ "xs_analog_read";
-};
+class Analog @ "xs_analog_destructor" {
+	static read(pin) @ "xs_analog_static_read";
+
+	constructor(dictionary) @ "xs_analog";
+	close() @ "xs_analog_close";
+	read() @ "xs_analog_read";
+}
+Analog.CrossingUp = 0;
+Analog.CrossingDown = 1;
+Analog.CrossingUpDown = 2;
+
 Object.freeze(Analog.prototype);
 
 export default Analog;

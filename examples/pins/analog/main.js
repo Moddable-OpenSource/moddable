@@ -28,8 +28,12 @@ let width = render.width, height = render.height;
 let white = render.makeColor(255, 255, 255);
 let black = render.makeColor(0, 0, 0);
 
+let analog = new Analog({ pin:5 });
+let count = 0;
+
 Timer.repeat(id => {
-	let value = 1024 - Analog.read(0);
+	//let value = 1024 - Analog.read(5);
+	let value = 1024 - analog.read();
 	trace(value + "\n");
 
 	value = value.toString();
@@ -37,4 +41,9 @@ Timer.repeat(id => {
 		render.fillRectangle(black, 0, 0, width, height);
 		render.drawText(value, font, white, (width - render.getTextWidth(value, font)) >> 1, (height - font.ascent) >> 1);
 	render.end();
+	
+	if (++count == 50) {
+		Timer.clear(id);
+		analog.close();
+	}
 }, 50);

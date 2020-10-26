@@ -12,13 +12,14 @@
  *
  */
 /*
-	This application demonstrates how to use the Sleep object to trigger wakeup on analog change detection.
+	This application demonstrates how to wakeup on analog change detection.
 	The application turns on the LED while running and turns off the LED when asleep.
 	Upon wakeup, the application re-launches and blinks the LED if the analog value change woke up the device.
 	Change the voltage connected to the analog input pin to wakeup the device.
 */
 
-import {Sleep, AnalogDetectMode, ResetReason} from "sleep";
+import Analog from "pins/analog";
+import {Sleep} from "sleep";
 import Timer from "timer";
 
 const wakeup_channel = 5;		// AIN5
@@ -27,20 +28,21 @@ const led = new Host.LED;
 // Turn on LED upon wakeup
 led.write(1);
 
-// Blink LED upon wakeup from analog value trigger
-if (ResetReason.LPCOMP == Sleep.resetReason) {
-	for (let i = 0; i < 10; ++i) {
-		led.write(0);
-		Timer.delay(50);
-		led.write(1);
-		Timer.delay(50);
+let analog = new Analog({
+	pin: wakeup_channel,
+	wakeValue: 512,
+	wakeCrossing: Analog.CrossingUpDown,
+	onWake() {
+		for (let i = 0; i < 10; ++i) {
+			led.write(0);
+			Timer.delay(50);
+			led.write(1);
+			Timer.delay(50);
+		}
 	}
-}
+});
 
 Timer.set(() => {
-	Sleep.wakeOnAnalog(wakeup_channel, { value:512, mode:AnalogDetectMode.Crossing });
-	//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:AnalogDetectMode.Up });
-	//Sleep.wakeOnAnalog(CHANNEL, { value:512, mode:mode:AnalogDetectMode.Down });
 	led.write(0);
 	led.close();
 	Sleep.deep();
