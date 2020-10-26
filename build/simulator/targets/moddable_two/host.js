@@ -1,5 +1,7 @@
 import Button from "button";
+import LED from "led";
 
 globalThis.Host = Object.freeze({
-	Button,
+	Button: { Default: Button },
+	LED: { Default: LED },
 });

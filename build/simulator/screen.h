@@ -85,6 +85,9 @@ typedef void (*txScreenWorkerCallbackProc)(void* machine, void* job);
 
 #define screenBytesPerPixel 4
 
+#define mxScreenIdling 1
+#define mxScreenLED 2
+
 struct sxScreen {
 	void* machine;
 	void* view;
