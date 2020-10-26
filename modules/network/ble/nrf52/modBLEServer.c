@@ -100,6 +100,7 @@ static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, u
 static void pmPeersDeleteSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void bleRadioOffEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void ble_radio_notification_deinit();
 
 static void setAttributePermissions(security_req_t *read_access, security_req_t *write_access, security_req_t *cccd_write_access, uint8_t permissions);
 static void setAttributeProperties(ble_gatt_char_props_t *char_props, uint16_t properties);
@@ -207,6 +208,11 @@ void xs_ble_server_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 
+	if (ble->adv_notify) {
+		sd_ble_gap_adv_stop(ble->adv_handle);
+		ble_radio_notification_deinit();
+	}
+	
 	if (-1 != ble->conn_handle)
 		sd_ble_gap_disconnect(ble->conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
 	
@@ -344,11 +350,8 @@ void xs_ble_server_stop_advertising(xsMachine *the)
 	if (NRF_ERROR_INVALID_STATE != err_code)
 		xsUnknownError("ble stop advertising failed");
 
-	if (notify) {
-		sd_nvic_ClearPendingIRQ(SWI1_IRQn);
-		sd_nvic_DisableIRQ(SWI1_IRQn);
-		sd_radio_notification_cfg_set(NRF_RADIO_NOTIFICATION_TYPE_NONE, NRF_RADIO_NOTIFICATION_DISTANCE_NONE);
-	}
+	if (notify)
+		ble_radio_notification_deinit();
 }
 
 void xs_ble_server_characteristic_notify_value(xsMachine *the)
@@ -1024,6 +1027,13 @@ static void bleRadioOffEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	xsEndHost(gBLE->the);
 }
 
+static void ble_radio_notification_deinit()
+{
+	sd_nvic_ClearPendingIRQ(SWI1_IRQn);
+	sd_nvic_DisableIRQ(SWI1_IRQn);
+	sd_radio_notification_cfg_set(NRF_RADIO_NOTIFICATION_TYPE_NONE, NRF_RADIO_NOTIFICATION_DISTANCE_NONE);
+}
+
 static void logGAPEvent(uint16_t evt_id) {
 	switch(evt_id) {
 		case BLE_GAP_EVT_CONNECTED: modLog("BLE_GAP_EVT_CONNECTED"); break;
@@ -1146,7 +1156,7 @@ void ble_evt_handler(const ble_evt_t *p_ble_evt, void * p_context)
 
 void ble_radio_evt(bool active)
 {
-	if (!active && gBLE->adv_notify)
+	if (!active && gBLE && gBLE->adv_notify)
 		modMessagePostToMachineFromISR(gBLE->the, bleRadioOffEvent, NULL);
 }
 
