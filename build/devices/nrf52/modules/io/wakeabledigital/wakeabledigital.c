@@ -64,7 +64,6 @@ typedef struct WakeableDigitalRecord *WakeableDigital;
 
 static void xs_wakeabledigital_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void wakeableDigitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength);
-static uint8_t softdevice_enabled();
 
 static const xsHostHooks ICACHE_FLASH_ATTR xsWakeableDigitalHooks = {
 	xs_wakeabledigital_destructor,
@@ -110,7 +109,7 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 	wd->hasOnReadable = hasOnReadable;
 
 	// get the reset reason
-	if (softdevice_enabled())
+	if (nrf52_softdevice_enabled())
 		sd_power_reset_reason_get(&resetReason);
 	else
 		resetReason = NRF_POWER->RESETREAS;
@@ -118,7 +117,7 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 	wd->resetReason = resetReason;
 	
 	// clear the reset reason register using the bit mask (required)
-	if (softdevice_enabled())
+	if (nrf52_softdevice_enabled())
 		sd_power_reset_reason_clr(resetReason);
 	else
 		NRF_POWER->RESETREAS = resetReason;
@@ -224,13 +223,4 @@ void wakeableDigitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16
 	xsBeginHost(the);
 		xsCallFunction0(xsReference(wd->onReadable), wd->target);
 	xsEndHost(the);
-}
-
-uint8_t softdevice_enabled()
-{
-#ifdef SOFTDEVICE_PRESENT
-	return nrf_sdh_is_enabled();
-#else
-	return false;
-#endif
 }

@@ -73,7 +73,6 @@ typedef struct WakeableAnalogRecord *WakeableAnalog;
 
 static void xs_wakeableanalog_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void wakeableAnalogDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength);
-static uint8_t softdevice_enabled();
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 
 static const xsHostHooks ICACHE_FLASH_ATTR xsWakeableAnalogHooks = {
@@ -165,7 +164,7 @@ void xs_wakeableanalog_constructor(xsMachine *the)
 	wa->hasOnReadable = hasOnReadable;
 
 	// get the reset reason
-	if (softdevice_enabled())
+	if (nrf52_softdevice_enabled())
 		sd_power_reset_reason_get(&resetReason);
 	else
 		resetReason = NRF_POWER->RESETREAS;
@@ -173,7 +172,7 @@ void xs_wakeableanalog_constructor(xsMachine *the)
 	wa->resetReason = resetReason;
 	
 	// clear the reset reason register using the bit mask (required)
-	if (softdevice_enabled())
+	if (nrf52_softdevice_enabled())
 		sd_power_reset_reason_clr(resetReason);
 	else
 		NRF_POWER->RESETREAS = resetReason;
@@ -287,15 +286,6 @@ void wakeableAnalogDeliver(void *notThe, void *refcon, uint8_t *message, uint16_
 	xsBeginHost(the);
 		xsCallFunction0(xsReference(wa->onReadable), wa->target);
 	xsEndHost(the);
-}
-
-uint8_t softdevice_enabled()
-{
-#ifdef SOFTDEVICE_PRESENT
-	return nrf_sdh_is_enabled();
-#else
-	return false;
-#endif
 }
 
 void lpcomp_event_handler(nrf_lpcomp_event_t event)

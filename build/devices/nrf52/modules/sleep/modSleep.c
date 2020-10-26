@@ -70,7 +70,6 @@ enum {
 	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
 #endif
 
-static uint8_t softdevice_enabled();
 static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
@@ -111,7 +110,7 @@ void xs_sleep_set_retained_value(xsMachine *the)
 	ram_powerset = (1L << (POWER_RAM_POWER_S0RETENTION_Pos + ram_section)) |
 		(1L << (POWER_RAM_POWER_S0POWER_Pos + ram_section));
 
-	if (softdevice_enabled())
+	if (nrf52_softdevice_enabled())
 		sd_power_ram_power_set(ram_slave, ram_powerset);
 	else
 		NRF_POWER->RAM[ram_slave].POWERSET = ram_powerset;
@@ -133,7 +132,7 @@ void xs_sleep_set_power_mode(xsMachine *the)
 	if (!(mode == kPowerModeConstantLatency || mode == kPowerModeLowPower))
 		xsUnknownError("invalid power mode");
 		
-	if (softdevice_enabled())
+	if (nrf52_softdevice_enabled())
 		sd_power_mode_set(kPowerModeConstantLatency == mode ? NRF_POWER_MODE_CONSTLAT : NRF_POWER_MODE_LOWPWR);
 	else {
 		if (kPowerModeConstantLatency == mode)
@@ -160,7 +159,7 @@ void xs_sleep_deep(xsMachine *the)
 		nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
 
 		// Block all the interrupts globally
-		if (softdevice_enabled()) {
+		if (nrf52_softdevice_enabled()) {
 			do {
 				uint8_t dummy = 0;
 				uint32_t err_code = sd_nvic_critical_region_enter(&dummy);
@@ -192,14 +191,14 @@ void xs_sleep_deep(xsMachine *the)
 		__DSB();
 
 		// Complete process depending on whether or not the SoftDevice is enabled
-		if (softdevice_enabled())
+		if (nrf52_softdevice_enabled())
 			sleep_wake_on_timer_sd();
 		else
 			sleep_wake_on_timer();		
 	}
 	else {
 		// System OFF sleep, wake on reset or preconfigured analog/digital wake-up trigger
-		if (softdevice_enabled())
+		if (nrf52_softdevice_enabled())
 			sd_power_system_off();
 		else
 			NRF_POWER->SYSTEMOFF = 1;
@@ -214,7 +213,7 @@ void xs_sleep_deep(xsMachine *the)
 void xs_sleep_get_reset_reason(xsMachine *the)
 {
 	uint32_t reset_reason;
-	uint8_t sd_enabled = softdevice_enabled();
+	uint8_t sd_enabled = nrf52_softdevice_enabled();
 
 	if (sd_enabled)
 		sd_power_reset_reason_get(&reset_reason);
@@ -392,15 +391,6 @@ void sleep_wake_on_timer_sd()
 	// Reset device
 	*((uint32_t*)DFU_DBL_RESET_MEM) = 0;
 	sd_nvic_SystemReset();
-}
-
-uint8_t softdevice_enabled()
-{
-#ifdef SOFTDEVICE_PRESENT
-	return nrf_sdh_is_enabled();
-#else
-	return false;
-#endif
 }
 
 void lpcomp_event_handler(nrf_lpcomp_event_t event)

@@ -1244,3 +1244,12 @@ void nrf52_get_mac(uint8_t *mac) {
 	*(uint16_t*)(mac + 4) = NRF_FICR->DEVICEID[1] & 0xffff;
 }
 
+uint8_t nrf52_softdevice_enabled(void)
+{
+#ifdef SOFTDEVICE_PRESENT
+	return nrf_sdh_is_enabled();
+#else
+	return false;
+#endif
+}
+

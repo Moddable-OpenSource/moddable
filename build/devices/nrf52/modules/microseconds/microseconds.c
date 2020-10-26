@@ -19,17 +19,16 @@
  */
 
 #include "xsmc.h"
+#include "xsHost.h"
 #include "nrf_sdh.h"
 #include "nrf_timer.h"
 
 #define TIMER NRF_TIMER4
 #define CHANNEL NRF_TIMER_CC_CHANNEL0
 
-static uint8_t softdevice_enabled(void);
-
 void xs_microseconds_start(xsMachine *the)
 {
-	if (softdevice_enabled()) {
+	if (nrf52_softdevice_enabled()) {
 		uint32_t running = 0;
 		sd_clock_hfclk_request();
 		while (0 == running)
@@ -54,7 +53,7 @@ void xs_microseconds_stop(xsMachine *the)
 	xsmcSetInteger(xsResult, TIMER->CC[CHANNEL]);
 	TIMER->TASKS_STOP = 1;
 	NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
-	if (softdevice_enabled())
+	if (nrf52_softdevice_enabled())
 		sd_clock_hfclk_release();
 	else
 		NRF_CLOCK->TASKS_HFCLKSTOP = 1;
@@ -64,13 +63,4 @@ void xs_microseconds_get(xsMachine *the)
 {
 	TIMER->TASKS_CAPTURE[CHANNEL] = 1;
 	xsmcSetInteger(xsResult, TIMER->CC[CHANNEL]);
-}
-
-uint8_t softdevice_enabled(void)
-{
-#ifdef SOFTDEVICE_PRESENT
-	return nrf_sdh_is_enabled();
-#else
-	return false;
-#endif
 }
