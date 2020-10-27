@@ -243,7 +243,7 @@ class ApplicationBehavior extends Behavior {
 		this.verticalDividerCurrent = this.VERTICAL_DIVIDER.behavior.current;
 		this.verticalDividerStatus = this.VERTICAL_DIVIDER.behavior.status;
 		this.quitScreen();
-		this.selectDevice(application, -1),
+		this.selectDevice(application, -1);
 		if (this.orientation) {
 			application.replace(application.first, new HorizontalContainer(this));
 			this.orientation = false;
