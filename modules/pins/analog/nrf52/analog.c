@@ -19,7 +19,7 @@
  */
 
 #include "xsmc.h"
-#include "xsHost.h"
+#include "xsPlatform.h"
 #include "mc.xs.h"
 
 #include "nrf_delay.h"
@@ -79,29 +79,19 @@ void xs_analog(xsMachine *the)
 		nrf_drv_lpcomp_config_t config;
 		uint16_t reference, detection;
 		int wakeValue, wakeCrossing;
-		uint32_t resetReason = 0;
+		uint32_t resetReason;
 		double scaledValue;
 		ret_code_t err_code;
 
-		if (nrf52_softdevice_enabled())
-			sd_power_reset_reason_get(&resetReason);
-		else
-			resetReason = NRF_POWER->RESETREAS;
-	
 		analog->obj = xsThis;
 		if (xsmcHas(xsArg(0), xsID_target)) {
 			xsmcGet(xsVar(0), xsArg(0), xsID_target);
 			xsmcSet(xsThis, xsID_target, xsVar(0));
 		}
 
-		if (kResetReasonLPCOMP == resetReason) {
-			if (nrf52_softdevice_enabled())
-				sd_power_reset_reason_clr(resetReason);
-			else
-				NRF_POWER->RESETREAS = resetReason;
-				
+		resetReason = nrf52_get_reset_reason();
+		if (kResetReasonLPCOMP == resetReason)
 			modMessagePostToMachine(the, NULL, 0, wakeableAnalogDeliver, analog);
-		}
 
 		if (!xsmcHas(xsArg(0), xsID_wakeCrossing))
 			xsUnknownError("wakeCrossing missing");
@@ -113,7 +103,11 @@ void xs_analog(xsMachine *the)
 		wakeCrossing = xsmcToInteger(xsVar(0));
 		if (wakeCrossing < kAnalogWakeCrossingUp || wakeCrossing > kAnalogWakeCrossingUpDown)
 			xsRangeError("invalid wakeCrossing");
-		detection = wakeCrossing;
+		switch(wakeCrossing) {
+			case kAnalogWakeCrossingUp: detection = NRF_LPCOMP_DETECT_UP; break;
+			case kAnalogWakeCrossingDown: detection = NRF_LPCOMP_DETECT_DOWN; break;
+			case kAnalogWakeCrossingUpDown: detection = NRF_LPCOMP_DETECT_CROSS; break;
+		}
 
 		xsmcGet(xsVar(0), xsArg(0), xsID_wakeValue);
 		wakeValue = xsmcToInteger(xsVar(0));

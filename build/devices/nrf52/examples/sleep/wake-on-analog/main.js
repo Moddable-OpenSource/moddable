@@ -22,14 +22,14 @@ import Analog from "pins/analog";
 import {Sleep} from "sleep";
 import Timer from "timer";
 
-const wakeup_channel = 5;		// AIN5
+const wakeup_pin = 5;		// AIN5
 const led = new Host.LED;
 
 // Turn on LED upon wakeup
 led.write(1);
 
 let analog = new Analog({
-	pin: wakeup_channel,
+	pin: wakeup_pin,
 	wakeValue: 512,
 	wakeCrossing: Analog.CrossingUpDown,
 	onWake() {

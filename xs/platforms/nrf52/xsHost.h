@@ -443,6 +443,9 @@ char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 extern void nrf52_get_mac(uint8_t *mac);
 
+void nrf52_set_reset_reason(uint32_t resetReason);
+uint32_t nrf52_get_reset_reason(void);
+
 uint8_t nrf52_softdevice_enabled(void);
 
 #ifdef __cplusplus

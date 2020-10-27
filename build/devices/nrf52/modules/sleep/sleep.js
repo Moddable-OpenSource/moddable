@@ -29,7 +29,6 @@ class Sleep {
 	static get resetReason() @ "xs_sleep_get_reset_reason";
 	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
-	static wakeOnAnalog(channel, configuration) @ "xs_sleep_wake_on_analog";
 	static wakeOnDigital(pin) @ "xs_sleep_wake_on_digital";
 	static wakeOnInterrupt(pin) @ "xs_sleep_wake_on_interrupt";
 
@@ -50,13 +49,6 @@ const SleepMode = {
 };
 Object.freeze(SleepMode);
 
-const AnalogDetectMode = {
-	Crossing: 0,
-	Up: 1,
-	Down: 2
-};
-Object.freeze(AnalogDetectMode);
-
 const ResetReason = {
 	RESETPIN: 1 << 0,	// reset pin
 	DOG: 1 << 1,		// watchdog
@@ -69,4 +61,4 @@ const ResetReason = {
 };
 Object.freeze(ResetReason);
 
-export {Sleep as default, Sleep, PowerMode, SleepMode, AnalogDetectMode, ResetReason};
+export {Sleep as default, Sleep, PowerMode, SleepMode, ResetReason};

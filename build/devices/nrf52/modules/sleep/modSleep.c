@@ -212,21 +212,7 @@ void xs_sleep_deep(xsMachine *the)
 
 void xs_sleep_get_reset_reason(xsMachine *the)
 {
-	uint32_t reset_reason;
-	uint8_t sd_enabled = nrf52_softdevice_enabled();
-
-	if (sd_enabled)
-		sd_power_reset_reason_get(&reset_reason);
-	else
-		reset_reason = NRF_POWER->RESETREAS;
-
-	// clear the reset reason register using the bit mask
-	if (sd_enabled)
-		sd_power_reset_reason_clr(reset_reason);
-	else
-		NRF_POWER->RESETREAS = reset_reason;
-		
-	xsmcSetInteger(xsResult, reset_reason);	
+	xsmcSetInteger(xsResult, nrf52_get_reset_reason());	
 }
 
 void xs_sleep_get_reset_pin(xsMachine *the)
@@ -253,39 +239,6 @@ void xs_sleep_wake_on_digital(xsMachine *the)
 	
     // Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
     nrf_delay_ms(1);
-}
-
-void xs_sleep_wake_on_analog(xsMachine *the)
-{
-	uint16_t input = xsmcToInteger(xsArg(0));
-	uint16_t detection = xsmcToInteger(xsArg(1));
-	uint16_t value = xsmcToInteger(xsArg(2));
-	nrf_drv_lpcomp_config_t config;
-	uint16_t reference;
-	double scaledValue;
-	ret_code_t err_code;
-
-	if (input < NRF_LPCOMP_INPUT_0 || input > NRF_LPCOMP_INPUT_7)
-		xsRangeError("invalid analog channel number");
-
-	if (detection < kAnalogWakeModeCrossing || detection > kAnalogWakeModeDown)
-		xsRangeError("invalid analog detect mode");
-
-	scaledValue = ((double)value) / (1L << kAnalogResolution);
-	reference = (uint16_t)(scaledValue * (LPCOMP_REFSEL_REFSEL_SupplySevenEighthsPrescaling - LPCOMP_REFSEL_REFSEL_SupplyOneEighthPrescaling + 1));
-
-	config.hal.reference = reference;
-	config.hal.detection = detection;
-	config.hal.hyst = 0;
-	config.input = input;
-	config.interrupt_priority = 6;
-	err_code = nrf_drv_lpcomp_init(&config, lpcomp_event_handler);
-	if (NRF_SUCCESS != err_code)
-		xsUnknownError("wake on analog config failure");
-
-	nrf_drv_lpcomp_enable();
-
-	nrf_delay_ms(10);	// @@ seems necessary?
 }
 
 void xs_sleep_wake_on_interrupt(xsMachine *the)

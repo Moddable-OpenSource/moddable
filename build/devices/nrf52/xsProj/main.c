@@ -140,6 +140,8 @@ static void timer_init(void)
 /**@brief Function for application main entry.
  */
 
+uint32_t gResetReason;
+
 int main(void)
 {
 #if USE_FTDI_TRACE
@@ -152,6 +154,10 @@ int main(void)
 #ifdef mxDebug
 	nrf_drv_power_init(NULL);
 #endif
+
+	// Grab the reset reason early. Because the reset reason register is cumulative, clear it now.
+	nrf52_set_reset_reason(NRF_POWER->RESETREAS);
+	NRF_POWER->RESETREAS = 0xFFFFFFFF;
 
 	watchdog_init();
 

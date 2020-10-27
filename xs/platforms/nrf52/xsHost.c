@@ -1244,6 +1244,18 @@ void nrf52_get_mac(uint8_t *mac) {
 	*(uint16_t*)(mac + 4) = NRF_FICR->DEVICEID[1] & 0xffff;
 }
 
+static uint32_t gResetReason;
+
+void nrf52_set_reset_reason(uint32_t resetReason)
+{
+	gResetReason = resetReason;
+}
+
+uint32_t nrf52_get_reset_reason(void)
+{
+	return gResetReason;
+}
+
 uint8_t nrf52_softdevice_enabled(void)
 {
 #ifdef SOFTDEVICE_PRESENT
