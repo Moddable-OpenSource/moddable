@@ -140,8 +140,6 @@ static void timer_init(void)
 /**@brief Function for application main entry.
  */
 
-uint32_t gResetReason;
-
 int main(void)
 {
 #if USE_FTDI_TRACE

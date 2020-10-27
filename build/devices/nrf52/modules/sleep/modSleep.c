@@ -31,18 +31,10 @@
 #define kRamRetentionValueMagic 0x52081543
 #define kRamRetentionSlots 32
 
-#define kAnalogResolution 10	// 10 bits
-
 enum {
 	kPowerModeUnknown = 0,
 	kPowerModeConstantLatency,
 	kPowerModeLowPower
-};
-
-enum {
-	kSleepModeUnknown = 0,
-	kSleepModeSystemOn,
-	kSleepModeSystemOff
 };
 
 enum {
@@ -55,13 +47,6 @@ enum {
 	kResetReasonLPCOMP = (1L << 17),
 	kResetReasonDebugInterface = (1L << 18),
 	kResetReasonNFC = (1L << 19)
-};
-
-enum {
-	kAnalogWakeModeUnknown = -1,
-	kAnalogWakeModeCrossing,
-	kAnalogWakeModeUp,
-	kAnalogWakeModeDown
 };
 
 #ifdef MODGCC
