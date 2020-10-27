@@ -23,6 +23,7 @@
 #include "xsHost.h"
 #include "modGPIO.h"
 #include "modSPI.h"
+#include "modTimer.h"
 #include "commodettoBitmap.h"
 #include "commodettoPixelsOut.h"
 #include "mc.xs.h"
@@ -103,7 +104,10 @@ struct ls013b4dn04Record {
 	uint16_t    bytesPerLine;
 
 	uint8_t		*pixelBuffer;
-	uint16_t	bufferSize;
+	uint16_t		bufferSize;
+#if MODDEF_LS013B4DN04_PULSE
+	modTimer		timer;
+#endif
 
 #if MODDEF_LS013B4DN04_DITHER
 	uint8_t				ditherPhase;
@@ -117,11 +121,15 @@ typedef ls013b4dn04Record *ls013b4dn04;
 
 static void ls013b4dn04ChipSelect(uint8_t active, modSPIConfiguration config);
 static void ls_clear(ls013b4dn04 ls);
+static void ls013b4dn04Hold(ls013b4dn04 ls);
 
 static uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
 static void ls013b4dn04Send(PocoPixel *data, int count, void *refCon);
 static void ls013b4dn04End(void *refcon);
 static void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid);
+#if MODDEF_LS013B4DN04_PULSE
+	static void pulseScreen(modTimer timer, void *refcon, int refconSize);
+#endif
 
 static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 	(PixelsOutBegin)ls013b4dn04Begin,
@@ -149,6 +157,13 @@ void xs_LS013B4DN04(xsMachine *the){
 
 #if MODDEF_LS013B4DN04_DITHER && MODDEF_LS013B4DN04_UPDATEALL
 	ls->flags = MODDEF_LS013B4DN04_UPDATEALL ? 2 : 0;
+#endif
+
+#if MODDEF_LS013B4DN04_PULSE
+	ls->timer = modTimerAdd(1001, 1000, pulseScreen, &ls, sizeof(ls));
+	if (!ls-> timer)
+		xsUnknownError("out of memory");
+	modTimerUnschedule(ls->timer);
 #endif
 
 	SCREEN_DISP_INIT;
@@ -181,6 +196,11 @@ uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordin
 	}
 #endif
 
+	ls->updateCycle = !ls->updateCycle;
+#if MODDEF_LS013B4DN04_PULSE
+	modTimerUnschedule(ls->timer);
+#endif
+
 	return 0;
 }
 
@@ -203,22 +223,21 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 	if (count < 0) count = -count;
 	modSPIActivateConfiguration(NULL);
 	lines = (int)(count / MODDEF_LS013B4DN04_WIDTH);
-	size = 2 + (ls->bytesPerLine * lines);
+	size = (ls->bytesPerLine * lines) + 2;		// 2 byte dummy data at after all scan lines
 
-	if (size + 10 > ls->bufferSize){
-		if (ls->pixelBuffer) {
+	if (size > ls->bufferSize){
+		if (ls->pixelBuffer)
 			c_free(ls->pixelBuffer);
+		ls->pixelBuffer = c_malloc(size);
+		if (!ls->pixelBuffer) {
 			ls->bufferSize = 0;
-		}
-		ls->pixelBuffer = c_malloc(size + 10);
-		if (!ls->pixelBuffer)
 			return;
-		ls->bufferSize = (size + 10);
+		}
+		ls->bufferSize = size;
 	}
 
 	toSend = ls->pixelBuffer;
-	ls->updateCycle = !ls->updateCycle;
-	flags = MODE_FLAG | (ls->updateCycle ? FRAME_FLAG : 0) & (~CLEAR_FLAG);
+	flags = MODE_FLAG | (ls->updateCycle ? FRAME_FLAG : 0);
 
 	for (int i = ls->onRow + 1; i <= (ls->onRow + lines); i++){
 		PocoPixel *dest;
@@ -303,9 +322,14 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon){
 			d |= (d >> 9) | (d >> 18) | (d >> 27);
 			*toSend++ = (uint8_t)d;
 		}
+
+		flags = 0;
 	}
 
-	ls->onRow = ls->onRow + lines;
+	*toSend++ = 0;
+	*toSend++ = 0;
+
+	ls->onRow += lines;
 	modSPITx(&ls->spiConfig, ls->pixelBuffer, size);
 }
 
@@ -343,10 +367,19 @@ void xs_ls013b4dn04_send(xsMachine *the){
 }
 
 void ls013b4dn04End(void *refcon){
+	ls013b4dn04 ls = refcon;
+
+#if MODDEF_LS013B4DN04_PULSE
+	modTimerReschedule(ls->timer, 2001, 1001);
+#endif
+	modSPIActivateConfiguration(NULL);		// drop CS after data
+
+	ls013b4dn04Hold(ls);
 }
 
 void xs_ls013b4dn04_end(xsMachine *the){
-  ls013b4dn04End(NULL);
+	ls013b4dn04 ls = xsmcGetHostData(xsThis);
+	ls013b4dn04End(ls);
 }
 
 void xs_ls013b4dn04_destructor(void *data){
@@ -356,6 +389,10 @@ void xs_ls013b4dn04_destructor(void *data){
 		if ( ls->pixelBuffer )
 			c_free(ls->pixelBuffer);
 		modSPIUninit(&ls->spiConfig);
+#if MODDEF_LS013B4DN04_PULSE
+		if (ls->timer)
+			modTimerRemove(ls->timer);
+#endif
 		c_free(data);
 	}
 }
@@ -363,23 +400,26 @@ void xs_ls013b4dn04_destructor(void *data){
 void ls013b4dn04Hold(ls013b4dn04 ls)
 {
 	ls->updateCycle = !ls->updateCycle;
-	uint8_t mode[6] = {0,0,0,0,0,0};
+	uint8_t mode[2] = {0, 0};
 	if (ls->updateCycle)
 		mode[0] |= FRAME_FLAG;
-	modSPITx(&ls->spiConfig, mode, 6);
+	modSPITx(&ls->spiConfig, mode, sizeof(mode));
 	modSPIActivateConfiguration(NULL);
 }
 
 void ls_clear(ls013b4dn04 ls)
 {
 	ls->updateCycle = !ls->updateCycle;
-	uint8_t mode[6] = {0,0,0,0,0,0};
-	mode[0] = CLEAR_FLAG;
+	uint8_t mode[2] = {CLEAR_FLAG, 0};
 	if (ls->updateCycle)
 		mode[0] |= FRAME_FLAG;
 
-	modSPITx(&ls->spiConfig, mode, 6);
+	modSPITx(&ls->spiConfig, mode, sizeof(mode));
 	modSPIActivateConfiguration(NULL);
+
+#if MODDEF_LS013B4DN04_PULSE
+	modTimerUnschedule(ls->timer);
+#endif
 }
 
 void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid)
@@ -430,7 +470,6 @@ void xs_ls013b4dn04_clear(xsMachine *the)
 	ls_clear(ls);
 }
 
-//@@ no power!?!
 void xs_ls013b4dn04_hold(xsMachine *the)
 {
 	ls013b4dn04 ls = xsmcGetHostData(xsThis);
@@ -466,3 +505,12 @@ void ls013b4dn04ChipSelect(uint8_t active, modSPIConfiguration config)
 	else
 		SCREEN_CS_DEACTIVE;
 }
+
+#if MODDEF_LS013B4DN04_PULSE
+void pulseScreen(modTimer timer, void *refcon, int refconSize)
+{
+	ls013b4dn04 ls = *(ls013b4dn04 *)refcon;
+
+	ls013b4dn04Hold(ls);
+}
+#endif
