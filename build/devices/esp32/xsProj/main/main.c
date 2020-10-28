@@ -29,7 +29,7 @@
 #include "freertos/task.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "esp_event_loop.h"
+// #include "esp_event_loop.h"
 #include "esp_task_wdt.h"
 #include "lwip/inet.h"
 #include "lwip/ip4_addr.h"
@@ -122,7 +122,7 @@ void setup(void)
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
-	uartConfig.use_ref_tick = 0;
+//	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)

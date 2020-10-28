@@ -28,7 +28,6 @@
 			"./update",
 			"./prefs"
 		],
-		"piu/Timeline":"$(MODULES)/piu/All/piuTimeline",
 		"net":"$(MODULES)/network/net/netmdns",
 		"dns/server":"$(MODULES)/network/dns/dnsserver",
 		"esp32/ota": "$(BUILD)/devices/esp32/modules/ota/*"
@@ -38,7 +37,6 @@
 		"buttons",
 		"styles",
 		"sevenseg",
-		"piu/Timeline",
 		"sntp",
 		"http",
 		"preference",

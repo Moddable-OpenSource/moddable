@@ -25,6 +25,11 @@ ESP32_CMAKE ?= 1
 
 EXPECTED_ESP_IDF ?= v3.3.2
 
+# ESP32_SUBCLASS is to find some include files in IDFv4
+# values include esp32, esp32s3 and esp32s2
+ESP32_SUBCLASS ?= esp32
+
+
 ifeq ($(VERBOSE),1)
 	CMAKE_LOG_LEVEL = VERBOSE
 	IDF_PY_LOG_FLAG = -v
@@ -33,7 +38,7 @@ else
 	IDF_PY_LOG_FLAG = -n
 endif
 
-ESP32_BASE ?= $(HOME)/esp32
+ESP32_BASE ?= $(HOME)/esp32-new
 IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
@@ -45,7 +50,7 @@ ifeq ($(IDF_VERSION),)
 $(warning Could not detect ESP-IDF version.)
 else
 ifneq ($(IDF_VERSION),$(EXPECTED_ESP_IDF))
-$(error Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).)
+$(warning Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).)
 endif
 endif
 
@@ -88,13 +93,25 @@ INC_DIRS = \
  	$(IDF_PATH)/components/bt/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
  	$(IDF_PATH)/components/driver/include \
- 	$(IDF_PATH)/components/esp32/include \
+ 	$(IDF_PATH)/components/driver/include/driver \
+ 	$(IDF_PATH)/components/esp_common/include \
+ 	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
+ 	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/esp_event/include \
+ 	$(IDF_PATH)/components/esp_eth/include \
+ 	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_ringbuf/include \
- 	$(IDF_PATH)/components/esp32/include \
+ 	$(IDF_PATH)/components/esp_rom/include \
+ 	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
+ 	$(IDF_PATH)/components/esp_system/include \
+ 	$(IDF_PATH)/components/esp_timer/include \
+ 	$(IDF_PATH)/components/esp_wifi/include \
+ 	$(IDF_PATH)/components/xtensa/include \
+	$(IDF_PATH)/components/xtensa/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
+ 	$(IDF_PATH)/components/freertos/xtensa/include \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/lwip/include/apps/ \
@@ -117,6 +134,9 @@ INC_DIRS = \
  	$(IDF_PATH)/components/soc/esp32/include \
  	$(IDF_PATH)/components/soc/esp32/include/soc \
  	$(IDF_PATH)/components/soc/include \
+	$(IDF_PATH)/components/soc/soc/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/soc/src/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/soc/soc/include \
  	$(IDF_PATH)/components/spiffs/include \
 	$(IDF_PATH)/components/fatfs/src \
 	$(IDF_PATH)/components/wear_levelling/include \
@@ -124,6 +144,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
  	$(IDF_PATH)/components/vfs/include
+
+# 	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
     
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
@@ -217,6 +239,7 @@ C_DEFINES = \
 	-D__ets__ \
 	-U__STRICT_ANSI__ \
 	-DESP32=1 \
+	-DIDF_TARGET=$(ESP32_SUBCLASS) \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
@@ -294,7 +317,8 @@ ifeq ($(ESP32_CMAKE),1)
 		SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
 	endif
 	BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
-	BUILD_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+#	BUILD_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	BUILD_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	BUILD_ERR = "ESP-IDF Build Failed"
 	DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	IDF_RECONFIGURE_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
