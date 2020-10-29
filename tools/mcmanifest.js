@@ -1267,19 +1267,21 @@ export class Tool extends TOOL {
 				this.environment.FULLPLATFORM = name;
 				this.environment.PLATFORMPATH = "";
 				let parts = name.split("/");
-				if (!parts[0]) {
+				if ((parts[0] == "sim") || (parts[0] == "simulator"))
 					parts[0] = this.currentPlatform;
-					this.fullplatform = this.currentPlatform + name;
-					this.environment.FULLPLATFORM = this.currentPlatform + name;
-				}
+				this.platform = parts[0];
 				if (parts[1]) {
 					this.subplatform = parts[1];
-					this.environment.SUBPLATFORM = parts[1];
-					this.environment.PLATFORMPATH = this.slash + parts[1];
+					this.environment.SUBPLATFORM = this.subplatform;
+					this.fullplatform = this.platform + "/" + this.subplatform;
+					this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
 				}
-				this.platform = parts[0];
-				this.environment.PLATFORM = parts[0];
-				this.environment.PLATFORMPATH = parts[0] + this.environment.PLATFORMPATH;
+				else {
+					this.fullplatform = this.platform;
+					this.environment.PLATFORMPATH = this.platform;
+				}
+				this.environment.PLATFORM = this.platform;
+				this.environment.FULLPLATFORM = this.fullplatform;
 				break;
 			case "-r":
 				argi++;
