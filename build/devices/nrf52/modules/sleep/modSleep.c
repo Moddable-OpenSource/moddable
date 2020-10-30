@@ -22,7 +22,6 @@
 #include "xsPlatform.h"
 
 #include "nrf_sdh.h"
-#include "nrf_drv_lpcomp.h"
 #include "nrf_rtc.h"
 
 #define RAM_START_ADDRESS  0x20000000
@@ -55,7 +54,6 @@ enum {
 	uint8_t gRamRetentionBuffer[kRamRetentionBufferSize] __attribute__((section(".retained_section"))) = {0};
 #endif
 
-static void lpcomp_event_handler(nrf_lpcomp_event_t event);
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
 static void sleep_wake_on_timer();
@@ -300,20 +298,6 @@ void sleep_wake_on_timer_sd()
 	// Reset device
 	*((uint32_t*)DFU_DBL_RESET_MEM) = 0;
 	sd_nvic_SystemReset();
-}
-
-void lpcomp_event_handler(nrf_lpcomp_event_t event)
-{
-	switch(event) {
-		case NRF_LPCOMP_EVENT_READY:
-			break;
-		case NRF_LPCOMP_EVENT_DOWN:
-			break;
-		case NRF_LPCOMP_EVENT_UP:
-			break;
-		case NRF_LPCOMP_EVENT_CROSS:
-			break;
-	}
 }
 
 void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)

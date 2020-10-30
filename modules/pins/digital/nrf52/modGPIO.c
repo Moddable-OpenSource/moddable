@@ -28,6 +28,7 @@
 */
 
 #define kUninitializedPin (255)
+#define kResetReasonGPIO (1L << 16)
 
 int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
@@ -112,9 +113,10 @@ void modGPIOWrite(modGPIOConfiguration config, uint8_t value)
 
 uint8_t modGPIODidWake(modGPIOConfiguration config, uint8_t pin)
 {
-	uint32_t result;
-	result = nrf_gpio_pin_latch_get(pin);
+	if (kResetReasonGPIO != nrf52_get_reset_reason())
+		return 0;
+	uint32_t result = nrf_gpio_pin_latch_get(pin);
 	nrf_gpio_pin_latch_clear(pin);
-	return result;
+	return result ? 1 : 0;
 }
 
