@@ -200,40 +200,11 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 	xsmcSetInteger(xsResult, nrf52_get_reset_reason());	
 }
 
-void xs_sleep_get_reset_pin(xsMachine *the)
+void xs_sleep_get_reset_pins(xsMachine *the)
 {
-	uint32_t i;
-	int32_t result = -1;
-	uint32_t pins = NRF_GPIO->IN;
-	
-	for (i = 0; i < 32; ++i) {
-		if (pins & (1L << i)) {
-			result = i;
-			break;
-		}
-	}
-	
+	uint32_t result;
+	result = NRF_GPIO->LATCH;
 	xsmcSetInteger(xsResult, result);	
-}
-
-void xs_sleep_wake_on_digital(xsMachine *the)
-{
-	uint16_t pin = xsmcToInteger(xsArg(0));
-	
-	nrf_gpio_cfg_sense_input(pin, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
-	
-    // Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
-    nrf_delay_ms(1);
-}
-
-void xs_sleep_wake_on_interrupt(xsMachine *the)
-{
-	uint16_t pin = xsmcToInteger(xsArg(0));
-
-	nrf_gpio_cfg_sense_input(pin, NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_SENSE_LOW);
-
-	// Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
-	nrf_delay_ms(1);
 }
 
 void xs_sleep_restore_time(xsMachine *the)

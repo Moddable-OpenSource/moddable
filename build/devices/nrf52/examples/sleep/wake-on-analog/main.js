@@ -12,7 +12,7 @@
  *
  */
 /*
-	This application demonstrates how to wakeup on analog change detection.
+	This application demonstrates how to wakeup from deep sleep on analog change detection.
 	The application turns on the LED while running and turns off the LED when asleep.
 	Upon wakeup, the application re-launches and blinks the LED if the analog value change woke up the device.
 	Change the voltage connected to the analog input pin to wakeup the device.
@@ -25,7 +25,6 @@ import Timer from "timer";
 const wakeup_pin = 5;		// AIN5
 const led = new Host.LED;
 
-// Turn on LED upon wakeup
 led.write(1);
 
 let analog = new Analog({

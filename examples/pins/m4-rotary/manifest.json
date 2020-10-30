@@ -1,11 +1,11 @@
 {
 	"include": [
 			"$(MODDABLE)/examples/manifest_base.json",
-			"$(MODDABLE)/modules/pins/digital/monitor/manifest.json",
+			"$(MODDABLE)/modules/pins/digital/monitor/manifest.json"
 			],
 	"modules": {
 		"*": [
-			"./main",
+			"./main"
 		]
 	},
 	"platforms":{
@@ -16,20 +16,20 @@
 			},
 			"preload": [
 				"pins/pulsecount"
-			],
+			]
 		},
 		"nrf52": {
 			"modules": {
 				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
 				"*": [
-					"$(MODULES)/pins/pulsecount/nrf52/*",
-				],
+					"$(MODULES)/pins/pulsecount/nrf52/*"
+				]
 			},
 			"preload": [
 				"pins/pulsecount",
 				"pins/digital",
-				"pins/digital/monitor",
-			],
+				"pins/digital/monitor"
+			]
 		}
 	}
 }

@@ -56,6 +56,14 @@ void modGPIOUninit(modGPIOConfiguration config)
 
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
+	nrf_gpio_pin_sense_t sense_config = NRF_GPIO_PIN_NOSENSE;
+	 
+	if (mode & kModGPIOWakeRisingEdge)
+		sense_config = NRF_GPIO_PIN_SENSE_HIGH;
+	else if (mode & kModGPIOWakeFallingEdge)
+		sense_config = NRF_GPIO_PIN_SENSE_LOW;
+	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
+	
 	switch (mode) {
 		case kModGPIOInput:
 			config->direction = 0;
@@ -81,6 +89,9 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 			return -1;
 	}
 
+	if (NRF_GPIO_PIN_NOSENSE != sense_config)
+		nrf_gpio_cfg_sense_set(config->pin, sense_config);
+
 	return 0;
 }
 
@@ -98,3 +109,12 @@ void modGPIOWrite(modGPIOConfiguration config, uint8_t value)
 {
 	nrf_gpio_pin_write(config->pin, value);
 }
+
+uint8_t modGPIODidWake(modGPIOConfiguration config, uint8_t pin)
+{
+	uint32_t result;
+	result = nrf_gpio_pin_latch_get(pin);
+	nrf_gpio_pin_latch_clear(pin);
+	return result;
+}
+

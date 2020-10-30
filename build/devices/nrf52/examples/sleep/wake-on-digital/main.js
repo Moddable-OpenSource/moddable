@@ -12,36 +12,38 @@
  *
  */
 /*
-	This application demonstrates how to use the Sleep object to put the device into System Off power saving mode (deep sleep).
-	The device is woken up from a digital input (button).
+	This application demonstrates how to use the Digital object to trigger wakeup from deep sleep on a button press.
 	The application turns on the LED while running and turns off the LED when asleep.
 	Upon wakeup, the application re-launches and blinks the LED if the button was pressed to wakeup the device.
 	Press the button connected to the digital input pin to wakeup the device.
 */
 
-import {Sleep, ResetReason} from "sleep";
+import Digital from "pins/digital";
+import {Sleep} from "sleep";
 import Timer from "timer";
 import config from "mc/config";
 
 const wakeup_pin = config.button1_pin;
 const led = new Host.LED;
  
-// Turn on LED upon wakeup
 led.write(1);
 
-// Blink LED upon wakeup from digital input pin
-if (ResetReason.GPIO == Sleep.resetReason) {
-	for (let i = 0; i < 10; ++i) {
-		led.write(0);
-		Timer.delay(50);
-		led.write(1);
-		Timer.delay(50);
+let digital = new Digital({
+	pin: wakeup_pin,
+	mode: Digital.InputPullUp | Digital.Falling,
+	onWake() {
+		for (let i = 0; i < 10; ++i) {
+			led.write(0);
+			Timer.delay(50);
+			led.write(1);
+			Timer.delay(50);
+		}
 	}
-}
+});
 
 Timer.set(() => {
-	Sleep.wakeOnDigital(wakeup_pin);
 	led.write(0);
 	led.close();
 	Sleep.deep();
 }, 3000);
+
