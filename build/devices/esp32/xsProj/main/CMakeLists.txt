@@ -28,4 +28,8 @@ endif()
 if (DEBUGGER_SPEED)
     target_compile_options(${COMPONENT_TARGET} PRIVATE -DDEBUGGER_SPEED=${DEBUGGER_SPEED})
 endif()
-target_link_libraries(${COMPONENT_TARGET} ${CMAKE_BINARY_DIR}/xs_esp32.a)
+
+add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_esp32.a
+             PRIV_REQUIRES driver nvs_flash)
+
+target_link_libraries(${COMPONENT_LIB} PRIVATE xsesp32)

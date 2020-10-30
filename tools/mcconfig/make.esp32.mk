@@ -41,7 +41,7 @@ endif
 ESP32_BASE ?= $(HOME)/esp32-new
 IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
-TOOLS_ROOT ?= $(ESP32_BASE)/xtensa-esp32-elf
+TOOLS_ROOT ?= $(HOME)/.espressif/tools/xtensa-esp32-elf/esp-2020r3-8.4.0/xtensa-esp32-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
 IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always")
