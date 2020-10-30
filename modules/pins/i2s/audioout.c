@@ -451,12 +451,18 @@ void xs_audioout_build(xsMachine *the)
 #endif
 #endif
 
+	xsRemember(out->obj);
+
 	out->built = 1;
 }
 
 void xs_audioout_close(xsMachine *the)
 {
-	xs_audioout_destructor(xsmcGetHostData(xsThis));
+	modAudioOut out = xsmcGetHostData(xsThis);
+
+	if (out->built)
+		xsForget(out->obj);
+	xs_audioout_destructor(out);
 	xsmcSetHostData(xsThis, NULL);
 }
 
