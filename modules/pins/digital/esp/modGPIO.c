@@ -112,6 +112,8 @@ void modGPIOUninit(modGPIOConfiguration config)
 
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
+	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
+
 	switch (mode) {
 		case kModGPIOInput:
 		case kModGPIOInputPullUp:
