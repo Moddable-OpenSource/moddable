@@ -113,10 +113,12 @@ void modGPIOWrite(modGPIOConfiguration config, uint8_t value)
 
 uint8_t modGPIODidWake(modGPIOConfiguration config, uint8_t pin)
 {
-	if (kResetReasonGPIO != nrf52_get_reset_reason())
-		return 0;
-	uint32_t result = nrf_gpio_pin_latch_get(pin);
-	nrf_gpio_pin_latch_clear(pin);
-	return result ? 1 : 0;
+	if (kResetReasonGPIO == nrf52_get_reset_reason()) {
+		if (nrf_gpio_pin_latch_get(pin)) {
+			nrf_gpio_pin_latch_clear(pin);
+			return 1;
+		}
+	}
+	return 0;
 }
 
