@@ -91,8 +91,8 @@ void xs_digital(xsMachine *the)
 		
 	xsmcSetHostChunk(xsThis, &gpio, sizeof(gpio));
 		
-	if (xsmcHas(xsArg(0), xsID_onWake)) {
-		if (modGPIODidWake(&gpio, pin)) {
+	if (modGPIODidWake(&gpio, pin)) {
+		if (xsmcHas(xsArg(0), xsID_onWake)) {
 			modDigitalWakeConfigurationRecord wake;
 			wake.obj = xsThis;
 			if (xsmcHas(xsArg(0), xsID_target)) {
