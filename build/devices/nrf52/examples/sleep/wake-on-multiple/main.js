@@ -18,7 +18,7 @@
 
 import Analog from "pins/analog";
 import Digital from "pins/digital";
-import {Sleep} from "sleep";
+import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import Poco from "commodetto/Poco";
@@ -30,10 +30,8 @@ let white = render.makeColor(255, 255, 255);
 let font = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
 
 const led = new Host.LED;
-
-render.begin();
-	render.fillRectangle(black, 0, 0, render.width, render.height);
-render.end();
+led.write(1);
+clearScreen();
 
 let digital1 = new Digital({
 	pin: 17,
@@ -60,19 +58,34 @@ let analog = new Analog({
 	}
 });
 
-Timer.set(() => Sleep.deep(), 10);
+if (ResetReason.RESETPIN == Sleep.resetReason)
+	notify("reset");
 
-function notify(text) {
+Timer.set(() => {
+	led.write(0);
+	notify("sleeping", false);
+	Sleep.deep();
+}, 3000);
+
+function notify(text, blink = true) {
 	render.begin();
 		render.fillRectangle(black, 0, 0, render.width, render.height);
 		render.drawText(text, font, white,
 			(render.width - render.getTextWidth(text, font)) >> 1,
 			(render.height - font.height) >> 1);
 	render.end();
-	for (let i = 0; i < 10; ++i) {
-		led.write(0);
-		Timer.delay(50);
-		led.write(1);
-		Timer.delay(50);
+	if (blink) {
+		for (let i = 0; i < 10; ++i) {
+			led.write(1);
+			Timer.delay(50);
+			led.write(0);
+			Timer.delay(50);
+		}
 	}
+}
+
+function clearScreen() {
+	render.begin();
+		render.fillRectangle(black, 0, 0, render.width, render.height);
+	render.end();
 }
