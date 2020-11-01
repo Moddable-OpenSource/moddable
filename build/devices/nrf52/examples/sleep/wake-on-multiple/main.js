@@ -13,7 +13,7 @@
  */
 /*
 	This application demonstrates how to use a combination of Analog and Digital objects to trigger wakeup from deep sleep.
-	Upon wakeup, the application re-launches and displays the wakeup source.
+	Upon wakeup, the application re-launches, blinks the led, and displays the wakeup source.
 */
 
 import Analog from "pins/analog";
@@ -29,6 +29,8 @@ let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);
 let font = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
 
+const led = new Host.LED;
+
 render.begin();
 	render.fillRectangle(black, 0, 0, render.width, render.height);
 render.end();
@@ -37,7 +39,7 @@ let digital1 = new Digital({
 	pin: 17,
 	mode: Digital.InputPullUp | Digital.Falling,
 	onWake() {
-		display("digital1");
+		notify("digital1");
 	}
 });
 
@@ -45,7 +47,7 @@ let digital2 = new Digital({
 	pin: 22,
 	mode: Digital.InputPullUp | Digital.Falling,
 	onWake() {
-		display("digital2");
+		notify("digital2");
 	}
 });
 
@@ -54,17 +56,23 @@ let analog = new Analog({
 	wakeValue: 512,
 	wakeCrossing: Analog.CrossingUpDown,
 	onWake() {
-		display("analog");
+		notify("analog");
 	}
 });
 
 Timer.set(() => Sleep.deep(), 10);
 
-function display(text) {
+function notify(text) {
 	render.begin();
 		render.fillRectangle(black, 0, 0, render.width, render.height);
 		render.drawText(text, font, white,
 			(render.width - render.getTextWidth(text, font)) >> 1,
 			(render.height - font.height) >> 1);
 	render.end();
+	for (let i = 0; i < 10; ++i) {
+		led.write(0);
+		Timer.delay(50);
+		led.write(1);
+		Timer.delay(50);
+	}
 }
