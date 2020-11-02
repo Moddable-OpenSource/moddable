@@ -198,19 +198,6 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 	xsmcSetInteger(xsResult, nrf52_get_reset_reason());	
 }
 
-void xs_sleep_get_reset_pin(xsMachine *the)
-{
-	uint32_t result = 0;
-	uint32_t pins = NRF_GPIO->LATCH;
-	for (uint32_t i = 0; i < 32; ++i) {
-		if (pins & (1L << i)) {
-			result = i;
-			break;
-		}
-	}
-	xsmcSetInteger(xsResult, result);	
-}
-
 void xs_sleep_restore_time(xsMachine *the)
 {
 #ifdef mxDebug

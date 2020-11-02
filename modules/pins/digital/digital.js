@@ -33,8 +33,8 @@ Digital.InputPullUp = 1;
 Digital.InputPullDown = 2;
 Digital.InputPullUpDown = 3;
 
-Digital.Rising = (1 << 6);
-Digital.Falling = (1 << 7);
+Digital.WakeOnRise = (1 << 6);
+Digital.WakeOnFall = (1 << 7);
 
 Digital.Output = 8;
 Digital.OutputOpenDrain = 9;

@@ -27,7 +27,6 @@ class Sleep {
 	static deep(ms) @ "xs_sleep_deep";
 	
 	static get resetReason() @ "xs_sleep_get_reset_reason";
-	static get resetPin() @ "xs_sleep_get_reset_pin";
 	
 	static restoreTime() @ "xs_sleep_restore_time";
 

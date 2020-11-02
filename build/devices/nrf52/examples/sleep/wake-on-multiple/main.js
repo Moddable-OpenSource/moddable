@@ -31,11 +31,13 @@ let font = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
 
 const led = new Host.LED;
 led.write(1);
-clearScreen();
+render.begin();
+	render.fillRectangle(black, 0, 0, render.width, render.height);
+render.end();
 
 let digital1 = new Digital({
 	pin: 17,
-	mode: Digital.InputPullUp | Digital.Falling,
+	mode: Digital.InputPullUp | Digital.WakeOnFall,
 	onWake() {
 		notify("digital1");
 	}
@@ -43,7 +45,7 @@ let digital1 = new Digital({
 
 let digital2 = new Digital({
 	pin: 22,
-	mode: Digital.InputPullUp | Digital.Falling,
+	mode: Digital.InputPullUp | Digital.WakeOnFall,
 	onWake() {
 		notify("digital2");
 	}
@@ -82,10 +84,4 @@ function notify(text, blink = true) {
 			Timer.delay(50);
 		}
 	}
-}
-
-function clearScreen() {
-	render.begin();
-		render.fillRectangle(black, 0, 0, render.width, render.height);
-	render.end();
 }
