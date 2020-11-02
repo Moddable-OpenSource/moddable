@@ -248,7 +248,7 @@ void sleep_wake_on_timer()
 //  } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
     
 	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((uint64_t)(portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * (uint64_t)1000) >> 10) / 1000;
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * 1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
 
 	// Power on all RAM (seems to be required in order for reset to work)
@@ -287,7 +287,7 @@ void sleep_wake_on_timer_sd()
 //  } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
 
 	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((uint64_t)(portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * (uint64_t)1000) >> 10) / 1000;
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * 1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
 
 	// Power on all RAM (seems to be required in order for reset to work)
