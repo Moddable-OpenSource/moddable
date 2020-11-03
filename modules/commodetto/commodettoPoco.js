@@ -61,7 +61,7 @@ export default class Poco @ "xs_poco_destructor" {
 
 	// clip and origin stacks
 	clip(x, y, width, height) @ "xs_poco_clip"
-	origin(x, y, width, height) @ "xs_poco_origin"
+	origin(x, y) @ "xs_poco_origin"
 
 	// rendering calls
 	makeColor(r, g, b) @ "xs_poco_makeColor"
@@ -72,7 +72,7 @@ export default class Poco @ "xs_poco_destructor" {
 	drawMonochrome(monochrome, fore, back, x, y, sx, sy, sw, sh) @ "xs_poco_drawMonochrome"
 	drawGray(bits, color, x, y, sx, sy, sw, sh, blend) @ "xs_poco_drawGray"
 	drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend) @ "xs_poco_drawMasked"
-	fillPattern(bits, x, y, w, h, sx, sx, sx, sh) @ "xs_poco_fillPattern"
+	fillPattern(bits, x, y, w, h, sx, sy, sw, sh) @ "xs_poco_fillPattern"
 
 	drawFrame(frame, stream, x, y) @ "xs_poco_drawFrame"
 

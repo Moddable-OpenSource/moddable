@@ -232,6 +232,29 @@ struct PocoCommandRecord {
 	};
 #endif
 
+#if !defined(kPocoCLUT16_01) || kPocoCLUT16_01
+	// first pixel is in high nybble (4-bit format in BMP)
+	#undef kPocoCLUT16_01
+	#define kPocoCLUT16_01 1
+	#define kPocoPixels4FirstMask (0xF0)
+	#define kPocoPixels4FirstShift (4)
+	#define kPocoPixels4SecondMask (0x0F)
+	#define kPocoPixels4SecondShift (0)
+	#define PocoPixels4IsFirstPixel(xphase) (!(xphase))
+	#define PocoPixels4IsSecondPixel(xphase) (xphase)
+#else
+	// first pixel is in low nybble (4-bit format used by D/AVE 2D engine)
+	#undef kPocoCLUT16_01
+	#define kPocoCLUT16_01 0
+	#define kPocoPixels4FirstMask (0x0F)
+	#define kPocoPixels4FirstShift (0)
+	#define kPocoPixels4SecondMask (0xF0)
+	#define kPocoPixels4SecondShift (4)
+	#define PocoPixels4IsFirstPixel(xphase) (xphase)
+	#define PocoPixels4IsSecondPixel(xphase) (!(xphase))
+#endif
+#define PocoPixels4Pack(first, second) (((first) << kPocoPixels4FirstShift) | ((second) << kPocoPixels4SecondShift))
+
 /*
 	here begin the functions to build the drawing list
 */
@@ -470,7 +493,7 @@ void PocoPixelDraw(Poco poco, PocoColor color, PocoCoordinate x, PocoCoordinate 
 const unsigned char *skipPackedPixels(const unsigned char *pixels, uint32_t skipPixels)
 {  
 	while (skipPixels) {
-		signed char opcode = READ_PROG_MEM_UNSIGNED_BYTE(pixels++);
+		signed char opcode = *pixels++;
 		unsigned char count = (opcode & 0x3F) + 1;
 		if (opcode < 0) {
 			if (!(opcode & 0x40))	// repeat (not skip)
@@ -1229,8 +1252,8 @@ void doBlendRectangle(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h
 	uint8_t blend = bd->blend;		// 5 bit blend level
 	PocoCoordinate w = bd->w;
 	PocoCoordinate rowBump = (poco->rowBytes >> (sizeof(PocoPixel) - 1)) - w;
-	uint16_t srcColor = bd->color * blend;		//@@ move to set-up
-	blend = (31 - blend);		//@@ move to set-up
+	uint16_t srcColor = bd->color * blend;
+	blend = 31 - blend;
 
 	while (h--) {
 		PocoCoordinate tw = w;
@@ -1249,8 +1272,8 @@ void doBlendRectangle(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h
 	PocoCoordinate w = bd->w;
 	PocoCoordinate rowBump = poco->rowBytes - ((bd->w + 1 + bd->xphase) >> 1);
 	uint8_t blend = bd->blend;		// 5 bit blend level
-	uint16_t srcColor = bd->color * blend;		//@@ move to set-up
-	blend = (31 - blend);		//@@ move to set-up
+	uint16_t srcColor = bd->color * blend;
+	blend = 31 - blend;
 
 	while (h--) {
 		PocoCoordinate tw = w;
@@ -1447,7 +1470,7 @@ void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoD
 #endif
 		PocoCoordinate tw = srcBits->w;
 		uint32_t *srcLong = (uint32_t *)(~3 & (uintptr_t)src);
-		uint32_t bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);
+		uint32_t bits = *srcLong++;
 		uint32_t tm = mask << (24 - ((3 & (uintptr_t)src) << 3));
 #if 4 == kPocoPixelSize
 		uint8_t xphase = srcBits->xphase;
@@ -1457,7 +1480,7 @@ void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoD
 		while (tw--) {
 			if (0 == tm) {
 				tm = 0x80000000;
-				bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);
+				bits = *srcLong++;
 				bits = SwapLong(bits);
 			}
 
@@ -1520,7 +1543,7 @@ void doDrawMonochromeForegroundBitmapPart(Poco poco, PocoCommand pc, PocoPixel *
 #endif
 		PocoCoordinate tw = srcBits->w;
 		uint32_t *srcLong = (uint32_t *)(~3 & (uintptr_t)src);
-		uint32_t bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);
+		uint32_t bits = *srcLong++;
 		uint32_t tm = mask << (24 - ((3 & (uintptr_t)src) << 3));
 
 #if 4 == kPocoPixelSize
@@ -1531,7 +1554,7 @@ void doDrawMonochromeForegroundBitmapPart(Poco poco, PocoCommand pc, PocoPixel *
 		while (tw--) {
 			if (0 == tm) {
 				tm = 0x80000000;
-				bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);
+				bits = *srcLong++;
 				bits = SwapLong(bits);
 			}
 
@@ -1600,7 +1623,7 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 #endif
 		PocoCoordinate tw = srcBits->w;
 		uint32_t *srcLong = (uint32_t *)(~3 & (uintptr_t)src);
-		uint32_t bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);		// 32 bits of mask - 8 4-bit gray values
+		uint32_t bits = *srcLong++;		// 32 bits of mask - 8 4-bit gray values
 		uint8_t tm = mask + ((3 - (3 & (uintptr_t)src)) << 3);
 #if 4 == kPocoPixelSize
 		uint8_t xphase = srcBits->xphase;
@@ -1613,7 +1636,7 @@ void doDrawGray16BitmapPart(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimensi
 
 			if (((int8_t)tm) < 0) {
 				tm = 32 - 4;
-				bits = READ_PROG_MEM_UNSIGNED_LONG(srcLong++);
+				bits = *srcLong++;
 				bits = SwapLong(bits);
 			}
 
@@ -2333,7 +2356,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 	while (h--) {
 		PocoCoordinate tw = rmb->w;
 		uint32_t *maskBitsLong = (uint32_t *)(~3 & (uintptr_t)maskBits);
-		uint32_t bits = READ_PROG_MEM_UNSIGNED_LONG(maskBitsLong++);
+		uint32_t bits = *maskBitsLong++;
 		int8_t tm = mask + ((3 - (3 & (uintptr_t)maskBits)) << 3);
 		bits = SwapLong(bits);
 
@@ -2342,7 +2365,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 
 			if (tm < 0) {
 				tm = 32 - 4;
-				bits = READ_PROG_MEM_UNSIGNED_LONG(maskBitsLong++);
+				bits = *maskBitsLong++;
 				bits = SwapLong(bits);
 			}
 
@@ -2448,7 +2471,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 		PocoPixel *dNext = (PocoPixel *)(poco->rowBytes + (char *)d);
 		PocoCoordinate tw = rmb->w;
 		uint32_t *maskBitsLong = (uint32_t *)(~3 & (uintptr_t)maskBits);
-		uint32_t bits = READ_PROG_MEM_UNSIGNED_LONG(maskBitsLong++);
+		uint32_t bits = *maskBitsLong++;
 		int8_t tm = rmb->mask + ((3 - (3 & (uintptr_t)maskBits)) << 3);
 		uint8_t xmask_dst = rmb->xphase;
 		uint8_t xmask_src = (0x0F == rmb->xmask_src);
@@ -2459,7 +2482,7 @@ void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h
 
 			if (tm < 0) {
 				tm = 32 - 4;
-				bits = READ_PROG_MEM_UNSIGNED_LONG(maskBitsLong++);
+				bits = *maskBitsLong++;
 				bits = SwapLong(bits);
 			}
 
