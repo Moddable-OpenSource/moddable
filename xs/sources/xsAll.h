@@ -1093,7 +1093,7 @@ mxExport txBigInt* fxBigInt_rem(txMachine* the, txBigInt* r, txBigInt* a, txBigI
 mxExport txBigInt* fxBigInt_sub(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 mxExport txBigInt* fxBigInt_xor(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 
-mxExport txBigInt *fxBigInt_alloc(txMachine* the, txU2 size);
+mxExport txBigInt *fxBigInt_alloc(txMachine* the, txU4 size);
 mxExport void fxBigInt_free(txMachine* the, txBigInt*);
 
 mxExport int fxBigInt_comp(txBigInt* a, txBigInt* b);
