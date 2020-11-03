@@ -42,7 +42,8 @@ enum {
 	kPocoCommandBitmapDrawMasked,
 	kPocoCommandBitmapPattern,
 	kPocoCommandFrame,
-	kPocoCommandDrawMax = kPocoCommandFrame + 1
+	kPocoCommandExternal,
+	kPocoCommandDrawMax = kPocoCommandExternal + 1
 };
 
 typedef uint8_t PocoCommandID;
@@ -82,6 +83,7 @@ static void doDrawGray16RLEBlendBitmapPart(Poco poco, PocoCommand pc, PocoPixel 
 static void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h);
 static void doDrawPattern(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 static void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
+static void doDrawExternal(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 
 static uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells);
 
@@ -97,7 +99,8 @@ static const PocoRenderCommandProc gDrawRenderCommand[kPocoCommandDrawMax] ICACH
 	doDrawGray16RLEBlendBitmapPart,
 	doDrawMaskedBitmap,
 	doDrawPattern,
-	doDrawFrame
+	doDrawFrame,
+	doDrawExternal
 };
 
 #if !kPocoFrameBuffer
@@ -366,6 +369,14 @@ typedef struct FrameRecord {
 	uint8_t			blockWidth;
 	uint8_t			unclippedBlockWidth;
 } FrameRecord, *Frame;
+
+typedef struct ExternalRecord {
+	PocoCommandFields;
+
+	uint8_t				dataSize;
+	PocoRenderExteral	doDrawExternal;
+	uint8_t				data[1];
+} ExternalRecord, *External;
 
 void PocoRectangleFill(Poco poco, PocoColor color, uint8_t blend, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
@@ -935,6 +946,26 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 	f->unclippedBlockWidth = f->blockWidth - (f->clipLeft >> 2) - (f->clipRight >> 2);
 
 	pc->x = x, pc->y = y, pc->w = xMax - x, pc->h = yMax - y;
+
+	PocoCommandBuilt(poco, pc);
+}
+
+// rotation and clipped performed externally
+void PocoDrawExternal(Poco poco, PocoRenderExteral doDrawExternal, uint8_t *data, uint8_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
+{
+	PocoCommand pc = poco->next;
+	External e;
+
+	PocoReturnIfNoSpace(pc, sizeof(ExternalRecord) + dataSize);
+
+	pc->command = kPocoCommandExternal;
+	PocoCommandSetLength(pc, sizeof(ExternalRecord) + dataSize);
+	e = (External)pc;
+	e->dataSize = dataSize;
+	e->doDrawExternal = doDrawExternal;
+	c_memcpy(e->data, data, dataSize);
+
+	pc->x = x, pc->y = y, pc->w = w, pc->h = h;
 
 	PocoCommandBuilt(poco, pc);
 }
@@ -3293,6 +3324,13 @@ done:
 	f->prev1 = prev1;
 
 	return repeatSkip;
+}
+
+void doDrawExternal(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
+{
+	External e = (External)pc;
+
+	(e->doDrawExternal)(poco, e->data, dst, pc->w, h);
 }
 
 void PocoDrawingBegin(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)

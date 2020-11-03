@@ -221,6 +221,9 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 
 void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h);
 
+typedef void (*PocoRenderExteral)(Poco poco, uint8_t *data, PocoPixel *dst, PocoDimension w, PocoDimension h);
+void PocoDrawExternal(Poco poco, PocoRenderExteral doDrawExternal, uint8_t *data, uint8_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h);
+
 void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h);
 void PocoClipPop(Poco poco);
 
