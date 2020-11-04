@@ -176,8 +176,10 @@ void xs_sleep_deep(xsMachine *the)
 		NRF_P0->LATCH = 0xFFFFFFFF;
 		
 		// Enable LPCOMP if configured
-		if (NRF_LPCOMP->INTENSET & (LPCOMP_INTENSET_UP_Msk | LPCOMP_INTENSET_DOWN_Msk | LPCOMP_INTENSET_CROSS_Msk))
+		if (NRF_LPCOMP->INTENSET & (LPCOMP_INTENSET_UP_Msk | LPCOMP_INTENSET_DOWN_Msk | LPCOMP_INTENSET_CROSS_Msk)) {
 			nrf_drv_lpcomp_enable();
+			nrf_delay_ms(10);
+		}
 		
 		// Ensure memory access has completed
 		__DSB();
