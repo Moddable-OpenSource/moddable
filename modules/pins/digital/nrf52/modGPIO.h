@@ -21,9 +21,6 @@
 #ifndef __MODGPIO_H__
 #define __MODGPIO_H__
 
-#include "nrf_gpio.h"
-#include "nrf_gpiote.h"
-
 enum {
 	kModGPIOInput 			= 0,
 	kModGPIOInputPullUp		= 1,

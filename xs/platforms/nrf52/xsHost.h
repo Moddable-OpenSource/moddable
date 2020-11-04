@@ -432,10 +432,15 @@ char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 #define DFU_DBL_RESET_MEM		0x200041FC		// uint32_t, defined in bootloader
 #define MOD_TIME_RTC_MEM		0x200041F8		// uint32_t
 #define MOD_TIME_RESTORE_MEM	0x200041EC		// uint32_t + c_timeval
+#define MOD_WAKEUP_REASON_MEM	0x200041E4		// uint32_t + uint32_t
 
 /* reset */
 #define REBOOT_TO_PROGRAMMING	0xbeefcafe
 #define REBOOT_TO_VENDOR		0xf00dcafe
+
+/* wake */
+#define MOD_GPIO_WAKE_MAGIC		0x04dfcfbf
+#define MOD_ANALOG_WAKE_MAGIC	0x9e60bfca
 
 #define nrf52_reset()			nrf52_reboot(0)
 #define nrf52_rebootToDFU()		nrf52_reboot(REBOOT_TO_PROGRAMMING)

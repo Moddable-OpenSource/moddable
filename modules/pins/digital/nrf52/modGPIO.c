@@ -22,6 +22,7 @@
 #include "xsHost.h"
 
 #include "modGPIO.h"
+#include "nrf_drv_gpiote.h"
 
 /*
 	gpio
@@ -29,6 +30,8 @@
 
 #define kUninitializedPin (255)
 #define kResetReasonGPIO (1L << 16)
+
+static void digitalWakeISR(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 
 int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
@@ -90,8 +93,18 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 			return -1;
 	}
 
-	if (NRF_GPIO_PIN_NOSENSE != sense_config)
+	if (NRF_GPIO_PIN_NOSENSE != sense_config) {
+		nrf_drv_gpiote_in_config_t gpiote_config = {0};
+		gpiote_config.sense = (NRF_GPIO_PIN_SENSE_HIGH == sense_config) ? NRF_GPIOTE_POLARITY_LOTOHI : NRF_GPIOTE_POLARITY_HITOLO;
+		gpiote_config.pull = nrf_gpio_pin_pull_get(config->pin);
+		gpiote_config.hi_accuracy = true;
+		gpiote_config.skip_gpio_setup = true;
+		if (!nrf_drv_gpiote_is_init())
+			nrf_drv_gpiote_init();
+		nrf_drv_gpiote_in_init(config->pin, &gpiote_config, digitalWakeISR);
+		nrf_drv_gpiote_in_event_enable(config->pin, false);
 		nrf_gpio_cfg_sense_set(config->pin, sense_config);
+	}
 
 	return 0;
 }
@@ -113,12 +126,29 @@ void modGPIOWrite(modGPIOConfiguration config, uint8_t value)
 
 uint8_t modGPIODidWake(modGPIOConfiguration config, uint8_t pin)
 {
+	// Check for wake from System OFF sleep
 	if (kResetReasonGPIO == nrf52_get_reset_reason()) {
 		if (nrf_gpio_pin_latch_get(pin)) {
 			nrf_gpio_pin_latch_clear(pin);
 			return 1;
 		}
 	}
+	
+	// Check for wake from System ON sleep
+	uint32_t wakeupMagic = ((uint32_t *)MOD_WAKEUP_REASON_MEM)[0];
+	uint32_t wakeupLatch = ((uint32_t *)MOD_WAKEUP_REASON_MEM)[1];
+	if (MOD_GPIO_WAKE_MAGIC == wakeupMagic) {
+		if ((1L << pin) & wakeupLatch) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = 0;
+			NRF_P0->LATCH = 1L << pin;
+			return 1;
+		}
+	}
+	
 	return 0;
+}
+
+void digitalWakeISR(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+{
 }
 

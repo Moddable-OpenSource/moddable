@@ -20,7 +20,9 @@
 
 #include "xsmc.h"
 #include "xsPlatform.h"
+#include "modGPIO.h"
 
+#include "nrf_drv_lpcomp.h"
 #include "nrf_sdh.h"
 #include "nrf_rtc.h"
 
@@ -134,7 +136,7 @@ void xs_sleep_deep(xsMachine *the)
 
 	uint16_t argc = xsmcArgc;
 	if (argc > 0) {
-		// System ON sleep, RAM powered off during sleep, wake on RTC
+		// System ON sleep, RAM powered off during sleep, wake on RTC or configured interrupt source
 		uint32_t ms = xsmcToInteger(xsArg(0));
 		uint32_t waitTicks = ((uint64_t)ms << 10) / 1000;
 		
@@ -170,6 +172,13 @@ void xs_sleep_deep(xsMachine *the)
 		nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
 		nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
 
+		// Clear GPIO P0 latch register
+		NRF_P0->LATCH = 0xFFFFFFFF;
+		
+		// Enable LPCOMP if configured
+		if (NRF_LPCOMP->INTENSET & (LPCOMP_INTENSET_UP_Msk | LPCOMP_INTENSET_DOWN_Msk | LPCOMP_INTENSET_CROSS_Msk))
+			nrf_drv_lpcomp_enable();
+		
 		// Ensure memory access has completed
 		__DSB();
 
@@ -181,6 +190,13 @@ void xs_sleep_deep(xsMachine *the)
 	}
 	else {
 		// System OFF sleep, wake on reset or preconfigured analog/digital wake-up trigger
+
+		// Enable LPCOMP if configured
+		if (NRF_LPCOMP->INTENSET & (LPCOMP_INTENSET_UP_Msk | LPCOMP_INTENSET_DOWN_Msk | LPCOMP_INTENSET_CROSS_Msk)) {
+			nrf_drv_lpcomp_enable();
+			nrf_delay_ms(10);
+		}
+
 		if (nrf52_softdevice_enabled())
 			sd_power_system_off();
 		else
@@ -228,15 +244,35 @@ void sleep_wake_on_timer()
 	NRF_POWER->RAM[7].POWERCLR = 0x03;
 	NRF_POWER->RAM[8].POWERCLR = 0x3F;
 
-	// Wait for RTC compare interrupt event
+	// Wait for RTC counter or interrupt events
 	do {
 		__WFE();
-	} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
-//  } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
+    } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
     
 	// Read RTC again and update saved time of day
 	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * 1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+
+    // If no RTC event pending, check for wake-up from configured digital/analog interrupt sources
+    if (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0)) {
+    	if (0 != NRF_P0->LATCH) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_GPIO_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = NRF_P0->LATCH;
+			NRF_P0->LATCH = 0xFFFFFFFF;	// clear
+    	}
+    	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_UP) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_UP_Msk)) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 1;
+    	}
+    	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_DOWN) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_DOWN_Msk)) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 2;
+    	}
+    	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_CROSS) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_CROSS_Msk)) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 3;
+    	}
+    }
 
 	// Power on all RAM (seems to be required in order for reset to work)
 	NRF_POWER->RAM[0].POWERSET = 0x03;
@@ -270,12 +306,32 @@ void sleep_wake_on_timer_sd()
 	// Wait for RTC compare interrupt event
 	do {
 		__WFE();
-	} while (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0));
-//  } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
+	} while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
 
 	// Read RTC again and update saved time of day
 	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * 1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
+
+    // If no RTC event pending, check for wake-up from configured digital/analog interrupt sources
+    if (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0)) {
+    	if (0 != NRF_P0->LATCH) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_GPIO_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = NRF_P0->LATCH;
+			NRF_P0->LATCH = 0xFFFFFFFF;	// clear
+    	}
+    	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_UP) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_UP_Msk)) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 1;
+    	}
+    	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_DOWN) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_DOWN_Msk)) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 2;
+    	}
+    	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_CROSS) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_CROSS_Msk)) {
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 3;
+    	}
+    }
 
 	// Power on all RAM (seems to be required in order for reset to work)
 	sd_power_ram_power_set(0, 0x03);
