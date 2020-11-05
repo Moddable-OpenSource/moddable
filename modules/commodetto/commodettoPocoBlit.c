@@ -396,8 +396,7 @@ typedef struct FrameRecord {
 typedef struct ExternalRecord {
 	PocoCommandFields;
 
-	uint8_t				dataSize;
-	PocoRenderExteral	doDrawExternal;
+	PocoRenderExternal	doDrawExternal;
 	uint8_t				data[1];
 } ExternalRecord, *External;
 
@@ -974,17 +973,16 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 }
 
 // rotation and clipped performed externally
-void PocoDrawExternal(Poco poco, PocoRenderExteral doDrawExternal, uint8_t *data, uint8_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
+void PocoDrawExternal(Poco poco, PocoRenderExternal doDrawExternal, uint8_t *data, uint8_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
 	PocoCommand pc = poco->next;
 	External e;
 
-	PocoReturnIfNoSpace(pc, sizeof(ExternalRecord) + dataSize);
+	PocoReturnIfNoSpace(pc, sizeof(ExternalRecord) + dataSize - 1);
 
 	pc->command = kPocoCommandExternal;
-	PocoCommandSetLength(pc, sizeof(ExternalRecord) + dataSize);
+	PocoCommandSetLength(pc, sizeof(ExternalRecord) + dataSize - 1);
 	e = (External)pc;
-	e->dataSize = dataSize;
 	e->doDrawExternal = doDrawExternal;
 	c_memcpy(e->data, data, dataSize);
 
