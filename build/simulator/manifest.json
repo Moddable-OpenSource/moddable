@@ -16,7 +16,7 @@
 		"lin": {
 		},
 		"lin/*": {
-			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(TARGETS)/$(SUBPLATFORM)/manifest.json"
 		},
 		"mac": {
 			"modules": {
@@ -26,7 +26,7 @@
 			}
 		},
 		"mac/*": {
-			"include": "./targets/$(SUBPLATFORM)/manifest.json",
+			"include": "$(TARGETS)/$(SUBPLATFORM)/manifest.json",
 			"modules": {
 				"*": [
 					"$(MODULES)/base/timer/modTimer"
@@ -41,7 +41,7 @@
 			}
 		},
 		"win/*": {
-			"include": "./targets/$(SUBPLATFORM)/manifest.json",
+			"include": "$(TARGETS)/$(SUBPLATFORM)/manifest.json",
 			"modules": {
 				"*": [
 					"$(MODULES)/base/timer/modTimer"
@@ -51,7 +51,7 @@
 		"wasm": {
 		},
 		"wasm/*": {
-			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(TARGETS)/$(SUBPLATFORM)/manifest.json"
 		}
 	}
 }

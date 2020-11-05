@@ -28,6 +28,7 @@ export const Screen = Template(Object.freeze({
 	_create($, it) @ "PiuScreen_create",
 	
 	get hole() @ "PiuScreen_get_hole",
+	get pixelFormat() @ "PiuScreen_get_pixelFormat",
 	get running() @ "PiuScreen_get_running",
 	
 	set hole(it) @ "PiuScreen_set_hole",

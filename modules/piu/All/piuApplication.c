@@ -583,7 +583,12 @@ void PiuApplicationDoMenu(PiuApplication* self, xsIntegerValue id)
 			if ((*content)->behavior) {
 				xsVar(0) = xsReference((*content)->behavior);
 				if (xsFindResult(xsVar(0), doID)) {
+					xsIntegerValue value;
 					xsVar(1) = xsReference((*content)->reference);
+					if (xsFindInteger(xsVar(2), xsID_value, &value))
+						xsVar(2) = xsInteger(value);
+					else
+						xsVar(2) = xsUndefined;
 					(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 					PiuApplicationAdjust(self);
 					break;

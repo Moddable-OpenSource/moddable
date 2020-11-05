@@ -198,6 +198,13 @@ void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 	{
 		xsVars(2);
 		xsVar(0) = xsGet(xsGlobal, xsID_screen);
+		if (xsFindResult(xsVar(0), xsID_onMessage)) {
+			if (size)
+				(void)xsCallFunction1(xsResult, xsVar(0), xsArrayBuffer(buffer, size));
+			else
+				(void)xsCallFunction1(xsResult, xsVar(0), xsString(buffer));
+
+		}
 		xsVar(1) = xsGet(xsVar(0), xsID_context);
 		if (xsTest(xsVar(1))) {
 			if (xsFindResult(xsVar(1), xsID_onMessage)) {

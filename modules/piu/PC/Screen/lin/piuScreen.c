@@ -20,6 +20,10 @@
 
 #include "piuPC.h"
 #include <dlfcn.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include "screen.h"
 
 typedef struct PiuScreenStruct PiuScreenRecord, *PiuScreen;
@@ -35,6 +39,8 @@ struct PiuScreenStruct {
 	cairo_surface_t *surface;
     txScreen* screen;
 	void* library;
+	int archiveFile;
+	size_t archiveSize;
 	guint timer;
 	gboolean timerRunning;
 	gboolean touching;
@@ -304,6 +310,13 @@ void PiuScreenQuit(PiuScreen* self)
         g_source_remove((*self)->timer);
         (*self)->timerRunning = FALSE;
 	}
+	if (screen->archive) {
+		munmap(screen->archive, (*self)->archiveSize);
+		close((*self)->archiveFile);
+		screen->archive = NULL;
+		(*self)->archiveSize = 0;
+		(*self)->archiveFile = -1;
+	}
 	if ((*self)->library) {
 		dlclose((*self)->library);
 		(*self)->library = NULL;
@@ -353,12 +366,6 @@ void PiuScreen_create(xsMachine* the)
 	PiuScreenDictionary(the, self);
 	PiuBehaviorOnCreate(self);
 }
-
-void PiuScreen_get_running(xsMachine* the)
-{
-	PiuScreen* self = PIU(Screen, xsThis);
-	xsResult = (*self)->library ? xsTrue : xsFalse;
-}
 	
 void PiuScreen_get_hole(xsMachine* the)
 {
@@ -390,15 +397,33 @@ void PiuScreen_set_hole(xsMachine* the)
 	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, (*self)->screen->width, (*self)->screen->height);
 }
 
+void PiuScreen_get_pixelFormat(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsInteger((*self)->screen->pixelFormat);
+}
+
+void PiuScreen_get_running(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = (*self)->library ? xsTrue : xsFalse;
+}
+
 void PiuScreen_launch(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	xsStringValue path = NULL;
+	xsStringValue libraryPath = NULL;
+	xsStringValue archivePath = NULL;
 	void* library = NULL;
 	txScreenLaunchProc launch;
+	int archiveFile = -1;
+	size_t archiveSize = 0;
+	void* archive = NULL;
 	xsTry {
-		path = xsToString(xsArg(0));
-		library = dlopen(path, RTLD_NOW);
+		libraryPath = xsToString(xsArg(0));
+		if (xsToInteger(xsArgc) > 1)
+			archivePath = xsToString(xsArg(1));
+		library = dlopen(libraryPath, RTLD_NOW);
 		if (library == NULL) {
 			xsUnknownError("%s", dlerror());
 		}
@@ -406,10 +431,31 @@ void PiuScreen_launch(xsMachine* the)
 		if (launch == NULL) {
 			xsUnknownError("%s", dlerror());
 		}
+		if (archivePath) {
+			archiveFile = open(archivePath, O_RDWR);
+			if (archiveFile < 0) {
+				xsUnknownError("%s", strerror(errno));
+			}
+			struct stat statbuf;
+			fstat(archiveFile, &statbuf);
+			archiveSize = statbuf.st_size;
+			archive = mmap(NULL, archiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, archiveFile, 0);
+			if (archive == MAP_FAILED) {
+				archive = NULL;
+				xsUnknownError("%s", strerror(errno));
+			}
+		}
 		(*self)->library = library;
+		(*self)->archiveFile = archiveFile;
+		(*self)->archiveSize = archiveSize;
+		(*self)->screen->archive = archive;
 		(*launch)((*self)->screen);
 	}
 	xsCatch {
+		if (archive)
+			munmap(archive, archiveSize);
+		if (archiveFile >= 0)
+			close(archiveFile);
 		if (library != NULL)
 			dlclose(library);
 		xsThrow(xsException);
@@ -470,6 +516,18 @@ void fxScreenBufferChanged(txScreen* screen)
 
 void fxScreenFormatChanged(txScreen* screen)
 {
+	PiuScreen* self = (PiuScreen*)screen->view;
+	if (self && (*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onPixelFormatChanged)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(screen->pixelFormat);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+		}
+		xsEndHost((*self)->the);
+	}
 }
 
 gboolean fxScreenIdle(gpointer data)

@@ -513,7 +513,6 @@ void PiuViewCreate(xsMachine* the)
 				xsVar(2) = xsGetAt(xsVar(1), xsInteger(j));
 				if (xsTest(xsVar(2))) {
 					WORD id = (WORD)((i << 8) | (j + 1));
-					xsStringValue title;
 					xsStringValue value;
 					char buffer[256];
 					xsIndex index;
@@ -537,9 +536,8 @@ void PiuViewCreate(xsMachine* the)
 						xsSet(xsVar(2), xsID_title, xsVar(4));
 					}
 					
-					title = xsToString(xsGet(xsVar(2), xsID_title));	
-						
 					if ((acceleratorsCount < 256)  && xsFindString(xsVar(2), xsID_key, &value)) {
+						xsStringValue title = xsToString(xsGet(xsVar(2), xsID_title));	
 						BYTE mask = FCONTROL | FVIRTKEY;
 						c_strcpy(buffer, title);
 						c_strcat(buffer, "\tCtrl+");
@@ -558,8 +556,11 @@ void PiuViewCreate(xsMachine* the)
 						acceleratorsCount++;
 						AppendMenu(menu, MF_STRING, id, buffer);
 					}
-					else
-						AppendMenu(menu, MF_STRING, id, title);
+					else {
+						wchar_t* title = xsToStringCopyW(xsGet(xsVar(2), xsID_title));
+						AppendMenuW(menu, MF_STRING, id, title);
+						c_free(title);
+					}
 				}
 				else
 					AppendMenu(menu, MF_SEPARATOR, -1, NULL);

@@ -40,6 +40,8 @@ struct PiuScreenStruct {
     HBITMAP bitmap;
     BITMAPINFO* bitmapInfo;
 	HMODULE library;
+	HANDLE archiveFile;
+	HANDLE archiveMapping;
 	PiuRectangleRecord hole;
 };
 
@@ -158,7 +160,7 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		PiuScreenMessage message = (PiuScreenMessage)lParam;
 		if ((*self)->behavior) {
 			xsBeginHost((*self)->the);
-			xsVars(2);
+			xsVars(3);
 			xsVar(0) = xsReference((*self)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onMessage)) {
 				xsVar(1) = xsReference((*self)->reference);
@@ -314,6 +316,18 @@ void PiuScreenQuit(PiuScreen* self)
 		free((void*)msg.lParam);
 	}		
 	KillTimer((*self)->control, 0);
+	if ((*self)->screen->archive) {
+		UnmapViewOfFile((*self)->screen->archive);
+		(*self)->screen->archive = NULL;
+	}
+	if ((*self)->archiveMapping) {
+		CloseHandle((*self)->archiveMapping);
+		(*self)->archiveMapping = INVALID_HANDLE_VALUE;
+	}
+	if ((*self)->archiveFile) {
+		CloseHandle((*self)->archiveFile);
+		(*self)->archiveFile = INVALID_HANDLE_VALUE;
+	}
 	if ((*self)->library) {
 		FreeLibrary((*self)->library);
 		(*self)->library = NULL;
@@ -387,6 +401,12 @@ void PiuScreen_set_hole(xsMachine* the)
 	PiuContentInvalidate(self, NULL);
 }
 
+void PiuScreen_get_pixelFormat(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsInteger((*self)->screen->pixelFormat);
+}
+
 void PiuScreen_get_running(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
@@ -396,23 +416,54 @@ void PiuScreen_get_running(xsMachine* the)
 void PiuScreen_launch(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	wchar_t* path = NULL;
+	wchar_t* libraryPath = NULL;
+	wchar_t* archivePath = NULL;
 	HMODULE library = NULL;
 	txScreenLaunchProc launch;
+	HANDLE archiveFile = INVALID_HANDLE_VALUE;
+	SIZE_T size;
+	HANDLE archiveMapping = INVALID_HANDLE_VALUE;
+	void* archive = NULL;
 	xsTry {
-		path = xsToStringCopyW(xsArg(0));
-		library = LoadLibraryW(path);
+		libraryPath = xsToStringCopyW(xsArg(0));
+		if (xsToInteger(xsArgc) > 1)
+			archivePath = xsToStringCopyW(xsArg(1));
+		library = LoadLibraryW(libraryPath);
 		xsElseThrow(library != NULL);
 		launch = (txScreenLaunchProc)GetProcAddress(library, "fxScreenLaunch");
 		xsElseThrow(launch != NULL);
+		if (archivePath) {
+			archiveFile = CreateFileW(archivePath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			xsElseThrow(archiveFile != INVALID_HANDLE_VALUE);
+			size = GetFileSize(archiveFile, &size);
+			xsElseThrow(size != INVALID_FILE_SIZE);
+			archiveMapping = CreateFileMapping(archiveFile, NULL, PAGE_READWRITE, 0, (SIZE_T)size, NULL);
+			xsElseThrow(archiveMapping != INVALID_HANDLE_VALUE);
+			archive = MapViewOfFile(archiveMapping, FILE_MAP_WRITE, 0, 0, (SIZE_T)size);
+			xsElseThrow(archive != NULL);
+		}
 		(*self)->library = library;
+		(*self)->archiveFile = archiveFile;
+		(*self)->archiveMapping = archiveMapping;
+		(*self)->screen->archive = archive;
 		(*launch)((*self)->screen);
+		if (archivePath)
+			free(archivePath);
+		free(libraryPath);
 	}
 	xsCatch {
+		if (archive)
+			UnmapViewOfFile(archive);
+		if (archiveMapping)
+			CloseHandle(archiveMapping);
+		if (archiveFile)
+			CloseHandle(archiveFile);
 		if (library != NULL)
 			FreeLibrary(library);
-		if (path != NULL)
-			free(path);
+		if (archivePath != NULL)
+			free(archivePath);
+		if (libraryPath != NULL)
+			free(libraryPath);
 		xsThrow(xsException);
 	}
 }
@@ -453,6 +504,18 @@ void fxScreenBufferChanged(txScreen* screen)
 
 void fxScreenFormatChanged(txScreen* screen)
 {
+	PiuScreen* self = (PiuScreen*)screen->view;
+	if (self && (*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onPixelFormatChanged)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(screen->pixelFormat);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+		}
+		xsEndHost((*self)->the);
+	}
 }
 
 void fxScreenPost(txScreen* screen, char* buffer, int size)

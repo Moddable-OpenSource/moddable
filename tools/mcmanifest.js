@@ -1391,6 +1391,7 @@ export class Tool extends TOOL {
 			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
 		else if (this.platform == "lin")
 			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
+		this.environment.TARGETS = this.moddablePath + this.slash + "build" + this.slash + "simulator" + this.slash + "targets";
 	}
 	concatProperties(object, properties, flag) {
 		if (properties) {
