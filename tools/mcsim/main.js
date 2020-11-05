@@ -86,10 +86,17 @@ class ApplicationBehavior extends Behavior {
 		
 		this.keys = {};
 		this.controlsCurrent = 320;
-		this.controlsStatus = true;
+		this.controlsStatus = false;
 		this.infoStatus = true;
 		
-		this.devicesPath = "";
+		let path = system.applicationPath;
+		path = system.getPathDirectory(path);
+		path = system.getPathDirectory(path);
+		path = system.getPathDirectory(path);
+		path = system.getPathDirectory(path);
+		path = system.buildPath(path, "simulators");
+		
+		this.devicesPath = system.fileExists(path) ? path : "";
 		this.devices = [];
 		this.deviceIndex = -1;
 		this.deviceRotation = 0;
@@ -117,7 +124,6 @@ class ApplicationBehavior extends Behavior {
 // 		}
 
 		application.add(new MainContainer(this));
-					
 	}
 	onDisplaying(application) {
 		if (this.devicesPath)
@@ -318,13 +324,12 @@ class ApplicationBehavior extends Behavior {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
 		if (path.endsWith(extension)) {
 			let index = this.devices.findIndex(device => device.applicationFilter.test(path));
-			if (index >= 0) {
-				this.quitScreen();
-				if (index != this.deviceIndex)
-					this.selectDevice(application, index);
-				this.libraryPath = path;
-				this.launchScreen();
-			}
+			if (index < 0) index = 0;
+			this.quitScreen();
+			if (index != this.deviceIndex)
+				this.selectDevice(application, index);
+			this.libraryPath = path;
+			this.launchScreen();
 		}
 		if (path.endsWith(".xsa")) {
 			this.quitScreen();
