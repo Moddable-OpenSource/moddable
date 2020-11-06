@@ -140,7 +140,8 @@ void PiuApplicationDeferContents(xsMachine* the, PiuApplication* self)
 				fxCall(the);
 				fxPush(xsVar(1));
 				for (i = 0; i < c; i++) {
-					fxPush((*link)->argv[i]);
+					xsVar(0) = xsAccess((*link)->argv[i]);
+					fxPush(xsVar(0));
 				}
 				fxRunCount(the, 1 + c);
 				the->stack++;

@@ -256,9 +256,9 @@ class ApplicationBehavior extends Behavior {
 	onOpenFile(application, path) {
 		let info = system.getFileInfo(path);
 		if (info.directory)
-			this.doLocateSimulatorsCallback(application, path);
+			application.defer("doLocateSimulatorsCallback", new String(path));
 		else
-			this.doOpenFileCallback(application, path);
+			application.defer("doOpenFileCallback", new String(path));
 	}
 	onQuit(application) {
 		this.writePreferences();
@@ -321,7 +321,7 @@ class ApplicationBehavior extends Behavior {
 		application.distribute("onInfoChanged");
 	}
 	doOpenFile() {
-		system.openFile({ prompt:"Open File", path:system.documentsDirectory }, path => { if (path) application.defer("doOpenFileCallback", path); });
+		system.openFile({ prompt:"Open File", path:system.documentsDirectory }, path => { if (path) application.defer("doOpenFileCallback", new String(path)); });
 	}
 	doOpenFileCallback(application, path) {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
@@ -345,7 +345,7 @@ class ApplicationBehavior extends Behavior {
 		this.launchScreen();
 	}
 	doLocateSimulators() {
-		system.openDirectory({ prompt:"Locate", path:system.documentsDirectory }, path => { if (path) application.defer("doLocateSimulatorsCallback", path); });
+		system.openDirectory({ prompt:"Locate", path:system.documentsDirectory }, path => { if (path) application.defer("doLocateSimulatorsCallback", new String(path)); });
 	}
 	doLocateSimulatorsCallback(application, path) {
 		this.devicesPath = path;
@@ -519,8 +519,10 @@ class FooterBehavior extends Behavior {
 				left += " + " + system.getPathName(system.getPathDirectory(model.archivePath))
 			}
 			const screen = model.SCREEN;
-			right += screen.width + " x " + screen.height;
-			right += " " + pixelFormatNames[model.SCREEN.pixelFormat];
+			if (screen.width && screen.height) {
+				right += screen.width + " x " + screen.height;
+				right += " - " + pixelFormatNames[model.SCREEN.pixelFormat];
+			}
 		}
 		row.first.string = left;
 		row.last.string = right;

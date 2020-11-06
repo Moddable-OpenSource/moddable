@@ -259,7 +259,7 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     screen->height = height;
     (*self)->screen = screen;
     
-    (*self)->bitmap = new Bitmap(width, height, 4 * width, PixelFormat32bppARGB, screen->buffer);
+    (*self)->bitmap = new Bitmap(width, height, 4 * width, PixelFormat32bppRGB, screen->buffer);
     
 	(*self)->window = CreateWindowEx(0, "PiuClipWindow", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE, 0, 0, 0, 0, (*view)->window, NULL, gInstance, (LPVOID)self);
 	(*self)->control = CreateWindowEx(0, "PiuScreenControl", NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, (*self)->window, NULL, gInstance, (LPVOID)self);

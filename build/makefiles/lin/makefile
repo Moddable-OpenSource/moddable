@@ -41,6 +41,7 @@ debug:
 	make -f simulator.mk
 	make -f tools.mk
 	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
+	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/mcsim/manifest.json
 	
 release:
 	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsc.mk

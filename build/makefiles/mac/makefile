@@ -41,6 +41,7 @@ debug:
 	make -f simulator.mk
 	make -f tools.mk
 	$(MODDABLE)/build/bin/mac/debug/mcconfig -d -m -p x-mac $(MODDABLE)/tools/xsbug/manifest.json
+	$(MODDABLE)/build/bin/mac/debug/mcconfig -d -m -p x-mac $(MODDABLE)/tools/mcsim/manifest.json
 	
 release:
 	make GOAL=release -f $(XS_DIR)/makefiles/mac/xsc.mk

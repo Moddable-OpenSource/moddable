@@ -133,11 +133,12 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 		xsBeginHost((*piuView)->the);
 		{
 			PiuApplication* application = (*piuView)->application;
-			xsVars(2);
+			xsVars(3);
 			xsVar(0) = xsReference((*application)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onOpenFile)) {
 				xsVar(1) = xsReference((*application)->reference);
-				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsStringW((wchar_t*)cds->lpData));
+				xsVar(2) = xsStringW((wchar_t*)cds->lpData);
+				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 			}
 			PiuApplicationAdjust(application);
 		}

@@ -1203,6 +1203,7 @@ export class Tool extends TOOL {
 		this.mainPath = null;
 		this.make = false;
 		this.manifestPath = null;
+		this.mcsim = false;
 		this.outputPath = null;
 		this.platform = null;
 		this.rotation = undefined;
@@ -1267,8 +1268,10 @@ export class Tool extends TOOL {
 				this.environment.FULLPLATFORM = name;
 				this.environment.PLATFORMPATH = "";
 				let parts = name.split("/");
-				if ((parts[0] == "sim") || (parts[0] == "simulator"))
+				if ((parts[0] == "sim") || (parts[0] == "simulator")) {
 					parts[0] = this.currentPlatform;
+					this.mcsim = true;
+				}
 				this.platform = parts[0];
 				if (parts[1]) {
 					this.subplatform = parts[1];
@@ -1385,13 +1388,24 @@ export class Tool extends TOOL {
 			this.format = null;
 		else if (!this.format)
 			this.format = "UNDEFINED";
-		if (this.platform == "mac")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/Screen Test.app";
-		else if (this.platform == "win")
-			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
-		else if (this.platform == "lin")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
-		this.environment.TARGETS = this.moddablePath + this.slash + "build" + this.slash + "simulator" + this.slash + "targets";
+		if (this.mcsim) {
+			if (this.platform == "mac")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/mcsim.app";
+			else if (this.platform == "win")
+				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
+			else if (this.platform == "lin")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
+			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
+		}
+		else {
+			if (this.platform == "mac")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/Screen Test.app";
+			else if (this.platform == "win")
+				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
+			else if (this.platform == "lin")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
+			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulator";
+		}
 	}
 	concatProperties(object, properties, flag) {
 		if (properties) {
