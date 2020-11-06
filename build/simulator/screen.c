@@ -237,11 +237,13 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 	}
 }
 
+
 void fxScreenLaunch(txScreen* screen)
 {
+	static xsStringValue signature = PIU_DOT_SIGNATURE;
 	void* preparation = xsPreparation();
 	void* archive = (screen->archive) ? fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
-	screen->machine = fxPrepareMachine(NULL, preparation, "mc", screen, archive);
+	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, archive);
 	if (!screen->machine)
 		return;	
 	((txMachine*)(screen->machine))->host = screen;
