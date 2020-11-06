@@ -64,6 +64,7 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 @property (retain) NSImage *touchImage;
 @property (assign) id *touches;
 @property (assign) BOOL touching;
+- (void)abortMachine;
 - (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath;
 - (void)quitMachine;
 @end
@@ -109,51 +110,35 @@ struct PiuScreenMessageStruct {
     [touchImage release];
     [super dealloc];
 }
+- (void)abortMachine {
+	if (piuScreen && (*piuScreen)->behavior) {
+		xsBeginHost((*piuScreen)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*piuScreen)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onAbort)) {
+			xsVar(1) = xsReference((*piuScreen)->reference);
+			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+		}
+		xsEndHost((*piuScreen)->the);
+	}
+}
 - (void)drawRect:(NSRect)rect {
-	CGRect bounds = NSRectToCGRect(self.bounds);
+	CGRect dstRect = NSRectToCGRect(self.bounds);
+	CGRect srcRect = CGRectMake(0, 0, screen->width, screen->height);
 	CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] CGContext];
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
 	CGDataProviderRef provider = CGDataProviderCreateWithData(nil, screen->buffer, screen->width * screen->height * screenBytesPerPixel, nil);
     CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big | kCGImageAlphaNoneSkipLast, provider, nil, NO, kCGRenderingIntentDefault);
-	if (PiuRectangleIsEmpty(&(*piuScreen)->hole)) {
-		CGContextDrawImage(context, bounds, image);
+	PiuRectangle hole = &(*piuScreen)->hole;
+	if (!PiuRectangleIsEmpty(hole)) {
+		CGContextAddRect(context, dstRect);
+		CGContextAddRect(context, CGRectMake(hole->x, dstRect.size.height - hole->height - hole->y, hole->width, hole->height));
+		CGContextEOClip(context);
 	}
-	else {
-        PiuRectangleRecord s, r;
-        PiuRectangleSet(&s, 0, 0, screen->width, screen->height);
-        if (PiuRectangleIntersect(&r, &s, &(*piuScreen)->hole)) {
-        	if (!PiuRectangleIsEqual(&r, &s)) {
-// 				r.y = s.height - (r.y + r.height);
-				if (r.x > 0) {
-					CGRect clip = CGRectMake(0, 0, r.x, s.height);
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y), part);
-					CGImageRelease(part);
-				}
-				if (r.y > 0) {
-					CGRect clip = CGRectMake(r.x, 0, r.width, r.y);
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y + bounds.size.height - r.y), part);
-					CGImageRelease(part);
-				}
-				if (r.y + r.height < s.height) {
-					CGRect clip = CGRectMake(r.x, r.y + r.height, r.width, s.height - (r.y + r.height));
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y - (r.y + r.height)), part);
-					CGImageRelease(part);
-				}
-				if (r.x + r.width < s.width) {
-					CGRect clip = CGRectMake(r.x + r.width, 0, s.width - (r.x + r.width), s.height);
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y), part);
-					CGImageRelease(part);
-				}
-			}
-		}
-		else {
-			CGContextDrawImage(context, bounds, image);
-		}
-	}
+	CGContextTranslateCTM(context, dstRect.size.width/2, dstRect.size.height/2);
+	CGContextRotateCTM(context, (*piuScreen)->rotation * (M_PI/180.0));
+	CGContextTranslateCTM(context, -srcRect.size.width/2, -srcRect.size.height/2);
+	CGContextDrawImage(context, srcRect, image);
 	CGImageRelease(image);
 	CGDataProviderRelease(provider);
 	CGColorSpaceRelease(colorSpace);
@@ -299,22 +284,22 @@ bail:
 - (NSPoint)rotatePoint:(NSPoint)point {
 	NSSize size = [self bounds].size;
     NSPoint result;
-    switch ((int)(self.boundsRotation)) {
+    switch ((*piuScreen)->rotation) {
     case 0:
     	result.x = point.x;
 		result.y = size.height - point.y;
 		break;
     case 90:
-    	result.x = point.x;
-		result.y = 0 - point.y;
+    	result.x = point.y;
+        result.y = point.x;
 		break;
     case 180:
-    	result.x = size.width + point.x;
-		result.y = 0 - point.y;
+    	result.x = size.width - point.x;
+		result.y = point.y;
 		break;
     case 270:
-    	result.x = size.width + point.x;
-        result.y = size.height - point.y;
+    	result.x = size.height - point.y;
+		result.y = size.width - point.x;
 		break;
     }
     return result;
@@ -518,7 +503,6 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 	 screenView.touching = NO;
 	 
     [(*view)->nsView addSubview:clipView];
-	screenView.boundsRotation = (*self)->rotation;
 }
 
 void PiuScreenDictionary(xsMachine* the, void* it) 
@@ -662,7 +646,7 @@ void PiuScreen_quit(xsMachine* the)
 void fxScreenAbort(txScreen* screen)
 {
 	NSPiuScreenView *screenView = screen->view;
-    [screenView performSelectorOnMainThread:@selector(quitMachine) withObject:nil waitUntilDone:NO];
+    [screenView performSelectorOnMainThread:@selector(abortMachine) withObject:nil waitUntilDone:NO];
 }
 
 void fxScreenBufferChanged(txScreen* screen)
@@ -674,17 +658,17 @@ void fxScreenBufferChanged(txScreen* screen)
 void fxScreenFormatChanged(txScreen* screen)
 {
 	NSPiuScreenView *screenView = screen->view;
-	PiuScreen* piuScreen = screenView.piuScreen;
-	if (piuScreen && (*piuScreen)->behavior) {
-		xsBeginHost((*piuScreen)->the);
+	PiuScreen* self = screenView.piuScreen;
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
 		xsVars(3);
-		xsVar(0) = xsReference((*piuScreen)->behavior);
+		xsVar(0) = xsReference((*self)->behavior);
 		if (xsFindResult(xsVar(0), xsID_onPixelFormatChanged)) {
-			xsVar(1) = xsReference((*piuScreen)->reference);
+			xsVar(1) = xsReference((*self)->reference);
 			xsVar(2) = xsInteger(screen->pixelFormat);
 			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 		}
-		xsEndHost((*piuScreen)->the);
+		xsEndHost((*self)->the);
 	}
 }
 

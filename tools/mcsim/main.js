@@ -250,6 +250,9 @@ class ApplicationBehavior extends Behavior {
 	}
 	
 /* EVENTS */
+	onAbort(application) {
+	 this.doCloseFile(application);
+	}
 	onOpenFile(application, path) {
 		let info = system.getFileInfo(path);
 		if (info.directory)
