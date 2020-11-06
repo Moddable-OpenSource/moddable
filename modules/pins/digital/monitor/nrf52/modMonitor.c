@@ -117,10 +117,8 @@ void xs_digital_monitor(xsMachine *the)
 
 	xsmcSetHostData(xsThis, monitor);
 
-//	monitor->nrfConfig = GPIOTE_CONFIG_IN_SENSE_TOGGLE(true);
 	monitor->nrfConfig.is_watcher = false;
 	monitor->nrfConfig.hi_accuracy = true;
-	monitor->nrfConfig.sense = NRF_GPIOTE_POLARITY_TOGGLE;
 
 	if (kModGPIOInputPullUp == mode)
 		monitor->nrfConfig.pull = NRF_GPIO_PIN_PULLUP;

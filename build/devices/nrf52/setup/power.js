@@ -19,8 +19,9 @@
  */
 
 import {Sleep} from "sleep";
+import config from "mc/config";
 
 export default function (done) {
-	Sleep.restoreTime();
+	Sleep.setup(config.ram ?? -1);
 	done();
 }

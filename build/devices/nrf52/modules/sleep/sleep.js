@@ -28,9 +28,7 @@ class Sleep {
 	
 	static get resetReason() @ "xs_sleep_get_reset_reason";
 	
-	static restoreTime() @ "xs_sleep_restore_time";
-
-	static powerOffRam() @ "xs_sleep_power_off_ram";	// @@
+	static setup() @ "xs_sleep_setup";
 };
 
 const PowerMode = {

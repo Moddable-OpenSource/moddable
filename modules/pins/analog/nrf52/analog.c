@@ -98,7 +98,6 @@ void xs_analog(xsMachine *the)
 		// Check for wake from System ON sleep
 		else {
 			uint32_t wakeupMagic = ((uint32_t *)MOD_WAKEUP_REASON_MEM)[0];
-			uint32_t wakeupLatch = ((uint32_t *)MOD_WAKEUP_REASON_MEM)[1];
 			if (MOD_ANALOG_WAKE_MAGIC == wakeupMagic) {
 				((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = 0;
 				modMessagePostToMachine(the, NULL, 0, wakeableAnalogDeliver, analog);

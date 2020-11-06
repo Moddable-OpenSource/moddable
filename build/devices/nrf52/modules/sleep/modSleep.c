@@ -159,20 +159,11 @@ void xs_sleep_deep(xsMachine *the)
 		c_gettimeofday(&tv, NULL);
 		*((c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
 
-		// Calculate wake up time in ticks
-		uint32_t enterTicks, wakeupTicks;
-		enterTicks = nrf_rtc_counter_get(portNRF_RTC_REG);
-		wakeupTicks = (enterTicks + waitTicks) & portNRF_RTC_MAXTICKS;
+		// Stop the RTC and clear the RTC counter
+		nrf_rtc_task_trigger(portNRF_RTC_REG, NRF_RTC_TASK_STOP);
+		nrf_rtc_task_trigger(portNRF_RTC_REG, NRF_RTC_TASK_CLEAR);
 
-		// Save enter time in retention memory
-		*(uint32_t*)MOD_TIME_RTC_MEM = enterTicks;
-
-		// Configure CTC interrupt
-		nrf_rtc_cc_set(portNRF_RTC_REG, 0, wakeupTicks);
-		nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
-		nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
-
-		// Clear GPIO P0 latch register
+		// Clear GPIO P0 latch register to clear any pending digital input pins
 		NRF_P0->LATCH = 0xFFFFFFFF;
 		
 		// Enable LPCOMP if configured
@@ -180,6 +171,14 @@ void xs_sleep_deep(xsMachine *the)
 			nrf_drv_lpcomp_enable();
 			nrf_delay_ms(10);
 		}
+		
+		// Configure CTC interrupt
+		nrf_rtc_cc_set(portNRF_RTC_REG, 0, waitTicks);
+		nrf_rtc_event_clear(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0);
+		nrf_rtc_int_enable(portNRF_RTC_REG, NRF_RTC_INT_COMPARE0_MASK);
+
+		// Start the RTC
+		nrf_rtc_task_trigger(portNRF_RTC_REG, NRF_RTC_TASK_START);
 		
 		// Ensure memory access has completed
 		__DSB();
@@ -216,7 +215,7 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 	xsmcSetInteger(xsResult, nrf52_get_reset_reason());	
 }
 
-void xs_sleep_restore_time(xsMachine *the)
+void xs_sleep_setup(xsMachine *the)
 {
 #ifdef mxDebug
 	return;
@@ -231,6 +230,11 @@ void xs_sleep_restore_time(xsMachine *the)
 		modSetTime(1601856000L);	// 10/5/2020 12:00:00 AM GMT
 	}
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
+	
+	// @@ TBD - power down ram to match requested amount
+	int ramRequested = xsmcToInteger(xsArg(0));
+	if (ramRequested > 0) {
+	}
 }
 
 void sleep_wake_on_timer()
@@ -252,7 +256,7 @@ void sleep_wake_on_timer()
     } while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
     
 	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * 1000) >> 10) / 1000;
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER * 1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
 
     // If no RTC event pending, check for wake-up from configured digital/analog interrupt sources
@@ -264,15 +268,15 @@ void sleep_wake_on_timer()
     	}
     	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_UP) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_UP_Msk)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 1;
+			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_DOWN) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_DOWN_Msk)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 2;
+			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_CROSS) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_CROSS_Msk)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 3;
+			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     }
 
@@ -311,7 +315,7 @@ void sleep_wake_on_timer_sd()
 	} while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
 
 	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += (((portNRF_RTC_REG->COUNTER - *(uint32_t*)MOD_TIME_RTC_MEM) * 1000) >> 10) / 1000;
+	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER * 1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
 
     // If no RTC event pending, check for wake-up from configured digital/analog interrupt sources
@@ -323,15 +327,15 @@ void sleep_wake_on_timer_sd()
     	}
     	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_UP) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_UP_Msk)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 1;
+			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_DOWN) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_DOWN_Msk)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 2;
+			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_CROSS) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_CROSS_Msk)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 3;
+			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     }
 
@@ -366,8 +370,4 @@ void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)
 		address -= 0x20010000L;
 		*section = address / 32768L;
 	}
-}
-
-void xs_sleep_power_off_ram(xsMachine *the)
-{
 }
