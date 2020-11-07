@@ -218,7 +218,7 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 void xs_sleep_setup(xsMachine *the)
 {
 #ifdef mxDebug
-	return;
+	//return;
 #endif
 	if (kRamRetentionValueMagic == ((uint32_t *)MOD_TIME_RESTORE_MEM)[2]) {
 		c_timeval tv = *((c_timeval *)MOD_TIME_RESTORE_MEM);
@@ -231,9 +231,41 @@ void xs_sleep_setup(xsMachine *the)
 	}
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = 0;
 	
-	// @@ TBD - power down ram to match requested amount
+	// Power down ram to match requested amount.
+	// Because this code is executed from the setup script, we know that the SoftDevice is disabled.
 	int ramRequested = xsmcToInteger(xsArg(0));
-	if (ramRequested > 0) {
+	if (ramRequested <= 0)
+		return;
+		
+	int ramAvailable = 0x20038000 - 0x20004200;
+	int ramToPowerDown = ramAvailable - ramRequested;
+	if (ramToPowerDown > 0) {
+		// Start powering down from the 32 KB section (4) beneath the stack section
+		uint8_t slave = 8, section = 4;
+		uint8_t flags = 0;
+		while (ramToPowerDown > 0) {
+			if (8 == slave) {
+				if (ramToPowerDown < 0x8000)
+					break;
+				ramToPowerDown -= 0x8000;
+			}
+			else {
+				if (ramToPowerDown < 0x1000)
+					break;
+				ramToPowerDown -= 0x1000;
+			}
+			flags |= (1 << section);
+			if (0 == section) {
+				NRF_POWER->RAM[slave].POWERCLR = flags;
+				flags = 0;
+				section = 1;
+				--slave;
+			}
+			else
+				--section;
+		}
+		if (0 != flags)
+			NRF_POWER->RAM[slave].POWERCLR = flags;
 	}
 }
 
