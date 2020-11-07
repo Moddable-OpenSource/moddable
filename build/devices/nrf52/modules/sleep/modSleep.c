@@ -218,7 +218,7 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 void xs_sleep_setup(xsMachine *the)
 {
 #ifdef mxDebug
-	//return;
+	return;
 #endif
 	if (kRamRetentionValueMagic == ((uint32_t *)MOD_TIME_RESTORE_MEM)[2]) {
 		c_timeval tv = *((c_timeval *)MOD_TIME_RESTORE_MEM);
