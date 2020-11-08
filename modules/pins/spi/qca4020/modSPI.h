@@ -54,6 +54,7 @@ struct modSPIConfigurationRecord {
 	uint8_t						_pad;
 	uint32_t					hz;
 	modSPIChipSelectCallback	doChipSelect;
+	uint8_t						mode;
 };
 
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;

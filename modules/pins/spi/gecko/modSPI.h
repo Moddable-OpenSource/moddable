@@ -38,6 +38,7 @@ struct modSPIConfigurationRecord {
 	uint32_t					hz;
 	uint32_t					clkdiv;		// stored speed
 	modSPIChipSelectCallback	doChipSelect;
+	uint8_t						mode;
 };
 
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;
