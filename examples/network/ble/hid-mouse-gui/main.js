@@ -80,9 +80,8 @@ let DragApplication = Application.template($ => ({
 		onMouseUp(application, x, y, buttons) {
 			this.doMoveTo(this.pointer, x, y);
 			let position = this.pointer.position;
-			let content = this.hitContent(this.draggers, position.x, position.y);
-			if (content && (content == this.target)) {
-				content.delegate("onTouchEnded", 0, position.x, position.y);
+			if (this.target) {
+				this.target.delegate("onTouchEnded", 0, position.x, position.y);
 			}
 			delete this.target;
 		}
