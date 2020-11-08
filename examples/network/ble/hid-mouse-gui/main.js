@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -96,7 +96,7 @@ let DragApplication = Application.template($ => ({
 		}
 		hitContent(container, x, y) {
 			let count = container.length;
-			for (let i = 0; i < count; ++i) {
+			for (let i = count - 1; i >= 0; i--) {
 				let content = container.content(i);
 				if (content.hit(x, y))
 					return content;
