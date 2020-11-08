@@ -96,6 +96,12 @@
 #define SCREEN_RST_INIT			modGPIOInit(&sd->rst, MODDEF_ILI9341_RST_PORT, MODDEF_ILI9341_RST_PIN, kModGPIOOutput); \
 		SCREEN_RST_DEACTIVE;
 
+#define ILI9341_GRAM_WIDTH             240
+#define ILI9341_GRAM_HEIGHT            320
+
+#define ILI9341_GRAM_X_OFFSET  ILI9341_GRAM_WIDTH - MODDEF_ILI9341_WIDTH
+#define ILI9341_GRAM_Y_OFFSET  ILI9341_GRAM_HEIGHT - MODDEF_ILI9341_HEIGHT
+
 typedef struct {
 	PixelsOutDispatch			dispatch;
 
@@ -539,6 +545,22 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 
 	xMin = x + MODDEF_ILI9341_COLUMN_OFFSET;
 	yMin = y + MODDEF_ILI9341_ROW_OFFSET;
+	
+	switch(sd->rotation) {
+		case 1:
+			// 90 degrees
+			yMin += ILI9341_GRAM_X_OFFSET;
+			break;
+		case 2:
+			// 180 degrees
+			yMin += ILI9341_GRAM_Y_OFFSET;
+			xMin += ILI9341_GRAM_X_OFFSET;
+			break;
+		case 3:
+			// 270 degrees
+			xMin += ILI9341_GRAM_Y_OFFSET;
+	}
+	
 	xMax = xMin + w - 1;
 	yMax = yMin + h - 1;
 
