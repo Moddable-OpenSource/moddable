@@ -147,7 +147,7 @@ void modSPIInit(modSPIConfiguration config)
 	spi_device_interface_config_t devcfg;
 	memset(&devcfg, 0, sizeof(devcfg));
 	devcfg.clock_speed_hz = config->hz;
-	devcfg.mode = 0;
+	devcfg.mode = config->mode;
 	devcfg.spics_io_num = config->cs_pin;		// set to -1 if none
 	devcfg.queue_size = 3;
 	devcfg.pre_cb = NULL;
