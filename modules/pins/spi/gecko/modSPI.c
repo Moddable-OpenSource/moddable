@@ -125,6 +125,23 @@ void modSPIInit(modSPIConfiguration config)
 	spiInit.msbf = true;
 	spiInit.prsRxEnable = false;
 	spiInit.autoTx = false;
+	
+	switch(config->mode)
+	{
+		case 3:
+			spiInit.clockMode = usartClockMode2;   /* CPOL = 1, CPHA = 1 */
+			break;
+		case 2:
+			spiInit.clockMode = usartClockMode3;   /* CPOL = 1, CPHA = 0 */
+			break;
+		case 1:
+			spiInit.clockMode = usartClockMode1;   /* CPOL = 0, CPHA = 1 */
+			break;
+		case 0:
+		default:
+			spiInit.clockMode = usartClockMode0;   /* CPOL = 0, CPHA = 0 */
+	}
+	
 #if (MIGHTY_GECKO || THUNDERBOARD2 || BLUE_GECKO) // EFR32MG1P132F256GM48 || EFR32MG12P332F1024GL125
 	spiInit.autoCsEnable = false;
 	spiInit.autoCsHold = false;
