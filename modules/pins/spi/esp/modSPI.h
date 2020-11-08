@@ -33,6 +33,7 @@ struct modSPIConfigurationRecord {
 	modSPIChipSelectCallback	doChipSelect;
 	uint32_t					reserved;	// set during modSPIInit to SPI flash bits
 	uint8_t						sync;
+	uint8_t						mode;
 };
 
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;

@@ -82,6 +82,10 @@
 	#define SCREEN_CS_INIT
 #endif
 
+#ifndef MODDEF_ILI9341_SPI_MODE
+       #define MODDEF_ILI9341_SPI_MODE 0
+#endif
+
 #define SCREEN_DC_DATA			modGPIOWrite(&sd->dc, 1)
 #define SCREEN_DC_COMMAND		modGPIOWrite(&sd->dc, 0)
 #define SCREEN_DC_INIT			modGPIOInit(&sd->dc, MODDEF_ILI9341_DC_PORT, MODDEF_ILI9341_DC_PIN, kModGPIOOutput); \
@@ -205,6 +209,7 @@ void xs_ILI9341(xsMachine *the)
 
 	modSPIConfig(sd->spiConfig, MODDEF_ILI9341_HZ, MODDEF_ILI9341_SPI_PORT,
 			MODDEF_ILI9341_CS_PORT, -1, ili9341ChipSelect);
+	sd->spiConfig.mode = MODDEF_ILI9341_SPI_MODE;
 
 	sd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
 
