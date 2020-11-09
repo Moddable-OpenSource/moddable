@@ -138,7 +138,7 @@ void xs_sleep_deep(xsMachine *the)
 	if (argc > 0) {
 		// System ON sleep, RAM powered off during sleep, wake on RTC or configured interrupt source
 		uint32_t ms = xsmcToInteger(xsArg(0));
-		uint32_t waitTicks = ((uint64_t)ms << 10) / 1000;
+		uint32_t waitTicks = (((uint64_t)ms) << 10) / 1000;
 		
 		// Stop tick events
 		nrf_rtc_int_disable(portNRF_RTC_REG, NRF_RTC_INT_TICK_MASK);
@@ -220,6 +220,14 @@ void xs_sleep_setup(xsMachine *the)
 #ifdef mxDebug
 	return;
 #endif
+
+	// We boot into System ON power mode.
+	// Ensure all RAM is powered on and RAM retention in System OFF power mode is disabled.
+	for (int i = 0; i <= 7; ++i)
+		NRF_POWER->RAM[i].POWER = 0x03;
+	NRF_POWER->RAM[8].POWER = 0x3F;
+
+	// Restore or initialize system time
 	if (kRamRetentionValueMagic == ((uint32_t *)MOD_TIME_RESTORE_MEM)[2]) {
 		c_timeval tv = *((c_timeval *)MOD_TIME_RESTORE_MEM);
 		modSetTime(tv.tv_sec);
@@ -237,7 +245,9 @@ void xs_sleep_setup(xsMachine *the)
 	if (ramRequested <= 0)
 		return;
 		
+	// All RAM between the RAM section below the stack and above the .NOINIT section is available.
 	int ramAvailable = 0x20038000 - 0x20004200;
+	
 	int ramToPowerDown = ramAvailable - ramRequested;
 	if (ramToPowerDown > 0) {
 		// Start powering down from the 32 KB section (4) beneath the stack section
