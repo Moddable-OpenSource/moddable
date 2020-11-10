@@ -33,6 +33,9 @@ class Client {
 				case "address":
 					this.address = dictionary.address;
 					break;
+				case "bonded":
+					this.bonded = dictionary.bonded;
+					break;
 				default:
 					throw new Error(`invalid property "${property}`);
 					break;

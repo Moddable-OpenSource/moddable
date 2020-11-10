@@ -241,7 +241,7 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = 0xFFFF;
+	connection->id = kInvalidConnectionID;
 	connection->type = kBLEConnectionTypeClient;
 	connection->addressType = addressType;
 	c_memmove(&connection->address, &bda, 6);
@@ -320,6 +320,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 	connection->the = the;
 	connection->objConnection = xsThis;
 	OBJ_CLIENT(connection) = xsArg(0);
+	xsRemember(connection->objConnection);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -819,7 +820,24 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	modBLEConnection connection = modBLEConnectionFindByAddress(auth_cmpl->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
-	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+
+	uint8_t bonded = 0;
+    int dev_num = esp_ble_get_bond_device_num();
+    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)c_malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    if (NULL != dev_list) {
+		for (int i = 0; i < dev_num; i++) {
+			if (0 == c_memcmp(dev_list[i].bd_addr, auth_cmpl->bd_addr, 6)) {
+				bonded = 1;
+				break;
+			}
+		}
+		c_free(dev_list);
+    }
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), bonded);
+	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -940,7 +958,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		
 	if (ESP_GATT_OK == open->status) {
 		uint8_t buffer[6];
-		if (0xFFFF != connection->id) {
+		if (kInvalidConnectionID != connection->id) {
 			LOG_GATTC_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}
