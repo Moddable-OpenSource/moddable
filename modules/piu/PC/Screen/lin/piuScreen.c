@@ -20,6 +20,10 @@
 
 #include "piuPC.h"
 #include <dlfcn.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include "screen.h"
 
 typedef struct PiuScreenStruct PiuScreenRecord, *PiuScreen;
@@ -35,11 +39,14 @@ struct PiuScreenStruct {
 	cairo_surface_t *surface;
     txScreen* screen;
 	void* library;
+	int archiveFile;
+	size_t archiveSize;
 	guint timer;
 	gboolean timerRunning;
 	gboolean touching;
 	PiuScreenMessage firstMessage;
 	PiuRectangleRecord hole;
+	xsIntegerValue rotation;
 };
 
 struct PiuScreenMessageStruct {
@@ -55,6 +62,7 @@ static void PiuScreenDelete(void* it);
 static void PiuScreenDeleteMessage(PiuScreen* self, PiuScreenMessage message);
 static void PiuScreenDictionary(xsMachine* the, void* it);
 static void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuScreenRotatePoint(PiuScreen* self, PiuCoordinate x, PiuCoordinate y, PiuPoint result);
 static void PiuScreenQuit(PiuScreen* self);
 static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view);
 
@@ -75,41 +83,22 @@ gboolean onScreenDraw(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
 	PiuScreen* self = (PiuScreen*)data;
 	cairo_surface_t *surface = (*self)->surface;
-	gint width = cairo_image_surface_get_width(surface);
-	gint height = cairo_image_surface_get_height(surface);
+	double dstWidth = (*self)->bounds.width;
+	double dstHeight = (*self)->bounds.height;
+	double srcWidth = cairo_image_surface_get_width(surface);
+	double srcHeight = cairo_image_surface_get_height(surface);
+	PiuRectangle hole = &(*self)->hole;
+	if (!PiuRectangleIsEmpty(hole)) {
+		cairo_set_fill_rule(cr, CAIRO_FILL_RULE_EVEN_ODD);
+		cairo_rectangle(cr, 0, 0, dstWidth, dstHeight);
+		cairo_rectangle(cr, hole->x, hole->y, hole->width, hole->height);
+		cairo_clip(cr);
+	}
+	cairo_translate(cr,dstWidth/2,dstHeight/2);
+	cairo_rotate(cr,(*self)->rotation * (M_PI/180.0));
+	cairo_translate(cr,-srcWidth/2,-srcHeight/2);
 	cairo_set_source_surface(cr, surface, 0, 0);
-	if (PiuRectangleIsEmpty(&(*self)->hole)) {
-		cairo_rectangle(cr, 0, 0, width, height);
-		cairo_fill(cr);
-	}
-	else {
-		PiuRectangleRecord s, r;
-		PiuRectangleSet(&s, 0, 0, width, height);
-		if (PiuRectangleIntersect(&r, &s, &(*self)->hole)) {
-			if (!PiuRectangleIsEqual(&r, &s)) {
-				if (r.x > 0) {
-					cairo_rectangle(cr, 0, 0, r.x, height);
-					cairo_fill(cr);
-				}
-				if (r.y > 0) {
-					cairo_rectangle(cr, r.x, 0, r.width, r.y);
-					cairo_fill(cr);
-				}
-				if (r.y + r.height < s.height) {
-					cairo_rectangle(cr, r.x, r.y + r.height, r.width, height - (r.y + r.height));
-					cairo_fill(cr);
-				}
-				if (r.x + r.width < s.width) {
-					cairo_rectangle(cr, r.x + r.width, 0, width - (r.x + r.width), height);
-					cairo_fill(cr);
-				}
-			}
-		}
-		else {
-			cairo_rectangle(cr, 0, 0, width, height);
-			cairo_fill(cr);
-		}
-	}
+	cairo_paint(cr);
 	return TRUE;
 }
 
@@ -118,8 +107,11 @@ gboolean onScreenMouseDown(GtkWidget *widget, GdkEvent *event, gpointer data)
 	PiuScreen* self = (PiuScreen*)data;
 	txScreen* screen = (*self)->screen;
     (*self)->touching = TRUE;
-	if (screen && screen->touch) 
-		(*screen->touch)(screen, touchEventBeganKind, 0, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, 0);
+	if (screen && screen->touch) {
+		PiuPointRecord point;
+		PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
+		(*screen->touch)(screen, touchEventBeganKind, 0, point.x, point.y, 0);
+	}
 	return TRUE;
 }
 
@@ -128,8 +120,11 @@ gboolean onScreenMouseMoved(GtkWidget *widget, GdkEvent *event, gpointer data)
 	PiuScreen* self = (PiuScreen*)data;
 	txScreen* screen = (*self)->screen;
 	if ((*self)->touching) {
-		if (screen && screen->touch) 
-			(*screen->touch)(screen, touchEventMovedKind, 0, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, 0);
+		if (screen && screen->touch) {
+			PiuPointRecord point;
+			PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
+			(*screen->touch)(screen, touchEventMovedKind, 0, point.x, point.y, 0);
+		}
 	}
 	return FALSE;
 }
@@ -138,9 +133,12 @@ gboolean onScreenMouseUp(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	PiuScreen* self = (PiuScreen*)data;
 	txScreen* screen = (*self)->screen;
-	if (screen && screen->touch) 
-		(*screen->touch)(screen, touchEventEndedKind, 0, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, 0);
-    (*self)->touching = FALSE;
+	if (screen && screen->touch) {
+		PiuPointRecord point;
+		PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
+		(*screen->touch)(screen, touchEventEndedKind, 0, point.x, point.y, 0);
+ 	}
+   (*self)->touching = FALSE;
 	return TRUE;
 }
 
@@ -181,6 +179,24 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 	
 	PiuDimension width = (*self)->coordinates.width;
 	PiuDimension height = (*self)->coordinates.height;
+    
+	GtkWidget* gtkDrawingArea = gtk_drawing_area_new();
+    if (gtkDrawingArea == NULL) goto bail;
+	gtk_widget_add_events(GTK_WIDGET(gtkDrawingArea), GDK_ALL_EVENTS_MASK);
+	gtk_widget_set_size_request (gtkDrawingArea, width, height);
+	g_signal_connect(G_OBJECT(gtkDrawingArea), "draw", G_CALLBACK(onScreenDraw), self);
+	g_signal_connect(G_OBJECT(gtkDrawingArea), "button-press-event", G_CALLBACK(onScreenMouseDown), self);
+	g_signal_connect(G_OBJECT(gtkDrawingArea), "button-release-event", G_CALLBACK(onScreenMouseUp), self);
+	g_signal_connect(G_OBJECT(gtkDrawingArea), "motion-notify-event", G_CALLBACK(onScreenMouseMoved), self);
+    
+	GtkPiuClip* gtkClip = gtk_piu_clip_new((PiuContent*)self, GTK_WIDGET(gtkDrawingArea));
+    if (gtkClip == NULL) goto bail;
+
+	if (((*self)->rotation == 90) || ((*self)->rotation == 270)) {
+		PiuDimension tmp = width;
+		width = height;
+		height = tmp;
+	}
 	
     txScreen* screen = (txScreen*)malloc(sizeof(txScreen) - 1 + (width * height * screenBytesPerPixel));
     if (screen == NULL) goto bail;
@@ -198,18 +214,6 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 
 	cairo_surface_t *surface = cairo_image_surface_create_for_data(screen->buffer, CAIRO_FORMAT_RGB24, width, height, width * screenBytesPerPixel);
     if (surface == NULL) goto bail;
-    
-	GtkWidget* gtkDrawingArea = gtk_drawing_area_new();
-    if (gtkDrawingArea == NULL) goto bail;
-	gtk_widget_add_events(GTK_WIDGET(gtkDrawingArea), GDK_ALL_EVENTS_MASK);
-	gtk_widget_set_size_request (gtkDrawingArea, width, height);
-	g_signal_connect(G_OBJECT(gtkDrawingArea), "draw", G_CALLBACK(onScreenDraw), self);
-	g_signal_connect(G_OBJECT(gtkDrawingArea), "button-press-event", G_CALLBACK(onScreenMouseDown), self);
-	g_signal_connect(G_OBJECT(gtkDrawingArea), "button-release-event", G_CALLBACK(onScreenMouseUp), self);
-	g_signal_connect(G_OBJECT(gtkDrawingArea), "motion-notify-event", G_CALLBACK(onScreenMouseMoved), self);
-    
-	GtkPiuClip* gtkClip = gtk_piu_clip_new((PiuContent*)self, GTK_WIDGET(gtkDrawingArea));
-    if (gtkClip == NULL) goto bail;
     
 	(*self)->gtkClip = GTK_WIDGET(gtkClip);
 	(*self)->gtkDrawingArea = gtkDrawingArea;
@@ -277,11 +281,38 @@ void PiuScreenDeleteMessage(PiuScreen* self, PiuScreenMessage message)
 
 void PiuScreenDictionary(xsMachine* the, void* it) 
 {
+	PiuScreen* self = (PiuScreen*)it;
+	xsIntegerValue integer;
+	if (xsFindInteger(xsArg(1), xsID_rotation, &integer)) {
+		(*self)->rotation = integer;
+	}
 }
 
 void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuContentMark(the, it, markRoot);
+}
+
+void PiuScreenRotatePoint(PiuScreen* self, PiuCoordinate x, PiuCoordinate y, PiuPoint result)
+{
+    switch ((*self)->rotation) {
+    case 0:
+    	result->x = x;
+		result->y = y;
+		break;
+    case 90:
+    	result->x = y;
+        result->y = (*self)->bounds.width - x;
+		break;
+    case 180:
+    	result->x = (*self)->bounds.width - x;
+        result->y = (*self)->bounds.height - y;
+		break;
+    case 270:
+    	result->x = (*self)->bounds.height - y;
+		result->y = x;;
+		break;
+    }
 }
 
 void PiuScreenQuit(PiuScreen* self) 
@@ -303,6 +334,13 @@ void PiuScreenQuit(PiuScreen* self)
     if ((*self)->timerRunning) {
         g_source_remove((*self)->timer);
         (*self)->timerRunning = FALSE;
+	}
+	if (screen->archive) {
+		munmap(screen->archive, (*self)->archiveSize);
+		close((*self)->archiveFile);
+		screen->archive = NULL;
+		(*self)->archiveSize = 0;
+		(*self)->archiveFile = -1;
 	}
 	if ((*self)->library) {
 		dlclose((*self)->library);
@@ -353,12 +391,6 @@ void PiuScreen_create(xsMachine* the)
 	PiuScreenDictionary(the, self);
 	PiuBehaviorOnCreate(self);
 }
-
-void PiuScreen_get_running(xsMachine* the)
-{
-	PiuScreen* self = PIU(Screen, xsThis);
-	xsResult = (*self)->library ? xsTrue : xsFalse;
-}
 	
 void PiuScreen_get_hole(xsMachine* the)
 {
@@ -390,15 +422,33 @@ void PiuScreen_set_hole(xsMachine* the)
 	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, (*self)->screen->width, (*self)->screen->height);
 }
 
+void PiuScreen_get_pixelFormat(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsInteger((*self)->screen->pixelFormat);
+}
+
+void PiuScreen_get_running(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = (*self)->library ? xsTrue : xsFalse;
+}
+
 void PiuScreen_launch(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	xsStringValue path = NULL;
+	xsStringValue libraryPath = NULL;
+	xsStringValue archivePath = NULL;
 	void* library = NULL;
 	txScreenLaunchProc launch;
+	int archiveFile = -1;
+	size_t archiveSize = 0;
+	void* archive = NULL;
 	xsTry {
-		path = xsToString(xsArg(0));
-		library = dlopen(path, RTLD_NOW);
+		libraryPath = xsToString(xsArg(0));
+		if (xsToInteger(xsArgc) > 1)
+			archivePath = xsToString(xsArg(1));
+		library = dlopen(libraryPath, RTLD_NOW);
 		if (library == NULL) {
 			xsUnknownError("%s", dlerror());
 		}
@@ -406,10 +456,31 @@ void PiuScreen_launch(xsMachine* the)
 		if (launch == NULL) {
 			xsUnknownError("%s", dlerror());
 		}
+		if (archivePath) {
+			archiveFile = open(archivePath, O_RDWR);
+			if (archiveFile < 0) {
+				xsUnknownError("%s", strerror(errno));
+			}
+			struct stat statbuf;
+			fstat(archiveFile, &statbuf);
+			archiveSize = statbuf.st_size;
+			archive = mmap(NULL, archiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, archiveFile, 0);
+			if (archive == MAP_FAILED) {
+				archive = NULL;
+				xsUnknownError("%s", strerror(errno));
+			}
+		}
 		(*self)->library = library;
+		(*self)->archiveFile = archiveFile;
+		(*self)->archiveSize = archiveSize;
+		(*self)->screen->archive = archive;
 		(*launch)((*self)->screen);
 	}
 	xsCatch {
+		if (archive)
+			munmap(archive, archiveSize);
+		if (archiveFile >= 0)
+			close(archiveFile);
 		if (library != NULL)
 			dlclose(library);
 		xsThrow(xsException);
@@ -458,18 +529,39 @@ void fxScreenAbort(txScreen* screen)
 gboolean fxScreenAbortAux(gpointer data)
 {
 	PiuScreen* self = (PiuScreen*)data;
-	PiuScreenQuit(self);
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onAbort)) {
+			xsVar(1) = xsReference((*self)->reference);
+			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+		}
+		xsEndHost((*self)->the);
+	}
     return FALSE;
 }
 
 void fxScreenBufferChanged(txScreen* screen)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;
-	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, screen->width, screen->height);
+	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, (*self)->bounds.width, (*self)->bounds.height);
 }
 
 void fxScreenFormatChanged(txScreen* screen)
 {
+	PiuScreen* self = (PiuScreen*)screen->view;
+	if (self && (*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onPixelFormatChanged)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(screen->pixelFormat);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+		}
+		xsEndHost((*self)->the);
+	}
 }
 
 gboolean fxScreenIdle(gpointer data)

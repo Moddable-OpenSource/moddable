@@ -63,16 +63,16 @@
 			"include": "$(BUILD)/devices/nrf52/manifest.json"
 		},
 		"lin": {
-			"include": "$(BUILD)/simulator/manifest.json"
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		},
 		"mac": {
-			"include": "$(BUILD)/simulator/manifest.json"
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		},
 		"win": {
-			"include": "$(BUILD)/simulator/manifest.json"
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		},
 		"wasm": {
-			"include": "$(BUILD)/simulator/manifest.json"
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		}
 	}
 }

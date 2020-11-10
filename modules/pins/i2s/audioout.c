@@ -115,7 +115,8 @@
 	enum {
 		kStateIdle = 0,
 		kStatePlaying = 1,
-		kStateTerminated = 2
+		kStateClosing = 2,
+		kStateTerminated = 3
 	};
 #elif defined(__ets__)
 	#include "xsHost.h"
@@ -285,8 +286,10 @@ void xs_audioout_destructor(void *data)
 	DeleteCriticalSection(&out->cs);
 	UnregisterClass("modAudioWindowClass", NULL);
 #elif ESP32
-	out->state = kStateTerminated;
-	xTaskNotify(out->task, kStateTerminated, eSetValueWithOverwrite);
+	out->state = kStateClosing;
+	xTaskNotify(out->task, kStateClosing, eSetValueWithOverwrite);
+	while (kStateClosing == out->state)
+		modDelayMilliseconds(1);
 
 	vSemaphoreDelete(out->mutex);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
@@ -451,12 +454,18 @@ void xs_audioout_build(xsMachine *the)
 #endif
 #endif
 
+	xsRemember(out->obj);
+
 	out->built = 1;
 }
 
 void xs_audioout_close(xsMachine *the)
 {
-	xs_audioout_destructor(xsmcGetHostData(xsThis));
+	modAudioOut out = xsmcGetHostData(xsThis);
+
+	if (out->built)
+		xsForget(out->obj);
+	xs_audioout_destructor(out);
 	xsmcSetHostData(xsThis, NULL);
 }
 
@@ -1075,7 +1084,7 @@ void audioOutLoop(void *pvParameter)
 	};
 #endif
 
-	while (kStateTerminated != out->state) {
+	while (kStateClosing != out->state) {
 		size_t bytes_written;
 
 		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
@@ -1098,7 +1107,7 @@ void audioOutLoop(void *pvParameter)
 //			}
 
 			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
-			if (kStateTerminated == newState)
+			if (kStateClosing == newState)
 				break;
 
 //			if (kStateIdle == newState)
@@ -1165,9 +1174,10 @@ void audioOutLoop(void *pvParameter)
 #endif
 	}
 
-	// from here, "out" is invalid
 	if (installed)
 		i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
+
+	out->state = kStateTerminated;
 
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
 }

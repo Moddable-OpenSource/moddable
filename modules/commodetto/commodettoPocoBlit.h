@@ -53,34 +53,11 @@
 	#define kPocoRotation 0
 #endif
 
-#if !defined(kPocoCLUT16_01) || kPocoCLUT16_01
-	// first pixel is in high nybble (4-bit format in BMP)
-	#undef kPocoCLUT16_01
-	#define kPocoCLUT16_01 1
-	#define kPocoPixels4FirstMask (0xF0)
-	#define kPocoPixels4FirstShift (4)
-	#define kPocoPixels4SecondMask (0x0F)
-	#define kPocoPixels4SecondShift (0)
-	#define PocoPixels4IsFirstPixel(xphase) (!(xphase))
-	#define PocoPixels4IsSecondPixel(xphase) (xphase)
-#else
-	// first pixel is in low nybble (4-bit format used by D/AVE 2D engine)
-	#undef kPocoCLUT16_01
-	#define kPocoCLUT16_01 0
-	#define kPocoPixels4FirstMask (0x0F)
-	#define kPocoPixels4FirstShift (0)
-	#define kPocoPixels4SecondMask (0xF0)
-	#define kPocoPixels4SecondShift (4)
-	#define PocoPixels4IsFirstPixel(xphase) (xphase)
-	#define PocoPixels4IsSecondPixel(xphase) (!(xphase))
-#endif
-#define PocoPixels4Pack(first, second) (((first) << kPocoPixels4FirstShift) | ((second) << kPocoPixels4SecondShift))
-
 typedef enum {
 	kPocoMonochromeForeground = 1,
 	kPocoMonochromeBackground = 2,
 	kPocoMonochromeForeAndBackground = (kPocoMonochromeForeground | kPocoMonochromeBackground)
- }  PocoMonochromeMode;
+} PocoMonochromeMode;
 
 #define kPocoOpaque (255)
 
@@ -122,7 +99,7 @@ struct PocoRecord {
 
 	char				*displayList;
 	const char			*displayListEnd;
-	PocoCommand		next;
+	PocoCommand			next;
 
 	// clip rectangle of active drawing operation (rotation removed - physical)
 	PocoCoordinate		x;
@@ -166,14 +143,11 @@ typedef struct PocoBitmapRecord {
 	PocoPixel			*pixels;
 #if COMMODETTO_BITMAP_ID
 	uint32_t			id;
-	int32_t			byteLength;
+	int32_t				byteLength;
 #endif
 } PocoBitmapRecord, *PocoBitmap;
 
 typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, void *refCon);
-
-#define READ_PROG_MEM_UNSIGNED_BYTE(a) (*(unsigned char *)(a))
-#define READ_PROG_MEM_UNSIGNED_LONG(a) (*(uint32_t *)(a))
 
 #define PocoMakePixelGray256(r, g, b) (((r << 1) + r + (g << 2) + b) >> 3)
 #define PocoMakePixelGray16(r, g, b) (((r << 1) + r + (g << 2) + b) >> 7)
@@ -220,6 +194,9 @@ void PocoBitmapDrawMasked(Poco poco, uint8_t blend, PocoBitmap bits, PocoCoordin
 void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh);
 
 void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h);
+
+typedef void (*PocoRenderExternal)(Poco poco, uint8_t *data, PocoPixel *dst, PocoDimension w, PocoDimension h);
+void PocoDrawExternal(Poco poco, PocoRenderExternal doDrawExternal, uint8_t *data, uint8_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h);
 
 void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h);
 void PocoClipPop(Poco poco);

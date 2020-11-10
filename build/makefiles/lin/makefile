@@ -18,6 +18,14 @@
 #
 .NOTPARALLEL:
 
+ifndef MODDABLE
+$(error MODDABLE environment variable not set)
+endif
+
+ifneq ($(MODDABLE), $(abspath $(MODDABLE)))
+$(error MODDABLE environment variable is set to an invalid path: "$(MODDABLE)")
+endif
+
 XS_DIR ?= $(MODDABLE)/xs
 export XS_DIR
 BUILD_DIR ?= $(MODDABLE)/build
@@ -33,6 +41,7 @@ debug:
 	make -f simulator.mk
 	make -f tools.mk
 	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
+	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/mcsim/manifest.json
 	
 release:
 	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsc.mk

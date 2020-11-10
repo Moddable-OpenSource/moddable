@@ -441,6 +441,13 @@ struct sxMachine {
 	txSize floatingPointOps;
 	void (*onBreak)(txMachine*, txU1 stop);
 #endif
+#ifdef mxMetering
+	txBoolean (*meterCallback)(txMachine*, txU4);
+	txU4 meterCount;
+	txU4 meterIndex;
+	txU4 meterInterval;
+	txJump* meterJump;
+#endif
 #ifdef mxProfile
 	txString profileDirectory;
 	void* profileFile;
@@ -638,6 +645,11 @@ mxExport void* fxGetArchiveData(txMachine* the, txString path, txSize* size);
 mxExport void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
+
+#ifdef mxMetering
+mxExport void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), txU4 interval);
+mxExport void fxEndMetering(txMachine* the);
+#endif
 
 /* xsmc.c */
 mxExport void _xsNewArray(txMachine *the, txSlot *res, txInteger length);
@@ -1093,7 +1105,7 @@ mxExport txBigInt* fxBigInt_rem(txMachine* the, txBigInt* r, txBigInt* a, txBigI
 mxExport txBigInt* fxBigInt_sub(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 mxExport txBigInt* fxBigInt_xor(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 
-mxExport txBigInt *fxBigInt_alloc(txMachine* the, txU2 size);
+mxExport txBigInt *fxBigInt_alloc(txMachine* the, txU4 size);
 mxExport void fxBigInt_free(txMachine* the, txBigInt*);
 
 mxExport int fxBigInt_comp(txBigInt* a, txBigInt* b);

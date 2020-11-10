@@ -1079,11 +1079,13 @@ void fx_RegExp_prototype_toString(txMachine* the)
 	fxStringX(the, mxResult, "/");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_source));
+	fxToString(the, the->stack);
 	fxConcatString(the, mxResult, the->stack);
 	the->stack++;
 	fxConcatStringC(the, mxResult, "/");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_flags));
+	fxToString(the, the->stack);
 	fxConcatString(the, mxResult, the->stack);
 	the->stack++;
 #endif

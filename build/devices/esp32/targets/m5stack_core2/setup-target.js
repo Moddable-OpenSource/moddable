@@ -5,36 +5,45 @@ import Resource from "Resource";
 import Timer from "timer";
 import config from "mc/config";
 
-const INTERNAL_I2C_SDA = 21;
-const INTERNAL_I2C_SCL = 22;
+const INTERNAL_I2C = Object.freeze({
+	sda: 21,
+	scl: 22
+});
 
 const state = {
   handleRotation: nop,
 };
 
 export default function (done) {
-  // power
-  global.power = new Power();
+	// power
+	globalThis.power = new Power();
 
-  // speaker
-  global.power.speaker.enable = true;
-  global.speaker = new AudioOut({ streams: 4 });
-  if (config.startupSound) {
-    speaker.callback = function () {
-      this.stop();
-    };
-    speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
-    speaker.enqueue(0, AudioOut.Callback, 0);
-    speaker.start();
-  }
+	// speaker
+	power.speaker.enable = true;
+
+	// start-up sound
+	if (config.startupSound) {
+		const speaker = new AudioOut({streams: 1});
+		speaker.callback = function () {
+			this.stop();
+			this.close();
+			this.done();
+		};
+		speaker.done = done;
+		done = undefined;
+
+		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
+		speaker.enqueue(0, AudioOut.Callback, 0);
+		speaker.start();
+	}
 
   // vibration
-  global.vibration = {
+  globalThis.vibration = {
     read: function () {
-      return global.power.vibration.enable;
+      return power.vibration.enable;
     },
     write: function (v) {
-      global.power.vibration.enable = v;
+      power.vibration.enable = v;
     },
   };
 
@@ -44,16 +53,13 @@ export default function (done) {
   }, 600);
 
   // accelerometer and gyrometer
-  state.accelerometerGyro = new MPU6886({
-    sda: INTERNAL_I2C_SDA,
-    scl: INTERNAL_I2C_SCL,
-  });
+  state.accelerometerGyro = new MPU6886(INTERNAL_I2C);
 
-  global.accelerometer = {
+  globalThis.accelerometer = {
     onreading: nop,
   };
 
-  global.gyro = {
+  globalThis.gyro = {
     onreading: nop,
   };
 
@@ -105,7 +111,7 @@ export default function (done) {
   };
 
   // autorotate
-  if (config.autorotate && global.Application) {
+  if (config.autorotate && globalThis.Application) {
     state.handleRotation = function (reading) {
       if (Math.abs(reading.y) > Math.abs(reading.x)) {
         if (reading.y < -0.7 && application.rotation != 180) {
@@ -124,15 +130,13 @@ export default function (done) {
     accelerometer.start(300);
   }
 
-  done();
+  done?.();
 }
 
 class Power extends AXP192 {
   constructor() {
-    super({
-      sda: INTERNAL_I2C_SDA,
-      scl: INTERNAL_I2C_SCL,
-    });
+    super(INTERNAL_I2C);
+
     // TODO: encapsulate direct register access by class method
     this.writeByte(0x30, (this.readByte(0x30) & 0x04) | 0x02); //AXP192 30H
     this.writeByte(0x92, this.readByte(0x92) & 0xf8); //AXP192 GPIO1:OD OUTPUT

@@ -37,8 +37,6 @@
 #define kCommodettoBitmapCLUT16 (11)
 #define kCommodettoBitmapRGB444 (12)
 
-#define mxScreenIdling 1
-
 static xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
 static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size_t size);
@@ -72,10 +70,12 @@ static void screen_end(xsMachine* the);
 static void screen_get_clut(xsMachine* the);
 static void screen_pixelsToBytes(xsMachine* the);
 static void screen_postMessage(xsMachine* the);
+static void screen_readLED(xsMachine* the);
 static void screen_send(xsMachine* the);
 static void screen_set_clut(xsMachine* the);
 static void screen_start(xsMachine* the);
 static void screen_stop(xsMachine* the);
+static void screen_writeLED(xsMachine* the);
 static void screen_get_pixelFormat(xsMachine* the);
 static void screen_get_rotation(xsMachine* the);
 static void screen_get_width(xsMachine* the);
@@ -198,6 +198,13 @@ void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 	{
 		xsVars(2);
 		xsVar(0) = xsGet(xsGlobal, xsID_screen);
+		if (xsFindResult(xsVar(0), xsID_onMessage)) {
+			if (size)
+				(void)xsCallFunction1(xsResult, xsVar(0), xsArrayBuffer(buffer, size));
+			else
+				(void)xsCallFunction1(xsResult, xsVar(0), xsString(buffer));
+
+		}
 		xsVar(1) = xsGet(xsVar(0), xsID_context);
 		if (xsTest(xsVar(1))) {
 			if (xsFindResult(xsVar(1), xsID_onMessage)) {
@@ -230,11 +237,13 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 	}
 }
 
+
 void fxScreenLaunch(txScreen* screen)
 {
+	static xsStringValue signature = PIU_DOT_SIGNATURE;
 	void* preparation = xsPreparation();
 	void* archive = (screen->archive) ? fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
-	screen->machine = fxPrepareMachine(NULL, preparation, "mc", screen, archive);
+	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, archive);
 	if (!screen->machine)
 		return;	
 	((txMachine*)(screen->machine))->host = screen;
@@ -277,12 +286,16 @@ void fxScreenLaunch(txScreen* screen)
 		xsDefine(xsVar(0), xsID_pixelsToBytes, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_postMessage, 1);
 		xsDefine(xsVar(0), xsID_postMessage, xsVar(1), xsDefault);
+		xsVar(1) = xsNewHostFunction(screen_readLED, 0);
+		xsDefine(xsVar(0), xsID_readLED, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_send, 1);
 		xsDefine(xsVar(0), xsID_send, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_start, 1);
 		xsDefine(xsVar(0), xsID_start, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_stop, 0);
 		xsDefine(xsVar(0), xsID_stop, xsVar(1), xsDefault);
+		xsVar(1) = xsNewHostFunction(screen_writeLED, 1);
+		xsDefine(xsVar(0), xsID_writeLED, xsVar(1), xsDefault);
 		xsVar(1) = xsNewHostFunction(screen_get_pixelFormat, 0);
 		xsDefine(xsVar(0), xsID_pixelFormat, xsVar(1), xsIsGetter);
 		xsVar(1) = xsNewHostFunction(screen_set_pixelFormat, 0);
@@ -299,6 +312,7 @@ void fxScreenLaunch(txScreen* screen)
 		xsVar(1) = xsNewHostFunction(screen_get_frameBuffer, 0);
 		xsDefine(xsVar(0), xsID_frameBuffer, xsVar(1), xsIsGetter);
 #endif
+
 		xsSet(xsVar(0), xsID_pixelFormat, xsInteger(kCommodettoBitmapFormat));
 		xsSet(xsVar(0), xsID_when, xsNumber(C_NAN));
 		xsSet(xsGlobal, xsID_screen, xsVar(0));
@@ -489,6 +503,12 @@ void screen_postMessage(xsMachine* the)
 		else
 			(*screen->post)(screen, xsToString(xsArg(0)), 0);
 	}
+}
+
+void screen_readLED(xsMachine* the)
+{
+	txScreen* screen = xsGetHostData(xsThis);
+	xsResult = (screen->flags & mxScreenLED) ? xsInteger(1) :  xsInteger(0);
 }
 
 void screen_send(xsMachine* the)
@@ -726,6 +746,16 @@ void screen_stop(xsMachine* the)
 	txScreen* screen = xsGetHostData(xsThis);
 	screen->flags &= ~mxScreenIdling;
 	xsSet(xsThis, xsID_when, xsNumber(C_NAN));
+}
+
+void screen_writeLED(xsMachine* the)
+{
+	txScreen* screen = xsGetHostData(xsThis);
+	if (xsTest(xsArg(0)))
+		screen->flags |= mxScreenLED;
+	else
+		screen->flags &= ~mxScreenLED;
+	(*screen->formatChanged)(screen);
 }
 
 void screen_get_clut(xsMachine* the)

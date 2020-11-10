@@ -45,6 +45,8 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 @interface NSPiuScreenView : NSView {
 	PiuScreen* piuScreen;
 	void* library;
+	int archiveFile;
+	int archiveSize;
 	txScreen* screen;
     NSTimeInterval time;
 	NSTimer *timer;
@@ -54,13 +56,16 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 }
 @property (assign) PiuScreen* piuScreen;
 @property (assign) void* library;
+@property (assign) int archiveFile;
+@property (assign) int archiveSize;
 @property (assign) txScreen *screen;
 @property (assign) NSTimeInterval time;
 @property (assign) NSTimer *timer;
 @property (retain) NSImage *touchImage;
 @property (assign) id *touches;
 @property (assign) BOOL touching;
-- (void)launchMachine:(NSString*)string;
+- (void)abortMachine;
+- (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath;
 - (void)quitMachine;
 @end
 
@@ -80,6 +85,7 @@ struct PiuScreenStruct {
     NSPiuScreenView *nsScreenView;
     txScreen* screen;
 	PiuRectangleRecord hole;
+	xsIntegerValue rotation;
 };
 
 struct PiuScreenMessageStruct {
@@ -90,6 +96,8 @@ struct PiuScreenMessageStruct {
 @implementation NSPiuScreenView
 @synthesize piuScreen;
 @synthesize library;
+@synthesize archiveFile;
+@synthesize archiveSize;
 @synthesize screen;
 @synthesize time;
 @synthesize timer;
@@ -102,51 +110,35 @@ struct PiuScreenMessageStruct {
     [touchImage release];
     [super dealloc];
 }
+- (void)abortMachine {
+	if (piuScreen && (*piuScreen)->behavior) {
+		xsBeginHost((*piuScreen)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*piuScreen)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onAbort)) {
+			xsVar(1) = xsReference((*piuScreen)->reference);
+			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+		}
+		xsEndHost((*piuScreen)->the);
+	}
+}
 - (void)drawRect:(NSRect)rect {
-	CGRect bounds = NSRectToCGRect(self.bounds);
+	CGRect dstRect = NSRectToCGRect(self.bounds);
+	CGRect srcRect = CGRectMake(0, 0, screen->width, screen->height);
 	CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] CGContext];
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
 	CGDataProviderRef provider = CGDataProviderCreateWithData(nil, screen->buffer, screen->width * screen->height * screenBytesPerPixel, nil);
     CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big | kCGImageAlphaNoneSkipLast, provider, nil, NO, kCGRenderingIntentDefault);
-	if (PiuRectangleIsEmpty(&(*piuScreen)->hole)) {
-		CGContextDrawImage(context, bounds, image);
+	PiuRectangle hole = &(*piuScreen)->hole;
+	if (!PiuRectangleIsEmpty(hole)) {
+		CGContextAddRect(context, dstRect);
+		CGContextAddRect(context, CGRectMake(hole->x, dstRect.size.height - hole->height - hole->y, hole->width, hole->height));
+		CGContextEOClip(context);
 	}
-	else {
-        PiuRectangleRecord s, r;
-        PiuRectangleSet(&s, 0, 0, screen->width, screen->height);
-        if (PiuRectangleIntersect(&r, &s, &(*piuScreen)->hole)) {
-        	if (!PiuRectangleIsEqual(&r, &s)) {
-// 				r.y = s.height - (r.y + r.height);
-				if (r.x > 0) {
-					CGRect clip = CGRectMake(0, 0, r.x, s.height);
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y), part);
-					CGImageRelease(part);
-				}
-				if (r.y > 0) {
-					CGRect clip = CGRectMake(r.x, 0, r.width, r.y);
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y + bounds.size.height - r.y), part);
-					CGImageRelease(part);
-				}
-				if (r.y + r.height < s.height) {
-					CGRect clip = CGRectMake(r.x, r.y + r.height, r.width, s.height - (r.y + r.height));
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y - (r.y + r.height)), part);
-					CGImageRelease(part);
-				}
-				if (r.x + r.width < s.width) {
-					CGRect clip = CGRectMake(r.x + r.width, 0, s.width - (r.x + r.width), s.height);
-					CGImageRef part = CGImageCreateWithImageInRect(image, clip);
-					CGContextDrawImage(context, CGRectOffset(clip, bounds.origin.x, bounds.origin.y), part);
-					CGImageRelease(part);
-				}
-			}
-		}
-		else {
-			CGContextDrawImage(context, bounds, image);
-		}
-	}
+	CGContextTranslateCTM(context, dstRect.size.width/2, dstRect.size.height/2);
+	CGContextRotateCTM(context, (*piuScreen)->rotation * (M_PI/180.0));
+	CGContextTranslateCTM(context, -srcRect.size.width/2, -srcRect.size.height/2);
+	CGContextDrawImage(context, srcRect, image);
 	CGImageRelease(image);
 	CGDataProviderRelease(provider);
 	CGColorSpaceRelease(colorSpace);
@@ -160,34 +152,64 @@ struct PiuScreenMessageStruct {
 		}
 	}
 }
-- (void)launchMachine:(NSString*)path {
+- (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath {
+	NSString *name = nil;
 	NSString *info = nil;
 	txScreenLaunchProc launch;
-	self.library = dlopen([path UTF8String], RTLD_NOW | RTLD_LOCAL);
+	self.library = dlopen([libraryPath UTF8String], RTLD_NOW | RTLD_LOCAL);
 	if (!self.library) {
+		name = libraryPath;
 		info = [NSString stringWithFormat:@"%s", dlerror()];
 		goto bail;
 	}
 	launch = (txScreenLaunchProc)dlsym(self.library, "fxScreenLaunch");
 	if (!launch) {
+		name = libraryPath;
 		info = [NSString stringWithFormat:@"%s", dlerror()];
 		goto bail;
+	}
+	if (archivePath) {
+		struct stat statbuf;
+		self.archiveFile = open([archivePath fileSystemRepresentation], O_RDWR);
+		if (self.archiveFile < 0) {
+			name = archivePath;
+			info = [NSString stringWithFormat:@"%s", strerror(errno)];
+			goto bail;
+		}
+		fstat(self.archiveFile, &statbuf);
+		self.archiveSize = statbuf.st_size;
+		self.screen->archive = mmap(NULL, self.archiveSize, PROT_READ|PROT_WRITE, MAP_SHARED, self.archiveFile, 0);
+		if (self.screen->archive == MAP_FAILED) {
+			self.screen->archive = NULL;
+			name = archivePath;
+			info = [NSString stringWithFormat:@"%s", strerror(errno)];
+			goto bail;
+		}
 	}
 	(*launch)(self.screen);
 	return;
 bail:
+	if (self.screen->archive) {
+		munmap(self.screen->archive, self.archiveSize);
+		self.screen->archive = NULL;
+		self.archiveSize = 0;
+	}
+	if (self.archiveFile >= 0) {
+		close(self.archiveFile);
+		self.archiveFile = -1;
+	}
 	if (self.library) {
 		dlclose(self.library);
 		self.library = nil;
 	}
 	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
-	[alert setMessageText:[NSString stringWithFormat:@"Cannot open \"%@\"", path]];
+	[alert setMessageText:[NSString stringWithFormat:@"Cannot open \"%@\"", name]];
 	if (info)
 		[alert setInformativeText:info];
 	[alert runModal];
 }
 - (void)messageToApplication:(NSObject *)object {
-	if (self.screen->invoke) {
+	if (self.screen && self.screen->invoke) {
 		NSData* data = (NSData*)object;
 		PiuScreenMessage message = (PiuScreenMessage)[data bytes];
 		(*self.screen->invoke)(self.screen, message->buffer, message->size);
@@ -197,7 +219,7 @@ bail:
 - (void)messageToHost:(NSObject *)object {
 	NSData* data = (NSData*)object;
 	PiuScreenMessage message = (PiuScreenMessage)[data bytes];
-	if ((*piuScreen)->behavior) {
+	if (piuScreen && (*piuScreen)->behavior) {
 		xsBeginHost((*piuScreen)->the);
 		xsVars(3);
 		xsVar(0) = xsReference((*piuScreen)->behavior);
@@ -219,7 +241,7 @@ bail:
 	NSTimeInterval when = 1000 * (time + [event timestamp]);
 	NSPoint point = [event locationInWindow];
 	point = [self convertPoint:point fromView:nil];
-	point.y = [self frame].size.height - point.y;
+	point = [self rotatePoint:point];
 	if (self.screen->touch) 
 		(*self.screen->touch)(self.screen, touchEventBeganKind, 0, point.x, point.y, when);
 }
@@ -229,7 +251,7 @@ bail:
 	NSTimeInterval when = 1000 * (time + [event timestamp]);
 	NSPoint point = [event locationInWindow];
 	point = [self convertPoint:point fromView:nil];
-	point.y = [self frame].size.height - point.y;
+	point = [self rotatePoint:point];
 	if (self.screen->touch) 
 		(*self.screen->touch)(self.screen, touchEventMovedKind, 0, point.x, point.y, when);
 }
@@ -239,18 +261,48 @@ bail:
 	NSTimeInterval when = 1000 * (time + [event timestamp]);
 	NSPoint point = [event locationInWindow];
 	point = [self convertPoint:point fromView:nil];
-	point.y = [self frame].size.height - point.y;
+	point = [self rotatePoint:point];
 	if (self.screen->touch) 
 		(*self.screen->touch)(self.screen, touchEventEndedKind, 0, point.x, point.y, when);
 }
 - (void)quitMachine {
 	if (self.screen->quit) 
 		(*self.screen->quit)(self.screen);
+	if (self.screen->archive) {
+		munmap(self.screen->archive, self.archiveSize);
+		close(self.archiveFile);
+		self.screen->archive = NULL;
+		self.archiveSize = 0;
+		self.archiveFile = -1;
+	}
 	if (self.library) {
     	dlclose(self.library);
     	self.library = nil;
     }
     [self display];
+}
+- (NSPoint)rotatePoint:(NSPoint)point {
+	NSSize size = [self bounds].size;
+    NSPoint result;
+    switch ((*piuScreen)->rotation) {
+    case 0:
+    	result.x = point.x;
+		result.y = size.height - point.y;
+		break;
+    case 90:
+    	result.x = point.y;
+        result.y = point.x;
+		break;
+    case 180:
+    	result.x = size.width - point.x;
+		result.y = point.y;
+		break;
+    case 270:
+    	result.x = size.height - point.y;
+		result.y = size.width - point.x;
+		break;
+    }
+    return result;
 }
 - (void)timerCallback:(NSTimer*)theTimer {
 	if (self.screen->idle) 
@@ -278,8 +330,9 @@ bail:
   				break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventBeganKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventBeganKind, i, point.x, point.y, when);
 	}  
 }
 - (void)touchesCancelledWithEvent:(NSEvent *)event {
@@ -303,8 +356,9 @@ bail:
    				break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventCancelledKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventCancelledKind, i, point.x, point.y, when);
 	}
 }
 - (void)touchesEndedWithEvent:(NSEvent *)event {
@@ -328,8 +382,9 @@ bail:
     			break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventEndedKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventEndedKind, i, point.x, point.y, when);
 	}
 }
 - (void)touchesMovedWithEvent:(NSEvent *)event {
@@ -352,8 +407,9 @@ bail:
    				break;
 			}
 		}
+		point = [self rotatePoint:point];
 		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventMovedKind, i, point.x, size.height - point.y, when);
+			(*self.screen->touch)(self.screen, touchEventMovedKind, i, point.x, point.y, when);
 	}
 }
 @end
@@ -412,6 +468,11 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 	
 	PiuDimension width = (*self)->coordinates.width;
 	PiuDimension height = (*self)->coordinates.height;
+	if (((*self)->rotation == 90) || ((*self)->rotation == 270)) {
+		PiuDimension tmp = width;
+		width = height;
+		height = tmp;
+	}
     txScreen* screen = malloc(sizeof(txScreen) - 1 + (width * height * 4));
     memset(screen, 0, sizeof(txScreen) - 1 + (width * height * 4));
     screen->view = screenView;
@@ -446,6 +507,11 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 
 void PiuScreenDictionary(xsMachine* the, void* it) 
 {
+	PiuScreen* self = it;
+	xsIntegerValue integer;
+	if (xsFindInteger(xsArg(1), xsID_rotation, &integer)) {
+		(*self)->rotation = integer;
+	}
 }
 
 void PiuScreenDelete(void* it) 
@@ -466,6 +532,8 @@ void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 	(*self)->screen = NULL;
     [(*self)->nsClipView release];
 	(*self)->nsClipView = NULL;
+	(*self)->nsScreenView.screen = NULL;
+	(*self)->nsScreenView.piuScreen = NULL;
     [(*self)->nsScreenView release];
 	(*self)->nsScreenView = NULL;
 	PiuContentUnbind(it, application, view);
@@ -530,6 +598,12 @@ void PiuScreen_set_hole(xsMachine* the)
 	[(*self)->nsScreenView display];
 }
 
+void PiuScreen_get_pixelFormat(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsInteger((*self)->screen->pixelFormat);
+}
+
 void PiuScreen_get_running(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
@@ -539,8 +613,10 @@ void PiuScreen_get_running(xsMachine* the)
 void PiuScreen_launch(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	xsStringValue path = xsToString(xsArg(0));
-    [(*self)->nsScreenView launchMachine:[NSString stringWithUTF8String:path]];
+	xsStringValue libraryPath = xsToString(xsArg(0));
+	xsStringValue archivePath = (xsToInteger(xsArgc) > 1) ? xsToString(xsArg(1)) : NULL;
+    [(*self)->nsScreenView launchMachine:[NSString stringWithUTF8String:libraryPath] 
+    	with:archivePath ? [NSString stringWithUTF8String:archivePath] : NULL];
 }
 	
 void PiuScreen_postMessage(xsMachine* the)
@@ -570,7 +646,7 @@ void PiuScreen_quit(xsMachine* the)
 void fxScreenAbort(txScreen* screen)
 {
 	NSPiuScreenView *screenView = screen->view;
-    [screenView performSelectorOnMainThread:@selector(quitMachine) withObject:nil waitUntilDone:NO];
+    [screenView performSelectorOnMainThread:@selector(abortMachine) withObject:nil waitUntilDone:NO];
 }
 
 void fxScreenBufferChanged(txScreen* screen)
@@ -581,6 +657,19 @@ void fxScreenBufferChanged(txScreen* screen)
 
 void fxScreenFormatChanged(txScreen* screen)
 {
+	NSPiuScreenView *screenView = screen->view;
+	PiuScreen* self = screenView.piuScreen;
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onPixelFormatChanged)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(screen->pixelFormat);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+		}
+		xsEndHost((*self)->the);
+	}
 }
 
 void fxScreenPost(txScreen* screen, char* buffer, int size)

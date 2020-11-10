@@ -78,9 +78,15 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 @end
 
 @interface CustomView : NSView {
+    NSImage *ledImage;
+	int ledLayer;
+	int ledState;
     NSImage *screenImage;
     int screenRotation;
 }
+@property (retain) NSImage *ledImage;
+@property (assign) int ledLayer;
+@property (assign) int ledState;
 @property (retain) NSImage *screenImage;
 @property (assign) int screenRotation;
 @end
@@ -355,6 +361,7 @@ static void fxScreenStop(txScreen* screen);
     NSInteger y = [[json valueForKeyPath:@"y"] integerValue];
     NSInteger width = [[json valueForKeyPath:@"width"] integerValue];
     NSInteger height = [[json valueForKeyPath:@"height"] integerValue];
+    NSInteger led = [[json valueForKeyPath:@"led"] integerValue];
    	NSRect customRect, screenRect;
    	switch (rotation) {
    	case 0:
@@ -414,7 +421,15 @@ static void fxScreenStop(txScreen* screen);
 		_screenView.touches[i] = nil;
 	 _screenView.touching = NO;
 	 
-    customView.screenImage = screenImage;
+	if (led) {
+    	NSString *ledImagePath = [[jsonPath stringByDeletingPathExtension] stringByAppendingPathExtension:@"led.png"];
+ 		customView.ledImage = [[NSImage alloc] initByReferencingFile:ledImagePath];
+	}
+	else
+		customView.ledImage = nil;
+    customView.ledLayer = led;
+  	customView.ledState = 0;
+   	customView.screenImage = screenImage;
     [customView addSubview:_screenView];
     [customWindow setContentView:customView];
     [customWindow setAlphaValue:1.0];
@@ -576,10 +591,14 @@ static void fxScreenStop(txScreen* screen);
 @end
 
 @implementation CustomView
+@synthesize ledImage;
+@synthesize ledLayer;
+@synthesize ledState;
 @synthesize screenImage;
 @synthesize screenRotation;
 - (void)dealloc {
 	[screenImage release];
+	[ledImage release];
     [super dealloc];
 }
 - (void)drawRect:(NSRect)rect {
@@ -596,7 +615,11 @@ static void fxScreenStop(txScreen* screen);
 	case 180: at = NSMakePoint(-size.width, -size.height); break;
 	case 270: at = NSMakePoint(-size.width, 0); break;
 	}
+    if (ledState && (ledLayer < 0))
+    	[ledImage drawAtPoint:at fromRect:NSMakeRect(0, 0, 0, 0) operation:NSCompositeSourceOver fraction:1.0];
     [screenImage drawAtPoint:at fromRect:NSMakeRect(0, 0, 0, 0) operation:NSCompositeSourceOver fraction:1.0];
+    if (ledState && (ledLayer > 0))
+    	[ledImage drawAtPoint:at fromRect:NSMakeRect(0, 0, 0, 0) operation:NSCompositeSourceOver fraction:1.0];
 	[rotate release];
 	[context restoreGraphicsState];
 }
@@ -928,6 +951,10 @@ void fxScreenBufferChanged(txScreen* screen)
 
 void fxScreenFormatChanged(txScreen* screen)
 {
+	ScreenView *screenView = screen->view;
+	CustomView *customView = (CustomView *)screenView.superview;
+	customView.ledState = (screen->flags & mxScreenLED) ? 1 :  0;
+	customView.needsDisplay = YES;
 }
 
 void fxScreenStart(txScreen* screen, double interval)

@@ -1,24 +1,13 @@
-import Digital from "pins/digital";
-import Monitor from "monitor";
-
+import M5Button from "m5button";
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
 import config from "mc/config";
 
-class Button extends Monitor {
-	constructor(pin) {
-		super({pin, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
-		this.onChanged = this.nop;
-	}
-	nop() {
-	}
-}
-
 export default function (done) {
 	global.button = {
-		a: new Button(39),
-		b: new Button(38),
-		c: new Button(37),
+		a: new M5Button(39),
+		b: new M5Button(38),
+		c: new M5Button(37)
 	};
 
 	global.speaker = new AudioOut({streams: 4, });

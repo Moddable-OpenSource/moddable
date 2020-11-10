@@ -1,0 +1,57 @@
+{
+	"modules": {
+		"*": [
+			"./modules/screen",
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/$(PLATFORM)/*",
+			"$(MODULES)/base/timer/timer",
+			"$(MODULES)/base/timer/$(PLATFORM)/*"
+		]
+	},
+	"preload": [
+		"time",
+		"timer"
+	],
+	"platforms": {
+		"lin": {
+		},
+		"lin/*": {
+			"include": "./$(SUBPLATFORM)/manifest.json"
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"mac/*": {
+			"include": "./$(SUBPLATFORM)/manifest.json",
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"win/*": {
+			"include": "./$(SUBPLATFORM)/manifest.json",
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"wasm": {
+		},
+		"wasm/*": {
+			"include": "./$(SUBPLATFORM)/manifest.json"
+		}
+	}
+}
