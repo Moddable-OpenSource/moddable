@@ -136,6 +136,11 @@ class BLEHIDClient extends BLEClient {
 	onDescriptorValue(descriptor, value) {
 		let reportType = value[1];
 		this.reports[this.reportIndex].reportType = reportType;
+		if (1 == this.reportTypes.length && this.reportTypes[0] == reportType) {
+			this.onDeviceReports([this.reports[this.reportIndex]]);
+			this.onDeviceReady();
+			return;
+		}
 		if (++this.reportIndex < this.reports.length)
 			this.reports[this.reportIndex].characteristic.discoverAllDescriptors();
 		else {
