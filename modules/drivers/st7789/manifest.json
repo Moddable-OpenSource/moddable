@@ -1,7 +1,7 @@
 {
 	"include": "../ili9341/manifest.json",
 	"modules": {
-		"*": "$(MODULES)/drivers/st7789/*",
+		"*": "$(MODULES)/drivers/st7789/*"
 	},
 	"preload": "st7789",
 	"defines": {

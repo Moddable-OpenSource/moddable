@@ -445,9 +445,9 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 	modSPIActivateConfiguration(NULL);
 	SCREEN_DC_COMMAND;
    	modSPITxRx(&sd->spiConfig, &command, 1);		// could use modSPITx, but modSPITxRx is synchronous and callers rely on that
-	   
+
 	if (count) {
-    	SCREEN_DC_DATA;
+        SCREEN_DC_DATA;
         modSPITxRx(&sd->spiConfig, (uint8_t *)data, count);
     }
 }
