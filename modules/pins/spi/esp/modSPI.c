@@ -96,6 +96,8 @@ void modSPIInit(modSPIConfiguration config)
 	}
 	else
 		config->reserved = frequencyToSPIClock(config->hz);
+	
+	modSPISetMode(config->mode);
 }
 
 void modSPIUninit(modSPIConfiguration config)
@@ -130,6 +132,9 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 
 		(gConfig->doChipSelect)(1, gConfig);
 	}
+	
+	if(config)
+		modSPISetMode(config->mode);
 }
 
 // data must be long aligned
