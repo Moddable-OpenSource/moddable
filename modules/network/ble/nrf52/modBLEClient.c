@@ -471,6 +471,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 	connection->the = the;
 	connection->objConnection = xsThis;
 	connection->objClient = xsArg(0);
+	xsRemember(connection->objConnection);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -963,7 +964,11 @@ static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, u
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_handle);
 	if (!connection)
 		xsUnknownError("connection not found");
-	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), (PM_CONN_SEC_PROCEDURE_BONDING == conn_sec_succeeded->procedure));
+	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
