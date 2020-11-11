@@ -131,6 +131,20 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 				fprintf(stderr, "### can't open '%s'\n", argv[argi]);
 				return 1;
 			}
+
+			// validate archive header
+			uint32_t header[4];
+			fread(header, 1, sizeof(header), gInstallFD);
+			fseek(gInstallFD, gInstallOffset, SEEK_END);
+
+			if ((ftell(gInstallFD) != ntohl(header[0])) ||
+				strncmp((char *)&header[1], "XS_A", 4) ||
+				(12 != ntohl(header[2])) ||
+				strncmp((char *)&header[3], "VERS", 4)) {
+				fprintf(stderr, "### invalid archive '%s'\n", argv[argi]);
+				return 1;
+			}
+			fseek(gInstallFD, 0, SEEK_SET);
 		}
 		else if (!strcmp(argv[argi], "-pref") && ((argi + 1) < argc)) {
 			PrefRecord pr;
