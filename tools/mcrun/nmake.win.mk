@@ -23,16 +23,16 @@
 !CMDSWITCHES +S
 !ENDIF
 
-BUILDCLUT = $(BUILD_DIR)\bin\win\debug\buildclut
-COMPRESSBMF = $(BUILD_DIR)\bin\win\debug\compressbmf
-IMAGE2CS = $(BUILD_DIR)\bin\win\debug\image2cs
-MCLOCAL = $(BUILD_DIR)\bin\win\debug\mclocal
-MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
-PNG2BMP = $(BUILD_DIR)\bin\win\debug\png2bmp
-RLE4ENCODE = $(BUILD_DIR)\bin\win\debug\rle4encode
-WAV2MAUD = $(BUILD_DIR)\bin\win\debug\wav2maud
-XSC = $(BUILD_DIR)\bin\win\debug\xsc
-XSL = $(BUILD_DIR)\bin\win\debug\xsl
+BUILDCLUT = $(BUILD_DIR)\bin\win\release\buildclut
+COMPRESSBMF = $(BUILD_DIR)\bin\win\release\compressbmf
+IMAGE2CS = $(BUILD_DIR)\bin\win\release\image2cs
+MCLOCAL = $(BUILD_DIR)\bin\win\release\mclocal
+MCREZ = $(BUILD_DIR)\bin\win\release\mcrez
+PNG2BMP = $(BUILD_DIR)\bin\win\release\png2bmp
+RLE4ENCODE = $(BUILD_DIR)\bin\win\release\rle4encode
+WAV2MAUD = $(BUILD_DIR)\bin\win\release\wav2maud
+XSC = $(BUILD_DIR)\bin\win\release\xsc
+XSL = $(BUILD_DIR)\bin\win\release\xsl
 
 all: $(BIN_DIR)\mc.xsa
 	start $(SIMULATOR) $(BIN_DIR)\mc.xsa
