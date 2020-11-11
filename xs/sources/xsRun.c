@@ -4132,13 +4132,9 @@ void fxEndMetering(txMachine* the)
 
 void fxCheckMetering(txMachine* the)
 {
-	txBoolean result;
 	txU4 interval = the->meterInterval;
 	the->meterInterval = 0;
-	fxBeginHost(the);
-	result = (*the->meterCallback)(the, the->meterIndex);
-	fxEndHost(the);
-	if (result) {
+	if ((*the->meterCallback)(the, the->meterIndex)) {
 		the->meterCount = the->meterIndex + interval;
 		if (the->meterCount < the->meterIndex) {
 			the->meterIndex = 0;
