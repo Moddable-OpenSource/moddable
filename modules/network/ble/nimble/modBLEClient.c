@@ -201,6 +201,9 @@ void xs_ble_client_destructor(void *data)
 		modBLEConnection next = modBLEConnectionGetNext(connection);
 		if (kBLEConnectionTypeClient == connection->type) {
 			ble_gap_terminate(connection->id, BLE_ERR_REM_USER_CONN_TERM);
+			xsBeginHost(connection->the);
+				xsForget(connection->objConnection);
+			xsEndHost(connection->the);
 			modBLEConnectionRemove(connection);
 		}
 		connection = next;
@@ -721,6 +724,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	}
 	else {
 		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
+		xsForget(connection->objConnection);
 		modBLEConnectionRemove(connection);
 	}
 bail:
@@ -742,6 +746,7 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), desc->conn_handle);
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);

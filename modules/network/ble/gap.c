@@ -83,13 +83,6 @@ void modBLEConnectionAdd(modBLEConnection connection)
 void modBLEConnectionRemove(modBLEConnection connection)
 {
 	modBLEConnection walker, prev = NULL;
-
-	if (kInvalidConnectionID != connection->id) {
-		xsBeginHost(connection->the);
-			xsForget(connection->objConnection);
-		xsEndHost(connection->the);
-	}
-
 	modCriticalSectionDeclare;
 	modCriticalSectionBegin();
 	for (walker = gConnections; NULL != walker; prev = walker, walker = walker->next) {

@@ -271,8 +271,12 @@ void xs_ble_client_destructor(void *data)
 	modBLEConnection connection = modBLEConnectionGetFirst();
 	while (connection != NULL) {
 		modBLEConnection next = connection->next;
-		if (kBLEConnectionTypeClient == connection->type)
+		if (kBLEConnectionTypeClient == connection->type) {
+			xsBeginHost(connection->the);
+				xsForget(connection->objConnection);
+			xsEndHost(connection->the);
 			modBLEConnectionRemove(connection);
+		}
 		connection = next;
 	}
 	
@@ -838,6 +842,7 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), connection->id);
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);

@@ -171,6 +171,9 @@ void xs_ble_client_destructor(void *data)
 				notifications = notifications->next;
 				c_free(notification);
 			}
+			xsBeginHost(connection->the);
+				xsForget(connection->objConnection);
+			xsEndHost(connection->the);
 			modBLEConnectionRemove((modBLEConnection)connection);
 		}
 		connection = next;
@@ -982,6 +985,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 #endif
 		if (ESP_GATT_IF_NONE != GATTC_IF(connection))
 			esp_ble_gattc_app_unregister(GATTC_IF(connection));
+		xsForget(connection->objConnection);
 		modBLEConnectionRemove(connection);
 		if (gAPP_ID > 1)
 			--gAPP_ID;
@@ -1004,6 +1008,7 @@ static void gattcCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), close->conn_id);
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);
