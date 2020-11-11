@@ -187,8 +187,12 @@ void xs_ble_client_destructor(void *data)
 	modBLEConnection connection = modBLEConnectionGetFirst();
 	while (connection != NULL) {
 		modBLEConnection next = connection->next;
-		if (kBLEConnectionTypeClient == connection->type)
+		if (kBLEConnectionTypeClient == connection->type) {
+			xsBeginHost(connection->the);
+				xsForget(connection->objConnection);
+			xsEndHost(connection->the);
 			modBLEConnectionRemove(connection);
+		}
 		connection = next;
 	}
 	
@@ -639,6 +643,7 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 		xsUnknownError("connection not found");
 	
 	xsCall1(connection->objConnection, xsID_callback, xsString("onDisconnected"));
+	xsForget(connection->objConnection);
 
 	modBLEConnectionRemove(connection);
 	xsEndHost(gBLE->the);
