@@ -446,7 +446,6 @@ struct sxMachine {
 	txU4 meterCount;
 	txU4 meterIndex;
 	txU4 meterInterval;
-	txJump* meterJump;
 #endif
 #ifdef mxProfile
 	txString profileDirectory;
@@ -629,6 +628,7 @@ mxExport void fxShareMachine(txMachine* the);
 mxExport txMachine* fxBeginHost(txMachine*);
 mxExport void fxEndHost(txMachine*);
 mxExport void fxEndJob(txMachine* the);
+mxExport void fxExitToHost(txMachine*) XS_FUNCTION_NORETURN;
 
 mxExport void fxCollectGarbage(txMachine*);
 mxExport void fxEnableGarbageCollection(txMachine* the, txBoolean enableIt);
@@ -1898,6 +1898,7 @@ enum {
 	XS_DEAD_STRIP_EXIT,
 	XS_UNHANDLED_EXCEPTION_EXIT,
 	XS_NO_MORE_KEYS_EXIT,
+	XS_TOO_MUCH_COMPUTATION_EXIT,
 };
 
 #if mxBigEndian

@@ -1255,6 +1255,7 @@ enum {
 	xsDeadStripExit,
 	xsUnhandledExceptionExit,
 	xsNoMoreKeysExit,
+	xsTooMuchComputationExit,
 };
 
 #ifndef __XSALL__

@@ -1863,6 +1863,18 @@ void fxEndJob(txMachine* the)
 		gxDefaults.cleanupFinalizationRegistries(the);
 }
 
+void fxExitToHost(txMachine* the)
+{
+	txJump* jump = the->firstJump;
+	while (jump->nextJump) {
+		txJump* nextJump = jump->nextJump;
+		if (jump->flag)
+			c_free(jump);
+		jump = nextJump;
+	}
+	c_longjmp(jump->buffer, 1);
+}
+
 typedef struct {
 	txU1* src;
 	txU1* dst;

@@ -4118,7 +4118,6 @@ void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), tx
 	the->meterCount = interval;
 	the->meterIndex = 0;
 	the->meterInterval = interval;
-	the->meterJump = the->firstJump;
 }
 
 void fxEndMetering(txMachine* the)
@@ -4126,7 +4125,6 @@ void fxEndMetering(txMachine* the)
 	the->meterCallback = C_NULL;
 	the->meterIndex = 0;
 	the->meterInterval = 0;
-	the->meterJump = C_NULL;
 	the->meterCount = 0;
 }
 
@@ -4143,13 +4141,7 @@ void fxCheckMetering(txMachine* the)
 		the->meterInterval = interval;
 	}
 	else {
-		txJump* jump = the->firstJump;
-		while (jump != the->meterJump) {
-			if (jump->flag)
-				c_free(jump);
-			jump = jump->nextJump;
-		}
-		c_longjmp(jump->buffer, 1);
+		fxAbort(the, XS_TOO_MUCH_COMPUTATION_EXIT);
 	}
 }
 #endif
