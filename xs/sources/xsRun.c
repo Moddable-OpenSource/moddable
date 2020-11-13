@@ -74,6 +74,10 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 		#define mxBreak \
 			if (gxDoTrace) fxTraceCode(the, stack, byte); \
 			goto *bytes[byte]
+	#elif defined(mxMetering)
+		#define mxBreak \
+			the->meterIndex++; \
+			goto *bytes[byte]
 	#else
 		#define mxBreak \
 			goto *bytes[byte]
