@@ -15,6 +15,7 @@
 		"ili9341": {
 			"dc_pin": 0,
 			"rst_pin": 5,
+			"cs_pin": -1,
 			"spi_port": "#HSPI",
 			"spi_mode": 2,
 			"hz": 27000000,
