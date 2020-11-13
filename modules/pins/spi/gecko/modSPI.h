@@ -30,7 +30,8 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 
 #define modSPIConfig(config, HZ, SPI_PORT, CS_PORT, CS_PIN, DOCHIPSELECT) \
     config.hz = HZ; \
-    config.doChipSelect = DOCHIPSELECT;
+    config.doChipSelect = DOCHIPSELECT; \
+    config.mode = 0;
 
 typedef void (*modSPIChipSelectCallback)(uint8_t active, modSPIConfiguration config);
 
