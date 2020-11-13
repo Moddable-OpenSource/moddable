@@ -917,7 +917,7 @@ void PiuSystem_setClipboardString(xsMachine* the)
 void PiuSystem_launchPath(xsMachine* the)
 {
 	NSString* string = [NSString stringWithUTF8String:xsToString(xsArg(0))];
-	[[NSWorkspace sharedWorkspace] openFile:string];
+	[[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:string]];
 }
 
 void PiuSystem_launchURL(xsMachine* the)
