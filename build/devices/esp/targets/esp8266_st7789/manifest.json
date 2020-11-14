@@ -18,7 +18,7 @@
 			"cs_pin": -1,
 			"spi_port": "#HSPI",
 			"spi_mode": 2,
-			"hz": 27000000,
+			"hz": 20000000,
 			"width": 240,
 			"height": 240
 		}
