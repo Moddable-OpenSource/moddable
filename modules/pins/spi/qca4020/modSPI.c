@@ -106,8 +106,7 @@ void modSPIInit(modSPIConfiguration config)
 		config->spi_config.loopback_Mode = 0;
 		config->spi_config.hs_Mode = 0;
 		
-		switch(config->mode)
-		{
+		switch (config->mode) {
 			case 3:
 				config->spi_config.SPIM_Mode = QAPI_SPIM_MODE_3_E;  /* CPOL = 1, CPHA = 1 */
 				break;
@@ -120,6 +119,7 @@ void modSPIInit(modSPIConfiguration config)
 			case 0:
 			default:
 				config->spi_config.SPIM_Mode = QAPI_SPIM_MODE_0_E;  /* CPOL = 0, CPHA = 0 */
+				break;
 		}
 
 		qurt_signal_create(&config->spi_signal);

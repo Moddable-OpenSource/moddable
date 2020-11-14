@@ -546,7 +546,7 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	xMin = x + MODDEF_ILI9341_COLUMN_OFFSET;
 	yMin = y + MODDEF_ILI9341_ROW_OFFSET;
 	
-	switch(sd->rotation) {
+	switch (sd->rotation) {
 		case 1:
 			// 90 degrees
 			yMin += ILI9341_GRAM_X_OFFSET;
@@ -559,6 +559,7 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 		case 3:
 			// 270 degrees
 			xMin += ILI9341_GRAM_Y_OFFSET;
+			break;
 	}
 	
 	xMax = xMin + w - 1;

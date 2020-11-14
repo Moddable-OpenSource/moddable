@@ -645,8 +645,7 @@ void ICACHE_RAM_ATTR spiTxInterrupt(void *refcon)
 
 
 void modSPISetMode(uint8_t mode) {
-	switch(mode)
-	{
+	switch (mode) {
 		case 3:
 			CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_CK_OUT_EDGE);
 			SET_PERI_REG_MASK(SPI_PIN(HSPI), SPI_IDLE_EDGE);      // CPOL = 1, CPHA = 1
@@ -660,7 +659,9 @@ void modSPISetMode(uint8_t mode) {
 			CLEAR_PERI_REG_MASK(SPI_PIN(HSPI), SPI_IDLE_EDGE);    // CPOL = 0, CPHA = 1
 			break;
 		case 0:
+		default:
 			CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_CK_OUT_EDGE);
 			CLEAR_PERI_REG_MASK(SPI_PIN(HSPI), SPI_IDLE_EDGE);    // CPOL = 0, CPHA = 0
+			break;
 	}
 }
