@@ -126,8 +126,7 @@ void modSPIInit(modSPIConfiguration config)
 	spiInit.prsRxEnable = false;
 	spiInit.autoTx = false;
 	
-	switch(config->mode)
-	{
+	switch (config->mode) {
 		case 3:
 			spiInit.clockMode = usartClockMode2;   /* CPOL = 1, CPHA = 1 */
 			break;
@@ -140,6 +139,7 @@ void modSPIInit(modSPIConfiguration config)
 		case 0:
 		default:
 			spiInit.clockMode = usartClockMode0;   /* CPOL = 0, CPHA = 0 */
+			break;
 	}
 	
 #if (MIGHTY_GECKO || THUNDERBOARD2 || BLUE_GECKO) // EFR32MG1P132F256GM48 || EFR32MG12P332F1024GL125
