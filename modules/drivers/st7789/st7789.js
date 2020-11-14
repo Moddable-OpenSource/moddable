@@ -24,4 +24,4 @@
 
 import ILI9341 from "ili9341";
 
-export default class ST7789 extends ILI9341 {};
+export default ILI9341;
