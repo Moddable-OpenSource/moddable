@@ -8,7 +8,7 @@
 		"ili9341": {
 			"width": 240,
 			"height": 320,
-			"hz": 20000000,
+			"hz": 15000000,
 			"spi_mode": 2,
 			"registers": [
                  "kDelayMS, 200,",
