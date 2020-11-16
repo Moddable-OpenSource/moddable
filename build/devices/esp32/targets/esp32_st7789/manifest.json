@@ -1,0 +1,27 @@
+{
+	"include": [
+		"$(MODULES)/drivers/st7789/manifest.json"
+	],
+	"config": {
+		"screen": "st7789",
+		"touch": ""
+	},
+	"defines": {
+		"spi": {
+			"mosi_pin": 14,
+			"miso_pin": -1,
+			"sck_pin": 27
+		},
+		"ili9341": {
+			"cs_pin": -1,
+			"dc_pin": 12,
+			"rst_pin": 26,
+			"backlight_pin": 0,
+			"backlight_on": 1,
+			"spi_port": "HSPI_HOST",
+			"hz": 20000000,
+			"width": 240,
+			"height": 240
+		}
+	}
+}

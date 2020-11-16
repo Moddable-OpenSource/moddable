@@ -74,6 +74,10 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 		#define mxBreak \
 			if (gxDoTrace) fxTraceCode(the, stack, byte); \
 			goto *bytes[byte]
+	#elif defined(mxMetering)
+		#define mxBreak \
+			the->meterIndex++; \
+			goto *bytes[byte]
 	#else
 		#define mxBreak \
 			goto *bytes[byte]
@@ -4118,7 +4122,6 @@ void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), tx
 	the->meterCount = interval;
 	the->meterIndex = 0;
 	the->meterInterval = interval;
-	the->meterJump = the->firstJump;
 }
 
 void fxEndMetering(txMachine* the)
@@ -4126,19 +4129,14 @@ void fxEndMetering(txMachine* the)
 	the->meterCallback = C_NULL;
 	the->meterIndex = 0;
 	the->meterInterval = 0;
-	the->meterJump = C_NULL;
 	the->meterCount = 0;
 }
 
 void fxCheckMetering(txMachine* the)
 {
-	txBoolean result;
 	txU4 interval = the->meterInterval;
 	the->meterInterval = 0;
-	fxBeginHost(the);
-	result = (*the->meterCallback)(the, the->meterIndex);
-	fxEndHost(the);
-	if (result) {
+	if ((*the->meterCallback)(the, the->meterIndex)) {
 		the->meterCount = the->meterIndex + interval;
 		if (the->meterCount < the->meterIndex) {
 			the->meterIndex = 0;
@@ -4147,13 +4145,7 @@ void fxCheckMetering(txMachine* the)
 		the->meterInterval = interval;
 	}
 	else {
-		txJump* jump = the->firstJump;
-		while (jump != the->meterJump) {
-			if (jump->flag)
-				c_free(jump);
-			jump = jump->nextJump;
-		}
-		c_longjmp(jump->buffer, 1);
+		fxAbort(the, XS_TOO_MUCH_COMPUTATION_EXIT);
 	}
 }
 #endif

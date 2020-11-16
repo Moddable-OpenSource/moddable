@@ -164,6 +164,7 @@ void xs_ble_client_destructor(void *data)
 	while (connection != NULL) {
 		modBLEClientConnection next = (modBLEClientConnection)connection->next;
 		if (kBLEConnectionTypeClient == connection->type) {
+			xsMachine *the = connection->the;
 			esp_ble_gattc_app_unregister(connection->gattc_if);
 			modBLENotification notifications = connection->notifications;
 			while (notifications != NULL) {
@@ -171,9 +172,7 @@ void xs_ble_client_destructor(void *data)
 				notifications = notifications->next;
 				c_free(notification);
 			}
-			xsBeginHost(connection->the);
-				xsForget(connection->objConnection);
-			xsEndHost(connection->the);
+			xsForget(connection->objConnection);
 			modBLEConnectionRemove((modBLEConnection)connection);
 		}
 		connection = next;

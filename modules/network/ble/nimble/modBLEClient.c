@@ -200,10 +200,9 @@ void xs_ble_client_destructor(void *data)
 	while (connection != NULL) {
 		modBLEConnection next = modBLEConnectionGetNext(connection);
 		if (kBLEConnectionTypeClient == connection->type) {
+			xsMachine *the = connection->the;
 			ble_gap_terminate(connection->id, BLE_ERR_REM_USER_CONN_TERM);
-			xsBeginHost(connection->the);
-				xsForget(connection->objConnection);
-			xsEndHost(connection->the);
+			xsForget(connection->objConnection);
 			modBLEConnectionRemove(connection);
 		}
 		connection = next;

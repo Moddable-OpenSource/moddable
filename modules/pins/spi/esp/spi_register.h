@@ -243,4 +243,9 @@
 #define SPI_FLASH_EXT3(i)                           (REG_SPI_BASE(i)  + 0xFC)
 #define SPI_INT_HOLD_ENA 0x00000003
 #define SPI_INT_HOLD_ENA_S 0
+
+// From spi_register.h included with ESP8266_RTOS_SDK
+#define SPI_IDLE_EDGE        (BIT(29))
+#define SPI_USER(i)          (REG_SPI_BASE(i)  + 0x1C)
+#define SPI_PIN(i)           (REG_SPI_BASE(i)  + 0x2C)
 #endif // SPI_REGISTER_H_INCLUDED

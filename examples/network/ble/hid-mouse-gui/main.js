@@ -37,6 +37,9 @@ class DragBehavior extends Behavior {
 		content.state = 1 - Math.quadEaseOut(content.fraction);
 	}
 	onTouchBegan(content, id, x, y, ticks) {
+		content.time = 0;
+		content.stop();
+
 		let anchor = this.anchor = content.position;
 		anchor.x -= x;
 		anchor.y -= y;
@@ -48,7 +51,6 @@ class DragBehavior extends Behavior {
 	}
 	onTouchEnded(content, id, x, y, ticks) {
 		content.duration = 250;
-		content.time = 0;
 		content.start();
 	}
 }

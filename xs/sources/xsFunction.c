@@ -741,3 +741,38 @@ void fx_AsyncFunction(txMachine* the)
 		mxPop();
 	}
 }
+
+#ifdef mxMetering
+
+void fxPatchHostFunction(txMachine* the, txCallback patch)
+{
+	txSlot* slot = fxToInstance(the, the->stack);
+	txSlot* property = slot->next;
+	if ((property == NULL) || (property->kind != XS_CALLBACK_KIND))
+		mxTypeError("no host function");
+	slot = fxNewSlot(the);
+	slot->kind = XS_CALLBACK_KIND;
+	slot->value.callback.address = property->value.callback.address;
+	slot->value.callback.IDs = C_NULL;
+	property->value.callback.address = patch;
+	property = property->next;
+	slot->next = property->next;
+	property->next = slot;
+}
+
+void fxMeterHostFunction(txMachine* the, txU4 count)
+{
+	txSlot* slot = fxToInstance(the, mxFunction);
+	txSlot* property = slot->next;
+	if ((property == NULL) || (property->kind != XS_CALLBACK_KIND))
+		mxTypeError("no host function");
+	property = property->next->next;	
+	if ((property == NULL) || (property->kind != XS_CALLBACK_KIND))
+		mxTypeError("no original host function");
+	the->meterIndex += count;
+	the->scope->value.environment.variable.count = 0;
+	the->stack = the->scope;
+	(*property->value.callback.address)(the);
+}
+
+#endif
