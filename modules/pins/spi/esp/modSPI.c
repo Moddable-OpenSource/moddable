@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -56,6 +56,7 @@ static uint8_t modSpiLoadBufferAsIs(uint8_t *data, uint8_t bytes);
 static uint32_t frequencyToSPIClock(uint32_t freq);
 
 static void spiTxInterrupt(void *refcon);
+static void modSPISetMode(uint8_t mode);
 
 static modSPIConfiguration gConfig;
 static uint8_t *gSPIData;
@@ -133,7 +134,7 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 		(gConfig->doChipSelect)(1, gConfig);
 	}
 	
-	if(config)
+	if (config)
 		modSPISetMode(config->mode);
 }
 
@@ -644,7 +645,8 @@ void ICACHE_RAM_ATTR spiTxInterrupt(void *refcon)
 }
 
 
-void modSPISetMode(uint8_t mode) {
+void modSPISetMode(uint8_t mode)
+{
 	switch (mode) {
 		case 3:
 			CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_CK_OUT_EDGE);
