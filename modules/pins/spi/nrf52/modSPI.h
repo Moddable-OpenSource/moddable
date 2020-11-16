@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,7 +43,7 @@ struct modSPIConfigurationRecord {
 	uint8_t						cs_pin;
 	uint8_t						spiPort;
 	uint8_t						sync;
-	uint8_t						_pad;
+	uint8_t						mode;
 	uint32_t					hz;
 	xsMachine *the;
 	modSPIChipSelectCallback	doChipSelect;
@@ -57,7 +57,8 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.cs_pin = CS_PIN; \
 	config.doChipSelect = DOCHIPSELECT; \
 	config.spiPort = SPI_PORT; \
-	config.sync = 1;
+	config.sync = 1; \
+	config.mode = 0;
 
 extern void modSPIInit(modSPIConfiguration config);
 extern void modSPIUninit(modSPIConfiguration config);

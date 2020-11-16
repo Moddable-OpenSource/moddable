@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -121,7 +121,22 @@ void modSPIInit(modSPIConfiguration config)
 		config->spi_config.ss_pin = NRF_DRV_SPI_PIN_NOT_USED;
 		config->spi_config.irq_priority = APP_IRQ_PRIORITY_LOWEST;
 		config->spi_config.orc = 0xFF;
-		config->spi_config.mode = NRF_DRV_SPI_MODE_0;
+
+		switch (config->mode) {
+			case 3:
+				config->spi_config.mode = NRF_DRV_SPI_MODE_3;	// CPOL = 1, CPHA = 1
+				break;
+			case 2:
+				config->spi_config.mode = NRF_DRV_SPI_MODE_2;	// CPOL = 1, CPHA = 0
+				break;
+			case 1:
+				config->spi_config.mode = NRF_DRV_SPI_MODE_1;	// CPOL = 0, CPHA = 1
+				break;
+			case 0:
+			default:
+				config->spi_config.mode = NRF_DRV_SPI_MODE_0;	// CPOL = 0, CPHA = 0
+		}
+
 		config->spi_config.bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
 
 		if (config->hz > 4000000)
