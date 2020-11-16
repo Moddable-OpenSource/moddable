@@ -200,7 +200,9 @@ void xs_ble_client_destructor(void *data)
 	while (connection != NULL) {
 		modBLEConnection next = modBLEConnectionGetNext(connection);
 		if (kBLEConnectionTypeClient == connection->type) {
+			xsMachine *the = connection->the;
 			ble_gap_terminate(connection->id, BLE_ERR_REM_USER_CONN_TERM);
+			xsForget(connection->objConnection);
 			modBLEConnectionRemove(connection);
 		}
 		connection = next;
@@ -297,7 +299,7 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = 0xFFFF;
+	connection->id = kInvalidConnectionID;
 	connection->type = kBLEConnectionTypeClient;
 	connection->addressType = addr.type;
 	c_memmove(connection->address, addr.val, 6);
@@ -388,6 +390,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 	connection->the = the;
 	connection->objConnection = xsThis;
 	connection->objClient = xsArg(0);
+	xsRemember(connection->objConnection);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -664,6 +667,8 @@ static void onConnected(struct ble_gap_conn_desc *desc)
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSetInteger(xsVar(1), desc->sec_state.bonded);
+	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
@@ -700,7 +705,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		// @@ workaround for https://github.com/espressif/esp-idf/issues/5693
 		connection = modBLEConnectionGetFirst();
 		while (NULL != connection) {
-			if (0xFFFF == connection->id)
+			if (kInvalidConnectionID == connection->id)
 				break;
 			connection = modBLEConnectionGetNext(connection);
 		}
@@ -709,7 +714,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	}
 		
 	if (0xFFFF != desc->conn_handle) {
-		if (0xFFFF != connection->id) {
+		if (kInvalidConnectionID != connection->id) {
 			LOG_GAP_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}
@@ -718,6 +723,7 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	}
 	else {
 		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
+		xsForget(connection->objConnection);
 		modBLEConnectionRemove(connection);
 	}
 bail:
@@ -739,6 +745,7 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), desc->conn_handle);
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);
@@ -996,7 +1003,11 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
         if (0 == rc) {
         	if (desc.sec_state.encrypted) {
 				xsBeginHost(gBLE->the);
-				xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+				xsmcVars(2);
+				xsVar(0) = xsmcNewObject();
+				xsmcSetBoolean(xsVar(1), desc.sec_state.bonded);
+				xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+				xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 				xsEndHost(gBLE->the);
         	}
         }

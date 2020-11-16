@@ -91,6 +91,8 @@ uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_
 
 /* connections */
 
+#define kInvalidConnectionID 0xFFFF
+
 typedef enum {
 	kBLEConnectionTypeClient = 0,
 	kBLEConnectionTypeServer

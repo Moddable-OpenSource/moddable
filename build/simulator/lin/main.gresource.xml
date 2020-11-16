@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
 	<gresource prefix="/tech/moddable/simulator/screens">
+		<file>0001-moddable_one.json</file>
+		<file>0001-moddable_one.png</file>
+		<file>0002-moddable_two.json</file>
+		<file>0002-moddable_two.png</file>
+		<file>0003-moddable_three.json</file>
+		<file>0003-moddable_three.png</file>
 		<file>0080x0160.json</file>
 		<file>0080x0160.png</file>
 		<file>0096x0200.json</file>
@@ -13,10 +19,8 @@
 		<file>0160x0080.png</file>
 		<file>0200x0096.json</file>
 		<file>0200x0096.png</file>
-		<file>0240x0320.json</file>
-		<file>0240x0320.png</file>
-		<file>0250x0122.json</file>
-		<file>0250x0122.png</file>
+		<file>0240x0240.json</file>
+		<file>0240x0240.png</file>
 		<file>0320x0240.json</file>
 		<file>0320x0240.png</file>
 		<file>0480x0320.json</file>

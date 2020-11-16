@@ -35,6 +35,7 @@ typedef struct {
 	int width;
 	int height;
 	char* title;
+	char* name;
 } txMockup;
 
 static BOOL CALLBACK fxMockupCount(HMODULE hModule, LPCTSTR lpszType, LPTSTR lpszName, LONG_PTR lParam);
@@ -305,6 +306,14 @@ BOOL CALLBACK fxMockupCreate(HMODULE hModule, LPCTSTR lpszType, LPTSTR lpszName,
 		string++;
 		offset++;
 	}
+	offset = 0;
+	size = strlen(lpszName) - 5;
+	mockup->name = (char*)malloc(size + 1);
+	while (offset < size) {
+		mockup->name[offset] = tolower(lpszName[5 + offset]);
+		offset++;
+	}
+	mockup->name[offset] = 0;
 	gxMockups[gxMockupIndex] = mockup;
 	gxMockupIndex++;
 	return TRUE;
@@ -592,6 +601,7 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 	case WM_OPEN_FILE: {
 		char* path = (char*)lParam;
 		HWND view = GetWindow(window, GW_CHILD);
+		BOOL launch = FALSE;
 		SendMessage(view, WM_QUIT_MACHINE, 0, 0);
 		if (path) {
 			char* slash = strrchr(path, '\\');
@@ -607,7 +617,7 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 							begin = strrchr(path, '\\');
 							strcpy(gxLibraryName, begin + 1);
 							*end = '/';
-							SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+							launch = TRUE;
 						}
 					}
 					else if (!strcmp(dot, ".xsa")) {
@@ -617,11 +627,35 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 							begin = strrchr(path, '\\');
 							strcpy(gxArchiveName, begin + 1);
 							*end = '/';
-							SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
+							launch = TRUE;
+						}
+					}
+					
+				}
+			}
+		}
+		if (launch) {
+			char* slash;
+			int i;
+			for (i = 0; i < 3; i++) {
+				slash = strrchr(path, '\\');
+				if (!slash)
+					break;
+				*slash = 0;
+			}
+			if (slash) {
+				slash++;
+				for (i = 0; i < gxMockupCount; i++) {
+					if (!strcmp(gxMockups[i]->name, slash)) {
+						if (gxMockupIndex != i) {
+							SendMessage(window, WM_DELETE_SCREEN, 0, 0);
+							gxMockupIndex = i;
+							SendMessage(window, WM_CREATE_SCREEN, 0, 0);
 						}
 					}
 				}
 			}
+			SendMessage(view, WM_LAUNCH_MACHINE, 0, 0);
 		}
 		} break;
 	case WM_PAINT: {

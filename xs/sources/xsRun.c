@@ -42,6 +42,9 @@
 
 #define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
 
+#ifdef mxMetering
+static void fxCheckMetering(txMachine* the);
+#endif
 extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
 static void fxRunBase(txMachine* the);
 static void fxRunConstructor(txMachine* the);
@@ -70,6 +73,10 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 	#elif defined(mxTrace)
 		#define mxBreak \
 			if (gxDoTrace) fxTraceCode(the, stack, byte); \
+			goto *bytes[byte]
+	#elif defined(mxMetering)
+		#define mxBreak \
+			the->meterIndex++; \
 			goto *bytes[byte]
 	#else
 		#define mxBreak \
@@ -244,6 +251,46 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #define mxSkipCode(OFFSET) { \
 	mxCode += OFFSET; \
 }
+
+#ifdef mxMetering
+	#define mxCheckMeter() \
+		if (the->meterInterval && (the->meterIndex > the->meterCount)) { \
+			mxSaveState; \
+			fxCheckMetering(the); \
+			mxRestoreState; \
+		}
+	#define mxBranch(INDEX, OFFSET) \
+		if ((OFFSET) < 0) { \
+			mxCheckMeter(); \
+		} \
+		mxNextCode((txS4)INDEX + OFFSET)
+	#define mxBranchElse(TEST, INDEX, OFFSET) \
+		if (TEST) { \
+			mxNextCode((txS4)INDEX); \
+		} \
+		else { \
+			mxBranch(INDEX, OFFSET); \
+		}
+	#define mxBranchIf(TEST, INDEX, OFFSET) \
+		if (TEST) { \
+			mxBranch(INDEX, OFFSET); \
+		} \
+		else { \
+			mxNextCode((txS4)index); \
+		}
+	#define mxFirstCode() \
+		mxCheckMeter(); \
+		byte = *((txU1*)mxCode)
+#else
+	#define mxBranch(INDEX, OFFSET) \
+		mxNextCode((txS4)INDEX + OFFSET)
+	#define mxBranchElse(TEST, INDEX, OFFSET) \
+		mxNextCode((TEST) ? (txS4)INDEX : (txS4)INDEX + OFFSET)
+	#define mxBranchIf(TEST, INDEX, OFFSET) \
+		mxNextCode((TEST) ? (txS4)INDEX + OFFSET : (txS4)INDEX)
+	#define mxFirstCode() \
+		byte = *((txU1*)mxCode)
+#endif
 
 #ifdef mxTrace
 short gxDoTrace = 1;
@@ -630,7 +677,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		fxBeginFunction(the, mxFrameFunction);
 #endif
 XS_CODE_JUMP:
-		mxNextCode(0);
+		mxFirstCode();
 	}
 	else {
 		offset = count;
@@ -640,6 +687,9 @@ XS_CODE_JUMP:
 
 #ifdef mxTrace
 		if (gxDoTrace) fxTraceCode(the, stack, byte);
+#endif
+#ifdef mxMetering
+		the->meterIndex++;
 #endif
 		//fxCheckStack(the, mxStack);
 		
@@ -740,7 +790,7 @@ XS_CODE_JUMP:
 						mxEnvironment = mxStack;
 						mxScope = mxStack;
 						mxCode = slot->value.code.address;
-						mxNextCode(0);
+						mxFirstCode();
 						mxBreak;
 					}
 					if ((slot->kind == XS_CALLBACK_KIND) || (slot->kind == XS_CALLBACK_X_KIND)) {
@@ -925,7 +975,7 @@ XS_CODE_JUMP:
 				return;	
 			}
 			mxEnvironment = mxFrameToEnvironment(mxFrame);
-			mxNextCode(0);
+			mxFirstCode();
 			mxBreak;
 		mxCase(XS_CODE_RETURN)
 #ifdef mxProfile
@@ -1247,7 +1297,7 @@ XS_CODE_JUMP:
 					mxEnvironment->value.reference = jump->environment;
 					mxCode = jump->code;
 					c_free(jump);
-					mxNextCode(0);
+					mxFirstCode();
 				}
 			}
 			else {
@@ -1292,15 +1342,15 @@ XS_CODE_JUMP:
 	/* BRANCHES */	
 		mxCase(XS_CODE_BRANCH_1)
 			offset = mxRunS1(1);
-			mxNextCode(2 + offset);
+			mxBranch(2, offset);
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_2)
 			offset = mxRunS2(1);
-			mxNextCode(3 + offset);
+			mxBranch(3, offset);
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_4)
 			offset = mxRunS4(1);
-			mxNextCode(5 + offset);
+			mxBranch(5, offset);
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_CHAIN_4)
 			offset = mxRunS4(1);
@@ -1317,10 +1367,10 @@ XS_CODE_JUMP:
 			byte = mxStack->kind;
 			if ((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte)) {
 				mxStack->kind = XS_UNDEFINED_KIND;
-				mxNextCode((txS4)index + offset)
+				mxBranch(index, offset);
 			}
 			else
-				mxNextCode((txS4)index)
+				mxNextCode((txS4)index);
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_COALESCE_4)
 			offset = mxRunS4(1);
@@ -1337,10 +1387,11 @@ XS_CODE_JUMP:
 			byte = mxStack->kind;
 			if ((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte)) {
 				mxStack++;
-				mxNextCode((txS4)index)
+				mxNextCode((txS4)index);
 			}
-			else
-				mxNextCode((txS4)index + offset)
+			else {
+				mxBranch(index, offset);
+			}
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_ELSE_4)
 			offset = mxRunS4(1);
@@ -1355,20 +1406,25 @@ XS_CODE_JUMP:
 			index = 2;
 		XS_CODE_BRANCH_ELSE:
 			byte = mxStack->kind;
-			if (XS_BOOLEAN_KIND == byte)
-				mxNextCode(mxStack->value.boolean ? (txS4)index : (txS4)index + offset)
-			else if (XS_INTEGER_KIND == byte)
-				mxNextCode(mxStack->value.integer ? (txS4)index : (txS4)index + offset)
+			if (XS_BOOLEAN_KIND == byte) {
+				mxBranchElse(mxStack->value.boolean, index, offset);
+			}
+			else if (XS_INTEGER_KIND == byte) {
+				mxBranchElse(mxStack->value.integer, index, offset);
+			}
 			else if (XS_NUMBER_KIND == byte) {
-				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? (txS4)index + offset : (txS4)index)
+				mxBranchIf((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)), index, offset);
 				mxFloatingPointOp("else");
 			}
-			else if ((XS_BIGINT_KIND == byte) || (XS_BIGINT_X_KIND == byte))
-				mxNextCode(((mxStack->value.bigint.size == 1) && (mxStack->value.bigint.data[0] == 0)) ? (txS4)index + offset : (txS4)index)
-			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
-				mxNextCode(c_isEmpty(mxStack->value.string) ? (txS4)index + offset : (txS4)index)
-			else
-				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? (txS4)index + offset : (txS4)index)
+			else if ((XS_BIGINT_KIND == byte) || (XS_BIGINT_X_KIND == byte)) {
+				mxBranchIf(((mxStack->value.bigint.size == 1) && (mxStack->value.bigint.data[0] == 0)), index, offset);
+			}
+			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte)) {
+				mxBranchIf(c_isEmpty(mxStack->value.string), index, offset);
+			}
+			else {
+				mxBranchIf((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte), index, offset);
+			}
 			mxStack++;
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_IF_4)
@@ -1384,20 +1440,25 @@ XS_CODE_JUMP:
 			index = 2;
 		XS_CODE_BRANCH_IF:
 			byte = mxStack->kind;
-			if (XS_BOOLEAN_KIND == byte)
-				mxNextCode(mxStack->value.boolean ? (txS4)index + offset : (txS4)index)
-			else if (XS_INTEGER_KIND == byte)
-				mxNextCode(mxStack->value.integer ? (txS4)index + offset : (txS4)index)
+			if (XS_BOOLEAN_KIND == byte) {
+				mxBranchIf(mxStack->value.boolean, index, offset);
+			}
+			else if (XS_INTEGER_KIND == byte) {
+				mxBranchIf(mxStack->value.integer, index, offset);
+			}
 			else if (XS_NUMBER_KIND == byte) {
-				mxNextCode((c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number)) ? (txS4)index : (txS4)index + offset)
+				mxBranchElse(c_isnan(mxStack->value.number) || c_iszero(mxStack->value.number), index, offset);
 				mxFloatingPointOp("if");
 			}
-			else if ((XS_BIGINT_KIND == byte) || (XS_BIGINT_X_KIND == byte))
-				mxNextCode(((mxStack->value.bigint.size == 1) && (mxStack->value.bigint.data[0] == 0)) ? (txS4)index : (txS4)index + offset)
-			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte))
-				mxNextCode(c_isEmpty(mxStack->value.string) ? (txS4)index : (txS4)index + offset)
-			else
-				mxNextCode((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte) ? (txS4)index : (txS4)index + offset)
+			else if ((XS_BIGINT_KIND == byte) || (XS_BIGINT_X_KIND == byte)) {
+				mxBranchElse((mxStack->value.bigint.size == 1) && (mxStack->value.bigint.data[0] == 0), index, offset);
+			}
+			else if ((XS_STRING_KIND == byte) || (XS_STRING_X_KIND == byte)) {
+				mxBranchElse(c_isEmpty(mxStack->value.string), index, offset);
+			}
+			else {
+				mxBranchElse((XS_UNDEFINED_KIND == byte) || (XS_NULL_KIND == byte), index, offset);
+			}
 			mxStack++;
 			mxBreak;
 		mxCase(XS_CODE_BRANCH_STATUS_4)
@@ -4052,6 +4113,42 @@ XS_CODE_JUMP:
 		}
 	}
 }
+
+#ifdef mxMetering
+
+void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), txU4 interval)
+{
+	the->meterCallback = callback;
+	the->meterCount = interval;
+	the->meterIndex = 0;
+	the->meterInterval = interval;
+}
+
+void fxEndMetering(txMachine* the)
+{
+	the->meterCallback = C_NULL;
+	the->meterIndex = 0;
+	the->meterInterval = 0;
+	the->meterCount = 0;
+}
+
+void fxCheckMetering(txMachine* the)
+{
+	txU4 interval = the->meterInterval;
+	the->meterInterval = 0;
+	if ((*the->meterCallback)(the, the->meterIndex)) {
+		the->meterCount = the->meterIndex + interval;
+		if (the->meterCount < the->meterIndex) {
+			the->meterIndex = 0;
+			the->meterCount = interval;
+		}
+		the->meterInterval = interval;
+	}
+	else {
+		fxAbort(the, XS_TOO_MUCH_COMPUTATION_EXIT);
+	}
+}
+#endif
 
 void fxRunBase(txMachine* the)
 {

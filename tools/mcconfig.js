@@ -789,6 +789,10 @@ export default class extends Tool {
 				path += this.slash + this.subplatform;
 				this.createDirectory(path);
 			}
+			else if ((platform == "lin") || (platform == "mac") || (platform == "win")) {
+				path += this.slash + "mc";
+				this.createDirectory(path);
+			}
 		}
 		if (this.debug) 
 			path += this.slash + "debug";
@@ -797,10 +801,6 @@ export default class extends Tool {
 		else
 			path += this.slash + "release";
 		this.createDirectory(path);
-		if ((platform == "lin") || (platform == "mac") || (platform == "win")) {
-			path += this.slash + "mc";
-			this.createDirectory(path);
-		}
 		if (last) {
 			path += this.slash + last;
 			this.createDirectory(path);

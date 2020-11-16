@@ -23,6 +23,17 @@ import {} from "piu/PC";
 import {
 	applicationStyle,
 	backgroundSkin,
+	buttonsSkin,
+	controlsMenuSkin,
+	controlsMenuGlyphSkin,
+	controlsMenuItemSkin,
+	controlsMenuItemStyle,
+	dotSkin,
+	paneBorderSkin,
+	paneHeaderSkin,
+	paneHeaderStyle,
+	paneFooterLeftStyle,
+	paneFooterRightStyle,
 } from "assets";
 
 import {
@@ -44,8 +55,6 @@ import {
 	DeviceContainer,
 	DeviceScreen,
 } from "DevicePane";
-
-import MessagesPane from "MessagesPane";
 
 class NoDeviceBehavior extends Behavior {
 }
@@ -76,43 +85,45 @@ class ApplicationBehavior extends Behavior {
   		application.interval = 100;
 		
 		this.keys = {};
-		this.orientation = false;
-		this.horizontalDividerCurrent = 320;
-		this.horizontalDividerStatus = true;
-		this.verticalDividerCurrent = 320;
-		this.verticalDividerStatus = true;
+		this.controlsCurrent = 320;
+		this.controlsStatus = false;
+		this.infoStatus = true;
 		
-		this.devicesPath = "";
+		let path = system.applicationPath;
+		path = system.getPathDirectory(path);
+		path = system.getPathDirectory(path);
+		path = system.getPathDirectory(path);
+		path = system.getPathDirectory(path);
+		path = system.buildPath(path, "simulators");
+		
+		this.devicesPath = system.fileExists(path) ? path : "";
 		this.devices = [];
 		this.deviceIndex = -1;
+		this.deviceRotation = 0;
 
-		this.screenPath = "";
-		this.localScreenPath = system.buildPath(system.localDirectory, "mc", extension);
-		
-		this.messagesKind = false;
+		this.libraryPath = "";
+		this.localLibraryPath = system.buildPath(system.localDirectory, "mc", extension);
+		this.archivePath = "";
+		this.localArchivePath = system.buildPath(system.localDirectory, "mc", "xsa");
 		
 		this.readPreferences();
-		
-		try {
-			let directory = system.getPathDirectory(system.applicationPath);
-			directory = system.buildPath(directory, "autorun");
-			if (system.fileExists(directory)) {
-				let devicesPath = system.buildPath(directory, "simulators");
-				let screenPath = system.buildPath(directory, "mc", extension);
-				if (system.fileExists(devicesPath) && system.fileExists(screenPath)) {
-					this.devicesPath = devicesPath;
-					this.screenPath = screenPath;
-				}
-			}
-		}
-		catch {
-		}
+// 		
+// 		try {
+// 			let directory = system.getPathDirectory(system.applicationPath);
+// 			directory = system.buildPath(directory, "autorun");
+// 			if (system.fileExists(directory)) {
+// 				let devicesPath = system.buildPath(directory, "simulators");
+// 				let libraryPath = system.buildPath(directory, "mc", extension);
+// 				if (system.fileExists(devicesPath) && system.fileExists(libraryPath)) {
+// 					this.devicesPath = devicesPath;
+// 					this.libraryPath = libraryPath;
+// 				}
+// 			}
+// 		}
+// 		catch {
+// 		}
 
-		if (this.orientation)
-			application.add(new VerticalContainer(this));
-		else
-			application.add(new HorizontalContainer(this));
-					
+		application.add(new MainContainer(this));
 	}
 	onDisplaying(application) {
 		if (this.devicesPath)
@@ -132,19 +143,26 @@ class ApplicationBehavior extends Behavior {
 		this.DEVICE.first.delegate("onKeyUp", key);
 	}
 	launchScreen() {
-		if (this.screenPath) {
-			system.copyFile(this.screenPath, this.localScreenPath);
-			this.SCREEN.launch(this.localScreenPath);
+		if (this.libraryPath) {
+			system.copyFile(this.libraryPath, this.localLibraryPath);
+			if (this.archivePath) {
+				system.copyFile(this.archivePath, this.localArchivePath);
+				this.SCREEN.launch(this.localLibraryPath, this.localArchivePath);
+			}
+			else
+				this.SCREEN.launch(this.localLibraryPath);
 			this.DEVICE.first.defer("onLaunch");
 		}
 		application.updateMenus();
+		application.distribute("onInfoChanged");
 	}
 	quitScreen() {
 		if (this.SCREEN)
 			this.SCREEN.quit();
-		if (system.fileExists(this.localScreenPath))
-			system.deleteFile(this.localScreenPath);
-		application.updateMenus();
+		if (system.fileExists(this.localArchivePath))
+			system.deleteFile(this.localArchivePath);
+		if (system.fileExists(this.localLibraryPath))
+			system.deleteFile(this.localLibraryPath);
 	}
 	reloadDevices(application, flag) {
 		let devices = this.devices = [];
@@ -162,21 +180,21 @@ class ApplicationBehavior extends Behavior {
 					try {
 						let compartment = new Compartment({...globalThis, Date, Math});
 						let device = compartment.importNow(info.path).default;
-						if (device && ("DeviceTemplate" in device)) {
+						if (device && (("DeviceTemplate" in device) || ("DeviceTemplates" in device))) {
 							device.compartment = compartment;
 							device.default = device;
+							if (!device.sortingTitle)
+								device.sortingTitle = device.title;
 							devices.push(device);
 							let name = device.applicationName;
 							if (name) {
-								let path = system.applicationPath;
-								let directory = system.getPathDirectory(path);
-								directory = system.buildPath(directory, "mc");
-								directory = system.buildPath(directory, name);
-								if (system.platform == "win")
-									path = system.buildPath(directory, "mc", "dll");
+								if (system.platform == "win") {
+									name = name.replaceAll("/", "\\\\");
+									name += "\\\\mc.dll";
+								}
 								else
-									path = system.buildPath(directory, "mc", "so");
-								device.applicationPath = path;
+									name += "/mc.so";
+								device.applicationFilter = new RegExp(name);
 							}
 						}
 					}
@@ -186,7 +204,7 @@ class ApplicationBehavior extends Behavior {
 			}
 			info = iterator.next();
 		}
-		devices.sort((a, b) => a.title.compare(b.title));
+		devices.sort((a, b) => a.sortingTitle.compare(b.sortingTitle));
 		
 		let length = devices.length;
 		if (index < 0)
@@ -200,59 +218,63 @@ class ApplicationBehavior extends Behavior {
 	
 		this.deviceIndex = index;
 		let device = (index < 0) ? noDevice : this.devices[index];
+		let rotation = this.deviceRotation;
+		let Templates = device.DeviceTemplates;
+		let Template = device.DeviceTemplates;
+		if (Templates) {
+			if (rotation in Templates)
+				Template = Templates[rotation];
+			else
+				Template = Templates[0];
+		}
+		else
+			Template = device.DeviceTemplate;
 		
-		let screenContainer = new device.DeviceTemplate(device);
+		let screenContainer = new Template(device);
 		let container = this.DEVICE;
 		container.replace(container.first, screenContainer);
 		
-		let controlsColumn = new device.ControlsTemplate(device);
-		let scroller = this.CONTROLS.first;
-		scroller.replace(scroller.first, controlsColumn);
+		if (this.CONTROLS) {
+			let controlsColumn = new device.ControlsTemplate(device);
+			let scroller = this.CONTROLS.first;
+			scroller.replace(scroller.first, controlsColumn);
+		}
 		
-		let path = device.applicationPath;
-		if (path && system.fileExists(path))
-			this.screenPath = path;
-		else
-			this.screenPath = "";
+// 		let path = device.applicationPath;
+// 		if (path && system.fileExists(path))
+// 			this.libraryPath = path;
+// 		else
+// 			this.libraryPath = "";
 			
 		application.distribute("onDeviceSelected", device);
-		application.updateMenus();
 	}
 	
 /* EVENTS */
+	onAbort(application) {
+	 this.doCloseFile(application);
+	}
 	onOpenFile(application, path) {
 		let info = system.getFileInfo(path);
 		if (info.directory)
-			this.doLocateSimulatorsCallback(path);
+			application.defer("doLocateSimulatorsCallback", new String(path));
 		else
-			this.doOpenFileCallback(path);
+			application.defer("doOpenFileCallback", new String(path));
 	}
 	onQuit(application) {
 		this.writePreferences();
 		application.quit();
 	}
+	onRotate(application, delta) {
+		let rotation = this.deviceRotation + delta;
+		if (rotation < 0) rotation += 360;
+		this.deviceRotation = rotation % 360;;
+		this.quitScreen();
+		this.selectDevice(application, this.deviceIndex);
+		this.launchScreen();
+	}
 	onSelectDevice(application, index) {
 		this.quitScreen();
 		this.selectDevice(application, index);
-		this.launchScreen();
-	}
-	onToggleMessages(application) {
-		let deviceIndex = this.deviceIndex;
-		this.horizontalDividerCurrent = this.HORIZONTAL_DIVIDER.behavior.current;
-		this.horizontalDividerStatus = this.HORIZONTAL_DIVIDER.behavior.status;
-		this.verticalDividerCurrent = this.VERTICAL_DIVIDER.behavior.current;
-		this.verticalDividerStatus = this.VERTICAL_DIVIDER.behavior.status;
-		this.quitScreen();
-		this.selectDevice(application, -1),
-		if (this.orientation) {
-			application.replace(application.first, new HorizontalContainer(this));
-			this.orientation = false;
-		}
-		else {
-			application.replace(application.first, new VerticalContainer(this));
-			this.orientation = true;
-		}
-		this.selectDevice(application, deviceIndex),
 		this.launchScreen();
 	}
 	
@@ -292,21 +314,30 @@ class ApplicationBehavior extends Behavior {
 		return true;
 	}
 	doCloseFile() {
+		this.archivePath = "";
+		this.libraryPath = "";
 		this.quitScreen();
-		this.screenPath = "";
+		application.updateMenus();
+		application.distribute("onInfoChanged");
 	}
 	doOpenFile() {
-		system.openFile({ prompt:"Open File", path:system.documentsDirectory }, path => { if (path) this.doOpenFileCallback(path); });
+		system.openFile({ prompt:"Open File", path:system.documentsDirectory }, path => { if (path) application.defer("doOpenFileCallback", new String(path)); });
 	}
-	doOpenFileCallback(path) {
+	doOpenFileCallback(application, path) {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
 		if (path.endsWith(extension)) {
-			let index = this.devices.findIndex(device => device.applicationPath == path);
-			if ((index >= 0) && (index != this.deviceIndex)) {
-				this.quitScreen();
+			let index = this.devices.findIndex(device => device.applicationFilter.test(path));
+			if (index < 0) index = 0;
+			this.quitScreen();
+			if (index != this.deviceIndex)
 				this.selectDevice(application, index);
-				this.launchScreen();
-			}
+			this.libraryPath = path;
+			this.launchScreen();
+		}
+		if (path.endsWith(".xsa")) {
+			this.quitScreen();
+			this.archivePath = path;
+			this.launchScreen();
 		}
 	}
 	doReloadFile() {
@@ -314,23 +345,59 @@ class ApplicationBehavior extends Behavior {
 		this.launchScreen();
 	}
 	doLocateSimulators() {
-		system.openDirectory({ prompt:"Locate", path:system.documentsDirectory }, path => { if (path) this.doLocateSimulatorsCallback(path); });
+		system.openDirectory({ prompt:"Locate", path:system.documentsDirectory }, path => { if (path) application.defer("doLocateSimulatorsCallback", new String(path)); });
 	}
-	doLocateSimulatorsCallback(path) {
+	doLocateSimulatorsCallback(application, path) {
 		this.devicesPath = path;
+		this.archivePath = "";
+		this.libraryPath = "";
 		this.doReloadSimulators();
+		application.updateMenus();
+		application.distribute("onInfoChanged");
 	}
 	doReloadSimulators() {
 		this.quitScreen();
 		this.reloadDevices(application);
 		this.launchScreen();
 	}
-/* EDIT MENU */
-	canCopy() {
+/* VIEW MENU */
+	canToggleControls(target, item) {
+		let divider = this.VERTICAL_DIVIDER;
+		item.state = divider.behavior.status ? 1 : 0;
 		return true;
 	}
-	doCopy() {
-		this.MESSAGES.delegate("doCopy");
+	doToggleControls(target, item) {
+		let divider = this.VERTICAL_DIVIDER;
+		divider.behavior.toggle(divider);
+		this.controlsStatus = divider.behavior.status;
+		application.updateMenus();
+	}
+	canToggleInfo(target, item) {
+		item.state = this.infoStatus ? 1 : 0;
+		return true;
+	}
+	doToggleInfo(target, item) {
+		if (this.infoStatus) {
+			this.infoStatus = false;
+			this.BODY.coordinates = { left:0, right:0, top:27, bottom:0 };
+			this.FOOTER.coordinates = { left:0, right:0, height:0, bottom:0 };
+		}
+		else {
+			this.infoStatus = true;
+			this.BODY.coordinates = { left:0, right:0, top:27, bottom:27 };
+			this.FOOTER.coordinates = { left:0, right:0, height:27, bottom:0 };
+		}
+		application.updateMenus();
+	}
+	canSelectRotation(target, item) {
+		item.check = this.deviceRotation == item.value;
+		return true;
+	}
+	doSelectRotation(target, value) {
+		this.deviceRotation = value;
+		this.quitScreen();
+		this.selectDevice(application, this.deviceIndex);
+		this.launchScreen();
 	}
 /* HELP MENU */
 	canSupport() {
@@ -346,42 +413,41 @@ class ApplicationBehavior extends Behavior {
 			let string = system.readPreferenceString("main");
 			if (string) {
 				let preferences = JSON.parse(string);
-				if ("orientation" in preferences)
-					this.orientation = preferences.orientation;
-				if ("horizontalDividerCurrent" in preferences)
-					this.horizontalDividerCurrent = preferences.horizontalDividerCurrent;
-				if ("horizontalDividerStatus" in preferences)
-					this.horizontalDividerStatus = preferences.horizontalDividerStatus;
-				if ("verticalDividerCurrent" in preferences)
-					this.verticalDividerCurrent = preferences.verticalDividerCurrent;
-				if ("verticalDividerStatus" in preferences)
-					this.verticalDividerStatus = preferences.verticalDividerStatus;
+				if ("controlsCurrent" in preferences)
+					this.controlsCurrent = preferences.controlsCurrent;
+				if ("controlsStatus" in preferences)
+					this.controlsStatus = preferences.controlsStatus;
+				if ("infoStatus" in preferences)
+					this.infoStatus = preferences.infoStatus;
 				if (("devicesPath" in preferences) && system.fileExists(preferences.devicesPath))
 					this.devicesPath = preferences.devicesPath;
 				if ("deviceIndex" in preferences)
 					this.deviceIndex = preferences.deviceIndex;
-				if (("screenPath" in preferences) && system.fileExists(preferences.screenPath))
-					this.screenPath = preferences.screenPath;
-				if ("messagesKind" in preferences)
-					this.messagesKind = preferences.messagesKind;
+				if ("deviceRotation" in preferences)
+					this.deviceRotation = preferences.deviceRotation;
+				if (("libraryPath" in preferences) && system.fileExists(preferences.libraryPath))
+					this.libraryPath = preferences.libraryPath;
+				if (("archivePath" in preferences) && system.fileExists(preferences.archivePath))
+					this.archivePath = preferences.archivePath;
 			}
 		}
 		catch(e) {
 		}
 	}
 	writePreferences() {
+		this.controlsCurrent = this.VERTICAL_DIVIDER.behavior.current;
+		this.controlsStatus = this.VERTICAL_DIVIDER.behavior.status;
 		try {
 			let content;
 			let preferences = {
-				orientation: this.orientation,
-				horizontalDividerCurrent: this.HORIZONTAL_DIVIDER.behavior.current,
-				horizontalDividerStatus: this.HORIZONTAL_DIVIDER.behavior.status,
-				verticalDividerCurrent: this.VERTICAL_DIVIDER.behavior.current,
-				verticalDividerStatus: this.VERTICAL_DIVIDER.behavior.status,
+				controlsCurrent: this.controlsCurrent,
+				controlsStatus: this.controlsStatus,
+				infoStatus: this.infoStatus,
 				devicesPath: this.devicesPath,
 				deviceIndex: this.deviceIndex,
-				screenPath: this.screenPath,
-				messagesKind: this.messagesKind,
+				deviceRotation: this.deviceRotation,
+				libraryPath: this.libraryPath,
+				archivePath: this.archivePath,
 			};
 			let string = JSON.stringify(preferences, null, "\t");
 			system.writePreferenceString("main", string);
@@ -391,53 +457,173 @@ class ApplicationBehavior extends Behavior {
 	}
 }
 
-var VerticalContainer = Container.template($ => ({ left:0, right:0, top:0, bottom:0, contents: [
-	Layout($, { left:0, right:0, top:0, bottom:0, Behavior:DividerLayoutBehavior, contents: [
-		Layout($, { left:0, width:0, top:0, bottom:0, Behavior:DividerLayoutBehavior, contents: [
-			Container($, { left:0, right:0, top:0, height:0, contents: [
-				ControlsPane($, { anchor:"CONTROLS" }),
-			]}),
-			Container($, { left:0, right:0, height:0, bottom:0, contents: [
-				MessagesPane($, { anchor:"MESSAGES" }),
-			]}),
-			HorizontalDivider($, { 
-				anchor:"HORIZONTAL_DIVIDER", width:6, bottom:$.horizontalDividerStatus ? $.horizontalDividerCurrent - 3 : 23, 
-				before:160, current:$.horizontalDividerCurrent, after:26, status:$.horizontalDividerStatus,
-			}),
-		]}),
-		Container($, { anchor:"DEVICE",  width:0, right:0, top:0, bottom:0, skin:backgroundSkin, clip:true, contents:[
-			Content($, {}),
-		]}),
-		VerticalDivider($, { 
-			anchor:"VERTICAL_DIVIDER", left:$.verticalDividerStatus ? $.verticalDividerCurrent - 3 : 317, width:6,
-			before:320, current:$.verticalDividerCurrent, after:320, status:$.verticalDividerStatus,
-		}),
-	]}),
-]}));
+class HeaderBehavior extends Behavior {	
+	onDeviceSelected(row, device) {
+		const glyph = row.first;
+		const label = glyph.next;
+		label.string = device.title;
+		if (model.devices.length > 0) {
+			glyph.state = 1;
+			label.state = 1;
+		}
+		else {
+			glyph.state = 0;
+			label.state = 0;
+		}
+	}
+	onMenuSelected(row, index) {
+		if (index >= 0)
+			model.onSelectDevice(application, index);
+	}
+	onMouseEntered(row, x, y) {
+		if (model.devices.length > 1)
+			row.state = 1;
+	}
+	onMouseExited(row, x, y) {
+		if (model.devices.length > 1)
+			row.state = 0;
+	}
+	onTouchBegan(row) {
+		if (model.devices.length > 1)
+			row.state = 2;
+	}
+	onTouchEnded(row) {
+		if (model.devices.length > 1) { 
+			row.state = 1;
+			let data = {
+				button: row,
+				items: model.devices.map((device, index) => ({ title: device.title, index })),
+			};
+			data.items.splice(model.deviceIndex, 1);
+			application.add(new ControlsMenu(data));
+		}
+	}
+};
 
-var HorizontalContainer = Container.template($ => ({ left:0, right:0, top:0, bottom:0, contents: [
-	Layout($, { left:0, right:0, top:0, bottom:0, Behavior:DividerLayoutBehavior, contents: [
-		Layout($, { left:0, right:0, top:0, height:0, Behavior:DividerLayoutBehavior, contents: [
+const pixelFormatNames = [
+	"16-bit RGB 565 Little Endian",
+	"16-bit RGB 565 Big Endian",
+	"8-bit Gray",
+	"8-bit RGB 332",
+	"4-bit Gray",
+	"4-bit Color Look-up Table",
+];
+
+class FooterBehavior extends Behavior {	
+	onInfoChanged(row) {
+		let left = "";
+		let right = "";
+		if (model.libraryPath) {
+			left += system.getPathName(system.getPathDirectory(model.libraryPath))
+			if (model.archivePath) {
+				left += " + " + system.getPathName(system.getPathDirectory(model.archivePath))
+			}
+			const screen = model.SCREEN;
+			if (screen.width && screen.height) {
+				right += screen.width + " x " + screen.height;
+				right += " - " + pixelFormatNames[model.SCREEN.pixelFormat];
+			}
+		}
+		row.first.string = left;
+		row.last.string = right;
+	}
+};
+
+class ControlsMenuBehavior extends Behavior {	
+	onClose(layout, index) {
+		let data = this.data;
+		application.remove(application.last);
+		data.button.delegate("onMenuSelected", index);
+	}
+	onCreate(layout, data) {
+		this.data = data;
+	}
+	onFitVertically(layout, value) {
+		let data = this.data;
+		let button = data.button;
+		let container = layout.first;
+		let scroller = container.first;
+		let size = scroller.first.measure();
+		let y = button.y + button.height + 1
+		let height = Math.min(size.height, application.height - y - 20);
+		container.coordinates = { left:button.x, width:size.width + 20, top:y, height:height + 10 }
+		scroller.coordinates = { left:10, width:size.width, top:0, height:height }
+// 		scroller.first.content(model.deviceIndex).first.visible = true;
+		return value;
+	}
+	onTouchEnded(layout, id, x, y, ticks) {
+		var content = layout.first.first.first;
+		if (!content.hit(x, y))
+			this.onClose(layout, -1);
+	}
+};
+
+class ControlsMenuItemBehavior extends ButtonBehavior {
+	onTap(item) {
+		item.bubble("onClose", this.data.index);
+	}
+}
+
+var ControlsMenu = Layout.template($ => ({
+	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
+	Behavior: ControlsMenuBehavior,
+	contents: [
+		Container($, { skin:controlsMenuSkin, contents:[
+			Scroller($, { clip:true, active:true, contents:[
+				Column($, { left:0, right:0, top:0, 
+					contents: $.items.map($$ => new ControlsMenuItem($$)),
+				}),
+			]}),
+		]}),
+	],
+}));
+
+var ControlsMenuItem = Row.template($ => ({
+	left:0, right:0, height:30, skin:controlsMenuItemSkin, active:true,
+	Behavior:ControlsMenuItemBehavior,
+	contents: [
+		Content($, { width:20, height:30, skin:dotSkin, visible:false }),
+		Label($, {left:0, right:20, height:30, style:controlsMenuItemStyle, string:$.title }),
+	]
+}));
+
+var MainContainer = Container.template($ => ({ 
+	left:0, right:0, top:0, bottom:0, 
+	contents: [
+		Row($, { left:0, right:0, top:0, height:26, skin:paneHeaderSkin, active:true, Behavior:HeaderBehavior, contents: [
+			Content($, { width:30, height:26, skin:controlsMenuGlyphSkin, }),
+			Label($, { left:0, right:0, style:paneHeaderStyle, }),
+			Content($, {
+				width:30, skin:buttonsSkin, variant:3, active:true, visible:true, 
+				Behavior: class extends ButtonBehavior {
+					onTap(button) {
+						button.bubble("onRotate", 90);
+					}
+				},
+			}),
+		]}), 
+		Content($, { left:0, right:0, top:26, height:1, skin:paneBorderSkin, }),
+		Layout($, { anchor:"BODY", left:0, right:0, top:27, bottom:$.infoStatus ? 27 : 0, Behavior:DividerLayoutBehavior, contents: [
 			Container($, { left:0, width:0, top:0, bottom:0, contents: [
 				ControlsPane($, { anchor:"CONTROLS" }),
 			]}),
-			Container($, { width:0, right:0, top:0, bottom:0, contents: [
-				MessagesPane($, { anchor:"MESSAGES" }),
+			Container($, { anchor:"DEVICE", width:0, right:0, top:0, bottom:0, skin:backgroundSkin, clip:true, contents:[
+				Content($, {}),
 			]}),
 			VerticalDivider($, { 
-				anchor:"VERTICAL_DIVIDER", left:$.verticalDividerStatus ? $.verticalDividerCurrent - 3 : 317, width:6,
-				before:320, current:$.verticalDividerCurrent, after:320, status:$.verticalDividerStatus,
+				anchor:"VERTICAL_DIVIDER", left:$.controlsStatus ? $.controlsCurrent - 3 : -3, width:6,
+				before:0, current:$.controlsCurrent, after:320, status:$.controlsStatus,
 			}),
 		]}),
-		Container($, { anchor:"DEVICE",  left:0, right:0, height:0, bottom:0, skin:backgroundSkin, clip:true, contents:[
-			Content($, {}),
+		Container($, { anchor:"FOOTER", left:0, right:0, height:$.infoStatus ? 27 : 0, bottom:0, clip:true, contents:[
+			Content($, { left:0, right:0, height:1, bottom:26, skin:paneBorderSkin, }),
+			Row($, { left:0, right:0, height:26, bottom:0, skin:paneHeaderSkin, Behavior:FooterBehavior, contents: [
+				Label($, { left:0, right:0, style:paneFooterLeftStyle, }),
+				Label($, { left:0, right:0, style:paneFooterRightStyle, }),
+			]}), 
 		]}),
-		HorizontalDivider($, { 
-			anchor:"HORIZONTAL_DIVIDER", width:6, bottom:$.horizontalDividerStatus ? $.horizontalDividerCurrent - 3 : 23, 
-			before:160, current:$.horizontalDividerCurrent, after:26, status:$.horizontalDividerStatus,
-		}),
-	]}),
-]}));
+	]
+}));
 
 let mcsimApplication = Application.template($ => ({
 	style:applicationStyle,
@@ -484,6 +670,18 @@ let mcsimApplication = Application.template($ => ({
 				{ title:"Clear", command:"Clear" },
 				null,
 				{ title:"Select All", key:"A", command:"SelectAll" },
+			],
+		},
+		{
+			title:"View",
+			items: [
+				{ state:0, titles: ["Show Controls", "Hide Controls"], key:"K", command:"ToggleControls" },
+				{ state:0, titles: ["Show Info", "Hide Info"], key:"I", command:"ToggleInfo" },
+				null,
+				{ title:"0°", value:0, command:"SelectRotation" },
+				{ title:"90°", value:90, command:"SelectRotation" },
+				{ title:"180°", value:180, command:"SelectRotation" },
+				{ title:"270°", value:270, command:"SelectRotation" },
 			],
 		},
 		{

@@ -23,20 +23,13 @@
 import {
 	buttonSkin,
 	buttonStyle,
-	controlNameStyle,
-	controlValueStyle,
 	controlsMenuSkin,
-	controlsMenuGlyphSkin,
 	controlsMenuItemSkin,
 	controlsMenuItemStyle,
-	controlRowSkin,
+	controlNameStyle,
+	controlValueStyle,
 	dotSkin,
-	glyphsSkin,
 	paneBodySkin,
-	paneBorderSkin,
-	paneHeaderSkin,
-	paneHeaderStyle,
-	popupStyle,
 	sliderBarSkin,
 	sliderButtonSkin,
 	switchBarSkin,
@@ -49,80 +42,6 @@ import {
 import {
 	ButtonBehavior,
 } from "piu/Buttons";
-
-class ControlsHeaderBehavior extends Behavior {	
-	onDeviceSelected(row, device) {
-		row.active = false;
-		row.first.state = 0;
-		row.last.state = 0;
-		row.last.string = device.title;
-		if (model.devices.length > 0) {
-			if (model.devices.length > 1) {
-				row.active = true;
-				row.first.state = 1;
-			}
-			row.last.state = 1;
-		}
-	}
-	onMenuSelected(row, index) {
-		if (index >= 0)
-			model.onSelectDevice(application, index);
-	}
-	onMouseEntered(row, x, y) {
-		row.state = 1;
-	}
-	onMouseExited(row, x, y) {
-		row.state = 0;
-	}
-	onTouchBegan(row) {
-		row.state = 2;
-	}
-	onTouchEnded(row) {
-		row.state = 1;
-		if (model.devices.length > 1) { 
-			let data = {
-				button: row,
-				items: model.devices.map((device, index) => ({ title: device.title, index })),
-			};
-			data.items.splice(model.deviceIndex, 1);
-			application.add(new ControlsMenu(data));
-		}
-	}
-};
-
-class ControlsMenuBehavior extends Behavior {	
-	onClose(layout, index) {
-		let data = this.data;
-		application.remove(application.last);
-		data.button.delegate("onMenuSelected", index);
-	}
-	onCreate(layout, data) {
-		this.data = data;
-	}
-	onFitVertically(layout, value) {
-		let data = this.data;
-		let button = data.button;
-		let container = layout.first;
-		let scroller = container.first;
-		let size = scroller.first.measure();
-		let y = button.y + button.height + 1
-		let height = Math.min(size.height, application.height - y - 20);
-		container.coordinates = { left:button.x, width:button.width, top:y, height:height + 10 }
-		scroller.coordinates = { left:10, width:button.width - 20, top:0, height:height }
-		return value;
-	}
-	onTouchEnded(layout, id, x, y, ticks) {
-		var content = layout.first.first.first;
-		if (!content.hit(x, y))
-			this.onClose(layout, -1);
-	}
-};
-
-class ControlsMenuItemBehavior extends ButtonBehavior {
-	onTap(item) {
-		item.bubble("onClose", this.data.index);
-	}
-}
 
 class PopupMenuBehavior extends Behavior {	
 	onClose(layout, index) {
@@ -179,40 +98,10 @@ import {
 export var ControlsPane = Container.template($ => ({ 
 	left:0, right:0, top:0, bottom:0, 
 	contents:[
-		Scroller($, { left:0, right:0, top:27, bottom:0, skin:paneBodySkin, active:true, Behavior:ScrollerBehavior, contents: [
+		Scroller($, { left:0, right:0, top:0, bottom:0, skin:paneBodySkin, active:true, Behavior:ScrollerBehavior, contents: [
 			Content($, {}),
 			VerticalScrollbar($, {}),
 		]}),
-		Content($, { left:0, right:0, top:26, height:1, skin:paneBorderSkin, }),
-		Row($, {
-			left:0, right:0, top:0, height:26, skin:paneHeaderSkin, active:false, Behavior:ControlsHeaderBehavior,
-			contents: [
-				Content($, { width:30, height:26, skin:controlsMenuGlyphSkin, state:0 }),
-				Label($, { left:0, right:0, style:paneHeaderStyle, state:0 }),
-			],
-		}),
-	]
-}));
-
-var ControlsMenu = Layout.template($ => ({
-	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
-	Behavior: ControlsMenuBehavior,
-	contents: [
-		Container($, { skin:controlsMenuSkin, contents:[
-			Scroller($, { clip:true, active:true, contents:[
-				Column($, { left:0, right:0, top:0, 
-					contents: $.items.map($$ => new ControlsMenuItem($$)),
-				}),
-			]}),
-		]}),
-	],
-}));
-
-var ControlsMenuItem = Row.template($ => ({
-	left:0, right:0, height:30, skin:controlsMenuItemSkin, active:true,
-	Behavior:ControlsMenuItemBehavior,
-	contents: [
-		Label($, {left:20, right:20, height:30, style:controlsMenuItemStyle, string:$.title }),
 	]
 }));
 

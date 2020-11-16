@@ -1203,6 +1203,7 @@ export class Tool extends TOOL {
 		this.mainPath = null;
 		this.make = false;
 		this.manifestPath = null;
+		this.mcsim = false;
 		this.outputPath = null;
 		this.platform = null;
 		this.rotation = undefined;
@@ -1267,14 +1268,23 @@ export class Tool extends TOOL {
 				this.environment.FULLPLATFORM = name;
 				this.environment.PLATFORMPATH = "";
 				let parts = name.split("/");
-				if (parts[1]) {
-					this.subplatform = parts[1];
-					this.environment.SUBPLATFORM = parts[1];
-					this.environment.PLATFORMPATH = this.slash + parts[1];
+				if ((parts[0] == "sim") || (parts[0] == "simulator")) {
+					parts[0] = this.currentPlatform;
+					this.mcsim = true;
 				}
 				this.platform = parts[0];
-				this.environment.PLATFORM = parts[0];
-				this.environment.PLATFORMPATH = parts[0] + this.environment.PLATFORMPATH;
+				if (parts[1]) {
+					this.subplatform = parts[1];
+					this.environment.SUBPLATFORM = this.subplatform;
+					this.fullplatform = this.platform + "/" + this.subplatform;
+					this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
+				}
+				else {
+					this.fullplatform = this.platform;
+					this.environment.PLATFORMPATH = this.platform;
+				}
+				this.environment.PLATFORM = this.platform;
+				this.environment.FULLPLATFORM = this.fullplatform;
 				break;
 			case "-r":
 				argi++;
@@ -1378,12 +1388,24 @@ export class Tool extends TOOL {
 			this.format = null;
 		else if (!this.format)
 			this.format = "UNDEFINED";
-		if (this.platform == "mac")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/Screen Test.app";
-		else if (this.platform == "win")
-			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
-		else if (this.platform == "lin")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
+		if (this.mcsim) {
+			if (this.platform == "mac")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/mcsim.app";
+			else if (this.platform == "win")
+				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
+			else if (this.platform == "lin")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
+			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
+		}
+		else {
+			if (this.platform == "mac")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/Screen Test.app";
+			else if (this.platform == "win")
+				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
+			else if (this.platform == "lin")
+				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
+			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulator";
+		}
 	}
 	concatProperties(object, properties, flag) {
 		if (properties) {

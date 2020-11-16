@@ -338,8 +338,10 @@ void fxGetNextNumberB(txParser* parser)
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
-	if (fxIsIdentifierFirst(parser->character))
+	if (fxIsIdentifierFirst(parser->character)) {
 		fxReportParserError(parser, "invalid number");			
+		fxThrowParserError(parser, parser->errorCount);
+	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
@@ -403,8 +405,10 @@ void fxGetNextNumberE(txParser* parser, int dot)
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
-	if (fxIsIdentifierFirst(parser->character))
+	if (fxIsIdentifierFirst(parser->character)) {
 		fxReportParserError(parser, "invalid number");			
+		fxThrowParserError(parser, parser->errorCount);
+	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
@@ -442,8 +446,10 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
-	if (fxIsIdentifierFirst(parser->character))
+	if (fxIsIdentifierFirst(parser->character)) {
 		fxReportParserError(parser, "invalid number");			
+		fxThrowParserError(parser, parser->errorCount);
+	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
@@ -473,8 +479,10 @@ void fxGetNextNumberX(txParser* parser)
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
-	if (fxIsIdentifierFirst(parser->character))
+	if (fxIsIdentifierFirst(parser->character)) {
 		fxReportParserError(parser, "invalid number");			
+		fxThrowParserError(parser, parser->errorCount);
+	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {

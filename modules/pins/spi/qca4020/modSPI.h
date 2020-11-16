@@ -54,6 +54,7 @@ struct modSPIConfigurationRecord {
 	uint8_t						_pad;
 	uint32_t					hz;
 	modSPIChipSelectCallback	doChipSelect;
+	uint8_t						mode;
 };
 
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;
@@ -64,7 +65,8 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.cs_pin = ((uint8_t)(uint32_t)CS_PIN); \
 	config.doChipSelect = DOCHIPSELECT; \
 	config.spiPort = ((uint8_t)(uint32_t)SPI_PORT); \
-	config.sync = 1;
+	config.sync = 1; \
+	config.mode = 0;
 
 extern void modSPIInit(modSPIConfiguration config);
 extern void modSPIUninit(modSPIConfiguration config);

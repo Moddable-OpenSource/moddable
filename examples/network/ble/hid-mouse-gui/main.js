@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -37,6 +37,9 @@ class DragBehavior extends Behavior {
 		content.state = 1 - Math.quadEaseOut(content.fraction);
 	}
 	onTouchBegan(content, id, x, y, ticks) {
+		content.time = 0;
+		content.stop();
+
 		let anchor = this.anchor = content.position;
 		anchor.x -= x;
 		anchor.y -= y;
@@ -48,7 +51,6 @@ class DragBehavior extends Behavior {
 	}
 	onTouchEnded(content, id, x, y, ticks) {
 		content.duration = 250;
-		content.time = 0;
 		content.start();
 	}
 }
@@ -80,9 +82,8 @@ let DragApplication = Application.template($ => ({
 		onMouseUp(application, x, y, buttons) {
 			this.doMoveTo(this.pointer, x, y);
 			let position = this.pointer.position;
-			let content = this.hitContent(this.draggers, position.x, position.y);
-			if (content && (content == this.target)) {
-				content.delegate("onTouchEnded", 0, position.x, position.y);
+			if (this.target) {
+				this.target.delegate("onTouchEnded", 0, position.x, position.y);
 			}
 			delete this.target;
 		}
@@ -96,7 +97,7 @@ let DragApplication = Application.template($ => ({
 		}
 		hitContent(container, x, y) {
 			let count = container.length;
-			for (let i = 0; i < count; ++i) {
+			for (let i = count - 1; i >= 0; i--) {
 				let content = container.content(i);
 				if (content.hit(x, y))
 					return content;

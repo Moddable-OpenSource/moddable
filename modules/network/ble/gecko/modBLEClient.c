@@ -187,8 +187,11 @@ void xs_ble_client_destructor(void *data)
 	modBLEConnection connection = modBLEConnectionGetFirst();
 	while (connection != NULL) {
 		modBLEConnection next = connection->next;
-		if (kBLEConnectionTypeClient == connection->type)
+		if (kBLEConnectionTypeClient == connection->type) {
+			xsMachine *the = connection->the;
+			xsForget(connection->objConnection);
 			modBLEConnectionRemove(connection);
+		}
 		connection = next;
 	}
 	
@@ -237,7 +240,7 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = 0xFFFF;
+	connection->id = kInvalidConnectionID;
 	c_memmove(&connection->address, address, 6);
 	connection->addressType = addressType;
 	connection->bond = 0xFF;
@@ -301,6 +304,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 	connection->the = the;
 	connection->objConnection = xsThis;
 	OBJ_CLIENT(connection) = xsArg(0);
+	xsRemember(connection->objConnection);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -611,7 +615,7 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 		xsUnknownError("connection not found");
 		
 	// Ignore duplicate connection events
-	if (0xFFFF != connection->id) goto bail;
+	if (kInvalidConnectionID != connection->id) goto bail;
 
 	connection->id = evt->connection;
 	connection->bond = evt->bonding;
@@ -638,6 +642,7 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 		xsUnknownError("connection not found");
 	
 	xsCall1(connection->objConnection, xsID_callback, xsString("onDisconnected"));
+	xsForget(connection->objConnection);
 
 	modBLEConnectionRemove(connection);
 	xsEndHost(gBLE->the);

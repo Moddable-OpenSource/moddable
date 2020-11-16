@@ -51,13 +51,15 @@ static void gtk_piu_application_command(GSimpleAction *action, GVariant *paramet
 		const char* name = g_action_get_name(G_ACTION(action));
 		xsIndex doID = xsID(name);
 		PiuContent* content = (*self)->focus;
-		xsVars(2);
+		xsVars(3);
 		while (content) {
 			if ((*content)->behavior) {
 				xsVar(0) = xsReference((*content)->behavior);
 				if (xsFindResult(xsVar(0), doID)) {
 					xsVar(1) = xsReference((*content)->reference);
-					(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+					if (parameter && g_variant_is_of_type(parameter, G_VARIANT_TYPE_INT32))
+						xsVar(2) = xsInteger(g_variant_get_int32(parameter));
+					(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 					PiuApplicationAdjust(self);
 					break;
 				}
@@ -114,6 +116,7 @@ static void gtk_piu_application_startup(GApplication *app)
 	{
 		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		gtkApplication->piuApplication = PIU(Application, xsResult);
+		PiuApplicationAdjust(gtkApplication->piuApplication);
 		xsCollectGarbage();
 	}
 	xsEndHost(machine);
@@ -174,6 +177,7 @@ void PiuApplication_createMenus(xsMachine *the)
 				char buffer[256];
 				xsStringValue value;
 				xsIndex index;
+				xsIntegerValue target;
 				GSimpleAction* action;
 				GMenuItem* item;
 				
@@ -189,34 +193,56 @@ void PiuApplication_createMenus(xsMachine *the)
 				index = xsID(buffer);
 				xsSet(xsVar(2), xsID_doID, xsInteger(index));
 				
-				action = g_simple_action_new(buffer, NULL);
-				g_action_map_add_action(G_ACTION_MAP(gtkApplication), G_ACTION(action));
-				g_signal_connect(G_OBJECT(action), "activate", G_CALLBACK(gtk_piu_application_command), self);
-				xsVar(3) = xsNewHostObject(NULL);
-				xsSetHostData(xsVar(3), action);
-				xsSet(xsVar(2), xsID_action, xsVar(3));
-			
-				value = xsToString(xsGet(xsVar(2), xsID_command));
-				c_strcpy(buffer, "app.do");
-				c_strcat(buffer, value);
+				if (xsFindInteger(xsVar(2), xsID_value, &target)) {
+					action = G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(gtkApplication), buffer));
+					if (!action) {
+						action =  g_simple_action_new_stateful(buffer, G_VARIANT_TYPE("i"), g_variant_new_int32(target));
+						g_action_map_add_action(G_ACTION_MAP(gtkApplication), G_ACTION(action));
+						g_signal_connect(G_OBJECT(action), "activate", G_CALLBACK(gtk_piu_application_command), self);
+					}
+					xsVar(3) = xsNewHostObject(NULL);
+					xsSetHostData(xsVar(3), action);
+					xsSet(xsVar(2), xsID_action, xsVar(3));
 				
-				xsVar(3) = xsGet(xsVar(2), xsID_titles);
-				if (xsTest(xsVar(3))) {
-					xsVar(4) = xsGet(xsVar(2), xsID_state);
-					value = xsToString(xsGetAt(xsVar(3), xsVar(4)));
-					item = g_menu_item_new(value, buffer);
-					xsVar(3) = xsNewHostObject(NULL);
-					xsSetHostData(xsVar(3), item);
-					xsSet(xsVar(2), xsID_item, xsVar(3));
-					xsSet(xsVar(2), xsID_position, xsInteger(position));
-					xsVar(3) = xsNewHostObject(NULL);
-					xsSetHostData(xsVar(3), section);
-					xsSet(xsVar(2), xsID_section, xsVar(3));
+					value = xsToString(xsGet(xsVar(2), xsID_command));
+					c_strcpy(buffer, "app.do");
+					c_strcat(buffer, value);
+				
+					value = xsToString(xsGet(xsVar(2), xsID_title));	
+					item = g_menu_item_new(value, NULL);
+					g_menu_item_set_action_and_target_value(item, buffer, g_variant_new_int32(target));
 				}
 				else {
-					value = xsToString(xsGet(xsVar(2), xsID_title));	
-					item = g_menu_item_new(value, buffer);
+					action = g_simple_action_new(buffer, NULL);
+					g_action_map_add_action(G_ACTION_MAP(gtkApplication), G_ACTION(action));
+					g_signal_connect(G_OBJECT(action), "activate", G_CALLBACK(gtk_piu_application_command), self);
+					xsVar(3) = xsNewHostObject(NULL);
+					xsSetHostData(xsVar(3), action);
+					xsSet(xsVar(2), xsID_action, xsVar(3));
+					xsVar(3) = xsGet(xsVar(2), xsID_titles);
+				
+					value = xsToString(xsGet(xsVar(2), xsID_command));
+					c_strcpy(buffer, "app.do");
+					c_strcat(buffer, value);
+				
+					if (xsTest(xsVar(3))) {
+						xsVar(4) = xsGet(xsVar(2), xsID_state);
+						value = xsToString(xsGetAt(xsVar(3), xsVar(4)));
+						item = g_menu_item_new(value, buffer);
+						xsVar(3) = xsNewHostObject(NULL);
+						xsSetHostData(xsVar(3), item);
+						xsSet(xsVar(2), xsID_item, xsVar(3));
+						xsSet(xsVar(2), xsID_position, xsInteger(position));
+						xsVar(3) = xsNewHostObject(NULL);
+						xsSetHostData(xsVar(3), section);
+						xsSet(xsVar(2), xsID_section, xsVar(3));
+					}
+					else {
+						value = xsToString(xsGet(xsVar(2), xsID_title));	
+						item = g_menu_item_new(value, buffer);
+					}
 				}
+				
 				if (xsFindString(xsVar(2), xsID_key, &value)) {
 					char key = value[0];
 					if (('A' <= key) && (key <= 'Z')) {
@@ -316,9 +342,17 @@ void PiuApplication_updateMenus(xsMachine *the)
 					}
 					content = (PiuContent*)(*content)->container;
 				}
+				xsVar(3) = xsGet(xsVar(2), xsID_check);
+				if (xsTest(xsVar(3)))
+					result |= piuMenuChecked;
 				xsVar(3) = xsGet(xsVar(2), xsID_action);
 				GSimpleAction* action = xsGetHostData(xsVar(3));
 				g_simple_action_set_enabled(action, result & piuMenuEnabled ? TRUE : FALSE);
+				if (result & piuMenuChecked) {
+					xsIntegerValue target;
+					if (xsFindInteger(xsVar(2), xsID_value, &target))
+						g_simple_action_set_state(action, g_variant_new_int32(target));
+				}
 				xsVar(3) = xsGet(xsVar(2), xsID_titles);
 				if (xsTest(xsVar(3))) {
 					xsVar(4) = xsGet(xsVar(2), xsID_section);

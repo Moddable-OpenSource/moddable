@@ -441,6 +441,12 @@ struct sxMachine {
 	txSize floatingPointOps;
 	void (*onBreak)(txMachine*, txU1 stop);
 #endif
+#ifdef mxMetering
+	txBoolean (*meterCallback)(txMachine*, txU4);
+	txU4 meterCount;
+	txU4 meterIndex;
+	txU4 meterInterval;
+#endif
 #ifdef mxProfile
 	txString profileDirectory;
 	void* profileFile;
@@ -622,6 +628,7 @@ mxExport void fxShareMachine(txMachine* the);
 mxExport txMachine* fxBeginHost(txMachine*);
 mxExport void fxEndHost(txMachine*);
 mxExport void fxEndJob(txMachine* the);
+mxExport void fxExitToHost(txMachine*) XS_FUNCTION_NORETURN;
 
 mxExport void fxCollectGarbage(txMachine*);
 mxExport void fxEnableGarbageCollection(txMachine* the, txBoolean enableIt);
@@ -638,6 +645,13 @@ mxExport void* fxGetArchiveData(txMachine* the, txString path, txSize* size);
 mxExport void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
+
+#ifdef mxMetering
+mxExport void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), txU4 interval);
+mxExport void fxEndMetering(txMachine* the);
+mxExport void fxMeterHostFunction(txMachine* the, txU4 count);
+mxExport void fxPatchHostFunction(txMachine* the, txCallback patch);
+#endif
 
 /* xsmc.c */
 mxExport void _xsNewArray(txMachine *the, txSlot *res, txInteger length);
@@ -1093,7 +1107,7 @@ mxExport txBigInt* fxBigInt_rem(txMachine* the, txBigInt* r, txBigInt* a, txBigI
 mxExport txBigInt* fxBigInt_sub(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 mxExport txBigInt* fxBigInt_xor(txMachine* the, txBigInt* r, txBigInt* a, txBigInt* b);
 
-mxExport txBigInt *fxBigInt_alloc(txMachine* the, txU2 size);
+mxExport txBigInt *fxBigInt_alloc(txMachine* the, txU4 size);
 mxExport void fxBigInt_free(txMachine* the, txBigInt*);
 
 mxExport int fxBigInt_comp(txBigInt* a, txBigInt* b);
@@ -1886,6 +1900,7 @@ enum {
 	XS_DEAD_STRIP_EXIT,
 	XS_UNHANDLED_EXCEPTION_EXIT,
 	XS_NO_MORE_KEYS_EXIT,
+	XS_TOO_MUCH_COMPUTATION_EXIT,
 };
 
 #if mxBigEndian

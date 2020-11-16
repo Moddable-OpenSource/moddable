@@ -24,11 +24,11 @@
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\debug\mc\lib
+LIB_DIR = $(BUILD_DIR)\tmp\win\mc\debug\lib
 !ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\instrument\mc\lib
+LIB_DIR = $(BUILD_DIR)\tmp\win\mc\instrument\lib
 !ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\win\release\mc\lib
+LIB_DIR = $(BUILD_DIR)\tmp\win\mc\release\lib
 !ENDIF
 
 XS_DIRECTORIES = \

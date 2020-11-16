@@ -18,16 +18,16 @@
 #
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/mac/debug/mc/lib
+	LIB_DIR = $(BUILD_DIR)/tmp/mac/mc/debug/lib
 	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 else
 	START_XSBUG =
 	KILL_SERIAL2XSBUG =
 	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/mac/instrument/mc/lib
+		LIB_DIR = $(BUILD_DIR)/tmp/mac/mc/instrument/lib
 	else
-		LIB_DIR = $(BUILD_DIR)/tmp/mac/release/mc/lib
+		LIB_DIR = $(BUILD_DIR)/tmp/mac/mc/release/lib
 	endif
 endif
 
@@ -133,7 +133,7 @@ RLE4ENCODE = $(BUILD_DIR)/bin/mac/release/rle4encode
 WAV2MAUD = $(BUILD_DIR)/bin/mac/release/wav2maud
 XSC = $(BUILD_DIR)/bin/mac/release/xsc
 XSID = $(BUILD_DIR)/bin/mac/release/xsid
-XSL = $(BUILD_DIR)/bin/mac/release/xsl
+XSL = $(BUILD_DIR)/bin/mac/debug/xsl
 
 VPATH += $(XS_DIRECTORIES)
 

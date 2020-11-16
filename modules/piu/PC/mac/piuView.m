@@ -25,6 +25,7 @@
 @synthesize piuApplication;
 @synthesize shouldQuit;
 - (void)applicationWillFinishLaunching:(NSNotification *)notification {
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"NSFullScreenMenuItemEverywhere"];
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 }
@@ -473,7 +474,8 @@ void PiuViewCreate(xsMachine* the)
     if (![nsWindow setFrameUsingName:@"PiuWindow"])
         [nsWindow cascadeTopLeftFromPoint:NSMakePoint(20, 20)];
 	[nsWindow setFrameAutosaveName:@"PiuWindow"]; 
-
+	if ([nsWindow respondsToSelector:@selector(setTabbingMode:)])
+		[nsWindow setTabbingMode:NSWindowTabbingModeDisallowed];
 	if (xsFindResult(xsArg(1), xsID_window)) {
 		xsResult = xsGet(xsResult, xsID_title);
 		nsWindow.title = [NSString stringWithUTF8String:xsToString(xsResult)];
@@ -654,10 +656,10 @@ void PiuViewDrawStringSubPixel(PiuView* self, xsSlot* slot, xsIntegerValue offse
 		CFNumberRef underline = CFNumberCreate(NULL, kCFNumberSInt32Type, &underlineType);
 		CFAttributedStringSetAttribute(attributedString, range, kCTUnderlineStyleAttributeName, underline);
 	}
-  CTLineRef line = CTLineCreateWithAttributedString(attributedString);
-  CGContextSetTextPosition(context, x, y + (*font)->ascent);
-  CTLineDraw(line, context);
-  CFRelease(line);
+	CTLineRef line = CTLineCreateWithAttributedString(attributedString);
+	CGContextSetTextPosition(context, x, y + (*font)->ascent);
+	CTLineDraw(line, context);
+	CFRelease(line);
  	CFRelease(attributedString);
  	CFRelease(string);
 }
@@ -915,7 +917,7 @@ void PiuSystem_setClipboardString(xsMachine* the)
 void PiuSystem_launchPath(xsMachine* the)
 {
 	NSString* string = [NSString stringWithUTF8String:xsToString(xsArg(0))];
-	[[NSWorkspace sharedWorkspace] openFile:string];
+	[[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:string]];
 }
 
 void PiuSystem_launchURL(xsMachine* the)

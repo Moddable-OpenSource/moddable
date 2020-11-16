@@ -60,54 +60,16 @@
 			"include": "$(BUILD)/devices/qca4020/manifest.json"
 		},
 		"lin": {
-			"modules": {
-				"*": [
-					"$(BUILD)/simulator/screen",
-					"$(MODULES)/base/timer/timer",
-					"$(MODULES)/base/timer/lin/*"
-				]
-			}
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		},
 		"mac": {
-			"modules": {
-				"*": [
-					"$(BUILD)/simulator/screen",
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/mac/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mac/*"
-				]
-			},
-			"preload": [
-				"time",
-				"timer"
-			]
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		},
 		"win": {
-			"modules": {
-				"*": [
-					"$(BUILD)/simulator/screen",
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/win/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/win/*"
-				]
-			},
-			"preload": [
-				"time",
-				"timer"
-			]
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		},
 		"wasm": {
-			"modules": {
-				"*": [
-					"$(BUILD)/simulator/screen",
-					"$(MODULES)/base/timer/timer",
-					"$(MODULES)/base/timer/wasm/*"
-				]
-			},
-			"preload": [
-			]
+			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		}
 	}
 }

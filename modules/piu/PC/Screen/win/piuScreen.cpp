@@ -21,9 +21,10 @@
 #include "piuPC.h"
 #include "screen.h"
 
-#define WM_QUIT_MACHINE WM_USER
-#define WM_MESSAGE_TO_APPLICATION WM_USER + 1
-#define WM_MESSAGE_TO_HOST WM_USER + 2
+#define WM_ABORT_MACHINE WM_USER
+#define WM_QUIT_MACHINE WM_USER + 1
+#define WM_MESSAGE_TO_APPLICATION WM_USER + 2
+#define WM_MESSAGE_TO_HOST WM_USER + 3
 
 typedef struct PiuScreenStruct PiuScreenRecord, *PiuScreen;
 typedef struct PiuScreenMessageStruct PiuScreenMessageRecord, *PiuScreenMessage;
@@ -36,11 +37,15 @@ struct PiuScreenStruct {
 	HWND window;
 	HWND control;
     txScreen* screen;
-    HDC dc;
-    HBITMAP bitmap;
-    BITMAPINFO* bitmapInfo;
+    Bitmap* bitmap;
+//     HDC dc;
+//     HBITMAP bitmap;
+//     BITMAPINFO* bitmapInfo;
 	HMODULE library;
+	HANDLE archiveFile;
+	HANDLE archiveMapping;
 	PiuRectangleRecord hole;
+	xsIntegerValue rotation;
 };
 
 struct PiuScreenMessageStruct {
@@ -53,8 +58,9 @@ static PiuScreenMessage PiuScreenCreateMessage(PiuScreen* self, char* buffer, in
 static void PiuScreenDelete(void* it);
 static void PiuScreenDeleteMessage(PiuScreen* self, PiuScreenMessage message);
 static void PiuScreenDictionary(xsMachine* the, void* it);
-static void PiuScreenQuit(PiuScreen* self);
 static void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuScreenQuit(PiuScreen* self);
+static void PiuScreenRotatePoint(PiuScreen* self, PiuCoordinate x, PiuCoordinate y, PiuPoint result);
 static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view);
 
 static void fxScreenAbort(txScreen* screen);
@@ -76,22 +82,31 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		SetCapture(window);
 		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 		txScreen* screen = (*self)->screen;
-		if (screen && screen->touch) 
-			(*screen->touch)(screen, touchEventBeganKind, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		if (screen && screen->touch)  {
+			PiuPointRecord point;
+			PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
+			(*screen->touch)(screen, touchEventBeganKind, 0, point.x, point.y, 0);
+		}
 	} break;
 	case WM_LBUTTONUP: {
 		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 		txScreen* screen = (*self)->screen;
-		if (screen && screen->touch) 
-			(*screen->touch)(screen, touchEventEndedKind, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+		if (screen && screen->touch)  {
+			PiuPointRecord point;
+			PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
+			(*screen->touch)(screen, touchEventEndedKind, 0, point.x, point.y, 0);
+		}
 		ReleaseCapture();
 	} break;
 	case WM_MOUSEMOVE: {
         if (wParam & MK_LBUTTON) {
 			PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 			txScreen* screen = (*self)->screen;
-			if (screen && screen->touch) 
-				(*screen->touch)(screen, touchEventMovedKind, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), 0);
+			if (screen && screen->touch)  {
+				PiuPointRecord point;
+				PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
+				(*screen->touch)(screen, touchEventMovedKind, 0, point.x, point.y, 0);
+			}
 		}
 	} break;
 	case WM_ERASEBKGND: {
@@ -102,35 +117,16 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		txScreen* screen = (*self)->screen;
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(window, &ps);
-		HGDIOBJ object = SelectObject((*self)->dc, (*self)->bitmap);
-		SetDIBits((*self)->dc, (*self)->bitmap, 0, screen->height, screen->buffer, (*self)->bitmapInfo, DIB_RGB_COLORS);
-		if (PiuRectangleIsEmpty(&(*self)->hole)) {
-			BitBlt(hdc, 0, 0, screen->width, screen->height, (*self)->dc, 0, 0, SRCCOPY);
+		Graphics graphics(hdc);
+ 		if (!PiuRectangleIsEmpty(&(*self)->hole)) {
+ 			const Region region(Rect((*self)->hole.x, (*self)->hole.y, (*self)->hole.width, (*self)->hole.height));
+   			HRGN hRegion = region.GetHRGN(&graphics);
+ 			graphics.SetClip(hRegion, CombineModeExclude);
 		}
-		else {
-			PiuRectangleRecord s, r;
-			PiuRectangleSet(&s, 0, 0, screen->width, screen->height);
-			if (PiuRectangleIntersect(&r, &s, &(*self)->hole)) {
-				if (!PiuRectangleIsEqual(&r, &s)) {
-					if (r.x > 0) {
-						BitBlt(hdc, 0, 0, r.x, s.height, (*self)->dc, 0, 0, SRCCOPY);
-					}
-					if (r.y > 0) {
-						BitBlt(hdc, r.x, 0, r.width, r.y, (*self)->dc, r.x, 0, SRCCOPY);
-					}
-					if (r.y + r.height < s.height) {
-						BitBlt(hdc, r.x, r.y + r.height, r.width, s.height - (r.y + r.height), (*self)->dc, r.x, r.y + r.height, SRCCOPY);
-					}
-					if (r.x + r.width < s.width) {
-						BitBlt(hdc, r.x + r.width, 0, s.width - (r.x + r.width), s.height, (*self)->dc, r.x + r.width, 0, SRCCOPY);
-					}
-				}
-			}
-			else {
-				BitBlt(hdc, 0, 0, screen->width, screen->height, (*self)->dc, 0, 0, SRCCOPY);
-			}
-		}
-		SelectObject((*self)->dc, object);
+		graphics.TranslateTransform(((REAL)(*self)->bounds.width)/2.0, ((REAL)(*self)->bounds.height)/2.0);
+		graphics.RotateTransform((REAL)(*self)->rotation);
+		graphics.TranslateTransform(-((REAL)screen->width)/2.0, -((REAL)screen->height)/2.0);
+  		graphics.DrawImage((*self)->bitmap, PointF(0.0f, 0.0f));
 		EndPaint(window, &ps);
 		return TRUE;
 	} break;
@@ -139,6 +135,19 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		txScreen* screen = (*self)->screen;
 		if (screen && screen->idle) 
 			(*screen->idle)(screen);
+	} break;
+	case WM_ABORT_MACHINE: {
+		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
+		if ((*self)->behavior) {
+			xsBeginHost((*self)->the);
+			xsVars(3);
+			xsVar(0) = xsReference((*self)->behavior);
+			if (xsFindResult(xsVar(0), xsID_onAbort)) {
+				xsVar(1) = xsReference((*self)->reference);
+				(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+			}
+			xsEndHost((*self)->the);
+		}
 	} break;
 	case WM_QUIT_MACHINE: {
 		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
@@ -158,7 +167,7 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		PiuScreenMessage message = (PiuScreenMessage)lParam;
 		if ((*self)->behavior) {
 			xsBeginHost((*self)->the);
-			xsVars(2);
+			xsVars(3);
 			xsVar(0) = xsReference((*self)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onMessage)) {
 				xsVar(1) = xsReference((*self)->reference);
@@ -231,6 +240,11 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
 	
 	PiuDimension width = (*self)->coordinates.width;
 	PiuDimension height = (*self)->coordinates.height;
+	if (((*self)->rotation == 90) || ((*self)->rotation == 270)) {
+		PiuDimension tmp = width;
+		width = height;
+		height = tmp;
+	}
     txScreen* screen = (txScreen*)malloc(sizeof(txScreen) - 1 + (width * height * 4));
     memset(screen, 0, sizeof(txScreen) - 1 + (width * height * 4));
     screen->view = self;
@@ -245,19 +259,7 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     screen->height = height;
     (*self)->screen = screen;
     
-	HDC hdc = GetDC(NULL);
-	(*self)->dc = CreateCompatibleDC(hdc); 
-	(*self)->bitmap = CreateCompatibleBitmap(hdc, width, height);
-	(*self)->bitmapInfo = (BITMAPINFO*)calloc(1, sizeof(BITMAPINFO) + (2 * sizeof(RGBQUAD)));
-	(*self)->bitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	(*self)->bitmapInfo->bmiHeader.biWidth = width;
-	(*self)->bitmapInfo->bmiHeader.biHeight = -height;
-	(*self)->bitmapInfo->bmiHeader.biPlanes = 1;
-	(*self)->bitmapInfo->bmiHeader.biBitCount = 32;
-	(*self)->bitmapInfo->bmiHeader.biCompression = BI_BITFIELDS;
-	(*self)->bitmapInfo->bmiColors[0].rgbBlue = 0xFF;
-	(*self)->bitmapInfo->bmiColors[1].rgbGreen = 0xFF;
-	(*self)->bitmapInfo->bmiColors[2].rgbRed = 0xFF;
+    (*self)->bitmap = new Bitmap(width, height, 4 * width, PixelFormat32bppRGB, screen->buffer);
     
 	(*self)->window = CreateWindowEx(0, "PiuClipWindow", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE, 0, 0, 0, 0, (*view)->window, NULL, gInstance, (LPVOID)self);
 	(*self)->control = CreateWindowEx(0, "PiuScreenControl", NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, (*self)->window, NULL, gInstance, (LPVOID)self);
@@ -297,6 +299,33 @@ void PiuScreenDeleteMessage(PiuScreen* self, PiuScreenMessage message)
 
 void PiuScreenDictionary(xsMachine* the, void* it) 
 {
+	PiuScreen* self = (PiuScreen*)it;
+	xsIntegerValue integer;
+	if (xsFindInteger(xsArg(1), xsID_rotation, &integer)) {
+		(*self)->rotation = integer;
+	}
+}
+
+void PiuScreenRotatePoint(PiuScreen* self, PiuCoordinate x, PiuCoordinate y, PiuPoint result)
+{
+    switch ((*self)->rotation) {
+    case 0:
+    	result->x = x;
+		result->y = y;
+		break;
+    case 90:
+    	result->x = y;
+        result->y = (*self)->bounds.width - x;
+		break;
+    case 180:
+    	result->x = (*self)->bounds.width - x;
+        result->y = (*self)->bounds.height - y;
+		break;
+    case 270:
+    	result->x = (*self)->bounds.height - y;
+		result->y = x;;
+		break;
+    }
 }
 
 void PiuScreenMark(xsMachine* the, void* it, xsMarkRoot markRoot)
@@ -314,6 +343,18 @@ void PiuScreenQuit(PiuScreen* self)
 		free((void*)msg.lParam);
 	}		
 	KillTimer((*self)->control, 0);
+	if ((*self)->screen->archive) {
+		UnmapViewOfFile((*self)->screen->archive);
+		(*self)->screen->archive = NULL;
+	}
+	if ((*self)->archiveMapping) {
+		CloseHandle((*self)->archiveMapping);
+		(*self)->archiveMapping = INVALID_HANDLE_VALUE;
+	}
+	if ((*self)->archiveFile) {
+		CloseHandle((*self)->archiveFile);
+		(*self)->archiveFile = INVALID_HANDLE_VALUE;
+	}
 	if ((*self)->library) {
 		FreeLibrary((*self)->library);
 		(*self)->library = NULL;
@@ -330,12 +371,8 @@ void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 	(*self)->control = NULL;
 	(*self)->window = NULL;
 	
-	free((*self)->bitmapInfo);
-	(*self)->bitmapInfo = NULL;
-	DeleteObject((*self)->bitmap);
+	delete (*self)->bitmap;
 	(*self)->bitmap = NULL;
-	DeleteObject((*self)->dc);
-	(*self)->dc = NULL;
 	mxDeleteMutex(&screen->workersMutex);
 	free(screen);
 	(*self)->screen = NULL;
@@ -387,6 +424,12 @@ void PiuScreen_set_hole(xsMachine* the)
 	PiuContentInvalidate(self, NULL);
 }
 
+void PiuScreen_get_pixelFormat(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsInteger((*self)->screen->pixelFormat);
+}
+
 void PiuScreen_get_running(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
@@ -396,23 +439,54 @@ void PiuScreen_get_running(xsMachine* the)
 void PiuScreen_launch(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
-	wchar_t* path = NULL;
+	wchar_t* libraryPath = NULL;
+	wchar_t* archivePath = NULL;
 	HMODULE library = NULL;
 	txScreenLaunchProc launch;
+	HANDLE archiveFile = INVALID_HANDLE_VALUE;
+	SIZE_T size;
+	HANDLE archiveMapping = INVALID_HANDLE_VALUE;
+	void* archive = NULL;
 	xsTry {
-		path = xsToStringCopyW(xsArg(0));
-		library = LoadLibraryW(path);
+		libraryPath = xsToStringCopyW(xsArg(0));
+		if (xsToInteger(xsArgc) > 1)
+			archivePath = xsToStringCopyW(xsArg(1));
+		library = LoadLibraryW(libraryPath);
 		xsElseThrow(library != NULL);
 		launch = (txScreenLaunchProc)GetProcAddress(library, "fxScreenLaunch");
 		xsElseThrow(launch != NULL);
+		if (archivePath) {
+			archiveFile = CreateFileW(archivePath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			xsElseThrow(archiveFile != INVALID_HANDLE_VALUE);
+			size = GetFileSize(archiveFile, &size);
+			xsElseThrow(size != INVALID_FILE_SIZE);
+			archiveMapping = CreateFileMapping(archiveFile, NULL, PAGE_READWRITE, 0, (SIZE_T)size, NULL);
+			xsElseThrow(archiveMapping != INVALID_HANDLE_VALUE);
+			archive = MapViewOfFile(archiveMapping, FILE_MAP_WRITE, 0, 0, (SIZE_T)size);
+			xsElseThrow(archive != NULL);
+		}
 		(*self)->library = library;
+		(*self)->archiveFile = archiveFile;
+		(*self)->archiveMapping = archiveMapping;
+		(*self)->screen->archive = archive;
 		(*launch)((*self)->screen);
+		if (archivePath)
+			free(archivePath);
+		free(libraryPath);
 	}
 	xsCatch {
+		if (archive)
+			UnmapViewOfFile(archive);
+		if (archiveMapping)
+			CloseHandle(archiveMapping);
+		if (archiveFile)
+			CloseHandle(archiveFile);
 		if (library != NULL)
 			FreeLibrary(library);
-		if (path != NULL)
-			free(path);
+		if (archivePath != NULL)
+			free(archivePath);
+		if (libraryPath != NULL)
+			free(libraryPath);
 		xsThrow(xsException);
 	}
 }
@@ -442,7 +516,7 @@ void PiuScreen_quit(xsMachine* the)
 void fxScreenAbort(txScreen* screen)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;
-	PostMessage((*self)->control, WM_QUIT_MACHINE, 0, 0);
+	PostMessage((*self)->control, WM_ABORT_MACHINE, 0, 0);
 }
 
 void fxScreenBufferChanged(txScreen* screen)
@@ -453,6 +527,18 @@ void fxScreenBufferChanged(txScreen* screen)
 
 void fxScreenFormatChanged(txScreen* screen)
 {
+	PiuScreen* self = (PiuScreen*)screen->view;
+	if (self && (*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(3);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onPixelFormatChanged)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(screen->pixelFormat);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+		}
+		xsEndHost((*self)->the);
+	}
 }
 
 void fxScreenPost(txScreen* screen, char* buffer, int size)

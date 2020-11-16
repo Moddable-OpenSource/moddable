@@ -119,6 +119,10 @@ CFEGlyph CFEGetGlyphFromGlyphID(CommodettoFontEngine tf, uint16_t glyphID, uint8
 
 	glyphID -= tf->firstChar;
 
+	glyph->dx = c_read8(tf->widthOffsetTable + (glyphID << 1) + 0);
+	if (glyph->dx & 0x80)
+		glyph->dx = -128 + (glyph->dx & 0x7f);
+
 	glyph->advance = c_read8(tf->widthOffsetTable + (glyphID << 1) + 1);
 	if (glyph->advance & 0x80)
 		glyph->advance = -128 + (glyph->advance & 0x7f);

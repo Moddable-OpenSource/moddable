@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,6 +20,7 @@
 
 #include "modSPI.h"
 #include "spi_register.h"
+#include "eagle_soc.h"        // CLEAR_PERI_REG_MASK, SET_PERI_REG_MASK
 
 #include <ets_sys.h>
 #include "string.h"
@@ -55,6 +56,7 @@ static uint8_t modSpiLoadBufferAsIs(uint8_t *data, uint8_t bytes);
 static uint32_t frequencyToSPIClock(uint32_t freq);
 
 static void spiTxInterrupt(void *refcon);
+static void modSPISetMode(uint8_t mode);
 
 static modSPIConfiguration gConfig;
 static uint8_t *gSPIData;
@@ -95,6 +97,8 @@ void modSPIInit(modSPIConfiguration config)
 	}
 	else
 		config->reserved = frequencyToSPIClock(config->hz);
+	
+	modSPISetMode(config->mode);
 }
 
 void modSPIUninit(modSPIConfiguration config)
@@ -129,6 +133,9 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 
 		(gConfig->doChipSelect)(1, gConfig);
 	}
+	
+	if (config)
+		modSPISetMode(config->mode);
 }
 
 // data must be long aligned
@@ -635,4 +642,28 @@ void ICACHE_RAM_ATTR spiTxInterrupt(void *refcon)
 	else
 	if (READ_PERI_REG(0x3ff00020) & BIT9)	// i2s isr
 		;
+}
+
+
+void modSPISetMode(uint8_t mode)
+{
+	switch (mode) {
+		case 3:
+			CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_CK_OUT_EDGE);
+			SET_PERI_REG_MASK(SPI_PIN(HSPI), SPI_IDLE_EDGE);      // CPOL = 1, CPHA = 1
+			break;
+		case 2:
+			SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_CK_OUT_EDGE);
+			SET_PERI_REG_MASK(SPI_PIN(HSPI), SPI_IDLE_EDGE);      // CPOL = 1, CPHA = 0
+			break;
+		case 1:
+			SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_CK_OUT_EDGE);
+			CLEAR_PERI_REG_MASK(SPI_PIN(HSPI), SPI_IDLE_EDGE);    // CPOL = 0, CPHA = 1
+			break;
+		case 0:
+		default:
+			CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_CK_OUT_EDGE);
+			CLEAR_PERI_REG_MASK(SPI_PIN(HSPI), SPI_IDLE_EDGE);    // CPOL = 0, CPHA = 0
+			break;
+	}
 }

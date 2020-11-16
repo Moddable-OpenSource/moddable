@@ -33,18 +33,19 @@ export class DeviceBehavior extends Behavior {
 		if (container.application)
 			this.onConfigure(container);
 	}
-	onMessage(container, buffer) {
+	onJSON(container, json) {
 	}
-	postMessage(container, buffer) {
-		container.first.postMessage(buffer);
+	onMessage(container, message) {
+		trace.right(message, "sim");
+		this.onJSON(container, JSON.parse(message));
 	}
-	traceInput(message, buffer, state = 0) {
-		let messagesPane = model.MESSAGES;
-		messagesPane.behavior.input(messagesPane, message, buffer, state);
+	postJSON(container, json) {
+		const message = JSON.stringify(json);
+		trace.left(message, "sim");
+		this.postMessage(container, message);
 	}
-	traceOutput(message, buffer, state = 0) {
-		let messagesPane = model.MESSAGES;
-		messagesPane.behavior.output(messagesPane, message, buffer, state);
+	postMessage(container, message) {
+		model.SCREEN.postMessage(message);
 	}
 }
 
@@ -56,17 +57,24 @@ export class DeviceWorker extends ScreenWorker {
 	}
 	onDelete(screen, device) {
 	}
-	traceInput(message, buffer, state = 0) {
-		let messagesPane = model.MESSAGES;
-		messagesPane.behavior.input(messagesPane, message, buffer, state);
+	traceInput(message, buffer, conversation) {
+		if (message)
+			trace.right(JSON.stringify(message), conversation);
+		if (buffer)
+			trace.right(buffer, conversation);
 	}
-	traceOutput(message, buffer, state = 0) {
-		let messagesPane = model.MESSAGES;
-		messagesPane.behavior.output(messagesPane, message, buffer, state);
+	traceOutput(message, buffer, conversation) {
+		if (message)
+			trace.left(JSON.stringify(message), conversation);
+		if (buffer)
+			trace.left(buffer, conversation);
 	}
 }
 
 class DeviceScreenBehavior extends Behavior {
+	onAbort(screen) {
+		screen.container.bubble("onAbort");
+	}
 	onCreate(screen, device) {
 		model.SCREEN = screen;
 		this.device = device;
@@ -92,6 +100,9 @@ class DeviceScreenBehavior extends Behavior {
 	}
 	onMessage(screen, message, id) {
 		screen.container.bubble("onMessage", message);
+	}
+	onPixelFormatChanged(screen, pixelFormat) {
+		application.distribute("onInfoChanged");
 	}
 }
 

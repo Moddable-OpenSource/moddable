@@ -104,8 +104,9 @@ export class BLEClient @ "xs_ble_client_destructor" {
 			}
 			case "onConnected": {
 				const address = new Bytes(params.address);
+				const bonded = params.bonded;
 				const ble = this;
-				const client = new Client({ address, connection:params.connection, ble });
+				const client = new Client({ address, connection:params.connection, ble, bonded });
 				const connection = new Connection({ address, client, ble });
 				this.onConnected(client);
 				break;
@@ -123,7 +124,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				return this.onPasskeyRequested({ address:new Bytes(params.address) });
 				break;
 			case "onAuthenticated":
-				return this.onAuthenticated();
+				this.onAuthenticated({ bonded:params.bonded });
 				break;
 		}
 	}
