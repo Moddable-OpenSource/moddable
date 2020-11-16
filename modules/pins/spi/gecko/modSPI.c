@@ -191,6 +191,8 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 	if (gConfig) {
 //		USART1->CLKDIV = config->clkdiv;
 		USART_BaudrateSyncSet(SPI_USART, 0, config->hz);
+		// @@ if there is more than one SPI device and they don't all use the same mode,
+		//	the mode needs to be updated here (clockMode bits in usart->CTRL)
 		(gConfig->doChipSelect)(1, gConfig);
 	}
 }
