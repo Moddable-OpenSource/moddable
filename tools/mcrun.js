@@ -415,11 +415,11 @@ export default class extends Tool {
 		this.dataPath = this.modulesPath = this.resourcesPath = path;
 		this.createDirectory(path);
 		for (var folder of this.dataFolders)
-			this.createDirectory(path + this.slash + folder);
+			this.createFolder(path, folder);
 		for (var folder of this.jsFolders)
-			this.createDirectory(path + this.slash + folder);
+			this.createFolder(path, folder);
 		for (var folder of this.resourcesFolders)
-			this.createDirectory(path + this.slash + folder);
+			this.createFolder(path, folder);
 		
 		var file;
 		if (this.format) {

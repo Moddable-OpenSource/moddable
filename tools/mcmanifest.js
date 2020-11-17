@@ -1426,6 +1426,13 @@ export class Tool extends TOOL {
 			return array.concat(value);
 		return array;
 	}
+	createFolder(path, folder) {
+		const names = folder.split("/");
+		for (let name of names) {
+			path += this.slash + name;
+			this.createDirectory(path)
+		}
+	}
 	includeManifest(name) {
 		var currentDirectory = this.currentDirectory;
 		var path = this.resolveFilePath(name);
