@@ -1,14 +1,4 @@
 {
-	"config": {
-		"wifi2": {
-			"ssid": "rhys",
-			"password": "jeered3242"
-		},
-		"wifi": {
-			"ssid": "Guess",
-			"password": "Guest-963"
-		},
-	}
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",		
 		"$(MODULES)/pins/i2c/manifest.json"
