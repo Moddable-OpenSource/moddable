@@ -25,6 +25,8 @@ UPLOAD_PORT ?= /dev/ttyUSB0
 endif
 URL ?= "~"
 
+DEBUGGER_SPEED ?= 460800
+
 ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 else
@@ -71,11 +73,11 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
 	$(START_XSBUG)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 	
 release: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 460800 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 debugURL: $(ARCHIVE)
 	@echo "# curl "$(NAME)".xsa "$(URL)
