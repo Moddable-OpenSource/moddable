@@ -58,10 +58,11 @@ class DragBehavior extends Behavior {
 let DragApplication = Application.template($ => ({
 	skin:desktopSkin, style:buttonStyle,
 	Behavior: class extends Behavior {
-		onCreate(applicaton) {
-			this.mouse = new Mouse;
+		onCreate(applicaton, data) {
+			this.data = data;
+			this.mouse = new Mouse(this.data);
 		}
-		onMouseConnected(application) {
+		onMouseReady(application) {
 			this.draggers = application.first.first;
 			this.pointer = application.last;
 			this.pointer.position = {
@@ -136,4 +137,4 @@ let DragApplication = Application.template($ => ({
 	]
 }));
 
-export default new DragApplication(null, { commandListLength:4096, displayListLength:4096 });
+export default new DragApplication({ bonding:false }, { commandListLength:4096, displayListLength:4096 });

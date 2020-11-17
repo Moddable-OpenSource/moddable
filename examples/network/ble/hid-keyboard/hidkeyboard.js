@@ -57,9 +57,9 @@ const ShiftCodes30 = [33,64,35,36,37,94,38,42,40],					// shifted key codes 30 -
 const NumLockCodes89 = [49,50,51,52,53,54,55,56,57,48,46];			// num lock key codes 89 - 99
 
 class BLEHIDKeyboard extends BLEHIDClient {
-	constructor() {
+	constructor(dictionary = { bonding:false }) {
 		super();
-		this.configure({ usageID: UsageID.KEYBOARD, reportTypes:[ReportType.INPUT, ReportType.OUTPUT] });
+		this.configure({ usageID: UsageID.KEYBOARD, reportTypes:[ReportType.INPUT, ReportType.OUTPUT], bonding:dictionary.bonding });
 		this.onDeviceDisconnected();
 	}
 	onCharacteristicNotification(characteristic, value) {
