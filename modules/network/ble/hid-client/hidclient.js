@@ -146,7 +146,7 @@ class BLEHIDClient extends BLEClient {
 			delete this.timer;
 		}
 		if (!this.bonded) {
-			this.onDeviceConnected();
+			this.onDeviceConnected(device);
 			this.device.discoverPrimaryService(this.HID_SERVICE_UUID);
 		}
 	}
@@ -160,7 +160,7 @@ class BLEHIDClient extends BLEClient {
 		if (this.bonded && params.bonded) {
 			this.device.services = this.bonded.device.services;
 			this.bonded.reports.forEach(report => report.characteristic.connection = this.device.connection);
-			this.onDeviceConnected();
+			this.onDeviceConnected(this.device);
 			this.onDeviceReports(this.bonded.reports);
 			this.onDeviceReady();
 		}
@@ -308,22 +308,35 @@ class Bonded {
 	}
 	static remove(usageID) {
 		Preference.delete(Bonded.PREFERENCE_DOMAIN, Bonded.key(usageID));
+		// @@ TBD: remove bond stored by native ble stack
 	}
 	static key(usageID) {
 		switch(usageID) {
+			case UsageID.POINTER:
+				return Bonded.PREFERENCE_KEY_POINTER;
 			case UsageID.MOUSE:
 				return Bonded.PREFERENCE_KEY_MOUSE;
+			case UsageID.JOYSTICK:
+				return Bonded.PREFERENCE_KEY_JOYSTICK;
+			case UsageID.GAMEPAD:
+				return Bonded.PREFERENCE_KEY_GAMEPAD;
 			case UsageID.KEYBOARD:
 				return Bonded.PREFERENCE_KEY_KEYBOARD;
+			case UsageID.KEYPAD:
+				return Bonded.PREFERENCE_KEY_KEYPAD;
 			default:
 				throw new Error("unsupported usage id");
 		}
 	}
 }
-Bonded.PREFERENCE_KEY_MOUSE = "mous";
-Bonded.PREFERENCE_KEY_KEYBOARD = "keyb";
 Bonded.PREFERENCE_DOMAIN = "hid";
+Bonded.PREFERENCE_KEY_POINTER = "poin";
+Bonded.PREFERENCE_KEY_MOUSE = "mous";
+Bonded.PREFERENCE_KEY_JOYSTICK = "joys";
+Bonded.PREFERENCE_KEY_GAMEPAD = "gamp";
+Bonded.PREFERENCE_KEY_KEYBOARD = "keyb";
+Bonded.PREFERENCE_KEY_KEYPAD = "keyp";
 Object.freeze(Bonded);
 
-export {BLEHIDClient as default, BLEHIDClient, ReportType, UsageID};
+export {BLEHIDClient as default, Bonded, BLEHIDClient, ReportType, UsageID};
 

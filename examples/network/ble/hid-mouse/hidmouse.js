@@ -37,7 +37,7 @@ class BLEHIDMouse extends BLEHIDClient {
 	onDeviceDisconnected() {
 		this.buttons = 0;
 	}
-	onDeviceConnected() {
+	onDeviceConnected(device) {
 		trace("Pairing mouse...\n");
 	}
 	onDeviceReady() {
