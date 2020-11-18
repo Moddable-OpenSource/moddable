@@ -52,6 +52,7 @@ export default class Poco @ "xs_poco_destructor" {
 					pixelsOut.frameBuffer,
 					pixelsOut.clut);
 	}
+	close() @ "xs_poco_close"
 	begin(x, y, width, height) @ "xs_poco_begin"
 	end() @ "xs_poco_end"
 	continue(x, y, w, h) {

@@ -473,6 +473,12 @@ let poco = new Poco(screen, {displayListLength: 4096});
 
 ***
 
+#### `close()`
+
+Frees all memory allocated by Poco. No other functions on the instance may be called after calling `close`.
+
+***
+
 #### `clip(x, y, width, height)`
 
 Poco maintains a clip rectangle that is applied to all drawing operations.
@@ -1061,7 +1067,7 @@ typedef void (*PocoRenderExternal)(Poco poco, uint8_t *data,
 
 `PocoDrawExternal` installs a custom rendering element into the current Poco display list. The `data` argument points to a block of data of `dataSize` bytes in length that describes the drawing operation. This data is copied into the Poco display list, and so should be as compact as possible. The bounds of the drawing operation are defined by the `x`, `y`, `w`, and `h` arguments. The `doDrawExternal` callback function is called to render the custom element, one or more scanlines at a time.
 
-Poco dos not perform clipping or rotation on the rendering operation. These must be applied by the code that creates the rendering data and/or the rendering callback function.
+Poco does not perform clipping or rotation on the rendering operation. These must be applied by the code that creates the rendering data and/or the rendering callback function.
 
 > **Note**: Implementing custom rendering elements is an advanced technique that requires familiarity with the implementation of the Poco rendering engine.
 

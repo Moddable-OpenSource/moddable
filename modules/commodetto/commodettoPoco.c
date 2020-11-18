@@ -115,6 +115,12 @@ void xs_poco_build(xsMachine *the)
 		gCFE = CFENew();
 }
 
+void xs_poco_close(xsMachine *the)
+{
+	xs_poco_destructor(xsmcGetHostData(xsThis));
+	xsmcSetHostData(xsThis, NULL);
+}
+
 void xs_poco_begin(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
