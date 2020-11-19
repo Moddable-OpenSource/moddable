@@ -1,0 +1,21 @@
+{
+	"config": {
+		"format": "Gray256"
+	},
+	"modules": {
+		"*": [
+			"../modules/control",
+			"../modules/button",
+			"../modules/jogdial",
+			"../modules/led",
+			"./host"
+		]
+	},
+	"preload": [
+		"control",
+		"button",
+		"jogdial",
+		"led",
+		"host"
+	]
+}
