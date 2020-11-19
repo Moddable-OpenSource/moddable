@@ -200,7 +200,7 @@ class Clock {
 
 		this.wifiScans = 0;
 		this.connecting = 0;
-		this.usingAP = undefined;
+		this.usingAP = false;
 
 		this.selectionBarSelected = 0;
 
@@ -215,7 +215,7 @@ class Clock {
 			else
 				this.display.value("scan").blink();
 			Timer.set(id => { this.checkConnected(); }, SCAN_TIME);		// wait ten seconds before falling back to AP
-			this.doWiFiScan(this.prefs.ssid);
+			this.doWiFiScan();
 		}
 
 /*
@@ -255,8 +255,8 @@ trace(`uiState: SHOW_TIME\n`);
 	get currentStyle() { return this._style; }
 	set currentStyle(v) { this._style = v; this.display.style = v; return v; }
 
-	doWiFiScan(ssid="") {
-		WiFi.scan({prefs:this.prefs}, item => {
+	doWiFiScan() {
+		WiFi.scan({}, item => {
 			if (item) {
 				let theap = accessPointList.find(x => x.ssid === item.ssid);
 				if (undefined === theap)
@@ -281,7 +281,7 @@ trace(`uiState: SHOW_TIME\n`);
 					this.checkConnected();
 				}
 				else
-					this.doWiFiScan(this.prefs.ssid);
+					this.doWiFiScan();
 			}
 		}
 	}
@@ -297,12 +297,17 @@ trace(`uiState: SHOW_TIME\n`);
 		else
 			this.display.value("conn").blink();
 		this.connecting++;
+        this.connectionWasEstablished = 0;
 
 		trace(`Starting WiFi to connect to <${ssid}>...\n`);
-		
-		let tries = 0;
 
-		this.myWiFi = new WiFi({ssid, password}, msg => {
+        WiFi.connect({ssid, password});
+        if (this.myWiFi)
+            return;
+
+		this.myWiFi = new WiFi;
+        this.myWiFi.onNotify = msg => {
+            trace(`Wi-Fi msg: ${msg}.\n`);
 			switch (msg) {
 				case WiFi.gotIP:
 					if (!this.connectionWasEstablished) {
@@ -310,48 +315,32 @@ trace(`uiState: SHOW_TIME\n`);
 						this.connected();
 					}
 					break;
-				case "disconnect":
-//					if (undefined === WiFi.status) {
+				case WiFi.disconnected:
+                    this.unconfigServer();
+                    this.connecting = 0;
 
-					if (this.connecting) {
+                    if (this.connecting) {
 						resetRebootTimer();
 						this.display.value("fail").blink();
-/*
-						if (this.connecting < 2) {
-							this.myWiFi.close();
-							this.myWiFi = undefined;
-							this.connect(ssid, password);
-						}
-						else {
-*/
-							this.connecting = 0;
-//							this.checkConnected();
-							this.configAP(ap_name, AP_PASSWORD);
-//						}
+
+                        this.configAP(ap_name, AP_PASSWORD);
 					}
-/*
-					else {		// do we get here?
-							this.connecting = 0;
-							this.display.value("fa-x").blink();
-							if (tries >= 1) {
-								this.myWiFi.close();
-								this.myWiFi = undefined;
-								if (this.connectionWasEstablished) {
-									this.connectionWasEstablished = 0;
-									trace("WiFi disconnected - try to reconnect\n");
-									this.connect(ssid, password);
-								}
-								else {
-									trace("WiFi never established - ask for SSID\n");
-									this.configAP(ap_name, AP_PASSWORD);
-								}
-							}
+					else {
+                        this.display.value("fa-x").blink();
+
+                        if (this.connectionWasEstablished) {
+                            trace("WiFi disconnected - try to reconnect\n");
+                            this.connect(ssid, password);
+                        }
+                        else {
+                            trace("WiFi never established - ask for SSID\n");
+                            this.configAP(ap_name, AP_PASSWORD);
+                        }
 					}
-*/
 					break;
 			}
-		});
-	}
+		}
+    }
 
 	connected() {
 		this.connecting = 0;
@@ -367,11 +356,11 @@ trace(`uiState: SHOW_TIME\n`);
 	}
 
 	checkConnected() {
-		if (this.connectionWasEstablished || this.connecting || (undefined !== this.usingAP))
+		if (this.connectionWasEstablished || this.connecting || !this.usingAP)
 			return;
 		if (this.wifiScans++ < MAX_WIFI_SCANS) {
 			Timer.set(id => { this.checkConnected(); }, SCAN_TIME);		// wait ten seconds before falling back to AP
-			this.doWiFiScan(this.prefs.ssid);
+			this.doWiFiScan();
 			return;
 		}
 		if (undefined !== this.myWiFi) {
@@ -388,8 +377,8 @@ trace(`uiState: SHOW_TIME\n`);
 
 		this.mdns = new MDNS({hostName: name, prefs: this.prefs}, function(message, value) {
 			if (1 === message) {
-				if ('' != value) {
-					if (value != clock.prefs.name) {
+				if ('' !== value) {
+					if (value !== clock.prefs.name) {
 						clock.prefs.name = value;
 					}
 				}
@@ -710,6 +699,13 @@ trace(`uiState: SHOW_TIME\n`);
 		trace(`clock's http server ready at ${Net.get("IP")}\n`);
 		this.advertiseServer();
 	}
+    unconfigServer() {
+            this.uiServer?.close();
+            delete this.uiServer;
+        
+            this.mdns?.close();
+            delete this.mdns;
+    }
 
 	configAP(ssid, password) {
 trace(`Configure access point ${ssid}\n`);
@@ -731,12 +727,28 @@ trace(` ap - ${clockAP.ssid} found iterating\n`);
 			this.myWiFi.close();
 			this.myWiFi = undefined;
 		}
-		this.AP = WiFi.accessPoint({ ssid:ap_name, password });
+		this.AP = WiFi.accessPoint({ ssid:ap_name, password, station: true });
 
 //        this.fetchTime();
 
 		this.configServer();
+        
+        if (this.prefs.ssid)
+            Timer.set(() => this.apScan(), 60_000 * 2);     // if SSID is stored, wait minutes then start scanning for it
 	}
+    apScan() {
+        WiFi.scan({}, item => {
+            if (!item) {
+                Timer.set(() => this.apScan(), 60_000);
+                return;
+            }
+
+            if (item.ssid !== this.prefs.ssid)
+                return;
+
+            doRestart(this);        // when the stored SSID appears, restart to try re-connecting
+        });
+    }
 
 	setupRtc() {
 		if (this.prefs.pin == 22 || this.prefs.pin == 21)
