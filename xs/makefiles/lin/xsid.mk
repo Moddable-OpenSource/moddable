@@ -53,7 +53,7 @@ else
 	C_OPTIONS += -O3
 endif
 
-LIBRARIES = -lm -ldl
+LIBRARIES = -lm -ldl -latomic
 
 LINK_OPTIONS = -rdynamic
 
