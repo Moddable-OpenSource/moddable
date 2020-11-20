@@ -19,10 +19,15 @@
 
 HOST_OS := $(shell uname)
 ifeq ($(HOST_OS),Darwin)
-UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
+	ifeq ($(findstring _11.,_$(shell sw_vers -productVersion)),_11.)
+		UPLOAD_PORT ?= /dev/cu.usbserial-0001
+	else
+		UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
+	endif
 else
-UPLOAD_PORT ?= /dev/ttyUSB0
+	UPLOAD_PORT ?= /dev/ttyUSB0
 endif
+
 URL ?= "~"
 
 DEBUGGER_SPEED ?= 921600
