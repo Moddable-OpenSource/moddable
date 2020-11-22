@@ -179,7 +179,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 					&& ((*font)->size == (*self)->size)
 					&& ((*font)->weight == (*self)->weight)
 					&& ((*font)->flags == ((*self)->flags & piuStyleBits))) {
-				fprintf(stderr, "CACHE\n");
+//				fprintf(stderr, "CACHE\n");
 				(*self)->font = font;
 				return;
 			}
@@ -228,7 +228,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 	font = PIU(Font, xsResult);
 #if MODDEF_CFE_TTF
 	c_strcat(path, ".ttf");
-	fprintf(stderr, "%s %d %d %d\n", path, (*self)->size, (*self)->weight, (*self)->flags & piuStyleBits);
+//	fprintf(stderr, "%s %d %d %d\n", path, (*self)->size, (*self)->weight, (*self)->flags & piuStyleBits);
 	buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
 	if (!buffer)
 		xsURIError("font not found: %s", path);
