@@ -23,6 +23,7 @@
 */
 
 import RTC from "rtc";
+import I2C from "pins/i2c";
 
 const RV3028_ADDR = 0x52;
 
@@ -83,7 +84,12 @@ class RV3028 extends RTC {
 		c = (c & 0xfe) | (0 == e);		// set last bit to 1 to note disabled
 		super.writeByte(RV3028_STATUS, c);
 	}
-
+	static probe() {
+		const i = new I2C({address: RV3028_ADDR, throw: false});
+		const result = i.read(1);
+		i.close();
+		return undefined !== result;
+	}
 }
 Object.freeze(RV3028.prototype);
 
