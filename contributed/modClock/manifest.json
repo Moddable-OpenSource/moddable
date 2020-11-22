@@ -27,7 +27,8 @@
 			"$(MODULES)/network/http/*",
 			"./web",
 			"./update",
-			"./prefs"
+			"./prefs",
+			"$(MODDABLE)/examples/network/wifi/wifiscancontinuous/wifiscanner"
 		],
 		"net":"$(MODULES)/network/net/netmdns",
 		"dns/server":"$(MODULES)/network/dns/dnsserver",
@@ -46,7 +47,8 @@
 		"update",
 		"prefs",
 		"dns/server",
-		"esp32/ota"
+		"esp32/ota",
+		"wifiscanner"
 	],
 	"resources": {
 		"*": [
