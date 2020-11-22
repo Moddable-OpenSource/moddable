@@ -19,13 +19,13 @@ WiFi.mode = 1;
 
 trace("Scan start\n");
 new Scanner({
-	onFound(target, ap) {
+	onFound(ap) {
 		if (!ap.ssid)
 			return false;
 
 		trace(`+ ${ap.ssid}\n`);
 	},
-	onLost(target, ssid) {
+	onLost(ssid) {
 		trace(`- ${ssid}\n`);
 	},
 	max: 64,
