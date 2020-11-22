@@ -64,14 +64,6 @@ const PiuStyleBuilderRecord ICACHE_FLASH_ATTR piuStyleSizeBuilders[] = {
 };
 
 
-static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
-
-static const xsHostHooks PiuFontListHooks ICACHE_RODATA_ATTR = {
-	NULL,
-	PiuFontListMark,
-	NULL
-};
-
 static void PiuStyleLinkMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static const xsHostHooks PiuStyleLinkHooks ICACHE_RODATA_ATTR = {
@@ -87,22 +79,6 @@ static const xsHostHooks PiuStyleHooks ICACHE_RODATA_ATTR = {
 	PiuStyleMark,
 	NULL
 };
-
-void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot)
-{
-	PiuFontList self = it;
-	PiuMarkHandle(the, self->first);
-}
-
-void PiuFontListNew(xsMachine* the)
-{
-	PiuFontList* self;
-	xsResult = xsNewHostObject(NULL);
-	xsSetHostChunk(xsResult, NULL, sizeof(PiuFontListRecord));
-	self = PIU(FontList, xsResult);
-	(*self)->reference = xsToReference(xsResult);
-	xsSetHostHooks(xsResult, &PiuFontListHooks);
-}
 
 PiuStyle* PiuStyleLinkCompute(xsMachine *the, PiuStyleLink* chain, PiuApplication* application)
 {
