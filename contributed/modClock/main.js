@@ -683,11 +683,10 @@ trace(` ap - ${clockAP.ssid} found iterating\n`);
 		if (!this.rtc.valid)
 			this.display.value(disp).blink();
 
-		if (undefined !== this.myWiFi) {
-			this.myWiFi.close();
-			this.myWiFi = undefined;
-		}
-		this.AP = WiFi.accessPoint({ ssid:ap_name, password, station: true });
+        this.myWiFi?.close();
+		delete this.myWiFi;
+
+        this.AP = WiFi.accessPoint({ ssid:ap_name, password, station: true });
 
 		this.configServer();
 		this.doWiFiScan();
