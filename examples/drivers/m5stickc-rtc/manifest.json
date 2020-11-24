@@ -1,6 +1,7 @@
 {
 	"config": {
-		"rotation": 90
+		"rotation": 90,
+		"sntp": "pool.ntp.org"
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
