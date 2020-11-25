@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,8 +18,17 @@
  *
  */
 
-export default class Resource @ "Resource_destructor" {
-     constructor(path) @ "Resource_constructor";
-     static exists(path) @ "Resource_exists";
-     slice(begin, end) @ "Resource_slice";
+import Resource from "Resource";
+
+function index(i) @ "Resource_index";
+
+Resource[Symbol.iterator] = function() {
+	return {
+		i: 0,
+		next() {
+			const result = {value: index(this.i++)};
+			result.done = undefined === result.value;
+			return result;
+		}
+	};
 }

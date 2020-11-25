@@ -1,0 +1,12 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/files/resource/*",
+			"./ResourceIterator"
+		]
+	},
+	"preload": [
+		"Resource",
+		"ResourceIterator"
+	]
+}
