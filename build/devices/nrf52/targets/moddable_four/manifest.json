@@ -64,6 +64,8 @@
 			"width": 128,
 			"height": 128,
 			"spi_port": 1,
+			"hz": 4000000,
+			"clearOnStart": 0,
 			"cs_pin": "NRF_GPIO_PIN_MAP(1,13)",
 			"disp_pin": "NRF_GPIO_PIN_MAP(1,1)",
 			"dither": 1,
