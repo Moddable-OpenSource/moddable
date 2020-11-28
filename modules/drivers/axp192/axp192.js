@@ -132,6 +132,19 @@ export default class AXP192 extends SMBus {
   set chargeCurrent(state) {
     this.writeByte(0x33, (this.readByte(0x33) & 0xf0) | (state & 0x0f));
   }
+  get batteryVoltage() {
+    let data = this.readByte(0x78) << 4;
+    data |= this.readByte(0x79);
+    return data * 1.1 / 1000;
+  }
+  get batteryCurrent() {
+    let currentIn = this.readByte(0x7a) << 5;
+    currentIn |= this.readByte(0x7b);
+    let currentOut = this.readByte(0x7c) << 5;
+    currentOut |= this.readByte(0x7d);
+
+    return (currentIn - currentOut) * 0.5;
+  }
 }
 
 AXP192.CHARGE_CURRENT = {
