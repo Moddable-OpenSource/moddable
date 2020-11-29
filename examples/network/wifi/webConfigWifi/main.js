@@ -92,13 +92,8 @@ class WebConfigWifi {
 						this.connecting = true;
 						WiFi.connect({ssid, password});		// try to reconnect
 					}
-					else if (!this.connecting) {
-						if (this.myWiFi) {
-							this.myWiFi.close();
-							delete this.myWiFi;
-						}
+					else if (!this.connecting)
 						this.configAP();
-					}
 					break;
 			}
 		});
@@ -178,15 +173,11 @@ class WebConfigWifi {
 		this.advertiseServer();
 	}
 	unconfigServer() {
-		if (this.mdns) {
-			this.mdns.close();
-			delete this.mdns;
-		}
+		this.mdns?.close();
+		delete this.mdns;
 
-		if (this.apServer) {
-			this.apServer.close();
-			delete this.apServer;
-		}
+		this.apServer?.close();
+		delete this.apServer;
 	}
 
 	responsePageSSID(req) {
@@ -218,10 +209,8 @@ Then reconnect to the access point "${AP_NAME}" and visit <a href="http://${this
 	configAP() {
 		trace(`configAP\n`);
 
-		if (this.myWiFi) {
-			this.myWiFi?.close();
-			delete this.myWiFi;
-		}
+		this.myWiFi?.close();
+		delete this.myWiFi;
 
 		WiFi.accessPoint({
 			ssid: AP_NAME,
