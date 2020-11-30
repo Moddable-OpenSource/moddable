@@ -38,6 +38,13 @@
 #ifndef MODDEF_SPI_SCK_PIN
 	#define MODDEF_SPI_SCK_PIN	NRF_GPIO_PIN_MAP(1,14)
 #endif
+#ifndef MODDEF_SPI_BUFFERSIZE
+	#define MODDEF_SPI_BUFFERSIZE	(240 * kSPITransfers)
+#endif
+
+#if MODDEF_SPI_BUFFERSIZE < 240
+	#error "SPI buffer must be at least 240 bytes"
+#endif
 
 typedef uint16_t (*modSPIBufferLoader)(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
 
@@ -54,14 +61,10 @@ static volatile int16_t gSPIDataCount = -1;
 static modSPIBufferLoader gSPIBufferLoader;
 //static uint16_t *gCLUT16;		//@@ unused
 
-// SPI_BUFFER_SIZE can be larger than 64... tested up to 512.
-#define SPI_BUFFER_SIZE (256)
 
 //uint32_t *gSPITransactionBuffer = NULL;
 uint32_t *gSPITxBuffer;
 uint32_t *gSPIRxBuffer;
-//static NRF_SPI_MNGR_BUFFER_LOC_IND uint8_t gSPITxBuffer[SPI_BUFFER_SIZE];
-//static NRF_SPI_MNGR_BUFFER_LOC_IND uint8_t gSPIRxBuffer[SPI_BUFFER_SIZE];
 
 // #define kSPI_SIG_TRANSFER_COMPLETE	(1<<0)
 
@@ -76,7 +79,6 @@ void spi_callback(uint32_t status, void *refcon)
 {
 	modSPIConfiguration config = (modSPIConfiguration)refcon;
 	uint16_t loaded, bitsOut;
-	int ret;
 
 	if (status != 0) {
 		xsBeginHost(config->the);
@@ -90,22 +92,31 @@ void spi_callback(uint32_t status, void *refcon)
 		return;
 	}
 
-	loaded = (gSPIBufferLoader)(gSPIData, (gSPIDataCount <= SPI_BUFFER_SIZE) ? gSPIDataCount : SPI_BUFFER_SIZE, &bitsOut);
+	loaded = (gSPIBufferLoader)(gSPIData, (gSPIDataCount <= MODDEF_SPI_BUFFERSIZE) ? gSPIDataCount : MODDEF_SPI_BUFFERSIZE, &bitsOut);
 	gSPIDataCount -= loaded;
 	gSPIData += loaded;
 
-	config->transfer[0].p_tx_data = (uint8_t*)gSPITxBuffer;
-	config->transfer[0].tx_length = loaded;
-	config->transfer[0].p_rx_data = NULL;
-	config->transfer[0].rx_length = 0;
+	uint16_t i, transfers = (loaded + 240 - 1) / 240;
+	uint8_t *from = (uint8_t *)gSPITxBuffer;
+	for (i = 0; i < transfers; i++) {
+		uint16_t use = (loaded > 240) ? 240 : loaded;
 
-	config->transaction[0].begin_callback = NULL;
-	config->transaction[0].end_callback = spi_callback;
-	config->transaction[0].p_user_data = refcon;
-	config->transaction[0].p_transfers = config->transfer;
-	config->transaction[0].number_of_transfers = 1;
-	config->transaction[0].p_required_spi_cfg = NULL;
-	ret = nrf_spi_mngr_schedule(&gSPI0, config->transaction);
+		config->transfer[i].p_tx_data = (uint8_t*)from;
+		config->transfer[i].tx_length = use;
+		config->transfer[i].p_rx_data = NULL;
+		config->transfer[i].rx_length = 0;
+
+		loaded -= use;
+		from += use;
+	}
+
+	config->transaction.begin_callback = NULL;
+	config->transaction.end_callback = spi_callback;
+	config->transaction.p_user_data = refcon;
+	config->transaction.p_transfers = config->transfer;
+	config->transaction.number_of_transfers = transfers;
+	config->transaction.p_required_spi_cfg = NULL;
+	nrf_spi_mngr_schedule(&gSPI0, &config->transaction);
 }
 
 
@@ -161,8 +172,8 @@ void modSPIInit(modSPIConfiguration config)
 			xsEndHost(config->the);
 		}
 
-		gSPITxBuffer = (uint32_t*)c_malloc(SPI_BUFFER_SIZE);
-		gSPIRxBuffer = (uint32_t*)c_malloc(SPI_BUFFER_SIZE);
+		gSPITxBuffer = (uint32_t *)c_malloc(MODDEF_SPI_BUFFERSIZE * 2);
+		gSPIRxBuffer = (uint32_t *)(MODDEF_SPI_BUFFERSIZE + (uintptr_t)gSPITxBuffer);
 
 		gSPIInited = true;
 	}
@@ -293,8 +304,8 @@ uint16_t IRAM_ATTR modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t byte
 	uint8_t *to = (uint8_t *)gSPITxBuffer;
 	uint16_t remain;
 
-	if (bytes > SPI_BUFFER_SIZE)
-		bytes = SPI_BUFFER_SIZE;
+	if (bytes > MODDEF_SPI_BUFFERSIZE)
+		bytes = MODDEF_SPI_BUFFERSIZE;
 
 	*bitsOut = (bytes >> 1) * 12;
 
@@ -329,8 +340,8 @@ uint16_t IRAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, u
 	uint32_t *to = gSPITxBuffer;
 	uint16_t remain;
 
-	if (bytes > (SPI_BUFFER_SIZE >> 1))
-		bytes = SPI_BUFFER_SIZE >> 1;
+	if (bytes > (MODDEF_SPI_BUFFERSIZE >> 1))
+		bytes = MODDEF_SPI_BUFFERSIZE >> 1;
 
 	*bitsOut = bytes << 4;		// output bits are double input bits
 
@@ -374,8 +385,8 @@ uint16_t IRAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, 
 	uint32_t *to = gSPITxBuffer;
 	uint16_t remain;
 
-	if (bytes > (SPI_BUFFER_SIZE >> 1))
-		bytes = SPI_BUFFER_SIZE >> 1;
+	if (bytes > (MODDEF_SPI_BUFFERSIZE >> 1))
+		bytes = MODDEF_SPI_BUFFERSIZE >> 1;
 
 	*bitsOut = bytes << 4;		// output bits are double input bits
 
@@ -412,8 +423,8 @@ uint16_t IRAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, u
 	uint32_t *to = gSPITxBuffer;
 	uint16_t i;
 
-	if (bytes > (SPI_BUFFER_SIZE >> 2))
-		bytes = SPI_BUFFER_SIZE >> 2;
+	if (bytes > (MODDEF_SPI_BUFFERSIZE >> 2))
+		bytes = MODDEF_SPI_BUFFERSIZE >> 2;
 	*bitsOut = bytes << 5;		// output bits are quadruple input bits
 
 	for (i = 0; i < bytes; i++) {
@@ -446,6 +457,11 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 
 	modSPIActivateConfiguration(config);
 
+	if (count > 255) {		// need to loop
+		modLog("TxRx over 255 bytes unimplemented");
+		return;
+	}
+
 	c_memcpy(gSPITxBuffer, data, count);
 	config->transfer[0].p_tx_data = (uint8_t*)gSPITxBuffer;
 	config->transfer[0].tx_length = count;
@@ -453,12 +469,12 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 	config->transfer[0].rx_length = count;
 
 /*
-	config->transaction[0].begin_callback = NULL;
-	config->transaction[0].end_callback = NULL;
-	config->transaction[0].p_user_data = NULL;
-	config->transaction[0].p_transfers = config->transfer;
-	config->transaction[0].number_of_transfers = 1;
-	config->transaction[0].p_required_spi_cfg = NULL;
+	config->transaction.begin_callback = NULL;
+	config->transaction.end_callback = NULL;
+	config->transaction.p_user_data = NULL;
+	config->transaction.p_transfers = config->transfer;
+	config->transaction.number_of_transfers = 1;
+	config->transaction.p_required_spi_cfg = NULL;
 */
 
 	ret = nrf_spi_mngr_perform(&gSPI0, NULL, config->transfer, 1, NULL);

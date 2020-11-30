@@ -35,11 +35,13 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 
 typedef void (*modSPIChipSelectCallback)(uint8_t status, modSPIConfiguration config);
 
+#define kSPITransfers (8)
+
 struct modSPIConfigurationRecord {
 	nrf_drv_spi_config_t		spi_config;
 	void						*spi_dev;
-	nrf_spi_mngr_transfer_t		transfer[2];
-	nrf_spi_mngr_transaction_t	transaction[2];
+	nrf_spi_mngr_transfer_t		transfer[kSPITransfers];
+	nrf_spi_mngr_transaction_t	transaction;
 	uint8_t						cs_pin;
 	uint8_t						spiPort;
 	uint8_t						sync;
