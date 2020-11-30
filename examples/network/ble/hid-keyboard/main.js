@@ -24,11 +24,9 @@
 import BLEHIDKeyboard from "hidkeyboard";
 
 class TerminalKeyboard extends BLEHIDKeyboard {
-	onCharCode(code) {
-		trace(code, " ");
-		if (code >= 32 && code <= 126)
-			; // trace(String.fromCharCode(code))
-		else if (code == 13)
+	onKeyDown(key) {
+		trace(key, " ");
+		if (13 === key)
 			trace("\n> ");
 	}
 	onDeviceConnected(device) {
@@ -40,4 +38,4 @@ class TerminalKeyboard extends BLEHIDKeyboard {
 	}
 }
 
-let keyboard = new TerminalKeyboard({ bonding:false });
+const keyboard = new TerminalKeyboard;

@@ -9,6 +9,9 @@
 			"./hidkeyboard"
 		]
 	},
+	"preload": [
+		"hidkeyboard"
+	],
 	"ble":{
 		"*": [
 			"./bleservices/*"
