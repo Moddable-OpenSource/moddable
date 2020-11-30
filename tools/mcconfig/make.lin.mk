@@ -143,7 +143,7 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: precursor
-	$(shell nohup $(SIMULATOR) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+	$(shell nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 

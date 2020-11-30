@@ -157,7 +157,7 @@ XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
 all: build
-	start $(SIMULATOR) $(BIN_DIR)\mc.dll
+	start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
 
 build: $(LIB_DIR) $(BIN_DIR)\mc.dll
 
