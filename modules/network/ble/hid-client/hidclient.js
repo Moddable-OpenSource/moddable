@@ -31,7 +31,7 @@
 import BLEClient from "bleclient";
 import {Bytes, uuid} from "btutils";
 import {Service, Characteristic} from "gatt";
-import {Authorization} from "sm";
+import {SM, Authorization} from "sm";
 import Preference from "preference";
 import Timer from "timer";
 
@@ -307,8 +307,10 @@ class Bonded {
 		Preference.set(Bonded.PREFERENCE_DOMAIN, Bonded.key(usageID), entry.buffer);
 	}
 	static remove(usageID) {
+		const bonded = Bonded.get(usageID);
+		if (undefined !== bonded)
+			SM.deleteBonding(bonded.device.address, bonded.device.addressType);
 		Preference.delete(Bonded.PREFERENCE_DOMAIN, Bonded.key(usageID));
-		// @@ TBD: remove bond stored by native ble stack
 	}
 	static key(usageID) {
 		switch(usageID) {
