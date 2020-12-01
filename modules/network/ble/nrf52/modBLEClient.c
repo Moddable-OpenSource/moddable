@@ -826,8 +826,14 @@ void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t me
 		goto bail;
 	}	
 	
-	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), conn_handle);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), conn_handle);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(1), connection->address, BLE_GAP_ADDR_LEN);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), connection->addressType);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
 	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);

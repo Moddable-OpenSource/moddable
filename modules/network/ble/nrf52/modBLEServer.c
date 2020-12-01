@@ -787,12 +787,14 @@ void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 		goto bail;
 	gBLE->conn_handle = conn_handle;
 	gBLE->remote_bda = gap_evt->params.connected.peer_addr;
-	xsmcVars(3);
+	xsmcVars(2);
 	xsmcSetNewObject(xsVar(0));
 	xsmcSetInteger(xsVar(1), conn_handle);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), gBLE->remote_bda.addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
@@ -809,12 +811,14 @@ void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t me
 	if (conn_handle != gBLE->conn_handle) return;
 	xsBeginHost(gBLE->the);
 	gBLE->conn_handle = BLE_CONN_HANDLE_INVALID;
-	xsmcVars(3);
+	xsmcVars(2);
 	xsmcSetNewObject(xsVar(0));
 	xsmcSetInteger(xsVar(1), conn_handle);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), gBLE->remote_bda.addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
@@ -1003,8 +1007,14 @@ static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, u
 {
 	if (!gBLE) return;
 
+	pm_evt_t *pm_evt = (pm_evt_t*)message;
+	pm_conn_secured_evt_t const * conn_sec_succeeded = (pm_conn_secured_evt_t const *)&pm_evt->params.conn_sec_succeeded;
 	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), (PM_CONN_SEC_PROCEDURE_BONDING == conn_sec_succeeded->procedure));
+	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -1189,9 +1199,9 @@ void pm_evt_handler(pm_evt_t const * p_evt)
             if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING)
 				pm_conn_secure(p_evt->conn_handle, true);
     		break;
-    	case PM_EVT_CONN_SEC_SUCCEEDED:
-			modMessagePostToMachine(gBLE->the, NULL, 0, pmConnSecSucceededEvent, NULL);
-			break;    		
+		case PM_EVT_CONN_SEC_SUCCEEDED:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt, sizeof(pm_evt_t), pmConnSecSucceededEvent, NULL);
+			break;
 		case PM_EVT_CONN_SEC_CONFIG_REQ: {
 			pm_conn_sec_config_t pm_conn_sec_config;
 			pm_conn_sec_config.allow_repairing = true;
