@@ -106,6 +106,8 @@ void modSPIInit(modSPIConfiguration config)
 		config->spi_config.loopback_Mode = 0;
 		config->spi_config.hs_Mode = 0;
 		
+		// @@ BSF - doesn't build - see PR #493
+#if 0
 		switch (config->mode) {
 			case 3:
 				config->spi_config.SPIM_Mode = QAPI_SPIM_MODE_3_E;   // CPOL = 1, CPHA = 1
@@ -121,6 +123,7 @@ void modSPIInit(modSPIConfiguration config)
 				config->spi_config.SPIM_Mode = QAPI_SPIM_MODE_0_E;   // CPOL = 0, CPHA = 0
 				break;
 		}
+#endif
 
 		qurt_signal_create(&config->spi_signal);
 
