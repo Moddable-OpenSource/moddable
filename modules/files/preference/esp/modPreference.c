@@ -24,7 +24,7 @@
 
 extern uint32_t _MODPREF_start;
 
-#define kPreferencesStartOffset ((uintptr_t)&_MODPREF_start - kFlashStart)
+#define kPreferencesStartOffset ((uintptr_t)&_MODPREF_start - (uintptr_t)kFlashStart)
 #define kPreferencesMagic 0x81213141
 
 enum {
