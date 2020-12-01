@@ -128,10 +128,10 @@ void modSPIInit(modSPIConfiguration config)
 	
 	switch (config->mode) {
 		case 3:
-			spiInit.clockMode = usartClockMode2;   // CPOL = 1, CPHA = 1
+			spiInit.clockMode = usartClockMode3;   // CPOL = 1, CPHA = 1
 			break;
 		case 2:
-			spiInit.clockMode = usartClockMode3;   // CPOL = 1, CPHA = 0
+			spiInit.clockMode = usartClockMode2;   // CPOL = 1, CPHA = 0
 			break;
 		case 1:
 			spiInit.clockMode = usartClockMode1;   // CPOL = 0, CPHA = 1
