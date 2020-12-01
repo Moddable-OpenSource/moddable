@@ -206,6 +206,7 @@ static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint
 static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static modBLE gBLE = NULL;
 
@@ -798,6 +799,34 @@ bail:
 	return result;
 }
 
+void modBLEClientBondingRemoved(qapi_BLE_BD_ADDR_t *address, qapi_BLE_GAP_LE_Address_Type_t addressType)
+{
+	qapi_BLE_GAP_LE_White_List_Entry_t entry;
+	
+	if (!gBLE) return;
+	
+	entry.Address_Type = addressType;
+	c_memmove(&entry.Address, address, 6);
+	modMessagePostToMachine(gBLE->the, (void*)&entry, sizeof(entry), bondingRemovedEvent, NULL);
+}
+
+void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	qapi_BLE_GAP_LE_White_List_Entry_t *entry = (qapi_BLE_GAP_LE_White_List_Entry_t *)message;
+	
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), &entry->Address, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), entry->Address_Type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsBeginHost(gBLE->the);
@@ -818,12 +847,16 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		goto bail;
 
 	connection->id = result->ConnectionID;
-	xsmcVars(3);
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), connection->id);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), &result->RemoteDevice, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), &result->RemoteDevice, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), connection->addressType);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsmcSetInteger(xsVar(1), 0);	// @@
+	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
@@ -838,8 +871,12 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	// ignore multiple disconnects on same connection
 	if (!connection) goto bail;
 
-	xsmcVars(1);
+	xsmcVars(2);
 	xsmcSetInteger(xsVar(0), connection->id);
+	xsmcSetArrayBuffer(xsVar(1), &result->RemoteDevice, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), connection->addressType);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
 	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
