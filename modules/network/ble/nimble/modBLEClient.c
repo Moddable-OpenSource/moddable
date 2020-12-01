@@ -23,7 +23,6 @@
 #include "mc.xs.h"
 #include "modBLE.h"
 #include "modBLECommon.h"
-#include "modTimer.h"
 
 #include "nimble/ble.h"
 #include "host/ble_hs.h"
@@ -65,6 +64,7 @@ typedef struct {
 	uint8_t terminating;
 	
 	modBLEMessageQueueRecord discoveryQueue;
+	
 	modBLEMessageQueueRecord notificationQueue;
 } modBLERecord, *modBLE;
 
@@ -154,6 +154,8 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void characteristicHandleDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void setSecurityParametersEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void logGAPEvent(struct ble_gap_event *event);
 
@@ -308,7 +310,35 @@ void xs_ble_client_connect(xsMachine *the)
 	ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr, BLE_HS_FOREVER, NULL, nimble_gap_event, NULL);
 }
 
-void smTimerCallback(modTimer timer, void *refcon, int refconSize)
+void modBLEClientBondingRemoved(char *address, uint8_t addressType)
+{
+	ble_addr_t addr;
+	
+	if (!gBLE) return;
+	
+	addr.type = addressType;
+	c_memmove(addr.val, address, 6);
+	modMessagePostToMachine(gBLE->the, (void*)&addr, sizeof(addr), bondingRemovedEvent, NULL);
+}
+
+void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	ble_addr_t *addr = (ble_addr_t *)message;
+
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), addr->val, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), addr->type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
+void setSecurityParametersEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
@@ -341,7 +371,7 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 		ble_addr_t addr;
 		ble_hs_id_gen_rnd(1, &addr);
 		ble_hs_id_set_rnd(addr.val);
-		modTimerAdd(0, 0, smTimerCallback, NULL, 0);
+		modMessagePostToMachine(gBLE->the, NULL, 0, setSecurityParametersEvent, NULL);
 	}
 }
 
@@ -742,8 +772,14 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		goto bail;
 	}	
 	
-	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), desc->conn_handle);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), desc->conn_handle);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
 	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);

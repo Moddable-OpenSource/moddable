@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,7 +21,9 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"
+#include "mc.defines.h"
 #include "modBLE.h"
+#include "modBLECommon.h"
 
 #include "bg_types.h"
 #include "native_gecko.h"
@@ -29,6 +31,19 @@
 void xs_ble_sm_delete_all_bondings(xsMachine *the)
 {
 	gecko_cmd_sm_delete_bondings();
+}
+
+void xs_ble_sm_delete_bonding(xsMachine *the)
+{
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
+	
+#if MODDEF_BLE_CLIENT
+	modBLEClientBondingRemove(address, addressType);
+#endif
+#if MODDEF_BLE_SERVER
+	modBLEServerBondingRemove(address, addressType);
+#endif
 }
 
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
@@ -57,7 +72,9 @@ uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_
  	
 	if (mitm)
 		flags |= 0x1;
-		
+	if (bonding)
+		flags |= 0x8;
+
 	rsp = gecko_cmd_sm_configure(flags, io_capabilities);
 	return rsp->result;
 }

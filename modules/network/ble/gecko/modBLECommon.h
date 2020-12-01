@@ -24,7 +24,7 @@
 int modBLEPlatformInitialize(void);
 int modBLEPlatformTerminate(void);
 
-void modBLEClientBondingRemoved(char *address, uint8_t addressType);
-void modBLEServerBondingRemoved(char *address, uint8_t addressType);
+void modBLEClientBondingRemove(char *address, uint8_t addressType);
+void modBLEServerBondingRemove(char *address, uint8_t addressType);
 
 #endif

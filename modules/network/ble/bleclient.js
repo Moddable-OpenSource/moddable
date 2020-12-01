@@ -40,6 +40,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 	onSecurityParameters() {}
 	onDiscovered() {}
 	onConnected() {}
+	onBondingDeleted() {}
 	
 	// From Connection object
 	onAuthenticated() {}
@@ -113,7 +114,7 @@ export class BLEClient @ "xs_ble_client_destructor" {
 				break;
 			}
 			case "onDisconnected":
-				this.onDisconnected(params);
+				this.onDisconnected({ address:new Bytes(params.address), addressType:params.addressType, connection:params.connection });
 				break;
 			case "onPasskeyConfirm":
 				this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
@@ -127,6 +128,10 @@ export class BLEClient @ "xs_ble_client_destructor" {
 			case "onAuthenticated":
 				this.onAuthenticated({ bonded:params.bonded });
 				break;
+			case "onBondingDeleted": {
+				this.onBondingDeleted({ address:new Bytes(params.address), addressType:params.addressType });
+				break;
+			}
 		}
 	}
 };
