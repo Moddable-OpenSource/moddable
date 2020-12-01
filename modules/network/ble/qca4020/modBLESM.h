@@ -52,4 +52,7 @@ modBLEBondedDevice modBLEBondedDevicesFindByAddress(qapi_BLE_BD_ADDR_t bd_addr);
 void configurePairingCapabilities(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability, qapi_BLE_GAP_LE_Extended_Pairing_Capabilities_t *Capabilities);
 void generateEncryptionKeys(uint32_t stackID, qapi_BLE_Encryption_Key_t *ER, qapi_BLE_Encryption_Key_t *IR, qapi_BLE_Encryption_Key_t *DHK, qapi_BLE_Encryption_Key_t *IRK);
 
+void modBLEClientBondingRemoved(qapi_BLE_BD_ADDR_t *address, qapi_BLE_GAP_LE_Address_Type_t addressType);
+void modBLEServerBondingRemoved(qapi_BLE_BD_ADDR_t *address, qapi_BLE_GAP_LE_Address_Type_t addressType);
+
 #endif

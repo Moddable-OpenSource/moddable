@@ -27,7 +27,8 @@ class Scanner {
 	#timer;
 
 	constructor(options) {
-		this.target = options.target;
+		if (undefined !== options.target)
+			this.target = options.target;
 		this.#onFound = options.onFound;
 		this.#onLost = options.onLost;
 		this.#onScanning = options.onScanning;

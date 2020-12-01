@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,16 +18,17 @@
  *
  */
 
-#include "xsmc.h"
+import Resource from "Resource";
 
-void xs_ble_sm_delete_all_bondings(xsMachine *the)
-{
-}
+function index(i) @ "Resource_index";
 
-void xs_ble_sm_delete_bonding(xsMachine *the)
-{
-}
-
-void xs_ble_sm_set_security_parameters(xsMachine *the)
-{
+Resource[Symbol.iterator] = function() {
+	return {
+		i: 0,
+		next() {
+			const result = {value: index(this.i++)};
+			result.done = undefined === result.value;
+			return result;
+		}
+	};
 }

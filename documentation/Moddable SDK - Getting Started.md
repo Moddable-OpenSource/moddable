@@ -154,7 +154,7 @@ More detailed getting started guides are available for the following devices:
 
 2. Create an `esp` directory in your home directory at `~/esp` for required third party SDKs and tools.
  
-3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
+3. If you are running macOS 10.15 (Catalina) or earlier, download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers). If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
 	> Note: If you run macOS Catalina, an extra step is required to enable the VCP driver. If you see a popup that says "System Extension Blocked" during installation, follow the instructions in the dialog to enable the extension in Security & Privacy System Preferences.
 
@@ -206,7 +206,7 @@ More detailed getting started guides are available for the following devices:
 
 2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
-3. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
+3. If you are running macOS 10.15 (Catalina) or earlier, download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers). If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
 	> Note: If you run macOS Catalina, an extra step is required to enable the VCP driver. If you see a popup that says "System Extension Blocked" during installation, follow the instructions in the dialog to enable the extension in Security & Privacy System Preferences.
 
@@ -750,10 +750,11 @@ When you're trying to install applications, you may experience roadblocks in the
 
 ### Device not connected/recognized
 
-The following error message means that the device is not connected to your computer or the computer doesn't recognize the device.
+The following error messages mean that the device is not connected to your computer or the computer doesn't recognize the device.
 
 ```text
 error: cannot access /dev/cu.SLAB_USBtoUART
+error: cannot access /dev/usbserial-0001
 ```
 
 There are a few reasons this can happen:
@@ -770,7 +771,9 @@ To test whether your computer recognizes your device, unplug the device and ente
 ls /dev/cu*
 ```
 
-Then plug in the device and repeat the same command. If nothing new appears in the terminal output, the device isn't being recognized by your computer. Make sure you have the correct VCP driver installed. 
+Then plug in the device and repeat the same command. If nothing new appears in the terminal output, the device isn't being recognized by your computer.
+
+If you are running macOS 10.15 or earlier, make sure you have the correct VCP driver installed.  If you are running macOS 10.16 or earlier, you do not need to install the VCP driver. 
 
 If it is recognized, you now have the device name and you need to edit the `UPLOAD_PORT` environment variable. Enter the following command, replacing `/dev/cu.SLAB_USBtoUART` with the name of the device on your system.
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2020  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -230,7 +230,7 @@ else
 	C_FLAGS += -D_RELEASE=1 -O3
 endif
 
-LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0)
+LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic
 
 LINK_FLAGS = -fPIC
 

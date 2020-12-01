@@ -133,6 +133,11 @@ void xs_wifi_scan(xsMachine *the)
 			xsmcGet(xsVar(0), xsArg(0), xsID_channel);
 			config.channel = xsmcToInteger(xsVar(0));
 		}
+
+		if (xsmcHas(xsArg(0), xsID_active)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_active);
+			config.scan_type = xsmcTest(xsVar(0)) ? WIFI_SCAN_TYPE_ACTIVE : WIFI_SCAN_TYPE_PASSIVE;
+		}
 	}
 
 	if (ESP_OK != esp_wifi_scan_start(&config, 0)) {

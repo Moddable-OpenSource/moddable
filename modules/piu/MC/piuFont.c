@@ -23,10 +23,17 @@
 
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static const xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
 	PiuFontDelete,
 	PiuFontMark,
+	NULL
+};
+
+static const xsHostHooks PiuFontListHooks ICACHE_RODATA_ATTR = {
+	NULL,
+	PiuFontListMark,
 	NULL
 };
 
@@ -122,7 +129,6 @@ PiuDimension PiuFontGetWidth(PiuFont* self, xsSlot* string, xsIntegerValue offse
 void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuFont self = it;
-	PiuMarkHandle(the, self->next);
 	PiuMarkHandle(the, self->texture);
 }
 
@@ -135,18 +141,6 @@ void PiuFontNew(xsMachine* the)
 	(*self)->reference = xsToReference(xsResult);
 	(*self)->the = the;
 	xsSetHostHooks(xsResult, &PiuFontHooks);
-}
-
-void PiuFontListLockCache(xsMachine* the)
-{
-	if (gCFE)
-		CFELockCache(gCFE, 1);
-}
-
-void PiuFontListUnlockCache(xsMachine* the)
-{
-	if (gCFE)
-		CFELockCache(gCFE, 0);
 }
 
 #ifdef piuGPU
@@ -185,6 +179,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 					&& ((*font)->size == (*self)->size)
 					&& ((*font)->weight == (*self)->weight)
 					&& ((*font)->flags == ((*self)->flags & piuStyleBits))) {
+//				fprintf(stderr, "CACHE\n");
 				(*self)->font = font;
 				return;
 			}
@@ -233,6 +228,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 	font = PIU(Font, xsResult);
 #if MODDEF_CFE_TTF
 	c_strcat(path, ".ttf");
+//	fprintf(stderr, "%s %d %d %d\n", path, (*self)->size, (*self)->weight, (*self)->flags & piuStyleBits);
 	buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
 	if (!buffer)
 		xsURIError("font not found: %s", path);
@@ -281,3 +277,36 @@ void PiuStyleLookupFont(PiuStyle* self)
 	
 	(*self)->font = font;
 }
+
+void PiuFontListLockCache(xsMachine* the)
+{
+	if (gCFE)
+		CFELockCache(gCFE, 1);
+}
+
+void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	PiuFontList self = it;
+	PiuFont* font = self->first;
+	while (font) {
+		PiuMarkHandle(the, font);
+		font = (*font)->next;
+	}
+}
+
+void PiuFontListUnlockCache(xsMachine* the)
+{
+	if (gCFE)
+		CFELockCache(gCFE, 0);
+}
+
+void PiuFontListNew(xsMachine* the)
+{
+	PiuFontList* self;
+	xsResult = xsNewHostObject(NULL);
+	xsSetHostChunk(xsResult, NULL, sizeof(PiuFontListRecord));
+	self = PIU(FontList, xsResult);
+	(*self)->reference = xsToReference(xsResult);
+	xsSetHostHooks(xsResult, &PiuFontListHooks);
+}
+

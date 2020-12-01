@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -16,6 +16,7 @@
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  */
+import GAP from "gap";
 
 const IOCapability = {
 	NoInputNoOutput: 0,
@@ -36,7 +37,13 @@ const Authorization = {
 Object.freeze(Authorization);
 
 export default class SM {
-	static deleteAllBondings() @ "xs_ble_sm_delete_all_bondings"	
+	static deleteAllBondings() @ "xs_ble_sm_delete_all_bondings"
+	
+	static deleteBonding(address, addressType = GAP.AddressType.PUBLIC) {
+		SM.#deleteBonding(address, addressType);
+	}
+
+	static #deleteBonding() @ "xs_ble_sm_delete_bonding"
 };
 Object.freeze(SM.prototype);
 

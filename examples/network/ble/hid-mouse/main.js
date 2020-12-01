@@ -24,11 +24,7 @@
 import BLEHIDMouse from "hidmouse";
 
 class Mouse extends BLEHIDMouse {
-	onDeviceConnected() {
-		trace("Pairing mouse...\n")
-	}
-	onDeviceReady() {
-		trace("Pairing complete.\n");
+	onMouseReady() {
 		this.onMoved(0, 0, 0);
 	}
 	onButtonDown(x, y, buttons) {
@@ -52,4 +48,4 @@ class Mouse extends BLEHIDMouse {
 	}
 }
 
-let mouse = new Mouse;
+let mouse = new Mouse({ bonding:false });

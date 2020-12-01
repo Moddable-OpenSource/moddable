@@ -24,12 +24,8 @@
 import BLEHIDMouse from "hidmouse";
 
 class Mouse extends BLEHIDMouse {
-	onDeviceConnected() {
-		trace("Pairing mouse...\n")
-	}
-	onDeviceReady() {
-		trace("Pairing complete.\n");
-		application.distribute("onMouseConnected");
+	onMouseReady() {
+		application.distribute("onMouseReady");
 	}
 	onButtonDown(x, y, buttons) {
 		application.distribute("onMouseDown", x, y, buttons);

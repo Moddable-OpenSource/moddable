@@ -366,6 +366,14 @@ export class Advertisement {
 	get buffer() {
 		return this.#buffer;
 	}
+	get appearance() {
+		const index = this.findIndex(GAP.ADType.APPEARANCE);
+		if (-1 != index) {
+			let start = index + 2;
+			const data = this.#data;
+			return (data[start] | (data[start+1] << 8));
+		}
+	}
 	get completeName() {
 		const index = this.findIndex(GAP.ADType.COMPLETE_LOCAL_NAME);
 		if (-1 != index) {

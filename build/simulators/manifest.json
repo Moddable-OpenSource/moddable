@@ -1,4 +1,7 @@
 {
+	"build": {
+		"SIMULATORS": "$(BUILD_SIMULATOR)"
+	},
 	"modules": {
 		"*": [
 			"./modules/screen",

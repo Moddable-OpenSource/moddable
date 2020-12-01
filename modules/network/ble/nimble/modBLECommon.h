@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,5 +23,8 @@
 
 int modBLEPlatformInitialize(void);
 int modBLEPlatformTerminate(void);
+
+void modBLEClientBondingRemoved(char *address, uint8_t addressType);
+void modBLEServerBondingRemoved(char *address, uint8_t addressType);
 
 #endif

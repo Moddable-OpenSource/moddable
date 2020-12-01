@@ -32,6 +32,12 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
 	pm_peers_delete();
 }
 
+void xs_ble_sm_delete_bonding(xsMachine *the)
+{
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
+}
+
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
 {
 	uint8_t io_caps;

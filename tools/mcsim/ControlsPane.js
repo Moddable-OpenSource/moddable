@@ -88,6 +88,8 @@ import {
 import {
 	HorizontalSliderBehavior,
 	HorizontalSlider,
+	HorizontalLogSliderBehavior,
+	HorizontalLogSlider,
 } from "piu/Sliders";	
 
 import {
@@ -250,6 +252,46 @@ export var SliderRow = Row.template(function($) { return {
 		HorizontalSlider($, { 
 			width:160, barSkin: sliderBarSkin, buttonSkin: sliderButtonSkin,
 			Behavior: class extends HorizontalSliderBehavior {
+				activate(container, active) {
+					var button = container.last;
+					var bar = button.previous;
+					var background = bar.previous;
+					var label = container.next;
+					container.active = active;
+					background.variant = active ? 0 : 1;
+					bar.variant = active ? 0 : 1;
+					button.variant = active ? 0 : 1;
+					label.state = active ? 0 : 1;
+				}
+				onDisplaying(container) {
+					let data = this.data;
+					if ("active" in data)
+						this.activate(container, data.active);
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+					super.onDisplaying(container);
+				}
+				onValueChanged(container) {
+					let data = this.data;
+					model.DEVICE.first.delegate(data.event, data);
+				}
+				onValueChanging(container) {
+					let data = this.data;
+					container.next.string = data.value + data.unit;
+				}
+			},
+		}),
+		Label($, { left:0, right:0, style:controlValueStyle, string:$.value + $.unit }),
+	],
+}});
+
+export var LogSliderRow = Row.template(function($) { return {
+	left:0, right:0, height:30,
+	contents: [
+		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		HorizontalLogSlider($, { 
+			width:160, barSkin: sliderBarSkin, buttonSkin: sliderButtonSkin,
+			Behavior: class extends HorizontalLogSliderBehavior {
 				activate(container, active) {
 					var button = container.last;
 					var bar = button.previous;

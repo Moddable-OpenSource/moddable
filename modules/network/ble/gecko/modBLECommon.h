@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,16 +18,13 @@
  *
  */
 
-#include "xsmc.h"
+#ifndef __mod_ble_common__
+#define __mod_ble_common__
 
-void xs_ble_sm_delete_all_bondings(xsMachine *the)
-{
-}
+int modBLEPlatformInitialize(void);
+int modBLEPlatformTerminate(void);
 
-void xs_ble_sm_delete_bonding(xsMachine *the)
-{
-}
+void modBLEClientBondingRemove(char *address, uint8_t addressType);
+void modBLEServerBondingRemove(char *address, uint8_t addressType);
 
-void xs_ble_sm_set_security_parameters(xsMachine *the)
-{
-}
+#endif

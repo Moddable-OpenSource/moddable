@@ -86,14 +86,3 @@ void Resource_slice(xsMachine *the)
 		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));
 	}
 }
-
-void Resource_name(xsMachine *the)
-{
-	extern const char *mcGetResourceName(void* it, int i);
-	extern int mcCountResources(void* it);
-	int index = xsToInteger(xsArg(0));
-	if ((index < 0) || (index >= mcCountResources(NULL)))
-		return;
-
-	xsResult = xsString(mcGetResourceName(NULL, index));
-}

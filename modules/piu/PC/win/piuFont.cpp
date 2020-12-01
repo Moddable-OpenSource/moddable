@@ -22,10 +22,17 @@
 
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static xsHostHooks PiuFontHooks = {
 	PiuFontDelete,
 	PiuFontMark,
+	NULL
+};
+
+static const xsHostHooks PiuFontListHooks = {
+	NULL,
+	PiuFontListMark,
 	NULL
 };
 
@@ -176,4 +183,24 @@ void PiuStyleLookupFont(PiuStyle* self)
 	(*font)->height = height;
 	
 	(*self)->font = font;
+}
+
+void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	PiuFontList self = (PiuFontList)it;
+	PiuFont* font = self->first;
+	while (font) {
+		PiuMarkHandle(the, font);
+		font = (*font)->next;
+	}
+}
+
+void PiuFontListNew(xsMachine* the)
+{
+	PiuFontList* self;
+	xsResult = xsNewHostObject(NULL);
+	xsSetHostChunk(xsResult, NULL, sizeof(PiuFontListRecord));
+	self = PIU(FontList, xsResult);
+	(*self)->reference = xsToReference(xsResult);
+	xsSetHostHooks(xsResult, &PiuFontListHooks);
 }

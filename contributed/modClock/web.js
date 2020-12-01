@@ -92,6 +92,14 @@ export class html_content {
 		let body = `<h2>Access point</h2><form action="/set-ssid" method="post"><div><label name="ssid">SSID: </label>`;
 
 	    if (apList.length > 0) {
+            apList.sort(function(a, b) {
+                a = a.ssid.toLowerCase();
+                b = b.ssid.toLowerCase();
+                if (a === b)
+                    return 0;
+                return (a > b) ? +1 : -1;
+            });
+            
 	        body += '<select class="select-css" name="ssid_select">';
 			apList.forEach(function(ap) {
 				body += `<option value="${ap.ssid}" `;
@@ -307,7 +315,7 @@ Time: <input type="time" name="set_clock_time" value="${html_content.timeFormatt
 
 	
 	static head(name, server) {
-		return `<html><head><title>${name}</title><link rel="stylesheet" href="${server}clock.css" type="text/css"></html>`;
+		return `<html><head><title>${name}</title><link rel="stylesheet" href="${server}clock.css" type="text/css"><meta charset="utf-8"/></head>`;
 	}
 
 	static masthead(prod, name) {

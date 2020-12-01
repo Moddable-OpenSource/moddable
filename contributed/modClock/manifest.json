@@ -8,6 +8,7 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODULES)/files/preference/manifest.json",
 		"$(MODULES)/network/mdns/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json",
 		"$(MODULES)/pins/digital/monitor/manifest.json",
 		"$(MODULES)/drivers/rtc/manifest.json"
 	],
@@ -26,9 +27,9 @@
 			"$(MODULES)/network/http/*",
 			"./web",
 			"./update",
-			"./prefs"
+			"./prefs",
+			"$(MODDABLE)/examples/network/wifi/wifiscancontinuous/wifiscanner"
 		],
-		"piu/Timeline":"$(MODULES)/piu/All/piuTimeline",
 		"net":"$(MODULES)/network/net/netmdns",
 		"dns/server":"$(MODULES)/network/dns/dnsserver",
 		"esp32/ota": "$(BUILD)/devices/esp32/modules/ota/*"
@@ -38,7 +39,6 @@
 		"buttons",
 		"styles",
 		"sevenseg",
-		"piu/Timeline",
 		"sntp",
 		"http",
 		"preference",
@@ -47,7 +47,8 @@
 		"update",
 		"prefs",
 		"dns/server",
-		"esp32/ota"
+		"esp32/ota",
+		"wifiscanner"
 	],
 	"resources": {
 		"*": [
@@ -58,6 +59,10 @@
 	"platforms": {
 		"esp32": {
 			"defines": {
+				"i2c": {
+					"sda_pin": 21,
+					"scl_pin": 22
+				},
 				"neopixel": {
 					"custom_rmt_driver": 1
 				}

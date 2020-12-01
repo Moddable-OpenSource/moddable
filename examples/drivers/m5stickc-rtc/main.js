@@ -13,18 +13,20 @@
  */
 
 import BM8563 from "bm8563";
+import Time from "time";
+
 
 let rtc = new BM8563;
-let enabled=1;
+let enabled = 1;
 
 // Main button:  enable/disable RTC
 button.a.onChanged = function () {
 	if (button.a.read()) {
 		return;
 	}
-	enabled=!enabled;
-	rtc.enabled=enabled;
-	global.power.brightness = 20+enabled*70;
+	enabled = !enabled;
+	rtc.enabled = enabled;
+	global.power.brightness = 20 + enabled * 70;
 }
 
 // Side button: set time from sntp
@@ -32,10 +34,7 @@ button.b.onChanged = function () {
 	if (button.b.read()) {
 		return;
 	}
-	let d = new Date;
-	trace('Set time: ', d, '\n');
-	trace(d.getTime() / 1000, '\n');
-	rtc.seconds = d.getTime() / 1000;
+	setRTCTimeLocal();
 }
 
 import Timer from "timer";
@@ -43,9 +42,21 @@ import parseBMF from "commodetto/parseBMF";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-const render = new Poco(screen, {rotation: 90});
+function setRTCTimeLocal() {
+	let d = new Date();
+	trace(`Set time: ${d.getTime()} ${d.toString()} tz:${Time.timezone} dst:${Time.dst}\n`);
+	rtc.seconds = d.getTime() / 1000;
+	let read = rtc.seconds;
+	let s = new Date(read * 1000);
+	trace(`Get time: ${read} ${s.toString()}\n`)
+}
+
+const render = new Poco(screen, {
+	rotation: 90
+});
 
 let white = render.makeColor(255, 255, 255);
+let grey = render.makeColor(170, 170, 170);
 let blue = render.makeColor(0, 0, 255);
 
 let font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
@@ -59,11 +70,17 @@ render.fillRectangle(blue, 0, 0, render.width, render.height);
 render.end();
 
 Timer.repeat(id => {
-	let now = rtc.seconds;
-	let e = new Date(now * 1000);
-	text = e.toString();
-	render.begin(0, y, render.width, font.height);
+	let now = 'setting..';
+	try {
+		now = rtc.seconds;
+	} catch (e) {
+		trace(e);
+	}
+	let rtc_clock = new Date(now * 1000);
+	let actual_clock = new Date();
+	render.begin(0, y, render.width, render.height);
 	render.fillRectangle(blue, 0, 0, render.width, render.height);
-	render.drawText(e.toString().slice(4,24), font, white, x, y);
+	render.drawText(rtc_clock.toString().slice(4, 24), font, white, x, y);
+	render.drawText(actual_clock.toString().slice(4, 24), font, grey, x, y + 30);
 	render.end();
 }, 1000);

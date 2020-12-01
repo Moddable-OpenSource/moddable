@@ -213,7 +213,6 @@ static void gattcMTUExchangedEvent(void *the, void *refcon, uint8_t *message, ui
 static void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void pmPeersDeleteSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void clearScanned(modBLE ble);
 
@@ -976,15 +975,6 @@ static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, u
 	xsEndHost(gBLE->the);
 }
 
-static void pmPeersDeleteSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	if (!gBLE) return;
-
-	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onBondingsDeleted"));
-	xsEndHost(gBLE->the);
-}
-
 void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	serviceSearchRecord *entry;
@@ -1560,9 +1550,6 @@ void pm_evt_handler(pm_evt_t const * p_evt)
     		break;
 		case PM_EVT_CONN_SEC_SUCCEEDED:
 			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt, sizeof(pm_evt_t), pmConnSecSucceededEvent, NULL);
-			break;
-		case PM_EVT_PEERS_DELETE_SUCCEEDED:
-			modMessagePostToMachine(gBLE->the, NULL, 0, pmPeersDeleteSucceededEvent, NULL);
 			break;
 		case PM_EVT_CONN_SEC_CONFIG_REQ: {
 			pm_conn_sec_config_t pm_conn_sec_config;

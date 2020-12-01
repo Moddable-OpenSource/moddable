@@ -24,6 +24,7 @@
 */
 
 import RTC from "rtc";
+import I2C from "pins/i2c";
 
 const DS3231_ADDR = 0x68;
 const DS3231_TIME_CAL_ADDR = 0x00;
@@ -92,7 +93,12 @@ class DS3231 extends RTC {
 	
 		super.writeBlock(DS3231_TIME_CAL_ADDR, buf);
 	}
-
+	static probe() {
+		const i = new I2C({address: DS3231_ADDR, throw: false});
+		const result = i.read(1);
+		i.close();
+		return undefined !== result;
+	}
 }
 Object.freeze(DS3231.prototype);
 

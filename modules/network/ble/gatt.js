@@ -33,6 +33,9 @@ class Client {
 				case "address":
 					this.address = dictionary.address;
 					break;
+				case "addressType":
+					this.addressType = dictionary.addressType;
+					break;
 				case "bonded":
 					this.bonded = dictionary.bonded;
 					break;
