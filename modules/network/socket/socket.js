@@ -34,6 +34,11 @@ export class Socket @ "xs_socket_destructor" {
 
 	// callback()		// connected, error/disconnected, read ready (bytes ready), write ready (bytes can write)
 };
+Socket.connected = 1;
+Socket.readable = 2;
+Socket.writable = 3;
+Socket.error = -2;
+Socket.disconnected = -1;
 
 export class Listener @ "xs_listener_destructor" {
 	constructor(dictionary) @ "xs_listener";		// {port: 80}
