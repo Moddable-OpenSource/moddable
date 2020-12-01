@@ -54,6 +54,12 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
 	gBondedDeviceList = NULL;
 }
 
+void xs_ble_sm_delete_bonding(xsMachine *the)
+{
+	// @@ TBD
+	xsUnknownError("unimplemented");
+}
+
 void modBLEBondedDevicesAdd(modBLEBondedDevice device)
 {
 	modBLEBondedDevice walker;
