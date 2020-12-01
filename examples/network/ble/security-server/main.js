@@ -18,7 +18,7 @@
 
 import BLEServer from "bleserver";
 import {uuid} from "btutils";
-import {IOCapability} from "sm";
+import {SM, IOCapability} from "sm";
 import Timer from "timer";
 
 const HTM_SERVICE_UUID = uuid`1809`;
@@ -28,21 +28,31 @@ class SecureHealthThermometerServer extends BLEServer {
 	onReady() {
 		this.deviceName = "Moddable HTM";
 		this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+		//this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.DisplayOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
 		//this.securityParameters = { ioCapability:IOCapability.NoInputNoOutput };
 		this.onDisconnected();
 	}
-	onAuthenticated() {
+	onAuthenticated(params) {
 		this.authenticated = true;
+		this.bonded = params.bonded;
 		if (this.characteristic)
 			this.startMeasurements();
 	}
-	onConnected() {
+	onConnected(device) {
+		trace(`connected to device ${device.address}\n`);
 		this.stopAdvertising();
 	}
-	onDisconnected() {
+	onDisconnected(device) {
+		if (device) {
+			trace(`disconnected from device ${device.address}\n`);
+			if (this.bonded) {
+				SM.deleteBonding(device.address, device.addressType);
+				delete this.bonded;
+			}
+		}
 		this.stopMeasurements();
 		this.startAdvertising({
 			advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [HTM_SERVICE_UUID, BATTERY_SERVICE_UUID]}
@@ -74,6 +84,9 @@ class SecureHealthThermometerServer extends BLEServer {
 		let passkey = Math.round(Math.random() * 999999);
 		trace(`server requested passkey: ${this.passkeyToString(passkey)}\n`);
 		return passkey;
+	}
+	onBondingDeleted(params) {
+		trace(`device ${params.address} bond deleted\n`);
 	}
 	get temperature() {
 		if (98.5 > this.temp)
