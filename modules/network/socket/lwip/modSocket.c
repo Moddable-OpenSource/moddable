@@ -109,6 +109,7 @@ struct xsSocketRecord {
 	uint16				bufpos;
 	uint16				buflen;
 	uint16				port;
+	uint8_t				disconnectedWhileReading;
 
 	xsSocketUDPRemoteRecord
 						remote[1];
@@ -548,6 +549,8 @@ void xs_socket_read(xsMachine *the)
 
 			if (xss->reader[0])
 				socketSetPending(xss, kPendingReceive);
+			else if (xss->disconnectedWhileReading)
+				socketSetPending(xss, kPendingDisconnect);
 		}
 	}
 }
@@ -952,39 +955,33 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	uint16 offset;
 
 #ifdef mxDebug
-	if (p && fxInNetworkDebugLoop(xss->the)) {
-		modLog("refuse TCP");
+	if (p && fxInNetworkDebugLoop(xss->the))
 		return ERR_MEM;
-	}
 #endif
 
 	if (xss->pending & kPendingClose)
 		return ERR_OK;
 
-	if (!p) {
+	if (err) {	// this is defensive, as the lwip sources appear to always pass ERR_OK for err
+#ifdef mxDebug
+		modLog("unexpected error in didReceive");
+#endif
+		socketSetPending(xss, kPendingError);
+		return ERR_OK;
+	}
+
+	if (!p) {		// connnection closed
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
-
 		tcp_err(xss->skt, NULL);
-#if ESP32
-		xss->skt = NULL;			// no close on socket if disconnected.
-#endif
 
 		if (xss->reader[0] || xss->buflen)
-			;
+			xss->disconnectedWhileReading = true;
 		else
 			socketSetPending(xss, kPendingDisconnect);
 
 		return ERR_OK;
 	}
-
-	if (err) {
-		socketSetPending(xss, kPendingError);
-		return ERR_OK;
-	}
-
-//@@	if (xss->suspended)
-//@@		return ERR_MEM;
 
 	modCriticalSectionBegin();
 	for (i = 0; i < kReadQueueLength; i++) {
@@ -998,7 +995,6 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	if (kReadQueueLength == i)
 		return ERR_MEM;			// no space. return error so lwip will redeliver later
 
-//tcp_recved(xss->skt, p->tot_len);		//@@
 	modInstrumentationAdjust(NetworkBytesRead, p->tot_len);
 
 	socketSetPending(xss, kPendingReceive);
