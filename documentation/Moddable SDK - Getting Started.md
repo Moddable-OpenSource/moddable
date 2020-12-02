@@ -68,7 +68,7 @@ The **documentation**, **examples**, and **modules** directories share a common 
 <a id="mac-requirements"></a>
 ### System Requirements
 
-The Moddable SDK requires macOS Sierra version 10.12 or newer and a full installation of Xcode version 9 or newer.
+The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full installation of Xcode version 9 or newer.
 
 <a id="mac-instructions"></a>
 ### Installing

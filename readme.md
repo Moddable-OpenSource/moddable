@@ -11,7 +11,7 @@ Microcontrollers are highly constrained devices compared to modern computers and
 
 ![JS logo](./documentation/assets/moddable/js.png)
 
-The primary programming language for development is JavaScript. The XS JavaScript engine at the center of the Moddable SDK implements the [2020 JavaScript language standard](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-262.pdf) with better than 99% conformance.<sup>[[1](#footnotes)]</sup> The constraints of the target microcontroller may limit the number of language features that can be used in combination by a single application.
+The primary programming language for development is JavaScript. The XS JavaScript engine at the center of the Moddable SDK implements the [2020 JavaScript language standard](http://www.ecma-international.org/ecma-262/11.0/index.html) with better than 99% conformance.<sup>[[1](#footnotes)]</sup> The constraints of the target microcontroller may limit the number of language features that can be used in combination by a single application.
 
 The JavaScript language implemented in the Moddable SDK is the same language used in web pages and Node.js. The microcontroller that the scripts run on, however, is very different from a personal computer, server, or mobile device. These differences often require a different approach to using JavaScript. The APIs and objects in the Moddable SDK are quite different, being designed with the goal of minimizing memory use. Bring your existing experience with JavaScript, but be prepared to think about performance, code size, and memory use in a different way.<sup>[[2](#footnotes)]</sup>
 
@@ -29,9 +29,9 @@ A significant part of building efficient software for microcontrollers occurs at
 
 ### Networking
 
-The Moddable SDK implements network sockets and a variety of standard, secure networking protocols built on sockets including HTTP/HTTPS, WebSockets, DNS, SNTP, and telnet.
+The Moddable SDK implements network sockets and a variety of standard, secure networking protocols built on sockets including HTTP/HTTPS, WebSockets, MQTT, mDNS, DNS, SNTP, and telnet.
 
-There is also Bluetooth Low Energy (BLE) protocol support, enabling both BLE peripheral and central device development.
+There is also Bluetooth Low Energy (BLE) protocol support for both BLE peripheral and central device development.
 
 ### Graphics
 
@@ -40,7 +40,7 @@ Two APIs for building modern user interfaces are available:
 - **Commodetto**, a bitmap graphics library that provides a 2D graphics API. Commodetto includes the lightweight **Poco** rendering engine, a display list renderer able to efficiently render a single scanline at a time, saving considerable memory by eliminating the need for a frame buffer.
 - **Piu**, a user interface framework built on top of Commodetto. Piu is an object-based framework that makes it easier to create complex, responsive layouts.
 
-The Moddable SDK also includes command line tools for image format conversion, image compression, image rotation, font compression, and more. The build system automatically makes use of these tools.
+The Moddable SDK also includes command line tools for image format conversion, image compression, image rotation, font compression, localization, and more. The build system automatically makes use of these tools.
 
 ### Hardware
 
@@ -64,7 +64,7 @@ Similar to other debuggers, `xsbug` supports setting breakpoints, browsing sourc
 
 3. To develop for a particular device, you need to install additional tools and SDKs for that device. The setup process for each device is different, but usually involves installing some additional SDKs, drivers, and development tools.
 
-	The SDKs and tools for a particular device are not created or maintained by Moddable, but we do provide detailed instructions to help you install them and get started developing for them with the Moddable SDK. The section below provides links to the setup instructions/developer guides for some of the devices we support.
+The SDKs and tools for a particular device are not created or maintained by Moddable, but we do provide detailed instructions to help you install them and get started developing for them with the Moddable SDK. The section below provides links to the setup instructions/developer guides for some of the devices we support.
 
 ### Hardware simulators
 
@@ -83,7 +83,7 @@ To use the Moddable SDK with ESP8266-based devices, you need to:
 1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
 2. Install [ESP8266 tools](./documentation/devices/esp8266.md)
 
-The Moddable SDK supports many devices built on ESP8266, including the devices shown below.
+The Moddable SDK supports [many devices](./documentation/devices/esp8266.md#platforms) built on ESP8266, including the devices shown below.
 
 | | | |
 | :---: | :---: | :---: |
@@ -101,7 +101,7 @@ To use the Moddable SDK with ESP32-based devices, you need to:
 1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
 2. Install [ESP32 tools](./documentation/devices/esp32.md)
 
-The Moddable SDK supports many devices built on ESP32, including the devices shown below.
+The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platforms) built on ESP32, including the devices shown below.
 
 | | | |
 | :---: | :---: | :---: |
@@ -149,7 +149,7 @@ The following developer resources are also available:
 
 ![](./documentation/assets/devices/wasm.gif)
 
-WebAssembly is supported in modern web browsers, both on computers and mobile devices. The Wasm support in the Moddable SDK has been successfully tested in Safari, FireFox, and Chrome.
+WebAssembly is supported in modern web browsers, both on computers and mobile devices. The Wasm support in the Moddable SDK is compatible with Safari, FireFox, and Chrome browsers.
 
 To use the Moddable SDK with WebAssembly, you need to:
 
@@ -160,7 +160,7 @@ To use the Moddable SDK with WebAssembly, you need to:
 
 ![Displays](./documentation/assets/moddable/displays.jpg)
 
-We have tested a variety of SPI displays with the ESP8266 and ESP32. Video demonstrations of these displays are [on our website](http://www.moddable.com/display). Wiring guides are available in the [documentation/displays](./documentation/displays) folder. The source code for the corresponding display and touch drivers is available in the [modules/drivers](./modules/drivers) folder.
+We have tested a variety of SPI displays with the ESP8266 and ESP32. Video demonstrations of these displays are [on our website](http://www.moddable.com/display). Wiring guides are available in the [documentation/displays](./documentation/displays) directory. The source code for the corresponding display and touch drivers is available in the [modules/drivers](./modules/drivers) directory.
 
 ## Source tree
 
@@ -180,18 +180,19 @@ In addition to the documentation and examples in this repository, we have severa
 
 | | |
 | :---: | :---|
-|<img src="https://miro.medium.com/fit/c/262/262/0*Vrsgi6r4Y0T_P9nd.png" width=60> | Our [Gitter chatroom](https://gitter.im/embedded-javascript/moddable) is a great place to ask questions and discuss the Moddable SDK with members of the Moddable team and other developers. |
-| <img src="https://static.thenounproject.com/png/1453176-200.png" width=70> | The [Moddable blog](https://blog.moddable.com) contains posts about interesting projects by Moddable and important updates to the Moddable SDK and XS JavaScript engine.
-| <img src="https://www.moddable.com/images/book/book-hero-full-vert.png" width=130> | [IoT Development for ESP32 and ESP8266 with JavaScript](https://www.moddable.com/book) is a book written by members of the Moddable team, Peter Hoddie and Lizzie Prader.
+|<img src="https://miro.medium.com/fit/c/262/262/0*Vrsgi6r4Y0T_P9nd.png" width=50> | Our [Gitter chatroom](https://gitter.im/embedded-javascript/moddable) is a great place to ask questions and discuss the Moddable SDK with members of the Moddable team and other developers. |
+| <img src="https://static.thenounproject.com/png/1453176-200.png" width=60> | The [Moddable blog](https://blog.moddable.com) contains in-depth posts about new features and the Moddable, interesting projects by Moddable, and important updates to the Moddable SDK and XS JavaScript engine.
+| <img src="https://www.moddable.com/images/book/book-hero-full-vert.png" width=200> | [IoT Development for ESP32 and ESP8266 with JavaScript](https://www.moddable.com/book) is a book written by members of the Moddable team, Peter Hoddie and Lizzie Prader.
 | <img src="https://m.media-amazon.com/images/I/51ak-nNiHdL.jpg" width=70> | [実践Moddable JavaScriptではじめるIoTアプリケーション (技術の泉シリーズ](https://meganetaaan.hatenablog.com/entry/2020/09/13/011403) is a book written by developer Shinya Ishikawa.
-
+| <img src="https://static.thenounproject.com/png/2067146-200.png" width=50> | [Detailed release notes](https://github.com/Moddable-OpenSource/moddable/releases) for updates to the Moddable SDK are posted regularly on GitHub. |
+2067146
 ## Licensing
 
 The Moddable SDK is provided under a combination of licenses that includes GPL 3.0, LGPL 3.0, Apache 2.0, and Creative Commons Attribution 4.0 Licenses. The [license](./licenses) directory contains additional information on the licenses used and licensing options. The [licensing article](http://www.moddable.com/license) on the Moddable web site describes additional background and a commercial licensing option.
 
 ## Security issues
 
-We work to ensure that there are no security holes in the Moddable SDK. Still, it is nearly impossible to eliminate them all. Security researchers who identify potential security issues with our software are encouraged to open an [open an issue](./issues). We will respond to these as quickly as we can. If you prefer, you may also report security issues by [email](mailto:info@moddable.com).
+We work to ensure that there are no security holes in the Moddable SDK. Still, it is nearly impossible to eliminate them all. Security researchers who identify potential security issues with our software are encouraged to open an [open an issue](./issues). We will respond to these as quickly as we can. If you prefer, you may instead report security issues by [email](mailto:info@moddable.com).
 
 ## Questions? We're here to help
 
