@@ -1408,7 +1408,7 @@ void PiuView_onTouchBegan(xsMachine* the)
 	y = c; 
 #endif
 	(*self)->updating = 1;
-	(*self)->idleTicks = ticks;
+	(*self)->idleTicks = (PiuTick)ticks;
 	PiuApplicationTouchBegan(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
@@ -1439,7 +1439,7 @@ void PiuView_onTouchEnded(xsMachine* the)
 	y = c; 
 #endif
 	(*self)->updating = 1;
-	(*self)->idleTicks = ticks;
+	(*self)->idleTicks = (PiuTick)ticks;
 	PiuApplicationTouchEnded(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
