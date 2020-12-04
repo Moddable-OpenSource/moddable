@@ -51,3 +51,4 @@ nmake GOAL=release BUILD_DIR=%BUILD_DIR% XS_DIR=%XS_DIR% /c /f serial2xsbug.mak 
 nmake GOAL=release BUILD_DIR=%BUILD_DIR% XS_DIR=%XS_DIR% /c /f simulator.mak /s
 nmake GOAL=release BUILD_DIR=%BUILD_DIR% XS_DIR=%XS_DIR% /c /f tools.mak /s
 call %MODDABLE%\build\bin\win\release\mcconfig -m -p x-win %MODDABLE%\tools\xsbug\manifest.json
+call %MODDABLE%\build\bin\win\release\mcconfig -m -p x-win %MODDABLE%\tools\mcsim\manifest.json
