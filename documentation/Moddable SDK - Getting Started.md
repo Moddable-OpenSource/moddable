@@ -2,7 +2,7 @@
 ### A guide to installing the Moddable SDK and building its tools
 
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: December 1, 2020
+Revised: December 4, 2020
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
@@ -24,7 +24,7 @@ To get started with the Moddable SDK, take the following steps:
 
 Follow the **Installing** instructions in the section below for your computer's OS. These instructions will have you verify your setup by running the `helloworld` example on a desktop simulator using `mcconfig`, a command line tool that builds and runs Moddable applications. 
 
-> For more information about the desktop simulator, see the **Simulator** section of the [tools documentation](./tools/tools.md).
+> For more information about the desktop simulator, see the **Simulator** section of the [tools documentation](./tools/tools.md#simulator).
 
 You will also learn how to open `xsbug`, the JavaScript source level debugger that is built as part of the Moddable SDK tools. `xsbug` is a full featured debugger that supports debugging modules and applications for XS platforms.
 

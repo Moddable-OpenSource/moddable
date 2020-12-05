@@ -76,7 +76,7 @@ To use the simulator, you simply need to install the [Moddable SDK](./documentat
 
 A [video demonstration](https://www.youtube.com/watch?v=7GKOm3Tayjs) and information about the simulator is available in the **Simulator** section of the [tools documentation](./documentation/tools/tools.md).
 
-### ESP8266 (Espressif)
+### ESP8266 by Espressif
 
 To use the Moddable SDK with ESP8266-based devices, you need to:
 
@@ -94,7 +94,7 @@ The Moddable SDK supports [many devices](./documentation/devices/esp8266.md#plat
 <sup>[6]</sup> *See also: [Using the Moddable SDK with ESP8266](./documentation/devices/esp8266.md)*<BR>
 <sup>[7]</sup> *See also: [Moddable Three Developer Guide](./documentation/devices/moddable-three.md)*<BR>
 
-### ESP32 (Espressif)
+### ESP32 by Espressif
 
 To use the Moddable SDK with ESP32-based devices, you need to:
 
@@ -112,7 +112,7 @@ The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platfo
 > <sup>[8]</sup> *See also: [Moddable Two Developer Guide](./documentation/devices/moddable-two.md), Moddable [product page](https://www.moddable.com/product)*<BR>
 <sup>[9]</sup> *See also: [Using the Moddable SDK with ESP32](./documentation/devices/esp32.md)*<BR>
 
-### Gecko (Silicon Labs)
+### Gecko by Silicon Labs
 
 To use the Moddable SDK with Gecko devices, you need to:
 
@@ -130,7 +130,7 @@ The Moddable SDK supports four Gecko boards, shown below.
 | :---: | :---: | :---: | :---: |
 | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://www.silabs.com/content/dam/siliconlabs/images/products/microcontrollers/32-bit_mcus/giant_gecko/giant-gecko-starter-kit.jpg" width=125></a><BR>Giant Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://blog.moddable.com/blog/wp-content/uploads/2018/05/gecko-1-300x179.jpg" width=125></a><BR>Mighty Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/thunderboard/thunderbord-sense-down-2.jpg?" width=125></a><BR>Thunderboard Sense 2 | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/bluetooth_low_energy/bluegiga_bluetooth_low_energy_modules/blue-gecko-soc-kit.jpg?" width=125></a><BR>Blue Gecko 
 
-### QCA4020 (Qualcomm)
+### QCA4020 by Qualcomm
 
 <a href="./documentation/devices/qca4020/README.md"><img src="https://blog.moddable.com/blog/wp-content/uploads/2019/04/qca4020-image.png" width=175></a>
 
@@ -185,7 +185,7 @@ In addition to the documentation and examples in this repository, we have severa
 | <img src="https://www.moddable.com/images/book/book-hero-full-vert.png" width=200> | [IoT Development for ESP32 and ESP8266 with JavaScript](https://www.moddable.com/book) is a book written by members of the Moddable team, [Peter Hoddie](https://www.moddable.com/peter-hoddie) and [Lizzie Prader](https://www.moddable.com/lizzie-prader).
 | <img src="https://m.media-amazon.com/images/I/51ak-nNiHdL.jpg" width=70> | [実践Moddable JavaScriptではじめるIoTアプリケーション (技術の泉シリーズ](https://meganetaaan.hatenablog.com/entry/2020/09/13/011403) is a book written by developer Shinya Ishikawa.
 | <img src="https://static.thenounproject.com/png/2067146-200.png" width=50> | [Detailed release notes](https://github.com/Moddable-OpenSource/moddable/releases) for updates to the Moddable SDK are posted regularly on GitHub. |
-| <img src="./documentation/assets/getting-started/ts-logo-256.svg" width=50> | The Moddable SDK build tools have support TypeScript, so you can use build-time type checking in your embedded code. Details on the [blog](https://blog.moddable.com/blog/typescript/) |
+| <img src="./documentation/assets/getting-started/ts-logo-256.svg" width=50> | The Moddable SDK build tools have support TypeScript, so you can use build-time type checking in your embedded code. Details on the [blog](https://blog.moddable.com/blog/typescript/). |
 
 ## Licensing
 
