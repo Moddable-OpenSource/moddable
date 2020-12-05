@@ -1,7 +1,7 @@
 # Moddable SDK
 
 Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: December 1, 2020
+Revised: December 4, 2020
 
 ## Modern software development for microcontrollers
 
@@ -9,7 +9,7 @@ Revised: December 1, 2020
 
 Microcontrollers are highly constrained devices compared to modern computers and mobile devices. A typical microcontroller used with the Moddable SDK has about 45 KB of free memory, 1 MB of Flash ROM, and runs at 80 MHz. The Moddable SDK uses many different techniques, both at build time and at run time, to work efficiently on these devices.
 
-![JS logo](./documentation/assets/moddable/js.png)
+<a href="https://tc39.es/ecma262/">![JS logo](./documentation/assets/moddable/js.png)</a>
 
 The primary programming language for development is JavaScript. The XS JavaScript engine at the center of the Moddable SDK implements the [2020 JavaScript language standard](http://www.ecma-international.org/ecma-262/11.0/index.html) with better than 99% conformance.<sup>[[1](#footnotes)]</sup> The constraints of the target microcontroller may limit the number of language features that can be used in combination by a single application.
 
@@ -68,7 +68,7 @@ The SDKs and tools for a particular device are not created or maintained by Modd
 
 ### Hardware simulators
 
-<img src="./documentation/assets/tools/screen-test.png" width=100>
+<a href="./documentation/tools/tools.md#simulator"><img src="./documentation/assets/tools/screen-test.png" width=100></a>
 
 The Moddable SDK includes simulators that run on macOS, Linux, and Windows. These are a great way to get started, and are invaluable as development accelerators.
 
@@ -105,8 +105,8 @@ The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platfo
 
 | | | |
 | :---: | :---: | :---: |
-| <a href="./documentation/devices/moddable-two.md"><img src="./documentation/assets/devices/moddable-two.png" width=125></a><BR>Moddable Two<sup>[[8](#footnotes3)]</sup> | <a href="./documentation/devices/esp32.md">![ESP32](./documentation/assets/devices/esp32.png)</a><BR>Node MCU ESP32<sup>[[9](#footnotes3)]</sup> | ![M5Stack](./documentation/assets/devices/m5stack.png)<BR>M5Stack
-| ![M5Stack Fire](./documentation/assets/devices/m5stack-fire.png)<BR>M5Stack Fire | ![M5Stick C](./documentation/assets/devices/m5stick-c.png)<BR>M5Stick C |  ![M5Atom](./documentation/assets/devices/m5atom.png)<BR>M5Atom Matrix
+| <a href="./documentation/devices/moddable-two.md"><img src="./documentation/assets/devices/moddable-two.png" width=125></a><BR>Moddable Two<sup>[[8](#footnotes3)]</sup> | <a href="./documentation/devices/esp32.md">![ESP32](./documentation/assets/devices/esp32.png)</a><BR>Node MCU ESP32<sup>[[9](#footnotes3)]</sup> | <a href="./documentation/devices/esp32.md#platforms">![M5Stack](./documentation/assets/devices/m5stack.png)</a><BR>M5Stack
+| <a href="./documentation/devices/esp32.md#platforms">![M5Stack Fire](./documentation/assets/devices/m5stack-fire.png)</a><BR>M5Stack Fire | <a href="./documentation/devices/esp32.md#platforms">![M5Stick C](./documentation/assets/devices/m5stick-c.png)</a><BR>M5Stick C |  <a href="./documentation/devices/esp32.md#platforms">![M5Atom](./documentation/assets/devices/m5atom.png)</a><BR>M5Atom Matrix
 
 <a id="footnotes3"></a>
 > <sup>[8]</sup> *See also: [Moddable Two Developer Guide](./documentation/devices/moddable-two.md), Moddable [product page](https://www.moddable.com/product)*<BR>
@@ -128,11 +128,11 @@ The Moddable SDK supports four Gecko boards, shown below.
 
 | | | | |
 | :---: | :---: | :---: | :---: |
-| <img src="https://www.silabs.com/content/dam/siliconlabs/images/products/microcontrollers/32-bit_mcus/giant_gecko/giant-gecko-starter-kit.jpg" width=125><BR>Giant Gecko | <img src="https://blog.moddable.com/blog/wp-content/uploads/2018/05/gecko-1-300x179.jpg" width=125><BR>Mighty Gecko | <img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/thunderboard/thunderbord-sense-down-2.jpg?" width=125><BR>Thunderboard Sense 2 | <img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/bluetooth_low_energy/bluegiga_bluetooth_low_energy_modules/blue-gecko-soc-kit.jpg?" width=125><BR>Blue Gecko 
+| <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://www.silabs.com/content/dam/siliconlabs/images/products/microcontrollers/32-bit_mcus/giant_gecko/giant-gecko-starter-kit.jpg" width=125></a><BR>Giant Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://blog.moddable.com/blog/wp-content/uploads/2018/05/gecko-1-300x179.jpg" width=125></a><BR>Mighty Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/thunderboard/thunderbord-sense-down-2.jpg?" width=125></a><BR>Thunderboard Sense 2 | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/bluetooth_low_energy/bluegiga_bluetooth_low_energy_modules/blue-gecko-soc-kit.jpg?" width=125></a><BR>Blue Gecko 
 
 ### QCA4020 (Qualcomm)
 
-<img src="https://blog.moddable.com/blog/wp-content/uploads/2019/04/qca4020-image.png" width=175>
+<a href="./documentation/devices/qca4020/README.md"><img src="https://blog.moddable.com/blog/wp-content/uploads/2019/04/qca4020-image.png" width=175></a>
 
 To use the Moddable SDK with the QCA4020, you need to:
 
@@ -147,7 +147,7 @@ The following developer resources are also available:
 
 ### WebAssembly (Wasm)
 
-![](./documentation/assets/devices/wasm.gif)
+<a href="./documentation/devices/wasm.md">![](./documentation/assets/devices/wasm.gif)</a>
 
 WebAssembly is supported in modern web browsers, both on computers and mobile devices. The Wasm support in the Moddable SDK is compatible with Safari, FireFox, and Chrome browsers.
 
@@ -158,7 +158,7 @@ To use the Moddable SDK with WebAssembly, you need to:
 
 ## Displays
 
-![Displays](./documentation/assets/moddable/displays.jpg)
+<a href="http://www.moddable.com/display">![Displays](./documentation/assets/moddable/displays.jpg)</a>
 
 We have tested a variety of SPI displays with the ESP8266 and ESP32. Video demonstrations of these displays are [on our website](http://www.moddable.com/display). Wiring guides are available in the [documentation/displays](./documentation/displays) directory. The source code for the corresponding display and touch drivers is available in the [modules/drivers](./modules/drivers) directory.
 
@@ -182,10 +182,11 @@ In addition to the documentation and examples in this repository, we have severa
 | :---: | :---|
 |<img src="https://miro.medium.com/fit/c/262/262/0*Vrsgi6r4Y0T_P9nd.png" width=50> | Our [Gitter chatroom](https://gitter.im/embedded-javascript/moddable) is a great place to ask questions and discuss the Moddable SDK with members of the Moddable team and other developers. |
 | <img src="https://static.thenounproject.com/png/1453176-200.png" width=60> | The [Moddable blog](https://blog.moddable.com) contains in-depth posts about new features and the Moddable, interesting projects by Moddable, and important updates to the Moddable SDK and XS JavaScript engine.
-| <img src="https://www.moddable.com/images/book/book-hero-full-vert.png" width=200> | [IoT Development for ESP32 and ESP8266 with JavaScript](https://www.moddable.com/book) is a book written by members of the Moddable team, Peter Hoddie and Lizzie Prader.
+| <img src="https://www.moddable.com/images/book/book-hero-full-vert.png" width=200> | [IoT Development for ESP32 and ESP8266 with JavaScript](https://www.moddable.com/book) is a book written by members of the Moddable team, [Peter Hoddie](https://www.moddable.com/peter-hoddie) and [Lizzie Prader](https://www.moddable.com/lizzie-prader).
 | <img src="https://m.media-amazon.com/images/I/51ak-nNiHdL.jpg" width=70> | [実践Moddable JavaScriptではじめるIoTアプリケーション (技術の泉シリーズ](https://meganetaaan.hatenablog.com/entry/2020/09/13/011403) is a book written by developer Shinya Ishikawa.
 | <img src="https://static.thenounproject.com/png/2067146-200.png" width=50> | [Detailed release notes](https://github.com/Moddable-OpenSource/moddable/releases) for updates to the Moddable SDK are posted regularly on GitHub. |
-2067146
+| <img src="./documentation/assets/getting-started/ts-logo-256.svg" width=50> | The Moddable SDK build tools have support TypeScript, so you can use build-time type checking in your embedded code. Details on the [blog](https://blog.moddable.com/blog/typescript/) |
+
 ## Licensing
 
 The Moddable SDK is provided under a combination of licenses that includes GPL 3.0, LGPL 3.0, Apache 2.0, and Creative Commons Attribution 4.0 Licenses. The [license](./licenses) directory contains additional information on the licenses used and licensing options. The [licensing article](http://www.moddable.com/license) on the Moddable web site describes additional background and a commercial licensing option.
