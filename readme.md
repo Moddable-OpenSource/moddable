@@ -164,15 +164,22 @@ We have tested a variety of SPI displays with the ESP8266 and ESP32. Video demon
 
 ## Source tree
 
-The Moddable SDK repository contains the following top level directories.
+The Moddable SDK repository contains the following top level directories:
 
-- **build**: Files required for specific microcontroller targets, the simulator, and make files for build tools in the `tools` directory.
-- **documentation**: All the documentation for the Moddable SDK. Documentation is provided in markdown format.
-- **examples**: Example applications for many of the capabilities of the Moddable SDK. The [readme.md](examples/readme.md) document provides a guide to building the examples and information to help you find the types of examples you are looking for.
-- **license**: The license agreements for the software provided in the Moddable SDK. The Contributor License Agreements are here as well.
-- **modules**: The software modules that make up the runtime of the Moddable SDK. These include networking, graphics, user interface, hardware access, cryptographic primitives, and device drivers. All modules have a JavaScript API. Many modules are implemented in part using C.
-- **tools**: Tools to build applications using the Moddable SDK. These include command line tools for image format conversion, image compression, image rotation, font compression, processing localization strings, compiling resources, and building applications from JSON manifest files. In addition, xsbug, the XS source level debugger, is here.
-- **xs**: The XS JavaScript engine including its compiler and linker, and the test262 execution shell.
+- [**build**](./build): Files required for specific microcontroller targets, the simulator, and make files for build tools in the `tools` directory.
+- [**contributed**](./contributed): Unofficial projects and modules that show useful techniques for working with the Moddable API.
+- [**documentation**](./documentation): All the documentation for the Moddable SDK. Documentation is provided in markdown format.
+- [**examples**](./examples): Example applications for many of the capabilities of the Moddable SDK. The [readme.md](examples/readme.md) document provides a guide to building the examples and information to help you find the types of examples you are looking for.
+- [**license**](./license): The license agreements for the software provided in the Moddable SDK. The Contributor License Agreements are here as well.
+- [**modules**](./modules): The software modules that make up the runtime of the Moddable SDK. These include networking, graphics, user interface, hardware access, cryptographic primitives, and device drivers. All modules have a JavaScript API. Many modules are implemented in part using C.
+- [**tools**](./tools): Tools to build applications using the Moddable SDK. These include command line tools for image format conversion, image compression, image rotation, font compression, processing localization strings, compiling resources, and building applications from JSON manifest files. In addition, xsbug, the XS source level debugger, is here.
+- [**xs**](./xs): The XS JavaScript engine including its compiler and linker, and the test262 execution shell.
+
+## API Documentation
+
+The JavaScript APIs supported by the Moddable SDK are documented in a suite of documents in the [documentation](./documentation) directory. The documentation is an extensive reference, with numerous examples. The primary [Piu document](./documentation/piu/piu.md) alone is over 100 pages. All documentation is provided in markdown format.
+
+See the [readme](./documentation#api-documentation-for-modules-in--the-moddable-sdk) document in that directory for an overview of the API documents. 
 
 ## Resources
 
