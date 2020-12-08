@@ -1427,7 +1427,7 @@ export class Tool extends TOOL {
 		return array;
 	}
 	createFolder(path, folder) {
-		const names = folder.split("/");
+		const names = folder.split(this.slash);
 		for (let name of names) {
 			path += this.slash + name;
 			this.createDirectory(path)
