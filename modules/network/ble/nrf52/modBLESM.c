@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,10 +22,13 @@
 #include "xsHost.h"
 #include "mc.xs.h"
 #include "modBLE.h"
+#include "modBLECommon.h"
 #include "peer_manager.h"
 
 #define SEC_PARAM_MIN_KEY_SIZE 7
 #define SEC_PARAM_MAX_KEY_SIZE 16
+
+static void pm_evt_handler(pm_evt_t const * p_evt);
 
 void xs_ble_sm_delete_all_bondings(xsMachine *the)
 {
@@ -36,6 +39,11 @@ void xs_ble_sm_delete_bonding(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	uint8_t addressType = xsmcToInteger(xsArg(1));
+	
+	ble_gap_addr_t peer_addr;
+	c_memmove(peer_addr.addr, address, 6);
+	peer_addr.addr_type = addressType;
+	modBLEBondingRemove(the, &peer_addr);
 }
 
 uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_t mitm, uint16_t ioCapability)
@@ -83,4 +91,3 @@ uint16_t modBLESetSecurityParameters(uint8_t encryption, uint8_t bonding, uint8_
 	err_code = pm_sec_params_set(&sec_param);
 	return err_code;
 }
-

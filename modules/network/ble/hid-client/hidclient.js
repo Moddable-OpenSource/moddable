@@ -99,6 +99,7 @@ class BLEHIDClient extends BLEClient {
 				delete this.connecting;
 				delete this.bonded;
 				delete this.timer;
+				Bonded.remove(this.usageID);
 				this.scan();
 			}, 5000);
 			return;

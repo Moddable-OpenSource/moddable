@@ -96,8 +96,6 @@ static void gattsReadAuthRequestEvent(void *the, void *refcon, uint8_t *message,
 static void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
-static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-
 static void bleRadioOffEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void ble_radio_notification_deinit();
 
@@ -113,6 +111,7 @@ typedef struct {
 	uint8_t deviceNameSet;
 
 	// connection
+	uint8_t authenticated;
 	uint16_t conn_handle;
 	ble_gap_addr_t remote_bda;
 	
@@ -726,6 +725,21 @@ const char_name_table *handleToCharName(uint16_t handle) {
 	return NULL;
 }
 
+void modBLEServerBondingRemoved(ble_gap_addr_t *peer_addr)
+{
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), peer_addr->addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), peer_addr->addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 void bleServerReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -811,6 +825,7 @@ void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t me
 	if (conn_handle != gBLE->conn_handle) return;
 	xsBeginHost(gBLE->the);
 	gBLE->conn_handle = BLE_CONN_HANDLE_INVALID;
+	gBLE->authenticated = 0;
 	xsmcVars(2);
 	xsmcSetNewObject(xsVar(0));
 	xsmcSetInteger(xsVar(1), conn_handle);
@@ -1003,16 +1018,64 @@ static void gattsMTUExchangedEvent(void *the, void *refcon, uint8_t *message, ui
 	xsEndHost(gBLE->the);
 }
 
+static void pmBondedPeerConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	pm_evt_t *pm_evt = (pm_evt_t*)message;
+	pm_peer_data_bonding_t peer_bonding_data;
+	ret_code_t err_code;
+	
+	err_code = pm_peer_data_bonding_load(pm_evt->peer_id, &peer_bonding_data);
+	if (NRF_ERROR_NOT_FOUND == err_code)
+		return;
+		
+	ble_gap_addr_t *p_bonded_peer_addr = &(peer_bonding_data.peer_ble_id.id_addr_info);
+
+	xsBeginHost(gBLE->the);
+	if (BLE_CONN_HANDLE_INVALID != gBLE->conn_handle)
+		goto bail;
+	gBLE->conn_handle = pm_evt->conn_handle;
+	gBLE->remote_bda = *p_bonded_peer_addr;
+	gBLE->authenticated = 1;
+		
+	// When re-establishing a connection with a bonded peer, this callback is called before the gapConnectedEvent callback.
+	// Therefore we populate the connection->id here and call both the "onConnected" and "onAuthenticated" JS callbacks here.
+	// When the gapConnectedEvent callback is subsequently called, the connection has already been established and the function quietly exits.
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), pm_evt->conn_handle);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(1), (uint8_t*)&p_bonded_peer_addr->addr[0], BLE_GAP_ADDR_LEN);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), p_bonded_peer_addr->addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), 1);
+	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
+	
+bail:
+	xsEndHost(gBLE->the);
+}
+
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	if (!gBLE) return;
+	// Only send one "onAuthenticated" callback per successful connection
+	if (!gBLE || gBLE->authenticated) return;
 
 	pm_evt_t *pm_evt = (pm_evt_t*)message;
 	pm_conn_secured_evt_t const * conn_sec_succeeded = (pm_conn_secured_evt_t const *)&pm_evt->params.conn_sec_succeeded;
+	
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
-	xsmcSetBoolean(xsVar(1), (PM_CONN_SEC_PROCEDURE_BONDING == conn_sec_succeeded->procedure));
+	
+	// The PM_CONN_SEC_PROCEDURE_ENCRYPTION procedure uses a LTK that was shared during a previous bonding procedure to encrypt the link.
+	// We therefore consider consider the connection bonded when completing the PM_CONN_SEC_PROCEDURE_BONDING or PM_CONN_SEC_PROCEDURE_ENCRYPTION
+	// security procedures.
+	uint8_t bonded = (PM_CONN_SEC_PROCEDURE_ENCRYPTION == conn_sec_succeeded->procedure || PM_CONN_SEC_PROCEDURE_BONDING == conn_sec_succeeded->procedure);
+	xsmcSetBoolean(xsVar(1), bonded);
 	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 	xsEndHost(gBLE->the);
@@ -1190,10 +1253,13 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 {
 	LOG_PM_EVENT(p_evt->evt_id);
 	
-    pm_handler_on_pm_evt(p_evt);
+	pm_handler_on_pm_evt(p_evt);
 	pm_handler_flash_clean(p_evt);
 
     switch (p_evt->evt_id) {
+    	case PM_EVT_BONDED_PEER_CONNECTED:
+			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt, sizeof(pm_evt_t), pmBondedPeerConnectedEvent, NULL);
+    		break;
     	case PM_EVT_CONN_SEC_FAILED:
             // Rebond if one party has lost its keys
             if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING)

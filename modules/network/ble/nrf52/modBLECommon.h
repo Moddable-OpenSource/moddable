@@ -21,6 +21,7 @@
 #ifndef __mod_ble_common__
 #define __mod_ble_common__
 
+#include "xsmc.h"
 #include "ble.h"
 #include "ble_conn_params.h"
 #include "nrf_ble_gatt.h"
@@ -83,5 +84,9 @@ ret_code_t modBLEPlatformTerminate(void);
 
 void uuidToBuffer(uint8_t *buffer, ble_uuid_t *uuid, uint16_t *length);
 void bufferToUUID(ble_uuid_t *uuid, uint8_t *buffer, uint16_t length);
+
+void modBLEBondingRemove(xsMachine *the, ble_gap_addr_t *peer_addr);
+void modBLEClientBondingRemoved(ble_gap_addr_t *peer_addr);
+void modBLEServerBondingRemoved(ble_gap_addr_t *peer_addr);
 
 #endif
