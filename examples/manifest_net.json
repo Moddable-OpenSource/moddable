@@ -1,4 +1,5 @@
 {
+	"include": "$(MODULES)/network/wifi/manifest.json",
 	"platforms": {
 		"esp": {
 			"modules": {
@@ -7,9 +8,7 @@
 					"$(MODULES)/network/socket/lwip/*",
 					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/esp/*"
+					"$(MODULES)/network/sntp/*"
 				],
 				"setup/network": "$(BUILD)/devices/esp/setup/network"
 			},
@@ -17,7 +16,6 @@
 				"socket",
 				"setup/network",
 				"sntp",
-				"wifi",
 				"net"
 			]
 		},
@@ -28,9 +26,7 @@
 					"$(MODULES)/network/socket/lwip/*",
 					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/esp32/*"
+					"$(MODULES)/network/sntp/*"
 				],
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
@@ -38,7 +34,6 @@
 				"socket",
 				"setup/network",
 				"sntp",
-				"wifi",
 				"net"
 			]
 		},
@@ -63,15 +58,12 @@
 					"$(MODULES)/network/socket/mac/*",
 					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/mac/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/mac/*"
+					"$(MODULES)/network/sntp/*"
 				]
 			},
 			"preload": [
 				"socket",
 				"sntp",
-				"wifi",
 				"net"
 			]
 		},
@@ -84,7 +76,12 @@
 					"$(MODULES)/network/net/win/*",
 					"$(MODULES)/network/sntp/*"
 				]
-			}
+			},
+			"preload": [
+				"socket",
+				"sntp",
+				"net"
+			]
 		},
 		"qca4020": {
 			"modules": {
@@ -93,9 +90,7 @@
 					"$(MODULES)/network/socket/qca4020/*",
 					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/qca4020/*",
-					"$(MODULES)/network/sntp/*",
-					"$(MODULES)/network/wifi/*",
-					"$(MODULES)/network/wifi/qca4020/*"
+					"$(MODULES)/network/sntp/*"
 				],
 				"setup/network": "$(BUILD)/devices/qca4020/setup/network"
 			},
@@ -103,7 +98,6 @@
 				"socket",
 				"setup/network",
 				"sntp",
-				"wifi",
 				"net"
 			]
 		},	

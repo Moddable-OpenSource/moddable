@@ -1,0 +1,55 @@
+{
+    "platforms": {
+        "esp": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/*",
+                    "$(MODULES)/network/wifi/esp/*"
+                ]
+            }
+        },
+        "esp32": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/*",
+                    "$(MODULES)/network/wifi/esp32/*"
+                ]
+            }
+        },
+        "lin": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
+        "mac": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
+        "win": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
+        "qca4020": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/*",
+                    "$(MODULES)/network/wifi/qca4020/*"
+                ]
+            }
+        },
+        "...": {
+            "error": "wifi - unsupported platform"
+        }
+    },
+    "preload": [
+        "wifi"
+    ]
+}
