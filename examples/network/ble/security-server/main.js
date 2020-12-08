@@ -26,10 +26,9 @@ const BATTERY_SERVICE_UUID = uuid`180F`;
 
 class SecureHealthThermometerServer extends BLEServer {
 	onReady() {
-trace("onReady!\n");
 		this.deviceName = "Moddable HTM";
-		//this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
-		this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.DisplayOnly };
+		this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+		//this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.DisplayOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
@@ -39,7 +38,7 @@ trace("onReady!\n");
 	onAuthenticated(params) {
 		this.authenticated = true;
 		this.bonded = params.bonded;
-trace(`onAuthenticated bonded = ${this.bonded}\n`);
+		trace(`onAuthenticated bonded = ${this.bonded}\n`);
 		if (this.characteristic)
 			this.startMeasurements();
 	}
@@ -61,7 +60,6 @@ trace(`onAuthenticated bonded = ${this.bonded}\n`);
 		});
 	}
 	onCharacteristicNotifyEnabled(characteristic) {
-trace(`onCharacteristicNotifyEnabled\n`);
 		this.characteristic = characteristic;
 		if (this.authenticated)
 			this.startMeasurements();

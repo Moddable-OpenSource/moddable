@@ -25,9 +25,8 @@ const TEMPERATURE_CHARACTERISTIC_UUID = uuid`2A1C`;
 
 class SecureHealthThermometerClient extends BLEClient {
 	onReady() {
-trace("security client ready!\n");
-		//this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
-		this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.DisplayOnly };
+		this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+		//this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.DisplayOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
@@ -45,7 +44,7 @@ trace("security client ready!\n");
 		}
 		if (found) {
 			this.stopScanning();
-		trace(`connecting to device ${device.address}\n`);
+			trace(`connecting to device ${device.address}\n`);
 			this.connect(device);
 		}
 	}
@@ -77,12 +76,9 @@ trace("security client ready!\n");
 	}
 	onCharacteristics(characteristics) {
 		if (characteristics.length) {
-trace("got characteristics\n");
 			this.characteristic = characteristics[0];
-			if (this.authenticated) {
-trace("enabling notifications\n");
+			if (this.authenticated)
 				this.characteristic.enableNotifications();
-			}
 		}
 	}
 	onCharacteristicNotification(characteristic, value) {
