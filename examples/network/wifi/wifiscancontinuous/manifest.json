@@ -1,35 +1,16 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/wifi/manifest.json"
+	],
 	"modules": {
 		"*": [
 			"./main",
-			"./wifiscanner",
-			"$(MODULES)/network/wifi/*"
+			"./wifiscanner"
 		]
 	},
 	"preload": [
-		"wifiscanner",
-		"wifi"
-	],
-	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODULES)/network/wifi/esp/*"
-			}
-		},
-		"esp32": {
-			"modules": {
-				"*": "$(MODULES)/network/wifi/esp32/*"
-			}
-		},
-		"qca4020": {
-			"modules": {
-				"*": "$(MODULES)/network/wifi/qca4020/*"
-			}
-		},
-		"...": {
-			"error": "WiFi module unsupported"
-		}
-	}
+		"wifiscanner"
+	]
 }
 

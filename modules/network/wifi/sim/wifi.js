@@ -24,6 +24,7 @@ const timerInterval = 50;
 
 let state = "idle";
 let timer;
+let scanning = false;
 
 export default class WiFi {
     #onNotify;
@@ -65,8 +66,21 @@ export default class WiFi {
         if (value != 1) throw new Error("AP mode is not implemented in the simulator");
     }
     static get mode() { return 1; }
-    static scan(dictionary, callback) { 
-        throw new Error("Wi-Fi scan is not implemented in the simulator")
+    static scan(dictionary, callback) {
+		if (scanning)
+			throw new Error("already scanning");
+
+		scanning = true;
+		const items = accessPoints.slice();
+		Timer.set(id => {
+			if (items.length)
+				callback({...items.shift()});
+			else {
+				Timer.clear(id);
+				scanning = false;
+				callback();
+			}
+		}, 1500, 50);
      }
     static connect(dictionary) {
         if (!dictionary) {
@@ -87,3 +101,87 @@ WiFi.gotIP = "gotIP";
 WiFi.lostIP = "lostIP";
 WiFi.connected = "connect";
 WiFi.disconnected = "disconnect";
+
+
+
+const accessPoints = [
+   {
+      "ssid": "468 8th - slow",
+      "rssi": -84,
+      "channel": 3,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "JAMS2",
+      "rssi": -72,
+      "channel": 6,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "xfinitywifi",
+      "rssi": -79,
+      "channel": 6,
+      "hidden": false,
+      "authentication": "none"
+   },
+   {
+      "ssid": "baja",
+      "rssi": -81,
+      "channel": 8,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "baja",
+      "rssi": -88,
+      "channel": 8,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "Breathe",
+      "rssi": -85,
+      "channel": 9,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "Breathe-Guest",
+      "rssi": -84,
+      "channel": 9,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "468 8th - slow",
+      "rssi": -23,
+      "channel": 10,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "HOME-608A_2GEXT",
+      "rssi": -86,
+      "channel": 11,
+      "hidden": false,
+      "authentication": "wpa_wpa2_psk"
+   },
+   {
+      "ssid": "ATTePGQDkI",
+      "rssi": -87,
+      "channel": 11,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   },
+   {
+      "ssid": "LBBSB",
+      "rssi": -85,
+      "channel": 11,
+      "hidden": false,
+      "authentication": "wpa2_psk"
+   }
+];
+Object.freeze(accessPoints, true);
+
