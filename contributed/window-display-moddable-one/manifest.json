@@ -1,0 +1,43 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"creation": {
+		"stack": 350
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./assets",
+			"./screens"
+		],
+        "commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+        "commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+        "commodetto/Convert": "$(COMMODETTO)/commodettoConvert"
+	},
+	"preload": [
+		"main",
+		"assets",
+		"screens"
+	],
+	"resources": {
+		"*": [
+			"./assets/rectangle"
+		],
+		"*-color": [
+			"./assets/feathers"
+		],
+		"*-mask": [
+			"./fonts/open-sans-28-date+color",
+			"./fonts/open-sans-50-one",
+			"./assets/circle",
+			"./assets/crosshair",
+			"./assets/dot",
+			"./assets/moddable-box",
+			"./assets/moddable-close-box",
+			"./assets/moddable-text",
+			"./assets/scroller"
+		]
+	}
+}
