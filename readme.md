@@ -179,7 +179,7 @@ The Moddable SDK repository contains the following top level directories:
 
 The JavaScript APIs supported by the Moddable SDK are documented in a suite of documents in the [documentation](./documentation) directory. The documentation is an extensive reference, with numerous examples. The primary [Piu document](./documentation/piu/piu.md) alone is over 100 pages. All documentation is provided in markdown format.
 
-See the [readme](./documentation#api-documentation-for-modules-in--the-moddable-sdk) document in that directory for an overview of the API documents. 
+See the [readme](./documentation#api-documentation-for-modules) document in that directory for an overview of the API documents. 
 
 ## Resources
 
