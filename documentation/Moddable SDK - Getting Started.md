@@ -248,14 +248,14 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable). For instance, using `Git Bash`:
 
 	```text
-	cd $MODDABLE
+	cd %MODDABLE%
 	git pull
 	```
 
 	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
 
 	```text
-	cd $MODDABLE
+	cd %MODDABLE%
 	git stash push
 	git pull
 	git stash pop
