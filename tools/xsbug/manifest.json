@@ -33,15 +33,20 @@
 			"$(PIU)/PC/Code/piu*",
 			"$(PIU)/PC/Common/piu*"
 		],
-		"*": [
-			"./*"
-		],
 		"yaml/*": [
 			"$(MODDABLE)/xs/tools/yaml/*"
+		],
+		"*": [
+			"./*",
+			"$(MODULES)/base/instrumentation/modInstrumentation"
 		]
 	},
 	"preload": [
-		"piu/PC"
+		"piu/All",
+		"piu/PC",
+		"io/Serial",
+		"timer"
+
 	],
 	"resources": {
 		"assets/*": "./assets/*",
@@ -50,8 +55,15 @@
 	"platforms":{
 		"x-lin": {
 			"modules": {
+				"io/*": [
+					"$(MODDABLE)/modules/io/serial/lin/*"
+				],
 				"piu/*": [
 					"$(PIU)/PC/lin/piu*"
+				],
+				"*": [
+					"$(MODDABLE)/modules/base/timer/timer",
+					"$(MODDABLE)/modules/base/timer/lin/*"
 				]
 			},
 			"preload": [
@@ -59,8 +71,15 @@
 		},
 		"x-mac": {
 			"modules": {
+				"io/*": [
+					"$(MODDABLE)/modules/io/serial/mac/*"
+				],
 				"piu/*": [
 					"$(PIU)/PC/mac/piu*"
+				],
+				"*": [
+					"$(MODDABLE)/modules/base/timer/*",
+					"$(MODDABLE)/modules/base/timer/mac/*"
 				]
 			},
 			"preload": [
@@ -68,8 +87,15 @@
 		},
 		"x-win": {
 			"modules": {
+				"io/*": [
+					"$(MODDABLE)/modules/io/serial/win/*"
+				],
 				"piu/*": [
 					"$(PIU)/PC/win/piu*"
+				],
+				"*": [
+					"$(MODDABLE)/modules/base/timer/*",
+					"$(MODDABLE)/modules/base/timer/win/*"
 				]
 			},
 			"preload": [
