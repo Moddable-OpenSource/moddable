@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -828,16 +828,12 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 				baud: this.baudRates[this.baudRatesIndex],
 				target:this,
 				onReadable(count) {
-					const buffer = this.read();
-					if (buffer)
-						this.target.parse(buffer);
-					else
-						this.target.close();
+					this.target.parse(this.read());
 				},
-				onWritable() {
-				},
+				onError() {
+					this.target.close();
+				}
 			});
-			this.serial.purge();
 			this.serial.set({DTR: false, RTS: true});
 			Timer.set(() => { 
 				this.serial.set({DTR: false, RTS: false}) 
