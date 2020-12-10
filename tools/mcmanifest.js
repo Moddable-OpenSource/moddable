@@ -329,6 +329,8 @@ export class MakeFile extends FILE {
 			this.line("INSTRUMENT = 1");
 		if (tool.verbose)
 			this.line("VERBOSE = 1");
+		if (tool.buildOnly)
+			this.line("BUILD_ONLY = 1");
 		for (var result in tool.environment)
 			this.line(result, " = ", tool.environment[result].replace(/ /g, "\\ "));
 		this.line("");
@@ -1318,6 +1320,9 @@ export class Tool extends TOOL {
 					this.buildTarget = argv[argi];
 				else
 					this.buildTarget = this.buildTarget + " " + argv[argi];
+				break;
+			case "-b":
+				this.buildOnly = true;
 				break;
 			default:
 				name = argv[argi];
