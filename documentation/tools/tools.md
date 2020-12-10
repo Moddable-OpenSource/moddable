@@ -57,6 +57,7 @@ A few notes:
 
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
+- `-b`: to build only (do not run or upload firmware)
 - `-d`: to build a debug instrumented version.
 - `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See **png2bmp** here under.
 - `-i`: to build a release instrumented version.
