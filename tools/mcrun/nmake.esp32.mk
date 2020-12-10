@@ -56,12 +56,16 @@ LAUNCH = release
 all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
+!IF "$(BUILD_ONLY)"!="1"
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(XSBUG).exe && echo Starting xsbug... && timeout /nobreak /t 7 > nul)
 	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
-	
+!ENDIF
+
 release: $(ARCHIVE)
+!IF "$(BUILD_ONLY)"!="1"
 	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+!ENDIF
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"

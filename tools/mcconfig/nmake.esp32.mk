@@ -48,6 +48,10 @@ BASE_DIR = $(USERPROFILE)
 ESP32_CMAKE = 1
 !ENDIF
 
+!IF "$(BUILD_ONLY)"!="1"
+FLASH=flash 
+!ENDIF
+
 !IF "$(ESP32_CMAKE)"!="1"
 !IF "$(UPLOAD_PORT)"==""
 !ERROR UPLOAD_PORT environment variable must be defined!
@@ -119,7 +123,7 @@ START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > n
 !IF "$(ESP32_CMAKE)"=="1"
 BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) -B $(IDF_BUILD_DIR) build -D mxDebug=1 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 BUILD_MSG =
-DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) flash -D mxDebug=1 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(FLASH) -D mxDebug=1 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 START_SERIAL2XSBUG = echo Launching app... & echo Type Ctrl-C twice after debugging app. & $(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1
 !ELSE
 BUILD_CMD = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make ; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW)"
@@ -137,7 +141,7 @@ START_SERIAL2XSBUG = echo No debugger for a release build.
 
 !IF "$(ESP32_CMAKE)"=="1"
 BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) -B $(IDF_BUILD_DIR) build -D mxDebug=0 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
-DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) flash -D mxDebug=0 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(FLASH) -D mxDebug=0 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 !ELSE
 BUILD_CMD = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW)"
 DEPLOY_CMD = $(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Deploying xs_esp32.elf...; DEBUG=0 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) make flash"
@@ -392,23 +396,31 @@ precursor: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_esp32.a
 
 
 debug: precursor
+!IF "$(BUILD_ONLY)"!="1"
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+!ENDIF
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 !IF "$(ESP32_CMAKE)"=="1"
 	cd $(PROJ_DIR)
-	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=1 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build $(FLASH) -D mxDebug=1 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\.
+!IF "$(BUILD_ONLY)"!="1"
 	(@echo Launching app. Type Ctrl-C twice after debugging app to close serial2xsbug...)
 	$(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1
+!ENDIF
 !ELSE
 	set HOME=$(PROJ_DIR)
-	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); echo Launching app...; echo -e '\nType Ctrl-C after debugging app to close this window'; $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
+	$(MSYS32_BASE)\msys2_shell.cmd -mingw32 -c "echo Building xs_esp32.elf...; touch ./main/main.c; DEBUG=1 IDF_BUILD_DIR=$(IDF_BUILD_DIR_MINGW) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make flash; cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.map $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/xs_esp32.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/partitions.bin $(BIN_DIR_MINGW); cp $(IDF_BUILD_DIR_MINGW)/bootloader/bootloader.bin $(BIN_DIR_MINGW); 
+!IF "$(BUILD_ONLY)"!="1"
+	echo Launching app...; echo -e '\nType Ctrl-C after debugging app to close this window'
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 | more"
+!ENDIF
 !ENDIF
 
 release: precursor
@@ -417,7 +429,7 @@ release: precursor
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
 !IF "$(ESP32_CMAKE)"=="1"
 	cd $(PROJ_DIR)
-	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=0 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build $(FLASH) -D mxDebug=0 SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
@@ -430,8 +442,10 @@ release: precursor
 
 
 mingPrepare:
+!IF "$(BUILD_ONLY)"!="1"
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
+!ENDIF
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
@@ -449,12 +463,16 @@ build: precursor mingPrepare
 	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)
 
 xsbug:
+!IF "$(BUILD_ONLY)"!="1"
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)
+!ENDIF
 
 DEPLOY_PRE:
+!IF "$(BUILD_ONLY)"!="1"
 	$(KILL_SERIAL2XSBUG)
+!ENDIF
 	if not exist $(BIN_DIR)\xs_esp32.bin echo "Please build before deploy"
 	if not exist $(BIN_DIR)\xs_esp32.bin exit 1
 	if exist $(IDF_BUILD_DIR)\xs_esp32.bin move /Y $(IDF_BUILD_DIR)\xs_esp32.bin $(IDF_BUILD_DIR)\xs_esp32.bin_prev

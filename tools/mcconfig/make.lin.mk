@@ -143,13 +143,17 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: precursor
-	$(shell nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+	ifneq ($(BUILD_ONLY),1)
+		$(shell nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+	endif
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 
 xsbug:
-	@echo "# starting xsbug"
-	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+	ifneq ($(BUILD_ONLY),1)
+		@echo "# starting xsbug"
+		$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+	endif
 
 build: precursor
 

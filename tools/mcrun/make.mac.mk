@@ -39,10 +39,12 @@ XSL = $(MODDABLE)/build/bin/mac/release/xsl
 .PHONY: all	
 
 all: $(BIN_DIR)/mc.xsa
-	$(KILL_SERIAL2XSBUG) 
-	$(START_XSBUG) 
-	open -a $(SIMULATOR) $(BIN_DIR)/mc.xsa
-
+	ifneq ($(BUILD_ONLY),1)
+		$(KILL_SERIAL2XSBUG) 
+		$(START_XSBUG) 
+		open -a $(SIMULATOR) $(BIN_DIR)/mc.xsa
+	endif
+	
 $(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"
 	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)

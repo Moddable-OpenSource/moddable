@@ -81,6 +81,10 @@ else
 	SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)/include
 endif
 
+!IF "$(BUILD_ONLY)"!="1"
+FLASH=flash 
+!ENDIF
+
 INC_DIRS = \
  	$(IDF_PATH)/components \
  	$(IDF_PATH)/components/bootloader_support/include \
@@ -189,7 +193,7 @@ CPP = $(TOOLS_BIN)/xtensa-esp32-elf-g++
 LD  = $(CPP)
 AR  = $(TOOLS_BIN)/xtensa-esp32-elf-ar
 OBJCOPY = $(TOOLS_BIN)/xtensa-esp32-elf-objcopy
-ESPTOOL = $(IDF_PATH)/components/esptool_py/esptool/esptool.py
+ESPTOOL = $(IDF_PATH)/components/esptool_py/esptool/BOGUSesptool.py
 
 AR_FLAGS = crs
 
@@ -293,10 +297,10 @@ ifeq ($(ESP32_CMAKE),1)
 		PORT_SET = -p $(UPLOAD_PORT)
 		SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
 	endif
-	BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build $(FLASH) -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	BUILD_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	BUILD_ERR = "ESP-IDF Build Failed"
-	DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+	DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) $(FLASH) -D mxDebug=$(DEBUG) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	IDF_RECONFIGURE_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) SDKCONFIG_H="$(SDKCONFIG_H)" CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 	RELEASE_LAUNCH_CMD = idf.py -B $(IDF_BUILD_DIR) $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL)
 	PARTITIONS_BIN = partition-table.bin
@@ -310,22 +314,26 @@ else
 	RELEASE_LAUNCH_CMD = IDF_BUILD_DIR=$(IDF_BUILD_DIR) SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) DEBUGGER_SPEED=$(DEBUGGER_SPEED) make monitor
 	PARTITIONS_BIN = partitions.bin
 	PARTITIONS_PATH = $(IDF_BUILD_DIR)/$(PARTITIONS_BIN)
-	ifeq ($(HOST_OS),Darwin)
-		SERIAL2XSBUG_PORT = `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'`
-	else
-		SERIAL2XSBUG_PORT = `grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | grep -o '"[^"]*"' | tr -d '"'`
+	ifneq ($(BUILD_ONLY),1)
+		ifeq ($(HOST_OS),Darwin)
+			SERIAL2XSBUG_PORT = `/usr/bin/grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | /usr/bin/grep -o '"[^"]*"' | tr -d '"'`
+		else
+			SERIAL2XSBUG_PORT = `grep ^CONFIG_ESPTOOLPY_PORT $(PROJ_DIR)/sdkconfig | grep -o '"[^"]*"' | tr -d '"'`
+		endif
 	endif
 endif
 
 ifeq ($(DEBUG),1)
-	ifeq ($(HOST_OS),Darwin)
-		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
-		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(IDF_BUILD_DIR)/xs_esp32.elf -bin $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
-	else
-		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
-		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
+	ifneq ($(BUILD_ONLY),1)
+		ifeq ($(HOST_OS),Darwin)
+			KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+			DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+			DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(IDF_BUILD_DIR)/xs_esp32.elf -bin $(TOOLS_ROOT)/bin/xtensa-esp32-elf-gdb"
+		else
+			KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+			DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+			DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
+		endif
 	endif
 else
 	KILL_SERIAL_2_XSBUG = 
@@ -379,11 +387,13 @@ DEPLOY_END:
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 xsbug:
-	@echo "# starting xsbug"
-	$(KILL_SERIAL2XSBUG)
-	$(DO_XSBUG)
-	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
-	$(DO_LAUNCH)
+	ifneq (($BUILD_ONLY),1)
+		@echo "# starting xsbug"
+		$(KILL_SERIAL2XSBUG)
+		$(DO_XSBUG)
+		PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
+		$(DO_LAUNCH)
+	endif
 
 prepareOutput:
 	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null

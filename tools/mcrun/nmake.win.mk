@@ -35,7 +35,9 @@ XSC = $(BUILD_DIR)\bin\win\release\xsc
 XSL = $(BUILD_DIR)\bin\win\release\xsl
 
 all: $(BIN_DIR)\mc.xsa
+!IF "$(BUILD_ONLY)"!="1"
 	start $(SIMULATOR) $(BIN_DIR)\mc.xsa
+!ENDIF
 
 $(BIN_DIR)\mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo # xsl mc.xsa

@@ -140,9 +140,11 @@ VPATH += $(XS_DIRECTORIES)
 .PHONY: all	
 	
 all: precursor
-	$(KILL_SERIAL2XSBUG) 
-	$(START_XSBUG) 
-	open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+	ifneq ($(BUILD_ONLY),1)
+		$(KILL_SERIAL2XSBUG) 
+		$(START_XSBUG) 
+		open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+	endif
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 

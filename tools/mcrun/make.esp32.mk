@@ -76,14 +76,18 @@ endif
 all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
-	$(shell pkill serial2xsbug)
-	$(START_XSBUG)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
-	
-release: $(ARCHIVE)
-	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	ifneq ($(BUILD_ONLY),1)
+		$(shell pkill serial2xsbug)
+		$(START_XSBUG)
+		$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	endif
 
+release: $(ARCHIVE)
+	ifneq ($(BUILD_ONLY),1)
+		$(shell pkill serial2xsbug)
+		$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	endif
+	
 debugURL: $(ARCHIVE)
 	@echo "# curl "$(NAME)".xsa "$(URL)
 	curl -X PUT $(URL) -H "Content-Type: application/octet-stream" -H "Expect:" --data-binary '@$(ARCHIVE)' --retry 2 --retry-delay 30
