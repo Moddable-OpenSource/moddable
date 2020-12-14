@@ -121,6 +121,7 @@ export class Request {
 		delete this.callback;
 		delete this.done;
 		delete this.suspended;
+		delete this.server;
 		this.state = 11;
 	}
 	suspend(value) {
@@ -435,7 +436,12 @@ function done(error = false) {
 	}
 
 	try {
-		this.callback(error ? Request.error : Request.responseComplete, data);
+		if (this.server) {
+			if (error)
+				this.callback(Server.error, data);
+		}
+		else
+			this.callback(error ? Request.error : Request.responseComplete, data);
 	}
 	finally {
 		this.close();
@@ -611,12 +617,13 @@ function server(message, value, etc) {
 			if (5 === this.state) {		// fragment of request body
 				let count = (value < this.total) ? value : this.total;
 				if (0 === count) return;
-				this.total -= count;
 
 				if (true === this.request)
 					this.callback(Server.requestFragment, socket.read());	// callback reads the data
-				else
+				else {
 					this.buffers.push(socket.read(this.request, count));		// http server reads the data
+					this.total -= count;
+				}
 
 				if (0 === this.total) {		// received complete request body
 					let data;
