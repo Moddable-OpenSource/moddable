@@ -6,9 +6,8 @@ interface Trace {
 }
 declare const trace:Trace;
 
-type HostBuffer = {
-  slice(begin: number, end?: number): ArrayBuffer
-};
+interface HostBuffer {
+}
 
 interface ObjectConstructor {
 	freeze<T>(obj: T, freeze?: boolean | number): Readonly<T>;
@@ -20,6 +19,10 @@ interface StringConstructor {
 
 interface ArrayBufferConstructor {
 	fromString(string: string): ArrayBuffer;
+}
+
+interface JSON {
+	parse(text: string, reviver?: string[]): any;
 }
 
 // Compartment?
