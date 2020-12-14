@@ -34,10 +34,15 @@ declare module "wifi" {
   type StationMode = 1;
   type AccessPointMode = 2;
   class WiFi {
+    static gotIP: string;
+    static lostIP: string;
+    static connected: string;
+    static disconnected: string;
+    
     constructor(options: WiFiOptions, callback: WiFiCallback);
     close(): void;
     static scan(options: {hidden?: boolean, channel: number}, callback: WiFiScanCallback): void;
-    mode: StationMode | AccessPointMode;
+    static mode: StationMode | AccessPointMode;
     static connect(options?: WiFiOptions);
     static accessPoint(options: {
       ssid: string,
