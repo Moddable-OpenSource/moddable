@@ -230,6 +230,10 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
     void modMachineTaskWake(xsMachine *the);
 #endif
 
+#define MOD_TASKS (true)
+
+#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
+
 /*
 	instrumentation
 */
