@@ -45,6 +45,7 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "semphr.h"
 
 #ifdef mxInstrument
 	#include "modTimer.h"
@@ -891,10 +892,15 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	#error make sure MOD_TASKS and modTaskGetCurrent are defined
 #endif
 
+static SemaphoreHandle_t gFlashMutex;
+
 void modMachineTaskInit(xsMachine *the)
 {
 	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(10, sizeof(modMessageRecord));
+
+	if (NULL == gFlashMutex)
+		gFlashMutex = xSemaphoreCreateMutex();
 }
 
 void modMachineTaskUninit(xsMachine *the)
@@ -1052,19 +1058,25 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 	uint8_t temp[4] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
-	if (!modSPIFlashInit())
+	xSemaphoreTake(gFlashMutex, portMAX_DELAY);
+
+	if (!modSPIFlashInit()) {
+		xSemaphoreGive(gFlashMutex);
 		return 0;
+	}
 
 	if (offset & 3) {		// long align offset
-		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset & ~3, temp, 4))
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset & ~3, temp, 4)) {
+			xSemaphoreGive(gFlashMutex);
 			return 0;
+		}
 		wait_for_flash_ready();
 
 		toAlign = 4 - (offset & 3);
 		c_memcpy(dst, temp + 4 - toAlign, (size < toAlign) ? size : toAlign);
 
 		if (size <= toAlign)
-			return 1;
+			goto done;
 
 		dst += toAlign;
 		offset += toAlign;
@@ -1075,8 +1087,10 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 	if (toAlign) {
 //@@ need case here for misaligned destination
 		size -= toAlign;
-		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, dst, toAlign))
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, dst, toAlign)) {
+			xSemaphoreGive(gFlashMutex);
 			return 0;
+		}
 		wait_for_flash_ready();
 
 		dst += toAlign;
@@ -1084,13 +1098,17 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 	}
 
 	if (size) {				// long align tail
-		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, temp, 4))
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, temp, 4)) {
+			xSemaphoreGive(gFlashMutex);
 			return 0;
+		}
 		wait_for_flash_ready();
 
 		c_memcpy(dst, temp, size);
 	}
 
+done:
+	xSemaphoreGive(gFlashMutex);
 	return 1;
 }
 
@@ -1099,19 +1117,27 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
-	if (!modSPIFlashInit())
+	xSemaphoreTake(gFlashMutex, portMAX_DELAY);
+
+	if (!modSPIFlashInit()) {
+		xSemaphoreGive(gFlashMutex);
 		return 0;
+	}
 
 	if (offset & 3) {		// long align offset
 		toAlign = 4 - (offset & 3);
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
-		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset & ~3, temp, 4, NULL))
+		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset & ~3, temp, 4, NULL)) {
+			xSemaphoreGive(gFlashMutex);
 			return 0;
+		}
 		wait_for_flash_ready();
 
-		if (size <= toAlign)
+		if (size <= toAlign) {
+			xSemaphoreGive(gFlashMutex);
 			return 1;
+		}
 
 		src += toAlign;
 		offset += toAlign;
@@ -1125,8 +1151,10 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 			while (toAlign) {
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
-				if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, use, NULL))
+				if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, use, NULL)) {
+					xSemaphoreGive(gFlashMutex);
 					return 0;
+				}
 				wait_for_flash_ready();
 
 				toAlign -= use;
@@ -1135,8 +1163,10 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 			}
 		}
 		else {
-			if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL))
+			if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL)) {
+				xSemaphoreGive(gFlashMutex);
 				return 0;
+			}
 			wait_for_flash_ready();
 
 			src += toAlign;
@@ -1147,28 +1177,40 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	if (size) {			// long align tail
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp, src, size);
-		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, 4, NULL))
+		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, 4, NULL)) {
+			xSemaphoreGive(gFlashMutex);
 			return 0;
+		}
 		wait_for_flash_ready();
 	}
 
+	xSemaphoreGive(gFlashMutex);
 	return 1;
 }
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
 {
-	if (!modSPIFlashInit())
-		return 0;
+	xSemaphoreTake(gFlashMutex, portMAX_DELAY);
 
-	if ((offset & (fstorage.p_flash_info->erase_unit - 1)) || (size & (fstorage.p_flash_info->erase_unit - 1)))
+	if (!modSPIFlashInit()) {
+		xSemaphoreGive(gFlashMutex);
 		return 0;
+	}
+
+	if ((offset & (fstorage.p_flash_info->erase_unit - 1)) || (size & (fstorage.p_flash_info->erase_unit - 1))) {
+		xSemaphoreGive(gFlashMutex);
+		return 0;
+	}
 
 	size /= fstorage.p_flash_info->erase_unit;
 
-	if (NRF_SUCCESS != nrf_fstorage_erase(&fstorage, offset, size, NULL))
+	if (NRF_SUCCESS != nrf_fstorage_erase(&fstorage, offset, size, NULL)) {
+		xSemaphoreGive(gFlashMutex);
 		return 0;
+	}
 	wait_for_flash_ready();
 
+	xSemaphoreGive(gFlashMutex);
 	return 1;
 }
 
