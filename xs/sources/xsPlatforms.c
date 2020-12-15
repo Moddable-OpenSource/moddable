@@ -205,6 +205,12 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		}
 	}
 #endif
+	slash = c_strrchr(name, mxSeparator);
+	if (!slash)
+		slash = name;
+	slash = c_strrchr(slash, '.');
+	if (slash)
+		*slash = 0;
 	if (absolute) {
 		if (preparation) {
 			c_strcpy(path, preparation->base);
@@ -214,7 +220,13 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 				return id;
 		}
 #ifdef mxParse
-		if (fxFindScript(the, name, &id))
+		c_strcpy(path, name);
+		c_strcat(path, ".js");
+		if (fxFindScript(the, path, &id))
+			return id;
+		c_strcpy(path, name);
+		c_strcat(path, ".mjs");
+		if (fxFindScript(the, path, &id))
 			return id;
 #endif
 	}
@@ -243,6 +255,12 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #ifdef mxParse
 		*slash = 0;
 		c_strcat(path, name + dot);
+		c_strcat(path, ".js");
+		if (fxFindScript(the, path, &id))
+			return id;
+		*slash = 0;
+		c_strcat(path, name + dot);
+		c_strcat(path, ".mjs");
 		if (fxFindScript(the, path, &id))
 			return id;
 #else
@@ -288,15 +306,7 @@ txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* 
 #ifdef mxParse
 txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 {
-	txString slash;
-	txString dot;
 	char real[C_PATH_MAX];
-	slash = c_strrchr(path, mxSeparator);
-	if (!slash)
-		slash = path;
-	dot = c_strrchr(slash, '.');
-	if (!dot)
-		c_strcat(path, ".js");
 	if (c_realpath(path, real)) {
 		*id = fxNewNameC(the, real);
 		return 1;

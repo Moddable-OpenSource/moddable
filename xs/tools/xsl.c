@@ -737,7 +737,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	txString slash;
 	txID id;
 		
-	fxToStringBuffer(the, slot, name, sizeof(name));
+	fxToStringBuffer(the, slot, name, sizeof(name) - 4);
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
 	}	
@@ -759,7 +759,9 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (!slash)
 		slash = name;
 	slash = c_strrchr(slash, '.');
-	if (!slash)
+	if (slash)
+		c_strcpy(slash, ".xsb");
+	else
 		c_strcat(name, ".xsb");
 	if (absolute) {
 		c_strcpy(path, linker->base);
