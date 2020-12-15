@@ -51,6 +51,7 @@ release:
 	make GOAL=release -f simulator.mk
 	make GOAL=release -f tools.mk
 	$(MODDABLE)/build/bin/mac/release/mcconfig -m -p x-mac $(MODDABLE)/tools/xsbug/manifest.json
+	$(MODDABLE)/build/bin/mac/release/mcconfig -m -p x-mac $(MODDABLE)/tools/mcsim/manifest.json
 	
 clean:
 	make clean -f $(XS_DIR)/makefiles/mac/xsc.mk

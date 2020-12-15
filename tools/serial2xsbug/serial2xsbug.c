@@ -674,10 +674,9 @@ void fxSetTime(txSerialTool self, txSerialMachine machine)
 		struct _timeb tb;
 		_ftime(&tb);
 		time = (long)tb.time;
-		gmt = tb.timezone * 60;
+		gmt = -tb.timezone * 60;
 		if (tb.dstflag) {
 			dst = 60 * 60;
-			gmt -= dst;
 		}
 	}
 #else

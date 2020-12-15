@@ -19,6 +19,7 @@
  */
 
 #include "xsmc.h"
+#include "stddef.h"
 
 extern const void* fxGetArchiveData(xsMachine* the, char* path, size_t* size);
 extern xsIntegerValue fxGetArchiveDataCount(xsMachine* the);

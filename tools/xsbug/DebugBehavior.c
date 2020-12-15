@@ -142,6 +142,7 @@ static void PiuDebugMachineMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength);
 static void PiuDebugMachineParseAttribute(PiuDebugMachine self, char* theName, char* theValue);
 static void PiuDebugMachineParseData(PiuDebugMachine self, char* theData);
+static void PiuDebugMachineParseProcessingInstruction(PiuDebugMachine self, char* theName);
 static void PiuDebugMachineParseString(PiuDebugMachine self, char* theString);
 static void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName);
@@ -439,7 +440,7 @@ void PiuDebugMachineCallback(CFSocketRef socketRef, CFSocketCallBackType cbType,
 		int length = recv(CFSocketGetNative(self->socket), self->buffer, XS_BUFFER_COUNT, 0);
 		if (length > 0) {
 			self->buffer[length] = 0;
-			//fprintf(stderr, "%s", self->buffer);
+// 			fprintf(stderr, "%s", self->buffer);
 			xsBeginHost(self->the);
 			{
 				xsVars(4);
@@ -491,7 +492,11 @@ LRESULT CALLBACK PiuDebugMachineWindowProc(HWND window, UINT message, WPARAM wPa
 void PiuDebugMachineCreate(xsMachine* the)
 {
 	PiuDebugMachine self;
-    
+	if (xsToInteger(xsArgc) > 1) {
+		xsSet(xsThis, xsID_connection, xsArg(0));
+		xsSet(xsThis, xsID_address, xsArg(1));
+		return;
+	}
 	self = c_calloc(1, sizeof(PiuDebugMachineRecord));
 	if (!self)
 		xsUnknownError("not enough memory");
@@ -678,8 +683,10 @@ void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength)
 		case XS_TAG_STATE:
 			if (c == '/')
 				self->state = XS_END_TAG_STATE;
-			else if (c == '?')
+			else if (c == '?') {
 				self->state = XS_PROCESSING_INSTRUCTION_STATE;
+				self->tagIndex = 0;
+			}
 			else if (mxIsFirstLetter(c)) {
 				self->state = XS_START_TAG_NAME_STATE;
 				self->tag[0] = c;
@@ -803,12 +810,20 @@ void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength)
 			break;
 
 		case XS_PROCESSING_INSTRUCTION_STATE:
-			if (c == '?')
+			if (c == '?') {
+				self->tag[self->tagIndex] = 0;
 				self->state = XS_PROCESSING_INSTRUCTION_SPACE_STATE;
+			}
+			else if (self->tagIndex < XS_BUFFER_COUNT) {	
+				self->tag[self->tagIndex] = c;
+				self->tagIndex++;
+			}
 			break;
 		case XS_PROCESSING_INSTRUCTION_SPACE_STATE:
-			if (c == '>')
+			if (c == '>') {
 				self->state = XS_BODY_STATE;
+				PiuDebugMachineParseProcessingInstruction(self, self->tag);
+			}
 			else
 				self->state = XS_ERROR_STATE;
 			break;
@@ -885,6 +900,41 @@ void PiuDebugMachineParseData(PiuDebugMachine self, char* theData)
 		xsResult = xsCall1(xsResult, xsID_concat, xsString(theData));
 		xsSet(self->itemSlot, xsID_data, xsResult);
 	}
+}
+
+void PiuDebugMachineParseProcessingInstruction(PiuDebugMachine self, char* p)
+{	
+	xsMachine* the = self->the;
+	char c;
+	int i;
+	xsIndex id;
+	xsIntegerValue value;
+	if (*p++ != 'x')
+		return;
+	if (*p++ != 's')
+		return;
+	c = *p++;
+	if (c == '.')
+		id = xsID_openMachine;
+	else if (c == '-')
+		id = xsID_closeMachine;
+	else
+		return;
+	value = 0;
+	for (i = 0; i < 8; i++) {
+		c = *p++;
+		if (('0' <= c) && (c <= '9'))
+			value = (value * 16) + (c - '0');
+		else if (('a' <= c) && (c <= 'f'))
+			value = (value * 16) + (10 + c - 'a');
+		else if (('A' <= c) && (c <= 'F'))
+			value = (value * 16) + (10 + c - 'A');
+		else
+			return;
+	}
+	if (*p++)
+		return;
+	(void)xsCall1(self->thisSlot, id, xsInteger(value));
 }
 
 typedef struct {
@@ -1132,8 +1182,15 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 	PiuDebugMachine self = xsGetHostData(xsThis);
 	xsIntegerValue c = xsToInteger(xsArgc), i;
 	xsIntegerValue command = xsToInteger(xsArg(0));
+	if (self) {
+		buffer[0] = 0;
+	}
+	else {
+		xsIntegerValue address = xsToInteger(xsGet(xsThis, xsID_address));
+		sprintf(buffer, "\15\12<?xs.%8.8X?>", address);
+	}
 	if (command < mxScriptCommand) {
-		c_strcpy(buffer, "\15\12");
+		c_strcat(buffer, "\15\12");
 		switch (command) {
 		case mxAbortCommand:
 			c_strcat(buffer, "<abort/>");
@@ -1203,16 +1260,16 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			break;
 		}
 		c_strcat(buffer, "\15\12");
-    	//fprintf(stderr, "%s", buffer);
+//     	fprintf(stderr, "%s", buffer);
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 	}
 	else {
 		void* data = xsToArrayBuffer(xsArg(2));
 		size_t length = xsGetArrayBufferLength(xsArg(2));
 		if (command == mxModuleCommand)
-			c_strcpy(buffer, "\15\12<module path=\"");
+			c_strcat(buffer, "\15\12<module path=\"");
 		else
-			c_strcpy(buffer, "\15\12<script path=\"");
+			c_strcat(buffer, "\15\12<script path=\"");
 		c_strcat(buffer, xsToString(xsArg(1)));
 		c_strcat(buffer, "\" line=\"0\"><![CDATA[");
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
@@ -1227,47 +1284,66 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 
 void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* buffer, size_t length)
 {
-#if mxLinux
-	{
+	if (self) {
+	#if mxLinux
 		GError* error = NULL;
 		if (g_socket_send(self->socket, buffer, length, NULL, &error) == -1) {
 			xsUnknownError("g_socket_send: %s", error->message);
 		}
-	}
-#elif mxMacOSX
-again:
-	if (send(CFSocketGetNative(self->socket), buffer, length, 0) == -1) {
-		if (errno == EINTR)
-			goto again;
-		else {
-			xsMachine* the = self->the;
-			xsUnknownError("write error: %s", strerror(errno));
-		}
-	}
-#elif mxWindows
-	if (self->socket != INVALID_SOCKET) {
+	#elif mxMacOSX
 	again:
-		int count = send(self->socket, buffer, length, 0);
-		if (count < 0) {
-			if (WSAEWOULDBLOCK == WSAGetLastError()) {
-				WaitMessage();
+		if (send(CFSocketGetNative(self->socket), buffer, length, 0) == -1) {
+			if (errno == EINTR)
 				goto again;
+			else {
+				xsMachine* the = self->the;
+				xsUnknownError("write error: %s", strerror(errno));
 			}
 		}
+	#elif mxWindows
+		if (self->socket != INVALID_SOCKET) {
+		again:
+			int count = send(self->socket, buffer, length, 0);
+			if (count < 0) {
+				if (WSAEWOULDBLOCK == WSAGetLastError()) {
+					WaitMessage();
+					goto again;
+				}
+			}
+		}
+	#endif
 	}
-#endif
+	else {
+		xsResult = xsGet(xsThis, xsID_connection);
+		xsCall1(xsResult, xsID_write, xsArrayBuffer(buffer, length));
+	}
 }
 
+void PiuDebugSerialCreate(xsMachine* the)
+{
+	PiuDebugMachine self = c_calloc(1, sizeof(PiuDebugMachineRecord));
+	if (!self)
+		xsUnknownError("not enough memory");
+	self->the = the;
+	self->thisSlot = xsThis;
+	self->itemSlot = xsUndefined;
+	self->listSlot = xsUndefined;
+	xsSetHostData(xsThis, self);
+	xsSetHostHooks(xsThis, &PiuDebugMachineHooks);
+}
 
+void PiuDebugSerialDelete(void* it)
+{
+	if (it)
+		c_free(it);
+}
 
-
-
-
-
-
-
-
-
-
-
-
+void PiuDebugSerialParse(xsMachine* the)
+{
+	PiuDebugMachine self = xsGetHostData(xsThis);
+	char* string = xsToArrayBuffer(xsArg(0));
+	int length = xsGetArrayBufferLength(xsArg(0));
+	xsVars(4);
+//     fprintf(stderr, "%.*s\n", length, string);
+	PiuDebugMachineParse(self, string, length);
+}

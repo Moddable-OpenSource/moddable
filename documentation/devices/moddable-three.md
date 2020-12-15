@@ -1,9 +1,9 @@
-# Getting Started with Moddable Three
+# Moddable Three Developer Guide
 
 Copyright 2019-2020 Moddable Tech, Inc.<BR>
-Revised: February 27, 2020
+Revised: October 21, 2020
 
-This document describes how to start building Moddable applications for Moddable Three. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Three.
+This document provides information about Moddable Three, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
 ## Table of Contents
 
@@ -33,12 +33,16 @@ The two main components of Moddable Three are the ESP8266 module and ePaper scre
 <a id="setup"></a>
 ## SDK and Host Environment Setup
 
-The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the **Host environment setup** and **ESP8266 setup** sections for your computer's operating system.
+To build and run apps on Moddable Three, you'll need to:
+
+1. Install the [Moddable SDK](./../Moddable%20SDK%20-%20Getting%20Started.md)
+2. Install [ESP8266 tools](./esp8266.md)
+3. Follow the instructions in the **Building and Deploying Apps** section below.
 
 <a id="building-and-deploying-apps"></a>
 ## Building and Deploying Apps
 
-After you've set up your host environment, take the following steps to install an application on your Moddable Three.
+After you've set up your host environment and ESP8266 tools, take the following steps to install an application on your Moddable Three.
 
 1. Attach your Moddable Three to your computer with a micro USB cable.
 
@@ -60,7 +64,7 @@ After you've set up your host environment, take the following steps to install a
 <a id="troubleshooting"></a>
 ## Troubleshooting
 
-See the Troubleshooting section of the [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) for a list of common issues and how to resolve them.
+See the Troubleshooting section of the [ESP8266 documentation](./esp8266.md) for a list of common issues and how to resolve them.
 
 <a id="development-resources"></a>
 ## Development Resources

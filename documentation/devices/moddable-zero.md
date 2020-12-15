@@ -1,9 +1,9 @@
-# Getting Started with Moddable Zero
+# Moddable Zero Developer Guide
 
-Copyright 2019 Moddable Tech, Inc.<BR>
-Revised: June 3, 2019
+Copyright 2019-2020 Moddable Tech, Inc.<BR>
+Revised: October 21, 2020
 
-This document describes how to start building Moddable applications for Moddable Zero. It provides information on how to configure the host build environment and how to build and deploy apps. It also provides information about development resources, including a summary of the examples available in this repository that run on Moddable Zero.
+This document provides information about Moddable Zero, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
 ## Table of Contents
 
@@ -11,9 +11,8 @@ This document describes how to start building Moddable applications for Moddable
 	- [Components](#components)
 	- [Pinout](#pinout)
 - [SDK and Host Environment Setup](#setup)
-
 - [Building and Deploying Apps](#building-and-deploying-apps)
-
+- [Troubleshooting](#troubleshooting)
 - [Development Resources](#development-resources)
 	- [Examples](#examples)
 	- [Documentation](#documentation)
@@ -40,7 +39,11 @@ The two main components of Moddable Zero are the ESP8266 module and resistive to
 <a id="setup"></a>
 ## SDK and Host Environment Setup
 
-The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the **Host environment setup** and **ESP8266 setup** sections for your computer's operating system.
+To build and run apps on Moddable Zero, you'll need to:
+
+1. Install the [Moddable SDK](./../Moddable%20SDK%20-%20Getting%20Started.md)
+2. Install [ESP8266 tools](./esp8266.md)
+3. Follow the instructions in the **Building and Deploying Apps** section below.
 
 <a id="building-and-deploying-apps"></a>
 ## Building and Deploying Apps
@@ -63,6 +66,11 @@ After you've set up your host environment, take the following steps to install a
 	```
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+
+<a id="troubleshooting"></a>
+## Troubleshooting
+
+See the Troubleshooting section of the [ESP8266 documentation](./esp8266.md) for a list of common issues and how to resolve them.
 
 <a id="development-resources"></a>
 ## Development Resources

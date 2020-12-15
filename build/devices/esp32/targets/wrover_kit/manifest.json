@@ -24,6 +24,6 @@
 			"spi_port": "HSPI_HOST",
 			"backlight_pin": 5,
 			"backlight_on": 0
-		},
+		}
 	}
 }

@@ -1,7 +1,4 @@
 {
-	"build": {
-		"SIMULATORS": "$(BUILD_SIMULATOR)"
-	},
 	"modules": {
 		"*": [
 			"./modules/screen",
@@ -19,6 +16,9 @@
 		"lin": {
 		},
 		"lin/*": {
+			"build": {
+				"SIMULATORS": "$(BUILD_SIMULATOR)"
+			},
 			"include": "./$(SUBPLATFORM)/manifest.json"
 		},
 		"mac": {
@@ -29,6 +29,9 @@
 			}
 		},
 		"mac/*": {
+			"build": {
+				"SIMULATORS": "$(BUILD_SIMULATOR)"
+			},
 			"include": "./$(SUBPLATFORM)/manifest.json",
 			"modules": {
 				"*": [
@@ -44,6 +47,9 @@
 			}
 		},
 		"win/*": {
+			"build": {
+				"SIMULATORS": "$(BUILD_SIMULATOR)"
+			},
 			"include": "./$(SUBPLATFORM)/manifest.json",
 			"modules": {
 				"*": [

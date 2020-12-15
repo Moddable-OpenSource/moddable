@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -34,6 +34,9 @@
  *       See the License for the specific language governing permissions and
  *       limitations under the License.
  */
+
+import Serial from "io/serial";
+import Timer from "timer";
 
 export const mxFramesView = 0;
 export const mxLocalsView = 1;
@@ -96,6 +99,16 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			this.alienSeparatorRegexp = /\\/g;
 		}
 		this.port = 5002;
+		const platform = system.platform;
+		if (platform == "lin")
+			this.serialDevicePath = "/dev/ttyUSB0";
+		else if (platform == "mac")
+			this.serialDevicePath = "/dev/cu.SLAB_USBtoUART";
+		else
+			this.serialDevicePath = "com8";
+		this.serialBaudRates = [ 460800, 921600, 1500000 ];
+		this.serialConnection = null;
+		this.serialState = 0;
 		this.sortingExceptions = {
 			"(return)":"0",
 			"new.target":"1",
@@ -110,6 +123,41 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			/(var\()([0-9]+)(\))/,
 		];
 		this.sortingZeros = "0000000000";
+	}
+	
+	canConnect(application, item) {
+		item.state = this.serialState;
+		return this.serialState != 2;
+	}
+	doConnect() {
+		if (this.serialState == 0) {
+			this.serialConnection = new DebugSerial({ behavior:this, devicePath:this.serialDevicePath, baudRates:this.serialBaudRates });
+		}
+		else if (this.serialState == 1) {
+			this.serialConnection.close();
+		}
+	}
+	onConnectError(application) {
+		system.alert({ 
+			type:"stop",
+			prompt:"xsbug",
+			info:"Serial connection error.\n\nCheck the Serial Preferences...",
+			buttons:["OK", "Cancel"]
+		}, ok => {
+			if (ok)
+				application.defer("doPreferences");
+		});
+	}
+	onConnectTimeout(application) {
+		system.alert({ 
+			type:"stop",
+			prompt:"xsbug",
+			info:"Serial connection timeout.\n\nCheck the Serial Preferences...",
+			buttons:["OK", "Cancel"]
+		}, ok => {
+			if (ok)
+				application.defer("doPreferences");
+		});
 	}
 	
 	canAbort() {
@@ -436,7 +484,6 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			new MachineView("MODULES"),
 			new MachineView("INSTRUMENTS"),
 		];
-		this.ip = this.address.slice(0, this.address.lastIndexOf(":"));
 		this.tag = "";
 		this.title = "";
 		
@@ -691,3 +738,133 @@ class MachineView {
 	}
 };
 
+class DebugSerial @ "PiuDebugSerialDelete" {
+	constructor(options) {
+		this.baudRates = options.baudRates
+		this.baudRatesIndex = 0;
+		this.behavior = options.behavior;
+		this.devicePath = options.devicePath;
+		this.machine = null;
+		this.machines = [];
+		this.serial = null;
+		this.create();
+		this.behavior.serialState = 2;
+		Timer.set(() => { 
+			this.openSerial();
+		}, 0);
+	}
+	close() {
+		if (this.serial) {
+			this.serial.close();
+			this.serial = null;
+		}
+		this.machines.forEach(item => item.onDisconnected());
+		this.machines = [];
+		this.machine = null;
+		this.behavior.serialConnection = null;
+		this.behavior.serialState = 0;
+	}
+	closeMachine(address) {
+		let index = this.machines.findIndex(item => item.address == address);
+		if (index < 0)
+			return;
+		let machine = this.machines[index];
+		if (this.machine == machine)
+			this.machine = null;
+		machine.onDisconnected();	
+		this.machines.splice(index, 1);
+		if (this.machines.length == 0)
+			this.close();
+	}
+	create() @ "PiuDebugSerialCreate"
+	onBroken(path, line, data) {
+		this.machine?.onBroken(path, line, data);
+	}
+	onBubbled(path, line, name, value, data) {
+		this.machine?.onBubbled(path, line, name, value, data);
+	}
+	onFileChanged(path, line) {
+		this.machine?.onFileChanged(path, line);
+	}
+	onFrameChanged(name, value) {
+		this.machine?.onFrameChanged(name, value);
+	}
+	onImport(path) {
+		this.machine?.onImport(path);
+	}
+	onLogged(path, line, data) {
+		this.machine?.onLogged(path, line, data);
+	}
+	onParsed() {
+		this.machine?.onParsed();
+	}
+	onParsing() {
+		this.machine?.onParsing();
+	}
+	onSampled(samples) {
+		this.machine?.onSampled(samples);
+	}
+	onTitleChanged(name, value) {
+		this.machine?.onTitleChanged(name, value);
+	}
+	onViewChanged(index, list) {
+		this.machine?.onViewChanged(index, list);
+	}
+	openMachine(address) {
+		let machine = this.machines.find(item => item.address == address);
+		if (!machine) {
+			machine = new DebugMachine(this, address);
+			machine.onCreate(application, this.behavior);
+			this.behavior.machines.push(machine);
+			application.distribute("onMachinesChanged", this.behavior.machines);
+			this.machines.push(machine);
+		}
+		this.machine = machine;
+	}
+	openSerial() {
+		try {
+			this.serial = new Serial({
+				device: this.devicePath,
+				baud: this.baudRates[this.baudRatesIndex],
+				target:this,
+				onReadable(count) {
+					this.target.parse(this.read());
+				},
+				onError() {
+					this.target.close();
+				}
+			});
+			this.serial.set({DTR: false, RTS: true});
+			Timer.set(() => { 
+				this.serial.set({DTR: false, RTS: false}) 
+				Timer.set(() => { 
+					if (this.machine) {
+						this.behavior.serialState = 1;
+					}
+					else {
+						this.timeout();
+					}
+				}, 1000)
+			}, 50);
+		}
+		catch(e) {
+			this.close();
+			application.defer("onConnectError");
+		}
+	}
+	parse(buffer) @ "PiuDebugSerialParse"
+	timeout() {
+		this.serial.close();
+		this.serial = null;
+		this.baudRatesIndex++;
+		if (this.baudRatesIndex < this.baudRates.length)
+			this.openSerial();
+		else {
+			this.close();
+			application.defer("onConnectTimeout");
+		}
+	}
+	write(buffer) {
+		this.serial.write(buffer);
+	}
+}

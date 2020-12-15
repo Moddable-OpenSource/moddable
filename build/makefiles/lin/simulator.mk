@@ -43,7 +43,7 @@ endif
 
 LINK_OPTIONS = $(shell $(PKGCONFIG) --libs gtk+-3.0)
 
-LIBRARIES = -ldl
+LIBRARIES = -ldl -latomic
 
 build: $(TMP_DIR) $(BIN_DIR)/$(NAME)
 

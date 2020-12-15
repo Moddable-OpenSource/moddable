@@ -24,10 +24,9 @@
 #include "mc.xs.h"			// for xsID_ values
 
 #ifdef mxInstrument
-	#include "modTimer.h"
 	#include "modInstrumentation.h"
 
-	static void workerSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize);
+	static void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
 #endif
 
 #if ESP32
@@ -517,7 +516,9 @@ void workerLoop(void *pvParameter)
 #endif
 
 #ifdef mxInstrument
-void workerSampleInstrumentation(modTimer timer, void *refcon, int32_t refconSize)
+extern void fxSampleInstrumentation(xsMachine * the, xsIntegerValue count, xsIntegerValue* values);
+
+void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	xsMachine *the = *(xsMachine **)refcon;
 	fxSampleInstrumentation(the, 0, NULL);

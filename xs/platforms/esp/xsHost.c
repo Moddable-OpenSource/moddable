@@ -1598,9 +1598,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	}
 }
 
+#ifndef modTaskGetCurrent
+	#error make sure MOD_TASKS and modTaskGetCurrent are defined
+#endif
+
 void modMachineTaskInit(xsMachine *the)
 {
-	the->task = xTaskGetCurrentTaskHandle();
+	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(10, sizeof(modMessageRecord));
 }
 

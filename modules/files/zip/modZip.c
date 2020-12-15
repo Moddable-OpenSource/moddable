@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,7 +29,12 @@
 */
 
 #pragma pack(2)
-#define PACKED __attribute__((packed))
+
+#if mxWindows
+	#define PACKED
+#else
+	#define PACKED __attribute__((packed))
+#endif
 
 typedef struct {
 	uint32_t		signature;

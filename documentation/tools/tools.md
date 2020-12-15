@@ -1,7 +1,7 @@
 # Tools
 
-Copyright 2017 Moddable Tech, Inc.<BR>
-Revised: April 8, 2020
+Copyright 2017-2020 Moddable Tech, Inc.<BR>
+Revised: December 9, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -51,6 +51,7 @@ A few notes:
 - When running a debug build, **xsbug** needs to be running on your computer for the launch to be successful.
 - See the [Manifest](./manifest.md) document for explanations about manifests.
 
+<a id="arguments"></a>
 ### Arguments
 
 	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-t target] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
@@ -66,9 +67,9 @@ A few notes:
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
 - `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See **Build Targets** below for more detail.
 - `-v`: to trace all commands executed by make
-- `-t`: to pass a build target to make. For example: `-t clean`
-- `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
-- `screen=screen_driver` and `touch=touch_driver`: to specify a screen or touch driver. See the [examples readme](../../examples/readme.md) for more information on screen and touch driver configuration.
+- config arguments specified in the form of `key-=value` or `key="value"`. These are merged into the `config` section of the manifest. Import the `mc/config` module to access them. Moddable provided hosts that support networking and/or displays define the following config properties:
+  - `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
+  - `screen=screen_driver` and `touch=touch_driver`: to specify a screen or touch driver. See the [examples readme](../../examples/readme.md) for more information on screen and touch driver configuration.
 
 **Build Targets**
 mcconfig takes an optional `-t target` argument to specify a build target. The options for the target are:

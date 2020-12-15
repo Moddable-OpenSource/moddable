@@ -19,9 +19,11 @@
 */
 
 declare module "Resource" {
-  var Resource: {
-    new (path: string): ArrayBuffer | HostBuffer
-    exists(path: string): boolean;
-  };
+  class Resource implements HostBuffer {
+    constructor(path: string);
+    slice(begin: number, end?: number): ArrayBuffer;
+    static exists(path: string): boolean;
+  }
+
   export {Resource as default};
 }

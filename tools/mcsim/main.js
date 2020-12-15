@@ -107,21 +107,21 @@ class ApplicationBehavior extends Behavior {
 		this.localArchivePath = system.buildPath(system.localDirectory, "mc", "xsa");
 		
 		this.readPreferences();
-// 		
-// 		try {
-// 			let directory = system.getPathDirectory(system.applicationPath);
-// 			directory = system.buildPath(directory, "autorun");
-// 			if (system.fileExists(directory)) {
-// 				let devicesPath = system.buildPath(directory, "simulators");
-// 				let libraryPath = system.buildPath(directory, "mc", extension);
-// 				if (system.fileExists(devicesPath) && system.fileExists(libraryPath)) {
-// 					this.devicesPath = devicesPath;
-// 					this.libraryPath = libraryPath;
-// 				}
-// 			}
-// 		}
-// 		catch {
-// 		}
+		
+		try {
+			let directory = system.getPathDirectory(system.applicationPath);
+			directory = system.buildPath(directory, "autorun");
+			if (system.fileExists(directory)) {
+				let devicesPath = system.buildPath(directory, "simulators");
+				let libraryPath = system.buildPath(directory, "mc", extension);
+				if (system.fileExists(devicesPath) && system.fileExists(libraryPath)) {
+					this.devicesPath = devicesPath;
+					this.libraryPath = libraryPath;
+				}
+			}
+		}
+		catch {
+		}
 
 		application.add(new MainContainer(this));
 	}

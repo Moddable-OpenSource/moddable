@@ -145,6 +145,17 @@ class PreferencesColumnBehavior extends Behavior {
 				{
 					Template: PreferencesTable,
 					expanded: true,
+					name: "LOCATIONS",
+					items: model.mappings.map((mapping, index) => ({
+						Template: LocationRow,
+						index,
+						name: mapping.remote + (mapping.alien ? model.alienSeparator : model.separator) + "*",
+						value: mapping.locale + model.separator + "*",
+					})),
+				},
+				{
+					Template: PreferencesTable,
+					expanded: true,
 					name: "NETWORK",
 					items: [
 						{
@@ -174,16 +185,34 @@ class PreferencesColumnBehavior extends Behavior {
 						},
 					],
 				},
-				{
+					{
 					Template: PreferencesTable,
 					expanded: true,
-					name: "LOCATIONS",
-					items: model.mappings.map((mapping, index) => ({
-						Template: LocationRow,
-						index,
-						name: mapping.remote + (mapping.alien ? model.alienSeparator : model.separator) + "*",
-						value: mapping.locale + model.separator + "*",
-					})),
+					name: "SERIAL",
+					items: [
+						{
+							Template: FieldRow,
+							name: "Device Path",
+							width: 208,
+							get value() {
+								return model.serialDevicePath;
+							},
+							set value(it) {
+								model.serialDevicePath = it;
+							},
+						},
+						{
+							Template: FieldRow,
+							name: "Baud Rates",
+							width: 208,
+							get value() {
+								return model.serialBaudRates.join(",");
+							},
+							set value(it) {
+								model.serialBaudRates = it.split(",").map(item => parseInt(item));
+							},
+						},
+					],
 				},
 				{
 					Template: PreferencesTable,
@@ -375,7 +404,7 @@ var FieldRow = Row.template($ => ({
 			Behavior: class extends ButtonBehavior {
 				onTap(button) {
 					let field = button.previous.first;
-					this.data.value = field.string();
+					this.data.value = field.string;
 					field.focus();
 				}
 			},

@@ -1674,7 +1674,21 @@ export default class extends TOOL {
 		var file = new FILE(path);
 		var services = [];
 		this.files.forEach((path, index) => {
-			services = services.concat(JSON.parse(this.readFileString(path)).service);
+			try {
+				const parse = JSON.parse(this.readFileString(path));
+				if (!parse.service)
+					throw new Error("service property missing");
+				const service = parse.service;
+				if (!service.uuid)
+					throw new Error("service.uuid property missing");
+				if (!service.characteristics)
+					throw new Error("service.characteristics property missing");
+				services.push(service);
+			}
+			catch (e) {
+				trace(`Error in JSON file ${path}\n`);
+				throw e;
+			}
 		});
 		var dictionary = { tool:this, client:this.client, server:this.server, nimble:this.nimble, file, services };
 		var gatt;

@@ -471,6 +471,10 @@ class ApplicationBehavior extends DebugBehavior {
 					this.test262Context.fromJSON(preferences.test262Context);
 				if ("visibleTabs" in preferences)
 					this.visibleTabs = preferences.visibleTabs;
+				if ("serialDevicePath" in preferences)
+					this.serialDevicePath = preferences.serialDevicePath;
+				if ("serialBaudRates" in preferences)
+					this.serialBaudRates = preferences.serialBaudRates;
 			}
 		}
 		catch(e) {
@@ -499,6 +503,8 @@ class ApplicationBehavior extends DebugBehavior {
 				automaticInstruments: this.automaticInstruments,
 				test262Context: this.test262Context,
 				visibleTabs: this.visibleTabs,
+				serialDevicePath: this.serialDevicePath,
+				serialBaudRates: this.serialBaudRates,
 			};
 			let string = JSON.stringify(preferences, null, "\t");
 			system.writePreferenceString("main", string);
@@ -610,6 +616,8 @@ let DebuggerApplication = Application.template($ => ({
 				null,
 				{ title:"Close", key:"W", command:"CloseFile" },
 				{ title:"Close All", option:true, key:"W", command:"CloseFiles" },
+				null,
+				{ state:0, titles: ["Connect Serial", "Disconnect Serial", "Connecting Serial..."], key:"S", command:"Connect" },
 				null,
 				{ title:"Quit", key:"Q", command:"Quit" },
 			],

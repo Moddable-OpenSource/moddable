@@ -51,6 +51,7 @@ release:
 	make GOAL=release -f simulator.mk
 	make GOAL=release -f tools.mk
 	$(MODDABLE)/build/bin/lin/release/mcconfig -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
+	$(MODDABLE)/build/bin/lin/release/mcconfig -m -p x-lin $(MODDABLE)/tools/mcsim/manifest.json
 	
 clean:
 	make clean -f $(XS_DIR)/makefiles/lin/xsc.mk
