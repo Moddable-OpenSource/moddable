@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -41,11 +41,11 @@ class ExpanderI2C extends I2C {
 class Expander {
 	#i2c;
 	constructor(dictionary) {
-		const i2c =  new ExpanderI2C({
-			sda: dictionary.sda,
-			scl: dictionary.scl,
+		const i2c = new ExpanderI2C({
+			data: dictionary.data,
+			clock: dictionary.clock,
 			hz: dictionary.hz,
-			address: dictionary.address,
+			address: dictionary.address
 		});
 		this.#i2c = i2c;
 
@@ -61,7 +61,7 @@ class Expander {
 		i2c.readers = [];
 		if (undefined !== dictionary.interrupt) {
 			i2c.interrupt = new DigitalBuiltin({
-				pin: 0,
+				pin: dictionary.interrupt,
 				mode: DigitalBuiltin.InputPullUp,
 				edge: DigitalBuiltin.Rising | DigitalBuiltin.Falling,
 				onReadable() {
@@ -171,7 +171,7 @@ class InputBank extends IO {
 		i2c.write(0x00, i2c.inputs & 255, i2c.inputs >> 8);
 
 		if (dictionary.rises || dictionary.falls) {
-			const onReadable = dictionary.onReadable || target.onReadable;
+			const onReadable = dictionary.onReadable;
 			if (!onReadable)
 				throw new Error("onReadable required");
 

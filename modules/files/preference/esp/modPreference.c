@@ -372,8 +372,8 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 
 	prefsFree = kFlashSectorSize - (prefsEnd & (kFlashSectorSize - 1));
 	if (prefsFree < prefSize) { // compact
-		uint32_t srcOffset = (prefsEnd < kFlashSectorSize) ? 0 : kFlashSectorSize;
-		uint32_t dstOffset = (prefsEnd < kFlashSectorSize) ? kFlashSectorSize : 0;
+		uint32_t srcOffset = prefsEnd & ~(kFlashSectorSize - 1);
+		uint32_t dstOffset = kPreferencesStartOffset + ((srcOffset == kPreferencesStartOffset) ? kFlashSectorSize : 0);
 		uint32_t srcOffsetSave = srcOffset;
 
 		srcOffset += kPreferencesStartOffset;
