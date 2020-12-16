@@ -376,9 +376,6 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 		uint32_t dstOffset = kPreferencesStartOffset + ((srcOffset == kPreferencesStartOffset) ? kFlashSectorSize : 0);
 		uint32_t srcOffsetSave = srcOffset;
 
-		srcOffset += kPreferencesStartOffset;
-		dstOffset += kPreferencesStartOffset;
-
 		if (!modSPIErase(dstOffset, kFlashSectorSize)) {
 			modLog("modSPIErase fail");
 			goto fail;
