@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -29,10 +29,10 @@ class Digital extends DigitalBank {
 			mode: dictionary.mode,
 			rises: (edge & Digital.Rising) ? pins : 0,
 			falls: (edge & Digital.Falling) ? pins : 0,
+			onReadable: dictionary.onReadable,
+			format: dictionary.format
 		};
-		if (dictionary.onReadable)
-			d.onReadable = dictionary.onReadable;
-		if (dictionary.target)
+		if ("target" in dictionary)
 			d.target = dictionary.target;
 		super(d);
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -38,9 +38,10 @@
 
 struct I2CRecord {
 	uint32_t					hz;
-	uint8_t						sda;
-	uint8_t						scl;
+	uint8_t						data;
+	uint8_t						clock;
 	uint8_t						address;		// 7-bit
+	xsSlot						obj;
 	struct I2CRecord			*next;
 };
 typedef struct I2CRecord I2CRecord;
@@ -50,39 +51,44 @@ static I2C gI2C;
 static I2C gI2CActive;
 
 static void i2cActivate(I2C i2c);
-static uint8_t usingPins(uint8_t sda, uint8_t scl);
+static uint8_t usingPins(uint8_t data, uint8_t clock);
 
 void _xs_i2c_constructor(xsMachine *the)
 {
 	I2C i2c;
-	int sda, scl, hz, address;
+	int data, clock, hz, address;
 
 	xsmcVars(1);
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_sda);
-	sda = xsmcToInteger(xsVar(0));
-	if ((sda < 0) || (sda > 16))
-		xsRangeError("invalid sda");
-
-	xsmcGet(xsVar(0), xsArg(0), xsID_scl);
-	scl = xsmcToInteger(xsVar(0));
-	if ((scl < 0) || (scl > 16))
-		xsRangeError("invalid scl");
-
-	if (usingPins((uint8_t)sda, (uint8_t)scl))
-		;
-	else if (!builtinArePinsFree((1 << sda) | (1 << scl)))
-		xsRangeError("inUse");
-
+	if (!xsmcHas(xsArg(0), xsID_data))
+		xsRangeError("data required");
+	if (!xsmcHas(xsArg(0), xsID_clock))
+		xsRangeError("address required");
 	if (!xsmcHas(xsArg(0), xsID_address))
 		xsRangeError("address required");
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_data);
+	data = xsmcToInteger(xsVar(0));
+	if ((data < 0) || (data > 16))
+		xsRangeError("invalid data");
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
+	clock = xsmcToInteger(xsVar(0));
+	if ((clock < 0) || (clock > 16))
+		xsRangeError("invalid clock");
+
+	if (usingPins((uint8_t)data, (uint8_t)clock))
+		;
+	else if (!builtinArePinsFree((1 << data) | (1 << clock)))
+		xsRangeError("inUse");
+
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = xsmcToInteger(xsVar(0));
 	if ((address < 0) || (address > 127))
 		xsRangeError("invalid address");
 
 	for (i2c = gI2C; i2c; i2c = i2c->next) {
-		if ((i2c->sda == sda) && (i2c->scl == scl) && (i2c->address == address))
+		if ((i2c->data == data) && (i2c->clock == clock) && (i2c->address == address))
 			xsRangeError("duplicate address");
 	}
 
@@ -91,20 +97,26 @@ void _xs_i2c_constructor(xsMachine *the)
 	if ((hz < 0) || (hz > 20000000))
 		xsRangeError("invalid hz");
 
+	builtinInitializeTarget(the);
+	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
+		xsRangeError("invalid format");
+
 	i2c = c_malloc(sizeof(I2CRecord));
 	if (!i2c)
 		xsRangeError("no memory");
 
 	xsmcSetHostData(xsThis, i2c);
-	i2c->scl = (uint8_t)scl;
-	i2c->sda = (uint8_t)sda;
+	i2c->obj = xsThis;
+	xsRemember(i2c->obj);
+	i2c->clock = (uint8_t)clock;
+	i2c->data = (uint8_t)data;
 	i2c->hz = hz;
 	i2c->address = address;
 
 	i2c->next = gI2C;
 	gI2C = i2c;
 
-	builtinUsePins((1 << sda) | (1 << scl));
+	builtinUsePins((1 << data) | (1 << clock));
 }
 
 void _xs_i2c_destructor(void *data)
@@ -128,8 +140,8 @@ void _xs_i2c_destructor(void *data)
 		}
 	}
 
-	if (!usingPins(i2c->sda, i2c->scl))
-		builtinFreePins((1 << i2c->sda) | (1 << i2c->scl));
+	if (!usingPins(i2c->data, i2c->clock))
+		builtinFreePins((1 << i2c->data) | (1 << i2c->clock));
 
 	c_free(i2c);
 
@@ -141,6 +153,7 @@ void _xs_i2c_close(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
 	if (!i2c) return;
+	xsForget(i2c->obj);
 	_xs_i2c_destructor(i2c);
 	xsmcSetHostData(xsThis, NULL);
 }
@@ -196,21 +209,21 @@ void _xs_i2c_write(xsMachine *the)
 void i2cActivate(I2C i2c)
 {
 	if ((i2c == gI2CActive) ||
-		(gI2CActive && (gI2CActive->sda == i2c->sda) && (gI2CActive->scl == i2c->scl) && (gI2CActive->hz == i2c->hz)))
+		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz)))
 		return;
 
-	twi_init(i2c->sda, i2c->scl);
+	twi_init(i2c->data, i2c->clock);
 	twi_setClock(i2c->hz);
 
 	gI2CActive = i2c;
 }
 
-uint8_t usingPins(uint8_t sda, uint8_t scl)
+uint8_t usingPins(uint8_t data, uint8_t clock)
 {
 	I2C walker;
 
 	for (walker = gI2C; walker; walker = walker->next) {
-		if ((walker->sda == sda) && (walker->scl == scl))
+		if ((walker->data == data) && (walker->clock == clock))
 			return 1;
 	}
 

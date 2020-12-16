@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -32,24 +32,54 @@
 #endif
 #include "mc.xs.h"			// for xsID_* values
 
+#include "builtinCommon.h"
+
+struct AnalogRecord {
+	xsSlot		obj;
+};
+typedef struct AnalogRecord AnalogRecord;
+typedef struct AnalogRecord *Analog;
+
 static uint8_t gInUse;
 
 void xs_analog_constructor(xsMachine *the)
 {
+	Analog analog;
+
 	if (gInUse)
 		xsUnknownError("in use");
+
+	builtinInitializeTarget(the);
+	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
+		xsRangeError("invalid format");
+
+	analog = c_malloc(sizeof(AnalogRecord));
+	if (!analog)
+		xsRangeError("no memory");
+
+	analog->obj = xsThis;
+	xsRemember(analog->obj);
+	xsmcSetHostData(xsThis, analog);
 
 	gInUse = 1;
 }
 
 void xs_analog_destructor(void *data)
 {
+	if (data)
+		c_free(data);
+
 	gInUse = 0;
 }
 
 void xs_analog_close(xsMachine *the)
 {
-	xs_analog_destructor(NULL);
+	Analog analog = xsmcGetHostData(xsThis);
+	if (!analog) return;
+
+	xsForget(analog->obj);
+	xs_analog_destructor(analog);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_analog_read(xsMachine *the)
