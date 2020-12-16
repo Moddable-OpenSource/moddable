@@ -415,7 +415,7 @@ export class MakeFile extends FILE {
 				var target = result.target;
 				var targetParts = tool.splitPath(target);
 				var temporary = source.slice(common, -3) + ".js"
-				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", temporary);
+				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", tool.slash, temporary);
 				this.echo(tool, "xsc ", target);
 				var options = "";
 				if (result.commonjs)
@@ -424,9 +424,9 @@ export class MakeFile extends FILE {
 					options += " -d";
 				if (tool.config)
 					options += " -c";
-				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				this.line("\t$(XSC) $(MODULES_DIR)", tool.slash, temporary, options, " -e -o $(@D) -r ", targetParts.name);
 				if (tool.windows)
-					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
+					this.line("$(MODULES_DIR)", tool.slash, temporary, ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
 			if (tool.windows)
