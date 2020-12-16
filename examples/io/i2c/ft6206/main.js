@@ -15,8 +15,8 @@
 import Touch from "sensor/touch";
 
 const touch = new Touch({
-	scl: 4,
-	sda: 5,
+	clock: 4,
+	data: 5
 });
 
 while (true) {

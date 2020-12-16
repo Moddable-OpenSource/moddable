@@ -14,28 +14,31 @@
 
  import UDP from "builtin/socket/udp";
 
-class SNTP extends UDP {
+class SNTP  {
+	#udp;
 	#onTime;
 	#onError;
 	#timer;
 	constructor(dictionary) {
-		super({});
+		this.#udp = new UDP({
+			target: this,
+			onReadable: this.onReadable
+		});
 
-		this.#onTime = dictionary.onTime || this.onTime;
+		this.#onTime = dictionary.onTime;
 		if (!this.#onTime)
 			throw new Error("onTime required");
 
-		this.#onError = dictionary.onError || this.onError;
+		this.#onError = dictionary.onError;
 
 		System.resolve(dictionary.host, (name, address) => {
 			if (!address) {
-				if (this.#onError)
-					this.#onError();
+				this.#onError?.();
 				return;
 			}
 
-			request.call(this, address);
-			this.#timer = System.setInterval(() => request.call(this, address), 5 * 1000);
+			request.call(this.#udp, address);
+			this.#timer = System.setInterval(() => request.call(this.#udp, address), 5 * 1000);
 		});
 	}
 	close() {
@@ -44,15 +47,16 @@ class SNTP extends UDP {
 		super.close();
 	}
 	onReadable(count) {
+		const target = this.target;
 		let packet;
 
 		while (count--)
 			packet = new DataView(this.read());
 
-		System.clearInterval(this.#timer);
-		this.#timer = undefined;
+		System.clearInterval(target.#timer);
+		target.#timer = undefined;
 
-		this.#onTime((packet.getUint32(40) - 2208988800) * 1000);		// convert from NTP to Unix Epoch time in milliseconds
+		target.#onTime((packet.getUint32(40) - 2208988800) * 1000);		// convert from NTP to Unix Epoch time in milliseconds
 	}
 }
 

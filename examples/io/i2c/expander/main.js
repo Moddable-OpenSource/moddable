@@ -15,8 +15,8 @@
 import Expander from "expander";
 
 const expander = new Expander({
-	sda: 5,
-	scl: 4,
+	data: 5,
+	clock: 4,
 	hz: 1000000,
 	interrupt: 0,
 	address: 0x20,
