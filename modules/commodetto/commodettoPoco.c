@@ -732,7 +732,9 @@ void xs_poco_drawText(xsMachine *the)
 	PocoColor color;
 	CommodettoBitmap cb = NULL;
 	PocoBitmapRecord bits;
-	static const unsigned char *ellipsis = (unsigned char *)"...";
+	static const unsigned char *ellipsisFallback = (unsigned char *)"...";
+	static const unsigned char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
+	const unsigned char *ellipsis;
 	PocoDimension ellipsisWidth;
 	int width;
 	const unsigned char *fontData;
@@ -752,10 +754,18 @@ void xs_poco_drawText(xsMachine *the)
 	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
 
 	if (argc > 5) {
-		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, ellipsis[0], false);
+		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, 0x2026, false);
+		if (glyph) {
+			ellipsisWidth = glyph->advance;
+			ellipsis = ellipsisUTF8;
+		}
+		else {
+			glyph = CFEGetGlyphFromUnicode(gCFE, '.', false);
+			ellipsisWidth = glyph ? glyph->advance * 3 : 0;
+			ellipsis = ellipsisFallback;
+		}
 
 		width = xsmcToInteger(xsArg(5));
-		ellipsisWidth = glyph ? glyph->advance * 3 : 0;
 	}
 	else {
 		width = 0;

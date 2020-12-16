@@ -413,7 +413,7 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 	PiuGlyph glyph;
 	PiuCoordinate advance;
 	
-	static const char ellipsisUnicode[3] = {0xE2, 0x80, 0xA6};		// 0x2026
+	static const char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
 	static const char *ellipsisFallback = "...";
 	const char *ellipsis;
 	PocoDimension ellipsisWidth;
@@ -421,7 +421,7 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 		PiuGlyph glyph = PiuFontGetGlyph(font, 0x2026, 0);
 		if (glyph) {
 			ellipsisWidth = glyph->advance;
-			ellipsis = (char *)ellipsisUnicode;
+			ellipsis = (char *)ellipsisUTF8;
 		}
 		else {
 			glyph = PiuFontGetGlyph(font, '.', 0);
