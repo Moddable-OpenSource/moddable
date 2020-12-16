@@ -209,7 +209,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (!slash)
 		slash = name;
 	slash = c_strrchr(slash, '.');
-	if (slash)
+	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs")))
 		*slash = 0;
 	if (absolute) {
 		if (preparation) {
