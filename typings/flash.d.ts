@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2020 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,12 +18,16 @@
 *
 */
 
-declare module "preference" {
-  var Preference: {
-    set: (domain: string, key: string, value: string | boolean | number | ArrayBuffer) => void;
-    get: (domain: string, key: string) => string | boolean | number | ArrayBuffer | undefined;
-    delete: (domain: string, key: string) => void;
-    keys: (domain: string) => string[];
+declare module "flash" {
+  class Flash {
+    constructor(partition?: string);
+    constructor(offset: number, byteLength: number);
+    erase(sector: number): void;
+    read(offset: number, byteLength: number): ArrayBuffer;
+    write(offset: number, byteLength: number, buffer: ArrayBuffer): void;
+    byteLength: number;
+    blockSize: number;
+    map(): HostBuffer;
   }
-  export {Preference as default};
+  export {Flash as default};
 }
