@@ -23,6 +23,7 @@ declare module "Resource" {
     constructor(path: string);
     slice(begin: number, end?: number): ArrayBuffer;
     static exists(path: string): boolean;
+    readonly byteLength: number;
   }
 
   export {Resource as default};

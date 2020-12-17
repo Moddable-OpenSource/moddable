@@ -7,7 +7,7 @@ interface Trace {
 declare const trace:Trace;
 
 interface HostBuffer {
-	byteLength: number
+	readonly byteLength: number
 }
 
 interface ObjectConstructor {

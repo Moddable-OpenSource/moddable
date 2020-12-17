@@ -23,10 +23,10 @@ declare module "flash" {
     constructor(partition?: string);
     constructor(offset: number, byteLength: number);
     erase(sector: number): void;
-    read(offset: number, byteLength: number): ArrayBuffer;
+    read(offset: number, byteLength: number, useHostBuffer?: boolean): ArrayBuffer | HostBuffer;
     write(offset: number, byteLength: number, buffer: ArrayBuffer): void;
-    byteLength: number;
-    blockSize: number;
+    readonly byteLength: number;
+    readonly blockSize: number;
     map(): HostBuffer;
   }
   export {Flash as default};
