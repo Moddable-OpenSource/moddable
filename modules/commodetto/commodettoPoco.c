@@ -947,7 +947,7 @@ void xs_poco_adaptInvalid(xsMachine *the)
 	if (pixelsOutDispatch)
 		(pixelsOutDispatch->doAdaptInvalid)(poco->outputRefcon, cr);
 	else
-		xsCall1(xsResult, xsID_adaptInvalidxsID_, xsArg(0));
+		xsCall1(xsResult, xsID_adaptInvalid, xsArg(0));
 	unrotateCoordinatesAndDimensions(poco->width, poco->height, cr->x, cr->y, cr->w, cr->h);
 	}
 #endif
