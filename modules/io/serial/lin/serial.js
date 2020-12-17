@@ -22,11 +22,11 @@ class Serial @ "xs_serial_destructor" {
 	constructor() @ "xs_serial_constructor";
 	close() @ "xs_serial_close";
 	read() @ "xs_serial_read";
-	write() @ "xs_serial_write";
+	purge() @ "xs_serial_purge";
 	set() @ "xs_serial_set";
+	write() @ "xs_serial_write";
 	get format() @ "xs_serial_format_get";
 	set format(value) @ "xs_serial_format_set";
-	purge() @ "xs_serial_purge";
 }
 
 export default Serial;

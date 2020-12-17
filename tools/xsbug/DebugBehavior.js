@@ -749,6 +749,7 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		this.serial = null;
 		this.create();
 		this.behavior.serialState = 2;
+		application.updateMenus();
 		Timer.set(() => { 
 			this.openSerial();
 		}, 0);
@@ -763,6 +764,7 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		this.machine = null;
 		this.behavior.serialConnection = null;
 		this.behavior.serialState = 0;
+		application.updateMenus();
 	}
 	closeMachine(address) {
 		let index = this.machines.findIndex(item => item.address == address);
@@ -840,6 +842,7 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 				Timer.set(() => { 
 					if (this.machine) {
 						this.behavior.serialState = 1;
+						application.updateMenus();
 					}
 					else {
 						this.timeout();
@@ -854,8 +857,10 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 	}
 	parse(buffer) @ "PiuDebugSerialParse"
 	timeout() {
-		this.serial.close();
-		this.serial = null;
+		if (this.serial) {
+			this.serial.close();
+			this.serial = null;
+		}
 		this.baudRatesIndex++;
 		if (this.baudRatesIndex < this.baudRates.length)
 			this.openSerial();
