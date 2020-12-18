@@ -1359,7 +1359,11 @@ void espInstrumentMachineReset(txMachine *the)
 #if INSTRUMENT_CPULOAD
 void IRAM_ATTR timer_group0_isr(void *para)
 {
+#if NUM_CPUS == 2
 	TIMERG0.int_clr_timers.t0 = 1;
+#else
+	TIMERG0.int_clr.t0 = 1;
+#endif
     TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
 
 	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
@@ -1381,6 +1385,7 @@ uint32_t modMilliseconds(void)
 	64-bit atomics
 */
 
+#if NUM_CPUS == 2
 bool __atomic_compare_exchange_8(txU8 *ptr, txU8 *expected, txU8 desired, bool weak, int success_memorder, int failure_memorder)
 {
 	modCriticalSectionBegin();
@@ -1491,6 +1496,7 @@ txU8 __atomic_fetch_xor_8(txU8 *ptr, txU8 val, int memorder)
 
 	return result;
 }
+#endif // NUM_CPUS == 2
 
 /*
 	messages

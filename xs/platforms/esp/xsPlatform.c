@@ -669,10 +669,11 @@ void fxReceive(txMachine* the)
 		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
 		while (!the->debugOffset) {
-			if (timeout && (timeout < modMilliseconds())) {
-				fxDisconnect(the);
-				break;
-			}
+// MDK disable for bringup
+//			if (timeout && (timeout < modMilliseconds())) {
+//				fxDisconnect(the);
+//				break;
+//			}
 
 			fxReceiveLoop();
 			if (the->debugFragments) {
@@ -725,7 +726,7 @@ void fxReceiveLoop(void)
 {
 	static const char *piBegin = "\r\n<?xs.";
 	static const char *tagEnd = ">\r\n";
-	static txMachine* current = NULL;
+	static txMachine* current = NULL;	
 	static uint8_t state = 0;
 	static uint16_t binary = 0;
 	static DebugFragment fragment = NULL;

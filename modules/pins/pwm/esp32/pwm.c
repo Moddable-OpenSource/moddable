@@ -33,10 +33,13 @@
 	#define MODDEF_PWM_LEDC_TIMER LEDC_TIMER_0
 #endif
 
+#define ESP_SPEED_MODE LEDC_SPEED_MODE_MAX
+
 static const ledc_timer_config_t gTimer = {
 	.duty_resolution = LEDC_TIMER_10_BIT,
 	.freq_hz = 1024,
-	.speed_mode = LEDC_HIGH_SPEED_MODE,
+//	.speed_mode = LEDC_HIGH_SPEED_MODE,		// not for esp32s2
+	.speed_mode = ESP_SPEED_MODE,
 	.timer_num = MODDEF_PWM_LEDC_TIMER
 };
 
@@ -54,8 +57,8 @@ void xs_pwm_destructor(void *data)
 	PWM pwm = data;
 	if (pwm) return;
 
-	ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm->ledc, pwm->gpio);
-	ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm->ledc);
+	ledc_set_duty(ESP_SPEED_MODE, pwm->ledc, pwm->gpio);
+	ledc_update_duty(ESP_SPEED_MODE, pwm->ledc);
 
 	gLEDC |= 1 << pwm->ledc;
 
@@ -93,7 +96,7 @@ void xs_pwm(xsMachine *the)
 	ledcConfig.channel    = ledc;
 	ledcConfig.duty       = 0;
 	ledcConfig.gpio_num   = gpio;
-	ledcConfig.speed_mode = LEDC_HIGH_SPEED_MODE;
+	ledcConfig.speed_mode = ESP_SPEED_MODE;
 	ledcConfig.timer_sel  = MODDEF_PWM_LEDC_TIMER;
 
 	if (ESP_OK != ledc_channel_config(&ledcConfig))
@@ -128,6 +131,6 @@ void xs_pwm_write(xsMachine *the)
 	if ((value < 0) || (value >= gTimer.freq_hz))
 		xsRangeError("bad value");
 
-	ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm->ledc, value);
-	ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm->ledc);
+	ledc_set_duty(ESP_SPEED_MODE, pwm->ledc, value);
+	ledc_update_duty(ESP_SPEED_MODE, pwm->ledc);
 }

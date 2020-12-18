@@ -121,7 +121,11 @@ export class MakeFile extends FILE {
 		// Read base debug build sdkconfig.defaults file
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
-		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj";
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
+		if (undefined === tool.environment.ESP32_SUBCLASS)
+			baseConfigDirectory += "esp32";
+		else
+			baseConfigDirectory += tool.environment.ESP32_SUBCLASS;
 		let baseConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
 		let baseConfigLength = baseConfig.length;
@@ -1341,6 +1345,10 @@ export class Tool extends TOOL {
 		if ("esp32" == this.platform) {
 			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
 			path += bluedroid ? this.platform : "nimble";
+/**/			let subclass = this.getenv("ESP32_SUBCLASS");
+/**/			if (undefined === subclass)
+/**/				subclass = "esp32";
+/**/			this.environment.ESP32_SUBCLASS = subclass;
 		}
 		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
 			path += "sim";

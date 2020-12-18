@@ -17,19 +17,7 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-set(COMPONENT_SRCS "main.c")
-set(COMPONENT_ADD_INCLUDEDIRS $ENV{MODDABLE}/xs/platforms/esp $ENV{MODDABLE}/xs/includes $ENV{MODDABLE}/modules/base/instrumentation)
+cmake_minimum_required(VERSION 3.5)
 
-register_component()
-
-if (mxDebug EQUAL "1")
-    target_compile_options(${COMPONENT_TARGET} PRIVATE -DmxDebug=1)
-endif()
-if (DEBUGGER_SPEED)
-    target_compile_options(${COMPONENT_TARGET} PRIVATE -DDEBUGGER_SPEED=${DEBUGGER_SPEED})
-endif()
-
-add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_esp32.a
-             PRIV_REQUIRES driver nvs_flash)
-
-target_link_libraries(${COMPONENT_LIB} PRIVATE xsesp32)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(xs_esp32)
