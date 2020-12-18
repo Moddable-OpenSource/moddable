@@ -34,6 +34,6 @@ declare module "commodetto/readJPEG" {
 
     readonly ready: boolean
   }
-
-  export {JPEG as default};
 }
+
+export {JPEG as default};

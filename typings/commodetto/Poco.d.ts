@@ -77,7 +77,7 @@ declare module "commodetto/Poco" {
     drawText(text: string, font: Font, color: number, x: number, y: number, width?: number): void
     getTextWidth(text: string, font: Font): number
 
-    adaptInvalid(invalid: Rectangle): Rectangle
+    adaptInvalid(area: Rectangle): void
 
     bitmapChanged(bits: Bitmap): void
     bitmapRemove(bits: Bitmap): void
@@ -87,7 +87,6 @@ declare module "commodetto/Poco" {
     readonly height: number
     readonly pixelsOut: PixelsOut
   }
-
-  export {Poco as default};
 }
 
+export {Poco as default};

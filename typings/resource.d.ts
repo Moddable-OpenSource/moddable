@@ -19,11 +19,10 @@
 */
 
 declare module "Resource" {
-  class Resource implements HostBuffer {
+  class Resource extends HostBuffer {
     constructor(path: string);
     slice(begin: number, end?: number): ArrayBuffer;
     static exists(path: string): boolean;
-    readonly byteLength: number;
   }
 
   export {Resource as default};

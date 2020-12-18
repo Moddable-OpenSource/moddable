@@ -6,8 +6,9 @@ interface Trace {
 }
 declare const trace:Trace;
 
-interface HostBuffer {
+declare class HostBuffer {
 	readonly byteLength: number
+	private brand: boolean;
 }
 
 interface ObjectConstructor {
