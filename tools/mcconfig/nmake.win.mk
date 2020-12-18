@@ -25,10 +25,12 @@
 
 !IF "$(DEBUG)"=="1"
 LIB_DIR = $(BUILD_DIR)\tmp\win\mc\debug\lib
+START_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 !ELSEIF "$(INSTRUMENT)"=="1"
 LIB_DIR = $(BUILD_DIR)\tmp\win\mc\instrument\lib
 !ELSE
 LIB_DIR = $(BUILD_DIR)\tmp\win\mc\release\lib
+START_XSBUG =
 !ENDIF
 
 XS_DIRECTORIES = \
@@ -157,6 +159,7 @@ XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
 all: build
+	$(START_XSBUG)
 	start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
 
 build: $(LIB_DIR) $(BIN_DIR)\mc.dll
