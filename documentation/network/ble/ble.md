@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: July 27, 2020
+Revised: December 18, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -329,6 +329,7 @@ An instance of the `Device` class is instantiated by `BLEClient` and provided to
 | --- | --- | :--- |
 | `connection` | `number` | Connection identifier.
 | `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
+| `addressType` | `number` | Bluetooth address type. Refer to `GAP.AddressType` for details.
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
 | `rssi` | `number` | Discovered device signal strength.
 
@@ -468,7 +469,11 @@ onDisconnected() {
 
 ***
 
-#### `onDisconnected()`
+#### `onDisconnected(device)`
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+
 The `onDisconnected` callback is called when the connection is closed.
 
 <a id="classservice"></a>
@@ -1342,21 +1347,18 @@ onDisconnected(device) {
 ***
 
 #### `onConnected(device)`
-
-| Name | Type | Description |
-| --- | --- | :--- |
-| `connection` | `number` | Connection identifier.
-| `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
 
 The `onConnected` callback function is called when a client connects to the `BLEServer`.
 
 ***
 
 #### `onDisconnected(device)`
-| Name | Type | Description |
-| --- | --- | :--- |
-| `connection` | `number` | Connection identifier.
-| `address` | `object` | Instance of [Bytes](#classbytes) class containing Bluetooth address bytes.
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
 
 The `onDisconnected` callback function is called when the client connection is closed.
 
@@ -1455,6 +1457,28 @@ onReady() {
 
 ### Functions
 
+#### `deleteBonding(address, addressType)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
+| `addressType` | `number` | Peer device Bluetooth address type. Refer to `GAP.AddressType` for supported address types.
+
+Call the `deleteBonding` function to delete stored bonding information for the peer device with the provided `address` and `addressType`. The `onBondingDeleted` callback is called once the bond has been deleted. The `onBondingDeleted` callback is supported by both the `BLEClient` and `BLEServer` classes.
+
+To delete bonding information after disconnecting from the peer device:
+
+```javascript
+onDisconnected(device) {
+	SM.deleteBonding(device.address, device.addressType);
+}
+onBondingDeleted(params) {
+	trace(`device ${params.address} bond deleted\n`);
+}
+```
+
+***
+
 #### `deleteAllBondings()`
 
 Use the `deleteAllBondings` function to delete all bonding information and encryption keys from persistent storage:
@@ -1524,13 +1548,24 @@ onSecurityParameters() {
 
 ***
 
-#### `onAuthenticated()`
+#### `onAuthenticated(params)`
 
-The `onAuthenticated` callback is called when an authentication procedure completes, i.e. after successful device pairing.
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `params` | `object` | Properties associated with the authentication procedure.
+
+The `params` object contains the following properties:
+
+| Property | Type | Description |
+| --- | --- | :--- |
+| `bonded` | `boolean` | Set `true` if the device has bonded with the peer.
+
+
+The `onAuthenticated` callback is called when an authentication procedure successfully completes, i.e. after successful device pairing or bonding. The `onAuthenticated` callback is supported by the `BLEClient` and `BLEServer` classes.
 
 ```javascript
-onAuthenticated() {
-	trace("authentication success\n");
+onAuthenticated(params) {
+	trace(`authentication success, bonded = ${params.bonded}\n`);
 }
 ```
 
