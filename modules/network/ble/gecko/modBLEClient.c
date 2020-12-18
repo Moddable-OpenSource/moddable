@@ -654,8 +654,6 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
 	xsmcSetInteger(xsVar(1), evt->address_type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsmcSetInteger(xsVar(1), 0xFF != evt->bonding);
-	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
