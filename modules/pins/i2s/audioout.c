@@ -369,6 +369,7 @@ void xs_audioout(xsMachine *the)
 
 	out->the = the;
 	out->obj = xsThis;
+	out->useCount = 1;
 
 	out->streamCount = streamCount;
 	out->sampleRate = sampleRate;
