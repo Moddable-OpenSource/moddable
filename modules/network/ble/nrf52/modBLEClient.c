@@ -213,7 +213,6 @@ static void gattcDescriptorDiscoveryEvent(void *the, void *refcon, uint8_t *mess
 static void gattcMTUExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
-static void pmBondedPeerConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void clearScanned(modBLE ble);
@@ -808,16 +807,10 @@ void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	uint16_t conn_handle = gap_evt->conn_handle;
 	modBLEConnection connection;
 	
-	// Ignore connection events that occur after a bonded peer has connected, i.e. if the connection handle is already stored
-	connection = modBLEConnectionFindByConnectionID(conn_handle);
-	if (connection) {
-		LOG_GATTC_MSG("gapConnectedEvent: Ignoring bonded peer connection event");
-		return;
-	}
-
 	xsBeginHost(gBLE->the);
 	
 	connection = modBLEConnectionFindByAddressAndType((uint8_t*)&p_evt_connected->peer_addr.addr, p_evt_connected->peer_addr.addr_type);
+
 	if (!connection)
 		xsUnknownError("connection not found");
 		
@@ -1055,51 +1048,6 @@ static void pmGapConnectedEvent(void *the, void *refcon, uint8_t *message, uint1
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	
 	xsEndHost(gBLE->the);
-}
-
-static void pmBondedPeerConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	pm_evt_t *pm_evt = (pm_evt_t*)message;
-	pm_peer_data_bonding_t peer_bonding_data;
-	ret_code_t err_code;
-	
-	if (!gBLE) return;
-
-	err_code = pm_peer_data_bonding_load(pm_evt->peer_id, &peer_bonding_data);
-	if (NRF_ERROR_NOT_FOUND == err_code)
-		return;
-		
-	ble_gap_addr_t *p_bonded_peer_addr = &(peer_bonding_data.peer_ble_id.id_addr_info);
-
-	// first check for a public address match
-	modBLEConnection connection = modBLEConnectionFindByAddressAndType((uint8_t*)&p_bonded_peer_addr->addr, p_bonded_peer_addr->addr_type);
-
-	// next check for a private resolvable address match
-	if (NULL == connection) {
-		ble_gap_addr_t addr = {.addr_id_peer = p_bonded_peer_addr->addr_id_peer};
-		connection = modBLEConnectionGetFirst();
-		while (NULL != connection) {
-			addr.addr_type = connection->addressType;
-			c_memmove(addr.addr, connection->address, BLE_GAP_ADDR_LEN);
-			if (pm_address_resolve(&addr, &(peer_bonding_data.peer_ble_id.id_info)))
-				break;
-			connection = modBLEConnectionGetNext(connection);
-		}
-	}
-	
-	if (NULL == connection)
-		return;
-
-	// When re-establishing a connection with a bonded peer, this callback is called before the gapConnectedEvent callback.
-	// Therefore we populate the connection here and trigger a call to the "onConnected" callback.
-	// When the gapConnectedEvent callback is subsequently called, the connection has already been established and the function quietly exits.
-	connection->id = pm_evt->conn_handle;
-
-	ble_gap_evt_t gap_evt = {0};
-	gap_evt.conn_handle = pm_evt->conn_handle;
-	gap_evt.params.connected.peer_addr.addr_type = connection->addressType;
-	c_memmove(gap_evt.params.connected.peer_addr.addr, connection->address, BLE_GAP_ADDR_LEN);
-	modMessagePostToMachine(gBLE->the, (uint8_t*)&gap_evt, sizeof(ble_gap_evt_t), pmGapConnectedEvent, NULL);
 }
 
 void gattcServiceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -1670,9 +1618,6 @@ void pm_evt_handler(pm_evt_t const * p_evt)
 	pm_handler_flash_clean(p_evt);
 
     switch (p_evt->evt_id) {
-    	case PM_EVT_BONDED_PEER_CONNECTED:
-			modMessagePostToMachine(gBLE->the, (uint8_t*)p_evt, sizeof(pm_evt_t), pmBondedPeerConnectedEvent, NULL);
-    		break;
     	case PM_EVT_CONN_SEC_FAILED:
             // Rebond if one party has lost its keys
             if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING)
@@ -1699,7 +1644,6 @@ static void logScanEvent(uint16_t evt_id) {
 		case NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT: modLog("NRF_BLE_SCAN_EVT_WHITELIST_ADV_REPORT"); break;
 		case NRF_BLE_SCAN_EVT_NOT_FOUND: modLog("NRF_BLE_SCAN_EVT_NOT_FOUND"); break;
 		case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT: modLog("NRF_BLE_SCAN_EVT_SCAN_TIMEOUT"); break;
-//		case NRF_BLE_SCAN_EVT_SCAN_REQ_REPORT: modLog("NRF_BLE_SCAN_EVT_SCAN_REQ_REPORT"); break;
 		case NRF_BLE_SCAN_EVT_CONNECTING_ERROR: modLog("NRF_BLE_SCAN_EVT_CONNECTING_ERROR"); break;
 		case NRF_BLE_SCAN_EVT_CONNECTED: modLog("NRF_BLE_SCAN_EVT_CONNECTED"); break;
 	}
