@@ -430,8 +430,6 @@ release: precursor
 
 
 mingPrepare:
-	$(KILL_SERIAL2XSBUG)
-	$(START_XSBUG)
 	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
 	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
 	copy $(BIN_DIR)\xs_esp32.a $(IDF_BUILD_DIR)\.
