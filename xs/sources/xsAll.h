@@ -762,6 +762,7 @@ mxExport void fxLogin(txMachine* the);
 mxExport void fxLogout(txMachine* the);
 #endif
 mxExport void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, txString conversation);
+mxExport void fxFileEvalString(txMachine* the, txString string, txString tag);
 mxExport void fxReport(txMachine* the, txString theFormat, ...);
 mxExport void fxReportError(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...);
 mxExport void fxReportWarning(txMachine* the, txString thePath, txInteger theLine, txString theFormat, ...);

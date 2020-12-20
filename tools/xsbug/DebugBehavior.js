@@ -439,9 +439,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	toggleBreakOnExceptions(it) {
 		this.breakOnExceptions = it;
 		if (it)
-			this.machines.forEach(machine => machine.setBreakpoint("exceptions", 0));
+			this.machines.forEach(machine => machine.doCommand(mxSetBreakpointCommand, "exceptions", 0));
 		else
-			this.machines.forEach(machine => machine.clearBreakpoint("exceptions", 0));
+			this.machines.forEach(machine => machine.doCommand(mxClearBreakpointCommand, "exceptions", 0));
 	}
 	toggleBreakOnStart(it) {
 		this.breakOnStart = it;
@@ -460,6 +460,8 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			return path;
 	}
 }
+
+let temporary = 0;
 
 export class DebugMachine @ "PiuDebugMachineDelete" {
 	constructor(socket) @ "PiuDebugMachineCreate"
@@ -487,6 +489,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.tag = "";
 		this.title = "";
 		
+		this.paths = {};
 		this.path = "";
 		this.line = 0;
 		this.frame = "";
@@ -537,9 +540,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.broken = true;
 		this.behavior.onBroken(this);
 		if (path && line) {
-			this.path = path;
-			this.line = line;
-			this.behavior.onFileChanged(this, path, line);
+			this.onFileChanged(path, line);
 		}
 	}
 	onBubbled(path, line, id, flags, message) {
@@ -552,7 +553,19 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.behavior.test262Context.onDisconnected(this);
 		this.behavior.onDisconnected(this);
 	}
+	onEval(tag, string) {
+		try {
+			const path = system.buildPath(model.evalDirectory, temporary, "js");
+			temporary++;
+			system.writeFileString(path, string);
+			this.paths[tag] = path;
+		}
+		catch {
+		}
+	}
 	onFileChanged(path, line) {
+		if (path in this.paths)
+			path = this.paths[path];
 		this.path = path;
 		this.line = line;
 		this.behavior.onFileChanged(this, path, line);

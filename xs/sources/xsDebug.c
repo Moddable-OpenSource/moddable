@@ -1988,6 +1988,21 @@ void fxBubble(txMachine* the, txInteger flags, void* message, txInteger length, 
 #endif
 }
 
+void fxFileEvalString(txMachine* the, txString string, txString tag)
+{
+	#ifdef mxDebug
+	if (fxIsConnected(the)) {
+		fxEcho(the, "<eval path=\"");
+		fxEchoString(the, tag);
+		fxEcho(the, "\"");
+		fxEcho(the, ">");
+		fxEchoString(the, string);
+		fxEcho(the, "</eval>");
+		fxEchoStop(the);
+	}
+#endif
+}
+
 void fxReport(txMachine* the, txString theFormat, ...)
 {
 	c_va_list arguments;
