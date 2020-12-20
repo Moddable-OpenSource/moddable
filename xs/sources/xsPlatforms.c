@@ -443,12 +443,14 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
+#ifdef mxDebug
 		if (fxIsConnected(the)) {
 			flags |= mxDebugFlag;
 			fxGenerateTag(the, tag, sizeof(tag), C_NULL);
 			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, tag);
 			parser->path = fxNewParserSymbol(parser, tag);
 		}
+#endif
 		fxParserTree(parser, stream, getter, flags, C_NULL);
 		fxParserHoist(parser);
 		fxParserBind(parser);

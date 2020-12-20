@@ -2090,9 +2090,9 @@ void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txStrin
 {
 	txMachine* the = console;
 	if (path)
-		snprintf(buffer, bufferSize, "#%d@%s", the->tag, path);
+		c_snprintf(buffer, bufferSize, "#%d@%s", the->tag, path);
 	else
-		snprintf(buffer, bufferSize, "#%d", the->tag);
+		c_snprintf(buffer, bufferSize, "#%d", the->tag);
 	the->tag++;
 }
 
