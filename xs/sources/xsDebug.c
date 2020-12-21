@@ -1992,6 +1992,7 @@ void fxFileEvalString(txMachine* the, txString string, txString tag)
 {
 	#ifdef mxDebug
 	if (fxIsConnected(the)) {
+		fxEchoStart(the);
 		fxEcho(the, "<eval path=\"");
 		fxEchoString(the, tag);
 		fxEcho(the, "\"");

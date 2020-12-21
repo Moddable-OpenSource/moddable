@@ -274,10 +274,10 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			else {
 				breakpoints.splice(index, 1);
 			}
-			this.machines.forEach(machine => machine.doCommand(mxClearBreakpointCommand, path, line));
+			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, path, line));
 			path = this.unmapPath(path);
 			if (path)
-				this.machines.forEach(machine => machine.doCommand(mxClearBreakpointCommand, path, line));
+				this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, path, line));
 		}
 		else {
 			if (toggleDisabled) {
@@ -285,10 +285,10 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			}
 			breakpoints.push({ path, name:system.getPathName(path), line, enabled: true });
 			breakpoints.sort(this.sortBreakpoints);
-			this.machines.forEach(machine => machine.doCommand(mxSetBreakpointCommand, path, line));
+			this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, path, line));
 			path = this.unmapPath(path);
 			if (path)
-				this.machines.forEach(machine => machine.doCommand(mxSetBreakpointCommand, path, line));
+				this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, path, line));
 		}
 		application.distribute("onBreakpointsChanged");
 	}
@@ -439,9 +439,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	toggleBreakOnExceptions(it) {
 		this.breakOnExceptions = it;
 		if (it)
-			this.machines.forEach(machine => machine.doCommand(mxSetBreakpointCommand, "exceptions", 0));
+			this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, "exceptions", 0));
 		else
-			this.machines.forEach(machine => machine.doCommand(mxClearBreakpointCommand, "exceptions", 0));
+			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, "exceptions", 0));
 	}
 	toggleBreakOnStart(it) {
 		this.breakOnStart = it;
@@ -529,6 +529,17 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	doAbort() {
 		this.doCommand(mxAbortCommand);
 	}
+	doBreakpointCommand(command, path, line) {
+		const paths = this.paths;
+		for (let name in paths) {
+			const value = paths[name];
+			if (path == value) {
+				path = name;
+				break;
+			}
+		}
+		this.doCommand(command, path, line);
+	}
 	doCommand(command) @ "PiuDebugMachine_doCommand"
 	doModule(path) {
 		this.doCommand(mxModuleCommand, path, system.readFileBuffer(path));
@@ -579,6 +590,8 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	onLogged(path, line, data) {
 		if (path && line) {
+			if (path in this.paths)
+				path = this.paths[path];
 			let color;
 			if (data.indexOf("breakpoint") >= 0)
 				color = 3;
@@ -797,6 +810,9 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 	}
 	onBubbled(path, line, name, value, data) {
 		this.machine?.onBubbled(path, line, name, value, data);
+	}
+	onEval(tag, string) {
+		this.machine?.onEval(tag, string);
 	}
 	onFileChanged(path, line) {
 		this.machine?.onFileChanged(path, line);
