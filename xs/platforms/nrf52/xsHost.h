@@ -436,9 +436,8 @@ char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 /* RESERVED MEMORY */
 
 #define DFU_DBL_RESET_MEM		0x200041FC		// uint32_t, defined in bootloader
-#define MOD_TIME_RTC_MEM		0x200041F8		// uint32_t
-#define MOD_TIME_RESTORE_MEM	0x200041EC		// uint32_t + c_timeval
-#define MOD_WAKEUP_REASON_MEM	0x200041E4		// uint32_t + uint32_t
+#define MOD_TIME_RESTORE_MEM	0x200041F0		// uint32_t + c_timeval
+#define MOD_WAKEUP_REASON_MEM	0x200041E8		// uint32_t + uint32_t
 
 /* reset */
 #define REBOOT_TO_PROGRAMMING	0xbeefcafe
