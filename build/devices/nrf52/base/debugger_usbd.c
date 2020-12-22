@@ -172,8 +172,6 @@ void flushDebugger()
 
 static void debug_task(void *pvParameter)
 {
-	extern uint8_t fxIsConnected(xsMachine *the);
-
 	while (true) {
 		uint32_t event;
 
@@ -665,23 +663,6 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 
 #ifdef mxDebug		// moved from way-up. We want usb for the programmer
 
-void modLog_transmit(const char *msg)
-{
-	uint8_t c;
-
-	if (gThe) {
-		while (0 != (c = c_read8(msg++)))
-			fx_putc(gThe, c);
-		fx_putc(gThe, 0);
-	}
-	else {
-		while (0 != (c = c_read8(msg++)))
-			ESP_putc(c);
-		ESP_putc('\r');
-		ESP_putc('\n');
-	}
-}
-
 void ESP_putc(int c)
 {
 	uint8_t ch = c;
@@ -793,7 +774,6 @@ bail:
 
 void ESP_putc(int c) { }
 int ESP_getc(void) { return -1; }
-void modLog_transmit(const char *msg) { }
 
 #endif
 

@@ -127,25 +127,6 @@ void setupDebugger() {
 	xTaskCreate(debug_task, "debug", DEBUGGER_STACK/sizeof(StackType_t), NULL, 8, NULL);
 }
 
-void modLog_transmit(const char *msg)
-{
-	int ret;
-	uint8_t c;
-
-#ifdef mxDebug
-	if (gThe) {
-		while (0 != (c = c_read8(msg++)))
-			fx_putc(gThe, c);
-		fx_putc(gThe, 0);
-	}
-	else
-#endif
-		while (0 != (c = c_read8(msg++)))
-			ESP_putc(c);
-	ESP_putc('\r');
-	ESP_putc('\n');
-}
-
 static int oof = 0;
 void ESP_putc(int c) {
 	int ret;
@@ -181,7 +162,6 @@ int ESP_getc(void) {
 
 void ESP_putc(int c) { }
 int ESP_getc(void) { return -1; }
-void modLog_transmit(const char *msg) { }
 
 #endif
 

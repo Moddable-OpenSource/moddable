@@ -27,7 +27,7 @@
 #include "xsHost.h"
 
 #ifdef mxDebug
-	xsMachine *gThe = NULL;		// main VM
+	static xsMachine *gThe = NULL;		// main VM
 	TaskHandle_t gMainTask = NULL;
 #endif
 
@@ -69,3 +69,24 @@ void xsTask(void *pvParameter)
 		modInstrumentationAdjust(Turns, +1);
 	}
 }
+
+void modLog_transmit(const char *msg)
+{
+	uint8_t c;
+
+#ifdef mxDebug
+	if (gThe) {
+		while (0 != (c = c_read8(msg++)))
+			fx_putc(gThe, c);
+		fx_putc(gThe, 0);
+	}
+	else
+#endif
+	{
+		while (0 != (c = c_read8(msg++)))
+			ESP_putc(c);
+		ESP_putc('\r');
+		ESP_putc('\n');
+	}
+}
+
