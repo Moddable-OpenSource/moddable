@@ -105,7 +105,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		else if (platform == "mac")
 			this.serialDevicePath = "/dev/cu.SLAB_USBtoUART";
 		else
-			this.serialDevicePath = "com8";
+			this.serialDevicePath = "com3";
 		this.serialBaudRates = [ 460800, 921600, 1500000 ];
 		this.serialConnection = null;
 		this.serialState = 0;
@@ -137,11 +137,11 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			this.serialConnection.close();
 		}
 	}
-	onConnectError(application) {
+	onConnectError(application, e) {
 		system.alert({ 
 			type:"stop",
 			prompt:"xsbug",
-			info:"Serial connection error.\n\nCheck the Serial Preferences...",
+			info:`Serial connection error.\n\n${e.message}\n\nCheck the Serial Preferences...`,
 			buttons:["OK", "Cancel"]
 		}, ok => {
 			if (ok)
@@ -884,22 +884,24 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 						application.updateMenus();
 					}
 					else {
-						this.timeout();
+						if (this.serial) {
+							this.serial.close();
+							this.serial = null;
+						}
+						Timer.set(() => { 
+							this.timeout();
+						}, 50);
 					}
-				}, 1000)
+				}, 1000);
 			}, 50);
 		}
 		catch(e) {
 			this.close();
-			application.defer("onConnectError");
+			application.defer("onConnectError", e);
 		}
 	}
 	parse(buffer) @ "PiuDebugSerialParse"
 	timeout() {
-		if (this.serial) {
-			this.serial.close();
-			this.serial = null;
-		}
 		this.baudRatesIndex++;
 		if (this.baudRatesIndex < this.baudRates.length)
 			this.openSerial();

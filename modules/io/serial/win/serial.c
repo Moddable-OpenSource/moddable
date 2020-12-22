@@ -18,6 +18,13 @@
  *
  */
 
+/*
+	to do:
+
+		string;ascii doesn't ensure data is valid
+
+*/
+
 #include "xsAll.h"
 #include "mc.xs.h"
 #include <process.h>
@@ -25,10 +32,9 @@
 typedef struct {
 	xsMachine			*the;
 	xsSlot				obj;
+	xsSlot				onError;
 	xsSlot				onReadable;
 	xsSlot				onWritable;
-	xsSlot				onError;
-
 	HANDLE				comm;
 	HANDLE				commEvent;
 	HANDLE				thread;
@@ -37,9 +43,9 @@ typedef struct {
 	HANDLE				writeEvent;
 	void*				writeJob;
 	uint8_t				bufferFormat;
+	uint8_t				hasOnError;
 	uint8_t				hasOnReadable;
 	uint8_t				hasOnWritable;
-	uint8_t				hasOnError;
 } xsSerialRecord, *xsSerial;
 
 typedef struct {
@@ -114,12 +120,6 @@ void xs_serial_destructor(void *data)
 {
 	xsSerial s = data;
 	if (!s) return;
-	if (s->writeEvent != INVALID_HANDLE_VALUE)
-		CloseHandle(s->writeEvent);
-	if (s->readEvent != INVALID_HANDLE_VALUE)
-		CloseHandle(s->readEvent);
-	if (s->commEvent != INVALID_HANDLE_VALUE)
-		CloseHandle(s->commEvent);
 	if (s->comm != INVALID_HANDLE_VALUE) {
 		CloseHandle(s->comm);
 		s->comm = INVALID_HANDLE_VALUE;
@@ -128,8 +128,14 @@ void xs_serial_destructor(void *data)
 		WaitForSingleObject(s->thread, INFINITE);
 		CloseHandle(s->thread);
 	}
+	if (s->commEvent != INVALID_HANDLE_VALUE)
+		CloseHandle(s->commEvent);
+	if (s->readEvent != INVALID_HANDLE_VALUE)
+		CloseHandle(s->readEvent);
 	if (s->readJob)
 		((xsSerialJob)s->readJob)->serial = NULL;
+	if (s->writeEvent != INVALID_HANDLE_VALUE)
+		CloseHandle(s->writeEvent);
 	if (s->writeJob)
 		((xsSerialJob)s->writeJob)->serial = NULL;
 	free(data);
@@ -137,95 +143,80 @@ void xs_serial_destructor(void *data)
 
 void xs_serial_constructor(xsMachine *the)
 {
-	char device[128], format[64];
+	xsSerial s = NULL;
 	xsIntegerValue baud;
-	xsSlot onReadable, onWritable, onError;
-	
-	HANDLE comm = INVALID_HANDLE_VALUE;
+	xsStringValue device;
  	char configuration[256];
 	DCB dcb;
 	COMMTIMEOUTS timeouts;
+	xsVars(1);
+	xsTry {
+		s = calloc(1, sizeof(xsSerialRecord));
+		xsElseThrow(s != NULL);
+		s->the = the;
+		s->obj = xsThis;
+		s->onError = xsGet(xsArg(0), xsID_onError);
+		s->hasOnError = xsTest(s->onError);
+		s->onReadable = xsGet(xsArg(0), xsID_onReadable);
+		s->hasOnReadable = xsTest(s->onReadable);
+		s->onWritable = xsGet(xsArg(0), xsID_onWritable);
+		s->hasOnWritable = xsTest(s->onWritable);
+		if (xsHas(xsArg(0), xsID_format)) {
+			xsVar(0) = xsGet(xsArg(0), xsID_format);
+			xs_serial_format_set_aux(the, s, xsToString(xsVar(0)));
+		}
+		else
+			s->bufferFormat = 1;
+		if (xsHas(xsArg(0), xsID_target)) {
+			xsVar(0) = xsGet(xsArg(0), xsID_target);
+			xsSet(xsThis, xsID_target, xsVar(0));
+		}
+		xsVar(0) = xsGet(xsArg(0), xsID_baud);
+		baud = xsToInteger(xsVar(0));
+		xsVar(0) = xsGet(xsArg(0), xsID_device);
+		device = xsToString(xsVar(0));
 
-	xsSerial s = NULL;
+		s->comm = CreateFile(device, GENERIC_READ | GENERIC_WRITE, 0, 0,  OPEN_EXISTING, 0, NULL);
+		xsElseThrow(s->comm != INVALID_HANDLE_VALUE);
+		sprintf(configuration, "baud=%d parity=N data=8 stop=1", baud);
+		memset(&dcb, 0, sizeof(dcb));
+		dcb.DCBlength = sizeof(dcb);
+		BuildCommDCB(configuration, &dcb);
+		xsElseThrow(SetCommState(s->comm, &dcb));
+		memset(&timeouts, 0, sizeof(timeouts));
+		timeouts.ReadIntervalTimeout = 1; 
+		timeouts.ReadTotalTimeoutMultiplier = 0;
+		timeouts.ReadTotalTimeoutConstant = 0;
+		timeouts.WriteTotalTimeoutMultiplier = 0;
+		timeouts.WriteTotalTimeoutConstant = 0;
+		xsElseThrow(SetCommTimeouts(s->comm, &timeouts));
+		CloseHandle(s->comm);
+		s->comm = INVALID_HANDLE_VALUE;
+	
+		s->comm = CreateFile(device, GENERIC_READ | GENERIC_WRITE, 0, 0,  OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+		xsElseThrow(SetCommMask(s->comm, EV_RXCHAR | EV_TXEMPTY));
 
-	xsVars(2);
-
-	xsVar(0) = xsGet(xsArg(0), xsID_device);
-	xsToStringBuffer(xsVar(0), device, sizeof(device));
-
-	xsVar(0) = xsGet(xsArg(0), xsID_baud);
-	baud = xsToInteger(xsVar(0));
-
-	onReadable = xsGet(xsArg(0), xsID_onReadable);
-	onWritable = xsGet(xsArg(0), xsID_onWritable);
-	onError = xsGet(xsArg(0), xsID_onError);
-
-	if (xsHas(xsArg(0), xsID_format)) {
-		xsVar(0) = xsGet(xsArg(0), xsID_format);
-		xsToStringBuffer(xsVar(0), format, sizeof(format));
+		s->commEvent = CreateEvent(0, TRUE, FALSE, NULL);
+		xsElseThrow(s->commEvent != INVALID_HANDLE_VALUE);
+		s->readEvent = CreateEvent(0, TRUE, FALSE, NULL);
+		xsElseThrow(s->readEvent != INVALID_HANDLE_VALUE);
+		s->writeEvent = CreateEvent(0, TRUE, FALSE, NULL);
+		xsElseThrow(s->writeEvent != INVALID_HANDLE_VALUE);
+		s->thread = (HANDLE)_beginthreadex(NULL, 0, xs_serial_loop, s, 0, NULL);
+		xsElseThrow(s->thread != INVALID_HANDLE_VALUE);
 	}
-	else
-		format[0] = 0;
-
-	if (xsHas(xsArg(0), xsID_target)) {
-		xsVar(0) = xsGet(xsArg(0), xsID_target);
-		xsSet(xsThis, xsID_target, xsVar(0));
-	}
-	
- 	comm = CreateFile(device, GENERIC_READ | GENERIC_WRITE, 0, 0,  OPEN_EXISTING, 0, NULL);
-	xsElseThrow(comm != INVALID_HANDLE_VALUE);
-	sprintf(configuration, "baud=%d parity=N data=8 stop=1", baud);
-	memset(&dcb, 0, sizeof(dcb));
-	dcb.DCBlength = sizeof(dcb);
-	BuildCommDCB(configuration, &dcb);
-	xsElseThrow(SetCommState(comm, &dcb));
-	memset(&timeouts, 0, sizeof(timeouts));
-	timeouts.ReadIntervalTimeout = 1; 
-	timeouts.ReadTotalTimeoutMultiplier = 0;
-	timeouts.ReadTotalTimeoutConstant = 0;
-	timeouts.WriteTotalTimeoutMultiplier = 0;
-	timeouts.WriteTotalTimeoutConstant = 0;
-	xsElseThrow(SetCommTimeouts(comm, &timeouts));
-	
-	CloseHandle(comm);
-	comm = INVALID_HANDLE_VALUE;
-	
-  	comm = CreateFile(device, GENERIC_READ | GENERIC_WRITE, 0, 0,  OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-	xsElseThrow(SetCommMask(comm, EV_RXCHAR | EV_TXEMPTY));
-
-	s = calloc(1, sizeof(xsSerialRecord));
-	if (!s)
-		xsUnknownError("not enough memory");
+	xsCatch {
+		xs_serial_destructor(s);
+		xsThrow(xsException);
+	}	
 	xsSetHostData(xsThis, s);
-	s->the = the;
-	s->obj = xsThis;
-	s->hasOnWritable = xsTest(onWritable);
-	s->hasOnReadable = xsTest(onReadable);
-	s->hasOnError = xsTest(onError);
-	
-	s->comm = comm;
-	s->commEvent = CreateEvent(0, TRUE, FALSE, NULL);
-	s->readEvent = CreateEvent(0, TRUE, FALSE, NULL);
-	s->writeEvent = CreateEvent(0, TRUE, FALSE, NULL);
-	s->thread = (HANDLE)_beginthreadex(NULL, 0, xs_serial_loop, s, 0, NULL);
-
-	if (format[0])
-		xs_serial_format_set_aux(the, s, format);
-	else
-		s->bufferFormat = 1;
 	xsRemember(s->obj);
-	if (s->hasOnReadable) {
-		s->onReadable = onReadable;
-		xsRemember(s->onReadable);
-	}
-	if (s->hasOnError) {
-		s->onError = onError;
+	if (s->hasOnError)
 		xsRemember(s->onError);
-	}
-	if (s->hasOnWritable) {
-		s->onWritable = onWritable;
+	if (s->hasOnReadable)
+		xsRemember(s->onReadable);
+	if (s->hasOnWritable)
 		xsRemember(s->onWritable);
-	}
 }
 
 void xs_serial_check(xsMachine *the)
@@ -250,12 +241,12 @@ void xs_serial_close(xsMachine *the)
 	if (!s) return;
 
 	xsForget(s->obj);
+	if (s->hasOnError)
+		xsForget(s->onError);
 	if (s->hasOnReadable)
 		xsForget(s->onReadable);
 	if (s->hasOnWritable)
 		xsForget(s->onWritable);
-	if (s->hasOnError)
-		xsForget(s->onError);
 	xs_serial_destructor(s);
 	
 	xsSetHostData(xsThis, NULL);
