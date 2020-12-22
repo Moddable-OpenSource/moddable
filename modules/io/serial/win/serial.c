@@ -20,47 +20,390 @@
 
 #include "xsAll.h"
 #include "mc.xs.h"
+#include <process.h>
 
-/*
-	to do:
+typedef struct {
+	xsMachine			*the;
+	xsSlot				obj;
+	xsSlot				onReadable;
+	xsSlot				onWritable;
+	xsSlot				onError;
 
-		everything
+	HANDLE				comm;
+	HANDLE				commEvent;
+	HANDLE				thread;
+	HANDLE				readEvent;
+	void*				readJob;
+	HANDLE				writeEvent;
+	void*				writeJob;
+	uint8_t				bufferFormat;
+	uint8_t				hasOnReadable;
+	uint8_t				hasOnWritable;
+	uint8_t				hasOnError;
+} xsSerialRecord, *xsSerial;
 
-*/
+typedef struct {
+	txWorkerJob* next;
+	txWorkerCallback callback;
+	xsSerial serial;
+} xsSerialJobRecord, *xsSerialJob;
+
+static void xs_serial_read_callback(void* machine, void* it);
+static void xs_serial_throw(xsMachine* the, DWORD error, xsStringValue path, xsIntegerValue line);
+static void xs_serial_write_callback(void* machine, void* it);
+static void xs_serial_format_set_aux(xsMachine *the, xsSerial s, char *format);
+
+#ifdef mxDebug
+	#define xsElseThrow(_ASSERTION) \
+		((void)((_ASSERTION) || (xs_serial_throw(the,GetLastError(),(char *)__FILE__,__LINE__), 1)))
+#else
+	#define xsElseThrow(_ASSERTION) \
+		((void)((_ASSERTION) || (xs_serial_throw(the,GetLastError(),NULL,0), 1)))
+#endif
+
+static unsigned int __stdcall xs_serial_loop(void* it)
+{
+	xsSerial s = it;
+	if (s->hasOnWritable) {
+		xsSerialJob writeJob = c_calloc(sizeof(xsSerialJobRecord), 1);
+		if (writeJob == NULL)
+			return 0;
+		writeJob->callback = xs_serial_write_callback;
+		writeJob->serial = s;
+		fxQueueWorkerJob(s->the, writeJob);
+		s->writeJob = writeJob;
+	}
+	while (s->comm != INVALID_HANDLE_VALUE) {
+		DWORD which;
+		OVERLAPPED overlapped;
+ 		memset(&overlapped, 0, sizeof(overlapped));
+		overlapped.hEvent = s->commEvent;
+  		if (!WaitCommEvent(s->comm, &which, &overlapped)) {
+        	DWORD error = GetLastError();
+        	if (error == ERROR_IO_PENDING) {
+ 				DWORD count;
+       			if (!GetOverlappedResult(s->comm, &overlapped, &count, TRUE))
+        			break;
+        	}
+        	else
+				break;
+   		}
+   		if (s->hasOnReadable && (which & EV_RXCHAR) && !s->readJob) {
+			xsSerialJob readJob = c_calloc(sizeof(xsSerialJobRecord), 1);
+			if (readJob == NULL)
+				break;
+			readJob->callback = xs_serial_read_callback;
+			readJob->serial = s;
+			fxQueueWorkerJob(s->the, readJob);
+			s->readJob = readJob;
+		}
+   		if (s->hasOnWritable && (which & EV_TXEMPTY) && !s->writeJob) {
+			xsSerialJob writeJob = c_calloc(sizeof(xsSerialJobRecord), 1);
+			if (writeJob == NULL)
+				break;
+			writeJob->callback = xs_serial_write_callback;
+			writeJob->serial = s;
+			fxQueueWorkerJob(s->the, writeJob);
+			s->writeJob = writeJob;
+		}
+	}
+	return 0;
+}
 
 void xs_serial_destructor(void *data)
 {
+	xsSerial s = data;
+	if (!s) return;
+	if (s->writeEvent != INVALID_HANDLE_VALUE)
+		CloseHandle(s->writeEvent);
+	if (s->readEvent != INVALID_HANDLE_VALUE)
+		CloseHandle(s->readEvent);
+	if (s->commEvent != INVALID_HANDLE_VALUE)
+		CloseHandle(s->commEvent);
+	if (s->comm != INVALID_HANDLE_VALUE) {
+		CloseHandle(s->comm);
+		s->comm = INVALID_HANDLE_VALUE;
+	}
+	if (s->thread != INVALID_HANDLE_VALUE) {
+		WaitForSingleObject(s->thread, INFINITE);
+		CloseHandle(s->thread);
+	}
+	if (s->readJob)
+		((xsSerialJob)s->readJob)->serial = NULL;
+	if (s->writeJob)
+		((xsSerialJob)s->writeJob)->serial = NULL;
+	free(data);
 }
 
 void xs_serial_constructor(xsMachine *the)
 {
-	xsUnknownError("not implemented");
+	char device[128], format[64];
+	xsIntegerValue baud;
+	xsSlot onReadable, onWritable, onError;
+	
+	HANDLE comm = INVALID_HANDLE_VALUE;
+ 	char configuration[256];
+	DCB dcb;
+	COMMTIMEOUTS timeouts;
+
+	xsSerial s = NULL;
+
+	xsVars(2);
+
+	xsVar(0) = xsGet(xsArg(0), xsID_device);
+	xsToStringBuffer(xsVar(0), device, sizeof(device));
+
+	xsVar(0) = xsGet(xsArg(0), xsID_baud);
+	baud = xsToInteger(xsVar(0));
+
+	onReadable = xsGet(xsArg(0), xsID_onReadable);
+	onWritable = xsGet(xsArg(0), xsID_onWritable);
+	onError = xsGet(xsArg(0), xsID_onError);
+
+	if (xsHas(xsArg(0), xsID_format)) {
+		xsVar(0) = xsGet(xsArg(0), xsID_format);
+		xsToStringBuffer(xsVar(0), format, sizeof(format));
+	}
+	else
+		format[0] = 0;
+
+	if (xsHas(xsArg(0), xsID_target)) {
+		xsVar(0) = xsGet(xsArg(0), xsID_target);
+		xsSet(xsThis, xsID_target, xsVar(0));
+	}
+	
+ 	comm = CreateFile(device, GENERIC_READ | GENERIC_WRITE, 0, 0,  OPEN_EXISTING, 0, NULL);
+	xsElseThrow(comm != INVALID_HANDLE_VALUE);
+	sprintf(configuration, "baud=%d parity=N data=8 stop=1", baud);
+	memset(&dcb, 0, sizeof(dcb));
+	dcb.DCBlength = sizeof(dcb);
+	BuildCommDCB(configuration, &dcb);
+	xsElseThrow(SetCommState(comm, &dcb));
+	memset(&timeouts, 0, sizeof(timeouts));
+	timeouts.ReadIntervalTimeout = 1; 
+	timeouts.ReadTotalTimeoutMultiplier = 0;
+	timeouts.ReadTotalTimeoutConstant = 0;
+	timeouts.WriteTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = 0;
+	xsElseThrow(SetCommTimeouts(comm, &timeouts));
+	
+	CloseHandle(comm);
+	comm = INVALID_HANDLE_VALUE;
+	
+  	comm = CreateFile(device, GENERIC_READ | GENERIC_WRITE, 0, 0,  OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	xsElseThrow(SetCommMask(comm, EV_RXCHAR | EV_TXEMPTY));
+
+	s = calloc(1, sizeof(xsSerialRecord));
+	if (!s)
+		xsUnknownError("not enough memory");
+	xsSetHostData(xsThis, s);
+	s->the = the;
+	s->obj = xsThis;
+	s->hasOnWritable = xsTest(onWritable);
+	s->hasOnReadable = xsTest(onReadable);
+	s->hasOnError = xsTest(onError);
+	
+	s->comm = comm;
+	s->commEvent = CreateEvent(0, TRUE, FALSE, NULL);
+	s->readEvent = CreateEvent(0, TRUE, FALSE, NULL);
+	s->writeEvent = CreateEvent(0, TRUE, FALSE, NULL);
+	s->thread = (HANDLE)_beginthreadex(NULL, 0, xs_serial_loop, s, 0, NULL);
+
+	if (format[0])
+		xs_serial_format_set_aux(the, s, format);
+	else
+		s->bufferFormat = 1;
+	xsRemember(s->obj);
+	if (s->hasOnReadable) {
+		s->onReadable = onReadable;
+		xsRemember(s->onReadable);
+	}
+	if (s->hasOnError) {
+		s->onError = onError;
+		xsRemember(s->onError);
+	}
+	if (s->hasOnWritable) {
+		s->onWritable = onWritable;
+		xsRemember(s->onWritable);
+	}
+}
+
+void xs_serial_check(xsMachine *the)
+{
+	xsSerial s = xsGetHostData(xsThis);
+	DCB dcb;
+	if (GetCommState(s->comm, &dcb) && SetCommState(s->comm, &dcb))
+		return;
+	if (s->hasOnError) {
+		xsTry {
+			xsCallFunction0(s->onError, s->obj);
+		}
+		xsCatch {
+		}
+	}
+	xsCall0(s->obj, xsID_close);
 }
 
 void xs_serial_close(xsMachine *the)
 {
+	xsSerial s = xsGetHostData(xsThis);
+	if (!s) return;
+
+	xsForget(s->obj);
+	if (s->hasOnReadable)
+		xsForget(s->onReadable);
+	if (s->hasOnWritable)
+		xsForget(s->onWritable);
+	if (s->hasOnError)
+		xsForget(s->onError);
+	xs_serial_destructor(s);
+	
+	xsSetHostData(xsThis, NULL);
 }
 
 void xs_serial_read(xsMachine *the)
 {
+	xsSerial s = xsGetHostData(xsThis);
+	DWORD errors;
+	COMSTAT	comstat;
+	DWORD available;
+	void *data;
+	DWORD read;
+    OVERLAPPED overlapped;
+	
+	xsElseThrow(ClearCommError(s->comm, &errors, &comstat));
+	available = comstat.cbInQue;		
+	if (!available)
+		return;		
+	if (s->bufferFormat) {
+		xsResult = xsArrayBuffer(NULL, (xsIntegerValue)available);
+		data = xsToArrayBuffer(xsResult);
+	}
+	else {
+		xsResult = xsStringBuffer(NULL, (xsIntegerValue)available);
+		data = xsToString(xsResult);
+	}
+ 	memset(&overlapped, 0, sizeof(overlapped));
+	overlapped.hEvent = s->readEvent;
+	if (!ReadFile(s->comm, data, available, &read, &overlapped)) {
+		DWORD error = GetLastError();
+		if (error != ERROR_IO_PENDING) xs_serial_throw(the, error, NULL, 0);
+        xsElseThrow(GetOverlappedResult(s->comm, &overlapped, &read, TRUE));
+	}
 }
 
-void xs_serial_write(xsMachine *the)
+void xs_serial_read_callback(void* machine, void* it)
+{
+	xsSerialJob readJob = it;
+	xsSerial s = readJob->serial;
+	if (s) {
+		s->readJob = NULL;
+		xsBeginHost(machine);
+		xsTry {
+			xsCallFunction1(s->onReadable, s->obj, xsInteger(1));
+		}
+		xsCatch {
+		}
+		xsEndHost(machine);
+	}
+}
+
+void xs_serial_purge(xsMachine *the)
 {
 }
 
 void xs_serial_set(xsMachine *the)
 {
+	xsSerial s = xsGetHostData(xsThis);
+
+	if (xsHas(xsArg(0), xsID_RTS)) {
+		xsResult = xsGet(xsArg(0), xsID_RTS);
+		if (xsTest(xsResult))
+			xsElseThrow(EscapeCommFunction(s->comm, SETRTS));
+		else
+			xsElseThrow(EscapeCommFunction(s->comm, CLRRTS));
+	}
+
+	if (xsHas(xsArg(0), xsID_DTR)) {
+		xsResult = xsGet(xsArg(0), xsID_DTR);
+		if (xsTest(xsResult))
+			xsElseThrow(EscapeCommFunction(s->comm, SETDTR));
+		else
+			xsElseThrow(EscapeCommFunction(s->comm, CLRDTR));
+	}
+}
+
+void xs_serial_throw(xsMachine* the, DWORD error, xsStringValue path, xsIntegerValue line)
+{
+	char buffer[2048];
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, sizeof(buffer), NULL);
+	fxThrowMessage(the, path, line, XS_UNKNOWN_ERROR, "%s", buffer);
+}
+
+void xs_serial_write(xsMachine *the)
+{
+	xsSerial s = xsGetHostData(xsThis);
+	char *data;
+	DWORD count;
+    OVERLAPPED overlapped;
+	DWORD written;
+
+	if (s->bufferFormat) {
+		data = xsToArrayBuffer(xsArg(0));
+		count = (DWORD)xsGetArrayBufferLength(xsArg(0));
+	}
+	else {
+		data = xsToString(xsArg(0));
+		count = (DWORD)strlen(data);
+	}
+	if (!count)
+		return;
+ 	memset(&overlapped, 0, sizeof(overlapped));
+	overlapped.hEvent = s->writeEvent;
+	if (!WriteFile(s->comm, data, (DWORD)count, &written, &overlapped)) {
+		DWORD error = GetLastError();
+		if (error != ERROR_IO_PENDING) xs_serial_throw(the, error, NULL, 0);
+        xsElseThrow(GetOverlappedResult(s->comm, &overlapped, &written, TRUE));
+	}
+}
+
+void xs_serial_write_callback(void* machine, void* it)
+{
+	xsSerialJob writeJob = it;
+	xsSerial s = writeJob->serial;
+	if (s) {
+		s->writeJob = NULL;
+		xsBeginHost(machine);
+		xsTry {
+			xsCallFunction1(s->onWritable, s->obj, xsInteger(1));
+		}
+		xsCatch {
+		}
+		xsEndHost(machine);
+	}
 }
 
 void xs_serial_format_get(xsMachine *the)
 {
+	xsSerial s = xsGetHostData(xsThis);
+	if (s->bufferFormat)
+		xsResult = xsString("buffer");
+	else
+		xsResult = xsString("string;ascii");
 }
 
 void xs_serial_format_set(xsMachine *the)
 {
+	xsSerial s = xsGetHostData(xsThis);
+	xs_serial_format_set_aux(the, s, xsToString(xsArg(0)));
 }
 
-void xs_serial_purge(xsMachine *the)
+void xs_serial_format_set_aux(xsMachine *the, xsSerial s, char *format)
 {
+	if (!strcmp(format, "buffer"))
+		s->bufferFormat = 1;
+	else if (!strcmp(format, "string;ascii"))
+		s->bufferFormat = 0;
+	else
+		xsUnknownError("invalid format");
 }

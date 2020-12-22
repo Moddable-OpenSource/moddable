@@ -20,6 +20,7 @@
 
 class Serial @ "xs_serial_destructor" {
 	constructor() @ "xs_serial_constructor";
+	check() @ "xs_serial_check";
 	close() @ "xs_serial_close";
 	read() @ "xs_serial_read";
 	write() @ "xs_serial_write";

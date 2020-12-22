@@ -360,6 +360,11 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			bubbles.push({ path, line, conversation, flags, message });
 		application.distribute("onBubblesChanged", bubbles);
 	}
+	onDevicesChanged() {
+		if (this.serialState == 1) {
+			this.serialConnection.check();
+		}
+	}
 	onDisconnected(machine) {
 		let machines = this.machines;
 		let index = machines.indexOf(machine);
@@ -779,6 +784,11 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		Timer.set(() => { 
 			this.openSerial();
 		}, 0);
+	}
+	check() {
+		if (this.serial) {
+			this.serial?.check();
+		}
 	}
 	close() {
 		if (this.serial) {
