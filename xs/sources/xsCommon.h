@@ -95,7 +95,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 10
-#define XS_MINOR_VERSION 4
+#define XS_MINOR_VERSION 5
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -850,7 +850,6 @@ enum {
 	_getUint16,
 	_getUint32,
 	_getUint8,
-	_getUint8Clamped,
 	_getYear,
 	_global,
 	_globalThis,
@@ -929,7 +928,6 @@ enum {
 	_pow,
 	_preventExtensions,
 	_propertyIsEnumerable,
-	_propertyIsScriptable,
 	_prototype,
 	_proxy,
 	_push,
@@ -981,7 +979,6 @@ enum {
 	_setUint16,
 	_setUint32,
 	_setUint8,
-	_setUint8Clamped,
 	_setYear,
 	_shift,
 	_sign,

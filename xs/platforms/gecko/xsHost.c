@@ -516,18 +516,9 @@ void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 	}
 }
 
-void fxMarkHost(txMachine* the, txMarkRoot markRoot)
-{
-	the->host = C_NULL;
-}
-
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
 	return C_NULL;
-}
-
-void fxSweepHost(txMachine *the)
-{
 }
 
 static void doRunPromiseJobs(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -571,9 +562,6 @@ void fxQueuePromiseJobs(txMachine* the)
 	gRunPromiseJobs = xsRunPromiseJobs_pending;
 }
 
-void fxSweepHost(txMachine* the)
-{
-}
 #endif
 
 /*

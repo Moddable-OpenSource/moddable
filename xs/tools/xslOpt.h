@@ -100,7 +100,6 @@
 
 #define mxUseDefaultChunkAllocation 1
 #define mxUseDefaultSlotAllocation 1
-#define mxUseDefaultHostCollection 1
 #define mxUseDefaultSharedChunks 1
 
 #endif /* __XSLOPT__ */

@@ -680,10 +680,8 @@ extern txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* n
 extern void fxFreeChunks(txMachine* the, void* theChunks);
 extern void fxFreeSlots(txMachine* the, void* theSlots);
 extern void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID);
-extern void fxMarkHost(txMachine* the, txMarkRoot markRoot);
 extern txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags);
 extern void fxQueuePromiseJobs(txMachine* the);
-extern void fxSweepHost(txMachine* the);
 extern void fxInitializeSharedCluster();
 extern void fxTerminateSharedCluster();
 extern void* fxCreateSharedChunk(txInteger byteLength);
@@ -808,6 +806,7 @@ extern txBoolean fxOrdinaryIsExtensible(txMachine* the, txSlot* instance);
 extern void fxOrdinaryOwnKeys(txMachine* the, txSlot* target, txFlag flag, txSlot* keys);
 extern txBoolean fxOrdinaryPreventExtensions(txMachine* the, txSlot* instance);
 extern txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* prototype);
+mxExport void fxOrdinaryToPrimitive(txMachine* the);
 
 extern const txBehavior gxEnvironmentBehavior;
 extern txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment);
@@ -891,9 +890,7 @@ mxExport void fx_Object_prototype___lookupSetter__(txMachine* the);
 mxExport void fx_Object_prototype_hasOwnProperty(txMachine* the);
 mxExport void fx_Object_prototype_isPrototypeOf(txMachine* the);
 mxExport void fx_Object_prototype_propertyIsEnumerable(txMachine* the);
-mxExport void fx_Object_prototype_propertyIsScriptable(txMachine* the);
 mxExport void fx_Object_prototype_toLocaleString(txMachine* the);
-mxExport void fx_Object_prototype_toPrimitive(txMachine* the);
 mxExport void fx_Object_prototype_toString(txMachine* the);
 mxExport void fx_Object_prototype_valueOf(txMachine* the);
 mxExport void fx_Object_assign(txMachine* the);
@@ -1209,6 +1206,7 @@ mxExport void fx_String_prototype_endsWith(txMachine* the);
 mxExport void fx_String_prototype_includes(txMachine* the);
 mxExport void fx_String_prototype_indexOf(txMachine* the);
 mxExport void fx_String_prototype_lastIndexOf(txMachine* the);
+mxExport void fx_String_prototype_localeCompare(txMachine* the);
 mxExport void fx_String_prototype_match(txMachine* the);
 mxExport void fx_String_prototype_matchAll(txMachine* the);
 mxExport void fx_String_prototype_normalize(txMachine* the);
@@ -1407,7 +1405,6 @@ mxExport void fx_DataView_prototype_setInt32(txMachine* the);
 mxExport void fx_DataView_prototype_setUint8(txMachine* the);
 mxExport void fx_DataView_prototype_setUint16(txMachine* the);
 mxExport void fx_DataView_prototype_setUint32(txMachine* the);
-mxExport void fx_DataView_prototype_setUint8Clamped(txMachine* the);
 
 mxExport const txTypeDispatch gxTypeDispatches[];
 mxExport const txBehavior gxTypedArrayBehavior;
@@ -2406,6 +2403,7 @@ enum {
 	mxExecuteRegExpFunctionIndex,
 	mxInitializeRegExpFunctionIndex,
 	mxArrayIteratorFunctionIndex,
+	mxOrdinaryToPrimitiveFunctionStackIndex,
 
 	mxEmptyCodeStackIndex,
 	mxEmptyStringStackIndex,
@@ -2587,6 +2585,7 @@ enum {
 #define  mxExecuteRegExpFunction the->stackPrototypes[-1 - mxExecuteRegExpFunctionIndex]
 #define  mxInitializeRegExpFunction the->stackPrototypes[-1 - mxInitializeRegExpFunctionIndex]
 #define  mxArrayIteratorFunction the->stackPrototypes[-1 - mxArrayIteratorFunctionIndex]
+#define mxOrdinaryToPrimitiveFunction the->stackPrototypes[-1 - mxOrdinaryToPrimitiveFunctionStackIndex]
 
 
 #define mxID(ID) ((ID) - 32768)

@@ -794,7 +794,7 @@ export class PrerequisiteFile {
 		this.current = ""
 	}
 	close() {
-		if (this.former.compare(this.current))
+		if (this.former.localeCompare(this.current))
 			this.tool.writeFileString(this.path, this.current);
 	}
 	line(...strings) {

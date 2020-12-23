@@ -732,7 +732,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			former = line;
 		});
 		lines.sort((a, b) => {
-			return a.path.compare(b.path);
+			return a.path.localeCompare(b.path);
 		});
 		return lines;
 	}

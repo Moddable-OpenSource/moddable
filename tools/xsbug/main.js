@@ -306,7 +306,7 @@ class ApplicationBehavior extends DebugBehavior {
 		if (!home) {
 			home = new Home(path);
 			items.push(home);
-			items.sort((a, b) => a.name.compare(b.name));
+			items.sort((a, b) => a.name.localeCompare(b.name));
 			application.distribute("onHomesChanged");
 		}
 		return home;

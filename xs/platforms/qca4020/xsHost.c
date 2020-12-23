@@ -667,11 +667,6 @@ void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 #endif
 }
 
-void fxMarkHost(txMachine* the, txMarkRoot markRoot)
-{
-	the->host = C_NULL;
-}
-
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
 	txParser _parser;
@@ -692,10 +687,6 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 #endif
 	fxTerminateParser(parser);
 	return script;
-}
-
-void fxSweepHost(txMachine *the)
-{
 }
 
 /*

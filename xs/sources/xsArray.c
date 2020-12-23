@@ -133,7 +133,6 @@ void fxBuildArray(txMachine* the)
 	mxPushSlot(property);
 	mxPull(mxArrayIteratorFunction);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
-	slot = fxNextBooleanProperty(the, slot, 1, mxID(_Symbol_isConcatSpreadable), XS_DONT_ENUM_FLAG);
 	unscopable = fxLastProperty(the, fxNewInstance(the));
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_find), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findIndex), XS_NO_FLAG);

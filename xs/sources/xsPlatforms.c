@@ -52,9 +52,6 @@
 #ifndef mxUseDefaultSlotAllocation
 	#define mxUseDefaultSlotAllocation 0
 #endif
-#ifndef mxUseDefaultHostCollection
-	#define mxUseDefaultHostCollection 0
-#endif
 #ifndef mxUseDefaultFindModule
 	#define mxUseDefaultFindModule 0
 #endif
@@ -144,19 +141,6 @@ void fxFreeSlots(txMachine* the, void* theSlots)
 }
 
 #endif /* mxUseDefaultSlotAllocation */ 
-
-
-#if mxUseDefaultHostCollection
-
-void fxMarkHost(txMachine* the, txMarkRoot markRoot)
-{
-}
-
-void fxSweepHost(txMachine* the)
-{
-}
-
-#endif /* mxUseDefaultHostCollection */ 
 
 
 #if mxUseDefaultFindModule

@@ -204,7 +204,7 @@ class ApplicationBehavior extends Behavior {
 			}
 			info = iterator.next();
 		}
-		devices.sort((a, b) => a.sortingTitle.compare(b.sortingTitle));
+		devices.sort((a, b) => a.sortingTitle.localeCompare(b.sortingTitle));
 		
 		let length = devices.length;
 		if (index < 0)
