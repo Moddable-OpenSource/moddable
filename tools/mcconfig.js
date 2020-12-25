@@ -1095,6 +1095,19 @@ export default class extends Tool {
 			this.createDirectory(this.resourcesPath);
 		}
 		else if (this.platform.startsWith("x-cli-")) {
+			var folder = "mc", file;
+			this.createDirectory(this.modulesPath + this.slash + folder);
+			var source = this.tmpPath + this.slash + "mc.config.js";
+			var target = folder + this.slash + "config.xsb";
+			this.jsFiles.push({ source, target });
+			if (this.preloads.length)
+				this.preloads.push("mc" + this.slash + "config.xsb");
+			file = new ConfigFile(source, this);
+			file.generate(this);
+			file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h", this);
+			file.generate(this);
+			this.dataPath = this.resourcesPath = this.tmpPath + this.slash + "resources";
+			this.createDirectory(this.resourcesPath);
 		}
 		else {
 			var folder = "mc", file;
