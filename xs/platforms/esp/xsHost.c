@@ -1023,7 +1023,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	txString slash;
 	txID id;
 
-	fxToStringBuffer(the, slot, name, sizeof(name));
+	fxToStringBuffer(the, slot, name, sizeof(name) - preparation->baseLength - 4);
 // #if MODDEF_XS_MODS
 // 	if (findMod(the, name, NULL)) {
 // 		c_strcpy(path, "/");
@@ -1048,11 +1048,20 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		relative = 1;
 		search = 1;
 	}
+	slash = c_strrchr(name, '/');
+	if (!slash)
+		slash = name;
+	slash = c_strrchr(slash, '.');
+	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs")))
+		*slash = 0;
 	if (absolute) {
 		c_strcpy(path, preparation->base);
 		c_strcat(path, name + 1);
-		if (fxFindScript(the, realm, path, &id))
+		c_strcat(path, ".xsb");
+		if (fxFindScript(the, realm, path, &id)) {
+// 			fxReport(the, "ABSOLUTE %s\n", path);
 			return id;
+		}
 	}
 	if (relative && (moduleID != XS_NO_ID)) {
 		c_strcpy(path, fxGetKeyName(the, moduleID));
@@ -1070,8 +1079,11 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		if (!c_strncmp(path, preparation->base, preparation->baseLength)) {
 			*slash = 0;
 			c_strcat(path, name + dot);
-			if (fxFindScript(the, realm, path, &id))
+			c_strcat(path, ".xsb");
+			if (fxFindScript(the, realm, path, &id)) {
+// 				fxReport(the, "RELATIVE %s\n", path);
 				return id;
+			}
 		}
 #if 0
 		*slash = 0;
@@ -1086,8 +1098,10 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		slot = slot->value.reference->next;
 		while (slot) {
 			txSlot* key = fxGetKey(the, slot->ID);
-			if (key && !c_strcmp(key->value.key.string, name))
+			if (key && !c_strcmp(key->value.key.string, name)) {
+// 				fxReport(the, "SEARCH %s\n", name);
 				return slot->value.symbol;
+			}
 			slot = slot->next;
 		}
 	}
@@ -1142,11 +1156,6 @@ void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 #endif
 }
 
-void fxMarkHost(txMachine* the, txMarkRoot markRoot)
-{
-	the->host = C_NULL;
-}
-
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
 	txParser _parser;
@@ -1156,6 +1165,15 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
+#ifdef mxDebug
+		if (fxIsConnected(the)) {
+			char tag[16];
+			flags |= mxDebugFlag;
+			fxGenerateTag(the, tag, sizeof(tag), C_NULL);
+			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, tag);
+			parser->path = fxNewParserSymbol(parser, tag);
+		}
+#endif
 		fxParserTree(parser, stream, getter, flags, NULL);
 		fxParserHoist(parser);
 		fxParserBind(parser);
@@ -1167,10 +1185,6 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 #endif
 	fxTerminateParser(parser);
 	return script;
-}
-
-void fxSweepHost(txMachine* the)
-{
 }
 
 /*
@@ -1598,9 +1612,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	}
 }
 
+#ifndef modTaskGetCurrent
+	#error make sure MOD_TASKS and modTaskGetCurrent are defined
+#endif
+
 void modMachineTaskInit(xsMachine *the)
 {
-	the->task = xTaskGetCurrentTaskHandle();
+	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(10, sizeof(modMessageRecord));
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -36,6 +36,8 @@
 #endif
 #include "mc.xs.h"			// for xsID_* values
 
+#include "builtinCommon.h"
+
 struct UDPPacketRecord {
 	struct UDPPacketRecord *next;
 	struct pbuf		*pb;
@@ -48,9 +50,9 @@ typedef struct UDPPacketRecord *UDPPacket;
 struct UDPRecord {
 	struct udp_pcb	*skt;
 	UDPPacket		packets;
+	xsSlot			obj;
 	uint8_t			hasOnReadable;
 	xsMachine		*the;
-	xsSlot			target;
 	xsSlot			onReadable;
 };
 typedef struct UDPRecord UDPRecord;
@@ -64,13 +66,8 @@ void xs_udp_constructor(xsMachine *the)
 	UDP udp;
 	int port = 0;
 	struct udp_pcb *skt;
-	xsSlot target;
 
 	xsmcVars(1);
-
-	xsmcGet(target, xsArg(0), xsID_target);
-	if (!xsmcTest(target))
-		target = xsThis;
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
@@ -78,6 +75,10 @@ void xs_udp_constructor(xsMachine *the)
 		if ((port < 0) || (port > 65535))
 			xsRangeError("invalid port");
 	}
+
+	builtinInitializeTarget(the);
+	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
+		xsRangeError("invalid format");
 
 	skt = udp_new();
 	if (!skt)
@@ -96,15 +97,14 @@ void xs_udp_constructor(xsMachine *the)
 
 	xsmcSetHostData(xsThis, udp);
 	udp->skt = skt;
+	udp->obj = xsThis;
+	udp->the = the;
+	xsRemember(udp->obj);
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
 
-	if (builtinGetCallback(the, &target, xsID_onReadable, &udp->onReadable)) {
+	if (builtinGetCallback(the, xsID_onReadable, &udp->onReadable)) {
 		udp->hasOnReadable = 1;
-		udp->the = the;
-		udp->target = target;
-		xsRemember(udp->target);
-
 		xsRemember(udp->onReadable);
 	}
 }
@@ -132,10 +132,9 @@ void xs_udp_close(xsMachine *the)
 	if (!udp) return;
 
 	xsmcSetHostData(xsThis, NULL);
-	if (udp->hasOnReadable) {
-		xsForget(udp->target);
+	xsForget(udp->obj);
+	if (udp->hasOnReadable)
 		xsForget(udp->onReadable);
-	}
 	xs_udp_destructor(udp);
 }
 
@@ -242,6 +241,6 @@ void udpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 
 	xsBeginHost(the);
 		xsmcSetInteger(xsResult, count);
-		xsCallFunction1(udp->onReadable, udp->target, xsResult);
+		xsCallFunction1(udp->onReadable, udp->obj, xsResult);
 	xsEndHost(the);
 }

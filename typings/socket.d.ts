@@ -25,9 +25,8 @@ declare module "socket" {
     kind: "RAW",
     protocol?: number,
   };
-  export type TCPSocketOptions = {
+  export type TCPSocketOptionsWithoutPort = {
     host: string,
-    port: number,
     kind?: "TCP",
     noDelay?: boolean,
     keepalive?: {
@@ -36,6 +35,7 @@ declare module "socket" {
       count: number
     }
   };
+  export type TCPSocketOptions = TCPSocketOptionsWithoutPort & {port: number};
   type UDPSocketOptions = {
     host: string,
     port: number,

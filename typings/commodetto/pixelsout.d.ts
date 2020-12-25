@@ -29,7 +29,8 @@ declare module "commodetto/PixelsOut" {
       offset: number,
       count: number
     ): void;
-    adaptInvalid(r: Rectangle): void;
+
+    adaptInvalid(area: {x: number, y: number, width: number, height: number}): void;
     pixelsToBytes(count: number): number;
     /**
      * The width of the PixelsOut instance in pixels.

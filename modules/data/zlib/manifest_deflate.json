@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"deflate": "./deflate",
+		"*": "./miniz"
+	},
+	"preload": [
+		"deflate"
+	]
+}

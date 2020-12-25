@@ -278,9 +278,9 @@ extern uint32_t gMsgBufferMax;
 #if defined(mxInstrument) && defined(__XS__)
 	#include "modTimer.h"
 
-	void espInstrumentMachineBegin(txMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
-	void espInstrumentMachineEnd(txMachine *the);
-	void espInstrumentMachineReset(txMachine *the);
+	void espInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
+	void espInstrumentMachineEnd(xsMachine *the);
+	void espInstrumentMachineReset(xsMachine *the);
 #endif
 
 /*

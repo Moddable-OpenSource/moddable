@@ -24,20 +24,25 @@ declare module "wifi" {
     ssid: string,
     password?: string
   }
-  type WiFiCallback = (message: "connect" | "gotIP" | "disconnect") => void
+  type WiFiCallback = (message: "connect" | "gotIP" | "lostIP" | "disconnect") => void
   type WiFiScanCallback = (item: {
     ssid: string,
     authentication: string,
     rssi: number,
-    bssid: string,
+    bssid: ArrayBuffer,
   } | null) => void;
   type StationMode = 1;
   type AccessPointMode = 2;
   class WiFi {
+    static gotIP: "gotIP";
+    static lostIP: "lostIP";
+    static connected: "connect";
+    static disconnected: "disconnect";
+    
     constructor(options: WiFiOptions, callback: WiFiCallback);
     close(): void;
     static scan(options: {hidden?: boolean, channel: number}, callback: WiFiScanCallback): void;
-    mode: StationMode | AccessPointMode;
+    static mode: StationMode | AccessPointMode;
     static connect(options?: WiFiOptions);
     static accessPoint(options: {
       ssid: string,

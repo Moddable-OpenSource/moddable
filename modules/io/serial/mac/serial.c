@@ -52,6 +52,7 @@ typedef struct {
 	xsSlot				obj;
 	xsSlot				onReadable;
 	xsSlot				onWritable;
+	xsSlot				onError;
 
 	int					fd;
 	CFSocketRef			serialSocket;
@@ -59,6 +60,9 @@ typedef struct {
 
 	modTimer			writable;
 	uint8_t				bufferFormat;
+	uint8_t				hasOnReadable;
+	uint8_t				hasOnWritable;
+	uint8_t				hasOnError;
 } xsSerialRecord, *xsSerial;
 
 static void fxSerialReadable(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
@@ -86,7 +90,7 @@ void xs_serial_constructor(xsMachine *the)
 	CFSocketContext context;
 	int fd;
 	xsSerial s;
-	xsSlot onReadable, onWritable;
+	xsSlot onReadable, onWritable, onError;
 
 	xsVars(2);
 
@@ -98,6 +102,7 @@ void xs_serial_constructor(xsMachine *the)
 
 	onReadable = xsGet(xsArg(0), xsID_onReadable);
 	onWritable = xsGet(xsArg(0), xsID_onWritable);
+	onError = xsGet(xsArg(0), xsID_onError);
 
 	if (xsHas(xsArg(0), xsID_format)) {
 		xsVar(0) = xsGet(xsArg(0), xsID_format);
@@ -117,6 +122,9 @@ void xs_serial_constructor(xsMachine *the)
 	xsSetHostData(xsThis, s);
 	s->the = the;
 	s->obj = xsThis;
+	s->hasOnWritable = xsTest(onWritable);
+	s->hasOnReadable = xsTest(onReadable);
+	s->hasOnError = xsTest(onError);
 
 	if (format[0])
 		fxSerialSetFormat(the, s, format);
@@ -145,12 +153,21 @@ void xs_serial_constructor(xsMachine *the)
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), s->serialSource, kCFRunLoopCommonModes);
 
 	xsRemember(s->obj);
-	s->onReadable = onReadable;
-	s->onWritable = onWritable;
-	xsRemember(s->onReadable);
-	xsRemember(s->onWritable);
 
-	s->writable = modTimerAdd(0, 0, fxSerialWritable, &s, sizeof(s));
+	if (s->hasOnReadable) {
+		s->onReadable = onReadable;
+		xsRemember(s->onReadable);
+	}
+	if (s->hasOnError) {
+		s->onError = onError;
+		xsRemember(s->onError);
+	}
+	if (s->hasOnWritable) {
+		s->onWritable = onWritable;
+		xsRemember(s->onWritable);
+
+		s->writable = modTimerAdd(0, 0, fxSerialWritable, &s, sizeof(s));
+	}
 }
 
 void xs_serial_close(xsMachine *the)
@@ -159,10 +176,15 @@ void xs_serial_close(xsMachine *the)
 	if (!s) return;
 
 	xsForget(s->obj);
-	xsForget(s->onReadable);
-	xsForget(s->onWritable);
 
-	xs_serial_destructor(xsGetHostData(xsThis));
+	if (s->hasOnReadable)
+		xsForget(s->onReadable);
+	if (s->hasOnWritable)
+		xsForget(s->onWritable);
+	if (s->hasOnError)
+		xsForget(s->onError);
+
+	xs_serial_destructor(s);
 	xsSetHostData(xsThis, NULL);
 }
 
@@ -213,19 +235,13 @@ void xs_serial_write(xsMachine *the)
 
 	while (count) {
 		int result = write(s->fd, data, count);
-		if (result <= 0) {
-			if (EAGAIN == errno) {
-				usleep(10000);
-				continue;
-			}
+		if (result < 0)
 			xsUnknownError("write failed");
-		}
-
 		count -= result;
 		data += result;
 	}
 
-	if (!s->writable)
+	if (!s->writable && s->hasOnWritable)
 		s->writable = modTimerAdd(0, 0, fxSerialWritable, &s, sizeof(s));
 }
 
@@ -275,12 +291,33 @@ void xs_serial_purge(xsMachine *the)
 void fxSerialReadable(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context)
 {
 	xsSerial s = context;
-	int count;
 
-	xsBeginHost(s->the);
-		ioctl(s->fd, FIONREAD, &count);
-		xsCallFunction1(s->onReadable, s->obj, xsInteger(count));
-	xsEndHost();
+	if (cbType & kCFSocketReadCallBack) {
+		int count, err;
+
+		err = ioctl(s->fd, FIONREAD, &count);
+		if (err < 0) {
+			xsBeginHost(s->the);
+			if (s->hasOnError) {
+				xsTry {
+					xsCallFunction0(s->onError, s->obj);
+				}
+				xsCatch {
+				}
+			}
+			xsCall0(s->obj, xsID("close"));
+			xsEndHost();
+			return;
+		}
+
+		if (!s->hasOnReadable)
+			return;
+
+		xsBeginHost(s->the);
+			ioctl(s->fd, FIONREAD, &count);
+			xsCallFunction1(s->onReadable, s->obj, xsInteger(count));
+		xsEndHost();
+	}
 }
 
 void fxSerialWritable(modTimer timer, void *refcon, int refconSize)

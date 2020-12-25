@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -104,12 +104,11 @@ enum {
 
 struct DigitalRecord {
 	uint32_t	pins;
-	uint8_t		hasOnReadable;
+	xsSlot		obj;
 	uint16_t	triggered;
 	uint16_t	rises;
 	uint16_t	falls;
 	xsMachine	*the;
-	xsSlot		target;
 	xsSlot		*onReadable;
 	struct DigitalRecord *next;
 };
@@ -134,38 +133,32 @@ void xs_digitalbank_constructor(xsMachine *the)
 	Digital digital;
 	int hasOnReadable = 0, mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
-	xsSlot target;
+	xsSlot tmp;
 
-	xsmcVars(1);
-
-	xsmcGet(target, xsArg(0), xsID_target);
-	if (!xsmcTest(target))
-		target = xsThis;
-
-	xsmcGet(xsVar(0), xsArg(0), xsID_pins);
-	pins = xsmcToInteger(xsVar(0));
+	xsmcGet(tmp, xsArg(0), xsID_pins);
+	pins = xsmcToInteger(tmp);
 	if (pins & ~0x1FFFF)
 		xsRangeError("invalid pins");
 	if (!builtinArePinsFree(pins))
 		xsUnknownError("in use");
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_mode);
-	mode = xsmcToInteger(xsVar(0));
+	xsmcGet(tmp, xsArg(0), xsID_mode);
+	mode = xsmcToInteger(tmp);
 	if (!(((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) ||
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
-	if (builtinHasCallback(the, &target, xsID_onReadable)) {
+	if (builtinHasCallback(the, xsID_onReadable)) {
 		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
 			xsRangeError("invalid mode");
 
 		if (xsmcHas(xsArg(0), xsID_rises)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_rises);
-			rises = xsmcToInteger(xsVar(0)) & pins;
+			xsmcGet(tmp, xsArg(0), xsID_rises);
+			rises = xsmcToInteger(tmp) & pins;
 		}
 		if (xsmcHas(xsArg(0), xsID_falls)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_falls);
-			falls = xsmcToInteger(xsVar(0)) & pins;
+			xsmcGet(tmp, xsArg(0), xsID_falls);
+			falls = xsmcToInteger(tmp) & pins;
 		}
 
 		if (!rises & !falls)
@@ -174,12 +167,19 @@ void xs_digitalbank_constructor(xsMachine *the)
 		hasOnReadable = 1;
 	}
 
+	builtinInitializeTarget(the);
+
+	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
+		xsRangeError("invalid format");
+
 	digital = c_malloc(hasOnReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
 		xsRangeError("no memory");
 
 	xsmcSetHostData(xsThis, digital);
 	digital->pins = 0;
+	digital->obj = xsThis;
+	xsRemember(digital->obj);
 
 	for (pin = 0; pin < 17; pin++) {
 		if (!(pins & (1 << pin)))
@@ -237,21 +237,16 @@ void xs_digitalbank_constructor(xsMachine *the)
 		}
 	}
 
-	digital->hasOnReadable = hasOnReadable;
 	if (hasOnReadable) {
 		xsSlot tmp;
 
 		digital->the = the;
-		digital->target = target;
-		xsRemember(digital->target);
 		digital->rises = rises;
 		digital->falls = falls;
 		digital->triggered = 0;
 // exception for rise/fall on pin 16
-		builtinGetCallback(the, &target, xsID_onReadable, &tmp);
+		builtinGetCallback(the, xsID_onReadable, &tmp);
 		digital->onReadable = xsToReference(tmp);
-if (NULL == digital->onReadable)
-	xsTrace("NULL ONREADABLE\n");
 
 		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
@@ -338,7 +333,7 @@ void xs_digitalbank_close(xsMachine *the)
 	if (!digital) return;
 
 	xsmcSetHostData(xsThis, NULL);
-	xsForget(digital->target);
+	xsForget(digital->obj);
 	xs_digitalbank_destructor(digital);
 }
 
@@ -416,7 +411,7 @@ void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messa
 
 		xsBeginHost(walker->the);
 			xsmcSetInteger(xsResult, triggered);
-			xsCallFunction1(xsReference(walker->onReadable), walker->target, xsResult);
+			xsCallFunction1(xsReference(walker->onReadable), walker->obj, xsResult);
 		xsEndHost(walker->the);
 	}
 }

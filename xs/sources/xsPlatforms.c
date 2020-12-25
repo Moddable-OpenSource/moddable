@@ -52,9 +52,6 @@
 #ifndef mxUseDefaultSlotAllocation
 	#define mxUseDefaultSlotAllocation 0
 #endif
-#ifndef mxUseDefaultHostCollection
-	#define mxUseDefaultHostCollection 0
-#endif
 #ifndef mxUseDefaultFindModule
 	#define mxUseDefaultFindModule 0
 #endif
@@ -146,19 +143,6 @@ void fxFreeSlots(txMachine* the, void* theSlots)
 #endif /* mxUseDefaultSlotAllocation */ 
 
 
-#if mxUseDefaultHostCollection
-
-void fxMarkHost(txMachine* the, txMarkRoot markRoot)
-{
-}
-
-void fxSweepHost(txMachine* the)
-{
-}
-
-#endif /* mxUseDefaultHostCollection */ 
-
-
 #if mxUseDefaultFindModule
 
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
@@ -205,6 +189,12 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		}
 	}
 #endif
+	slash = c_strrchr(name, mxSeparator);
+	if (!slash)
+		slash = name;
+	slash = c_strrchr(slash, '.');
+	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs")))
+		*slash = 0;
 	if (absolute) {
 		if (preparation) {
 			c_strcpy(path, preparation->base);
@@ -214,7 +204,13 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 				return id;
 		}
 #ifdef mxParse
-		if (fxFindScript(the, name, &id))
+		c_strcpy(path, name);
+		c_strcat(path, ".js");
+		if (fxFindScript(the, path, &id))
+			return id;
+		c_strcpy(path, name);
+		c_strcat(path, ".mjs");
+		if (fxFindScript(the, path, &id))
 			return id;
 #endif
 	}
@@ -243,6 +239,12 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #ifdef mxParse
 		*slash = 0;
 		c_strcat(path, name + dot);
+		c_strcat(path, ".js");
+		if (fxFindScript(the, path, &id))
+			return id;
+		*slash = 0;
+		c_strcat(path, name + dot);
+		c_strcat(path, ".mjs");
 		if (fxFindScript(the, path, &id))
 			return id;
 #else
@@ -288,15 +290,7 @@ txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* 
 #ifdef mxParse
 txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 {
-	txString slash;
-	txString dot;
 	char real[C_PATH_MAX];
-	slash = c_strrchr(path, mxSeparator);
-	if (!slash)
-		slash = path;
-	dot = c_strrchr(slash, '.');
-	if (!dot)
-		c_strcat(path, ".js");
 	if (c_realpath(path, real)) {
 		*id = fxNewNameC(the, real);
 		return 1;
@@ -432,7 +426,16 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
-		fxParserTree(parser, stream, getter, flags, NULL);
+#ifdef mxDebug
+		if (fxIsConnected(the)) {
+			char tag[16];
+			flags |= mxDebugFlag;
+			fxGenerateTag(the, tag, sizeof(tag), C_NULL);
+			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, tag);
+			parser->path = fxNewParserSymbol(parser, tag);
+		}
+#endif
+		fxParserTree(parser, stream, getter, flags, C_NULL);
 		fxParserHoist(parser);
 		fxParserBind(parser);
 		script = fxParserCode(parser);

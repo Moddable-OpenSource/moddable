@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -47,13 +47,13 @@ typedef struct SerialRecord SerialRecord;
 typedef struct SerialRecord *Serial;
 
 struct SerialRecord {
+	xsSlot		obj;
 	uint8_t		hasReadable;
 	uint8_t		hasWritable;
 	uint8_t		isReadable;
 	uint8_t		isWritable;
 	uint8_t		format;
 	xsMachine	*the;
-	xsSlot		target;
 	xsSlot		onReadable;
 	xsSlot		onWritable;
 };
@@ -65,25 +65,26 @@ void xs_serial_constructor(xsMachine *the)
 {
 	Serial serial;
 	int baud;
-	uint8_t hasReadable, hasWritable;
-	xsSlot target;
+	uint8_t hasReadable, hasWritable, format;
 
 	if (!builtinArePinsFree((1 << kTXPin) | (1 << kRXPin)))
 		xsUnknownError("in use");
 
 	xsmcVars(1);
 
-	xsmcGet(target, xsArg(0), xsID_target);
-	if (!xsmcTest(target))
-		target = xsThis;
-
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
 	if ((baud < 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
 
-	hasReadable = builtinHasCallback(the, &target, xsID_onReadable);
-	hasWritable = builtinHasCallback(the, &target, xsID_onWritable);
+	hasReadable = builtinHasCallback(the, xsID_onReadable);
+	hasWritable = builtinHasCallback(the, xsID_onWritable);
+
+	builtinInitializeTarget(the);
+
+	format = builtinInitializeFormat(the, kIOFormatNumber);
+	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
+		xsRangeError("invalid format");
 
 	serial = c_malloc((hasReadable || hasWritable) ? sizeof(SerialRecord) : offsetof(SerialRecord, the));
 	if (!serial)
@@ -91,23 +92,24 @@ void xs_serial_constructor(xsMachine *the)
 
 	xsmcSetHostData(xsThis, serial);
 
-	serial->format = kIOFormatByte;
+	serial->obj = xsThis;
+	xsRemember(serial->obj);
+
+	serial->format = format;
 	serial->hasReadable = hasReadable;
 	serial->hasWritable = hasWritable;
 	if (hasReadable || hasWritable) {
 		serial->the = the;
-		serial->target = target;
-		xsRemember(serial->target);
 
 		if (hasReadable) {
 			serial->isReadable = 0;
-			builtinGetCallback(the, &target, xsID_onReadable, &serial->onReadable);
+			builtinGetCallback(the, xsID_onReadable, &serial->onReadable);
 			xsRemember(serial->onReadable);
 		}
 
 		if (hasWritable) {
 			serial->isWritable = 0;
-			builtinGetCallback(the, &target, xsID_onWritable, &serial->onWritable);
+			builtinGetCallback(the, xsID_onWritable, &serial->onWritable);
 			xsRemember(serial->onWritable);
 		}
 	}
@@ -183,8 +185,8 @@ void xs_serial_close(xsMachine *the)
 	if (!serial) return;
 
 	xsmcSetHostData(xsThis, NULL);
+	xsForget(serial->obj);
 	if (serial->hasReadable || serial->hasWritable) {
-		xsForget(serial->target);
 		if (serial->hasReadable)
 			xsForget(serial->onReadable);
 		if (serial->hasWritable)
@@ -203,7 +205,7 @@ void xs_serial_set_format(xsMachine *the)
 {
 	Serial serial = xsmcGetHostData(xsThis);
 	uint8_t format = builtinSetFormat(the);
-	if ((kIOFormatByte != format) && (kIOFormatBuffer != format))
+	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
 	serial->format = format;
 }
@@ -220,7 +222,7 @@ void xs_serial_read(xsMachine *the)
 	if (0 == count)
 		return;
 
-	if (kIOFormatByte == serial->format)
+	if (kIOFormatNumber == serial->format)
 		xsmcSetInteger(xsResult, USF(UART_NR));
 	else {
 		uint8_t *buffer;
@@ -244,7 +246,7 @@ void xs_serial_write(xsMachine *the)
 		xsUnknownError("closed");
 
 	count = getBytesWritable();
-	if (kIOFormatByte == serial->format) {
+	if (kIOFormatNumber == serial->format) {
 		if (0 == count)
 			xsUnknownError("output full");
 
@@ -299,7 +301,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		if (count) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, count);
-				xsCallFunction1(serial->onReadable, serial->target, xsResult);
+				xsCallFunction1(serial->onReadable, serial->obj, xsResult);
 			xsEndHost(the);
 		}
 	}
@@ -310,7 +312,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		if (count) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, count);
-				xsCallFunction1(serial->onWritable, serial->target, xsResult);
+				xsCallFunction1(serial->onWritable, serial->obj, xsResult);
 			xsEndHost(the);
 		}
 	}

@@ -20,6 +20,7 @@
 
 #define GDIPVER     0x0110
 #include "piuPC.h"
+#include <dbt.h>
 
 class PiuDropTarget : public IDropTarget {
 public:
@@ -373,6 +374,25 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 			PiuApplicationAdjust(application);
 		}
 		xsEndHost((*piuView)->the);
+	} break;
+	
+	case WM_DEVICECHANGE: {
+		if (wParam == DBT_DEVNODES_CHANGED) {
+			PiuView* piuView = (PiuView*)GetWindowLongPtr(window, 0);
+			xsBeginHost((*piuView)->the);
+			{
+				PiuApplication* application = (*piuView)->application;
+				xsVars(3);
+				xsVar(0) = xsReference((*application)->behavior);
+				if (xsFindResult(xsVar(0), xsID_onDevicesChanged)) {
+					xsVar(1) = xsReference((*application)->reference);
+					(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+				}
+				PiuApplicationAdjust(application);
+			}
+			xsEndHost((*piuView)->the);
+		}
+		return TRUE;
 	} break;
 	
 	default:
