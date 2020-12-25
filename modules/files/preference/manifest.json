@@ -36,6 +36,13 @@
 				]
 			}
 		},
+		"x-cli-mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/mac/*"
+				]
+			}
+		},
 		"win": {
 			"modules": {
 				"*": [

@@ -99,6 +99,36 @@
 				"net"
 			]
 		},
+		"x-cli-mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/mac/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/mac/*",
+					"$(MODULES)/network/sntp/*"
+				]
+			},
+			"preload": [
+				"socket",
+				"sntp",
+				"net"
+			]
+		},
+		"x-cli-lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lin/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/lin/*"
+				]
+			},
+			"preload": [
+				"socket",
+				"net"
+			]
+		},
 		"qca4020": {
 			"modules": {
 				"*": [

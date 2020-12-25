@@ -7,6 +7,22 @@
 					"./x-cli-win/machine"
 				]
 			}
+		},
+		"x-cli-mac": {
+			"modules": {
+				"*": [
+					"./x-cli-mac/main"
+					"./x-cli-mac/machine"
+				]
+			}
+		},
+		"x-cli-lin": {
+			"modules": {
+				"*": [
+					"./x-cli-lin/main",
+					"./x-cli-lin/machine"
+				]
+			}
 		}
 	}
 }
