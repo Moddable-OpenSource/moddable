@@ -37,6 +37,13 @@
                 ]
             }
         },
+        "x-cli-win": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
         "qca4020": {
             "modules": {
                 "*": [

@@ -83,6 +83,22 @@
 				"net"
 			]
 		},
+		"x-cli-win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/win/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/win/*",
+					"$(MODULES)/network/sntp/*"
+				]
+			},
+			"preload": [
+				"socket",
+				"sntp",
+				"net"
+			]
+		},
 		"qca4020": {
 			"modules": {
 				"*": [

@@ -42,6 +42,13 @@
 					"$(MODULES)/files/preference/win/*"
 				]
 			}
+		},
+		"x-cli-win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/win/*"
+				]
+			}
 		}
 	}
 }
