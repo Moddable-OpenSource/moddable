@@ -1,0 +1,12 @@
+{
+	"platforms": {
+		"x-cli-win": {
+			"modules": {
+				"*": [
+					"./x-cli-win/main",
+					"./x-cli-win/machine"
+				]
+			}
+		}
+	}
+}
