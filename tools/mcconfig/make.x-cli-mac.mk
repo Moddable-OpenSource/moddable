@@ -27,6 +27,9 @@ else
 	endif
 endif
 
+MCREZ = $(BUILD_DIR)/bin/mac/release/mcrez
+
+
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
@@ -114,7 +117,7 @@ else
 endif
 C_FLAGS = $(XS_C_FLAGS)
  
-LIBRARIES = -framework CoreFoundation -lcurl -lpng16
+LIBRARIES = -framework CoreFoundation
 
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = 
@@ -143,9 +146,9 @@ $(BIN_DIR)/Info.plist: $(MAIN_DIR)/mac/main.plist
 	cp -rf $< $@
 	echo APPLTINY > $(BIN_DIR)/PkgInfo
 	
-$(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(OBJECTS)
-	@echo "# cc" $(@F)
-	$(CC) $(LINK_FLAGS) $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(OBJECTS) $(LIBRARIES) -o $@
+$(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
+	@echo "# cc" $(@F) "($@)"
+	$(CC) $(LINK_FLAGS) $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(LIBRARIES) -o $@
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c
@@ -159,6 +162,14 @@ $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
+
+$(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
+	@echo "# cc" $(<F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
+	@echo "# mcrez resources"
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 	
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)

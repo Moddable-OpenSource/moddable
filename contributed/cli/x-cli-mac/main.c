@@ -20,96 +20,58 @@
 
 /*
     This file implements a x-cli-mac platform for Moddable that supports an event loop and dynamically loaded
-    archives (mods).  It implements the C main function, sets up XS machine and starts a Mac CFRunLoop message pump.
+    archives (mods).  It implements the C main function, sets up XS machine and starts a Mac CFRunLoop message loop.
     Upon a close message (which is intercepted and sent upon ^C) it cleanly shuts down the XS machine.  It also
     maintains the instrumentation updates, using a timer, on a once/second interval.
 */
 
 #include "xsAll.h"
-#include <process.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "machine.h"
-#include "sysinfoapi.h"
+#include <signal.h>
 
-unsigned int messagePumpThreadId = 0;       // thread ID of the thread running the windows message pump
 #ifdef mxInstrument
-#define WM_APP_INSTRUMENTATION (WM_APP + 1) // ID of our private instrumentation message
-
-static VOID CALLBACK sendInstrumentationMessage(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    PostThreadMessage(messagePumpThreadId, WM_APP_INSTRUMENTATION, 0, 0);
+/*
+    Called from a once/second timer (see runMessageLoop) and is used to trigger instrumentation for debugging
+*/
+static void sendInstrumentation(CFRunLoopTimerRef cfTimer, void *info) {
+    instrumentMachine();   
 }
 #endif
 
 
 /*
-    Message pump that manages the XS virtual machine.  The machine is started up, then the Windows message
-    pump is executed allow for modules such as Timer to be used.  Also maintains instrumentation to xsbug once
-    per second, triggered by the WM_APP_INSTRUMENTATION message from a timer.  Shuts down the VM when a WM_CLOSE
-    message is received, and signals completion using the terminateEvent event.
+    Message loop that manages the XS virtual machine.  The machine is started up, a timer is created to update
+    instrumentation every second, and then the Mac message loop is executed.
 */
-void messagePump(char *pathToMod)
+int runMessageLoop(char *pathToMod)
 {
-    MSG msg;
-
-    // save away our thread ID - this is done so that the ^C interception can send us a WM_CLOSE message
-    messagePumpThreadId = GetCurrentThreadId();
-
     // start up our VM
     int error = startMachine(pathToMod);
 
     // set up a timer for the instrumentation
 #ifdef mxInstrument
-    SetTimer(NULL, 1, 1000, sendInstrumentationMessage);
+	CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 1,
+					1, 0, 0, sendInstrumentation, NULL);
+	CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, kCFRunLoopCommonModes);
 #endif
 
-    // process the windows message loop until terminated
-    while( GetMessage(&msg, NULL, 0, 0) > 0 ) {
-#ifdef mxInstrument
-        if (msg.message == WM_APP_INSTRUMENTATION) {
-            // make sure we don't issue instrumentation more often than once/second - if the host gets busy, a
-            // bunch of messages can be queued up, and this drops the extra ones on the floor
-            static DWORD instrumentTime = 0;
-            DWORD currentTime = GetTickCount();
-            
-            if (instrumentTime < currentTime) {
-                instrumentTime = currentTime + 1000;
-                instrumentMachine();
-            }
-
-            continue;
-        }
-#endif	
-
-        // do we need to shut down?
-        if (msg.message == WM_CLOSE)
-            break;
-
-        // go ahead and let the message get dispatched
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
+    // process the message loop until terminated
+    CFRunLoopRun();
 
     // done - end our XS machine
     endMachine();
+
+    return error;
 }
 
 /*
-    Handler for intercepting the ctrl-C shutdown of the process, and sends the WM_CLOSE message so the message pump can
-    initiate a shutdown
+    Handler for intercepting the ctrl-C shutdown of the process, and instructs the CFRunLoop to shutdown
 */
-BOOL WINAPI ctrlHandler(_In_ DWORD dwCtrlType) {
-    switch (dwCtrlType)
-    {
-    case CTRL_C_EVENT:
-        PostThreadMessage(messagePumpThreadId, WM_CLOSE, 0, 0);
-
-        return TRUE;
-    default:
-        // Pass signal on to the next handler
-        return FALSE;
-    }
+void ctrlHandler(int sig) {
+    CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
 
@@ -121,10 +83,10 @@ BOOL WINAPI ctrlHandler(_In_ DWORD dwCtrlType) {
 int main(int argc, char* argv[]) {
 
     // take control over ^C handling
-    SetConsoleCtrlHandler(ctrlHandler, TRUE);
+    signal(SIGINT, &ctrlHandler);
 
-    // start up the XS VM and run the message pump
-    messagePump((argc > 1) ? argv[1] : NULL);
+    // start up the XS VM and run the message loop
+    int error = runMessageLoop((argc > 1) ? argv[1] : NULL);
 
-    return 0;
+    return error;
 }

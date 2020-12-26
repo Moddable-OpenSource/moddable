@@ -25,9 +25,8 @@
 
 #include "xsAll.h"
 #include "mc.xs.h"
+#include <sys/mman.h>
 
-HANDLE archiveFile = INVALID_HANDLE_VALUE;
-HANDLE archiveMapping = INVALID_HANDLE_VALUE;
 static txMachine root;
 txMachine* machine = &root;
 
@@ -49,36 +48,26 @@ xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t siz
 }
 
 /*
-	Windows specific implementation to map an archive (mod) into memory.  Accepts the path to the 
+	Mac specific implementation to map an archive (mod) into memory.  Accepts the path to the 
 	archive, and returns either a pointer to the memory mapped image, or NULL if there was a failure during the loading
 	of the file.
 */
 void *loadArchive(char *archivePath) {
-	if (archivePath[0]) {
-		DWORD size;
-		archiveFile = CreateFile(archivePath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (archiveFile == INVALID_HANDLE_VALUE) {
-			fprintf(stderr, "Failed to open archive %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		size = GetFileSize(archiveFile, &size);
-		if (size == INVALID_FILE_SIZE) {
-			fprintf(stderr, "Failed to get file size for %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		archiveMapping = CreateFileMapping(archiveFile, NULL, PAGE_READWRITE, 0, (SIZE_T)size, NULL);
-		if (archiveMapping == INVALID_HANDLE_VALUE) {
-			fprintf(stderr, "Failed to create file mapping for %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		void *memArchive = MapViewOfFile(archiveMapping, FILE_MAP_WRITE, 0, 0, (SIZE_T)size);
-		if (memArchive == NULL) {
-			fprintf(stderr, "Failed to map view of file for %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		return memArchive;
+	struct stat statbuf;
+	int archiveFile;
+
+	archiveFile = open(archivePath, O_RDWR);
+	if (archiveFile < 0) {
+		fprintf(stderr, "Filed to load archive %s (error %s)\n", archivePath, strerror(errno));
+		return NULL;
 	}
-	return NULL;
+	fstat(archiveFile, &statbuf);
+	void *archiveMapped = mmap(NULL, statbuf.st_size, PROT_READ|PROT_WRITE, MAP_SHARED, archiveFile, 0);
+	if (archiveMapped == MAP_FAILED) {
+		fprintf(stderr, "Filed to map archive %s (error %s)\n", archivePath, strerror(errno));
+		return NULL;
+	}
+	return archiveMapped;
 }
 
 /*
@@ -106,27 +95,6 @@ int startMachine(char *archivePath) {
 	void *memArchive = NULL;		// memory mapped instance of the mod (archive)
 	void *archive = NULL;			// XS symbol-mapped archive
 
-	// set up the XS VM
-	c_memset(machine, 0, sizeof(txMachine));
-	machine->preparation = preparation;
-	machine->keyArray = preparation->keys;
-	machine->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
-	machine->keyIndex = (txID)preparation->keyCount;
-	machine->nameModulo = preparation->nameModulo;
-	machine->nameTable = preparation->names;
-	machine->symbolModulo = preparation->symbolModulo;
-	machine->symbolTable = preparation->symbols;
-	
-	machine->stack = &preparation->stack[0];
-	machine->stackBottom = &preparation->stack[0];
-	machine->stackTop = &preparation->stack[preparation->stackCount];
-	
-	machine->firstHeap = &preparation->heap[0];
-	machine->freeHeap = &preparation->heap[preparation->heapCount - 1];
-	machine->aliasCount = (txID)preparation->aliasCount;
-
-	machine->onBreak = debugBreak;
-
 	// memory map the archive using the first argument on the command line
 	if (archivePath) {
 		memArchive = loadArchive(archivePath);
@@ -147,6 +115,8 @@ int startMachine(char *archivePath) {
 		return 1;	
 	}
 
+	// instruct the machine to call us prior to entering the debugger, so we can update instrumentation
+	machine->onBreak = debugBreak;
 
 	// set up the stack context for XS
 	xsBeginHost(machine);
