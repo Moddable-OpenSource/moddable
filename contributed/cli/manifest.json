@@ -11,7 +11,7 @@
 		"x-cli-mac": {
 			"modules": {
 				"*": [
-					"./x-cli-mac/main"
+					"./x-cli-mac/main",
 					"./x-cli-mac/machine"
 				]
 			}
