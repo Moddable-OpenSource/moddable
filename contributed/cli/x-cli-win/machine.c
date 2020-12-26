@@ -106,27 +106,6 @@ int startMachine(char *archivePath) {
 	void *memArchive = NULL;		// memory mapped instance of the mod (archive)
 	void *archive = NULL;			// XS symbol-mapped archive
 
-	// set up the XS VM
-	c_memset(machine, 0, sizeof(txMachine));
-	machine->preparation = preparation;
-	machine->keyArray = preparation->keys;
-	machine->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
-	machine->keyIndex = (txID)preparation->keyCount;
-	machine->nameModulo = preparation->nameModulo;
-	machine->nameTable = preparation->names;
-	machine->symbolModulo = preparation->symbolModulo;
-	machine->symbolTable = preparation->symbols;
-	
-	machine->stack = &preparation->stack[0];
-	machine->stackBottom = &preparation->stack[0];
-	machine->stackTop = &preparation->stack[preparation->stackCount];
-	
-	machine->firstHeap = &preparation->heap[0];
-	machine->freeHeap = &preparation->heap[preparation->heapCount - 1];
-	machine->aliasCount = (txID)preparation->aliasCount;
-
-	machine->onBreak = debugBreak;
-
 	// memory map the archive using the first argument on the command line
 	if (archivePath) {
 		memArchive = loadArchive(archivePath);
@@ -147,6 +126,8 @@ int startMachine(char *archivePath) {
 		return 1;	
 	}
 
+	// set up to call our instrumentation update routing when we jump into the debugger
+	machine->onBreak = debugBreak;
 
 	// set up the stack context for XS
 	xsBeginHost(machine);
