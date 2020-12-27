@@ -38,6 +38,7 @@
 #include <signal.h>
 #include <gtk/gtk.h>
 #include <sys/mman.h>
+#include <fcntl.h>
 
 static GtkApplication *gxApplication = NULL;
 static GtkWindow *gxWindow;
