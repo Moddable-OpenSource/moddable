@@ -17,6 +17,11 @@ manifest file:
 ],
 ```
 
+Adding this manifest for non-command-line platforms (such as `-p esp32` or `-p win`) will not affect your program (the
+manifest does not include any modules).  However, when your platform is one of `x-cli-win`, `x-cli-lin`, or
+`x-cli-mac`, it will add the appropriate logic to build the platfrom as a native console executuable for that
+platform.
+
 ## Running your program
 
 When you build, such as `mcconfig -m -d -p x-cli-win`, the resulting program will be a native app (such as `.exe` on
@@ -41,3 +46,17 @@ via the `mcrun` program while a host waits for the module to be presented), but 
 
 Full support for the debugger and instrumentation is included, and it should behave the same as using other platform
 types.  Instrumentation is updated once per second.
+
+## Linux requires X Windows System
+
+The Moddable implementation for Linux depends on the GTK3+ libraries, and as such even though a console application is
+built using `cli`, it still depends on X being installed.  This means that running the Linux console application from
+`telnet` or `ssh`, or from a server-based (non-desktop) Linux distro will not work.  You should be able to execute it 
+by installing X and also using the `xvfb` module (which implements a headless X frame buffer), but this has not been
+tested yet.  If you try this and find a recipe that works, please submit a pull and update this documentation
+accordingly.  
+
+A great future project for someone is to consider implementing a generic console machine across all of Moddable using
+the `libuv` event handler, which is the event handler from Node.  It is cross-platform and should allow for building
+command line programs on a wide range of platforms without the need for X or any window manager, assuming other
+cross-platform libraries are also consumed in the process for operations like files, resources, etc.

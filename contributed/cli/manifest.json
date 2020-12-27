@@ -1,8 +1,28 @@
 {
-	"modules": {
-		"*": [
-			"./$(PLATFORM)/main",
-			"./cli"
-		]
+	"platforms": {
+		"x-cli-win": {
+			"modules": {
+				"*": [
+					"./$(PLATFORM)/main",
+					"./cli"
+				]
+			}
+		},
+		"x-cli-mac": {
+			"modules": {
+				"*": [
+					"./$(PLATFORM)/main",
+					"./cli"
+				]
+			}
+		},
+		"x-cli-lin": {
+			"modules": {
+				"*": [
+					"./$(PLATFORM)/main",
+					"./cli"
+				]
+			}
+		}
 	}
 }
