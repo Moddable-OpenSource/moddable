@@ -147,8 +147,8 @@ build: $(LIB_DIR) $(BIN_DIR)/$(NAME)
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 
-$(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.o $(OBJECTS)
-	@echo "# ld " $(<F)
+$(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
+	@echo "# ld " $(<F) "($(BIN_DIR)/$(NAME))"
 	$(CC) $(LINK_OPTIONS) $^ $(LINK_LIBRARIES) -o $@
 
 clean:
@@ -173,34 +173,21 @@ $(TMP_DIR)/mc.resources.o: $(RESOURCES_DIR)/mc.resources.c
 	@echo "# cc" $(<F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -o $@
 
-$(RESOURCES_DIR)/mc.resources.c: $(RESOURCES_DIR)/mc.resources.xml
-	@echo "# glib-compile-resources" $(<F)
-	cd $(RESOURCES_DIR); $(GLIB_COMPILE_RESOURCES) --generate-source --c-name mc mc.resources.xml
+# $(RESOURCES_DIR)/mc.resources.c: $(RESOURCES_DIR)/mc.resources.xml
+# 	@echo "# glib-compile-resources" $(<F)
+# 	cd $(RESOURCES_DIR); $(GLIB_COMPILE_RESOURCES) --generate-source --c-name mc mc.resources.xml
 
-$(RESOURCES_DIR)/mc.resources.xml: $(RESOURCES) $(MANIFEST)
+# $(RESOURCES_DIR)/mc.resources.xml: $(RESOURCES) $(MANIFEST)
+# 	@echo "# mcrez resources"
+# 	$(MCREZ) $(RESOURCES) -o $(RESOURCES_DIR) -p x-lin -r mc.resources.xml -s $(SLASH_SIGNATURE)
+
+$(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
+	@echo "# cc" $(<F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(RESOURCES_DIR) -p x-lin -r mc.resources.xml -s $(SLASH_SIGNATURE)
-
-INSTALL_BIN_DIR = /usr/bin
-INSTALL_DESKTOP_DIR = /usr/share/applications/
-INSTALL_ICON_DIR = /usr/share/icons/hicolor
-INSTALL_ICONS = $(foreach SIZE,32 48 64 96 128 256,$(INSTALL_ICON_DIR)/$(SIZE)x$(SIZE)/apps/$(DASH_SIGNATURE).png)
-
-install: $(INSTALL_BIN_DIR)/$(DASH_SIGNATURE) $(INSTALL_DESKTOP_DIR)/$(DASH_SIGNATURE).desktop $(INSTALL_ICONS)
-	sudo gtk-update-icon-cache -f $(INSTALL_ICON_DIR)
-
-$(INSTALL_BIN_DIR)/$(DASH_SIGNATURE): $(BIN_DIR)/$(NAME)
-	@echo "#" $(NAME) $(GOAL) ": cp" $(<F)
-	sudo cp $< $@
-
-$(INSTALL_DESKTOP_DIR)/$(DASH_SIGNATURE).desktop: $(MAIN_DIR)/lin/main.desktop
-	@echo "#" $(NAME) $(GOAL) ": cp" $(<F)
-	sudo cp $< $@
-
-$(INSTALL_ICON_DIR)/%/apps/$(DASH_SIGNATURE).png: $(MAIN_DIR)/lin/icons/%.png
-	@echo "#" $(NAME) $(GOAL) ": cp" $(<F)
-	sudo cp $< $@
-
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 
 # MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)

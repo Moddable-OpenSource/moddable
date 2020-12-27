@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Chris Midgley
+ * Copyright (c) 2016-2017 Chris Midgley
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -19,112 +19,87 @@
  */
 
 /*
-    This file implements a x-cli-win platform for Moddable that supports an event loop and dynamically loaded
-    archives (mods).  It implements the C main function, sets up XS machine and starts a Windows message pump.
-    Upon a WM_CLOSE message (which is intercepted and sent upon ^C) it cleanly shuts down the XS machine.  It also
+    This file implements a x-cli-lin platform for Moddable that supports an event loop and dynamically loaded
+    archives (mods).  It implements the C main function, sets up XS machine and starts a Mac CFRunLoop message loop.
+    Upon a close message (which is intercepted and sent upon ^C) it cleanly shuts down the XS machine.  It also
     maintains the instrumentation updates, using a timer, on a once/second interval.
 */
 
 #include "xsAll.h"
-#include <process.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "machine.h"
-#include "sysinfoapi.h"
+#include <signal.h>
+#include <gtk/gtk.h>
 
-unsigned int messagePumpThreadId = 0;       // thread ID of the thread running the windows message pump
+static GtkApplication *gxApplication = NULL;
+static GtkWindow *gxWindow;
+static GtkApplication *app;
+
 #ifdef mxInstrument
-#define WM_APP_INSTRUMENTATION (WM_APP + 1) // ID of our private instrumentation message
-
-static VOID CALLBACK sendInstrumentationMessage(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    PostThreadMessage(messagePumpThreadId, WM_APP_INSTRUMENTATION, 0, 0);
+/*
+    Called from a once/second timer (see runMessageLoop) and is used to trigger instrumentation for debugging
+*/
+gboolean  sendInstrumentation(gpointer userData) {
+    instrumentMachine();   
+	return TRUE;
 }
 #endif
 
 
-/*
-    Message pump that manages the XS virtual machine.  The machine is started up, then the Windows message
-    pump is executed allow for modules such as Timer to be used.  Also maintains instrumentation to xsbug once
-    per second, triggered by the WM_APP_INSTRUMENTATION message from a timer.  Shuts down the VM when a WM_CLOSE
-    message is received, and signals completion using the terminateEvent event.
-*/
-void messagePump(char *pathToMod)
+void onApplicationActivate(GtkApplication *app, gpointer it)
 {
-    MSG msg;
-
-    // save away our thread ID - this is done so that the ^C interception can send us a WM_CLOSE message
-    messagePumpThreadId = GetCurrentThreadId();
-
     // start up our VM
-    int error = startMachine(pathToMod);
+    startMachine(NULL);
 
-    // set up a timer for the instrumentation
-#ifdef mxInstrument
-    SetTimer(NULL, 1, 1000, sendInstrumentationMessage);
-#endif
+	// set up a timer for instrumentation updates once/second
+	g_timeout_add(1000, sendInstrumentation, NULL);
+}
 
-    // process the windows message loop until terminated
-    while( GetMessage(&msg, NULL, 0, 0) > 0 ) {
-#ifdef mxInstrument
-        if (msg.message == WM_APP_INSTRUMENTATION) {
-            // make sure we don't issue instrumentation more often than once/second - if the host gets busy, a
-            // bunch of messages can be queued up, and this drops the extra ones on the floor
-            static DWORD instrumentTime = 0;
-            DWORD currentTime = GetTickCount();
-            
-            if (instrumentTime < currentTime) {
-                instrumentTime = currentTime + 1000;
-                instrumentMachine();
-            }
-
-            continue;
-        }
-#endif	
-
-        // do we need to shut down?
-        if (msg.message == WM_CLOSE)
-            break;
-
-        // go ahead and let the message get dispatched
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-
+void onApplicationShutdown(GtkApplication *app, gpointer it)
+{
     // done - end our XS machine
     endMachine();
 }
 
-/*
-    Handler for intercepting the ctrl-C shutdown of the process, and sends the WM_CLOSE message so the message pump can
-    initiate a shutdown
-*/
-BOOL WINAPI ctrlHandler(_In_ DWORD dwCtrlType) {
-    switch (dwCtrlType)
-    {
-    case CTRL_C_EVENT:
-        PostThreadMessage(messagePumpThreadId, WM_CLOSE, 0, 0);
+void onApplicationStartup(GtkApplication *app)
+{
+	// create a window to keep our application running, but don't show it (so we logically remain a console app)
+	gxWindow = (GtkWindow*)gtk_application_window_new(app);
+}
 
-        return TRUE;
-    default:
-        // Pass signal on to the next handler
-        return FALSE;
-    }
+/*
+    Handler for intercepting the ctrl-C shutdown of the process, and instructs the CFRunLoop to shutdown
+*/
+void ctrlHandler(int sig) {
+    g_application_quit(G_APPLICATION(app));
+	fprintf(stderr, "\nShutting down\n");
 }
 
 
 /*
     main - accepts a single optional command line argument that is the path to a mod to load
 
-    Sets a ^C handler (for clearn shutdown) and starts up the VM and message pump
+    Sets a ^C handler (for clearn shutdown) and starts up the GTK application
+
+	Note: This depends on GTK, which also means X, as the Moddable 'lin' machine depends deeply on GTK.  This means
+	that this "cli" application will not work on SSH or headless Linux without installing X and likely using
+	xvfb (x frame buffer).  
 */
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv)
+{
+	int status;
 
     // take control over ^C handling
-    SetConsoleCtrlHandler(ctrlHandler, TRUE);
+    signal(SIGINT, &ctrlHandler);
 
-    // start up the XS VM and run the message pump
-    messagePump((argc > 1) ? argv[1] : NULL);
+	app = gxApplication = gtk_application_new("tech.moddable.cli", G_APPLICATION_HANDLES_OPEN);
+	g_signal_connect(app, "startup", G_CALLBACK(onApplicationStartup), NULL);
+  	g_signal_connect(app, "activate", G_CALLBACK(onApplicationActivate), NULL);
+	g_signal_connect(app, "shutdown", G_CALLBACK(onApplicationShutdown), NULL);
+	status = g_application_run(G_APPLICATION(app), argc, argv);
 
-    return 0;
+	g_object_unref(app);
+	return status;
 }
