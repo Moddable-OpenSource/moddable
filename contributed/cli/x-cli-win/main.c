@@ -35,7 +35,6 @@
 
 unsigned int messagePumpThreadId = 0;       // thread ID of the thread running the windows message pump
 
-
 #ifdef mxInstrument
 #define WM_APP_INSTRUMENTATION (WM_APP + 1) // ID of our private instrumentation message
 
@@ -43,7 +42,6 @@ static VOID CALLBACK sendInstrumentationMessage(HWND hwnd, UINT uMsg, UINT_PTR i
     PostThreadMessage(messagePumpThreadId, WM_APP_INSTRUMENTATION, 0, 0);
 }
 #endif
-
 
 /*
 	Windows specific implementation to map an archive (mod) into memory.  Accepts the path to the 
@@ -87,8 +85,7 @@ void *loadArchive(char *archivePath) {
     per second, triggered by the WM_APP_INSTRUMENTATION message from a timer.  Shuts down the VM when a WM_CLOSE
     message is received, and signals completion using the terminateEvent event.
 */
-void messagePump(char *pathToMod)
-{
+void messagePump(char *pathToMod) {
     MSG msg;
 
     // save away our thread ID - this is done so that the ^C interception can send us a WM_CLOSE message

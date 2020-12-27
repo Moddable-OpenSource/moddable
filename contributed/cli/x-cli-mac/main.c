@@ -69,8 +69,7 @@ void *loadArchive(char *archivePath) {
     Message loop that manages the XS virtual machine.  The machine is started up, a timer is created to update
     instrumentation every second, and then the Mac message loop is executed.
 */
-int runMessageLoop(char *pathToMod)
-{
+int runMessageLoop(char *pathToMod) {
     // start up our VM
     int error = startMachine(pathToMod);
 

@@ -77,38 +77,46 @@ void *loadArchive(char *archivePath) {
 	return archiveMapped;
 }
 
-
-/*
-	GTK handler for when the application is activated; starts up the VM and runs the main function, followed by
-	setting up a timer to update instrumentation once/second
-*/
-void onApplicationActivate(GtkApplication *app, gpointer it)
-{
-    // start up our VM
-    startMachine(NULL);
-
-	// set up a timer for instrumentation updates once/second
-	g_timeout_add(1000, sendInstrumentation, NULL);
-}
-
 /*
 	GTK handler for when the application is shutdown.  Cleanly terminates the XS machine.
 */
-void onApplicationShutdown(GtkApplication *app, gpointer it)
-{
+void onApplicationShutdown(GtkApplication *app, gpointer it) {
     // done - end our XS machine
     endMachine();
 }
 
 /*
-	GTK handler for application startup.  Creates a window, but does not show it, in order to keep the GTK
-	application running until we are ready for a shutdown
+	GTK handler for application startup, which is the first event we process when the app starts up.  Creates a window (but does not show it)
+	in order to keep the GTK application running until we are ready for a shutdown.  Also sets up the instrumentation timer (once/second for
+	instrumentation updates in the debugger)
 */
-void onApplicationStartup(GtkApplication *app)
-{
+void onApplicationStartup(GtkApplication *app) {
 	// create a window to keep our application running, but don't show it (so we logically remain a console app)
 	gxWindow = (GtkWindow*)gtk_application_window_new(app);
+
+	// set up a timer for instrumentation updates once/second
+#ifdef mxInstrument
+	g_timeout_add(1000, sendInstrumentation, NULL);
+#endif
 }
+
+/*
+	GTK handler for when the application is activated, which happens if there are no commmand line arguments. We simply start up the 
+	VM with no mods.
+*/
+void onApplicationActivate(GtkApplication *app, gpointer it) {
+    startMachine(NULL);
+
+}
+
+/*
+	GTK handler for when a command line is provided.  We start up the VM using the path to the mod from the command line
+*/
+void onApplicationOpen(GtkApplication *app, GFile **files, gint c, const gchar *hint, gpointer it) {
+    // start up our VM, optionally with path to archive (mod)
+    startMachine(g_file_get_path(files[0]));
+}
+
 
 /*
     Handler for intercepting the ctrl-C shutdown of the process, and instructs the CFRunLoop to shutdown
@@ -123,8 +131,7 @@ void ctrlHandler(int sig) {
 
     Sets a ^C handler (for clearn shutdown) and starts up the GTK application
 */
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 	int status;
 
     // take control over ^C handling
@@ -134,6 +141,7 @@ int main(int argc, char** argv)
 	g_signal_connect(app, "startup", G_CALLBACK(onApplicationStartup), NULL);
   	g_signal_connect(app, "activate", G_CALLBACK(onApplicationActivate), NULL);
 	g_signal_connect(app, "shutdown", G_CALLBACK(onApplicationShutdown), NULL);
+  	g_signal_connect(app, "open", G_CALLBACK(onApplicationOpen), NULL);
 	status = g_application_run(G_APPLICATION(app), argc, argv);
 
 	g_object_unref(app);

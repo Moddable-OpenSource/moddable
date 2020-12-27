@@ -27,9 +27,7 @@
 #include "mc.xs.h"
 #include "cli.h"
 
-static txMachine root;
-txMachine* machine = &root;
-
+txMachine* machine = NULL;
 
 /*
 	Service used by fxMapArchive to read a section of the archive (mod) from memory 
@@ -47,14 +45,11 @@ xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t siz
 	return 1;
 }
 
-
-
 /*
 	Callback function when the debugger is executed (see machine->onBreak).  Updates the instrumentation so
 	breakpoints have accurate instrumentation just prior to stopping.
 */
-void debugBreak(xsMachine* the, uint8_t stop)
-{
+void debugBreak(xsMachine* the, uint8_t stop) {
 #ifdef mxInstrument
 	if (stop) {
 		// fxCollectGarbage(the);
@@ -136,7 +131,8 @@ int startMachine(char *archivePath) {
 	Terminates a running XS machine
 */
 void endMachine() {
-	xsDeleteMachine(machine);	
+	if (machine)
+		xsDeleteMachine(machine);	
 }
 
 /*
