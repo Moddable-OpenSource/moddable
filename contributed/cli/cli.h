@@ -21,4 +21,5 @@
 int startMachine(char *archivePath);
 void endMachine();
 void instrumentMachine();
+void *loadArchive(char *archivePath);
 

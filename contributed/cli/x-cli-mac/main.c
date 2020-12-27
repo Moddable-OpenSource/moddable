@@ -29,8 +29,10 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "machine.h"
+#include "cli.h"
 #include <signal.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #ifdef mxInstrument
 /*
@@ -41,6 +43,27 @@ static void sendInstrumentation(CFRunLoopTimerRef cfTimer, void *info) {
 }
 #endif
 
+/*
+	Map an archive (mod) into memory.  Accepts the path to the archive, and returns either a pointer to the 
+	memory mapped image, or NULL if there was a failure during the loading of the file.
+*/
+void *loadArchive(char *archivePath) {
+	struct stat statbuf;
+	int archiveFile;
+
+	archiveFile = open(archivePath, O_RDWR);
+	if (archiveFile < 0) {
+		fprintf(stderr, "Filed to load archive %s (error %s)\n", archivePath, strerror(errno));
+		return NULL;
+	}
+	fstat(archiveFile, &statbuf);
+	void *archiveMapped = mmap(NULL, statbuf.st_size, PROT_READ|PROT_WRITE, MAP_SHARED, archiveFile, 0);
+	if (archiveMapped == MAP_FAILED) {
+		fprintf(stderr, "Filed to map archive %s (error %s)\n", archivePath, strerror(errno));
+		return NULL;
+	}
+	return archiveMapped;
+}
 
 /*
     Message loop that manages the XS virtual machine.  The machine is started up, a timer is created to update
@@ -53,8 +76,7 @@ int runMessageLoop(char *pathToMod)
 
     // set up a timer for the instrumentation
 #ifdef mxInstrument
-	CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 1,
-					1, 0, 0, sendInstrumentation, NULL);
+	CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 1, 1, 0, 0, sendInstrumentation, NULL);
 	CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, kCFRunLoopCommonModes);
 #endif
 

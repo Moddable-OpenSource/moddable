@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Chris Midgley
+ * Copyright (c) 2020 Chris Midgley
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -20,18 +20,24 @@
 
 /*
     This file implements a x-cli-lin platform for Moddable that supports an event loop and dynamically loaded
-    archives (mods).  It implements the C main function, sets up XS machine and starts a Mac CFRunLoop message loop.
-    Upon a close message (which is intercepted and sent upon ^C) it cleanly shuts down the XS machine.  It also
-    maintains the instrumentation updates, using a timer, on a once/second interval.
+    archives (mods).  It implements the C main function, and starts up GTK with an invisible window to run
+	the actual program.  It manages clearn termination upon receipt of ^C, and performs instrumentaton updates
+	once/second.
+
+	This code is built upon GTK3 because the core of the Moddable "lin" platform is built upon GTK.  This means
+	that this "cli" application will not work on SSH or headless Linux without installing X and likely using
+	xvfb (x frame buffer).  
+
 */
 
 #include "xsAll.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "machine.h"
+#include "cli.h"
 #include <signal.h>
 #include <gtk/gtk.h>
+#include <sys/mman.h>
 
 static GtkApplication *gxApplication = NULL;
 static GtkWindow *gxWindow;
@@ -39,7 +45,8 @@ static GtkApplication *app;
 
 #ifdef mxInstrument
 /*
-    Called from a once/second timer (see runMessageLoop) and is used to trigger instrumentation for debugging
+	Updates Moddable instrumentation once/second - called from GTK timer (see onApplicationActivate for where
+	the timer is started)
 */
 gboolean  sendInstrumentation(gpointer userData) {
     instrumentMachine();   
@@ -47,7 +54,33 @@ gboolean  sendInstrumentation(gpointer userData) {
 }
 #endif
 
+/*
+	Map an archive (mod) into memory.  Accepts the path to the archive, and returns either a pointer to the 
+	memory mapped image, or NULL if there was a failure during the loading of the file.
+*/
+void *loadArchive(char *archivePath) {
+	struct stat statbuf;
+	int archiveFile;
 
+	archiveFile = open(archivePath, O_RDWR);
+	if (archiveFile < 0) {
+		fprintf(stderr, "Filed to load archive %s (error %s)\n", archivePath, strerror(errno));
+		return NULL;
+	}
+	fstat(archiveFile, &statbuf);
+	void *archiveMapped = mmap(NULL, statbuf.st_size, PROT_READ|PROT_WRITE, MAP_SHARED, archiveFile, 0);
+	if (archiveMapped == MAP_FAILED) {
+		fprintf(stderr, "Filed to map archive %s (error %s)\n", archivePath, strerror(errno));
+		return NULL;
+	}
+	return archiveMapped;
+}
+
+
+/*
+	GTK handler for when the application is activated; starts up the VM and runs the main function, followed by
+	setting up a timer to update instrumentation once/second
+*/
 void onApplicationActivate(GtkApplication *app, gpointer it)
 {
     // start up our VM
@@ -57,12 +90,19 @@ void onApplicationActivate(GtkApplication *app, gpointer it)
 	g_timeout_add(1000, sendInstrumentation, NULL);
 }
 
+/*
+	GTK handler for when the application is shutdown.  Cleanly terminates the XS machine.
+*/
 void onApplicationShutdown(GtkApplication *app, gpointer it)
 {
     // done - end our XS machine
     endMachine();
 }
 
+/*
+	GTK handler for application startup.  Creates a window, but does not show it, in order to keep the GTK
+	application running until we are ready for a shutdown
+*/
 void onApplicationStartup(GtkApplication *app)
 {
 	// create a window to keep our application running, but don't show it (so we logically remain a console app)
@@ -77,15 +117,10 @@ void ctrlHandler(int sig) {
 	fprintf(stderr, "\nShutting down\n");
 }
 
-
 /*
     main - accepts a single optional command line argument that is the path to a mod to load
 
     Sets a ^C handler (for clearn shutdown) and starts up the GTK application
-
-	Note: This depends on GTK, which also means X, as the Moddable 'lin' machine depends deeply on GTK.  This means
-	that this "cli" application will not work on SSH or headless Linux without installing X and likely using
-	xvfb (x frame buffer).  
 */
 int main(int argc, char** argv)
 {

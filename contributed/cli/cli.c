@@ -19,15 +19,14 @@
  */
 
 /*
-	This file implements services for the x-cli-win platform to start/stop the XS virtual machine, provide loading of
-	archives (mods), and handling of instrumentation updates. 
+	This file implements common services across all platforms to implement the "x-cli-XXX" runtime for Moddable,
+	including support for starting/stopping the XS virtual machine, and providing loading of archives (mods).
 */
 
 #include "xsAll.h"
 #include "mc.xs.h"
+#include "cli.h"
 
-HANDLE archiveFile = INVALID_HANDLE_VALUE;
-HANDLE archiveMapping = INVALID_HANDLE_VALUE;
 static txMachine root;
 txMachine* machine = &root;
 
@@ -48,38 +47,7 @@ xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t siz
 	return 1;
 }
 
-/*
-	Windows specific implementation to map an archive (mod) into memory.  Accepts the path to the 
-	archive, and returns either a pointer to the memory mapped image, or NULL if there was a failure during the loading
-	of the file.
-*/
-void *loadArchive(char *archivePath) {
-	if (archivePath[0]) {
-		DWORD size;
-		archiveFile = CreateFile(archivePath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (archiveFile == INVALID_HANDLE_VALUE) {
-			fprintf(stderr, "Failed to open archive %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		size = GetFileSize(archiveFile, &size);
-		if (size == INVALID_FILE_SIZE) {
-			fprintf(stderr, "Failed to get file size for %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		archiveMapping = CreateFileMapping(archiveFile, NULL, PAGE_READWRITE, 0, (SIZE_T)size, NULL);
-		if (archiveMapping == INVALID_HANDLE_VALUE) {
-			fprintf(stderr, "Failed to create file mapping for %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		void *memArchive = MapViewOfFile(archiveMapping, FILE_MAP_WRITE, 0, 0, (SIZE_T)size);
-		if (memArchive == NULL) {
-			fprintf(stderr, "Failed to map view of file for %s (error %d)\n", archivePath, GetLastError());
-			return NULL;
-		}
-		return memArchive;
-	}
-	return NULL;
-}
+
 
 /*
 	Callback function when the debugger is executed (see machine->onBreak).  Updates the instrumentation so
@@ -126,7 +94,7 @@ int startMachine(char *archivePath) {
 		return 1;	
 	}
 
-	// set up to call our instrumentation update routing when we jump into the debugger
+	// instruct the machine to call us prior to entering the debugger, so we can update instrumentation
 	machine->onBreak = debugBreak;
 
 	// set up the stack context for XS

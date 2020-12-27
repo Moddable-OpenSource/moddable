@@ -30,10 +30,12 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "machine.h"
+#include "cli.h"
 #include "sysinfoapi.h"
 
 unsigned int messagePumpThreadId = 0;       // thread ID of the thread running the windows message pump
+
+
 #ifdef mxInstrument
 #define WM_APP_INSTRUMENTATION (WM_APP + 1) // ID of our private instrumentation message
 
@@ -42,6 +44,42 @@ static VOID CALLBACK sendInstrumentationMessage(HWND hwnd, UINT uMsg, UINT_PTR i
 }
 #endif
 
+
+/*
+	Windows specific implementation to map an archive (mod) into memory.  Accepts the path to the 
+	archive, and returns either a pointer to the memory mapped image, or NULL if there was a failure during the loading
+	of the file.
+*/
+void *loadArchive(char *archivePath) {
+    HANDLE archiveFile = INVALID_HANDLE_VALUE;
+    HANDLE archiveMapping = INVALID_HANDLE_VALUE;
+
+	if (archivePath[0]) {
+		DWORD size;
+		archiveFile = CreateFile(archivePath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (archiveFile == INVALID_HANDLE_VALUE) {
+			fprintf(stderr, "Failed to open archive %s (error %d)\n", archivePath, GetLastError());
+			return NULL;
+		}
+		size = GetFileSize(archiveFile, &size);
+		if (size == INVALID_FILE_SIZE) {
+			fprintf(stderr, "Failed to get file size for %s (error %d)\n", archivePath, GetLastError());
+			return NULL;
+		}
+		archiveMapping = CreateFileMapping(archiveFile, NULL, PAGE_READWRITE, 0, (SIZE_T)size, NULL);
+		if (archiveMapping == INVALID_HANDLE_VALUE) {
+			fprintf(stderr, "Failed to create file mapping for %s (error %d)\n", archivePath, GetLastError());
+			return NULL;
+		}
+		void *memArchive = MapViewOfFile(archiveMapping, FILE_MAP_WRITE, 0, 0, (SIZE_T)size);
+		if (memArchive == NULL) {
+			fprintf(stderr, "Failed to map view of file for %s (error %d)\n", archivePath, GetLastError());
+			return NULL;
+		}
+		return memArchive;
+	}
+	return NULL;
+}
 
 /*
     Message pump that manages the XS virtual machine.  The machine is started up, then the Windows message
