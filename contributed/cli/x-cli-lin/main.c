@@ -114,8 +114,8 @@ void onApplicationStartup(GtkApplication *app)
     Handler for intercepting the ctrl-C shutdown of the process, and instructs the CFRunLoop to shutdown
 */
 void ctrlHandler(int sig) {
-    g_application_quit(G_APPLICATION(app));
 	fprintf(stderr, "\nShutting down\n");
+    g_application_quit(G_APPLICATION(app));
 }
 
 /*

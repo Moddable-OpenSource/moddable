@@ -93,6 +93,7 @@ int runMessageLoop(char *pathToMod)
     Handler for intercepting the ctrl-C shutdown of the process, and instructs the CFRunLoop to shutdown
 */
 void ctrlHandler(int sig) {
+	fprintf(stderr, "\nShutting down\n");
     CFRunLoopStop(CFRunLoopGetCurrent());
 }
 

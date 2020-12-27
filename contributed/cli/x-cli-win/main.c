@@ -141,6 +141,7 @@ BOOL WINAPI ctrlHandler(_In_ DWORD dwCtrlType) {
     switch (dwCtrlType)
     {
     case CTRL_C_EVENT:
+    	fprintf(stderr, "\nShutting down\n");
         PostThreadMessage(messagePumpThreadId, WM_CLOSE, 0, 0);
 
         return TRUE;
