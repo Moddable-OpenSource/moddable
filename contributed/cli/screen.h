@@ -78,35 +78,4 @@ struct sxScreen {
 	void *firstWorker;
 	txMutex workersMutex;
 	txThread mainThread;
-
-
-
-	// void* view;
-	// void* archive;
-	// txScreenAbortProc abort;
-	// txScreenBufferChangedProc bufferChanged;
-	// txScreenFormatChangedProc formatChanged;
-	// txScreenIdleProc idle;
-	// txScreenMessageProc invoke;
-	// txScreenKeyProc key;
-	// txScreenMessageProc post;
-	// txScreenQuitProc quit;
-	// txScreenStartProc start;
-	// txScreenStopProc stop;
-	// txScreenTouchProc touch;
-	// int flags;
-	// long instrumentTime;
-	// int pixelFormat;
-	// int rotation;
-	// int width;
-	// int height;
-	// uint16_t *clut;
-	// uint8_t palette[16 * screenBytesPerPixel];
-	// void *frameBuffer;				// only used when kPocoFrameBuffer
-	// uint32_t frameBufferLength;		// only used when kPocoFrameBuffer
-	// unsigned char *rowAddress;
-	// int rowCount;
-	// int rowDelta;
-	// int rowIndex;
-	// unsigned char buffer[1];
 };
