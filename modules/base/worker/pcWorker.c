@@ -1,3 +1,4 @@
+#include "xsAll.h"
 #include "mc.xs.h"
 #include "screen.h"
 
@@ -103,7 +104,8 @@ void fxWorkerInitialize(txWorker* worker)
 	}
 	xsEndHost(worker->machine);
 #if mxInstrument
-	fxDescribeInstrumentation(worker->machine, 0, NULL, NULL);
+	if (fxIsConnected(worker->machine))
+		fxDescribeInstrumentation(worker->machine, 0, NULL, NULL);
 #endif
 	mxLockMutex(&worker->runningMutex);
 	worker->running = 1;
@@ -129,7 +131,8 @@ void fxWorkerMessage(void* machine, void* it)
 	xsEndHost(machine);
 #if mxInstrument
 	if (((txScreen*)(((xsMachine*)machine)->host))->mainThread != mxCurrentThread())
-		fxSampleInstrumentation(machine, 0, NULL);
+		if (fxIsConnected(machine))
+			fxSampleInstrumentation(machine, 0, NULL);
 #endif
 	c_free(job->argument);
 }
