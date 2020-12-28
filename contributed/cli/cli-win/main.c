@@ -32,14 +32,18 @@
 #include <stdio.h>
 #include "cli.h"
 #include "sysinfoapi.h"
+#include "screen.h"
+
+extern txScreen screen;
 
 unsigned int messagePumpThreadId = 0;       // thread ID of the thread running the windows message pump
 
 #ifdef mxInstrument
+#define INSTRUMENTATION_FREQUENCY 1000       // frequency of instrumentation updates in ms
 #define WM_APP_INSTRUMENTATION (WM_APP + 1) // ID of our private instrumentation message
 
 static VOID CALLBACK sendInstrumentationMessage(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    PostThreadMessage(messagePumpThreadId, WM_APP_INSTRUMENTATION, 0, 0);
+    PostMessage(((txMachine *) screen.machine)->window, WM_APP_INSTRUMENTATION, 0, 0);
 }
 #endif
 
@@ -96,20 +100,20 @@ void messagePump(char *pathToMod) {
 
     // set up a timer for the instrumentation
 #ifdef mxInstrument
-    SetTimer(NULL, 1, 1000, sendInstrumentationMessage);
+    SetTimer(((txMachine *) screen.machine)->window, 1, INSTRUMENTATION_FREQUENCY, sendInstrumentationMessage);
 #endif
 
     // process the windows message loop until terminated
-    while( GetMessage(&msg, NULL, 0, 0) > 0 ) {
+    while( GetMessage(&msg, ((txMachine *) screen.machine)->window, 0, 0) > 0 ) {
 #ifdef mxInstrument
         if (msg.message == WM_APP_INSTRUMENTATION) {
-            // make sure we don't issue instrumentation more often than once/second - if the host gets busy, a
-            // bunch of messages can be queued up, and this drops the extra ones on the floor
+            // make sure we don't issue instrumentation more often than once/INSTRUMENTATION_FREQUENCY - if 
+            // the host gets busy, a bunch of messages can be queued up, and this drops the extra ones on the floor
             static DWORD instrumentTime = 0;
             DWORD currentTime = GetTickCount();
             
             if (instrumentTime < currentTime) {
-                instrumentTime = currentTime + 1000;
+                instrumentTime = currentTime + INSTRUMENTATION_FREQUENCY;
                 instrumentMachine();
             }
 
@@ -118,12 +122,27 @@ void messagePump(char *pathToMod) {
 #endif	
 
         // do we need to shut down?
-        if (msg.message == WM_CLOSE)
+        if (msg.message == WM_CLOSE) {
             break;
+        }
 
         // go ahead and let the message get dispatched
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
+
+        // if the running operation never stops sending messages (this can happen such as with workers that
+        // create workers on every loop), the timer gets starved because Windows does not process timer
+        // events unless the queue is empty.  This will ensure that timers continue to operate even
+        // when the loop is busy
+        while (PeekMessage(&msg, ((txMachine *) screen.machine)->window, WM_TIMER, WM_TIMER, PM_REMOVE)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        // similar problem as WM_TIMER for the WM_CLOSE message - it does get processed eventually, but to 
+        // speed it up we check here
+        if (PeekMessage(&msg, ((txMachine *) screen.machine)->window, WM_CLOSE, WM_CLOSE, PM_REMOVE)) 
+            break;
 	}
 
     // done - end our XS machine
@@ -139,7 +158,7 @@ BOOL WINAPI ctrlHandler(_In_ DWORD dwCtrlType) {
     {
     case CTRL_C_EVENT:
     	fprintf(stderr, "\nShutting down\n");
-        PostThreadMessage(messagePumpThreadId, WM_CLOSE, 0, 0);
+        PostMessage(((txMachine *) screen.machine)->window, WM_CLOSE, 0, 0);
 
         return TRUE;
     default:
