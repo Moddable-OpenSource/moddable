@@ -160,14 +160,11 @@ void xs_FT6202(xsMachine *the)
 	int16_t values[4];
 	uint16_t byteCountOut;
 	if (modPreferenceGet("ft6206", "calibrate", &prefType, (uint8_t *)values, sizeof(values), &byteCountOut)) {
-	modLog("loaded calibration");
 		ft->min_x = values[0];
 		ft->max_x = values[1];
 		ft->min_y = values[2];
 		ft->max_y = values[3];
 	}
-	else
-		modLog("use default calibration");
 #endif
 }
 
