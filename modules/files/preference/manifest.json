@@ -36,7 +36,7 @@
 				]
 			}
 		},
-		"x-cli-mac": {
+		"cli-mac": {
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/mac/*"
@@ -50,7 +50,7 @@
 				]
 			}
 		},
-		"x-cli-win": {
+		"cli-win": {
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/win/*"

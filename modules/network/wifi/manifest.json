@@ -23,7 +23,7 @@
                 ]
             }
         },
-        "x-cli-lin": {
+        "cli-lin": {
             "modules": {
                 "*": [
                     "$(MODULES)/network/wifi/sim/*"
@@ -37,7 +37,7 @@
                 ]
             }
         },
-        "x-cli-mac": {
+        "cli-mac": {
             "modules": {
                 "*": [
                     "$(MODULES)/network/wifi/sim/*"
@@ -51,7 +51,7 @@
                 ]
             }
         },
-        "x-cli-win": {
+        "cli-win": {
             "modules": {
                 "*": [
                     "$(MODULES)/network/wifi/sim/*"

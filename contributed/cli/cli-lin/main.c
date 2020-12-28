@@ -19,7 +19,7 @@
  */
 
 /*
-    This file implements a x-cli-lin platform for Moddable that supports an event loop and dynamically loaded
+    This file implements a cli-lin platform for Moddable that supports an event loop and dynamically loaded
     archives (mods).  It implements the C main function, and starts up GTK with an invisible window to run
 	the actual program.  It manages clearn termination upon receipt of ^C, and performs instrumentaton updates
 	once/second.

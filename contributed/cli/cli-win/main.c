@@ -19,7 +19,7 @@
  */
 
 /*
-    This file implements a x-cli-win platform for Moddable that supports an event loop and dynamically loaded
+    This file implements a cli-win platform for Moddable that supports an event loop and dynamically loaded
     archives (mods).  It implements the C main function, sets up XS machine and starts a Windows message pump.
     Upon a WM_CLOSE message (which is intercepted and sent upon ^C) it cleanly shuts down the XS machine.  It also
     maintains the instrumentation updates, using a timer, on a once/second interval.

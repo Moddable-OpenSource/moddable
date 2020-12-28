@@ -34,17 +34,17 @@
 				"*": "$(MODULES)/base/worker/pcWorker"
 			}
 		},
-		"x-cli-lin": {
+		"cli-lin": {
 			"modules": {
 				"*": "$(MODULES)/base/worker/pcWorker"
 			}
 		},
-		"x-cli-mac": {
+		"cli-mac": {
 			"modules": {
 				"*": "$(MODULES)/base/worker/pcWorker"
 			}
 		},
-		"x-cli-win": {
+		"cli-win": {
 			"modules": {
 				"*": "$(MODULES)/base/worker/pcWorker"
 			}

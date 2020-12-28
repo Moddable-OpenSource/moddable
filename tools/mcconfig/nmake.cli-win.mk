@@ -139,7 +139,7 @@ C_FLAGS = $(XS_C_FLAGS)
 
 RC_OPTIONS = /nologo
 
-LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib Iphlpapi.lib
+LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib Iphlpapi.lib wlanapi.lib
 	
 LINK_OPTIONS = /incremental:no /machine:I386 /nologo /subsystem:console
 !IF "$(DEBUG)"=="1"
@@ -172,9 +172,9 @@ clean:
 $(LIB_DIR) :
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 
-$(BIN_DIR)\$(NAME).exe: $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(OBJECTS)
-	@echo # link $(NAME).exe
-	link $(LINK_OPTIONS) $(LINK_LIBRARIES) $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(OBJECTS) /implib:$(TMP_DIR)\$(NAME).lib /out:$@
+$(BIN_DIR)\$(NAME).exe: $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o  $(OBJECTS)
+	@echo # link $(NAME).exe ($(BIN_DIR)\$(NAME))
+	link $(LINK_OPTIONS) $(LINK_LIBRARIES) $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) /implib:$(TMP_DIR)\$(NAME).lib /out:$@
 	
 $(XS_OBJECTS) : $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
@@ -190,3 +190,11 @@ $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 	
 	
+$(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c $(HEADERS)
+	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\mc.resources.c /Fo$@
+
+$(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
+	@echo # mcrez resources
+	$(MCREZ) <<args.txt
+$(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
+<<

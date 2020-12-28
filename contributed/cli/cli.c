@@ -19,7 +19,7 @@
  */
 
 /*
-	This file implements common services across all platforms to implement the "x-cli-XXX" runtime for Moddable,
+	This file implements common services across all platforms to implement the "cli-XXX" runtime for Moddable,
 	including support for starting/stopping the XS virtual machine, and providing loading of archives (mods).
 */
 

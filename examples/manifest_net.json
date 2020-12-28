@@ -83,7 +83,7 @@
 				"net"
 			]
 		},
-		"x-cli-win": {
+		"cli-win": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
@@ -99,7 +99,7 @@
 				"net"
 			]
 		},
-		"x-cli-mac": {
+		"cli-mac": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
@@ -115,7 +115,7 @@
 				"net"
 			]
 		},
-		"x-cli-lin": {
+		"cli-lin": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",

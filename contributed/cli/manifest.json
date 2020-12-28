@@ -1,6 +1,6 @@
 {
 	"platforms": {
-		"x-cli-win": {
+		"cli-win": {
 			"modules": {
 				"*": [
 					"./$(PLATFORM)/main",
@@ -8,7 +8,7 @@
 				]
 			}
 		},
-		"x-cli-mac": {
+		"cli-mac": {
 			"modules": {
 				"*": [
 					"./$(PLATFORM)/main",
@@ -16,7 +16,7 @@
 				]
 			}
 		},
-		"x-cli-lin": {
+		"cli-lin": {
 			"modules": {
 				"*": [
 					"./$(PLATFORM)/main",

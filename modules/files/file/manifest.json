@@ -34,7 +34,7 @@
 				}
 			}
 		},
-		"x-cli-mac": {
+		"cli-mac": {
 			"modules": {
 				"*": "$(MODULES)/files/file/mac/*"
 			},
@@ -54,7 +54,7 @@
 				}
 			}
 		},
-		"x-cli-win": {
+		"cli-win": {
 			"modules": {
 				"*": "$(MODULES)/files/file/win/*"
 			},
@@ -74,7 +74,7 @@
 				}
 			}
 		},
-		"x-cli-lin": {
+		"cli-lin": {
 			"modules": {
 				"*": "$(MODULES)/files/file/lin/*"
 			},

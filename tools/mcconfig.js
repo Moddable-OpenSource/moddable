@@ -782,6 +782,10 @@ export default class extends Tool {
 			path += this.slash + platform.slice(2);
 			this.createDirectory(path);
 		}
+		else if (platform.startsWith("cli-")) {
+			path += this.slash + platform.slice(4);
+			this.createDirectory(path);
+		}
 		else {
 			path += this.slash + this.platform;
 			this.createDirectory(path);
@@ -1029,7 +1033,7 @@ export default class extends Tool {
 		var name = this.environment.NAME
 		if (this.platform == "x-mac")
 			this.binPath = this.createDirectories(this.outputPath, "bin", name + ".app");
-		else if ((this.platform == "x-lin") || (this.platform == "x-win") || (this.platform.startsWith("x-cli-")))
+		else if ((this.platform == "x-lin") || (this.platform == "x-win") || (this.platform.startsWith("x-cli-") || (this.platform.startsWith("cli-"))))
 			this.binPath = this.createDirectories(this.outputPath, "bin");
 		else
 			this.binPath = this.createDirectories(this.outputPath, "bin", name);
@@ -1095,6 +1099,8 @@ export default class extends Tool {
 			this.createDirectory(this.resourcesPath);
 		}
 		else if (this.platform.startsWith("x-cli-")) {
+		} 
+		else if (this.platform.startsWith("cli-")) {
 			var folder = "mc", file;
 			this.createDirectory(this.modulesPath + this.slash + folder);
 			var source = this.tmpPath + this.slash + "mc.config.js";
