@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: Oct 11, 2020
+Revised: Dec 28, 2020
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -21,8 +21,9 @@ This document describes how to start building Moddable applications for Moddable
 	- [Support](#support)
 	- [Updates](#updates)
 - [Advanced](#advanced)
-	- [Debugging Native code](#debugging-native-code)
-	- [Debugging Native and Script Code](#debugging-native-and-script-code)
+	- [Debugging Native Code](#debugging-native-code)
+		- [Debugging Native Code with SEGGER Embedded Studio](#debugging-native-code-with-segger)
+		- [Debugging Native Code with GDB](#debugging-native-code-with-gdb)	<!--- [Debugging Native and Script Code](#debugging-native-and-script-code)-->
 	- [Bootloader](#bootloader)
 
 <a id="about-moddable-four"></a>
@@ -390,7 +391,7 @@ That said, many of the examples that use Commodetto and Piu are designed for col
 <a id="documentation"></a>
 ### Documentation
 
-Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v17.0.0, which is available [here](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v17.0.0%2Findex.html).
+Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v17.0.2, which is available [here](https://infocenter.nordicsemi.com/topic/struct_sdk/struct/sdk_nrf5_latest.html).
 
 All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
 
@@ -412,16 +413,14 @@ The best way to keep up with what we're doing is to follow us on Twitter ([@modd
 <a id="advanced"></a>
 ## Advanced
 
-This section provides information about debugging and the bootloader on Moddable Four.
+This section provides information about native code debugging using SEGGER Embedded Studio or GDB, and the bootloader on Moddable Four.
 
 <a id="debugging-native-code"></a>
-### Debugging Native code
+### Debugging Native Code
 
-As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md).
+As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md). For native code source level debugging, developers can use [SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) or [GDB](https://www.gnu.org/software/gdb/documentation/).
 
-Some developers may need to debug native code. [SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) is a C/C++ IDE for embedded systems. It includes a debugger that allows you to set breakpoints and examine registers, variables, and memory. You can debug native code on Moddable Four using the SEGGER Embedded Studio debugger. For documentation on using the debugger, see the [documentation by SEGGER](https://www.segger.com/products/development-tools/embedded-studio/technology/debugger/).
-
-Debugging native code on the Moddable Four with SEGGER Embedded Studio requires a [Nordic nRF52840 DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK). Connect your Moddable Four to the nRF52840 DK board as follows:
+Debugging native code on the Moddable Four requires a [Nordic nRF52840-DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK). Connect your Moddable Four to the nRF52840-DK board as follows:
 
 | nRF52840 DK | Moddable Four |
 | :---: | :---: |
@@ -432,6 +431,12 @@ Debugging native code on the Moddable Four with SEGGER Embedded Studio requires 
 | VTG | 3V3 |
 
 ![Moddable Four to nRF52840 DK connection](../assets/devices/moddable-four-dk-pinout.png)
+
+<a id="debugging-native-code-with-segger"></a>
+#### Debugging Native Code with SEGGER Embedded Studio
+
+[SEGGER Embedded Studio](https://www.segger.com/products/development-tools/embedded-studio/) is a C/C++ IDE for embedded systems. It includes a debugger that allows you to set breakpoints and examine registers, variables, and memory. You can debug native code on Moddable Four using the SEGGER Embedded Studio debugger. For documentation on using the debugger, see the [documentation by SEGGER](https://www.segger.com/products/development-tools/embedded-studio/technology/debugger/).
+
 
 <!--In SEGGER Embedded Studio, open the Options dialog for the `xsproj` project. Go to **Debug->J-Link** and set the **Target Interface Type** to **SWD**, as shown in the image below.
 
@@ -477,6 +482,75 @@ Then you'll need to launch launch `xsbug` and `serial2xsbug` by taking the follo
 	```
 	
 	-->
+
+<a id="debugging-native-code-with-gdb"></a>
+#### Debugging Native Code with GDB
+
+[GDB](https://www.gnu.org/software/gdb/documentation/) is the GNU debugger widely used on Unix-like build hosts to debug native code. GDB is included in the Arm Embedded Toolchain archive downloaded during the [SDK and Host Environment Setup](#setup) step. GDB communicates with the Moddable Four via a J-Link connection to the nRF52840-DK board. Take the following steps to install/configure the required tools and launch GDB:
+
+1. [Install the nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools). Make sure the `JLinkGDBServer` is somewhere in your `$PATH`.
+
+2. Create a GDB startup command text file `gdb_cmds.txt` in the `nrf5` directory with the following contents:
+
+	```text
+	target remote localhost:2331
+	mon speed 10000
+	mon flash download=1
+	load
+	break main
+	mon reset 0
+	continue
+	```
+	
+3. Connect the Moddable Four and nRF52840-DK USB ports to your computer. Both USB ports can be connected to the computer via a USB hub. Note that the Moddable Four must also be connected to the nRF52840-DK board as described in the [Debugging Native Code](debugging-native-code) section above.
+
+4. Build the Moddable app that includes the native code you plan to debug. For this example, we build the BLE [heart-rate-server](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/ble/heart-rate-server) example:
+
+	```text
+	cd $MODDABLE/examples/network/ble/heart-rate-server
+	mcconfig -d -m -p nrf52/moddable_four -t build
+	```
+	
+5. Launch the J-Link GDB server from a command line console:
+
+	```text
+	JLinkGDBServer -device nRF52840_xxAA -if swd -port 2331
+	```
+
+	The GDB server will connect to the nRF52840-DK target and wait for a client connection:
+	
+	```text
+	Connecting to J-Link...
+	J-Link is connected.
+	Firmware: J-Link OB-SAM3U128-V2-NordicSemi compiled Mar 17 2020 14:43:00
+	Hardware: V1.00
+	S/N: 683214408
+	Checking target voltage...
+	Target voltage: 3.30 V
+	Listening on TCP/IP port 2331
+	Connecting to target...Connected to target
+	Waiting for GDB connection...
+	```
+
+6. From a second command line console, launch the GDB client, passing the application ELF and GDB startup command text files as command line arguments:
+
+	```text
+	~/nrf5/gcc-arm-none-eabi-8-2018-q4-major/bin/arm-none-eabi-gdb $MODDABLE/build/tmp/nrf52/moddable_four/debug/heart-rate-server/xs_nrf52.out -x ~/nrf5/gdb_cmds.txt
+	```
+	
+	The GDB server connects with the client, downloads the application and stops at the breakpoint `main` specified in the GDB setup command file:
+	
+	```text
+	Breakpoint 1 at 0x46550: file /Users/<user>/Projects/moddable/build/devices/nrf52/xsProj/main.c, line 149.
+Resets core & peripherals via SYSRESETREQ & VECTRESET bit.
+
+	Breakpoint 1, main () at /Users/<user>/Projects/moddable/build/devices/nrf52/xsProj/main.c:149
+149		clock_init();
+(gdb) 
+	```
+
+7. At the `(gdb)` prompt, type `c` to continue execution and/or set other breakpoints, etc...
+
 
 <a id="bootloader"></a>
 ### Bootloader
