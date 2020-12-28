@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,6 +29,8 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "mc.defines.h"
 #include "modI2C.h"
+
+#include "modPreference.h"
 
 #ifndef MODDEF_FT6206_HZ
 	#define MODDEF_FT6206_HZ 600000
@@ -69,6 +71,14 @@
 #ifndef MODDEF_FT6206_FITY
     #define MODDEF_FT6206_FITY 1
 #endif
+#ifndef MODDEF_FT6206_RAW
+	#define MODDEF_FT6206_RAW (false)
+#endif
+#if MODDEF_FT6206_RAW || !defined(MODDEF_FT6206_RAW_LEFT) || !defined(MODDEF_FT6206_RAW_RIGHT) || !defined(MODDEF_FT6206_RAW_TOP) || !defined(MODDEF_FT6206_RAW_BOTTOM) 
+	#define MODDEF_FT6206_CALIBRATE (false)
+#else
+	#define MODDEF_FT6206_CALIBRATE (true)
+#endif
 
 #define FT6206_REG_NUMTOUCHES 0x02
 #define FT6206_REG_THRESHHOLD 0x80
@@ -78,6 +88,13 @@
 
 struct ft6206Record {
 	modI2CConfigurationRecord i2c;
+
+#if MODDEF_FT6206_CALIBRATE
+	int16_t			min_x;
+	int16_t			max_x;
+	int16_t			min_y;
+	int16_t			max_y;
+#endif
 };
 typedef struct ft6206Record ft6206Record;
 typedef ft6206Record *ft6206;
@@ -132,6 +149,26 @@ void xs_FT6202(xsMachine *the)
 	data[1] = 1;		// switch to monitor mode when no touch
 	err = modI2CWrite(&ft->i2c, data, 2, true);
 	if (err) xsUnknownError("write failed setting ctrl");
+
+#if MODDEF_FT6206_CALIBRATE
+	ft->min_x = MODDEF_FT6206_RAW_LEFT;
+	ft->max_x = MODDEF_FT6206_RAW_RIGHT;
+	ft->min_y = MODDEF_FT6206_RAW_TOP;
+	ft->max_y = MODDEF_FT6206_RAW_BOTTOM;
+
+	uint8_t prefType;
+	int16_t values[4];
+	uint16_t byteCountOut;
+	if (modPreferenceGet("ft6206", "calibrate", &prefType, (uint8_t *)values, sizeof(values), &byteCountOut)) {
+	modLog("loaded calibration");
+		ft->min_x = values[0];
+		ft->max_x = values[1];
+		ft->min_y = values[2];
+		ft->max_y = values[3];
+	}
+	else
+		modLog("use default calibration");
+#endif
 }
 
 void xs_FT6202_read(xsMachine *the)
@@ -209,6 +246,21 @@ void xs_FT6202_read(xsMachine *the)
 			y = (MODDEF_FT6206_HEIGHT - 1);
 		else if (y < 0)
 			y = 0;
+#endif
+
+#if MODDEF_FT6206_CALIBRATE
+		x = (x - ft->min_x) * ((float)(MODDEF_FT6206_WIDTH - 1)) / (ft->max_x - ft->min_x);
+		y = (y - ft->min_y) * ((float)(MODDEF_FT6206_HEIGHT - 1)) / (ft->max_y - ft->min_y);
+
+		if (x < 0)
+			x = 0;
+		else if (x > (MODDEF_FT6206_WIDTH - 1))
+			x = MODDEF_FT6206_WIDTH - 1;
+
+		if (y < 0)
+			y = 0;
+		else if (y > (MODDEF_FT6206_HEIGHT - 1))
+			y = MODDEF_FT6206_HEIGHT - 1;
 #endif
 
 		// result
