@@ -99,7 +99,9 @@ int startMachine(char *archivePath) {
 	}
 
 	// instruct the machine to call us prior to entering the debugger, so we can update instrumentation
+#ifdef mxDebug
 	machine->onBreak = debugBreak;
+#endif
 
 	// link our screen and machine objects together
 	screen.machine = (void *) machine;
