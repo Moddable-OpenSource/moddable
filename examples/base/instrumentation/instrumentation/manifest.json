@@ -2,7 +2,8 @@
 	"include": "$(MODDABLE)/examples/manifest_base.json",
 	"modules": {
 		"*": [
-			"./main"
+			"./main",
+			"$(MODULES)/base/instrumentation/*"
 		]
 	}
 }
