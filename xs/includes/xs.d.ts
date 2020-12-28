@@ -27,6 +27,15 @@ interface ArrayBufferConstructor {
 	fromString(string: string): ArrayBuffer;
 }
 
+interface ArrayBuffer {
+	concat(...buffers: ArrayBuffer[]): ArrayBuffer;
+}
+
+interface BigIntConstructor {
+	bitLength(value: BigInt): number
+	fromArrayBuffer(buffer: ArrayBuffer): BigInt
+}
+
 interface Uint8ArrayConstructor {
 	new(buffer: HostBuffer, byteOffset?: number, length?: number): Uint8Array
 }
