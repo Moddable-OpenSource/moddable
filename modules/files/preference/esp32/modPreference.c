@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
+#include "modPreference.h"
 
 #include "nvs_flash/include/nvs_flash.h"
 
@@ -38,7 +39,7 @@ void xs_preference_set(xsMachine *the)
 	if (ESP_OK != err)
 		xsUnknownError("nvs_open fail");
 
-	nvs_erase_key(handle, key);		// ESP IDF bug: if typ of key changes, new type is ignored. work around by deleting first.
+	nvs_erase_key(handle, key);		// ESP IDF bug: if type of key changes, new type is ignored. work around by deleting first.
 	if ((ESP_OK != err) && (ESP_ERR_NVS_NOT_FOUND != err))
 		goto bail;
 
@@ -154,5 +155,92 @@ bail:
 
 void xs_preference_keys(xsMachine *the)
 {
-	xsResult = xsNewArray(0);
+#if 1
+	xsmcSetNewArray(xsResult, 0);
+#else /* for ESP-IDF 4.x */
+	int i = 0;
+	nvs_iterator_t it = nvs_iterator_tnvs_entry_find(NVS_DEFAULT_PART_NAME, xsmcToString(xsArg(0)), NVS_TYPE_ANY);
+	if (!it)
+		xsUnknownError("no iterator");
+
+	xsmcVars(1);
+	xsmcSetNewArray(xsResult, 0);
+
+	while (it) {
+        nvs_entry_info_t info;
+
+        nvs_entry_info(it, &info);
+
+		xsmcSetString(xsVar(0), info.key);
+		xsmcSet(xsResult, i++, xsVar(0));
+
+        it = nvs_entry_next(it);
+	}
+#endif
+}
+
+uint8_t modPreferenceSet(char *domain, char *key, uint8_t prefType, uint8_t *value, uint16_t byteCount)
+{
+	nvs_handle handle;
+	uint8_t resultCode = -1;
+
+	if (ESP_OK == nvs_open(domain, NVS_READWRITE, &handle)) {
+		int result = -1;
+
+		nvs_erase_key(handle, key);		// ESP IDF bug: if type of key changes, new type is ignored. work around by deleting first.
+
+		if (kPrefsTypeBoolean == prefType)
+			result = nvs_set_u8(handle, key, *(uint8_t *)value);
+		else if (kPrefsTypeInteger == prefType)
+			result = nvs_set_i32(handle, key, *(int32_t *)value);
+		else if (kPrefsTypeString == prefType) {
+			char *str = c_calloc(1, byteCount + 1);
+			if (str) {
+				c_memcpy(str, value, byteCount);
+				result = nvs_set_str(handle, key, str);
+				c_free(str);
+			}
+		}
+		else if (kPrefsTypeBuffer == prefType)
+			result = nvs_set_blob(handle, key, value, byteCount);
+
+		resultCode = result ? -1 : 0;
+		nvs_close(handle);
+	}
+
+	return resultCode ? 0 : 1;
+}
+
+
+uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut)
+{
+	nvs_handle handle;
+	uint8_t resultCode = -1;
+
+	if (ESP_OK == nvs_open(domain, NVS_READONLY, &handle)) {
+		int32_t size = byteCountIn;
+		resultCode = 0;
+		if (!nvs_get_u8(handle, key, value)) {
+			*type = kPrefsTypeBoolean;
+			*byteCountOut = 1;
+		}
+		else if (!nvs_get_i32(handle, key, (int32_t *)value)) {
+			*type = kPrefsTypeInteger;
+			*byteCountOut = 4;
+		}
+		else if (!nvs_get_str(handle, key, value, &size)) {
+			*type = kPrefsTypeString;
+			*byteCountOut = (uint16_t)size;
+		}
+		else if (!nvs_get_blob(handle, key, value, &size)) {
+			*type = kPrefsTypeBuffer;
+			*byteCountOut = (uint16_t)size;
+		}
+		else
+			resultCode = -2;
+
+		nvs_close(handle);
+	}
+
+	return resultCode ? 0 : 1;
 }

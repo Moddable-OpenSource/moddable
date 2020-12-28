@@ -54,6 +54,10 @@
 
 #include "xsHost.h"
 
+#ifdef mxDebug
+	#include "modPreference.h"
+#endif
+
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
 
@@ -973,19 +977,6 @@ void fxConnectTo(txMachine *the, struct tcp_pcb *pcb)
 	the->connection = pcb;
 }
 
-enum {
-	kPrefsTypeBoolean = 1,
-	kPrefsTypeInteger = 2,
-	kPrefsTypeString = 3,
-	kPrefsTypeBuffer = 4,
-};
-
-#if !ESP32
-
-extern uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
-extern uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut);
-#endif
-
 static void doLoadModule(modTimer timer, void *refcon, int refconSize)
 {
 	modLoadModule((txMachine *)*(uintptr_t *)refcon, sizeof(uintptr_t) + (uint8_t *)refcon);
@@ -1087,35 +1078,9 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			if (key && value) {
 				uint8_t prefType = c_read8(value++);
 				cmdLen -= 1;
-#if ESP32
-				nvs_handle handle;
-				resultCode = -1;
 
-				if (ESP_OK == nvs_open(domain, NVS_READWRITE, &handle)) {
-					int result = -1;
-
-					if (kPrefsTypeBoolean == prefType)
-						result = nvs_set_u8(handle, key, *(uint8_t *)value);
-					else if (kPrefsTypeInteger == prefType)
-						result = nvs_set_i32(handle, key, *(int32_t *)value);
-					else if (kPrefsTypeString == prefType) {
-						char *str = c_calloc(1, cmdLen + 1);
-						if (str) {
-							c_memcpy(str, value, cmdLen);
-							result = nvs_set_str(handle, key, str);
-							c_free(str);
-						}
-					}
-					else if (kPrefsTypeBuffer == prefType)
-						result = nvs_set_blob(handle, key, value, cmdLen);
-
-					resultCode = result ? -1 : 0;
-					nvs_close(handle);
-				}
-#else
 				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
 					resultCode = -1;
-#endif
 			}
 			}
 			break;
@@ -1137,36 +1102,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					resultCode = -4;
 					break;
 				}
-#if ESP32
-				nvs_handle handle;
-				resultCode = -1;
 
-				if (ESP_OK == nvs_open(domain, NVS_READONLY, &handle)) {
-					int32_t size = 64;
-					uint8_t *buffer = the->echoBuffer + the->echoOffset + 1;
-					resultCode = 0;
-					if (!nvs_get_u8(handle, key, buffer)) {
-						buffer[-1] = kPrefsTypeBoolean;
-						the->echoOffset += 1 + 1;
-					}
-					else if (!nvs_get_i32(handle, key, (int32_t *)buffer)) {
-						buffer[-1] = kPrefsTypeInteger;
-						the->echoOffset += 1 + 4;
-					}
-					else if (!nvs_get_str(handle, key, buffer, &size)) {
-						buffer[-1] = kPrefsTypeString;
-						the->echoOffset += 1 + size;
-					}
-					else if (!nvs_get_blob(handle, key, buffer, &size)) {
-						buffer[-1] = kPrefsTypeBuffer;
-						the->echoOffset += 1 + size;
-					}
-					else
-						resultCode = -2;
-
-					nvs_close(handle);
-				}
-#else
 				uint8_t buffer[65];
 				uint8_t type;
 				uint16_t byteCountOut;
@@ -1176,7 +1112,6 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
 					the->echoOffset += byteCountOut + 1;
 				}
-#endif
 			}
 		}
 		break;

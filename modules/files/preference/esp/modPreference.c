@@ -21,22 +21,14 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "modPreference.h"
 
 extern uint8_t _MODPREF_start;
 
 #define kPreferencesStartOffset ((uint8_t *)&_MODPREF_start - kFlashStart)
 #define kPreferencesMagic 0x81213141
 
-enum {
-	kPrefsTypeBoolean = 1,
-	kPrefsTypeInteger = 2,
-	kPrefsTypeString = 3,
-	kPrefsTypeBuffer = 4,
-};
-
 #define kBufferSize (64)
-
-uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
 
 static void resetPrefs(void);
 static uint8_t findPrefsBlock(uint32_t *offset);
