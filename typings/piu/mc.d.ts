@@ -18,7 +18,7 @@
  *
  */
 
-declare module "piu/mc" {
+declare module "piu/MC" {
   /* type aliases */
   type Coordinates = {
     top?: number;
