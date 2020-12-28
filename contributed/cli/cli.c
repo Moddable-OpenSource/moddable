@@ -26,8 +26,12 @@
 #include "xsAll.h"
 #include "mc.xs.h"
 #include "cli.h"
+#include "screen.h"
 
-txMachine* machine = NULL;
+// txMachine* machine = NULL;
+// set up context (using a txScreen, from screen.h, because that is what the base/Worker module needs - it is
+// a subset of what a simulator would use, containing mostly support for finding the machine and mutex controls)
+txScreen screen;
 
 /*
 	Service used by fxMapArchive to read a section of the archive (mod) from memory 
@@ -82,8 +86,13 @@ int startMachine(char *archivePath) {
 		}
 	}
 
+	// set up our "screen" context
+	mxCreateMutex(&screen.workersMutex);
+	screen.firstWorker = NULL;
+	screen.mainThread = mxCurrentThread();
+
 	// instantiate the VM
-	machine = fxPrepareMachine(NULL, preparation, "machine", NULL, archive);
+	txMachine *machine = fxPrepareMachine(NULL, preparation, "machine", &screen, archive);
 	if (!machine) {
 		fprintf(stderr, "Failed to instantiate the VM\n");
 		return 1;	
@@ -91,6 +100,10 @@ int startMachine(char *archivePath) {
 
 	// instruct the machine to call us prior to entering the debugger, so we can update instrumentation
 	machine->onBreak = debugBreak;
+
+	// link our screen and machine objects together
+	screen.machine = (void *) machine;
+	machine->host = (void *) &screen;
 
 	// set up the stack context for XS
 	xsBeginHost(machine);
@@ -131,8 +144,8 @@ int startMachine(char *archivePath) {
 	Terminates a running XS machine
 */
 void endMachine() {
-	if (machine)
-		xsDeleteMachine(machine);	
+	if (screen.machine)
+		xsDeleteMachine(screen.machine);	
 }
 
 /*
@@ -140,7 +153,7 @@ void endMachine() {
 */
 void instrumentMachine() {
 #ifdef mxDebug
-	xsBeginHost(machine);
+	xsBeginHost(screen.machine);
 	{
 		// is the debugger connected?  If not, skip to avoid console output
 		if (fxIsConnected(the))
