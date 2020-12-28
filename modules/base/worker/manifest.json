@@ -34,6 +34,21 @@
 				"*": "$(MODULES)/base/worker/pcWorker"
 			}
 		},
+		"x-cli-lin": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/pcWorker"
+			}
+		},
+		"x-cli-mac": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/pcWorker"
+			}
+		},
+		"x-cli-win": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/pcWorker"
+			}
+		},
 		"...": {
 			"error": "Worker module unsupported"
 		}

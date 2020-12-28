@@ -15,6 +15,9 @@
 		"qca4020": {},
 		"mac": {},
 		"win": {},
+		"x-cli-win": {},
+		"x-cli-lin": {},
+		"x-cli-mac": {},
 		"...": {
 			"error": "Net module unsupported"
 		}
