@@ -1392,12 +1392,6 @@ void fxScopeCodingBody(txScope* self, txCoder* coder)
 		}
 		fxCoderAddByte(coder, 1, XS_CODE_NULL);
 		fxCoderAddByte(coder, 0, XS_CODE_WITH);
-		node = self->scope->firstDeclareNode;
-		while (node) {
-			if ((node->description->token == XS_TOKEN_ARG) || (node->description->token == XS_TOKEN_VAR))
-				fxCoderAddIndex(coder, 0, XS_CODE_STORE_1, node->index);
-			node = node->nextDeclareNode;
-		}
 		node = self->firstDeclareNode;
 		while (node) {
 			if ((node->description->token == XS_TOKEN_DEFINE) || (node->description->token == XS_TOKEN_VAR))
@@ -1533,6 +1527,12 @@ void fxScopeCodingParams(txScope* self, txCoder* coder)
 		node = node->nextDeclareNode;
 	}
 	if (self->flags & mxEvalFlag) {
+		if (!(self->node->flags & mxStrictFlag)) {	
+			fxCoderAddByte(coder, 1, XS_CODE_NULL);
+			fxCoderAddByte(coder, 0, XS_CODE_WITH);
+			fxCoderAddByte(coder, -1, XS_CODE_POP);
+			coder->environmentLevel++;
+		}
 		fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
 		fxCoderAddByte(coder, 0, XS_CODE_WITH);
 		node = self->firstDeclareNode;
@@ -3086,6 +3086,7 @@ void fxFunctionNodeCode(void* it, void* param)
 	txFunctionNode* self = it;
 	txCoder* coder = param;
 	txInteger environmentLevel = coder->environmentLevel;
+	txBoolean evalFlag = coder->evalFlag;
 	txInteger line = coder->line;
 	txBoolean programFlag = coder->programFlag;
 	txInteger scopeLevel = coder->scopeLevel;
@@ -3095,6 +3096,8 @@ void fxFunctionNodeCode(void* it, void* param)
 	txSymbol* name = self->symbol;
 	txTargetCode* target = fxCoderCreateTarget(param);
 	
+	if ((self->flags & mxEvalFlag) && !(self->flags & mxStrictFlag))
+		coder->evalFlag = 1;
 	coder->line = -1;
 	coder->programFlag = 0;
 	coder->scopeLevel = 0;
@@ -3199,6 +3202,7 @@ void fxFunctionNodeCode(void* it, void* param)
 	coder->scopeLevel = scopeLevel;
 	coder->programFlag = programFlag;
 	coder->line = line;
+	coder->evalFlag = evalFlag;
 	coder->environmentLevel = environmentLevel;
 }
 
