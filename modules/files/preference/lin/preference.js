@@ -2,62 +2,64 @@ import {File} from "file";
 import config from "mc/config";
 
 export default class Preference {
-    static _prefCache;
+    static #filePath = config.file.root + "modpreferences.json";
+    static #cache = Preference.#load();
 
     static set(domain, key, value) {
-        Preference._load();
-        if (Preference._prefCache[domain] == undefined)
-            Preference._prefCache[domain] = {};
-		Preference._prefCache[domain][key] = value;
-		Preference._save();
+		if (value instanceof ArrayBuffer)
+			value = {buffer: (new Uint8Array(value).toString())};
+
+        Preference.#cache[domain] ??= {};
+		Preference.#cache[domain][key] = value;
+		Preference.#save();
 	}
 
     static get(domain, key) {
-        Preference._load();
-		return Preference._prefCache[domain] ? Preference._prefCache[domain][key] : undefined;
+		let result = Preference.#cache[domain]?.[key];
+
+		if (result && ("object" === typeof result))
+			result = Uint8Array.from(result.buffer.split(",")).buffer;
+
+		return result;
 	}
 
     static delete(domain, key) {
-        Preference._load();
-		if ( (Preference._prefCache[domain] !== undefined) && (Preference._prefCache[domain][key] !== undefined) ) {
-			delete Preference._prefCache[domain][key];
-			if (Object.keys(Preference._prefCache[domain]).length == 0)
-				delete Preference._prefCache[domain];
-			Preference._save();
+		if (Preference.#cache[domain]?.[key] !== undefined) {
+			delete Preference.#cache[domain][key];
+			if (Object.keys(Preference.#cache[domain]).length === 0)
+				delete Preference.#cache[domain];
+			Preference.#save();
 		}
 	}
 
     static keys(domain) {
-        Preference._load();
-		return Preference._prefCache[domain] ? Object.keys(Preference._prefCache[domain]) : [];
+		return Preference.#cache[domain] ? Object.keys(Preference.#cache[domain]) : [];
 	}
 
-	static get _filePath() {
-		return config.file.root + "preferences.json";
+	static #load() {
+		let result = {};
+
+		try {
+			if (File.exists(Preference.#filePath)) {
+				let file = new File(Preference.#filePath, false);
+				result = JSON.parse(file.read(String));
+				file.close();
+			}
+		} catch {
+			// ignore errors
+		}
+
+		return result;
 	}
 
-	static _load() {
-        if (Preference._prefCache === undefined) {
-            try {
-                let file = new File(Preference._filePath, false);
-                Preference._prefCache = JSON.parse(file.read(String));
-                file.close();
-            } catch {
-                // ignore errors
-                Preference._prefCache = {};
-            }
-        }
-	}
-
-	static _save() {
-        try {
-            File.delete(Preference._filePath);
-            let file = new File(Preference._filePath, true);
-            file.write(JSON.stringify(Preference._prefCache));
-            file.close();
-        } catch {
-            // ignore errors
-        }
+	static #save() {
+		try {
+			File.delete(Preference.#filePath);
+			const file = new File(Preference.#filePath, true);
+			file.write(JSON.stringify(Preference.#cache));
+			file.close();
+		} catch {
+			// ignore errors
+		}
 	}
 }
-
