@@ -4,6 +4,14 @@ build/devices/esp32/xsProj/sdkconfig.defaults.prior
 build/devices/esp32/xsProj/sdkconfig.mc
 build/devices/esp32/xsProj/sdkconfig.old
 build/devices/esp32/xsProj/build
+build/devices/esp32/xsProj-esp32/sdkconfig.defaults.prior
+build/devices/esp32/xsProj-esp32/sdkconfig.mc
+build/devices/esp32/xsProj-esp32/sdkconfig.old
+build/devices/esp32/xsProj-esp32/build
+build/devices/esp32/xsProj-esp32s2/sdkconfig.defaults.prior
+build/devices/esp32/xsProj-esp32s2/sdkconfig.mc
+build/devices/esp32/xsProj-esp32s2/sdkconfig.old
+build/devices/esp32/xsProj-esp32s2/build
 libraries/esp/
 .DS_Store
 .idea/
