@@ -417,13 +417,21 @@ void fx_Function_prototype_bind(txMachine* the)
 		if (mxBehaviorGetOwnProperty(the, mxThis->value.reference, mxID(_length), XS_NO_ID, the->stack)) {
 			mxPushSlot(mxThis);
 			fxGetID(the, mxID(_length));
-			if ((the->stack->kind == XS_INTEGER_KIND) || (the->stack->kind == XS_NUMBER_KIND)) {
-				length = fxToLength(the, the->stack);
-				if (c > 1)
-					length -= c - 1;
-				if (length < 0)
-					length = 0;
+			property = the->stack;
+			if (property->kind == XS_INTEGER_KIND) {
+				length = property->value.integer;
 			}
+			else if (property->kind == XS_NUMBER_KIND) {
+				length = property->value.number;
+				if (c_isnan(length))
+					length = 0;
+				else
+					length = c_trunc(length);
+			}
+			if (c > 1)
+				length -= c - 1;
+			if (length < 0)
+				length = 0;
 			mxPop();
 		}
 		mxPop();
