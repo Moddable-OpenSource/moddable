@@ -572,13 +572,13 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 void fx_Function_prototype_toString(txMachine* the)
 {	
 	fxCheckFunctionInstance(the, mxThis);
-	mxPushStringX("function ");
+	mxPushStringX("function [\"");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_name));
 	if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
 		fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
-	mxPushStringX(" (){[native code]}");
+	mxPushStringX("\"] (){[native code]}");
 	fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
 	mxPullSlot(mxResult);
