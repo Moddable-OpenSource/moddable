@@ -679,6 +679,9 @@ void* fxRetainSharedChunk(void* data)
 	txS4 result = 0;
 	txS4 value = 1;
 	txS4* address = &(chunk->usage);
+#ifndef mxUseGCCAtomics
+	txBoolean lock = true;
+#endif
 	mxAtomicsAdd();
 	if (result == 0)
 		return C_NULL;
@@ -691,6 +694,9 @@ void fxReleaseSharedChunk(void* data)
 	txS4 result = 0;
 	txS4 value = 1;
 	txS4* address = &(chunk->usage);
+#ifndef mxUseGCCAtomics
+	txBoolean lock = true;
+#endif
 	mxAtomicsSub();
 	if (result == 1) {
 		c_free(chunk);
