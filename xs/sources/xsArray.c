@@ -291,7 +291,6 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 
 txIndex fxCheckArrayLength(txMachine* the, txSlot* slot)
 {
-again:
 	if (slot->kind == XS_INTEGER_KIND) {
 		if (slot->value.integer >= 0)
 			return (txIndex)slot->value.integer;
@@ -303,8 +302,16 @@ again:
 			return length;
 	}
 	else {
-		fxToNumber(the, slot);
-		goto again;
+		txUnsigned length;
+		txNumber check;
+		mxPushSlot(slot);
+		length = fxToUnsigned(the, the->stack);
+		mxPop();
+		mxPushSlot(slot);
+		check = fxToNumber(the, the->stack);
+		mxPop();
+		if (length == check)
+			return length;
 	}
 	mxRangeError("invalid length");
 	return 0;
@@ -703,6 +710,7 @@ void fxArrayLengthSetter(txMachine* the)
 {
 	txSlot* instance = fxToInstance(the, mxThis);
 	txSlot* array;
+	txIndex length;
 	while (instance) {
 		if (instance->flag & XS_EXOTIC_FLAG) {
 			array = instance->next;
@@ -717,7 +725,14 @@ void fxArrayLengthSetter(txMachine* the)
 			alias = fxAliasInstance(the, instance);
 		array = alias->next;
 	}
-	fxSetArrayLength(the, array, fxCheckArrayLength(the, mxArgv(0)));
+	length = fxCheckArrayLength(the, mxArgv(0));
+	if (array->flag & XS_DONT_SET_FLAG) {
+		if (the->frame->next->flag & XS_STRICT_FLAG)
+			mxTypeError("set length: not writable");
+		else
+			return;
+	}
+	fxSetArrayLength(the, array, length);
     mxResult->value.number = array->value.array.length;
     mxResult->kind = XS_NUMBER_KIND;
 }
@@ -728,7 +743,8 @@ txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 		txSlot* array = instance->next;
 		txSlot slot;
 		txBoolean result = 1;
-		slot.flag = array->flag;
+        txIndex length = ((descriptor->kind != XS_UNINITIALIZED_KIND) && (descriptor->kind != XS_ACCESSOR_KIND)) ? fxCheckArrayLength(the, descriptor) : 0;
+        slot.flag = array->flag;
 		slot.ID = id;
 		slot.kind = XS_NUMBER_KIND;
 		slot.value.number = array->value.array.length;
@@ -742,7 +758,6 @@ txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 			}
 		}
 		if (descriptor->kind != XS_UNINITIALIZED_KIND) {
-			txIndex length = fxCheckArrayLength(the, descriptor);
 			if (array->value.array.length != length)
 				result = fxSetArrayLength(the, array, length);
 		}
