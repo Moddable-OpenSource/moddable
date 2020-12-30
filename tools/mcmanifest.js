@@ -758,6 +758,7 @@ export class TSConfigFile extends FILE {
 				outDir: tool.modulesPath,
 				paths: {
 				},
+				lib: ["es2020"],
 				sourceMap: true,
 				target: "ES2020",
 				types: [

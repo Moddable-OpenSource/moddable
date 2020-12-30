@@ -558,7 +558,7 @@ declare module "piu/MC" {
     const Port: PortConstructor
     const Label: LabelConstructor
     const Transition: TransitionConstructor
-    // const Text: TextConstructor  //@@ conflicts with DOM!?!?!
+    const Text: TextConstructor
   }
  }
 
