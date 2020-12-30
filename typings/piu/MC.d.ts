@@ -71,45 +71,48 @@ declare module "piu/MC" {
     func: (param: any) => ConstructorParameters<T>[1]
   ) => TemplateComponent<Parameters<typeof func>[0], T>;
 
-  class Behavior {}
+  interface Behavior {}
 
-  class Content {
+  interface BehaviorConstructor {
+    new(any): Behavior;
+  }
+
+  interface Content {
     // TODO: consider type parameter to avoid any
-    public constructor(behaviorData: any, dictionary: ContentDictionary);
-    public adjust(x: number, y: number): void;
-    public bubble(id: string, ...extras: any[]): void;
-    public captureTouch(id: string, x: number, y: number, ticks: number): void;
-    public defer(id: string, ...extras: any[]): void;
-    public delegate(id: string, ...extras: any[]): void;
-    public distribute(id: string, ...extras: any[]): void;
-    public focus(): void;
-    public hit(x: number, y: number): Content | undefined;
-    public measure(): Size;
-    public moveBy(x: number, y: number): void;
-    public render(): void;
-    public sizeBy(width: number, height: number): void;
-    public start(): void;
-    public stop(): void;
-    public onCreate(content: Content, data: object, context: object): void;
-    public onDisplaying(content: Content): void;
-    public onFinished(content: Content): void;
-    public onTimeChanged(content: Content): void;
-    public onTouchBegan(
+    adjust(x: number, y: number): void;
+    bubble(id: string, ...extras: any[]): void;
+    captureTouch(id: string, x: number, y: number, ticks: number): void;
+    defer(id: string, ...extras: any[]): void;
+    delegate(id: string, ...extras: any[]): void;
+    distribute(id: string, ...extras: any[]): void;
+    focus(): void;
+    hit(x: number, y: number): Content | undefined;
+    measure(): Size;
+    moveBy(x: number, y: number): void;
+    render(): void;
+    sizeBy(width: number, height: number): void;
+    start(): void;
+    stop(): void;
+    onCreate(content: Content, data: object, context: object): void;
+    onDisplaying(content: Content): void;
+    onFinished(content: Content): void;
+    onTimeChanged(content: Content): void;
+    onTouchBegan(
       content: Content,
       id: string,
       x: number,
       y: number,
       ticks: number
     ): void;
-    public onTouchCancelled(content: Content, id: string): void;
-    public onTouchended(
+    onTouchCancelled(content: Content, id: string): void;
+    onTouchended(
       content: Content,
       id: string,
       x: number,
       y: number,
       ticks: number
     ): void;
-    public onTouchMoved(
+    onTouchMoved(
       content: Content,
       id: string,
       x: number,
@@ -117,40 +120,38 @@ declare module "piu/MC" {
       ticks: number
     ): void;
     // TODO: Avoid any
-    public static template: TemplateComponentFactory<typeof Content>;
-    public static getAll<T>(this: { new (): T }): T[];
-    public readonly previous: Content | null;
-    public readonly next: Content | null;
-    public readonly container: Container | null;
-    public readonly index: number;
-    public name: string;
-    public active: boolean;
-    public anchor: string;
-    public behavior: object;
-    public coordinates: Coordinates;
-    public bounds: Bounds;
-    public backgroundTouch: boolean;
-    public exclusiveTouch: boolean;
-    public multipleTouch: boolean;
+    readonly previous: Content | null;
+    readonly next: Content | null;
+    readonly container: Container | null;
+    readonly index: number;
+    name: string;
+    active: boolean;
+    anchor: string;
+    behavior: object;
+    coordinates: Coordinates;
+    bounds: Bounds;
+    backgroundTouch: boolean;
+    exclusiveTouch: boolean;
+    multipleTouch: boolean;
 
-    public time: number;
-    public duration: number;
-    public fraction: number;
-    public interval: number;
-    public loop: boolean;
-    public running: boolean;
-    public offset: undefined | Position;
-    public position: undefined | Position;
-    public size: Size;
-    public state: number;
-    public variant: number;
-    public skin: Skin | null;
-    public style: Style | null;
-    public visible: boolean;
-    public x: number;
-    public y: number;
-    public width: number;
-    public height: number;
+    time: number;
+    duration: number;
+    fraction: number;
+    interval: number;
+    loop: boolean;
+    running: boolean;
+    offset: undefined | Position;
+    position: undefined | Position;
+    size: Size;
+    state: number;
+    variant: number;
+    skin: Skin | null;
+    style: Style | null;
+    visible: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
   }
   interface ContentDictionary
     extends Coordinates,
@@ -160,25 +161,37 @@ declare module "piu/MC" {
       TouchProperty {
     name?: string;
     anchor?: string;
-    Behavior?: new () => Behavior;
+    Behavior?: BehaviorConstructor;
     skin?: Skin;
-    Skin?: new () => Skin;
+    Skin?: SkinConstructor;
     style?: Style;
-    Style?: new () => Style;
+    Style?: StyleConstructor;
     visible?: boolean;
   }
+  interface ContentConstructor {
+    new(behaviorData: any, dictionary: ContentDictionary): Content;
+    (behaviorData: any, dictionary: ContentDictionary): Content;
+    readonly prototype: Content;
 
-  class Style {
-    public constructor(dictionary: StyleDictionary);
-    public measure(string: string): Size;
-    public static template: TemplateStyleFactory<typeof Style>;
+    template: TemplateComponentFactory<typeof Content>;
+    getAll<T>(this: { new (): T }): T[];
+  }
+
+  interface Style {
+    measure(string: string): Size;
   }
   interface StyleDictionaryBase {
-    color: Color | Color[];
-    font: string;
+    color?: Color | Color[];
+    font?: string;
     horizontal?: string;
     top?: number;
   }
+  interface StyleConstructor {
+    new(dictionary: StyleDictionary): Style;
+
+    template<T>(this: T, any): T;
+  }
+  
   interface TextStyleDictionary extends StyleDictionaryBase {
     leading?: number;
     right?: number;
@@ -190,39 +203,48 @@ declare module "piu/MC" {
   }
   type StyleDictionary = LabelStyleDictionary | TextStyleDictionary;
 
-  class Texture {
-    public constructor(path: string);
-    public constructor(dictionary: TextureDictionary);
-    public readonly height: number;
-    public readonly width: number;
-    public static template: TemplateStyleFactory<typeof Texture>;
+  interface Texture {
+    readonly height: number;
+    readonly width: number;
   }
   interface TextureDictionary {
     path: string;
   }
+  interface TextureConstructor {
+    new(path: string): Texture;
+    new(dictionary: TextureDictionary): Texture;
+    readonly prototype: Texture;
 
-  class Skin {
-    public constructor(dictionary: SkinDictionary);
-    public static template: TemplateStyleFactory<typeof Skin>;
-    public borders: Coordinates;
-    public fill: Color | Color[];
-    public stroke: Color | Color[];
-    public texture: Texture;
-    public color: Color;
-    public bounds: Bounds;
-    public height: number;
-    public width: number;
-    public states?: number;
-    public variants?: number;
-    public tiles?: Coordinates;
-    public top?: number;
-    public right?: number;
-    public bottom?: number;
-    public left?: number;
+    template: TemplateStyleFactory<typeof Texture>;
   }
+
+  interface Skin {
+    borders: Coordinates;
+    fill: Color | Color[];
+    stroke: Color | Color[];
+    texture: Texture;
+    color: Color;
+    bounds: Bounds;
+    height: number;
+    width: number;
+    states?: number;
+    variants?: number;
+    tiles?: Coordinates;
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  }
+  interface SkinConstructor {
+    new(dictionary: SkinDictionary): Skin;
+    readonly prototype: Skin;
+
+    template: TemplateStyleFactory<typeof Skin>;
+  }
+
   interface TextureSkinDictionary extends Coordinates, Bounds {
     texture?: Texture;
-    Texture?: new () => Texture;
+    Texture?: TextureConstructor;
     color?: Color;
     states?: number;
     variants?: number;
@@ -235,64 +257,72 @@ declare module "piu/MC" {
   }
   type SkinDictionary = ColorSkinDictionary | TextureSkinDictionary;
 
-  class Transition {
-    public constructor(duration: number);
-    public onBegin(container: Container, ...extras: any[]): void;
-    public onEnd(container: Container, ...extras: any[]): void;
-    public onStep(fraction: number): void;
-    public duration?: number;
+  interface Transition {
+    onBegin(container: Container, ...extras: any[]): void;
+    onEnd(container: Container, ...extras: any[]): void;
+    onStep(fraction: number): void;
+    duration?: number;
+  }
+  interface TransitionConstructor {
+    new(duration: number, interpolator?: (value: number) => number, first?: any, last?: any): Transition
   }
 
-  class Container extends Content {
-    public constructor(behaviorData: any, dictionary: ContainerDictionary);
-    public clip: boolean;
-    public readonly first: Content | null;
-    public readonly last: Content | null;
-    public readonly length: number;
-    public readonly transitioning: boolean;
-    public add(content: Content): void;
-    public content(at: number | string): Content | undefined;
-    public empty(start?: number, stop?: number): void;
-    public firstThat(id: string, ...extras: any[]): void;
-    public insert(content: Content, before: Content): void;
-    public lastThat(id: string, ...extras: any[]): void;
-    public remove(content: Content): void;
-    public replace(content: Content, by: Content): void;
-    public run(transition: Transition, ...extras: any[]): void;
-    public swap(content0: Content, content1: Content): void;
-    public onTransitionBeginning(container: Container): void;
-    public onTransitionEnded(container: Container): void;
-    public static template: TemplateComponentFactory<typeof Container>;
+  interface Container extends Content {
+    clip: boolean;
+    readonly first: Content | null;
+    readonly last: Content | null;
+    readonly length: number;
+    readonly transitioning: boolean;
+    add(content: Content): void;
+    content(at: number | string): Content | undefined;
+    empty(start?: number, stop?: number): void;
+    firstThat(id: string, ...extras: any[]): void;
+    insert(content: Content, before: Content): void;
+    lastThat(id: string, ...extras: any[]): void;
+    remove(content: Content): void;
+    replace(content: Content, by: Content): void;
+    run(transition: Transition, ...extras: any[]): void;
+    swap(content0: Content, content1: Content): void;
+    onTransitionBeginning(container: Container): void;
+    onTransitionEnded(container: Container): void;
   }
   interface ContainerDictionary extends ContentDictionary {
     clip?: boolean;
-    contents: Content[];
+    contents?: Content[];
+  }
+  interface ContainerConstructor {
+    new(behaviorData: any, dictionary?: ContainerDictionary);
+
+    template<T>(this: T, any): T;
   }
 
-  class Label extends Content {
-    public constructor(behaviorData: any, dictionary: LabelDictionary);
-    public string: string;
-    public static template: TemplateComponentFactory<typeof Label>;
-  }
-  interface LabelDictionary extends ContentDictionary {
+  interface Label extends Content {
     string: string;
   }
+  interface LabelDictionary extends ContentDictionary {
+    string?: string;
+  }
+  interface LabelConstructor {
+    new(behaviorData: any, dictionary: LabelDictionary): Label;
 
-  class Port extends Content {
-    public drawContent(
+    template<T>(this: T, any): T;
+  }
+
+  interface Port extends Content {
+    drawContent(
       x: number,
       y: number,
       width: number,
       height: number
     ): void;
-    public drawLabel(
+    drawLabel(
       string: string,
       x: number,
       y: number,
       width: number,
       height: number
     ): void;
-    public drawSkin(
+    drawSkin(
       skin: Skin,
       x: number,
       y: number,
@@ -301,7 +331,7 @@ declare module "piu/MC" {
       variant?: number,
       state?: number
     ): void;
-    public drawString(
+    drawString(
       string: string,
       style: Style,
       color: Color,
@@ -310,7 +340,7 @@ declare module "piu/MC" {
       width: number,
       height: number
     ): void;
-    public drawStyle(
+    drawStyle(
       string: string,
       style: Style,
       x: number,
@@ -320,7 +350,7 @@ declare module "piu/MC" {
       ellipsis?: boolean,
       state?: number
     ): void;
-    public drawTexture(
+    drawTexture(
       texture: Texture,
       color: Color,
       x: number,
@@ -330,14 +360,14 @@ declare module "piu/MC" {
       sw: number,
       sh: number
     ): void;
-    public fillColor(
+    fillColor(
       color: Color,
       x: number,
       y: number,
       width: number,
       height: number
     ): void;
-    public fillTexture(
+    fillTexture(
       texture: Texture,
       color: Color,
       x: number,
@@ -349,46 +379,45 @@ declare module "piu/MC" {
       sw?: number,
       sh?: number
     ): void;
-    public invalidate(
+    invalidate(
       x?: number,
       y?: number,
       width?: number,
       height?: number
     ): void;
-    public measureString(string: string, style: Style): Size;
-    public popClip(): void;
-    public pushClip(
+    measureString(string: string, style: Style): Size;
+    popClip(): void;
+    pushClip(
       x?: number,
       y?: number,
       width?: number,
       height?: number
     ): void;
-    public onDraw(
+    onDraw(
       port: Port,
       x: number,
       y: number,
       width: number,
       height: number
     ): void;
-    public static template: TemplateComponentFactory<typeof Port>;
+  }
+  interface PortConstructor extends ContentConstructor {
   }
 
-  class Text extends Content {
-    public constructor(begaviorData: any, dictionary: TextDictionary);
-    public blocks: {
+  interface Text extends Content {
+    blocks: {
       behavior: object | null;
       style: Style | null;
       spans: string | string[];
     }[];
-    public string: string;
-    public begin(): void;
-    public beginBlock(style?: Style, behavior?: object): void;
-    public beginSpan(style: Style, behavior?: object): void;
-    public concat(string: string): void;
-    public end(): void;
-    public endBlock(): void;
-    public endSpan(): void;
-    public static template: TemplateComponentFactory<typeof Text>;
+    string: string;
+    begin(): void;
+    beginBlock(style?: Style, behavior?: object): void;
+    beginSpan(style: Style, behavior?: object): void;
+    concat(string: string): void;
+    end(): void;
+    endBlock(): void;
+    endSpan(): void;
   }
   interface TextDictionary extends ContentDictionary {
     blocks?: {
@@ -398,74 +427,90 @@ declare module "piu/MC" {
     }[];
     string: string;
   }
+  interface TextConstructor extends ContentConstructor {
+    new(behaviorData: any, dictionary: TextDictionary): Text;
 
-  class Application extends Container {
-    public constructor(behaviorData: any, dictionary: ApplicationDictionary);
-    public displayListLength: number;
-    public commandListLength: number;
-    public touchCount: number;
-    public static template: TemplateComponentFactory<typeof Application>;
+    template<T>(this: T, any): T;
+  }
+
+  interface Application extends Container {
+    displayListLength: number;
+    commandListLength: number;
+    touchCount: number;
   }
   interface ApplicationDictionary extends ContainerDictionary {
     displayListLength?: number;
     commandListLength?: number;
     touchCount?: number;
   }
+  interface ApplicationConstructor {
+    new(behaviorData: any, dictionary: ApplicationDictionary): Application;
 
-  class Column extends Container {
-    public static template: TemplateComponentFactory<typeof Column>;
+    template<T>(this: T, any): T;
   }
 
-  class Layout extends Container {
-    public onFitHorizontally(layout: Layout, width: number): void;
-    public onFitVertically(layout: Layout, height: number): void;
-    public onMeasureHorizontally(layout: Layout, width: number): void;
-    public onMeasureVertically(layout: Layout, height: number): void;
-    public static template: TemplateComponentFactory<typeof Layout>;
+  interface Column extends Container {
+  }
+  interface ColumnConstructor extends ContainerConstructor {
   }
 
-  class Image extends Content {
-    public constructor(behaviorData: any, dictionary: ImageDictionary);
-    public readonly frameCount: never;
-    public frameIndex: number;
-    public static template: TemplateComponentFactory<typeof Image>;
+  interface Layout extends Container {
+    onFitHorizontally(layout: Layout, width: number): void;
+    onFitVertically(layout: Layout, height: number): void;
+    onMeasureHorizontally(layout: Layout, width: number): void;
+    onMeasureVertically(layout: Layout, height: number): void;
+  }
+  interface LayoutConstructor extends ContainerConstructor {
+  }
+
+  interface Image extends Content {
+    readonly frameCount: never;
+    frameIndex: number;
   }
   interface ImageDictionary extends ContentDictionary {
     path: string;
   }
+  interface ImageConstructor extends ContentConstructor {
+    new(behaviorData: any, dictionary: ImageDictionary): Image;
 
-  class Die extends Layout {
-    public set(x: number, y: number, width: number, height: number): Die;
-    public sub(x: number, y: number, width: number, height: number): Die;
-    public and(x: number, y: number, width: number, height: number): Die;
-    public or(x: number, y: number, width: number, height: number): Die;
-    public xor(x: number, y: number, width: number, height: number): Die;
-    public fill(): Die;
-    public empty(): Die;
-    public cut(): void;
-    public attach(content: Content): void;
-    public detach(): void;
-    public static template: TemplateComponentFactory<typeof Die>;
+    template<T>(this: T, any): T;
   }
 
-  class Row extends Container {
-    public static template: TemplateComponentFactory<typeof Row>;
+  interface Die extends Layout {
+    set(x: number, y: number, width: number, height: number): Die;
+    sub(x: number, y: number, width: number, height: number): Die;
+    and(x: number, y: number, width: number, height: number): Die;
+    or(x: number, y: number, width: number, height: number): Die;
+    xor(x: number, y: number, width: number, height: number): Die;
+    fill(): Die;
+    empty(): Die;
+    cut(): void;
+    attach(content: Content): void;
+    detach(): void;
+  }
+  interface DieConstructor extends LayoutConstructor {
   }
 
-  class Scroller extends Container {
-    public constructor(behaviorData: any, dictionary: ScrollerDictionary);
-    public readonly constraint: Position;
-    public loop: boolean;
-    public scroll: Position;
-    public tracking: boolean;
-    public reveal(bounds: Bounds): void;
-    public scrollBy(dx: number, dy: number): void;
-    public scrollTo(x: number, y: number): void;
-    public onScrolled(scroller: Scroller): void;
-    public static template: TemplateComponentFactory<typeof Scroller>;
+  interface Row extends Container {
+  }
+  interface RowConstructor extends ContainerConstructor {
+  }
+
+  interface Scroller extends Container {
+    readonly constraint: Position;
+    loop: boolean;
+    scroll: Position;
+    tracking: boolean;
+    reveal(bounds: Bounds): void;
+    scrollBy(dx: number, dy: number): void;
+    scrollTo(x: number, y: number): void;
+    onScrolled(scroller: Scroller): void;
   }
   interface ScrollerDictionary extends ContainerDictionary {
     loop?: boolean;
+  }
+  interface ScrollerConstructor extends ContainerConstructor {
+    new(behaviorData: any, dictionary: ScrollerDictionary): Scroller;
   }
 
   class Timeline {
@@ -496,4 +541,56 @@ declare module "piu/MC" {
       delay?: number
     ): Timeline;
   }
+
+  global {
+    const Skin: SkinConstructor
+    const Texture: TextureConstructor
+    const Style: StyleConstructor
+    const Behavior: BehaviorConstructor
+    const Content: ContentConstructor
+    const Container: ContainerConstructor
+    const Application: ApplicationConstructor
+    const Scroller: ScrollerConstructor
+    const Row: RowConstructor
+    const Column: ColumnConstructor
+    const Layout: LayoutConstructor
+    const Die: DieConstructor
+    const Port: PortConstructor
+    const Label: LabelConstructor
+    const Transition: TransitionConstructor
+    // const Text: TextConstructor  //@@ conflicts with DOM!?!?!
+  }
+ }
+
+interface Math {
+  backEaseIn(value: number): number
+  backEaseInOut(value: number): number
+  backEaseOut(value: number): number
+  bounceEaseIn(value: number): number
+  bounceEaseInOut(value: number): number
+  bounceEaseOut(value: number): number
+  circularEaseIn(value: number): number
+  circularEaseInOut(value: number): number
+  circularEaseOut(value: number): number
+  cubicEaseIn(value: number): number
+  cubicEaseInOut(value: number): number
+  cubicEaseOut(value: number): number
+  elasticEaseIn(value: number): number
+  elasticEaseInOut(value: number): number
+  elasticEaseOut(value: number): number
+  exponentialEaseIn(value: number): number
+  exponentialEaseInOut(value: number): number
+  exponentialEaseOut(value: number): number
+  quadEaseIn(value: number): number
+  quadEaseInOut(value: number): number
+  quadEaseOut(value: number): number
+  quartEaseIn(value: number): number
+  quartEaseInOut(value: number): number
+  quartEaseOut(value: number): number
+  quintEaseIn(value: number): number
+  quintEaseInOut(value: number): number
+  quintEaseOut(value: number): number
+  sineEaseIn(value: number): number
+  sineEaseInOut(value: number): number
+  sineEaseOut(value: number): number
 }
