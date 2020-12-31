@@ -33,7 +33,11 @@
 	#define MODDEF_PWM_LEDC_TIMER LEDC_TIMER_0
 #endif
 
-#define ESP_SPEED_MODE LEDC_SPEED_MODE_MAX
+#if IDF_TARGET == esp32s2
+	#define ESP_SPEED_MODE LEDC_LOW_SPEED_MODE
+#else
+	#define ESP_SPEED_MODE LEDC_HIGH_SPEED_MODE
+#endif
 
 static const ledc_timer_config_t gTimer = {
 	.duty_resolution = LEDC_TIMER_10_BIT,
