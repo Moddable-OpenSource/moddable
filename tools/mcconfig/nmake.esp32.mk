@@ -402,7 +402,7 @@ release: precursor
 	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
 	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
 	copy $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\.
-	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) monitor -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) monitor
 
 prepare:
 	$(KILL_SERIAL2XSBUG)
