@@ -17,19 +17,22 @@
  *   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-declare module "piu/sound" {
+declare module "piu/Sound" {
+  import AudioOut from "pins/audioout"
   class Sound {
     public constructor(dictionary: {
-    path: string;
-    offset?: number;
-    size?: number;
+      path: string;
+      offset?: number;
+      size?: number;
     });
-    public readonly bitsPerSample: number;
-    public readonly numChannels: number;
-    public readonly sampleRate: number;
-    public volume: number;
+    public static callback(index: number): void;
+    public static readonly bitsPerSample: number;
+    public static readonly numChannels: number;
+    public static readonly sampleRate: number;
+    public static get volume(): number;
+    public static set volume(it: number);
     public static close(): void;
+    public static open(stream?: number): AudioOut;
     public play(stream?: number, repeat?: number, callback?: Function): void;
   }
   export { Sound as default }
