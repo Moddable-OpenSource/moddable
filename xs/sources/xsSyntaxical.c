@@ -686,7 +686,7 @@ void fxModule(txParser* parser)
 {
 	txInteger aCount = parser->nodeCount;
 	txInteger aLine = parser->line;
-	while ((parser->token != XS_TOKEN_EOF) && (parser->token != XS_TOKEN_RIGHT_BRACE)) {
+	while ((parser->token != XS_TOKEN_EOF)) {
 		if (parser->token == XS_TOKEN_EXPORT)
 			fxExport(parser);
 		else if (parser->token == XS_TOKEN_IMPORT) {
@@ -1061,9 +1061,38 @@ void fxSpecifiers(txParser* parser)
 
 void fxProgram(txParser* parser)
 {
-	txInteger aLine = parser->line;
-	fxBody(parser);
-	fxPushNodeStruct(parser, 1, XS_TOKEN_PROGRAM, aLine);
+	txInteger count = parser->nodeCount;
+	txInteger line = parser->line;
+	txNode* node;
+	while (parser->token != XS_TOKEN_EOF) {
+		fxStatement(parser, 1);
+		node = parser->root;
+		if (!node || !node->description || (node->description->token != XS_TOKEN_STATEMENT))
+			break;
+		node = ((txStatementNode*)node)->expression;
+		if (!node || !node->description || (node->description->token != XS_TOKEN_STRING))
+			break;
+		if (!(node->flags & mxStringEscapeFlag) && (c_strcmp(((txStringNode*)node)->value, "use strict") == 0)) {
+			if (!(parser->flags & mxStrictFlag)) {
+				parser->flags |= mxStrictFlag;
+				if (parser->token == XS_TOKEN_IDENTIFIER)
+					fxCheckStrictKeyword(parser);
+			}
+		}
+	}
+	while (parser->token != XS_TOKEN_EOF) {
+		fxStatement(parser, 1);
+	}
+	count = parser->nodeCount - count;
+	if (count > 1) {
+		fxPushNodeList(parser, count);
+		fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENTS, line);
+	}
+	else if (count == 0) {
+		fxPushNodeStruct(parser, 0, XS_TOKEN_UNDEFINED, line);
+		fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, line);
+	}
+	fxPushNodeStruct(parser, 1, XS_TOKEN_PROGRAM, line);
 	if (parser->flags & mxFieldFlag)
 		if (parser->flags & mxArgumentsFlag)
 			fxReportParserError(parser, "invalid arguments");

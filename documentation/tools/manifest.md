@@ -1,7 +1,7 @@
 # Manifest
 
 Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: December 9, 2020
+Revised: December 23, 2020
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -164,7 +164,9 @@ The `creation` object defines the creation parameters of the XS machine that wil
 	"main": "main",
 },
 ```
-	
+
+These values correspond to machine allocation values [described](../xs/XS%20in%20C.md#machine-allocation) in the XS in C documentation (the sole exception is the `main` property, which is the module specifier of the module loaded following the [set-up phase](../base/setup.md)). Take care when changing these values as configuring them improperly can result in an unstable or unusable system. Bigger values are not always better, especially on devices with limited resources.
+
 ***
 
 <a id="defines"></a>

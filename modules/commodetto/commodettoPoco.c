@@ -314,7 +314,8 @@ void xs_poco_clip(xsMachine *the)
 		y = (PocoCoordinate)xsmcToInteger(xsArg(1)) + poco->yOrigin;
 		w = (PocoDimension)xsmcToInteger(xsArg(2));
 		h = (PocoDimension)xsmcToInteger(xsArg(3));
-		PocoClipPush(poco, x, y, w, h);
+		if (PocoClipPush(poco, x, y, w, h))
+			xsmcSetTrue(xsResult);
 	}
 	else
 		PocoClipPop(poco);

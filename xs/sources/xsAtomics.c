@@ -22,24 +22,29 @@
 
 static txInteger fxCheckAtomicsIndex(txMachine* the, txInteger index, txInteger length);
 static txSlot* fxCheckAtomicsTypedArray(txMachine* the, txBoolean onlyInt32);
+static txSlot* fxCheckAtomicsArrayBuffer(txMachine* the, txSlot* slot, txBoolean onlyShared);
+static void* fxCheckAtomicsArrayBufferDetached(txMachine* the, txSlot* slot, txBoolean mutable);
 static txSlot* fxCheckSharedArrayBuffer(txMachine* the, txSlot* slot, txString which);
 static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 
 #define mxAtomicsHead0(TYPE,TO) \
 	TYPE result = 0; \
-	void* data = host->value.host.data; \
+	txBoolean lock = host->kind == XS_HOST_KIND; \
+	void* data = (lock) ? host->value.host.data : fxCheckAtomicsArrayBufferDetached(the, host, XS_IMMUTABLE); \
 	TYPE* address = (TYPE*)(((txByte*)data) + offset)
 
 #define mxAtomicsHead1(TYPE,TO) \
 	TYPE result = 0; \
 	TYPE value = (TYPE)TO(the, slot); \
-	void* data = host->value.host.data; \
+	txBoolean lock = host->kind == XS_HOST_KIND; \
+	void* data = (lock) ? host->value.host.data : fxCheckAtomicsArrayBufferDetached(the, host, XS_MUTABLE); \
 	TYPE* address = (TYPE*)(((txByte*)data) + offset)
 
 #define mxAtomicsHead2(TYPE,TO) \
 	TYPE result = (TYPE)TO(the, slot + 1); \
 	TYPE value = (TYPE)TO(the, slot); \
-	void* data = host->value.host.data; \
+	txBoolean lock = host->kind == XS_HOST_KIND; \
+	void* data = (lock) ? host->value.host.data : fxCheckAtomicsArrayBufferDetached(the, host, XS_MUTABLE); \
 	TYPE* address = (TYPE*)(((txByte*)data) + offset)
 
 #ifdef mxUseGCCAtomics
@@ -53,15 +58,15 @@ static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 	#define mxAtomicsSub() result = __atomic_fetch_sub(address, value, __ATOMIC_SEQ_CST)
 	#define mxAtomicsXor() result = __atomic_fetch_xor(address, value, __ATOMIC_SEQ_CST)
 #else
-	#define mxAtomicsCompareExchange() fxLockSharedChunk(data); if (*address == result) *address = value; else result = *address; fxUnlockSharedChunk(data)
-	#define mxAtomicsLoad() fxLockSharedChunk(data); result = *address;  fxUnlockSharedChunk(data)
-	#define mxAtomicsAdd() fxLockSharedChunk(data); result = *address; *address = result + value; fxUnlockSharedChunk(data)
-	#define mxAtomicsAnd() fxLockSharedChunk(data); result = *address; *address = result & value; fxUnlockSharedChunk(data)
-	#define mxAtomicsExchange() fxLockSharedChunk(data); result = *address; *address = value; fxUnlockSharedChunk(data)
-	#define mxAtomicsOr() fxLockSharedChunk(data); result = *address; *address = result | value; fxUnlockSharedChunk(data)
-	#define mxAtomicsStore() fxLockSharedChunk(data); *address = value; fxUnlockSharedChunk(data)
-	#define mxAtomicsSub() fxLockSharedChunk(data); result = *address; *address = result - value; fxUnlockSharedChunk(data)
-	#define mxAtomicsXor() fxLockSharedChunk(data); result = *address; *address = result ^ value; fxUnlockSharedChunk(data)
+	#define mxAtomicsCompareExchange() fxLockSharedChunk(data); if (*address == result) *address = value; else result = *address; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsLoad() if (lock) fxLockSharedChunk(data); result = *address;  if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsAdd() if (lock) fxLockSharedChunk(data); result = *address; *address = result + value; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsAnd() if (lock) fxLockSharedChunk(data); result = *address; *address = result & value; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsExchange() if (lock) fxLockSharedChunk(data); result = *address; *address = value; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsOr() if (lock) fxLockSharedChunk(data); result = *address; *address = result | value; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsStore() if (lock) fxLockSharedChunk(data); *address = value; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsSub() if (lock) fxLockSharedChunk(data); result = *address; *address = result - value; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsXor() if (lock) fxLockSharedChunk(data); result = *address; *address = result ^ value; if (lock) fxUnlockSharedChunk(data)
 #endif	
 
 #define mxAtomicsTail() \
@@ -87,11 +92,11 @@ static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 #define mxAtomicsTailWait() \
 	return (result != value) ? -1 : fxWaitSharedChunk(the, address, timeout)
 
-#define mxAtomicsDeclarations(onlyInt32) \
+#define mxAtomicsDeclarations(onlyInt32, onlyShared) \
 	txSlot* dispatch = fxCheckAtomicsTypedArray(the, onlyInt32); \
 	txSlot* view = dispatch->next; \
 	txSlot* buffer = view->next; \
-	txSlot* host = fxCheckSharedArrayBuffer(the, buffer, "typedArray.buffer"); \
+	txSlot* host = fxCheckAtomicsArrayBuffer(the, buffer, onlyShared); \
 	txU2 shift = dispatch->value.typedArray.dispatch->shift; \
 	txInteger index = fxCheckAtomicsIndex(the, 1, view->value.dataView.size >> shift); \
 	txInteger offset = view->value.dataView.offset + (index << shift)
@@ -215,6 +220,33 @@ void fxBuildAtomics(txMachine* the)
 	mxPull(mxAtomicsObject);
 }
 
+txSlot* fxCheckAtomicsArrayBuffer(txMachine* the, txSlot* slot, txBoolean onlyShared)
+{
+	if ((!slot) || (!mxIsReference(slot)))
+		mxTypeError("typedArray.buffer is no object");
+	slot = slot->value.reference->next;
+	if (slot && (slot->kind == XS_HOST_KIND) && (slot->value.host.variant.destructor == fxReleaseSharedChunk))
+		return slot;
+	if (onlyShared)
+		mxTypeError("typedArray.buffer is no SharedArrayBuffer");
+	if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_ARRAY_BUFFER_KIND)) {
+		if (slot->value.arrayBuffer.address == C_NULL)
+			mxTypeError("typedArray.buffer is detached");
+		return slot;
+	}
+	mxTypeError("typedArray.buffer is no SharedArrayBuffer, no ArrayBuffer");
+	return C_NULL;
+}
+
+void* fxCheckAtomicsArrayBufferDetached(txMachine* the, txSlot* slot, txBoolean mutable)
+{
+	if (slot->value.arrayBuffer.address == C_NULL)
+		mxTypeError("typedArray.buffer is detached");
+	if (mutable && (slot->flag & XS_MARK_FLAG))
+		mxTypeError("typedArray.buffer is read-only");
+	return slot->value.arrayBuffer.address;
+}
+
 txInteger fxCheckAtomicsIndex(txMachine* the, txInteger i, txInteger length)
 {
 	txNumber index = (mxArgc > i) ? c_trunc(fxToNumber(the, mxArgv(i))) : C_NAN; 
@@ -276,7 +308,7 @@ void fxPushAtomicsValue(txMachine* the, int i, txID id)
 		txNumber value;
 		fxNumberCoerce(the, slot);
 		value = c_trunc(slot->value.number); 
-		if (c_isnan(value))
+		if (c_isnan(value) || (value == -0))
 			value = 0;
 		slot->value.number = value;
 	}
@@ -343,7 +375,7 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 
 void fx_Atomics_add(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->add)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
@@ -351,7 +383,7 @@ void fx_Atomics_add(txMachine* the)
 
 void fx_Atomics_and(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->and)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
@@ -359,7 +391,7 @@ void fx_Atomics_and(txMachine* the)
 
 void fx_Atomics_compareExchange(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	fxPushAtomicsValue(the, 3, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->compareExchange)(the, host, offset, the->stack, 0);
@@ -369,7 +401,7 @@ void fx_Atomics_compareExchange(txMachine* the)
 
 void fx_Atomics_exchange(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->exchange)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
@@ -384,13 +416,13 @@ void fx_Atomics_isLockFree(txMachine* the)
 
 void fx_Atomics_load(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	(*dispatch->value.typedArray.atomics->load)(the, host, offset, mxResult, 0);
 }
 
 void fx_Atomics_or(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->or)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
@@ -398,17 +430,22 @@ void fx_Atomics_or(txMachine* the)
 
 void fx_Atomics_notify(txMachine* the)
 {
-	mxAtomicsDeclarations(1);
+	mxAtomicsDeclarations(1, 0);
 	txInteger count = ((mxArgc > 2) && !mxIsUndefined(mxArgv(2))) ? fxToInteger(the, mxArgv(2)) : 20;
 	if (count < 0)
 		count = 0;
-	mxResult->value.integer = fxNotifySharedChunk(the, host->value.host.data, offset, count);
+	if (host->kind == XS_ARRAY_BUFFER_KIND) {
+		mxResult->value.integer = 0;
+	}
+	else {
+		mxResult->value.integer = fxNotifySharedChunk(the, host->value.host.data, offset, count);
+	}
 	mxResult->kind = XS_INTEGER_KIND;
 }
 
 void fx_Atomics_store(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	*mxResult = *the->stack;
 	(*dispatch->value.typedArray.atomics->store)(the, host, offset, the->stack, 0);
@@ -417,7 +454,7 @@ void fx_Atomics_store(txMachine* the)
 
 void fx_Atomics_sub(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->sub)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
@@ -425,7 +462,7 @@ void fx_Atomics_sub(txMachine* the)
 
 void fx_Atomics_wait(txMachine* the)
 {
-	mxAtomicsDeclarations(1);
+	mxAtomicsDeclarations(1, 1);
 	txNumber timeout;
 	txInteger result;
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
@@ -448,7 +485,7 @@ void fx_Atomics_wait(txMachine* the)
 
 void fx_Atomics_xor(txMachine* the)
 {
-	mxAtomicsDeclarations(0);
+	mxAtomicsDeclarations(0, 0);
 	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
 	(*dispatch->value.typedArray.atomics->xor)(the, host, offset, the->stack, 0);
 	mxPullSlot(mxResult);
@@ -642,6 +679,9 @@ void* fxRetainSharedChunk(void* data)
 	txS4 result = 0;
 	txS4 value = 1;
 	txS4* address = &(chunk->usage);
+#ifndef mxUseGCCAtomics
+	txBoolean lock = true;
+#endif
 	mxAtomicsAdd();
 	if (result == 0)
 		return C_NULL;
@@ -654,6 +694,9 @@ void fxReleaseSharedChunk(void* data)
 	txS4 result = 0;
 	txS4 value = 1;
 	txS4* address = &(chunk->usage);
+#ifndef mxUseGCCAtomics
+	txBoolean lock = true;
+#endif
 	mxAtomicsSub();
 	if (result == 1) {
 		c_free(chunk);

@@ -38,10 +38,13 @@
 			]
 		},
 		"ft6206": {
-			"threshold": 36,
-			"dy": 0,
+			"threshold": 20,
 			"flipX": false,
-			"flipY": false
+			"flipY": false,
+			"raw_left": 10,
+			"raw_right": 232,
+			"raw_top": 8,
+			"raw_bottom": 315
 		}
 	}
 }
