@@ -1037,6 +1037,9 @@ void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName)
 	else if (strcmp(theName, "property") == 0) {
 		(void)xsCall1(self->listSlot, xsID_push, self->itemSlot);
 	}
+	else if (strcmp(theName, "eval") == 0) {
+		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+	}
 }
 
 void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
@@ -1112,6 +1115,12 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 		xsVar(0) = xsGet(self->itemSlot, xsID_path);
 		(void)xsCall1(self->thisSlot, xsID_onImport, xsVar(0));
 	}
+	else if (strcmp(theName, "eval") == 0) {
+		self->logging = 0;
+		xsVar(0) = xsGet(self->itemSlot, xsID_path);
+		xsResult = xsGet(self->itemSlot, xsID_data);
+		(void)xsCall2(self->thisSlot, xsID_onEval, xsVar(0), xsResult);
+	}
 	self->itemSlot = xsUndefined;
 }
 
@@ -1165,6 +1174,9 @@ void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName)
 	else if (strcmp(theName, "property") == 0) {
 		self->column++;
 		xsDefine(self->itemSlot, xsID_column, xsInteger(self->column), xsDefault);
+	}
+	else if (strcmp(theName, "eval") == 0) {
+		self->logging = 1;
 	}
 }
 

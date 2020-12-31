@@ -1,0 +1,30 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/files/preference/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		],
+		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit"
+	},
+	"preload": [
+		"commodetto/*"
+	],
+	"resources":{
+		"*-mask": [
+			"./assets/crosshair",
+			"./assets/success"
+		]
+	},
+	"defines": {
+		"ft81x": {
+			"raw": true
+		}
+	}
+}

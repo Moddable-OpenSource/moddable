@@ -821,13 +821,9 @@ void fx_Proxy(txMachine* the)
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
 		mxTypeError("target is no object");
 	target = mxArgv(0)->value.reference;
-	if ((target->next) && (target->next->kind == XS_PROXY_KIND) && !target->next->value.proxy.handler)
-		mxTypeError("target is a revoked proxy");
 	if ((mxArgc < 2) || (mxArgv(1)->kind != XS_REFERENCE_KIND))
 		mxTypeError("handler is no object");
 	handler = mxArgv(1)->value.reference;
-	if ((handler->next) && (handler->next->kind == XS_PROXY_KIND) && !handler->next->value.proxy.handler)
-		mxTypeError("handler is a revoked proxy");
 	instance->flag |= target->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
 	proxy->value.proxy.target = target;
 	proxy->value.proxy.handler = handler;
@@ -843,13 +839,9 @@ void fx_Proxy_revocable(txMachine* the)
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
 		mxTypeError("target is no object");
 	target = mxArgv(0)->value.reference;
-	if ((target->next) && (target->next->kind == XS_PROXY_KIND) && !target->next->value.proxy.handler)
-		mxTypeError("target is a revoked proxy");
 	if ((mxArgc < 2) || (mxArgv(1)->kind != XS_REFERENCE_KIND))
 		mxTypeError("handler is no object");
 	handler = mxArgv(1)->value.reference;
-	if ((handler->next) && (handler->next->kind == XS_PROXY_KIND) && !handler->next->value.proxy.handler)
-		mxTypeError("handler is a revoked proxy");
 		
 	mxPush(mxObjectPrototype);
 	property = fxLastProperty(the, fxNewObjectInstance(the));

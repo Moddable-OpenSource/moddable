@@ -2288,7 +2288,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_ANY);
 			mxRestoreState;
-			if (slot->kind < 0)
+			if (slot && (slot->kind < 0))
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", (txID)offset);
 			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_SUPER_AT)

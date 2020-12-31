@@ -86,7 +86,7 @@ const txTypeDispatch ICACHE_FLASH_ATTR gxTypeDispatches[mxTypeArrayCount] = {
 	{ 1, 0, fxUint8Getter, fxUint8Setter, fxUintCoerce, fxUint8Compare, _getUint8, _setUint8, _Uint8Array },
 	{ 2, 1, fxUint16Getter, fxUint16Setter, fxUintCoerce, fxUint16Compare, _getUint16, _setUint16, _Uint16Array },
 	{ 4, 2, fxUint32Getter, fxUint32Setter, fxUintCoerce, fxUint32Compare, _getUint32, _setUint32, _Uint32Array },
-	{ 1, 0, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }
+	{ 1, 0, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8, _setUint8, _Uint8ClampedArray }
 };
 
 const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {

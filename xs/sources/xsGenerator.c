@@ -54,6 +54,8 @@ static void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status
 void fxBuildGenerator(txMachine* the)
 {
 	txSlot* slot;
+	txSlot* property;
+
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Generator_prototype_next), 1, mxID(_next), XS_DONT_ENUM_FLAG);
@@ -61,19 +63,21 @@ void fxBuildGenerator(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Generator_prototype_throw), 1, mxID(_throw), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Generator", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxGeneratorPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructor(the, mxCallback(fx_Generator), 1, XS_NO_ID));
+	the->stack++;
+	
+	mxPush(mxFunctionPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextSlotProperty(the, slot, &mxGeneratorPrototype, mxID(_prototype), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	property = mxBehaviorSetProperty(the, mxGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->kind = the->stack->kind;
+	property->value = the->stack->value;
 	slot = fxNextStringXProperty(the, slot, "GeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxGeneratorFunctionPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_GeneratorFunction), 1, mxID(_GeneratorFunction));
-	slot->value.instance.prototype = mxFunctionConstructor.value.reference;
-	the->stack++;
-	
-	slot = mxBehaviorGetProperty(the, mxGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-	slot->flag |= XS_DONT_SET_FLAG;
 	slot = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 	slot->flag |= XS_DONT_SET_FLAG;
-	slot = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_prototype), XS_NO_ID, XS_OWN);
-	slot->flag &= ~XS_DONT_DELETE_FLAG;
+	the->stack++;
 
 	mxPush(mxObjectPrototype);
 	slot = fxNewObjectInstance(the);
@@ -87,19 +91,21 @@ void fxBuildGenerator(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_AsyncGenerator_prototype_throw), 1, mxID(_throw), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "AsyncGenerator", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxAsyncGeneratorPrototype = *the->stack;
-	slot = fxLastProperty(the, fxNewHostConstructor(the, mxCallback(fx_AsyncGenerator), 1, XS_NO_ID));
+	the->stack++;
+
+	mxPush(mxFunctionPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextSlotProperty(the, slot, &mxAsyncGeneratorPrototype, mxID(_prototype), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	property = mxBehaviorSetProperty(the, mxAsyncGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->kind = the->stack->kind;
+	property->value = the->stack->value;
 	slot = fxNextStringXProperty(the, slot, "AsyncGeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxAsyncGeneratorFunctionPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncGeneratorFunction), 1, mxID(_AsyncGeneratorFunction));
-	slot->value.instance.prototype = mxFunctionConstructor.value.reference;
-	the->stack++;
-
-	slot = mxBehaviorGetProperty(the, mxAsyncGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
-	slot->flag |= XS_DONT_SET_FLAG;
 	slot = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
 	slot->flag |= XS_DONT_SET_FLAG;
-	slot = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_prototype), XS_NO_ID, XS_OWN);
-	slot->flag &= ~XS_DONT_DELETE_FLAG;
+	the->stack++;
 	
 	mxPush(mxAsyncIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));

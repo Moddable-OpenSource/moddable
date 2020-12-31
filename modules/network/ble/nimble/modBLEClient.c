@@ -697,8 +697,6 @@ static void onConnected(struct ble_gap_conn_desc *desc)
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsmcSetInteger(xsVar(1), desc->sec_state.bonded);
-	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 }

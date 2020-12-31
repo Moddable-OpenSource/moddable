@@ -1,7 +1,7 @@
 # Mods - User Installed Extensions
 
 Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: August 11, 2020	
+Revised: December 31, 2020	
 
 Mods are scripts that users can install on their IoT products to add new features and change existing behaviors. A mod is one or more JavaScript modules together with assets like images, audio, and certificates. A mod augments the software of a product without changing the factory installed firmware. To minimize safety, security, and privacy risks, products may sandbox mods using Secure EMCAScript. Mods are a new core feature of the Moddable SDK supported by the XS JavaScript engine.
 
@@ -104,7 +104,7 @@ You can use `mcrun` to build and install the mod on a microcontroller by specify
 mcrun -d -m -p esp32/moddable_two
 ```
 
-For `mcrun` to install the mod, a mod host must already be installed on the device. The mod host must be a debug build because `mcrun` uses the xsbug debugger protocol to install the mod. (Note that mods can run on a release build but the installation method used by `mcrun` depends on capabilities only present in a debug build.)
+For `mcrun` to install the mod, a debug build of a mod host must first be installed on the device. The mod host must be a debug build because `mcrun` installs the mod using the xsbug debugger protocol. Mods can also run on a release build of a mod host but must be installed in some other way.
 
 Once the mod is installed, `mcrun` automatically restarts the microcontroller and connects to xsbug to debug the mod.
 

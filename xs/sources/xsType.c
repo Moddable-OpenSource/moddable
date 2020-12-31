@@ -255,8 +255,7 @@ void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 		fxGetID(the, mxID(_Symbol_toPrimitive));
 		if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 			mxPop();
-			mxPushSlot(&mxObjectPrototype);
-			fxGetID(the, mxID(_Symbol_toPrimitive));
+			mxPush(mxOrdinaryToPrimitiveFunction);
 		}
 		mxCall();
 		if (theHint == XS_NO_HINT)
@@ -829,6 +828,62 @@ txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 		instance->value.instance.prototype = prototype;
 	}
 	return 1;
+}
+
+void fxOrdinaryToPrimitive(txMachine* the)
+{
+	if (mxIsReference(mxThis)) {
+		txInteger hint = XS_NO_HINT;
+		txInteger ids[2], i;
+		if (mxArgc > 0) {
+			txSlot* slot = mxArgv(0);
+			if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
+				if (!c_strcmp(slot->value.string, "default"))
+					hint = XS_NUMBER_HINT;
+				else if (!c_strcmp(slot->value.string, "number"))
+					hint = XS_NUMBER_HINT;
+				else if (!c_strcmp(slot->value.string, "string"))
+					hint = XS_STRING_HINT;
+			}
+		}
+		if (hint == XS_STRING_HINT) {
+		 	ids[0] = mxID(_toString);
+		 	ids[1] = mxID(_valueOf);
+		}
+		else if (hint == XS_NUMBER_HINT) {
+		 	ids[0] = mxID(_valueOf);
+		 	ids[1] = mxID(_toString);
+		}
+ 		else
+     		mxTypeError("invalid hint");
+		for (i = 0; i < 2; i++) {
+			mxPushSlot(mxThis);
+			mxPushSlot(mxThis);
+			fxGetID(the, ids[i]);
+			if (fxIsCallable(the, the->stack)) {
+				mxCall();
+				mxRunCount(0);
+				if (mxIsReference(the->stack))
+					mxPop();
+				else {
+					mxPullSlot(mxResult);
+					return;
+      			}
+			}
+			else {
+				mxPop();
+				mxPop();
+			}
+		}
+		if (hint == XS_STRING_HINT)
+            mxTypeError("cannot coerce object to string");
+        else
+            mxTypeError("cannot coerce object to number");
+	}
+	else {
+		mxResult->kind = mxThis->kind;
+		mxResult->value = mxThis->value;
+	}
 }
 
 void fx_species_get(txMachine* the)

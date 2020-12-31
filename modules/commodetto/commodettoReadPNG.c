@@ -263,6 +263,7 @@ void xs_PNG_constructor(xsMachine *the)
 
 				png->scanLine = png->scanBuffers;
 				png->prevScanLine = png->scanBuffers + (png->scanLineByteCount + kScanLineSlop);
+				c_memset(png->prevScanLine, 0, png->scanLineByteCount + kScanLineSlop);
 #if 4 == kScanLineSlop
 				*(uint32_t *)png->scanLine = 0;
 				*(uint32_t *)png->prevScanLine = 0;

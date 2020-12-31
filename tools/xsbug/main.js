@@ -169,7 +169,17 @@ class ApplicationBehavior extends DebugBehavior {
 		this.path = undefined;
 		this.state = undefined;
 		
+		this.evalDirectory = system.buildPath(system.localDirectory, "eval");
+		system.ensureDirectory(this.evalDirectory);
 		this.readPreferences();
+		if (this.path == undefined) {
+			let items = this.history.items;
+			if (items.length) {
+				let item = items.shift();
+				this.path = item.path;
+				this.state = item.state;
+			}
+		}
 		application.add(new MainContainer(this));
 		this.doOpenView();
 			
@@ -239,6 +249,14 @@ class ApplicationBehavior extends DebugBehavior {
 		this.stop();
 		application.distribute("onStateChanging", this.path);
 		this.writePreferences();
+		
+		let iterator = new system.DirectoryIterator(this.evalDirectory);
+		let info = iterator.next();
+		while (info) {
+			system.deleteFile(info.path);
+			info = iterator.next();
+		}
+		
 		application.quit();
 	}
 /* APP MENU */
@@ -288,7 +306,7 @@ class ApplicationBehavior extends DebugBehavior {
 		if (!home) {
 			home = new Home(path);
 			items.push(home);
-			items.sort((a, b) => a.name.compare(b.name));
+			items.sort((a, b) => a.name.localeCompare(b.name));
 			application.distribute("onHomesChanged");
 		}
 		return home;
@@ -460,7 +478,8 @@ class ApplicationBehavior extends DebugBehavior {
 				if ("mappings" in preferences)
 					this.mappings = preferences.mappings;
 				if ("path" in preferences)
-					this.path = preferences.path;
+					if (system.fileExists(preferences.path))
+						this.path = preferences.path;
 				if ("port" in preferences)
 					this.port = preferences.port;
 				if ("state" in preferences)

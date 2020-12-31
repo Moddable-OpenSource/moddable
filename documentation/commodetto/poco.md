@@ -503,6 +503,8 @@ poco.end();
 
 If the clip stack overflows or underflows, an exception is thrown from `end`. The clip stack must be empty when `end` is called or an exception is thrown. 
 
+When calling `clip` with four arguments, the return value is `true` if the resulting area contains one or more pixels and `undefined` if the clip area is empty. 
+
 > **Note:** `clip` and `origin` share the same stack, and so must be popped in the order they were pushed.
 
 ***

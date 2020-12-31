@@ -109,9 +109,8 @@ export class BLEClient @ "xs_ble_client_destructor" {
 			case "onConnected": {
 				const address = new Bytes(params.address);
 				const addressType = params.addressType;
-				const bonded = params.bonded;
 				const ble = this;
-				const client = new Client({ address, addressType, connection:params.connection, ble, bonded });
+				const client = new Client({ address, addressType, connection:params.connection, ble });
 				const connection = new Connection({ address, addressType, client, ble });
 				this.onConnected(client);
 				break;

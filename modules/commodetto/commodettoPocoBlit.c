@@ -3525,7 +3525,7 @@ int PocoDrawingEndFrameBuffer(Poco poco)
 }
 #endif
 
-void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
+int PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
 	PocoRectangle clip;
 	PocoCoordinate xMax, yMax;
@@ -3533,7 +3533,7 @@ void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w
 	if (poco->pixelsLength < (int)(sizeof(PocoRectangleRecord) * (poco->stackDepth + 1))) {
 		poco->flags |= kPocoFlagErrorStackProblem;
 		pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->displayListEnd - (char *)poco->displayList);
-		return;
+		return 0;
 	}
 
 	rotateCoordinatesAndDimensions(poco->width, poco->height, x, y, w, h);
@@ -3570,7 +3570,7 @@ void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w
 		poco->h = 0;
 		poco->xMax = 0;
 		poco->yMax = 0;
-		return;
+		return 0;
 	}
 
 	// apply new clip
@@ -3580,6 +3580,8 @@ void PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w
 	poco->h = yMax - y;
 	poco->xMax = xMax;
 	poco->yMax = yMax;
+
+	return 1;
 }
 
 void PocoClipPop(Poco poco)

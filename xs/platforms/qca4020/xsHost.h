@@ -54,6 +54,8 @@
 #include "stdint.h"
 #include "stddef.h"
 #include "malloc.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #define QAPI_NET_ENABLE_BSD_COMPATIBILITY
 #include "qapi_socket.h"	// for ERRNO defines

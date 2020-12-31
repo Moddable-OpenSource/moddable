@@ -17,6 +17,9 @@
 		],
 		"pins/*": [
 			"$(TYPINGS)/pins/*"
+		],
+		"piu/*": [
+			"$(TYPINGS)/piu/*"
 		]
 	}
 }

@@ -688,7 +688,7 @@ void fxFunctionNodeHoist(void* it, void* param)
 		fxScopeAddDefineNode(hoister->functionScope, node);
 	}
 	fxNodeDispatchHoist(self->params, param);
-	if (self->flags & (mxArgumentsFlag | mxEvalFlag)) {
+	if ((self->flags & (mxArgumentsFlag | mxEvalFlag)) && !(self->flags & mxArrowFlag)) {
 		txDeclareNode* declaration = fxDeclareNodeNew(hoister->parser, XS_TOKEN_VAR, hoister->parser->argumentsSymbol);
 		fxScopeAddDeclareNode(hoister->functionScope, declaration);
 	}	
@@ -762,13 +762,9 @@ void fxModuleNodeHoist(void* it, void* param)
 void fxParamsBindingNodeHoist(void* it, void* param)
 {
 	txParamsNode* self = it;
-	txHoister* hoister = param;
-	txNode* environmentNode = hoister->environmentNode;
 	txNode* item = self->items->first;
 	while (item) {
-		hoister->environmentNode = item;
 		fxNodeDispatchHoist(item, param);
-		hoister->environmentNode = environmentNode;
 		item = item->next;
 	}
 }

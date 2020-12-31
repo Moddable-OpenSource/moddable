@@ -19,25 +19,29 @@
 */
 
 declare module "timer" {
-  type TimerID = number;
-  type TimerCallback = (id: TimerID) => void;
-  var Timer: {
-    set: (
+  type TimerCallback = (timer?: Timer) => void;
+
+  class Timer {
+    private constructor()
+    static set: (
       callback: TimerCallback,
       interval?: number,
-      repeat?: boolean
-    ) => TimerID,
-    repeat: (
+      repeat?: number
+    ) => Timer
+    static repeat: (
       callback: TimerCallback,
+      interval: number,
+    ) => Timer
+    static schedule: (
+      timer: Timer,
       interval?: number,
-    ) => TimerID
-    schedule: (
-      id: TimerID,
-      interval?: number,
-      repeat?: boolean
+      repeat?: number
     ) => void;
-    clear: (id: TimerID) => void;
-    delay: (ms: number) => void;
+    static clear: (timer: Timer) => void;
+    static delay: (milliseconds: number) => void;
+
+    private brand: boolean;
   }
+
   export {Timer as default};
 }

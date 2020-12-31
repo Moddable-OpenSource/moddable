@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2020 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,12 +18,8 @@
 *
 */
 
-declare module "Resource" {
-  class Resource implements HostBuffer {
-    constructor(path: string);
-    slice(begin: number, end?: number): ArrayBuffer;
-    static exists(path: string): boolean;
-  }
+import Bitmap from "commodetto/Bitmap"
 
-  export {Resource as default};
+declare module "commodetto/parseRLE" {
+  export default function(bmp: HostBuffer): Bitmap
 }

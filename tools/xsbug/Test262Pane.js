@@ -624,14 +624,14 @@ class Test262FolderTableBehavior extends FolderTableBehavior {
 			}
 			info = iterator.next();
 		}
-		currents.sort((a, b) => a.name.compare(b.name));
+		currents.sort((a, b) => a.name.localeCompare(b.name));
 		if (formers) {
 			let i = 0, j = 0;
 			let c = formers.length, d = currents.length;
 			while ((i < c) && (j < d)) {
 				let former = formers[i];
 				let current = currents[j];
-				let order = former.name.compare(current.name);
+				let order = former.name.localeCompare(current.name);
 				if (order < 0)
 					i++;
 				else if (order > 0)

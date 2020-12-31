@@ -46,6 +46,10 @@ void fxBuildObject(txMachine* the)
 	fxNewHostFunction(the, mxCallback(fx_Object_copy), 2, XS_NO_ID);
 	mxCopyObjectFunction = *the->stack;
 	the->stack++;
+	fxNewHostFunction(the, mxCallback(fxOrdinaryToPrimitive), 2, XS_NO_ID);
+	mxOrdinaryToPrimitiveFunction = *the->stack;
+	the->stack++;
+	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, the->stack->value.reference);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Object_prototype___proto__get), mxCallback(fx_Object_prototype___proto__set), mxID(___proto__), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
@@ -56,9 +60,7 @@ void fxBuildObject(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype___lookupSetter__), 1, mxID(___lookupSetter__), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_isPrototypeOf), 1, mxID(_isPrototypeOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_propertyIsEnumerable), 1, mxID(_propertyIsEnumerable), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_propertyIsScriptable), 1, mxID(_propertyIsScriptable), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_toLocaleString), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_toPrimitive), 1, mxID(_Symbol_toPrimitive), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Object), 1, mxID(_Object));
@@ -285,12 +287,6 @@ void fx_Object_prototype_propertyIsEnumerable(txMachine* the)
 	mxPop();
 }
 
-void fx_Object_prototype_propertyIsScriptable(txMachine* the)
-{
-	mxResult->kind = XS_BOOLEAN_KIND;
-	mxResult->value.boolean = 1;
-}
-
 void fx_Object_prototype_toLocaleString(txMachine* the)
 {
 	mxPushSlot(mxThis);
@@ -299,62 +295,6 @@ void fx_Object_prototype_toLocaleString(txMachine* the)
 	mxCall();
 	mxRunCount(0);
 	mxPullSlot(mxResult);
-}
-
-void fx_Object_prototype_toPrimitive(txMachine* the)
-{
-	if (mxIsReference(mxThis)) {
-		txInteger hint = XS_NO_HINT;
-		txInteger ids[2], i;
-		if (mxArgc > 0) {
-			txSlot* slot = mxArgv(0);
-			if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
-				if (!c_strcmp(slot->value.string, "default"))
-					hint = XS_NUMBER_HINT;
-				else if (!c_strcmp(slot->value.string, "number"))
-					hint = XS_NUMBER_HINT;
-				else if (!c_strcmp(slot->value.string, "string"))
-					hint = XS_STRING_HINT;
-			}
-		}
-		if (hint == XS_STRING_HINT) {
-		 	ids[0] = mxID(_toString);
-		 	ids[1] = mxID(_valueOf);
-		}
-		else if (hint == XS_NUMBER_HINT) {
-		 	ids[0] = mxID(_valueOf);
-		 	ids[1] = mxID(_toString);
-		}
- 		else
-     		mxTypeError("invalid hint");
-		for (i = 0; i < 2; i++) {
-			mxPushSlot(mxThis);
-			mxPushSlot(mxThis);
-			fxGetID(the, ids[i]);
-			if (fxIsCallable(the, the->stack)) {
-				mxCall();
-				mxRunCount(0);
-				if (mxIsReference(the->stack))
-					mxPop();
-				else {
-					mxPullSlot(mxResult);
-					return;
-      			}
-			}
-			else {
-				mxPop();
-				mxPop();
-			}
-		}
-		if (hint == XS_STRING_HINT)
-            mxTypeError("cannot coerce object to string");
-        else
-            mxTypeError("cannot coerce object to number");
-	}
-	else {
-		mxResult->kind = mxThis->kind;
-		mxResult->value = mxThis->value;
-	}
 }
 
 void fx_Object_prototype_toString(txMachine* the)

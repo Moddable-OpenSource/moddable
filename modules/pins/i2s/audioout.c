@@ -157,6 +157,7 @@ typedef struct {
 	uint8_t					bytesPerFrame;
 	uint8_t					applyVolume;		// one or more active streams is not at 1.0 volume
 	uint8_t					built;
+	int8_t					useCount;
 
 	int						activeStreamCount;
 	modAudioOutStream		activeStream[MODDEF_AUDIOOUT_STREAMS];
@@ -368,6 +369,7 @@ void xs_audioout(xsMachine *the)
 
 	out->the = the;
 	out->obj = xsThis;
+	out->useCount = 1;
 
 	out->streamCount = streamCount;
 	out->sampleRate = sampleRate;
@@ -459,14 +461,30 @@ void xs_audioout_build(xsMachine *the)
 	out->built = 1;
 }
 
-void xs_audioout_close(xsMachine *the)
+#define upUseCount(out) (out)->useCount += 1
+
+static void downUseCount(modAudioOut out)
 {
-	modAudioOut out = xsmcGetHostData(xsThis);
+	xsMachine *the = out->the;
+
+	out->useCount -= 1;
+	if (out->useCount > 0)
+		return;
+
+	xsmcSetHostData(out->obj, NULL);
 
 	if (out->built)
 		xsForget(out->obj);
+
 	xs_audioout_destructor(out);
-	xsmcSetHostData(xsThis, NULL);
+}
+
+void xs_audioout_close(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostData(xsThis);
+	if (!out) return;
+
+	downUseCount(out);
 }
 
 void xs_audioout_start(xsMachine *the)
@@ -773,6 +791,8 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 	xsBeginHost(out->the);
 	xsmcVars(1);
 
+	upUseCount(out);
+
 	while (out->pendingCallbackCount) {
 		int id;
 
@@ -785,10 +805,12 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 		pthread_mutex_unlock(&out->mutex);
 
 		xsmcSetInteger(xsVar(0), id);
-		xsCall1(out->obj, xsID_callback, xsVar(0));		//@@ unsafe to close inside callback
+		xsCall1(out->obj, xsID_callback, xsVar(0));
 	}
 
 	xsEndHost(out->the);
+
+	downUseCount(out);
 }
 
 // note: queueCallback relies on caller to lock mutex
@@ -1257,6 +1279,8 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 	xsBeginHost(out->the);
 	xsmcVars(1);
 
+	upUseCount(out);
+
 	while (out->pendingCallbackCount) {
 		int id;
 
@@ -1271,10 +1295,12 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 		doUnlock(out);
 
 		xsmcSetInteger(xsVar(0), id);
-		xsCall1(out->obj, xsID_callback, xsVar(0));		//@@ unsafe to close inside callback
+		xsCall1(out->obj, xsID_callback, xsVar(0));
 	}
 
 	xsEndHost(out->the);
+
+	downUseCount(out);
 }
 
 // note: queueCallback relies on caller to lock mutex

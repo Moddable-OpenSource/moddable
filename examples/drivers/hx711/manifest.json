@@ -1,0 +1,31 @@
+{
+  "include": [
+    "$(MODDABLE)/examples/manifest_base.json",
+    "$(MODDABLE)/examples/manifest_piu.json",
+    "$(MODDABLE)/modules/drivers/hx711/manifest.json"
+  ],
+	"resources":{
+		"*-alpha": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-16",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-24"
+		]
+	},
+  "modules": {
+    "*": ["./main"]
+  },
+  "platforms": {
+    "esp32/m5stick_c": {
+      "config": {
+        "rotation": 270,
+        "dat": 33,
+        "clk": 32
+      }
+    },
+    "esp32/m5stack": {
+      "config": {
+        "dat": 36,
+        "clk": 26
+      }
+    }
+  }
+}
