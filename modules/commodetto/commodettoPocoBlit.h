@@ -306,6 +306,32 @@ int PocoNextFromUTF8(uint8_t **src);
 	#error must define kPocoRotation to 0, 90, 180, or 270
 #endif
 
+#define doPocoBlitterClip(x, y, w, h, xMax, yMax) \
+	xMax = x + w;				\
+	yMax = y + h; 				\
+								\
+	if (x < poco->x)			\
+		x = poco->x;			\
+								\
+	if (xMax > poco->xMax)		\
+		xMax = poco->xMax;		\
+								\
+	if (x >= xMax)				\
+		return;					\
+								\
+	w = xMax - x;				\
+								\
+	if (y < poco->y)			\
+		y = poco->y;			\
+								\
+	if (yMax > poco->yMax)		\
+		yMax = poco->yMax;		\
+								\
+	if (y >= yMax)				\
+		return;					\
+								\
+	h = yMax - y
+
 #ifdef __cplusplus
 }
 #endif
