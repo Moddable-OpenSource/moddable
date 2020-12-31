@@ -27,6 +27,10 @@ declare module "worker" {
 		postMessage(message: any): void;
 	}
 
+	export class SharedWorker {
+		constructor(module: string, options?: object)
+	}
+
 	interface Self {
 		onmessage(message: any): void;
 		postMessage(message: any): void;
