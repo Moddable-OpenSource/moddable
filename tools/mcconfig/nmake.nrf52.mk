@@ -210,6 +210,7 @@ XS_INCLUDES = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\nrf52 \
+	-I$(XS_DIR)\..\modules\files\preference \
 	-I$(XS_DIR)\..\modules\base\instrumentation \
 	-I$(XS_DIR)\..\modules\base\timer \
 	-I$(BUILD_DIR)\devices\nrf52 \

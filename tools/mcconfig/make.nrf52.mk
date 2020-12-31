@@ -146,6 +146,7 @@ INC_DIRS = \
 	$(NRF52_GCC_ROOT)/arm-none-eabi/include/machine \
 	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(NRF52_GNU_VERSION)/include \
 	$(NRF52_GCC_ROOT)/lib/gcc/arm-none-eabi/$(NRF52_GNU_VERSION)/include-fixed \
+	$(XS_DIR)/../modules/files/preference \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
 	$(BUILD_DIR)/devices/nrf52 \
