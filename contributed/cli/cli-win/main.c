@@ -43,7 +43,7 @@ unsigned int messagePumpThreadId = 0;       // thread ID of the thread running t
 #define WM_APP_INSTRUMENTATION (WM_APP + 1) // ID of our private instrumentation message
 
 static VOID CALLBACK sendInstrumentationMessage(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    PostMessage(((txMachine *) screen.machine)->window, WM_APP_INSTRUMENTATION, 0, 0);
+    PostMessage(NULL, WM_APP_INSTRUMENTATION, 0, 0);
 }
 #endif
 
@@ -100,11 +100,11 @@ void messagePump(char *pathToMod) {
 
     // set up a timer for the instrumentation
 #ifdef mxInstrument
-    SetTimer(((txMachine *) screen.machine)->window, 1, INSTRUMENTATION_FREQUENCY, sendInstrumentationMessage);
+    SetTimer(NULL, 1, INSTRUMENTATION_FREQUENCY, sendInstrumentationMessage);
 #endif
 
     // process the windows message loop until terminated
-    while( GetMessage(&msg, ((txMachine *) screen.machine)->window, 0, 0) > 0 ) {
+    while( GetMessage(&msg, NULL, 0, 0) > 0 ) {
 #ifdef mxInstrument
         if (msg.message == WM_APP_INSTRUMENTATION) {
             // make sure we don't issue instrumentation more often than once/INSTRUMENTATION_FREQUENCY - if 
@@ -134,17 +134,16 @@ void messagePump(char *pathToMod) {
         // create workers on every loop), the timer gets starved because Windows does not process timer
         // events unless the queue is empty.  This will ensure that timers continue to operate even
         // when the loop is busy
-        while (PeekMessage(&msg, ((txMachine *) screen.machine)->window, WM_TIMER, WM_TIMER, PM_REMOVE)) {
+        while (PeekMessage(&msg, NULL, WM_TIMER, WM_TIMER, PM_REMOVE)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
 
         // similar problem as WM_TIMER for the WM_CLOSE message - it does get processed eventually, but to 
         // speed it up we check here
-        if (PeekMessage(&msg, ((txMachine *) screen.machine)->window, WM_CLOSE, WM_CLOSE, PM_REMOVE)) 
+        if (PeekMessage(&msg, NULL, WM_CLOSE, WM_CLOSE, PM_REMOVE)) 
             break;
 	}
-
     // done - end our XS machine
     endMachine();
 }

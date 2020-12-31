@@ -103,8 +103,10 @@ void fxWorkerInitialize(txWorker* worker)
 			xsCallFunction0(xsVar(0), xsGlobal);
 	}
 	xsEndHost(worker->machine);
-#if mxInstrument
+#ifdef mxInstrument
+#ifdef mxDebug
 	if (fxIsConnected(worker->machine))
+#endif
 		fxDescribeInstrumentation(worker->machine, 0, NULL, NULL);
 #endif
 	mxLockMutex(&worker->runningMutex);
@@ -129,9 +131,11 @@ void fxWorkerMessage(void* machine, void* it)
 		}
 	}
 	xsEndHost(machine);
-#if mxInstrument
+#ifdef mxInstrument
 	if (((txScreen*)(((xsMachine*)machine)->host))->mainThread != mxCurrentThread())
+#ifdef mxDebug
 		if (fxIsConnected(machine))
+#endif
 			fxSampleInstrumentation(machine, 0, NULL);
 #endif
 	c_free(job->argument);

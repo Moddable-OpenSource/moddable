@@ -114,11 +114,15 @@ int startMachine(char *archivePath) {
 
 #ifdef mxInstrument
 		// send the instrumentation headers, only if the debugger is connected
+#ifdef mxDebug
 		if (fxIsConnected(the))
+#endif
 			fxDescribeInstrumentation(machine, 0, NULL, NULL);
 
 		// send the initial instrumentation data, only if the debugger is connected
+#ifdef mxDebug
 		if (fxIsConnected(the))
+#endif
 			fxSampleInstrumentation(the, 0, NULL);
 #endif
 		{
@@ -154,11 +158,13 @@ void endMachine() {
 	Updates instrumentation (debugging statistics) for a running XS machine
 */
 void instrumentMachine() {
-#ifdef mxDebug
+#ifdef mxInstrument
 	xsBeginHost(screen.machine);
 	{
 		// is the debugger connected?  If not, skip to avoid console output
+#ifdef mxDebug
 		if (fxIsConnected(the))
+#endif
 			fxSampleInstrumentation(the, 0, NULL);
 	}
 	xsEndHost(the);
