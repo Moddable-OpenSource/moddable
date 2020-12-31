@@ -130,13 +130,22 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 	
-all: build
+all: preamble
+ifeq ($(DEBUG),1)
+	$(shell pkill serial2xsbug)
+	open -a "$(BUILD_DIR)/bin/mac/release/xsbug.app" -g
+endif
+	@echo "# starting app"
+	"$(BIN_DIR)/$(NAME)"
 
-build: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+build: preamble
+	@echo "# Project built; executable is:"
+	@echo "$(BIN_DIR)/$(NAME)"
+
+preamble: $(LIB_DIR) $(BIN_DIR)/$(NAME)
 
 clean:
-	echo "# Clean application"
-	-rm -rf $(BIN_DIR)
+	@echo "# Clean application"
 	-rm -rf $(TMP_DIR)
 	
 $(LIB_DIR):
@@ -147,7 +156,7 @@ $(BIN_DIR)/Info.plist: $(MAIN_DIR)/mac/main.plist
 	echo APPLTINY > $(BIN_DIR)/PkgInfo
 	
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
-	@echo "# cc" $(@F) "($@)"
+	@echo "# cc" $(@F)
 	$(CC) $(LINK_FLAGS) $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(LIBRARIES) -o $@
 
 $(XS_OBJECTS) : $(XS_HEADERS)

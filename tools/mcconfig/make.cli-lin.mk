@@ -140,20 +140,31 @@ VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
 
-all: build
+all: preamble
+ifeq ($(DEBUG),1)
+	@echo "# starting xsbug"
+	$(shell nohup "$(BUILD_DIR)/bin/lin/release/xsbug" > /dev/null 2>&1 &)
+endif
+	sleep 1
+	"$(BIN_DIR)/$(NAME)"
 
-build: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+build: preamble
+	@echo "# Project built; executable is:"
+	@echo "$(BIN_DIR)/$(NAME)"
+
+preamble: $(LIB_DIR) $(BIN_DIR)/$(NAME)
+	@echo "# preamble done"
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
-	@echo "# ld " $(<F) "($(BIN_DIR)/$(NAME))"
+	@echo "# ld $(<F)"
 	$(CC) $(LINK_OPTIONS) $^ $(LINK_LIBRARIES) -o $@
+	@echo "# link done"
 
 clean:
 	@echo "# Clean project"
-	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
 $(XS_OBJECTS) : $(XS_HEADERS)
