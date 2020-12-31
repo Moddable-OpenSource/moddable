@@ -152,28 +152,27 @@ XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
-all: build
+all: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe
+!IF "$(DEBUG)"=="1"
+	start xsbug
+!ENDIF
+	$(BIN_DIR)\$(NAME).exe
 
 build: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe 
+	echo # Project built; executable is:
+	echo $(BIN_DIR)\$(NAME)
 
 clean:
-	echo # Clean project lib bin and tmp
-	echo $(BIN_DIR)
-	del /s/q/f $(BIN_DIR)\*.* > NULL
-	rmdir /s/q $(BIN_DIR)
+	echo # Clean project 
 	echo $(TMP_DIR)
 	del /s/q/f $(TMP_DIR)\*.* > NULL
 	rmdir /s/q $(TMP_DIR)
-	echo $(LIB_DIR)
-	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NULL
-	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
-
 
 $(LIB_DIR) :
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 
 $(BIN_DIR)\$(NAME).exe: $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o  $(OBJECTS)
-	@echo # link $(NAME).exe ($(BIN_DIR)\$(NAME))
+	@echo # link $(NAME).exe
 	link $(LINK_OPTIONS) $(LINK_LIBRARIES) $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) /implib:$(TMP_DIR)\$(NAME).lib /out:$@
 	
 $(XS_OBJECTS) : $(XS_HEADERS)
