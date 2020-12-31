@@ -133,7 +133,11 @@ void modSPIInit(modSPIConfiguration config)
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
 
+	#if IDF_TARGET == esp32s2
+		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);
+	#else
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
+	#endif
 		if (ret) {
 			free(gSPITransactionBuffer);
 			gSPITransactionBuffer = NULL;
