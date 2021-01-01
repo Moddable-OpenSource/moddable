@@ -4,14 +4,23 @@
 		"IDF_USE_VERSION": "4"
 	},
 	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODULES)/pins/pwm/manifest.json"
 	],
 	"modules": {
-		"setup/target": "./setup-target"
+		"setup/target": "./setup-target",
+		"*": [
+			"$(MODULES)/drivers/neopixel/*",
+			"$(MODULES)/drivers/neopixel/esp32/*"
+		]
 	},
-	"preload": "setup/target",
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
 	"config": {
-		"screen": "ili9341"
+		"screen": "ili9341",
+		"rainbow": true
 	},
 	"defines": {
 		"i2c": {

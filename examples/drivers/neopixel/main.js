@@ -14,7 +14,7 @@
 import NeoPixel from "neopixel";
 import Timer from "timer";
 
-const np = new NeoPixel({length: 1, pin: 45, order: "GRB"});
+const np = Host?.NeoPixel ? new Host.NeoPixel : new NeoPixel({length: 1, pin: 1, order: "GRB"});
 
 Timer.delay(1);
 np.fill(np.makeRGB(255, 255, 255)); np.update();

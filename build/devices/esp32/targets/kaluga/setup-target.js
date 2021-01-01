@@ -1,56 +1,60 @@
-//import Digital from "pins/digital";
-//import PWM from "pins/pwm";
+import Digital from "pins/digital";
 import config from "mc/config";
-//import Button from "button";
-//import LED from "led";
-
-// class Backlight extends PWM {
-// 	constructor(brightness = 100) {
-// 		super({pin: config.backlight});
-// 		this.write(brightness);
-// 	}
-// 	write(value) {
-// 		value = 100 - value;		// PWM is inverted
-// 		if (value <= 0)
-// 			value = 0;
-// 		else if (value >= 100)
-// 			value = 1023;
-// 		else
-// 			value = (value / 100) * 1023;
-// 		super.write(value);
-// 	}
-// }
+import NEOPIXEL from "neopixel";
+import Timer from "timer";
 
 globalThis.Host = Object.freeze({
-	// Backlight,
-	// LED: {
-	// 	Default: class {
-	// 		constructor(options) {
-	// 			return new LED({
-	// 				...options,
-	// 				pin: 2
-	// 			});
-	// 		}
-	// 	}
-	// },
-	// Button: {
-	// 	Default: class {
-	// 		constructor(options) {
-	// 			return new Button({
-	// 				...options,
-	// 				pin: 0,
-	// 				invert: true
-	// 			});
-	// 		}
-	// 	}
-	// }
+	NeoPixel: class {
+		constructor(options = {}){
+			return new NEOPIXEL({
+				...options,
+				length: 1, 
+				pin: 45, 
+				order: "GRB"
+			});
+		}
+	}
 }, true);
 
 export default function (done) {
-	// if ((undefined === config.brightness) || ("none" === config.brightness))
-	// 	Digital.write(config.backlight, 0);
-	// else
-	// 	globalThis.backlight = new Backlight(parseInt(config.brightness));
+	if (config.rainbow){
+		globalThis.neopixel = new NEOPIXEL({length: 1, pin: 45, order: "GRB"});
+		const np = globalThis.neopixel;
+		const STEP = 3;
+		
+		let rgb = [0, 0, 0];
+		let phase = 0;
+		let phases = [
+			//red, purple, blue, cyan, green, orange, white, black
+			[1, 0, -1, 0, 0, 1, 0, -1],
+			[0, 0, 0, 1, 0, 0, 0, -1],
+			[0, 1, 0, 0, -1, 0, 1, -1]
+		]
+
+		np.rainbowTimer = Timer.repeat(() => {
+			let advance = false;
+			for (let i = 0; i < 3; i++){
+				const direction = phases[i][phase];
+				rgb[i] += direction * STEP;
+				if (direction){
+					if (rgb[i] >= 255){
+						rgb[i] = 255;
+						advance = true;
+					}
+					if (rgb[i] <= 0){
+						rgb[i] = 0;
+						advance = true;
+					}
+				}
+			}
+			if (advance)
+				if (++phase >= phases[0].length) phase = 0;
+	
+			np.setPixel(0, np.makeRGB(rgb[0], rgb[1], rgb[2]));
+			np.update();
+		}, 33);
+	}
+
 
 	done();
 }

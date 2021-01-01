@@ -8,6 +8,9 @@
 			"./main"
 		]
 	},
+	"config": {
+		"rainbow": false
+	},
 	"preload": "neopixel",
 	"platforms": {
 		"esp32": {
