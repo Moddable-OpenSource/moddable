@@ -31,12 +31,14 @@ export class Connection {
 				case "address":
 					this.address = dictionary.address;
 					break;
+				case "addressType":
+					this.addressType = dictionary.addressType;
+					break;
 				default:
 					throw new Error(`invalid property "${property}`);
 					break;
 			}
 		}
-		rememberConnection(this);
 		this.initialize(this.client);
 	}
 	initialize(params) @ "xs_gap_connection_initialize"
@@ -52,7 +54,6 @@ export class Connection {
 		switch(event) {
 			case "onDisconnected":
 				this.ble.onDisconnected(this.client);
-				forgetConnection(this);
 				break;
 			case "onRSSI":
 				this.ble.onRSSI(this.client, params);
@@ -76,25 +77,5 @@ export class Connection {
 	}
 };
 Object.freeze(Connection.prototype);
-
-// Maintain a list of connections to ensure each connection and associated properties
-// are not garbage collected when active.
-const _private = { connections:null };
-function rememberConnection(connection) {
-	if (_private.connections) {
-		if (-1 == _private.connections.indexOf(connection))
-			_private.connections.push(connection);
-	}
-	else
-		_private.connections = [connection];
-}
-function forgetConnection(connection) {
-	if (_private.connections) {
-		let index = _private.connections.indexOf(connection);
-		if (-1 != index) {
-			_private.connections.splice(index, 1);
-		}
-	}
-}
 
 export default Connection;

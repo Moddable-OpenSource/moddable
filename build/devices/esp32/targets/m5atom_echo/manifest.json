@@ -7,7 +7,7 @@
 		"DEBUGGER_SPEED": "1500000"
 	},
 	"config": {
-		"speaker": true
+		"startupSound": "bflatmajor.maud"
 	},
 	"modules": {
 		"*": [
@@ -58,5 +58,8 @@
 			"order": "#GRB",
 			"rmt_channel": "RMT_CHANNEL_0"
 		}
+	},
+	"resources": {
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
 	}
 }

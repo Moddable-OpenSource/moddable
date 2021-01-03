@@ -45,9 +45,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if ((nCmdShow != SW_SHOWMINIMIZED) && (nCmdShow != SW_MINIMIZE) && (nCmdShow != SW_SHOWMINNOACTIVE))
 			SetForegroundWindow(window);
 		for (argi = 1; argi < argc; argi++) {
+			wchar_t path[MAX_PATH];
 			COPYDATASTRUCT cds;
-			cds.cbData = 2 * (wcslen(argv[argi]) + 1);
-			cds.lpData = argv[argi];
+			_wfullpath(path, argv[argi], MAX_PATH);
+			cds.cbData = 2 * (wcslen(path) + 1);
+			cds.lpData = path;
 			SendMessage(window, WM_COPYDATA, 0, (LPARAM)&cds);
 		}
     	return 0;
@@ -118,9 +120,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetFocus(window);
 
 	for (argi = 1; argi < argc; argi++) {
+		wchar_t path[MAX_PATH];
 		COPYDATASTRUCT cds;
-		cds.cbData = 2 * (wcslen(argv[argi]) + 1);
-		cds.lpData = argv[argi];
+		_wfullpath(path, argv[argi], MAX_PATH);
+		cds.cbData = 2 * (wcslen(path) + 1);
+		cds.lpData = path;
 		SendMessage(window, WM_COPYDATA, 0, (LPARAM)&cds);
 	}
 		

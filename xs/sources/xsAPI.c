@@ -1863,6 +1863,18 @@ void fxEndJob(txMachine* the)
 		gxDefaults.cleanupFinalizationRegistries(the);
 }
 
+void fxExitToHost(txMachine* the)
+{
+	txJump* jump = the->firstJump;
+	while (jump->nextJump) {
+		txJump* nextJump = jump->nextJump;
+		if (jump->flag)
+			c_free(jump);
+		jump = nextJump;
+	}
+	c_longjmp(jump->buffer, 1);
+}
+
 typedef struct {
 	txU1* src;
 	txU1* dst;
@@ -2009,44 +2021,90 @@ void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
 	return C_NULL;
 }
 
-void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
+static txU1 *fxGetArchiveResources(txMachine *the, txU4 *size)
 {
 	txPreparation* preparation = the->preparation;
-	if (preparation) {
-		txU1* p = the->archive;
-		if (p) {
-			txU4 atomSize;
-			txU1* q;
-			p += mxArchiveHeaderSize;
-			// NAME
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// SYMB
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// MODS
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// RSRC
-			atomSize = c_read32be(p);
-			q = p + atomSize;
-			p += sizeof(Atom);
-			while (p < q) {
-				// PATH
-				atomSize = c_read32be(p);
-				if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
-					p += atomSize;
-					atomSize = c_read32be(p);
-					*size = atomSize - sizeof(Atom);
-					return p + sizeof(Atom);
-				}
-				p += atomSize;
-				// DATA
-				atomSize = c_read32be(p);
-				p += atomSize;
-			}
+	txU1* p = the->archive;
+
+	if (!preparation || !p) {
+		*size = 0;
+		return NULL;
+	}
+
+	p += mxArchiveHeaderSize;
+	// NAME
+	p += c_read32be(p);
+	// SYMB
+	p += c_read32be(p);
+	// MODS
+	p += c_read32be(p);
+	// RSRC
+	*size = c_read32be(p) - sizeof(Atom);
+	return p + sizeof(Atom);
+}
+
+txInteger fxGetArchiveDataCount(txMachine* the)
+{
+	txInteger count = 0;
+	txU4 size;
+	txU1 *p = fxGetArchiveResources(the, &size);
+	if (p) {
+		txU1 *q = p + size;
+		while (p < q) {
+			// PATH
+			p += c_read32be(p);
+			// DATA
+			p += c_read32be(p);
+			count += 1;
 		}
 	}
+
+	return count;
+}
+
+void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
+{
+	txU4 atomSize;
+	txU1 *p = fxGetArchiveResources(the, &atomSize), *q;
+	if (!p)
+		return NULL; 
+
+	q = p + atomSize;
+	while (p < q) {
+		// PATH
+		atomSize = c_read32be(p);
+		if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
+			p += atomSize;
+			atomSize = c_read32be(p);
+			*size = atomSize - sizeof(Atom);
+			return p + sizeof(Atom);
+		}
+		p += atomSize;
+		// DATA
+		atomSize = c_read32be(p);
+		p += atomSize;
+	}
+
+	return C_NULL;
+}
+
+void* fxGetArchiveDataName(txMachine* the, txInteger index)
+{
+	txU4 atomSize;
+	txU1 *p = fxGetArchiveResources(the, &atomSize), *q;
+	if (!p)
+		return NULL;
+
+	q = p + atomSize;
+	while (p < q) {
+		// PATH
+		if (!index--)
+			return (txString)(p + sizeof(Atom));
+		p += c_read32be(p);
+		// DATA
+		p += c_read32be(p);
+	}
+
 	return C_NULL;
 }
 

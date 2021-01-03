@@ -1,7 +1,7 @@
 # Worker
-Copyright 2018 Moddable Tech, Inc.
+Copyright 2018-2020 Moddable Tech, Inc.
 
-Revised: March 19, 2018
+Revised: December 30, 2020
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -152,5 +152,4 @@ The debugger for the XS virtual machine, `xsbug`, supports working with multiple
 ![](assets/xsbug.png)
 
 ## Shared Memory and Atomics
-The ECMAScript 2016 standard includes support for Shared Memory and Atomics. These are powerful tools for efficient communication between virtual machines. The XS virtual machine fully implements these features. However, they have not yet been integrated into the Moddable SDK runtime for microcontrollers. 
-
+The ECMAScript 2016 standard includes support for Shared Memory and Atomics. These are powerful tools for efficient communication between virtual machines. The XS virtual machine fully implements these features. They are supported on some microcontrollers (ESP32) but not all (ESP8266).

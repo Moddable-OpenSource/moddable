@@ -33,6 +33,7 @@ struct modSPIConfigurationRecord {
 	modSPIChipSelectCallback	doChipSelect;
 	uint32_t					reserved;	// set during modSPIInit to SPI flash bits
 	uint8_t						sync;
+	uint8_t						mode;
 };
 
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;
@@ -43,7 +44,8 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.doChipSelect = DOCHIPSELECT; \
 	config.sync = 1; \
 	if (0 != espStrCmp(SPI_PORT, "HSPI")) \
-		xsUnknownError("invalid SPI port");
+		xsUnknownError("invalid SPI port"); \
+	config.mode = 0;
 
 //	config.spiPort = SPI_PORT; \
 //	config.csPort = CS_PORT; \

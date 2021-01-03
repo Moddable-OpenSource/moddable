@@ -19,7 +19,6 @@
 		"builtin/socket/listener": "$(IO)/socket/listener",
 		"builtin/socket/tcp": "$(IO)/socket/tcp",
 		"builtin/socket/udp": "$(IO)/socket/udp",
-		"builtin/wakeabledigital": "$(IO)/wakeabledigital/wakeabledigital",
 		"builtin/pwm": "$(IO)/pwm/pwm",
 
 		"expander": "$(IO)/expander/*",
@@ -35,7 +34,6 @@
 		"builtin/socket/listener",
 		"builtin/socket/tcp",
 		"builtin/socket/udp",
-		"builtin/wakeabledigital",
 		"builtin/pwm",
 
 		"expander",

@@ -205,8 +205,6 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 #ifdef mxProfile
 	fxBeginGC(the);
 #endif
-	fxMarkHost(the, theFlag ? fxMarkValue : fxMarkReference);
-
 	if (theFlag) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the, fxMarkValue);
@@ -269,8 +267,6 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 		aSlot->flag &= ~XS_MARK_FLAG; 
 		aSlot++;
 	}
-	
-	fxSweepHost(the);
 	
 	if (!theFlag) {
 		if ((the->maximumHeapCount - the->currentHeapCount) < the->minimumHeapCount)
@@ -398,6 +394,7 @@ void fxGrowChunks(txMachine* the, txSize theSize)
 		aBlock->temporary = C_NULL;
 		the->firstBlock = aBlock;
 	}
+    theSize -= sizeof(txBlock);
 	the->maximumChunksSize += theSize;
 #if mxReport
 	fxReport(the, "# Chunk allocation: reserved %ld used %ld peak %ld bytes\n", 

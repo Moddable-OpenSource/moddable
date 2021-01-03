@@ -34,6 +34,16 @@
 				}
 			}
 		},
+		"x-cli-mac": {
+			"modules": {
+				"*": "$(MODULES)/files/file/mac/*"
+			},
+			"config": {
+				"file": {
+					"root": "/Users/Shared/"
+				}
+			}
+		},
 		"win": {
 			"modules": {
 				"*": "$(MODULES)/files/file/win/*"

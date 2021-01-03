@@ -281,7 +281,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Number_prototype_valueOf);
 	fxUnstripCallback(linker, fx_Object_assign);
 	fxUnstripCallback(linker, fx_Object_copy);
-	fxUnstripCallback(linker, fx_Object_prototype_toPrimitive);
 	fxUnstripCallback(linker, fx_Object_prototype_toString);
 	fxUnstripCallback(linker, fx_Object_prototype_valueOf);
 	fxUnstripCallback(linker, fx_String_prototype_iterator);
@@ -292,6 +291,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Symbol_prototype_valueOf);
 	fxUnstripCallback(linker, fx_TypedArray_prototype_join);
 	fxUnstripCallback(linker, fx_TypedArray_prototype_values);
+	
+	fxUnstripCallback(linker, fxOrdinaryToPrimitive);
 	
 	fxUnstripCallback(linker, fxArrayLengthGetter);
 	fxUnstripCallback(linker, fxArrayLengthSetter);
@@ -626,9 +627,9 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	else
 		fprintf(file, "\t{ 4, 2, C_NULL, C_NULL, C_NULL, C_NULL, _getUint32, _setUint32, _Uint32Array },\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Uint8ClampedArray)))
-		fprintf(file, "\t{ 1, 0, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
+		fprintf(file, "\t{ 1, 0, fxUint8Getter, fxUint8ClampedSetter, fxNumberCoerce, fxUint8Compare, _getUint8, _setUint8, _Uint8ClampedArray }\n");
 	else
-		fprintf(file, "\t{ 1, 0, C_NULL, C_NULL, C_NULL, C_NULL, _getUint8Clamped, _setUint8Clamped, _Uint8ClampedArray }\n");
+		fprintf(file, "\t{ 1, 0, C_NULL, C_NULL, C_NULL, C_NULL, _getUint8, _setUint8, _Uint8ClampedArray }\n");
 	fprintf(file, "};\n\n");
 	
 	fprintf(file, "const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {\n");

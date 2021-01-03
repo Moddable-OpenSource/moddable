@@ -23,6 +23,7 @@
 */
 
 import RTC from "rtc";
+import I2C from "pins/i2c";
 
 const DS1307_ADDR = 0x68;
 
@@ -73,7 +74,12 @@ class DS1307 extends RTC {
 
 		super.writeBlock(0, buf);
 	}
-
+	static probe() {
+		const i = new I2C({address: DS1307_ADDR, throw: false});
+		const result = i.read(1);
+		i.close();
+		return undefined !== result;
+	}
 }
 Object.freeze(DS1307.prototype);
 

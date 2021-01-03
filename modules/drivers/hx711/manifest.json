@@ -1,0 +1,11 @@
+{
+  "include": ["$(MODDABLE)/modules/pins/digital/manifest.json"],
+  "modules": {
+    "*": [
+      "./*"
+    ]
+  },
+  "preload": [
+    "hx711"
+  ]
+}

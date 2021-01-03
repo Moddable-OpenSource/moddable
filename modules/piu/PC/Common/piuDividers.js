@@ -99,11 +99,17 @@ export class HorizontalDividerBehavior extends DividerBehavior {
 		var height = divider.height >> 1;
 		if (this.status) {
 			this.status = false;
-			divider.y = (layout.y + layout.height) - (this.after + height);
+			if (this.direction > 0)
+				divider.y = layout.y + this.before - height;
+			else
+				divider.y = (layout.y + layout.height) - (this.after + height);
 		}
 		else {
 			this.status = true;
-			divider.y = (layout.y + layout.height) - (this.current + height);
+			if (this.direction > 0)
+				divider.y = layout.y + this.current - height;
+			else
+				divider.y = (layout.y + layout.height) - (this.current + height);
 		}
 		this.divide(divider);
 		application.distribute("onDividerChanged", divider);
@@ -154,11 +160,17 @@ export class VerticalDividerBehavior extends DividerBehavior {
 		var width = divider.width >> 1;
 		if (this.status) {
 			this.status = false;
-			divider.x = (layout.x + layout.width) - (this.after + width);
+			if (this.direction > 0)
+				divider.x = layout.x + this.before - width;
+			else
+				divider.x = (layout.x + layout.width) - (this.after + width);
 		}
 		else {
 			this.status = true;
-			divider.x = (layout.x + layout.width) - (this.current + width);
+			if (this.direction > 0)
+				divider.x = layout.x + this.current - width;
+			else
+				divider.x = (layout.x + layout.width) - (this.current + width);
 		}
 		this.divide(divider);
 		application.distribute("onDividerChanged", divider);

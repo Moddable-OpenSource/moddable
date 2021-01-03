@@ -20,15 +20,28 @@
 
 declare module "websocket" {
   class Client {
-    constructor(options: import('socket').TCPSocketOptions & {
+    static readonly connect: number;
+    static readonly handshake: number;
+    static readonly receive: number;
+    static readonly disconnect: number;
+
+    constructor(options: import('socket').TCPSocketOptionsWithoutPort & {
       port?: number,
-      path?: string
+      path?: string,
+      protocol?: string,
+      headers?: string[]
     });
     close(): void;
     write(data: string | ArrayBuffer);
     callback: (message: number, value?: any) => void;
   }
   class Server {
+    static readonly connect: number;
+    static readonly handshake: number;
+    static readonly receive: number;
+    static readonly disconnect: number;
+    static readonly subprotocol: number;
+
     constructor(options: import('socket').ListenerOptions);
     close(): void;
     write(message: string | ArrayBuffer): void;

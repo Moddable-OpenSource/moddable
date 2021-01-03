@@ -1,0 +1,66 @@
+{
+	"modules": {
+		"*": [
+			"./modules/screen",
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/$(PLATFORM)/*",
+			"$(MODULES)/base/timer/timer",
+			"$(MODULES)/base/timer/$(PLATFORM)/*"
+		]
+	},
+	"preload": [
+		"time",
+		"timer"
+	],
+	"platforms": {
+		"lin": {
+		},
+		"lin/*": {
+			"build": {
+				"SIMULATORS": "$(BUILD_SIMULATOR)"
+			},
+			"include": "./$(SUBPLATFORM)/manifest.json"
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"mac/*": {
+			"build": {
+				"SIMULATORS": "$(BUILD_SIMULATOR)"
+			},
+			"include": "./$(SUBPLATFORM)/manifest.json",
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"win/*": {
+			"build": {
+				"SIMULATORS": "$(BUILD_SIMULATOR)"
+			},
+			"include": "./$(SUBPLATFORM)/manifest.json",
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/modTimer"
+				]
+			}
+		},
+		"wasm": {
+		},
+		"wasm/*": {
+			"include": "./$(SUBPLATFORM)/manifest.json"
+		}
+	}
+}

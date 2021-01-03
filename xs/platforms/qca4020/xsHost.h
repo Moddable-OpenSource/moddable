@@ -54,6 +54,8 @@
 #include "stdint.h"
 #include "stddef.h"
 #include "malloc.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #define QAPI_NET_ENABLE_BSD_COMPATIBILITY
 #include "qapi_socket.h"	// for ERRNO defines
@@ -230,11 +232,17 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
     void modMachineTaskWake(xsMachine *the);
 #endif
 
+#define MOD_TASKS (true)
+
+#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
+
 /*
 	instrumentation
 */
 
-#if defined(mxInstrumentation) && defined(__XS__)
+#if defined(mxInstrument) && defined(__XS__)
+	#include "modTimer.h"
+
 	void espInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
 	void espInstrumentMachineEnd(xsMachine *the);
 	void espInstrumentMachineReset(xsMachine *the);

@@ -1,0 +1,30 @@
+{
+	"config": {
+		"rotation": 90,
+		"sntp": "pool.ntp.org"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",		
+		"$(MODULES)/pins/i2c/manifest.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json"
+	],
+	"modules": {
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"*": [
+			"$(MODULES)/drivers/rtc/rtc",
+			"$(MODULES)/drivers/rtc/bm8563",
+			"$(MODULES)/network/sntp/*",
+			"./main"
+		]
+	},
+	"resources": {
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16"
+	},
+	"preload": [
+		"sntp",
+		"bm8563",
+		"rtc",
+		"smbus"
+	]	
+}

@@ -94,6 +94,8 @@ export const paneHeaderSkin = { fill:[GRAYS[6], GRAYS[10], GRAYS[14], GRAYS[6]] 
 export const paneHeaderStyle = { font:"semibold", color:[GRAYS[30], GRAYS[85], GRAYS[85], GRAYS[85]], horizontal:"left" };
 export const paneBorderSkin = { fill:GRAYS[14] };
 export const paneSeparatorSkin = { fill:GRAYS[14] };
+export const paneFooterLeftStyle = { font:"light", color:BLACK, horizontal:"left", left:10 };
+export const paneFooterRightStyle = { font:"light", color:BLACK, horizontal:"right", right:10 };
 
 export const timerSkin = { fill:[WHITE, BLUE], stroke:GRAYS[14], left:1, right:1, top:1, bottom:1 };
 
@@ -127,4 +129,6 @@ Object.freeze(paneHeaderSkin, true)
 Object.freeze(paneHeaderStyle, true)
 Object.freeze(paneBorderSkin, true)
 Object.freeze(paneSeparatorSkin, true)
+Object.freeze(paneFooterLeftStyle, true)
+Object.freeze(paneFooterRightStyle, true)
 Object.freeze(timerSkin, true)

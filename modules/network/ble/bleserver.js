@@ -101,6 +101,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onPasskeyRequested() {}
 	onAuthenticated() {}
 	onMTUExchanged() {}
+	onBondingDeleted() {}
 
 	_deploy() @ "xs_ble_server_deploy"
 	_setDeviceName() @ "xs_ble_server_set_device_name"
@@ -140,7 +141,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				this.onConnected({ address:new Bytes(params.address), addressType:params.addressType, connection:params.connection });
 				break;
 			case "onDisconnected":
-				this.onDisconnected({ address:new Bytes(params.address), connection:params.connection });
+				this.onDisconnected({ address:new Bytes(params.address), addressType:params.addressType, connection:params.connection });
 				break;
 			case "onPasskeyConfirm":
 				this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
@@ -155,11 +156,15 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				return this.onPasskeyRequested({ address:new Bytes(params.address) });
 				break;
 			case "onAuthenticated":
-				return this.onAuthenticated();
+				this.onAuthenticated({ bonded:params.bonded });
 				break;
 			case "onMTUExchanged":
 				this.onMTUExchanged(params);
 				break;
+			case "onBondingDeleted": {
+				this.onBondingDeleted({ address:new Bytes(params.address), addressType:params.addressType });
+				break;
+			}
 		}
 	}
 };

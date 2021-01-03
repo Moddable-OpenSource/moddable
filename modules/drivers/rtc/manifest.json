@@ -1,20 +1,25 @@
 {
 	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",		
 		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
+			"$(MODULES)/network/sntp/*",
 			"$(MODULES)/drivers/rtc/rtc",
 			"$(MODULES)/drivers/rtc/ds1307",
 			"$(MODULES)/drivers/rtc/ds3231",
-			"$(MODULES)/drivers/rtc/rv3028"
+			"$(MODULES)/drivers/rtc/rv3028",
+			"$(MODULES)/drivers/rtc/bm8563"
 		]
 	},
 	"preload": [
+		"sntp",
 		"ds1307",
 		"ds3231",
 		"rv3028",
+		"bm8563",
 		"rtc",
 		"smbus"
 	]

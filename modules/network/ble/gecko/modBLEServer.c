@@ -31,6 +31,11 @@
 #include "mc.bleservices.c"
 
 typedef struct {
+  uint8_t addr[6];
+  uint8_t addrType;
+} bondingRemoveAddressRecord, *bondingRemoveAddress;
+
+typedef struct {
 	xsMachine *the;
 	xsSlot obj;
 
@@ -46,7 +51,10 @@ typedef struct {
 	modTimer timer;
 	int8_t connection;
 	bd_addr address;
+	uint8_t addressType;
 	uint8_t bond;
+
+	bondingRemoveAddress bondingToRemove;
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
@@ -131,6 +139,8 @@ void xs_ble_server_destructor(void *data)
 			modBLEConnectionRemove(connection);
 		gecko_cmd_le_connection_close(ble->connection);
 	}
+	if (ble->bondingToRemove)
+		c_free(ble->bondingToRemove);
 	modTimerRemove(ble->timer);
 	c_free(ble);
 
@@ -259,6 +269,18 @@ static const char_name_table *handleToCharName(uint16_t handle) {
 	return NULL;
 }
 
+void modBLEServerBondingRemove(char *address, uint8_t addressType)
+{
+	if (!gBLE) return;
+
+	gBLE->bondingToRemove = c_malloc(sizeof(bondingRemoveAddressRecord));
+	if (gBLE->bondingToRemove) {
+		gBLE->bondingToRemove->addrType = addressType;
+		c_memmove(gBLE->bondingToRemove->addr, address, 6);
+		gecko_cmd_sm_list_all_bondings();
+	}
+}
+
 void bleTimerCallback(modTimer timer, void *refcon, int refconSize)
 {
     struct gecko_cmd_packet* evt = gecko_peek_event();
@@ -283,6 +305,7 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 	
 	gBLE->connection = evt->connection;
 	gBLE->address = evt->address;
+	gBLE->addressType = evt->address_type;
 	gBLE->bond = evt->bonding;
 	
 	modBLEConnection connection = c_calloc(sizeof(modBLEConnectionRecord), 1);
@@ -291,18 +314,21 @@ static void leConnectionOpenedEvent(struct gecko_msg_le_connection_opened_evt_t 
 		
 	connection->id = gBLE->connection;
 	connection->type = kBLEConnectionTypeServer;
+	connection->addressType = evt->address_type;
 	c_memmove(connection->address, gBLE->address.addr, 6);
 	modBLEConnectionAdd(connection);
 
 	if (gBLE->encryption || gBLE->mitm)
 		gecko_cmd_sm_increase_security(evt->connection);
 
-	xsmcVars(3);
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), evt->connection);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), evt->address.addr, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), evt->address.addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), evt->address_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
@@ -326,6 +352,10 @@ static void leConnectionClosedEvent(struct gecko_msg_le_connection_closed_evt_t 
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(2), gBLE->address.addr, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetInteger(xsVar(1), evt->connection);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetInteger(xsVar(1), gBLE->addressType);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
@@ -335,7 +365,11 @@ static void leConnectionParametersEvent(struct gecko_msg_le_connection_parameter
 {
 	xsBeginHost(gBLE->the);
 	if (evt->security_mode > le_connection_mode1_level1) {
-		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetBoolean(xsVar(1), 0xFF != gBLE->bond);
+		xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 	}
 	xsEndHost(gBLE->the);
 }
@@ -487,6 +521,44 @@ static void smBondingFailedEvent(struct gecko_msg_sm_bonding_failed_evt_t *evt)
 	}
 }
 
+static void smListBondingEntryEvent(struct gecko_msg_sm_list_bonding_entry_evt_t *evt)
+{
+	if (gBLE->bondingToRemove && (evt->address_type == gBLE->bondingToRemove->addrType) && (0 == c_memcmp(&evt->address.addr, gBLE->bondingToRemove->addr, 6))) {
+		gecko_cmd_sm_delete_bonding(evt->bonding);
+		xsBeginHost(gBLE->the);
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetArrayBuffer(xsVar(1), evt->address.addr, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSetInteger(xsVar(1), evt->address_type);
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+		xsEndHost(gBLE->the);
+	}
+}
+
+static void smListAllBondingsCompleteEvent(void)
+{
+	if (gBLE->bondingToRemove) {
+		c_free(gBLE->bondingToRemove);
+		gBLE->bondingToRemove = NULL;
+	}
+}
+
+static void smBondedEvent(struct gecko_msg_sm_bonded_evt_t *evt)
+{
+	xsBeginHost(gBLE->the);
+	gBLE->bond = evt->bonding;
+	if (0xFF != gBLE->bond) {
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetBoolean(xsVar(1), 0xFF != gBLE->bond);
+		xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
+	}
+	xsEndHost(gBLE->the);
+}
+
 static void gattMTUExchangedEvent(struct gecko_msg_gatt_mtu_exchanged_evt_t *evt)
 {
 	if (evt->connection != gBLE->connection)
@@ -539,6 +611,15 @@ void ble_event_handler(struct gecko_cmd_packet* evt)
 			break;
 		case gecko_evt_gatt_mtu_exchanged_id:
 			gattMTUExchangedEvent(&evt->data.evt_gatt_mtu_exchanged);
+			break;
+		case gecko_evt_sm_list_bonding_entry_id:
+			smListBondingEntryEvent(&evt->data.evt_sm_list_bonding_entry);
+			break;
+		case gecko_evt_sm_list_all_bondings_complete_id:
+			smListAllBondingsCompleteEvent();
+			break;
+		case gecko_evt_sm_bonded_id:
+			smBondedEvent(&evt->data.evt_sm_bonded);
 			break;
 		default:
 			break;

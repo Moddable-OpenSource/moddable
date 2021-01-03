@@ -25,7 +25,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>mcsim 1.0b1</string>
 	<key>CFBundleGetInfoString</key>
-	<string>mcsim 1.0b1 Copyright © 2017 Moddable Tech, Inc.</string>
+	<string>mcsim 1.0b1 Copyright © 2017-2020 Moddable Tech, Inc.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -37,5 +37,7 @@
 			<string>Viewer</string>
 		</dict>
 	</array>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

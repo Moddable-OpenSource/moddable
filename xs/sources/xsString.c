@@ -108,7 +108,7 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_includes), 1, mxID(_includes), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_indexOf), 1, mxID(_indexOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_lastIndexOf), 1, mxID(_lastIndexOf), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_compare), 1, mxID(_localeCompare), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_localeCompare), 1, mxID(_localeCompare), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_normalize), 0, mxID(_normalize), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_padEnd), 1, mxID(_padEnd), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_padStart), 1, mxID(_padStart), XS_DONT_ENUM_FLAG);
@@ -121,7 +121,6 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_substr), 2, mxID(_substr), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_substring), 2, mxID(_substring), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_toLowerCase), 0, mxID(_toLocaleLowerCase), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_valueOf), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_toUpperCase), 0, mxID(_toLocaleUpperCase), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_toLowerCase), 0, mxID(_toLowerCase), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_valueOf), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
@@ -276,7 +275,7 @@ void fxStringOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys
 txSlot* fxStringSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
 {
 	if ((id == mxID(_length)) || (!id && (mxStringInstanceLength(instance) > index)))
-		return 0;
+		return C_NULL;
 	return fxOrdinarySetProperty(the, instance, id, index, flag);
 }
 
@@ -548,6 +547,12 @@ fail:
 	mxResult->kind = XS_NUMBER_KIND;
 }
 
+void fx_String_prototype_compare(txMachine* the)
+{
+	fxReport(the, "# Use standard String.prototype.localeCompare instead of soon obsolete String.prototype.compare\n");
+	fx_String_prototype_localeCompare(the);
+}
+
 void fx_String_prototype_codePointAt(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis);
@@ -563,20 +568,6 @@ void fx_String_prototype_codePointAt(txMachine* the)
 			mxResult->kind = XS_INTEGER_KIND;
 		}
 	}
-}
-
-void fx_String_prototype_compare(txMachine* the)
-{
-	txString aString;
-
-	aString = fxCoerceToString(the, mxThis);
-	if (mxArgc < 1)
-		mxResult->value.integer = c_strcmp(aString, "undefined");
-	else {
-		fxToString(the, mxArgv(0));
-		mxResult->value.integer = c_strcmp(aString, mxArgv(0)->value.string);
-	}
-	mxResult->kind = XS_INTEGER_KIND;
 }
 
 void fx_String_prototype_concat(txMachine* the)
@@ -766,6 +757,20 @@ void fx_String_prototype_lastIndexOf(txMachine* the)
 	else
 		anOffset = -1;
 	mxResult->value.integer = anOffset;
+	mxResult->kind = XS_INTEGER_KIND;
+}
+
+void fx_String_prototype_localeCompare(txMachine* the)
+{
+	txString aString;
+
+	aString = fxCoerceToString(the, mxThis);
+	if (mxArgc < 1)
+		mxResult->value.integer = c_strcmp(aString, "undefined");
+	else {
+		fxToString(the, mxArgv(0));
+		mxResult->value.integer = c_strcmp(aString, mxArgv(0)->value.string);
+	}
 	mxResult->kind = XS_INTEGER_KIND;
 }
 

@@ -115,7 +115,8 @@
 	enum {
 		kStateIdle = 0,
 		kStatePlaying = 1,
-		kStateTerminated = 2
+		kStateClosing = 2,
+		kStateTerminated = 3
 	};
 #elif defined(__ets__)
 	#include "xsHost.h"
@@ -156,6 +157,7 @@ typedef struct {
 	uint8_t					bytesPerFrame;
 	uint8_t					applyVolume;		// one or more active streams is not at 1.0 volume
 	uint8_t					built;
+	int8_t					useCount;
 
 	int						activeStreamCount;
 	modAudioOutStream		activeStream[MODDEF_AUDIOOUT_STREAMS];
@@ -285,8 +287,10 @@ void xs_audioout_destructor(void *data)
 	DeleteCriticalSection(&out->cs);
 	UnregisterClass("modAudioWindowClass", NULL);
 #elif ESP32
-	out->state = kStateTerminated;
-	xTaskNotify(out->task, kStateTerminated, eSetValueWithOverwrite);
+	out->state = kStateClosing;
+	xTaskNotify(out->task, kStateClosing, eSetValueWithOverwrite);
+	while (kStateClosing == out->state)
+		modDelayMilliseconds(1);
 
 	vSemaphoreDelete(out->mutex);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
@@ -365,6 +369,7 @@ void xs_audioout(xsMachine *the)
 
 	out->the = the;
 	out->obj = xsThis;
+	out->useCount = 1;
 
 	out->streamCount = streamCount;
 	out->sampleRate = sampleRate;
@@ -451,13 +456,35 @@ void xs_audioout_build(xsMachine *the)
 #endif
 #endif
 
+	xsRemember(out->obj);
+
 	out->built = 1;
+}
+
+#define upUseCount(out) (out)->useCount += 1
+
+static void downUseCount(modAudioOut out)
+{
+	xsMachine *the = out->the;
+
+	out->useCount -= 1;
+	if (out->useCount > 0)
+		return;
+
+	xsmcSetHostData(out->obj, NULL);
+
+	if (out->built)
+		xsForget(out->obj);
+
+	xs_audioout_destructor(out);
 }
 
 void xs_audioout_close(xsMachine *the)
 {
-	xs_audioout_destructor(xsmcGetHostData(xsThis));
-	xsmcSetHostData(xsThis, NULL);
+	modAudioOut out = xsmcGetHostData(xsThis);
+	if (!out) return;
+
+	downUseCount(out);
 }
 
 void xs_audioout_start(xsMachine *the)
@@ -764,6 +791,8 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 	xsBeginHost(out->the);
 	xsmcVars(1);
 
+	upUseCount(out);
+
 	while (out->pendingCallbackCount) {
 		int id;
 
@@ -776,10 +805,12 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 		pthread_mutex_unlock(&out->mutex);
 
 		xsmcSetInteger(xsVar(0), id);
-		xsCall1(out->obj, xsID_callback, xsVar(0));		//@@ unsafe to close inside callback
+		xsCall1(out->obj, xsID_callback, xsVar(0));
 	}
 
 	xsEndHost(out->the);
+
+	downUseCount(out);
 }
 
 // note: queueCallback relies on caller to lock mutex
@@ -1075,7 +1106,7 @@ void audioOutLoop(void *pvParameter)
 	};
 #endif
 
-	while (kStateTerminated != out->state) {
+	while (kStateClosing != out->state) {
 		size_t bytes_written;
 
 		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
@@ -1098,7 +1129,7 @@ void audioOutLoop(void *pvParameter)
 //			}
 
 			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
-			if (kStateTerminated == newState)
+			if (kStateClosing == newState)
 				break;
 
 //			if (kStateIdle == newState)
@@ -1165,9 +1196,10 @@ void audioOutLoop(void *pvParameter)
 #endif
 	}
 
-	// from here, "out" is invalid
 	if (installed)
 		i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
+
+	out->state = kStateTerminated;
 
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
 }
@@ -1247,6 +1279,8 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 	xsBeginHost(out->the);
 	xsmcVars(1);
 
+	upUseCount(out);
+
 	while (out->pendingCallbackCount) {
 		int id;
 
@@ -1261,10 +1295,12 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 		doUnlock(out);
 
 		xsmcSetInteger(xsVar(0), id);
-		xsCall1(out->obj, xsID_callback, xsVar(0));		//@@ unsafe to close inside callback
+		xsCall1(out->obj, xsID_callback, xsVar(0));
 	}
 
 	xsEndHost(out->the);
+
+	downUseCount(out);
 }
 
 // note: queueCallback relies on caller to lock mutex

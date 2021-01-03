@@ -417,13 +417,21 @@ void fx_Function_prototype_bind(txMachine* the)
 		if (mxBehaviorGetOwnProperty(the, mxThis->value.reference, mxID(_length), XS_NO_ID, the->stack)) {
 			mxPushSlot(mxThis);
 			fxGetID(the, mxID(_length));
-			if ((the->stack->kind == XS_INTEGER_KIND) || (the->stack->kind == XS_NUMBER_KIND)) {
-				length = fxToLength(the, the->stack);
-				if (c > 1)
-					length -= c - 1;
-				if (length < 0)
-					length = 0;
+			property = the->stack;
+			if (property->kind == XS_INTEGER_KIND) {
+				length = property->value.integer;
 			}
+			else if (property->kind == XS_NUMBER_KIND) {
+				length = property->value.number;
+				if (c_isnan(length))
+					length = 0;
+				else
+					length = c_trunc(length);
+			}
+			if (c > 1)
+				length -= c - 1;
+			if (length < 0)
+				length = 0;
 			mxPop();
 		}
 		mxPop();
@@ -564,13 +572,13 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 void fx_Function_prototype_toString(txMachine* the)
 {	
 	fxCheckFunctionInstance(the, mxThis);
-	mxPushStringX("function ");
+	mxPushStringX("function [\"");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_name));
 	if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
 		fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
-	mxPushStringX(" (){[native code]}");
+	mxPushStringX("\"] (){[native code]}");
 	fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
 	mxPullSlot(mxResult);
@@ -741,3 +749,38 @@ void fx_AsyncFunction(txMachine* the)
 		mxPop();
 	}
 }
+
+#ifdef mxMetering
+
+void fxPatchHostFunction(txMachine* the, txCallback patch)
+{
+	txSlot* slot = fxToInstance(the, the->stack);
+	txSlot* property = slot->next;
+	if ((property == NULL) || (property->kind != XS_CALLBACK_KIND))
+		mxTypeError("no host function");
+	slot = fxNewSlot(the);
+	slot->kind = XS_CALLBACK_KIND;
+	slot->value.callback.address = property->value.callback.address;
+	slot->value.callback.IDs = C_NULL;
+	property->value.callback.address = patch;
+	property = property->next;
+	slot->next = property->next;
+	property->next = slot;
+}
+
+void fxMeterHostFunction(txMachine* the, txU4 count)
+{
+	txSlot* slot = fxToInstance(the, mxFunction);
+	txSlot* property = slot->next;
+	if ((property == NULL) || (property->kind != XS_CALLBACK_KIND))
+		mxTypeError("no host function");
+	property = property->next->next;	
+	if ((property == NULL) || (property->kind != XS_CALLBACK_KIND))
+		mxTypeError("no original host function");
+	the->meterIndex += count;
+	the->scope->value.environment.variable.count = 0;
+	the->stack = the->scope;
+	(*property->value.callback.address)(the);
+}
+
+#endif

@@ -1038,7 +1038,7 @@ export default class extends Tool {
 		this.modulesPath = this.tmpPath + this.slash + "modules";
 		this.createDirectory(this.modulesPath);
 		for (var folder of this.jsFolders)
-			this.createDirectory(this.modulesPath + this.slash + folder);
+			this.createFolder(this.modulesPath, folder);
 
 		if (this.platform == "esp32") {
 			if (undefined === this.environment.SDKCONFIGPATH) {
@@ -1120,9 +1120,9 @@ export default class extends Tool {
 			this.createDirectory(this.resourcesPath);
 		}
 		for (var folder of this.dataFolders)
-			this.createDirectory(this.dataPath + this.slash + folder);
+			this.createFolder(this.dataPath, folder);
 		for (var folder of this.resourcesFolders)
-			this.createDirectory(this.resourcesPath + this.slash + folder);
+			this.createFolder(this.resourcesPath, folder);
 			
 		var file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h", this);
 		file.generate(this);

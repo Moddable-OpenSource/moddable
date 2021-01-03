@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -29,100 +29,74 @@ const PREF_WIFI = "wifi";
 let stored_ssid = Preference.get(PREF_WIFI, "ssid");
 let stored_pass = Preference.get(PREF_WIFI, "password");
 
-let accessPointList = [];
+const MAX_WIFI_SCANS = 3;
 
 class WebConfigWifi {
+	wifiScans = 0;
+	connecting = false;
+	connectionWasEstablished = false;
+
 	constructor(dict) {
 		this.dict = dict;
-		this.connecting = 0;
-		this.usingAP = 0;
 
-		if (undefined === this.dict.ssid || '' === this.dict.ssid) {
-			this.configAP(AP_NAME, AP_PASSWORD);
+		if (dict.ssid) {
+			this.doWiFiScan();
 		}
 		else {
-			Timer.set(id => { this.checkConnected(); }, 10000);
-			this.doWiFiScan();
+			this.configAP();
 		}
 	}
 
 	doWiFiScan() {
 		trace(`doWifiScan - looking for ${this.dict.ssid}\n`);
 		WiFi.scan({}, item => {
-			if (item) {
-				let theap = accessPointList.find(x => x.ssid === item.ssid);
-				if (undefined === theap)
-					accessPointList.push(item);
-				else
-					theap.rssi = item.rssi;
+			if (this.connecting || this.AP)
+				return;
 
-				if (item.ssid == this.dict.ssid)
-					this.checkSSIDs();
+			if (item) {
+				if (item.ssid === this.dict.ssid) {
+					this.connect(this.dict.ssid, this.dict.password);
+				}
+			}
+			else {
+				if (this.wifiScans++ > MAX_WIFI_SCANS) {
+					this.configAP();
+				}
+				else {
+					this.doWiFiScan();
+				}
 			}
 		});
-	}
-
-	checkSSIDs() {
-		trace(`checkSSIDs - looking for ${this.dict.ssid}\n`);
-
-		let theap = accessPointList.find(x => x.ssid === this.dict.ssid);
-		if (undefined !== theap)
-			this.connect(this.dict.ssid, this.dict.password);
-		else {
-			if (WiFi.status === 0) {			// idle
-				if (this.wifiScans++ > MAX_WIFI_SCANS) {
-					this.wifiScans = 0;
-					this.checkConnected();
-				}
-				else
-					this.doWiFiScan();
-			}
-		}
 	}
 
 	connect(ssid, password) {
 		trace(`connect - ${ssid} ${password}\n`);
-		this.connecting = 1;
+		this.connecting = true;
 
-		let tries = 0;
 		this.myWiFi = new WiFi({ssid, password}, msg => {
+			trace(`WiFi - ${msg}\n`);
 			switch (msg) {
-				case "connect":
+				case WiFi.gotIP:
+					trace(`connected\n`);
+					this.connecting = false;
+					this.connectionWasEstablished = true;
+
+					this.configServer();
 					break;
-				case "gotIP":
-					if (!this.connectionWasEstablised) {
-						this.connected();
+
+				case WiFi.disconnected:
+					this.connecting = false;
+					this.unconfigServer();
+
+					if (this.connectionWasEstablished) {
+						this.connecting = true;
+						WiFi.connect({ssid, password});		// try to reconnect
 					}
-					break;
-				case "disconnect":
-					this.connecting = 0;
-					if (undefined === WiFi.status) {
-						this.checkConnected();
-					}
-					//@@
+					else if (!this.connecting)
+						this.configAP();
 					break;
 			}
 		});
-	}
-
-	connected() {
-		trace(`connected\n`);
-		this.connecting = 0;
-		this.connectionWasEstablished = 1;
-
-		this.configServer();
-	}
-
-	checkConnected() {
-		trace(`checkConnected\n`);
-		if (this.connectionWasEstablished || this.connecting || (undefined !== this.usingAP))
-			return;
-		if (undefined !== this.myWiFi) {
-			this.myWiFi.close();
-			this.myWiFi = undefined;
-		}
-		WiFi.close();
-		this.configAP(AP_NAME, AP_PASSWORD);
 	}
 
 	advertiseServer() {
@@ -141,7 +115,7 @@ class WebConfigWifi {
 		trace(`configServer\n`);
 		this.head = `<html><head><title>${HTML_TITLE}</title></head>`;
 
-		this.apServer  = new Server();
+		this.apServer  = new Server;
 		this.apServer.owner = this;
 		this.apServer.callback = function(message, value, v2) {
 			switch (message) {
@@ -157,7 +131,7 @@ class WebConfigWifi {
 					let postData = value.split("&");
 					for (let i=0; i<postData.length; i++) {
 						let x = postData[i].split("=");
-						this.userReq[x[0]] = x[1].replace("+"," ");
+						this.userReq[x[0]] = x[1].replaceAll("+"," ");
 					}
 					break;
 
@@ -169,7 +143,7 @@ class WebConfigWifi {
 						}
 					}
 					else {
-						if (this.server.owner.usingAP)
+						if (this.server.owner.AP)
 							msg = this.server.owner.requestPageSSID();
 						else
 							msg = this.server.owner.requestPage();
@@ -198,6 +172,13 @@ class WebConfigWifi {
 
 		this.advertiseServer();
 	}
+	unconfigServer() {
+		this.mdns?.close();
+		delete this.mdns;
+
+		this.apServer?.close();
+		delete this.apServer;
+	}
 
 	responsePageSSID(req) {
 		let msg = `<h3>Attempting to connect to <b>${req.ssid}</b></h3>
@@ -225,15 +206,17 @@ Then reconnect to the access point "${AP_NAME}" and visit <a href="http://${this
 <div class="button"><button>Set SSID</button></div></form>`;
 	}
 
-	configAP(ssid, password) {
+	configAP() {
 		trace(`configAP\n`);
-		this.usingAP = 1;
 
-		if (undefined !== this.myWiFi) {
-			this.myWiFi.close();
-			this.myWiFi = undefined;
-		}
-		this.AP = WiFi.accessPoint({ ssid, password });
+		this.myWiFi?.close();
+		delete this.myWiFi;
+
+		WiFi.accessPoint({
+			ssid: AP_NAME,
+			password: AP_PASSWORD
+		});
+		this.AP = true;
 		this.configServer();
 	}
 }
@@ -247,5 +230,8 @@ function doRestart() {
     restart();
 }
 
-let setupWifi = new WebConfigWifi({ ssid:stored_ssid, password:stored_pass, name:hostName});
-
+const setupWifi = new WebConfigWifi({
+	ssid: stored_ssid,
+	password: stored_pass,
+	name: hostName
+});

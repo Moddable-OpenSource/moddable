@@ -105,7 +105,7 @@ void modSPIInit(modSPIConfiguration config)
 		config->spi_config.deassertion_Time_Ns = 0;
 		config->spi_config.loopback_Mode = 0;
 		config->spi_config.hs_Mode = 0;
-
+		
 		qurt_signal_create(&config->spi_signal);
 
 		gSPITxBuffer = (uint32_t*)c_malloc(SPI_BUFFER_SIZE);

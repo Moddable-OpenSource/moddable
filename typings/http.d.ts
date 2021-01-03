@@ -19,6 +19,7 @@
 */
 
 declare module "http" {
+  type RequestError = -1;
   type RequestBodyFragment = 0;
   type RequestStatusCode = 1;
   type RequestHeaderReceived = 2;
@@ -26,6 +27,7 @@ declare module "http" {
   type RequestResponseFragment = 4;
   type RequestAllResponse = 5;
   type RequestStatus = (
+    RequestError |
     RequestBodyFragment |
     RequestStatusCode |
     RequestHeaderReceived |
@@ -53,34 +55,64 @@ declare module "http" {
     // TODO: better
     callback: (message: RequestStatus, val1?: any, val2?: any) => void;
     
-    static requestFragment: number;
-    static status: number;
-    static header: number;
-    static headersComplete: number;
-    static responseFragment: number;
-    static responseComplete: number;
-    static error: number;
+    static readonly requestFragment: RequestBodyFragment;
+    static readonly status: RequestStatusCode;
+    static readonly header: RequestHeaderReceived;
+    static readonly headersComplete: RequestAllHeaders;
+    static readonly responseFragment: RequestAllHeaders;
+    static readonly responseComplete: RequestAllResponse;
+    static readonly error: RequestError;
   }
+
+
+type ServerConnection = 1;
+type ServerStatus = 2;
+type ServerHeader = 3;
+type ServerHeadersComplete = 4;
+type ServerRequestFragment = 5;
+type ServerRequestComplete = 6;
+type ServerPrepareResponse = 8;
+type ServerResponseFragment = 9;
+type ServerResponseComplete = 10;
+type ServerError = -1;
+type ServerMessages = (
+  ServerConnection |
+  ServerStatus |
+  ServerHeader |
+  ServerHeadersComplete |
+  ServerRequestFragment |
+  ServerRequestComplete |
+  ServerPrepareResponse |
+  ServerResponseFragment |
+  ServerResponseComplete |
+  ServerError
+);
+
   class Server {
     constructor(
-      options: import('socket').TCPSocketOptions & {
+      options?: import('socket').TCPSocketOptions & {
         port?: number
       }
     );
     close();
+    read(): number;
+    read<T extends typeof String | typeof ArrayBuffer>(
+      type: T,
+      until?: number
+    ): T extends typeof String ? string : ArrayBuffer;
     // TODO: better
-    callback: (message: number, val1?: any, val2?: any) => void;
+    callback: (message: ServerMessages, val1?: any, val2?: any) => void;
   
-    static connection: number;
-    static status: number;
-    static header: number;
-    static headersComplete: number;
-    static requestFragment: number;
-    static requestComplete: number;
-    static prepareResponse: number;
-    static responseFragment: number;
-    static responseComplete: number;
-    static error: number;
+    static connection: ServerConnection;
+    static status: ServerStatus;
+    static header: ServerHeader;
+    static headersComplete: ServerHeadersComplete;
+    static requestFragment: ServerRequestFragment;
+    static requestComplete: ServerRequestComplete;
+    static prepareResponse: ServerPrepareResponse;
+    static responseFragment: ServerResponseFragment;
+    static responseComplete: ServerResponseComplete;
+    static error: ServerError;
 }
   export {Request, Server};
 }

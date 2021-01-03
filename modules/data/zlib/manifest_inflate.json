@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"inflate": "./inflate",
+		"*": "./miniz"
+	},
+	"preload": [
+		"inflate"
+	]
+}

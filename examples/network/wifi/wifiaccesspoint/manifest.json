@@ -9,13 +9,5 @@
 			"$(MODULES)/network/http/*"
 		]
 	},
-	"preload": "http",
-	"platforms": {
-		"esp": {},
-		"esp32": {},
-		"qca4020": {},
-		"...": {
-			"error": "WiFi module unsupported"
-		}
-	}
+	"preload": "http"
 }

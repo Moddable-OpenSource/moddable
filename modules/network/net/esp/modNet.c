@@ -51,6 +51,19 @@ getNIF(xsMachine *the)
 	if (xsToInteger(xsArgc) > 1) {
 		wantsAP = 0 == c_strcmp(xsToString(xsArg(1)), "ap");
 		wantsStation = 0 == c_strcmp(xsToString(xsArg(1)), "station");
+#if ESP32
+		if (!wantsAP && !wantsStation) {	// for multihomed configurations: if argument is IP address, find adapter that matches.
+			ip_addr_t dst;
+			if (ipaddr_aton(xsToString(xsArg(1)), &dst)) {
+				dst.u_addr.ip4.addr &= 0x00ffffff;		//@@ this only works for IPv4
+				tcpip_adapter_ip_info_t infoSTA = {0}, infoAP = {0};
+				if ((ESP_OK == tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &infoSTA)) && ((infoSTA.ip.addr & 0x00ffffff) == dst.u_addr.ip4.addr))
+					return TCPIP_ADAPTER_IF_STA;
+				if ((ESP_OK == tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &infoAP)) && ((infoAP.ip.addr & 0x00ffffff) == dst.u_addr.ip4.addr))
+					return TCPIP_ADAPTER_IF_AP;
+			}
+		}
+#endif
 	}
 
 #if ESP32

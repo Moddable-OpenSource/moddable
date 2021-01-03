@@ -115,6 +115,12 @@ void xs_poco_build(xsMachine *the)
 		gCFE = CFENew();
 }
 
+void xs_poco_close(xsMachine *the)
+{
+	xs_poco_destructor(xsmcGetHostData(xsThis));
+	xsmcSetHostData(xsThis, NULL);
+}
+
 void xs_poco_begin(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
@@ -308,7 +314,8 @@ void xs_poco_clip(xsMachine *the)
 		y = (PocoCoordinate)xsmcToInteger(xsArg(1)) + poco->yOrigin;
 		w = (PocoDimension)xsmcToInteger(xsArg(2));
 		h = (PocoDimension)xsmcToInteger(xsArg(3));
-		PocoClipPush(poco, x, y, w, h);
+		if (PocoClipPush(poco, x, y, w, h))
+			xsmcSetTrue(xsResult);
 	}
 	else
 		PocoClipPop(poco);
@@ -726,7 +733,9 @@ void xs_poco_drawText(xsMachine *the)
 	PocoColor color;
 	CommodettoBitmap cb = NULL;
 	PocoBitmapRecord bits;
-	static const unsigned char *ellipsis = (unsigned char *)"...";
+	static const unsigned char *ellipsisFallback = (unsigned char *)"...";
+	static const unsigned char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
+	const unsigned char *ellipsis;
 	PocoDimension ellipsisWidth;
 	int width;
 	const unsigned char *fontData;
@@ -746,10 +755,18 @@ void xs_poco_drawText(xsMachine *the)
 	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
 
 	if (argc > 5) {
-		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, ellipsis[0], false);
+		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, 0x2026, false);
+		if (glyph) {
+			ellipsisWidth = glyph->advance;
+			ellipsis = ellipsisUTF8;
+		}
+		else {
+			glyph = CFEGetGlyphFromUnicode(gCFE, '.', false);
+			ellipsisWidth = glyph ? glyph->advance * 3 : 0;
+			ellipsis = ellipsisFallback;
+		}
 
 		width = xsmcToInteger(xsArg(5));
-		ellipsisWidth = glyph ? glyph->advance * 3 : 0;
 	}
 	else {
 		width = 0;
@@ -931,7 +948,7 @@ void xs_poco_adaptInvalid(xsMachine *the)
 	if (pixelsOutDispatch)
 		(pixelsOutDispatch->doAdaptInvalid)(poco->outputRefcon, cr);
 	else
-		xsCall1(xsResult, xsID_adaptInvalidxsID_, xsArg(0));
+		xsCall1(xsResult, xsID_adaptInvalid, xsArg(0));
 	unrotateCoordinatesAndDimensions(poco->width, poco->height, cr->x, cr->y, cr->w, cr->h);
 	}
 #endif

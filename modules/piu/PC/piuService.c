@@ -31,6 +31,7 @@
 #include "piuAll.h"
 #include "pthread.h"
 #endif
+#include "mc.defines.h"
 
 #ifdef mxInstrument	
 extern void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units);
@@ -228,11 +229,12 @@ void ServiceThreadCreate(xsMachine* the)
 
 void ServiceThreadInitialize(void* it, void* context)
 {
+	static xsStringValue signature = PIU_DOT_SIGNATURE;
 	ServiceThread thread = it;
 	//fprintf(stderr, "ServiceThreadInitialize thread %p\n", thread);
 	txMachine* root = &ServiceRoot;
 	txPreparation* preparation = xsPreparation();
-	thread->the = fxCloneMachine(&preparation->creation, root, thread->name[0] ? thread->name : "main", context);
+	thread->the = fxCloneMachine(&preparation->creation, root, thread->name[0] ? thread->name : strrchr(signature, '.') + 1, context);
 	xsBeginHost(thread->the);
 	{
 		xsVars(3);

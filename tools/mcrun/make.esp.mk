@@ -19,11 +19,18 @@
 
 HOST_OS := $(shell uname)
 ifeq ($(HOST_OS),Darwin)
-UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
+	ifeq ($(findstring _11.,_$(shell sw_vers -productVersion)),_11.)
+		UPLOAD_PORT ?= /dev/cu.usbserial-0001
+	else
+		UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
+	endif
 else
-UPLOAD_PORT ?= /dev/ttyUSB0
+	UPLOAD_PORT ?= /dev/ttyUSB0
 endif
+
 URL ?= "~"
+
+DEBUGGER_SPEED ?= 921600
 
 ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -71,11 +78,11 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
 	$(START_XSBUG)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 release: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 debugURL: $(ARCHIVE)
 	@echo "# curl "$(NAME)".xsa "$(URL)

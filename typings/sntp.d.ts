@@ -32,6 +32,10 @@ declare module "sntp" {
   )
   type SNTPCallback = (message: SNTPCallbackMessage, value?: number) => void;
   class SNTP {
+    static readonly time: SNTPUnableToRetrieveTime;
+    static readonly retry: SNTPRetry;
+    static readonly error: SNTPUnableToRetrieveTime;
+
     constructor(options: SNTPOptions, callback: SNTPCallback);
   }
   export {SNTP as default};

@@ -413,17 +413,30 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 	PiuGlyph glyph;
 	PiuCoordinate advance;
 	
-	static const char *ellipsis = "...";
+	static const char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
+	static const char *ellipsisFallback = "...";
+	const char *ellipsis;
 	PocoDimension ellipsisWidth;
 	if (width) {
-		PiuGlyph glyph = PiuFontGetGlyph(font, '.', 0);
-		if (glyph)
-			ellipsisWidth = 3 * glyph->advance;
-		else
-			ellipsisWidth = 0;
+		PiuGlyph glyph = PiuFontGetGlyph(font, 0x2026, 0);
+		if (glyph) {
+			ellipsisWidth = glyph->advance;
+			ellipsis = (char *)ellipsisUTF8;
+		}
+		else {
+			glyph = PiuFontGetGlyph(font, '.', 0);
+			if (glyph) {
+				ellipsisWidth = 3 * glyph->advance;
+				ellipsis = ellipsisFallback;
+			}
+			else
+				ellipsisWidth = 0;
+		}
 	}
-	else
+	else {
+		ellipsis = NULL;
 		ellipsisWidth = 0;
+	}
 
 	text += offset;
 	while (length) {
@@ -1408,7 +1421,7 @@ void PiuView_onTouchBegan(xsMachine* the)
 	y = c; 
 #endif
 	(*self)->updating = 1;
-	(*self)->idleTicks = ticks;
+	(*self)->idleTicks = (PiuTick)ticks;
 	PiuApplicationTouchBegan(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;
@@ -1439,7 +1452,7 @@ void PiuView_onTouchEnded(xsMachine* the)
 	y = c; 
 #endif
 	(*self)->updating = 1;
-	(*self)->idleTicks = ticks;
+	(*self)->idleTicks = (PiuTick)ticks;
 	PiuApplicationTouchEnded(application, index, x, y, ticks);
 	PiuApplicationAdjust(application);
 	(*self)->updating = 0;

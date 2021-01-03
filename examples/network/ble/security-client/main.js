@@ -18,7 +18,7 @@
 
 import BLEClient from "bleclient";
 import {uuid} from "btutils";
-import {IOCapability} from "sm";
+import {SM, IOCapability} from "sm";
 
 const HTM_SERVICE_UUID = uuid`1809`;
 const TEMPERATURE_CHARACTERISTIC_UUID = uuid`2A1C`;
@@ -26,6 +26,7 @@ const TEMPERATURE_CHARACTERISTIC_UUID = uuid`2A1C`;
 class SecureHealthThermometerClient extends BLEClient {
 	onReady() {
 		this.securityParameters = { mitm:true, ioCapability:IOCapability.DisplayOnly };
+		//this.securityParameters = { mitm:true, bonding:true, ioCapability:IOCapability.DisplayOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardDisplay };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.KeyboardOnly };
 		//this.securityParameters = { mitm:true, ioCapability:IOCapability.NoInputNoOutput };
@@ -46,14 +47,23 @@ class SecureHealthThermometerClient extends BLEClient {
 			this.connect(device);
 		}
 	}
-	onAuthenticated() {
+	onAuthenticated(params) {
 		this.authenticated = true;
+		this.bonded = params.bonded;
 		this.characteristic?.enableNotifications();
 	}
 	onConnected(device) {
+		trace(`connected to device ${device.address}\n`);
 		device.discoverPrimaryService(HTM_SERVICE_UUID);
 	}
-	onDisconnected() {
+	onDisconnected(device) {
+		if (device) {
+			trace(`disconnected from device ${device.address}\n`);
+			if (this.bonded) {
+				SM.deleteBonding(device.address, device.addressType);
+				delete this.bonded;
+			}
+		}
 		delete this.characteristic;
 		delete this.authenticated;
 		this.startScanning();
@@ -96,6 +106,9 @@ class SecureHealthThermometerClient extends BLEClient {
 		let passkey = Math.round(Math.random() * 999999);
 		trace(`client requested passkey: ${this.passkeyToString(passkey)}\n`);
 		return passkey;
+	}
+	onBondingDeleted(params) {
+		trace(`device ${params.address} bond deleted\n`);
 	}
 	passkeyToString(passkey) {
 		return passkey.toString().padStart(6, "0");

@@ -206,6 +206,7 @@ static void deviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint
 static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static modBLE gBLE = NULL;
 
@@ -271,8 +272,11 @@ void xs_ble_client_destructor(void *data)
 	modBLEConnection connection = modBLEConnectionGetFirst();
 	while (connection != NULL) {
 		modBLEConnection next = connection->next;
-		if (kBLEConnectionTypeClient == connection->type)
+		if (kBLEConnectionTypeClient == connection->type) {
+			xsMachine *the = connection->the;
+			xsForget(connection->objConnection);
 			modBLEConnectionRemove(connection);
+		}
 		connection = next;
 	}
 	
@@ -358,7 +362,7 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = 0;
+	connection->id = kInvalidConnectionID;
 	c_memmove(&connection->address, address, 6);
 	connection->addressType = addressType;
 	connection->bond = 0xFF;
@@ -447,6 +451,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 	connection->the = the;
 	connection->objConnection = xsThis;
 	connection->objClient = xsArg(0);
+	xsRemember(connection->objConnection);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -794,6 +799,34 @@ bail:
 	return result;
 }
 
+void modBLEClientBondingRemoved(qapi_BLE_BD_ADDR_t *address, qapi_BLE_GAP_LE_Address_Type_t addressType)
+{
+	qapi_BLE_GAP_LE_White_List_Entry_t entry;
+	
+	if (!gBLE) return;
+	
+	entry.Address_Type = addressType;
+	c_memmove(&entry.Address, address, 6);
+	modMessagePostToMachine(gBLE->the, (void*)&entry, sizeof(entry), bondingRemovedEvent, NULL);
+}
+
+void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	qapi_BLE_GAP_LE_White_List_Entry_t *entry = (qapi_BLE_GAP_LE_White_List_Entry_t *)message;
+	
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), &entry->Address, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), entry->Address_Type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsBeginHost(gBLE->the);
@@ -810,16 +843,18 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsUnknownError("connection not found");
 		
 	// Ignore duplicate connection events
-	if (0 != connection->id)
+	if (kInvalidConnectionID != connection->id)
 		goto bail;
 
 	connection->id = result->ConnectionID;
-	xsmcVars(3);
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), connection->id);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(2), &result->RemoteDevice, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), &result->RemoteDevice, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), connection->addressType);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
@@ -834,9 +869,14 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	// ignore multiple disconnects on same connection
 	if (!connection) goto bail;
 
-	xsmcVars(1);
+	xsmcVars(2);
 	xsmcSetInteger(xsVar(0), connection->id);
+	xsmcSetArrayBuffer(xsVar(1), &result->RemoteDevice, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), connection->addressType);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);
@@ -1167,7 +1207,9 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	if (NULL == connection) return;
 	c_memmove(&remote_addr, connection->address, 6);
 	if (QAPI_BLE_GAP_LE_PAIRING_STATUS_NO_ERROR == Pairing_Status->Status) {
+		uint8_t bonded = 0;
 		if (gBLE->bonding && ((connection->Flags & (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID)) == (DEVICE_INFO_FLAGS_LTK_VALID | DEVICE_INFO_FLAGS_IRK_VALID))) {
+			bonded = 1;
 			device = modBLEBondedDevicesFindByAddress(remote_addr);
 			if (NULL != device)
 				modBLEBondedDevicesRemove(device);
@@ -1185,7 +1227,11 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 			}
 		}
 		xsBeginHost(gBLE->the);
-		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetBoolean(xsVar(1), bonded);
+		xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 		xsEndHost(gBLE->the);
 	}
 	else {

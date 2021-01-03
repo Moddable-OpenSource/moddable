@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
- * 
+ *
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
@@ -14,32 +14,36 @@
 
 import {Socket} from "socket";
 
-let messageNames = ["error", "disconnect", "unused", "connect", "dataReceived", "dataSent"];
-
 let bytes = 0;
 
-let host = "www.example.com";
-let socket = new Socket({host: host, port: 80});
+const host = "www.example.com";
+const socket = new Socket({host, port: 80});
 socket.callback = function(message, value)
 {
-	trace(`Socket message ${messageNames[message + 2]}`);
-	if (undefined != value)
-		trace(` VALUE = ${value}`);
+	let name;
+
+	for (name in Socket) {
+		if (Socket[name] === message)
+			break;
+	}
+
+	trace(`Socket message: ${name} `);
+	if (undefined !== value)
+		trace(value);
 	trace("\n");
 
-	if (1 == message) {
+	if (Socket.connected === message) {
 		this.write("GET / HTTP/1.1\r\n");
 		this.write("Host: ", host, "\r\n");
 		this.write("Connection: close\r\n");
 		this.write("\r\n");
 	}
-	else if (2 == message) {
+	else if (Socket.readable === message) {
 		bytes += value;
 
-		trace(this.read(String));
-		trace("\n");
+		trace(this.read(String), "\n");
 	}
-	else if (-1 == message)
+	else if (message < 0)
 		trace(`socket disconnected after receiving ${bytes} bytes in http response.\n`);
 }
 

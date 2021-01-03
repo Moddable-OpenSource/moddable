@@ -110,6 +110,7 @@ static const char_name_table *handleToCharName(uint16_t handle);
 static const ble_uuid16_t *handleToUUID(uint16_t handle);
 
 static void bleServerCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void logGAPEvent(struct ble_gap_event *event);
 static void logGATTEvent(uint8_t op);
@@ -369,6 +370,17 @@ static void deployServices(xsMachine *the)
 		xsUnknownError("failed to start services");
 }
 
+void modBLEServerBondingRemoved(char *address, uint8_t addressType)
+{
+	ble_addr_t addr;
+	
+	if (!gBLE) return;
+	
+	addr.type = addressType;
+	c_memmove(addr.val, address, 6);
+	modMessagePostToMachine(gBLE->the, (void*)&addr, sizeof(addr), bondingRemovedEvent, NULL);
+}
+
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -409,21 +421,20 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		connection->addressType = gBLE->remote_bda.type;
 		c_memmove(connection->address, gBLE->remote_bda.val, 6);
 		modBLEConnectionAdd(connection);
-		
-		xsmcVars(2);
-		xsVar(0) = xsmcNewObject();
-		xsmcSetInteger(xsVar(1), desc->conn_handle);
-		xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-		xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
-		xsmcSet(xsVar(0), xsID_address, xsVar(1));
-		xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
-		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	}
 	else {
 		LOG_GAP_MSG("BLE_GAP_EVENT_CONNECT failed");
-		xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
 	}
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetInteger(xsVar(1), desc->conn_handle);
+	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
+	xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, -1 != desc->conn_handle ? xsString("onConnected") : xsString("onDisconnected"), xsVar(0));
+	
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -453,6 +464,8 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
@@ -645,7 +658,11 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
         if (0 == rc) {
         	if (desc.sec_state.encrypted) {
 				xsBeginHost(gBLE->the);
-				xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+				xsmcVars(2);
+				xsVar(0) = xsmcNewObject();
+				xsmcSetBoolean(xsVar(1), desc.sec_state.bonded);
+				xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+				xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 				xsEndHost(gBLE->the);
         	}
         }
@@ -666,6 +683,23 @@ static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), event->mtu.value);
 	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
+void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	ble_addr_t *addr = (ble_addr_t *)message;
+
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), addr->val, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), addr->type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 

@@ -29,17 +29,41 @@
 #include "esp_gap_ble_api.h"
 #include "esp_bt_defs.h"
 
+static void deleteBonding(xsMachine *the, uint8_t *address, uint8_t addressType);
+
 void xs_ble_sm_delete_all_bondings(xsMachine *the)
 {
-    int dev_num = esp_ble_get_bond_device_num();
+	deleteBonding(the, NULL, 0);
+}
+
+void xs_ble_sm_delete_bonding(xsMachine *the)
+{
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
+	
+	deleteBonding(the, address, addressType);
+}
+
+void deleteBonding(xsMachine *the, uint8_t *address, uint8_t addressType)
+{
+    int i, dev_num = esp_ble_get_bond_device_num();
+    uint8_t addr[6];
     if (0 == dev_num) return;
     
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)c_malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
     if (!dev_list)
 		xsUnknownError("no memory");
+	if (NULL != address) {
+		for (i = 0; i < 6; ++i)
+			addr[i] = address[5 - i];
+	}
     esp_ble_get_bond_device_list(&dev_num, dev_list);
-    for (int i = 0; i < dev_num; i++)
-        esp_ble_remove_bond_device(dev_list[i].bd_addr);
+    for (i = 0; i < dev_num; ++i) {
+    	if (NULL == address || 0 == c_memcmp(addr, dev_list[i].bd_addr, 6)) {
+			esp_ble_remove_bond_device(dev_list[i].bd_addr);
+			break;
+    	}
+    }
     c_free(dev_list);
 }
 

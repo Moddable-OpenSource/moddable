@@ -1,6 +1,6 @@
 # Poco
-Copyright 2016-2018 Moddable Tech, Inc.<BR>
-Revised: November 26, 2018
+Copyright 2016-2020 Moddable Tech, Inc.<BR>
+Revised: November 4, 2020
 
 ## About This Document
 
@@ -473,6 +473,12 @@ let poco = new Poco(screen, {displayListLength: 4096});
 
 ***
 
+#### `close()`
+
+Frees all memory allocated by Poco. No other functions on the instance may be called after calling `close`.
+
+***
+
 #### `clip(x, y, width, height)`
 
 Poco maintains a clip rectangle that is applied to all drawing operations.
@@ -496,6 +502,8 @@ poco.end();
 ```
 
 If the clip stack overflows or underflows, an exception is thrown from `end`. The clip stack must be empty when `end` is called or an exception is thrown. 
+
+When calling `clip` with four arguments, the return value is `true` if the resulting area contains one or more pixels and `undefined` if the clip area is empty. 
 
 > **Note:** `clip` and `origin` share the same stack, and so must be popped in the order they were pushed.
 
@@ -1032,7 +1040,7 @@ void PocoDrawingBeginFrameBuffer(Poco poco, PocoCoordinate x, PocoCoordinate y,
 	PocoPixel *pixels, int16_t rowBytes);
 ```
 
-`PocoDrawingBeginFrameBuffer ` begins the immediate mode rendering process for an update area of pixels bounded by the `x`, `y`, `w`, and `h` parameters. The `pixels` parameter points to first scan line of output pixels. The `rowBytes` parameters is the stride in bytes between scanlines.
+`PocoDrawingBeginFrameBuffer ` begins the immediate mode rendering process for an update area of pixels bounded by the `x`, `y`, `w`, and `h` parameters. The `pixels` parameter points to the first scanline of output pixels. The `rowBytes` parameters is the stride in bytes between each scanline.
 
 ***
 
@@ -1043,6 +1051,27 @@ int PocoDrawingEndFrameBuffer(Poco poco;
 ```
 
 `PocoDrawingEndFrameBuffer ` indicates that all drawing is complete for the current frame.
+
+***
+
+##### `PocoDrawExternal`
+
+
+```c
+void PocoDrawExternal(Poco poco, PocoRenderExternal doDrawExternal,
+	uint8_t *data, uint8_t dataSize,
+	PocoCoordinate x, PocoCoordinate y,
+	PocoDimension w, PocoDimension h);
+
+typedef void (*PocoRenderExternal)(Poco poco, uint8_t *data,
+	PocoPixel *dst, PocoDimension w, PocoDimension h);
+```
+
+`PocoDrawExternal` installs a custom rendering element into the current Poco display list. The `data` argument points to a block of data of `dataSize` bytes in length that describes the drawing operation. This data is copied into the Poco display list, and so should be as compact as possible. The bounds of the drawing operation are defined by the `x`, `y`, `w`, and `h` arguments. The `doDrawExternal` callback function is called to render the custom element, one or more scanlines at a time.
+
+Poco does not perform clipping or rotation on the rendering operation. These must be applied by the code that creates the rendering data and/or the rendering callback function.
+
+> **Note**: Implementing custom rendering elements is an advanced technique that requires familiarity with the implementation of the Poco rendering engine.
 
 ***
 

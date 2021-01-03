@@ -164,6 +164,7 @@ void xs_ble_client_destructor(void *data)
 	while (connection != NULL) {
 		modBLEClientConnection next = (modBLEClientConnection)connection->next;
 		if (kBLEConnectionTypeClient == connection->type) {
+			xsMachine *the = connection->the;
 			esp_ble_gattc_app_unregister(connection->gattc_if);
 			modBLENotification notifications = connection->notifications;
 			while (notifications != NULL) {
@@ -171,6 +172,7 @@ void xs_ble_client_destructor(void *data)
 				notifications = notifications->next;
 				c_free(notification);
 			}
+			xsForget(connection->objConnection);
 			modBLEConnectionRemove((modBLEConnection)connection);
 		}
 		connection = next;
@@ -241,7 +243,7 @@ void xs_ble_client_connect(xsMachine *the)
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
 		xsUnknownError("out of memory");
-	connection->id = 0xFFFF;
+	connection->id = kInvalidConnectionID;
 	connection->type = kBLEConnectionTypeClient;
 	connection->addressType = addressType;
 	c_memmove(&connection->address, &bda, 6);
@@ -320,6 +322,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 	connection->the = the;
 	connection->objConnection = xsThis;
 	OBJ_CLIENT(connection) = xsArg(0);
+	xsRemember(connection->objConnection);
 }
 	
 void xs_gap_connection_disconnect(xsMachine *the)
@@ -819,7 +822,27 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	modBLEConnection connection = modBLEConnectionFindByAddress(auth_cmpl->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
-	xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetBoolean(xsVar(1), auth_cmpl->auth_mode & ESP_LE_AUTH_BOND);
+	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
+static void gapRemoveBondCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	struct ble_remove_bond_dev_cmpl_evt_param *remove_bond_dev_cmpl = (struct ble_remove_bond_dev_cmpl_evt_param *)message;
+	if (!gBLE) return;
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), remove_bond_dev_cmpl->bd_addr, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), kBLEAddressTypePublic);	// @@
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -879,6 +902,10 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 			}
 #endif
      		break;
+		case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT:
+			if (ESP_GATT_OK == param->remove_bond_dev_cmpl.status)
+				modMessagePostToMachine(gBLE->the, (uint8_t*)&param->remove_bond_dev_cmpl, sizeof(struct ble_remove_bond_dev_cmpl_evt_param), gapRemoveBondCompleteEvent, NULL);
+			break;
 		case ESP_GAP_BLE_SEC_REQ_EVT:
 			esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
      		break;
@@ -935,12 +962,12 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 	struct gattc_open_evt_param *open = (struct gattc_open_evt_param *)message;
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByAddress(open->remote_bda);
+	uint8_t buffer[6];
 	if (!connection)
 		xsUnknownError("connection not found");
 		
 	if (ESP_GATT_OK == open->status) {
-		uint8_t buffer[6];
-		if (0xFFFF != connection->id) {
+		if (kInvalidConnectionID != connection->id) {
 			LOG_GATTC_MSG("Ignoring duplicate connect event");
 			goto bail;
 		}
@@ -964,10 +991,18 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 #endif
 		if (ESP_GATT_IF_NONE != GATTC_IF(connection))
 			esp_ble_gattc_app_unregister(GATTC_IF(connection));
-		modBLEConnectionRemove(connection);
 		if (gAPP_ID > 1)
 			--gAPP_ID;
-		xsCall1(gBLE->obj, xsID_callback, xsString("onDisconnected"));
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		addressToBuffer(&connection->address, buffer);
+		xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+		xsmcSet(xsVar(0), xsID_address, xsVar(1));
+		xsmcSetInteger(xsVar(1), connection->addressType);
+		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+		xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+		xsForget(connection->objConnection);
+		modBLEConnectionRemove(connection);
 	}
 bail:
 	xsEndHost(gBLE->the);
@@ -976,6 +1011,7 @@ bail:
 static void gattcCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct gattc_close_evt_param *close = (struct gattc_close_evt_param *)message;
+	uint8_t buffer[6];
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(close->conn_id);
 	
@@ -983,9 +1019,15 @@ static void gattcCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	if (!connection) goto bail;
 	
 	esp_ble_gattc_app_unregister(GATTC_IF(connection));
-	xsmcVars(1);
+	xsmcVars(2);
 	xsmcSetInteger(xsVar(0), close->conn_id);
+	addressToBuffer(&connection->address, buffer);
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), connection->addressType);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
 	xsEndHost(gBLE->the);

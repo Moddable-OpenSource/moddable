@@ -1,45 +1,96 @@
 {
-	"modules": {
-		"*": [
-			"$(MODULES)/files/preference/*"
-		]
-	},
-	"preload": [
-		"preference"
-	],
 	"platforms": {
 		"esp": {
 			"modules": {
 				"*": [
+					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/esp/*"
 				]
-			}
+			},
+			"preload": [
+				"preference"
+			]		
 		},
 		"esp32": {
 			"modules": {
 				"*": [
+					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/esp32/*"
 				]
-			}
+			},
+			"preload": [
+				"preference"
+			]
 		},
 		"gecko": {
 			"modules": {
 				"*": [
+					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/gecko/*"
 				]
-			}
+			},
+			"preload": [
+				"preference"
+			]
 		},
 		"mac": {
 			"modules": {
 				"*": [
+					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/mac/*"
 				]
-			}
+			},
+			"preload": [
+				"preference"
+			]
+		},
+		"cli-mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/mac/*"
+				]
+			},
+			"preload": [
+				"preference"
+			]
 		},
 		"win": {
 			"modules": {
 				"*": [
+					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/win/*"
+				]
+			},
+			"preload": [
+				"preference"
+			]
+		},
+		"cli-win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/win/*"
+				]
+			},
+			"preload": [
+				"preference"
+			]
+		},
+		"lin": {
+			"include": [
+				"$(MODULES)/files/file/manifest.json"
+			],
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/lin/*"
+				]
+			}
+		},
+		"cli-lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/lin/*"
 				]
 			}
 		}

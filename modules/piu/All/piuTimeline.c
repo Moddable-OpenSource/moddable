@@ -99,7 +99,7 @@ void xs_TweenOnProperty_tween(xsMachine *the)
 	xsVar(0) = xsReference(tr->values);
 
 	index = tr->length * fraction;
-	fromI = c_floor(index);
+	fromI = (int)c_floor(index);
 	toI = ((fromI + 1) < tr->length) ? (fromI + 1) : tr->length;
 
 	from = xsToNumber(xsGet(xsVar(0), fromI));

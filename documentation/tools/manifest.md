@@ -1,7 +1,7 @@
 # Manifest
 
 Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: September 29, 2020
+Revised: December 23, 2020
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -13,12 +13,15 @@ A manifest is a JSON file that describes the modules and resources necessary to 
 	* [`build`](#build)
 	* [`include`](#include)
 	* [`creation`](#creation)
+	* [`defines`](#defines)
+	* [`config`](#config)
 	* [`strip`](#strip)
 	* [`modules`](#modules)
 	* [`preload`](#preload)
 	* [`resources`](#resources)
 	* [`data`](#data)
 	* [`platforms`](#platforms)
+		* [`subplatforms`](#subplatforms)
 * [How manifests are processed](#process)
 
 <a id="example"></a>
@@ -161,7 +164,9 @@ The `creation` object defines the creation parameters of the XS machine that wil
 	"main": "main",
 },
 ```
-	
+
+These values correspond to machine allocation values [described](../xs/XS%20in%20C.md#machine-allocation) in the XS in C documentation (the sole exception is the `main` property, which is the module specifier of the module loaded following the [set-up phase](../base/setup.md)). Take care when changing these values as configuring them improperly can result in an unstable or unusable system. Bigger values are not always better, especially on devices with limited resources.
+
 ***
 
 <a id="defines"></a>
@@ -202,6 +207,8 @@ if (!config.ssid) {
 ```
 
 The `config` object in the `mc/config` module is frozen, preventing its values from being changed at runtime.
+
+The content of the `config` object may be overridden by adding key value pairs to the command line provided to `mcconfig`. See the Arguments section of the [Tools document](./tools.md#arguments) for details.
 
 ***
 
@@ -438,6 +445,7 @@ For example, if the `platforms` object of a manifest is as follows, building for
 }
 ```
 
+<a id="subplatforms"></a>
 #### Subplatforms
 
 A subplatform is used to configure an application for the variations in a product family. They are useful when devices are similar and share much of the same configuration, but have slight differences.

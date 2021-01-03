@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,10 +29,14 @@
 */
 
 import BLEClient from "bleclient";
-import {uuid} from "btutils";
-import {Authorization} from "sm";
+import {Bytes, uuid} from "btutils";
+import {Service, Characteristic} from "gatt";
+import {SM, Authorization} from "sm";
+import Preference from "preference";
+import Timer from "timer";
 
 const ReportType = {
+	NONE: 0x00,
 	INPUT: 0x01,
 	OUTPUT: 0x02,
 	FEATURE: 0x03
@@ -49,6 +53,15 @@ const UsageID = {
 };
 Object.freeze(UsageID);
 
+const Appearance = {
+	GENERIC: 960,
+	KEYBOARD: 961,
+	MOUSE: 962,
+	JOYSTICK: 963,
+	GAMEPAD: 964
+};
+Object.freeze(Appearance);
+
 class BLEHIDClient extends BLEClient {
 	constructor() {
 		super();
@@ -56,17 +69,44 @@ class BLEHIDClient extends BLEClient {
 		this.REPORT_CHARACTERISTIC_UUID = uuid`2A4D`;
 		this.REPORT_MAP_CHARACTERISTIC_UUID = uuid`2A4B`;
 		this.REPORT_REFERENCE_DESCRIPTOR_UUID = uuid`2908`;
-		this.connecting = false;
 	}
 	configure(params) {
 		this.reportTypes = params.reportTypes;
 		this.usageID = params.usageID;
+		this.bonding = params.bonding;
+		if (this.bonding)
+			this.bonded = Bonded.get(this.usageID);
+		else
+			Bonded.remove(this.usageID);
 	}
 	onReady() {
-		this.securityParameters = { mitm:true };
+		this.securityParameters = { mitm:true, bonding:this.bonding };
 	}
 	onSecurityParameters(params) {
-		this.startScanning();
+		this.start();
+	}
+	start() {
+		if (this.bonded) {
+			let bonded = this.bonded;
+			const address = new Bytes(bonded.device.address);
+			const addressType = bonded.device.addressType;
+			const device = { address, addressType };
+			this.connecting = true;
+			this.connect(device);
+			
+			// set a timeout to re-pair in case hid device no longer stores the bond
+			this.timer = Timer.set(() => {
+				delete this.connecting;
+				delete this.bonded;
+				delete this.timer;
+				this.scan();
+			}, 5000);
+			return;
+		}
+		this.scan();
+	}
+	scan() {
+		this.startScanning({ duplicates:false });
 	}
 	onDiscovered(device) {
 		if (this.connecting)
@@ -80,6 +120,19 @@ class BLEHIDClient extends BLEClient {
 			if (uuids)
 				found = uuids.find(uuid => uuid.equals(this.HID_SERVICE_UUID));
 		}
+		if (!found) {
+			let appearance = device.scanResponse.appearance;
+			if (appearance) {
+				switch(this.usageID) {
+					case UsageID.MOUSE: found = (Appearance.MOUSE == appearance); break;
+					case UsageID.JOYSTICK: found = (Appearance.JOYSTICK == appearance); break;
+					case UsageID.GAMEPAD: found = (Appearance.GAMEPAD == appearance); break;
+					case UsageID.KEYBOARD: found = (Appearance.KEYBOARD == appearance); break;
+					default:
+						break;
+				}
+			}
+		}
 		if (found) {
 			this.stopScanning();
 			this.connecting = true;
@@ -87,20 +140,39 @@ class BLEHIDClient extends BLEClient {
 		}
 	}
 	onConnected(device) {
-		this.onDeviceConnected();
-		device.discoverPrimaryService(this.HID_SERVICE_UUID);
+		this.device = device;
+		if (this.timer) {
+			Timer.clear(this.timer);
+			delete this.timer;
+		}
+		if (!this.bonded) {
+			this.onDeviceConnected(device);
+			this.device.discoverPrimaryService(this.HID_SERVICE_UUID);
+		}
 	}
 	onDisconnected() {
+		delete this.device;
+		delete this.connecting;
 		this.onDeviceDisconnected();
-		this.connecting = false;
-		this.startScanning();
+		this.start();
+	}
+	onAuthenticated(params) {
+		if (this.bonded && params.bonded) {
+			this.device.services = this.bonded.device.services;
+			this.bonded.reports.forEach(report => report.characteristic.connection = this.device.connection);
+			this.onDeviceConnected(this.device);
+			this.onDeviceReports(this.bonded.reports);
+			this.onDeviceReady();
+		}
 	}
 	onServices(services) {
-		if (services.length)
-			services[0].discoverCharacteristic(this.REPORT_MAP_CHARACTERISTIC_UUID);
+		if (services.length) {
+			this.service = services[0];
+			this.service.discoverCharacteristic(this.REPORT_MAP_CHARACTERISTIC_UUID);
+		}
 	}
 	onCharacteristics(characteristics) {
-		let count = characteristics.length;
+		const count = characteristics.length;
 		if (0 == count) return;
 		
 		this.reports = [];
@@ -111,7 +183,7 @@ class BLEHIDClient extends BLEClient {
 				return;
 			}
 			else if (characteristic.uuid.equals(this.REPORT_CHARACTERISTIC_UUID)) {
-				this.reports.push({ characteristic, reportType:0 });
+				this.reports.push({ characteristic, reportType:ReportType.NONE });
 			}
 		}
 		this.reportIndex = 0;
@@ -125,7 +197,7 @@ class BLEHIDClient extends BLEClient {
 		}
 		else {
 			// wrong hid device!
-			// @@ disconnect from this device
+			this.device.close();
 		}
 	}
 	onDescriptors(descriptors) {
@@ -135,22 +207,26 @@ class BLEHIDClient extends BLEClient {
 	}
 	onDescriptorValue(descriptor, value) {
 		let reportType = value[1];
+		let matched = [];
 		this.reports[this.reportIndex].reportType = reportType;
-		if (++this.reportIndex < this.reports.length)
+		if (1 == this.reportTypes.length && this.reportTypes[0] == reportType)
+			matched.push(this.reports[this.reportIndex]);
+		else if (++this.reportIndex < this.reports.length)
 			this.reports[this.reportIndex].characteristic.discoverAllDescriptors();
 		else {
-			let matched = [];
 			this.reports.forEach(report => {
 				this.reportTypes.forEach(reportType => {
 					if (report.reportType == reportType)
 						matched.push(report);
 				});
 			});
-			if (matched.length) {
-				this.onDeviceReports(matched);
-				this.onDeviceReady();
-			}
 		}		
+		if (matched.length) {
+			if (this.bonding)
+				Bonded.set(this.usageID, this.device, matched);
+			this.onDeviceReports(matched);
+			this.onDeviceReady();
+		}
 	}
 	onDeviceConnected() {
 		debugger;
@@ -169,5 +245,100 @@ class BLEHIDClient extends BLEClient {
 	}
 }
 
-export {BLEHIDClient as default, BLEHIDClient, ReportType, UsageID};
+/*
+	Preference format:
+	
+	- length (1)
+	- address (6)
+	- address type (1)
+	- service start handle (2)
+	- service end handle (2)
+	- report count (1)
+	- for each report:
+		- report type (1)
+		- characteristic handle (2)
+*/
+class Bonded {
+	static get(usageID) {
+		const buffer = Preference.get(Bonded.PREFERENCE_DOMAIN, Bonded.key(usageID));
+		if (buffer) {
+			let index = 1;
+			const entry = new Uint8Array(buffer);
+			const address = entry.slice(index, index + 6).buffer;
+			index += 6;
+			const addressType = entry[index++];
+			const serviceStartHandle = entry[index++] | (entry[index++] << 8);
+			const serviceEndHandle = entry[index++] | (entry[index++] << 8);
+			const reportCount = entry[index++];
+			const reports = new Array(reportCount);
+			const services = [new Service({ start:serviceStartHandle, end:serviceEndHandle })];
+			for (let i = 0; i < reportCount; ++i) {
+				const reportType = entry[index++];
+				const handle = entry[index++] | (entry[index++] << 8);
+				const characteristic = new Characteristic({ handle, type:"Uint8Array" });
+				services[0].characteristics.push(characteristic);
+				reports[i] = { reportType, characteristic };
+			}
+			const bonded = {
+				device: { address, addressType, services },
+				reports
+			};
+			return bonded;
+		}
+	}
+	static set(usageID, device, reports) {
+		const length = 13 + ((1 + 2) * reports.length);
+		let entry = new Uint8Array(length);
+		let index = 0;
+		entry[index++] = length;
+		entry.set(new Uint8Array(device.address), index);
+		index += 6;
+		entry[index++] = device.addressType;
+		entry[index++] = device.services[0].start & 0xFF;
+		entry[index++] = (device.services[0].start >> 8) & 0xFF;
+		entry[index++] = device.services[0].end & 0xFF;
+		entry[index++] = (device.services[0].end >> 8) & 0xFF;
+		entry[index++] = reports.length;
+		reports.forEach(report => {
+			entry[index++] = report.reportType;
+			entry[index++] = report.characteristic.handle & 0xFF;
+			entry[index++] = (report.characteristic.handle >> 8) & 0xFF;
+		});
+		Preference.set(Bonded.PREFERENCE_DOMAIN, Bonded.key(usageID), entry.buffer);
+	}
+	static remove(usageID) {
+		const bonded = Bonded.get(usageID);
+		if (undefined !== bonded)
+			SM.deleteBonding(bonded.device.address, bonded.device.addressType);
+		Preference.delete(Bonded.PREFERENCE_DOMAIN, Bonded.key(usageID));
+	}
+	static key(usageID) {
+		switch(usageID) {
+			case UsageID.POINTER:
+				return Bonded.PREFERENCE_KEY_POINTER;
+			case UsageID.MOUSE:
+				return Bonded.PREFERENCE_KEY_MOUSE;
+			case UsageID.JOYSTICK:
+				return Bonded.PREFERENCE_KEY_JOYSTICK;
+			case UsageID.GAMEPAD:
+				return Bonded.PREFERENCE_KEY_GAMEPAD;
+			case UsageID.KEYBOARD:
+				return Bonded.PREFERENCE_KEY_KEYBOARD;
+			case UsageID.KEYPAD:
+				return Bonded.PREFERENCE_KEY_KEYPAD;
+			default:
+				throw new Error("unsupported usage id");
+		}
+	}
+}
+Bonded.PREFERENCE_DOMAIN = "hid";
+Bonded.PREFERENCE_KEY_POINTER = "poin";
+Bonded.PREFERENCE_KEY_MOUSE = "mous";
+Bonded.PREFERENCE_KEY_JOYSTICK = "joys";
+Bonded.PREFERENCE_KEY_GAMEPAD = "gamp";
+Bonded.PREFERENCE_KEY_KEYBOARD = "keyb";
+Bonded.PREFERENCE_KEY_KEYPAD = "keyp";
+Object.freeze(Bonded);
+
+export {BLEHIDClient as default, Bonded, BLEHIDClient, ReportType, UsageID};
 

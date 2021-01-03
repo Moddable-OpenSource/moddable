@@ -97,6 +97,11 @@ LRESULT CALLBACK PiuFieldProc(HWND control, UINT message, WPARAM wParam, LPARAM 
 			break;
 		}
 	}
+	if (message == WM_SETFOCUS) {
+		PiuField* self = (PiuField*)data;
+		if ((*self)->application)
+			PiuApplicationSetFocus((*self)->application, self);
+	}
     return DefSubclassProc(control, message, wParam, lParam);
 }
 

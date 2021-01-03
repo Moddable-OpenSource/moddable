@@ -82,6 +82,10 @@
 	#define SCREEN_CS_INIT
 #endif
 
+#ifndef MODDEF_ILI9341_SPI_MODE
+       #define MODDEF_ILI9341_SPI_MODE 0
+#endif
+
 #define SCREEN_DC_DATA			modGPIOWrite(&sd->dc, 1)
 #define SCREEN_DC_COMMAND		modGPIOWrite(&sd->dc, 0)
 #define SCREEN_DC_INIT			modGPIOInit(&sd->dc, MODDEF_ILI9341_DC_PORT, MODDEF_ILI9341_DC_PIN, kModGPIOOutput); \
@@ -91,6 +95,12 @@
 #define SCREEN_RST_DEACTIVE		modGPIOWrite(&sd->rst, 1)
 #define SCREEN_RST_INIT			modGPIOInit(&sd->rst, MODDEF_ILI9341_RST_PORT, MODDEF_ILI9341_RST_PIN, kModGPIOOutput); \
 		SCREEN_RST_DEACTIVE;
+
+#define ILI9341_GRAM_WIDTH             240
+#define ILI9341_GRAM_HEIGHT            320
+
+#define ILI9341_GRAM_X_OFFSET  ILI9341_GRAM_WIDTH - MODDEF_ILI9341_WIDTH
+#define ILI9341_GRAM_Y_OFFSET  ILI9341_GRAM_HEIGHT - MODDEF_ILI9341_HEIGHT
 
 typedef struct {
 	PixelsOutDispatch			dispatch;
@@ -205,6 +215,7 @@ void xs_ILI9341(xsMachine *the)
 
 	modSPIConfig(sd->spiConfig, MODDEF_ILI9341_HZ, MODDEF_ILI9341_SPI_PORT,
 			MODDEF_ILI9341_CS_PORT, -1, ili9341ChipSelect);
+	sd->spiConfig.mode = MODDEF_ILI9341_SPI_MODE;
 
 	sd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
 
@@ -434,9 +445,9 @@ void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_
 	modSPIActivateConfiguration(NULL);
 	SCREEN_DC_COMMAND;
    	modSPITxRx(&sd->spiConfig, &command, 1);		// could use modSPITx, but modSPITxRx is synchronous and callers rely on that
-	   
+
 	if (count) {
-    	SCREEN_DC_DATA;
+        SCREEN_DC_DATA;
         modSPITxRx(&sd->spiConfig, (uint8_t *)data, count);
     }
 }
@@ -534,6 +545,23 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 
 	xMin = x + MODDEF_ILI9341_COLUMN_OFFSET;
 	yMin = y + MODDEF_ILI9341_ROW_OFFSET;
+	
+	switch (sd->rotation) {
+		case 1:
+			// 90 degrees
+			yMin += ILI9341_GRAM_X_OFFSET;
+			break;
+		case 2:
+			// 180 degrees
+			yMin += ILI9341_GRAM_Y_OFFSET;
+			xMin += ILI9341_GRAM_X_OFFSET;
+			break;
+		case 3:
+			// 270 degrees
+			xMin += ILI9341_GRAM_Y_OFFSET;
+			break;
+	}
+	
 	xMax = xMin + w - 1;
 	yMax = yMin + h - 1;
 

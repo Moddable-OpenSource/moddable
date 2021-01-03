@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -24,14 +24,12 @@
 import BLEHIDKeyboard from "hidkeyboard";
 
 class TerminalKeyboard extends BLEHIDKeyboard {
-	onCharCode(code) {
-		trace(code, " ");
-		if (code >= 32 && code <= 126)
-			; // trace(String.fromCharCode(code))
-		else if (code == 13)
+	onKeyDown(key) {
+		trace(key, " ");
+		if (13 === key)
 			trace("\n> ");
 	}
-	onDeviceConnected() {
+	onDeviceConnected(device) {
 		trace("Pairing keyboard...\n")
 	}
 	onDeviceReady() {
@@ -40,4 +38,4 @@ class TerminalKeyboard extends BLEHIDKeyboard {
 	}
 }
 
-let keyboard = new TerminalKeyboard;
+const keyboard = new TerminalKeyboard;

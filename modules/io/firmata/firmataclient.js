@@ -531,7 +531,7 @@ class Digital {
 		this.#flag = flag;
 
 		if (fDIGITAL_OUTPUT !== mode) {
-			const onReadable = dictionary.onReadable || this.onReadable;
+			const onReadable = dictionary.onReadable;
 			if (onReadable)
 				firmata.digitalReaders.push({target: this, onReadable, pins: pins << (port << 3)});
 
@@ -597,7 +597,7 @@ class Analog {
 		this.#pin = pin;
 		this.#firmata = firmata;
 
-		const onReadable = dictionary.onReadable || this.onReadable;
+		const onReadable = dictionary.onReadable;
 		if (onReadable) {
 			firmata.pins[pin].onReadable = onReadable;
 			firmata.pins[pin].target = this;
@@ -630,7 +630,7 @@ class I2C {
 		this.#firmata = firmata;
 		this.#state = {
 			target: this,
-			onReadable: dictionary.onReadable || this.onReadable,
+			onReadable: dictionary.onReadable,
 			address: dictionary.address,
 			received: [],
 		}
@@ -661,7 +661,7 @@ class Poco {
 		this.#firmata = firmata;
 		firmata.poco = {
 			target: this,
-			onReadable: dictionary.onReadable || this.onReadable,
+			onReadable: dictionary.onReadable,
 			received: [],
 		}
 	}
@@ -707,7 +707,7 @@ export class FirmataClientSerial extends FirmataClient {
 		super(dictionary);
 
 		this.transport = new Serial({
-			baud: dictionary.baud || 57600,
+			baud: dictionary.baud ?? 57600,
 			onReadable: count => this.onReadable(count),
 			onWritable: () => {
 				if (!this.transport.first)
@@ -726,7 +726,7 @@ export class FirmataClientTCP extends FirmataClient {
 
 		this.transport = new TCP({
 			address: dictionary.address,
-			port: dictionary.port || 3030,
+			port: dictionary.port ?? 3030,
 			onReadable: count => this.onReadable(count),
 			onWritable: () => {
 				if (!this.transport.first)

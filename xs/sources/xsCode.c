@@ -1392,12 +1392,6 @@ void fxScopeCodingBody(txScope* self, txCoder* coder)
 		}
 		fxCoderAddByte(coder, 1, XS_CODE_NULL);
 		fxCoderAddByte(coder, 0, XS_CODE_WITH);
-		node = self->scope->firstDeclareNode;
-		while (node) {
-			if ((node->description->token == XS_TOKEN_ARG) || (node->description->token == XS_TOKEN_VAR))
-				fxCoderAddIndex(coder, 0, XS_CODE_STORE_1, node->index);
-			node = node->nextDeclareNode;
-		}
 		node = self->firstDeclareNode;
 		while (node) {
 			if ((node->description->token == XS_TOKEN_DEFINE) || (node->description->token == XS_TOKEN_VAR))
@@ -1533,6 +1527,12 @@ void fxScopeCodingParams(txScope* self, txCoder* coder)
 		node = node->nextDeclareNode;
 	}
 	if (self->flags & mxEvalFlag) {
+		if (!(self->node->flags & mxStrictFlag)) {	
+			fxCoderAddByte(coder, 1, XS_CODE_NULL);
+			fxCoderAddByte(coder, 0, XS_CODE_WITH);
+			fxCoderAddByte(coder, -1, XS_CODE_POP);
+			coder->environmentLevel++;
+		}
 		fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
 		fxCoderAddByte(coder, 0, XS_CODE_WITH);
 		node = self->firstDeclareNode;
@@ -2364,16 +2364,7 @@ void fxChainNodeCode(void* it, void* param)
 	txTargetCode* chainTarget = coder->chainTarget;
 	coder->chainTarget = fxCoderCreateTarget(param);
 	fxNodeDispatchCode(self->right, param);
-	if (self->right->description->token == XS_TOKEN_CALL) {
-		txTargetCode* skipTarget = fxCoderCreateTarget(param);
-		fxCoderAddBranch(param, 1, XS_CODE_BRANCH_1, skipTarget);
-		fxCoderAdd(param, 0, coder->chainTarget);
-		fxCoderAddByte(param, 0, XS_CODE_SWAP);
-		fxCoderAddByte(param, -1, XS_CODE_POP);
-		fxCoderAdd(param, 0, skipTarget);
-	}
-	else
-		fxCoderAdd(param, 0, coder->chainTarget);
+	fxCoderAdd(param, 0, coder->chainTarget);
 	coder->chainTarget = chainTarget;
 }
 
@@ -2384,16 +2375,7 @@ txFlag fxChainNodeCodeThis(void* it, void* param, txFlag flag)
 	txTargetCode* chainTarget = coder->chainTarget;
 	coder->chainTarget = fxCoderCreateTarget(param);
 	flag = fxNodeDispatchCodeThis(self->right, param, flag);
-    if (self->right->description->token == XS_TOKEN_CALL) {
-        txTargetCode* skipTarget = fxCoderCreateTarget(param);
-		fxCoderAddBranch(param, 1, XS_CODE_BRANCH_1, skipTarget);
-        fxCoderAdd(param, 0, coder->chainTarget);
-        fxCoderAddByte(param, 0, XS_CODE_SWAP);
-        fxCoderAddByte(param, 1, XS_CODE_POP);
-        fxCoderAdd(param, 0, skipTarget);
-    }
-    else
-        fxCoderAdd(param, 0, coder->chainTarget);
+    fxCoderAdd(param, 0, coder->chainTarget);
 	coder->chainTarget = chainTarget;
 	return flag;
 }
@@ -3104,6 +3086,7 @@ void fxFunctionNodeCode(void* it, void* param)
 	txFunctionNode* self = it;
 	txCoder* coder = param;
 	txInteger environmentLevel = coder->environmentLevel;
+	txBoolean evalFlag = coder->evalFlag;
 	txInteger line = coder->line;
 	txBoolean programFlag = coder->programFlag;
 	txInteger scopeLevel = coder->scopeLevel;
@@ -3113,6 +3096,8 @@ void fxFunctionNodeCode(void* it, void* param)
 	txSymbol* name = self->symbol;
 	txTargetCode* target = fxCoderCreateTarget(param);
 	
+	if ((self->flags & mxEvalFlag) && !(self->flags & mxStrictFlag))
+		coder->evalFlag = 1;
 	coder->line = -1;
 	coder->programFlag = 0;
 	coder->scopeLevel = 0;
@@ -3217,6 +3202,7 @@ void fxFunctionNodeCode(void* it, void* param)
 	coder->scopeLevel = scopeLevel;
 	coder->programFlag = programFlag;
 	coder->line = line;
+	coder->evalFlag = evalFlag;
 	coder->environmentLevel = environmentLevel;
 }
 
@@ -3708,9 +3694,17 @@ txFlag fxOptionNodeCodeThis(void* it, void* param, txFlag flag)
 {
 	txUnaryExpressionNode* self = it;
 	txCoder* coder = param;
+	txTargetCode* swapTarget = fxCoderCreateTarget(param);
+	txTargetCode* skipTarget = fxCoderCreateTarget(param);
 	self->right->flags |= (self->flags & mxTailRecursionFlag);
 	flag = fxNodeDispatchCodeThis(self->right, param, flag);
-	fxCoderAddBranch(param, 0, XS_CODE_BRANCH_CHAIN_1, coder->chainTarget);
+	fxCoderAddBranch(param, 0, XS_CODE_BRANCH_CHAIN_1, swapTarget);
+	fxCoderAddBranch(param, 1, XS_CODE_BRANCH_1, skipTarget);
+	fxCoderAdd(param, 0, swapTarget);
+	fxCoderAddByte(param, 0, XS_CODE_SWAP);
+	fxCoderAddByte(param, -1, XS_CODE_POP);
+	fxCoderAddBranch(param, 0, XS_CODE_BRANCH_1, coder->chainTarget);
+	fxCoderAdd(param, 0, skipTarget);
 	return flag;
 }
 

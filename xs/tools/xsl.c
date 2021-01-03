@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
 		4 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024,	/* incrementalHeapCount */
-		1024,				/* stackCount */
+		1024 * 16,			/* stackCount */
 		2048 * 4,			/* keyCount */
 		1993,				/* nameModulo */
 		127,				/* symbolModulo */
@@ -737,7 +737,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	txString slash;
 	txID id;
 		
-	fxToStringBuffer(the, slot, name, sizeof(name));
+	fxToStringBuffer(the, slot, name, sizeof(name) - 4);
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
 	}	
@@ -759,7 +759,9 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (!slash)
 		slash = name;
 	slash = c_strrchr(slash, '.');
-	if (!slash)
+	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs") || !c_strcmp(slash, ".xsb")))
+		c_strcpy(slash, ".xsb");
+	else
 		c_strcat(name, ".xsb");
 	if (absolute) {
 		c_strcpy(path, linker->base);

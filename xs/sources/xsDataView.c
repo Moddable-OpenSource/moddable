@@ -217,8 +217,6 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_setUint16), 2, mxID(_setUint16), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_getUint32), 1, mxID(_getUint32), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_setUint32), 2, mxID(_setUint32), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_getUint8), 1, mxID(_getUint8Clamped), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_setUint8Clamped), 2, mxID(_setUint8Clamped), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_DataView_prototype_buffer_get), C_NULL, mxID(_buffer), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_DataView_prototype_byteLength_get), C_NULL, mxID(_byteLength), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_DataView_prototype_byteOffset_get), C_NULL, mxID(_byteOffset), XS_DONT_ENUM_FLAG);
@@ -780,11 +778,6 @@ void fx_DataView_prototype_setUint16(txMachine* the)
 void fx_DataView_prototype_setUint32(txMachine* the)
 {
 	fx_DataView_prototype_set(the, 4, fxUintCoerce, fxUint32Setter);
-}
-
-void fx_DataView_prototype_setUint8Clamped(txMachine* the)
-{
-	fx_DataView_prototype_set(the, 1, fxNumberCoerce, fxUint8ClampedSetter);
 }
 
 

@@ -8,8 +8,7 @@
 		"screen": "ili9341",
 		"touch": "",
 		"autorotate": 300,
-		"startupSound": "bflatmajor.maud",
-		"speaker": true
+		"startupSound": "bflatmajor.maud"
 	},
 	"defines": {
 		"i2c":{

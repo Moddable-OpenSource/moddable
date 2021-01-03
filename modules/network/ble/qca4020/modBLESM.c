@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"
+#include "mc.defines.h"
 #include "modBLE.h"
 #include "modBLESM.h"
 
@@ -52,6 +53,26 @@ void xs_ble_sm_delete_all_bondings(xsMachine *the)
 		qapi_Persist_Cleanup(Handle);
 	}
 	gBondedDeviceList = NULL;
+}
+
+void xs_ble_sm_delete_bonding(xsMachine *the)
+{
+	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
+	uint8_t addressType = xsmcToInteger(xsArg(1));
+	qapi_BLE_BD_ADDR_t bd_addr;	
+	modBLEBondedDevice device;
+
+	c_memmove(&bd_addr, address, 6);
+	device = modBLEBondedDevicesFindByAddress(bd_addr);
+	if (NULL != device) {
+		modBLEBondedDevicesRemove(device);
+#if MODDEF_BLE_CLIENT
+		modBLEClientBondingRemoved(&bd_addr, addressType);
+#endif
+#if MODDEF_BLE_SERVER
+		modBLEServerBondingRemoved(&bd_addr, addressType);
+#endif
+	}
 }
 
 void modBLEBondedDevicesAdd(modBLEBondedDevice device)

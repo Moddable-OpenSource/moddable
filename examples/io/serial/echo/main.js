@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -19,11 +19,11 @@ const msg = "hello world\r\n";
 if (1) {		// using buffers
 	let serial = new Serial({
 		baud: 115200 * 8,
+		format: "buffer",
 		onReadable: function(count) {
 			this.write(this.read());
 		},
 	});
-	serial.format = "buffer";
 
 	serial.write(ArrayBuffer.fromString(msg));
 }

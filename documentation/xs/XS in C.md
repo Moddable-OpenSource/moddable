@@ -1772,11 +1772,13 @@ Returns a machine if successful, otherwise `NULL`
 
 Regarding the parameters of the machine that are specified in the `xsCreation` structure:
 
-- A machine manages strings and bytecodes in chunks. The initial chunk size is the initial size of the memory allocated to chunks. The incremental chunk size tells the runtime how to expand the memory allocated to chunks. 
+- A machine uses chunks to store strings, bytecodes, array buffers, big int values, and others. The `initialChunkSize` is the initial size of the memory allocated to chunks. The `incrementalChunkSize` tells the runtime how to expand the memory allocated to chunks. 
 
-- A machine uses a heap and a stack of slots. The initial heap count is the initial number of slots allocated to the heap. The incremental heap count tells the runtime how to increase the number of slots allocated to the heap. The stack count is the number of slots allocated to the stack.
+- A machine uses a heap and a stack of slots. The `initialHeapCount` is the initial number of slots allocated to the heap. The `incrementalHeapCount` tells the runtime how to increase the number of slots allocated to the heap. The `stackCount` is the number of slots allocated to the stack. Note that these values are all slots, not bytes.
 
-- The symbol count is the number of symbols the machine will use. The symbol modulo is the size of the hash table the machine will use for symbols. A symbol binds a string value and an identifier; see [`xsID`](#xs-id).
+- A symbol binds a string value and an identifier; see [`xsID`](#xs-id). The `keyCount` is the number of symbols the machine will use. The `symbolModulo` is the size of the hash table the machine will use for symbols.  The `nameModulo` is the size of the hash table the machine will use for symbol names. 
+
+- Some XS hosts attempt to grow the slot and chunk heaps without limit at runtime to accommodate the memory needs of the hosted scripts; others limit the maximum memory that may be allocated to the machine. For the latter, the `staticSize` defines the total number of bytes that may be allocated for the combination of chunks and slots, which includes the stack. In general, only hosts running on resource constrained devices implement `staticSize`.
 
 ***
 

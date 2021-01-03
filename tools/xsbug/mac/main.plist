@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 	<key>ATSApplicationFontsPath</key>
 	<string>fonts/</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -25,7 +27,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>xsbug 7.0b1</string>
 	<key>CFBundleGetInfoString</key>
-	<string>xsbug 7.0b1 Copyright © 2017 Moddable Tech, Inc.</string>
+	<string>xsbug 7.0b1 Copyright © 2017-2020 Moddable Tech, Inc.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

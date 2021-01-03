@@ -24,10 +24,14 @@
 !ENDIF
 
 !IF "$(UPLOAD_PORT)"==""
-UPLOAD_PORT = com8
+UPLOAD_PORT = COM3
 !ENDIF
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\debug
+!IF "$(DEBUGGER_SPEED)"==""
+DEBUGGER_SPEED = 921600
+!ENDIF
+
+MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
 IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
@@ -54,10 +58,10 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(XSBUG).exe && echo Starting xsbug... && timeout /nobreak /t 7 > nul)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 	
 release: $(ARCHIVE)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"

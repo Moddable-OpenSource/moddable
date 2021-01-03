@@ -117,6 +117,7 @@ void PiuSystem_ensureDirectory(xsMachine* the)
 				*p = '\\';
 				p++;
 			}
+			xsElseThrow(CreateDirectoryW(path, NULL) != 0);
 		}
 	}
 	xsCatch {

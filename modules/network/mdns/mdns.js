@@ -342,7 +342,7 @@ class MDNS extends Socket {
 					if ((this.hostName !== authority.qname[0]) || (2 !== authority.qname.length) || (LOCAL !== authority.qname[1]))
 						continue;
 					const rdata = authority.rdata.split(".");
-					const ip = Net.get("IP").split(".");
+					const ip = Net.get("IP", address).split(".");
 					trace(`  compare ${rdata} with ${ip}\n`);
 					for (let k = 0; k < 4; k++) {
 						if (parseInt(ip[k]) < parseInt(rdata[k])) {
@@ -444,12 +444,12 @@ class MDNS extends Socket {
 			if (mask[0]) {
 				if (!response[0])
 					response[0] = new Serializer({query: false, opcode: DNS.OPCODE.QUERY, authoritative: true});
-				this.reply(response[0], mask[0], service)
+				this.reply(response[0], mask[0], service, false, address)
 			}
 			if (mask[1]) {
 				if (!response[1])
 					response[1] = new Serializer({query: false, opcode: DNS.OPCODE.QUERY, authoritative: true});
-				this.reply(response[1], mask[1], service)
+				this.reply(response[1], mask[1], service, false, address)
 			}
 		}
 
@@ -470,7 +470,7 @@ class MDNS extends Socket {
 		0x02 - SRV
 		0x01 - A
 	 */
-	reply(response, mask, service, bye = false) {
+	reply(response, mask, service, bye = false, from) {
 		let build = response ? false : true;
 		if (build) response = new Serializer({query: false, opcode: DNS.OPCODE.QUERY, authoritative: true});
 		bye = bye ? 0 : 0xFFFFFFF;
@@ -493,7 +493,7 @@ class MDNS extends Socket {
 							{priority: 0, weight: 0, port: service.port, target: this.hostName + "." + LOCAL});
 
 		if (0x01 & mask)	// A
-			response.add(DNS.SECTION.ANSWER, this.hostName + "." + LOCAL, DNS.RR.A, DNS.CLASS.IN | MDNS.FLUSH, 120 & bye, Net.get("IP"));
+			response.add(DNS.SECTION.ANSWER, this.hostName + "." + LOCAL, DNS.RR.A, DNS.CLASS.IN | MDNS.FLUSH, 120 & bye, Net.get("IP", from));
 
 		if (!build)
 			return;

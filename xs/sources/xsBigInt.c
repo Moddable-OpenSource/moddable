@@ -143,13 +143,19 @@ void fx_BigInt_asIntN(txMachine* the)
 {
 	txInteger index = (txInteger)fx_BigInt_asAux(the);
 	txBigInt* arg = fxToBigInt(the, mxArgv(1), 1);
-	txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
-	txBigInt* mask = fxBigInt_usub(the, C_NULL, bits, (txBigInt *)&gxBigIntOne);
-	txBigInt* result = fxBigInt_uand(the, C_NULL, arg, mask);
-	if ((arg->sign) && !fxBigInt_iszero(result))
-		result = fxBigInt_usub(the, C_NULL, bits, result);
-	if (index && fxBigInt_comp(result, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index - 1)) >= 0)
-		result = fxBigInt_sub(the, C_NULL, result, bits);
+	txBigInt* result;
+	if (fxBigInt_iszero(arg)) {
+		result = fxBigInt_dup(the, arg);
+	}
+	else {
+		txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
+		txBigInt* mask = fxBigInt_usub(the, C_NULL, bits, (txBigInt *)&gxBigIntOne);
+		result = fxBigInt_uand(the, C_NULL, arg, mask);
+		if ((arg->sign) && !fxBigInt_iszero(result))
+			result = fxBigInt_usub(the, C_NULL, bits, result);
+		if (index && fxBigInt_comp(result, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index - 1)) >= 0)
+			result = fxBigInt_sub(the, C_NULL, result, bits);
+	}
 	mxResult->value.bigint = *result;
 	mxResult->kind = XS_BIGINT_KIND;
 // 	txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
@@ -164,11 +170,17 @@ void fx_BigInt_asUintN(txMachine* the)
 {
 	txInteger index = (txInteger)fx_BigInt_asAux(the);
 	txBigInt* arg = fxToBigInt(the, mxArgv(1), 1);
-	txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
-	txBigInt* mask = fxBigInt_sub(the, C_NULL, bits, (txBigInt *)&gxBigIntOne);
-	txBigInt* result = fxBigInt_uand(the, C_NULL, arg, mask);
-	if ((arg->sign) && !fxBigInt_iszero(result))
-		result = fxBigInt_usub(the, C_NULL, bits, result);
+	txBigInt* result;
+	if (fxBigInt_iszero(arg)) {
+		result = fxBigInt_dup(the, arg);
+	}
+	else {
+		txBigInt* bits = fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index);
+		txBigInt* mask = fxBigInt_sub(the, C_NULL, bits, (txBigInt *)&gxBigIntOne);
+		result = fxBigInt_uand(the, C_NULL, arg, mask);
+		if ((arg->sign) && !fxBigInt_iszero(result))
+			result = fxBigInt_usub(the, C_NULL, bits, result);
+	}
 	mxResult->value.bigint = *result;
 	mxResult->kind = XS_BIGINT_KIND;
 // 	fxToBigInt(the, mxArgv(1), 1);
@@ -817,10 +829,13 @@ void fxFromBigUint64(txMachine* the, txSlot* slot, txU8 value)
 
 #endif
 
-txBigInt *fxBigInt_alloc(txMachine* the, txU2 size)
+txBigInt *fxBigInt_alloc(txMachine* the, txU4 size)
 {
 #ifdef mxRun
 	txBigInt* bigint;
+	if (size > 0xFFFF) {
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	}
 	mxPushUndefined();
 	bigint = &the->stack->value.bigint;
 	bigint->data = fxNewChunk(the, (txU4)size * sizeof(txU4));
@@ -1172,12 +1187,11 @@ txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
 	txU4 wsz, bsz;
 	int n;
 
-	/* 'r' can be the same as 'a' */
-	/* assume 'r' is large enough if 'r' is present */
-	if (r == NULL)
-		r = fxBigInt_alloc(the, a->size + howmany(sw, mxBigIntWordSize));
 	wsz = sw / mxBigIntWordSize;
 	bsz = sw % mxBigIntWordSize;
+	n = a->size + wsz + ((bsz == 0) ? 0 : 1);
+	if (r == NULL) 
+		r = fxBigInt_alloc(the, n);
 	if (bsz == 0) {
 		c_memmove(&r->data[wsz], a->data, a->size * sizeof(txU4));
 		c_memset(r->data, 0, wsz * sizeof(txU4));

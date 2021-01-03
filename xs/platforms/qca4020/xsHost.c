@@ -667,11 +667,6 @@ void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 #endif
 }
 
-void fxMarkHost(txMachine* the, txMarkRoot markRoot)
-{
-	the->host = C_NULL;
-}
-
 txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags)
 {
 	txParser _parser;
@@ -692,10 +687,6 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 #endif
 	fxTerminateParser(parser);
 	return script;
-}
-
-void fxSweepHost(txMachine *the)
-{
 }
 
 /*
@@ -924,9 +915,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	}
 }
 
+#ifndef modTaskGetCurrent
+	#error make sure MOD_TASKS and modTaskGetCurrent are defined
+#endif
+
 void modMachineTaskInit(xsMachine *the)
 {
-	the->task = xTaskGetCurrentTaskHandle();
+	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(10, sizeof(modMessageRecord));
 }
 

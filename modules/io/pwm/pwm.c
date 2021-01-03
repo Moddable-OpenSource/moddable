@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -37,11 +37,17 @@
 static uint32_t gFrequencyOwners = 0;
 static uint32_t gHz = 0;
 
+struct PWMRecord {
+	int			pin;
+	xsSlot		obj;
+};
+typedef struct PWMRecord PWMRecord;
+typedef struct PWMRecord *PWM;
+
 void xs_pwm_constructor(xsMachine *the)
 {
+	PWM pwm;
 	int pin;
-
-    xsmcSetHostData(xsThis, (void *)(uintptr_t) -1);
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
@@ -50,7 +56,7 @@ void xs_pwm_constructor(xsMachine *the)
     if (!builtinArePinsFree((1 << pin)))
 		xsRangeError("in use");
 
-    if (xsmcHas(xsArg(0), xsID_hz)){
+    if (xsmcHas(xsArg(0), xsID_hz)) {
         int hz;
 
         xsmcGet(xsVar(0), xsArg(0), xsID_hz);
@@ -66,35 +72,53 @@ void xs_pwm_constructor(xsMachine *the)
         gFrequencyOwners |= (1 << pin);
     }
 
+	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
+		xsRangeError("invalid format");
+	builtinInitializeTarget(the);
+
+	pwm = c_malloc(sizeof(PWMRecord));
+	if (!pwm)
+		xsRangeError("no memory");
+
+	pwm->pin = pin;
+	pwm->obj = xsThis;
+	xsRemember(pwm->obj);
+    xsmcSetHostData(xsThis, pwm);
+
     analogWrite(pin, 0);
     builtinUsePins(1 << pin);
-    xsmcSetHostData(xsThis, (void *)(uintptr_t)pin);
 }
 
 void xs_pwm_destructor(void *data)
 {
-	uintptr_t pin = (uintptr_t)data;
-    if (pin == (uintptr_t)-1)
-		return;
+	PWM pwm = data;
+	if (!pwm) return;
+
+    analogWrite(pwm->pin, 0);
     
-    analogWrite(pin, 0);
-    
-    builtinFreePins(1 << pin);
-    gFrequencyOwners &= ~(1 << pin);
+    builtinFreePins(1 << pwm->pin);
+    gFrequencyOwners &= ~(1 << pwm->pin);
+
+    c_free(pwm);
 }
 
 void xs_pwm_close(xsMachine *the)
 {
-	xs_pwm_destructor(xsmcGetHostData(xsThis));
-	xsmcSetHostData(xsThis, (void *)(uintptr_t)-1);
+	PWM pwm = xsmcGetHostData(xsThis);
+	if (!pwm) return;
+
+	xsForget(pwm->obj);
+	xs_pwm_destructor(pwm);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_pwm_write(xsMachine *the)
 {
-    uintptr_t pin = (uintptr_t)xsmcGetHostData(xsThis);
+	PWM pwm = xsmcGetHostData(xsThis);
     int value = xsmcToInteger(xsArg(0));
     
-    if (pin == -1) xsUnknownError("write to closed pwm pin");
+	if (!pwm)
+		xsUnknownError("write to closed pwm pin");
 
-    analogWrite(pin, value);
+    analogWrite(pwm->pin, value);
 }

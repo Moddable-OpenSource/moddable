@@ -20,6 +20,7 @@
 
 #define GDIPVER     0x0110
 #include "piuPC.h"
+#include <dbt.h>
 
 class PiuDropTarget : public IDropTarget {
 public:
@@ -133,11 +134,12 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 		xsBeginHost((*piuView)->the);
 		{
 			PiuApplication* application = (*piuView)->application;
-			xsVars(2);
+			xsVars(3);
 			xsVar(0) = xsReference((*application)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onOpenFile)) {
 				xsVar(1) = xsReference((*application)->reference);
-				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsStringW((wchar_t*)cds->lpData));
+				xsVar(2) = xsStringW((wchar_t*)cds->lpData);
+				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 			}
 			PiuApplicationAdjust(application);
 		}
@@ -374,6 +376,25 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 		xsEndHost((*piuView)->the);
 	} break;
 	
+	case WM_DEVICECHANGE: {
+		if (wParam == DBT_DEVNODES_CHANGED) {
+			PiuView* piuView = (PiuView*)GetWindowLongPtr(window, 0);
+			xsBeginHost((*piuView)->the);
+			{
+				PiuApplication* application = (*piuView)->application;
+				xsVars(3);
+				xsVar(0) = xsReference((*application)->behavior);
+				if (xsFindResult(xsVar(0), xsID_onDevicesChanged)) {
+					xsVar(1) = xsReference((*application)->reference);
+					(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+				}
+				PiuApplicationAdjust(application);
+			}
+			xsEndHost((*piuView)->the);
+		}
+		return TRUE;
+	} break;
+	
 	default:
 		return DefWindowProc(window, message, wParam, lParam);
 	}
@@ -513,7 +534,6 @@ void PiuViewCreate(xsMachine* the)
 				xsVar(2) = xsGetAt(xsVar(1), xsInteger(j));
 				if (xsTest(xsVar(2))) {
 					WORD id = (WORD)((i << 8) | (j + 1));
-					xsStringValue title;
 					xsStringValue value;
 					char buffer[256];
 					xsIndex index;
@@ -537,9 +557,8 @@ void PiuViewCreate(xsMachine* the)
 						xsSet(xsVar(2), xsID_title, xsVar(4));
 					}
 					
-					title = xsToString(xsGet(xsVar(2), xsID_title));	
-						
 					if ((acceleratorsCount < 256)  && xsFindString(xsVar(2), xsID_key, &value)) {
+						xsStringValue title = xsToString(xsGet(xsVar(2), xsID_title));	
 						BYTE mask = FCONTROL | FVIRTKEY;
 						c_strcpy(buffer, title);
 						c_strcat(buffer, "\tCtrl+");
@@ -558,8 +577,11 @@ void PiuViewCreate(xsMachine* the)
 						acceleratorsCount++;
 						AppendMenu(menu, MF_STRING, id, buffer);
 					}
-					else
-						AppendMenu(menu, MF_STRING, id, title);
+					else {
+						wchar_t* title = xsToStringCopyW(xsGet(xsVar(2), xsID_title));
+						AppendMenuW(menu, MF_STRING, id, title);
+						c_free(title);
+					}
 				}
 				else
 					AppendMenu(menu, MF_SEPARATOR, -1, NULL);

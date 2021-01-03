@@ -138,6 +138,7 @@ static modBLE gBLE = NULL;
 #endif
 
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void addressToBuffer(qapi_BLE_BD_ADDR_t BD_ADDR, uint8_t *buffer);
 static void QAPI_BLE_BTPSAPI GAP_LE_Event_Callback(uint32_t BluetoothStackID, qapi_BLE_GAP_LE_Event_Data_t *GAP_LE_Event_Data, uint32_t CallbackParameter);
@@ -473,6 +474,34 @@ static int16_t attributeToHandle(uint32_t service_id, uint16_t att_index)
 	return -1;
 }
 
+void modBLEServerBondingRemoved(qapi_BLE_BD_ADDR_t *address, qapi_BLE_GAP_LE_Address_Type_t addressType)
+{
+	qapi_BLE_GAP_LE_White_List_Entry_t entry;
+	
+	if (!gBLE) return;
+	
+	entry.Address_Type = addressType;
+	c_memmove(&entry.Address, address, 6);
+	modMessagePostToMachine(gBLE->the, (void*)&entry, sizeof(entry), bondingRemovedEvent, NULL);
+}
+
+void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	qapi_BLE_GAP_LE_White_List_Entry_t *entry = (qapi_BLE_GAP_LE_White_List_Entry_t *)message;
+	
+	if (!gBLE) return;
+
+	xsBeginHost(gBLE->the);
+	xsmcVars(2);
+	xsVar(0) = xsmcNewObject();
+	xsmcSetArrayBuffer(xsVar(1), &entry->Address, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), entry->Address_Type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
+	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsEndHost(gBLE->the);
+}
+
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	if (!gBLE) return;
@@ -496,13 +525,15 @@ static void connectEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
  	xsBeginHost(gBLE->the);
 	gBLE->connection.id = result->ConnectionID;
 	gBLE->connection.bd_addr = result->RemoteDevice;
-	xsmcVars(3);
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), gBLE->connection.id);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	addressToBuffer(result->RemoteDevice, buffer);
-	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), gBLE->connection.bd_addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 
@@ -525,13 +556,15 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	c_memset(&gBLE->connection.bd_addr, 0, sizeof(gBLE->connection.bd_addr));
 
 	xsBeginHost(gBLE->the);
-	xsmcVars(3);
+	xsmcVars(2);
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), result->ConnectionID);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	addressToBuffer(result->RemoteDevice, buffer);
-	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(2));
+	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
+	xsmcSet(xsVar(0), xsID_address, xsVar(1));
+	xsmcSetInteger(xsVar(1), gBLE->connection.bd_addr_type);
+	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
@@ -800,6 +833,7 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 {
 	qapi_BLE_GAP_LE_Pairing_Status_t *Pairing_Status = (qapi_BLE_GAP_LE_Pairing_Status_t *)message;
 	modBLEBondedDevice device;
+	uint8_t bonded = 0;
 
 	if (!gBLE) return;
 	
@@ -819,10 +853,15 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 				device->IRK = gBLE->connection.IRK;
 				device->LTK = gBLE->connection.LTK;
 				modBLEBondedDevicesAdd(device);
+				bonded = 1;
 			}
 		}
 		xsBeginHost(gBLE->the);
-		xsCall1(gBLE->obj, xsID_callback, xsString("onAuthenticated"));
+		xsmcVars(2);
+		xsVar(0) = xsmcNewObject();
+		xsmcSetBoolean(xsVar(1), bonded);
+		xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
+		xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
 		xsEndHost(gBLE->the);
 	}
 	else {
