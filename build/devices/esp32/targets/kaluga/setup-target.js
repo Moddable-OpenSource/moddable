@@ -1,15 +1,47 @@
-import Digital from "pins/digital";
 import config from "mc/config";
 import NEOPIXEL from "neopixel";
 import Timer from "timer";
+import Analog from "pins/analog";
+
+const BUTTON_TOLERANCE = 10;
+const BUTTON_VALUES = [750 + BUTTON_TOLERANCE, 615 + BUTTON_TOLERANCE, 515 + BUTTON_TOLERANCE, 347 + BUTTON_TOLERANCE, 255 + BUTTON_TOLERANCE, 119 + BUTTON_TOLERANCE];
+
+class ButtonArray {
+	#callback;
+	#pushed;
+	constructor(options){
+		let delay = 50;
+		this.#callback = options.onPush;
+		if (options.delay !== undefined) delay = options.delay;
+		Timer.repeat( id => {
+			const value = Analog.read(config.buttonArray);
+			if (value > BUTTON_VALUES[0]){
+				if (this.#pushed === undefined) return;
+				this.#callback.call(this, this.#pushed, 0);
+				this.#pushed = undefined;
+			}
+			for (let i = 5; i >= 0; i--){
+				if (value < BUTTON_VALUES[i]){
+					if (i !== this.#pushed){
+						if (this.#pushed !== undefined) this.#callback.call(this, this.#pushed, 0);
+						this.#pushed = i;
+						this.#callback.call(this, i, 1);
+					}
+					break;
+				}
+			}
+		}, delay);
+	}
+}
 
 globalThis.Host = Object.freeze({
+	ButtonArray,
 	NeoPixel: class {
 		constructor(options = {}){
 			return new NEOPIXEL({
 				...options,
 				length: 1, 
-				pin: 45, 
+				pin: config.neopixel, 
 				order: "GRB"
 			});
 		}
@@ -18,7 +50,7 @@ globalThis.Host = Object.freeze({
 
 export default function (done) {
 	if (config.rainbow){
-		globalThis.neopixel = new NEOPIXEL({length: 1, pin: 45, order: "GRB"});
+		globalThis.neopixel = new NEOPIXEL({length: 1, pin: config.neopixel, order: "GRB"});
 		const np = globalThis.neopixel;
 		const STEP = 3;
 		

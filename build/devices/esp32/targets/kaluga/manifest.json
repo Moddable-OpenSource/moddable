@@ -5,7 +5,7 @@
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODULES)/pins/pwm/manifest.json"
+		"$(MODULES)/pins/analog/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target",
@@ -20,6 +20,8 @@
 	],
 	"config": {
 		"screen": "ili9341",
+		"neopixel": 45,
+		"buttonArray": 5,
 		"rainbow": true
 	},
 	"defines": {
