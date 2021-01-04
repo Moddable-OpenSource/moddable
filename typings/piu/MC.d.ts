@@ -513,33 +513,35 @@ declare module "piu/MC" {
     new(behaviorData: any, dictionary: ScrollerDictionary): Scroller;
   }
 
-  class Timeline {
-    public constructor();
-    public duration: number;
-    public fraction: number;
-    public time: number;
-    public from(
+  interface Timeline {
+    duration: number;
+    fraction: number;
+    time: number;
+    from(
       target: object,
       fromProperties: object,
       duration: number,
       easing?: string,
       delay?: number
     ): Timeline;
-    public on(
+    on(
       target: object,
       onProperties: object,
       duration: number,
       easing?: number,
       delay?: number
     ): Timeline;
-    public seekTo(time: number): void;
-    public to(
+    seekTo(time: number): void;
+    to(
       target: object,
       fromProperties: object,
       duration: number,
       easing?: string,
       delay?: number
     ): Timeline;
+  }
+  interface TimelineConstructor {
+    new(): Timeline
   }
 
   global {
@@ -559,38 +561,41 @@ declare module "piu/MC" {
     const Label: LabelConstructor
     const Transition: TransitionConstructor
     const Text: TextConstructor
+    const Timeline: TimelineConstructor
   }
  }
 
-interface Math {
-  backEaseIn(value: number): number
-  backEaseInOut(value: number): number
-  backEaseOut(value: number): number
-  bounceEaseIn(value: number): number
-  bounceEaseInOut(value: number): number
-  bounceEaseOut(value: number): number
-  circularEaseIn(value: number): number
-  circularEaseInOut(value: number): number
-  circularEaseOut(value: number): number
-  cubicEaseIn(value: number): number
-  cubicEaseInOut(value: number): number
-  cubicEaseOut(value: number): number
-  elasticEaseIn(value: number): number
-  elasticEaseInOut(value: number): number
-  elasticEaseOut(value: number): number
-  exponentialEaseIn(value: number): number
-  exponentialEaseInOut(value: number): number
-  exponentialEaseOut(value: number): number
-  quadEaseIn(value: number): number
-  quadEaseInOut(value: number): number
-  quadEaseOut(value: number): number
-  quartEaseIn(value: number): number
-  quartEaseInOut(value: number): number
-  quartEaseOut(value: number): number
-  quintEaseIn(value: number): number
-  quintEaseInOut(value: number): number
-  quintEaseOut(value: number): number
-  sineEaseIn(value: number): number
-  sineEaseInOut(value: number): number
-  sineEaseOut(value: number): number
+ type PiuInterpolator = (value: number) => number;
+ 
+ interface Math {
+  backEaseIn: PiuInterpolator,
+  backEaseInOut: PiuInterpolator,
+  backEaseOut: PiuInterpolator,
+  bounceEaseIn: PiuInterpolator,
+  bounceEaseInOut: PiuInterpolator,
+  bounceEaseOut: PiuInterpolator,
+  circularEaseIn: PiuInterpolator,
+  circularEaseInOut: PiuInterpolator,
+  circularEaseOut: PiuInterpolator,
+  cubicEaseIn: PiuInterpolator,
+  cubicEaseInOut: PiuInterpolator,
+  cubicEaseOut: PiuInterpolator,
+  elasticEaseIn: PiuInterpolator,
+  elasticEaseInOut: PiuInterpolator,
+  elasticEaseOut: PiuInterpolator,
+  exponentialEaseIn: PiuInterpolator,
+  exponentialEaseInOut: PiuInterpolator,
+  exponentialEaseOut: PiuInterpolator,
+  quadEaseIn: PiuInterpolator,
+  quadEaseInOut: PiuInterpolator,
+  quadEaseOut: PiuInterpolator,
+  quartEaseIn: PiuInterpolator,
+  quartEaseInOut: PiuInterpolator,
+  quartEaseOut: PiuInterpolator,
+  quintEaseIn: PiuInterpolator,
+  quintEaseInOut: PiuInterpolator,
+  quintEaseOut: PiuInterpolator,
+  sineEaseIn: PiuInterpolator,
+  sineEaseInOut: PiuInterpolator,
+  sineEaseOut: PiuInterpolator
 }

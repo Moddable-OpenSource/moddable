@@ -58,7 +58,7 @@ static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 	#define mxAtomicsSub() result = __atomic_fetch_sub(address, value, __ATOMIC_SEQ_CST)
 	#define mxAtomicsXor() result = __atomic_fetch_xor(address, value, __ATOMIC_SEQ_CST)
 #else
-	#define mxAtomicsCompareExchange() fxLockSharedChunk(data); if (*address == result) *address = value; else result = *address; if (lock) fxUnlockSharedChunk(data)
+	#define mxAtomicsCompareExchange() if (lock) fxLockSharedChunk(data); if (*address == result) *address = value; else result = *address; if (lock) fxUnlockSharedChunk(data)
 	#define mxAtomicsLoad() if (lock) fxLockSharedChunk(data); result = *address;  if (lock) fxUnlockSharedChunk(data)
 	#define mxAtomicsAdd() if (lock) fxLockSharedChunk(data); result = *address; *address = result + value; if (lock) fxUnlockSharedChunk(data)
 	#define mxAtomicsAnd() if (lock) fxLockSharedChunk(data); result = *address; *address = result & value; if (lock) fxUnlockSharedChunk(data)
@@ -680,7 +680,7 @@ void* fxRetainSharedChunk(void* data)
 	txS4 value = 1;
 	txS4* address = &(chunk->usage);
 #ifndef mxUseGCCAtomics
-	txBoolean lock = true;
+	txBoolean lock = 1;
 #endif
 	mxAtomicsAdd();
 	if (result == 0)
@@ -695,7 +695,7 @@ void fxReleaseSharedChunk(void* data)
 	txS4 value = 1;
 	txS4* address = &(chunk->usage);
 #ifndef mxUseGCCAtomics
-	txBoolean lock = true;
+	txBoolean lock = 1;
 #endif
 	mxAtomicsSub();
 	if (result == 1) {

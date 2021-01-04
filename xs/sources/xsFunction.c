@@ -417,13 +417,21 @@ void fx_Function_prototype_bind(txMachine* the)
 		if (mxBehaviorGetOwnProperty(the, mxThis->value.reference, mxID(_length), XS_NO_ID, the->stack)) {
 			mxPushSlot(mxThis);
 			fxGetID(the, mxID(_length));
-			if ((the->stack->kind == XS_INTEGER_KIND) || (the->stack->kind == XS_NUMBER_KIND)) {
-				length = fxToLength(the, the->stack);
-				if (c > 1)
-					length -= c - 1;
-				if (length < 0)
-					length = 0;
+			property = the->stack;
+			if (property->kind == XS_INTEGER_KIND) {
+				length = property->value.integer;
 			}
+			else if (property->kind == XS_NUMBER_KIND) {
+				length = property->value.number;
+				if (c_isnan(length))
+					length = 0;
+				else
+					length = c_trunc(length);
+			}
+			if (c > 1)
+				length -= c - 1;
+			if (length < 0)
+				length = 0;
 			mxPop();
 		}
 		mxPop();
@@ -564,13 +572,13 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 void fx_Function_prototype_toString(txMachine* the)
 {	
 	fxCheckFunctionInstance(the, mxThis);
-	mxPushStringX("function ");
+	mxPushStringX("function [\"");
 	mxPushSlot(mxThis);
 	fxGetID(the, mxID(_name));
 	if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
 		fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
-	mxPushStringX(" (){[native code]}");
+	mxPushStringX("\"] (){[native code]}");
 	fxConcatString(the, the->stack + 1, the->stack);
 	mxPop();
 	mxPullSlot(mxResult);

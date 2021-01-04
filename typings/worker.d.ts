@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Shinya Ishikawa
+ * Copyright (c) 2020 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -18,19 +18,27 @@
  *
  */
 
-declare module "piu/sound" {
-  class Sound {
-    public constructor(dictionary: {
-    path: string;
-    offset?: number;
-    size?: number;
-    });
-    public readonly bitsPerSample: number;
-    public readonly numChannels: number;
-    public readonly sampleRate: number;
-    public volume: number;
-    public static close(): void;
-    public play(stream?: number, repeat?: number, callback?: Function): void;
-  }
-  export { Sound as default }
+declare module "worker" {
+	class Worker  {
+		constructor(module: string, options?: object)
+		terminate(): void;
+
+		onmessage(message: any): void;
+		postMessage(message: any): void;
+	}
+
+	export class SharedWorker {
+		constructor(module: string, options?: object)
+	}
+
+	interface Self {
+		onmessage(message: any): void;
+		postMessage(message: any): void;
+	}
+
+	global {
+		const self: Self
+	}
+
+	export {Worker as default}
 }
