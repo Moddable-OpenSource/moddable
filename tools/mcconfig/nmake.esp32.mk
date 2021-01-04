@@ -123,6 +123,8 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\bt\bluedroid\api\include\api \
  	-I$(IDF_PATH)\components\driver\include \
 	-I$(IDF_PATH)\components\driver\include\driver \
+	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include\driver \
 	-I$(IDF_PATH)\components\esp_common\include \
  	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS) \

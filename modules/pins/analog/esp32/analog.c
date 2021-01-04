@@ -26,20 +26,28 @@
 
 #define V_REF 1100
 
+#if IDF_TARGET == esp32s2
+	#define ADC_WIDTH ADC_WIDTH_BIT_13
+	#define ADC_ATTEN ADC_ATTEN_DB_11
+#else
+	#define ADC_WIDTH ADC_WIDTH_BIT_10
+	#define ADC_ATTEN ADC_ATTEN_DB_11
+#endif
+
 void xs_analog_read(xsMachine *the)
 {
 	int channel = xsToInteger(xsArg(0));
 	if (channel < 0 || channel >= ADC1_CHANNEL_MAX)
 		xsRangeError("invalid analog channel number");
 
-	if (ESP_OK != adc1_config_width(ADC_WIDTH_BIT_10))
+	if (ESP_OK != adc1_config_width(ADC_WIDTH))
 		xsUnknownError("can't configure precision for ADC1 peripheral");
 
-	if (ESP_OK != adc1_config_channel_atten(channel, ADC_ATTEN_DB_11))
+	if (ESP_OK != adc1_config_channel_atten(channel, ADC_ATTEN))
 		xsUnknownError("can't configure attenuation for requested channel on ADC1 peripheral");
 
 	esp_adc_cal_characteristics_t characteristics;
-	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_10, V_REF, &characteristics);
+	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN, ADC_WIDTH, V_REF, &characteristics);
 
 	uint32_t reading = adc1_get_raw(channel);
 	uint32_t millivolts = esp_adc_cal_raw_to_voltage(reading, &characteristics);
