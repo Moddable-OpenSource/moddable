@@ -155,7 +155,6 @@ enum {
 };
 
 static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
-txBoolean _debugLoginAttempted = 0;	// true once we have attempted fxLogin, to avoid connection delay when instantiating multiple machines (such as Workers) without a debugger
 
 void fxCheck(txMachine* the, txString thePath, txInteger theLine)
 {
@@ -1795,10 +1794,7 @@ txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module)
 void fxLogin(txMachine* the)
 {
 	if (!fxIsConnected(the)) {
-		if (_debugLoginAttempted)
-			return;
 		fxConnect(the);
-		_debugLoginAttempted = 1;
 		if (!fxIsConnected(the))
 			return;
 	}
