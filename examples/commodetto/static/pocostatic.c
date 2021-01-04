@@ -1,3 +1,4 @@
+#include "xsPlatform.h"
 #include "xsmc.h"
 #include "commodettoPoco.h"
 #include "commodettoPocoBlit.h"
