@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 
+#error - this modPreference implementation is deprecated and replaced by preference/esp/modPreference.c
 
 // #include "nvs_flash/include/nvs_flash.h"
 

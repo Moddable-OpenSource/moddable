@@ -43,6 +43,10 @@
 #include "mc.defines.h"
 #include "xsHost.h"
 
+#ifdef mxDebug
+	#include "modPreference.h"
+#endif
+
 #include "nrf_ficr.h"
 
 #define XSDEBUG_NONE	0,0,0,0
@@ -482,16 +486,6 @@ void fxSend(txMachine* the, txBoolean flags)
 			mxDebugMutexGive();
 	}
 }
-
-enum {
-	kPrefsTypeBoolean = 1,
-	kPrefsTypeInteger = 2,
-	kPrefsTypeString = 3,
-	kPrefsTypeBuffer = 4,
-};
-
-extern uint8_t modPreferenceSet(char *domain, char *name, uint8_t type, uint8_t *value, uint16_t byteCount);
-extern uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut);
 
 void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 {
