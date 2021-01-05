@@ -38,8 +38,10 @@ typedef struct {
 	HANDLE				comm;
 	HANDLE				commEvent;
 	HANDLE				thread;
+	CRITICAL_SECTION	readCritical;
 	HANDLE				readEvent;
 	void*				readJob;
+	CRITICAL_SECTION	writeCritical;
 	HANDLE				writeEvent;
 	void*				writeJob;
 	uint8_t				bufferFormat;
@@ -94,6 +96,7 @@ static unsigned int __stdcall xs_serial_loop(void* it)
         	else
 				break;
    		}
+		EnterCriticalSection(&s->readCritical);
    		if (s->hasOnReadable && (which & EV_RXCHAR) && !s->readJob) {
 			xsSerialJob readJob = c_calloc(sizeof(xsSerialJobRecord), 1);
 			if (readJob == NULL)
@@ -103,7 +106,9 @@ static unsigned int __stdcall xs_serial_loop(void* it)
 			fxQueueWorkerJob(s->the, readJob);
 			s->readJob = readJob;
 		}
-   		if (s->hasOnWritable && (which & EV_TXEMPTY) && !s->writeJob) {
+		LeaveCriticalSection(&s->readCritical);
+ 		EnterCriticalSection(&s->writeCritical);
+  		if (s->hasOnWritable && (which & EV_TXEMPTY) && !s->writeJob) {
 			xsSerialJob writeJob = c_calloc(sizeof(xsSerialJobRecord), 1);
 			if (writeJob == NULL)
 				break;
@@ -112,6 +117,7 @@ static unsigned int __stdcall xs_serial_loop(void* it)
 			fxQueueWorkerJob(s->the, writeJob);
 			s->writeJob = writeJob;
 		}
+		LeaveCriticalSection(&s->writeCritical);
 	}
 	return 0;
 }
@@ -134,10 +140,12 @@ void xs_serial_destructor(void *data)
 		CloseHandle(s->readEvent);
 	if (s->readJob)
 		((xsSerialJob)s->readJob)->serial = NULL;
+	DeleteCriticalSection(&s->readCritical);
 	if (s->writeEvent != INVALID_HANDLE_VALUE)
 		CloseHandle(s->writeEvent);
 	if (s->writeJob)
 		((xsSerialJob)s->writeJob)->serial = NULL;
+	DeleteCriticalSection(&s->writeCritical);
 	free(data);
 }
 
@@ -153,6 +161,8 @@ void xs_serial_constructor(xsMachine *the)
 	xsTry {
 		s = calloc(1, sizeof(xsSerialRecord));
 		xsElseThrow(s != NULL);
+		InitializeCriticalSection(&s->readCritical);
+		InitializeCriticalSection(&s->writeCritical);
 		s->the = the;
 		s->obj = xsThis;
 		s->onError = xsGet(xsArg(0), xsID_onError);
@@ -288,7 +298,9 @@ void xs_serial_read_callback(void* machine, void* it)
 	xsSerialJob readJob = it;
 	xsSerial s = readJob->serial;
 	if (s) {
+		EnterCriticalSection(&s->readCritical);
 		s->readJob = NULL;
+		LeaveCriticalSection(&s->readCritical);
 		xsBeginHost(machine);
 		xsTry {
 			xsCallFunction1(s->onReadable, s->obj, xsInteger(1));
@@ -363,7 +375,9 @@ void xs_serial_write_callback(void* machine, void* it)
 	xsSerialJob writeJob = it;
 	xsSerial s = writeJob->serial;
 	if (s) {
+ 		EnterCriticalSection(&s->writeCritical);
 		s->writeJob = NULL;
+ 		LeaveCriticalSection(&s->writeCritical);
 		xsBeginHost(machine);
 		xsTry {
 			xsCallFunction1(s->onWritable, s->obj, xsInteger(1));

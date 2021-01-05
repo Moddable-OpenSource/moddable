@@ -20,14 +20,17 @@
 
 declare module "socket" {
   type RawSocketOptions = {
-    host: string,
+    host?: string,
+    address?: string,
     port: number,
     kind: "RAW",
     protocol?: number,
   };
-  export type TCPSocketOptionsWithoutPort = {
-    host: string,
+  export type TCPSocketOptions = {
     kind?: "TCP",
+    host?: string,
+    addresss?: string,
+    port?: number,
     noDelay?: boolean,
     keepalive?: {
       idle: number,
@@ -35,9 +38,9 @@ declare module "socket" {
       count: number
     }
   };
-  export type TCPSocketOptions = TCPSocketOptionsWithoutPort & {port: number};
   type UDPSocketOptions = {
-    host: string,
+    host?: string,
+    addresss?: string,
     port: number,
     kind: "UDP",
   };
@@ -75,7 +78,10 @@ declare module "socket" {
     write(ip: string, port: number, data: ArrayBuffer);
     write(): number;
   }
-  export type ListenerOptions = {port: number};
+  export type ListenerOptions = {
+    port?: number,
+    address?: string
+  };
   class Listener {
     constructor(options: ListenerOptions);
     callback: (this: Listener) => void;
