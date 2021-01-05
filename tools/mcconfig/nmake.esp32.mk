@@ -169,6 +169,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\soc\soc\include \
 	-I$(IDF_PATH)\components\spiffs\include \
 	-I$(IDF_PATH)\components\fatfs\src \
+	-I$(IDF_PATH)\components\fatfs\vfs \
 	-I$(IDF_PATH)\components\wear_levelling\include \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
