@@ -43,7 +43,7 @@
 #include "mc.defines.h"
 
 #if ESP32
-	#include "rom/ets_sys.h"
+	#include "esp32/rom/ets_sys.h"
 	#include "nvs_flash/include/nvs_flash.h"
 	#include "esp_partition.h"
 	#include "esp_wifi.h"
