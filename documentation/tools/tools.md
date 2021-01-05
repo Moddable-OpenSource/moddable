@@ -1,7 +1,7 @@
 # Tools
 
-Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: December 9, 2020
+Copyright 2017-2021 Moddable Tech, Inc.<BR>
+Revised: January 5, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -17,6 +17,7 @@ To build the tools themselves, and to build and run apps in the Moddable simulat
 
 * [mcconfig](#mcconfig)
 * [mcrez](#mcrez)
+* [mcrun](#mcrun)
 * [png2bmp](#png2bmp)
 * [xsc](#xsc)
 * [xsl](#xsl)
@@ -38,10 +39,10 @@ will build and launch the [balls example](../../examples/piu/balls) in the simul
 
 ```shell
 cd $MODDABLE/examples/piu/balls
-mcconfig -d -m -p esp/moddable_zero
+mcconfig -d -m -p esp/moddable_two
 ```
 		
-will build and launch the balls example on Moddable Zero, and
+will build and launch the balls example on Moddable Two, and
 
 ```shell
 cd $MODDABLE/examples/network/http/httpgetjson
@@ -69,13 +70,15 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 - `-i`: to build a release instrumented version.
 - `-m`: to run `make` automatically, otherwise **mcconfig** just generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
-- `-p platform`: to select the platform: `esp`, `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue` or `gecko/thunderboard2`. Defaults to the host build platform:`mac`, `win` or `lin`.
+- `-p platform`: to select the platform. Consult the documentation for your device target for its platform identifier. The supported values include: `esp`, `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue`, `gecko/thunderboard2`, and `wasm`.  Defaults to the host build platform:`mac`, `win` or `lin`. 
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
 - `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See **Build Targets** below for more detail.
 - `-v`: to trace all commands executed by `make`
 - config arguments specified in the form of `key-=value` or `key="value"`. These are merged into the `config` section of the manifest. Import the `mc/config` module to access them. Moddable provided hosts that support networking and/or displays define the following config properties:
   - `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
   - `screen=screen_driver` and `touch=touch_driver`: to specify a screen or touch driver. See the [examples readme](../../examples/readme.md) for more information on screen and touch driver configuration.
+
+> **Note**: To generate a release build, exclude both `-d` and `-i` from the command line.
 
 **Build Targets**
 
@@ -86,6 +89,16 @@ mcconfig takes an optional `-t target` argument to specify a build target. The o
 - `deploy`: deploys a previously built app without rebuilding
 - `xsbug`: connect the xsbug debugger to a previously-deployed app
 - `all`: performs all steps (This is the default value, when the `-t` flag is omitted)
+
+<a id="mcrun"></a>
+## mcrun
+**mcrun** is a command line tool to build [mods](../xs/mods.md), scripts that users can install on their IoT products to add new features and change existing behaviors. The inputs to build a mod are JavaScript modules, assets data, and configuration. These are specified in a manifest. The output is an XS archive file (`.xsa` extension) containing JavaScript byte code and resource data.
+
+The command line arguments to `mcrun` are nearly identical to those for `mcconfig`. There are a few differences differences between `mcrun` and `mcconfig`;
+
+- the manifest used by `mcrun` must not reference any files which build to native code (e.g. `.c` or `.cpp` files) as a mod may only contain JavaScript
+- `mcrun` does not support the `-t` option
+- config propertiese are available from the `mod/config` module instead of `mc/config`
 
 <a id="mcrez"></a>
 ## mcrez
@@ -154,7 +167,7 @@ png2bmp file.png [-a] [-c] [f format] [-o directory] [-r rotation]
 <a id="xsc"></a>
 ## xsc
 
-**xsc** is the XS compiler, a command line tool that compiles JavaScript files into XS binary files containing symbols and byte codes. 
+**xsc** is the XS compiler, a command line tool that compiles files containing JavaScript source code (usually stored in a file with a `.js` extension) into XS binary files containing symbols and byte codes. 
 
 By default **xsc** parses the JavaScript file as an ECMAScript module. Optionally, for compatibility and conformance, **xsc** can parse the JavaScript file as an ECMAScript program. Moddable apps only use ECMAScript modules.
 
