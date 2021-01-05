@@ -18,6 +18,8 @@
 *
 */
 
+import type {TCPSocketOptions, ListenerOptions} from "socket";
+
 declare module "http" {
   type RequestError = -1;
   type RequestBodyFragment = 0;
@@ -26,7 +28,7 @@ declare module "http" {
   type RequestAllHeaders = 3;
   type RequestResponseFragment = 4;
   type RequestAllResponse = 5;
-  type RequestStatus = (
+  export type RequestStatus = (
     RequestError |
     RequestBodyFragment |
     RequestStatusCode |
@@ -35,25 +37,28 @@ declare module "http" {
     RequestResponseFragment |
     RequestAllResponse
   );
-  class Request {
-    constructor(options: {
-      host?: string,
-      address?: string,
-      port?: number,
-      path?: string,
-      method?: string,
-      headers?: (string | number)[],
-      body?: boolean | string | ArrayBuffer,
-      response?: typeof String | typeof ArrayBuffer
-    });
+  export type HTTPRequestOptions = TCPSocketOptions | {
+    host?: string,
+    address?: string,
+    port?: number,
+    path?: string,
+    method?: string,
+    headers?: (string | number)[],
+    body?: boolean | string | ArrayBuffer,
+    response?: typeof String | typeof ArrayBuffer
+  }
+  // TODO: better
+  export type HTTPRequestCallback = (message: RequestStatus, val1?: any, val2?: any) => void | number | boolean | string | ArrayBuffer;
+
+  export class Request {
+    constructor(options: HTTPRequestOptions);
     close(): void;
     read(): number;
     read<T extends typeof String | typeof ArrayBuffer>(
       type: T,
       until?: number
     ): T extends typeof String ? string : ArrayBuffer;
-    // TODO: better
-    callback: (message: RequestStatus, val1?: any, val2?: any) => void;
+    callback: HTTPRequestCallback
     
     static readonly requestFragment: RequestBodyFragment;
     static readonly status: RequestStatusCode;
@@ -64,55 +69,53 @@ declare module "http" {
     static readonly error: RequestError;
   }
 
+  type ServerConnection = 1;
+  type ServerStatus = 2;
+  type ServerHeader = 3;
+  type ServerHeadersComplete = 4;
+  type ServerRequestFragment = 5;
+  type ServerRequestComplete = 6;
+  type ServerPrepareResponse = 8;
+  type ServerResponseFragment = 9;
+  type ServerResponseComplete = 10;
+  type ServerError = -1;
+  export type ServerMessages = (
+    ServerConnection |
+    ServerStatus |
+    ServerHeader |
+    ServerHeadersComplete |
+    ServerRequestFragment |
+    ServerRequestComplete |
+    ServerPrepareResponse |
+    ServerResponseFragment |
+    ServerResponseComplete |
+    ServerError
+  );
+  export type HTTPServerOptions = ListenerOptions;
+  // TODO: better
+  export type HTTPServerCallback = (this: Request, message: ServerMessages, val1?: any, val2?: any) => void | number | boolean | string | ArrayBuffer;
 
-type ServerConnection = 1;
-type ServerStatus = 2;
-type ServerHeader = 3;
-type ServerHeadersComplete = 4;
-type ServerRequestFragment = 5;
-type ServerRequestComplete = 6;
-type ServerPrepareResponse = 8;
-type ServerResponseFragment = 9;
-type ServerResponseComplete = 10;
-type ServerError = -1;
-type ServerMessages = (
-  ServerConnection |
-  ServerStatus |
-  ServerHeader |
-  ServerHeadersComplete |
-  ServerRequestFragment |
-  ServerRequestComplete |
-  ServerPrepareResponse |
-  ServerResponseFragment |
-  ServerResponseComplete |
-  ServerError
-);
-
-  class Server {
-    constructor(
-      options?: import('socket').TCPSocketOptions & {
-        port?: number
-      }
-    );
-    close();
-    read(): number;
-    read<T extends typeof String | typeof ArrayBuffer>(
-      type: T,
-      until?: number
-    ): T extends typeof String ? string : ArrayBuffer;
-    // TODO: better
-    callback: (message: ServerMessages, val1?: any, val2?: any) => void;
-  
-    static connection: ServerConnection;
-    static status: ServerStatus;
-    static header: ServerHeader;
-    static headersComplete: ServerHeadersComplete;
-    static requestFragment: ServerRequestFragment;
-    static requestComplete: ServerRequestComplete;
-    static prepareResponse: ServerPrepareResponse;
-    static responseFragment: ServerResponseFragment;
-    static responseComplete: ServerResponseComplete;
-    static error: ServerError;
-}
-  export {Request, Server};
+  export class Server {
+      constructor(
+        options?: HTTPServerOptions
+      );
+      close();
+      read(): number;
+      read<T extends typeof String | typeof ArrayBuffer>(
+        type: T,
+        until?: number
+      ): T extends typeof String ? string : ArrayBuffer;
+      callback: HTTPServerCallback
+    
+      static readonly connection: ServerConnection;
+      static readonly status: ServerStatus;
+      static readonly header: ServerHeader;
+      static readonly headersComplete: ServerHeadersComplete;
+      static readonly requestFragment: ServerRequestFragment;
+      static readonly requestComplete: ServerRequestComplete;
+      static readonly prepareResponse: ServerPrepareResponse;
+      static readonly responseFragment: ServerResponseFragment;
+      static readonly responseComplete: ServerResponseComplete;
+      static readonly error: ServerError;
+  }
 }
