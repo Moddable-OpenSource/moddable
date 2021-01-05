@@ -29,6 +29,8 @@
 #include "esp_attr.h"		// IRAM_ATTR
 #include "esp_heap_caps.h"	// MALLOC_CAP_DMA, heap_caps_malloc
 
+#include "semphr.h"
+
 #ifndef MODDEF_SPI_MISO_PIN
 	#define MODDEF_SPI_MISO_PIN	12
 #endif
@@ -39,80 +41,97 @@
 	#define MODDEF_SPI_SCK_PIN	14
 #endif
 
-typedef uint16_t (*modSPIBufferLoader)(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
+typedef uint32_t (*modSPIBufferLoader)(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
 
-static uint16_t modSpiLoadBufferAsIs(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
-static uint16_t modSpiLoadBufferSwap16(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
-static uint16_t modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
-static uint16_t modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
-static uint16_t modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
-static uint16_t modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
-static uint16_t modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut);
+static uint32_t modSpiLoadBufferAsIs(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
+static uint32_t modSpiLoadBufferSwap16(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
+static uint32_t modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
+static uint32_t modSpiLoadBufferRGB332To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
+static uint32_t modSpiLoadBufferGray256To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
+static uint32_t modSpiLoadBufferGray16To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
+static uint32_t modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
 
 static modSPIConfiguration gConfig;
 static uint8_t *gSPIData;
-static volatile int16_t gSPIDataCount = -1;
+static volatile int32_t gSPIDataCount = -1;
 static modSPIBufferLoader gSPIBufferLoader;
 static uint16_t *gCLUT16;
 
-static spi_transaction_t gTransaction[2];
+#define kTransactions (2)
+static spi_transaction_t gTransaction[kTransactions];
 static uint8_t gTransactionIndex = 0;
-static uint8_t gTransactionsPending = 0;
+static volatile uint8_t gTransactionsPending = 0;
 
-// SPI_BUFFER_SIZE can be larger than 64... tested up to 512.
-#define SPI_BUFFER_SIZE (512)
+#define SPI_BUFFER_SIZE (8 * 1024)
 
-// The SPI driver may decide to use DMA for transfers, so these buffers should
-// be allocated in DMA-capable memory using heap_caps_malloc(size, MALLOC_CAP_DMA).
-//static uint32_t gSPITransactionBuffer[SPI_BUFFER_SIZE / sizeof(uint32_t)];
-uint32_t *gSPITransactionBuffer = NULL;
+uint32_t *gSPITransactionBuffer[kTransactions];
 
+static TaskHandle_t gSPITask;
+static SemaphoreHandle_t gSPIMutex;
 
-void IRAM_ATTR reduceTransactionsPending(uint8_t min)
+static void IRAM_ATTR queueTransfer(void)
 {
-	while (gTransactionsPending > min) {
+    uint32_t bitsOut;
+    uint16_t loaded;
+    spi_transaction_t *trans = &gTransaction[gTransactionIndex];
+
+    loaded = (gSPIBufferLoader)(gSPIData, (gSPIDataCount <= SPI_BUFFER_SIZE) ? gSPIDataCount : SPI_BUFFER_SIZE, &bitsOut);
+    gSPIDataCount -= loaded;
+    gSPIData += loaded;
+
+    trans->flags = 0;
+    trans->cmd = 0;
+    trans->addr = 0;
+    trans->length = bitsOut;
+    trans->rxlength = 0;
+    trans->user = 0;
+    trans->tx_buffer = gSPITransactionBuffer[gTransactionIndex];
+    trans->rx_buffer = NULL;
+
+    gTransactionsPending += 1;
+    gTransactionIndex += 1;
+    if (gTransactionIndex >= kTransactions)
+        gTransactionIndex = 0;
+
+    spi_device_queue_trans(gConfig->spi_dev, trans, portMAX_DELAY);
+}
+
+void spiLoop(void *pvParameter)
+{
+	while (true) {
+		uint32_t newState;
 		spi_transaction_t *ret_trans;
 
-		spi_device_get_trans_result(gConfig->spi_dev, &ret_trans, portMAX_DELAY);
+		xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
 
-		gTransactionsPending -= 1;
+		while (0 == spi_device_get_trans_result(gConfig->spi_dev, &ret_trans, 0))
+			gTransactionsPending -= 1;
+
+		xSemaphoreTake(gSPIMutex, portMAX_DELAY);
+
+		while ((gSPIDataCount > 0) && (gTransactionsPending < kTransactions))
+			queueTransfer();
+
+		if (gSPIDataCount <= 0) {
+			gSPIDataCount = -1;
+			gSPIData = NULL;
+		}
+
+		xSemaphoreGive(gSPIMutex);
 	}
 }
 
-// queue up the next one
 static void IRAM_ATTR postTransfer(spi_transaction_t *transIn)
 {
-    esp_err_t ret;
-	spi_transaction_t *trans;
-	uint16_t loaded, bitsOut;
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-	if (gSPIDataCount <= 0) {
-		gSPIDataCount = -1;
-		gSPIData = NULL;
+	if (transIn->rx_buffer)
 		return;
-	}
 
-	loaded = (gSPIBufferLoader)(gSPIData, (gSPIDataCount <= SPI_BUFFER_SIZE) ? gSPIDataCount : SPI_BUFFER_SIZE, &bitsOut);
-	gSPIDataCount -= loaded;
-	gSPIData += loaded;
+	xTaskNotifyFromISR(gSPITask, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 
-	trans = &gTransaction[gTransactionIndex];
-	gTransactionIndex ^= 1;
-
-	trans->flags = 0;
-	trans->cmd = 0;
-	trans->addr = 0;
-	trans->length = bitsOut;
-	trans->rxlength = 0;
-	trans->user = 0;
-	trans->tx_buffer = gSPITransactionBuffer;
-	trans->rx_buffer = NULL;
-
-	gTransactionsPending += 1;
-
-    ret = spi_device_queue_trans(gConfig->spi_dev, trans, portMAX_DELAY);
-
-	reduceTransactionsPending(2);
+	if (xHigherPriorityTaskWoken)
+		portYIELD_FROM_ISR();
 }
 
 static uint8_t gSPIInited;
@@ -123,37 +142,44 @@ void modSPIInit(modSPIConfiguration config)
 
 	if (!gSPIInited) {
 		spi_bus_config_t buscfg;
+        uint8_t i;
 
-		gSPITransactionBuffer = heap_caps_malloc(SPI_BUFFER_SIZE, MALLOC_CAP_DMA);
-
+        gSPITransactionBuffer[0] = heap_caps_malloc(SPI_BUFFER_SIZE * kTransactions, MALLOC_CAP_DMA);      // use DMA capable memory for SPI driver
+        for (i = 1; i < kTransactions; i++)
+            gSPITransactionBuffer[i] = (uint32_t *)(SPI_BUFFER_SIZE + (uint8_t *)gSPITransactionBuffer[i - 1]);
+        
 		memset(&buscfg, 0, sizeof(buscfg));
 		buscfg.miso_io_num = MODDEF_SPI_MISO_PIN;
 		buscfg.mosi_io_num = MODDEF_SPI_MOSI_PIN;
 		buscfg.sclk_io_num = MODDEF_SPI_SCK_PIN;
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
+        buscfg.max_transfer_sz = 8 * 1024 * 1024;
 
 	#if IDF_TARGET == esp32s2
-		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);
+		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);		//@@
 	#else
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
 	#endif
 		if (ret) {
-			free(gSPITransactionBuffer);
-			gSPITransactionBuffer = NULL;
+            free(gSPITransactionBuffer[0]);
+            gSPITransactionBuffer[0] = NULL;
 			return;
 		}
 
 		gSPIData = NULL;
 		gSPIDataCount = -1;
+
+		gSPIMutex = xSemaphoreCreateMutex();
+		xTaskCreate(spiLoop, "spiLoop", 2048 + XT_STACK_EXTRA_CLIB, NULL, 10, &gSPITask);
 	}
 
-	spi_device_interface_config_t devcfg;
+    spi_device_interface_config_t devcfg;
 	memset(&devcfg, 0, sizeof(devcfg));
 	devcfg.clock_speed_hz = config->hz;
 	devcfg.mode = config->mode & 3;
 	devcfg.spics_io_num = config->cs_pin;		// set to -1 if none
-	devcfg.queue_size = 3;
+	devcfg.queue_size = kTransactions;
 	devcfg.pre_cb = NULL;
 	devcfg.post_cb = postTransfer;
 	devcfg.input_delay_ns = config->miso_delay;
@@ -161,8 +187,8 @@ void modSPIInit(modSPIConfiguration config)
 	ret = spi_bus_add_device(config->spiPort, &devcfg, &config->spi_dev);
 	if (ret) {
 		modLog("spi_bus_add_device failed");
-		free(gSPITransactionBuffer);
-		gSPITransactionBuffer = NULL;
+        free(gSPITransactionBuffer[0]);
+        gSPITransactionBuffer[0] = NULL;
 		spi_bus_free(config->spiPort);
 		return;
 	}
@@ -186,9 +212,8 @@ void modSPIUninit(modSPIConfiguration config)
 
 	spi_bus_free(config->spiPort);
 
-	free(gSPITransactionBuffer);
-	gSPITransactionBuffer = NULL;
-
+    free(gSPITransactionBuffer[0]);
+    gSPITransactionBuffer[0] = NULL;
 }
 
 void modSPIActivateConfiguration(modSPIConfiguration config)
@@ -207,9 +232,9 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 }
 
 // data must be long aligned
-uint16_t IRAM_ATTR modSpiLoadBufferAsIs(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+uint32_t IRAM_ATTR modSpiLoadBufferAsIs(uint8_t *data, uint32_t bytes, uint32_t *bitsOut)
 {
-	uint32_t *from = (uint32_t *)data, *to = gSPITransactionBuffer;
+	uint32_t *from = (uint32_t *)data, *to = gSPITransactionBuffer[gTransactionIndex];
 	uint8_t longs;
 	uint16_t result = bytes;
 
@@ -242,10 +267,10 @@ uint16_t IRAM_ATTR modSpiLoadBufferAsIs(uint8_t *data, uint16_t bytes, uint16_t 
 	return result;
 }
 
-uint16_t IRAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+uint32_t IRAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint32_t bytes, uint32_t *bitsOut)
 {
 	uint32_t *from = (uint32_t *)data;
-	uint32_t *to = gSPITransactionBuffer;
+	uint32_t *to = gSPITransactionBuffer[gTransactionIndex];
 	const uint32_t mask = 0x00ff00ff;
 	uint32_t twoPixels;
 	uint16_t result = bytes;
@@ -282,10 +307,10 @@ uint16_t IRAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint16_t bytes, uint16_
 
 }
 
-uint16_t IRAM_ATTR modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+uint32_t IRAM_ATTR modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint32_t bytes, uint32_t *bitsOut)
 {
 	uint16_t *from = (uint16_t *)data;
-	uint8_t *to = (uint8_t *)gSPITransactionBuffer;
+	uint8_t *to = (uint8_t *)gSPITransactionBuffer[gTransactionIndex];
 	uint16_t remain;
 
 	if (bytes > SPI_BUFFER_SIZE)
@@ -318,10 +343,10 @@ uint16_t IRAM_ATTR modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t byte
 	return bytes;		// input bytes consumed
 }
 
-uint16_t IRAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+uint32_t IRAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut)
 {
 	uint8_t *from = (uint8_t *)data;
-	uint32_t *to = gSPITransactionBuffer;
+	uint32_t *to = gSPITransactionBuffer[gTransactionIndex];
 	uint16_t remain;
 
 	if (bytes > (SPI_BUFFER_SIZE >> 1))
@@ -363,10 +388,10 @@ uint16_t IRAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, u
 	return bytes;		// input bytes consumed
 }
 
-uint16_t IRAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+uint32_t IRAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut)
 {
 	uint8_t *from = (uint8_t *)data;
-	uint32_t *to = gSPITransactionBuffer;
+	uint32_t *to = gSPITransactionBuffer[gTransactionIndex];
 	uint16_t remain;
 
 	if (bytes > (SPI_BUFFER_SIZE >> 1))
@@ -401,10 +426,10 @@ uint16_t IRAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, 
 	return bytes;		// input bytes consumed
 }
 
-uint16_t IRAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+uint32_t IRAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut)
 {
 	uint8_t *from = (uint8_t *)data;
-	uint32_t *to = gSPITransactionBuffer;
+	uint32_t *to = gSPITransactionBuffer[gTransactionIndex];
 	uint16_t i;
 
 	if (bytes > (SPI_BUFFER_SIZE >> 2))
@@ -434,11 +459,11 @@ uint16_t IRAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, u
 	return bytes;		// input bytes consumed
 }
 
-uint16_t IRAM_ATTR modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
+uint32_t IRAM_ATTR modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint32_t bytes, uint32_t *bitsOut)
 {
 	uint16_t *clut16_t = gCLUT16;
 	uint8_t *from = (uint8_t *)data;
-	uint32_t *to = gSPITransactionBuffer;
+	uint32_t *to = gSPITransactionBuffer[gTransactionIndex];
 	uint16_t i;
 
 	if (bytes > (SPI_BUFFER_SIZE >> 2))
@@ -482,24 +507,34 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 
 void modSPIFlush(void)
 {
-	while (gSPIDataCount >= 0)
-		taskYIELD();
-
-	reduceTransactionsPending(0);
+	while (gTransactionsPending)
+        taskYIELD();
 }
 
 static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t count, modSPIBufferLoader loader)
 {
-	modSPIActivateConfiguration(config);
+    if (!config->sync && (config == gConfig)) {
+		while (kTransactions == gTransactionsPending)
+			taskYIELD();
+	}
+	else
+		modSPIActivateConfiguration(config);
+
+	xSemaphoreTake(gSPIMutex, portMAX_DELAY);
 
 	gSPIBufferLoader = loader;
-	gSPIData = data;
-	gSPIDataCount = count;
+    gSPIData = data;
+    gSPIDataCount = count;
 
-	postTransfer(NULL);
-
-	if (config->sync)
+    if (config->sync) {
+        queueTransfer();
+		xSemaphoreGive(gSPIMutex);
 		modSPIFlush();
+    }
+	else {
+		xTaskNotify(gSPITask, 1, eSetValueWithOverwrite);
+		xSemaphoreGive(gSPIMutex);
+	}
 }
 
 void modSPITx(modSPIConfiguration config, uint8_t *data, uint16_t count)
@@ -537,4 +572,3 @@ void modSPITxCLUT16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t co
 	gCLUT16 = colors;
 	modSPITxCommon(config, data, count, modSpiLoadBufferCLUT16To16BE);
 }
-
