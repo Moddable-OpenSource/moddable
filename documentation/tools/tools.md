@@ -29,18 +29,24 @@ To build the tools themselves, and to build and run apps in the Moddable simulat
 
 For example:
 
-	cd $MODDABLE/piu/examples/balls
-	mcconfig -d -m
+```shell
+cd $MODDABLE/piu/examples/balls
+mcconfig -d -m
+```
 
 will build and launch the [balls example](../../examples/piu/balls) in the simulator,
 
-	cd $MODDABLE/examples/piu/balls
-	mcconfig -d -m -p esp/moddable_zero
+```shell
+cd $MODDABLE/examples/piu/balls
+mcconfig -d -m -p esp/moddable_zero
+```
 		
 will build and launch the balls example on Moddable Zero, and
 
-	cd $MODDABLE/examples/network/http/httpgetjson
-	mcconfig -d -m -p esp ssid="Public Wi-Fi"
+```shell
+cd $MODDABLE/examples/network/http/httpgetjson
+mcconfig -d -m -p esp ssid="Public Wi-Fi"
+```
 	
 will configure an ESP8266 target device to connect to an open Wi-Fi access point called "Public Wi-Fi," then build and launch the httpgetjson example on the device.
 
@@ -53,7 +59,9 @@ A few notes:
 <a id="arguments"></a>
 ### Arguments
 
-	mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-t target] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+```text
+mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-t target] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+```
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
 - `-d`: to build a debug instrumented version.
@@ -96,7 +104,9 @@ Notice that most assets are used directly from flash storage.
 
 ### Arguments
 
-	mcrez files... [-o output] [-r name] [-p platform]
+```text
+mcrez files... [-o output] [-r name] [-p platform]
+```
 
 - `files`: the paths of the assets to include.
 - `-o output`: the path of the output directory. Defaults to the current directory.
@@ -110,8 +120,10 @@ Notice that most assets are used directly from flash storage.
 
 For instance:
 
-	cd $MODDABLE/piu/examples/balls
-	png2bmp balls.png -o ~/Desktop
+```shell
+cd $MODDABLE/piu/examples/balls
+png2bmp balls.png -o ~/Desktop
+```
 
 will create two files on your dektop:
 
@@ -120,14 +132,18 @@ will create two files on your dektop:
 
 To be able to use bitmaps directly from flash storage, the bitmaps need to conform to the screen pixel format and rotation. Use the `-f` option to select the screen pixel format and the `-r` option to select the screen rotation. **png2bmp** also takes care of the row bytes constraint related to the screen pixel format. For instance:
 
-	cd $MODDABLE/piu/examples/balls
-	png2bmp balls.png -o ~/Desktop -f gray256 -r 90
+```shell
+cd $MODDABLE/piu/examples/balls
+png2bmp balls.png -o ~/Desktop -f gray256 -r 90
+```
 
 ![](./../assets/tools/png2bmp.png)
 
 ### Arguments
-	
-	png2bmp file.png [-a] [-c] [f format] [-o directory] [-r rotation]
+
+```text	
+png2bmp file.png [-a] [-c] [f format] [-o directory] [-r rotation]
+```
 
 - `-a`: to create only the alpha bitmap.
 - `-c`: to create only the color bitmap.
@@ -144,12 +160,14 @@ By default **xsc** parses the JavaScript file as an ECMAScript module. Optionall
 
 With the `-c` option, **xsc** accepts the `@` constructs that reference host functions and host objects. For instance:
 
-	class Point @ "Point_destructor" {
-		constructor(x, y) @ "Point_constructor"
-		moveBy(x, y) @ "Point_moveBy"
-		get x() @ "Point_get_x"
-		get y() @ "Point_get_y"
-	}
+```c
+class Point @ "Point_destructor" {
+	constructor(x, y) @ "Point_constructor"
+	moveBy(x, y) @ "Point_moveBy"
+	get x() @ "Point_get_x"
+	get y() @ "Point_get_y"
+}
+```
 
 The `Point` class creates host objects. The `Point_destructor` C function will be called when the garbage collector destroys such host objects. The `Point_constructor ` C function will be called when `new Point(x, y)` constructs such host objects. The other C functions will be called when accessing properties and calling methods. See [**XS in C**](../xs/XS%20in%20C.md) about the implementation of the C functions.
 
@@ -159,7 +177,9 @@ With the  `-e` option, **xsc** embeds the references to host functions and host 
 
 ### Arguments
 
-	xsc file [-c] [-d] [-e] [-o directory] [-p] [-r name] [-t directory]
+```text
+xsc file [-c] [-d] [-e] [-o directory] [-p] [-r name] [-t directory]
+```
 
 - `file`: the path of a `.js` file to compile.
 - `-c`: to accept the `@` constructs that reference host functions and host objects. With the `-c` option and without the `-e` option, **xsc** generates C code that declares XS symbols, host functions and host objects.
@@ -181,7 +201,9 @@ The C code can then be compiled and linked with the implementation of the host f
 
 ### Arguments
 
-	xsl files... [-a name] [-b directory] [c creation] [-o directory] [-p modules]... [u url]
+```text
+xsl files... [-a name] [-b directory] [c creation] [-o directory] [-p modules]... [u url]
+```
 
 - `files`: the paths of the XS binary files to link.
 - `-a name`: the name of the XS archive file. Defaults to `a`. 
