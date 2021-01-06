@@ -22,9 +22,11 @@
 #include "xsPlatform.h"
 #include "modGPIO.h"
 
+#include "nrf_drv_clock.h"
 #include "nrf_drv_lpcomp.h"
 #include "nrf_sdh.h"
 #include "nrf_rtc.h"
+
 
 #define RAM_START_ADDRESS  0x20000000
 #define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size 0x100
@@ -137,6 +139,7 @@ void xs_sleep_deep(xsMachine *the)
 	uint16_t argc = xsmcArgc;
 	if (argc > 0) {
 		// System ON sleep, RAM powered off during sleep, wake on RTC or configured interrupt source
+		
 		uint32_t ms = xsmcToInteger(xsArg(0));
 		uint32_t waitTicks = (((uint64_t)ms) << 10) / 1000;
 		
@@ -159,6 +162,9 @@ void xs_sleep_deep(xsMachine *the)
 		c_gettimeofday(&tv, NULL);
 		*((c_timeval *)MOD_TIME_RESTORE_MEM) = tv;
 
+		// Disable LFCLK started interrupt
+		nrf_clock_int_disable(CLOCK_INTENSET_LFCLKSTARTED_Msk);
+                          
 		// Stop the RTC and clear the RTC counter
 		nrf_rtc_task_trigger(portNRF_RTC_REG, NRF_RTC_TASK_STOP);
 		nrf_rtc_task_trigger(portNRF_RTC_REG, NRF_RTC_TASK_CLEAR);
@@ -292,56 +298,12 @@ void sleep_wake_on_timer()
 	NRF_POWER->RAM[7].POWERCLR = 0x03;
 	NRF_POWER->RAM[8].POWERCLR = 0x3F;
 
-#if 1
-	// Wait for RTC compare or configured digital/analog interrupt sources
-	do {
-		__WFE();
-		
-		// RTC reached the specified timeout
-		if (nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0))
-			break;
-			
-		// Check for wake-up from configured digital sources
-		if (0 != NRF_P0->LATCH) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_GPIO_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = NRF_P0->LATCH;
-			NRF_P0->LATCH = 0xFFFFFFFF;	// clear
-			break;
-		}
-		
-		// Check for wake-up from analog upward crossing
-		if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_UP) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_UP_Msk)) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
-			break;
-		}
-		
-		// Check for wake-up from analog downward crossing
-		if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_DOWN) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_DOWN_Msk)) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
-			break;
-		}
-		
-		// Check for wake-up from analog upward or downward crossing
-		if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_CROSS) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_CROSS_Msk)) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
-			break;
-		}
-	} while (1);
-
-	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER * 1000) >> 10) / 1000;
-	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
-#endif
-	
-#if 0
 	// Wait for RTC compare or configured digital/analog interrupt sources
 	do {
 		__WFE();
 	} while (0 == (NVIC->ISPR[0] | NVIC->ISPR[1]));
     
+
 	// Read RTC again and update saved time of day
 	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER * 1000) >> 10) / 1000;
 	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
@@ -366,7 +328,6 @@ void sleep_wake_on_timer()
 			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     }
-#endif
 
 	// Power on all RAM (seems to be required in order for reset to work)
 	NRF_POWER->RAM[0].POWERSET = 0x03;
@@ -397,51 +358,6 @@ void sleep_wake_on_timer_sd()
 	sd_power_ram_power_clr(7, 0x03);
 	sd_power_ram_power_clr(8, 0x3F);
 
-#if 1
-	// Wait for RTC compare or configured digital/analog interrupt sources
-	do {
-		__WFE();
-		
-		// RTC reached the specified timeout
-		if (nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0))
-			break;
-			
-		// Check for wake-up from configured digital sources
-		if (0 != NRF_P0->LATCH) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_GPIO_WAKE_MAGIC;
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = NRF_P0->LATCH;
-			NRF_P0->LATCH = 0xFFFFFFFF;	// clear
-			break;
-		}
-		
-		// Check for wake-up from analog upward crossing
-		if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_UP) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_UP_Msk)) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
-			break;
-		}
-		
-		// Check for wake-up from analog downward crossing
-		if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_DOWN) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_DOWN_Msk)) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
-			break;
-		}
-		
-		// Check for wake-up from analog upward or downward crossing
-		if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_CROSS) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_CROSS_Msk)) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;
-			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
-			break;
-		}
-	} while (1);
-
-	// Read RTC again and update saved time of day
-	((c_timeval *)MOD_TIME_RESTORE_MEM)->tv_sec += ((portNRF_RTC_REG->COUNTER * 1000) >> 10) / 1000;
-	((uint32_t *)MOD_TIME_RESTORE_MEM)[2] = kRamRetentionValueMagic;
-#endif
-
-#if 0
 	// Wait for RTC compare or configured digital/analog interrupt sources
 	do {
 		__WFE();
@@ -471,7 +387,6 @@ void sleep_wake_on_timer_sd()
 			NRF_LPCOMP->ENABLE = LPCOMP_ENABLE_ENABLE_Disabled << LPCOMP_ENABLE_ENABLE_Pos;
     	}
     }
-#endif
 
 	// Power on all RAM (seems to be required in order for reset to work)
 	sd_power_ram_power_set(0, 0x03);
