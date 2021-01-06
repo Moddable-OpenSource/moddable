@@ -239,7 +239,9 @@ gboolean xs_serial_read_callback(GIOChannel *source, GIOCondition condition, gpo
 		if (s->hasOnReadable) {
 			xsBeginHost(s->the);
 			xsTry {
-				xsCallFunction1(s->onReadable, s->obj, xsInteger(1));
+				int available = 0;
+				ioctl(s->fd, FIONREAD, &available);
+				xsCallFunction1(s->onReadable, s->obj, xsInteger(available));
 			}
 			xsCatch {
 			}
@@ -326,7 +328,7 @@ void xs_serial_write_callback(void* machine, void* it)
 		s->job = NULL;
 		xsBeginHost(machine);
 		xsTry {
-			xsCallFunction1(s->onWritable, s->obj, xsInteger(1));
+			xsCallFunction1(s->onWritable, s->obj, xsInteger(1024));
 		}
 		xsCatch {
 		}

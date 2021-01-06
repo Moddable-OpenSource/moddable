@@ -303,7 +303,10 @@ void xs_serial_read_callback(void* machine, void* it)
 		LeaveCriticalSection(&s->readCritical);
 		xsBeginHost(machine);
 		xsTry {
-			xsCallFunction1(s->onReadable, s->obj, xsInteger(1));
+			DWORD errors;
+			COMSTAT	comstat;
+			xsElseThrow(ClearCommError(s->comm, &errors, &comstat));
+			xsCallFunction1(s->onReadable, s->obj, xsInteger((xsIntegerValue)comstat.cbInQue));
 		}
 		xsCatch {
 		}
@@ -380,7 +383,7 @@ void xs_serial_write_callback(void* machine, void* it)
  		LeaveCriticalSection(&s->writeCritical);
 		xsBeginHost(machine);
 		xsTry {
-			xsCallFunction1(s->onWritable, s->obj, xsInteger(1));
+			xsCallFunction1(s->onWritable, s->obj, xsInteger(1024));
 		}
 		xsCatch {
 		}
