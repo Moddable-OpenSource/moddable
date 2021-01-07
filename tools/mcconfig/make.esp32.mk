@@ -30,7 +30,7 @@ EXPECTED_ESP_IDF ?= v3.3.2
 ESP32_SUBCLASS ?= esp32
 $(warning ESP32_SUBCLASS $(ESP32_SUBCLASS))
 
-IDF_USE_VERSION ?= 3
+IDF_USE_VERSION ?= 4
 
 ifeq ($(VERBOSE),1)
 	CMAKE_LOG_LEVEL = VERBOSE
@@ -102,8 +102,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components \
  	$(IDF_PATH)/components/bootloader_support/include \
  	$(IDF_PATH)/components/bt/include \
- 	$(IDF_PATH)/components/bt/bluedroid/api/include \
- 	$(IDF_PATH)/components/bt/bluedroid/api/include/api \
+ 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
+ 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
  	$(IDF_PATH)/components/driver/include \
  	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
@@ -126,6 +126,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
  	$(IDF_PATH)/components/freertos/xtensa/include \
+	$(IDF_PATH)/components/freertos/xtensa/include/freertos \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/lwip/include/apps/ \

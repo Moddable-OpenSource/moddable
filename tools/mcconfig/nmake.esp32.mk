@@ -24,14 +24,14 @@ ESP32_SUBCLASS = esp32
 !ENDIF
 
 !IF "$(IDF_USE_VERSION)"==""
-IDF_USE_VERSION = 3
+IDF_USE_VERSION = 4
 !ENDIF
 
 !IF "$(EXPECTED_ESP_IDF)"==""
 !IF "$(IDF_USE_VERSION)"=="4"
 EXPECTED_ESP_IDF = v4.2-47-g2532ddd9f
 !ELSE
-EXPECTED_ESP_IDF = v4.2-47-g2532ddd9f
+EXPECTED_ESP_IDF = v3.3.2
 !ENDIF
 !ENDIF
 
@@ -119,8 +119,8 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components \
  	-I$(IDF_PATH)\components\bootloader_support\include \
  	-I$(IDF_PATH)\components\bt\include \
- 	-I$(IDF_PATH)\components\bt\bluedroid\api\include \
- 	-I$(IDF_PATH)\components\bt\bluedroid\api\include\api \
+ 	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include \
+ 	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include\api \
  	-I$(IDF_PATH)\components\driver\include \
 	-I$(IDF_PATH)\components\driver\include\driver \
 	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include \
@@ -143,6 +143,7 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\freertos\include \
  	-I$(IDF_PATH)\components\freertos\include\freertos \
 	-I$(IDF_PATH)\components\freertos\xtensa\include \
+	-I$(IDF_PATH)\components\freertos\xtensa\include\freertos \
 	-I$(IDF_PATH)\components\heap\include \
 	-I$(IDF_PATH)\components\log\include \
 	-I$(IDF_PATH)\components\lwip\include\apps \

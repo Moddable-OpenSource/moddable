@@ -229,9 +229,9 @@ export class MakeFile extends FILE {
 				else {
 					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "y" });
 					options.push({ name: "CONFIG_BT_NIMBLE_ENABLED", value: "n" });
-					options.push({ name: "CONFIG_BLE_SMP_ENABLE", value: "y" });
-					options.push({ name: "CONFIG_GATTS_ENABLE", value: (server ? "y" : "n") });
-					options.push({ name: "CONFIG_GATTC_ENABLE", value: (client ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_BLE_SMP_ENABLE", value: "y" });
+					options.push({ name: "CONFIG_BT_GATTS_ENABLE", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_GATTC_ENABLE", value: (client ? "y" : "n") });
 				}
 			} else {
 				options.push({ name: "CONFIG_BT_ENABLED", value: "n" });
