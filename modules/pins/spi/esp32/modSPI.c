@@ -156,7 +156,7 @@ void modSPIInit(modSPIConfiguration config)
 		buscfg.quadhd_io_num = -1;
         buscfg.max_transfer_sz = 8 * 1024 * 1024;
 
-	#if IDF_TARGET == esp32s2
+	#if IDF_TARGET_ESP32S2
 		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);		//@@
 	#else
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);

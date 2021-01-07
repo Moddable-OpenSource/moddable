@@ -26,7 +26,7 @@
 
 #define V_REF 1100
 
-#if IDF_TARGET == esp32s2
+#if IDF_TARGET_ESP32S2
 	#define ADC_WIDTH ADC_WIDTH_BIT_13
 	#define ADC_ATTEN ADC_ATTEN_DB_11
 #else
