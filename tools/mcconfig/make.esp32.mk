@@ -137,15 +137,15 @@ INC_DIRS = \
  	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
  	$(IDF_PATH)/components/newlib/include \
  	$(IDF_PATH)/components/newlib/platform_include \
- 	$(IDF_PATH)/components/nimble/esp-hci/include \
- 	$(IDF_PATH)/components/nimble/nimble/nimble/host/include \
- 	$(IDF_PATH)/components/nimble/nimble/nimble/host/services/gap/include \
- 	$(IDF_PATH)/components/nimble/nimble/nimble/host/src \
- 	$(IDF_PATH)/components/nimble/nimble/nimble/include \
- 	$(IDF_PATH)/components/nimble/nimble/nimble/include/nimble \
- 	$(IDF_PATH)/components/nimble/nimble/porting/nimble/include \
- 	$(IDF_PATH)/components/nimble/nimble/porting/npl/freertos/include \
- 	$(IDF_PATH)/components/nimble/port/include \
+ 	$(IDF_PATH)/components/bt/host/nimble/esp-hci/include \
+ 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/include \
+ 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/services/gap/include \
+ 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/src \
+ 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include \
+ 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include/nimble \
+ 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/nimble/include \
+ 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/npl/freertos/include \
+ 	$(IDF_PATH)/components/bt/host/nimble/port/include \
  	$(IDF_PATH)/components/soc/esp32/include \
  	$(IDF_PATH)/components/soc/esp32/include/soc \
  	$(IDF_PATH)/components/soc/include \
