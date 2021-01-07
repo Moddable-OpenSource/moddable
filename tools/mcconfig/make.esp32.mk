@@ -384,7 +384,7 @@ SDKCONFIG_H = $(SDKCONFIG_H_DIR)/sdkconfig.h
 all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
-	cd $(PROJ_DIR) ; idf.py set-target $(ESP32_SUBCLASS) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
+	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
 	-cp $(IDF_BUILD_DIR)/xs_esp32.elf $(BIN_DIR)
