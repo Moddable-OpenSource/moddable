@@ -218,17 +218,17 @@ export class MakeFile extends FILE {
 			if (client || server) {
 				options.push({ name: "CONFIG_BT_ENABLED", value: "y" });
 				if (nimble) {
-					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "y" });
-					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "n" });
 					options.push({ name: "CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_SM_LEGACY", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_SM_SC", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
-					options.push({ name: "CONFIG_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_NIMBLE_SM_LEGACY", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_SM_SC", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
 				}
 				else {
-					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ENABLED", value: "n" });
 					options.push({ name: "CONFIG_BLE_SMP_ENABLE", value: "y" });
 					options.push({ name: "CONFIG_GATTS_ENABLE", value: (server ? "y" : "n") });
 					options.push({ name: "CONFIG_GATTC_ENABLE", value: (client ? "y" : "n") });
