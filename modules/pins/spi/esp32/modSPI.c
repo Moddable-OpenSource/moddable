@@ -57,19 +57,19 @@ static volatile int32_t gSPIDataCount = -1;
 static modSPIBufferLoader gSPIBufferLoader;
 static uint16_t *gCLUT16;
 
-#define kTransactions (2)
+#define kTransactions (3)
 static spi_transaction_t gTransaction[kTransactions];
 static uint8_t gTransactionIndex = 0;
 static volatile uint8_t gTransactionsPending = 0;
 
-#define SPI_BUFFER_SIZE (8 * 1024)
+#define SPI_BUFFER_SIZE (1024)
 
 uint32_t *gSPITransactionBuffer[kTransactions];
 
 static TaskHandle_t gSPITask;
 static SemaphoreHandle_t gSPIMutex;
 
-static void IRAM_ATTR queueTransfer(void)
+static void IRAM_ATTR queueTransfer(modSPIConfiguration config)
 {
     uint32_t bitsOut;
     uint16_t loaded;
@@ -88,12 +88,12 @@ static void IRAM_ATTR queueTransfer(void)
     trans->tx_buffer = gSPITransactionBuffer[gTransactionIndex];
     trans->rx_buffer = NULL;
 
-    gTransactionsPending += 1;
+	gTransactionsPending += 1;
     gTransactionIndex += 1;
     if (gTransactionIndex >= kTransactions)
         gTransactionIndex = 0;
 
-    spi_device_queue_trans(gConfig->spi_dev, trans, portMAX_DELAY);
+	spi_device_queue_trans(config->spi_dev, trans, portMAX_DELAY);
 }
 
 void spiLoop(void *pvParameter)
@@ -103,14 +103,18 @@ void spiLoop(void *pvParameter)
 		spi_transaction_t *ret_trans;
 
 		xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
-
-		while (0 == spi_device_get_trans_result(gConfig->spi_dev, &ret_trans, 0))
-			gTransactionsPending -= 1;
-
 		xSemaphoreTake(gSPIMutex, portMAX_DELAY);
 
+		if (!gConfig) {
+			xSemaphoreGive(gSPIMutex);
+			continue;
+		}
+
+		while (gTransactionsPending && (ESP_OK == spi_device_get_trans_result(gConfig->spi_dev, &ret_trans, 0)))
+			gTransactionsPending -= 1;
+
 		while ((gSPIDataCount > 0) && (gTransactionsPending < kTransactions))
-			queueTransfer();
+			queueTransfer(gConfig);
 
 		if (gSPIDataCount <= 0) {
 			gSPIDataCount = -1;
@@ -125,10 +129,14 @@ static void IRAM_ATTR postTransfer(spi_transaction_t *transIn)
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-	if (transIn->rx_buffer)
+	int i = transIn - gTransaction;
+	if ((i < 0) || (i >= kTransactions))
 		return;
 
-	xTaskNotifyFromISR(gSPITask, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+//	if (transIn->rx_buffer)
+//		return;
+
+	xTaskNotifyFromISR(gSPITask, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 
 	if (xHigherPriorityTaskWoken)
 		portYIELD_FROM_ISR();
@@ -507,33 +515,43 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 
 void modSPIFlush(void)
 {
-	while (gTransactionsPending)
+	while (true) {
+		xSemaphoreTake(gSPIMutex, portMAX_DELAY);
+		int active = gTransactionsPending || (gSPIDataCount > 0);
+		xSemaphoreGive(gSPIMutex);
+		if (!active) break;
         taskYIELD();
+	}
 }
 
 static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t count, modSPIBufferLoader loader)
 {
-    if (!config->sync && (config == gConfig)) {
-		while (kTransactions == gTransactionsPending)
+	if (!config->sync && (config == gConfig)) {
+		while (true) {
+			xSemaphoreTake(gSPIMutex, portMAX_DELAY);
+			int active = (kTransactions == gTransactionsPending) || (gSPIDataCount > 0);
+			if (!active) break;
+			xSemaphoreGive(gSPIMutex);
 			taskYIELD();
+		}
 	}
-	else
+	else {
 		modSPIActivateConfiguration(config);
-
-	xSemaphoreTake(gSPIMutex, portMAX_DELAY);
+		xSemaphoreTake(gSPIMutex, portMAX_DELAY);
+	}
 
 	gSPIBufferLoader = loader;
     gSPIData = data;
     gSPIDataCount = count;
 
     if (config->sync) {
-        queueTransfer();
+        queueTransfer(config);
 		xSemaphoreGive(gSPIMutex);
 		modSPIFlush();
     }
 	else {
-		xTaskNotify(gSPITask, 1, eSetValueWithOverwrite);
 		xSemaphoreGive(gSPIMutex);
+		xTaskNotify(gSPITask, (uintptr_t)config, eSetValueWithOverwrite);
 	}
 }
 
