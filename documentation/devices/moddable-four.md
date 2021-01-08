@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
-Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: Dec 28, 2020
+Copyright 2021 Moddable Tech, Inc.<BR>
+Revised: Jan 8, 2021
 
 This document describes how to start building Moddable applications for Moddable Four. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -188,12 +188,12 @@ After you've setup your macOS host environment, take the following steps to inst
 
 		![](../assets/devices/nrf5-sdk-selected.png)
 
-	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_17_0_2_d674dde` directory into the `nrf5` directory.
 
 6. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
 
 	```text
-	set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5_SDK_17.0.2_d674dde
+	set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5_SDK_17_0_2_d674dde
 	```
 
 7. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
