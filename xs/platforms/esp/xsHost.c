@@ -51,8 +51,8 @@
 	#if INSTRUMENT_CPULOAD
 		#include "driver/timer.h"
 
-		static uint16_t gCPUCounts[4];
-		static TaskHandle_t gIdles[2];
+		static uint16_t gCPUCounts[NUM_CPUS * 2];
+		static TaskHandle_t gIdles[NUM_CPUS];
 		static void IRAM_ATTR timer_group0_isr(void *para);
 	#endif
 #else
@@ -89,8 +89,12 @@
 	#endif
 		(char *)"System bytes free",
 	#if ESP32
-		(char *)"CPU 0",
-		(char *)"CPU 1",
+		#if NUM_CPUS == 1
+			(char *)"CPU",
+		#else
+			(char *)"CPU 0",
+			(char *)"CPU 1",
+		#endif
 	#endif
 	};
 
@@ -110,7 +114,9 @@
 		(char *)" bytes",
 	#if ESP32
 		(char *)" percent",
-		(char *)" percent",
+		#if NUM_CPUS > 1
+			(char *)" percent",
+		#endif
 	#endif
 	};
 #endif
@@ -1252,6 +1258,7 @@ static int32_t modInstrumentationCPU0(void *theIn)
 	return result;
 }
 
+#if NUM_CPUS > 1
 static int32_t modInstrumentationCPU1(void *theIn)
 {
 	int32_t result, total = (gCPUCounts[2] + gCPUCounts[3]);
@@ -1261,6 +1268,7 @@ static int32_t modInstrumentationCPU1(void *theIn)
 	gCPUCounts[2] = gCPUCounts[3] = 0;
 	return result;
 }
+#endif
 #endif
 
 #ifdef mxDebug
@@ -1293,8 +1301,10 @@ void espInitInstrumentation(txMachine *the)
 
 #if INSTRUMENT_CPULOAD
 	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
+#if NUM_CPUS > 1
 	modInstrumentationSetCallback(CPU1, modInstrumentationCPU1);
-
+#endif
+	
 	timer_config_t config = {
 		.divider = 16,
 		.counter_dir = TIMER_COUNT_UP,
@@ -1381,7 +1391,9 @@ void IRAM_ATTR timer_group0_isr(void *para)
     TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
 
 	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
+#if NUM_CPUS > 1
 	gCPUCounts[2 + (xTaskGetCurrentTaskHandleForCPU(1) == gIdles[1])] += 1;
+#endif
 }
 #endif
 #endif
