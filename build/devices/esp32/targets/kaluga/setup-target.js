@@ -1,5 +1,5 @@
 import config from "mc/config";
-import NEOPIXEL from "neopixel";
+import NeoPixel from "neopixel";
 import Timer from "timer";
 import Analog from "pins/analog";
 
@@ -39,7 +39,7 @@ globalThis.Host = Object.freeze({
 	ButtonArray,
 	NeoPixel: class {
 		constructor(options) {
-			return new NEOPIXEL({
+			return new NeoPixel({
 				...options,
 				length: 1, 
 				pin: config.neopixel, 
@@ -58,14 +58,13 @@ const phases = Object.freeze([
 
 export default function (done) {
 	if (config.rainbow){
-		const np = new Host.NeoPixel;
-		globalThis.neopixel = np;
+		const neopixel = new Host.NeoPixel;
 		const STEP = 3;
 		
 		let rgb = [0, 0, 0];
 		let phase = 0;
 
-		np.rainbowTimer = Timer.repeat(() => {
+		Timer.repeat(() => {
 			let advance;
 			for (let i = 0; i < 3; i++) {
 				const direction = phases[i][phase];
