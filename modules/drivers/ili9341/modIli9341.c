@@ -441,7 +441,6 @@ void ili9341Send_CLUT16(PocoPixel *pixels, int byteLength, void *refcon)
 
 void ili9341Command(spiDisplay sd, uint8_t command, const uint8_t *data, uint16_t count)
 {
-	modSPIFlush();
 	modSPIActivateConfiguration(NULL);
 	SCREEN_DC_COMMAND;
    	modSPITxRx(&sd->spiConfig, &command, 1);		// could use modSPITx, but modSPITxRx is synchronous and callers rely on that
