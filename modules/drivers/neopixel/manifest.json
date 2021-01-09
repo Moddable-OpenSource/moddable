@@ -1,0 +1,15 @@
+{
+	"modules": {
+		"*": [
+			"./*"
+		]
+	},
+	"preload": "neopixel",
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "./esp32/*"
+			}
+		}
+	}
+}
