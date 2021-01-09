@@ -2,17 +2,41 @@ import config from "mc/config";
 import NeoPixel from "neopixel";
 import Timer from "timer";
 
-globalThis.Host = Object.freeze({
-	NeoPixel: class {
-		constructor(options) {
-			return new NeoPixel({
-				...options,
-				length: 1, 
-				pin: config.neopixel, 
-				order: "GRB"
-			});
-		}
+class NeoPixelLED extends NeoPixel {
+	#value = 0;
+	read() {
+		return this.#value;
 	}
+	write(value) {
+		this.#value = value;
+		if (value) {
+			super.setPixel(0, super.makeRGB(255, 255, 255));
+		}else{
+			super.setPixel(0, super.makeRGB(0, 0, 0));
+		}
+		super.update();
+	}
+	on() {
+		this.write(1);
+	}
+	off() {
+		this.write(0);
+	}
+}
+
+globalThis.Host = Object.freeze({
+    LED: {
+        Default: class {
+            constructor(options) {
+                return new NeoPixelLED({
+                    ...options,
+                    length: 1,
+                    pin: config.neopixel,
+                    order: "GRB"
+                });
+            }
+        }
+    }
 }, true);
 
 const phases = Object.freeze([
@@ -24,7 +48,7 @@ const phases = Object.freeze([
 
 export default function (done) {
 	if (config.rainbow){
-		const neopixel = new Host.NeoPixel;
+		const neopixel = new Host.LED.Default;
 		const STEP = 3;
 		
 		let rgb = [0, 0, 0];

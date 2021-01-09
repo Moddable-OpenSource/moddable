@@ -3,9 +3,6 @@
 		"ESP32_SUBCLASS": "esp32s2",
 		"IDF_USE_VERSION": "4"
 	},
-	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
-	],
 	"modules": {
 		"setup/target": "./setup-target",
 		"*": [
@@ -20,7 +17,7 @@
 	"config": {
 		"screen": "",
 		"neopixel": 18,
-		"rainbow": false
+		"rainbow": true
 	},
 	"defines": {
 		"i2c": {
@@ -37,7 +34,7 @@
 			"cs_pin": 11,
 			"dc_pin": 13,
 			"rst_pin": 16,
-			"spi_port": 2,
+			"spi_port": 2
 		}
 	}
 }

@@ -1,5 +1,6 @@
 {
 	"build":{
+		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/sdkconfig-s2-psram",
 		"ESP32_SUBCLASS": "esp32s2",
 		"IDF_USE_VERSION": "4"
 	},
