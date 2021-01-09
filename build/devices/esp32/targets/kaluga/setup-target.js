@@ -35,17 +35,42 @@ class ButtonArray {
 	}
 }
 
+class NeoPixelLED extends NeoPixel {
+	#value = 0;
+	read() {
+		return this.#value;
+	}
+	write(value) {
+		this.#value = value;
+		if (value) {
+			super.setPixel(0, super.makeRGB(255, 255, 255));
+			
+		}else{
+			super.setPixel(0, super.makeRGB(0, 0, 0));
+		}
+		super.update();
+	}
+	on() {
+		this.write(1);
+	}
+	off() {
+		this.write(0);
+	}
+}
+
 globalThis.Host = Object.freeze({
 	ButtonArray,
-	NeoPixel: class {
-		constructor(options) {
-			return new NeoPixel({
-				...options,
-				length: 1, 
-				pin: config.neopixel, 
-				order: "GRB"
-			});
-		}
+	LED: {
+		Default: class {
+			constructor(options) {
+				return new NeoPixelLED({
+					...options,
+					length: 1, 
+					pin: config.neopixel, 
+					order: "GRB"
+				});
+			}
+		} 
 	}
 }, true);
 
@@ -57,8 +82,8 @@ const phases = Object.freeze([
 ], true);
 
 export default function (done) {
-	if (config.rainbow){
-		const neopixel = new Host.NeoPixel;
+	if (config.rainbow) {
+		const neopixel = new Host.LED.Default;
 		const STEP = 3;
 		
 		let rgb = [0, 0, 0];
