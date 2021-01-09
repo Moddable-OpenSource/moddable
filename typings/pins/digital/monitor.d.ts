@@ -30,7 +30,7 @@ declare module 'pins/digital/monitor' {
   type Falling = 2
   type Edge = Rising | Falling
   class Monitor {
-    public constructor(dictionary: { pin: number; port?: string; mode: Mode; edges: Edge })
+    public constructor(dictionary: { pin: number; port?: string; mode: Mode; edge: Edge })
     public onChanged(callback: () => void): void
     public read(): number
     public close(): void
