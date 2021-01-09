@@ -1,14 +1,13 @@
 {
+	"include": [
+		"$(MODULES)/drivers/neopixel/manifest.json"
+	],
 	"build":{
 		"ESP32_SUBCLASS": "esp32s2",
 		"IDF_USE_VERSION": "4"
 	},
 	"modules": {
-		"setup/target": "./setup-target",
-		"*": [
-			"$(MODULES)/drivers/neopixel/*",
-			"$(MODULES)/drivers/neopixel/esp32/*"
-		]
+		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"setup/target",
@@ -28,13 +27,6 @@
 			"miso_pin":8,
 			"mosi_pin":9,
 			"sck_pin": 15
-		},
-		"ili9341": {
-			"hz": 40000000,
-			"cs_pin": 11,
-			"dc_pin": 13,
-			"rst_pin": 16,
-			"spi_port": 2
 		}
 	}
 }
