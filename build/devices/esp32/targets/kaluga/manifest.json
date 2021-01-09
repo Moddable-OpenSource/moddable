@@ -5,19 +5,15 @@
 		"IDF_USE_VERSION": "4"
 	},
 	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
 		"$(MODULES)/pins/analog/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target",
-		"*": [
-			"$(MODULES)/drivers/neopixel/*",
-			"$(MODULES)/drivers/neopixel/esp32/*"
-		]
 	},
 	"preload": [
 		"setup/target",
-		"neopixel"
 	],
 	"config": {
 		"screen": "ili9341",
