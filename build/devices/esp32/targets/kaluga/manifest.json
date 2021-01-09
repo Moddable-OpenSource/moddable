@@ -22,6 +22,7 @@
 		"screen": "ili9341",
 		"neopixel": 45,
 		"buttonArray": 5,
+		"buttonArrayDelay": 50,
 		"rainbow": true
 	},
 	"defines": {
