@@ -1,6 +1,7 @@
 import config from "mc/config";
 import NeoPixel from "neopixel";
 import Timer from "timer";
+import Button from "button";
 
 class NeoPixelLED extends NeoPixel {
 	#value = 0;
@@ -36,7 +37,18 @@ globalThis.Host = Object.freeze({
                 });
             }
         }
-    }
+    },
+	Button: {
+		Default: class {
+			constructor(options) {
+				return new Button({
+					...options,
+					pin: 0,
+					invert: true
+				});
+			}
+		}
+	}
 }, true);
 
 const phases = Object.freeze([

@@ -1,5 +1,6 @@
 {
 	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
 		"$(MODULES)/drivers/neopixel/manifest.json"
 	],
 	"build":{
