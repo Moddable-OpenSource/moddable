@@ -6,152 +6,85 @@ import Analog from "pins/analog";
 const BUTTON_TOLERANCE = 10;
 const BUTTON_VALUES = Object.freeze([750 + BUTTON_TOLERANCE, 615 + BUTTON_TOLERANCE, 515 + BUTTON_TOLERANCE, 347 + BUTTON_TOLERANCE, 255 + BUTTON_TOLERANCE, 119 + BUTTON_TOLERANCE]);
 
-class ButtonArray {
-	#buttons = {};
-	#delay;
-	#pushed;
-	#timerID;
+class Button {
+	static #state = {
+		active: {},
+		pushed: undefined,
+		timer: undefined
+	};
+	
+	#button;
+	#onPush;
 
-	constructor() {
-		this.#delay = config.buttonArrayDelay ?? 50;
-	}
+	constructor(options) {
+		this.#button = options.button;
+		this.#onPush = options.onPush;
 
-	register(button, buttonNumber) {
-		if (this.#buttons[buttonNumber])
-			throw new Error(`Button ${buttonNumber} has already been created.`);
+		if (Button.#state.active[this.#button])
+			throw new Error("in use");
 
-		if (this.#timerID === undefined)
-			this.#startTimer();
+		Button.#state.active[this.#button] = this;
 
-		this.#buttons[buttonNumber] = button;
-	}
+		if (Button.#state.timer)
+			return;
 
-	unregister(buttonNumber) {
-		delete this.#buttons[buttonNumber];
-		if (Object.keys(this.#buttons).length == 0)
-			this.#stopTimer();
-	}
-
-	#startTimer() {
-		this.#timerID = Timer.repeat( () => {
+		Button.#state.timer = Timer.repeat( () => {
 			const value = Analog.read(config.buttonArray);
 			if (value > BUTTON_VALUES[0]) {
-				if (this.#pushed === undefined)
+				if (Button.#state.pushed === undefined)
 					return;
-				if (this.#buttons[this.#pushed])
-					this.#buttons[this.#pushed].value = 0;
-				this.#pushed = undefined;
+				Button.#state.active[Button.#state.pushed]?.#onPush?.(0);
+				Button.#state.pushed = undefined;
 			}
 			for (let i = 5; i >= 0; i--) {
 				if (value < BUTTON_VALUES[i]) {
-					if (i !== this.#pushed) {
-						if (this.#pushed !== undefined)
-							if (this.#buttons[this.#pushed])
-								this.#buttons[this.#pushed].value = 0;
-						this.#pushed = i;
-						if (this.#buttons[i])
-							this.#buttons[i].value = 1;
+					if (i !== Button.#state.pushed) {
+						if (Button.#state.pushed !== undefined)
+							Button.#state.active[Button.#state.pushed]?.#onPush?.(0);
+						Button.#state.pushed = i;
+						Button.#state.active[i]?.#onPush?.(1);
 					}
 					break;
 				}
 			}
-		}, this.#delay);
-	}
-
-	#stopTimer() {
-		Timer.clear(this.#timerID);
-		this.#timerID = undefined;
-	}
-}
-
-let buttonArray;
-class KalugaButton {
-	#buttonNumber;
-	#onPush;
-	#value = 0;
-	
-	constructor(options) {
-		this.#buttonNumber = options.buttonNumber;
-		this.#onPush = options.onPush;
-
-		if (undefined === buttonArray)
-			buttonArray = new ButtonArray();
-
-		buttonArray.register(this, options.buttonNumber);
-	}
-
-	set value(value) {
-		this.#value = value;
-		if (this.#onPush)
-			this.#onPush(value);
+		}, config.buttonArrayDelay ?? 50);
 	}
 
 	close() {
-		buttonArray.unregister(this.#buttonNumber);
+		if (undefined === this.#button)
+			return;
+		
+		delete Button.#state.active[this.#button];
+		this.#button = undefined;
+
+		if (Object.keys(Button.#state.active).length)
+			return;
+
+		Timer.clear(Button.#state.timer);
+		Button.#state.timer = undefined;
 	}
 
 	read() {
-		return this.#value;
+		return (Button.#state.pushed === this.#button) ? 1 : 0;
 	}
 
-	get pressed() {
-		return this.#value ? true : false;
+	get pressed(){
+		return (Button.#state.pushed === this.#button);
 	}
 }
 
-class A {
-	constructor(options) {
-		return new KalugaButton({
-			...options,
-			buttonNumber: 0
-		});
-	}
-};
-
-class B {
-	constructor(options) {
-		return new KalugaButton({
-			...options,
-			buttonNumber: 1
-		});
-	}
-};
-
-class C {
-	constructor(options) {
-		return new KalugaButton({
-			...options,
-			buttonNumber: 2
-		});
-	}
-};
-
-class D {
-	constructor(options) {
-		return new KalugaButton({
-			...options,
-			buttonNumber: 3
-		});
-	}
-};
-
-class E {
-	constructor(options) {
-		return new KalugaButton({
-			...options,
-			buttonNumber: 4
-		});
-	}
-};
-
-class F {
-	constructor(options) {
-		return new KalugaButton({
-			...options,
-			buttonNumber: 5
-		});
-	}
-};
+function create(button) {
+	const i = button;
+	return class {
+		constructor(options) {
+			return new Button({
+				...options,
+				button: i
+			});
+		}
+	};
+}
+const A = create(0);
 
 class NeoPixelLED extends NeoPixel {
 	#value = 0;
@@ -180,11 +113,11 @@ globalThis.Host = Object.freeze({
 	Button: {
 		Default: A,
 		A,
-		B,
-		C,
-		D,
-		E,
-		F
+		B: create(1),
+		C: create(2),
+		D: create(3),
+		E: create(4),
+		F: create(5)
 	},
 	LED: {
 		Default: class {
