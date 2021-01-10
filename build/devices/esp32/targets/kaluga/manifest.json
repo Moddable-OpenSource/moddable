@@ -10,10 +10,10 @@
 		"$(MODULES)/pins/analog/manifest.json"
 	],
 	"modules": {
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"setup/target",
+		"setup/target"
 	],
 	"config": {
 		"screen": "ili9341",
