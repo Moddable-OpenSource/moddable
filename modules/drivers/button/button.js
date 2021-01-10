@@ -16,7 +16,6 @@ class Button {
 				pin: options.pin,
 				edge: Monitor.Rising | Monitor.Falling,
 			});
-			this.#input.target = this;
 			this.#input.onPush = options.onPush;
 			this.#input.onChanged = () => {
 				this.#input.onPush.call(this, this.read());
