@@ -40,6 +40,12 @@
 #ifndef MODDEF_SPI_SCK_PIN
 	#define MODDEF_SPI_SCK_PIN	14
 #endif
+#ifndef MODDEF_SPI_ESP32_TRANSACTIONS
+	#define MODDEF_SPI_ESP32_TRANSACTIONS (3)
+#endif
+#ifndef MODDEF_SPI_ESP32_TRANSACTIONSIZE
+	#define MODDEF_SPI_ESP32_TRANSACTIONSIZE (1024)
+#endif
 
 typedef uint32_t (*modSPIBufferLoader)(uint8_t *data, uint32_t bytes, uint32_t *bitsOut);
 
@@ -57,12 +63,12 @@ static volatile int32_t gSPIDataCount = -1;
 static modSPIBufferLoader gSPIBufferLoader;
 static uint16_t *gCLUT16;
 
-#define kTransactions (3)
+#define kTransactions MODDEF_SPI_ESP32_TRANSACTIONS
 static spi_transaction_t gTransaction[kTransactions];
 static uint8_t gTransactionIndex = 0;
 static volatile uint8_t gTransactionsPending = 0;
 
-#define SPI_BUFFER_SIZE (1024)
+#define SPI_BUFFER_SIZE MODDEF_SPI_ESP32_TRANSACTIONSIZE
 
 uint32_t *gSPITransactionBuffer[kTransactions];
 
