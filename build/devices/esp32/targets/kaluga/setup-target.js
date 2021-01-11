@@ -5,7 +5,7 @@ import Analog from "pins/analog";
 import DigitalButton from "button";
 
 const BUTTON_TOLERANCE = 10;
-const BUTTON_VALUES = Object.freeze([750 + BUTTON_TOLERANCE, 615 + BUTTON_TOLERANCE, 515 + BUTTON_TOLERANCE, 347 + BUTTON_TOLERANCE, 255 + BUTTON_TOLERANCE, 119 + BUTTON_TOLERANCE]);
+const BUTTON_VALUES = [750 + BUTTON_TOLERANCE, 615 + BUTTON_TOLERANCE, 515 + BUTTON_TOLERANCE, 347 + BUTTON_TOLERANCE, 255 + BUTTON_TOLERANCE, 119 + BUTTON_TOLERANCE];
 
 class Button {
 	static #state = {
@@ -86,6 +86,16 @@ function create(button) {
 	};
 }
 
+class G {
+	constructor(options) {
+		return new DigitalButton({
+			...options,
+			pin: 0,
+			invert: true
+		});
+	}
+}
+
 class NeoPixelLED extends NeoPixel {
 	#value = 0;
 	read() {
@@ -109,23 +119,16 @@ class NeoPixelLED extends NeoPixel {
 	}
 }
 
-globalThis.Host = Object.freeze({
+globalThis.Host = {
 	Button: {
-		Default: class {
-			constructor(options) {
-				return new DigitalButton({
-					...options,
-					pin: 0,
-					invert: true
-				});
-			}
-		},
+		Default: G,
 		A: create(0),
 		B: create(1),
 		C: create(2),
 		D: create(3),
 		E: create(4),
-		F: create(5)
+		F: create(5),
+		G
 	},
 	LED: {
 		Default: class {
@@ -139,20 +142,21 @@ globalThis.Host = Object.freeze({
 			}
 		} 
 	}
-}, true);
+};
 
-const phases = Object.freeze([
+const phases = [
 	//red, purple, blue, cyan, green, orange, white, black
 	[1, 0, -1, 0, 0, 1, 0, -1],
 	[0, 0, 0, 1, 0, 0, 0, -1],
 	[0, 1, 0, 0, -1, 0, 1, -1]
-], true);
+];
+Object.freeze({phases, Host: globalThis.Host, BUTTON_VALUES}, true);
 
 export default function (done) {
 	if (config.rainbow) {
 		const neopixel = new Host.LED.Default;
 		const STEP = 3;
-		
+
 		let rgb = [0, 0, 0];
 		let phase = 0;
 
@@ -160,20 +164,21 @@ export default function (done) {
 			let advance;
 			for (let i = 0; i < 3; i++) {
 				const direction = phases[i][phase];
+				if (!direction)
+					continue;
+
 				rgb[i] += direction * STEP;
-				if (direction) {
-					if (rgb[i] >= 255) {
-						rgb[i] = 255;
-						advance = true;
-					}
-					else if (rgb[i] <= 0) {
-						rgb[i] = 0;
-						advance = true;
-					}
+				if (rgb[i] >= 255) {
+					rgb[i] = 255;
+					advance = true;
+				}
+				else if (rgb[i] <= 0) {
+					rgb[i] = 0;
+					advance = true;
 				}
 			}
-			if (advance)
-				if (++phase >= phases[0].length) phase = 0;
+			if (advance && (++phase >= phases[0].length))
+				phase = 0;
 	
 			neopixel.setPixel(0, neopixel.makeRGB(rgb[0], rgb[1], rgb[2]));
 			neopixel.update();
