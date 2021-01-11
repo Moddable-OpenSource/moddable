@@ -67,7 +67,7 @@ The Moddable SDK supports many devices built on ESP32. The following table lists
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -82,55 +82,35 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake opt
 	
 	If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
-4. Download and untar the [ESP32 GCC toolchain](https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz). Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
-
-	Note that the extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name. Your directory tree structure should look like this:
-	
-	```text
-	~/esp32
-	├── xtensa-esp32-elf
-	│   ├── bin
-	│   ├── include
-	│   ├── lib
-	│   ├── libexec
-	│   ├── share
-	│   └── xtensa-esp32-elf
-	```
-
-5. If you do not have a cloned copy of the ESP-IDF, clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. If you do not have a cloned copy of the ESP-IDF, clone the release/v4.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v3.3.2 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b release/v4.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.2 tag:
+	If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the release/v4.2 branch:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.2
+    git checkout release/v4.2
     git submodule update
     ```
 
-6. Update homebrew and then install Python, cmake, ninja, and the pip package management system. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
+5. Update homebrew and then install Python, cmake, ninja, the pip package management system, and pyserial. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
 
 	```text
 	brew update
 	brew install python cmake ninja
 	brew upgrade python cmake ninja
 	sudo easy_install pip
-	```
-	
-7. Install required Python packages:
-
-	```text
-	python -m pip install --user -r ~/esp32/esp-idf/requirements.txt
+	pip install --user pyserial
 	```
 
-8. Connect the ESP32 device to your macOS host with a USB cable.
+6. Connect the ESP32 device to your macOS host with a USB cable.
 
-9. Open your shell startup/initialization file. 
+7. Open your shell startup/initialization file. 
 
 	For macOS Mojave and earlier, the default shell is `bash`, so you should open `~/.profile`. 
 
@@ -144,14 +124,13 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake opt
 	open ~/.zshrc
 	```
 		
-10. Add the following lines to the file you just opened and save. This sets the `IDF_PATH` environment variable to point at your ESP-IDF directory and edits the `PATH` environment variable to include the ESP-IDF directory.
+8. Add the following line to the file you just opened and save. This sets the `IDF_PATH` environment variable to point at your ESP-IDF directory.
 
 	```text
 	export IDF_PATH=$HOME/esp32/esp-idf
-	export PATH=$PATH:$HOME/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
 	```
 
-	There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.
+	There is one optional environment variables for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
 
@@ -171,10 +150,22 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake opt
 	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
 	```
 
-	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
+9. Adding the export statements to your `~/.profile` or `~/.zshrc` does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statement in your shell before proceeding.
 
+10. Run the ESP-IDF install script. This will install the proper cross-compilation toolchain and utilities needed for the ESP-IDF build.
 
-11. Adding the export statements to your `~/.profile` or `~/.zshrc` does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statements in your shell before proceeding.
+	```text
+	cd $IDF_PATH
+	./install.sh
+	```
+
+11. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
+
+	```text
+	source $IDF_PATH/export.sh
+	```
+
+	If you prefer to automate this process for new shell instances, follow the instructions from Steps 7-9 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
 
 12. Verify the setup by building `helloworld` for your device target:
 
@@ -242,12 +233,13 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 
 To ensure that your build environment is up to date, perform the following steps:
 
-1. Update your cloned copy of the ESP-IDF and select the v3.3.2 tag:
+1. Update your cloned copy of the ESP-IDF and select the release/v4.2 branch:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout --recurse-submodules v3.3.2
+    git checkout --recurse-submodules release/v4.2
+	git pull
     ```
 	
 2. Update homebrew and then verify that you have all the necessary tools and that they are up to date:
@@ -257,22 +249,31 @@ To ensure that your build environment is up to date, perform the following steps
 	brew install python cmake ninja
 	brew upgrade python cmake ninja
 	sudo easy_install pip
-	```
-	
-3. Each version of the ESP-IDF comes with an updated set of python dependencies. To keep up to date, run this command to install the required Python packages:
-
-	```text
-	python -m pip install --user -r ~/esp32/esp-idf/requirements.txt
-	```
+	pip install --user pyserial
+	```	
 		
-4. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell).
+3. Verify the `IDF_PATH` environment variable is set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell).
 
 	```text
-   export IDF_PATH=~/esp32/esp-idf
-	export PATH=$PATH:~/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
+   export IDF_PATH=$HOME/esp32/esp-idf
 	```
+
+4. If you are upgrading to ESP-IDF 4.x for the first time, run the ESP-IDF install script. This will install the proper cross-compilation toolchain and utilities needed for the ESP-IDF build.
+
+	```text
+	cd $IDF_PATH
+	./install.sh
+	```
+
+5. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
+
+	```text
+	source $IDF_PATH/export.sh
+	```
+
+	If you prefer to automate this process for new shell instances, follow the instructions from Steps 7-9 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
 	
-5. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
+6. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
     ```text
     cd $MODDABLE/build
@@ -280,7 +281,7 @@ To ensure that your build environment is up to date, perform the following steps
     rm -rf tmp/esp32
     ```
 
-6. Verify the setup by building `helloworld` for your device target:
+7. Verify the setup by building `helloworld` for your device target:
 
 	```text
 	cd ${MODDABLE}/examples/helloworld
@@ -292,7 +293,7 @@ To ensure that your build environment is up to date, perform the following steps
 <a id="win"></a>	
 ## Windows
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="win-instructions"></a>
 ### Installing
@@ -301,33 +302,35 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake opt
 
 2. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers). The driver zip file contains x64 and x86 versions of the installer. Most modern PCs run 64-bit Windows and should use the x64 version of the VCP driver. If you run a 32-bit version of Windows, use the x86 version of the driver. (You can determine if your computer is running a 64-bit version of Windows by checking "About your PC" in System Settings.)
 
-3. Download and run the Espressif [ESP-IDF Tools Installer](https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe). This will install the ESP32 Xtensa gcc toolchain, Ninja Build, and a Windows-based kconfig tool. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
+3. Download and run the Espressif [ESP-IDF Tools Installer](https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe). This will install the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
 
     It is safe to accept all of the default options in the installer, or to change install locations as necessary.
 
-    If you do not already have CMake or Python 2.7, the installer will also prompt you to download and install those tools (you should do so if needed).
+    If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
 
-4. Create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
+	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "release/v4.2 (release branch)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
+
+4. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
 
     ```text
     cd ~
     mkdir esp32
     ```
 
-5. Clone the v3.3.2 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the release/v4.2 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
     ```text
     cd ~/esp32
-    git clone -b v3.3.2 --recursive https://github.com/espressif/esp-idf.git
+    git clone -b release/v4.2 --recursive https://github.com/espressif/esp-idf.git
     ```
 
-	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.2 tag:
+	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v4.2 branch:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.2
-    git submodule update
+    git checkout --recurse-submodules release/v4.2
+    git pull
     ```
 
 6. Connect the ESP32 device to your Windows host with a USB cable.
@@ -336,22 +339,38 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake opt
 	- Create a User Variable called `IDF_PATH` and set it to the directory where you cloned the ESP-IDF, e.g.:
 		- Variable name: `IDF_PATH`
 		- Variable value (Use the "Browse Directory..." button to make this selection): `C:\Users\<user>\esp32\esp-idf`
-	- Edit the `Path` System Variable to include the ESP-IDF tools directory (edited as needed for your system):
-		- Variable name: `Path`
-		- Variable value (add to the existing list using the "Browse..." button): `C:\Users\<user>\esp32\esp-idf\tools`
 
-	There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.<br><br>
+	There is one optional environment variable for advanced users: `UPLOAD_PORT`.<br><br>
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable following the same procedure as above.
 
     - `UPLOAD_PORT`: the COM port for your device, e.g. `COM3`
 
 	To identify the correct serial port, launch the Windows Device Manager. Open the "Ports (COM & LPT)" section, verify the "Silicon Labs CP210x USB to UART Bridge" is displayed, and note the associated COM port (e.g. COM3).
 
-	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `MinGW`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `MinGW`-based build. Support for `MinGW`-based builds will be removed in a future Moddable SDK update.
-
 8. Newly-set environment variables will not take effect in existing Command Prompt instances, so be sure to open a new Command Prompt instance after applying these changes.
 	
-9. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for your device target:
+9. The ESP-IDF tools provide an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
+
+	```text
+	"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+	```
+
+	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the ESP-IDF Command Prompt shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF Command Prompt (cmd.exe)" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
+	
+	```text
+	C:\Windows\system32\cmd.exe /k ""C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
+	```
+
+	You can append the path to `vcvars32.bat` into the target as follows. Adjust the paths as necessary for your system.
+
+	```text
+	C:\Windows\system32\cmd.exe /k ""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
+	```
+
+	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+
+
+10. In the ESP-IDF Command Prompt, verify the setup by building `helloworld` for your device target:
 
 	```text
 	cd %MODDABLE%\examples\helloworld
@@ -397,24 +416,26 @@ set UPLOAD_PORT=COM3
 
 To ensure that your build environment is up to date, perform the following steps:
 
-1. Download and run the Espressif [ESP-IDF Tools Installer](https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe). This will install or update the ESP32 Xtensa gcc toolchain, Ninja Build, and a Windows-based kconfig tool. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
+1. Download and run the Espressif [ESP-IDF Tools Installer](https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe). This will install the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
 
     It is safe to accept all of the default options in the installer, or to change install locations as necessary.
 
-    If you do not already have CMake or Python 2.7, the installer will also prompt you to download and install those tools (you should do so if needed).
+    If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
 
-2. Update your cloned copy of the ESP-IDF and select the v3.3.2 tag. For instance, with `Git Bash`:
+	Since you already have the ESP-IDF cloned, you do not need to have the installer clone a new copy for you.
+
+2. Update your cloned copy of the ESP-IDF and select the release/v4.2 branch. For instance, with `Git Bash`:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout --recurse-submodules v3.3.2
+    git checkout --recurse-submodules release/v4.2
+    git pull
     ```
 
-3. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog, verify the `IDF_PATH` and `PATH` Windows environment variables are set correctly.
+3. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog, verify the `IDF_PATH` Windows environment variable is set correctly.
 
 	- `IDF_PATH` should have the value `C:\Users\<user>\esp32\esp-idf`
-	- `Path` should have the value `C:\Users\<user>\esp32\esp-idf\tools`
 		
 4. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2019" command line console:
 
@@ -424,7 +445,28 @@ To ensure that your build environment is up to date, perform the following steps
     rmdir /S /Q tmp\esp32
     ```
 
-5. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Verify the setup by building `helloworld` for your device target:
+5. The ESP-IDF tools provide an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
+
+	```text
+	"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+	```
+
+	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the ESP-IDF Command Prompt shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF Command Prompt (cmd.exe)" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
+	
+	```text
+	C:\Windows\system32\cmd.exe /k ""C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
+	```
+
+	You can append the path to `vcvars32.bat` into the target as follows. Adjust the paths as necessary for your system.
+
+	```text
+	C:\Windows\system32\cmd.exe /k ""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
+	```
+
+	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+
+
+6. In the ESP-IDF Command Prompt, verify the setup by building `helloworld` for your device target:
 
 	```text
 	cd %MODDABLE%\examples\helloworld
