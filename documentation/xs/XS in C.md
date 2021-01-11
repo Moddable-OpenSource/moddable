@@ -37,7 +37,7 @@
 
 # XS in C
 
-Revised: March 2, 2020  
+Revised: January 11, 2020  
 **See end of document for [copyright and license](#license)**
 
 ## About This Document
@@ -1877,7 +1877,7 @@ void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
 <a id="host"></a>
 ### Host
 
-This section describes the host-related macros of XS in C (see Table 2). The example code that uses these macros is shown after the last macro it uses has been described. (The remaining two macros do not enter into the sample application.)
+This section describes the host-related macros of XS in C (see Table 2). An annotated example that uses the host-related macros follows.
 
 **Table 2.** Host-Related Macros
 
@@ -1897,6 +1897,10 @@ This section describes the host-related macros of XS in C (see Table 2). The exa
     <tr>
       <td><code>xsNewHostObject</code></td>
       <td>Creates a host object</td>
+    </tr> 
+    <tr>
+      <td><code>xsNewHostInstance, xsmcNewHostInstance</code></td>
+      <td>Creates a host object instance</td>
     </tr> 
     <tr>
       <td>
@@ -1978,6 +1982,22 @@ To create a host object, use the `xsNewHostObject` macro.
 | `theDestructor` | The destructor to be executed by the garbage collector. Pass the host object's destructor, or `NULL` if it does not need a destructor.
 
 Creates a host object, and returns a reference to the new host object
+
+***
+
+#### xsNewHostInstance
+
+Use the `xsNewHostInstance` macro to create an instance of a host object.
+
+**`xsSlot xsNewHostInstance(xsSlot thePrototype)`**
+**`xsSlot xsmcNewHostInstance(xsSlot thePrototype)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `thePrototype` | A reference to the prototype of the instance to create. This argument must be host object.
+
+Creates a host object instance, and returns a reference to the new host object instance
+
 
 ***
 
@@ -2064,18 +2084,86 @@ Uncaught exceptions that occur between the calls the `xsBeginHost` and `xsEndHos
 
 ##### Example
 
+This example creates a `File` class using the host macros of XS in C. This is a low-level technique that provides the most flexibility. Most projects do not create classes directly using XS in C, but instead use the [`@` syntax extension](#syntax-extension) to declare classes because it is simpler.
+
+This code uses the `File` class from JavaScript to open and close a file:
+
 ```
-long FAR PASCAL xsWndProc(HWND hwnd, UINT m, UINT w, LONG l)
+const f = new File("/Users/user/test.js", "rb");
+f.close();
+```
+
+The following code builds the `File` class. The XS in C host macro calls appear in the block between `xsBeginHost` and `xsEndHost`. Two variable slots are used to store the `File` host object and constructor. The `File` object includes a single host function, `close`, that has no arguments.
+
+The `prototype` is a host object which includes the native destructor `xs_file_destructor` to be invoked when the object is garbage collected. This prototype is provided to `xsNewHostConstructor` along with the native constructor `xs_file_constructor`.
+
+This example adds the `close` function to the prototype after creating the constructor. It may be added before instead.
+
+```
+#define kPrototype (0)
+#define kConstructor (1)
+
+xsBeginHost(the);
+	xsVars(2);
+	xsVar(kPrototype) = xsNewHostObject(xs_file_destructor);
+	xsVar(kConstructor) = xsNewHostConstructor(xs_file_constructor, 0, xsVar(kPrototype));
+	xsSet(xsGlobal, xsID("File"), xsVar(kConstructor));
+	xsSet(xsVar(kPrototype), xsID("close"),	xsNewHostFunction(xs_file_close, 0));
+xsEndHost(the);
+```
+
+The `xs_file_constructor` function implements the host constructor. The constructor instantiates an instance of the `File` object prototype, opens the requested file, and stores the associated `xsFileRecord`, containing the stdio `FILE` pointer, as host data.
+
+Note that the implementation of a constructor created by calling `xsNewHostConstructor` is slightly different from one created using the `@` syntax. Specifically, the constructor created by `xsNewHostConstructor` must create the instance whereas XS creates the instance for constructors declared with the `@` syntax. Here the constructor uses `xsNewHostInstance` to create the instance and assign it to the the return value `xsResult`. The prototype passed to `xsNewHostInstance` is taken from the prototype of the constructor, accessed through `xsTarget`. The `xsTarget` value is the XS in C equivalent to the [`new.target`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new.target) pseudo-property in JavaScript.
+
+```
+typedef struct {
+	FILE *fd;
+} xsFileRecord, *xsFile;
+
+static void xs_file_constructor(xsMachine *the)
 {
-	long result = 0;
-	xsMachine* aMachine = GetWindowLongPtr(hwnd, GWL_USERDATA);
-	xsBeginHost(aMachine);
-	{
-		result = xsToInteger(xsCall3(xsGlobal, xsID_dispatch, 
-			xsInteger(m), xsInteger(w), xsInteger(l)));
-	} 
-	xsEndHost(aMachine);
-	return result;
+	xsFileRecord f;
+	FILE *fd;
+	xsResult = xsGet(xsTarget, xsID("prototype"));
+	xsResult = xsNewHostInstance(xsResult);
+	fd = fopen(xsToString(xsArg(0)), xsToString(xsArg(1)));
+	if (!fd)
+		xsUnknownError("can't open");
+	f = malloc(sizeof(xsFileRecord));
+	if (!f) {
+		fclose(fd);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	}
+	f->fd = fd;
+	xsSetHostData(xsResult, f);
+}
+```
+
+The `xs_file_destructor` function implements the host object's destructor. The destructor closes the file and frees the host data:
+
+```
+static void xs_file_destructor(void *data)
+{
+	xsFile f = data;
+	if (f) {
+		fclose(f->fd);
+		free(f);
+	}
+}
+```
+
+> Note: The destructor function is called by XS when the `File` instance is garbage collected.
+
+The `xs_file_close` function closes the file immediately, rather than waiting for the instance to be freed by the garbage collector. The function retrieves the associated `xsFileRecord` record from the object instance host data and calls the host object destructor to close the file.
+
+```
+static void xs_file_close(xsMachine *the)
+{
+	xsFile f = xsGetHostData(xsThis);
+	if (!f) return;
+	xs_file_destructor(f);
+	xsSetHostData(xsThis, NULL);
 }
 ```
 
@@ -2233,7 +2321,6 @@ The value of `xsThis` in the implementation of `xs_restart` matches the receiver
 <!-- TBD:
 	- Document xsCall*_noResult, xsmcCall_noResult
 	- Document xsNewHostConstructorObject, xsNewHostFunctionObject
-	- Document xsmcNewHostInstance
 	- Document: xsReference
 -->
 
