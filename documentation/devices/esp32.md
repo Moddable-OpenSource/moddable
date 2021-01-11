@@ -95,7 +95,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
     cd ~/esp32/esp-idf
     git fetch
     git checkout release/v4.2
-    git submodule update
+    git submodule update --init --recursive
     ```
 
 5. Update homebrew and then install Python, cmake, ninja, the pip package management system, and pyserial. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
@@ -238,7 +238,8 @@ To ensure that your build environment is up to date, perform the following steps
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout --recurse-submodules release/v4.2
+    git checkout release/v4.2
+	git submodule update --init --recursive
 	git pull
     ```
 	
@@ -329,7 +330,8 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout --recurse-submodules release/v4.2
+    git checkout release/v4.2
+	git submodule update --init --recursive
     git pull
     ```
 
@@ -429,7 +431,8 @@ To ensure that your build environment is up to date, perform the following steps
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout --recurse-submodules release/v4.2
+    git checkout release/v4.2
+	git submodule update --init --recursive
     git pull
     ```
 
