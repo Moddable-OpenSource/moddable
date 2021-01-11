@@ -28,11 +28,7 @@ IDF_USE_VERSION = 4
 !ENDIF
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-!IF "$(IDF_USE_VERSION)"=="4"
-EXPECTED_ESP_IDF = v4.2-47-g2532ddd9f
-!ELSE
-EXPECTED_ESP_IDF = v3.3.2
-!ENDIF
+EXPECTED_ESP_IDF = v4.2
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -56,7 +52,7 @@ DEBUGGER_SPEED = 460800
 BASE_DIR = $(USERPROFILE)
 !ENDIF
 
-!IF [cd $(IDF_PATH) && git describe --always > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
+!IF [cd $(IDF_PATH) && git describe --always --abbrev=0 > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
 IDF_VERSION = \
 !INCLUDE $(TMP_DIR)\_idf_version.tmp
 !IF [del $(TMP_DIR)\_idf_version.tmp] == 0

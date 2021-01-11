@@ -23,7 +23,7 @@ UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 ESP32_CMAKE ?= 1
 
-EXPECTED_ESP_IDF ?= v3.3.2
+EXPECTED_ESP_IDF ?= v4.2
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -47,7 +47,7 @@ export IDF_PATH
 TOOLS_ROOT ?= $(HOME)/.espressif/tools/xtensa-$(ESP32_SUBCLASS)-elf/esp-2020r3-8.4.0/xtensa-$(ESP32_SUBCLASS)-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
-IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always")
+IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always --abbrev=0")
 
 ifeq ($(IDF_VERSION),)
 $(warning Could not detect ESP-IDF version.)
