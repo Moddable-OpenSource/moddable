@@ -7,7 +7,8 @@
 	"include": [
 		"$(MODULES)/drivers/ili9341/manifest.json",
 		"$(MODULES)/drivers/neopixel/manifest.json",
-		"$(MODULES)/pins/analog/manifest.json"
+		"$(MODULES)/pins/analog/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

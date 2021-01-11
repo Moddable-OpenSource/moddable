@@ -2,6 +2,7 @@ import config from "mc/config";
 import NeoPixel from "neopixel";
 import Timer from "timer";
 import Analog from "pins/analog";
+import DigitalButton from "button";
 
 const BUTTON_TOLERANCE = 10;
 const BUTTON_VALUES = Object.freeze([750 + BUTTON_TOLERANCE, 615 + BUTTON_TOLERANCE, 515 + BUTTON_TOLERANCE, 347 + BUTTON_TOLERANCE, 255 + BUTTON_TOLERANCE, 119 + BUTTON_TOLERANCE]);
@@ -68,7 +69,7 @@ class Button {
 		return (Button.#state.pushed === this.#button) ? 1 : 0;
 	}
 
-	get pressed(){
+	get pressed() {
 		return (Button.#state.pushed === this.#button);
 	}
 }
@@ -84,7 +85,6 @@ function create(button) {
 		}
 	};
 }
-const A = create(0);
 
 class NeoPixelLED extends NeoPixel {
 	#value = 0;
@@ -111,8 +111,16 @@ class NeoPixelLED extends NeoPixel {
 
 globalThis.Host = Object.freeze({
 	Button: {
-		Default: A,
-		A,
+		Default: class {
+			constructor(options) {
+				return new DigitalButton({
+					...options,
+					pin: 0,
+					invert: true
+				});
+			}
+		},
+		A: create(0),
 		B: create(1),
 		C: create(2),
 		D: create(3),
