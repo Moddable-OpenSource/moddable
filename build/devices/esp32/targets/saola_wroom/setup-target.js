@@ -25,6 +25,17 @@ class NeoPixelLED extends NeoPixel {
 	}
 }
 
+class Flash {
+	constructor(options) {
+		return new Button({
+			...options,
+			pin: 0,
+			invert: true
+		});
+	}
+}
+
+
 globalThis.Host = Object.freeze({
     LED: {
         Default: class {
@@ -41,15 +52,8 @@ globalThis.Host = Object.freeze({
         }
     },
 	Button: {
-		Default: class {
-			constructor(options) {
-				return new Button({
-					...options,
-					pin: 0,
-					invert: true
-				});
-			}
-		}
+		Default: Flash,
+		Flash
 	}
 }, true);
 

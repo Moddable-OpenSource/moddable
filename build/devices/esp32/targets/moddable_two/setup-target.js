@@ -21,6 +21,16 @@ class Backlight extends PWM {
 	}
 }
 
+class Flash {
+	constructor(options) {
+		return new Button({
+			...options,
+			pin: 0,
+			invert: true
+		});
+	}
+}
+
 globalThis.Host = Object.freeze({
 	Backlight,
 	LED: {
@@ -34,15 +44,8 @@ globalThis.Host = Object.freeze({
 		}
 	},
 	Button: {
-		Default: class {
-			constructor(options) {
-				return new Button({
-					...options,
-					pin: 0,
-					invert: true
-				});
-			}
-		}
+		Default: Flash,
+		Flash
 	}
 }, true);
 

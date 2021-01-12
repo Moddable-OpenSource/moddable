@@ -86,7 +86,7 @@ function create(button) {
 	};
 }
 
-class G {
+class Flash {
 	constructor(options) {
 		return new DigitalButton({
 			...options,
@@ -121,14 +121,14 @@ class NeoPixelLED extends NeoPixel {
 
 globalThis.Host = {
 	Button: {
-		Default: G,
+		Default: Flash,
+		Flash,
 		A: create(0),
 		B: create(1),
 		C: create(2),
 		D: create(3),
 		E: create(4),
-		F: create(5),
-		G
+		F: create(5)
 	},
 	LED: {
 		Default: class {
