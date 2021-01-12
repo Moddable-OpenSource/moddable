@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -219,10 +219,8 @@ SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)\config
 
 !IF "$(ESP32_SUBCLASS)"=="esp32s2"
 ESP32_TARGET = 2
-USE_XS_ATOMICS = 1
 !ELSE
 ESP32_TARGET = 1
-USE_XS_ATOMICS = 0
 !ENDIF
 
 XS_DIRS = \
@@ -279,7 +277,6 @@ C_DEFINES = \
 	-D__ets__ \
 	-U__STRICT_ANSI__ \
 	-DESP32=$(ESP32_TARGET) \
-	-DuseXSAtomics=$(USE_XS_ATOMICS) \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \

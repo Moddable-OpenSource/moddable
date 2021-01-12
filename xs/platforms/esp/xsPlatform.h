@@ -60,11 +60,11 @@
 #endif
 #if !ESP32
 	#define mxMisalignedSettersCrash 1
-#else
+#elif ESP32 == 1
 	#define mxUseFreeRTOSTasks 1
-	#if !useXSAtomics
-		#define mxUseGCCAtomics 1
-	#endif
+	#define mxUseGCCAtomics 1
+#elif ESP32 == 2
+	#define mxUseFreeRTOSTasks 1
 #endif
 
 #ifndef __XS6PLATFORMMINIMAL__
