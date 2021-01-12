@@ -83,11 +83,9 @@ endif
 SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)/config
 
 ifeq ("$(ESP32_SUBCLASS)","esp32s2")
-	ESP32_CPUS = 1
-	IDF_TARGET_ESP32S2 = 1
+	ESP32_TARGET = 2
 else
-	ESP32_CPUS = 2
-	IDF_TARGET_ESP32S2 = 0
+	ESP32_TARGET = 1
 endif
 
 
@@ -247,9 +245,7 @@ XSL = $(MODDABLE_TOOLS_DIR)/xsl
 C_DEFINES = \
 	-D__ets__ \
 	-U__STRICT_ANSI__ \
-	-DESP32=1 \
-	-DIDF_TARGET_ESP32S2=$(IDF_TARGET_ESP32S2) \
-	-DNUM_CPUS=$(ESP32_CPUS) \
+	-DESP32=$(ESP32_TARGET) \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \

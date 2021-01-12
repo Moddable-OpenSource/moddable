@@ -63,7 +63,7 @@ enum {
 #if ESP32
 	/* CPU utilization */
 	kModInstrumentationCPU0,
-	#if NUM_CPUS > 1
+	#if kTargetCPUCount > 1
 		kModInstrumentationCPU1,
 	#endif
 #endif

@@ -543,6 +543,17 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
+/* CPU */
+
+#if ESP32 == 2
+	#define kCPUESP32S2 1
+	#define kTargetCPUCount 1
+#elif ESP32 == 1 
+	#define kTargetCPUCount 2
+#else
+	#define kTargetCPUCount 1
+#endif
+
 #ifdef __cplusplus
 }
 #endif
