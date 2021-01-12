@@ -23,7 +23,17 @@
 !CMDSWITCHES +S
 !ENDIF
 
+PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj-$(ESP32_SUBCLASS)
+
 !IF "$(UPLOAD_PORT)"==""
+!IF [python $(PROJ_DIR_TEMPLATE)\getPort.py $(IDF_PATH)\tools > $(TMP_DIR)\_default_port.tmp 2> nul] == 0
+DEFAULT_PORT = \
+!INCLUDE $(TMP_DIR)\_default_port.tmp
+!IF [del $(TMP_DIR)\_default_port.tmp] == 0
+!ENDIF
+!ENDIF
+UPLOAD_PORT = $(DEFAULT_PORT)
+!ELSE
 UPLOAD_PORT = COM3
 !ENDIF
 
