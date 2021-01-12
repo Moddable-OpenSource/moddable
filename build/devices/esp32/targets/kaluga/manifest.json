@@ -17,10 +17,15 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"neopixel": 45,
-		"buttonArray": 5,
-		"buttonArrayDelay": 50,
-		"rainbow": true
+		"led": {
+			"pin": 45,
+			"rainbow": false,
+			"brightness": 128
+		},
+		"buttonArray": {
+			"pin": 5,
+			"delay": 50
+		}
 	},
 	"defines": {
 		"i2c": {

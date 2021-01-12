@@ -30,7 +30,7 @@ class Button {
 			return;
 
 		Button.#state.timer = Timer.repeat( () => {
-			const value = Analog.read(config.buttonArray);
+			const value = Analog.read(config.buttonArray.pin);
 			if (value > BUTTON_VALUES[0]) {
 				if (Button.#state.pushed === undefined)
 					return;
@@ -48,7 +48,7 @@ class Button {
 					break;
 				}
 			}
-		}, config.buttonArrayDelay ?? 50);
+		}, config.buttonArray.delay ?? 50);
 	}
 
 	close() {
@@ -133,12 +133,14 @@ globalThis.Host = {
 	LED: {
 		Default: class {
 			constructor(options) {
-				return new NeoPixelLED({
+				const led = new NeoPixelLED({
 					...options,
 					length: 1, 
-					pin: config.neopixel, 
+					pin: config.led.pin, 
 					order: "GRB"
 				});
+				led.brightness = config.led.brightness;
+				return led;
 			}
 		} 
 	}
@@ -153,7 +155,7 @@ const phases = [
 Object.freeze({phases, Host: globalThis.Host, BUTTON_VALUES}, true);
 
 export default function (done) {
-	if (config.rainbow) {
+	if (config.led.rainbow) {
 		const neopixel = new Host.LED.Default;
 		const STEP = 3;
 
