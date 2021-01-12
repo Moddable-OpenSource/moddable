@@ -12,6 +12,8 @@ build/devices/esp32/xsProj-esp32s2/sdkconfig.defaults.prior
 build/devices/esp32/xsProj-esp32s2/sdkconfig.mc
 build/devices/esp32/xsProj-esp32s2/sdkconfig.old
 build/devices/esp32/xsProj-esp32s2/build
+build/devices/esp32/sdkconfig-s2-psram/sdkconfig.old
+build/devices/esp32/sdkconfig-s2-psram/sdkconfig.defaults.prior
 libraries/esp/
 .DS_Store
 .idea/
