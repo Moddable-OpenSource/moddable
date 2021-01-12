@@ -277,6 +277,7 @@ C_DEFINES = \
 	-D__ets__ \
 	-U__STRICT_ANSI__ \
 	-DESP32=$(ESP32_TARGET) \
+	-DuseXSAtomics=1 \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
@@ -309,12 +310,11 @@ C_COMMON_FLAGS = -c -Os -g \
 	-DHAVE_CONFIG_H \
 	-D BOOTLOADER_BUILD=1 \
 	-DESP_PLATFORM \
-	-latomic \
 	-MP
 
 C_FLAGS = $(C_COMMON_FLAGS) \
 	-Wno-implicit-function-declaration \
-	-std=gnu99
+	-std=gnu99 
 
 CPP_FLAGS = $(C_COMMON_FLAGS)
 
