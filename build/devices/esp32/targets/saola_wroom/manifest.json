@@ -4,8 +4,7 @@
 		"$(MODULES)/drivers/neopixel/manifest.json"
 	],
 	"build":{
-		"ESP32_SUBCLASS": "esp32s2",
-		"IDF_USE_VERSION": "4"
+		"ESP32_SUBCLASS": "esp32s2"
 	},
 	"modules": {
 		"setup/target": "./setup-target"
