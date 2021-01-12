@@ -17,7 +17,7 @@
 		"screen": "",
 		"led": {
 			"pin": 18,
-			"rainbow": true,
+			"rainbow": false,
 			"brightness": 128
 		}
 	},
