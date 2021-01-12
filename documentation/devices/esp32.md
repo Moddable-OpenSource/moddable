@@ -272,7 +272,7 @@ To ensure that your build environment is up to date, perform the following steps
 	source $IDF_PATH/export.sh
 	```
 
-	If you prefer to automate this process for new shell instances, follow the instructions from Steps 7-9 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
+	If you prefer to automate this process for new shell instances, follow the instructions from Step 3 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
 	
 6. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
@@ -479,70 +479,64 @@ To ensure that your build environment is up to date, perform the following steps
 <a id="esp32-linux"></a>
 ## Linux
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="lin-instructions"></a>
 ### Installing
 
 1. Install the Moddable SDK tools by following the instructions in the [Getting Started document](./../Moddable%20SDK%20-%20Getting%20Started.md).
 
-2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
+2. Install the packages required to compile with the `ESP-IDF`.
 
-3. Download and untar the [64-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz) or [32-bit](https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz) ESP32 GCC toolchain compatible with your Linux host. Copy the extracted `xtensa-esp32-elf` directory into your `~/esp32` directory.
+	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
 
-	Note that the extracted `xtensa-esp32-elf` directory contains a subdirectory that is also called `xtensa-esp32-elf`. Be sure to copy the top level `xtensa-esp32-elf` directory, not the subdirectory with the same name. Your directory tree structure should look like this:
-	
 	```text
-	~/esp32
-	├── xtensa-esp32-elf
-	│   ├── bin
-	│   ├── include
-	│   ├── lib
-	│   ├── libexec
-	│   ├── share
-	│   └── xtensa-esp32-elf
+	sudo apt-get update
+	sudo apt-get install git wget flex bison gperf python-is-python3 python3-pip python3-serial python-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
 	```
 
-4. If you do not have a cloned copy of the ESP-IDF, clone the v3.3.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+	For Ubuntu prior to 20.04 (and other Linux distributions that default to Python 2):
+
+	```text
+	sudo apt-get update
+	sudo apt-get install git wget flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+	```
+
+	> Note: The ESP-IDF build recommends Python 3. If your distribution uses Python 2.7 by default, you can explicitly install Python 3 and set it as the default Python interpreter with these commands. Note that this is a system-wide change that will impact other applications that use Python.
+
+	```text
+	sudo apt-get install python3 python3-pip python3-setuptools
+	sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+	```
+
+3. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
+
+4. If you do not have a cloned copy of the ESP-IDF, clone the v4.2 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v3.3.2 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b release/v4.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v3.3.2 tag:
+	If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the release/v4.2 tag:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout v3.3.2
-    git submodule update
+    git checkout release/v4.2
+	git submodule update --init --recursive
+	git pull
     ```
 
-5. Install the packages required to compile with the `ESP-IDF`.
+5. Connect the ESP32 device to your Linux host with a USB cable.
 
-	For Ubuntu 20:
-
-	```text
-	sudo apt-get install cmake ninja-build python-is-python3 python3-pip python3-serial
-	```
-
-	For Ubuntu versions prior to 20:
+6. Open your shell startup/initialization file (e.g.  ` ~/.bash_profile` or `~/.zshrc`, depending on your shell), add the following line to the file, and save. This sets the `IDF_PATH` environment variable to point at your ESP-IDF directory.
 
 	```text
-	sudo apt-get install python python-pip python-setuptools python-serial cmake ninja-build
+	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
-6. Connect the ESP32 device to your Linux host with a USB cable.
-
-7. Open your shell startup/initialization file (e.g.  ` ~/.bash_profile` or `~/.zshrc`, depending on your shell), add the following lines to the file, and save. This sets the `IDF_PATH` environment variable to point at your ESP-IDF directory and edits the `PATH` environment variable to include the ESP-IDF directory.
-
-	```text
-   export IDF_PATH=~/esp32/esp-idf
-	export PATH=$PATH:~/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
-	```
-
-	There are two optional environment variables for advanced users: `UPLOAD_PORT` and `ESP32_CMAKE`.
+	There is an optional environment variable for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
 
@@ -561,16 +555,23 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v3.3.2 and the CMake opt
 	```text
 	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32
 	```
-	
-	The `ESP32_CMAKE` environment variable controls whether the ESP-IDF is built using the newer CMake or older `make`-based tools. The default is 1, which builds with CMake. Set `ESP32_CMAKE` to 0 to use the older `make`-based build. Support for `make`-based builds will be removed in a future Moddable SDK update.
 
-8. Adding the export statements to your shell startup file does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statements in your shell before proceeding.
+7. Adding the export statements to your shell startup file does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statements in your shell before proceeding.
 
-9. Install the required Python packages:
+8. Run the ESP-IDF install script. This will install the proper cross-compilation toolchain and utilities needed for the ESP-IDF build.
 
 	```text
-	python -m pip install --user -r $IDF_PATH/requirements.txt
+	cd $IDF_PATH
+	./install.sh
 	```
+
+9. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
+
+	```text
+	source $IDF_PATH/export.sh
+	```
+
+	If you prefer to automate this process for new shell instances, follow the instructions from Steps 6-7 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
 
 10. Verify the setup by building `helloworld` for your device target:
 
@@ -634,12 +635,14 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 
 To ensure that your build environment is up to date, perform the following steps:
 
-1. Update your cloned copy of the ESP-IDF and select the v3.3.2 tag:
+1. Update your cloned copy of the ESP-IDF and select the v4.2 tag:
 
     ```text
     cd ~/esp32/esp-idf
     git fetch
-    git checkout --recurse-submodules v3.3.2
+    git checkout release/v4.2
+	git submodule update --init --recursive
+    git pull
     ```
 
 2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
@@ -648,32 +651,45 @@ To ensure that your build environment is up to date, perform the following steps
 
 	```text
 	sudo apt-get update
-	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
-	sudo apt-get upgrade gcc git wget make libncurses-dev flex bison gperf cmake ninja-build python-is-python3 python3-pip python3-serial
+	sudo apt-get install git wget flex bison gperf python-is-python3 python3-pip python3-serial python-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
 	```
 
 	For Ubuntu prior to 20.04 (and other Linux distributions that default to Python 2):
 
 	```text
-    sudo apt-get update
-	sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
-    sudo apt-get upgrade gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build
+	sudo apt-get update
+	sudo apt-get install git wget flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build ccache libffi-dev libssl-dev dfu-util
 	```
 
-3. Verify the `IDF_PATH` and `PATH` environment variables are set correctly in your shell's user profile file (e.g. `~/.bash_profile` or `~/.zshrc`, depending on your shell).
+	> Note: The ESP-IDF build recommends Python 3. If your distribution uses Python 2.7 by default, you can explicitly install Python 3 and set it as the default Python interpreter with these commands. Note that this is a system-wide change that will impact other applications that use Python.
 
 	```text
-	export IDF_PATH=~/esp32/esp-idf
-	export PATH=$PATH:~/esp32/xtensa-esp32-elf/bin:$IDF_PATH/tools
+	sudo apt-get install python3 python3-pip python3-setuptools
+	sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 	```
 
-4. Each version of the ESP-IDF comes with an updated set of python dependencies. To keep up to date, run this command to install the required Python packages::
+3. Verify the `IDF_PATH` environment variable is set correctly in your shell's user profile file (e.g. `~/.bash_profile` or `~/.zshrc`, depending on your shell).
 
 	```text
-	python -m pip install --user -r $IDF_PATH/requirements.txt
+	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
-5. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
+4. If you are upgrading to ESP-IDF 4.x for the first time, run the ESP-IDF install script. This will install the proper cross-compilation toolchain and utilities needed for the ESP-IDF build.
+
+	```text
+	cd $IDF_PATH
+	./install.sh
+	```
+
+5. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
+
+	```text
+	source $IDF_PATH/export.sh
+	```
+
+	If you prefer to automate this process for new shell instances, follow the instructions from Step 3 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
+
+6. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
     ```text
     cd $MODDABLE/build
@@ -681,8 +697,8 @@ To ensure that your build environment is up to date, perform the following steps
     rm -rf tmp/esp32
     ```
 
-6. Verify the setup by building `helloworld` for your device target:
-
+7. Verify the setup by building `helloworld` for your device target:
+	
 	```text
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
