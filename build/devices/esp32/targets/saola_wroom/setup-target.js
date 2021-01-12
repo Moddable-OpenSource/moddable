@@ -29,12 +29,14 @@ globalThis.Host = Object.freeze({
     LED: {
         Default: class {
             constructor(options) {
-                return new NeoPixelLED({
+				const led = new NeoPixelLED({
                     ...options,
                     length: 1,
-                    pin: config.neopixel,
+                    pin: config.led.pin,
                     order: "GRB"
                 });
+				led.brightness = config.led.brightness;
+				return led;
             }
         }
     },
@@ -59,7 +61,7 @@ const phases = Object.freeze([
 ], true);
 
 export default function (done) {
-	if (config.rainbow){
+	if (config.led.rainbow){
 		const neopixel = new Host.LED.Default;
 		const STEP = 3;
 		
@@ -90,5 +92,5 @@ export default function (done) {
 		}, 33);
 	}
 
-	done();
+	done?.();
 }

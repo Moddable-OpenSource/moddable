@@ -15,8 +15,11 @@
 	],
 	"config": {
 		"screen": "",
-		"neopixel": 18,
-		"rainbow": true
+		"led": {
+			"pin": 18,
+			"rainbow": true,
+			"brightness": 128
+		}
 	},
 	"defines": {
 		"i2c": {
