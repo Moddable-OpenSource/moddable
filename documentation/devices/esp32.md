@@ -1,7 +1,7 @@
 # Using the Moddable SDK with ESP32
 
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: December 1, 2020
+Revised: January 12, 2021
 
 This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) with the Moddable SDK.
 
@@ -158,6 +158,8 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
 	cd $IDF_PATH
 	./install.sh
 	```
+	
+	If you are using a Mac with an M1 chip, you will have to take some additional steps before you can run the install script because the ESP-IDF does not yet have proper support for Darwin-arm64 hosts. [This comment](https://github.com/espressif/esp-idf/issues/6113#issuecomment-756335935) provides step by step intructions that you can follow to work around this issue.
 
 11. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
 
