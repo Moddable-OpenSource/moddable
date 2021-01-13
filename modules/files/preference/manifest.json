@@ -55,13 +55,6 @@
 				"preference"
 			]
 		},
-		"cli-mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/preference/mac/*"
-				]
-			}
-		},
 		"win": {
 			"modules": {
 				"*": [
@@ -98,13 +91,6 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/files/preference/lin/*"
-				]
-			}
-		},
-		"cli-win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/files/preference/win/*"
 				]
 			}
 		}
