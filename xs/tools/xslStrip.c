@@ -455,25 +455,25 @@ void fxStripClass(txLinker* linker, txMachine* the, txSlot* slot)
 void fxStripDefaults(txLinker* linker, FILE* file)
 {
 	if (!fxIsCodeUsed(XS_CODE_START_ASYNC)) {
-		fprintf(file, "static txSlot* fxNewAsyncInstanceDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txSlot* fxNewAsyncInstanceDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 		fprintf(file, "static void fxRunAsyncDeadStrip(txMachine* the, txSlot* slot) { mxUnknownError(\"dead strip\"); }\n");
 	}
 	if (!fxIsCodeUsed(XS_CODE_START_GENERATOR))
-		fprintf(file, "static txSlot* fxNewGeneratorInstanceDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txSlot* fxNewGeneratorInstanceDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 	if (!fxIsCodeUsed(XS_CODE_GENERATOR_FUNCTION))
-		fprintf(file, "static txSlot* fxNewGeneratorFunctionInstanceDeadStrip(txMachine* the, txID name) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txSlot* fxNewGeneratorFunctionInstanceDeadStrip(txMachine* the, txID name) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 	if (!fxIsCodeUsed(XS_CODE_START_ASYNC_GENERATOR))
-		fprintf(file, "static txSlot* fxNewAsyncGeneratorInstanceDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txSlot* fxNewAsyncGeneratorInstanceDeadStrip(txMachine* the) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 	if (!fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION))
-		fprintf(file, "static txSlot* fxNewAsyncGeneratorFunctionInstanceDeadStrip(txMachine* the, txID name) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txSlot* fxNewAsyncGeneratorFunctionInstanceDeadStrip(txMachine* the, txID name) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 	if (!fxIsCodeUsed(XS_CODE_IMPORT) && fxIsCallbackStripped(linker, fx_Compartment_prototype_import))
 		fprintf(file, "static void fxRunImportDeadStrip(txMachine* the, txSlot* realm, txID id) { mxUnknownError(\"dead strip\"); }\n");
 	if (!fxIsCodeUsed(XS_CODE_NEW_PRIVATE_1) && !fxIsCodeUsed(XS_CODE_NEW_PRIVATE_2))
-		fprintf(file, "static txBoolean fxDefinePrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txBoolean fxDefinePrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask) { mxUnknownError(\"dead strip\"); return 0; }\n");
 	if (!fxIsCodeUsed(XS_CODE_GET_PRIVATE_1) && !fxIsCodeUsed(XS_CODE_GET_PRIVATE_2))
-		fprintf(file, "static txSlot* fxGetPrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txSlot* fxGetPrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 	if (!fxIsCodeUsed(XS_CODE_SET_PRIVATE_1) && !fxIsCodeUsed(XS_CODE_SET_PRIVATE_2))
-		fprintf(file, "static txSlot* fxSetPrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txSlot* fxSetPrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 		
 	if (fxIsCallbackStripped(linker, fx_BigInt))
 		fprintf(file, "static void fxBigIntDecodeDeadStrip(txMachine* the, txSize size) { mxUnknownError(\"dead strip\"); }\n");
