@@ -19,7 +19,7 @@
 */
 
 declare module "timer" {
-  type TimerCallback = (timer?: Timer) => void;
+  export type TimerCallback = (timer?: Timer) => void;
 
   class Timer {
     private constructor()

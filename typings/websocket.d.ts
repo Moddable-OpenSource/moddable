@@ -18,34 +18,41 @@
 *
 */
 
+import type {TCPSocketOptions, ListenerOptions} from "socket";
+
 declare module "websocket" {
-  class Client {
+  export type WebSocketClientOptions = TCPSocketOptions & {
+    path?: string,
+    protocol?: string,
+    headers?: string[]
+  }
+  export type WebSocketClientCallback = (message: number, value?: any) => void;
+
+  export class Client {
     static readonly connect: number;
     static readonly handshake: number;
     static readonly receive: number;
     static readonly disconnect: number;
 
-    constructor(options: import('socket').TCPSocketOptionsWithoutPort & {
-      port?: number,
-      path?: string,
-      protocol?: string,
-      headers?: string[]
-    });
+    constructor(options: WebSocketClientOptions);
     close(): void;
     write(data: string | ArrayBuffer);
-    callback: (message: number, value?: any) => void;
+    callback: WebSocketClientCallback;
   }
-  class Server {
+
+  export type WebSocketServerOptions = ListenerOptions
+  export type WebSocketServerCallback = (message: number, value?: any) => void;
+
+  export class Server {
     static readonly connect: number;
     static readonly handshake: number;
     static readonly receive: number;
     static readonly disconnect: number;
     static readonly subprotocol: number;
 
-    constructor(options: import('socket').ListenerOptions);
+    constructor(options: WebSocketServerOptions);
     close(): void;
     write(message: string | ArrayBuffer): void;
-    callback: (message: number, value?: any) => void;
+    callback: WebSocketServerCallback;
   }
-  export {Client, Server};
 }

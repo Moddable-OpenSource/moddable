@@ -129,6 +129,13 @@ int main(int argc, char* argv[])
 				txString token = strtok(string, " \f\n\r\t\v");
 				if (token == NULL)
 					break;
+				if (token[0] == '"') {
+					int last = c_strlen(token) - 1;
+					if (token[last] == '"') {
+						token[last] = 0;
+						token++;
+					}
+				}
 				argv[argc] = token;
 			}
 		}

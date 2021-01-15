@@ -170,7 +170,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		relative = 1;
 	}
 #if mxWindows
-	else if (('A' <= name[0]) && (name[0] <= 'Z') && (name[1] == ':') && (name[2] == '\\')) {
+	else if (((('A' <= name[0]) && (name[0] <= 'Z')) || (('a' <= name[0]) && (name[0] <= 'z'))) && (name[1] == ':') && (name[2] == '\\')) {
 		absolute = 1;
 	}	
 #endif

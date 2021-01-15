@@ -44,7 +44,7 @@
 		"esp": {
 		},
 		"...": {
-			"error": "Experimental TC53 IO modules unsupported"
+			"error": "Experimental TC53 IO modules currently available for ESP8266 only. For now, try using the modules in the pins directory instead"
 		}
 	}
 }
