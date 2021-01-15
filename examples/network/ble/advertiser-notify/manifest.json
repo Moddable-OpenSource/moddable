@@ -7,5 +7,12 @@
 		"*": [
 			"./main"
 		]
+	},
+	"platforms": {
+		"nrf52": {
+		},
+		"...": {
+			"error": "Advertisement notifications currently available for nRF52 only"
+		}
 	}
 }
