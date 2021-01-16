@@ -673,11 +673,10 @@ void fxReceive(txMachine* the)
 		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
 
 		while (!the->debugOffset) {
-// MDK disable for bringup
-//			if (timeout && (timeout < modMilliseconds())) {
-//				fxDisconnect(the);
-//				break;
-//			}
+			if (timeout && (timeout < modMilliseconds())) {
+				fxDisconnect(the);
+				break;
+			}
 
 			fxReceiveLoop();
 			if (the->debugFragments) {
