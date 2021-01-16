@@ -7,7 +7,8 @@
 		"$(MODULES)/drivers/ili9341/manifest.json",
 		"$(MODULES)/drivers/neopixel/manifest.json",
 		"$(MODULES)/pins/analog/manifest.json",
-		"$(MODULES)/drivers/button/manifest.json"
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/touchpad/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"
@@ -25,6 +26,16 @@
 		"buttonArray": {
 			"pin": 5,
 			"delay": 50
+		},
+		"touchpad": {
+			"sensitivity": 0.2,
+			"pins":{
+				"B": 2,
+				"C": 5,
+				"E": 1,
+				"F": 3
+			},
+			"guard": 4
 		}
 	},
 	"defines": {

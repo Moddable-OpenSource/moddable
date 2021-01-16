@@ -3,6 +3,7 @@ import NeoPixel from "neopixel";
 import Timer from "timer";
 import Analog from "pins/analog";
 import DigitalButton from "button";
+import Touchpad from "touchpad";
 
 const BUTTON_TOLERANCE = 10;
 const BUTTON_VALUES = [750 + BUTTON_TOLERANCE, 615 + BUTTON_TOLERANCE, 515 + BUTTON_TOLERANCE, 347 + BUTTON_TOLERANCE, 255 + BUTTON_TOLERANCE, 119 + BUTTON_TOLERANCE];
@@ -96,6 +97,86 @@ class Flash {
 	}
 }
 
+class TouchpadButton {
+	static #state = {
+		active: {},
+		touchpad: undefined,
+		previous: 0
+	};
+
+	#pin;
+	#onPush;
+
+	constructor(options) {
+		this.#pin = options.pin;
+		this.#onPush = options.onPush;
+
+		if (TouchpadButton.#state.active[this.#pin])
+			throw new Error("in use");
+
+		TouchpadButton.#state.active[this.#pin] = this;
+
+		if (!TouchpadButton.#state.touchpad) {
+			TouchpadButton.#state.touchpad = new Touchpad({guard: config.touchpad.guard, sensitivity: config.touchpad.sensitivity});
+			TouchpadButton.#state.touchpad.onChanged = function() {
+				const status = TouchpadButton.#state.touchpad.status;
+				let changes = status ^ TouchpadButton.#state.previous;
+				
+				let i = 0;
+				while (changes) {
+					if (changes & 0x01) {
+						const value = (status >> i) & 0x01;
+						TouchpadButton.#state.active[i]?.#onPush?.(value);
+					}
+					changes >>= 1;
+					i++;
+				}
+
+				TouchpadButton.#state.previous = status;
+			}
+		}
+		TouchpadButton.#state.touchpad.add({pin: this.#pin});
+	}
+
+	close() {
+		if (undefined === this.#pin)
+			return;
+		
+		TouchpadButton.#state.touchpad.remove(this.#pin);
+		delete TouchpadButton.#state.active[this.#pin];
+		this.#pin = undefined;
+
+		if (Object.keys(TouchpadButton.#state.active).length)
+			return;
+
+		TouchpadButton.#state.touchpad.close();
+		TouchpadButton.#state.touchpad = undefined;
+	}
+
+	read() {
+		let status = TouchpadButton.#state.touchpad.status;
+		return (status >> this.#pin) & 0x01;
+	}
+
+	get pressed() {
+		let status = TouchpadButton.#state.touchpad.status;
+		return (((status >> this.#pin) & 0x01) == 1);
+	}
+}
+
+function createTouch(pin) {
+	if (pin === undefined) return;
+	const i = pin;
+	return class {
+		constructor(options) {
+			return new TouchpadButton({
+				...options,
+				pin: i
+			});
+		}
+	};
+}
+
 class NeoPixelLED extends NeoPixel {
 	#value = 0;
 	read() {
@@ -130,6 +211,7 @@ globalThis.Host = {
 		E: create(4),
 		F: create(5)
 	},
+	Touchpad: { },
 	LED: {
 		Default: class {
 			constructor(options) {
@@ -145,6 +227,10 @@ globalThis.Host = {
 		} 
 	}
 };
+
+if (config.touchpad?.pins)
+	for (let x in config.touchpad.pins)
+		Host.Touchpad[x] = createTouch(config.touchpad.pins[x]);
 
 const phases = [
 	//red, purple, blue, cyan, green, orange, white, black
