@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"*": "$(MODULES)/drivers/touchpad/*"
+	},
+	"preload": "touchpad",
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/drivers/touchpad/esp32/*"
+			}
+		},
+		"...": {
+			"error": "touchpad module unsupported"
+		}
+	}
+}
