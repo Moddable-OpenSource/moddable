@@ -20,6 +20,7 @@
 */
 
 import Sleep from "sleep";
+import Digital from "pins/digital";
 import Timer from "timer";
 import config from "mc/config";
 
@@ -28,6 +29,13 @@ const led = new Host.LED;
 
 // Turn on LED upon wakeup
 led.write(1);
+
+let digital = new Digital({
+	pin: wakeup_pin,
+	mode: Digital.InputPullUp | Digital.WakeOnFall,
+	onWake() {
+	}
+});
 
 // Check if retained values are valid
 let valid = true;
@@ -56,7 +64,6 @@ else {
 		led.close();
 		for (let i = 0; i < 32; ++i)
 			Sleep.setRetainedValue(i, i + 1);
-		Sleep.wakeOnDigital(wakeup_pin);
 		Sleep.deep();
 	}, 3000);
 }
