@@ -92,6 +92,8 @@ int modBLEPlatformTerminate(void)
 	if (0 != --useCount)
 		return 0;
 		
+	modBLEWhitelistClear();
+	
 	int rc = nimble_port_stop();
 	if (0 == rc) {
 		nimble_port_deinit();

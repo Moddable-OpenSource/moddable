@@ -84,6 +84,7 @@ struct modBLEWhitelistAddressRecord {
 };
 
 int modBLEWhitelistContains(uint8_t addressType, uint8_t *address);
+void modBLEWhitelistClear(void);
 
 /* security */
 

@@ -267,6 +267,7 @@ void xs_ble_client_destructor(void *data)
 	modBLE ble = data;
 	if (!ble) return;
 	
+	modBLEWhitelistClear();
 	qapi_BLE_GATT_Cleanup(ble->stackID);
 	qapi_BLE_BSC_Shutdown(ble->stackID);
 	modBLEConnection connection = modBLEConnectionGetFirst();

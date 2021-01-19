@@ -145,6 +145,7 @@ typedef struct {
 	
 	// scanning
 	uint8_t duplicates;
+	uint8_t useWhitelist;
 	modBLEScannedPacket scanned;
 	
 	bondingRemoveAddress bondingToRemove;
@@ -206,6 +207,7 @@ void xs_ble_client_destructor(void *data)
 	
 	modTimerRemove(ble->timer);
 	clearScanned(ble);
+	modBLEWhitelistClear();
 	if (ble->bondingToRemove)
 		c_free(ble->bondingToRemove);
 	c_free(ble);
@@ -222,9 +224,10 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
 	uint32_t interval = xsmcToInteger(xsArg(2));
 	uint32_t window = xsmcToInteger(xsArg(3));
-//	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
+	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	
 	gBLE->duplicates = duplicates;
+	gBLE->useWhitelist = (kBLEScanFilterPolicyWhitelist == filterPolicy || kBLEScanFilterWhitelistNotResolvedDirected == filterPolicy);
 		
 	gecko_cmd_le_gap_set_scan_parameters(interval, window, active ? 1 : 0);
    	gecko_cmd_le_gap_discover(le_gap_discover_generic);
@@ -592,6 +595,9 @@ static void leGapScanResponseEvent(struct gecko_msg_le_gap_scan_response_evt_t *
 {
 	xsBeginHost(gBLE->the);
 
+	if (gBLE->useWhitelist && !modBLEWhitelistContains(evt->address_type, evt->address.addr))
+		goto bail;
+	
 	if (!gBLE->duplicates) {
 		modBLEScannedPacket scanned = gBLE->scanned;
 		while (scanned) {

@@ -141,6 +141,7 @@ void xs_ble_server_destructor(void *data)
 	}
 	if (ble->bondingToRemove)
 		c_free(ble->bondingToRemove);
+	modBLEWhitelistClear();
 	modTimerRemove(ble->timer);
 	c_free(ble);
 

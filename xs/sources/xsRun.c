@@ -1642,7 +1642,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = fxNewSlot(the);
 			mxRestoreState;
-			slot->flag |= XS_DONT_DELETE_FLAG;
+			slot->flag = XS_DONT_DELETE_FLAG;
 			slot->ID = (txID)offset;
 			slot->kind = XS_CLOSURE_KIND;
 			slot->value.closure = variable;

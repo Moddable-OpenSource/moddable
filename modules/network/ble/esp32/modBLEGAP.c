@@ -106,6 +106,11 @@ void xs_gap_whitelist_remove(xsMachine *the)
 
 void xs_gap_whitelist_clear(xsMachine *the)
 {
+	modBLEWhitelistClear();
+}
+
+void modBLEWhitelistClear(void)
+{
 	esp_bd_addr_t bda;
 	modBLEWhitelistAddress walker = gWhitelist;
 	
@@ -117,6 +122,7 @@ void xs_gap_whitelist_clear(xsMachine *the)
 		esp_ble_gap_update_whitelist(ESP_BLE_WHITELIST_REMOVE, bda, addr->addressType);
 		c_free(addr);
 	}
+	gWhitelist = NULL;
 }
 
 int modBLEWhitelistContains(uint8_t addressType, uint8_t *address)

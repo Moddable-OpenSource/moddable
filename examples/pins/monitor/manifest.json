@@ -1,11 +1,11 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/digital/manifest.json"
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"$(MODULES)/pins/digital/monitor/*",
 			"./main"
 		]
 	},
@@ -14,23 +14,12 @@
 			"config": {
 				"led1_pin": 2,
 				"button1_pin": 0
-			},
-			"modules": {
-				"*": "$(MODULES)/pins/digital/monitor/esp/*"
 			}
 		},
 		"esp32": {
 			"config": {
 				"led1_pin": 2,
 				"button1_pin": 0
-			},
-			"modules": {
-				"*": "$(MODULES)/pins/digital/monitor/esp32/*"
-			}
-		},
-		"gecko": {
-			"modules": {
-				"*": "$(MODULES)/pins/digital/monitor/gecko/*"
 			}
 		},
 		"qca4020": {
@@ -38,9 +27,6 @@
 				"led1_pin": 12,
 				"led2_pin": 13,
 				"button1_pin": 23
-			},
-			"modules": {
-				"*": "$(MODULES)/pins/digital/monitor/qca4020/*"
 			}
 		},
 		"...": {

@@ -93,7 +93,8 @@ declare module "http" {
   );
   export type HTTPServerOptions = ListenerOptions;
   // TODO: better
-  export type HTTPServerCallback = (this: Request, message: ServerMessages, val1?: any, val2?: any) => void | number | boolean | string | ArrayBuffer;
+  export type HTTPServerCallback = (this: Request, message: ServerMessages, val1?: any, val2?: any) => void | number | boolean | string |
+        ArrayBuffer | {status?: number, reason?: string, headers?: string[], body: true | string | ArrayBuffer};
 
   export class Server {
       constructor(

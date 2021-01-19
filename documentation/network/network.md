@@ -455,7 +455,7 @@ The user of the server receives status information through the callback function
 | 1 | `connection` | New connection received. A new requested has been accepted by the server.
 | 2 | `status` | Status line of request received. The `val1` argument contains the request path (e.g. `index.html`) and `val2` contains the request method (e.g. `GET`).
 | 3 | `header` | One header received. A single HTTP header has been received, with the header name in lowercase letters in `val1` (e.g. `connection`) and the header value (e.g. `close`) in `val2`.
-| 4 | `headersComplete` | All headers received. All HTTP headers have been received.
+| 4 | `headersComplete` | All headers received. All HTTP headers have been received. Return `String` or `ArrayBuffer` to receive the complete request body as an argument to the `requestComplete` message as the corresponding type; return `true` to have `requestFragment` invoked as the fragments arrrive. Return `false` or `undefined` to ignore the request body. The behavior for ohter return values is undefined.
 | 5 | `requestFragment` |
 | 6 | `requestComplete` |
 | 8 | `prepareResponse` | Prepare response. The server is ready to send the response. Callback returns a dictionary with the response status (e.g. 200) in the `status` property, HTTP headers in an array on the `headers` property, and the response body on the `body` property. If the status property is missing, the default value of `200` is used. If the body is a `String` or `ArrayBuffer`, it is the complete response. The server adds the `Content-Length` HTTP header. If the body property is set to `true`, the response is delivered using the `Transfer-encoding` mode `chunked`, and the callback is invoked to retrieve each response fragment.
