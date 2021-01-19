@@ -102,6 +102,11 @@ void xs_gap_whitelist_remove(xsMachine *the)
 
 void xs_gap_whitelist_clear(xsMachine *the)
 {
+	modBLEWhitelistClear();
+}
+
+void modBLEWhitelistClear(void)
+{
 	modBLEWhitelistAddress walker = gWhitelist;
 	
 	while (walker != NULL) {
@@ -109,6 +114,9 @@ void xs_gap_whitelist_clear(xsMachine *the)
 		walker = walker->next;
 		c_free(addr);
 	}
+	
+	gWhitelist = NULL;
+	
 	nimbleClearWhitelist();
 }
 

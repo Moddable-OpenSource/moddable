@@ -255,6 +255,7 @@ void xs_ble_server_destructor(void *data)
 		}
 	}
 	
+	modBLEWhitelistClear();
 	qapi_BLE_GATT_Cleanup(ble->stackID);
 	qapi_BLE_BSC_Shutdown(ble->stackID);
 	c_free(ble);
