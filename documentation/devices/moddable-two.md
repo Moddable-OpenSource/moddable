@@ -1,7 +1,7 @@
 # Moddable Two Developer Guide
 
 Copyright 2019-2020 Moddable Tech, Inc.<BR>
-Revised: November 3, 2020
+Revised: January 19, 2021
 
 This document provides information about Moddable Two, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
@@ -11,6 +11,7 @@ This document provides information about Moddable Two, including details about i
 	- [Components](#components)
 	- [Pinout](#pinout)
 	- [Pin Information](#pin-info)
+	- [Dimensions](#dimensions)
 - [SDK and Host Environment Setup](#setup)
 - [Building and Deploying Apps](#building-and-deploying-apps)
 - [Troubleshooting](#troubleshooting)
@@ -95,6 +96,11 @@ Power can be supplied to the Moddable Two via the following:
 * 5V - Moddable Programmer connector
 * 5V - VIN on 16 pin external header
 * 3.3V - 3.3V pin external header
+
+<a id="dimensions"></a>
+### Dimensions
+
+The complete dimensions of Moddable Two are provided in this [PDF document](../assets/devices/moddable-two-dimensions.pdf). These are helpful when designing a case for Moddable Two. 
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
