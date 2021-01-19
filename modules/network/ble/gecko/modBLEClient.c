@@ -206,6 +206,7 @@ void xs_ble_client_destructor(void *data)
 	
 	modTimerRemove(ble->timer);
 	clearScanned(ble);
+	modBLEWhitelistClear();
 	if (ble->bondingToRemove)
 		c_free(ble->bondingToRemove);
 	c_free(ble);

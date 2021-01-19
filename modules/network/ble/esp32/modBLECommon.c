@@ -47,6 +47,8 @@ int modBLEPlatformTerminate(void)
 	if (0 != --useCount)
 		return 0;
 
+	modBLEWhitelistClear();
+	
 	esp_bluedroid_disable();
 	esp_bluedroid_deinit();
 	esp_bt_controller_disable();
