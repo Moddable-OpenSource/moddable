@@ -92,13 +92,13 @@ void xs_servo(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_min)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_min);
 		d = xsmcToNumber(xsVar(0));
-		ms.min = (int)((d / 1000000.0) * 32767.0);
+		ms.min = (int)((d / 20000.0) * 32767.0);
 	}
 
 	if (xsmcHas(xsArg(0), xsID_max)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_max);
 		d = xsmcToNumber(xsVar(0));
-		ms.max = (int)((d / 1000000.0) * 32767.0);
+		ms.max = (int)((d / 20000.0) * 32767.0);
 	}
 
 	ledc_timer_config(&ledc_timer);
@@ -140,7 +140,7 @@ void xs_servo_writeMicroseconds(xsMachine *the)
 
 	if (!ms || !ms->running) xsUnknownError((char *)"closed");
 
-	duty = (int)((us / 1000000.0) * 32767.0);
+	duty = (int)((us / 20000.0) * 32767.0);
 
 	ledc_set_duty(LEDC_HIGH_SPEED_MODE, ms->channel, duty);
 	ledc_update_duty(LEDC_HIGH_SPEED_MODE, ms->channel);
