@@ -14,7 +14,7 @@
 
 import Timer from "timer";
 import Digital from "pins/digital";
-import Monitor from "monitor";
+import Monitor from "pins/digital/monitor";
 import config from "mc/config";
 
 let led1 = null;
