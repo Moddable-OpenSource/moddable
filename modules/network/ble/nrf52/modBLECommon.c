@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.defines.h"
+#include "modBLE.h"
 #include "modBLECommon.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
@@ -149,6 +150,8 @@ ret_code_t modBLEPlatformTerminate(void)
 		walker = next;
 	}
 
+	modBLEWhitelistClear();
+	
 	return nrf_sdh_disable_request();
 }
 
