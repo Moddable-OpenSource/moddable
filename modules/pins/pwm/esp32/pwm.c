@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019  Moddable Tech, Inc.
+ * Copyright (c) 2018-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -42,7 +42,6 @@
 static const ledc_timer_config_t gTimer = {
 	.duty_resolution = LEDC_TIMER_10_BIT,
 	.freq_hz = 1024,
-//	.speed_mode = LEDC_HIGH_SPEED_MODE,		// not for esp32s2
 	.speed_mode = ESP_SPEED_MODE,
 	.timer_num = MODDEF_PWM_LEDC_TIMER
 };
@@ -59,11 +58,9 @@ typedef struct PWMRecord *PWM;
 void xs_pwm_destructor(void *data)
 {
 	PWM pwm = data;
-	if (pwm) return;
+	if (!pwm) return;
 
-	ledc_set_duty(ESP_SPEED_MODE, pwm->ledc, pwm->gpio);
-	ledc_update_duty(ESP_SPEED_MODE, pwm->ledc);
-
+	ledc_stop(ESP_SPEED_MODE, pwm->ledc, 0);
 	gLEDC |= 1 << pwm->ledc;
 
 	free(pwm);
@@ -132,8 +129,11 @@ void xs_pwm_write(xsMachine *the)
 
 	if (!pwm) return;
 
-	if ((value < 0) || (value >= gTimer.freq_hz))
+	if ((value < 0) || (value > 1023))
 		xsRangeError("bad value");
+
+	if (value == 1023)
+		value = 1024;
 
 	ledc_set_duty(ESP_SPEED_MODE, pwm->ledc, value);
 	ledc_update_duty(ESP_SPEED_MODE, pwm->ledc);
