@@ -344,7 +344,7 @@ void xs_ble_server_stop_advertising(xsMachine *the)
     gBLE->adv_notify = 0;
     
 	err_code = sd_ble_gap_adv_stop(gBLE->adv_handle);
-	if (NRF_ERROR_INVALID_STATE != err_code)
+	if (NRF_SUCCESS != err_code && NRF_ERROR_INVALID_STATE != err_code)
 		xsUnknownError("ble stop advertising failed");
 
 	if (notify)
