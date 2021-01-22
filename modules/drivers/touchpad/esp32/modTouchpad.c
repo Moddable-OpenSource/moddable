@@ -18,8 +18,8 @@
  *
  */
 
+#include "xsPlatform.h"
 #include "xsmc.h"
-#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "mc.defines.h"
 #include "driver/touch_pad.h"
@@ -27,10 +27,8 @@
 typedef struct {
 	xsMachine			*the;
 	xsSlot				obj;
-	uint32_t			pins;
+	xsSlot				*onReadable;
 	uint32_t			values;
-	double				sensitivity;
-    uint8_t             running;
 	uint8_t				closed;
 	uint8_t				triggered;
 } modTouchpadRecord, *modTouchpad;
@@ -38,11 +36,19 @@ typedef struct {
 #define DEFAULT_SENSITIVITY 0.2
 #define MAXIMUM_PIN 31
 
+void xs_touchpad_mark(xsMachine* the, void *it, xsMarkRoot markRoot);
+static void startTouchpad(modTouchpad touchpad);
 static void setThresholds(uint32_t pins, double sensitivity);
 static void touchpadDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void touchpadISR(void *refcon);
 
-static uint8_t gTouchpadInit = 0;
+static modTouchpad gTouchpad = NULL;
+
+static const xsHostHooks ICACHE_FLASH_ATTR xsTouchpadHooks = {
+	xs_touchpad_destructor,
+	xs_touchpad_mark,
+	NULL
+};
 
 void xs_touchpad_destructor(void *data)
 {
@@ -51,22 +57,27 @@ void xs_touchpad_destructor(void *data)
 		return;
 
 	touch_pad_fsm_stop();
+	touch_pad_intr_disable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE);
 	touch_pad_isr_deregister(touchpadISR, touchpad);
 	touch_pad_deinit();
-    gTouchpadInit = 0;
+
+    gTouchpad = NULL;
 	c_free(touchpad);
 }
 
 void xs_touchpad(xsMachine *the)
 {
 	modTouchpad touchpad;
-    int guardPin = -1;
+    int pins, tmpPins, i = 0, guardPin = -1;
 	double sensitivity = DEFAULT_SENSITIVITY;
 
-	if (gTouchpadInit++)
+	if (gTouchpad)
         xsUnknownError("ESP32 only supports one touchpad instance");
     
     xsmcVars(1);
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_pins);
+	pins = xsmcToInteger(xsVar(0));
 
 	if (xsmcHas(xsArg(0), xsID_guard)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_guard);
@@ -79,15 +90,14 @@ void xs_touchpad(xsMachine *the)
 	}	
 
 	touchpad = c_malloc(sizeof(modTouchpadRecord));
+	
 	if (!touchpad)
 		xsUnknownError("no memory");
 
-	touchpad->the = the;
-    touchpad->obj = xsThis;
-	touchpad->pins = 0;
+    touchpad->the = the;
+	touchpad->obj = xsThis;
+	touchpad->onReadable = NULL;
 	touchpad->values = 0;
-	touchpad->sensitivity = sensitivity;
-    touchpad->running = false;
 	touchpad->closed = false;
 	touchpad->triggered = false;
 	
@@ -104,6 +114,35 @@ void xs_touchpad(xsMachine *the)
 		touch_pad_waterproof_set_config(&config);
 		touch_pad_waterproof_enable();
 	}
+
+	tmpPins = pins;
+	while(tmpPins) {
+		if (tmpPins & 0x01)
+			touch_pad_config(i);
+		i++;
+		tmpPins >>= 1;
+	}
+
+	if (xsmcHas(xsArg(0), xsID_onReadable)) {
+		xsSlot tmp;
+
+		xsmcGet(tmp, xsArg(0), xsID_onReadable);
+		touchpad->onReadable = xsToReference(tmp);
+
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsTouchpadHooks);
+	}
+
+	startTouchpad(touchpad);
+	setThresholds(pins, sensitivity);
+
+	gTouchpad = touchpad;
+}
+
+void xs_touchpad_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
+{
+	modTouchpad touchpad = it;
+
+	(*markRoot)(the, touchpad->onReadable);
 }
 
 void xs_touchpad_close(xsMachine *the)
@@ -117,76 +156,31 @@ void xs_touchpad_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_touchpad_add(xsMachine *the)
-{
-    modTouchpad touchpad = xsmcGetHostData(xsThis);
-    int pin;
-
-	xsmcVars(1);
-
-    if (!xsmcHas(xsArg(0), xsID_pin))
-		xsUnknownError("pin missing");
-	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
-	pin = xsmcToInteger(xsVar(0));
-
-	if (pin > MAXIMUM_PIN)
-		xsUnknownError("invalid touch pin");
-
-    touch_pad_config(pin);
-	touchpad->pins |= (1 << pin);
-
-	if (!touchpad->running) {
-		touch_filter_config_t filter_info = {
-			.mode = TOUCH_PAD_FILTER_IIR_16,
-			.debounce_cnt = 1,
-			.noise_thr = 0,
-			.jitter_step = 4,
-			.smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
-		};
-    	touch_pad_filter_set_config(&filter_info);
-    	touch_pad_filter_enable();
-
-		touch_pad_isr_register(touchpadISR, touchpad, TOUCH_PAD_INTR_MASK_ALL);
-		touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE);
-		
-		touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
-		touchpad->running = true;
-	}else{
-		touch_pad_fsm_stop();
-	}
-
-	touch_pad_fsm_start(); // have to restart fsm after a new touch pin is added
-	vTaskDelay(100 / portTICK_RATE_MS); //@@ there does seem to need to be a delay between fsm_start and setting thresholds, but this may not be the best way to implement it
-
-	setThresholds(touchpad->pins, touchpad->sensitivity); // have to reset all thresholds after fsm restart
-}
-
-void xs_touchpad_remove(xsMachine *the)
-{
-    modTouchpad touchpad = xsmcGetHostData(xsThis);
-    int pin;
-	uint32_t value;
-
-	xsmcVars(1);
-
-    if (!xsmcHas(xsArg(0), xsID_pin))
-		xsUnknownError("pin missing");
-	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
-	pin = xsmcToInteger(xsVar(0));
-
-	if (pin > MAXIMUM_PIN)
-		xsUnknownError("invalid touch pin");
-
-	//@@ Touchpad API does not seem to have a way to de-initialize a pad... So, instead set touch threshold to max to prevent interrupts from that pad.
-	touch_pad_set_thresh(pin, TOUCH_PAD_THRESHOLD_MAX);
-
-	touchpad->pins &= ~(1 << pin);
-}
-
 void xs_touchpad_read(xsMachine *the)
 {
     modTouchpad touchpad = xsmcGetHostData(xsThis);
 	xsResult = xsInteger(touchpad->values);
+}
+
+static void startTouchpad(modTouchpad touchpad)
+{
+	touch_filter_config_t filter_info = {
+		.mode = TOUCH_PAD_FILTER_IIR_16,
+		.debounce_cnt = 1,
+		.noise_thr = 0,
+		.jitter_step = 4,
+		.smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
+	};
+	touch_pad_filter_set_config(&filter_info);
+	touch_pad_filter_enable();
+
+	touch_pad_isr_register(touchpadISR, touchpad, TOUCH_PAD_INTR_MASK_ALL);
+	touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE);
+	
+	touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
+	touch_pad_fsm_start();
+
+	vTaskDelay(100 / portTICK_RATE_MS); //@@ there does seem to need to be a delay between fsm_start and setting thresholds, but this may not be the best way to implement it
 }
 
 static void setThresholds(uint32_t pins, double sensitivity)
@@ -210,8 +204,11 @@ void touchpadISR(void *refcon)
 	
 	touchpad->values = touch_pad_get_status();
 
+	if (!touchpad->onReadable)
+		return;
+
 	if (touchpad->triggered)
-			return;
+		return;
 	touchpad->triggered = true;
 
 	modMessagePostToMachineFromISR(touchpad->the, touchpadDeliver, touchpad);
@@ -220,15 +217,19 @@ void touchpadISR(void *refcon)
 void touchpadDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	modTouchpad touchpad = refcon;
+
+	if (touchpad != gTouchpad)
+		return;
+
 	if (touchpad->closed) {
 		xs_touchpad_destructor(touchpad);
 		return;
 	}
 
 	touchpad->triggered = false;
-
+	
 	xsBeginHost(the);
 		xsmcVars(1);
-		xsCall0(touchpad->obj, xsID_onChanged);
+		xsCallFunction0(xsReference(touchpad->onReadable), touchpad->obj);
 	xsEndHost(the);
 }

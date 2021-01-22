@@ -19,11 +19,8 @@
  */
 class TouchPad @ "xs_touchpad_destructor" {
     constructor(dictionary) @ "xs_touchpad";
-    add(pin) @ "xs_touchpad_add";
-    remove(pin) @ "xs_touchpad_remove";
+    read() @ "xs_touchpad_read";
     close() @ "xs_touchpad_close";
-
-    get status() @ "xs_touchpad_read";
 }
 Object.freeze(TouchPad.prototype);
 

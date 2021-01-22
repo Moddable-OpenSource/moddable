@@ -115,13 +115,48 @@ class TouchpadButton {
 			throw new Error("in use");
 
 		TouchpadButton.#state.active[this.#pin] = this;
+		TouchpadButton.#buildTouchpad();
+	}
 
-		if (!TouchpadButton.#state.touchpad) {
-			TouchpadButton.#state.touchpad = new Touchpad({guard: config.touchpad.guard, sensitivity: config.touchpad.sensitivity});
-			TouchpadButton.#state.touchpad.onChanged = function() {
-				const status = TouchpadButton.#state.touchpad.status;
+	close() {
+		if (undefined === this.#pin)
+			return;
+		
+		delete TouchpadButton.#state.active[this.#pin];
+		this.#pin = undefined;
+
+		if (Object.keys(TouchpadButton.#state.active).length) {
+			TouchpadButton.#buildTouchpad();
+		} else {
+			TouchpadButton.#state.touchpad.close();
+			TouchpadButton.#state.touchpad = undefined;
+		}
+	}
+
+	read() {
+		let status = TouchpadButton.#state.touchpad.read();
+		return (status >> this.#pin) & 0x01;
+	}
+
+	get pressed() {
+		let status = TouchpadButton.#state.touchpad.read();
+		return (((status >> this.#pin) & 0x01) == 1);
+	}
+
+	static #buildTouchpad() {
+		TouchpadButton.#state.touchpad?.close();
+		let pins = 0;
+		for (let i in TouchpadButton.#state.active)
+			pins |= (1 << i);
+
+		TouchpadButton.#state.touchpad = new Touchpad({
+			pins,
+			guard: config.touchpad.guard, 
+			sensitivity: config.touchpad.sensitivity,
+			onReadable() {
+				const status = TouchpadButton.#state.touchpad.read();
 				let changes = status ^ TouchpadButton.#state.previous;
-				
+
 				let i = 0;
 				while (changes) {
 					if (changes & 0x01) {
@@ -131,36 +166,9 @@ class TouchpadButton {
 					changes >>= 1;
 					i++;
 				}
-
 				TouchpadButton.#state.previous = status;
 			}
-		}
-		TouchpadButton.#state.touchpad.add({pin: this.#pin});
-	}
-
-	close() {
-		if (undefined === this.#pin)
-			return;
-		
-		TouchpadButton.#state.touchpad.remove(this.#pin);
-		delete TouchpadButton.#state.active[this.#pin];
-		this.#pin = undefined;
-
-		if (Object.keys(TouchpadButton.#state.active).length)
-			return;
-
-		TouchpadButton.#state.touchpad.close();
-		TouchpadButton.#state.touchpad = undefined;
-	}
-
-	read() {
-		let status = TouchpadButton.#state.touchpad.status;
-		return (status >> this.#pin) & 0x01;
-	}
-
-	get pressed() {
-		let status = TouchpadButton.#state.touchpad.status;
-		return (((status >> this.#pin) & 0x01) == 1);
+		});
 	}
 }
 
