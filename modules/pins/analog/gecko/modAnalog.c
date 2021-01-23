@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,11 +18,22 @@
  *
  */
 
-#include "xs.h"
+#include "xsmc.h"
 #include "xsHost.h"
+#include "mc.xs.h"
 #include "mc.defines.h"
 #include "em_adc.h"
 #include "em_gpio.h"
+
+typedef struct modAnalogConfigurationRecord modAnalogConfigurationRecord;
+typedef struct modAnalogConfigurationRecord *modAnalogConfiguration;
+
+struct modAnalogConfigurationRecord {
+	uint32_t channel;
+};
+
+static uint32_t read_analog(uint32_t channel);
+static int adc_channel(uint32_t channel);
 
 uint32_t adcSingle(bool ovs, uint32_t inputChan, uint32_t reference);
 uint32_t ADC_Calibration(ADC_TypeDef *adc, ADC_Ref_TypeDef ref);
@@ -45,57 +56,108 @@ static void calibrate() {
 	ADC_Calibration(adc, ref);
 }
 
+void xs_analog(xsMachine *the)
+{
+	modAnalogConfiguration analog;
+	int channel;
+	xsmcVars(1);
+
+	if (!xsmcHas(xsArg(0), xsID_pin))
+		xsUnknownError("pin missing");
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
+
+	channel = adc_channel(xsmcToInteger(xsVar(0)));
+	if (channel < 0)
+		xsUnknownError("bad analog input #%d", channel);
+
+	analog = c_malloc(sizeof(modAnalogConfigurationRecord));
+	if (NULL == analog)
+		xsUnknownError("out of memory");
+		
+	analog->channel = channel;
+	xsmcSetHostData(xsThis, analog);
+
+	adcSetup();
+}
+
+void xs_analog_destructor(void *data)
+{
+	modAnalogConfiguration analog = data;
+	if (analog) {
+		adcTerminate();
+		c_free(analog);
+	}
+}
+
+void xs_analog_close(xsMachine *the)
+{
+	modAnalogConfiguration analog = (modAnalogConfiguration)xsmcGetHostData(xsThis);
+	if (!analog) return;
+
+	xs_analog_destructor(analog);
+	xsmcSetHostData(xsThis, NULL);
+}
+
 void xs_analog_read(xsMachine *the) {
-	int chan = xsToInteger(xsArg(0));
-	uint32_t ret, inputChan = 0;
-	int gotChan = 0;
+	modAnalogConfiguration analog = (modAnalogConfiguration)xsmcGetHostChunk(xsThis);
+	uint32_t ret;
+	
+	ret = read_analog(analog->channel);
+
+	xsResult = xsInteger(ret);
+}
+
+void xs_analog_static_read(xsMachine *the) {
+	uint32_t ret, chan = xsmcToInteger(xsArg(0));
+	int inputChan;
+
+	inputChan = adc_channel(chan);
+	if (inputChan < 0)
+		xsUnknownError("bad analog input #%d", chan);
 
 	adcSetup();
 
-	switch (chan) {
+	ret = read_analog(inputChan);
+
+	adcTerminate();
+
+	xsResult = xsInteger(ret);
+}
+
+int adc_channel(uint32_t channel)
+{
+	switch (channel) {
 #ifdef MODDEF_ANALOG_INPUT1
 		case 1:
-			inputChan = MODDEF_ANALOG_INPUT1;
-			gotChan = 1;
-			break;
+			return MODDEF_ANALOG_INPUT1;
 #endif
 #ifdef MODDEF_ANALOG_INPUT2
 		case 2:
-			inputChan = MODDEF_ANALOG_INPUT2;
-			gotChan = 1;
-			break;
+			return MODDEF_ANALOG_INPUT2;
 #endif
 #ifdef MODDEF_ANALOG_INPUT3
 		case 3:
-			inputChan = MODDEF_ANALOG_INPUT3;
-			gotChan = 1;
-			break;
+			return MODDEF_ANALOG_INPUT3;
 #endif
 #ifdef MODDEF_ANALOG_INPUT4
 		case 4:
-			inputChan = MODDEF_ANALOG_INPUT4;
-			gotChan = 1;
-			break;
+			return MODDEF_ANALOG_INPUT4;
 #endif
 #ifdef MODDEF_ANALOG_INPUT5
 		case 5:
-			inputChan = MODDEF_ANALOG_INPUT5;
-			gotChan = 1;
-			break;
+			return MODDEF_ANALOG_INPUT5;
 #endif
-		default:
-			xsUnknownError("bad analog input # " + chan);
 	}
-	if (gotChan) {
+	return -1;
+}
+
+uint32_t read_analog(uint32_t channel)
+{
 #ifdef MODDEF_ANALOG_REF
-		ret = adcSingle(true, inputChan, MODDEF_ANALOG_REF);
+	return adcSingle(true, channel, MODDEF_ANALOG_REF);
 #else
-		ret = adcSingle(true, inputChan, adcRefVDD);
+	return adcSingle(true, channel, adcRefVDD);
 #endif
-	}
-
-	xsResult = xsInteger(ret);
-
-	adcTerminate();
 }
 

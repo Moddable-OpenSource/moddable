@@ -28,7 +28,36 @@
 	Analog
 */
 
+void xs_analog(xsMachine *the)
+{
+	xsVars(1);
+
+	if (!xsHas(xsArg(0), xsID_pin))
+		xsUnknownError("pin missing");
+
+	xsVar(0) = xsGet(xsArg(0), xsID_pin);
+	int pin = xsToInteger(xsVar(0));
+
+	if (0 != pin)
+		xsRangeError("");
+}
+
+void xs_analog_destructor(void *data)
+{
+}
+
+void xs_analog_close(xsMachine *the)
+{
+	xs_analog_destructor(NULL);
+}
+
 void xs_analog_read(xsMachine *the)
+{
+	int value = system_adc_read();		// 0 to 1023
+	xsResult = xsInteger(value);
+}
+
+void xs_analog_static_read(xsMachine *the)
 {
 	int pin = xsToInteger(xsArg(0));
 	if (0 != pin)
