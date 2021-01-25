@@ -148,6 +148,8 @@ void xs_touchpad_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
 void xs_touchpad_close(xsMachine *the)
 {
 	modTouchpad touchpad = xsmcGetHostData(xsThis);
+	if (NULL == touchpad)
+		return;
 
 	xsForget(touchpad->obj);
 	touchpad->closed = true;
@@ -159,6 +161,9 @@ void xs_touchpad_close(xsMachine *the)
 void xs_touchpad_read(xsMachine *the)
 {
     modTouchpad touchpad = xsmcGetHostData(xsThis);
+	if (NULL == touchpad)
+		xsUnknownError("bad state");
+
 	xsResult = xsInteger(touchpad->values);
 }
 
@@ -229,7 +234,6 @@ void touchpadDeliver(void *the, void *refcon, uint8_t *message, uint16_t message
 	touchpad->triggered = false;
 	
 	xsBeginHost(the);
-		xsmcVars(1);
 		xsCallFunction0(xsReference(touchpad->onReadable), touchpad->obj);
 	xsEndHost(the);
 }

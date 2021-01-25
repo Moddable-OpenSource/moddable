@@ -22,6 +22,5 @@ class TouchPad @ "xs_touchpad_destructor" {
     read() @ "xs_touchpad_read";
     close() @ "xs_touchpad_close";
 }
-Object.freeze(TouchPad.prototype);
 
 export default TouchPad;
