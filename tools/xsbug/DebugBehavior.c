@@ -66,6 +66,11 @@ enum {
 	XS_PROCESSING_INSTRUCTION_SPACE_STATE,
 	XS_ENTITY_STATE,
 	XS_ENTITY_NUMBER_STATE,
+	XS_BINARY_CR_STATE,
+	XS_BINARY_LF_STATE,
+	XS_BINARY_LENGTH_HIGH_STATE,
+	XS_BINARY_LENGTH_LOW_STATE,
+	XS_BINARY_DATA_STATE,
 	XS_ERROR_STATE
 };
 
@@ -117,6 +122,9 @@ struct PiuDebugMachineStruct {
 	char attribute[XS_BUFFER_COUNT + 1];
 	char data[XS_BUFFER_COUNT + 1];
 	char tag[XS_BUFFER_COUNT + 1];
+	
+	unsigned short binaryIndex;
+	unsigned short binaryLength;
 };
 
 #if mxLinux
@@ -853,6 +861,35 @@ void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength)
 				self->state = XS_ERROR_STATE;
 			break;
 			
+		case XS_BINARY_CR_STATE:
+			self->state = XS_BINARY_LF_STATE;
+			break;
+		case XS_BINARY_LF_STATE:
+			self->state = XS_BINARY_LENGTH_HIGH_STATE;
+			break;
+		case XS_BINARY_LENGTH_HIGH_STATE:
+			self->binaryLength = ((unsigned char)c) << 8;
+			self->state = XS_BINARY_LENGTH_LOW_STATE;
+			break;
+		case XS_BINARY_LENGTH_LOW_STATE: {
+			xsMachine* the = self->the;
+			self->binaryIndex = 0;
+			self->binaryLength |= (unsigned char)c;
+			self->itemSlot = xsArrayBuffer(NULL, self->binaryLength);
+			self->state = XS_BINARY_DATA_STATE;
+			} break;
+		case XS_BINARY_DATA_STATE: {
+			xsMachine* the = self->the;
+			uint8_t *buffer = xsToArrayBuffer(self->itemSlot);
+			buffer[self->binaryIndex] = c;
+			self->binaryIndex++;
+			if (self->binaryIndex == self->binaryLength) {
+				(void)xsCall1(self->thisSlot, xsID_onBinaryResult, self->itemSlot);
+				self->itemSlot = xsUndefined;
+				self->state = XS_BODY_STATE;
+			}
+			} break;
+			
 		case XS_ERROR_STATE:
 			//fprintf(stderr, "\n### ERROR: %c\n", c);
 			break;
@@ -918,6 +955,10 @@ void PiuDebugMachineParseProcessingInstruction(PiuDebugMachine self, char* p)
 		id = xsID_openMachine;
 	else if (c == '-')
 		id = xsID_closeMachine;
+	else if (c == '#') {
+		id = xsID_openMachine;
+		self->state = XS_BINARY_CR_STATE;
+	}
 	else
 		return;
 	value = 0;
@@ -1186,6 +1227,31 @@ void PiuDebugMachine_close(xsMachine* the)
 	PiuDebugMachineDelete(self);
 	xsSetHostData(xsThis, NULL);
 	(void)xsCall0(xsThis, xsID_onDisconnected);
+}
+
+void PiuDebugMachine_doBinaryCommandAux(xsMachine* the)
+{
+	static char buffer[16 * 1024];
+	xsIntegerValue address = xsToInteger(xsGet(xsThis, xsID_address));
+	xsIntegerValue command = xsToInteger(xsArg(0));
+	xsIntegerValue id = xsToInteger(xsArg(1));
+	void* payload = ((xsToInteger(xsArgc) > 2) && xsTest(xsArg(2))) ? xsToArrayBuffer(xsArg(2)) : NULL;
+	xsIntegerValue offset, length = 3;
+	uint8_t* header;
+	sprintf(buffer, "\15\12<?xs#%8.8X?>", address);
+	offset = c_strlen(buffer);
+	header = (uint8_t*)(buffer + offset);
+	if (payload)
+		length += xsGetArrayBufferLength(xsArg(2));
+	header[0] = (uint8_t)(length >> 8);
+	header[1] = (uint8_t)(length & 0xFF);
+	header[2] = (uint8_t)command;
+	header[3] = (uint8_t)(id >> 8);
+	header[4] = (uint8_t)(id & 0xFF);
+	if (payload)
+		c_memcpy(header + 5, payload, length - 3);
+	xsResult = xsGet(xsThis, xsID_connection);
+	xsCall1(xsResult, xsID_write, xsArrayBuffer(buffer, offset + 2 + length));
 }
 
 void PiuDebugMachine_doCommand(xsMachine* the)

@@ -80,6 +80,10 @@ import {
 } from "PreferencesView";
 
 import {
+	SerialPane,
+} from "SerialPane";
+
+import {
 	TabsPane,
 } from "TabsPane";
 
@@ -164,7 +168,7 @@ class ApplicationBehavior extends DebugBehavior {
 		
 		this.test262Context = new Test262Context;
 		
-		this.visibleTabs = [ true, true, false ];
+		this.visibleTabs = [ true, true, false, false ];
 		
 		this.path = undefined;
 		this.state = undefined;
@@ -201,6 +205,8 @@ class ApplicationBehavior extends DebugBehavior {
 						container.replace(container.first, new FilePane(this));
 					else if (tab == 1)
 						container.replace(container.first, new MessagePane(this));
+					else if (tab == 2)
+						container.replace(container.first, new SerialPane(this));
 					else
 						container.replace(container.first, new Test262Pane(this));
 				}	
@@ -238,9 +244,9 @@ class ApplicationBehavior extends DebugBehavior {
 	onOpenFile(application, path) {
 		let info = system.getFileInfo(path);
 		if (info.directory)
-			this.doOpenDirectoryCallback(path);
+			application.defer("doOpenDirectoryCallback", new String(path));
 		else
-			this.doOpenFileCallback(path);
+			application.defer("doOpenFileCallback", new String(path));
 	}
 	onPathChanged(application, path) {
 		application.invalidateMenus();
@@ -298,9 +304,9 @@ class ApplicationBehavior extends DebugBehavior {
 		return this.path ? true : false;
 	}
 	doOpenDirectory() {
-		system.openDirectory({ prompt:"Open Folder" }, path => { if (path) this.doOpenDirectoryCallback(path); });
+		system.openDirectory({ prompt:"Open Folder" }, path => { if (path) application.defer("doOpenDirectoryCallback", new String(path)); });
 	}
-	doOpenDirectoryCallback(path) {
+	doOpenDirectoryCallback(application, path) {
 		let items = this.homes.items;
 		let home = items.find(item => item.path == path);
 		if (!home) {
@@ -312,11 +318,13 @@ class ApplicationBehavior extends DebugBehavior {
 		return home;
 	}
 	doOpenFile() {
-		system.openFile({ prompt:"Open File" }, path => { if (path) this.doOpenFileCallback(path); });
+		system.openFile({ prompt:"Open File" }, path => { if (path) application.defer("doOpenFileCallback", new String(path)); });
 	}
-	doOpenFileCallback(path) {
+	doOpenFileCallback(application, path) {
 		if (path.endsWith(".js") || path.endsWith(".json") || path.endsWith(".ts") || path.endsWith(".xml") || path.endsWith(".xs"))
 			this.selectFile(path);
+		else if (path.endsWith(".xsa"))
+			this.serial.doInstall(path);
 	}
 	doCloseDirectory(path) {
 		let items = this.homes.items;
@@ -412,7 +420,7 @@ class ApplicationBehavior extends DebugBehavior {
 			if (index >= 0)
 				items.splice(index, 1);
 			application.distribute("onStateChanging", this.state);
-			if (this.path && (this.path != "preferences")) {
+			if (this.path && (this.path != "preferences") && (this.path != "device")) {
 				items.unshift({ path:this.path, state:this.state });
 				if (items.length > 32)
 					items.length = 32;
@@ -488,7 +496,7 @@ class ApplicationBehavior extends DebugBehavior {
 					this.automaticInstruments = preferences.automaticInstruments;
 				if ("test262Context" in preferences)
 					this.test262Context.fromJSON(preferences.test262Context);
-				if ("visibleTabs" in preferences)
+				if (("visibleTabs" in preferences) && (preferences.visibleTabs.length == 4))
 					this.visibleTabs = preferences.visibleTabs;
 				if ("serialDevicePath" in preferences)
 					this.serialDevicePath = preferences.serialDevicePath;
@@ -635,8 +643,6 @@ let DebuggerApplication = Application.template($ => ({
 				null,
 				{ title:"Close", key:"W", command:"CloseFile" },
 				{ title:"Close All", option:true, key:"W", command:"CloseFiles" },
-				null,
-				{ state:0, titles: ["Connect Serial", "Disconnect Serial", "Connecting Serial..."], key:"S", command:"Connect" },
 				null,
 				{ title:"Quit", key:"Q", command:"Quit" },
 			],
