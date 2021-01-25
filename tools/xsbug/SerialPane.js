@@ -84,10 +84,7 @@ class SerialPaneBehavior extends Behavior {
 	onSerialChanged(container) {
 		const column = container.first.first;
 		const serial = this.data.serial;
-		column.empty(1);
-		if (serial.app.signature) {
-			column.add(new AppTable(serial.app));
-		}
+		column.empty(2);
 		if (serial.mod.spaceAvailable >= 0) {
 			column.add(new ModTable(serial.mod));
 		}
@@ -148,12 +145,12 @@ class SerialTableBehavior extends TableBehavior {
 class DeviceTableBehavior extends SerialTableBehavior {
 	fill(column) {
 		var data = this.data;
+		if (data.mcu)
+			column.add(new SerialRow(data.mcu));
 		if (data.macAddress)
 			column.add(new SerialRow(data.macAddress));
 		if (data.pixelFormat)
 			column.add(new SerialRow(data.pixelFormat));
-		if (data.screenRotation)
-			column.add(new SerialRow(data.screenRotation));
 	}
 	hold(column) {
 		return DeviceHeader(this.data, {left:0, right:0, top:0, height:column.first.height});
@@ -163,7 +160,9 @@ class DeviceTableBehavior extends SerialTableBehavior {
 class AppTableBehavior extends SerialTableBehavior {
 	fill(column) {
 		var data = this.data;
-		if (data.signature)
+		if (data.progress >= 0)
+			column.add(new SerialProgressRow(data));
+		else if (data.signature)
 			column.add(new SerialRow(data.signature));
 		if (data.xsVersion)
 			column.add(new SerialRow(data.xsVersion));
@@ -181,7 +180,7 @@ class ModTableBehavior extends SerialTableBehavior {
 		else if (data.signature)
 			column.add(new SerialRow(data.signature));
 		else
-			column.add(new SerialInfoRow("no mods"));
+			column.add(new SerialInfoRow("no mod"));
 		if (data.spaceAvailable)
 			column.add(new SerialRow(data.spaceAvailable + " bytes available"));
 	}
@@ -207,6 +206,7 @@ export var SerialPane = Container.template($ => ({
 					left:0, right:0, top:0, Behavior:HolderColumnBehavior,
 					contents: [
 						DeviceTable($.serial.device, {}),
+						AppTable($.serial.app, {}),
 					],
 				}),
 				Container($, {
@@ -252,6 +252,7 @@ var AppHeader = Row.template(function($) { return {
 		Content($, { width:0 }),
 		Content($, { width:26, top:3, skin:glyphsSkin, variant:0, state:1 }),
 		Label($, { width:52, style:tableHeaderStyle, string:"APP" }),
+		SerialButton({ name:"Install" }, { name:"SerialInstallApp" }),
 		SerialButton({ name:"Restart" }, { name:"SerialRestart", }),
 	],
 }});
@@ -271,8 +272,8 @@ var ModHeader = Row.template(function($) { return {
 		Content($, { width:0 }),
 		Content($, { width:26, top:3, skin:glyphsSkin, variant:0, state:1 }),
 		Label($, { width:52, style:tableHeaderStyle, string:"MOD" }),
-		SerialButton({ name:"Install" }, { name:"SerialInstall" }),
-		SerialButton({ name:"Uninstall" }, { name:"SerialUninstall", }),
+		SerialButton({ name:"Install" }, { name:"SerialInstallMod" }),
+		SerialButton({ name:"Uninstall" }, { name:"SerialUninstallMod", }),
 	],
 }});
 
@@ -304,6 +305,7 @@ var SerialProgressRow = Row.template(function($) { return {
 			],
 		}),
 		Content($, { width:20 }),
+		Content($, { width:rowIndent }),
 	],
 }});
 
