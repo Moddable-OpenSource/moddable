@@ -1193,6 +1193,11 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #if ESP32
 			the->echoBuffer[the->echoOffset++] = '3';
 			the->echoBuffer[the->echoOffset++] = '2';
+#if kCPUESP32S2
+			the->echoBuffer[the->echoOffset++] = '-';
+			the->echoBuffer[the->echoOffset++] = 's';
+			the->echoBuffer[the->echoOffset++] = '2';
+#endif
 #endif
 			break;
 
