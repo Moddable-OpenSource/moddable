@@ -978,18 +978,21 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		application.distribute("onSerialChanged");
 	}
 	async doInstallApp(path) {
+		const name = system.getPathName(path);
+		const mcu = (name == "xs_esp32.bin") ? "esp32" : (name == "main.bin") ? "esp8266" : "";
+		if (!mcu) {
+			system.alert({ 
+				type:"stop",
+				prompt:"xsbug",
+				info:`The file must be \"xs_esp32.bin\" for ESP32 or \"main.bin\" for the ESP8266.`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+			return;
+		}
 		try {
-			const name = system.getPathName(path);
-			const mcu = (name == "xs_esp32.bin") ? "esp32" : (name == "main.bin") ? "esp8266" : "";
-			if (!mcu)
-				throw new UnknownError("Unknown MCU");
-			const flash = {
-				mode: ("esp32" === mcu) ? "dio" : "qio",	// qio is enabled in bootloader build for ESP32. must be dio here.
-				frequency: "80m",
-				size: "4MB",
-			};
-			
-			await this.disconnect();
+			if (this.state != 0)
+				await this.disconnect();
 			
 			this.app.progress = 0;
 			this.app.signature = "";
@@ -1000,13 +1003,17 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 			this.state = 3;
 			application.distribute("onSerialChanged");
 			
+			const flash = {
+				mode: ("esp32" === mcu) ? "dio" : "qio",	// qio is enabled in bootloader build for ESP32. must be dio here.
+				frequency: "80m",
+				size: "4MB",
+			};
 			const tool = new EspTool({
 				device: this.behavior.serialDevicePath,
 				mcu,
 				flash,
 			});
 			await tool.beginProgramming();
-			console.log("Device in programming mode");
 
 			const info = await tool.getInfo();
 			console.log(JSON.stringify(info, undefined, 3));
@@ -1032,10 +1039,6 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		}
 	}
 	async doInstallMod(path) {
-		if (this.state == 0)
-			await this.connect();
-		if (this.state != 1)
-			return;
 		if (this.mod.spaceAvailable < 0) {
 			system.alert({ 
 				type:"stop",
@@ -1058,6 +1061,10 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 			});
 			return;
 		}
+		if (this.state == 0)
+			await this.connect();
+		if (this.state != 1)
+			return;
 		this.mod.progress = 0;
 		this.mod.signature = "";
 		this.state = 3;
@@ -1084,7 +1091,8 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 			await this.doRestart();
 		}
 		catch(e) {
-			debugger
+			this.doDisconnect();
+			application.defer("onConnectError", e);
 		}
 	}
 	async doRestart() {
@@ -1116,7 +1124,8 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 			await this.doRestart();
 		}
 		catch(e) {
-			debugger
+			this.doDisconnect();
+			application.defer("onConnectError", e);
 		}
 	}
 	async getInfos() {

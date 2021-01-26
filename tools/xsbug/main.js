@@ -323,10 +323,16 @@ class ApplicationBehavior extends DebugBehavior {
 	doOpenFileCallback(application, path) {
 		if (path.endsWith(".js") || path.endsWith(".json") || path.endsWith(".ts") || path.endsWith(".xml") || path.endsWith(".xs"))
 			this.selectFile(path);
-		else if (path.endsWith(".bin"))
+		else if (path.endsWith(".bin")) {
+			this.showTab(2, true);
+			this.selectMachine(null, 2);
 			this.serial.doInstallApp(path);
-		else if (path.endsWith(".xsa"))
+		}
+		else if (path.endsWith(".xsa")) {
+			this.showTab(2, true);
+			this.selectMachine(null, 2);
 			this.serial.doInstallMod(path);
+		}
 	}
 	doCloseDirectory(path) {
 		let items = this.homes.items;
