@@ -83,6 +83,8 @@ class EspTool {
 	#baudDownload;
 	#serialOptions;
 	#flashOptions;
+	#writeSpaceAvailable;
+	#writable;
 
 	constructor(options) {
 		if (!options.device)
@@ -332,7 +334,7 @@ class EspTool {
 		let reply = await this.getReply();
 		this.parseReply(reply, Bootloader.READ_FLASH);
 		const position = reply.indexOf(0xC0, 1);
-		if (position < reply.length)
+		if (position < (reply.length - 1))
 			initial = reply.slice(position + 1);
 
 		let result = new Uint8Array;
@@ -340,7 +342,7 @@ class EspTool {
 		let progress = new DataView(new ArrayBuffer(1 * 4));
 		while (result.byteLength < size) {
 			const data = initial ?? this.#serial.read();
-			if (!data.byteLength) {
+			if (!data) {
 				const readPromise = new Promise(resolve => {
 					this.#readable = resolve;
 				});
@@ -468,10 +470,16 @@ class EspTool {
 				...this.#serialOptions,
 				baud,
 				device: this.#device,
-				onWritable() {
+				onWritable(count) {
 					if (resolve)
 						resolve(true);
 					resolve = reject = undefined;
+
+					this.flash.#writeSpaceAvailable = count;
+					if (this.flash.#writable) {
+						this.flash.#writable(true);
+						this.flash.#writable = undefined;
+					}
 				},
 				onReadable() {
 					if (this.flash.#readable) {
@@ -548,7 +556,7 @@ class EspTool {
 			if (duration <= 0)
 				break;
 			let data = this.#serial.read();
-			if (!data || !data.byteLength) {
+			if (!data || !data.byteLength) {		//@@ byteLength check should be unnecessary!
 				const readPromise = new Promise(resolve => {
 					this.#readable = resolve;
 				});
@@ -664,7 +672,34 @@ class EspTool {
 		tracePacket("<<", data);
 		if (purge)
 			this.#serial.purge();
-		this.#serial.write(data.buffer);
+
+		const buffer = data.buffer;
+		if (!this.#writeSpaceAvailable)
+			throw new Error("unexpected: not ready to write");
+
+		if (buffer.byteLength <= this.#writeSpaceAvailable) {
+			this.#serial.write(buffer);
+			this.#writeSpaceAvailable -= buffer.byteLength;
+		}
+		else {
+			let byteOffset = 0, byteLength = buffer.byteLength;
+
+			while (byteOffset < byteLength) {
+				const writePromise = new Promise(resolve => {
+					 this.#writable = resolve;
+				 });
+
+				let count = this.#writeSpaceAvailable;
+				if (count > (byteLength - byteOffset))
+					count = (byteLength - byteOffset)
+
+				this.#writeSpaceAvailable -= count;
+				this.#serial.write(buffer.slice(byteOffset, byteOffset + count));
+				byteOffset += count;
+
+				await writePromise;
+			}
+		}
 	}
     async readEfuse(index) {
     	const EFUSE_REG_BASE = 0x6001a000;
