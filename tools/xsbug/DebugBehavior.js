@@ -966,6 +966,7 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 	}
 	async doDisconnect(path) {
 		await this.disconnect();
+		this.device.mcu = "";
 		this.device.macAddress = "";
 		this.device.pixelFormat = "";
 		this.app.progress = -1;
@@ -1133,6 +1134,9 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 			const machine = this.machine;
 			let data, view;
 			
+			data = await machine.doBinaryCommand(17);
+			this.device.mcu = String.fromArrayBuffer(data);
+
 			data = await machine.doBinaryCommand(14);
 			view = new Uint8Array(data);
 			this.device.macAddress = "MAC " + view.reduce((former, value) => { return former + (former ? ":" : "") + value.toString(16).padStart(2, "0") }, "");
