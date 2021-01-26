@@ -1186,6 +1186,16 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			} break;
 #endif
 
+		case 17:
+			the->echoBuffer[the->echoOffset++] = 'e';
+			the->echoBuffer[the->echoOffset++] = 's';
+			the->echoBuffer[the->echoOffset++] = 'p';
+#if ESP32
+			the->echoBuffer[the->echoOffset++] = '3';
+			the->echoBuffer[the->echoOffset++] = '2';
+#endif
+			break;
+
 		default:
 			resultCode = -1;
 			break;
