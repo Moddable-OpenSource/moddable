@@ -1,7 +1,7 @@
 # Pins
 
-Copyright 2017-20 Moddable Tech, Inc.<BR>
-Revised: November 9, 2020
+Copyright 2017-21 Moddable Tech, Inc.<BR>
+Revised: January 26, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -214,6 +214,36 @@ let value = this.read();
 ```
 
 ***
+
+### `onWake() callback`
+
+On platforms that support device wake-up from deep sleep on digital input triggers, an `onWake` callback can be provided in the `Monitor` constructor. The `onWake` callback is called the first time the pin is instantiated after waking with that pin being the reset reason. The wake-up trigger is configured by additional `mode` flags.
+
+The following mode values are available for configuring the wake-up trigger.
+
+```js
+Digital.WakeOnRise = (1 << 6);
+Digital.WakeOnFall = (1 << 7);
+```
+
+### Example: Wake from deep sleep on falling edge
+The following example configures input pin 7 to trigger wake-up on a falling edge using an internal pull-up resistor:
+
+```js
+import {Sleep} from "sleep";
+
+let monitor = new Monitor({
+	pin: 7,
+	mode: Digital.InputPullUp | Digital.WakeOnFall,
+	onWake() {
+		// take action based on digital monitor wake-up trigger
+	}
+});
+
+Sleep.deep();
+```
+
+**Note**: Only nRF52840 devices currently support deep sleep wake-up from digital input triggers.
 
 ### `close()`
 

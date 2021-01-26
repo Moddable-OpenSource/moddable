@@ -94,6 +94,9 @@ void xs_digital_monitor(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_mode)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_mode);
 		mode = xsmcToInteger(xsVar(0));
+		
+		// wake on gpio not supported
+		mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
 	}
 
 	monitor = c_malloc(sizeof(modDigitalMonitorRecord));

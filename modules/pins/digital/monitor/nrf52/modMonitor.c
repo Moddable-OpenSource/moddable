@@ -38,8 +38,14 @@ typedef struct {
 	nrf_drv_gpiote_in_config_t	nrfConfig;
 } modDigitalMonitorRecord, *modDigitalMonitor;
 
+typedef struct {
+	xsSlot obj;
+	xsSlot onWake;
+} modDigitalWakeConfigurationRecord, *modDigitalWakeConfiguration;
+
 static void digitalMonitorISR(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 static void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void wakeableDigitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static modDigitalMonitor gMonitors = NULL;
 
@@ -78,6 +84,7 @@ void xs_digital_monitor(xsMachine *the)
 {
 	modDigitalMonitor monitor;
 	int pin, edge, mode = kModGPIOInput;
+	nrf_gpio_pin_sense_t sense_config = NRF_GPIO_PIN_NOSENSE;
 	ret_code_t err_code;
 
 	xsmcVars(1);
@@ -97,6 +104,11 @@ void xs_digital_monitor(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_mode)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_mode);
 		mode = xsmcToInteger(xsVar(0));
+	}
+
+	if (xsmcHas(xsArg(0), xsID_wakeEdge)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_wakeEdge);
+		mode |= xsmcToInteger(xsVar(0));
 	}
 
 	monitor = c_calloc(1, sizeof(modDigitalMonitorRecord));
@@ -120,6 +132,13 @@ void xs_digital_monitor(xsMachine *the)
 	monitor->nrfConfig.is_watcher = false;
 	monitor->nrfConfig.hi_accuracy = true;
 
+	if (mode & kModGPIOWakeRisingEdge)
+		sense_config = NRF_GPIO_PIN_SENSE_HIGH;
+	else if (mode & kModGPIOWakeFallingEdge)
+		sense_config = NRF_GPIO_PIN_SENSE_LOW;
+		
+	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
+
 	if (kModGPIOInputPullUp == mode)
 		monitor->nrfConfig.pull = NRF_GPIO_PIN_PULLUP;
 	else if (kModGPIOInputPullDown == mode)
@@ -141,11 +160,29 @@ void xs_digital_monitor(xsMachine *the)
 	APP_ERROR_CHECK(err_code);
 
 	nrf_drv_gpiote_in_event_enable(monitor->pin, true);
+
+	if (NRF_GPIO_PIN_NOSENSE != sense_config)
+		nrf_gpio_cfg_sense_set(monitor->pin, sense_config);
+
+	if (xsmcHas(xsArg(0), xsID_onWake)) {
+		if (modGPIODidWake(NULL, pin)) {
+			modDigitalWakeConfigurationRecord wake;
+			wake.obj = xsThis;
+			if (xsmcHas(xsArg(0), xsID_target)) {
+				xsmcGet(xsVar(0), xsArg(0), xsID_target);
+				xsmcSet(xsThis, xsID_target, xsVar(0));
+			}
+			xsmcGet(wake.onWake, xsArg(0), xsID_onWake);
+			xsRemember(wake.onWake);
+			modMessagePostToMachine(the, (uint8_t*)&wake, sizeof(wake), wakeableDigitalDeliver, NULL);
+		}
+	}
 }
 
 void xs_digital_monitor_close(xsMachine *the)
 {
 	modDigitalMonitor monitor = xsmcGetHostData(xsThis);
+	nrf_gpio_cfg_sense_set(monitor->pin, NRF_GPIO_PIN_NOSENSE);
 	nrf_drv_gpiote_in_event_disable(monitor->pin);
 	xsForget(monitor->obj);
 	monitor->closed = true;
@@ -244,3 +281,14 @@ void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t m
 		xsCall0(monitor->obj, xsID_onChanged);
 	xsEndHost(the);
 }
+
+void wakeableDigitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	modDigitalWakeConfiguration wake = (modDigitalWakeConfiguration)message;
+
+	xsBeginHost(the);
+		xsCallFunction0(wake->onWake, wake->obj);
+		xsForget(wake->onWake);
+	xsEndHost(the);
+}
+
