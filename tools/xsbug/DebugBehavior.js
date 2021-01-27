@@ -878,6 +878,7 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		this.behavior = behavior;
 		this.device = {
 			expanded: true,
+			mcu: "",
 			macAddress: "",
 			pixelFormat: "",
 		};
@@ -1134,8 +1135,13 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 			const machine = this.machine;
 			let data, view;
 			
-			data = await machine.doBinaryCommand(17);
-			this.device.mcu = String.fromArrayBuffer(data);
+			try {
+				data = await machine.doBinaryCommand(17);
+				this.device.mcu = String.fromArrayBuffer(data);
+			}
+			catch {
+				this.device.mcu = "";
+			}
 
 			data = await machine.doBinaryCommand(14);
 			view = new Uint8Array(data);
