@@ -103,16 +103,10 @@ class ES8311 extends SMBus {
             pin: dictionary.power.pin,
             mode: Digital.Output
         });
-	}
 
-	configure(dictionary) {
-        if (dictionary?.volume !== undefined)
-            this.setVolume(dictionary.volume);
-    }
-    
-    init(mode, isDigitalMic) {
-        const initOutput = mode & ES8311.Output;
-        const initInput = mode & ES8311.Input;
+        const initOutput = dictionary.mode & ES8311.Output;
+        const initInput = dictionary.mode & ES8311.Input;
+        const isDigitalMic = dictionary.isDigitalMic;
 
         super.writeByte(Registers.RESET_REG00, 0x00);
         super.writeByte(Registers.GP_REG45, 0x00);
@@ -232,19 +226,27 @@ class ES8311 extends SMBus {
         }
         
         this.paPower(true);
-    }  
+	}
+
+	configure(dictionary) {
+        if (dictionary?.volume !== undefined) {
+            let volume = dictionary.volume;
+            if (volume < 0)
+                volume = 0;
+            if (volume > 255)
+                volume = 255;
+            super.writeByte(Registers.DAC_REG32, volume);
+        }
+    }
 
     paPower(state){
         this.#powerPin.write(state ? 1 : 0);
     }
 
-    setVolume(volume){ 
-        if (volume < 0)
-            volume = 0;
-        if (volume > 255)
-            volume = 255;
-
-        super.writeByte(Registers.DAC_REG32, volume);
+    close(){
+        this.paPower(false);
+        this.#powerPin.close();
+        super.close();
     }
 }
 ES8311.Output = 0b01;
@@ -257,43 +259,34 @@ class AudioOutKaluga extends AudioOut {
     }
 
     constructor(options) {
-        if (AudioOutKaluga.#state.es8311 !== undefined) {
-            AudioOutKaluga.#state.count++;
-        }else{
-            AudioOutKaluga.#state.es8311 = new ES8311({
+        const state = AudioOutKaluga.#state;
+        
+        super(options);
+
+        if (state.es8311 === undefined) {
+            state.es8311 = new ES8311({
                 i2c: {
-                    sda: config.es8311.i2c.sda,
-                    scl: config.es8311.i2c.clk,
-                    address: config.es8311.i2c.address,
+                    ...config.es8311.i2c,
                     hz: 100000
                 },
                 power: {
-                    pin: config.es8311.power.pin
-                }
+                    ...config.es8311.power
+                },
+                mode: ES8311.Output
             });
-            AudioOutKaluga.#state.es8311.init(ES8311.Output);
-            AudioOutKaluga.#state.es8311.setVolume(config.es8311.volume ?? 128);
+            state.es8311.configure({volume: config.es8311.volume ?? 128});
         }
-
-        super(options);
+        state.count++;
     }
 
-    // enqueue(stream, kind, buffer, repeat, offset, count) {
-    //     if (kind === AudioOut.Volume) {
-    //         AudioOutKaluga.#state.es8311?.setVolume(buffer);
-    //     }else{
-    //         super.enqueue(stream, kind, buffer, repeat, offset, count);
-    //     }
-    // }
-
     close() {
+        const state = AudioOutKaluga.#state;
         super.close();
 
-        AudioOutKaluga.#state.count--;
-        if (AudioOutKaluga.#state.count <= 0) {
-            AudioOutKaluga.#state.es8311.paPower(false);
-            AudioOutKaluga.#state.es8311.close();
-            AudioOutKaluga.#state.es8311 = undefined;
+        state.count--;
+        if (state.count <= 0) {
+            state.es8311.close();
+            state.es8311 = undefined;
         }
     }
 }

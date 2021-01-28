@@ -44,7 +44,7 @@
 		"es8311": {
 			"i2c": {
 				"address": 24,
-				"clk": 7,
+				"scl": 7,
 				"sda": 8
 			},
 			"power": {
