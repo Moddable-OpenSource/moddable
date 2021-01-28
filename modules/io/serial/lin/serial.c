@@ -51,6 +51,8 @@ struct termios2 {
 #define TCGETS2 _IOR('T', 0x2A, struct termios2)
 #define TCSETS2 _IOW('T', 0x2B, struct termios2)
 
+#define kWriteBufferSize (1024)		// 1024 is the default on macOS (it seems)
+
 typedef struct {
 	xsMachine			*the;
 	xsSlot				obj;
@@ -65,6 +67,11 @@ typedef struct {
 	uint8_t				hasOnError;
 	uint8_t				hasOnReadable;
 	uint8_t				hasOnWritable;
+	
+	uint8_t				writeBuffer[kWriteBufferSize];
+	uint32_t			writeCount;
+	uint8_t*			writeData;
+	guint				writeSource;
 } xsSerialRecord, *xsSerial;
 
 typedef struct {
@@ -75,8 +82,7 @@ typedef struct {
 
 static void xs_serial_format_set_aux(xsMachine *the, xsSerial s, char *format);
 static gboolean xs_serial_read_callback(GIOChannel *source, GIOCondition condition, gpointer data);
-static void xs_serial_write_aux(void* machine, xsSerial s);
-static void xs_serial_write_callback(void* machine, void* it);
+static gboolean xs_serial_write_callback(GIOChannel *source, GIOCondition condition, gpointer data);
 
 #ifdef mxDebug
 	#define xsElseThrow(_ASSERTION) \
@@ -93,6 +99,8 @@ void xs_serial_destructor(void *data)
 
 	if (s->source)
 		g_source_remove(s->source);
+	if (s->writeSource)
+		g_source_remove(s->writeSource);
 	if (s->channel) {
 		g_io_channel_shutdown(s->channel, TRUE, NULL);
 		g_io_channel_unref(s->channel);
@@ -159,7 +167,7 @@ void xs_serial_constructor(xsMachine *the)
 		s->source = g_io_add_watch(s->channel, G_IO_IN | G_IO_ERR, xs_serial_read_callback, s);
 		xsElseThrow(s->source != 0);
 		if (s->hasOnWritable)
-			xs_serial_write_aux(the, s);
+			s->writeSource = g_io_add_watch(s->channel, G_IO_OUT, xs_serial_write_callback, s);
 	}
 	xsCatch {
 		xs_serial_destructor(s);
@@ -297,43 +305,55 @@ void xs_serial_write(xsMachine *the)
 	}
 	if (!count)
 		return;
+		
+	if ((count > kWriteBufferSize) || s->writeCount)
+		xsUnknownError("would overflow");
 
 	while (count) {
 		int result = write(s->fd, data, count);
-		xsElseThrow(result >= 0);
+		if (result < 0) {
+			xsElseThrow(errno == EAGAIN);
+			c_memmove(s->writeBuffer, data, count);
+			s->writeCount = count;
+			s->writeData = s->writeBuffer;
+			s->writeSource = g_io_add_watch(s->channel, G_IO_OUT, xs_serial_write_callback, s);
+			return;
+		}
 		count -= result;
 		data += result;
 	}
 	
-	if (!s->job && s->hasOnWritable) {
-		xs_serial_write_aux(the, s);
-	}
+	if (!s->writeSource && s->hasOnWritable)
+		s->writeSource = g_io_add_watch(s->channel, G_IO_OUT, xs_serial_write_callback, s);
 }
 
-void xs_serial_write_aux(void* the, xsSerial s)
+gboolean xs_serial_write_callback(GIOChannel *source, GIOCondition condition, gpointer data)
 {
-	xsSerialJob job = c_calloc(sizeof(xsSerialJobRecord), 1);
-	xsElseThrow(job != NULL);
-	job->callback = xs_serial_write_callback;
-	job->serial = s;
-	fxQueueWorkerJob(the, job);
-	s->job = job;
-}
-
-void xs_serial_write_callback(void* machine, void* it)
-{
-	xsSerialJob job = it;
-	xsSerial s = job->serial;
-	if (s) {
-		s->job = NULL;
-		xsBeginHost(machine);
-		xsTry {
-			xsCallFunction1(s->onWritable, s->obj, xsInteger(1024));
+	xsSerial s = data;
+	gboolean keep = TRUE;
+	if (condition & G_IO_OUT) {
+		if (s->writeCount) {
+			int result = write(s->fd, s->writeData, s->writeCount);
+			if (result > 0) {
+				s->writeCount -= result;
+				s->writeData += result;
+			}
 		}
-		xsCatch {
+		if (s->writeCount == 0) {
+			keep = FALSE;
+			s->writeSource = 0;
+			if (s->hasOnWritable) {
+				xsBeginHost(s->the);
+				xsTry {
+					xsCallFunction1(s->onWritable, s->obj, xsInteger(kWriteBufferSize));
+				}
+				xsCatch {
+				}
+				xsEndHost();
+			}
 		}
-		xsEndHost();
 	}
+	return keep;
 }
 
 void xs_serial_format_get(xsMachine *the)
