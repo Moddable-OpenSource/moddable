@@ -76,6 +76,40 @@ class SoundAppBehavior extends Behavior {
 				}
 			}
 		}
+		if (undefined !== Host?.Button?.C && undefined !== Host?.Button?.E && undefined !== Host?.Button?.F) { // Kaluga buttons
+			new Host.Button.C({
+				onPush(value){
+					if (value) application.delegate("playSound");
+				}
+			})
+			new Host.Button.E({
+				onPush(value){
+					if (value) application.delegate("volumeDown");
+				}
+			})
+			new Host.Button.F({
+				onPush(value){
+					if (value) application.delegate("volumeUp");
+				}
+			})
+		}
+		if (undefined !== Host?.Touchpad?.B && undefined !== Host?.Touchpad?.E && undefined !== Host?.Touchpad?.F ) { // Kaluga touchpad
+			new Host.Touchpad.B({
+				onPush(value){
+					if (value) application.delegate("playSound");
+				}
+			})
+			new Host.Touchpad.E({
+				onPush(value){
+					if (value) application.delegate("volumeUp");
+				}
+			})
+			new Host.Touchpad.F({
+				onPush(value){
+					if (value) application.delegate("volumeDown");
+				}
+			})
+		}
 	}
 	volumeDown(application) {
 		if (Sound.volume >= 0.1) {
