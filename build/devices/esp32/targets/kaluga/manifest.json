@@ -8,10 +8,14 @@
 		"$(MODULES)/drivers/neopixel/manifest.json",
 		"$(MODULES)/pins/analog/manifest.json",
 		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/touchpad/manifest.json"
+		"$(MODULES)/drivers/touchpad/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
-		"setup/target": "./setup-target"
+		"setup/target": "./setup-target",
+		"true/audioout": "$(MODULES)/pins/i2s/*",
+		"pins/audioout": "./audioout",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"setup/target"
@@ -36,6 +40,17 @@
 				"F": 3
 			},
 			"guard": 4
+		},
+		"es8311": {
+			"i2c": {
+				"address": 24,
+				"clk": 7,
+				"sda": 8
+			},
+			"power": {
+				"pin": 10
+			},
+			"volume": 154
 		}
 	},
 	"defines": {
@@ -73,6 +88,19 @@
 				"0x29, 0,",
 				"0xFF, 0"
 			]
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 32000,
+			"format": "ima",
+			"streams": 1,
+			"queueLength": 8,
+			"i2s": {
+				"bck_pin": 18,
+				"lr_pin": 17,
+				"dataout_pin": 12 
+			}
 		}
 	}
 }
