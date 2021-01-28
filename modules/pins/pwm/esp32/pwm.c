@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "mc.defines.h"
+#include "xsHost.h"
 
 #include "driver/ledc.h"
 #include "stdlib.h"
