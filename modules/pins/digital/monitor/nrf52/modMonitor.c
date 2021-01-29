@@ -83,7 +83,7 @@ void xs_digital_monitor_destructor(void *data)
 void xs_digital_monitor(xsMachine *the)
 {
 	modDigitalMonitor monitor;
-	int pin, edge, mode = kModGPIOInput;
+	int pin, edge, wakeEdge = 0, mode = kModGPIOInput;
 	nrf_gpio_pin_sense_t sense_config = NRF_GPIO_PIN_NOSENSE;
 	ret_code_t err_code;
 
@@ -108,7 +108,7 @@ void xs_digital_monitor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_wakeEdge)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_wakeEdge);
-		mode |= xsmcToInteger(xsVar(0));
+		wakeEdge = xsmcToInteger(xsVar(0));
 	}
 
 	monitor = c_calloc(1, sizeof(modDigitalMonitorRecord));
@@ -132,13 +132,11 @@ void xs_digital_monitor(xsMachine *the)
 	monitor->nrfConfig.is_watcher = false;
 	monitor->nrfConfig.hi_accuracy = true;
 
-	if (mode & kModGPIOWakeRisingEdge)
+	if (wakeEdge & kModGPIOWakeRisingEdge)
 		sense_config = NRF_GPIO_PIN_SENSE_HIGH;
-	else if (mode & kModGPIOWakeFallingEdge)
+	else if (wakeEdge & kModGPIOWakeFallingEdge)
 		sense_config = NRF_GPIO_PIN_SENSE_LOW;
 		
-	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
-
 	if (kModGPIOInputPullUp == mode)
 		monitor->nrfConfig.pull = NRF_GPIO_PIN_PULLUP;
 	else if (kModGPIOInputPullDown == mode)

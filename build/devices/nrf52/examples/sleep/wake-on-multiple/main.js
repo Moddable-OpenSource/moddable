@@ -37,7 +37,8 @@ render.end();
 
 let digital1 = new Digital({
 	pin: 17,
-	mode: Digital.InputPullUp | Digital.WakeOnFall,
+	mode: Digital.InputPullUp,
+	wakeEdge: Digital.WakeOnFall,
 	onWake() {
 		notify("digital1");
 	}
@@ -45,7 +46,8 @@ let digital1 = new Digital({
 
 let digital2 = new Digital({
 	pin: 22,
-	mode: Digital.InputPullUp | Digital.WakeOnFall,
+	mode: Digital.InputPullUp,
+	wakeEdge: Digital.WakeOnFall,
 	onWake() {
 		notify("digital2");
 	}

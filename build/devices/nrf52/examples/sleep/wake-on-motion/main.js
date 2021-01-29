@@ -45,7 +45,8 @@ led.write(1);
 
 let digital = new Digital({
 	pin: wakeup_pin,
-	mode: Digital.Input | Digital.WakeOnFall,
+	mode: Digital.InputPullUp,
+	wakeEdge: Digital.WakeOnFall,
 	onWake() {
 		for (let i = 0; i < 10; ++i) {
 			led.write(0);

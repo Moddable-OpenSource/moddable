@@ -31,7 +31,8 @@ led.write(1);
 
 let monitor = new Monitor({
 	pin: wakeup_pin,
-	mode: Digital.InputPullUp | Digital.WakeOnFall,
+	mode: Digital.InputPullUp,
+	wakeEdge: Digital.WakeOnFall,
 	edge: Monitor.Rising | Monitor.Falling,
 	onWake() {
 		for (let i = 0; i < 10; ++i) {
