@@ -365,13 +365,15 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
 	C:\Windows\system32\cmd.exe /k ""C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
 	```
 
-	You can append the path to `vcvars32.bat` into the target as follows. Adjust the paths as necessary for your system.
+	You can change the Target to include the path to `vcvars32.bat` as follows. Adjust the paths as necessary for your system.
 
 	```text
-	C:\Windows\system32\cmd.exe /k ""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
+	%comspec% /k ""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python38-32\" "%ProgramFiles%\Git\cmd" && popd"
 	```
 
-	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python38-32\" "%ProgramFiles%\Git\cmd" && popd"` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+
+	It is also convenient to update the "Start in" field of the shortcut to `%MODDABLE%` to start your Command Prompt session in the Moddable SDK directory.
 
 
 10. In the ESP-IDF Command Prompt, verify the setup by building `helloworld` for your device target:
@@ -387,6 +389,12 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
 When you're trying to install applications, you may experience roadblocks in the form of errors or warnings; this section explains some common issues on Windows and how to resolve them.
 
 For other issues that are common on macOS, Windows, and Linux, see the [Troubleshooting section](#troubleshooting) at the bottom of this document.
+
+#### Python Versions
+
+Espressif recommends using Python 3.8 or later when building with ESP-IDF v4.2. Python 3.8.5 will be installed by the ESP-IDF Tools Installer.
+
+If you had a previous version of Python (such as Python 2.7) installed on your system, you may need to remove it from the System PATH so that Python 3.8.5 is chosen by default. Look for entries like `C:\Python27\` or `C:\Python27\Scripts\` in your PATH and remove them if you encounter Python errors during the build process. 
 
 #### Python dependencies
 
@@ -462,13 +470,15 @@ To ensure that your build environment is up to date, perform the following steps
 	C:\Windows\system32\cmd.exe /k ""C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
 	```
 
-	You can append the path to `vcvars32.bat` into the target as follows. Adjust the paths as necessary for your system.
+	You can change the Target to include the path to `vcvars32.bat` as follows. Adjust the paths as necessary for your system.
 
 	```text
-	C:\Windows\system32\cmd.exe /k ""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""
+	%comspec% /k ""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python38-32\" "%ProgramFiles%\Git\cmd" && popd"
 	```
 
-	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && "C:\Users\<username>\.espressif\idf_cmd_init.bat" "C:\Users\<username>\AppData\Local\Programs\Python\Python38-32\" "C:\Program Files\Git\cmd\""` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python38-32\" "%ProgramFiles%\Git\cmd" && popd"` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+
+	It is also convenient to update the "Start in" field of the shortcut to `%MODDABLE%` to start your Command Prompt session in the Moddable SDK directory.
 
 
 6. In the ESP-IDF Command Prompt, verify the setup by building `helloworld` for your device target:

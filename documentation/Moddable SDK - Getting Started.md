@@ -200,18 +200,18 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```text
-	cd C:\Users\<user>\Projects
+	cd %USERPROFILE%\Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
 4. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog:
  - Create a User Variable called `MODDABLE` and set it to point at your local Moddable SDK repository directory. Update the path as necessary for you system by navigating to the Moddable SDK folder using the "Browse Directory..." button.
 	- Variable Name: `MODDABLE` 
-	- Variable Value: `C:\Users\<user>\Projects\moddable`
+	- Variable Value: `%USERPROFILE%\Projects\moddable`
 
- - Edit the System Variable `Path` to include the Moddable SDK tools directory. Update the path as necessary for your system by navigating to the correct folder using the "Browse..." button.
+ - Edit the User Variable `Path` to include the Moddable SDK tools directory. Update the path as necessary for your system by navigating to the correct folder using the "Browse..." button.
 	- Variable Name: `Path`
-	- Variable Value (add to the existing list): `C:\Users\<user>\Projects\moddable\build\bin\win\release`
+	- Variable Value (add to the existing list): `%USERPROFILE%\Projects\moddable\build\bin\win\release`
 	
 5. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
