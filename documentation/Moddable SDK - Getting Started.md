@@ -240,6 +240,13 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 
  - If the Moddable SDK build fails with an error like "`LINK : fatal error LNK1104: cannot open file '<Moddable path>\build\bin\win\release\<tool name>.exe'`", it most likely indicates a conflict with antivirus software as described in [this document from Microsoft](https://docs.microsoft.com/en-us/cpp/error-messages/tool-errors/linker-tools-error-lnk1104?view=vs-2019). Please try excluding the `%MODDABLE%` directory from your antivirus software's live scanning capability during the build process.
 
+ - If the Moddable SDK build fails with the error "`'nmake' is not recognized as an internal or external command, operable program or batch file.`" there are three potential issues and fixes:
+	1. You may not have Visual Studio installed. We recommend using the [Microsoft Visual Studio 2019 Community Edition installer](https://www.visualstudio.com/downloads/).
+	2. When you installed Visual Studio, you may not have chosen the "Desktop development for C++" workload option. Re-run [the installer](https://www.visualstudio.com/downloads/) and choose that workload for installation.
+	3. You may have inadvertently attempted the build in the default Command Prompt rather than the "x86 Native Tools Command Prompt for VS 2019." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
+
+ - If the Moddable SDK build fails with an error like "`fatal error LNK1112: module machine type 'x64' conflicts with target machine type 'x86'`", you have most likely attempted the build in the "x64 Native Tools Command Prompt for VS 2019" rather than the correct "x86 Native Tools Command Prompt for VS 2019." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
+
 <a id="win-update"></a>
 ### Updating
 
