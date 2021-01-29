@@ -271,9 +271,8 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 2. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Delete any existing Moddable SDK build outputs:
 
 	```text
-	cd %MODDABLE%
-	rmdir /S /Q build\tmp
-	rmdir /S /Q build\bin
+	cd %MODDABLE%\build\makefiles\win
+	build clean
 	```
 
 3. In the "x86 Native Tools Command Prompt for VS 2019" command line console, build the Moddable command line tools, simulator, and debugger:
