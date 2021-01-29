@@ -1,8 +1,8 @@
 # Moddable SDK – Getting Started
 ### A guide to installing the Moddable SDK and building its tools
 
-Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: December 4, 2020
+Copyright 2016-2021 Moddable Tech, Inc.<BR>
+Revised: January 29, 2021
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
