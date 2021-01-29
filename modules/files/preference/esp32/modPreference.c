@@ -155,16 +155,16 @@ bail:
 
 void xs_preference_keys(xsMachine *the)
 {
-#if 1
-	xsmcSetNewArray(xsResult, 0);
-#else /* for ESP-IDF 4.x */
 	int i = 0;
-	nvs_iterator_t it = nvs_iterator_tnvs_entry_find(NVS_DEFAULT_PART_NAME, xsmcToString(xsArg(0)), NVS_TYPE_ANY);
+	nvs_iterator_t it;
+	
+	xsmcSetNewArray(xsResult, 0);
+	
+	it = nvs_entry_find(NVS_DEFAULT_PART_NAME, xsmcToString(xsArg(0)), NVS_TYPE_ANY);
 	if (!it)
-		xsUnknownError("no iterator");
+		return;
 
 	xsmcVars(1);
-	xsmcSetNewArray(xsResult, 0);
 
 	while (it) {
         nvs_entry_info_t info;
@@ -176,7 +176,6 @@ void xs_preference_keys(xsMachine *the)
 
         it = nvs_entry_next(it);
 	}
-#endif
 }
 
 uint8_t modPreferenceSet(char *domain, char *key, uint8_t prefType, uint8_t *value, uint16_t byteCount)
