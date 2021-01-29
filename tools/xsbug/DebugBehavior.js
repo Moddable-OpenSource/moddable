@@ -929,7 +929,9 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 					baud: baudRates[baudRatesIndex],
 					target:this,
 					onReadable(count) {
-						this.target.parse(this.read());
+						const buffer = this.read();
+						if (buffer)
+							this.target.parse(buffer);
 					},
 					onError() {
 						this.target.doDisconnect();
@@ -1015,21 +1017,27 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 				mcu,
 				flash,
 			});
-			await tool.beginProgramming();
+			try {
+				await tool.beginProgramming();
 
-			const info = await tool.getInfo();
-			console.log(JSON.stringify(info, undefined, 3));
+				const info = await tool.getInfo();
+				console.log(JSON.stringify(info, undefined, 3));
 
-			const data = system.readFileBuffer(path);
-			await tool.write({
-				data,
-				offset: "app",
-			}, progress => {
-				this.app.progress = progress;
-				application.distribute("onSerialProgressChanged");
-			});
-			tool.close();
-			
+				const data = system.readFileBuffer(path);
+				await tool.write({
+					data,
+					offset: "app",
+				}, progress => {
+					this.app.progress = progress;
+					application.distribute("onSerialProgressChanged");
+				});
+			}
+			catch(e) {
+				throw e;
+			}
+			finally {
+				tool.close();
+			}
 			this.app.progress = 1;
 			application.distribute("onSerialProgressChanged");
 
