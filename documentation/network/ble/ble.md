@@ -1,7 +1,7 @@
 # BLE
 Copyright 2017-20 Moddable Tech, Inc.
 
-Revised: December 18, 2020
+Revised: January 15, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -1739,37 +1739,15 @@ Use the `clear` function to remove all peer devices from the whitelist.
 
 <a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform
-The `mcconfig` command line tool **automatically** configures the required ESP-IDF BLE options required by the host app.
-The [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults) configuration file in the Moddable SDK presets the following core BLE options:
+The `mcconfig` command line tool **automatically** configures the ESP-IDF [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults) BLE options required by the host app. The ESP-IDF supports both the Apache [NimBLE](http://mynewt.apache.org/latest/network/index.html#) Bluetooth LE [5.1-certified](https://launchstudio.bluetooth.com/ListingDetails/97856) open-source host and the dual-mode [Bluedroid](https://www.espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf) stack. NimBLE provides [several benefits](https://blog.moddable.com/blog/moddable-sdk-improvements-for-esp32-projects/) over Bluedroid, including smaller Flash/RAM footprint, fewer buffer copies, and faster builds. NimBLE is enabled by default by the Moddable SDK in ESP32 builds.
 
-	CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE=0
-	CONFIG_BTDM_CONTROLLER_HCI_MODE_VHCI=y
-	CONFIG_BLUEDROID_ENABLED=y
-	CONFIG_BLUEDROID_PINNED_TO_CORE=0
-	CONFIG_BTC_TASK_STACK_SIZE=3072
-	CONFIG_BLE_SMP_ENABLE=y
-	CONFIG_BT_ACL_CONNECTIONS=1
-	CONFIG_SMP_ENABLE=y
-	CONFIG_BT_RESERVE_DRAM=0x10000
-	
-When building a BLE client or server app, the `mcconfig` tool enables the ESP-IDF BLE components by setting the corresponding option:
+>**Note:** BLE options can be further customized by the host app, if necessary, by providing a pathname to a directory containing custom sdkconfig defaults entries in the application manifest. Refer to the [manifest](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/manifest.md) documentation for details. For example, the `CONFIG_BT_NIMBLE_MAX_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
 
-	CONFIG_BT_ENABLED=y
-
-When building a BLE client app, the `CONFIG_GATTC_ENABLE` option is also set:
-
-	CONFIG_GATTC_ENABLE=y
-
-When building a BLE server app, the `CONFIG_GATTS_ENABLE` option is also set:
-
-	CONFIG_GATTS_ENABLE=y
-
->**Note:** BLE options can be further customized, if necessary, by editing the `sdkconfig.defaults` file before building the host app. For example, the `CONFIG_BT_ACL_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
-
-Once any sdkconfig.defaults file changes have been made, build the [scanner](../../../examples/network/ble/scanner) BLE app for the ESP32 platform:
+To build BLE apps using the legacy Bluedroid implementation, set the `ESP32_BLUEDROID` build environment variable to `1`. This environment variable can be set on the `mcconfig` command line for convenience:
 
 	cd $MODDABLE/examples/network/ble/scanner
-	mcconfig -d -m -p esp32
+	ESP32_BLUEDROID=1 mcconfig -d -m -p esp32
+
 
 <a id="geckoplatform"></a>
 ## BLE Apps on Blue Gecko Platform

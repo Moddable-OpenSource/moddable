@@ -43,7 +43,7 @@
 #include "mc.defines.h"
 
 #if ESP32
-	#include "rom/ets_sys.h"
+	#include "esp32/rom/ets_sys.h"
 	#include "nvs_flash/include/nvs_flash.h"
 	#include "esp_partition.h"
 	#include "esp_wifi.h"
@@ -729,7 +729,7 @@ void fxReceiveLoop(void)
 {
 	static const char *piBegin = "\r\n<?xs.";
 	static const char *tagEnd = ">\r\n";
-	static txMachine* current = NULL;
+	static txMachine* current = NULL;	
 	static uint8_t state = 0;
 	static uint16_t binary = 0;
 	static DebugFragment fragment = NULL;
@@ -1193,6 +1193,11 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #if ESP32
 			the->echoBuffer[the->echoOffset++] = '3';
 			the->echoBuffer[the->echoOffset++] = '2';
+#if kCPUESP32S2
+			the->echoBuffer[the->echoOffset++] = '-';
+			the->echoBuffer[the->echoOffset++] = 's';
+			the->echoBuffer[the->echoOffset++] = '2';
+#endif
 #endif
 			break;
 

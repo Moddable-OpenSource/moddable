@@ -179,8 +179,8 @@ extern int modTimersNext(void);
 #else
 	#define modCriticalSectionDeclare
 	extern portMUX_TYPE gCriticalMux;
-	#define modCriticalSectionBegin() vTaskEnterCritical(&gCriticalMux)
-	#define modCriticalSectionEnd() vTaskExitCritical(&gCriticalMux)
+	#define modCriticalSectionBegin() vPortEnterCritical(&gCriticalMux)
+	#define modCriticalSectionEnd() vPortExitCritical(&gCriticalMux)
 #endif
 
 /*
@@ -542,6 +542,17 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
+
+/* CPU */
+
+#if ESP32 == 2
+	#define kCPUESP32S2 1
+	#define kTargetCPUCount 1
+#elif ESP32 == 1 
+	#define kTargetCPUCount 2
+#else
+	#define kTargetCPUCount 1
+#endif
 
 #ifdef __cplusplus
 }

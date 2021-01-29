@@ -1041,8 +1041,12 @@ export default class extends Tool {
 			this.createFolder(this.modulesPath, folder);
 
 		if (this.platform == "esp32") {
-			if (undefined === this.environment.SDKCONFIGPATH)
-				this.environment.SDKCONFIGPATH = this.buildPath + this.slash + "devices" + this.slash + "esp32" + this.slash + "xsProj";
+			if (undefined === this.environment.SDKCONFIGPATH) {
+				if (undefined === this.environment.ESP32_SUBCLASS)
+					this.environment.SDKCONFIGPATH = this.buildPath + this.slash + "devices" + this.slash + "esp32" + this.slash + "xsProj-esp32";
+				else
+					this.environment.SDKCONFIGPATH = this.buildPath + this.slash + "devices" + this.slash + "esp32" + this.slash + "xsProj-" + this.environment.ESP32_SUBCLASS;
+			}
 		}
 		
 		if ((this.platform == "x-android") || (this.platform == "x-android-simulator")) {

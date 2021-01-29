@@ -25,7 +25,7 @@ static void doStatic(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w
 		PocoDimension tw = w;
 		while (tw--) {
 			if (!r)
-				r = c_rand() & 0x00ffffff;
+				r = c_rand() & 0x0fffffff;
 			*dst++ = sr->colors[r & 0x0F];
 			r >>= 4;
 		}

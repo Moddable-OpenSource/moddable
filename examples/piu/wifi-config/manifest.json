@@ -89,6 +89,14 @@
 				"rotation": 180
 			}
 		},
+		"esp32/kaluga": {
+			"creation":{
+				"static": 50000
+			},
+			"config": {
+				"rotation": 180
+			}
+		},
         "...": {
             "error": "unsupported platform"
         }

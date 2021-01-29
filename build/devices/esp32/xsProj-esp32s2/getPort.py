@@ -21,10 +21,14 @@
 
 import sys
 import io
-sys.path.append(sys.argv[1])
-from idf import get_default_serial_port
+import serial.tools.list_ports
 from io import BytesIO as StringIO
-sys.stdout = StringIO()
-port = get_default_serial_port()
-sys.stdout = sys.__stdout__
-print(port),
+
+# Same logic as used by idf.py, to ensure same port is chosen for serial2xsbug
+ports = list(reversed(sorted(p.device for p in serial.tools.list_ports.comports())))
+length = len(ports)
+
+if length > 0:
+    sys.stdout = StringIO()
+    sys.stdout = sys.__stdout__
+    print(ports[0]),

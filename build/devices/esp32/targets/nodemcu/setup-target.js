@@ -21,6 +21,16 @@
 import Button from "button";
 import LED from "led";
 
+class Flash {
+	constructor(options) {
+		return new Button({
+			...options,
+			pin: 0,
+			invert: true
+		});
+	}
+}
+					 
 globalThis.Host = {
 	LED: {
 		Default: class {
@@ -33,15 +43,8 @@ globalThis.Host = {
 		}
 	},
 	Button: {
-		Default: class {
-			constructor(options) {
-				return new Button({
-					...options,
-					pin: 0,
-					invert: true
-				});
-			}
-		}
+		Default: Flash,
+		Flash
 	}
 };
 Object.freeze(Host, true);

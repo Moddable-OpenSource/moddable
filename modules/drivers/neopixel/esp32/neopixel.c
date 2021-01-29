@@ -102,7 +102,6 @@ static void startNext(int channel);
 static void doneOnChannel(rmt_channel_t channel, void *arg);
 void fillHalfRMTBuffer(pixel_settings_t *px);
 void startOnChannel(pixel_settings_t *px, int channel);
-//void copyPixelData(pixel_settings_t *px);
 static void copyPixelData(pixel_settings_t *px);
 
 

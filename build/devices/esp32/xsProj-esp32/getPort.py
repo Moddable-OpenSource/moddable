@@ -16,16 +16,19 @@
 #   You should have received a copy of the GNU General Public License
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
+#   getPort.py: utility to determine what serial port idf.py will choose automatically if no ESPPORT is specified.
+#
 
-set(COMPONENT_SRCS "main.c")
-set(COMPONENT_ADD_INCLUDEDIRS $ENV{MODDABLE}/xs/platforms/esp $ENV{MODDABLE}/xs/includes $ENV{MODDABLE}/modules/base/instrumentation)
+import sys
+import io
+import serial.tools.list_ports
+from io import BytesIO as StringIO
 
-register_component()
+# Same logic as used by idf.py, to ensure same port is chosen for serial2xsbug
+ports = list(reversed(sorted(p.device for p in serial.tools.list_ports.comports())))
+length = len(ports)
 
-if (mxDebug EQUAL "1")
-    target_compile_options(${COMPONENT_TARGET} PRIVATE -DmxDebug=1)
-endif()
-if (DEBUGGER_SPEED)
-    target_compile_options(${COMPONENT_TARGET} PRIVATE -DDEBUGGER_SPEED=${DEBUGGER_SPEED})
-endif()
-target_link_libraries(${COMPONENT_TARGET} ${CMAKE_BINARY_DIR}/xs_esp32.a)
+if length > 0:
+    sys.stdout = StringIO()
+    sys.stdout = sys.__stdout__
+    print(ports[0]),

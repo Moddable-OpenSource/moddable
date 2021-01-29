@@ -121,7 +121,11 @@ export class MakeFile extends FILE {
 		// Read base debug build sdkconfig.defaults file
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
-		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj";
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
+		if (undefined === tool.environment.ESP32_SUBCLASS)
+			baseConfigDirectory += "esp32";
+		else
+			baseConfigDirectory += tool.environment.ESP32_SUBCLASS;
 		let baseConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
 		let baseConfigLength = baseConfig.length;
@@ -214,20 +218,20 @@ export class MakeFile extends FILE {
 			if (client || server) {
 				options.push({ name: "CONFIG_BT_ENABLED", value: "y" });
 				if (nimble) {
-					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "y" });
-					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "n" });
 					options.push({ name: "CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_SM_LEGACY", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_SM_SC", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
-					options.push({ name: "CONFIG_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_NIMBLE_SM_LEGACY", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_SM_SC", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
 				}
 				else {
-					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "n" });
-					options.push({ name: "CONFIG_BLE_SMP_ENABLE", value: "y" });
-					options.push({ name: "CONFIG_GATTS_ENABLE", value: (server ? "y" : "n") });
-					options.push({ name: "CONFIG_GATTC_ENABLE", value: (client ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BT_BLE_SMP_ENABLE", value: "y" });
+					options.push({ name: "CONFIG_BT_GATTS_ENABLE", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_GATTC_ENABLE", value: (client ? "y" : "n") });
 				}
 			} else {
 				options.push({ name: "CONFIG_BT_ENABLED", value: "n" });
@@ -1347,6 +1351,10 @@ export class Tool extends TOOL {
 		if ("esp32" == this.platform) {
 			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
 			path += bluedroid ? this.platform : "nimble";
+/**/			let subclass = this.getenv("ESP32_SUBCLASS");
+/**/			if (undefined === subclass)
+/**/				subclass = "esp32";
+/**/			this.environment.ESP32_SUBCLASS = subclass;
 		}
 		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
 			path += "sim";
