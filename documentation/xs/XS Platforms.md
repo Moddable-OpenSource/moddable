@@ -321,20 +321,6 @@ XS calls `fxFreeSlots` to free the `slots` system memory block. Usually implemen
 
 --
 
-- `void fxMarkHost(txMachine* the, txMarkRoot markRoot)`
-
-XS calls `fxMarkHost` at the beginning of a garbage collection. The platform can use the `markRoot` callback to mark its own roots:
-
-	(*markRoot)(the, &root);
-
---
-
-- `void fxSweepHost(txMachine* the)`
-
-XS calls `fxSweepHost` at the end of a garbage collection. 
-
---
-
 ### Modules
 
 On platforms that support several ways to get modules, the implementation of `fxFindModule` and `fxLoadModule` can be complex. On microcontrollers, where all modules are prepared or preloaded, the implementation of `fxFindModule`and `fxLoadModule` can be simple enough, as demonstrated by the code snippets here under.
