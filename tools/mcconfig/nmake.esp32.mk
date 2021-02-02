@@ -362,6 +362,9 @@ clean:
 	echo $(IDF_BUILD_DIR)
 	if exist $(IDF_BUILD_DIR) del /s/q/f $(IDF_BUILD_DIR)\*.* > NUL
 	if exist $(IDF_BUILD_DIR) rmdir /s/q $(IDF_BUILD_DIR)
+	echo $(CONFIGDIR)
+	if exist $(CONFIGDIR) del /s/q/f $(CONFIGDIR)\*.* > NUL
+	if exist $(CONFIGDIR) rmdir /s/q $(CONFIGDIR)
 	echo $(PROJ_DIR)
 	if exist $(PROJ_DIR) del /s/q/f $(PROJ_DIR)\*.* > NUL
 	if exist $(PROJ_DIR) rmdir /s/q $(PROJ_DIR)

@@ -427,6 +427,7 @@ clean:
 	-rm -rf $(LIB_DIR) 2>/dev/null
 	-rm -rf $(IDF_BUILD_DIR) 2>/dev/null
 	-rm -rf $(PROJ_DIR) 2>/dev/null
+	-rm -rf $(CONFIGDIR) 2>/dev/null
 	-rm -f $(IDF_BUILD_DIR)/CMakeCache.txt
 
 erase_flash:
