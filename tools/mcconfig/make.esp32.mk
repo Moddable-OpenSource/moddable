@@ -348,7 +348,6 @@ endif
 
 SDKCONFIGPATH ?= $(PROJ_DIR)
 SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.defaults
-SDKCONFIGPRIOR = $(SDKCONFIGPATH)/sdkconfig.defaults.prior
 SDKCONFIG_H = $(SDKCONFIG_H_DIR)/sdkconfig.h
 
 
@@ -435,16 +434,8 @@ erase_flash:
 	
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
-	if ! test -s $(SDKCONFIGPRIOR) ; then cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); fi
-	if ! test -s $(IDF_BUILD_DIR)/; then rm -f $(SDKCONFIGPRIOR); fi
-	if ! test -s $(SDKCONFIG_H) \
-		|| ! cmp -s "$(SDKCONFIGPRIOR)" "$(SDKCONFIG_FILE)" \
-		|| ! cmp -s "$(PROJ_DIR)/sdkconfig" "$(SDKCONFIGPATH)/sdkconfig.old"; then \
-		rm $(PROJ_DIR)/sdkconfig; \
-		cp $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR); \
-		echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD); \
-		if test -s $(PROJ_DIR)/sdkconfig.old ; then mv $(PROJ_DIR)/sdkconfig.old $(SDKCONFIGPATH)/sdkconfig.old; fi ;\
-	fi
+	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
+	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

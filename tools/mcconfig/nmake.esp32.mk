@@ -455,25 +455,11 @@ DEPLOY_END:
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE)
-	if exist $(TMP_DIR)\_s.tmp del $(TMP_DIR)\_s.tmp
-	if exist $(TMP_DIR)\_fc.tmp del $(TMP_DIR)\_fc.tmp
-!IF !EXIST($(SDKCONFIGPRIOR))
-	copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR)
-!ENDIF
-!IF !EXIST($(IDF_BUILD_DIR)\)
-	if exist $(SDKCONFIGPRIOR) del $(SDKCONFIGPRIOR)
-	echo 1 > $(TMP_DIR)\_s.tmp
-!ENDIF
-	if exist $(SDKCONFIG_H) ( echo 1 > nul ) else ( echo 1 > $(TMP_DIR)\_s.tmp )
-	-if exist $(SDKCONFIGPRIOR) (fc $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR) > $(TMP_DIR)\_fc.tmp)
-	-if exist $(TMP_DIR)\_fc.tmp ((find "CONFIG_" $(TMP_DIR)\_fc.tmp > nul) && echo 1 > $(TMP_DIR)\_s.tmp )
-	if exist $(TMP_DIR)\_s.tmp (if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig)
-	if exist $(TMP_DIR)\_s.tmp (copy $(SDKCONFIG_FILE) $(SDKCONFIGPRIOR))
 	@echo Reconfiguring ESP-IDF...
+	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 
 	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) -B $(IDF_BUILD_DIR) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
 	COPY /B $(SDKCONFIG_H)+,, $(SDKCONFIG_H)
-	if exist $(PROJ_DIR)\sdkconfig.old (copy $(PROJ_DIR)\sdkconfig.old $(SDKCONFIGPATH)\sdkconfig.old)
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
