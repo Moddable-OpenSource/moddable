@@ -122,13 +122,22 @@ export class MakeFile extends FILE {
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
-		if (undefined === tool.environment.ESP32_SUBCLASS)
+		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : "release") + tool.slash + "config-";
+
+		if (undefined === tool.environment.ESP32_SUBCLASS) {
 			baseConfigDirectory += "esp32";
-		else
+			outputConfigDirectory += "esp32";
+		}else{
 			baseConfigDirectory += tool.environment.ESP32_SUBCLASS;
+			outputConfigDirectory += tool.environment.ESP32_SUBCLASS;
+		}
+			
 		let baseConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
 		let baseConfigLength = baseConfig.length;
+
+		tool.createDirectory(outputConfigDirectory);
+		tool.setenv("CONFIGDIR", outputConfigDirectory);
 
 		// For release builds merge base sdkconfig.defaults.release file
 		if (tool.debug === false) {
@@ -246,7 +255,7 @@ export class MakeFile extends FILE {
 		}
 		
 		// Write the result, if it has changed
-		let buildConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.mc";
+		let buildConfigFile = outputConfigDirectory + tool.slash + "sdkconfig.mc";
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
 		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
 			const oldConfig = tool.readFileString(buildConfigFile);
