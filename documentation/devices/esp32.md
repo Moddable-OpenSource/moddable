@@ -1,14 +1,16 @@
 # Using the Moddable SDK with ESP32
 
 Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: January 29, 2021
+Revised: February 2, 2021
 
-This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) with the Moddable SDK.
+This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) and [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2) with the Moddable SDK.
 
 ## Table of Contents
 
 * [Overview](#overview)
-* [Platforms](#platforms) 
+* [Platforms](#platforms)
+	* [ESP32](#platforms-esp32)
+	* [ESP32-S2](#platforms-esp32-s2)
 * Setup instructions
 
 	| [![Apple logo](./../assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./../assets/moddable/win-logo.png)](#win) | [![Linux logo](./../assets/moddable/lin-logo.png)](#lin) |
@@ -36,10 +38,13 @@ When building with `mcconfig`, you specify your device target by providing the *
 mcconfig -d -m -p esp32/moddable_two
 ```
 
-A list of available ESP32 subplatforms and their platform identifiers is provided in the **Platforms** section below.
+A list of available ESP32 and ESP32-S2 subplatforms and their platform identifiers is provided in the **Platforms** section below.
 
 <a id="platforms"></a>
 ## Platforms
+
+<a id="platforms-esp32"></a>
+### ESP32
 
 ESP32 has the following features:
 
@@ -52,7 +57,7 @@ ESP32 has the following features:
 
 The Moddable SDK supports many devices built on ESP32. The following table lists each device, its platform identifier, a list of key features specific to the device, and links to additional resources.
 
-| Name | Platform identifier | Key feaures | Links |
+| Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 | <img src="./../assets/devices/moddable-two.png" width=125><BR>Moddable Two | `esp32/moddable_two` | **2.4" IPS display**<BR>240 x 320 QVGA<BR>16-bit color<BR>Capacitive touch<BR><BR>20 External pins  | <li>[Moddable Two developer guide](./moddable-two.md)</li><li>[Moddable product page](https://www.moddable.com/purchase.php)</li> |
 | ![ESP32](./../assets/devices/esp32.png)<BR>Node MCU ESP32 | `esp32/nodemcu` | | 
@@ -63,6 +68,24 @@ The Moddable SDK supports many devices built on ESP32. The following table lists
 |  <img src="https://cdn.sparkfun.com//assets/parts/1/1/5/6/4/13907-01.jpg" width=125><BR>ESP32 Thing | `esp32/esp32_thing` | | <li>[Product page](https://www.sparkfun.com/products/13907)</li> |
 |  <img src="https://cdn.sparkfun.com//assets/parts/1/3/2/0/9/14917_-_356-ESP-WROVER-KIT_3_Edit.jpg" width=125><BR>ESP32 WRover Kit | `esp32/wrover_kit` | | <li>[Product page](https://www.adafruit.com/product/3384)</li>
 | Moddable Zero | `esp32/moddable_zero` | | <li>[Wiring guide](../displays/wiring-guide-generic-2.4-spi-esp32.md)</li> |
+
+<a id="platforms-esp32-s2"></a>
+## ESP32-S2
+
+ESP32-S2 has the following features:
+
+- 240 MHz processor
+- Wi-Fi
+- 320 KB RAM
+- External SRAM support
+- 4 MB flash on popular modules
+
+The Moddable SDK supports two ESP32-S2 development kits from Espressif. The following table lists each device, its platform identifier, a list of key features specific to the device, and links to additional resources.
+
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+|  <img src="https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png" width=125><BR>Kaluga | `esp32/kaluga` |  **3.2" LCD display**<BR>320 x 240 QVGA<BR>16-bit color<BR><BR>2 MB SRAM<BR>Speaker and Audio Playback<BR>Touch Pad Panel<BR>NeoPixel LED | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit.html)</li> |
+|  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/_images/esp32-s2-saola-1-v1.2-isometric.png" width=125><BR>Saola<BR>(WROOM & WROVER versions) | `esp32/saola_wroom` <BR> `esp32/saola_wrover`| NeoPixel LED<BR>2 MB SRAM (WROVER version only)| <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)</li> |
 
 <a id="mac"></a>
 ## macOS
