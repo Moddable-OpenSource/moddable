@@ -184,7 +184,7 @@ export default CountingLog;
 
 When this module is preloaded, the value of the `count` variable is frozen in ROM as part of the module's closure. As with objects, XS allows such variables to be modified by storing the modification in RAM. It achieves this by maintaining a pointer in RAM for each variable in ROM that may be modified. Each pointer takes up 4 bytes on a typical 32-bit microcontroller.
 
-Use `const` to declare module variables that are not intended to be modified at runtime. Declaring a module variable with `const` conveys to XS that the variable cannot be modified. This saves RAM by eliminating the pointer otherwise needed to allow tthe variable to be modified.
+Use `const` to declare module variables that are not intended to be modified at runtime. Declaring a module variable with `const` conveys to XS that the variable cannot be modified. This saves RAM by eliminating the pointer otherwise needed to allow the variable to be modified.
 
 ## What Cannot be Preloaded
 Preloading occurs on the build machine, not the target device. That limits the operations that may be performed during preload. 
