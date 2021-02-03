@@ -980,6 +980,8 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 		case XS_CALLBACK_X_KIND:
 		case XS_CODE_KIND:
 		case XS_CODE_X_KIND:
+			if (aProperty->value.code.closures)
+				fxEchoPropertyInstance(the, theList, "(closures)", -1, C_NULL, XS_NO_ID, aProperty->flag, aProperty->value.code.closures);
 			fxEchoProperty(the, aProperty, theList, "(function)", -1, C_NULL);
 			aProperty = aProperty->next;
 			if ((aProperty->kind == XS_HOME_KIND) && (aProperty->value.home.object))
@@ -1034,6 +1036,8 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 		case XS_GLOBAL_KIND:
 			break;
 		case XS_PROMISE_KIND:
+           	fxEchoProperty(the, aProperty, theList, "(promise)", -1, C_NULL);
+			aProperty = aProperty->next;
 			break;
 		case XS_MAP_KIND:
 			aProperty = aProperty->next;
@@ -1343,6 +1347,14 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 			}
 			else
 					fxEcho(the, " value=\"NULL\"/>");
+			break;
+		case XS_PROMISE_KIND:
+			switch (theProperty->value.integer) {
+			case mxUndefinedStatus: fxEcho(the, " value=\"?\"/>"); break;
+			case mxPendingStatus: fxEcho(the, " value=\"pending\"/>"); break;
+			case mxFulfilledStatus: fxEcho(the, " value=\"fulfilled\"/>"); break;
+			case mxRejectedStatus: fxEcho(the, " value=\"rejected\"/>"); break;
+			}
 			break;
 		case XS_KEY_KIND:
 		case XS_KEY_X_KIND:
