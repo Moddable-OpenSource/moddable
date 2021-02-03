@@ -767,6 +767,7 @@ export class TSConfigFile extends FILE {
 		let json = {
 			compilerOptions: {
 				baseUrl: "./",
+				forceConsistentCasingInFileNames: true,
 				module: "es2020",
 				outDir: tool.modulesPath,
 				paths: {
