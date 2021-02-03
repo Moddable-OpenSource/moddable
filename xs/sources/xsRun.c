@@ -716,6 +716,11 @@ XS_CODE_JUMP:
 		XS_CODE_RUN_TAIL_ALL:
 			if (mxFrameTarget->kind)
 				goto XS_CODE_RUN_ALL;
+#ifdef mxDebug
+			slot = mxStack + offset + 4;
+			if (!fxIsCallable(the, slot))
+				goto XS_CODE_RUN_ALL;
+#endif
 			variable = mxFrameEnd - 6 - offset;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
