@@ -24,15 +24,13 @@
 	to do:
 */
 
-#include "twi.h"			// i2c
-
 #include "xsmc.h"			// xs bindings for microcontroller
-#ifdef __ets__
-	#include "xsHost.h"		// esp platform support
-#else
-	#error - unsupported platform
-#endif
 #include "mc.xs.h"			// for xsID_* values
+#include "xsHost.h"		// esp platform support
+
+#ifdef __ets__
+	#include "twi.h"			// i2c
+#endif
 
 #include "builtinCommon.h"
 
@@ -79,7 +77,7 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	if (usingPins((uint8_t)data, (uint8_t)clock))
 		;
-	else if (!builtinArePinsFree((1 << data) | (1 << clock)))
+	else if (!builtinIsPinFree(data) || !builtinIsPinFree(clock))
 		xsRangeError("inUse");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
@@ -116,7 +114,8 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->next = gI2C;
 	gI2C = i2c;
 
-	builtinUsePins((1 << data) | (1 << clock));
+	builtinUsePin(data);
+	builtinUsePin(clock);
 }
 
 void _xs_i2c_destructor(void *data)
@@ -140,8 +139,10 @@ void _xs_i2c_destructor(void *data)
 		}
 	}
 
-	if (!usingPins(i2c->data, i2c->clock))
-		builtinFreePins((1 << i2c->data) | (1 << i2c->clock));
+	if (!usingPins(i2c->data, i2c->clock)) {
+		builtinFreePin(i2c->data);
+		builtinFreePin(i2c->clock);
+	}
 
 	c_free(i2c);
 

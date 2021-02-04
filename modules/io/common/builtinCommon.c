@@ -18,47 +18,50 @@
  *
  */
 
-#include "user_interface.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
+#include "xsHost.h"
+#include "builtinCommon.h"
+
+
 #ifdef __ets__
-	#include "xsHost.h"		// esp platform support
+	static uint32_t gDigitalAvailable[kPinBanks] = {
+		(1 <<  0) |
+		(1 <<  1) |
+		(1 <<  2) |
+		(1 <<  3) |
+		(1 <<  4) |
+		(1 <<  5) |
+		(1 << 12) |
+		(1 << 13) |
+		(1 << 14) |
+		(1 << 15) |
+		(1 << 16)
+	};
+#elif ESP32
+//@@
 #else
 	#error - unsupported platform
 #endif
-#include "builtinCommon.h"
 
-static uint32_t gDigitalAvailable =
-	(1 <<  0) |
-	(1 <<  1) |
-	(1 <<  2) |
-	(1 <<  3) |
-	(1 <<  4) |
-	(1 <<  5) |
-	(1 << 12) |
-	(1 << 13) |
-	(1 << 14) |
-	(1 << 15) |
-	(1 << 16);
-
-uint8_t builtinArePinsFree(uint32_t pins)
+uint8_t builtinArePinsFree(uint8_t bank, uint32_t pins)
 {
-	return (pins == (gDigitalAvailable & pins)) ? 1 : 0;
+	return (pins == (gDigitalAvailable[bank] & pins)) ? 1 : 0;
 }
 
-uint8_t builtinUsePins(uint32_t pins)
+uint8_t builtinUsePins(uint8_t bank, uint32_t pins)
 {
-	if (pins != (gDigitalAvailable & pins))
+	if (pins != (gDigitalAvailable[bank] & pins))
 		return 0;
 
-	gDigitalAvailable &= ~pins;
+	gDigitalAvailable[bank] &= ~pins;
 	return 1;
 }
 
-void builtinFreePins(uint32_t pins)
+void builtinFreePins(uint8_t bank, uint32_t pins)
 {
-	gDigitalAvailable |= pins;
+	gDigitalAvailable[bank] |= pins;
 }
 
 uint8_t builtinHasCallback(xsMachine *the, xsIndex id)

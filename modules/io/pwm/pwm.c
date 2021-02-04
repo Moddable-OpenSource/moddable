@@ -22,14 +22,13 @@
 	PWM - uing ESP8266 Arduino Core
 */
 
-#include "Arduino.h"
-
 #include "xsmc.h"			// xs bindings for microcontroller
+#include "xsHost.h"		// esp platform support
+
 #ifdef __ets__
-	#include "xsHost.h"		// esp platform support
-#else
-	#error - unsupported platform
+	#include "Arduino.h"
 #endif
+
 #include "mc.xs.h"			// for xsID_* values
 
 #include "builtinCommon.h"
@@ -53,7 +52,7 @@ void xs_pwm_constructor(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
 	pin = xsmcToInteger(xsVar(0));
 
-    if (!builtinArePinsFree((1 << pin)))
+    if (!builtinIsPinFree(pin))
 		xsRangeError("in use");
 
     if (xsmcHas(xsArg(0), xsID_hz)) {
@@ -86,7 +85,7 @@ void xs_pwm_constructor(xsMachine *the)
     xsmcSetHostData(xsThis, pwm);
 
     analogWrite(pin, 0);
-    builtinUsePins(1 << pin);
+    builtinUsePin(pin);
 }
 
 void xs_pwm_destructor(void *data)
@@ -96,7 +95,7 @@ void xs_pwm_destructor(void *data)
 
     analogWrite(pwm->pin, 0);
     
-    builtinFreePins(1 << pwm->pin);
+    builtinFreePin(pwm->pin);
     gFrequencyOwners &= ~(1 << pwm->pin);
 
     c_free(pwm);

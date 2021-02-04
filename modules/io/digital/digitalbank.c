@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -24,68 +24,67 @@
 	To do:
 */
 
-#include "user_interface.h"	// esp8266 functions
-
 #include "xsmc.h"			// xs bindings for microcontroller
-#ifdef __ets__
-	#include "xsHost.h"		// esp platform support
-#else
-	#error - unsupported platform
-#endif
+#include "xsHost.h"			// esp platform support
 #include "mc.xs.h"			// for xsID_* values
 
 #include "builtinCommon.h"
 
-#define GPCD   2  // DRIVER 0: normal, 1: open drain
+#ifdef __ets__
+	#include "user_interface.h"	// esp8266 functions
 
-#define GPIO_INIT_OUTPUT(index, opendrain) \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) |= (1 << index);					/* enable for write */ \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~((opendrain ? 0 : 1) << GPCD);	/* normal (not open-drain) */ \
 
-#define GPIO_INIT_INPUT(index) \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) &= ~(1 << index);					/* disable write (e.g. read) */ \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~(1 << GPCD);	/* normal (not open-drain) */
+	#define GPCD   2  // DRIVER 0: normal, 1: open drain
 
-#define GPIO_CLEAR(index) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, 1 << index))
-#define GPIO_SET(index) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, 1 << index))
+	#define GPIO_INIT_OUTPUT(index, opendrain) \
+			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) |= (1 << index);					/* enable for write */ \
+			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~((opendrain ? 0 : 1) << GPCD);	/* normal (not open-drain) */ \
 
-static const uint32_t gPixMuxAddr[] ICACHE_RODATA_ATTR = {
-	PERIPHS_IO_MUX_GPIO0_U,
-	PERIPHS_IO_MUX_U0TXD_U,
-	PERIPHS_IO_MUX_GPIO2_U,
-	PERIPHS_IO_MUX_U0RXD_U,
-	PERIPHS_IO_MUX_GPIO4_U,
-	PERIPHS_IO_MUX_GPIO5_U,
-	PERIPHS_IO_MUX_SD_CLK_U,
-	PERIPHS_IO_MUX_SD_DATA0_U,
-	PERIPHS_IO_MUX_SD_DATA1_U,
-	PERIPHS_IO_MUX_SD_DATA2_U,
-	PERIPHS_IO_MUX_SD_DATA3_U,
-	PERIPHS_IO_MUX_SD_CMD_U,
-	PERIPHS_IO_MUX_MTDI_U,
-	PERIPHS_IO_MUX_MTCK_U,
-	PERIPHS_IO_MUX_MTMS_U,
-	PERIPHS_IO_MUX_MTDO_U
-};
+	#define GPIO_INIT_INPUT(index) \
+			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) &= ~(1 << index);					/* disable write (e.g. read) */ \
+			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~(1 << GPCD);	/* normal (not open-drain) */
 
-static const uint8_t gPixMuxValue[] ICACHE_RODATA_ATTR = {
-	FUNC_GPIO0,
-	FUNC_GPIO1,
-	FUNC_GPIO2,
-	FUNC_GPIO3,
-	FUNC_GPIO4,
-	FUNC_GPIO5,
-	FUNC_GPIO6,
-	FUNC_GPIO7,
-	FUNC_GPIO8,
-	FUNC_GPIO9,
-	FUNC_GPIO10,
-	FUNC_GPIO11,
-	FUNC_GPIO12,
-	FUNC_GPIO13,
-	FUNC_GPIO14,
-	FUNC_GPIO15
-};
+	#define GPIO_CLEAR(index) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, 1 << index))
+	#define GPIO_SET(index) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, 1 << index))
+
+	static const uint32_t gPixMuxAddr[] ICACHE_RODATA_ATTR = {
+		PERIPHS_IO_MUX_GPIO0_U,
+		PERIPHS_IO_MUX_U0TXD_U,
+		PERIPHS_IO_MUX_GPIO2_U,
+		PERIPHS_IO_MUX_U0RXD_U,
+		PERIPHS_IO_MUX_GPIO4_U,
+		PERIPHS_IO_MUX_GPIO5_U,
+		PERIPHS_IO_MUX_SD_CLK_U,
+		PERIPHS_IO_MUX_SD_DATA0_U,
+		PERIPHS_IO_MUX_SD_DATA1_U,
+		PERIPHS_IO_MUX_SD_DATA2_U,
+		PERIPHS_IO_MUX_SD_DATA3_U,
+		PERIPHS_IO_MUX_SD_CMD_U,
+		PERIPHS_IO_MUX_MTDI_U,
+		PERIPHS_IO_MUX_MTCK_U,
+		PERIPHS_IO_MUX_MTMS_U,
+		PERIPHS_IO_MUX_MTDO_U
+	};
+
+	static const uint8_t gPixMuxValue[] ICACHE_RODATA_ATTR = {
+		FUNC_GPIO0,
+		FUNC_GPIO1,
+		FUNC_GPIO2,
+		FUNC_GPIO3,
+		FUNC_GPIO4,
+		FUNC_GPIO5,
+		FUNC_GPIO6,
+		FUNC_GPIO7,
+		FUNC_GPIO8,
+		FUNC_GPIO9,
+		FUNC_GPIO10,
+		FUNC_GPIO11,
+		FUNC_GPIO12,
+		FUNC_GPIO13,
+		FUNC_GPIO14,
+		FUNC_GPIO15
+	};
+#endif
 
 enum {
 	kDigitalInput = 0,
@@ -108,6 +107,7 @@ struct DigitalRecord {
 	uint16_t	triggered;
 	uint16_t	rises;
 	uint16_t	falls;
+	uint8_t		bank;
 	xsMachine	*the;
 	xsSlot		*onReadable;
 	struct DigitalRecord *next;
@@ -133,13 +133,23 @@ void xs_digitalbank_constructor(xsMachine *the)
 	Digital digital;
 	int hasOnReadable = 0, mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
+	uint8_t bank = 0;
 	xsSlot tmp;
+
+#if kPinBanks > 1
+	if (xsmcHas(xsArg(0), xsID_bank)) {
+		uint32_t b;
+		xsmcGet(tmp, xsArg(0), xsID_bank);
+		b = xsmcToInteger(tmp);
+		if (b >= kPinBanks)
+			xsUnknownError("invalid bank");
+		bank = (uint8_t)b;
+	}
+#endif
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
 	pins = xsmcToInteger(tmp);
-	if (pins & ~0x1FFFF)
-		xsRangeError("invalid pins");
-	if (!builtinArePinsFree(pins))
+	if (!builtinArePinsFree(bank, pins))
 		xsUnknownError("in use");
 
 	xsmcGet(tmp, xsArg(0), xsID_mode);
@@ -273,7 +283,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 	}
 
 	digital->pins = pins;
-	builtinUsePins(pins);
+	digital->bank = bank;
+	builtinUsePins(bank, pins);
 }
 
 void xs_digitalbank_destructor(void *data)
@@ -312,7 +323,7 @@ void xs_digitalbank_destructor(void *data)
 		if (NULL == gDigitals)
 			ETS_GPIO_INTR_DISABLE();
 
-		builtinFreePins(digital->pins);
+		builtinFreePins(digital->bank, digital->pins);
 	}
 
 	builtinCriticalSectionEnd();
@@ -381,7 +392,7 @@ void ICACHE_RAM_ATTR digitalISR(void *ignore)
 		if (!(walker->pins & status))
 			continue;
 
-		if ((levels & walker->rises) || (~levels & walker->falls)) {
+		if ((levels & walker->rises) || (~levels & walker->falls)) {		// mask rises & falls with status? otherwise may be false trigger?
 			walker->triggered |= levels;
 			doUpdate = 1;
 		}
