@@ -25,27 +25,28 @@
 #define builtinUsePin(pin) builtinUsePins(pin >> 5, 1 << (pin & 0x1F))
 #define builtinFreePin(pin) builtinFreePins(pin >> 5, 1 << (pin & 0x1F))
 
-uint8_t builtinArePinsFree(uint8_t bank, uint32_t pin);
-uint8_t builtinUsePins(uint8_t bank, uint32_t pin);
-void builtinFreePins(uint8_t bank, uint32_t pin);
+uint8_t builtinArePinsFree(uint32_t bank, uint32_t pin);
+uint8_t builtinUsePins(uint32_t bank, uint32_t pin);
+void builtinFreePins(uint32_t bank, uint32_t pin);
 
 uint8_t builtinHasCallback(xsMachine *the, xsIndex id);
 uint8_t builtinGetCallback(xsMachine *the, xsIndex id, xsSlot *slot);
 
-#ifdef __ets__
+#if ESP32
+	#define kPinBanks (2)
+
+	extern portMUX_TYPE gCommonCriticalMux;
+	#define builtinCriticalSectionBegin() vPortEnterCritical(&gCommonCriticalMux)
+	#define builtinCriticalSectionEnd() vPortExitCritical(&gCommonCriticalMux)
+
+#elif defined(__ets__)
 	#define kPinBanks (1)
 
 	#define builtinCriticalSectionBegin() xt_rsil(0)
 	#define builtinCriticalSectionEnd() xt_rsil(15)
-#elif ESP32
-	#define kPinBanks (2)
-
-//@@
 #else
 	#error - unsupported platform
 #endif
-
-
 
 enum {
 	kIOFormatNumber = 1,

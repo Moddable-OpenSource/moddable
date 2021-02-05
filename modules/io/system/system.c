@@ -24,15 +24,18 @@
 
 #include "builtinCommon.h"
 
-extern void system_deep_sleep_instant(uint32 time_in_us);
+#if defined(__ets__) && !ESP32
+	extern void system_deep_sleep_instant(uint32_t time_in_us);
 
 static void deepSleepDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	system_deep_sleep_instant((uintptr_t)refcon);
 }
+#endif
 
 void xs_system_deepSleep(xsMachine *the)
 {
+#if defined(__ets__) && !ESP32
 	uint32_t us = 0;
 
 	if (xsmcArgc) {
@@ -43,14 +46,19 @@ void xs_system_deepSleep(xsMachine *the)
 		}
 	}
 	modMessagePostToMachine(the, NULL, 0, deepSleepDeliver, (void *)us);
+#endif
 }
 
 void xs_system_restart(xsMachine *the)
 {
+#if ESP32
+//2@
+#elif defined(__ets__)
 	system_restart();
 
 	while (1)
 		delay(1000);
+#endif
 }
 
 /*

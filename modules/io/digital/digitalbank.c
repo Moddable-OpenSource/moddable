@@ -19,9 +19,13 @@
  */
 
 /*
-	DigitalBank - uing ESP8266 hardware registers
+	DigitalBank - uing ESP8266 hardware registers and ESP32 hybrid of ESP-IDF and hardware registers
 
 	To do:
+
+		read not blocked on input instances, write not blocked on outpit instances
+		ESP8266 implementation assumes a single VM
+
 */
 
 #include "xsmc.h"			// xs bindings for microcontroller
@@ -30,9 +34,15 @@
 
 #include "builtinCommon.h"
 
-#ifdef __ets__
-	#include "user_interface.h"	// esp8266 functions
+#if ESP32
+	#include "driver/gpio.h"
 
+	#include "soc/gpio_caps.h"
+	#include "soc/gpio_periph.h"
+	#include "hal/gpio_hal.h"
+
+#elif defined(__ets__)
+	#include "user_interface.h"	// esp8266 functions
 
 	#define GPCD   2  // DRIVER 0: normal, 1: open drain
 
@@ -99,15 +109,20 @@ enum {
 	kDigitalEdgeFalling = 2,
 };
 
-#define kInvalidPin (255)
-
 struct DigitalRecord {
 	uint32_t	pins;
 	xsSlot		obj;
+	uint8_t		bank;
+	// fields after here only allocated if onReadable callback present
+#if ESP32
+	uint32_t	triggered;
+	uint32_t	rises;
+	uint32_t	falls;
+#else
 	uint16_t	triggered;
 	uint16_t	rises;
 	uint16_t	falls;
-	uint8_t		bank;
+#endif
 	xsMachine	*the;
 	xsSlot		*onReadable;
 	struct DigitalRecord *next;
@@ -120,9 +135,13 @@ static void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t m
 static void xs_digitalbank_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static Digital gDigitals;	// pins with onReadable callbacks
-static uint8_t gDigitalCallbackPending;
 
-static const xsHostHooks ICACHE_FLASH_ATTR xsDigitalBankHooks = {
+#if ESP32
+#elif defined(__ets__)
+	static uint8_t gDigitalCallbackPending;
+#endif
+
+static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 	xs_digitalbank_destructor,
 	xs_digitalbank_mark,
 	NULL
@@ -182,6 +201,17 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
+#if ESP32
+	if (bank && (~3 & pins) && ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
+		xsRangeError("invalid mode");		// input-only pins
+#elif defined(__ets__)
+	if (kDigitalInputPullUpDown == mode)
+		xsRangeError("invalid mode");		// unavailable
+
+	if ((16 == pin) && ((kDigitalInput != mode) && (kDigitalOutput != mode)))
+		xsRangeError("invalid mode");
+#endif
+
 	digital = c_malloc(hasOnReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
 		xsRangeError("no memory");
@@ -191,6 +221,37 @@ void xs_digitalbank_constructor(xsMachine *the)
 	digital->obj = xsThis;
 	xsRemember(digital->obj);
 
+#if ESP32
+	int lastPin = bank ? GPIO_NUM_MAX - 1 : 31;
+	for (pin = bank ? 32 : 0; pin <= lastPin; pin++) {
+		if (!(pins & (1 << (pin & 0x1f))))
+			continue;
+
+		gpio_pad_select_gpio(pin);
+		switch (mode) {
+			case kDigitalInput:
+			case kDigitalInputPullUp:
+			case kDigitalInputPullDown:
+			case kDigitalInputPullUpDown:
+				gpio_set_direction(pin, GPIO_MODE_INPUT);
+				if (kDigitalInputPullUp == mode)
+					gpio_set_pull_mode(pin, GPIO_PULLUP_ONLY);
+				else if (kDigitalInputPullDown == mode)
+					gpio_set_pull_mode(pin, GPIO_PULLDOWN_ONLY);
+				else if (kDigitalInputPullUpDown == mode)
+					gpio_set_pull_mode(pin, GPIO_PULLUP_PULLDOWN);
+				else
+					gpio_set_pull_mode(pin, GPIO_FLOATING);
+				break;
+
+			case kDigitalOutput:
+			case kDigitalOutputOpenDrain:
+				gpio_set_level(pin, 0);
+				gpio_set_direction(pin, (kDigitalOutputOpenDrain == mode) ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT);
+				break;
+		}
+	}
+#elif defined(__ets__)
 	for (pin = 0; pin < 17; pin++) {
 		if (!(pins & (1 << pin)))
 			continue;
@@ -209,9 +270,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 						*(volatile uint32_t *)gPixMuxAddr[pin] |= 1 << 6;
 				}
 				else if (16 == pin) {
-					if (kDigitalInput != mode)
-						xsRangeError("invalid mode");
-
 					WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
 								   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC and rtc_gpio0 connection
 
@@ -231,9 +289,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 					GPIO_CLEAR(pin);
 				}
 				else if (16 == pin) {
-					if (kDigitalOutputOpenDrain == mode)
-						xsRangeError("invalid mode");
-
 					WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
 								   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC to output rtc_gpio0
 
@@ -246,6 +301,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 				break;
 		}
 	}
+#endif
 
 	if (hasOnReadable) {
 		xsSlot tmp;
@@ -260,7 +316,34 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
+#if ESP32
+			if (NULL == gDigitals)
+				gpio_install_isr_service(0);
+
+			builtinCriticalSectionBegin();
+				digital->next = gDigitals;
+				gDigitals = digital;
+			builtinCriticalSectionEnd();
+
+			for (pin = bank ? 32 : 0; pin <= lastPin; pin++) {
+				uint32_t mask = 1 << (pin & 0x1f);
+				if (pins & mask) {
+					gpio_isr_handler_add(pin, digitalISR, (void *)(uintptr_t)pin);
+					gpio_intr_enable(pin);
+
+					if ((rises & mask) && (falls & mask))
+						gpio_set_intr_type(pin, GPIO_INTR_ANYEDGE);
+					else if (rises & mask)
+						gpio_set_intr_type(pin, GPIO_INTR_POSEDGE);
+					else if (falls & mask)
+						gpio_set_intr_type(pin, GPIO_INTR_NEGEDGE);
+					else
+						gpio_set_intr_type(pin, GPIO_INTR_DISABLE);
+				}
+			}
+#elif defined(__ets__)
 		builtinCriticalSectionBegin();
+
 			if (NULL == gDigitals) {
 				gDigitalCallbackPending = 0;
 				ETS_GPIO_INTR_ATTACH(digitalISR, NULL);
@@ -279,7 +362,9 @@ void xs_digitalbank_constructor(xsMachine *the)
 					GPC(pin) |= ((edge & 0xF) << GPCI);
 				}
 			}
+
 		builtinCriticalSectionEnd();
+#endif
 	}
 
 	digital->pins = pins;
@@ -306,12 +391,24 @@ void xs_digitalbank_destructor(void *data)
 		}
 	}
 
-//@@ what state should pin go to on close...
-
 	if (digital->pins) {
-		// disable interrupt for this pin
+#if ESP32
+		int pin, lastPin = digital->bank ? GPIO_NUM_MAX - 1 : 31;
+
+		for (pin = digital->bank ? 32 : 0; pin <= lastPin; pin++) {
+			if (digital->pins & (1 << (pin & 0x1f))) {
+				gpio_isr_handler_remove(pin);
+				gpio_reset_pin(pin);
+			}
+		}
+
+		if (NULL == gDigitals)
+			gpio_uninstall_isr_service();
+#elif defined(__ets__)
+		//@@ what state should pin go to on close...
 		uint8_t pin;
 
+		// disable interrupts for these pins
 		for (pin = 0; pin < 16; pin++) {
 			if (digital->pins & (1 << pin)) {
 				GPC(pin) &= ~(0xF << GPCI);
@@ -322,7 +419,7 @@ void xs_digitalbank_destructor(void *data)
 		// remove ISR
 		if (NULL == gDigitals)
 			ETS_GPIO_INTR_DISABLE();
-
+#endif
 		builtinFreePins(digital->bank, digital->pins);
 	}
 
@@ -356,9 +453,18 @@ void xs_digitalbank_read(xsMachine *the)
 	if (!digital)
 		xsUnknownError("bad state");
 
+#if ESP32
+	gpio_dev_t *hw = &GPIO;
+
+    if (digital->bank)
+        result = hw->in1.data & digital->pins;
+    else
+        result = hw->in & digital->pins;
+#elif defined(__ets__)
 	result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
 	if ((digital->pins & 0x10000) && (READ_PERI_REG(RTC_GPIO_IN_DATA) & 1))
 		result |= 0x10000;
+#endif
 
 	xsmcSetInteger(xsResult, result);
 }
@@ -371,12 +477,62 @@ void xs_digitalbank_write(xsMachine *the)
 	if (!digital)
 		xsUnknownError("bad state");
 
+#if ESP32
+	gpio_dev_t *hw = &GPIO;
+
+	if (digital->bank) {
+		hw->out1_w1ts.data = value;
+		hw->out1_w1tc.data = ~value & digital->pins;
+	}
+	else {
+		hw->out_w1ts = value;
+		hw->out_w1tc = ~value & digital->pins;
+	}
+#elif defined(__ets__)
 	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
 	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);
 	if (digital->pins & 0x10000)
 		WRITE_PERI_REG(RTC_GPIO_OUT, (READ_PERI_REG(RTC_GPIO_OUT) & (uint32)0xfffffffe) | (value >> 16));
+#endif
 }
 
+#if ESP32
+void IRAM_ATTR digitalISR(void *refcon)
+{
+	uint32_t pin = (uintptr_t)refcon;
+	uint8_t bank = (pin >> 5) & 1;
+	Digital walker;
+
+	pin = 1 << (pin & 0x1F);
+
+	for (walker = gDigitals; walker; walker = walker->next) {
+		if ((bank != walker->bank) || !(pin & walker->pins))
+			continue;
+
+		uint32_t triggered = walker->triggered;
+		walker->triggered |= pin;
+		if (!triggered)
+			modMessagePostToMachineFromISR(walker->the, digitalDeliver, walker);
+		break;
+	}
+}
+
+void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	Digital digital = refcon;
+	uint32_t triggered;
+
+	builtinCriticalSectionBegin();
+		triggered = digital->triggered;
+		digital->triggered = 0;
+	builtinCriticalSectionEnd();
+
+	xsBeginHost(digital->the);
+		xsmcSetInteger(xsResult, triggered);
+		xsCallFunction1(xsReference(digital->onReadable), digital->obj, xsResult);
+	xsEndHost(digital->the);
+}
+#elif defined(__ets__)
 void ICACHE_RAM_ATTR digitalISR(void *ignore)
 {
 	uint32_t status = GPIE;
@@ -414,11 +570,15 @@ void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messa
 
 //@@ bad things happen if a digital instance is closed inside this loop
 	for (walker = gDigitals; walker; walker = walker->next) {
-		uint16_t triggered = walker->triggered;
+		uint32_t triggered;
+
+		builtinCriticalSectionBegin();
+			triggered = walker->triggered;
+			walker->triggered = 0;
+		builtinCriticalSectionEnd();
+
 		if (!triggered)
 			continue;
-
-		walker->triggered = 0;
 
 		xsBeginHost(walker->the);
 			xsmcSetInteger(xsResult, triggered);
@@ -426,3 +586,5 @@ void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messa
 		xsEndHost(walker->the);
 	}
 }
+
+#endif

@@ -61,7 +61,7 @@ void xs_pwm_constructor(xsMachine *the)
         xsmcGet(xsVar(0), xsArg(0), xsID_hz);
         hz = xsmcToInteger(xsVar(0));
 
-        if (gHz != hz){
+        if (gHz != hz) {
             if (gFrequencyOwners)
                 xsRangeError("different hz already set by open pwm");
 
@@ -120,4 +120,10 @@ void xs_pwm_write(xsMachine *the)
 		xsUnknownError("write to closed pwm pin");
 
     analogWrite(pwm->pin, value);
+}
+
+void xs_pwm_get_hz(xsMachine *the)
+{
+	extern uint32_t pwm_freq;	// from core_esp8266_wiring_pwm
+	xsmcSetInteger(xsResult, pwm_freq);
 }

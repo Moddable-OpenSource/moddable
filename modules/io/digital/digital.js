@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -21,26 +21,28 @@
 import DigitalBank from "builtin/digitalbank";
 
 class Digital extends DigitalBank {
-	constructor(dictionary) {
-		const pins = 1 << dictionary.pin;
-		const edge = (undefined === dictionary.edge) ? 0 : dictionary.edge;
-		const d = {
+	constructor(options) {
+		const pin = options.pin;
+		const pins = 1 << (pin & 0x1F);
+		const edge = options.edge ?? 0;
+		const o = {
 			pins,
-			mode: dictionary.mode,
+			bank: (pin >> 5) & 0xFF,
+			mode: options.mode,
 			rises: (edge & Digital.Rising) ? pins : 0,
 			falls: (edge & Digital.Falling) ? pins : 0,
-			onReadable: dictionary.onReadable,
-			format: dictionary.format
+			onReadable: options.onReadable,
+			format: options.format
 		};
-		if ("target" in dictionary)
-			d.target = dictionary.target;
-		super(d);
+		if ("target" in options)
+			o.target = options.target;
+		super(o);
 	}
 	read() {
 		return super.read() ? 1 : 0;
 	}
 	write(value) {
-		super.write(value ? ~0: 0);
+		super.write(value ? ~0 : 0);
 	}
 }
 Digital.Input = DigitalBank.Input;
