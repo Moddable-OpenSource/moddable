@@ -19,19 +19,19 @@ class SNTP  {
 	#onTime;
 	#onError;
 	#timer;
-	constructor(dictionary) {
+	constructor(options) {
 		this.#udp = new UDP({
 			target: this,
-			onReadable: this.onReadable
+			onReadable: this.#onReadable
 		});
 
-		this.#onTime = dictionary.onTime;
+		this.#onTime = options.onTime;
 		if (!this.#onTime)
 			throw new Error("onTime required");
 
-		this.#onError = dictionary.onError;
+		this.#onError = options.onError;
 
-		System.resolve(dictionary.host, (name, address) => {
+		System.resolve(options.host, (name, address) => {
 			if (!address) {
 				this.#onError?.();
 				return;
@@ -46,7 +46,7 @@ class SNTP  {
 			System.clearInterval(this.#timer);
 		super.close();
 	}
-	onReadable(count) {
+	#onReadable(count) {
 		const target = this.target;
 		let packet;
 
@@ -60,8 +60,7 @@ class SNTP  {
 	}
 }
 
-function request(address)
-{
+function request(address) {
 	const packet = new Uint8Array(48);
 	packet[0] = (4 << 3) | (3 << 0);		// version 4, mode 3 (client)
 	this.write(address, 123, packet);

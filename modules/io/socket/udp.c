@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,18 +22,17 @@
 	UDP socket - uing lwip low level callback API
 
 	To do:
-		unsafe on ESP32 - assumes single thread
+
+		- multicast
 */
 
 #include "lwip/udp.h"
 #include "lwip/raw.h"
 
+#include "modLwipSafe.h"
+
 #include "xsmc.h"			// xs bindings for microcontroller
-#ifdef __ets__
-	#include "xsHost.h"		// esp platform support
-#else
-	#error - unsupported platform
-#endif
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_* values
 
 #include "builtinCommon.h"
@@ -51,15 +50,21 @@ struct UDPRecord {
 	struct udp_pcb	*skt;
 	UDPPacket		packets;
 	xsSlot			obj;
-	uint8_t			hasOnReadable;
 	xsMachine		*the;
-	xsSlot			onReadable;
+	xsSlot			*onReadable;
 };
 typedef struct UDPRecord UDPRecord;
 typedef struct UDPRecord *UDP;
 
 static void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
 static void udpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void xs_udp_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
+
+static const xsHostHooks ICACHE_RODATA_ATTR xsUDPHooks = {
+	xs_udp_destructor,
+	xs_udp_mark,
+	NULL
+};
 
 void xs_udp_constructor(xsMachine *the)
 {
@@ -80,18 +85,18 @@ void xs_udp_constructor(xsMachine *the)
 	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
 		xsRangeError("invalid format");
 
-	skt = udp_new();
+	skt = udp_new_safe();
 	if (!skt)
 		xsRangeError("no socket");
 
-	if (udp_bind(skt, IP_ADDR_ANY, port)) {
-		udp_remove(skt);
+	if (udp_bind_safe(skt, IP_ADDR_ANY, port)) {
+		udp_remove_safe(skt);
 		xsUnknownError("bind failed");
 	}
 
 	udp = c_calloc(1, sizeof(UDPRecord));
 	if (!udp) {
-		udp_remove(skt);
+		udp_remove_safe(skt);
 		xsRangeError("no memory");
 	}
 
@@ -103,9 +108,9 @@ void xs_udp_constructor(xsMachine *the)
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
 
-	if (builtinGetCallback(the, xsID_onReadable, &udp->onReadable)) {
-		udp->hasOnReadable = 1;
-		xsRemember(udp->onReadable);
+	if (builtinGetCallback(the, xsID_onReadable, &xsVar(0))) {
+		udp->onReadable = xsToReference(xsVar(0));
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
 	}
 }
 
@@ -114,14 +119,14 @@ void xs_udp_destructor(void *data)
 	UDP udp = data;
 	if (!udp) return;
 
+	udp_remove_safe(udp->skt);
+
 	while (udp->packets) {
 		UDPPacket packet = udp->packets;
 		udp->packets = packet->next;
-		pbuf_free(packet->pb);
+		pbuf_free_safe(packet->pb);
 		c_free(packet);
 	}
-
-	udp_remove(udp->skt);
 
 	c_free(data);
 }
@@ -133,26 +138,28 @@ void xs_udp_close(xsMachine *the)
 
 	xsmcSetHostData(xsThis, NULL);
 	xsForget(udp->obj);
-	if (udp->hasOnReadable)
-		xsForget(udp->onReadable);
 	xs_udp_destructor(udp);
 }
 
 void xs_udp_read(xsMachine *the)
 {
 	UDP udp = xsmcGetHostData(xsThis);
-	UDPPacket packet = udp->packets;
+	UDPPacket packet;
 
-	if (!packet)
+	builtinCriticalSectionBegin();
+	packet = udp->packets;
+	if (!packet) {
+		builtinCriticalSectionEnd();
 		return;
-
-	xsmcVars(1);
+	}
+	udp->packets = packet->next;
+	builtinCriticalSectionEnd();
 
 	xsmcSetArrayBuffer(xsResult, packet->pb->payload, packet->pb->len);
-	pbuf_free(packet->pb);
-	udp->packets = packet->next;
+	pbuf_free_safe(packet->pb);
 	c_free(packet);
 
+	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), packet->port);
 	xsmcSet(xsResult, xsID_port, xsVar(0));
 
@@ -165,7 +172,7 @@ void xs_udp_write(xsMachine *the)
 {
 	UDP udp = xsmcGetHostData(xsThis);
 	char temp[32];
-	uint16 port = xsmcToInteger(xsArg(1));
+	uint16_t port = xsmcToInteger(xsArg(1));
 	ip_addr_t dst;
 	int byteLength;
 	err_t err;
@@ -176,16 +183,10 @@ void xs_udp_write(xsMachine *the)
 		xsRangeError("invalid IP address");
 
 	if (xsmcIsInstanceOf(xsArg(2), xsTypedArrayPrototype))
-		xsmcGet(xsArg(2), xsArg(2), xsID_buffer);
+		xsmcGet(xsArg(2), xsArg(2), xsID_buffer);		//@@ ignoring view
 	byteLength = xsmcGetArrayBufferLength(xsArg(2));
 
-	pb = pbuf_alloc(PBUF_TRANSPORT, byteLength, PBUF_RAM);
-	if (!pb)
-		xsRangeError("no memory");
-
-	c_memcpy(pb->payload, xsmcToArrayBuffer(xsArg(2)), byteLength);
-	err = udp_sendto(udp->skt, pb, &dst, port);
-	pbuf_free(pb);
+	udp_sendto_safe(udp->skt, xsmcToArrayBuffer(xsArg(2)), byteLength, &dst, port, &err);
 	if (ERR_OK != err)
 		xsUnknownError("UDP send failed");
 }
@@ -197,14 +198,14 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 
 #ifdef mxDebug
 	if (fxInNetworkDebugLoop(udp->the)) {
-		pbuf_free(p);
+		pbuf_free_safe(p);
 		return;
 	}
 #endif
 
 	packet = c_malloc(sizeof(UDPPacketRecord));
-	if (!packet) {	//@@ report dropped error?
-		pbuf_free(p);
+	if (!packet) {
+		pbuf_free_safe(p);
 		return;
 	}
 
@@ -213,16 +214,21 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 	packet->port = port;
 	packet->address = *addr;
 
+	builtinCriticalSectionBegin();
 	if (udp->packets) {
 		UDPPacket walker;
 
 		for (walker = udp->packets; walker->next; walker = walker->next)
 			;
 		walker->next = packet;
+
+		builtinCriticalSectionEnd();
 	}
 	else {
 		udp->packets = packet;
-		if (udp->hasOnReadable)
+		builtinCriticalSectionEnd();
+
+		if (udp->onReadable)
 			modMessagePostToMachine(udp->the, NULL, 0, udpDeliver, udp);
 	}
 }
@@ -231,16 +237,27 @@ void udpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 {
 	UDP udp = refcon;
 	int count;
-	UDPPacket walker = udp->packets;
+	UDPPacket walker;
 
-	if (!walker)
+	builtinCriticalSectionBegin();
+	walker = udp->packets;
+	if (!walker) {
+		builtinCriticalSectionEnd();
 		return;
-
+	}
 	for (count = 0; NULL != walker; count++, walker = walker->next)
 		;
+	builtinCriticalSectionEnd();
 
 	xsBeginHost(the);
 		xsmcSetInteger(xsResult, count);
-		xsCallFunction1(udp->onReadable, udp->obj, xsResult);
+		xsCallFunction1(xsReference(udp->onReadable), udp->obj, xsResult);
 	xsEndHost(the);
+}
+
+void xs_udp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	UDP udp = it;
+
+	(*markRoot)(the, udp->onReadable);
 }

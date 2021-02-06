@@ -15,6 +15,7 @@
 import Listener from "builtin/socket/listener";
 import TCP from "builtin/socket/tcp";
 
+let requests = 0;
 new Listener({
 	port: 80,
 	onReadable(count) {
@@ -22,14 +23,16 @@ new Listener({
 			const socket = new TCP({
 				from: this.read(),
 				onReadable() {
-					const response = this.read();
+					const echo = this.read();
+					const msg = ArrayBuffer.fromString(`\r\n\r\nResponse ${++requests}. ${new Date}`);
 
 					this.write(ArrayBuffer.fromString("HTTP/1.1 200 OK\r\n"));
 					this.write(ArrayBuffer.fromString("connection: close\r\n"));
 					this.write(ArrayBuffer.fromString("content-type: text/plain\r\n"));
-					this.write(ArrayBuffer.fromString(`content-length: ${response.byteLength}\r\n`));
+					this.write(ArrayBuffer.fromString(`content-length: ${echo.byteLength + msg.byteLength}\r\n`));
 					this.write(ArrayBuffer.fromString("\r\n"));
-					this.write(response);
+					this.write(echo);
+					this.write(msg);
 
 					this.close();
 				},

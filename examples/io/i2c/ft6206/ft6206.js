@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -69,7 +69,7 @@ class FT6206 extends I2C {
 				state = 1;
 			else if (2 === state)								// contact
 				state = 2;
-			else if (1 === state)								// lift (not always delivered)
+			else if ((1 === state) || (3 === state))			// lift (not always delivered)
 				state = 3;
 			else
 				throw new Error("unexpected");

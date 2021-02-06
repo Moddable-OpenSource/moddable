@@ -40,6 +40,8 @@ uint8_t builtinGetCallback(xsMachine *the, xsIndex id, xsSlot *slot);
 	#define builtinCriticalSectionEnd() vPortExitCritical(&gCommonCriticalMux)
 
 #elif defined(__ets__)
+	#include "Arduino.h"	// mostly to get xs_rsil
+
 	#define kPinBanks (1)
 
 	#define builtinCriticalSectionBegin() xt_rsil(0)

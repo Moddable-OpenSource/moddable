@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,18 +26,12 @@
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
 		while connecting cannot safely transfer native socket
-
-		unsafe on ESP32 - assumes single thread
 */
 
 #include "lwip/tcp.h"
 
 #include "xsmc.h"			// xs bindings for microcontroller
-#ifdef __ets__
-	#include "xsHost.h"		// esp platform support
-#else
-	#error - unsupported platform
-#endif
+#include "xsHost.h"		// esp platform support
 #include "mc.xs.h"			// for xsID_* values
 #include "builtinCommon.h"
 
@@ -67,9 +61,9 @@ struct TCPRecord {
 	int8_t			useCount;
 	uint8_t			format;
 	xsMachine		*the;
-	xsSlot			onReadable;
-	xsSlot			onWritable;
-	xsSlot			onError;
+	xsSlot			*onReadable;
+	xsSlot			*onWritable;
+	xsSlot			*onError;
 };
 typedef struct TCPRecord TCPRecord;
 typedef struct TCPRecord *TCP;
@@ -84,12 +78,20 @@ static err_t tcpSent(void *arg, struct tcp_pcb *pcb, u16_t len);
 static void tcpTrigger(TCP tcp, uint8_t trigger);
 
 static void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void doClose(xsMachine *the, xsSlot *instance);
+
+static const xsHostHooks ICACHE_RODATA_ATTR xsTCPHooks = {
+	xs_tcp_destructor,
+	xs_tcp_mark,
+	NULL
+};
 
 void xs_tcp_constructor(xsMachine *the)
 {
 	TCP tcp;
 	uint8_t create = xsmcArgc > 0;
-	uint8_t connect = 0, triggerable = 0, triggered, nodelay = 0, format = kIOFormatBuffer;
+	uint8_t connect = 0, triggerable = 0, triggered = 0, nodelay = 0, format = kIOFormatBuffer;
 	int port;
 	struct tcp_pcb *skt;
 	TCPBuffer buffers = NULL;
@@ -131,7 +133,8 @@ void xs_tcp_constructor(xsMachine *the)
 				triggered |= kTCPReadable;
 			from->skt = NULL;
 			from->buffers = NULL;
-			from->triggered = 0;		// prevent outstanding delivery from doing anything
+			from->triggered = 0;
+			doClose(the, &xsVar(0));
 		}
 		else {
 			char addrStr[32];
@@ -173,8 +176,10 @@ void xs_tcp_constructor(xsMachine *the)
 	tcp->obj = xsThis;
 	xsRemember(tcp->obj);
 	tcp->format = format;
-	builtinInitializeTarget(the);
 	tcpHold(tcp);
+
+	if (!create)
+		return;
 
 	if (nodelay) {
 		if (2 == nodelay)
@@ -183,8 +188,7 @@ void xs_tcp_constructor(xsMachine *the)
 			tcp_nagle_enable(skt);
 	}
 
-	if (!create)
-		return;
+	builtinInitializeTarget(the);
 
 	tcp->skt = skt;
 	tcp->buffers = buffers;
@@ -195,22 +199,23 @@ void xs_tcp_constructor(xsMachine *the)
 
 	if (triggerable) {
 		tcp->triggerable = triggerable;
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
 
 		if (triggerable & kTCPReadable) {
-			builtinGetCallback(the, xsID_onReadable, &tcp->onReadable);
-			xsRemember(tcp->onReadable);
+			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
+			tcp->onReadable = xsToReference(xsVar(0));
 		}
 
 		if (triggerable & kTCPWritable) {
-			builtinGetCallback(the, xsID_onWritable, &tcp->onWritable);
-			xsRemember(tcp->onWritable);
+			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
+			tcp->onWritable = xsToReference(xsVar(0));
 
 			tcp_sent(skt, tcpSent);
 		}
 
 		if (triggerable & kTCPError) {
-			builtinGetCallback(the, xsID_onError, &tcp->onError);
-			xsRemember(tcp->onError);
+			builtinGetCallback(the, xsID_onError, &xsVar(0));
+			tcp->onError = xsToReference(xsVar(0));
 		}
 	}
 
@@ -227,13 +232,6 @@ void xs_tcp_destructor(void *data)
 	TCP tcp = data;
 	if (!tcp) return;
 
-	while (tcp->buffers) {
-		TCPBuffer buffer = tcp->buffers;
-		tcp->buffers = buffer->next;
-		pbuf_free(buffer->pb);
-		c_free(buffer);
-	}
-
 	if (tcp->skt) {
 		tcp_recv(tcp->skt, NULL);
 		tcp_sent(tcp->skt, NULL);
@@ -245,27 +243,30 @@ void xs_tcp_destructor(void *data)
 #endif
 	}
 
+	while (tcp->buffers) {
+		TCPBuffer buffer = tcp->buffers;
+		tcp->buffers = buffer->next;
+		pbuf_free(buffer->pb);
+		c_free(buffer);
+	}
+
 	c_free(data);
+}
+
+void doClose(xsMachine *the, xsSlot *instance)
+{
+	TCP tcp = xsmcGetHostData(*instance);
+	if (!tcp) return;
+
+	xsmcSetHostData(*instance, NULL);
+	xsForget(tcp->obj);
+
+	tcpRelease(tcp);
 }
 
 void xs_tcp_close(xsMachine *the)
 {
-	TCP tcp = xsmcGetHostData(xsThis);
-	if (!tcp) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(tcp->obj);
-	if (tcp->triggerable) {
-		if (tcp->triggerable & kTCPReadable)
-			xsForget(tcp->onReadable);
-		if (tcp->triggerable & kTCPWritable)
-			xsForget(tcp->onWritable);
-		if (tcp->triggerable & kTCPError)
-			xsForget(tcp->onError);
-		tcp->triggerable = 0;
-	}
-
-	tcpRelease(tcp);
+	doClose(the, &xsThis);
 }
 
 void xs_tcp_read(xsMachine *the)
@@ -275,8 +276,8 @@ void xs_tcp_read(xsMachine *the)
 	int requested;
 	uint8_t *out, value;
 
-	if (!tcp || !tcp->skt)
-		xsUnknownError("bad state");
+	if (!tcp)
+		xsUnknownError("closed");
 
 	if (!tcp->buffers)
 		return;
@@ -342,8 +343,13 @@ void xs_tcp_write(xsMachine *the)
 	void *buffer;
 	uint8_t value;
 
-	if (!tcp || !tcp->skt)
-		xsUnknownError("bad state");
+	if (!tcp)
+		xsUnknownError("closed");
+
+	if (!tcp->skt) {
+		xsTrace("write to closed socket\n");
+		return;
+	}
 
 	if (kIOFormatBuffer == tcp->format) {
 		if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
@@ -384,23 +390,34 @@ void xs_tcp_set_format(xsMachine *the)
 
 void tcpHold(TCP tcp)
 {
+	builtinCriticalSectionBegin();
 	tcp->useCount += 1;
+	builtinCriticalSectionEnd();
 }
 
 void tcpRelease(TCP tcp)
 {
+	uint8_t unused;
+
+	builtinCriticalSectionBegin();
 	tcp->useCount -= 1;
-	if (0 == tcp->useCount)
+	unused = 0 == tcp->useCount;
+	builtinCriticalSectionEnd();
+	if (unused)
 		xs_tcp_destructor(tcp);
 }
 
 void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	TCP tcp = refcon;
-	uint8_t triggered = tcp->triggered;		//@@ protect on ESP32
-	tcp->triggered = 0;
+	uint8_t triggered;
 
-	if (triggered & kTCPOutput)
+	builtinCriticalSectionBegin();
+	triggered = tcp->triggered;
+	tcp->triggered = 0;
+	builtinCriticalSectionEnd();
+
+	if ((triggered & kTCPOutput) && tcp->skt)
 		tcp_output(tcp->skt);
 
 	if ((triggered & kTCPReadable) && tcp->buffers) {
@@ -412,21 +429,21 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 
 		xsBeginHost(the);
 			xsmcSetInteger(xsResult, bytes);
-			xsCallFunction1(tcp->onReadable, tcp->obj, xsResult);
+			xsCallFunction1(xsReference(tcp->onReadable), tcp->obj, xsResult);
 		xsEndHost(the);
 	}
 
 	if (!(triggered & kTCPError)) {
-		if (triggered & kTCPWritable) {
+		if ((triggered & kTCPWritable) && tcp->skt) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, tcp_sndbuf(tcp->skt));
-				xsCallFunction1(tcp->onWritable, tcp->obj, xsResult);
+				xsCallFunction1(xsReference(tcp->onWritable), tcp->obj, xsResult);
 			xsEndHost(the);
 		}
 	}
 	else if (tcp->triggerable & kTCPError) {
 		xsBeginHost(the);
-			xsCallFunction0(tcp->onError, tcp->obj);
+			xsCallFunction0(xsReference(tcp->onError), tcp->obj);
 		xsEndHost(the);
 	}
 
@@ -500,13 +517,28 @@ err_t tcpSent(void *arg, struct tcp_pcb *pcb, u16_t len)
 
 void tcpTrigger(TCP tcp, uint8_t trigger)
 {
-	uint8_t triggered = tcp->triggered;		//@@ protect on ESP32
+	uint8_t triggered;
 
+	builtinCriticalSectionBegin();
+	triggered = tcp->triggered;
 	tcp->triggered |= trigger;
+	builtinCriticalSectionEnd();
 	if (!triggered) {
 		tcpHold(tcp);
 		modMessagePostToMachine(tcp->the, NULL, 0, tcpDeliver, tcp);
 	}
+}
+
+void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	TCP tcp = it;
+
+	if (tcp->onReadable)
+		(*markRoot)(the, tcp->onReadable);
+	if (tcp->onWritable)
+		(*markRoot)(the, tcp->onWritable);
+	if (tcp->onError)
+		(*markRoot)(the, tcp->onError);
 }
 
 /*
@@ -524,12 +556,10 @@ struct ListenerRecord {
 	struct tcp_pcb	*skt;
 	xsSlot			obj;
 	ListenerPending	pending;
-	uint8_t			hasOnReadable;
-//	uint8_t			hasOnError;
 	uint8_t			triggered;
 	xsMachine		*the;
-	xsSlot			onReadable;
-//	xsSlot			onError;
+	xsSlot			*onReadable;
+//	xsSlot			*onError;
 };
 typedef struct ListenerRecord ListenerRecord;
 typedef struct ListenerRecord *Listener;
@@ -538,6 +568,13 @@ static err_t listenerAccept(void *arg, struct tcp_pcb *skt, err_t err);
 static void listenerDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void listenerTrigger(Listener listener, uint8_t trigger);
+
+static void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static const xsHostHooks ICACHE_RODATA_ATTR xsListenerHooks = {
+	xs_listener_destructor,
+	xs_listener_mark,
+	NULL
+};
 
 enum {
 	kListenerReadable = 1 << 0,
@@ -556,7 +593,7 @@ void xs_listener_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		port = (uint16)xsmcToInteger(xsVar(0));
+		port = (uint16_t)xsmcToInteger(xsVar(0));
 	}
 	//@@ address
 
@@ -600,9 +637,9 @@ void xs_listener_constructor(xsMachine *the)
 	tcp_accept(skt, listenerAccept);
 
 	if (hasOnReadable) {
-		builtinGetCallback(the, xsID_onReadable, &listener->onReadable);
-		listener->hasOnReadable = 1;
-		xsRemember(listener->onReadable);
+		builtinGetCallback(the, xsID_onReadable, &xsVar(0));
+		listener->onReadable = xsToReference(xsVar(0));
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
 	}
 }
 
@@ -611,15 +648,15 @@ void xs_listener_destructor_(void *data)
 	Listener listener = data;
 	if (!data) return;
 
+	tcp_accept(listener->skt, NULL);
+	tcp_close(listener->skt);
+
 	while (listener->pending) {
 		ListenerPending pending = listener->pending;
 		listener->pending = pending->next;
 		tcp_close(pending->skt);
 		c_free(pending);
 	}
-
-	tcp_accept(listener->skt, NULL);
-	tcp_close(listener->skt);
 
 	c_free(listener);
 }
@@ -630,8 +667,6 @@ void xs_listener_close_(xsMachine *the)
 	if (!listener) return;
 
 	xsForget(listener->obj);
-	if (listener->hasOnReadable)
-		xsForget(listener->onReadable);
 	xs_listener_destructor_(listener);
 	xsmcSetHostData(xsThis, NULL);
 }
@@ -639,16 +674,19 @@ void xs_listener_close_(xsMachine *the)
 void xs_listener_read(xsMachine *the)
 {
 	Listener listener = xsmcGetHostData(xsThis);
-	ListenerPending pending = listener->pending;
+	ListenerPending pending;
 	TCP tcp;
 
-	if (NULL == pending) {
+	if (NULL == listener->pending) {
 		xsDebugger();
 		xsCall0(xsArg(0), xsID_close);
 		return;
 	}
 
+	builtinCriticalSectionBegin();
+	pending = listener->pending;
 	listener->pending = pending->next;
+	builtinCriticalSectionEnd();
 
 	xsResult = xsArg(0);
 	tcp = xsmcGetHostData(xsArg(0));
@@ -666,8 +704,12 @@ void xs_listener_read(xsMachine *the)
 void listenerDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	Listener listener = refcon;
-	uint8_t triggered = listener->triggered;		//@@ protect on ESP32
+	uint8_t triggered;
+
+	builtinCriticalSectionBegin();
+	triggered = listener->triggered;
 	listener->triggered = 0;
+	builtinCriticalSectionEnd();
 
 	if ((triggered & kListenerReadable) && listener->pending) {
 		ListenerPending walker;
@@ -678,7 +720,7 @@ void listenerDeliver(void *the, void *refcon, uint8_t *message, uint16_t message
 
 		xsBeginHost(the);
 			xsmcSetInteger(xsResult, sockets);
-			xsCallFunction1(listener->onReadable, listener->obj, xsResult);
+			xsCallFunction1(xsReference(listener->onReadable), listener->obj, xsResult);
 		xsEndHost(the);
 	}
 
@@ -706,7 +748,9 @@ err_t listenerAccept(void *arg, struct tcp_pcb *skt, err_t err)
 	pending->skt = skt;
 
 	tcp_recv(skt, listenerReceive);
+	//@@ also install error handler to know if pending socket disconnects?
 
+	builtinCriticalSectionBegin();
 	walker = listener->pending;
 	if (NULL == walker)
 		listener->pending = pending;
@@ -715,8 +759,9 @@ err_t listenerAccept(void *arg, struct tcp_pcb *skt, err_t err)
 			walker = walker->next;
 		walker->next = pending;
 	}
+	builtinCriticalSectionEnd();
 
-	if (listener->hasOnReadable)
+	if (listener->onReadable)
 		listenerTrigger(listener, kListenerReadable);
 
 	return ERR_OK;
@@ -724,9 +769,20 @@ err_t listenerAccept(void *arg, struct tcp_pcb *skt, err_t err)
 
 void listenerTrigger(Listener listener, uint8_t trigger)
 {
-	uint8_t triggered = listener->triggered;		//@@ protect on ESP32
+	uint8_t triggered;
 
+	builtinCriticalSectionBegin();
+	triggered = listener->triggered;
 	listener->triggered |= trigger;
+	builtinCriticalSectionEnd();
+
 	if (!triggered)
 		modMessagePostToMachine(listener->the, NULL, 0, listenerDeliver, listener);
+}
+
+void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	Listener listener = it;
+
+	(*markRoot)(the, listener->onReadable);
 }

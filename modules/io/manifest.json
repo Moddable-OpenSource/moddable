@@ -20,6 +20,10 @@
 
 		"expander": "$(IO)/expander/*",
 
+		"builtin/socket/tcp": "$(IO)/socket/tcp",
+		"builtin/socket/udp": "$(IO)/socket/udp",
+		"builtin/socket/listener": "$(IO)/socket/listener",
+
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
@@ -29,16 +33,13 @@
 	"platforms": {
 		"esp": {
 			"modules": {
-				"builtin/serial": "$(IO)/serial/*",
-				"builtin/socket/listener": "$(IO)/socket/listener",
-				"builtin/socket/tcp": "$(IO)/socket/tcp",
-				"builtin/socket/udp": "$(IO)/socket/udp"
+				"builtin/serial": "$(IO)/serial/*"
 			}
 		},
 		"esp32": {
 		},
 		"...": {
-			"error": "Experimental TC53 IO modules currently available for ESP8266 and ESP32 only. For now, try using the modules in the pins directory instead"
+			"error": "Experimental TC53 IO modules currently available for ESP8266 and ESP32 only. For now, use the modules in the pins directory instead"
 		}
 	}
 }

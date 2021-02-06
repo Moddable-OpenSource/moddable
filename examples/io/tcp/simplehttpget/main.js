@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -21,59 +21,62 @@ class HTTPGet {
 	#socket;
 	#onData;
 	#onError;
-	constructor(dictionary) {
-		this.#host = dictionary.host;
-		this.#path = dictionary.path;
-		this.#port = dictionary.port || 80;
+	constructor(options) {
+		this.#host = options.host;
+		this.#path = options.path;
+		this.#port = options.port ?? 80;
 
-		this.#onData = dictionary.onData || this.onData;
-		if (!this.#onData)
-			throw new Error("onData required");
-		this.#onError = dictionary.onError || this.onError;
+		this.#onData = options.onData;
+		this.#onError = options.onError;
+
+		if (!this.#onData || !this.#path)
+			throw new Error("parameter error");
 
 		System.resolve(this.#host, (host, address) => {
 			if (!address) {
-				if (this.#onError)
-					this.#onError();
+				this.#onError?.();
 				return;
 			}
 
 			this.#socket = new TCP({
+				target: this,
 				address,
 				port: this.#port,
-				onReadable: this.readable.bind(this),
-				onWritable: this.writeable.bind(this),
-				onError: this.error.bind(this),
+				onReadable: this.readable,
+				onWritable: this.writeable,
+				onError: this.error,
 			});
 		});
 	}
 	readable(byteLength) {
-		const buffer = this.#socket.read(byteLength);
-		this.#onData(buffer);
+		const target = this.target;
+		const buffer = target.#socket.read(byteLength);
+		target.#onData(buffer);
 	}
 	writeable(byteLength) {
-		if (this.#path) {
+		const target = this.target;
+		if (target.#path) {
 			const headers = [
-				`GET ${this.#path} HTTP/1.1`,
-				`Host: ${this.#host}`,
+				`GET ${target.#path} HTTP/1.1`,
+				`Host: ${target.#host}`,
 				"Connection: close",
 				"",
 				"",
 			].join("\r\n")
-			this.#socket.write(ArrayBuffer.fromString(headers));
+			target.#socket.write(ArrayBuffer.fromString(headers));
 
-			this.#path = undefined;
+			target.#path = undefined;
 		}
 	}
 	error() {
-		if (this.#onError)
-			this.#onError();
-		this.#socket.close();
-		this.#socket = undefined;
+		const target = this.target;
+		target.#onError?.();
+		target.#socket.close();
+		target.#socket = undefined;
 	}
 }
 
-let request = new HTTPGet({
+new HTTPGet({
 	host: "httpbin.org",
 	port: 80,
 	path: "/",
