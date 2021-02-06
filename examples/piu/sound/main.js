@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -76,6 +76,8 @@ class SoundAppBehavior extends Behavior {
 				}
 			}
 		}
+		
+		const Host = global.Host;
 		if (undefined !== Host?.Button?.C && undefined !== Host?.Button?.E && undefined !== Host?.Button?.F) { // Kaluga buttons
 			new Host.Button.C({
 				onPush(value){
