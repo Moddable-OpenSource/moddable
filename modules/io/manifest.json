@@ -17,6 +17,7 @@
 		"builtin/i2c": "$(IO)/i2c/_i2c",
 		"builtin/smbus": "$(IO)/i2c/smbus",
 		"builtin/pwm": "$(IO)/pwm/$(PLATFORM)/*",
+		"builtin/serial": "$(IO)/serial/$(PLATFORM)/*",
 
 		"expander": "$(IO)/expander/*",
 
@@ -32,9 +33,6 @@
 	],
 	"platforms": {
 		"esp": {
-			"modules": {
-				"builtin/serial": "$(IO)/serial/*"
-			}
 		},
 		"esp32": {
 		},
