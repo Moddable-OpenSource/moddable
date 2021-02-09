@@ -217,6 +217,9 @@ void fxAbort(txMachine* the, int status)
 		case XS_UNHANDLED_EXCEPTION_EXIT:
 			msg = "unhandled exception";
 			break;
+		case XS_UNHANDLED_REJECTION_EXIT:
+			msg = "unhandled rejection";
+			break;
 		case XS_NO_MORE_KEYS_EXIT:
 			msg = "not enough keys";
 			break;

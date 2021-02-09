@@ -184,12 +184,12 @@ static void fx_setTimerCallback(txJob* job);
 
 static txAgentCluster gxAgentCluster;
 
+static int gxError = 0;
+static int gxUnhandledErrors = 0;
+
 int main(int argc, char* argv[]) 
 {
 	int argi;
-	int argr = 0;
-	int argw = 0;
-	int error = 0;
 	int option = 0;
 	char path[C_PATH_MAX];
 	char* dot;
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 #endif
 	if (argc == 1) {
 		fxPrintUsage();
-		return 0;
+		return 1;
 	}
 	for (argi = 1; argi < argc; argi++) {
 		if (argv[argi][0] != '-')
@@ -211,30 +211,14 @@ int main(int argc, char* argv[])
 			option = 1;
 		else if (!strcmp(argv[argi], "-m"))
 			option = 2;
-		else if (!strcmp(argv[argi], "-r")) {
-			argi++;
-			if (argi < argc)
-				argr = argi;
-			else {
-				fxPrintUsage();
-				return 1;
-			}
-		}
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
 			option = 4;
+		else if (!strcmp(argv[argi], "-u"))
+			gxUnhandledErrors = 1;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
-		else if (!strcmp(argv[argi], "-w")) {
-			argi++;
-			if (argi < argc)
-				argw = argi;
-			else {
-				fxPrintUsage();
-				return 1;
-			}
-		}
 		else {
 			fxPrintUsage();
 			return 1;
@@ -245,7 +229,7 @@ int main(int argc, char* argv[])
 			option  = 4;
 	}
 	if (option == 4)
-		error = main262(argc, argv);
+		gxError = main262(argc, argv);
 	else {
 		xsCreation _creation = {
 			16 * 1024 * 1024, 	/* initialChunkSize */
@@ -271,10 +255,6 @@ int main(int argc, char* argv[])
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
-					if (argi == argr)
-						continue;
-					if (argi == argw)
-						continue;
 					if (option == 1) {
 						xsVar(0) = xsGet(xsGlobal, xsID("$262"));
 						xsResult = xsString(argv[argi]);
@@ -292,27 +272,16 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsCatch {
-				if (xsTypeOf(xsException) != xsUndefinedType) {
-					fprintf(stderr, "%s\n", xsToString(xsException));
-					error = 1;
-					xsException = xsUndefined;
-				}
+				fprintf(stderr, "%s\n", xsToString(xsException));
+				gxError = 1;
 			}
 		}
 		xsEndHost(machine);
 		fxRunLoop(machine);
-		xsBeginHost(machine);
-		{
-			if (xsTypeOf(xsException) != xsUndefinedType) {
-				fprintf(stderr, "%s\n", xsToString(xsException));
-				error = 1;
-			}
-		}
-		xsEndHost(machine);
 		xsDeleteMachine(machine);
 		fxTerminateSharedCluster();
 	}
-	return error;
+	return gxError;
 }
 
 int main262(int argc, char* argv[]) 
@@ -506,12 +475,13 @@ void fxPrintResult(txContext* context, txResult* result, int c)
 
 void fxPrintUsage()
 {
-	printf("xst [-h] [-e] [-m] [-s] [-t] [-v] strings...\n");
+	printf("xst [-h] [-e] [-m] [-s] [-t] [-u] [-v] strings...\n");
 	printf("\t-h: print this help message\n");
 	printf("\t-e: eval strings\n");
 	printf("\t-m: strings are paths to modules\n");
 	printf("\t-s: strings are paths to scripts\n");
 	printf("\t-t: strings are paths to test262 cases or directories\n");
+	printf("\t-u: print unhandled exceptions and rejections\n");
 	printf("\t-v: print XS version\n");
 	printf("without -e, -m, -s, or -t:\n");
 	printf("\tif ../harness exists, strings are paths to test262 cases or directories\n");
@@ -1343,6 +1313,7 @@ void fxRunLoop(txMachine* the)
 	txNumber when;
 	txJob* job;
 	txJob** address;
+	
 	for (;;) {
 		c_gettimeofday(&tv, NULL);
 		when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0);
@@ -1368,12 +1339,12 @@ void fxRunLoop(txMachine* the)
 
 void fxFulfillModuleFile(txMachine* the)
 {
-	xsException = xsUndefined;
 }
 
 void fxRejectModuleFile(txMachine* the)
 {
-	xsException = xsArg(0);
+	fprintf(stderr, "%s\n", xsToString(xsArg(0)));
+	gxError = 1;
 }
 
 void fxRunModuleFile(txMachine* the, txString path)
@@ -1407,6 +1378,13 @@ void fxAbort(txMachine* the, int status)
 		mxUnknownError("not enough memory");
 	else if (status == XS_STACK_OVERFLOW_EXIT)
 		mxUnknownError("stack overflow");
+	else if ((status == XS_UNHANDLED_EXCEPTION_EXIT) || (status == XS_UNHANDLED_REJECTION_EXIT)) {
+		if (gxUnhandledErrors) {
+			fprintf(stderr, "%s\n", xsToString(xsException));
+			gxError = 1;
+		}
+		xsException = xsUndefined;
+	}
 	else
 		c_exit(status);
 }

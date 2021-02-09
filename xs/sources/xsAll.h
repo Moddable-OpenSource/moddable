@@ -1652,6 +1652,7 @@ mxExport void fx_Promise_prototype_then(txMachine* the);
 mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
+mxExport void fxOnUnhandledRejection(txMachine* the);
 
 extern void fx_Promise_prototype_finallyAux(txMachine* the);
 extern void fx_Promise_prototype_finallyReturn(txMachine* the);
@@ -1664,7 +1665,7 @@ extern void fxNewPromiseCapabilityCallback(txMachine* the);
 extern txSlot* fxNewPromiseInstance(txMachine* the);
 extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* resolveFunction, txSlot* rejectFunction);
 extern void fxPushPromiseFunctions(txMachine* the, txSlot* promise);
-extern void fxQueueJob(txMachine* the, txInteger count, txID id);
+extern void fxQueueJob(txMachine* the, txInteger count, txSlot* promise);
 extern void fxRejectException(txMachine* the, txSlot* rejectFunction);
 extern void fxRejectPromise(txMachine* the);
 extern void fxResolvePromise(txMachine* the);
@@ -1899,6 +1900,7 @@ enum {
 	XS_UNHANDLED_EXCEPTION_EXIT,
 	XS_NO_MORE_KEYS_EXIT,
 	XS_TOO_MUCH_COMPUTATION_EXIT,
+	XS_UNHANDLED_REJECTION_EXIT,
 };
 
 #if mxBigEndian
@@ -2248,6 +2250,7 @@ enum {
 #define mxPromiseStatus(INSTANCE) ((INSTANCE)->next)
 #define mxPromiseThens(INSTANCE) ((INSTANCE)->next->next)
 #define mxPromiseResult(INSTANCE) ((INSTANCE)->next->next->next)
+#define mxPromiseEnvironment(INSTANCE) ((INSTANCE)->next->next->next->next)
 
 #define mxRealmGlobal(REALM)			((REALM)->next)
 #define mxRealmClosures(REALM)			((REALM)->next->next)
@@ -2373,6 +2376,7 @@ enum {
 	mxOnRejectedPromiseFunctionStackIndex,
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
+	mxOnUnhandledRejectionFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
 	mxProxyAccessorStackIndex,
 	mxStringAccessorStackIndex,
@@ -2556,6 +2560,7 @@ enum {
 #define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
+#define mxOnUnhandledRejectionFunction the->stackPrototypes[-1 - mxOnUnhandledRejectionFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
 #define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
 #define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]

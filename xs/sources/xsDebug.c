@@ -214,7 +214,7 @@ void fxDebugCommand(txMachine* the)
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
 	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG))
-		fxQueueJob(the, 3, XS_NO_ID);
+		fxQueueJob(the, 3, C_NULL);
 }
 
 void fxDebugImport(txMachine* the, txString path)
