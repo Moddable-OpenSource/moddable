@@ -135,16 +135,38 @@ static char* gxTouchEventNames[4] = {
 void fxAbort(xsMachine* the, int status)
 {
 	txScreen* screen = the->host;
-	if (status == xsNotEnoughMemoryExit)
-		xsUnknownError("not enough memory");
-	else if (status == xsStackOverflowExit)
-		xsUnknownError("stack overflow");
-	else if (status == xsDeadStripExit)
-		xsUnknownError("dead strip");
-	else if (status == xsUnhandledExceptionExit) {
-		xsTrace("unhandled exception\n");
-		(*screen->abort)(screen);
+	char* why;
+	switch (status) {
+	case XS_STACK_OVERFLOW_EXIT:
+		why = "stack overflow";
+		break;
+	case XS_NOT_ENOUGH_MEMORY_EXIT:
+		why = "memory full";
+		break;
+	case XS_DEAD_STRIP_EXIT:
+		why = "dead strip";
+		break;
+	case XS_DEBUGGER_EXIT:
+		why = "debugger";
+		break;
+	case XS_FATAL_CHECK_EXIT:
+		why = "fatal check";
+		break;
+	case XS_NO_MORE_KEYS_EXIT:
+		why = "not enough keys";
+		break;
+	case XS_UNHANDLED_EXCEPTION_EXIT:
+		why = "unhandled exception";
+		break;
+	case XS_UNHANDLED_REJECTION_EXIT:
+		why = "unhandled rejection";
+		break;
+	default:
+		why = "unknown";
+		break;
 	}
+	xsLog("XS abort: %s\n", why);
+	(*screen->abort)(screen);
 }
 
 void debugBreak(xsMachine* the, uint8_t stop)
