@@ -901,6 +901,7 @@ export default class extends Tool {
 				tsFile.preload = false;
 			}
 			for (var pattern of preload) {
+				pattern = this.resolvePrefix(pattern);
 				pattern = this.resolveSlash(pattern);
 				var star = pattern.lastIndexOf("*");
 				if (star >= 0) {
