@@ -26,8 +26,6 @@
 		track in use pins... single instance
 */
 
-import DigitalBuiltin from "embedded:io/digital";
-
 class ExpanderI2C {
 	#io;
 
@@ -73,8 +71,8 @@ class Expander {
 			o = options.interrupt;
 			i2c.interrupt = new (o.io)({
 				pin: o.pin,
-				mode: DigitalBuiltin.InputPullUp,
-				edge: DigitalBuiltin.Rising | DigitalBuiltin.Falling,
+				mode: o.io.InputPullUp,
+				edge: o.io.Rising | o.io.Falling,
 				onReadable() {
 					const i2c = this.i2c;
 					i2c.write(0x0E);		// INTF
