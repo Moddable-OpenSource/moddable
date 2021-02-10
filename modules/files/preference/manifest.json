@@ -11,6 +11,17 @@
 				"preference"
 			]		
 		},
+		"pico": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/esp/*"
+				]
+			},
+			"preload": [
+				"preference"
+			]		
+		},
 		"esp32": {
 			"modules": {
 				"*": [
