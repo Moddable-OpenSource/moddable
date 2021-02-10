@@ -45,12 +45,12 @@
 	Implements basic Poco graphics (mostly rectanngle) as an extension to Firmata through User Command 1
 */
 
-import Analog from "builtin/analog";
-import DigitalBank from "builtin/digitalbank";
-import I2C from "builtin/i2c";
-import Listener from "builtin/socket/listener";
-import Serial from "builtin/serial";
-import TCP from "builtin/socket/tcp";
+import Analog from "embedded:io/analog";
+import DigitalBank from "embedded:io/digitalbank";
+import I2C from "embedded:io/i2c";
+import Listener from "embedded:io/socket/listener";
+import Serial from "embedded:io/serial";
+import TCP from "embedded:io/socket/tcp";
 import Poco from "commodetto/Poco";
 
 const I2CBus = Object.freeze({

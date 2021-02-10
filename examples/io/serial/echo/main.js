@@ -12,7 +12,7 @@
  *
  */
 
-import Serial from "builtin/serial";
+import Serial from "embedded:io/serial";
 
 const msg = "hello world\r\n";
 

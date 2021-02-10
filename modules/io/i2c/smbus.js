@@ -18,7 +18,7 @@
  *
 */
 
-import I2C from "builtin/i2c";
+import I2C from "embedded:io/i2c";
 
 class SMBus extends I2C {
     constructor(dictionary){

@@ -12,7 +12,7 @@
  *
  */
 
-import Digital from "builtin/digital";
+import Digital from "embedded:io/digital";
 
 let led = new Digital({
    pin: 2,

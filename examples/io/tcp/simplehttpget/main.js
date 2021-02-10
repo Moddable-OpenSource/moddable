@@ -12,7 +12,7 @@
  *
  */
 
-import TCP from "builtin/socket/tcp";
+import TCP from "embedded:io/socket/tcp";
 
 class HTTPGet {
 	#host;

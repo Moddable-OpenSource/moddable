@@ -13,8 +13,8 @@
  */
 
 import {FirmataClientTCP} from "firmataclient";
-import Digital from "builtin/digital";
-import DigitalBank from "builtin/digitalbank";
+import Digital from "embedded:io/digital";
+import DigitalBank from "embedded:io/digitalbank";
 
 const ServerAddress = "10.0.1.36";
 

@@ -26,8 +26,8 @@
 		track in use pins... single instance
 */
 
-import I2C from "builtin/i2c";
-import DigitalBuiltin from "builtin/digital";
+import I2C from "embedded:io/i2c";
+import DigitalBuiltin from "embedded:io/digital";
 
 class ExpanderI2C extends I2C {
 	write(...args) {

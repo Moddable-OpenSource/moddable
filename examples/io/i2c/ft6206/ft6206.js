@@ -12,7 +12,7 @@
  *
  */
 
-import I2C from "builtin/i2c";
+import I2C from "embedded:io/i2c";
 
 const none = Object.freeze([]);
 

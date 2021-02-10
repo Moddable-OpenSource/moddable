@@ -12,7 +12,7 @@
  *
  */
 
-import PWM from "builtin/pwm";
+import PWM from "embedded:io/pwm";
 
 const led1 = new PWM({
    pin: 4

@@ -18,7 +18,7 @@
  *
  */
 
-import TCP from "builtin/socket/tcp"
+import TCP from "embedded:io/socket/tcp"
 
 class Listener @ "xs_listener_destructor_" {
 	constructor(dictionary) @ "xs_listener_constructor";

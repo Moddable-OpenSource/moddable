@@ -12,8 +12,8 @@
  *
  */
 
-import Listener from "builtin/socket/listener";
-import TCP from "builtin/socket/tcp";
+import Listener from "embedded:io/socket/listener";
+import TCP from "embedded:io/socket/tcp";
 
 let requests = 0;
 new Listener({
