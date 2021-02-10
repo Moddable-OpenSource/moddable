@@ -65,7 +65,7 @@ void xs_pwm_constructor(xsMachine *the)
 	int hz = 1024;
 	int resolution = 10;
 	int8_t i, free = -1, timerIndex = -1;
-	int ledc;
+	int ledc = -1;
 	ledc_channel_config_t ledcConfig;
 
 	xsmcVars(1);
@@ -89,15 +89,26 @@ void xs_pwm_constructor(xsMachine *the)
 			xsRangeError("invalid resolution");
     }
 
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		ledc = xsmcToInteger(xsVar(0));
+		if ((ledc < 0) || (ledc >= LEDC_CHANNEL_MAX))
+			xsRangeError("invalid port");
+		if (!(gLEDC & (1 << ledc)))
+			xsRangeError("port unavailable");
+	}
+
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
-	for (ledc = 0; ledc < 8; ledc++) {
-		if (gLEDC & (1 << ledc))
-			break;
+	if (-1 == ledc) {
+		for (ledc = 0; ledc < 8; ledc++) {
+			if (gLEDC & (1 << ledc))
+				break;
+		}
+		if (8 == ledc)
+			xsUnknownError("no ledc channel");
 	}
-	if (8 == ledc)
-		xsUnknownError("no ledc channel");
 
 	for (i = 0; i < LEDC_TIMER_MAX; i++) {
 		if (!gTimers[i].useCount)
