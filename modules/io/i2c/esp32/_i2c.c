@@ -32,8 +32,6 @@
 
 #include "builtinCommon.h"
 
-#define kI2CPort (I2C_NUM_1)
-
 struct I2CRecord {
 	uint32_t					hz;
 	uint32_t					data;
@@ -41,6 +39,7 @@ struct I2CRecord {
 	uint32_t					timeout;
 	uint8_t						address;		// 7-bit
 	uint8_t						pullup;
+	uint8_t						port;
 	xsSlot						obj;
 	struct I2CRecord			*next;
 };
@@ -59,6 +58,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	int data, clock, hz, address;
 	int timeout = 32000;
 	uint8_t pullup = GPIO_PULLUP_ENABLE;
+	int port = I2C_NUM_MAX - 1;
 
 	xsmcVars(1);
 
@@ -105,6 +105,13 @@ void _xs_i2c_constructor(xsMachine *the)
 		pullup = xsmcTest(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
 	}
 
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		port = xsmcToInteger(xsVar(0));
+		if ((port < 0) || (port >= I2C_NUM_MAX))
+			xsRangeError("invalid port");
+	}
+
 	builtinInitializeTarget(the);
 	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
 		xsRangeError("invalid format");
@@ -122,6 +129,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->address = address;
 	i2c->timeout = timeout;
 	i2c->pullup = pullup;
+	i2c->port = (uint8_t)port;
 
 	i2c->next = gI2C;
 	gI2C = i2c;
@@ -138,7 +146,7 @@ void _xs_i2c_destructor(void *data)
 
 	if (i2c == gI2CActive) {
 		gI2CActive = NULL;
-		i2c_driver_delete(kI2CPort);
+		i2c_driver_delete(i2c->port);
 	}
 
 	if (gI2C == i2c)
@@ -212,7 +220,7 @@ void _xs_i2c_read(xsMachine *the)
 	i2c_master_read(cmd, buffer + length - 1, 1, I2C_MASTER_NACK);
 	if (stop)
 		i2c_master_stop(cmd);
-	err = i2c_master_cmd_begin(kI2CPort, cmd, 1000 / portTICK_RATE_MS);
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
 	if (ESP_OK != err)
@@ -248,7 +256,7 @@ void _xs_i2c_write(xsMachine *the)
 	i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
 	if (stop)
 		i2c_master_stop(cmd);
-	err = i2c_master_cmd_begin(kI2CPort, cmd, 1000 / portTICK_RATE_MS);
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
 	if (ESP_OK != err)
@@ -260,11 +268,11 @@ uint8_t i2cActivate(I2C i2c)
 	i2c_config_t conf;
 
 	if ((i2c == gI2CActive) ||
-		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz)))
+		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
 		return 1;
 
 	if (gI2CActive) {
-		i2c_driver_delete(kI2CPort);
+		i2c_driver_delete(gI2CActive->port);
 		gI2CActive = NULL;
 	}
 
@@ -274,15 +282,15 @@ uint8_t i2cActivate(I2C i2c)
 	conf.master.clk_speed = i2c->hz;
 	conf.sda_pullup_en = i2c->pullup;
 	conf.scl_pullup_en = i2c->pullup;
-	if (ESP_OK != i2c_param_config(kI2CPort, &conf))
+	if (ESP_OK != i2c_param_config(i2c->port, &conf))
 		return 0;
 
-	if (ESP_OK != i2c_driver_install(kI2CPort, I2C_MODE_MASTER, 0, 0, 0))
+	if (ESP_OK != i2c_driver_install(i2c->port, I2C_MODE_MASTER, 0, 0, 0))
 		return 0;
 
 	gI2CActive = i2c;
 
-	i2c_set_timeout(kI2CPort, i2c->timeout);
+	i2c_set_timeout(i2c->port, i2c->timeout);
 
 	return 1;
 }
