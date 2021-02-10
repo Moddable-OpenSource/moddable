@@ -12,14 +12,20 @@
  *
  */
 
-import Expander from "expander";
+import Expander from "embedded:io/provider/MCP23017";
+import I2C from "embedded:io/i2c";
+import Digital from "embedded:io/digital";
 
 const expander = new Expander({
-	data: 5,
-	clock: 4,
-	hz: 1000000,
-	interrupt: 0,
-	address: 0x20,
+	i2c: {
+		io: I2C,
+		data: 5,
+		clock: 4
+	},
+	interrupt: {
+		io: Digital,
+		pin: 0
+	}
 });
 
 const input = new expander.Digital({

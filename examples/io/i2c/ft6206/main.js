@@ -13,8 +13,10 @@
  */
 
 import Touch from "sensor/touch";
+import I2C from "embedded:io/i2c";
 
 const touch = new Touch({
+	io: I2C,
 	clock: 4,
 	data: 5
 });

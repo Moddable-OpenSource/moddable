@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,28 +26,38 @@
 		track in use pins... single instance
 */
 
-import I2C from "embedded:io/i2c";
 import DigitalBuiltin from "embedded:io/digital";
 
-class ExpanderI2C extends I2C {
+class ExpanderI2C {
+	#io;
+
+	constructor(options) {
+		this.#io =  new (options.io)(options);
+	}
+	close() {
+		this.#io.close?.();
+		this.#io = undefined;
+	}
 	write(...args) {
-		super.write(Uint8Array.from(args));
+		this.#io.write(Uint8Array.from(args));
 	}
 	read(count) {
-		return new Uint8Array(super.read(count));
+		return new Uint8Array(this.#io.read(count));
 	}
 }
 
 class Expander {
 	#i2c;
-	constructor(dictionary) {
-		const i2c = new ExpanderI2C({
-			data: dictionary.data,
-			clock: dictionary.clock,
-			hz: dictionary.hz,
-			address: dictionary.address
+
+	constructor(options) {
+		let o = options.i2c;
+		const i2c = this.#i2c = new ExpanderI2C({
+			io: o.io,
+			data: o.data,
+			clock: o.clock,
+			hz: o.hz ?? 1_000_000,
+			address: o.address ?? 0x20
 		});
-		this.#i2c = i2c;
 
 		i2c.inputs = 0b1111111111111111;		// set bit to indicate pin is an input
 		i2c.write(0x00, 0b11111111, 0b11111111);
@@ -59,9 +69,10 @@ class Expander {
 		i2c.write(0x12, 0b00000000, 0b00000000);
 
 		i2c.readers = [];
-		if (undefined !== dictionary.interrupt) {
-			i2c.interrupt = new DigitalBuiltin({
-				pin: dictionary.interrupt,
+		if (options.interrupt) {
+			o = options.interrupt;
+			i2c.interrupt = new (o.io)({
+				pin: o.pin,
 				mode: DigitalBuiltin.InputPullUp,
 				edge: DigitalBuiltin.Rising | DigitalBuiltin.Falling,
 				onReadable() {
@@ -71,7 +82,7 @@ class Expander {
 					pins = pins[0] | (pins[1] << 8);
 					for (let i = 0, readers = i2c.readers, length = readers.length; i < length; i++) {
 						if (readers[i].pins & pins)
-							readers[i].onReadable.call(readers[i].target, readers[i].pins & pins);
+							readers[i].onReadable(readers[i].pins & pins);
 					}
 				}
 			});
@@ -89,20 +100,19 @@ class Expander {
 		i2c.write(0x04, 0, 0);		// GPINTEN
 
 		this.Digital = class extends Digital {
-			constructor(dictionary) {
-				super({...dictionary, i2c}, true);
+			constructor(options) {
+				super(options, i2c, true);
 			}
 		}
 		this.DigitalBank = class extends Digital {
-			constructor(dictionary) {
-				super({...dictionary, i2c});
+			constructor(options) {
+				super(options, i2c);
 			}
 		}
 	}
 	close() {
 		this.#i2c.close();
-		if (this.#i2c.interrupt)
-			this.#i2c.interrupt.close();
+		this.#i2c.interrupt.close?.();
 		this.#i2c = undefined;
 		delete this.Digital;
 		delete this.DigitalBank;
@@ -110,29 +120,32 @@ class Expander {
 }
 
 class Digital {
-	constructor(dictionary, flag) {
+	constructor(options, i2c, flag) {
 		if (flag) {
-			if ((dictionary.pin < 0) || (dictionary.pin > 15))
+			options = {...options, pins: 1 << options.pin, i2c};
+			if ((options.pin < 0) || (options.pin > 15))
 				throw new RangeError("invalid pin");
-			dictionary = {...dictionary, pins: 1 << dictionary.pin};
-			delete dictionary.pin;
-			if (dictionary.edge) {
-				if (Digital.Rising & dictionary.edge)
-					dictionary.rises = dictionary.pins;
-				if (Digital.Falling & dictionary.edge)
-					dictionary.falls = dictionary.pins;
-				delete dictionary.edge;
+			delete options.pin;
+			if (options.edge) {
+				if (Digital.Rising & options.edge)
+					options.rises = options.pins;
+				if (Digital.Falling & options.edge)
+					options.falls = options.pins;
+				delete options.edge;
 			}
 		}
-		else if (!dictionary.pins)
-			throw new RangeError("invalid pins");
+		else {
+			options = {...options, i2c};
+			if (!options.pins)
+				throw new RangeError("invalid pins");
+		}
 
-		switch (dictionary.mode) {
+		switch (options.mode) {
 			case Digital.Input:
 			case Digital.InputPullUp:
-				return flag ? new Input(dictionary) : new InputBank(dictionary);
+				return flag ? new Input(options) : new InputBank(options);
 			case Digital.Output:
-				return flag ? new Output(dictionary) : new OutputBank(dictionary);
+				return flag ? new Output(options) : new OutputBank(options);
 			default:
 				throw new RangeError("invalid mode");
 		}
@@ -155,31 +168,32 @@ class IO {
 class InputBank extends IO {
 	#i2c;
 	#pins;
-	constructor(dictionary) {
-		super(dictionary);
-		const i2c = dictionary.i2c;
-		const pins = dictionary.pins;
-		const target = dictionary.target || this;
+	constructor(options) {
+		super(options);
+		const i2c = options.i2c;
+		const pins = options.pins;
+
+		if (undefined !== options.target)
+			this.target = options.target;
 
 		this.#pins = pins;
 		this.#i2c = i2c;
 
-		i2c.pullups = (Digital.InputPullUp === dictionary.mode) ? (i2c.pullups | pins) : (i2c.pullups & ~pins);
+		i2c.pullups = (Digital.InputPullUp === options.mode) ? (i2c.pullups | pins) : (i2c.pullups & ~pins);
 		i2c.write(0x06, i2c.pullups & 255, i2c.pullups >> 8);
 
 		i2c.inputs |= pins;
 		i2c.write(0x00, i2c.inputs & 255, i2c.inputs >> 8);
 
-		if (dictionary.rises || dictionary.falls) {
-			const onReadable = dictionary.onReadable;
+		if (options.rises || options.falls) {
+			const onReadable = options.onReadable;
 			if (!onReadable)
 				throw new Error("onReadable required");
 
 			this.#interrupt(~0);
 			i2c.readers.push({
 				onReadable,
-				pins,
-				target,
+				pins
 			});
 		}
 	}
@@ -217,10 +231,13 @@ class Input extends InputBank {
 class OutputBank extends IO {
 	#i2c;
 	#pins;
-	constructor(dictionary) {
-		super(dictionary);
-		const i2c = dictionary.i2c;
-		const pins = dictionary.pins;
+	constructor(options) {
+		super(options);
+		const i2c = options.i2c;
+		const pins = options.pins;
+
+		if (undefined !== options.target)
+			this.target = options.target;
 
 		this.#pins = pins;
 		this.#i2c = i2c;
