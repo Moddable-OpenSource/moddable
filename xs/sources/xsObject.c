@@ -150,8 +150,6 @@ void fx_Object_prototype___defineGetter__(txMachine* the)
 	txSlot* slot;
 	if ((mxArgc < 2) || (!fxIsCallable(the, mxArgv(1))))
 		mxTypeError("invalid getter");
-	if (mxArgc < 1)
-		mxTypeError("invalid key");
 	at = fxAt(the, mxArgv(0));
 	mxPushUndefined();
 	slot = the->stack;
@@ -171,8 +169,6 @@ void fx_Object_prototype___defineSetter__(txMachine* the)
 	txSlot* slot;
 	if ((mxArgc < 2) || (!fxIsCallable(the, mxArgv(1))))
 		mxTypeError("invalid setter");
-	if (mxArgc < 1)
-		mxTypeError("invalid key");
 	at = fxAt(the, mxArgv(0));
 	mxPushUndefined();
 	slot = the->stack;
@@ -191,8 +187,10 @@ void fx_Object_prototype___lookupGetter__(txMachine* the)
 	txSlot* at;
 	txSlot* slot;
 	if (mxArgc < 1)
-		mxTypeError("invalid key");
-	at = fxAt(the, mxArgv(0));
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(0));
+	at = fxAt(the, the->stack);
 	mxPushUndefined();
 	slot = the->stack;
 again:
@@ -211,6 +209,7 @@ again:
 		goto again;
 	}
 	mxPop();
+	mxPop();
 }
 
 void fx_Object_prototype___lookupSetter__(txMachine* the)
@@ -219,8 +218,10 @@ void fx_Object_prototype___lookupSetter__(txMachine* the)
 	txSlot* at;
 	txSlot* slot;
 	if (mxArgc < 1)
-		mxTypeError("invalid key");
-	at = fxAt(the, mxArgv(0));
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(0));
+	at = fxAt(the, the->stack);
 	mxPushUndefined();
 	slot = the->stack;
 again:
@@ -239,6 +240,7 @@ again:
 		goto again;
 	}
 	mxPop();
+	mxPop();
 }
 
 void fx_Object_prototype_hasOwnProperty(txMachine* the)
@@ -246,12 +248,15 @@ void fx_Object_prototype_hasOwnProperty(txMachine* the)
 	txSlot* at;
 	txSlot* instance;
 	if (mxArgc < 1)
-		mxTypeError("invalid key");
-	at = fxAt(the, mxArgv(0));
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(0));
+	at = fxAt(the, the->stack);
 	instance = fxToInstance(the, mxThis);
 	mxPushUndefined();
 	mxResult->value.boolean = mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack);
 	mxResult->kind = XS_BOOLEAN_KIND;
+	mxPop();
 	mxPop();
 }
 
@@ -278,12 +283,15 @@ void fx_Object_prototype_propertyIsEnumerable(txMachine* the)
 	txSlot* at;
 	txSlot* instance;
 	if (mxArgc < 1)
-		mxTypeError("invalid key");
-	at = fxAt(the, mxArgv(0));
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(0));
+	at = fxAt(the, the->stack);
 	instance = fxToInstance(the, mxThis);
 	mxPushUndefined();
 	mxResult->value.boolean = mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack) && ((the->stack->flag & XS_DONT_ENUM_FLAG) == 0);
 	mxResult->kind = XS_BOOLEAN_KIND;
+	mxPop();
 	mxPop();
 }
 
