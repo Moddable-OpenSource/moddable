@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,71 +18,86 @@
  *
 */
 
-import I2C from "embedded:io/i2c";
+class SMBus {
+	#io;
+	#stop;
+	#byteBuffer = new Uint8Array(1);
+	#wordBuffer = new Uint8Array(2);
+	#writeWordBuffer = new Uint8Array(3);
 
-class SMBus extends I2C {
-    constructor(dictionary){
-        super(dictionary);
-        this.sendStop = false;
-        this.registerBuffer = new Uint8Array(1);
-        this.byteBuffer = new Uint8Array(1);
-        this.wordBuffer = new Uint8Array(2);
-        this.writeWordBuffer = new Uint8Array(3);
-        if (dictionary.sendStop !== undefined) this.sendStop = dictionary.sendStop;
+    constructor(options) {
+        this.#io = new (options.io)(options);
+		if (options.sendStop)
+			this.#stop = true;
+    }
+    close() {
+		if (!this.#io)
+			return;
+
+		this.#io.close();
+		this.#io = undefined;
     }
 
     readByte(register) {
-        this.registerBuffer[0] = register;
-        super.write(this.registerBuffer, this.sendStop);
+		const io = this.#io, buffer = this.#byteBuffer;
 
-        super.read(this.byteBuffer);
-        return this.byteBuffer[0];
+        buffer[0] = register;
+        io.write(buffer, this.#stop);
+
+        io.read(buffer);
+        return buffer[0];
     }
 
-    readWord(register, bigEndian = false) {
-        this.registerBuffer[0] = register;
-        super.write(this.registerBuffer, this.sendStop);
+    readWord(register, bigEndian) {
+		const io = this.#io, buffer = this.#wordBuffer;
 
-        super.read(this.wordBuffer);
-        if (bigEndian){
-            return (this.wordBuffer[0] << 8) | this.wordBuffer[1];
-        }else{
-            return ((this.wordBuffer[1] << 8) | this.wordBuffer[0]);
-        }   
+        this.#byteBuffer[0] = register;
+        io.write(this.#byteBuffer, this.#stop);
+
+        io.read(buffer);
+		return bigEndian ? ((buffer[0] << 8) | buffer[1]) : ((buffer[1] << 8) | buffer[0]);
     }
 
-    readBlock(register, buffer){
-        this.registerBuffer[0] = register;
-        super.write(this.registerBuffer, this.sendStop);
+    readBlock(register, buffer) {
+		const io = this.#io;
 
-        super.read(buffer);
+        this.#byteBuffer[0] = register;
+        io.write(this.#byteBuffer, this.#stop);
+
+        io.read(buffer);
         return buffer;
     }
 
     writeByte(register, byte) {
-        this.wordBuffer[0] = register;
-        this.wordBuffer[1] = byte;
-        super.write(this.wordBuffer);
+		const io = this.#io, buffer = this.#wordBuffer;
+
+        buffer[0] = register;
+        buffer[1] = byte;
+        io.write(buffer);
     }
 
-    writeWord(register, word, bigEndian = false){
-        this.writeWordBuffer[0] = register;
-        if (bigEndian){
-            this.writeWordBuffer[1] = (word >> 8) & 0xFF;
-            this.writeWordBuffer[2] = word & 0xFF;
-        }else{
-            this.writeWordBuffer[1] = word & 0xFF;
-            this.writeWordBuffer[2] = (word >> 8) & 0xFF;
+    writeWord(register, word, bigEndian) {
+		const io = this.#io, buffer = this.#writeWordBuffer;
+
+        buffer[0] = register;
+        if (bigEndian) {
+            buffer[1] = word >> 8;
+            buffer[2] = word;
         }
-        super.write(this.writeWordBuffer);
+        else {
+            buffer[1] = word;
+            buffer[2] = word >> 8;
+        }
+        io.write(buffer);
     }
 
-    writeBlock(register, buffer){
-        this.registerBuffer[0] = register;
-        super.write(this.registerBuffer, false);
-        super.write(buffer);
+    writeBlock(register, buffer) {
+		const io = this.#io;
+
+        this.#byteBuffer[0] = register;
+        io.write(this.#byteBuffer, false);
+        io.write(buffer);
     }
 }
-Object.freeze(SMBus.prototype);
 
 export default SMBus;
