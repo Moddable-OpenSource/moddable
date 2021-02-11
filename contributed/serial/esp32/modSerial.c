@@ -271,8 +271,12 @@ modSerialDevice modSerialDevice_setup(modSerialConfig config) {
 		serial->uart = UART_NUM_0;
 	else if (config->interface == 1)
 		serial->uart = UART_NUM_1;
-	else
+#if SOC_UART_NUM > 2
+	else if (config->interface == 2)
 		serial->uart = UART_NUM_2;
+#endif
+	else
+		serial->uart = UART_NUM_0;
 
 	if (config->databits == 5)
 		serial->config.data_bits = UART_DATA_5_BITS;

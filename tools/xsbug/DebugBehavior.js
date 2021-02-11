@@ -35,7 +35,6 @@
  *       limitations under the License.
  */
 
-import Serial from "io/serial";
 import Timer from "timer";
 
 export const mxFramesView = 0;
@@ -60,6 +59,7 @@ const mxStepOutCommand = 10;
 const mxToggleCommand = 11;
 const mxScriptCommand = 12;
 const mxModuleCommand = 13;
+const serialConnectStrings = ["Connect", "Disconnect", "Connecting...", "Installing..."];
 
 export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	constructor(application) @ "PiuDebugBehaviorCreate"
@@ -107,8 +107,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		else
 			this.serialDevicePath = "com3";
 		this.serialBaudRates = [ 460800, 921600, 1500000 ];
-		this.serialConnection = null;
-		this.serialState = 0;
+		this.serial = new DebugSerial(this);;
 		this.sortingExceptions = {
 			"(return)":"0",
 			"new.target":"1",
@@ -125,18 +124,49 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		this.sortingZeros = "0000000000";
 	}
 	
-	canConnect(application, item) {
-		item.state = this.serialState;
-		return this.serialState != 2;
+	canSerialConnect(application, item) {
+		item.string = serialConnectStrings[this.serial.state];
+		return this.serial.state < 2;
 	}
-	doConnect() {
-		if (this.serialState == 0) {
-			this.serialConnection = new DebugSerial({ behavior:this, devicePath:this.serialDevicePath, baudRates:this.serialBaudRates });
+	canSerialInstallApp() {
+		return this.serial.state < 2;
+	}
+	canSerialInstallMod() {
+		return this.serial.state == 1;
+	}
+	canSerialRestart() {
+		return (this.serial.state == 1) && (this.serial.app.signature != "");
+	}
+	canSerialUninstallMod() {
+		return (this.serial.state == 1) && (this.serial.mod.signature != "");
+	}
+	doSerialConnect() {
+		if (this.serial.state == 0) {
+			this.serial.doConnect();
 		}
-		else if (this.serialState == 1) {
-			this.serialConnection.close();
+		else if (this.serial.state == 1) {
+			this.serial.doDisconnect();
 		}
 	}
+	doSerialInstallApp() {
+		system.openFile({ prompt:"Install App" }, path => { if (path) application.defer("doSerialInstallAppCallback", new String(path)); });
+	}
+	doSerialInstallAppCallback(application, path) {
+		this.serial.doInstallApp(path);
+	}
+	doSerialInstallMod() {
+		system.openFile({ prompt:"Install Mod" }, path => { if (path) application.defer("doSerialInstallModCallback", new String(path)); });
+	}
+	doSerialInstallModCallback(application, path) {
+		this.serial.doInstallMod(path);
+	}
+	doSerialRestart() {
+		this.serial.doRestart();
+	}
+	doSerialUninstallMod() {
+		this.serial.doUninstallMod();
+	}
+
 	onConnectError(application, e) {
 		system.alert({ 
 			type:"stop",
@@ -159,7 +189,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 				application.defer("doPreferences");
 		});
 	}
-	
+
 	canAbort() {
 		let machine = this.currentMachine;
 		return machine ? true : false;
@@ -361,9 +391,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		application.distribute("onBubblesChanged", bubbles);
 	}
 	onDevicesChanged() {
-		if (this.serialState == 1) {
-			this.serialConnection.check();
-		}
+		this.serial.check();
 	}
 	onDisconnected(machine) {
 		let machines = this.machines;
@@ -506,6 +534,9 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.debugScroll = { x:0, y:0 };
 		
 		this.instrumentsView.expanded = true;
+		
+		this.binaryCommandID = 0;
+		this.binaryCommands = [];
 	}
 	get framesView() {
 		return this.views[0];
@@ -534,6 +565,15 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	doAbort() {
 		this.doCommand(mxAbortCommand);
 	}
+	doBinaryCommand(command, payload) {
+		return new Promise((resolve, reject) => {
+			let id = this.binaryCommandID + 1;
+			this.binaryCommands.push({ id, resolve, reject });
+			this.binaryCommandID = id;
+			this.doBinaryCommandAux(command, id, payload);
+		})
+	}
+	doBinaryCommandAux(command, id, payload) @ "PiuDebugMachine_doBinaryCommandAux"
 	doBreakpointCommand(command, path, line) {
 		const paths = this.paths;
 		for (let name in paths) {
@@ -551,6 +591,26 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	doScript(path) {
 		this.doCommand(mxScriptCommand, path, system.readFileBuffer(path));
+	}
+	onBinaryResult(data) {
+		const view = new DataView(data);
+		const command = view.getUint8(0);
+		const id = view.getUint16(1);
+		let item = this.binaryCommands.shift();
+		while (item.id != id) {
+			item.reject(-1);
+			item = this.binaryCommands.shift();
+		}
+		if (command != 5) {
+			item.reject(-1);
+			return;
+		}
+		const code = view.getInt16(3);
+		if (code != 0) {
+			item.reject(code);
+			return;
+		}
+		item.resolve(data.slice(5));
 	}
 	onBroken(path, line, data) {
 		this.broken = true;
@@ -769,38 +829,84 @@ class MachineView {
 	}
 };
 
+import Serial from "io/serial";
+import EspTool from "esptool";
+
+globalThis.setTimeout = function (callback, delay) {
+	Timer.set(function() {
+		callback();
+	}, delay);
+}
+
+globalThis.console = Object.freeze({
+	log(msg) {
+		trace(msg, "\n");
+	}
+}, true);
+
+globalThis.TextDecoder = class {
+	decode(data) {
+		return String.fromArrayBuffer(data.subarray().buffer);
+	}
+}
+
+const pocoPixelsFormats = [
+	"",
+	"",
+	"",
+	"Monochrome", // kCommodettoBitmapMonochrome (3)
+	"4-bit Gray", //kCommodettoBitmapGray16 (4)
+	"8-bit Gray", //kCommodettoBitmapGray256 (5)
+	"8-bit RGB 332", //kCommodettoBitmapRGB332 (6)
+	"16-bit RGB 565 Little Endian", //kCommodettoBitmapRGB565LE (7)
+	"16-bit RGB 565 Big Endian", //kCommodettoBitmapRGB565BE (8)
+	"24-bit RGB", //kCommodettoBitmap24RGB (9)
+	"32-bit RGBA", //kCommodettoBitmap32RGBA (10)
+	"4-bit Color Look-up Table", //kCommodettoBitmapCLUT16 (11)
+	"12-bit RGB 444", //kCommodettoBitmapRGB444 (12)
+];
+
+function timeout(ms) {
+    return new Promise(resolve => Timer.set(resolve, ms));
+}
+function twoDigits(number) {
+	return (number < 16) ? "0" + number : number;
+}
+
 class DebugSerial @ "PiuDebugSerialDelete" {
-	constructor(options) {
-		this.baudRates = options.baudRates
-		this.baudRatesIndex = 0;
-		this.behavior = options.behavior;
-		this.devicePath = options.devicePath;
+	constructor(behavior) {
+		this.behavior = behavior;
+		this.device = {
+			expanded: true,
+			mcu: "",
+			macAddress: "",
+			pixelFormat: "",
+		};
+		this.app = {
+			expanded: true,
+			progress: -1,
+			signature: "",
+			xsVersion: "",
+		};
+		this.mod = {
+			expanded: true,
+			progress: -1,
+			signature: "",
+			spaceAvailable: -1,
+		};
 		this.machine = null;
 		this.machines = [];
 		this.serial = null;
+		this.state = 0;
 		this.create();
-		this.behavior.serialState = 2;
-		application.updateMenus();
-		Timer.set(() => { 
-			this.openSerial();
-		}, 0);
 	}
 	check() {
-		if (this.serial) {
-			this.serial?.check();
-		}
+		this.serial?.check();
 	}
 	close() {
-		if (this.serial) {
-			this.serial.close();
-			this.serial = null;
-		}
 		this.machines.forEach(item => item.onDisconnected());
 		this.machines = [];
 		this.machine = null;
-		this.behavior.serialConnection = null;
-		this.behavior.serialState = 0;
-		application.updateMenus();
 	}
 	closeMachine(address) {
 		let index = this.machines.findIndex(item => item.address == address);
@@ -811,10 +917,284 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 			this.machine = null;
 		machine.onDisconnected();	
 		this.machines.splice(index, 1);
-		if (this.machines.length == 0)
-			this.close();
+	}
+	async connect() {
+		try {
+			const baudRates = this.behavior.serialBaudRates
+			const devicePath = this.behavior.serialDevicePath
+			let baudRatesIndex = 0
+			while (baudRatesIndex < baudRates.length) {
+				this.serial = new Serial({
+					device: devicePath,
+					baud: baudRates[baudRatesIndex],
+					target:this,
+					onReadable(count) {
+						const buffer = this.read();
+						if (buffer)
+							this.target.parse(buffer);
+					},
+					onError() {
+						this.target.doDisconnect();
+					}
+				});
+				await this.doRestart();
+				if (this.machine) {
+					this.state = 1;
+					application.distribute("onSerialChanged");
+					return;
+				}
+				await timeout(50);
+				baudRatesIndex++;
+			}
+			application.defer("onConnectTimeout");
+		}
+		catch(e) {
+			application.defer("onConnectError", e);
+		}
+		this.state = 0;
+		application.distribute("onSerialChanged");
 	}
 	create() @ "PiuDebugSerialCreate"
+	async disconnect() {
+		this.close();
+		if (this.serial) {
+			this.serial.close();
+			this.serial = null;
+		}
+	}
+	async doConnect(path) {
+		this.state = 2;
+		application.distribute("onSerialChanged");
+		await this.connect();
+	}
+	async doDisconnect(path) {
+		await this.disconnect();
+		this.device.mcu = "";
+		this.device.macAddress = "";
+		this.device.pixelFormat = "";
+		this.app.progress = -1;
+		this.app.signature = "";
+		this.app.xsVersion = "";
+		this.mod.progress = -1;
+		this.mod.signature = "";
+		this.mod.spaceAvailable = -1;
+		this.state = 0;
+		application.distribute("onSerialChanged");
+	}
+	async doInstallApp(path) {
+		const name = system.getPathName(path);
+		const mcu = (name == "xs_esp32.bin") ? "esp32" : (name == "main.bin") ? "esp8266" : "";
+		if (!mcu) {
+			system.alert({ 
+				type:"stop",
+				prompt:"xsbug",
+				info:`The file must be \"xs_esp32.bin\" for ESP32 or \"main.bin\" for the ESP8266.`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+			return;
+		}
+		try {
+			if (this.state != 0)
+				await this.disconnect();
+			
+			this.app.progress = 0;
+			this.app.signature = "";
+			this.app.xsVersion = "";
+			this.mod.progress = -1;
+			this.mod.signature = "";
+			this.mod.spaceAvailable = -1;
+			this.state = 3;
+			application.distribute("onSerialChanged");
+			
+			const flash = {
+				mode: ("esp32" === mcu) ? "dio" : "qio",	// qio is enabled in bootloader build for ESP32. must be dio here.
+				frequency: "80m",
+				size: "4MB",
+			};
+			const tool = new EspTool({
+				device: this.behavior.serialDevicePath,
+				mcu,
+				flash,
+			});
+			try {
+				await tool.beginProgramming();
+
+				const info = await tool.getInfo();
+				console.log(JSON.stringify(info, undefined, 3));
+
+				const data = system.readFileBuffer(path);
+				await tool.write({
+					data,
+					offset: "app",
+				}, progress => {
+					this.app.progress = progress;
+					application.distribute("onSerialProgressChanged");
+				});
+			}
+			catch(e) {
+				throw e;
+			}
+			finally {
+				tool.close();
+			}
+			this.app.progress = 1;
+			application.distribute("onSerialProgressChanged");
+
+			await this.connect();
+		}
+		catch(e) {
+			this.doDisconnect();
+			application.defer("onConnectError", e);
+		}
+	}
+	async doInstallMod(path) {
+		if (this.mod.spaceAvailable < 0) {
+			system.alert({ 
+				type:"stop",
+				prompt:"xsbug",
+				info:`The app does not support mods.`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+			return;
+		}
+		const data = system.readFileBuffer(path);
+		const size = data.byteLength;
+		if (this.mod.spaceAvailable < size) {
+			system.alert({ 
+				type:"stop",
+				prompt:"xsbug",
+				info:`Not enough memory. The mod requires ${size} bytes but only ${this.mod.spaceAvailable} bytes are available.`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+			return;
+		}
+		if (this.state == 0)
+			await this.connect();
+		if (this.state != 1)
+			return;
+		this.mod.progress = 0;
+		this.mod.signature = "";
+		this.state = 3;
+		application.distribute("onSerialChanged");
+		try {
+			let offset = 0;
+			let step = 16;
+			while (offset < size) {
+				const use = Math.min(step, size - offset);
+				const payload = new Uint8Array(4 + use);
+				payload[0] = (offset >> 24) & 0xff;
+				payload[1] = (offset >> 16) & 0xff;
+				payload[2] = (offset >>  8) & 0xff;
+				payload[3] =  offset        & 0xff;
+				payload.set(new Uint8Array(data, offset, use), 4);
+				await this.machine.doBinaryCommand(3, payload.buffer);	
+				this.mod.progress = offset / size;
+				application.distribute("onSerialProgressChanged");
+				offset += use;
+				step = 512;
+			}
+			this.mod.progress = 1;
+			application.distribute("onSerialProgressChanged");
+			await this.doRestart();
+		}
+		catch(e) {
+			this.doDisconnect();
+			application.defer("onConnectError", e);
+		}
+	}
+	async doRestart() {
+		this.close();
+		this.serial.set({DTR: false, RTS: true});
+		await timeout(50);
+		this.serial.set({DTR: false, RTS: false});
+		const promise = new Promise((resolve, reject) => {
+			this.resolveMachine = resolve;
+		});
+		await Promise.race([promise, timeout(1000)]);
+		if (this.machine)
+			return;
+		this.disconnect();
+	}
+	async doSetTime() {
+		const payload = new ArrayBuffer(12);
+		const view = new DataView(payload);
+		const date = new Date();
+		view.setUint32(0, Math.round(date.valueOf() / 1000)); // big-endian
+		view.setUint32(4, date.getTimezoneOffset());
+		view.setUint32(8, 0);
+		await this.machine.doBinaryCommand(9, payload);
+		this.machine.doCommand(mxGoCommand);
+	}
+	async doUninstallMod() {
+		try {
+			await this.machine.doBinaryCommand(2);
+			await this.doRestart();
+		}
+		catch(e) {
+			this.doDisconnect();
+			application.defer("onConnectError", e);
+		}
+	}
+	async getInfos() {
+		try {
+			const machine = this.machine;
+			let data, view;
+			
+			try {
+				data = await machine.doBinaryCommand(17);
+				this.device.mcu = String.fromArrayBuffer(data);
+			}
+			catch {
+				this.device.mcu = "";
+			}
+
+			data = await machine.doBinaryCommand(14);
+			view = new Uint8Array(data);
+			this.device.macAddress = "MAC " + view.reduce((former, value) => { return former + (former ? ":" : "") + value.toString(16).padStart(2, "0") }, "");
+			data = await machine.doBinaryCommand(12);
+			view = new DataView(data);
+			this.device.pixelFormat = `${pocoPixelsFormats[view.getUint8(0)]}`;
+
+			this.app.progress = -1;
+			data = await machine.doBinaryCommand(13);
+			this.app.signature = String.fromArrayBuffer(data);
+			data = await machine.doBinaryCommand(11);
+			view = new DataView(data);
+			this.app.xsVersion = `XS ${view.getUint8(0)}.${view.getUint8(1)}.${view.getUint8(2)}`;
+			
+			this.mod.progress = -1;
+			try {
+				data = await machine.doBinaryCommand(16, ArrayBuffer.fromString("NAME"));
+				this.mod.signature = String.fromArrayBuffer(data);
+				data = await machine.doBinaryCommand(15);
+				view = new DataView(data);
+				this.mod.spaceAvailable = view.getUint32(0);
+			}
+			catch {
+				this.mod.signature = "";
+				this.mod.spaceAvailable = -1;
+			}
+			
+			await this.doSetTime();
+			
+			this.state = 1;
+			application.distribute("onSerialChanged");
+			
+			if (this.resolveMachine) {
+				this.resolveMachine(machine);
+				this.resolveMachine = null;
+			}
+		}
+		catch(e) {
+			application.defer("onConnectError", e);
+		}
+	}
+	onBinaryResult(buffer) {
+		this.machine?.onBinaryResult(buffer);
+	}
 	onBroken(path, line, data) {
 		this.machine?.onBroken(path, line, data);
 	}
@@ -837,7 +1217,11 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		this.machine?.onLogged(path, line, data);
 	}
 	onParsed() {
+		const once = this.machine.once;
 		this.machine?.onParsed();
+		if (once) {
+			this.getInfos();
+		}
 	}
 	onParsing() {
 		this.machine?.onParsing();
@@ -851,65 +1235,24 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 	onViewChanged(index, list) {
 		this.machine?.onViewChanged(index, list);
 	}
+	async getMachine() {
+		return new Promise((resolve, reject) => {
+			this.machineCallbacks = {resolve, reject};
+		})
+	}
 	openMachine(address) {
 		let machine = this.machines.find(item => item.address == address);
 		if (!machine) {
-			machine = new DebugMachine(this, address);
+			this.machine = machine = new DebugMachine(this, address);
 			machine.onCreate(application, this.behavior);
+			this.machines.push(machine);
 			this.behavior.machines.push(machine);
 			application.distribute("onMachinesChanged", this.behavior.machines);
-			this.machines.push(machine);
 		}
-		this.machine = machine;
-	}
-	openSerial() {
-		try {
-			this.serial = new Serial({
-				device: this.devicePath,
-				baud: this.baudRates[this.baudRatesIndex],
-				target:this,
-				onReadable(count) {
-					this.target.parse(this.read());
-				},
-				onError() {
-					this.target.close();
-				}
-			});
-			this.serial.set({DTR: false, RTS: true});
-			Timer.set(() => { 
-				this.serial.set({DTR: false, RTS: false}) 
-				Timer.set(() => { 
-					if (this.machine) {
-						this.behavior.serialState = 1;
-						application.updateMenus();
-					}
-					else {
-						if (this.serial) {
-							this.serial.close();
-							this.serial = null;
-						}
-						Timer.set(() => { 
-							this.timeout();
-						}, 50);
-					}
-				}, 1000);
-			}, 50);
-		}
-		catch(e) {
-			this.close();
-			application.defer("onConnectError", e);
-		}
+		else
+			this.machine = machine;
 	}
 	parse(buffer) @ "PiuDebugSerialParse"
-	timeout() {
-		this.baudRatesIndex++;
-		if (this.baudRatesIndex < this.baudRates.length)
-			this.openSerial();
-		else {
-			this.close();
-			application.defer("onConnectTimeout");
-		}
-	}
 	write(buffer) {
 		this.serial.write(buffer);
 	}

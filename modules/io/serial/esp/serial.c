@@ -31,17 +31,22 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_* values
 
-#include "uart.h"
-#include "esp8266_peri.h"
-
 #include "builtinCommon.h"
 
-#define UART_NR (UART0)
-#define kTXPin (1)
-#define kRXPin (3)
+#ifdef __ets__
+	#include "uart.h"
+	#include "esp8266_peri.h"
 
-#define getBytesReadable() ((USS(UART_NR) >> USRXC) & 0x7F)
-#define getBytesWritable() (128 - ((USS(UART_NR) >> USTXC) & 0x7F))
+
+	#define UART_NR (UART0)
+	#define kTXPin (1)
+	#define kRXPin (3)
+
+	#define getBytesReadable() ((USS(UART_NR) >> USRXC) & 0x7F)
+	#define getBytesWritable() (128 - ((USS(UART_NR) >> USTXC) & 0x7F))
+
+	static void ICACHE_RAM_ATTR serial_isr(void * arg);
+#endif
 
 typedef struct SerialRecord SerialRecord;
 typedef struct SerialRecord *Serial;
@@ -59,7 +64,6 @@ struct SerialRecord {
 };
 
 static void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLength);
-static void ICACHE_RAM_ATTR serial_isr(void * arg);
 
 void xs_serial_constructor(xsMachine *the)
 {
@@ -67,7 +71,7 @@ void xs_serial_constructor(xsMachine *the)
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
 
-	if (!builtinArePinsFree((1 << kTXPin) | (1 << kRXPin)))
+	if (!builtinIsPinFree(kTXPin) || !builtinIsPinFree(kRXPin))
 		xsUnknownError("in use");
 
 	xsmcVars(1);
@@ -160,7 +164,8 @@ void xs_serial_constructor(xsMachine *the)
 		modMessagePostToMachineFromPool(serial->the, serialDeliver, serial);
 	}
 
-	builtinUsePins((1 << kTXPin) | (1 << kRXPin));
+	builtinUsePin(kTXPin);
+	builtinUsePin(kRXPin);
 }
 
 void xs_serial_destructor(void *data)
@@ -176,7 +181,8 @@ void xs_serial_destructor(void *data)
 
 	c_free(serial);
 
-	builtinFreePins((1 << kTXPin) | (1 << kRXPin));
+	builtinFreePin(kTXPin);
+	builtinFreePin(kRXPin);
 }
 
 void xs_serial_close(xsMachine *the)

@@ -19,33 +19,23 @@
  */
 
 #include "xsmc.h"
-#ifdef __ets__
-	#include "xsHost.h"		// esp platform support
-#else
-	#error - unsupported platform
-#endif
+
+#include "xsHost.h"
 
 #include "builtinCommon.h"
 
-#include "rtctime.h"
-#include "rtcaccess.h"
-
-enum RFMode {
-    RF_DEFAULT = 0, // RF_CAL or not after deep-sleep wake up, depends on init data byte 108.
-    RF_CAL = 1,      // RF_CAL after deep-sleep wake up, there will be large current.
-    RF_NO_CAL = 2,   // no RF_CAL after deep-sleep wake up, there will only be small current.
-    RF_DISABLED = 4 // disable RF after deep-sleep wake up, just like modem sleep, there will be the smallest current.
-};
-
-extern void system_deep_sleep_instant(uint32 time_in_us);
+#if defined(__ets__) && !ESP32
+	extern void system_deep_sleep_instant(uint32_t time_in_us);
 
 static void deepSleepDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	system_deep_sleep_instant((uintptr_t)refcon);
 }
+#endif
 
 void xs_system_deepSleep(xsMachine *the)
 {
+#if defined(__ets__) && !ESP32
 	uint32_t us = 0;
 
 	if (xsmcArgc) {
@@ -56,14 +46,19 @@ void xs_system_deepSleep(xsMachine *the)
 		}
 	}
 	modMessagePostToMachine(the, NULL, 0, deepSleepDeliver, (void *)us);
+#endif
 }
 
 void xs_system_restart(xsMachine *the)
 {
+#if ESP32
+//2@
+#elif defined(__ets__)
 	system_restart();
 
 	while (1)
 		delay(1000);
+#endif
 }
 
 /*

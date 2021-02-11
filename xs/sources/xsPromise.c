@@ -81,6 +81,9 @@ void fxBuildPromise(txMachine* the)
 	fxNewHostFunction(the, mxCallback(fxOnThenable), 1, XS_NO_ID);
 	mxOnThenableFunction = *the->stack;
 	the->stack++;
+	fxNewHostFunction(the, mxCallback(fxOnUnhandledRejection), 1, XS_NO_ID);
+	mxOnUnhandledRejectionFunction = *the->stack;
+	the->stack++;
 }
 
 txSlot* fxNewPromiseInstance(txMachine* the)
@@ -116,6 +119,21 @@ txSlot* fxNewPromiseInstance(txMachine* the)
 	/* RESULT */
 	slot = slot->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+#ifdef mxDebug
+	/* ENVIRONMENT */
+	slot = slot->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	instance = the->frame;
+	while (instance) {
+		txSlot* environment = mxFrameToEnvironment(instance);
+		if (environment->ID != XS_NO_ID) {
+			slot->ID = environment->ID;
+			slot->value.environment.line = environment->value.environment.line;
+			break;
+		}
+		instance = instance->next;
+	}
+#endif
 	return promise;
 }
 
@@ -272,7 +290,7 @@ void fxCombinePromises(txMachine* the, txInteger which)
 				property->value.integer += index;
 				index = property->value.integer;
 			}
-			if (index == 0) {
+			if ((index == 0) && (which != XS_PROMISE_COMBINE_NONE)) {
 				mxPushUndefined();
 				if (which == XS_PROMISE_COMBINE_REJECTED)
 					mxPushSlot(rejectFunction);
@@ -479,6 +497,30 @@ void fxOnThenable(txMachine* the)
 	}
 }
 
+void fxOnUnhandledRejection(txMachine* the)
+{
+	txSlot* promise = mxThis->value.reference;
+	txSlot* argument = mxArgv(0);
+#ifdef mxPromisePrint
+	fprintf(stderr, "fxOnUnhandledRejection %d\n", promise->next->ID);
+#endif
+#ifdef mxDebug
+	if (fxIsConnected(the) && (the->breakOnExceptionsFlag)) {
+		txSlot* environment = mxPromiseEnvironment(promise);
+		txString path = NULL;
+		txInteger line = 0;
+		if (environment->ID != XS_NO_ID) {
+			path = fxGetKeyName(the, environment->ID);
+			line = environment->value.environment.line;
+		}
+		fxDebugLoop(the, path, line, "unhandled rejection");
+	}
+#endif
+	mxException.kind = argument->kind;
+	mxException.value = argument->value;
+	fxAbort(the, XS_UNHANDLED_REJECTION_EXIT);
+}
+
 void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* resolveFunction, txSlot* rejectFunction)
 {
 	txSlot* reaction;
@@ -525,7 +567,7 @@ void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot
 		mxCall();
 		slot = mxPromiseResult(promise);
 		mxPushSlot(slot);
-		fxQueueJob(the, 1, promise->next->ID);
+		fxQueueJob(the, 1, promise);
 	}
 	mxPop(); // reaction
 }
@@ -590,13 +632,22 @@ void fxRejectPromise(txMachine* the)
 	result->kind = argument->kind;
 	result->value = argument->value;
 	slot = mxPromiseThens(promise)->value.reference->next;
-	while (slot) {
-		mxPushReference(slot->value.reference);
-		mxPush(mxOnRejectedPromiseFunction);
+	if (slot) {
+		while (slot) {
+			mxPushReference(slot->value.reference);
+			mxPush(mxOnRejectedPromiseFunction);
+			mxCall();
+			mxPushSlot(argument);
+			fxQueueJob(the, 1, promise);
+			slot = slot->next;
+		}
+	}
+	else {
+		mxPushReference(promise);
+		mxPush(mxOnUnhandledRejectionFunction);
 		mxCall();
 		mxPushSlot(argument);
-		fxQueueJob(the, 1, promise->next->ID);
-		slot = slot->next;
+		fxQueueJob(the, 1, promise);
 	}
 	slot = mxPromiseStatus(promise);
 	slot->value.integer = mxRejectedStatus;
@@ -638,7 +689,7 @@ void fxResolvePromise(txMachine* the)
 				mxCall();
 				fxPushPromiseFunctions(the, promise);
 				mxPushSlot(slot);
-				fxQueueJob(the, 3, promise->next->ID);
+				fxQueueJob(the, 3, promise);
 				goto bail;
 			}
 			mxPop();
@@ -652,7 +703,7 @@ void fxResolvePromise(txMachine* the)
 			mxPush(mxOnResolvedPromiseFunction);
 			mxCall();
 			mxPushSlot(result);
-			fxQueueJob(the, 1, promise->next->ID);
+			fxQueueJob(the, 1, promise);
 			slot = slot->next;
 		}
 		slot = mxPromiseStatus(promise);
@@ -665,13 +716,22 @@ bail:
 		result->value = mxException.value;
 		mxException = mxUndefined;
 		slot = mxPromiseThens(promise)->value.reference->next;
-		while (slot) {
-			mxPushReference(slot->value.reference);
-			mxPush(mxOnRejectedPromiseFunction);
+		if (slot) {
+			while (slot) {
+				mxPushReference(slot->value.reference);
+				mxPush(mxOnRejectedPromiseFunction);
+				mxCall();
+				mxPushSlot(result);
+				fxQueueJob(the, 1, promise);
+				slot = slot->next;
+			}
+		}
+		else {
+			mxPushReference(promise);
+			mxPush(mxOnUnhandledRejectionFunction);
 			mxCall();
 			mxPushSlot(result);
-			fxQueueJob(the, 1, promise->next->ID);
-			slot = slot->next;
+			fxQueueJob(the, 1, promise);
 		}
 		slot = mxPromiseStatus(promise);
 		slot->value.integer = mxRejectedStatus;
@@ -1022,7 +1082,7 @@ void fx_Promise_prototype_then(txMachine* the)
 	fxPromiseThen(the, promise, onFullfilled, onRejected, resolveFunction, rejectFunction);
 }
 
-void fxQueueJob(txMachine* the, txInteger count, txID id)
+void fxQueueJob(txMachine* the, txInteger count, txSlot* promise)
 {
 	txSlot* slot;
 	txSlot* job;
@@ -1033,9 +1093,23 @@ void fxQueueJob(txMachine* the, txInteger count, txID id)
 	if (mxPendingJobs.value.reference->next == NULL) {
 		fxQueuePromiseJobs(the);
 	}
+	else if (promise) {
+		address = &(mxPendingJobs.value.reference->next);
+		while ((slot = *address)) {
+			txSlot* jobThis = slot->value.reference->next;
+			txSlot* jobFunction = jobThis->next;
+			if (jobFunction->value.reference == mxOnUnhandledRejectionFunction.value.reference) {
+				if (jobThis->value.reference == promise) {
+					*address = slot->next;
+					break;
+				}
+			}
+			address = &(slot->next);
+		}
 #ifdef mxPromisePrint
-	fprintf(stderr, "fxQueueJob %d\n", id);
+		fprintf(stderr, "fxQueueJob %d\n", promise->next->ID);
 #endif
+	}
 	count += 6;
 	item = stack = the->stack + count;
 	slot = job = fxNewInstance(the);

@@ -49,6 +49,7 @@ struct sxMD5 {
 	uint8_t buf[MD5_BLKSIZE];
 };
 
+static txString fxBasePrefix(txLinker* linker, txString path);
 static void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);
@@ -87,6 +88,18 @@ void fx_Uint16Array(txMachine* the) { fx_TypedArray(the); }
 void fx_Uint32Array(txMachine* the) { fx_TypedArray(the); }
 void fx_Uint8ClampedArray(txMachine* the) { fx_TypedArray(the); }
 
+txString fxBasePrefix(txLinker* linker, txString path)
+{
+	if ((path[0] == '~') && (path[1] == '.')) {
+		txString slash = c_strchr(path + 2, mxSeparator);
+		if (slash) {
+			*slash = ':';
+			path += 2;
+		}
+	}
+	return path;
+}
+
 void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength)
 {
 	if (c_strncmp(resource->path, base, baseLength))
@@ -99,7 +112,7 @@ void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInt
 {
 	if (c_strncmp(script->path, base, baseLength))
 		fxReportLinkerError(linker, "'%s': not relative to '%s'", script->path, base);
-	script->path += baseLength;
+	script->path = fxBasePrefix(linker, script->path + baseLength);
 	script->pathSize = c_strlen(script->path) + 1;
 	script->scriptIndex = linker->scriptCount;
 	linker->scriptCount++;
@@ -372,6 +385,7 @@ txLinkerPreload* fxNewLinkerPreload(txLinker* linker, txString name)
 {
 	txLinkerPreload* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerPreload));
 	result->name = fxNewLinkerString(linker, name, c_strlen(name));
+	result->name = fxBasePrefix(linker, result->name);
 	return result;
 }
 

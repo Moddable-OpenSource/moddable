@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,16 +12,15 @@
  *
  */
 
-import Digital from "builtin/digital";
-
-let led = new Digital({
-   pin: 2,
+const Digital = Host.io.Digital;
+const led = new Digital({
+   pin: Host.pins.led,
    mode: Digital.Output,
 });
 led.write(1);		// off
 
-let button = new Digital({
-	pin: 0,
+new Digital({
+	pin: Host.pins.button,
 	mode: Digital.InputPullUp,
 	edge: Digital.Rising | Digital.Falling,
 	onReadable() {

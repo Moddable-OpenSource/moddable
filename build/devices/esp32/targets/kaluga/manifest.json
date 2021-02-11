@@ -1,0 +1,106 @@
+{
+	"build":{
+		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/sdkconfig-s2-psram",
+		"ESP32_SUBCLASS": "esp32s2"
+	},
+	"include": [
+		"$(MODULES)/drivers/ili9341/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODULES)/pins/analog/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/touchpad/manifest.json",
+		"$(MODULES)/pins/i2c/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target",
+		"true/audioout": "$(MODULES)/pins/i2s/*",
+		"pins/audioout": "./audioout",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "ili9341",
+		"led": {
+			"pin": 45,
+			"rainbow": false,
+			"brightness": 128
+		},
+		"buttonArray": {
+			"pin": 5,
+			"delay": 50
+		},
+		"touchpad": {
+			"sensitivity": 0.2,
+			"pins":{
+				"B": 2,
+				"C": 5,
+				"E": 1,
+				"F": 3
+			},
+			"guard": 4
+		},
+		"es8311": {
+			"i2c": {
+				"address": 24,
+				"scl": 7,
+				"sda": 8
+			},
+			"power": {
+				"pin": 10
+			},
+			"volume": 154
+		}
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 20,
+			"scl_pin": 19
+		},
+		"spi": {
+			"miso_pin": 8,
+			"mosi_pin": 9,
+			"sck_pin": 15
+		},
+		"ili9341": {
+			"hz": 80000000,
+			"cs_pin": 11,
+			"dc_pin": 13,
+			"rst_pin": 16,
+			"spi_port": 2,
+			"registers": [
+				"0x36, 1, 0x00,",
+				"0x3A, 1, 0x05,",
+				"0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,",
+				"0xB7, 1, 0x35,",
+				"0xBB, 1, 0x19,",
+				"0xC0, 1, 0x2C,",
+				"0xC2, 1, 0x01,",
+				"0xC3, 1, 0x12,",
+				"0xC4, 1, 0x20,",
+				"0xC6, 1, 0x0F,",
+				"0xD0, 2, 0xA4, 0xA1,",
+				"0xE0, 14, 0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23,",
+				"0xE1, 14, 0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F, 0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23,",
+				"0x20, 0,",
+				"0x11, 0,",
+				"0x29, 0,",
+				"0xFF, 0"
+			]
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 32000,
+			"format": "ima",
+			"streams": 1,
+			"queueLength": 8,
+			"i2s": {
+				"bck_pin": 18,
+				"lr_pin": 17,
+				"dataout_pin": 12 
+			}
+		}
+	}
+}

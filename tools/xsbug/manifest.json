@@ -44,9 +44,10 @@
 	"preload": [
 		"piu/All",
 		"piu/PC",
-		"io/Serial",
-		"timer"
-
+		"io/serial",
+		"timer",
+		"scan",
+		"esptool"
 	],
 	"resources": {
 		"assets/*": "./assets/*",

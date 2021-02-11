@@ -1,0 +1,34 @@
+{
+	"platforms": {
+        "esp32/m5atom_echo": {
+            "build": {
+                "UPLOAD_SPEED": "1500000",
+                "DEBUGGER_SPEED": "1500000"
+            }
+        },
+        "esp32/m5atom_lite": {
+            "build": {
+                "UPLOAD_SPEED": "1500000",
+                "DEBUGGER_SPEED": "1500000"
+            }
+        },
+        "esp32/m5atom_matrix": {
+            "build": {
+                "UPLOAD_SPEED": "1500000",
+                "DEBUGGER_SPEED": "1500000"
+            }
+        },
+		"esp32/m5stack_core2": {
+			"build": {
+				"UPLOAD_SPEED": "1500000",
+				"DEBUGGER_SPEED": "921600"
+			}
+        },
+        "esp32/m5stick_c": {
+            "build": {
+                "UPLOAD_SPEED": "1500000",
+                "DEBUGGER_SPEED": "1500000"
+            }
+        }
+	}
+}

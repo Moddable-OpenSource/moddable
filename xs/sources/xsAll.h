@@ -45,6 +45,13 @@ extern "C" {
 #endif
 
 //#define mxFrequency 1
+#ifndef mxBoundsCheck
+	#ifdef mxDebug
+		#define mxBoundsCheck 1
+	#else
+		#define mxBoundsCheck 0
+	#endif
+#endif
 #ifndef mxRegExp
 	#define mxRegExp 1
 #endif
@@ -1652,6 +1659,7 @@ mxExport void fx_Promise_prototype_then(txMachine* the);
 mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
+mxExport void fxOnUnhandledRejection(txMachine* the);
 
 extern void fx_Promise_prototype_finallyAux(txMachine* the);
 extern void fx_Promise_prototype_finallyReturn(txMachine* the);
@@ -1664,7 +1672,7 @@ extern void fxNewPromiseCapabilityCallback(txMachine* the);
 extern txSlot* fxNewPromiseInstance(txMachine* the);
 extern void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot* onRejected, txSlot* resolveFunction, txSlot* rejectFunction);
 extern void fxPushPromiseFunctions(txMachine* the, txSlot* promise);
-extern void fxQueueJob(txMachine* the, txInteger count, txID id);
+extern void fxQueueJob(txMachine* the, txInteger count, txSlot* promise);
 extern void fxRejectException(txMachine* the, txSlot* rejectFunction);
 extern void fxRejectPromise(txMachine* the);
 extern void fxResolvePromise(txMachine* the);
@@ -1899,6 +1907,7 @@ enum {
 	XS_UNHANDLED_EXCEPTION_EXIT,
 	XS_NO_MORE_KEYS_EXIT,
 	XS_TOO_MUCH_COMPUTATION_EXIT,
+	XS_UNHANDLED_REJECTION_EXIT,
 };
 
 #if mxBigEndian
@@ -2003,104 +2012,111 @@ enum {
 #define mxIsStringPrimitive(THE_SLOT) \
 	(((THE_SLOT)->kind == XS_STRING_KIND) || ((THE_SLOT)->kind == XS_STRING_X_KIND))
 
-#ifdef mxDebug
+#if mxBoundsCheck
+#define mxOverflow(_COUNT) \
+	(fxOverflow(the,_COUNT,C_NULL, 0))
+#else
+#define mxOverflow(_COUNT) \
+	((void)0)
+#endif
+
 #define mxCall() \
-	(fxOverflow(the, -4, C_NULL, 0), \
+	(mxOverflow(-4), \
 	fxCall(the))
 #define mxDub() \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	((--the->stack)->next = C_NULL, \
 	the->stack->flag = XS_NO_FLAG, \
 	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
 	the->stack->value = (the->stack + 1)->value))
 #define mxNew() \
-	(fxOverflow(the, -5, C_NULL, 0), \
+	(mxOverflow(-5), \
 	fxNew(the))
 
 #define mxPush(THE_SLOT) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, (THE_SLOT).kind), \
 	the->stack->value = (THE_SLOT).value)
 #define mxPushSlot(THE_SLOT) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, (THE_SLOT)->kind), \
 	the->stack->value = (THE_SLOT)->value)
 
 #define mxPushBigInt(THE_BIGINT) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_BIGINT_KIND), \
 	the->stack->value.bigint = (THE_BIGINT))
 #define mxPushBoolean(THE_BOOLEAN) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_BOOLEAN_KIND), \
 	the->stack->value.boolean = (THE_BOOLEAN))
 #define mxPushClosure(THE_SLOT) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_CLOSURE_KIND), \
 	the->stack->value.closure = (THE_SLOT))
 #define mxPushInteger(THE_NUMBER) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_INTEGER_KIND), \
 	the->stack->value.integer = (THE_NUMBER))
 #define mxPushList() \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_LIST_KIND), \
 	the->stack->value.list.first = C_NULL, \
 	the->stack->value.list.last = C_NULL)
 #define mxPushNull() \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_NULL_KIND))
 #define mxPushNumber(THE_NUMBER) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_NUMBER_KIND), \
 	the->stack->value.number = (THE_NUMBER))
 #define mxPushReference(THE_SLOT) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_REFERENCE_KIND), \
 	the->stack->value.reference = (THE_SLOT))
 #define mxPushString(THE_STRING) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_STRING_KIND), \
 	the->stack->value.string = (THE_STRING))
 #define mxPushStringC(THE_STRING) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
 	fxCopyStringC(the, the->stack, THE_STRING))
 #ifdef mxSnapshot
 #define mxPushStringX(THE_STRING) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
 	fxCopyStringC(the, the->stack, THE_STRING))
 #else
 #define mxPushStringX(THE_STRING) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
 	the->stack->value.string = (THE_STRING))
 #endif
 #define mxPushUndefined() \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND))
 #define mxPushUninitialized() \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	mxInitSlotKind(the->stack, XS_UNINITIALIZED_KIND))
 #define mxPushUnsigned(THE_NUMBER) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
 	(THE_NUMBER < 0x7FFFFFFF) ? \
 		(mxInitSlotKind(the->stack, XS_INTEGER_KIND), \
@@ -2110,93 +2126,10 @@ enum {
 		the->stack->value.number = (txNumber)(THE_NUMBER)) \
 	)
 #define mxTemporary(_SLOT) \
-	(fxOverflow(the, -1, C_NULL, 0), \
+	(mxOverflow(-1), \
 	_SLOT = --the->stack)
-#else
-#define mxCall() \
-	(fxCall(the))
-#define mxDub() \
-	((--the->stack)->next = C_NULL, \
-	the->stack->flag = XS_NO_FLAG, \
-	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
-	the->stack->value = (the->stack + 1)->value)
-#define mxNew() \
-	(fxNew(the))
-#define mxPush(THE_SLOT) \
-	((--the->stack)->next = C_NULL, \
-	the->stack->flag = XS_NO_FLAG, \
-	mxInitSlotKind(the->stack, (THE_SLOT).kind), \
-	the->stack->value = (THE_SLOT).value)
-#define mxPushSlot(THE_SLOT) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, (THE_SLOT)->kind), \
-	the->stack->value = (THE_SLOT)->value)
 
-#define mxPushBoolean(THE_BOOLEAN) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_BOOLEAN_KIND), \
-	the->stack->value.boolean = (THE_BOOLEAN))
-#define mxPushClosure(THE_SLOT) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_CLOSURE_KIND), \
-	the->stack->value.closure = (THE_SLOT))
-#define mxPushInteger(THE_NUMBER) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_INTEGER_KIND), \
-	the->stack->value.integer = (THE_NUMBER))
-#define mxPushList() \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_LIST_KIND), \
-	the->stack->value.list.first = C_NULL, \
-	the->stack->value.list.last = C_NULL)
-#define mxPushNull() \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_NULL_KIND))
-#define mxPushNumber(THE_NUMBER) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_NUMBER_KIND), \
-	the->stack->value.number = (THE_NUMBER))
-#define mxPushReference(THE_SLOT) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_REFERENCE_KIND), \
-	the->stack->value.reference = (THE_SLOT))
-#define mxPushString(THE_STRING) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_STRING_KIND), \
-	the->stack->value.string = (THE_STRING))
-#define mxPushStringC(THE_STRING) \
-	(--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
-	(fxCopyStringC(the, the->stack, THE_STRING))
-#ifdef mxSnapshot
-#define mxPushStringX(THE_STRING) \
-	(--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND), \
-	(fxCopyStringC(the, the->stack, THE_STRING))
-#else
-#define mxPushStringX(THE_STRING) \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
-	the->stack->value.string = (THE_STRING))
-#endif
-#define mxPushUndefined() \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND))
-#define mxPushUninitialized() \
-	((--the->stack)->next = C_NULL, \
-	mxInitSlotKind(the->stack, XS_UNINITIALIZED_KIND))
-#define mxPushUnsigned(THE_NUMBER) \
-	((--the->stack)->next = C_NULL, \
-	(THE_NUMBER < 0x7FFFFFFF) ? \
-		(mxInitSlotKind(the->stack, XS_INTEGER_KIND), \
-		the->stack->value.integer = (txInteger)(THE_NUMBER)) \
-	: \
-		(mxInitSlotKind(the->stack, XS_NUMBER_KIND), \
-		the->stack->value.number = (txNumber)(THE_NUMBER)) \
-	)
-#define mxTemporary(_SLOT) \
-	(_SLOT = --the->stack)
-#endif
+
 #define mxPop() \
 	(the->stack++)
 #define mxPull(THE_SLOT) \
@@ -2248,6 +2181,7 @@ enum {
 #define mxPromiseStatus(INSTANCE) ((INSTANCE)->next)
 #define mxPromiseThens(INSTANCE) ((INSTANCE)->next->next)
 #define mxPromiseResult(INSTANCE) ((INSTANCE)->next->next->next)
+#define mxPromiseEnvironment(INSTANCE) ((INSTANCE)->next->next->next->next)
 
 #define mxRealmGlobal(REALM)			((REALM)->next)
 #define mxRealmClosures(REALM)			((REALM)->next->next)
@@ -2373,6 +2307,7 @@ enum {
 	mxOnRejectedPromiseFunctionStackIndex,
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
+	mxOnUnhandledRejectionFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
 	mxProxyAccessorStackIndex,
 	mxStringAccessorStackIndex,
@@ -2556,6 +2491,7 @@ enum {
 #define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
+#define mxOnUnhandledRejectionFunction the->stackPrototypes[-1 - mxOnUnhandledRejectionFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
 #define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
 #define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]

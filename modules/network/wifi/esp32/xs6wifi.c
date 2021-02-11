@@ -36,8 +36,6 @@ int8_t gDisconnectReason = 0;		// -1 = password rejected
 int8_t gWiFiConnectRetryRemaining;
 int8_t	gWiFiIP;		// 0x01 == IP4, 0x02 == IP6
 
-#define SYSTEM_EVENT_STA_CHANGED_IP (SYSTEM_EVENT_MAX + 1)
-
 static void initWiFi(void);
 
 struct wifiScanRecord {
@@ -47,6 +45,8 @@ struct wifiScanRecord {
 typedef struct wifiScanRecord wifiScanRecord;
 
 static wifiScanRecord *gScan;
+static esp_netif_t *gStation;
+static esp_netif_t *gAP;
 
 void xs_wifi_set_mode(xsMachine *the)
 {
@@ -296,27 +296,43 @@ static xsWiFi gWiFi;
 
 static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	xsWiFi wifi = refcon;
-	system_event_id_t event_id = *(system_event_id_t *)message;
-	const char *msg;
+    xsWiFi wifi = refcon;
+    int32_t event_id = *(int32_t *)message;
+    const char *msg;
 
-	switch (event_id){
-		case SYSTEM_EVENT_STA_START:			msg = "start"; break;
-		case SYSTEM_EVENT_STA_CONNECTED:		msg = "connect"; break;
-		case SYSTEM_EVENT_STA_DISCONNECTED:		msg = "disconnect"; break;
-		case SYSTEM_EVENT_STA_GOT_IP:			msg = "gotIP"; break;
-		case SYSTEM_EVENT_STA_CHANGED_IP:		msg = "changedIP"; break;
-		default: return;
-	}
+    switch (event_id) {
+        case WIFI_EVENT_STA_START:          msg = "start"; break;
+        case WIFI_EVENT_STA_CONNECTED:      msg = "connect"; break;
+        case WIFI_EVENT_STA_DISCONNECTED:   msg = "disconnect"; break;
+        default: return;
+    }
 
-	xsBeginHost(the);
-		if (SYSTEM_EVENT_STA_DISCONNECTED != event_id)
-			xsCall1(wifi->obj, xsID_callback, xsString(msg));
-		else {
-			xsmcSetInteger(xsResult, gDisconnectReason);
-			xsCall2(wifi->obj, xsID_callback, xsString(msg), xsResult);
-		}
-	xsEndHost(the);
+    xsBeginHost(the);
+        if (WIFI_EVENT_STA_DISCONNECTED != event_id)
+            xsCall1(wifi->obj, xsID_callback, xsString(msg));
+        else {
+            xsmcSetInteger(xsResult, gDisconnectReason);
+            xsCall2(wifi->obj, xsID_callback, xsString(msg), xsResult);
+        }
+    xsEndHost(the);
+}
+
+static void ipEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+    xsWiFi wifi = refcon;
+    int32_t event_id = *(int32_t *)message;
+    const char *msg;
+
+    //@@ NO GOOD! NEED BASE + ID
+    switch (event_id) {
+        case IP_EVENT_STA_GOT_IP:            msg = "gotIP"; break;
+//        case IP_EVENT_STA_CHANGED_IP:        msg = "changedIP"; break;
+        default: return;
+    }
+
+    xsBeginHost(the);
+        xsCall1(wifi->obj, xsID_callback, xsString(msg));
+    xsEndHost(the);
 }
 
 void xs_wifi_destructor(void *data)
@@ -389,17 +405,16 @@ void xs_wifi_set_onNotify(xsMachine *the)
 	xsmcSet(xsThis, xsID_callback, xsArg(0));
 }
 
-static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
+static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
 	wifi_config_t wifi_config;
 	xsWiFi walker;
-	system_event_id_t event_id = event->event_id;
 
 	switch (event_id) {
-		case SYSTEM_EVENT_STA_START:
+		case WIFI_EVENT_STA_START:
 			if (ESP_OK == esp_wifi_get_config(WIFI_IF_STA, &wifi_config)) {
 #ifdef MODDEF_WIFI_HOSTNAME
-				tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, MODDEF_WIFI_HOSTNAME);
+                esp_netif_set_hostname(gStation, MODDEF_WIFI_HOSTNAME);
 #endif
 
 				gWiFiState = 3;
@@ -409,36 +424,18 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			else
 				gWiFiState = 2;
 			break;
-		case SYSTEM_EVENT_STA_STOP:
+		case WIFI_EVENT_STA_STOP:
 			gWiFiState = 1;
 			break;
-		case SYSTEM_EVENT_STA_CONNECTED:
+		case WIFI_EVENT_STA_CONNECTED:
 			gWiFiState = 4;
 			gWiFiConnectRetryRemaining = 0;
 			gWiFiIP = 0;
-			if (ESP_OK != tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA))
-				gWiFiIP = 0x02;		// don't wait for IP6 address if tcpip_adapter_create_ip6_linklocal failed
+            if (ESP_OK != esp_netif_create_ip6_linklocal(gStation))
+				gWiFiIP = 0x02;		// don't wait for IP6 address if esp_netif_create_ip6_linklocal failed
 			break;
-		case SYSTEM_EVENT_AP_STA_GOT_IP6:
-			if (0x03 == gWiFiIP)
-				return 0;
-			gWiFiIP |= 0x02;
-			if (0x03 != gWiFiIP)
-				return 0;
-			event_id = SYSTEM_EVENT_STA_GOT_IP;
-			gWiFiState = 5;
-			break;
-
-		case SYSTEM_EVENT_STA_GOT_IP:
-			gWiFiIP |= 0x01;
-			if (0x03 != gWiFiIP)
-				return 0;
-			if (event->event_info.got_ip.ip_changed && (5 == gWiFiState))		// N.B. ip_changed is set when initial IP address received.
-				event_id = SYSTEM_EVENT_STA_CHANGED_IP;
-			gWiFiState = 5;
-			break;
-		case SYSTEM_EVENT_STA_DISCONNECTED: {
-			wifi_err_reason_t reason = event->event_info.disconnected.reason;
+		case WIFI_EVENT_STA_DISCONNECTED: {
+			wifi_err_reason_t reason = ((wifi_event_sta_disconnected_t *)event_data)->reason;
 			gWiFiState = 2;
 			gWiFiIP = 0;
 			gDisconnectReason =	((WIFI_REASON_MIC_FAILURE == reason) ||
@@ -449,23 +446,51 @@ static esp_err_t doWiFiEvent(void *ctx, system_event_t *event)
 			if (gWiFiConnectRetryRemaining > 0) {
 				if (0 == esp_wifi_connect()) {
 					gWiFiConnectRetryRemaining -= 1;
-					return ESP_OK;
+					return;
 				}
 				gWiFiConnectRetryRemaining = 0;
 			}
 			} break;
-		case SYSTEM_EVENT_SCAN_DONE:
+		case WIFI_EVENT_SCAN_DONE:
 			if (gScan)
 				modMessagePostToMachine(gScan->the, NULL, 0, reportScan, NULL);
-			return ESP_OK;
+            return;
 		default:
-			return ESP_OK;
+            return;
 	}
 
 	for (walker = gWiFi; NULL != walker; walker = walker->next)
 		modMessagePostToMachine(walker->the, (uint8_t *)&event_id, sizeof(event_id), wifiEventPending, walker);
+}
 
-	return ESP_OK;
+static void doIPEvent(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    wifi_config_t wifi_config;
+    xsWiFi walker;
+
+    switch (event_id) {
+        case IP_EVENT_GOT_IP6:
+            if (0x03 == gWiFiIP)
+                return;
+            gWiFiIP |= 0x02;
+            if (0x03 != gWiFiIP)
+                return;
+            event_id = IP_EVENT_STA_GOT_IP;
+            gWiFiState = 5;
+            break;
+
+        case IP_EVENT_STA_GOT_IP:
+            gWiFiIP |= 0x01;
+            if (0x03 != gWiFiIP)
+                return;
+//@@            if (((ip_event_got_ip_t *)event_data)->ip_changed && (5 == gWiFiState))        // N.B. ip_changed is set when initial IP address received.
+//@@                event_id = IP_EVENT_STA_CHANGED_IP;
+            gWiFiState = 5;
+            break;
+    }
+
+    for (walker = gWiFi; NULL != walker; walker = walker->next)
+        modMessagePostToMachine(walker->the, (uint8_t *)&event_id, sizeof(event_id), ipEventPending, walker);
 }
 
 void initWiFi(void)
@@ -473,8 +498,8 @@ void initWiFi(void)
 	if (gWiFiState > 0) return;
 
 	if (gWiFiState <= -2) {
-		tcpip_adapter_init();
-		ESP_ERROR_CHECK( esp_event_loop_init(NULL, NULL) );
+        esp_netif_init();
+		ESP_ERROR_CHECK(esp_event_loop_create_default());
 	}
 
 	gWiFiState = 1;
@@ -483,9 +508,15 @@ void initWiFi(void)
 	cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
 	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 	esp_wifi_set_mode(WIFI_MODE_NULL);
-	ESP_ERROR_CHECK( esp_event_loop_set_cb(doWiFiEvent, NULL) );
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, NULL, NULL));
+
 	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-	ESP_ERROR_CHECK( esp_wifi_start() );
+
+    gStation = esp_netif_create_default_wifi_sta();
+    
+    ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
 void xs_wifi_accessPoint(xsMachine *the)
@@ -493,7 +524,7 @@ void xs_wifi_accessPoint(xsMachine *the)
 	wifi_mode_t mode;
 	wifi_config_t config;
 	wifi_ap_config_t *ap;
-	tcpip_adapter_ip_info_t info;
+    esp_netif_ip_info_t info;
 	char *str;
 	uint8_t station = 0;
 
@@ -556,19 +587,22 @@ void xs_wifi_accessPoint(xsMachine *the)
 		station = xsmcToBoolean(xsVar(0));
 	}
 
-	esp_wifi_get_mode(&mode);
+    if (!gAP)
+        gAP = esp_netif_create_default_wifi_ap();
+
+    esp_wifi_get_mode(&mode);
 	if ((WIFI_MODE_AP != mode) && (WIFI_MODE_APSTA != mode)) {
 		if (ESP_OK != esp_wifi_set_mode(station ? WIFI_MODE_APSTA : WIFI_MODE_AP))
 			xsUnknownError("esp_wifi_set_mode failed");
 	}
 
-	if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &config))
+    if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &config))
 		xsUnknownError("esp_wifi_set_config failed");
-	if (ESP_OK != esp_wifi_start())
+
+    if (ESP_OK != esp_wifi_start())
 		xsUnknownError("esp_wifi_start failed");
-	if (ESP_OK != tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &info))
-		xsUnknownError("tcpip_adapter_get_ip_info failed");
+	if (ESP_OK != esp_netif_get_ip_info(gAP, &info))
+		xsUnknownError("esp_netif_get_ip_info failed");
 	if (0 == info.ip.addr)
 		xsUnknownError("IP config bad when starting Wi-Fi AP!");
 }
-

@@ -31,6 +31,15 @@ IF NOT EXIST %MODDABLE%\xs (
 
 SET BUILD_DIR=%MODDABLE%\build
 SET XS_DIR=%MODDABLE%\xs
+
+IF "%1%"=="clean" (
+    echo Cleaning...
+    rmdir /S /Q %BUILD_DIR%\tmp
+    rmdir /S /Q %BUILD_DIR%\bin
+    echo Done.
+    EXIT /B 0
+)
+
 @echo on
 
 nmake GOAL=debug BUILD_DIR=%BUILD_DIR% XS_DIR=%XS_DIR% /c /f %XS_DIR%\makefiles\win\xsc.mak /s

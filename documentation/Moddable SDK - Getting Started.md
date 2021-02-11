@@ -1,8 +1,8 @@
 # Moddable SDK – Getting Started
 ### A guide to installing the Moddable SDK and building its tools
 
-Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: December 4, 2020
+Copyright 2016-2021 Moddable Tech, Inc.<BR>
+Revised: January 29, 2021
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
@@ -200,18 +200,18 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```text
-	cd C:\Users\<user>\Projects
+	cd %USERPROFILE%\Projects
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
 4. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog:
  - Create a User Variable called `MODDABLE` and set it to point at your local Moddable SDK repository directory. Update the path as necessary for you system by navigating to the Moddable SDK folder using the "Browse Directory..." button.
 	- Variable Name: `MODDABLE` 
-	- Variable Value: `C:\Users\<user>\Projects\moddable`
+	- Variable Value: `%USERPROFILE%\Projects\moddable`
 
- - Edit the System Variable `Path` to include the Moddable SDK tools directory. Update the path as necessary for your system by navigating to the correct folder using the "Browse..." button.
+ - Edit the User Variable `Path` to include the Moddable SDK tools directory. Update the path as necessary for your system by navigating to the correct folder using the "Browse..." button.
 	- Variable Name: `Path`
-	- Variable Value (add to the existing list): `C:\Users\<user>\Projects\moddable\build\bin\win\release`
+	- Variable Value (add to the existing list): `%USERPROFILE%\Projects\moddable\build\bin\win\release`
 	
 5. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
@@ -240,6 +240,13 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 
  - If the Moddable SDK build fails with an error like "`LINK : fatal error LNK1104: cannot open file '<Moddable path>\build\bin\win\release\<tool name>.exe'`", it most likely indicates a conflict with antivirus software as described in [this document from Microsoft](https://docs.microsoft.com/en-us/cpp/error-messages/tool-errors/linker-tools-error-lnk1104?view=vs-2019). Please try excluding the `%MODDABLE%` directory from your antivirus software's live scanning capability during the build process.
 
+ - If the Moddable SDK build fails with the error "`'nmake' is not recognized as an internal or external command, operable program or batch file.`" there are three potential issues and fixes:
+	1. You may not have Visual Studio installed. We recommend using the [Microsoft Visual Studio 2019 Community Edition installer](https://www.visualstudio.com/downloads/).
+	2. When you installed Visual Studio, you may not have chosen the "Desktop development for C++" workload option. Re-run [the installer](https://www.visualstudio.com/downloads/) and choose that workload for installation.
+	3. You may have inadvertently attempted the build in the default Command Prompt rather than the "x86 Native Tools Command Prompt for VS 2019." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
+
+ - If the Moddable SDK build fails with an error like "`fatal error LNK1112: module machine type 'x64' conflicts with target machine type 'x86'`", you have most likely attempted the build in the "x64 Native Tools Command Prompt for VS 2019" rather than the correct "x86 Native Tools Command Prompt for VS 2019." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
+
 <a id="win-update"></a>
 ### Updating
 
@@ -264,9 +271,8 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 2. Launch the "x86 Native Tools Command Prompt for VS 2019" command line console. Delete any existing Moddable SDK build outputs:
 
 	```text
-	cd %MODDABLE%
-	rmdir /S /Q build\tmp
-	rmdir /S /Q build\bin
+	cd %MODDABLE%\build\makefiles\win
+	build clean
 	```
 
 3. In the "x86 Native Tools Command Prompt for VS 2019" command line console, build the Moddable command line tools, simulator, and debugger:

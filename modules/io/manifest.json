@@ -8,43 +8,38 @@
 	],
 	"modules": {
 		"*": [
-			"$(IO)/common/builtinCommon"
+			"$(IO)/common/builtinCommon",
+			"$(IO)/i2c/$(PLATFORM)/*"
 		],
-		"builtin/analog": "$(IO)/analog/*",
-		"builtin/digital": "$(IO)/digital/digital",
-		"builtin/digitalbank": "$(IO)/digital/digitalbank",
-		"builtin/i2c": "$(IO)/i2c/_i2c",
-		"builtin/serial": "$(IO)/serial/*",
-		"builtin/smbus": "$(IO)/i2c/smbus",
-		"builtin/socket/listener": "$(IO)/socket/listener",
-		"builtin/socket/tcp": "$(IO)/socket/tcp",
-		"builtin/socket/udp": "$(IO)/socket/udp",
-		"builtin/pwm": "$(IO)/pwm/pwm",
+		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
+		"embedded:io/digital": "$(IO)/digital/digital",
+		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
+		"embedded:io/i2c": "$(IO)/i2c/_i2c",
+		"embedded:io/smbus": "$(IO)/i2c/smbus",
+		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
+		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 
-		"expander": "$(IO)/expander/*",
+		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
+
+		"embedded:io/socket/tcp": "$(IO)/socket/tcp",
+		"embedded:io/socket/udp": "$(IO)/socket/udp",
+		"embedded:io/socket/listener": "$(IO)/socket/listener",
+
+		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
 
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
-		"builtin/analog",
-		"builtin/digital",
-		"builtin/digitalbank",
-		"builtin/i2c",
-		"builtin/serial",
-		"builtin/socket/listener",
-		"builtin/socket/tcp",
-		"builtin/socket/udp",
-		"builtin/pwm",
-
-		"expander",
-
+		"embedded:*",
 		"system"
 	],
 	"platforms": {
 		"esp": {
 		},
+		"esp32": {
+		},
 		"...": {
-			"error": "Experimental TC53 IO modules currently available for ESP8266 only. For now, try using the modules in the pins directory instead"
+			"error": "Experimental TC53 IO modules currently available for ESP8266 and ESP32 only. For now, use the modules in the pins directory instead"
 		}
 	}
 }

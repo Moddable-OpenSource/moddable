@@ -232,13 +232,24 @@ class PreferencesColumnBehavior extends Behavior {
 						},
 						{
 							Template: ToggleRow,
-							comment: "Show Test262 tab",
-							name: "Test262",
+							comment: "Show Serial tab",
+							name: "Serial",
 							get value() {
 								return model.visibleTabs[2];
 							},
 							set value(it) {
 								model.showTab(2, it);
+							},
+						},
+						{
+							Template: ToggleRow,
+							comment: "Show Test262 tab",
+							name: "Test262",
+							get value() {
+								return model.visibleTabs[3];
+							},
+							set value(it) {
+								model.showTab(3, it);
 							},
 						},
 					],

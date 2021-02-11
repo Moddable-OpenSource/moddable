@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Moddable Tech, Inc.
+ * Copyright (c) 2019-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -19,28 +19,27 @@
  */
 
 /*
-	I2C - uing Arduino twi API
+	I2C - uing ESP-IDF
 
 	to do:
 */
 
-#include "twi.h"			// i2c
-
 #include "xsmc.h"			// xs bindings for microcontroller
-#ifdef __ets__
-	#include "xsHost.h"		// esp platform support
-#else
-	#error - unsupported platform
-#endif
 #include "mc.xs.h"			// for xsID_* values
+#include "xsHost.h"			// esp platform support
+
+#include "driver/i2c.h"
 
 #include "builtinCommon.h"
 
 struct I2CRecord {
 	uint32_t					hz;
-	uint8_t						data;
-	uint8_t						clock;
+	uint32_t					data;
+	uint32_t					clock;
+	uint32_t					timeout;
 	uint8_t						address;		// 7-bit
+	uint8_t						pullup;
+	uint8_t						port;
 	xsSlot						obj;
 	struct I2CRecord			*next;
 };
@@ -50,36 +49,35 @@ typedef struct I2CRecord *I2C;
 static I2C gI2C;
 static I2C gI2CActive;
 
-static void i2cActivate(I2C i2c);
-static uint8_t usingPins(uint8_t data, uint8_t clock);
+static uint8_t i2cActivate(I2C i2c);
+static uint8_t usingPins(uint32_t data, uint32_t clock);
 
 void _xs_i2c_constructor(xsMachine *the)
 {
 	I2C i2c;
 	int data, clock, hz, address;
+	int timeout = 32000;
+	uint8_t pullup = GPIO_PULLUP_ENABLE;
+	int port = I2C_NUM_MAX - 1;
 
 	xsmcVars(1);
 
 	if (!xsmcHas(xsArg(0), xsID_data))
 		xsRangeError("data required");
 	if (!xsmcHas(xsArg(0), xsID_clock))
-		xsRangeError("address required");
+		xsRangeError("clock required");
 	if (!xsmcHas(xsArg(0), xsID_address))
 		xsRangeError("address required");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_data);
 	data = xsmcToInteger(xsVar(0));
-	if ((data < 0) || (data > 16))
-		xsRangeError("invalid data");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
 	clock = xsmcToInteger(xsVar(0));
-	if ((clock < 0) || (clock > 16))
-		xsRangeError("invalid clock");
 
-	if (usingPins((uint8_t)data, (uint8_t)clock))
+	if (usingPins(data, clock))
 		;
-	else if (!builtinArePinsFree((1 << data) | (1 << clock)))
+	else if (!builtinIsPinFree(data) || !builtinIsPinFree(clock))
 		xsRangeError("inUse");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
@@ -97,6 +95,23 @@ void _xs_i2c_constructor(xsMachine *the)
 	if ((hz < 0) || (hz > 20000000))
 		xsRangeError("invalid hz");
 
+	if (xsmcHas(xsArg(0), xsID_timeout)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
+		timeout = xsmcToInteger(xsVar(0)) * (80000000 / 1000);
+	}
+
+	if (xsmcHas(xsArg(0), xsID_pullup)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_pullup);
+		pullup = xsmcTest(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
+	}
+
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		port = xsmcToInteger(xsVar(0));
+		if ((port < 0) || (port >= I2C_NUM_MAX))
+			xsRangeError("invalid port");
+	}
+
 	builtinInitializeTarget(the);
 	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
 		xsRangeError("invalid format");
@@ -108,15 +123,19 @@ void _xs_i2c_constructor(xsMachine *the)
 	xsmcSetHostData(xsThis, i2c);
 	i2c->obj = xsThis;
 	xsRemember(i2c->obj);
-	i2c->clock = (uint8_t)clock;
-	i2c->data = (uint8_t)data;
+	i2c->clock = clock;
+	i2c->data = data;
 	i2c->hz = hz;
 	i2c->address = address;
+	i2c->timeout = timeout;
+	i2c->pullup = pullup;
+	i2c->port = (uint8_t)port;
 
 	i2c->next = gI2C;
 	gI2C = i2c;
 
-	builtinUsePins((1 << data) | (1 << clock));
+	builtinUsePin(data);
+	builtinUsePin(clock);
 }
 
 void _xs_i2c_destructor(void *data)
@@ -125,8 +144,10 @@ void _xs_i2c_destructor(void *data)
 	if (!i2c)
 		return;
 
-	if (i2c == gI2CActive)
+	if (i2c == gI2CActive) {
 		gI2CActive = NULL;
+		i2c_driver_delete(i2c->port);
+	}
 
 	if (gI2C == i2c)
 		gI2C = i2c->next;
@@ -140,13 +161,12 @@ void _xs_i2c_destructor(void *data)
 		}
 	}
 
-	if (!usingPins(i2c->data, i2c->clock))
-		builtinFreePins((1 << i2c->data) | (1 << i2c->clock));
+	if (!usingPins(i2c->data, i2c->clock)) {
+		builtinFreePin(i2c->data);
+		builtinFreePin(i2c->clock);
+	}
 
 	c_free(i2c);
-
-	if (NULL == gI2C)
-		twi_stop();
 }
 
 void _xs_i2c_close(xsMachine *the)
@@ -164,6 +184,11 @@ void _xs_i2c_read(xsMachine *the)
 	int length, type;
 	int err;
 	uint8_t stop = true;
+	i2c_cmd_handle_t cmd;
+	uint8_t *buffer;
+
+	if (!i2c)
+		xsUnknownError("closed");
 
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
@@ -176,15 +201,30 @@ void _xs_i2c_read(xsMachine *the)
 	}
 	else {
 		xsResult = xsArg(0);
+//@@ assumes view is full buffer
 		if (xsmcIsInstanceOf(xsResult, xsTypedArrayPrototype))
 			xsmcGet(xsArg(0), xsResult, xsID_buffer);
 		length = xsmcGetArrayBufferLength(xsArg(0));
 	}
 
-	i2cActivate(i2c);
-	err = twi_readFrom(i2c->address, xsmcToArrayBuffer(xsArg(0)), length, stop);
-	if (err)
-		xsUnknownError("i2c read failed");
+	if (!i2cActivate(i2c))
+		xsUnknownError("activate failed");
+
+	buffer = xsmcToArrayBuffer(xsArg(0));
+
+	cmd = i2c_cmd_link_create();
+	i2c_master_start(cmd);
+	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
+	if (length > 1)
+		i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
+	i2c_master_read(cmd, buffer + length - 1, 1, I2C_MASTER_NACK);
+	if (stop)
+		i2c_master_stop(cmd);
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
+	i2c_cmd_link_delete(cmd);
+
+	if (ESP_OK != err)
+		xsUnknownError("read failed");
 }
 
 void _xs_i2c_write(xsMachine *the)
@@ -192,33 +232,70 @@ void _xs_i2c_write(xsMachine *the)
 	I2C i2c = xsmcGetHostData(xsThis);
 	int err, length;
 	uint8_t stop = true;
+	i2c_cmd_handle_t cmd;
+	uint8_t *buffer;
+
+	if (!i2c)
+		xsUnknownError("closed");
 
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
 
 	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-		xsmcGet(xsArg(0), xsArg(0), xsID_buffer);
+		xsmcGet(xsArg(0), xsArg(0), xsID_buffer);		//@@ assumes view is full buffer
 	length = xsmcGetArrayBufferLength(xsArg(0));
 
-	i2cActivate(i2c);
-	err = twi_writeTo(i2c->address, xsmcToArrayBuffer(xsArg(0)), length, stop);
-	if (err)
-		xsUnknownError("i2c write failed");
+	if (!i2cActivate(i2c))
+		xsUnknownError("activate failed");
+
+	buffer = xsmcToArrayBuffer(xsArg(0));
+
+	cmd = i2c_cmd_link_create();
+	i2c_master_start(cmd);
+	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
+	i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
+	if (stop)
+		i2c_master_stop(cmd);
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
+	i2c_cmd_link_delete(cmd);
+
+	if (ESP_OK != err)
+		xsUnknownError("write failed");
 }
 
-void i2cActivate(I2C i2c)
+uint8_t i2cActivate(I2C i2c)
 {
-	if ((i2c == gI2CActive) ||
-		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz)))
-		return;
+	i2c_config_t conf;
 
-	twi_init(i2c->data, i2c->clock);
-	twi_setClock(i2c->hz);
+	if ((i2c == gI2CActive) ||
+		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
+		return 1;
+
+	if (gI2CActive) {
+		i2c_driver_delete(gI2CActive->port);
+		gI2CActive = NULL;
+	}
+
+	conf.mode = I2C_MODE_MASTER;
+	conf.sda_io_num = i2c->data;
+	conf.scl_io_num = i2c->clock;
+	conf.master.clk_speed = i2c->hz;
+	conf.sda_pullup_en = i2c->pullup;
+	conf.scl_pullup_en = i2c->pullup;
+	if (ESP_OK != i2c_param_config(i2c->port, &conf))
+		return 0;
+
+	if (ESP_OK != i2c_driver_install(i2c->port, I2C_MODE_MASTER, 0, 0, 0))
+		return 0;
 
 	gI2CActive = i2c;
+
+	i2c_set_timeout(i2c->port, i2c->timeout);
+
+	return 1;
 }
 
-uint8_t usingPins(uint8_t data, uint8_t clock)
+uint8_t usingPins(uint32_t data, uint32_t clock)
 {
 	I2C walker;
 

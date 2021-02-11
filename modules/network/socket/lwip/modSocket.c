@@ -343,7 +343,13 @@ void xs_socket(xsMachine *the)
 			ifaddr.addr = staIpInfo.ip.addr;
 	#endif
 			igmp_joingroup(&ifaddr, &multicastIP);
+
+	#if ESP32
+			(xss->udp)->mcast_ip4 = multicastIP.u_addr.ip4;
+	#else
 			(xss->udp)->multicast_ip = multicastIP;
+	#endif
+	
 			xss->udp->ttl = 1;
 		}
 	}

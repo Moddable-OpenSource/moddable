@@ -121,10 +121,23 @@ export class MakeFile extends FILE {
 		// Read base debug build sdkconfig.defaults file
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
-		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj";
+		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
+		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : "release") + tool.slash + "config-";
+
+		if (undefined === tool.environment.ESP32_SUBCLASS) {
+			baseConfigDirectory += "esp32";
+			outputConfigDirectory += "esp32";
+		}else{
+			baseConfigDirectory += tool.environment.ESP32_SUBCLASS;
+			outputConfigDirectory += tool.environment.ESP32_SUBCLASS;
+		}
+			
 		let baseConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
 		let baseConfigLength = baseConfig.length;
+
+		tool.createDirectory(outputConfigDirectory);
+		tool.setenv("CONFIGDIR", outputConfigDirectory);
 
 		// For release builds merge base sdkconfig.defaults.release file
 		if (tool.debug === false) {
@@ -214,20 +227,20 @@ export class MakeFile extends FILE {
 			if (client || server) {
 				options.push({ name: "CONFIG_BT_ENABLED", value: "y" });
 				if (nimble) {
-					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "y" });
-					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "n" });
 					options.push({ name: "CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_SM_LEGACY", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_SM_SC", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
-					options.push({ name: "CONFIG_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_NIMBLE_SM_LEGACY", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_SM_SC", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
 				}
 				else {
-					options.push({ name: "CONFIG_BLUEDROID_ENABLED", value: "y" });
-					options.push({ name: "CONFIG_NIMBLE_ENABLED", value: "n" });
-					options.push({ name: "CONFIG_BLE_SMP_ENABLE", value: "y" });
-					options.push({ name: "CONFIG_GATTS_ENABLE", value: (server ? "y" : "n") });
-					options.push({ name: "CONFIG_GATTC_ENABLE", value: (client ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ENABLED", value: "n" });
+					options.push({ name: "CONFIG_BT_BLE_SMP_ENABLE", value: "y" });
+					options.push({ name: "CONFIG_BT_GATTS_ENABLE", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_GATTC_ENABLE", value: (client ? "y" : "n") });
 				}
 			} else {
 				options.push({ name: "CONFIG_BT_ENABLED", value: "n" });
@@ -242,7 +255,7 @@ export class MakeFile extends FILE {
 		}
 		
 		// Write the result, if it has changed
-		let buildConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.mc";
+		let buildConfigFile = outputConfigDirectory + tool.slash + "sdkconfig.mc";
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
 		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
 			const oldConfig = tool.readFileString(buildConfigFile);
@@ -754,6 +767,7 @@ export class TSConfigFile extends FILE {
 		let json = {
 			compilerOptions: {
 				baseUrl: "./",
+				forceConsistentCasingInFileNames: true,
 				module: "es2020",
 				outDir: tool.modulesPath,
 				paths: {
@@ -924,6 +938,7 @@ class Rule {
 			if (target == "~") {
 			}
 			else {
+				target = tool.resolvePrefix(target);
 				target = tool.resolveSlash(target);
 				var slash = target.lastIndexOf(tool.slash);
 				if (slash >= 0)
@@ -1347,6 +1362,10 @@ export class Tool extends TOOL {
 		if ("esp32" == this.platform) {
 			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
 			path += bluedroid ? this.platform : "nimble";
+/**/			let subclass = this.getenv("ESP32_SUBCLASS");
+/**/			if (undefined === subclass)
+/**/				subclass = "esp32";
+/**/			this.environment.ESP32_SUBCLASS = subclass;
 		}
 		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
 			path += "sim";
@@ -1565,6 +1584,13 @@ export class Tool extends TOOL {
 		}
 		this.manifests.push(manifest);
 		return manifest;
+	}
+	resolvePrefix(value) {
+		const colon = value.indexOf(":");
+		if (colon > 0) {
+			value = "~." + value.slice(0, colon) + "/" + value.slice(colon + 1);
+		}
+		return value;
 	}
 	resolveSlash(value) {
 		if (this.windows)

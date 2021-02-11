@@ -25,6 +25,9 @@
 				"pins/servo"
 			]
 		},
+		"esp32/kaluga": {
+			"error": "pins/servo module is unsupported on esp32s2"
+		},
 		"mac": {
 			"modules": {
 				"pins/servo": "$(MODULES)/pins/servo/servo",

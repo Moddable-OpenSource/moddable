@@ -18,8 +18,8 @@
  *
  */
 
-import Serial from "builtin/serial";
-import TCP from "builtin/socket/tcp";
+import Serial from "embedded:io/serial";
+import TCP from "embedded:io/socket/tcp";
 
 const FIRMATA_PROTOCOL_MAJOR_VERSION = 2;
 const FIRMATA_PROTOCOL_MINOR_VERSION = 6;

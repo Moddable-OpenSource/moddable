@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -19,6 +19,7 @@
  */
 
 import Timer from "timer";
+import Host from "embedded:provider/builtin";
 
 class System {
 	static deepSleep() @ "xs_system_deepSleep"
@@ -40,4 +41,5 @@ class System {
 	}
 }
 
-global.System = System;
+globalThis.System = System;
+globalThis.Host = Object.freeze(Host, true);

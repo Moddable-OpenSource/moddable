@@ -387,7 +387,6 @@ typedef struct FrameRecord {
 	uint16_t		prev1;
 #endif
 	uint16_t		clipLeft;
-	uint16_t		clipRight;
 	uint8_t			yOffset;
 	uint8_t			blockWidth;
 	uint8_t			unclippedBlockWidth;
@@ -916,7 +915,7 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 {
 	PocoCommand pc = poco->next;
 	Frame f;
-	PocoCoordinate xMax, yMax;
+	PocoCoordinate xMax, yMax, clipRight;
 #if (0 == kPocoRotation) || (180 == kPocoRotation)
 	PocoCoordinate sw = w;
 #else
@@ -935,13 +934,14 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 	f->blockWidth = sw >> 2;
 	f->prev0 = PocoMakeColor(poco, 255, 255, 255);
 	f->prev1 = PocoMakeColor(poco, 0, 0, 0);
-	f->clipLeft = f->clipRight = 0;
+	f->clipLeft = 0;
+	clipRight = 0;
 
 	xMax = x + w;
 	yMax = y + h;
 
 	if (xMax > poco->xMax) {
-		f->clipRight = xMax - poco->xMax;
+		clipRight = xMax - poco->xMax;
 		xMax = poco->xMax;
 	}
 
@@ -965,7 +965,7 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 		y = poco->y;
 	}
 
-	f->unclippedBlockWidth = f->blockWidth - (f->clipLeft >> 2) - (f->clipRight >> 2);
+	f->unclippedBlockWidth = ((sw - clipRight + 3) >> 2) - (f->clipLeft >> 2);
 
 	pc->x = x, pc->y = y, pc->w = xMax - x, pc->h = yMax - y;
 
@@ -3030,35 +3030,28 @@ void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 	Frame f = (Frame)pc;
 	uint8_t yOffset = f->yOffset;
 	PocoPixel prev0 = f->prev0, prev1 = f->prev1;
-	PocoCoordinate rowBump = (poco->rowBytes >> (sizeof(PocoPixel) - 1)) - (f->unclippedBlockWidth << 2);
-
-	if (f->clipLeft & 3) rowBump += 4 - (f->clipLeft & 3);
-	if (f->clipRight & 3) rowBump += (f->clipRight & 3);
+	PocoCoordinate rowBump = (poco->rowBytes >> (sizeof(PocoPixel) - 1)) - f->w;
 
 	while (h--) {
 		const uint8_t *data;
-		uint16_t unclippedBlockWidth = f->unclippedBlockWidth;
+		uint16_t widthRemain = f->w;
 		PocoPixel color0, color1;
 		uint8_t clipLeft = f->clipLeft & 3;
 		uint8_t repeatSkip;
 
-		if ((f->clipLeft >= 4)) {
-			const uint8_t *td = f->data;
+		if (f->clipLeft >= 4) {
 			PocoPixel tp0 = f->prev0, tp1 = f->prev1;
 			repeatSkip = doSkipColorCells(poco, pc, f->clipLeft >> 2);
-			data = f->data;
 			prev0 = f->prev0;
 			prev1 = f->prev1;
-			f->data = td;
 			f->prev0 = tp0;
 			f->prev1 = tp1;
 		}
-		else {
+		else
 			repeatSkip = 0;
-			data = f->data;
-		}
+		data = f->data;
 
-		while (unclippedBlockWidth) {
+		do {
 			uint8_t command = c_read8(data++);
 			uint32_t bitmask;
 			uint16_t out[4];
@@ -3193,43 +3186,36 @@ twoColorCommon:
 			}
 
 			do {
-				unclippedBlockWidth--;
-				if (clipLeft) {
-					if (3 == clipLeft) {
-						dst[0] = out[1];
-						dst[1] = out[2];
-						dst[2] = out[3];
-					}
-					else if (2 == clipLeft) {
-						dst[0] = out[2];
-						dst[1] = out[3];
-					}
-					else
-						dst[0] = out[3];
-					dst += clipLeft;
+				PocoPixel *src = out;
+				uint8_t count = widthRemain & 3;
+				if (!count) count = 4;
 
+				if (clipLeft) {
+					if (clipLeft >= count)
+						count = 0;
+					else
+						count -= clipLeft;
+					src += clipLeft;
 					clipLeft = 0;
 				}
-				else if ((0 == unclippedBlockWidth) && (f->clipRight & 3)) {
-					uint8_t clipRight = f->clipRight & 3;
-					dst[0] = out[0];
-					if (1 == clipRight) {
-						dst[1] = out[1];
-						dst[2] = out[2];
-					}
-					else if (2 == clipRight)
-						dst[1] = out[1];
-					dst += 4 - clipRight;
+
+				dst[0] = src[0];
+				if (4 == count) {
+					dst[1] = src[1];
+					dst[2] = src[2];
+					dst[3] = src[3];
 				}
-				else {
-					dst[0] = out[0];
-					dst[1] = out[1];
-					dst[2] = out[2];
-					dst[3] = out[3];
-					dst += 4;
+				else if (3 == count) {
+					dst[1] = src[1];
+					dst[2] = src[2];
 				}
-			} while (--repeat && unclippedBlockWidth);
-		}
+				else if (2 == count)
+					dst[1] = src[1];
+
+				dst += count;
+				widthRemain -= count;
+			} while (--repeat && widthRemain);
+		} while (widthRemain);
 
 		yOffset += 1;
 		if (4 == yOffset) {

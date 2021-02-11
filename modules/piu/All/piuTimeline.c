@@ -18,7 +18,8 @@
  *
  */
 
-#include "piuAll.h"
+#include "xsPlatform.h"
+#include "mc.xs.h"
 
 typedef struct {
 	xsNumberValue	from;

@@ -139,20 +139,20 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 	}
 #endif
 
-#ifdef mxDebug
-#define mxOverflow(_COUNT) \
+#if mxBoundsCheck
+#define mxAllocStack(_COUNT) \
 	if ((mxStack - _COUNT) < the->stackBottom) { \
 		mxSaveState; \
 		fxAbort(the, XS_STACK_OVERFLOW_EXIT); \
 	} \
 	mxStack -= _COUNT
 #else
-#define mxOverflow(_COUNT) \
+#define mxAllocStack(_COUNT) \
 	mxStack -= _COUNT
 #endif
 
 #define mxPushKind(_KIND) { \
-	mxOverflow(1); \
+	mxAllocStack(1); \
 	mxStack->next = C_NULL;  \
 	mxInitSlotKind(mxStack, _KIND); \
 }
@@ -623,7 +623,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		slot = mxStack;
 		variable = generator->next;
 		offset = variable->value.stack.length;
-		mxOverflow(offset);
+		mxAllocStack(offset);
 		c_memcpy(mxStack, variable->value.stack.address, offset * sizeof(txSlot));
 		mxCode = (mxStack++)->value.reference->next->value.code.address;
 		offset = (mxStack++)->value.integer;
@@ -716,6 +716,11 @@ XS_CODE_JUMP:
 		XS_CODE_RUN_TAIL_ALL:
 			if (mxFrameTarget->kind)
 				goto XS_CODE_RUN_ALL;
+#ifdef mxDebug
+			slot = mxStack + offset + 4;
+			if (!fxIsCallable(the, slot))
+				goto XS_CODE_RUN_ALL;
+#endif
 			variable = mxFrameEnd - 6 - offset;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
@@ -963,7 +968,7 @@ XS_CODE_JUMP:
 			mxStack = mxFrameEnd;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = *slot;
 			mxFrame = mxFrame->next;
 			if (!mxFrame || (mxFrame->flag & XS_C_FLAG)) {
@@ -984,7 +989,7 @@ XS_CODE_JUMP:
 			mxStack = mxFrameEnd;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = *mxFrameResult;
 			mxFrame = mxFrame->next;
 #ifdef mxTrace
@@ -1184,7 +1189,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, offset);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxArrayPrototype;
 			mxSaveState;
 			fxNewArrayInstance(the);
@@ -1204,7 +1209,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_SLOPPY)
 			offset = mxRunU1(1);
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxArgumentsSloppyPrototype;
 			mxSaveState;
 			gxDefaults.newArgumentsSloppyInstance(the, offset);
@@ -1213,7 +1218,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_STRICT)
 			offset = mxRunU1(1);
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxArgumentsStrictPrototype;
 			mxSaveState;
 			gxDefaults.newArgumentsStrictInstance(the, offset);
@@ -1221,7 +1226,7 @@ XS_CODE_JUMP:
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_CURRENT)
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = *mxFrameFunction;
 			mxNextCode(1);
 			mxBreak;
@@ -1230,12 +1235,12 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_TARGET)
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = *mxFrameTarget;
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_THIS)
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = *mxFrameThis;
 			mxNextCode(1);
 			mxBreak;
@@ -1260,7 +1265,7 @@ XS_CODE_JUMP:
 		
 	/* EXCEPTIONS */	
 		mxCase(XS_CODE_EXCEPTION)
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxException;
 			mxException = mxUndefined;
 			mxNextCode(1);
@@ -1488,12 +1493,12 @@ XS_CODE_JUMP:
 			
 	/* STACK */	
 		mxCase(XS_CODE_DUB)
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = *(mxStack + 1);
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_DUB_AT)
-			mxOverflow(2);
+			mxAllocStack(2);
 			*(mxStack + 1) = *(mxStack + 3);
 			*mxStack = *(mxStack + 2);
 			mxNextCode(1);
@@ -1642,7 +1647,7 @@ XS_CODE_JUMP:
 			mxSaveState;
 			variable = fxNewSlot(the);
 			mxRestoreState;
-			slot->flag |= XS_DONT_DELETE_FLAG;
+			slot->flag = XS_DONT_DELETE_FLAG;
 			slot->ID = (txID)offset;
 			slot->kind = XS_CLOSURE_KIND;
 			slot->value.closure = variable;
@@ -1770,7 +1775,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
-			mxOverflow(index);		
+			mxAllocStack(index);		
 			c_memset(mxStack, 0, index * sizeof(txSlot));
 			mxBreak;
 			
@@ -2202,7 +2207,7 @@ XS_CODE_JUMP:
 					mxStack->kind = XS_UNDEFINED_KIND;
 					mxBreak;
 				}
-				mxOverflow(5);
+				mxAllocStack(5);
 				slot = mxStack;
 				mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 				mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
@@ -2377,7 +2382,7 @@ XS_CODE_JUMP:
 					goto XS_CODE_SET_SKIP;
 				}
 				slot = mxStack;
-				mxOverflow(5);
+				mxAllocStack(5);
 				mxStack->value = slot->value;
 				mxInitSlotKind(mxStack, slot->kind);
 				slot = mxStack + 1;
@@ -2406,7 +2411,7 @@ XS_CODE_JUMP:
 			
 	/* INSTANCES */	
 		mxCase(XS_CODE_ARRAY)
-// 			mxOverflow(1);
+// 			mxAllocStack(1);
 			mxSaveState;
 			fxNewArray(the, 0);
 			mxRestoreState;
@@ -2437,7 +2442,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_COPY_OBJECT)
 			mxNextCode(1);
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxCopyObjectFunction;
 			mxBreak;
 		mxCase(XS_CODE_EXTEND)
@@ -2466,7 +2471,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxHosts;
 			slot = mxBehaviorGetProperty(the, mxStack->value.reference, 0, index, XS_OWN);
 			mxStack->kind = slot->kind;
@@ -2481,7 +2486,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_CALL)
 			mxNextCode(1);
-			mxOverflow(4);
+			mxAllocStack(4);
 			slot = mxStack;
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
@@ -2491,7 +2496,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_NEW)
 			mxNextCode(1);
 			variable = mxStack;
-			mxOverflow(5);
+			mxAllocStack(5);
 			slot = mxStack;
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
@@ -2503,7 +2508,7 @@ XS_CODE_JUMP:
 			mxInitSlotKind(slot, XS_UNINITIALIZED_KIND);
 			mxBreak;
 		mxCase(XS_CODE_OBJECT)
-// 			mxOverflow(1);
+// 			mxAllocStack(1);
 			mxSaveState;
 			fxNewObject(the);
 			mxRestoreState;
@@ -2511,7 +2516,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_REGEXP)
 			mxNextCode(1);
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxRegExpConstructor;
 			mxBreak;
 		mxCase(XS_CODE_SUPER)
@@ -2521,7 +2526,7 @@ XS_CODE_JUMP:
 			variable = fxGetPrototype(the, variable->value.reference);
             if (!mxIsConstructor(variable))
 				mxRunDebug(XS_TYPE_ERROR, "super: no constructor");
-			mxOverflow(6);
+			mxAllocStack(6);
 			slot = mxStack;
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
@@ -2559,7 +2564,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxAsyncFunctionPrototype;
 			mxSaveState;
 			fxNewFunctionInstance(the, (txID)offset);
@@ -2571,7 +2576,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxAsyncGeneratorFunctionPrototype;
 			mxSaveState;
 			gxDefaults.newAsyncGeneratorFunctionInstance(the,(txID) offset);
@@ -2583,7 +2588,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxFunctionPrototype;
 			mxSaveState;
 			fxNewFunctionInstance(the, (txID)offset);
@@ -2595,7 +2600,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxFunctionPrototype;
 			mxSaveState;
 			fxNewFunctionInstance(the, XS_NO_ID);
@@ -2608,7 +2613,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxFunctionPrototype;
 			mxSaveState;
 			fxNewFunctionInstance(the, (txID)offset);
@@ -2620,7 +2625,7 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset);
 #endif
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxGeneratorFunctionPrototype;
 			mxSaveState;
 			gxDefaults.newGeneratorFunctionInstance(the,(txID) offset);
@@ -3818,7 +3823,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_FOR_IN)
 			mxSkipCode(1);
 			/* FUNCTION */
-			mxOverflow(1);
+			mxAllocStack(1);
 			*mxStack = mxEnumeratorFunction;
 			slot = fxGetInstance(the, mxStack);
 			/* TARGET */

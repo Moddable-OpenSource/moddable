@@ -510,6 +510,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxOnRejectedPromise,
 	fxOnResolvedPromise,
 	fxOnThenable,
+	fxOnUnhandledRejection,
 	fxOrdinaryToPrimitive,
 	fxProxyGetter,
 	fxProxySetter,

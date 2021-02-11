@@ -149,6 +149,13 @@
 	#endif /* !__XSPLATFORM__ */
 #endif /* !INCLUDE_XSPLATFORM */
 
+#ifndef mxBoundsCheck
+	#ifdef mxDebug
+		#define mxBoundsCheck 1
+	#else
+		#define mxBoundsCheck 0
+	#endif
+#endif
 #ifndef NULL
 	#define NULL 0
 #endif
@@ -156,12 +163,17 @@
 #define fxPop() (*(the->stack++))
 #define fxPush(_SLOT) (*(--the->stack) = (_SLOT))
 
-#ifdef mxDebug
-#define xsOverflow(_COUNT) \
-	(fxOverflow(the,_COUNT,(char *)__FILE__,__LINE__))
+#if mxBoundsCheck
+	#ifdef mxDebug
+		#define xsOverflow(_COUNT) \
+			(fxOverflow(the,_COUNT,(char *)__FILE__,__LINE__))
+	#else
+		#define xsOverflow(_COUNT) \
+			(fxOverflow(the,_COUNT,NULL,0))
+	#endif
 #else
-#define xsOverflow(_COUNT) \
-	(fxOverflow(the,_COUNT,NULL,0))
+	#define xsOverflow(_COUNT) \
+		((void)0)
 #endif
 
 #ifndef __XSALL__
@@ -946,9 +958,17 @@ struct xsHostHooksStruct {
 #define xsTarget (the->frame[2])
 #define xsResult (the->frame[1])
 #define xsArgc (the->frame[-1])
+#if mxBoundsCheck
 #define xsArg(_INDEX) (the->frame[-2 - fxCheckArg(the, _INDEX)])
+#else
+#define xsArg(_INDEX) (the->frame[-2 - (_INDEX)])
+#endif
 #define xsVarc (the->scope[0])
+#if mxBoundsCheck
 #define xsVar(_INDEX) (the->scope[-1 - fxCheckVar(the, _INDEX)])
+#else
+#define xsVar(_INDEX) (the->scope[-1 - (_INDEX)])
+#endif
 	
 /* Garbage Collector */
 
@@ -1256,6 +1276,7 @@ enum {
 	xsUnhandledExceptionExit,
 	xsNoMoreKeysExit,
 	xsTooMuchComputationExit,
+	xsUnhandledRejectionExit,
 };
 
 #ifndef __XSALL__

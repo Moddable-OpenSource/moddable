@@ -43,7 +43,7 @@
 #include "mc.defines.h"
 
 #if ESP32
-	#include "rom/ets_sys.h"
+	#include "esp32/rom/ets_sys.h"
 	#include "nvs_flash/include/nvs_flash.h"
 	#include "esp_partition.h"
 	#include "esp_wifi.h"
@@ -216,6 +216,9 @@ void fxAbort(txMachine* the, int status)
 			break;
 		case XS_UNHANDLED_EXCEPTION_EXIT:
 			msg = "unhandled exception";
+			break;
+		case XS_UNHANDLED_REJECTION_EXIT:
+			msg = "unhandled rejection";
 			break;
 		case XS_NO_MORE_KEYS_EXIT:
 			msg = "not enough keys";
@@ -729,7 +732,7 @@ void fxReceiveLoop(void)
 {
 	static const char *piBegin = "\r\n<?xs.";
 	static const char *tagEnd = ">\r\n";
-	static txMachine* current = NULL;
+	static txMachine* current = NULL;	
 	static uint8_t state = 0;
 	static uint16_t binary = 0;
 	static DebugFragment fragment = NULL;
@@ -1185,6 +1188,21 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 			} break;
 #endif
+
+		case 17:
+			the->echoBuffer[the->echoOffset++] = 'e';
+			the->echoBuffer[the->echoOffset++] = 's';
+			the->echoBuffer[the->echoOffset++] = 'p';
+#if ESP32
+			the->echoBuffer[the->echoOffset++] = '3';
+			the->echoBuffer[the->echoOffset++] = '2';
+#if kCPUESP32S2
+			the->echoBuffer[the->echoOffset++] = '-';
+			the->echoBuffer[the->echoOffset++] = 's';
+			the->echoBuffer[the->echoOffset++] = '2';
+#endif
+#endif
+			break;
 
 		default:
 			resultCode = -1;

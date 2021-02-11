@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,23 +18,33 @@
  *
  */
 
-class PWM @"xs_pwm_destructor" {
-    constructor(dictionary) @"xs_pwm_constructor"
-    close() @"xs_pwm_close"
-    write() @"xs_pwm_write"
-    
-    get resolution(){
-        return 10;
-    }
-    
-    get format() {
-        return "number";
-    }
+import Analog from "embedded:io/analog";
+import Digital from "embedded:io/digital";
+import DigitalBank from "embedded:io/digitalbank";
+import I2C from "embedded:io/i2c";
+import PWM from "embedded:io/pwm";
+import Serial from "embedded:io/serial";
 
-    set format(value) {
-        if ("number" !== value)
-            throw new RangeError;
-    }
-}
+const pins = {
+	button: 0,
+	led: 2
+};
 
-export default PWM;
+const Host = {
+	I2C: {
+		default: {
+			io: I2C,
+			data: 5,
+			clock: 4
+		}
+	},
+	Serial: {
+		default: {
+			io: Serial,
+		}
+	},
+	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial},
+	pins
+};
+
+export default Host;

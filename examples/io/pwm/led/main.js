@@ -12,13 +12,11 @@
  *
  */
 
-import PWM from "builtin/pwm";
-
-const led1 = new PWM({
-   pin: 4
+const led1 = new Host.io.PWM({
+   pin: Host.pins.led
 });
 
-const led2 = new PWM({
+const led2 = new Host.io.PWM({
    pin: 5
 });
 

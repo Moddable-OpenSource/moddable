@@ -113,6 +113,8 @@ export const paneHeaderStyle = new Style({ font:"semibold", color:GRAYS[85], hor
 export const paneBorderSkin = new Skin({ fill:GRAYS[14] });
 export const paneSeparatorSkin = new Skin({ fill:GRAYS[14] });
 
+export const progressBarSkin = new Skin({ fill:[GRAYS[6], GRAYS[75]] });
+
 export const tableHeaderSkin = new Skin({ fill:[GRAYS[6], GRAYS[10], GRAYS[14], GRAYS[6]], stroke:GRAYS[14], borders: { bottom:1 } });
 export const tableHeaderStyle = new Style({ font:"bold", color:GRAYS[75], horizontal:"left" });
 export const tableFooterSkin = new Skin({ fill:GRAYS[2], stroke:GRAYS[14], borders: { bottom:1 }  });
@@ -194,3 +196,10 @@ export const preferenceValueStyle = new Style({ color:GRAYS[85], horizontal:"lef
 
 export const toggleBarSkin = new Skin({ texture:toggleTexture, x:0, y:0, width:60, height:30, states:30, tiles: { left:20, right:20 }  });
 export const toggleButtonSkin = new Skin({ texture:toggleTexture, x:60, y:0, width:30, height:30, states:30 });
+
+export const serialButtonStyle = new Style({ font:"semibold", color:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE ], left:15, right:15 });
+export const serialRowStyle = new Style({ color:[BLACK, GRAYS[50]], horizontal:"left" });
+
+
+
+
