@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,10 +12,9 @@
  *
  */
 
-import Digital from "embedded:io/digital";
-
+const Digital = Host.io.Digital;
 const led = new Digital({
-   pin: 2,
+   pin: Host.pins.led,
    mode: Digital.Output,
 });
 led.write(1);		// off

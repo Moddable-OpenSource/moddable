@@ -12,13 +12,13 @@
  *
  */
 
-import Serial from "embedded:io/serial";
-
 const msg = "hello world\r\n";
 
 if (1) {		// using buffers
-	let serial = new Serial({
-		baud: 115200 * 8,
+	new Host.io.Serial({
+		...Host.Serial.default,
+		baud: 115200,
+		port: 2,
 		format: "buffer",
 		onReadable: function(count) {
 			this.write(this.read());
@@ -28,7 +28,8 @@ if (1) {		// using buffers
 	serial.write(ArrayBuffer.fromString(msg));
 }
 else {		// using bytes
-	let serial = new Serial({
+	let serial = new Host.io.Serial({
+		...Host.Serial.default,
 		baud: 115200 * 8,
 		onReadable: function(count) {
 			while (count--)

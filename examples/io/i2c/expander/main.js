@@ -13,17 +13,11 @@
  */
 
 import Expander from "embedded:io/provider/MCP23017";
-import I2C from "embedded:io/i2c";
-import Digital from "embedded:io/digital";
 
 const expander = new Expander({
-	i2c: {
-		io: I2C,
-		data: 5,
-		clock: 4
-	},
+	i2c: Host.I2C.default,
 	interrupt: {
-		io: Digital,
+		io: Host.io.Digital,
 		pin: 0
 	}
 });

@@ -25,6 +25,8 @@
 		"embedded:io/socket/udp": "$(IO)/socket/udp",
 		"embedded:io/socket/listener": "$(IO)/socket/listener",
 
+		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
+
 		"system": "$(IO)/system/*"
 	},
 	"preload": [

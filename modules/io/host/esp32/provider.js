@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,28 +18,36 @@
  *
  */
 
-import Timer from "timer";
-import Host from "embedded:provider/builtin";
+import Analog from "embedded:io/analog";
+import Digital from "embedded:io/digital";
+import DigitalBank from "embedded:io/digitalbank";
+import I2C from "embedded:io/i2c";
+import PWM from "embedded:io/pwm";
+import Serial from "embedded:io/serial";
 
-class System {
-	static deepSleep() @ "xs_system_deepSleep"
-	static restart() @ "xs_system_restart"
+const pins = {
+	button: 0,
+	led: 2
+};
 
-	static resolve(name, callback) @ "xs_system_resolve"
+globalThis.Host = {
+	I2C: {
+		default: {
+			io: I2C,
+			data: 21,
+			clock: 22
+		}
+	},
+	Serial: {
+		default: {
+			io: Serial,
+			port: 1,
+			receive: 3,
+			transmit: 1
+		}
+	},
+	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial},
+	pins
+};
 
-	static setTimeout(callback, delay) {
-		return Timer.set(callback, delay);
-	}
-	static clearTimeout(id) {
-		Timer.clear(id);
-	}
-	static setInterval(callback, delay) {
-		return Timer.repeat(callback, delay);
-	}
-	static clearInterval(id) {
-		Timer.clear(id);
-	}
-}
-
-globalThis.System = System;
-globalThis.Host = Object.freeze(Host, true);
+export default Host;
