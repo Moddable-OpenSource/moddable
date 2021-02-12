@@ -3,13 +3,13 @@
 		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json"
+		"$(MODDABLE)/examples/manifest_base.json"
 	],
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
-			"$(IO)/i2c/$(PLATFORM)/*"
+			"$(IO)/i2c/$(PLATFORM)/*",
+			"$(IO)/system/$(PLATFORM)/*"
 		],
 		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
 		"embedded:io/digital": "$(IO)/digital/digital",
@@ -21,10 +21,6 @@
 
 		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
 
-		"embedded:io/socket/tcp": "$(IO)/socket/tcp",
-		"embedded:io/socket/udp": "$(IO)/socket/udp",
-		"embedded:io/socket/listener": "$(IO)/socket/listener",
-
 		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
 
 		"system": "$(IO)/system/*"
@@ -35,8 +31,26 @@
 	],
 	"platforms": {
 		"esp": {
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"modules": {
+				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
+				"embedded:io/socket/udp": "$(IO)/socket/udp",
+				"embedded:io/socket/listener": "$(IO)/socket/listener"
+			}
 		},
 		"esp32": {
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"modules": {
+				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
+				"embedded:io/socket/udp": "$(IO)/socket/udp",
+				"embedded:io/socket/listener": "$(IO)/socket/listener"
+			}
+		},
+		"nrf52": {
 		},
 		"...": {
 			"error": "Experimental TC53 IO modules currently available for ESP8266 and ESP32 only. For now, use the modules in the pins directory instead"

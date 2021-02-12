@@ -45,6 +45,10 @@
 		(1 << 15) |
 		(1 << 16)
 	};
+#elif nrf52
+	static uint32_t gDigitalAvailable[kPinBanks] = {
+		0xFFFFFFFF,		//@@
+	};
 #else
 	#error - unsupported platform
 #endif
