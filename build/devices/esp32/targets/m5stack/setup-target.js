@@ -2,6 +2,7 @@ import M5Button from "m5button";
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
 import config from "mc/config";
+import Timer from "timer";
 
 export default function (done) {
 	global.button = {
@@ -11,12 +12,13 @@ export default function (done) {
 	};
 
 	if (config.startupSound) {
-		const speaker = new AudioOut({streams: 1});
-		speaker.callback = function () {
-			this.stop();
-			this.close();
-			this.done();
-		};
+	const speaker = new AudioOut({streams: 1});
+	speaker.callback = function () {
+		Timer.delay(75); // @@ workaround for static after startup sound on M5Stack
+		this.stop();
+		this.close();
+		this.done();
+	};
 		speaker.done = done;
 		done = undefined;
 
