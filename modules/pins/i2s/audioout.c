@@ -1171,9 +1171,9 @@ void audioOutLoop(void *pvParameter)
 #if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 3 //I2S_DAC_CHANNEL_BOTH_EN
 			*dst++ = (s << 16) | s;
 #elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1 //I2S_DAC_CHANNEL_RIGHT_EN
-			*dst++ = s << 16;
-#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 2 //I2S_DAC_CHANNEL_LEFT_EN
 			*dst++ = s;
+#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 2 //I2S_DAC_CHANNEL_LEFT_EN
+			*dst++ = s << 16;
 #endif
 		}
 			
