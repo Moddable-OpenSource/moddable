@@ -15,7 +15,7 @@
 const msg = "hello world\r\n";
 
 if (1) {		// using buffers
-	new Host.io.Serial({
+	let serial = new Host.io.Serial({
 		...Host.Serial.default,
 		baud: 115200,
 		port: 2,
