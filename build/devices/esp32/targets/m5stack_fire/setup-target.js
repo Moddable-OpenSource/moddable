@@ -121,6 +121,8 @@ export default function (done) {
 
 	if (config.autorotate && globalThis.Application && globalThis.accelerometer) {
 		state.handleRotation = function (reading) {
+			if (globalThis.application === undefined) return;
+
 			if (Math.abs(reading.y) > Math.abs(reading.x)) {
 				if (reading.y < -0.7 && application.rotation != 90) {
 					application.rotation = 90;
