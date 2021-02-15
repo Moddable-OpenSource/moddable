@@ -28,6 +28,7 @@ export default function (done) {
 	if (config.startupSound) {
 		const speaker = new AudioOut({streams: 1});
 		speaker.callback = function () {
+			Timer.delay(75); // @@ workaround for static after startup sound on M5Stack Fire
 			this.stop();
 			this.close();
 			this.done();
@@ -120,6 +121,8 @@ export default function (done) {
 
 	if (config.autorotate && globalThis.Application && globalThis.accelerometer) {
 		state.handleRotation = function (reading) {
+			if (globalThis.application === undefined) return;
+
 			if (Math.abs(reading.y) > Math.abs(reading.x)) {
 				if (reading.y < -0.7 && application.rotation != 90) {
 					application.rotation = 90;

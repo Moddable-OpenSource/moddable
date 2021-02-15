@@ -12,51 +12,55 @@
  *
  */
 
-import I2C from "builtin/i2c";
-
 const none = Object.freeze([]);
 
-class FT6206 extends I2C {
-	constructor(dictionary) {
-		super({
-			...dictionary,
+class FT6206  {
+	#io;
+
+	constructor(options) {
+		const io = this.#io = new options.io({
+			...options,
 			hz: 600000,
 			address: 0x38,
 		});
 
-		super.write(Uint8Array.of(0xA8));
-		if (17 !== (new Uint8Array(super.read(1)))[0])
+		io.write(Uint8Array.of(0xA8));
+		if (17 !== (new Uint8Array(io.read(1)))[0])
 			throw new Error("unexpected vendor");
 
-		super.write(Uint8Array.of(0xA3));
-		let id = (new Uint8Array(super.read(1)))[0];
+		io.write(Uint8Array.of(0xA3));
+		let id = (new Uint8Array(io.read(1)))[0];
 		if ((6 !== id) && (100 !== id))
 			throw new Error("unexpected chip");
 
-		super.write(Uint8Array.of(0x80, 128));					// touch threshold
-		super.write(Uint8Array.of(0x86, 1));					// go to monitor mode when no touch active
+		io.write(Uint8Array.of(0x80, 128));					// touch threshold
+		io.write(Uint8Array.of(0x86, 1));					// go to monitor mode when no touch active
 	}
-	configure(dictionary) {
-		if (dictionary.threshold)
-			super.write(Uint8Array.of(0x80, dictionary.threshold));
+	configure(options) {
+		const io = this.#io;
 
-		if (dictionary.monitor)
-			super.write(Uint8Array.of(0x86, dictionary.monitor ? 1 : 0));
+		if (options.threshold)
+			io.write(Uint8Array.of(0x80, options.threshold));
 
-		if (undefined !== dictionary.flipX)
-			this.flipX = dictionary.flipX;
+		if (options.monitor)
+			io.write(Uint8Array.of(0x86, options.monitor ? 1 : 0));
 
-		if (undefined !== dictionary.flipY)
-			this.flipY = dictionary.flipY;
+		if (undefined !== options.flipX)
+			this.flipX = options.flipX;
+
+		if (undefined !== options.flipY)
+			this.flipY = options.flipY;
 	}
 	sample() {
-		super.write(Uint8Array.of(0x02));						// number of touches
-		const length = (new Uint8Array(super.read(1)))[0] & 0x0F;
+		const io = this.#io;
+
+		io.write(Uint8Array.of(0x02));						// number of touches
+		const length = (new Uint8Array(io.read(1)))[0] & 0x0F;
 		if (0 === length)
 			return none;
 
-		super.write(Uint8Array.of(0x03));						// read points
-		const data = new Uint8Array(super.read(6 * length));	// x, then y
+		io.write(Uint8Array.of(0x03));						// read points
+		const data = new Uint8Array(io.read(6 * length));	// x, then y
 		const result = new Array(length);
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;
@@ -86,6 +90,5 @@ class FT6206 extends I2C {
 		return result;
 	}
 }
-
 
 export default FT6206;

@@ -59,7 +59,7 @@ void _xsNewObject(txMachine *the, txSlot *res)
 
 void _xsNewHostInstance(txMachine *the, txSlot *res, txSlot *proto)
 {
-	fxOverflow(the, -1, C_NULL, 0);
+	mxOverflow(-1);
 	fxPush(*proto);
 	fxNewHostInstance(the);
 	*res = fxPop();
@@ -67,7 +67,7 @@ void _xsNewHostInstance(txMachine *the, txSlot *res, txSlot *proto)
 
 txBoolean _xsIsInstanceOf(txMachine *the, txSlot *v, txSlot *proto)
 {
-	fxOverflow(the, -2, C_NULL, 0);
+	mxOverflow(-2);
 	fxPush(*proto);
 	fxPush(*v);
 	return fxIsInstanceOf(the);
@@ -75,14 +75,14 @@ txBoolean _xsIsInstanceOf(txMachine *the, txSlot *v, txSlot *proto)
 
 txBoolean _xsHas(txMachine *the, txSlot *self, txInteger id)
 {
-	fxOverflow(the, -1, C_NULL, 0);
+	mxOverflow(-1);
 	fxPush(*self);
 	return fxHasID(the, id);
 }
 
 void _xsGet(txMachine *the, txSlot *res, txSlot *self, txInteger id)
 {
-	fxOverflow(the, -1, C_NULL, 0);
+	mxOverflow(-1);
 	fxPush(*self);
 	fxGetID(the, id);
 	*res = fxPop();
@@ -90,7 +90,7 @@ void _xsGet(txMachine *the, txSlot *res, txSlot *self, txInteger id)
 
 void _xsGetAt(txMachine *the, txSlot *res, txSlot *self, txSlot *at)
 {
-	fxOverflow(the, -2, C_NULL, 0);
+	mxOverflow(-2);
 	fxPush(*self);
 	fxPush(*at);
 	fxGetAt(the);
@@ -99,7 +99,7 @@ void _xsGetAt(txMachine *the, txSlot *res, txSlot *self, txSlot *at)
 
 void _xsSet(txMachine *the, txSlot *self, txInteger id, txSlot *v)
 {
-	fxOverflow(the, -2, C_NULL, 0);
+	mxOverflow(-2);
 	fxPush(*v);
 	fxPush(*self);
 	fxSetID(the, id);
@@ -108,7 +108,7 @@ void _xsSet(txMachine *the, txSlot *self, txInteger id, txSlot *v)
 
 void _xsSetAt(txMachine *the, txSlot *self, txSlot *at , txSlot *v)
 {
-	fxOverflow(the, -3, C_NULL, 0);
+	mxOverflow(-3);
 	fxPush(*v);
 	fxPush(*self);
 	fxPush(*at);
@@ -118,14 +118,14 @@ void _xsSetAt(txMachine *the, txSlot *self, txSlot *at , txSlot *v)
 
 void _xsDelete(txMachine *the, txSlot *self, txInteger id)
 {
-	fxOverflow(the, -1, C_NULL, 0);
+	mxOverflow(-1);
 	fxPush(*self);
 	fxDeleteID(the, id);
 }
 
 void _xsDeleteAt(txMachine *the, txSlot *self, txSlot *at)
 {
-	fxOverflow(the, -2, C_NULL, 0);
+	mxOverflow(-2);
 	fxPush(*self);
 	fxPush(*at);
 	fxDeleteAt(the);
@@ -141,7 +141,7 @@ void _xsCall(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 	for (n = 0; va_arg(ap, txSlot *) != NULL; n++)
 		;
 	va_end(ap);
-	fxOverflow(the, -(n+6), C_NULL, 0);
+	mxOverflow(-(n+6));
 	fxPush(*self);
 	fxCallID(the, id);
 	va_start(ap, id);
@@ -165,7 +165,7 @@ void _xsNew(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 	for (n = 0; va_arg(ap, txSlot *) != NULL; n++)
 		;
 	va_end(ap);
-	fxOverflow(the, -(n+6), C_NULL, 0);
+	mxOverflow(-(n+6));
 	fxPush(*self);
 	fxNewID(the, id);
 	va_start(ap, id);
@@ -178,7 +178,7 @@ void _xsNew(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 
 txBoolean _xsTest(txMachine *the, txSlot *v)
 {
-	fxOverflow(the, -1, C_NULL, 0);
+	mxOverflow(-1);
 	fxPush(*v);
 	return fxRunTest(the);
 }
@@ -192,7 +192,7 @@ txInteger fxIncrementalVars(txMachine* the, txInteger theCount)
 		static const char msg[] ICACHE_XS6STRING_ATTR = "C: xsVars: too late";
 		mxSyntaxError((char *)msg);
 	}
-	fxOverflow(the, theCount, C_NULL, 0);
+	mxOverflow(theCount);
 	aVar = aStack->value.integer;
 	aStack->value.integer += theCount;
 	if (theCount > 0) {

@@ -18,7 +18,7 @@
  *
  */
 
-import DigitalBank from "builtin/digitalbank";
+import DigitalBank from "embedded:io/digitalbank";
 
 class Digital extends DigitalBank {
 	constructor(options) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,25 +18,33 @@
  *
  */
 
-import TCP from "embedded:io/socket/tcp"
+import Analog from "embedded:io/analog";
+import Digital from "embedded:io/digital";
+import DigitalBank from "embedded:io/digitalbank";
+import I2C from "embedded:io/i2c";
+import PWM from "embedded:io/pwm";
+import Serial from "embedded:io/serial";
 
-class Listener @ "xs_listener_destructor_" {
-	constructor(dictionary) @ "xs_listener_constructor";
-	close() @ "xs_listener_close_"
-	read() {
-		return read.call(this, new TCP);
-	}
+const pins = {
+	button: 0,
+	led: 2
+};
 
-	get format() {
-		return "socket/tcp";
-	}
-	set format(value) {
-		if ("socket/tcp" !== value)
-			throw new RangeError;
-	}
-}
-Object.freeze(Listener.prototype);
+const Host = {
+	I2C: {
+		default: {
+			io: I2C,
+			data: 5,
+			clock: 4
+		}
+	},
+	Serial: {
+		default: {
+			io: Serial,
+		}
+	},
+	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial},
+	pins
+};
 
-function read() @ "xs_listener_read";
-
-export default Listener;
+export default Host;

@@ -12,7 +12,7 @@
  *
  */
 
- import UDP from "builtin/socket/udp";
+ import UDP from "embedded:io/socket/udp";
 
 class SNTP  {
 	#udp;

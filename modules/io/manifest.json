@@ -11,24 +11,26 @@
 			"$(IO)/common/builtinCommon",
 			"$(IO)/i2c/$(PLATFORM)/*"
 		],
-		"builtin/analog": "$(IO)/analog/$(PLATFORM)/*",
-		"builtin/digital": "$(IO)/digital/digital",
-		"builtin/digitalbank": "$(IO)/digital/digitalbank",
-		"builtin/i2c": "$(IO)/i2c/_i2c",
-		"builtin/smbus": "$(IO)/i2c/smbus",
-		"builtin/pwm": "$(IO)/pwm/$(PLATFORM)/*",
-		"builtin/serial": "$(IO)/serial/$(PLATFORM)/*",
+		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
+		"embedded:io/digital": "$(IO)/digital/digital",
+		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
+		"embedded:io/i2c": "$(IO)/i2c/_i2c",
+		"embedded:io/smbus": "$(IO)/i2c/smbus",
+		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
+		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 
-		"expander": "$(IO)/expander/*",
+		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
 
-		"builtin/socket/tcp": "$(IO)/socket/tcp",
-		"builtin/socket/udp": "$(IO)/socket/udp",
-		"builtin/socket/listener": "$(IO)/socket/listener",
+		"embedded:io/socket/tcp": "$(IO)/socket/tcp",
+		"embedded:io/socket/udp": "$(IO)/socket/udp",
+		"embedded:io/socket/listener": "$(IO)/socket/listener",
+
+		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
 
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
-		"builtin/*",
+		"embedded:*",
 		"system"
 	],
 	"platforms": {

@@ -23,7 +23,7 @@ export default function (done) {
 
 	// start-up sound
 	if (config.startupSound) {
-		const speaker = new AudioOut({streams: 1});
+    const speaker = new AudioOut({streams: 1});
 		speaker.callback = function () {
 			this.stop();
 			this.close();
@@ -113,6 +113,8 @@ export default function (done) {
   // autorotate
   if (config.autorotate && globalThis.Application) {
     state.handleRotation = function (reading) {
+      if (globalThis.application === undefined) return;
+
       if (Math.abs(reading.y) > Math.abs(reading.x)) {
         if (reading.y < -0.7 && application.rotation != 180) {
           application.rotation = 180;

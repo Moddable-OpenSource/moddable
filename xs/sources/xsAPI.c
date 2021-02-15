@@ -37,10 +37,6 @@
 
 #include "xsAll.h"
 
-#ifndef mxBoundsCheck
-	#define mxBoundsCheck 1
-#endif
-
 #define	XS_PROFILE_COUNT (256 * 1024)
 
 static txSlot* fxCheckHostObject(txMachine* the, txSlot* it);
@@ -878,7 +874,7 @@ void fxGetAll(txMachine* the, txInteger id, txIndex index)
 		txSlot* function = property->value.accessor.getter;
 		if (mxIsFunction(function)) {
 			txSlot* slot;
-			fxOverflow(the, -5, C_NULL, 0);
+			mxOverflow(-5);
             the->stack -= 5;
 			slot = the->stack;
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
@@ -960,7 +956,7 @@ void fxSetAll(txMachine* the, txInteger id, txIndex index)
 		txSlot* function = property->value.accessor.setter;
 		if (!mxIsFunction(function))
 			mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: no setter", id);
-		fxOverflow(the, -5, C_NULL, 0);
+		mxOverflow(-5);
 		the->stack -= 5;
 		slot = the->stack;
 		slot->value = value->value;
@@ -1096,7 +1092,7 @@ void fxCallID(txMachine* the, txInteger theID)
 
 void fxCallFrame(txMachine* the)
 {
-	fxOverflow(the, -4, C_NULL, 0);
+	mxOverflow(-4);
 	fxCall(the);
 }
 
@@ -1123,7 +1119,7 @@ void fxNewID(txMachine* the, txInteger theID)
 
 void fxNewFrame(txMachine* the)
 {
-	fxOverflow(the, -5, C_NULL, 0);
+	mxOverflow(-5);
 	fxNew(the);
 }
 
@@ -1179,7 +1175,7 @@ void fxVars(txMachine* the, txInteger theCount)
 {
 	if (the->scope != the->stack)
 		mxSyntaxError("C: xsVars: too late");
-	fxOverflow(the, theCount, C_NULL, 0);
+	mxOverflow(theCount);
 	the->scope->value.environment.variable.count = theCount;
 	while (theCount) {
 		mxPushUndefined();
@@ -1189,25 +1185,20 @@ void fxVars(txMachine* the, txInteger theCount)
 
 txInteger fxCheckArg(txMachine* the, txInteger theIndex)
 {
-#if mxBoundsCheck
 	if ((theIndex < 0) || (mxArgc <= theIndex))
 		mxSyntaxError("C: xsArg(%ld): invalid index", theIndex);
-#endif
 	return theIndex;
 }
 
 txInteger fxCheckVar(txMachine* the, txInteger theIndex)
 {
-#if mxBoundsCheck
 	if ((theIndex < 0) || (mxVarc <= theIndex))
 		mxSyntaxError("C: xsVar(%ld): invalid index", theIndex);
-#endif
 	return theIndex;
 }
 
 void fxOverflow(txMachine* the, txInteger theCount, txString thePath, txInteger theLine)
 {
-#if mxBoundsCheck
 	txSlot* aStack = the->stack + theCount;
 	if (theCount < 0) {
 		if (aStack < the->stackBottom) {
@@ -1221,7 +1212,6 @@ void fxOverflow(txMachine* the, txInteger theCount, txString thePath, txInteger 
 			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
 		}
 	}
-#endif
 }
 
 /* Exceptions */
@@ -1801,7 +1791,7 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 
 txMachine* fxBeginHost(txMachine* the)
 {
-	fxOverflow(the, -7, C_NULL, 0);
+	mxOverflow(-7);
 	/* THIS */
 	(--the->stack)->next = C_NULL;
 	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND);

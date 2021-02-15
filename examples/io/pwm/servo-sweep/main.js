@@ -12,7 +12,7 @@
  *
  */
 
-import PWM from "builtin/pwm";
+import PWM from "embedded:io/pwm";
 
 const target_period = 18;
 const degree0 = 0.5;

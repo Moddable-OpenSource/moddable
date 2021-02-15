@@ -938,6 +938,7 @@ class Rule {
 			if (target == "~") {
 			}
 			else {
+				target = tool.resolvePrefix(target);
 				target = tool.resolveSlash(target);
 				var slash = target.lastIndexOf(tool.slash);
 				if (slash >= 0)
@@ -1583,6 +1584,13 @@ export class Tool extends TOOL {
 		}
 		this.manifests.push(manifest);
 		return manifest;
+	}
+	resolvePrefix(value) {
+		const colon = value.indexOf(":");
+		if (colon > 0) {
+			value = "~." + value.slice(0, colon) + "/" + value.slice(colon + 1);
+		}
+		return value;
 	}
 	resolveSlash(value) {
 		if (this.windows)

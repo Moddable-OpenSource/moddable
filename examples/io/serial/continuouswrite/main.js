@@ -12,13 +12,12 @@
  *
  */
 
-import Serial from "builtin/serial";
-
 const message = ArrayBuffer.fromString("Since publication of the first edition in 1997, ECMAScript has grown to be one of the world's most widely used general-purpose programming languages. It is best known as the language embedded in web browsers but has also been widely adopted for server and embedded applications.\r\n");
 let offset = 0;
 
-new Serial({
-	baud: 921600,
+new Host.io.Serial({
+	...Host.Serial.default,
+	baud: 921600 / 2,
 	format: "buffer",
 	onWritable: function(count) {
 		do {
