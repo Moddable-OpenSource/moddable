@@ -9,10 +9,6 @@
 			"$(MODULES)/files/preference/esp/modPreference"
 		]
 	},
-	"preload": [
-		"time",
-		"timer"
-	],
 	"platforms": {
 		"pico/*": {
 			"include": "$(BUILD)/devices/pico/targets/$(SUBPLATFORM)/manifest.json"

@@ -81,11 +81,9 @@ extern int modTimersNext(void);
 /*
 	critical section
 */
-#include "pico/sync.h"
-
-#define modCriticalSectionDeclare		critical_section_t m_crit; critical_section_init(&m_crit);
-#define modCriticalSectionBegin()	critical_section_enter_blocking(&m_crit)
-#define modCriticalSectionEnd()		critical_section_exit(&m_crit)
+#define modCriticalSectionDeclare
+#define modCriticalSectionBegin()	do { __asm("cpsid i"); } while (0)
+#define modCriticalSectionEnd()		do { __asm("isb"); __asm("cpsie i"); } while (0)
 
 /*
 	date and time
@@ -427,12 +425,14 @@ char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 /* RESERVED MEMORY */
 // from elf2uf2/main.cpp
+/*
 #define MAIN_RAM_START 0x20000000u
 #define MAIN_RAM_END   0x20042000u
 #define FLASH_START    0x10000000u
 #define FLASH_END      0x15000000u
 #define XIP_SRAM_START 0x15000000u
 #define XIP_SRAM_END   0x15004000u
+*/
 
 #define pico_reset()			pico_reboot(0)
 #define pico_rebootToDFU()		pico_reboot(1)

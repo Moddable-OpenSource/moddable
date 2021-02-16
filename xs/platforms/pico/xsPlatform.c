@@ -42,6 +42,7 @@
 
 #include "mc.defines.h"
 #include "xsHost.h"
+#include "pico/sem.h"
 
 #ifdef mxDebug
 	#include "modPreference.h"
@@ -64,9 +65,11 @@ static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
 static void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
 void fxReceiveLoop(void);
 
-#define mxDebugMutexTake()
-#define mxDebugMutexGive()
-#define mxDebugMutexAllocated() (true)
+static semaphore_t gDebugMutex;
+static int gDebugMutexInited = 0;
+#define mxDebugMutexTake()	sem_acquire_blocking(&gDebugMutex)
+#define mxDebugMutexGive()	sem_release(&gDebugMutex)
+#define mxDebugMutexAllocated() (gDebugMutexInited)
 
 int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 // int modMessagePostToMachineFromPool(txMachine *the, modMessageDeliver callback, void *refcon);
@@ -82,9 +85,10 @@ void fxCreateMachinePlatform(txMachine* the)
 	modMachineTaskInit(the);
 #ifdef mxDebug
 	the->connection = (txSocket)mxNoSocket;
-//	if (!gDebugMutex) {
-//		gDebugMutex = xSemaphoreCreateMutex();
-//	}
+	if (!gDebugMutexInited) {
+		sem_init(&gDebugMutex, 1, 1);
+		gDebugMutexInited = 1;
+	}
 #endif
 }
 
@@ -234,7 +238,7 @@ txBoolean fxIsConnected(txMachine* the)
 txBoolean fxIsReadable(txMachine* the)
 {
 	if ((txSocket)kSerialConnection == the->connection) {
-//		fxReceiveLoop();
+		fxReceiveLoop();
 //		taskYIELD();
 		return NULL != the->debugFragments;
 	}
@@ -537,6 +541,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
+printf("set pref\n");
 			while (cmdLen--) {
 				if (!*cmd++) {
 					if (NULL == key)
@@ -557,6 +562,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 6: {		// get preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
+printf("get pref\n");
 			int zeros = 0;
 			while (cmdLen--) {
 				if (!*cmd++) {
@@ -594,22 +600,26 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 		case 11:
+printf("get vers\n");
 			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
 			the->echoBuffer[the->echoOffset++] = XS_MINOR_VERSION;
 			the->echoBuffer[the->echoOffset++] = XS_PATCH_VERSION;
 			break;
 
 		case 12:
+printf("get format\n");
 			the->echoBuffer[the->echoOffset++] = kCommodettoBitmapFormat;
 			the->echoBuffer[the->echoOffset++] = kPocoRotation / 90;
 			break;
 
 		case 13:
+printf("get sig\n");
 			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
 			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
 			break;
 		
 		case 14:  {
+printf("get id\n");
 			uint8_t *id = (uint8_t *)(the->echoBuffer + the->echoOffset);
 			pico_get_mac(id);
 			the->echoOffset += 8;
@@ -634,6 +644,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #endif
 
 		default:
+printf("unknown\n");
 			resultCode = -3;
 			break;
 	}

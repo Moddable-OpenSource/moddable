@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -317,7 +317,6 @@ void mc_setup(xsMachine *the)
 #endif
 
 	gSetupPending = 1;
-
 	xsBeginHost(the);
 		xsVars(1);
 		xsVar(0) = xsNewHostFunction(setStepDone, 0);
@@ -759,6 +758,9 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
+	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
+        values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;     // ignore the turn that generates instrumentation
+
 	fxSampleInstrumentation(the, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
@@ -767,6 +769,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
+	modInstrumentationSet(Turns, 0);
 	espInstrumentMachineReset(the);
 }
 
@@ -828,7 +831,7 @@ static void appendMessage(modMessage msg)
 	modCriticalSectionBegin();
 	if (NULL == gMessageQueue) {
 		gMessageQueue = msg;
-		modLog("esp_schedule ?");
+//		modLog("esp_schedule ?");
 //		esp_schedule();				// what do?
 	}
 	else {

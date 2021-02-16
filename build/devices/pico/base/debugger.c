@@ -26,16 +26,16 @@
 #ifdef mxDebug
 
 #ifndef MODDEF_DEBUGGER_RX_PIN
-	#define MODDEF_DEBUGGER_RX_PIN	31
+	#define MODDEF_DEBUGGER_RX_PIN	(0)
 #endif
 #ifndef MODDEF_DEBUGGER_TX_PIN
-	#define MODDEF_DEBUGGER_TX_PIN	30	
+	#define MODDEF_DEBUGGER_TX_PIN	(1)
 #endif
 #ifndef MODDEF_DEBUGGER_BAUDRATE
 	#define MODDEF_DEBUGGER_BAUDRATE	NRF_UART_BAUDRATE_115200
 #endif
 
-		
+
 //---------
 void setupDebugger()
 {
@@ -59,7 +59,7 @@ void ESP_putc(int c)
 int ESP_getc(void)
 {
 	int c;
-	c = getchar_timeout_us(10);
+	c = getchar_timeout_us(1000);
 	if (PICO_ERROR_TIMEOUT == c)
 		return -1;
 	return c;

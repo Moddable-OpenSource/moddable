@@ -50,6 +50,8 @@ void xs_setup(void)
 #endif
 		modTimersExecute();
 		modMessageService(the, modTimersNext());
+
+		modInstrumentationAdjust(Turns, +1);
 	}
 }
 
