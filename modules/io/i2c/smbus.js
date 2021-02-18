@@ -95,7 +95,7 @@ class SMBus {
 		const io = this.#io;
 
         this.#byteBuffer[0] = register;
-        io.write(this.#byteBuffer, false);
+        io.write(this.#byteBuffer, this.#stop);
         io.write(buffer);
     }
 }
