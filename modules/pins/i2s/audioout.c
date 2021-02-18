@@ -1106,10 +1106,10 @@ void audioOutLoop(void *pvParameter)
 	};
 #endif
 
-	while (kStateClosing != out->state) {
+	while (true) {
 		size_t bytes_written;
 
-		if ((kStateIdle == out->state) || (0 == out->activeStreamCount)) {
+		if ((kStatePlaying != out->state) || (0 == out->activeStreamCount)) {
 			uint32_t newState;
 
 			if (!stopped) {
@@ -1120,20 +1120,11 @@ void audioOutLoop(void *pvParameter)
 #endif
 				stopped = true;
 			}
-//			if (installed) {
-//#if MODDEF_AUDIOOUT_I2S_DAC
-//				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
-//#endif
-//				i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
-//				installed = false;
-//			}
 
-			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
-			if (kStateClosing == newState)
+			if ((kStateClosing == out->state) || (kStateTerminated == out->state))
 				break;
 
-//			if (kStateIdle == newState)
-//				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);
+			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
 			continue;
 		}
 
