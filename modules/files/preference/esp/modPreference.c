@@ -25,7 +25,7 @@
 
 extern uint8_t _MODPREF_start;
 
-#define kPreferencesStartOffset ((uint8_t *)&_MODPREF_start - kFlashStart)
+#define kPreferencesStartOffset ((uint8_t *)&_MODPREF_start - (uint8_t*)kFlashStart)
 #define kPreferencesMagic 0x81213141
 
 #define kBufferSize (64)

@@ -30,7 +30,7 @@
 	static xsMachine *gThe = NULL;		// main VM
 #endif
 
-static void debuggerTask();
+void debuggerTask();
 
 void xs_setup(void)
 {
