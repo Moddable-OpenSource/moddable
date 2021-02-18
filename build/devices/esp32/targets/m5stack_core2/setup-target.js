@@ -14,6 +14,19 @@ const state = {
   handleRotation: nop,
 };
 
+globalThis.Host = {
+  Backlight: class {
+    constructor(brightness = 100) {
+      this.write(brightness);
+    }
+    write(value) {
+      if (undefined !== globalThis.power)
+        globalThis.power.brightness = value;
+    }
+    close() {}
+  }
+}
+
 export default function (done) {
 	// power
 	globalThis.power = new Power();
