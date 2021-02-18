@@ -3,7 +3,7 @@
 #include "xsmain.h"
 
 int main() {
-	stdio_uart_init();
+	stdio_init_all();
 
 	xs_setup();
 }

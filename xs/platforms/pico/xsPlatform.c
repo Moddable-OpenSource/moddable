@@ -492,6 +492,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 	cmdID = *cmd++;
 	cmdLen -= 1;
+//printf("do Remote command %d\n", cmdID);
 
 	if (cmdLen >= 2) {
 		resultID = (cmd[0] << 8) | cmd[1];
@@ -652,6 +653,7 @@ printf("unknown\n");
 	if (resultID) {
 		the->echoBuffer[3] = resultCode >> 8;
 		the->echoBuffer[4] = resultCode & 0xff;
+printf("about to send resultID\n");
 		fxSend(the, 2);		// send binary
 	}
 

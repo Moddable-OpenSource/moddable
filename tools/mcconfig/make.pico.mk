@@ -31,8 +31,8 @@ DEBUGGER_SPEED ?= 115200
 DEBUGGER_PORT ?= /dev/cu.SLAB_USBtoUART
 
 UF2_VOLUME_NAME ?= RPI-RP2
-M4_VID ?= 2e8a
-M4_PID ?= 0003
+PICO_VID ?= 2e8a
+PICO_PID ?= 000a
 
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH)
@@ -44,9 +44,10 @@ ifeq ($(HOST_OS),Darwin)
 
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
-		CONNECT_XSBUG=@echo "Connect to xsbug." ; serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+#	CONNECT_XSBUG=@echo "Connect to xsbug @ $(DEBUGGER_PORT)." ; serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+		CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
 		NORESTART=-norestart
-		WAIT_FOR_COPY_COMPLETE =
+#		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
@@ -99,14 +100,17 @@ LDFLAGS += \
 	-mthumb						\
 	-march=armv6-m				\
 	-mcpu=cortex-m0plus			\
-	-mthumb						\
 	-Wl,--build-id=none			\
 	--specs=nosys.specs			\
 
 LDFLAGS += \
+	-Wl,--wrap=printf			\
+	-Wl,--wrap=vprintf			\
+	-Wl,--wrap=puts				\
+	-Wl,--wrap=putchar			\
 	-Wl,--wrap=sprintf			\
 	-Wl,--wrap=snprintf			\
-	-Wl,--wrap=vsnprintf			\
+	-Wl,--wrap=vsnprintf		\
 	-Wl,--wrap=__clzsi2			\
 	-Wl,--wrap=__clzdi2			\
 	-Wl,--wrap=__ctzsi2			\
@@ -257,11 +261,7 @@ LDFLAGS += \
 	-Wl,--wrap=__aeabi_memcpy8			\
 	-Wl,--wrap=__aeabi_memset8			\
 	-Wl,--script=$(LINKER_SCRIPT)			\
-	-Wl,--gc-sections			\
-	-Wl,--wrap=printf			\
-	-Wl,--wrap=vprintf			\
-	-Wl,--wrap=puts			\
-	-Wl,--wrap=putchar
+	-Wl,--gc-sections
 
 
 LIB_FILES += \
@@ -302,7 +302,11 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_float/include	\
 	$(PICO_SDK_DIR)/src/common/pico_binary_info/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb/include	\
+	$(PICO_SDK_DIR)/lib/tinyusb/src		\
+	$(PICO_SDK_DIR)/lib/tinyusb/src/common		\
+	$(PICO_SDK_DIR)/lib/tinyusb/hw		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/include	\
 	$(XS_DIR)/../modules/files/preference \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
@@ -310,11 +314,8 @@ INC_DIRS = \
 	$(PLATFORM_DIR)/base \
 	$(PLATFORM_DIR)/config
 
-#	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb/include	\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src		\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src/common		\
-#	$(PICO_SDK_DIR)/lib/tinyusb/hw		\
-#	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/include	\
+#	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
+
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
@@ -383,8 +384,6 @@ PICO_OBJ = \
 	$(LIB_DIR)/claim.c.o \
 	$(LIB_DIR)/sync.c.o \
 	$(LIB_DIR)/platform.c.o \
-	$(LIB_DIR)/uart.c.o \
-	$(LIB_DIR)/divider.S.o \
 	$(LIB_DIR)/time.c.o \
 	$(LIB_DIR)/timeout_helper.c.o \
 	$(LIB_DIR)/timer.c.o \
@@ -420,24 +419,26 @@ PICO_OBJ = \
 	$(LIB_DIR)/crt0.S.o \
 	$(LIB_DIR)/binary_info.c.o \
 	$(LIB_DIR)/stdio.c.o \
-	$(LIB_DIR)/stdio_uart.c.o \
+	$(LIB_DIR)/stdio_usb.c.o \
+	$(LIB_DIR)/stdio_usb_descriptors.c.o \
+	$(LIB_DIR)/usbd.c.o \
+	$(LIB_DIR)/usbd_control.c.o \
+	$(LIB_DIR)/cdc_device.c.o \
+	$(LIB_DIR)/vendor_device.c.o \
+	$(LIB_DIR)/dcd_rp2040.c.o \
+	$(LIB_DIR)/rp2040_usb.c.o \
 	$(LIB_DIR)/flash.c.o \
 	$(LIB_DIR)/bs2_default_padded_checksummed.S.o \
+	$(LIB_DIR)/tusb.c.o \
+	$(LIB_DIR)/tusb_fifo.c.o \
+	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o \
+ 	$(LIB_DIR)/hardware_divider.S.o \
 	$(LIB_DIR)/pico_divider.S.o
 
-#	$(LIB_DIR)/stdio_usb.c.o \
-#	$(LIB_DIR)/stdio_usb_descriptors.c.o \
-#	$(LIB_DIR)/dcd_rp2040.c.o \
-#	$(LIB_DIR)/rp2040_usb.c.o \
-#	$(LIB_DIR)/usbd.c.o \
-#	$(LIB_DIR)/usbd_control.c.o \
-#	$(LIB_DIR)/cdc_device.c.o \
+#	$(LIB_DIR)/divider.S.o \
 #	$(LIB_DIR)/dfu_rt_device.c.o \
 #	$(LIB_DIR)/msc_device.c.o \
-#	$(LIB_DIR)/tusb.c.o \
-#	$(LIB_DIR)/tusb_fifo.c.o \
-#	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o \
-# 	$(LIB_DIR)/hardware_divider.S.o \
+#	$(LIB_DIR)/stdio_uart.c.o \
 
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdlib			\
@@ -469,18 +470,20 @@ PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_mem_ops			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_standard_link	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio			\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart		\
-#	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb		\
 	$(PICO_SDK_DIR)/src/rp2_common/boot_stage2			\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src/portable/raspberrypi/rp2040		\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src/device				\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src/class/cdc			\
+	$(PICO_SDK_DIR)/lib/tinyusb/src/portable/raspberrypi/rp2040		\
+	$(PICO_SDK_DIR)/lib/tinyusb/src/device				\
+	$(PICO_SDK_DIR)/lib/tinyusb/src/class/cdc			\
+	$(PICO_SDK_DIR)/lib/tinyusb/src/class/vendor		\
+	$(PICO_SDK_DIR)/lib/tinyusb/src						\
+	$(PICO_SDK_DIR)/lib/tinyusb/src/common				\
+	$(PICO_SDK_DIR)/lib/tinyusb/hw						\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration	
+
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/msc			\
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/dfu			\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src						\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src/common				\
-#	$(PICO_SDK_DIR)/lib/tinyusb/hw						\
-#	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration	
+#	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart		\
 
 SDK_GLUE_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
@@ -528,6 +531,7 @@ XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
 PICO_SDK_DEFINES= \
 	-DPICO_STDIO_ENABLE_CRLF_SUPPORT=0 \
+	-DPICO_STDIO_USB_DEFAULT_CRLF=0 \
 	-DPICO_STDIO_DEFAULT_CRLF=0 \
 	-DPICO_DEBUG_MALLOC_LOW_WATER=0	\
 	-DPICO_DEFAULT_UART_BAUD_RATE=$(DEBUGGER_SPEED) \
@@ -553,11 +557,11 @@ PICO_C_DEFINES= \
 	-DPICO_ON_DEVICE=1	\
 	-DPICO_PRINTF_PICO=1	\
 	-DPICO_PROGRAM_URL=\"https://github.com/Moddable-OpenSource\"	\
-	-DPICO_STDIO_UART=1	\
 	-DPICO_TARGET_NAME=\"$(NAME)\"	\
+	-DPICO_STDIO_USB=1	\
 	-DPICO_USE_BLOCKED_RAM=0
 
-#	-DPICO_STDIO_USB=1	\
+#	-DPICO_STDIO_UART=1	\
 
 C_DEFINES = \
 	$(PICO_C_DEFINES) \
@@ -663,8 +667,8 @@ all: precursor $(BIN_DIR)/xs_pico.uf2
 	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 	$(WAIT_FOR_COPY_COMPLETE)
-	$(CONNECT_XSBUG)
-#	$(CONNECT_XSBUG) $(NORESTART)
+#	$(CONNECT_XSBUG)
+	$(CONNECT_XSBUG) $(NORESTART)
 
 deploy: precursor $(BIN_DIR)/xs_pico.uf2
 	$(KILL_SERIAL_2_XSBUG)
@@ -777,13 +781,14 @@ $(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p pico -r mc.resources.c
 
-# $(LIB_DIR)/hardware_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/hardware_divider/divider.S
-# 	@echo "# asm (special) " $(<F)
-# 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
+$(LIB_DIR)/hardware_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/hardware_divider/divider.S
+	@echo "# asm (special) " $(PICO_SDK_DIR)/src/rp2_common/hardware_divider/divider.S
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $(LIB_DIR)/hardware_divider.S.o
 
 $(LIB_DIR)/pico_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/pico_divider/divider.S
 	@echo "# asm  (special)" $(<F)
-	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $(LIB_DIR)/pico_divider.S.o
+#	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
 
 MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)

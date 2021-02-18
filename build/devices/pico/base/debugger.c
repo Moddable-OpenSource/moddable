@@ -35,10 +35,16 @@
 	#define MODDEF_DEBUGGER_BAUDRATE	NRF_UART_BAUDRATE_115200
 #endif
 
-
 //---------
 void setupDebugger()
 {
+	int i;
+
+	for (i=1; i<=5; i++) {
+		printf("pico-usb-start %d\r\n", i);
+		delay(1000);
+	}
+
 }
 
 void debuggerTask()
