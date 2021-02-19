@@ -5,6 +5,7 @@
 	"modules": {
 		"*": [
 			  "./main",
+			  "./require",
 			  "./replcore"
 		]
 	},
@@ -22,6 +23,13 @@
 			}
 		},
 		"esp32": {
+			"modules": {
+				"*": [
+					"./esp/repl"
+				]
+			}
+		},
+		"pico": {
 			"modules": {
 				"*": [
 					"./esp/repl"
