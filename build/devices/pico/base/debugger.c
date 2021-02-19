@@ -38,13 +38,14 @@
 //---------
 void setupDebugger()
 {
+#if mxDebug
 	int i;
 
-	for (i=1; i<=5; i++) {
+	for (i=1; i<=10; i++) {
 		printf("pico-usb-start %d\r\n", i);
 		delay(1000);
 	}
-
+#endif
 }
 
 void debuggerTask()

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+port=$(findUSBLinux $1 $2 cdc_acm)
+while [ "" == "${port}" ]; do
+	sleep 0.1
+	port=$(findUSBLinux $1 $2 cdc_acm)
+done
+
+sleep 2
+
+${MODDABLE}/build/bin/lin/release/serial2xsbug ${port} 921600 8N1 $3
+
+# -dtr $3

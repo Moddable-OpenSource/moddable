@@ -34,12 +34,15 @@ UF2_VOLUME_NAME ?= RPI-RP2
 PICO_VID ?= 2e8a
 PICO_PID ?= 000a
 
+
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
+	UF2CONV = $(MODDABLE)/build/devices/pico/config/elf2uf2_mac
+
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolume $(UF2_VOLUME_PATH)
-#	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(M4_VID) $(M4_PID) $(UF2_VOLUME_PATH)
+#	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 	ifeq ($(DEBUG),1)
@@ -55,15 +58,22 @@ ifeq ($(HOST_OS),Darwin)
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 else
+	PLATFORM_OTHER = \
+		$(MODDABLE_TOOLS_DIR)/findUSBLinux
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
-	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(M4_VID) $(M4_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+	UF2CONV = $(MODDABLE)/build/devices/pico/config/elf2uf2_lin
+
+#	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolumeLinux $(UF2_VOLUME_PATH)
+	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
+#		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
+#		CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
 		NORESTART=-norestart
 	else
 		DO_XSBUG =
@@ -498,7 +508,9 @@ OBJECTS += \
 	$(PICO_OBJ)
 
 OTHER_STUFF += \
-	env_vars
+	env_vars \
+	$(PLATFORM_OTHER)
+
 
 TOOLS_BIN = $(PICO_GCC_ROOT)/bin
 TOOLS_PREFIX = arm-none-eabi-
@@ -687,6 +699,9 @@ ifndef PICO_SDK_DIR
 	$(error PICO_SDK_DIR environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/ for details.)
 endif
 
+$(MODDABLE_TOOLS_DIR)/findUSBLinux: $(PLATFORM_DIR)/config/findUSBLinux
+	cp $(PLATFORM_DIR)/config/findUSBLinux $(MODDABLE_TOOLS_DIR)
+
 clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
@@ -699,8 +714,6 @@ allclean:
 	-rm -rf $(MODDABLE)/build/bin/pico
 	@echo "# rm $(MODDABLE)/build/tmp/pico"
 	-rm -rf $(MODDABLE)/build/tmp/pico
-
-UF2CONV = $(MODDABLE)/build/devices/pico/config/elf2uf2
 
 $(BIN_DIR)/xs_pico.uf2: $(BIN_DIR)/xs_pico.elf
 	@echo Making: $(BIN_DIR)/xs_pico.uf2 from xs_pico.elf
