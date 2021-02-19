@@ -28,9 +28,11 @@
 
 #ifdef mxDebug
 	static xsMachine *gThe = NULL;		// main VM
+	void debuggerTask();
+#else
+	#define setupDebugger()
 #endif
 
-void debuggerTask();
 
 void xs_setup(void)
 {
