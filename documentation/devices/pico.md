@@ -81,7 +81,7 @@ Please see the [Raspberry Pi Pico documentation](https://www.raspberrypi.org/doc
 
 
 <a id="macOS-building-and-deploying-apps"></a>
-### Building and Deploying Apps
+#### Building and Deploying Apps on macOS
 
 After you've setup your macOS host environment, take the following steps to install an application on your Pico.
 
@@ -113,7 +113,7 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 Not yet available.
 
 <a id="win-building-and-deploying-apps"></a>
-### Building and Deploying Apps
+#### Building and Deploying Apps on Windows
 
 Not yet available.
 
@@ -171,8 +171,8 @@ Not yet available.
 	```
 
 
-<a id="macOS-building-and-deploying-apps"></a>
-### Building and Deploying Apps
+<a id="linux-building-and-deploying-apps"></a>
+### Building and Deploying Apps on Linux
 
 After you've setup your Linux host environment, take the following steps to install an application on your Pico.
 
@@ -182,11 +182,11 @@ After you've setup your Linux host environment, take the following steps to inst
 
 	> Note: a USB hub with power switch is very helpful here.
 
-	Programming mode is indicated when a usb device named `RPI-RP2` appears on your desktop.
+	You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
 	
 	<img src="../assets/devices/pico-on-linux.png" width="175">
 
-	> Note: For good results with a virtual machine, capture the Pico device in both the Boot mode state and running state. The image below shows the configuration in VirtualBox:
+	> Note: For best results with a virtual machine, capture the Pico device in both the Boot mode state and running state. The image below shows the configuration in VirtualBox:
 	
 	<img src="../assets/devices/pico-vbox-usb.png" width="400">
 
