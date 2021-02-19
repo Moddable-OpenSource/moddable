@@ -903,7 +903,7 @@ int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, 
 	return 0;
 }
 
-int modMessageService(void)
+int modMessageService(xsMachine *the, int maxDelayMS)
 {
 	modCriticalSectionDeclare;
 	modMessage msg = gMessageQueue;
@@ -932,6 +932,8 @@ int modMessageService(void)
 			c_free(msg);
 		msg = next;
 	}
+
+	sleep_ms(maxDelayMS);
 
 	return gMessageQueue ? 1 : 0;
 }
