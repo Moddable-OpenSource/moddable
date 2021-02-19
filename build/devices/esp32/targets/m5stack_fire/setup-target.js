@@ -28,7 +28,6 @@ export default function (done) {
 	if (config.startupSound) {
 		const speaker = new AudioOut({streams: 1});
 		speaker.callback = function () {
-			Timer.delay(75); // @@ workaround for static after startup sound on M5Stack Fire
 			this.stop();
 			this.close();
 			this.done();

@@ -1,0 +1,18 @@
+{
+	"modules": {
+		"pins/rmt": "./rmt"
+	},
+	"preload": [
+		"pins/rmt"
+	],
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/rmt/esp32/*"
+			}
+		},
+		"...": {
+			"error": "pins/rmt module unsupported"
+		}
+	}
+}

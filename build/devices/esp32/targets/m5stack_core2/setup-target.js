@@ -14,6 +14,19 @@ const state = {
   handleRotation: nop,
 };
 
+globalThis.Host = {
+  Backlight: class {
+    constructor(brightness = 100) {
+      this.write(brightness);
+    }
+    write(value) {
+      if (undefined !== globalThis.power)
+        globalThis.power.brightness = value;
+    }
+    close() {}
+  }
+}
+
 export default function (done) {
 	// power
 	globalThis.power = new Power();
@@ -188,6 +201,21 @@ class Power extends AXP192 {
       this.writeByte(0x12, this.readByte(0x12) & 0xbf); //set EXTEN to disable 5v boost
       this.writeByte(0x90, (this.readByte(0x90) & 0xf8) | 0x01); //set GPIO0 to float , using enternal pulldown resistor to enable supply from BUS_5VS
     }
+  }
+  
+  // value 0 - 100 %
+  set brightness(value) {
+    if (value <= 0)
+      value = 2500;
+    else if (value >= 100)
+      value = 3300;
+    else
+      value = (value / 100) * 800 + 2500;
+    this.lcd.voltage = value;
+  }
+  
+  get brightness() {
+    return (this.lcd.voltage - 2500) / 800 * 100;
   }
 }
 
