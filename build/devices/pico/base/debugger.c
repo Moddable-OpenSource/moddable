@@ -23,6 +23,8 @@
 
 #include "mc.defines.h"
 
+#include "tusb.h"
+
 #ifdef mxDebug
 
 #ifndef MODDEF_DEBUGGER_RX_PIN
@@ -41,9 +43,14 @@ void setupDebugger()
 #if mxDebug
 	int i;
 
-	for (i=1; i<=10; i++) {
-		printf("pico-usb-start %d\r\n", i);
-		delay(1000);
+	for (i=0; i<=19; i++) {
+		if (tud_cdc_connected()) {
+			printf("pico-usb-connected.\r\n");
+			break;
+		}
+
+		printf("pico-usb-start %d\r\n", 20 - i);
+		delay(500);
 	}
 #endif
 }
@@ -65,11 +72,8 @@ void ESP_putc(int c)
 
 int ESP_getc(void)
 {
-	int c;
-	c = getchar_timeout_us(1000);
-	if (PICO_ERROR_TIMEOUT == c)
-		return -1;
-	return c;
+	int c = getchar_timeout_us(0);
+	return (PICO_ERROR_TIMEOUT == c) ? -1 : c;
 }
 
 #else
