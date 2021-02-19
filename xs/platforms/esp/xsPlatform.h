@@ -67,6 +67,10 @@
 	#define mxUseFreeRTOSTasks 1
 #endif
 
+#if !ESP32
+	#define mxUnalignedAccess 0
+#endif
+
 #ifndef __XS6PLATFORMMINIMAL__
 
 #define mxExport extern

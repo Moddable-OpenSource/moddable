@@ -219,10 +219,8 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 		variable = (SLOT)->value.reference; \
 		primitive = 0; \
 	}
-	
-#if defined(__ets__) || defined(PICO_BUILD)
-	#define mxUnalignedAccess 0
-#else
+
+#ifndef mxUnalignedAccess
 	#define mxUnalignedAccess 1
 #endif
 
