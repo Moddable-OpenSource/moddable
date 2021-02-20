@@ -37,6 +37,18 @@
 	#define MODDEF_DEBUGGER_BAUDRATE	NRF_UART_BAUDRATE_115200
 #endif
 
+#if mxDebug
+void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
+{
+	static int8_t lastRTS = -1;
+	if (-1 != lastRTS) {
+		if (lastRTS && !rts)
+			pico_reboot(dtr);
+	}
+	lastRTS = rts;
+}
+#endif
+
 //---------
 void setupDebugger()
 {
