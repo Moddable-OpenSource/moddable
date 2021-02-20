@@ -1,0 +1,18 @@
+#!/bin/bash
+
+VENDOR_ID=$1
+PRODUCT_ID=$2
+VOLUME_NAME=$3
+
+if [[ ! -d $VOLUME_NAME ]]
+then 
+	serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} 921600 8N1 -programming
+	echo -n "Waiting for ${VOLUME_NAME}."
+	while [ ! -d "${VOLUME_NAME}" ]; do
+		echo -n "."
+	    sleep 1
+	done
+	sleep 1
+	echo
+fi
+
