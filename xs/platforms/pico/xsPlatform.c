@@ -246,12 +246,13 @@ txBoolean fxIsReadable(txMachine* the)
 	return 0;
 }
 
+#define kXsbugConnectionTimeout 4000	//@@ was 2000 - needs revisiting (pico hosted from ubuntu VM)
 void fxReceive(txMachine* the)
 {
 	the->debugOffset = 0;
 
 	if ((txSocket)kSerialConnection == the->connection) {
-		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + 2000);
+		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + kXsbugConnectionTimeout);
 
 		while (!the->debugOffset) {
 			if (timeout && (timeout < modMilliseconds())) {

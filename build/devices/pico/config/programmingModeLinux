@@ -15,7 +15,7 @@ then
 else
 	if [ -z "$serial" ];
 	then
-		echo "If led is not blinking, please double-tap the reset button to enter programming mode."
+		echo "Hold the BOOTSEL button and power-cycle the device."
 	else
 		echo "Triggering serial port $serial."
 		serial2xsbug $serial 921600 8N1 -programming
