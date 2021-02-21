@@ -158,6 +158,8 @@ struct txSerialToolStruct {
 	int dtr;
 	int programming;
 	int restartOnConnect;
+	int showPath;
+	int timeout;
 	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	int index;
