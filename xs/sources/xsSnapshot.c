@@ -1337,6 +1337,7 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		buffer.value.export.module = fxProjectSlot(the, snapshot->firstProjection, slot->value.export.module);
 		break;
 	case XS_FRAME_KIND:
+		buffer.next = C_NULL;
 		break;
 	default:
 		fxReport(the, "# snapshot: invalid slot %d!\n", slot->kind);
