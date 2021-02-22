@@ -43,6 +43,8 @@
 
 #include <stdio.h>
 
+#include "hardware/sync.h"
+
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
@@ -820,19 +822,16 @@ struct modMessageRecord {
 	char				message[1];
 };
 
-static modMessage gMessageQueue;
+static modMessage gMessageQueue = NULL;
 
+// caller is responsible for setting critical section
 static void appendMessage(modMessage msg)
 {
-	modCriticalSectionDeclare;
 	msg->next = NULL;
 	msg->marked = 0;
 
-	modCriticalSectionBegin();
 	if (NULL == gMessageQueue) {
 		gMessageQueue = msg;
-//		modLog("esp_schedule ?");
-//		esp_schedule();				// what do?
 	}
 	else {
 		modMessage walker;
@@ -841,7 +840,8 @@ static void appendMessage(modMessage msg)
 			;
 		walker->next = msg;
 	}
-	modCriticalSectionEnd();
+
+	__sev();		// wake main task
 }
 	
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
@@ -863,7 +863,9 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 		c_memmove(msg->message, message, messageLength);
 	msg->length = messageLength;
 
+	modCriticalSectionBegin();
 	appendMessage(msg);
+	modCriticalSectionEnd();
 
 	return 0;
 }
@@ -871,13 +873,10 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 #define kMessagePoolCount (4)
 static modMessageRecord gMessagePool[kMessagePoolCount];
 
-int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, void *refcon)
+int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
 {
-	modCriticalSectionDeclare;
 	modMessage msg;
 	uint8_t i;
-
-	modCriticalSectionBegin();
 
 	for (i = 0, msg = gMessagePool; i < kMessagePoolCount; i++, msg++) {
 		if (!msg->isStatic) {
@@ -886,10 +885,8 @@ int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, 
 		}
 	}
 
-	modCriticalSectionEnd();
-
 	if ((gMessagePool + kMessagePoolCount) == msg) {
-		modLog("message pool full");
+//		modLog("message pool full");
 		return -1;
 	}
 
@@ -905,12 +902,16 @@ int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, 
 
 int modMessageService(xsMachine *the, int maxDelayMS)
 {
+	absolute_time_t until = make_timeout_time_ms(maxDelayMS);
+
 	modCriticalSectionDeclare;
+	modCriticalSectionBegin();
 	modMessage msg = gMessageQueue;
 	while (msg) {
 		msg->marked = 1;
 		msg = msg->next;
 	}
+	modCriticalSectionEnd();
 
 	modWatchDogReset();
 
@@ -933,7 +934,11 @@ int modMessageService(xsMachine *the, int maxDelayMS)
 		msg = next;
 	}
 
-	sleep_ms(maxDelayMS);
+	while (!gMessageQueue) {
+		best_effort_wfe_or_timeout(until);
+		if (to_us_since_boot(get_absolute_time()) >= to_us_since_boot(until))
+			break;
+	}
 
 	return gMessageQueue ? 1 : 0;
 }
