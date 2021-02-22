@@ -919,7 +919,7 @@ int modMessageService(xsMachine *the, int maxDelayMS)
 	while (msg && msg->marked) {
 		modMessage next;
 
-		if (msg->callback)
+		if (msg->callback && (!msg->the || (msg->the == the)))
 			(msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
 
 		modCriticalSectionBegin();
