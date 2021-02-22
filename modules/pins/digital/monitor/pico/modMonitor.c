@@ -64,11 +64,12 @@ void xs_digital_monitor_destructor(void *data)
 
 	// disable interrupt for this pin
 	gpio_set_irq_enabled(monitor->pin, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, false);
-	gpio_init(monitor->pin);
 
 	// remove ISR
-//	if (NULL == gMonitors)
-//		ETS_GPIO_INTR_DISABLE();
+	if (NULL == gMonitors)
+		gpio_set_irq_enabled_with_callback(monitor->pin, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, false, NULL);
+
+	gpio_init(monitor->pin);
 
 	modCriticalSectionEnd();
 
@@ -134,7 +135,6 @@ void xs_digital_monitor(xsMachine *the)
 
 	// enable interrupt for this pin
 	gpio_set_irq_enabled(monitor->pin, edge << 2, true);		// shift to GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE
-
 }
 
 void xs_digital_monitor_close(xsMachine *the)
@@ -182,17 +182,13 @@ void gpioISR(uint gpio, uint32_t events)
 			continue;
 
 		if (gpio_get(gpio)) {
-			if (1 & walker->edge) {
+			if (1 & walker->edge)
 				walker->rises += 1;
-				doUpdate = !walker->triggered;
-				walker->triggered = true;
-			}
 		}
-		else if (2 & walker->edge) {
+		else if (2 & walker->edge)
 			walker->falls += 1;
-			doUpdate = !walker->triggered;
-			walker->triggered = true;
-		}
+		doUpdate = !walker->triggered;
+		walker->triggered = true;
 		break;
 	}
 
