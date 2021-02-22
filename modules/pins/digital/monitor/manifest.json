@@ -20,13 +20,18 @@
 				"*": "$(MODULES)/pins/digital/monitor/gecko/*"
 			}
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/pico/*"
+			}
+		},
 		"qca4020": {
 			"modules": {
 				"*": "$(MODULES)/pins/digital/monitor/qca4020/*"
 			}
 		},
 		"...": {
-			"error": "pins/digital module unsupported"
+			"error": "pins/digital/monitor module unsupported"
 		}
 	}
 }
