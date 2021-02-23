@@ -934,11 +934,8 @@ int modMessageService(xsMachine *the, int maxDelayMS)
 		msg = next;
 	}
 
-	while (!gMessageQueue) {
-		best_effort_wfe_or_timeout(until);
-		if (to_us_since_boot(get_absolute_time()) >= to_us_since_boot(until))
-			break;
-	}
+	while (!gMessageQueue && !best_effort_wfe_or_timeout(until))
+		;
 
 	return gMessageQueue ? 1 : 0;
 }
