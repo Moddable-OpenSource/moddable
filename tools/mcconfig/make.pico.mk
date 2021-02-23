@@ -280,6 +280,7 @@ LIB_FILES += \
 INC_DIRS = \
 	$(PICO_SDK_DIR)/src/common/pico_stdlib/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm/include	\
 	$(PICO_SDK_DIR)/src/common/pico_base/include	\
 	$(PICO_SDK_DIR)/src/boards/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_platform/include	\
