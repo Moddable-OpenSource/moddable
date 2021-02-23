@@ -64,6 +64,8 @@ void xs_rmt_destructor(void *data)
 			}
 		}
 
+		rmt_driver_uninstall(rmt->channel);
+
 		c_free(data);
 
 		if (NULL == gRMT)
