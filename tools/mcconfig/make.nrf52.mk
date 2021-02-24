@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -21,7 +21,22 @@ HOST_OS := $(shell uname)
 
 XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2> /dev/null)
 
+USE_USB ?= 0
+FTDI_TRACE ?= -DUSE_FTDI_TRACE=0
+
 NRF_ROOT ?= $(HOME)/nrf5
+
+ifeq ($(USE_QSPI),1)
+	NRFJPROG_ARGS ?= -f nrf52 --qspiini $(QSPI_INI_PATH)
+	BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_nrf52_qspi_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
+else
+	NRFJPROG_ARGS ?= -f nrf52
+	BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_nrf52_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
+endif
+
+UPLOAD_SPEED ?= 921600
+DEBUGGER_SPEED ?= 921600
+DEBUGGER_PORT ?= $(UPLOAD_PORT)
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
@@ -79,17 +94,14 @@ BOARD = pca10056
 SOFT_DEVICE = s140
 HWCPU = cortex-m4
 
-# BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_four_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
-# SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
-SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.1_softdevice.hex
-# SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.2.0_softdevice.hex
+SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.2_softdevice.hex
 
 # BOARD_DEF = BOARD_PCA10056
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
 BOARD_DEF = BOARD_MODDABLE_FOUR
 
 #HEAP_SIZE = 0x13000
-HEAP_SIZE ?= 0x32F00
+HEAP_SIZE ?= 0x32800
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
@@ -102,6 +114,20 @@ else
 	else
 		LIB_DIR = $(BUILD_DIR)/tmp/nrf52/release/lib
 	endif
+endif
+
+ifeq ($(DEBUG),1)
+	ifeq ($(USE_USB),1)
+		DEBUGGER_USBD= -DUSE_DEBUGGER_USBD=1
+		FTDI_TRACE ?= -DUSE_FTDI_TRACE=0
+	else
+		DEBUGGER_USBD= -DUSE_DEBUGGER_USBD=0
+		FTDI_TRACE ?= -DUSE_FTDI_TRACE=1
+		CONNECT_XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+	endif
+else
+	DEBUGGER_USBD= -DUSE_DEBUGGER_USBD=0
+	FTDI_TRACE ?= -DUSE_FTDI_TRACE=0
 endif
 
 ifeq ($(MAKEFLAGS_JOBS),)
@@ -190,10 +216,12 @@ INC_DIRS += \
 	$(NRF52_SDK_ROOT)/components/libraries/bsp \
 	$(NRF52_SDK_ROOT)/components/libraries/delay \
 	$(NRF52_SDK_ROOT)/components/libraries/fds \
+	$(NRF52_SDK_ROOT)/components/libraries/fifo \
 	$(NRF52_SDK_ROOT)/components/libraries/fstorage \
 	$(NRF52_SDK_ROOT)/components/libraries/hardfault \
 	$(NRF52_SDK_ROOT)/components/libraries/hardfault/nrf52 \
 	$(NRF52_SDK_ROOT)/components/libraries/hardfault/nrf52/handler \
+	$(NRF52_SDK_ROOT)/components/libraries/libuarte \
 	$(NRF52_SDK_ROOT)/components/libraries/log \
 	$(NRF52_SDK_ROOT)/components/libraries/log/src \
 	$(NRF52_SDK_ROOT)/components/libraries/queue \
@@ -201,7 +229,6 @@ INC_DIRS += \
 	$(NRF52_SDK_ROOT)/components/libraries/scheduler \
 	$(NRF52_SDK_ROOT)/components/libraries/serial \
 	$(NRF52_SDK_ROOT)/components/libraries/sortlist \
-	$(NRF52_SDK_ROOT)/components/libraries/spi_mngr \
 	$(NRF52_SDK_ROOT)/components/libraries/stack_info \
 	$(NRF52_SDK_ROOT)/components/libraries/strerror \
 	$(NRF52_SDK_ROOT)/components/libraries/twi_sensor \
@@ -307,11 +334,12 @@ HEADERS += $(XS_HEADERS)
 SDK_GLUE_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
 	$(TMP_DIR)/systemclock.c.o \
-	$(TMP_DIR)/debugger.c.o \
-	$(TMP_DIR)/ftdi_trace.c.o \
+	$(TMP_DIR)/nrf52_serial.c.o \
 	$(TMP_DIR)/main.c.o \
 	$(TMP_DIR)/debugger_usbd.c.o \
-	$(TMP_DIR)/app_usbd_vendor.c.o
+	$(TMP_DIR)/ftdi_trace.c.o \
+	$(TMP_DIR)/app_usbd_vendor.c.o \
+	$(TMP_DIR)/debugger.c.o
 
 SDK_GLUE_HEADERS = \
 	$(BUILD_DIR)/devices/nrf52/base/app_usbd_vendor.h \
@@ -411,23 +439,25 @@ NRF_CRYPTO_BACKEND_CC310_OBJECTS = \
 NRF_DRIVERS = \
 	$(LIB_DIR)/nrf_drv_clock.c.o \
 	$(LIB_DIR)/nrf_drv_power.c.o \
-	$(LIB_DIR)/nrf_drv_spi.c.o \
 	$(LIB_DIR)/nrf_drv_twi.c.o \
-	$(LIB_DIR)/nrf_drv_uart.c.o \
 	$(LIB_DIR)/nrfx_atomic.c.o \
 	$(LIB_DIR)/nrfx_clock.c.o \
 	$(LIB_DIR)/nrfx_gpiote.c.o \
 	$(LIB_DIR)/nrfx_lpcomp.c.o \
 	$(LIB_DIR)/nrfx_power.c.o \
+	$(LIB_DIR)/nrfx_ppi.c.o \
 	$(LIB_DIR)/nrfx_prs.c.o \
 	$(LIB_DIR)/nrfx_qdec.c.o \
 	$(LIB_DIR)/nrfx_saadc.c.o \
 	$(LIB_DIR)/nrfx_spim.c.o \
 	$(LIB_DIR)/nrfx_systick.c.o \
+	$(LIB_DIR)/nrfx_timer.c.o \
 	$(LIB_DIR)/nrfx_twim.c.o \
-	$(LIB_DIR)/nrfx_uart.c.o \
-	$(LIB_DIR)/nrfx_uarte.c.o \
 	$(LIB_DIR)/nrfx_wdt.c.o
+
+#	$(LIB_DIR)/nrf_drv_uart.c.o \
+#	$(LIB_DIR)/nrfx_uart.c.o \
+#	$(LIB_DIR)/nrfx_uarte.c.o \
 
 NRF_LIBRARIES = \
 	$(LIB_DIR)/app_button.c.o \
@@ -442,15 +472,17 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_atflags.c.o \
 	$(LIB_DIR)/nrf_atomic.c.o \
 	$(LIB_DIR)/nrf_balloc.c.o \
+	$(LIB_DIR)/app_fifo.c.o \
 	$(LIB_DIR)/nrf_fprintf.c.o \
 	$(LIB_DIR)/nrf_fprintf_format.c.o \
 	$(LIB_DIR)/nrf_fstorage_sd.c.o \
 	$(LIB_DIR)/nrf_fstorage.c.o \
+	$(LIB_DIR)/nrf_libuarte_drv.c.o \
+	$(LIB_DIR)/nrf_libuarte_async.c.o \
 	$(LIB_DIR)/nrf_memobj.c.o \
 	$(LIB_DIR)/nrf_queue.c.o \
 	$(LIB_DIR)/nrf_ringbuf.c.o \
 	$(LIB_DIR)/nrf_section_iter.c.o \
-	$(LIB_DIR)/nrf_spi_mngr.c.o \
 	$(LIB_DIR)/nrf_strerror.c.o \
 	$(LIB_DIR)/nrf_twi_mngr.c.o \
 	$(LIB_DIR)/nrf_twi_sensor.c.o
@@ -556,7 +588,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
 	-DMODGCC=1 \
-	-DUSE_FTDI_TRACE=0
+	$(FTDI_TRACE)
 
 C_FLAGS=\
 	-c	\
@@ -572,10 +604,10 @@ C_FLAGS=\
 
 ifeq ($(DEBUG),1)
 	C_DEFINES += \
+		$(DEBUGGER_USBD) \
 		-DDEBUG=1 \
 		-DmxDebug=1 \
 		-DDEBUG_NRF \
-		-DUSE_DEBUGGER_USBD=1 \
 		-g3 \
 		-Os
 	C_FLAGS += $(HW_DEBUG_OPT)
@@ -619,7 +651,11 @@ C_DEFINES := -fshort-enums $(C_DEFINES)
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
-LINKER_SCRIPT := $(PLATFORM_DIR)/config/xsproj.ld
+ifeq ($(USE_QSPI),1)
+	LINKER_SCRIPT := $(PLATFORM_DIR)/config/qspi_xsproj.ld
+else
+	LINKER_SCRIPT := $(PLATFORM_DIR)/config/xsproj.ld
+endif
 
 # Utility functions
 git_description = $(shell git -C  $(1) describe --tags --always --dirty 2>/dev/null)
@@ -688,15 +724,21 @@ allclean:
 	@echo "# rm $(MODDABLE)/build/tmp/nrf52"
 	-rm -rf $(MODDABLE)/build/tmp/nrf52
 
-# flash: all $(BIN_DIR)/xs_nrf52.hex
-# 	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
-# 	$(NRFJPROG) -f nrf52 --program $(BIN_DIR)/xs_nrf52.hex --sectorerase
-# 	$(NRFJPROG) -f nrf52 --reset
+flash: precursor $(BIN_DIR)/xs_nrf52.hex
+	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
+	$(NRFJPROG) $(NRFJPROG_ARGS) --program $(BIN_DIR)/xs_nrf52.hex --qspisectorerase --sectorerase
+	$(NRFJPROG) $(NRFJPROG_ARGS) --verify $(BIN_DIR)/xs_nrf52.hex
+	$(NRFJPROG) --reset
 
-# flash_softdevice:
-# 	@echo Flashing: s140_nrf52_7.0.1_softdevice.hex
-# 	$(NRFJPROG) -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
-# 	$(NRFJPROG) -f nrf52 --reset
+debugger:
+	serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+
+use_jlink: flash xsbug
+
+flash_softdevice:
+	@echo Flashing: s140_nrf52_7.0.1_softdevice.hex
+	$(NRFJPROG) -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
+	$(NRFJPROG) -f nrf52 --reset
 
 $(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
 	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
@@ -722,7 +764,7 @@ dfu-package: $(BIN_DIR)/xs_nrf52-merged.hex
 
 installDFU: all dfu-package
 	@echo "# Flashing $<"
-	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b 115200 --singlebank --touch 1200
+	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b $(UPLOAD_SPEED) --singlebank --touch 1200
 
 xsbug:
 	$(KILL_SERIAL_2_XSBUG)

@@ -2234,7 +2234,7 @@
 // <e> NRFX_PPI_ENABLED - nrfx_ppi - PPI peripheral allocator
 //==========================================================
 #ifndef NRFX_PPI_ENABLED
-#define NRFX_PPI_ENABLED 0
+#define NRFX_PPI_ENABLED 1
 #endif
 // <e> NRFX_PPI_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
@@ -2292,7 +2292,7 @@
 // <e> NRFX_PRS_ENABLED - nrfx_prs - Peripheral Resource Sharing module
 //==========================================================
 #ifndef NRFX_PRS_ENABLED
-#define NRFX_PRS_ENABLED 1
+#define NRFX_PRS_ENABLED 0
 #endif
 // <q> NRFX_PRS_BOX_0_ENABLED  - Enables box 0 in the module.
  
@@ -3156,7 +3156,7 @@
  
 
 #ifndef NRFX_SPIM1_ENABLED
-#define NRFX_SPIM1_ENABLED 1
+#define NRFX_SPIM1_ENABLED 0
 #endif
 
 // <q> NRFX_SPIM2_ENABLED  - Enable SPIM2 instance
@@ -3170,7 +3170,7 @@
  
 
 #ifndef NRFX_SPIM3_ENABLED
-#define NRFX_SPIM3_ENABLED 0
+#define NRFX_SPIM3_ENABLED 1
 #endif
 
 // <q> NRFX_SPIM_EXTENDED_ENABLED  - Enable extended SPIM features
@@ -3369,7 +3369,7 @@
 // <e> NRFX_SPI_ENABLED - nrfx_spi - SPI peripheral driver
 //==========================================================
 #ifndef NRFX_SPI_ENABLED
-#define NRFX_SPI_ENABLED 1
+#define NRFX_SPI_ENABLED 0
 #endif
 // <q> NRFX_SPI0_ENABLED  - Enable SPI0 instance
  
@@ -3382,7 +3382,7 @@
  
 
 #ifndef NRFX_SPI1_ENABLED
-#define NRFX_SPI1_ENABLED 1
+#define NRFX_SPI1_ENABLED 0
 #endif
 
 // <q> NRFX_SPI2_ENABLED  - Enable SPI2 instance
@@ -3580,7 +3580,7 @@
 // <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
 //==========================================================
 #ifndef NRFX_TIMER_ENABLED
-#define NRFX_TIMER_ENABLED 0
+#define NRFX_TIMER_ENABLED 1
 #endif
 // <q> NRFX_TIMER0_ENABLED  - Enable TIMER0 instance
  
@@ -3593,14 +3593,14 @@
  
 
 #ifndef NRFX_TIMER1_ENABLED
-#define NRFX_TIMER1_ENABLED 0
+#define NRFX_TIMER1_ENABLED 1
 #endif
 
 // <q> NRFX_TIMER2_ENABLED  - Enable TIMER2 instance
  
 
 #ifndef NRFX_TIMER2_ENABLED
-#define NRFX_TIMER2_ENABLED 0
+#define NRFX_TIMER2_ENABLED 1
 #endif
 
 // <q> NRFX_TIMER3_ENABLED  - Enable TIMER3 instance
@@ -4073,7 +4073,7 @@
 // <e> NRFX_UARTE_ENABLED - nrfx_uarte - UARTE peripheral driver
 //==========================================================
 #ifndef NRFX_UARTE_ENABLED
-#define NRFX_UARTE_ENABLED 1
+#define NRFX_UARTE_ENABLED 0
 #endif
 // <o> NRFX_UARTE0_ENABLED - Enable UARTE0 instance 
 #ifndef NRFX_UARTE0_ENABLED
@@ -4204,7 +4204,7 @@
 
 // <o> NRFX_UART0_ENABLED - Enable UART0 instance 
 #ifndef NRFX_UART0_ENABLED
-#define NRFX_UART0_ENABLED 0
+#define NRFX_UART0_ENABLED 1
 #endif
 
 // <o> NRFX_UART_DEFAULT_CONFIG_HWFC  - Hardware Flow Control
@@ -4323,7 +4323,7 @@
 // <e> NRFX_WDT_ENABLED - nrfx_wdt - WDT peripheral driver
 //==========================================================
 #ifndef NRFX_WDT_ENABLED
-#define NRFX_WDT_ENABLED 1
+#define NRFX_WDT_ENABLED 0
 #endif
 // <o> NRFX_WDT_CONFIG_BEHAVIOUR  - WDT behavior in CPU SLEEP or HALT mode
  
@@ -4613,7 +4613,7 @@
  
 
 #ifndef PPI_ENABLED
-#define PPI_ENABLED 0
+#define PPI_ENABLED 1
 #endif
 
 // <e> PWM_ENABLED - nrf_drv_pwm - PWM peripheral driver - legacy layer
@@ -5264,7 +5264,7 @@
 // <e> SPI1_ENABLED - Enable SPI1 instance
 //==========================================================
 #ifndef SPI1_ENABLED
-#define SPI1_ENABLED 1
+#define SPI1_ENABLED 0
 #endif
 // <q> SPI1_USE_EASY_DMA  - Use EasyDMA
  
@@ -5294,7 +5294,7 @@
 // <e> TIMER_ENABLED - nrf_drv_timer - TIMER periperal driver - legacy layer
 //==========================================================
 #ifndef TIMER_ENABLED
-#define TIMER_ENABLED 0
+#define TIMER_ENABLED 1
 #endif
 // <o> TIMER_DEFAULT_CONFIG_FREQUENCY  - Timer frequency if in Timer mode
  
@@ -5354,21 +5354,21 @@
  
 
 #ifndef TIMER0_ENABLED
-#define TIMER0_ENABLED 0
+//#define TIMER0_ENABLED 0
 #endif
 
 // <q> TIMER1_ENABLED  - Enable TIMER1 instance
  
 
 #ifndef TIMER1_ENABLED
-#define TIMER1_ENABLED 0
+#define TIMER1_ENABLED 1
 #endif
 
 // <q> TIMER2_ENABLED  - Enable TIMER2 instance
  
 
 #ifndef TIMER2_ENABLED
-#define TIMER2_ENABLED 0
+#define TIMER2_ENABLED 1
 #endif
 
 // <q> TIMER3_ENABLED  - Enable TIMER3 instance
@@ -5555,7 +5555,7 @@
 // <e> UART_ENABLED - nrf_drv_uart - UART/UARTE peripheral driver - legacy layer
 //==========================================================
 #ifndef UART_ENABLED
-#define UART_ENABLED 1
+#define UART_ENABLED 0
 #endif
 // <o> UART_DEFAULT_CONFIG_HWFC  - Hardware Flow Control
  
@@ -5619,26 +5619,26 @@
  
 
 #ifndef UART_EASY_DMA_SUPPORT
-#define UART_EASY_DMA_SUPPORT 1
+#define UART_EASY_DMA_SUPPORT 0
 #endif
 
 // <q> UART_LEGACY_SUPPORT  - Driver supporting Legacy mode
  
 
 #ifndef UART_LEGACY_SUPPORT
-#define UART_LEGACY_SUPPORT 1
+#define UART_LEGACY_SUPPORT 0
 #endif
 
 // <e> UART0_ENABLED - Enable UART0 instance
 //==========================================================
 #ifndef UART0_ENABLED
-#define UART0_ENABLED 1
+#define UART0_ENABLED 0
 #endif
 // <q> UART0_CONFIG_USE_EASY_DMA  - Default setting for using EasyDMA
  
 
 #ifndef UART0_CONFIG_USE_EASY_DMA
-#define UART0_CONFIG_USE_EASY_DMA 1
+#define UART0_CONFIG_USE_EASY_DMA 0
 #endif
 
 // </e>
@@ -5950,7 +5950,7 @@
 // <e> APP_UART_ENABLED - app_uart - UART driver
 //==========================================================
 #ifndef APP_UART_ENABLED
-#define APP_UART_ENABLED 1
+#define APP_UART_ENABLED 0
 #endif
 // <o> APP_UART_DRIVER_INSTANCE  - UART instance used
  
@@ -7346,7 +7346,7 @@
 // <e> NRF_LOG_BACKEND_UART_ENABLED - nrf_log_backend_uart - Log UART backend
 //==========================================================
 #ifndef NRF_LOG_BACKEND_UART_ENABLED
-#define NRF_LOG_BACKEND_UART_ENABLED 1
+#define NRF_LOG_BACKEND_UART_ENABLED 0
 #endif
 // <o> NRF_LOG_BACKEND_UART_TX_PIN - UART TX pin 
 #ifndef NRF_LOG_BACKEND_UART_TX_PIN
@@ -11494,13 +11494,10 @@
 // </h> 
 //==========================================================
 
-#define NRF_SERIAL_ENABLED 1
-/*
-#define NRF_UARTE_ENABLED 1
-#define NRFX_UARTE_PRESENT
-#define NRFX_UARTE0_INST_IDX 0
-#define UART0_USE_EASY_DMA	true
-*/
+// #define NRF_SERIAL_ENABLED 1
+#define NRF_LIBUARTE_ASYNC_WITH_APP_TIMER 1
+#define NRF_LIBUARTE_DRV_UARTE0 1
+#define NRF_LIBUARTE_DRV_UARTE1 1
 // <<< end of configuration section >>>
 #endif //SDK_CONFIG_H
 

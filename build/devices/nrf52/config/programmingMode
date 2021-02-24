@@ -9,7 +9,7 @@ then
 	echo "If led is not blinking, please double-tap the reset button to enter programming mode."
 	serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} 921600 8N1 -programming
 	echo -n "Waiting for ${VOLUME_NAME}."
-	while [ ! -d "${VOLUME_NAME}" ]; do
+	while [[ ! -d "${VOLUME_NAME}" ]]; do
 		echo -n "."
 	    sleep 1
 	done

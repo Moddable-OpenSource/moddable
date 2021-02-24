@@ -23,45 +23,35 @@
 #include "mc.defines.h"
 
 #include "ftdi_trace.h"
-#include "nrfx_uart.h"
+
+void setupSerial();
+void serial_put(uint8_t *buffer, uint32_t len);
 
 #if USE_FTDI_TRACE 
-
 static uint8_t ftBuf[128];
-
-nrfx_uart_config_t gDebuggerUartConfig = {
-	.pseltxd = MODDEF_DEBUGGER_TX_PIN,
-	.pselrxd = MODDEF_DEBUGGER_RX_PIN,
-	.pselcts = -1,
-	.pselrts = -1,
-	.p_context = NULL,
-	.hwfc = NRF_UART_HWFC_DISABLED,
-	.parity = NRF_UART_PARITY_EXCLUDED,
-	.baudrate = MODDEF_DEBUGGER_BAUDRATE,
-	.interrupt_priority = UART_DEFAULT_CONFIG_IRQ_PRIORITY };
-		
-nrfx_uart_t gDebuggerUart = {
-    .p_reg        = NRFX_CONCAT_2(NRF_UART, 0),
-    .drv_inst_idx = NRFX_CONCAT_3(NRFX_UART, 0, _INST_IDX),
-};
-
-void ftdiTraceInit() {
-	ret_code_t ret;
-
-	ret = nrfx_uart_init(&gDebuggerUart, &gDebuggerUartConfig, NULL);
-}
 
 static void ftdiTx(uint8_t *buffer)
 {
-	while (nrfx_uart_tx_in_progress(&gDebuggerUart))
-		taskYIELD();
-
-	nrfx_uart_tx(&gDebuggerUart, buffer, c_strlen(buffer));
+	serial_put(buffer, c_strlen(buffer));
 }
+
+void ftdiTraceInit()
+{
+	setupSerial();
+	ftdiTx("setupSerial\n");
+}
+
 
 void ftdiTrace(const char *msg)
 {
-	snprintf(ftBuf, sizeof(ftBuf), "%s\n", msg);
+//	snprintf(ftBuf, sizeof(ftBuf), "%s\n", msg);
+	snprintf(ftBuf, sizeof(ftBuf), "[%p] %s\n", xTaskGetCurrentTaskHandle(), msg);
+	ftdiTx(ftBuf);
+}
+
+void ftdiTrace2(const char *msg, const char *msg2)
+{
+	snprintf(ftBuf, sizeof(ftBuf), "%s %s\n", msg, msg2);
 	ftdiTx(ftBuf);
 }
 
@@ -71,9 +61,16 @@ void ftdiTraceAndHex(const char *msg, int i)
 	ftdiTx(ftBuf);
 }
 
+void ftdiTraceAndHex2(const char *msg, int i, int j)
+{
+	snprintf(ftBuf, sizeof(ftBuf), "%s 0x%02x 0x%02x\n", msg, i, j);
+	ftdiTx(ftBuf);
+}
+
 void ftdiTraceAndInt(const char *msg, int i)
 {
-	snprintf(ftBuf, sizeof(ftBuf), "%s %d\n", msg, i);
+//	snprintf(ftBuf, sizeof(ftBuf), "%s %d\n", msg, i);
+	snprintf(ftBuf, sizeof(ftBuf), "[%p] %s %d\n", xTaskGetCurrentTaskHandle(), msg, i);
 	ftdiTx(ftBuf);
 }
 
@@ -190,6 +187,7 @@ void ftdiTraceAndCtx(const char *msg, app_usbd_vendor_ctx_t *ctx) {
 #else
 	void ftdiTraceInit() {}
 	void ftdiTrace(const char *msg) {}
+	void ftdiTrace2(const char *msg, const char *msg2) {}
 	void ftdiTraceInt(int i) {}
 	void ftdiTraceChar(int c) {}
 	void ftdiTraceAndHex(const char *msg, int i) {}

@@ -89,7 +89,7 @@ APP_USBD_VENDOR_GLOBAL_DEF(
 		
 
 #define USBD_STACK_SIZE			256
-#define USBD_PRIORITY			2
+#define USBD_PRIORITY			1
 #define USB_THREAD_MAX_BLOCK_TIME portMAX_DELAY
 
 #define kTXBufferSize 2048
@@ -138,6 +138,10 @@ static QueueHandle_t uartQueue;
 void setupDebugger(void)
 {
 	uint32_t count;
+
+#if USE_FTDI_TRACE
+    ftdiTraceInit();
+#endif
 
 	if (!gUSBMutex)
 		gUSBMutex = xSemaphoreCreateMutex();
@@ -347,8 +351,8 @@ static ret_code_t sendNextBuffer()
     nrf_drv_usbd_ep_t ep = data_ep_in_addr_get(p_inst);
     
 	NRF_DRV_USBD_TRANSFER_IN_ZLP(transfer, &buffer->buffer[0], buffer->size);
-	ftdiTraceAndInt("ACM - sending buffer, size=", buffer->size);
-	ftdiTraceHex(&buffer->buffer[0], buffer->size);
+//	ftdiTraceAndInt("ACM - sending buffer, size=", buffer->size);
+//	ftdiTraceHex(&buffer->buffer[0], buffer->size);
 	return app_usbd_ep_transfer(ep, &transfer);
 }
 

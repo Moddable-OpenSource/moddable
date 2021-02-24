@@ -1,12 +1,13 @@
 {
+	"include": [
+        "$(MODULES)/files/preference/manifest.json"
+	],
 	"modules": {
 		"*": [
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/esp/*",
 			"$(MODULES)/base/timer/*",
-			"$(MODULES)/base/timer/mc/*",
-			"$(MODULES)/files/preference/modPreference",
-			"$(MODULES)/files/preference/esp/modPreference"
+			"$(MODULES)/base/timer/mc/*"
 		]
 	},
 	"preload": [

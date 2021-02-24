@@ -210,9 +210,10 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 	modMachineTaskWait(the);
 #elif nrf52
+	#define kWorkerPriority 1
 	#define kStack ((10 * 1024) / sizeof(StackType_t))
 
-	xTaskCreate(workerLoop, worker->module, kStack, worker, 4, &worker->task);
+	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerPriority, &worker->task);
 
 	modMachineTaskWait(the);
 #else
@@ -516,7 +517,7 @@ void workerLoop(void *pvParameter)
 #endif
 
 #ifdef mxInstrument
-extern void fxSampleInstrumentation(xsMachine * the, xsIntegerValue count, xsIntegerValue* values);
+extern void fxSampleInstrumentation(xsMachine *the, xsIntegerValue count, xsIntegerValue* values);
 
 void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -45,7 +45,20 @@ M4_PID = CAFE
 
 NRF52_SDK_ROOT = $(NRF52_SDK_PATH)
 NRF52_GNU_VERSION = 7.2.1
+
+NRFJPROG = "c:\Program Files\Nordic Semiconductor\nrf-command-line-tools\bin\nrfjprog"
 UF2CONV = $(NRF_ROOT)\uf2conv.py
+
+!IF "$(USE_USB)"==""
+USE_USB = 0
+!ENDIF
+
+!IF "$(UPLOAD_SPEED)"==""
+UPLOAD_SPEED = 921600
+!ENDIF
+!IF "$(DEBUGGER_SPEED)"==""
+DEBUGGER_SPEED = 921600
+!ENDIF
 
 #VERBOSE = 1
 
@@ -87,7 +100,7 @@ ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DI
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
-SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && for /F "tokens=1" %%i in ( $(TMP_DIR)\_port.tmp ) do @$(MODDABLE_TOOLS_DIR)\serial2xsbug %%i 921600 8N1 -dtr
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && for /F "tokens=1" %%i in ( $(TMP_DIR)\_port.tmp ) do @$(MODDABLE_TOOLS_DIR)\serial2xsbug %%i $(DEBUGGER_SPEED) 8N1 -dtr
 NORESTART = -norestart
 !ELSE
 DO_XSBUG =
@@ -97,12 +110,16 @@ SERIAL_2_XSBUG =
 NORESTART =
 !ENDIF
 
+!IF "$(FTDI_TRACE)"==""
+FTDI_TRACE = -DUSE_FTDI_TRACE=0
+!ENDIF
+
 # nRF52840_xxAA
 BOARD = pca10056
 BOARD_DEF = BOARD_MODDABLE_FOUR
 
 !IF "$(HEAP_SIZE)"==""
-HEAP_SIZE = 0x32F00
+HEAP_SIZE = 0x32800
 !ENDIF
 
 HWCPU = cortex-m4
@@ -116,106 +133,124 @@ LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\instrument\lib
 LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
 !ENDIF
 
-CRYPTO_INCLUDES = \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\cc310 \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\cc310_bl \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\cifra \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\nrf_hw \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\mbedtls \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\micro_ecc \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\nrf_sw \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\oberon \
-	-I$(NRF52_SDK_ROOT)\components\libraries\crypto\backend\optiga \
-	-I$(NRF52_SDK_ROOT)\external\nrf_cc310\include \
-	-I$(NRF52_SDK_ROOT)\external\nrf_cc310_bl\include
+!IF "$(DEBUG)"=="1"
+!IF "$(USE_USB)"=="1"
+DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=1
+FTDI_TRACE = -DUSE_FTDI_TRACE=0
+!ELSE
+DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
+FTDI_TRACE = -DUSE_FTDI_TRACE=1
+!ENDIF
+!ELSE
+DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
+FTDI_TRACE = -DUSE_FTDI_TRACE=0
+!ENDIF
 
-FREE_RTOS_INCLUDES = \
-	-I$(NRF52_SDK_ROOT)\external\freertos\portable\GCC\nrf52 \
-	-I$(NRF52_SDK_ROOT)\external\freertos\portable\CMSIS\nrf52 \
-	-I$(NRF52_SDK_ROOT)\external\freertos\source \
-	-I$(NRF52_SDK_ROOT)\external\freertos\source\include \
-	-I$(NRF52_SDK_ROOT)\external\freertos\source\portable\MemMang
+!IF "$(USE_QSPI)"=="1"
+LINKER_SCRIPT = $(PLATFORM_DIR)\config\qspi_xsproj.ld
+!ELSE
+LINKER_SCRIPT = $(PLATFORM_DIR)\config\xsproj.ld
+!ENDIF
 
-GCC_INCLUDES = \
-	-I$(NRF52_GCC_ROOT)\arm-none-eabi\include \
-	-I$(NRF52_GCC_ROOT)\arm-none-eabi\include\machine \
-	-I$(NRF52_GCC_ROOT)\lib\gcc\arm-none-eabi\$(NRF52_GNU_VERSION)\include \
-	-I$(NRF52_GCC_ROOT)\lib\gcc\arm-none-eabi\$(NRF52_GNU_VERSION)\include-fixed
+GCC_INCLUDES=-iprefix $(NRF52_GCC_ROOT)\ \
+	-iwithprefix arm-none-eabi\include \
+	-iwithprefix arm-none-eabi\include\machine \
+	-iwithprefix lib\gcc\arm-none-eabi\$(NRF52_GNU_VERSION)\include \
+	-iwithprefix lib\gcc\arm-none-eabi\$(NRF52_GNU_VERSION)\include-fixed
 
-SDK_INCLUDES = \
-	-I$(NRF52_SDK_ROOT)\components \
-	-I$(NRF52_SDK_ROOT)\components\ble\common \
-	-I$(NRF52_SDK_ROOT)\components\ble\ble_advertising \
-	-I$(NRF52_SDK_ROOT)\components\ble\ble_radio_notification \
-	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_gatt \
-	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_qwr \
-	-I$(NRF52_SDK_ROOT)\components\ble\nrf_ble_scan \
-	-I$(NRF52_SDK_ROOT)\components\ble\peer_manager \
-	-I$(NRF52_SDK_ROOT)\components\boards \
-	-I$(NRF52_SDK_ROOT)\components\libraries\atomic \
-	-I$(NRF52_SDK_ROOT)\components\libraries\atomic_fifo \
-	-I$(NRF52_SDK_ROOT)\components\libraries\atomic_flags \
-	-I$(NRF52_SDK_ROOT)\components\libraries\balloc \
-	-I$(NRF52_SDK_ROOT)\components\libraries\button \
-	-I$(NRF52_SDK_ROOT)\components\libraries\bsp \
-	-I$(NRF52_SDK_ROOT)\components\libraries\delay \
-	-I$(NRF52_SDK_ROOT)\components\libraries\experimental_section_vars \
-	-I$(NRF52_SDK_ROOT)\components\libraries\fds \
-	-I$(NRF52_SDK_ROOT)\components\libraries\fstorage \
-	-I$(NRF52_SDK_ROOT)\components\libraries\hardfault \
-	-I$(NRF52_SDK_ROOT)\components\libraries\hardfault\nrf52 \
-	-I$(NRF52_SDK_ROOT)\components\libraries\hardfault\nrf52\handler \
-	-I$(NRF52_SDK_ROOT)\components\libraries\log \
-	-I$(NRF52_SDK_ROOT)\components\libraries\log\src \
-	-I$(NRF52_SDK_ROOT)\components\libraries\memobj \
-	-I$(NRF52_SDK_ROOT)\components\libraries\mutex \
-	-I$(NRF52_SDK_ROOT)\components\libraries\queue \
-	-I$(NRF52_SDK_ROOT)\components\libraries\ringbuf \
-	-I$(NRF52_SDK_ROOT)\components\libraries\scheduler \
-	-I$(NRF52_SDK_ROOT)\components\libraries\serial \
-	-I$(NRF52_SDK_ROOT)\components\libraries\spi_mngr \
-	-I$(NRF52_SDK_ROOT)\components\libraries\stack_info \
-	-I$(NRF52_SDK_ROOT)\components\libraries\strerror \
-	-I$(NRF52_SDK_ROOT)\components\libraries\twi_sensor \
-	-I$(NRF52_SDK_ROOT)\components\libraries\twi_mngr \
-	-I$(NRF52_SDK_ROOT)\components\libraries\timer \
-	-I$(NRF52_SDK_ROOT)\components\libraries\util \
-	-I$(NRF52_SDK_ROOT)\components\libraries\usbd \
-	-I$(NRF52_SDK_ROOT)\components\libraries\usbd\class\cdc \
-	-I$(NRF52_SDK_ROOT)\components\libraries\usbd\class\cdc\acm \
-	-I$(NRF52_SDK_ROOT)\components\softdevice\common \
-	-I$(NRF52_SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers \
-	-I$(NRF52_SDK_ROOT)\components\softdevice\$(SOFT_DEVICE)\headers\nrf52 \
-	-I$(NRF52_SDK_ROOT)\components\toolchain\cmsis\include \
-	-I$(NRF52_SDK_ROOT)\external\fprintf \
-	-I$(NRF52_SDK_ROOT)\external\utf_converter \
-	-I$(NRF52_SDK_ROOT)\integration\nrfx\legacy \
-	-I$(NRF52_SDK_ROOT)\integration\nrfx \
-	-I$(NRF52_SDK_ROOT)\modules\nrfx \
-	-I$(NRF52_SDK_ROOT)\modules\nrfx\drivers\include \
-	-I$(NRF52_SDK_ROOT)\modules\nrfx\drivers\src \
-	-I$(NRF52_SDK_ROOT)\modules\nrfx\drivers\src\prs \
-	-I$(NRF52_SDK_ROOT)\modules\nrfx\hal \
-	-I$(NRF52_SDK_ROOT)\modules\nrfx\mdk \
-	-I$(NRF52_SDK_ROOT)\modules\nrfx\soc
+
+NRF_SDK_INCLUDES=-iprefix $(NRF52_SDK_ROOT)\components\libraries\ \
+	-iwithprefix crypto \
+	-iwithprefix crypto\backend\cc310 \
+	-iwithprefix crypto\backend\cc310_bl \
+	-iwithprefix crypto\backend\cifra \
+	-iwithprefix crypto\backend\nrf_hw \
+	-iwithprefix crypto\backend\mbedtls \
+	-iwithprefix crypto\backend\micro_ecc \
+	-iwithprefix crypto\backend\nrf_sw \
+	-iwithprefix crypto\backend\oberon \
+	-iwithprefix crypto\backend\optiga \
+	-iwithprefix atomic \
+	-iwithprefix atomic_fifo \
+	-iwithprefix atomic_flags \
+	-iwithprefix balloc \
+	-iwithprefix button \
+	-iwithprefix bsp \
+	-iwithprefix delay \
+	-iwithprefix experimental_section_vars \
+	-iwithprefix fds \
+	-iwithprefix fifo \
+	-iwithprefix fstorage \
+	-iwithprefix hardfault \
+	-iwithprefix hardfault\nrf52 \
+	-iwithprefix hardfault\nrf52\handler \
+	-iwithprefix libuarte \
+	-iwithprefix log \
+	-iwithprefix log\src \
+	-iwithprefix memobj \
+	-iwithprefix mutex \
+	-iwithprefix queue \
+	-iwithprefix ringbuf \
+	-iwithprefix scheduler \
+	-iwithprefix serial \
+	-iwithprefix stack_info \
+	-iwithprefix strerror \
+	-iwithprefix twi_sensor \
+	-iwithprefix twi_mngr \
+	-iwithprefix timer \
+	-iwithprefix util \
+	-iwithprefix usbd \
+	-iwithprefix usbd\class\cdc \
+	-iwithprefix usbd\class\cdc\acm \
+	-iprefix $(NRF52_SDK_ROOT)\ \
+	-iwithprefix external\nrf_cc310\include \
+	-iwithprefix external\nrf_cc310_bl\include \
+	-iwithprefix external\freertos\portable\GCC\nrf52 \
+	-iwithprefix external\freertos\portable\CMSIS\nrf52 \
+	-iwithprefix external\freertos\source \
+	-iwithprefix external\freertos\source\include \
+	-iwithprefix external\freertos\source\portable\MemMang \
+	-iwithprefix components \
+	-iwithprefix components\ble\common \
+	-iwithprefix components\ble\ble_advertising \
+	-iwithprefix components\ble\ble_radio_notification \
+	-iwithprefix components\ble\nrf_ble_gatt \
+	-iwithprefix components\ble\nrf_ble_qwr \
+	-iwithprefix components\ble\nrf_ble_scan \
+	-iwithprefix components\ble\peer_manager \
+	-iwithprefix components\boards \
+	-iwithprefix components\softdevice\common \
+	-iwithprefix components\softdevice\$(SOFT_DEVICE)\headers \
+	-iwithprefix components\softdevice\$(SOFT_DEVICE)\headers\nrf52 \
+	-iwithprefix components\toolchain\cmsis\include \
+	-iwithprefix external\fprintf \
+	-iwithprefix external\utf_converter \
+	-iwithprefix integration\nrfx\legacy \
+	-iwithprefix integration\nrfx \
+	-iwithprefix modules\nrfx \
+	-iwithprefix modules\nrfx\drivers\include \
+	-iwithprefix modules\nrfx\drivers\src \
+	-iwithprefix modules\nrfx\drivers\src\prs \
+	-iwithprefix modules\nrfx\hal \
+	-iwithprefix modules\nrfx\mdk \
+	-iwithprefix modules\nrfx\soc
 
 SDK_GLUE_INCLUDES = \
-	-I$(BUILD_DIR)\devices\nrf52\base \
-	-I$(BUILD_DIR)\devices\nrf52\config \
 	-I$(PLATFORM_DIR) \
 	-I$(PLATFORM_DIR)\config
 
 XS_INCLUDES = \
-	-I$(XS_DIR)\includes \
-	-I$(XS_DIR)\sources \
-	-I$(XS_DIR)\platforms\nrf52 \
-	-I$(XS_DIR)\..\modules\files\preference \
-	-I$(XS_DIR)\..\modules\base\instrumentation \
-	-I$(XS_DIR)\..\modules\base\timer \
-	-I$(BUILD_DIR)\devices\nrf52 \
-	-I$(BUILD_DIR)\devices\nrf52\base \
-	-I$(BUILD_DIR)\devices\nrf52\xsProj
+	-iprefix $(XS_DIR)\ \
+	-iwithprefix includes \
+	-iwithprefix sources \
+	-iwithprefix platforms\nrf52 \
+	-iwithprefix ..\modules\files\preference \
+	-iwithprefix ..\modules\base\instrumentation \
+	-iwithprefix ..\modules\base\timer \
+	-iprefix $(BUILD_DIR)\devices\nrf52\ \
+	-iwithprefix base \
+	-iwithprefix config \
+	-iwithprefix xsProj
 
 BOARD_SUPPORT_OBJ = \
 	$(LIB_DIR)\boards.o \
@@ -277,22 +312,20 @@ NRF_CRYPTO_OBJ = \
 NRF_DRIVERS_OBJ = \
 	$(LIB_DIR)\nrf_drv_clock.o \
 	$(LIB_DIR)\nrf_drv_power.o \
-	$(LIB_DIR)\nrf_drv_spi.o \
 	$(LIB_DIR)\nrf_drv_twi.o \
-	$(LIB_DIR)\nrf_drv_uart.o \
 	$(LIB_DIR)\nrfx_atomic.o \
 	$(LIB_DIR)\nrfx_clock.o \
 	$(LIB_DIR)\nrfx_gpiote.o \
 	$(LIB_DIR)\nrfx_lpcomp.o \
 	$(LIB_DIR)\nrfx_power.o \
+	$(LIB_DIR)\nrfx_ppi.o \
 	$(LIB_DIR)\nrfx_prs.o \
 	$(LIB_DIR)\nrfx_qdec.o \
 	$(LIB_DIR)\nrfx_saadc.o \
 	$(LIB_DIR)\nrfx_spim.o \
 	$(LIB_DIR)\nrfx_systick.o \
+	$(LIB_DIR)\nrfx_timer.o \
 	$(LIB_DIR)\nrfx_twim.o \
-	$(LIB_DIR)\nrfx_uart.o \
-	$(LIB_DIR)\nrfx_uarte.o \
 	$(LIB_DIR)\nrfx_wdt.o
 
 NRF_CRYPTO_BACKEND_CC310_OBJ = \
@@ -327,15 +360,17 @@ NRF_LIBRARIES_OBJ = \
 	$(LIB_DIR)\nrf_atflags.o \
 	$(LIB_DIR)\nrf_atomic.o \
 	$(LIB_DIR)\nrf_balloc.o \
+	$(LIB_DIR)\app_fifo.o \
 	$(LIB_DIR)\nrf_fprintf.o \
 	$(LIB_DIR)\nrf_fprintf_format.o \
 	$(LIB_DIR)\nrf_fstorage_sd.o \
 	$(LIB_DIR)\nrf_fstorage.o \
+	$(LIB_DIR)\nrf_libuarte_drv.o \
+	$(LIB_DIR)\nrf_libuarte_async.o \
 	$(LIB_DIR)\nrf_memobj.o \
 	$(LIB_DIR)\nrf_queue.o \
 	$(LIB_DIR)\nrf_ringbuf.o \
 	$(LIB_DIR)\nrf_section_iter.o \
-	$(LIB_DIR)\nrf_spi_mngr.o \
 	$(LIB_DIR)\nrf_strerror.o \
 	$(LIB_DIR)\nrf_twi_mngr.o \
 	$(LIB_DIR)\nrf_twi_sensor.o
@@ -367,6 +402,7 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)\debugger_usbd.o \
 	$(TMP_DIR)\ftdi_trace.o \
 	$(TMP_DIR)\main.o \
+	$(TMP_DIR)\nrf52_serial.o \
 	$(TMP_DIR)\systemclock.o \
 	$(TMP_DIR)\xsmain.o \
 	$(TMP_DIR)\app_usbd_vendor.o
@@ -433,8 +469,7 @@ OBJECTS = \
 	$(NRF_LIBRARIES_OBJ) \
 	$(NRF_SOFTDEVICE_OBJ) \
 	$(NRF_USBD_OBJ) \
-	$(STARTUP_OBJ) \
-	$(WEBUSB_OBJ)
+	$(STARTUP_OBJ)
 
 FINAL_LINK_OBJ = \
 	$(LIB_DIR)\buildinfo.o \
@@ -490,13 +525,13 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
 	-DMODGCC=1 \
-	-DUSE_FTDI_TRACE=0 \
+	$(FTDI_TRACE) \
 	-fshort-enums
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
 !ENDIF
 !IF "$(DEBUG)"=="1"
-C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUG=1 -DDEBUG_NRF -DUSE_DEBUGGER_USBD=1 -g3 -Os
+C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUG=1 -DDEBUG_NRF $(DEBUGGER_USBD) -g3 -Os
 !ELSE
 C_DEFINES = $(C_DEFINES) -Os -DUSE_WATCHDOG=0
 !ENDIF
@@ -566,9 +601,8 @@ LDFLAGS = \
 	-Xlinker -no-enum-size-warning \
 	-Xlinker -Map=$(BIN_DIR)\xs_lib.map
 
-C_INCLUDES = $(C_INCLUDES) $(DIRECTORIES) $(GCC_INCLUDES) $(CRYPTO_INCLUDES) $(SDK_INCLUDES) $(FREE_RTOS_INCLUDES) $(SDK_GLUE_INCLUDES) $(XS_INCLUDES) -I$(LIB_DIR) -I$(TMP_DIR) -I$(PLATFORM_DIR)
+C_INCLUDES = $(GCC_INCLUDES) $(C_INCLUDES) $(DIRECTORIES) $(SDK_GLUE_INCLUDES) $(XS_INCLUDES) -I$(LIB_DIR) -I$(TMP_DIR) -I$(PLATFORM_DIR) $(NRF_SDK_INCLUDES)
 
-LINKER_SCRIPT = $(PLATFORM_DIR)\config\xsproj.ld
 
 .PHONY: all
 .SUFFIXES: .S .s
@@ -587,14 +621,33 @@ all: precursor $(BIN_DIR)\xs_nrf52.uf2
 clean:
 	echo # Clean project
 	echo $(BIN_DIR)
-	del /s/q/f $(BIN_DIR)\*.* > NUL
-	rmdir /s/q $(BIN_DIR)
+	if exist $(BIN_DIR) del /s/q/f $(BIN_DIR)\*.* > NUL
+	if exist $(BIN_DIR) rmdir /s/q $(BIN_DIR)
 	echo $(TMP_DIR)
-	del /s/q/f $(TMP_DIR)\*.* > NUL
-	rmdir /s/q $(TMP_DIR)
+	if exist $(TMP_DIR) del /s/q/f $(TMP_DIR)\*.* > NUL
+	if exist $(TMP_DIR) rmdir /s/q $(TMP_DIR)
 	echo $(LIB_DIR)
 	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
 	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
+
+NRFJPROG_ARGS = -f nrf52 --qspiini $(QSPI_INI_PATH_WIN) --log
+flash: precursor $(BIN_DIR)\xs_nrf52.hex
+	@echo Flashing: $(BIN_DIR)\xs_nrf52.hex
+	@echo # $(NRFJPROG) $(NRFJPROG_ARGS) --program $(BIN_DIR)\xs_nrf52.hex --qspisectorerase --sectorerase
+	$(NRFJPROG) $(NRFJPROG_ARGS) --program $(BIN_DIR)\xs_nrf52.hex --qspisectorerase --sectorerase
+	@echo # $(NRFJPROG) $(NRFJPROG_ARGS) --verify $(BIN_DIR)\xs_nrf52.hex
+	$(NRFJPROG) $(NRFJPROG_ARGS) --verify $(BIN_DIR)\xs_nrf52.hex
+	@echo # $(NRFJPROG) --reset
+	$(NRFJPROG) --reset
+
+debugger:
+	$(DO_XSBUG)
+	$(MODDABLE_TOOLS_DIR)\serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1 -dtr $(NORESTART)
+
+build: precursor $(BIN_DIR)\xs_nrf52.hex
+	@echo Target built: $(BIN_DIR)\xs_nrf52.hex
+
+brin: flash debugger
 
 xsbug:
 	$(KILL_SERIAL_2_XSBUG)
@@ -627,7 +680,7 @@ $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo link to .out file
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
-$(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJECTS) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
+$(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
 	@echo # buildinfo
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
@@ -730,6 +783,10 @@ $(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
+{$(NRF52_SDK_ROOT)\components\libraries\fifo\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
 {$(NRF52_SDK_ROOT)\components\libraries\fstorage\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
@@ -739,6 +796,10 @@ $(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
 {$(NRF52_SDK_ROOT)\components\libraries\hardfault\nrf52\handler\}.c{$(LIB_DIR)\}.o:
+	@echo # library: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+{$(NRF52_SDK_ROOT)\components\libraries\libuarte\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 

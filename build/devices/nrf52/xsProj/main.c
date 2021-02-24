@@ -142,10 +142,6 @@ static void timer_init(void)
 
 int main(void)
 {
-#if USE_FTDI_TRACE
-	ftdiTraceInit();
-#endif
-
 	clock_init();
 	timer_init();
 

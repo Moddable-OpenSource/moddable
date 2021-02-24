@@ -38,8 +38,11 @@
 #ifndef MODDEF_SPI_SCK_PIN
 	#define MODDEF_SPI_SCK_PIN	NRF_GPIO_PIN_MAP(1,14)
 #endif
+
+#define SPI_CHUNKSIZE	(480 * 8)
+
 #ifndef MODDEF_SPI_BUFFERSIZE
-	#define MODDEF_SPI_BUFFERSIZE	(240 * kSPITransfers)
+	#define MODDEF_SPI_BUFFERSIZE	SPI_CHUNKSIZE
 #endif
 
 #if MODDEF_SPI_BUFFERSIZE < 240
@@ -62,61 +65,74 @@ static modSPIBufferLoader gSPIBufferLoader;
 //static uint16_t *gCLUT16;		//@@ unused
 
 
-//uint32_t *gSPITransactionBuffer = NULL;
 uint32_t *gSPITxBuffer;
 uint32_t *gSPIRxBuffer;
 
-// #define kSPI_SIG_TRANSFER_COMPLETE	(1<<0)
-
 static uint8_t gSPIInited;
 
-#define SPI_QUEUE_LENGTH	15
+static const nrfx_spim_t gSPI = NRFX_SPIM_INSTANCE(MODDEF_SPI_INTERFACE);
 
-NRF_SPI_MNGR_DEF(gSPI0, SPI_QUEUE_LENGTH, MODDEF_SPI_INTERFACE);
+static void spi_callback(nrfx_spim_evt_t const *event, void *refcon);
 
-
-void spi_callback(uint32_t status, void *refcon)
-{
-	modSPIConfiguration config = (modSPIConfiguration)refcon;
+static int loadData(modSPIConfiguration config, uint8_t idx) {
 	uint16_t loaded, bitsOut;
 
-	if (status != 0) {
-		xsBeginHost(config->the);
-		xsTraceLeft("spi_callback - status non zero", "spi");
-		xsTraceLeftBytes(&status, 4, "spi");
-		xsEndHost(config->the);
-	}
-	if (gSPIDataCount <= 0) {
-		gSPIDataCount = -1;
-		gSPIData = NULL;
-		return;
-	}
+	if (gSPIDataCount <= 0)
+		return 0;
 
+	config->loadIdx = idx;
 	loaded = (gSPIBufferLoader)(gSPIData, (gSPIDataCount <= MODDEF_SPI_BUFFERSIZE) ? gSPIDataCount : MODDEF_SPI_BUFFERSIZE, &bitsOut);
 	gSPIDataCount -= loaded;
 	gSPIData += loaded;
+	config->transfer[idx].tx_length = loaded;
+	config->transfer[idx].rx_length = loaded;
 
-	uint16_t i, transfers = (loaded + 240 - 1) / 240;
-	uint8_t *from = (uint8_t *)gSPITxBuffer;
-	for (i = 0; i < transfers; i++) {
-		uint16_t use = (loaded > 240) ? 240 : loaded;
+	config->loaded[idx] = 1;
+	return (gSPIDataCount > 0);
+}
 
-		config->transfer[i].p_tx_data = (uint8_t*)from;
-		config->transfer[i].tx_length = use;
-		config->transfer[i].p_rx_data = NULL;
-		config->transfer[i].rx_length = 0;
+static void startBulk(modSPIConfiguration config) {
+	config->transIdx = 0;
+	if (loadData(config, 0))
+		loadData(config, 1);
 
-		loaded -= use;
-		from += use;
+	spi_callback(NULL, config);
+}
+
+void spi_callback(nrfx_spim_evt_t const *event, void *refcon)
+{
+	modSPIConfiguration config = (modSPIConfiguration)refcon;
+	nrfx_err_t err;
+	uint8_t alt = 0;
+
+	CRITICAL_REGION_ENTER();
+
+	if (event) {
+		switch (event->type) {
+			case NRFX_SPIM_EVENT_DONE:
+				config->loaded[config->transIdx] = 0;
+				config->transIdx = !config->transIdx;
+				break;
+			default:
+				break;
+		}
 	}
 
-	config->transaction.begin_callback = NULL;
-	config->transaction.end_callback = spi_callback;
-	config->transaction.p_user_data = refcon;
-	config->transaction.p_transfers = config->transfer;
-	config->transaction.number_of_transfers = transfers;
-	config->transaction.p_required_spi_cfg = NULL;
-	nrf_spi_mngr_schedule(&gSPI0, &config->transaction);
+	if (gSPIDataCount == 0 && !config->loaded[config->transIdx])
+		gSPIDataCount = -1;
+
+done:
+	CRITICAL_REGION_EXIT();
+
+	if (config->loaded[config->transIdx]) {
+		// start transfer
+		err = nrfx_spim_xfer(&gSPI, &config->transfer[config->transIdx], 0);
+	}
+
+	if (!config->loaded[!config->transIdx])
+		loadData(config, !config->transIdx);
+
+	return;
 }
 
 
@@ -129,51 +145,85 @@ void modSPIInit(modSPIConfiguration config)
 		config->spi_config.mosi_pin = MODDEF_SPI_MOSI_PIN;
 		config->spi_config.miso_pin = MODDEF_SPI_MISO_PIN;
 //		config->spi_config.ss_pin = config->cs_pin;
-		config->spi_config.ss_pin = NRF_DRV_SPI_PIN_NOT_USED;
+//		config->spi_config.ss_pin = NRF_DRV_SPI_PIN_NOT_USED;
+		config->spi_config.ss_pin = NRFX_SPIM_PIN_NOT_USED;
+		config->spi_config.ss_active_high = false;
 		config->spi_config.irq_priority = APP_IRQ_PRIORITY_LOWEST;
 		config->spi_config.orc = 0xFF;
+		config->spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
 
+//config->mode = 3;
 		switch (config->mode) {
 			case 3:
-				config->spi_config.mode = NRF_DRV_SPI_MODE_3;	// CPOL = 1, CPHA = 1
+				config->spi_config.mode = NRF_SPIM_MODE_3;	// CPOL = 1, CPHA = 1
 				break;
 			case 2:
-				config->spi_config.mode = NRF_DRV_SPI_MODE_2;	// CPOL = 1, CPHA = 0
+				config->spi_config.mode = NRF_SPIM_MODE_2;	// CPOL = 1, CPHA = 0
 				break;
 			case 1:
-				config->spi_config.mode = NRF_DRV_SPI_MODE_1;	// CPOL = 0, CPHA = 1
+				config->spi_config.mode = NRF_SPIM_MODE_1;	// CPOL = 0, CPHA = 1
 				break;
 			case 0:
 			default:
-				config->spi_config.mode = NRF_DRV_SPI_MODE_0;	// CPOL = 0, CPHA = 0
+				config->spi_config.mode = NRF_SPIM_MODE_0;	// CPOL = 0, CPHA = 0
 		}
 
-		config->spi_config.bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
-
-		if (config->hz > 4000000)
-			config->spi_config.frequency = NRF_DRV_SPI_FREQ_8M;
+		if (config->hz > 16000000)
+			config->spi_config.frequency = NRF_SPIM_FREQ_32M;
+		else if (config->hz > 8000000)
+			config->spi_config.frequency = NRF_SPIM_FREQ_16M;
+		else if (config->hz > 4000000)
+			config->spi_config.frequency = NRF_SPIM_FREQ_8M;
 		else if (config->hz > 2000000)
-			config->spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
+			config->spi_config.frequency = NRF_SPIM_FREQ_4M;
 		else if (config->hz > 1000000)
-			config->spi_config.frequency = NRF_DRV_SPI_FREQ_2M;
+			config->spi_config.frequency = NRF_SPIM_FREQ_2M;
 		else if (config->hz > 500000)
-			config->spi_config.frequency = NRF_DRV_SPI_FREQ_1M;
+			config->spi_config.frequency = NRF_SPIM_FREQ_1M;
 		else if (config->hz > 250000)
-			config->spi_config.frequency = NRF_DRV_SPI_FREQ_500K;
+			config->spi_config.frequency = NRF_SPIM_FREQ_500K;
 		else if (config->hz > 125000)
-			config->spi_config.frequency = NRF_DRV_SPI_FREQ_250K;
+			config->spi_config.frequency = NRF_SPIM_FREQ_250K;
 		else
-			config->spi_config.frequency = NRF_DRV_SPI_FREQ_125K;
+			config->spi_config.frequency = NRF_SPIM_FREQ_125K;
 			
-		ret = nrf_spi_mngr_init(&gSPI0, &config->spi_config);
+		ret = nrfx_spim_init(&gSPI, &config->spi_config, spi_callback, config);
 		if (ret) {
 			xsBeginHost(config->the);
 			xsTraceLeft("spi_init - status non zero", "spi");
 			xsEndHost(config->the);
 		}
 
-		gSPITxBuffer = (uint32_t *)c_malloc(MODDEF_SPI_BUFFERSIZE * 2);
-		gSPIRxBuffer = (uint32_t *)(MODDEF_SPI_BUFFERSIZE + (uintptr_t)gSPITxBuffer);
+#ifdef MODDEF_SPI_HIGH_POWER
+		// set IO to high drive
+		nrf_gpio_cfg(
+			MODDEF_SPI_MOSI_PIN,
+			NRF_GPIO_PIN_DIR_OUTPUT,
+			NRF_GPIO_PIN_INPUT_DISCONNECT,
+			NRF_GPIO_PIN_NOPULL,
+			NRF_GPIO_PIN_H0H1,
+			NRF_GPIO_PIN_NOSENSE);
+
+		nrf_gpio_cfg(
+			MODDEF_SPI_SCK_PIN,
+			NRF_GPIO_PIN_DIR_OUTPUT,
+			NRF_GPIO_PIN_INPUT_DISCONNECT,
+			NRF_GPIO_PIN_NOPULL,
+			NRF_GPIO_PIN_H0H1,
+			NRF_GPIO_PIN_NOSENSE);
+#endif
+
+		// trans and rcv organized as 2xTX buffer and 1xRX buffer
+		gSPITxBuffer = (uint32_t *)c_malloc(MODDEF_SPI_BUFFERSIZE * 3);
+		gSPIRxBuffer = (uint32_t *)((MODDEF_SPI_BUFFERSIZE * 2) + (uintptr_t)gSPITxBuffer);
+		config->transfer[0].p_tx_buffer = (uint8_t*)gSPITxBuffer;
+		config->transfer[0].tx_length = 0;
+		config->transfer[0].p_rx_buffer = (uint8_t*)gSPIRxBuffer;
+		config->transfer[0].rx_length = 0;
+		config->transfer[1].p_tx_buffer = (uint8_t*)gSPITxBuffer + MODDEF_SPI_BUFFERSIZE;
+		config->transfer[1].tx_length = 0;
+		config->transfer[1].p_rx_buffer = (uint8_t*)gSPIRxBuffer;
+		config->transfer[1].rx_length = 0;
 
 		gSPIInited = true;
 	}
@@ -196,10 +246,8 @@ void modSPIUninit(modSPIConfiguration config)
 		modSPIActivateConfiguration(NULL);
 
 //@@ should only be done on last SPI client closing
-	nrf_spi_mngr_uninit(&gSPI0);
+	nrfx_spim_uninit(&gSPI);
 	gSPIInited = false;
-
-	config->spi_dev = NULL;
 }
 
 void modSPIActivateConfiguration(modSPIConfiguration config)
@@ -217,7 +265,6 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 
 	gConfig = config;
 	if (gConfig) {
-//		ret = qapi_SPIM_Enable(gConfig->spi_dev);
 		(gConfig->doChipSelect)(1, gConfig);
 	}
 }
@@ -225,7 +272,7 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 // data must be long aligned (doesn't matter on qca4020 or gecko)
 uint16_t IRAM_ATTR modSpiLoadBufferAsIs(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
 {
-	uint32_t *from = (uint32_t *)data, *to = gSPITxBuffer;
+	uint32_t *from = (uint32_t *)data, *to = (uint32_t *)(gSPITxBuffer + (gConfig->loadIdx * SPI_CHUNKSIZE));
 	uint8_t longs;
 	uint16_t result = bytes;
 
@@ -261,7 +308,7 @@ uint16_t IRAM_ATTR modSpiLoadBufferAsIs(uint8_t *data, uint16_t bytes, uint16_t 
 uint16_t IRAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
 {
 	uint32_t *from = (uint32_t *)data;
-	uint32_t *to = gSPITxBuffer;
+	uint32_t *to = (uint32_t *)(gSPITxBuffer + (gConfig->loadIdx * SPI_CHUNKSIZE));
 	const uint32_t mask = 0x00ff00ff;
 	uint32_t twoPixels;
 	uint16_t result = bytes;
@@ -301,7 +348,7 @@ uint16_t IRAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint16_t bytes, uint16_
 uint16_t IRAM_ATTR modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
 {
 	uint16_t *from = (uint16_t *)data;
-	uint8_t *to = (uint8_t *)gSPITxBuffer;
+	uint8_t *to = (uint8_t *)(gSPITxBuffer + (gConfig->loadIdx * SPI_CHUNKSIZE));
 	uint16_t remain;
 
 	if (bytes > MODDEF_SPI_BUFFERSIZE)
@@ -337,7 +384,7 @@ uint16_t IRAM_ATTR modSpiLoadBufferRGB565LEtoRGB444(uint8_t *data, uint16_t byte
 uint16_t IRAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
 {
 	uint8_t *from = (uint8_t *)data;
-	uint32_t *to = gSPITxBuffer;
+	uint32_t *to = (uint32_t *)(gSPITxBuffer + (gConfig->loadIdx * SPI_CHUNKSIZE));
 	uint16_t remain;
 
 	if (bytes > (MODDEF_SPI_BUFFERSIZE >> 1))
@@ -382,7 +429,7 @@ uint16_t IRAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint16_t bytes, u
 uint16_t IRAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
 {
 	uint8_t *from = (uint8_t *)data;
-	uint32_t *to = gSPITxBuffer;
+	uint32_t *to = (uint32_t *)(gSPITxBuffer + (gConfig->loadIdx * SPI_CHUNKSIZE));
 	uint16_t remain;
 
 	if (bytes > (MODDEF_SPI_BUFFERSIZE >> 1))
@@ -420,7 +467,7 @@ uint16_t IRAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint16_t bytes, 
 uint16_t IRAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint16_t bytes, uint16_t *bitsOut)
 {
 	uint8_t *from = (uint8_t *)data;
-	uint32_t *to = gSPITxBuffer;
+	uint32_t *to = (uint32_t *)(gSPITxBuffer + (gConfig->loadIdx * SPI_CHUNKSIZE));
 	uint16_t i;
 
 	if (bytes > (MODDEF_SPI_BUFFERSIZE >> 2))
@@ -462,35 +509,28 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 		return;
 	}
 
+	gSPIDataCount = 0;
+	config->transIdx = 0;
+
 	c_memcpy(gSPITxBuffer, data, count);
-	config->transfer[0].p_tx_data = (uint8_t*)gSPITxBuffer;
 	config->transfer[0].tx_length = count;
-	config->transfer[0].p_rx_data = (uint8_t*)gSPIRxBuffer;
 	config->transfer[0].rx_length = count;
 
-/*
-	config->transaction.begin_callback = NULL;
-	config->transaction.end_callback = NULL;
-	config->transaction.p_user_data = NULL;
-	config->transaction.p_transfers = config->transfer;
-	config->transaction.number_of_transfers = 1;
-	config->transaction.p_required_spi_cfg = NULL;
-*/
-
-	ret = nrf_spi_mngr_perform(&gSPI0, NULL, config->transfer, 1, NULL);
+	ret = nrfx_spim_xfer(&gSPI, &config->transfer[0], 0);
 	if (ret) {
 		xsBeginHost(config->the);
 		xsTraceLeft("spiTxRx - status non zero", "spi");
 		xsEndHost(config->the);
 	}
+// wait for completion
+	while (gSPIDataCount != -1)
+        taskYIELD();
 
 	c_memcpy(data, gSPIRxBuffer, count);
 }
 
 void modSPIFlush(void)
 {
-//	while (!nrf_spi_mngr_is_idle(&gSPI0))
- //      taskYIELD();
 	while (gSPIDataCount != -1)
         taskYIELD();
 }
@@ -503,8 +543,7 @@ static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t c
 	gSPIData = data;
 	gSPIDataCount = count;
 
-	// start the spi transmit
-	spi_callback(0, config);
+	startBulk(config);
 
 	if (config->sync)
 		modSPIFlush();

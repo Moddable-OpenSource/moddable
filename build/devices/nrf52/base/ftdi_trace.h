@@ -27,11 +27,13 @@
 
 void ftdiTraceInit();
 void ftdiTrace(const char *msg);
+void ftdiTrace2(const char *msg, const char *msg2);
 void ftdiTraceInt(int i);
 void ftdiTraceInt2(int i, int j);
 void ftdiTraceChar(int c);
 void ftdiTraceHex(uint8_t *data, int num);
 void ftdiTraceAndHex(const char *msg, int i);
+void ftdiTraceAndHex2(const char *msg, int i, int j);
 void ftdiTraceAndInt(const char *msg, int i);
 void ftdiTraceAndInt2(const char *msg, int i, int j);
 void ftdiTraceAndbmReq(const char *msg, uint8_t val);

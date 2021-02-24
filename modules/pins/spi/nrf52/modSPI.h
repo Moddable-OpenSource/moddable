@@ -26,7 +26,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nrf_spi_mngr.h"
+#include "nrfx_spim.h"
+// need to add NRFX_SPIM3_ENABLED to the NRFX_SPIM_ENABLED check in
+// integration/nrfx/legacy/apply_old_config.h
 
 //#include "stdint.h"
 
@@ -35,18 +37,20 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 
 typedef void (*modSPIChipSelectCallback)(uint8_t status, modSPIConfiguration config);
 
-#define kSPITransfers (8)
+#define kSPITransfers (2)
 
 struct modSPIConfigurationRecord {
-	nrf_drv_spi_config_t		spi_config;
-	void						*spi_dev;
-	nrf_spi_mngr_transfer_t		transfer[kSPITransfers];
-	nrf_spi_mngr_transaction_t	transaction;
+//	nrf_drv_spi_config_t		spi_config;
+	nrfx_spim_config_t			spi_config;
+	uint32_t					hz;
+	nrfx_spim_xfer_desc_t		transfer[kSPITransfers];
+	uint8_t						transIdx;		// which transfer index
+	uint8_t						loadIdx;		// which transfer to load
+	uint8_t						loaded[kSPITransfers];
 	uint8_t						cs_pin;
 	uint8_t						spiPort;
 	uint8_t						sync;
 	uint8_t						mode;
-	uint32_t					hz;
 	xsMachine *the;
 	modSPIChipSelectCallback	doChipSelect;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -34,3 +34,21 @@ uint32_t nrf52_milliseconds() {
 	return ((uint64_t)xTaskGetTickCount() * (uint64_t)1000) >> 10;
 }
 
+/* https://devzone.nordicsemi.com/f/nordic-q-a/38551/three-errors-found-from-sdk15-2-0 */
+uint32_t app_timer_cnt_get(void)
+{
+    if (__get_IPSR() != 0)
+    {
+        // inside ISR
+        return (uint32_t)xTaskGetTickCountFromISR();
+    }
+    else
+    {
+        return (uint32_t)xTaskGetTickCount();
+    }
+} 
+
+uint32_t app_timer_cnt_diff_compute(uint32_t ticks_to, uint32_t ticks_from)
+{
+	return (ticks_to - ticks_from);
+}
