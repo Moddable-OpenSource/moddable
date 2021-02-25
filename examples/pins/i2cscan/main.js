@@ -23,24 +23,18 @@ function isReserved(address) {
 
 function scan() {
 	for (let address = 0x00; address <= 0x7F; address++) {
-		let found = false;
-		let i2c;
-
 		if (isReserved(address))
 			continue;
 
-		try {
-			i2c = new I2C({address, timeout: 50});
-			found = undefined !== i2c.read(1);
-		}
-		catch {
-		}
+		const i2c = new I2C({address, timeout: 50});
+		let found = undefined !== i2c.read(1);
 		i2c.close();
 
 		if (found && !addresses[address])
 			trace(`Found 0x${address.toString(16).padStart(2, "0")}\n`);
 		else if (!found && addresses[address])
 			trace(`Lost 0x${address.toString(16).padStart(2, "0")}\n`);
+
 		addresses[address] = found;
 	}
 
