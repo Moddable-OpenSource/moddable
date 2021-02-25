@@ -48,8 +48,11 @@ void modI2CInit(modI2CConfiguration config)
 
 	config->inst = NULL;
 
-	if ((config->scl & 1) && !(config->sda & 1)  && ((config->scl >> 1) & 1) == ((config->sda >> 1) & 1))
+	if ((config->scl & 1) && !(config->sda & 1)  && ((config->scl >> 1) & 1) == ((config->sda >> 1) & 1)) {
 		config->inst = ((config->scl >> 1) & 1) ? &i2c1_inst : &i2c0_inst;
+		if (!config->hz)
+			config->hz = 100000;
+	}
 }
 
 void modI2CUninit(modI2CConfiguration config)
