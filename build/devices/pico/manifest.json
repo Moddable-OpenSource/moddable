@@ -9,6 +9,12 @@
 			"$(MODULES)/files/preference/esp/modPreference"
 		]
 	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 4,
+			"scl_pin": 5
+		}
+	},
 	"platforms": {
 		"pico/*": {
 			"include": "$(BUILD)/devices/pico/targets/$(SUBPLATFORM)/manifest.json"

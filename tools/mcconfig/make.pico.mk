@@ -280,6 +280,7 @@ LIB_FILES += \
 INC_DIRS = \
 	$(PICO_SDK_DIR)/src/common/pico_stdlib/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_i2c/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm/include	\
 	$(PICO_SDK_DIR)/src/common/pico_base/include	\
 	$(PICO_SDK_DIR)/src/boards/include	\
@@ -392,6 +393,7 @@ HEADERS += $(XS_HEADERS)
 PICO_OBJ = \
 	$(LIB_DIR)/stdlib.c.o \
 	$(LIB_DIR)/gpio.c.o \
+	$(LIB_DIR)/i2c.c.o \
 	$(LIB_DIR)/claim.c.o \
 	$(LIB_DIR)/sync.c.o \
 	$(LIB_DIR)/platform.c.o \
@@ -454,6 +456,8 @@ PICO_OBJ = \
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdlib			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm			\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_i2c			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_claim		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_sync		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_flash		\
