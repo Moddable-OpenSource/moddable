@@ -10,6 +10,11 @@
 				"*": "$(MODULES)/pins/spi/esp32/*"
 			}
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/pico/*"
+			}
+		},
 		"gecko": {
 			"modules": {
 				"*": "$(MODULES)/pins/spi/gecko/*"

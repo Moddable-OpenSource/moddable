@@ -59,6 +59,16 @@ extern "C" {
 #define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
 #define ICACHE_XS6STRING_ATTR __attribute__((section(".rodata.xs6string"))) __attribute__((aligned(4)))
 
+/*
+	memory and strings
+*/
+extern uint8_t espRead8(const void *addr);
+extern uint16_t espRead16(const void *addr);
+extern uint32_t espRead32(const void *addr);
+extern uint16_t espRead16be(const void *addr);
+extern uint32_t espRead32be(const void *addr);
+
+
 #if defined(__XS__)
 	extern void mc_setup(xsMachine *the);
 #endif
@@ -392,15 +402,22 @@ extern void pico_reboot(uint32_t kind);
 #define C_EINVAL EINVAL
 
 
-#define espRead8(POINTER) *((txU1*)POINTER)
 #define mxGetKeySlotID(SLOT) (SLOT)->ID
 #define mxGetKeySlotKind(SLOT) (SLOT)->kind
 
+#if 1
+	#define c_read8		espRead8
+	#define c_read16 	espRead16
+	#define c_read32 	espRead32
+	#define c_read16be	espRead16be
+	#define c_read32be 	espRead32be
+#else
 #define c_read8(POINTER) *((txU1*)(POINTER))
 #define c_read16(POINTER) *((txU2*)(POINTER))
 #define c_read16be(POINTER) ((((txU2)((txU1*)POINTER)[0]) << 8) | ((txU2)((txU1*)POINTER)[1]))
 #define c_read32(POINTER) *((txU4*)(POINTER))
 #define c_read32be(POINTER) ((((txU4)((txU1*)POINTER)[0]) << 24) | (((txU4)((txU1*)POINTER)[1]) << 16) | (((txU4)((txU1*)POINTER)[2]) << 8) | ((txU4)((txU1*)POINTER)[3]))
+#endif
 
 /* FLASH */
 #include "hardware/flash.h"

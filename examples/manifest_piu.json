@@ -36,6 +36,12 @@
 			},
 			"preload": "setup/piu"
 		},
+		"pico": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/pico/setup/piu"
+			},
+			"preload": "setup/piu"
+		},
 		"gecko": {
 			"modules": {
 				"setup/piu": "$(BUILD)/devices/gecko/setup/piu"

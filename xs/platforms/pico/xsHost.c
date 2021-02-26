@@ -87,6 +87,60 @@
 
 extern void* xsPreparationAndCreation(xsCreation **creation);
 
+ICACHE_RAM_ATTR uint8_t espRead8(const void *addr)
+{
+	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
+	return *p >> ((3 & (uint32_t)addr) << 3);
+}
+
+ICACHE_RAM_ATTR uint16_t espRead16(const void *addr)
+{
+	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
+	switch (3 & (uint32_t)addr) {
+		case 3: return (uint16_t)((*p >> 24) | (p[1] << 8));
+		case 2: return (uint16_t) (*p >> 16);
+		case 1: return (uint16_t) (*p >>  8);
+		case 0: return (uint16_t) (*p);
+	}
+}
+
+ICACHE_RAM_ATTR uint32_t espRead32(const void *addr)
+{
+	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
+	switch (3 & (uint32_t)addr) {
+		case 0: return *p;
+		case 1: return (p[0] >>  8) | (p[1] << 24);
+		case 2: return (p[0] >> 16) | (p[1] << 16);
+		case 3: return (p[0] >> 24) | (p[1] <<  8);
+	}
+}
+
+ICACHE_RAM_ATTR uint16_t espRead16be(const void *addr)
+{
+	uint16_t result;
+	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
+	switch (3 & (uint32_t)addr) {
+		case 3: result = (uint16_t)((*p >> 24) | (p[1] << 8)); break;
+		case 2: result = (uint16_t) (*p >> 16); break;
+		case 1: result = (uint16_t) (*p >>  8); break;
+		case 0: result = (uint16_t) (*p); break;
+	}
+	return (result >> 8) | (result << 8);
+}
+
+ICACHE_RAM_ATTR uint32_t espRead32be(const void *addr)
+{
+	uint32_t result;
+	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
+	switch (3 & (uint32_t)addr) {
+		case 0: result = *p; break;
+		case 1: result = (p[0] >>  8) | (p[1] << 24); break;
+		case 2: result = (p[0] >> 16) | (p[1] << 16); break;
+		case 3: result = (p[0] >> 24) | (p[1] <<  8); break;
+	}
+	return (result << 24) | ((result & 0xff00) << 8)  | ((result >> 8) & 0xff00) | (result >> 24);
+}
+
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 
 /*
