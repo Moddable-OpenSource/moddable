@@ -48,7 +48,7 @@ DEBUGGER_SPEED = 460800
 BASE_DIR = $(USERPROFILE)
 !ENDIF
 
-!IF [cd $(IDF_PATH) && git describe --always --abbrev=0 > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
+!IF [cd /D $(IDF_PATH) && git describe --always --abbrev=0 > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
 IDF_VERSION = \
 !INCLUDE $(TMP_DIR)\_idf_version.tmp
 !IF [del $(TMP_DIR)\_idf_version.tmp] == 0
