@@ -63,9 +63,9 @@ class Connection extends WiFi {
 				if (this.#reconnect)
 					Timer.clear(this.#reconnect);
 				this.#reconnect = undefined;
-
-				this.#state = WiFi.connected;
 			}
+
+			this.#state = msg;
 
 			this.#callback?.(msg, code);
 		});
