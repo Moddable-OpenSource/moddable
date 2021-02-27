@@ -1,0 +1,31 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/network/mqtt/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		],
+		"mqtt/connection": "./mqttconnection",
+		"wifi/connection": "../../wifi/wificonnection/wificonnection"
+	},
+	"preload": [
+		"mqtt/connection",
+		"wifi/connection"
+	],
+	"platforms": {
+		"esp": {
+			"modules": {
+				"~": "$(BUILD)/devices/$(PLATFORM)/setup/network"
+			}
+		},
+		"esp32": {
+			"modules": {
+				"~": "$(BUILD)/devices/$(PLATFORM)/setup/network"
+			}
+		}
+	}
+}
+
