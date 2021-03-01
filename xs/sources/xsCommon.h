@@ -95,7 +95,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 10
-#define XS_MINOR_VERSION 5
+#define XS_MINOR_VERSION 6
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -993,6 +993,7 @@ enum {
 	_splice,
 	_split,
 	_sqrt,
+	_stack,
 	_startsWith,
 	_status,
 	_sticky,

@@ -563,6 +563,10 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tC_NULL,\n");
 	else
 		fprintf(file, "\tfxCleanupFinalizationRegistries,\n");
+	if (fxIsCallbackStripped(linker, fx_Error_prototype_get_stack))
+		fprintf(file, "\tfxJump,\n");
+	else
+		fprintf(file, "\tfxJumpError,\n");
 	fprintf(file, "};\n\n");
 
 	fprintf(file, "const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {\n");
