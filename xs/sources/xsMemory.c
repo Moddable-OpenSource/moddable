@@ -659,10 +659,8 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		
 	case XS_ERROR_KIND:
 		aSlot = theSlot->value.reference;
-		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG))) {
-			aSlot->flag |= XS_MARK_FLAG; 
-			fxMarkReference(the, aSlot);
-		}
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 	case XS_LIST_KIND:
 		aSlot = theSlot->value.list.first;
@@ -865,10 +863,8 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		
 	case XS_ERROR_KIND:
 		aSlot = theSlot->value.reference;
-		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG))) {
-			aSlot->flag |= XS_MARK_FLAG; 
-			fxMarkValue(the, aSlot);
-		}
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
 	case XS_LIST_KIND:
 		aSlot = theSlot->value.list.first;

@@ -40,6 +40,7 @@ struct modRMTRecord {
 static void rmtTransmitComplete(rmt_channel_t channel, void *arg);
 static void rmtWritable(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static int receive(modRMT rmt, uint8_t *buffer, int maxBytes, int* count, int* phase);
+static int getInt(xsMachine *the, xsSlot *options, xsIndex id);
 
 static modRMT gRMT;
 
@@ -110,6 +111,20 @@ void xs_rmt(xsMachine *the)
 		xsmcGet(xsVar(0), xsArg(0), xsID_ringbufferSize);
 		ringbuffer = xsmcToInteger(xsVar(0));
 	}
+	if (xsmcHas(xsArg(0), xsID_tx_config)) {
+		xsSlot options;
+		xsmcGet(options, xsArg(0), xsID_tx_config);
+		config.tx_config.loop_en = getInt(the, &options, xsID_loop_en);
+		config.tx_config.carrier_freq_hz = getInt(the, &options, xsID_carrier_freq_hz);
+		config.tx_config.carrier_duty_percent = getInt(the, &options, xsID_carrier_duty_percent);
+		config.tx_config.carrier_level = getInt(the, &options, xsID_carrier_level);
+		config.tx_config.carrier_en = getInt(the, &options, xsID_carrier_en);
+		config.tx_config.idle_level = getInt(the, &options, xsID_idle_level);
+		config.tx_config.idle_output_en = getInt(the, &options, xsID_idle_output_en);
+	}
+	else {
+		config.tx_config.idle_output_en = 1;
+	}
 
 	rmt = c_calloc(1, sizeof(modRMTRecord));
 	if (!rmt)
@@ -126,14 +141,12 @@ void xs_rmt(xsMachine *the)
     config.mem_block_num = 1;
 	config.clk_div = divider;
 
-	if (transmit){
-		config.tx_config.idle_output_en = 1;
-		config.tx_config.idle_level = 0;
-	}else{
-		if (filter){
+	if (!transmit) {
+		if (filter) {
 			config.rx_config.filter_en = true;
 			config.rx_config.filter_ticks_thresh = filter;
-		}else{
+		}
+		else {
 			config.rx_config.filter_en = false;
 		}
 		config.rx_config.idle_threshold = timeout;
@@ -314,5 +327,15 @@ int receive(modRMT rmt, uint8_t *buffer, int maxBytes, int* count, int* phase){
 		vRingbufferReturnItemFromISR(rmt->rb, (void*) first_item, &dummy);
 	}
 	
+	return 0;
+}
+
+int getInt(xsMachine *the, xsSlot *options, xsIndex id)
+{
+	if (xsmcHas(*options, id)) {
+		xsmcGet(xsVar(0), *options, id);
+		return xsmcToInteger(xsVar(0));
+	}
+
 	return 0;
 }
