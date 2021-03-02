@@ -1,7 +1,7 @@
 # Pins
 
-Copyright 2017-18 Moddable Tech, Inc.<BR>
-Revised: October 26, 2018
+Copyright 2017-21 Moddable Tech, Inc.<BR>
+Revised: February 18, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -14,6 +14,7 @@ Revised: October 26, 2018
 * [I2C](#i2c)
 * [SMBus](#smbus)
 * [Servo](#servo)
+* [RMT](#rmt)
 * [SPI](#spi)
 
 <a id="digital"></a>
@@ -501,6 +502,115 @@ The Servo implementation pulses a digital signal for a number of microseconds th
 
 ```js
 servo.writeMicroseconds(1000);
+```
+
+***
+
+<a id="rmt"></a>
+## class RMT
+
+- **Source code:** [rmt](../../modules/pins/rmt)
+- **Relevant Examples:** [write](../../examples/pins/rmt/write), [read](../../examples/pins/rmt/read)
+
+The `RMT` class provides access to a RMT (remote control) module. `RMT` is supported on ESP32 and ESP32-S2 microcontrollers.
+
+```js
+import RMT from "pins/rmt";
+```
+
+### `constructor(dictionary)`
+
+The RMT constructor initializes the RMT module and associates it with the specified pin. 
+
+The RMT constructor takes a dictionary. The `pin` property is required, and specifies the pin to associate with the RMT module. 
+
+```js
+let rmt = new RMT({pin: 17});
+```
+
+The constructor dictionary also has several optional properties:
+
+- The `channel` property specifies the RMT channel to use with this instance, with a default value of `0`. 
+- The `divider` property specifies the clock divider used to generate RMT ticks, with a range of `1` to `255` and a default value of `255`.
+- The `direction` property specifies whether to use this RMT as an input or an output. Use `"rx"` for input and `"tx"` for output. The default is output.
+
+```js
+let rmt = new RMT({pin: 17, channel: 1, divider: 100});
+```
+
+When using the RMT for input, there are additional optional properties in the dictionary:
+
+- The `filter` property configures the RMT module to filter out received pulses shorter than a number of ticks, with a range of `0` to `255` and a default value of `0`.
+- The `timeout` property specifies the length of a pulse (in ticks) that will trigger the RMT module to enter its idle mode, with a range of `0` to `65_535` and a default value of `5000`.
+- The `ringbufferSize` property configures the size of the RMT module's input buffer in bytes, with a default value of `1024`.
+
+```js
+let inputRMT = new RMT({pin: 17, channel: 3, divider: 100, direction: "rx", filter: 100, timeout: 7000, ringbufferSize: 512});
+```
+
+***
+
+### `write(firstValue, durations)`
+
+The `write` function transmits alternating pulses of 1s and 0s (i.e. high and low voltages) on the configured pin via the RMT module. The `firstValue` parameter specifies if the first pulse in the sequence will be `1` or `0`. The `durations` parameter must be an Array of integers that specify the duration (in RMT module ticks) of each pulse in the sequence to write to the pin.
+
+The following example pulses the pin high for 2000 ticks then low for 5000 ticks, repeating 3 times in total, then ends with a high pulse of 10000 ticks.
+
+```js
+rmt.write(1, [2000, 5000, 2000, 5000, 2000, 5000, 10000]);
+```
+
+The write is performed asynchronously, so `write` returns immediately. When the write is complete, the `onWriteable` callback is invoked and another `write` may be issued.
+
+***
+
+### `onWriteable()` callback
+
+A script may install an `onWriteable` callback on the instance to be invoked when the RMT module is ready to write data. 
+
+```js
+rmt.onWritable = function() {
+	rmt.write(1, [2000, 5000, 2000, 5000, 2000, 5000, 10000]);
+}
+```
+
+The `onWriteable` function is called once when the RMT module is initialized and ready to receive the first call to `write`. It is then subsequently called each time a write completes and the RMT module is ready to transmit a new sequence.
+
+***
+
+### `read(buffer)`
+
+The `read` function returns RMT data in an ArrayBuffer provided by the `buffer` argument. Up to `buffer.byteLength` bytes from the RMT module's ring buffer are returned in the ArrayBuffer. 
+
+`read` returns an object with three properties: 
+
+- The `buffer` property is the ArrayBuffer provided to `read` as an argument, filled with the received pulse duration sequence read by the RMT module. 
+- The `count` property is the total number of pulses received in the sequence. 
+- The `phase` property is the logic level of the first item in the sequence (`0` or `1`) — subsequent pulses in the `buffer` alternate logic levels.
+
+```js
+const data = new Uint16Array(512);
+
+Timer.repeat(() => {
+	let result = inputRMT.read(data.buffer);
+	if (result.count) {
+		let value = result.phase;
+		for (let i = 0; i < result.count; i++) {
+			trace(`Pulse of value ${value} for duration ${data[i]}\n`);
+			value ^= 1;
+		}
+	}
+}, 20);
+```
+
+***
+
+### `close()`
+
+The `close` function releases the resources associated with the `RMT` instance.
+
+```js
+rmt.close();
 ```
 
 ***

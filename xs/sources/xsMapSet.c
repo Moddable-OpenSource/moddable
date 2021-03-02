@@ -1128,6 +1128,15 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 			sum = (sum << 1) + kind;
 		sum = (sum << 1) + XS_STRING_KIND;
 	}
+	else if ((XS_BIGINT_KIND == kind) || (XS_BIGINT_X_KIND == kind)) {
+		address = (txU1*)slot->value.bigint.data;
+		size = slot->value.bigint.size * sizeof(txU4);
+		while (size) {
+			sum = (sum << 1) + c_read8(address++);
+			size--;
+		}
+		sum = (sum << 1) + XS_BIGINT_KIND;
+	}
 	else {
 		if (XS_BOOLEAN_KIND == kind) {
 			address = (txU1*)&slot->value.boolean;
@@ -1183,6 +1192,8 @@ txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b)
 			result = c_strcmp(a->value.string, b->value.string) == 0;
 		else if (XS_SYMBOL_KIND == a->kind)
 			result = a->value.symbol == b->value.symbol;
+		else if ((XS_BIGINT_KIND == a->kind) || (XS_BIGINT_X_KIND == a->kind))
+			result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 		else if (XS_REFERENCE_KIND == a->kind)
 			result = a->value.reference == b->value.reference;
 	}
@@ -1194,6 +1205,10 @@ txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b)
 		result = c_strcmp(a->value.string, b->value.string) == 0;
 	else if ((XS_STRING_X_KIND == a->kind) && (XS_STRING_KIND == b->kind))
 		result = c_strcmp(a->value.string, b->value.string) == 0;
+	else if ((XS_BIGINT_KIND == a->kind) && (XS_BIGINT_X_KIND == b->kind))
+		result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
+	else if ((XS_BIGINT_X_KIND == a->kind) && (XS_BIGINT_KIND == b->kind))
+		result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 	return result;
 }
 

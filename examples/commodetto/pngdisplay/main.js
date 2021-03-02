@@ -10,6 +10,8 @@ import WiFi from "wifi";
 
 /*
 	curl -T $MODDABLE/examples/commodetto/pngdisplay/test.png http://pngdisplay.local/upload
+
+	Details about this application: https://blog.moddable.com/blog/pngdisplay
 */
 const HOSTNAME = "pngdisplay";
 
@@ -82,8 +84,7 @@ function render(data) {
 	for (let y = 0; y < height; y++) {
 		convert.process(png.read().buffer, scanOut);
 
-		if (reverse)
-			reverse.reverse();
+		reverse?.reverse();
 
 		poco.begin(0, y, width, 1);
 		poco.drawBitmap(bits, 0, y);

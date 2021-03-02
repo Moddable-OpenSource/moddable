@@ -9,8 +9,5 @@
 	},
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/images/cell-flag"
-	},
-	"config": {
-		"screen": "ili9341"
 	}
 }

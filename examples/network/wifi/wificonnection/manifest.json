@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/wifi/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		],
+		"wifi/connection": "./wificonnection"
+	},
+	"preload": [
+		"wifi/connection"
+	]
+}

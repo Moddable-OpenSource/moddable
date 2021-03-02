@@ -3365,7 +3365,7 @@ txUnsigned fxObjectBinding(txParser* parser, txToken theToken)
 			break;
 		aSymbol = NULL;
 		aToken = XS_TOKEN_PROPERTY_BINDING;
-		if (parser->token == XS_TOKEN_IDENTIFIER) {
+		if ((gxTokenFlags[parser->token] & XS_TOKEN_IDENTIFIER_NAME)) {
 			aSymbol = parser->symbol;
 			fxPushSymbol(parser, aSymbol);
 			aToken = XS_TOKEN_PROPERTY_BINDING;
