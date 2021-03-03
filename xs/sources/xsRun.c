@@ -1320,7 +1320,7 @@ XS_CODE_JUMP:
 			mxRestoreState;
 		#endif
 			mxSaveState;
-			gxDefaults.jumpError(the);
+			fxJump(the);
 			mxBreak;
 		mxCase(XS_CODE_THROW_STATUS)
 			if (the->status & XS_THROW_STATUS) {
@@ -1331,7 +1331,7 @@ XS_CODE_JUMP:
 				mxRestoreState;
 			#endif
 				mxSaveState;
-				gxDefaults.jumpError(the);
+				fxJump(the);
 			}
 			mxNextCode(1);
 			mxBreak;
@@ -1484,7 +1484,7 @@ XS_CODE_JUMP:
 				mxRestoreState;
 			#endif
 				mxSaveState;
-				gxDefaults.jumpError(the);
+				fxJump(the);
 			}
 			mxNextCode((the->status & XS_RETURN_STATUS) ? index : index + offset);
 			mxBreak;

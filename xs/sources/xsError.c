@@ -119,41 +119,41 @@ void fxBuildError(txMachine* the)
 	the->stack++;
 }
 
-void fxJumpError(txMachine* the)
+void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
 {
-	if (mxException.kind == XS_REFERENCE_KIND) {
-		txSlot* instance = mxException.value.reference;
-		txSlot* property = instance->next;
-		if (property->kind == XS_ERROR_KIND) {
-			txSlot* slot = property->value.reference;
-			if (!slot) {
-				txSlot* frame = the->frame;
-				slot = property->value.reference = fxNewSlot(the);
-				slot->kind = XS_INSTANCE_KIND;
-				slot->value.instance.garbage = C_NULL;
-				slot->value.instance.prototype = C_NULL;
-				while (frame->next) {
-					txSlot* environment = mxFrameToEnvironment(frame);
-					txSlot* function = frame + 3; 
-					if (function->kind == XS_REFERENCE_KIND) {
-						slot = slot->next = fxNewSlot(the);
-						slot->kind = XS_KEY_KIND;
-						slot->ID = environment->ID;
-						slot->value.key.string = C_NULL;
-						slot->value.key.sum = environment->value.environment.line;
-						property = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), XS_NO_ID, XS_OWN);
-						if (property) {
-							if (property->kind == XS_STRING_X_KIND)
-								slot->kind = XS_KEY_X_KIND;
-							slot->value.key.string = property->value.string;
-						}
+	txSlot* slot = internal->value.reference = fxNewSlot(the);
+	slot->kind = XS_INSTANCE_KIND;
+	slot->value.instance.garbage = C_NULL;
+	slot->value.instance.prototype = C_NULL;
+	while (frame->next) {
+		txSlot* environment = mxFrameToEnvironment(frame);
+		txSlot* function = frame + 3; 
+		if (function->kind == XS_REFERENCE_KIND) {
+			txSlot* name = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), XS_NO_ID, XS_OWN);
+			slot = slot->next = fxNewSlot(the);
+			slot->kind = XS_KEY_KIND;
+			slot->ID = environment->ID;
+			slot->value.key.string = C_NULL;
+			slot->value.key.sum = environment->value.environment.line;
+			if (name) {
+				if (name->kind == XS_STRING_X_KIND)
+					slot->kind = XS_KEY_X_KIND;
+				slot->value.key.string = name->value.string;
+			}
+			else {
+				txSlot* code = mxFunctionInstanceCode(function->value.reference);
+				if (code->ID != XS_NO_ID) {
+					txSlot* key = fxGetKey(the, code->ID);
+					if (key) {
+						if (key->kind == XS_KEY_X_KIND)
+							slot->kind = XS_KEY_X_KIND;
+						slot->value.key.string = key->value.key.string;
 					}
-					frame = frame->next;
 				}
-			} 
+			}
 		}
+		frame = frame->next;
 	}
-	fxJump(the);
 }
 
 void fx_Error(txMachine* the)
@@ -176,6 +176,8 @@ txSlot* fx_Error_aux(txMachine* the, txSlot* prototype, txInteger i)
 	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
 	slot->kind = XS_ERROR_KIND;
 	slot->value.reference = C_NULL;
+	if (gxDefaults.captureErrorStack)
+		gxDefaults.captureErrorStack(the, slot, the->frame->next);
 	if ((mxArgc > i) && (mxArgv(i)->kind != XS_UNDEFINED_KIND)) {
 		fxToString(the, mxArgv(i));
 		slot = fxNextSlotProperty(the, slot, mxArgv(i), mxID(_message), XS_DONT_ENUM_FLAG);

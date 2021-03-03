@@ -128,7 +128,7 @@ typedef struct {
 	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
 	txSlot* (*setPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
 	void (*cleanupFinalizationRegistries)(txMachine*);
-	void (*jumpError)(txMachine*) XS_FUNCTION_NORETURN;
+	void (*captureErrorStack)(txMachine* the, txSlot* internal, txSlot* frame);
 } txDefaults;
 
 enum {
@@ -1000,7 +1000,7 @@ mxExport void fx_URIError(txMachine* the);
 mxExport void fx_Error_prototype_get_stack(txMachine* the);
 
 extern void fxBuildError(txMachine* the);
-extern void fxJumpError(txMachine* the) XS_FUNCTION_NORETURN;
+extern void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame);
 
 /* xsNumber.c */
 mxExport void fx_isFinite(txMachine* the);
