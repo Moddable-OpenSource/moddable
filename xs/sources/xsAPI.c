@@ -1221,7 +1221,7 @@ void fxThrow(txMachine* the, txString path, txInteger line)
 #ifdef mxDebug
 	fxDebugThrow(the, path, line, "C: xsThrow");
 #endif
-	gxDefaults.jumpError(the);
+	fxJump(the);
 }
 
 void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error, txString format, ...)
@@ -1250,11 +1250,13 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
 	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
 	slot->kind = XS_ERROR_KIND;
 	slot->value.reference = C_NULL;
+	if (gxDefaults.captureErrorStack)
+		gxDefaults.captureErrorStack(the, slot, the->frame);
 	slot = fxNextStringProperty(the, slot, message, mxID(_message), XS_DONT_ENUM_FLAG);
 #ifdef mxDebug
 	fxDebugThrow(the, path, line, message);
 #endif
-	gxDefaults.jumpError(the);
+	fxJump(the);
 }
 
 /* Debugger */
