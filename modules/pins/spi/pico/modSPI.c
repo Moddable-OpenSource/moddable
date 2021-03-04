@@ -31,7 +31,7 @@
 
 // GPIO Function select: F1, SPI0
 #ifndef MODDEF_SPI_MISO_PIN
-	#define MODDEF_SPI_MISO_PIN	20
+	#define MODDEF_SPI_MISO_PIN	-1
 #endif
 #ifndef MODDEF_SPI_MOSI_PIN
 	#define MODDEF_SPI_MOSI_PIN	19
@@ -71,34 +71,40 @@ uint32_t *gSPITxBuffer;
 
 static uint8_t gSPIInited;
 
+static void configSPI(modSPIConfiguration config)
+{
+	spi_cpol_t cpol;
+	spi_cpha_t cpha;
+
+	switch (config->mode) {
+		case 3: cpol = SPI_CPOL_1; cpha = SPI_CPHA_1; break;
+		case 2: cpol = SPI_CPOL_1; cpha = SPI_CPHA_0; break;
+		case 1: cpol = SPI_CPOL_0; cpha = SPI_CPHA_1; break;
+		case 0:	// fall through
+		default:  cpol = SPI_CPOL_0; cpha = SPI_CPHA_0; break;
+	}
+	spi_set_format(config->spi_inst, 8, cpol, cpha, SPI_MSB_FIRST);
+}
+
 void modSPIInit(modSPIConfiguration config)
 {
 	int ret;
 
 	if (!gSPIInited) {
-		spi_cpol_t cpol;
-		spi_cpha_t cpha;
 
 		if (config->spi_port == 1)
 			config->spi_inst = spi1;
 		else
 			config->spi_inst = spi0;
 
-		switch (config->mode) {
-			case 3: cpol = SPI_CPOL_1; cpha = SPI_CPHA_1; break;
-			case 2: cpol = SPI_CPOL_1; cpha = SPI_CPHA_0; break;
-			case 1: cpol = SPI_CPOL_0; cpha = SPI_CPHA_1; break;
-			case 0:	// fall through
-			default:  cpol = SPI_CPOL_0; cpha = SPI_CPHA_0; break;
-		}
-
 		spi_init(config->spi_inst, config->hz);
+		configSPI(config);
 
-		gpio_set_function(MODDEF_SPI_MISO_PIN, GPIO_FUNC_SPI);
+		if (-1 != MODDEF_SPI_MISO_PIN)
+			gpio_set_function(MODDEF_SPI_MISO_PIN, GPIO_FUNC_SPI);
 		gpio_set_function(MODDEF_SPI_MOSI_PIN, GPIO_FUNC_SPI);
 		gpio_set_function(MODDEF_SPI_SCK_PIN, GPIO_FUNC_SPI);
 
-		spi_set_format(config->spi_inst, 8, cpol, cpha, SPI_MSB_FIRST);
 		gSPIInited = true;
 	}
 	gSPITxBuffer = c_malloc(MODDEF_SPI_BUFFERSIZE);
@@ -137,6 +143,13 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 		(gConfig->doChipSelect)(0, gConfig);
 	}
 
+	if (gConfig && config) {
+		if (gConfig->mode != config->mode)
+			configSPI(config);
+		if (gConfig->hz != config->hz)
+			spi_set_baudrate(config->spi_inst, config->hz);
+	}
+	
 	gConfig = config;
 	if (gConfig) {
 		(gConfig->doChipSelect)(1, gConfig);
@@ -400,7 +413,7 @@ void modSPIFlush(void)
 
 static void modSPITxCommon(modSPIConfiguration config, uint8_t *data, uint16_t count, modSPIBufferLoader loader)
 {
-	uint32_t bitsOut;
+	uint16_t bitsOut;
 	uint32_t loaded;
 	int ret;
 
