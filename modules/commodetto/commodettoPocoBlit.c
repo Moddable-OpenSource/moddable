@@ -3040,16 +3040,20 @@ void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 		uint8_t repeatSkip;
 
 		if (f->clipLeft >= 4) {
+			const uint8_t *td = f->data;
 			PocoPixel tp0 = f->prev0, tp1 = f->prev1;
 			repeatSkip = doSkipColorCells(poco, pc, f->clipLeft >> 2);
+			data = f->data;
 			prev0 = f->prev0;
 			prev1 = f->prev1;
+			f->data = td;
 			f->prev0 = tp0;
 			f->prev1 = tp1;
 		}
-		else
+		else {
 			repeatSkip = 0;
-		data = f->data;
+			data = f->data;
+		}
 
 		do {
 			uint8_t command = c_read8(data++);
