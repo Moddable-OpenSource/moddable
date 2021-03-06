@@ -422,17 +422,17 @@ extern void pico_reboot(uint32_t kind);
 /* FLASH */
 #include "hardware/flash.h"
 
-#define kFlashStart ((uintptr_t)0)
+extern uint8_t _MODDABLE_start;		// from linker
+#define kModulesEnd ((uintptr_t)&_MODPREF_start)
+#define kModulesByteLength (kModulesEnd - kModulesStart)
+
+#define kFlashStart ((uintptr_t)&_MODDABLE_start)
 #define kFlashSectorSize (modSPIFlashInit() ? FLASH_SECTOR_SIZE : 0)
 
 extern uint8_t *espFindUnusedFlashStart(void);
 #define kModulesStart ((uintptr_t)espFindUnusedFlashStart())
 
 extern uint8_t _MODPREF_start;		// from linker
-extern uint8_t _MODDABLE_start;		// from linker
-#define kModulesEnd ((uintptr_t)&_MODPREF_start)
-#define kModulesByteLength (kModulesEnd - kModulesStart)
-
 extern uint8_t modSPIFlashInit(void);
 extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);

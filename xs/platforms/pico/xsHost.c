@@ -1029,13 +1029,11 @@ void fxQueuePromiseJobs(txMachine* the)
 
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
-modLog("spiRead");
 	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
 }
 
 static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
-modLog("spiWrite");
 	offset += (uintptr_t)dst;
 
 	if ((offset + kFlashSectorSize) > (uintptr_t)kModulesEnd)
@@ -1108,14 +1106,12 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 
 uint8_t modSPIFlashInit(void)
 {
-modLog("modSPIFlashInit");
 	return 1;
 }
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 {
-modLog("modSPIRead");
-	c_memcpy(dst, (void *)(XIP_BASE + offset), size);
+	c_memcpy(dst, (void *)(offset + kFlashStart), size);
 	return 1;
 }
 
@@ -1124,7 +1120,6 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
-modLog("modSPIWrite");
 	if (!modSPIFlashInit()) {
 		return 0;
 	}
@@ -1180,13 +1175,14 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 	if (!modSPIFlashInit()) {
 		return 0;
 	}
-modLog("modSPIErase");
 
 	if ((offset & (FLASH_SECTOR_SIZE -1)) || (size & (FLASH_SECTOR_SIZE -1))) {
 		return 0;
 	}
 
+	uint32_t status = save_and_disable_interrupts();
 	flash_range_erase(offset, size);
+	restore_interrupts(status);
 	return 1;
 }
 
@@ -1199,7 +1195,6 @@ uint8_t *espFindUnusedFlashStart(void)
 	if (!modSPIFlashInit())
 		return NULL;
 
-modLog("espFindUnusedFlashStart");
 	modStart = (uintptr_t)&__start_unused_space;
 	modStart += FLASH_SECTOR_SIZE - 1;
 	modStart -= modStart % FLASH_SECTOR_SIZE;

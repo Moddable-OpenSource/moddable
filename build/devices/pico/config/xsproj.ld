@@ -252,8 +252,8 @@ SECTIONS
     } > FLASH
 	
 	PROVIDE(_MODFLASH_end	= 0x10200000);
-	PROVIDE(_MODPREF_start  = 0x101FF000);
-	PROVIDE(_MODDABLE_start	= __logical_binary_start);
+	PROVIDE(_MODPREF_start  = 0x101F8000);
+	PROVIDE(_MODDABLE_start	= __flash_binary_start);
 
     /* stack limit is poorly named, but historically is maximum heap ptr */
     __StackLimit = ORIGIN(RAM) + LENGTH(RAM);

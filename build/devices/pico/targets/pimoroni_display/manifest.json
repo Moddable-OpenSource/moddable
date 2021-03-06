@@ -27,10 +27,11 @@
 		},
 		"spi": {
 			"mosi_pin": 19,
-			"sck_pin": 18
+			"sck_pin": 18,
+			"buffersize": 540
 		},
 		"ili9341": {
-			"hz": 27000000,
+			"hz": 64000000,
 			"width": 240,
 			"height": 135,
 			"cs_pin": 17,

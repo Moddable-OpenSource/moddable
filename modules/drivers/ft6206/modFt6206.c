@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -120,10 +120,7 @@ void xs_FT6202(xsMachine *the)
 
 	xsmcVars(1);
 
-	ft->i2c.sda = MODDEF_FT6206_SDA;
-	ft->i2c.scl = MODDEF_FT6206_SCL;
-	ft->i2c.address = MODDEF_FT6206_ADDR;
-	ft->i2c.hz = MODDEF_FT6206_HZ;
+	modI2CConfig(ft->i2c, MODDEF_FT6206_HZ, MODDEF_FT6206_SDA, MODDEF_FT6206_SCL, MODDEF_FT6206_ADDR, 1000);
 	modI2CInit(&ft->i2c);
 
 	data[0] = FT6206_REG_VENDID;
