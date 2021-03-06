@@ -988,8 +988,15 @@ int modMessageService(xsMachine *the, int maxDelayMS)
 		msg = next;
 	}
 
-	while (!gMessageQueue && !best_effort_wfe_or_timeout(until))
+	absolute_time_t now = make_timeout_time_ms(0);
+	if (absolute_time_diff_us(until, now) > 0) {
 		;
+//		modLog("expired timeout ms");
+	}
+	else {
+		while (!gMessageQueue && !best_effort_wfe_or_timeout(until))
+			;
+	}
 
 	return gMessageQueue ? 1 : 0;
 }
@@ -1128,7 +1135,10 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		toAlign = 256 - (offset & 255);
 		c_memset(temp, 0xFF, 256);
 		c_memcpy(temp + 256 - toAlign, src, (size < toAlign) ? size : toAlign);
+
+		uint32_t status = save_and_disable_interrupts();
 		flash_range_program(offset & ~255, temp, 256);
+		restore_interrupts(status);
 
 		if (size <= toAlign) {
 			return 1;
@@ -1146,7 +1156,9 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 			while (toAlign) {
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
+				uint32_t status = save_and_disable_interrupts();
 				flash_range_program(offset, temp, use);
+				restore_interrupts(status);
 
 				toAlign -= use;
 				src += use;
@@ -1154,7 +1166,9 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 			}
 		}
 		else {
+			uint32_t status = save_and_disable_interrupts();
 			flash_range_program(offset, src, toAlign);
+			restore_interrupts(status);
 
 			src += toAlign;
 			offset += toAlign;
@@ -1164,7 +1178,9 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	if (size) {			// long align tail
 		c_memset(temp, 0xFF, 256);
 		c_memcpy(temp, src, size);
+		uint32_t status = save_and_disable_interrupts();
 		flash_range_program(offset, temp, 256);
+		restore_interrupts(status);
 	}
 
 	return 1;

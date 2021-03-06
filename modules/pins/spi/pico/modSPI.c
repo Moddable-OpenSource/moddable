@@ -70,6 +70,8 @@ uint32_t *gSPITxBuffer;
 //uint32_t *gSPIRxBuffer;
 
 static uint8_t gSPIInited;
+static uint8_t gPrevMode;
+static uint32_t gPrevHz;
 
 static void configSPI(modSPIConfiguration config)
 {
@@ -84,20 +86,25 @@ static void configSPI(modSPIConfiguration config)
 		default:  cpol = SPI_CPOL_0; cpha = SPI_CPHA_0; break;
 	}
 	spi_set_format(config->spi_inst, 8, cpol, cpha, SPI_MSB_FIRST);
+	gPrevMode = config->mode;
 }
 
 void modSPIInit(modSPIConfiguration config)
 {
 	int ret;
 
-	if (!gSPIInited) {
-
+	if (!config->spi_inst) {
 		if (config->spi_port == 1)
 			config->spi_inst = spi1;
 		else
 			config->spi_inst = spi0;
+	}
 
-		spi_init(config->spi_inst, config->hz);
+	if (!gSPIInited++) {
+
+		gPrevHz = 64000000;
+//		spi_init(config->spi_inst, config->hz);
+		spi_init(config->spi_inst, 64000000);
 		configSPI(config);
 
 		if (-1 != MODDEF_SPI_MISO_PIN)
@@ -105,9 +112,9 @@ void modSPIInit(modSPIConfiguration config)
 		gpio_set_function(MODDEF_SPI_MOSI_PIN, GPIO_FUNC_SPI);
 		gpio_set_function(MODDEF_SPI_SCK_PIN, GPIO_FUNC_SPI);
 
+		gSPITxBuffer = c_malloc(MODDEF_SPI_BUFFERSIZE);
 		gSPIInited = true;
 	}
-	gSPITxBuffer = c_malloc(MODDEF_SPI_BUFFERSIZE);
 	//@ check
 
 	if (NULL == gConfig) {
@@ -122,12 +129,13 @@ void modSPIUninit(modSPIConfiguration config)
 	if (config == gConfig)
 		modSPIActivateConfiguration(NULL);
 
-	spi_deinit(config->spi_inst);
-	if (gSPITxBuffer) {
-		c_free(gSPITxBuffer);
-		gSPITxBuffer = NULL;
+	if (0 == --gSPIInited) {
+		spi_deinit(config->spi_inst);
+		if (gSPITxBuffer) {
+			c_free(gSPITxBuffer);
+			gSPITxBuffer = NULL;
+		}
 	}
-	gSPIInited = false;
 }
 
 void modSPIActivateConfiguration(modSPIConfiguration config)
@@ -139,19 +147,21 @@ void modSPIActivateConfiguration(modSPIConfiguration config)
 	if (config == gConfig)
 		return;
 
-	if (gConfig) {
+	if (gConfig)
 		(gConfig->doChipSelect)(0, gConfig);
-	}
 
-	if (gConfig && config) {
-		if (gConfig->mode != config->mode)
-			configSPI(config);
-		if (gConfig->hz != config->hz)
-			spi_set_baudrate(config->spi_inst, config->hz);
-	}
-	
 	gConfig = config;
+
+
 	if (gConfig) {
+		if (config->mode != gPrevMode)
+			configSPI(gConfig);
+
+		if (config->hz != gPrevHz) {
+			spi_set_baudrate(config->spi_inst, config->hz);
+			gPrevHz = config->hz;
+		}
+
 		(gConfig->doChipSelect)(1, gConfig);
 	}
 }
