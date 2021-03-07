@@ -34,7 +34,11 @@
 				"*": [
 					"./esp/repl"
 				]
-			}
+			},
+			"strip": [
+				"Atomics",
+				"SharedArrayBuffer"
+			]
 		},
 		"x-cli-mac": {
 			"modules": {
