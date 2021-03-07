@@ -28,18 +28,18 @@
 
 #ifdef mxDebug
 	static xsMachine *gThe = NULL;		// main VM
-	void debuggerTask();
-#else
-	#define setupDebugger()
 #endif
-
 
 void xs_setup(void)
 {
 	xsMachine *the;
+
+#if defined(mxDebug) || MODDEF_PICO_USB
 	setupDebugger();
+#endif
 
 	the = ESP_cloneMachine(0, 0, 0, 0);
+
 #ifdef mxDebug
 	gThe = the;
 #endif
@@ -47,9 +47,6 @@ void xs_setup(void)
 	mc_setup(the);
 
 	while (1) {
-#ifdef mxDebug
-		debuggerTask();
-#endif
 		modTimersExecute();
 		modMessageService(the, modTimersNext());
 

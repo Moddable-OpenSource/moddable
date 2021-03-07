@@ -25,19 +25,6 @@
 
 #include "tusb.h"
 
-#ifdef mxDebug
-
-#ifndef MODDEF_DEBUGGER_RX_PIN
-	#define MODDEF_DEBUGGER_RX_PIN	(0)
-#endif
-#ifndef MODDEF_DEBUGGER_TX_PIN
-	#define MODDEF_DEBUGGER_TX_PIN	(1)
-#endif
-#ifndef MODDEF_DEBUGGER_BAUDRATE
-	#define MODDEF_DEBUGGER_BAUDRATE	NRF_UART_BAUDRATE_115200
-#endif
-
-#if mxDebug
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
 	static int8_t lastRTS = -1;
@@ -48,16 +35,19 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 	lastRTS = rts;
 }
 
+#ifdef mxDebug
+
 void tud_cdc_rx_cb(uint8_t itf)
 {
 	modMessagePostToMachineFromISR(NULL, (modMessageDeliver)fxReceiveLoop, NULL);
 }
+
 #endif
 
 //---------
 void setupDebugger()
 {
-#if mxDebug
+#ifdef mxDebug
 	int i;
 
 	for (i=0; i<=19; i++) {
@@ -70,11 +60,6 @@ void setupDebugger()
 		delay(500);
 	}
 #endif
-}
-
-void debuggerTask()
-{
-	fxReceiveLoop();
 }
 
 void flushDebugger()
@@ -92,12 +77,3 @@ int ESP_getc(void)
 	int c = getchar_timeout_us(0);
 	return (PICO_ERROR_TIMEOUT == c) ? -1 : c;
 }
-
-#else
-
-void ESP_putc(int c) { }
-int ESP_getc(void) { return -1; }
-
-#endif
-
-
