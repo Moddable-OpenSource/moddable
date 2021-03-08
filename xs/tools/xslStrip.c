@@ -75,7 +75,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	
 	if (linker->stripFlag == XS_STRIP_EXPLICIT_FLAG) {
 		fxUseCodes();
-		fxUnuseCode(XS_CODE_PROGRAM_ENVIRONMENT);
 		id = 0;
 		while (id < linker->symbolIndex) {
 			linker->symbolArray[id]->flag = 1;
@@ -242,6 +241,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxUnuseCode(XS_CODE_ARGUMENTS_SLOPPY);
 				fxUnuseCode(XS_CODE_EVAL);
 				fxUnuseCode(XS_CODE_EVAL_TAIL);
+				fxUnuseCode(XS_CODE_PROGRAM_ENVIRONMENT);
 			}
 		}
 		else {
