@@ -4,12 +4,16 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json"
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
-			"$(IO)/i2c/$(PLATFORM)/*"
+			"$(IO)/i2c/$(PLATFORM)/*",
+			"$(IO)/spi/$(PLATFORM)/*",
+			"$(MODULES)/commodetto/commodettoBitmap"
 		],
 		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
 		"embedded:io/digital": "$(IO)/digital/digital",
@@ -18,6 +22,7 @@
 		"embedded:io/smbus": "$(IO)/i2c/smbus",
 		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
+		"embedded:io/spi": "$(IO)/spi/spi",
 
 		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
 

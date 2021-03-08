@@ -18,47 +18,21 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SPI from "embedded:io/spi";
+class SPI @ "xs_spi_destructor" {
+	constructor(dictionary) @ "xs_spi_constructor"
+	close() @ "xs_spi_close"
+	read(count) @ "xs_spi_read"
+	write(buffer) @ "xs_spi_write"
+	transfer(buffer) @ "xs_spi_transfer"
+	flush(deselect) @ "xs_spi_flush"
 
-globalThis.Host = {
-	I2C: {
-		default: {
-			io: I2C,
-			data: 21,
-			clock: 22
-		}
-	},
-	Serial: {
-		default: {
-			io: Serial,
-			port: 1,
-			receive: 3,
-			transmit: 1
-		}
-	},
-	SPI: {
-		default: {
-			io: SPI,
-			clock: 14,
-			in: 12,
-			out: 13,
-			port: 1
-		}
-	},
-	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SPI},
-	pins: {
-		button: 0,
-		led: 2,
-		backlight: 18,
-		displayDC: 2,
-		displaySelect: 15
+	get format() {
+		return "buffer";
 	}
-};
+	set format(value) {
+		if ("buffer" != value)
+			throw new RangeError;
+	}
+}
 
-export default Host;
+export default SPI;
