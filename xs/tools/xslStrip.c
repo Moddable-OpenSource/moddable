@@ -524,11 +524,11 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsCodeUsed(XS_CODE_EVAL_TAIL) || !fxIsCallbackStripped(linker, fx_eval) || !fxIsCallbackStripped(linker, fx_Compartment_prototype_evaluate))
 		fprintf(file, "\tfxRunEvalEnvironment,\n");
 	else
-		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tfxDeadStrip,\n");
 	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT))
 		fprintf(file, "\tfxRunProgramEnvironment,\n");
 	else
-		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tfxDeadStrip,\n");
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Atomics))) {
 		fprintf(file, "\tfxInitializeSharedCluster,\n");
 		fprintf(file, "\tfxTerminateSharedCluster,\n");
