@@ -463,7 +463,7 @@ void xs_digitalbank_read(xsMachine *the)
 #elif defined(__ets__)
 	result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
 	if (digital->pins & 0x10000) {
-		if (READ_PERI_REG(RTC_sGPIO_IN_DATA) & 1)
+		if (READ_PERI_REG(RTC_GPIO_IN_DATA) & 1)
 			result |= 0x10000;
 		else
 			result &= ~0x10000;
