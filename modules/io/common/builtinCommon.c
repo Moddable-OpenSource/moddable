@@ -152,3 +152,31 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format)
 
 	return format;
 }
+
+void *builtinGetBufferPointer(xsMachine *the, xsSlot *slot, uint32_t *byteLength)
+{
+	xsSlot arrayBuffer;
+	int offset, count;
+
+	if (xsmcIsInstanceOf(*slot, xsTypedArrayPrototype)) {
+		xsSlot tmp;
+
+		xsmcGet(tmp, *slot, xsID_byteOffset);
+		offset = xsmcToInteger(tmp);
+		xsmcGet(tmp, *slot, xsID_byteLength);
+		count = xsmcToInteger(tmp);
+		xsmcGet(arrayBuffer, *slot, xsID_buffer);
+
+		if ((count < 0) || (offset < 0))
+			xsUnknownError("invalid");
+		// additional validation?
+	}
+	else {
+		offset = 0;
+		count = xsmcGetArrayBufferLength(*slot);
+		arrayBuffer = *slot;
+	}
+
+	*byteLength = count;
+	return offset + (uint8_t *)xsmcToArrayBuffer(arrayBuffer);
+}

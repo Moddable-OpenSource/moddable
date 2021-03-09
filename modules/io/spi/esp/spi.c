@@ -203,13 +203,9 @@ void xs_spi_read(xsMachine *the)
 		xsUnknownError("closed");
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
-		if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
-			//@@ byteOffset and byteLength
-			xsmcGet(xsArg(0), xsArg(0), xsID_buffer);
-		}
-		count = xsmcGetArrayBufferLength(xsArg(0));
-		xsmcSetInteger(xsResult, count);
-		data = xsmcToArrayBuffer(xsArg(0));
+		data = builtinGetBufferPointer(the, &xsArg(0), &count);
+		if (count > 65535)
+			xsRangeError("bad byteLength");
 	}
 	else {
 		count = xsmcToInteger(xsArg(0));
@@ -231,17 +227,11 @@ void xs_spi_write(xsMachine *the)
 	if (!spi)
 		xsUnknownError("closed");
 
-	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
-		//@@ byteOffset and byteLength
-		xsmcGet(xsArg(0), xsArg(0), xsID_buffer);
-	}
-
-	count = xsmcGetArrayBufferLength(xsArg(0));
-	if ((count <= 0 ) || (count > 65535))
+	data = builtinGetBufferPointer(the, &xsArg(0), &count);
+	if (count > 65535)
 		xsRangeError("bad byteLength");
 
-	data = xsmcToArrayBuffer(xsArg(0));
-	modSPITx(&spi->config, data, (uint16_t)count);
+	modSPITx(&spi->config, (uint8_t *)data, (uint16_t)count);
 }
 
 void xs_spi_transfer(xsMachine *the)
@@ -253,17 +243,11 @@ void xs_spi_transfer(xsMachine *the)
 	if (!spi)
 		xsUnknownError("closed");
 
-	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
-		//@@ byteOffset and byteLength
-		xsmcGet(xsArg(0), xsArg(0), xsID_buffer);
-	}
-
-	count = xsmcGetArrayBufferLength(xsArg(0));
-	if ((count <= 0 ) || (count > 65535))
+	data = builtinGetBufferPointer(the, &xsArg(0), &count);
+	if (count > 65535)
 		xsRangeError("bad byteLength");
 
-	data = xsmcToArrayBuffer(xsArg(0));
-	modSPITxRx(&spi->config, data, (uint16_t)count);
+	modSPITxRx(&spi->config, (uint8_t *)data, (uint16_t)count);
 }
 
 void xs_spi_flush(xsMachine *the)
