@@ -37,7 +37,7 @@
 
 #include "xsAll.h"
 
-static txSlot* fx_Error_aux(txMachine* the, txSlot* prototype, txInteger i);
+static txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i);
 
 void fxBuildError(txMachine* the)
 {
@@ -158,10 +158,10 @@ void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
 
 void fx_Error(txMachine* the)
 {
-	fx_Error_aux(the, &mxErrorPrototype, 0);
+	fx_Error_aux(the, XS_UNKNOWN_ERROR, 0);
 }
 
-txSlot* fx_Error_aux(txMachine* the, txSlot* prototype, txInteger i)
+txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i)
 {
 	txSlot* instance;
 	txSlot* slot;
@@ -169,13 +169,14 @@ txSlot* fx_Error_aux(txMachine* the, txSlot* prototype, txInteger i)
 		mxPushSlot(mxFunction);
 	else
 		mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, prototype);
+	fxGetPrototypeFromConstructor(the, mxErrorPrototypes(error).value.reference);
 	instance = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
 	slot = instance->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
 	slot->kind = XS_ERROR_KIND;
-	slot->value.reference = C_NULL;
+	slot->value.error.info = C_NULL;
+	slot->value.error.which = error;
 	if (gxDefaults.captureErrorStack)
 		gxDefaults.captureErrorStack(the, slot, the->frame->next);
 	if ((mxArgc > i) && (mxArgv(i)->kind != XS_UNDEFINED_KIND)) {
@@ -221,7 +222,7 @@ void fx_Error_toString(txMachine* the)
 void fx_AggregateError(txMachine* the)
 {
 	txSlot* stack = the->stack;
-	txSlot* property = fx_Error_aux(the, &mxAggregateErrorPrototype, 1);
+	txSlot* property = fx_Error_aux(the, XS_AGGREGATE_ERROR, 1);
 	txSlot* array;
 	txSlot** address;
 	txIndex length = 0;
@@ -259,32 +260,32 @@ void fx_AggregateError(txMachine* the)
 
 void fx_EvalError(txMachine* the)
 {
-	fx_Error_aux(the, &mxEvalErrorPrototype, 0);
+	fx_Error_aux(the, XS_EVAL_ERROR, 0);
 }
 
 void fx_RangeError(txMachine* the)
 {
-	fx_Error_aux(the, &mxRangeErrorPrototype, 0);
+	fx_Error_aux(the, XS_RANGE_ERROR, 0);
 }
 
 void fx_ReferenceError(txMachine* the)
 {
-	fx_Error_aux(the, &mxReferenceErrorPrototype, 0);
+	fx_Error_aux(the, XS_REFERENCE_ERROR, 0);
 }
 
 void fx_SyntaxError(txMachine* the)
 {
-	fx_Error_aux(the, &mxSyntaxErrorPrototype, 0);
+	fx_Error_aux(the, XS_SYNTAX_ERROR, 0);
 }
 
 void fx_TypeError(txMachine* the)
 {
-	fx_Error_aux(the, &mxTypeErrorPrototype, 0);
+	fx_Error_aux(the, XS_TYPE_ERROR, 0);
 }
 
 void fx_URIError(txMachine* the)
 {
-	fx_Error_aux(the, &mxURIErrorPrototype, 0);
+	fx_Error_aux(the, XS_URI_ERROR, 0);
 }
 
 void fx_Error_prototype_get_stack(txMachine* the)

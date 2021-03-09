@@ -1249,7 +1249,8 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
 	slot = slot->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
 	slot->kind = XS_ERROR_KIND;
-	slot->value.reference = C_NULL;
+	slot->value.error.info = C_NULL;
+	slot->value.error.which = error;
 	if (gxDefaults.captureErrorStack)
 		gxDefaults.captureErrorStack(the, slot, the->frame);
 	slot = fxNextStringProperty(the, slot, message, mxID(_message), XS_DONT_ENUM_FLAG);
