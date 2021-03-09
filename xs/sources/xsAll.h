@@ -260,6 +260,7 @@ typedef union {
 	struct { txCallback address; txID* IDs; } callback;
 	struct { txByte* address; txSlot* closures; } code;
 	struct { txInteger offset; txInteger size; } dataView;
+	struct { txSlot* info; txError which; } error;
 	struct { void* data; union { txDestructor destructor; txHostHooks* hooks; } variant; } host;
 	struct { txSlot* handler; txSlot* target; } proxy;
 	struct { txInteger* code; txInteger* data; } regexp;
@@ -1749,6 +1750,7 @@ enum {
 	XS_SYNTAX_ERROR,
 	XS_TYPE_ERROR,
 	XS_URI_ERROR,
+	XS_AGGREGATE_ERROR,
 	XS_ERROR_COUNT
 };
 
@@ -2046,6 +2048,12 @@ enum {
 	mxInitSlotKind(the->stack, (THE_SLOT)->kind), \
 	the->stack->value = (THE_SLOT)->value)
 
+#define mxPushAt(ID,INDEX) \
+	(mxOverflow(-1), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_AT_KIND), \
+	the->stack->value.at.index = (INDEX), \
+	the->stack->value.at.id = (ID))
 #define mxPushBigInt(THE_BIGINT) \
 	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
