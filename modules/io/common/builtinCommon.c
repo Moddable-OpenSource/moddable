@@ -48,6 +48,7 @@
 #elif nrf52
 	static uint32_t gDigitalAvailable[kPinBanks] = {
 		0xFFFFFFFF,		//@@
+		0xFFFFFFFF		//@@
 	};
 #else
 	#error - unsupported platform
