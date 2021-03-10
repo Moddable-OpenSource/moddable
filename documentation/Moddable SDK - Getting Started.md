@@ -2,7 +2,7 @@
 ### A guide to installing the Moddable SDK and building its tools
 
 Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: January 29, 2021
+Revised: March 9, 2021
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
@@ -14,6 +14,8 @@ This document provides instructions to install the Moddable SDK and build its to
 	| [![Apple logo](./assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./assets/moddable/win-logo.png)](#windows) | [![Linux logo](./assets/moddable/lin-logo.png)](#linux) |
 	| :--- | :--- | :--- |
 	| •  [System requirements](#mac-requirements)<BR>•  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting)<BR>•  [Updating](#mac-update) | •  [System requirements](#win-requirements)<BR>•  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting)<BR>•  [Updating](#win-update) | •  [System requirements](#lin-requirements)<BR>•  [Installing](#lin-instructions)<BR>•  [Updating](#lin-update)
+
+* [What's Next](#dev-boards-and-mcus): Building and Running Apps on Development Boards and MCUs
 
 <a id="overview"></a>
 ## Overview
@@ -35,12 +37,7 @@ Similar to other debuggers, `xsbug` supports setting breakpoints, browsing sourc
 
 #### Step 2: Install tools for your target platform(s)
 
-To run applications on a device, you have to install the required SDKs, drivers and development tools for your target platform. The `devices` folder contains instructions for all MCUs supported by the Moddable SDK:
-
-- [ESP32](./devices/esp32.md) by Espressif
-- [ESP8266](./devices/esp8266.md) by Espressif
-- [Gecko](./devices/gecko/GeckoBuild.md) by Silicon Labs
-- [QCA4020](./devices/qca4020/README.md) by Qualcomm
+To run applications on a device, you have to install the required SDKs, drivers and development tools for your target platform. The `devices` folder contains instructions for all MCUs supported by the Moddable SDK. See the [What's Next](#dev-boards-and-mcus): Building and Running Apps on Development Boards and MCUs section of this document for more details and links to instructions for your target platform.
 
 #### Step 3: Try out some examples
 
@@ -128,6 +125,8 @@ The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full insta
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p mac
 	```
+
+9. **IMPORTANT:** You can now build and run applications for the desktop simulator. To build and run applications on a development board or MCU, you need to install additional SDKs, drivers, and development tools for your target platform. See the [What's Next](#dev-boards-and-mcus) (Building and Running Apps on Development Boards and MCUs) section of this document for more details and links to instructions.
 
 <a id="mac-troubleshooting"></a>
 ### Troubleshooting
@@ -234,6 +233,8 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p win
 	```
+
+8. **IMPORTANT:** You can now build and run applications for the desktop simulator. To build and run applications on a development board or MCU, you need to install additional SDKs, drivers, and development tools for your target platform. See the [What's Next](#dev-boards-and-mcus) (Building and Running Apps on Development Boards and MCUs) section of this document for more details and links to instructions.
 
 <a id="win-troubleshooting"></a>
 ### Troubleshooting
@@ -369,6 +370,8 @@ The Moddable SDK has been tested on the Ubuntu 16.04 LTS (64-bit) and Raspberry 
 	mcconfig -d -m -p lin
 	```
 
+11. **IMPORTANT:** You can now build and run applications for the desktop simulator. To build and run applications on a development board or MCU, you need to install additional SDKs, drivers, and development tools for your target platform. See the [What's Next](#dev-boards-and-mcus) (Building and Running Apps on Development Boards and MCUs) section of this document for more details and links to instructions.
+
 <!--<a id="lin-troubleshooting"></a>
 ### Troubleshooting
 -->
@@ -432,3 +435,17 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p lin
 	```
+
+<a id="dev-boards-and-mcus"></a>
+## What's Next: Building and Running Apps on Development Boards and MCUs
+
+To build and run applications on a development board or MCU, you will need to install additional SDKs, drivers, and development tools for your target platform. These tools are provided by the manufacturer of the MCU and are not part of the Moddable SDK, but the `devices` folder contains instructions we wrote to guide you through the installation process. 
+
+The table below links to some of the documents in the `devices` folder to help you quickly find instructions for your target platform:
+
+| Device | Documents |
+| :---: | :--- |
+| ESP32 or ESP32-based products<BR>including Moddable Two, NodeMCU ESP32,<BR>and M5Stack development boards | [Using the Moddable SDK with ESP32](./devices/esp32.md)
+| ESP8266 or ESP8266-based products<BR>including Moddable One, Moddable Three,<BR> and NodeMCU ESP8266 | [Using the Moddable SDK with ESP8266](./devices/esp8266.md)
+| Giant Gecko, Mighty Gecko,<BR>Thunderboard Sense 2, or Blue Gecko | [Using the Moddable SDK with Gecko](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md)
+| QCA4020 | [Using the Moddable SDK with QCA4020](./devices/qca4020/README.md)
