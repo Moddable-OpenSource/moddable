@@ -56,7 +56,7 @@ void setupDebugger()
 			break;
 		}
 
-		printf("pico-usb-start %d\r\n", 20 - i);
+//		printf("pico-usb-start %d\r\n", 20 - i);
 		delay(500);
 	}
 #endif

@@ -1,4 +1,4 @@
-// Padded and checksummed version of: /Users/mkellner/pico/pico-examples/build/pico-sdk/src/rp2_common/boot_stage2/bs2_default.bin
+// Padded and checksummed version of: pico-sdk/build/src/rp2_common/boot_stage2/bs2_default.bin
 
 .cpu cortex-m0plus
 .thumb

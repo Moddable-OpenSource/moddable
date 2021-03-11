@@ -58,8 +58,6 @@ ifeq ($(HOST_OS),Darwin)
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 else
-	PLATFORM_OTHER = \
-		$(MODDABLE_TOOLS_DIR)/findUSBLinux
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 	UF2CONV = $(MODDABLE)/build/devices/pico/config/elf2uf2_lin
@@ -297,6 +295,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_timer/include	\
 	$(PICO_SDK_DIR)/src/common/pico_sync/include	\
 	$(PICO_SDK_DIR)/src/common/pico_util/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_malloc/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_clocks/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_resets/include	\
@@ -434,14 +433,15 @@ PICO_OBJ = \
 	$(LIB_DIR)/crt0.S.o \
 	$(LIB_DIR)/binary_info.c.o \
 	$(LIB_DIR)/stdio.c.o \
+	$(LIB_DIR)/reset_interface.c.o \
 	$(LIB_DIR)/stdio_usb.c.o \
 	$(LIB_DIR)/stdio_usb_descriptors.c.o \
+	$(LIB_DIR)/dcd_rp2040.c.o \
+	$(LIB_DIR)/rp2040_usb.c.o \
 	$(LIB_DIR)/usbd.c.o \
 	$(LIB_DIR)/usbd_control.c.o \
 	$(LIB_DIR)/cdc_device.c.o \
 	$(LIB_DIR)/vendor_device.c.o \
-	$(LIB_DIR)/dcd_rp2040.c.o \
-	$(LIB_DIR)/rp2040_usb.c.o \
 	$(LIB_DIR)/flash.c.o \
 	$(LIB_DIR)/bs2_default_padded_checksummed.S.o \
 	$(LIB_DIR)/tusb.c.o \
@@ -516,8 +516,7 @@ OBJECTS += \
 	$(PICO_OBJ)
 
 OTHER_STUFF += \
-	env_vars \
-	$(PLATFORM_OTHER)
+	env_vars
 
 
 TOOLS_BIN = $(PICO_GCC_ROOT)/bin
@@ -562,6 +561,7 @@ PICO_C_DEFINES= \
 	-DCFG_TUSB_DEBUG=0 \
 	-DCFG_TUSB_MCU=OPT_MCU_RP2040 \
 	-DCFG_TUSB_OS=OPT_OS_PICO \
+	-DPICO_BOOT2_NAME=\"boot_w25q080\"	\
 	-DPICO_BIT_OPS_PICO=1	\
 	-DPICO_BOARD=\"pico\"	\
 	-DPICO_BUILD=1	\
