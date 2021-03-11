@@ -22,7 +22,6 @@
 		"main"
 	],
 	"config": {
-		"screen": "ili9341",
 		"touch": ""
 	}
 }

@@ -24,11 +24,7 @@ import DigitalBank from "embedded:io/digitalbank";
 import I2C from "embedded:io/i2c";
 import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
-
-const pins = {
-	button: 0,
-	led: 2
-};
+import SPI from "embedded:io/spi";
 
 const Host = {
 	I2C: {
@@ -43,8 +39,22 @@ const Host = {
 			io: Serial,
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial},
-	pins
+	SPI: {
+		default: {
+			io: SPI,
+			clock: 14,
+			in: 13,
+			out: 12,
+			port: "HSPI"
+		}
+	},
+	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SPI},
+	pins: {
+		button: 0,
+		led: 2,
+		displayDC: 2,
+		displaySelect: 15
+	}
 };
 
 export default Host;

@@ -221,7 +221,7 @@ void xs_serial_read(xsMachine *the)
 		xsResult = xsArrayBuffer(NULL, count);
 		read(s->fd, xsToArrayBuffer(xsResult), count);
 	}
-	if (2 == s->bufferFormat) {
+	else if (2 == s->bufferFormat) {
 		uint8_t byte;
 		read(s->fd, &byte, 1);
 		xsResult = xsInteger(byte);

@@ -3439,7 +3439,7 @@ void fxModuleNodeCode(void* it, void* param)
 	txTargetCode* target = fxCoderCreateTarget(param);
 	txDeclareNode* declaration;
 	txInteger count;
-	txSymbol* name = (coder->parser->flags & mxDebugFlag) ? self->path : C_NULL;
+	txSymbol* name = /*(coder->parser->flags & mxDebugFlag) ? self->path :*/ C_NULL;
 	
 	coder->line = -1;
 	coder->programFlag = 0;

@@ -133,6 +133,7 @@ class Power extends AXP192 {
     this.write(0xb8, 0x80); // Enable Colume Counter
     this.write(0x12, 0x4d); // Enable DC-DC1, OLED VDD, 5B V EXT
     this.write(0x36, 0x5c); // PEK
+    this.write(0x91, 0xA0); // Set MIC voltage to 2.8V
     this.write(0x90, 0x02); // gpio0
   }
 

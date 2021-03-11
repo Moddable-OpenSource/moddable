@@ -52,13 +52,13 @@ void xs_system_deepSleep(xsMachine *the)
 void xs_system_restart(xsMachine *the)
 {
 #if ESP32
-//2@
+	esp_restart();
 #elif defined(__ets__)
 	system_restart();
+#endif
 
 	while (1)
-		delay(1000);
-#endif
+		modDelayMilliseconds(1000);
 }
 
 /*

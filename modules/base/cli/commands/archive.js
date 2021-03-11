@@ -92,5 +92,3 @@ function readString(archive, position) {
 	}
 	return result;
 }
-
-}

@@ -657,15 +657,10 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 		
-	case XS_ERRORS_KIND:
-		aSlot = theSlot->value.errors.first;
-		while (aSlot) {
-			if (!(aSlot->flag & XS_MARK_FLAG)) {
-				aSlot->flag |= XS_MARK_FLAG;
-				fxMarkReference(the, aSlot);
-			}
-			aSlot = aSlot->next;
-		}
+	case XS_ERROR_KIND:
+		aSlot = theSlot->value.error.info;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 	case XS_LIST_KIND:
 		aSlot = theSlot->value.list.first;
@@ -866,15 +861,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			mxMarkChunk(theSlot->value.key.string);
 		break;
 		
-	case XS_ERRORS_KIND:
-		aSlot = theSlot->value.errors.first;
-		while (aSlot) {
-			if (!(aSlot->flag & XS_MARK_FLAG)) {
-				aSlot->flag |= XS_MARK_FLAG;
-				fxMarkValue(the, aSlot);
-			}
-			aSlot = aSlot->next;
-		}
+	case XS_ERROR_KIND:
+		aSlot = theSlot->value.error.info;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
 	case XS_LIST_KIND:
 		aSlot = theSlot->value.list.first;
@@ -1006,11 +996,15 @@ void fxMarkWeakStuff(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 {
 	txSlot* slot;
 	txSlot** address;
-	address = &the->firstWeakMapTable;
-	while ((slot = *address)) {
-		fxMarkWeakMapTable(the, slot, theMarker);
-		*address = C_NULL;
-		address = &(slot->value.table.address[slot->value.table.length]);
+	while (the->firstWeakMapTable) {
+		txSlot* firstWeakMapTable = the->firstWeakMapTable;
+		the->firstWeakMapTable = C_NULL;
+		address = &firstWeakMapTable;
+		while ((slot = *address)) {
+			fxMarkWeakMapTable(the, slot, theMarker);
+			*address = C_NULL;
+			address = &(slot->value.table.address[slot->value.table.length]);
+		}
 	}
 	address = &the->firstWeakSetTable;
 	while ((slot = *address)) {

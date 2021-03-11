@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/base/instrumentation/*"
+		]
+	},
+	"preload": [
+		"instrumentation"
+	]
+}

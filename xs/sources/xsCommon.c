@@ -1476,6 +1476,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"splice",
 	"split",
 	"sqrt",
+	"stack",
 	"startsWith",
 	"status",
 	"sticky",

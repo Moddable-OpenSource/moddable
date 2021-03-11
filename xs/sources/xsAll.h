@@ -128,6 +128,7 @@ typedef struct {
 	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
 	txSlot* (*setPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
 	void (*cleanupFinalizationRegistries)(txMachine*);
+	void (*captureErrorStack)(txMachine* the, txSlot* internal, txSlot* frame);
 } txDefaults;
 
 enum {
@@ -259,6 +260,7 @@ typedef union {
 	struct { txCallback address; txID* IDs; } callback;
 	struct { txByte* address; txSlot* closures; } code;
 	struct { txInteger offset; txInteger size; } dataView;
+	struct { txSlot* info; txError which; } error;
 	struct { void* data; union { txDestructor destructor; txHostHooks* hooks; } variant; } host;
 	struct { txSlot* handler; txSlot* target; } proxy;
 	struct { txInteger* code; txInteger* data; } regexp;
@@ -996,8 +998,10 @@ mxExport void fx_ReferenceError(txMachine* the);
 mxExport void fx_SyntaxError(txMachine* the);
 mxExport void fx_TypeError(txMachine* the);
 mxExport void fx_URIError(txMachine* the);
+mxExport void fx_Error_prototype_get_stack(txMachine* the);
 
 extern void fxBuildError(txMachine* the);
+extern void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame);
 
 /* xsNumber.c */
 mxExport void fx_isFinite(txMachine* the);
@@ -1746,6 +1750,7 @@ enum {
 	XS_SYNTAX_ERROR,
 	XS_TYPE_ERROR,
 	XS_URI_ERROR,
+	XS_AGGREGATE_ERROR,
 	XS_ERROR_COUNT
 };
 
@@ -1882,7 +1887,6 @@ enum {
 	XS_AT_KIND,
 	XS_ENTRY_KIND, //40
 	XS_ERROR_KIND,
-	XS_ERRORS_KIND,
 	XS_HOME_KIND,
 	XS_KEY_KIND,
 	XS_KEY_X_KIND,
@@ -2044,6 +2048,12 @@ enum {
 	mxInitSlotKind(the->stack, (THE_SLOT)->kind), \
 	the->stack->value = (THE_SLOT)->value)
 
+#define mxPushAt(ID,INDEX) \
+	(mxOverflow(-1), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_AT_KIND), \
+	the->stack->value.at.index = (INDEX), \
+	the->stack->value.at.id = (ID))
 #define mxPushBigInt(THE_BIGINT) \
 	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \

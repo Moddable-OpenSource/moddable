@@ -72,4 +72,6 @@ uint8_t builtinSetFormat(xsMachine *the);
 void builtinInitializeTarget(xsMachine *the);
 uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format);
 
+void *builtinGetBufferPointer(xsMachine *the, xsSlot *slot, uint32_t *byteLength);
+
 #endif

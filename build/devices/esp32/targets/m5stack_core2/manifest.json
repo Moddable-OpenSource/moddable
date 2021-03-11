@@ -72,6 +72,16 @@
 				"lr_pin": 0,
 				"dataout_pin": 2
 			}
+		},
+		"audioIn": {
+			"sampleRate": 11025,
+			"bitsPerSample": 16,
+			"i2s": {
+				"bck_pin": 12,
+				"lr_pin": 0,
+				"datain": 34,
+				"pdm": 1
+			}
 		}
 	},
 	"modules": {
