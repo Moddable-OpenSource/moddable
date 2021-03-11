@@ -22,6 +22,7 @@
 #include "xsmain.h"
 #include "modTimer.h"
 #include "modInstrumentation.h"
+#include "mc.defines.h"
 
 #include "xsPlatform.h"
 #include "xsHost.h"

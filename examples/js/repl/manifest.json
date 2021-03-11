@@ -38,7 +38,12 @@
 			"strip": [
 				"Atomics",
 				"SharedArrayBuffer"
-			]
+			],
+			"defines": {
+				"pico": {
+					"usb": 1
+				}
+			}
 		},
 		"x-cli-mac": {
 			"modules": {

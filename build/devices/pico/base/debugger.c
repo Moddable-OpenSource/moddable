@@ -47,7 +47,6 @@ void tud_cdc_rx_cb(uint8_t itf)
 //---------
 void setupDebugger()
 {
-#ifdef mxDebug
 	int i;
 
 	for (i=0; i<=19; i++) {
@@ -56,10 +55,8 @@ void setupDebugger()
 			break;
 		}
 
-//		printf("pico-usb-start %d\r\n", 20 - i);
 		delay(500);
 	}
-#endif
 }
 
 void flushDebugger()
@@ -69,11 +66,15 @@ void flushDebugger()
 
 void ESP_putc(int c)
 {
-	putchar(c);
+	if (tud_cdc_connected())
+		putchar(c);
 }
 
 int ESP_getc(void)
 {
+	if (!tud_cdc_connected())
+		return -1;
+
 	int c = getchar_timeout_us(0);
 	return (PICO_ERROR_TIMEOUT == c) ? -1 : c;
 }
