@@ -885,7 +885,7 @@ struct modMessageRecord {
 	char				message[1];
 };
 
-static modMessage gMessageQueue = NULL;
+static volatile modMessage gMessageQueue = NULL;
 
 // caller is responsible for setting critical section
 static void appendMessage(modMessage msg)
@@ -997,15 +997,8 @@ int modMessageService(xsMachine *the, int maxDelayMS)
 		msg = next;
 	}
 
-	absolute_time_t now = make_timeout_time_ms(0);
-	if (absolute_time_diff_us(until, now) > 0) {
+	while (!gMessageQueue && !best_effort_wfe_or_timeout(until))
 		;
-//		modLog("expired timeout ms");
-	}
-	else {
-		while (!gMessageQueue && !best_effort_wfe_or_timeout(until))
-			;
-	}
 
 	return gMessageQueue ? 1 : 0;
 }
