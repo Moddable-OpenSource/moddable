@@ -997,8 +997,20 @@ int modMessageService(xsMachine *the, int maxDelayMS)
 		msg = next;
 	}
 
+#if 1
+	// workaround for best_effort_wfe_or_timeout hanging on small/zero/negative timeouts
+	while (!gMessageQueue) {
+		absolute_time_t now = make_timeout_time_ms(0);
+		if (absolute_time_diff_us(until, now) < 1000)
+			break;
+
+		if (best_effort_wfe_or_timeout(until))
+			break;
+	}
+#else
 	while (!gMessageQueue && !best_effort_wfe_or_timeout(until))
 		;
+#endif
 
 	return gMessageQueue ? 1 : 0;
 }
