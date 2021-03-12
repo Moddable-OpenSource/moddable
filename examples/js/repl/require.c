@@ -18,6 +18,7 @@
 *
 */
 
+#include "xsAll.h"
 #include "xs.h"
 #include "xsHost.h"
 
@@ -32,4 +33,12 @@ void xs_require(xsMachine *the)
 	}
 	xsCatch {
 	}
+}
+
+void xs_repl_get_xsVersion(xsMachine *the)
+{
+	xsResult = xsNewArray(0);
+	xsCall1(xsResult, xsID("push"), xsInteger(XS_MAJOR_VERSION));
+	xsCall1(xsResult, xsID("push"), xsInteger(XS_MINOR_VERSION));
+	xsCall1(xsResult, xsID("push"), xsInteger(XS_PATCH_VERSION));
 }
