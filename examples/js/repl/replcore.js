@@ -32,8 +32,6 @@ class REPL @ "xs_repl_destructor" {
 	constructor() {
 		REPL.write(newline, "Moddable REPL v0.0.2", newline);
 		REPL.write(`  XS engine v${REPL.xsVersion.join(".")}`, newline, newline);
-		//@@ XS version
-		//@@ build date
 		this.history = [];
 		this.prompt();
 	}
@@ -187,7 +185,7 @@ class REPL @ "xs_repl_destructor" {
 				const args = [];
 				for (let i = 0; i < value.length; i++)
 					args.push(String.fromCharCode(97 + i));
-				return `${value.prototype?.constructor ? "class" : "ƒ"} ${value.name} (${args.join(", ")}) ${body}`;
+				return `${value.prototype?.constructor ? "class" : "ƒ"} ${value.name ?? ""} (${args.join(", ")}) ${body}`;
 				}
 
 			case "object":
@@ -270,7 +268,7 @@ class REPL @ "xs_repl_destructor" {
 				if (!value.prototype?.constructor)
 					REPL.write(this.short(value) , newline);
 				else {
-					REPL.write("class ", value.name, " {", newline);
+					REPL.write("class", " " + (value.name ?? ""), " {", newline);
 
 					let keys = Object.getOwnPropertyNames(value);
 					for (let key of keys) {
@@ -295,7 +293,7 @@ class REPL @ "xs_repl_destructor" {
 
 					REPL.write("}", newline);
 				}
-				break;;
+				break;
 
 			default:
 				REPL.write(type, ": ", value.toString(), newline);
@@ -303,13 +301,5 @@ class REPL @ "xs_repl_destructor" {
 		}
 	}
 }
-Object.freeze(REPL.prototype);
-
-global.console = {
-	log: function (...str) {
-		REPL.write(...str, newline);
-	}
-}
-Object.freeze(global.console);
 
 export default REPL;

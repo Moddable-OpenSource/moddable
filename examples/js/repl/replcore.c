@@ -22,19 +22,6 @@
 #include "xs.h"
 #include "xsHost.h"
 
-void xs_require(xsMachine *the)
-{
-	char name[128];
-
-	xsToStringBuffer(xsArg(0), name, sizeof(name));
-
-	xsTry {
-		xsResult = xsAwaitImport(name, XS_IMPORT_DEFAULT);
-	}
-	xsCatch {
-	}
-}
-
 void xs_repl_get_xsVersion(xsMachine *the)
 {
 	xsResult = xsNewArray(0);

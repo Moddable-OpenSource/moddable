@@ -1,5 +1,12 @@
 import REPL from "repl";
+import Modules from "modules";
 
-globalThis.require = function(specifier) @ "xs_require";
+globalThis.console = Object.freeze({
+	log: function (...str) {
+		REPL.write(...str, newline);
+	}
+}, true);
 
-let console = new REPL;
+globalThis.require = Modules.importNow;
+
+const console = new REPL;
