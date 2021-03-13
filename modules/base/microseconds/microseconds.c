@@ -48,6 +48,16 @@ void xs_time_microseconds(xsMachine *the)
 	xsmcSetNumber(xsResult, now * 1000000.0);
 }
 
+#elif defined(PICO_BOARD)
+
+#include "time.h"
+
+void xs_time_microseconds(xsMachine *the)
+{
+	uint64_t now = time_us_64();
+	xsmcSetNumber(xsResult, now);
+}
+
 #else
 	#error microseconds unsupported
 #endif
