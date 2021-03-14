@@ -40,7 +40,7 @@
 static void fxSourceMapLines(txParser* parser, txString mappings);
 static txInteger fxSourceMapValue(txParser* parser, txString* p);
 
-#define mxAssert(ASSERTION,MESSAGE) if (!(ASSERTION)) { fxReportParserError(parser, MESSAGE); goto bail; }
+#define mxAssert(ASSERTION,MESSAGE) if (!(ASSERTION)) { fxReportParserError(parser, parser->line, MESSAGE); return; }
 
 void fxParserSourceMap(txParser* parser, void* theStream, txGetter theGetter, txUnsigned flags, txString* name)
 {
@@ -79,7 +79,7 @@ void fxParserSourceMap(txParser* parser, void* theStream, txGetter theGetter, tx
 	fxGetNextTokenJSON(parser);
 	fxJSONValue(parser);
 	if (parser->errorCount)
-		fxThrowParserError(parser, parser->errorCount);
+		return;
 	object = parser->root;
 	parser->line = line;
 	parser->root = root;
@@ -116,9 +116,6 @@ void fxParserSourceMap(txParser* parser, void* theStream, txGetter theGetter, tx
 
 	fxSourceMapLines(parser, mappings);
 	*name = source;
-bail:
-	if (parser->errorCount)
-		fxThrowParserError(parser, parser->errorCount);
 }
 
 void fxSourceMapLines(txParser* parser, txString mappings)
@@ -199,7 +196,7 @@ txInteger fxSourceMapValue(txParser* parser, txString* p)
 		else if (c == '/')
 			digit = 63;
 		else
-			fxReportParserError(parser, "source map: unexpected character"); 
+			fxReportParserError(parser, parser->line, "source map: unexpected character"); 
 		continuation = digit & VLQ_CONTINUATION_BIT;
 		digit &= VLQ_MASK_BITS;
 		result += (digit << shift);

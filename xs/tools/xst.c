@@ -184,6 +184,7 @@ static void fx_setTimerCallback(txJob* job);
 
 static txAgentCluster gxAgentCluster;
 
+static int gx262 = 0;
 static int gxError = 0;
 static int gxUnhandledErrors = 0;
 
@@ -228,8 +229,10 @@ int main(int argc, char* argv[])
 		if (c_realpath(harnessPath, path))
 			option  = 4;
 	}
-	if (option == 4)
+	if (option == 4) {
+		gx262 = 1;
 		gxError = main262(argc, argv);
+	}
 	else {
 		xsCreation _creation = {
 			16 * 1024 * 1024, 	/* initialChunkSize */
@@ -1343,8 +1346,12 @@ void fxFulfillModuleFile(txMachine* the)
 
 void fxRejectModuleFile(txMachine* the)
 {
-	fprintf(stderr, "%s\n", xsToString(xsArg(0)));
-	gxError = 1;
+	if (gx262)
+		xsException = xsArg(0);
+	else {
+		fprintf(stderr, "%s\n", xsToString(xsArg(0)));
+		gxError = 1;
+	}
 }
 
 void fxRunModuleFile(txMachine* the, txString path)

@@ -589,6 +589,7 @@ struct sxParser {
 	txParserJump* firstJump;
 	void* console;
 	int error;
+	char* stackLimit;
 	
 	void* dtoa;
 	
@@ -674,6 +675,7 @@ struct sxParser {
 	txSymbol* constructorSymbol;
 	txSymbol* defaultSymbol;
 	txSymbol* doneSymbol;
+	txSymbol* ErrorSymbol;
 	txSymbol* evalSymbol;
 	txSymbol* exportsSymbol;
 	txSymbol* fillSymbol;
@@ -695,7 +697,6 @@ struct sxParser {
 	txSymbol* privateConstructorSymbol;
 	txSymbol* prototypeSymbol;
 	txSymbol* rawSymbol;
-	txSymbol* ReferenceErrorSymbol;
 	txSymbol* returnSymbol;
 	txSymbol* setSymbol;
 	txSymbol* sliceSymbol;
@@ -940,20 +941,16 @@ enum {
 
 /* xsScript.c */
 
+extern void fxCheckParserStack(txParser* parser, txInteger line);
 extern void fxDisposeParserChunks(txParser* parser);
 extern void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSize symbolModulo);
 extern void* fxNewParserChunk(txParser* parser, txSize size);
 extern void* fxNewParserChunkClear(txParser* parser, txSize size);
 extern txString fxNewParserString(txParser* parser, txString buffer, txSize size);
 extern txSymbol* fxNewParserSymbol(txParser* parser, txString buffer);
-extern void fxReportReferenceError(txParser* parser, txString theFormat, ...);
-extern void fxReportParserError(txParser* parser, txString theFormat, ...);
-extern void fxReportParserWarning(txParser* parser, txString theFormat, ...);
-extern void fxReportLineReferenceError(txParser* parser, txInteger line, txString theFormat, ...);
-extern void fxReportLineError(txParser* parser, txInteger line, txString theFormat, ...);
+extern void fxReportMemoryError(txParser* parser, txInteger line, txString theFormat, ...);
+extern void fxReportParserError(txParser* parser, txInteger line, txString theFormat, ...);
 extern void fxTerminateParser(txParser* parser);
-extern void fxThrowMemoryError(txParser* parser);
-extern void fxThrowParserError(txParser* parser, txInteger count);
 
 /* xsLexical.c */
 
@@ -1163,18 +1160,19 @@ extern void fxWhileNodeCode(void* it, void* param);
 extern void fxWithNodeCode(void* it, void* param);
 extern void fxYieldNodeCode(void* it, void* param); 
 
+#define mxTryParser(PARSER) \
+	txParserJump __JUMP__; \
+	__JUMP__.nextJump = (PARSER)->firstJump; \
+	(PARSER)->firstJump = &__JUMP__; \
+	if (c_setjmp(__JUMP__.jmp_buf) == 0) {
+
+#define mxCatchParser(PARSER) \
+		(PARSER)->firstJump = __JUMP__.nextJump; \
+	} \
+	else for ( \
+		(PARSER)->firstJump = __JUMP__.nextJump; \
+		(__JUMP__.nextJump); \
+		__JUMP__.nextJump = NULL)
+
 #endif /* __XS6SCRIPT__ */
-
-
-
-
-
-
-
-
-
-
-
-
-
 

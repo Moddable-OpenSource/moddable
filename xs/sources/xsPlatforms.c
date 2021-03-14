@@ -395,10 +395,12 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 			fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
 			fclose(file);
 			file = NULL;
-			if (slash) *slash = 0;
-			c_strcat(path, name);
-			mxParserThrowElse(c_realpath(path, map));
-			parser->path = fxNewParserSymbol(parser, map);
+			if (parser->errorCount == 0) {
+				if (slash) *slash = 0;
+				c_strcat(path, name);
+				mxParserThrowElse(c_realpath(path, map));
+				parser->path = fxNewParserSymbol(parser, map);
+			}
 		}
 		fxParserHoist(parser);
 		fxParserBind(parser);
