@@ -120,6 +120,19 @@ txSample gxCompactChunkTime = { { 0, 0 }, { 0, 0 }, 0, "compact chunk" };
 
 #endif
 
+txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b)
+{
+	txSize c;
+#if __has_builtin(__builtin_add_overflow)
+	if (__builtin_add_overflow(a, b, &c)) {
+#else
+	c = a + b;
+	if (((a ^ c) & (b ^ c)) < 0) {
+#endif
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	}
+	return c;
+}
 
 void fxCheckStack(txMachine* the, txSlot* slot)
 {
@@ -373,7 +386,7 @@ void fxGrowChunks(txMachine* the, txSize theSize)
 
 	if (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG))
 		theSize = roundup(theSize, the->minimumChunksSize);
-	theSize += sizeof(txBlock);
+	theSize = fxAddChunkSizes(the, theSize, sizeof(txBlock));
 	aData = fxAllocateChunks(the, theSize);
 #ifdef mxSnapshot
 	c_memset(aData, 0, theSize);
@@ -1028,6 +1041,22 @@ void fxMarkWeakStuff(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 	}
 }
 
+txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b)
+{
+	txSize c;
+#if __has_builtin(__builtin_mul_overflow)
+	if (__builtin_mul_overflow(a, b, &c)) {
+#else
+	txNumber A = a, B = b, C = A * B, check;
+	c = (txSize)C;
+	check = c;
+	if (C != check) {
+#endif
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	}
+	return c;
+}
+
 void* fxNewChunk(txMachine* the, txSize theSize)
 {
 	txBlock* aBlock;
@@ -1042,7 +1071,7 @@ void* fxNewChunk(txMachine* the, txSize theSize)
 #endif
     //if (theSize > 1000)
     //	fprintf(stderr, "# fxNewChunk %ld\n", theSize);
-	theSize = mxRoundSize(theSize) + sizeof(txChunk);
+	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk) + (sizeof(txSize) - 1)) & ~(sizeof(txSize) - 1);
 again:
 	aBlock = the->firstBlock;
 	while (aBlock) {
@@ -1115,8 +1144,7 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
 	txBlock* aBlock = the->firstBlock;
-	theSize = mxRoundSize(theSize) + sizeof(txChunk); 
-	
+	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk) + (sizeof(txSize) - 1)) & ~(sizeof(txSize) - 1);
 	if (aChunk->size == theSize) {
 	#ifdef mxNever
 		gxRenewChunkCases[0]++;

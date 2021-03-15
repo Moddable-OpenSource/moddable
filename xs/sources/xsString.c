@@ -911,7 +911,7 @@ void fx_String_prototype_pad(txMachine* the, txBoolean flag)
 			txInteger delta = resultSize - stringSize;
 			txInteger count = delta / fillerSize;
 			txInteger rest = fxUnicodeToUTF8Offset(filler, delta % fillerSize);
-			txString result = mxResult->value.string = (txString)fxNewChunk(the, stringLength + (fillerLength * count) + rest + 1);
+			txString result = mxResult->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, fxAddChunkSizes(the, stringLength, fxMultiplyChunkSizes(the, fillerLength, count)), 1));
 			mxResult->kind = XS_STRING_KIND;
 			string = fxToString(the, mxThis);
 			filler = fxToString(the, the->stack);
@@ -951,17 +951,27 @@ void fx_String_prototype_padStart(txMachine* the)
 void fx_String_prototype_repeat(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis), result;
-	txInteger length = c_strlen(string), count;
-	txNumber COUNT = (mxArgc > 0) ? c_trunc(fxToNumber(the, mxArgv(0))) : 0;
-    if (COUNT < 0)
-		mxRangeError("count < 0");
-	else if (COUNT == C_INFINITY)
-		mxRangeError("count == Infinity");
-    else if (c_isnan(COUNT))
-        count = 0;
-    else
-        count = (txInteger)COUNT;
-	result = mxResult->value.string = (txString)fxNewChunk(the, (length * count) + 1);
+	txInteger length = c_strlen(string);
+	txInteger count = 0;
+	txSlot *arg = mxArgv(0);
+	if ((mxArgc > 0) && (arg->kind != XS_UNDEFINED_KIND)) {
+		if (XS_INTEGER_KIND == arg->kind) {
+			count = arg->value.integer;
+			if (count < 0)
+				mxRangeError("out of range count");
+		}
+		else {
+			txNumber value = c_trunc(fxToNumber(the, arg));
+			if (c_isnan(value))
+				count = 0;
+			else {
+				if ((value < 0) || (0x7FFFFFFF < value))
+					mxRangeError("out of range count");
+				count = value;
+			}
+		}
+	}
+	result = mxResult->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, fxMultiplyChunkSizes(the, length, count), 1));
 	mxResult->kind = XS_STRING_KIND;
 	string = fxToString(the, mxThis);
 	if (length) {

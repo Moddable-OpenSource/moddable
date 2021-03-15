@@ -117,8 +117,6 @@ void fxBuildKeys(txMachine* the)
 
 void* fxAllocateChunks(txMachine* the, txSize theSize)
 {
-	if (theSize > 0x3FFFFFFF)
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	return c_malloc(theSize);
 }
 
