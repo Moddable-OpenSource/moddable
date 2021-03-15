@@ -2131,8 +2131,15 @@ XS_CODE_JUMP:
 			index = XS_NO_ID;
 			mxNextCode(3);
 			slot = mxBehaviorGetProperty(the, variable, (txID)offset, index, XS_ANY);
-			if (!slot && (byte != XS_CODE_TYPEOF))
-				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: undefined variable", (txID)offset);
+			if (slot) {
+				if (slot->kind < 0)
+					mxRunDebugID(XS_REFERENCE_ERROR, "get %s: not initialized yet", (txID)offset);
+			}
+			else {
+				if (byte != XS_CODE_TYPEOF)
+					mxRunDebugID(XS_REFERENCE_ERROR, "get %s: undefined variable", (txID)offset);
+			}
+				
 			goto XS_CODE_GET_ALL;
 		mxCase(XS_CODE_GET_SUPER_AT)
 			variable = (mxStack + 1)->value.reference;
