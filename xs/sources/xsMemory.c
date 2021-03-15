@@ -53,9 +53,6 @@ int gxStress = 0;
 
 #define mxChunkFlag 0x80000000
 
-//#define mxRoundSize(_SIZE) ((_SIZE + (sizeof(txChunk) - 1)) & ~(sizeof(txChunk) - 1))
-#define mxRoundSize(_SIZE) ((_SIZE + (sizeof(txSize) - 1)) & ~(sizeof(txSize) - 1))
-
 static void fxGrowChunks(txMachine* the, txSize theSize); 
 static void fxGrowSlots(txMachine* the, txSize theCount); 
 static void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
@@ -1047,10 +1044,9 @@ txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b)
 #if __has_builtin(__builtin_mul_overflow)
 	if (__builtin_mul_overflow(a, b, &c)) {
 #else
-	txNumber A = a, B = b, C = A * B, check;
+	txNumber C = (txNumber)a * (txNumber)b;
 	c = (txSize)C;
-	check = c;
-	if (C != check) {
+	if (C > (txNumber)0x7FFFFFFF) {
 #endif
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
