@@ -277,6 +277,7 @@ LIB_FILES += \
 
 INC_DIRS = \
 	$(PICO_SDK_DIR)/src/common/pico_stdlib/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_adc/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_i2c/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_spi/include	\
@@ -392,6 +393,7 @@ HEADERS += $(XS_HEADERS)
 
 PICO_OBJ = \
 	$(LIB_DIR)/stdlib.c.o \
+	$(LIB_DIR)/adc.c.o \
 	$(LIB_DIR)/gpio.c.o \
 	$(LIB_DIR)/i2c.c.o \
 	$(LIB_DIR)/spi.c.o \
@@ -457,6 +459,7 @@ PICO_OBJ = \
 
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdlib			\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_adc			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_i2c			\
