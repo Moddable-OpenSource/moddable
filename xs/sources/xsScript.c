@@ -62,27 +62,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	c_memset(parser, 0, sizeof(txParser));
 	parser->first = C_NULL;
 	parser->console = console;
-	{
-	#if mxWindows
-		ULONG_PTR low, high;
-		GetCurrentThreadStackLimits(&low, &high);
-		parser->stackLimit = (char*)low + (32 * 1024);
-	#elif mxMacOSX
-		pthread_t self = pthread_self();
-    	void* stackAddr = pthread_get_stackaddr_np(self);
-   		size_t stackSize = pthread_get_stacksize_np(self);
-		parser->stackLimit = (char*)stackAddr - stackSize + (4 * 1024);
-	#elif mxLinux
-		pthread_attr_t attrs;
-		if (pthread_getattr_np(pthread_self(), &attrs) == 0) {
-    		void* stackAddr;
-   			size_t stackSize;
-			if (pthread_attr_getstack(&attrs, &stackAddr, &stackSize) == 0) {
-				parser->stackLimit = (char*)stackAddr + (4 * 1024);
-			}
-		}
-	#endif
-	}
+	parser->stackLimit = fxCStackLimit();
 
 	parser->buffer = fxNewParserChunk(parser, bufferSize);
 	parser->bufferSize = bufferSize;
