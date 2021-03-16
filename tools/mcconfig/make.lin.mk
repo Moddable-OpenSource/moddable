@@ -120,7 +120,7 @@ else
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1
 endif
 
-LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0)
+LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -lpthread
 
 LINK_OPTIONS = -fPIC -shared -Wl,-Bdynamic\,-Bsymbolic
 
