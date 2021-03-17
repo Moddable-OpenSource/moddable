@@ -19,8 +19,7 @@ import WiFi from "wifi/connection";
 import config from "mc/config";
 
 const mqtt = new Client({
-	host: "test.mosquitto.org",
-	id: "moddable_" + Net.get("MAC"),
+	host: "test.mosquitto.org"
 });
 
 mqtt.onReady = function() {
@@ -54,8 +53,10 @@ new WiFi(
 	},
 	function (msg) {
 		trace(`Wi-Fi ${msg}\n`);
-		if (WiFi.gotIP === msg)
+		if (WiFi.gotIP === msg) {
+			mqtt.id = "moddable_" + Net.get("MAC");
 			mqtt.wait(false);		// connected
+		}
 		else if (WiFi.disconnected === msg)
 			mqtt.wait(true);		// lost connection
 	}
