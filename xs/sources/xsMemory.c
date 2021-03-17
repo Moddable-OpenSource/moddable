@@ -372,17 +372,16 @@ void fxFree(txMachine* the)
 #endif
 }
 
-#ifndef roundup
-#define roundup(x, y)	((((x) + (y) - 1) / (y)) * (y))
-#endif
-
 void fxGrowChunks(txMachine* the, txSize theSize) 
 {
 	txByte* aData;
 	txBlock* aBlock;
 
-	if (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG))
-		theSize = roundup(theSize, the->minimumChunksSize);
+	if (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG)) {
+		txSize modulo = theSize % the->minimumChunksSize;
+		if (modulo)
+			fxAddChunkSizes(the, theSize, the->minimumChunksSize - modulo);
+	}
 	theSize = fxAddChunkSizes(the, theSize, sizeof(txBlock));
 	aData = fxAllocateChunks(the, theSize);
 #ifdef mxSnapshot
@@ -1058,6 +1057,7 @@ void* fxNewChunk(txMachine* the, txSize theSize)
 	txBlock* aBlock;
 	txByte* aData;
 	txBoolean once = 1;
+	txSize modulo = theSize & (sizeof(txSize) - 1);
 	
 #if mxStress
 	if (gxStress) {
@@ -1067,7 +1067,9 @@ void* fxNewChunk(txMachine* the, txSize theSize)
 #endif
     //if (theSize > 1000)
     //	fprintf(stderr, "# fxNewChunk %ld\n", theSize);
-	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk) + (sizeof(txSize) - 1)) & ~(sizeof(txSize) - 1);
+    if (modulo)
+		theSize = fxAddChunkSizes(the, theSize, sizeof(txSize) - modulo);
+	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk));
 again:
 	aBlock = the->firstBlock;
 	while (aBlock) {

@@ -332,23 +332,25 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 	txSlot* address = array->value.array.address;
 	txSlot* chunk = address;
 	txIndex length = array->value.array.length;
-	txIndex size;
+	txIndex current;
+	txSize size;
 	txSlot* result;
 	txSlot* limit;
 	txIndex at;
 	if (address) {
-		size = (((txChunk*)(((txByte*)chunk) - sizeof(txChunk)))->size) / sizeof(txSlot);
-		if (length == size) {
+		current = (((txChunk*)(((txByte*)chunk) - sizeof(txChunk)))->size) / sizeof(txSlot);
+		if (length == current) {
 			if (index < length) 
 				return address + index;
 			if (instance->flag & XS_DONT_PATCH_FLAG)
 				return C_NULL;
 			if (array->flag & XS_DONT_SET_FLAG)
 				return C_NULL;
-			size++;
-			chunk = (txSlot*)fxRenewChunk(the, address, size * sizeof(txSlot));
+			current++;
+			size = fxMultiplyChunkSizes(the, current, sizeof(txSlot));
+			chunk = (txSlot*)fxRenewChunk(the, address, size);
 			if (!chunk) {
-				chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+				chunk = (txSlot*)fxNewChunk(the, size);
 				address = array->value.array.address;
 				c_memcpy(chunk, address, length * sizeof(txSlot));
 			}
@@ -356,7 +358,7 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 		}
 		else {
 			result = address;
-			limit = result + size;
+			limit = result + current;
 			while (result < limit) {
 				at = *((txIndex*)result);
 				if (at == index)
@@ -369,12 +371,13 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 				return C_NULL;
 			if ((array->flag & XS_DONT_SET_FLAG) && (index >= length))
 				return C_NULL;
-			size++;
 			at = result - address;
-			chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+			current++;
+			size = fxMultiplyChunkSizes(the, current, sizeof(txSlot));
+			chunk = (txSlot*)fxNewChunk(the, size);
 			address = array->value.array.address;
 			result = address + at;
-			limit = address + size - 1;
+			limit = address + current - 1;
 			if (result > address)
 				c_memcpy(chunk, address, (result - address) * sizeof(txSlot));
 			if (result < limit)
@@ -387,7 +390,7 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
             return C_NULL;
 		if ((array->flag & XS_DONT_SET_FLAG) && (index >= length))
 			return C_NULL;
-		size = 1;
+		current = 1;
 		chunk = (txSlot*)fxNewChunk(the, sizeof(txSlot));
 		result = chunk;
 	}
@@ -407,32 +410,30 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target)
 {
 	txSlot* address = array->value.array.address;
 	txSlot* chunk = C_NULL;
-	txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
-	if (target > (0x7FFFFFFF / sizeof(txSlot))) {
-		fxReport(the, "# too big array\n");
-		fxJump(the);
-	}
-	if (size != target) {
+	txIndex current = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
+	txSize size;
+	if (current != target) {
 		if (array->flag & XS_DONT_SET_FLAG)
 			mxTypeError("set length: not writable");
+		size = fxMultiplyChunkSizes(the, target, sizeof(txSlot));
 		if (address) {
 			if (target) {
-				chunk = (txSlot*)fxRenewChunk(the, address, target * sizeof(txSlot));
+				chunk = (txSlot*)fxRenewChunk(the, address, size);
 				if (!chunk) {
-					chunk = (txSlot*)fxNewChunk(the, target * sizeof(txSlot));
+					chunk = (txSlot*)fxNewChunk(the, size);
 					address = array->value.array.address;
-					if (size < target)
-						c_memcpy(chunk, address, size * sizeof(txSlot));
+					if (current < target)
+						c_memcpy(chunk, address, current * sizeof(txSlot));
 					else
-						c_memcpy(chunk, address, target * sizeof(txSlot));
+						c_memcpy(chunk, address, size);
 				}
 			}
 		}
 		else {
-			chunk = (txSlot*)fxNewChunk(the, target * sizeof(txSlot));
+			chunk = (txSlot*)fxNewChunk(the, size);
 		}
-		if (size < target)
-			c_memset(chunk + size, 0, (target - size) * sizeof(txSlot));
+		if (current < target)
+			c_memset(chunk + current, 0, (target - current) * sizeof(txSlot));
 		array->value.array.length = target;
 		array->value.array.address = chunk;
 	}

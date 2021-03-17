@@ -266,7 +266,7 @@ void fxStringX(txMachine* the, txSlot* theSlot, txString theValue)
 
 void fxStringBuffer(txMachine* the, txSlot* theSlot, txString theValue, txSize theSize)
 {
-	theSlot->value.string = (txString)fxNewChunk(the, theSize + 1);
+	theSlot->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, theSize, 1));
 	if (theValue)
 		c_memcpy(theSlot->value.string, theValue, theSize);
 	else
@@ -490,7 +490,7 @@ void fxArrayCacheEnd(txMachine* the, txSlot* reference)
 	txIndex length = array->value.array.length;
 	if (length) {
 		txSlot *srcSlot, *dstSlot;
-		array->value.array.address = (txSlot*)fxNewChunk(the, length * sizeof(txSlot));
+		array->value.array.address = (txSlot*)fxNewChunk(the, fxMultiplyChunkSizes(the, length, sizeof(txSlot)));
 		srcSlot = array->next;
 		dstSlot = array->value.array.address + length;
 		while (srcSlot) {

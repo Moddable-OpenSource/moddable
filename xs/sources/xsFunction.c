@@ -446,7 +446,7 @@ void fx_Function_prototype_bind(txMachine* the)
 		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
 			length = c_strlen(the->stack->value.string);
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-		name = (txString)fxNewChunk(the, 6 + length + 1);
+		name = (txString)fxNewChunk(the, fxAddChunkSizes(the, length, 6 + 1));
 		c_memcpy(name, "bound ", 6);
 		if (length)
 			c_memcpy(name + 6, the->stack->value.string, length);

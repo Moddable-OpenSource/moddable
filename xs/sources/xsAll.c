@@ -42,7 +42,7 @@ txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txStrin
 	txSize stringSize = c_strlen(string->value.string);
 	txSize prefixSize = prefix ? c_strlen(prefix) : 0;
 	txSize suffixSize = suffix ? c_strlen(suffix) : 0;
-	txSize resultSize = stringSize + prefixSize + suffixSize + 1;
+	txSize resultSize = fxAddChunkSizes(the, fxAddChunkSizes(the, fxAddChunkSizes(the, stringSize, prefixSize), suffixSize), 1);
 	txString result = (txString)fxNewChunk(the, resultSize);
 	if (prefix && prefixSize)
 		c_memcpy(result, prefix, prefixSize);
