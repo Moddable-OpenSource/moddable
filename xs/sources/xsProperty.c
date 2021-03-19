@@ -217,7 +217,7 @@ txSlot* fxQueueIDKeys(txMachine* the, txSlot* first, txFlag flag, txSlot* keys)
 	if (flag & XS_EACH_NAME_FLAG) {
 		txSlot* property = first;
 		while (property) {
-			if (fxIsKeyName(the, property->ID))
+			if (!(property->flag & XS_INTERNAL_FLAG) && fxIsKeyName(the, property->ID))
 				keys = fxQueueKey(the, property->ID, XS_NO_ID, keys);
 			property = property->next;
 		}
@@ -225,7 +225,7 @@ txSlot* fxQueueIDKeys(txMachine* the, txSlot* first, txFlag flag, txSlot* keys)
 	if (flag & XS_EACH_SYMBOL_FLAG) {
 		txSlot* property = first;
 		while (property) {
-			if (fxIsKeySymbol(the, property->ID))
+			if (!(property->flag & XS_INTERNAL_FLAG) && fxIsKeySymbol(the, property->ID))
 				keys = fxQueueKey(the, property->ID, XS_NO_ID, keys);
 			property = property->next;
 		}

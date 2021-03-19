@@ -169,7 +169,7 @@ txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i)
 		mxPushSlot(mxFunction);
 	else
 		mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, mxErrorPrototypes(error).value.reference);
+	fxGetPrototypeFromConstructor(the, &mxErrorPrototypes(error));
 	instance = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
 	slot = instance->next = fxNewSlot(the);

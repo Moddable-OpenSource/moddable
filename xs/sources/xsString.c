@@ -911,7 +911,7 @@ void fx_String_prototype_pad(txMachine* the, txBoolean flag)
 			txInteger delta = resultSize - stringSize;
 			txInteger count = delta / fillerSize;
 			txInteger rest = fxUnicodeToUTF8Offset(filler, delta % fillerSize);
-			txString result = mxResult->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, fxAddChunkSizes(the, stringLength, fxMultiplyChunkSizes(the, fillerLength, count)), 1));
+			txString result = mxResult->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, fxAddChunkSizes(the, stringLength, fxMultiplyChunkSizes(the, fillerLength, count)), rest + 1));
 			mxResult->kind = XS_STRING_KIND;
 			string = fxToString(the, mxThis);
 			filler = fxToString(the, the->stack);
