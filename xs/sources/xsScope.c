@@ -85,20 +85,28 @@ static void fxFunctionNodeRename(void* it, txSymbol* symbol);
 void fxParserBind(txParser* parser)
 {
 	txBinder binder;
+	c_memset(&binder, 0, sizeof(txBinder));
+	binder.parser = parser;
 	if (parser->errorCount == 0) {
-		c_memset(&binder, 0, sizeof(txBinder));
-		binder.parser = parser;
-		fxNodeDispatchBind(parser->root, &binder);
+		mxTryParser(parser) {
+			fxNodeDispatchBind(parser->root, &binder);
+		}
+		mxCatchParser(parser) {
+		}
 	}
 }
 
 void fxParserHoist(txParser* parser)
 {
 	txHoister hoister;
+	c_memset(&hoister, 0, sizeof(txHoister));
+	hoister.parser = parser;
 	if (parser->errorCount == 0) {
-		c_memset(&hoister, 0, sizeof(txHoister));
-		hoister.parser = parser;
-		fxNodeDispatchHoist(parser->root, &hoister);
+		mxTryParser(parser) {
+			fxNodeDispatchHoist(parser->root, &hoister);
+		}
+		mxCatchParser(parser) {
+		}
 	}
 }
 
@@ -109,7 +117,7 @@ void fxHoisterAddExportLink(txHoister* self, txSpecifierNode* specifier)
     if (symbol) {
         while (link) {
             if (link->symbol == symbol) {
-                fxReportLineError(self->parser, specifier->line, "duplicate export %s", symbol->string);
+                fxReportParserError(self->parser, specifier->line, "duplicate export %s", symbol->string);
                 return;
             }
             link = link->next;
@@ -358,6 +366,7 @@ void fxNodeHoist(void* it, void* param)
 void fxNodeDispatchHoist(void* it, void* param)
 {
 	txNode* node = it;
+	fxCheckParserStack(((txHoister*)param)->parser, node->line);
 	(*node->description->dispatch->hoist)(it, param);
 }
 
@@ -414,7 +423,7 @@ void fxCatchNodeHoist(void* it, void* param)
 		node = self->statementScope->firstDeclareNode;
 		while (node) {
 		   if (fxScopeGetDeclareNode(self->scope, node->symbol))
-			   fxReportLineError(hoister->parser, node->line, "duplicate variable %s", node->symbol->string);
+			   fxReportParserError(hoister->parser, node->line, "duplicate variable %s", node->symbol->string);
 		   node = node->nextDeclareNode;
 		}
 	}
@@ -461,7 +470,7 @@ void fxClassNodeHoist(void* it, void* param)
 			if (node) {
                 txUnsigned flags = (node->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag)) ^ (item->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag));
 				if ((flags != (mxGetterFlag | mxSetterFlag)))
-					fxReportLineError(hoister->parser, item->line, "duplicate %s", symbol->string);
+					fxReportParserError(hoister->parser, item->line, "duplicate %s", symbol->string);
 			}
 			node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_CONST, symbol);
 			node->flags |= mxDeclareNodeClosureFlag | (item->flags & (mxStaticFlag | mxGetterFlag | mxSetterFlag));
@@ -506,9 +515,9 @@ void fxCoalesceExpressionNodeHoist(void* it, void* param)
 	txToken leftToken = self->left->description->token;
 	txToken rightToken = self->right->description->token;
 	if ((leftToken == XS_TOKEN_AND) || (rightToken == XS_TOKEN_AND))
-		fxReportLineError(hoister->parser, self->line, "missing () around &&");
+		fxReportParserError(hoister->parser, self->line, "missing () around &&");
 	else if ((leftToken == XS_TOKEN_OR) || (rightToken == XS_TOKEN_OR))
-		fxReportLineError(hoister->parser, self->line, "missing () around ||");
+		fxReportParserError(hoister->parser, self->line, "missing () around ||");
 	fxNodeDispatchHoist(self->left, param);
 	fxNodeDispatchHoist(self->right, param);
 }
@@ -523,7 +532,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 		node = fxScopeGetDeclareNode(hoister->functionScope, self->symbol);
 		if (node) {
 			if ((node->description->token == XS_TOKEN_ARG) && (hoister->functionScope->node->flags & (mxArrowFlag | mxAsyncFlag | mxMethodFlag | mxNotSimpleParametersFlag | mxStrictFlag)))
-				fxReportLineError(hoister->parser, self->line, "duplicate argument %s", self->symbol->string);
+				fxReportParserError(hoister->parser, self->line, "duplicate argument %s", self->symbol->string);
 		}
 		else {
 			fxScopeAddDeclareNode(hoister->functionScope, self);
@@ -537,7 +546,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 				node = C_NULL;
 		}
 		if (node)
-			fxReportLineError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
+			fxReportParserError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
 		else
 			fxScopeAddDeclareNode(hoister->scope, self);
 	}
@@ -561,7 +570,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 			}
 		}
 		if (node)
-			fxReportLineError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
+			fxReportParserError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
 		else {
 			node = fxScopeGetDeclareNode(hoister->functionScope, self->symbol);
 			if (!node || ((node->description->token != XS_TOKEN_ARG) && (node->description->token != XS_TOKEN_VAR)))
@@ -582,13 +591,13 @@ void fxDefineNodeHoist(void* it, void* param)
 	txDeclareNode* node;
 	if (self->flags & mxStrictFlag) {
 		if ((self->symbol == hoister->parser->argumentsSymbol) || (self->symbol == hoister->parser->evalSymbol) || (self->symbol == hoister->parser->yieldSymbol))
-			fxReportLineError(hoister->parser, self->line, "invalid definition %s", self->symbol->string);
+			fxReportParserError(hoister->parser, self->line, "invalid definition %s", self->symbol->string);
 	}
 	if ((hoister->scope == hoister->bodyScope) && (hoister->scope->token != XS_TOKEN_MODULE)) {
 		node = fxScopeGetDeclareNode(hoister->bodyScope, self->symbol);
 		if (node) {
 			if ((node->description->token == XS_TOKEN_CONST) || (node->description->token == XS_TOKEN_LET))
-				fxReportLineError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
+				fxReportParserError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
 		}
 		else {
 			if (hoister->functionScope != hoister->bodyScope)
@@ -601,7 +610,7 @@ void fxDefineNodeHoist(void* it, void* param)
 	else {
 		node = fxScopeGetDeclareNode(hoister->scope, self->symbol);
 		if (node)
-			fxReportLineError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
+			fxReportParserError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
 		else
 			fxScopeAddDeclareNode(hoister->scope, (txDeclareNode*)self);
 		fxScopeAddDefineNode(hoister->scope, self);
@@ -704,7 +713,7 @@ void fxHostNodeHoist(void* it, void* param)
 	txHoister* hoister = param;
 	txScope* scope = hoister->bodyScope;
 	if ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM))
-		fxReportLineError(hoister->parser, self->line, "invalid host");
+		fxReportParserError(hoister->parser, self->line, "invalid host");
 	else {
 		// @@ check simple parameters
 	}
@@ -721,11 +730,11 @@ void fxImportNodeHoist(void* it, void* param)
 			txSymbol* symbol = specifier->asSymbol ? specifier->asSymbol : specifier->symbol;
 			if (self->flags & mxStrictFlag) {
 				if ((symbol == hoister->parser->argumentsSymbol) || (symbol == hoister->parser->evalSymbol))
-					fxReportLineError(hoister->parser, self->line, "invalid import %s", symbol->string);
+					fxReportParserError(hoister->parser, self->line, "invalid import %s", symbol->string);
 			}
 			node = fxScopeGetDeclareNode(hoister->scope, symbol);
 			if (node)
-				fxReportLineError(hoister->parser, self->line, "duplicate variable %s", symbol->string);
+				fxReportParserError(hoister->parser, self->line, "duplicate variable %s", symbol->string);
 			else {
 				specifier->declaration = node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_LET, symbol);
 				specifier->from = self->from;
@@ -810,6 +819,7 @@ void fxWithNodeHoist(void* it, void* param)
 void fxNodeDispatchBind(void* it, void* param)
 {
 	txNode* node = it;
+	fxCheckParserStack(((txBinder*)param)->parser, node->line);
 	(*node->description->dispatch->bind)(it, param);
 }
 
@@ -966,7 +976,7 @@ void fxExportNodeBind(void* it, void* param)
 				specifier->declaration->firstExportSpecifier = specifier;
 			}
 			else
-				fxReportLineError(binder->parser, specifier->line, "unknown variable %s", specifier->symbol->string);
+				fxReportParserError(binder->parser, specifier->line, "unknown variable %s", specifier->symbol->string);
 			specifier = (txSpecifierNode*)specifier->next;
 		}
 	}
@@ -1137,15 +1147,15 @@ void fxParamsBindingNodeBind(void* it, void* param)
 	txInteger count = self->items->length;
 	if (functionNode->flags & mxGetterFlag) {
 		if (count != 0)
-			fxReportLineError(binder->parser, self->line, "invalid getter arguments");
+			fxReportParserError(binder->parser, self->line, "invalid getter arguments");
 	}
 	else if (functionNode->flags & mxSetterFlag) {
 		if ((count != 1) || (self->items->first->description->token == XS_TOKEN_REST_BINDING))
-			fxReportLineError(binder->parser, self->line, "invalid setter arguments");
+			fxReportParserError(binder->parser, self->line, "invalid setter arguments");
 	}
 	else {
 		if (count > 255)
-			fxReportLineError(binder->parser, self->line, "too many arguments");
+			fxReportParserError(binder->parser, self->line, "too many arguments");
 	}
 	if (functionNode->flags & mxArgumentsFlag) {
 		txNode* item;
@@ -1183,7 +1193,7 @@ void fxPrivateMemberNodeBind(void* it, void* param)
 	txPrivateMemberNode* self = it;
 	fxScopeLookup(binder->scope, (txAccessNode*)self, 0);
 	if (!self->declaration)
-		fxReportLineError(binder->parser, self->line, "invalid private identifier");
+		fxReportParserError(binder->parser, self->line, "invalid private identifier");
 	fxNodeDispatchBind(self->reference, param);
 }
 

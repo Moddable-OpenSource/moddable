@@ -35,7 +35,17 @@
  *       limitations under the License.
  */
 
+#define _GNU_SOURCE
 #include "xsScript.h"
+
+void fxCheckParserStack(txParser* parser, txInteger line)
+{
+    char x;
+    char *stack = &x;
+    if (stack <= parser->stackLimit) {
+    	fxReportMemoryError(parser, line, "stack overflow");
+    }
+}
 
 void fxDisposeParserChunks(txParser* parser)
 {
@@ -52,6 +62,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	c_memset(parser, 0, sizeof(txParser));
 	parser->first = C_NULL;
 	parser->console = console;
+	parser->stackLimit = fxCStackLimit();
 
 	parser->buffer = fxNewParserChunk(parser, bufferSize);
 	parser->bufferSize = bufferSize;
@@ -78,6 +89,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->constructorSymbol = fxNewParserSymbol(parser, "constructor");
 	parser->defaultSymbol = fxNewParserSymbol(parser, "default");
 	parser->doneSymbol = fxNewParserSymbol(parser, "done");
+	parser->ErrorSymbol = fxNewParserSymbol(parser, "Error");
 	parser->evalSymbol = fxNewParserSymbol(parser, "eval");
 	parser->exportsSymbol = fxNewParserSymbol(parser, "exports");
 	parser->fillSymbol = fxNewParserSymbol(parser, "fill");
@@ -99,7 +111,6 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->privateConstructorSymbol = fxNewParserSymbol(parser, "#constructor");
 	parser->prototypeSymbol = fxNewParserSymbol(parser, "prototype");
 	parser->rawSymbol = fxNewParserSymbol(parser, "raw");
-	parser->ReferenceErrorSymbol = fxNewParserSymbol(parser, "ReferenceError");
 	parser->returnSymbol = fxNewParserSymbol(parser, "return");
 	parser->setSymbol = fxNewParserSymbol(parser, "set");
 	parser->sliceSymbol = fxNewParserSymbol(parser, "slice");
@@ -125,7 +136,7 @@ void* fxNewParserChunk(txParser* parser, txSize size)
 {
 	txParserChunk* block = c_malloc(sizeof(txParserChunk) + size);
 	if (!block)
-		fxThrowMemoryError(parser);
+		fxReportMemoryError(parser, parser->line, "heap overflow");
 	parser->total += sizeof(txParserChunk) + size;
 	block->next = parser->first;
 	parser->first = block;
@@ -184,89 +195,44 @@ txSymbol* fxNewParserSymbol(txParser* parser, txString theString)
 	return aSymbol;
 }
 
-void fxReportParserError(txParser* parser, txString theFormat, ...)
+void fxReportMemoryError(txParser* parser, txInteger line, txString theFormat, ...)
 {
 	c_va_list arguments;
+	parser->error = C_ENOMEM;
 	parser->errorCount++;
-	if (!parser->errorSymbol)
+	c_va_start(arguments, theFormat);
+    (*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
+	c_va_end(arguments);
+	if (parser->console) {
+		parser->errorSymbol = parser->ErrorSymbol;
+		if (parser->buffer != theFormat) {
+			c_va_start(arguments, theFormat);
+			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
+			c_va_end(arguments);
+		}
+		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
+	}
+	c_longjmp(parser->firstJump->jmp_buf, 1);
+}
+
+void fxReportParserError(txParser* parser, txInteger line, txString theFormat, ...)
+{
+	c_va_list arguments;
+	parser->error = C_EINVAL;
+	parser->errorCount++;
+	c_va_start(arguments, theFormat);
+    (*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
+	c_va_end(arguments);
+	if (parser->console) {
 		parser->errorSymbol = parser->SyntaxErrorSymbol;
-	if (!parser->errorMessage) {
 		if (parser->buffer != theFormat) {
 			c_va_start(arguments, theFormat);
 			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
 			c_va_end(arguments);
 		}
 		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
+		c_longjmp(parser->firstJump->jmp_buf, 1);
 	}
-	c_va_start(arguments, theFormat);
-    (*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, parser->line, theFormat, arguments);
-	c_va_end(arguments);
-}
-
-void fxReportReferenceError(txParser* parser, txString theFormat, ...)
-{
-	c_va_list arguments;
-	parser->errorCount++;
-	if (!parser->errorSymbol)
-		parser->errorSymbol = parser->ReferenceErrorSymbol;
-	if (!parser->errorMessage) {
-		if (parser->buffer != theFormat) {
-			c_va_start(arguments, theFormat);
-			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
-			c_va_end(arguments);
-		}
-		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
-	}
-	c_va_start(arguments, theFormat);
-    (*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, parser->line, theFormat, arguments);
-	c_va_end(arguments);
-}
-
-void fxReportParserWarning(txParser* parser, txString theFormat, ...)
-{
-	c_va_list arguments;
-	parser->warningCount++;
-	c_va_start(arguments, theFormat);
-	(*parser->reportWarning)(parser->console, parser->path ? parser->path->string : C_NULL, parser->line, theFormat, arguments);
-	c_va_end(arguments);
-}
-
-void fxReportLineReferenceError(txParser* parser, txInteger line, txString theFormat, ...)
-{
-	c_va_list arguments;
-	parser->errorCount++;
-	if (!parser->errorSymbol)
-		parser->errorSymbol = parser->ReferenceErrorSymbol;
-	if (!parser->errorMessage) {
-		if (parser->buffer != theFormat) {
-			c_va_start(arguments, theFormat);
-			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
-			c_va_end(arguments);
-		}
-		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
-	}
-	c_va_start(arguments, theFormat);
-	(*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
-	c_va_end(arguments);
-}
-
-void fxReportLineError(txParser* parser, txInteger line, txString theFormat, ...)
-{
-	c_va_list arguments;
-	parser->errorCount++;
-	if (!parser->errorSymbol)
-		parser->errorSymbol = parser->SyntaxErrorSymbol;
-	if (!parser->errorMessage) {
-		if (parser->buffer != theFormat) {
-			c_va_start(arguments, theFormat);
-			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
-			c_va_end(arguments);
-		}
-		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
-	}
-	c_va_start(arguments, theFormat);
-	(*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
-	c_va_end(arguments);
 }
 
 void fxTerminateParser(txParser* parser)
@@ -274,18 +240,6 @@ void fxTerminateParser(txParser* parser)
 	fxDisposeParserChunks(parser);
 	if (parser->dtoa)
 		fxDelete_dtoa(parser->dtoa);
-}
-
-void fxThrowMemoryError(txParser* parser)
-{
-	parser->error = C_ENOMEM;
-	c_longjmp(parser->firstJump->jmp_buf, 1);
-}
-
-void fxThrowParserError(txParser* parser, txInteger count)
-{
-	parser->error = C_EINVAL;
-	c_longjmp(parser->firstJump->jmp_buf, 1);
 }
 
 

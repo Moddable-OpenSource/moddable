@@ -135,53 +135,54 @@ void fxIncludeTree(txParser* parser, void* stream, txGetter getter, txUnsigned f
 
 void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsigned flags, txString* name)
 {
-	parser->stream = theStream;
-	parser->getter = theGetter;
-	parser->line = 1;
-	parser->flags = flags;
-	parser->modifier = parser->emptyString;
-	parser->string = parser->emptyString;
-	parser->line2 = 1;
-	parser->modifier2 = parser->emptyString;
-	parser->string2 = parser->emptyString;
+	mxTryParser(parser) {
+		parser->stream = theStream;
+		parser->getter = theGetter;
+		parser->line = 1;
+		parser->flags = flags;
+		parser->modifier = parser->emptyString;
+		parser->string = parser->emptyString;
+		parser->line2 = 1;
+		parser->modifier2 = parser->emptyString;
+		parser->string2 = parser->emptyString;
 	
-	parser->root = NULL;
+		parser->root = NULL;
 	
-	parser->flags &= ~mxEvalFlag;
-	if (!(parser->flags & mxProgramFlag))
-		parser->flags |= mxStrictFlag | mxAsyncFlag;
-	fxGetNextCharacter(parser);
-	fxGetNextCharacter(parser);
-	if (parser->character == '#') {
+		parser->flags &= ~mxEvalFlag;
+		if (!(parser->flags & mxProgramFlag))
+			parser->flags |= mxStrictFlag | mxAsyncFlag;
 		fxGetNextCharacter(parser);
-		if (parser->character == '!') {
+		fxGetNextCharacter(parser);
+		if (parser->character == '#') {
 			fxGetNextCharacter(parser);
-			while ((parser->character != (txU4)C_EOF) && (parser->character != 10) && (parser->character != 13) && (parser->character != 0x2028) && (parser->character != 0x2029)) {
+			if (parser->character == '!') {
 				fxGetNextCharacter(parser);
-			}	
+				while ((parser->character != (txU4)C_EOF) && (parser->character != 10) && (parser->character != 13) && (parser->character != 0x2028) && (parser->character != 0x2029)) {
+					fxGetNextCharacter(parser);
+				}	
+			}
+			else
+				fxReportParserError(parser, parser->line, "invalid character %d", parser->character);
 		}
-		else
-			fxReportParserError(parser, "invalid character %d", parser->character);
-	}
-	fxGetNextToken(parser);
-	if (parser->flags & mxProgramFlag) {
-		fxProgram(parser);
-	}
-	else {
-		fxModule(parser);
-	}
-	parser->flags &= ~mxEvalFlag;
+		fxGetNextToken(parser);
+		if (parser->flags & mxProgramFlag) {
+			fxProgram(parser);
+		}
+		else {
+			fxModule(parser);
+		}
+		parser->flags &= ~mxEvalFlag;
 	
-	parser->flags |= flags & mxEvalFlag;
+		parser->flags |= flags & mxEvalFlag;
 	
-#ifdef mxTreePrint
-	fxTreePrint(parser, parser->root);
-#endif
-	
-	if (parser->errorCount)
-		return;
-	if (name)
-		*name = parser->name;
+	#ifdef mxTreePrint
+		fxTreePrint(parser, parser->root);
+	#endif
+		if ((parser->errorCount == 0) && name)
+			*name = parser->name;
+	}
+	mxCatchParser(parser) {
+	}
 }
 
 void fxNodeListDistribute(txNodeList* list, txNodeCall call, void* param)

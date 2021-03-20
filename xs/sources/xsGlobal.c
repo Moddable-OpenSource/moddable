@@ -178,6 +178,7 @@ txSlot* fxNewGlobalInstance(txMachine* the)
 #else
 	txSize length = the->keyCount;
 #endif
+	txSize size = fxMultiplyChunkSizes(the, length, sizeof(txSlot*));
 	instance = fxNewSlot(the);
 	instance->flag = XS_EXOTIC_FLAG;
 	instance->kind = XS_INSTANCE_KIND;
@@ -185,8 +186,8 @@ txSlot* fxNewGlobalInstance(txMachine* the)
 	instance->value.instance.prototype = mxObjectPrototype.value.reference;
 	mxPushReference(instance);
 	property = instance->next = fxNewSlot(the);
-	property->value.table.address = (txSlot**)fxNewChunk(the, length * sizeof(txSlot*));
-	c_memset(property->value.table.address, 0, length * sizeof(txSlot*));
+	property->value.table.address = (txSlot**)fxNewChunk(the, size);
+	c_memset(property->value.table.address, 0, size);
 	property->value.table.length = length;
 	property->flag = XS_INTERNAL_FLAG;
 	property->ID = XS_GLOBAL_BEHAVIOR;

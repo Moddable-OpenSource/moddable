@@ -69,8 +69,8 @@ static void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString
 void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 {
 	txFlag aFlag;
-	txByte* p = (txByte*)theData;
-	txByte* q = p + *((txSize*)(p));
+	txByte* p;
+	txByte* q;
 	txID aSymbolCount;
 	txID aSymbolLength;
 	txID* aSymbolMap;
@@ -80,6 +80,12 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 	txInteger skipped;
 	txIndex aLength;
 	
+	if (!theData) {
+		the->stack->kind = XS_UNDEFINED_KIND;
+		return;
+	}
+	p = (txByte*)theData;
+	q = p + *((txSize*)(p));
 	aFlag = (txFlag)the->collectFlag;
 	the->collectFlag &= ~(XS_COLLECTING_FLAG | XS_SKIPPED_COLLECT_FLAG);
 	{

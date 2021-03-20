@@ -1743,12 +1743,12 @@ void fx_TypedArray_prototype_join(txMachine* the)
 		string = fxToString(the, slot);
 		slot->kind += XS_KEY_KIND - XS_STRING_KIND;
 		slot->value.key.sum = c_strlen(string);
-		size += slot->value.key.sum;
+		size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		mxPop();
 		offset += delta;
 	}
 	mxPop();
-	string = mxResult->value.string = fxNewChunk(the, size + 1);
+	string = mxResult->value.string = fxNewChunk(the, fxAddChunkSizes(the, size, 1));
 	slot = list->next;
 	while (slot) {
 		c_memcpy(string, slot->value.key.string, slot->value.key.sum);
@@ -2180,12 +2180,12 @@ void fx_TypedArray_prototype_toLocaleString(txMachine* the)
 			string = fxToString(the, slot);
 			slot->kind += XS_KEY_KIND - XS_STRING_KIND;
 			slot->value.key.sum = c_strlen(string);
-			size += slot->value.key.sum;
+			size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		}
 		mxPop();
 		index++;
 	}
-	string = mxResult->value.string = fxNewChunk(the, size + 1);
+	string = mxResult->value.string = fxNewChunk(the, fxAddChunkSizes(the, size, 1));
 	slot = list->next;
 	while (slot) {
 		c_memcpy(string, slot->value.key.string, slot->value.key.sum);

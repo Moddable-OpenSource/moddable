@@ -988,28 +988,48 @@ txInteger fxCountEntries(txMachine* the, txSlot* list, txBoolean paired)
 	return count;
 }
 
-txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txBoolean paired) 
+txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txBoolean paired) 
 {
-	txU4 sum = fxSumEntry(the, slot);
+	txU4 sum = fxSumEntry(the, key);
 	txU4 modulo = sum % table->value.table.length;
 	txSlot** address = &(table->value.table.address[modulo]);
 	txSlot* entry;
-	txSlot* result;
+	txSlot* first;
+	txSlot* last;
+	txSlot* slot;
 	while ((entry = *address)) {
 		if (entry->value.entry.sum == sum) {
-			result = entry->value.entry.slot;
-			if (fxTestEntry(the, result, slot)) {
-				if (list) {
-					result->flag = XS_DONT_ENUM_FLAG;
-					result->kind = XS_UNDEFINED_KIND;
-					if (paired) {
-						slot = result->next;
-						slot->flag = XS_DONT_ENUM_FLAG;
-						slot->kind = XS_UNDEFINED_KIND;
-					}
-				}
+			first = entry->value.entry.slot;
+			if (fxTestEntry(the, first, key)) {
 				*address = entry->next;
 				entry->next = C_NULL;
+				if (list) {
+					first->flag = XS_DONT_ENUM_FLAG;
+					first->kind = XS_UNDEFINED_KIND;
+					if (paired) {
+						last = first->next;
+						last->flag = XS_DONT_ENUM_FLAG;
+						last->kind = XS_UNDEFINED_KIND;
+					}
+				}
+				else if (paired && !(key->flag & XS_MARK_FLAG)) {
+					last = first->next;
+					slot = key->value.reference;
+					if (slot->flag & XS_EXOTIC_FLAG)
+						slot = slot->next;
+					address = &slot->next;
+					while ((slot = *address)) {
+						if (!(slot->flag & XS_INTERNAL_FLAG))
+							break;
+						if (slot->kind == XS_CLOSURE_KIND) {
+							if (slot->value.closure == last) {
+								*address = slot->next;
+								break;
+							}
+						}	
+						address = &slot->next;
+					}
+				}
 				return 1;
 			}
 		}
@@ -1065,50 +1085,69 @@ void fxPurgeEntries(txMachine* the, txSlot* list)
 }
 #endif
 
-void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txSlot* pair) 
+void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot* pair) 
 {
-	txU4 sum = fxSumEntry(the, slot);
+	txU4 sum = fxSumEntry(the, key);
 	txU4 modulo = sum % table->value.table.length;
 	txSlot** address = &(table->value.table.address[modulo]);
 	txSlot* entry;
-	txSlot* result;
+	txSlot* first;
+	txSlot* last;
+	txSlot* slot;
 	while ((entry = *address)) {
 		if (entry->value.entry.sum == sum) {
-			result = entry->value.entry.slot;
-			if (fxTestEntry(the, result, slot)) {
+			first = entry->value.entry.slot;
+			if (fxTestEntry(the, first, key)) {
 				if (pair) {
-					slot = result->next;
-					slot->kind = pair->kind;
-					slot->value = pair->value;
+					last = first->next;
+					last->kind = pair->kind;
+					last->value = pair->value;
 				}
 				return;
 			}
 		}
 		address = &entry->next;
 	}
-	result = fxNewSlot(the);
-	result->kind = slot->kind;
-	result->value = slot->value;
-	mxPushClosure(result);
+	first = fxNewSlot(the);
+	first->kind = key->kind;
+	first->value = key->value;
+	mxPushClosure(first);
 	if (pair) {
-		result->next = slot = fxNewSlot(the);
-		slot->kind = pair->kind;
-		slot->value = pair->value;
-		mxPushClosure(slot);
+		first->next = last = fxNewSlot(the);
+		last->kind = pair->kind;
+		last->value = pair->value;
+		mxPushClosure(last);
 	}
 	*address = entry = fxNewSlot(the);
 	entry->kind = XS_ENTRY_KIND;
-	entry->value.entry.slot = result;
+	entry->value.entry.slot = first;
 	entry->value.entry.sum = sum;
 	if (list) {
 		if (list->value.list.last)
-			list->value.list.last->next = result;
+			list->value.list.last->next = first;
 		else
-			list->value.list.first = result;
+			list->value.list.first = first;
 		if (pair)
-			list->value.list.last = slot;
+			list->value.list.last = last;
 		else
-			list->value.list.last = result;
+			list->value.list.last = first;
+	}
+	else if (pair && !(key->flag & XS_MARK_FLAG)) {
+		slot = key->value.reference;
+		if (slot->flag & XS_EXOTIC_FLAG)
+			slot = slot->next;
+		address = &slot->next;
+		while ((slot = *address)) {
+			if (!(slot->flag & XS_INTERNAL_FLAG))
+				break;
+			address = &slot->next;
+		}
+		slot = fxNewSlot(the);
+		slot->next = *address;
+		slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+		slot->kind = XS_CLOSURE_KIND;
+		slot->value.closure = last;
+		*address = slot;
 	}
 	if (pair)
 		mxPop();

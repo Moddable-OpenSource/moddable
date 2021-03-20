@@ -42,7 +42,7 @@ txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txStrin
 	txSize stringSize = c_strlen(string->value.string);
 	txSize prefixSize = prefix ? c_strlen(prefix) : 0;
 	txSize suffixSize = suffix ? c_strlen(suffix) : 0;
-	txSize resultSize = stringSize + prefixSize + suffixSize + 1;
+	txSize resultSize = fxAddChunkSizes(the, fxAddChunkSizes(the, fxAddChunkSizes(the, stringSize, prefixSize), suffixSize), 1);
 	txString result = (txString)fxNewChunk(the, resultSize);
 	if (prefix && prefixSize)
 		c_memcpy(result, prefix, prefixSize);
@@ -159,7 +159,8 @@ txString fxConcatString(txMachine* the, txSlot* a, txSlot* b)
 {
 	txSize aSize = c_strlen(a->value.string);
 	txSize bSize = c_strlen(b->value.string);
-	txString result = (txString)fxNewChunk(the, aSize + bSize + 1);
+	txSize resultSize = fxAddChunkSizes(the, fxAddChunkSizes(the, aSize, bSize), 1);
+	txString result = (txString)fxNewChunk(the, resultSize);
 	c_memcpy(result, a->value.string, aSize);
 	c_memcpy(result + aSize, b->value.string, bSize + 1);
 	a->value.string = result;
@@ -171,7 +172,7 @@ txString fxConcatStringC(txMachine* the, txSlot* a, txString b)
 {
 	txSize aSize = c_strlen(a->value.string);
 	txSize bSize = c_strlen(b);
-	txSize resultSize = aSize + bSize + 1;
+	txSize resultSize = fxAddChunkSizes(the, fxAddChunkSizes(the, aSize, bSize), 1);
 	txString result = C_NULL;
 	if (a->kind == XS_STRING_KIND)
 		result = (txString)fxRenewChunk(the, a->value.string, resultSize);
@@ -196,8 +197,9 @@ txString fxCopyString(txMachine* the, txSlot* a, txSlot* b)
 txString fxCopyStringC(txMachine* the, txSlot* a, txString b)
 {
 	txSize bSize = c_strlen(b);
-	txString result = (txString)fxNewChunk(the, bSize + 1);
-	c_memcpy(result, b, bSize + 1);
+	txSize resultSize = fxAddChunkSizes(the, bSize, 1);
+	txString result = (txString)fxNewChunk(the, resultSize);
+	c_memcpy(result, b, resultSize);
 	a->value.string = result;
 	a->kind = XS_STRING_KIND;
 	return result;
