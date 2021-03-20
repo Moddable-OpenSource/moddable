@@ -69,8 +69,8 @@ else
 
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
-#		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
+#		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
+		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
 #		CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
 		NORESTART=-norestart
 	else
