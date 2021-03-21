@@ -1,9 +1,45 @@
 {
-	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/digital/manifest.json"
-	],
-	"modules": {
-		"*": "./main"
-	}
+  "include" : [
+    "$(MODDABLE)/examples/manifest_base.json",
+    "$(MODULES)/pins/digital/manifest.json"
+  ],
+  "platforms" : {
+    "esp" : {
+      "config" : {
+        "led" : {
+          "pin" : "2"
+        }
+      },
+      "led2" : {
+        "pin" : "16"
+      }
+    },
+    "esp32" : {
+      "config" : {
+        "led" : {
+          "pin" : "2"
+        }
+      }
+    },
+    "esp32/m5stick_c" : {
+      "config" : {
+        "led" : {
+          "pin" : "10"
+        }
+      }
+    },
+    "pico" : {
+      "config" : {
+        "led" : {
+          "pin" : "25"
+        }
+      }
+    },
+    "..." : {
+      "error" : "Led pin not defined for platform"
+    }
+  },
+  "modules" : {
+    "*" : "./main"
+  }
 }
