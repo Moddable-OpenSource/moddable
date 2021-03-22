@@ -29,6 +29,7 @@ import Timer from "timer";
 
 globalThis.Digital = Digital;
 globalThis.I2C = I2C;
+globalThis.Modules = Modules;
 globalThis.Preference = Preference;
 globalThis.Resource = Resource;
 globalThis.SMBus = SMBus;
