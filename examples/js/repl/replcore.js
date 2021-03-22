@@ -18,6 +18,8 @@
  *
  */
 
+import CLI from "cli";
+
 const backspace = String.fromCharCode(8);
 const newline = "\n";
 
@@ -30,10 +32,11 @@ class REPL @ "xs_repl_destructor" {
 	static get xsVersion() @ "xs_repl_get_xsVersion"
 
 	constructor() {
-		REPL.write(newline, "Moddable REPL v0.0.2", newline);
+		REPL.write(newline, "Moddable JavaScript REPL v0.0.3", newline);
 		REPL.write(`  XS engine v${REPL.xsVersion.join(".")}`, newline, newline);
 		this.history = [];
 		this.prompt();
+		globalThis._ = undefined;
 	}
 	prompt() {
 		delete this.historyPosition;
@@ -136,8 +139,21 @@ class REPL @ "xs_repl_destructor" {
 				this.history.shift();
 
 			try {
-				const result = REPL.eval(this.incoming);
-				this.print(result);
+				if (this.incoming.startsWith(".")) {
+					CLI.execute.call(this, this.incoming.slice(1));
+				}
+				else if (this.incoming.startsWith("?")) {
+					this.line(`  "globalThis" lists JavaScript global variables`);
+					this.line(`  lines that start with "." are commands`);
+					this.line(`  ".help" lists all commands`);
+					this.line(`  "Modules.host" lists available modules`);
+					this.line(`  global "_" holds result of last REPL JavaScript operation`);
+					this.line(`  lines that start with "?" display this help message`);
+				}
+				else {
+					globalThis._ = REPL.eval(this.incoming);
+					this.print(_);
+				}
 			}
 			catch (e) {
 				REPL.write(e.toString(), newline);
@@ -159,6 +175,9 @@ class REPL @ "xs_repl_destructor" {
 			}
 			this.position -= 1;
 		}
+	}
+	line(...args) {
+		REPL.write(...args, newline);
 	}
 	short(value) {
 		if (null === value)

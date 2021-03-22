@@ -5,11 +5,13 @@
 	],
 	"modules": {
 		"*": [
-			  "./main",
-			  "./replcore"
+			"./main",
+			"./replcore",
+			"$(MODULES)/base/cli/*"
 		]
 	},
 	"preload": [
+		"cli",
 		"repl",
 		"replcore"
 	],
@@ -31,16 +33,27 @@
 		},
 		"pico": {
 			"include": [
-				"$(MODULES)/files/preference/manifest.json"
+				"$(MODDABLE)/modules/files/resourceiterator/manifest.json",
+				"$(MODULES)/files/preference/manifest.json",
+				"$(MODULES)/base/microseconds/manifest.json",
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/smbus/manifest.json"
 			],
 			"modules": {
 				"*": [
 					"./esp/repl"
 				],
-				"setup/globals": "./pico/setup/globals"
+				"setup/globals": "./pico/setup/globals",
+
+				"cli/digital": "$(MODULES)/base/cli/commands/digital",
+				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
+				"cli/pico": "$(MODULES)/base/cli/commands/pico/pico",
+				"cli/pixelsout": "$(MODULES)/base/cli/commands/pixelsout",
+				"cli/sensor": "$(MODULES)/base/cli/commands/sensor"
 			},
 			"preload": [
-				"setup/globals"
+				"setup/globals",
+				"cli/*"
 			],
 			"strip": [
 				"Atomics",

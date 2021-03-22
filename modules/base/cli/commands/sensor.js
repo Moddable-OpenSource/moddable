@@ -4,8 +4,9 @@
  */
 
 import CLI from "cli";
+import Modules from "modules";
 
-CLI.install(async function(command, parts) {
+CLI.install(function(command, parts) {
 	if ("sensor" !== command)
 		return false;
 
@@ -18,7 +19,7 @@ CLI.install(async function(command, parts) {
 				throw new Error("already open");
 			this.suspend();
 			try {
-				this.sensor = new ((await import(parts[0]))).default({});
+				this.sensor = (new (Modules.importNow(parts[0]))).default({});
 			}
 			catch(e) {
 				this.line(e.toString());

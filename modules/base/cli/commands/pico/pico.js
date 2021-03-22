@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,31 +20,36 @@
 
 
 import CLI from "cli";
-import Digital from "pins/digital";
+
+class Pico {
+	static restart(how) @ "xs_pico_restart";
+}
 
 CLI.install(function(command, parts) {
 	switch (command) {
-		case "digital":
-			if (parts.length < 1)
-				throw new Error("missing read/write");
-			let mode = parts[0].toLowerCase();
-			if ("read" === mode) {
-				if (parts.length < 2)
-					throw new Error("missing pin number");
-				this.line(Digital.read(parseInt(parts[1])).toString());
+		case "pico":
+			command = parts.shift().toLowerCase();
+			switch (command) {
+				case "restart":
+					if (!parts.length) {
+						this.line("Restarting Pico");
+						Pico.restart();
+					}
+					else {
+						this.line("Restarting Pico in programming mode");
+						Pico.restart(true);
+					}
+					break;
+
+				default:
+					this.line("unrecognized command: " + command);
+					break;
 			}
-			else if ("write" === mode) {
-				if (parts.length < 3)
-					throw new Error("missing value");
-				Digital.write(parseInt(parts[1]), parseInt(parts[2]));
-			}
-			else
-				throw new Error("expected read or write");
 			break;
 
 		case "help":
-			this.line("digital read pin - reads pin");
-			this.line("digital write pin value - writes pin");
+			this.line("pico restart - restart device");
+			this.line("pico restart prog - restart in programming mode");
 			break;
 
 		default:
