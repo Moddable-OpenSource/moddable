@@ -1,6 +1,7 @@
 import Digital from "pins/digital";
 import config from "mc/config";
 import LED from "led";
+import Button from "button";
 
 /*
 class Backlight extends PWM {
@@ -21,6 +22,12 @@ class Backlight extends PWM {
 }
 */
 
+class A {
+	constructor(options) {
+		return new Button({...options, invert: true, pin: 12});
+	}
+}
+
 globalThis.Host = Object.freeze({
 	LED: {
 		Default: class {
@@ -32,18 +39,36 @@ globalThis.Host = Object.freeze({
 			}
 		}
 	},
+	Button: {
+		Default: A,
+		A,
+		B: class {
+			constructor(options) {
+				return new Button({...options, invert: true, pin: 13});
+			}
+		},
+		X: class {
+			constructor(options) {
+				return new Button({...options, invert: true, pin: 14});
+			}
+		},
+		Y: class {
+			constructor(options) {
+				return new Button({...options, invert: true, pin: 15});
+			}
+		},
+	}
 }, true);
 
 export default function (done) {
 	if (undefined !== config.backlight)
 		Digital.write(config.backlight, 1);
-	if (undefined != config.rgb_r)
+	if (undefined !== config.rgb_r)
 		Digital.write(config.rgb_r, 1);
-	if (undefined != config.rgb_g)
+	if (undefined !== config.rgb_g)
 		Digital.write(config.rgb_g, 1);
-	if (undefined != config.rgb_b)
+	if (undefined !== config.rgb_b)
 		Digital.write(config.rgb_b, 1);
-		
 
 	done();
 }

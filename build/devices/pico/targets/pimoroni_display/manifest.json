@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7789/manifest.json",
-		"$(MODULES)/drivers/led/manifest.json"
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"
