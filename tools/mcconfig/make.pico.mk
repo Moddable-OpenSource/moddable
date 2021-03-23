@@ -801,9 +801,9 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
-$(TMP_DIR)/mc.resources.c: $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p pico -r mc.resources.c
+	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p pico -r mc.resources.c
 
 $(LIB_DIR)/hardware_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/hardware_divider/divider.S
 	@echo "# asm (special) " $(PICO_SDK_DIR)/src/rp2_common/hardware_divider/divider.S
