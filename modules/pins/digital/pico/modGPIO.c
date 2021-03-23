@@ -57,33 +57,30 @@ void modGPIOUninit(modGPIOConfiguration config)
 
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
-	uint8_t clearPull = true;
+	gpio_set_function(config->pin, GPIO_FUNC_SIO);
 
 	switch (mode) {
 		case kModGPIOInput:
-			gpio_set_dir(config->pin, 0);
+			gpio_set_dir(config->pin, GPIO_IN);
+			gpio_set_pulls(config->pin, false, false);
 			break;
 		case kModGPIOInputPullUp:
-			clearPull = false;
-			gpio_set_dir(config->pin, 0);
-			gpio_pull_up(config->pin);
+			gpio_set_dir(config->pin, GPIO_IN);
+			gpio_set_pulls(config->pin, true, false);
 			break;
 		case kModGPIOInputPullDown:
-			clearPull = false;
-			gpio_pull_down(config->pin);
+			gpio_set_dir(config->pin, GPIO_IN);
+			gpio_set_pulls(config->pin, false, true);
 			break;
 
 		case kModGPIOOutput:
 		case kModGPIOOutputOpenDrain:
-			gpio_set_dir(config->pin, 1);
+			gpio_set_dir(config->pin, GPIO_OUT);
 			break;
 
 		default:
 			return -1;
 	}
-
-	if (clearPull)
-		gpio_disable_pulls(config->pin);
 
 	return 0;
 }
