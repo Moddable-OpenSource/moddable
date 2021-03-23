@@ -27,6 +27,8 @@
 #include "nrf_libuarte_async.h"
 #include "app_fifo.h"
 
+#include "ftdi_trace.h"
+
 #define SERIAL_TASK_STACK	2048
 #define kDebuggerTaskPriority	1
 
