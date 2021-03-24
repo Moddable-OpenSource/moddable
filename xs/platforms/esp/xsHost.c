@@ -216,8 +216,8 @@ size_t espStrLen(const void *addr)
 int espStrCmp(const char *ap, const char *bp)
 {
 	while (true) {
-		uint8_t a = espRead8(ap);
-		uint8_t b = espRead8(bp);
+		uint8_t a = c_read8(ap);
+		uint8_t b = c_read8(bp);
 
 		if ((a != b) || !a)
 			return a - b;
@@ -230,8 +230,8 @@ int espStrCmp(const char *ap, const char *bp)
 int espStrNCmp(const char *ap, const char *bp, size_t count)
 {
 	while (count--) {
-		uint8_t a = espRead8(ap);
-		uint8_t b = espRead8(bp);
+		uint8_t a = c_read8(ap);
+		uint8_t b = c_read8(bp);
 
 		if ((a != b) || !a)
 			return a - b;
@@ -248,7 +248,7 @@ void espStrCpy(char *dst, const char *src)
 	uint8_t c;
 
 	do {
-		c = espRead8(src++);
+		c = c_read8(src++);
 		*dst++ = c;
 	} while (c);
 }
@@ -260,7 +260,7 @@ void espStrNCpy(char *dst, const char *src, size_t count)
 	if (0 == count) return;
 
 	do {
-		c = espRead8(src++);
+		c = c_read8(src++);
 		*dst++ = c;
 	} while (--count && c);
 
@@ -270,7 +270,7 @@ void espStrNCpy(char *dst, const char *src, size_t count)
 
 void espStrCat(char *dst, const char *src)
 {
-	while (0 != espRead8(dst))
+	while (0 != c_read8(dst))
 		dst++;
 
 	espStrCpy(dst, src);
@@ -278,11 +278,11 @@ void espStrCat(char *dst, const char *src)
 
 void espStrNCat(char *dst, const char *src, size_t count)
 {
-	while (0 != espRead8(dst))
+	while (0 != c_read8(dst))
 		dst++;
 
 	while (count--) {
-		char c = espRead8(src++);
+		char c = c_read8(src++);
 		if (0 == c)
 			break;
 
@@ -295,7 +295,7 @@ void espStrNCat(char *dst, const char *src, size_t count)
 char *espStrChr(const char *str, int c)
 {
 	do {
-		char value = espRead8(str);
+		char value = c_read8(str);
 		if (!value)
 			return NULL;
 
@@ -324,13 +324,13 @@ char *espStrRChr(const char *str, int c)
 
 char *espStrStr(const char *src, const char *search)
 {
-	char searchFirst = espRead8(search++);
+	char searchFirst = c_read8(search++);
 	char c;
 
 	if (0 == searchFirst)
 		return (char *)src;
 
-	while ((c = espRead8(src++))) {
+	while ((c = c_read8(src++))) {
 		const char *ap, *bp;
 		uint8_t a, b;
 
@@ -339,11 +339,11 @@ char *espStrStr(const char *src, const char *search)
 
 		ap = src, bp = search;
 		while (true) {
-			b = espRead8(bp++);
+			b = c_read8(bp++);
 			if (!b)
 				return (char *)src - 1;
 
-			a = espRead8(ap++);
+			a = c_read8(ap++);
 			if ((a != b) || !a)
 				break;
 		}
@@ -448,7 +448,7 @@ void espMemCpy(void *dst, const void *src, size_t count)
 
 	// tail
 	while (count--)
-		*d++ = espRead8(s++);
+		*d++ = c_read8(s++);
 }
 
 int espMemCmp(const void *a, const void *b, size_t count)
@@ -457,8 +457,8 @@ int espMemCmp(const void *a, const void *b, size_t count)
 	const uint8_t *b8 = b;
 
 	while (count--) {
-		uint8_t av = espRead8(a8++);
-		uint8_t bv = espRead8(b8++);
+		uint8_t av = c_read8(a8++);
+		uint8_t bv = c_read8(b8++);
 		if (av == bv)
 			continue;
 		return av - bv;
@@ -576,7 +576,7 @@ struct modTm *modGmTime(const modTime_t *timep)
 	gTM.tm_yday = t;
 
 	for (gTM.tm_mon = 0; gTM.tm_mon < 12; gTM.tm_mon++) {
-		uint8_t daysInMonth = espRead8(gDaysInMonth + gTM.tm_mon);
+		uint8_t daysInMonth = c_read8(gDaysInMonth + gTM.tm_mon);
 
 		if ((1 == gTM.tm_mon) && isLeapYear(gTM.tm_year))
 			daysInMonth = 29;
