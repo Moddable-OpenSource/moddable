@@ -34,12 +34,12 @@ UF2_VOLUME_NAME ?= RPI-RP2
 PICO_VID ?= 2e8a
 PICO_PID ?= 000a
 
+UF2CONV = $(PICO_SDK_DIR)/build/elf2uf2/elf2uf2
 
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
-	UF2CONV = $(MODDABLE)/build/devices/pico/config/elf2uf2_mac
 
 #	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolume $(UF2_VOLUME_PATH)
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
@@ -60,7 +60,6 @@ ifeq ($(HOST_OS),Darwin)
 else
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
-	UF2CONV = $(MODDABLE)/build/devices/pico/config/elf2uf2_lin
 
 #	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolumeLinux $(UF2_VOLUME_PATH)
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename

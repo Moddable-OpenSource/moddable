@@ -78,6 +78,15 @@ Please see the [Raspberry Pi Pico documentation](https://www.raspberrypi.org/doc
 	export PICO_SDK_PATH=$HOME/pico/pico-sdk
 	```
 
+7. Build some `pico` tools:
+
+	```text
+	cd $PICO_SDK_PATH
+	mkdir build
+	cd build
+	cmake ..
+	make
+	```
 
 
 <a id="macOS-building-and-deploying-apps"></a>
@@ -168,6 +177,16 @@ Not yet available.
 
 	```text
 	export PICO_SDK_PATH=$HOME/pico/pico-sdk
+	```
+
+7. Build some `pico` tools:
+
+	```text
+	cd $PICO_SDK_PATH
+	mkdir build
+	cd build
+	cmake ..
+	make
 	```
 
 
