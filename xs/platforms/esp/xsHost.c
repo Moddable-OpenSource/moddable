@@ -858,7 +858,16 @@ void mc_setup(xsMachine *the)
 
 void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 {
-	if (the->heap_ptr + size <= the->heap_pend) {
+	txBlock* block = the->firstBlock;
+	if (block) {	// reduce size by number of free bytes in current chunk heap
+		txSize grow = size - sizeof(txBlock) - (block->limit - block->current);
+		if (the->heap_ptr + grow <= the->heap_pend) {
+			the->heap_ptr += grow;
+			block->limit = (txByte*)the->heap_ptr - size; // fxGrowChunks adds theSize
+			return block->limit;
+		}
+	}
+	else if (the->heap_ptr + size <= the->heap_pend) {
 		void *ptr = the->heap_ptr;
 		the->heap_ptr += size;
 		return ptr;
