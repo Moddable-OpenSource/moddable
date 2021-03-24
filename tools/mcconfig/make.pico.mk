@@ -62,7 +62,7 @@ else
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 
 #	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolumeLinux $(UF2_VOLUME_PATH)
-	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+	PROGRAMMING_MODE = PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
