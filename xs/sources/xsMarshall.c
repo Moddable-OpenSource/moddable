@@ -443,12 +443,10 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 	txSlot* cSlot;
 	
 	mxTry(the) {
+		size_t mapSize = alien ? the->keyIndex : (the->keyIndex - the->keyOffset);
 		aBuffer.symbolSize = sizeof(txSize) + sizeof(txID);
-		if (alien)
-			aBuffer.symbolMap = c_calloc(the->keyIndex, sizeof(txID));
-		else
-			aBuffer.symbolMap = c_calloc(the->keyIndex - the->keyOffset, sizeof(txID));
-		if (!aBuffer.symbolMap)
+		aBuffer.symbolMap = c_calloc(mapSize, sizeof(txID));
+		if (mapSize && !aBuffer.symbolMap)
 			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
         the->stack->ID = XS_NO_ID;
         aBuffer.stack = the->stack;
