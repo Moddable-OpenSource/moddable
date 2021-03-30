@@ -24,7 +24,7 @@
 
 		- tries to reconnect on connection dropped (0.5 second delay)
 		- 10 second timeout on establishing connection (until onReady)
-		- call wait(false) if no network to turn off reconnect attempts and wait(true) to restart
+		- call wait(false) if no network connection to turn off reconnect attempts and wait(true) to restart
 		- onConnected and onReady called on each reconnection
 		- onClose may be called more than once between connections
 		- any subscriptions are lost on disconnect and must be restablished on reconnect
@@ -62,7 +62,7 @@ class Connection {
 			Timer.clear(this.#timeout);
 		this.#timeout = undefined;
 
-		return mqtt?.close();
+		mqtt?.close();
 	}
 	publish(topic, data) {
 		if (!this.#ready)
@@ -157,6 +157,16 @@ class Connection {
 		}
 		else if (!this.#ready && !this.#timeout && !this.#reconnect)
 			this.#restart();
+	}
+	get id() {
+		return this.#options.id;
+	}
+	set id(value) {
+		value = value.toString();
+		if ((undefined !== this.#options.id) && (value !== this.#options.id))
+			throw new Error("may only set once");
+
+		this.#options.id = value;
 	}
 }
 

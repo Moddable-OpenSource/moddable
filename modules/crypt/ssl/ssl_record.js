@@ -163,13 +163,12 @@ const recordProtocol = {
 					let nonce = s.readChunk(session.chosenCipher.ivSize);
 					fragmentLen -= session.chosenCipher.ivSize;
 					nonce = cipher.iv.concat(nonce);
-					fragment = s.readChunk(fragmentLen);
-					let additional_data = this.aeadAdditionalData(session.readSeqNum, type, version, fragmentLen - cipher.enc.tagLength);
-					if (!(fragment = cipher.enc.process(fragment, null, nonce, additional_data, false))) {
+					fragment = s.readChunk(fragmentLen, true);
+					const additional_data = this.aeadAdditionalData(session.readSeqNum, type, version, fragmentLen - cipher.enc.tagLength);
+					if (!(fragment = cipher.enc.process(fragment, fragment, nonce, additional_data, false))) {
 						// @@ should send an alert
 						throw new Error("SSL: recordProtocol auth failed");
 					}
-					fragment = new Uint8Array(fragment);
 					break;
 				}
 				session.readSeqNum++;

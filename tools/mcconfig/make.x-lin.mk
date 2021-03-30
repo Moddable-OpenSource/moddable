@@ -118,7 +118,7 @@ else
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1
 endif
 
-LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs freetype2 gtk+-3.0) -ldl -latomic
+LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs freetype2 gtk+-3.0) -ldl -latomic -lpthread
 
 LINK_OPTIONS = -fPIC
 

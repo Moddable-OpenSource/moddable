@@ -1,0 +1,55 @@
+{
+	"include": [
+		"$(MODULES)/drivers/st7789/manifest.json"
+	],
+	"config": {
+		"screen": "st7789",
+		"touch": ""
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/pins/digital/monitor/*",
+			"$(MODULES)/pins/digital/monitor/esp32/*"
+		],
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"monitor",
+		"setup/target"
+	],
+	"defines": {
+		"i2c": {
+			"sda_pin": 21,
+			"scl_pin": 22
+		},
+		"spi": {
+			"mosi_pin": 19,
+			"sck_pin": 18
+		},
+		"ili9341": {
+			"hz": 27000000,
+			"width": 240,
+			"height": 135,
+			"cs_pin": 5,
+			"dc_pin": 16,
+			"column_offset": 40,
+			"row_offset": 53,
+			"spi_port": "VSPI_HOST",
+			"backlight_pin": 4,
+			"backlight_on": 1,
+            "registers": [
+                "0x01, 0,",
+                "0xff, 150,",
+                "0x36, 1, 0x70,",
+                "0x3A, 1, 0x05,",
+                "0x21, 0,",
+                "0x11, 0,",
+                "0x29, 0,",
+                "0xff, 100,",
+                "0x2B, 4, 0x00, 0x35, 0x00, 0xbb,",
+                "0x2A, 4, 0x00, 0x28, 0x01, 0x17,",
+                "0xff, 100,"
+            ]
+		}
+	}
+}

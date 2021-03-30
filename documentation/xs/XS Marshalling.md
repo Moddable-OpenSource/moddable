@@ -2,36 +2,37 @@
 
 Copyright 2021 Moddable Tech, Inc.
 
-Revised: March 9, 2021
+Revised: March 15, 2021
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
-
 ## Introduction
 
-For the sake of exchanging data between machines that can run in separate threads, XS always supported marshalling thru its C programmming interface. 
+To exchange data between machines that can run in separate threads, XS always supported marshalling thru the **XS in C** programming interface. 
 
-Even if you do not write C code, this document is useful if you write JavaScript code based on the standard `Worker` programming interface provided by the [worker](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/base/worker.md) module of the Moddable SDK.
+Even if you do not write C code, this document is useful if you write JavaScript code using the standard `Worker` programming interface provided by the [worker](../base/worker.md) module of the Moddable SDK.
 
 ## What Is Marshalling?
 
-Similarly to what `JSON.stringify` and `JSON.parse` do with a string, *marshalling* creates a memory block from a JavaScript value and *demarshalling* creates a JavaScript value from a memory block. The format of the memory block is binary. 
+Similar to what `JSON.stringify` and `JSON.parse` do with a string, *marshalling* creates a memory block from a JavaScript value and *demarshalling* creates a JavaScript value from a memory block. The format of the memory block is binary. 
 
-XS machines can be created from scratch or based on a read-only machine. Typically on micro-controllers, multiple tiny machines can be created in RAM based based on one huge machine in ROM.
+XS machines can be created from scratch or cloned from a read-only machine. Typically on micro-controllers, multiple small machines can be created in RAM based based on one large read-only machine in ROM.
 
-When two machines are created from scratch or based on different read-only machines, they are **alien** and the corresponding programmming interface must be used:
+> For those familiar with Secure ECMAScript (SES), a cloned machine is in a state analogous to the post-lockdown state in SES. In this state, all built-ins are deeply frozen. An XS created from scratch is fully mutable and therefore analogous to the pre-lockdown state in SES.
+
+When two machines are created from scratch or cloned from different read-only machines, they are **alien** and the alien programming interface must be used:
 
 	void* xsMarshallAlien(xsSlot slot);
 	xsSlot xsDemarshallAlien(void* data);
 
 > In **mcsim**, the simulator and the app are alien machines. They communicate using the standard `Worker` programming interface, which is implemented here with `xsMarshallAlien` and `xsDemarshallAlien`.
 
-Otherwise the marshalling can take advantage of what is shared by the two machines and the **full** programmming interface can be used:
+When two machines are cloned from the same read-ony machinee, marshalling can take advantage of what is shared by the two machines and the **full** programming interface can be used:
 
 	void* xsMarshall(xsSlot slot);
 	xsSlot xsDemarshall(void* data);
 
-> The **worker** module creates threads and machines based on the same read-only machine. They communicate using the standard `Worker` programming interface, which is implemented here with `xsMarshall` and `xsDemarshall`.
+> The **worker** module clones all machines from the same read-only machine. They communicate using the standard `Worker` programming interface, which is implemented here with `xsMarshall` and `xsDemarshall`.
 
 ## Alien Marshalling
 
@@ -48,9 +49,9 @@ Firstly, everything that can be exchanged thru JSON:
 	- `Object`
 	- `Array`
 
-> Usually, the marshalled memory block is smaller that the JSON string and `xsMarshallAlien`/`xsDemarshallAlien` are faster than `JSON.stringify`/ `JSON.parse`.
+> Usually, the marshalled memory block is smaller that the equivalent JSON string and `xsMarshallAlien`/`xsDemarshallAlien` are faster than `JSON.stringify`/ `JSON.parse`.
 
-Then XS can marshall other values:
+XS can also marshall other values not possible using JSON:
 
 - `undefined` 
 - bigints
@@ -63,7 +64,6 @@ Then XS can marshall other values:
 	- `Map`, `Set`
 	- `ArrayBuffer`, `SharedArrayBuffer`, `DataView`
 	- `Proxy`
-
 
 Furthermore, XS can marshall cyclic references:
 
@@ -91,7 +91,7 @@ Symbols are consistent inside a marshalled memory block:
 		trace(`${m.object[m.symbol]}\n`); // null
 	}
 
-But successive marshallings of the same symbol result in successive demarshalling of different symbols:
+However, successive marshallings of the same symbol result in successive demarshalling of different symbols:
 
 ##### main.js
 	let step = 0;
@@ -109,11 +109,11 @@ But successive marshallings of the same symbol result in successive demarshallin
 			trace(`${symbol === m.symbol}`) // false
 	}
 
-### No Way*
+### No Way
 
-Marshalling is about data, what is related to code, or to the execution of code, cannot be marshalled: accessors, arguments, classes, functions, generators, modules and promises.
+Marshalling is for data. Objects related to code, or to the execution of code, cannot be marshalled: accessors, arguments, classes, functions, generators, modules and promises.
 
-Also, what is related to garbage collection cannot be marshalled: finalization registries, weak references, weak maps and weak sets. And, of course, what is outside XS cannot be marshalled: host objects and host functions.
+Also, objects related to garbage collection cannot be marshalled: finalization registries, weak references, weak maps and weak sets. And, of course, objects implemented outside XS cannot be marshalled: host objects and host functions.
 
 In these cases, XS tries to report a meaningful error:
 
@@ -132,9 +132,9 @@ breaks into **xsbug** with
 
 ## Full Marshalling
 
-What can be exchanged between machines based on the same read-only machine?
+What can be exchanged between machines cloned from the same read-only machine?
 
-Firsly, everything that can be marshalled between alien machines. Then XS takes advantage of what is shared in the read-only machine to complete the marshalled instances.
+Firstly, everything that can be marshalled between alien machines. Then XS takes advantage of what is shared in the read-only machine to complete the marshalled instances.
 
 In the following examples, *preload.js* is a module that is preloaded by the XS linker. Its body is executed at link time to define classes and objects in the read-only machine.
 
@@ -231,7 +231,7 @@ References to instances in the read-only machine are preserved:
 		trace(`${m.o === o}\n`); // true
 	}
 
-That is especially useful to exchange references to objects with methods, like the handler of a proxy. Here is an example inspired by the [MDN Proxy documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy):
+That is especially useful for exchanging references to objects with methods, like the handler of a proxy. Here is an example inspired by the [MDN Proxy documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy):
 
 ##### preload.js
 	export const handler = Object.freeze({
@@ -258,3 +258,6 @@ That is especially useful to exchange references to objects with methods, like t
 	}
 
 
+### Exchange Data, Share Code
+
+Marshalling is a way to safely exchange **data** between machines. Prototypes, classes, and proxy handlers in the read-only machine are ways to safely share **code** between cloned machines.
