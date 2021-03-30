@@ -117,8 +117,6 @@ void fxBuildKeys(txMachine* the)
 
 void* fxAllocateChunks(txMachine* the, txSize theSize)
 {
-	if (theSize > 0x3FFFFFFF)
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	return c_malloc(theSize);
 }
 
@@ -395,10 +393,12 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 			fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
 			fclose(file);
 			file = NULL;
-			if (slash) *slash = 0;
-			c_strcat(path, name);
-			mxParserThrowElse(c_realpath(path, map));
-			parser->path = fxNewParserSymbol(parser, map);
+			if (parser->errorCount == 0) {
+				if (slash) *slash = 0;
+				c_strcat(path, name);
+				mxParserThrowElse(c_realpath(path, map));
+				parser->path = fxNewParserSymbol(parser, map);
+			}
 		}
 		fxParserHoist(parser);
 		fxParserBind(parser);

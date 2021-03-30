@@ -663,7 +663,7 @@ txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot)
 		size++;
 		number /= limit;
 	}
-	bigint->data = fxNewChunk(the, size * sizeof(txU4));
+	bigint->data = fxNewChunk(the, fxMultiplyChunkSizes(the, size, sizeof(txU4)));
 	bigint->size = size;
 	while (size > 0) {
 		txU4 part = (txU4)number;
@@ -838,7 +838,7 @@ txBigInt *fxBigInt_alloc(txMachine* the, txU4 size)
 	}
 	mxPushUndefined();
 	bigint = &the->stack->value.bigint;
-	bigint->data = fxNewChunk(the, (txU4)size * sizeof(txU4));
+	bigint->data = fxNewChunk(the, fxMultiplyChunkSizes(the, size, sizeof(txU4)));
 	bigint->size = size;
 	bigint->sign = 0;
 	the->stack->kind = XS_BIGINT_KIND;

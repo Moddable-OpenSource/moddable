@@ -507,12 +507,9 @@ void fxIDToString(txMachine* the, txInteger id, txString theBuffer, txSize theSi
 			if (key) {
 				txKind kind = mxGetKeySlotKind(key);
 				if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND))
-					c_strcpy(theBuffer, key->value.key.string);
-				else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
-					theBuffer[0] = '[';
-					c_strcpy(theBuffer + 1, key->value.string);
-					c_strcat(theBuffer, "]");
-				}
+					c_snprintf(theBuffer, theSize, "%s", key->value.key.string);
+				else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND))
+					c_snprintf(theBuffer, theSize, "[%s]", key->value.string);
 				else
 					*theBuffer = 0;
 			}

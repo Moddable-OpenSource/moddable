@@ -69,8 +69,8 @@ static void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString
 void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 {
 	txFlag aFlag;
-	txByte* p = (txByte*)theData;
-	txByte* q = p + *((txSize*)(p));
+	txByte* p;
+	txByte* q;
 	txID aSymbolCount;
 	txID aSymbolLength;
 	txID* aSymbolMap;
@@ -80,6 +80,12 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 	txInteger skipped;
 	txIndex aLength;
 	
+	if (!theData) {
+		the->stack->kind = XS_UNDEFINED_KIND;
+		return;
+	}
+	p = (txByte*)theData;
+	q = p + *((txSize*)(p));
 	aFlag = (txFlag)the->collectFlag;
 	the->collectFlag &= ~(XS_COLLECTING_FLAG | XS_SKIPPED_COLLECT_FLAG);
 	{
@@ -437,12 +443,10 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 	txSlot* cSlot;
 	
 	mxTry(the) {
+		size_t mapSize = alien ? the->keyIndex : (the->keyIndex - the->keyOffset);
 		aBuffer.symbolSize = sizeof(txSize) + sizeof(txID);
-		if (alien)
-			aBuffer.symbolMap = c_calloc(the->keyIndex, sizeof(txID));
-		else
-			aBuffer.symbolMap = c_calloc(the->keyIndex - the->keyOffset, sizeof(txID));
-		if (!aBuffer.symbolMap)
+		aBuffer.symbolMap = c_calloc(mapSize, sizeof(txID));
+		if (mapSize && !aBuffer.symbolMap)
 			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
         the->stack->ID = XS_NO_ID;
         aBuffer.stack = the->stack;

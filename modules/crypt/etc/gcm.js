@@ -86,9 +86,11 @@ export default class GCM {
 		}
 		else {
 			this.init(iv, aad);
-			buf = this.decrypt(data.slice(0, data.byteLength - this.tagLength), buf);
-			let tag = this.close();
-			if (Bin.comp(tag, data.slice(data.byteLength - this.tagLength), this.tagLength) == 0)
+
+			const subarray = data.subarray(0, data.byteLength - this.tagLength);
+			buf = this.decrypt(subarray, (buf === data) ? subarray : buf);
+			const tag = this.close();
+			if (Bin.comp(tag, data.subarray(data.byteLength - this.tagLength), this.tagLength) === 0)
 				return buf;
 		}
 	};

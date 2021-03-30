@@ -182,17 +182,26 @@ txScript* fxParserCode(txParser* parser)
 
     c_memset(&coder, 0, sizeof(txCoder));
 	coder.parser = parser;
-	if (parser->errorCount == 0)
-		fxNodeDispatchCode(parser->root, &coder);
+	if (parser->errorCount == 0) {
+		mxTryParser(parser) {
+			fxNodeDispatchCode(parser->root, &coder);
+		}
+		mxCatchParser(parser) {
+		}
+	}
 	if (parser->errorCount) {
-		coder.firstCode = NULL;
-		coder.lastCode = NULL;
-		fxCoderAddByte(&coder, 1, XS_CODE_GLOBAL);
-		fxCoderAddSymbol(&coder, 0, XS_CODE_GET_VARIABLE, parser->errorSymbol);
-		fxCoderAddByte(&coder, 2, XS_CODE_NEW);
-		fxCoderAddString(&coder, 1, XS_CODE_STRING_1, c_strlen(parser->errorMessage), parser->errorMessage);
-		fxCoderAddInteger(&coder, -3, XS_CODE_RUN_1, 1);
-		fxCoderAddByte(&coder, -1, XS_CODE_THROW);
+		if (parser->console) {
+			coder.firstCode = NULL;
+			coder.lastCode = NULL;
+			fxCoderAddByte(&coder, 1, XS_CODE_GLOBAL);
+			fxCoderAddSymbol(&coder, 0, XS_CODE_GET_VARIABLE, parser->errorSymbol);
+			fxCoderAddByte(&coder, 2, XS_CODE_NEW);
+			fxCoderAddString(&coder, 1, XS_CODE_STRING_1, c_strlen(parser->errorMessage), parser->errorMessage);
+			fxCoderAddInteger(&coder, -3, XS_CODE_RUN_1, 1);
+			fxCoderAddByte(&coder, -1, XS_CODE_THROW);
+		}
+		else
+			return C_NULL;
 	}
 	
 	fxCoderOptimize(&coder);
@@ -1514,7 +1523,7 @@ void fxScopeCodingParams(txScope* self, txCoder* coder)
 		if ((token == XS_TOKEN_ARG) || (token == XS_TOKEN_VAR) || (token == XS_TOKEN_CONST)) {
 			if (node->flags & mxDeclareNodeClosureFlag) {
 				if (node->flags & mxDeclareNodeUseClosureFlag) {
-					fxReportLineError(self->parser, node->line, "argument %s use closure", node->symbol->string);
+					fxReportParserError(self->parser, node->line, "argument %s use closure", node->symbol->string);
 				}
 				node->index = coder->scopeLevel++;
 				fxCoderAddVariable(coder, 0, XS_CODE_NEW_CLOSURE, node->symbol, node->index);
@@ -1734,6 +1743,7 @@ void fxNodeDispatchCode(void* it, void* param)
 {
 	txNode* self = it;
 	txCoder* coder = param;
+	fxCheckParserStack(coder->parser, self->line);
 	if (self->line >= 0)
 		fxCoderAddLine(coder, 0, XS_CODE_LINE, self); 
 	(*self->description->dispatch->code)(it, param);
@@ -1743,6 +1753,7 @@ void fxNodeDispatchCodeAssign(void* it, void* param, txFlag flag)
 {
 	txNode* self = it;
 	txCoder* coder = param;
+	fxCheckParserStack(coder->parser, self->line);
 	if (self->line >= 0)
 		fxCoderAddLine(coder, 0, XS_CODE_LINE, self); 
 	(*self->description->dispatch->codeAssign)(self, param, flag);
@@ -1752,6 +1763,7 @@ void fxNodeDispatchCodeDelete(void* it, void* param)
 {
 	txNode* self = it;
 	txCoder* coder = param;
+	fxCheckParserStack(coder->parser, self->line);
 	if (self->line >= 0)
 		fxCoderAddLine(coder, 0, XS_CODE_LINE, self); 
 	(*self->description->dispatch->codeDelete)(self, param);
@@ -1761,6 +1773,7 @@ void fxNodeDispatchCodeReference(void* it, void* param)
 {
 	txNode* self = it;
 	txCoder* coder = param;
+	fxCheckParserStack(coder->parser, self->line);
 	if (self->line >= 0)
 		fxCoderAddLine(coder, 0, XS_CODE_LINE, self); 
 	(*self->description->dispatch->codeReference)(self, param);
@@ -1770,6 +1783,7 @@ txFlag fxNodeDispatchCodeThis(void* it, void* param, txFlag flag)
 {
 	txNode* self = it;
 	txCoder* coder = param;
+	fxCheckParserStack(coder->parser, self->line);
 	if (self->line >= 0)
 		fxCoderAddLine(coder, 0, XS_CODE_LINE, self); 
 	return (*self->description->dispatch->codeThis)(self, param, flag);
@@ -1779,7 +1793,7 @@ void fxNodeCode(void* it, void* param)
 {
 	txNode* self = it;
 	txCoder* coder = param;
-	fxReportLineError(coder->parser, self->line, "no value");
+	fxReportParserError(coder->parser, self->line, "no value");
 	fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
 }
 
@@ -1787,7 +1801,7 @@ void fxNodeCodeAssign(void* it, void* param, txFlag flag)
 {
 	txNode* self = it;
 	txCoder* coder = param;
-	fxReportLineError(coder->parser, self->line, "no reference");
+	fxReportParserError(coder->parser, self->line, "no reference");
 }
 
 void fxNodeCodeDelete(void* it, void* param) 
@@ -1840,7 +1854,7 @@ void fxAccessNodeCodeDelete(void* it, void* param)
 	txCoder* coder = param;
 	txDeclareNode* declaration = self->declaration;
 	if (self->flags & mxStrictFlag)
-		fxReportLineError(coder->parser, self->line, "delete identifier (strict code)");
+		fxReportParserError(coder->parser, self->line, "delete identifier (strict code)");
 	if (!declaration) {
 		fxAccessNodeCodeReference(it, param);
 		fxCoderAddSymbol(param, 0, XS_CODE_DELETE_PROPERTY, self->symbol);
@@ -2246,7 +2260,7 @@ void fxBindingNodeCode(void* it, void* param)
 	txCoder* coder = param;
 	
 	if (self->target->description->token == XS_TOKEN_ACCESS) {
-		fxReportLineError(coder->parser, self->line, "invalid initializer");
+		fxReportParserError(coder->parser, self->line, "invalid initializer");
 		fxNodeDispatchCode(self->initializer, param);
 		return;
 	}
@@ -2320,9 +2334,9 @@ void fxBreakContinueNodeCode(void* it, void* param)
 		target = target->nextTarget;
 	}
 	if (self->description->token == XS_TOKEN_BREAK)
-		fxReportLineError(coder->parser, self->line, "invalid break");
+		fxReportParserError(coder->parser, self->line, "invalid break");
 	else
-		fxReportLineError(coder->parser, self->line, "invalid continue");
+		fxReportParserError(coder->parser, self->line, "invalid continue");
 }
 
 void fxCallNodeCode(void* it, void* param) 
@@ -2609,7 +2623,7 @@ void fxDeclareNodeCode(void* it, void* param)
 	txDeclareNode* self = it;
 	txCoder* coder = param;
 	if (self->description->token == XS_TOKEN_CONST)
-		fxReportLineError(coder->parser, self->line, "invalid const");
+		fxReportParserError(coder->parser, self->line, "invalid const");
 	else if (self->description->token == XS_TOKEN_LET) {
 		fxNodeDispatchCodeReference(self, param);
 		fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
@@ -3324,7 +3338,7 @@ void fxLabelNodeCode(void* it, void* param)
 			txLabelNode* current = self;
 			while (current) {
 				if (former->symbol && current->symbol && (former->symbol == current->symbol)) {
-					fxReportLineError(coder->parser, current->line, "duplicate label %s", current->symbol->string);
+					fxReportParserError(coder->parser, current->line, "duplicate label %s", current->symbol->string);
 				}
 				current = current->nextLabel;
 			}
@@ -3548,7 +3562,7 @@ void fxObjectNodeCode(void* it, void* param)
 			if (item->description->token == XS_TOKEN_PROPERTY) {
 				if (!(item->flags & mxShorthandFlag) && (((txPropertyNode*)item)->symbol == coder->parser->__proto__Symbol)) {
 					if (flag)
-						fxReportLineError(coder->parser, item->line, "invalid __proto__");
+						fxReportParserError(coder->parser, item->line, "invalid __proto__");
 					flag = 1;
 					fxNodeDispatchCode(((txPropertyNode*)item)->value, param);
 					fxCoderAddByte(param, 0, XS_CODE_INSTANTIATE);
@@ -3843,7 +3857,7 @@ void fxPrivateMemberNodeCodeDelete(void* it, void* param)
 	txPrivateMemberNode* self = it;
 	txCoder* coder = param;
 	fxNodeDispatchCode(self->reference, param);
-	fxReportLineError(coder->parser, self->line, "delete private property");
+	fxReportParserError(coder->parser, self->line, "delete private property");
 }
 
 void fxPrivateMemberNodeCodeReference(void* it, void* param) 
@@ -3921,7 +3935,7 @@ void fxReturnNodeCode(void* it, void* param)
 	txStatementNode* self = it;
 	txCoder* coder = param;
 	if (coder->programFlag)
-		fxReportLineError(coder->parser, self->line, "invalid return");
+		fxReportParserError(coder->parser, self->line, "invalid return");
 	if (self->expression) {	
 		if (((self->flags & (mxStrictFlag | mxGeneratorFlag)) == mxStrictFlag) && (coder->returnTarget->original == NULL))
 			self->expression->flags |= mxTailRecursionFlag;
@@ -4160,13 +4174,13 @@ void fxTemplateNodeCode(void* it, void* param)
 	}
 	else {
         if (((txTemplateItemNode*)item)->string->flags & mxStringErrorFlag)
-            fxReportLineError(parser, item->line, "invalid escape sequence");
+            fxReportParserError(parser, item->line, "invalid escape sequence");
 		fxNodeDispatchCode(((txTemplateItemNode*)item)->string, param);
 		item = item->next;
 		while (item) {
 			if (item->description->token == XS_TOKEN_TEMPLATE_MIDDLE) {
 				if (((txTemplateItemNode*)item)->string->flags & mxStringErrorFlag)
-					fxReportLineError(parser, item->line, "invalid escape sequence");
+					fxReportParserError(parser, item->line, "invalid escape sequence");
 				fxNodeDispatchCode(((txTemplateItemNode*)item)->string, param);
 			}
 			else {
@@ -4291,7 +4305,7 @@ void fxUndefinedNodeCodeDelete(void* it, void* param)
 	txNode* self = it;
 	txCoder* coder = param;
 	if (self->flags & mxStrictFlag)
-		fxReportLineError(coder->parser, self->line, "delete identifier (strict code)");
+		fxReportParserError(coder->parser, self->line, "delete identifier (strict code)");
 	fxCoderAddByte(param, 1, XS_CODE_FALSE);
 }
 

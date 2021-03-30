@@ -41,7 +41,7 @@ else
 	C_OPTIONS += -O3
 endif
 
-LIBRARIES =
+LIBRARIES = -lpthread
 LINK_OPTIONS =
 
 OBJECTS = \

@@ -259,6 +259,18 @@ void xs_ILI9341(xsMachine *the)
 
 	ili9341Init(sd);
 
+#if defined(MODDEF_ILI9341_ERASE_WIDTH) && defined(MODDEF_ILI9341_ERASE_HEIGHT)
+	int i;
+	uint8_t *pixels = c_calloc(MODDEF_ILI9341_ERASE_WIDTH, 2);
+	if (pixels) {
+		ili9341Begin(sd, 0, 0, MODDEF_ILI9341_ERASE_WIDTH, MODDEF_ILI9341_ERASE_HEIGHT);
+		for (i = 0; i < MODDEF_ILI9341_ERASE_HEIGHT; i++)
+			(sd->dispatch->doSend)((PocoPixel *)pixels, MODDEF_ILI9341_ERASE_WIDTH * 2, sd);
+		ili9341End(sd);
+		c_free(pixels);
+	}
+#endif
+
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOInit(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_PORT, MODDEF_ILI9341_BACKLIGHT_PIN, kModGPIOOutput);
 	modGPIOWrite(&sd->backlight, MODDEF_ILI9341_BACKLIGHT_OFF);

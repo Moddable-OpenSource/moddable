@@ -39,9 +39,11 @@ global.CLUT = CLUT;
 // PiuTexture.c
 
 export class Texture @ "PiuTextureDelete" {
-	constructor(it) {
-		let alphaBitmap;
-		let colorBitmap;
+	constructor(it, alphaBitmap, colorBitmap) {
+		if (alphaBitmap || colorBitmap) {
+			this._create(alphaBitmap, colorBitmap);
+			return;
+		}
 		if (typeof(it) == "object")
 			it = it.path;
 		if (it.endsWith(".png")) {

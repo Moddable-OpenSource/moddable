@@ -156,12 +156,16 @@ export class MakeFile extends FILE {
 		// Merge any application sdkconfig files
 		if (tool.environment.SDKCONFIGPATH != baseConfigDirectory) {
 			let appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
-			if ((false === tool.debug) && (1 == tool.isDirectoryOrFile(appConfigFile + ".release")))
-				appConfigFile += ".release";
 			if (1 == tool.isDirectoryOrFile(appConfigFile)) {
 				let entries = tool.readFileString(appConfigFile);
 				mergedConfig = mergedConfig.concat(entries.split(regex));
 			}
+			
+			if ((false === tool.debug) && (1 == tool.isDirectoryOrFile(appConfigFile + ".release"))) {
+				let entries = tool.readFileString(appConfigFile + ".release");
+				mergedConfig = mergedConfig.concat(entries.split(regex));
+			}
+				
 			if (tool.debug === false && tool.instrument === true) {
 				appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.inst";
 				if (1 == tool.isDirectoryOrFile(appConfigFile)) {
