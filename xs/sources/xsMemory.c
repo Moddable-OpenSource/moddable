@@ -46,6 +46,9 @@
 #ifndef mxFill
 #define mxFill 0
 #endif
+#ifndef mxNoChunks
+#define mxNoChunks 0
+#endif
 
 #if mxStress
 int gxStress = 0;
@@ -166,7 +169,10 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->firstBlock = C_NULL;
 	the->firstHeap = C_NULL;
 
+#if mxNoChunks
+#else
 	fxGrowChunks(the, theCreation->initialChunkSize);
+#endif
 
 	the->stackBottom = fxAllocateSlots(the, theCreation->stackCount);
 	the->stackTop = the->stackBottom + theCreation->stackCount;
@@ -215,6 +221,35 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 #ifdef mxProfile
 	fxBeginGC(the);
 #endif
+#if mxNoChunks
+	if (theFlag) {
+		txSize total = 0;
+		txChunk** address;
+		txChunk* chunk;
+		fxMark(the, fxMarkValue);
+		fxMarkWeakStuff(the, fxMarkValue);
+		address = (txChunk**)&(the->firstBlock);
+		while ((chunk = *address)) {
+			txSize size = chunk->size;
+			if (size & mxChunkFlag) {
+				size &= ~mxChunkFlag;
+				chunk->size = size;
+				address = (txChunk**)&(chunk->temporary);
+				total += size;
+			}
+			else {
+				*address = (txChunk*)(chunk->temporary);
+				c_free(chunk);
+			}
+		}
+		the->currentChunksSize = total;
+	}
+	else {
+		fxMark(the, fxMarkReference);
+		fxMarkWeakStuff(the, fxMarkReference);
+	}
+	{		
+#else
 	if (theFlag) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the, fxMarkValue);
@@ -223,6 +258,7 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 	else {
 		fxMark(the, fxMarkReference);
 		fxMarkWeakStuff(the, fxMarkReference);
+#endif
 	#ifdef mxNever
 		startTime(&gxSweepSlotTime);
 	#endif
@@ -348,12 +384,24 @@ void fxFree(txMachine* the)
 	}
 	the->firstHeap = C_NULL;
 	
+#if mxNoChunks
+	{
+		txChunk** address;
+		txChunk* chunk;
+		address = (txChunk**)&(the->firstBlock);
+		while ((chunk = *address)) {
+			*address = (txChunk*)(chunk->temporary);
+			c_free(chunk);
+		}
+	}
+#else
 	while (the->firstBlock) {
 		aBlock = the->firstBlock;
 		the->firstBlock = aBlock->nextBlock;
 		fxFreeChunks(the, aBlock);
 	}
 	the->firstBlock = C_NULL;
+#endif
 	
 #ifdef mxNever
 	stopTime(&gxLifeTime);
@@ -1103,6 +1151,15 @@ void* fxNewChunk(txMachine* the, txSize theSize)
     if (modulo)
 		theSize = fxAddChunkSizes(the, theSize, sizeof(txSize) - modulo);
 	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk));
+	
+#if mxNoChunks
+	aData = c_malloc(theSize);
+	((txChunk*)aData)->size = theSize;
+	((txChunk*)aData)->temporary = (txByte*)the->firstBlock;
+	the->firstBlock = (txBlock*)aData;
+	return aData + sizeof(txChunk);
+#endif
+	
 again:
 	aBlock = the->firstBlock;
 	while (aBlock) {
@@ -1175,13 +1232,21 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
 	txBlock* aBlock = the->firstBlock;
-	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk) + (sizeof(txSize) - 1)) & ~(sizeof(txSize) - 1);
+	txSize modulo = theSize & (sizeof(txSize) - 1);
+    if (modulo)
+		theSize = fxAddChunkSizes(the, theSize, sizeof(txSize) - modulo);
+	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk));
 	if (aChunk->size == theSize) {
 	#ifdef mxNever
 		gxRenewChunkCases[0]++;
 	#endif
 		return theData;
 	}
+	
+#if mxNoChunks
+	return C_NULL;
+#endif
+
 	aData += aChunk->size;
 	theSize -= aChunk->size;
 	while (aBlock) {
