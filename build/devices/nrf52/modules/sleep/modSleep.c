@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -21,12 +21,16 @@
 #include "xsmc.h"
 #include "xsPlatform.h"
 #include "modGPIO.h"
+#include "mc.defines.h"
 
 #include "nrf_drv_clock.h"
 #include "nrf_drv_lpcomp.h"
 #include "nrf_sdh.h"
 #include "nrf_rtc.h"
 
+#ifndef MODDEF_SLEEP_FASTRESET
+	#define MODDEF_SLEEP_FASTRESET (false)
+#endif
 
 #define RAM_START_ADDRESS  0x20000000
 #define kRamRetentionBufferSize 256		// must match .retained_section/.no_init linker size 0x100
@@ -198,6 +202,10 @@ void xs_sleep_deep(xsMachine *the)
 	else {
 		// System OFF sleep, wake on reset or preconfigured analog/digital wake-up trigger
 
+#if MODDEF_SLEEP_FASTRESET
+		*((uint32_t*)DFU_DBL_RESET_MEM) = 0x4ee5677e;
+#endif
+
 		// Enable LPCOMP if configured
 		if (NRF_LPCOMP->INTENSET & (LPCOMP_INTENSET_UP_Msk | LPCOMP_INTENSET_DOWN_Msk | LPCOMP_INTENSET_CROSS_Msk)) {
 			nrf_drv_lpcomp_enable();
@@ -232,6 +240,11 @@ void xs_sleep_setup(xsMachine *the)
 	for (int i = 0; i <= 7; ++i)
 		NRF_POWER->RAM[i].POWER = 0x03;
 	NRF_POWER->RAM[8].POWER = 0x3F;
+
+#if MODDEF_SLEEP_FASTRESET
+	//Retain RAM2 Section 0 when in System OFF sleep to preserve fast reset setting
+	NRF_POWER->RAM[2].POWERSET = 0x10000;
+#endif
 
 	// Restore or initialize system time
 	if (kRamRetentionValueMagic == ((uint32_t *)MOD_TIME_RESTORE_MEM)[2]) {
@@ -341,7 +354,11 @@ void sleep_wake_on_timer()
 	NRF_POWER->RAM[8].POWERSET = 0x3F;
 
 	// Reset device
+#if MODDEF_SLEEP_FASTRESET
+	*((uint32_t*)DFU_DBL_RESET_MEM) = 0x4ee5677e;
+#else 
 	*((uint32_t*)DFU_DBL_RESET_MEM) = 0;
+#endif
 	NVIC_SystemReset();
 }
 
