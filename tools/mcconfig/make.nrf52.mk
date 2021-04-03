@@ -704,7 +704,16 @@ SCRIPTS=\
 $(MODDABLE_TOOLS_DIR)/findUSBLinux: $(PLATFORM_DIR)/config/findUSBLinux
 	cp  $(PLATFORM_DIR)/config/findUSBLinux $(MODDABLE_TOOLS_DIR)/findUSBLinux
 
-precursor: $(SCRIPTS) $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
+precursor: mod_sdk $(SCRIPTS) $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
+
+sdk_mod_txt="nRF5 SDK needs to be modified to support SPIM3 - See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details."
+
+sdk_mod := $(shell grep 'SPIM3' $(NRF_SDK_DIR)/integration/nrfx/legacy/apply_old_config.h 1>&2 2> /dev/null ; echo $$?)
+
+mod_sdk:
+ifeq ($(sdk_mod),1)
+	$(error $(sdk_mod_txt))
+endif
 
 env_vars:
 ifndef NRF_SDK_DIR

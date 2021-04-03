@@ -123,6 +123,16 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	  #include "moddable_four.h"
 	```
 
+9. Add `SPIM3` support:
+
+	The nRF5 SDK has a file `integration/nrfx/legacy/apply_old_config.h` that needs a small change. Add `|| NRFX_SPIM3_ENABLED` after the `NRFX_SPIM2_ENABLED` as shown in the line below:
+
+	```text
+	#define NRFX_SPIM_ENABLED \
+    (SPI_ENABLED && (NRFX_SPIM0_ENABLED || NRFX_SPIM1_ENABLED || NRFX_SPIM2_ENABLED || NRFX_SPIM3_ENABLED))
+	```
+
+
 <a id="macOS-building-and-deploying-apps"></a>
 #### Building and Deploying Apps
 
@@ -219,6 +229,16 @@ After you've setup your macOS host environment, take the following steps to inst
 	  #include "moddable_four.h"
 	```
 
+10. Add `SPIM3` support:
+
+	The nRF5 SDK has a file `integration\nrfx\legacy\apply_old_config.h` that needs a small change. Add `|| NRFX_SPIM3_ENABLED` after the `NRFX_SPIM2_ENABLED` as shown in the line below:
+
+	```text
+	#define NRFX_SPIM_ENABLED \
+    (SPI_ENABLED && (NRFX_SPIM0_ENABLED || NRFX_SPIM1_ENABLED || NRFX_SPIM2_ENABLED || NRFX_SPIM3_ENABLED))
+	```
+
+
 <a id="windows-building-and-deploying-apps"></a>
 #### Building and Deploying Apps
 
@@ -312,6 +332,16 @@ After you've setup your Windows host environment, take the following steps to in
 	#elif defined (BOARD_MODDABLE_FOUR)
 	  #include "moddable_four.h"
 	```
+
+8. Add `SPIM3` support:
+
+	The nRF5 SDK has a file `integration/nrfx/legacy/apply_old_config.h` that needs a small change. Add `|| NRFX_SPIM3_ENABLED` after the `NRFX_SPIM2_ENABLED` as shown in the line below:
+
+	```text
+	#define NRFX_SPIM_ENABLED \
+    (SPI_ENABLED && (NRFX_SPIM0_ENABLED || NRFX_SPIM1_ENABLED || NRFX_SPIM2_ENABLED || NRFX_SPIM3_ENABLED))
+	```
+
 
 <a id="linux-building-and-deploying-apps"></a>
 #### Building and Deploying Apps
