@@ -51,11 +51,6 @@
 			"rx_pin": "4",
 			"baudrate": "NRF_UARTE_BAUDRATE_115200"
 		},
-		"serial": {
-			"tx_pin": "NRF_GPIO_PIN_MAP(0,30)",
-			"rx_pin": "NRF_GPIO_PIN_MAP(0,31)",
-			"baudrate": "NRF_UARTE_BAUDRATE_921600"
-		},
 		"spi": {
 			"interface": "3",
 			"hz": "2000000",

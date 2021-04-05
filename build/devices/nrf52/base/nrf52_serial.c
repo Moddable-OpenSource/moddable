@@ -24,9 +24,9 @@
 
 #include "mc.defines.h"
 
+#if defined(MODDEF_SERIAL_RX_PIN) || defined(MODDEF_SERIAL_TX_PIN)
 #include "nrf_libuarte_async.h"
 #include "app_fifo.h"
-
 #include "ftdi_trace.h"
 
 #define SERIAL_TASK_STACK	2048
@@ -242,4 +242,4 @@ int serial_getc(void) {
 	return -1;
 }
 
-
+#endif
