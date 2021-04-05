@@ -708,7 +708,7 @@ precursor: mod_sdk $(SCRIPTS) $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_
 
 sdk_mod_txt="nRF5 SDK needs to be modified to support SPIM3 - See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details."
 
-sdk_mod := $(shell grep 'SPIM3' $(NRF_SDK_DIR)/integration/nrfx/legacy/apply_old_config.h 1>&2 2> /dev/null ; echo $$?)
+sdk_mod := $(shell grep 'SPIM3' $(NRF_SDK_DIR)/integration/nrfx/legacy/apply_old_config.h > /dev/null 2>&1 ; echo $$?)
 
 mod_sdk:
 ifeq ($(sdk_mod),1)
