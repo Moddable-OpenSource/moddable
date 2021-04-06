@@ -9,6 +9,11 @@
 			"$(MODULES)/files/preference/esp32/modPreference"
 		]
 	},
+	"preload": [
+		"preference",
+		"time",
+		"timer"
+	],
 	"platforms": {
 		"esp32/*": {
 			"include": "./targets/$(SUBPLATFORM)/manifest.json"

@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_commodetto.json"
+	],
+	"modules": {
+		"*": [
+			"./pocogif"
+		],
+		"commodetto/ReadGIF": "./commodettoReadGIF"
+	},
+	"preload": [
+		"commodetto/ReadGIF",
+		"pocogif"
+	]
+}

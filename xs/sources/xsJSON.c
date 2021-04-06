@@ -320,7 +320,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			size = 0;
 			for (;;) {
 				p = fxUTF8Decode(p, &character);
-				if ((0 <= character) && (character < 32)) {
+				if (character < 32) {
 					goto error;
 				}
 				else if (character == '"') {
