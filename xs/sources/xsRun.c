@@ -1199,7 +1199,9 @@ XS_CODE_JUMP:
 				count -= offset;
 				variable = mxFrameArgv(offset);
 				for (offset = 0; offset < count; offset++) {
+					mxSaveState;
 					slot = mxBehaviorSetProperty(the, mxStack->value.reference, 0, offset, XS_OWN);
+					mxRestoreState;
 					slot->kind = variable->kind;
 					slot->value = variable->value;
 					variable--;
