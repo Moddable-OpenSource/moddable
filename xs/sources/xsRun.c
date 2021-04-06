@@ -46,6 +46,7 @@
 static void fxCheckMetering(txMachine* the);
 #endif
 extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
+static void fxRunArguments(txMachine* the, txIndex offset);
 static void fxRunBase(txMachine* the);
 static void fxRunConstructor(txMachine* the);
 static txBoolean fxRunDefine(txMachine* the, txSlot* instance, txSlot* check, txID id, txIndex index, txSlot* slot, txFlag mask);
@@ -1189,22 +1190,9 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, offset);
 #endif
-			mxAllocStack(1);
-			*mxStack = mxArrayPrototype;
 			mxSaveState;
-			fxNewArrayInstance(the);
+			fxRunArguments(the, offset);
 			mxRestoreState;
-			count = mxFrameArgc;
-			if (offset < count) {
-				count -= offset;
-				variable = mxFrameArgv(offset);
-				for (offset = 0; offset < count; offset++) {
-					slot = mxBehaviorSetProperty(the, mxStack->value.reference, 0, offset, XS_OWN);
-					slot->kind = variable->kind;
-					slot->value = variable->value;
-					variable--;
-				}
-			}
 			mxNextCode(2);
 			mxBreak;
 		mxCase(XS_CODE_ARGUMENTS_SLOPPY)
@@ -4161,6 +4149,31 @@ void fxCheckMetering(txMachine* the)
 	}
 }
 #endif
+
+void fxRunArguments(txMachine* the, txIndex offset)
+{
+	txSlot* array;
+	txIndex length = (txIndex)mxArgc;
+	txIndex index;
+	txSlot* address;
+	mxPush(mxArrayPrototype);
+	array = fxNewArrayInstance(the)->next;
+	if (offset < length) {
+		length -= offset;
+		fxSetIndexSize(the, array, length);
+		index = 0;
+		address = array->value.array.address;
+		while (index < length) {
+			txSlot* property = mxArgv(offset + index);
+			*((txIndex*)address) = index;
+			address->ID = XS_NO_ID;
+			address->kind = property->kind;
+			address->value = property->value;
+			index++;
+			address++;
+		}
+	}
+}
 
 void fxRunBase(txMachine* the)
 {
