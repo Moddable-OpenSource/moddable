@@ -286,7 +286,7 @@ void fx_GeneratorFunction(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxGeneratorFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
@@ -676,7 +676,7 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 	stream.slot = the->stack;
 	stream.offset = 0;
 	stream.size = c_strlen(the->stack->value.string);
-	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
+	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxGeneratorFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);

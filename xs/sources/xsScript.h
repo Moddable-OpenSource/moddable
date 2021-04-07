@@ -902,6 +902,8 @@ enum {
 	/* mxSuperFlag = 1 << 5, */
 	/* mxTargetFlag = 1 << 6, */
 	/* mxFieldFlag = 1 << 15, */
+	/* mxFunctionFlag = 1 << 16, */
+	/* mxGeneratorFlag = 1 << 21, */
 	mxParserFlags = mxCFlag | mxDebugFlag | mxProgramFlag,
 
 
@@ -917,7 +919,6 @@ enum {
 	mxElisionFlag = 1 << 18,
 	mxExpressionNoValue = 1 << 19,
 	mxForFlag = 1 << 20,
-	mxGeneratorFlag = 1 << 21,
 	mxGetterFlag = 1 << 22,
 	mxMethodFlag = 1 << 23,
 	mxNotSimpleParametersFlag = 1 << 24,

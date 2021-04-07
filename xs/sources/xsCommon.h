@@ -397,6 +397,8 @@ enum {
 	mxSuperFlag = 1 << 5,
 	mxTargetFlag = 1 << 6,
 	mxFieldFlag = 1 << 15,
+	mxFunctionFlag = 1 << 16,
+	mxGeneratorFlag = 1 << 21,
 };
 
 extern void fxDeleteScript(txScript* script);
