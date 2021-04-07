@@ -210,8 +210,12 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 {
 	txSlot* key = fxGetKey(the, slot->value.symbol);
 	fxStringX(the, slot, "Symbol(");
-	if (key && ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)))
-		fxConcatStringC(the, slot, key->value.string);
+	if (key) {
+		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
+			fxConcatStringC(the, slot, key->value.key.string);
+		else if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND))
+			fxConcatStringC(the, slot, key->value.string);
+	}
 	fxConcatStringC(the, slot, ")");
 }
 
