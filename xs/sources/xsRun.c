@@ -3138,15 +3138,12 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					#if __has_builtin(__builtin_add_overflow)
-						variable = mxStack;
-						mxPushKind(XS_INTEGER_KIND);
-						if (__builtin_add_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
+						if (__builtin_add_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = (txNumber)(slot->value.integer) + (txNumber)(variable->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) + (txNumber)(mxStack->value.integer);
 						}
 						else
-							slot->value.integer = mxStack->value.integer;
-						mxStack++;
+							slot->value.integer = scratch.value.integer;
 					#else
 						txInteger a = slot->value.integer;
 						txInteger b = mxStack->value.integer;
@@ -3206,15 +3203,12 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					#if __has_builtin(__builtin_sub_overflow)
-						variable = mxStack;
-						mxPushKind(XS_INTEGER_KIND);
-						if (__builtin_sub_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
+						if (__builtin_sub_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(variable->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(mxStack->value.integer);
 						}
 						else
-							slot->value.integer = mxStack->value.integer;
-						mxStack++;
+							slot->value.integer = scratch.value.integer;
 					#else
 						txInteger a = slot->value.integer;
 						txInteger b = -mxStack->value.integer;
@@ -3331,15 +3325,12 @@ XS_CODE_JUMP:
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					#if __has_builtin(__builtin_mul_overflow)
-						variable = mxStack;
-						mxPushKind(XS_INTEGER_KIND);
-						if (__builtin_mul_overflow(slot->value.integer, variable->value.integer, &mxStack->value.integer)) {
+						if (__builtin_mul_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
-							slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(variable->value.integer);
+							slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
 						}
 						else
-							slot->value.integer = mxStack->value.integer;
-						mxStack++;
+							slot->value.integer = scratch.value.integer;
 					#else
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
