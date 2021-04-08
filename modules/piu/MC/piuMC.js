@@ -204,7 +204,7 @@ class View @ "PiuViewDelete" {
 	constructor(application, it) {
 		let screen = global.screen;
 		it.rotation = this.rotation;
-		let poco = new Poco(screen, it);
+		let poco = this.poco = new Poco(screen, it);
 		this._create(application, it, screen, poco, poco.rectangle());
 		if (screen.pixelFormat == Bitmap.CLUT16)
 			application.clut = new Resource("main.cct");
