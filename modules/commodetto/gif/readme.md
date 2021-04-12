@@ -1,12 +1,14 @@
 # Animated GIF for Commodetto
 Copyright 2021 Moddable Tech, Inc.<BR>
-Updated: March 29, 2021
+Updated: April 11, 2021
 
 ## Introduction
 
 The animated GIF image format is popular and possible to implement for microcontrollers. The Commodetto graphics library provides high quality, high performance rendering on microcontrollers for delivering products with smooth animation.
 
 Most GIF implementations for microcontrollers decode directly to the frame buffer to minimize memory use. This works for some animated GIFs, but for others it causes flickering or artifacts. The Commodetto animated GIF decoder takes a different approach: it requires a memory buffer for the full decoded image. This makes it unsuitable when memory is tight. However, for those devices where it works it is able to deliver correct, high performance, flicker free animations. Because the output of the decoder is a Commodetto bitmap it may be composited with other graphical elements using the Poco renderer.
+
+The Commodetto animated GIF decoder has several special decoding modes to significantly reduce the amount of memory required to decode many animated GIF sequences.
 
 Because of the increased memory requirements, the Commodetto animated GIF decoder is not practical on all microcontrollers. It works very well on an ESP32 (with no external RAM) and Pico (RP2040) for images that are about 200 pixels on a side. 
 
@@ -28,7 +30,7 @@ let reader = new ReadGIF(new Resource("moddable.gif"));
 ### Memory use
 ReadGIF needs memory to store the decoding state and memory to store the decoded image. If there is insufficient memory, `ReadGIF` throws an exception.
 
-The decoding state is in the application heap. The default configuration of the application heap is  too small for this, and must be increased to about 48 KB. You can do this in your project manifest:
+The decoding state is in the application heap. The default configuration of the application heap is too small for this, and must be increased to about 48 KB. You can do this in your project manifest:
 
 ```json
 	"creation": {
@@ -61,7 +63,7 @@ Calling `next` updates the reader's bitmap with the next frame. Use Poco to draw
 import Poco from "commodetto/Poco";
 
 poco.begin(0, 0, reader.width, reader.height);
-poco.drawBitmap(reader, 0, 0);
+poco.drawBitmapWithKeyColor(reader, 0, 0);
 poco.end();
 ```
 
@@ -75,7 +77,7 @@ Timer.repeat(() => {
 	reader.next();
 
 	poco.begin(reader.frameX, reader.frameY, reader.frameWidth, reader.frameHeight);
-	poco.drawBitmap(reader, 0, 0);
+	poco.drawBitmapWithKeyColor(reader, 0, 0);
 	poco.end();
 }, 100);
 ```
@@ -98,7 +100,7 @@ Timer.repeat(id => {
 	Timer.schedule(id, reader.frameDuration, 1);
 
 	poco.begin(reader.frameX, reader.frameY, reader.frameWidth, reader.frameHeight);
-	poco.drawBitmap(bitmap, 0, 0);
+	poco.drawBitmapWithKeyColor(bitmap, 0, 0);
 	poco.end();
 }, 1);
 ```
@@ -108,33 +110,39 @@ Some animated GIF images have transparent regions which are design to allow the 
 
 The `transparent` property of the reader instance indicates if the image has transparent pixels.
 
-By default, GIFReader fills transparent pixels with the background color specified by the image. You can override this color by setting the `transparentColor` property. If your script displays GIF images on a solid color background, set the reader instances `transparentColor` property to that color to give the illusion of transparency.
-
-To achieve true transparency requires two steps. First, select a key color to use in the transparent pixels of the image and set as the `transparentColor`. Using 0x0020 works well. GIFReader ensures that the color you choose is not used by the image for opaque pixels. Second, instead of using `drawBitmap` to render the image use `drawBitmapWithKeyColor`. This custom drawing function is like `drawBitmap` but it skips over any pixels that match the specified key color.
+To achieve true transparency requires steps. First, the application must fill in the background pixels behind the image. The example below fills the background with red. Second, use `drawBitmapWithKeyColor` to render the image and provide it with the transparent color from the animated GIF. The `drawBitmapWithKeyColor` function is like `drawBitmap` except that it skips over any pixels that match the specified key color.
 
 ```js
-// after setting up the reader
-const keyColor = 0x0020;
-reader.transparentColor = keyColor;
+const red = poco.makeColor(255, 0, 0);
 
-
-// to draw
-if (reader.transparent) {
-	poco.fillRectangle(red, 0, 0, reader.width, reader.height);
-	poco.drawBitmapWithKeyColor(reader, 0, 0, keyColor);
-}
-else
-	poco.drawBitmap(reader, 0, 0);
+poco.fillRectangle(red, 0, 0, reader.width, reader.height);
+poco.drawBitmapWithKeyColor(reader, 0, 0, reader.transparentColor);
 ```
 
-Note that the `fillRectangle` call draws behind the animated GIF. Your code can draw anything behind the GIF, such as a pattern or a logo or even another animation. It is safe to use `drawBitmapWithKeyColor` for images without transparency, however the rendering is slower than using `drawBitmap`.
+Note that the `fillRectangle` call draws behind the animated GIF. Your code can draw anything behind the GIF, such as a pattern or a logo or even another animation. It is safe to use `drawBitmapWithKeyColor`.
+
+### Reducing memory use
+A GIF image contains between 2 and about 16 million colors. Images with many colors must be stored at 16-bits per pixel, which uses quite a bit of memory. The Commodetto GIF decoder is also able to decode GIF images to 8-bit, 4-bit, and 1-bit pixels. The decoder automatically determines the format that uses the least memory while maintaining full color fidelity. Thee bitmap format used may always be drawn using `poco.drawBitmapWithKeyColor`. The format of the bitmap used is available from the `pixelFormat` property of the GIF Reader instance. 
+
+Some applications may wish to force decoding to a specific format, overriding the automatic format detection. This may generate an image which does not render correctly, but should never crash. To force decoding to a particular format, pass the pixel format to the `ReadGIF` constructor as part of the optional options argument. The following example shows requesting pixels in RGB565 little-endian format:
+
+```js
+const reader = new ReadGIF(
+	new Resource("moddable.gif"),
+	{
+		pixelFormat: Bitmap.RGB565LE
+	}
+);
+```
+
+For force decoding to 1, 4, and 8 bits per pixel use `Bitmap.Monochrome`, `Bitmap.Gray16`, and `Bitmap.CLUT256` respectively.
 
 ## Reference
 
 The following table describes the properties available on the GIF reader instance. A GIF animation is draw onto a canvas. Each frame of the animation contains an image that updates the canvas. The image may update all of the canvas or only a part of it.
 
-| Property| Description |
-| :---: | :--- |
+| Property | Description |
+| ---: | :--- |
 | `width` | width of the animation canvas |
 | `height` | height of the animation canvas |
 | `duration` | total duration of the animation in milliseconds |
@@ -147,6 +155,10 @@ The following table describes the properties available on the GIF reader instanc
 | `frameWidth` | width of the area updated in the current frame |
 | `frameHeight` | height of the area updated in the current frame |
 | `transparent` | `true` if the canvas contains transparent background pixels |
-| `transparentColor` | pixel value used to fill transparent background pixels; if not set, background color in GIF is used |
+| `transparentColor` | pixel value used to fill transparent background pixels; undefined if image does not use transparency |
 | `ready` | `true` if the animated GIF reader is able to parse at least one frame; used when downloading GIF images to detect first frame is available  |
 
+
+## Thank you
+
+The core GIF decoder is [GIF Animator](https://github.com/bitbank2/AnimatedGIF) by [Larry Bank](https://github.com/bitbank2) of [BitBank Software](https://www.bitbanksoftware.com). 

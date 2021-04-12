@@ -19,6 +19,13 @@
 */
 
 import Poco from "commodetto/Poco";
+import Bitmap from "commodetto/Bitmap";
 
-function drawBitmapWithKeyColor(bitmap, x, y) @ "xs_poco_drawGIF";
-Poco.prototype.drawBitmapWithKeyColor = drawBitmapWithKeyColor;
+function drawBitmapWithKeyColor(bits, x, y, color) @ "xs_poco_drawGIF";
+Poco.prototype.drawBitmapWithKeyColor = function(bits, x, y, color) {
+	if (Bitmap.Monochrome === bits.pixelFormat)
+		return this.drawMonochrome(bits, this.makeColor(0, 0, 0), this.makeColor(255, 255, 255), x, y);
+
+	return drawBitmapWithKeyColor.call(this, bits, x, y, color);
+}
+	

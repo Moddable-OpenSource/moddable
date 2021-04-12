@@ -34,7 +34,7 @@ static void GIFMakePels(GIFIMAGE *pPage, unsigned int code);
 static int DecodeLZW(GIFIMAGE *pImage, int iOptions);
 static int32_t readMem(GIFFILE *pFile, uint8_t *pBuf, int32_t iLen);
 static int32_t seekMem(GIFFILE *pFile, int32_t iPosition);
-int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo);
+int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo, unsigned short *pPalette);
 #if defined( PICO_BUILD ) || defined( __LINUX__ ) || defined( __MCUXPRESSO )
 static int32_t readFile(GIFFILE *pFile, uint8_t *pBuf, int32_t iLen);
 static int32_t seekFile(GIFFILE *pFile, int32_t iPosition);
@@ -276,7 +276,7 @@ static int GIFParseInfo(GIFIMAGE *pPage, int bInfoOnly)
         iColorTableBits = (p[10] & 7) + 1; // Log2(size) of the color table
         pPage->ucBackground = p[11]; // background color
         pPage->ucGIFBits = 0;
-        pPage->bHasGlobalColorTable = 0;
+        pPage->sGlobalColorTableCount = 0;
         iOffset = 13;
         if (p[10] & 0x80) // global color table?
         { // by default, convert to byte-reversed RGB565 for immediate use
@@ -302,7 +302,7 @@ static int GIFParseInfo(GIFIMAGE *pPage, int bInfoOnly)
                 c_memcpy(pPage->pPalette, &p[iOffset], (1<<iColorTableBits) * 3);
                 iOffset += (1 << iColorTableBits) * 3;
             }
-			pPage->bHasGlobalColorTable = 1;
+			pPage->sGlobalColorTableCount = 1 << iColorTableBits;
         }
     }
     while (p[iOffset] != ',') /* Wait for image separator */
@@ -492,7 +492,7 @@ static int GIFParseInfo(GIFIMAGE *pPage, int bInfoOnly)
 //
 // Gather info about an animated GIF file
 //
-int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo)
+int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo, unsigned short *pPalette)
 {
     int iOff, iNumFrames;
     int iDelay, iMaxDelay, iMinDelay, iTotalDelay;
@@ -503,6 +503,8 @@ int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo)
     int bDone = 0;
     int bExt;
     uint8_t c, *cBuf;
+	uint16_t sGlobalColorTableSize = 0;
+	uint8_t ucHasLocalColorTable = 0, ucHasTransparent = 0, ucBackground = 0;
 
     iMaxDelay = iTotalDelay = 0;
     iMinDelay = 10000;
@@ -513,11 +515,25 @@ int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo)
     iDataAvailable = (*pPage->pfnRead)(&pPage->GIFFile, cBuf, FILE_BUF_SIZE);
     iOff = 10;
     c = cBuf[iOff]; // get info bits
+    ucBackground = cBuf[iOff + 1];
     iOff += 3;   /* Skip flags, background color & aspect ratio */
     if (c & 0x80) /* Deal with global color table */
     {
         c &= 7;  /* Get the number of colors defined */
-        iOff += (2<<c)*3; /* skip color table */
+        sGlobalColorTableSize = 2 << c;
+        if (pPalette) {
+			unsigned short i;
+			for (i=0; i<sGlobalColorTableSize; i++)
+			{
+				pPalette[i] =
+					((cBuf[iOff] >> 3) << 11) |
+					((cBuf[iOff+1] >> 2) << 5) |
+					(cBuf[iOff+2] >> 3);
+				iOff += 3;
+			}
+        }
+        else
+			iOff += sGlobalColorTableSize*3; /* skip color table */
     }
     while (!bDone) // && iNumFrames < MAX_FRAMES)
     {
@@ -547,6 +563,8 @@ int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo)
                         if (iDelay > iMaxDelay) iMaxDelay = iDelay;
                         else if (iDelay < iMinDelay) iMinDelay = iDelay;
                        // (cBuf[iOff+6]; // transparent color index
+                        if ((cBuf[iOff+3] & 1) && (ucBackground == cBuf[iOff+6]))
+							ucHasTransparent = 1;
                     }
                     iOff += 2; /* skip to length */
                     iOff += (int)cBuf[iOff]; /* Skip the data block */
@@ -585,6 +603,7 @@ int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo)
         {
             c &= 7;
             iOff += (2<<c)*3;
+            ucHasLocalColorTable = 1;
         }
         iOff++; /* Skip LZW code size byte */
         c = cBuf[iOff++];
@@ -634,6 +653,9 @@ gifpagesz:
 		pInfo->iMaxDelay = iMaxDelay;
 		pInfo->iMinDelay = iMinDelay;
 		pInfo->iDuration = iTotalDelay;
+		pInfo->sGlobalColorTableSize = sGlobalColorTableSize;
+		pInfo->ucHasLocalColorTable = ucHasLocalColorTable;
+		pInfo->ucHasTransparent = ucHasTransparent;
 	}
     return iNumFrames ? 1 : 0;
 } /* GIFGetInfo() */

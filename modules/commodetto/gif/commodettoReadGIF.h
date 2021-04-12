@@ -44,6 +44,7 @@ typedef struct {
 	uint16_t	prevY;
 	uint16_t	prevW;
 	uint16_t	prevH;
+	void		*pixels;
 	GIFIMAGE	gi;
 	GIFINFO		ginfo;
 } xsGIFRecord, *xsGIF;
