@@ -64,6 +64,7 @@ void xs_system_restart(xsMachine *the)
 /*
 	adapted from modResolve.c
 */
+#if defined(__ets__) || ESP32
 
 #include "lwip/tcp.h"
 
@@ -184,3 +185,9 @@ void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messa
 
 	resolveNext();
 }
+
+#else
+
+void xs_system_resolve(xsMachine *the) {}
+
+#endif
