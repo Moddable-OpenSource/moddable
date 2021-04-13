@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -26,5 +26,9 @@ int modBLEPlatformTerminate(void);
 
 void modBLEClientBondingRemoved(char *address, uint8_t addressType);
 void modBLEServerBondingRemoved(char *address, uint8_t addressType);
+
+#define xsStringX(_VALUE) \
+	(fxStringX(the, &the->scratch, (xsStringValue)(_VALUE)), \
+	the->scratch)
 
 #endif
