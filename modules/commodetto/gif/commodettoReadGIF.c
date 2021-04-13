@@ -121,7 +121,7 @@ void xs_readgif(xsMachine *the)
 				}
 				if ((3 == monochrome) && !xg->ginfo.ucHasTransparent)
 					format = kCommodettoBitmapMonochrome;
-				else if ((gray16 & 0xaaaaaaaa) && !(gray16 & 0x55555555) && gray && !xg->ginfo.ucHasTransparent)
+				else if ((gray16 & 0xaaaa5555) && !(gray16 & 0x5555aaaa) && gray && !xg->ginfo.ucHasTransparent)
 					format = kCommodettoBitmapGray16;
 				else
 					format = kCommodettoBitmapCLUT256;
