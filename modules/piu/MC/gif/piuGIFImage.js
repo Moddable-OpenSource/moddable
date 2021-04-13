@@ -7,7 +7,7 @@ const gifImage = {
 	_create($, it) @ "PiuGIFImage_create",
 
 	load(path, colorized) {
-		const gif = new ReadGIF(new Resource(path), colorized ? {pixelFormat: Bitmap.Gray16} : {});
+		const gif = new ReadGIF(("string" === typeof path) ? new Resource(path) : path, colorized ? {pixelFormat: Bitmap.Gray16} : {});
 		this.duration = gif.duration;
 		this.time = 0;
 		return gif;

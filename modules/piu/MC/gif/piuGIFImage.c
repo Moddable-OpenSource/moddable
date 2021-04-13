@@ -28,6 +28,7 @@ struct PiuGIFImageStruct {
 	PiuBehaviorPart;
 	PiuContentPart;
 	xsSlot* path;
+	xsSlot* buffer;
 	PiuColorRecord color;
 	xsSlot* gif;
 	PiuDimension gifWidth;
@@ -82,11 +83,14 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuGIFImageHooks = {
 void PiuGIFImageBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuGIFImage* self = it;
-	if ((*self)->path) {
+	if ((*self)->path || (*self)->buffer) {
 		xsBeginHost((*self)->the);
 		xsVars(2);
 		xsVar(0) = xsReference((*self)->reference);
-		xsVar(1) = *((*self)->path);
+		if ((*self)->path)
+			xsVar(1) = *((*self)->path);
+		else
+			xsVar(1) = xsReference((*self)->buffer);
 		xsResult = xsCall2(xsVar(0), xsID_load, xsVar(1), ((*self)->flags & piuColorized) ? xsTrue : xsFalse);
 		(*self)->gif = xsToReference(xsResult);
 		(*self)->gifWidth = xsToInteger(xsGet(xsResult, xsID_width));
@@ -105,6 +109,11 @@ void PiuGIFImageDictionary(xsMachine* the, void* it)
 	if (xsFindResult(xsArg(1), xsID_path)) {
 		xsSlot* path = PiuString(xsResult);
 		(*self)->path = path;
+	}
+	else
+	if (xsFindResult(xsArg(1), xsID_buffer)) {
+		xsSlot* buffer = xsToReference(xsResult);
+		(*self)->buffer = buffer;
 	}
 	if (xsFindResult(xsArg(1), xsID_color)) {
 		PiuColorRecord color;
@@ -151,7 +160,10 @@ void PiuGIFImageMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuGIFImage self = it;
 	PiuContentMark(the, it, markRoot);
-	PiuMarkString(the, self->path);
+	if (self->path)
+		PiuMarkString(the, self->path);
+	if (self->buffer)
+		PiuMarkReference(the, self->buffer);
 	PiuMarkReference(the, self->gif);
 }
 
