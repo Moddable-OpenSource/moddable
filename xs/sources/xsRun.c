@@ -54,6 +54,7 @@ static txBoolean fxRunDelete(txMachine* the, txSlot* instance, txID id, txIndex 
 static void fxRunDerived(txMachine* the);
 static void fxRunExtends(txMachine* the);
 static void fxRunForOf(txMachine* the);
+static txBoolean fxRunHas(txMachine* the, txSlot* instance, txID id, txIndex index);
 static void fxRunIn(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
@@ -2282,10 +2283,12 @@ XS_CODE_JUMP:
 			index = XS_NO_ID;
 			mxNextCode(3);
 			if (mxFrame->flag & XS_STRICT_FLAG) {
-				if (!mxBehaviorHasProperty(the, variable, (txID)offset, index))
+            	mxSaveState;
+				if (!fxRunHas(the, variable, (txID)offset, index))
 					mxRunDebugID(XS_REFERENCE_ERROR, "set %s: undefined variable", (txID)offset);
+				mxRestoreState;
 			}
-			mxSaveState;
+            mxSaveState;
 			slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_ANY);
 			mxRestoreState;
 			if (slot && (slot->kind < 0))
@@ -4321,6 +4324,15 @@ void fxRunForOf(txMachine* the)
 	fxBeginHost(the);
 	fxGetIterator(the, slot, slot, C_NULL, 0);
 	fxEndHost(the);
+}
+
+txBoolean fxRunHas(txMachine* the, txSlot* instance, txID id, txIndex index)
+{
+	txBoolean result;
+	fxBeginHost(the);
+	result = mxBehaviorHasProperty(the, instance, id, index);
+	fxEndHost(the);
+	return result;
 }
 
 void fxRunIn(txMachine* the)
