@@ -1,17 +1,6 @@
 {
-	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/files/resourceiterator/manifest.json"
-	],
-	"creation": {
-		"heap": {
-			"initial": 256
-		}
-	},
 	"modules": {
 		"*": [
-			"./main",
 			"./pocogif"
 		],
 		"commodetto/ReadGIF": "./commodettoReadGIF"
@@ -19,10 +8,5 @@
 	"preload": [
 		"commodetto/ReadGIF",
 		"pocogif"
-	],
-	"data": {
-		"*": [
-			"./assets/*"
-		]
-	}
+	]
 }
