@@ -339,21 +339,21 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
 4. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
 
     ```text
-    cd ~
+    cd %USERPROFILE%
     mkdir esp32
     ```
 
 5. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the release/v4.2 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
     ```text
-    cd ~/esp32
+    cd %USERPROFILE%\esp32
     git clone -b release/v4.2 --recursive https://github.com/espressif/esp-idf.git
     ```
 
 	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v4.2 branch:
 
     ```text
-    cd ~/esp32/esp-idf
+    cd %USERPROFILE%\esp32\esp-idf
     git fetch
     git checkout release/v4.2
 	git submodule update --init --recursive
