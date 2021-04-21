@@ -96,7 +96,7 @@ void fxCreateMachinePlatform(txMachine* the)
 	wcex.lpszClassName = "fxMessageWindowClass";
 	RegisterClassEx(&wcex);
 	the->window = CreateWindowEx(0, "fxMessageWindowClass", NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
-	SetWindowLongPtr(the->window, 0, (LONG)the);
+	SetWindowLongPtr(the->window, 0, (LONG_PTR)the);
 	InitializeCriticalSection(&(the->workerMutex));
 #ifdef mxDebug
 	the->connection = INVALID_SOCKET;
