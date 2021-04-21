@@ -107,7 +107,7 @@ The Moddable SDK sdkconfig defaults files are located in the `$MODDABLE/build/de
 
 	When applications specify optional sdkconfig files using the `SDKCONFIGPATH` manifest environment variable, the merge processing additionally includes the following:
 
-4. On debug builds, the application `sdkconfig.defaults` file, when provided, is merged on top of the base Moddable SDK `sdkconfig.defaults` file.
+4. On debug builds, the application `sdkconfig.defaults` file, when provided, is merged on top of the merge performed in step 3.
 5. On release builds, the application `sdkconfig.defaults.release` options, when provided,  are merged on top of the merge performed in step 4.
 6. On release instrumented builds, the `sdkconfig.inst` options, when provided, are merged on top of the merge performed in step 5.
 
