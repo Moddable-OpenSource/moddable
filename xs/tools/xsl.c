@@ -112,10 +112,10 @@ int main(int argc, char* argv[])
 			file = fopen(argv[1], "r");
 			mxThrowElse(file);
 			fseek(file, 0, SEEK_END);
-			size = ftell(file);
+			size = (txSize)ftell(file);
 			fseek(file, 0, SEEK_SET);
 			buffer = fxNewLinkerChunk(linker, size + 1);
-			size = fread(buffer, 1, size, file);
+			size = (txSize)fread(buffer, 1, size, file);
 			buffer[size] = 0;
 			fclose(file);
 			string = buffer;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 				if (token == NULL)
 					break;
 				if (token[0] == '"') {
-					int last = c_strlen(token) - 1;
+					int last = mxStringLength(token) - 1;
 					if (token[last] == '"') {
 						token[last] = 0;
 						token++;
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-n: no namespace");
-				linker->name = fxNewLinkerString(linker, argv[argi], c_strlen(argv[argi]));
+				linker->name = fxNewLinkerString(linker, argv[argi], mxStringLength(argv[argi]));
 			}
 			else if (!c_strcmp(argv[argi], "-o")) {
 				argi++;
@@ -259,11 +259,11 @@ int main(int argc, char* argv[])
 		if (!base)
 			base = output;
 		if (!linker->name)
-			linker->name = fxNewLinkerString(linker, name, c_strlen(name));
+			linker->name = fxNewLinkerString(linker, name, mxStringLength(name));
 
 		linker->freezeFlag = (linker->stripFlag || linker->firstPreload) ? 1 : 0;
 			
-		size = c_strlen(base);
+		size = mxStringLength(base);
 		script = linker->firstScript;
 		while (script) {
 			fxBaseScript(linker, script, base, size);
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 			fxWriteSymbols(linker, path, &file);
 	
 			linker->base = url;
-			linker->baseLength = c_strlen(url);
+			linker->baseLength = mxStringLength(url);
 	
 			creation->nameModulo = linker->creation.nameModulo;
 			creation->symbolModulo = linker->creation.symbolModulo;
@@ -435,7 +435,7 @@ int main(int argc, char* argv[])
 						c_strcpy(path + linker->baseLength, script->path);
 						target->value.symbol = fxNewNameC(the, path);
 						target->kind = XS_SYMBOL_KIND;
-						path[c_strlen(path) - 4] = 0;
+						path[mxStringLength(path) - 4] = 0;
 						target->ID = fxNewNameC(the, path + linker->baseLength);
 						script = script->nextScript;
 					}
@@ -1022,7 +1022,7 @@ void fxConnect(txMachine* the)
 	if (GetEnvironmentVariable("XSBUG_HOST", name, sizeof(name))) {
 #else
 	colon = getenv("XSBUG_HOST");
-	if ((colon) && (c_strlen(colon) + 1 < sizeof(name))) {
+	if ((colon) && (strlen(colon) + 1 < sizeof(name))) {
 		c_strcpy(name, colon);
 #endif		
 		colon = strchr(name, ':');

@@ -108,20 +108,20 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 					if (aSymbolLength > 1) {
 						aSlot = fxNewSlot(the);
 						aSlot->kind = XS_STRING_KIND;
-						aSlot->value.string = (txString)fxNewChunk(the, c_strlen((char *)p) + 1);
+						aSlot->value.string = (txString)fxNewChunk(the, mxStringLength((char *)p) + 1);
 						c_strcpy(aSlot->value.key.string, (char *)p);
 					}
 					else
 						aSlot = C_NULL;
 					the->keyArray[id - the->keyOffset] = aSlot;
 					the->keyIndex++;
-					id = 0x8000 | id;
+					id = XS_ID_BIT | id;
 				}
 				*aSymbolPointer++ = id;
 				aSymbolCount--;
 				p += aSymbolLength;
 			}
-			aLength = p - (txByte*)theData;
+			aLength = mxPtrDiff(p - (txByte*)theData);
 			mxMarshallAlign(p, aLength);
 			mxPushUndefined();
 			fxDemarshallSlot(the, (txSlot*)p, the->stack, aSymbolMap, alien);
@@ -176,7 +176,7 @@ void fxDemarshallChunk(txMachine* the, void* theData, void** theDataAddress)
 txID fxDemarshallKey(txMachine* the, txID id, txID* theSymbolMap, txBoolean alien)
 {
 	if (id < XS_NO_ID) {
-		txID index = id & 0x7FFF;
+		txID index = id & XS_ID_MASK;
 		if (alien)
 			id = theSymbolMap[index];
 		else if (index >= the->keyOffset)
@@ -474,7 +474,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 				while (p < q) {
 					txID length = *map;
 					if (length) {
-						*map = dstIndex | 0x8000;
+						*map = dstIndex | XS_ID_BIT;
 						if ((*p) && ((*p)->flag & XS_DONT_ENUM_FLAG)) {
 							*lengths++ = length;
 							c_memcpy(aBuffer.current, (*p)->value.key.string, length);
@@ -500,7 +500,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 			while (p < q) {
 				txID length = *map;
 				if (length) {
-					*map = dstIndex | 0x8000;
+					*map = dstIndex | XS_ID_BIT;
 					if ((*p) && ((*p)->flag & XS_DONT_ENUM_FLAG)) {
 						*lengths++ = length;
 						c_memcpy(aBuffer.current, (*p)->value.key.string, length);
@@ -570,7 +570,7 @@ void fxMarshallChunk(txMachine* the, void* theData, void** theDataAddress, txMar
 txID fxMarshallKey(txMachine* the, txID id, txMarshallBuffer* theBuffer, txBoolean alien)
 {
 	if (id < XS_NO_ID) {
-		txID index = id & 0x7FFF;
+		txID index = id & XS_ID_MASK;
 		if (alien) {
             id = theBuffer->symbolMap[index];
 		}
@@ -754,9 +754,9 @@ void fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoo
 {
 	txID anIndex;
 	txSlot* aSlot;
-	txInteger aLength;
+	txSize aLength;
 	if (theID < XS_NO_ID) {
-		anIndex = theID & 0x7FFF;
+		anIndex = theID & XS_ID_MASK;
 		if (alien) {
 			if (theBuffer->symbolMap[anIndex])
 				return;
@@ -775,17 +775,17 @@ void fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoo
 			return;
 		if (aSlot) {
 			if (aSlot->flag & XS_DONT_ENUM_FLAG) {
-				aLength = c_strlen(aSlot->value.key.string) + 1;
+				aLength = mxStringLength(aSlot->value.key.string) + 1;
 			}
 			else if (aSlot->kind != XS_UNDEFINED_KIND) {
-				aLength = c_strlen(aSlot->value.string) + 1;
+				aLength = mxStringLength(aSlot->value.string) + 1;
 			}
 			else
 				aLength = 1;
 		}
 		else
 			aLength = 1;
-		if (aLength > 0x7FFF)
+		if (aLength > XS_ID_MASK)
 			mxRangeError("marshall: key overflow");
 		theBuffer->symbolMap[anIndex] = (txID)aLength;
 		theBuffer->symbolSize += sizeof(txID);

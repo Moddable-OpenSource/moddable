@@ -793,7 +793,7 @@ void fxDebugThrow(txMachine* the, txString path, txInteger line, txString messag
 
 void fxEcho(txMachine* the, txString theString)
 {
-	txInteger srcLength = c_strlen(theString);
+	txInteger srcLength = mxStringLength(theString);
 	txInteger dstLength = sizeof(the->echoBuffer) - the->echoOffset;
 	while (srcLength > dstLength) {
 		c_memcpy(the->echoBuffer + the->echoOffset, theString, dstLength);
@@ -1107,7 +1107,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 // 				txSlot* check = aProperty->value.private.check;
 // 				txSlot* item = aProperty->value.private.first;
 // 				fxBufferFunctionName(the, buffer, sizeof(buffer), check, "");
-// 				length = c_strlen(buffer);
+// 				length = mxStringLength(buffer);
 // 				while (item) {
 // 					fxIDToString(the, item->ID, &buffer[length], sizeof(buffer) - length);
 // 					fxEchoProperty(the, item, theList, buffer, -1, C_NULL);
@@ -1474,14 +1474,14 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 	}
 	if (thePrefix) {
 		c_strcpy(p, thePrefix);
-		p += c_strlen(thePrefix);
+		p += mxStringLength(thePrefix);
 		if (theSuffix) {
-			fxIndexToString(the, theIndex, p, q - p - 1); // assume c_strlen(theSuffix) == 1;
+			fxIndexToString(the, theIndex, p, mxPtrDiff(q - p - 1)); // assume mxStringLength(theSuffix) == 1;
 			c_strcat(p, theSuffix);
 		}
 	}
 	else
-		fxIDToString(the, theID, p, q - p);
+		fxIDToString(the, theID, p, mxPtrDiff(q - p));
 
 	fxEcho(the, "<property");
 	if (instanceInspector) {
@@ -1587,7 +1587,7 @@ void fxEchoString(txMachine* the, txString theString)
 	while ((tmp = c_read8(src))) {
 		src++;
 		if (dst + 6 > stop) {
-			the->echoOffset = dst - start;
+			the->echoOffset = mxPtrDiff(dst - start);
 			fxSend(the, 1);
 			dst = start;
 		}
@@ -1614,7 +1614,7 @@ void fxEchoString(txMachine* the, txString theString)
 			*(dst++) = ';';
 		}
 	}
-	the->echoOffset = dst - start;
+	the->echoOffset = mxPtrDiff(dst - start);
 }
 
 txSlot* fxFindFrame(txMachine* the)
@@ -1747,7 +1747,7 @@ void fxListLocal(txMachine* the)
 				aSlot--;
 				id = aSlot->ID;
 				if (id < 0) {
-					id &= 0x7FFF;
+					id &= XS_ID_MASK;
 					if (id < the->keyCount) {
 						txSlot* key;
 						if (id < the->keyOffset)
@@ -2281,8 +2281,8 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[1] = the->maximumChunksSize;
 	xsInstrumentValues[2] = the->currentHeapCount * sizeof(txSlot);
 	xsInstrumentValues[3] = the->maximumHeapCount * sizeof(txSlot);
-	xsInstrumentValues[4] = (the->stackTop - the->stackPeak) * sizeof(txSlot);
-	xsInstrumentValues[5] = (the->stackTop - the->stackBottom) * sizeof(txSlot);
+	xsInstrumentValues[4] = (mxPtrDiff(the->stackTop - the->stackPeak)) * sizeof(txSlot);
+	xsInstrumentValues[5] = (mxPtrDiff(the->stackTop - the->stackBottom)) * sizeof(txSlot);
 	xsInstrumentValues[6] = the->garbageCollectionCount;
 	xsInstrumentValues[7] = the->keyIndex - the->keyOffset;
 	xsInstrumentValues[8] = the->loadedModulesCount;

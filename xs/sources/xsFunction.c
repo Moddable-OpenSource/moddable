@@ -314,7 +314,7 @@ void fx_Function(txMachine* the)
 	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
-	stream.size = c_strlen(the->stack->value.string);
+	stream.size = mxStringLength(the->stack->value.string);
 	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxFunctionFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
@@ -350,7 +350,7 @@ void fx_Function_prototype_apply(txMachine* the)
 		the->stack++;
 		for (i = 0; i < c; i++) {
 			mxPushSlot(mxArgv(1));
-			fxGetID(the, (txID)i);
+			fxGetIndex(the, i);
 		}
 	}
 	mxRunCount(c);
@@ -444,7 +444,7 @@ void fx_Function_prototype_bind(txMachine* the)
 		mxPushSlot(mxThis);
 		fxGetID(the, mxID(_name));
 		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
-			length = c_strlen(the->stack->value.string);
+			length = mxStringLength(the->stack->value.string);
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 		name = (txString)fxNewChunk(the, fxAddChunkSizes(the, length, 6 + 1));
 		c_memcpy(name, "bound ", 6);
@@ -739,7 +739,7 @@ void fx_AsyncFunction(txMachine* the)
 	fxConcatStringC(the, the->stack, "\n})");
 	stream.slot = the->stack;
 	stream.offset = 0;
-	stream.size = c_strlen(the->stack->value.string);
+	stream.size = mxStringLength(the->stack->value.string);
 	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxFunctionFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
 	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {

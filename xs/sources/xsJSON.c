@@ -276,7 +276,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			}
 			else
 				goto error;
-			size = p - s;
+			size = mxPtrDiff(p - s);
 			if ((size_t)(size + 1) > sizeof(the->nameBuffer))
 				mxSyntaxError("%ld: number overflow", theParser->line);
 			c_memcpy(the->nameBuffer, s, size);
@@ -316,7 +316,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 		case '"':
 			p++;
 			escaped = 0;
-			offset = p - theParser->slot->value.string;
+			offset = mxPtrDiff(p - theParser->slot->value.string);
 			size = 0;
 			for (;;) {
 				p = fxUTF8Decode(p, &character);
@@ -449,7 +449,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			break;
 		}
 	}
-	theParser->offset = p - theParser->slot->value.string;
+	theParser->offset = mxPtrDiff(p - theParser->slot->value.string);
 }
 
 void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
@@ -722,7 +722,7 @@ void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, cha
 {
     //fprintf(stderr, "%s", s);
     if (!theSize)
-    	theSize = c_strlen(s);
+    	theSize = mxStringLength(s);
 	if ((theStringifier->offset + theSize) >= theStringifier->size) {
 		char* aBuffer;
 		theStringifier->size += ((theSize / 1024) + 1) * 1024;
@@ -886,7 +886,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 				mxPop();
 				for (anIndex = 0; anIndex < aLength; anIndex++) {
 					mxPushReference(anInstance);
-					fxGetID(the, anIndex);
+					fxGetIndex(the, anIndex);
 					mxPushInteger(anIndex);
 					fxStringifyJSONProperty(the, theStringifier, &aFlag);
 				}
@@ -993,7 +993,7 @@ void fxStringifyJSONString(txMachine* the, txJSONStringifier* theStringifier, tx
 		else if ((0xD800 <= character) && (character <= 0xDFFF))
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
 		else
-			fxStringifyJSONChars(the, theStringifier, theString, string - theString);
+			fxStringifyJSONChars(the, theStringifier, theString, mxPtrDiff(string - theString));
 		theString = string;
 	}
 	fxStringifyJSONChar(the, theStringifier, '"');
@@ -1006,7 +1006,7 @@ void fxStringifyJSONUnicodeEscape(txMachine* the, txJSONStringifier* theStringif
 	*p++ = '\\'; 
 	*p++ = 'u'; 
 	p = fxStringifyUnicodeEscape(p, character, '\\');
-	fxStringifyJSONChars(the, theStringifier, buffer, p - buffer);
+	fxStringifyJSONChars(the, theStringifier, buffer, mxPtrDiff(p - buffer));
 }
 
 txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)

@@ -546,7 +546,7 @@ void fx_eval(txMachine* the)
 	}
 	aStream.slot = mxArgv(0);
 	aStream.offset = 0;
-	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
+	aStream.size = mxStringLength(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxEvalFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, module);
 	mxPullSlot(mxResult);
 }

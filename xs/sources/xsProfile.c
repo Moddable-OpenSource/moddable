@@ -250,7 +250,7 @@ void fxWriteProfileProperty(txMachine* the, txSlot* theProperty, txSlot* theList
 		aSlot = fxGetKey(the, theProperty->ID);
 		if (aSlot) {
 			c_strcat(aName, ".");
-			c_strncat(aName, aSlot->value.key.string, mxNameSize - c_strlen(aName) - 1);
+			c_strncat(aName, aSlot->value.key.string, mxNameSize - mxStringLength(aName) - 1);
 		}
 		else
 			c_strcat(aName, "[]");
@@ -284,7 +284,7 @@ void fxWriteProfileProperty(txMachine* the, txSlot* theProperty, txSlot* theList
 				aSlot = theList->value.list.first;
 				while (aSlot) {
 					if (aSlot->value.key.string) {
-						fxWriteProfileFile(the, aSlot->value.key.string, c_strlen(aSlot->value.key.string));
+						fxWriteProfileFile(the, aSlot->value.key.string, mxStringLength(aSlot->value.key.string));
 					}
 					aSlot = aSlot->next;
 				}
@@ -335,7 +335,7 @@ void fxWriteProfileSymbols(txMachine* the)
 	c_strcpy(aName, "(gc)");
 	aProfileID = 0;
 	fxWriteProfileFile(the, &aProfileID, sizeof(txInteger));
-	fxWriteProfileFile(the, aName, c_strlen(aName) + 1);
+	fxWriteProfileFile(the, aName, mxStringLength(aName) + 1);
 
 	aKey.next = C_NULL;	
 	aKey.value.key.string = C_NULL;	

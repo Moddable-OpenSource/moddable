@@ -323,7 +323,7 @@ void fx_Date_parse(txMachine* the)
 	txInteger aComment;
 	txInteger aDelta;
 	txInteger aValue;
-	txInteger aLength;
+	txSize aLength;
 	txInteger i;
 	txInteger yearSign = 1;
 		
@@ -497,7 +497,7 @@ void fx_Date_parse(txMachine* the)
 			}
 		}				
 		else if ((('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z'))) {
-			txInteger cmpLength;
+			txSize cmpLength;
 			p = buffer;
 			q = p + sizeof(buffer) - 1;
 			do {
@@ -506,7 +506,7 @@ void fx_Date_parse(txMachine* the)
 				c = c_read8(aString++);
 			} while ((('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')));
 			*p = 0;
-			aLength = p - (txString)buffer;
+			aLength = mxPtrDiff(p - (txString)buffer);
 			cmpLength = (aLength >= 3) ? aLength : 3;
 			if (c_strcmp("am", buffer) == 0) {
 				if ((dt.hours < 0) || (12 <  dt.hours))

@@ -371,7 +371,7 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 				return C_NULL;
 			if ((array->flag & XS_DONT_SET_FLAG) && (index >= length))
 				return C_NULL;
-			at = result - address;
+			at = mxPtrDiff(result - address);
 			current++;
 			size = fxMultiplyChunkSizes(the, current, sizeof(txSlot));
 			chunk = (txSlot*)fxNewChunk(the, size);

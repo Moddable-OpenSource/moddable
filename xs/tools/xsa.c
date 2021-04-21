@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-n: no namespace");
-				linker->name = fxNewLinkerString(linker, argv[argi], c_strlen(argv[argi]));
+				linker->name = fxNewLinkerString(linker, argv[argi], mxStringLength(argv[argi]));
 			}
 			else if (!c_strcmp(argv[argi], "-o")) {
 				argi++;
@@ -124,9 +124,9 @@ int main(int argc, char* argv[])
 		if (!base)
 			base = output;
 		if (!linker->name)
-			linker->name = fxNewLinkerString(linker, name, c_strlen(name));
+			linker->name = fxNewLinkerString(linker, name, mxStringLength(name));
 			
-		size = c_strlen(base);
+		size = mxStringLength(base);
 		script = linker->firstScript;
 		while (script) {
 			fxBaseScript(linker, script, base, size);

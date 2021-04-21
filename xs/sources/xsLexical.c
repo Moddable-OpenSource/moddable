@@ -342,8 +342,8 @@ void fxGetNextNumberB(txParser* parser)
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumB(p - q));
-		fxBigIntParseB(&parser->bigint2, q, p - q);
+		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumB(mxPtrDiff(p - q)));
+		fxBigIntParseB(&parser->bigint2, q, mxPtrDiff(p - q));
 		parser->token2 = XS_TOKEN_BIGINT;
 	}
 	else {
@@ -408,8 +408,8 @@ void fxGetNextNumberE(txParser* parser, int dot)
 	q = parser->buffer;
 	if (c == 'n') {
 		if (dot == 0) {
-			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximum(p - q));
-			fxBigIntParse(&parser->bigint2, q, p - q, 0);
+			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximum(mxPtrDiff(p - q)));
+			fxBigIntParse(&parser->bigint2, q, mxPtrDiff(p - q), 0);
 			parser->token2 = XS_TOKEN_BIGINT;
 		}
 		else
@@ -446,8 +446,8 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(p - q));
-		fxBigIntParseO(&parser->bigint2, q, p - q);
+		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(mxPtrDiff(p - q)));
+		fxBigIntParseO(&parser->bigint2, q, mxPtrDiff(p - q));
 		parser->token2 = XS_TOKEN_BIGINT;
 	}
 	else {	
@@ -477,8 +477,8 @@ void fxGetNextNumberX(txParser* parser)
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumX(p - q));
-		fxBigIntParseX(&parser->bigint2, q, p - q);
+		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumX(mxPtrDiff(p - q)));
+		fxBigIntParseX(&parser->bigint2, q, mxPtrDiff(p - q));
 		parser->token2 = XS_TOKEN_BIGINT;
 	}
 	else {
@@ -558,7 +558,7 @@ void fxGetNextRegExp(txParser* parser, txU4 c)
 		first = 0;
 	}
 	*p = 0;
-	parser->stringLength = p - parser->buffer;
+	parser->stringLength = mxPtrDiff(p - parser->buffer);
 	parser->string = fxNewParserString(parser, parser->buffer, parser->stringLength);
 	p = parser->buffer;
 	q = p + parser->bufferSize - 1;
@@ -570,7 +570,7 @@ void fxGetNextRegExp(txParser* parser, txU4 c)
 			break;
 	}
 	*p = 0;
-	parser->modifierLength = p - parser->buffer;
+	parser->modifierLength = mxPtrDiff(p - parser->buffer);
 	parser->modifier = fxNewParserString(parser, parser->buffer, parser->modifierLength);
 	if (!fxCompileRegExp(C_NULL, parser->string, parser->modifier, C_NULL, C_NULL, parser->buffer, parser->bufferSize))
 		fxReportParserError(parser, parser->line, parser->buffer);
@@ -658,7 +658,7 @@ void fxGetNextString(txParser* parser, int c)
 	if (p == q) {
 		fxReportMemoryError(parser, parser->line, "string overflow");
 	}
-	parser->rawLength2 = p - parser->buffer;
+	parser->rawLength2 = mxPtrDiff(p - parser->buffer);
 	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
 	if (parser->escaped2) {
 		txInteger character;
@@ -765,7 +765,7 @@ void fxGetNextString(txParser* parser, int c)
 			}
 		}
 		*p = 0;
-		parser->stringLength2 = p - parser->buffer;
+		parser->stringLength2 = mxPtrDiff(p - parser->buffer);
 		parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
 		if (errorCount > 0) {
 			if (c == '`')
@@ -1244,7 +1244,7 @@ void fxGetNextTokenAux(txParser* parser)
 						while ((c != 0) && (c != 10) && (c != 13))
 							c = *q++;
 						*q = 0;
-						parser->name = fxNewParserString(parser, p, q - p);
+						parser->name = fxNewParserString(parser, p, mxPtrDiff(q - p));
 					}
 				}
 			bail:
@@ -1713,7 +1713,7 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 		case '\'':
 			if (quote) {
 				if (quote == parser->character) {
-					parser->stringLength2 = p - parser->buffer;
+					parser->stringLength2 = mxPtrDiff(p - parser->buffer);
 					parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
 					parser->token2 = XS_TOKEN_STRING;
 				}
@@ -1829,7 +1829,7 @@ void fxGetNextTokenJSXChild(txParser* parser)
 			break;	
 		}	
 	}
-	parser->rawLength2 = p - parser->buffer;
+	parser->rawLength2 = mxPtrDiff(p - parser->buffer);
 	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
 	if (parser->crlf2) {
 		p = parser->buffer;
@@ -1865,7 +1865,7 @@ void fxGetNextTokenJSXChild(txParser* parser)
 		if (after)
 			p = after;
 	}
-	parser->stringLength2 = p - parser->buffer;
+	parser->stringLength2 = mxPtrDiff(p - parser->buffer);
 	parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
 	
 	parser->line = parser->line2;

@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 	while (fxMatchRegExp(NULL, code, data, buffer, offset) > 0) {
 		char* from = buffer + data[0] + 5;
 		char* to = buffer + data[1];
-		int length = to - from;
+		int length = mxPtrDiff(to - from);
 		char tmp = *to;
 		txLink** address = &list;
 		*to = 0;
@@ -221,11 +221,11 @@ int main(int argc, char* argv[])
 	if (!file)
 		fxReportError("cannot open output file");
 	size = 8 + 8 + 4 + 8 + total;
-	size = htonl(size);
+	size = htonl((u_long)size);
 	fwrite(&size, 4, 1, file);
 	fwrite("XS_I", 4, 1, file);
 	size = 8 + 4;
-	size = htonl(size);
+	size = htonl((u_long)size);
 	fwrite(&size, 4, 1, file);
 	fwrite("VERS", 4, 1, file);
 	byte = XS_MAJOR_VERSION;
@@ -237,12 +237,12 @@ int main(int argc, char* argv[])
 	byte = 0;
 	fwrite(&byte, 1, 1, file);
 	size = 8 + total;
-	size = htonl(size);
+	size = htonl((u_long)size);
 	fwrite(&size, 4, 1, file);
 	fwrite("SYMB", 4, 1, file);
 	p = (txByte*)reason;
 	id = (txID)count;
-	mxEncode2(p, id);
+	mxEncodeID(p, id);
 	fwrite(reason, 2, 1, file);
 	link = list;
 	while (link) {
