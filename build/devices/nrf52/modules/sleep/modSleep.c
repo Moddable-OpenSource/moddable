@@ -65,6 +65,7 @@ enum {
 static void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section);
 
 static void sleep_wake_on_timer();
+static void sleepPinsOff();
 
 // The gRamRetentionBuffer contains 32-bit retained value slots
 // When values are retained, the slot contents are as follows:
@@ -138,6 +139,8 @@ void xs_sleep_deep(xsMachine *the)
 	modLog("Deep sleep only supported for release builds!");
 	return;
 #endif
+
+	sleepPinsOff();
 
 	uint16_t argc = xsmcArgc;
 	if (argc > 0) {
@@ -378,3 +381,17 @@ void getRAMSlaveAndSection(uint32_t address, uint32_t *slave, uint32_t *section)
 		*section = address / 32768L;
 	}
 }
+
+static const uint32_t gPinsToDisable[] = {
+#if defined MODDEF_SLEEP_SHUTDOWN_PINS
+	MODDEF_SLEEP_SHUTDOWN_PINS
+#endif
+	0xffffffff
+};
+
+static void sleepPinsOff() {
+	const uint32_t *pins = gPinsToDisable;
+	while (*pins != 0xffffffff)
+		nrf_gpio_cfg_default(*pins++);
+}
+
