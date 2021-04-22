@@ -377,7 +377,7 @@ void PiuViewDrawContent(PiuView* self, PiuViewDrawContentProc proc, void* it, Pi
 	x += poco->xOrigin;
 	y += poco->yOrigin;
 #ifdef piuGPU
-	(*proc)(poco, data, dataSize, x, y, sw, sh);
+	(*proc)(it, self, x, y, sw, sh);
 #else
 	{
 		PIUQueueCommand(DrawContentCommand);
