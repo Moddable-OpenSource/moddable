@@ -44,6 +44,10 @@
 	#define MODDEF_PWM_LEDC_FREQUENCY 1024
 #endif
 
+#ifndef MODDEF_PWM_LEDC_OFFVALUE
+	#define MODDEF_PWM_LEDC_OFFVALUE 0
+#endif
+
 static const ledc_timer_config_t gTimer = {
 	.duty_resolution = LEDC_TIMER_10_BIT,
 	.freq_hz = MODDEF_PWM_LEDC_FREQUENCY,
@@ -65,7 +69,7 @@ void xs_pwm_destructor(void *data)
 	PWM pwm = data;
 	if (!pwm) return;
 
-	ledc_stop(ESP_SPEED_MODE, pwm->ledc, 0);
+	ledc_stop(ESP_SPEED_MODE, pwm->ledc, MODDEF_PWM_LEDC_OFFVALUE);
 	gLEDC |= 1 << pwm->ledc;
 
 	free(pwm);
