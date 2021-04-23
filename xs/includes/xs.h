@@ -355,7 +355,12 @@ typedef txU4 xsUnsignedValue;
 /* Identifiers */
 
 typedef unsigned char xsFlag;
-typedef short xsIndex;
+#ifdef mx32bitID
+typedef txS4 xsIndex;
+#else
+typedef txS2 xsIndex;
+#endif
+
 #define XS_NO_ID -1
 
 #define xsID(_NAME) \

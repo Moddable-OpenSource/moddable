@@ -454,10 +454,10 @@ void fx_ArrayBuffer_fromBigInt(txMachine* the)
 
 void fx_ArrayBuffer_fromString(txMachine* the)
 {
-	txInteger length;
+	txSize length;
 	if (mxArgc < 1)
 		mxTypeError("no argument");
-	length = c_strlen(fxToString(the, mxArgv(0)));
+	length = mxStringLength(fxToString(the, mxArgv(0)));
 	fxConstructArrayBufferResult(the, mxThis, length);
 	c_memcpy(mxResult->value.reference->next->value.arrayBuffer.address, mxArgv(0)->value.string, length);
 }
@@ -1433,13 +1433,13 @@ void fx_TypedArray_from_object(txMachine* the, txSlot* instance, txSlot* functio
 				mxCall();
 				/* ARGUMENTS */
 				mxPushSlot(mxArgv(0));
-				fxGetID(the, index);
+				fxGetIndex(the, index);
 				mxPushInteger(index);
 				mxRunCount(2);
 			}
 			else {
 				mxPushSlot(mxArgv(0));
-				fxGetID(the, index);
+				fxGetIndex(the, index);
 			}
 			(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
 			(*dispatch->value.typedArray.dispatch->setter)(the, data, (index << shift), the->stack, EndianNative);
@@ -1723,7 +1723,7 @@ void fx_TypedArray_prototype_join(txMachine* the)
 		mxPushSlot(mxArgv(0));
 		string = fxToString(the, the->stack);
 		the->stack->kind += XS_KEY_KIND - XS_STRING_KIND;
-		the->stack->value.key.sum = c_strlen(the->stack->value.string);
+		the->stack->value.key.sum = mxStringLength(the->stack->value.string);
 	}
 	else {
 		mxPushStringX(",");
@@ -1742,7 +1742,7 @@ void fx_TypedArray_prototype_join(txMachine* the)
 		slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
 		string = fxToString(the, slot);
 		slot->kind += XS_KEY_KIND - XS_STRING_KIND;
-		slot->value.key.sum = c_strlen(string);
+		slot->value.key.sum = mxStringLength(string);
 		size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		mxPop();
 		offset += delta;
@@ -1953,7 +1953,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		index = 0;
 		while (index < count) {
 			mxPushSlot(mxArgv(0));
-			fxGetID(the, index);
+			fxGetIndex(the, index);
 			if (data->value.arrayBuffer.address == C_NULL)
 				mxTypeError("detached buffer");
 			(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
@@ -2179,7 +2179,7 @@ void fx_TypedArray_prototype_toLocaleString(txMachine* the)
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
 			string = fxToString(the, slot);
 			slot->kind += XS_KEY_KIND - XS_STRING_KIND;
-			slot->value.key.sum = c_strlen(string);
+			slot->value.key.sum = mxStringLength(string);
 			size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		}
 		mxPop();

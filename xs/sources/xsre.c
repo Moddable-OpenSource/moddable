@@ -598,7 +598,7 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 	case 'x': {
 		txString p = parser->pattern + parser->offset;
 		if (fxParseHexEscape(&p, &parser->character)) {
-			parser->offset = p - parser->pattern;
+			parser->offset = mxPtrDiff(p - parser->pattern);
 			result = fxCharSetSingle(parser, parser->character);
 			fxPatternParserNext(parser);
 		}
@@ -607,7 +607,7 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 	case 'u': {
 		txString p = parser->pattern + parser->offset;
 		if (fxParseUnicodeEscape(&p, &parser->character, (parser->flags & XS_REGEXP_U) ? 1 : 0, (parser->flags & XS_REGEXP_U) ? '\\' : 0)) {
-			parser->offset = p - parser->pattern;
+			parser->offset = mxPtrDiff(p - parser->pattern);
 			result = fxCharSetSingle(parser, parser->character);
 			fxPatternParserNext(parser);
 		}
@@ -1543,7 +1543,7 @@ void fxPatternParserName(txPatternParser* parser, txInteger* length)
 	}
 	fxPatternParserNext(parser);
 	*p = 0;
-	*length = p - parser->error;
+	*length = mxPtrDiff(p - parser->error);
 }
 
 void fxPatternParserNameEscape(txPatternParser* parser)
@@ -1555,7 +1555,7 @@ void fxPatternParserNameEscape(txPatternParser* parser)
 	p = parser->pattern + parser->offset;
 	if (!fxParseUnicodeEscape(&p, &parser->character, (parser->flags & XS_REGEXP_U) ? 1 : 0, (parser->flags & XS_REGEXP_U) ? '\\' : 0))
 		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-	parser->offset = p - parser->pattern;
+	parser->offset = mxPtrDiff(p - parser->pattern);
 }
 
 void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture)
@@ -1582,7 +1582,7 @@ void fxPatternParserNext(txPatternParser* parser)
 	else {
 		p = fxUTF8Decode(p, &character);
 		if (character != C_EOF) {
-			parser->offset = p - parser->pattern;
+			parser->offset = mxPtrDiff(p - parser->pattern);
 			if (!(parser->flags & XS_REGEXP_U) && (character > 0xFFFF)) {
 				character -= 0x10000;
 				parser->surrogate = 0xDC00 | (character & 0x3FF);
@@ -1730,7 +1730,7 @@ txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction)
 			break;
 		p += direction;
 	}
-	return p - (txU1*)input;
+	return mxPtrDiff(p - (txU1*)input);
 }
 
 txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags)
@@ -1864,7 +1864,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 	};
 	register void * const *steps = gxSteps;
 #endif
-	txInteger stop = c_strlen(subject);
+	txInteger stop = mxStringLength(subject);
 	txInteger flags = code[0];
 	txCaptureData* captures = (txCaptureData*)data;
 	txCaptureData* capture;

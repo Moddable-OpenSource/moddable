@@ -618,12 +618,12 @@ struct sxParser {
 	int escaped;
 	txBigInt bigint;
 	txInteger integer;
-	txInteger modifierLength;
+	txSize modifierLength;
 	txString modifier;
 	txNumber number;
-	txInteger rawLength;
+	txSize rawLength;
 	txString raw;
-	txInteger stringLength;
+	txSize stringLength;
 	txString string;
 	txSymbol* symbol;
 	txToken token;
@@ -633,12 +633,12 @@ struct sxParser {
 	int escaped2;
 	txBigInt bigint2;
 	txInteger integer2;
-	txInteger modifierLength2;
+	txSize modifierLength2;
 	txString modifier2;
 	txNumber number2;
-	txInteger rawLength2;
+	txSize rawLength2;
 	txString raw2;
-	txInteger stringLength2;
+	txSize stringLength2;
 	txString string2;
 	txSymbol* symbol2;
 	txToken token2;
@@ -902,6 +902,8 @@ enum {
 	/* mxSuperFlag = 1 << 5, */
 	/* mxTargetFlag = 1 << 6, */
 	/* mxFieldFlag = 1 << 15, */
+	/* mxFunctionFlag = 1 << 16, */
+	/* mxGeneratorFlag = 1 << 21, */
 	mxParserFlags = mxCFlag | mxDebugFlag | mxProgramFlag,
 
 
@@ -917,7 +919,6 @@ enum {
 	mxElisionFlag = 1 << 18,
 	mxExpressionNoValue = 1 << 19,
 	mxForFlag = 1 << 20,
-	mxGeneratorFlag = 1 << 21,
 	mxGetterFlag = 1 << 22,
 	mxMethodFlag = 1 << 23,
 	mxNotSimpleParametersFlag = 1 << 24,

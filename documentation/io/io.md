@@ -1,11 +1,11 @@
 # TC53 IO: A New Take on JavaScript Input/Output on Microcontrollers 
 Author: Peter Hoddie<br/>
-Updated: July 26, 2019<br/>
-Copyright 2019 Moddable Tech, Inc.
+Updated: April 7, 2021<br/>
+Copyright 2019-2021 Moddable Tech, Inc.
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
-This document introduces work on Input/Output (IO) under development by Ecma TC53 in the IO Class Pattern proposal and describes an implementation of the proposal that uses the XS JavaScript engine on the ESP8266 microcontroller. 
+This document introduces work on Input/Output (IO) under development by Ecma TC53 in the IO Class Pattern proposal and describes an implementation of the proposal that uses the XS JavaScript engine on the ESP8266 microcontroller. (The implementation also supports ESP32, but this document is focused on ESP8266.)
 
 Ecma TC53 is a standards committee with a charter to define ECMAScript Modules for embedded systems. Its goal is to define standard JavaScript APIs for developing software for resource-constrained embedded hardware. This is analogous to the work of W3C and WHATWG to define JavaScript APIs for developing software for the web. The APIs defined by TC53 are intended to be vendor-neutral and, consequently, independent of the host operating system, CPU architecture, and JavaScript engine. IO was selected as the first area of work by TC53 because it is fundamental to nearly all uses of embedded systems. For example, IO is a precondition to implementing support for both sensors and communication.
 
@@ -13,7 +13,7 @@ A key characteristic of the initial TC53 work, including the work on IO, is that
 
 The IO Class Pattern proposal appears to balance these requirements well. The design takes inspiration from a range of JavaScript projects including [Johnny Five](http://johnny-five.io/), [Firmata](http://firmata.org/wiki/Main_Page), [Node.js](https://nodejs.org/en/), and the [Moddable SDK](https://github.com/Moddable-OpenSource/moddable), among others. These have provided ideas grounded in real-world experience about how to interact with various kinds of IO in JavaScript. The effort to implement the APIs proved to be very manageable, with a result that operates efficiently in terms of both CPU utilization, latency, and memory use.
 
-The basic definition of the IO Class Pattern has been in place for about six months, with refinements to the design settling into place. To better understand the design, an implementation effort was undertaken. The ESP8266 microcontroller was selected as a testbed because it is supported by the XS JavaScript engine and its hardware resources are on the low end of the devices that currently support modern JavaScript. Further, its low cost and wide availability make it feasible for many developers to experiment with and contribute to the effort.
+The basic definition of the IO Class Pattern has been in place since mid-2019, with refinements to the design settling into place. The [current draft](https://ecmatc53.github.io/spec/web/spec.html) of the proposed specification is now available. To better understand the design, an implementation effort was undertaken. The ESP8266 microcontroller was selected as a testbed because it is supported by the XS JavaScript engine and its hardware resources are on the low end of the devices that currently support modern JavaScript. Further, its low cost and wide availability make it feasible for many developers to experiment with and contribute to the effort.
 
 The implementation itself tries to be "bare metal" as much as feasible. The digital and serial IO is implemented by directly manipulating hardware registers, for example. This approach was taken to explore what a truly focused port of the IO Class looks like. To ease porting, future work may include a native porting layer.
 
@@ -60,20 +60,7 @@ let serial = new Serial({
 })
 ```
 
-This way of providing the callback as a property of the configuration is often convenient. The same approach is used by streams in Node.js as described in [Simplified Construction](https://nodejs.org/api/stream.html#stream_simplified_construction). However, this syntax is less reusable and may require additional resources compared to the standard class syntax. The following code is equivalent to the preceding example:
-
-```js
-class MySerial extends Serial {
-	onReadable() {
-		trace("serial input available\n");
-	}
-}
-let serial = new MySerial({
-	baud: 57600,
-})
-```
-
-If the same callback is present on both the class' prototype chain and in the argument to the constructor, the callback passed to the constructor takes precedence.
+This way of providing the callback as a property of the configuration is often convenient. The same approach is used by streams in Node.js as described in [Simplified Construction](https://nodejs.org/api/stream.html#stream_simplified_construction). 
 
 Each IO implementation defines the notifications it supports. The IO Class Pattern proposal defines four notifications:
 
@@ -195,7 +182,7 @@ The IO Class Pattern, as described above, defines the fundamental behavior of an
 The built-in `Digital` IO class is used for digital inputs and outputs.
 
 ```js
-import Digital from "builtin/digital";
+import Digital from "embedded:io/digital";
 ```
 
 #### Constructor Properties
@@ -249,7 +236,7 @@ let button = new Digital({
 The built-in `DigitalBank` class provides simultaneous access to a group of digital pins.
 
 ```js
-import DigitalBank from "builtin/digitalbank";
+import DigitalBank from "embedded:io/digitalbank";
 ```
 
 Many microcontrollers, including the ESP8266, provide access to their digital pins through unified memory mapped hardware ports that make it possible to read and write several pins as a single operation. The `DigitalBank` IO provides direct access to this capability.
@@ -326,7 +313,7 @@ let buttons = new DigitalBank({
 The built-in `Analog` IO class represents an analog input source.
 
 ```js
-import Analog from "builtin/analog";
+import Analog from "embedded:io/analog";
 ```
 
 #### Constructor Properties
@@ -359,7 +346,7 @@ trace(analog.read() / (1 << analog.resolution), "\n");
 The built-in `PWM` IO class provides access to the pulse-width modulation capability of pins.
 
 ```js
-import PWM from "builtin/pwm";
+import PWM from "embedded:io/pwm";
 ```
 
 #### Constructor Properties
@@ -394,14 +381,14 @@ pwm.write(0.5 * ((1 << pwm.resolution) - 1));
 The built-in `I2C` class implements an I<sup>2</sup>C Master to communicate with one address on an I<sup>2</sup>C bus.
 
 ```js
-import I2C from "builtin/i2c";
+import I2C from "embedded:io/i2c";
 ```
 
 #### Constructor Properties
 | Property | Description |
 | :---: | :--- |
-| `sda` | A number from 0  to 16 indicating the GPIO number of the I<sup>2</sup>C data pin. This property is required.
-| `scl` | A number from 0 to 16 indicating the GPIO number of the I<sup>2</sup>C clock pin. This property is required.
+| `data` | A number from 0  to 16 indicating the GPIO number of the I<sup>2</sup>C data pin. This property is required.
+| `clock` | A number from 0 to 16 indicating the GPIO number of the I<sup>2</sup>C clock pin. This property is required.
 | `hz` | The speed of communication on the I<sup>2</sup>C bus. This property is required.
 | `address` | The 7-bit address of the I<sup>2</sup>C slave device to communicate with.
 
@@ -421,10 +408,10 @@ The following example reads the number of touch points from an FT6206 touch sens
 
 ```js
 let touch = new I2C({
-	sda: 4,
-	scl: 5,
+	data: 4,
+	clock: 5,
 	hz: 600000,
-	address: 0x38,
+	address: 0x38
 });
 
 touch.write(Uint8Array.of(2));
@@ -444,7 +431,7 @@ if (count)
 The built-in `Serial` class implements bi-directional communication over serial port at a specified baud rate.
 
 ```js
-import Serial from "builtin/serial";
+import Serial from "embedded:io/serial";
 ```
 
 #### Constructor Properties
@@ -523,7 +510,7 @@ serial.format = "buffer";
 The built-in `TCP` network socket class implements a general purpose, bi-directional TCP connection. 
 
 ```js
-import TCP from "builtin/socket/tcp";
+import TCP from "embedded:io/socket/tcp";
 ```
 
 The TCP socket is only a TCP connection. It is not a TCP listener, as in some networking libraries. The TCP listener is a separate class.
@@ -602,7 +589,7 @@ new TCP({
 The built-in TCP `Listener` class provides a way to listen for and accept incoming TCP connection requests.
 
 ```js
-import Listener from "builtin/socket/listener";
+import Listener from "embedded:io/socket/listener";
 ```
 
 #### Constructor Properties
@@ -629,7 +616,13 @@ The constructor should support an optional `address` property to bind to a speci
 The following example implements a simple HTTP echo server. It accepts incoming requests and sends back the complete request (including the request headers) as the response body. The `TCPEcho` class reads the request and generates the response.
 
 ```js
-class TCPEcho extends TCP {
+class TCPEcho {
+	constructor(options) {
+		new TCP({
+			...options,
+			onReadable: this.onReadable
+		});
+	}
 	onReadable() {
 		const response = this.read();
 	
@@ -660,7 +653,7 @@ new Listener({
 The built-in `UDP` network socket class implements the sending and receiving of UDP packets. 
 
 ```js
-import UDP from "builtin/socket/udp";
+import UDP from "embedded:io/socket/udp";
 ```
 
 #### Constructor Properties
@@ -714,11 +707,12 @@ packet[0] = (4 << 3) | (3 << 0);		// version 4, mode 3 (client)
 sntpClient.write("208.113.157.157", 123, packet);
 ```
 
+<!--
 ### Wakeable Digital
 The built-in `WakeableDigital` class represents a digital input source used in energy management. This IO kind applies the IO Class Pattern in a somewhat unusual way.
 
 ```js
-import WakeableDigital from "builtin/wakeabledigital";
+import WakeableDigital from "embedded:io/wakeabledigital";
 ```
 
 The ESP8266 has a deep sleep feature where the microcontroller turns off, but a small amount of memory (256 bytes) is retained. When the reset pin is pulled low, for example by a sensor configured to trigger an interrupt under a certain condition, the microcontroller reboots, still retaining the small memory area. The Wakeable Digital pin provides a way for scripts to know whether the most recent boot of the microcontroller is due to a wake from deep sleep or a conventional hard reset (e.g. power applied after being off). The script uses this information to change its behavior.
@@ -751,6 +745,7 @@ let wakeable = new WakeableDigital({
 });
 trace(wakeable.read() ? "Woke from deep sleep\n" : "Hard reset\n");
 ```
+-->
 
 ## IO Providers
 IO providers access IO resources that are external to the built-in IO resources. IO providers often use the built-in IO resources to access their external IO resources. The definition of "external" encompasses a wide range of possibilities.

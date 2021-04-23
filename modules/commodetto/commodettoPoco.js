@@ -111,3 +111,4 @@ class Rectangle @ "xs_rectangle_destructor" {
 	set w() @ "xs_rectangle_set_w"
 	set h() @ "xs_rectangle_set_h"
 }
+

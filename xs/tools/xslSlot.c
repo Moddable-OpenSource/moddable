@@ -284,7 +284,7 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 			txInteger length = (txInteger)fxGetIndexSize(the, property);
 			while (length > 0) {
 				if (item->kind == XS_REFERENCE_KIND) {
-					mxPushLink(propertyLink,  (txInteger)(item->next), XSL_ITEM_FLAG);
+					mxPushLink(propertyLink, *((txInteger*)item), XSL_ITEM_FLAG);
 					fxCheckInstanceAliases(the, item->value.reference, list);
 					mxPopLink(propertyLink);
 				}
@@ -480,7 +480,7 @@ void fxLinkerScriptCallback(txMachine* the)
 					}
 					fxArrayCacheItem(the, the->stack + 1, the->stack);
 					the->stack++;
-					p += c_strlen((char*)p) + 1;
+					p += mxStringLength((char*)p) + 1;
 				}
 			}
 			break;
@@ -824,7 +824,7 @@ void fxPrepareProjection(txMachine* the)
 	while (heap) {
 		txSlot* slot = heap + 1;
 		txSlot* limit = heap->value.reference;
-		projection = fxNewLinkerChunkClear(linker, sizeof(txLinkerProjection) + (limit - slot) * sizeof(txInteger));
+		projection = fxNewLinkerChunkClear(linker, sizeof(txLinkerProjection) + (mxPtrDiff(limit - slot) * sizeof(txInteger)));
 		projection->heap = heap;
 		projection->limit = limit;
 		*projectionAddress = projection;
@@ -933,7 +933,7 @@ void fxPrintID(txMachine* the, FILE* file, txID id)
 	if (id == XS_NO_ID)
 		fprintf(file, "XS_NO_ID");
 	else if (id < 0) {
-		txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+		txLinkerSymbol* linkerSymbol = linker->symbolArray[id & XS_ID_MASK];
 		if (linkerSymbol) {
 			if (fxIsCIdentifier(linker, linkerSymbol->string))
 				fprintf(file, "xsID_%s", linkerSymbol->string);
@@ -976,7 +976,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	fprintf(file, "\t{ ");
 	if (flag & XS_DEBUG_FLAG) {
 		flag &= ~XS_DEBUG_FLAG;
-		fprintf(file, "(txSlot*)%ld", (long int)slot->next);
+		fprintf(file, "(txSlot*)%d", *((txInteger*)slot));
 	}
 	else
 		fxPrintAddress(the, file, slot->next);

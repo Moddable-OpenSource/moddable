@@ -81,7 +81,7 @@ class CertificateManager {
 		}
 	}
 	findPreferredCert(types, names) {
-		return this.#clientCertificates;
+		return this.#clientCertificates ?? [];
 	}
 	getIndex(name, target) {
 		if (!target)

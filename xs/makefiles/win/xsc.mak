@@ -87,7 +87,7 @@ C_OPTIONS = $(C_OPTIONS) \
 
 LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib
 	
-LINK_OPTIONS = /incremental:no /machine:I386 /nologo /subsystem:console
+LINK_OPTIONS = /incremental:no /nologo /subsystem:console
 !IF "$(GOAL)"=="debug"
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF

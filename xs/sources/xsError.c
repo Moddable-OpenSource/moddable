@@ -301,7 +301,7 @@ void fx_Error_prototype_get_stack(txMachine* the)
 			slot = slot->next;
 			while (slot) {
 				fxConcatStringC(the, mxResult, "\n at");
-				if ((slot->value.key.string != C_NULL) && (c_strlen(slot->value.key.string))) {
+				if ((slot->value.key.string != C_NULL) && (mxStringLength(slot->value.key.string))) {
 					fxConcatStringC(the, mxResult, " ");
 					fxConcatString(the, mxResult, slot);
 				}

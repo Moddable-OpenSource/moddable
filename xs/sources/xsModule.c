@@ -1624,7 +1624,7 @@ void fx_Compartment_prototype_evaluate(txMachine* the)
 		txStringStream stream;
 		stream.slot = mxArgv(0);
 		stream.offset = 0;
-		stream.size = c_strlen(fxToString(the, mxArgv(0)));
+		stream.size = mxStringLength(fxToString(the, mxArgv(0)));
 		fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxStrictFlag | mxProgramFlag | mxEvalFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, program);
 		mxPullSlot(mxResult);
 	}

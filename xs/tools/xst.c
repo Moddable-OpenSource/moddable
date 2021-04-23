@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-u"))
 			gxUnhandledErrors = 1;
 		else if (!strcmp(argv[argi], "-v"))
-			printf("XS %d.%d.%d\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION);
+			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
 			fxPrintUsage();
 			return 1;
@@ -342,7 +342,7 @@ int main262(int argc, char* argv[])
 		return 1;
 	}
 	c_strcat(path, separator);
-	context.testPathLength = c_strlen(path);
+	context.testPathLength = mxStringLength(path);
 	context.current = NULL;
 	fxPushResult(&context, "");
 	
@@ -495,7 +495,7 @@ void fxPrintUsage()
 void fxPushResult(txContext* context, char* path) 
 {
 	txResult* parent = context->current;
-	txResult* result = c_malloc(sizeof(txResult) + c_strlen(path));
+	txResult* result = c_malloc(sizeof(txResult) + mxStringLength(path));
 	if (!result) {
 		c_exit(1);
 	}
@@ -526,7 +526,7 @@ void fxRunDirectory(txContext* context, char* path)
 	};
 
 #if mxWindows
-	UINT32 length;
+	size_t length;
 	HANDLE findHandle = INVALID_HANDLE_VALUE;
 	WIN32_FIND_DATA findData;
 	length = strlen(path);
@@ -903,8 +903,8 @@ void fx_done(xsMachine* the)
 
 int fxStringEndsWith(const char *string, const char *suffix)
 {
-	int stringLength = strlen(string);
-	int suffixLength = strlen(suffix);
+	size_t stringLength = strlen(string);
+	size_t suffixLength = strlen(suffix);
 	return (stringLength >= suffixLength) && (0 == strcmp(string + (stringLength - suffixLength), suffix));
 }
 
@@ -993,7 +993,7 @@ void fx_agent_receiveBroadcast(xsMachine* the)
 void fx_agent_report(xsMachine* the)
 {
 	xsStringValue message = xsToString(xsArg(0));
-	xsIntegerValue messageLength = c_strlen(message);
+	xsIntegerValue messageLength = mxStringLength(message);
 	txAgentReport* report = c_malloc(sizeof(txAgentReport) + messageLength);
 	if (!report) xsUnknownError("not enough memory");
     report->next = C_NULL;
@@ -1020,7 +1020,7 @@ void fx_agent_sleep(xsMachine* the)
 void fx_agent_start(xsMachine* the)
 {
 	xsStringValue script = xsToString(xsArg(0));
-	xsIntegerValue scriptLength = c_strlen(script);
+	xsIntegerValue scriptLength = mxStringLength(script);
 	txAgent* agent = c_malloc(sizeof(txAgent) + scriptLength);
 	if (!agent) xsUnknownError("not enough memory");
 	c_memset(agent, 0, sizeof(txAgent));
@@ -1163,7 +1163,7 @@ void fx_evalScript(xsMachine* the)
 	txStringStream aStream;
 	aStream.slot = mxArgv(0);
 	aStream.offset = 0;
-	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
+	aStream.size = mxStringLength(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
 }

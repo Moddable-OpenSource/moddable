@@ -313,28 +313,51 @@ struct sxJump {
 
 struct sxSlot {
 	txSlot* next;
-#if mxBigEndian
-	union {
-		struct {
-			txID ID;
-			txFlag flag;
-			txKind kind;
+#if mx32bitID
+	#if mxBigEndian
+		union {
+			struct {
+				txID ID;
+				txS2 dummy;
+				txFlag flag;
+				txKind kind;
+			};
+			txS8 ID_FLAG_KIND;
 		};
-		txInteger ID_FLAG_KIND;
-	};
+	#else
+		union {
+			struct {
+				txKind kind;
+				txFlag flag;
+				txS2 dummy;
+				txID ID;
+			};
+			txS8 KIND_FLAG_ID;
+		};
+	#endif
 #else
-	union {
-		struct {
-			txKind kind;
-			txFlag flag;
-			txID ID;
+	#if mxBigEndian
+		union {
+			struct {
+				txID ID;
+				txFlag flag;
+				txKind kind;
+			};
+			txS4 ID_FLAG_KIND;
 		};
-		txInteger KIND_FLAG_ID;
-	};
-#endif
-#if (!defined(linux)) && ((defined(__GNUC__) && defined(__LP64__)) || (defined(_MSC_VER) && defined(_M_X64)))
-	// Made it aligned and consistent on all platforms
-	txInteger dummy;
+	#else
+		union {
+			struct {
+				txKind kind;
+				txFlag flag;
+				txID ID;
+			};
+			txS4 KIND_FLAG_ID;
+		};
+	#endif
+	#if INTPTR_MAX == INT64_MAX
+		txS4 dummy;
+	#endif
 #endif
 	txValue value;
 };
@@ -430,12 +453,12 @@ struct sxMachine {
 	txFlag debugTag;
 	txFlag nameIndex;
 	txFlag pathIndex;
-	unsigned long idValue;
+	size_t idValue;
 	txInteger lineValue;
 	char pathValue[256];
-	txInteger debugOffset;
+	txSize debugOffset;
 	char debugBuffer[256];
-	txInteger echoOffset;
+	txSize echoOffset;
 	char echoBuffer[256];
 #endif
 #ifdef mxFrequency
@@ -2535,8 +2558,7 @@ enum {
 #define  mxArrayIteratorFunction the->stackPrototypes[-1 - mxArrayIteratorFunctionIndex]
 #define mxOrdinaryToPrimitiveFunction the->stackPrototypes[-1 - mxOrdinaryToPrimitiveFunctionStackIndex]
 
-
-#define mxID(ID) ((ID) - 32768)
+#define mxID(ID) ((txID)((ID) | XS_ID_BIT))
 
 #ifdef mxLink
 extern txCallback fxNewLinkerCallback(txMachine*, txCallback, txString);

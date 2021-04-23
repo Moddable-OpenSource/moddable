@@ -324,7 +324,7 @@ txString fxToStringBuffer(txMachine* the, txSlot* theSlot, txString theBuffer, t
 	txSize aSize;
 
 	aString = fxToString(the, theSlot);
-	aSize = c_strlen(aString) + 1;
+	aSize = mxStringLength(aString) + 1;
 	if (aSize > theSize)
 		mxRangeError("Cannot buffer string");
 	c_memcpy(theBuffer, aString, aSize);
@@ -1227,12 +1227,12 @@ void fxThrow(txMachine* the, txString path, txInteger line)
 void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error, txString format, ...)
 {
 	char message[128] = "";
-	txInteger length = 0;
+	txSize length = 0;
     va_list arguments;
     txSlot* slot;
 #ifdef mxDebug
 	fxBufferFrameName(the, message, sizeof(message), the->frame, ": ");
-	length = c_strlen(message);
+	length = mxStringLength(message);
 #endif
     va_start(arguments, format);
     c_vsnprintf(message + length, sizeof(message) - length, format, arguments);
@@ -1591,7 +1591,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxLastProperty(the, fxNewGlobalInstance(the));
 			while (sharedSlot) {
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
-				id = slot->ID & 0x7FFF;
+				id = slot->ID & XS_ID_MASK;
 				if ((XS_SYMBOL_ID_COUNT <= id) && (id < _Infinity))
 					slot->flag = XS_DONT_ENUM_FLAG;
 				else if ((_Infinity <= id) && (id < _Compartment))
@@ -1929,7 +1929,7 @@ void fxBuildArchiveKeys(txMachine* the)
 			p += 2;
 			for (i = 0; i < c; i++) {
 				fxNewNameX(the, (txString)p);
-				p += c_strlen((txString)p) + 1;
+				p += mxStringLength((txString)p) + 1;
 			}
 		}
 	}
@@ -2234,7 +2234,7 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 			if (result)
 				self->ids[i] = result->ID;
 			else {
-				self->ids[i] = id | 0x8000;
+				self->ids[i] = id | XS_ID_BIT;
 				id++;
 			}
 		}
@@ -2304,7 +2304,7 @@ void fxMapperMapID(txMapper* self)
 	
 	id = (*high << 8) | *low;
 	if (id != XS_NO_ID) {
-		id &= 0x7FFF;
+		id &= XS_ID_MASK;
 		id = self->ids[id];
 	}
 	*low = id & 0x00FF;

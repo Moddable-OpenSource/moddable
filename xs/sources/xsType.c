@@ -345,7 +345,7 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 	the->stack++;
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
-		fxGetID(the, (txID)i);
+		fxGetIndex(the, i);
 	}
 	mxRunCount(c);
 	mxPullSlot(mxResult);
@@ -520,7 +520,7 @@ again:
 			instance = alias;
 	}
 	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
-		txID color = id & 0x7FFF;
+		txID color = id & XS_ID_MASK;
 		if (color < the->keyOffset) {
 			color = the->colors[color];
 			if (color) {
@@ -695,7 +695,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		}
 	}
 	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
-		txID color = id & 0x7FFF;
+		txID color = id & XS_ID_MASK;
 		if (color < the->keyOffset) {
 			color = the->colors[color];
 			if (color) {

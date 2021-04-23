@@ -39,9 +39,11 @@ global.CLUT = CLUT;
 // PiuTexture.c
 
 export class Texture @ "PiuTextureDelete" {
-	constructor(it) {
-		let alphaBitmap;
-		let colorBitmap;
+	constructor(it, alphaBitmap, colorBitmap) {
+		if (alphaBitmap || colorBitmap) {
+			this._create(alphaBitmap, colorBitmap);
+			return;
+		}
 		if (typeof(it) == "object")
 			it = it.path;
 		if (it.endsWith(".png")) {
@@ -202,7 +204,7 @@ class View @ "PiuViewDelete" {
 	constructor(application, it) {
 		let screen = global.screen;
 		it.rotation = this.rotation;
-		let poco = new Poco(screen, it);
+		let poco = this.poco = new Poco(screen, it);
 		this._create(application, it, screen, poco, poco.rectangle());
 		if (screen.pixelFormat == Bitmap.CLUT16)
 			application.clut = new Resource("main.cct");

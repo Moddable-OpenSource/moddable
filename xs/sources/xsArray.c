@@ -639,7 +639,7 @@ txBoolean fxSetArrayLength(txMachine* the, txSlot* array, txIndex length)
 		}
 		if (result < limit) {
 			if (result > address) {
-				size = result - address;
+				size = mxPtrDiff(result - address);
 				chunk = (txSlot*)fxNewChunk(the, fxMultiplyChunkSizes(the, size, sizeof(txSlot)));
 				address = array->value.array.address;
 				c_memcpy(chunk, address, size * sizeof(txSlot));
@@ -1542,7 +1542,7 @@ void fx_Array_prototype_join(txMachine* the)
 		mxPushSlot(mxArgv(0));
 		string = fxToString(the, the->stack);
 		the->stack->kind += XS_KEY_KIND - XS_STRING_KIND;
-		the->stack->value.key.sum = c_strlen(string);
+		the->stack->value.key.sum = mxStringLength(string);
 	}
 	else {
 		mxPushStringX(",");
@@ -1562,7 +1562,7 @@ void fx_Array_prototype_join(txMachine* the)
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
 			string = fxToString(the, slot);
 			slot->kind += XS_KEY_KIND - XS_STRING_KIND;
-			slot->value.key.sum = c_strlen(string);
+			slot->value.key.sum = mxStringLength(string);
 			size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		}
 		mxPop();
@@ -2320,7 +2320,7 @@ void fx_Array_prototype_toLocaleString(txMachine* the)
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
 			string = fxToString(the, slot);
 			slot->kind += XS_KEY_KIND - XS_STRING_KIND;
-			slot->value.key.sum = c_strlen(string);
+			slot->value.key.sum = mxStringLength(string);
 			size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		}
 		mxPop();

@@ -422,27 +422,27 @@ txSize fxBigIntMeasure(txBigInt* bigint)
 	return bigint->size * sizeof(txU4);
 }
 
-txSize fxBigIntMaximum(txInteger length)
+txSize fxBigIntMaximum(txSize length)
 {
 	return sizeof(txU4) * (1 + (((txSize)c_ceil((txNumber)length * c_log(10) / c_log(2))) / 32));
 }
 
-txSize fxBigIntMaximumB(txInteger length)
+txSize fxBigIntMaximumB(txSize length)
 {
 	return sizeof(txU4) * (1 + howmany(1, mxBigIntWordSize) + (length / 32));
 }
 
-txSize fxBigIntMaximumO(txInteger length)
+txSize fxBigIntMaximumO(txSize length)
 {
 	return sizeof(txU4) * (1 + howmany(3, mxBigIntWordSize) + ((length * 3) / 32));
 }
 
-txSize fxBigIntMaximumX(txInteger length)
+txSize fxBigIntMaximumX(txSize length)
 {
 	return sizeof(txU4) * (1 + howmany(4, mxBigIntWordSize) + ((length * 4) / 32));
 }
 
-void fxBigIntParse(txBigInt* bigint, txString p, txInteger length, txInteger sign)
+void fxBigIntParse(txBigInt* bigint, txString p, txSize length, txInteger sign)
 {
 	txU4 data[1] = { 0 };
 	txBigInt digit = { .sign=0, .size=1, .data=data };
@@ -459,7 +459,7 @@ void fxBigIntParse(txBigInt* bigint, txString p, txInteger length, txInteger sig
 		bigint->sign = sign;
 }
 
-void fxBigIntParseB(txBigInt* bigint, txString p, txInteger length)
+void fxBigIntParseB(txBigInt* bigint, txString p, txSize length)
 {
 	txU4 data[1] = { 0 };
 	txBigInt digit = { .sign=0, .size=1, .data=data };
@@ -474,7 +474,7 @@ void fxBigIntParseB(txBigInt* bigint, txString p, txInteger length)
 	}
 }
 
-void fxBigIntParseO(txBigInt* bigint, txString p, txInteger length)
+void fxBigIntParseO(txBigInt* bigint, txString p, txSize length)
 {
 	txU4 data[1] = { 0 };
 	txBigInt digit = { .sign=0, .size=1, .data=data };
@@ -489,7 +489,7 @@ void fxBigIntParseO(txBigInt* bigint, txString p, txInteger length)
 	}
 }
 
-void fxBigIntParseX(txBigInt* bigint, txString p, txInteger length)
+void fxBigIntParseX(txBigInt* bigint, txString p, txSize length)
 {
 	txU4 data[1] = { 0 };
 	txBigInt digit = { .sign=0, .size=1, .data=data };
@@ -689,11 +689,11 @@ txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole)
 		char d = *(p + 1);
 		if (whole && ((d == 'B') || (d == 'b') || (d == 'O') || (d == 'o') || (d == 'X') || (d == 'x'))) {
 			p += 2;
-			offset = p - s;
+			offset = mxPtrDiff(p - s);
 			if ((d == 'B') || (d == 'b')) {
 				while (((c = *p)) && ('0' <= c) && (c <= '1'))
 					p++;
-				length = p - s - offset;
+				length = mxPtrDiff(p - s - offset);
 				p = fxSkipSpaces(p);
 				if ((length > 0) && (*p == 0)) {
 					bigint.data = fxNewChunk(the, fxBigIntMaximumB(length));
@@ -703,7 +703,7 @@ txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole)
 			else if ((d == 'O') || (d == 'o')) {
 				while (((c = *p)) && ('0' <= c) && (c <= '7'))
 					p++;
-				length = p - s - offset;
+				length = mxPtrDiff(p - s - offset);
 				p = fxSkipSpaces(p);
 				if ((length > 0) && (*p == 0)) {
 					bigint.data = fxNewChunk(the, fxBigIntMaximumO(length));
@@ -713,7 +713,7 @@ txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole)
 			else if ((d == 'X') || (d == 'x')) {
 				while (((c = *p)) && ((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'f')) || (('A' <= c) && (c <= 'F'))))
 					p++;
-				length = p - s - offset;
+				length = mxPtrDiff(p - s - offset);
 				p = fxSkipSpaces(p);
 				if ((length > 0) && (*p == 0)) {
 					bigint.data = fxNewChunk(the, fxBigIntMaximumX(length));
@@ -727,10 +727,10 @@ txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole)
 		sign = 1;
 		p++;
 	}
-	offset = p - s;
+	offset = mxPtrDiff(p - s);
 	while (((c = *p)) && ('0' <= c) && (c <= '9'))
 		p++;
-	length = p - s - offset;
+	length = mxPtrDiff(p - s - offset);
 	p = fxSkipSpaces(p);
 	if (*p == 0) {
 		bigint.data = fxNewChunk(the, fxBigIntMaximum(length));

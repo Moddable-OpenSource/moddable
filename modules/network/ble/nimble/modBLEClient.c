@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -276,18 +276,16 @@ void xs_ble_client_stop_scanning(xsMachine *the)
 
 void xs_ble_client_connect(xsMachine *the)
 {
-	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint8_t addressType = xsmcToInteger(xsArg(1));
 	ble_addr_t addr;
 	
-	// Ignore duplicate connection attempts
+	addr.type = xsmcToInteger(xsArg(1));;
+	xsmcGetArrayBufferData(xsArg(0), 0, &addr.val, 6);
+
+// Ignore duplicate connection attempts
 	if (ble_gap_conn_active()) return;
 	
 	ble_gap_disc_cancel();
-	
-	addr.type = addressType;
-	c_memmove(addr.val, address, 6);
-		
+
 	// Check if there has already been a connection established with this peer.
 	// This can happen if a BLEServer instance connects prior to the BLEClient instance.
 	// If so, skip the connection request below.
@@ -300,7 +298,7 @@ void xs_ble_client_connect(xsMachine *the)
 	// Add a new connection record to be filled as the connection completes
 	modBLEClientConnection connection = c_calloc(sizeof(modBLEClientConnectionRecord), 1);
 	if (!connection)
-		xsUnknownError("out of memory");
+		xsUnknownError("no memory");
 	connection->id = kInvalidConnectionID;
 	connection->type = kBLEConnectionTypeClient;
 	connection->addressType = addr.type;
@@ -329,12 +327,12 @@ void bondingRemovedEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), addr->val, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), addr->type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onBondingDeleted"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -342,14 +340,14 @@ void setSecurityParametersEvent(void *the, void *refcon, uint8_t *message, uint1
 {
 	xsBeginHost(gBLE->the);
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetBoolean(xsVar(1), gBLE->encryption);
 	xsmcSet(xsVar(0), xsID_encryption, xsVar(1));
 	xsmcSetBoolean(xsVar(1), gBLE->bonding);
 	xsmcSet(xsVar(0), xsID_bonding, xsVar(1));
 	xsmcSetBoolean(xsVar(1), gBLE->mitm);
 	xsmcSet(xsVar(0), xsID_mitm, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onSecurityParameters"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onSecurityParameters"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -392,7 +390,7 @@ void xs_ble_client_passkey_reply(xsMachine *the)
 static void readyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
+	xsCall1(gBLE->obj, xsID_callback, xsStringX("onReady"));
 	xsEndHost(gBLE->the);
 }
 
@@ -440,7 +438,7 @@ void xs_gap_connection_read_rssi(xsMachine *the)
 	if (!connection) return;
 	if (0 == ble_gap_conn_rssi(conn_id, &rssi)) {
 		xsBeginHost(the);
-		xsCall2(connection->objConnection, xsID_callback, xsString("onRSSI"), xsInteger(rssi));
+		xsCall2(connection->objConnection, xsID_callback, xsStringX("onRSSI"), xsInteger(rssi));
 		xsEndHost(the);
 	}
 }
@@ -535,7 +533,8 @@ void xs_gatt_characteristic_write_without_response(xsMachine *the)
 	uint16_t length = xsmcGetArrayBufferLength(xsArg(2));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
-	ble_gattc_write_no_rsp_flat(conn_id, handle, buffer, length);
+	int result = ble_gattc_write_no_rsp_flat(conn_id, handle, buffer, length);
+	xsmcSetInteger(xsResult, result);
 }
 
 void xs_gatt_characteristic_read_value(xsMachine *the)
@@ -689,15 +688,15 @@ bail:
 static void onConnected(struct ble_gap_conn_desc *desc)
 {
 	xsBeginHost(gBLE->the);
-	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetInteger(xsVar(1), desc->conn_handle);
-	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
-	xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
-	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
-	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+	xsmcVars(1);
+	xsmcSetNewObject(xsVar(0));
+	xsmcSetInteger(xsResult, desc->conn_handle);
+	xsmcSet(xsVar(0), xsID_connection, xsResult);
+	xsmcSetArrayBuffer(xsResult, desc->peer_id_addr.val, 6);
+	xsmcSet(xsVar(0), xsID_address, xsResult);
+	xsmcSetInteger(xsResult, desc->peer_id_addr.type);
+	xsmcSet(xsVar(0), xsID_addressType, xsResult);
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onConnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -708,7 +707,7 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		struct ble_gap_disc_desc *disc = &entry->disc;
 		xsBeginHost(gBLE->the);
 		xsmcVars(2);
-		xsVar(0) = xsmcNewObject();
+		xsmcSetNewObject(xsVar(0));
 		xsmcSetArrayBuffer(xsVar(1), entry->data, disc->length_data);
 		xsmcSet(xsVar(0), xsID_scanResponse, xsVar(1));
 		xsmcSetArrayBuffer(xsVar(1), disc->addr.val, 6);
@@ -717,7 +716,7 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 		xsmcSetInteger(xsVar(1), disc->rssi);
 		xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+		xsCall2(gBLE->obj, xsID_callback, xsStringX("onDiscovered"), xsVar(0));
 		xsEndHost(gBLE->the);
 		
 		c_free(entry);
@@ -771,14 +770,14 @@ static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	}	
 	
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetInteger(xsVar(1), desc->conn_handle);
 	xsmcSet(xsVar(0), xsID_connection, xsVar(1));
 	xsmcSetArrayBuffer(xsVar(1), desc->peer_id_addr.val, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), desc->peer_id_addr.type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsCall2(connection->objConnection, xsID_callback, xsStringX("onDisconnected"), xsVar(0));
 	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
@@ -794,7 +793,7 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 		if (!connection)
 			xsUnknownError("connection not found");
 		if (entry->completed) {
-			xsCall1(connection->objClient, xsID_callback, xsString("onService"));
+			xsCall1(connection->objClient, xsID_callback, xsStringX("onService"));
 		}
 		else {
 			struct ble_gatt_svc *service = &entry->service;
@@ -802,14 +801,14 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 			uint8_t buffer[16];
 			uuidToBuffer(buffer, &service->uuid, &length);
 			xsmcVars(4);
-			xsVar(0) = xsmcNewObject();
+			xsmcSetNewObject(xsVar(0));
 			xsmcSetArrayBuffer(xsVar(1), buffer, length);
 			xsmcSetInteger(xsVar(2), service->start_handle);
 			xsmcSetInteger(xsVar(3), service->end_handle);
 			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 			xsmcSet(xsVar(0), xsID_start, xsVar(2));
 			xsmcSet(xsVar(0), xsID_end, xsVar(3));
-			xsCall2(connection->objClient, xsID_callback, xsString("onService"), xsVar(0));
+			xsCall2(connection->objClient, xsID_callback, xsStringX("onService"), xsVar(0));
 		}	
 		c_free(entry);
 	}
@@ -826,7 +825,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 			xsUnknownError("connection not found");
 		attributeSearchRecord *csr = (attributeSearchRecord *)refcon;
 		if (entry->completed) {
-			xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));
+			xsCall1(csr->obj, xsID_callback, xsStringX("onCharacteristic"));
 			c_free(csr);
 		}
 		else {
@@ -836,7 +835,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 			uint8_t buffer[16];
 			uuidToBuffer(buffer, &chr->uuid, &length);
 			xsmcVars(4);
-			xsVar(0) = xsmcNewObject();
+			xsmcSetNewObject(xsVar(0));
 			xsmcSetArrayBuffer(xsVar(1), buffer, length);
 			xsmcSetInteger(xsVar(2), chr->val_handle);
 			xsmcSetInteger(xsVar(3), chr->properties);
@@ -849,7 +848,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 				xsmcSetString(xsVar(2), (char*)char_name->type);
 				xsmcSet(xsVar(0), xsID_type, xsVar(2));
 			}
-			xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+			xsCall2(csr->obj, xsID_callback, xsStringX("onCharacteristic"), xsVar(0));
 		}
 		c_free(entry);
 	}
@@ -896,7 +895,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 			xsUnknownError("connection not found");
 		attributeSearchRecord *dsr = (attributeSearchRecord *)refcon;
 		if (entry->completed) {
-			xsCall1(dsr->obj, xsID_callback, xsString("onDescriptor"));
+			xsCall1(dsr->obj, xsID_callback, xsStringX("onDescriptor"));
 			c_free(dsr);
 		}
 		else {
@@ -906,7 +905,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 			uint8_t buffer[16];
 			uuidToBuffer(buffer, &dsc->uuid, &length);
 			xsmcVars(4);
-			xsVar(0) = xsmcNewObject();
+			xsmcSetNewObject(xsVar(0));
 			xsmcSetArrayBuffer(xsVar(1), buffer, length);
 			xsmcSetInteger(xsVar(2), dsc->handle);
 			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
@@ -917,7 +916,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 				xsmcSetString(xsVar(2), (char*)char_name->type);
 				xsmcSet(xsVar(0), xsID_type, xsVar(2));
 			}
-			xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
+			xsCall2(dsr->obj, xsID_callback, xsStringX("onDescriptor"), xsVar(0));
 		}
 		c_free(entry);
 	}
@@ -933,12 +932,12 @@ static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_
 		if (!connection)
 			xsUnknownError("connection not found");
 		xsmcVars(3);
-		xsVar(0) = xsmcNewObject();
+		xsmcSetNewObject(xsVar(0));
 		xsmcSetArrayBuffer(xsVar(1), entry->data, entry->length);
 		xsmcSetInteger(xsVar(2), entry->handle);
 		xsmcSet(xsVar(0), xsID_value, xsVar(1));
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-		xsCall2(connection->objClient, xsID_callback, xsString("onCharacteristicNotification"), xsVar(0));
+		xsCall2(connection->objClient, xsID_callback, xsStringX("onCharacteristicNotification"), xsVar(0));
 		c_free(entry);
 	}	
 	xsEndHost(gBLE->the);
@@ -952,12 +951,12 @@ static void attributeReadEvent(void *the, void *refcon, uint8_t *message, uint16
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), value->data, value->length);
 	xsmcSetInteger(xsVar(2), value->handle);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-	xsCall2(connection->objClient, xsID_callback, value->isCharacteristic ? xsString("onCharacteristicValue") : xsString("onDescriptorValue"), xsVar(0));
+	xsCall2(connection->objClient, xsID_callback, value->isCharacteristic ? xsStringX("onCharacteristicValue") : xsStringX("onDescriptorValue"), xsVar(0));
 	c_free(value);
 	xsEndHost(gBLE->the);
 }
@@ -970,10 +969,10 @@ static void notificationEnabledEvent(void *the, void *refcon, uint8_t *message, 
 	if (!connection)
 		xsUnknownError("connection not found");
 	xsmcVars(2);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 	xsmcSetInteger(xsVar(1), cne->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(connection->objClient, xsID_callback, cne->enable ? xsString("onCharacteristicNotificationEnabled") : xsString("onCharacteristicNotificationDisabled"), xsVar(0));
+	xsCall2(connection->objClient, xsID_callback, cne->enable ? xsStringX("onCharacteristicNotificationEnabled") : xsStringX("onCharacteristicNotificationDisabled"), xsVar(0));
 	c_free(cne);
 	xsEndHost(gBLE->the);
 }
@@ -991,7 +990,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	
 	xsBeginHost(gBLE->the);
 	xsmcVars(3);
-	xsVar(0) = xsmcNewObject();
+	xsmcSetNewObject(xsVar(0));
 
     if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
     	pkey.passkey = (c_rand() % 999999) + 1;
@@ -999,16 +998,16 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsmcSetInteger(xsVar(2), pkey.passkey);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+		xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyDisplay"), xsVar(0));
 		ble_sm_inject_io(event->passkey.conn_handle, &pkey);
 	}
     else if (event->passkey.params.action == BLE_SM_IOACT_INPUT) {
 		xsmcSetArrayBuffer(xsVar(1), connection->address, 6);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		if (gBLE->iocap == KeyboardOnly)
-			xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+			xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyInput"), xsVar(0));
 		else {
-			xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+			xsResult = xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyRequested"), xsVar(0));
 			pkey.passkey = xsmcToInteger(xsResult);
 			ble_sm_inject_io(event->passkey.conn_handle, &pkey);
 		}
@@ -1018,7 +1017,7 @@ static void passkeyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 		xsmcSetInteger(xsVar(2), event->passkey.params.numcmp);
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+		xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyConfirm"), xsVar(0));
 	}
 	
 	xsEndHost(gBLE->the);
@@ -1038,10 +1037,10 @@ static void encryptionChangeEvent(void *the, void *refcon, uint8_t *message, uin
         	if (desc.sec_state.encrypted) {
 				xsBeginHost(gBLE->the);
 				xsmcVars(2);
-				xsVar(0) = xsmcNewObject();
+				xsmcSetNewObject(xsVar(0));
 				xsmcSetBoolean(xsVar(1), desc.sec_state.bonded);
 				xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
-				xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
+				xsCall2(gBLE->obj, xsID_callback, xsStringX("onAuthenticated"), xsVar(0));
 				xsEndHost(gBLE->the);
         	}
         }
@@ -1055,7 +1054,7 @@ static void mtuExchangedEvent(void *the, void *refcon, uint8_t *message, uint16_
 	if (!connection) return;
 	
 	xsBeginHost(gBLE->the);
-		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(mer->mtu));
+		xsCall2(connection->objConnection, xsID_callback, xsStringX("onMTUExchanged"), xsInteger(mer->mtu));
 	xsEndHost(gBLE->the);
 }
 

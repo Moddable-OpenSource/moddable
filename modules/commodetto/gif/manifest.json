@@ -1,0 +1,12 @@
+{
+	"modules": {
+		"*": [
+			"./pocogif"
+		],
+		"commodetto/ReadGIF": "./commodettoReadGIF"
+	},
+	"preload": [
+		"commodetto/ReadGIF",
+		"pocogif"
+	]
+}

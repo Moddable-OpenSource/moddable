@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/commodetto/gif/manifest.json",
+		"$(MODDABLE)/modules/files/resourceiterator/manifest.json"
+	],
+	"creation": {
+		"heap": {
+			"initial": 256
+		}
+	},
+	"modules": {
+		"*": "./main"
+	},
+	"data": {
+		"*": [
+			"$(MODDABLE)/examples/assets/images/cell-flag"
+		]
+	}
+}

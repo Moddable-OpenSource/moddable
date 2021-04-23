@@ -2,7 +2,7 @@
 ### A guide to installing the Moddable SDK and building its tools
 
 Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: March 9, 2021
+Revised: April 2, 2021
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
@@ -96,6 +96,8 @@ The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full insta
 	```text
 	open ~/.zshrc
 	```
+
+	> Note: If executing the above command gives you an error saying that your shell startup/initializaiton file does not exist, you can create the appropriate file using the `touch` command. For example, `touch ~/.zshrc`.
 
 5. Add the following lines to the file you just opened and save. This sets up the `MODDABLE` environment variable to point at your local Moddable SDK repository directory and edits the `PATH` environment variable to include the build directory.
 

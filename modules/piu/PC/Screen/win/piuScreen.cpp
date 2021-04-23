@@ -444,7 +444,7 @@ void PiuScreen_launch(xsMachine* the)
 	HMODULE library = NULL;
 	txScreenLaunchProc launch;
 	HANDLE archiveFile = INVALID_HANDLE_VALUE;
-	SIZE_T size;
+	DWORD size;
 	HANDLE archiveMapping = INVALID_HANDLE_VALUE;
 	void* archive = NULL;
 	xsTry {
