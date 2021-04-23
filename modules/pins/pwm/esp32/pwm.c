@@ -40,9 +40,13 @@
 	#define ESP_SPEED_MODE LEDC_HIGH_SPEED_MODE
 #endif
 
+#ifndef MODDEF_PWM_LEDC_FREQUENCY
+	#define MODDEF_PWM_LEDC_FREQUENCY 1024
+#endif
+
 static const ledc_timer_config_t gTimer = {
 	.duty_resolution = LEDC_TIMER_10_BIT,
-	.freq_hz = 1024,
+	.freq_hz = MODDEF_PWM_LEDC_FREQUENCY,
 	.speed_mode = ESP_SPEED_MODE,
 	.timer_num = MODDEF_PWM_LEDC_TIMER
 };
