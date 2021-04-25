@@ -686,7 +686,7 @@ void PiuContainer_firstThat(xsMachine *the)
 {
 	PiuContainer* self = PIU(Container, xsThis);
 	xsVars(2);
-	xsIndex id = xsToID(xsArg(0));
+	xsIdentifier id = xsToID(xsArg(0));
 	xsIntegerValue c = xsToInteger(xsArgc);
 	PiuContent* content;
 	xsAssert(self != NULL);
@@ -731,7 +731,7 @@ void PiuContainer_lastThat(xsMachine *the)
 {
 	PiuContainer* self = PIU(Container, xsThis);
 	xsVars(2);
-	xsIndex id = xsToID(xsArg(0));
+	xsIdentifier id = xsToID(xsArg(0));
 	xsIntegerValue c = xsToInteger(xsArgc);
 	PiuContent* content;
 	xsAssert(self != NULL);

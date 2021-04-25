@@ -262,7 +262,8 @@ void fx_Map(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_set));	
+	mxPushSlot(mxResult);
+	fxGetID(the, mxID(_set));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
@@ -553,7 +554,8 @@ void fx_Set(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_add));	
+	mxPushSlot(mxResult);
+	fxGetID(the, mxID(_add));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
@@ -777,7 +779,8 @@ void fx_WeakMap(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_set));	
+	mxPushSlot(mxResult);
+	fxGetID(the, mxID(_set));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
@@ -909,7 +912,8 @@ void fx_WeakSet(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_add));	
+	mxPushSlot(mxResult);
+	fxGetID(the, mxID(_add));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");

@@ -187,7 +187,7 @@ void xs_FT6202_read(xsMachine *the)
 
 	xsmcSetInteger(xsVar(0), 0);
 	for (i = 0; i <= maxID; i++) {
-		xsmcGet(xsVar(1), xsArg(0), i);
+		xsmcGetIndex(xsVar(1), xsArg(0), i);
 		xsmcSet(xsVar(1), xsID_state, xsVar(0));
 	}
 
@@ -261,7 +261,7 @@ void xs_FT6202_read(xsMachine *the)
 #endif
 
 		// result
-		xsmcGet(xsVar(0), xsArg(0), id);
+		xsmcGetIndex(xsVar(0), xsArg(0), id);
 		xsmcSetInteger(xsVar(1), x);
 		xsmcSet(xsVar(0), xsID_x, xsVar(1));
 		xsmcSetInteger(xsVar(1), y);

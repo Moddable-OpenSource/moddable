@@ -944,7 +944,7 @@ void PiuDebugMachineParseProcessingInstruction(PiuDebugMachine self, char* p)
 	xsMachine* the = self->the;
 	char c;
 	int i;
-	xsIndex id;
+	xsIdentifier id;
 	xsIntegerValue value;
 	if (*p++ != 'x')
 		return;

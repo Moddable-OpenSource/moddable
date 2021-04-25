@@ -274,7 +274,7 @@ void fxWriteIDs(txScript* script, FILE* file)
 	mxDecode2(p, c);
 	for (i = 0; i < c; i++) {
 		if (fxIsCIdentifier((txString)p))
-			fprintf(file, "#define xsID_%s (((xsIndex*)(the->code))[%d])\n", p, i);
+			fprintf(file, "#define xsID_%s (((xsIdentifier*)(the->code))[%d])\n", p, i);
 		p += mxStringLength((char*)p) + 1;
 	}
 }

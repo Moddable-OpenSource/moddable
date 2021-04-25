@@ -862,7 +862,7 @@ void fxEnumerate(txMachine* the)
 	mxRunCount(0);
 }
 
-void fxGetAll(txMachine* the, txInteger id, txIndex index)
+void fxGetAll(txMachine* the, txID id, txIndex index)
 {
 	txBoolean flag = mxIsReference(the->stack) ? 1 : 0;
 	txSlot* instance = (flag) ? the->stack->value.reference : fxToInstance(the, the->stack);
@@ -906,12 +906,15 @@ void fxGetAt(txMachine* the)
 	fxGetAll(the, at->value.at.id, at->value.at.index);
 }
 
-void fxGetID(txMachine* the, txInteger id)
+void fxGetID(txMachine* the, txID id)
 {
 	if (id < 0)
 		fxGetAll(the, id, XS_NO_ID);
-	else
+	else {
+		fxReport(the, "# Obsolete: use xsGetIndex instead of xsGet to get property by index!\n");
+		fxDebugger(the, C_NULL, 0);
 		fxGetAll(the, 0, (txIndex)id);
+	}
 }
 
 void fxGetIndex(txMachine* the, txIndex index)
@@ -919,32 +922,36 @@ void fxGetIndex(txMachine* the, txIndex index)
 	fxGetAll(the, 0, index);
 }
 
-txBoolean fxHasAt(txMachine* the)
+static txBoolean fxHasAll(txMachine* the, txID id, txIndex index)
 {
-	txSlot* at = fxAt(the, the->stack);
-	txSlot* instance = fxToInstance(the, the->stack + 1);
-	txBoolean result = mxBehaviorHasProperty(the, instance, at->value.at.id, at->value.at.index);
-	the->stack += 2;
+	txSlot* instance = fxToInstance(the, the->stack);
+	txBoolean result = mxBehaviorHasProperty(the, instance, id, index);
+	mxPop();
 	return result;
 }
 
-txBoolean fxHasID(txMachine* the, txInteger id)
+txBoolean fxHasAt(txMachine* the)
 {
-	txSlot* instance = fxToInstance(the, the->stack);
-	txBoolean result = (id < 0) ? mxBehaviorHasProperty(the, instance, (txID)id, XS_NO_ID) : mxBehaviorHasProperty(the, instance, 0, (txIndex)id);
-	mxPop();
-	return result;
+	txSlot* at = fxAt(the, the->stack);
+	the->stack++;
+	return fxHasAll(the, at->value.at.id, at->value.at.index);
+}
+
+txBoolean fxHasID(txMachine* the, txID id)
+{
+	if (id < 0)
+		return fxHasAll(the, id, XS_NO_ID);
+	fxReport(the, "# Obsolete: use xsHasIndex instead of xsHas to test property by index!\n");
+	fxDebugger(the, C_NULL, 0);
+	return fxHasAll(the, 0, (txIndex)id);
 }
 
 txBoolean fxHasIndex(txMachine* the, txIndex index)
 {
-	txSlot* instance = fxToInstance(the, the->stack);
-	txBoolean result = mxBehaviorHasProperty(the, instance, 0, index);
-	mxPop();
-	return result;
+	return fxHasAll(the, 0, index);
 }
 
-void fxSetAll(txMachine* the, txInteger id, txIndex index)
+void fxSetAll(txMachine* the, txID id, txIndex index)
 {
 	txSlot* value = the->stack + 1;
 	txSlot* instance = fxToInstance(the, the->stack);
@@ -988,12 +995,15 @@ void fxSetAt(txMachine* the)
 	fxSetAll(the, at->value.at.id, at->value.at.index);
 }
 
-void fxSetID(txMachine* the, txInteger id)
+void fxSetID(txMachine* the, txID id)
 {
 	if (id < 0)
 		fxSetAll(the, id, XS_NO_ID);
-	else
+	else {
+		fxReport(the, "# Obsolete: use xsSetIndex instead of xsSet to set property by index!\n");
+		fxDebugger(the, C_NULL, 0);
 		fxSetAll(the, 0, (txIndex)id);
+	}
 }
 
 void fxSetIndex(txMachine* the, txIndex index)
@@ -1001,7 +1011,7 @@ void fxSetIndex(txMachine* the, txIndex index)
 	fxSetAll(the, 0, index);
 }
 
-void fxDeleteAll(txMachine* the, txInteger id, txIndex index)
+void fxDeleteAll(txMachine* the, txID id, txIndex index)
 {
 	txSlot* instance = fxToInstance(the, the->stack);
 	if (!mxBehaviorDeleteProperty(the, instance, (txID)id, index))
@@ -1017,7 +1027,7 @@ void fxDeleteAt(txMachine* the)
 		mxDebugID(XS_TYPE_ERROR, "delete %s: not configurable", at->value.at.id);
 }
 
-void fxDeleteID(txMachine* the, txInteger id)
+void fxDeleteID(txMachine* the, txID id)
 {
 	txSlot* instance = fxToInstance(the, the->stack);
 	if (!mxBehaviorDeleteProperty(the, instance, (txID)id, XS_NO_ID))
@@ -1083,7 +1093,7 @@ void fxCall(txMachine* the)
 	mxInitSlotKind(the->stack, XS_UNINITIALIZED_KIND);
 }
 
-void fxCallID(txMachine* the, txInteger theID)
+void fxCallID(txMachine* the, txID theID)
 {
 	mxDub();
 	fxGetID(the, theID);
@@ -1111,7 +1121,7 @@ void fxNew(txMachine* the)
 	mxInitSlotKind(slot, XS_UNINITIALIZED_KIND);
 }
 
-void fxNewID(txMachine* the, txInteger theID)
+void fxNewID(txMachine* the, txID theID)
 {
 	fxGetID(the, theID);
 	fxNew(the);

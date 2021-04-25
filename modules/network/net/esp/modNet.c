@@ -233,7 +233,7 @@ void xs_net_get(xsMachine *the)
 
 			ipaddr_ntoa_r(addr, addrStr, sizeof(addrStr));
 			xsVar(0) = xsStringBuffer(addrStr, c_strlen(addrStr));
-			xsSet(xsResult, i++, xsVar(0));
+			xsSetIndex(xsResult, i++, xsVar(0));
 		} while (true);
 	}
 }

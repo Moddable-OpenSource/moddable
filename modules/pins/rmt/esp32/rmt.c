@@ -40,7 +40,7 @@ struct modRMTRecord {
 static void rmtTransmitComplete(rmt_channel_t channel, void *arg);
 static void rmtWritable(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static int receive(modRMT rmt, uint8_t *buffer, int maxBytes, int* count, int* phase);
-static int getInt(xsMachine *the, xsSlot *options, xsIndex id);
+static int getInt(xsMachine *the, xsSlot *options, xsIdentifier id);
 
 static modRMT gRMT;
 
@@ -219,7 +219,7 @@ void xs_rmt_write(xsMachine *the)
 	length = xsmcToInteger(xsVar(0));
 	count = length + 2;	// (at least) one entry for each array item plus 2 terminating entries
 	for (i = 0, item = items; i < length; i++) {
-		xsmcGet(xsVar(0), xsArg(1), i);
+		xsmcGetIndex(xsVar(0), xsArg(1), i);
 		duration = xsmcToInteger(xsVar(0));
 		if (duration > 32767)
 			count += duration / 32767;
@@ -234,7 +234,7 @@ void xs_rmt_write(xsMachine *the)
 
 		if (0 == duration) {
 			value ^= 1;
-			xsmcGet(xsVar(0), xsArg(1), i);
+			xsmcGetIndex(xsVar(0), xsArg(1), i);
 			duration = xsmcToInteger(xsVar(0));
 			i++;
 		}
@@ -330,7 +330,7 @@ int receive(modRMT rmt, uint8_t *buffer, int maxBytes, int* count, int* phase){
 	return 0;
 }
 
-int getInt(xsMachine *the, xsSlot *options, xsIndex id)
+int getInt(xsMachine *the, xsSlot *options, xsIdentifier id)
 {
 	if (xsmcHas(*options, id)) {
 		xsmcGet(xsVar(0), *options, id);

@@ -298,7 +298,7 @@ struct PiuStyleStruct {
 	PiuAssetPart;
 	xsMachine* the;
 	PiuFont* font;
-	xsIndex family;
+	xsIdentifier family;
 	xsIntegerValue size;
 	xsIntegerValue weight;
 	PiuAlignment horizontal;
@@ -329,7 +329,7 @@ extern void PiuStyleUnbind(PiuStyle* self, PiuApplication* application, PiuView*
 
 extern void PiuBehaviorOnCreate(void* it);
 
-extern void PiuBehaviorOnDefaultID(void* it, xsIndex id);
+extern void PiuBehaviorOnDefaultID(void* it, xsIdentifier id);
 #define PiuBehaviorOnDisplaying(it) PiuBehaviorOnDefaultID(it, xsID_onDisplaying) 
 #define PiuBehaviorOnFinished(it) PiuBehaviorOnDefaultID(it, xsID_onFinished) 
 #define PiuBehaviorOnScrolled(it) PiuBehaviorOnDefaultID(it, xsID_onScrolled) 
@@ -339,17 +339,17 @@ extern void PiuBehaviorOnDefaultID(void* it, xsIndex id);
 
 extern void PiuBehaviorOnDraw(void* it, PiuRectangle area);
 
-extern void PiuBehaviorOnFitID(void* it, xsIndex id, PiuDimension dimension);
+extern void PiuBehaviorOnFitID(void* it, xsIdentifier id, PiuDimension dimension);
 #define PiuBehaviorOnFitHorizontally(it, width) PiuBehaviorOnFitID(it, xsID_onFitHorizontally, width) 
 #define PiuBehaviorOnFitVertically(it, height) PiuBehaviorOnFitID(it, xsID_onFitVertically, height) 
 
-extern PiuDimension PiuBehaviorOnMeasureID(void* it, xsIndex id, PiuDimension dimension);
+extern PiuDimension PiuBehaviorOnMeasureID(void* it, xsIdentifier id, PiuDimension dimension);
 #define PiuBehaviorOnMeasureHorizontally(it, width) PiuBehaviorOnMeasureID(it, xsID_onMeasureHorizontally, width) 
 #define PiuBehaviorOnMeasureVertically(it, height) PiuBehaviorOnMeasureID(it, xsID_onMeasureVertically, height) 
 
-extern PiuBoolean PiuBehaviorOnMouseID(void* it, xsIndex id, PiuCoordinate x, PiuCoordinate y);
+extern PiuBoolean PiuBehaviorOnMouseID(void* it, xsIdentifier id, PiuCoordinate x, PiuCoordinate y);
 
-extern void PiuBehaviorOnTouchID(void* it, xsIndex id, xsIntegerValue index, PiuCoordinate x, PiuCoordinate y, double ticks, PiuTouchLink* link);
+extern void PiuBehaviorOnTouchID(void* it, xsIdentifier id, xsIntegerValue index, PiuCoordinate x, PiuCoordinate y, double ticks, PiuTouchLink* link);
 #define PiuBehaviorOnTouchBegan(it, index, x, y, ticks, link) PiuBehaviorOnTouchID(it, xsID_onTouchBegan, index, x, y, ticks, link) 
 #define PiuBehaviorOnTouchCancelled(it, index, x, y, ticks, link) PiuBehaviorOnTouchID(it, xsID_onTouchCancelled, index, x, y, ticks, link) 
 #define PiuBehaviorOnTouchEnded(it, index, x, y, ticks, link) PiuBehaviorOnTouchID(it, xsID_onTouchEnded, index, x, y, ticks, link) 
@@ -518,7 +518,7 @@ extern void PiuContentSync(void* it);
 extern void PiuContentToApplicationCoordinates(void* it, PiuCoordinate x0, PiuCoordinate y0, PiuCoordinate *x1, PiuCoordinate *y1);
 extern void PiuContentUnbind(void* it, PiuApplication* application, PiuView* view);
 extern void PiuContentUpdate(void* it, PiuView* view, PiuRectangle area);
-extern void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIndex id, xsIntegerValue c);
+extern void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIdentifier id, xsIntegerValue c);
 
 // PiuLabel.c
 
@@ -666,7 +666,7 @@ struct PiuDeferLinkStruct {
 	PiuHandlePart;
 	PiuContent* content;
 	PiuDeferLink* deferLink;
-	xsIndex id;
+	xsIdentifier id;
 	xsIntegerValue argc;
 	xsSlot argv[7];
 };
@@ -799,11 +799,11 @@ extern const void *fxGetResource(xsMachine* the, const char* path, size_t* size)
 
 // XS
 
-extern xsBooleanValue fxFindBoolean(xsMachine* the, xsSlot* slot, xsIndex id, xsBooleanValue* value);
-extern xsBooleanValue fxFindInteger(xsMachine* the, xsSlot* slot, xsIndex id, xsIntegerValue* value);
-extern xsBooleanValue fxFindNumber(xsMachine* the, xsSlot* slot, xsIndex id, xsNumberValue* value);
-extern xsBooleanValue fxFindString(xsMachine* the, xsSlot* slot, xsIndex id, xsStringValue* value);
-extern xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
+extern xsBooleanValue fxFindBoolean(xsMachine* the, xsSlot* slot, xsIdentifier id, xsBooleanValue* value);
+extern xsBooleanValue fxFindInteger(xsMachine* the, xsSlot* slot, xsIdentifier id, xsIntegerValue* value);
+extern xsBooleanValue fxFindNumber(xsMachine* the, xsSlot* slot, xsIdentifier id, xsNumberValue* value);
+extern xsBooleanValue fxFindString(xsMachine* the, xsSlot* slot, xsIdentifier id, xsStringValue* value);
+extern xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIdentifier id);
 
 #define xsFindBoolean(_THIS,_ID,_RESULT) fxFindBoolean(the, &_THIS, _ID, _RESULT)
 #define xsFindInteger(_THIS,_ID,_RESULT) fxFindInteger(the, &_THIS, _ID, _RESULT)

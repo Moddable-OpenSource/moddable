@@ -44,7 +44,7 @@ struct PiuFontStruct {
 	xsMachine* the;
 	PiuFont* next;
 	PiuFlags flags;
-	xsIndex family;
+	xsIdentifier family;
 	PiuCoordinate size;
 	PiuCoordinate weight;
 	uint8_t *buffer;

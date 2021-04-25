@@ -169,7 +169,7 @@ void xs_XPT2046_read(xsMachine *the)
 	uint16_t x, y, i;
 
 	xsmcVars(2);
-	xsmcGet(xsVar(1), xsArg(0), 0);
+	xsmcGetIndex(xsVar(1), xsArg(0), 0);
 
 #ifdef MODDEF_XPT2046_TOUCH_PIN
 	if (modGPIORead(&xpt->touchPin))

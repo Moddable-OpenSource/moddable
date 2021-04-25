@@ -317,7 +317,7 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	the->stack++;
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
-		fxGetID(the, (txID)i);
+		fxGetIndex(the, i);
 	}
 	mxRunCount(c);
 	mxPullSlot(mxResult);

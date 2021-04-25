@@ -20,7 +20,7 @@ void xs_modules_host(xsMachine *the)
 		if (dot)
 			*dot = 0;
 
-		xsSet(xsResult, i++, xsString(path));
+		xsSetIndex(xsResult, i++, xsString(path));
 
 		script++;
 	}
@@ -60,7 +60,7 @@ void xs_modules_archive(xsMachine *the)
 		c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
 		path[atomSize - sizeof(Atom) - 4] = 0;
 
-		xsSet(xsResult, i++, xsString(path + preparation->baseLength));
+		xsSetIndex(xsResult, i++, xsString(path + preparation->baseLength));
 
 		p += atomSize;
 		p += c_read32be(p);

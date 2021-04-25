@@ -28,7 +28,7 @@ static void PiuContentSetInterval(PiuContent* self, PiuInterval interval);
 static void PiuContentStart(PiuContent* self);
 static void PiuContentStop(PiuContent* self);
 
-static PiuBoolean PiuContent_distributeAux(xsMachine *the, PiuContainer* container, xsIndex id, xsIntegerValue c);
+static PiuBoolean PiuContent_distributeAux(xsMachine *the, PiuContainer* container, xsIdentifier id, xsIntegerValue c);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuContentDispatchRecord = {
 	"Content",
@@ -1227,7 +1227,7 @@ void PiuContent_adjust(xsMachine *the)
 void PiuContent_bubble(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsIndex id = xsToID(xsArg(0));
+	xsIdentifier id = xsToID(xsArg(0));
 	xsIntegerValue c = xsToInteger(xsArgc);
 	xsVars(2);
 	xsAssert(self != NULL);
@@ -1258,7 +1258,7 @@ void PiuContent_defer(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
 	xsIntegerValue c = xsToInteger(xsArgc), i;
-	xsIndex id = xsToID(xsArg(0));
+	xsIdentifier id = xsToID(xsArg(0));
 	PiuApplication* application;
 	PiuDeferLink* link;
 	PiuDeferLink* former;
@@ -1287,7 +1287,7 @@ void PiuContent_defer(xsMachine *the)
 void PiuContent_delegate(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsIndex id = xsToID(xsArg(0));
+	xsIdentifier id = xsToID(xsArg(0));
 	xsIntegerValue c = xsToInteger(xsArgc);
 	xsVars(2);
 	xsAssert(self != NULL);
@@ -1297,7 +1297,7 @@ void PiuContent_delegate(xsMachine *the)
 	PiuContent_delegateAux(the, self, id, c);
 }
 
-void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIndex id, xsIntegerValue c)
+void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIdentifier id, xsIntegerValue c)
 {
 	xsIntegerValue i;
 	if ((*content)->behavior) {
@@ -1323,7 +1323,7 @@ void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIndex id, xsI
 void PiuContent_distribute(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsIndex id = xsToID(xsArg(0));
+	xsIdentifier id = xsToID(xsArg(0));
 	xsIntegerValue c = xsToInteger(xsArgc);
 	xsVars(2);
 	xsAssert(self != NULL);
@@ -1333,7 +1333,7 @@ void PiuContent_distribute(xsMachine *the)
 		xsResult = xsUndefined;
 }
 
-PiuBoolean PiuContent_distributeAux(xsMachine *the, PiuContainer* container, xsIndex id, xsIntegerValue c)
+PiuBoolean PiuContent_distributeAux(xsMachine *the, PiuContainer* container, xsIdentifier id, xsIntegerValue c)
 {
 	if ((*container)->flags & piuContainer) {
 		PiuContent* content = (*container)->first;
