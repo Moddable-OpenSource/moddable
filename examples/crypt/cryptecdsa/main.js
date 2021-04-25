@@ -85,8 +85,10 @@ trace("sig: " + (BigInt.fromArrayBuffer(sig)).toString(16) + "\n")
 let l = (BigInt.bitLength(n) + 7) >>> 3;
 
 if (r == BigInt.fromArrayBuffer(sig.slice(0, l)) &&
-    s == BigInt.fromArrayBuffer(sig.slice(l, l*2)))
-	trace("ecdsa: succeeded\n");
+    s == BigInt.fromArrayBuffer(sig.slice(l, l*2))) {
+	let ecdsa = new ECDSA(key, false);
+	trace("ecdsa: " + ecdsa.verify(H, sig) ? "succeeded\n" : "failed\n");
+}
 else {
 	trace("ecdsa: failed!\n");
 	trace("r = " + r.toString(16) + "\n");

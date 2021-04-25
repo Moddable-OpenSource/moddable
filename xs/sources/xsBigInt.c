@@ -894,7 +894,7 @@ fxBigInt_fill0(txBigInt *r)
 
 void fxBigInt_copy(txBigInt *a, txBigInt *b)
 {
-	c_memcpy(a->data, b->data, b->size * sizeof(txU4));
+	c_memmove(a->data, b->data, b->size * sizeof(txU4));
 	a->size = b->size;
 	a->sign = b->sign;
 }

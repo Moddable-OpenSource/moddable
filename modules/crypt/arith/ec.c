@@ -43,6 +43,12 @@
 extern void fxBigInt_ec_add(xsMachine *the, txECPoint *r, txECPoint *a, txECPoint *b, txECParam *ec);
 extern void fxBigInt_ec_mul(xsMachine *the, txECPoint *r, txECPoint *a, txBigInt *k, txECParam *ec);
 extern void fxBigInt_ec_mul2(xsMachine *the, txECPoint *r, txECPoint *a1, txBigInt *k1, txECPoint *a2, txBigInt *k2, txECParam *ec);
+extern void fxBigInt_ec_norm(xsMachine *the, txECPoint *r, txECPoint *a, txECParam *ec);
+extern txU4 mont_init(txBigInt *m);
+extern txBigInt *mont_in(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m);
+extern txBigInt *mont_out(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u);
+
+extern txBigInt gxBigIntOne;
 
 static void get_ec_param(xsMachine *the, txECParam *ec, int *i)
 {
@@ -55,9 +61,14 @@ static void get_ec_param(xsMachine *the, txECParam *ec, int *i)
 	xsmcGet(xsVar(*i), xsThis, xsID_b);
 	ec->b = xsmcToBigInt(xsVar(*i));
 	(*i)++;
+	ec->u = mont_init(ec->m);
+	ec->a = mont_in(the, NULL, ec->a, ec->m);
+	ec->b = mont_in(the, NULL, ec->b, ec->m);
+	ec->one = mont_in(the, NULL, &gxBigIntOne, ec->m);
+	// RI: (a, b, one) are fxBigInt_alloc'ed. Is it no to free?
 }
 
-static void get_ecp(xsMachine *the, txECPoint *p, xsSlot *slot, int *i)
+static void get_ecp(xsMachine *the, txECPoint *p, xsSlot *slot, int *i, txECParam *ec)
 {
 	xsmcGet(xsVar(*i), *slot, xsID_x);
 	p->x = xsmcToBigInt(xsVar(*i));
@@ -65,27 +76,28 @@ static void get_ecp(xsMachine *the, txECPoint *p, xsSlot *slot, int *i)
 	xsmcGet(xsVar(*i), *slot, xsID_y);
 	p->y = xsmcToBigInt(xsVar(*i));
 	(*i)++;
-	xsmcGet(xsVar(*i), *slot, xsID_identity);
-	p->identity = xsmcToBoolean(xsVar(*i));
+	xsmcGet(xsVar(*i), *slot, xsID_z);
+	p->z = xsmcToBigInt(xsVar(*i));
 	(*i)++;
+	p->x = mont_in(the, NULL, p->x, ec->m);
+	p->y = mont_in(the, NULL, p->y, ec->m);
+	p->z = mont_in(the, NULL, p->z, ec->m);
+	// RI: those (x, y, z) are fxBigInt_alloc'ed. Is it ok not to free?
 }
 
-static void set_ecp(xsMachine *the, xsSlot *slot, txECPoint *p)
+static void set_ecp(xsMachine *the, xsSlot *slot, txECPoint *p, txECParam *ec)
 {
-	if (p->identity) {
-		xsmcSetUndefined(xsVar(0));
-		xsmcSetUndefined(xsVar(1));
-		xsmcSetTrue(xsVar(2));
-	}
-	else {
-		xsmcSetBigInt(xsVar(0), p->x);
-		xsmcSetBigInt(xsVar(1), p->y);
-		xsmcSetFalse(xsVar(2));
-	}
+	mont_out(the, p->x, p->x, ec->m, ec->u);
+	mont_out(the, p->y, p->y, ec->m, ec->u);
+	mont_out(the, p->z, p->z, ec->m, ec->u);
+
+	xsmcSetBigInt(xsVar(0), p->x);
+	xsmcSetBigInt(xsVar(1), p->y);
+	xsmcSetBigInt(xsVar(2), p->z);
 	xsmcSetNewObject(*slot);
 	xsmcSet(*slot, xsID_x, xsVar(0));
 	xsmcSet(*slot, xsID_y, xsVar(1));
-	xsmcSet(*slot, xsID_identity, xsVar(2));
+	xsmcSet(*slot, xsID_z, xsVar(2));
 }
 
 void
@@ -97,11 +109,13 @@ xs_ec2_add(xsMachine *the)
 
 	xsmcVars(10);
 	get_ec_param(the, &ec, &i);
-	get_ecp(the, &p1, &xsArg(0), &i);
-	get_ecp(the, &p2, &xsArg(1), &i);
-	r.x = r.y = NULL;
+	get_ecp(the, &p1, &xsArg(0), &i, &ec);
+	get_ecp(the, &p2, &xsArg(1), &i, &ec);
+	r.x = r.y = r.z = NULL;
+	// RI: r(x, y, z) will be fxBigInt_alloc'ed. Is it ok not to free?
 	fxBigInt_ec_add(the, &r, &p1, &p2, &ec);
-	set_ecp(the, &xsResult, &r);
+	fxBigInt_ec_norm(the, &r, &r, &ec);
+	set_ecp(the, &xsResult, &r, &ec);
 }
 
 void
@@ -114,11 +128,13 @@ xs_ec2_mul(xsMachine *the)
 
 	xsmcVars(10);
 	get_ec_param(the, &ec, &i);
-	get_ecp(the, &p, &xsArg(0), &i);
+	get_ecp(the, &p, &xsArg(0), &i, &ec);
 	k = xsmcToBigInt(xsArg(1));
-	r.x = r.y = NULL;
+	r.x = r.y = r.z = NULL;
+	// RI: r(x, y, z) will be fxBigInt_alloc'ed. Is it ok not to free?
 	fxBigInt_ec_mul(the, &r, &p, k, &ec);
-	set_ecp(the, &xsResult, &r);
+	fxBigInt_ec_norm(the, &r, &r, &ec);
+	set_ecp(the, &xsResult, &r, &ec);
 }
 
 void
@@ -131,11 +147,13 @@ xs_ec2_mul2(xsMachine *the)
 
 	xsmcVars(10);
 	get_ec_param(the, &ec, &i);
-	get_ecp(the, &p1, &xsArg(0), &i);
+	get_ecp(the, &p1, &xsArg(0), &i, &ec);
 	k1 = xsmcToBigInt(xsArg(1));
-	get_ecp(the, &p2, &xsArg(2), &i);
+	get_ecp(the, &p2, &xsArg(2), &i, &ec);
 	k2 = xsmcToBigInt(xsArg(3));
-	r.x = r.y = NULL;
+	r.x = r.y = r.z = NULL;
+	// RI: r(x, y, z) will be fxBigInt_alloc'ed. Is it ok not to free?
 	fxBigInt_ec_mul2(the, &r, &p1, k1, &p2, k2, &ec);
-	set_ecp(the, &xsResult, &r);
+	fxBigInt_ec_norm(the, &r, &r, &ec);
+	set_ecp(the, &xsResult, &r, &ec);
 }

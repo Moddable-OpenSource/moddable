@@ -37,6 +37,10 @@
 
 #include "xsAll.h"
 #include "xsBigIntEx.h"
+#include "xsmc.h"
+
+extern txBigInt gxBigIntZero;
+extern txBigInt gxBigIntOne;
 
 #ifndef howmany
 #define howmany(x, y)	(((x) + (y) - 1) / (y))
@@ -47,6 +51,50 @@
 #ifndef MIN
 #define MIN(a, b)	((a) <= (b) ? (a) : (b))
 #endif
+
+#define MAX_PELM	30
+#define FREE_MASK	((txU2)1 << (sizeof(txU2) * 8 - 1))
+
+typedef struct pool {
+	txBigInt *pelm[MAX_PELM];
+} pool_t;
+
+static void pool_init(pool_t *pool)
+{
+	c_memset(pool, 0, sizeof(pool_t));
+}
+
+static txBigInt *pool_get(xsMachine *the, txU2 size, pool_t *pool)
+{
+	// search for a free slot that fits into the size
+	for (int i = 0; i < MAX_PELM; i++) {
+		txBigInt *e = pool->pelm[i];
+		if (e == NULL) {
+			e = fxBigInt_alloc(the, size);
+			pool->pelm[i] = e;
+			return e;
+		}
+		if (e->size & FREE_MASK && (e->size & ~FREE_MASK) == size) {
+			e->size &= ~FREE_MASK;
+			return e;
+		}
+	}
+	fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	return NULL;
+}
+
+static void pool_put(txBigInt *e, txU2 size)
+{
+	e->size = FREE_MASK | size;
+}
+
+static void pool_dispose(xsMachine *the, pool_t *pool)
+{
+	for (int i = MAX_PELM; --i >= 0;) {
+		if (pool->pelm[i] != NULL)
+			fxBigInt_free(the, pool->pelm[i]);
+	}
+}
 
 /*
  * common functions
@@ -61,25 +109,38 @@ void fxBigInt_setBigInt(txSlot *slot, txBigInt *a)
 /*
  * modular arithmetics
  */
-txBigInt *fxBigInt_mod_add(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m)
+txBigInt *fxBigInt_mod_add(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m, pool_t *pool)
 {
-	txBigInt *c;
-
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
-	c = fxBigInt_add(the, NULL, a, b);
-	fxBigInt_mod(the, r, c, m);
-	fxBigInt_free(the, c);
+	txBigInt *c = pool_get(the, m->size + 1, pool);
+	
+	fxBigInt_add(the, c, a, b);
+	while (fxBigInt_ucomp(c, m) >= 0)
+		fxBigInt_sub(the, c, c, m);
+	fxBigInt_copy(r, c);
+	pool_put(c, m->size + 1);
 	return r;
 }
 
-txBigInt *fxBigInt_mod_sub(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m)
+txBigInt *fxBigInt_mod_dbl(txMachine *the, txBigInt *r, txBigInt *a, int k, txBigInt *m, pool_t *pool)
 {
-	txBigInt *c;
+	txBigInt *t = pool_get(the, m->size + 1, pool);
 
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
-	c = fxBigInt_sub(the, NULL, a, b);
+	fxBigInt_copy(r, a);
+	while (--k >= 0) {
+		fxBigInt_ulsl1(the, t, r, 1);
+		while (fxBigInt_ucomp(t, m) >= 0)
+			fxBigInt_sub(the, t, t, m);
+		fxBigInt_copy(r, t);
+	}
+	pool_put(t, m->size + 1);
+	return r;
+}
+
+txBigInt *fxBigInt_mod_sub(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m, pool_t *pool)
+{
+	txBigInt *c = pool_get(the, m->size + 1, pool);
+
+	fxBigInt_sub(the, c, a, b);
 	if (c->sign) {
 		while (c->sign)
 			fxBigInt_add(the, c, c, m);
@@ -89,41 +150,37 @@ txBigInt *fxBigInt_mod_sub(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b
 			fxBigInt_sub(the, c, c, m);
 	}
 	fxBigInt_copy(r, c);
-	fxBigInt_free(the, c);
+	pool_put(c, m->size + 1);
 	return r;
 }
 
-txBigInt *fxBigInt_mod_inv(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m)
+txBigInt *fxBigInt_mod_inv(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, pool_t *pool)
 {
-	return fxBigInt_mod_sub(the, r, m, a, m);
+	return fxBigInt_mod_sub(the, r, m, a, m, pool);
 }
 
-txBigInt *fxBigInt_mod_mod(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m)
+txBigInt *fxBigInt_mod_mod(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, pool_t *pool)
 {
 	return fxBigInt_mod(the, r, a, m);
 }
 
-txBigInt *fxBigInt_mod_mul(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m)
+txBigInt *fxBigInt_mod_mul(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m, pool_t *pool)
 {
-	txBigInt *c;
+	txBigInt *c = pool_get(the, m->size * 2, pool);
 
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
-	c = fxBigInt_mul(the, NULL, a, b);
+	c = fxBigInt_mul(the, c, a, b);
 	fxBigInt_mod(the, r, c, m);
-	fxBigInt_free(the, c);
+	pool_put(c, m->size * 2);
 	return r;
 }
 
-txBigInt *fxBigInt_mod_square(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m)
+txBigInt *fxBigInt_mod_square(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, pool_t *pool)
 {
-	txBigInt *c;
+	txBigInt *c = pool_get(the, m->size * 2, pool);
 
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
-	c = fxBigInt_sqr(the, NULL, a);
+	fxBigInt_sqr(the, c, a);
 	fxBigInt_mod(the, r, c, m);
-	fxBigInt_free(the, c);
+	pool_put(c, m->size * 2);
 	return r;
 }
 
@@ -311,28 +368,31 @@ txBigInt *fxBigInt_mod_exp_LR(txMachine *the, txBigInt *r, txBigInt *b, txBigInt
 {
 	int i;
 	txBigInt *t, *t2 = NULL;
-
+	pool_t pool;
+	
+	pool_init(&pool);
 	if (r == NULL)
 		r = fxBigInt_alloc(the, m->size);
-	t = mod_exp_init(the, NULL, m);
-	if (fxBigInt_ucomp(b, m) > 0)
-		t2 = b = fxBigInt_mod(the, NULL, b, m);
+	t = pool_get(the, m->size, &pool);
+	t = mod_exp_init(the, t, m);
+	if (fxBigInt_ucomp(b, m) > 0) {
+		t2 = pool_get(the, m->size, &pool);
+		b = fxBigInt_mod(the, t2, b, m);
+	}
 	for (i = fxBigInt_bitsize(e); --i >= 0;) {
-		fxBigInt_mod_square(the, t, t, m);
+		fxBigInt_mod_square(the, t, t, m, &pool);
 		if (fxBigInt_isset(e, i))
-			fxBigInt_mod_mul(the, t, t, b, m);
+			fxBigInt_mod_mul(the, t, t, b, m,&pool);
 	}
 	fxBigInt_copy(r, t);
-	if (t2 != NULL)
-		fxBigInt_free(the, t2);
-	fxBigInt_free(the, t);
+	pool_dispose(the, &pool);
 	return r;
 }
 
 /*
  * Montgomery method
  */
-static txU4 mont_init(txBigInt *m)
+txU4 mont_init(txBigInt *m)
 {
 	txU4 a = m->data[0];
 	txU4 x, s, d;
@@ -347,16 +407,17 @@ static txU4 mont_init(txBigInt *m)
 	return ~x + 1;
 }
 
-static txBigInt *mont_reduction(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u)
+txBigInt *mont_reduction(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u, pool_t *pool)
 {
 	txBigInt *t1, *t2;
+	txU2 t1siz, t2siz;
 	int n;
 
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
 	n = m->size;
-	t2 = fxBigInt_alloc(the, n + 1);
-	t1 = fxBigInt_alloc(the, MAX(t2->size, a->size) + 1);
+	t2siz = n + 1;
+	t1siz = MAX(t2siz, a->size) + 1;
+	t2 = pool_get(the, t2siz, pool);
+	t1 = pool_get(the, t1siz, pool);
 	fxBigInt_copy(t1, a);
 	while (--n >= 0) {
 		txU4 u1 = u * t1->data[0];	/* mod b */
@@ -367,12 +428,12 @@ static txBigInt *mont_reduction(txMachine *the, txBigInt *r, txBigInt *a, txBigI
 	if (fxBigInt_ucomp(t1, m) >= 0)
 		fxBigInt_sub(the, t1, t1, m);
 	fxBigInt_copy(r, t1);
-	fxBigInt_free(the, t1);
-	fxBigInt_free(the, t2);
+	pool_put(t1, t1siz);
+	pool_put(t2, t2siz);
 	return r;
 }
 
-static txBigInt *mont_in(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m)
+txBigInt *mont_in(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m)
 {
 	txBigInt *ta;
 
@@ -384,23 +445,27 @@ static txBigInt *mont_in(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m)
 	return r;
 }
 
-static txBigInt *mont_out(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u)
+txBigInt *mont_out(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u)
 {
 	/* convert x' -> Mont(x', 1) = x'R^{-1} mod m -- same as Montgomery reduction */
-	return mont_reduction(the, r, a, m, u);
+	pool_t pool;	// must be a small pool
+	if (r == NULL)
+		r = fxBigInt_alloc(the, m->size);
+	pool_init(&pool);
+	mont_reduction(the, r, a, m, u, &pool);
+	pool_dispose(the, &pool);
+	return r;
 }
 
-static txBigInt *mont_mul(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m, txU4 u)
+static txBigInt *mont_mul(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m, txU4 u, pool_t *pool)
 {
 	int i, n, sz;
 	txBigInt *t1, *t2, *t3;
 
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
 	sz = MAX(b->size + 1, m->size + 1) + 1;
-	t1 = fxBigInt_alloc(the, sz);
-	t2 = fxBigInt_alloc(the, sz);
-	t3 = fxBigInt_alloc(the, sz + 1);
+	t1 = pool_get(the, sz, pool);
+	t2 = pool_get(the, sz, pool);
+	t3 = pool_get(the, sz + 1, pool);
 	t3->size = 1;
 	t3->data[0] = 0;
 	for (i = 0, n = m->size; i < n; i++) {
@@ -415,35 +480,30 @@ static txBigInt *mont_mul(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b,
 	if (fxBigInt_ucomp(t3, m) >= 0)
 		fxBigInt_sub(the, t3, t3, m);
 	fxBigInt_copy(r, t3);
-	fxBigInt_free(the, t3);
-	fxBigInt_free(the, t2);
-	fxBigInt_free(the, t1);
+	pool_put(t3, sz + 1);
+	pool_put(t2, sz);
+	pool_put(t1, sz);
 	return r;
 }
 
-static txBigInt *mont_square(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u)
+static txBigInt *mont_square(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u, pool_t *pool)
 {
-	txBigInt *t;
+	txBigInt *t = pool_get(the, a->size * 2, pool);
 
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
-	t = fxBigInt_sqr(the, NULL, a);
-	mont_reduction(the, r, t, m, u);
-	fxBigInt_free(the, t);
+	fxBigInt_sqr(the, t, a);
+	mont_reduction(the, r, t, m, u, pool);
+	pool_put(t, a->size * 2);
 	return r;
 }
 
-static txBigInt *mont_exp_init(txMachine *the, txBigInt *r, txBigInt *m)
+static txBigInt *mont_exp_init(txMachine *the, txBigInt *r, txBigInt *m, pool_t *pool)
 {
-	txBigInt *t;
+	txBigInt *t = pool_get(the, m->size + 1, pool);
 
-	if (r == NULL)
-		r = fxBigInt_alloc(the, m->size);
-	t = fxBigInt_alloc(the, m->size + 1);
 	fxBigInt_fill0(t);
 	t->data[t->size - 1] = 1;
 	r = fxBigInt_mod(the, r, t, m);
-	fxBigInt_free(the, t);
+	pool_put(t, m->size + 1);
 	return r;
 }
 
@@ -452,21 +512,24 @@ txBigInt *fxBigInt_mont_exp_LR(txMachine *the, txBigInt *r, txBigInt *b, txBigIn
 	int i;
 	txBigInt *t;
 	txU4 u;
+	pool_t pool;
 
 	if (r == NULL)
 		r = fxBigInt_alloc(the, m->size);
+	pool_init(&pool);
 	u = mont_init(m);
-	t = mont_exp_init(the, NULL, m);
+	t = pool_get(the, m->size, &pool);
+	mont_exp_init(the, t, m, &pool);
 	if (fxBigInt_ucomp(b, m) > 0)
-		b = fxBigInt_mod(the, NULL, b, m);
-	b = mont_in(the, NULL, b, m);
+		b = fxBigInt_mod(the, pool_get(the, m->size, &pool), b, m);
+	b = mont_in(the, pool_get(the, m->size, &pool), b, m);
 	for (i = fxBigInt_bitsize(e); --i >= 0;) {
-		mont_square(the, t, t, m, u);
+		mont_square(the, t, t, m, u, &pool);
 		if (fxBigInt_isset(e, i))
-			mont_mul(the, t, t, b, m, u);
+			mont_mul(the, t, t, b, m, u, &pool);
 	}
 	mont_out(the, r, t, m, u);
-	fxBigInt_free(the, t);
+	pool_dispose(the, &pool);
 	return r;
 }
 
@@ -477,14 +540,16 @@ txBigInt *fxBigInt_mont_exp_SW(txMachine *the, txBigInt *r, txBigInt *b, txBigIn
 	txBigInt *A;
 	txBigInt *g[64];
 	txU4 u;
+	pool_t pool;
 
 	if (r == NULL)
 		r = fxBigInt_alloc(the, m->size);
+	pool_init(&pool);
 	u = mont_init(m);
-	A = mont_exp_init(the, NULL, m);
+	A = mont_exp_init(the, pool_get(the, m->size, &pool), m, &pool);
 	if (fxBigInt_ucomp(b, m) > 0)
-		b = fxBigInt_mod(the, NULL, b, m);
-	b = mont_in(the, NULL, b, m);
+		b = fxBigInt_mod(the, pool_get(the, m->size, &pool), b, m);
+	b = mont_in(the, pool_get(the, m->size, &pool), b, m);
 	expLen = fxBigInt_bitsize(e);
 	if (param > 0)
 		k = param;
@@ -492,16 +557,16 @@ txBigInt *fxBigInt_mont_exp_SW(txMachine *the, txBigInt *r, txBigInt *b, txBigIn
 		k = (expLen <= 18 ? 1 : (expLen <= 36 ? 2 : (expLen <= 134 ? 3 : (expLen <= 536 ? 4 : (expLen <= 1224 ? 5 : (expLen <= 1342 ? 6 : 7))))));
 	gsize = 1 << (k - 1);
 	for (i = 0; i < gsize; i++)
-		g[i] = fxBigInt_alloc(the, m->size);
+		g[i] = pool_get(the, m->size, &pool);
 	fxBigInt_copy(g[0], b);
 	if (k > 1) {
-		txBigInt *t = mont_square(the, NULL, b, m, u);
-		for (i = 1; i < gsize; i++)
-			g[i] = mont_mul(the, NULL, t, g[i - 1], m, u);
+		txBigInt *t = mont_square(the, pool_get(the, m->size, &pool), b, m, u, &pool);
+		for (i = gsize; --i >= 1;)
+			mont_mul(the, g[i], t, g[i - 1], m, u, &pool);
 	}
 	for (i = expLen - 1; i >= 0;) {
 		if (!fxBigInt_isset(e, i)) {
-			mont_square(the, A, A, m, u);
+			mont_square(the, A, A, m, u, &pool);
 			--i;
 		}
 		else {
@@ -517,17 +582,15 @@ txBigInt *fxBigInt_mont_exp_SW(txMachine *the, txBigInt *r, txBigInt *b, txBigIn
 				else
 					shift++;
 			}
-			mont_square(the, A, A, m, u);
+			mont_square(the, A, A, m, u, &pool);
 			for (j = 1; j < i - l + 1; j++)
-				mont_square(the, A, A, m, u);
-			mont_mul(the, A, A, g[(power-1)>>1], m, u);
+				mont_square(the, A, A, m, u, &pool);
+			mont_mul(the, A, A, g[(power-1)>>1], m, u, &pool);
 			i = l - 1;
 		}
 	}
 	mont_out(the, r, A, m, u);
-	for (i = 0; i < gsize; i++)
-		fxBigInt_free(the, g[i]);
-	fxBigInt_free(the, A);
+	pool_dispose(the, &pool);
 	return r;
 }
 
@@ -535,152 +598,272 @@ txBigInt *fxBigInt_mont_exp_SW(txMachine *the, txBigInt *r, txBigInt *b, txBigIn
  * EC(p)
  */
 #define fxBigInt_mod_mulinv	fxBigInt_mod_mulinv_general
+#define fxBigInt_mont_square(the, r, a, m, u, pool)	mont_square(the, r, a, m, u, pool)
+#define fxBigInt_mont_mul(the, r, a, b, m, u, pool)	mont_mul(the, r, a, b, m, u, pool)
 
-void fxBigInt_ec_double(txMachine *the, txECPoint *r, txECPoint *a, txECParam *ec)
+/*
+ https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html
+ The "dbl-2007-bl" doubling formulas [database entry; Sage verification script; Sage output; three-operand code]:
+ Cost: 1M + 8S + 1*a + 10add + 2*2 + 1*3 + 1*8.
+ Source: 2007 Bernstein–Lange.
+ Explicit formulas:
+	   XX = X1^2
+	   YY = Y1^2
+	   YYYY = YY^2
+	   ZZ = Z1^2
+	   S = 2*((X1+YY)^2-XX-YYYY)
+	   M = 3*XX+a*ZZ^2
+	   T = M^2-2*S
+	   X3 = T
+	   Y3 = M*(S-T)-8*YYYY
+	   Z3 = (Y1+Z1)^2-YY-ZZ
+ */
+
+static void ec_double(txMachine *the, txECPoint *r, txECPoint *a, txECParam *ec, pool_t *pool)
 {
-	txBigInt *t1, *t2, *t3, *t4, *t5, *t6, *lambda, *rx, *ry;
-
-	if (a->identity || fxBigInt_iszero(a->y)) {
-		r->identity = 1;
+	txBigInt *XX, *YY, *YYYY, *ZZ, *S, *M, *T, *Y3, *Z3;
+	txBigInt *t1, *t2;
+	txBigInt *m = ec->m;
+	
+	if (fxBigInt_iszero(a->z)) {
+		fxBigInt_copy(r->z, a->z);
 		return;
 	}
 
-	r->identity = 0;
+	t1 = pool_get(the, m->size, pool);
+	t2 = pool_get(the, m->size, pool);
+	XX = pool_get(the, m->size, pool);
+	YY = pool_get(the, m->size, pool);
+	YYYY = pool_get(the, m->size, pool);
+	ZZ = pool_get(the, m->size, pool);
+	S = pool_get(the, m->size, pool);
+	M = pool_get(the, m->size, pool);
+	T = pool_get(the, m->size, pool);
+	Y3 = pool_get(the, m->size, pool);
+	Z3 = pool_get(the, m->size, pool);
+	
+	XX = fxBigInt_mont_square(the, XX, a->x, m, ec->u, pool);
+	YY = fxBigInt_mont_square(the, YY, a->y, m, ec->u, pool);
+	YYYY = fxBigInt_mont_square(the, YYYY, YY, m, ec->u, pool);
+	ZZ = fxBigInt_mont_square(the, ZZ, a->z, m, ec->u, pool);
+	t1 = fxBigInt_mod_add(the, t1, a->x, YY, m, pool);
+	t1 = fxBigInt_mont_square(the, t1, t1, m, ec->u, pool);
+	t1 = fxBigInt_mod_sub(the, t1, t1, XX, m, pool);
+	t1 = fxBigInt_mod_sub(the, t1, t1, YYYY, m, pool);
+	S = fxBigInt_mod_dbl(the, S, t1, 1, m, pool);
+	t1 = fxBigInt_mod_dbl(the, t1, XX, 1, m, pool);
+	t1 = fxBigInt_mod_add(the, t1, t1, XX, m, pool);
+	t2 = fxBigInt_mont_square(the, t2, ZZ, m, ec->u, pool);
+	t2 = fxBigInt_mont_mul(the, t2, t2, ec->a, m, ec->u, pool);
+	M = fxBigInt_mod_add(the, M, t1, t2, m, pool);
+	t1 = fxBigInt_mont_square(the, t1, M, m, ec->u, pool);
+	t2 = fxBigInt_mod_dbl(the, t2, S, 1, m, pool);
+	T = fxBigInt_mod_sub(the, T, t1, t2, m, pool);
+	t1 = fxBigInt_mod_sub(the, t1, S, T, m, pool);
+	t1 = fxBigInt_mont_mul(the, t1, t1, M, m, ec->u, pool);
+	t2 = fxBigInt_mod_dbl(the, t2, YYYY, 3, m, pool);
+	Y3 = fxBigInt_mod_sub(the, Y3, t1, t2, m, pool);
+	t1 = fxBigInt_mod_add(the, t1, a->y, a->z, m, pool);
+	t1 = fxBigInt_mont_square(the, t1, t1, m, ec->u, pool);
+	t1 = fxBigInt_mod_sub(the, t1, t1, YY, m, pool);
+	Z3 = fxBigInt_mod_sub(the, Z3, t1, ZZ, m, pool);
+	
+	fxBigInt_copy(r->z, Z3);
+	fxBigInt_copy(r->y, Y3);
+	fxBigInt_copy(r->x, T);
+	
+	pool_put(Z3, m->size);
+	pool_put(Y3, m->size);
+	pool_put(T, m->size);
+	pool_put(M, m->size);
+	pool_put(S, m->size);
+	pool_put(ZZ, m->size);
+	pool_put(YYYY, m->size);
+	pool_put(YY, m->size);
+	pool_put(XX, m->size);
+	pool_put(t2, m->size);
+	pool_put(t1, m->size);
+}
+
+void fxBigInt_ec_double(txMachine *the, txECPoint *r, txECPoint *a, txECParam *ec)
+{
+	pool_t pool;
+	
+	if (r->z == NULL)
+		r->z = fxBigInt_alloc(the, ec->m->size);
 	if (r->y == NULL)
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
 		r->x = fxBigInt_alloc(the, ec->m->size);
-
-	/* lambda = (3*x^2 + a) / 2*y */
-	lambda = fxBigInt_alloc(the, ec->m->size);
-	t1 = fxBigInt_mod_square(the, NULL, a->x, ec->m);		/* t1 = x^2 */
-	t2 = fxBigInt_mod_add(the, NULL, t1, t1, ec->m);		/* t2 = t1 + t1 = t1 * 2 */
-	t3 = fxBigInt_mod_add(the, NULL, t2, t1, ec->m);		/* t3 = t1 + t2 = t1 * 3 */
-	t4 = fxBigInt_mod_add(the, NULL, t3, ec->a, ec->m);
-	t5 = fxBigInt_mod_add(the, NULL, a->y, a->y, ec->m);
-	t6 = fxBigInt_mod_mulinv(the, NULL, t5, ec->m);
-	fxBigInt_mod_mul(the, lambda, t4, t6, ec->m);
-
-	fxBigInt_free(the, t6);
-	fxBigInt_free(the, t5);
-	fxBigInt_free(the, t4);
-	fxBigInt_free(the, t3);
-	fxBigInt_free(the, t2);
-	fxBigInt_free(the, t1);
-
-	/* rx = lambda^2 - 2*x */
-	rx = fxBigInt_alloc(the, ec->m->size);
-	t1 = fxBigInt_mod_square(the, NULL, lambda, ec->m);		/* t1 = lambda^2 */
-	t2 = fxBigInt_mod_sub(the, NULL, t1, a->x, ec->m);		/* t2 = t1 - x */
-	fxBigInt_mod_sub(the, rx, t2, a->x, ec->m);			/* rx = t2 - x = t1 - 2*x */
-	fxBigInt_free(the, t2);
-	fxBigInt_free(the, t1);
-
-	/* ry = lambda * (x - rx) - y */
-	ry = fxBigInt_alloc(the, ec->m->size);
-	t1 = fxBigInt_mod_sub(the, NULL, a->x, rx, ec->m);
-	t2 = fxBigInt_mod_mul(the, NULL, lambda, t1, ec->m);
-	fxBigInt_mod_sub(the, ry, t2, a->y, ec->m);
-	fxBigInt_free(the, t2);
-	fxBigInt_free(the, t1);
-
-	fxBigInt_copy(r->y, ry);
-	fxBigInt_free(the, ry);
-	fxBigInt_copy(r->x, rx);
-	fxBigInt_free(the, rx);
-	fxBigInt_free(the, lambda);
+	pool_init(&pool);
+	ec_double(the, r, a, ec, &pool);
+	pool_dispose(the, &pool);
 }
 
-static void ec_copy(txMachine *the, txECPoint *r, txECPoint *a)
+/*
+  https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html
+  add-2007-bl:
+      Z1Z1 = Z1^2
+      Z2Z2 = Z2^2
+      U1 = X1*Z2Z2
+      U2 = X2*Z1Z1
+      S1 = Y1*Z2*Z2Z2
+      S2 = Y2*Z1*Z1Z1
+      H = U2-U1
+      I = (2*H)^2
+      J = H*I
+      r = 2*(S2-S1)
+      V = U1*I
+      X3 = r^2-J-2*V
+      Y3 = r*(V-X3)-2*S1*J
+      Z3 = ((Z1+Z2)^2-Z1Z1-Z2Z2)*H
+ */
+
+static void ec_add(txMachine *the, txECPoint *r, txECPoint *a, txECPoint *b, txECParam *ec, pool_t *pool)
 {
-	if (r->x == NULL)
-		r->x = fxBigInt_alloc(the, a->x->size);
-	if (r->y == NULL)
-		r->y = fxBigInt_alloc(the, a->y->size);
-	fxBigInt_copy(r->x, a->x);
-	fxBigInt_copy(r->y, a->y);
-	r->identity = a->identity;
+    txBigInt *Z1Z1, *Z2Z2, *U1, *U2, *S1, *S2, *H, *I, *J, *R, *V, *X3, *Y3, *Z3;
+    txBigInt *t1, *t2;
+    txBigInt *m = ec->m;
+
+	if (fxBigInt_iszero(a->z)) {
+		fxBigInt_copy(r->x, b->x);
+		fxBigInt_copy(r->y, b->y);
+		fxBigInt_copy(r->z, b->z);
+		return;
+	}
+	else if (fxBigInt_iszero(b->z)) {
+		fxBigInt_copy(r->x, a->x);
+		fxBigInt_copy(r->y, a->y);
+		fxBigInt_copy(r->z, a->z);
+		return;
+	}
+	
+	t1 = pool_get(the, m->size, pool);
+	t2 = pool_get(the, m->size, pool);
+	Z1Z1 = pool_get(the, m->size, pool);
+	Z2Z2 = pool_get(the, m->size, pool);
+	U1 = pool_get(the, m->size, pool);
+	U2 = pool_get(the, m->size, pool);
+	S1 = pool_get(the, m->size, pool);
+	S2 = pool_get(the, m->size, pool);
+
+    Z1Z1 = fxBigInt_mont_square(the, Z1Z1, a->z, m, ec->u, pool);
+    Z2Z2 = fxBigInt_mont_square(the, Z2Z2, b->z, m, ec->u, pool);
+    U1 = fxBigInt_mont_mul(the, U1, a->x, Z2Z2, m, ec->u, pool);
+    U2 = fxBigInt_mont_mul(the, U2, b->x, Z1Z1, m, ec->u, pool);
+	t1 = fxBigInt_mont_mul(the, t1, a->y, b->z, m, ec->u, pool);
+	S1 = fxBigInt_mont_mul(the, S1, t1, Z2Z2, m, ec->u, pool);
+	t1 = fxBigInt_mont_mul(the, t1, b->y, a->z, m, ec->u, pool);
+	S2 = fxBigInt_mont_mul(the, S2, t1, Z1Z1, m, ec->u, pool);
+
+	if (fxBigInt_ucomp(U1, U2) == 0) {
+		int eq = fxBigInt_ucomp(S1, S2) == 0;
+		pool_put(S2, m->size);
+		pool_put(S1, m->size);
+		pool_put(U2, m->size);
+		pool_put(U1, m->size);
+		pool_put(Z2Z2, m->size);
+		pool_put(Z1Z1, m->size);
+		pool_put(t2, m->size);
+		pool_put(t1, m->size);
+		if (eq)
+			ec_double(the, r, a, ec, pool);
+		else {
+			// zero?
+			fxBigInt_copy(r->z, &gxBigIntZero);
+		}
+		return;
+	}
+
+	H = pool_get(the, m->size, pool);
+	I = pool_get(the, m->size, pool);
+	J = pool_get(the, m->size, pool);
+	R = pool_get(the, m->size, pool);
+	V = pool_get(the, m->size, pool);
+	X3 = pool_get(the, m->size, pool);
+	Y3 = pool_get(the, m->size, pool);
+	Z3 = pool_get(the, m->size, pool);
+
+    H = fxBigInt_mod_sub(the, H, U2, U1, m, pool);
+	t1 = fxBigInt_mod_dbl(the, t1, H, 1, m, pool);
+	I = fxBigInt_mont_square(the, I, t1, m, ec->u, pool);
+	J = fxBigInt_mont_mul(the, J, H, I, m, ec->u, pool);
+	t1 = fxBigInt_mod_sub(the, t1, S2, S1, m, pool);
+	R = fxBigInt_mod_dbl(the, R, t1, 1, m, pool);
+	V = fxBigInt_mont_mul(the, V, U1, I, m, ec->u, pool);
+	t1 = fxBigInt_mont_square(the, t1, R, m, ec->u, pool);
+	t1 = fxBigInt_mod_sub(the, t1, t1, J, m, pool);
+	t2 = fxBigInt_mod_dbl(the, t2, V, 1, m, pool);
+	X3 = fxBigInt_mod_sub(the, X3, t1, t2, m, pool);
+	t1 = fxBigInt_mod_sub(the, t1, V, X3, m, pool);
+	t1 = fxBigInt_mont_mul(the, t1, t1, R, m, ec->u, pool);
+	t2 = fxBigInt_mont_mul(the, t2, S1, J, m, ec->u, pool);
+	t2 = fxBigInt_mod_dbl(the, t2, t2, 1, m, pool);
+	Y3 = fxBigInt_mod_sub(the, Y3, t1, t2, m, pool);
+	t1 = fxBigInt_mod_add(the, t1, a->z, b->z, m, pool);
+	t1 = fxBigInt_mont_square(the, t1, t1, m, ec->u, pool);
+	t1 = fxBigInt_mod_sub(the, t1, t1, Z1Z1, m, pool);
+	t1 = fxBigInt_mod_sub(the, t1, t1, Z2Z2, m, pool);
+	Z3 = fxBigInt_mont_mul(the, Z3, t1, H, m, ec->u, pool);
+
+	fxBigInt_copy(r->z, Z3);
+	fxBigInt_copy(r->y, Y3);
+	fxBigInt_copy(r->x, X3);
+
+	pool_put(Z3, m->size);
+	pool_put(Y3, m->size);
+	pool_put(X3, m->size);
+	pool_put(V, m->size);
+	pool_put(R, m->size);
+	pool_put(J, m->size);
+	pool_put(I, m->size);
+	pool_put(H, m->size);
+	pool_put(S2, m->size);
+	pool_put(S1, m->size);
+	pool_put(U2, m->size);
+	pool_put(U1, m->size);
+	pool_put(Z2Z2, m->size);
+	pool_put(Z1Z1, m->size);
+	pool_put(t2, m->size);
+	pool_put(t1, m->size);
 }
 
 void fxBigInt_ec_add(txMachine *the, txECPoint *r, txECPoint *a, txECPoint *b, txECParam *ec)
 {
-	txBigInt *t1, *t2, *t3, *lambda, *rx, *ry;
-
-	/* add zero? */
-	if (a->identity) {
-		ec_copy(the, r, b);
-		return;
-	}
-	if (b->identity) {
-		ec_copy(the, r, a);
-		return;
-	}
-
-	if (fxBigInt_ucomp(a->x, b->x) == 0) {
-		/* a == b ? */
-		if (fxBigInt_ucomp(a->y, b->y) == 0) {
-			fxBigInt_ec_double(the, r, a, ec);
-			return;
-		}
-		else {
-			r->identity = 1;
-			return;
-		}
-	}
-
-	r->identity = 0;
+	pool_t pool;
+	
+	if (r->z == NULL)
+		r->z = fxBigInt_alloc(the, ec->m->size);
 	if (r->y == NULL)
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
 		r->x = fxBigInt_alloc(the, ec->m->size);
-
-	/* lambda = (y2 - y1) / (x2 - x1) */
-	lambda = fxBigInt_alloc(the, ec->m->size);
-	t1 = fxBigInt_mod_sub(the, NULL, b->y, a->y, ec->m);
-	t2 = fxBigInt_mod_sub(the, NULL, b->x, a->x, ec->m);
-	t3 = fxBigInt_mod_mulinv(the, NULL, t2, ec->m);
-	fxBigInt_mod_mul(the, lambda, t1, t3, ec->m);
-	fxBigInt_free(the, t3);
-	fxBigInt_free(the, t2);
-	fxBigInt_free(the, t1);
-
-	/* rx = lambda^2 - x1 - x2 */
-	rx = fxBigInt_alloc(the, ec->m->size);
-	t1 = fxBigInt_mod_square(the, NULL, lambda, ec->m);
-	t2 = fxBigInt_mod_sub(the, NULL, t1, a->x, ec->m);
-	fxBigInt_mod_sub(the, rx, t2, b->x, ec->m);
-	fxBigInt_free(the, t2);
-	fxBigInt_free(the, t1);
-
-	/* ry = lambda * (x1 - rx) - y1 */
-	ry = fxBigInt_alloc(the, ec->m->size);
-	t1 = fxBigInt_mod_sub(the, NULL, a->x, rx, ec->m);
-	t2 = fxBigInt_mod_mul(the, NULL, lambda, t1, ec->m);
-	fxBigInt_mod_sub(the, ry, t2, a->y, ec->m);
-	fxBigInt_free(the, t2);
-	fxBigInt_free(the, t1);
-
-	fxBigInt_copy(r->y, ry);
-	fxBigInt_free(the, ry);
-	fxBigInt_copy(r->x, rx);
-	fxBigInt_free(the, rx);
-	fxBigInt_free(the, lambda);
+	pool_init(&pool);
+	ec_add(the, r, a, b, ec, &pool);
+	pool_dispose(the, &pool);
 }
 
 void fxBigInt_ec_mul(txMachine *the, txECPoint *r, txECPoint *a, txBigInt *k, txECParam *ec)
 {
 	int i;
+	pool_t pool;
 
+	if (r->z == NULL)
+		r->z = fxBigInt_alloc(the, ec->m->size);
 	if (r->y == NULL)
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
 		r->x = fxBigInt_alloc(the, ec->m->size);
-	r->identity = 1;
+	fxBigInt_copy(r->z, &gxBigIntZero);
+	
+	pool_init(&pool);
 	for (i = fxBigInt_bitsize(k); --i >= 0;) {
-		fxBigInt_ec_double(the, r, r, ec);
-		if (fxBigInt_isset(k, i))
-			fxBigInt_ec_add(the, r, r, a, ec);
+		ec_double(the, r, r, ec, &pool);
+		if (fxBigInt_isset(k, i)) {
+			ec_add(the, r, r, a, ec, &pool);
+		}
 	}
+	pool_dispose(the, &pool);
 }
 
 void fxBigInt_ec_mul2(txMachine *the, txECPoint *r, txECPoint *a1, txBigInt *k1, txECPoint *a2, txBigInt *k2, txECParam *ec)
@@ -688,28 +871,68 @@ void fxBigInt_ec_mul2(txMachine *the, txECPoint *r, txECPoint *a1, txBigInt *k1,
 	int i, j;
 	txECPoint *G[4], g3;
 	int k1size, k2size;
+	pool_t pool;
 #define isset_k1(i)	(i < k1size ? fxBigInt_isset(k1, i): 0)
 #define isset_k2(i)	(i < k2size ? fxBigInt_isset(k2, i): 0)
 
+	if (r->z == NULL)
+		r->z = fxBigInt_alloc(the, ec->m->size);
 	if (r->y == NULL)
 		r->y = fxBigInt_alloc(the, ec->m->size);
 	if (r->x == NULL)
 		r->x = fxBigInt_alloc(the, ec->m->size);
-	r->identity = 1;
+	fxBigInt_copy(r->z, &gxBigIntZero);
 
+	pool_init(&pool);
 	G[1] = a1;
 	G[2] = a2;
-	g3.x = g3.y = NULL;
-	fxBigInt_ec_add(the, &g3, a1, a2, ec);
+	g3.x = pool_get(the, ec->m->size, &pool);
+	g3.y = pool_get(the, ec->m->size, &pool);
+	g3.z = pool_get(the, ec->m->size, &pool);
+	ec_add(the, &g3, a1, a2, ec, &pool);
 	G[3] = &g3;
 	k1size = fxBigInt_bitsize(k1);
 	k2size = fxBigInt_bitsize(k2);
 	for (i = MAX(k1size, k2size); --i >= 0;) {
-		fxBigInt_ec_double(the, r, r, ec);
+		ec_double(the, r, r, ec, &pool);
 		j = isset_k1(i) | (isset_k2(i) << 1);
 		if (j != 0)
-			fxBigInt_ec_add(the, r, r, G[j], ec);
+			ec_add(the, r, r, G[j], ec, &pool);
 	}
-	fxBigInt_free(the, g3.x);
-	fxBigInt_free(the, g3.y);
+	pool_dispose(the, &pool);
+}
+
+void fxBigInt_ec_norm(xsMachine *the, txECPoint *r, txECPoint *a, txECParam *ec)
+{
+	txBigInt *inv, *inv2, *inv3;
+	pool_t pool;
+	
+	if (r->z == NULL)
+		r->z = fxBigInt_alloc(the, ec->m->size);
+	if (r->y == NULL)
+		r->y = fxBigInt_alloc(the, ec->m->size);
+	if (r->x == NULL)
+		r->x = fxBigInt_alloc(the, ec->m->size);
+
+	if (fxBigInt_iszero(a->z) || fxBigInt_ucomp(a->z, ec->one) == 0) {
+		fxBigInt_copy(r->x, a->x);
+		fxBigInt_copy(r->y, a->y);
+		fxBigInt_copy(r->z, a->z);
+		return;
+	}
+	
+	pool_init(&pool);
+	inv = pool_get(the, ec->m->size, &pool);
+	inv2 = pool_get(the, ec->m->size, &pool);
+	inv3 = pool_get(the, ec->m->size, &pool);
+	inv = mont_out(the, inv, a->z, ec->m, ec->u);
+	inv = fxBigInt_mod_mulinv(the, inv, inv, ec->m);
+	inv = mont_in(the, inv, inv, ec->m);
+	inv2 = fxBigInt_mont_square(the, inv2, inv, ec->m, ec->u, &pool);
+	inv3 = fxBigInt_mont_mul(the, inv3, inv2, inv, ec->m, ec->u, &pool);
+	
+	fxBigInt_mont_mul(the, r->x, a->x, inv2, ec->m, ec->u, &pool);
+	fxBigInt_mont_mul(the, r->y, a->y, inv3, ec->m, ec->u, &pool);
+	fxBigInt_copy(r->z, ec->one);
+	pool_dispose(the, &pool);
 }
