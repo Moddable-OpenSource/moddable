@@ -971,9 +971,8 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 	if (aParent)
 		fxEchoPropertyInstance(the, theList, "(..)", -1, C_NULL, XS_NO_ID, theInstance->flag & XS_MARK_FLAG, aParent);
 	aProperty = theInstance->next;
-	if (aProperty && (aProperty->ID == XS_ARRAY_BEHAVIOR)) {
+	if (aProperty && (aProperty->flag & XS_INTERNAL_FLAG) && (aProperty->ID == XS_ARRAY_BEHAVIOR)) {
 		fxEchoProperty(the, aProperty, theList, "(array)", -1, C_NULL);
-		aProperty = aProperty->next;
 	}
 	else if (aProperty && (aProperty->flag & XS_INTERNAL_FLAG)) {
 		switch (aProperty->kind) {
