@@ -512,14 +512,15 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	mxPop();
 	if (length > 0xFFFFFFFF) { // @@ practical limit for iterations
 		txSlot* result = instance->next;
-		while (result && (result->flag & XS_INTERNAL_FLAG))
+		length = 0;
+		while (result && (result->flag & XS_INTERNAL_FLAG)) {
+			if (result->kind == XS_ARRAY_KIND) {
+				length = array->value.array.length;
+				break;
+			}
 			result = result->next;
-		if (result && (result->kind == XS_ARRAY_KIND))
-			length = array->value.array.length;
-		else
-			length = 0;
+		}
 	}
-		
 	return (txIndex)length;
 }
 
@@ -585,7 +586,7 @@ txSlot* fxNewArrayInstance(txMachine* the)
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 	property->ID = XS_ARRAY_BEHAVIOR;
 	property->kind = XS_ARRAY_KIND;
 	property->value.array.length = 0;

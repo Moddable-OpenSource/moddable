@@ -455,7 +455,7 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 	}
 	if (!property) {
 		*address = property = fxNewSlot(the);
-		property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+		property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 		property->kind = XS_PRIVATE_KIND;
 		property->value.private.check = check;
 		property->value.private.first = C_NULL;
