@@ -752,8 +752,10 @@ void fx_Object_fromEntries(txMachine* the)
 		mxTry(the) {
 			if (value->kind != XS_REFERENCE_KIND)
 				mxTypeError("item is no object");
-			mxGetID(value, 0);
-			mxGetID(value, 1);
+			mxPushSlot(value);
+			fxGetIndex(the, 0);
+			mxPushSlot(value);
+			fxGetIndex(the, 1);
 			at = fxAt(the, the->stack + 1);
 			mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
 			mxPop();

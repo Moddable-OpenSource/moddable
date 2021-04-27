@@ -536,7 +536,7 @@ void PiuViewCreate(xsMachine* the)
 					WORD id = (WORD)((i << 8) | (j + 1));
 					xsStringValue value;
 					char buffer[256];
-					xsIndex index;
+					xsIdentifier index;
 
 					value = xsToString(xsGet(xsVar(2), xsID_command));
 					c_strcpy(buffer, "can");

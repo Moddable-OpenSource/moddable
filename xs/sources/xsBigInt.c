@@ -894,7 +894,7 @@ fxBigInt_fill0(txBigInt *r)
 
 void fxBigInt_copy(txBigInt *a, txBigInt *b)
 {
-	c_memcpy(a->data, b->data, b->size * sizeof(txU4));
+	c_memmove(a->data, b->data, b->size * sizeof(txU4));
 	a->size = b->size;
 	a->sign = b->sign;
 }
@@ -1324,6 +1324,34 @@ txBigInt *fxBigInt_sub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 	return(rr);
 }
 
+#if __has_builtin(__builtin_uadd_overflow)
+static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
+{
+	txU4 c = 0;
+	int i;
+
+	for (i = 0; i < an; i++) {
+#ifdef __ets__
+	txU4 r;
+	if (__builtin_uadd_overflow(ap[i], bp[i], &r)) {
+		rp[i] = r + c;
+		c = 1;
+	}
+	else
+		c = __builtin_uadd_overflow(r, c, &rp[i]);
+#else
+		c = __builtin_uadd_overflow(ap[i], bp[i], &rp[i]) | __builtin_uadd_overflow(rp[i], c, &rp[i]);
+#endif
+	}
+	for (; c && (i < bn); i++) {
+		c = __builtin_uadd_overflow(1, bp[i], &rp[i]);
+	}
+	for (; i < bn; i++) {
+		rp[i] = bp[i];
+	}
+	return(c);
+}
+#else
 static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
 {
 	txU4 a, b, t, r, c = 0;
@@ -1344,6 +1372,7 @@ static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
 	}
 	return(c);
 }
+#endif
 
 txBigInt *fxBigInt_uadd(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {

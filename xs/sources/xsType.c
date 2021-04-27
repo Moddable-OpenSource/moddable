@@ -317,7 +317,7 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	the->stack++;
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
-		fxGetID(the, (txID)i);
+		fxGetIndex(the, i);
 	}
 	mxRunCount(c);
 	mxPullSlot(mxResult);
@@ -471,9 +471,9 @@ txBoolean fxOrdinaryDeleteProperty(txMachine* the, txSlot* instance, txID id, tx
 			instance = alias;
 	}
 	address = &(instance->next);
-	while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
-		address = &(property->next);
 	if (id) {
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
+			address = &(property->next);
 		while ((property = *address)) {
 			if (property->ID == id) {
 				if (property->flag & XS_DONT_DELETE_FLAG)
@@ -489,8 +489,11 @@ txBoolean fxOrdinaryDeleteProperty(txMachine* the, txSlot* instance, txID id, tx
 		return 1;
 	}
 	else {
-		if (property && (property->kind == XS_ARRAY_KIND))
-			return fxDeleteIndexProperty(the, property, index);
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG)) {
+			if (property->kind == XS_ARRAY_KIND)
+				return fxDeleteIndexProperty(the, property, index);
+			address = &(property->next);
+		}
 		return 1;
 	}
 }
@@ -519,21 +522,21 @@ again:
 		if (alias)
 			instance = alias;
 	}
-	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
-		txID color = id & XS_ID_MASK;
-		if (color < the->keyOffset) {
-			color = the->colors[color];
-			if (color) {
-				result = instance + color;
-				if (result->ID == id)
-					return result;
+	if (id) {
+		if (the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+			txID color = id & XS_ID_MASK;
+			if (color < the->keyOffset) {
+				color = the->colors[color];
+				if (color) {
+					result = instance + color;
+					if (result->ID == id)
+						return result;
+				}
 			}
 		}
-	}
-	result = instance->next;
-	while (result && (result->flag & XS_INTERNAL_FLAG))
-		result = result->next;
-	if (id) {
+		result = instance->next;
+		while (result && (result->flag & XS_INTERNAL_FLAG))
+			result = result->next;
 		while (result) {
 			if (result->ID == id)
 				return result;
@@ -541,10 +544,15 @@ again:
 		}
 	}
 	else {
-		if (result && (result->kind == XS_ARRAY_KIND)) {
-			result = fxGetIndexProperty(the, result, index);
-			if (result)
-				return result;
+		result = instance->next;
+		while (result && (result->flag & XS_INTERNAL_FLAG)) {
+			if (result->kind == XS_ARRAY_KIND) {
+				result = fxGetIndexProperty(the, result, index);
+				if (result)
+					return result;
+				break;
+			}		
+			result = result->next;
 		}		
 	}
 	if (flag) {
@@ -648,10 +656,9 @@ void fxOrdinaryOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* ke
 			instance = alias;
 	}
 	property = instance->next;
-	while (property && (property->flag & XS_INTERNAL_FLAG))
-		property = property->next;
-	if (property && (property->kind == XS_ARRAY_KIND)) {
-		keys = fxQueueIndexKeys(the, property, flag, keys);
+	while (property && (property->flag & XS_INTERNAL_FLAG)) {
+		if (property->kind == XS_ARRAY_KIND)
+			keys = fxQueueIndexKeys(the, property, flag, keys);
 		property = property->next;
 	}
 	fxQueueIDKeys(the, property, flag, keys);
@@ -694,21 +701,21 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 			instance = fxAliasInstance(the, instance);
 		}
 	}
-	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
-		txID color = id & XS_ID_MASK;
-		if (color < the->keyOffset) {
-			color = the->colors[color];
-			if (color) {
-				property = instance + color;
-				if (property->ID == id)
-					return property;
+	if (id) {
+		if (the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+			txID color = id & XS_ID_MASK;
+			if (color < the->keyOffset) {
+				color = the->colors[color];
+				if (color) {
+					property = instance + color;
+					if (property->ID == id)
+						return property;
+				}
 			}
 		}
-	}
-	address = &(instance->next);
-	while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
-		address = &(property->next);
-	if (id) {
+		address = &(instance->next);
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
+			address = &(property->next);
 		while ((property = *address)) {
 			if (property->ID == id)
 				return property;
@@ -716,10 +723,15 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		}
 	}
 	else {
-		if (property && (property->kind == XS_ARRAY_KIND)) {
-			result = fxGetIndexProperty(the, property, index);
-			if (result)
-				return result;
+		address = &(instance->next);
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG)) {
+			if (property->kind == XS_ARRAY_KIND) {
+				result = fxGetIndexProperty(the, property, index);
+				if (result)
+					return result;
+				break;
+			}		
+			address = &(property->next);
 		}		
 	}
 	if (flag) {
@@ -747,6 +759,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		else {
 			property = fxNewSlot(the);
 			property->next = *address;
+			property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 			property->ID = 0;
 			property->kind = XS_ARRAY_KIND;
 			property->value.array.address = C_NULL;

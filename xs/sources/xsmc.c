@@ -73,14 +73,21 @@ txBoolean _xsIsInstanceOf(txMachine *the, txSlot *v, txSlot *proto)
 	return fxIsInstanceOf(the);
 }
 
-txBoolean _xsHas(txMachine *the, txSlot *self, txInteger id)
+txBoolean _xsHas(txMachine *the, txSlot *self, txID id)
 {
 	mxOverflow(-1);
 	fxPush(*self);
 	return fxHasID(the, id);
 }
 
-void _xsGet(txMachine *the, txSlot *res, txSlot *self, txInteger id)
+txBoolean _xsHasIndex(txMachine *the, txSlot *self, txIndex index)
+{
+	mxOverflow(-1);
+	fxPush(*self);
+	return fxHasIndex(the, index);
+}
+
+void _xsGet(txMachine *the, txSlot *res, txSlot *self, txID id)
 {
 	mxOverflow(-1);
 	fxPush(*self);
@@ -97,7 +104,15 @@ void _xsGetAt(txMachine *the, txSlot *res, txSlot *self, txSlot *at)
 	*res = fxPop();
 }
 
-void _xsSet(txMachine *the, txSlot *self, txInteger id, txSlot *v)
+void _xsGetIndex(txMachine *the, txSlot *res, txSlot *self, txIndex index)
+{
+	mxOverflow(-1);
+	fxPush(*self);
+	fxGetIndex(the, index);
+	*res = fxPop();
+}
+
+void _xsSet(txMachine *the, txSlot *self, txID id, txSlot *v)
 {
 	mxOverflow(-2);
 	fxPush(*v);
@@ -116,7 +131,16 @@ void _xsSetAt(txMachine *the, txSlot *self, txSlot *at , txSlot *v)
 	the->stack++;
 }
 
-void _xsDelete(txMachine *the, txSlot *self, txInteger id)
+void _xsSetIndex(txMachine *the, txSlot *self, txIndex index, txSlot *v)
+{
+	mxOverflow(-2);
+	fxPush(*v);
+	fxPush(*self);
+	fxSetIndex(the, index);
+	the->stack++;
+}
+
+void _xsDelete(txMachine *the, txSlot *self, txID id)
 {
 	mxOverflow(-1);
 	fxPush(*self);

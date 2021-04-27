@@ -63,7 +63,7 @@ struct PiuFontStruct {
 	xsMachine* the;
 	PiuFont* next;
 	PiuFlags flags;
-	xsIndex family;
+	xsIdentifier family;
 	PiuCoordinate size;
 	PiuCoordinate weight;
 	cairo_font_face_t* face;

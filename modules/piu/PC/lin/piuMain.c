@@ -49,7 +49,7 @@ static void gtk_piu_application_command(GSimpleAction *action, GVariant *paramet
 	xsBeginHost((*self)->the);
 	{
 		const char* name = g_action_get_name(G_ACTION(action));
-		xsIndex doID = xsID(name);
+		xsIdentifier doID = xsID(name);
 		PiuContent* content = (*self)->focus;
 		xsVars(3);
 		while (content) {
@@ -176,7 +176,7 @@ void PiuApplication_createMenus(xsMachine *the)
 			if (xsTest(xsVar(2))) {
 				char buffer[256];
 				xsStringValue value;
-				xsIndex index;
+				xsIdentifier index;
 				xsIntegerValue target;
 				GSimpleAction* action;
 				GMenuItem* item;
@@ -326,7 +326,7 @@ void PiuApplication_updateMenus(xsMachine *the)
 		for (j = 0; j < d; j++) {
 			xsVar(2) = xsGetAt(xsVar(1), xsInteger(j));
 			if (xsTest(xsVar(2))) {
-				xsIndex canID = (xsIndex)xsToInteger(xsGet(xsVar(2), xsID_canID));
+				xsIdentifier canID = (xsIdentifier)xsToInteger(xsGet(xsVar(2), xsID_canID));
 				PiuContent* content = (*self)->focus;
 				xsIntegerValue result = 0;
 				while (content) {

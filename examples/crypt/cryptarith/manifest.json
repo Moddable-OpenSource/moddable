@@ -8,5 +8,15 @@
 			"$(MODULES)/crypt/arith/*",
 			"$(MODULES)/crypt/etc/*"
 		]
-	}
+	},
+	"preload": [
+		"ber",
+		"crypt",
+		"ec",
+		"ecdsa",
+		"main",
+		"modular",
+		"mont",
+		"pkcs1"
+	]
 }

@@ -614,28 +614,28 @@ mxExport txString fxName(txMachine*, txID);
 
 mxExport void fxEnumerate(txMachine* the);
 mxExport txBoolean fxHasAt(txMachine* the);
-mxExport txBoolean fxHasID(txMachine*, txInteger);
+mxExport txBoolean fxHasID(txMachine*, txID);
 mxExport txBoolean fxHasIndex(txMachine* the, txIndex index);
-mxExport void fxGetAll(txMachine* the, txInteger id, txIndex index);
+mxExport void fxGetAll(txMachine* the, txID id, txIndex index);
 mxExport void fxGetAt(txMachine*);
-mxExport void fxGetID(txMachine*, txInteger);
+mxExport void fxGetID(txMachine*, txID);
 mxExport void fxGetIndex(txMachine*, txIndex);
-mxExport void fxSetAll(txMachine* the, txInteger id, txIndex index);
+mxExport void fxSetAll(txMachine* the, txID id, txIndex index);
 mxExport void fxSetAt(txMachine*);
-mxExport void fxSetID(txMachine*, txInteger);
+mxExport void fxSetID(txMachine*, txID);
 mxExport void fxSetIndex(txMachine*, txIndex);
 mxExport void fxDefineAll(txMachine* the, txID id, txIndex index, txFlag flag, txFlag mask);
 mxExport void fxDefineAt(txMachine* the, txFlag flag, txFlag mask);
 mxExport void fxDefineID(txMachine* the, txID id, txFlag flag, txFlag mask);
 mxExport void fxDefineIndex(txMachine* the, txIndex index, txFlag flag, txFlag mask);
-mxExport void fxDeleteAll(txMachine*, txInteger, txIndex);
+mxExport void fxDeleteAll(txMachine*, txID, txIndex);
 mxExport void fxDeleteAt(txMachine*);
-mxExport void fxDeleteID(txMachine*, txInteger);
+mxExport void fxDeleteID(txMachine*, txID);
 mxExport void fxDeleteIndex(txMachine*, txIndex);
 mxExport void fxCall(txMachine*);
-mxExport void fxCallID(txMachine*, txInteger);
+mxExport void fxCallID(txMachine*, txID);
 mxExport void fxNew(txMachine*);
-mxExport void fxNewID(txMachine*, txInteger);
+mxExport void fxNewID(txMachine*, txID);
 mxExport void fxRunCount(txMachine*, txInteger);
 mxExport txBoolean fxRunTest(txMachine* the);
 
@@ -690,12 +690,15 @@ mxExport void _xsNewArray(txMachine *the, txSlot *res, txInteger length);
 mxExport void _xsNewObject(txMachine *the, txSlot *res);
 mxExport void _xsNewHostInstance(txMachine*, txSlot*, txSlot*);
 mxExport txBoolean _xsIsInstanceOf(txMachine*, txSlot*, txSlot*);
-mxExport txBoolean _xsHas(txMachine*, txSlot*, txInteger);
-mxExport void _xsGet(txMachine*, txSlot*, txSlot*, txInteger);
+mxExport txBoolean _xsHas(txMachine*, txSlot*, txID);
+mxExport txBoolean _xsHasIndex(txMachine*, txSlot*, txIndex);
+mxExport void _xsGet(txMachine*, txSlot*, txSlot*, txID);
 mxExport void _xsGetAt(txMachine*, txSlot*, txSlot*, txSlot*);
-mxExport void _xsSet(txMachine*, txSlot*, txInteger, txSlot*);
+mxExport void _xsGetIndex(txMachine*, txSlot*, txSlot*, txIndex);
+mxExport void _xsSet(txMachine*, txSlot*, txID, txSlot*);
 mxExport void _xsSetAt(txMachine*, txSlot*, txSlot*, txSlot*);
-mxExport void _xsDelete(txMachine*, txSlot*, txInteger);
+mxExport void _xsSetIndex(txMachine*, txSlot*, txIndex, txSlot*);
+mxExport void _xsDelete(txMachine*, txSlot*, txID);
 mxExport void _xsDeleteAt(txMachine*, txSlot*, txSlot*);
 mxExport void _xsCall(txMachine*, txSlot*, txSlot*, txInteger, ...);
 mxExport void _xsNew(txMachine*, txSlot*, txSlot*, txInteger, ...);
@@ -2274,10 +2277,6 @@ enum {
 #define mxBehaviorSetPrototype(THE, INSTANCE, PROTOTYPE) \
 	(*mxBehavior(INSTANCE)->setPrototype)(THE, INSTANCE, PROTOTYPE)
 	
-#define mxGetID(_THIS,_ID) \
-	mxPushSlot(_THIS); \
-	fxGetID(the, _ID)
-
 #define mxRunCount(_COUNT) \
 	fxRunID(the, C_NULL, _COUNT)
 

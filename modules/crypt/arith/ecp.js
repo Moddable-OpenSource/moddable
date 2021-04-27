@@ -35,11 +35,13 @@
  *       limitations under the License.
  */
 
+import Modular from "modular";
+
 export default class ECPoint {
 	constructor(x, y, identity = false) {
 		this.x = x;
 		this.y = y;
-		this.identity = identity;
+		this.z = identity ? 0n : 1n;
 	};
 	get X() {
 		return this.x;
@@ -54,18 +56,22 @@ export default class ECPoint {
 		this.y = y;
 	}
 	isZero() {
-		return this.identity;
+		return this.z == 0n;
 	};
 	toString() {
-		return this.x + "," + this.y;
+//		this.norm();
+		if (this.isZero())
+			return "0"
+		else
+			return this.x + "," + this.y + "," + this.z;
 	}
 	static serialize(o) {
 		o.toString();
 	};
 	static parse(txt) {
 		let a = txt.split(",");
-		if (2 === a.length) {
-			return new ECPoint(a[0], a[1]);
+		if (3 === a.length) {
+			return new ECPoint(a[0], a[1], a[2]);
 		}
 	};
 };

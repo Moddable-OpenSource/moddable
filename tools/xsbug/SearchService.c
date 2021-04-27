@@ -101,7 +101,7 @@ void PiuCode_search(xsMachine* the)
 		for (i = 0; i < c; i++) {
 	// 		if (!KprMessageContinue(self->message))
 	// 			break;
-			xsVar(XS_DIRECTORY) = xsGet(xsArg(2), i);
+			xsVar(XS_DIRECTORY) = xsGetIndex(xsArg(2), i);
 			xsVar(XS_PATH) = xsGet(xsVar(XS_DIRECTORY), xsID_path);
 			xsVar(XS_TITLE) = xsGet(xsVar(XS_DIRECTORY), xsID_name);
 		#if mxLinux
@@ -117,7 +117,7 @@ void PiuCode_search(xsMachine* the)
 			for (i = 0; i < c; i++) {
 	// 			if (!KprMessageContinue(self->message))
 	// 				break;
-				xsVar(XS_FILE) = xsGet(xsResult, i);
+				xsVar(XS_FILE) = xsGetIndex(xsResult, i);
 				xsSet(xsVar(XS_FILE), xsID_expanded, xsFalse);
 				xsSet(xsVar(XS_FILE), xsID_items, xsNull);
 			}

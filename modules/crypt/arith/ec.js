@@ -44,21 +44,21 @@ export default class EC {
 		this.m = m;
 	};
 	inv(p) {
-		return new ECPoint(this.m - p.y, p.x, p.identity);
+		return new ECPoint(this.m - p.y, p.x, p.z == 0n, this.m);
 	}
 	add(a, b) {
 		let r = this._add(a, b);
-		return new ECPoint(r.x, r.y, r.identity);
+		return new ECPoint(r.x, r.y, r.z == 0n, this.m);
 	}
 	_add(a, b) @ "xs_ec2_add";
 	mul(a, k) {
 		let r = this._mul(a, k);
-		return new ECPoint(r.x, r.y, r.identity);
+		return new ECPoint(r.x, r.y, r.z == 0n, this.m);
 	}
 	_mul(a, k) @ "xs_ec2_mul";
 	mul2(a1, k1, a2, k2) {
 		let r = this._mul2(a1, k1, a2, k2);
-		return new ECPoint(r.x, r.y, r.identity);
+		return new ECPoint(r.x, r.y, r.z == 0n, this.m);
 	}
 	_mul2(a1, k1, a2, k2) @ "xs_ec2_mul2";
 };
