@@ -52,7 +52,7 @@
 	#define mxNoConsole 1
 #endif
 #define mxMisalignedSettersCrash 1		//@@@ ?
-#define mxUseGCCAtomics		1
+// #define mxUseGCCAtomics		1
 #define mxUnalignedAccess 0
 
 #ifndef __XS6PLATFORMMINIMAL__
