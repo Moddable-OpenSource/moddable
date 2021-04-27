@@ -1,7 +1,7 @@
 # Getting Started with Raspberry Pi Pico
 
 Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: February 18, 2021
+Revised: April 27, 2021
 
 > Note: This is preliminary documentation for a port-in-progress. The Raspberry Pi Pico port of the Moddable SDK is not ready for general use. The port and this documentation are provided for the community to work together to finish the port.
 
@@ -237,6 +237,7 @@ These instructions have been tested on a macOS host using the two Pico SWD setup
 2. In a console, start `openocd` and set the console aside.
 
 	```text
+	cd ~/pico/openocd
 	~/pico/openocd/src/openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -s tcl
 	```
 

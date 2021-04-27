@@ -295,6 +295,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_timer/include	\
 	$(PICO_SDK_DIR)/src/common/pico_sync/include	\
 	$(PICO_SDK_DIR)/src/common/pico_util/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/boot_stage2/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_malloc/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_clocks/include	\
