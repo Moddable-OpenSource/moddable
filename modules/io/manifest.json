@@ -12,9 +12,10 @@
 		"*": [
 			"$(IO)/common/builtinCommon",
 			"$(IO)/i2c/$(PLATFORM)/*",
-			"$(IO)/spi/$(PLATFORM)/*",
-			"$(MODULES)/commodetto/commodettoBitmap"
+			"$(IO)/spi/$(PLATFORM)/*"
 		],
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+
 		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
