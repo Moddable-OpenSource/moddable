@@ -35,7 +35,6 @@
  *       limitations under the License.
  */
 
-#define _GNU_SOURCE
 #include "xsScript.h"
 
 void fxCheckParserStack(txParser* parser, txInteger line)

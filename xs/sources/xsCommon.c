@@ -35,6 +35,7 @@
  *       limitations under the License.
  */
 
+#define _GNU_SOURCE
 #include "xsCommon.h"
 #ifndef mxUseDefaultCStackLimit
 	#define mxUseDefaultCStackLimit 1

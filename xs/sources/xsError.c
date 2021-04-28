@@ -129,7 +129,7 @@ void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
 		txSlot* environment = mxFrameToEnvironment(frame);
 		txSlot* function = frame + 3; 
 		if (function->kind == XS_REFERENCE_KIND) {
-			txSlot* name = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), XS_NO_ID, XS_OWN);
+			txSlot* name = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), 0, XS_OWN);
 			slot = slot->next = fxNewSlot(the);
 			slot->kind = XS_KEY_KIND;
 			slot->ID = environment->ID;

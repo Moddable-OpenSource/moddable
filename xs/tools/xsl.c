@@ -378,19 +378,19 @@ int main(int argc, char* argv[])
 				{
 					txCallback callback;
 					txSlot* property;
-					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxCompartmentPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxCompartmentPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
 
@@ -400,16 +400,16 @@ int main(int argc, char* argv[])
 					property = mxFunctionInstanceCode(the->stack->value.reference);
 					property->value.callback.address = callback;
 		
-					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_now), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_now), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Date_now_secure), 0, mxID(_now));
 					
-					property = mxBehaviorGetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = the->stack->kind;
 					property->value = the->stack->value;
 					mxPull(mxDateConstructor);
 
 					fxDuplicateInstance(the, mxMathObject.value.reference);
-					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
 					mxPull(mxMathObject);
 				}
@@ -903,7 +903,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
 		mxFreezeBuiltInCall; 
-		mxPush(the->stackPrototypes[-1 - dispatch->constructorID]);
+		mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
 		fxGetID(the, mxID(_prototype));
 		mxFreezeBuiltInRun;
 	}

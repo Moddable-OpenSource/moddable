@@ -183,7 +183,7 @@ void fxInitializeLinker(txLinker* linker)
 	c_memset(linker, 0, sizeof(txLinker));
 	linker->dtoa = fxNew_dtoa(NULL);
 	linker->symbolModulo = 1993;
-	linker->symbolCount = 0x7FFF;
+	linker->symbolCount = 0x10000;
 	linker->symbolArray = fxNewLinkerChunkClear(linker, linker->symbolCount * sizeof(txLinkerSymbol*));
 	linker->symbolIndex = 0;
 	
@@ -319,7 +319,8 @@ txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag)
 	txID c, i;
 	mxDecodeID(p, c);
 	symbols = fxNewLinkerChunk(linker, c * sizeof(txID*));
-	for (i = 0; i < c; i++) {
+	symbols[0] = XS_NO_ID;
+	for (i = 1; i < c; i++) {
 		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, (txString)p, flag);
 		symbols[i] = symbol->ID;
 		p += mxStringLength((char*)p) + 1;
@@ -509,7 +510,7 @@ txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag f
 		}
 		aSymbol = fxNewLinkerChunk(linker, sizeof(txLinkerSymbol));
 		aSymbol->next = linker->symbolTable[aModulo];
-		aSymbol->ID = XS_ID_BIT | anID;
+		aSymbol->ID = anID;
 		aSymbol->length = aLength + 1;
 		aSymbol->string = fxNewLinkerString(linker, theString, aLength);
 		aSymbol->sum = aSum;
@@ -613,7 +614,7 @@ txString fxRealFilePath(txLinker* linker, txString path)
 
 void fxReferenceLinkerSymbol(txLinker* linker, txID id)
 {
-	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & XS_ID_MASK];
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id];
 	linkerSymbol->flag |= 1;
 }
 

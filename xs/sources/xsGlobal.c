@@ -396,7 +396,7 @@ txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 {
 	txBoolean result = fxOrdinaryDeleteProperty(the, instance, id, index);
 	if (id && result) {
-		txInteger i = id & XS_ID_MASK;
+		txInteger i = id;
 		txSlot* globals = instance->next;
 		if (i < globals->value.table.length)
 			globals->value.table.address[i] = C_NULL;
@@ -408,7 +408,7 @@ txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex i
 {
 	txSlot* result = C_NULL;
 	if (id) {
-		txInteger i = id & XS_ID_MASK;
+		txInteger i = id;
 		txSlot* globals = instance->next;
 		if (i < globals->value.table.length) {
 			result = globals->value.table.address[i];
@@ -427,7 +427,7 @@ txSlot* fxGlobalSetProperty(txMachine* the, txSlot* instance, txID id, txIndex i
 {
 	txSlot* result = C_NULL;
 	if (id) {
-		txInteger i = id & XS_ID_MASK;
+		txInteger i = id;
 		txSlot* globals = instance->next;
 		if (i < globals->value.table.length) {
 			result = globals->value.table.address[i];

@@ -820,8 +820,9 @@ void fx_RegExp_prototype_replace(txMachine* the)
 					mxPop();
 					mxRunCount(3 + i - 1);
 				}
-				else
+				else {
 					mxRunCount(4 + i - 1);
+				}
                 fxToString(the, the->stack);
                 item = item->next = fxNewSlot(the);
                 mxPullSlot(item);
@@ -829,6 +830,8 @@ void fx_RegExp_prototype_replace(txMachine* the)
             else {
  				mxPushSlot(result);
 				fxGetID(the, mxID(_groups));
+				if (!mxIsUndefined(the->stack))
+					fxToInstance(the, the->stack);
 				fxPushSubstitutionString(the, argument, utf8Size, fxUnicodeToUTF8Offset(argument->value.string, position), matched, mxStringLength(matched->value.string), i - 1, the->stack + 1, the->stack, replacement);
                 item = item->next = fxNewSlot(the);
                 mxPullSlot(item);

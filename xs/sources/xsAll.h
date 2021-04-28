@@ -121,7 +121,7 @@ typedef struct {
 	void (*initializeSharedCluster)();
 	void (*terminateSharedCluster)();
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txNumber length);
-	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
+	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix);
     void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
     void (*runImport)(txMachine* the, txSlot* realm, txID id);
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
@@ -409,7 +409,7 @@ struct sxMachine {
 	txSlot** keyArray;
 	txID keyCount;
 	txID keyIndex;
-	int	keyOffset;
+	txID keyOffset;
 	txSlot** keyArrayHost;
 
 	txID aliasCount;
@@ -539,7 +539,7 @@ struct sxPreparation {
 
 struct sxHostFunctionBuilder {
 	txCallback callback;
-	txID length;
+	txInteger length;
 	txID id;
 };
 
@@ -974,8 +974,8 @@ extern txBoolean fxIsCallable(txMachine* the, txSlot* slot);
 extern txBoolean fxIsFunction(txMachine* the, txSlot* slot);
 extern txSlot* fxNewFunctionInstance(txMachine* the, txID name);
 extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length);
-extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix);
-extern void fxRenameFunction(txMachine* the, txSlot* function, txInteger id, txIndex index, txInteger former, txString prefix);
+extern txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix);
+extern void fxRenameFunction(txMachine* the, txSlot* function, txID id, txIndex index, txID former, txString prefix);
 
 mxExport void fx_AsyncFunction(txMachine* the);
 
@@ -1014,7 +1014,7 @@ extern txID fxNewNameC(txMachine* the, txString theString);
 extern txID fxNewNameX(txMachine* the, txString theString);
 extern txSlot* fxAt(txMachine* the, txSlot* slot);
 extern void fxKeyAt(txMachine* the, txID id, txIndex index, txSlot* slot);
-extern void fxIDToString(txMachine* the, txInteger id, txString theBuffer, txSize theSize);
+extern void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize);
 
 /* xsError.c */
 mxExport void fx_Error(txMachine* the);
@@ -2557,7 +2557,7 @@ enum {
 #define  mxArrayIteratorFunction the->stackPrototypes[-1 - mxArrayIteratorFunctionIndex]
 #define mxOrdinaryToPrimitiveFunction the->stackPrototypes[-1 - mxOrdinaryToPrimitiveFunctionStackIndex]
 
-#define mxID(ID) ((txID)((ID) | XS_ID_BIT))
+#define mxID(ID) ((txID)(ID))
 
 #ifdef mxLink
 extern txCallback fxNewLinkerCallback(txMachine*, txCallback, txString);

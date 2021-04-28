@@ -98,7 +98,7 @@ void fx_Symbol(txMachine* the)
 	the->keyArray[id - the->keyOffset] = description;
 	the->keyIndex++;
 	mxResult->kind = XS_SYMBOL_KIND;
-	mxResult->value.symbol = XS_ID_BIT | id;
+	mxResult->value.symbol = id;
 }
 
 void fx_Symbol_for(txMachine* the)
@@ -108,7 +108,7 @@ void fx_Symbol_for(txMachine* the)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID index;
+	txID id;
 	if (mxArgc < 1)
 		mxSyntaxError("no key parameter");
 	string = fxToString(the, mxArgv(0));
@@ -127,16 +127,16 @@ void fx_Symbol_for(txMachine* the)
 		result = result->next;
 	}
 	if (result == C_NULL) {
-		index = the->keyIndex;
-		if (index == the->keyCount)
+		id = the->keyIndex;
+		if (id == the->keyCount)
 			fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 		result = fxNewSlot(the);
 		result->next = the->symbolTable[modulo];
 		result->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
-		result->ID = XS_ID_BIT | index;
+		result->ID = id;
 		result->value.key.string = mxArgv(0)->value.string;
 		result->value.key.sum = sum;
-		the->keyArray[index - the->keyOffset] = result;
+		the->keyArray[id - the->keyOffset] = result;
 		the->keyIndex++;
 		the->symbolTable[modulo] = result;
 	}
@@ -221,14 +221,11 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 
 txSlot* fxGetKey(txMachine* the, txID theID)
 {
-	if (theID < 0) {
-		theID &= XS_ID_MASK;
-		if (theID < the->keyCount) {
-			if (theID < the->keyOffset)
-				return the->keyArrayHost[theID];
-			else
-				return the->keyArray[theID - the->keyOffset];
-		}
+	if ((0 < theID) && (theID < the->keyCount)) {
+		if (theID < the->keyOffset)
+			return the->keyArrayHost[theID];
+		else
+			return the->keyArray[theID - the->keyOffset];
 	}
 	return C_NULL;
 }
@@ -236,16 +233,13 @@ txSlot* fxGetKey(txMachine* the, txID theID)
 char* fxGetKeyName(txMachine* the, txID theID)
 {
 	txSlot* key;
-	if (theID < 0) {
-		theID &= XS_ID_MASK;
-		if (theID < the->keyCount) {
-			if (theID < the->keyOffset)
-				key = the->keyArrayHost[theID];
-			else
-				key = the->keyArray[theID - the->keyOffset];
-			if (key)
-				return key->value.string;
-		}
+	if ((0 < theID) && (theID < the->keyCount)) {
+		if (theID < the->keyOffset)
+			key = the->keyArrayHost[theID];
+		else
+			key = the->keyArray[theID - the->keyOffset];
+		if (key)
+			return key->value.string;
 	}
 	return C_NULL;
 }
@@ -292,7 +286,7 @@ txID fxNewName(txMachine* the, txSlot* theSlot)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID index;
+	txID id;
 
 	string = (txU1*)theSlot->value.string;
 	sum = 0;
@@ -310,17 +304,17 @@ txID fxNewName(txMachine* the, txSlot* theSlot)
 		result = result->next;
 	}
 
-	index = the->keyIndex;
-	if (index == the->keyCount)
+	id = the->keyIndex;
+	if (id == the->keyCount)
 		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_KIND;
-	result->ID = XS_ID_BIT | index;
+	result->ID = id;
 	result->value.key.string = theSlot->value.string;
 	result->value.key.sum = sum;
-	the->keyArray[index - the->keyOffset] = result;
+	the->keyArray[id - the->keyOffset] = result;
 	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	return result->ID;
@@ -332,7 +326,7 @@ txID fxNewNameC(txMachine* the, txString theString)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID index;
+	txID id;
 
 	string = (txU1*)theString;
 	sum = 0;
@@ -350,17 +344,17 @@ txID fxNewNameC(txMachine* the, txString theString)
 		result = result->next;
 	}
 
-	index = the->keyIndex;
-	if (index == the->keyCount)
+	id = the->keyIndex;
+	if (id == the->keyCount)
 		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_KIND;
-	result->ID = XS_ID_BIT | index;
+	result->ID = id;
 	result->value.key.string = C_NULL;
 	result->value.key.sum = sum;
-	the->keyArray[index - the->keyOffset] = result;
+	the->keyArray[id - the->keyOffset] = result;
 	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	result->value.key.string = (txString)fxNewChunk(the, mxStringLength(theString) + 1);
@@ -374,7 +368,7 @@ txID fxNewNameX(txMachine* the, txString theString)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID index;
+	txID id;
 	
 	string = (txU1*)theString;
 	sum = 0;
@@ -392,17 +386,17 @@ txID fxNewNameX(txMachine* the, txString theString)
 		result = result->next;
 	}
 
-	index = the->keyIndex;
-	if (index == the->keyCount)
+	id = the->keyIndex;
+	if (id == the->keyCount)
 		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_X_KIND;
-	result->ID = XS_ID_BIT | index;
+	result->ID = id;
 	result->value.key.string = theString;
 	result->value.key.sum = sum;
-	the->keyArray[index - the->keyOffset] = result;
+	the->keyArray[id - the->keyOffset] = result;
 	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	return result->ID;
@@ -414,16 +408,16 @@ txSlot* fxAt(txMachine* the, txSlot* slot)
 	txString string;
 again:
 	if ((slot->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the->dtoa, slot->value.integer, &index)) {
-		slot->value.at.id = 0;
+		slot->value.at.id = XS_NO_ID;
 		slot->value.at.index = index;
 	}
 	else if ((slot->kind == XS_NUMBER_KIND) && fxNumberToIndex(the->dtoa, slot->value.number, &index)) {
-		slot->value.at.id = 0;
+		slot->value.at.id = XS_NO_ID;
 		slot->value.at.index = index;
 	}
 	else if (slot->kind == XS_SYMBOL_KIND) {
 		slot->value.at.id = slot->value.symbol;
-		slot->value.at.index = XS_NO_ID;
+		slot->value.at.index = 0;
 	}
     else {
         if (slot->kind == XS_REFERENCE_KIND) {
@@ -432,7 +426,7 @@ again:
         }
         string = fxToString(the, slot);
         if (fxStringToIndex(the->dtoa, string, &index)) {
-            slot->value.at.id = 0;
+            slot->value.at.id = XS_NO_ID;
             slot->value.at.index = index;
         }
         else {
@@ -442,7 +436,7 @@ again:
             else
                 id = fxNewName(the, slot);
             slot->value.at.id = id;
-            slot->value.at.index = XS_NO_ID;
+            slot->value.at.index = 0;
         }
     }
 	slot->kind = XS_AT_KIND;
@@ -497,34 +491,29 @@ again:
 	return fxNewName(the, slot);
 }
 
-void fxIDToString(txMachine* the, txInteger id, txString theBuffer, txSize theSize)
+void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize)
 {
-	if (id < 0) {
-		id &= XS_ID_MASK;
-		if (id < the->keyCount) {
-			txSlot* key;
+	if ((0 < id) && (id < the->keyCount)) {
+		txSlot* key;
 
-			if (id < the->keyOffset)
-				key = the->keyArrayHost[id];
-			else
-				key = the->keyArray[id - the->keyOffset];
-			if (key) {
-				txKind kind = mxGetKeySlotKind(key);
-				if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND))
-					c_snprintf(theBuffer, theSize, "%s", key->value.key.string);
-				else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND))
-					c_snprintf(theBuffer, theSize, "[%s]", key->value.string);
-				else
-					*theBuffer = 0;
-			}
+		if (id < the->keyOffset)
+			key = the->keyArrayHost[id];
+		else
+			key = the->keyArray[id - the->keyOffset];
+		if (key) {
+			txKind kind = mxGetKeySlotKind(key);
+			if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND))
+				c_snprintf(theBuffer, theSize, "%s", key->value.key.string);
+			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND))
+				c_snprintf(theBuffer, theSize, "[%s]", key->value.string);
 			else
 				*theBuffer = 0;
 		}
-		else {
-			theBuffer[0] = '?';
-			theBuffer[1] = 0;
-		}
+		else
+			*theBuffer = 0;
 	}
-	else
-		fxIntegerToString(the->dtoa, id, theBuffer, theSize);
+	else {
+		theBuffer[0] = '?';
+		theBuffer[1] = 0;
+	}
 }

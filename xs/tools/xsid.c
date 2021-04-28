@@ -165,8 +165,8 @@ int main(int argc, char* argv[])
 		fxReportError("%s", reason);
 		
 	offset = 0;
-	count = 0;
-	total = 2;
+	count = 1;
+	total = sizeof(txID);
 	while (fxMatchRegExp(NULL, code, data, buffer, offset) > 0) {
 		char* from = buffer + data[0] + 5;
 		char* to = buffer + data[1];
@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
 	p = (txByte*)reason;
 	id = (txID)count;
 	mxEncodeID(p, id);
-	fwrite(reason, 2, 1, file);
+	fwrite(reason, sizeof(txID), 1, file);
 	link = list;
 	while (link) {
 		fwrite(link->string, link->length + 1, 1, file);
