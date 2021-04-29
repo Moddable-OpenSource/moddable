@@ -1490,13 +1490,25 @@ void fx_Compartment(txMachine* the)
 		program = fxNewProgramInstance(the);
 		mxPullSlot(mxResult);
 		
-		mxPush(mxObjectPrototype);
-		global = fxNewObjectInstance(the);
-		slot = fxLastProperty(the, global);
-		for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
-			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
-		for (; id < _Compartment; id++)
-			slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+		if (the->sharedMachine == C_NULL) {
+			mxPush(mxObjectPrototype);
+	#ifdef mxLink
+			global = fxNewObjectInstance(the);
+	#else
+			global = fxNewGlobalInstance(the);
+	#endif
+			slot = fxLastProperty(the, global);
+			for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
+				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+			for (; id < _Compartment; id++)
+				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+		}
+		else {
+			mxPush(mxCompartmentGlobal);
+			global = fxNewObjectInstance(the);
+			slot = fxLastProperty(the, global);
+			id = _Compartment;
+		}
 		for (; id < XS_INTRINSICS_COUNT; id++) {
 			txSlot* instance = fxDuplicateInstance(the, the->stackPrototypes[-1 - id].value.reference);
 			mxFunctionInstanceHome(instance)->value.home.module = program;

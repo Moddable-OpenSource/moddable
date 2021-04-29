@@ -2373,6 +2373,7 @@ enum {
 	mxInitializeRegExpFunctionIndex,
 	mxArrayIteratorFunctionIndex,
 	mxOrdinaryToPrimitiveFunctionStackIndex,
+	mxCompartmentGlobalStackIndex,
 
 	mxEmptyCodeStackIndex,
 	mxEmptyStringStackIndex,
@@ -2556,6 +2557,7 @@ enum {
 #define  mxInitializeRegExpFunction the->stackPrototypes[-1 - mxInitializeRegExpFunctionIndex]
 #define  mxArrayIteratorFunction the->stackPrototypes[-1 - mxArrayIteratorFunctionIndex]
 #define mxOrdinaryToPrimitiveFunction the->stackPrototypes[-1 - mxOrdinaryToPrimitiveFunctionStackIndex]
+#define mxCompartmentGlobal the->stackPrototypes[-1 - mxCompartmentGlobalStackIndex]
 
 #define mxID(ID) ((txID)(ID))
 

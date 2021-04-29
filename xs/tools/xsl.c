@@ -378,6 +378,7 @@ int main(int argc, char* argv[])
 				{
 					txCallback callback;
 					txSlot* property;
+					txID id;
 					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
@@ -412,6 +413,21 @@ int main(int argc, char* argv[])
 					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
 					mxPull(mxMathObject);
+					
+					property = fxLastProperty(the, fxNewInstance(the));
+					for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
+						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+					for (; id < _Compartment; id++)
+						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+					mxPull(mxCompartmentGlobal);
+					
+					mxGlobal.value.reference->value.instance.prototype = C_NULL;
+					mxPush(mxGlobal);
+					fxDeleteID(the, mxID(_global));
+					mxPop();
+					mxPush(mxGlobal);
+					fxDeleteID(the, mxID(_globalThis));
+					mxPop();
 				}
 				{
 					txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;

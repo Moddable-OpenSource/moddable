@@ -1389,8 +1389,11 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxBuildModule(the);
 			
 			mxPush(mxObjectPrototype);
-			
+	#ifdef mxLink
+			slot = fxLastProperty(the, fxNewObjectInstance(the));
+	#else
 			slot = fxLastProperty(the, fxNewGlobalInstance(the));
+	#endif
 			for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
 				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 			for (; id < _Compartment; id++)
@@ -1509,7 +1512,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 		aJump.flag = 0;
 		the->firstJump = &aJump;
 		if (c_setjmp(aJump.buffer) == 0) {
-			txInteger id;
 			txSlot* sharedSlot;
 			txSlot* slot;
 
@@ -1580,26 +1582,11 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushList();
 
 			the->stackPrototypes = theMachine->stackTop;
-			
-			sharedSlot = theMachine->stackTop[-1 - mxGlobalStackIndex].value.reference->next->next;
-			slot = fxLastProperty(the, fxNewGlobalInstance(the));
-			while (sharedSlot) {
-				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
-				id = slot->ID;
-				if ((XS_SYMBOL_ID_COUNT <= id) && (id < _Infinity))
-					slot->flag = XS_DONT_ENUM_FLAG;
-				else if ((_Infinity <= id) && (id < _Compartment))
-					slot->flag = XS_GET_ONLY;
-				else if ((_Compartment <= id) && (id < XS_INTRINSICS_COUNT))
-					slot->flag = XS_DONT_ENUM_FLAG;
-				else if ((id == _global) || (id == _globalThis)) {
-					slot->value.reference = the->stack->value.reference;
-					slot->flag = XS_DONT_ENUM_FLAG;
-				}
-				else
-					slot->flag = XS_NO_FLAG;
-				sharedSlot = sharedSlot->next;
-			}
+
+			mxPush(theMachine->stackTop[-1 - mxGlobalStackIndex]);
+			slot = fxLastProperty(the, fxNewObjectInstance(the));
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
@@ -1614,10 +1601,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 				sharedSlot = sharedSlot->next;
 			}
 			mxPop();
-			
-			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
-			slot = fxLastProperty(the, fxNewGlobalInstance(the));
-			
 		
 			the->sharedModules = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference->next; //@@
 			

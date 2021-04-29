@@ -1671,10 +1671,13 @@ void fxListGlobal(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
 	txSlot* realm = fxFindRealm(the);
-	txSlot* slot = mxRealmGlobal(realm)->value.reference->next;
+	txSlot* global = mxRealmGlobal(realm)->value.reference;
+	txSlot* slot = fxGetPrototype(the, global);
 	fxEcho(the, "<global>");
-	if (slot->flag & XS_INTERNAL_FLAG)
-		slot = slot->next;
+	if (slot != mxObjectPrototype.value.reference) {
+		fxEchoPropertyInstance(the, &aList, "(..)", -1, C_NULL, XS_NO_ID, global->flag & XS_MARK_FLAG, slot);
+	}
+	slot = global->next;
 	while (slot) {
 		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
 		slot = slot->next;
@@ -1805,6 +1808,10 @@ void fxLogin(txMachine* the)
 	fxEcho(the, "XS");
 	fxEcho(the, "\"/>");
 	fxEchoStop(the);
+	if (the->sharedMachine) {
+		fxToggle(the, the->sharedMachine->stackTop[-1 - mxGlobalStackIndex].value.reference);
+		fxToggle(the, the->sharedMachine->stackTop[-1 - mxCompartmentGlobalStackIndex].value.reference);
+	}
 	fxDebugCommand(the);
 }
 
