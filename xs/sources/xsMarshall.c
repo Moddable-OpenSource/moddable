@@ -37,6 +37,14 @@
 
 #include "xsAll.h"
 
+#if mx32bitID
+#define mxSymbolBit 0x80000000
+#define mxSymbolMask 0x7FFFFFFF
+#else
+#define mxSymbolBit 0x8000
+#define mxSymbolMask 0x7FFF
+#endif
+
 typedef struct sxMarshallBuffer txMarshallBuffer; 
 struct sxMarshallBuffer {
 	txByte* base;
@@ -98,10 +106,10 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 			while (aSymbolCount) {
 				txID id;
 				aSymbolLength = *aSymbolPointer;
-				if (aSymbolLength > 0)
+				if ((aSymbolLength & mxSymbolBit) == 0)
 					id = fxNewNameC(the, (char *)p);
 				else {
-					aSymbolLength = -aSymbolLength;
+					aSymbolLength = aSymbolLength & mxSymbolMask;
 					id = the->keyIndex;
 					if (id == the->keyCount)
 						fxAbort(the, XS_NO_MORE_KEYS_EXIT);
@@ -478,7 +486,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 							c_memcpy(aBuffer.current, (*p)->value.key.string, length);
 						}
 						else {
-							*lengths++ = -length;
+							*lengths++ = mxSymbolBit | length;
 							if (length > 1)
 								c_memcpy(aBuffer.current, (*p)->value.string, length);
 							else
@@ -504,7 +512,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 						c_memcpy(aBuffer.current, (*p)->value.key.string, length);
 					}
 					else {
-						*lengths++ = -length;
+						*lengths++ = mxSymbolBit | length;
 						if (length > 1)
 							c_memcpy(aBuffer.current, (*p)->value.string, length);
 						else
