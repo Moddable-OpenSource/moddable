@@ -18,13 +18,13 @@
  *
  */
 
-class PWM @"xs_pwm_destructor" {
-    constructor(dictionary) @ "xs_pwm_constructor"
-    close() @ "xs_pwm_close"
-    write() @ "xs_pwm_write"
+class PWM @"xs_pwm_destructor_" {
+    constructor(dictionary) @ "xs_pwm_constructor_"
+    close() @ "xs_pwm_close_"
+    write() @ "xs_pwm_write_"
     
-    get hz() @ "xs_pwm_get_hz"
-    get resolution() @ "xs_pwm_get_resolution"
+    get hz() @ "xs_pwm_get_hz_"
+    get resolution() @ "xs_pwm_get_resolution_"
 
     get format() {
         return "number";
