@@ -184,7 +184,7 @@ txID fxDemarshallKey(txMachine* the, txID id, txID* theSymbolMap, txBoolean alie
 {
 	if (id != XS_NO_ID) {
 		if (alien)
-			id = theSymbolMap[id];
+			id = theSymbolMap[id - 1];
 		else if (id >= the->keyOffset)
 			id = theSymbolMap[id - the->keyOffset];
 	}
@@ -470,7 +470,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		if (aBuffer.symbolCount) {
 			txID* lengths = (txID*)aBuffer.current;
 			txID* map = aBuffer.symbolMap;
-			txID dstIndex = 0;
+			txID dstIndex = 1;
 			txSlot** p;
 			txSlot** q;
 			aBuffer.current += aBuffer.symbolCount * sizeof(txID);
