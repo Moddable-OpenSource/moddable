@@ -18,12 +18,12 @@
  *
  */
 
-class Analog @ "xs_analog_destructor" {
-	constructor(options) @ "xs_analog_constructor"
-	close() @ "xs_analog_close"
-	read() @ "xs_analog_read"
+class Analog @ "xs_analog_destructor_" {
+	constructor(options) @ "xs_analog_constructor_"
+	close() @ "xs_analog_close_"
+	read() @ "xs_analog_read_"
 
-	get resolution() @ "xs_analog_get_resolution"
+	get resolution() @ "xs_analog_get_resolution_"
 
 	get format() {
 		return "number";

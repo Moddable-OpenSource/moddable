@@ -77,7 +77,7 @@ typedef struct AnalogRecord *Analog;
 
 static esp_adc_cal_characteristics_t gCharacteristics;
 
-void xs_analog_constructor(xsMachine *the)
+void xs_analog_constructor_(xsMachine *the)
 {
 	Analog analog;
 	int8_t i, channel = -1;
@@ -123,7 +123,7 @@ void xs_analog_constructor(xsMachine *the)
     builtinUsePin(pin);
 }
 
-void xs_analog_destructor(void *data)
+void xs_analog_destructor_(void *data)
 {
 	Analog analog = data;
 	if (!analog)
@@ -134,17 +134,17 @@ void xs_analog_destructor(void *data)
 	c_free(analog);
 }
 
-void xs_analog_close(xsMachine *the)
+void xs_analog_close_(xsMachine *the)
 {
 	Analog analog = xsmcGetHostData(xsThis);
 	if (!analog) return;
 
 	xsForget(analog->obj);
-	xs_analog_destructor(analog);
+	xs_analog_destructor_(analog);
 	xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_analog_read(xsMachine *the)
+void xs_analog_read_(xsMachine *the)
 {
 	uint32_t millivolts;
 	Analog analog = xsmcGetHostData(xsThis);
@@ -156,7 +156,7 @@ void xs_analog_read(xsMachine *the)
 	xsmcSetInteger(xsResult, (millivolts * ((1 << ADC_RESOLUTION) - 1)) / 3300);
 }
 
-void xs_analog_get_resolution(xsMachine *the)
+void xs_analog_get_resolution_(xsMachine *the)
 {
 	Analog analog = xsmcGetHostData(xsThis);
 	if (!analog)
