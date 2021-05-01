@@ -155,7 +155,7 @@ void _xsDeleteAt(txMachine *the, txSlot *self, txSlot *at)
 	fxDeleteAt(the);
 }
 
-void _xsCall(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
+void _xsCall(txMachine *the, txSlot *res, txSlot *self, txUnsigned id, ...)
 {
 	va_list ap;
 	int n;
@@ -167,7 +167,7 @@ void _xsCall(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 	va_end(ap);
 	mxOverflow(-(n+6));
 	fxPush(*self);
-	fxCallID(the, id);
+	fxCallID(the, (txID)id);
 	va_start(ap, id);
 	while ((v = va_arg(ap, txSlot *)) != NULL)
 		fxPush(*v);
@@ -179,7 +179,7 @@ void _xsCall(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 		the->stack++;
 }
 
-void _xsNew(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
+void _xsNew(txMachine *the, txSlot *res, txSlot *self, txUnsigned id, ...)
 {
 	va_list ap;
 	int n;
@@ -191,7 +191,7 @@ void _xsNew(txMachine *the, txSlot *res, txSlot *self, txInteger id, ...)
 	va_end(ap);
 	mxOverflow(-(n+6));
 	fxPush(*self);
-	fxNewID(the, id);
+	fxNewID(the, (txID)id);
 	va_start(ap, id);
 	while ((v = va_arg(ap, txSlot *)) != NULL)
 		fxPush(*v);

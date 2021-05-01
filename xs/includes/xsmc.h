@@ -131,11 +131,11 @@ mxImport void _xsDelete(xsMachine *, xsSlot *, xsIdentifier);
 mxImport void _xsDeleteAt(xsMachine *, xsSlot *, xsSlot *);
 #define xsmcDeleteAt(_THIS, _AT)	_xsDeleteAt(the, &_THIS, &_AT)
 
-mxImport void _xsCall(xsMachine *, xsSlot *, xsSlot *, xsIntegerValue, ...);
+mxImport void _xsCall(xsMachine *, xsSlot *, xsSlot *, xsUnsignedValue, ...);
 #define xsmcCall(_RES, _THIS, _ID, ...)		_xsCall(the, &_RES, &_THIS, _ID, __VA_ARGS__)
 #define xsmcCall_noResult(_THIS, _ID, ...)	_xsCall(the, NULL, &_THIS, _ID, __VA_ARGS__)
 
-mxImport void _xsNew(xsMachine *, xsSlot *, xsSlot *, xsIntegerValue, ...);
+mxImport void _xsNew(xsMachine *, xsSlot *, xsSlot *, xsUnsignedValue, ...);
 #define xsmcNew(_RES, _THIS, _ID, ...)	_xsNew(the, &_RES, &_THIS, _ID, __VA_ARGS__)
 
 mxImport xsBooleanValue _xsTest(xsMachine *, xsSlot *);
