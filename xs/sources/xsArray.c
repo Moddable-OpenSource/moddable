@@ -282,8 +282,18 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 		{
 			txSlot* address = array->value.array.address;
 			txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
-			if (array->value.array.length == size)
-				return array;
+			txIndex index = 0;
+			if (array->value.array.length != size)
+				return C_NULL;
+			if (mutable && (instance->flag & XS_DONT_PATCH_FLAG))
+				return C_NULL;
+			while (index < size) {
+				if (address->flag)
+					return C_NULL;
+				address++;
+				index++;
+			}
+			return array;
 		}
 	}
 	return C_NULL;
@@ -528,6 +538,7 @@ void fxIndexArray(txMachine* the, txSlot* array)
 		txIndex index = 0;
 		while (index < size) {
 			*((txIndex*)address) = index;	
+			address->flag = XS_NO_FLAG;
 			address++;
 			index++;
 		}
