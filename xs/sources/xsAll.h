@@ -700,8 +700,8 @@ mxExport void _xsSetAt(txMachine*, txSlot*, txSlot*, txSlot*);
 mxExport void _xsSetIndex(txMachine*, txSlot*, txIndex, txSlot*);
 mxExport void _xsDelete(txMachine*, txSlot*, txID);
 mxExport void _xsDeleteAt(txMachine*, txSlot*, txSlot*);
-mxExport void _xsCall(txMachine*, txSlot*, txSlot*, txInteger, ...);
-mxExport void _xsNew(txMachine*, txSlot*, txSlot*, txInteger, ...);
+mxExport void _xsCall(txMachine*, txSlot*, txSlot*, txUnsigned, ...);
+mxExport void _xsNew(txMachine*, txSlot*, txSlot*, txUnsigned, ...);
 mxExport txBoolean _xsTest(txMachine*, txSlot*);
 mxExport txInteger fxIncrementalVars(txMachine*, txInteger);
 
