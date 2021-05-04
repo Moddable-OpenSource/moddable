@@ -29,7 +29,6 @@ MEMORY
     SCRATCH_Y(rwx) : ORIGIN = 0x20041000, LENGTH = 4k
 }
 
-
 ENTRY(_entry_point)
 
 SECTIONS
@@ -268,5 +267,13 @@ SECTIONS
 
     ASSERT( __binary_info_header_end - __logical_binary_start <= 256, "Binary info must be in first 256 bytes of the binary")
     /* todo assert on extra code */
+}
+
+SECTIONS
+{
+	.end_of_image :
+	{
+		PROVIDE(__start_unused_space = .);
+	} > FLASH
 }
 

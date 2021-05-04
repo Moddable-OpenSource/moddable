@@ -1217,6 +1217,9 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 	return 1;
 }
 
+// FLASH_PAGE_SIZE	 (1u << 8)
+// FLASH_SECTOR_SIZE (1u << 12)
+// FLASH_BLOCK_SIZE  (1u << 16)
 
 uint8_t *espFindUnusedFlashStart(void)
 {
@@ -1236,7 +1239,8 @@ uint8_t *espFindUnusedFlashStart(void)
 		- it is no bigger than 4096 bytes
 		- empty space follows the .data. section
 	*/
-	modStart += 4096;
+//	modStart += 4096;
+	modStart += FLASH_SECTOR_SIZE;
 
 	return (uint8_t *)modStart;
 }

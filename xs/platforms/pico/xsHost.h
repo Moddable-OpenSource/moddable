@@ -426,7 +426,7 @@ extern uint8_t _MODDABLE_start;		// from linker
 #define kModulesEnd ((uintptr_t)&_MODPREF_start)
 #define kModulesByteLength (kModulesEnd - kModulesStart)
 
-#define kFlashStart ((uintptr_t)&_MODDABLE_start)
+#define kFlashStart (XIP_BASE)
 #define kFlashSectorSize (modSPIFlashInit() ? FLASH_SECTOR_SIZE : 0)
 
 extern uint8_t *espFindUnusedFlashStart(void);

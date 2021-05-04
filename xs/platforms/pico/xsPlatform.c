@@ -646,7 +646,7 @@ printf("get id\n");
 #endif
 
 		default:
-printf("unknown\n");
+printf("unknown cmdID: %d\n");
 			resultCode = -3;
 			break;
 	}
@@ -654,7 +654,6 @@ printf("unknown\n");
 	if (resultID) {
 		the->echoBuffer[3] = resultCode >> 8;
 		the->echoBuffer[4] = resultCode & 0xff;
-printf("about to send resultID\n");
 		fxSend(the, 2);		// send binary
 	}
 
