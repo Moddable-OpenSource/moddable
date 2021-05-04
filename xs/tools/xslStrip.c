@@ -55,7 +55,7 @@ txFlag fxIsCallbackStripped(txLinker* linker, txCallback which)
 
 txFlag fxIsLinkerSymbolUsed(txLinker* linker, txID id)
 {
-	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & XS_ID_MASK];
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id];
 	return linkerSymbol->flag;
 }
 
@@ -85,7 +85,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	else {
 		linkerBuilder = linker->firstBuilder;
 		while (linkerBuilder) {
-			txID id = linkerBuilder->host.id & XS_ID_MASK;
+			txID id = linkerBuilder->host.id;
 			txLinkerSymbol* symbol = linker->symbolArray[id];
 			if (symbol->flag)
 				fxUnstripCallback(linker, linkerBuilder->host.callback);
@@ -778,6 +778,6 @@ void fxUnstripCallbacks(txLinker* linker)
 
 void fxUnuseSymbol(txLinker* linker, txID id)
 {
-	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & XS_ID_MASK];
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id];
 	linkerSymbol->flag = 0;
 }

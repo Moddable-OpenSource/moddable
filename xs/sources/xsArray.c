@@ -270,7 +270,7 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 	txSlot* instance = fxToInstance(the, slot);
 	txSlot* array = instance->next;
 	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
-		if (instance->ID >= 0) {
+		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
 				array = alias->next;
@@ -282,8 +282,18 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 		{
 			txSlot* address = array->value.array.address;
 			txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
-			if (array->value.array.length == size)
-				return array;
+			txIndex index = 0;
+			if (array->value.array.length != size)
+				return C_NULL;
+			if (mutable && (instance->flag & XS_DONT_PATCH_FLAG))
+				return C_NULL;
+			while (index < size) {
+				if (address->flag)
+					return C_NULL;
+				address++;
+				index++;
+			}
+			return array;
 		}
 	}
 	return C_NULL;
@@ -324,11 +334,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 	txSlot* b = the->stack;
 	int result;
 	
-	if (!(a->ID))
-		result = (!(b->ID)) ? 0 : 1;
-	else if (!(b->ID))
-		result = -1;
-	else if (a->kind == XS_UNDEFINED_KIND)
+	if (a->kind == XS_UNDEFINED_KIND)
 		result = (b->kind == XS_UNDEFINED_KIND) ? 0 : 1;
 	else if (b->kind == XS_UNDEFINED_KIND)
 		result = -1;
@@ -491,7 +497,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* array = instance->next;
 	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
-		if (instance->ID >= 0) {
+		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
 				array = alias->next;
@@ -532,6 +538,7 @@ void fxIndexArray(txMachine* the, txSlot* array)
 		txIndex index = 0;
 		while (index < size) {
 			*((txIndex*)address) = index;	
+			address->flag = XS_NO_FLAG;
 			address++;
 			index++;
 		}
@@ -543,10 +550,10 @@ txBoolean fxIsArray(txMachine* the, txSlot* instance)
 again:
 	if (instance) {
 		txSlot* internal = instance->next;
-		if (internal) {
-			if (internal->ID == XS_ARRAY_BEHAVIOR)
+		if (internal && (internal->flag & XS_INTERNAL_FLAG)) {
+			if ((internal->kind == XS_ARRAY_KIND) && (internal->ID == XS_ARRAY_BEHAVIOR))
 				return 1;
-			if (internal->ID == XS_PROXY_BEHAVIOR) {
+			if (internal->kind == XS_PROXY_KIND) {
 				instance = internal->value.proxy.target;
 				if (instance)
 					goto again;
@@ -692,7 +699,7 @@ void fxArrayLengthGetter(txMachine* the)
 		}
 		instance = fxGetPrototype(the, instance);
 	}
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			array = alias->next;
@@ -720,7 +727,7 @@ void fxArrayLengthSetter(txMachine* the)
 		}
 		instance = fxGetPrototype(the, instance);
 	}
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (!alias)
 			alias = fxAliasInstance(the, instance);
@@ -751,7 +758,7 @@ txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 		slot.value.number = array->value.array.length;
 		if (!fxIsPropertyCompatible(the, &slot, descriptor, mask))
 			return 0;
-		if (instance->ID >= 0) {
+		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (!alias) {
 				alias = fxAliasInstance(the, instance);
@@ -808,7 +815,7 @@ void fxArrayOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys)
 	txSlot* property = instance->next;
 	keys = fxQueueIndexKeys(the, property, flag, keys);
 	if (flag & XS_EACH_NAME_FLAG)
-		keys = fxQueueKey(the, mxID(_length), XS_NO_ID, keys);
+		keys = fxQueueKey(the, mxID(_length), 0, keys);
 	property = property->next;
 	fxQueueIDKeys(the, property, flag, keys);
 }

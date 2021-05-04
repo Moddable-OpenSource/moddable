@@ -58,7 +58,7 @@ struct PWMRecord {
 typedef struct PWMRecord PWMRecord;
 typedef struct PWMRecord *PWM;
 
-void xs_pwm_constructor(xsMachine *the)
+void xs_pwm_constructor_(xsMachine *the)
 {
 	PWM pwm;
 	int pin;
@@ -169,7 +169,7 @@ void xs_pwm_constructor(xsMachine *the)
     builtinUsePin(pin);
 }
 
-void xs_pwm_destructor(void *data)
+void xs_pwm_destructor_(void *data)
 {
 	PWM pwm = data;
 	if (!pwm) return;
@@ -186,17 +186,17 @@ void xs_pwm_destructor(void *data)
     c_free(pwm);
 }
 
-void xs_pwm_close(xsMachine *the)
+void xs_pwm_close_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
 	if (!pwm) return;
 
 	xsForget(pwm->obj);
-	xs_pwm_destructor(pwm);
+	xs_pwm_destructor_(pwm);
 	xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_pwm_write(xsMachine *the)
+void xs_pwm_write_(xsMachine *the)
 {
     int value, max;
 	PWM pwm = xsmcGetHostData(xsThis);
@@ -213,7 +213,7 @@ void xs_pwm_write(xsMachine *the)
 	ledc_update_duty(kSpeedMode, pwm->ledc);
 }
 
-void xs_pwm_get_hz(xsMachine *the)
+void xs_pwm_get_hz_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
 	if (!pwm)
@@ -222,7 +222,7 @@ void xs_pwm_get_hz(xsMachine *the)
 	xsmcSetInteger(xsResult, gTimers[pwm->timerIndex].hz);
 }
 
-void xs_pwm_get_resolution(xsMachine *the)
+void xs_pwm_get_resolution_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
 	if (!pwm)

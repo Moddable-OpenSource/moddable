@@ -68,14 +68,14 @@ void fxBuildGenerator(txMachine* the)
 	mxPush(mxFunctionPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextSlotProperty(the, slot, &mxGeneratorPrototype, mxID(_prototype), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	property = mxBehaviorSetProperty(the, mxGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+	property = mxBehaviorSetProperty(the, mxGeneratorPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	property->kind = the->stack->kind;
 	property->value = the->stack->value;
 	slot = fxNextStringXProperty(the, slot, "GeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxGeneratorFunctionPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_GeneratorFunction), 1, mxID(_GeneratorFunction));
-	slot = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+	slot = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 	slot->flag |= XS_DONT_SET_FLAG;
 	the->stack++;
 
@@ -96,14 +96,14 @@ void fxBuildGenerator(txMachine* the)
 	mxPush(mxFunctionPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextSlotProperty(the, slot, &mxAsyncGeneratorPrototype, mxID(_prototype), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	property = mxBehaviorSetProperty(the, mxAsyncGeneratorPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+	property = mxBehaviorSetProperty(the, mxAsyncGeneratorPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 	property->flag = XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 	property->kind = the->stack->kind;
 	property->value = the->stack->value;
 	slot = fxNextStringXProperty(the, slot, "AsyncGeneratorFunction", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxAsyncGeneratorFunctionPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncGeneratorFunction), 1, mxID(_AsyncGeneratorFunction));
-	slot = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+	slot = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 	slot->flag |= XS_DONT_SET_FLAG;
 	the->stack++;
 	

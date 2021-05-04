@@ -37,6 +37,14 @@
 
 #include "xsAll.h"
 
+#if mx32bitID
+#define mxSymbolBit 0x80000000
+#define mxSymbolMask 0x7FFFFFFF
+#else
+#define mxSymbolBit 0x8000
+#define mxSymbolMask 0x7FFF
+#endif
+
 typedef struct sxMarshallBuffer txMarshallBuffer; 
 struct sxMarshallBuffer {
 	txByte* base;
@@ -98,10 +106,10 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 			while (aSymbolCount) {
 				txID id;
 				aSymbolLength = *aSymbolPointer;
-				if (aSymbolLength > 0)
+				if ((aSymbolLength & mxSymbolBit) == 0)
 					id = fxNewNameC(the, (char *)p);
 				else {
-					aSymbolLength = -aSymbolLength;
+					aSymbolLength = aSymbolLength & mxSymbolMask;
 					id = the->keyIndex;
 					if (id == the->keyCount)
 						fxAbort(the, XS_NO_MORE_KEYS_EXIT);
@@ -115,7 +123,6 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 						aSlot = C_NULL;
 					the->keyArray[id - the->keyOffset] = aSlot;
 					the->keyIndex++;
-					id = XS_ID_BIT | id;
 				}
 				*aSymbolPointer++ = id;
 				aSymbolCount--;
@@ -175,12 +182,11 @@ void fxDemarshallChunk(txMachine* the, void* theData, void** theDataAddress)
 
 txID fxDemarshallKey(txMachine* the, txID id, txID* theSymbolMap, txBoolean alien)
 {
-	if (id < XS_NO_ID) {
-		txID index = id & XS_ID_MASK;
+	if (id != XS_NO_ID) {
 		if (alien)
-			id = theSymbolMap[index];
-		else if (index >= the->keyOffset)
-			id = theSymbolMap[index - the->keyOffset];
+			id = theSymbolMap[id - 1];
+		else if (id >= the->keyOffset)
+			id = theSymbolMap[id - the->keyOffset];
 	}
 	return id;
 }
@@ -315,7 +321,7 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 					case XS_STRING_KIND: theResult->value.instance.prototype = mxStringPrototype.value.reference; break;
 					case XS_TYPED_ARRAY_KIND: {
 						txTypeDispatch* dispatch = (txTypeDispatch*)&gxTypeDispatches[aSlot->value.integer];
-						mxPush(the->stackPrototypes[-1 - dispatch->constructorID]);
+						mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
 						fxGetID(the, mxID(_prototype));
 						theResult->value.instance.prototype = the->stack->value.reference;
 						mxPop();
@@ -464,7 +470,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		if (aBuffer.symbolCount) {
 			txID* lengths = (txID*)aBuffer.current;
 			txID* map = aBuffer.symbolMap;
-			txID dstIndex = 0;
+			txID dstIndex = 1;
 			txSlot** p;
 			txSlot** q;
 			aBuffer.current += aBuffer.symbolCount * sizeof(txID);
@@ -474,13 +480,13 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 				while (p < q) {
 					txID length = *map;
 					if (length) {
-						*map = dstIndex | XS_ID_BIT;
+						*map = dstIndex;
 						if ((*p) && ((*p)->flag & XS_DONT_ENUM_FLAG)) {
 							*lengths++ = length;
 							c_memcpy(aBuffer.current, (*p)->value.key.string, length);
 						}
 						else {
-							*lengths++ = -length;
+							*lengths++ = mxSymbolBit | length;
 							if (length > 1)
 								c_memcpy(aBuffer.current, (*p)->value.string, length);
 							else
@@ -500,13 +506,13 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 			while (p < q) {
 				txID length = *map;
 				if (length) {
-					*map = dstIndex | XS_ID_BIT;
+					*map = dstIndex;
 					if ((*p) && ((*p)->flag & XS_DONT_ENUM_FLAG)) {
 						*lengths++ = length;
 						c_memcpy(aBuffer.current, (*p)->value.key.string, length);
 					}
 					else {
-						*lengths++ = -length;
+						*lengths++ = mxSymbolBit | length;
 						if (length > 1)
 							c_memcpy(aBuffer.current, (*p)->value.string, length);
 						else
@@ -569,13 +575,12 @@ void fxMarshallChunk(txMachine* the, void* theData, void** theDataAddress, txMar
 
 txID fxMarshallKey(txMachine* the, txID id, txMarshallBuffer* theBuffer, txBoolean alien)
 {
-	if (id < XS_NO_ID) {
-		txID index = id & XS_ID_MASK;
+	if (id != XS_NO_ID) {
 		if (alien) {
-            id = theBuffer->symbolMap[index];
+            id = theBuffer->symbolMap[id];
 		}
-		else if (index >= the->keyOffset) {
-            id = theBuffer->symbolMap[index - the->keyOffset];
+		else if (id >= the->keyOffset) {
+            id = theBuffer->symbolMap[id - the->keyOffset];
         }
 	}
 	return id;
@@ -752,24 +757,22 @@ void fxMeasureChunk(txMachine* the, void* theData, txMarshallBuffer* theBuffer)
 
 void fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoolean alien)
 {
-	txID anIndex;
 	txSlot* aSlot;
 	txSize aLength;
-	if (theID < XS_NO_ID) {
-		anIndex = theID & XS_ID_MASK;
+	if (theID != XS_NO_ID) {
 		if (alien) {
-			if (theBuffer->symbolMap[anIndex])
+			if (theBuffer->symbolMap[theID])
 				return;
-			if (anIndex >= the->keyOffset)
-				aSlot = the->keyArray[anIndex - the->keyOffset];
+			if (theID >= the->keyOffset)
+				aSlot = the->keyArray[theID - the->keyOffset];
 			else
-				aSlot = the->keyArrayHost[anIndex];
+				aSlot = the->keyArrayHost[theID];
 		}
-		else if (anIndex >= the->keyOffset) {
-			anIndex -= the->keyOffset;
-			if (theBuffer->symbolMap[anIndex])
+		else if (theID >= the->keyOffset) {
+			theID -= the->keyOffset;
+			if (theBuffer->symbolMap[theID])
 				return;
-			aSlot = the->keyArray[anIndex];
+			aSlot = the->keyArray[theID];
 		}
 		else
 			return;
@@ -785,9 +788,9 @@ void fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoo
 		}
 		else
 			aLength = 1;
-		if (aLength > XS_ID_MASK)
-			mxRangeError("marshall: key overflow");
-		theBuffer->symbolMap[anIndex] = (txID)aLength;
+// 		if (aLength > XS_ID_MASK)
+// 			mxRangeError("marshall: key overflow");
+		theBuffer->symbolMap[theID] = (txID)aLength;
 		theBuffer->symbolSize += sizeof(txID);
 		theBuffer->symbolSize += aLength;
 		theBuffer->symbolCount++;
@@ -867,7 +870,7 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		theSlot->value.instance.garbage = C_NULL;
 		aSlot = theSlot->next;
 		while (aSlot) {
-			mxPushAt(aSlot->ID, XS_NO_ID);
+			mxPushAt(aSlot->ID, 0);
 			fxMeasureSlot(the, aSlot, theBuffer, alien);
 			mxPop();
 			aSlot = aSlot->next;
@@ -991,7 +994,7 @@ void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString messag
 					}
 				}
 			}
-			else if ((int)slot->value.at.index != XS_NO_ID) {
+			else {
 				if (i < c) i += c_snprintf(buffer + i, c - i, "[%d]", (int)slot->value.at.index);
 			}
 		}

@@ -428,7 +428,7 @@ void fxGrowChunks(txMachine* the, txSize theSize)
 	if (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG)) {
 		txSize modulo = theSize % the->minimumChunksSize;
 		if (modulo)
-			fxAddChunkSizes(the, theSize, the->minimumChunksSize - modulo);
+			theSize = fxAddChunkSizes(the, theSize, the->minimumChunksSize - modulo);
 	}
 	theSize = fxAddChunkSizes(the, theSize, sizeof(txBlock));
 	aData = fxAllocateChunks(the, theSize);

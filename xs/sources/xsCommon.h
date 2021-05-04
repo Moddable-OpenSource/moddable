@@ -57,13 +57,9 @@ extern "C" {
 typedef txS1 txByte;
 typedef txU1 txFlag;
 #ifdef mx32bitID
-	#define XS_ID_BIT 0x80000000
-	#define XS_ID_MASK 0x7FFFFFFF
-	typedef txS4 txID;
+	typedef txU4 txID;
 #else
-	#define XS_ID_BIT 0x8000
-	#define XS_ID_MASK 0x7FFF
-	typedef txS2 txID;
+	typedef txU2 txID;
 #endif
 typedef txU4 txIndex;
 typedef txS1 txKind;
@@ -103,8 +99,8 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 10
-#define XS_MINOR_VERSION 6
-#define XS_PATCH_VERSION 2
+#define XS_MINOR_VERSION 7
+#define XS_PATCH_VERSION 1
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -632,8 +628,8 @@ extern void fxBigIntParseX(txBigInt* bigint, txString string, txSize length);
 #define mxEncodeID(THE_CODE, THE_VALUE) mxEncode2(THE_CODE, THE_VALUE)	
 #endif	
 
-#define XS_NO_ID -1
 enum {
+	XS_NO_ID = 0,
 	_Symbol_asyncIterator = 1,
 	_Symbol_hasInstance,
 	_Symbol_isConcatSpreadable,

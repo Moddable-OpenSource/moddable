@@ -76,7 +76,7 @@ void fxBuildFunction(txMachine* the)
 	slot = fxBuildHostConstructor(the, mxCallback(fx_AsyncFunction), 1, mxID(_AsyncFunction));
 	slot->value.instance.prototype = constructor;
 	the->stack++;
-	slot = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+	slot = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 	slot->flag |= XS_DONT_SET_FLAG;
 }
 
@@ -168,9 +168,9 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 		
 	/* NAME */
 	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, XS_NO_ID, XS_NO_ID, C_NULL);
+		fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
 	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, XS_NO_ID, XS_NO_ID, C_NULL);
+		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, 0, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -214,7 +214,7 @@ txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultPrototype)
 #ifndef mxLink
 txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length)
 {
-	txSlot* property = mxBehaviorGetProperty(the, instance, mxID(_length), XS_NO_ID, XS_OWN);
+	txSlot* property = mxBehaviorGetProperty(the, instance, mxID(_length), 0, XS_OWN);
 	if (!property)
 		property = fxNextIntegerProperty(the, fxLastProperty(the, instance), 0, mxID(_length), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	if (length <= 0x7FFFFFFF) {
@@ -228,11 +228,11 @@ txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length)
 	return property;
 }
 
-txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix)
+txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix)
 {
 	txSlot* property;
 	txSlot* key;
-	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
+	property = mxBehaviorGetProperty(the, instance, mxID(_name), 0, XS_OWN);
 	if (!property)
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	if (id) {
@@ -262,7 +262,7 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInde
 			property->value = mxEmptyString.value;
 		}
 	}
-	else {
+	else if (former) {
 		char buffer[16];
 		fxCopyStringC(the, property, fxNumberToString(the->dtoa, index, buffer, sizeof(buffer), 0, 0));	
 	}
@@ -272,7 +272,7 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInde
 }
 #endif
 
-void fxRenameFunction(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix)
+void fxRenameFunction(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix)
 {
 	txSlot* property;
 	if (instance->flag & XS_MARK_FLAG)
@@ -414,7 +414,7 @@ void fx_Function_prototype_bind(txMachine* the)
 	if (gxDefaults.newFunctionLength) {
 		txNumber length = 0;
 		mxPushUndefined();
-		if (mxBehaviorGetOwnProperty(the, mxThis->value.reference, mxID(_length), XS_NO_ID, the->stack)) {
+		if (mxBehaviorGetOwnProperty(the, mxThis->value.reference, mxID(_length), 0, the->stack)) {
 			mxPushSlot(mxThis);
 			fxGetID(the, mxID(_length));
 			property = the->stack;
@@ -553,7 +553,7 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 	}
 	if (!prototype)
 		mxTypeError("prototype is no object");
-	if (prototype->ID >= 0) {
+	if (prototype->ID) {
 		txSlot* alias = the->aliasArray[prototype->ID];
 		if (alias)
 			prototype = alias;

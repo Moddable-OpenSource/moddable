@@ -99,7 +99,7 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 						fxBufferFunctionName(the, buffer, size, home, ".");
 					}
 					else {
-						txSlot* constructor = mxBehaviorGetProperty(the, home, mxID(_constructor), XS_NO_ID, XS_OWN);
+						txSlot* constructor = mxBehaviorGetProperty(the, home, mxID(_constructor), 0, XS_OWN);
 						if (constructor) {
 							if (constructor->kind == XS_REFERENCE_KIND) {
 								constructor = constructor->value.reference;
@@ -147,7 +147,7 @@ void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* 
 
 void fxBufferObjectName(txMachine* the, txString buffer, txSize size, txSlot* object, txString suffix)
 {
-	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), XS_NO_ID, XS_ANY);
+	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), 0, XS_ANY);
 	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string))
 		c_strncat(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
 	else

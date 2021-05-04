@@ -89,8 +89,8 @@ struct sxLinker {
 	txMachine* realm;
 	txLinkerScript* currentScript;
 	txLinkerScript* firstScript;
-	txID scriptCount;
-	txID hostsCount;
+	txSize scriptCount;
+	txSize hostsCount;
 	
 	txLinkerStrip* firstStrip;
 	txFlag stripFlag;
@@ -98,8 +98,8 @@ struct sxLinker {
 	
 	txSize symbolModulo;
 	txLinkerSymbol** symbolTable;
-	txID symbolCount;
-	txID symbolIndex;
+	txSize symbolCount;
+	txSize symbolIndex;
 	txLinkerSymbol** symbolArray;
 	
 	txS1* symbolsBuffer;

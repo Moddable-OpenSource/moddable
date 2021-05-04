@@ -270,7 +270,7 @@ void fxWriteProfileProperty(txMachine* the, txSlot* theProperty, txSlot* theList
 		switch (aProperty->kind) {
 		case XS_CALLBACK_KIND:
 		case XS_CODE_KIND:
-			aSlot = mxBehaviorGetProperty(the, anInstance, mxID(_prototype), XS_NO_ID, XS_ANY);
+			aSlot = mxBehaviorGetProperty(the, anInstance, mxID(_prototype), 0, XS_ANY);
 			if (aSlot && (aSlot->kind == XS_REFERENCE_KIND)) {
 				aSlot->ID = mxID(_prototype);
 				fxWriteProfileProperty(the, aSlot, theList, -1);

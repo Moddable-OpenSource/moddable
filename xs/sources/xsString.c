@@ -268,7 +268,7 @@ void fxStringOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys
 		property = property->next;
 	}
 	if (flag & XS_EACH_NAME_FLAG)
-		keys = fxQueueKey(the, mxID(_length), XS_NO_ID, keys);
+		keys = fxQueueKey(the, mxID(_length), 0, keys);
 	fxQueueIDKeys(the, property, flag, keys);
 }
 
@@ -1706,7 +1706,7 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
  							mxPushSlot(groups);
 							fxGetID(the, name);
 							if (!mxIsUndefined(the->stack)) {
-// 								fxToString(the, the->stack);
+								fxToString(the, the->stack);
 								l += mxStringLength(the->stack->value.string);
 							}
 							mxPop();
@@ -1812,7 +1812,7 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 								mxPushSlot(groups);
 								fxGetID(the, name);
 								if (!mxIsUndefined(the->stack)) {
-// 									fxToString(the, the->stack);
+									fxToString(the, the->stack);
 									l = mxStringLength(the->stack->value.string);
 									c_memcpy(s, the->stack->value.string, l);
 									s += l;

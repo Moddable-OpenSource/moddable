@@ -200,10 +200,10 @@ void fxOptimize(txMachine* the)
 				txColorTable* colorTable = colorTables[instanceIndex] = fxNewColorTable(linker, slot);
 				txSlot* property = slot->next;
 				while (property) {
-					if (((property->flag & XS_INTERNAL_FLAG) == 0) && (property->ID < 0) && (property->ID != XS_NO_ID)) {
+					if (((property->flag & XS_INTERNAL_FLAG) == 0) && (property->ID != XS_NO_ID)) {
 						txColorEntry* colorEntry = fxNewColorEntry(linker, property);
 						txConflictEntry* conflictEntry = fxNewConflictEntry(linker, colorTable);
-						txID id = property->ID & XS_ID_MASK;
+						txID id = property->ID;
 						txConflictTable* conflictTable = conflictTables[id];
 						if (!conflictTable) {
 							conflictTable = conflictTables[id] = fxNewConflictTable(linker, id);
@@ -232,7 +232,7 @@ void fxOptimize(txMachine* the)
 			linker->colors[conflictTable->id] = conflictTable->color;
 			if (color < conflictTable->color)
 				color = conflictTable->color;
-// 			fprintf(stderr, "%s %d %d\n", fxGetKeyName(the, conflictTable->id | XS_ID_BIT), conflictTable->count, conflictTable->color);
+// 			fprintf(stderr, "%s %d %d\n", fxGetKeyName(the, conflictTable->id), conflictTable->count, conflictTable->color);
 		}
 		else
 			break;

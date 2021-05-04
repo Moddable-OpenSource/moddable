@@ -543,7 +543,7 @@ txScript* fxParserCode(txParser* parser)
 	
 	address = parser->symbolTable;
 	c = parser->symbolModulo;
-	id = 0;
+	id = 1;
 	total = sizeof(txID);
 	for (i = 0; i < c; i++) {
 		txSymbol* symbol = *address;
@@ -977,10 +977,10 @@ txScript* fxParserCode(txParser* parser)
 	
 	c = (txS2)(parser->hostNodeIndex);
 	if (c) {
-		size = 2;
+		size = sizeof(txID);
 		node = parser->firstHostNode;
 		while (node) {
-			size += 3 + node->at->length + 1;
+			size += 1 + sizeof(txID) + node->at->length + 1;
 			node = node->nextHostNode;
 		}
 	
@@ -989,15 +989,15 @@ txScript* fxParserCode(txParser* parser)
 		script->hostsSize = size;
 	
 		p = script->hostsBuffer;
-		mxEncode2(p, c);
+		mxEncodeID(p, c);
 		node = parser->firstHostNode;
 		while (node) {
 			*p++ = (txS1)(node->paramsCount);
 			if (node->symbol)
-				c = (txS2)node->symbol->ID;
+				c = node->symbol->ID;
 			else
-				c = -1;
-			mxEncode2(p, c);
+				c = XS_NO_ID;
+			mxEncodeID(p, c);
 			c_memcpy(p, node->at->value, node->at->length);
 			p += node->at->length;
 			*p++ = 0;

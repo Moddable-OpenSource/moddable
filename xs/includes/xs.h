@@ -357,13 +357,13 @@ typedef txU4 xsUnsignedValue;
 typedef txS1 xsByte;
 typedef unsigned char xsFlag;
 #ifdef mx32bitID
-typedef txS4 xsIdentifier;
+typedef txU4 xsIdentifier;
 #else
-typedef txS2 xsIdentifier;
+typedef txU2 xsIdentifier;
 #endif
 typedef txU4 xsIndex;
 
-#define XS_NO_ID -1
+#define XS_NO_ID 0
 
 #define xsID(_NAME) \
 	fxID(the, _NAME)
@@ -892,7 +892,7 @@ typedef void (*xsCallback)(xsMachine*);
 
 struct xsHostBuilderRecord {
 	xsCallback callback;
-	xsIdentifier length;
+	xsIntegerValue length;
 	xsIdentifier id;
 };
 	

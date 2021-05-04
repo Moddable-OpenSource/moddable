@@ -864,7 +864,7 @@ void fx_Proxy_revocable(txMachine* the)
 
 void fx_Proxy_revoke(txMachine* the)
 {
-	txSlot* property = mxBehaviorGetProperty(the, mxFunction->value.reference, mxID(_proxy), XS_NO_ID, XS_ANY);
+	txSlot* property = mxBehaviorGetProperty(the, mxFunction->value.reference, mxID(_proxy), 0, XS_ANY);
 	if (property && (property->kind == XS_REFERENCE_KIND)) {
 		txSlot* instance = property->value.reference;
 		txSlot* proxy = instance->next;

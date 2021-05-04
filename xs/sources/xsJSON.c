@@ -134,11 +134,11 @@ void fx_JSON_parse(txMachine* the)
 			mxPush(mxObjectPrototype);
 			instance = fxNewObjectInstance(the);
 			id = fxID(the, "");
-			mxBehaviorDefineOwnProperty(the, instance, id, XS_NO_ID, mxResult, XS_GET_ONLY);
+			mxBehaviorDefineOwnProperty(the, instance, id, 0, mxResult, XS_GET_ONLY);
 			mxPushSlot(mxArgv(1));
 			mxCall();
 			mxPushUndefined();
-			fxKeyAt(the, id, XS_NO_ID, the->stack);
+			fxKeyAt(the, id, 0, the->stack);
 			mxPushSlot(mxResult);
 			fxReviveJSON(the, mxArgv(1));
 			mxPullSlot(mxResult);
@@ -477,15 +477,13 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 			mxSyntaxError("%ld: missing name", theParser->line);
 		mxPushString(theParser->string->value.string);
 		at = the->stack;
-		index = XS_NO_ID;
+		index = 0;
 		if (theParser->keys) {
 			at->kind = XS_UNDEFINED_KIND;
 			if (fxStringToIndex(the->dtoa, at->value.string, &index))
 				id = 0;
-			else {
+			else
 				id = fxFindName(the, at->value.string);
-				if (!id) id = XS_NO_ID;
-			}
 			if (id != XS_NO_ID) {
 				txSlot* item = theParser->keys->value.reference->next;
 				while (item) {
@@ -1021,26 +1019,27 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 	mxPop();
 	i = 0;
 	while (i < length) {
+		txBoolean flag = 0;
 		txID id = XS_NO_ID;
-		txIndex index = XS_NO_ID;
+		txIndex index = 0;
 		mxPushSlot(reference);
 		fxGetIndex(the, i);
 		slot = the->stack;
 	again:
 		if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
-			if (fxStringToIndex(the->dtoa, slot->value.string, &index)) {
-				id = 0;
-			}
+			if (fxStringToIndex(the->dtoa, slot->value.string, &index))
+				flag = 1;
 			else {
 				if (slot->kind == XS_STRING_X_KIND)
 					id = fxNewNameX(the, slot->value.string);
 				else
 					id = fxNewName(the, slot);
+				flag = 1;
 			}
 		}
 		else if (slot->kind == XS_INTEGER_KIND) {
 			if (fxIntegerToIndex(the->dtoa, slot->value.integer, &index))
-				id = 0;
+				flag = 1;
 			else {
 				fxToString(the, slot);
 				goto again;
@@ -1048,7 +1047,7 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 		}
 		else if (slot->kind == XS_NUMBER_KIND){
 			if (fxNumberToIndex(the->dtoa, slot->value.number, &index))
-				id = 0;
+				flag = 1;
 			else {
 				fxToString(the, slot);
 				goto again;
@@ -1061,7 +1060,7 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 				goto again;
 			}
 		}
-		if (id != XS_NO_ID) {
+		if (flag) {
 			txSlot* already = list->next;
 			while (already) {
 				if ((already->value.at.id == id) && (already->value.at.index == index))

@@ -42,7 +42,7 @@ typedef struct AnalogRecord *Analog;
 
 static uint8_t gInUse;
 
-void xs_analog_constructor(xsMachine *the)
+void xs_analog_constructor_(xsMachine *the)
 {
 	Analog analog;
 
@@ -64,7 +64,7 @@ void xs_analog_constructor(xsMachine *the)
 	gInUse = 1;
 }
 
-void xs_analog_destructor(void *data)
+void xs_analog_destructor_(void *data)
 {
 	if (data)
 		c_free(data);
@@ -72,17 +72,17 @@ void xs_analog_destructor(void *data)
 	gInUse = 0;
 }
 
-void xs_analog_close(xsMachine *the)
+void xs_analog_close_(xsMachine *the)
 {
 	Analog analog = xsmcGetHostData(xsThis);
 	if (!analog) return;
 
 	xsForget(analog->obj);
-	xs_analog_destructor(analog);
+	xs_analog_destructor_(analog);
 	xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_analog_read(xsMachine *the)
+void xs_analog_read_(xsMachine *the)
 {
 	int value = system_adc_read();
 	xsmcSetInteger(xsResult, (value > 1023) ? 1023 : value);		// pin, as API returns 1024.
