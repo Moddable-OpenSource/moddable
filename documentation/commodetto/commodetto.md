@@ -1,7 +1,7 @@
 # Commodetto
 
-Copyright 2016-2018 Moddable Tech, Inc.<BR>
-Revised: November 26, 2018
+Copyright 2016-2021 Moddable Tech, Inc.<BR>
+Revised: May 4, 2021
 
 ## About This Document
 
@@ -930,15 +930,15 @@ let converter = new Convert(Bitmap.RGB565LE, Bitmap.Gray256);
 
 ***
 
-#### `convert(src, dst)`
+#### `process(src, dst)`
 
-The convert function performs a pixel conversion. The `src` argument is the input pixels in the format specified in the constructor. The input pixels are stored either in an `ArrayBuffer` or a `HostBuffer`. The `dst` argument is where the output pixels will be returned. It must be an `ArrayBuffer`.
+The `process` function performs a pixel conversion. The `src` argument is the input pixels in the format specified in the constructor. The input pixels are stored either in an `ArrayBuffer` or a `HostBuffer`. The `dst` argument is where the output pixels will be returned. It must be an `ArrayBuffer`.
 
 ```js
-converter.convert(inputPixels, outputPixels);
+converter.process(inputPixels, outputPixels);
 ```
 
-The caller of convert is responsible for allocating a large enough output buffer. The `Bitmap.depth` function is useful for this calculation.
+The caller of process is responsible for allocating a large enough output buffer. The `Bitmap.depth` function is useful for this calculation.
 
 ```js
 let outputPixelFormat = Bitmap.Gray256;
