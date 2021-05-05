@@ -42,13 +42,13 @@ void fxBuildObject(txMachine* the)
 	txSlot* slot;
 	fxNewHostFunction(the, mxCallback(fx_Object_assign), 2, XS_NO_ID);
 	mxAssignObjectFunction = *the->stack;
-	the->stack++;
+	mxPop();
 	fxNewHostFunction(the, mxCallback(fx_Object_copy), 2, XS_NO_ID);
 	mxCopyObjectFunction = *the->stack;
-	the->stack++;
+	mxPop();
 	fxNewHostFunction(the, mxCallback(fxOrdinaryToPrimitive), 2, XS_NO_ID);
 	mxOrdinaryToPrimitiveFunction = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, the->stack->value.reference);
@@ -87,7 +87,7 @@ void fxBuildObject(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_seal), 1, mxID(_seal), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_setPrototypeOf), 2, mxID(_setPrototypeOf), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_values), 1, mxID(_values), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 }
 
 
@@ -299,7 +299,7 @@ void fx_Object_prototype_toLocaleString(txMachine* the)
 {
 	mxPushSlot(mxThis);
 	mxDub();
-	fxGetID(the, mxID(_toString));
+	mxGetID(mxID(_toString));
 	mxCall();
 	mxRunCount(0);
 	mxPullSlot(mxResult);
@@ -422,7 +422,7 @@ void fx_Object_prototype_toString(txMachine* the)
 	fxStringX(the, mxResult, "[object ");
 	if (instance) {
 		mxPushReference(instance);
-		fxGetID(the, mxID(_Symbol_toStringTag));
+		mxGetID(mxID(_Symbol_toStringTag));
 		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
 			fxConcatString(the, mxResult, the->stack);
 		else
@@ -462,9 +462,9 @@ void fx_Object_assign(txMachine* the)
 		while ((at = at->next)) {
 			if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 				mxPushReference(instance);
-				fxGetAll(the, at->value.at.id, at->value.at.index);
+				mxGetAll(at->value.at.id, at->value.at.index);
 				mxPushSlot(target);
-				fxSetAll(the, at->value.at.id, at->value.at.index);
+				mxSetAll(at->value.at.id, at->value.at.index);
 				mxPop();
 			}
 		}
@@ -501,7 +501,7 @@ void fx_Object_copy(txMachine* the)
 		if (i == c) {
 			if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 				mxPushReference(source);
-				fxGetAll(the, at->value.at.id, at->value.at.index);
+				mxGetAll(at->value.at.id, at->value.at.index);
 				the->stack->flag = 0;
 				mxBehaviorDefineOwnProperty(the, target, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
 				mxPop();
@@ -538,7 +538,7 @@ void fx_Object_create(txMachine* the)
 		while ((at = at->next)) {
 			if (mxBehaviorGetOwnProperty(the, properties, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 				mxPushReference(properties);
-				fxGetAll(the, at->value.at.id, at->value.at.index);
+				mxGetAll(at->value.at.id, at->value.at.index);
 				mask = fxDescriptorToSlot(the, the->stack);
 				if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, mask))
 					mxTypeError("invalid descriptor");
@@ -570,7 +570,7 @@ void fx_Object_defineProperties(txMachine* the)
 	while ((at = at->next)) {
 		if (mxBehaviorGetOwnProperty(the, properties, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 			mxPushReference(properties);
-			fxGetAll(the, at->value.at.id, at->value.at.index);
+			mxGetAll(at->value.at.id, at->value.at.index);
 			mask = fxDescriptorToSlot(the, the->stack);
 			if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, mask))
 				mxTypeError("invalid descriptor");
@@ -624,7 +624,7 @@ void fx_Object_entries(txMachine* the)
 			mxPushUndefined();
 			fxKeyAt(the, item->value.at.id, item->value.at.index, the->stack);
 			mxPushReference(instance);
-			fxGetAll(the, item->value.at.id, item->value.at.index);
+			mxGetAll(item->value.at.id, item->value.at.index);
 			fxConstructArrayEntry(the, item);
 			address = &(item->next);
 		}
@@ -676,7 +676,7 @@ void fx_Object_freeze(txMachine* the)
 						if (property->kind == XS_REFERENCE_KIND) {
 							mxPushSlot(mxThis);
 							mxDub();
-							fxGetID(the, mxID(_isFrozen));
+							mxGetID(mxID(_isFrozen));
 							mxCall();
 							mxPushSlot(property);
 							mxRunCount(1);
@@ -694,7 +694,7 @@ void fx_Object_freeze(txMachine* the)
 							if (property->value.accessor.getter) {
 								mxPushSlot(mxThis);
 								mxDub();
-								fxGetID(the, mxID(_isFrozen));
+								mxGetID(mxID(_isFrozen));
 								mxCall();
 								mxPushReference(property->value.accessor.getter);
 								mxRunCount(1);
@@ -711,7 +711,7 @@ void fx_Object_freeze(txMachine* the)
 							if (property->value.accessor.setter) {
 								mxPushSlot(mxThis);
 								mxDub();
-								fxGetID(the, mxID(_isFrozen));
+								mxGetID(mxID(_isFrozen));
 								mxCall();
 								mxPushReference(property->value.accessor.setter);
 								mxRunCount(1);
@@ -753,9 +753,9 @@ void fx_Object_fromEntries(txMachine* the)
 			if (value->kind != XS_REFERENCE_KIND)
 				mxTypeError("item is no object");
 			mxPushSlot(value);
-			fxGetIndex(the, 0);
+			mxGetIndex(0);
 			mxPushSlot(value);
-			fxGetIndex(the, 1);
+			mxGetIndex(1);
 			at = fxAt(the, the->stack + 1);
 			mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY);
 			mxPop();
@@ -766,7 +766,7 @@ void fx_Object_fromEntries(txMachine* the)
 			fxJump(the);
 		}
 	}
-	the->stack++;
+	mxPop();
 }
 
 void fx_Object_getOwnPropertyDescriptor(txMachine* the)
@@ -1076,7 +1076,7 @@ void fx_Object_values(txMachine* the)
 		if (mxBehaviorGetOwnProperty(the, instance, item->value.at.id, item->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 			array->value.array.length++;
 			mxPushReference(instance);
-			fxGetAll(the, item->value.at.id, item->value.at.index);
+			mxGetAll(item->value.at.id, item->value.at.index);
 			mxPullSlot(item);
 			address = &(item->next);
 		}

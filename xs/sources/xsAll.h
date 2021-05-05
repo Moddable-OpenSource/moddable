@@ -416,10 +416,13 @@ struct sxMachine {
 	txID aliasIndex;
 	txSlot** aliasArray;
 	
+	char* stackLimit;
+	
 	txSlot* firstWeakMapTable;
 	txSlot* firstWeakSetTable;
 	txSlot* firstWeakRefLink;
 
+	
 	txSize currentChunksSize;
 	txSize peakChunksSize;
 	txSize maximumChunksSize;
@@ -613,6 +616,7 @@ mxExport txID fxToID(txMachine* the, txSlot* theSlot);
 mxExport txString fxName(txMachine*, txID);
 
 mxExport void fxEnumerate(txMachine* the);
+mxExport txBoolean fxHasAll(txMachine* the, txID id, txIndex index);
 mxExport txBoolean fxHasAt(txMachine* the);
 mxExport txBoolean fxHasID(txMachine*, txID);
 mxExport txBoolean fxHasIndex(txMachine* the, txIndex index);
@@ -775,7 +779,7 @@ extern txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean z
 
 /* xsMemory.c */
 extern txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b);
-extern void fxCheckStack(txMachine* the, txSlot* slot);
+extern void fxCheckCStack(txMachine* the);
 extern void fxAllocate(txMachine* the, txCreation* theCreation);
 extern void fxCollect(txMachine* the, txBoolean theFlag);
 mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
@@ -2043,27 +2047,76 @@ enum {
 
 #define mxIsStringPrimitive(THE_SLOT) \
 	(((THE_SLOT)->kind == XS_STRING_KIND) || ((THE_SLOT)->kind == XS_STRING_X_KIND))
+	
+#ifdef mxMetering
+#define mxMeterOne() \
+	(the->meterIndex++)
+#else
+#define mxMeterOne() \
+	((void)0)
+#endif
 
 #if mxBoundsCheck
 #define mxOverflow(_COUNT) \
-	(fxOverflow(the,_COUNT,C_NULL, 0))
+	(mxMeterOne(), fxOverflow(the,_COUNT,C_NULL, 0))
 #else
 #define mxOverflow(_COUNT) \
 	((void)0)
 #endif
 
+
 #define mxCall() \
 	(mxOverflow(-4), \
 	fxCall(the))
+	
+#define mxDefineAll(ID, INDEX, FLAG, MASK) \
+	(mxMeterOne(), fxDefineAll(the, ID, INDEX, FLAG, MASK))
+#define mxDefineID(ID, FLAG, MASK) \
+	(mxMeterOne(), fxDefineAll(the, ID, 0, FLAG, MASK))
+#define mxDefineIndex(INDEX, FLAG, MASK) \
+	(mxMeterOne(), fxDefineAll(the, XS_NO_ID, INDEX, FLAG, MASK))
+	
+#define mxDeleteAll(ID, INDEX) \
+	(mxMeterOne(), fxDeleteAll(the, ID, INDEX))
+#define mxDeleteID(ID) \
+	(mxMeterOne(), fxDeleteAll(the, ID, 0))
+#define mxDeleteIndex(INDEX) \
+	(mxMeterOne(), fxDeleteAll(the, XS_NO_ID, INDEX))
+	
 #define mxDub() \
 	(mxOverflow(-1), \
 	((--the->stack)->next = C_NULL, \
 	the->stack->flag = XS_NO_FLAG, \
 	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
 	the->stack->value = (the->stack + 1)->value))
+	
+#define mxGetAll(ID, INDEX) \
+	(mxMeterOne(), fxGetAll(the, ID, INDEX))
+#define mxGetID(ID) \
+	(mxMeterOne(), fxGetAll(the, ID, 0))
+#define mxGetIndex(INDEX) \
+	(mxMeterOne(), fxGetAll(the, XS_NO_ID, INDEX))
+	
+#define mxHasAll(ID, INDEX) \
+	(mxMeterOne(), fxHasAll(the, ID, INDEX))
+#define mxHasID(ID) \
+	(mxMeterOne(), fxHasAll(the, ID, 0))
+#define mxHasIndex(INDEX) \
+	(mxMeterOne(), fxHasAll(the, XS_NO_ID, INDEX))
+	
 #define mxNew() \
 	(mxOverflow(-5), \
 	fxNew(the))
+	
+#define mxRunCount(_COUNT) \
+	(mxMeterOne(), fxRunID(the, C_NULL, _COUNT))
+	
+#define mxSetAll(ID, INDEX) \
+	(mxMeterOne(), fxSetAll(the, ID, INDEX))
+#define mxSetID(ID) \
+	(mxMeterOne(), fxSetAll(the, ID, 0))
+#define mxSetIndex(INDEX) \
+	(mxMeterOne(), fxSetAll(the, XS_NO_ID, INDEX))
 
 #define mxPush(THE_SLOT) \
 	(mxOverflow(-1), \
@@ -2167,14 +2220,15 @@ enum {
 	(mxOverflow(-1), \
 	_SLOT = --the->stack)
 
-
 #define mxPop() \
-	(the->stack++)
+	(mxMeterOne(), the->stack++)
 #define mxPull(THE_SLOT) \
-	((THE_SLOT).value = the->stack->value, \
+	(mxMeterOne(), \
+	(THE_SLOT).value = the->stack->value, \
 	(THE_SLOT).kind = (the->stack++)->kind)
 #define mxPullSlot(THE_SLOT) \
-	((THE_SLOT)->value = the->stack->value, \
+	(mxMeterOne(), \
+	(THE_SLOT)->value = the->stack->value, \
 	(THE_SLOT)->kind = (the->stack++)->kind)
 
 
@@ -2276,9 +2330,6 @@ enum {
 	(*mxBehavior(INSTANCE)->setPropertyValue)(THE, INSTANCE, ID, INDEX, VALUE, RECEIVER)
 #define mxBehaviorSetPrototype(THE, INSTANCE, PROTOTYPE) \
 	(*mxBehavior(INSTANCE)->setPrototype)(THE, INSTANCE, PROTOTYPE)
-	
-#define mxRunCount(_COUNT) \
-	fxRunID(the, C_NULL, _COUNT)
 
 enum {
 	mxGlobalStackIndex,

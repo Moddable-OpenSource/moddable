@@ -134,20 +134,13 @@ txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b)
 	return c;
 }
 
-void fxCheckStack(txMachine* the, txSlot* slot)
+void fxCheckCStack(txMachine* the)
 {
-	while (slot < the->stackTop) {
-		if ((slot->kind != XS_FRAME_KIND) && ((slot + 1)->kind != XS_FRAME_KIND))
-			mxCheck(the, slot->next == C_NULL);
-		switch(slot->kind) {
-		case XS_REFERENCE_KIND:
-			mxCheck(the, slot->value.reference->kind == XS_INSTANCE_KIND);
-			break;
-		default:
-			break;
-		}
-		slot++;
-	}
+    char x;
+    char *stack = &x;
+    if (stack <= the->stackLimit) {
+    	fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+    }
 }
 
 void fxAllocate(txMachine* the, txCreation* theCreation)
@@ -199,6 +192,8 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->symbolTable = (txSlot **)c_malloc_uint32(theCreation->symbolModulo * sizeof(txSlot*));
 	if (!the->symbolTable)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+
+	the->stackLimit = fxCStackLimit();
 
 	the->cRoot = C_NULL;
 	the->parserBufferSize = theCreation->parserBufferSize;
@@ -1159,7 +1154,6 @@ void* fxNewChunk(txMachine* the, txSize theSize)
 	the->firstBlock = (txBlock*)aData;
 	return aData + sizeof(txChunk);
 #endif
-	
 again:
 	aBlock = the->firstBlock;
 	while (aBlock) {
@@ -1548,6 +1542,7 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 {
 	txSlot* aSlot;
 	txByte* data;
+	
 #define mxSweepChunk(_THE_DATA, _THE_DATA_TYPE) \
 	if ((data = (txByte*)(((txChunk*)(((txByte*)(_THE_DATA)) - sizeof(txChunk)))->temporary))) \
 		((_THE_DATA)) = (_THE_DATA_TYPE)(data + sizeof(txChunk))

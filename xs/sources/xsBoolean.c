@@ -49,7 +49,7 @@ void fxBuildBoolean(txMachine* the)
 	mxBooleanPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Boolean), 1, mxID(_Boolean));
 	mxBooleanConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewBooleanInstance(txMachine* the)

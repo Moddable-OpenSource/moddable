@@ -626,6 +626,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 	txSlot** address;
 	txJump* yieldJump = the->firstJump;
 
+	fxCheckCStack(the);
 	if (generator) {
 		slot = mxStack;
 		variable = generator->next;
@@ -698,7 +699,6 @@ XS_CODE_JUMP:
 #ifdef mxMetering
 		the->meterIndex++;
 #endif
-		//fxCheckStack(the, mxStack);
 		
 		mxSwitch(byte) {
 		mxCase(XS_NO_CODE)
@@ -4252,11 +4252,11 @@ void fxRunExtends(txMachine* the)
 	prototype = the->stack;
 	fxBeginHost(the);
 	mxPushReference(constructor);
-	fxGetID(the, mxID(_prototype));
+	mxGetID(mxID(_prototype));
 	*prototype = *the->stack;
 	fxEndHost(the);
 	if (the->stack->kind == XS_NULL_KIND) {
-		the->stack++;
+		mxPop();
 		fxNewInstance(the);
 	}
 	else if (the->stack->kind == XS_REFERENCE_KIND) {
@@ -4304,7 +4304,7 @@ void fxRunEval(txMachine* the)
 		fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, flags), mxThis, mxTarget, closures, home->value.home.object, home->value.home.module);
 		aStream.slot->kind = the->stack->kind;
 		aStream.slot->value = the->stack->value;
-		the->stack++;
+		mxPop();
 	}
 }
 
@@ -4314,7 +4314,7 @@ void fxRunForAwaitOf(txMachine* the)
 	fxBeginHost(the);
 	mxPushSlot(slot);
 	mxDub();
-	fxGetID(the, mxID(_Symbol_asyncIterator));
+	mxGetID(mxID(_Symbol_asyncIterator));
 	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 		mxPop();
 		mxPop();
@@ -4356,7 +4356,7 @@ void fxRunIn(txMachine* the)
 	left->value.boolean = fxHasAt(the);
 	left->kind = XS_BOOLEAN_KIND;
 	fxEndHost(the);
-	the->stack++;
+	mxPop();
 }
 
 void fxRunInstanceOf(txMachine* the)
@@ -4366,7 +4366,7 @@ void fxRunInstanceOf(txMachine* the)
 	fxBeginHost(the);
 	mxPushSlot(right);
 	mxDub();
-	fxGetID(the, mxID(_Symbol_hasInstance));
+	mxGetID(mxID(_Symbol_hasInstance));
 	mxCall();
 	mxPushSlot(left);
 	mxRunCount(1);
@@ -4402,7 +4402,7 @@ void fxRunProxy(txMachine* the, txSlot* instance)
 		mxBehaviorConstruct(the, instance, the->stack, mxTarget);
 	else
 		mxTypeError("no constructor");
-	the->stack++;
+	mxPop();
 }
 
 txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b)
@@ -4521,15 +4521,15 @@ txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id)
 	txBoolean result;
 	fxBeginHost(the);
 	mxPushReference(instance);
-	result = fxHasID(the, id);
+	result = mxHasID(id);
 	if (result) {
 		mxPushReference(instance);
-		fxGetID(the, mxID(_Symbol_unscopables));
+		mxGetID(mxID(_Symbol_unscopables));
 		if (mxIsReference(the->stack)) {
-			fxGetID(the, id);
+			mxGetID(id);
 			result = fxToBoolean(the, the->stack) ? 0 : 1;
 		}
-		the->stack++;
+		mxPop();
 	}
 	fxEndHost(the);
 	return result;
@@ -4711,7 +4711,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				mxPushUndefined();
 			}
 			mxPull(mxHosts);
-			the->stack++;
+			mxPop();
 
 			/* THIS */
 			if (_this)

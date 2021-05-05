@@ -252,7 +252,7 @@ void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 		fxBeginHost(the);
 		mxPushSlot(theSlot);
 		mxPushSlot(theSlot);
-		fxGetID(the, mxID(_Symbol_toPrimitive));
+		mxGetID(mxID(_Symbol_toPrimitive));
 		if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 			mxPop();
 			mxPush(mxOrdinaryToPrimitiveFunction);
@@ -285,7 +285,7 @@ void fxToSpeciesConstructor(txMachine* the, txSlot* constructor)
 	if (!mxIsReference(the->stack)) {
 		mxTypeError("no constructor");
 	}
-	fxGetID(the, mxID(_Symbol_species));
+	mxGetID(mxID(_Symbol_species));
 	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 		mxPop();
 		mxPushSlot(constructor);
@@ -312,12 +312,12 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
-	fxGetID(the, mxID(_length));
+	mxGetID(mxID(_length));
 	c = fxToInteger(the, the->stack);
-	the->stack++;
+	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
-		fxGetIndex(the, i);
+		mxGetIndex(i);
 	}
 	mxRunCount(c);
 	mxPullSlot(mxResult);
@@ -340,12 +340,12 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
-	fxGetID(the, mxID(_length));
+	mxGetID(mxID(_length));
 	c = fxToInteger(the, the->stack);
-	the->stack++;
+	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
-		fxGetIndex(the, i);
+		mxGetIndex(i);
 	}
 	mxRunCount(c);
 	mxPullSlot(mxResult);
@@ -870,7 +870,7 @@ void fxOrdinaryToPrimitive(txMachine* the)
 		for (i = 0; i < 2; i++) {
 			mxPushSlot(mxThis);
 			mxPushSlot(mxThis);
-			fxGetID(the, ids[i]);
+			mxGetID(ids[i]);
 			if (fxIsCallable(the, the->stack)) {
 				mxCall();
 				mxRunCount(0);
@@ -917,39 +917,39 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 	if (!mxIsReference(descriptor))
 		mxTypeError("descriptor is no object");
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_enumerable))) {
+	if (mxHasID(mxID(_enumerable))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_enumerable));
+		mxGetID(mxID(_enumerable));
 		enumerable = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_configurable))) {
+	if (mxHasID(mxID(_configurable))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_configurable));
+		mxGetID(mxID(_configurable));
 		configurable = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_value))) {
+	if (mxHasID(mxID(_value))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_value));
+		mxGetID(mxID(_value));
 		value = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_writable))) {
+	if (mxHasID(mxID(_writable))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_writable));
+		mxGetID(mxID(_writable));
 		writable = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_get))) {
+	if (mxHasID(mxID(_get))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_get));
+		mxGetID(mxID(_get));
 		get = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_set))) {
+	if (mxHasID(mxID(_set))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_set));
+		mxGetID(mxID(_set));
 		set = the->stack;
 	}
 	if (get) {

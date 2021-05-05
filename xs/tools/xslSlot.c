@@ -477,7 +477,7 @@ void fxLinkerScriptCallback(txMachine* the)
 						the->stack->value.hostFunction.IDs = NULL;
 					}
 					fxArrayCacheItem(the, the->stack + 1, the->stack);
-					the->stack++;
+					mxPop();
 					p += mxStringLength((char*)p) + 1;
 				}
 			}

@@ -708,9 +708,9 @@ void fxDebugPushTag(txMachine* the)
 		/* FUNCTION */
 		mxPush(mxGlobal);
 		if (the->debugTag == XS_MODULE_TAG)
-			fxGetID(the, fxID(the, "<xsbug:module>"));
+			mxGetID(fxID(the, "<xsbug:module>"));
 		else
-			fxGetID(the, mxID(__xsbug_script_));
+			mxGetID(mxID(__xsbug_script_));
 		mxCall();
 		mxPushUndefined();
 		fxStringBuffer(the, the->stack, C_NULL, 256);
@@ -1403,7 +1403,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 			else
 				hostInspectors->value.list.first = hostInspector;
 			hostInspectors->value.list.last = hostInspector;
-			the->stack++;
+			mxPop();
 			
 			aParent = theInstance;
 			while (aParent && (aParent->next->kind == XS_HOST_KIND)) {
@@ -1425,7 +1425,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 								cacheProperty->flag |= XS_INSPECTOR_FLAG;
 								cacheProperty->kind = the->stack->kind;
 								cacheProperty->value = the->stack->value;
-								the->stack++;
+								mxPop();
 								fxEndHost(the);
 							}
 						}

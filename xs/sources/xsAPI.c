@@ -542,7 +542,7 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 		else
 			fxNewHostObject(the, (txDestructor)builder->callback);
 		fxArrayCacheItem(the, the->stack + 1, the->stack);
-		the->stack++;
+		mxPop();
 		c--;
 		builder++;
 	}
@@ -566,7 +566,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 	property->kind = the->stack->kind;
 	property->value = the->stack->value;
 	*aStack = *the->stack;
-	the->stack++;
+	mxPop();
 	return instance;
 }
 
@@ -902,21 +902,21 @@ void fxGetAll(txMachine* the, txID id, txIndex index)
 void fxGetAt(txMachine* the)
 {
 	txSlot* at = fxAt(the, the->stack);
-	the->stack++;
-	fxGetAll(the, at->value.at.id, at->value.at.index);
+	mxPop();
+	mxGetAll(at->value.at.id, at->value.at.index);
 }
 
 void fxGetID(txMachine* the, txID id)
 {
-	fxGetAll(the, id, 0);
+	mxGetAll(id, 0);
 }
 
 void fxGetIndex(txMachine* the, txIndex index)
 {
-	fxGetAll(the, XS_NO_ID, index);
+	mxGetAll(XS_NO_ID, index);
 }
 
-static txBoolean fxHasAll(txMachine* the, txID id, txIndex index)
+txBoolean fxHasAll(txMachine* the, txID id, txIndex index)
 {
 	txSlot* instance = fxToInstance(the, the->stack);
 	txBoolean result = mxBehaviorHasProperty(the, instance, id, index);
@@ -927,18 +927,18 @@ static txBoolean fxHasAll(txMachine* the, txID id, txIndex index)
 txBoolean fxHasAt(txMachine* the)
 {
 	txSlot* at = fxAt(the, the->stack);
-	the->stack++;
-	return fxHasAll(the, at->value.at.id, at->value.at.index);
+	mxPop();
+	return mxHasAll(at->value.at.id, at->value.at.index);
 }
 
 txBoolean fxHasID(txMachine* the, txID id)
 {
-	return fxHasAll(the, id, 0);
+	return mxHasAll(id, 0);
 }
 
 txBoolean fxHasIndex(txMachine* the, txIndex index)
 {
-	return fxHasAll(the, XS_NO_ID, index);
+	return mxHasAll(XS_NO_ID, index);
 }
 
 void fxSetAll(txMachine* the, txID id, txIndex index)
@@ -981,18 +981,18 @@ void fxSetAll(txMachine* the, txID id, txIndex index)
 void fxSetAt(txMachine* the)
 {
 	txSlot* at = fxAt(the, the->stack);
-	the->stack++;
-	fxSetAll(the, at->value.at.id, at->value.at.index);
+	mxPop();
+	mxSetAll(at->value.at.id, at->value.at.index);
 }
 
 void fxSetID(txMachine* the, txID id)
 {
-	fxSetAll(the, id, 0);
+	mxSetAll(id, 0);
 }
 
 void fxSetIndex(txMachine* the, txIndex index)
 {
-	fxSetAll(the, XS_NO_ID, index);
+	mxSetAll(XS_NO_ID, index);
 }
 
 void fxDeleteAll(txMachine* the, txID id, txIndex index)
@@ -1006,7 +1006,7 @@ void fxDeleteAt(txMachine* the)
 {
 	txSlot* at = fxAt(the, the->stack);
 	txSlot* instance = fxToInstance(the, the->stack + 1);
-	the->stack++;
+	mxPop();
 	if (!mxBehaviorDeleteProperty(the, instance, at->value.at.id, at->value.at.index))
 		mxDebugID(XS_TYPE_ERROR, "delete %s: not configurable", at->value.at.id);
 }
@@ -1042,23 +1042,23 @@ void fxDefineAll(txMachine* the, txID id, txIndex index, txFlag flag, txFlag mas
 	slot->flag = flag & XS_GET_ONLY;
 	if (!mxBehaviorDefineOwnProperty(the, instance, id, index, slot, mask))
 		mxTypeError("define %ld: not configurable", id);
-	the->stack++;
+	mxPop();
 }
 
 void fxDefineAt(txMachine* the, txFlag flag, txFlag mask)
 {
 	txSlot* at = fxAt(the, the->stack++);
-	fxDefineAll(the, at->value.at.id, at->value.at.index, flag, mask);
+	mxDefineAll(at->value.at.id, at->value.at.index, flag, mask);
 }
 
 void fxDefineID(txMachine* the, txID id, txFlag flag, txFlag mask)
 {
-	fxDefineAll(the, id, 0, flag, mask);
+	mxDefineAll(id, 0, flag, mask);
 }
 
 void fxDefineIndex(txMachine* the, txIndex index, txFlag flag, txFlag mask)
 {
-	fxDefineAll(the, XS_NO_ID, index, flag, mask);
+	mxDefineAll(XS_NO_ID, index, flag, mask);
 }
 
 void fxCall(txMachine* the)
@@ -1080,7 +1080,7 @@ void fxCall(txMachine* the)
 void fxCallID(txMachine* the, txID theID)
 {
 	mxDub();
-	fxGetID(the, theID);
+	mxGetID(theID);
 	fxCall(the);
 }
 
@@ -1107,7 +1107,7 @@ void fxNew(txMachine* the)
 
 void fxNewID(txMachine* the, txID theID)
 {
-	fxGetID(the, theID);
+	mxGetID(theID);
 	fxNew(the);
 }
 
@@ -1159,7 +1159,7 @@ txBoolean fxRunTest(txMachine* the)
 		result = 1;
 		break;
 	}
-	the->stack++;
+	mxPop();
 	return result;
 }
 
@@ -1953,7 +1953,7 @@ void fxBuildModuleMap(txMachine* the)
 			p += atomSize;
 		}
 		*(the->stack + 1) = *(the->stack);
-		the->stack++;
+		mxPop();
 	}
 }
 
