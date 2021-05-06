@@ -14,21 +14,14 @@
 
 import Timer from "timer";
 import Digital from "pins/digital";
+import config from "mc/config";
 
 // blinks the two LEDs on ESP8266 NodeMCU boards
-// blinks only blue LED on ESP32 Node<MCU boards (pin 2).
-// pi uses 25
+// blinks one led on other boards
 
 let count = 0;
-let led = 0;
-const ledPin = 25;
 Timer.repeat(() => {
-	switch (count++ % 5) {
-		case 0: Digital.write(ledPin, 1); break;
-		case 1: break;
-		case 2: break;
-		case 3: Digital.write(ledPin, 0); break;
-		case 4: break;
-	}
+	trace(`repeat ${++count} \n`);
+	Digital.write(config.led.pin, ~count & 1);
+	if ( config.led.pin2 ) Digital.write(config.led.pin2, count & 1);
 }, 200);
-
