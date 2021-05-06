@@ -14,7 +14,7 @@
 
 import Touch from "sensor/touch";
 
-const touch = new Touch(Host.I2C.default);
+const touch = new Touch(device.I2C.default);
 
 while (true) {
 	const points = touch.sample();

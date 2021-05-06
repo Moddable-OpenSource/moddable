@@ -12,11 +12,11 @@
  *
  */
 
-const led1 = new Host.io.PWM({
-   pin: Host.pins.led
+const led1 = new device.io.PWM({
+   pin: device.pins.led
 });
 
-const led2 = new Host.io.PWM({
+const led2 = new device.io.PWM({
    pin: 5
 });
 

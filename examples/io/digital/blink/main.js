@@ -12,9 +12,9 @@
  *
  */
 
-const Digital = Host.io.Digital;
+const Digital = device.io.Digital;
 const led = new Digital({
-   pin: Host.pins.led,
+   pin: device.pins.led,
    mode: Digital.Output,
 });
 led.write(1);		// off

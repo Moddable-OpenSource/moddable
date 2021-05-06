@@ -13,8 +13,8 @@
 */
 
 import Timer from  "timer";
-const Digital = Host.io.Digital;
-const SPI = Host.io.SPI;
+const Digital = device.io.Digital;
+const SPI = device.io.SPI;
 
 const CTRLY = 0b10010011;
 const CTRLX = 0b11010011;
@@ -32,7 +32,7 @@ Timer.repeat(() => {
 }, 33);
 
 const spi = new SPI({
-	...Host.SPI.default,
+	...device.SPI.default,
 	hz: 1_000_000,
 	select: 0,
 	active: 0
