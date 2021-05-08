@@ -1470,6 +1470,8 @@ void fx_TypedArray_of(txMachine* the)
 			mxTypeError("insufficient TypedArray");
 		while (index < count) {
 			(*resultDispatch->value.typedArray.dispatch->coerce)(the, mxArgv(index));
+			if (resultData->value.arrayBuffer.address == C_NULL)
+				mxTypeError("detached buffer");
 			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultData, resultView->value.dataView.offset + (index << shift), mxArgv(index), EndianNative);
 			index++;
 		}
