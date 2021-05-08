@@ -2057,13 +2057,16 @@ enum {
 #endif
 
 #if mxBoundsCheck
+#define mxCheckCStack() \
+	(fxCheckCStack(the))
 #define mxOverflow(_COUNT) \
 	(mxMeterOne(), fxOverflow(the,_COUNT,C_NULL, 0))
 #else
+#define mxCheckCStack() \
+	((void)0)
 #define mxOverflow(_COUNT) \
 	((void)0)
 #endif
-
 
 #define mxCall() \
 	(mxOverflow(-4), \

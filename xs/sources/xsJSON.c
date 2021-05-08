@@ -168,7 +168,7 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 	txIndex aLength;
 	txSlot* anItem;
 
-	fxCheckCStack(the);
+	mxCheckCStack();
 	fxParseJSONToken(the, theParser);
 	mxPush(mxArrayPrototype);
 	anArray = fxNewArrayInstance(the);
@@ -462,7 +462,7 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 	txID id;
 	txSlot* aProperty;
 
-	fxCheckCStack(the);
+	mxCheckCStack();
 	fxParseJSONToken(the, theParser);
 	mxPush(mxObjectPrototype);
 	anObject = fxNewObjectInstance(the);
@@ -798,7 +798,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	txInteger aFlag;
 	txIndex aLength, anIndex;
 	
-	fxCheckCStack(the);
+	mxCheckCStack();
 	if (mxIsReference(aValue) || mxIsBigInt(aValue)) {
 		/* THIS */
 		mxPushSlot(aValue);

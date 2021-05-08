@@ -626,7 +626,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 	txSlot** address;
 	txJump* yieldJump = the->firstJump;
 
-	fxCheckCStack(the);
+	mxCheckCStack();
 	if (generator) {
 		slot = mxStack;
 		variable = generator->next;
