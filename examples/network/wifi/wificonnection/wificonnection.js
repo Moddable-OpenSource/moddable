@@ -28,6 +28,8 @@
 		- Supresses redundant WiFi.disconnect messages
 		- Callback uses same message constants as "wifi"
 		- Getter on "ready" is convenient way to check if Wi-Fi is connected
+		- If connection attempt does not succeed with an IP address in 30 seconds, forces disconnect and retries
+		- Wait 5 seconds after (unforced) disconnect to ensure clean reconnect
 */
 
 import WiFi from "wifi";
@@ -37,6 +39,7 @@ class Connection extends WiFi {
 	#options;
 	#callback;
 	#reconnect;
+	#connecting;
 	#state = WiFi.disconnected;
 
 	constructor(options, callback) {
@@ -44,12 +47,19 @@ class Connection extends WiFi {
 
 		super(options, (msg, code) => {
 			if (WiFi.disconnected === msg) {
-				if (!this.#reconnect) {
-					this.#reconnect = Timer.set(() => {
-						this.#reconnect = undefined;
-						WiFi.connect(this.#options);
-					}, 5000);		// wait a bit. sometimes Wi-Fi stack sends disconnects before finally connecting.
-				}
+				if (this.#connecting)
+					Timer.clear(this.#connecting);
+				this.#connecting = undefined;
+
+				this.#reconnect ??= Timer.set(() => {
+					this.#reconnect = undefined;
+					WiFi.connect(this.#options);
+
+					this.#connecting = Timer.set(() => {
+						this.#connecting = undefined;
+						WiFi.disconnect();				// connection attempt failed
+					}, 30 * 1000);
+				}, 5 * 1000);		// wait a bit. sometimes Wi-Fi stack sends disconnects before finally connecting.
 
 				if (this.#state !== WiFi.disconnected) {		// supress redundant disconnect messages
 					this.#state = WiFi.disconnected;
@@ -64,11 +74,21 @@ class Connection extends WiFi {
 					Timer.clear(this.#reconnect);
 				this.#reconnect = undefined;
 			}
+			else if (WiFi.gotIP === msg) {
+				if (this.#connecting)
+					Timer.clear(this.#connecting);
+				this.#connecting = undefined;
+			}
 
 			this.#state = msg;
 
 			this.#callback?.(msg, code);
 		});
+
+		this.#connecting = Timer.set(() => {
+			this.#connecting = undefined;
+			WiFi.disconnect();				// connection attempt failed
+		}, 30 * 1000);
 
 		this.#callback = callback;
 		this.#options = options;
@@ -77,6 +97,11 @@ class Connection extends WiFi {
 		if (this.#reconnect)
 			Timer.clear(this.#reconnect);
 		this.#reconnect = undefined;
+
+		if (this.#connecting)
+			Timer.clear(this.#connecting);
+		this.#connecting = undefined;
+
 		WiFi.disconnect();
 		super.close();
 	}
