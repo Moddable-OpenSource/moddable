@@ -2051,8 +2051,12 @@ enum {
 #ifdef mxMetering
 #define mxMeterOne() \
 	(the->meterIndex++)
+#define mxMeterSome(_COUNT) \
+	(the->meterIndex += _COUNT)
 #else
 #define mxMeterOne() \
+	((void)0)
+#define mxMeterSome(_COUNT) \
 	((void)0)
 #endif
 
@@ -2074,6 +2078,8 @@ enum {
 	
 #define mxDefineAll(ID, INDEX, FLAG, MASK) \
 	(mxMeterOne(), fxDefineAll(the, ID, INDEX, FLAG, MASK))
+#define mxDefineAt(FLAG, MASK) \
+	(mxMeterOne(), fxDefineAt(the, FLAG, MASK))
 #define mxDefineID(ID, FLAG, MASK) \
 	(mxMeterOne(), fxDefineAll(the, ID, 0, FLAG, MASK))
 #define mxDefineIndex(INDEX, FLAG, MASK) \
@@ -2081,6 +2087,8 @@ enum {
 	
 #define mxDeleteAll(ID, INDEX) \
 	(mxMeterOne(), fxDeleteAll(the, ID, INDEX))
+#define mxDeleteAt() \
+	(mxMeterOne(), fxDeleteAt(the))
 #define mxDeleteID(ID) \
 	(mxMeterOne(), fxDeleteAll(the, ID, 0))
 #define mxDeleteIndex(INDEX) \
@@ -2095,6 +2103,8 @@ enum {
 	
 #define mxGetAll(ID, INDEX) \
 	(mxMeterOne(), fxGetAll(the, ID, INDEX))
+#define mxGetAt() \
+	(mxMeterOne(), fxGetAt(the))
 #define mxGetID(ID) \
 	(mxMeterOne(), fxGetAll(the, ID, 0))
 #define mxGetIndex(INDEX) \
@@ -2102,6 +2112,8 @@ enum {
 	
 #define mxHasAll(ID, INDEX) \
 	(mxMeterOne(), fxHasAll(the, ID, INDEX))
+#define mxHasAt() \
+	(mxMeterOne(), fxHasAt(the))
 #define mxHasID(ID) \
 	(mxMeterOne(), fxHasAll(the, ID, 0))
 #define mxHasIndex(INDEX) \
@@ -2116,6 +2128,8 @@ enum {
 	
 #define mxSetAll(ID, INDEX) \
 	(mxMeterOne(), fxSetAll(the, ID, INDEX))
+#define mxSetAt() \
+	(mxMeterOne(), fxSetAt(the))
 #define mxSetID(ID) \
 	(mxMeterOne(), fxSetAll(the, ID, 0))
 #define mxSetIndex(INDEX) \
