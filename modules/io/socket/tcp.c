@@ -376,12 +376,14 @@ void xs_tcp_write(xsMachine *the)
 void xs_tcp_get_format(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostData(xsThis);
+	if (!tcp) return;
 	builtinGetFormat(the, tcp->format);
 }
 
 void xs_tcp_set_format(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostData(xsThis);
+	if (!tcp) return;
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");

@@ -158,9 +158,5 @@ void xs_analog_read_(xsMachine *the)
 
 void xs_analog_get_resolution_(xsMachine *the)
 {
-	Analog analog = xsmcGetHostData(xsThis);
-	if (!analog)
-		xsUnknownError("closed");
-
 	xsmcSetInteger(xsResult, ADC_RESOLUTION);
 }
