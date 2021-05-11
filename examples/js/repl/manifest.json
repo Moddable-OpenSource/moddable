@@ -1,31 +1,82 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json"
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/base/modules/manifest.json",
+		"$(MODDABLE)/modules/files/preference/manifest.json"
 	],
 	"modules": {
 		"*": [
-			  "./main",
-			  "./replcore"
+			"./main",
+			"./replcore",
+			"$(MODULES)/base/cli/*"
 		]
 	},
 	"preload": [
+		"cli",
 		"repl",
 		"replcore"
 	],
 	"strip": [],
+	"defines": {
+		"XS_MODS": 1
+	},
 	"platforms": {
 		"esp": {
+			"include": [
+				"$(MODULES)/base/microseconds/manifest.json",
+				"$(MODDABLE)/modules/files/resourceiterator/manifest.json",
+				"$(MODDABLE)/modules/io/manifest.json"
+			],
 			"modules": {
 				"*": [
-					"./esp/repl"
+					"./io/repl"
 				]
 			}
 		},
 		"esp32": {
+			"include": [
+				"$(MODULES)/base/microseconds/manifest.json",
+				"$(MODDABLE)/modules/files/resourceiterator/manifest.json",
+				"$(MODDABLE)/modules/io/manifest.json"
+			],
+			"modules": {
+				"*": [
+					"./io/repl"
+				]
+			}
+		},
+		"pico": {
+			"include": [
+				"$(MODDABLE)/modules/files/resourceiterator/manifest.json",
+				"$(MODULES)/files/preference/manifest.json",
+				"$(MODULES)/base/microseconds/manifest.json",
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/smbus/manifest.json"
+			],
 			"modules": {
 				"*": [
 					"./esp/repl"
-				]
+				],
+				"setup/globals": "./pico/setup/globals",
+
+				"cli/digital": "$(MODULES)/base/cli/commands/digital",
+				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
+				"cli/pico": "$(MODULES)/base/cli/commands/pico/pico",
+				"cli/pixelsout": "$(MODULES)/base/cli/commands/pixelsout",
+				"cli/sensor": "$(MODULES)/base/cli/commands/sensor"
+			},
+			"preload": [
+				"setup/globals",
+				"cli/*"
+			],
+			"strip": [
+				"Atomics",
+				"SharedArrayBuffer"
+			],
+			"defines": {
+				"pico": {
+					"usb": 1
+				}
 			}
 		},
 		"x-cli-mac": {
