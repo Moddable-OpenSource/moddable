@@ -13,6 +13,7 @@
 	},
 	"preload": [
 		"cli",
+		"cli/*",
 		"repl",
 		"replcore"
 	],
@@ -37,13 +38,22 @@
 			"include": [
 				"$(MODULES)/base/microseconds/manifest.json",
 				"$(MODDABLE)/modules/files/resourceiterator/manifest.json",
-				"$(MODDABLE)/modules/io/manifest.json"
+				"$(MODDABLE)/modules/io/manifest.json",
+				"$(MODULES)/pins/smbus/manifest.json"
 			],
 			"modules": {
 				"*": [
-					"./io/repl"
-				]
-			}
+					"./io/repl",
+					"$(MODULES)/files/flash/*",
+					"$(MODULES)/files/flash/esp32/*"
+				],
+				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
+				"cli/archive": "$(MODULES)/base/cli/commands/archive",
+				"cli/network": "$(MODULES)/base/cli/commands/network"
+			},
+			"preload": [
+				"flash"
+			]
 		},
 		"pico": {
 			"include": [
@@ -66,8 +76,7 @@
 				"cli/sensor": "$(MODULES)/base/cli/commands/sensor"
 			},
 			"preload": [
-				"setup/globals",
-				"cli/*"
+				"setup/globals"
 			],
 			"strip": [
 				"Atomics",

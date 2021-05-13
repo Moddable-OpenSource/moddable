@@ -34,7 +34,7 @@ class REPL extends REPLCore {
 		super();
 
 		if (isDebug)
-			trace("** Warning: debugger connection active. REPL unavaiable using serial. **\n");
+			trace("** Warning: debugger connection active. REPL unavailable using serial. **\n");
 
 		this.#trace = trace;
 		if (!isDebug) {

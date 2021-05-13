@@ -46,17 +46,37 @@ class REPL @ "xs_repl_destructor" {
 		this.write(`  XS engine v${REPL.xsVersion.join(".")}`, newline);
 		this.write(`  ? for help`, newline);
 		this.write(newline);
+
+		const archive = Modules.archive;
+		if (archive.includes("setup"))
+			Modules.importNow("setup");
+
+		for (let i = 0; i < archive.length; i++) {
+			if (archive[i].startsWith("cli/"))
+				Modules.importNow(archive[i]);
+		}
+
 		this.prompt();
 	}
 	receive() @ "xs_repl_receive"
 	write() @ "xs_repl_write"
+	suspend(cancel) {
+		this.suspended = cancel ?? true;
+	}
+	resume() {
+		if (!this.suspended) return;
+
+		delete this.suspended;
+		this.prompt();
+	}
 	prompt() {
 		delete this.historyPosition;
 		delete this.postHistory;
 		this.position = 0;
 		this.escapeState = 0;
 		this.incoming = "";
-		this.write("> ");
+		if (!this.suspended)
+			this.write("> ");
 	}
 	poll() {
 		do {
@@ -107,6 +127,18 @@ class REPL @ "xs_repl_destructor" {
 				else if ((67 === c) && (this.position < this.incoming.length)) {		// right arrow
 					this.write(this.incoming[this.position]);
 					this.position += 1;
+				}
+				continue;
+			}
+
+			if (this.suspended) {
+				if (3 === c) {
+					if (true !== this.suspended)
+						this.suspended();
+					delete this.suspended;
+					this.incoming = "";
+					this.write("^C", newline);
+					this.prompt();
 				}
 				continue;
 			}
@@ -172,6 +204,7 @@ class REPL @ "xs_repl_destructor" {
 				this.write(e.toString(), newline);
 			}
 		}
+
 		this.prompt();
 	}
 	delete() {
