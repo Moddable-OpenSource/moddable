@@ -1094,11 +1094,11 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 	txU4 sum = fxSumEntry(the, key);
 	txU4 modulo = sum % table->value.table.length;
 	txSlot** address = &(table->value.table.address[modulo]);
-	txSlot* entry;
+	txSlot* entry = *address;
 	txSlot* first;
 	txSlot* last;
 	txSlot* slot;
-	while ((entry = *address)) {
+	while (entry) {
 		if (entry->value.entry.sum == sum) {
 			first = entry->value.entry.slot;
 			if (fxTestEntry(the, first, key)) {
@@ -1110,7 +1110,7 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 				return;
 			}
 		}
-		address = &entry->next;
+		entry = entry->next;
 	}
 	first = fxNewSlot(the);
 	first->kind = key->kind;
@@ -1122,10 +1122,12 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 		last->value = pair->value;
 		mxPushClosure(last);
 	}
-	*address = entry = fxNewSlot(the);
+	entry = fxNewSlot(the);
+	entry->next = *address;
 	entry->kind = XS_ENTRY_KIND;
 	entry->value.entry.slot = first;
 	entry->value.entry.sum = sum;
+	*address = entry;
 	if (list) {
 		if (list->value.list.last)
 			list->value.list.last->next = first;
