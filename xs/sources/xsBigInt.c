@@ -580,12 +580,16 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	txBigInt divider = { .sign=0, .size=1, .data=data };
 	txSize length, offset;
 	txBoolean minus = 0;
-	txSlot* result = slot;
+	txSlot* result;
+	
+	mxPushUndefined();
+	result = the->stack;
+	
+	mxPushSlot(slot);
+	slot = the->stack;
 	
 	if (radix)
 		divider.data[0] = radix;
-	mxPushSlot(slot);
-	slot = the->stack;
 	
 	length = 1 + (txSize)c_ceil((txNumber)slot->value.bigint.size * 32 * c_log(2) / c_log(data[0]));
 	if (slot->value.bigint.sign) {
@@ -602,7 +606,8 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 		txBigInt* remainder = NULL;
 		txBigInt* quotient = fxBigInt_udiv(the, C_NULL, &slot->value.bigint, &divider, &remainder);
 		result->value.string[--offset] = c_read8(gxDigits + remainder->data[0]);
-		slot->value.bigint = *quotient;
+        slot->value.bigint = *quotient;
+        slot->kind = XS_BIGINT_KIND;
 		the->stack = slot;
 	}
 	while (!fxBigInt_iszero(&slot->value.bigint));
@@ -611,6 +616,7 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	c_memmove(result->value.string, result->value.string + offset, length - offset);
 	
 	mxPop();
+	mxPullSlot(slot);
 }
 
 txS8 fxToBigInt64(txMachine* the, txSlot* slot)
