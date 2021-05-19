@@ -173,8 +173,10 @@ void xs_serial_constructor(xsMachine *the)
 			uart_enable_rx_intr(uart);
 			uart_set_rx_timeout(uart, 4);
 		}
-		else
+		else {
 			uart_disable_rx_intr(uart);
+			serial->onReadable = NULL;
+		}
 
 		if (hasWritable) {
 			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
@@ -182,8 +184,10 @@ void xs_serial_constructor(xsMachine *the)
 
 			uart_enable_tx_intr(uart, 1, 20);
 		}
-		else
+		else {
 			uart_disable_tx_intr(uart);
+			serial->onWritable = NULL;
+		}
 	}
 
 	xsRemember(serial->obj);

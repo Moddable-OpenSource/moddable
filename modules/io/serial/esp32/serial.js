@@ -26,7 +26,7 @@ class Serial @ "xs_serial_destructor" {
 	write() @ "xs_serial_write"
 
 	get format() @ "xs_serial_get_format"
-	set format() @ "xs_serial_set_format"
+	set format(value) @ "xs_serial_set_format"
 }
 
 export default Serial;
