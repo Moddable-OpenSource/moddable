@@ -463,7 +463,6 @@ partitionsFileCheck:
 
 bootloaderCheck:
 ifneq ($(BOOTLOADERPATH),)
-	echo path one ; \
 	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
 		if cmp -s $(BOOTLOADERPATH)/subproject/main/bootloader_start.c $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
 			rm -rf $(IDF_BUILD_DIR)/bootloader; \
@@ -472,7 +471,6 @@ ifneq ($(BOOTLOADERPATH),)
 		rm -rf $(IDF_BUILD_DIR)/bootloader; \
 	fi
 else
-	echo path two ; \
 	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
 		rm -rf $(PROJ_DIR)/components; \
 		rm -rf $(IDF_BUILD_DIR)/bootloader; \
