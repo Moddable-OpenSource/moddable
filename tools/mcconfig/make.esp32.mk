@@ -464,7 +464,7 @@ partitionsFileCheck:
 bootloaderCheck:
 ifneq ($(BOOTLOADERPATH),)
 	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
-		if cmp -s $(BOOTLOADERPATH)/subproject/main/bootloader_start.c $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
+		if ! cmp -s $(BOOTLOADERPATH)/subproject/main/bootloader_start.c $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
 			rm -rf $(IDF_BUILD_DIR)/bootloader; \
 		fi ; \
 	else \
@@ -493,7 +493,7 @@ $(PROJ_DIR)/main/component.mk: $(PROJ_DIR_TEMPLATE)/main/component.mk
 $(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
 	cp -f $? $@
 
-$(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c: $(PROJ_DIR) $(BOOTLOADERPATH)/subproject/main/bootloader_start.c
+$(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c: $(PROJ_DIR) bootloaderCheck $(BOOTLOADERPATH)/subproject/main/bootloader_start.c
 	echo Using custom bootloader: $(BOOTLOADERPATH)
 	mkdir -p $(PROJ_DIR)/components/bootloader
 	cp -fr $(BOOTLOADERPATH)/* $(PROJ_DIR)/components/bootloader/
