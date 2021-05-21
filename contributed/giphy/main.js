@@ -18,8 +18,13 @@ import {Request} from "http"
 import SecureSocket from "securesocket";
 import Flash from "flash";
 import ReadGIF from "commodetto/ReadGIF";
+import config from "mc/config";
 
-const API_KEY = "YOUR_API_KEY_HERE";
+if (config.ssid === "YOUR_SSID_HERE")
+	throw new Error("Wi-Fi SSID required");
+const API_KEY = config.apiKey;
+if (API_KEY === "YOUR_API_KEY_HERE")
+	throw new Error("Giphy API Key required");
 
 const keys = Object.freeze(["data", "images", "username", "title", "fixed_width", "url", "size", "user", "display_name", "meta", "status"]);
 
