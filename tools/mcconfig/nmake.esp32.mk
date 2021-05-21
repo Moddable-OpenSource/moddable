@@ -344,6 +344,18 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)\partitions.csv \
 	$(PROJ_DIR)\Makefile
 
+!IF "$(BOOTLOADERPATH)"!=""
+!IF [fc $(BOOTLOADERPATH)\subproject\main\bootloader_start.c $(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c > nul 2> nul] != 0
+!IF [rmdir /S /Q $(IDF_BUILD_DIR)\bootloader > nul 2> nul] == 0
+!ENDIF
+!ENDIF
+PROJ_DIR_FILES = $(PROJ_DIR_FILES) \
+	$(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c
+!ELSE
+!IF [rmdir /S /Q $(PROJ_DIR)\components > nul 2> nul && rmdir /S /Q $(IDF_BUILD_DIR)\bootloader > nul 2> nul] == 1
+!ENDIF
+!ENDIF
+
 .PHONY: all
 
 all: $(LAUNCH)
@@ -454,7 +466,7 @@ DEPLOY_END:
 
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE)
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	@echo Reconfiguring ESP-IDF...
 	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 
@@ -489,6 +501,11 @@ $(PROJ_DIR)\main\component.mk: $(PROJ_DIR_TEMPLATE)\main\component.mk
 
 $(PROJ_DIR)\Makefile: $(PROJ_DIR_TEMPLATE)\Makefile
 	copy $? $@
+
+$(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c: $(PROJ_DIR) $(BOOTLOADERPATH)\subproject\main\bootloader_start.c
+	echo Using custom bootloader: $(BOOTLOADERPATH)
+	xcopy /s /y $(BOOTLOADERPATH)\* $(PROJ_DIR)\components\bootloader\\
+	copy /b $(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c+,, $(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c
 
 $(XS_OBJ): $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
