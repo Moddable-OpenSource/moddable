@@ -20,7 +20,7 @@ const Digital = device.io.Digital;
 
 const temp = new Temperature({
 	...device.I2C.default,
-	extendedRange: false,
+	extendedRange: true,
 	alert: {
 		pin: config.interrupt_pin,
 		mode: Digital.Input,
@@ -32,22 +32,19 @@ const temp = new Temperature({
 });
 
 temp.configure({
-	extendedRange: true,
 	alert: {
-		highTemperature: 25,
-		lowTemperature: -25
+		highTemperature: 31,
+		lowTemperature: 27
 	}
 });
 
-let sample;
+let lastSample = {};
 Timer.repeat(() => {
-	temp.configure({extendedRange: false });
-	sample = temp.sample();
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+	const sample = temp.sample();
 
-	temp.configure({extendedRange: true });
-	sample = temp.sample();
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+	if (sample.temperature && sample.temperature != lastSample.temperature)
+		trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
 
+	lastSample = sample;
 }, 2000);
 

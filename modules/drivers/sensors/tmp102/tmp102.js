@@ -36,6 +36,7 @@ const Register = Object.freeze({
 class TMP102  {
 	#io;
 	#extendedRange;
+	#extShift;
 	#onAlert;
 	#irqMonitor;
 	#status;
@@ -47,6 +48,7 @@ class TMP102  {
 			address: 0x48
 		});
 
+		this.#extShift = 4;
 		this.#extendedRange = false;
 		this.configure(options);
 	}
@@ -54,61 +56,69 @@ class TMP102  {
 	configure(options) {
 		const io = this.#io;
 
-//			io.writeWord(Register.TEMP_HIGH, 0x7ff8);
-			let config = io.readWord(Register.CONFIG);
+//		io.writeWord(Register.TEMP_HIGH, 0x7ff8);
+		let config = io.readWord(Register.CONFIG, true);
 
-			if (undefined !== options.extendedRange)
-				this.#extendedRange = options.extendedRange;
-				
-			if (this.#extendedRange && (0x1000 & config)) {
-				if (this.#extendedRange)
-					config |= 0x1000;			// turn on 13-bit range
-				else
-					config &= 0xefff;
-				io.writeWord(Register.CONFIG, config);
-				Timer.delay(250);
-			}
+		if (undefined !== options.extendedRange)
+			this.#extendedRange = options.extendedRange;
 
-			if (options.alert && options.onAlert) {
-				this.#onAlert = options.onAlert;
-				this.#irqMonitor = new Digital({
-					pin: options.alert.pin,
-					mode: Digital.Input,
-					edge: Digital.Falling,
-					onReadable: options.onAlert});
-				this.#irqMonitor.target = this;
+		config &= 0b1111_1111_1110_0000;
 
-			}
+		if (this.#extendedRange) {
+			config |= 0b1_0000;
+			this.#extShift = 3;
+		}
 
-			let extShift = this.#extendedRange ? 3 : 4;
-			if (options.alert?.highTemperature) {
-				const value = (options.alert.highTemperature / 0.0625) << extShift;
-				io.writeWord(Register.TEMP_HIGH, value);
-			}
+		if (options.alert && options.onAlert) {
+			this.#onAlert = options.onAlert;
+			this.#irqMonitor = new Digital({
+				pin: options.alert.pin,
+				mode: Digital.Input,
+				edge: Digital.Falling,
+				onReadable: options.onAlert});
+			this.#irqMonitor.target = this;
+		}
+
+		if (options.alert?.highTemperature) {
+			const value = (options.alert.highTemperature / 0.0625) << this.#extShift;
+			io.writeWord(Register.TEMP_HIGH, value, true);
+		}
+		else
+			io.writeWord(Register.TEMP_HIGH, 0x7ff8, true);
+
+		if (options.alert?.lowTemperature) {
+			const value = (options.alert.lowTemperature / 0.0625) << this.#extShift;
+			io.writeWord(Register.TEMP_LO, value, true);
+		}
+		else
+			io.writeWord(Register.TEMP_LO, 0x0, true);	// lower?
+
+		if (undefined !== options.hz) {
+			const hz = options.hz;
+			config &= 0b1111_1111_0011_0000;
+			
+			if (hz < 0.5)
+				; // config |= 0b00;
+			else if (hz < 2)
+				config |= 0b0100_0000;
+			else if (hz < 6)
+				config |= 0b1000_0000;
 			else
-				io.writeWord(Register.TEMP_HIGH, 0x7ff8);
+				config |= 0b1100_0000;
+		}
 
-			if (options.alert?.lowTemperature) {
-				const value = (options.alert.lowTemperature / 0.0625) << extShift;
-				io.writeWord(Register.TEMP_LO, value);
+		if (undefined !== options.faultQueue) {
+			conf &= 0b1110_0111_1111_0000;
+			switch (options.faultQueue) {
+				case 1: break;
+				case 2: conf |= 0b0000_1000_0000_0000; break;
+				case 4: conf |= 0b0001_0000_0000_0000; break;
+				case 6: conf |= 0b0001_1000_0000_0000; break;
+				default: throw new Error("invalid faultQueue");
 			}
-			else
-				io.writeWord(Register.TEMP_LO, 0x0);	// lower?
+		}
 
-			if (options.hz) {
-				const hz = options.hz;
-				let val;
-				if (hz < 0.5)
-					val = 0b00;
-				else if (hz < 2)
-					val = 0b01;
-				else if (hz < 6)
-					val = 0b10;
-				else
-					val = 0b11;
-
-				io.writeWord(Register.CONFIG, (io.readWord(Register.CONFIG) & ~0xc000) | (hz << 14));
-			}
+		io.writeWord(Register.CONFIG, config, true);
 	}
 
 	close() {
@@ -119,8 +129,8 @@ class TMP102  {
 	sample() {
 		const io = this.#io;
 
-		let value = io.readWord(Register.TEMP_READ);	// 13-bits
-		value = ((value & 0x00ff) << 5) | ((value & 0xff00) >> 11);
+		let value = io.readWord(Register.TEMP_READ, true) >> this.#extShift;
+//		value = ((value & 0x00ff) << 5) | ((value & 0xff00) >> 11);
 		if (value & 0x1000) {
 			value -= 1;
 			value = ~value & 0x1fff;

@@ -20,7 +20,7 @@ const Digital = device.io.Digital;
 const temp = new Temperature({
 	...device.I2C.default,
 	alert: {
-		pin: 16,
+		pin: config.interrupt_pin,
 		mode: Digital.Input,
 		edge: Digital.Falling
 	},
