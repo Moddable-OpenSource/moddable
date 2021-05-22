@@ -37,7 +37,7 @@
 #define kCommodettoBitmapCLUT16 (11)
 #define kCommodettoBitmapRGB444 (12)
 
-static xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id);
+static xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIdentifier id);
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
 static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size_t size);
 static xsBooleanValue fxArchiveWrite(void* src, size_t offset, void* buffer, size_t size);
@@ -837,7 +837,7 @@ void screen_get_frameBuffer(xsMachine* the)
 }
 #endif
 
-xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIndex id)
+xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIdentifier id)
 {
 	xsBooleanValue result;
 	xsOverflow(-1);

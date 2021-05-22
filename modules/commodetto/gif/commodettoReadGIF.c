@@ -26,11 +26,15 @@
 // ick
 #include "AnimatedGIF.c"
 
-static void doDraw(GIFDRAW *pDraw);
+static void doDraw565LE(GIFDRAW *pDraw);
+static void doDrawCLUT256(GIFDRAW *pDraw);
+static void doDrawGray16(GIFDRAW *pDraw);
+static void doDrawMonochrome(GIFDRAW *pDraw);
 
 // scratch globals because gif library doesn't have way to pass state to callbacks
 static uint16_t *gBitmap;
 static uint16_t gBitmapStride;
+static uint8_t gBitmapPhase;
 
 void xs_readgif_destructor(void *data)
 {
@@ -45,38 +49,125 @@ void xs_readgif_destructor(void *data)
 void xs_readgif(xsMachine *the)
 {
 	xsGIF xg = xsmcSetHostChunk(xsThis, NULL, sizeof(xsGIFRecord));
-	int32_t bufferSize;
+	int32_t bufferSize, available;
 	void *buffer;
+	int format = kCommodettoBitmapDefault;
 
 	xsmcVars(1);
 	buffer = xsmcGetHostData(xsArg(0));
 	xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-	bufferSize = xsmcToInteger(xsVar(0));
+	bufferSize = available = xsmcToInteger(xsVar(0));
 
 	xg = xsmcGetHostChunk(xsThis);
-    xg->bufferSize = bufferSize;
+	xg->bufferSize = bufferSize;
+
+	if (xsmcArgc > 1) {
+		if (xsmcHas(xsArg(1), xsID_available)) {
+			xsmcGet(xsVar(0), xsArg(1), xsID_available);
+			available = xsmcToInteger(xsVar(0));
+			if ((available < 0) || (available > bufferSize))
+				xsUnknownError("invalid");
+		}
+
+		if (xsmcHas(xsArg(1), xsID_pixelFormat)) {
+			xsmcGet(xsVar(0), xsArg(1), xsID_pixelFormat);
+			format = xsmcToInteger(xsVar(0));
+			if ((kCommodettoBitmapRGB565LE != format) && (kCommodettoBitmapCLUT256 != format)
+				&& (kCommodettoBitmapGray16 != format) && (kCommodettoBitmapMonochrome != format))
+				xsUnknownError("unsupported format");
+		}
+	}
 
 	GIFIMAGE *pGIF = &xg->gi;
-    pGIF->iError = GIF_SUCCESS;
-    pGIF->ucPaletteType = GIF_PALETTE_RGB565;
+	pGIF->iError = GIF_SUCCESS;
+	pGIF->ucPaletteType = GIF_PALETTE_RGB565;
 	pGIF->ucLittleEndian = true;
-    pGIF->pfnRead = readMem;
-    pGIF->pfnSeek = seekMem;
-    pGIF->pfnDraw = doDraw;
-    pGIF->pfnOpen = NULL;
-    pGIF->pfnClose = NULL;
-    pGIF->GIFFile.iSize = bufferSize;
-    pGIF->GIFFile.pData = buffer;
-    GIFInit(pGIF);
-    
+	pGIF->pfnRead = readMem;
+	pGIF->pfnSeek = seekMem;
+	pGIF->pfnOpen = NULL;
+	pGIF->pfnClose = NULL;
+	pGIF->GIFFile.iSize = available;
+	pGIF->GIFFile.pData = buffer;
+	GIFInit(pGIF);
+
+	if ((available == bufferSize) && (kCommodettoBitmapDefault == format)) {
+		if (GIFGetInfo(&xg->gi, &xg->ginfo, xg->gi.pPalette)) {
+			xg->ready = 2;
+
+			if (xg->ginfo.sGlobalColorTableSize && !xg->ginfo.ucHasLocalColorTable) {
+				uint16_t monochrome = 0;
+				uint32_t gray16 = 0;
+				int i, gray = 1;
+				for (i = 0; i < xg->ginfo.sGlobalColorTableSize; i++) {
+					uint16_t color = xg->gi.pPalette[i];
+					int r = color >> 11;
+					int g = (color >> 6) & 0x1F;
+					int b = color & 0x1F;
+					if ((r == g) && (r == b)) {
+						if (0 == r)
+							monochrome |= 1;
+						else if (31 == r)
+							monochrome |= 2;
+						else
+							monochrome |= 4;
+
+						gray16 |= 1 << r;
+					}
+					else {
+						gray = 0;
+						monochrome |= 4;
+						break;
+					}
+				}
+				if ((3 == monochrome) && !xg->ginfo.ucHasTransparent)
+					format = kCommodettoBitmapMonochrome;
+				else if ((gray16 & 0xaaaa5555) && !(gray16 & 0x5555aaaa) && gray && !xg->ginfo.ucHasTransparent)
+					format = kCommodettoBitmapGray16;
+				else
+					format = kCommodettoBitmapCLUT256;
+			}
+		}
+		(*pGIF->pfnSeek)(&pGIF->GIFFile, 0); // rewind
+	}
+
+	if (kCommodettoBitmapDefault == format)
+		format = kCommodettoBitmapRGB565LE;
+
 	xg->bitmap.w = pGIF->iCanvasWidth;
 	xg->bitmap.h = pGIF->iCanvasHeight;
-	xg->bitmap.format = kCommodettoBitmapRGB565LE;
+	if (kCommodettoBitmapMonochrome == format)
+		xg->bitmap.w = (xg->bitmap.w + 7) & ~7;
+	else if (kCommodettoBitmapGray16 == format)
+		xg->bitmap.w = (xg->bitmap.w + 1) & ~1;
+
 	xg->bitmap.havePointer = 1;
-	xg->bitmap.bits.data = c_malloc(2 * pGIF->iCanvasWidth * pGIF->iCanvasHeight);
+	xg->bitmap.format = (CommodettoBitmapFormat)format;
+	if (kCommodettoBitmapRGB565LE == format) {
+		xg->bitmap.bits.data = c_malloc(2 * xg->bitmap.w * pGIF->iCanvasHeight);
+		xg->pixels = xg->bitmap.bits.data;
+		pGIF->pfnDraw = doDraw565LE;
+	}
+	else if (kCommodettoBitmapCLUT256 == format) {
+		xg->bitmap.bits.data = c_malloc((258 * sizeof(uint16_t)) + (xg->bitmap.w * pGIF->iCanvasHeight));
+		if (xg->bitmap.bits.data) {
+			uint16_t *t = (uint16_t *)xg->bitmap.bits.data;
+			t[0] = 0xaa55;
+			t[1] = 0;
+			xg->pixels = &t[2];
+			pGIF->pfnDraw = doDrawCLUT256;
+		}
+	} else if (kCommodettoBitmapGray16 == format) {
+		xg->bitmap.bits.data = c_malloc(((xg->bitmap.w + 1) >> 1) * pGIF->iCanvasHeight);
+		xg->pixels = xg->bitmap.bits.data;
+		pGIF->pfnDraw = doDrawGray16;
+	} else if (kCommodettoBitmapMonochrome == format) {
+		xg->bitmap.bits.data = c_malloc(((xg->bitmap.w + 7) >> 3) * pGIF->iCanvasHeight);
+		xg->pixels = xg->bitmap.bits.data;
+		pGIF->pfnDraw = doDrawMonochrome;
+	}
 	if (NULL == xg->bitmap.bits.data)
 		xsUnknownError("no memory");
-	
+
 	xg->frameNumber = -1;
 }
 
@@ -95,7 +186,7 @@ void xs_readgif_get_ready(xsMachine *the)
 		return;
 
 	if (!xg->ready) {
-		if (GIFGetInfo(&xg->gi, NULL))
+		if (GIFGetInfo(&xg->gi, NULL, NULL))
 			xg->ready = 1;
 	}
 
@@ -121,7 +212,7 @@ void xs_readgif_first(xsMachine *the)
 	if (xg->reduced)
 		return;
 
-    (*pGIF->pfnSeek)(&pGIF->GIFFile, 0); // rewind
+	(*pGIF->pfnSeek)(&pGIF->GIFFile, 0); // rewind
 	xg->frameNumber = -1;
 	xsCall0(xsThis, xsID_next);
 }
@@ -136,11 +227,11 @@ void xs_readgif_next(xsMachine *the)
 	if (xg->reduced)
 		return;
 
-    if (pGIF->GIFFile.iPos >= pGIF->GIFFile.iSize - 1) {	// no more data
-        (*pGIF->pfnSeek)(&pGIF->GIFFile, 0); // rewind
-        xg->frameNumber = 0;
-    }
-    else
+	if (pGIF->GIFFile.iPos >= pGIF->GIFFile.iSize - 1) {	// no more data
+		(*pGIF->pfnSeek)(&pGIF->GIFFile, 0); // rewind
+		xg->frameNumber = 0;
+	}
+	else
 		xg->frameNumber += 1;
 
 	if (0 == xg->frameNumber) {
@@ -167,10 +258,17 @@ void xs_readgif_next(xsMachine *the)
 		return;
 
 	if (first) {
-		if (pGIF->bHasGlobalColorTable) {
+		if (pGIF->sGlobalColorTableCount) {
 			uint16_t *palette = (uint16_t *)pGIF->pPalette;
 			xg->background = palette[pGIF->ucBackground];
 			xg->hasTransparentBackground = (pGIF->ucBackground == pGIF->ucTransparent) && (pGIF->ucGIFBits & 1);
+
+			if (kCommodettoBitmapCLUT256 == xg->bitmap.format) {
+				uint16_t *t = (uint16_t *)xg->bitmap.bits.data;
+				t[1] = pGIF->sGlobalColorTableCount;
+				c_memcpy(t + 2, palette, sizeof(uint16_t) * pGIF->sGlobalColorTableCount);
+				xg->pixels = &t[2 + pGIF->sGlobalColorTableCount];
+			}
 		}
 		else
 			xg->background = 0xFFFF;		// white
@@ -180,24 +278,106 @@ void xs_readgif_next(xsMachine *the)
 		xg->background = xg->transparentColor;
 
 	if (2 == xg->disposalMethod) {
-		uint16_t *dst = ((xg->prevY * pGIF->iCanvasWidth) + xg->prevX) + (uint16_t *)xg->bitmap.bits.data;
-		int h = xg->prevH;
-		uint16_t background = xg->background;
-		int skip = pGIF->iCanvasWidth - xg->prevW;
-
-		do {
-			int w = xg->prevW;
+		if (kCommodettoBitmapRGB565LE == xg->bitmap.format) {
+			uint16_t *dst = ((xg->prevY * xg->bitmap.w) + xg->prevX) + (uint16_t *)xg->pixels;
+			int h = xg->prevH;
+			uint16_t background = xg->background;
+			int skip = xg->bitmap.w - xg->prevW;
 
 			do {
-				*dst++ = background;
-			}  while (--w);
+				int w = xg->prevW;
 
-			dst += skip;
-		} while (--h);
+				do {
+					*dst++ = background;
+				} while (--w);
+
+				dst += skip;
+			} while (--h);
+		}
+		else if (kCommodettoBitmapCLUT256 == xg->bitmap.format) {
+			uint8_t *dst = ((xg->prevY * xg->bitmap.w) + xg->prevX) + (uint8_t *)xg->pixels;
+			int h = xg->prevH;
+			uint8_t background = pGIF->ucBackground;		//@@ incorrect if background was changed... but does that matter here?
+			int skip = xg->bitmap.w - xg->prevW;
+
+			do {
+				int w = xg->prevW;
+
+				do {
+					*dst++ = background;
+				} while (--w);
+
+				dst += skip;
+			} while (--h);
+		}
+		else if (kCommodettoBitmapGray16 == xg->bitmap.format) {
+			uint8_t phase = xg->prevX & 1;
+			uint8_t *dst = ((xg->prevY * ((xg->bitmap.w + 1) >> 1)) + (xg->prevX >> 1)) + (uint8_t *)xg->pixels;
+			int h = xg->prevH;
+			uint8_t background = pGIF->ucBackground;		//@@ incorrect if background was changed... but does that matter here?
+			int skip = (xg->bitmap.w - xg->prevW) >> 1;
+
+			do {
+				int w = xg->prevW;
+
+				if (phase) {
+					*dst = (*dst & 0xF0) | background;
+					w--;
+				}
+				while (w >= 2) {
+					w -= 2;
+					*dst++ = background | (background << 4);
+				}
+				if (w)
+					*dst = (*dst & 0x0F) | (background << 4);
+
+				dst += skip;
+			} while (--h);
+		}
+		else if (kCommodettoBitmapMonochrome == xg->bitmap.format) {
+			uint8_t mask = 1 << (~xg->prevX & 7);
+			uint8_t *dst = ((xg->prevY * ((xg->bitmap.w + 7) >> 3)) + (xg->prevX >> 3)) + (uint8_t *)xg->pixels;
+			int h = xg->prevH;
+			int skip = (xg->bitmap.w - xg->prevW) >> 3;
+
+			do {
+				int w = xg->prevW;
+				uint8_t pixels = *dst;
+				do {
+					pixels &= ~mask;
+
+					mask >>= 1;
+					if (!mask) {
+						dst[0] = pixels;
+						pixels = dst[1];
+						dst += 1;
+						mask = 0x80;
+					}
+				} while (--w);
+
+				if (0x80 != mask)
+					*dst = pixels;
+
+				dst += skip;
+			} while (--h);
+		}
 	}
 
-	gBitmap = ((pGIF->iY * pGIF->iCanvasWidth) + pGIF->iX) + (uint16_t *)xg->bitmap.bits.data;
-	gBitmapStride = pGIF->iCanvasWidth;
+	gBitmapStride = xg->bitmap.w;
+	if (kCommodettoBitmapRGB565LE == xg->bitmap.format)
+		gBitmap = ((pGIF->iY * xg->bitmap.w) + pGIF->iX) + (uint16_t *)xg->pixels;
+	else if (kCommodettoBitmapCLUT256 == xg->bitmap.format)
+		gBitmap = (uint16_t *)(((pGIF->iY * gBitmapStride) + pGIF->iX) + (uint8_t *)xg->pixels);
+	else if (kCommodettoBitmapGray16 == xg->bitmap.format) {
+		gBitmapStride = (gBitmapStride + 1) >> 1;
+		gBitmap = (uint16_t *)(((pGIF->iY * gBitmapStride) + (pGIF->iX >> 1)) + (uint8_t *)xg->pixels);
+		gBitmapPhase = pGIF->iX & 1;
+	}
+	else if (kCommodettoBitmapMonochrome == xg->bitmap.format) {
+		gBitmapStride = (gBitmapStride + 7) >> 3;
+		gBitmap = (uint16_t *)(((pGIF->iY * gBitmapStride) + (pGIF->iX >> 3)) + (uint8_t *)xg->pixels);
+		gBitmapPhase = 1 << (~pGIF->iX & 7);
+	}
 	int rc = DecodeLZW(pGIF, 0);
 	gBitmap = NULL;
 	if (rc != 0) // problem
@@ -254,18 +434,19 @@ void xs_readgif_next(xsMachine *the)
 void xs_readgif_get_width(xsMachine *the)
 {
 	xsGIF xg = xsmcGetHostChunk(xsThis);
-	xsmcSetInteger(xsResult, xg->gi.iCanvasWidth);
+	xsmcSetInteger(xsResult, xg->bitmap.w);
 }
 
 void xs_readgif_get_height(xsMachine *the)
 {
 	xsGIF xg = xsmcGetHostChunk(xsThis);
-	xsmcSetInteger(xsResult, xg->gi.iCanvasHeight);
+	xsmcSetInteger(xsResult, xg->bitmap.h);
 }
 
 void xs_readgif_get_pixelFormat(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, kCommodettoBitmapRGB565LE);
+	xsGIF xg = xsmcGetHostChunk(xsThis);
+	xsmcSetInteger(xsResult, xg->bitmap.format);
 }
 
 void xs_readgif_get_offset(xsMachine *the)
@@ -285,7 +466,7 @@ void xs_readgif_get_duration(xsMachine *the)
 	xsGIF xg = xsmcGetHostChunk(xsThis);
 
 	if (2 != xg->ready) {
-		if (xg->reduced || !GIFGetInfo(&xg->gi, &xg->ginfo))
+		if (xg->reduced || !GIFGetInfo(&xg->gi, &xg->ginfo, NULL))
 			return;
 		xg->ready = 2;
 	}
@@ -310,7 +491,7 @@ void xs_readgif_get_frameCount(xsMachine *the)
 {
 	xsGIF xg = xsmcGetHostChunk(xsThis);
 	if (2 != xg->ready) {
-		if (!GIFGetInfo(&xg->gi, &xg->ginfo))
+		if (!GIFGetInfo(&xg->gi, &xg->ginfo, NULL))
 			return;
 		xg->ready = 2;
 	}
@@ -364,20 +545,31 @@ void xs_readgif_get_transparent(xsMachine *the)
 void xs_readgif_get_transparentColor(xsMachine *the)
 {
 	xsGIF xg = xsmcGetHostChunk(xsThis);
-	if (xg->hasTransparentColor)
-		xsmcSetInteger(xsResult, xg->transparentColor);
+	if (kCommodettoBitmapCLUT256 == xg->bitmap.format) {
+		GIFIMAGE *pGIF = &xg->gi;
+		if (xg->hasTransparentBackground)
+			xsmcSetInteger(xsResult, pGIF->ucBackground);
+	}
+	else  {
+		if (xg->hasTransparentBackground)
+			xsmcSetInteger(xsResult, xg->background);
+	}
 }
 
 void xs_readgif_set_transparentColor(xsMachine *the)
 {
-	int transparentColor = xsmcToInteger(xsArg(0));
 	xsGIF xg = xsmcGetHostChunk(xsThis);
+
+	if (kCommodettoBitmapRGB565LE != xg->bitmap.format)
+		return;
+
+	int transparentColor = xsmcToInteger(xsArg(0));
 	uint16_t prev = xg->transparentColor;
 	xg->transparentColor = (uint16_t)transparentColor;
 	xg->hasTransparentColor = true;
 
-	uint16_t *pixels = xg->bitmap.bits.data;
-	int i = xg->gi.iCanvasWidth * xg->gi.iCanvasHeight;
+	uint16_t *pixels = xg->pixels;
+	int i = xg->bitmap.w * xg->gi.iCanvasHeight;
 	do {
 		if (*pixels == prev)
 			*pixels = (uint16_t)transparentColor;
@@ -386,7 +578,7 @@ void xs_readgif_set_transparentColor(xsMachine *the)
 }
 
 // caller ensures pDraw->pPixels is 32-bit aligned
-void doDraw(GIFDRAW *pDraw)
+void doDraw565LE(GIFDRAW *pDraw)
 {
 	uint16_t *dst = gBitmap + (pDraw->y * gBitmapStride);
 	uint16_t *palette = (uint16_t *)pDraw->pPalette;
@@ -395,7 +587,7 @@ void doDraw(GIFDRAW *pDraw)
 
 	if (pDraw->ucHasTransparency) {
 		uint8_t ucTransparent = pDraw->ucTransparent;
-		while (i >= 4)  {
+		while (i >= 4) {
 			uint8_t index;
 			uint32_t pixels = *(uint32_t *)src;
 			i -= 4;
@@ -420,7 +612,7 @@ void doDraw(GIFDRAW *pDraw)
 			dst += 4;
 		}
 
-		while (i--)  {
+		while (i--) {
 			uint8_t index = *src++;
 			if (index != ucTransparent)
 				*dst = palette[index];
@@ -428,7 +620,7 @@ void doDraw(GIFDRAW *pDraw)
 		}
 	}
 	else {
-		while (i >= 4)  {
+		while (i >= 4) {
 			uint32_t pixels = *(uint32_t *)src;
 			i -= 4;
 			src += 4;
@@ -444,4 +636,129 @@ void doDraw(GIFDRAW *pDraw)
 		while (i--)
 			*dst++ = palette[*src++];
 	}
+}
+
+void doDrawCLUT256(GIFDRAW *pDraw)
+{
+	uint8_t *dst = ((uint8_t *)gBitmap) + (pDraw->y * gBitmapStride);
+	uint8_t *src = pDraw->pPixels;
+	uint16_t i = pDraw->iWidth;
+
+	if (pDraw->ucHasTransparency) {
+		uint8_t ucTransparent = pDraw->ucTransparent;
+		while (i >= 4) {
+			uint8_t index;
+			uint32_t pixels = *(uint32_t *)src;
+			i -= 4;
+			src += 4;
+
+			index = (uint8_t)pixels;
+			if (index != ucTransparent)
+				dst[0] = index;
+
+			index = (uint8_t)(pixels >> 8);
+			if (index != ucTransparent)
+				dst[1] = index;
+
+			index = (uint8_t)(pixels >> 16);
+			if (index != ucTransparent)
+				dst[2] = index;
+
+			index = (uint8_t)(pixels >> 24);
+			if (index != ucTransparent)
+				dst[3] = index;
+
+			dst += 4;
+		}
+
+		while (i--) {
+			uint8_t index = *src++;
+			if (index != ucTransparent)
+				*dst = index;
+			dst++;
+		}
+	}
+	else {
+		while (i >= 4) {
+			*(uint32_t *)dst = *(uint32_t *)src;
+			i -= 4;
+			src += 4;
+			dst += 4;
+		}
+
+		while (i--)
+			*dst++ = *src++;
+	}
+}
+
+// no transparency in gray16 @@ fix that !!
+void doDrawGray16(GIFDRAW *pDraw)
+{
+	uint8_t *dst = ((uint8_t *)gBitmap) + (pDraw->y * gBitmapStride);
+	uint8_t *src = pDraw->pPixels;
+	uint16_t i = pDraw->iWidth;
+	uint16_t *palette = (uint16_t *)pDraw->pPalette;
+
+	if (gBitmapPhase) {
+		i -= 1;
+		*dst = (*dst & 0xF0) | (~(palette[*src++] >> 1) & 0x0F);
+		dst += 1;
+	}
+	while (i >= 2) {
+		i -= 2;
+		*dst++ = ~(((palette[src[0]] & 0x1E) << 3) | ((palette[src[1]] >> 1) & 0x0F));
+		src += 2;
+	}
+	if (i)
+		*dst = (*dst & 0x0F) | ((~palette[src[0]] & 0x1E) << 3);
+}
+
+// assumes white is index 0 and black is index 1
+void doDrawMonochrome(GIFDRAW *pDraw)
+{
+	uint8_t *dst = ((uint8_t *)gBitmap) + (pDraw->y * gBitmapStride);
+	uint8_t *src = pDraw->pPixels;
+	uint16_t i = pDraw->iWidth;
+	uint8_t mask = gBitmapPhase;
+	uint8_t pixels = *dst;
+
+	if (pDraw->ucHasTransparency) {
+		uint8_t ucTransparent = pDraw->ucTransparent;
+		do {
+			uint8_t pixel = *src++;
+			if (ucTransparent != pixel) {
+				if (pixel)
+					pixels |= mask;
+				else
+					pixels &= ~mask;
+			}
+
+			mask >>= 1;
+			if (!mask) {
+				dst[0] = pixels;
+				pixels = dst[1];
+				dst += 1;
+				mask = 0x80;
+			}
+		} while (--i);
+	}
+	else {
+		do {
+			if (*src++)
+				pixels |= mask;
+			else
+				pixels &= ~mask;
+
+			mask >>= 1;
+			if (!mask) {
+				dst[0] = pixels;
+				pixels = dst[1];
+				dst += 1;
+				mask = 0x80;
+			}
+		} while (--i);
+	}
+
+	if (0x80 != mask)
+		*dst = pixels;
 }

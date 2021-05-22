@@ -18,10 +18,10 @@
  *
  */
 
-class Analog @ "xs_analog_destructor" {
-	constructor(dictionary) @ "xs_analog_constructor"
-	close() @ "xs_analog_close"
-	read() @ "xs_analog_read"
+class Analog @ "xs_analog_destructor_" {
+	constructor(dictionary) @ "xs_analog_constructor_"
+	close() @ "xs_analog_close_"
+	read() @ "xs_analog_read_"
 
 	get resolution() {
 		return 10;

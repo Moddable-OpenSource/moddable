@@ -100,7 +100,7 @@ void xs_net_get(xsMachine *the)
 			}
 			else
 				continue;
-			xsSet(xsResult, index++, xsVar(0));
+			xsSetIndex(xsResult, index++, xsVar(0));
 		}
 
 		res_ndestroy(&res);

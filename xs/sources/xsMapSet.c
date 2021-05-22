@@ -92,7 +92,7 @@ void fxBuildMapSet(txMachine* the)
 	mxMapConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -129,7 +129,7 @@ void fxBuildMapSet(txMachine* the)
 	mxSetConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -158,7 +158,7 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakMapPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakMap), 0, mxID(_WeakMap));
 	mxWeakMapConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	/* WEAK SET */
 	mxPush(mxObjectPrototype);
@@ -170,7 +170,7 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakSetPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakSet), 0, mxID(_WeakSet));
 	mxWeakSetConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	/* WEAK REF */
 	mxPush(mxObjectPrototype);
@@ -180,7 +180,7 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakRefPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakRef), 1, mxID(_WeakRef));
 	mxWeakRefConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	/* FINALIZATION REGISTRY */
 	mxPush(mxObjectPrototype);
@@ -192,7 +192,7 @@ void fxBuildMapSet(txMachine* the)
 	mxFinalizationRegistryPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_FinalizationRegistry), 1, mxID(_FinalizationRegistry));
 	mxFinalizationRegistryConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
@@ -262,7 +262,8 @@ void fx_Map(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_set));	
+	mxPushSlot(mxResult);
+	mxGetID(mxID(_set));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
@@ -278,9 +279,9 @@ void fx_Map(txMachine* the)
 			mxPushSlot(function);
 			mxCall();
 			mxPushSlot(value);
-			fxGetIndex(the, 0);
+			mxGetIndex(0);
 			mxPushSlot(value);
-			fxGetIndex(the, 1);
+			mxGetIndex(1);
 			mxRunCount(2);
 			mxPop();
 		}
@@ -368,7 +369,7 @@ void fx_Map_prototype_forEach(txMachine* the)
 			mxPushSlot(key);
 			mxPushSlot(mxThis);
 			mxRunCount(3);
-			the->stack++;
+			mxPop();
 		}
 		key = value->next;
 	}
@@ -553,7 +554,8 @@ void fx_Set(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_add));	
+	mxPushSlot(mxResult);
+	mxGetID(mxID(_add));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
@@ -777,7 +779,8 @@ void fx_WeakMap(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_set));	
+	mxPushSlot(mxResult);
+	mxGetID(mxID(_set));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
@@ -793,9 +796,9 @@ void fx_WeakMap(txMachine* the)
 			if (value->kind != XS_REFERENCE_KIND)
 				mxTypeError("item is no object");
 			mxPushSlot(value);
-			fxGetIndex(the, 0);
+			mxGetIndex(0);
 			mxPushSlot(value);
-			fxGetIndex(the, 1);
+			mxGetIndex(1);
 			mxRunCount(2);
 			mxPop();
 		}
@@ -909,7 +912,8 @@ void fx_WeakSet(txMachine* the)
 	iterable = mxArgv(0);
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
-	mxGetID(mxResult, mxID(_add));	
+	mxPushSlot(mxResult);
+	mxGetID(mxID(_add));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
@@ -1090,11 +1094,11 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 	txU4 sum = fxSumEntry(the, key);
 	txU4 modulo = sum % table->value.table.length;
 	txSlot** address = &(table->value.table.address[modulo]);
-	txSlot* entry;
+	txSlot* entry = *address;
 	txSlot* first;
 	txSlot* last;
 	txSlot* slot;
-	while ((entry = *address)) {
+	while (entry) {
 		if (entry->value.entry.sum == sum) {
 			first = entry->value.entry.slot;
 			if (fxTestEntry(the, first, key)) {
@@ -1106,7 +1110,7 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 				return;
 			}
 		}
-		address = &entry->next;
+		entry = entry->next;
 	}
 	first = fxNewSlot(the);
 	first->kind = key->kind;
@@ -1118,10 +1122,12 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 		last->value = pair->value;
 		mxPushClosure(last);
 	}
-	*address = entry = fxNewSlot(the);
+	entry = fxNewSlot(the);
+	entry->next = *address;
 	entry->kind = XS_ENTRY_KIND;
 	entry->value.entry.slot = first;
 	entry->value.entry.sum = sum;
+	*address = entry;
 	if (list) {
 		if (list->value.list.last)
 			list->value.list.last->next = first;

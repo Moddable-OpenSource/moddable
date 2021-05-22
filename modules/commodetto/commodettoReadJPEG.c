@@ -645,7 +645,7 @@ unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned ch
 	jpeg->totalBytesAvailable -= buf_size;
 
 	xsmcGet(xsVar(0), xsThis, xsID_buffers);
-	xsmcGet(xsVar(0), xsVar(0), jpeg->bufferIndex);
+	xsmcGetIndex(xsVar(0), xsVar(0), jpeg->bufferIndex);
 
 	if (jpeg->isArrayBuffer)
 		buffer = xsmcToArrayBuffer(xsVar(0));
@@ -674,7 +674,7 @@ void activateBuffer(JPEG jpeg)
 	xsMachine *the = jpeg->the;
 
 	xsmcGet(xsVar(0), xsThis, xsID_buffers);
-	xsmcGet(xsVar(0), xsVar(0), jpeg->bufferIndex);
+	xsmcGetIndex(xsVar(0), xsVar(0), jpeg->bufferIndex);
 	if (!xsmcTest(xsVar(0)))
 		return;
 

@@ -172,7 +172,7 @@ void xs_preference_keys(xsMachine *the)
         nvs_entry_info(it, &info);
 
 		xsmcSetString(xsVar(0), info.key);
-		xsmcSet(xsResult, i++, xsVar(0));
+		xsmcSetIndex(xsResult, i++, xsVar(0));
 
         it = nvs_entry_next(it);
 	}

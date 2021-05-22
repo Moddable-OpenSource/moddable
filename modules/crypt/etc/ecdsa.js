@@ -90,7 +90,8 @@ export default class ECDSA {
 		var u2 = n.mul(r, s_inv);
 		// var R = ec.add(ec.mul(G, u1), ec.mul(Qu, u2));
 		var R = ec.mul2(G, u1, Qu, u2);
-		return R.X.comp(r) == 0;
+		return R.X === r;
+
 	};
 	verify(H, sig) {
 		var l = this.orderSize;

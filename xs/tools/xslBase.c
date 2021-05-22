@@ -105,7 +105,7 @@ void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base,
 	if (c_strncmp(resource->path, base, baseLength))
 		fxReportLinkerError(linker, "'%s': not relative to '%s'", resource->path, base);
 	resource->path += baseLength;
-	resource->pathSize = c_strlen(resource->path) + 1;
+	resource->pathSize = mxStringLength(resource->path) + 1;
 }
 
 void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInteger baseLength)
@@ -113,7 +113,7 @@ void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInt
 	if (c_strncmp(script->path, base, baseLength))
 		fxReportLinkerError(linker, "'%s': not relative to '%s'", script->path, base);
 	script->path = fxBasePrefix(linker, script->path + baseLength);
-	script->pathSize = c_strlen(script->path) + 1;
+	script->pathSize = mxStringLength(script->path) + 1;
 	script->scriptIndex = linker->scriptCount;
 	linker->scriptCount++;
 }
@@ -183,7 +183,7 @@ void fxInitializeLinker(txLinker* linker)
 	c_memset(linker, 0, sizeof(txLinker));
 	linker->dtoa = fxNew_dtoa(NULL);
 	linker->symbolModulo = 1993;
-	linker->symbolCount = 0x7FFF;
+	linker->symbolCount = 0x10000;
 	linker->symbolArray = fxNewLinkerChunkClear(linker, linker->symbolCount * sizeof(txLinkerSymbol*));
 	linker->symbolIndex = 0;
 	
@@ -257,12 +257,11 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 		}
 		else if (0 == offset) {
 			p++;
-			mxDecode2(p, id);
+			mxDecodeID(p, id);
 			if (id != XS_NO_ID) {
-				id &= 0x7FFF;
 				id = theIDs[id];
-				p -= 2;
-				mxEncode2(p, id);
+				p -= sizeof(txID);
+				mxEncodeID(p, id);
 				if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_THIS_VARIABLE == code) || (XS_CODE_GET_VARIABLE == code)) {
 					fxReferenceLinkerSymbol(linker, id);
 				}
@@ -291,16 +290,16 @@ void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs)
 	txByte* p = script->hostsBuffer;
 	if (p) {
 		txID c, i, id;
-		mxDecode2(p, c);
+		mxDecodeID(p, c);
 		for (i = 0; i < c; i++) {
 			p++;
-			mxDecode2(p, id);
+			mxDecodeID(p, id);
 			if (id != XS_NO_ID) {
 				id = theIDs[id];
-				p -= 2;
-				mxEncode2(p, id);
+				p -= sizeof(txID);
+				mxEncodeID(p, id);
 			}
-			p += c_strlen((char*)p) + 1;
+			p += mxStringLength((char*)p) + 1;
 		}
 		linker->hostsCount += c;
 	}
@@ -318,12 +317,13 @@ txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag)
 	txID* symbols = C_NULL;
 	txByte* p = symbolsBuffer;
 	txID c, i;
-	mxDecode2(p, c);
+	mxDecodeID(p, c);
 	symbols = fxNewLinkerChunk(linker, c * sizeof(txID*));
-	for (i = 0; i < c; i++) {
+	symbols[0] = XS_NO_ID;
+	for (i = 1; i < c; i++) {
 		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, (txString)p, flag);
 		symbols[i] = symbol->ID;
-		p += c_strlen((char*)p) + 1;
+		p += mxStringLength((char*)p) + 1;
 	}
 	return symbols;
 }
@@ -377,14 +377,14 @@ void* fxNewLinkerChunkClear(txLinker* linker, txSize size)
 txLinkerInclude* fxNewLinkerInclude(txLinker* linker, txString path)
 {
 	txLinkerInclude* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerInclude));
-	result->path = fxNewLinkerString(linker, path, c_strlen(path));
+	result->path = fxNewLinkerString(linker, path, mxStringLength(path));
 	return result;
 }
 
 txLinkerPreload* fxNewLinkerPreload(txLinker* linker, txString name)
 {
 	txLinkerPreload* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerPreload));
-	result->name = fxNewLinkerString(linker, name, c_strlen(name));
+	result->name = fxNewLinkerString(linker, name, mxStringLength(name));
 	result->name = fxBasePrefix(linker, result->name);
 	return result;
 }
@@ -393,7 +393,7 @@ txLinkerResource* fxNewLinkerResource(txLinker* linker, txString path, FILE** fi
 {
 	txLinkerResource* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerResource));
 	FILE* aFile = NULL;
-	result->path = fxNewLinkerString(linker, path, c_strlen(path));
+	result->path = fxNewLinkerString(linker, path, mxStringLength(path));
 	aFile = fopen(path, "rb");
 	mxThrowElse(aFile);
 	*fileAddress = aFile;
@@ -414,7 +414,7 @@ txLinkerScript* fxNewLinkerScript(txLinker* linker, txString path, FILE** fileAd
 	Atom atom;
 	txByte version[4];
 	script = fxNewLinkerChunkClear(linker, sizeof(txLinkerScript));
-	script->path = fxNewLinkerString(linker, path, c_strlen(path));
+	script->path = fxNewLinkerString(linker, path, mxStringLength(path));
 	aFile = fopen(path, "rb");
 	mxThrowElse(aFile);
 	*fileAddress = aFile;
@@ -474,7 +474,7 @@ txString fxNewLinkerString(txLinker* linker, txString buffer, txSize size)
 txLinkerStrip* fxNewLinkerStrip(txLinker* linker, txString name)
 {
 	txLinkerStrip* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerStrip));
-	result->name = fxNewLinkerString(linker, name, c_strlen(name));
+	result->name = fxNewLinkerString(linker, name, mxStringLength(name));
 	return result;
 }
 
@@ -510,7 +510,7 @@ txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag f
 		}
 		aSymbol = fxNewLinkerChunk(linker, sizeof(txLinkerSymbol));
 		aSymbol->next = linker->symbolTable[aModulo];
-		aSymbol->ID = 0x8000 | anID;
+		aSymbol->ID = anID;
 		aSymbol->length = aLength + 1;
 		aSymbol->string = fxNewLinkerString(linker, theString, aLength);
 		aSymbol->sum = aSum;
@@ -569,7 +569,7 @@ txString fxRealDirectoryPath(txLinker* linker, txString path)
 		attributes = GetFileAttributes(buffer);
 		if ((attributes != 0xFFFFFFFF) && (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
   	 		strcat(buffer, "\\");
-			return fxNewLinkerString(linker, buffer, strlen(buffer));
+			return fxNewLinkerString(linker, buffer, mxStringLength(buffer));
 		}
 	}
 #else
@@ -579,7 +579,7 @@ txString fxRealDirectoryPath(txLinker* linker, txString path)
 		if (stat(buffer, &a_stat) == 0) {
 			if (S_ISDIR(a_stat.st_mode)) {
   	 			strcat(buffer, "/");
-				return fxNewLinkerString(linker, buffer, strlen(buffer));
+				return fxNewLinkerString(linker, buffer, mxStringLength(buffer));
 			}
 		}
 	}
@@ -595,7 +595,7 @@ txString fxRealFilePath(txLinker* linker, txString path)
 	if (_fullpath(buffer, path, C_PATH_MAX) != NULL) {
 		attributes = GetFileAttributes(buffer);
 		if ((attributes != 0xFFFFFFFF) && (!(attributes & FILE_ATTRIBUTE_DIRECTORY))) {
-			return fxNewLinkerString(linker, buffer, strlen(buffer));
+			return fxNewLinkerString(linker, buffer, mxStringLength(buffer));
 		}
 	}
 #else
@@ -604,7 +604,7 @@ txString fxRealFilePath(txLinker* linker, txString path)
 	if (realpath(path, buffer) != NULL) {
 		if (stat(buffer, &a_stat) == 0) {
 			if (S_ISREG(a_stat.st_mode)) {
-				return fxNewLinkerString(linker, buffer, strlen(buffer));
+				return fxNewLinkerString(linker, buffer, mxStringLength(buffer));
 			}
 		}
 	}
@@ -614,7 +614,7 @@ txString fxRealFilePath(txLinker* linker, txString path)
 
 void fxReferenceLinkerSymbol(txLinker* linker, txID id)
 {
-	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id];
 	linkerSymbol->flag |= 1;
 }
 
@@ -688,7 +688,7 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	*fileAddress = file;
 	
 	md5_create(&md5);
-	nameSize = c_strlen(linker->name) + 1;
+	nameSize = mxStringLength(linker->name) + 1;
 	md5_update(&md5, linker->name, nameSize);
 	md5_update(&md5, linker->symbolsBuffer, linker->symbolsSize);
 	modsSize = 0;
@@ -897,7 +897,7 @@ void fxWriteScriptExterns(txLinkerScript* script, FILE* file)
 				fprintf(file, "extern void %s(void* data);\n", p);
 			else
 				fprintf(file, "extern void %s(xsMachine* the);\n", p);
-			p += c_strlen((char*)p) + 1;
+			p += mxStringLength((char*)p) + 1;
 		}
 	}
 }
@@ -916,7 +916,7 @@ void fxWriteScriptHosts(txLinkerScript* script, FILE* file)
 				fprintf(file, "\t{ (xsCallback)%s, -1, -1 },\n", p);
 			else
 				fprintf(file, "\t{ %s, %d, %d },\n", p, length, id);
-			p += c_strlen((char*)p) + 1;
+			p += mxStringLength((char*)p) + 1;
 		}
 		fprintf(file, "};\n");
 		fprintf(file, "void xsHostModule%d(xsMachine* the)\n", script->scriptIndex);

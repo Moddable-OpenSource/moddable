@@ -28,7 +28,7 @@
 	portMUX_TYPE gCommonCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 
 	static uint32_t gDigitalAvailable[kPinBanks] = {
-		0xFFFFFF,		//@@
+		0xFFFFFFFF,		//@@
 		0xFFFFFF		//@@
 	};
 #elif defined(__ets__)
@@ -74,7 +74,7 @@ void builtinFreePins(uint32_t bank, uint32_t pins)
 		gDigitalAvailable[bank] |= pins;
 }
 
-uint8_t builtinHasCallback(xsMachine *the, xsIndex id)
+uint8_t builtinHasCallback(xsMachine *the, xsIdentifier id)
 {
 	xsSlot slot;
 
@@ -82,7 +82,7 @@ uint8_t builtinHasCallback(xsMachine *the, xsIndex id)
 	return xsmcTest(slot);
 }
 
-uint8_t builtinGetCallback(xsMachine *the, xsIndex id, xsSlot *slot)
+uint8_t builtinGetCallback(xsMachine *the, xsIdentifier id, xsSlot *slot)
 {
 	xsmcGet(*slot, xsArg(0), id);
 	return xsmcTest(*slot);

@@ -178,7 +178,7 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment({...globalThis, Date, Math});
+						let compartment = new Compartment({...Object.getPrototypeOf(globalThis), ...globalThis});
 						let device = compartment.importNow(info.path).default;
 						if (device && (("DeviceTemplate" in device) || ("DeviceTemplates" in device))) {
 							device.compartment = compartment;

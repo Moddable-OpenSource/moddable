@@ -39,9 +39,9 @@
 
 txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix)
 {
-	txSize stringSize = c_strlen(string->value.string);
-	txSize prefixSize = prefix ? c_strlen(prefix) : 0;
-	txSize suffixSize = suffix ? c_strlen(suffix) : 0;
+	txSize stringSize = mxStringLength(string->value.string);
+	txSize prefixSize = prefix ? mxStringLength(prefix) : 0;
+	txSize suffixSize = suffix ? mxStringLength(suffix) : 0;
 	txSize resultSize = fxAddChunkSizes(the, fxAddChunkSizes(the, fxAddChunkSizes(the, stringSize, prefixSize), suffixSize), 1);
 	txString result = (txString)fxNewChunk(the, resultSize);
 	if (prefix && prefixSize)
@@ -99,7 +99,7 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 						fxBufferFunctionName(the, buffer, size, home, ".");
 					}
 					else {
-						txSlot* constructor = mxBehaviorGetProperty(the, home, mxID(_constructor), XS_NO_ID, XS_OWN);
+						txSlot* constructor = mxBehaviorGetProperty(the, home, mxID(_constructor), 0, XS_OWN);
 						if (constructor) {
 							if (constructor->kind == XS_REFERENCE_KIND) {
 								constructor = constructor->value.reference;
@@ -117,8 +117,8 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 		}
 	}
 	else
-		c_strncat(buffer, "(host)", size - c_strlen(buffer) - 1);
-	c_strncat(buffer, suffix, size - c_strlen(buffer) - 1);
+		c_strncat(buffer, "(host)", size - mxStringLength(buffer) - 1);
+	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 }
 
 void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* function, txString suffix)
@@ -128,37 +128,37 @@ void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* 
 		txSlot* key = fxGetKey(the, slot->ID);
 		if (key) {
 			if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
-				c_strncat(buffer, key->value.key.string, size - c_strlen(buffer) - 1);
-				c_strncat(buffer, suffix, size - c_strlen(buffer) - 1);
+				c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
+				c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 				return;
 			}
 			if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
-				c_strncat(buffer, "[", size - c_strlen(buffer) - 1);
-				c_strncat(buffer, key->value.string, size - c_strlen(buffer) - 1);
-				c_strncat(buffer, "]", size - c_strlen(buffer) - 1);
-				c_strncat(buffer, suffix, size - c_strlen(buffer) - 1);
+				c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
+				c_strncat(buffer, key->value.string, size - mxStringLength(buffer) - 1);
+				c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
+				c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 				return;
 			}
 		}
 	}
-	c_strncat(buffer, "?", size - c_strlen(buffer) - 1);
-	c_strncat(buffer, suffix, size - c_strlen(buffer) - 1);
+	c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
+	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 }
 
 void fxBufferObjectName(txMachine* the, txString buffer, txSize size, txSlot* object, txString suffix)
 {
-	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), XS_NO_ID, XS_ANY);
+	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), 0, XS_ANY);
 	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string))
-		c_strncat(buffer, slot->value.string, size - c_strlen(buffer) - 1);
+		c_strncat(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
 	else
-		c_strncat(buffer, "?", size - c_strlen(buffer) - 1);
-	c_strncat(buffer, suffix, size - c_strlen(buffer) - 1);
+		c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
+	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 }
 
 txString fxConcatString(txMachine* the, txSlot* a, txSlot* b)
 {
-	txSize aSize = c_strlen(a->value.string);
-	txSize bSize = c_strlen(b->value.string);
+	txSize aSize = mxStringLength(a->value.string);
+	txSize bSize = mxStringLength(b->value.string);
 	txSize resultSize = fxAddChunkSizes(the, fxAddChunkSizes(the, aSize, bSize), 1);
 	txString result = (txString)fxNewChunk(the, resultSize);
 	c_memcpy(result, a->value.string, aSize);
@@ -170,8 +170,8 @@ txString fxConcatString(txMachine* the, txSlot* a, txSlot* b)
 
 txString fxConcatStringC(txMachine* the, txSlot* a, txString b)
 {
-	txSize aSize = c_strlen(a->value.string);
-	txSize bSize = c_strlen(b);
+	txSize aSize = mxStringLength(a->value.string);
+	txSize bSize = mxStringLength(b);
 	txSize resultSize = fxAddChunkSizes(the, fxAddChunkSizes(the, aSize, bSize), 1);
 	txString result = C_NULL;
 	if (a->kind == XS_STRING_KIND)
@@ -196,7 +196,7 @@ txString fxCopyString(txMachine* the, txSlot* a, txSlot* b)
 
 txString fxCopyStringC(txMachine* the, txSlot* a, txString b)
 {
-	txSize bSize = c_strlen(b);
+	txSize bSize = mxStringLength(b);
 	txSize resultSize = fxAddChunkSizes(the, bSize, 1);
 	txString result = (txString)fxNewChunk(the, resultSize);
 	c_memcpy(result, b, resultSize);

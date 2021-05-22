@@ -125,7 +125,7 @@ txSlot* fxGetPrototype(txMachine* the, txSlot* instance)
 {
 	txSlot* prototype = instance->value.instance.prototype;
 	if (prototype) {
-		if (prototype->ID >= 0) {
+		if (prototype->ID) {
 			txSlot* alias = the->aliasArray[prototype->ID];
 			if (alias)
 				prototype = alias;
@@ -148,7 +148,7 @@ txBoolean fxIsSameInstance(txMachine* the, txSlot* a, txSlot* b)
 {	
 	if (a == b)
 		return 1;
-	if (a->ID >= 0) {
+	if (a->ID) {
 		txSlot* alias = the->aliasArray[a->ID];
 		if (alias) {
 			a = alias;
@@ -156,7 +156,7 @@ txBoolean fxIsSameInstance(txMachine* the, txSlot* a, txSlot* b)
 				return 1;
 		}
 	}
-	if (b->ID >= 0) {
+	if (b->ID) {
 		txSlot* alias = the->aliasArray[b->ID];
 		if (alias) {
 			b = alias;
@@ -232,7 +232,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 		txByte* code = the->code;
 		the->code = (txByte*)(theSlot->value.hostFunction.IDs);
 		anInstance = fxNewHostFunction(the, theSlot->value.hostFunction.builder->callback, theSlot->value.hostFunction.builder->length, 
-			(theSlot->value.hostFunction.IDs && (theSlot->value.hostFunction.builder->id >= 0)) 
+			(theSlot->value.hostFunction.IDs && (theSlot->value.hostFunction.builder->id)) 
 				? theSlot->value.hostFunction.IDs[theSlot->value.hostFunction.builder->id]
 				: theSlot->value.hostFunction.builder->id);
 		the->code = code;
@@ -252,7 +252,7 @@ void fxToPrimitive(txMachine* the, txSlot* theSlot, txInteger theHint)
 		fxBeginHost(the);
 		mxPushSlot(theSlot);
 		mxPushSlot(theSlot);
-		fxGetID(the, mxID(_Symbol_toPrimitive));
+		mxGetID(mxID(_Symbol_toPrimitive));
 		if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 			mxPop();
 			mxPush(mxOrdinaryToPrimitiveFunction);
@@ -285,7 +285,7 @@ void fxToSpeciesConstructor(txMachine* the, txSlot* constructor)
 	if (!mxIsReference(the->stack)) {
 		mxTypeError("no constructor");
 	}
-	fxGetID(the, mxID(_Symbol_species));
+	mxGetID(mxID(_Symbol_species));
 	if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
 		mxPop();
 		mxPushSlot(constructor);
@@ -312,12 +312,12 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
-	fxGetID(the, mxID(_length));
+	mxGetID(mxID(_length));
 	c = fxToInteger(the, the->stack);
-	the->stack++;
+	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
-		fxGetID(the, (txID)i);
+		mxGetIndex(i);
 	}
 	mxRunCount(c);
 	mxPullSlot(mxResult);
@@ -340,12 +340,12 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
-	fxGetID(the, mxID(_length));
+	mxGetID(mxID(_length));
 	c = fxToInteger(the, the->stack);
-	the->stack++;
+	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
-		fxGetID(the, (txID)i);
+		mxGetIndex(i);
 	}
 	mxRunCount(c);
 	mxPullSlot(mxResult);
@@ -385,7 +385,7 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 				}
 			}
 		}
-		if (instance->ID >= 0) {
+		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (!alias) {
 				alias = fxAliasInstance(the, instance);
@@ -465,20 +465,20 @@ txBoolean fxOrdinaryDeleteProperty(txMachine* the, txSlot* instance, txID id, tx
 {
 	txSlot** address = &(instance->next);
 	txSlot* property;
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
 	}
 	address = &(instance->next);
-	while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
-		address = &(property->next);
 	if (id) {
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
+			address = &(property->next);
 		while ((property = *address)) {
 			if (property->ID == id) {
 				if (property->flag & XS_DONT_DELETE_FLAG)
 					return 0;
-				if (instance->ID >= 0)
+				if (instance->ID)
 					return fxOrdinaryDeleteProperty(the, fxAliasInstance(the, instance), id, index);
 				*address = property->next;
 				property->next = C_NULL;
@@ -489,8 +489,11 @@ txBoolean fxOrdinaryDeleteProperty(txMachine* the, txSlot* instance, txID id, tx
 		return 1;
 	}
 	else {
-		if (property && (property->kind == XS_ARRAY_KIND))
-			return fxDeleteIndexProperty(the, property, index);
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG)) {
+			if (property->kind == XS_ARRAY_KIND)
+				return fxDeleteIndexProperty(the, property, index);
+			address = &(property->next);
+		}
 		return 1;
 	}
 }
@@ -514,26 +517,25 @@ txSlot* fxOrdinaryGetProperty(txMachine* the, txSlot* instance, txID id, txIndex
     txSlot* result;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
 again:
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
 	}
-	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
-		txID color = id & 0x7FFF;
-		if (color < the->keyOffset) {
-			color = the->colors[color];
-			if (color) {
-				result = instance + color;
-				if (result->ID == id)
-					return result;
+	if (id) {
+		if (the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+			if (id < the->keyOffset) {
+				txID color = the->colors[id];
+				if (color) {
+					result = instance + color;
+					if (result->ID == id)
+						return result;
+				}
 			}
 		}
-	}
-	result = instance->next;
-	while (result && (result->flag & XS_INTERNAL_FLAG))
-		result = result->next;
-	if (id) {
+		result = instance->next;
+		while (result && (result->flag & XS_INTERNAL_FLAG))
+			result = result->next;
 		while (result) {
 			if (result->ID == id)
 				return result;
@@ -541,10 +543,15 @@ again:
 		}
 	}
 	else {
-		if (result && (result->kind == XS_ARRAY_KIND)) {
-			result = fxGetIndexProperty(the, result, index);
-			if (result)
-				return result;
+		result = instance->next;
+		while (result && (result->flag & XS_INTERNAL_FLAG)) {
+			if (result->kind == XS_ARRAY_KIND) {
+				result = fxGetIndexProperty(the, result, index);
+				if (result)
+					return result;
+				break;
+			}		
+			result = result->next;
 		}		
 	}
 	if (flag) {
@@ -599,7 +606,7 @@ bail:
 txBoolean fxOrdinaryGetPrototype(txMachine* the, txSlot* instance, txSlot* result)
 {
 	txSlot* prototype;
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
@@ -631,7 +638,7 @@ txBoolean fxOrdinaryHasProperty(txMachine* the, txSlot* instance, txID id, txInd
 
 txBoolean fxOrdinaryIsExtensible(txMachine* the, txSlot* instance)
 {
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
@@ -642,16 +649,15 @@ txBoolean fxOrdinaryIsExtensible(txMachine* the, txSlot* instance)
 void fxOrdinaryOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys)
 {
 	txSlot* property;
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
 	}
 	property = instance->next;
-	while (property && (property->flag & XS_INTERNAL_FLAG))
-		property = property->next;
-	if (property && (property->kind == XS_ARRAY_KIND)) {
-		keys = fxQueueIndexKeys(the, property, flag, keys);
+	while (property && (property->flag & XS_INTERNAL_FLAG)) {
+		if (property->kind == XS_ARRAY_KIND)
+			keys = fxQueueIndexKeys(the, property, flag, keys);
 		property = property->next;
 	}
 	fxQueueIDKeys(the, property, flag, keys);
@@ -659,14 +665,14 @@ void fxOrdinaryOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* ke
 
 txBoolean fxOrdinaryPreventExtensions(txMachine* the, txSlot* instance)
 {
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
 	}
 	if (instance->flag & XS_DONT_PATCH_FLAG)
 		return 1;
-	if (instance->ID >= 0)
+	if (instance->ID)
 		instance = fxAliasInstance(the, instance);
 	instance->flag |= XS_DONT_PATCH_FLAG;
 	return 1;
@@ -677,7 +683,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 	txSlot** address;
 	txSlot* property;
 	txSlot* result;
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
@@ -694,21 +700,20 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 			instance = fxAliasInstance(the, instance);
 		}
 	}
-	if (id && the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
-		txID color = id & 0x7FFF;
-		if (color < the->keyOffset) {
-			color = the->colors[color];
-			if (color) {
-				property = instance + color;
-				if (property->ID == id)
-					return property;
+	if (id) {
+		if (the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
+			if (id < the->keyOffset) {
+				txID color = the->colors[id];
+				if (color) {
+					property = instance + color;
+					if (property->ID == id)
+						return property;
+				}
 			}
 		}
-	}
-	address = &(instance->next);
-	while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
-		address = &(property->next);
-	if (id) {
+		address = &(instance->next);
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
+			address = &(property->next);
 		while ((property = *address)) {
 			if (property->ID == id)
 				return property;
@@ -716,10 +721,15 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		}
 	}
 	else {
-		if (property && (property->kind == XS_ARRAY_KIND)) {
-			result = fxGetIndexProperty(the, property, index);
-			if (result)
-				return result;
+		address = &(instance->next);
+		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG)) {
+			if (property->kind == XS_ARRAY_KIND) {
+				result = fxGetIndexProperty(the, property, index);
+				if (result)
+					return result;
+				break;
+			}		
+			address = &(property->next);
 		}		
 	}
 	if (flag) {
@@ -747,6 +757,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		else {
 			property = fxNewSlot(the);
 			property->next = *address;
+			property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 			property->ID = 0;
 			property->kind = XS_ARRAY_KIND;
 			property->value.array.address = C_NULL;
@@ -809,7 +820,7 @@ bail:
 txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 {
 	txSlot* prototype = (slot->kind == XS_NULL_KIND) ? C_NULL : slot->value.reference;
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
@@ -823,7 +834,7 @@ txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 				return 0;
 			slot = fxGetPrototype(the, slot);
 		}
-		if (instance->ID >= 0)
+		if (instance->ID)
 			instance = fxAliasInstance(the, instance);
 		instance->value.instance.prototype = prototype;
 	}
@@ -859,7 +870,7 @@ void fxOrdinaryToPrimitive(txMachine* the)
 		for (i = 0; i < 2; i++) {
 			mxPushSlot(mxThis);
 			mxPushSlot(mxThis);
-			fxGetID(the, ids[i]);
+			mxGetID(ids[i]);
 			if (fxIsCallable(the, the->stack)) {
 				mxCall();
 				mxRunCount(0);
@@ -906,39 +917,39 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 	if (!mxIsReference(descriptor))
 		mxTypeError("descriptor is no object");
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_enumerable))) {
+	if (mxHasID(mxID(_enumerable))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_enumerable));
+		mxGetID(mxID(_enumerable));
 		enumerable = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_configurable))) {
+	if (mxHasID(mxID(_configurable))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_configurable));
+		mxGetID(mxID(_configurable));
 		configurable = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_value))) {
+	if (mxHasID(mxID(_value))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_value));
+		mxGetID(mxID(_value));
 		value = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_writable))) {
+	if (mxHasID(mxID(_writable))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_writable));
+		mxGetID(mxID(_writable));
 		writable = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_get))) {
+	if (mxHasID(mxID(_get))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_get));
+		mxGetID(mxID(_get));
 		get = the->stack;
 	}
 	mxPushSlot(descriptor);
-	if (fxHasID(the, mxID(_set))) {
+	if (mxHasID(mxID(_set))) {
 		mxPushSlot(descriptor);
-		fxGetID(the, mxID(_set));
+		mxGetID(mxID(_set));
 		set = the->stack;
 	}
 	if (get) {
@@ -1144,7 +1155,7 @@ txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIn
 			if (result->ID == id) {
 				result = result->value.closure;
 				alias = result->ID;
-				if (alias >= 0) {
+				if (alias) {
 					txSlot* slot = the->aliasArray[alias];
 					if (slot)
 						result = slot;
@@ -1182,7 +1193,7 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 				if (result->flag & XS_DONT_SET_FLAG)
 					mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
 				alias = result->ID;
-				if (alias >= 0) {
+				if (alias) {
 					result = the->aliasArray[alias];
 					if (!result) {
 						result = fxNewSlot(the);
@@ -1220,7 +1231,7 @@ void fxRunEvalEnvironment(txMachine* the)
 	while (slot >= bottom) {
 		txSlot* environment = currentEnvironment;
 		while (environment != varEnvironment) {
-			if (mxBehaviorHasProperty(the, environment, slot->ID, XS_NO_ID))
+			if (mxBehaviorHasProperty(the, environment, slot->ID, 0))
 				mxDebugID(XS_SYNTAX_ERROR, "%s: duplicate variable", slot->ID);
 			environment = environment->value.instance.prototype;
 		}
@@ -1229,11 +1240,11 @@ void fxRunEvalEnvironment(txMachine* the)
 	if (varEnvironment) {
 		slot = top;
 		while (slot >= bottom) {
-			property = mxBehaviorGetProperty(the, varEnvironment, slot->ID, XS_NO_ID, XS_OWN);
+			property = mxBehaviorGetProperty(the, varEnvironment, slot->ID, 0, XS_OWN);
 			if (!property) {
 				slot->value.closure = fxNewSlot(the);
 				slot->kind = XS_CLOSURE_KIND;
-				mxBehaviorDefineOwnProperty(the, varEnvironment, slot->ID, XS_NO_ID, slot, XS_NO_FLAG); // configurable variable!
+				mxBehaviorDefineOwnProperty(the, varEnvironment, slot->ID, 0, slot, XS_NO_FLAG); // configurable variable!
 			}
 			slot--;
 		}
@@ -1244,7 +1255,7 @@ void fxRunEvalEnvironment(txMachine* the)
 		while (slot <= top) {
 			if (slot->kind == XS_NULL_KIND) {
 				property = the->stack;
-				if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+				if (!mxBehaviorGetOwnProperty(the, global, slot->ID, 0, property)) {
 					if (!mxBehaviorIsExtensible(the, global))
 						mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
 				}
@@ -1259,7 +1270,7 @@ void fxRunEvalEnvironment(txMachine* the)
 		while (slot >= bottom) {
 			if (slot->kind == XS_UNDEFINED_KIND) {
 				property = the->stack;
-				if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+				if (!mxBehaviorGetOwnProperty(the, global, slot->ID, 0, property)) {
 					if (!mxBehaviorIsExtensible(the, global))
 						mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
 				}
@@ -1270,7 +1281,7 @@ void fxRunEvalEnvironment(txMachine* the)
 		slot = bottom;
 		while (slot <= top) {
 			if (slot->kind == XS_NULL_KIND) {
-				property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+				property = mxBehaviorSetProperty(the, global, slot->ID, 0, XS_OWN);
 				if (!(property->flag & XS_DONT_DELETE_FLAG))
 					property->flag = XS_NO_FLAG;
 			}
@@ -1279,7 +1290,7 @@ void fxRunEvalEnvironment(txMachine* the)
 		slot = top;
 		while (slot >= bottom) {
 			if (slot->kind == XS_UNDEFINED_KIND) {
-				property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+				property = mxBehaviorSetProperty(the, global, slot->ID, 0, XS_OWN);
 			}
 			slot--;
 		}
@@ -1303,10 +1314,10 @@ void fxRunProgramEnvironment(txMachine* the)
 	slot = top;
 	while (slot >= bottom) {
 		if (slot->kind == XS_CLOSURE_KIND) {
-			property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);
+			property = mxBehaviorGetProperty(the, environment, slot->ID, 0, XS_OWN);
 			if (property)
 				mxDebugID(XS_SYNTAX_ERROR, "%s: duplicate variable", slot->ID);
-			property = mxBehaviorGetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+			property = mxBehaviorGetProperty(the, global, slot->ID, 0, XS_OWN);
 			if (property && (property->flag & XS_DONT_DELETE_FLAG))
 				mxDebugID(XS_SYNTAX_ERROR, "%s: restricted variable", slot->ID);
 		}
@@ -1317,7 +1328,7 @@ void fxRunProgramEnvironment(txMachine* the)
 	}
 	middle = slot;
 	while (slot >= bottom) {
-		property = mxBehaviorGetProperty(the, environment, slot->ID, XS_NO_ID, XS_OWN);
+		property = mxBehaviorGetProperty(the, environment, slot->ID, 0, XS_OWN);
 		if (property)
 			mxDebugID(XS_SYNTAX_ERROR, "%s: duplicate variable", slot->ID);
 		slot--;
@@ -1327,7 +1338,7 @@ void fxRunProgramEnvironment(txMachine* the)
 	while (slot <= middle) {
 		if (slot->kind == XS_NULL_KIND) {
 			property = the->stack;
-			if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+			if (!mxBehaviorGetOwnProperty(the, global, slot->ID, 0, property)) {
 				if (!mxBehaviorIsExtensible(the, global))
 					mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
 			}
@@ -1341,7 +1352,7 @@ void fxRunProgramEnvironment(txMachine* the)
 	while (slot >= bottom) {
 		if (slot->kind == XS_UNDEFINED_KIND) {
 			property = the->stack;
-			if (!mxBehaviorGetOwnProperty(the, global, slot->ID, XS_NO_ID, property)) {
+			if (!mxBehaviorGetOwnProperty(the, global, slot->ID, 0, property)) {
 				if (!mxBehaviorIsExtensible(the, global))
 					mxDebugID(XS_TYPE_ERROR, "%s: global object not extensible", slot->ID);
 			}
@@ -1351,13 +1362,13 @@ void fxRunProgramEnvironment(txMachine* the)
 	
 	slot = top;
 	while (slot > middle) {
-		mxBehaviorDefineOwnProperty(the, environment, slot->ID, XS_NO_ID, slot, XS_GET_ONLY);
+		mxBehaviorDefineOwnProperty(the, environment, slot->ID, 0, slot, XS_GET_ONLY);
 		slot--;
 	}
 	slot = bottom;
 	while (slot <= middle) {
 		if (slot->kind == XS_NULL_KIND) {
-			property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+			property = mxBehaviorSetProperty(the, global, slot->ID, 0, XS_OWN);
 			if (!(property->flag & XS_DONT_DELETE_FLAG))
 				property->flag = XS_DONT_DELETE_FLAG;
 			slot->value.closure = property;
@@ -1367,9 +1378,9 @@ void fxRunProgramEnvironment(txMachine* the)
 	}
 	while (slot >= bottom) {
 		if (slot->kind == XS_UNDEFINED_KIND) {
-			property = mxBehaviorGetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+			property = mxBehaviorGetProperty(the, global, slot->ID, 0, XS_OWN);
 			if (!property) {
-				property = mxBehaviorSetProperty(the, global, slot->ID, XS_NO_ID, XS_OWN);
+				property = mxBehaviorSetProperty(the, global, slot->ID, 0, XS_OWN);
 				property->flag = XS_DONT_DELETE_FLAG;
 			}
 			slot->value.closure = property;

@@ -33,7 +33,7 @@ void PiuBehaviorOnCreate(void* it)
 	}
 }
 
-void PiuBehaviorOnDefaultID(void* it, xsIndex id)
+void PiuBehaviorOnDefaultID(void* it, xsIdentifier id)
 {
 	PiuContent* content = it;
 	if ((*content)->behavior) {
@@ -63,7 +63,7 @@ void PiuBehaviorOnDraw(void* it, PiuRectangle area)
 	}
 }
 
-void PiuBehaviorOnFitID(void* it, xsIndex id, PiuDimension dimension)
+void PiuBehaviorOnFitID(void* it, xsIdentifier id, PiuDimension dimension)
 {
 	PiuContent* content = it;
 	if ((*content)->behavior) {
@@ -78,7 +78,7 @@ void PiuBehaviorOnFitID(void* it, xsIndex id, PiuDimension dimension)
 	}
 }
 
-PiuDimension PiuBehaviorOnMeasureID(void* it, xsIndex id, PiuDimension dimension)
+PiuDimension PiuBehaviorOnMeasureID(void* it, xsIdentifier id, PiuDimension dimension)
 {
 	PiuContent* content = it;
 	if ((*content)->behavior) {
@@ -94,7 +94,7 @@ PiuDimension PiuBehaviorOnMeasureID(void* it, xsIndex id, PiuDimension dimension
 	return dimension;
 }
 
-PiuBoolean PiuBehaviorOnMouseID(void* it, xsIndex id, PiuCoordinate x, PiuCoordinate y)
+PiuBoolean PiuBehaviorOnMouseID(void* it, xsIdentifier id, PiuCoordinate x, PiuCoordinate y)
 {
 	PiuBoolean result = 0;
 	PiuContent* content = it;
@@ -111,7 +111,7 @@ PiuBoolean PiuBehaviorOnMouseID(void* it, xsIndex id, PiuCoordinate x, PiuCoordi
 	return result;
 }
 
-void PiuBehaviorOnTouchID(void* it, xsIndex id, xsIntegerValue index, PiuCoordinate x, PiuCoordinate y, double ticks, PiuTouchLink* link)
+void PiuBehaviorOnTouchID(void* it, xsIdentifier id, xsIntegerValue index, PiuCoordinate x, PiuCoordinate y, double ticks, PiuTouchLink* link)
 {
 	PiuContent* content = it;
 	if ((*content)->behavior) {

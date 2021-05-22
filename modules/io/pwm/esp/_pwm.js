@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,20 +18,25 @@
  *
  */
 
-class Analog @ "xs_analog_destructor" {
-	constructor(options) @ "xs_analog_constructor"
-	close() @ "xs_analog_close"
-	read() @ "xs_analog_read"
+class PWM @"xs_pwm_destructor_" {
+    constructor(dictionary) @ "xs_pwm_constructor_"
+    close() @ "xs_pwm_close_"
+    write() @ "xs_pwm_write_"
+    
+    get hz() @ "xs_pwm_get_hz_"
 
-	get resolution() @ "xs_analog_get_resolution"
+    get resolution() {
+        return 10;
+    }
 
-	get format() {
-		return "number";
-	}
-	set format(value) {
-		if ("number" !== value)
-			throw new RangeError;
-	}
+    get format() {
+        return "number";
+    }
+
+    set format(value) {
+        if ("number" !== value)
+            throw new RangeError;
+    }
 }
 
-export default Analog;
+export default PWM;

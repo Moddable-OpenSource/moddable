@@ -35,6 +35,7 @@
  *       limitations under the License.
  */
 
+#define _GNU_SOURCE
 #include "xsCommon.h"
 #ifndef mxUseDefaultCStackLimit
 	#define mxUseDefaultCStackLimit 1
@@ -359,7 +360,7 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_EXPONENTIATION */,
 	1 /* XS_CODE_EXTEND */,
 	1 /* XS_CODE_FALSE */,
-	1 /* XS_CODE_FIELD_FUNCTION */,
+	0 /* XS_CODE_FIELD_FUNCTION */,
 	0 /* XS_CODE_FILE */,
 	1 /* XS_CODE_FOR_AWAIT_OF */,
 	1 /* XS_CODE_FOR_IN */,
@@ -1007,9 +1008,9 @@ txString fxUTF8Encode(txString string, txInteger character)
 	return (txString)p;
 }
 
-txInteger fxUTF8Length(txInteger character)
+txSize fxUTF8Length(txInteger character)
 {
-	txInteger length;
+	txSize length;
 	if (character < 0)
 		length = 0;
 	else if (character == 0)
@@ -1027,12 +1028,12 @@ txInteger fxUTF8Length(txInteger character)
 	return length;
 }
 
-txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset)
+txSize fxUTF8ToUnicodeOffset(txString theString, txSize theOffset)
 {
 	txU1* p = (txU1*)theString;
 	txU1 c;
-	txInteger unicodeOffset = 0;
-	txInteger utf8Offset = 0;
+	txSize unicodeOffset = 0;
+	txSize utf8Offset = 0;
 	
 	while ((c = c_read8(p++))) {
 		if ((c & 0xC0) != 0x80) {
@@ -1048,11 +1049,11 @@ txInteger fxUTF8ToUnicodeOffset(txString theString, txInteger theOffset)
 		return -1;
 }
 
-txInteger fxUnicodeLength(txString theString)
+txSize fxUnicodeLength(txString theString)
 {
 	txU1* p = (txU1*)theString;
 	txU1 c;
-	txInteger anIndex = 0;
+	txSize anIndex = 0;
 	
 	while ((c = c_read8(p++))) {
 		if ((c & 0xC0) != 0x80)
@@ -1061,12 +1062,12 @@ txInteger fxUnicodeLength(txString theString)
 	return anIndex;
 }
 
-txInteger fxUnicodeToUTF8Offset(txString theString, txInteger theOffset)
+txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset)
 {
 	txU1* p = (txU1*)theString;
 	txU1 c;
-	txInteger unicodeOffset = 0;
-	txInteger utf8Offset = 0;
+	txSize unicodeOffset = 0;
+	txSize utf8Offset = 0;
 	
 	while ((c = c_read8(p++))) {
 		if ((c & 0xC0) != 0x80) {

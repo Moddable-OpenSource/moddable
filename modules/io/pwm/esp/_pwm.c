@@ -43,7 +43,7 @@ struct PWMRecord {
 typedef struct PWMRecord PWMRecord;
 typedef struct PWMRecord *PWM;
 
-void xs_pwm_constructor(xsMachine *the)
+void xs_pwm_constructor_(xsMachine *the)
 {
 	PWM pwm;
 	int pin;
@@ -88,7 +88,7 @@ void xs_pwm_constructor(xsMachine *the)
     builtinUsePin(pin);
 }
 
-void xs_pwm_destructor(void *data)
+void xs_pwm_destructor_(void *data)
 {
 	PWM pwm = data;
 	if (!pwm) return;
@@ -101,17 +101,17 @@ void xs_pwm_destructor(void *data)
     c_free(pwm);
 }
 
-void xs_pwm_close(xsMachine *the)
+void xs_pwm_close_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
 	if (!pwm) return;
 
 	xsForget(pwm->obj);
-	xs_pwm_destructor(pwm);
+	xs_pwm_destructor_(pwm);
 	xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_pwm_write(xsMachine *the)
+void xs_pwm_write_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
     int value = xsmcToInteger(xsArg(0));
@@ -122,7 +122,7 @@ void xs_pwm_write(xsMachine *the)
     analogWrite(pwm->pin, value);
 }
 
-void xs_pwm_get_hz(xsMachine *the)
+void xs_pwm_get_hz_(xsMachine *the)
 {
 	extern uint32_t pwm_freq;	// from core_esp8266_wiring_pwm
 	xsmcSetInteger(xsResult, pwm_freq);

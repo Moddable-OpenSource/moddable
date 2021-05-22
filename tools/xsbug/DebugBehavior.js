@@ -1123,7 +1123,7 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 		const view = new DataView(payload);
 		const date = new Date();
 		view.setUint32(0, Math.round(date.valueOf() / 1000)); // big-endian
-		view.setUint32(4, date.getTimezoneOffset());
+		view.setUint32(4, date.getTimezoneOffset() * -60);
 		view.setUint32(8, 0);
 		await this.machine.doBinaryCommand(9, payload);
 		this.machine.doCommand(mxGoCommand);

@@ -19,7 +19,7 @@
  */
 
 import Timer from "timer";
-import Host from "embedded:provider/builtin";
+import device from "embedded:provider/builtin";
 
 class System {
 	static deepSleep() @ "xs_system_deepSleep"
@@ -42,4 +42,4 @@ class System {
 }
 
 globalThis.System = System;
-globalThis.Host = Object.freeze(Host, true);
+globalThis.device = Object.freeze(device, true);

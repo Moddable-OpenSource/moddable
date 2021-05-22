@@ -117,11 +117,11 @@ txString fxCombinePath(txParser* parser, txString base, txString name)
 	separator = strrchr(base, mxSeparator);
 	if (separator) {
 		separator++;
-		baseLength = separator - base;
+		baseLength = mxPtrDiff(separator - base);
 	}
 	else
 		baseLength = 0;
-	nameLength = c_strlen(name);
+	nameLength = mxStringLength(name);
 	path = fxNewParserChunk(parser, baseLength + nameLength + 1);
 	if (baseLength)
 		c_memcpy(path, base, baseLength);
@@ -160,7 +160,7 @@ txString fxRealDirectoryPath(txParser* parser, txString path)
 		attributes = GetFileAttributes(buffer);
 		if ((attributes != 0xFFFFFFFF) && (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
   	 		strcat(buffer, "\\");
-			return fxNewParserString(parser, buffer, strlen(buffer));
+			return fxNewParserString(parser, buffer, mxStringLength(buffer));
 		}
 	}
 #else
@@ -170,7 +170,7 @@ txString fxRealDirectoryPath(txParser* parser, txString path)
 		if (stat(buffer, &a_stat) == 0) {
 			if (S_ISDIR(a_stat.st_mode)) {
   	 			strcat(buffer, "/");
-				return fxNewParserString(parser, buffer, strlen(buffer));
+				return fxNewParserString(parser, buffer, mxStringLength(buffer));
 			}
 		}
 	}
@@ -188,7 +188,7 @@ txString fxRealFilePath(txParser* parser, txString path)
 	if (_fullpath(buffer, path, C_PATH_MAX) != NULL) {
 		attributes = GetFileAttributes(buffer);
 		if ((attributes != 0xFFFFFFFF) && (!(attributes & FILE_ATTRIBUTE_DIRECTORY))) {
-			return fxNewParserString(parser, buffer, strlen(buffer));
+			return fxNewParserString(parser, buffer, mxStringLength(buffer));
 		}
 	}
 #else
@@ -197,7 +197,7 @@ txString fxRealFilePath(txParser* parser, txString path)
 	if (realpath(path, buffer) != NULL) {
 		if (stat(buffer, &a_stat) == 0) {
 			if (S_ISREG(a_stat.st_mode)) {
-				return fxNewParserString(parser, buffer, strlen(buffer));
+				return fxNewParserString(parser, buffer, mxStringLength(buffer));
 			}
 		}
 	}
@@ -241,7 +241,7 @@ void fxWriteExterns(txScript* script, FILE* file)
 			fprintf(file, "extern void %s(void* data);\n", p);
 		else
 			fprintf(file, "extern void %s(xsMachine* the);\n", p);
-		p += c_strlen((char*)p) + 1;
+		p += mxStringLength((char*)p) + 1;
 	}
 }
 
@@ -260,7 +260,7 @@ void fxWriteHosts(txScript* script, FILE* file)
 			fprintf(file, "\t\t{ (xsCallback)%s, -1, -1 },\n", p);
 		else
 			fprintf(file, "\t\t{ %s, %d, %d },\n", p, length, id);
-		p += c_strlen((char*)p) + 1;
+		p += mxStringLength((char*)p) + 1;
 	}
 	fprintf(file, "\t};\n");
 	fprintf(file, "\txsResult = xsBuildHosts(%d, builders);\n", c);
@@ -274,8 +274,8 @@ void fxWriteIDs(txScript* script, FILE* file)
 	mxDecode2(p, c);
 	for (i = 0; i < c; i++) {
 		if (fxIsCIdentifier((txString)p))
-			fprintf(file, "#define xsID_%s (((xsIndex*)(the->code))[%d])\n", p, i);
-		p += c_strlen((char*)p) + 1;
+			fprintf(file, "#define xsID_%s (((xsIdentifier*)(the->code))[%d])\n", p, i);
+		p += mxStringLength((char*)p) + 1;
 	}
 }
 
@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
 				else if (rename)
 					fxReportParserError(parser, 0, "too many names");
 				else
-					rename = fxNewParserString(parser, argv[argi], strlen(argv[argi]));
+					rename = fxNewParserString(parser, argv[argi], mxStringLength(argv[argi]));
 			}
 			else if (!strcmp(argv[argi], "-t")) {
 				argi++;

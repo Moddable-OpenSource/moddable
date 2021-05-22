@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,17 +18,55 @@
  *
  */
 
+import CLI from "cli";
+import Modules from "modules";
+
 const backspace = String.fromCharCode(8);
-const newline = "\n";
+const newline = "\r\n";
+
+const primitives = Object.freeze(["Number", "Boolean", "BigInt", "String"]);
 
 class REPL @ "xs_repl_destructor" {
-	static receive() @ "xs_repl_receive"
-	static write() @ "xs_repl_write"
 	static eval() @ "xs_repl_eval"
+	static get xsVersion() @ "xs_repl_get_xsVersion"
 
 	constructor() {
-		REPL.write(newline, "Moddable REPL (version 0.0.1)", newline, newline);
 		this.history = [];
+		globalThis._ = undefined;
+		globalThis.Modules = Modules;
+		globalThis.require = Modules.importNow;
+
+		globalThis.console = {
+			log: (...str) => this.write(...str, newline)
+		};
+		globalThis.trace = (...str) => this.write(...str);
+	}
+	ready() {
+		this.write(newline, "Moddable JavaScript REPL v0.0.4", newline);
+		this.write(`  XS engine v${REPL.xsVersion.join(".")}`, newline);
+		this.write(`  ? for help`, newline);
+		this.write(newline);
+
+		const archive = Modules.archive;
+		if (archive.includes("setup"))
+			Modules.importNow("setup");
+
+		for (let i = 0; i < archive.length; i++) {
+			if (archive[i].startsWith("cli/"))
+				Modules.importNow(archive[i]);
+		}
+
+		this.prompt();
+	}
+	receive() @ "xs_repl_receive"
+	write() @ "xs_repl_write"
+	suspend(cancel) {
+		this.suspended = cancel ?? true;
+	}
+	resume() {
+		if (!this.suspended) return;
+
+		delete this.suspended;
 		this.prompt();
 	}
 	prompt() {
@@ -37,11 +75,12 @@ class REPL @ "xs_repl_destructor" {
 		this.position = 0;
 		this.escapeState = 0;
 		this.incoming = "";
-		REPL.write("> ");
+		if (!this.suspended)
+			this.write("> ");
 	}
 	poll() {
 		do {
-			let c = REPL.receive();
+			let c = this.receive();
 			if (undefined === c)
 				return;
 
@@ -70,10 +109,10 @@ class REPL @ "xs_repl_destructor" {
 						this.incoming = this.postHistory;
 					else
 						this.incoming = this.history[this.history.length - this.historyPosition];
-					REPL.write(backspace.repeat(incoming.length), this.incoming);
+					this.write(backspace.repeat(incoming.length), this.incoming);
 					if (incoming.length > this.incoming.length) {
 						const delta = incoming.length - this.incoming.length;
-						REPL.write(" ".repeat(delta),
+						this.write(" ".repeat(delta),
 								   backspace.repeat(delta));
 					}
 					this.position = this.incoming.length;
@@ -82,12 +121,24 @@ class REPL @ "xs_repl_destructor" {
 				if ((68 === c) && this.incoming) {		// left arrow
 					if (this.position > 0) {
 						this.position -= 1;
-						REPL.write(backspace);
+						this.write(backspace);
 					}
 				}
 				else if ((67 === c) && (this.position < this.incoming.length)) {		// right arrow
-					REPL.write(this.incoming[this.position]);
+					this.write(this.incoming[this.position]);
 					this.position += 1;
+				}
+				continue;
+			}
+
+			if (this.suspended) {
+				if (3 === c) {
+					if (true !== this.suspended)
+						this.suspended();
+					delete this.suspended;
+					this.incoming = "";
+					this.write("^C", newline);
+					this.prompt();
 				}
 				continue;
 			}
@@ -97,7 +148,7 @@ class REPL @ "xs_repl_destructor" {
 					break;
 
 				if (3 === c) {
-					REPL.write("^C", newline);
+					this.write("^C", newline);
 					this.prompt();
 				}
 
@@ -115,60 +166,229 @@ class REPL @ "xs_repl_destructor" {
 
 			// insert
 			c = String.fromCharCode(c);
-			REPL.write(c);
+			this.write(c);
 			if (this.position === this.incoming.length)
 				this.incoming += c;
 			else {
-				REPL.write(this.incoming.slice(this.position), backspace.repeat(this.incoming.length - this.position));
+				this.write(this.incoming.slice(this.position), backspace.repeat(this.incoming.length - this.position));
 				this.incoming = this.incoming.slice(0, this.position) + c + this.incoming.slice(this.position);
 			}
 			this.position += 1;
 		} while (true);
 
-		REPL.write(newline);
+		this.write(newline);
 		if (this.incoming) {
 			this.history.push(this.incoming);
 			while (this.history.length > 20)
 				this.history.shift();
 
 			try {
-				let result = REPL.eval(this.incoming);
-				if (undefined === result)
-					REPL.write("undefined", newline);
-				else if (null === result)
-					REPL.write("null", newline);
-				else
-					REPL.write(result.toString(), newline);
+				if (this.incoming.startsWith(".")) {
+					CLI.execute.call(this, this.incoming.slice(1));
+				}
+				else if (this.incoming.startsWith("?")) {
+					this.line(`  "globalThis" lists JavaScript global variables`);
+					this.line(`  lines that start with "." are commands`);
+					this.line(`  ".help" lists all commands`);
+					this.line(`  "Modules.host" lists built-in modules`);
+					this.line(`  "Modules.archive" lists modules from mod`);
+					this.line(`  global "_" is result of last REPL JavaScript operation`);
+					this.line(`  lines that start with "?" display this help message`);
+				}
+				else {
+					globalThis._ = REPL.eval(this.incoming);
+					this.print(_);
+				}
 			}
 			catch (e) {
-				REPL.write(e.toString(), newline);
+				this.write(e.toString(), newline);
 			}
 		}
+
 		this.prompt();
 	}
 	delete() {
 		if (this.incoming.length && this.position) {
 			if (this.position === this.incoming.length) {
-				REPL.write(backspace, " ", backspace);
+				this.write(backspace, " ", backspace);
 				this.incoming = this.incoming.slice(0, -1);
 			}
 			else {
-				let start = this.incoming.slice(0, this.position - 1);
-				let end = this.incoming.slice(this.position);
+				const start = this.incoming.slice(0, this.position - 1);
+				const end = this.incoming.slice(this.position);
 				this.incoming = start + end
-				REPL.write(backspace, end, " ", backspace.repeat(end.length + 1));
+				this.write(backspace, end, " ", backspace.repeat(end.length + 1));
 			}
 			this.position -= 1;
 		}
 	}
-}
-Object.freeze(REPL.prototype);
+	line(...args) {
+		this.write(...args, newline);
+	}
+	short(value) {
+		if (null === value)
+			return "null";
 
-global.console = {
-	log: function (...str) {
-		REPL.write(...str, newline);
+		let type = typeof value;
+		if (globalThis === value)
+			return "globals";
+
+		switch (type) {
+			case "undefined":
+				return "undefined";
+
+			case "boolean":
+			case "number":
+			case "symbol":
+				return value.toString();
+				break;
+
+			case "string":
+				return '"' + value.toString() + '"';
+
+			case "bigint":
+				return value.toString() + "n";
+
+			case "function": {
+				const body = /* value.toString().includes("[native code]") ? "{ [native code] }" : */ "{}";
+				const args = [];
+				for (let i = 0; i < value.length; i++)
+					args.push(String.fromCharCode(97 + i));
+				return `${value.prototype?.constructor ? "class" : "ƒ"} ${value.name ?? ""} (${args.join(", ")}) ${body}`;
+				}
+
+			case "object":
+				let type = Object.prototype.toString.call(value).slice(8, -1);
+				if ("RegExp" === type)
+					return value.toString();
+				return type;
+		}
+	}
+	print(value) {
+		if ((("object" !== typeof value) && ("function" !== typeof value)) || (null === value)) {
+			this.write(this.short(value) , newline);
+			return;
+		}
+
+		let type = Object.prototype.toString.call(value).slice(8, -1);
+		if (primitives.includes(type))
+			type = "Object";
+
+		if (value === globalThis)
+			type = "global";
+
+		let keys;
+		switch (type) {
+			case "RegExp":
+				this.write(value.toString(), newline);
+				break;
+
+			case "Error":
+				this.write(value.stack.toString(), newline);
+				break;
+
+			case "Array":
+			case "Atomics":
+			case "Math":
+			case "Object":
+			case "Reflect":
+				this.write(type, newline);
+				keys = Object.getOwnPropertyNames(value);
+				for (let key of keys)
+					this.write("  ", key, ": ", this.short(value[key]), newline);
+				break;
+
+			case "global":
+				this.write(type, newline);
+				keys = Object.getOwnPropertyNames(value).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(value))).sort();
+				for (let key of keys)
+					this.write("  ", key, ": ", this.short(value[key]), newline);
+				break;
+
+			case "Set":
+			case "Int8Array":
+			case "Uint8Array":
+			case "Uint8ClampedArray":
+			case "Int16Array":
+			case "Uint16Array":
+			case "Int32Array":
+			case "Uint32Array":
+			case "Int64Array":
+			case "Uint64Array":
+			case "Float32Array":
+			case "Float64Array":
+			case "BigInt64Array":
+			case "BigUint64Array":
+				this.write(type, newline);
+				for (let v of value)
+					this.write("  ", this.short(v), newline);
+				break;
+
+			case "Map":
+				this.write(type, newline);
+				for (let [k, v] of value)
+					this.write("  ", this.short(k), ": ", this.short(v), newline);
+				break;
+
+			case "ArrayBuffer":
+			case "SharedArrayBuffer": {
+				this.write(type, ", byteLength ", value.byteLength, newline);
+				for (let v of (new Uint8Array(value)))
+					this.write("  ", this.short(v), newline);
+				} break;
+
+			case "Module":
+			case "WeakMap":
+			case "WeakRef":
+			case "WeakSet":
+				this.write(type, newline);
+				break;
+
+			case "Function":
+				if (!value.prototype?.constructor)
+					this.write(this.short(value) , newline);
+				else {
+					this.write("class", " " + (value.name ?? ""), " {", newline);
+
+					let keys = Object.getOwnPropertyNames(value);
+					for (let key of keys) {
+						if (("length" === key) || ("name" === key) || ("prototype" === key))
+							continue;
+
+						let v = value[key];
+						if ("function" === typeof v)
+							this.write("  ", `static ƒ ${key}() {}`, newline);
+						else
+							this.write("  ", "static ", key, ": ", this.short(v), newline);
+					}
+
+					keys = Object.getOwnPropertyNames(value.prototype);
+					for (let key of keys) {
+						let d = Object.getOwnPropertyDescriptor(value.prototype, key);
+						if (d.get || d.set) {
+							if (d.get)
+								this.write("  ", `ƒ get ${key}() {}`, newline);
+							if (d.set)
+								this.write("  ", `ƒ set ${key}() {}`, newline);
+						}
+						else {
+							let v  = d.value;
+							if ("function" === typeof v)
+								this.write("  ", `ƒ ${key}() {}`, newline);
+							else
+								this.write("  ", key, ": ", this.short(v), newline);
+						}
+					}
+
+					this.write("}", newline);
+				}
+				break;
+
+			default:
+				this.write(type, ": ", value.toString(), newline);
+				break;
+		}
 	}
 }
-Object.freeze(global.console);
 
 export default REPL;

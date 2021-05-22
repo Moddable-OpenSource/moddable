@@ -15,9 +15,9 @@
 import Expander from "embedded:io/provider/MCP23017";
 
 const expander = new Expander({
-	i2c: Host.I2C.default,
+	i2c: device.I2C.default,
 	interrupt: {
-		io: Host.io.Digital,
+		io: device.io.Digital,
 		pin: 0
 	}
 });

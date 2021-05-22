@@ -97,31 +97,47 @@ mxImport xsBooleanValue _xsIsInstanceOf(xsMachine *, xsSlot *, xsSlot *);
 #define xsmcIsInstanceOf(_SLOT,_PROTOTYPE)	_xsIsInstanceOf(the, &_SLOT, &_PROTOTYPE)
 
 #undef xsHas
+#undef xsHasIndex
 #undef xsGet
 #undef xsGetAt
+#undef xsGetIndex
 #undef xsSet
 #undef xsSetAt
+#undef xsSetIndex
 #undef xsDelete
 #undef xsDeleteAt
-mxImport xsBooleanValue _xsHas(xsMachine *, xsSlot *, xsIntegerValue);
+
+mxImport xsBooleanValue _xsHas(xsMachine *, xsSlot *, xsIdentifier);
 #define xsmcHas(_THIS, _ID)	_xsHas(the, &_THIS, _ID)
-mxImport void _xsGet(xsMachine *, xsSlot *, xsSlot *, xsIntegerValue);
+mxImport xsBooleanValue _xsHasIndex(xsMachine *, xsSlot *, xsIndex);
+#define xsmcHasIndex(_THIS, _INDEX)	_xsHasIndex(the, &_THIS, _INDEX)
+
+mxImport void _xsGet(xsMachine *, xsSlot *, xsSlot *, xsIdentifier);
 #define xsmcGet(_SLOT, _THIS, _ID)	_xsGet(the, &_SLOT, &_THIS, _ID)
 mxImport void _xsGetAt(xsMachine *, xsSlot *, xsSlot *, xsSlot *);
 #define xsmcGetAt(_SLOT, _THIS, _AT)	_xsGetAt(the, &_SLOT, &_THIS, &_AT)
-mxImport void _xsSet(xsMachine *, xsSlot *, xsIntegerValue, xsSlot *);
+mxImport void _xsGetIndex(xsMachine *, xsSlot *, xsSlot *, xsIndex);
+#define xsmcGetIndex(_SLOT, _THIS, _INDEX)	_xsGetIndex(the, &_SLOT, &_THIS, _INDEX)
+
+mxImport void _xsSet(xsMachine *, xsSlot *, xsIdentifier, xsSlot *);
 #define xsmcSet(_THIS, _ID, _SLOT)	_xsSet(the, &_THIS, _ID, &_SLOT)
 mxImport void _xsSetAt(xsMachine *, xsSlot *, xsSlot *, xsSlot *);
 #define xsmcSetAt(_THIS, _AT, _SLOT)	_xsSetAt(the, &_THIS, &_AT, &_SLOT)
-mxImport void _xsDelete(xsMachine *, xsSlot *, xsIntegerValue);
+mxImport void _xsSetIndex(xsMachine *, xsSlot *, xsIndex, xsSlot *);
+#define xsmcSetIndex(_THIS, _INDEX, _SLOT)	_xsSetIndex(the, &_THIS, _INDEX, &_SLOT)
+
+mxImport void _xsDelete(xsMachine *, xsSlot *, xsIdentifier);
 #define xsmcDelete(_THIS, _ID)	_xsDelete(the, &_THIS, _ID)
 mxImport void _xsDeleteAt(xsMachine *, xsSlot *, xsSlot *);
 #define xsmcDeleteAt(_THIS, _AT)	_xsDeleteAt(the, &_THIS, &_AT)
-mxImport void _xsCall(xsMachine *, xsSlot *, xsSlot *, xsIntegerValue, ...);
+
+mxImport void _xsCall(xsMachine *, xsSlot *, xsSlot *, xsUnsignedValue, ...);
 #define xsmcCall(_RES, _THIS, _ID, ...)		_xsCall(the, &_RES, &_THIS, _ID, __VA_ARGS__)
 #define xsmcCall_noResult(_THIS, _ID, ...)	_xsCall(the, NULL, &_THIS, _ID, __VA_ARGS__)
-mxImport void _xsNew(xsMachine *, xsSlot *, xsSlot *, xsIntegerValue, ...);
+
+mxImport void _xsNew(xsMachine *, xsSlot *, xsSlot *, xsUnsignedValue, ...);
 #define xsmcNew(_RES, _THIS, _ID, ...)	_xsNew(the, &_RES, &_THIS, _ID, __VA_ARGS__)
+
 mxImport xsBooleanValue _xsTest(xsMachine *, xsSlot *);
 #undef xsTest
 #define xsmcTest(_SLOT)	_xsTest(the, &_SLOT)

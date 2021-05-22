@@ -40,11 +40,20 @@
 	#define ESP_SPEED_MODE LEDC_HIGH_SPEED_MODE
 #endif
 
+#ifndef MODDEF_PWM_LEDC_FREQUENCY
+	#define MODDEF_PWM_LEDC_FREQUENCY 1024
+#endif
+
+#ifndef MODDEF_PWM_LEDC_OFFVALUE
+	#define MODDEF_PWM_LEDC_OFFVALUE 0
+#endif
+
 static const ledc_timer_config_t gTimer = {
 	.duty_resolution = LEDC_TIMER_10_BIT,
-	.freq_hz = 1024,
+	.freq_hz = MODDEF_PWM_LEDC_FREQUENCY,
 	.speed_mode = ESP_SPEED_MODE,
-	.timer_num = MODDEF_PWM_LEDC_TIMER
+	.timer_num = MODDEF_PWM_LEDC_TIMER,
+	.clk_cfg = LEDC_AUTO_CLK
 };
 
 static uint8_t gLEDC = MODDEF_PWM_LEDC_CHANNEL_MAP;
@@ -61,7 +70,7 @@ void xs_pwm_destructor(void *data)
 	PWM pwm = data;
 	if (!pwm) return;
 
-	ledc_stop(ESP_SPEED_MODE, pwm->ledc, 0);
+	ledc_stop(ESP_SPEED_MODE, pwm->ledc, MODDEF_PWM_LEDC_OFFVALUE);
 	gLEDC |= 1 << pwm->ledc;
 
 	free(pwm);
@@ -96,10 +105,12 @@ void xs_pwm(xsMachine *the)
 		xsUnknownError("no ledc channel free");
 
 	ledcConfig.channel    = ledc;
-	ledcConfig.duty       = 0;
+	ledcConfig.duty       = MODDEF_PWM_LEDC_OFFVALUE ? 1024 : 0;
 	ledcConfig.gpio_num   = gpio;
 	ledcConfig.speed_mode = ESP_SPEED_MODE;
+	ledcConfig.hpoint 	  = 0;
 	ledcConfig.timer_sel  = MODDEF_PWM_LEDC_TIMER;
+	ledcConfig.intr_type  = LEDC_INTR_DISABLE;
 
 	if (ESP_OK != ledc_channel_config(&ledcConfig))
 		xsUnknownError("configure ledc channel failed");
@@ -136,6 +147,9 @@ void xs_pwm_write(xsMachine *the)
 	if (value == 1023)
 		value = 1024;
 
-	ledc_set_duty(ESP_SPEED_MODE, pwm->ledc, value);
-	ledc_update_duty(ESP_SPEED_MODE, pwm->ledc);
+	if (ESP_OK != ledc_set_duty(ESP_SPEED_MODE, pwm->ledc, value))
+		xsUnknownError("set ledc duty cycle failed");
+
+	if (ESP_OK != ledc_update_duty(ESP_SPEED_MODE, pwm->ledc))
+		xsUnknownError("update ledc duty cycle failed");
 }

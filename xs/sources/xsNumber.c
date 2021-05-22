@@ -74,7 +74,7 @@ void fxBuildNumber(txMachine* the)
 	slot = fxNextNumberProperty(the, slot, C_NAN, mxID(_NaN), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextNumberProperty(the, slot, -((txNumber)C_INFINITY), mxID(_NEGATIVE_INFINITY), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextNumberProperty(the, slot, (txNumber)C_INFINITY, mxID(_POSITIVE_INFINITY), XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewNumberInstance(txMachine* the)

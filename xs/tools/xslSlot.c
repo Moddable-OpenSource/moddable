@@ -176,30 +176,28 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 		case XSL_PROXY_TARGET_FLAG: fprintf(stderr, ".(target)"); break;
 		default: fprintf(stderr, ": "); break;
 		}
-		if (link->id < 0) {
-			if (link->id != XS_NO_ID) {
-				char* string = fxGetKeyName(the, link->id);
-				if (string) {
-					if (link->flag == XSL_MODULE_FLAG) {
-						char* dot = c_strrchr(string, '.');
-						if (dot) {
-							*dot = 0;
-							fprintf(stderr, "\"%s\"", string + linker->baseLength);
-							*dot = '.';
-						}
-						else
-							fprintf(stderr, "%s", string);
-					}
-					else if (link->flag == XSL_GLOBAL_FLAG) {
-						fprintf(stderr, "globalThis."); 
-						fprintf(stderr, "%s", string);
+		if (link->id != XS_NO_ID) {
+			char* string = fxGetKeyName(the, link->id);
+			if (string) {
+				if (link->flag == XSL_MODULE_FLAG) {
+					char* dot = c_strrchr(string, '.');
+					if (dot) {
+						*dot = 0;
+						fprintf(stderr, "\"%s\"", string + linker->baseLength);
+						*dot = '.';
 					}
 					else
 						fprintf(stderr, "%s", string);
 				}
+				else if (link->flag == XSL_GLOBAL_FLAG) {
+					fprintf(stderr, "globalThis."); 
+					fprintf(stderr, "%s", string);
+				}
 				else
-					fprintf(stderr, "%d", link->id);
+					fprintf(stderr, "%s", string);
 			}
+			else
+				fprintf(stderr, "%d", link->id);
 		}
 		else 
 			fprintf(stderr, "%d", link->id);
@@ -284,7 +282,7 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 			txInteger length = (txInteger)fxGetIndexSize(the, property);
 			while (length > 0) {
 				if (item->kind == XS_REFERENCE_KIND) {
-					mxPushLink(propertyLink,  (txInteger)(item->next), XSL_ITEM_FLAG);
+					mxPushLink(propertyLink, *((txInteger*)item), XSL_ITEM_FLAG);
 					fxCheckInstanceAliases(the, item->value.reference, list);
 					mxPopLink(propertyLink);
 				}
@@ -479,8 +477,8 @@ void fxLinkerScriptCallback(txMachine* the)
 						the->stack->value.hostFunction.IDs = NULL;
 					}
 					fxArrayCacheItem(the, the->stack + 1, the->stack);
-					the->stack++;
-					p += c_strlen((char*)p) + 1;
+					mxPop();
+					p += mxStringLength((char*)p) + 1;
 				}
 			}
 			break;
@@ -498,7 +496,7 @@ txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length)
 	txSlot* property;
 	if (linker->stripFlag)
 		return C_NULL;
-	property = mxBehaviorGetProperty(the, instance, mxID(_length), XS_NO_ID, XS_OWN);
+	property = mxBehaviorGetProperty(the, instance, mxID(_length), 0, XS_OWN);
 	if (!property)
 		property = fxNextIntegerProperty(the, fxLastProperty(the, instance), 0, mxID(_length), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	if (length <= 0x7FFFFFFF) {
@@ -512,14 +510,14 @@ txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length)
 	return property;
 }
 
-txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txIndex index, txInteger former, txString prefix)
+txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txSlot* property;
 	txSlot* key;
 	if (linker->stripFlag)
 		return C_NULL;
-	property = mxBehaviorGetProperty(the, instance, mxID(_name), XS_NO_ID, XS_OWN);
+	property = mxBehaviorGetProperty(the, instance, mxID(_name), 0, XS_OWN);
 	if (!property)
         property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
     if (id) {
@@ -549,7 +547,7 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txInteger id, txInde
 			property->value = mxEmptyString.value;
 		}
 	}
-	else {
+	else if (former) {
 		char buffer[16];
 		fxCopyStringC(the, property, fxNumberToString(the->dtoa, index, buffer, sizeof(buffer), 0, 0));	
 	}
@@ -585,7 +583,7 @@ void fxPrepareInstance(txMachine* the, txSlot* instance)
 txInteger fxPrepareHeap(txMachine* the)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	txID aliasCount = 0;
+	txID aliasCount = 1;
 	txInteger index = linker->projectionIndex;
 	txSlot *heap, *slot, *limit, *item;
 	txLinkerProjection* projection;
@@ -824,7 +822,7 @@ void fxPrepareProjection(txMachine* the)
 	while (heap) {
 		txSlot* slot = heap + 1;
 		txSlot* limit = heap->value.reference;
-		projection = fxNewLinkerChunkClear(linker, sizeof(txLinkerProjection) + (limit - slot) * sizeof(txInteger));
+		projection = fxNewLinkerChunkClear(linker, sizeof(txLinkerProjection) + (mxPtrDiff(limit - slot) * sizeof(txInteger)));
 		projection->heap = heap;
 		projection->limit = limit;
 		*projectionAddress = projection;
@@ -897,8 +895,7 @@ void fxPrintHeap(txMachine* the, FILE* file, txInteger count)
 					txInteger size = (txInteger)fxGetIndexSize(the, slot);
 					fprintf(file, "\t{ ");
 					fxPrintAddress(the, file, slot->next);
-					fprintf(file, ", {.ID = ");
-					fxPrintID(the, file, slot->ID);
+					fprintf(file, ", {.ID = %d", slot->ID);
 					fprintf(file, ", .flag = 0x%x", slot->flag | XS_MARK_FLAG);
 					fprintf(file, ", .kind = XS_ARRAY_KIND}, .value = { .array = { (txSlot*)&gxHeap[%d], %d } }},\n", (int)index + 1, (int)slot->value.array.length);
 					fprintf(file, "/* %.4d */", index);
@@ -932,8 +929,8 @@ void fxPrintID(txMachine* the, FILE* file, txID id)
 	txLinker* linker = (txLinker*)(the->context);
 	if (id == XS_NO_ID)
 		fprintf(file, "XS_NO_ID");
-	else if (id < 0) {
-		txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+	else {
+		txLinkerSymbol* linkerSymbol = linker->symbolArray[id];
 		if (linkerSymbol) {
 			if (fxIsCIdentifier(linker, linkerSymbol->string))
 				fprintf(file, "xsID_%s", linkerSymbol->string);
@@ -948,8 +945,6 @@ void fxPrintID(txMachine* the, FILE* file, txID id)
 				fprintf(file, "%d /* ? */", id);
 		}
 	}
-	else
-		fprintf(file, "%d", id);
 }
 
 void fxPrintNumber(txMachine* the, FILE* file, txNumber value) 
@@ -976,12 +971,19 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	fprintf(file, "\t{ ");
 	if (flag & XS_DEBUG_FLAG) {
 		flag &= ~XS_DEBUG_FLAG;
-		fprintf(file, "(txSlot*)%ld", (long int)slot->next);
+		fprintf(file, "(txSlot*)%d", *((txInteger*)slot));
 	}
 	else
 		fxPrintAddress(the, file, slot->next);
 	fprintf(file, ", {.ID = ");
-	fxPrintID(the, file, slot->ID);
+	if (slot->kind == 	XS_INSTANCE_KIND)
+		fprintf(file, "%d", slot->ID);
+	else if ((slot->kind == XS_CODE_X_KIND) || (slot->kind == XS_CALLBACK_X_KIND))
+		fxPrintID(the, file, slot->ID);
+	else if (slot->flag & XS_INTERNAL_FLAG)
+		fprintf(file, "%d", slot->ID);
+	else
+		fxPrintID(the, file, slot->ID);
 	fprintf(file, ", ");
 	if (slot->kind == 	XS_INSTANCE_KIND)
 		fprintf(file, ".flag = 0x%x, ", slot->flag | flag | XS_DONT_MARSHALL_FLAG);

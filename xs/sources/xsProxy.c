@@ -93,7 +93,7 @@ void fxBuildProxy(txMachine* the)
 	mxProxyConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Proxy_revocable), 2, mxID(_revocable), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -155,7 +155,7 @@ txSlot* fxCheckProxyFunction(txMachine* the, txSlot* proxy, txID index)
 	if (!proxy->value.proxy.target)
 		mxTypeError("(proxy).%s: target is no object", fxName(the, mxID(index)));
 	mxPushReference(proxy->value.proxy.handler);
-	fxGetID(the, mxID(index));
+	mxGetID(mxID(index));
 	function = the->stack;
 	if (mxIsUndefined(function) || (mxIsNull(function)))
 		function = C_NULL;
@@ -603,13 +603,13 @@ void fxProxyOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* list)
 		mxRunCount(1);
 		reference = the->stack;
 		mxPushSlot(reference);
-		fxGetID(the, mxID(_length));
+		mxGetID(mxID(_length));
 		length = fxToInteger(the, the->stack++);
 		item = list;
 		index = 0;
 		while (index < length) {
 			mxPushSlot(reference);
-			fxGetIndex(the, index);
+			mxGetIndex(index);
 			at = the->stack;
 			test = (at->kind == XS_SYMBOL_KIND) ? 1 : 0;
 			if (test || (at->kind == XS_STRING_KIND) || (at->kind == XS_STRING_X_KIND)) {
@@ -864,7 +864,7 @@ void fx_Proxy_revocable(txMachine* the)
 
 void fx_Proxy_revoke(txMachine* the)
 {
-	txSlot* property = mxBehaviorGetProperty(the, mxFunction->value.reference, mxID(_proxy), XS_NO_ID, XS_ANY);
+	txSlot* property = mxBehaviorGetProperty(the, mxFunction->value.reference, mxID(_proxy), 0, XS_ANY);
 	if (property && (property->kind == XS_REFERENCE_KIND)) {
 		txSlot* instance = property->value.reference;
 		txSlot* proxy = instance->next;

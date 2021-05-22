@@ -26,7 +26,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SPI from "embedded:io/spi";
 
-globalThis.Host = {
+const device = {
 	I2C: {
 		default: {
 			io: I2C,
@@ -61,4 +61,4 @@ globalThis.Host = {
 	}
 };
 
-export default Host;
+export default device;

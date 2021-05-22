@@ -197,7 +197,7 @@ xs_x509_decodeExtension(xsMachine *the)
 	int i;
 
 	for (i = 0; i < idlen; i++)
-		extid[i] = xsToInteger(xsGet(xsArg(1), i));
+		extid[i] = xsToInteger(xsGetIndex(xsArg(1), i));
 	resolveBuffer(the, &xsArg(0), &p, &count);
 	sz = count;
 	savep = p;

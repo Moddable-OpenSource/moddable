@@ -199,7 +199,7 @@ void fxBuildAtomics(txMachine* the)
 	mxSharedArrayBufferConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -359,7 +359,7 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 		stop = start;
 	length = stop - start;
 	mxPushSlot(mxThis);
-	fxGetID(the, mxID(_constructor));
+	mxGetID(mxID(_constructor));
 	fxToSpeciesConstructor(the, &mxSharedArrayBufferConstructor);
 	mxNew();
 	mxPushInteger(length);

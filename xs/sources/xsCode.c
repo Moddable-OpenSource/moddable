@@ -171,11 +171,11 @@ txScript* fxParserCode(txParser* parser)
 	txCoder coder;
 	txByteCode* code;
 	txScript* script;
-	txInteger size, delta, offset;
+	txSize size, delta, offset;
 	txSymbol* symbol;
 	txSymbol** address;
 	txSize c, i;
-	txID id;
+	txID id, count;
 	txSize total;
 	txByte* p;
 	txHostNode* node;
@@ -196,7 +196,7 @@ txScript* fxParserCode(txParser* parser)
 			fxCoderAddByte(&coder, 1, XS_CODE_GLOBAL);
 			fxCoderAddSymbol(&coder, 0, XS_CODE_GET_VARIABLE, parser->errorSymbol);
 			fxCoderAddByte(&coder, 2, XS_CODE_NEW);
-			fxCoderAddString(&coder, 1, XS_CODE_STRING_1, c_strlen(parser->errorMessage), parser->errorMessage);
+			fxCoderAddString(&coder, 1, XS_CODE_STRING_1, mxStringLength(parser->errorMessage), parser->errorMessage);
 			fxCoderAddInteger(&coder, -3, XS_CODE_RUN_1, 1);
 			fxCoderAddByte(&coder, -1, XS_CODE_THROW);
 		}
@@ -242,6 +242,9 @@ txScript* fxParserCode(txParser* parser)
 			size += 2;
 			break;
 
+		case XS_CODE_LINE:
+			size += 3;
+			break;
 		case XS_CODE_ASYNC_FUNCTION:
 		case XS_CODE_ASYNC_GENERATOR_FUNCTION:
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
@@ -257,7 +260,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_VARIABLE:
 		case XS_CODE_EVAL_PRIVATE:
 		case XS_CODE_EVAL_REFERENCE:
-		case XS_CODE_LINE:
 		case XS_CODE_NAME:
 		case XS_CODE_NEW_CLOSURE:
 		case XS_CODE_NEW_LOCAL:
@@ -267,7 +269,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_SUPER:
 		case XS_CODE_SET_VARIABLE:
 		case XS_CODE_SYMBOL:
-			size += 3;
+			size += 1 + sizeof(txID);
 			break;
 			
 		case XS_CODE_STRING_1:
@@ -411,6 +413,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
+		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -432,7 +435,7 @@ txScript* fxParserCode(txParser* parser)
 			symbol = ((txSymbolCode*)code)->symbol;
 			if (symbol && symbol->string)
 				symbol->usage++;
-			size += 3;
+			size += 1 + sizeof(txID);
 			break;
 			
 		case XS_CODE_CONST_CLOSURE_1:
@@ -540,8 +543,8 @@ txScript* fxParserCode(txParser* parser)
 	
 	address = parser->symbolTable;
 	c = parser->symbolModulo;
-	id = 0;
-	total = 2;
+	id = 1;
+	total = sizeof(txID);
 	for (i = 0; i < c; i++) {
 		txSymbol* symbol = *address;
 		while (symbol) {
@@ -554,6 +557,7 @@ txScript* fxParserCode(txParser* parser)
 		}
 		address++;
 	}
+	count = id;
 		
 	script->codeBuffer = c_malloc(size);
 	if (!script->codeBuffer) goto bail;
@@ -576,7 +580,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BRANCH_STATUS_1:
 		case XS_CODE_CATCH_1:
 		case XS_CODE_CODE_1:
-			offset = p + 1 - script->codeBuffer;
+			offset = mxPtrDiff(p + 1 - script->codeBuffer);
 			s1 = (txS1)(((txBranchCode*)code)->target->offset - offset);
 			*p++ = s1;
 			break;
@@ -588,7 +592,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BRANCH_STATUS_2:
 		case XS_CODE_CATCH_2:
 		case XS_CODE_CODE_2:
-			offset = p + 2 - script->codeBuffer;
+			offset = mxPtrDiff(p + 2 - script->codeBuffer);
 			s2 = (txS2)(((txBranchCode*)code)->target->offset - offset);
 			mxEncode2(p, s2);
 			break;
@@ -600,7 +604,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BRANCH_STATUS_4:
 		case XS_CODE_CATCH_4:
 		case XS_CODE_CODE_4:
-			offset = p + 4 - script->codeBuffer;
+			offset = mxPtrDiff(p + 4 - script->codeBuffer);
 			s4 = (txS4)(((txBranchCode*)code)->target->offset  - offset);
 			mxEncode4(p, s4);
 			break;
@@ -610,6 +614,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
+		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -630,10 +635,10 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SYMBOL:
 			symbol = ((txSymbolCode*)code)->symbol;
 			if (symbol && symbol->string)
-				s2 = (txS2)symbol->ID;
+				id = symbol->ID;
 			else
-				s2 = -1;
-			mxEncode2(p, s2);
+				id = XS_NO_ID;
+			mxEncodeID(p, id);
 			break;
 			
 		case XS_CODE_ARGUMENT:
@@ -823,6 +828,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
+		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -953,7 +959,7 @@ txScript* fxParserCode(txParser* parser)
 	script->symbolsSize = total;
 	
 	p = script->symbolsBuffer;
-	mxEncode2(p, id);
+	mxEncodeID(p, count);
 	
 	address = parser->symbolTable;
 	c = parser->symbolModulo;
@@ -971,10 +977,10 @@ txScript* fxParserCode(txParser* parser)
 	
 	c = (txS2)(parser->hostNodeIndex);
 	if (c) {
-		size = 2;
+		size = sizeof(txID);
 		node = parser->firstHostNode;
 		while (node) {
-			size += 3 + node->at->length + 1;
+			size += 1 + sizeof(txID) + node->at->length + 1;
 			node = node->nextHostNode;
 		}
 	
@@ -983,15 +989,15 @@ txScript* fxParserCode(txParser* parser)
 		script->hostsSize = size;
 	
 		p = script->hostsBuffer;
-		mxEncode2(p, c);
+		mxEncodeID(p, c);
 		node = parser->firstHostNode;
 		while (node) {
 			*p++ = (txS1)(node->paramsCount);
 			if (node->symbol)
-				c = (txS2)node->symbol->ID;
+				c = node->symbol->ID;
 			else
-				c = -1;
-			mxEncode2(p, c);
+				c = XS_NO_ID;
+			mxEncodeID(p, c);
 			c_memcpy(p, node->at->value, node->at->length);
 			p += node->at->length;
 			*p++ = 0;

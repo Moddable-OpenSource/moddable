@@ -47,6 +47,9 @@ typedef struct {
 
 static void fxNodeDistribute(void* it, txNodeCall call, void* param);
 
+static void fxCheckFunction(txParser* parser);
+static void fxCheckGenerator(txParser* parser);
+
 static void fxArrayNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxArrayBindingNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxAssignNodeDistribute(void* it, txNodeCall call, void* param);
@@ -133,6 +136,46 @@ void fxIncludeTree(txParser* parser, void* stream, txGetter getter, txUnsigned f
 	parser->path = symbol;
 }
 
+void fxCheckFunction(txParser* parser)
+{
+	txNode* node = parser->root;
+	if (node->description->token == XS_TOKEN_PROGRAM) {
+		node = ((txProgramNode*)node)->body;
+		if (node->description->token == XS_TOKEN_STATEMENT) {
+			node = ((txStatementNode*)node)->expression;
+			if (node->description->token == XS_TOKEN_EXPRESSIONS) {
+				txNodeList* list = ((txExpressionsNode*)node)->items;
+				if (list->length == 1) {
+					node = list->first;
+					if (node->description->token == XS_TOKEN_FUNCTION)
+						return;
+				}
+			}
+		}
+	}
+	fxReportParserError(parser, parser->line, "no function");
+}
+
+void fxCheckGenerator(txParser* parser)
+{
+	txNode* node = parser->root;
+	if (node->description->token == XS_TOKEN_PROGRAM) {
+		node = ((txProgramNode*)node)->body;
+		if (node->description->token == XS_TOKEN_STATEMENT) {
+			node = ((txStatementNode*)node)->expression;
+			if (node->description->token == XS_TOKEN_EXPRESSIONS) {
+				txNodeList* list = ((txExpressionsNode*)node)->items;
+				if (list->length == 1) {
+					node = list->first;
+					if (node->description->token == XS_TOKEN_GENERATOR)
+						return;
+				}
+			}
+		}
+	}
+	fxReportParserError(parser, parser->line, "no generator function");
+}
+
 void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsigned flags, txString* name)
 {
 	mxTryParser(parser) {
@@ -148,7 +191,7 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 	
 		parser->root = NULL;
 	
-		parser->flags &= ~mxEvalFlag;
+		parser->flags &= ~(mxEvalFlag | mxFunctionFlag | mxGeneratorFlag);
 		if (!(parser->flags & mxProgramFlag))
 			parser->flags |= mxStrictFlag | mxAsyncFlag;
 		fxGetNextCharacter(parser);
@@ -167,6 +210,10 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 		fxGetNextToken(parser);
 		if (parser->flags & mxProgramFlag) {
 			fxProgram(parser);
+			if (flags & mxFunctionFlag)
+				fxCheckFunction(parser);
+			else if (flags & mxGeneratorFlag)
+				fxCheckGenerator(parser);
 		}
 		else {
 			fxModule(parser);

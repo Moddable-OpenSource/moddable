@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,6 +20,7 @@
 
 import I2C from "pins/i2c";
 import Time from "time";
+import Timer from "timer";
 
 class GT911 extends I2C {
 	#until;
@@ -27,25 +28,59 @@ class GT911 extends I2C {
 
 	constructor(dictionary) {
 		super({
-			address: 0x14,
+			address: 0x5D,
+			hz: 200_000,		// ....data sheet warns about speeds over 200_000
 			...dictionary
 		});
 
 		// check id
 		super.write(0x81, 0x40);
-		let data = super.read(6);
+		const data = super.read(3);
 		const id = String.fromCharCode(data[0]) + String.fromCharCode(data[1]) + String.fromCharCode(data[2]);
 		if ("911" !== id)
 			throw new Error("unrecognized");
 
-		// check configuration
-		super.write(0x80, 0x47);
-		data = super.read(40);		//@@ 186
+		if (dictionary?.config) {
+			const start = 0x8047, end = 0x80FF;
+			const config = dictionary.config;
+			if (config.length !== (end - start))
+				throw new Error("bad config");
 
-		const view = new DataView(data.buffer);
-		this.maxX = view.getInt16(1, true);
-		this.maxY = view.getInt16(3, true);
-		this.maxTouch = view.getUint8(5) & 0x0F;
+			// see if configuration needs update
+			let update = false;
+			for (let address = start, step = 16; address < end; address += step) {
+				let use = step;
+				if ((address + use) > end)
+					use = end - address;
+				super.write(address >> 8, address & 0xff);
+				const data = super.read(use);
+				for (let i = 0, offset = address - start; i < use; i++, offset++) {
+					if (data[i] !== config[offset])
+						update = true;
+				}
+			}
+
+			if (update) {	// write configuration
+				let checksum = 0;
+				for (let address = start, step = 16, offset = 0; address < end; address += step, offset += step) {
+					let use = step;
+					if ((address + use) > end)
+						use = end - address;
+					const slice = new  Uint8Array(use);
+					for (let i = 0; i < use; i++)
+						slice[i] = config[offset + i];
+
+					super.write(address >> 8, address & 0xff, slice);
+
+					for (let i = 0; i < use; i++)
+						checksum += slice[i];
+				}
+				checksum = ((~checksum) + 1) & 0xFF;
+				super.write(end >> 8, end & 0xff, checksum, 1);
+
+				Timer.delay(100);
+			}
+		}
 
 		super.write(0x81, 0x4E, 0);		// ready for next reading
 	}
@@ -58,7 +93,7 @@ class GT911 extends I2C {
 			this.#data = data = new Uint8Array(byteLength);
 		super.read(byteLength, data.buffer);
 
-		if (!(data[0] & 0x80) && target[0].state && (Time.ticks < this.#until)) {
+		if (!(data[0] & 0x80) && (0x7F & target[0].state) && (Time.ticks < this.#until)) {
 			for (let i = 0; i < target.length; i++)
 				target[i].state |= 0x80;
 			return;						// can take 10 to 15 ms for the next reading to be available

@@ -224,11 +224,11 @@ void PiuPort_drawString(xsMachine* the)
 	PiuCoordinate x, y;
 	PiuDimension w, sw;
 	if (!view) xsUnknownError("out of sequence");
-	string = PiuString(xsArg(0));
 	style = PIU(Style, xsArg(1));
 	if ((*style)->font == NULL)
 		PiuStyleLookupFont(style);
 	PiuColorDictionary(the, &xsArg(2), &color);
+	string = PiuString(xsArg(0));
 	x = xsToPiuCoordinate(xsArg(3));
 	y = xsToPiuCoordinate(xsArg(4));
 	w = (c > 5) ? xsToPiuDimension(xsArg(5)) : 0;
@@ -249,10 +249,10 @@ void PiuPort_drawStyle(xsMachine* the)
 	PiuBoolean ellipsis;
 	PiuState state;
 	if (!view) xsUnknownError("out of sequence");
-	string = PiuString(xsArg(0));
 	style = PIU(Style, xsArg(1));
 	if ((*style)->font == NULL)
 		PiuStyleLookupFont(style);
+	string = PiuString(xsArg(0));
 	bounds.x = xsToPiuCoordinate(xsArg(2));
 	bounds.y = xsToPiuCoordinate(xsArg(3));
 	bounds.width = xsToPiuDimension(xsArg(4));

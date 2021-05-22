@@ -169,7 +169,7 @@ void xs_i2c_write(xsMachine *the)
 			if ((len + l) > sizeof(buffer))
 				xsUnknownError("40 byte write limit");
 			for (j = 0; j < l; j++) {
-				xsmcGet(xsVar(0), xsArg(i), j);
+				xsmcGetIndex(xsVar(0), xsArg(i), j);
 				buffer[len++] = xsmcToInteger(xsVar(0));
 			}
 		}

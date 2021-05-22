@@ -24,7 +24,7 @@
 typedef struct {
 	xsNumberValue	from;
 	xsNumberValue	range;
-	xsIndex			id;
+	xsIdentifier	id;
 } TweenPropertyRecord, *TweenProperty;
 
 void xs_TweenProperty_destructor(void *data)
@@ -51,7 +51,7 @@ void xs_TweenProperty_tween(xsMachine *the)
 }
 
 typedef struct {
-	xsIndex			id;
+	xsIdentifier	id;
 	uint16_t		length;
 	xsSlot			*values;
 } TweenOnPropertyRecord, *TweenOnProperty;
@@ -103,8 +103,8 @@ void xs_TweenOnProperty_tween(xsMachine *the)
 	fromI = (int)c_floor(index);
 	toI = ((fromI + 1) < tr->length) ? (fromI + 1) : tr->length;
 
-	from = xsToNumber(xsGet(xsVar(0), fromI));
-	range = xsToNumber(xsGet(xsVar(0), toI)) - from;
+	from = xsToNumber(xsGetIndex(xsVar(0), fromI));
+	range = xsToNumber(xsGetIndex(xsVar(0), toI)) - from;
 	result = from + ((index - fromI) * range);
 	xsSet(xsArg(0), tr->id, xsNumber(result));
 }

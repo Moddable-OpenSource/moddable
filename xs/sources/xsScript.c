@@ -35,7 +35,6 @@
  *       limitations under the License.
  */
 
-#define _GNU_SOURCE
 #include "xsScript.h"
 
 void fxCheckParserStack(txParser* parser, txInteger line)
@@ -210,7 +209,7 @@ void fxReportMemoryError(txParser* parser, txInteger line, txString theFormat, .
 			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
 			c_va_end(arguments);
 		}
-		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
+		parser->errorMessage = fxNewParserString(parser, parser->buffer, mxStringLength(parser->buffer));
 	}
 	c_longjmp(parser->firstJump->jmp_buf, 1);
 }
@@ -230,7 +229,7 @@ void fxReportParserError(txParser* parser, txInteger line, txString theFormat, .
 			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);
 			c_va_end(arguments);
 		}
-		parser->errorMessage = fxNewParserString(parser, parser->buffer, c_strlen(parser->buffer));
+		parser->errorMessage = fxNewParserString(parser, parser->buffer, mxStringLength(parser->buffer));
 		c_longjmp(parser->firstJump->jmp_buf, 1);
 	}
 }

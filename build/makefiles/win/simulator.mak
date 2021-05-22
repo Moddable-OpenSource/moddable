@@ -65,7 +65,7 @@ RC_OPTIONS = /nologo
 
 LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib gdiplus.lib ole32.lib shell32.lib
 	
-LINK_OPTIONS = /incremental:no /machine:I386 /nologo
+LINK_OPTIONS = /incremental:no /nologo
 !IF "$(GOAL)"=="debug"
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF

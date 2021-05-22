@@ -412,6 +412,7 @@ void xs_serial_write_callback(void* machine, void* it)
 void xs_serial_format_get(xsMachine *the)
 {
 	xsSerial s = xsGetHostData(xsThis);
+	if (!s) return;
 	if (s->bufferFormat)
 		xsResult = xsString("buffer");
 	else
@@ -421,6 +422,7 @@ void xs_serial_format_get(xsMachine *the)
 void xs_serial_format_set(xsMachine *the)
 {
 	xsSerial s = xsGetHostData(xsThis);
+	if (!s) return;
 	xs_serial_format_set_aux(the, s, xsToString(xsArg(0)));
 }
 

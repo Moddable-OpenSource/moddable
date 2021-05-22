@@ -12,26 +12,26 @@
 *
 */
 
-const Digital = Host.io.Digital;
-const SPI = Host.io.SPI;
+const Digital = device.io.Digital;
+const SPI = device.io.SPI;
 
-if (undefined !== Host.pins.backlight) {
+if (undefined !== device.pins.backlight) {
 	const backlight = new Digital({
-		pin: Host.pins.backlight,
+		pin: device.pins.backlight,
 		mode: Digital.Output,
 	});
 	backlight.write(0);
 }
 
 const dc = new Digital({
-	pin: Host.pins.displayDC,
+	pin: device.pins.displayDC,
 	mode: Digital.Output,
 });
 
 const spi = new SPI({
-	...Host.SPI.default,
+	...device.SPI.default,
 	hz: 40_000_000,
-	select: Host.pins.displaySelect,
+	select: device.pins.displaySelect,
 	active: 0
 });
 

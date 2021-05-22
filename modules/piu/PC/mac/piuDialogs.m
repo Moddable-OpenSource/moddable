@@ -44,7 +44,7 @@ void PiuSystem_alert(xsMachine* the)
 			if (xsIsInstanceOf(xsResult, xsArrayPrototype)) {
 				xsIntegerValue c = xsToInteger(xsGet(xsResult, xsID_length)), i;
 				for (i = 0; i < c; i++) {
-					string = xsToString(xsGet(xsResult, i));
+					string = xsToString(xsGetIndex(xsResult, i));
 					[alert addButtonWithTitle:[NSString stringWithUTF8String:string]];
 				}
 			}

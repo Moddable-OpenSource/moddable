@@ -166,29 +166,25 @@ void fxBuildGlobal(txMachine* the)
 		slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 		slot = slot->next;
 	}
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewGlobalInstance(txMachine* the)
 {
 	txSlot* instance;
 	txSlot* property;
-#ifdef mxFewGlobalsTable
-	txSize length = XS_INTRINSICS_COUNT;
-#else
-	txSize length = the->keyCount;
-#endif
-	txSize size = fxMultiplyChunkSizes(the, length, sizeof(txSlot*));
+	txSize size = fxMultiplyChunkSizes(the, XS_INTRINSICS_COUNT, sizeof(txSlot*));
 	instance = fxNewSlot(the);
 	instance->flag = XS_EXOTIC_FLAG;
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
-	instance->value.instance.prototype = mxObjectPrototype.value.reference;
-	mxPushReference(instance);
+	instance->value.instance.prototype = the->stack->value.reference;
+	the->stack->value.reference = instance;
+	the->stack->kind = XS_REFERENCE_KIND;
 	property = instance->next = fxNewSlot(the);
 	property->value.table.address = (txSlot**)fxNewChunk(the, size);
 	c_memset(property->value.table.address, 0, size);
-	property->value.table.length = length;
+	property->value.table.length = XS_INTRINSICS_COUNT;
 	property->flag = XS_INTERNAL_FLAG;
 	property->ID = XS_GLOBAL_BEHAVIOR;
 	property->kind = XS_GLOBAL_KIND;
@@ -218,14 +214,14 @@ txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot*
 	if (!mxIsReference(the->stack))
 		mxTypeError("iterator result is no object");
 	mxDub();
-	fxGetID(the, mxID(_done));
+	mxGetID(mxID(_done));
 	if (fxToBoolean(the, the->stack)) {
 		mxPop();
 		mxPop();
 		return 0;
 	}
 	mxPop();
-	fxGetID(the, mxID(_value));
+	mxGetID(mxID(_value));
 	mxPullSlot(value);
 	return 1;
 }
@@ -234,7 +230,7 @@ void fxIteratorReturn(txMachine* the, txSlot* iterator)
 {
 	mxPushSlot(iterator);
 	mxDub();
-	fxGetID(the, mxID(_return));
+	mxGetID(mxID(_return));
 	if (mxIsUndefined(the->stack)) 
 		mxPop();
 	else {
@@ -248,7 +244,7 @@ txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSl
 {
 	mxPushSlot(iterable);
 	mxDub();
-	fxGetID(the, mxID(_Symbol_iterator));
+	mxGetID(mxID(_Symbol_iterator));
 	if (optional && (mxIsUndefined(the->stack) || mxIsNull(the->stack))) {
 		mxPop();
 		mxPop();
@@ -260,7 +256,7 @@ txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSl
 		mxTypeError("iterator is no object");
 	if (next) {
 		mxDub();
-		fxGetID(the, mxID(_next));
+		mxGetID(mxID(_next));
 		mxPullSlot(next);
 	}
 	mxPullSlot(iterator);
@@ -280,7 +276,7 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 	property = fxNextSlotProperty(the, instance, the->stack, id, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	property = fxNextSlotProperty(the, property, iterable, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
-    the->stack++;
+	mxPop();
 	return instance;
 }
 
@@ -298,7 +294,7 @@ void fx_Enumerator(txMachine* the)
 	txSlot* visited;
 	
 	mxPush(mxEnumeratorFunction);
-	fxGetID(the, mxID(_prototype));
+	mxGetID(mxID(_prototype));
 	iterator = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
 	mxPush(mxObjectPrototype);
@@ -395,11 +391,9 @@ void fx_Enumerator_next(txMachine* the)
 txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index) 
 {
 	txBoolean result = fxOrdinaryDeleteProperty(the, instance, id, index);
-	if (id && result) {
-		txInteger i = id & 0x00007FFF;
+	if (id && (id < XS_INTRINSICS_COUNT) && result) {
 		txSlot* globals = instance->next;
-		if (i < globals->value.table.length)
-			globals->value.table.address[i] = C_NULL;
+		globals->value.table.address[id] = C_NULL;
 	}
 	return result;
 }
@@ -407,15 +401,12 @@ txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag) 
 {
 	txSlot* result = C_NULL;
-	if (id) {
-		txInteger i = id & 0x00007FFF;
+	if (id && (id < XS_INTRINSICS_COUNT)) {
 		txSlot* globals = instance->next;
-		if (i < globals->value.table.length) {
-			result = globals->value.table.address[i];
-			if (!result) {
-				result = fxOrdinaryGetProperty(the, instance, id, index, flag);
-				globals->value.table.address[i] = result;
-			}
+		result = globals->value.table.address[id];
+		if (!result) {
+			result = fxOrdinaryGetProperty(the, instance, id, index, flag);
+			globals->value.table.address[id] = result;
 		}
 	}
 	if (!result)
@@ -426,15 +417,12 @@ txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex i
 txSlot* fxGlobalSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag) 
 {
 	txSlot* result = C_NULL;
-	if (id) {
-		txInteger i = id & 0x00007FFF;
+	if (id && (id < XS_INTRINSICS_COUNT)) {
 		txSlot* globals = instance->next;
-		if (i < globals->value.table.length) {
-			result = globals->value.table.address[i];
-			if (!result) {
-				result = fxOrdinarySetProperty(the, instance, id, index, flag);
-				globals->value.table.address[i] = result;
-			}
+		result = globals->value.table.address[id];
+		if (!result) {
+			result = fxOrdinarySetProperty(the, instance, id, index, flag);
+			globals->value.table.address[id] = result;
 		}
 	}
 	if (!result)
@@ -546,7 +534,7 @@ void fx_eval(txMachine* the)
 	}
 	aStream.slot = mxArgv(0);
 	aStream.offset = 0;
-	aStream.size = c_strlen(fxToString(the, mxArgv(0)));
+	aStream.size = mxStringLength(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxEvalFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, module);
 	mxPullSlot(mxResult);
 }
@@ -580,7 +568,7 @@ void fx_trace_aux(txMachine* the, txInteger flags)
 		}
 		else if (slot && (slot->kind == XS_HOST_KIND)) {
 			mxPushSlot(mxArgv(0));
-			fxGetID(the, mxID(_byteLength));
+			mxGetID(mxID(_byteLength));
 			length = fxToInteger(the, the->stack);
 			mxPop();
 			message = slot->value.host.data;

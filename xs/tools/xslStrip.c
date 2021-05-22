@@ -55,7 +55,7 @@ txFlag fxIsCallbackStripped(txLinker* linker, txCallback which)
 
 txFlag fxIsLinkerSymbolUsed(txLinker* linker, txID id)
 {
-	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id];
 	return linkerSymbol->flag;
 }
 
@@ -85,7 +85,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	else {
 		linkerBuilder = linker->firstBuilder;
 		while (linkerBuilder) {
-			txID id = linkerBuilder->host.id & 0x7FFF;
+			txID id = linkerBuilder->host.id;
 			txLinkerSymbol* symbol = linker->symbolArray[id];
 			if (symbol->flag)
 				fxUnstripCallback(linker, linkerBuilder->host.callback);
@@ -449,7 +449,7 @@ void fxStripClass(txLinker* linker, txMachine* the, txSlot* slot)
 {
 	mxPushSlot(slot);
 	fxStripInstance(linker, the, the->stack->value.reference);
-	fxGetID(the, mxID(_prototype));
+	mxGetID(mxID(_prototype));
 	fxStripInstance(linker, the, the->stack->value.reference);
 	mxPop();
 }
@@ -778,6 +778,6 @@ void fxUnstripCallbacks(txLinker* linker)
 
 void fxUnuseSymbol(txLinker* linker, txID id)
 {
-	txLinkerSymbol* linkerSymbol = linker->symbolArray[id & 0x7FFF];
+	txLinkerSymbol* linkerSymbol = linker->symbolArray[id];
 	linkerSymbol->flag = 0;
 }

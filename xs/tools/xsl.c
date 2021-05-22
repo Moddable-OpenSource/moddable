@@ -112,10 +112,10 @@ int main(int argc, char* argv[])
 			file = fopen(argv[1], "r");
 			mxThrowElse(file);
 			fseek(file, 0, SEEK_END);
-			size = ftell(file);
+			size = (txSize)ftell(file);
 			fseek(file, 0, SEEK_SET);
 			buffer = fxNewLinkerChunk(linker, size + 1);
-			size = fread(buffer, 1, size, file);
+			size = (txSize)fread(buffer, 1, size, file);
 			buffer[size] = 0;
 			fclose(file);
 			string = buffer;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 				if (token == NULL)
 					break;
 				if (token[0] == '"') {
-					int last = c_strlen(token) - 1;
+					int last = mxStringLength(token) - 1;
 					if (token[last] == '"') {
 						token[last] = 0;
 						token++;
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-n: no namespace");
-				linker->name = fxNewLinkerString(linker, argv[argi], c_strlen(argv[argi]));
+				linker->name = fxNewLinkerString(linker, argv[argi], mxStringLength(argv[argi]));
 			}
 			else if (!c_strcmp(argv[argi], "-o")) {
 				argi++;
@@ -259,11 +259,11 @@ int main(int argc, char* argv[])
 		if (!base)
 			base = output;
 		if (!linker->name)
-			linker->name = fxNewLinkerString(linker, name, c_strlen(name));
+			linker->name = fxNewLinkerString(linker, name, mxStringLength(name));
 
 		linker->freezeFlag = (linker->stripFlag || linker->firstPreload) ? 1 : 0;
 			
-		size = c_strlen(base);
+		size = mxStringLength(base);
 		script = linker->firstScript;
 		while (script) {
 			fxBaseScript(linker, script, base, size);
@@ -289,6 +289,7 @@ int main(int argc, char* argv[])
 
 		linker->symbolTable = fxNewLinkerChunkClear(linker, linker->symbolModulo * sizeof(txLinkerSymbol*));
 		if (archiving) {
+			fxNewLinkerSymbol(linker, gxIDStrings[0], 0);
 			resource = linker->firstResource;
 			while (resource) {
 				fxBaseResource(linker, resource, base, size);
@@ -330,7 +331,7 @@ int main(int argc, char* argv[])
 			fxWriteSymbols(linker, path, &file);
 	
 			linker->base = url;
-			linker->baseLength = c_strlen(url);
+			linker->baseLength = mxStringLength(url);
 	
 			creation->nameModulo = linker->creation.nameModulo;
 			creation->symbolModulo = linker->creation.symbolModulo;
@@ -378,19 +379,20 @@ int main(int argc, char* argv[])
 				{
 					txCallback callback;
 					txSlot* property;
-					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					txID id;
+					property = mxBehaviorGetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
-					property = mxBehaviorGetProperty(the, mxCompartmentPrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxCompartmentPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = mxThrowTypeErrorFunction.kind;
 					property->value = mxThrowTypeErrorFunction.value;
 
@@ -400,18 +402,33 @@ int main(int argc, char* argv[])
 					property = mxFunctionInstanceCode(the->stack->value.reference);
 					property->value.callback.address = callback;
 		
-					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_now), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_now), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Date_now_secure), 0, mxID(_now));
 					
-					property = mxBehaviorGetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), 0, XS_OWN);
 					property->kind = the->stack->kind;
 					property->value = the->stack->value;
 					mxPull(mxDateConstructor);
 
 					fxDuplicateInstance(the, mxMathObject.value.reference);
-					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), XS_NO_ID, XS_OWN);
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
 					mxPull(mxMathObject);
+					
+					property = fxLastProperty(the, fxNewInstance(the));
+					for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
+						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+					for (; id < _Compartment; id++)
+						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+					mxPull(mxCompartmentGlobal);
+					
+					mxGlobal.value.reference->value.instance.prototype = C_NULL;
+					mxPush(mxGlobal);
+					mxDeleteID(mxID(_global));
+					mxPop();
+					mxPush(mxGlobal);
+					mxDeleteID(mxID(_globalThis));
+					mxPop();
 				}
 				{
 					txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
@@ -435,7 +452,7 @@ int main(int argc, char* argv[])
 						c_strcpy(path + linker->baseLength, script->path);
 						target->value.symbol = fxNewNameC(the, path);
 						target->kind = XS_SYMBOL_KIND;
-						path[c_strlen(path) - 4] = 0;
+						path[mxStringLength(path) - 4] = 0;
 						target->ID = fxNewNameC(the, path + linker->baseLength);
 						script = script->nextScript;
 					}
@@ -838,13 +855,13 @@ void fxFreezeBuiltIns(txMachine* the)
 	const txTypeDispatch *dispatch;
 	mxTemporary(freeze);
 	mxPush(mxObjectConstructor);
-	fxGetID(the, mxID(_freeze));
+	mxGetID(mxID(_freeze));
 	mxPullSlot(freeze);
 	
 	mxFreezeBuiltInCall; mxPush(mxAtomicsObject); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxJSONObject); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxMathObject); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxGlobal); fxGetID(the, mxID(_Math)); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxGlobal); mxGetID(mxID(_Math)); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxReflectObject); mxFreezeBuiltInRun;
 
 	mxFreezeBuiltInCall; mxPush(mxAggregateErrorPrototype); mxFreezeBuiltInRun;
@@ -903,13 +920,13 @@ void fxFreezeBuiltIns(txMachine* the)
 	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
 		mxFreezeBuiltInCall; 
-		mxPush(the->stackPrototypes[-1 - dispatch->constructorID]);
-		fxGetID(the, mxID(_prototype));
+		mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
+		mxGetID(mxID(_prototype));
 		mxFreezeBuiltInRun;
 	}
-	mxFreezeBuiltInCall; mxPush(mxEnumeratorFunction); fxGetID(the, mxID(_prototype)); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxEnumeratorFunction); mxGetID(mxID(_prototype)); mxFreezeBuiltInRun;
 	
-	mxFreezeBuiltInCall; mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxArrayPrototype); mxGetID(mxID(_Symbol_unscopables)); mxFreezeBuiltInRun;
 	
 	mxFreezeBuiltInCall; mxPush(mxProgram); mxFreezeBuiltInRun; //@@
 	mxFreezeBuiltInCall; mxPush(mxHosts); mxFreezeBuiltInRun; //@@
@@ -1022,7 +1039,7 @@ void fxConnect(txMachine* the)
 	if (GetEnvironmentVariable("XSBUG_HOST", name, sizeof(name))) {
 #else
 	colon = getenv("XSBUG_HOST");
-	if ((colon) && (c_strlen(colon) + 1 < sizeof(name))) {
+	if ((colon) && (strlen(colon) + 1 < sizeof(name))) {
 		c_strcpy(name, colon);
 #endif		
 		colon = strchr(name, ':');

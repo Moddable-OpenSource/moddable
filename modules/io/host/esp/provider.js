@@ -26,7 +26,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SPI from "embedded:io/spi";
 
-const Host = {
+const device = {
 	I2C: {
 		default: {
 			io: I2C,
@@ -57,4 +57,4 @@ const Host = {
 	}
 };
 
-export default Host;
+export default device;

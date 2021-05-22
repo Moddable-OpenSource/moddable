@@ -1,7 +1,4 @@
 {
-	"include": [
-		"$(MODDABLE)/examples/manifest_commodetto.json"
-	],
 	"modules": {
 		"*": [
 			"./pocogif"

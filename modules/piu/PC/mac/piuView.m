@@ -549,7 +549,7 @@ void PiuViewDictionary(xsMachine* the, void* it)
 				xsVar(2) = xsGetAt(xsVar(1), xsInteger(j));
 				if (xsTest(xsVar(2))) {
 					char buffer[256];
-					xsIndex index;
+					xsIdentifier index;
 					value = xsToString(xsGet(xsVar(2), xsID_command));
 					c_strcpy(buffer, "can");
 					c_strcat(buffer, value);

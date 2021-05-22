@@ -52,13 +52,13 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 		getter = fxBuildHostFunction(the, get, 0, id);
 		slot = mxFunctionInstanceHome(getter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, getter, id, XS_NO_ID, id, "get ");
+		fxRenameFunction(the, getter, id, 0, id, "get ");
 	}
 	if (set) {
 		setter = fxBuildHostFunction(the, set, 1, id);
 		slot = mxFunctionInstanceHome(setter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, setter, id, XS_NO_ID, id, "set ");
+		fxRenameFunction(the, setter, id, 0, id, "set ");
 	}
 	property = property->next = fxNewSlot(the);
 	property->flag = flag;
@@ -67,9 +67,9 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 	property->value.accessor.getter = getter;
 	property->value.accessor.setter = setter;
 	if (set)
-		the->stack++;
+		mxPop();
 	if (get)
-		the->stack++;
+		mxPop();
 	return property;
 }
 
@@ -85,7 +85,7 @@ txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback 
 	property->ID = id;
 	property->kind = the->stack->kind;
 	property->value = the->stack->value;
-	the->stack++;
+	mxPop();
 	return property;
 }
 #endif
@@ -218,7 +218,7 @@ txSlot* fxQueueIDKeys(txMachine* the, txSlot* first, txFlag flag, txSlot* keys)
 		txSlot* property = first;
 		while (property) {
 			if (!(property->flag & XS_INTERNAL_FLAG) && fxIsKeyName(the, property->ID))
-				keys = fxQueueKey(the, property->ID, XS_NO_ID, keys);
+				keys = fxQueueKey(the, property->ID, 0, keys);
 			property = property->next;
 		}
 	}
@@ -226,7 +226,7 @@ txSlot* fxQueueIDKeys(txMachine* the, txSlot* first, txFlag flag, txSlot* keys)
 		txSlot* property = first;
 		while (property) {
 			if (!(property->flag & XS_INTERNAL_FLAG) && fxIsKeySymbol(the, property->ID))
-				keys = fxQueueKey(the, property->ID, XS_NO_ID, keys);
+				keys = fxQueueKey(the, property->ID, 0, keys);
 			property = property->next;
 		}
 	}
@@ -371,7 +371,7 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 				return C_NULL;
 			if ((array->flag & XS_DONT_SET_FLAG) && (index >= length))
 				return C_NULL;
-			at = result - address;
+			at = mxPtrDiff(result - address);
 			current++;
 			size = fxMultiplyChunkSizes(the, current, sizeof(txSlot));
 			chunk = (txSlot*)fxNewChunk(the, size);
@@ -441,8 +441,8 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target)
 
 txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask) 
 {
-    txSlot** address;
-    txSlot* property;
+	txSlot** address;
+	txSlot* property;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
 	address = &(instance->next);
 	while ((property = *address)) {
@@ -455,9 +455,9 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 	}
 	if (!property) {
 		*address = property = fxNewSlot(the);
-        property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-        property->kind = XS_PRIVATE_KIND;
-        property->value.private.check = check;
+		property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+		property->kind = XS_PRIVATE_KIND;
+		property->value.private.check = check;
 		property->value.private.first = C_NULL;
 	}
 	address = &(property->value.private.first);
@@ -480,26 +480,30 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 		}
 		if (mask & XS_GETTER_FLAG) {
 			txSlot* function = property->value.accessor.getter = slot->value.accessor.getter;
-			txSlot* home = mxFunctionInstanceHome(function);
-			home->value.home.object = instance;
-			fxRenameFunction(the, function, id, XS_NO_ID, mxID(_get), "get ");
+			if ((function->flag & XS_MARK_FLAG) == 0) {
+				txSlot* home = mxFunctionInstanceHome(function);
+				home->value.home.object = instance;
+			}
+			fxRenameFunction(the, function, id, 0, mxID(_get), "get ");
 		}
 		else {
-			txSlot* function = property->value.accessor.setter = slot->value.accessor.setter;
-			txSlot* home = mxFunctionInstanceHome(function);
-			home->value.home.object = instance;
-			fxRenameFunction(the, function, id, XS_NO_ID, mxID(_set), "set ");
+			txSlot*  function = property->value.accessor.setter = slot->value.accessor.setter;
+			if ((function->flag & XS_MARK_FLAG) == 0) {
+				txSlot* home = mxFunctionInstanceHome(function);
+				home->value.home.object = instance;
+			}
+			fxRenameFunction(the, function, id, 0, mxID(_set), "set ");
 		}
 	}
 	else {
 		if (property)
 			return 0;
 		*address = property = fxNewSlot(the);
- 		property->flag = (mask & XS_METHOD_FLAG) ? XS_DONT_SET_FLAG : XS_NO_FLAG;
-       	property->ID = id;
-       	property->kind = slot->kind;
+		property->flag = (mask & XS_METHOD_FLAG) ? XS_DONT_SET_FLAG : XS_NO_FLAG;
+		property->ID = id;
+		property->kind = slot->kind;
 		property->value = slot->value;
-        if (property->kind == XS_REFERENCE_KIND) {
+		if (property->kind == XS_REFERENCE_KIND) {
 			txSlot* function = slot->value.reference;
 			if (mxIsFunction(function)) {
 				if ((mask & XS_METHOD_FLAG) && ((function->flag & XS_MARK_FLAG) == 0)) {
@@ -507,7 +511,7 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 					home->value.home.object = instance;
 				}
 				if (id)
-					fxRenameFunction(the, function, id, XS_NO_ID, mxID(_value), C_NULL);
+					fxRenameFunction(the, function, id, 0, mxID(_value), C_NULL);
 			}
 		}
 	}
@@ -518,7 +522,7 @@ txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, tx
 {
     txSlot* result;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;
@@ -550,7 +554,7 @@ txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, tx
 {
     txSlot* result;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
-	if (instance->ID >= 0) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			instance = alias;

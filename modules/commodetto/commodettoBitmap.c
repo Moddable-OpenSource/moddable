@@ -139,7 +139,7 @@ uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format)
 		depth = 1;
 	else if ((kCommodettoBitmapGray16 == format) || (kCommodettoBitmapCLUT16 == format))
 		depth = 4;
-	else if ((kCommodettoBitmapGray256 == format) || (kCommodettoBitmapRGB332 == format))
+	else if ((kCommodettoBitmapGray256 == format) || (kCommodettoBitmapRGB332 == format) || (kCommodettoBitmapCLUT256 == format))
 		depth = 8;
 	else if ((kCommodettoBitmapRGB565LE == format) || (kCommodettoBitmapRGB565BE == format) || (kCommodettoBitmapARGB4444 == format))
 		depth = 16;

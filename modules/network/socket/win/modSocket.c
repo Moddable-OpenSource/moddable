@@ -184,7 +184,7 @@ void createSocketWindow(xsSocket xss)
 	wcex.lpszClassName = "modSocketWindowClass";
 	RegisterClassEx(&wcex);
 	xss->window = CreateWindowEx(0, wcex.lpszClassName, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
-	SetWindowLongPtr(xss->window, 0, (LONG)xss);
+	SetWindowLongPtr(xss->window, 0, (LONG_PTR)xss);
 }
 
 void createListenerWindow(xsListener xsl)
@@ -196,7 +196,7 @@ void createListenerWindow(xsListener xsl)
 	wcex.lpszClassName = "modListenerWindowClass";
 	RegisterClassEx(&wcex);
 	xsl->window = CreateWindowEx(0, wcex.lpszClassName, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
-	SetWindowLongPtr(xsl->window, 0, (LONG)xsl);
+	SetWindowLongPtr(xsl->window, 0, (LONG_PTR)xsl);
 }
 
 DWORD WINAPI hostResolveProc(LPVOID lpParameter)

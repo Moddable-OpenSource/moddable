@@ -331,7 +331,7 @@ void PiuDebugBehaviorStart(PiuDebugBehavior self, int port)
 #elif mxWindows
 	struct sockaddr_in address;
 	self->window = CreateWindowEx(0, "PiuDebugBehaviorWindow", NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
-	SetWindowLongPtr(self->window, 0, (LONG)self);
+	SetWindowLongPtr(self->window, 0, (LONG_PTR)self);
 	memset(&address, 0, sizeof(struct sockaddr_in));
 	address.sin_family = AF_INET;
 	address.sin_port = htons(port);
@@ -580,7 +580,7 @@ void PiuDebugMachineCreate(xsMachine* the)
 		int ip, port;
 		char buffer[22];
 		self->window = CreateWindowEx(0, "PiuDebugMachineWindow", NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
-		SetWindowLongPtr(self->window, 0, (LONG)self);
+		SetWindowLongPtr(self->window, 0, (LONG_PTR)self);
 		self->socket = accept(behavior->socket, (struct sockaddr*)&address, &size);
 		ip = ntohl(address.sin_addr.s_addr);
 		port = ntohs(address.sin_port);
@@ -944,7 +944,7 @@ void PiuDebugMachineParseProcessingInstruction(PiuDebugMachine self, char* p)
 	xsMachine* the = self->the;
 	char c;
 	int i;
-	xsIndex id;
+	xsIdentifier id;
 	xsIntegerValue value;
 	if (*p++ != 'x')
 		return;

@@ -54,7 +54,7 @@ void PiuSystem_alert(xsMachine* the)
 			if (xsIsInstanceOf(xsResult, xsArrayPrototype)) {
 				xsIntegerValue c = xsToInteger(xsGet(xsResult, xsID_length)), i;
 				for (i = 0; i < c; i++) {
-					string = xsToString(xsGet(xsResult, i));
+					string = xsToString(xsGetIndex(xsResult, i));
 					gtk_dialog_add_button(GTK_DIALOG(dialog), string, i);
 				}
 			}

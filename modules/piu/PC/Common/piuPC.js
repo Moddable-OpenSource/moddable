@@ -129,6 +129,9 @@ export function Application($, it = {}) {
 	it._TouchLink = TouchLink;
 	it._View = View;
 	global.application = self;
+	global.controlKey = false;
+	global.optionKey = false;
+	global.shiftKey = false;
 	self._create($, it);
 	return self;
 }
@@ -136,7 +139,6 @@ Application.prototype = application;
 Application.template = template;
 Object.freeze(application);
 global.Application = Application;
-global.application = null;
 
 // PiuView.c
 
@@ -160,9 +162,6 @@ export class Service @ "ServiceProxyDelete" {
 };
 global.Service = Service;
 
-global.controlKey = false;
-global.optionKey = false;
-global.shiftKey = false;
 
 global.cursors = {
 	get arrow() @ "PiuCursors_get_arrow",

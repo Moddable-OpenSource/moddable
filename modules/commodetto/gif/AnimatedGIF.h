@@ -91,6 +91,9 @@ typedef struct gif_info_tag
   int32_t iDuration; // duration of animation in milliseconds
   int32_t iMaxDelay; // maximum frame delay
   int32_t iMinDelay; // minimum frame delay
+  uint16_t sGlobalColorTableSize;
+  uint8_t ucHasLocalColorTable;
+  uint8_t ucHasTransparent;
 } GIFINFO;
 
 typedef struct gif_draw_tag
@@ -137,19 +140,19 @@ typedef struct gif_image_tag
     GIF_CLOSE_CALLBACK *pfnClose;
     GIFFILE GIFFile;
     unsigned char *pFrameBuffer;
-    unsigned char *pPixels, *pOldPixels;
+    unsigned char *pPixels;
     unsigned char ucLineBuf[MAX_WIDTH]; // current line
     unsigned char ucFileBuf[FILE_BUF_SIZE]; // holds temp data and pixel stack
-    unsigned short pPalette[256]; // can hold RGB565 or RGB888 - set in begin()
+    unsigned short pPalette[256]; // RGB565
     unsigned short pLocalPalette[256]; // color palettes for GIF images
     unsigned char ucLZW[LZW_BUF_SIZE]; // holds 6 chunks (6x255) of GIF LZW data packed together
     unsigned short usGIFTable[4096];
     unsigned char ucGIFPixels[8192];
     unsigned char bEndOfFrame;
     unsigned char ucGIFBits, ucBackground, ucTransparent, ucCodeStart, ucMap, bUseLocalPalette, ucLittleEndian;
-    unsigned char bHasGlobalColorTable;
     unsigned char ucPaletteType; // RGB565 or RGB888
     unsigned char ucDrawType; // RAW or COOKED
+    short sGlobalColorTableCount;
 } GIFIMAGE;
 
 #ifdef __cplusplus
@@ -189,7 +192,7 @@ class AnimatedGIF
     int GIF_getCanvasWidth(GIFIMAGE *pGIF);
     int GIF_getCanvasHeight(GIFIMAGE *pGIF);
     int GIF_getComment(GIFIMAGE *pGIF, char *destBuffer);
-    int GIF_getInfo(GIFIMAGE *pGIF, GIFINFO *pInfo);
+    int GIF_getInfo(GIFIMAGE *pGIF, GIFINFO *pInfo, unsigned short *pPalette);
     int GIF_getLastError(GIFIMAGE *pGIF);
 #endif // __cplusplus
 

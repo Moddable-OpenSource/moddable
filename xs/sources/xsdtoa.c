@@ -1774,7 +1774,7 @@ multadd(Bigint *b, int m, int a MTd)	/* multiply by m and add a */
 			Bfree(b MTa);
 			b = b1;
 			}
-		b->x[wds++] = carry;
+		b->x[wds++] = (ULong)carry;
 		b->wds = wds;
 		}
 	return b;
@@ -1943,7 +1943,7 @@ mult(Bigint *a, Bigint *b MTd)
 				*xc++ = z & FFFFFFFF;
 				}
 				while(x < xae);
-			*xc = carry;
+			*xc = (ULong)carry;
 			}
 		}
 #else
@@ -3613,7 +3613,7 @@ strtod2(const char *s00, char **se __XS__d)
 			z = 10*z + c - '0';
 #endif
 	nd0 = nd;
-	bc.dp0 = bc.dp1 = s - s0;
+	bc.dp0 = bc.dp1 = (int)(s - s0);
 	for(s1 = s; s1 > s0 && *--s1 == '0'; )
 		++nz1;
 #ifdef USE_LOCALE
@@ -3637,13 +3637,13 @@ strtod2(const char *s00, char **se __XS__d)
 #endif
 	if (c == '.') {
 		c = c_read8(++s);
-		bc.dp1 = s - s0;
+		bc.dp1 = (int)(s - s0);
 		bc.dplen = bc.dp1 - bc.dp0;
 		if (!nd) {
 			for(; c == '0'; c = c_read8(++s))
 				nz++;
 			if (c > '0' && c <= '9') {
-				bc.dp0 = s0 - s;
+				bc.dp0 = (int)(s0 - s);
 				bc.dp1 = bc.dp0 + bc.dplen;
 				s0 = s;
 				nf += nz;
@@ -6429,7 +6429,7 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 		break;
 	}
 	base = start = fx_dtoa(theValue, mode, precision, &decpt, &sign, &stop, &DTOA);
-	count = stop - start;
+	count = mxPtrDiff(stop - start);
 	result = theBuffer;
 	theSize--; // C string
 	if (sign && theValue) {
@@ -6507,7 +6507,7 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 			}
 		}
 		else if (decpt <= 0) {
-			theSize -= 2 - decpt + (stop - start);
+			theSize -= 2 - decpt + (mxPtrDiff(stop - start));
 			if (theSize < 0) goto error;
 			*result++ = '0';
 			*result++ = '.';
@@ -6530,7 +6530,7 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 			}
 		}
 		else if (decpt < count) {
-			theSize -= decpt + 1 + (stop - start);
+			theSize -= decpt + 1 + (mxPtrDiff(stop - start));
 			if (theSize < 0) goto error;
 			while (decpt > 0) {
 				*result++ = *start++;
@@ -6551,7 +6551,7 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 			}
 		}
 		else {
-			theSize -= (stop - start);
+			theSize -= (mxPtrDiff(stop - start));
 			if (theSize < 0) goto error;
 			while (start < stop) {
 				*result++ = *start++;
@@ -6575,7 +6575,7 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 		}
 	}
 	else {
-		theSize -= (stop - start);
+		theSize -= (mxPtrDiff(stop - start));
 		if (theSize < 0) goto error;
 		while (start < stop)
 			*result++ = *start++;

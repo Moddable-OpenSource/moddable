@@ -51,10 +51,12 @@ typedef struct sxECParam {
 	txBigInt *a;
 	txBigInt *b;
 	txBigInt *m;
+	txU4 u;
+	txBigInt *one;
 } txECParam;
 
 typedef struct sxECPoint {
 	txBigInt *x;
 	txBigInt *y;
-	txBoolean identity;
+	txBigInt *z;
 } txECPoint;

@@ -132,7 +132,7 @@ void fxBuildDate(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_now), 0, mxID(_now), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_parse), 1, mxID(_parse), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Date_UTC), 7, mxID(_UTC), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewDateInstance(txMachine* the)
@@ -207,7 +207,7 @@ void fx_Date_aux(txMachine* the, txFlag secure)
 		if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
 			mxPushSlot(mxFunction);
 			mxDub();
-			fxGetID(the, mxID(_parse));
+			mxGetID(mxID(_parse));
 			mxCall();
 			mxPushSlot(slot);
 			mxRunCount(1);
@@ -323,7 +323,7 @@ void fx_Date_parse(txMachine* the)
 	txInteger aComment;
 	txInteger aDelta;
 	txInteger aValue;
-	txInteger aLength;
+	txSize aLength;
 	txInteger i;
 	txInteger yearSign = 1;
 		
@@ -497,7 +497,7 @@ void fx_Date_parse(txMachine* the)
 			}
 		}				
 		else if ((('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z'))) {
-			txInteger cmpLength;
+			txSize cmpLength;
 			p = buffer;
 			q = p + sizeof(buffer) - 1;
 			do {
@@ -506,7 +506,7 @@ void fx_Date_parse(txMachine* the)
 				c = c_read8(aString++);
 			} while ((('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')));
 			*p = 0;
-			aLength = p - (txString)buffer;
+			aLength = mxPtrDiff(p - (txString)buffer);
 			cmpLength = (aLength >= 3) ? aLength : 3;
 			if (c_strcmp("am", buffer) == 0) {
 				if ((dt.hours < 0) || (12 <  dt.hours))
@@ -1067,7 +1067,7 @@ void fx_Date_prototype_toJSON(txMachine* the)
 		mxPop();
 		mxPushSlot(mxThis);
 		mxDub();
-		fxGetID(the, mxID(_toISOString));
+		mxGetID(mxID(_toISOString));
 		mxCall();
 		mxRunCount(0);
 		mxPullSlot(mxResult);
@@ -1103,7 +1103,7 @@ void fx_Date_prototype_toPrimitive(txMachine* the)
 		for (i = 0; i < 2; i++) {
 			mxPushSlot(mxThis);
 			mxPushSlot(mxThis);
-			fxGetID(the, ids[i]);
+			mxGetID(ids[i]);
 			if (fxIsCallable(the, the->stack)) {
 				mxCall();
 				mxRunCount(0);

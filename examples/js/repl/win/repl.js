@@ -23,6 +23,7 @@ import REPLCore from "replcore";
 class REPL extends REPLCore {
 	constructor() {
 		super();
+		this.ready();
 		while (true)
 			this.poll();
 	}

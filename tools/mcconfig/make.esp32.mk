@@ -303,7 +303,7 @@ MEM_USAGE = \
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
-.PHONY: all partitionsFileCheck
+.PHONY: all partitionsFileCheck bootloaderCheck
 
 PARTITIONS_FILE ?= $(PROJ_DIR_TEMPLATE)/partitions.csv
 
@@ -313,6 +313,10 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)/main/component.mk \
 	$(PROJ_DIR)/partitions.csv \
 	$(PROJ_DIR)/Makefile
+
+ifneq ($(BOOTLOADERPATH),)
+	PROJ_DIR_FILES += $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c
+endif
 
 ifeq ($(UPLOAD_PORT),)
 	PORT_SET =
@@ -404,7 +408,7 @@ prepareOutput:
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
 	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
 
-precursor: partitionsFileCheck prepareOutput projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
+precursor: partitionsFileCheck prepareOutput projDir bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
 	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(IDF_BUILD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
@@ -433,7 +437,7 @@ erase_flash:
 	$(ESPTOOL) --chip $(ESP32_SUBCLASS) --port $(UPLOAD_PORT) erase_flash
 	
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE)
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
 
@@ -457,6 +461,22 @@ partitionsFileCheck:
 		fi ; \
 	fi
 
+bootloaderCheck:
+ifneq ($(BOOTLOADERPATH),)
+	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
+		if ! cmp -s $(BOOTLOADERPATH)/subproject/main/bootloader_start.c $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
+			rm -rf $(IDF_BUILD_DIR)/bootloader; \
+		fi ; \
+	else \
+		rm -rf $(IDF_BUILD_DIR)/bootloader; \
+	fi
+else
+	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
+		rm -rf $(PROJ_DIR)/components; \
+		rm -rf $(IDF_BUILD_DIR)/bootloader; \
+	fi
+endif
+
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
 	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
@@ -472,6 +492,12 @@ $(PROJ_DIR)/main/component.mk: $(PROJ_DIR_TEMPLATE)/main/component.mk
 
 $(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
 	cp -f $? $@
+
+$(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c: $(PROJ_DIR) bootloaderCheck $(BOOTLOADERPATH)/subproject/main/bootloader_start.c
+	echo Using custom bootloader: $(BOOTLOADERPATH)
+	mkdir -p $(PROJ_DIR)/components/bootloader
+	cp -fr $(BOOTLOADERPATH)/* $(PROJ_DIR)/components/bootloader/
+	touch $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c
 
 $(XS_OBJ): $(SDKCONFIG_H) $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c

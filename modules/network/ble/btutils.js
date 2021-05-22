@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,84 +40,100 @@
 
 import GAP from "gap";
 
-export function typedValueToBuffer(type, value) {
-	let buffer;
-	switch(type) {
-		case "Uint8Array":
-		case "Int8Array":
-		case "Int16Array":
-		case "Uint16Array":
-			buffer = value.buffer;
-			break;
-		case "Array":
-			buffer = new Uint8Array(value).buffer;
-			break;
-		case "String":
-			buffer = ArrayBuffer.fromString(value);
-			break;
-		case "Uint8":
-			buffer = Uint8Array.of(value & 0xFF).buffer;
-			break;
-		case "Int16":
-		case "Uint16":
-			buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF).buffer;
-			break;
-		case "Uint32":
-			buffer = Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF).buffer;
-			break;
-		case "ArrayBuffer":
-		default:
-			buffer = value;
-			break;
+const toArrayBuffer = Object.freeze({
+	Uint8Array(value) {
+		return value.buffer;
+	},
+	Int8Array(value) {
+		return value.buffer;
+	},
+	Int16Array(value) {
+		return value.buffer;
+	},
+	Uint16Array(value) {
+		return value.buffer;
+	},
+	Array(value) {
+		return new Uint8Array(value).buffer;
+	},
+	String(value) {
+		return ArrayBuffer.fromString(value);
+	},
+	Uint8(value) {
+		return Uint8Array.of(value & 0xFF).buffer;
+	},
+	Int16(value) {
+		return Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF).buffer;
+	},
+	Uint16(value) {
+		return Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF).buffer;
+	},
+	Uint32(value) {
+		return Uint8Array.of(value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF).buffer;
 	}
-	return buffer;
+}, true);
+
+export function typedValueToBuffer(type, value) {
+	type = toArrayBuffer[type];
+	return type ? type(value) : value;
 }
 
-export function typedBufferToValue(type, buffer) {
-	let value;
-	switch(type) {
-		case "Array":
-		case "Uint8Array":
-			value = new Uint8Array(buffer);
-			break;
-		case "Int8Array":
-			value = new Int8Array(buffer);
-			break;
-		case "Int16Array":
-			value = new Int16Array(buffer);
-			break;
-		case "Uint16Array":
-			value = new Uint16Array(buffer);
-			break;
-		case "String":
-			value = String.fromArrayBuffer(buffer);
-			break;
-		case "Uint8":
-			value = new Uint8Array(buffer)[0] & 0xFF;
-			break;
-		case "Int16":
-			value = (new DataView(buffer)).getInt16(0, true);
-			break;
-		case "Uint16":
-			value = (new DataView(buffer)).getUint16(0, true);
-			break;
-		case "Uint32":
-			value = (new DataView(buffer)).getUint32(0, true);
-			break;
-		case "ArrayBuffer":
-		default:
-			value = buffer;
-			break;
+const fromArrayBuffer = Object.freeze({
+	Uint8Array(buffer) {
+		return new Uint8Array(buffer);
+	},
+	Int8Array(buffer) {
+		return new Int8Array(buffer);
+	},
+	Int16Array(buffer) {
+		return new Int16Array(buffer);
+	},
+	Uint16Array(buffer) {
+		return new Uint16Array(buffer);
+	},
+	Array(buffer) {
+		return new Uint8Array(buffer);
+	},
+	String(buffer) {
+		return String.fromArrayBuffer(buffer);
+	},
+	Uint8(buffer) {
+		return new Uint8Array(buffer)[0] & 0xFF;
+	},
+	Int16(buffer) {
+		return (new DataView(buffer)).getInt16(0, true);
+	},
+	Uint16(buffer) {
+		return (new DataView(buffer)).getUint16(0, true);
+	},
+	Uint32(buffer) {
+		return (new DataView(buffer)).getUint32(0, true);
 	}
-	return value;
+}, true);
+
+export function typedBufferToValue(type, buffer) {
+	type = fromArrayBuffer[type];
+	return type ? type(buffer) : buffer;
+}
+
+const hex = "0123456789ABCDEF";
+function toHexString(buffer, delimeter = '') {
+	const bytes = new Uint8Array(buffer);
+	const length = buffer.byteLength;
+	let result = new Array(length);
+	for (let index = 0; index < length; ++index) {
+		const byte = bytes[index];
+		result[length - index - 1] = hex[byte >> 4] + hex[byte & 0x0F];
+	}
+	return result.join(delimeter);
 }
 
 export class Bytes extends ArrayBuffer {
 	constructor(bytes, littleEndian) {
 		let byteLength;
-		if ("string" == typeof bytes)
+		if ("string" === typeof bytes)
 			byteLength = bytes.length >> 1;
-		else if (("object" == typeof bytes) && (bytes instanceof ArrayBuffer))
+		else if (("object" === typeof bytes) && (bytes instanceof ArrayBuffer))
 			byteLength = bytes.byteLength;
 		else
 			throw new Error("unsupported type");
@@ -127,36 +143,24 @@ export class Bytes extends ArrayBuffer {
 	toString() {
 		// this function assumes the bytes are in little endian order
 		const byteLength = this.byteLength;
-		if (6 == byteLength)
-			return this.#toHexString(this, ':');
-		else if (16 == byteLength) {
+		if (6 === byteLength)
+			return toHexString(this, ':');
+		if (16 === byteLength) {
 			const bytes = new Uint8Array(this);
 			const string =
-				this.#toHexString(bytes.slice(12, 16)) + '-' +
-				this.#toHexString(bytes.slice(10, 12)) + '-' +
-				this.#toHexString(bytes.slice(8, 10)) + '-' +
-				this.#toHexString(bytes.slice(6, 8)) + '-' +
-				this.#toHexString(bytes.slice(0, 6));
+				toHexString(bytes.slice(12, 16)) + '-' +
+				toHexString(bytes.slice(10, 12)) + '-' +
+				toHexString(bytes.slice(8, 10)) + '-' +
+				toHexString(bytes.slice(6, 8)) + '-' +
+				toHexString(bytes.slice(0, 6));
 			return string;
 		}
-		else {
-			return this.#toHexString(this);
-		}
+
+		return toHexString(this);
 	}
 	set(bytes, littleEndian) @ "xs_bytes_set"
 	equals(bytes) @ "xs_bytes_equals"
 	
-	#toHexString(buffer, delimeter = '') {
-		const hex = "0123456789ABCDEF";
-		const bytes = new Uint8Array(buffer);
-		const length = buffer.byteLength;
-		let result = new Array(length);
-		for (let index = 0; index < length; ++index) {
-			const byte = bytes[index];
-			result[length - index - 1] = hex[byte >> 4] + hex[byte & 0x0F];
-		}
-		return result.join(delimeter);
-	}
 }
 Object.freeze(Bytes.prototype);
 

@@ -64,11 +64,11 @@ void fxBuildArguments(txMachine* the)
 {
 	mxPush(mxObjectPrototype);
 	mxArgumentsSloppyPrototype = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxObjectPrototype);
 	mxArgumentsStrictPrototype = *the->stack;
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count)
@@ -84,7 +84,7 @@ txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count)
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	array = instance->next = fxNewSlot(the);
-	array->flag = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+	array->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 	array->ID = XS_ARGUMENTS_SLOPPY_BEHAVIOR;
 	array->kind = XS_ARRAY_KIND;
 	array->value.array.length = 0;
@@ -192,7 +192,7 @@ txSlot* fxNewArgumentsStrictInstance(txMachine* the, txIndex count)
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	array = instance->next = fxNewSlot(the);
-	array->flag = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+	array->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 	array->ID = XS_ARGUMENTS_STRICT_BEHAVIOR;
 	array->kind = XS_ARRAY_KIND;
 	array->value.array.length = 0;

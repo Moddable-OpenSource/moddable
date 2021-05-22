@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,25 +18,22 @@
  *
  */
 
-class PWM @"xs_pwm_destructor" {
-    constructor(dictionary) @ "xs_pwm_constructor"
-    close() @ "xs_pwm_close"
-    write() @ "xs_pwm_write"
-    
-    get hz() @ "xs_pwm_get_hz"
+import Digital from "pins/digital";
+import I2C from "pins/i2c";
+import SMBus from "pins/smbus";
+import Modules from "modules";
+import Preference from "preference";
+import Resource from "Resource";
+import Time from "time";
+import Timer from "timer";
 
-    get resolution() {
-        return 10;
-    }
+globalThis.Digital = Digital;
+globalThis.I2C = I2C;
+globalThis.Modules = Modules;
+globalThis.Preference = Preference;
+globalThis.Resource = Resource;
+globalThis.SMBus = SMBus;
+globalThis.Time = Time;
 
-    get format() {
-        return "number";
-    }
 
-    set format(value) {
-        if ("number" !== value)
-            throw new RangeError;
-    }
-}
-
-export default PWM;
+globalThis.Timer = Timer;

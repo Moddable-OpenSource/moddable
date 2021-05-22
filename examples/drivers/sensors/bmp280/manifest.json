@@ -1,0 +1,6 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/sensors/bmp280/manifest.json",
+	"modules": {
+		"*": "./main"
+	}
+}

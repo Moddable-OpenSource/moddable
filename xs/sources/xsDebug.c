@@ -708,9 +708,9 @@ void fxDebugPushTag(txMachine* the)
 		/* FUNCTION */
 		mxPush(mxGlobal);
 		if (the->debugTag == XS_MODULE_TAG)
-			fxGetID(the, fxID(the, "<xsbug:module>"));
+			mxGetID(fxID(the, "<xsbug:module>"));
 		else
-			fxGetID(the, mxID(__xsbug_script_));
+			mxGetID(mxID(__xsbug_script_));
 		mxCall();
 		mxPushUndefined();
 		fxStringBuffer(the, the->stack, C_NULL, 256);
@@ -793,7 +793,7 @@ void fxDebugThrow(txMachine* the, txString path, txInteger line, txString messag
 
 void fxEcho(txMachine* the, txString theString)
 {
-	txInteger srcLength = c_strlen(theString);
+	txInteger srcLength = mxStringLength(theString);
 	txInteger dstLength = sizeof(the->echoBuffer) - the->echoOffset;
 	while (srcLength > dstLength) {
 		c_memcpy(the->echoBuffer + the->echoOffset, theString, dstLength);
@@ -962,7 +962,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 	txSlot* aSlot;
 	txInteger anIndex;
 
-	if (theInstance->ID >= 0) {
+	if (theInstance->ID) {
 		txSlot* aliasInstance = the->aliasArray[theInstance->ID];
 		if (aliasInstance)
 			theInstance = aliasInstance;
@@ -971,7 +971,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 	if (aParent)
 		fxEchoPropertyInstance(the, theList, "(..)", -1, C_NULL, XS_NO_ID, theInstance->flag & XS_MARK_FLAG, aParent);
 	aProperty = theInstance->next;
-	if (aProperty && (aProperty->ID == XS_ARRAY_BEHAVIOR)) {
+	if (aProperty && (aProperty->flag & XS_INTERNAL_FLAG) && (aProperty->ID == XS_ARRAY_BEHAVIOR)) {
 		fxEchoProperty(the, aProperty, theList, "(array)", -1, C_NULL);
 	}
 	else if (aProperty && (aProperty->flag & XS_INTERNAL_FLAG)) {
@@ -1034,6 +1034,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			aProperty = aProperty->next;
 			break;
 		case XS_GLOBAL_KIND:
+			aProperty = aProperty->next;
 			break;
 		case XS_PROMISE_KIND:
            	fxEchoProperty(the, aProperty, theList, "(promise)", -1, C_NULL);
@@ -1045,8 +1046,8 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			aSlot = aProperty->value.list.first;
 			while (aSlot) {
 				if (!(aSlot->flag & XS_DONT_ENUM_FLAG)) {
-					fxEchoProperty(the, aSlot, theList, "(.", anIndex, ")");
-					fxEchoProperty(the, aSlot->next, theList, "(..", anIndex, ")");
+					fxEchoProperty(the, aSlot, theList, "(", anIndex, ".0)");
+					fxEchoProperty(the, aSlot->next, theList, "(", anIndex, ".1)");
 				}
 				anIndex++;
 				aSlot = aSlot->next->next;
@@ -1064,7 +1065,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			aSlot = aProperty->value.list.first;
 			while (aSlot) {
 				if (!(aSlot->flag & XS_DONT_ENUM_FLAG))
-					fxEchoProperty(the, aSlot, theList, "(.", anIndex, ")");
+					fxEchoProperty(the, aSlot, theList, "(", anIndex, ")");
 				anIndex++;
 				aSlot = aSlot->next;
 			}
@@ -1083,15 +1084,12 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 				fxEchoPropertyInstance(the, theList, "(target)", -1, C_NULL, XS_NO_ID, aProperty->flag, aProperty->value.proxy.target);
 			if (aProperty->value.proxy.handler)
 				fxEchoPropertyInstance(the, theList, "(handler)", -1, C_NULL, XS_NO_ID, aProperty->flag, aProperty->value.proxy.handler);
+			aProperty = aProperty->next;
 			break;
 		}
 	}
 	while (aProperty) {
-		if (aProperty->ID < -1) {
-			if (!(aProperty->flag & XS_INTERNAL_FLAG))
-				fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
-		}
-		else {
+		if (aProperty->flag & XS_INTERNAL_FLAG) {
 			if (aProperty->kind == XS_ARRAY_KIND) {
 				txSlot* item = aProperty->value.array.address;
 				txIndex c = fxGetIndexSize(the, aProperty), i;
@@ -1101,20 +1099,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 					item++;
 				}
 			}
-// 			if (aProperty->kind == XS_PRIVATE_KIND) {
-// 				char buffer[128] = "";
-// 				txInteger length;
-// 				txSlot* check = aProperty->value.private.check;
-// 				txSlot* item = aProperty->value.private.first;
-// 				fxBufferFunctionName(the, buffer, sizeof(buffer), check, "");
-// 				length = c_strlen(buffer);
-// 				while (item) {
-// 					fxIDToString(the, item->ID, &buffer[length], sizeof(buffer) - length);
-// 					fxEchoProperty(the, item, theList, buffer, -1, C_NULL);
-// 					item = item->next;
-// 				}
-// 			}
-			if (aProperty->kind == XS_PRIVATE_KIND) {
+			else if (aProperty->kind == XS_PRIVATE_KIND) {
 				txSlot* instanceInspector = fxToInstanceInspector(the, aProperty);
 				char buffer[128] = "(";
 				txSlot* check = aProperty->value.private.check;
@@ -1177,6 +1162,9 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 				}
 			}
 		}
+		else {
+			fxEchoProperty(the, aProperty, theList, C_NULL, -1, C_NULL);
+		}
 		aProperty = aProperty->next;
 	}
 }
@@ -1233,7 +1221,7 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txString name;
 	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
-		if (theProperty->ID >= 0) {
+		if (theProperty->ID) {
 			txSlot* slot = the->aliasArray[theProperty->ID];
 			if (slot)
 				theProperty = slot;
@@ -1415,14 +1403,14 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 			else
 				hostInspectors->value.list.first = hostInspector;
 			hostInspectors->value.list.last = hostInspector;
-			the->stack++;
+			mxPop();
 			
 			aParent = theInstance;
 			while (aParent && (aParent->next->kind == XS_HOST_KIND)) {
 				txSlot* aParentProperty = aParent->next;
 				while (aParentProperty) {
 					if ((aParentProperty->kind == XS_ACCESSOR_KIND) && (aParentProperty->value.accessor.getter)) {
-						cacheProperty = mxBehaviorGetProperty(the, cache, aParentProperty->ID, XS_NO_ID, XS_ANY);
+						cacheProperty = mxBehaviorGetProperty(the, cache, aParentProperty->ID, 0, XS_ANY);
 						if (!cacheProperty) {
 							txSlot* aFunction = aParentProperty->value.accessor.getter;
 							if (mxIsFunction(aFunction)) {
@@ -1433,11 +1421,11 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 								mxPushReference(aFunction);
 								mxCall();
 								mxRunCount(0);
-								cacheProperty = mxBehaviorSetProperty(the, cache, aParentProperty->ID, XS_NO_ID, XS_ANY);
+								cacheProperty = mxBehaviorSetProperty(the, cache, aParentProperty->ID, 0, XS_ANY);
 								cacheProperty->flag |= XS_INSPECTOR_FLAG;
 								cacheProperty->kind = the->stack->kind;
 								cacheProperty->value = the->stack->value;
-								the->stack++;
+								mxPop();
 								fxEndHost(the);
 							}
 						}
@@ -1450,7 +1438,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 		cache = hostInspector->value.hostInspector.cache;
 		cacheProperty = cache->next;
 		while (cacheProperty) {
-			if (cacheProperty->ID < -1)
+			if (cacheProperty->ID)
 				fxEchoProperty(the, cacheProperty, theList, C_NULL, -1, C_NULL);
 			cacheProperty = cacheProperty->next;
 		}
@@ -1474,14 +1462,14 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 	}
 	if (thePrefix) {
 		c_strcpy(p, thePrefix);
-		p += c_strlen(thePrefix);
+		p += mxStringLength(thePrefix);
 		if (theSuffix) {
-			fxIndexToString(the, theIndex, p, q - p - 1); // assume c_strlen(theSuffix) == 1;
+			fxIndexToString(the, theIndex, p, mxPtrDiff(q - p - 1)); // assume mxStringLength(theSuffix) == 1;
 			c_strcat(p, theSuffix);
 		}
 	}
 	else
-		fxIDToString(the, theID, p, q - p);
+		fxIDToString(the, theID, p, mxPtrDiff(q - p));
 
 	fxEcho(the, "<property");
 	if (instanceInspector) {
@@ -1587,7 +1575,7 @@ void fxEchoString(txMachine* the, txString theString)
 	while ((tmp = c_read8(src))) {
 		src++;
 		if (dst + 6 > stop) {
-			the->echoOffset = dst - start;
+			the->echoOffset = mxPtrDiff(dst - start);
 			fxSend(the, 1);
 			dst = start;
 		}
@@ -1614,7 +1602,7 @@ void fxEchoString(txMachine* the, txString theString)
 			*(dst++) = ';';
 		}
 	}
-	the->echoOffset = dst - start;
+	the->echoOffset = mxPtrDiff(dst - start);
 }
 
 txSlot* fxFindFrame(txMachine* the)
@@ -1683,10 +1671,13 @@ void fxListGlobal(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
 	txSlot* realm = fxFindRealm(the);
-	txSlot* slot = mxRealmGlobal(realm)->value.reference->next;
+	txSlot* global = mxRealmGlobal(realm)->value.reference;
+	txSlot* slot = fxGetPrototype(the, global);
 	fxEcho(the, "<global>");
-	if (slot->flag & XS_INTERNAL_FLAG)
-		slot = slot->next;
+	if (slot != mxObjectPrototype.value.reference) {
+		fxEchoPropertyInstance(the, &aList, "(..)", -1, C_NULL, XS_NO_ID, global->flag & XS_MARK_FLAG, slot);
+	}
+	slot = global->next;
 	while (slot) {
 		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
 		slot = slot->next;
@@ -1742,27 +1733,24 @@ void fxListLocal(txMachine* the)
 	else {
 		if (scope) {
 			txSlot* aSlot = mxFrameToEnvironment(frame);
-			txInteger id;
+			txID id;
 			while (aSlot > scope) {
 				aSlot--;
 				id = aSlot->ID;
-				if (id < 0) {
-					id &= 0x7FFF;
-					if (id < the->keyCount) {
-						txSlot* key;
-						if (id < the->keyOffset)
-							key = the->keyArrayHost[id];
-						else
-							key = the->keyArray[id - the->keyOffset];
-						if (key) {
-							txKind kind = mxGetKeySlotKind(key);
-							if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND)) {
-								 if (key->value.key.string[0] != '#')
-									fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
-							}
-							else
+				if ((0 < id) && (id < the->keyCount)) {
+					txSlot* key;
+					if (id < the->keyOffset)
+						key = the->keyArrayHost[id];
+					else
+						key = the->keyArray[id - the->keyOffset];
+					if (key) {
+						txKind kind = mxGetKeySlotKind(key);
+						if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND)) {
+							 if (key->value.key.string[0] != '#')
 								fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
 						}
+						else
+							fxEchoProperty(the, aSlot, &aList, C_NULL, -1, C_NULL);
 					}
 				}
 			}
@@ -1820,6 +1808,10 @@ void fxLogin(txMachine* the)
 	fxEcho(the, "XS");
 	fxEcho(the, "\"/>");
 	fxEchoStop(the);
+	if (the->sharedMachine) {
+		fxToggle(the, the->sharedMachine->stackTop[-1 - mxGlobalStackIndex].value.reference);
+		fxToggle(the, the->sharedMachine->stackTop[-1 - mxCompartmentGlobalStackIndex].value.reference);
+	}
 	fxDebugCommand(the);
 }
 
@@ -2281,8 +2273,8 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[1] = the->maximumChunksSize;
 	xsInstrumentValues[2] = the->currentHeapCount * sizeof(txSlot);
 	xsInstrumentValues[3] = the->maximumHeapCount * sizeof(txSlot);
-	xsInstrumentValues[4] = (the->stackTop - the->stackPeak) * sizeof(txSlot);
-	xsInstrumentValues[5] = (the->stackTop - the->stackBottom) * sizeof(txSlot);
+	xsInstrumentValues[4] = (mxPtrDiff(the->stackTop - the->stackPeak)) * sizeof(txSlot);
+	xsInstrumentValues[5] = (mxPtrDiff(the->stackTop - the->stackBottom)) * sizeof(txSlot);
 	xsInstrumentValues[6] = the->garbageCollectionCount;
 	xsInstrumentValues[7] = the->keyIndex - the->keyOffset;
 	xsInstrumentValues[8] = the->loadedModulesCount;
