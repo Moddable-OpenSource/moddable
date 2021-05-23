@@ -5,15 +5,12 @@ import I2C from "embedded:io/i2c";
 import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 
-const pins = {
-};
-
-globalThis.Host = {
+const device = {
 	I2C: {
 		default: {
 			io: I2C,
-			data: 21,
-			clock: 22
+			data: 26,
+			clock: 27
 		}
 	},
 	Serial: {
@@ -25,7 +22,10 @@ globalThis.Host = {
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial},
-	pins
+	pins: {
+		button: 13,
+		led: 7
+	}
 };
 
-export default Host;
+export default device;
