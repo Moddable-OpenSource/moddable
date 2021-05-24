@@ -1,86 +1,157 @@
 # SecureSocket
-Copyright 2017-19 Moddable Tech, Inc.
 
-Revised: October 20, 2019
+Copyright 2017-2021 Moddable Tech, Inc.<BR>
+Revised: May 24, 2021
 
-Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+**Warning:** These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
-## Introduction
+## Table of Contents
 
-SecureSocket is an implementation of TLS for the Moddable SDK. It is an evolution of the SecureSocket for Kinoma Element with significant changes to drastically reduce RAM requirements. The essential function and operation remain the same.
+* [SecureSocket](#securesocket)
+	* [Use with HTTPS](#https)
+	* [Use with WSS](#websockets)
+	* [TLS Certificates](#certificates)
+	* [Memory](#memory)
+* [Configuration](#configuration)
 
-At this time, there is no Listener in SecureSocket, only the Socket, which is TCP-only (no UDP).
+<a id="securesocket"></a>
+## class `SecureSocket`
 
-### Use
+- **Source code:** [securesocket](../../modules/crypt/securesocket)
+- **Relevant Examples:** [socketsecure](../../examples/network/socket/socketsecure), [httpsget](../../examples/network/http/httpsget), [mqttsecure](../../examples/network/mqtt/mqttsecure)
 
-SecureSocket implements the same API as the Socket class. See the documentation of the Socket class for details.
+The `SecureSocket` class implements TLS. At this time, there is no Listener in `SecureSocket`; there is only the Socket, which is TCP-only (no UDP).
 
-SecureSocket extends the dictionary of the constructor with an additional property named "secure" which is itself a dictionary used to configure the TLS connection.
+```js
+import SecureSocket from "securesocket";
+```
 
-In the following example, the TLS socket is created with support for version 0x303 of TLS, which corresponds to TLS 1.2.
+### `constructor(dictionary)`
 
-	const host = "www.example.com";
-	const port = 443;
-	
-	let socket = new SecureSocket({host, port,
-			secure: {protocolVersion: 0x303}});
+The `SecureSocket` constructor takes a single argument, a object dictionary of initialization parameters. The dictionary is a super-set of the `Socket` dictionary (see the documentation of the `Socket` class in the [network documentation](./network.md) for details).
 
-### Dictionary
+`SecureSocket` extends the dictionary of the constructor with an additional property named `secure` which is itself a dictionary used to configure the TLS connection.
 
-The "secure" dictionary may contain the following properties:
+The `secure` dictionary may contain the following properties:
 
-- `protocolVersion` - the minimum version of the TLS protocol to implement. TLS 1.1 is used by default.
-- `certificate` - a certificate in DER (binary) format contained in an `ArrayBuffer`, `Uint8Array`, or host buffer
-- `trace`  - if true, the TLS stack outputs a trace of its activity. This can be useful in diagnosing failures.
-- `verify` - if false, the certificate chain provided by the server is not verified. This should never be done in production systems but can be useful when debugging.
-- `tls_max_fragment_length` - a number indicating the requested maximum fragment size. Unfortunately, many servers ignore this optional extension. When supported, can help reduce memory requirements.
-- `tls_server_name` - TBD
-- `tls_signature_algorithms` - TBD
-- `tls_application_layer_protocol_negotiation` - TBD
+| Parameter | Default Value | Description |
+| :---: | :---: | :--- |
+| `protocolVersion` | `0x302` (TLS 1.1) | The minimum version of the TLS protocol to implement, in hex.<BR><BR>- `0x303` is TLS 1.2<BR>- `0x302` is TLS 1.1<BR>- `0x301` is TLS 1.0
+| `certificate` | N/A |  a certificate in DER (binary) format contained in an `ArrayBuffer`, `Uint8Array`, or host buffer
+| `trace` | `false` | If true, the TLS stack outputs a trace of its activity. This can be useful in diagnosing failures.
+| `verify` | `true` | If false, the certificate chain provided by the server is not verified. This should never be done in production systems but can be useful when debugging.
+| `tls_max_fragment_length` | N/A |  A number indicating the requested maximum fragment size. Unfortunately, many servers ignore this optional extension. When supported, can help reduce memory requirements.
+| `tls_server_name` | N/A | TBD
+| `tls_signature_algorithms` | N/A | TBD
+| `tls_application_layer_protocol_negotiation` | N/A | TBD
  
+In the following example, the TLS socket is created with support for version `0x303` of TLS, which corresponds to TLS 1.2.
 
-### HTTPS
+```js
+let socket = new SecureSocket({
+	host: "www.example.com", 
+	port: 443,
+	secure: {protocolVersion: 0x303}
+});
+```
 
-The HTTP client accepts an optional Socket property in the dictionary of its constructor. Set this to SecureSocket to make an HTTPS request. 
+<a id="https"></a>
+### Use with HTTPS
 
-	import SecureSocket from "securesocket";
-	
-	let request = new Request({host: "www.howsmyssl.com", path: "/",
-		response: String, Socket: SecureSocket, port: 443});
+The HTTP `Client` class accepts an optional `Socket` property in the dictionary of its constructor. Set this property to `SecureSocket` to make an HTTPS request:
 
-The secure property may also be provided:
+```js
+let request = new Request({
+	host: "www.howsmyssl.com", 
+	path: "/",
+	response: String, 
+	Socket: SecureSocket, 
+	port: 443
+});
+```
 
-	let request = new Request({host: "www.howsmyssl.com", path: "/",
-		response: String, Socket: SecureSocket, port: 443,
-		secure: {trace: true, protocolVersion: 0x303});
+The `secure` property may also be provided:
 
-### WSS
+```js
+let request = new Request({
+	host: "www.howsmyssl.com",
+	path: "/",
+	response: String, 
+	Socket: SecureSocket, 
+	port: 443,
+	secure: {trace: true, protocolVersion: 0x303}
+});
+```
 
-The WebSockets client accepts an optional Socket property in the dictionary of its constructor. Set this to SecureSocket to make an WSS request. 
+<a id="websockets"></a>
+### Use with WSS
 
-	import {Client} from "websocket"
-	import SecureSocket from "securesocket";
+The WebSockets `Client` class accepts an optional `Socket` property in the dictionary of its constructor. Set this property to `SecureSocket` to make an WSS request. The `secure` property may also be provided:
 
-	let ws = new Client({host: "echo.websocket.org", port: 443,
-		Socket: SecureSocket, secure: {protocolVersion: 0x302}});
+```js
+let ws = new Client({
+	host: "echo.websocket.org", 
+	port: 443,
+	Socket: SecureSocket, 
+	secure: {protocolVersion: 0x302}
+});
+```
 
-### Certificates
+<a id="certificates"></a>
+### TLS Certificates
 
-Work on built-in certificates is on-going. Kinoma Element carries about 300 KB of built-in certificates to be able to connect to a majority of the internet web sites. Many devices, the ESP8266 of note, do not have enough free flash to hold these in the current implementation.
+TLS Certificates are used to encrypt the data you send to a server. `SecureSocket` objects use certificates in DER (binary) format.
 
-The certificate store is located at ${MODDABLE}/modules/crypt/data. The content of this directory must be pruned before building or the link will fail. Only `ca.ski` is required. This is the index of certificates. All others can be removed. Of course, with no certificates no web sites will work with verification enabled.
+The certificate store is located in the [`modules/crypt/data` folder](../../modules/crypt/data) of the Moddable SDK. Not every certificate is used by every application, so it would be a waste of limited flash memory to include all of them by default. Instead, certificates are explicitly included in the `resources` section of manifests.
 
-For testing, I leave only ca9.der, ca17.der, ca56.der, ca107.der, ca109.der, ca118.der, and ca220.der. To determine which certificate is required for a given web site, remove all certificates and the try to access the web site and see what certificate fails to load.
+```text
+"resources": {
+    "*": [
+        "$(MODULES)/crypt/data/ca9",
+    ]
+}
+```
 
-As an alternative to the certificate store, you can put the certificates needed in your application and pass the appropriate certificate in the "secure" dictionary.
+If you are unsure which certificate you need to include, just run your application that tries to access a website and see what certificate fails to load. The application will throw an exception like the following:
 
-	let request = new Request({host: "www.howsmyssl.com", path: "/",
-			response: String, Socket: SecureSocket, port: 443,
-			secure: {certificate: new Resource("ca109.der")}});
+![resource not found error message](../assets/network/ssl-resource-not-found.png)
 
+In this case, `ca109.der` needs to be included, so it should be added in the manifest’s `resources` object.
+
+```test
+"resources": {
+    "*": [
+        "$(MODULES)/crypt/data/ca109"
+    ]
+}
+```
+
+As an alternative to the certificate store, you can put the certificates needed in your application and pass the appropriate certificate in the `secure` dictionary.
+
+```js
+let request = new Request({
+	host: "www.howsmyssl.com", 
+	path: "/",
+	response: String, 
+	Socket: SecureSocket, 
+	port: 443,
+	secure: {certificate: new Resource("ca109.der")}
+});
+```
+			
+Note that you do not have to use the certificates included in the Moddable SDK. You may pass any valid certificate in DER format in the SecureSocket’s dictionary:
+
+```js
+let request = new Request({
+    ...
+    secure: {certificate: new Resource("mycert.der")} 
+});
+```
+
+<a id="memory"></a>
 ### Memory
 
-The TLS handshake require a fair amount of memory. The exact amount required varies depending on the site you are connecting to.  As a rough guideline, the following should be free:
+The TLS handshake requires a fair amount of memory. The exact amount required varies depending on the site you are connecting to. As a rough guideline, the following should be free:
 
 - 4 KB of stack
 - 10 KB in the chunk heap
@@ -89,27 +160,20 @@ The TLS handshake require a fair amount of memory. The exact amount required var
 
 Once the handshake is complete (e.g. once the secure connection is established), memory use drops considerably.
 
-However, if the server sends large fragments (e.g. apple.com sends 16 KB fragments), there is not enough free RAM on the ESP8266 to buffer them. The requests will fail. Secure web servers designed to work with IoT devices will use smaller fragments by default and/or will support the `tls_max_fragment_length` extension.
+However, if the server sends large fragments (e.g. apple.com sends 16 KB fragments), there may not be enough free RAM on your microcontroller to buffer them. The requests will fail. Secure web servers designed to work with IoT devices will use smaller fragments by default and/or will support the `tls_max_fragment_length` extension.
 
-When working with HTTPS, it is best to use streaming mode to retrieve the response body as it arrives rather than having the http client buffer the entire response body in memory.
+When working with HTTPS, it is best to use streaming mode to retrieve the response body as it arrives rather than having the HTTP client buffer the entire response body in memory. See the [`httpsgetstreaming` example](../../examples/network/http/httpsgetstreaming) for an example of this.
 
-### Configuration
+<a id="configuration"></a>
+## Configuration
 
-The TLS implementation defaults to enabling cipher suites that use DHE and ECDHE. These modes are computationally complex and therefore can take a long time to run on slower microcontrollers. The use of these suites is controlled by the `config` section of the manifest. To disable these suites, include the following in your project manifest.
+The TLS implementation defaults to enabling cipher suites that use DHE and ECDHE. These modes are computationally complex and therefore can take a long time to run on slower microcontrollers. The use of these suites is controlled by the `config` section of the manifest. To disable these suites, include the following in your project manifest:
 
-	"config": {
-		"tls": {
-			"DHE_RSA": false,
-			"ECDHE_RSA": false
-		}
-	},
-
-### macOS
-
-SecureSocket works on macOS. The code is the same. macOS is more generous with memory, so requests may succeed on macOS that fail on an MCU.
-
-### To do
-
-Large fragments (e.g. larger than can be fully buffered in RAM) may be possible to support, but it will be complicated.
-
-Listener.
+```text
+"config": {
+	"tls": {
+		"DHE_RSA": false,
+		"ECDHE_RSA": false
+	}
+}
+```
