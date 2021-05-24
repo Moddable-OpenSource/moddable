@@ -34,67 +34,11 @@
 
 #include "builtinCommon.h"
 
-#if ESP32
-	#include "driver/gpio.h"
+#include "driver/gpio.h"
 
-	#include "soc/gpio_caps.h"
-	#include "soc/gpio_periph.h"
-	#include "hal/gpio_hal.h"
-
-#elif defined(__ets__)
-	#include "user_interface.h"	// esp8266 functions
-
-	#define GPCD   2  // DRIVER 0: normal, 1: open drain
-
-	#define GPIO_INIT_OUTPUT(index, opendrain) \
-			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) |= (1 << index);					/* enable for write */ \
-			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~((opendrain ? 0 : 1) << GPCD);	/* normal (not open-drain) */ \
-
-	#define GPIO_INIT_INPUT(index) \
-			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) &= ~(1 << index);					/* disable write (e.g. read) */ \
-			*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~(1 << GPCD);	/* normal (not open-drain) */
-
-	#define GPIO_CLEAR(index) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, 1 << index))
-	#define GPIO_SET(index) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, 1 << index))
-
-	static const uint32_t gPixMuxAddr[] ICACHE_RODATA_ATTR = {
-		PERIPHS_IO_MUX_GPIO0_U,
-		PERIPHS_IO_MUX_U0TXD_U,
-		PERIPHS_IO_MUX_GPIO2_U,
-		PERIPHS_IO_MUX_U0RXD_U,
-		PERIPHS_IO_MUX_GPIO4_U,
-		PERIPHS_IO_MUX_GPIO5_U,
-		PERIPHS_IO_MUX_SD_CLK_U,
-		PERIPHS_IO_MUX_SD_DATA0_U,
-		PERIPHS_IO_MUX_SD_DATA1_U,
-		PERIPHS_IO_MUX_SD_DATA2_U,
-		PERIPHS_IO_MUX_SD_DATA3_U,
-		PERIPHS_IO_MUX_SD_CMD_U,
-		PERIPHS_IO_MUX_MTDI_U,
-		PERIPHS_IO_MUX_MTCK_U,
-		PERIPHS_IO_MUX_MTMS_U,
-		PERIPHS_IO_MUX_MTDO_U
-	};
-
-	static const uint8_t gPixMuxValue[] ICACHE_RODATA_ATTR = {
-		FUNC_GPIO0,
-		FUNC_GPIO1,
-		FUNC_GPIO2,
-		FUNC_GPIO3,
-		FUNC_GPIO4,
-		FUNC_GPIO5,
-		FUNC_GPIO6,
-		FUNC_GPIO7,
-		FUNC_GPIO8,
-		FUNC_GPIO9,
-		FUNC_GPIO10,
-		FUNC_GPIO11,
-		FUNC_GPIO12,
-		FUNC_GPIO13,
-		FUNC_GPIO14,
-		FUNC_GPIO15
-	};
-#endif
+#include "soc/gpio_caps.h"
+#include "soc/gpio_periph.h"
+#include "hal/gpio_hal.h"
 
 enum {
 	kDigitalInput = 0,
@@ -114,15 +58,10 @@ struct DigitalRecord {
 	xsSlot		obj;
 	uint8_t		bank;
 	// fields after here only allocated if onReadable callback present
-#if ESP32
 	uint32_t	triggered;
 	uint32_t	rises;
 	uint32_t	falls;
-#else
-	uint16_t	triggered;
-	uint16_t	rises;
-	uint16_t	falls;
-#endif
+
 	xsMachine	*the;
 	xsSlot		*onReadable;
 	struct DigitalRecord *next;
@@ -135,11 +74,6 @@ static void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t m
 static void xs_digitalbank_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static Digital gDigitals;	// pins with onReadable callbacks
-
-#if ESP32
-#elif defined(__ets__)
-	static uint8_t gDigitalCallbackPending;
-#endif
 
 static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 	xs_digitalbank_destructor,
@@ -201,16 +135,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
-#if ESP32
 	if (bank && (~3 & pins) && ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");		// input-only pins
-#elif defined(__ets__)
-	if (kDigitalInputPullUpDown == mode)
-		xsRangeError("invalid mode");		// unavailable
-
-	if ((16 == pin) && ((kDigitalInput != mode) && (kDigitalOutput != mode)))
-		xsRangeError("invalid mode");
-#endif
 
 	digital = c_malloc(hasOnReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
@@ -221,7 +147,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 	digital->obj = xsThis;
 	xsRemember(digital->obj);
 
-#if ESP32
 	int lastPin = bank ? GPIO_NUM_MAX - 1 : 31;
 	for (pin = bank ? 32 : 0; pin <= lastPin; pin++) {
 		if (!(pins & (1 << (pin & 0x1f))))
@@ -251,57 +176,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 				break;
 		}
 	}
-#elif defined(__ets__)
-	for (pin = 0; pin < 17; pin++) {
-		if (!(pins & (1 << pin)))
-			continue;
-
-		switch (mode) {
-			case kDigitalInput:
-			case kDigitalInputPullUp:
-			case kDigitalInputPullDown:
-				if (pin < 16) {
-					PIN_FUNC_SELECT(gPixMuxAddr[pin], c_read8(&gPixMuxValue[pin]));
-					GPIO_INIT_INPUT(pin);
-
-					if (mode == kDigitalInputPullUp)
-						*(volatile uint32_t *)gPixMuxAddr[pin] |= 1 << 7;
-					else if (mode == kDigitalInputPullDown)
-						*(volatile uint32_t *)gPixMuxAddr[pin] |= 1 << 6;
-				}
-				else if (16 == pin) {
-					WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
-								   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC and rtc_gpio0 connection
-
-					WRITE_PERI_REG(RTC_GPIO_CONF,
-								   (READ_PERI_REG(RTC_GPIO_CONF) & (uint32)0xfffffffe) | (uint32)0x0);	//mux configuration for out enable
-
-					WRITE_PERI_REG(RTC_GPIO_ENABLE,
-								   READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe);	//out disable
-				}
-				break;
-
-			case kDigitalOutput:
-			case kDigitalOutputOpenDrain:
-				if (pin < 16) {
-					PIN_FUNC_SELECT(gPixMuxAddr[pin], c_read8(&gPixMuxValue[pin]));
-					GPIO_INIT_OUTPUT(pin, kDigitalOutputOpenDrain == mode);
-					GPIO_CLEAR(pin);
-				}
-				else if (16 == pin) {
-					WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
-								   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC to output rtc_gpio0
-
-					WRITE_PERI_REG(RTC_GPIO_CONF,
-								   (READ_PERI_REG(RTC_GPIO_CONF) & (uint32)0xfffffffe) | (uint32)0x0);	//mux configuration for out enable
-
-					WRITE_PERI_REG(RTC_GPIO_ENABLE,
-								   (READ_PERI_REG(RTC_GPIO_ENABLE) & (uint32)0xfffffffe) | (uint32)0x1);	//out enable
-				}
-				break;
-		}
-	}
-#endif
 
 	if (hasOnReadable) {
 		xsSlot tmp;
@@ -316,7 +190,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
-#if ESP32
 			if (NULL == gDigitals)
 				gpio_install_isr_service(0);
 
@@ -341,30 +214,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 						gpio_set_intr_type(pin, GPIO_INTR_DISABLE);
 				}
 			}
-#elif defined(__ets__)
-		builtinCriticalSectionBegin();
-
-			if (NULL == gDigitals) {
-				gDigitalCallbackPending = 0;
-				ETS_GPIO_INTR_ATTACH(digitalISR, NULL);
-				ETS_GPIO_INTR_ENABLE();
-			}
-
-			digital->next = gDigitals;
-			gDigitals = digital;
-
-			// enable interrupt for these pins
-			GPC(pin) &= ~(0xF << GPCI);
-			GPIEC = pins & 0xFFFF;
-			for (pin = 0; pin < 16; pin++) {
-				if (pins & (1 << pin)) {
-					uint8_t edge = ((rises & (1 << pin)) ? 1 : 0) | ((falls & (1 << pin)) ? 2 : 0);
-					GPC(pin) |= ((edge & 0xF) << GPCI);
-				}
-			}
-
-		builtinCriticalSectionEnd();
-#endif
 	}
 
 	digital->pins = pins;
@@ -392,7 +241,6 @@ void xs_digitalbank_destructor(void *data)
 	}
 
 	if (digital->pins) {
-#if ESP32
 		int pin, lastPin = digital->bank ? GPIO_NUM_MAX - 1 : 31;
 
 		for (pin = digital->bank ? 32 : 0; pin <= lastPin; pin++) {
@@ -404,22 +252,6 @@ void xs_digitalbank_destructor(void *data)
 
 		if (NULL == gDigitals)
 			gpio_uninstall_isr_service();
-#elif defined(__ets__)
-		//@@ what state should pin go to on close...
-		uint8_t pin;
-
-		// disable interrupts for these pins
-		for (pin = 0; pin < 16; pin++) {
-			if (digital->pins & (1 << pin)) {
-				GPC(pin) &= ~(0xF << GPCI);
-				GPIEC = (1 << pin);
-			}
-		}
-
-		// remove ISR
-		if (NULL == gDigitals)
-			ETS_GPIO_INTR_DISABLE();
-#endif
 		builtinFreePins(digital->bank, digital->pins);
 	}
 
@@ -453,22 +285,12 @@ void xs_digitalbank_read(xsMachine *the)
 	if (!digital)
 		xsUnknownError("bad state");
 
-#if ESP32
 	gpio_dev_t *hw = &GPIO;
 
     if (digital->bank)
         result = hw->in1.data & digital->pins;
     else
         result = hw->in & digital->pins;
-#elif defined(__ets__)
-	result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
-	if (digital->pins & 0x10000) {
-		if (READ_PERI_REG(RTC_GPIO_IN_DATA) & 1)
-			result |= 0x10000;
-		else
-			result &= ~0x10000;
-	}
-#endif
 
 	xsmcSetInteger(xsResult, result);
 }
@@ -481,7 +303,6 @@ void xs_digitalbank_write(xsMachine *the)
 	if (!digital)
 		xsUnknownError("bad state");
 
-#if ESP32
 	gpio_dev_t *hw = &GPIO;
 
 	if (digital->bank) {
@@ -492,15 +313,8 @@ void xs_digitalbank_write(xsMachine *the)
 		hw->out_w1ts = value;
 		hw->out_w1tc = ~value & digital->pins;
 	}
-#elif defined(__ets__)
-	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
-	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);
-	if (digital->pins & 0x10000)
-		WRITE_PERI_REG(RTC_GPIO_OUT, (READ_PERI_REG(RTC_GPIO_OUT) & (uint32)0xfffffffe) | (value >> 16));
-#endif
 }
 
-#if ESP32
 void IRAM_ATTR digitalISR(void *refcon)
 {
 	uint32_t pin = (uintptr_t)refcon;
@@ -536,59 +350,4 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 		xsCallFunction1(xsReference(digital->onReadable), digital->obj, xsResult);
 	xsEndHost(digital->the);
 }
-#elif defined(__ets__)
-void ICACHE_RAM_ATTR digitalISR(void *ignore)
-{
-	uint32_t status = GPIE;
-	GPIEC = status;				// clear interrupts
-	if (!status)
-		return;
 
-	ETS_GPIO_INTR_DISABLE();
-	uint32_t levels = GPI;
-	uint8_t doUpdate = 0;
-	Digital walker;
-	for (walker = gDigitals; walker; walker = walker->next) {
-		if (!(walker->pins & status))
-			continue;
-
-		if ((levels & walker->rises) || (~levels & walker->falls)) {		// mask rises & falls with status? otherwise may be false trigger?
-			walker->triggered |= levels;
-			doUpdate = 1;
-		}
-	}
-
-	ETS_GPIO_INTR_ENABLE();
-
-	if (doUpdate && !gDigitalCallbackPending) {
-		gDigitalCallbackPending = 1;
-		modMessagePostToMachineFromPool(NULL, digitalDeliver, NULL);		// N.B. no THE required on ESP8266 since it is single threaded... would be unsafe on ESP32
-	}
-}
-
-void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	Digital walker;
-
-	gDigitalCallbackPending = 0;
-
-//@@ bad things happen if a digital instance is closed inside this loop
-	for (walker = gDigitals; walker; walker = walker->next) {
-		uint32_t triggered;
-
-		builtinCriticalSectionBegin();
-			triggered = walker->triggered;
-			walker->triggered = 0;
-		builtinCriticalSectionEnd();
-
-		if (!triggered)
-			continue;
-
-		xsBeginHost(walker->the);
-			xsmcSetInteger(xsResult, triggered);
-			xsCallFunction1(xsReference(walker->onReadable), walker->obj, xsResult);
-		xsEndHost(walker->the);
-	}
-}
-
-#endif
