@@ -11,6 +11,7 @@
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
+			"$(IO)/digital/$(PLATFORM)/*",
 			"$(IO)/i2c/$(PLATFORM)/*",
 			"$(IO)/spi/$(PLATFORM)/*"
 		],
