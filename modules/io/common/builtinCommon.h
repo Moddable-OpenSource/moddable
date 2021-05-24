@@ -48,6 +48,7 @@ uint8_t builtinGetCallback(xsMachine *the, xsIdentifier id, xsSlot *slot);
 	#define builtinCriticalSectionEnd() xt_rsil(15)
 #elif nrf52
 	#define kPinBanks (2)
+	#define GPIO_NUM_MAX (64)
 
 	#define builtinCriticalSectionBegin() vPortEnterCritical()
 	#define builtinCriticalSectionEnd() vPortExitCritical()
