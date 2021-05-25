@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,7 +36,9 @@
  */
 
 #ifndef __XSALL__
-typedef void txBigInt;
+typedef struct {
+	txU4 opaque;
+}  txBigInt;
 typedef xsBooleanValue txBoolean;
 
 extern void fxBigInt_setBigInt(xsSlot *slot, txBigInt *a);

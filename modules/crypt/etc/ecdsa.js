@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- * This file incorporates work covered by the following copyright and  
- * permission notice:  
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
  *
  *       Copyright (C) 2010-2016 Marvell International Ltd.
  *       Copyright (C) 2002-2010 Kinoma, Inc.
@@ -39,15 +39,17 @@ import RNG from "rng";
 import PKCS1 from "pkcs1";
 import Mont from "mont";
 import EC from "ec";
+import Curve from "curve";
+import BER from "ber";
 
 export default class ECDSA {
-	constructor(key, priv) {
-		this.u = priv ? key.du: key.Qu;
-		this.G = key.G;
-		this.orderSize = (BigInt.bitLength(key.n) + 7) >>> 3;
-		this.n = new Mont({m: key.n});
-		this.ec = new EC(key.a, key.b, key.p);
-		this.k = key.k;		// just for the debugging purpose
+	constructor(key, curve, priv) {
+		this.u = key;
+		this.G = curve.G;
+		this.orderSize = curve.orderSize;
+		this.n = new Mont({m: curve.n});
+		this.ec = curve.ec;
+		this.k = curve.k;	// just for a debugging purpose
 	};
 	_sign(H) {
 		// (r, s) = (k*G, (e + du*r) / k)
@@ -69,11 +71,16 @@ export default class ECDSA {
 		sig.s = s;
 		return sig;
 	};
-	sign(H) {
-		var sig = this._sign(H);
-		var os = new ArrayBuffer();
-		var l = this.orderSize;
-		return os.concat(PKCS1.I2OSP(sig.r, l), PKCS1.I2OSP(sig.s, l));
+	sign(H, asn1) {
+		if (asn1) {
+			return BER.encode([0x30, [0x02, sig.r], [0x02, sig.s]]);
+		}
+		else {
+			var sig = this._sign(H);
+			var os = new ArrayBuffer();
+			var l = this.orderSize;
+			return os.concat(PKCS1.I2OSP(sig.r, l), PKCS1.I2OSP(sig.s, l));
+		}
 	};
 	_verify(H, r, s) {
 		// u1 = e / s
@@ -90,13 +97,22 @@ export default class ECDSA {
 		var u2 = n.mul(r, s_inv);
 		// var R = ec.add(ec.mul(G, u1), ec.mul(Qu, u2));
 		var R = ec.mul2(G, u1, Qu, u2);
-		return R.X === r;
+		return R.X == r;
 
 	};
-	verify(H, sig) {
-		var l = this.orderSize;
-		var r = PKCS1.OS2IP(sig.slice(0, l));
-		var s = PKCS1.OS2IP(sig.slice(l, l*2));
+	verify(H, sig, asn1) {
+		var r, s;
+		if (asn1) {
+			let ber = new BER(sig);
+			let seq = new BER(ber.getSequence());
+			r = seq.getInteger();
+			s = seq.getInteger();
+		}
+		else {
+			let l = this.orderSize;
+			r = PKCS1.OS2IP(sig.slice(0, l));
+			s = PKCS1.OS2IP(sig.slice(l, l*2));
+		}
 		return this._verify(H, r, s);
 	};
 	static randint(max) {

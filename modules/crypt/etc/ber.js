@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- * This file incorporates work covered by the following copyright and  
- * permission notice:  
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
  *
  *       Copyright (C) 2010-2016 Marvell International Ltd.
  *       Copyright (C) 2002-2010 Kinoma, Inc.
@@ -108,16 +108,13 @@ export default class BER {
 		return this.getChunk(this.getLength());
 	};
 	getObjectIdentifier() {
-		if (this.getTag() != 0x06)
+		if (this.getTag() !== 0x06)
 			throw new Error("BER: not an object identifier");
 		return this._getObjectIdentifier(this.getLength())
 	}
 	_getObjectIdentifier(len) {
-		let oid = [];
 		let i = this.#a[this.#i++];
-		let rem = i % 40;
-		oid.push((i - rem) / 40);
-		oid.push(rem);
+		let oid = [Math.idiv(i, 40), Math.irem(i, 40)];
 		--len;
 		while (len > 0) {
 			let v = 0;
