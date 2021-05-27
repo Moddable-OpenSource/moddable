@@ -37,7 +37,6 @@
 
 #include "xsAll.h"
 
-static txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset);
 static txSlot* fxArgToInstance(txMachine* the, txInteger i);
 static txBoolean fxCheckLength(txMachine* the, txSlot* slot, txInteger* index);
 

@@ -312,7 +312,9 @@ void fx_String_fromArrayBuffer(txMachine* the)
 {
 	txSlot* slot;
 	txSlot* arrayBuffer = C_NULL;
-	txInteger length;
+	txInteger limit, offset;
+	txInteger inLength, outLength = 0;
+	unsigned char *in;
 	txString string;
 	if (mxArgc < 1)
 		mxTypeError("no argument");
@@ -324,12 +326,57 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	}
 	if (!arrayBuffer)
 		mxTypeError("argument is no ArrayBuffer instance");
-	length = arrayBuffer->value.arrayBuffer.length;
-	string = fxNewChunk(the, length + 1);
-	c_memcpy(string, arrayBuffer->value.arrayBuffer.address, length);
-	string[length] = 0;
+
+	limit = arrayBuffer->value.arrayBuffer.length;
+	offset = fxArgToByteOffset(the, 1, 0);
+	if (limit < offset)
+		mxRangeError("out of range byteOffset %ld", offset);
+	inLength = fxArgToByteLength(the, 2, limit - offset);
+	if (limit < (offset + inLength))
+		mxRangeError("out of range byteLength %ld", inLength);
+
+	in = offset + (unsigned char *)arrayBuffer->value.arrayBuffer.address;
+	while (inLength > 0) {
+		unsigned char first = c_read8(in++), clen;
+		if (first < 0x80){
+			if (0 == first)
+				break;
+			inLength -= 1;
+			outLength += 1;
+			continue;
+		}
+
+		if (0xC0 == (first & 0xE0))
+			clen = 2;
+		else if (0xE0 == (first & 0xF0))
+			clen = 3;
+		else if (0xF0 == (first & 0xF0))
+			clen = 4;
+		else
+			goto badUTF8;
+
+		inLength -= clen;
+		if (inLength < 0)
+			goto badUTF8;
+
+		outLength += clen;
+		clen -= 1;
+		do {
+			if (!(0x80 & c_read8(in++)))
+				goto badUTF8;
+		} while (--clen > 0);
+	}
+
+	string = fxNewChunk(the, outLength + 1);
+	c_memcpy(string, offset + arrayBuffer->value.arrayBuffer.address, outLength);
+	string[outLength] = 0;
 	mxResult->value.string = string;
 	mxResult->kind = XS_STRING_KIND;
+
+	return;
+
+badUTF8:
+	mxTypeError("invalid UTF-8");
 }
 
 void fx_String_fromCharCode(txMachine* the)

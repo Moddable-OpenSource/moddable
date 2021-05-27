@@ -1491,6 +1491,9 @@ mxExport void fx_TypedArray_prototype_values(txMachine* the);
 extern void fxBuildDataView(txMachine* the);
 extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);
 
+extern txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset);
+extern txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length);
+
 /* xsAtomics.c */
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
