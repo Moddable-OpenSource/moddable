@@ -19,15 +19,42 @@
  */
 
 
-export class CRC8 {
+class CRC8 {
+	#poly;
+	#initial;
+	#reflectInput;
+	#reflectOutput;
+	#xorOutput;
 
-	constructor(polynomial, initial_value) {
-		this.setup(polynomial, initial_value);	
+	constructor(polynomial, initial_value, reflectInput, reflectOutput, xorOutput) {
+		this.#poly = polynomial;
+		this.#initial = initial_value ?? 0;
+		this.#reflectInput = reflectInput ?? false;
+		this.#reflectOutput = reflectOutput ?? false;
+		this.#xorOutput = xorOutput ?? 0x00;
 	}
 
-	setup(polynomial, initial_value) @ "xs_setup_crc8_table";
-	checksum(bytes, length) @ "xs_checksum8";
+	checksum(bytes, length) { return this.#doChecksum8(bytes, length ?? bytes.byteLength, this.#poly, this.#initial, this.#reflectInput, this.#reflectOutput, this.#xorOutput); }
+	#doChecksum8(bytes, length, poly, initial, refIn, refOut, xorOut) @ "xs_checksum8";
 }
 
+class CRC16 {
+	#poly;
+	#initial;
+	#reflectInput;
+	#reflectOutput;
+	#xorOutput;
 
-export default CRC8;
+	constructor(polynomial, initial_value, reflectInput, reflectOutput, xorOutput) {
+		this.#poly = polynomial;
+		this.#initial = initial_value ?? 0;
+		this.#reflectInput = reflectInput ?? false;
+		this.#reflectOutput = reflectOutput ?? false;
+		this.#xorOutput = xorOutput ?? 0x00;
+	}
+
+	checksum(bytes, length) { return this.#doChecksum16(bytes, length ?? bytes.byteLength, this.#poly, this.#initial, this.#reflectInput, this.#reflectOutput, this.#xorOutput); }
+	#doChecksum16(bytes, length, poly, initial, refIn, refOut, xorOut) @ "xs_checksum16";
+}
+
+export { CRC8 as default, CRC8, CRC16 };
