@@ -41,52 +41,53 @@ const Register = Object.freeze({
 class HTU21D  {
 	#io;
 	#byteBuffer = new Uint8Array(1);
-	#wordBuffer = new Uint8Array(2);
 	#valueBuffer = new Uint8Array(3);
 	#crc8;
 
 	constructor(options) {
 		const io = this.#io = new (options.io)({
-			...options,
 			hz: 100_000,
-			address: 0x40
+			address: 0x40,
+			...options
 		});
 
 		this.#byteBuffer[0] = Register.SOFT_RESET;
 		io.write(this.#byteBuffer);
 
-		this.#crc8 = new CRC8(0x31, 0x00);
+		this.#crc8 = new CRC8(0x31);
 	}
 	configure(options) {
 	}
 	sample() {
 		let ret = {};
 
-		let humid = this.readValue(Register.HUMID_MEASURE_HOLD);
+		let humid = this.#readValue(Register.HUMID_MEASURE_HOLD);
 		ret.humidity = (humid * 125.0 / 65536.0) - 6.0;
 
-		let temp = this.readValue(Register.TEMP_MEASURE_HOLD);
+		let temp = this.#readValue(Register.TEMP_MEASURE_HOLD);
 		ret.temperature = (temp * 175.72 / 65536.0) - 46.85;
 
 		return ret;
 	}
-	readValue(command) {
+	#readValue(command) {
 		const io = this.#io;
+		const bBuf = this.#byteBuffer;
+		const vBuf = this.#valueBuffer;
 
-		this.#byteBuffer[0] = command;
-		io.write(this.#byteBuffer);
+		bBuf[0] = command;
+		io.write(bBuf);
 
 		Timer.delay(50);		// from datasheet for 14 bit
 
-		io.read(this.#valueBuffer);
+		io.read(vBuf);
 
-		let chk = this.#crc8.checksum(this.#valueBuffer.buffer, 2);
-		if (chk !== this.#valueBuffer[2]) {
-			trace(`checksum failed: ${chk} vs ${this.#valueBuffer[2]} on ${this.#valueBuffer[0]}, ${this.#valueBuffer[1]}\n`);
+		let chk = this.#crc8.checksum(vBuf, 2);
+		if (chk !== vBuf[2]) {
+			trace(`checksum failed: ${chk} vs ${vBuf[2]} on ${vBuf[0]}, ${vBuf[1]}\n`);
 			return -1;
 		}
 
-		let value = ((this.#valueBuffer[0] << 8) + this.#valueBuffer[1]) & 0xfffc;		return value;		
+		return ((vBuf[0] << 8) + vBuf[1]) & 0xfffc;
 	}
 }
 

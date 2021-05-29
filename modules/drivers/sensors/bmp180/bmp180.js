@@ -39,7 +39,7 @@ const Config = Object.freeze({
 		HIGHRES:		0x02,
 		ULTRAHIGHRES:	0x03
 	}
-});
+}, true);
 
 class aHostObject @ "xs_bmp180_host_object_destructor" {
 	constructor() @ "xs_bmp180_host_object_constructor";
@@ -48,33 +48,36 @@ class aHostObject @ "xs_bmp180_host_object_destructor" {
 class BMP180 extends aHostObject {
 	#io;
 	#calib;
-	#byteBuffer = new Uint8Array(1);
-	#wordBuffer = new Uint8Array(2);
-	#valueBuffer = new Uint8Array(3);
-	#mode = Config.Mode.ULTRALOWPOWER;
+	#byteBuffer;
+	#wordBuffer;
+	#valueBuffer;
+	#mode;
 
 	constructor(options) {
 		super(options);
 		const io = this.#io = new (options.io)({
-			...options,
 			hz: 100_000,
-			address: 0x77
+			address: 0x77,
+			...options
 		});
 
-		this.#byteBuffer[0] = Register.BMP180_CHIPID;
-		io.write(this.#byteBuffer);
+		const bBuf = this.#byteBuffer = new Uint8Array(1);
+		this.#wordBuffer = new Uint8Array(2);
+		this.#valueBuffer = new Uint8Array(3);
+		this.#mode = Config.Mode.ULTRALOWPOWER;
+
+		bBuf[0] = Register.BMP180_CHIPID;
+		io.write(bBuf);
 		if (0x55 !== io.read(this.#byteBuffer)[0])
 			throw new Error("unexpected sensor");
 
-		this.initialize();
+		this.#initialize();
 		this.configure(options);
 	}
 	configure(options) {
 		if (undefined !== options.mode)
 			this.#mode = options.mode;
 	}
-	calculate(rawTemp, rawPressure, mode) @ "xs_bmp180_calculate";
-	setCalibration(calibrate) @ "xs_bmp180_setCalibration";
 	close() @ "xs_bmp180_close";
 	sample() {
 		const io = this.#io;
@@ -86,7 +89,7 @@ class BMP180 extends aHostObject {
 		io.write(wBuf);
 		Timer.delay(5);
 
-		let temp = this.readUInt(Register.BMP180_RESULT);
+		let temp = this.#readUInt(Register.BMP180_RESULT);
 
 		wBuf[0] = Register.BMP180_CONTROL;
 		wBuf[1] = Register.CMD_PRES + (this.#mode << 6);
@@ -95,7 +98,7 @@ class BMP180 extends aHostObject {
 			case Config.Mode.STANDARD: Timer.delay(8); break;
 			case Config.Mode.HIGHRES: Timer.delay(14); break;
 			case Config.Mode.ULTRAHIGHRES: Timer.delay(26); break;
-			default: delay(5); break;
+			default: Timer.delay(5); break;
 		}
 
 		bBuf[0] = Register.BMP180_RESULT;
@@ -105,30 +108,32 @@ class BMP180 extends aHostObject {
 		let pr = (this.#valueBuffer[0] << 16) | (this.#valueBuffer[1] << 8) | this.#valueBuffer[2];
 		pr >>= (8 - this.#mode);
 
-		return this.calculate(temp, pr, this.#mode);
+		return this.#calculate(temp, pr, this.#mode);
 	}
-	initialize() {
+	#initialize() {
 		let calib = {};
-		calib.AC1 = this.readInt(0xAA);
-		calib.AC2 = this.readInt(0xAC);
-		calib.AC3 = this.readInt(0xAE);
-		calib.AC4 = this.readUInt(0xB0);
-		calib.AC5 = this.readUInt(0xB2);
-		calib.AC6 = this.readUInt(0xB4);
-		calib.B1 = this.readInt(0xB6);
-		calib.B2 = this.readInt(0xB8);
-		calib.MB = this.readInt(0xBA);
-		calib.MC = this.readInt(0xBC);
-		calib.MD = this.readInt(0xBE);
+		calib.AC1 = this.#readInt(0xAA);
+		calib.AC2 = this.#readInt(0xAC);
+		calib.AC3 = this.#readInt(0xAE);
+		calib.AC4 = this.#readUInt(0xB0);
+		calib.AC5 = this.#readUInt(0xB2);
+		calib.AC6 = this.#readUInt(0xB4);
+		calib.B1 = this.#readInt(0xB6);
+		calib.B2 = this.#readInt(0xB8);
+		calib.MB = this.#readInt(0xBA);
+		calib.MC = this.#readInt(0xBC);
+		calib.MD = this.#readInt(0xBE);
 
-		this.setCalibration(calib);
+		this.#setCalibration(calib);
 	}
-	twoC(val) {
+	#calculate(rawTemp, rawPressure, mode) @ "xs_bmp180_calculate";
+	#setCalibration(calibrate) @ "xs_bmp180_setCalibration";
+	#twoC(val) {
 		if (val > 32767)
 			val = -(65535 - val + 1);
 		return val;
 	}
-	readUInt(reg) {
+	#readUInt(reg) {
 		const io = this.#io;
 		const bBuf = this.#byteBuffer;
 		const wBuf = this.#wordBuffer;
@@ -137,8 +142,8 @@ class BMP180 extends aHostObject {
 		io.read(wBuf);
 		return (wBuf[0] << 8) | wBuf[1];
 	}
-	readInt(reg) {
-		return this.twoC(this.readUInt(reg));
+	#readInt(reg) {
+		return this.#twoC(this.#readUInt(reg));
 	}
 }
 Object.freeze(BMP180.prototype);

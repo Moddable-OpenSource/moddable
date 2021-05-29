@@ -24,10 +24,7 @@
 	https://www.ti.com/lit/ds/symlink/tmp117.pdf
 */
 
-import device from "embedded:provider/builtin";
 import SMBus from "embedded:io/smbus";
-const Digital = device.io.Digital;
-
 import Timer from "timer";
 
 const Register = Object.freeze({
@@ -54,7 +51,7 @@ const ConfigMask = Object.freeze({
 	SOFT_RESET:		0b0000_0000_0000_0010
 });
 
-class Temperature {
+class TMP117 {
 	#io;
 	#onAlert;
 	#irqMonitor;
@@ -62,9 +59,9 @@ class Temperature {
 
 	constructor(options) {
 		const io = this.#io = new SMBus({
-			...options,
 			hz: 100_000, 
-			address: 0x48
+			address: 0x48,
+			...options,
 		});
 
 		let conf = io.readWord(Register.TMP117_CHIPID, true);
@@ -75,47 +72,35 @@ class Temperature {
 		conf |= ConfigMask.SOFT_RESET;		// softreset
 		io.writeWord(Register.TMP117_CONF, conf, true);
 		
-		if (undefined !== options.target)
-			this.target = options.target;
+		if (options.alert) {
+			const alert = options.alert;
 
-		try {
-			if (options.alert && options.onAlert) {
+			if (options.onAlert) {
 				this.#onAlert = options.onAlert;
-				this.#irqMonitor = new Digital({
-					pin: options.alert.pin,
-					mode: Digital.Input,
-					edge: Digital.Falling,
-					onReadable: this.onAlert});
-//					onReadable: options.onAlert});
-				this.#irqMonitor.target = this;
+				this.#irqMonitor = new alert.io({
+					onReadable: () => this.#onAlert(),
+					...alert
+				});
 			}
+		}
 
-			this.configure({
-				shutdownMode: false,
-				thermostatMode: this.#onAlert ? "interrupt" : "comparator",
-				polarity: 0,
-				averaging: 8
-			});
-		}
-		catch(e) {
-			this.close();
-			throw e;
-		}
+		this.configure({
+			shutdownMode: false,
+			thermostatMode: this.#onAlert ? "interrupt" : "comparator",
+			polarity: 0,
+			averaging: 8,
+			...options
+		});
+
 		this.#status = "ready";
 	}
-	onAlert() {
-		this.target.status;	// clear alert
-		this.target.callAlert();
-	}
-	callAlert() {
-		this.#onAlert();
-	}
-	get status() { return this.#io.readWord(Register.TMP117_CONF, true); }
+//	get #status() { return this.#io.readWord(Register.TMP117_CONF, true); }
 
-	shutdown() {
-		let conf = this.#io.readWord(Register.TMP117_CONF, true);
+	#shutdown() {
+		const io = this.#io;
+		let conf = io.readWord(Register.TMP117_CONF, true);
 		conf &= ~ConfigMask.MODE;
-		this.#io.writeWord(Register.TMP117_CONF, conf, true);
+		io.writeWord(Register.TMP117_CONF, conf, true);
 	}
 	close() {
 		if ("ready" === this.#status) {
@@ -157,35 +142,37 @@ class Temperature {
 			}
 		}
 
-		if (undefined !== options.alert?.highTemperature) {
-			const temp = options.alert.highTemperature / .0078125;
-			io.writeWord(Register.TMP117_THI, temp, true);
-		}
+		if (options.alert) {
+			const alert = options.alert;
 
-		if (undefined !== options.alert?.lowTemperature) {
-			const temp = options.alert.lowTemperature / .0078125;
-			io.writeWord(Register.TMP117_TLO, temp, true);
+			if (undefined !== alert.highTemperature) {
+				const value = alert.highTemperature / .0078125;
+				io.writeWord(Register.TMP117_THI, value, true);
+			}
+
+			if (undefined !== alert.lowTemperature) {
+				const value = alert.lowTemperature / .0078125;
+				io.writeWord(Register.TMP117_TLO, value, true);
+			}
 		}
 
 		io.writeByte(Register.TMP117_CONF, conf);
 	}
 
-
 	sample() {
 		const io = this.#io;
 
-		const value = twoC(io.readWord(Register.TMP117_TEMP, true));
+		let value = io.readWord(Register.TMP117_TEMP, true);
+		value = ((value & 0x8000) ? (value | 0xffff0000) : value);
 
 		let sign = 1;
-		if (1 === (value & 0b1000_0000_0000_0000))
+		if (1 === (value & 0b1000_0000_0000_0000)) {
 			sign = -1;
+			value &= 0b0111_1111_1111_1111;
+		}
 
 		return { temperature: value * sign * 0.0078125 };
 	}
 }
 
-function twoC(a) {
-	return ((a & 0x8000) ? (a | 0xffff0000) : a);
-}
-
-export default Temperature;
+export default TMP117;

@@ -21,10 +21,7 @@
     TMP102 - temperature
 */
 
-import Timer from "timer";
 import SMBus from "embedded:io/smbus";
-import device from "embedded:provider/builtin";
-const Digital = device.io.Digital;
 
 const Register = Object.freeze({
 	TEMP_READ: 0x00,
@@ -43,12 +40,23 @@ class TMP102  {
 
 	constructor(options) {
 		const io = this.#io = new SMBus({
-			...options,
 			hz: 100_000,
-			address: 0x48
+			address: 0x48,
+			...options
 		});
 
-		this.#extShift = 4;
+		if (options.alert) {
+			const alert = options.alert;
+
+			if (options.onAlert) {
+				this.#onAlert = options.onAlert;
+				this.#irqMonitor = new alert.io({
+					onReadable: () => this.#onAlert(),
+					...alert
+				 });
+			}
+		}
+
 		this.#extendedRange = false;
 		this.configure(options);
 	}
@@ -56,42 +64,35 @@ class TMP102  {
 	configure(options) {
 		const io = this.#io;
 
-//		io.writeWord(Register.TEMP_HIGH, 0x7ff8);
-		let config = io.readWord(Register.CONFIG, true);
+		let config = io.readWord(Register.CONFIG, true) & 0b1111_1111_1110_0000;
 
 		if (undefined !== options.extendedRange)
 			this.#extendedRange = options.extendedRange;
-
-		config &= 0b1111_1111_1110_0000;
 
 		if (this.#extendedRange) {
 			config |= 0b1_0000;
 			this.#extShift = 3;
 		}
-
-		if (options.alert && options.onAlert) {
-			this.#onAlert = options.onAlert;
-			this.#irqMonitor = new Digital({
-				pin: options.alert.pin,
-				mode: Digital.Input,
-				edge: Digital.Falling,
-				onReadable: options.onAlert});
-			this.#irqMonitor.target = this;
-		}
-
-		if (options.alert?.highTemperature) {
-			const value = (options.alert.highTemperature / 0.0625) << this.#extShift;
-			io.writeWord(Register.TEMP_HIGH, value, true);
-		}
 		else
-			io.writeWord(Register.TEMP_HIGH, 0x7ff8, true);
+			this.#extShift = 4;
 
-		if (options.alert?.lowTemperature) {
-			const value = (options.alert.lowTemperature / 0.0625) << this.#extShift;
-			io.writeWord(Register.TEMP_LO, value, true);
+		if (options.alert) {
+			const alert = options.alert;
+
+			if (undefined !== alert.highTemperature) {
+				const value = (alert.highTemperature / 0.0625) << this.#extShift;
+				io.writeWord(Register.TEMP_HIGH, value, true);
+			}
+			else
+				io.writeWord(Register.TEMP_HIGH, 0x7ff8, true);
+
+			if (undefined !== alert.lowTemperature) {
+				const value = (alert.lowTemperature / 0.0625) << this.#extShift;
+				io.writeWord(Register.TEMP_LO, value, true);
+			}
+			else
+				io.writeWord(Register.TEMP_LO, 0xfff8, true);
 		}
-		else
-			io.writeWord(Register.TEMP_LO, 0x0, true);	// lower?
 
 		if (undefined !== options.hz) {
 			const hz = options.hz;
@@ -124,13 +125,12 @@ class TMP102  {
 	close() {
 		this.#irqMonitor?.close();
 		this.#irqMonitor = undefined;
+		this.#io.close();
+		this.#io = undefined;
 	}
 
 	sample() {
-		const io = this.#io;
-
-		let value = io.readWord(Register.TEMP_READ, true) >> this.#extShift;
-//		value = ((value & 0x00ff) << 5) | ((value & 0xff00) >> 11);
+		let value = this.#io.readWord(Register.TEMP_READ, true) >> this.#extShift;
 		if (value & 0x1000) {
 			value -= 1;
 			value = ~value & 0x1fff;

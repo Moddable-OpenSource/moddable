@@ -22,29 +22,25 @@ const temp = new Temperature({
 	...device.I2C.default,
 	extendedRange: true,
 	alert: {
+		io: device.io.Digital,
 		pin: config.interrupt_pin,
-		mode: Digital.Input,
+		mode: Digital.InputPullUp,
 		edge: Digital.Falling
 	},
-	onAlert: () => {
+	onAlert() {
 		trace(`Trigger: temp ${temp.sample().temperature} C\n`);
 	}
 });
 
 temp.configure({
 	alert: {
-		highTemperature: 31,
-		lowTemperature: 27
+		highTemperature: 33,
+		lowTemperature: 29
 	}
 });
 
-let lastSample = {};
 Timer.repeat(() => {
 	const sample = temp.sample();
-
-	if (sample.temperature && sample.temperature != lastSample.temperature)
-		trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
-
-	lastSample = sample;
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
 }, 2000);
 

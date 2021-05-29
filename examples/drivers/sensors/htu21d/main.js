@@ -21,7 +21,7 @@ const humidity = new Humidity(device.I2C.default);
 Timer.repeat(() => {
 	const sample = humidity.sample();
 
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C -- `);
 	trace(`Humidity: ${sample.humidity.toFixed(2)} %RH\n`);
 
 }, 5000);

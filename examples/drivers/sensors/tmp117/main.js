@@ -21,11 +21,12 @@ const Digital = device.io.Digital;
 const temp = new Temperature({
 	...device.I2C.default,
 	alert: {
+		io: device.io.Digital,
 		pin: config.interrupt_pin,
-		mode: Digital.Input,
+		mode: Digital.InputPullUp,
 		edge: Digital.Falling
 	},
-	onAlert: () => {
+	onAlert() {
 		trace(`Trigger: temp ${temp.sample().temperature} C\n`);
 	}
 });

@@ -13,16 +13,16 @@
  */
 
 import device from "embedded:provider/builtin";
-import Humidity from "embedded:sensor/SI7020";
+import Humidity from "embedded:sensor/AM2320";
 import Timer from "timer";
 
-const humidity = new Humidity(device.I2C.default);
+const sensor = new Humidity(device.I2C.default);
 
 Timer.repeat(() => {
-	const sample = humidity.sample();
+	const sample = sensor.sample();
 
 	trace(`Temperature: ${sample.temperature.toFixed(2)} C `);
 	trace(`Humidity: ${sample.humidity.toFixed(2)} %RH\n`);
 
-}, 5000);
+}, 2000);
 

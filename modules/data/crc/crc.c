@@ -75,9 +75,11 @@ void xs_checksum8(xsMachine *the) {
 	int len;
 	uint8_t *p;
 	uint8_t initial, poly, refIn, refOut, xorOut;
-	
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		p = xsmcToArrayBuffer(xsArg(0));
+
+	xsResult = xsArg(0);
+	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
+		xsmcGet(xsArg(0), xsResult, xsID_buffer);
+	p = xsmcToArrayBuffer(xsArg(0));
 	len = xsmcToInteger(xsArg(1));
 	poly = xsmcToInteger(xsArg(2));
 	initial = xsmcToInteger(xsArg(3));
@@ -137,8 +139,10 @@ void xs_checksum16(xsMachine *the) {
 	uint8_t refIn, refOut;
 	uint16_t initial, poly, xorOut;
 	
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		p = xsmcToArrayBuffer(xsArg(0));
+	xsResult = xsArg(0);
+	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
+		xsmcGet(xsArg(0), xsResult, xsID_buffer);
+	p = xsmcToArrayBuffer(xsArg(0));
 	len = xsmcToInteger(xsArg(1));
 	poly = xsmcToInteger(xsArg(2));
 	initial = xsmcToInteger(xsArg(3));

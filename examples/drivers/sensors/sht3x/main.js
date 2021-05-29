@@ -16,12 +16,12 @@ import device from "embedded:provider/builtin";
 import Humidity from "embedded:sensor/SHT3x";
 import Timer from "timer";
 
-const humidity = new Humidity(device.I2C.default);
+const sensor = new Humidity(device.I2C.default);
 
 Timer.repeat(() => {
-	const sample = humidity.sample();
+	const sample = sensor.sample();
 
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C `);
 	trace(`Humidity: ${sample.humidity.toFixed(2)} %RH\n`);
-}, 10000);
+}, 2000);
 

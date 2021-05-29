@@ -24,10 +24,7 @@
 	https://www.nxp.com/docs/en/data-sheet/LM75B.pdf
 */
 
-import device from "embedded:provider/builtin";
 import SMBus from "embedded:io/smbus";
-const Digital = device.io.Digital;
-
 import Timer from "timer";
 
 const Register = Object.freeze({
@@ -37,7 +34,7 @@ const Register = Object.freeze({
 	LM75_TOS:	0x03
 });
 
-class Temperature {
+class LM75 {
 	#io;
 	#onAlert;
 	#irqMonitor;
@@ -45,36 +42,29 @@ class Temperature {
 
 	constructor(options) {
 		const io = this.#io = new SMBus({
-			...options,
 			hz: 100_000, 
-			address: 0x48
+			address: 0x48,
+			...options
 		});
 
-		if (undefined !== options.target)
-			this.target = options.target;
+		if (options.alert) {
+			const alert = options.alert;
 
-		try {
-			if (options.alert && options.onAlert) {
+			if (options.onAlert) {
 				this.#onAlert = options.onAlert;
-				this.#irqMonitor = new Digital({
-					pin: options.alert.pin,
-					mode: Digital.Input,
-					edge: Digital.Falling,
-					onReadable: options.onAlert});
-				this.#irqMonitor.target = this;
-//				this.#irqMonitor.onChanged = () => this.#onAlert();
+				this.#irqMonitor = new alert.io({
+					onReadable: () => this.#onAlert(),
+					...alert
+				});
 			}
 
 			this.configure({
 				shutdownMode: false,
 				thermostatMode: this.#onAlert ? "interrupt" : "comparator",
 				polarity: 0,
-				faultQueue: 1
+				faultQueue: 1,
+				...options
 			});
-		}
-		catch(e) {
-			this.close();
-			throw e;
 		}
 		this.#status = "ready";
 	}
@@ -84,8 +74,11 @@ class Temperature {
 			this.#io.writeByte(Register.LM75_CONF, 1);		// shut down device
 			this.#status = undefined;
 		}
+
 		this.#irqMonitor?.close();
 		this.#irqMonitor = undefined;
+		this.#io.close();
+		this.#io = undefined;
 	}
 
 	configure(options) {
@@ -119,44 +112,46 @@ class Temperature {
 				default: throw new Error("invalid faultQueue");
 			}
 		}
-	
-		const hiTemp = (options.highTemperature ?? 80) * 2;
-		const loTemp = (options.lowTemperature ?? 75) * 2;
 
-		const hiVal = (hiTemp > 250) ? 250 : (hiTemp < -110) ? -110 : hiTemp | 0;
-		const loVal = (loTemp > 250) ? 250 : (loTemp < -110) ? -110 : loTemp | 0;
+		if (options.alert) {
+			const alert = options.alert;
 
-		io.writeWord(Register.LM75_TOS, hiVal << 7, true);
-		io.writeWord(Register.LM75_THYST, loVal << 7, true);
+			if (undefined !== alert.highTemperature) {
+				const value = (((alert.highTemperature > 250) ? 250 : (alert.highTemperature < -110) ? -110 : alert.highTemperature) * 2) | 0;
+				io.writeWord(Register.LM75_TOS, value << 7, true);
+			}
+			if (undefined !== alert.lowTemperature) {
+				const value = (((alert.lowTemperature > 250) ? 250 : (alert.lowTemperature < -110) ? -110 : alert.lowTemperature) * 2) | 0;
+				io.writeWord(Register.LM75_THYST, value << 7, true);
+			}
+		}
 
 		io.writeByte(Register.LM75_CONF, conf);
 	}
-
 
 	sample() {
 		const io = this.#io;
 		const conf = io.readByte(Register.LM75_CONF);
 		if (conf & 1) {	// if in shutdown mode, turn it on
 			io.writeByte(Register.LM75_CONF, conf & 0b1111_1110);
-			Timer.delay(250);		// wait for new reading to be available
+			Timer.delay(100);		// wait for new reading to be available
 		}
 			
-		const value = twoC(io.readWord(Register.LM75_TEMP, true));
+		let value = io.readWord(Register.LM75_TEMP, true);
+		value = ((value & 0x8000) ? (value | 0xffff0000) : value);
 
 		if (conf & 1)	// if was in shutdown mode, turn it back off
 			io.writeByte(Register.LM75_CONF, conf);
 
 		let sign = 1;
-		if (1 === (value & 0b1000_0000_0000_0000))
+		if (1 === (value & 0b1000_0000_0000_0000)) {
 			sign = -1;
+			value &= 0b0111_1111_1111_1111;
+		}
 
 		return { temperature: (value >> 5) * sign * 0.125 };
 	}
 }
 
-function twoC(a) {
-	return ((a & 0x8000) ? (a | 0xffff0000) : a);
-}
 
-
-export default Temperature;
+export default LM75;

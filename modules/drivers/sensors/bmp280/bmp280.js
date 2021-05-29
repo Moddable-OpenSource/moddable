@@ -73,24 +73,28 @@ class aHostObject @ "xs_bmp280_host_object_destructor" {
 
 class BMP280 extends aHostObject {
 	#io;
-	#byteBuffer = new Uint8Array(1);
-	#wordBuffer = new Uint8Array(2);
-	#valueBuffer = new Uint8Array(3);
+	#byteBuffer;
+	#wordBuffer;
+	#valueBuffer;
 
 	constructor(options) {
 		super(options);
 		const io = this.#io = new (options.io)({
-			...options,
 			hz: 100_000,
-			address: 0x76
+			address: 0x76,
+			...options
 		});
 
-		this.#byteBuffer[0] = Register.BMP280_CHIPID;
-		io.write(this.#byteBuffer);
-		if (0x58 !== io.read(this.#byteBuffer)[0])
+		const bBuf = this.#byteBuffer = new Uint8Array(1);
+		this.#wordBuffer = new Uint8Array(2);
+		this.#valueBuffer = new Uint8Array(3);
+
+		bBuf[0] = Register.BMP280_CHIPID;
+		io.write(bBuf);
+		if (0x58 !== io.read(bBuf)[0])
 			throw new Error("unexpected sensor");
 
-		this.initialize();
+		this.#initialize();
 		this.configure(options);
 	}
 	configure(options) {
@@ -128,38 +132,38 @@ class BMP280 extends aHostObject {
 		wBuf[1] = measureReg;
 		io.write(wBuf);
 	}
-	calculate(rawTemp, rawPressure) @ "xs_bmp280_calculate";
-	setCalibration(calibrate) @ "xs_bmp280_setCalibration";
-	close() @ "xs_bmp280_close";
 	sample() {
-		let rawT = this.read24(Register.BMP280_TEMPDATA);
-		let rawP = this.read24(Register.BMP280_PRESSUREDATA);
-		return this.calculate(rawT, rawP);
+		let rawT = this.#read24(Register.BMP280_TEMPDATA);
+		let rawP = this.#read24(Register.BMP280_PRESSUREDATA);
+		return this.#calculate(rawT, rawP);
 	}
-	initialize() {
+	close() @ "xs_bmp280_close";
+	#calculate(rawTemp, rawPressure) @ "xs_bmp280_calculate";
+	#setCalibration(calibrate) @ "xs_bmp280_setCalibration";
+	#initialize() {
 		let calib = {};
-		calib.T1 = this.read16LE(0x88);
-		calib.T2 = this.readS16LE(0x8A);
-		calib.T3 = this.readS16LE(0x8C);
+		calib.T1 = this.#read16LE(0x88);
+		calib.T2 = this.#readS16LE(0x8A);
+		calib.T3 = this.#readS16LE(0x8C);
 
-		calib.P1 = this.read16LE(0x8E);
-		calib.P2 = this.readS16LE(0x90);
-		calib.P3 = this.readS16LE(0x92);
-		calib.P4 = this.readS16LE(0x94);
-		calib.P5 = this.readS16LE(0x96);
-		calib.P6 = this.readS16LE(0x98);
-		calib.P7 = this.readS16LE(0x9A);
-		calib.P8 = this.readS16LE(0x9C);
-		calib.P9 = this.readS16LE(0x9E);
+		calib.P1 = this.#read16LE(0x8E);
+		calib.P2 = this.#readS16LE(0x90);
+		calib.P3 = this.#readS16LE(0x92);
+		calib.P4 = this.#readS16LE(0x94);
+		calib.P5 = this.#readS16LE(0x96);
+		calib.P6 = this.#readS16LE(0x98);
+		calib.P7 = this.#readS16LE(0x9A);
+		calib.P8 = this.#readS16LE(0x9C);
+		calib.P9 = this.#readS16LE(0x9E);
 
-		this.setCalibration(calib);
+		this.#setCalibration(calib);
 	}
-	twoC(val) {
+	#twoC(val) {
 		if (val > 32767)
 			val = -(65535 - val + 1);
 		return val;
 	}
-	read16(reg) {
+	#read16(reg) {
 		const io = this.#io;
 		const bBuf = this.#byteBuffer;
 		const wBuf = this.#wordBuffer;
@@ -168,17 +172,17 @@ class BMP280 extends aHostObject {
 		io.read(wBuf);
 		return (wBuf[0] << 8) | wBuf[1];
 	}
-	readS16(reg) {
-		return this.twoC(this.read16(reg));
+	#readS16(reg) {
+		return this.#twoC(this.#read16(reg));
 	}
-	read16LE(reg) {
-		let v = this.read16(reg);
+	#read16LE(reg) {
+		let v = this.#read16(reg);
 		return ((v & 0xff00) >> 8) | ((v & 0xff) << 8);
 	}
-	readS16LE(reg) {
-		return this.twoC(this.read16LE(reg));
+	#readS16LE(reg) {
+		return this.#twoC(this.#read16LE(reg));
 	}
-	read24(reg) {
+	#read24(reg) {
 		const io = this.#io;
 		const bBuf = this.#byteBuffer;
 		const vBuf = this.#valueBuffer;

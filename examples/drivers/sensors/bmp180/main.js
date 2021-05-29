@@ -16,8 +16,10 @@ import device from "embedded:provider/builtin";
 import { BMP180, Config } from "embedded:sensor/BMP180";
 import Timer from "timer";
 
-const sensor = new BMP180({ ...device.I2C.default,
-			mode: Config.Mode.ULTRAHIGHRES });
+const sensor = new BMP180({
+			...device.I2C.default,
+			mode: Config.Mode.ULTRAHIGHRES
+		});
 
 function CtoF(c) { return (c*1.8)+32; }
 function PatoInHg(Pa) { return Pa * 0.0002953; }

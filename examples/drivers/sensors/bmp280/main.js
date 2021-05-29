@@ -32,5 +32,5 @@ Timer.repeat(() => {
 	trace(`Temperature: ${sample.temperature.toFixed(2)} C -- ${CtoF(sample.temperature).toFixed(2)} F\n`);
 	trace(`Pressure: ${sample.pressure.toFixed(2)} Pa -- ${PatoInHg(sample.pressure).toFixed(3)} inHg\n`);
 
-}, 10000);
+}, 2000);
 
