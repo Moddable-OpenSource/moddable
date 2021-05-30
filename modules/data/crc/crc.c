@@ -68,8 +68,6 @@ typedef struct {
 
 void xs_crc8_destructor(void *data)
 {
-	if (data)
-		c_free(data);
 }
 
 void xs_crc8(xsMachine *the)
@@ -80,11 +78,7 @@ void xs_crc8(xsMachine *the)
 	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : false;
 	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : false;
 	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
-	CRC8 crc8 = c_malloc(sizeof(CRC8Record));
-	if (!crc8)
-		xsUnknownError("no memory");
-
-	xsmcSetHostData(xsThis, crc8);
+	CRC8 crc8 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC8Record));
 
 	crc8->reset = initial;
 	crc8->initial = initial;
@@ -97,28 +91,21 @@ void xs_crc8(xsMachine *the)
 
 void xs_crc8_close(xsMachine *the)
 {
-	CRC8 crc8 = xsmcGetHostData(xsThis);
-	xs_crc8_destructor(crc8);
 	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_crc8_reset(xsMachine *the)
 {
-	CRC8 crc8 = xsmcGetHostData(xsThis);
-	if (!crc8)
-		xsUnknownError("closed");
+	CRC8 crc8 = xsmcGetHostChunk(xsThis);
 
 	crc8->initial = crc8->reset;
 }
 
 void xs_crc8_checksum(xsMachine *the)
 {
-	CRC8 crc8 = xsmcGetHostData(xsThis);
+	CRC8 crc8 = xsmcGetHostChunk(xsThis);
 	uint8_t *data;
 	uint32_t length;
-
-	if (!crc8)
-		xsUnknownError("closed");
 
 	xsmcGetBuffer(xsArg(0), (void **)&data, &length);
 	crc8->initial = checksum8(data, length, crc8->table, crc8->initial, crc8->reflectInput, crc8->reflectOutput, crc8->xorOutput);
@@ -174,8 +161,6 @@ typedef struct {
 
 void xs_crc16_destructor(void *data)
 {
-	if (data)
-		c_free(data);
 }
 
 void xs_crc16(xsMachine *the)
@@ -186,11 +171,7 @@ void xs_crc16(xsMachine *the)
 	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : false;
 	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : false;
 	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
-	CRC16 crc16 = c_malloc(sizeof(CRC16Record));
-	if (!crc16)
-		xsUnknownError("no memory");
-
-	xsmcSetHostData(xsThis, crc16);
+	CRC16 crc16 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC16Record));
 
 	crc16->reset = initial;
 	crc16->initial = initial;
@@ -203,28 +184,21 @@ void xs_crc16(xsMachine *the)
 
 void xs_crc16_close(xsMachine *the)
 {
-	CRC16 crc16 = xsmcGetHostData(xsThis);
-	xs_crc16_destructor(crc16);
 	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_crc16_reset(xsMachine *the)
 {
-	CRC16 crc16 = xsmcGetHostData(xsThis);
-	if (!crc16)
-		xsUnknownError("closed");
+	CRC16 crc16 = xsmcGetHostChunk(xsThis);
 
 	crc16->initial = crc16->reset;
 }
 
 void xs_crc16_checksum(xsMachine *the)
 {
-	CRC16 crc16 = xsmcGetHostData(xsThis);
+	CRC16 crc16 = xsmcGetHostChunk(xsThis);
 	uint8_t *data;
 	uint32_t length;
-
-	if (!crc16)
-		xsUnknownError("closed");
 
 	xsmcGetBuffer(xsArg(0), (void **)&data, &length);
 	crc16->initial = checksum16(data, length, crc16->table, crc16->initial, crc16->reflectInput, crc16->reflectOutput, crc16->xorOutput);
