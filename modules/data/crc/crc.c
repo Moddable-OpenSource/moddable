@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -19,23 +19,16 @@
  */
 
 #include "xsmc.h"
-#include "mc.xs.h"			// for xsID_ values
 #include "xsHost.h"
 
-static uint8_t table8_init = 0;	// will contain polynomial when configured
-static uint8_t *crc8_table = NULL;
-//static uint8_t crc8_table[256];
-static uint16_t table16_init = 0; // will contain polynomial when configured
-static uint16_t *crc16_table = NULL;
-//static uint16_t crc16_table[256];
+// https://graphics.stanford.edu/~seander/bithacks.html
+uint8_t reflect8(uint8_t b) {
+	return ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+}
 
-static void setup_crc8_table(uint8_t polynomial) {
+static void make_crc8_table(uint8_t polynomial, uint8_t *crc8_table)
+{
 	int i, j, cur;
-
-	if (NULL == crc8_table)
-		crc8_table = (uint8_t*)c_malloc(256);
-	else if (table8_init == polynomial)
-		return;
 
 	for (i=0; i<256; i++) {
 		for (cur=i, j=0; j<8; j++) {
@@ -46,19 +39,12 @@ static void setup_crc8_table(uint8_t polynomial) {
 		}
 		crc8_table[i] = cur;
 	}
-	table8_init = polynomial;
 }
 
-// https://graphics.stanford.edu/~seander/bithacks.html
-uint8_t reflect8(uint8_t b) {
-	return ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16; 
-}
-
-uint8_t checksum8(uint8_t *bytes, uint32_t length, uint8_t poly, uint8_t initial, uint8_t refIn, uint8_t refOut, uint8_t xorOut) {
+static uint8_t checksum8(uint8_t *bytes, uint32_t length, uint8_t *crc8_table, uint8_t initial, uint8_t refIn, uint8_t refOut, uint8_t xorOut) {
 	uint8_t c = initial;
 	uint32_t i;
 
-	setup_crc8_table(poly);
 	for (i=0; i<length; i++)
 		if (refIn)
 			c = crc8_table[(c ^ reflect8(bytes[i])) % 256];
@@ -71,33 +57,79 @@ uint8_t checksum8(uint8_t *bytes, uint32_t length, uint8_t poly, uint8_t initial
 		return c ^ xorOut;
 }
 
-void xs_checksum8(xsMachine *the) {
-	int len;
-	uint8_t *p;
-	uint8_t initial, poly, refIn, refOut, xorOut;
+typedef struct {
+	uint8_t	reset;
+	uint8_t	initial;
+	uint8_t	reflectInput;
+	uint8_t	reflectOutput;
+	uint8_t	xorOutput;
+	uint8_t	table[256];
+} CRC8Record, *CRC8;
 
-	xsResult = xsArg(0);
-	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-		xsmcGet(xsArg(0), xsResult, xsID_buffer);
-	p = xsmcToArrayBuffer(xsArg(0));
-	len = xsmcToInteger(xsArg(1));
-	poly = xsmcToInteger(xsArg(2));
-	initial = xsmcToInteger(xsArg(3));
-	refIn = xsmcToInteger(xsArg(4));
-	refOut = xsmcToInteger(xsArg(5));
-	xorOut = xsmcToInteger(xsArg(6));
-
-	xsmcSetInteger(xsResult, checksum8(p, len, poly, initial, refIn, refOut, xorOut));
+void xs_crc8_destructor(void *data)
+{
+	if (data)
+		c_free(data);
 }
 
-static void setup_crc16_table(uint16_t polynomial) {
+void xs_crc8(xsMachine *the)
+{
+	int argc = xsmcArgc;
+	int polynomial = xsmcToInteger(xsArg(0));
+	int initial = (argc > 1) ? xsmcToInteger(xsArg(1)) : 0;
+	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : false;
+	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : false;
+	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
+	CRC8 crc8 = c_malloc(sizeof(CRC8Record));
+	if (!crc8)
+		xsUnknownError("no memory");
+
+	xsmcSetHostData(xsThis, crc8);
+
+	crc8->reset = initial;
+	crc8->initial = initial;
+	crc8->reflectInput = reflectInput;
+	crc8->reflectOutput = reflectOutput;
+	crc8->xorOutput = xorOutput;
+
+	make_crc8_table(polynomial, crc8->table);
+}
+
+void xs_crc8_close(xsMachine *the)
+{
+	CRC8 crc8 = xsmcGetHostData(xsThis);
+	xs_crc8_destructor(crc8);
+	xsmcSetHostData(xsThis, NULL);
+}
+
+void xs_crc8_reset(xsMachine *the)
+{
+	CRC8 crc8 = xsmcGetHostData(xsThis);
+	if (!crc8)
+		xsUnknownError("closed");
+
+	crc8->initial = crc8->reset;
+}
+
+void xs_crc8_checksum(xsMachine *the)
+{
+	CRC8 crc8 = xsmcGetHostData(xsThis);
+	uint8_t *data;
+	uint32_t length;
+
+	if (!crc8)
+		xsUnknownError("closed");
+
+	xsmcGetBuffer(xsArg(0), (void **)&data, &length);
+	crc8->initial = checksum8(data, length, crc8->table, crc8->initial, crc8->reflectInput, crc8->reflectOutput, crc8->xorOutput);
+
+	xsmcSetInteger(xsResult, crc8->initial);
+}
+
+
+static void make_crc16_table(uint16_t polynomial, uint16_t *crc16_table) {
 	int i, j;
 	uint16_t crc;
-
-	if (NULL == crc16_table)
-		crc16_table = (uint16_t*)c_malloc(512);
-	else if (table16_init == polynomial)
-		return;
 
 	for (i=0; i<256; i++) {
 		for (crc=i<<8, j=0; j<8; j++) {
@@ -110,15 +142,13 @@ static void setup_crc16_table(uint16_t polynomial) {
 		}
 		crc16_table[i] = crc;
 	}
-	table16_init = polynomial;
 }
 
-uint16_t checksum16(uint8_t *bytes, uint32_t length, uint16_t poly, uint16_t initial, uint8_t refIn, uint8_t refOut, uint16_t xorOut) {
-	int i, x;
+static uint16_t checksum16(uint8_t *bytes, uint32_t length, uint16_t *crc16_table, uint16_t initial, uint8_t refIn, uint8_t refOut, uint16_t xorOut) {
+	uint32_t i;
 	uint16_t crc = initial;
 	uint8_t b;
 
-	setup_crc16_table(poly);
 	for (i=0; i<length; i++) {
 		b = bytes[i];
 		if (refIn)
@@ -133,22 +163,71 @@ uint16_t checksum16(uint8_t *bytes, uint32_t length, uint16_t poly, uint16_t ini
 		return crc ^ xorOut;
 }
 
-void xs_checksum16(xsMachine *the) {
-	int len;
-	uint8_t *p;
-	uint8_t refIn, refOut;
-	uint16_t initial, poly, xorOut;
-	
-	xsResult = xsArg(0);
-	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-		xsmcGet(xsArg(0), xsResult, xsID_buffer);
-	p = xsmcToArrayBuffer(xsArg(0));
-	len = xsmcToInteger(xsArg(1));
-	poly = xsmcToInteger(xsArg(2));
-	initial = xsmcToInteger(xsArg(3));
-	refIn = xsmcToInteger(xsArg(4));
-	refOut = xsmcToInteger(xsArg(5));
-	xorOut = xsmcToInteger(xsArg(6));
-	xsmcSetInteger(xsResult, checksum16(p, len, poly, initial, refIn, refOut, xorOut));
+typedef struct {
+	uint16_t	reset;
+	uint16_t	initial;
+	uint16_t	reflectInput;
+	uint16_t	reflectOutput;
+	uint16_t	xorOutput;
+	uint16_t	table[256];
+} CRC16Record, *CRC16;
+
+void xs_crc16_destructor(void *data)
+{
+	if (data)
+		c_free(data);
 }
 
+void xs_crc16(xsMachine *the)
+{
+	int argc = xsmcArgc;
+	int polynomial = xsmcToInteger(xsArg(0));
+	int initial = (argc > 1) ? xsmcToInteger(xsArg(1)) : 0;
+	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : false;
+	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : false;
+	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
+	CRC16 crc16 = c_malloc(sizeof(CRC16Record));
+	if (!crc16)
+		xsUnknownError("no memory");
+
+	xsmcSetHostData(xsThis, crc16);
+
+	crc16->reset = initial;
+	crc16->initial = initial;
+	crc16->reflectInput = reflectInput;
+	crc16->reflectOutput = reflectOutput;
+	crc16->xorOutput = xorOutput;
+
+	make_crc16_table(polynomial, crc16->table);
+}
+
+void xs_crc16_close(xsMachine *the)
+{
+	CRC16 crc16 = xsmcGetHostData(xsThis);
+	xs_crc16_destructor(crc16);
+	xsmcSetHostData(xsThis, NULL);
+}
+
+void xs_crc16_reset(xsMachine *the)
+{
+	CRC16 crc16 = xsmcGetHostData(xsThis);
+	if (!crc16)
+		xsUnknownError("closed");
+
+	crc16->initial = crc16->reset;
+}
+
+void xs_crc16_checksum(xsMachine *the)
+{
+	CRC16 crc16 = xsmcGetHostData(xsThis);
+	uint8_t *data;
+	uint32_t length;
+
+	if (!crc16)
+		xsUnknownError("closed");
+
+	xsmcGetBuffer(xsArg(0), (void **)&data, &length);
+	crc16->initial = checksum16(data, length, crc16->table, crc16->initial, crc16->reflectInput, crc16->reflectOutput, crc16->xorOutput);
+
+	xsmcSetInteger(xsResult, crc16->initial);
+}
