@@ -42,7 +42,7 @@ class HTU21D  {
 	#io;
 	#byteBuffer = new Uint8Array(1);
 	#valueBuffer = new Uint8Array(3);
-	#crc8;
+	#crc;
 
 	constructor(options) {
 		const io = this.#io = new (options.io)({
@@ -54,7 +54,7 @@ class HTU21D  {
 		this.#byteBuffer[0] = Register.SOFT_RESET;
 		io.write(this.#byteBuffer);
 
-		this.#crc8 = new CRC8(0x31);
+		this.#crc = new CRC8(0x31);
 	}
 	configure(options) {
 	}
@@ -81,7 +81,8 @@ class HTU21D  {
 
 		io.read(vBuf);
 
-		let chk = this.#crc8.checksum(vBuf, 2);
+		this.#crc.reset();
+		let chk = this.#crc.checksum(vBuf.subarray(0,2));
 		if (chk !== vBuf[2]) {
 			trace(`checksum failed: ${chk} vs ${vBuf[2]} on ${vBuf[0]}, ${vBuf[1]}\n`);
 			return -1;

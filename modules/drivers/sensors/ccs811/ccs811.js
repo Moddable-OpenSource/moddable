@@ -71,6 +71,7 @@ class CCS811  {
 		const io = this.#io = new SMBus({
 			hz: 100_000,
 			address: 0x5A,
+			sendStop: true,
 			...options
 		});
 

@@ -37,7 +37,7 @@ class AM2320  {
 	#cmdBuffer = new Uint8Array(3);
 	#crcBuffer = new Uint8Array(4);
 	#valueBuffer = new Uint8Array(6);
-	#crc16;
+	#crc;
 
 	constructor(options) {
 		const io = this.#io = new (options.io)({
@@ -46,7 +46,7 @@ class AM2320  {
 			...options
 		});
 
-		this.#crc16 = new CRC16(0x8005, 0xFFFF, true, true);
+		this.#crc = new CRC16(0x8005, 0xFFFF, true, true);
 	}
 	configure(options) {
 	}
@@ -68,7 +68,6 @@ class AM2320  {
 	}
 	#readValue(reg) {
 		const io = this.#io;
-		const crcBuf = this.#crcBuffer;
 		const cBuf = this.#cmdBuffer;
 		const vBuf = this.#valueBuffer;
 
@@ -88,9 +87,8 @@ class AM2320  {
 		io.read(vBuf);
 
 		// check crc
-		for (let i=0; i<4; i++)
-			crcBuf[i] = vBuf[i];
-		let calcCRC = this.#crc16.checksum(crcBuf);
+		this.#crc.reset();
+		let calcCRC = this.#crc.checksum(vBuf.subarray(0,4));
 
 		if ((vBuf[5] != (calcCRC >> 8)) || (vBuf[4] != (calcCRC & 0xFF)))
 			return;

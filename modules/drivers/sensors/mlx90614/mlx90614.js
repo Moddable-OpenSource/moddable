@@ -91,6 +91,7 @@ class MLX90614 {
 		pBuf[3] = vBuf[0];
 		pBuf[4] = vBuf[1];
 
+		this.#crc.reset();
 		if (this.#crc.checksum(pBuf) !== vBuf[2])
 			xsUnknownError("bad checksum\n");
 

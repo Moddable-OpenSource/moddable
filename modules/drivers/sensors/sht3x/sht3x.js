@@ -44,7 +44,7 @@ class SHT3x  {
 	#wordBuffer;
 	#statusBuffer;
 	#valueBuffer;
-	#crc8;
+	#crc;
 
 	constructor(options) {
 		const io = this.#io = new (options.io)({
@@ -57,12 +57,11 @@ class SHT3x  {
 		this.#statusBuffer = new Uint8Array(3);
 		this.#valueBuffer = new Uint8Array(6);
 		this.#writeCommand(Register.SOFTRESET);
-		this.#crc8 = new CRC8(0x31, 0xff);
+		this.#crc = new CRC8(0x31, 0xff);
 	}
 	configure(options) {
 	}
 	sample() {
-		const wBuf = this.#wordBuffer;
 		const vBuf = this.#valueBuffer;
 		const status = this.#statusBuffer;
 		let ret = {};
@@ -72,18 +71,17 @@ class SHT3x  {
 
 		this.#writeCommand(Register.READSTATUS);
 		this.#io.read(status);
-		if (status[2] !== this.#crc8.checksum(status, 2))
+		this.#crc.reset();
+		if (status[2] !== this.#crc.checksum(status.subarray(0,2)))
             throw new Error("bad checksum");
 
 		this.#writeCommand(Register.CLEARSTATUS);
 
-		wBuf[0] = vBuf[0];
-		wBuf[1] = vBuf[1];
-		if (vBuf[2] == this.#crc8.checksum(wBuf, 2))
+		this.#crc.reset();
+		if (vBuf[2] == this.#crc.checksum(vBuf.subarray(0,2)))
 			ret.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
-		wBuf[0] = vBuf[3];
-		wBuf[1] = vBuf[4];
-		if (vBuf[5] == this.#crc8.checksum(wBuf, 2))
+		this.#crc.reset();
+		if (vBuf[5] == this.#crc.checksum(vBuf.subarray(3,5)))
 			ret.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
 		return ret;
 	}
