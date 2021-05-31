@@ -43,33 +43,33 @@ const crc16_tests = [
 ];
 
 
-let testData = Uint8Array.of(49, 50, 51, 52, 53, 54, 55, 56, 57);
+let testData = Uint8Array.of(49, 50, 51, 52, 53, 54, 55, 56, 57).buffer;
 
-for (let i=0; i<crc8_tests.length; i++) {
+crc8_tests.forEach(data => {
 	let test = new CRC8(
-				crc8_tests[i].poly,
-				crc8_tests[i].init,
-				crc8_tests[i].refIn,
-				crc8_tests[i].refOut,
-				crc8_tests[i].xorOut);
-	let res = test.checksum(testData.buffer);
-	if (res === crc8_tests[i].res)
-		trace(`Success: ${crc8_tests[i].name}\n`);
+				data.poly,
+				data.init,
+				data.refIn,
+				data.refOut,
+				data.xorOut);
+	let res = test.checksum(testData);
+	if (res === data.res)
+		trace(`Success: ${data.name}\n`);
 	else
-		trace(`Failure: ${crc8_tests[i].name} expected ${crc8_tests[i].res} vs. ${res}\n`);
-}
+		trace(`Failure: ${data.name} expected ${data.res} vs. ${res}\n`);
+});
 
-for (let i=0; i<crc16_tests.length; i++) {
+crc16_tests.forEach(data => {
 	let test = new CRC16(
-				crc16_tests[i].poly,
-				crc16_tests[i].init,
-				crc16_tests[i].refIn,
-				crc16_tests[i].refOut,
-				crc16_tests[i].xorOut);
-	let res = test.checksum(testData.buffer);
-	if (res === crc16_tests[i].res)
-		trace(`Success: ${crc16_tests[i].name}\n`);
+				data.poly,
+				data.init,
+				data.refIn,
+				data.refOut,
+				data.xorOut);
+	let res = test.checksum(testData);
+	if (res === data.res)
+		trace(`Success: ${data.name}\n`);
 	else
-		trace(`Failure: ${crc16_tests[i].name} expected ${crc16_tests[i].res} vs. ${res}\n`);
-}
+		trace(`Failure: ${data.name} expected ${data.res} vs. ${res}\n`);
+});
 
