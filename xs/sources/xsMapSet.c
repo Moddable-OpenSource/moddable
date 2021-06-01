@@ -1567,6 +1567,7 @@ void fx_FinalizationRegistryCleanup(txMachine* the, txSlot* registry, txSlot* ca
 	
 	slot = registry->value.finalizationRegistry.callback->next;
 	while (slot) {
+		slot = slot->next;
 		if (slot->value.finalizationCell.target == C_NULL)
 			break;
 		slot = slot->next;
