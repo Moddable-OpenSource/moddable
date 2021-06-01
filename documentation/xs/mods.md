@@ -1,7 +1,7 @@
 # Mods - User Installed Extensions
 
 Copyright 2020-2021 Moddable Tech, Inc.<BR>
-Revised: February 2, 2021
+Revised: June 1, 2021
 
 Mods are scripts that users can install on their IoT products to add new features and change existing behaviors. A mod is one or more JavaScript modules together with assets like images, audio, and certificates. A mod augments the software of a product without changing the factory installed firmware. To minimize safety, security, and privacy risks, products may sandbox mods using Secure EMCAScript. Mods are a new core feature of the Moddable SDK supported by the XS JavaScript engine.
 
@@ -127,34 +127,40 @@ The commonly used manifests in the Moddable SDK, such as [`manifest_base.json`](
 ```
 
 #### Checking For Installed Mods
-A mod host may want to check if a mod is installed before attempting to load it. To do that use the `LoadMod` module, a utility module for working with mods. First, import the `LoadMod` module:
+A mod host may want to check if a mod is installed before attempting to load it. To do that use the `Modules` module, a utility module for working with mods. First, import the `Modules` module:
 
 ```js
-import LoadMod from "loadmod";
+import Modules from "modules";
+```
+
+Add the manifest for the `Modules` module to your project manifest:
+
+```
+"include": [
+	$(MODULES)/module/manifest.json
+]
 ```
 
 Then use the static `has` method to check if a given module is available. The following code determines if the module "mod" from the example above is installed:
 
 ```js
-if (LoadMod.has("mod"))
+if (Modules.has("mod"))
 	trace("mod installed\n");
 ```
 
 The `has` function does not load or execute the mod. It only checks for its presence.
 
-> **Note**: The `LoadMod` module works well for many mod hosts but is not sufficient for all scenarios. The API is likely to evolve or become deprecated.
-
 #### Running a Mod
-The `LoadMod` module can load and run a module within a mod.
+The `Modules` module can load and run a module within a mod.
 
 ```js
-if (LoadMod.has("mod"))
-	LoadMod.load("mod");
+if (Modules.has("mod"))
+	Modules.importNow("mod");
 ```
 
-The `load` function loads the module and executes the module's body, similar to  calling dynamic `import`, though `load` is synchronous. 
+The `importNow` function loads the module and executes the module's body, similar to calling dynamic `import`, though `importNow` is synchronous. 
 
-The `load` function returns the module's default export. Consider the following mod that exports several functions through its default export.
+The `importNow` function returns the module's default export. Consider the following mod that exports several functions through its default export.
 
 ```js
 export default {
@@ -169,7 +175,7 @@ export default {
 The mod host loads the mod at start-up and calls `onLaunch` for the mod to initialize itself.
 
 ```js
-const mod = LoadMod.load("mod");
+const mod = Modules.importNow("mod");
 mod.onLaunch();
 ```
 
@@ -179,9 +185,9 @@ The mod host invokes the other functions at the appropriate time, `onLightOn` wh
 Every mod has a module named `check` which contains a function to verify that the mod is compatible with the current host. By default the `check` module is created automatically by `mcrun` to verify that any graphics in the mod are compatible with the current host. It is a good practice to invoke the `check` module before any other. The `check` module exports a function that throws an exception if it finds an incompatibility.
 
 ```js
-if (LoadMod.has("check")) {
+if (Modules.has("check")) {
 	try {
-		const checkFunction = LoadMod.load("check");
+		const checkFunction = Modules.importNow("check");
 		checkFunction();
 	}
 	catch (e) {
