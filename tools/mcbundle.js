@@ -196,7 +196,7 @@ export default class extends TOOL {
 			icon = "./icon.png";
 		let iconPath = this.resolveFilePath(icon);
 		if (!iconPath)
-			throw new Error(`icon not found: ${icon}!`);
+			this.reportWarning(null, 0, `icon not found: ${icon}!`);
 		
 		let custom = store.custom;
 		if (!custom)
@@ -219,7 +219,7 @@ export default class extends TOOL {
 							throw new Error(`unexpected file: ${custom}/${directoryName}/${fileName}!`);
 					}
 					if (!gotIcon)
-						throw new Error(`missing file: ${custom}/${directoryName}/icon.png!`);
+						this.reportWarning(null, 0, `icon not found: ${custom}/${directoryName}/icon.png!`);
 					if (!gotIndex)
 						throw new Error(`missing file: ${custom}/${directoryName}/index.html!`);
 				}
@@ -257,12 +257,14 @@ export default class extends TOOL {
 				file.line(`cp $MODDABLE/build/bin/${result.platform}/${build}/${name}/${target} $OUTPUT/${result.id}/${target}`);
 			}
 		}
-		file.line(`cp ${iconPath} $OUTPUT/icon.png`);
+		if (iconPath)
+			file.line(`cp ${iconPath} $OUTPUT/icon.png`);
 		if (customPath) {
 			file.line(`cp -R ${customPath} $OUTPUT`);
 		}
 		file.line(`rm -f $OUTPUT.zip`);
-		file.line(`zip -r $OUTPUT.zip $OUTPUT`);
+		file.line(`cd ${outputPath}`);
+		file.line(`zip -r ${id}.zip ${id}`);
 		file.close();
 		if (this.make)
 			this.then("bash", filePath);
