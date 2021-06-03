@@ -75,8 +75,8 @@ void xs_crc8(xsMachine *the)
 	int argc = xsmcArgc;
 	int polynomial = xsmcToInteger(xsArg(0));
 	int initial = (argc > 1) ? xsmcToInteger(xsArg(1)) : 0;
-	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : false;
-	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : false;
+	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
+	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : 0;
 	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
 	CRC8 crc8 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC8Record));
 
@@ -99,6 +99,7 @@ void xs_crc8_reset(xsMachine *the)
 	CRC8 crc8 = xsmcGetHostChunk(xsThis);
 
 	crc8->initial = crc8->reset;
+	xsResult = xsThis;
 }
 
 void xs_crc8_checksum(xsMachine *the)
@@ -168,8 +169,8 @@ void xs_crc16(xsMachine *the)
 	int argc = xsmcArgc;
 	int polynomial = xsmcToInteger(xsArg(0));
 	int initial = (argc > 1) ? xsmcToInteger(xsArg(1)) : 0;
-	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : false;
-	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : false;
+	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
+	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : 0;
 	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
 	CRC16 crc16 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC16Record));
 
