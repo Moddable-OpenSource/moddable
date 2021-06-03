@@ -43,4 +43,7 @@ void xs_time_dst_set(xsMachine *the)
 
 void xs_time_ticks(xsMachine *the)
 {
+    c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	xsResult = xsNumber((uint32_t)(uint64_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0)));
 }
