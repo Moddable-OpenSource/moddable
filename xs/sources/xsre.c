@@ -1837,7 +1837,7 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger start)
 {
 #if defined(__GNUC__)
-	static void *const ICACHE_RAM_ATTR gxSteps[] = {
+	static void *const gxSteps[] = {
 		&&cxMatchStep,
 		&&cxAssertionStep,
 		&&cxAssertionCompletion,

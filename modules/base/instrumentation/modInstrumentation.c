@@ -26,7 +26,7 @@
 
 #if MODINSTRUMENTATION
 
-static uintptr_t ICACHE_RAM_ATTR gInstrumentationValues[kModInstrumentationLast + 1] ;
+static uintptr_t gInstrumentationValues[kModInstrumentationLast + 1];
 
 void modInstrumentationInit(void)
 {

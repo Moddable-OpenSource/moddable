@@ -384,7 +384,11 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 	register txS4 offset;
 	txU1 primitive = 0;
 #if defined(__GNUC__) && defined(__OPTIMIZE__)
-	static void *const ICACHE_RAM_ATTR gxBytes[] = {
+	static void *const
+	#if !defined(__ets__) || ESP32
+		ICACHE_RAM_ATTR
+	#endif
+		gxBytes[] = {
 		&&XS_NO_CODE,
 		&&XS_CODE_ADD,
 		&&XS_CODE_ARGUMENT,
