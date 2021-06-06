@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- * This file incorporates work covered by the following copyright and  
- * permission notice:  
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
  *
  *       Copyright (C) 2010-2016 Marvell International Ltd.
  *       Copyright (C) 2002-2010 Kinoma, Inc.
@@ -36,7 +36,8 @@
  */
 
 import Crypt from "crypt";
-import Mont from "mont"
+import Mont from "mont";
+import BER from "ber";
 
 export default class DSA {
 	constructor(key, priv) {
@@ -61,10 +62,15 @@ export default class DSA {
 		sig.s = s;
 		return sig;
 	};
-	sign(H) {
-		var sig = this._sign(H);
-		var os = new ArrayBuffer();
-		return os.concat(Crypt.PKCS1.I2OSP(sig.r, 20), Crypt.PKCS1.I2OSP(sig.s, 20));
+	sign(H, asn1) {
+		if (asn1) {
+			return BER.encode([0x30, [0x02, sig.r], [0x02, sig.s]]);
+		}
+		else {
+			var sig = this._sign(H);
+			var os = new ArrayBuffer();
+			return os.concat(Crypt.PKCS1.I2OSP(sig.r, 20), Crypt.PKCS1.I2OSP(sig.s, 20));
+		}
 	};
 	_verify(H, r, s) {
 		// w = 1/s mod q
@@ -82,10 +88,19 @@ export default class DSA {
 		var v = q.mod(p.exp2(g, u1, y, u2));
 		return this.comp(v, r) == 0;
 	};
-	verify(H, sig) {
-		// "20" is specified in the xmldsig-core spec.
-		var r = Crypt.PKCS1.OS2IP(sig.slice(0, 20));
-		var s = Crypt.PKCS1.OS2IP(sig.slice(20, 40));
+	verify(H, sig, asn1) {
+		var r, s;
+		if (asn1) {
+			let ber = new BER(sig);
+			let seq = new BER(ber.getSequence());
+			r = seq.getInteger();
+			s = seq.getInteger();
+		}
+		else {
+			// "20" is specified in the xmldsig-core spec.
+			r = Crypt.PKCS1.OS2IP(sig.slice(0, 20));
+			s = Crypt.PKCS1.OS2IP(sig.slice(20, 40));
+		}
 		return(this._verify(H, r, s));
 	};
 };

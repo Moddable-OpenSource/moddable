@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -95,10 +95,10 @@ class CertificateManager {
 		return -1;
 	}
 	findCert(fname, target) {
-		var i = this.getIndex(fname, target);
-		if (i < 0)
+		let data = this.getIndex(fname, target);
+		if (data < 0)
 			return;	// undefined
-		let data = getResource("ca" + i + ".der");
+		data = getResource("ca" + data + ".der");
 		if (this.#verify) {
 			const validity = X509.decodeTBS(X509.decode(new Uint8Array(data)).tbs).validity;
 			const now = Date.now();
@@ -114,7 +114,7 @@ class CertificateManager {
 		if (!this.#verify)
 			return true;
 
-		let length = certs.length - 1, x509, validity, now = Date.now();
+		let length = certs.length - 1, x509, validity, now = Date.now(), spki;
 
 		// this approach calls decodeSPKI once more than necessary in favor of minimizing memory use
 		for (let i = 0; i < length; i++) {
@@ -127,21 +127,24 @@ class CertificateManager {
 
 			if (!this._verify(X509.decodeSPKI(certs[i + 1]), x509))
 				return false;
+			x509 = undefined;
 
 			let aki = X509.decodeAKI(certs[i + 1]);
 			for (let j = 0; j < this.#registeredCerts.length; j++) {
 				if (Bin.comp(X509.decodeSKI(this.#registeredCerts[j]), aki) == 0) {
-					let spki = X509.decodeSPKI(this.#registeredCerts[j]);
+					spki = X509.decodeSPKI(this.#registeredCerts[j]);
 					if (spki && this._verify(spki, X509.decode(certs[i + 1])))
 						return true;
+					spki = undefined;
 				}
 			}
 
-			let spki = this.findCert("ca.ski", aki);
+			spki = this.findCert("ca.ski", aki);
 			aki = undefined;
 			if (spki && this._verify(spki, X509.decode(certs[i + 1])))
 				return true;
 				// else fall thru
+			spki = undefined;
 		}
 
 		x509 = X509.decode(certs[length]);
@@ -149,7 +152,7 @@ class CertificateManager {
 		if (!((validity.from < now) && (now < validity.to)))
 			throw new Error("date validation failed");
 
-		let spki = this.findCert("ca.ski", X509.decodeAKI(certs[length]));
+		spki = this.findCert("ca.ski", X509.decodeAKI(certs[length]));
 		if (spki && this._verify(spki, x509))
 			return true;
 			// else fall thru
@@ -202,19 +205,16 @@ class CertificateManager {
 			pk = DSA;
 			// needs to decode the sig value into <r, s>
 			const ber = new BER(x509.sig);
-			if (ber.getTag() == 0x30) {
+			if (ber.getTag() === 0x30) {
 				ber.getLength();
-				let r = ber.getInteger();
-				let s = ber.getInteger();
-				sig = r.concat(s);
+				sig = ber.getInteger().concat(ber.getInteger());
 			}
 			} break;
 		default:
 			throw new Error("Cert: unsupported algorithm: " + x509.algo.toString());
 			break;
 		}
-		let H = (new Crypt.Digest(hash)).process(x509.tbs);
-		return (new pk(spki, false, [] /* any oid */)).verify(H, sig);
+		return (new pk(spki, false, [] /* any oid */)).verify((new Crypt.Digest(hash)).process(x509.tbs), sig);
 	}
 	register(cert) {
 		if (this.#verify) {
@@ -245,28 +245,3 @@ function getResource(name)
 Object.freeze(CertificateManager.prototype);
 
 export default CertificateManager;
-
-
-/*
-function dumpHex(label, values, width)
-{
-	values = new Uint8Array(values);
-
-	trace(label + ", " + values.length + " bytes:");
-
-	if (!width) width = 16;
-
-	for (let i = 0; i < values.length; i++) {
-		if (0 == (i % width))
-			trace("\n");
-
-		let str = values[i].toString(16);
-		if (1 == str.length)
-			str = "0" + str;
-		trace(str + ":");
-	}
-
-	trace("\n");
-}
-
-*/

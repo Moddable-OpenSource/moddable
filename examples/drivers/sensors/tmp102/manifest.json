@@ -6,12 +6,12 @@
 	"platforms": {
 		"esp": {
 			"config": {
-				"interrupt_pin": 16
+				"interrupt_pin": 13
 			}
 		},
 		"esp32": {
 			"config": {
-				"interrupt_pin": 16
+				"interrupt_pin": 13
 			}
 		},
 		"nrf52": {

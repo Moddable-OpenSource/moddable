@@ -6,7 +6,7 @@
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <https://creativecommons.org/licenses/by/4.0>.
+ *       <http://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -21,7 +21,7 @@ const humidity = new Humidity(device.I2C.default);
 Timer.repeat(() => {
 	const sample = humidity.sample();
 
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C `);
 	trace(`Humidity: ${sample.humidity.toFixed(2)} %RH\n`);
 
 }, 5000);

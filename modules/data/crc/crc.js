@@ -19,15 +19,18 @@
  */
 
 
-export class CRC8 {
-
-	constructor(polynomial, initial_value) {
-		this.setup(polynomial, initial_value);	
-	}
-
-	setup(polynomial, initial_value) @ "xs_setup_crc8_table";
-	checksum(bytes, length) @ "xs_checksum8";
+class CRC8  @ "xs_crc8_destructor" {
+	constructor(polynomial, initial, reflectInput, reflectOutput, xorOutput) @ "xs_crc8";
+	close() @ "xs_crc8_close";
+	checksum(buffer) @ "xs_crc8_checksum";
+	reset() @ "xs_crc8_reset";
 }
 
+class CRC16  @ "xs_crc16_destructor" {
+	constructor(polynomial, initial, reflectInput, reflectOutput, xorOutput) @ "xs_crc16";
+	close() @ "xs_crc16_close";
+	checksum(buffer) @ "xs_crc16_checksum";
+	reset() @ "xs_crc16_reset";
+}
 
-export default CRC8;
+export { CRC8 as default, CRC8, CRC16 };

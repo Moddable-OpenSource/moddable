@@ -23,8 +23,8 @@
 
 */
 
-import device from "embedded:provider/builtin";
 import SMBus from "embedded:io/smbus";
+import CRC8 from "crc";
 import Timer from "timer";
 
 const Register = {
@@ -50,36 +50,53 @@ Object.freeze(Register);
 
 class MLX90614 {
 	#io;
-	#byteBuffer = new Uint8Array(1);
-	#valueBuffer = new Uint8Array(3);
+	#address;
+	#byteBuffer;
+	#valueBuffer;
+	#pecBuffer;
+	#crc;
 
 	constructor(options) {
+		this.#address = options?.address ?? 0x5A;
+
 		const io = this.#io = new SMBus({
-			...options,
 			hz: 100_000,
-			address: 0x5A
+			address: this.#address,
+			...options
 		});
 
+		this.#byteBuffer = new Uint8Array(1);
+		this.#valueBuffer = new Uint8Array(3);
+		this.#pecBuffer = new Uint8Array(5);
+
+		this.#crc = new CRC8(0x07);
 	}
 
 	sample() {
 		let value = {};
-		value.ambient = this.readTemp(Register.MLX90614_TA).toFixed(3);
-		value.temperature = this.readTemp(Register.MLX90614_TOBJ1).toFixed(2);
+		value.ambient = this.#readTemp(Register.MLX90614_TA);
+		value.temperature = this.#readTemp(Register.MLX90614_TOBJ1);
 		return value;
 	}
 
-	readTemp(reg) {
-		return (this.read16(reg) * 0.02) - 273.15;
-	}
-
-	read16(reg) {
+	#readTemp(reg) {
 		const io = this.#io;
-//		this.#byteBuffer[0] = reg;
-//		io.write(this.#byteBuffer);
-		io.readBlock(reg, this.#valueBuffer);
+		const vBuf = this.#valueBuffer;
+		const pBuf = this.#pecBuffer;
+		io.readBlock(reg, vBuf);
 
-		return (this.#valueBuffer[1] << 8) | this.#valueBuffer[0];
+		pBuf[0] = this.#address << 1;
+		pBuf[1] = reg;
+		pBuf[2] = (this.#address << 1) + 1;
+		pBuf[3] = vBuf[0];
+		pBuf[4] = vBuf[1];
+
+		this.#crc.reset();
+		if (this.#crc.checksum(pBuf) !== vBuf[2])
+			xsUnknownError("bad checksum\n");
+
+		let value = (vBuf[1] << 8) | vBuf[0];
+		return (value * 0.02) - 273.15;
 	}
 }
 export default MLX90614;

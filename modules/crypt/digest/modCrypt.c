@@ -1111,42 +1111,7 @@ void cbc_xor(uint8_t *t, const uint8_t *x, size_t count)
 
 void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count)
 {
-	xsSlot tmp;
-
-	if (xsmcIsInstanceOf(*slot, xsArrayBufferPrototype)) {
-		if (count)
-			*count = xsmcGetArrayBufferLength(*slot);
-		if (data)
-			*data = xsmcToArrayBuffer(*slot);
-	}
-	else if (xsmcIsInstanceOf(*slot, xsTypedArrayPrototype)) {
-		if (count) {
-			xsmcGet(tmp, *slot, xsID_byteLength);
-			*count = xsmcToInteger(tmp);
-		}
-
-		if (data) {
-			xsIntegerValue byteOffset;
-
-			xsmcGet(tmp, *slot, xsID_byteOffset);
-			byteOffset = xsmcToInteger(tmp);
-
-			xsmcGet(tmp, *slot, xsID_buffer);
-			if (xsmcIsInstanceOf(tmp, xsArrayBufferPrototype))
-				*data = byteOffset + (uint8_t *)xsmcToArrayBuffer(tmp);
-			else
-				*data = byteOffset + (uint8_t *)xsmcGetHostData(tmp);
-		}
-	}
-	else {	// host buffer
-		if (count) {
-			xsmcGet(tmp, *slot, xsID_byteLength);
-			*count = xsmcToInteger(tmp);
-		}
-
-		if (data)
-			*data = (uint8_t *)xsmcGetHostData(*slot);
-	}
+	xsmcGetBuffer(*slot, (void **)data, count);
 }
 
 /*

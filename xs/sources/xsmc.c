@@ -234,3 +234,43 @@ txInteger _xsArgc(txMachine *the)
 {
 	return mxArgc;
 }
+
+void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count)
+{
+	txSlot tmp;
+
+	if (_xsIsInstanceOf(the, slot, &mxArrayBufferPrototype)) {
+		if (count)
+			*count = (txUnsigned)fxGetArrayBufferLength(the, slot);
+		if (data)
+			*data = fxToArrayBuffer(the, slot);
+	}
+	else if (_xsIsInstanceOf(the, slot, &mxTypedArrayPrototype)) {
+		if (count) {
+			_xsGet(the, &tmp, slot, _byteLength);
+			*count = (txUnsigned)fxToInteger(the, &tmp);
+		}
+
+		if (data) {
+			txInteger byteOffset;
+
+			_xsGet(the, &tmp, slot, _byteOffset);
+			byteOffset = fxToInteger(the, &tmp);
+
+			_xsGet(the, &tmp, slot, _buffer);
+			if (_xsIsInstanceOf(the, &tmp, &mxArrayBufferPrototype))
+				*data = byteOffset + (uint8_t *)fxToArrayBuffer(the, &tmp);
+			else
+				*data = byteOffset + (uint8_t *)fxGetHostData(the, &tmp);
+		}
+	}
+	else {	// host buffer
+		if (count) {
+			_xsGet(the, &tmp, slot, _byteLength);
+			*count = (txUnsigned)fxToInteger(the, &tmp);
+		}
+
+		if (data)
+			*data = (uint8_t *)fxGetHostData(the, slot);
+	}
+}

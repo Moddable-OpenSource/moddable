@@ -17,7 +17,7 @@ As a general rule, software for build tools is licensed under GPL 3.0 and runtim
 The GPL 3.0 and LGPL 3.0 give product developers and product users very broad rights. We believe this is good for everyone. We also recognize that because of the far reaching freedoms granted by these licenses, not all developers are yet able or willing to use code carrying these licenses in their products. For these situations, Moddable also offers a conventional commercial software license for the Moddable SDK.
 
 ### Creative Commons
-The example code in the Moddable SDK is provided under the Creative Commons [Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/) license.
+The example code in the Moddable SDK is provided under the Creative Commons [Attribution 4.0 International](http://creativecommons.org/licenses/by/4.0/) license.
 
 ### Apache 2.0
 Some of the software in the Moddable SDK, primarily that related to the XS JavaScript engine, is derived from work done by the Kinoma team as an independent company and part of Marvell Semiconductor. XS is licensed by Marvell under the Apache 2.0 license. Files that carry the Apache license from Marvell and have since been modified as part of the Moddable SDK carry both the GPL 3.0 (or LGPL 3.0) license and the original Apache license.

@@ -98,6 +98,28 @@ class SMBus {
         io.write(this.#byteBuffer, this.#stop);
         io.write(buffer);
     }
+
+	sendByte(command) {
+		const io = this.#io, buffer = this.#byteBuffer;
+
+		buffer[0] = command;
+		io.write(buffer, this.#stop);
+	}
+
+	receiveByte() {
+		const io = this.#io, buffer = this.#byteBuffer;
+
+		io.read(buffer, this.#stop);
+		return (buffer[0]);
+	}
+
+	readQuick() {
+		this.#io.read(new ArrayBuffer, this.#stop);
+	}
+
+	writeQuick() {
+		this.#io.write(new ArrayBuffer, this.#stop);
+	}
 }
 
 export default SMBus;

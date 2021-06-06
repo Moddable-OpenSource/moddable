@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -173,7 +173,21 @@ if (config.tls.ECDHE_RSA) {
 			encryptionMode: GCM,
 			ivSize: 8,	// explicit nonce size
 			saltSize: 4,	// implicit part
-		}
+		},
+		{
+			// TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+			value: [0xc0, 0x2b],
+			isExportable: false,
+			keyExchangeAlgorithm: ECDHE_RSA,
+			cipherAlgorithm: AES,
+			cipherKeySize: 16,
+			cipherBlockSize: 16,
+			hashAlgorithm: SHA256,
+			hashSize: 32,
+			encryptionMode: GCM,
+			ivSize: 8,	// explicit nonce size
+			saltSize: 4,	// implicit part
+		},
 	);
 }
 

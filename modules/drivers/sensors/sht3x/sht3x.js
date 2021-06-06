@@ -41,56 +41,58 @@ const Register = Object.freeze({
 
 class SHT3x  {
 	#io;
-	#wordBuffer = new Uint8Array(2);
-	#crc8;
+	#wordBuffer;
+	#statusBuffer;
+	#valueBuffer;
+	#crc;
 
 	constructor(options) {
 		const io = this.#io = new (options.io)({
-			...options,
 			hz: 1_000_000,		// data sheet says up to 1000 kHz
-			address: 0x44
+			address: 0x44,
+			...options
 		});
 
-		this.writeCommand(Register.SOFTRESET);
-		this.#crc8 = new CRC8(0x31, 0xff);
+		this.#wordBuffer = new Uint8Array(2);
+		this.#statusBuffer = new Uint8Array(3);
+		this.#valueBuffer = new Uint8Array(6);
+		this.#writeCommand(Register.SOFTRESET);
+		this.#crc = new CRC8(0x31, 0xff);
 	}
 	configure(options) {
 	}
 	sample() {
+		const vBuf = this.#valueBuffer;
+		const status = this.#statusBuffer;
 		let ret = {};
 
-		this.writeCommand(Register.HIGHREP_STRETCH);
-		const data = new Uint8Array(6);
-		this.#io.read(data);
-		if (undefined === data)
-			return {};
+		this.#writeCommand(Register.HIGHREP_STRETCH);
+		this.#io.read(vBuf);
 
-		this.writeCommand(Register.READSTATUS);
-		const status = new Uint8Array(3);
+		this.#writeCommand(Register.READSTATUS);
 		this.#io.read(status);
-		if (status[2] !== this.#crc8.checksum(status.buffer, 2)) {
-			trace(`bad status checksum\n`);
-		}
-		this.writeCommand(Register.CLEARSTATUS);
+		this.#crc.reset();
+		if (status[2] !== this.#crc.checksum(status.subarray(0,2)))
+            throw new Error("bad checksum");
 
-		this.#wordBuffer[0] = data[0];
-		this.#wordBuffer[1] = data[1];
-		if (data[2] == this.#crc8.checksum(this.#wordBuffer.buffer, 2))
-			ret.temperature = ((((data[0] * 256.0) + data[1]) * 175) / 65535) - 45;
+		this.#writeCommand(Register.CLEARSTATUS);
 
-		this.#wordBuffer[0] = data[3];
-		this.#wordBuffer[1] = data[4];
-		if (data[5] == this.#crc8.checksum(this.#wordBuffer.buffer, 2))
-			ret.humidity = ((((data[3] * 256.0) + data[4]) * 100) / 65535);
+		this.#crc.reset();
+		if (vBuf[2] == this.#crc.checksum(vBuf.subarray(0,2)))
+			ret.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
+		this.#crc.reset();
+		if (vBuf[5] == this.#crc.checksum(vBuf.subarray(3,5)))
+			ret.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
 		return ret;
 	}
-	writeCommand(command) {
-		const io = this.#io, buffer = this.#wordBuffer;
+	#writeCommand(command) {
+		const io = this.#io;
+		const wBuf = this.#wordBuffer;
 
-		buffer[0] = command >> 8;
-		buffer[1] = command & 0xff;
+		wBuf[0] = command >> 8;
+		wBuf[1] = command & 0xff;
 
-		io.write(buffer);
+		io.write(wBuf);
 		Timer.delay(50);
 	}
 }

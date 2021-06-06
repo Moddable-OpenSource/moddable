@@ -557,15 +557,17 @@ void fxMarkFinalizationRegistry(txMachine* the, txSlot* registry)
 	txSlot* instance;
 	while (slot) {
 		slot = slot->next;
-		instance = slot->value.finalizationCell.target;
-		if (instance && !(instance->flag & XS_MARK_FLAG)) {
-			slot->value.finalizationCell.target = C_NULL;
-			registry->value.finalizationRegistry.flags |= XS_FINALIZATION_REGISTRY_CHANGED;
+		if (slot) {
+			instance = slot->value.finalizationCell.target;
+			if (instance && !(instance->flag & XS_MARK_FLAG)) {
+				slot->value.finalizationCell.target = C_NULL;
+				registry->value.finalizationRegistry.flags |= XS_FINALIZATION_REGISTRY_CHANGED;
+			}
+			instance = slot->value.finalizationCell.token;
+			if (instance && !(instance->flag & XS_MARK_FLAG))
+				slot->value.finalizationCell.token = C_NULL;
+			slot = slot->next;
 		}
-		instance = slot->value.finalizationCell.token;
-		if (instance && !(instance->flag & XS_MARK_FLAG))
-			slot->value.finalizationCell.token = C_NULL;
-		slot = slot->next;
 	}
 }
 
@@ -789,16 +791,20 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_FINALIZATION_REGISTRY_KIND:
 		aSlot = theSlot->value.finalizationRegistry.callback;
-		aSlot->flag |= XS_MARK_FLAG;
-		fxMarkReference(the, aSlot);
-		aSlot = aSlot->next;
-		while (aSlot) {
+		if (aSlot) {
 			aSlot->flag |= XS_MARK_FLAG;
-			fxMarkReference(the, aSlot); // holdings
+			fxMarkReference(the, aSlot);
 			aSlot = aSlot->next;
-			aSlot->flag |= XS_MARK_FLAG;
-			// weak target and token
-			aSlot = aSlot->next;
+			while (aSlot) {
+				aSlot->flag |= XS_MARK_FLAG;
+				fxMarkReference(the, aSlot); // holdings
+				aSlot = aSlot->next;
+				if (aSlot) {
+					aSlot->flag |= XS_MARK_FLAG;
+					// weak target and token
+					aSlot = aSlot->next;
+				}
+			}
 		}
 		break;
 		
@@ -1016,16 +1022,20 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_FINALIZATION_REGISTRY_KIND:
 		aSlot = theSlot->value.finalizationRegistry.callback;
-		aSlot->flag |= XS_MARK_FLAG;
-		fxMarkValue(the, aSlot);
-		aSlot = aSlot->next;
-		while (aSlot) {
+		if (aSlot) {
 			aSlot->flag |= XS_MARK_FLAG;
-			fxMarkValue(the, aSlot); // holdings
+			fxMarkValue(the, aSlot);
 			aSlot = aSlot->next;
-			aSlot->flag |= XS_MARK_FLAG;
-			// weak target and token
-			aSlot = aSlot->next;
+			while (aSlot) {
+				aSlot->flag |= XS_MARK_FLAG;
+				fxMarkValue(the, aSlot); // holdings
+				aSlot = aSlot->next;
+				if (aSlot) {
+					aSlot->flag |= XS_MARK_FLAG;
+					// weak target and token
+					aSlot = aSlot->next;
+				}
+			}
 		}
 		break;
 		

@@ -13,34 +13,34 @@
  */
 
 import device from "embedded:provider/builtin";
-import Timer from "timer";
 import Temperature from "embedded:sensor/LM75";
+import Timer from "timer";
+import config from "mc/config";
 const Digital = device.io.Digital;
 
 const temp = new Temperature({
 	...device.I2C.default,
 	alert: {
+		io: device.io.Digital,
 		pin: config.interrupt_pin,
-		mode: Digital.Input,
+		mode: Digital.InputPullUp,
 		edge: Digital.Falling
 	},
-	onAlert: () => {
+	onAlert() {
 		trace(`Trigger: temp ${temp.sample().temperature} C\n`);
 	}
 });
 
 temp.configure({
-	highTemperature: 31,
-	lowTemperature: 29
+	alert: {
+		highTemperature: 33,
+		lowTemperature: 29
+	}
 });
 
+Timer.repeat(() => {
+	const sample = temp.sample();
 
-let last;
-Timer.repeat(id => {
-	let value = temp.sample();
-	if (value !== last) {
-		trace(`Celsius temperature: ${value.temperature}\n`);
-		last = value;
-	}
-}, 1000);
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+}, 2000);
 

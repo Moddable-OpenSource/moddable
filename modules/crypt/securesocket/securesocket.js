@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -72,9 +72,8 @@ class SecureSocket {
 						if (this.handshaking)
 							this.messageHandler(0);
 						else {
-							let write = value - 128;		//@@ 128 is guess at TLS overhead
-							if (write > 0)
-								this.callback(3, write)
+							if (value > 128)			//@@ 128 is guess at TLS overhead
+								this.callback(3, value - 128)
 						}
 						break;
 					case -1:	// disconnect

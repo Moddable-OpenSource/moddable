@@ -151,7 +151,7 @@ ICACHE_RAM_ATTR uint32_t espRead32(const void *addr)
 	}
 }
 
-ICACHE_RAM_ATTR uint16_t espRead16be(const void *addr)
+uint16_t espRead16be(const void *addr)
 {
 	uint16_t result;
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
@@ -165,7 +165,7 @@ ICACHE_RAM_ATTR uint16_t espRead16be(const void *addr)
 	return (result >> 8) | (result << 8);
 }
 
-ICACHE_RAM_ATTR uint32_t espRead32be(const void *addr)
+uint32_t espRead32be(const void *addr)
 {
 	uint32_t result;
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);

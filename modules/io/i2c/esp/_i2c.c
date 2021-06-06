@@ -184,7 +184,11 @@ void _xs_i2c_read(xsMachine *the)
 
 	i2cActivate(i2c);
 	err = twi_readFrom(i2c->address, xsmcToArrayBuffer(xsArg(0)), length, stop);
-	if (err)
+	if (length == 0) {
+		if (err)
+			xsmcSetInteger(xsResult, 1);
+	}
+	else if (err)
 		xsUnknownError("i2c read failed");
 }
 
@@ -203,7 +207,11 @@ void _xs_i2c_write(xsMachine *the)
 
 	i2cActivate(i2c);
 	err = twi_writeTo(i2c->address, xsmcToArrayBuffer(xsArg(0)), length, stop);
-	if (err)
+	if (length == 0) {
+		if (err)
+			xsmcSetInteger(xsResult, 1);
+	}
+	else if (err)
 		xsUnknownError("i2c write failed");
 }
 

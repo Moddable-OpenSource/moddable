@@ -6,7 +6,7 @@
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <https://creativecommons.org/licenses/by/4.0>.
+ *       <http://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -16,8 +16,10 @@ import device from "embedded:provider/builtin";
 import { BMP180, Config } from "embedded:sensor/BMP180";
 import Timer from "timer";
 
-const sensor = new BMP180({ ...device.I2C.default,
-			mode: Config.Mode.ULTRAHIGHRES });
+const sensor = new BMP180({
+			...device.I2C.default,
+			mode: Config.Mode.ULTRAHIGHRES
+		});
 
 function CtoF(c) { return (c*1.8)+32; }
 function PatoInHg(Pa) { return Pa * 0.0002953; }

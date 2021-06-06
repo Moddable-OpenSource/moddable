@@ -24,10 +24,12 @@
 
 #include "mc.defines.h"
 
-#if defined(MODDEF_SERIAL_RX_PIN) || defined(MODDEF_SERIAL_TX_PIN)
 #include "nrf_libuarte_async.h"
 #include "app_fifo.h"
-#include "ftdi_trace.h"
+
+#if !defined(MODDEF_SERIAL_BAUDRATE) && !defined(MODDEF_SERIAL_TX_PIN) && !defined(MODDEF_SERIAL_RX_PIN)
+// need to define at least one of baudrate, tx_pin or rx_pin to enable this
+#else
 
 #define SERIAL_TASK_STACK	2048
 #define kDebuggerTaskPriority	1
