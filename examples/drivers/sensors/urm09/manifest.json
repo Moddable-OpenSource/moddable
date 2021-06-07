@@ -1,0 +1,6 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/sensors/urm09/manifest.json",
+	"modules": {
+		"*": "./main"
+	}
+}

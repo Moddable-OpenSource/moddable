@@ -94,7 +94,6 @@ class TMP117 {
 
 		this.#status = "ready";
 	}
-//	get #status() { return this.#io.readWord(Register.TMP117_CONF, true); }
 
 	#shutdown() {
 		const io = this.#io;
