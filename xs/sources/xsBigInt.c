@@ -581,19 +581,20 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	txSize length, offset;
 	txBoolean minus = 0;
 	txSlot* result;
+	txSlot* stack;
 	
 	mxPushUndefined();
 	result = the->stack;
 	
 	mxPushSlot(slot);
-	slot = the->stack;
+	stack = the->stack;
 	
 	if (radix)
 		divider.data[0] = radix;
 	
-	length = 1 + (txSize)c_ceil((txNumber)slot->value.bigint.size * 32 * c_log(2) / c_log(data[0]));
-	if (slot->value.bigint.sign) {
-		slot->value.bigint.sign = 0;
+	length = 1 + (txSize)c_ceil((txNumber)stack->value.bigint.size * 32 * c_log(2) / c_log(data[0]));
+	if (stack->value.bigint.sign) {
+		stack->value.bigint.sign = 0;
 		length++;
 		minus = 1;
 	}
@@ -604,13 +605,13 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	result->value.string[--offset] = 0;
 	do {
 		txBigInt* remainder = NULL;
-		txBigInt* quotient = fxBigInt_udiv(the, C_NULL, &slot->value.bigint, &divider, &remainder);
+		txBigInt* quotient = fxBigInt_udiv(the, C_NULL, &stack->value.bigint, &divider, &remainder);
 		result->value.string[--offset] = c_read8(gxDigits + remainder->data[0]);
-        slot->value.bigint = *quotient;
-        slot->kind = XS_BIGINT_KIND;
-		the->stack = slot;
+        stack->value.bigint = *quotient;
+        stack->kind = XS_BIGINT_KIND;
+		the->stack = stack;
 	}
-	while (!fxBigInt_iszero(&slot->value.bigint));
+	while (!fxBigInt_iszero(&stack->value.bigint));
 	if (minus)
 		result->value.string[--offset] = '-';
 	c_memmove(result->value.string, result->value.string + offset, length - offset);
