@@ -1,8 +1,8 @@
 # Using XS Preload to Optimize Applications
 
-Copyright 2019 Moddable Tech, Inc.
+Copyright 2019-2021 Moddable Tech, Inc.
 
-Revised: August 17, 2019
+Revised: June 7, 2021
 
 Preloading of modules is a unique feature of the XS JavaScript engine. Preloading executes parts of a JavaScript application during the the build process, before the application is downloaded to the target device. This has two major benefits:
 
@@ -224,49 +224,40 @@ Example.aNativeFunction();
 ### Some JavaScript Built-ins
 Many of the basic JavaScript types and objects may be created at build time allowing the objects created be stored in flash memory. Those which may be safely used include:
 
-- undefined
+- Array
+- ArrayBuffer
+- BigInt
+- Boolean
+- class
+- DataView
+- Date
+- Error
+- FinalizationGroup
+- Function
+- Map
 - null
 - Number
-- String
-- Array
-- BigInt
 - Object
-- Function
-- class
-- Symbol
-
-Here is a partial list of objects which cannot be stored in flash memory:
-
-- ArrayBuffer
-- SharedArrayBuffer
-- TypedArrays (e.g. `Uint8Array`)
 - Promise
-- Date
-- Map & Set
-- WeakMap & WeakSet
+- Set
+- String
+- Symbol
+- TypedArrays (e.g. `Uint8Array`)
+- undefined
+- WeakMap
+- WeakRef
+- WeakSet
+
+These objects cannot be stored in flash memory:
+
+- AsyncGenerator
+- Generator
 - RegExp
+- SharedArrayBuffer
 
-In the future XS may support storing additional built-in objects in flash memory.
+In the future XS may support storing additional built-in objects in flash memory. For detais on built-in obiects stored in flash memory see the [XS Linker Warnings](./XS%20linker%20warnings.md) document. 
 
-These objects cannot be stored in flash. However, they maybe used during preload as long as they do not need to be stored. The following examples uses the `Date` object to save the time when the module is loaded in a static property of the class.
-
-```js
-class Stamped {
-}
-Stamped.when = new Date;
-```
-
-This fails, because Date cannot be stored as the result of preload. However, a string can be stored, so this works:
-
-```js
-class Stamped {
-}
-Stamped.when = (new Date).toString();
-```
-
-The value of `Stamped.when` is the time that the file was preloaded by the linker, which may be useful for some projects.
-
-The section below on pre-calculation gives other examples of executing code at build time to generate data to be used at runtime.
+These objects cannot be stored in flash. However, they maybe used during preload as long as they do not need to be stored. For example, code that executes a part of preload can safely use `RegExp` as long as there are no regular expression instances remaining when the preload phase ends.
 
 ## Preloading `main`
 The `main` module is the first application script executed. To do its work, the `main` module usually imports other modules. The `main` module of a project is often the only module that is not set to preload. This is done for convenience, and for small projects, like examples in the Moddable SDK, it is often not a problem. The application's `main` module invariably invokes native functions, to connect to Wi-Fi, display an image, or toggle a digital pin. As noted above native functions cannot be called during preload.
@@ -301,7 +292,7 @@ export default function() {
 }
 ```
 
-A better approach is to create a simple class to instantiate from the exported function. This structures the code more cleanly and any needed state, such as `toggle` in the above example, is part of the instance state accessed using `this`.
+It is sometimes useful to organize `main` with a simple class that is instantiated from the exported function. This structures the code more cleanly and any needed state, such as `toggle` in the above example, is part of the instance state accessed using `this`.
 
 ```js
 import Digital from "pins/digital:
