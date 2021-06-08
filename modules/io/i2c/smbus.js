@@ -18,6 +18,8 @@
  *
 */
 
+import I2C from "embedded:io/i2c"
+
 class SMBus {
 	#io;
 	#stop;
@@ -26,7 +28,7 @@ class SMBus {
 	#writeWordBuffer = new Uint8Array(3);
 
     constructor(options) {
-        this.#io = new (options.io)(options);
+        this.#io = new I2C(options);
 		if (options.sendStop)
 			this.#stop = true;
     }
