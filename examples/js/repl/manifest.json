@@ -117,5 +117,16 @@
 		"...": {
 			"warning": "unsupported target"
 		}
+	},
+	"store": {
+		"id": "com.moddable.repl",
+		"devices": [
+			"esp/moddable_one",
+			"esp/moddable_three",
+			"esp/nodemcu",
+			"esp32/moddable_two",
+			"esp32/nodemcu"
+		],
+		"icon": "./store/icon.png"
 	}
 }
