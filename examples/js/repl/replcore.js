@@ -42,7 +42,7 @@ class REPL @ "xs_repl_destructor" {
 		globalThis.trace = (...str) => this.write(...str);
 	}
 	ready() {
-		this.write(newline, "Moddable JavaScript REPL v0.0.4", newline);
+		this.write(newline, "Moddable JavaScript REPL v0.0.5", newline);
 		this.write(`  XS engine v${REPL.xsVersion.join(".")}`, newline);
 		this.write(`  ? for help`, newline);
 		this.write(newline);

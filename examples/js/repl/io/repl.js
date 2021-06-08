@@ -20,6 +20,8 @@
 
 import REPLCore from "replcore";
 
+const baud = 115200;
+
 class REPL extends REPLCore {
 	#read = new ArrayBuffer;
 	#write = new ArrayBuffer;
@@ -33,14 +35,16 @@ class REPL extends REPLCore {
 
 		super();
 
-		if (isDebug)
-			trace("** Warning: debugger connection active. REPL unavailable using serial. **\n");
+		if (isDebug) {
+			trace("** Warning: debugger connection active. REPL unavailable over serial. **\n");
+			trace(`** Connect with a serial terminal / monitor at ${baud} baud 8N1. **\n`);
+		}
 
 		this.#trace = trace;
 		if (!isDebug) {
 			this.#serial = new device.io.Serial({
 				...device.Serial.default,
-				baud: 115200,
+				baud,
 				format: "buffer",
 				target: this,
 				onWritable: function(count) {
