@@ -139,7 +139,7 @@ class ToDoFile extends FILE {
 			line.push(tool.resourcesPath + tool.slash + result.target);
 		}
 		if (tool.stringFiles.length) {
-			line.push(tool.resourcesPath + tool.slash + "locals.mhi");
+			line.push(tool.resourcesPath + tool.slash + tool.localsName + ".mhi");
 		}
 		lines.push(line);
 	}
@@ -316,6 +316,7 @@ class ToDoFile extends FILE {
 			if (tool.format)
 				line.push("-s");
 			line.push("-o", tool.resourcesPath);
+			line.push("-r", tool.localsName);
 			lines.push(line);
 		}
 	}
@@ -385,7 +386,9 @@ export default class extends Tool {
 		}
 	}
 	run() {
+		this.localsName = "modLocals";
 		super.run();
+
 		if ("URL" in this.config)
 			this.environment.URL = this.config.URL;
 
