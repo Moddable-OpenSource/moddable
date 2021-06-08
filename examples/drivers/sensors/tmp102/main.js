@@ -18,8 +18,10 @@ import Timer from "timer";
 import config from "mc/config";
 
 const sensor = new Temperature({
-	...device.I2C.default,
-	io: device.io.SMBus,
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus,
+	},
 	alert: {
 		io: device.io.Digital,
 		pin: config.interrupt_pin,
@@ -31,10 +33,10 @@ const sensor = new Temperature({
 
 sensor.configure({
 	extendedRange: true,
-	hz: 0.5,
+	conversionRate: 0.25,
 	faultQueue: 2,
 	alert: {
-		mode: "comparator",		// or "interrupt"
+		thermostatMode: "comparator",
 		highTemperature: 33,
 		lowTemperature: 29
 	}

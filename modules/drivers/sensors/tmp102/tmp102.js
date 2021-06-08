@@ -37,10 +37,10 @@ class TMP102  {
 	#monitor;
 
 	constructor(options) {
-		this.#io = new options.io({
+		this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x48,
-			...options
+			...options.sensor
 		});
 
 		const {alert, onAlert} = options;
@@ -93,25 +93,22 @@ class TMP102  {
 			else
 				io.writeWord(Register.TEMP_LOW, 0xfff8, true);
 
-			if (undefined !== alert.mode) {
+			if (undefined !== alert.thermostatMode) {
 				config &= 0b1111_1101_1111_0000;
-				if (alert.mode === "interrupt")
+				if (alert.thermostatMode === "interrupt")
 					config |= 0b10_0000_0000;
 			}
 		}
 
-		if (undefined !== options.hz) {
-			const hz = options.hz;
+		if (undefined !== options.conversionRate) {
 			config &= 0b1111_1111_0011_0000;
-			
-			if (hz < 0.5)
-				; // config |= 0b00;
-			else if (hz < 2)
-				config |= 0b0100_0000;
-			else if (hz < 6)
-				config |= 0b1000_0000;
-			else
-				config |= 0b1100_0000;
+			switch (options.conversionRate)	{
+				case 0.25:	break;
+				case 1:		config |= 0b0100_0000;	break;
+				case 4:		config |= 0b1000_0000;	break;
+				case 8:		config |= 0b1100_0000;	break;
+				default: throw new Error("invalid conversionRate");
+			}
 		}
 
 		if (undefined !== options.faultQueue) {
