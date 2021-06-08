@@ -22,8 +22,6 @@
 	Datasheet: https://www.ti.com/lit/ds/symlink/tmp102.pdf
 */
 
-import SMBus from "embedded:io/smbus";
-
 const Register = Object.freeze({
 	TEMP_READ: 0x00,
 	CONFIG: 0x01,
@@ -33,39 +31,35 @@ const Register = Object.freeze({
 
 class TMP102  {
 	#io;
-	#extendedRange;
-	#extShift;
+	#extendedRange = false;
+	#shift = 4;
 	#onAlert;
-	#irqMonitor;
-	#status;
+	#monitor;
 
 	constructor(options) {
-		const io = this.#io = new SMBus({
+		this.#io = new options.io({
 			hz: 100_000,
 			address: 0x48,
 			...options
 		});
 
-		if (options.alert) {
-			const alert = options.alert;
-
-			if (options.onAlert) {
-				this.#onAlert = options.onAlert;
-				this.#irqMonitor = new alert.io({
-					onReadable: () => this.#onAlert(),
-					...alert
-				 });
-			}
+		const {alert, onAlert} = options;
+		if (alert && onAlert) {
+			this.#onAlert = onAlert;
+			this.#monitor = new alert.io({
+				mode: alert.io.InputPullUp,
+				...alert,
+				edge: alert.io.Falling,
+				onReadable: () => this.#onAlert()
+			 });
 		}
-
-		this.#extendedRange = false;
 
 		// reset to default values (7.5.3 of datasheet)
 		this.#io.writeWord(Register.Config, 0b0110_0000_1010_0000, true);
 
 		// THigh = +80C TLow = +75C (7.5.4)
 		this.#io.writeWord(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
-		this.#io.writeWord(Register.TEMP_LO, 0b0100_1011_0000_0000, true);
+		this.#io.writeWord(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
 	}
 
 	configure(options) {
@@ -78,27 +72,32 @@ class TMP102  {
 
 		if (this.#extendedRange) {
 			config |= 0b1_0000;
-			this.#extShift = 3;
+			this.#shift = 3;
 		}
 		else
-			this.#extShift = 4;
+			this.#shift = 4;
 
-		if (options.alert) {
-			const alert = options.alert;
-
+		const alert = options.alert;
+		if (alert) {
 			if (undefined !== alert.highTemperature) {
-				const value = (alert.highTemperature / 0.0625) << this.#extShift;
+				const value = (alert.highTemperature / 0.0625) << this.#shift;
 				io.writeWord(Register.TEMP_HIGH, value, true);
 			}
 			else
 				io.writeWord(Register.TEMP_HIGH, 0x7ff8, true);
 
 			if (undefined !== alert.lowTemperature) {
-				const value = (alert.lowTemperature / 0.0625) << this.#extShift;
-				io.writeWord(Register.TEMP_LO, value, true);
+				const value = (alert.lowTemperature / 0.0625) << this.#shift;
+				io.writeWord(Register.TEMP_LOW, value, true);
 			}
 			else
-				io.writeWord(Register.TEMP_LO, 0xfff8, true);
+				io.writeWord(Register.TEMP_LOW, 0xfff8, true);
+
+			if (undefined !== alert.mode) {
+				config &= 0b1111_1101_1111_0000;
+				if (alert.mode === "interrupt")
+					config |= 0b10_0000_0000;
+			}
 		}
 
 		if (undefined !== options.hz) {
@@ -116,12 +115,12 @@ class TMP102  {
 		}
 
 		if (undefined !== options.faultQueue) {
-			conf &= 0b1110_0111_1111_0000;
+			config &= 0b1110_0111_1111_0000;
 			switch (options.faultQueue) {
 				case 1: break;
-				case 2: conf |= 0b0000_1000_0000_0000; break;
-				case 4: conf |= 0b0001_0000_0000_0000; break;
-				case 6: conf |= 0b0001_1000_0000_0000; break;
+				case 2: config |= 0b0000_1000_0000_0000; break;
+				case 4: config |= 0b0001_0000_0000_0000; break;
+				case 6: config |= 0b0001_1000_0000_0000; break;
 				default: throw new Error("invalid faultQueue");
 			}
 		}
@@ -130,14 +129,14 @@ class TMP102  {
 	}
 
 	close() {
-		this.#irqMonitor?.close();
-		this.#irqMonitor = undefined;
+		this.#monitor?.close();
+		this.#monitor = undefined;
 		this.#io.close();
 		this.#io = undefined;
 	}
 
 	sample() {
-		let value = this.#io.readWord(Register.TEMP_READ, true) >> this.#extShift;
+		let value = this.#io.readWord(Register.TEMP_READ, true) >> this.#shift;
 		if (value & 0x1000) {
 			value -= 1;
 			value = ~value & 0x1fff;

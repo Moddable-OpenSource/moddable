@@ -16,32 +16,31 @@ import device from "embedded:provider/builtin";
 import Temperature from "embedded:sensor/TMP102";
 import Timer from "timer";
 import config from "mc/config";
-const Digital = device.io.Digital;
 
-const temp = new Temperature({
+const sensor = new Temperature({
 	...device.I2C.default,
+	io: device.io.SMBus,
 	alert: {
 		io: device.io.Digital,
 		pin: config.interrupt_pin,
-		mode: Digital.InputPullUp,
-		edge: Digital.Falling
 	},
 	onAlert() {
-		trace(`Trigger: temp ${temp.sample().temperature} C\n`);
+		trace(`Trigger: ${this.sample().temperature} C\n`);
 	}
 });
 
-temp.configure({
+sensor.configure({
 	extendedRange: true,
 	hz: 0.5,
+	faultQueue: 2,
 	alert: {
+		mode: "comparator",		// or "interrupt"
 		highTemperature: 33,
 		lowTemperature: 29
 	}
 });
 
 Timer.repeat(() => {
-	const sample = temp.sample();
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+	trace(`Temperature: ${sensor.sample().temperature.toFixed(2)} C\n`);
 }, 2000);
 
