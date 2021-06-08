@@ -46,7 +46,7 @@ const Config = Object.freeze({
 	RANGE_150CM:	0b0000_0000,
 });
 
-const READ_DELAY = [ 20, 30, 40 ];
+const READ_DELAY = Object.freeze([ 20, 30, 40 ]);
 
 const CMD_READ_ONCE = 0b01; 	// write to command register if CONFIG_ONE_SHOT
 
@@ -64,8 +64,6 @@ class URM09 {
 
 		if (io.readByte(Register.PRODUCT_ID) !== 0x01)
 			throw new Error("unexpected sensor");
-
-		this.configure(options);
 	}
 	configure(options) {
 		if (undefined !== options.mode)

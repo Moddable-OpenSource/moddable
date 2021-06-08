@@ -50,7 +50,7 @@ class ZIOQWIIC {
 			trace(`no response from sensor`);
 		}
 
-		this.configure({led: 0, ...options});
+		this.configure({led: 0});
 	}
 	configure(options) {
 		if (undefined !== options.led) {

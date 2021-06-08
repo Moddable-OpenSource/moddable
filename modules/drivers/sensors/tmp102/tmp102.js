@@ -19,6 +19,7 @@
  */
 /*
     TMP102 - temperature
+	Datasheet: https://www.ti.com/lit/ds/symlink/tmp102.pdf
 */
 
 import SMBus from "embedded:io/smbus";
@@ -58,7 +59,13 @@ class TMP102  {
 		}
 
 		this.#extendedRange = false;
-		this.configure(options);
+
+		// reset to default values (7.5.3 of datasheet)
+		this.#io.writeWord(Register.Config, 0b0110_0000_1010_0000, true);
+
+		// THigh = +80C TLow = +75C (7.5.4)
+		this.#io.writeWord(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
+		this.#io.writeWord(Register.TEMP_LO, 0b0100_1011_0000_0000, true);
 	}
 
 	configure(options) {

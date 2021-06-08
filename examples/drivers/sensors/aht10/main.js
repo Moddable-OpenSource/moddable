@@ -2,7 +2,7 @@
  * Copyright (c) 2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
- * 
+ *
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
@@ -12,20 +12,22 @@
  *
  */
 
+/*
+ * NOTE: The AHT10 sensor uses address 0x38 which conflicts with the FT6206
+ *          TouchScreen driver for Moddable One and Moddable Two
+ */
+
 import device from "embedded:provider/builtin";
-import { URM09, Config } from "embedded:sensor/URM09";
+import Humidity from "embedded:sensor/AHT10";
 import Timer from "timer";
 
-const sensor = new URM09(device.I2C.default);
+const humidity = new Humidity(device.I2C.default);
 
-sensor.configure({
-	mode: Config.ONE_SHOT,
-	range: Config.RANGE_100CM
-});
-	
 Timer.repeat(() => {
-	const sample = sensor.sample();
+	const sample = humidity.sample();
 
-	trace(`Distance: ${sample.distance} cm -- Temperature ${sample.temperature} C\n`);
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C `);
+	trace(`Humidity: ${sample.humidity.toFixed(2)} %RH\n`);
+
 }, 2000);
 

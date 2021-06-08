@@ -84,12 +84,17 @@ class TMP117 {
 			}
 		}
 
+		// Reset to default: DataSheet 7.6.3
+		io.writeWord(Register.TMP117_CONF, 0b0000_0010_0010_0000, true);
+
+		io.writeWord(Register.TMP117_THI, 0b0110_0000_0000_0000, true);
+		io.writeWord(Register.TMP117_TLO, 0b1000_0000_0000_0000, true);
+
 		this.configure({
 			shutdownMode: false,
 			thermostatMode: this.#onAlert ? "interrupt" : "comparator",
 			polarity: 0,
-			averaging: 8,
-			...options
+			averaging: 8
 		});
 
 		this.#status = "ready";
@@ -103,7 +108,7 @@ class TMP117 {
 	}
 	close() {
 		if ("ready" === this.#status) {
-			this.#io.writeByte(Register.TMP117_CONF, 1);		// shut down device
+			this.#io.writeByte(Register.TMP117_CONF, 1);	// shut down device
 			this.#status = undefined;
 		}
 		this.#irqMonitor?.close();

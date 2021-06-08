@@ -20,7 +20,6 @@ const Digital = device.io.Digital;
 
 const temp = new Temperature({
 	...device.I2C.default,
-	extendedRange: true,
 	alert: {
 		io: device.io.Digital,
 		pin: config.interrupt_pin,
@@ -33,6 +32,8 @@ const temp = new Temperature({
 });
 
 temp.configure({
+	extendedRange: true,
+	hz: 0.5,
 	alert: {
 		highTemperature: 33,
 		lowTemperature: 29
