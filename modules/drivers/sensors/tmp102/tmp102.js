@@ -22,12 +22,19 @@
 	Datasheet: https://www.ti.com/lit/ds/symlink/tmp102.pdf
 */
 
+import Timer from "timer";
+
 const Register = Object.freeze({
 	TEMP_READ: 0x00,
 	CONFIG: 0x01,
 	TEMP_LOW: 0x02,
 	TEMP_HIGH: 0x03
-})
+});
+
+const SHUTDOWN_MODE = 0b0000_0001_0000_0000;
+const ALERT_BIT = 0b0000_0000_0010_0000;
+const POLARITY_BIT = 0b0000_0100_0000_0000;
+const ONE_SHOT = 0b1000_0000_0000_0000;
 
 class TMP102  {
 	#io;
@@ -35,9 +42,10 @@ class TMP102  {
 	#shift = 4;
 	#onAlert;
 	#monitor;
+	#status = "ready";
 
 	constructor(options) {
-		this.#io = new options.sensor.io({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x48,
 			...options.sensor
@@ -55,11 +63,11 @@ class TMP102  {
 		}
 
 		// reset to default values (7.5.3 of datasheet)
-		this.#io.writeWord(Register.Config, 0b0110_0000_1010_0000, true);
+		io.writeWord(Register.CONFIG, 0b0110_0000_1010_0000, true);
 
 		// THigh = +80C TLow = +75C (7.5.4)
-		this.#io.writeWord(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
-		this.#io.writeWord(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
+		io.writeWord(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
+		io.writeWord(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
 	}
 
 	configure(options) {
@@ -77,27 +85,31 @@ class TMP102  {
 		else
 			this.#shift = 4;
 
-		const alert = options.alert;
-		if (alert) {
-			if (undefined !== alert.highTemperature) {
-				const value = (alert.highTemperature / 0.0625) << this.#shift;
-				io.writeWord(Register.TEMP_HIGH, value, true);
+		if (undefined !== options.shutdownMode) {
+			config &= ~SHUTDOWN_MODE;
+			if (options.shudownMode) {
+				config |= SHUTDOWN_MODE;
+				this.#status = "shutdown";
 			}
 			else
-				io.writeWord(Register.TEMP_HIGH, 0x7ff8, true);
+				this.#status = "ready";
+		}
 
-			if (undefined !== alert.lowTemperature) {
-				const value = (alert.lowTemperature / 0.0625) << this.#shift;
-				io.writeWord(Register.TEMP_LOW, value, true);
-			}
-			else
-				io.writeWord(Register.TEMP_LOW, 0xfff8, true);
+		if (undefined !== options.highTemperature) {
+			const value = (options.highTemperature / 0.0625) << this.#shift;
+			io.writeWord(Register.TEMP_HIGH, value, true);
+		}
+		if (undefined !== options.lowTemperature) {
+			const value = (options.lowTemperature / 0.0625) << this.#shift;
+			io.writeWord(Register.TEMP_LOW, value, true);
+		}
 
-			if (undefined !== alert.thermostatMode) {
-				config &= 0b1111_1101_1111_0000;
-				if (alert.thermostatMode === "interrupt")
-					config |= 0b10_0000_0000;
-			}
+		if (undefined !== options.thermostatMode) {
+			config &= 0b1111_1101_1111_0000;
+			if (options.thermostatMode === "interrupt")
+				config |= 0b10_0000_0000;
+			else if (options.thermostatMode !== "comparator")
+				throw new Error("bad thermostatMode");
 		}
 
 		if (undefined !== options.conversionRate) {
@@ -111,6 +123,11 @@ class TMP102  {
 			}
 		}
 
+		if (undefined !== options.polarity) {
+			config &= ~POLARITY_BIT;
+			if (options.polarity)
+				config |= POLARITY_BIT;
+		}
 		if (undefined !== options.faultQueue) {
 			config &= 0b1110_0111_1111_0000;
 			switch (options.faultQueue) {
@@ -126,6 +143,11 @@ class TMP102  {
 	}
 
 	close() {
+		if ("ready" === this.#status) {
+			this.#io.writeWord(Register.CONFIG, SHUTDOWN_MODE, true);	// shut down device
+			this.#status = undefined;
+		}
+
 		this.#monitor?.close();
 		this.#monitor = undefined;
 		this.#io.close();
@@ -133,6 +155,13 @@ class TMP102  {
 	}
 
 	sample() {
+		const io = this.#io;
+		const conf = io.readWord(Register.CONFIG, true);
+		if (conf & SHUTDOWN_MODE) { // if in shutdown mode, set ONE_SHOT
+			io.writeByte(Register.CONFIG, conf & ONE_SHOT);
+			Timer.delay(35);		// wait for new reading to be available
+		}
+
 		let value = this.#io.readWord(Register.TEMP_READ, true) >> this.#shift;
 		if (value & 0x1000) {
 			value -= 1;
@@ -141,7 +170,7 @@ class TMP102  {
 		}
 		value *= 0.0625;
 
-		return { temperature: value };
+		return { temperature: value, alert: (conf & ALERT_BIT) == (conf & POLARITY_BIT) };
 	}
 }
 

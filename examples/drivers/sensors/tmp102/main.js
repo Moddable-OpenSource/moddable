@@ -27,22 +27,24 @@ const sensor = new Temperature({
 		pin: config.interrupt_pin,
 	},
 	onAlert() {
-		trace(`Trigger: ${this.sample().temperature} C\n`);
+		let sample = this.sample();
+		trace(`Trigger: ${sample.temperature} C, alert: ${sample.alert}\n`);
 	}
 });
 
 sensor.configure({
-	extendedRange: true,
-	conversionRate: 0.25,
+	highTemperature: 33,
+	lowTemperature: 29,
+	polarity: 0,
+	shutdownMode: false,
+	thermostatMode: "interrupt",
 	faultQueue: 2,
-	alert: {
-		thermostatMode: "comparator",
-		highTemperature: 33,
-		lowTemperature: 29
-	}
+	conversionRate: 1,
+	extendedRange: true
 });
 
 Timer.repeat(() => {
-	trace(`Temperature: ${sensor.sample().temperature.toFixed(2)} C\n`);
+	let sample = sensor.sample();
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C, alert: ${sample.alert}\n`);
 }, 2000);
 
