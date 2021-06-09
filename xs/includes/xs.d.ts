@@ -45,6 +45,7 @@ interface StringConstructor {
 
 interface ArrayBufferConstructor {
 	fromString(string: string): ArrayBuffer;
+	fromBigInt(value: BigInt): ArrayBuffer;
 }
 
 interface ArrayBuffer {
