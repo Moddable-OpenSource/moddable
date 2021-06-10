@@ -29,8 +29,8 @@ import Timer from "timer";
 const Register = Object.freeze({
 	TEMP_MEASURE_HOLD: 0xE3,
 	HUMID_MEASURE_HOLD: 0xE5,
-	TEMP_MEASURE_NOHOLD: 0xF3,
-	HUMID_MEASURE_NOHOLD: 0xF5,
+//	TEMP_MEASURE_NOHOLD: 0xF3,
+//	HUMID_MEASURE_NOHOLD: 0xF5,
 	WRITE_USER_REG: 0xE6,
 	READ_USER_REG: 0xE7,
 	SOFT_RESET: 0xFE
@@ -43,18 +43,23 @@ class SI7020  {
 	#crc;
 
 	constructor(options) {
-		const io = this.#io = new (options.io)({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x40,
-			...options
+			...options.sensor
 		});
 
-		this.#byteBuffer[0] = Register.SOFT_RESET;
-		io.write(this.#byteBuffer);
+		const bBuf = this.#byteBuffer;
+		bBuf[0] = Register.SOFT_RESET;
+		io.write(bBuf);
 
 		this.#crc = new CRC8(0x31);
 	}
 	configure(options) {
+	}
+	close() {
+		this.#io.close();
+		this.#io = undefined;
 	}
 	sample() {
 		let ret = {};
@@ -79,8 +84,7 @@ class SI7020  {
 
 		io.read(vBuf);
 
-		this.#crc.reset();
-		let chk = this.#crc.checksum(vBuf.subarray(0, 2));
+		let chk = this.#crc.reset().checksum(vBuf.subarray(0, 2));
 		if (chk !== vBuf[2])
 			throw new Error("bad checksum");
 

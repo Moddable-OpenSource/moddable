@@ -13,12 +13,18 @@
  */
 
 import device from "embedded:provider/builtin";
-import { HMC5883, Config } from "embedded:sensor/HMC5883";
+import { HMC5883, Config } from "embedded:sensor/Magnetometer/HMC5883";
 import Timer from "timer";
 
 
 const sensor = new HMC5883({
-	...device.I2C.default,
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	}
+});
+
+sensor.configure({
 	rate: Config.Rate.RATE_15,
 	gain: Config.Gain.GAIN_1_3,
 	mode: Config.Mode.CONTINUOUS

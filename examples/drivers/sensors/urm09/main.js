@@ -13,10 +13,15 @@
  */
 
 import device from "embedded:provider/builtin";
-import { URM09, Config } from "embedded:sensor/URM09";
+import { URM09, Config } from "embedded:sensor/Proximity-Temperature/URM09";
 import Timer from "timer";
 
-const sensor = new URM09(device.I2C.default);
+const sensor = new URM09({
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	}
+});
 
 sensor.configure({
 	mode: Config.ONE_SHOT,
@@ -26,6 +31,6 @@ sensor.configure({
 Timer.repeat(() => {
 	const sample = sensor.sample();
 
-	trace(`Distance: ${sample.distance} cm -- Temperature ${sample.temperature} C\n`);
+	trace(`Distance: ${sample.near ? "NEAR" : ""}  ${sample.distance} cm, max: ${sample.max} -- Temperature ${sample.temperature} C\n`);
 }, 2000);
 

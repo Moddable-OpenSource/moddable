@@ -87,7 +87,7 @@ class TMP102  {
 
 		if (undefined !== options.shutdownMode) {
 			config &= ~SHUTDOWN_MODE;
-			if (options.shudownMode) {
+			if (options.shutdownMode) {
 				config |= SHUTDOWN_MODE;
 				this.#status = "shutdown";
 			}
@@ -154,6 +154,10 @@ class TMP102  {
 		this.#io = undefined;
 	}
 
+	#twoC16(val) {
+		return (val > 32768) ?  -(65535 - val + 1) : val;
+	}
+
 	sample() {
 		const io = this.#io;
 		const conf = io.readWord(Register.CONFIG, true);
@@ -162,14 +166,7 @@ class TMP102  {
 			Timer.delay(35);		// wait for new reading to be available
 		}
 
-		let value = this.#io.readWord(Register.TEMP_READ, true) >> this.#shift;
-		if (value & 0x1000) {
-			value -= 1;
-			value = ~value & 0x1fff;
-			value = -value;
-		}
-		value *= 0.0625;
-
+		let value = (this.#twoC16(io.readWord(Register.TEMP_READ, true)) >> this.#shift) * 0.0625;
 		return { temperature: value, alert: (conf & ALERT_BIT) == (conf & POLARITY_BIT) };
 	}
 }

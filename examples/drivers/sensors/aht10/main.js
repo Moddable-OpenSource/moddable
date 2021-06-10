@@ -18,10 +18,10 @@
  */
 
 import device from "embedded:provider/builtin";
-import Humidity from "embedded:sensor/AHT10";
+import Humidity from "embedded:sensor/Humidity-Temperature/AHT10";
 import Timer from "timer";
 
-const humidity = new Humidity(device.I2C.default);
+const humidity = new Humidity({ sensor: device.I2C.default });
 
 Timer.repeat(() => {
 	const sample = humidity.sample();

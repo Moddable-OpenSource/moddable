@@ -24,7 +24,6 @@
 	https://www.ti.com/lit/ds/symlink/tmp117.pdf
 */
 
-import SMBus from "embedded:io/smbus";
 import Timer from "timer";
 
 const Register = Object.freeze({
@@ -35,12 +34,6 @@ const Register = Object.freeze({
 	TMP117_CHIPID:	0x0F
 });
 
-const StatusMask = Object.freeze({
-	ALERT_HIGH:		0b1000_0000_0000_0000,
-	ALERT_LOW:		0b0100_0000_0000_0000,
-	DATA_READY:		0b0010_0000_0000_0000,
-	EEPROM_BUSY:	0b0001_0000_0000_0000
-});
 const ConfigMask = Object.freeze({
 	MODE:			0b0000_1100_0000_0000,
 	CONV:			0b0000_0011_1000_0000,
@@ -51,17 +44,24 @@ const ConfigMask = Object.freeze({
 	SOFT_RESET:		0b0000_0000_0000_0010
 });
 
+const SHUTDOWN_MODE = 0b0000_0100_0000_0000;		// Shutdown mode
+const ONE_SHOT = 0b0000_1100_0000_0000;
+const ONE_SHOT_DELAY = Object.freeze([ 16, 15.5*8, 15.5*32, 15.5*64 ]);
+const HIGH_ALERT = 0b1000_0000_0000_0000;
+const LOW_ALERT = 0b0100_0000_0000_0000;
+const DATA_READY = 0b0010_0000_0000_0000;
+
 class TMP117 {
 	#io;
 	#onAlert;
-	#irqMonitor;
+	#monitor;
 	#status;
 
 	constructor(options) {
-		const io = this.#io = new SMBus({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000, 
 			address: 0x48,
-			...options,
+			...options.sensor
 		});
 
 		let conf = io.readWord(Register.TMP117_CHIPID, true);
@@ -72,47 +72,25 @@ class TMP117 {
 		conf |= ConfigMask.SOFT_RESET;		// softreset
 		io.writeWord(Register.TMP117_CONF, conf, true);
 		
-		if (options.alert) {
-			const alert = options.alert;
-
-			if (options.onAlert) {
-				this.#onAlert = options.onAlert;
-				this.#irqMonitor = new alert.io({
-					onReadable: () => this.#onAlert(),
-					...alert
-				});
-			}
+		const {alert, onAlert} = options;
+		if (alert && onAlert) {
+			this.#onAlert = options.onAlert;
+			this.#monitor = new alert.io({
+				mode: alert.io.InputPullUp,
+				...alert,
+				edge: alert.io.Falling,
+				onReadable: () => this.#onAlert()
+			});
 		}
 
 		// Reset to default: DataSheet 7.6.3
 		io.writeWord(Register.TMP117_CONF, 0b0000_0010_0010_0000, true);
 
+		// DataSheet 7.6.4, 7.6.5
 		io.writeWord(Register.TMP117_THI, 0b0110_0000_0000_0000, true);
 		io.writeWord(Register.TMP117_TLO, 0b1000_0000_0000_0000, true);
 
-		this.configure({
-			shutdownMode: false,
-			thermostatMode: this.#onAlert ? "interrupt" : "comparator",
-			polarity: 0,
-			averaging: 8
-		});
-
 		this.#status = "ready";
-	}
-
-	#shutdown() {
-		const io = this.#io;
-		let conf = io.readWord(Register.TMP117_CONF, true);
-		conf &= ~ConfigMask.MODE;
-		io.writeWord(Register.TMP117_CONF, conf, true);
-	}
-	close() {
-		if ("ready" === this.#status) {
-			this.#io.writeByte(Register.TMP117_CONF, 1);	// shut down device
-			this.#status = undefined;
-		}
-		this.#irqMonitor?.close();
-		this.#irqMonitor = undefined;
 	}
 	configure(options) {
 		const io = this.#io;
@@ -120,9 +98,20 @@ class TMP117 {
 
 		if (undefined !== options.shutdownMode) {
 			conf &= ~ConfigMask.MODE;
-			if (options.shutdownMode)
+			if (options.shutdownMode) {
 				conf |= 0b0000_0100_0000_0000;
+				this.#status = "shutdown";
+			}
+			else
+				this.#status = "ready";
 		}
+
+		if (undefined !== options.highTemperature)
+			io.writeWord(Register.TMP117_THI, (options.highTemperature / .0078125) | 0, true);
+
+		if (undefined !== options.lowTemperature)
+			io.writeWord(Register.TMP117_TLO, (options.lowTemperature / .0078125) | 0, true);
+
 		if (undefined !== options.thermostatMode) {
 			conf &= ~ConfigMask.THERM;
 			if (options.thermostatMode === "interrupt")
@@ -130,10 +119,16 @@ class TMP117 {
 			else if (options.thermostatMode !== "comparator")
 				throw new Error("bad thermostatMode");
 		}
+
+		if (undefined !== options.conversionRate) {
+			conf &= ~ConfigMask.CONV;
+			conf |= (options.conversionRate & 0b111) << 7;
+		}
+
 		if (undefined !== options.polarity) {
 			conf &= ~ConfigMask.POL;
 			if (options.polarity)
-				conf |= 0b1000;
+				conf |= ConfigMask.POL;
 		}
 		if (undefined !== options.averaging) {
 			conf &= ~ConfigMask.AVG;
@@ -146,36 +141,46 @@ class TMP117 {
 			}
 		}
 
-		if (options.alert) {
-			const alert = options.alert;
-
-			if (undefined !== alert.highTemperature) {
-				const value = alert.highTemperature / .0078125;
-				io.writeWord(Register.TMP117_THI, value, true);
-			}
-
-			if (undefined !== alert.lowTemperature) {
-				const value = alert.lowTemperature / .0078125;
-				io.writeWord(Register.TMP117_TLO, value, true);
-			}
-		}
-
-		io.writeByte(Register.TMP117_CONF, conf);
+		io.writeWord(Register.TMP117_CONF, conf, true);
 	}
-
+	close() {
+		if ("ready" === this.#status) {
+			const io = this.#io;
+			let conf = io.readWord(Register.TMP117_CONF, true);
+			conf &= ~ConfigMask.MODE;
+			conf |= SHUTDOWN_MODE;
+			io.writeWord(Register.TMP117_CONF, conf, true);
+			this.#status = undefined;
+		}
+		this.#monitor?.close();
+		this.#monitor = undefined;
+		this.#io.close();
+		this.#io = undefined;
+	}
+	#twoC16(val) {
+		return (val > 32768) ?  -(65535 - val + 1) : val;
+	}
 	sample() {
 		const io = this.#io;
-
-		let value = io.readWord(Register.TMP117_TEMP, true);
-		value = ((value & 0x8000) ? (value | 0xffff0000) : value);
-
-		let sign = 1;
-		if (1 === (value & 0b1000_0000_0000_0000)) {
-			sign = -1;
-			value &= 0b0111_1111_1111_1111;
+		let conf = io.readWord(Register.TMP117_CONF, true);
+		if ((conf & ConfigMask.MODE) == SHUTDOWN_MODE) {
+			conf |= ONE_SHOT;
+			io.writeWord(Register.TMP117_CONF, conf, true);
+			Timer.delay(ONE_SHOT_DELAY[(conf & ConfigMask.AVE) >> 5]);
+			conf &= ~ConfigMask.MODE;
+			io.writeWord(Register.TMP117_CONF, conf | SHUTDOWN_MODE, true);
 		}
 
-		return { temperature: value * sign * 0.0078125 };
+		let value = this.#twoC16(io.readWord(Register.TMP117_TEMP, true)) * 0.0078125;
+
+		conf = io.readWord(Register.TMP117_CONF, true);
+		let alert = 0;
+		if (conf & HIGH_ALERT)
+			alert |= 0b01;
+		if (conf & LOW_ALERT)
+			alert |= 0b10;
+
+		return { temperature: value, alert };
 	}
 }
 

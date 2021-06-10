@@ -130,6 +130,10 @@ class LM75 {
 		this.#io = undefined;
 	}
 
+	#twoC16(val) {
+        return (val > 32768) ?  -(65535 - val + 1) : val;
+	}
+
 	sample() {
 		const io = this.#io;
 		const conf = io.readByte(Register.LM75_CONF);
@@ -139,11 +143,13 @@ class LM75 {
 		}
 			
 		let value = io.readWord(Register.LM75_TEMP, true);
-		value = ((value & 0x8000) ? (value | 0xffff0000) : value);
 
 		if (conf & 1)	// if was in shutdown mode, turn it back off
 			io.writeByte(Register.LM75_CONF, conf);
 
+		value = (this.#twoC16(value) >> 5) * 0.125;
+/*
+		value = ((value & 0x8000) ? (value | 0xffff0000) : value);
 		let sign = 1;
 		if (1 === (value & 0b1000_0000_0000_0000)) {
 			sign = -1;
@@ -151,6 +157,8 @@ class LM75 {
 		}
 
 		return { temperature: (value >> 5) * sign * 0.125 };
+*/
+		return { temperature: value };
 	}
 }
 

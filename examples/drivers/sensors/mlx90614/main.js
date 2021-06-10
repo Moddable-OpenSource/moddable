@@ -13,15 +13,20 @@
  */
 
 import device from "embedded:provider/builtin";
-import Temperature from "embedded:sensor/MLX90614";
+import Temperature from "embedded:sensor/Temperature/MLX90614";
 import Timer from "timer";
 
-const sensor = new Temperature(device.I2C.default);
+const sensor = new Temperature({
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	}
+});
 
 function toF(c) { return (((c * 9) / 5) + 32).toFixed(2); }
 
 Timer.repeat(id => {
 	let value = sensor.sample();
-	trace(`temperature: ${toF(value.temperature)} F - ambient: ${toF(value.ambient)} F\n`);
+	trace(`temperature: ${toF(value.temperature)} F - ambient temperature: ${toF(value.ambientTemperature)} F\n`);
 }, 100);
 

@@ -35,10 +35,10 @@ const Register = Object.freeze({
 });
 
 const Flags = Object.freeze({
-	BUSY:			0b1000_0000,
-	MODE_CMD:		0b0100_0000,
+//	BUSY:			0b1000_0000,
+//	MODE_CMD:		0b0100_0000,
 	MODE_CYC:		0b0010_0000,
-	MODE_NOR:		0b0110_0000,
+//	MODE_NOR:		0b0110_0000,
 	CAL_ENABLED:	0b0000_1000
 });
 
@@ -47,17 +47,15 @@ const MEASUREMENT_DELAY = 75;
 
 class AHT10 {
 	#io;
-	#byteBuffer = new Uint8Array(1);
 	#cmdBuffer = new Uint8Array(3);
 	#valueBuffer = new Uint8Array(6);
 
 	constructor(options) {
-		const bBuf = this.#byteBuffer;
 		const cBuf = this.#cmdBuffer;
-		const io = this.#io = new (options.io)({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000, 
 			address: 0x38,
-			...options
+			...options.sensor
 		});
 
 		cBuf[0] = Register.CMD_INIT;
@@ -66,14 +64,15 @@ class AHT10 {
 		io.write(cBuf, true);
 
 		Timer.delay(RESET_DELAY);
-		io.read(bBuf, true);
-		let status = bBuf[0];
 	}
 	configure(options) {
 	}
+	close() {
+		this.#io.close();
+		this.#io = undefined;
+	}
 	sample() {
 		const io = this.#io;
-		const bBuf = this.#byteBuffer;
 		const cBuf = this.#cmdBuffer;
 		const vBuf = this.#valueBuffer;
 		let ret = {};

@@ -13,26 +13,29 @@
  */
 
 import device from "embedded:provider/builtin";
-import { HMC5883, Config } from "embedded:sensor/HMC5883";
+import { HMC5883, Config } from "embedded:sensor/Magnetometer/HMC5883";
 import Timer from "timer";
 import config from "mc/config";
-const Digital = device.io.Digital;
 
 
 const sensor = new HMC5883({
-	...device.I2C.default,
-	rate: Config.Rate.RATE_15,
-	gain: Config.Gain.GAIN_1_3,
-	mode: Config.Mode.CONTINUOUS,
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	},
 	alert: {
 		io: device.io.Digital,
-		pin: config.interrupt_pin,
-		mode: Digital.Input,		// device is internally pulled up
-		edge: Digital.Falling
+		pin: config.interrupt_pin
 	},
 	onAlert() {
 		const sample = sensor.sample();
 		trace(`DataReady: [${sample.x}, ${sample.y}, ${sample.z}]\n`);
 	}
+});
+
+sensor.configure({
+	rate: Config.Rate.RATE_15,
+	gain: Config.Gain.GAIN_1_3,
+	mode: Config.Mode.CONTINUOUS,
 });
 

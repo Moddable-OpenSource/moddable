@@ -13,18 +13,18 @@
  */
 
 import device from "embedded:provider/builtin";
-import Temperature from "embedded:sensor/TMP102";
+import Temperature from "embedded:sensor/temperature/TMP102";
 import Timer from "timer";
 import config from "mc/config";
 
 const sensor = new Temperature({
 	sensor: {
 		...device.I2C.default,
-		io: device.io.SMBus,
+		io: device.io.SMBus
 	},
 	alert: {
 		io: device.io.Digital,
-		pin: config.interrupt_pin,
+		pin: config.interrupt_pin
 	},
 	onAlert() {
 		let sample = this.sample();

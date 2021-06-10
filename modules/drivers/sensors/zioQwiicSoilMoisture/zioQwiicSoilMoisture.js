@@ -23,7 +23,6 @@
 	https://github.com/sparkfun/Zio-Qwiic-Soil-Moisture-Sensor/blob/master/Firmware/Qwiic%20Soil%20Moisture%20Sensor%20Examples/Example1-Basic_Reading/Example1-Basic_Reading.ino
 */
 
-import SMBus from "embedded:io/smbus";
 import Timer from "timer";
 
 const Register = Object.freeze({
@@ -33,14 +32,14 @@ const Register = Object.freeze({
 	NOTHING_NEW:	0x99
 });
 
-class ZIOQWIIC {
+class ZIOQWIICMOISTURE {
 	#io;
 
 	constructor(options) {
-		const io = this.#io = new SMBus({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000, 
 			address: 0x28,
-			...options
+			...options.sensor
 		});
 
 		try {
@@ -60,6 +59,10 @@ class ZIOQWIIC {
 				this.#ledOff();
 		}
 	}
+	close() {
+		this.#io.close();
+		this.#io = undefined;
+	}
 	sample() {
 		return { value: this.#io.readWord(Register.GET_VALUE, 0) };
 	}
@@ -72,4 +75,4 @@ class ZIOQWIIC {
 }
 
 
-export default ZIOQWIIC;
+export default ZIOQWIICMOISTURE;

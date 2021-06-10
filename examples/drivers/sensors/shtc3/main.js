@@ -13,14 +13,15 @@
  */
 
 import device from "embedded:provider/builtin";
-import Humidity from "embedded:sensor/SHTC3";
+import Humidity from "embedded:sensor/Humidity-Temperature/SHTC3";
 import Timer from "timer";
 
-const sensor = new Humidity({
-		lowPower: true,
-		autoSleep: true,
-		...device.I2C.default
-	});
+const sensor = new Humidity({ sensor: device.I2C.default });
+
+sensor.configure({
+	lowPower: true,
+	autoSleep: true
+});
 
 Timer.repeat(() => {
 	const sample = sensor.sample();

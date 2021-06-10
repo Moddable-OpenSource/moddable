@@ -23,7 +23,6 @@
 	https://wiki.dfrobot.com/URM09_Ultrasonic_Sensor_(Gravity-I2C)_(V1.0)_SKU_SEN0304
 */
 
-import SMBus from "embedded:io/smbus";
 import Timer from "timer";
 
 const Register = Object.freeze({
@@ -56,10 +55,10 @@ class URM09 {
 	#range = Config.RANGE_500CM;
 
 	constructor(options) {
-		const io = this.#io = new SMBus({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000, 
 			address: 0x11,
-			...options
+			...options.sensor
 		});
 
 		if (io.readByte(Register.PRODUCT_ID) !== 0x01)
@@ -82,9 +81,17 @@ class URM09 {
 			io.writeByte(Register.COMMAND, CMD_READ_ONCE);
 			Timer.delay(READ_DELAY[this.#range >> 4]);
 		}
+		switch (this.#range) {
+			case Config.RANGE_500CM: ret.max = 500; break;
+			case Config.RANGE_300CM: ret.max = 300; break;
+			case Config.RANGE_150CM: ret.max = 150; break;
+		}
 
 		ret.distance = io.readWord(Register.DISTANCE_MSB, true);
 		ret.temperature = io.readWord(Register.TEMP_MSB, true) / 10;
+		if (ret.distance <= ret.max)
+			ret.near = true;
+
 		return ret;
 	}
 }

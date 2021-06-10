@@ -23,17 +23,16 @@
 
 */
 
-import SMBus from "embedded:io/smbus";
 import CRC8 from "crc";
-import Timer from "timer";
 
 const Register = {
-	MLX90614_RAWIR1:	0x04,
-	MLX90614_RAWIR2:	0x05,
+//	MLX90614_RAWIR1:	0x04,
+//	MLX90614_RAWIR2:	0x05,
 	MLX90614_TA:		0x06,
 	MLX90614_TOBJ1:		0x07,
-	MLX90614_TOBJ2:		0x08,
+//	MLX90614_TOBJ2:		0x08,
 
+/*
 	MLX90614_TOMAX:		0x20,
 	MLX90614_TOMIN:		0x21,
 	MLX90614_PWMCTRL:	0x22,
@@ -45,40 +44,38 @@ const Register = {
 	MLX90614_ID2:		0x3D,
 	MLX90614_ID3:		0x3E,
 	MLX90614_ID4:		0x3F
+*/
 };
 Object.freeze(Register);
 
 class MLX90614 {
 	#io;
-	#address;
-	#byteBuffer;
-	#valueBuffer;
-	#pecBuffer;
+	#byteBuffer = new Uint8Array(1);
+	#valueBuffer = new Uint8Array(3);
+	#pecBuffer = new Uint8Array(5);
+	#address;	// for PEC
 	#crc;
 
 	constructor(options) {
-		this.#address = options?.address ?? 0x5A;
-
-		const io = this.#io = new SMBus({
+		this.#address = options.sensor.address ?? 0x5A;
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: this.#address,
-			...options
+			...options.sensor
 		});
-
-		this.#byteBuffer = new Uint8Array(1);
-		this.#valueBuffer = new Uint8Array(3);
-		this.#pecBuffer = new Uint8Array(5);
 
 		this.#crc = new CRC8(0x07);
 	}
-
+	close() {
+		this.#io.close();
+		this.#io = undefined;
+	}
 	sample() {
 		let value = {};
-		value.ambient = this.#readTemp(Register.MLX90614_TA);
+		value.ambientTemperature = this.#readTemp(Register.MLX90614_TA);
 		value.temperature = this.#readTemp(Register.MLX90614_TOBJ1);
 		return value;
 	}
-
 	#readTemp(reg) {
 		const io = this.#io;
 		const vBuf = this.#valueBuffer;
@@ -91,8 +88,7 @@ class MLX90614 {
 		pBuf[3] = vBuf[0];
 		pBuf[4] = vBuf[1];
 
-		this.#crc.reset();
-		if (this.#crc.checksum(pBuf) !== vBuf[2])
+		if (this.#crc.reset().checksum(pBuf) !== vBuf[2])
 			xsUnknownError("bad checksum\n");
 
 		let value = (vBuf[1] << 8) | vBuf[0];

@@ -79,23 +79,26 @@ class BMP280 extends aHostObject {
 
 	constructor(options) {
 		super(options);
-		const io = this.#io = new (options.io)({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x76,
-			...options
+			...options.sensor
 		});
 
 		const bBuf = this.#byteBuffer = new Uint8Array(1);
-		this.#wordBuffer = new Uint8Array(2);
-		this.#valueBuffer = new Uint8Array(3);
+		const wBuf = this.#wordBuffer = new Uint8Array(2);
+		this.#valueBuffer = new Uint8Array(6);
 
 		bBuf[0] = Register.BMP280_CHIPID;
 		io.write(bBuf);
 		if (0x58 !== io.read(bBuf)[0])
 			throw new Error("unexpected sensor");
 
+		wBuf[0] = Register.BMP280_SOFTRESET;
+		wBuf[1] = Config.Mode.SOFT_RESET;
+		io.write(wBuf);
+
 		this.#initialize();
-		this.configure(options);
 	}
 	configure(options) {
 		const io = this.#io;
@@ -133,11 +136,23 @@ class BMP280 extends aHostObject {
 		io.write(wBuf);
 	}
 	sample() {
-		let rawT = this.#read24(Register.BMP280_TEMPDATA);
-		let rawP = this.#read24(Register.BMP280_PRESSUREDATA);
+		const io = this.#io;
+		const bBuf = this.#byteBuffer;
+		const vBuf = this.#valueBuffer;
+		
+		bBuf[0] = Register.BMP280_PRESSUREDATA;
+		io.write(bBuf);
+		io.read(vBuf);
+		const rawP = (vBuf[0] << 16) | (vBuf[1] << 8) | vBuf[2];
+		const rawT = (vBuf[3] << 16) | (vBuf[4] << 8) | vBuf[5];
 		return this.#calculate(rawT, rawP);
 	}
-	close() @ "xs_bmp280_close";
+	#close() @ "xs_bmp280_close";
+	close() {
+		this.#close();
+		this.#io.close();
+		this.#io = undefined;
+	}	
 	#calculate(rawTemp, rawPressure) @ "xs_bmp280_calculate";
 	#setCalibration(calibrate) @ "xs_bmp280_setCalibration";
 	#initialize() {
@@ -158,10 +173,8 @@ class BMP280 extends aHostObject {
 
 		this.#setCalibration(calib);
 	}
-	#twoC(val) {
-		if (val > 32767)
-			val = -(65535 - val + 1);
-		return val;
+	#twoC16(val) {
+		return (val > 32767) ? -(65535 - val + 1) : val;
 	}
 	#read16(reg) {
 		const io = this.#io;
@@ -173,23 +186,14 @@ class BMP280 extends aHostObject {
 		return (wBuf[0] << 8) | wBuf[1];
 	}
 	#readS16(reg) {
-		return this.#twoC(this.#read16(reg));
+		return this.#twoC16(this.#read16(reg));
 	}
 	#read16LE(reg) {
 		let v = this.#read16(reg);
 		return ((v & 0xff00) >> 8) | ((v & 0xff) << 8);
 	}
 	#readS16LE(reg) {
-		return this.#twoC(this.#read16LE(reg));
-	}
-	#read24(reg) {
-		const io = this.#io;
-		const bBuf = this.#byteBuffer;
-		const vBuf = this.#valueBuffer;
-		bBuf[0] = reg;
-		io.write(bBuf);
-		io.read(vBuf);
-		return (vBuf[0] << 16) | (vBuf[1] << 8) | vBuf[2];
+		return this.#twoC16(this.#read16LE(reg));
 	}
 }
 Object.freeze(BMP280.prototype);

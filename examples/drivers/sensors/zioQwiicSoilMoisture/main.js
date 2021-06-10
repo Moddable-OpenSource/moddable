@@ -13,11 +13,14 @@
  */
 
 import device from "embedded:provider/builtin";
-import Moisture from "embedded:sensor/ZIOQWIIC";
+import Moisture from "embedded:sensor/Moisture/ZIOQWIICMOISTURE";
 import Timer from "timer";
 
-const sensor = new Moisture({
-	...device.I2C.default
+const sensor = new Moisture({	
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	}
 });
 
 Timer.repeat(() => {

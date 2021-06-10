@@ -26,14 +26,14 @@ import Timer from "timer";
 import CRC8 from "crc";
 
 const Register = Object.freeze({
-	READ_T_NORMAL:			(0x7866),	// temp 1st
-	READ_T_LOWP:			(0x609C),	// temp 1st, low power
-	READ_RH_NORMAL:			(0x58E0),	// humidity 1st
-	READ_RH_LOWP:			(0x401A),	// humidity 1st, low power
+//	READ_T_NORMAL:			(0x7866),	// temp 1st
+//	READ_T_LOWP:			(0x609C),	// temp 1st, low power
+//	READ_RH_NORMAL:			(0x58E0),	// humidity 1st
+//	READ_RH_LOWP:			(0x401A),	// humidity 1st, low power
 	READ_T_NORMAL_STRETCH:	(0x7CA2),	// temp 1st, clock stretch
 	READ_T_LOWP_STRETCH:	(0x6458),	// temp 1st, low power, clock stretch
-	READ_RH_NORMAL_STRETCH:	(0x5C24),	// humidity 1st, clock stretch
-	READ_RH_LOWP_STRETCH:	(0x44DE),	// humidity 1st, low power, clock stretch
+//	READ_RH_NORMAL_STRETCH:	(0x5C24),	// humidity 1st, clock stretch
+//	READ_RH_LOWP_STRETCH:	(0x44DE),	// humidity 1st, low power, clock stretch
 	READ_ID:				(0xEFC8),	// read ID
 	CMD_WAKE:				(0x3517),	// wake device
 	CMD_RESET:				(0x805D),	// reset device
@@ -49,14 +49,14 @@ class SHTC3  {
 	#wordBuffer;
 	#valueBuffer;
 	#lowPower = 0;
-	#autoSleep = 0;
+	#autoSleep = 1;
 	#crc;
 
 	constructor(options) {
-		const io = this.#io = new (options.io)({
+		const io = this.#io = new options.sensor.io({
 			hz: 1_000_000,		// data sheet says up to 1000 kHz
 			address: 0x70,
-			...options
+			...options.sensor
 		});
 
 		const wBuf = this.#wordBuffer = new Uint8Array(2);
@@ -74,15 +74,26 @@ class SHTC3  {
 			throw new Error("unexpected sensor");
 
 		this.#valueBuffer = new Uint8Array(6);
-		this.configure(options);
 		if (this.#autoSleep)
 			this.#writeCommand(Register.CMD_SLEEP);
 	}
 	configure(options) {
 		if (undefined !== options.lowPower)
 			this.#lowPower = options.lowPower;
-		if (undefined !== options.autoSleep)
+		if (undefined !== options.autoSleep) {
 			this.#autoSleep = options.autoSleep;
+			if (this.#autoSleep)
+				this.#writeCommand(Register.CMD_SLEEP);
+			else {
+				this.#writeCommand(Register.CMD_WAKE);
+				Timer.delay(1);
+			}
+		}
+	}
+	close() {
+		this.#writeCommand(Register.CMD_SLEEP);
+		this.#io.close();
+		this.#io = undefined;
 	}
 	sample() {
 		const io = this.#io;

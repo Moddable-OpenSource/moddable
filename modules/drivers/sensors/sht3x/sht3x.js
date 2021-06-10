@@ -27,39 +27,44 @@ import CRC8 from "crc";
 
 const Register = Object.freeze({
 	HIGHREP_STRETCH : (0x2C06), // high repeatability, clock stretch
+/*
 	MEDREP_STRETCH : (0x2C0D),  // med repeat, clock stretched
 	LOWREP_STRETCH : (0x2C10),  // low repeat, clock stretched
 	HIGHREP : (0x2400),         // high repeat, no clock stretch
 	MEDREP : (0x240B),          // med repeat, no clock stretch
 	LOWREP : (0x2416),          // low repeat, no clock stretch
+*/
 	READSTATUS : (0xF32D),      // read status register
 	CLEARSTATUS : (0x3041),     // clear status
 	SOFTRESET : (0x30A2),       // soft reset
+/*
 	HEATEREN : (0x306D),        // heater enable
 	HEATERDIS : (0x3066)	      // heater disable
+*/
 });
 
 class SHT3x  {
 	#io;
-	#wordBuffer;
-	#statusBuffer;
-	#valueBuffer;
+	#wordBuffer = new Uint8Array(2);
+	#statusBuffer = new Uint8Array(3);
+	#valueBuffer = new Uint8Array(6);
 	#crc;
 
 	constructor(options) {
-		const io = this.#io = new (options.io)({
+		const io = this.#io = new options.sensor.io({
 			hz: 1_000_000,		// data sheet says up to 1000 kHz
 			address: 0x44,
-			...options
+			...options.sensor
 		});
 
-		this.#wordBuffer = new Uint8Array(2);
-		this.#statusBuffer = new Uint8Array(3);
-		this.#valueBuffer = new Uint8Array(6);
 		this.#writeCommand(Register.SOFTRESET);
 		this.#crc = new CRC8(0x31, 0xff);
 	}
 	configure(options) {
+	}
+	close() {
+		this.#io.close();
+		this.#io = undefined;
 	}
 	sample() {
 		const vBuf = this.#valueBuffer;
@@ -71,17 +76,14 @@ class SHT3x  {
 
 		this.#writeCommand(Register.READSTATUS);
 		this.#io.read(status);
-		this.#crc.reset();
-		if (status[2] !== this.#crc.checksum(status.subarray(0,2)))
+		if (status[2] !== this.#crc.reset().checksum(status.subarray(0,2)))
             throw new Error("bad checksum");
 
 		this.#writeCommand(Register.CLEARSTATUS);
 
-		this.#crc.reset();
-		if (vBuf[2] == this.#crc.checksum(vBuf.subarray(0,2)))
+		if (vBuf[2] == this.#crc.reset().checksum(vBuf.subarray(0,2)))
 			ret.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
-		this.#crc.reset();
-		if (vBuf[5] == this.#crc.checksum(vBuf.subarray(3,5)))
+		if (vBuf[5] == this.#crc.reset().checksum(vBuf.subarray(3,5)))
 			ret.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
 		return ret;
 	}

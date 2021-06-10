@@ -73,20 +73,20 @@ const Config = Object.freeze({
 class HMC5883 {
 	#io;
 	#onAlert;
-	#irqMonitor;
-	#values = new Uint8Array(6);
+	#monitor;
+	#valueBuffer = new Uint8Array(6);
 	#rate = Config.Rate.RATE_15;
 	#gain = Config.Gain.GAIN_1_3;
-	#averaging = 0 << 5;
+	#averaging = 0;
 	#gauss_xy;
 	#gauss_z;
 
 	constructor(options) {
-		const io = this.#io = new SMBus({
+		const io = this.#io = new options.sensor.io({
 			hz: 400_000,
 			sendStop: true,
 			address: 0x1E,
-			...options
+			...options.sensor
 		});
 
 		const ID = new Uint8Array(3);
@@ -94,19 +94,21 @@ class HMC5883 {
 		if (ID[0] !== 72 || ID[1] !== 52 || ID[2] !== 51)
 			throw new Error("unexpected sensor");
 
-		if (options.alert) {
-			const alert = options.alert;
-
-			if (options.onAlert) {
-				this.#onAlert = options.onAlert;
-				this.#irqMonitor = new alert.io({
-					onReadable: () => this.#onAlert(),
-					...alert
-				});
-			}
+		const {alert, onAlert} = options;
+		if (alert && onAlert) {
+			this.#onAlert = options.onAlert;
+			this.#monitor = new alert.io({
+				mode: alert.io.InputPullUp,
+				...alert,
+				edge: alert.io.Falling,
+				onReadable: () => this.#onAlert()
+			});
 		}
 
-		this.configure(options);
+		// reset to defaults
+		io.writeByte(Register.CONFIG_A, 0b0001_0000);
+		io.writeByte(Register.CONFIG_B, 0b0010_0000);
+		io.writeByte(Register.MODE, 0b0000_0001);
 	}
 
 	configure(options) {
@@ -164,23 +166,27 @@ class HMC5883 {
 				break;
 		}
 	}
+	close() {
+		this.#monitor?.close();
+		this.#monitor = undefined;
+		this.#io.close();
+		this.#io = undefined;
+	}
 	sample() {
 		const io = this.#io;
-		const values = this.#values;
+		const vBuf = this.#valueBuffer;
 		let ret = {};
 
-		io.readBlock(Register.DATA_X_MSB, values);
-		ret.x = (this.#toInt16(values[0], values[1]) / this.#gauss_xy * 100).toFixed(2),
-		ret.y = (this.#toInt16(values[2], values[3]) / this.#gauss_xy * 100).toFixed(2),
-		ret.z = (this.#toInt16(values[4], values[5]) / this.#gauss_z * 100).toFixed(2)
+		io.readBlock(Register.DATA_X_MSB, vBuf);
+		ret.x = (this.#twoC16(vBuf[0], vBuf[1]) / this.#gauss_xy * 100).toFixed(2),
+		ret.y = (this.#twoC16(vBuf[2], vBuf[3]) / this.#gauss_xy * 100).toFixed(2),
+		ret.z = (this.#twoC16(vBuf[4], vBuf[5]) / this.#gauss_z * 100).toFixed(2)
 
 		return ret;
 	}
-	#toInt16(high, low) {
-		let result = (high << 8) | low;
-		if (result > 32767)
-			result = result - 65536;
-		return result;
+	#twoC16(high, low) {
+		const val = (high << 8) | low;
+		return (val > 32768) ? -(65535 - val + 1) : val;
 	}
 
 }

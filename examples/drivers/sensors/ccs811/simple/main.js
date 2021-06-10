@@ -13,10 +13,15 @@
  */
 
 import device from "embedded:provider/builtin";
-import Sensor from "embedded:sensor/CCS811";
+import Sensor from "embedded:sensor/AirQuality/CCS811";
 import Timer from "timer";
 
-const sensor = new Sensor(device.I2C.default);
+const sensor = new Sensor({
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	}
+});
 
 while (!sensor.available)
 	Timer.delay(500);

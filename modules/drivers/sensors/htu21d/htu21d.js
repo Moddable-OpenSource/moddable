@@ -45,10 +45,10 @@ class HTU21D  {
 	#crc;
 
 	constructor(options) {
-		const io = this.#io = new (options.io)({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x40,
-			...options
+			...options.sensor
 		});
 
 		this.#byteBuffer[0] = Register.SOFT_RESET;
@@ -57,6 +57,10 @@ class HTU21D  {
 		this.#crc = new CRC8(0x31);
 	}
 	configure(options) {
+	}
+	close() {
+		this.#io.close();
+		this.#io = undefined;
 	}
 	sample() {
 		let ret = {};
