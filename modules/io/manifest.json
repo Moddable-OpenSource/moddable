@@ -44,6 +44,9 @@
 		"esp": {
 		},
 		"esp32": {
+			"modules": {
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+			}
 		},
 		"...": {
 			"error": "Experimental TC53 IO modules currently available for ESP8266 and ESP32 only. For now, use the modules in the pins directory instead"
