@@ -97,7 +97,7 @@ typedef struct {
 
 uint8_t ZipOpen(Zip *zip, const uint8_t *data, uint32_t dataSize);
 void ZipClose(Zip zip);
-uint8_t ZipFindFile(Zip zip, const char *path, uint8_t **data, uint32_t *dataSize);
+zipLocalFileHeader ZipFindFile(Zip zip, const char *path, uint8_t **data, uint32_t *dataSize);
 
 uint8_t ZipOpen(Zip *zipOut, const uint8_t *data, uint32_t dataSize)
 {
@@ -152,7 +152,7 @@ void ZipClose(Zip zip)
 	c_free(zip);
 }
 
-uint8_t ZipFindFile(Zip zip, const char *path, uint8_t **data, uint32_t *dataSize)
+zipLocalFileHeader ZipFindFile(Zip zip, const char *path, uint8_t **data, uint32_t *dataSize)
 {
 	const char *walker = (const char *)zip->cd;
 	uint32_t i;
@@ -170,7 +170,7 @@ uint8_t ZipFindFile(Zip zip, const char *path, uint8_t **data, uint32_t *dataSiz
 						c_read16(&lf->fileNameLen) + c_read16(&lf->extraFieldLen);
 			*dataSize = c_read32(&lf->compressedSize);
 
-			return 1;
+			return lf;
 		}
 
 		walker += sizeof(zipCentralDirectoryFileRecord) +
@@ -178,7 +178,7 @@ uint8_t ZipFindFile(Zip zip, const char *path, uint8_t **data, uint32_t *dataSiz
 					c_read16(&item->commentLen);
 	}
 
-	return 0;
+	return NULL;
 }
 
 /*
@@ -222,7 +222,7 @@ void xs_zip_file_map(xsMachine *the)
 	uint8_t *data;
 	uint32_t dataSize;
 
-	if (0 == ZipFindFile(zip, path, &data, &dataSize))
+	if (NULL == ZipFindFile(zip, path, &data, &dataSize))
 		xsErrorPrintf("can't find path");
 
 	xsResult = xsNewHostObject(NULL);
@@ -233,9 +233,10 @@ void xs_zip_file_map(xsMachine *the)
 }
 
 typedef struct {
-	uint8_t		*data;
-	uint32_t	dataSize;
-	uint32_t	position;
+	uint8_t				*data;
+	uint32_t			dataSize;
+	uint32_t			position;
+	zipLocalFileHeader	lf;
 } xsZipFileRecord, *xsZipFile;
 
 void xs_zip_file_destructor(void *data)
@@ -251,11 +252,13 @@ void xs_zip_File(xsMachine *the)
 	uint8_t *data;
 	uint32_t dataSize;
 	xsZipFile zf;
+	zipLocalFileHeader lf;
 
 	xsmcSet(xsThis, xsID_ZIP, xsArg(0));
 
 	path = xsmcToString(xsArg(1));
-	if (0 == ZipFindFile(zip, path, &data, &dataSize))
+	lf = ZipFindFile(zip, path, &data, &dataSize);
+	if (NULL == lf)
 		xsErrorPrintf("can't find path");
 
 	zf = c_malloc(sizeof(xsZipFileRecord));
@@ -265,6 +268,7 @@ void xs_zip_File(xsMachine *the)
 	zf->data = data;
 	zf->dataSize = dataSize;
 	zf->position = 0;
+	zf->lf = lf;
 
 	xsmcSetHostData(xsThis, zf);
 }
@@ -338,6 +342,16 @@ void xs_zip_file_set_position(xsMachine *the)
 
 	zf->position = position;
 }
+
+void xs_zip_file_get_method(xsMachine *the)
+{
+	xsZipFile zf = xsmcGetHostData(xsThis);
+	if (NULL == zf)
+		xsErrorPrintf("file closed");
+
+	xsResult = xsInteger(c_read16(&zf->lf->compressionMethod));
+}
+
 
 typedef struct {
 	Zip						zip;
