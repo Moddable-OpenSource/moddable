@@ -299,13 +299,23 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #ifdef mxTrace
 short gxDoTrace = 1;
 
+#ifdef mxMetering
 static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode) 
 {
 	if (((XS_NO_CODE < theCode) && (theCode < XS_CODE_COUNT)))
-		fprintf(stderr, "\n%ld: %s", the->stackTop - stack, gxCodeNames[theCode]);
+		fprintf(stderr, "\n%u %ld: %s", the->meterIndex, the->stackTop - stack, gxCodeNames[theCode]);
 	else
-		fprintf(stderr, "\n%ld: ?", the->stackTop - stack);
+		fprintf(stderr, "\n%u %ld: ?", the->meterIndex, the->stackTop - stack);
 }
+#else
+static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode) 
+{
+	if (((XS_NO_CODE < theCode) && (theCode < XS_CODE_COUNT)))
+		fprintf(stderr, "\n%%ld: %s", the->stackTop - stack, gxCodeNames[theCode]);
+	else
+		fprintf(stderr, "\n%%ld: ?", the->stackTop - stack);
+}
+#endif
 
 static void fxTraceID(txMachine* the, txID id, txIndex index) 
 {

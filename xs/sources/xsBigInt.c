@@ -60,7 +60,14 @@ const txBigInt gxBigIntNaN = { .sign=0, .size=0, .data=(txU4*)gxDataZero };
 const txBigInt gxBigIntOne = { .sign=0, .size=1, .data=(txU4*)gxDataOne };
 const txBigInt gxBigIntZero = { .sign=0, .size=1, .data=(txU4*)gxDataZero };
 
-static txBigInt *fxBigInt_fit(txBigInt *r);
+static txBigInt *fxBigInt_fit(txMachine* the, txBigInt *r);
+
+#ifdef mxMetering
+static void fxBigInt_meter(txMachine* the, int n);
+#define mxBigInt_meter(N) if (the) fxBigInt_meter(the, N)
+#else
+#define mxBigInt_meter(N)
+#endif
 
 // BYTE CODE
 
@@ -353,7 +360,8 @@ txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoo
 void fxBigIntDecode(txMachine* the, txSize size)
 {
 	txBigInt* bigint;
-	mxPushUndefined();
+	fxOverflow(the, -1, C_NULL, 0);
+	(--the->stack)->next = C_NULL;
 	bigint = &the->stack->value.bigint;
 	bigint->data = fxNewChunk(the, size);
 	bigint->size = size >> 2;
@@ -843,7 +851,8 @@ txBigInt *fxBigInt_alloc(txMachine* the, txU4 size)
 	if (size > 0xFFFF) {
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
-	mxPushUndefined();
+	fxOverflow(the, -1, C_NULL, 0);
+	(--the->stack)->next = C_NULL;
 	bigint = &the->stack->value.bigint;
 	bigint->data = fxNewChunk(the, fxMultiplyChunkSizes(the, size, sizeof(txU4)));
 	bigint->size = size;
@@ -859,7 +868,7 @@ void fxBigInt_free(txMachine* the, txBigInt *bigint)
 {
 #ifdef mxRun
 	if (bigint == &the->stack->value.bigint)
-		mxPop();
+		the->stack++;
 // 	else
 // 		fprintf(stderr, "oops\n");
 #endif
@@ -924,7 +933,7 @@ fxBigInt_ffs(txBigInt *a)
 	return(i);
 }
 
-txBigInt *fxBigInt_fit(txBigInt *r)
+txBigInt *fxBigInt_fit(txMachine* the, txBigInt *r)
 {
 	int i = r->size;
 	while (i > 0) {
@@ -933,6 +942,7 @@ txBigInt *fxBigInt_fit(txBigInt *r)
 			break;
 	}
 	r->size = (txU2)(i + 1);
+	mxBigInt_meter(r->size);
 	return r;
 }
 
@@ -996,7 +1006,7 @@ txBigInt *fxBigInt_and(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	}
 	if (b->sign)
 		goto AND_PLUS_MINUS;
-	return fxBigInt_fit(fxBigInt_uand(the, r, a, b));
+	return fxBigInt_fit(the, fxBigInt_uand(the, r, a, b));
 AND_PLUS_MINUS:
 // GMP: OP1 & -OP2 == OP1 & ~(OP2 - 1)
 	if (r == NULL)
@@ -1013,7 +1023,7 @@ AND_PLUS_MINUS:
 			r->data[i] = a->data[i] & ~bb->data[i];
     }
     fxBigInt_free(the, bb);
-	return fxBigInt_fit(r);
+	return fxBigInt_fit(the, r);
 AND_MINUS_MINUS:
 // GMP: -((-OP1) & (-OP2)) = -(~(OP1 - 1) & ~(OP2 - 1)) == ~(~(OP1 - 1) & ~(OP2 - 1)) + 1 == ((OP1 - 1) | (OP2 - 1)) + 1
 	if (r == NULL)
@@ -1025,7 +1035,7 @@ AND_MINUS_MINUS:
 	r->sign = 1;
 	fxBigInt_free(the, bb);
 	fxBigInt_free(the, aa);
-	return fxBigInt_fit(r);
+	return fxBigInt_fit(the, r);
 }
 
 txBigInt *fxBigInt_uand(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
@@ -1049,6 +1059,7 @@ txBigInt *fxBigInt_or(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
 	txBigInt *aa, *bb;
 	int i;
+	mxBigInt_meter(MAX(a->size, b->size));
 	if (a->sign) {
 		if (b->sign)
 			goto OR_MINUS_MINUS;
@@ -1059,7 +1070,7 @@ txBigInt *fxBigInt_or(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	}
 	if (b->sign)
 		goto OR_PLUS_MINUS;
-	return fxBigInt_uor(the, r, a, b);
+	return fxBigInt_fit(the, fxBigInt_uor(the, r, a, b));
 OR_PLUS_MINUS:
 // GMP: -(OP1 | (-OP2)) = -(OP1 | ~(OP2 - 1)) == ~(OP1 | ~(OP2 - 1)) + 1 == (~OP1 & (OP2 - 1)) + 1
 	if (r == NULL)
@@ -1079,7 +1090,7 @@ OR_PLUS_MINUS:
 	r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
 	r->sign = 1;
 	fxBigInt_free(the, bb);
-	return(r);
+	return fxBigInt_fit(the, r);
 OR_MINUS_MINUS:
 // GMP: -((-OP1) | (-OP2)) = -(~(OP1 - 1) | ~(OP2 - 1)) == ~(~(OP1 - 1) | ~(OP2 - 1)) + 1 = = ((OP1 - 1) & (OP2 - 1)) + 1
 	if (r == NULL)
@@ -1091,7 +1102,7 @@ OR_MINUS_MINUS:
 	r->sign = 1;
 	fxBigInt_free(the, bb);
 	fxBigInt_free(the, aa);
-	return(r);
+	return fxBigInt_fit(the, r);
 }
 
 txBigInt *fxBigInt_uor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
@@ -1126,7 +1137,7 @@ txBigInt *fxBigInt_xor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	}
 	if (b->sign)
 		goto XOR_PLUS_MINUS;
-	return fxBigInt_fit(fxBigInt_uxor(the, r, a, b));
+	return fxBigInt_fit(the, fxBigInt_uxor(the, r, a, b));
 XOR_PLUS_MINUS:
 // GMP: -(OP1 ^ (-OP2)) == -(OP1 ^ ~(OP2 - 1)) == ~(OP1 ^ ~(OP2 - 1)) + 1 == (OP1 ^ (OP2 - 1)) + 1
 	if (r == NULL)
@@ -1136,8 +1147,7 @@ XOR_PLUS_MINUS:
 	r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
 	r->sign = 1;
 	fxBigInt_free(the, bb);
-    fxBigInt_fit(r);
-	return fxBigInt_fit(r);
+	return fxBigInt_fit(the, r);
 XOR_MINUS_MINUS:
 // GMP: (-OP1) ^ (-OP2) == ~(OP1 - 1) ^ ~(OP2 - 1) == (OP1 - 1) ^ (OP2 - 1)
 	if (r == NULL)
@@ -1147,8 +1157,7 @@ XOR_MINUS_MINUS:
 	r = fxBigInt_uxor(the, r, aa, bb);
 	fxBigInt_free(the, bb);
 	fxBigInt_free(the, aa);
-    fxBigInt_fit(r);
-	return fxBigInt_fit(r);
+	return fxBigInt_fit(the, r);
 }
 
 txBigInt *fxBigInt_uxor(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
@@ -1186,7 +1195,7 @@ txBigInt *fxBigInt_lsl(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		r = fxBigInt_ulsl1(the, r, a, b->data[0]);
 		r->sign = a->sign;
 	}
-	return fxBigInt_fit(r);
+	return fxBigInt_fit(the, r);
 }
 
 txBigInt *fxBigInt_ulsl1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
@@ -1234,7 +1243,7 @@ txBigInt *fxBigInt_lsr(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		else
 			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
 	}
-	return fxBigInt_fit(r);
+	return fxBigInt_fit(the, r);
 }
 
 txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
@@ -1292,6 +1301,7 @@ txBigInt *fxBigInt_add(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 		else
 			rr = fxBigInt_usub(the, rr, bb, aa);
 	}
+	mxBigInt_meter(rr->size);
 	return(rr);
 }
 
@@ -1328,6 +1338,7 @@ txBigInt *fxBigInt_sub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 		rr = fxBigInt_uadd(the, rr, aa, bb);
 		rr->sign = sign;
 	}
+	mxBigInt_meter(rr->size);
 	return(rr);
 }
 
@@ -1463,6 +1474,7 @@ txBigInt *fxBigInt_mul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 	rr = fxBigInt_umul(the, rr, aa, bb);
 	if ((aa->sign != bb->sign) && !fxBigInt_iszero(rr))
 		rr->sign = 1;
+	mxBigInt_meter(rr->size);
 	return(rr);
 }
 
@@ -1574,6 +1586,7 @@ txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		r->sign = a->sign & odd;
 		fxBigInt_free(the, t);
 	}
+	mxBigInt_meter(r->size);
 	return(r);
 }
 
@@ -1637,12 +1650,14 @@ txBigInt *fxBigInt_div(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b)
 		if (b->sign)
 			q->sign = !q->sign;
 	}
+	mxBigInt_meter(q->size);
 	return(q);
 }
 
 txBigInt *fxBigInt_mod(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
 	txBigInt *q;
+	mxBigInt_meter(((a->size - b->size) * (a->size + b->size)));
 	if (r == NULL)
 		r = fxBigInt_alloc(the, a->sign ? b->size : MIN(a->size, b->size));
 	q = fxBigInt_udiv(the, NULL, a, b, &r);
@@ -1651,6 +1666,7 @@ txBigInt *fxBigInt_mod(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 			r = fxBigInt_sub(the, r, b, r);
 	}
 	fxBigInt_free(the, q);
+	mxBigInt_meter(r->size);
 	return(r);
 }
 
@@ -1661,6 +1677,7 @@ txBigInt *fxBigInt_rem(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 	if (fxBigInt_iszero(b))
 		mxRangeError("zero divider");
 #endif
+	mxBigInt_meter(((a->size - b->size) * (a->size + b->size)));
 	if (r == NULL)
 		r = fxBigInt_alloc(the, MIN(a->size, b->size));
 	q = fxBigInt_udiv(the, NULL, a, b, &r);
@@ -1669,6 +1686,7 @@ txBigInt *fxBigInt_rem(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
             r->sign = !r->sign;
 	}
 	fxBigInt_free(the, q);
+	mxBigInt_meter(r->size);
 	return(r);
 }
 
@@ -1763,7 +1781,7 @@ txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, t
 	tb = fxBigInt_ulsl1(the, NULL, nb, (n - t) * mxBigIntWordSize);	/* y*b^n */
 	if (fxBigInt_ucomp(na, tb) >= 0) {
 		q->data[q->size - 1]++;
-		fxBigInt_sub(the, na, na, tb);
+		fxBigInt_sub(C_NULL, na, na, tb);
 		/* since nomalization done, must be na < tb here */
 	}
 
@@ -1818,4 +1836,11 @@ txBigInt *fxBigInt_udiv(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b, t
 	fxBigInt_free(the, nb);
 	return(q);
 }
+
+#ifdef mxMetering
+void fxBigInt_meter(txMachine* the, int n)
+{
+	the->meterIndex += n - 1;
+}
+#endif
 
