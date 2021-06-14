@@ -42,9 +42,6 @@
 
 #define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
 
-#ifdef mxMetering
-static void fxCheckMetering(txMachine* the);
-#endif
 extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
 static void fxRunArguments(txMachine* the, txIndex offset);
 static void fxRunBase(txMachine* the);
