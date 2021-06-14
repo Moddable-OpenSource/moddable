@@ -62,16 +62,19 @@ void xs_inflate_push(xsMachine *the)
 	z_stream *zlib = xsmcGetHostData(xsThis);
 	uint8_t output[1024];
 	int inputOffset = 0;
-	int inputRemaining = xsmcGetArrayBufferLength(xsArg(0));
+	uint8_t *input;
+	xsUnsignedValue inputRemaining, ignore;
 	int inputEnd = xsmcTest(xsArg(1));
 	int status = Z_OK;
 
+	xsmcGetBuffer(xsArg(0), (void **)&input, &inputRemaining);
 	while (Z_OK == status) {
 		zlib->next_out	= output;
 		zlib->avail_out	= sizeof(output);
 		zlib->total_out	= 0;
 
-		zlib->next_in = inputOffset + (uint8_t *)xsmcToArrayBuffer(xsArg(0));
+		xsmcGetBuffer(xsArg(0), (void **)&input, &ignore);
+		zlib->next_in = inputOffset + input;
 		zlib->avail_in = inputRemaining;
 		zlib->total_in = 0;
 
@@ -79,12 +82,13 @@ void xs_inflate_push(xsMachine *the)
 		if ((Z_OK != status) && (Z_STREAM_END != status)) {
 			if (Z_DATA_ERROR == status) {
 				xs_inflate_close(the);
-				xsDebugger();
 				xsUnknownError("bad zlib data");
 			}
 		}
-		if (Z_BUF_ERROR == status)
-			status = Z_OK;
+		if (Z_BUF_ERROR == status) {
+			status = Z_OK;		// is this always correct?
+			break;
+		}
 
 		if (zlib->total_out) {
 			xsmcSetArrayBuffer(xsResult, output, zlib->total_out);
