@@ -2066,6 +2066,9 @@ XS_CODE_JUMP:
 				flag = fxStringToIndex(the->dtoa, mxStack->value.string, &(scratch.value.at.index));
 				mxRestoreState;
 				if (flag) {
+#ifdef mxMetering
+					the->meterIndex += 2;
+#endif
 					mxStack->kind = XS_AT_KIND;
 					mxStack->value.at.id = XS_NO_ID;
 					mxStack->value.at.index = scratch.value.at.index;

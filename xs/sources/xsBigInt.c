@@ -591,6 +591,8 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	txSlot* result;
 	txSlot* stack;
 	
+	mxMeterSome(slot->value.bigint.size);
+	
 	mxPushUndefined();
 	result = the->stack;
 	
