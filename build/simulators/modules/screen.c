@@ -175,7 +175,8 @@ void fxAbort(xsMachine* the, int status)
 	if (debug)
 		fxDebugger(the, (char *)__FILE__, __LINE__);
 #endif
-	(*screen->abort)(screen);
+    if (screen)
+        (*screen->abort)(screen);
 }
 
 void debugBreak(xsMachine* the, uint8_t stop)
