@@ -41,8 +41,9 @@ struct PulseCountRecord {
 typedef struct PulseCountRecord PulseCountRecord;
 typedef struct PulseCountRecord *PulseCount;
 
-//@@ TODO: check PCNT_UNIT_0 and PCNT_UNIT_MAX
-static uint8_t gPulseCountUnitsAvailable = 0xFF;
+#define PCNT_AVAILABLE ((1 << SOC_PCNT_UNIT_NUM) - 1)
+
+static uint8_t gPulseCountUnitsAvailable = PCNT_AVAILABLE;
 
 static PulseCount gPulseCounts; // pulse count units with onReadable callbacks
 static pcnt_isr_handle_t gPulseCountISRHandle;
