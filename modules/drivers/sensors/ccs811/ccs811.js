@@ -19,6 +19,9 @@
 */
 
 // @ToDo: Thresholds
+//		: more config
+//		: Wake pin (not just tied to low)
+//		: shut down firmware on close
 
 import Timer from "timer";
 import SMBus from "embedded:io/smbus";
@@ -68,11 +71,11 @@ class CCS811  {
 	#mode = { INT_THRESH: 0, INT_DATARDY: 0, DRIVE_MODE: Config.Drive_Mode.IDLE };
 
 	constructor(options) {
-		const io = this.#io = new SMBus({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x5A,
 			sendStop: true,
-			...options
+			...options.sensor
 		});
 
 		io.writeBlock(Register.SW_RESET, Uint8Array.of(0x11, 0xE5, 0x72, 0x8A));
@@ -138,6 +141,11 @@ class CCS811  {
 	get available() {
 		this.#readStatus();
 		return this.#status.DATA_READY ? true: false;
+	}
+	close() {
+				// low power?
+		this.#io.close();
+		this.#io = undefined;
 	}
 	sample() {
 		let ret = {};

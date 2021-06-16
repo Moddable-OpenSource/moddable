@@ -1,0 +1,18 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/sensors/hmc5883/manifest.json",
+	"modules": {
+		"*": "./main"
+	},
+	"platforms": {
+		"esp": {
+			"config": {
+				"interrupt_pin": 13
+			}
+		},
+		"esp32": {
+			"config": {
+				"interrupt_pin": 13
+			}
+		}
+	}
+}

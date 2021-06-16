@@ -1,7 +1,7 @@
 # Wasm
 
 Copyright 2019-2021 Moddable Tech, Inc.<BR>
-Revised: January 27, 2021
+Revised: June 14, 2021
 
 This document provides instructions to build and run Moddable SDK apps for the Wasm platform.
 
@@ -39,10 +39,8 @@ This document provides instructions to build and run Moddable SDK apps for the W
 	./emsdk activate latest
 	```
 	
-	> We last tested using version 2.0.12 (commit `5ad9d720c37d451e4dc8547ec516b8194455ce53`).
+	> We last tested using version 2.0.24 (commit `e2dc11e0dbd8f9367d70c76e57cdb9a45515390e`).
 	
-	If you are using a Mac with an M1 chip, you will have to take some additional steps before you can run the install script because Emscripten does not yet have a precompiled package for the M1 hardware. [This comment](https://github.com/emscripten-core/emsdk/issues/671#issuecomment-754541014) provides intructions that you can follow to work around this issue.
-		
 2. Clone the [Binaryen](https://github.com/WebAssembly/binaryen) repository into your `~/Projects` directory and build it.
 
 	```text
@@ -52,7 +50,7 @@ This document provides instructions to build and run Moddable SDK apps for the W
 	cmake . && make
 	```
 	
-	> We last tested using wasm-opt version 99 (commit `53c471a445ef26eac7befc3f3a5e0a53870df8cb`)	
+	> We last tested using wasm-opt version 101 (commit `aec8d12282b5279b80e79f21d54491db5d55278e`)	
 3. 	Setup the `PATH` and other environment variables by pasting the following commands into your `~/.profile`. The first command sources a shell script that sets environment variables for Emscripten. The second updates your `PATH` to include BinaryEn.
 
 	```text

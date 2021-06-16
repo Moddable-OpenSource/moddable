@@ -591,7 +591,7 @@ class XcodeFile extends PrerequisiteFile {
 			this.addResource(tool.resourcesPath + "/" + target);
 		}
 		if (tool.stringFiles.length)
-			this.addResource(tool.resourcesPath + "/locals.mhi");
+			this.addResource(tool.resourcesPath + "/" + tool.localsName + ".mhi");
 
 		this.addResource(tool.mainPath + "/ios/Assets.xcassets", true);
 	
@@ -1039,6 +1039,7 @@ export default class extends Tool {
 		}
 	}
 	run() {
+		this.localsName = "locals";
 		super.run();
 		
 		this.filterCommonjs(this.manifest.commonjs);

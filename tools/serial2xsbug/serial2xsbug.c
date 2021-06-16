@@ -273,6 +273,8 @@ int fxInitializeTarget(txSerialTool self)
 	else if (!strcmp("install", gCmd)) {
 #if mxTraceCommands
 		fprintf(stderr, "### install\n");
+#else
+		fprintf(stderr, "Installing mod.");
 #endif
 		gInstallOffset = 0;
 		fxInstallFragment(self);
@@ -308,8 +310,13 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 	uint16_t resultId = (buffer[1] << 8) | buffer[2];
 	uint16_t resultCode = (buffer[3] << 8) | buffer[4];
 
+	if (resultCode) {
+		fprintf(stderr, "### fxCommandReceived: remote operation failed with resultCode %d\n", resultCode);
+		exit(-1);
+	}
 #if mxTraceCommands
-	fprintf(stderr, "### fxCommandReceived\n");
+	else
+		fprintf(stderr, "### fxCommandReceived: remote operation SUCCESS with resultCode %d\n", resultCode);
 #endif
 
 	if (0xff02 == resultId) {	// uninstall
@@ -322,6 +329,8 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 	}
 
 	if (0xe0e0 == resultId) {	// installed fragment
+		if ((gInstallOffset / 4096) != ((gInstallOffset - kInstallFragmentSize) / 4096))
+			fprintf(stderr, ".");
 		fxInstallFragment(self);
 		return;
 	}
@@ -329,6 +338,7 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 #if mxTraceCommands
 		fprintf(stderr, "### install complete\n");
 #endif
+		fprintf(stderr, "..complete\n");
 		fclose(gInstallFD);
 		gInstallFD = NULL;
 		fxRestart(self);
@@ -345,13 +355,6 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		}
 		return;
 	}
-
-	if (resultCode)
-		fprintf(stderr, "### remote operation failed with resultCode %d\n", resultCode);
-#if mxTraceCommands
-	else
-		fprintf(stderr, "### remote operation SUCCESS with resultCode %d\n", resultCode);
-#endif
 }
 
 uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value)

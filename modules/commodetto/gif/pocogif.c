@@ -34,11 +34,11 @@ typedef struct {
 } GIFRecord, *GIF;
 
 
-static void doGIFGray16(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h);
-static void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h);
-static void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h);
-static void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h);
-static void doGIFKeyCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h);
+static void doGIFGray16(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
+static void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
+static void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
+static void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
+static void doGIFKeyCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
 
 void xs_poco_drawGIF(xsMachine *the)
 {
@@ -128,7 +128,7 @@ void xs_poco_drawGIF(xsMachine *the)
 		PocoDrawExternal(poco, (kCommodettoBitmapRGB565LE == cb->format) ? doGIF565LE : doGIFCLUT256, (void *)&gif, sizeof(gif), x, y, sw, sh);
 }
 
-void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h)
+void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	PocoPixel *src = gif->pixels;
@@ -148,7 +148,7 @@ void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, Poc
 	gif->pixels = src;
 }
 
-void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h)
+void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	PocoPixel *src = gif->pixels;
@@ -172,7 +172,7 @@ void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, 
 	gif->pixels = src;
 }
 
-void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h)
+void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	uint8_t *src = (uint8_t *)gif->pixels;
@@ -194,7 +194,7 @@ void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, P
 	gif->pixels = (uint16_t *)src;
 }
 
-void doGIFKeyCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h)
+void doGIFKeyCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	uint8_t *src = (uint8_t *)gif->pixels;
@@ -240,7 +240,7 @@ static const uint16_t Gray4ToRGB565[16] = {
 	PocoMakeRGB565FromGray4(0)
 };
 
-void doGIFGray16(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h)
+void doGIFGray16(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	uint8_t *src = (uint8_t *)gif->pixels;

@@ -19,46 +19,55 @@
  */
 /*
     TMP102 - temperature
+	Datasheet: https://www.ti.com/lit/ds/symlink/tmp102.pdf
 */
 
-import SMBus from "embedded:io/smbus";
+import Timer from "timer";
 
 const Register = Object.freeze({
 	TEMP_READ: 0x00,
 	CONFIG: 0x01,
 	TEMP_LOW: 0x02,
 	TEMP_HIGH: 0x03
-})
+});
+
+const SHUTDOWN_MODE = 0b0000_0001_0000_0000;
+const ALERT_BIT = 0b0000_0000_0010_0000;
+const POLARITY_BIT = 0b0000_0100_0000_0000;
+const ONE_SHOT = 0b1000_0000_0000_0000;
 
 class TMP102  {
 	#io;
-	#extendedRange;
-	#extShift;
+	#extendedRange = false;
+	#shift = 4;
 	#onAlert;
-	#irqMonitor;
-	#status;
+	#monitor;
+	#status = "ready";
 
 	constructor(options) {
-		const io = this.#io = new SMBus({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x48,
-			...options
+			...options.sensor
 		});
 
-		if (options.alert) {
-			const alert = options.alert;
-
-			if (options.onAlert) {
-				this.#onAlert = options.onAlert;
-				this.#irqMonitor = new alert.io({
-					onReadable: () => this.#onAlert(),
-					...alert
-				 });
-			}
+		const {alert, onAlert} = options;
+		if (alert && onAlert) {
+			this.#onAlert = onAlert;
+			this.#monitor = new alert.io({
+				mode: alert.io.InputPullUp,
+				...alert,
+				edge: alert.io.Falling,
+				onReadable: () => this.#onAlert()
+			 });
 		}
 
-		this.#extendedRange = false;
-		this.configure(options);
+		// reset to default values (7.5.3 of datasheet)
+		io.writeWord(Register.CONFIG, 0b0110_0000_1010_0000, true);
+
+		// THigh = +80C TLow = +75C (7.5.4)
+		io.writeWord(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
+		io.writeWord(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
 	}
 
 	configure(options) {
@@ -71,50 +80,61 @@ class TMP102  {
 
 		if (this.#extendedRange) {
 			config |= 0b1_0000;
-			this.#extShift = 3;
+			this.#shift = 3;
 		}
 		else
-			this.#extShift = 4;
+			this.#shift = 4;
 
-		if (options.alert) {
-			const alert = options.alert;
-
-			if (undefined !== alert.highTemperature) {
-				const value = (alert.highTemperature / 0.0625) << this.#extShift;
-				io.writeWord(Register.TEMP_HIGH, value, true);
+		if (undefined !== options.shutdownMode) {
+			config &= ~SHUTDOWN_MODE;
+			if (options.shutdownMode) {
+				config |= SHUTDOWN_MODE;
+				this.#status = "shutdown";
 			}
 			else
-				io.writeWord(Register.TEMP_HIGH, 0x7ff8, true);
-
-			if (undefined !== alert.lowTemperature) {
-				const value = (alert.lowTemperature / 0.0625) << this.#extShift;
-				io.writeWord(Register.TEMP_LO, value, true);
-			}
-			else
-				io.writeWord(Register.TEMP_LO, 0xfff8, true);
+				this.#status = "ready";
 		}
 
-		if (undefined !== options.hz) {
-			const hz = options.hz;
+		if (undefined !== options.highTemperature) {
+			const value = (options.highTemperature / 0.0625) << this.#shift;
+			io.writeWord(Register.TEMP_HIGH, value, true);
+		}
+		if (undefined !== options.lowTemperature) {
+			const value = (options.lowTemperature / 0.0625) << this.#shift;
+			io.writeWord(Register.TEMP_LOW, value, true);
+		}
+
+		if (undefined !== options.thermostatMode) {
+			config &= 0b1111_1101_1111_0000;
+			if (options.thermostatMode === "interrupt")
+				config |= 0b10_0000_0000;
+			else if (options.thermostatMode !== "comparator")
+				throw new Error("bad thermostatMode");
+		}
+
+		if (undefined !== options.conversionRate) {
 			config &= 0b1111_1111_0011_0000;
-			
-			if (hz < 0.5)
-				; // config |= 0b00;
-			else if (hz < 2)
-				config |= 0b0100_0000;
-			else if (hz < 6)
-				config |= 0b1000_0000;
-			else
-				config |= 0b1100_0000;
+			switch (options.conversionRate)	{
+				case 0.25:	break;
+				case 1:		config |= 0b0100_0000;	break;
+				case 4:		config |= 0b1000_0000;	break;
+				case 8:		config |= 0b1100_0000;	break;
+				default: throw new Error("invalid conversionRate");
+			}
 		}
 
+		if (undefined !== options.polarity) {
+			config &= ~POLARITY_BIT;
+			if (options.polarity)
+				config |= POLARITY_BIT;
+		}
 		if (undefined !== options.faultQueue) {
-			conf &= 0b1110_0111_1111_0000;
+			config &= 0b1110_0111_1111_0000;
 			switch (options.faultQueue) {
 				case 1: break;
-				case 2: conf |= 0b0000_1000_0000_0000; break;
-				case 4: conf |= 0b0001_0000_0000_0000; break;
-				case 6: conf |= 0b0001_1000_0000_0000; break;
+				case 2: config |= 0b0000_1000_0000_0000; break;
+				case 4: config |= 0b0001_0000_0000_0000; break;
+				case 6: config |= 0b0001_1000_0000_0000; break;
 				default: throw new Error("invalid faultQueue");
 			}
 		}
@@ -123,22 +143,31 @@ class TMP102  {
 	}
 
 	close() {
-		this.#irqMonitor?.close();
-		this.#irqMonitor = undefined;
+		if ("ready" === this.#status) {
+			this.#io.writeWord(Register.CONFIG, SHUTDOWN_MODE, true);	// shut down device
+			this.#status = undefined;
+		}
+
+		this.#monitor?.close();
+		this.#monitor = undefined;
 		this.#io.close();
 		this.#io = undefined;
 	}
 
-	sample() {
-		let value = this.#io.readWord(Register.TEMP_READ, true) >> this.#extShift;
-		if (value & 0x1000) {
-			value -= 1;
-			value = ~value & 0x1fff;
-			value = -value;
-		}
-		value *= 0.0625;
+	#twoC16(val) {
+		return (val > 32768) ?  -(65535 - val + 1) : val;
+	}
 
-		return { temperature: value };
+	sample() {
+		const io = this.#io;
+		const conf = io.readWord(Register.CONFIG, true);
+		if (conf & SHUTDOWN_MODE) { // if in shutdown mode, set ONE_SHOT
+			io.writeByte(Register.CONFIG, conf & ONE_SHOT);
+			Timer.delay(35);		// wait for new reading to be available
+		}
+
+		let value = (this.#twoC16(io.readWord(Register.TEMP_READ, true)) >> this.#shift) * 0.0625;
+		return { temperature: value, alert: (conf & ALERT_BIT) == (conf & POLARITY_BIT) };
 	}
 }
 

@@ -1,0 +1,10 @@
+{
+	"include": "$(MODDABLE)/modules/io/manifest.json",
+	"modules": {
+		"embedded:sensor/Humidity-Temperature/AHT10": "$(MODDABLE)/modules/drivers/sensors/aht10/aht10"
+	},
+	"preload": [
+		"embedded:sensor/Humidity-Temperature/AHT10"
+	]
+}
+

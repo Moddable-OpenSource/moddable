@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -35,20 +35,23 @@ const Register = Object.freeze({
 class AM2320  {
 	#io;
 	#cmdBuffer = new Uint8Array(3);
-	#crcBuffer = new Uint8Array(4);
 	#valueBuffer = new Uint8Array(6);
 	#crc;
 
 	constructor(options) {
-		const io = this.#io = new (options.io)({
+		const io = this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x5C,
-			...options
+			...options.sensor
 		});
 
 		this.#crc = new CRC16(0x8005, 0xFFFF, true, true);
 	}
 	configure(options) {
+	}
+	close() {
+		this.#io.close();
+		this.#io = undefined;
 	}
 	sample() {
 		let ret = {};

@@ -13,34 +13,38 @@
  */
 
 import device from "embedded:provider/builtin";
-import Temperature from "embedded:sensor/TMP102";
+import Temperature from "embedded:sensor/temperature/TMP102";
 import Timer from "timer";
 import config from "mc/config";
-const Digital = device.io.Digital;
 
-const temp = new Temperature({
-	...device.I2C.default,
-	extendedRange: true,
+const sensor = new Temperature({
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	},
 	alert: {
 		io: device.io.Digital,
-		pin: config.interrupt_pin,
-		mode: Digital.InputPullUp,
-		edge: Digital.Falling
+		pin: config.interrupt_pin
 	},
 	onAlert() {
-		trace(`Trigger: temp ${temp.sample().temperature} C\n`);
+		let sample = this.sample();
+		trace(`Trigger: ${sample.temperature} C, alert: ${sample.alert}\n`);
 	}
 });
 
-temp.configure({
-	alert: {
-		highTemperature: 33,
-		lowTemperature: 29
-	}
+sensor.configure({
+	highTemperature: 33,
+	lowTemperature: 29,
+	polarity: 0,
+	shutdownMode: false,
+	thermostatMode: "interrupt",
+	faultQueue: 2,
+	conversionRate: 1,
+	extendedRange: true
 });
 
 Timer.repeat(() => {
-	const sample = temp.sample();
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C\n`);
+	let sample = sensor.sample();
+	trace(`Temperature: ${sample.temperature.toFixed(2)} C, alert: ${sample.alert}\n`);
 }, 2000);
 

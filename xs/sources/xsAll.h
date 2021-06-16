@@ -684,9 +684,8 @@ mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
 
 #ifdef mxMetering
 mxExport void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), txU4 interval);
+mxExport void fxCheckMetering(txMachine* the);
 mxExport void fxEndMetering(txMachine* the);
-mxExport void fxMeterHostFunction(txMachine* the, txU4 count);
-mxExport void fxPatchHostFunction(txMachine* the, txCallback patch);
 #endif
 
 /* xsmc.c */

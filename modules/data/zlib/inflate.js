@@ -1,20 +1,14 @@
 class Inflate @ "xs_inflate_destructor" {
-	constructor(options = {}) {
-		this.chunks = [];
-		this.strm = {};
+	chunks = [];
+	strm = {};
 
+	constructor(options = {}) {
 		this.build(options);
 	}
 	build(options) @ "xs_inflate";
 	close() @ "xs_inflate_close";
 
 	push(buffer, end) {
-		if (ArrayBuffer.isView(buffer)) {
-			if (buffer.byteOffset || (buffer.byteLength !== buffer.buffer.byteLength))
-				throw new Error;
-
-			buffer = buffer.buffer;
-		}
 		this.strm.avail_in = this._push(buffer, end);
 	}
 
@@ -24,24 +18,25 @@ class Inflate @ "xs_inflate_destructor" {
 		this.chunks.push(chunk);
 	}
 	onEnd(err) {
+		const chunks = this.chunks, length = chunks.length;
+		delete this.chunks;
+
 		this.err = err;
-		if (err) {
-			delete this.chunks;
+		if (err)
 			return;
-		}
 
 		// join chunks
 		let total = 0;
-		for (let i = 0, chunks = this.chunks, length = chunks.length; i < length; i++)
+		for (let i = 0; i < length; i++)
 			total += chunks[i].byteLength;
 
 		this.result = new Uint8Array(total);
 		let offset = 0;
-		for (let i = 0, chunks = this.chunks, length = chunks.length; i < length; i++) {
-			this.result.set(new Uint8Array(this.chunks[i]), offset);
-			offset += chunks[i].byteLength;
+		for (let i = 0; i < length; i++) {
+			const chunk = chunks[i];
+			this.result.set(new Uint8Array(chunk), offset);
+			offset += chunk.byteLength;
 		}
-		delete this.chunks;
 	}
 }
 

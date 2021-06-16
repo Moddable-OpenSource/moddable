@@ -185,6 +185,7 @@ again:
 	case XS_STRING_X_KIND:
 		theSlot->kind = XS_NUMBER_KIND;
 		theSlot->value.number = fxStringToNumber(the->dtoa, theSlot->value.string, 1);
+		mxMeterOne();
 		goto again;
 	case XS_SYMBOL_KIND:
 		mxTypeError("Cannot coerce symbol to integer");
@@ -235,6 +236,7 @@ again:
 	case XS_STRING_X_KIND:
 		theSlot->kind = XS_NUMBER_KIND;
 		theSlot->value.number = fxStringToNumber(the->dtoa, theSlot->value.string, 1);
+		mxMeterOne();
 		break;
 	case XS_SYMBOL_KIND:
 		mxTypeError("Cannot coerce symbol to number");
@@ -294,9 +296,11 @@ again:
 		break;
 	case XS_INTEGER_KIND:
 		fxCopyStringC(the, theSlot, fxIntegerToString(the->dtoa, theSlot->value.integer, aBuffer, sizeof(aBuffer)));
+		mxMeterOne();
 		break;
 	case XS_NUMBER_KIND:
 		fxCopyStringC(the, theSlot, fxNumberToString(the->dtoa, theSlot->value.number, aBuffer, sizeof(aBuffer), 0, 0));
+		mxMeterOne();
 		break;
 	case XS_SYMBOL_KIND:
 		mxTypeError("Cannot coerce symbol to string");
@@ -396,6 +400,7 @@ again:
 	case XS_STRING_X_KIND:
 		theSlot->kind = XS_NUMBER_KIND;
 		theSlot->value.number = fxStringToNumber(the->dtoa, theSlot->value.string, 1);
+		mxMeterOne();
 		goto again;
 	case XS_SYMBOL_KIND:
 		result = 0;

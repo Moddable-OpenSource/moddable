@@ -15,7 +15,7 @@ typedef struct {
 /*
 	blitter. called from top to bottom to render the pixels
 */
-static void doStatic(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h)
+static void doStatic(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	PocoStatic sr = (PocoStatic)refcon;
 	PocoDimension rowBump = (poco->rowBytes >> (sizeof(PocoPixel) - 1)) - w;
