@@ -40,7 +40,7 @@
 			"./assets/scroller"
 		]
 	},
-	"store": {
+	"bundle": {
 	    "id": "tech.moddable.window-display-moddable-one",
 	    "devices": [
 	        "esp/moddable_one",

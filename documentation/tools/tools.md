@@ -234,10 +234,10 @@ xsl files... [-a name] [-b directory] [c creation] [-o directory] [-p modules]..
 
 **mcbundle** is a command line tool to build and package app archives for the Moddable Store.
 
-**mcbundle** uses the [`store` object](./manifest.md#store) of the [app manifest](./manifest.md). Here is a sample `store` object, taken from the `countdown` example:
+**mcbundle** uses the [`bundle` object](./manifest.md#store) of the [app manifest](./manifest.md). Here is a sample `bundle` object, taken from the `countdown` example:
 
 ```text
-"store": {
+"bundle": {
 	"id": "tech.moddable.countdown",
 	"devices": [
 		"esp/moddable_one",
@@ -257,7 +257,7 @@ mcbundle -d -m -o $MODDABLE/build/tmp
 
 This will build the `countdown` app for two devices and package the targets into one app archive.
 
-**mcbundle** generates and execute a shell script, `tech.moddable.countdown.sh`. The shell script invokes **mcconfig** once for each target platform to build the app, then copies the targets, icon and custom preferences dialog boxes into the app archive folder. The name of the app archive folder matches the `id` property of the `store` object: `tech.moddable.countdown`.
+**mcbundle** generates and execute a shell script, `tech.moddable.countdown.sh`. The shell script invokes **mcconfig** once for each target platform to build the app, then copies the targets, icon and custom preferences dialog boxes into the app archive folder. The name of the app archive folder matches the `id` property of the `bundle` object: `tech.moddable.countdown`.
 
 ```text
 tech.moddable.countdown

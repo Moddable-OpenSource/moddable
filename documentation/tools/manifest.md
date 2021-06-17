@@ -22,7 +22,7 @@ A manifest is a JSON file that describes the modules and resources necessary to 
 	* [`data`](#data)
 	* [`platforms`](#platforms)
 		* [`subplatforms`](#subplatforms)
-	* [`store`](#store)
+	* [`bundle`](#bundle)
 * [How manifests are processed](#process)
 
 <a id="example"></a>
@@ -493,10 +493,10 @@ The `SUBPLATFORM` variable is automatically defined by `mcconfig`. A wildcard is
 
 ***
 
-<a id="store"></a>
-### `store`
+<a id="bundle"></a>
+### `bundle`
 
-The `store` object is used by the [`mcbundle` command line tool](./tools.md#mcbundle) to build and package app archives for the Moddable Store. It has the following properties:
+The `bundle` object is used by the [`mcbundle` command line tool](./tools.md#mcbundle) to build and package app archives for the Moddable Store. It has the following properties:
 
 | Property | Required | Description |
 | :---: | :---: | :--- |
@@ -506,7 +506,7 @@ The `store` object is used by the [`mcbundle` command line tool](./tools.md#mcbu
 | `icon` | | The path to the custom app icon, if any. The app icon is the image that shows up next to the app name in the Moddable Store. The Moddable Store supplies a default icon based on the Moddable logo.
 
 ```
-"store": {
+"bundle": {
     "id": "tech.moddable.countdown",
     "devices": [
         "esp/moddable_one",

@@ -13,7 +13,7 @@
 			"./digits"
 		]
 	},
-	"store": {
+	"bundle": {
 		"id": "tech.moddable.countdown",
 		"devices": [
 			"esp/moddable_one",

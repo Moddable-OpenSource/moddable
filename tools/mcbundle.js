@@ -134,7 +134,7 @@ export default class extends TOOL {
 		const path = this.manifestPath;
 		const manifest = this.parseManifest(path);
 		this.parseBuild(manifest);
-		const store = manifest.store;
+		const store = manifest.bundle ?? manifest.store;
 		if (!store) {
 			throw new Error("no store!");;
 		}
