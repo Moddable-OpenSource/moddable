@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020  Moddable Tech, Inc.
+ * Copyright (c) 2018-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,6 +29,8 @@ Mixer.Flush = 2;
 Mixer.Callback = 3;
 Mixer.Volume = 4;
 Mixer.RawSamples = 5;
+Mixer.Tone = 6;
+Mixer.Silence = 7;
 
 function build(dictionary) @ "xs_audioout_build";
 
