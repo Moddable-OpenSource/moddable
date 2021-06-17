@@ -116,7 +116,7 @@ class SMBus {
 	}
 
 	readQuick() {
-		this.#io.read(new ArrayBuffer, this.#stop);
+		this.#io.read(0, this.#stop);
 	}
 
 	writeQuick() {

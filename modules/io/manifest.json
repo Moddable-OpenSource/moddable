@@ -32,8 +32,6 @@
 		"embedded:io/socket/udp": "$(IO)/socket/udp",
 		"embedded:io/socket/listener": "$(IO)/socket/listener",
 
-		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
-
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
@@ -41,10 +39,25 @@
 		"system"
 	],
 	"platforms": {
+		"esp/*": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider"
+			}
+		},
 		"esp": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
+			}
+		},
+		"esp32/*": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+			}
 		},
 		"esp32": {
 			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
 				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
 			}
 		},

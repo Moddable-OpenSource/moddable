@@ -29,38 +29,8 @@ import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
 
 const device = {
-	I2C: {
-		default: {
-			io: I2C,
-			data: 21,
-			clock: 22
-		}
-	},
-	Serial: {
-		default: {
-			io: Serial,
-			port: 1,
-			receive: 3,
-			transmit: 1
-		}
-	},
-	SPI: {
-		default: {
-			io: SPI,
-			clock: 14,
-			in: 12,
-			out: 13,
-			port: 1
-		}
-	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
-	pins: {
-		button: 0,
-		led: 2,
-		backlight: 18,
-		displayDC: 2,
-		displaySelect: 15
-	}
+	pins: {}
 };
 
 export default device;

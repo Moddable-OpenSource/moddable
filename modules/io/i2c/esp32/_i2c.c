@@ -58,7 +58,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	int data, clock, hz, address;
 	int timeout = 32000;
 	uint8_t pullup = GPIO_PULLUP_ENABLE;
-	int port = I2C_NUM_MAX - 1;
+	int port = I2C_NUM_0;
 
 	xsmcVars(1);
 
