@@ -1585,6 +1585,24 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		heap = heap->next;
 	}
 	
+	{
+		txBlock* block;
+		txByte* mByte;
+		txByte* nByte;
+
+		block = the->firstBlock;
+		while (block) {
+			mByte = ((txByte*)block) + sizeof(txBlock);
+			nByte = block->current;
+			while (mByte < nByte) {
+				txSize size = ((txChunk*)mByte)->size;
+				((txChunk*)mByte)->temporary = C_NULL;
+				mByte += size;
+			}	
+			block = block->nextBlock;
+		}
+	}
+	
 	return (snapshot->error) ? 0 : 1;
 }
 
