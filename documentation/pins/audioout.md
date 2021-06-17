@@ -180,12 +180,12 @@ A subset of the samples in the buffer may be selected for playback by using the 
 
 #### Enqueuing tones and silence
 
-To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infiinty` for the sample count to play the tone until `flush`,  `stop`, or `close`. 
+To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinty` for the sample count to play the tone until `flush`,  `stop`, or `close`. 
 
 ```js
 audio.enqueue(0, AudioOut.Tone, 440, 8000);
 ```
-To `enqueue` slience, provide the number of samples. Queuing silence is useful for adding precise gaps between audio buffers.  The following queues 11025 samples of silence.
+To `enqueue` silence, provide the number of samples. Queuing silence is useful for adding precise gaps between audio buffers.  The following queues 11025 samples of silence.
 
 ```js
 audio.enqueue(0, AudioOut.Silence, 8000);
@@ -253,3 +253,4 @@ The `audioOut` module is be configured at build time.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.
+* 
