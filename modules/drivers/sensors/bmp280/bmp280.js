@@ -19,6 +19,7 @@
  */
 /*
     BMP280 - temp/pressure
+	Datasheet - https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp280-ds001.pdf
     Implementation based on Adafruit https://github.com/adafruit/Adafruit_BMP280_Library
 */
 import Timer from "timer";
