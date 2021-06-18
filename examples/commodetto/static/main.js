@@ -1,11 +1,7 @@
 import Poco from "commodetto/Poco";
 import Timer from "timer";
 
-class PocoCustom extends Poco {
-	fillStatic(x, y, w, h, brightness = 255) @ "xs_poco_fillStatic";
-}
-
-const render = new PocoCustom(screen, {pixels: screen.width * 16});
+const render = new Poco(screen, {pixels: screen.width * 16});
 
 render.begin();
 	render.fillRectangle(render.makeColor(0, 0, 0), 0, 0, render.width, render.height);
