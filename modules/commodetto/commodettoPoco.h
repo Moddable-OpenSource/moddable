@@ -23,3 +23,9 @@
 
 #define xsGetHostDataPoco(slot) ((void *)((char *)xsGetHostData(slot) - offsetof(PocoRecord, pixels)))
 #define xsmcGetHostDataPoco(slot) ((void *)((char *)xsmcGetHostData(slot) - offsetof(PocoRecord, pixels)))
+
+#define PocoDisableGC(poco) \
+if (!(poco->flags & kPocoFlagGCDisabled)) {	\
+	poco->flags |= kPocoFlagGCDisabled;	\
+	xsEnableGarbageCollection(false);	\
+}
