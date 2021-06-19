@@ -70,7 +70,7 @@
 
 typedef struct sxScreen txScreen;
 
-typedef void (*txScreenAbortProc)(txScreen* screen);
+typedef void (*txScreenAbortProc)(txScreen* screen, int status);
 typedef void (*txScreenBufferChangedProc)(txScreen* screen);
 typedef void (*txScreenFormatChangedProc)(txScreen* screen);
 typedef void (*txScreenIdleProc)(txScreen* screen);

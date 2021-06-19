@@ -47,6 +47,7 @@ struct PiuScreenStruct {
 	PiuScreenMessage firstMessage;
 	PiuRectangleRecord hole;
 	xsIntegerValue rotation;
+	xsIntegerValue status;
 };
 
 struct PiuScreenMessageStruct {
@@ -68,7 +69,7 @@ static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view
 
 static gboolean PiuScreen_postMessageAux(gpointer data);
 
-static void fxScreenAbort(txScreen* screen);
+static void fxScreenAbort(txScreen* screen, int status);
 static gboolean fxScreenAbortAux(gpointer data);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
@@ -520,9 +521,10 @@ void PiuScreen_quit(xsMachine* the)
 	PiuScreenQuit(self);
 }
 
-void fxScreenAbort(txScreen* screen)
+void fxScreenAbort(txScreen* screen, int status)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;
+	(*self)->status = status;
 	g_idle_add(fxScreenAbortAux, self);
 }
 
@@ -535,7 +537,8 @@ gboolean fxScreenAbortAux(gpointer data)
 		xsVar(0) = xsReference((*self)->behavior);
 		if (xsFindResult(xsVar(0), xsID_onAbort)) {
 			xsVar(1) = xsReference((*self)->reference);
-			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+			xsVar(2) = xsInteger((*self)->status);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 		}
 		xsEndHost((*self)->the);
 	}

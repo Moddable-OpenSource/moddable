@@ -72,8 +72,8 @@ export class DeviceWorker extends ScreenWorker {
 }
 
 class DeviceScreenBehavior extends Behavior {
-	onAbort(screen) {
-		screen.container.bubble("onAbort");
+	onAbort(screen, status) {
+		screen.container.bubble("onAbort", status);
 	}
 	onCreate(screen, device) {
 		model.SCREEN = screen;

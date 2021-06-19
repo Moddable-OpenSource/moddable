@@ -135,6 +135,8 @@ static char* gxTouchEventNames[4] = {
 void fxAbort(xsMachine* the, int status)
 {
 	txScreen* screen = the->host;
+	if (!screen)
+		screen = the->context;
 	char* why = NULL;
 	int debug = 0;
 	switch (status) {
@@ -171,12 +173,9 @@ void fxAbort(xsMachine* the, int status)
 	}
 	if (why)
 		xsLog("XS abort: %s\n", why);
-#ifdef mxDebug
-	if (debug)
-		fxDebugger(the, (char *)__FILE__, __LINE__);
-#endif
     if (screen)
-        (*screen->abort)(screen);
+        (*screen->abort)(screen, status);
+    fxJump(the);
 }
 
 void debugBreak(xsMachine* the, uint8_t stop)
