@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/Temperature/NTC_Thermistor": "$(MODDABLE)/modules/drivers/sensors/ntcThermistor/ntcThermistor"
+	},
+	"preload": [
+		"embedded:sensor/Temperature/NTC_Thermistor"
+	]
+}
+
