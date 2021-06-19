@@ -2220,7 +2220,7 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 				id++;
 			}
 		}
-		mxElseThrow((id - (txID)preparation->keyCount) < (txID)preparation->creation.keyCount);
+// 		mxElseThrow((id - (txID)preparation->keyCount) < (txID)preparation->creation.keyCount);
 
 		fxMapperReadAtom(self, &atom);
 		mxElseThrow(atom.atomType == XS_ATOM_MODULES);
