@@ -791,6 +791,14 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 	xsSetContext(result, NULL);
 
+#if MODDEF_XS_MODS
+	xsMachine *the = result;
+	if (gHasMods && !the->archive) {
+		gHasMods = false;
+		xsTrace("failed to load mod\n");
+	}
+#endif
+
 	return result;
 }
 
