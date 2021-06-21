@@ -134,48 +134,49 @@ static char* gxTouchEventNames[4] = {
 
 void fxAbort(xsMachine* the, int status)
 {
-	txScreen* screen = the->host;
-	if (!screen)
-		screen = the->context;
-	char* why = NULL;
-	int debug = 0;
-	switch (status) {
-	case XS_STACK_OVERFLOW_EXIT:
-		why = "stack overflow";
-		debug = 1;
-		break;
-	case XS_NOT_ENOUGH_MEMORY_EXIT:
-		why = "memory full";
-		debug = 1;
-		break;
-	case XS_NO_MORE_KEYS_EXIT:
-		why = "not enough keys";
-		debug = 1;
-		break;
-	case XS_DEAD_STRIP_EXIT:
-		why = "dead strip";
-		debug = 1;
-		break;
-	case XS_DEBUGGER_EXIT:
-		break;
-	case XS_FATAL_CHECK_EXIT:
-		break;
-	case XS_UNHANDLED_EXCEPTION_EXIT:
-		why = "unhandled exception";
-		break;
-	case XS_UNHANDLED_REJECTION_EXIT:
-		why = "unhandled rejection";
-		break;
-	default:
-		why = "unknown";
-		debug = 1;
-		break;
+	static int exitToHost = 1;
+	if (exitToHost) {
+		txScreen* screen = the->host;
+		if (!screen)
+			screen = the->context;
+		char* why = NULL;
+		switch (status) {
+		case XS_STACK_OVERFLOW_EXIT:
+			why = "stack overflow";
+			break;
+		case XS_NOT_ENOUGH_MEMORY_EXIT:
+			why = "memory full";
+			break;
+		case XS_NO_MORE_KEYS_EXIT:
+			why = "not enough keys";
+			break;
+		case XS_DEAD_STRIP_EXIT:
+			why = "dead strip";
+			break;
+		case XS_DEBUGGER_EXIT:
+			break;
+		case XS_FATAL_CHECK_EXIT:
+			break;
+		case XS_UNHANDLED_EXCEPTION_EXIT:
+			why = "unhandled exception";
+			break;
+		case XS_UNHANDLED_REJECTION_EXIT:
+			exitToHost = 0;
+			why = "unhandled rejection";
+			break;
+		default:
+			why = "unknown";
+			break;
+		}
+		if (why)
+			xsLog("XS abort: %s\n", why);
+		if (screen)
+			(*screen->abort)(screen, status);
+		if (exitToHost) {
+			exitToHost = 0;
+			fxExitToHost(the);
+		}
 	}
-	if (why)
-		xsLog("XS abort: %s\n", why);
-    if (screen)
-        (*screen->abort)(screen, status);
-    fxJump(the);
 }
 
 void debugBreak(xsMachine* the, uint8_t stop)
