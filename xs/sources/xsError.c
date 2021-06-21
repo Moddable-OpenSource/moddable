@@ -138,13 +138,13 @@ void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
 				slot->ID = environment->ID;
 				slot->value.key.string = C_NULL;
 				slot->value.key.sum = environment->value.environment.line;
-				if ((name->kind == XS_STRING_KIND) || (name->kind == XS_STRING_X_KIND)) {
+				if (name && ((name->kind == XS_STRING_KIND) || (name->kind == XS_STRING_X_KIND))) {
 					if (name->kind == XS_STRING_X_KIND)
 						slot->kind = XS_KEY_X_KIND;
 					slot->value.key.string = name->value.string;
 				}
 				else {
-					txSlot* code = mxFunctionInstanceCode(function->value.reference);
+					txSlot* code = mxFunctionInstanceCode(function);
 					if (code->ID != XS_NO_ID) {
 						txSlot* key = fxGetKey(the, code->ID);
 						if (key) {
