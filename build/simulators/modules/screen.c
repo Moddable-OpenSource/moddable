@@ -207,12 +207,14 @@ void fxScreenIdle(txScreen* screen)
 				xsNumberValue when;
 				xsVars(2);
 				xsVar(0) = xsGet(xsGlobal, xsID_screen);
-				when = xsToNumber(xsGet(xsVar(0), xsID_when));
-				if (!c_isnan(when) && (when <= fxDateNow())) {
-					xsVar(1) = xsGet(xsVar(0), xsID_context);
-					if (xsTest(xsVar(1))) {
-						if (xsFindResult(xsVar(1), xsID_onIdle)) {
-							xsCallFunction0(xsResult, xsVar(1));
+				if (xsTest(xsVar(0))) {
+					when = xsToNumber(xsGet(xsVar(0), xsID_when));
+					if (!c_isnan(when) && (when <= fxDateNow())) {
+						xsVar(1) = xsGet(xsVar(0), xsID_context);
+						if (xsTest(xsVar(1))) {
+							if (xsFindResult(xsVar(1), xsID_onIdle)) {
+								xsCallFunction0(xsResult, xsVar(1));
+							}
 						}
 					}
 				}
@@ -228,21 +230,23 @@ void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 	{
 		xsVars(2);
 		xsVar(0) = xsGet(xsGlobal, xsID_screen);
-		if (xsFindResult(xsVar(0), xsID_onMessage)) {
-			if (size)
-				(void)xsCallFunction1(xsResult, xsVar(0), xsArrayBuffer(buffer, size));
-			else
-				(void)xsCallFunction1(xsResult, xsVar(0), xsString(buffer));
-
-		}
-		xsVar(1) = xsGet(xsVar(0), xsID_context);
-		if (xsTest(xsVar(1))) {
-			if (xsFindResult(xsVar(1), xsID_onMessage)) {
+		if (xsTest(xsVar(0))) {
+			if (xsFindResult(xsVar(0), xsID_onMessage)) {
 				if (size)
-					(void)xsCallFunction1(xsResult, xsVar(1), xsArrayBuffer(buffer, size));
+					(void)xsCallFunction1(xsResult, xsVar(0), xsArrayBuffer(buffer, size));
 				else
-					(void)xsCallFunction1(xsResult, xsVar(1), xsString(buffer));
+					(void)xsCallFunction1(xsResult, xsVar(0), xsString(buffer));
+
+			}
+			xsVar(1) = xsGet(xsVar(0), xsID_context);
+			if (xsTest(xsVar(1))) {
+				if (xsFindResult(xsVar(1), xsID_onMessage)) {
+					if (size)
+						(void)xsCallFunction1(xsResult, xsVar(1), xsArrayBuffer(buffer, size));
+					else
+						(void)xsCallFunction1(xsResult, xsVar(1), xsString(buffer));
 	
+				}
 			}
 		}
 	}
@@ -256,10 +260,12 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 		{
 			xsVars(2);
 			xsVar(0) = xsGet(xsGlobal, xsID_screen);
-			xsVar(1) = xsGet(xsVar(0), xsID_context);
-			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID(gxKeyEventNames[kind]))) {
-					xsCallFunction3(xsResult, xsVar(1), xsString(string), xsInteger(modifiers), xsNumber(when));
+			if (xsTest(xsVar(0))) {
+				xsVar(1) = xsGet(xsVar(0), xsID_context);
+				if (xsTest(xsVar(1))) {
+					if (xsFindResult(xsVar(1), xsID(gxKeyEventNames[kind]))) {
+						xsCallFunction3(xsResult, xsVar(1), xsString(string), xsInteger(modifiers), xsNumber(when));
+					}
 				}
 			}
 		}
@@ -293,6 +299,8 @@ void fxScreenLaunch(txScreen* screen)
 	xsBeginHost(screen->machine);
 	{
 		xsVars(2);
+		if (screen->archive && !the->archive)
+			fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 		xsCollectGarbage();
 		xsVar(0) = xsNewHostObject(NULL); // no destructor
 		xsSetHostData(xsVar(0), screen);
@@ -387,10 +395,12 @@ void fxScreenQuit(txScreen* screen)
 		{
 			xsVars(2);
 			xsVar(0) = xsGet(xsGlobal, xsID_screen);
-			xsVar(1) = xsGet(xsVar(0), xsID_context);
-			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID_onQuit)) {
-					xsCallFunction0(xsResult, xsVar(1));
+			if (xsTest(xsVar(0))) {
+				xsVar(1) = xsGet(xsVar(0), xsID_context);
+				if (xsTest(xsVar(1))) {
+					if (xsFindResult(xsVar(1), xsID_onQuit)) {
+						xsCallFunction0(xsResult, xsVar(1));
+					}
 				}
 			}
 		}
@@ -429,10 +439,12 @@ void fxScreenTouch(txScreen* screen, int kind, int index, int x, int y, double w
 		{
 			xsVars(2);
 			xsVar(0) = xsGet(xsGlobal, xsID_screen);
-			xsVar(1) = xsGet(xsVar(0), xsID_context);
-			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID(gxTouchEventNames[kind]))) {
-					xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(modMilliseconds()));
+			if (xsTest(xsVar(0))) {
+				xsVar(1) = xsGet(xsVar(0), xsID_context);
+				if (xsTest(xsVar(1))) {
+					if (xsFindResult(xsVar(1), xsID(gxTouchEventNames[kind]))) {
+						xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(modMilliseconds()));
+					}
 				}
 			}
 		}
