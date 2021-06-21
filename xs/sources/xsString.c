@@ -362,7 +362,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 		outLength += clen;
 		clen -= 1;
 		do {
-			if (!(0x80 & c_read8(in++)))
+			if (0x80 != (0xc0 & c_read8(in++)))
 				goto badUTF8;
 		} while (--clen > 0);
 	}
