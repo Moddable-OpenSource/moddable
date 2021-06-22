@@ -196,37 +196,22 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 	}
 }
 
+const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
+	"debugger",
+	"memory full",
+	"stack overflow",
+	"fatal",
+	"dead strip",
+	"unhandled exception",
+	"not enough keys",
+	"too much computation",
+	"unhandled rejection"
+};
+
 void fxAbort(txMachine* the, int status)
 {
 #if defined(mxDebug) || defined(mxInstrument)
-	char *msg = NULL;
-
-	switch (status) {
-		case XS_STACK_OVERFLOW_EXIT:
-			msg = "stack overflow";
-			break;
-		case XS_NOT_ENOUGH_MEMORY_EXIT:
-			msg = "memory full";
-			break;
-		case XS_DEAD_STRIP_EXIT:
-			msg = "dead strip";
-			break;
-		case XS_DEBUGGER_EXIT:
-		case XS_FATAL_CHECK_EXIT:
-			break;
-		case XS_UNHANDLED_EXCEPTION_EXIT:
-			msg = "unhandled exception";
-			break;
-		case XS_UNHANDLED_REJECTION_EXIT:
-			msg = "unhandled rejection";
-			break;
-		case XS_NO_MORE_KEYS_EXIT:
-			msg = "not enough keys";
-			break;
-		default:
-			msg = "unknown";
-			break;
-	}
+	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
 
 	fxReport(the, "XS abort: %s\n", msg);
 	#if defined(mxDebug)

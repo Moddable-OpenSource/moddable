@@ -1905,41 +1905,15 @@ void fxBuildArchiveKeys(txMachine* the)
 		txU1* p = the->archive;
 		if (p) {
 			txU4 atomSize;
-			txID c, i, needed = 0;
+			txID c, i;
 			p += mxArchiveHeaderSize;
 			// NAME
 			atomSize = c_read32be(p);
 			p += atomSize;
 			// SYMB
-			txU1* mods = p + c_read32be(p);;
 			p += sizeof(Atom);
 			c = (txID)c_read16(p);
 			p += 2;
-
-			txU1* pp = p, *q;
-			for (i = 0; i < c; i++) {
-				if (!fxFindName(the, (txString)pp))
-					needed += 1;
-				pp += mxStringLength((txString)pp) + 1;
-			}
-
-			// MODS
-			atomSize = c_read32be(mods);
-			q = mods + atomSize;
-			mods += sizeof(Atom);
-			while (mods < q) {
-				needed += 2;
-				// PATH
-				mods += c_read32be(mods);
-				// CODE
-				mods += c_read32be(mods);
-			}
-
-			if (needed >= (the->keyCount - the->keyIndex)) {
-				the->archive = NULL;		// not enough keys. ignore archive.
-				return;
-			}
-
 			for (i = 0; i < c; i++) {
 				fxNewNameX(the, (txString)p);
 				p += mxStringLength((txString)p) + 1;
@@ -2149,6 +2123,10 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 	
 		p = self->buffer;
 		mxMapAtom(p);
+		if (atom.atomType == XS_ATOM_ERROR) {
+			self->dst = NULL;
+			goto bail;
+		}
 		mxElseFatalCheck(atom.atomType == XS_ATOM_ARCHIVE);
 		self->size = atom.atomSize;
 		mxMapAtom(p);

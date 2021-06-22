@@ -744,7 +744,7 @@ void modPrelaunch(void)
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
 {
-	xsMachine *result;
+	xsMachine *the;
 	uint8_t *context[2];
 	xsCreation *creationP;
 	void *preparation = xsPreparationAndCreation(&creationP);
@@ -776,30 +776,29 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 		}
 		context[1] = context[0] + allocation;
 
-		result = xsPrepareMachine(&creation, preparation, name ? (txString)name : "main", context, archive);
-		if (NULL == result) {
+		the = xsPrepareMachine(&creation, preparation, name ? (txString)name : "main", context, archive);
+		if (NULL == the) {
 			if (context[0])
 				c_free(context[0]);
 			return NULL;
 		}
 	}
 	else {
-		result = xsPrepareMachine(NULL, preparation, "main", NULL, archive);
-		if (NULL == result)
+		the = xsPrepareMachine(NULL, preparation, "main", NULL, archive);
+		if (NULL == the)
 			return NULL;
 	}
 
-	xsSetContext(result, NULL);
+	xsSetContext(the, NULL);
 
 #if MODDEF_XS_MODS
-	xsMachine *the = result;
-	if (gHasMods && !the->archive) {
-		gHasMods = false;
-		xsTrace("failed to load mod\n");
+	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart)) {
+		uint8_t status = *(8 + (uint8_t *)kModulesStart);
+		xsLog("Mod failed: %s\n", gXSAbortStrings[status]);
 	}
 #endif
 
-	return result;
+	return the;
 }
 
 static uint16_t gSetupPending = 0;
