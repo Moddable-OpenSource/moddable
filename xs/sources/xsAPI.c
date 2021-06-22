@@ -1888,7 +1888,12 @@ static void fxMapperStep(txMapper* self);
 	atom.atomType = c_read32be(POINTER); \
 	POINTER += 4
 	
-#define mxElseThrow(_ASSERTION) if (!(_ASSERTION)) c_longjmp(self->jmp_buf, 1)
+
+#define mxElseStatus(_ASSERTION,_STATUS) \
+	((void)((_ASSERTION) || ((self->buffer[8] = (_STATUS)), c_longjmp(self->jmp_buf, 1), 0)))
+#define mxElseFatalCheck(_ASSERTION) mxElseStatus(_ASSERTION, XS_FATAL_CHECK_EXIT)
+#define mxElseNoMoreKeys(_ASSERTION) mxElseStatus(_ASSERTION, XS_NO_MORE_KEYS_EXIT)
+#define mxElseNotEnoughMemory(_ASSERTION) mxElseStatus(_ASSERTION, XS_NOT_ENOUGH_MEMORY_EXIT)
 #define mxElseInstall(_ASSERTION) if (!(_ASSERTION)) goto install
 
 #define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
@@ -2135,43 +2140,43 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		
 		self->bufferSize = bufferSize;
 		self->buffer = c_malloc(bufferSize);
-		mxElseThrow(self->buffer != C_NULL);
+		mxElseNotEnoughMemory(self->buffer != C_NULL);
 		self->scratchSize = 1024;
 		self->scratch = c_malloc(self->scratchSize);
-		mxElseThrow(self->scratch != C_NULL);
+		mxElseNotEnoughMemory(self->scratch != C_NULL);
 		
-		mxElseThrow(self->read(self->src, 0, self->buffer, mxArchiveHeaderSize));
+		mxElseFatalCheck(self->read(self->src, 0, self->buffer, mxArchiveHeaderSize));
 	
 		p = self->buffer;
 		mxMapAtom(p);
-		mxElseThrow(atom.atomType == XS_ATOM_ARCHIVE);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_ARCHIVE);
 		self->size = atom.atomSize;
 		mxMapAtom(p);
-		mxElseThrow(atom.atomType == XS_ATOM_VERSION);
-		mxElseThrow(atom.atomSize == sizeof(Atom) + 4);
-		mxElseThrow(*p++ == XS_MAJOR_VERSION);
-		mxElseThrow(*p++ == XS_MINOR_VERSION);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_VERSION);
+		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + 4);
+		mxElseFatalCheck(*p++ == XS_MAJOR_VERSION);
+		mxElseFatalCheck(*p++ == XS_MINOR_VERSION);
 		p++;
 		flag = p;
 		p++;
 		mxMapAtom(p);
-		mxElseThrow(atom.atomType == XS_ATOM_SIGNATURE);
-		mxElseThrow(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
+		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
 		signature = p;
 		p += XS_DIGEST_SIZE;
 		mxMapAtom(p);
-		mxElseThrow(atom.atomType == XS_ATOM_CHECKSUM);
-		mxElseThrow(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
+		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
 	
 		checksum = preparation->checksum;
 		if (self->src == self->dst) {
 			if (*flag) {
-				mxElseThrow(c_memcmp(p, checksum, XS_DIGEST_SIZE) == 0);
+				mxElseFatalCheck(c_memcmp(p, checksum, XS_DIGEST_SIZE) == 0);
 				goto bail;
 			}
 		}
 		else {
-			mxElseThrow(self->read(self->dst, 0, self->scratch, mxArchiveHeaderSize));
+			mxElseFatalCheck(self->read(self->dst, 0, self->scratch, mxArchiveHeaderSize));
 			q = self->scratch;
 			mxMapAtom(q);
 			mxElseInstall(atom.atomType == XS_ATOM_ARCHIVE);
@@ -2204,17 +2209,17 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		self->bufferOffset = mxArchiveHeaderSize;
 		if (self->bufferSize > self->size)
 			self->bufferSize = self->size;
-		mxElseThrow(self->read(self->src, mxArchiveHeaderSize, p, self->bufferSize - mxArchiveHeaderSize));
+		mxElseFatalCheck(self->read(self->src, mxArchiveHeaderSize, p, self->bufferSize - mxArchiveHeaderSize));
 	
 		fxMapperReadAtom(self, &atom);
-		mxElseThrow(atom.atomType == XS_ATOM_NAME);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_NAME);
 		fxMapperSkip(self, atom.atomSize - sizeof(Atom));
 	
 		fxMapperReadAtom(self, &atom);
-		mxElseThrow(atom.atomType == XS_ATOM_SYMBOLS);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_SYMBOLS);
 		c = fxMapperRead2(self);
 		self->ids = c_malloc(c * sizeof(txID));
-		mxElseThrow(self->ids != C_NULL);
+		mxElseFatalCheck(self->ids != C_NULL);
 		id = (txID)preparation->keyCount;
 		for (i = 0; i < c; i++) {
 			txU1 byte;
@@ -2224,11 +2229,11 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 			p = self->scratch;
 			q = p + self->scratchSize;
 			while ((byte = fxMapperRead1(self))) {
-				mxElseThrow(p < q);
+				mxElseFatalCheck(p < q);
 				*p++ = byte;
 				sum = (sum << 1) + byte;
 			}
-			mxElseThrow(p < q);
+			mxElseFatalCheck(p < q);
 			*p = 0;
 			sum &= 0x7FFFFFFF;
 			modulo = sum % preparation->nameModulo;
@@ -2246,41 +2251,50 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 				id++;
 			}
 		}
-// 		mxElseThrow((id - (txID)preparation->keyCount) < (txID)preparation->creation.keyCount);
+ 		mxElseNoMoreKeys((id - (txID)preparation->keyCount) < (txID)preparation->creation.keyCount);
 
 		fxMapperReadAtom(self, &atom);
-		mxElseThrow(atom.atomType == XS_ATOM_MODULES);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_MODULES);
 		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
 		while (self->bufferOffset < self->bufferLoop) {
 			fxMapperReadAtom(self, &atom);
-			mxElseThrow(atom.atomType == XS_ATOM_PATH);
+			mxElseFatalCheck(atom.atomType == XS_ATOM_PATH);
 			fxMapperSkip(self, atom.atomSize - sizeof(Atom));
 			fxMapperReadAtom(self, &atom);
-			mxElseThrow(atom.atomType == XS_ATOM_CODE);
+			mxElseFatalCheck(atom.atomType == XS_ATOM_CODE);
 			self->bufferCode = self->bufferOffset - sizeof(Atom) + atom.atomSize;
 			fxMapperMapIDs(self);
 		}
 	
 		fxMapperReadAtom(self, &atom);
-		mxElseThrow(atom.atomType == XS_ATOM_RESOURCES);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_RESOURCES);
 		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
 		while (self->bufferOffset < self->bufferLoop) {
 			fxMapperReadAtom(self, &atom);
-			mxElseThrow(atom.atomType == XS_ATOM_PATH);
+			mxElseFatalCheck(atom.atomType == XS_ATOM_PATH);
 			fxMapperSkip(self, atom.atomSize - sizeof(Atom));
 			fxMapperReadAtom(self, &atom);
-			mxElseThrow(atom.atomType == XS_ATOM_DATA);
+			mxElseFatalCheck(atom.atomType == XS_ATOM_DATA);
 			fxMapperSkip(self, atom.atomSize - sizeof(Atom));
 		}
 	
 		if (self->bufferOffset) {
 			if ((self->src != self->dst) || self->dirty) {
-				mxElseThrow(self->write(self->dst, self->offset, self->buffer, self->bufferOffset));
+				mxElseFatalCheck(self->write(self->dst, self->offset, self->buffer, self->bufferOffset));
 				self->dirty = 0;
 			}
 		}
 	}
 	else {
+		self->buffer[0] = 0;
+		self->buffer[1] = 0;
+		self->buffer[2] = 0;
+		self->buffer[3] = 9;
+		self->buffer[4] = 'X';
+		self->buffer[5] = 'S';
+		self->buffer[6] = '_';
+		self->buffer[7] = 'E';
+		self->write(self->dst, 0, self->buffer, 9);
 		self->dst = C_NULL;
 	}
 bail:
@@ -2397,7 +2411,7 @@ void fxMapperSkip(txMapper* self, size_t size)
 void fxMapperStep(txMapper* self)
 {
 	if ((self->src != self->dst) || self->dirty) {
-		mxElseThrow(self->write(self->dst, self->offset, self->buffer, self->bufferSize));
+		mxElseFatalCheck(self->write(self->dst, self->offset, self->buffer, self->bufferSize));
 		self->dirty = 0;
 	}
 	self->offset += self->bufferSize;
@@ -2407,7 +2421,7 @@ void fxMapperStep(txMapper* self)
 	if (self->bufferSize > self->size)
 		self->bufferSize = self->size;
 	if (self->bufferSize > 0)
-		mxElseThrow(self->read(self->src, self->offset, self->buffer, self->bufferSize));
+		mxElseFatalCheck(self->read(self->src, self->offset, self->buffer, self->bufferSize));
 	self->bufferOffset = 0;
 }
 

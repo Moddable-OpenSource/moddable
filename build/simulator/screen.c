@@ -302,7 +302,7 @@ void fxScreenLaunch(txScreen* screen)
 	{
 		xsVars(2);
 		if (screen->archive && !the->archive)
-			fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+			fxAbort(the, ((txByte*)(screen->archive))[8]);
 		xsCollectGarbage();
 		xsVar(0) = xsNewHostObject(NULL); // no destructor
 		xsSetHostData(xsVar(0), screen);
