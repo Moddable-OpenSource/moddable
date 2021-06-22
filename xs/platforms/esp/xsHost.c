@@ -1892,19 +1892,18 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
+	spi_flash_mmap_handle_t handle;
+
 	gPartition = esp_partition_find_first(0x40, 1,  NULL);
 	if (!gPartition) return NULL;
 
-	if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
-		spi_flash_mmap_handle_t handle;
+	if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle))
+		return NULL;
 
-		if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle))
-			return NULL;
-	}
-	else
-		return 0;
+	if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
+		return (void *)gPartitionAddress;
 
-	return (void *)gPartitionAddress;
+	return NULL;
 }
 
 #else /* ESP8266 */
