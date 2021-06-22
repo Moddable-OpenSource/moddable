@@ -311,9 +311,9 @@ static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode)
 static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode) 
 {
 	if (((XS_NO_CODE < theCode) && (theCode < XS_CODE_COUNT)))
-		fprintf(stderr, "\n%%ld: %s", the->stackTop - stack, gxCodeNames[theCode]);
+		fprintf(stderr, "\n%ld: %s", the->stackTop - stack, gxCodeNames[theCode]);
 	else
-		fprintf(stderr, "\n%%ld: ?", the->stackTop - stack);
+		fprintf(stderr, "\n%ld: ?", the->stackTop - stack);
 }
 #endif
 
