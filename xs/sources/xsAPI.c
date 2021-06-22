@@ -2229,12 +2229,12 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 				id++;
 			}
 		}
- 		mxElseNoMoreKeys((id - (txID)preparation->keyCount) < (txID)preparation->creation.keyCount);
 
 		fxMapperReadAtom(self, &atom);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_MODULES);
 		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
 		while (self->bufferOffset < self->bufferLoop) {
+			id += 2;
 			fxMapperReadAtom(self, &atom);
 			mxElseFatalCheck(atom.atomType == XS_ATOM_PATH);
 			fxMapperSkip(self, atom.atomSize - sizeof(Atom));
@@ -2243,6 +2243,8 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 			self->bufferCode = self->bufferOffset - sizeof(Atom) + atom.atomSize;
 			fxMapperMapIDs(self);
 		}
+		
+ 		mxElseNoMoreKeys((id - (txID)preparation->keyCount) < (txID)preparation->creation.keyCount);
 	
 		fxMapperReadAtom(self, &atom);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_RESOURCES);
