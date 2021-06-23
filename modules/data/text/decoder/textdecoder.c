@@ -20,7 +20,12 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
-#include "mc.xs.h"			// for xsID_ values
+#if mxNoFunctionLength
+	#include "mc.xs.h"			// for xsID_ values
+#else
+	#define xsID_ignoreBOM (xsID("ignoreBOM"))
+	#define xsID_fatal (xsID("fatal"))
+#endif
 
 typedef struct {
 	uint8_t		ignoreBOM;
@@ -43,6 +48,7 @@ void xs_textdecoder(xsMachine *the)
 	decoder.fatal = false;
 	if (argc >= 2) {
 		xsmcVars(1);
+
 		xsmcGet(xsVar(0), xsArg(1), xsID_ignoreBOM);
 		decoder.ignoreBOM = xsmcTest(xsVar(0));
 
@@ -191,6 +197,11 @@ void xs_textdecoder_decode(xsMachine *the)
 
 fatal:
 	xsTypeError("invalid utf-8");
+}
+
+void xs_textdecoder_get_enccoding(xsMachine *the)
+{
+	xsmcSetString(xsResult, "utf-8");
 }
 
 void xs_textdecoder_get_ignoreBOM(xsMachine *the)

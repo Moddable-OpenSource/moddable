@@ -20,7 +20,12 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
-#include "mc.xs.h"			// for xsID_ values
+#if mxNoFunctionLength
+	#include "mc.xs.h"			// for xsID_ values
+#else
+	#define xsID_String (xsID("String"))
+	#define xsID_Uint8Array (xsID("Uint8Array"))
+#endif
 
 /*
 	null character maps to 0xF4, 0x90, 0x80, 0x80
@@ -28,9 +33,12 @@
 
 void xs_textencoder_encode(xsMachine *the)
 {
-	uint8_t *src = (uint8_t *)xsmcToString(xsArg(0)), *dst;
+	uint8_t *src, *dst;
 	int length = 0;
 	uint8_t hasNull = 0;
+
+	xsArg(0) = xsCall1(xsGlobal, xsID_String, xsArg(0));
+	src = (uint8_t *)xsmcToString(xsArg(0));
 
 	while (true) {
 		uint8_t c = c_read8(src++);
@@ -42,21 +50,25 @@ void xs_textencoder_encode(xsMachine *the)
 			hasNull = 1;
 		}
 	}
-	if (!hasNull)
-		return;
 
 	xsmcSetArrayBuffer(xsResult, NULL, length);
 	src = (uint8_t *)xsmcToString(xsArg(0));
 	dst = xsmcToArrayBuffer(xsResult);
-	while (true) {
-		uint8_t c = c_read8(src++);
-		if (!c) break;
+	if (hasNull) {
+		while (true) {
+			uint8_t c = c_read8(src++);
+			if (!c) break;
 
-		if ((0xF4 == c) && (0x90 == c_read8(src)) && (0x80 == c_read8(src + 1)) && (0x80 == c_read8(src + 2))) {
-			*dst++ = 0;
-			src += 3;
+			if ((0xF4 == c) && (0x90 == c_read8(src)) && (0x80 == c_read8(src + 1)) && (0x80 == c_read8(src + 2))) {
+				*dst++ = 0;
+				src += 3;
+			}
+			else
+				*dst++ = c;
 		}
-		else
-			*dst++ = c;
 	}
+	else
+		c_memmove(dst, src, length);
+
+	xsResult = xsNew1(xsGlobal, xsID_Uint8Array, xsResult);
 }

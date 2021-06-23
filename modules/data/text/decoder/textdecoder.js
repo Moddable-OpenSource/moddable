@@ -18,14 +18,10 @@
 *
 */
 
-class TextDecoder @ "xs_textdecoder_destructor" {
+export default class @ "xs_textdecoder_destructor" {
 	constructor(label, options) @ "xs_textdecoder";
-	decode(buffer) @ "xs_textdecoder_decode"
-	get encoding() {
-		return "utf-8";
-	}
+	decode(buffer) @ "xs_textdecoder_decode";
+	get encoding() @ "xs_textdecoder_get_enccoding";
 	get ignoreBOM() @ "xs_textdecoder_get_ignoreBOM";
 	get fatal() @ "xs_textdecoder_get_fatal";
 }
-
-export default TextDecoder;

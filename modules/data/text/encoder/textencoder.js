@@ -18,13 +18,7 @@
 *
 */
 
-class TextEncoder {
-	encode(value) {
-		value = String(value);
-		return new Uint8Array(encode(value) ?? ArrayBuffer.fromString(value));
-	}
+export default class TextEncoder {
+	encode(value) @ "xs_textencoder_encode";
 }
 
-function encode(value) @ "xs_textencoder_encode";
-
-export default TextEncoder;
