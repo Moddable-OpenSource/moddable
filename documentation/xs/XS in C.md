@@ -1,5 +1,5 @@
 <!--
- | Copyright (c) 2016-2020  Moddable Tech, Inc.
+ | Copyright (c) 2016-2021  Moddable Tech, Inc.
  |
  |   This file is part of the Moddable SDK Runtime.
  | 
@@ -37,7 +37,7 @@
 
 # XS in C
 
-Revised: January 11, 2020  
+Revised: June 23, 2021  
 **See end of document for [copyright and license](#license)**
 
 ## About This Document
@@ -2455,7 +2455,7 @@ The value of `xsThis` in the implementation of `xs_restart` matches the receiver
 
 <a id="license"></a>
 ## License
-    Copyright (c) 2016-2018  Moddable Tech, Inc.
+    Copyright (c) 2016-2021  Moddable Tech, Inc.
  
     This file is part of the Moddable SDK Runtime.
   
