@@ -2215,6 +2215,8 @@ The `prototype` is a host object which includes the native destructor `xs_file_d
 
 This example adds the `close` function to the prototype after creating the constructor. It may be added before instead.
 
+This example also adds a getter accessor function for the property `isOpen`. 
+
 ```
 #define kPrototype (0)
 #define kConstructor (1)
@@ -2224,7 +2226,8 @@ xsBeginHost(the);
 	xsVar(kPrototype) = xsNewHostObject(xs_file_destructor);
 	xsVar(kConstructor) = xsNewHostConstructor(xs_file_constructor, 0, xsVar(kPrototype));
 	xsSet(xsGlobal, xsID("File"), xsVar(kConstructor));
-	xsSet(xsVar(kPrototype), xsID("close"),	xsNewHostFunction(xs_file_close, 0));
+	xsDefine(xsVar(kPrototype), xsID("close"),	xsNewHostFunction(xs_file_close, xsDefault));
+	xsDefine(xsVar(kPrototype), xsID("isOpen"),	xsNewHostFunction(xs_file_get_isOpen, xsIsGetter));
 xsEndHost(the);
 ```
 
@@ -2280,6 +2283,16 @@ static void xs_file_close(xsMachine *the)
 	if (!f) return;
 	xs_file_destructor(f);
 	xsSetHostData(xsThis, NULL);
+}
+```
+
+The `xs_file_get_isOpen` getter accessor function sets the result to `true` or `false` depending on whether the file is open.
+
+```
+static void xs_file_get_isOpen(xsMachine *the)
+{
+	xsFile f = xsGetHostData(xsThis);
+	xsResult = f ? xsTrue : xsFalse;
 }
 ```
 
