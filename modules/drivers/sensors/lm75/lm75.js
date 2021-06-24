@@ -148,16 +148,6 @@ class LM75 {
 			io.writeByte(Register.LM75_CONF, conf);
 
 		value = (this.#twoC16(value) >> 5) * 0.125;
-/*
-		value = ((value & 0x8000) ? (value | 0xffff0000) : value);
-		let sign = 1;
-		if (1 === (value & 0b1000_0000_0000_0000)) {
-			sign = -1;
-			value &= 0b0111_1111_1111_1111;
-		}
-
-		return { temperature: (value >> 5) * sign * 0.125 };
-*/
 		return { temperature: value };
 	}
 }

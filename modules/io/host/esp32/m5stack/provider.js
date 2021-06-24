@@ -47,25 +47,25 @@ const device = {
 	SPI: {
 		default: {
 			io: SPI,
-			clock: 14,
-			in: 12,
-			out: 13,
+			clock: 18,
+			in: 19,
+			out: 23,
 			port: 1
 		}
 	},
 	Analog: {
 		default: {
 			io: Analog,
-			pin: 33
+			pin: 35
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pins: {
-		button: 0,
+		button: 38,
 		led: 2,
-		backlight: 18,
-		displayDC: 2,
-		displaySelect: 15
+		backlight: 32,
+		displayDC: 27,
+		displaySelect: 14
 	}
 };
 

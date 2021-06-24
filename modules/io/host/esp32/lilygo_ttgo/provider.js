@@ -47,9 +47,8 @@ const device = {
 	SPI: {
 		default: {
 			io: SPI,
-			clock: 14,
-			in: 12,
-			out: 13,
+			clock: 18,
+			out: 19,
 			port: 1
 		}
 	},
@@ -63,9 +62,9 @@ const device = {
 	pins: {
 		button: 0,
 		led: 2,
-		backlight: 18,
-		displayDC: 2,
-		displaySelect: 15
+		backlight: 4,
+		displayDC: 16,
+		displaySelect: 5
 	}
 };
 

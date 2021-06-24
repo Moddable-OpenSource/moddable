@@ -6,12 +6,5 @@
 	],
 	"modules": {
 		"*": "./main"
-	},
-	"platforms": {
-		"esp32": {
-			"config": {
-				"thermistor_pin": 36
-			}
-		}
 	}
 }

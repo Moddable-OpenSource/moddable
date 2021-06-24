@@ -22,7 +22,6 @@ import Analog from "embedded:io/analog";
 import Digital from "embedded:io/digital";
 import DigitalBank from "embedded:io/digitalbank";
 import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
 import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
@@ -32,38 +31,28 @@ const device = {
 	I2C: {
 		default: {
 			io: I2C,
-			data: 21,
-			clock: 22
+			data: 5,
+			clock: 4
 		}
 	},
 	Serial: {
 		default: {
 			io: Serial,
-			port: 1,
-			receive: 3,
-			transmit: 1
 		}
 	},
 	SPI: {
 		default: {
 			io: SPI,
 			clock: 14,
-			in: 12,
-			out: 13,
-			port: 1
+			in: 13,
+			out: 12,
+			port: "HSPI"
 		}
 	},
-	Analog: {
-		default: {
-			io: Analog,
-			pin: 33
-		}
-	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
+	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI},
 	pins: {
 		button: 0,
 		led: 2,
-		backlight: 18,
 		displayDC: 2,
 		displaySelect: 15
 	}

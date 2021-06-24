@@ -32,8 +32,8 @@ const device = {
 	I2C: {
 		default: {
 			io: I2C,
-			data: 21,
-			clock: 22
+			data: 20,
+			clock: 19
 		}
 	},
 	Serial: {
@@ -47,25 +47,21 @@ const device = {
 	SPI: {
 		default: {
 			io: SPI,
-			clock: 14,
-			in: 12,
-			out: 13,
+			clock: 15,
+			in: 8,
+			out: 9,
 			port: 1
 		}
 	},
 	Analog: {
 		default: {
 			io: Analog,
-			pin: 33
+			pin: 1
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pins: {
-		button: 0,
-		led: 2,
-		backlight: 18,
-		displayDC: 2,
-		displaySelect: 15
+		button: 0
 	}
 };
 

@@ -53,6 +53,12 @@ const device = {
 			port: 1
 		}
 	},
+	Analog: {
+		default: {
+			io: Analog,
+			pin: 33
+		}
+	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pins: {
 		button: 0,
