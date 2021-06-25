@@ -641,6 +641,7 @@ void fxRejectPromise(txMachine* the)
 			fxQueueJob(the, 1, promise);
 			slot = slot->next;
 		}
+		mxPromiseThens(promise)->value.reference->next = C_NULL;
 	}
 	else {
 		mxPushReference(promise);
@@ -706,6 +707,7 @@ void fxResolvePromise(txMachine* the)
 			fxQueueJob(the, 1, promise);
 			slot = slot->next;
 		}
+		mxPromiseThens(promise)->value.reference->next = C_NULL;
 		slot = mxPromiseStatus(promise);
 		slot->value.integer = mxFulfilledStatus;
 	}
@@ -725,6 +727,7 @@ bail:
 				fxQueueJob(the, 1, promise);
 				slot = slot->next;
 			}
+			mxPromiseThens(promise)->value.reference->next = C_NULL;
 		}
 		else {
 			mxPushReference(promise);
