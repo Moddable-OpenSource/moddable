@@ -119,6 +119,7 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 @property (retain) NSImage *touchImage;
 @property (assign) id *touches;
 @property (assign) BOOL touching;
+- (void)abortMachine:(NSObject *)object;
 - (void)launchMachine;
 - (void)quitMachine;
 @end
@@ -137,7 +138,7 @@ NSString* gPixelFormatNames[pixelFormatCount] = {
 @property (retain) NSMutableArray *mockups;
 @end
 
-static void fxScreenAbort(txScreen* screen);
+static void fxScreenAbort(txScreen* screen, int status);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenStart(txScreen* screen, double interval);
@@ -652,6 +653,32 @@ static void fxScreenStop(txScreen* screen);
     [touchImage release];
     [super dealloc];
 }
+- (void)abortMachine:(NSObject *)object {
+    [self quitMachine];
+	NSData* data = (NSData*)object;
+	int status;
+	[data getBytes:&status length: sizeof(status)];
+    if (status) {
+		char* reasons[9] = {
+			"",
+			"memory full",
+			"stack overflow",
+			"fatal check",
+			"dead strip",
+			"unhandled exception",
+			"not enough keys",
+			"too much computation",
+			"unhandled rejection",
+		};
+		NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+		[alert setAlertStyle:NSAlertStyleCritical];
+		[alert setMessageText:@"Screen Test"];
+		[alert setInformativeText:[NSString stringWithFormat:@"XS abort: %s!",reasons[status]]];
+		[alert beginSheetModalForWindow:self.window completionHandler:^(NSInteger result) {
+			[alert.window close]; 
+		}];
+	}
+}
 - (void)drawRect:(NSRect)rect {
 	CGRect bounds = NSRectToCGRect(self.bounds);
 	CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
@@ -936,11 +963,11 @@ bail:
 }
 @end
 
-void fxScreenAbort(txScreen* screen)
+void fxScreenAbort(txScreen* screen, int status)
 {
 	ScreenView *screenView = screen->view;
-    [screenView performSelectorOnMainThread:@selector(quitMachine) withObject:nil waitUntilDone:NO];
-    [screenView performSelectorOnMainThread:@selector(launchMachine) withObject:nil waitUntilDone:NO];
+	NSData* data = [NSData dataWithBytes:&status length:sizeof(status)];
+    [screenView performSelectorOnMainThread:@selector(abortMachine:) withObject:data waitUntilDone:NO];
 }
 
 void fxScreenBufferChanged(txScreen* screen)

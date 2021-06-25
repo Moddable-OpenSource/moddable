@@ -250,8 +250,31 @@ class ApplicationBehavior extends Behavior {
 	}
 	
 /* EVENTS */
-	onAbort(application) {
-		this.doCloseApp(application);
+	onAbort(application, status) {
+		this.archivePath = "";
+		this.libraryPath = "";
+		this.quitScreen();
+		this.launchScreen();
+		if (status) {
+			const reasons = [
+				"debugger",
+				"memory full",
+				"stack overflow",
+				"fatal check",
+				"dead strip",
+				"unhandled exception",
+				"not enough keys",
+				"too much computation",
+				"unhandled rejection",
+			];
+			system.alert({ 
+				type:"stop",
+				prompt:"mcsim",
+				info:`XS abort: ${reasons[status]}!`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+		}
 	}
 	onOpenFile(application, path) {
 		let info = system.getFileInfo(path);

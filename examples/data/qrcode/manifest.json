@@ -1,18 +1,10 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json"
+		"$(MODDABLE)/modules/commodetto/qrcode/manifest.json",
+		"$(MODDABLE)/modules/data/qrcode/manifest.json"
 	],
 	"modules": {
-		"*": [
-			"./main",
-			"$(MODULES)/data/qrcode/qrcode",
-			"$(MODULES)/data/qrcode/qrcodegen"
-		],
-		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
-		"commodetto/RLE4Out": "$(COMMODETTO)/commodettoRLE4Out"
-	},
-	"preload": [
-		"qrcode"
-	]
+		"*": "./main"
+	}
 }

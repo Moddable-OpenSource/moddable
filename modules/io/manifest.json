@@ -36,14 +36,38 @@
 		"system"
 	],
 	"platforms": {
+		"esp/*": {
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
+				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
+				"embedded:io/socket/udp": "$(IO)/socket/udp",
+				"embedded:io/socket/listener": "$(IO)/socket/listener",
+			}
+		},
 		"esp": {
 			"include": [
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
 				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/listener"
+			}
+		},
+		"esp32/*": {
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
+				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
+				"embedded:io/socket/udp": "$(IO)/socket/udp",
+				"embedded:io/socket/listener": "$(IO)/socket/listener",
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
 			}
 		},
 		"esp32": {
@@ -51,6 +75,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
 				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/listener",

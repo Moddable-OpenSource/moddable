@@ -38,7 +38,7 @@ const FieldSkin = Skin.template(Object.freeze({fill: WHITE}));
 const BackgroundSkin = Skin.template(Object.freeze({fill: BLACK}));
 const ProgressBarSkin = Skin.template(Object.freeze({ fill: [DARK_GRAY, LIGHT_GRAY]}));
 
-const KeyboardStyle = Style.template(Object.freeze({font:"18px Open Sans", color: [BLACK, WHITE]}));
+const KeyboardStyle = Style.template(Object.freeze({font:"18px Open Sans", color: [BLACK, WHITE], horizontal: "center"}));
 const FieldStyle = Style.template(Object.freeze({font:"light 42px Open Sans", color: BLACK, horizontal:"left", vertical:"middle"}));
 const TitleStyle = Style.template(Object.freeze({font:"18px Open Sans", color: WHITE, horizontal: "right" }));
 
@@ -182,6 +182,9 @@ class GIFScreenBehavior extends Behavior {
 		let filler = background.first;
 		filler.width = background.width * progress;
 	}
+	onError(container, error) {
+		this.data["LOADING"].string = error;
+	}
 	showFirstFrame(container) {
 		container.remove(this.data["LOADING"]);
 		delete this.data["LOADING"]
@@ -266,8 +269,9 @@ const GIFScreen = Container.template($ => ({
 				})
 			]		
 		}),
-		Label($, {
-			anchor: "LOADING", Style: KeyboardStyle, state: 1, string: "Loading..."
+		Text($, {
+			anchor: "LOADING", left: 20, right: 20,
+			Style: KeyboardStyle, state: 1, string: "Loading..."
 		}),
 		Content($, {
 			anchor: "FOOTER", left: 25, top: 286, Skin: GiphyLogoSkin

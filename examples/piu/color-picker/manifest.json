@@ -17,7 +17,7 @@
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Light-42"
 		]
 	},
-	"store": {
+	"bundle": {
 	    "id": "tech.moddable.color-picker",
 	    "devices": [
 	        "esp/moddable_one",

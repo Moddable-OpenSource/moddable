@@ -62,7 +62,7 @@ static void fxLibraryClose();
 static txMockup* fxMockupCreate(gchar* string, gsize size, gchar* path);
 static void fxMockupCreateAux(txMockup* mockup, gchar* nameFrom, gchar* nameTo, gchar* valueFrom, gchar* valueTo);
 
-static void fxScreenAbort(txScreen* screen);
+static void fxScreenAbort(txScreen* screen, int status);
 static gboolean fxScreenAbortAux(gpointer it);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
@@ -123,6 +123,7 @@ static GResource *gxResource = NULL;
 static txScreen* gxScreen = NULL;
 static cairo_surface_t *gxScreenSurface = NULL;
 
+static int gxStatus = 0; 
 static guint gxTimer = 0;
 static gboolean gxTimerRunning = FALSE;
 static gboolean gxTouching = FALSE;
@@ -315,14 +316,32 @@ void fxMockupCreateAux(txMockup* mockup, gchar* nameFrom, gchar* nameTo, gchar* 
 		mockup->height = atoi(valueFrom);
 }
 
-void fxScreenAbort(txScreen* screen)
+void fxScreenAbort(txScreen* screen, int status)
 {
+	gxStatus = status;
 	g_idle_add(fxScreenAbortAux, NULL);
 }
 
 gboolean fxScreenAbortAux(gpointer it)
 {
 	fxLibraryClose();
+	if (gxStatus) {
+		char* reasons[9] = {
+			"",
+			"memory full!",
+			"stack overflow!",
+			"fatal check!",
+			"dead strip!",
+			"unhandled exception!",
+			"not enough keys!",
+			"too much computation!",
+			"unhandled rejection!",
+		};
+		GtkWidget *dialog = gtk_message_dialog_new(gxWindow, GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_CANCEL, "Screen Test");
+		gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog), "XS abort: %s!", reasons[gxStatus]);
+		gtk_dialog_run(GTK_DIALOG(dialog));
+		gtk_widget_destroy(dialog);
+	}
     return FALSE;
 }
 

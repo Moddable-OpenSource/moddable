@@ -64,12 +64,12 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 @property (retain) NSImage *touchImage;
 @property (assign) id *touches;
 @property (assign) BOOL touching;
-- (void)abortMachine;
+- (void)abortMachine:(NSObject *)object;
 - (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath;
 - (void)quitMachine;
 @end
 
-static void fxScreenAbort(txScreen* screen);
+static void fxScreenAbort(txScreen* screen, int status);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenPost(txScreen* screen, char* message, int size);
@@ -110,14 +110,18 @@ struct PiuScreenMessageStruct {
     [touchImage release];
     [super dealloc];
 }
-- (void)abortMachine {
+- (void)abortMachine:(NSObject *)object {
+	NSData* data = (NSData*)object;
+	int status;
+	[data getBytes:&status length: sizeof(status)];
 	if (piuScreen && (*piuScreen)->behavior) {
 		xsBeginHost((*piuScreen)->the);
 		xsVars(3);
 		xsVar(0) = xsReference((*piuScreen)->behavior);
 		if (xsFindResult(xsVar(0), xsID_onAbort)) {
 			xsVar(1) = xsReference((*piuScreen)->reference);
-			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+			xsVar(2) = xsInteger(status);
+			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 		}
 		xsEndHost((*piuScreen)->the);
 	}
@@ -643,10 +647,11 @@ void PiuScreen_quit(xsMachine* the)
     [(*self)->nsScreenView quitMachine];
 }
 
-void fxScreenAbort(txScreen* screen)
+void fxScreenAbort(txScreen* screen, int status)
 {
 	NSPiuScreenView *screenView = screen->view;
-    [screenView performSelectorOnMainThread:@selector(abortMachine) withObject:nil waitUntilDone:NO];
+	NSData* data = [NSData dataWithBytes:&status length:sizeof(status)];
+    [screenView performSelectorOnMainThread:@selector(abortMachine:) withObject:data waitUntilDone:NO];
 }
 
 void fxScreenBufferChanged(txScreen* screen)

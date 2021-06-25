@@ -24,7 +24,7 @@
 	"config": {
 		"touch": ""
 	},
-	"store": {
+	"bundle": {
 	    "id": "tech.moddable.pngdisplay",
 	    "devices": [
 	        "esp32/moddable_two",

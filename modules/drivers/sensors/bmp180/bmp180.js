@@ -19,6 +19,7 @@
  */ 
 /*
     BMP85,BMP180 - temp/pressure
+	Datasheet - https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
     Implementation based on Adafruit https://github.com/adafruit/Adafruit-BMP085-Library
 */
 

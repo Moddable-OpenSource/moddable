@@ -1,71 +1,89 @@
 # AudioOut
-Copyright 2018 Moddable Tech, Inc.
+Copyright 2021 Moddable Tech, Inc.
 
-Revised: May 31, 2018
+Revised: June 17, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
 
-	import AudioOut from "pins/i2s";
+```js
+import AudioOut from "pins/i2s";
+```
 
 ### Play a sound
 The following example plays a single bell sound. The audio is stored in a resource. The format of the resource is Moddable Audio, which is uncompressed audio with a small header containing the audio encoding.
 
-	let bell = new Resource("bell.maud");
-	let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 1});
-	audio.enqueue(0, AudioOut.Samples, bell);
-	audio.start();
+```js
+let bell = new Resource("bell.maud");
+let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 1});
+audio.enqueue(0, AudioOut.Samples, bell);
+audio.start();
+```
 
 The constructor configures the `sampleRate`, `bitsPerSample`, and `numChannels` for the output. The supported configurations depend on the host hardware. The constructor also configures the maximum number of parallel streams supported by the instance, one in this example.
 
 ### Play a sound repeatedly
 The following example plays the same bell sound four times in row by passing 4 for the optional `repeat` parameter of the `enqueue` function.
 
-	let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 1});
-	audio.enqueue(0, AudioOut.Samples, bell, 4);
-	audio.start();
+```js
+let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 1});
+audio.enqueue(0, AudioOut.Samples, bell, 4);
+audio.start();
+```
 
 Set the repeat parameter to `Infinity` to repeat the sound indefinitely:
 
-	audio.enqueue(0, AudioOut.Samples, bell, Infinity);
+```js
+audio.enqueue(0, AudioOut.Samples, bell, Infinity);
+```
 
 ### Receive a callback
 To receive a callback after a buffer completes playback, enqueue a `Callback` command:
 
-	audio.enqueue(0, AudioOut.Samples, bell, 2);
-	audio.enqueue(0, AudioOut.Callback, 5);
-	audio.start();
-	audio.callback = id => trace(`audio callback id ${id}\n`);
+```js
+audio.enqueue(0, AudioOut.Samples, bell, 2);
+audio.enqueue(0, AudioOut.Callback, 5);
+audio.start();
+audio.callback = id => trace(`audio callback id ${id}\n`);
+```
 
 This example traces the value `5` to the console after the bell sound plays twice.
 
 ### Play part of a sound
 To play part of a sound, pass the optional `start` and `count` parameters to the `enqueue` function. The start and count parameters use sample number as units, not bytes. The following example plays the second second of the bell sound once followed by the first second twice.
 
-	let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 1});
-	audio.enqueue(0, AudioOut.Samples, bell, 1, 11025, 11025);
-	audio.enqueue(0, AudioOut.Samples, bell, 2, 0, 11025);
-	audio.start();
+```js
+let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 1});
+audio.enqueue(0, AudioOut.Samples, bell, 1, 11025, 11025);
+audio.enqueue(0, AudioOut.Samples, bell, 2, 0, 11025);
+audio.start();
+```
 
 ### Play sounds in parallel
 To play sounds in parallel, enqueue them to separate stream. The following sample plays the bell sound once on stream zero in parallel with the beep sound four times on stream one.
 
-	let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 2});
-	audio.enqueue(0, AudioOut.Samples, bell);
-	audio.enqueue(1, AudioOut.Samples, beep, 4);
-	audio.start();
+```js
+let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 1, streams: 2});
+audio.enqueue(0, AudioOut.Samples, bell);
+audio.enqueue(1, AudioOut.Samples, beep, 4);
+audio.start();
+```
 
 ### Flush enqueued audio
 The audio queued on a given stream may be flushed by calling `enqueue` with the `Flush` command. The following example flushes stream 1.
 
-	audio.enqueue(1, AudioOut.Flush);
+```js
+audio.enqueue(1, AudioOut.Flush);
+```
 
 ### Stop playback
 To stop playback of all streams, call `stop`.
 
-	audio.stop();
+```js
+audio.stop();
+```
 
 The `stop` function does not flush any enqueued samples. Calling `start` resumes playback where the audio was stopped.
 
@@ -74,18 +92,23 @@ Audio samples often consist of three sections, an initial attack followed by a s
 
 This is done by using the ability to repeat a sample an infinite number of times, until the next sample is queued. To begin the sample playback, enqueue both the attack and sustain sections.
 
-	audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.attackStart, aSample.attackCount);
-	audio.enqueue(0, AudioOut.Samples, aSample, Infinity, aSample.sustainStart, aSample.sustainCount);
+```js
+audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.attackStart, aSample.attackCount);
+audio.enqueue(0, AudioOut.Samples, aSample, Infinity, aSample.sustainStart, aSample.sustainCount);
+```
 	
 When it is time to end playback of the sample, enqueue the decay section. This will terminate the enqueue sustain section when it completes the current repetition:
 
-	audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.decayStart, aSample.decayCount);
+```js
+audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.decayStart, aSample.decayCount);
+```
 
 ### constructor(dictionary)
 The constructor accepts a dictionary to configure the audio output. 
 
-	let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 2, streams: 3});
-
+```js
+let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 2, streams: 3});
+```
 The following properties are defined.
 
 - **sampleRate** -- The number of samples per second of audio to playback. Sample rates from 8000 to 48000 are supported, though this may be limited on a particular device.
@@ -100,17 +123,23 @@ When an audio out is instantiated, it is in the stopped state. It is necessary t
 ### close()
 Call the `close` function to free all resources associated with the audio output. If audio is playing at the time `close` is called, it is immediately stopped.
 
-	audio.close();
+```js
+audio.close();
+```
 
 ### start()
 Call the `start` function to begin playing audio. If no audio is enqueued for playback, silence is played.
 
-	audio.start();
+```js
+audio.start();
+```
 
 ### stop()
 Call the `stop` function to immediately suspend audio playback. 
 
-	audio.stop();
+```js
+audio.stop();
+```
 
 Calling `stop` has no effect on the state of any audio queued for playback on any streams. Calling `start` after `stop` will resume playback at the point it was suspended.
 
@@ -128,39 +157,64 @@ Audio samples to play may be provided either as a MAUD audio resource or as raw 
 
 To `enqueue` audio samples with a Moddable Audio header (MAUD), call enqueue with a buffer of samples:
 
-	audio.enqueue(0, AuioOut.Samples, buffer);
+```js
+audio.enqueue(0, AudioOut.Samples, buffer);
+```
 
 To `enqueue` a buffer of uncompressed audio samples with no header call enqueue with a buffer of samples:
 
-	audio.enqueue(0, AudioOut.RawSamples, buffer);
+```js
+audio.enqueue(0, AudioOut.RawSamples, buffer);
+```
 
 To play the buffer several times, specify the optional `repeat` count. The repeat count is either a positive integer or `Infinity`.
 
-	audio.enqueue(0, AudioOut.Samples, bufferOne, 4);
-	audio.enqueue(0, AudioOut.Samples, bufferTwo, Infinity);
+```js
+audio.enqueue(0, AudioOut.Samples, bufferOne, 4);
+audio.enqueue(0, AudioOut.Samples, bufferTwo, Infinity);
+```
 
 If the repeat count is `Infinity`, the buffer is repeated until the audio out instance is closed, the streaming is flushed, or another buffer of audio is enqueued. In the final case, the currently playing buffer plays to completion, and then the following buffer is played.
 	
 A subset of the samples in the buffer may be selected for playback by using the optional `offset` and `count` parameters. Both parameters are in units of samples, not bytes. The `offset` parameter indicates the number of samples into the buffer to begin playback. If the `count` parameter is not provided, playback proceeds to the end of the buffer. It the `count` parameter is provided, only the number of samples it specifies are played.
 
+#### Enqueuing tones and silence
+
+To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinty` for the sample count to play the tone until `flush`,  `stop`, or `close`. 
+
+```js
+audio.enqueue(0, AudioOut.Tone, 440, 8000);
+```
+To `enqueue` silence, provide the number of samples. Queuing silence is useful for adding precise gaps between audio buffers.  The following queues 11025 samples of silence.
+
+```js
+audio.enqueue(0, AudioOut.Silence, 8000);
+```
+
 #### Enqueuing callbacks
 To schedule a callback at a particular point in a stream, call enqueue with an integer value for the buffer argument. When the buffer preceding the callback completes playback, the instance's `callback` function will be invoked.
 
-	audio.enqueue(0, AudioOut.Samples, bufferOne);
-	audio.enqueue(0, AudioOut.Callback, 1);
-	audio.enqueue(0, AudioOut.Samples, bufferTwo);
-	audio.enqueue(0, AudioOut.Callback, 2);
-	audio.callback = id => trace(`finished playing buffer ${id}\n`);
+```js
+audio.enqueue(0, AudioOut.Samples, bufferOne);
+audio.enqueue(0, AudioOut.Callback, 1);
+audio.enqueue(0, AudioOut.Samples, bufferTwo);
+audio.enqueue(0, AudioOut.Callback, 2);
+audio.callback = id => trace(`finished playing buffer ${id}\n`);
+```
 
 #### Dequeuing audio samples
 All of the samples and callbacks enqueued on a specified stream may be dequeued by calling `enqueue` with only the `stream` parameter:
 
-	audio.enqueue(3, AudioOut.Flush);
+```js
+audio.enqueue(3, AudioOut.Flush);
+```
 
 #### Changing volume
 To change the volume, enqueue a `Volume` command on a stream. The volume command does not change the volume of samples already enqueued, only those enqueued after the `Volume` command.
 
-	audio.enqueue(0, AudioOut.Volume, 128);
+```js
+audio.enqueue(0, AudioOut.Volume, 128);
+```
 
 Values for the volume command range from 0 for silent, to 256 for full volume.
 
@@ -175,7 +229,7 @@ The format has a twelve byte header followed immediately by audio samples.
 - offset 3 -- bits per sample (8 or 16)
 - offset 4 -- sample rate (between 8000 and 48000, inclusive). 2 bytes, unsigned, little-endian
 - offset 6 -- number of channels (1 or 2)
-- offset 7 -- sample format (0 for uncompressed, 1 for IMA ADPCM)
+- offset 7 -- sample format (0 for uncompressed, 1 for IMA ADPCM, 2 for SBC)
 - offset 8 -- sample count. 4 bytes, unsigned little-endian
 
 Audio samples immediately follow the header. If there are two channels, the channels are interleaved. 16-bit samples are signed little-endian values. 8-bit samples are signed values.
@@ -199,3 +253,4 @@ The `audioOut` module is be configured at build time.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.
+* 

@@ -55,7 +55,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxAssert(_ASSERTION,...) { if (!(_ASSERTION)) { fxReport(the, __VA_ARGS__); snapshot->error = C_EINVAL; fxJump(the); } }
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 
-#define mxCallbacksLength 472
+#define mxCallbacksLength 473
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -226,6 +226,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_FinalizationRegistry,
 	fx_Function_prototype_apply,
 	fx_Function_prototype_bind,
+	fx_Function_prototype_bound,
 	fx_Function_prototype_call,
 	fx_Function_prototype_hasInstance,
 	fx_Function_prototype_toString,
@@ -572,8 +573,6 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 	case XS_GLOBAL_KIND:
 	case XS_MAP_KIND:
 	case XS_SET_KIND:
-	case XS_WEAK_MAP_KIND:
-	case XS_WEAK_SET_KIND:
 		fxMeasureChunk(the, snapshot, slot->value.table.address, chunkSize);
 		break;
 		
@@ -811,8 +810,6 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 				switch (slot->kind) {
 				case XS_MAP_KIND:
 				case XS_SET_KIND:
-				case XS_WEAK_MAP_KIND:
-				case XS_WEAK_SET_KIND:
 					fxUnprojectTable(the, snapshot, slot);
 					break;
 				}
@@ -932,12 +929,17 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 		slot->value.table.address = (txSlot**)mxUnprojectChunk(slot->value.table.address);
 		fxReadSlotTable(the, snapshot, slot->value.table.address, slot->value.table.length);
 		break;
+		
 	case XS_WEAK_MAP_KIND:
 	case XS_WEAK_SET_KIND:
-		slot->value.table.address = (txSlot**)mxUnprojectChunk(slot->value.table.address);
-		fxReadSlotTable(the, snapshot, slot->value.table.address, slot->value.table.length + 1);
+		slot->value.weakList.first = fxUnprojectSlot(the, snapshot, slot->value.weakList.first);
+		slot->value.weakList.link = the->firstWeakListLink;
+		the->firstWeakListLink = slot;
 		break;
-		
+	case XS_WEAK_ENTRY_KIND:
+		slot->value.weakEntry.check = fxUnprojectSlot(the, snapshot, slot->value.weakEntry.check);
+		slot->value.weakEntry.value = fxUnprojectSlot(the, snapshot, slot->value.weakEntry.value);
+		break;
 	case XS_WEAK_REF_KIND:
 		slot->value.weakRef.target = fxUnprojectSlot(the, snapshot, slot->value.weakRef.target);
 		slot->value.weakRef.link = fxUnprojectSlot(the, snapshot, slot->value.weakRef.link);
@@ -1101,10 +1103,6 @@ void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 	case XS_GLOBAL_KIND:
 	case XS_MAP_KIND:
 	case XS_SET_KIND:
-		fxWriteChunkTable(the, snapshot, slot->value.table.address, slot->value.table.length);
-		break;
-	case XS_WEAK_MAP_KIND:
-	case XS_WEAK_SET_KIND:
 		fxWriteChunkTable(the, snapshot, slot->value.table.address, slot->value.table.length);
 		break;
 	}
@@ -1273,12 +1271,19 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 	case XS_GLOBAL_KIND:
 	case XS_MAP_KIND:
 	case XS_SET_KIND:
-	case XS_WEAK_MAP_KIND:
-	case XS_WEAK_SET_KIND:
 		buffer.value.table.address = (txSlot**)fxProjectChunk(the, slot->value.table.address);
 		buffer.value.table.length = slot->value.table.length;
 		break;
 		
+	case XS_WEAK_MAP_KIND:
+	case XS_WEAK_SET_KIND:
+		buffer.value.weakList.first = fxProjectSlot(the, snapshot->firstProjection, slot->value.weakList.first);
+		buffer.value.weakList.link = C_NULL;
+		break;
+	case XS_WEAK_ENTRY_KIND:
+		buffer.value.weakEntry.check = fxProjectSlot(the, snapshot->firstProjection, slot->value.weakEntry.check);
+		buffer.value.weakEntry.value = fxProjectSlot(the, snapshot->firstProjection, slot->value.weakEntry.value);
+		break;
 	case XS_WEAK_REF_KIND:
 		buffer.value.weakRef.target = fxProjectSlot(the, snapshot->firstProjection, slot->value.weakRef.target);
 		buffer.value.weakRef.link = fxProjectSlot(the, snapshot->firstProjection, slot->value.weakRef.link);
@@ -1445,8 +1450,6 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 					switch (slot->kind) {
 					case XS_MAP_KIND:
 					case XS_SET_KIND:
-					case XS_WEAK_MAP_KIND:
-					case XS_WEAK_SET_KIND:
 						fxProjectTable(the, snapshot, slot);
 						break;
 					}
@@ -1558,8 +1561,6 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 					switch (slot->kind) {
 					case XS_MAP_KIND:
 					case XS_SET_KIND:
-					case XS_WEAK_MAP_KIND:
-					case XS_WEAK_SET_KIND:
 						fxUnprojectTable(the, snapshot, slot);
 						break;
 					}
@@ -1583,6 +1584,24 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	while (heap) {
 		heap->flag &= ~XS_MARK_FLAG;
 		heap = heap->next;
+	}
+	
+	{
+		txBlock* block;
+		txByte* mByte;
+		txByte* nByte;
+
+		block = the->firstBlock;
+		while (block) {
+			mByte = ((txByte*)block) + sizeof(txBlock);
+			nByte = block->current;
+			while (mByte < nByte) {
+				txSize size = ((txChunk*)mByte)->size;
+				((txChunk*)mByte)->temporary = C_NULL;
+				mByte += size;
+			}	
+			block = block->nextBlock;
+		}
 	}
 	
 	return (snapshot->error) ? 0 : 1;

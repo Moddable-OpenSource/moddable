@@ -49,13 +49,18 @@ class GiphyAppBehavior extends Behavior {
 		request.callback = function(message, value, etc) {
 			if (Request.responseComplete === message) {
 				let response = JSON.parse(value, keys);
-				let item = response.data[0];
-				if (Number(item.images.fixed_width.size) > 2_090_000) { // Don't try to download images that are too big to fit into flash
-					application.defer("searchGiphy", string, offset+1);
-				} else 
-					application.distribute("updateTitle", item.title);
-					application.defer("downloadGIF", item.images.fixed_width.url);
-					trace(item.images.fixed_width.url, "\n")
+				if (!response.data.length) {
+					application.distribute("onError", `No GIFs found for search query "${string}"`);
+				} else {
+					let item = response.data[0];
+					if (Number(item.images.fixed_width.size) > 2_090_000) { // Don't try to download images that are too big to fit into flash
+						application.defer("searchGiphy", string, offset+1);
+					} else {
+						application.distribute("updateTitle", item.title);
+						application.defer("downloadGIF", item.images.fixed_width.url);
+						trace(item.images.fixed_width.url, "\n")
+					}
+				}
 			}
 		}
 	}

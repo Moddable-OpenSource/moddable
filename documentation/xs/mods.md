@@ -204,12 +204,10 @@ At launch, XS creates a second array to store keys created at runtime. The lengt
 Mods, however, may create many more symbols because they can contain code with many property names that do not appear in the host. To accommodate this, a  project can adjust the length of the runtime key array by changing the number of available keys in the defines section of the manifest.
 
 ```
-"defines": {
-	"creation": {
-		"keys": {
-			"available": 128
-		}
-	},
+"creation": {
+	"keys": {
+		"available": 128
+	}
 }
 ```
 

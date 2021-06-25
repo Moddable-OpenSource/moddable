@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Moddable Tech, Inc.
+ * Copyright (c) 2018-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,6 +25,7 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "mc.defines.h"
+#include "sbc_decoder.h"
 
 #ifndef MODDEF_AUDIOOUT_STREAMS
 	#define MODDEF_AUDIOOUT_STREAMS (4)
@@ -127,6 +128,9 @@
 #define kIMASamplesPerChunk (129)	/* (kIMABytesPerChunk - 4) / 2 + 1 */
 extern int dvi_adpcm_decode(void *in_buf, int in_size, void *out_buf);
 
+#define kSBCSamplesPerChunk (128)
+#define kToneSamplesPerChunk (128)
+
 typedef struct {
 	void		*samples;
 	int			sampleCount;		// 0 means this is a callback or volume command with value of (uintptr_t)samples
@@ -134,15 +138,29 @@ typedef struct {
 	int16_t		repeat;				// always 1 for callback, negative for infinite
 	int8_t		sampleFormat;		// kSampleFormat
 	int8_t		reserved;
-	uint16_t	compressedRemaining;
-	uint16_t	compressedTotal;
-	uint8_t		*compressed;
-	uint8_t		*compressedInitial;
+	union {
+		struct {
+			uint16_t	remaining;
+			uint16_t	total;
+			uint8_t		*data;
+			uint8_t		*initial;
+		} compressed;
+		struct {
+			uint32_t			position;
+			uint32_t			max;
+			int32_t				count;
+			OUTPUTSAMPLETYPE	value;
+		} tone;
+	};
 } modAudioQueueElementRecord, *modAudioQueueElement;
 
 typedef struct {
 	uint16_t		volume;				// 8.8 fixed
+	uint8_t			reserved;
+	uint8_t			format;
 	int16_t			*decompressed;
+	void			*decompressor;		//@@ merge into decompressed block
+	uint16_t		compressedBytesPerChunk;		//@@ merge into decompressed block
 	int				elementCount;
 	modAudioQueueElementRecord	element[MODDEF_AUDIOOUT_QUEUELENGTH];
 } modAudioOutStreamRecord, *modAudioOutStream;
@@ -190,7 +208,11 @@ typedef struct {
 
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
+#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
 	uint32_t				buffer[384];
+#elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
+	uint32_t				buffer[256];
+#endif
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	uint32_t				*buffer32;
 #endif
@@ -303,9 +325,12 @@ void xs_audioout_destructor(void *data)
 		i2s_end();
 #endif
 
-	for (i = 0; i < out->streamCount; i++)
+	for (i = 0; i < out->streamCount; i++) {
 		if (out->stream[i].decompressed)
 			c_free(out->stream[i].decompressed);
+		if (out->stream[i].decompressor)
+			c_free(out->stream[i].decompressor);
+	}
 
 	c_free(out);
 }
@@ -385,11 +410,11 @@ void xs_audioout(xsMachine *the)
 void xs_audioout_build(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostData(xsThis);
-	int i;
 
 #if defined(__APPLE__)
 	OSStatus err;
 	AudioStreamBasicDescription desc = {0};
+	int i;
 
 	desc.mBitsPerChannel = out->bitsPerSample;
 	desc.mBytesPerFrame = out->bytesPerFrame;
@@ -542,36 +567,42 @@ enum {
 	kKindCallback = 3,
 	kKindVolume = 4,
 	kKindRawSamples = 5,
+	kKindTone = 6,
+	kKindSilence = 7,
 };
 
 enum {
 	kSampleFormatUncompressed = 0,
 	kSampleFormatIMA = 1,
+	kSampleFormatSBC = 2,
+	kSampleFormatTone = 3,
 };
 
 void xs_audioout_enqueue(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostData(xsThis);
-	int stream, argc = xsmcArgc;
-	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume;
+	int streamIndex, argc = xsmcArgc;
+	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume, i;
 	uint8_t kind;
 	uint8_t *buffer;
 	uint16_t sampleRate;
 	uint8_t numChannels;
 	uint8_t bitsPerSample;
 	uint8_t sampleFormat;
+	modAudioOutStream stream;
 	modAudioQueueElement element;
 	int activeStreamCount = out->activeStreamCount;
 
 	xsmcVars(1);
 
-	stream = xsmcToInteger(xsArg(0));
-	if ((stream < 0) || (stream >= out->streamCount))
+	streamIndex = xsmcToInteger(xsArg(0));
+	if ((streamIndex < 0) || (streamIndex >= out->streamCount))
 		xsRangeError("invalid stream");
+	stream = &out->stream[streamIndex];
 
 	kind = xsmcToInteger(xsArg(1));
 	if (kKindFlush != kind) {
-		if (MODDEF_AUDIOOUT_QUEUELENGTH == out->stream[stream].elementCount)
+		if (MODDEF_AUDIOOUT_QUEUELENGTH == stream->elementCount)
 			xsUnknownError("queue full");
 	}
 
@@ -591,7 +622,7 @@ void xs_audioout_enqueue(xsMachine *the)
 			}
 
 			buffer = xsmcGetHostData(xsArg(2));
-			if (kind == kKindSamples) {
+			if (kKindSamples == kind) {
 				if (('m' != c_read8(buffer + 0)) || ('a' != c_read8(buffer + 1)) || (1 != c_read8(buffer + 2)))
 					xsUnknownError("bad header");
 
@@ -604,7 +635,7 @@ void xs_audioout_enqueue(xsMachine *the)
 					xsUnknownError("format doesn't match output");
 				if ((sampleRate != out->sampleRate) || (numChannels != out->numChannels))
 					xsUnknownError("format doesn't match output");
-				if ((kSampleFormatUncompressed != sampleFormat) && (kSampleFormatIMA != sampleFormat))
+				if ((kSampleFormatUncompressed != sampleFormat) && (kSampleFormatIMA != sampleFormat) && (kSampleFormatSBC != sampleFormat))
 					xsUnknownError("unsupported compression");
 
 				buffer += 12;
@@ -624,7 +655,7 @@ void xs_audioout_enqueue(xsMachine *the)
 
 			doLock(out);
 
-			element = &out->stream[stream].element[out->stream[stream].elementCount];
+			element = &stream->element[stream->elementCount];
 			element->position = 0;
 			element->repeat = repeat;
 			element->sampleFormat = sampleFormat;
@@ -632,61 +663,176 @@ void xs_audioout_enqueue(xsMachine *the)
 				element->samples = buffer + (sampleOffset * out->bytesPerFrame);
 				element->sampleCount = samplesToUse;
 			}
-			else {		// must be kSampleFormatIMA
-				if (NULL == out->stream[stream].decompressed) {
-					out->stream[stream].decompressed = c_malloc(kIMASamplesPerChunk * sizeof(int16_t));
-					if (NULL == out->stream[stream].decompressed)
+			else if (kSampleFormatIMA == sampleFormat) {
+				if ((kSampleFormatUncompressed != stream->format) && (kSampleFormatIMA != stream->format))
+					xsUnknownError("cannot switch compression");
+
+				if (NULL == stream->decompressed) {
+					stream->decompressed = c_malloc(kIMASamplesPerChunk * sizeof(int16_t));
+					if (NULL == stream->decompressed)
 						xsUnknownError("out of memory");
+
+					stream->format = kSampleFormatIMA;
+					stream->compressedBytesPerChunk = kIMABytesPerChunk;
 				}
-				element->samples = out->stream[stream].decompressed;
+				element->samples = stream->decompressed;
 				element->sampleCount = kIMASamplesPerChunk;
 				// calculations quantize to chunk boundaries
-				element->compressedInitial = buffer + ((sampleOffset / kIMASamplesPerChunk) * kIMABytesPerChunk);
-				element->compressed = element->compressedInitial;
-				element->compressedTotal = samplesToUse / kIMASamplesPerChunk;
-				element->compressedRemaining = element->compressedTotal;
+				element->compressed.initial = buffer + ((sampleOffset / kIMASamplesPerChunk) * kIMABytesPerChunk);
+				element->compressed.data = element->compressed.initial;
+				element->compressed.total = samplesToUse / kIMASamplesPerChunk;
+				element->compressed.remaining = element->compressed.total;
+			}
+			else if (kSampleFormatSBC == sampleFormat) {
+				if ((kSampleFormatUncompressed != stream->format) && (kSampleFormatSBC != stream->format))
+					xsUnknownError("cannot switch compression");
+
+				if (NULL == stream->decompressed) {
+					if (NULL == stream->decompressor) {
+						stream->decompressor = c_malloc(sizeof(SBC_Decode));
+						if (NULL == stream->decompressor)
+							xsUnknownError("out of memory");
+						stream->format = kSampleFormatSBC;
+						sbc_init((SBC_Decode *)stream->decompressor);
+					}
+
+					stream->decompressed = c_malloc(kSBCSamplesPerChunk * sizeof(int16_t));
+					if (NULL == stream->decompressed)
+						xsUnknownError("out of memory");
+
+					stream->compressedBytesPerChunk = sbc_decoder((SBC_Decode *)stream->decompressor, buffer, 512 /* @@ */, stream->decompressed, kSBCSamplesPerChunk * sizeof(int16_t), NULL);
+				}
+				element->samples = stream->decompressed;
+				element->sampleCount = kSBCSamplesPerChunk;
+				// calculations quantize to chunk boundaries
+				element->compressed.initial = buffer + ((sampleOffset / stream->compressedBytesPerChunk) * stream->compressedBytesPerChunk);
+				element->compressed.data = element->compressed.initial;
+				element->compressed.total = samplesToUse / kSBCSamplesPerChunk;
+				element->compressed.remaining = element->compressed.total;
+			}
+			else
+				xsUnknownError("invalid format");
+
+
+		enqueueSamples:
+			// stop infinite element
+			for (i = stream->elementCount - 1; i >= 0; i--) {
+				if (0 == stream->element[i].repeat)
+					continue;
+
+				if (stream->element[i].repeat < 0) {
+					if (kSampleFormatTone == element->sampleFormat)
+						element[-1].tone.count = 0;;
+					stream->element[i].repeat = 1;
+				}
+				break;
 			}
 
 		enqueue:
-			out->stream[stream].elementCount += 1;
+			stream->elementCount += 1;
 
-			if (1 == out->stream[stream].elementCount) {
+			if (1 == stream->elementCount) {
 				if (kSampleFormatUncompressed != sampleFormat)
-					streamDecompressNext(&out->stream[stream]);
+					streamDecompressNext(stream);
 				updateActiveStreams(out);
 			}
 
 			doUnlock(out);
 			break;
 
-		case kKindFlush: {
-				int elementCount, i;
+		case kKindTone:
+		case kKindSilence: {
+			int frequency, count;
+			OUTPUTSAMPLETYPE value;
 
-				doLock(out);
-
-				elementCount = out->stream[stream].elementCount;
-				out->stream[stream].elementCount = 0;		// flush queue
-				updateActiveStreams(out);
-
-				for (i = 0; i < elementCount; i++) {
-					modAudioQueueElement element = &out->stream[stream].element[i];
-					if ((0 == element->repeat) && (element->position < 0) && (0 == element->sampleCount))
-						queueCallback(out, (xsIntegerValue)element->samples);
+			if (kKindTone == kind) {
+				frequency = xsmcToInteger(xsArg(2));
+				count = -1;
+				if ((argc > 3) && (C_INFINITY != xsmcToNumber(xsArg(3))))
+					count = xsmcToInteger(xsArg(3));
+				if (frequency < 10)
+					xsUnknownError("invalid frequency");
+				if (argc > 4)
+					value = xsmcToInteger(xsArg(4));
+				else {
+#if 8 == MODDEF_AUDIOOUT_BITSPERSAMPLE
+					value = 127 >> 2;
+#else
+					value = 32767 >> 2;
+#endif
 				}
+			}
+			else {
+				count = xsmcToInteger(xsArg(2));
+				if (0 == count)
+					xsUnknownError("invalid frequency");
+				frequency = 1;
+				value = 0;
+			}
 
-				doUnlock(out);
+			if (NULL == stream->decompressed) {
+				stream->decompressed = c_malloc(kToneSamplesPerChunk * sizeof(OUTPUTSAMPLETYPE));
+				if (NULL == stream->decompressed)
+					xsUnknownError("out of memory");
+
+				stream->format = kSampleFormatTone;
+				stream->compressedBytesPerChunk = 0;
+			}
+
+			doLock(out);
+
+			element = &stream->element[stream->elementCount];
+			element->samples = stream->decompressed;
+			element->sampleCount = kToneSamplesPerChunk;
+			element->position = 0;
+			element->repeat = (count < 0) ? -1 : 1;
+			element->sampleFormat = kSampleFormatTone;
+
+			element->tone.position = 0;
+			element->tone.max = ((uint64_t)out->sampleRate << 15) / frequency;		// 16.16 fixed
+			element->tone.value = value;
+			element->tone.count = count;
+
+			goto enqueueSamples;
+		}
+
+		case kKindFlush: {
+			int elementCount, i;
+			modAudioQueueElement element;
+
+			doLock(out);
+
+			elementCount = stream->elementCount;
+			stream->elementCount = 0;		// flush queue
+			updateActiveStreams(out);
+
+			for (i = 0, element = stream->element; i < elementCount; i++, element++) {
+				if ((0 == element->repeat) && (element->position < 0) && (0 == element->sampleCount))
+					queueCallback(out, (xsIntegerValue)element->samples);
+			}
+
+			if (stream->decompressed)
+				c_free(stream->decompressed);
+			stream->decompressed = NULL;
+			if (stream->decompressor)
+				c_free(stream->decompressor);
+			stream->decompressed = NULL;
+			stream->decompressor = NULL;
+			stream->format = kSampleFormatUncompressed;
+
+			doUnlock(out);
 
 #if defined(__APPLE__)
-				invokeCallbacks(NULL, out);
+			invokeCallbacks(NULL, out);
 #elif ESP || defined(__ets__) || defined(_WIN32)
-				deliverCallbacks(the, out, NULL, 0);
+			deliverCallbacks(the, out, NULL, 0);
 #endif
 		} break;
 
 		case kKindCallback:
 			doLock(out);
 
-			element = &out->stream[stream].element[out->stream[stream].elementCount];
+			element = &stream->element[stream->elementCount];
 			element->samples = (void *)(uintptr_t)xsmcToInteger(xsArg(2));
 			element->sampleCount = 0;
 			element->position = -1;
@@ -695,14 +841,14 @@ void xs_audioout_enqueue(xsMachine *the)
 
 		case kKindVolume:
 			volume = xsmcToInteger(xsArg(2));
-			if (0 == out->stream[stream].elementCount) {
-				setStreamVolume(out, &out->stream[stream], volume);
+			if (0 == stream->elementCount) {
+				setStreamVolume(out, stream, volume);
 				break;
 			}
 
 			doLock(out);
 
-			element = &out->stream[stream].element[out->stream[stream].elementCount];
+			element = &stream->element[stream->elementCount];
 			element->samples = NULL;
 			element->sampleCount = 0;
 			element->position = volume;
@@ -1563,8 +1709,8 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 	}
 
 	element->position = 0;
-	element->compressedRemaining = element->compressedTotal;
-	element->compressed = element->compressedInitial;
+	element->compressed.remaining = element->compressed.total;
+	element->compressed.data = element->compressed.initial;
 
 	if (element->repeat < 0) {		// infinity... continues until more samples queued
 		int i;
@@ -1616,13 +1762,58 @@ int streamDecompressNext(modAudioOutStream stream)
 {
 	modAudioQueueElement element = stream->element;
 
-	if (0 == element->compressedRemaining)
-		return 0;
+	if (kSampleFormatIMA == stream->format) {
+		if (0 == element->compressed.remaining)
+			return 0;
 
-	dvi_adpcm_decode(element->compressed, kIMABytesPerChunk, stream->decompressed);
+		dvi_adpcm_decode(element->compressed.data, kIMABytesPerChunk, stream->decompressed);
 
-	element->compressedRemaining -= 1;
-	element->compressed += kIMABytesPerChunk;
+		element->compressed.remaining -= 1;
+		element->compressed.data += stream->compressedBytesPerChunk;
+	}
+	else if (kSampleFormatSBC == stream->format) {
+		if (0 == element->compressed.remaining)
+			return 0;
+
+		sbc_decoder((SBC_Decode *)stream->decompressor, element->compressed.data, stream->compressedBytesPerChunk, stream->decompressed, kSBCSamplesPerChunk * sizeof(int16_t), NULL);
+
+		element->compressed.remaining -= 1;
+		element->compressed.data += stream->compressedBytesPerChunk;
+	}
+	else if (kSampleFormatTone == stream->format) {
+		int16_t *out = stream->decompressed;
+		uint8_t remain;
+		OUTPUTSAMPLETYPE value;
+		int position, max;
+
+		if (0 == element->tone.count)
+			return 0;
+
+		if (element->tone.count < 0)
+			remain = kToneSamplesPerChunk;
+		else {
+			if (kToneSamplesPerChunk < element->tone.count)
+				remain = kToneSamplesPerChunk;
+			else
+				remain = element->tone.count;
+			element->tone.count -= remain;
+		}
+
+		value = element->tone.value;
+		position = element->tone.position;
+		max = element->tone.max;
+		while (remain--) {
+			position += 0x10000;
+			if (position >= max) {
+				value = -value;
+				position &= 0x0FFFF;
+			}
+			*out++ = value;
+		}
+		element->tone.value = value;
+		element->tone.position = position;
+	}
+
 	element->position = 0;
 
 	return 1;

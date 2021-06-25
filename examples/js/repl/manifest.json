@@ -118,7 +118,7 @@
 			"warning": "unsupported target"
 		}
 	},
-	"store": {
+	"bundle": {
 		"id": "com.moddable.repl",
 		"devices": [
 			"esp/moddable_one",

@@ -116,7 +116,11 @@ void xs_spi_constructor(xsMachine *the)
 #if ESP32
 	xsmcGet(xsVar(0), xsArg(0), xsID_port);
 	tmp = xsmcToInteger(xsVar(0));
-	if ((SPI_HOST != tmp) && (HSPI_HOST != tmp) && (VSPI_HOST != tmp))
+	if ((SPI_HOST != tmp) && (HSPI_HOST != tmp)
+#if ESP32 != 2
+		 && (VSPI_HOST != tmp)
+#endif
+		)
 		xsRangeError("invalid port");
 	spiPort = (uint8_t)tmp;
 #else
