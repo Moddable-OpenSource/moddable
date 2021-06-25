@@ -24,5 +24,12 @@
 				"rotation": 270
 			}
 		}
+	},
+	"bundle": {
+		"id": "tech.moddable.love-e-ink",
+		"devices": [
+			"esp/moddable_three"
+		],
+		"icon": "./store/icon.png"
 	}
 }
