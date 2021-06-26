@@ -1,0 +1,28 @@
+{
+	"platforms": {
+		"cli-win": {
+			"modules": {
+				"*": [
+					"./$(PLATFORM)/main",
+					"./cli"
+				]
+			}
+		},
+		"cli-mac": {
+			"modules": {
+				"*": [
+					"./$(PLATFORM)/main",
+					"./cli"
+				]
+			}
+		},
+		"cli-lin": {
+			"modules": {
+				"*": [
+					"./$(PLATFORM)/main",
+					"./cli"
+				]
+			}
+		}
+	}
+}

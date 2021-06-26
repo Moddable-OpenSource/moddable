@@ -1408,7 +1408,7 @@ export class Tool extends TOOL {
 			this.outputPath = this.buildPath;
 		if (!this.platform)
 			this.platform = this.currentPlatform;
-		if (this.platform.startsWith("x-"))
+		if (this.platform.startsWith("x-") || this.platform.startsWith("cli-"))
 			this.format = null;
 		else if (!this.format)
 			this.format = "UNDEFINED";

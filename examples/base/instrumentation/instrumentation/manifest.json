@@ -5,7 +5,8 @@
 	],
 	"modules": {
 		"*": [
-			"./main"
+			"./main",
+			"$(MODULES)/base/instrumentation/*"
 		]
 	}
 }
