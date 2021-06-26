@@ -104,14 +104,14 @@ In this example, the modClock [partitions.csv](https://github.com/Moddable-OpenS
 The Moddable SDK sdkconfig defaults files are located in the `$MODDABLE/build/devices/esp32/xsProj-esp32` and `$MODDABLE/build/devices/esp32/xsProj-esp32s2` directories for ESP32 and ESP32-S2, respectively. The `sdkconfig.defaults` ([ESP32](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.defaults)/[ESP32-S2](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32s2/sdkconfig.defaults)) file is the base configuration file used by all ESP32/ESP32-S2 builds. Release and instrumented release builds merge additional configuration options, on top of the base `sdkconfig.defaults` file, from the `sdkconfig.defaults.release` ([ESP32](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.defaults.release)/[ESP32-S2](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32s2/sdkconfig.defaults.release)) and `sdkconfig.inst` ([ESP32](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.inst)/[ESP32-S2](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32s2/sdkconfig.inst)) files respectively. When merging, configuration options that exist in the base `sdkconfig.defaults` file are replaced and options that don't exist in the base `sdkconfig.defaults` file are added. The merge processing order is as follows:
 
 1. All base `sdkconfig.defaults` options are applied to the build.
-2. On release builds, the `sdkconfig.defaults.release` options are merged on top of the `sdkconfig.defaults` options.
-3. On release instrumented builds, the `sdkconfig.inst` options are merged on top of the merge performed in step 2.
+2. On release builds, the `sdkconfig.defaults.release` options are merged.
+3. On release instrumented builds, the `sdkconfig.inst` options are merged.
 
 	When applications specify optional sdkconfig files using the `SDKCONFIGPATH` manifest environment variable, the merge processing additionally includes the following:
 
-4. On debug builds, the application `sdkconfig.defaults` file, when provided, is merged on top of the base Moddable SDK `sdkconfig.defaults` file.
-5. On release builds, the application `sdkconfig.defaults.release` options, when provided,  are merged on top of the merge performed in step 4.
-6. On release instrumented builds, the `sdkconfig.inst` options, when provided, are merged on top of the merge performed in step 5.
+4. The application `$(SDKCONFIGPATH)/sdkconfig.defaults` options, when provided, are merged.
+5. On release builds, the application `$(SDKCONFIGPATH)/sdkconfig.defaults.release` options, when provided,  are merged.
+6. On release instrumented builds, the application `$(SDKCONFIGPATH)/sdkconfig.inst` options, when provided, are merged.
 
 ***
 
