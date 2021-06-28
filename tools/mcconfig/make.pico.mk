@@ -316,6 +316,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/common/pico_binary_info/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id/include	\
 	$(PICO_SDK_DIR)/lib/tinyusb/src		\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/common		\
 	$(PICO_SDK_DIR)/lib/tinyusb/hw		\
@@ -450,7 +451,8 @@ PICO_OBJ = \
 	$(LIB_DIR)/tusb_fifo.c.o \
 	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o \
  	$(LIB_DIR)/hardware_divider.S.o \
-	$(LIB_DIR)/pico_divider.S.o
+	$(LIB_DIR)/pico_divider.S.o \
+ 	$(LIB_DIR)/unique_id.c.o
 
 #	$(LIB_DIR)/divider.S.o \
 #	$(LIB_DIR)/dfu_rt_device.c.o \
@@ -500,7 +502,8 @@ PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/lib/tinyusb/src						\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/common				\
 	$(PICO_SDK_DIR)/lib/tinyusb/hw						\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration	
+	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id
 
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/msc			\
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/dfu			\
@@ -564,27 +567,48 @@ PICO_C_DEFINES= \
 	-DCFG_TUSB_DEBUG=0 \
 	-DCFG_TUSB_MCU=OPT_MCU_RP2040 \
 	-DCFG_TUSB_OS=OPT_OS_PICO \
-	-DPICO_BOOT2_NAME=\"boot_w25q080\"	\
-	-DPICO_BIT_OPS_PICO=1	\
+	-DLIB_PICO_BIT_OPS=1	\
+	-DLIB_PICO_BIT_OPS_PICO=1	\
+	-DLIB_PICO_DIVIDER=1	\
+	-DLIB_PICO_DIVIDER_HARDWARE=1	\
+	-DLIB_PICO_DOUBLE=1	\
+	-DLIB_PICO_DOUBLE_PICO=1	\
+	-DLIB_PICO_FIX_RP2040_USB_DEVICE_ENUMERATION=1	\
+	-DLIB_PICO_FLOAT=1	\
+	-DLIB_PICO_FLOAT_PICO=1	\
+	-DLIB_PICO_INT64_OPS=1	\
+	-DLIB_PICO_INT64_OPS_PICO=1	\
+	-DLIB_PICO_MALLOC=1	\
+	-DLIB_PICO_MEM_OPS_PICO=1	\
+	-DLIB_PICO_PLATFORM=1	\
+	-DLIB_PICO_PRINTF=1	\
+	-DLIB_PICO_PRINTF_PICO=1	\
+	-DLIB_PICO_RUNTIME=1	\
+	-DLIB_PICO_STANDARD_LINK=1	\
+	-DLIB_PICO_STDIO=1	\
+	-DLIB_PICO_STDIO_USB=1	\
+	-DLIB_PICO_STDLIB=1	\
+	-DLIB_PICO_SYNC=1	\
+	-DLIB_PICO_SYNC_CORE=1	\
+	-DLIB_PICO_SYNC_CRITICAL_SECTION=1	\
+	-DLIB_PICO_SYNC_MUTEX=1	\
+	-DLIB_PICO_SYNC_SEM=1	\
+	-DLIB_PICO_TIME=1	\
+	-DLIB_PICO_UNIQUE_ID=1	\
+	-DLIB_PICO_UTIL=1	\
 	-DPICO_BOARD=\"pico\"	\
 	-DPICO_BUILD=1	\
 	-DPICO_COPY_TO_RAM=0	\
 	-DPICO_CXX_ENABLE_EXCEPTIONS=0	\
-	-DPICO_DIVIDER_HARDWARE=1	\
-	-DPICO_DOUBLE_PICO=1	\
-	-DPICO_FLOAT_PICO=1	\
-	-DPICO_INT64_OPS_PICO=1	\
-	-DPICO_MEM_OPS_PICO=1	\
 	-DPICO_NO_FLASH=0	\
 	-DPICO_NO_HARDWARE=0	\
 	-DPICO_ON_DEVICE=1	\
-	-DPICO_PRINTF_PICO=1	\
 	-DPICO_PROGRAM_URL=\"https://github.com/Moddable-OpenSource\"	\
 	-DPICO_TARGET_NAME=\"$(NAME)\"	\
-	-DPICO_STDIO_USB=1	\
 	-DPICO_USE_BLOCKED_RAM=0
 
 #	-DPICO_STDIO_UART=1	\
+#	-DPICO_BOOT2_NAME=\"boot_w25q080\"	\
 
 C_DEFINES = \
 	$(PICO_C_DEFINES) \
