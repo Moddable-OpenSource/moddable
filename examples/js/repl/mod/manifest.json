@@ -1,0 +1,7 @@
+{
+	"modules": {
+		"*": "./mod",
+		"setup": "./setup",
+		"cli/random": "./cli/random"
+	}
+}

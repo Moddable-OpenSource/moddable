@@ -11,6 +11,7 @@
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
+			"$(IO)/digital/$(PLATFORM)/*",
 			"$(IO)/i2c/$(PLATFORM)/*",
 			"$(IO)/spi/$(PLATFORM)/*"
 		],
@@ -31,8 +32,6 @@
 		"embedded:io/socket/udp": "$(IO)/socket/udp",
 		"embedded:io/socket/listener": "$(IO)/socket/listener",
 
-		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
-
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
@@ -40,9 +39,27 @@
 		"system"
 	],
 	"platforms": {
+		"esp/*": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider"
+			}
+		},
 		"esp": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
+			}
+		},
+		"esp32/*": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+			}
 		},
 		"esp32": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+			}
 		},
 		"...": {
 			"error": "Experimental TC53 IO modules currently available for ESP8266 and ESP32 only. For now, use the modules in the pins directory instead"

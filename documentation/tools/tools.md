@@ -1,7 +1,7 @@
 # Tools
 
 Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: January 5, 2021
+Revised: June 16, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -21,6 +21,7 @@ To build the tools themselves, and to build and run apps in the Moddable simulat
 * [png2bmp](#png2bmp)
 * [xsc](#xsc)
 * [xsl](#xsl)
+* [mcbundle](#mcbundle)
 * [Simulator](#simulator)
 
 <a id="mcconfig"></a>
@@ -227,6 +228,68 @@ xsl files... [-a name] [-b directory] [c creation] [-o directory] [-p modules]..
 - `-r name`: the name of the output file. Defaults to `mc`.
 - `-s feature`: the name of a feature to strip. Use one `-s feature` option by feature to strip, use `s *` to strip all unused features.
 - `-u url`: the base URL of the modules in the archive. Defaults to `/`.
+
+<a id="mcbundle"></a>
+## mcbundle
+
+**mcbundle** is a command line tool to build and package app archives for the Moddable Store.
+
+**mcbundle** uses the [`bundle` object](./manifest.md#store) of the [app manifest](./manifest.md). Here is a sample `bundle` object, taken from the `countdown` example:
+
+```text
+"bundle": {
+	"id": "tech.moddable.countdown",
+	"devices": [
+		"esp/moddable_one",
+		"com.moddable.two"
+	],
+	“custom”: “./store/custom”,
+	“icon”: “./store/icon.png”
+}
+```
+
+To bundle an app archive for the `countdown` example, you would use the following `mcbundle` command:
+
+```shell
+cd $MODDABLE/examples/piu/countdown
+mcbundle -d -m -o $MODDABLE/build/tmp
+```
+
+This will build the `countdown` app for two devices and package the targets into one app archive.
+
+**mcbundle** generates and execute a shell script, `tech.moddable.countdown.sh`. The shell script invokes **mcconfig** once for each target platform to build the app, then copies the targets, icon and custom preferences dialog boxes into the app archive folder. The name of the app archive folder matches the `id` property of the `bundle` object: `tech.moddable.countdown`.
+
+```text
+tech.moddable.countdown
+	com.moddable.one
+		main.bin
+	com.moddable.two
+		bootloader.bin
+		partition-table.bin
+		xs_esp32.bin
+	custom
+		config
+			icon.png
+			index.html
+	icon.png
+```
+
+Eventually, the app archive folder is compressed into the app archive file, `tech.moddable.countdown.zip`
+
+The shell script, the app archive folder and the app archive file will be in `$MODDABLE/build/tmp`.
+
+**mcbundle** requires the `MODDABLE` environment variable, the `IDF_PATH` environment variable for ESP32 devices and the `EMSDK` environment variable for the Wasm simulator
+
+### Arguments
+
+```text
+mcbundle [manifest] [-d] [-m] [-o directory] 
+```
+
+- `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory.
+- `-d`: to build debug instrumented versions.
+- `-m`: to run `bash` automatically, otherwise **mcbundle** just generates the shell script.
+- `-o directory`: the output directory. Defaults to the current directory.
 
 <a id="simulator"></a>
 ## Simulator

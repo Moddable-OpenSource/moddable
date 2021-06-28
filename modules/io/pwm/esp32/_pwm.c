@@ -217,7 +217,7 @@ void xs_pwm_get_hz_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
 	if (!pwm)
-		xsUnknownError("closed");
+		return;
 
 	xsmcSetInteger(xsResult, gTimers[pwm->timerIndex].hz);
 }
@@ -226,7 +226,7 @@ void xs_pwm_get_resolution_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
 	if (!pwm)
-		xsUnknownError("closed");
+		return;
 
 	xsmcSetInteger(xsResult, gTimers[pwm->timerIndex].resolution);
 }

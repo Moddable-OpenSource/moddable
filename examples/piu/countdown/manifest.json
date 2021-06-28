@@ -12,5 +12,14 @@
 		"*-alpha": [
 			"./digits"
 		]
+	},
+	"bundle": {
+		"id": "tech.moddable.countdown",
+		"devices": [
+			"esp/moddable_one",
+			"com.moddable.two"
+		],
+		"icon": "./store/icon.png",
+		"custom": "./store/custom"
 	}
 }

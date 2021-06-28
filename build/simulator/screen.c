@@ -136,16 +136,48 @@ static char* gxTouchEventNames[4] = {
 
 void fxAbort(xsMachine* the, int status)
 {
-	txScreen* screen = the->host;
-	if (status == xsNotEnoughMemoryExit)
-		xsUnknownError("not enough memory");
-	else if (status == xsStackOverflowExit)
-		xsUnknownError("stack overflow");
-	else if (status == xsDeadStripExit)
-		xsUnknownError("dead strip");
-	else if (status == xsUnhandledExceptionExit) {
-		xsTrace("unhandled exception\n");
-		(*screen->abort)(screen);
+	static int exitToHost = 1;
+	if (exitToHost) {
+		txScreen* screen = the->host;
+		if (!screen)
+			screen = the->context;
+		char* why = NULL;
+		switch (status) {
+		case XS_STACK_OVERFLOW_EXIT:
+			why = "stack overflow";
+			break;
+		case XS_NOT_ENOUGH_MEMORY_EXIT:
+			why = "memory full";
+			break;
+		case XS_NO_MORE_KEYS_EXIT:
+			why = "not enough keys";
+			break;
+		case XS_DEAD_STRIP_EXIT:
+			why = "dead strip";
+			break;
+		case XS_DEBUGGER_EXIT:
+			break;
+		case XS_FATAL_CHECK_EXIT:
+			break;
+		case XS_UNHANDLED_EXCEPTION_EXIT:
+			why = "unhandled exception";
+			break;
+		case XS_UNHANDLED_REJECTION_EXIT:
+			exitToHost = 0;
+			why = "unhandled rejection";
+			break;
+		default:
+			why = "unknown";
+			break;
+		}
+		if (why)
+			xsLog("XS abort: %s\n", why);
+		if (screen)
+			(*screen->abort)(screen, status);
+		if (exitToHost) {
+			exitToHost = 0;
+			fxExitToHost(the);
+		}
 	}
 }
 
@@ -177,12 +209,14 @@ void fxScreenIdle(txScreen* screen)
 				xsNumberValue when;
 				xsVars(2);
 				xsVar(0) = xsGet(xsGlobal, xsID_screen);
-				when = xsToNumber(xsGet(xsVar(0), xsID_when));
-				if (!c_isnan(when) && (when <= fxDateNow())) {
-					xsVar(1) = xsGet(xsVar(0), xsID_context);
-					if (xsTest(xsVar(1))) {
-						if (xsFindResult(xsVar(1), xsID_onIdle)) {
-							xsCallFunction0(xsResult, xsVar(1));
+				if (xsTest(xsVar(0))) {
+					when = xsToNumber(xsGet(xsVar(0), xsID_when));
+					if (!c_isnan(when) && (when <= fxDateNow())) {
+						xsVar(1) = xsGet(xsVar(0), xsID_context);
+						if (xsTest(xsVar(1))) {
+							if (xsFindResult(xsVar(1), xsID_onIdle)) {
+								xsCallFunction0(xsResult, xsVar(1));
+							}
 						}
 					}
 				}
@@ -198,21 +232,23 @@ void fxScreenInvoke(txScreen* screen, char* buffer, int size)
 	{
 		xsVars(2);
 		xsVar(0) = xsGet(xsGlobal, xsID_screen);
-		if (xsFindResult(xsVar(0), xsID_onMessage)) {
-			if (size)
-				(void)xsCallFunction1(xsResult, xsVar(0), xsArrayBuffer(buffer, size));
-			else
-				(void)xsCallFunction1(xsResult, xsVar(0), xsString(buffer));
-
-		}
-		xsVar(1) = xsGet(xsVar(0), xsID_context);
-		if (xsTest(xsVar(1))) {
-			if (xsFindResult(xsVar(1), xsID_onMessage)) {
+		if (xsTest(xsVar(0))) {
+			if (xsFindResult(xsVar(0), xsID_onMessage)) {
 				if (size)
-					(void)xsCallFunction1(xsResult, xsVar(1), xsArrayBuffer(buffer, size));
+					(void)xsCallFunction1(xsResult, xsVar(0), xsArrayBuffer(buffer, size));
 				else
-					(void)xsCallFunction1(xsResult, xsVar(1), xsString(buffer));
+					(void)xsCallFunction1(xsResult, xsVar(0), xsString(buffer));
+
+			}
+			xsVar(1) = xsGet(xsVar(0), xsID_context);
+			if (xsTest(xsVar(1))) {
+				if (xsFindResult(xsVar(1), xsID_onMessage)) {
+					if (size)
+						(void)xsCallFunction1(xsResult, xsVar(1), xsArrayBuffer(buffer, size));
+					else
+						(void)xsCallFunction1(xsResult, xsVar(1), xsString(buffer));
 	
+				}
 			}
 		}
 	}
@@ -226,10 +262,12 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 		{
 			xsVars(2);
 			xsVar(0) = xsGet(xsGlobal, xsID_screen);
-			xsVar(1) = xsGet(xsVar(0), xsID_context);
-			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID(gxKeyEventNames[kind]))) {
-					xsCallFunction3(xsResult, xsVar(1), xsString(string), xsInteger(modifiers), xsNumber(when));
+			if (xsTest(xsVar(0))) {
+				xsVar(1) = xsGet(xsVar(0), xsID_context);
+				if (xsTest(xsVar(1))) {
+					if (xsFindResult(xsVar(1), xsID(gxKeyEventNames[kind]))) {
+						xsCallFunction3(xsResult, xsVar(1), xsString(string), xsInteger(modifiers), xsNumber(when));
+					}
 				}
 			}
 		}
@@ -263,6 +301,8 @@ void fxScreenLaunch(txScreen* screen)
 	xsBeginHost(screen->machine);
 	{
 		xsVars(2);
+		if (screen->archive && !the->archive)
+			fxAbort(the, ((txByte*)(screen->archive))[8]);
 		xsCollectGarbage();
 		xsVar(0) = xsNewHostObject(NULL); // no destructor
 		xsSetHostData(xsVar(0), screen);
@@ -361,10 +401,12 @@ void fxScreenQuit(txScreen* screen)
 		{
 			xsVars(2);
 			xsVar(0) = xsGet(xsGlobal, xsID_screen);
-			xsVar(1) = xsGet(xsVar(0), xsID_context);
-			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID_onQuit)) {
-					xsCallFunction0(xsResult, xsVar(1));
+			if (xsTest(xsVar(0))) {
+				xsVar(1) = xsGet(xsVar(0), xsID_context);
+				if (xsTest(xsVar(1))) {
+					if (xsFindResult(xsVar(1), xsID_onQuit)) {
+						xsCallFunction0(xsResult, xsVar(1));
+					}
 				}
 			}
 		}

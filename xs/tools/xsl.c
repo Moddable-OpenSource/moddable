@@ -289,6 +289,7 @@ int main(int argc, char* argv[])
 
 		linker->symbolTable = fxNewLinkerChunkClear(linker, linker->symbolModulo * sizeof(txLinkerSymbol*));
 		if (archiving) {
+			fxNewLinkerSymbol(linker, gxIDStrings[0], 0);
 			resource = linker->firstResource;
 			while (resource) {
 				fxBaseResource(linker, resource, base, size);
@@ -423,10 +424,10 @@ int main(int argc, char* argv[])
 					
 					mxGlobal.value.reference->value.instance.prototype = C_NULL;
 					mxPush(mxGlobal);
-					fxDeleteID(the, mxID(_global));
+					mxDeleteID(mxID(_global));
 					mxPop();
 					mxPush(mxGlobal);
-					fxDeleteID(the, mxID(_globalThis));
+					mxDeleteID(mxID(_globalThis));
 					mxPop();
 				}
 				{
@@ -854,13 +855,13 @@ void fxFreezeBuiltIns(txMachine* the)
 	const txTypeDispatch *dispatch;
 	mxTemporary(freeze);
 	mxPush(mxObjectConstructor);
-	fxGetID(the, mxID(_freeze));
+	mxGetID(mxID(_freeze));
 	mxPullSlot(freeze);
 	
 	mxFreezeBuiltInCall; mxPush(mxAtomicsObject); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxJSONObject); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxMathObject); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxGlobal); fxGetID(the, mxID(_Math)); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxGlobal); mxGetID(mxID(_Math)); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxReflectObject); mxFreezeBuiltInRun;
 
 	mxFreezeBuiltInCall; mxPush(mxAggregateErrorPrototype); mxFreezeBuiltInRun;
@@ -920,12 +921,12 @@ void fxFreezeBuiltIns(txMachine* the)
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
 		mxFreezeBuiltInCall; 
 		mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
-		fxGetID(the, mxID(_prototype));
+		mxGetID(mxID(_prototype));
 		mxFreezeBuiltInRun;
 	}
-	mxFreezeBuiltInCall; mxPush(mxEnumeratorFunction); fxGetID(the, mxID(_prototype)); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxEnumeratorFunction); mxGetID(mxID(_prototype)); mxFreezeBuiltInRun;
 	
-	mxFreezeBuiltInCall; mxPush(mxArrayPrototype); fxGetID(the, mxID(_Symbol_unscopables)); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxArrayPrototype); mxGetID(mxID(_Symbol_unscopables)); mxFreezeBuiltInRun;
 	
 	mxFreezeBuiltInCall; mxPush(mxProgram); mxFreezeBuiltInRun; //@@
 	mxFreezeBuiltInCall; mxPush(mxHosts); mxFreezeBuiltInRun; //@@

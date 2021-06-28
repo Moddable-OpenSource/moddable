@@ -2681,6 +2681,7 @@ void fxGroupExpression(txParser* parser, txUnsigned flag)
 {
 	txInteger aCount = 0;
 	txInteger aLine;
+	txUnsigned formerAwaitingYieldingFlags = parser->flags & (mxAwaitingFlag | mxYieldingFlag);
 	txUnsigned former;
 	parser->flags &= ~(mxAwaitingFlag | mxYieldingFlag);
 	if (flag) {
@@ -2728,6 +2729,7 @@ void fxGroupExpression(txParser* parser, txUnsigned flag)
 			fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, aLine);
 		}
 	}
+	parser->flags |= formerAwaitingYieldingFlags;
 }
 
 void fxNewExpression(txParser* parser)

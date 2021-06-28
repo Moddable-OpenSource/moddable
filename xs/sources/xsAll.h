@@ -267,6 +267,8 @@ typedef union {
 	struct { txSlot* address; txIndex length; } stack;
 	struct { txSlot** address; txSize length; } table;
 	struct { txTypeDispatch* dispatch; txTypeAtomics* atomics; } typedArray;
+	struct { txSlot* check; txSlot* value; } weakEntry;
+	struct { txSlot* first; txSlot* link; } weakList;
 	struct { txSlot* target; txSlot* link; } weakRef;
 	struct { txSlot* callback; txUnsigned flags; } finalizationRegistry;
 	struct { txSlot* target; txSlot* token; } finalizationCell;
@@ -416,10 +418,11 @@ struct sxMachine {
 	txID aliasIndex;
 	txSlot** aliasArray;
 	
-	txSlot* firstWeakMapTable;
-	txSlot* firstWeakSetTable;
+	char* stackLimit;
+	
+	txSlot* firstWeakListLink;
 	txSlot* firstWeakRefLink;
-
+	
 	txSize currentChunksSize;
 	txSize peakChunksSize;
 	txSize maximumChunksSize;
@@ -613,6 +616,7 @@ mxExport txID fxToID(txMachine* the, txSlot* theSlot);
 mxExport txString fxName(txMachine*, txID);
 
 mxExport void fxEnumerate(txMachine* the);
+mxExport txBoolean fxHasAll(txMachine* the, txID id, txIndex index);
 mxExport txBoolean fxHasAt(txMachine* the);
 mxExport txBoolean fxHasID(txMachine*, txID);
 mxExport txBoolean fxHasIndex(txMachine* the, txIndex index);
@@ -680,9 +684,8 @@ mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
 
 #ifdef mxMetering
 mxExport void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), txU4 interval);
+mxExport void fxCheckMetering(txMachine* the);
 mxExport void fxEndMetering(txMachine* the);
-mxExport void fxMeterHostFunction(txMachine* the, txU4 count);
-mxExport void fxPatchHostFunction(txMachine* the, txCallback patch);
 #endif
 
 /* xsmc.c */
@@ -775,7 +778,7 @@ extern txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean z
 
 /* xsMemory.c */
 extern txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b);
-extern void fxCheckStack(txMachine* the, txSlot* slot);
+extern void fxCheckCStack(txMachine* the);
 extern void fxAllocate(txMachine* the, txCreation* theCreation);
 extern void fxCollect(txMachine* the, txBoolean theFlag);
 mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
@@ -1487,6 +1490,9 @@ mxExport void fx_TypedArray_prototype_values(txMachine* the);
 extern void fxBuildDataView(txMachine* the);
 extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);
 
+extern txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset);
+extern txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length);
+
 /* xsAtomics.c */
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
 extern void fxInt16Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
@@ -1929,6 +1935,7 @@ enum {
 	XS_HOST_INSPECTOR_KIND,
 	XS_INSTANCE_INSPECTOR_KIND,
 	XS_EXPORT_KIND,
+	XS_WEAK_ENTRY_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,
@@ -2043,11 +2050,27 @@ enum {
 
 #define mxIsStringPrimitive(THE_SLOT) \
 	(((THE_SLOT)->kind == XS_STRING_KIND) || ((THE_SLOT)->kind == XS_STRING_X_KIND))
+	
+#ifdef mxMetering
+#define mxMeterOne() \
+	(the->meterIndex++)
+#define mxMeterSome(_COUNT) \
+	(the->meterIndex += _COUNT)
+#else
+#define mxMeterOne() \
+	((void)0)
+#define mxMeterSome(_COUNT) \
+	((void)0)
+#endif
 
 #if mxBoundsCheck
+#define mxCheckCStack() \
+	(fxCheckCStack(the))
 #define mxOverflow(_COUNT) \
-	(fxOverflow(the,_COUNT,C_NULL, 0))
+	(mxMeterOne(), fxOverflow(the,_COUNT,C_NULL, 0))
 #else
+#define mxCheckCStack() \
+	((void)0)
 #define mxOverflow(_COUNT) \
 	((void)0)
 #endif
@@ -2055,15 +2078,65 @@ enum {
 #define mxCall() \
 	(mxOverflow(-4), \
 	fxCall(the))
+	
+#define mxDefineAll(ID, INDEX, FLAG, MASK) \
+	(mxMeterOne(), fxDefineAll(the, ID, INDEX, FLAG, MASK))
+#define mxDefineAt(FLAG, MASK) \
+	(mxMeterOne(), fxDefineAt(the, FLAG, MASK))
+#define mxDefineID(ID, FLAG, MASK) \
+	(mxMeterOne(), fxDefineAll(the, ID, 0, FLAG, MASK))
+#define mxDefineIndex(INDEX, FLAG, MASK) \
+	(mxMeterOne(), fxDefineAll(the, XS_NO_ID, INDEX, FLAG, MASK))
+	
+#define mxDeleteAll(ID, INDEX) \
+	(mxMeterOne(), fxDeleteAll(the, ID, INDEX))
+#define mxDeleteAt() \
+	(mxMeterOne(), fxDeleteAt(the))
+#define mxDeleteID(ID) \
+	(mxMeterOne(), fxDeleteAll(the, ID, 0))
+#define mxDeleteIndex(INDEX) \
+	(mxMeterOne(), fxDeleteAll(the, XS_NO_ID, INDEX))
+	
 #define mxDub() \
 	(mxOverflow(-1), \
 	((--the->stack)->next = C_NULL, \
 	the->stack->flag = XS_NO_FLAG, \
 	mxInitSlotKind(the->stack, (the->stack + 1)->kind), \
 	the->stack->value = (the->stack + 1)->value))
+	
+#define mxGetAll(ID, INDEX) \
+	(mxMeterOne(), fxGetAll(the, ID, INDEX))
+#define mxGetAt() \
+	(mxMeterOne(), fxGetAt(the))
+#define mxGetID(ID) \
+	(mxMeterOne(), fxGetAll(the, ID, 0))
+#define mxGetIndex(INDEX) \
+	(mxMeterOne(), fxGetAll(the, XS_NO_ID, INDEX))
+	
+#define mxHasAll(ID, INDEX) \
+	(mxMeterOne(), fxHasAll(the, ID, INDEX))
+#define mxHasAt() \
+	(mxMeterOne(), fxHasAt(the))
+#define mxHasID(ID) \
+	(mxMeterOne(), fxHasAll(the, ID, 0))
+#define mxHasIndex(INDEX) \
+	(mxMeterOne(), fxHasAll(the, XS_NO_ID, INDEX))
+	
 #define mxNew() \
 	(mxOverflow(-5), \
 	fxNew(the))
+	
+#define mxRunCount(_COUNT) \
+	(mxMeterOne(), fxRunID(the, C_NULL, _COUNT))
+	
+#define mxSetAll(ID, INDEX) \
+	(mxMeterOne(), fxSetAll(the, ID, INDEX))
+#define mxSetAt() \
+	(mxMeterOne(), fxSetAt(the))
+#define mxSetID(ID) \
+	(mxMeterOne(), fxSetAll(the, ID, 0))
+#define mxSetIndex(INDEX) \
+	(mxMeterOne(), fxSetAll(the, XS_NO_ID, INDEX))
 
 #define mxPush(THE_SLOT) \
 	(mxOverflow(-1), \
@@ -2167,14 +2240,15 @@ enum {
 	(mxOverflow(-1), \
 	_SLOT = --the->stack)
 
-
 #define mxPop() \
-	(the->stack++)
+	(mxMeterOne(), the->stack++)
 #define mxPull(THE_SLOT) \
-	((THE_SLOT).value = the->stack->value, \
+	(mxMeterOne(), \
+	(THE_SLOT).value = the->stack->value, \
 	(THE_SLOT).kind = (the->stack++)->kind)
 #define mxPullSlot(THE_SLOT) \
-	((THE_SLOT)->value = the->stack->value, \
+	(mxMeterOne(), \
+	(THE_SLOT)->value = the->stack->value, \
 	(THE_SLOT)->kind = (the->stack++)->kind)
 
 
@@ -2276,9 +2350,6 @@ enum {
 	(*mxBehavior(INSTANCE)->setPropertyValue)(THE, INSTANCE, ID, INDEX, VALUE, RECEIVER)
 #define mxBehaviorSetPrototype(THE, INSTANCE, PROTOTYPE) \
 	(*mxBehavior(INSTANCE)->setPrototype)(THE, INSTANCE, PROTOTYPE)
-	
-#define mxRunCount(_COUNT) \
-	fxRunID(the, C_NULL, _COUNT)
 
 enum {
 	mxGlobalStackIndex,

@@ -1,0 +1,11 @@
+{
+	"include": "$(MODDABLE)/modules/io/manifest.json",
+	"modules": {
+		"embedded:sensor/Humidity-Temperature/SI7020": "$(MODDABLE)/modules/drivers/sensors/si7020/si7020",
+		"crc": "$(MODDABLE)/modules/data/crc/crc"
+	},
+	"preload": [
+		"embedded:sensor/Humidity-Temperature/SI7020"
+	]
+}
+

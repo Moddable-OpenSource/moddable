@@ -28,7 +28,7 @@
 	portMUX_TYPE gCommonCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 
 	static uint32_t gDigitalAvailable[kPinBanks] = {
-		0xFFFFFF,		//@@
+		0xFFFFFFFF,		//@@
 		0xFFFFFF		//@@
 	};
 #elif defined(__ets__)

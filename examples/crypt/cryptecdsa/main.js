@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
- * 
+ *
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <https://creativecommons.org/licenses/by/4.0>.
+ *       <http://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
@@ -76,7 +76,8 @@ let key = {
 	du: X,
 	k: k,
 };
-let ecdsa = new ECDSA(key, true);
+curve.k = k;
+let ecdsa = new ECDSA(X, curve, true);
 
 let digest = new Digest("SHA256");
 let H = digest.process(message);
@@ -86,7 +87,7 @@ let l = (BigInt.bitLength(n) + 7) >>> 3;
 
 if (r == BigInt.fromArrayBuffer(sig.slice(0, l)) &&
     s == BigInt.fromArrayBuffer(sig.slice(l, l*2))) {
-	let ecdsa = new ECDSA(key, false);
+	let ecdsa = new ECDSA(P, curve, false);
 	trace("ecdsa: " + ecdsa.verify(H, sig) ? "succeeded\n" : "failed\n");
 }
 else {

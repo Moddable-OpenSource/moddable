@@ -68,7 +68,7 @@ void fxBuildSymbol(txMachine* the)
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_toPrimitive), mxID(_toPrimitive), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_toStringTag), mxID(_toStringTag), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_unscopables), mxID(_unscopables), XS_GET_ONLY);
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewSymbolInstance(txMachine* the)
@@ -466,29 +466,6 @@ void fxKeyAt(txMachine* the, txID id, txIndex index, txSlot* slot)
 		char buffer[16];
 		fxCopyStringC(the, slot, fxNumberToString(the->dtoa, index, buffer, sizeof(buffer), 0, 0));
 	}
-}
-
-
-txInteger fxSlotToIndex(txMachine* the, txSlot* slot, txIndex* index)
-{
-	txString string;
-again:
-	if ((slot->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the->dtoa, slot->value.integer, index))
-		return 0;
-	if ((slot->kind == XS_NUMBER_KIND) && fxNumberToIndex(the->dtoa, slot->value.number, index))
-		return 0;
-	if (slot->kind == XS_SYMBOL_KIND)
-		return slot->value.symbol;
-	if (slot->kind == XS_REFERENCE_KIND) {
-		fxToPrimitive(the, slot, XS_STRING_HINT);
-		goto again;
-	}
-	string = fxToString(the, slot);
-	if (fxStringToIndex(the->dtoa, string, index))
-		return 0;
-	if (slot->kind == XS_STRING_X_KIND)
-		return fxNewNameX(the, string);
-	return fxNewName(the, slot);
 }
 
 void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize)

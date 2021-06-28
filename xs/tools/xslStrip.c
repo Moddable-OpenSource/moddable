@@ -449,7 +449,7 @@ void fxStripClass(txLinker* linker, txMachine* the, txSlot* slot)
 {
 	mxPushSlot(slot);
 	fxStripInstance(linker, the, the->stack->value.reference);
-	fxGetID(the, mxID(_prototype));
+	mxGetID(mxID(_prototype));
 	fxStripInstance(linker, the, the->stack->value.reference);
 	mxPop();
 }

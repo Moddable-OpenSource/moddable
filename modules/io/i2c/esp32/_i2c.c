@@ -58,7 +58,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	int data, clock, hz, address;
 	int timeout = 32000;
 	uint8_t pullup = GPIO_PULLUP_ENABLE;
-	int port = I2C_NUM_MAX - 1;
+	int port = I2C_NUM_0;
 
 	xsmcVars(1);
 
@@ -215,9 +215,11 @@ void _xs_i2c_read(xsMachine *the)
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
 	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	if (length > 1)
-		i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
-	i2c_master_read(cmd, buffer + length - 1, 1, I2C_MASTER_NACK);
+	if (length > 0) {
+		if (length > 1)
+			i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
+		i2c_master_read(cmd, buffer + length - 1, 1, I2C_MASTER_NACK);
+	}
 	if (stop)
 		i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
@@ -252,14 +254,22 @@ void _xs_i2c_write(xsMachine *the)
 
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
-	i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
+	if (length == 0)
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_NACK);
+	else {
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_ACK);
+		i2c_master_write(cmd, (uint8_t *)buffer, length, I2C_MASTER_ACK);
+	}
 	if (stop)
 		i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
-	if (ESP_OK != err)
+	if (length == 0) {
+		if (ESP_OK != err)
+			xsmcSetInteger(xsResult, 1);
+	}
+	else if (ESP_OK != err)
 		xsUnknownError("write failed");
 }
 

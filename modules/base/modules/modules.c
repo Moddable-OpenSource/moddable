@@ -12,7 +12,7 @@ void xs_modules_host(xsMachine *the)
 	xsResult = xsNewArray(0);
 
 	while (scriptCount--) {
-		char path[PATH_MAX];
+		char path[C_PATH_MAX];
 		char *dot;
 
 		c_strcpy(path, script->path);
@@ -69,7 +69,7 @@ void xs_modules_archive(xsMachine *the)
 
 void xs_modules_importNow(xsMachine *the)
 {
-	char path[PATH_MAX];
+	char path[C_PATH_MAX];
 
 	xsToStringBuffer(xsArg(0), path, sizeof(path));
 	xsResult = xsAwaitImport(path, XS_IMPORT_DEFAULT);
@@ -77,7 +77,7 @@ void xs_modules_importNow(xsMachine *the)
 
 void xs_modules_has(xsMachine *the)
 {
-	char name[PATH_MAX];
+	char name[C_PATH_MAX];
 
 	xsToStringBuffer(xsArg(0), name, sizeof(name));
 	xsResult = xsAwaitImport(name, XS_IMPORT_DEFAULT | XS_IMPORT_PREFLIGHT);

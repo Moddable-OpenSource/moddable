@@ -159,6 +159,9 @@ mxImport xsIntegerValue fxIncrementalVars(xsMachine*, xsIntegerValue);
 mxImport xsIntegerValue _xsArgc(xsMachine*);
 #define xsmcArgc _xsArgc(the)
 
+mxImport void _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data, xsUnsignedValue *count);
+#define xsmcGetBuffer(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count)
+
 #ifdef __cplusplus
 }
 #endif

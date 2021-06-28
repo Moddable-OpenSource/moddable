@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/ntcThermistor/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

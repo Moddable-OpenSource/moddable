@@ -1064,12 +1064,14 @@ void PocoDrawExternal(Poco poco, PocoRenderExternal doDrawExternal,
 	PocoDimension w, PocoDimension h);
 
 typedef void (*PocoRenderExternal)(Poco poco, uint8_t *data,
-	PocoPixel *dst, PocoDimension w, PocoDimension h);
+	PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
 ```
 
 `PocoDrawExternal` installs a custom rendering element into the current Poco display list. The `data` argument points to a block of data of `dataSize` bytes in length that describes the drawing operation. This data is copied into the Poco display list, and so should be as compact as possible. The bounds of the drawing operation are defined by the `x`, `y`, `w`, and `h` arguments. The `doDrawExternal` callback function is called to render the custom element, one or more scanlines at a time.
 
 Poco does not perform clipping or rotation on the rendering operation. These must be applied by the code that creates the rendering data and/or the rendering callback function.
+
+When drawing to pixel formats with multiple pixels per byte, `xphase` indicates the pixel where drawing begins. For example, for a pixel format that uses 4-bits per pixel, xphase is 0 for the first pixel in the byte and 1 for the second.
 
 > **Note**: Implementing custom rendering elements is an advanced technique that requires familiarity with the implementation of the Poco rendering engine.
 

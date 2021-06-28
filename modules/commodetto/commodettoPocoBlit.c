@@ -3341,7 +3341,11 @@ void doDrawExternal(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 {
 	External e = (External)pc;
 
-	(e->doDrawExternal)(poco, e->data, dst, pc->w, h);
+#if kPocoPixelSize < 8
+	(e->doDrawExternal)(poco, e->data, dst, pc->w, h, pc->xphase);
+#else
+	(e->doDrawExternal)(poco, e->data, dst, pc->w, h, 0);
+#endif
 }
 
 void PocoDrawingBegin(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)

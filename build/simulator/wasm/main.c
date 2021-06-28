@@ -7,7 +7,7 @@
 
 extern void fxScreenLaunch(txScreen* screen);
 
-static void fxScreenAbort(txScreen* screen);
+static void fxScreenAbort(txScreen* screen, int status);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenStart(txScreen* screen, double interval);
@@ -56,7 +56,7 @@ int fxMainQuit()
 	return 0;
 }
 
-void fxScreenAbort(txScreen* screen)
+void fxScreenAbort(txScreen* screen, int status)
 {
 }
 

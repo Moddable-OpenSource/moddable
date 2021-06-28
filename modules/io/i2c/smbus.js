@@ -18,6 +18,8 @@
  *
 */
 
+import I2C from "embedded:io/i2c"
+
 class SMBus {
 	#io;
 	#stop;
@@ -26,7 +28,7 @@ class SMBus {
 	#writeWordBuffer = new Uint8Array(3);
 
     constructor(options) {
-        this.#io = new (options.io)(options);
+        this.#io = new I2C(options);
 		if (options.sendStop)
 			this.#stop = true;
     }
@@ -98,6 +100,28 @@ class SMBus {
         io.write(this.#byteBuffer, this.#stop);
         io.write(buffer);
     }
+
+	sendByte(command) {
+		const io = this.#io, buffer = this.#byteBuffer;
+
+		buffer[0] = command;
+		io.write(buffer, this.#stop);
+	}
+
+	receiveByte() {
+		const io = this.#io, buffer = this.#byteBuffer;
+
+		io.read(buffer, this.#stop);
+		return (buffer[0]);
+	}
+
+	readQuick() {
+		this.#io.read(0, this.#stop);
+	}
+
+	writeQuick() {
+		this.#io.write(new ArrayBuffer, this.#stop);
+	}
 }
 
 export default SMBus;

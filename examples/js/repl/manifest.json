@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/base/modules/manifest.json"
+		"$(MODDABLE)/modules/base/modules/manifest.json",
+		"$(MODDABLE)/modules/files/preference/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -12,24 +13,47 @@
 	},
 	"preload": [
 		"cli",
+		"cli/*",
 		"repl",
 		"replcore"
 	],
 	"strip": [],
+	"defines": {
+		"XS_MODS": 1
+	},
 	"platforms": {
 		"esp": {
+			"include": [
+				"$(MODULES)/base/microseconds/manifest.json",
+				"$(MODDABLE)/modules/files/resourceiterator/manifest.json",
+				"$(MODDABLE)/modules/io/manifest.json"
+			],
 			"modules": {
 				"*": [
-					"./esp/repl"
+					"./io/repl"
 				]
 			}
 		},
 		"esp32": {
+			"include": [
+				"$(MODULES)/base/microseconds/manifest.json",
+				"$(MODDABLE)/modules/files/resourceiterator/manifest.json",
+				"$(MODDABLE)/modules/io/manifest.json",
+				"$(MODULES)/pins/smbus/manifest.json"
+			],
 			"modules": {
 				"*": [
-					"./esp/repl"
-				]
-			}
+					"./io/repl",
+					"$(MODULES)/files/flash/*",
+					"$(MODULES)/files/flash/esp32/*"
+				],
+				"cli/i2c": "$(MODULES)/base/cli/commands/i2c",
+				"cli/archive": "$(MODULES)/base/cli/commands/archive",
+				"cli/network": "$(MODULES)/base/cli/commands/network"
+			},
+			"preload": [
+				"flash"
+			]
 		},
 		"pico": {
 			"include": [
@@ -52,8 +76,7 @@
 				"cli/sensor": "$(MODULES)/base/cli/commands/sensor"
 			},
 			"preload": [
-				"setup/globals",
-				"cli/*"
+				"setup/globals"
 			],
 			"strip": [
 				"Atomics",
@@ -94,5 +117,16 @@
 		"...": {
 			"warning": "unsupported target"
 		}
+	},
+	"bundle": {
+		"id": "com.moddable.repl",
+		"devices": [
+			"esp/moddable_one",
+			"esp/moddable_three",
+			"esp/nodemcu",
+			"esp32/moddable_two",
+			"esp32/nodemcu"
+		],
+		"icon": "./store/icon.png"
 	}
 }

@@ -151,7 +151,7 @@ ICACHE_RAM_ATTR uint32_t espRead32(const void *addr)
 	}
 }
 
-ICACHE_RAM_ATTR uint16_t espRead16be(const void *addr)
+uint16_t espRead16be(const void *addr)
 {
 	uint16_t result;
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
@@ -165,7 +165,7 @@ ICACHE_RAM_ATTR uint16_t espRead16be(const void *addr)
 	return (result >> 8) | (result << 8);
 }
 
-ICACHE_RAM_ATTR uint32_t espRead32be(const void *addr)
+uint32_t espRead32be(const void *addr)
 {
 	uint32_t result;
 	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
@@ -744,7 +744,7 @@ void modPrelaunch(void)
 
 void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
 {
-	xsMachine *result;
+	xsMachine *the;
 	uint8_t *context[2];
 	xsCreation *creationP;
 	void *preparation = xsPreparationAndCreation(&creationP);
@@ -776,22 +776,29 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 		}
 		context[1] = context[0] + allocation;
 
-		result = xsPrepareMachine(&creation, preparation, name ? (txString)name : "main", context, archive);
-		if (NULL == result) {
+		the = xsPrepareMachine(&creation, preparation, name ? (txString)name : "main", context, archive);
+		if (NULL == the) {
 			if (context[0])
 				c_free(context[0]);
 			return NULL;
 		}
 	}
 	else {
-		result = xsPrepareMachine(NULL, preparation, "main", NULL, archive);
-		if (NULL == result)
+		the = xsPrepareMachine(NULL, preparation, "main", NULL, archive);
+		if (NULL == the)
 			return NULL;
 	}
 
-	xsSetContext(result, NULL);
+	xsSetContext(the, NULL);
 
-	return result;
+#if MODDEF_XS_MODS
+	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart)) {
+		uint8_t status = *(8 + (uint8_t *)kModulesStart);
+		xsLog("Mod failed: %s\n", gXSAbortStrings[status]);
+	}
+#endif
+
+	return the;
 }
 
 static uint16_t gSetupPending = 0;
@@ -1885,19 +1892,18 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *installModules(txPreparation *preparation)
 {
+	spi_flash_mmap_handle_t handle;
+
 	gPartition = esp_partition_find_first(0x40, 1,  NULL);
 	if (!gPartition) return NULL;
 
-	if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite)) {
-		spi_flash_mmap_handle_t handle;
+	if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle))
+		return NULL;
 
-		if (ESP_OK != esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle))
-			return NULL;
-	}
-	else
-		return 0;
+	if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, SPI_FLASH_SEC_SIZE, spiRead, spiWrite))
+		return (void *)gPartitionAddress;
 
-	return (void *)gPartitionAddress;
+	return NULL;
 }
 
 #else /* ESP8266 */

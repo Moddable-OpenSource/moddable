@@ -120,6 +120,8 @@ void xs_socket(xsMachine *the)
 		xsmcSetHostData(xsThis, xss);
 		xsRemember(xss->obj);
 
+		modInstrumentationAdjust(NetworkSockets, 1);
+
 		xss->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, xss->cfSkt, 0);
 		CFRunLoopAddSource(CFRunLoopGetCurrent(), xss->cfRunLoopSource, kCFRunLoopCommonModes);
 

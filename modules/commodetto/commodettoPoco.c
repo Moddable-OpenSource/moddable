@@ -40,12 +40,6 @@
 
 CommodettoFontEngine gCFE;
 
-#define PocoDisableGC(poco) \
-	if (!(poco->flags & kPocoFlagGCDisabled)) {	\
-		poco->flags |= kPocoFlagGCDisabled;	\
-		xsEnableGarbageCollection(false);	\
-	}
-
 void xs_poco_destructor(void *data)
 {
 	if (data)

@@ -166,7 +166,7 @@ void fxBuildGlobal(txMachine* the)
 		slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 		slot = slot->next;
 	}
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewGlobalInstance(txMachine* the)
@@ -214,14 +214,14 @@ txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot*
 	if (!mxIsReference(the->stack))
 		mxTypeError("iterator result is no object");
 	mxDub();
-	fxGetID(the, mxID(_done));
+	mxGetID(mxID(_done));
 	if (fxToBoolean(the, the->stack)) {
 		mxPop();
 		mxPop();
 		return 0;
 	}
 	mxPop();
-	fxGetID(the, mxID(_value));
+	mxGetID(mxID(_value));
 	mxPullSlot(value);
 	return 1;
 }
@@ -230,7 +230,7 @@ void fxIteratorReturn(txMachine* the, txSlot* iterator)
 {
 	mxPushSlot(iterator);
 	mxDub();
-	fxGetID(the, mxID(_return));
+	mxGetID(mxID(_return));
 	if (mxIsUndefined(the->stack)) 
 		mxPop();
 	else {
@@ -244,7 +244,7 @@ txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSl
 {
 	mxPushSlot(iterable);
 	mxDub();
-	fxGetID(the, mxID(_Symbol_iterator));
+	mxGetID(mxID(_Symbol_iterator));
 	if (optional && (mxIsUndefined(the->stack) || mxIsNull(the->stack))) {
 		mxPop();
 		mxPop();
@@ -256,7 +256,7 @@ txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSl
 		mxTypeError("iterator is no object");
 	if (next) {
 		mxDub();
-		fxGetID(the, mxID(_next));
+		mxGetID(mxID(_next));
 		mxPullSlot(next);
 	}
 	mxPullSlot(iterator);
@@ -276,7 +276,7 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 	property = fxNextSlotProperty(the, instance, the->stack, id, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	property = fxNextSlotProperty(the, property, iterable, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
-    the->stack++;
+	mxPop();
 	return instance;
 }
 
@@ -294,7 +294,7 @@ void fx_Enumerator(txMachine* the)
 	txSlot* visited;
 	
 	mxPush(mxEnumeratorFunction);
-	fxGetID(the, mxID(_prototype));
+	mxGetID(mxID(_prototype));
 	iterator = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
 	mxPush(mxObjectPrototype);
@@ -568,7 +568,7 @@ void fx_trace_aux(txMachine* the, txInteger flags)
 		}
 		else if (slot && (slot->kind == XS_HOST_KIND)) {
 			mxPushSlot(mxArgv(0));
-			fxGetID(the, mxID(_byteLength));
+			mxGetID(mxID(_byteLength));
 			length = fxToInteger(the, the->stack);
 			mxPop();
 			message = slot->value.host.data;

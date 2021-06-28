@@ -90,7 +90,7 @@ The Moddable SDK supports two ESP32-S2 development kits from Espressif. The foll
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2.1 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -120,6 +120,8 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
     git checkout release/v4.2
     git submodule update --init --recursive
     ```
+
+	> Note: The supported ESP-IDF is tagged as `v4.2.1` but the correct branch is still `release/v4.2`.
 
 5. Update homebrew and then install Python, cmake, ninja, the pip package management system, and pyserial. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
 
@@ -267,6 +269,8 @@ To ensure that your build environment is up to date, perform the following steps
 	git submodule update --init --recursive
 	git pull
     ```
+
+	> Note: The supported ESP-IDF is tagged as `v4.2.1` but the correct branch is still `release/v4.2`.
 	
 2. Update homebrew and then verify that you have all the necessary tools and that they are up to date:
 
@@ -319,7 +323,7 @@ To ensure that your build environment is up to date, perform the following steps
 <a id="win"></a>	
 ## Windows
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2.1 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="win-instructions"></a>
 ### Installing
@@ -350,7 +354,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
     git clone -b release/v4.2 --recursive https://github.com/espressif/esp-idf.git
     ```
 
-	> Note: If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v4.2 branch:
+	If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the v4.2 branch:
 
     ```text
     cd ~/esp32/esp-idf
@@ -359,6 +363,8 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
 	git submodule update --init --recursive
     git pull
     ```
+
+	> Note: The supported ESP-IDF is tagged as `v4.2.1` but the correct branch is still `release/v4.2`.
 
 6. Connect the ESP32 device to your Windows host with a USB cable.
 	
@@ -469,6 +475,8 @@ To ensure that your build environment is up to date, perform the following steps
     git pull
     ```
 
+	> Note: The supported ESP-IDF is tagged as `v4.2.1` but the correct branch is still `release/v4.2`.
+
 3. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog, verify the `IDF_PATH` Windows environment variable is set correctly.
 
 	- `IDF_PATH` should have the value `C:\Users\<user>\esp32\esp-idf`
@@ -514,7 +522,7 @@ To ensure that your build environment is up to date, perform the following steps
 <a id="esp32-linux"></a>
 ## Linux
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2.1 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="lin-instructions"></a>
 ### Installing
@@ -553,7 +561,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
 	git clone -b release/v4.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the release/v4.2 tag:
+	If you already have a cloned copy of the ESP-IDF, you can update it in place by fetching updated sources and selecting the release/v4.2 branch:
 
     ```text
     cd ~/esp32/esp-idf
@@ -562,6 +570,8 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.2 and the CMake optio
 	git submodule update --init --recursive
 	git pull
     ```
+
+	> Note: The supported ESP-IDF is tagged as `v4.2.1` but the correct branch is still `release/v4.2`.
 
 5. Connect the ESP32 device to your Linux host with a USB cable.
 
@@ -670,7 +680,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 
 To ensure that your build environment is up to date, perform the following steps:
 
-1. Update your cloned copy of the ESP-IDF and select the v4.2 tag:
+1. Update your cloned copy of the ESP-IDF and select the `release/v4.2` branch:
 
     ```text
     cd ~/esp32/esp-idf
@@ -679,6 +689,8 @@ To ensure that your build environment is up to date, perform the following steps
 	git submodule update --init --recursive
     git pull
     ```
+
+	> Note: The supported ESP-IDF is tagged as `v4.2.1` but the correct branch is still `release/v4.2`.
 
 2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
 

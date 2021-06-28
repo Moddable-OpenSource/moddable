@@ -19,24 +19,55 @@
  */
 
 import CLI from "cli";
+import Modules from "modules";
 
 const backspace = String.fromCharCode(8);
-const newline = "\n";
+const newline = "\r\n";
 
 const primitives = Object.freeze(["Number", "Boolean", "BigInt", "String"]);
 
 class REPL @ "xs_repl_destructor" {
-	static receive() @ "xs_repl_receive"
-	static write() @ "xs_repl_write"
 	static eval() @ "xs_repl_eval"
 	static get xsVersion() @ "xs_repl_get_xsVersion"
 
 	constructor() {
-		REPL.write(newline, "Moddable JavaScript REPL v0.0.3", newline);
-		REPL.write(`  XS engine v${REPL.xsVersion.join(".")}`, newline, newline);
 		this.history = [];
-		this.prompt();
 		globalThis._ = undefined;
+		globalThis.Modules = Modules;
+		globalThis.require = Modules.importNow;
+
+		globalThis.console = {
+			log: (...str) => this.write(...str, newline)
+		};
+		globalThis.trace = (...str) => this.write(...str);
+	}
+	ready() {
+		this.write(newline, "Moddable JavaScript REPL v0.0.5", newline);
+		this.write(`  XS engine v${REPL.xsVersion.join(".")}`, newline);
+		this.write(`  ? for help`, newline);
+		this.write(newline);
+
+		const archive = Modules.archive;
+		if (archive.includes("setup"))
+			Modules.importNow("setup");
+
+		for (let i = 0; i < archive.length; i++) {
+			if (archive[i].startsWith("cli/"))
+				Modules.importNow(archive[i]);
+		}
+
+		this.prompt();
+	}
+	receive() @ "xs_repl_receive"
+	write() @ "xs_repl_write"
+	suspend(cancel) {
+		this.suspended = cancel ?? true;
+	}
+	resume() {
+		if (!this.suspended) return;
+
+		delete this.suspended;
+		this.prompt();
 	}
 	prompt() {
 		delete this.historyPosition;
@@ -44,11 +75,12 @@ class REPL @ "xs_repl_destructor" {
 		this.position = 0;
 		this.escapeState = 0;
 		this.incoming = "";
-		REPL.write("> ");
+		if (!this.suspended)
+			this.write("> ");
 	}
 	poll() {
 		do {
-			let c = REPL.receive();
+			let c = this.receive();
 			if (undefined === c)
 				return;
 
@@ -77,10 +109,10 @@ class REPL @ "xs_repl_destructor" {
 						this.incoming = this.postHistory;
 					else
 						this.incoming = this.history[this.history.length - this.historyPosition];
-					REPL.write(backspace.repeat(incoming.length), this.incoming);
+					this.write(backspace.repeat(incoming.length), this.incoming);
 					if (incoming.length > this.incoming.length) {
 						const delta = incoming.length - this.incoming.length;
-						REPL.write(" ".repeat(delta),
+						this.write(" ".repeat(delta),
 								   backspace.repeat(delta));
 					}
 					this.position = this.incoming.length;
@@ -89,12 +121,24 @@ class REPL @ "xs_repl_destructor" {
 				if ((68 === c) && this.incoming) {		// left arrow
 					if (this.position > 0) {
 						this.position -= 1;
-						REPL.write(backspace);
+						this.write(backspace);
 					}
 				}
 				else if ((67 === c) && (this.position < this.incoming.length)) {		// right arrow
-					REPL.write(this.incoming[this.position]);
+					this.write(this.incoming[this.position]);
 					this.position += 1;
+				}
+				continue;
+			}
+
+			if (this.suspended) {
+				if (3 === c) {
+					if (true !== this.suspended)
+						this.suspended();
+					delete this.suspended;
+					this.incoming = "";
+					this.write("^C", newline);
+					this.prompt();
 				}
 				continue;
 			}
@@ -104,7 +148,7 @@ class REPL @ "xs_repl_destructor" {
 					break;
 
 				if (3 === c) {
-					REPL.write("^C", newline);
+					this.write("^C", newline);
 					this.prompt();
 				}
 
@@ -122,17 +166,17 @@ class REPL @ "xs_repl_destructor" {
 
 			// insert
 			c = String.fromCharCode(c);
-			REPL.write(c);
+			this.write(c);
 			if (this.position === this.incoming.length)
 				this.incoming += c;
 			else {
-				REPL.write(this.incoming.slice(this.position), backspace.repeat(this.incoming.length - this.position));
+				this.write(this.incoming.slice(this.position), backspace.repeat(this.incoming.length - this.position));
 				this.incoming = this.incoming.slice(0, this.position) + c + this.incoming.slice(this.position);
 			}
 			this.position += 1;
 		} while (true);
 
-		REPL.write(newline);
+		this.write(newline);
 		if (this.incoming) {
 			this.history.push(this.incoming);
 			while (this.history.length > 20)
@@ -146,8 +190,9 @@ class REPL @ "xs_repl_destructor" {
 					this.line(`  "globalThis" lists JavaScript global variables`);
 					this.line(`  lines that start with "." are commands`);
 					this.line(`  ".help" lists all commands`);
-					this.line(`  "Modules.host" lists available modules`);
-					this.line(`  global "_" holds result of last REPL JavaScript operation`);
+					this.line(`  "Modules.host" lists built-in modules`);
+					this.line(`  "Modules.archive" lists modules from mod`);
+					this.line(`  global "_" is result of last REPL JavaScript operation`);
 					this.line(`  lines that start with "?" display this help message`);
 				}
 				else {
@@ -156,34 +201,39 @@ class REPL @ "xs_repl_destructor" {
 				}
 			}
 			catch (e) {
-				REPL.write(e.toString(), newline);
+				this.write(e.toString(), newline);
 			}
 		}
+
 		this.prompt();
 	}
 	delete() {
 		if (this.incoming.length && this.position) {
 			if (this.position === this.incoming.length) {
-				REPL.write(backspace, " ", backspace);
+				this.write(backspace, " ", backspace);
 				this.incoming = this.incoming.slice(0, -1);
 			}
 			else {
-				let start = this.incoming.slice(0, this.position - 1);
-				let end = this.incoming.slice(this.position);
+				const start = this.incoming.slice(0, this.position - 1);
+				const end = this.incoming.slice(this.position);
 				this.incoming = start + end
-				REPL.write(backspace, end, " ", backspace.repeat(end.length + 1));
+				this.write(backspace, end, " ", backspace.repeat(end.length + 1));
 			}
 			this.position -= 1;
 		}
 	}
 	line(...args) {
-		REPL.write(...args, newline);
+		this.write(...args, newline);
 	}
 	short(value) {
 		if (null === value)
 			return "null";
 
-		switch (typeof value) {
+		let type = typeof value;
+		if (globalThis === value)
+			return "globals";
+
+		switch (type) {
 			case "undefined":
 				return "undefined";
 
@@ -216,7 +266,7 @@ class REPL @ "xs_repl_destructor" {
 	}
 	print(value) {
 		if ((("object" !== typeof value) && ("function" !== typeof value)) || (null === value)) {
-			REPL.write(this.short(value) , newline);
+			this.write(this.short(value) , newline);
 			return;
 		}
 
@@ -224,13 +274,17 @@ class REPL @ "xs_repl_destructor" {
 		if (primitives.includes(type))
 			type = "Object";
 
+		if (value === globalThis)
+			type = "global";
+
+		let keys;
 		switch (type) {
 			case "RegExp":
-				REPL.write(value.toString(), newline);
+				this.write(value.toString(), newline);
 				break;
 
 			case "Error":
-				REPL.write(value.stack.toString(), newline);
+				this.write(value.stack.toString(), newline);
 				break;
 
 			case "Array":
@@ -238,11 +292,17 @@ class REPL @ "xs_repl_destructor" {
 			case "Math":
 			case "Object":
 			case "Reflect":
-			case "global":
-				REPL.write(type, newline);
-				const keys = Object.getOwnPropertyNames(value);
+				this.write(type, newline);
+				keys = Object.getOwnPropertyNames(value);
 				for (let key of keys)
-					REPL.write("  ", key, ": ", this.short(value[key]), newline);
+					this.write("  ", key, ": ", this.short(value[key]), newline);
+				break;
+
+			case "global":
+				this.write(type, newline);
+				keys = Object.getOwnPropertyNames(value).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(value))).sort();
+				for (let key of keys)
+					this.write("  ", key, ": ", this.short(value[key]), newline);
 				break;
 
 			case "Set":
@@ -259,35 +319,36 @@ class REPL @ "xs_repl_destructor" {
 			case "Float64Array":
 			case "BigInt64Array":
 			case "BigUint64Array":
-				REPL.write(type, newline);
+				this.write(type, newline);
 				for (let v of value)
-					REPL.write("  ", this.short(v), newline);
+					this.write("  ", this.short(v), newline);
 				break;
 
 			case "Map":
-				REPL.write(type, newline);
+				this.write(type, newline);
 				for (let [k, v] of value)
-					REPL.write("  ", this.short(k), ": ", this.short(v), newline);
+					this.write("  ", this.short(k), ": ", this.short(v), newline);
 				break;
 
 			case "ArrayBuffer":
 			case "SharedArrayBuffer": {
-				REPL.write(type, ", byteLength ", value.byteLength, newline);
+				this.write(type, ", byteLength ", value.byteLength, newline);
 				for (let v of (new Uint8Array(value)))
-					REPL.write("  ", this.short(v), newline);
+					this.write("  ", this.short(v), newline);
 				} break;
 
+			case "Module":
 			case "WeakMap":
 			case "WeakRef":
 			case "WeakSet":
-				REPL.write(type, newline);
+				this.write(type, newline);
 				break;
 
 			case "Function":
 				if (!value.prototype?.constructor)
-					REPL.write(this.short(value) , newline);
+					this.write(this.short(value) , newline);
 				else {
-					REPL.write("class", " " + (value.name ?? ""), " {", newline);
+					this.write("class", " " + (value.name ?? ""), " {", newline);
 
 					let keys = Object.getOwnPropertyNames(value);
 					for (let key of keys) {
@@ -296,26 +357,35 @@ class REPL @ "xs_repl_destructor" {
 
 						let v = value[key];
 						if ("function" === typeof v)
-							REPL.write("  ", `static ƒ ${key}() {}`, newline);
+							this.write("  ", `static ƒ ${key}() {}`, newline);
 						else
-							REPL.write("  ", "static ", key, ": ", this.short(v), newline);
+							this.write("  ", "static ", key, ": ", this.short(v), newline);
 					}
 
 					keys = Object.getOwnPropertyNames(value.prototype);
 					for (let key of keys) {
-						let v = value.prototype[key];
-						if ("function" === typeof v)
-							REPL.write("  ", `ƒ ${key}() {}`, newline);
-						else
-							REPL.write("  ", key, ": ", this.short(v), newline);
+						let d = Object.getOwnPropertyDescriptor(value.prototype, key);
+						if (d.get || d.set) {
+							if (d.get)
+								this.write("  ", `ƒ get ${key}() {}`, newline);
+							if (d.set)
+								this.write("  ", `ƒ set ${key}() {}`, newline);
+						}
+						else {
+							let v  = d.value;
+							if ("function" === typeof v)
+								this.write("  ", `ƒ ${key}() {}`, newline);
+							else
+								this.write("  ", key, ": ", this.short(v), newline);
+						}
 					}
 
-					REPL.write("}", newline);
+					this.write("}", newline);
 				}
 				break;
 
 			default:
-				REPL.write(type, ": ", value.toString(), newline);
+				this.write(type, ": ", value.toString(), newline);
 				break;
 		}
 	}

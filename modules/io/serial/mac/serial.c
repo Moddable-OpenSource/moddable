@@ -306,6 +306,7 @@ void xs_serial_set(xsMachine *the)
 void xs_serial_format_get(xsMachine *the)
 {
 	xsSerial s = xsGetHostData(xsThis);
+	if (!s) return;
 	if (2 == s->bufferFormat)
 		xsResult = xsString("number");
 	else if (1 == s->bufferFormat)
@@ -317,6 +318,7 @@ void xs_serial_format_get(xsMachine *the)
 void xs_serial_format_set(xsMachine *the)
 {
 	xsSerial s = xsGetHostData(xsThis);
+	if (!s) return;
 	fxSerialSetFormat(the, s, xsToString(xsArg(0)));
 }
 

@@ -6,32 +6,32 @@
 *   This work is licensed under the
 *       Creative Commons Attribution 4.0 International License.
 *   To view a copy of this license, visit
-*       <https://creativecommons.org/licenses/by/4.0>.
+*       <http://creativecommons.org/licenses/by/4.0>.
 *   or send a letter to Creative Commons, PO Box 1866,
 *   Mountain View, CA 94042, USA.
 *
 */
 
-const Digital = Host.io.Digital;
-const SPI = Host.io.SPI;
+const Digital = device.io.Digital;
+const SPI = device.io.SPI;
 
-if (undefined !== Host.pins.backlight) {
+if (undefined !== device.pins.backlight) {
 	const backlight = new Digital({
-		pin: Host.pins.backlight,
+		pin: device.pins.backlight,
 		mode: Digital.Output,
 	});
 	backlight.write(0);
 }
 
 const dc = new Digital({
-	pin: Host.pins.displayDC,
+	pin: device.pins.displayDC,
 	mode: Digital.Output,
 });
 
 const spi = new SPI({
-	...Host.SPI.default,
+	...device.SPI.default,
 	hz: 40_000_000,
-	select: Host.pins.displaySelect,
+	select: device.pins.displaySelect,
 	active: 0
 });
 

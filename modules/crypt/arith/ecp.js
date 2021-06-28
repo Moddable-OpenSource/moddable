@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -74,6 +74,14 @@ export default class ECPoint {
 			return new ECPoint(a[0], a[1], a[2]);
 		}
 	};
+	static fromOctetString(os) {
+		if (os[0] != 0x04)
+			throw new Error("unsupported format");
+		let flen = (os.length - 1) / 2;
+		let x = BigInt.fromArrayBuffer(os.slice(1, 1 + flen).buffer);
+		let y = BigInt.fromArrayBuffer(os.slice(1 + flen, os.length).buffer);
+		return new ECPoint(x, y);
+	}
 };
 
 Object.freeze(ECPoint.prototype);

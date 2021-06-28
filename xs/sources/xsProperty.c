@@ -67,9 +67,9 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 	property->value.accessor.getter = getter;
 	property->value.accessor.setter = setter;
 	if (set)
-		the->stack++;
+		mxPop();
 	if (get)
-		the->stack++;
+		mxPop();
 	return property;
 }
 
@@ -85,7 +85,7 @@ txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback 
 	property->ID = id;
 	property->kind = the->stack->kind;
 	property->value = the->stack->value;
-	the->stack++;
+	mxPop();
 	return property;
 }
 #endif

@@ -1,7 +1,7 @@
 # Manifest
 
 Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: March 11, 2021
+Revised: June 16, 2021
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -22,6 +22,7 @@ A manifest is a JSON file that describes the modules and resources necessary to 
 	* [`data`](#data)
 	* [`platforms`](#platforms)
 		* [`subplatforms`](#subplatforms)
+	* [`bundle`](#bundle)
 * [How manifests are processed](#process)
 
 <a id="example"></a>
@@ -82,11 +83,12 @@ The `esp32` platform object supports a number of optional environment variables 
 | Variable | Description |
 | --- | :--- | 
 | `SDKCONFIGPATH` | Pathname to a directory containing custom [sdkconfig defaults](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults) entries. 
-| `PARTITIONS_FILE` | Full pathname to a [partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) in CSV format
+| `PARTITIONS_FILE` | Full pathname to a [partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) in CSV format.
+| `BOOTLOADERPATH` | Pathname to a directory containing a custom [ESP-IDF bootloader component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/bootloader.html#custom-bootloader).
 
 > Note: This document does not cover native code ESP32 and ESP-IDF build details. Refer to the [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/get-started/index.html) for additional information.
  
-The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/modClock) example app leverages both environment variables:
+The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/modClock) example app leverages the `SDKCONFIGPATH` and `PARTITIONS_FILE` environment variables:
 
 ```js
 "build": {
@@ -491,6 +493,31 @@ The `SUBPLATFORM` variable is automatically defined by `mcconfig`. A wildcard is
 
 ***
 
+<a id="bundle"></a>
+### `bundle`
+
+The `bundle` object is used by the [`mcbundle` command line tool](./tools.md#mcbundle) to build and package app archives for the Moddable Store. It has the following properties:
+
+| Property | Required | Description |
+| :---: | :---: | :--- |
+| `id` | ✓ | The app signature. We typically use the app signature `tech.moddable.` + the name of the app, for example `tech.moddable.balls` for an app called `balls`.
+| `devices` | ✓ | An array of platform identifiers or device signatures that support the app.<BR><BR>You can also use wildcards (e.g. `esp/*` or `esp32/*`).
+| `custom` | | The path to the `custom` directory for the app's configurable preferences, if any.
+| `icon` | | The path to the custom app icon, if any. The app icon is the image that shows up next to the app name in the Moddable Store. The Moddable Store supplies a default icon based on the Moddable logo.
+
+```
+"bundle": {
+    "id": "tech.moddable.countdown",
+    "devices": [
+        "esp/moddable_one",
+        "com.moddable.two"
+    ],
+    “custom”: “./store/custom”,
+    “icon”: “./store/icon.png”
+}
+```
+
+***
 <a id="process"></a>
 ## How manifests are processed
 

@@ -511,7 +511,7 @@ export class MakeFile extends FILE {
 		if (tool.stringFiles.length) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
-			this.write("locals.mhi");
+			this.write(tool.localsName + ".mhi");
 		}
 		this.line("");
 		this.line("");
@@ -731,10 +731,10 @@ export class MakeFile extends FILE {
 		}
 
 		for (var result of tool.stringFiles)
-			this.line("$(RESOURCES_DIR)", tool.slash, result.target, ": ", "$(RESOURCES_DIR)", tool.slash, "locals.mhi");
+			this.line("$(RESOURCES_DIR)", tool.slash, result.target, ": ", "$(RESOURCES_DIR)", tool.slash, tool.localsName, ".mhi");
 		this.write("$(RESOURCES_DIR)");
 		this.write(tool.slash);
-		this.write("locals.mhi: $(HEADERS)");
+		this.write(tool.localsName + ".mhi: $(HEADERS)");
 		for (var result of tool.stringFiles) {
 			this.write(" ");
 			this.write(result.source);
@@ -750,7 +750,7 @@ export class MakeFile extends FILE {
 			this.write(" -d");
 		if (tool.format)
 			this.write(" -s");
-		this.line(" -o $(@D)");
+		this.line(" -o $(@D) -r ", tool.localsName);
 		this.line("");
 	}
 	generateRules(tool) {
@@ -1158,7 +1158,7 @@ class ResourcesRule extends Rule {
 		if (tool.dataFiles.already[source])
 			return;
 		if ((parts.extension == ".json") && (parts.directory.endsWith("strings"))) {
-			this.appendFile(tool.stringFiles, "locals." + parts.name + ".mhr", source, include);
+			this.appendFile(tool.stringFiles, tool.localsName + "." + parts.name + ".mhr", source, include);
 			return;
 		}
 		if (tool.format) {

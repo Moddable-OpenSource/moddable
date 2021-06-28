@@ -43,6 +43,8 @@ class File @ "xs_zip_file_destructor" {
 	get length() @ "xs_zip_file_get_length";
 	get position() @ "xs_zip_file_get_position";
 	set position() @ "xs_zip_file_set_position";
+	get method() @ "xs_zip_file_get_method";
+	get crc() @ "xs_zip_file_get_crc";
 };
 
 class Iterator @ "xs_zip_file_iterator_destructor" {

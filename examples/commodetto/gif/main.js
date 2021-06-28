@@ -6,7 +6,7 @@
 *   This work is licensed under the
 *       Creative Commons Attribution 4.0 International License.
 *   To view a copy of this license, visit
-*       <https://creativecommons.org/licenses/by/4.0>.
+*       <http://creativecommons.org/licenses/by/4.0>.
 *   or send a letter to Creative Commons, PO Box 1866,
 *   Mountain View, CA 94042, USA.
 *
@@ -36,6 +36,6 @@ Timer.repeat(id => {
 
 	poco.begin(x + reader.frameX, y + reader.frameY, reader.frameWidth, reader.frameHeight);
 		poco.fillRectangle(background, 0, 0, poco.width, poco.height);
-		poco.drawBitmap(reader, x, y);
+		poco.drawBitmapWithKeyColor(reader, x, y);
 	poco.end();
 }, 1);

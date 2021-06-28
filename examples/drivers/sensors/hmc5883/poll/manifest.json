@@ -1,0 +1,6 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/sensors/hmc5883/manifest.json",
+	"modules": {
+		"*": "./main"
+	}
+}

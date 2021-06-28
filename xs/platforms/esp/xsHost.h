@@ -131,6 +131,8 @@ extern void ESP_put(uint8_t *c, int count);
 #define xmodLogInt(msg)
 #define xmodLogHex(msg)
 
+extern const char *gXSAbortStrings[];
+
 /*
 	start-up
 */

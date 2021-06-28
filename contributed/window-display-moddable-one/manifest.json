@@ -39,5 +39,16 @@
 			"./assets/moddable-text",
 			"./assets/scroller"
 		]
+	},
+	"bundle": {
+	    "id": "tech.moddable.window-display-moddable-one",
+	    "devices": [
+	        "esp/moddable_one",
+	        "esp32/moddable_two",
+	        "esp32/m5stack",
+	        "esp32/m5stack_core2",
+	        "esp32/m5stack_fire"
+	    ],
+	    "icon": "./store/icon.png"
 	}
 }

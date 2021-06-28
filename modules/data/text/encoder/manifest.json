@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"text/encoder": "./textencoder"
+	},
+	"preload": [
+		"text/encoder"
+	]
+}

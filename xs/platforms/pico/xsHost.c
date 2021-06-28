@@ -379,7 +379,7 @@ void mc_setup(xsMachine *the)
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
-				char path[PATH_MAX];
+				char path[C_PATH_MAX];
 				char *dot;
 
 				c_strcpy(path, script->path);
@@ -566,8 +566,8 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
-	char name[PATH_MAX];
-	char path[PATH_MAX];
+	char name[C_PATH_MAX];
+	char path[C_PATH_MAX];
 	txBoolean absolute = 0, relative = 0, search = 0;
 	txInteger dot = 0;
 	txString slash;

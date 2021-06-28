@@ -24,7 +24,7 @@ import Digital from "pins/digital";
 
 CLI.install(function(command, parts) {
 	switch (command) {
-		case "digital":
+		case "gpio":
 			if (parts.length < 1)
 				throw new Error("missing read/write");
 			let mode = parts[0].toLowerCase();
@@ -43,8 +43,8 @@ CLI.install(function(command, parts) {
 			break;
 
 		case "help":
-			this.line("digital read pin - reads pin");
-			this.line("digital write pin value - writes pin");
+			this.line("gpio read pin - reads pin");
+			this.line("gpio write pin value - writes pin");
 			break;
 
 		default:

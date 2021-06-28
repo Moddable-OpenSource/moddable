@@ -204,12 +204,14 @@ void xs_serial_close(xsMachine *the)
 void xs_serial_get_format(xsMachine *the)
 {
 	Serial serial = xsmcGetHostData(xsThis);
+	if (!serial) return;
 	builtinGetFormat(the, serial->format);
 }
 
 void xs_serial_set_format(xsMachine *the)
 {
 	Serial serial = xsmcGetHostData(xsThis);
+	if (!serial) return;
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");

@@ -63,7 +63,7 @@ static void PiuScreenQuit(PiuScreen* self);
 static void PiuScreenRotatePoint(PiuScreen* self, PiuCoordinate x, PiuCoordinate y, PiuPoint result);
 static void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view);
 
-static void fxScreenAbort(txScreen* screen);
+static void fxScreenAbort(txScreen* screen, int status);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenPost(txScreen* screen, char* message, int size);
@@ -144,7 +144,8 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 			xsVar(0) = xsReference((*self)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onAbort)) {
 				xsVar(1) = xsReference((*self)->reference);
-				(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+				xsVar(2) = xsInteger(wParam);
+				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 			}
 			xsEndHost((*self)->the);
 		}
@@ -513,10 +514,10 @@ void PiuScreen_quit(xsMachine* the)
 	PiuScreenQuit(self);
 }
 
-void fxScreenAbort(txScreen* screen)
+void fxScreenAbort(txScreen* screen, int status)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;
-	PostMessage((*self)->control, WM_ABORT_MACHINE, 0, 0);
+	PostMessage((*self)->control, WM_ABORT_MACHINE, status, 0);
 }
 
 void fxScreenBufferChanged(txScreen* screen)

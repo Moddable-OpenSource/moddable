@@ -1,0 +1,69 @@
+{
+	"config": {
+		"ssid": "YOUR_SSID_HERE",
+		"password": "YOUR_PASSWORD_HERE",
+		"apiKey": "YOUR_API_KEY_HERE"
+	},
+	"build": {
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+	},	
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/crypt/tls.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/input/expanding-keyboard/vertical/manifest.json",
+		"$(MODDABLE)/modules/files/resourceiterator/manifest.json"
+	],
+	"creation":{
+		"static": 69152,
+		"stack": 360
+	},
+	"x-config": {
+		"tls": {
+			"DHE_RSA": false,
+			"ECDHE_RSA": false
+		}
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./screens",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/files/flash/*",
+			"$(MODULES)/files/flash/esp32/*"
+		],
+		"commodetto/ReadGIF": "$(MODULES)/commodetto/gif/commodettoReadGIF",
+		"pocogif": "$(MODULES)/commodetto/gif/pocogif",
+		"piu/GIFImage": "$(MODULES)/piu/MC/gif/piuGIFImage"
+	},
+	"preload": [
+		"main",
+		"screens",
+		"commodetto/ReadGIF",
+		"pocogif",
+		"piu/GIFImage",
+		"http",
+		"flash"
+	],
+	"resources":{
+		"*-color": [
+			"./giphy-logo"
+		],
+		"*-alpha": [
+			"./back-arrow",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Light-42",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-18"
+		],
+		"*": [
+			"$(MODULES)/crypt/data/ca215"
+		]
+	},
+	"platforms": {
+		"esp32": {},
+		"...": {
+			"error": "unsupported target"
+		}
+	}
+}

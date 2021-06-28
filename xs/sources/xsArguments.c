@@ -64,11 +64,11 @@ void fxBuildArguments(txMachine* the)
 {
 	mxPush(mxObjectPrototype);
 	mxArgumentsSloppyPrototype = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxObjectPrototype);
 	mxArgumentsStrictPrototype = *the->stack;
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count)

@@ -47,12 +47,6 @@ static txSlot* fxCheckMapKey(txMachine* the);
 static txSlot* fxCheckSetInstance(txMachine* the, txSlot* slot, txBoolean mutable);
 static txSlot* fxCheckSetValue(txMachine* the);
 
-static txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable);
-static txSlot* fxCheckWeakMapKey(txMachine* the);
-
-static txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable);
-static txSlot* fxCheckWeakSetValue(txMachine* the);
-
 static void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paired);
 static txInteger fxCountEntries(txMachine* the, txSlot* list, txBoolean paired);
 static txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txBoolean paired); 
@@ -61,6 +55,16 @@ static txSlot* fxNewEntryIteratorInstance(txMachine* the, txSlot* iterable, txID
 //static void fxPurgeEntries(txMachine* the, txSlot* list);
 static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txSlot* pair); 
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
+
+static txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable);
+static txSlot* fxCheckWeakMapKey(txMachine* the);
+
+static txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable);
+static txSlot* fxCheckWeakSetValue(txMachine* the);
+
+static txBoolean fxDeleteWeakEntry(txMachine* the, txSlot* link, txSlot* slot); 
+static txSlot* fxGetWeakEntry(txMachine* the, txSlot* link, txSlot* slot);
+static void fxSetWeakEntry(txMachine* the, txSlot* link, txSlot* slot, txSlot* pair); 
 
 static void fxKeepDuringJobs(txMachine* the, txSlot* target);
 static txSlot* fxNewWeakRefInstance(txMachine* the);
@@ -92,7 +96,7 @@ void fxBuildMapSet(txMachine* the)
 	mxMapConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -129,7 +133,7 @@ void fxBuildMapSet(txMachine* the)
 	mxSetConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
-	the->stack++;
+	mxPop();
 	
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -158,7 +162,7 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakMapPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakMap), 0, mxID(_WeakMap));
 	mxWeakMapConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	/* WEAK SET */
 	mxPush(mxObjectPrototype);
@@ -170,7 +174,7 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakSetPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakSet), 0, mxID(_WeakSet));
 	mxWeakSetConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	/* WEAK REF */
 	mxPush(mxObjectPrototype);
@@ -180,7 +184,7 @@ void fxBuildMapSet(txMachine* the)
 	mxWeakRefPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakRef), 1, mxID(_WeakRef));
 	mxWeakRefConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 	
 	/* FINALIZATION REGISTRY */
 	mxPush(mxObjectPrototype);
@@ -192,7 +196,7 @@ void fxBuildMapSet(txMachine* the)
 	mxFinalizationRegistryPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_FinalizationRegistry), 1, mxID(_FinalizationRegistry));
 	mxFinalizationRegistryConstructor = *the->stack;
-	the->stack++;
+	mxPop();
 }
 
 txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
@@ -263,7 +267,7 @@ void fx_Map(txMachine* the)
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
 	mxPushSlot(mxResult);
-	fxGetID(the, mxID(_set));	
+	mxGetID(mxID(_set));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("set is no function");
@@ -279,9 +283,9 @@ void fx_Map(txMachine* the)
 			mxPushSlot(function);
 			mxCall();
 			mxPushSlot(value);
-			fxGetIndex(the, 0);
+			mxGetIndex(0);
 			mxPushSlot(value);
-			fxGetIndex(the, 1);
+			mxGetIndex(1);
 			mxRunCount(2);
 			mxPop();
 		}
@@ -369,7 +373,7 @@ void fx_Map_prototype_forEach(txMachine* the)
 			mxPushSlot(key);
 			mxPushSlot(mxThis);
 			mxRunCount(3);
-			the->stack++;
+			mxPop();
 		}
 		key = value->next;
 	}
@@ -555,7 +559,7 @@ void fx_Set(txMachine* the)
 	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
 		return;
 	mxPushSlot(mxResult);
-	fxGetID(the, mxID(_add));	
+	mxGetID(mxID(_add));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
 		mxTypeError("add is no function");
@@ -719,254 +723,6 @@ void fx_Set_prototype_values_next(txMachine* the)
 	}
 }
 
-txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
-{
-	if (slot->kind == XS_REFERENCE_KIND) {
-		txSlot* instance = slot->value.reference;
-		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_MAP_KIND) && (instance != mxWeakMapPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
-				mxTypeError("WeakMap instance is read-only");
-			return instance;
-		}
-	}
-	mxTypeError("this is no WeakMap instance");
-	return C_NULL;
-}
-
-txSlot* fxCheckWeakMapKey(txMachine* the)
-{
-	if (mxArgc > 0) {
-		txSlot* slot = mxArgv(0);
-		if (slot->kind == XS_REFERENCE_KIND)
-			return slot;
-	}
-	return C_NULL;
-}
-
-txSlot* fxNewWeakMapInstance(txMachine* the)
-{
-	txSlot* map;
-	txSlot* table;
-	txSlot** address;
-	map = fxNewSlot(the);
-	map->kind = XS_INSTANCE_KIND;
-	map->value.instance.garbage = C_NULL;
-	map->value.instance.prototype = the->stack->value.reference;
-	the->stack->kind = XS_REFERENCE_KIND;
-	the->stack->value.reference = map;
-	table = map->next = fxNewSlot(the);
-	address = (txSlot**)fxNewChunk(the, (mxMapSetLength + 1) * sizeof(txSlot*)); // one more slot for the collector weak table list
-	c_memset(address, 0, (mxMapSetLength + 1) * sizeof(txSlot*));
-	/* TABLE */
-	table->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-	table->kind = XS_WEAK_MAP_KIND;
-	table->value.table.address = address;
-	table->value.table.length = mxMapSetLength;
- 	return map;
-}
-
-void fx_WeakMap(txMachine* the)
-{
-	txSlot *function, *iterable, *iterator, *next, *value;
-	if (mxIsUndefined(mxTarget))
-		mxTypeError("call: WeakMap");
-	mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, &mxWeakMapPrototype);
-	fxNewWeakMapInstance(the);
-	mxPullSlot(mxResult);
-	if (mxArgc < 1)
-		return;
-	iterable = mxArgv(0);
-	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
-		return;
-	mxPushSlot(mxResult);
-	fxGetID(the, mxID(_set));	
-	function = the->stack;	
-	if (!fxIsCallable(the, function))	
-		mxTypeError("set is no function");
-	mxTemporary(iterator);
-	mxTemporary(next);
-	fxGetIterator(the, iterable, iterator, next, 0);	
-	mxTemporary(value);
-	while (fxIteratorNext(the, iterator, next, value)) {
-		mxTry(the) {
-			mxPushSlot(mxResult);
-			mxPushSlot(function);
-			mxCall();
-			if (value->kind != XS_REFERENCE_KIND)
-				mxTypeError("item is no object");
-			mxPushSlot(value);
-			fxGetIndex(the, 0);
-			mxPushSlot(value);
-			fxGetIndex(the, 1);
-			mxRunCount(2);
-			mxPop();
-		}
-		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
-			fxJump(the);
-		}
-	}
-}
-
-void fx_WeakMap_prototype_delete(txMachine* the)
-{
-	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
-	txSlot* table = instance->next;
-	txSlot* key = fxCheckWeakMapKey(the);
-	mxResult->value.boolean = (key) ? fxDeleteEntry(the, table, C_NULL, key, 1) : 0;
-	mxResult->kind = XS_BOOLEAN_KIND;
-}
-
-void fx_WeakMap_prototype_get(txMachine* the)
-{
-	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
-	txSlot* table = instance->next;
-	txSlot* key = fxCheckWeakMapKey(the);
-	txSlot* result = (key) ? fxGetEntry(the, table, key) : C_NULL;
-	if (result) {
-		txSlot* value = result->next;
-		mxResult->kind = value->kind;
-		mxResult->value = value->value;
-	}
-}
-
-void fx_WeakMap_prototype_has(txMachine* the)
-{
-	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
-	txSlot* table = instance->next;
-	txSlot* key = fxCheckWeakMapKey(the);
-	txSlot* result = (key) ? fxGetEntry(the, table, key) : C_NULL;
-	mxResult->kind = XS_BOOLEAN_KIND;
-	mxResult->value.boolean = (result) ? 1 : 0;
-}
-
-void fx_WeakMap_prototype_set(txMachine* the)
-{
-	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
-	txSlot* table = instance->next;
-	txSlot* key = fxCheckWeakMapKey(the);
-	if (!key)
-		mxTypeError("key is no object");
-	fxSetEntry(the, table, C_NULL, key, (mxArgc > 1) ? mxArgv(1) : &mxUndefined);
-	*mxResult = *mxThis;
-}
-
-txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
-{
-	if (slot->kind == XS_REFERENCE_KIND) {
-		txSlot* instance = slot->value.reference;
-		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_SET_KIND) && (instance != mxWeakSetPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
-				mxTypeError("WeakSet instance is read-only");
-			return instance;
-		}
-	}
-	mxTypeError("this is no WeakSet instance");
-	return C_NULL;
-}
-
-txSlot* fxCheckWeakSetValue(txMachine* the)
-{
-	if (mxArgc > 0) {
-		txSlot* slot = mxArgv(0);
-		if (slot->kind == XS_REFERENCE_KIND)
-			return slot;
-	}
-	return C_NULL;
-}
-
-txSlot* fxNewWeakSetInstance(txMachine* the)
-{
-	txSlot* set;
-	txSlot* table;
-	txSlot** address;
-	set = fxNewSlot(the);
-	set->kind = XS_INSTANCE_KIND;
-	set->value.instance.garbage = C_NULL;
-	set->value.instance.prototype = the->stack->value.reference;
-	the->stack->kind = XS_REFERENCE_KIND;
-	the->stack->value.reference = set;
-	table = set->next = fxNewSlot(the);
-	address = (txSlot**)fxNewChunk(the, (mxMapSetLength + 1) * sizeof(txSlot*)); // one more slot for the collector weak table list
-	c_memset(address, 0, (mxMapSetLength + 1) * sizeof(txSlot*));
-	/* TABLE */
-	table->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-	table->kind = XS_WEAK_SET_KIND;
-	table->value.table.address = address;
-	table->value.table.length = mxMapSetLength;
- 	return set;
-}
-
-void fx_WeakSet(txMachine* the)
-{
-	txSlot *function, *iterable, *iterator, *next, *value;
-	if (mxIsUndefined(mxTarget))
-		mxTypeError("call: WeakSet");
-	mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, &mxWeakSetPrototype);
-	fxNewWeakSetInstance(the);
-	mxPullSlot(mxResult);
-	if (mxArgc < 1)
-		return;
-	iterable = mxArgv(0);
-	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
-		return;
-	mxPushSlot(mxResult);
-	fxGetID(the, mxID(_add));	
-	function = the->stack;	
-	if (!fxIsCallable(the, function))	
-		mxTypeError("add is no function");
-	mxTemporary(iterator);
-	mxTemporary(next);
-	fxGetIterator(the, iterable, iterator, next, 0);	
-	mxTemporary(value);
-	while (fxIteratorNext(the, iterator, next, value)) {
-		mxTry(the) {
-			mxPushSlot(mxResult);
-			mxPushSlot(function);
-			mxCall();
-			mxPushSlot(value);
-			mxRunCount(1);
-			mxPop();
-		}
-		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
-			fxJump(the);
-		}
-	}
-}
-
-void fx_WeakSet_prototype_add(txMachine* the)
-{
-	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
-	txSlot* table = instance->next;
-	txSlot* value = fxCheckWeakSetValue(the);
-	if (!value)
-		mxTypeError("value is no object");
-	fxSetEntry(the, table, C_NULL, value, C_NULL);
-	*mxResult = *mxThis;
-}
-
-void fx_WeakSet_prototype_has(txMachine* the)
-{
-	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_IMMUTABLE);
-	txSlot* table = instance->next;
-	txSlot* value = fxCheckWeakSetValue(the);
-	txSlot* result = (value) ? fxGetEntry(the, table, value) : C_NULL;
-	mxResult->kind = XS_BOOLEAN_KIND;
-	mxResult->value.boolean = (result) ? 1 : 0;
-}
-
-void fx_WeakSet_prototype_delete(txMachine* the)
-{
-	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
-	txSlot* table = instance->next;
-	txSlot* value = fxCheckWeakSetValue(the);
-	mxResult->value.boolean = (value) ? fxDeleteEntry(the, table, C_NULL, value, 0) : 0;
-	mxResult->kind = XS_BOOLEAN_KIND;
-}
-
 void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paired)
 {
 	txSlot* slot = list->value.list.first;
@@ -1000,39 +756,18 @@ txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key
 	txSlot* entry;
 	txSlot* first;
 	txSlot* last;
-	txSlot* slot;
 	while ((entry = *address)) {
 		if (entry->value.entry.sum == sum) {
 			first = entry->value.entry.slot;
 			if (fxTestEntry(the, first, key)) {
 				*address = entry->next;
 				entry->next = C_NULL;
-				if (list) {
-					first->flag = XS_DONT_ENUM_FLAG;
-					first->kind = XS_UNDEFINED_KIND;
-					if (paired) {
-						last = first->next;
-						last->flag = XS_DONT_ENUM_FLAG;
-						last->kind = XS_UNDEFINED_KIND;
-					}
-				}
-				else if (paired && !(key->flag & XS_MARK_FLAG)) {
+				first->flag = XS_DONT_ENUM_FLAG;
+				first->kind = XS_UNDEFINED_KIND;
+				if (paired) {
 					last = first->next;
-					slot = key->value.reference;
-					if (slot->flag & XS_EXOTIC_FLAG)
-						slot = slot->next;
-					address = &slot->next;
-					while ((slot = *address)) {
-						if (!(slot->flag & XS_INTERNAL_FLAG))
-							break;
-						if (slot->kind == XS_CLOSURE_KIND) {
-							if (slot->value.closure == last) {
-								*address = slot->next;
-								break;
-							}
-						}	
-						address = &slot->next;
-					}
+					last->flag = XS_DONT_ENUM_FLAG;
+					last->kind = XS_UNDEFINED_KIND;
 				}
 				return 1;
 			}
@@ -1094,11 +829,10 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 	txU4 sum = fxSumEntry(the, key);
 	txU4 modulo = sum % table->value.table.length;
 	txSlot** address = &(table->value.table.address[modulo]);
-	txSlot* entry;
+	txSlot* entry = *address;
 	txSlot* first;
 	txSlot* last;
-	txSlot* slot;
-	while ((entry = *address)) {
+	while (entry) {
 		if (entry->value.entry.sum == sum) {
 			first = entry->value.entry.slot;
 			if (fxTestEntry(the, first, key)) {
@@ -1110,7 +844,7 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 				return;
 			}
 		}
-		address = &entry->next;
+		entry = entry->next;
 	}
 	first = fxNewSlot(the);
 	first->kind = key->kind;
@@ -1122,37 +856,20 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 		last->value = pair->value;
 		mxPushClosure(last);
 	}
-	*address = entry = fxNewSlot(the);
+	entry = fxNewSlot(the);
+	entry->next = *address;
 	entry->kind = XS_ENTRY_KIND;
 	entry->value.entry.slot = first;
 	entry->value.entry.sum = sum;
-	if (list) {
-		if (list->value.list.last)
-			list->value.list.last->next = first;
-		else
-			list->value.list.first = first;
-		if (pair)
-			list->value.list.last = last;
-		else
-			list->value.list.last = first;
-	}
-	else if (pair && !(key->flag & XS_MARK_FLAG)) {
-		slot = key->value.reference;
-		if (slot->flag & XS_EXOTIC_FLAG)
-			slot = slot->next;
-		address = &slot->next;
-		while ((slot = *address)) {
-			if (!(slot->flag & XS_INTERNAL_FLAG))
-				break;
-			address = &slot->next;
-		}
-		slot = fxNewSlot(the);
-		slot->next = *address;
-		slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
-		slot->kind = XS_CLOSURE_KIND;
-		slot->value.closure = last;
-		*address = slot;
-	}
+	*address = entry;
+	if (list->value.list.last)
+		list->value.list.last->next = first;
+	else
+		list->value.list.first = first;
+	if (pair)
+		list->value.list.last = last;
+	else
+		list->value.list.last = first;
 	if (pair)
 		mxPop();
 	mxPop();
@@ -1253,6 +970,333 @@ txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b)
 	else if ((XS_BIGINT_X_KIND == a->kind) && (XS_BIGINT_KIND == b->kind))
 		result = gxTypeBigInt.compare(the, 0, 1, 0, a, b);
 	return result;
+}
+
+txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
+{
+	if (slot->kind == XS_REFERENCE_KIND) {
+		txSlot* instance = slot->value.reference;
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_MAP_KIND) && (instance != mxWeakMapPrototype.value.reference)) {
+			if (mutable && (slot->flag & XS_MARK_FLAG))
+				mxTypeError("WeakMap instance is read-only");
+			return instance;
+		}
+	}
+	mxTypeError("this is no WeakMap instance");
+	return C_NULL;
+}
+
+txSlot* fxCheckWeakMapKey(txMachine* the)
+{
+	if (mxArgc > 0) {
+		txSlot* slot = mxArgv(0);
+		if (slot->kind == XS_REFERENCE_KIND)
+			return slot;
+	}
+	return C_NULL;
+}
+
+txSlot* fxNewWeakMapInstance(txMachine* the)
+{
+	txSlot* map;
+	txSlot* list;
+	map = fxNewSlot(the);
+	map->kind = XS_INSTANCE_KIND;
+	map->value.instance.garbage = C_NULL;
+	map->value.instance.prototype = the->stack->value.reference;
+	the->stack->kind = XS_REFERENCE_KIND;
+	the->stack->value.reference = map;
+	/* LIST */
+	list = map->next = fxNewSlot(the);
+	list->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	list->kind = XS_WEAK_MAP_KIND;
+	list->value.weakList.first = C_NULL;
+	list->value.weakList.link = the->firstWeakListLink;
+	the->firstWeakListLink = list;
+ 	return map;
+}
+
+void fx_WeakMap(txMachine* the)
+{
+	txSlot *function, *iterable, *iterator, *next, *value;
+	if (mxIsUndefined(mxTarget))
+		mxTypeError("call: WeakMap");
+	mxPushSlot(mxTarget);
+	fxGetPrototypeFromConstructor(the, &mxWeakMapPrototype);
+	fxNewWeakMapInstance(the);
+	mxPullSlot(mxResult);
+	if (mxArgc < 1)
+		return;
+	iterable = mxArgv(0);
+	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
+		return;
+	mxPushSlot(mxResult);
+	mxGetID(mxID(_set));	
+	function = the->stack;	
+	if (!fxIsCallable(the, function))	
+		mxTypeError("set is no function");
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			mxCall();
+			if (value->kind != XS_REFERENCE_KIND)
+				mxTypeError("item is no object");
+			mxPushSlot(value);
+			mxGetIndex(0);
+			mxPushSlot(value);
+			mxGetIndex(1);
+			mxRunCount(2);
+			mxPop();
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator);
+			fxJump(the);
+		}
+	}
+}
+
+void fx_WeakMap_prototype_delete(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
+	txSlot* key = fxCheckWeakMapKey(the);
+	mxResult->value.boolean = (key) ? fxDeleteWeakEntry(the, instance->next, key->value.reference) : 0;
+	mxResult->kind = XS_BOOLEAN_KIND;
+}
+
+void fx_WeakMap_prototype_get(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
+	txSlot* key = fxCheckWeakMapKey(the);
+	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key->value.reference) : C_NULL;
+	if (result) {
+		txSlot* value = result->value.weakEntry.value;
+		mxResult->kind = value->kind;
+		mxResult->value = value->value;
+	}
+}
+
+void fx_WeakMap_prototype_has(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
+	txSlot* key = fxCheckWeakMapKey(the);
+	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key->value.reference) : C_NULL;
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = (result) ? 1 : 0;
+}
+
+void fx_WeakMap_prototype_set(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
+	txSlot* key = fxCheckWeakMapKey(the);
+	if (!key)
+		mxTypeError("key is no object");
+	fxSetWeakEntry(the, instance->next, key->value.reference, (mxArgc > 1) ? mxArgv(1) : &mxUndefined);
+	*mxResult = *mxThis;
+}
+
+txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
+{
+	if (slot->kind == XS_REFERENCE_KIND) {
+		txSlot* instance = slot->value.reference;
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_SET_KIND) && (instance != mxWeakSetPrototype.value.reference)) {
+			if (mutable && (slot->flag & XS_MARK_FLAG))
+				mxTypeError("WeakSet instance is read-only");
+			return instance;
+		}
+	}
+	mxTypeError("this is no WeakSet instance");
+	return C_NULL;
+}
+
+txSlot* fxCheckWeakSetValue(txMachine* the)
+{
+	if (mxArgc > 0) {
+		txSlot* slot = mxArgv(0);
+		if (slot->kind == XS_REFERENCE_KIND)
+			return slot;
+	}
+	return C_NULL;
+}
+
+txSlot* fxNewWeakSetInstance(txMachine* the)
+{
+	txSlot* set;
+	txSlot* list;
+	set = fxNewSlot(the);
+	set->kind = XS_INSTANCE_KIND;
+	set->value.instance.garbage = C_NULL;
+	set->value.instance.prototype = the->stack->value.reference;
+	the->stack->kind = XS_REFERENCE_KIND;
+	the->stack->value.reference = set;
+	/* LIST */
+	list = set->next = fxNewSlot(the);
+	list->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	list->kind = XS_WEAK_SET_KIND;
+	list->value.weakList.first = C_NULL;
+	list->value.weakList.link = the->firstWeakListLink;
+	the->firstWeakListLink = list;
+ 	return set;
+}
+
+void fx_WeakSet(txMachine* the)
+{
+	txSlot *function, *iterable, *iterator, *next, *value;
+	if (mxIsUndefined(mxTarget))
+		mxTypeError("call: WeakSet");
+	mxPushSlot(mxTarget);
+	fxGetPrototypeFromConstructor(the, &mxWeakSetPrototype);
+	fxNewWeakSetInstance(the);
+	mxPullSlot(mxResult);
+	if (mxArgc < 1)
+		return;
+	iterable = mxArgv(0);
+	if ((iterable->kind == XS_UNDEFINED_KIND) || (iterable->kind == XS_NULL_KIND))
+		return;
+	mxPushSlot(mxResult);
+	mxGetID(mxID(_add));	
+	function = the->stack;	
+	if (!fxIsCallable(the, function))	
+		mxTypeError("add is no function");
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			mxPushSlot(mxResult);
+			mxPushSlot(function);
+			mxCall();
+			mxPushSlot(value);
+			mxRunCount(1);
+			mxPop();
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator);
+			fxJump(the);
+		}
+	}
+}
+
+void fx_WeakSet_prototype_add(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
+	txSlot* value = fxCheckWeakSetValue(the);
+	if (!value)
+		mxTypeError("value is no object");
+	fxSetWeakEntry(the, instance->next, value->value.reference, C_NULL);
+	*mxResult = *mxThis;
+}
+
+void fx_WeakSet_prototype_has(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_IMMUTABLE);
+	txSlot* value = fxCheckWeakSetValue(the);
+	txSlot* result = (value) ? fxGetWeakEntry(the, instance->next, value->value.reference) : C_NULL;
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = (result) ? 1 : 0;
+}
+
+void fx_WeakSet_prototype_delete(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
+	txSlot* value = fxCheckWeakSetValue(the);
+	mxResult->value.boolean = (value) ? fxDeleteWeakEntry(the, instance->next, value->value.reference) : 0;
+	mxResult->kind = XS_BOOLEAN_KIND;
+}
+
+txBoolean fxDeleteWeakEntry(txMachine* the, txSlot* list, txSlot* key) 
+{
+	txSlot* slot = (key->flag & XS_EXOTIC_FLAG) ? key->next : key;
+	txSlot** address = &slot->next;
+	while ((slot = *address)) {
+		if (!(slot->flag & XS_INTERNAL_FLAG))
+			break;
+		if ((slot->kind == XS_WEAK_ENTRY_KIND) && (slot->value.weakEntry.check == list)) {
+			txSlot* listEntry;
+			txSlot** listEntryAddress = &slot->value.weakList.first;
+			listEntryAddress = &list->value.weakList.first;
+			while ((listEntry = *listEntryAddress)) {
+				if (listEntry->value.weakEntry.check == key) {
+					*listEntryAddress = listEntry->next;
+					break;
+				}
+				listEntryAddress = &listEntry->next;
+			}
+			mxCheck(the, listEntry != C_NULL);
+			*address = slot->next;
+			return 1;
+		}			
+		address = &slot->next;
+	}
+	return 0;
+}
+
+txSlot* fxGetWeakEntry(txMachine* the, txSlot* list, txSlot* key) 
+{
+	txSlot* slot = (key->flag & XS_EXOTIC_FLAG) ? key->next : key;
+    slot = slot->next;
+	while (slot) {
+		if (!(slot->flag & XS_INTERNAL_FLAG))
+			break;
+		if ((slot->kind == XS_WEAK_ENTRY_KIND) && (slot->value.weakEntry.check == list))
+			return slot;
+		slot = slot->next;
+	}
+	return C_NULL;
+}
+
+void fxSetWeakEntry(txMachine* the, txSlot* list, txSlot* key, txSlot* value) 
+{
+	txSlot* slot = (key->flag & XS_EXOTIC_FLAG) ? key->next : key;
+	txSlot** address = &slot->next;
+	txSlot* keyEntry;
+	txSlot* listEntry;
+	while ((slot = *address)) {
+		if (!(slot->flag & XS_INTERNAL_FLAG))
+			break;
+		if ((slot->kind == XS_WEAK_ENTRY_KIND) && (slot->value.weakEntry.check == list)) {
+			if (value) {
+				slot = slot->value.weakEntry.value;
+				slot->kind = value->kind;
+				slot->value = value->value;
+			}			
+			return;
+		}			
+		address = &slot->next;
+	}
+	keyEntry = fxNewSlot(the);
+	mxPushClosure(keyEntry);
+	listEntry = fxNewSlot(the);
+	mxPushClosure(listEntry);
+	if (value) {
+		slot = fxNewSlot(the);
+		slot->kind = value->kind;
+		slot->value = value->value;
+	}
+	else
+		slot = C_NULL;
+	
+	keyEntry->next = *address;
+	keyEntry->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	keyEntry->kind = XS_WEAK_ENTRY_KIND;
+	keyEntry->value.weakEntry.check = list;
+	keyEntry->value.weakEntry.value = slot;
+	*address = keyEntry;
+	
+	listEntry->next = list->value.weakList.first;
+	listEntry->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	listEntry->kind = XS_WEAK_ENTRY_KIND;
+	listEntry->value.weakEntry.check = key;
+	listEntry->value.weakEntry.value = slot;
+	list->value.weakList.first = listEntry;
+	
+	mxPop();
+	mxPop();
 }
 
 void fxKeepDuringJobs(txMachine* the, txSlot* target)
@@ -1565,6 +1609,7 @@ void fx_FinalizationRegistryCleanup(txMachine* the, txSlot* registry, txSlot* ca
 	
 	slot = registry->value.finalizationRegistry.callback->next;
 	while (slot) {
+		slot = slot->next;
 		if (slot->value.finalizationCell.target == C_NULL)
 			break;
 		slot = slot->next;

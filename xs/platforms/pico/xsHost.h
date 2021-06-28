@@ -254,7 +254,7 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #ifndef PATH_MAX
 #define PATH_MAX 128
 #endif
-
+#define C_PATH_MAX PATH_MAX
 
 #define c_tolower tolower
 #define c_toupper toupper

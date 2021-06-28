@@ -477,7 +477,7 @@ void fxLinkerScriptCallback(txMachine* the)
 						the->stack->value.hostFunction.IDs = NULL;
 					}
 					fxArrayCacheItem(the, the->stack + 1, the->stack);
-					the->stack++;
+					mxPop();
 					p += mxStringLength((char*)p) + 1;
 				}
 			}
@@ -641,10 +641,8 @@ txInteger fxPrepareHeap(txMachine* the)
 							fxPrepareInstance(the, slot);
 							linker->slotSize += property->value.table.length;
 						}
-						else if ((property->kind == XS_WEAK_MAP_KIND) || (property->kind == XS_WEAK_SET_KIND)) {
+						else if ((property->kind == XS_WEAK_MAP_KIND) || (property->kind == XS_WEAK_SET_KIND))
 							fxPrepareInstance(the, slot);
-							linker->slotSize += property->value.table.length + 1;
-						}
 						else if (property->kind == XS_WEAK_REF_KIND)
 							fxPrepareInstance(the, slot);
 						else if ((property->kind == XS_CLOSURE_KIND) && (property->value.closure->kind == XS_FINALIZATION_REGISTRY_KIND))
@@ -1165,9 +1163,15 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_WEAK_MAP_KIND: {
 		fprintf(file, ".kind = XS_WEAK_MAP_KIND}, ");
-		fprintf(file, ".value = { .table = { (txSlot**)&gxSlotData[%d], %d } }", linker->slotSize, slot->value.table.length);
-		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, (slot->value.table.length + 1) * sizeof(txSlot*));
-		linker->slotSize += slot->value.table.length + 1;
+		fprintf(file, ".value = { .weakList = { ");
+		fxPrintAddress(the, file, slot->value.weakList.first);
+		fprintf(file, ", NULL } }");
+	} break;
+	case XS_WEAK_SET_KIND: {
+		fprintf(file, ".kind = XS_WEAK_SET_KIND}, ");
+		fprintf(file, ".value = { .weakList = { ");
+		fxPrintAddress(the, file, slot->value.weakList.first);
+		fprintf(file, ", NULL } }");
 	} break;
 	case XS_WEAK_REF_KIND: {
 		fprintf(file, ".kind = XS_WEAK_REF_KIND}, ");
@@ -1176,12 +1180,6 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.weakRef.link);
 		fprintf(file, " } }");
-	} break;
-	case XS_WEAK_SET_KIND: {
-		fprintf(file, ".kind = XS_WEAK_SET_KIND}, ");
-		fprintf(file, ".value = { .table = { (txSlot**)&gxSlotData[%d], %d } }", linker->slotSize, slot->value.table.length);
-		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, (slot->value.table.length + 1) * sizeof(txSlot*));
-		linker->slotSize += slot->value.table.length + 1;
 	} break;
 	case XS_ACCESSOR_KIND: {
 		fprintf(file, ".kind = XS_ACCESSOR_KIND}, ");
@@ -1248,6 +1246,14 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_STACK_KIND: {
 		fprintf(file, ".kind = XS_STACK_KIND}, ");
+	} break;
+	case XS_WEAK_ENTRY_KIND: {
+		fprintf(file, ".kind = XS_WEAK_ENTRY_KIND}, ");
+		fprintf(file, ".value = { .weakEntry = { ");
+		fxPrintAddress(the, file, slot->value.weakEntry.check);
+		fprintf(file, ", ");
+		fxPrintAddress(the, file, slot->value.weakEntry.value);
+		fprintf(file, " } }");
 	} break;
 #ifdef mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {

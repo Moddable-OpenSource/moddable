@@ -250,8 +250,31 @@ class ApplicationBehavior extends Behavior {
 	}
 	
 /* EVENTS */
-	onAbort(application) {
-	 this.doCloseFile(application);
+	onAbort(application, status) {
+		this.archivePath = "";
+		this.libraryPath = "";
+		this.quitScreen();
+		this.launchScreen();
+		if (status) {
+			const reasons = [
+				"debugger",
+				"memory full",
+				"stack overflow",
+				"fatal check",
+				"dead strip",
+				"unhandled exception",
+				"not enough keys",
+				"too much computation",
+				"unhandled rejection",
+			];
+			system.alert({ 
+				type:"stop",
+				prompt:"mcsim",
+				info:`XS abort: ${reasons[status]}!`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+		}
 	}
 	onOpenFile(application, path) {
 		let info = system.getFileInfo(path);
@@ -301,7 +324,10 @@ class ApplicationBehavior extends Behavior {
 	canOpenFile() {
 		return true;
 	}
-	canCloseFile() {
+	canCloseApp() {
+		return this.SCREEN && this.SCREEN.running;
+	}
+	canCloseMod() {
 		return this.SCREEN && this.SCREEN.running;
 	}
 	canReloadFile() {
@@ -313,12 +339,15 @@ class ApplicationBehavior extends Behavior {
 	canReloadSimulators() {
 		return true;
 	}
-	doCloseFile() {
-		this.archivePath = "";
+	doCloseApp() {
 		this.libraryPath = "";
 		this.quitScreen();
-		application.updateMenus();
-		application.distribute("onInfoChanged");
+		this.launchScreen();
+	}
+	doCloseMod() {
+		this.archivePath = "";
+		this.quitScreen();
+		this.launchScreen();
 	}
 	doOpenFile() {
 		system.openFile({ prompt:"Open File", path:system.documentsDirectory }, path => { if (path) application.defer("doOpenFileCallback", new String(path)); });
@@ -349,8 +378,6 @@ class ApplicationBehavior extends Behavior {
 	}
 	doLocateSimulatorsCallback(application, path) {
 		this.devicesPath = path;
-		this.archivePath = "";
-		this.libraryPath = "";
 		this.doReloadSimulators();
 		application.updateMenus();
 		application.distribute("onInfoChanged");
@@ -648,9 +675,10 @@ let mcsimApplication = Application.template($ => ({
 		{ 
 			title:"File",
 			items: [
-				{ title:"Open Application...", key:"O", command:"OpenFile" },
-				{ title:"Close Application", key:"W", command:"CloseFile" },
-				{ title:"Reload Application", key:"R", command:"ReloadFile" },
+				{ title:"Open...", key:"O", command:"OpenFile" },
+				{ title:"Close App", key:"W", command:"CloseApp" },
+				{ title:"Close Mod", option:true, key:"W", command:"CloseMod" },
+				{ title:"Reload", key:"R", command:"ReloadFile" },
 				null,
 				{ title:"Locate Simulators...", key:"L", command:"LocateSimulators" },
 				{ title:"Reload Simulators", shift:true, key:"R", command:"ReloadSimulators" },

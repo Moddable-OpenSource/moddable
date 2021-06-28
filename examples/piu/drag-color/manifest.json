@@ -21,5 +21,15 @@
 		"*": [
 			"./button"
 		]
+	},
+	"bundle": {
+		"id": "tech.moddable.drag-color",
+		"devices": [
+			"wasm",
+			"esp/moddable_one",
+			"esp32/moddable_two",
+			"esp32/m5stack_core2"
+		],
+		"icon": "./store/icon.png"
 	}
 }

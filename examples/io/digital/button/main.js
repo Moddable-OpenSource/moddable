@@ -6,21 +6,21 @@
  *   This work is licensed under the
  *       Creative Commons Attribution 4.0 International License.
  *   To view a copy of this license, visit
- *       <https://creativecommons.org/licenses/by/4.0>.
+ *       <http://creativecommons.org/licenses/by/4.0>.
  *   or send a letter to Creative Commons, PO Box 1866,
  *   Mountain View, CA 94042, USA.
  *
  */
 
-const Digital = Host.io.Digital;
+const Digital = device.io.Digital;
 const led = new Digital({
-   pin: Host.pins.led,
+   pin: device.pins.led,
    mode: Digital.Output,
 });
 led.write(1);		// off
 
 new Digital({
-	pin: Host.pins.button,
+	pin: device.pins.button,
 	mode: Digital.InputPullUp,
 	edge: Digital.Rising | Digital.Falling,
 	onReadable() {

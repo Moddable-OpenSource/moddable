@@ -168,6 +168,7 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 	txIndex aLength;
 	txSlot* anItem;
 
+	mxCheckCStack();
 	fxParseJSONToken(the, theParser);
 	mxPush(mxArrayPrototype);
 	anArray = fxNewArrayInstance(the);
@@ -188,7 +189,7 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 		anItem = anItem->next;
 		anItem->kind = the->stack->kind;
 		anItem->value = the->stack->value;
-		the->stack++;
+		mxPop();
 	}
 	anArray->next->value.array.length = aLength;
 	fxCacheArray(the, anArray);
@@ -461,6 +462,7 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 	txID id;
 	txSlot* aProperty;
 
+	mxCheckCStack();
 	fxParseJSONToken(the, theParser);
 	mxPush(mxObjectPrototype);
 	anObject = fxNewObjectInstance(the);
@@ -516,8 +518,8 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 			aProperty->kind = the->stack->kind;
 			aProperty->value = the->stack->value;
 		}
-		the->stack++;
-		the->stack++;
+		mxPop();
+		mxPop();
 		comma = 1;
 	}
 	fxParseJSONToken(the, theParser);
@@ -571,7 +573,7 @@ void fxReviveJSON(txMachine* the, txSlot* reviver)
 		if (fxIsArray(the, instance)) {
 			txIndex length, index;
 			mxPushSlot(reference);
-			fxGetID(the, mxID(_length));
+			mxGetID(mxID(_length));
 			length = (txIndex)fxToLength(the, the->stack);
 			mxPop();
 			index = 0;
@@ -582,7 +584,7 @@ void fxReviveJSON(txMachine* the, txSlot* reviver)
 				mxPushUndefined();
 				fxKeyAt(the, 0, index, the->stack);
 				mxPushSlot(reference);
-				fxGetAll(the, 0, index);
+				mxGetAll(0, index);
 				fxReviveJSON(the, reviver);
 				if (mxIsUndefined(the->stack)) {
 					mxBehaviorDeleteProperty(the, reference->value.reference, 0, index);
@@ -604,7 +606,7 @@ void fxReviveJSON(txMachine* the, txSlot* reviver)
 				mxPushUndefined();
 				fxKeyAt(the, at->value.at.id, at->value.at.index, the->stack);
 				mxPushSlot(reference);
-				fxGetAll(the, at->value.at.id, at->value.at.index);
+				mxGetAll(at->value.at.id, at->value.at.index);
 				fxReviveJSON(the, reviver);
 				if (mxIsUndefined(the->stack)) {
 					mxBehaviorDeleteProperty(the, reference->value.reference, at->value.at.id, at->value.at.index);
@@ -698,7 +700,7 @@ void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier)
 	fxNextSlotProperty(the, instance, the->stack, mxID(__empty_string_), XS_NO_FLAG);
 	mxPush(mxEmptyString);
 	fxStringifyJSONProperty(the, theStringifier, &aFlag);
-	the->stack++;
+	mxPop();
 }
 
 void fxStringifyJSONChar(txMachine* the, txJSONStringifier* theStringifier, char c)
@@ -771,7 +773,7 @@ void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txIn
 		if (theStringifier->indent[0])
 			fxStringifyJSONChar(the, theStringifier, ' ');
 	}
-	the->stack++; // POP KEY
+	mxPop(); // POP KEY
 }
 
 void fxStringifyJSONNumber(txMachine* the, txJSONStringifier* theStringifier, txNumber theNumber)
@@ -796,12 +798,13 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	txInteger aFlag;
 	txIndex aLength, anIndex;
 	
+	mxCheckCStack();
 	if (mxIsReference(aValue) || mxIsBigInt(aValue)) {
 		/* THIS */
 		mxPushSlot(aValue);
 		/* FUNCTION */
 		mxDub();
-		fxGetID(the, mxID(_toJSON));
+		mxGetID(mxID(_toJSON));
 		if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))  {
 			mxCall();
 			mxPushSlot(aKey);
@@ -879,12 +882,12 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 				fxStringifyJSONIndent(the, theStringifier);
 				aFlag = 4;
 				mxPushReference(anInstance);
-				fxGetID(the, mxID(_length));
+				mxGetID(mxID(_length));
 				aLength = fxToInteger(the, the->stack);
 				mxPop();
 				for (anIndex = 0; anIndex < aLength; anIndex++) {
 					mxPushReference(anInstance);
-					fxGetIndex(the, anIndex);
+					mxGetIndex(anIndex);
 					mxPushInteger(anIndex);
 					fxStringifyJSONProperty(the, theStringifier, &aFlag);
 				}
@@ -914,7 +917,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 					while ((at = at->next)) {
 						if (mxBehaviorGetOwnProperty(the, anInstance, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 							mxPushReference(anInstance);
-							fxGetAll(the, at->value.at.id, at->value.at.index);
+							mxGetAll(at->value.at.id, at->value.at.index);
 							if (at->value.at.id) {
 								txSlot* key = fxGetKey(the, at->value.at.id);
 								if (mxGetKeySlotKind(key) == XS_KEY_KIND)
@@ -953,7 +956,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 			fxStringifyJSONChars(the, theStringifier, "null", 0);
 		}
 	}
-	the->stack++; // POP VALUE
+	mxPop(); // POP VALUE
 }
 
 void fxStringifyJSONString(txMachine* the, txJSONStringifier* theStringifier, txString theString)
@@ -1014,7 +1017,7 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 	txSlot* slot;
 	txIndex length, i;
 	mxPushSlot(reference);
-	fxGetID(the, mxID(_length));
+	mxGetID(mxID(_length));
 	length = (txIndex)fxToLength(the, the->stack);
 	mxPop();
 	i = 0;
@@ -1023,7 +1026,7 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 		txID id = XS_NO_ID;
 		txIndex index = 0;
 		mxPushSlot(reference);
-		fxGetIndex(the, i);
+		mxGetIndex(i);
 		slot = the->stack;
 	again:
 		if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {

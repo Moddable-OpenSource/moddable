@@ -1837,7 +1837,7 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger start)
 {
 #if defined(__GNUC__)
-	static void *const ICACHE_RAM_ATTR gxSteps[] = {
+	static void *const gxSteps[] = {
 		&&cxMatchStep,
 		&&cxAssertionStep,
 		&&cxAssertionCompletion,
@@ -1880,6 +1880,9 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 		for (;;) {
 			txInteger step = (2 + captureCount + 2) * sizeof(txInteger), sequel;
 			txInteger offset = start;
+		#ifdef mxMetering
+			txInteger former = step;
+		#endif
 			c_memset(captures, -1, captureCount * sizeof(txCaptureData));
 			while (step) {
 				txInteger* pointer = (txInteger*)(((txByte*)code) + step);
@@ -1887,10 +1890,21 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 				#ifdef mxTrace 
 				{
 					txInteger captureIndex;
-					fprintf(stderr, "\n[%d,%d]", start, offset);
+					fprintf(stderr, "\n#%d [%d,%d]", step, start, offset);
 					for (captureIndex = 1; captureIndex < captureCount; captureIndex++) 
 						fprintf(stderr, " [%d,%d]", captures[captureIndex].from, captures[captureIndex].to);
 					fprintf(stderr, " %s", gxStepNames[which]);
+				}
+				#endif
+				#ifdef mxMetering
+				if (the) {
+					if (step < former) {
+						if (((txMachine*)the)->meterInterval && (((txMachine*)the)->meterIndex > ((txMachine*)the)->meterCount)) {
+							fxCheckMetering(the);
+						}
+					}
+					former = step;
+					((txMachine*)the)->meterIndex++;
 				}
 				#endif
 				mxSwitch(which) {
@@ -2171,8 +2185,9 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						step = firstState->step;
 						offset = firstState->offset;
 						c_memcpy(captures, firstState->captures, captureCount * sizeof(txCaptureData));
-						if (firstState->the)
+						if (firstState->the) {
 							firstState = firstState->nextState;
+						}
 						else {
 							txStateData* state = firstState;
 							firstState = state->nextState;

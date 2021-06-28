@@ -41,11 +41,14 @@
 #ifdef INCLUDE_XSPLATFORM
 	#include "xsPlatform.h"
 	#define xsMachinePlatform mxMachinePlatform
+
+	#include <stdint.h>
 #else
 	#define xsMachinePlatform
 	#ifndef __XSPLATFORM__
 
 	#include <setjmp.h>
+	#include <stdint.h>
 
 	#define mxBigEndian 0
 	#define mxLittleEndian 0
@@ -110,17 +113,12 @@
 		#error unknown compiler
 	#endif
 
-	typedef signed char txS1;
-	typedef unsigned char txU1;
-	typedef short txS2;
-	typedef unsigned short txU2;
-	#if __LP64__
-	typedef int txS4;
-	typedef unsigned int txU4;
-	#else
-	typedef long txS4;
-	typedef unsigned long txU4;
-	#endif
+	typedef int8_t txS1;
+	typedef uint8_t txU1;
+	typedef int16_t txS2;
+	typedef uint16_t txU2;
+	typedef int32_t txS4;
+	typedef uint32_t txU4;
 
 	#if mxWindows
 		#undef _setjmp
@@ -1444,7 +1442,6 @@ mxImport void fxStartProfiling(xsMachine*);
 mxImport void fxStopProfiling(xsMachine*);
 	
 mxImport void* fxMapArchive(const unsigned char *, unsigned long, xsStringValue, xsCallbackAt);
-mxImport void fxUnmapArchive(void*);
 mxImport void fxAwaitImport(xsMachine*, xsBooleanValue);
 
 mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);

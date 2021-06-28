@@ -20,5 +20,11 @@
 			"./led-dim",
 			"./led-bright"
 		]
+	},
+	"bundle": {
+		"id": "tech.moddable.backlight",
+		"devices": [
+			"esp32/moddable_two"
+		]
 	}
 }

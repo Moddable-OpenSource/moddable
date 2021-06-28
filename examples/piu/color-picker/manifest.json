@@ -16,5 +16,13 @@
 		"*-alpha": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Light-42"
 		]
+	},
+	"bundle": {
+	    "id": "tech.moddable.color-picker",
+	    "devices": [
+	        "esp/moddable_one",
+	        "esp32/moddable_two"
+	    ],
+	    "icon": "./store/icon.png"
 	}
 }

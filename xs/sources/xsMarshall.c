@@ -322,7 +322,7 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 					case XS_TYPED_ARRAY_KIND: {
 						txTypeDispatch* dispatch = (txTypeDispatch*)&gxTypeDispatches[aSlot->value.integer];
 						mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
-						fxGetID(the, mxID(_prototype));
+						mxGetID(mxID(_prototype));
 						theResult->value.instance.prototype = the->stack->value.reference;
 						mxPop();
 						} break;
@@ -555,7 +555,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		}
 		break;
 	}
-	the->stack++;
+	mxPop();
 	c_free(aBuffer.symbolMap);
 	return aBuffer.base;
 }
