@@ -99,8 +99,8 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 10
-#define XS_MINOR_VERSION 8
+#define XS_MAJOR_VERSION 11
+#define XS_MINOR_VERSION 0
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16

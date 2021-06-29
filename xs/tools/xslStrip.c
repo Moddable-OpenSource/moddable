@@ -332,18 +332,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripObject(linker, the, &mxJSONObject);
 	if (fxIsCallbackStripped(linker, fx_Map)) {
 		fxStripClass(linker, the, &mxMapConstructor);
-		fxStripInstance(linker, the, mxMapEntriesIteratorPrototype.value.reference);
-		fxStripInstance(linker, the, mxMapKeysIteratorPrototype.value.reference);
-		fxStripInstance(linker, the, mxMapValuesIteratorPrototype.value.reference);
+		fxStripInstance(linker, the, mxMapIteratorPrototype.value.reference);
 	}
 	else {
 		fxUnstripCallback(linker, fx_Map_prototype_entries);
-		fxUnstripCallback(linker, fx_Map_prototype_entries_next);
 		fxUnstripCallback(linker, fx_Map_prototype_set);
-		if (!fxIsCallbackStripped(linker, fx_Map_prototype_keys))
-			fxUnstripCallback(linker, fx_Map_prototype_keys_next);
-		if (!fxIsCallbackStripped(linker, fx_Map_prototype_values))
-			fxUnstripCallback(linker, fx_Map_prototype_values_next);
+		fxUnstripCallback(linker, fx_MapIterator_prototype_next);
 	}
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Math)))
 		fxStripObject(linker, the, &mxMathObject);
@@ -422,16 +416,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}	
 	if (fxIsCallbackStripped(linker, fx_Set)) {
 		fxStripClass(linker, the, &mxSetConstructor);
-		fxStripInstance(linker, the, mxSetEntriesIteratorPrototype.value.reference);
-		fxStripInstance(linker, the, mxSetKeysIteratorPrototype.value.reference);
-		fxStripInstance(linker, the, mxSetValuesIteratorPrototype.value.reference);
+		fxStripInstance(linker, the, mxSetIteratorPrototype.value.reference);
 	}
 	else {
 		fxUnstripCallback(linker, fx_Set_prototype_add);
-		if (!fxIsCallbackStripped(linker, fx_Set_prototype_entries))
-			fxUnstripCallback(linker, fx_Set_prototype_entries_next);
 		fxUnstripCallback(linker, fx_Set_prototype_values);
-		fxUnstripCallback(linker, fx_Set_prototype_values_next);
+		fxUnstripCallback(linker, fx_SetIterator_prototype_next);
 	}
 	if (fxIsCallbackStripped(linker, fx_SharedArrayBuffer))
 		fxStripClass(linker, the, &mxSharedArrayBufferConstructor);

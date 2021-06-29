@@ -768,11 +768,9 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		aSlot = theSlot->value.weakEntry.check;
 		if (aSlot->flag & XS_MARK_FLAG) {
 			aSlot = theSlot->value.weakEntry.value;
-			if (aSlot) {
-				if (!(aSlot->flag & XS_MARK_FLAG)) {
-					aSlot->flag |= XS_MARK_FLAG; 
-					fxMarkReference(the, aSlot);
-				}
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				aSlot->flag |= XS_MARK_FLAG; 
+				fxMarkReference(the, aSlot);
 			}
 		}
 		break;
@@ -993,11 +991,9 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		aSlot = theSlot->value.weakEntry.check;
 		if (aSlot->flag & XS_MARK_FLAG) {
 			aSlot = theSlot->value.weakEntry.value;
-			if (aSlot) {
-				if (!(aSlot->flag & XS_MARK_FLAG)) {
-					aSlot->flag |= XS_MARK_FLAG; 
-					fxMarkValue(the, aSlot);
-				}
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				aSlot->flag |= XS_MARK_FLAG; 
+				fxMarkValue(the, aSlot);
 			}
 		}
 		break;
@@ -1047,8 +1043,8 @@ void fxMarkWeakStuff(txMachine* the)
 				txSlot* listEntry;
 				txSlot** listEntryAddress = &list->value.weakList.first;
 				while ((listEntry = *listEntryAddress)) {
-					txSlot* key = listEntry->value.weakEntry.check;
-					if (key->flag & XS_MARK_FLAG)
+					txSlot* value = listEntry->value.weakEntry.value;
+					if (value->flag & XS_MARK_FLAG)
 						listEntryAddress = &listEntry->next;
 					else {
 						listEntry->flag &= ~XS_MARK_FLAG;
@@ -1065,6 +1061,8 @@ void fxMarkWeakStuff(txMachine* the)
 						txSlot* keyEntry;
 						txSlot** keyEntryAddress = &key->next;
 						while ((keyEntry = *keyEntryAddress)) {
+							if (!(keyEntry->flag & XS_INTERNAL_FLAG))
+								break;
 							if ((keyEntry->kind == XS_WEAK_ENTRY_KIND) && (keyEntry->value.weakEntry.check == list)) {
 								keyEntry->flag &= ~XS_MARK_FLAG;
 								*keyEntryAddress = keyEntry->next;
@@ -1072,7 +1070,6 @@ void fxMarkWeakStuff(txMachine* the)
 							}
 							keyEntryAddress = &keyEntry->next;
 						}
-						mxCheck(the, keyEntry != C_NULL);
 					}
 					listEntry = listEntry->next;
 				}

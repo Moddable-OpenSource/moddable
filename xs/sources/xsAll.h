@@ -1602,27 +1602,24 @@ mxExport void fx_Map(txMachine* the);
 mxExport void fx_Map_prototype_clear(txMachine* the);
 mxExport void fx_Map_prototype_delete(txMachine* the);
 mxExport void fx_Map_prototype_entries(txMachine* the);
-mxExport void fx_Map_prototype_entries_next(txMachine* the);
 mxExport void fx_Map_prototype_forEach(txMachine* the);
 mxExport void fx_Map_prototype_get(txMachine* the);
 mxExport void fx_Map_prototype_has(txMachine* the);
 mxExport void fx_Map_prototype_keys(txMachine* the);
-mxExport void fx_Map_prototype_keys_next(txMachine* the);
 mxExport void fx_Map_prototype_set(txMachine* the);
 mxExport void fx_Map_prototype_size(txMachine* the);
 mxExport void fx_Map_prototype_values(txMachine* the);
-mxExport void fx_Map_prototype_values_next(txMachine* the);
+mxExport void fx_MapIterator_prototype_next(txMachine* the);
 mxExport void fx_Set(txMachine* the);
 mxExport void fx_Set_prototype_add(txMachine* the);
 mxExport void fx_Set_prototype_clear(txMachine* the);
 mxExport void fx_Set_prototype_delete(txMachine* the);
 mxExport void fx_Set_prototype_entries(txMachine* the);
-mxExport void fx_Set_prototype_entries_next(txMachine* the);
 mxExport void fx_Set_prototype_forEach(txMachine* the);
 mxExport void fx_Set_prototype_has(txMachine* the);
 mxExport void fx_Set_prototype_size(txMachine* the);
 mxExport void fx_Set_prototype_values(txMachine* the);
-mxExport void fx_Set_prototype_values_next(txMachine* the);
+mxExport void fx_SetIterator_prototype_next(txMachine* the);
 mxExport void fx_WeakMap(txMachine* the);
 mxExport void fx_WeakMap_prototype_delete(txMachine* the);
 mxExport void fx_WeakMap_prototype_get(txMachine* the);
@@ -2420,13 +2417,9 @@ enum {
 	
 	mxIteratorPrototypeStackIndex,
 	mxArrayIteratorPrototypeStackIndex,
-	mxMapEntriesIteratorPrototypeStackIndex,
-	mxMapKeysIteratorPrototypeStackIndex,
-	mxMapValuesIteratorPrototypeStackIndex,
+	mxMapIteratorPrototypeStackIndex,
 	mxRegExpStringIteratorPrototypeStackIndex,
-	mxSetEntriesIteratorPrototypeStackIndex,
-	mxSetKeysIteratorPrototypeStackIndex,
-	mxSetValuesIteratorPrototypeStackIndex,
+	mxSetIteratorPrototypeStackIndex,
 	mxStringIteratorPrototypeStackIndex,
 	
 	mxAsyncIteratorPrototypeStackIndex,
@@ -2605,13 +2598,9 @@ enum {
 
 #define mxIteratorPrototype the->stackPrototypes[-1 - mxIteratorPrototypeStackIndex]
 #define mxArrayIteratorPrototype the->stackPrototypes[-1 - mxArrayIteratorPrototypeStackIndex]
-#define mxMapEntriesIteratorPrototype the->stackPrototypes[-1 - mxMapEntriesIteratorPrototypeStackIndex]
-#define mxMapKeysIteratorPrototype the->stackPrototypes[-1 - mxMapKeysIteratorPrototypeStackIndex]
-#define mxMapValuesIteratorPrototype the->stackPrototypes[-1 - mxMapValuesIteratorPrototypeStackIndex]
+#define mxMapIteratorPrototype the->stackPrototypes[-1 - mxMapIteratorPrototypeStackIndex]
 #define mxRegExpStringIteratorPrototype the->stackPrototypes[-1 - mxRegExpStringIteratorPrototypeStackIndex]
-#define mxSetEntriesIteratorPrototype the->stackPrototypes[-1 - mxSetEntriesIteratorPrototypeStackIndex]
-#define mxSetKeysIteratorPrototype the->stackPrototypes[-1 - mxSetKeysIteratorPrototypeStackIndex]
-#define mxSetValuesIteratorPrototype the->stackPrototypes[-1 - mxSetValuesIteratorPrototypeStackIndex]
+#define mxSetIteratorPrototype the->stackPrototypes[-1 - mxSetIteratorPrototypeStackIndex]
 #define mxStringIteratorPrototype the->stackPrototypes[-1 - mxStringIteratorPrototypeStackIndex]
 
 #define mxAsyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncIteratorPrototypeStackIndex]
