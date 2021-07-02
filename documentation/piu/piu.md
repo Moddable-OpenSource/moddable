@@ -1,5 +1,8 @@
 # Piu JavaScript Reference
 
+Copyright 2017-2021 Moddable Tech, Inc.<BR>
+Revised: July 2, 2021
+
 ## About This Document
 
 Piu is a user interface framework designed to run on microcontrollers. The programming interface to Piu is a JavaScript API of global constructors, functions, and objects that define the containment hierarchy, appearance, behavior, and flow of applications. This document provides details on the objects that define the Piu API and important related concepts.
@@ -565,7 +568,7 @@ The lookup happens only when `label` or `text` objects that use the style are bo
 
 #### Cascading Styles
 
-In order to cascade styles, you may want to use something similar to the [CSS font shortcut](https://developer.mozilla.org/en-US/docs/Web/CSS/font).
+In order to cascade styles, you may want to use something similar to the [CSS font shortcut](https://developer.mozilla.org/en-US/docs/Web/CSS/font). Note that if you use this method of defining fonts in an application, you should not define other fonts in the application using just the font name as described above.
 
 ```javascript
 const style = new Style({ font:"italic bold 16px Open Sans" });
@@ -602,6 +605,7 @@ For Piu to find the corresponding bitmap font files in your assets, you have to 
 * the computed size in pixels without units.
 
 Here above `style ` will look for `OpenSans-BoldItalic-16.fnt`, `appStyle` will look for `FiraSans-Regular-16.fnt` and `menuStyle` will look for `FiraSans-Bold-16.fnt`.
+
 
 ### Tiles
 
