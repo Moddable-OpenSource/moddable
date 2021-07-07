@@ -19,7 +19,8 @@
  */
  
 /*
-	MLX90614 sensor - data sheet at https://components101.com/asset/sites/default/files/component_datasheet/MLX90614-Datasheet.pdf
+	MLX90614 sensor - data sheet at https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90614
+	or https://components101.com/asset/sites/default/files/component_datasheet/MLX90614-Datasheet.pdf
 
 */
 

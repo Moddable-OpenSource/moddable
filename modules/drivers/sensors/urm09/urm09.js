@@ -38,11 +38,12 @@ const Register = Object.freeze({
 });
 
 const Config = Object.freeze({
-	ONE_SHOT:		0b0000_0000,	// Config bit 7
-	CONTINUOUS:		0b1000_0000,	// Config bit 7
-	RANGE_500CM:	0b0010_0000,	// Range is bits 5-4
-	RANGE_300CM:	0b0001_0000,
-	RANGE_150CM:	0b0000_0000,
+	ONE_SHOT:		0b0,		// Config bit 7
+	CONTINUOUS:		0b1,		// Config bit 7
+
+	RANGE_500CM:	0b0010,		// Range is bits 5-4
+	RANGE_300CM:	0b0001,
+	RANGE_150CM:	0b0000,
 });
 
 const READ_DELAY = Object.freeze([ 20, 30, 40 ]);
@@ -65,13 +66,15 @@ class URM09 {
 			throw new Error("unexpected sensor");
 	}
 	configure(options) {
-		if (undefined !== options.mode)
-			this.#mode = options.mode & 0x1000_0000;
-
 		if (undefined !== options.range)
-			this.#range = options.range & 0x0011_0000;
+			this.#range = options.range & 0b11;
 
-		this.#io.writeByte(Register.CONFIG, this.#mode | this.range);
+		if (undefined !== options.mode)
+			this.#mode = options.mode & 0b1;
+
+		const config = (this.#range << 4) | (this.#mode << 7);
+//		this.#io.writeByte(Register.CONFIG, this.#mode | this.range);
+		this.#io.writeByte(Register.CONFIG, config);
 	}
 	sample() {
 		const io = this.#io;
@@ -79,7 +82,7 @@ class URM09 {
 
 		if ((this.#mode & Config.CONTINUOUS) !== Config.CONTINUOUS) {
 			io.writeByte(Register.COMMAND, CMD_READ_ONCE);
-			Timer.delay(READ_DELAY[this.#range >> 4]);
+			Timer.delay(READ_DELAY[this.#range]);
 		}
 		switch (this.#range) {
 			case Config.RANGE_500CM: ret.max = 500; break;
@@ -88,6 +91,8 @@ class URM09 {
 		}
 
 		ret.distance = io.readWord(Register.DISTANCE_MSB, true);
+		if (ret.distance == 0xffff)
+			ret.distance = null;
 		ret.temperature = io.readWord(Register.TEMP_MSB, true) / 10;
 		if (ret.distance <= ret.max)
 			ret.near = true;

@@ -27,7 +27,8 @@ const sensor = new Temperature({
 		pin: config.interrupt_pin
 	},
 	onAlert() {
-		trace(`Trigger: ${this.sample().temperature} C\n`);
+		const sample = this.sample();
+		trace(`Trigger: ${sample.temperature.toFixed(2)} C, alert: ${sample.alert}\n`);
 	}
 });
 
@@ -41,6 +42,8 @@ sensor.configure({
 });
 
 Timer.repeat(() => {
-	trace(`Temperature: ${sensor.sample().temperature.toFixed(2)} C\n`);
+	const sample = sensor.sample();
+    trace(`Temperature: ${sample.temperature.toFixed(2)} C, alert: ${sample.alert}\n`);
+
 }, 2000);
 
