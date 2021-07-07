@@ -36,6 +36,8 @@ const Register = Object.freeze({
 class LM75 {
 	#io;
 	#onAlert;
+	#TOS;
+	#THYST;
 	#monitor;
 	#status = "ready";
 
@@ -62,7 +64,9 @@ class LM75 {
 		
 
 		// Tth(ots) = +80C Thys = +75C (7.9)
+		this.#TOS = 80;
 		io.writeWord(Register.LM75_TOS, 160 << 7, true);	// half degrees
+		this.#THYST = 75;
 		io.writeWord(Register.LM75_THYST, 150 << 7, true);	// half degrees
 	}
 
@@ -83,14 +87,16 @@ class LM75 {
 		if (undefined !== highT) {
 			const value = (((highT > 125) ? 125 : (highT < -55) ? -55 : highT) * 2) | 0;	// half degrees
 			io.writeWord(Register.LM75_TOS, value << 7, true);
+			this.#TOS = value/2;
 		}
 		const lowT = options.lowTemperature;
 		if (undefined !== lowT) {
 			const value = (((lowT > 125) ? 125 : (lowT < -55) ? -55 : lowT) * 2) | 0;		// half degrees
 			io.writeWord(Register.LM75_THYST, value << 7, true);
+			this.#THYST = value/2;
 		}
 
-		const mode = options.thermostatMdoe;
+		const mode = options.thermostatMode;
 		if (undefined !== mode) {
 			conf &= ~0b10;
 			if (mode === "interrupt")
@@ -135,6 +141,7 @@ class LM75 {
 	}
 
 	sample() {
+		let ret = {};
 		const io = this.#io;
 		const conf = io.readByte(Register.LM75_CONF);
 		if (conf & 1) {	// if in shutdown mode, turn it on
@@ -148,9 +155,12 @@ class LM75 {
 			io.writeByte(Register.LM75_CONF, conf);
 
 		value = (this.#twoC16(value) >> 5) * 0.125;
-		return { temperature: value };
+		ret.temperature = value;
+		if (this.#onAlert) {
+			ret.alert = (value > this.#TOS) || (value < this.#THYST);
+		}
+		return ret;
 	}
 }
-
 
 export default LM75;
