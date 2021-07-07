@@ -26,13 +26,13 @@
 	"platforms":{
 		"esp": {
 			"modules": {
-				"setup/piu": "$(BUILD)/devices/esp/setup/piu"
+				"setup/piu": "$(BUILD)/devices/esp/setup/piu_io"
 			},
 			"preload": "setup/piu"
 		},
 		"esp32": {
 			"modules": {
-				"setup/piu": "$(BUILD)/devices/esp32/setup/piu"
+				"setup/piu": "$(BUILD)/devices/esp32/setup/piu_io"
 			},
 			"preload": "setup/piu"
 		},

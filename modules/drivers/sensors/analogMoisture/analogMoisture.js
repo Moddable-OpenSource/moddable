@@ -18,49 +18,37 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
+/*
+	Analog Moisture Sensor
+*/
 
-const device = {
-	I2C: {
-		default: {
-			io: I2C,
-			data: 5,
-			clock: 4
-		}
-	},
-	Serial: {
-		default: {
-			io: Serial,
-		}
-	},
-	SPI: {
-		default: {
-			io: SPI,
-			clock: 14,
-			in: 13,
-			out: 12,
-			port: "HSPI"
-		}
-	},
-	Analog: {
-		default: {
-			io: Analog
-		}
-	},
-	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI},
-	pins: {
-		button: 0,
-		led: 2,
-		displayDC: 2,
-		displaySelect: 15
+import Timer from "timer";
+
+class AnalogMoisture {
+	#io;
+	#averaging;
+
+	constructor(options) {
+		this.#io = new options.sensor.io(options.sensor);
+		this.#averaging = 1;
 	}
-};
+	configure(options) {
+		if (undefined !== options.averaging)
+			this.#averaging = options.averaging;
+	}
+	close() {
+		this.#io.close();
+		this.#io = undefined;
+	}
+	sample() {
+		const io = this.#io;
+		let adc = 0;
+		for (let i=0; i<this.#averaging; i++)
+			adc += io.read();
+		adc /= this.#averaging;
+		return { value: adc }
+	}
+}
 
-export default device;
+
+export default AnalogMoisture;
