@@ -1,7 +1,7 @@
 # Networking
 
-Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: September 19, 2020
+Copyright 2017-2021 Moddable Tech, Inc.<BR>
+Revised: July 1, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -784,7 +784,7 @@ let monitor = new WiFi({ssid: "My Wi-Fi", password: "secret"}, msg => {
 	switch (msg) {
 		case WiFi.connected:
 			break; // still waiting for IP address
-		case Wifi.gotIP:
+		case WiFi.gotIP:
 			trace(`IP address ${Net.get("IP")}\n`);
 			break;
 		case WiFi.disconnected:

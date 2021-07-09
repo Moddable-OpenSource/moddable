@@ -36,6 +36,6 @@ Timer.repeat(id => {
 
 	poco.begin(x + reader.frameX, y + reader.frameY, reader.frameWidth, reader.frameHeight);
 		poco.fillRectangle(background, 0, 0, poco.width, poco.height);
-		poco.drawBitmap(reader, x, y);
+		poco.drawBitmapWithKeyColor(reader, x, y);
 	poco.end();
 }, 1);

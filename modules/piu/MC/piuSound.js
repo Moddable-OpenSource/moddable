@@ -22,6 +22,8 @@ import AudioOut from "pins/audioout";
 import Resource from "Resource";
 
 export default class Sound {
+	static private = { audioOut:null, callbacks:null, streams:0, volume:256 };
+
 	static callback(index) {
 		Sound.private.callbacks[index].call();
 	}
@@ -58,6 +60,11 @@ export default class Sound {
 		this.private.volume = Math.round(it * 256);
 	}
 	constructor(it) {
+		if (Array.isArray(it)) {
+			this.tones = it;
+			return;
+		}
+
 		let path = it.path;
 		if (!path)
 			throw new URIError("Sound: no path!");
@@ -71,16 +78,29 @@ export default class Sound {
 		this.size = it.size || -1;
 	}
 	play(stream = 0, repeat = 1, callback) {
-		let audioOut = Sound.private.audioOut
-		if (!audioOut)
-			audioOut = Sound.open();
+		const audioOut = Sound.private.audioOut ?? Sound.open();
 		audioOut.enqueue(stream, AudioOut.Flush);
 		audioOut.enqueue(stream, AudioOut.Volume, Sound.private.volume);
-		audioOut.enqueue(stream, AudioOut.Samples, this.buffer, repeat, this.offset, this.size);
+
+		if (this.tones) {
+			if (1 !== repeat)
+				throw new Error("Sound: no repeat!");
+
+			const tones = this.tones;
+			let length = audioOut.length(stream) - (callback ? 1 : 0);
+			if (length > tones.length)
+				length = tones.length;
+
+			for (let i = 0; i < length; i++)
+				audioOut.enqueue(stream, AudioOut.Tone, tones[i].frequency, tones[i].samples ?? Infinity);
+		}
+		else {
+			audioOut.enqueue(stream, AudioOut.Samples, this.buffer, repeat, this.offset, this.size);
+		}
+
 		if (callback) {
 			Sound.private.callbacks[stream] = callback;
 			audioOut.enqueue(stream, AudioOut.Callback, stream);
 		}
 	}
 }
-Sound.private = { audioOut:null, callbacks:null, streams:0, volume:256 };

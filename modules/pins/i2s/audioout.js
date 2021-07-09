@@ -23,6 +23,7 @@ export class Mixer @ "xs_audioout_destructor" {
 	close() @ "xs_audioout_close";
 	enqueue(stream, kind, buffer, repeat, offset, count) @ "xs_audioout_enqueue";
 	mix(samples) @ "xs_audioout_mix";
+	length(stream) @ "xs_audioout_length";
 }
 Mixer.Samples = 1;
 Mixer.Flush = 2;

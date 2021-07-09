@@ -2123,11 +2123,10 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 	
 		p = self->buffer;
 		mxMapAtom(p);
-		if (atom.atomType == XS_ATOM_ERROR) {
+		if (atom.atomType != XS_ATOM_ARCHIVE) {
 			self->dst = NULL;
 			goto bail;
 		}
-		mxElseFatalCheck(atom.atomType == XS_ATOM_ARCHIVE);
 		self->size = atom.atomSize;
 		mxMapAtom(p);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_VERSION);
