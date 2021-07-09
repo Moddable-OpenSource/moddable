@@ -513,37 +513,6 @@ declare module "piu/MC" {
     new(behaviorData: any, dictionary: ScrollerDictionary): Scroller;
   }
 
-  interface Timeline {
-    duration: number;
-    fraction: number;
-    time: number;
-    from(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: string,
-      delay?: number
-    ): Timeline;
-    on(
-      target: object,
-      onProperties: object,
-      duration: number,
-      easing?: number,
-      delay?: number
-    ): Timeline;
-    seekTo(time: number): void;
-    to(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: string,
-      delay?: number
-    ): Timeline;
-  }
-  interface TimelineConstructor {
-    new(): Timeline
-  }
-
   global {
     const Skin: SkinConstructor
     const Texture: TextureConstructor
@@ -561,7 +530,6 @@ declare module "piu/MC" {
     const Label: LabelConstructor
     const Transition: TransitionConstructor
     const Text: TextConstructor
-    const Timeline: TimelineConstructor
   }
  }
 
