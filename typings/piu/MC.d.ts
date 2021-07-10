@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Shinya Ishikawa
+ * Copyright (c) 2020-2021 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Tools.
  *
