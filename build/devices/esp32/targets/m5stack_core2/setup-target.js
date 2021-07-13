@@ -60,10 +60,12 @@ export default function (done) {
     },
   };
 
-  vibration.write(true);
-  Timer.set(() => {
-    vibration.write(false);
-  }, 600);
+  if (config.startupVibration) {
+    vibration.write(true);
+    Timer.set(() => {
+      vibration.write(false);
+    }, config.startupVibration);
+  }
 
   // accelerometer and gyrometer
   state.accelerometerGyro = new MPU6886(INTERNAL_I2C);
