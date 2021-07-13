@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODDABLEPROJECTS)/modules/drivers/sensors/ft6206/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
 		"$(MODULES)/drivers/button/manifest.json",
 		"$(MODULES)/drivers/led/manifest.json"
 	],
@@ -11,10 +11,7 @@
 	},
 	"config": {
 		"screen": "ili9341",
-		"touch": "sensor/touch",
-	
-		"i2c_data": 5,
-		"i2c_clock": 4
+		"touch": "ft6206"
 	},
 	"defines": {
 		"i2c": {
