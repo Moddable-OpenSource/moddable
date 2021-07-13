@@ -19,12 +19,14 @@
  */
 
 /*
-	Analog Moisture Sensor
+	Capacitive Moisture Sensor
+
+	https://wiki.dfrobot.com/Capacitive_Soil_Moisture_Sensor_SKU_SEN0193
 */
 
 import Timer from "timer";
 
-class AnalogMoisture {
+class CapacitiveMoisture {
 	#io;
 	#averaging;
 
@@ -51,4 +53,4 @@ class AnalogMoisture {
 }
 
 
-export default AnalogMoisture;
+export default CapacitiveMoisture;

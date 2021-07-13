@@ -13,7 +13,7 @@
  */
 
 import device from "embedded:provider/builtin";
-import Moisture from "embedded:sensor/Moisture/Analog";
+import Moisture from "embedded:sensor/Moisture/Capacitive";
 import Timer from "timer";
 
 const sensor = new Moisture({

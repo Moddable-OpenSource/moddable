@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/sensors/mpu9250/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/ak8963/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}
