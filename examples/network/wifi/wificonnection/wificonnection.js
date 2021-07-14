@@ -30,6 +30,7 @@
 		- Getter on "ready" is convenient way to check if Wi-Fi is connected
 		- If connection attempt does not succeed with an IP address in 30 seconds, forces disconnect and retries
 		- Wait 5 seconds after (unforced) disconnect to ensure clean reconnect
+		- Try a list of access point in order using "getAP"
 */
 
 import WiFi from "wifi";
@@ -41,19 +42,22 @@ class Connection extends WiFi {
 	#reconnect;
 	#connecting;
 	#state = WiFi.disconnected;
+	#index = 0;
 
 	constructor(options, callback) {
 		options = {...options};
 
-		super(options, (msg, code) => {
+		super(callback?.("getAP", 0) ?? options, (msg, code) => {
 			if (WiFi.disconnected === msg) {
-				if (this.#connecting)
+				if (this.#connecting) {
+					this.#index += 1;
 					Timer.clear(this.#connecting);
+				}
 				this.#connecting = undefined;
 
 				this.#reconnect ??= Timer.set(() => {
 					this.#reconnect = undefined;
-					WiFi.connect(this.#options);
+					WiFi.connect(this.#callback?.("getAP", this.#index) ?? this.#options);
 
 					this.#connecting = Timer.set(() => {
 						this.#connecting = undefined;
@@ -78,6 +82,7 @@ class Connection extends WiFi {
 				if (this.#connecting)
 					Timer.clear(this.#connecting);
 				this.#connecting = undefined;
+				this.#index = 0;
 			}
 
 			this.#state = msg;
