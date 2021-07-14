@@ -785,6 +785,7 @@ mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
 extern void fxFree(txMachine* the);
 extern txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b);
 mxExport void* fxNewChunk(txMachine* the, txSize theSize);
+mxExport void* fxNewChunkCap(txMachine* the, txSize size, txSize overflow);
 extern txSlot* fxNewSlot(txMachine* the);
 mxExport void* fxRenewChunk(txMachine* the, void* theData, txSize theSize);
 extern void fxShare(txMachine* the);

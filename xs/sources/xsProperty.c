@@ -350,7 +350,7 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 			size = fxMultiplyChunkSizes(the, current, sizeof(txSlot));
 			chunk = (txSlot*)fxRenewChunk(the, address, size);
 			if (!chunk) {
-				chunk = (txSlot*)fxNewChunk(the, size);
+				chunk = (txSlot*)fxNewChunkCap(the, size, size + (size >> 1));
 				address = array->value.array.address;
 				c_memcpy(chunk, address, length * sizeof(txSlot));
 			}
@@ -420,7 +420,8 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target)
 			if (target) {
 				chunk = (txSlot*)fxRenewChunk(the, address, size);
 				if (!chunk) {
-					chunk = (txSlot*)fxNewChunk(the, size);
+					chunk = (txSlot*)fxNewChunkCap(the, size, size + (size / 3));
+// 					chunk = (txSlot*)fxNewChunk(the, size);
 					address = array->value.array.address;
 					if (current < target)
 						c_memcpy(chunk, address, current * sizeof(txSlot));
