@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLEPROJECTS)/modules/io/manifest_io_i2c.json"
+	],
+	"modules": {
+		"sensor/touch": "./ft6206"
+	},
+	"preload": [
+		"sensor/touch"
+	]
+}
