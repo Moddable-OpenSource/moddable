@@ -1199,15 +1199,15 @@ void* fxNewChunk(txMachine* the, txSize size)
 	return fxCheckChunk(the, chunk, size);
 }
 
-void* fxNewChunkCap(txMachine* the, txSize size, txSize cap)
+void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 {
 	txChunk* chunk;
 	txBoolean once = 1;
 	size = fxAdjustChunkSize(the, size);
-	cap = fxAdjustChunkSize(the, cap);
-	chunk = fxFindChunk(the, cap, &once);
+	capacity = fxAdjustChunkSize(the, capacity);
+	chunk = fxFindChunk(the, capacity, &once);
 	if (!chunk) {
-		chunk = fxGrowChunk(the, cap);
+		chunk = fxGrowChunk(the, capacity);
 		if (!chunk) {
 			chunk = fxFindChunk(the, size, &once);
 			if (!chunk) {
@@ -1258,18 +1258,15 @@ again:
 	return C_NULL;
 }
 
-void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
+void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 {
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
-	txSize aSize = aChunk->temporary - aData;
+	txSize capacity = aChunk->temporary - aData;
 	txBlock* aBlock = the->firstBlock;
-	txSize modulo = theSize & (sizeof(txSize) - 1);
-    if (modulo)
-		theSize = fxAddChunkSizes(the, theSize, sizeof(txSize) - modulo);
-	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk));
-	if (theSize <= aSize) {
-		aChunk->size = theSize;
+	size = fxAdjustChunkSize(the, size);
+	if (size <= capacity) {
+		aChunk->size = size;
 	#ifdef mxNever
 		gxRenewChunkCases[0]++;
 	#endif
@@ -1280,14 +1277,14 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
 	return C_NULL;
 #endif
 
-	aSize = theSize - aSize;
 	while (aBlock) {
 		if (aChunk->temporary == aBlock->current) {
-			if (aBlock->current + aSize <= aBlock->limit) {
-				aBlock->current += aSize;
+			txSize delta = size - capacity;
+			if (aBlock->current + delta <= aBlock->limit) {
+				aBlock->current += delta;
 				aChunk->temporary = aBlock->current;
-				aChunk->size = theSize;
-				the->currentChunksSize += theSize;
+				aChunk->size = size;
+				the->currentChunksSize += size;
 				if (the->peakChunksSize < the->currentChunksSize)
 					the->peakChunksSize = the->currentChunksSize;
 			#ifdef mxNever
