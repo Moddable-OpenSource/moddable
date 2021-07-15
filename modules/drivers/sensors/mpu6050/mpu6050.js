@@ -67,8 +67,8 @@ const Config = Object.freeze({
 Object.freeze(Config, true);
 
 const EXPECTED_WHO_AM_I = 0x68;
-const GYRO_SCALER = [ 131, 65.5, 32,8, 16.4 ];		// Datasheet 6.1
-const ACCEL_SCALER = [ 16384, 8192, 4096, 2048 ];	// Datasheet 6.2
+const GYRO_SCALER = Object.freeze([ 131, 65.5, 32,8, 16.4 ]);	// Datasheet 6.1
+const ACCEL_SCALER = Object.freeze([ 16384, 8192, 4096, 2048 ]); // Datasheet 6.2
 const Gconversion = 9.80665;
 
 class MPU6050 {

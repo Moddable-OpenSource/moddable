@@ -142,6 +142,8 @@ class LIS3DH {
 			});
 			io.writeByte(Register.CTRL6, Config.Interrupt.ACTIVE_LOW);
         }
+
+		this.configure({});
 	}
 
 	configure(options) {

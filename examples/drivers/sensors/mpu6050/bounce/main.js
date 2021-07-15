@@ -54,9 +54,6 @@ let sensor = new Accelerometer({
 	}
 });
 
-sensor.configure({
-});
-
 Timer.repeat(() => {
 	let values = sensor.sample();
 
