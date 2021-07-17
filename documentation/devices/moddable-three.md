@@ -9,6 +9,7 @@ This document provides information about Moddable Three, including details about
 
 - [About Moddable Three](#about-moddable-three)
 	- [Components](#components)
+	- [Pinout](#pinout)
 - [SDK and Host Environment Setup](#setup)
 - [Building and Deploying Apps](#building-and-deploying-apps)
 - [Troubleshooting](#troubleshooting)
@@ -29,6 +30,11 @@ Moddable Three is a hardware module that makes it easy for developers to experim
 ### Components
 
 The two main components of Moddable Three are the ESP8266 module and ePaper screen. The ESP8266 module includes a Wi-Fi antenna and 4 MB of flash storage memory. The ePaper screen is a 122 x 250 black and white display.
+
+<a id="pinout"</a>
+### Pinout
+
+<img src="../assets/devices/moddable-three-pinout.png">
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
