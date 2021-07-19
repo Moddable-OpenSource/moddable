@@ -90,6 +90,15 @@ const named_curves = Object.freeze({
 	x448: 30,
 });
 
+const options = Object.freeze({
+	tls_elliptic_curves: [named_curves.secp256r1],
+	tls_ec_point_formats: [0],	// uncompressed
+	tls_signature_algorithms: [
+		{hash: 4, sig: 3},		// SHA256, ECDSA
+		{hash: 4, sig: 1}		// SHA256, RSA
+	]
+}, true);
+
 function handshakeDigestUpdate(session, data)
 {
 	if (session.handshakeDigests) {
@@ -270,7 +279,7 @@ const handshakeProtocol = {
 			var sessionID = sessionIDLen > 0 ? s.readChunk(sessionIDLen) : undefined;
 			var suites = [];
 			var compressionMethods = [];
-			if (msgType == client_hello) {
+			if (msgType === client_hello) {
 				session.clientRandom = random;
 				session.clientSessionID = sessionID;
 				for (var nsuites = s.readChars(2) / 2; --nsuites >= 0;) {
@@ -292,7 +301,7 @@ const handshakeProtocol = {
 			}
 			session.chosenCipher = this.selectCipherSuite(suites);
 			session.compressionMethod = this.selectCompressionMethod(compressionMethods);
-			if (msgType == server_hello && s.byteAvailable) {
+			if (msgType === server_hello && s.byteAvailable) {
 				let type = s.readChars(2);
 				switch (type) {
 				case extension_type.tls_signature_algorithms:
@@ -311,12 +320,12 @@ const handshakeProtocol = {
 			}
 		},
 		packetize(session, cipherSuites, compressionMethods, msgType) {
-			let s = new SSLStream();
+			const s = new SSLStream;
 			s.writeChars(session.protocolVersion, 2);
 			let random = this.random.serialize();
 			let sessionID;
 			s.writeChunk(random);
-			if (msgType == client_hello) {
+			if (msgType === client_hello) {
 				session.clientRandom = random;
 				sessionID = session.clientSessionID;
 			}
@@ -330,7 +339,7 @@ const handshakeProtocol = {
 				s.writeChar(sessionID.byteLength);
 				s.writeChunk(sessionID);
 			}
-			if (msgType == client_hello) {
+			if (msgType === client_hello) {
 				s.writeChars(cipherSuites.length * 2, 2);
 				for (let i = 0; i < cipherSuites.length; i++) {
 					let val = cipherSuites[i].value;
@@ -343,14 +352,13 @@ const handshakeProtocol = {
 				//
 				// TLS extensions
 				//
-				let es = new SSLStream();
-				session.options.tls_elliptic_curves = [named_curves.secp256r1];
-				session.options.tls_ec_point_formats = [0];	// uncompressed
+				const es = new SSLStream;
+				session.options = {...options, ...session.options};
 				for (let i in session.options) {
 					if (!(i in extension_type))
 						continue;
-					let type = extension_type[i];
-					let ext = session.options[i];
+					const type = extension_type[i];
+					const ext = session.options[i];
 					switch (type) {
 					case extension_type.tls_server_name: {
 						es.writeChars(type, 2);
@@ -368,8 +376,7 @@ const handshakeProtocol = {
 						es.writeChars(1, 2);
 						let j;
 						for (j = 1; j <= 4; j++) {
-							let e = j + 9;	// start with 2^9
-							if ((ext >>> e) == 0)
+							if ((ext >>> (j + 9)) == 0)		// start with 2^9
 								break;
 						}
 						if (j > 4)
@@ -380,7 +387,7 @@ const handshakeProtocol = {
 					case extension_type.tls_signature_algorithms: {
 						es.writeChars(type, 2);
 						es.writeChars(2 + ext.length * 2, 2);
-						es.writeChars(ext.length, 2);
+						es.writeChars(ext.length * 2, 2);
 						for (let j = 0; j < ext.length; j++) {
 							es.writeChar(ext[j].hash);
 							es.writeChar(ext[j].sig);
@@ -427,7 +434,7 @@ const handshakeProtocol = {
 				}
 			}
 			else {
-				let val = cipherSuites[0].value;
+				const val = cipherSuites[0].value;
 				s.writeChar(val[0]);
 				s.writeChar(val[1]);
 				s.writeChar(compressionMethods[0]);

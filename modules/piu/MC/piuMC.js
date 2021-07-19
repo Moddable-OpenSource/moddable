@@ -44,8 +44,15 @@ export class Texture @ "PiuTextureDelete" {
 			this._create(alphaBitmap, colorBitmap);
 			return;
 		}
-		if (typeof(it) == "object")
+		if (typeof(it) == "object") {
+			if (it.alpha && it.color) {
+				alphaBitmap = parseBMP(new Resource(it.alpha));
+				colorBitmap = parseBMP(new Resource(it.color));
+				this._create(alphaBitmap, colorBitmap);
+				return;
+			}
 			it = it.path;
+		}
 		if (it.endsWith(".png")) {
 			let name = it.slice(0, -4);
 			let path = name + "-alpha.bm4";

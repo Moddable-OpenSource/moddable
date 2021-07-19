@@ -29,6 +29,10 @@ if (API_KEY === "YOUR_API_KEY_HERE")
 const keys = Object.freeze(["data", "images", "username", "title", "fixed_width", "url", "size", "user", "display_name", "meta", "status"]);
 
 class GiphyAppBehavior extends Behavior {
+	onCreate(application) {
+		if (application.rotation !== undefined && application.width > application.height)
+			application.rotation = 90;
+	}
 	onStringEntered(application, string) {
 		application.defer("searchGiphy", string, 0);
 	}

@@ -34,10 +34,8 @@ Timer.repeat(() => {
 	const h = humidity.sample();
 	trace(`humidity: ${h.humidity.toFixed(2)} %RH, temperature: ${CtoF(h.temperature).toFixed(2)} F\n`);
 	sensor.configure({
-		environmentalData: {
-			humidity: h.humidity,
-			temperature: h.temperature
-		}
+		humidity: h.humidity,
+		temperature: h.temperature
 	});
 
 	const sample = sensor.sample();

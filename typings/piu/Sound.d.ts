@@ -25,6 +25,10 @@ declare module "piu/Sound" {
       offset?: number;
       size?: number;
     });
+    public constructor(tones: {
+      frequency: number,
+      samples?: number
+    }[]);
     public static callback(index: number): void;
     public static readonly bitsPerSample: number;
     public static readonly numChannels: number;

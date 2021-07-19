@@ -14,12 +14,42 @@
 
 import WiFi from "wifi/connection";
 
-new WiFi(
-	{
-		ssid: "access point name",
-		password: "password"
-	},
-	function (msg) {
-		trace(`Wi-Fi ${msg}\n`);
-	}
-);
+if (1) {
+	// single access point
+	new WiFi(
+		{
+			ssid: "access point name",
+			password: "password"
+		},
+		function (msg) {
+			trace(`Wi-Fi ${msg}\n`);
+		}
+	);
+}
+else {
+	// multiple access points
+
+	const AccessPoints = [
+		{
+			ssid: "access point name one",
+			password: "password"
+		},
+		{
+			ssid: "access point name two",
+			password: "password"
+		},
+		{
+			ssid: "access point name three",
+			password: "password"
+		}
+	];
+
+	new WiFi(
+		{},
+		function (msg, value) {
+			trace(`Wi-Fi ${msg} @ ${value}\n`);
+			if ("getAP" === msg)
+				return AccessPoints[value % AccessPoints.length];
+		}
+	);
+}

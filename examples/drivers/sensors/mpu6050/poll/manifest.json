@@ -1,0 +1,6 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/sensors/mpu6050/manifest.json",
+	"modules": {
+		"*": "./main"
+	}
+}

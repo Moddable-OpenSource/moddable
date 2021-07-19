@@ -360,8 +360,7 @@ txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoo
 void fxBigIntDecode(txMachine* the, txSize size)
 {
 	txBigInt* bigint;
-	fxOverflow(the, -1, C_NULL, 0);
-	(--the->stack)->next = C_NULL;
+	mxPushUndefined();
 	bigint = &the->stack->value.bigint;
 	bigint->data = fxNewChunk(the, size);
 	bigint->size = size >> 2;
@@ -853,8 +852,7 @@ txBigInt *fxBigInt_alloc(txMachine* the, txU4 size)
 	if (size > 0xFFFF) {
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
-	fxOverflow(the, -1, C_NULL, 0);
-	(--the->stack)->next = C_NULL;
+	mxPushUndefined();
 	bigint = &the->stack->value.bigint;
 	bigint->data = fxNewChunk(the, fxMultiplyChunkSizes(the, size, sizeof(txU4)));
 	bigint->size = size;

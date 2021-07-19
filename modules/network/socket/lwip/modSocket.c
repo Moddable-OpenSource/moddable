@@ -1293,7 +1293,7 @@ void socketClearPending(void *the, void *refcon, uint8_t *message, uint16_t mess
 	if ((pending & kPendingSent) && !(xss->pending & kPendingClose))
 		socketMsgDataSent(xss);
 
-	if ((pending & kPendingOutput) && !(xss->pending & kPendingClose))
+	if ((pending & kPendingOutput) && !(xss->pending & kPendingClose) && xss->skt)
 		tcp_output_safe(xss->skt);
 
 	if ((pending & kPendingDisconnect) && !(xss->pending & kPendingClose))
