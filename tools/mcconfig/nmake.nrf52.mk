@@ -139,7 +139,7 @@ DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=1
 FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ELSE
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
-FTDI_TRACE = -DUSE_FTDI_TRACE=1
+FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ENDIF
 !ELSE
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
@@ -323,6 +323,7 @@ NRF_DRIVERS_OBJ = \
 	$(LIB_DIR)\nrfx_qdec.o \
 	$(LIB_DIR)\nrfx_saadc.o \
 	$(LIB_DIR)\nrfx_spim.o \
+	$(LIB_DIR)\nrfx_spis.o \
 	$(LIB_DIR)\nrfx_systick.o \
 	$(LIB_DIR)\nrfx_timer.o \
 	$(LIB_DIR)\nrfx_twim.o \
@@ -644,10 +645,12 @@ debugger:
 	$(DO_XSBUG)
 	$(MODDABLE_TOOLS_DIR)\serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1 -dtr $(NORESTART)
 
-build: precursor $(BIN_DIR)\xs_nrf52.hex
-	@echo Target built: $(BIN_DIR)\xs_nrf52.hex
+build: precursor $(BIN_DIR)\xs_nrf52.uf2
+	@echo Target built: $(BIN_DIR)\xs_nrf52.uf2
 
 brin: flash debugger
+
+use_jlink: flash debugger
 
 xsbug:
 	$(KILL_SERIAL_2_XSBUG)

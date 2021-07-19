@@ -27,8 +27,6 @@
 
 		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
 
-		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
-
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
@@ -44,7 +42,7 @@
 				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
 				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/udp",
-				"embedded:io/socket/listener": "$(IO)/socket/listener",
+				"embedded:io/socket/listener": "$(IO)/socket/listener"
 			}
 		},
 		"esp": {
@@ -82,8 +80,14 @@
 				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
 			}
 		},
+		"nrf52/*": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider"
+			}
+		},
 		"nrf52": {
 			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
 			}
 		},
 		"...": {

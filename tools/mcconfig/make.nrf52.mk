@@ -452,6 +452,7 @@ NRF_DRIVERS = \
 	$(LIB_DIR)/nrfx_qdec.c.o \
 	$(LIB_DIR)/nrfx_saadc.c.o \
 	$(LIB_DIR)/nrfx_spim.c.o \
+	$(LIB_DIR)/nrfx_spis.c.o \
 	$(LIB_DIR)/nrfx_systick.c.o \
 	$(LIB_DIR)/nrfx_timer.c.o \
 	$(LIB_DIR)/nrfx_twim.c.o \
