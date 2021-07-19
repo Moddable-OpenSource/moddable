@@ -56,7 +56,7 @@ const device = {
 	Analog: {
 		default: {
 			io: Analog,
-			pin: 33
+			pin: 35
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
