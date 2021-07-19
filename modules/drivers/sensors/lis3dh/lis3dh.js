@@ -27,7 +27,6 @@
 */
 
 import Timer from "timer";
-import SMBus from "embedded:io/smbus";
 
 function asHex(v) { return `${v.toString(16).padStart(2, "0")}`; }
 
