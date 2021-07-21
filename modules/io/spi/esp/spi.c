@@ -67,7 +67,7 @@ void xs_spi_constructor(xsMachine *the)
 	xsmcVars(1);
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
-	clock = xsmcToInteger(xsVar(0));
+	clock = builtinGetPin(the, &xsVar(0));
 	if (!builtinIsPinFree(clock))
 		xsRangeError("in use");
 
@@ -76,21 +76,21 @@ void xs_spi_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_out)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_out);
-		mosi = xsmcToInteger(xsVar(0));
+		mosi = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(mosi))
 			xsRangeError("in use");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_in)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_in);
-		miso = xsmcToInteger(xsVar(0));
+		miso = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(miso))
 			xsRangeError("in use");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_select)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_select);
-		select = xsmcToInteger(xsVar(0));
+		select = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(select))
 			xsRangeError("in use");
 	}

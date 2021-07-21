@@ -153,6 +153,20 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format)
 	return format;
 }
 
+uint32_t builtinGetPin(xsMachine *the, xsSlot *slot)
+{
+	xsIntegerValue pin;
+	xsType type = fxTypeOf(the, slot);
+	if (xsUndefinedType == type)
+		xsUnknownError("invalid");
+
+	pin = fxToInteger(the, slot);
+	if (pin < 0)
+		xsRangeError("negative");
+
+	return (uint32_t)pin;
+}
+
 void *builtinGetBufferPointer(xsMachine *the, xsSlot *slot, uint32_t *byteLength)
 {
 	xsSlot arrayBuffer;
