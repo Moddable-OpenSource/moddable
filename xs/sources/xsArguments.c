@@ -93,7 +93,7 @@ txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count)
 	property = fxNextSlotProperty(the, property, mxFunction, mxID(_callee), XS_DONT_ENUM_FLAG);
 	property = fxNextSlotProperty(the, property, &mxArrayIteratorFunction, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	the->code = code;
-	fxSetIndexSize(the, array, length);
+	fxSetIndexSize(the, array, length, XS_CHUNK);
 	index = 0;
 	address = array->value.array.address;
 	property = the->scope + count;
@@ -207,7 +207,7 @@ txSlot* fxNewArgumentsStrictInstance(txMachine* the, txIndex count)
 	property->value.accessor.getter = function;
 	property->value.accessor.setter = function;
 	the->code = code;
-	fxSetIndexSize(the, array, length);
+	fxSetIndexSize(the, array, length, XS_CHUNK);
 	index = 0;
 	address = array->value.array.address;
 	while (index < length) {

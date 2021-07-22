@@ -452,7 +452,7 @@ txSlot* fxNewArray(txMachine* the, txInteger size)
 	txSlot* instance;
 	mxPush(mxArrayPrototype);
 	instance = fxNewArrayInstance(the);
-	fxSetIndexSize(the, instance->next, size);
+	fxSetIndexSize(the, instance->next, size, XS_CHUNK);
 	return instance;
 }
 

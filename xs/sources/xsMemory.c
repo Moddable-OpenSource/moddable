@@ -71,7 +71,6 @@ static void fxMarkWeakStuff(txMachine* the);
 static void fxSweep(txMachine* the);
 static void fxSweepValue(txMachine* the, txSlot* theSlot);
 
-#define mxNever 1
 #ifdef mxNever
 
 long gxRenewChunkCases[4] = { 0, 0, 0, 0 };
@@ -466,7 +465,7 @@ void fxFree(txMachine* the)
 #ifdef mxNever
 	stopTime(&gxLifeTime);
 	reportTime(&gxLifeTime);
-	fprintf(stderr, "chunk: %ld bytes\n", the->maximumChunksSize);
+	fprintf(stderr, "chunk: %d bytes\n", the->maximumChunksSize);
 	fprintf(stderr, "slot: %ld bytes\n", the->maximumHeapCount * sizeof(txSlot));
 	reportTime(&gxMarkTime);
 	reportTime(&gxSweepChunkTime);

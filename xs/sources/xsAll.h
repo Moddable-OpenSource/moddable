@@ -882,7 +882,7 @@ extern txBoolean fxDeleteIndexProperty(txMachine* the, txSlot* array, txIndex in
 extern txSlot* fxGetIndexProperty(txMachine* the, txSlot* array, txIndex index);
 extern txIndex fxGetIndexSize(txMachine* the, txSlot* array);
 extern txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIndex index);
-extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target);
+extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean growable);
 
 extern txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
 extern txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id);
@@ -1789,6 +1789,11 @@ enum {
 enum {
 	XS_IMMUTABLE = 0,
 	XS_MUTABLE = 1,
+};
+
+enum {
+	XS_CHUNK = 0,
+	XS_GROWABLE_CHUNK = 1,
 };
 
 enum {

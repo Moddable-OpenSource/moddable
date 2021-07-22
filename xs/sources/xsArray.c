@@ -382,7 +382,7 @@ void fxConstructArrayEntry(txMachine* the, txSlot* entry)
 	mxPush(mxArrayPrototype);
 	instance = fxNewArrayInstance(the);
 	array = instance->next;
-	fxSetIndexSize(the, array, 2);
+	fxSetIndexSize(the, array, 2, XS_CHUNK);
 	item = array->value.array.address;
 	*((txIndex*)item) = 0;
 	item->ID = XS_NO_ID;
@@ -417,7 +417,7 @@ txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length)
 		mxRunCount(0);
 	mxPullSlot(mxResult);
 	if (resize)
-		fxSetIndexSize(the, mxResult->value.reference->next, length);
+		fxSetIndexSize(the, mxResult->value.reference->next, length, XS_CHUNK);
 	return fxCheckArray(the, mxResult, XS_MUTABLE);
 }
 
@@ -453,7 +453,7 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	mxPullSlot(mxResult);
 	if (flag) {
 		array = mxResult->value.reference->next;
-		fxSetIndexSize(the, array, (txIndex)length);
+		fxSetIndexSize(the, array, (txIndex)length, XS_CHUNK);
 	}
 	return array;
 }
@@ -861,7 +861,7 @@ void fx_Array(txMachine* the)
 		if (flag)
 			fxSetArrayLength(the, array, count);
 		else {
-			fxSetIndexSize(the, array, count);
+			fxSetIndexSize(the, array, count, XS_CHUNK);
 			slot = array->value.array.address;
 			while (index < count) {
 				argument = mxArgv(index);
@@ -983,7 +983,7 @@ void fx_Array_of(txMachine* the)
 	txSlot* array = fxCreateArray(the, 1, count);
 	if (array) {
 		txSlot* slot;
-		fxSetIndexSize(the, array, count);
+		fxSetIndexSize(the, array, count, XS_CHUNK);
 		slot = array->value.array.address;
 		while (index < count) {
 			txSlot* argument = mxArgv(index);
@@ -1076,7 +1076,7 @@ void fx_Array_prototype_concat(txMachine* the)
 				break;
 			mxPushSlot(mxArgv(i));
 		}
-		fxSetIndexSize(the, resultArray, resultLength - holeCount);
+		fxSetIndexSize(the, resultArray, resultLength - holeCount, XS_CHUNK);
 		resultArray->value.array.length = resultLength;
 		resultSlot = resultArray->value.array.address;
 		slot = list->next;
@@ -1232,7 +1232,7 @@ void fx_Array_prototype_fill(txMachine* the)
 		txSlot* address;
 		txIndex size;
 		if ((start == 0) && (end == length)) {
-			fxSetIndexSize(the, array, length);
+			fxSetIndexSize(the, array, length, XS_CHUNK);
 			fxIndexArray(the, array);
 		}
 		address = array->value.array.address;
@@ -1302,7 +1302,7 @@ void fx_Array_prototype_filter(txMachine* the)
 			}
 			index++;
 		}
-		fxSetIndexSize(the, resultArray, resultLength);
+		fxSetIndexSize(the, resultArray, resultLength, XS_CHUNK);
 		resultSlot = resultArray->value.array.address;
 		slot = list->next;
 		index = 0;
@@ -1683,7 +1683,7 @@ void fx_Array_prototype_map(txMachine* the)
 			index++;
 		}
 		if (resultLength < length) {
-			fxSetIndexSize(the, resultArray, resultLength);
+			fxSetIndexSize(the, resultArray, resultLength, XS_CHUNK);
 			resultArray->value.array.length = length;
 		}
 	}
@@ -1711,7 +1711,7 @@ void fx_Array_prototype_pop(txMachine* the)
 			address = array->value.array.address + length;
 			mxResult->kind = address->kind;
 			mxResult->value = address->value;
-			fxSetIndexSize(the, array, length);
+			fxSetIndexSize(the, array, length, XS_CHUNK);
 			mxMeterSome(8);
 		}
 		mxMeterSome(4);
@@ -1746,7 +1746,7 @@ void fx_Array_prototype_push(txMachine* the)
 		mxMeterSome(2);
 		if (length + c < length)
 			mxRangeError("array overflow");
-		fxSetIndexSize(the, array, length + c);
+		fxSetIndexSize(the, array, length + c, XS_GROWABLE_CHUNK);
 		address = array->value.array.address + length;
 		while (i < c) {
 			txSlot* argument = mxArgv(i);
@@ -1922,7 +1922,7 @@ void fx_Array_prototype_shift(txMachine* the)
 			mxResult->kind = address->kind;
 			mxResult->value = address->value;
 			c_memmove(address, address + 1, length * sizeof(txSlot));
-			fxSetIndexSize(the, array, length);
+			fxSetIndexSize(the, array, length, XS_CHUNK);
 			fxIndexArray(the, array);
 			mxMeterSome(length * 10);
 			mxMeterSome(3);
@@ -2247,12 +2247,12 @@ void fx_Array_prototype_splice(txMachine* the)
 		mxMeterSome(4);
 		if (insertions < deletions) {
 			c_memmove(array->value.array.address + start + insertions, array->value.array.address + start + deletions, (length - (start + deletions)) * sizeof(txSlot));
-			fxSetIndexSize(the, array, length - (deletions - insertions));
+			fxSetIndexSize(the, array, length - (deletions - insertions), XS_CHUNK);
 			mxMeterSome((length - (start + deletions)) * 10);
 			mxMeterSome((deletions - insertions) * 4);
 		}
 		else if (insertions > deletions) {
-			fxSetIndexSize(the, array, length + (insertions - deletions));
+			fxSetIndexSize(the, array, length + (insertions - deletions), XS_CHUNK);
 			c_memmove(array->value.array.address + start + insertions, array->value.array.address + start + deletions, (length - (start + deletions)) * sizeof(txSlot));
 			mxMeterSome((length - (start + deletions)) * 10);
 		}
@@ -2404,7 +2404,7 @@ void fx_Array_prototype_unshift(txMachine* the)
 		if (length + c < length)
 			mxRangeError("array overflow");
 		if (c > 0) {
-			fxSetIndexSize(the, array, length + c);
+			fxSetIndexSize(the, array, length + c, XS_GROWABLE_CHUNK);
 			address = array->value.array.address;
 			c_memmove(address + c, address, length * sizeof(txSlot));
 			mxMeterSome(length * 10);
