@@ -1480,6 +1480,19 @@ void fx_TypedArray_of(txMachine* the)
 
 void fx_TypedArray_prototype_at(txMachine* the)
 {
+	txSlot* instance = fxCheckTypedArrayInstance(the, mxThis);
+	txSlot* dispatch = instance->next;
+	txSlot* view = dispatch->next;
+	txSlot* buffer = view->next;
+	txInteger length = (buffer->value.reference->next->value.arrayBuffer.address == C_NULL) ? 0 : view->value.dataView.size >> dispatch->value.typedArray.dispatch->shift;
+	txInteger index = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	if (index < 0)
+		index = length + index;
+	if ((0 <= index) && (index < length)) {
+		mxPushSlot(mxThis);
+		mxGetIndex(index);
+		mxPullSlot(mxResult);
+	}
 }
 
 void fx_TypedArray_prototype_buffer_get(txMachine* the)
