@@ -99,6 +99,7 @@ void fxBuildString(txMachine* the)
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewStringInstance(the));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_charAt), 1, mxID(_charAt), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_charCodeAt), 1, mxID(_charCodeAt), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_codePointAt), 1, mxID(_codePointAt), XS_DONT_ENUM_FLAG);
@@ -533,6 +534,29 @@ void fx_String_raw(txMachine* the)
 	}
 	mxResult->kind = XS_STRING_KIND;
 	mxPop();
+}
+
+void fx_String_prototype_at(txMachine* the)
+{
+	txString string = fxCoerceToString(the, mxThis);
+	txNumber length = fxUnicodeLength(string);
+	txNumber index = (mxArgc > 0) ? c_trunc(fxToNumber(the, mxArgv(0))) : C_NAN;
+	if (c_isnan(index) || (index == 0))
+		index = 0;
+	if (index < 0)
+		index = length + index;
+	if ((0 <= index) && (index < length)) {
+		txInteger from = fxUnicodeToUTF8Offset(string, (txIndex)index);
+		if (from >= 0) {
+			txInteger to = fxUnicodeToUTF8Offset(string, (txIndex)(index + 1));
+			if (to >= 0) {
+				mxResult->value.string = fxNewChunk(the, to - from + 1);
+				c_memcpy(mxResult->value.string, fxToString(the, mxThis) + from, to - from);
+				mxResult->value.string[to - from] = 0;
+				mxResult->kind = XS_STRING_KIND;
+			}
+		}
+	}
 }
 
 void fx_String_prototype_charAt(txMachine* the)

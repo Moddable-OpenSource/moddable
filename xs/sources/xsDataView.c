@@ -237,6 +237,7 @@ void fxBuildDataView(txMachine* the)
 	mxPop();
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_TypedArray_prototype_buffer_get), C_NULL, mxID(_buffer), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_TypedArray_prototype_byteLength_get), C_NULL, mxID(_byteLength), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_TypedArray_prototype_byteOffset_get), C_NULL, mxID(_byteOffset), XS_DONT_ENUM_FLAG);
@@ -1475,6 +1476,10 @@ void fx_TypedArray_of(txMachine* the)
 			index++;
 		}
 	}
+}
+
+void fx_TypedArray_prototype_at(txMachine* the)
+{
 }
 
 void fx_TypedArray_prototype_buffer_get(txMachine* the)

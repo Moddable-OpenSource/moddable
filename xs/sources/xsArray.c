@@ -98,6 +98,7 @@ void fxBuildArray(txMachine* the)
 
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewArrayInstance(the));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_concat), 1, mxID(_concat), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_copyWithin), 2, mxID(_copyWithin), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_entries), 0, mxID(_entries), XS_DONT_ENUM_FLAG);
@@ -133,11 +134,12 @@ void fxBuildArray(txMachine* the)
 	mxPull(mxArrayIteratorFunction);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	unscopable = fxLastProperty(the, fxNewInstance(the));
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_copyWithin), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_at), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_entries), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_fill), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_find), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findIndex), XS_NO_FLAG);
-	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_fill), XS_NO_FLAG);
-	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_copyWithin), XS_NO_FLAG);
-	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_entries), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flat), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flatMap), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_includes), XS_NO_FLAG);
@@ -1009,6 +1011,23 @@ void fx_Array_of(txMachine* the)
 		mxPushSlot(mxResult);
 		mxSetID(mxID(_length));
 		mxPop();
+	}
+}
+
+void fx_Array_prototype_at(txMachine* the)
+{
+	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
+	txNumber length = (array) ? array->value.array.length : fxGetArrayLength(the, mxThis);
+	txNumber index = (mxArgc > 0) ? c_trunc(fxToNumber(the, mxArgv(0))) : C_NAN;
+	if (c_isnan(index) || (index == 0))
+		index = 0;
+	if (index < 0)
+		index = length + index;
+	if ((0 <= index) && (index < length)) {
+		mxPushSlot(mxThis);
+		mxPushNumber(index);
+		mxGetAt();
+		mxPullSlot(mxResult);
 	}
 }
 
