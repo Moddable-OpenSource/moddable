@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/pins/rmt/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}
