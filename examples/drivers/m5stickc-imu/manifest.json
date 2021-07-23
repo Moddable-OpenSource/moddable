@@ -10,5 +10,12 @@
 	"resources": {
 		"*": "./ball",
 		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16"
+	},
+	"bundle": {
+		"id": "tech.moddable.m5stickc-imu",
+		"devices": [
+			"esp32/m5stick_c"
+		],
+		"icon": "./icon.png"
 	}
 }
