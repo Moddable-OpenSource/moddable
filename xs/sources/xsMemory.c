@@ -1597,7 +1597,10 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 	case XS_ARRAY_KIND:
 	case XS_STACK_KIND:
 		if ((aSlot = theSlot->value.array.address)) {
-			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
+			txChunk* chunk = (txChunk*)(((txByte*)aSlot) - sizeof(txChunk));
+			txIndex aLength = chunk->size / sizeof(txSlot);
+			if (aLength > theSlot->value.array.length)
+				aLength = theSlot->value.array.length;
 			while (aLength) {
 				fxSweepValue(the, aSlot);
 				aSlot++;
