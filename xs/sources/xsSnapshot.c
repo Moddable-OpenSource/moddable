@@ -20,6 +20,8 @@
 
 #include "xsSnapshot.h"
 
+static void fxLinkChunks(txMachine* the);
+
 static void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* chunkSize);
 static void fxMeasureChunk(txMachine* the, txSnapshot* snapshot, void* address, txSize* chunkSize);
 static void fxMeasureChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize* chunkSize);
@@ -534,6 +536,21 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 extern const txTypeDispatch gxTypeDispatches[];
 extern const txTypeAtomics gxTypeAtomics[];
 
+void fxLinkChunks(txMachine* the)
+{
+	txBlock* block = the->firstBlock;
+	while (block) {
+		txByte* current = ((txByte*)block) + sizeof(txBlock);
+		txByte* limit = block->current;
+		while (current < limit) {
+			txSize size = ((txChunk*)current)->size;
+			txByte* next = current + size;
+			((txChunk*)current)->temporary = next;
+			current = next;
+		}	
+		block = block->nextBlock;
+	}
+}
 
 void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* chunkSize)
 {
@@ -844,7 +861,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			slot = &mxDuringJobs;
             the->collectFlag = XS_COLLECTING_FLAG;
 
-
+			fxLinkChunks(the);
 
 		#ifdef mxDebug
 			fxLogin(the);
@@ -1586,23 +1603,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		heap = heap->next;
 	}
 	
-	{
-		txBlock* block;
-		txByte* mByte;
-		txByte* nByte;
-
-		block = the->firstBlock;
-		while (block) {
-			mByte = ((txByte*)block) + sizeof(txBlock);
-			nByte = block->current;
-			while (mByte < nByte) {
-				txSize size = ((txChunk*)mByte)->size;
-				((txChunk*)mByte)->temporary = C_NULL;
-				mByte += size;
-			}	
-			block = block->nextBlock;
-		}
-	}
+	fxLinkChunks(the);
 	
 	return (snapshot->error) ? 0 : 1;
 }
