@@ -769,7 +769,6 @@ void fxResizeEntries(txMachine* the, txSlot* table, txSlot* list)
 {
 	txSize size = list->next->value.integer;
 	txSize formerLength = table->value.table.length;
-	txSlot** formerAddress = table->value.table.address;
 	txSize currentLength = formerLength;
 	txSize high = mxTableThreshold(formerLength);
 	txSize low = mxTableThreshold(formerLength) >> 1;
@@ -786,6 +785,8 @@ void fxResizeEntries(txMachine* the, txSlot* table, txSlot* list)
 	if (formerLength != currentLength) {
 		txSlot** currentAddress = (txSlot**)fxNewChunk(the, currentLength * sizeof(txSlot*));
 		if (currentAddress) {
+			txSlot** formerAddress = table->value.table.address;
+
             txSize currentMask = currentLength - 1;
 			c_memset(currentAddress, 0, currentLength * sizeof(txSlot*));
 			while (formerLength) {
