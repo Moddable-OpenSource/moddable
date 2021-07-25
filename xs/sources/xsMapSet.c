@@ -924,7 +924,7 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 		sum = sum ^ (sum >> 22);
 	}
 	sum &= mxTableMaxLength - 1;
-	return sum;
+	return (txU4)sum;
 }
 
 txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b)

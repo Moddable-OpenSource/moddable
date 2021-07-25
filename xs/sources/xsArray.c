@@ -1183,7 +1183,7 @@ void fx_Array_prototype_copyWithin(txMachine* the)
 		if (count > 0) {
 			c_memmove(array->value.array.address + (txIndex)to, array->value.array.address + (txIndex)from, (txIndex)count * sizeof(txSlot));
 			fxIndexArray(the, array);
-			mxMeterSome(count * 10);
+			mxMeterSome((txU4)count * 10);
 		}
 	}
 	else {

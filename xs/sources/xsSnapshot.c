@@ -1416,7 +1416,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	txSize namesSize = the->nameModulo * sizeof(txSlot*);
 	txSize keysSize = the->keyIndex * sizeof(txSlot*);
 	txSize slotSize = 1;
-	txSize stackSize = (the->stackTop - the->stack) * sizeof(txSlot);
+	txSize stackSize = (txSize)((the->stackTop - the->stack) * sizeof(txSlot));
 	txSize symbolsSize = the->symbolModulo * sizeof(txSlot*);
 	txCreation creation;
 	
@@ -1480,7 +1480,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		creation.incrementalChunkSize = the->minimumChunksSize;
 		creation.initialHeapCount = the->maximumHeapCount;
 		creation.incrementalHeapCount = the->minimumHeapCount;
-		creation.stackCount = the->stackTop - the->stackBottom;
+		creation.stackCount = (txSize)(the->stackTop - the->stackBottom);
 		creation.keyCount = the->keyCount;
 		creation.nameModulo = the->nameModulo;
 		creation.symbolModulo = the->symbolModulo;

@@ -207,7 +207,7 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size)
 	if (chunk) {
 		txByte* data = (txByte*)chunk;
 		chunk->size = size;
-		the->currentChunksSize += chunk->temporary - data;
+		the->currentChunksSize += (txSize)(chunk->temporary - data);
 		if (the->peakChunksSize < the->currentChunksSize)
 			the->peakChunksSize = the->currentChunksSize;
 		return data + sizeof(txChunk);
@@ -1261,7 +1261,7 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 {
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
-	txSize capacity = aChunk->temporary - aData;
+	txSize capacity = (txSize)(aChunk->temporary - aData);
 	txBlock* aBlock = the->firstBlock;
 	size = fxAdjustChunkSize(the, size);
 	if (size <= capacity) {
@@ -1412,7 +1412,7 @@ void fxSweep(txMachine* the)
 			else {
 				((txChunk*)current)->temporary = C_NULL;
 			}
-			((txChunk*)current)->size = next - current;
+			((txChunk*)current)->size = (txSize)(next - current);
 			current = next;
 		}	
 		aBlock->temporary = temporary;
@@ -1550,7 +1550,7 @@ void fxSweep(txMachine* the)
 			if ((temporary = ((txChunk*)current)->temporary)) {
 				if (former) {
 					((txChunk*)former)->temporary = temporary;
-					((txChunk*)former)->size = temporary - former;
+					((txChunk*)former)->size = (txSize)(temporary - former);
 				}
 				if (temporary != current)
 					c_memmove(temporary, current, aSize);
@@ -1560,7 +1560,7 @@ void fxSweep(txMachine* the)
 		}
 		if (former) {
 			((txChunk*)former)->temporary = aBlock->temporary;
-			((txChunk*)former)->size = aBlock->temporary - former;
+			((txChunk*)former)->size = (txSize)(aBlock->temporary - former);
 		}
 	#if mxFill
 		c_memset(aBlock->temporary, 0xFF, aBlock->current - aBlock->temporary);
