@@ -42,6 +42,7 @@
 static txIndex fxCheckArrayLength(txMachine* the, txSlot* slot);
 static txBoolean fxCallThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* item);
 static txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable);
+static txSlot* fxCheckArrayItems(txMachine* the, txSlot* array, txIndex from, txIndex to);
 static int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txInteger i);
 static txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length);
 static txSlot* fxCreateArraySpecies(txMachine* the, txNumber length);
@@ -283,21 +284,27 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 		{
 			txSlot* address = array->value.array.address;
 			txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
-			txIndex index = 0;
 			if (array->value.array.length != size)
 				return C_NULL;
 			if (mutable && (instance->flag & XS_DONT_PATCH_FLAG))
 				return C_NULL;
-			while (index < size) {
-				if (address->flag)
-					return C_NULL;
-				address++;
-				index++;
-			}
 			return array;
 		}
 	}
 	return C_NULL;
+}
+
+txSlot* fxCheckArrayItems(txMachine* the, txSlot* array, txIndex from, txIndex to)
+{
+	txSlot* address = array->value.array.address;
+	address += from;
+	while (from < to) {
+		if (address->flag)
+			return C_NULL;
+		address++;
+		from++;
+	}
+	return array;
 }
 
 txIndex fxCheckArrayLength(txMachine* the, txSlot* slot)
@@ -1181,6 +1188,14 @@ void fx_Array_prototype_copyWithin(txMachine* the)
 		count = length - to;
 	if (array && ((txIndex)length == mxArraySize(array))) {
 		if (count > 0) {
+			if (from < to)
+				array = fxCheckArrayItems(the, array, from, to + count);
+			else
+				array = fxCheckArrayItems(the, array, to, from + count);
+		}
+	}
+	if (array && ((txIndex)length == mxArraySize(array))) {
+		if (count > 0) {
 			c_memmove(array->value.array.address + (txIndex)to, array->value.array.address + (txIndex)from, (txIndex)count * sizeof(txSlot));
 			fxIndexArray(the, array);
 			mxMeterSome((txU4)count * 10);
@@ -1723,6 +1738,11 @@ void fx_Array_prototype_pop(txMachine* the)
 	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	if (array) {
 		txIndex length = array->value.array.length;
+		if (length > 0)
+			array = fxCheckArrayItems(the, array, length - 1, length);
+	}
+	if (array) {
+		txIndex length = array->value.array.length;
 		txSlot* address;
 		mxMeterSome(2);
 		if (length > 0) {
@@ -1930,6 +1950,8 @@ void fx_Array_prototype_reverse(txMachine* the)
 void fx_Array_prototype_shift(txMachine* the)
 {
 	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
+	if (array)
+		array = fxCheckArrayItems(the, array, 0, array->value.array.length);
 	if (array) {
 		txIndex length = array->value.array.length;
 		txSlot* address;
@@ -2063,6 +2085,8 @@ void fx_Array_prototype_sort(txMachine* the)
 				mxTypeError("compare is no function");
 		}
 	}
+	if (array)
+		array = fxCheckArrayItems(the, array, 0, array->value.array.length);
 again:
 	if (!array) {
 		LENGTH = fxGetArrayLength(the, mxThis);
@@ -2250,6 +2274,12 @@ void fx_Array_prototype_splice(txMachine* the)
 	}
 	if (LENGTH + INSERTIONS - DELETIONS > C_MAX_SAFE_INTEGER)
 		mxTypeError("unsafe integer");
+	if (array) {
+		if (INSERTIONS == DELETIONS)
+			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)START + DELETIONS);
+		else
+			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)LENGTH);
+	}
 	resultArray = fxCreateArraySpecies(the, DELETIONS);
 	if (array && resultArray) {
 		txSlot* address;
@@ -2417,6 +2447,8 @@ void fx_Array_prototype_unshift(txMachine* the)
 {
 	txIndex c = mxArgc, i;
 	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
+	if (array)
+		array = fxCheckArrayItems(the, array, 0, array->value.array.length);
 	if (array) {
 		txSlot* address;
 		txIndex length = array->value.array.length;
