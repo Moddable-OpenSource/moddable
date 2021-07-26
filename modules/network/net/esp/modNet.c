@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -52,6 +52,8 @@ getNIF(xsMachine *the)
 		wantsAP = 0 == c_strcmp(xsToString(xsArg(1)), "ap");
 		wantsStation = 0 == c_strcmp(xsToString(xsArg(1)), "station");
 #if ESP32
+		if (0 == c_strcmp(xsToString(xsArg(1)), "ethernet"))
+			return TCPIP_ADAPTER_IF_ETH;
 		if (!wantsAP && !wantsStation) {	// for multihomed configurations: if argument is IP address, find adapter that matches.
 			ip_addr_t dst;
 			if (ipaddr_aton(xsToString(xsArg(1)), &dst)) {
@@ -133,15 +135,19 @@ void xs_net_get(xsMachine *the)
 		uint8_t macaddr[6];
 #if ESP32
 		tcpip_adapter_if_t nif = getNIF(the);
-		wifi_interface_t ifx;
+		esp_netif_t *netif = NULL;
+
 		if (TCPIP_ADAPTER_IF_STA == nif)
-			ifx = ESP_IF_WIFI_STA;
+			netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
 		else if (TCPIP_ADAPTER_IF_AP == nif)
-			ifx = ESP_IF_WIFI_AP;
-		else
+			netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+		else if (TCPIP_ADAPTER_IF_ETH == nif)
+			netif = esp_netif_get_handle_from_ifkey("ETH_DEF");
+
+		if (!netif)
 			return;
 
-		if (ESP_OK == esp_wifi_get_mac(ifx, macaddr))
+		if (ESP_OK == esp_netif_get_mac(netif, macaddr))
 #else
 		if (wifi_get_macaddr(getNIF(the), macaddr))
 #endif
