@@ -1274,12 +1274,22 @@ void fx_Array_prototype_fill(txMachine* the)
 		if (length == size) {
 			while (start < end) {
 				txSlot* slot = array->value.array.address + start;
-				slot->ID = XS_NO_ID;
-				slot->kind = value->kind;
-				slot->value = value->value;
-				mxMeterSome(5);
+				if (slot->flag) {
+					mxPushSlot(value);
+					mxPushSlot(mxThis);
+					mxSetIndex(start);
+					mxPop();
+					mxMeterSome(1);
+				}
+				else {
+					slot->ID = XS_NO_ID;
+					slot->kind = value->kind;
+					slot->value = value->value;
+					mxMeterSome(5);
+				}
 				start++;
 			}
+			
 		}
 		else {
 			while (start < end) {
@@ -2017,6 +2027,8 @@ void fx_Array_prototype_slice(txMachine* the)
 	txNumber COUNT = (END > START) ? END - START : 0;
 	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* resultArray = fxCreateArraySpecies(the, COUNT);
+	if (array && resultArray)
+		array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + COUNT));
 	if (array && resultArray) {
 		txIndex start = (txIndex)START;
 		txIndex count = (txIndex)COUNT;
@@ -2274,13 +2286,13 @@ void fx_Array_prototype_splice(txMachine* the)
 	}
 	if (LENGTH + INSERTIONS - DELETIONS > C_MAX_SAFE_INTEGER)
 		mxTypeError("unsafe integer");
-	if (array) {
+	resultArray = fxCreateArraySpecies(the, DELETIONS);
+	if (array && resultArray) {
 		if (INSERTIONS == DELETIONS)
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)START + DELETIONS);
 		else
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)LENGTH);
 	}
-	resultArray = fxCreateArraySpecies(the, DELETIONS);
 	if (array && resultArray) {
 		txSlot* address;
 		txIndex length = (txIndex)LENGTH;
