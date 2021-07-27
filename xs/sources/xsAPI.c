@@ -2112,12 +2112,11 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		self->read = read;
 		self->write = write;
 		
-		self->bufferSize = bufferSize;
-		self->buffer = c_malloc(bufferSize);
-		mxElseNotEnoughMemory(self->buffer != C_NULL);
 		self->scratchSize = 1024;
-		self->scratch = c_malloc(self->scratchSize);
+		self->scratch = c_malloc(self->scratchSize + bufferSize);
 		mxElseNotEnoughMemory(self->scratch != C_NULL);
+		self->bufferSize = bufferSize;
+		self->buffer = self->scratch + self->scratchSize;
 		
 		mxElseFatalCheck(self->read(self->src, 0, self->buffer, mxArchiveHeaderSize));
 	
@@ -2148,7 +2147,8 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		checksum = preparation->checksum;
 		if (self->src == self->dst) {
 			if (*flag) {
-				mxElseFatalCheck(c_memcmp(p, checksum, XS_DIGEST_SIZE) == 0);
+				if (c_memcmp(p, checksum, XS_DIGEST_SIZE) != 0)
+					self->dst = NULL;
 				goto bail;
 			}
 		}
@@ -2281,8 +2281,6 @@ bail:
 		c_free(self->ids);
 	if (self->scratch)
 		c_free(self->scratch);
-	if (self->buffer)
-		c_free(self->buffer);
 	return self->dst;
 }
 
