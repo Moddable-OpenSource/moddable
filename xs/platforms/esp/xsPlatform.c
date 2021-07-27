@@ -1157,12 +1157,29 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 #if MODDEF_XS_MODS
-		case 15:
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
-			break;
+		case 15: {
+#if ESP32
+			uint32_t freeRAM = (uint32_t)heap_caps_get_free_size(MALLOC_CAP_8BIT);
+#else
+			uint32_t freeRAM = (uint32_t)system_get_free_heap_size();
+#endif
+			uint32_t installSpace = kModulesByteLength;
+			uint32_t transferSize;
+
+			the->echoBuffer[the->echoOffset++] = installSpace >> 24;
+			the->echoBuffer[the->echoOffset++] = installSpace >> 16;
+			the->echoBuffer[the->echoOffset++] = installSpace >>  8;
+			the->echoBuffer[the->echoOffset++] = installSpace;
+
+			transferSize = freeRAM >> 2;
+			if (transferSize > 4096)
+				transferSize = 4096;
+
+			the->echoBuffer[the->echoOffset++] = transferSize >> 24;
+			the->echoBuffer[the->echoOffset++] = transferSize >> 16;
+			the->echoBuffer[the->echoOffset++] = transferSize >>  8;
+			the->echoBuffer[the->echoOffset++] = transferSize;
+			} break;
 
 		case 16: {
 			int atomSize;
