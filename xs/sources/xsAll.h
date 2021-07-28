@@ -1047,6 +1047,7 @@ mxExport void fx_Number_isNaN(txMachine* the);
 mxExport void fx_Number_isSafeInteger(txMachine* the);
 mxExport void fx_Number_prototype_toExponential(txMachine* the);
 mxExport void fx_Number_prototype_toFixed(txMachine* the);
+mxExport void fx_Number_prototype_toLocaleString(txMachine* the);
 mxExport void fx_Number_prototype_toPrecision(txMachine* the);
 mxExport void fx_Number_prototype_toString(txMachine* the);
 mxExport void fx_Number_prototype_valueOf(txMachine* the);

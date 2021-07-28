@@ -303,6 +303,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Number_isSafeInteger,
 	fx_Number_prototype_toExponential,
 	fx_Number_prototype_toFixed,
+	fx_Number_prototype_toLocaleString,
 	fx_Number_prototype_toPrecision,
 	fx_Number_prototype_toString,
 	fx_Number_prototype_valueOf,
