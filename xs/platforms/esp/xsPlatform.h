@@ -122,6 +122,8 @@ extern "C" {
 
 extern void fx_putc(void *refcon, char c);
 
+#define mxTableMinLength (1)
+
 struct DebugFragmentRecord {
 	struct DebugFragmentRecord *next;
 	uint16_t count;
