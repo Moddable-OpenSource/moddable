@@ -38,7 +38,7 @@
 #include "xsAll.h"
 
 #ifndef mxTableMinLength
-	#define mxTableMinLength (4)
+	#define mxTableMinLength (1)
 #endif
 #ifndef mxTableMaxLength
 	#define mxTableMaxLength (1024 * 1024)
@@ -924,7 +924,7 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 		sum = sum + (sum << 6);
 		sum = sum ^ (sum >> 22);
 	}
-	sum &= mxTableMaxLength - 1;
+	sum &= 0xFFFFFFFF;
 	return (txU4)sum;
 }
 
