@@ -871,11 +871,27 @@ void fxGetNextTokenAux(txParser* parser)
 			parser->crlf2 = 1;
 			break;
 			
+		case '\t':
 		case 11:
 		case 12:
-		case 160:
-		case ' ':
-		case '\t':
+ 		case ' ':
+		case 0x00A0:
+		case 0x1680:
+		case 0x2000:
+		case 0x2001:
+		case 0x2002:
+		case 0x2003:
+		case 0x2004:
+		case 0x2005:
+		case 0x2006:
+		case 0x2007:
+		case 0x2008:
+		case 0x2009:
+		case 0x200A:
+		case 0x202F:
+		case 0x205F:
+		case 0x3000:
+		case 0xFEFF:
 			fxGetNextCharacter(parser);
 			break;
 			
@@ -1691,11 +1707,27 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 			}
 			parser->crlf2 = 1;
 			break;
+		case '\t':
 		case 11:
 		case 12:
-		case 160:
-		case ' ':
-		case '\t':
+ 		case ' ':
+		case 0x00A0:
+		case 0x1680:
+		case 0x2000:
+		case 0x2001:
+		case 0x2002:
+		case 0x2003:
+		case 0x2004:
+		case 0x2005:
+		case 0x2006:
+		case 0x2007:
+		case 0x2008:
+		case 0x2009:
+		case 0x200A:
+		case 0x202F:
+		case 0x205F:
+		case 0x3000:
+		case 0xFEFF:
 			if (quote)
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 			fxGetNextCharacter(parser);

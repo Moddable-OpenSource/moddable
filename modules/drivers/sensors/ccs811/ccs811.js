@@ -15,7 +15,7 @@
 /*
     CCS811 - Indoor Air Quality sensor
 	https://www.sciosense.com/products/environmental-sensors/ccs811-gas-sensor-solution/
-    Datasheet: https://cdn.sparkfun.com/assets/learn_tutorials/1/4/3/CCS811_Datasheet-DS000459.pdf
+    Datasheet: https://www.sciosense.com/wp-content/uploads/documents/SC-001232-DS-2-CCS811B-Datasheet-Revision-2.pdf
 */
 
 // @ToDo: Thresholds
@@ -95,9 +95,9 @@ class CCS811  {
 		this.#driveMode = Config.Drive_Mode.MEAS_1SEC;
 	}
 	configure(options) {
-		if (undefined !== options.environmentalData) {
-			let humidity = options.environmentalData.humidity ?? 50;
-			let temperature = options.environmentalData.temperature ?? 25;
+		if ((undefined !== options.humidity) || (undefined !== options.temperature)) {
+			let humidity = options.humidity ?? 50;
+			let temperature = options.temperature ?? 25;
 
 			humidity = (humidity * 512.0 + 0.5) & 0xffff;
 			temperature = ((temperature + 25.0) * 512.0 + 0.5) & 0xffff;
@@ -105,6 +105,13 @@ class CCS811  {
 			this.#io.writeBlock(Register.ENV_DATA, Uint8Array.of(
 					(humidity >> 8) & 0xff, humidity & 0xff,
 					(temperature >> 8) & 0xff, temperature & 0xff));
+		}
+		if (undefined !== options.mode) {
+			let mode = options.mode | 0;
+			if (mode >= 0 && mode <= 4)
+				this.#driveMode = mode << 4;
+			else
+				throw new Error("bad drive mode");
 		}
 	}
 	#enableInterrupt() {
@@ -156,7 +163,7 @@ class CCS811  {
 		io.readBlock(Register.ALG_RESULT, vBuf);
 		ret.eCO2 = (vBuf[0] << 8) | vBuf[1];
 		ret.TVOC = (vBuf[2] << 8) | vBuf[3];
-		ret.selected = vBuf[6] >> 2;
+		ret.current = vBuf[6] >> 2;
 		ret.rawADC = ((vBuf[6] & 3) << 8) | vBuf[7];
 		return ret;
 	}

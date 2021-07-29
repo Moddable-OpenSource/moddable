@@ -66,11 +66,11 @@ void xs_pwm_constructor_(xsMachine *the)
 	int resolution = 10;
 	int8_t i, free = -1, timerIndex = -1;
 	int ledc = -1;
-	ledc_channel_config_t ledcConfig;
+	ledc_channel_config_t ledcConfig = {0};
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
-	pin = xsmcToInteger(xsVar(0));
+	pin = builtinGetPin(the, &xsVar(0));
 
     if (!builtinIsPinFree(pin))
 		xsRangeError("in use");

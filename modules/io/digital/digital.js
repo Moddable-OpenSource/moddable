@@ -23,6 +23,8 @@ import DigitalBank from "embedded:io/digitalbank";
 class Digital extends DigitalBank {
 	constructor(options) {
 		const pin = options.pin;
+		if (undefined === pin)
+			throw new Error("invalid");
 		const pins = 1 << (pin & 0x1F);
 		const edge = options.edge ?? 0;
 		const o = {

@@ -98,6 +98,7 @@ class BMP280 extends aHostObject {
 		wBuf[0] = Register.BMP280_SOFTRESET;
 		wBuf[1] = Config.Mode.SOFT_RESET;
 		io.write(wBuf);
+		Timer.delay(10);
 
 		this.#initialize();
 	}

@@ -20,6 +20,7 @@
 
 /*
 	Zio Qwiic Soil Moisture Sensor
+	QuickStart guide: https://www.smart-prototyping.com/blog/Zio-Soil-Moisture-Sensor-Qwiic-Start-Guide
 	https://github.com/sparkfun/Zio-Qwiic-Soil-Moisture-Sensor/blob/master/Firmware/Qwiic%20Soil%20Moisture%20Sensor%20Examples/Example1-Basic_Reading/Example1-Basic_Reading.ino
 */
 

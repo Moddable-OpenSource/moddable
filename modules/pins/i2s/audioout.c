@@ -891,6 +891,16 @@ void xs_audioout_mix(xsMachine *the)
 	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
 }
 
+void xs_audioout_length(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostData(xsThis);
+	int streamIndex = xsmcToInteger(xsArg(0));
+	if ((streamIndex < 0) || (streamIndex >= out->streamCount))
+		xsRangeError("invalid stream");
+
+	xsmcSetInteger(xsResult, MODDEF_AUDIOOUT_QUEUELENGTH - out->stream[streamIndex].elementCount);
+}
+
 // note: updateActiveStreams relies on caller to lock mutex
 void updateActiveStreams(modAudioOut out)
 {

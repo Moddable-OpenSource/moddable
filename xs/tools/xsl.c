@@ -888,10 +888,8 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxGeneratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxHostPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxIteratorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxMapEntriesIteratorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxMapKeysIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxMapIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxMapPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxMapValuesIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxModulePrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxNumberPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxObjectPrototype); mxFreezeBuiltInRun;
@@ -901,10 +899,8 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxReferenceErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxRegExpPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxRegExpStringIteratorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxSetEntriesIteratorPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxSetKeysIteratorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSetIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSetPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxSetValuesIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSharedArrayBufferPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringPrototype); mxFreezeBuiltInRun;

@@ -1474,7 +1474,7 @@ void fx_Compartment(txMachine* the)
 	txSlot* slot;
 	txSlot* own;
 	txString string;
-	txID id;
+	txInteger id;
 	
 	if (!module) module = mxProgram.value.reference;
 	realm = mxModuleInstanceInternal(module)->value.module.realm;

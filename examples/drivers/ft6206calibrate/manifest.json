@@ -26,5 +26,13 @@
 		"ft81x": {
 			"raw": true
 		}
+	},
+	"bundle": {
+		"id": "tech.moddable.ft6206calibrate",
+		"devices": [
+			"esp/moddable_one",
+			"esp32/moddable_two"
+		],
+		"icon": "./store/icon.png"
 	}
 }

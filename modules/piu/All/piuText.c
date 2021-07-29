@@ -33,6 +33,7 @@ enum {
 	piuTextSpace = 1,
 	piuTextReturn = 2,
 	piuTextEnd = 4,
+	piuTextWordBreak = 8,
 };
 
 typedef struct {
@@ -312,36 +313,25 @@ PiuTextKind PiuTextAdvance(xsMachine* the, xsSlot* string, PiuTextOffset offset,
 	if (offset == limit)
 		kind = piuTextEnd;
 	else {
-		uint8_t* p = (uint8_t*)xsToString(*string);
-		uint8_t c = c_read8(p + offset);
-		if (c == 0)
+		xsIntegerValue c;
+		xsStringValue p = xsToString(*string) + offset;
+		xsStringValue q = fxUTF8Decode(p, &c);
+		length = q - p;
+		if ((c == C_EOF) || (c == 0))
 			kind = piuTextEnd;
+		if (length == 1) {
+			if (c == '\n')
+				kind = piuTextReturn;
+			else if (c == '\t')
+				kind = piuTextSpace;
+			else if (c == ' ')
+				kind = piuTextSpace;
+		} 
 		else {
-			if (!(c & 0x80)) {
-				length = 1;
-				if (c == '\n')
-					kind = piuTextReturn;
-				else if (c == '\t')
-					kind = piuTextSpace;
-				else if (c == ' ')
-					kind = piuTextSpace;
-			}
-			else if ((c & 0xe0) != 0xe0) {
-				length = 2;
-			}
-			else if ((c & 0xf0) != 0xf0) {
-				length = 3;
-				if ((0xe3 == c) && (0x80 == c_read8(p + 1)) && (0x80 == c_read8(p + 2)))
-					kind = piuTextSpace;
-				else
-					kind = piuTextWord;
-			}
-			else if ((c & 0xf8) == 0xf0) {
-				length = 4;
-			}
-			else {
-				xsUnknownError("invalid character");
-			}
+			if (c == 0xA0)
+				kind = piuTextSpace;
+			else if ((0x4E00 <= c) && (c <= 0x9FFF))
+				kind = piuTextWordBreak;
 		}
 	}
 	*nextOffset = offset + length;
@@ -764,18 +754,36 @@ void PiuTextFormat(PiuText* self)
 							ctx->wordHeight = spanHeight;
 						previousOffset = offset;
 					}
-					if (kind == piuTextEnd) break;
 					length = nextOffset - previousOffset;
-					PiuTextFormatBlock(self, ctx, kind, length, textOffset + nextOffset);
-					node = NODE(nodeOffset);
-					if (length) {
-						if (kind == piuTextSpace) {
+					if (kind == piuTextSpace) {
+						PiuTextFormatBlock(self, ctx, kind, length, textOffset + nextOffset);
+						node = NODE(nodeOffset);
+						if (length) {
 							ctx->spaceWidth = PiuFontGetWidth(spanFont, node->string, previousOffset, length);
 							previousOffset = nextOffset;
 						}
-						else if (kind == piuTextReturn)
-							previousOffset = nextOffset;
 					}
+					else if (kind == piuTextReturn) {
+						PiuTextFormatBlock(self, ctx, kind, length, textOffset + nextOffset);
+						node = NODE(nodeOffset);
+						if (length) {
+							previousOffset = nextOffset;
+						}
+					}
+					else if (kind == piuTextWordBreak) {
+						PiuTextFormatBlock(self, ctx, kind, 0, textOffset + previousOffset);
+						node = NODE(nodeOffset);
+						if (length) {
+							ctx->wordWidth = PiuFontGetWidth(spanFont, node->string, previousOffset, length);
+							if (ctx->wordAscent < spanAscent)
+								ctx->wordAscent = spanAscent;
+							if (ctx->wordHeight < spanHeight)
+								ctx->wordHeight = spanHeight;
+							previousOffset = nextOffset;
+						}
+					}
+					else
+						break;
 				}
 				offset = nextOffset;
 			}

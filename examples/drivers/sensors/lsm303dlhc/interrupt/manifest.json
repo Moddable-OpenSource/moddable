@@ -1,0 +1,20 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/sensors/lsm303dlhc/manifest.json",
+	"modules": {
+		"*": "./main"
+	},
+	"platforms": {
+		"esp": {
+			"config": {
+				"magnetometer_data_ready": 13,
+				"motion_interrupt_pin": 12
+			}
+		},
+		"esp32": {
+			"config": {
+				"magnetometer_data_ready": 13,
+				"motion_interrupt_pin": 12
+			}
+		}
+	}
+}

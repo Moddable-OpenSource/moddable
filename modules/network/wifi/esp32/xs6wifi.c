@@ -60,6 +60,8 @@ void xs_wifi_set_mode(xsMachine *the)
 		esp_wifi_set_mode(WIFI_MODE_AP);
 	else if (3 == mode)
 		esp_wifi_set_mode(WIFI_MODE_APSTA);
+	else if (0 == mode)
+		esp_wifi_set_mode(WIFI_MODE_NULL);
 	else
 		xsUnknownError("invalid mode");
 }
@@ -77,6 +79,8 @@ void xs_wifi_get_mode(xsMachine *the)
 		xsmcSetInteger(xsResult, 2);
 	else if (WIFI_MODE_APSTA == mode)
 		xsmcSetInteger(xsResult, 3);
+	else if (WIFI_MODE_NULL == mode)
+		xsmcSetInteger(xsResult, 0);
 }
 
 void xs_wifi_scan(xsMachine *the)
@@ -304,6 +308,8 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
         case WIFI_EVENT_STA_START:          msg = "start"; break;
         case WIFI_EVENT_STA_CONNECTED:      msg = "connect"; break;
         case WIFI_EVENT_STA_DISCONNECTED:   msg = "disconnect"; break;
+		case WIFI_EVENT_AP_STACONNECTED:	msg = "station_connect"; break;
+		case WIFI_EVENT_AP_STADISCONNECTED: msg = "station_disconnect"; break;
         default: return;
     }
 
@@ -455,6 +461,9 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 			if (gScan)
 				modMessagePostToMachine(gScan->the, NULL, 0, reportScan, NULL);
             return;
+		case WIFI_EVENT_AP_STACONNECTED:
+		case WIFI_EVENT_AP_STADISCONNECTED:
+			break;
 		default:
             return;
 	}

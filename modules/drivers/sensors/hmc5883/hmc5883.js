@@ -23,10 +23,8 @@
 	Implementation inspired by Adafruit https://github.com/adafruit/Adafruit_HMC5883_Unified
 
 	device DataReady pin is internally pulled up
-	sample value in Microtesla
+	magnetometer sample value in Tesla
 */
-
-import SMBus from "embedded:io/smbus";
 
 const Register = Object.freeze({
 	CONFIG_A:	0,
@@ -51,22 +49,22 @@ const Config = Object.freeze({
 		IDLE:		2
 	},
 	Gain: {
-		GAIN_1_3:	0b0010_0000,
-		GAIN_1_9:	0b0100_0000,
-		GAIN_2_5:	0b0110_0000,
-		GAIN_4_0:	0b1000_0000,
-		GAIN_4_7:	0b1010_0000,
-		GAIN_5_6:	0b1100_0000,
-		GAIN_8_1:	0b1110_0000
+		GAIN_1_3:	0b001,
+		GAIN_1_9:	0b010,
+		GAIN_2_5:	0b011,
+		GAIN_4_0:	0b100,
+		GAIN_4_7:	0b101,
+		GAIN_5_6:	0b110,
+		GAIN_8_1:	0b111
 	},
 	Rate: {
-		RATE_0_75:	0b0_0000,
-		RATE_1_5:	0b0_0100,
-		RATE_3:		0b0_1000,
-		RATE_7_5:	0b0_1100,
-		RATE_15:	0b1_0000,
-		RATE_30:	0b1_0100,
-		RATE_70:	0b1_1000
+		RATE_0_75:	0b000,
+		RATE_1_5:	0b001,
+		RATE_3:		0b010,
+		RATE_7_5:	0b011,
+		RATE_15:	0b100,
+		RATE_30:	0b101,
+		RATE_70:	0b110
 	}
 }, true);
 
@@ -84,7 +82,6 @@ class HMC5883 {
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
 			hz: 400_000,
-			sendStop: true,
 			address: 0x1E,
 			...options.sensor
 		});
@@ -115,7 +112,7 @@ class HMC5883 {
 		const io = this.#io;
 
 		if (undefined !== options.rate)
-			this.#rate = options.rate;
+			this.#rate = options.rate & 0b111;
 
 		if (undefined !== options.averaging)
 			switch (options.averaging) {
@@ -125,14 +122,14 @@ class HMC5883 {
 				default: this.#averaging = 0; break;
 			}
 
-		io.writeByte(Register.CONFIG_A, this.#averaging | this.#rate);
+		io.writeByte(Register.CONFIG_A, this.#averaging | this.#rate << 2);
 
 		if (undefined !== options.mode)
-			io.writeByte(Register.MODE, options.mode);
+			io.writeByte(Register.MODE, options.mode & 0b11);
 
 		if (undefined !== options.gain) {
-			this.#gain = options.gain;
-			io.writeByte(Register.CONFIG_B, this.#gain);
+			this.#gain = options.gain & 0b111;
+			io.writeByte(Register.CONFIG_B, this.#gain << 5);
 		}
 
 		switch (this.#gain) {
@@ -177,10 +174,11 @@ class HMC5883 {
 		const vBuf = this.#valueBuffer;
 		let ret = {};
 
+		// data registers configured in XZY order
 		io.readBlock(Register.DATA_X_MSB, vBuf);
-		ret.x = (this.#twoC16(vBuf[0], vBuf[1]) / this.#gauss_xy * 100).toFixed(2),
-		ret.y = (this.#twoC16(vBuf[2], vBuf[3]) / this.#gauss_xy * 100).toFixed(2),
-		ret.z = (this.#twoC16(vBuf[4], vBuf[5]) / this.#gauss_z * 100).toFixed(2)
+		ret.x = this.#twoC16(vBuf[0], vBuf[1]) / this.#gauss_xy * 0.0001;
+		ret.z = this.#twoC16(vBuf[1], vBuf[3]) / this.#gauss_z * 0.0001;
+		ret.y = this.#twoC16(vBuf[4], vBuf[5]) / this.#gauss_xy * 0.0001;
 
 		return ret;
 	}

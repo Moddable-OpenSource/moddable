@@ -70,10 +70,10 @@ void _xs_i2c_constructor(xsMachine *the)
 		xsRangeError("address required");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_data);
-	data = xsmcToInteger(xsVar(0));
+	data = builtinGetPin(the, &xsVar(0));
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
-	clock = xsmcToInteger(xsVar(0));
+	clock = builtinGetPin(the, &xsVar(0));
 
 	if (usingPins(data, clock))
 		;
@@ -81,7 +81,7 @@ void _xs_i2c_constructor(xsMachine *the)
 		xsRangeError("inUse");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
-	address = xsmcToInteger(xsVar(0));
+	address = builtinGetPin(the, &xsVar(0));
 	if ((address < 0) || (address > 127))
 		xsRangeError("invalid address");
 

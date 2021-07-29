@@ -52,7 +52,7 @@ void fxBuildNumber(txMachine* the)
 	slot = fxLastProperty(the, fxNewNumberInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_toExponential), 1, mxID(_toExponential), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_toFixed), 1, mxID(_toFixed), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_toString), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_toLocaleString), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_toPrecision), 1, mxID(_toPrecision), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_toString), 1, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Number_prototype_valueOf), 0, mxID(_valueOf), XS_DONT_ENUM_FLAG);
@@ -366,6 +366,15 @@ void fx_Number_prototype_toFixed(txMachine* the)
 		mode = 'f';
 	fxNumberToString(the->dtoa, value, buffer, sizeof(buffer), mode, (int)precision);
 	fxCopyStringC(the, mxResult, buffer);
+}
+
+void fx_Number_prototype_toLocaleString(txMachine* the)
+{
+	txSlot* slot = fxCheckNumber(the, mxThis);
+	if (!slot) mxTypeError("this is no number");
+	mxResult->kind = slot->kind;
+	mxResult->value = slot->value;
+	fxToString(the, mxResult);
 }
 
 void fx_Number_prototype_toPrecision(txMachine* the)

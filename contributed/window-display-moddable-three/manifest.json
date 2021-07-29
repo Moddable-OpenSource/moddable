@@ -1,0 +1,66 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"cccreation": {
+		"stack": 350
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./assets",
+			"./screens"
+		]
+	},
+	"preload": [
+		"main",
+		"assets",
+		"screens"
+	],
+	"resources": {
+		"*-mask": [
+			"./assets/dither-grad-left",
+			"./assets/dither-grad-right",
+			"./assets/eye",
+			"./assets/mod-logo-blk",
+			"./assets/shoe-price",
+			"./assets/three",
+			"./assets/weathe-right",
+			"./assets/weather-left",
+			"./assets/wifi-left",
+			"./assets/wifi-left-background",
+			"./assets/wifi-right",
+			"./assets/world-spin-sprite-b-w"
+		]
+	},
+	"platforms": {
+		"mac": {
+			"config": {
+				"rotation": 0
+			}
+		},
+		"win": {
+			"config": {
+				"rotation": 0
+			}
+		},
+		"lin": {
+			"config": {
+				"rotation": 0
+			}
+		},
+		"esp": {
+			"config": {
+				"rotation": 90
+			}
+		}
+	},
+	"store": {
+	    "id": "tech.moddable.window-display-moddable-three",
+	    "devices": [
+	    	"esp/moddable_three"
+	    ],
+	    "icon": "./store/icon.png"
+	}
+}

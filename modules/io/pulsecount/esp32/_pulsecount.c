@@ -116,13 +116,13 @@ void xs_pulsecount_constructor_(xsMachine *the)
 	xsmcVars(1);
 	
 	xsmcGet(xsVar(0), xsArg(0), xsID_signal);
-	signal = xsmcToInteger(xsVar(0));
+	signal = builtinGetPin(the, &xsVar(0));
 	if (!builtinIsPinFree(signal))
 		xsRangeError("in use");
 
 	if (xsmcHas(xsArg(0), xsID_control)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_control);
-		control = xsmcToInteger(xsVar(0));
+		control = builtinGetPin(the, &xsVar(0));
 
         if (!builtinIsPinFree(control))
 		    xsRangeError("in use");

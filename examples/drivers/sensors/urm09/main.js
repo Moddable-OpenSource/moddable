@@ -25,7 +25,7 @@ const sensor = new URM09({
 
 sensor.configure({
 	mode: Config.ONE_SHOT,
-	range: Config.RANGE_100CM
+	range: Config.RANGE_300CM
 });
 	
 Timer.repeat(() => {

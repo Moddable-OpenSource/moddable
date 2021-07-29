@@ -23,12 +23,17 @@ const sensor = new Sensor({
 	}
 });
 
+sensor.configure({ mode: 2 });
+
 while (!sensor.available)
 	Timer.delay(500);
 
 Timer.repeat(() => {
-	const sample = sensor.sample();
+	if (sensor.available) {
+		const sample = sensor.sample();
 
-	trace(`eCO2: ${sample.eCO2} ppm, VOC: ${sample.TVOC} ppb\n`);
+		trace(`eCO2: ${sample.eCO2} ppm, VOC: ${sample.TVOC} ppb\n`);
+	}
+	trace(`no data\n`);
 }, 5000);
 

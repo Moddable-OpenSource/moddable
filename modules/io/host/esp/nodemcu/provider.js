@@ -49,6 +49,11 @@ const device = {
 			port: "HSPI"
 		}
 	},
+	Analog: {
+		default: {
+			io: Analog
+		}
+	},
 	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI},
 	pins: {
 		button: 0,

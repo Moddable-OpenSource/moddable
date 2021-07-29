@@ -89,17 +89,14 @@ export default class PKCS1_5 {
 		length = bc[position++];
 
 		// decode oid
-		let oid = []
 		i = bc[position++];
-		let rem = i % 40;
-		oid.push((i - rem) / 40);
-		oid.push(rem);
+//		const oid = [Math.idiv(i, 40), Math.irem(i, 40)];
 		--length;
 		while (length > 0) {
 			let v = 0;
 			while (--length >= 0 && (i = bc[position++]) >= 0x80)
 				v = (v << 7) | (i & 0x7f);
-			oid.push((v << 7) | i);
+//			oid.push((v << 7) | i);
 		}
 
 		if ((5 != bc[position]) || (0 != bc[position + 1]) || (4 != bc[position + 2]))

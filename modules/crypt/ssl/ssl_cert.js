@@ -157,10 +157,13 @@ class CertificateManager {
 			return true;
 			// else fall thru
 
-		return false;		//@@ code that follows doesn't work...
+		for (let i = 0; i < this.#registeredCerts.length; i++) {
+			spki = X509.decodeSPKI(this.#registeredCerts[i]);
+			if (spki && this._verify(spki, x509))
+				return true;
+		}
 
-		spki = this.findCert("ca.subject", new Crypt.Digest("SHA1")).process(X509.decodeTBS(x509.tbs).issuer);
-		return spki && this._verify(spki, x509);
+		return false;
 	}
 
 	_verify(spki, x509) {

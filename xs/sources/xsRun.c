@@ -4177,7 +4177,7 @@ void fxRunArguments(txMachine* the, txIndex offset)
 	array = fxNewArrayInstance(the)->next;
 	if (offset < length) {
 		length -= offset;
-		fxSetIndexSize(the, array, length);
+		fxSetIndexSize(the, array, length, XS_CHUNK);
 		index = 0;
 		address = array->value.array.address;
 		while (index < length) {
@@ -4396,7 +4396,7 @@ void fxRunProxy(txMachine* the, txSlot* instance)
 	txSlot* address;
 	mxPush(mxArrayPrototype);
 	array = fxNewArrayInstance(the)->next;
-	fxSetIndexSize(the, array, length);
+	fxSetIndexSize(the, array, length, XS_CHUNK);
 	index = 0;
 	address = array->value.array.address;
 	while (index < length) {
