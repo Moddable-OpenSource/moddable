@@ -357,9 +357,6 @@ void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	if (size)
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-
 	return NULL;
 }
 
