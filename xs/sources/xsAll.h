@@ -785,6 +785,7 @@ mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
 extern void fxFree(txMachine* the);
 extern txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b);
 mxExport void* fxNewChunk(txMachine* the, txSize theSize);
+mxExport void* fxNewGrowableChunk(txMachine* the, txSize size, txSize overflow);
 extern txSlot* fxNewSlot(txMachine* the);
 mxExport void* fxRenewChunk(txMachine* the, void* theData, txSize theSize);
 extern void fxShare(txMachine* the);
@@ -881,7 +882,7 @@ extern txBoolean fxDeleteIndexProperty(txMachine* the, txSlot* array, txIndex in
 extern txSlot* fxGetIndexProperty(txMachine* the, txSlot* array, txIndex index);
 extern txIndex fxGetIndexSize(txMachine* the, txSlot* array);
 extern txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIndex index);
-extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target);
+extern void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean growable);
 
 extern txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
 extern txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id);
@@ -1046,6 +1047,7 @@ mxExport void fx_Number_isNaN(txMachine* the);
 mxExport void fx_Number_isSafeInteger(txMachine* the);
 mxExport void fx_Number_prototype_toExponential(txMachine* the);
 mxExport void fx_Number_prototype_toFixed(txMachine* the);
+mxExport void fx_Number_prototype_toLocaleString(txMachine* the);
 mxExport void fx_Number_prototype_toPrecision(txMachine* the);
 mxExport void fx_Number_prototype_toString(txMachine* the);
 mxExport void fx_Number_prototype_valueOf(txMachine* the);
@@ -1239,6 +1241,7 @@ mxExport void fx_String_fromArrayBuffer(txMachine* the);
 mxExport void fx_String_fromCharCode(txMachine* the);
 mxExport void fx_String_fromCodePoint(txMachine* the);
 mxExport void fx_String_raw(txMachine* the);
+mxExport void fx_String_prototype_at(txMachine* the);
 mxExport void fx_String_prototype_charAt(txMachine* the);
 mxExport void fx_String_prototype_charCodeAt(txMachine* the);
 mxExport void fx_String_prototype_codePointAt(txMachine* the);
@@ -1326,6 +1329,7 @@ mxExport void fx_Array(txMachine* the);
 mxExport void fx_Array_from(txMachine* the);
 mxExport void fx_Array_isArray(txMachine* the);
 mxExport void fx_Array_of(txMachine* the);
+mxExport void fx_Array_prototype_at(txMachine* the);
 mxExport void fx_Array_prototype_concat(txMachine* the);
 mxExport void fx_Array_prototype_copyWithin(txMachine* the);
 mxExport void fx_Array_prototype_entries(txMachine* the);
@@ -1457,6 +1461,7 @@ mxExport void fxTypedArraySetter(txMachine* the);
 mxExport void fx_TypedArray(txMachine* the);
 mxExport void fx_TypedArray_from(txMachine* the);
 mxExport void fx_TypedArray_of(txMachine* the);
+mxExport void fx_TypedArray_prototype_at(txMachine* the);
 mxExport void fx_TypedArray_prototype_buffer_get(txMachine* the);
 mxExport void fx_TypedArray_prototype_byteLength_get(txMachine* the);
 mxExport void fx_TypedArray_prototype_byteOffset_get(txMachine* the);
@@ -1602,27 +1607,24 @@ mxExport void fx_Map(txMachine* the);
 mxExport void fx_Map_prototype_clear(txMachine* the);
 mxExport void fx_Map_prototype_delete(txMachine* the);
 mxExport void fx_Map_prototype_entries(txMachine* the);
-mxExport void fx_Map_prototype_entries_next(txMachine* the);
 mxExport void fx_Map_prototype_forEach(txMachine* the);
 mxExport void fx_Map_prototype_get(txMachine* the);
 mxExport void fx_Map_prototype_has(txMachine* the);
 mxExport void fx_Map_prototype_keys(txMachine* the);
-mxExport void fx_Map_prototype_keys_next(txMachine* the);
 mxExport void fx_Map_prototype_set(txMachine* the);
 mxExport void fx_Map_prototype_size(txMachine* the);
 mxExport void fx_Map_prototype_values(txMachine* the);
-mxExport void fx_Map_prototype_values_next(txMachine* the);
+mxExport void fx_MapIterator_prototype_next(txMachine* the);
 mxExport void fx_Set(txMachine* the);
 mxExport void fx_Set_prototype_add(txMachine* the);
 mxExport void fx_Set_prototype_clear(txMachine* the);
 mxExport void fx_Set_prototype_delete(txMachine* the);
 mxExport void fx_Set_prototype_entries(txMachine* the);
-mxExport void fx_Set_prototype_entries_next(txMachine* the);
 mxExport void fx_Set_prototype_forEach(txMachine* the);
 mxExport void fx_Set_prototype_has(txMachine* the);
 mxExport void fx_Set_prototype_size(txMachine* the);
 mxExport void fx_Set_prototype_values(txMachine* the);
-mxExport void fx_Set_prototype_values_next(txMachine* the);
+mxExport void fx_SetIterator_prototype_next(txMachine* the);
 mxExport void fx_WeakMap(txMachine* the);
 mxExport void fx_WeakMap_prototype_delete(txMachine* the);
 mxExport void fx_WeakMap_prototype_get(txMachine* the);
@@ -1791,6 +1793,11 @@ enum {
 enum {
 	XS_IMMUTABLE = 0,
 	XS_MUTABLE = 1,
+};
+
+enum {
+	XS_CHUNK = 0,
+	XS_GROWABLE_CHUNK = 1,
 };
 
 enum {
@@ -2420,13 +2427,9 @@ enum {
 	
 	mxIteratorPrototypeStackIndex,
 	mxArrayIteratorPrototypeStackIndex,
-	mxMapEntriesIteratorPrototypeStackIndex,
-	mxMapKeysIteratorPrototypeStackIndex,
-	mxMapValuesIteratorPrototypeStackIndex,
+	mxMapIteratorPrototypeStackIndex,
 	mxRegExpStringIteratorPrototypeStackIndex,
-	mxSetEntriesIteratorPrototypeStackIndex,
-	mxSetKeysIteratorPrototypeStackIndex,
-	mxSetValuesIteratorPrototypeStackIndex,
+	mxSetIteratorPrototypeStackIndex,
 	mxStringIteratorPrototypeStackIndex,
 	
 	mxAsyncIteratorPrototypeStackIndex,
@@ -2605,13 +2608,9 @@ enum {
 
 #define mxIteratorPrototype the->stackPrototypes[-1 - mxIteratorPrototypeStackIndex]
 #define mxArrayIteratorPrototype the->stackPrototypes[-1 - mxArrayIteratorPrototypeStackIndex]
-#define mxMapEntriesIteratorPrototype the->stackPrototypes[-1 - mxMapEntriesIteratorPrototypeStackIndex]
-#define mxMapKeysIteratorPrototype the->stackPrototypes[-1 - mxMapKeysIteratorPrototypeStackIndex]
-#define mxMapValuesIteratorPrototype the->stackPrototypes[-1 - mxMapValuesIteratorPrototypeStackIndex]
+#define mxMapIteratorPrototype the->stackPrototypes[-1 - mxMapIteratorPrototypeStackIndex]
 #define mxRegExpStringIteratorPrototype the->stackPrototypes[-1 - mxRegExpStringIteratorPrototypeStackIndex]
-#define mxSetEntriesIteratorPrototype the->stackPrototypes[-1 - mxSetEntriesIteratorPrototypeStackIndex]
-#define mxSetKeysIteratorPrototype the->stackPrototypes[-1 - mxSetKeysIteratorPrototypeStackIndex]
-#define mxSetValuesIteratorPrototype the->stackPrototypes[-1 - mxSetValuesIteratorPrototypeStackIndex]
+#define mxSetIteratorPrototype the->stackPrototypes[-1 - mxSetIteratorPrototypeStackIndex]
 #define mxStringIteratorPrototype the->stackPrototypes[-1 - mxStringIteratorPrototypeStackIndex]
 
 #define mxAsyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncIteratorPrototypeStackIndex]

@@ -19,6 +19,8 @@ import AudioOut from "pins/audioout";
 let playing = false;
 let count = 0;
 
+const speaker = new AudioOut({streams: 1});
+
 speaker.callback = function () {
 	this.stop();
 	trace('Speaker Stopped!\n');

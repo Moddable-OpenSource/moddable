@@ -20,6 +20,8 @@
 
 #include "xsSnapshot.h"
 
+static void fxLinkChunks(txMachine* the);
+
 static void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* chunkSize);
 static void fxMeasureChunk(txMachine* the, txSnapshot* snapshot, void* address, txSize* chunkSize);
 static void fxMeasureChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize* chunkSize);
@@ -61,6 +63,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Array_from,
 	fx_Array_isArray,
 	fx_Array_of,
+	fx_Array_prototype_at,
 	fx_Array_prototype_concat,
 	fx_Array_prototype_copyWithin,
 	fx_Array_prototype_entries,
@@ -243,18 +246,16 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_JSON_stringify,
 	fx_Map_prototype_clear,
 	fx_Map_prototype_delete,
-	fx_Map_prototype_entries_next,
 	fx_Map_prototype_entries,
 	fx_Map_prototype_forEach,
 	fx_Map_prototype_get,
 	fx_Map_prototype_has,
-	fx_Map_prototype_keys_next,
 	fx_Map_prototype_keys,
 	fx_Map_prototype_set,
 	fx_Map_prototype_size,
-	fx_Map_prototype_values_next,
 	fx_Map_prototype_values,
 	fx_Map,
+	fx_MapIterator_prototype_next,
 	fx_Math_abs,
 	fx_Math_acos,
 	fx_Math_acosh,
@@ -302,6 +303,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Number_isSafeInteger,
 	fx_Number_prototype_toExponential,
 	fx_Number_prototype_toFixed,
+	fx_Number_prototype_toLocaleString,
 	fx_Number_prototype_toPrecision,
 	fx_Number_prototype_toString,
 	fx_Number_prototype_valueOf,
@@ -392,14 +394,13 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Set_prototype_add,
 	fx_Set_prototype_clear,
 	fx_Set_prototype_delete,
-	fx_Set_prototype_entries_next,
 	fx_Set_prototype_entries,
 	fx_Set_prototype_forEach,
 	fx_Set_prototype_has,
 	fx_Set_prototype_size,
-	fx_Set_prototype_values_next,
 	fx_Set_prototype_values,
 	fx_Set,
+	fx_SetIterator_prototype_next,
 	fx_SharedArrayBuffer_prototype_get_byteLength,
 	fx_SharedArrayBuffer_prototype_slice,
 	fx_SharedArrayBuffer,
@@ -407,6 +408,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_String_fromArrayBuffer,
 	fx_String_fromCharCode,
 	fx_String_fromCodePoint,
+	fx_String_prototype_at,
 	fx_String_prototype_charAt,
 	fx_String_prototype_charCodeAt,
 	fx_String_prototype_codePointAt,
@@ -455,6 +457,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_trace,
 	fx_TypedArray_from,
 	fx_TypedArray_of,
+	fx_TypedArray_prototype_at,
 	fx_TypedArray_prototype_buffer_get,
 	fx_TypedArray_prototype_byteLength_get,
 	fx_TypedArray_prototype_byteOffset_get,
@@ -534,6 +537,21 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 extern const txTypeDispatch gxTypeDispatches[];
 extern const txTypeAtomics gxTypeAtomics[];
 
+void fxLinkChunks(txMachine* the)
+{
+	txBlock* block = the->firstBlock;
+	while (block) {
+		txByte* current = ((txByte*)block) + sizeof(txBlock);
+		txByte* limit = block->current;
+		while (current < limit) {
+			txSize size = ((txChunk*)current)->size;
+			txByte* next = current + size;
+			((txChunk*)current)->temporary = next;
+			current = next;
+		}	
+		block = block->nextBlock;
+	}
+}
 
 void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* chunkSize)
 {
@@ -844,7 +862,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			slot = &mxDuringJobs;
             the->collectFlag = XS_COLLECTING_FLAG;
 
-
+			fxLinkChunks(the);
 
 		#ifdef mxDebug
 			fxLogin(the);
@@ -1399,7 +1417,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	txSize namesSize = the->nameModulo * sizeof(txSlot*);
 	txSize keysSize = the->keyIndex * sizeof(txSlot*);
 	txSize slotSize = 1;
-	txSize stackSize = (the->stackTop - the->stack) * sizeof(txSlot);
+	txSize stackSize = (txSize)((the->stackTop - the->stack) * sizeof(txSlot));
 	txSize symbolsSize = the->symbolModulo * sizeof(txSlot*);
 	txCreation creation;
 	
@@ -1463,7 +1481,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		creation.incrementalChunkSize = the->minimumChunksSize;
 		creation.initialHeapCount = the->maximumHeapCount;
 		creation.incrementalHeapCount = the->minimumHeapCount;
-		creation.stackCount = the->stackTop - the->stackBottom;
+		creation.stackCount = (txSize)(the->stackTop - the->stackBottom);
 		creation.keyCount = the->keyCount;
 		creation.nameModulo = the->nameModulo;
 		creation.symbolModulo = the->symbolModulo;
@@ -1586,23 +1604,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		heap = heap->next;
 	}
 	
-	{
-		txBlock* block;
-		txByte* mByte;
-		txByte* nByte;
-
-		block = the->firstBlock;
-		while (block) {
-			mByte = ((txByte*)block) + sizeof(txBlock);
-			nByte = block->current;
-			while (mByte < nByte) {
-				txSize size = ((txChunk*)mByte)->size;
-				((txChunk*)mByte)->temporary = C_NULL;
-				mByte += size;
-			}	
-			block = block->nextBlock;
-		}
-	}
+	fxLinkChunks(the);
 	
 	return (snapshot->error) ? 0 : 1;
 }

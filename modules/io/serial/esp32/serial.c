@@ -81,14 +81,14 @@ void xs_serial_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_transmit)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_transmit);
-		transmit = xsmcToInteger(xsVar(0));
+		transmit = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(transmit))
 			xsUnknownError("in use");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_receive)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_receive);
-		receive = xsmcToInteger(xsVar(0));
+		receive = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(receive))
 			xsUnknownError("in use");
 	}

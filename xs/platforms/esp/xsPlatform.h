@@ -122,7 +122,7 @@ extern "C" {
 
 extern void fx_putc(void *refcon, char c);
 
-#define mxMapSetLength (1)
+#define mxTableMinLength (1)
 
 struct DebugFragmentRecord {
 	struct DebugFragmentRecord *next;

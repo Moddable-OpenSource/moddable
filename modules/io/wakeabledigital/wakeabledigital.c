@@ -68,7 +68,7 @@ void xs_wakeabledigital_constructor(xsMachine *the)
 
 	type = xsmcTypeOf(xsVar(0));
 	if ((xsNumberType == type) || (xsIntegerType == type)) {
-		pin = xsmcToInteger(xsVar(0));
+		pin = builtinGetPin(the, &xsVar(0));
 		if ((pin < 0) || (pin > 15))
 			xsRangeError("invalid pin");
 		if (!builtinArePinsFree(1 << pin))

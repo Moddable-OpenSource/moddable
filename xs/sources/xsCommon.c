@@ -1276,6 +1276,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"asinh",
 	"assign",
 	"asyncIterator",
+	"at",
 	"atan",
 	"atanh",
 	"atan2",

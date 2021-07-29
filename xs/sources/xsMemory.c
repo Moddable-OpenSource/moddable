@@ -56,7 +56,11 @@ int gxStress = 0;
 
 #define mxChunkFlag 0x80000000
 
-static void fxGrowChunks(txMachine* the, txSize theSize); 
+static txSize fxAdjustChunkSize(txMachine* the, txSize size);
+static void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size);
+static void* fxFindChunk(txMachine* the, txSize size, txBoolean *once);
+static void* fxGrowChunk(txMachine* the, txSize size);
+static void* fxGrowChunks(txMachine* the, txSize theSize); 
 static void fxGrowSlots(txMachine* the, txSize theCount); 
 static void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
 static void fxMarkFinalizationRegistry(txMachine* the, txSlot* registry);
@@ -67,54 +71,55 @@ static void fxMarkWeakStuff(txMachine* the);
 static void fxSweep(txMachine* the);
 static void fxSweepValue(txMachine* the, txSlot* theSlot);
 
-//#define mxNever 1
 #ifdef mxNever
 
-txSize gxRenewChunkCases[4] = { 0, 0, 0, 0 };
+long gxRenewChunkCases[4] = { 0, 0, 0, 0 };
 
 typedef struct sxSample txSample;
 struct sxSample {
-	wide time;
-	wide duration;
+	txNumber time;
+	txNumber duration;
 	long count;
 	char* label;
 };
 
 void reportTime(txSample* theSample) 
 {
-	long aDurationMinute;
-	long aRemainder;
-	long aDurationSecond;
-	long aDurationMilli;
+	txNumber duration = theSample->duration;
+	txNumber minutes;
+	txNumber seconds;
 
-	aDurationMinute = WideDivide(&(theSample->duration), 60000000, &aRemainder);
-	aDurationSecond = aRemainder / 1000000;
-	aRemainder = aRemainder % 1000000;
-	aDurationMilli = aRemainder / 1000;  
+	minutes = c_floor(duration / 60000000);
+	duration -= minutes * 60000000;
+	seconds = c_floor(duration / 1000000);
+	duration -= seconds * 1000000;
+	duration = c_floor(duration / 1000);
 	fprintf(stderr, "%s * %ld = %ld:%02ld.%03ld\n", theSample->label, theSample->count, 
-			aDurationMinute, aDurationSecond, aDurationMilli);
+			(long)minutes, (long)seconds, (long)duration);
 }
 
 void startTime(txSample* theSample) 
 {
-	Microseconds((UnsignedWide*)&(theSample->time));
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	theSample->time = ((txNumber)(tv.tv_sec) * 1000000.0) + ((txNumber)tv.tv_usec);
 }
 
 void stopTime(txSample* theSample) 
 {
-	wide aTime;
-	
-	Microseconds((UnsignedWide*)&aTime);
-	WideSubtract(&aTime, &(theSample->time));
-	WideAdd(&(theSample->duration), &aTime);
+	c_timeval tv;
+	txNumber time;
+	c_gettimeofday(&tv, NULL);
+	time = ((txNumber)(tv.tv_sec) * 1000000.0) + ((txNumber)tv.tv_usec);
+	theSample->duration += time - theSample->time;
 	theSample->count++;
 }
 
-txSample gxLifeTime = { { 0, 0 }, { 0, 0 }, 0, "life" };
-txSample gxMarkTime = { { 0, 0 }, { 0, 0 }, 0, "mark" };
-txSample gxSweepChunkTime = { { 0, 0 }, { 0, 0 }, 0, "sweep chunk" };
-txSample gxSweepSlotTime = { { 0, 0 }, { 0, 0 }, 0, "sweep slot" };
-txSample gxCompactChunkTime = { { 0, 0 }, { 0, 0 }, 0, "compact chunk" };
+txSample gxLifeTime = { 0, 0, 0, "life" };
+txSample gxMarkTime = { 0, 0, 0, "mark" };
+txSample gxSweepChunkTime = { 0, 0, 0, "sweep chunk" };
+txSample gxSweepSlotTime = { 0, 0, 0, "sweep slot" };
+txSample gxCompactChunkTime = { 0, 0, 0, "compact chunk" };
 
 #endif
 
@@ -132,13 +137,12 @@ txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b)
 	return c;
 }
 
-void fxCheckCStack(txMachine* the)
+txSize fxAdjustChunkSize(txMachine* the, txSize size)
 {
-    char x;
-    char *stack = &x;
-    if (stack <= the->stackLimit) {
-    	fxAbort(the, XS_STACK_OVERFLOW_EXIT);
-    }
+	txSize modulo = size & (sizeof(txSize) - 1);
+    if (modulo)
+		size = fxAddChunkSizes(the, size, sizeof(txSize) - modulo);
+	return fxAddChunkSizes(the, size, sizeof(txChunk));
 }
 
 void fxAllocate(txMachine* the, txCreation* theCreation)
@@ -196,6 +200,30 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->cRoot = C_NULL;
 	the->parserBufferSize = theCreation->parserBufferSize;
 	the->parserTableModulo = theCreation->parserTableModulo;
+}
+
+void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size)
+{
+	if (chunk) {
+		txByte* data = (txByte*)chunk;
+		chunk->size = size;
+		the->currentChunksSize += (txSize)(chunk->temporary - data);
+		if (the->peakChunksSize < the->currentChunksSize)
+			the->peakChunksSize = the->currentChunksSize;
+		return data + sizeof(txChunk);
+	}
+	fxReport(the, "# Chunk allocation: failed for %ld bytes\n", size);
+	fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	return C_NULL;
+}
+
+void fxCheckCStack(txMachine* the)
+{
+    char x;
+    char *stack = &x;
+    if (stack <= the->stackLimit) {
+    	fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+    }
 }
 
 void fxCollect(txMachine* the, txBoolean theFlag)
@@ -344,6 +372,44 @@ txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot)
 	return result;
 }
 
+void* fxFindChunk(txMachine* the, txSize size, txBoolean *once)
+{
+	txBlock* block;
+	txChunk* chunk;
+#if mxStress
+	if (gxStress) {
+		if (*once) {
+			fxCollect(the, 1);
+			*once = 0;
+		}
+	}
+#endif
+#if mxNoChunks
+	chunk = c_malloc(size);
+	chunk->size = size;
+	chunk->temporary = (txByte*)the->firstBlock;
+	the->firstBlock = (txBlock*)chunk;
+	return chunk;
+#endif
+again:
+	block = the->firstBlock;
+	while (block) {
+		if ((block->current + size) <= block->limit) {
+			chunk = (txChunk*)(block->current);
+			block->current += size;
+			chunk->temporary = block->current;
+			return chunk;
+		}
+		block = block->nextBlock;
+	}
+	if (*once) {
+		fxCollect(the, 1);
+		*once = 0;
+		goto again;
+	}
+	return C_NULL;
+}
+
 void fxFree(txMachine* the) 
 {
 	txSlot* aHeap;
@@ -399,7 +465,7 @@ void fxFree(txMachine* the)
 #ifdef mxNever
 	stopTime(&gxLifeTime);
 	reportTime(&gxLifeTime);
-	fprintf(stderr, "chunk: %ld bytes\n", the->maximumChunksSize);
+	fprintf(stderr, "chunk: %d bytes\n", the->maximumChunksSize);
 	fprintf(stderr, "slot: %ld bytes\n", the->maximumHeapCount * sizeof(txSlot));
 	reportTime(&gxMarkTime);
 	reportTime(&gxSweepChunkTime);
@@ -413,43 +479,54 @@ void fxFree(txMachine* the)
 #endif
 }
 
-void fxGrowChunks(txMachine* the, txSize theSize) 
+void* fxGrowChunk(txMachine* the, txSize size) 
 {
-	txByte* aData;
-	txBlock* aBlock;
+	txBlock* block = fxGrowChunks(the, size);
+	txChunk* chunk = C_NULL;
+	if (block) {
+		chunk = (txChunk*)(block->current);
+		block->current += size;
+		chunk->temporary = block->current;
+	}
+	return chunk;
+}
+
+void* fxGrowChunks(txMachine* the, txSize size) 
+{
+	txByte* buffer;
+	txBlock* block = C_NULL;
 
 	if (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG)) {
-		txSize modulo = theSize % the->minimumChunksSize;
+		txSize modulo = size % the->minimumChunksSize;
 		if (modulo)
-			theSize = fxAddChunkSizes(the, theSize, the->minimumChunksSize - modulo);
+			size = fxAddChunkSizes(the, size, the->minimumChunksSize - modulo);
 	}
-	theSize = fxAddChunkSizes(the, theSize, sizeof(txBlock));
-	aData = fxAllocateChunks(the, theSize);
-#ifdef mxSnapshot
-	c_memset(aData, 0, theSize);
-#endif
-	if (!aData) {
-		fxReport(the, "# Chunk allocation: failed for %ld bytes\n", theSize);
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	size = fxAddChunkSizes(the, size, sizeof(txBlock));
+	buffer = fxAllocateChunks(the, size);
+	if (buffer) {
+	#ifdef mxSnapshot
+		c_memset(buffer, 0, size);
+	#endif
+		if ((the->firstBlock != C_NULL) && (the->firstBlock->limit == buffer)) {
+			the->firstBlock->limit += size;
+			block = the->firstBlock;
+		}
+		else {
+			block = (txBlock*)buffer;
+			block->nextBlock = the->firstBlock;
+			block->current = buffer + sizeof(txBlock);
+			block->limit = buffer + size;
+			block->temporary = C_NULL;
+			the->firstBlock = block;
+		}
+		size -= sizeof(txBlock);
+		the->maximumChunksSize += size;
+	#if mxReport
+		fxReport(the, "# Chunk allocation: reserved %ld used %ld peak %ld bytes\n", 
+			the->maximumChunksSize, the->currentChunksSize, the->peakChunksSize);
+	#endif
 	}
-	if ((the->firstBlock != C_NULL) && (the->firstBlock->limit == aData)) {
-		the->firstBlock->limit += theSize;
-		aBlock = the->firstBlock;
-	}
-	else {
-		aBlock = (txBlock*)aData;
-		aBlock->nextBlock = the->firstBlock;
-		aBlock->current = aData + sizeof(txBlock);
-		aBlock->limit = aData + theSize;
-		aBlock->temporary = C_NULL;
-		the->firstBlock = aBlock;
-	}
-    theSize -= sizeof(txBlock);
-	the->maximumChunksSize += theSize;
-#if mxReport
-	fxReport(the, "# Chunk allocation: reserved %ld used %ld peak %ld bytes\n", 
-		the->maximumChunksSize, the->currentChunksSize, the->peakChunksSize);
-#endif
+	return block;
 }
 
 void fxGrowSlots(txMachine* the, txSize theCount) 
@@ -768,11 +845,9 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		aSlot = theSlot->value.weakEntry.check;
 		if (aSlot->flag & XS_MARK_FLAG) {
 			aSlot = theSlot->value.weakEntry.value;
-			if (aSlot) {
-				if (!(aSlot->flag & XS_MARK_FLAG)) {
-					aSlot->flag |= XS_MARK_FLAG; 
-					fxMarkReference(the, aSlot);
-				}
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				aSlot->flag |= XS_MARK_FLAG; 
+				fxMarkReference(the, aSlot);
 			}
 		}
 		break;
@@ -993,11 +1068,9 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		aSlot = theSlot->value.weakEntry.check;
 		if (aSlot->flag & XS_MARK_FLAG) {
 			aSlot = theSlot->value.weakEntry.value;
-			if (aSlot) {
-				if (!(aSlot->flag & XS_MARK_FLAG)) {
-					aSlot->flag |= XS_MARK_FLAG; 
-					fxMarkValue(the, aSlot);
-				}
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				aSlot->flag |= XS_MARK_FLAG; 
+				fxMarkValue(the, aSlot);
 			}
 		}
 		break;
@@ -1047,8 +1120,8 @@ void fxMarkWeakStuff(txMachine* the)
 				txSlot* listEntry;
 				txSlot** listEntryAddress = &list->value.weakList.first;
 				while ((listEntry = *listEntryAddress)) {
-					txSlot* key = listEntry->value.weakEntry.check;
-					if (key->flag & XS_MARK_FLAG)
+					txSlot* value = listEntry->value.weakEntry.value;
+					if (value->flag & XS_MARK_FLAG)
 						listEntryAddress = &listEntry->next;
 					else {
 						listEntry->flag &= ~XS_MARK_FLAG;
@@ -1065,6 +1138,8 @@ void fxMarkWeakStuff(txMachine* the)
 						txSlot* keyEntry;
 						txSlot** keyEntryAddress = &key->next;
 						while ((keyEntry = *keyEntryAddress)) {
+							if (!(keyEntry->flag & XS_INTERNAL_FLAG))
+								break;
 							if ((keyEntry->kind == XS_WEAK_ENTRY_KIND) && (keyEntry->value.weakEntry.check == list)) {
 								keyEntry->flag &= ~XS_MARK_FLAG;
 								*keyEntryAddress = keyEntry->next;
@@ -1072,7 +1147,6 @@ void fxMarkWeakStuff(txMachine* the)
 							}
 							keyEntryAddress = &keyEntry->next;
 						}
-						mxCheck(the, keyEntry != C_NULL);
 					}
 					listEntry = listEntry->next;
 				}
@@ -1112,57 +1186,35 @@ txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b)
 	return c;
 }
 
-void* fxNewChunk(txMachine* the, txSize theSize)
+void* fxNewChunk(txMachine* the, txSize size)
 {
-	txBlock* aBlock;
-	txByte* aData;
+	txChunk* chunk;
 	txBoolean once = 1;
-	txSize modulo = theSize & (sizeof(txSize) - 1);
-	
-#if mxStress
-	if (gxStress) {
-		fxCollect(the, 1);
-		once = 0;
+	size = fxAdjustChunkSize(the, size);
+	chunk = fxFindChunk(the, size, &once);
+	if (!chunk) {
+		chunk = fxGrowChunk(the, size);
 	}
-#endif
-    //if (theSize > 1000)
-    //	fprintf(stderr, "# fxNewChunk %ld\n", theSize);
-    if (modulo)
-		theSize = fxAddChunkSizes(the, theSize, sizeof(txSize) - modulo);
-	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk));
-	
-#if mxNoChunks
-	aData = c_malloc(theSize);
-	((txChunk*)aData)->size = theSize;
-	((txChunk*)aData)->temporary = (txByte*)the->firstBlock;
-	the->firstBlock = (txBlock*)aData;
-	return aData + sizeof(txChunk);
-#endif
-again:
-	aBlock = the->firstBlock;
-	while (aBlock) {
-		if ((aBlock->current + theSize) <= aBlock->limit) {
-			aData = aBlock->current;
-			((txChunk*)aData)->size = theSize;
-			((txChunk*)aData)->temporary = C_NULL;
-			aBlock->current += theSize;
-			the->currentChunksSize += theSize;
-			if (the->peakChunksSize < the->currentChunksSize)
-				the->peakChunksSize = the->currentChunksSize;
-			return aData + sizeof(txChunk);
+	return fxCheckChunk(the, chunk, size);
+}
+
+void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
+{
+	txChunk* chunk;
+	txBoolean once = 1;
+	size = fxAdjustChunkSize(the, size);
+	capacity = fxAdjustChunkSize(the, capacity);
+	chunk = fxFindChunk(the, capacity, &once);
+	if (!chunk) {
+		chunk = fxGrowChunk(the, capacity);
+		if (!chunk) {
+			chunk = fxFindChunk(the, size, &once);
+			if (!chunk) {
+				chunk = fxGrowChunk(the, size);
+			}
 		}
-		aBlock = aBlock->nextBlock;
 	}
-	if (once) {
-		fxCollect(the, 1);
-		once = 0;
-	}
-	else {
-		fxGrowChunks(the, theSize);
-	}
-	goto again;
-	
-	return C_NULL;
+	return fxCheckChunk(the, chunk, size);
 }
 
 txSlot* fxNewSlot(txMachine* the) 
@@ -1205,16 +1257,15 @@ again:
 	return C_NULL;
 }
 
-void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
+void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 {
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
+	txSize capacity = (txSize)(aChunk->temporary - aData);
 	txBlock* aBlock = the->firstBlock;
-	txSize modulo = theSize & (sizeof(txSize) - 1);
-    if (modulo)
-		theSize = fxAddChunkSizes(the, theSize, sizeof(txSize) - modulo);
-	theSize = fxAddChunkSizes(the, theSize, sizeof(txChunk));
-	if (aChunk->size == theSize) {
+	size = fxAdjustChunkSize(the, size);
+	if (size <= capacity) {
+		aChunk->size = size;
 	#ifdef mxNever
 		gxRenewChunkCases[0]++;
 	#endif
@@ -1225,14 +1276,14 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
 	return C_NULL;
 #endif
 
-	aData += aChunk->size;
-	theSize -= aChunk->size;
 	while (aBlock) {
-		if (aBlock->current == aData) {
-			if (aData + theSize <= aBlock->limit) {
-				aBlock->current += theSize;
-				aChunk->size += theSize;
-				the->currentChunksSize += theSize;
+		if (aChunk->temporary == aBlock->current) {
+			txSize delta = size - capacity;
+			if (aBlock->current + delta <= aBlock->limit) {
+				aBlock->current += delta;
+				aChunk->temporary = aBlock->current;
+				aChunk->size = size;
+				the->currentChunksSize += size;
 				if (the->peakChunksSize < the->currentChunksSize)
 					the->peakChunksSize = the->currentChunksSize;
 			#ifdef mxNever
@@ -1242,25 +1293,12 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize theSize)
 			}
 			else {
 			#ifdef mxNever
-				gxRenewChunkCases[3]++;
+				gxRenewChunkCases[2]++;
 			#endif
 				return C_NULL;
 			}
 		}
 		aBlock = aBlock->nextBlock;
-	}
-	if (theSize < 0) {
-		the->currentChunksSize += theSize;
-		if (the->peakChunksSize < the->currentChunksSize)
-			the->peakChunksSize = the->currentChunksSize;
-		aChunk->size += theSize;
-		aData += theSize;
-		((txChunk*)aData)->size = -theSize;
-		((txChunk*)aData)->temporary = C_NULL;
-	#ifdef mxNever
-		gxRenewChunkCases[2]++;
-	#endif
-		return theData;
 	}
 #ifdef mxNever
 	gxRenewChunkCases[3]++;
@@ -1340,9 +1378,10 @@ void fxSweep(txMachine* the)
 {
 	txSize aTotal;
 	txBlock* aBlock;
-	txByte* mByte;
-	txByte* nByte;
-	txByte* pByte;
+	txByte* current;
+	txByte* limit;
+	txByte* next;
+	txByte* temporary;
 	txSize aSize;
 	txByte** aCodeAddress;
 	txSlot* aSlot;
@@ -1358,21 +1397,25 @@ void fxSweep(txMachine* the)
 	aTotal = 0;
 	aBlock = the->firstBlock;
 	while (aBlock) {
-		mByte = ((txByte*)aBlock) + sizeof(txBlock);
-		nByte = aBlock->current;
-		pByte = mByte;
-		while (mByte < nByte) {
-			aSize = ((txChunk*)mByte)->size;
+		current = ((txByte*)aBlock) + sizeof(txBlock);
+		limit = aBlock->current;
+		temporary = current;
+		while (current < limit) {
+			aSize = ((txChunk*)current)->size;
+			next = ((txChunk*)current)->temporary;
 			if (aSize & mxChunkFlag) {
 				aSize &= ~mxChunkFlag;
-				((txChunk*)mByte)->size = aSize;
-				((txChunk*)mByte)->temporary = pByte;
-				pByte += aSize;
+				((txChunk*)current)->temporary = temporary;
+				temporary += aSize;
 				aTotal += aSize;
 			}
-			mByte += aSize;
+			else {
+				((txChunk*)current)->temporary = C_NULL;
+			}
+			((txChunk*)current)->size = (txSize)(next - current);
+			current = next;
 		}	
-		aBlock->temporary = pByte;
+		aBlock->temporary = temporary;
 		aBlock = aBlock->nextBlock;
 	}
 	the->currentChunksSize = aTotal;
@@ -1384,21 +1427,21 @@ void fxSweep(txMachine* the)
 		if ((aSlot->flag & XS_C_FLAG) == 0) {
 			bSlot = (aSlot + 3)->value.reference->next;
 			if (bSlot->kind == XS_CODE_KIND) {
-				mByte = bSlot->value.code.address;
-				pByte = (txByte*)(((txChunk*)(mByte - sizeof(txChunk)))->temporary);
-				if (pByte) {
-					pByte += sizeof(txChunk);
-					aSize = mxPtrDiff(pByte - mByte);
+				current = bSlot->value.code.address;
+				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
+				if (temporary) {
+					temporary += sizeof(txChunk);
+					aSize = mxPtrDiff(temporary - current);
 					*aCodeAddress = *aCodeAddress + aSize;
 				}
 			}
 		}
 		else {
-			mByte = *aCodeAddress;
-			if (mByte) {
-				pByte = (txByte*)(((txChunk*)(mByte - sizeof(txChunk)))->temporary);
-				if (pByte)
-					*aCodeAddress = pByte + sizeof(txChunk);
+			current = *aCodeAddress;
+			if (current) {
+				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
+				if (temporary)
+					*aCodeAddress = temporary + sizeof(txChunk);
 			}
 		}
 		aCodeAddress = &(aSlot->value.frame.code);
@@ -1411,20 +1454,20 @@ void fxSweep(txMachine* the)
 			aSlot = jump->frame;
 			bSlot = (aSlot + 3)->value.reference->next;
 			if (bSlot->kind == XS_CODE_KIND) {
-				mByte = bSlot->value.code.address;
-				pByte = (txByte*)(((txChunk*)(mByte - sizeof(txChunk)))->temporary);
-				if (pByte) {
-					pByte += sizeof(txChunk);
-					jump->code += pByte - mByte;
+				current = bSlot->value.code.address;
+				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
+				if (temporary) {
+					temporary += sizeof(txChunk);
+					jump->code += temporary - current;
 				}
 			}
 		}
 		else {
-			mByte = jump->code;
-			if (mByte) {
-				pByte = (txByte*)(((txChunk*)(mByte - sizeof(txChunk)))->temporary);
-				if (pByte)
-					jump->code = pByte + sizeof(txChunk);
+			current = jump->code;
+			if (current) {
+				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
+				if (temporary)
+					jump->code = temporary + sizeof(txChunk);
 			}
 		}
 		jump = jump->nextJump;
@@ -1498,17 +1541,27 @@ void fxSweep(txMachine* the)
 
 	aBlock = the->firstBlock;
 	while (aBlock) {
-		mByte = ((txByte*)aBlock) + sizeof(txBlock);
-		nByte = aBlock->current;
-		while (mByte < nByte) {
-			aSize = ((txChunk*)mByte)->size;
-			if ((pByte = ((txChunk*)mByte)->temporary)) {
-				((txChunk*)mByte)->temporary = C_NULL;
-				if (pByte != mByte)
-					c_memmove(pByte, mByte, aSize);
+		txByte* former = C_NULL;
+		current = ((txByte*)aBlock) + sizeof(txBlock);
+		limit = aBlock->current;
+		while (current < limit) {
+			aSize = ((txChunk*)current)->size;
+			next = current + aSize;
+			if ((temporary = ((txChunk*)current)->temporary)) {
+				if (former) {
+					((txChunk*)former)->temporary = temporary;
+					((txChunk*)former)->size = (txSize)(temporary - former);
+				}
+				if (temporary != current)
+					c_memmove(temporary, current, aSize);
+				former = temporary;
 			}
-			mByte += aSize;
-		}	
+			current = next;
+		}
+		if (former) {
+			((txChunk*)former)->temporary = aBlock->temporary;
+			((txChunk*)former)->size = (txSize)(aBlock->temporary - former);
+		}
 	#if mxFill
 		c_memset(aBlock->temporary, 0xFF, aBlock->current - aBlock->temporary);
 	#endif
@@ -1544,7 +1597,10 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 	case XS_ARRAY_KIND:
 	case XS_STACK_KIND:
 		if ((aSlot = theSlot->value.array.address)) {
-			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
+			txChunk* chunk = (txChunk*)(((txByte*)aSlot) - sizeof(txChunk));
+			txIndex aLength = chunk->size / sizeof(txSlot);
+			if (aLength > theSlot->value.array.length)
+				aLength = theSlot->value.array.length;
 			while (aLength) {
 				fxSweepValue(the, aSlot);
 				aSlot++;
