@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,11 +20,14 @@
 
 import Timer from "timer";
 
-const timerInterval = 50;
+const timerInterval = 1000;
 
 let state = "idle";
+let state_next = "idle";
 let timer;
 let scanning = false;
+let ap_mode=1;
+let pwd = '';
 
 export default class WiFi {
     #onNotify;
@@ -36,16 +39,45 @@ export default class WiFi {
         this.onNotify = onNotify;
 
         timer = Timer.repeat(() => {
+            if ( state_next != state) {
+                //trace(`Wifi: ${state} -> ${state_next}\n`);
+                state=state_next;
+            }
             switch (state) {
                 case "starting":
-                    state = WiFi.connected;
-                    this.#onNotify(state);
+                    // simulate invalid password
+                    if ( pwd === 'invalid!')
+                        state_next = 'ending'
+                    else
+                        state_next = WiFi.connected
                     break;
 
                 case WiFi.connected:
-                    state = WiFi.gotIP;
                     this.#onNotify(state);
+                    state_next = WiFi.gotIP;
                     break;
+                case WiFi.gotIP:
+                    this.#onNotify(state);
+                    state_next = 'done';
+                    break;
+                case 'ending': {
+                    state_next = WiFi.disconnected;
+                    break;
+                }
+                case 'done': {
+                    if (timer) {
+                        Timer.clear(timer)
+                        timer = undefined;
+                    }
+                }
+                case WiFi.disconnected: {
+                    this.#onNotify(state);
+                    if (timer) {
+                        Timer.clear(timer)
+                        timer = undefined;
+                    }
+                    state_next = 'idle';
+                }
             }
         }, timerInterval);
 
@@ -63,24 +95,29 @@ export default class WiFi {
         this.#onNotify = value ?? function () { };
     }
     static set mode(value) { 
-        if (value != 1) throw new Error("AP mode is not implemented in the simulator");
+        ap_mode=value;
     }
-    static get mode() { return 1; }
+    static get mode() { return ap_mode; }
     static scan(dictionary, callback) {
 		if (scanning)
 			throw new Error("already scanning");
 
 		scanning = true;
 		const items = accessPoints.slice();
+        let total=items.length+1;
 		Timer.set(id => {
-			if (items.length)
+			if (items.length) {
+
 				callback({...items.shift()});
+                let delay=10*(total-items.length);
+                Timer.schedule(id,10,delay);
+            }
 			else {
 				Timer.clear(id);
 				scanning = false;
 				callback();
 			}
-		}, 1500, 50);
+		}, 1500 );
      }
     static connect(dictionary) {
         if (!dictionary) {
@@ -88,21 +125,24 @@ export default class WiFi {
             return;
         }
 
-        state = "starting";
+        state_next = "starting";
+        pwd=dictionary?.password;
         if (timer)
             Timer.schedule(timer, timerInterval, timerInterval);
     }
     static accessPoint(dictionary) {
-        throw new Error("AP mode is not implemented in the simulator");
+        trace(`Sim AP started ssid: ${dictionary.ssid}\n`);
     }
     static close() { WiFi.connect(); }
+	
+	static disconnect() {
+		state = WiFi.disconnected;
+	}
 }
 WiFi.gotIP = "gotIP";
 WiFi.lostIP = "lostIP";
 WiFi.connected = "connect";
 WiFi.disconnected = "disconnect";
-
-
 
 const accessPoints = [
    {
@@ -184,4 +224,3 @@ const accessPoints = [
    }
 ];
 Object.freeze(accessPoints, true);
-
