@@ -69,11 +69,13 @@ void xs_textdecoder(xsMachine *the)
 	UTF-8 BOM is sequence 0xEF,0xBB,0xBF
 	Replacement character sequence in UTF-8 is 0xEF 0xBF 0xBD
 	null character maps to 0xF4, 0x90, 0x80, 0x80
+	
+	implementation overallocates by 3 bytes if BOM is present and ignoreBOM is false
 */
 
 void xs_textdecoder_decode(xsMachine *the)
 {
-	uint8_t *src, *srcEnd, *dst;
+	uint8_t *src, *srcEnd, *dst, *dst3;
 	uint8_t *buffer;
 	xsUnsignedValue srcLength, bufferLength;
 	modTextDecoder td;
@@ -94,13 +96,6 @@ void xs_textdecoder_decode(xsMachine *the)
 	td = xsmcGetHostChunk(xsThis);
 	buffer = td->buffer;
 	bufferLength = td->bufferLength;
-	//@@ different on first chunk? depends on streaming?
-	if (td->ignoreBOM && (srcLength >= 3)) {
-		if ((0xEF == c_read8(src + 0)) && (0xBB == c_read8(src + 1)) && (0xBF == c_read8(src + 2))) {
-			srcOffset = 3;
-			src += 3;
-		}
-	}
 
 	while (src < srcEnd) {
 		unsigned char first, clen, i;
@@ -185,6 +180,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	bufferLength = td->bufferLength;
 
 	dst = (uint8_t *)xsmcToString(xsResult);
+	dst3 = td->ignoreBOM ? NULL : (dst + 3);
 
 	while (src < srcEnd) {
 		unsigned char first, clen, i, firstFromBuffer;
@@ -268,6 +264,11 @@ void xs_textdecoder_decode(xsMachine *the)
 				else
 					*dst++ = c_read8(src++);
 			} while (--clen);
+
+			if ((0xEF == first) && (dst == dst3)) {
+				if ((0xBF == dst[-1]) && (0xBB == dst[-2]))
+					dst -= 3;
+			}
 		}
 	}
 	*dst++ = 0;
