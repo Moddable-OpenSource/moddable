@@ -8,7 +8,9 @@ class ShellFile extends FILE {
 
 const devices = [
 	{ platform:"esp/moddable_one", id:"com.moddable.one", targets:[ "main.bin" ] },
+	{ platform:"esp/moddable_display_1", id:"com.moddable.display_1", targets:[ "main.bin" ] },
 	{ platform:"esp/moddable_three", id:"com.moddable.three", targets:[ "main.bin" ] },
+	{ platform:"esp/moddable_display_3", id:"com.moddable.display_3", targets:[ "main.bin" ] },
 	{ platform:"esp/nodemcu", id:"com.nodemcu.esp8266", targets:[ "main.bin" ] },
 	{ platform:"esp32/esp32_thing", id:"com.sparkfun.thing.esp32", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/esp32_thing_plus", id:"com.sparkfun.thing_plus.esp32", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
@@ -21,6 +23,7 @@ const devices = [
 	{ platform:"esp32/m5stack", id:"com.m5stack", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5stick_c", id:"com.m5stick.c", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/moddable_two", id:"com.moddable.two", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
+	{ platform:"esp32/moddable_display_2", id:"com.moddable.display_2", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/nodemcu", id:"com.nodemcu.esp32", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/saola_wroom", id:"com.espressif.saola", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/wrover_kit", id:"com.esp32.wrover", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },

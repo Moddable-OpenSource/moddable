@@ -128,5 +128,7 @@ class Screen extends config.Screen {
 
 export default function (done) {
 	globalThis.screen = new Screen({});
+	if (config.driverRotation)
+		screen.rotation = config.driverRotation;
 	done();
 }
