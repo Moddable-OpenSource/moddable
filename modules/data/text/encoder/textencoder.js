@@ -20,5 +20,5 @@
 
 export default class TextEncoder {
 	encode(value) @ "xs_textencoder_encode";
+	encodeInto(value, buffer) @ "xs_textencoder_encodeInto";
 }
-
