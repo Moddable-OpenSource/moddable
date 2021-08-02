@@ -11,7 +11,8 @@
 	},
 	"config": {
 		"screen": "ili9341",
-		"touch": "ft6206"
+		"touch": "ft6206",
+		"driverRotation": 180
 	},
 	"defines": {
 		"i2c": {

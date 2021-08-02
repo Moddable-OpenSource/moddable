@@ -31,7 +31,9 @@
 		"id": "tech.moddable.ft6206calibrate",
 		"devices": [
 			"esp/moddable_one",
-			"esp32/moddable_two"
+			"esp/moddable_display_1",
+			"esp32/moddable_two",
+			"esp32/moddable_display_2"
 		],
 		"icon": "./store/icon.png"
 	}
