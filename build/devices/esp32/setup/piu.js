@@ -81,6 +81,8 @@ class Screen extends config.Screen {
 		return super.rotation;
 	}
 	set rotation(value) {
+		if (config.rotation)
+			value = (value + config.rotation) % 360;
 		super.rotation = value;
 		if (0 === value)
 			delete this.rotate;

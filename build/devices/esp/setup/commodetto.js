@@ -21,7 +21,14 @@
 import config from "mc/config";
 
 export default function (done) {
-	if (!global.screen && config.Screen)
+	if (!global.screen && config.Screen) {
 		global.screen = new config.Screen({});
+		if (config.driverRotation) {
+			if (config.rotation)
+				screen.rotation = (config.driverRotation + config.rotation) % 360;
+			else
+				screen.rotation = config.driverRotation;
+		}
+	}
 	done();
 }
