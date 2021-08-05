@@ -147,6 +147,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/fatfs/src \
 	$(IDF_PATH)/components/fatfs/vfs \
 	$(IDF_PATH)/components/wear_levelling/include \
+ 	$(IDF_PATH)/components/sdmmc⁩/include \
  	$(IDF_PATH)/components/spi_flash/include \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \

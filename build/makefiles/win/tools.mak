@@ -117,6 +117,7 @@ MODULES = \
 	$(MOD_DIR)\colorcellencode.xsb \
 	$(MOD_DIR)\compressbmf.xsb \
 	$(MOD_DIR)\image2cs.xsb \
+	$(MOD_DIR)\mcbundle.xsb \
 	$(MOD_DIR)\mcconfig.xsb \
 	$(MOD_DIR)\mclocal.xsb \
 	$(MOD_DIR)\mcmanifest.xsb \
@@ -184,6 +185,7 @@ COMMANDS = \
 	$(BIN_DIR)\colorcellencode.bat \
 	$(BIN_DIR)\compressbmf.bat \
 	$(BIN_DIR)\image2cs.bat \
+	$(BIN_DIR)\mcbundle.bat \
 	$(BIN_DIR)\mcconfig.bat \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcrez.bat \
@@ -358,6 +360,9 @@ $(BIN_DIR)\compressbmf.bat :
 $(BIN_DIR)\image2cs.bat :
 	@echo # image2cs.bat
 	echo @$(BIN_DIR)\tools image2cs %%* 1> $(BIN_DIR)\image2cs.bat
+$(BIN_DIR)\mcbundle.bat :
+	@echo # mcbundle.bat
+	echo @$(BIN_DIR)\tools mcbundle %%* 1> $(BIN_DIR)\mcbundle.bat	
 $(BIN_DIR)\mcconfig.bat :
 	@echo # mcconfig.bat
 	echo @$(BIN_DIR)\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat

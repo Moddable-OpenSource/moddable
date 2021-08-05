@@ -59,7 +59,8 @@
 	"store": {
 	    "id": "tech.moddable.window-display-moddable-three",
 	    "devices": [
-	    	"esp/moddable_three"
+	    	"esp/moddable_three",
+	    	"esp/moddable_display_3"
 	    ],
 	    "icon": "./store/icon.png"
 	}

@@ -81,6 +81,8 @@ class Screen extends config.Screen {
 		return super.rotation;
 	}
 	set rotation(value) {
+		if (config.rotation)
+			value = (value + config.rotation) % 360;
 		super.rotation = value;
 		if (0 === value)
 			delete this.rotate;
@@ -128,5 +130,7 @@ class Screen extends config.Screen {
 
 export default function (done) {
 	globalThis.screen = new Screen({});
+	if (config.driverRotation)
+		screen.rotation = config.driverRotation;
 	done();
 }

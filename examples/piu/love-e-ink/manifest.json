@@ -23,12 +23,18 @@
 			"config": {
 				"rotation": 270
 			}
+		},
+		"esp/moddable_display_3": {
+			"config": {
+				"rotation": 90
+			}
 		}
 	},
 	"bundle": {
 		"id": "tech.moddable.love-e-ink",
 		"devices": [
-			"esp/moddable_three"
+			"esp/moddable_three",
+			"esp/moddable_display_3"
 		],
 		"icon": "./store/icon.png"
 	}

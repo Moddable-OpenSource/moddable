@@ -24,7 +24,8 @@
 	"bundle": {
 		"id": "tech.moddable.backlight",
 		"devices": [
-			"esp32/moddable_two"
+			"esp32/moddable_two",
+			"esp32/moddable_display_2"
 		]
 	}
 }

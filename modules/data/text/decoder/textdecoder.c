@@ -25,11 +25,16 @@
 #else
 	#define xsID_ignoreBOM (xsID("ignoreBOM"))
 	#define xsID_fatal (xsID("fatal"))
+	#define xsID_stream (xsID("stream"))
 #endif
 
 typedef struct {
 	uint8_t		ignoreBOM;
 	uint8_t		fatal;
+
+	// left over when streaming
+	uint8_t		bufferLength;
+	uint8_t		buffer[12];
 } modTextDecoderRecord, *modTextDecoder;
 
 void xs_textdecoder_destructor(void *data)
@@ -46,6 +51,7 @@ void xs_textdecoder(xsMachine *the)
 
 	decoder.ignoreBOM = false;
 	decoder.fatal = false;
+	decoder.bufferLength = 0;
 	if (argc >= 2) {
 		xsmcVars(1);
 
@@ -63,32 +69,42 @@ void xs_textdecoder(xsMachine *the)
 	UTF-8 BOM is sequence 0xEF,0xBB,0xBF
 	Replacement character sequence in UTF-8 is 0xEF 0xBF 0xBD
 	null character maps to 0xF4, 0x90, 0x80, 0x80
+	
+	implementation overallocates by 3 bytes if BOM is present and ignoreBOM is false
 */
 
 void xs_textdecoder_decode(xsMachine *the)
 {
-	uint8_t *src, *srcEnd, *dst;
-	xsUnsignedValue srcLength;
+	uint8_t *src, *srcEnd, *dst, *dst3;
+	uint8_t *buffer;
+	xsUnsignedValue srcLength, bufferLength;
 	modTextDecoder td;
 	uint8_t srcOffset = 0;
 	uint32_t outLength = 0;
+	uint8_t stream = 0;
 
-	if (xsmcArgc > 1)
-		xsUnknownError("options not supported");
+	if (xsmcArgc > 1) {
+		xsmcVars(1);
+
+		xsmcGet(xsVar(0), xsArg(1), xsID_stream);
+		stream = xsmcToBoolean(xsVar(0));
+	}
 
 	xsmcGetBuffer(xsArg(0), (void **)&src, &srcLength);
 	srcEnd = src + srcLength;
 
 	td = xsmcGetHostChunk(xsThis);
-	if (td->ignoreBOM && (srcLength >= 3)) {
-		if ((0xEF == c_read8(src + 0)) && (0xBB == c_read8(src + 1)) && (0xBF == c_read8(src + 2))) {
-			srcOffset = 3;
-			src += 3;
-		}
-	}
+	buffer = td->buffer;
+	bufferLength = td->bufferLength;
 
 	while (src < srcEnd) {
-		unsigned char first = c_read8(src++), clen, i;
+		unsigned char first, clen, i;
+		if (bufferLength) {
+			bufferLength--;
+			first = *buffer++;
+		}
+		else
+			first = c_read8(src++);
 		if (first < 0x80) {
 			outLength += (0 == first) ? 4 : 1;
 			continue;
@@ -107,7 +123,10 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
-		if ((src + clen) > srcEnd) {
+		if (clen > ((srcEnd - src) + bufferLength)) {
+			if (stream)
+				break;	// decode to here. remainder saved below
+
 			if (td->fatal)
 				goto fatal;
 
@@ -116,7 +135,12 @@ void xs_textdecoder_decode(xsMachine *the)
 		}
 
 		for (i = 0; i < clen; i++) {
-			if (0x80 == (0xC0 & c_read8(src + i)))
+			unsigned char c;
+			if (i < bufferLength)
+				c = buffer[i];
+			else
+				c = c_read8(src + i - bufferLength);
+			if (0x80 == (0xC0 & c))
 				continue;
 
 			if (td->fatal)
@@ -126,8 +150,23 @@ void xs_textdecoder_decode(xsMachine *the)
 			clen = 0;
 			break;
 		}
-		src += clen;
-		outLength += clen ? clen + 1 : 0;
+
+		if (clen) {
+			outLength += clen + 1;
+
+			if (bufferLength) {
+				if (bufferLength >= clen) {
+					bufferLength -= clen;
+					buffer += clen;
+				}
+				else {
+					src += clen - bufferLength; 
+					bufferLength = 0;
+				}
+			}
+			else
+				src += clen;
+		}
 	}
 
 	xsmcSetStringBuffer(xsResult, NULL, outLength + 1);
@@ -136,10 +175,24 @@ void xs_textdecoder_decode(xsMachine *the)
 	srcEnd = src + srcLength;
 	src += srcOffset;
 
+	td = xsmcGetHostChunk(xsThis);
+	buffer = td->buffer;
+	bufferLength = td->bufferLength;
+
 	dst = (uint8_t *)xsmcToString(xsResult);
+	dst3 = td->ignoreBOM ? NULL : (dst + 3);
 
 	while (src < srcEnd) {
-		unsigned char first = c_read8(src++), clen, i;
+		unsigned char first, clen, i, firstFromBuffer;
+		if (bufferLength) {
+			bufferLength--;
+			first = *buffer++;
+			firstFromBuffer = 1;
+		}
+		else {
+			first = c_read8(src++);
+			firstFromBuffer = 0;
+		}
 		if (first < 0x80) {
 			if (first)
 				*dst++ = first;
@@ -165,7 +218,19 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
-		if ((src + clen) > srcEnd) {
+		if (clen > ((srcEnd - src) + bufferLength)) {
+			if (stream) {
+				// put back "first". remainder saved below.
+				if (firstFromBuffer) {
+					buffer--;
+					bufferLength++;
+				}
+				else
+					src--;
+				break;
+				
+			}
+
 			*dst++ = 0xEF;
 			*dst++ = 0xBF;
 			*dst++ = 0xBD;
@@ -173,7 +238,12 @@ void xs_textdecoder_decode(xsMachine *the)
 		}
 
 		for (i = 0; i < clen; i++) {
-			if (0x80 == (0xC0 & c_read8(src + i)))
+			unsigned char c;
+			if (i < bufferLength)
+				c = buffer[i];
+			else
+				c = c_read8(src + i - bufferLength);
+			if (0x80 == (0xC0 & c))
 				continue;
 
 			*dst++ = 0xEF;
@@ -187,11 +257,25 @@ void xs_textdecoder_decode(xsMachine *the)
 		if (clen) {
 			*dst++ = first;
 			do {
-				*dst++ = c_read8(src++);
+				if (bufferLength) {
+					bufferLength--;
+					*dst++ = *buffer++;
+				}
+				else
+					*dst++ = c_read8(src++);
 			} while (--clen);
+
+			if ((0xEF == first) && (dst == dst3)) {
+				if ((0xBF == dst[-1]) && (0xBB == dst[-2]))
+					dst -= 3;
+			}
 		}
 	}
 	*dst++ = 0;
+
+	c_memmove(td->buffer, buffer, bufferLength);
+	c_memmove(td->buffer + bufferLength, src, srcEnd - src);
+	td->bufferLength = bufferLength + (srcEnd - src);
 
 	return;
 
