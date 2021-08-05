@@ -37,6 +37,8 @@ typedef struct {
 	uint8_t		buffer[12];
 } modTextDecoderRecord, *modTextDecoder;
 
+static uint8_t isLegalUTF8(const uint8_t *source, int length);
+
 void xs_textdecoder_destructor(void *data)
 {
 }
@@ -99,6 +101,8 @@ void xs_textdecoder_decode(xsMachine *the)
 
 	while (src < srcEnd) {
 		unsigned char first, clen, i;
+		uint8_t utf8[4];
+
 		if (bufferLength) {
 			bufferLength--;
 			first = *buffer++;
@@ -134,39 +138,36 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
+		utf8[0] = first;
 		for (i = 0; i < clen; i++) {
-			unsigned char c;
 			if (i < bufferLength)
-				c = buffer[i];
+				utf8[i + 1] = buffer[i];
 			else
-				c = c_read8(src + i - bufferLength);
-			if (0x80 == (0xC0 & c))
-				continue;
+				utf8[i + 1] = c_read8(src + i - bufferLength);
+		}
 
+		if (!isLegalUTF8(utf8, clen + 1)) {
 			if (td->fatal)
 				goto fatal;
 
 			outLength += 3;
-			clen = 0;
-			break;
+			continue;
 		}
 
-		if (clen) {
-			outLength += clen + 1;
+		outLength += clen + 1;
 
-			if (bufferLength) {
-				if (bufferLength >= clen) {
-					bufferLength -= clen;
-					buffer += clen;
-				}
-				else {
-					src += clen - bufferLength; 
-					bufferLength = 0;
-				}
+		if (bufferLength) {
+			if (bufferLength >= clen) {
+				bufferLength -= clen;
+				buffer += clen;
 			}
-			else
-				src += clen;
+			else {
+				src += clen - bufferLength; 
+				bufferLength = 0;
+			}
 		}
+		else
+			src += clen;
 	}
 
 	xsmcSetStringBuffer(xsResult, NULL, outLength + 1);
@@ -184,6 +185,8 @@ void xs_textdecoder_decode(xsMachine *the)
 
 	while (src < srcEnd) {
 		unsigned char first, clen, i, firstFromBuffer;
+		uint8_t utf8[4];
+
 		if (bufferLength) {
 			bufferLength--;
 			first = *buffer++;
@@ -237,39 +240,42 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
+		utf8[0] = first;
 		for (i = 0; i < clen; i++) {
-			unsigned char c;
 			if (i < bufferLength)
-				c = buffer[i];
+				utf8[i + 1] = buffer[i];
 			else
-				c = c_read8(src + i - bufferLength);
-			if (0x80 == (0xC0 & c))
-				continue;
+				utf8[i + 1] = c_read8(src + i - bufferLength);
+		}
 
+		if (!isLegalUTF8(utf8, clen + 1)) {
 			*dst++ = 0xEF;
 			*dst++ = 0xBF;
 			*dst++ = 0xBD;
-
-			clen = 0;
-			break;
+			continue;
 		}
 
-		if (clen) {
-			*dst++ = first;
-			do {
-				if (bufferLength) {
-					bufferLength--;
-					*dst++ = *buffer++;
-				}
-				else
-					*dst++ = c_read8(src++);
-			} while (--clen);
+		*dst++ = first;
+		for (i = 0; i < clen; i++)
+			*dst++ = utf8[i + 1];
+		
+		if ((0xEF == first) && (dst == dst3)) {
+			if ((0xBF == dst[-1]) && (0xBB == dst[-2]))
+				dst -= 3;
+		}
 
-			if ((0xEF == first) && (dst == dst3)) {
-				if ((0xBF == dst[-1]) && (0xBB == dst[-2]))
-					dst -= 3;
+		if (bufferLength) {
+			if (bufferLength >= clen) {
+				bufferLength -= clen;
+				buffer += clen;
+			}
+			else {
+				src += clen - bufferLength; 
+				bufferLength = 0;
 			}
 		}
+		else
+			src += clen;
 	}
 	*dst++ = 0;
 
@@ -299,3 +305,52 @@ void xs_textdecoder_get_fatal(xsMachine *the)
 	modTextDecoder td = xsmcGetHostChunk(xsThis);
 	xsmcSetBoolean(xsResult, td->fatal);
 }
+
+
+/*
+ * Copyright 2001-2004 Unicode, Inc.
+ * 
+ * Disclaimer
+ * 
+ * This source code is provided as is by Unicode, Inc. No claims are
+ * made as to fitness for any particular purpose. No warranties of any
+ * kind are expressed or implied. The recipient agrees to determine
+ * applicability of information provided. If this file has been
+ * purchased on magnetic or optical media from Unicode, Inc., the
+ * sole remedy for any claim will be exchange of defective media
+ * within 90 days of receipt.
+ * 
+ * Limitations on Rights to Redistribute This Code
+ * 
+ * Unicode, Inc. hereby grants the right to freely use the information
+ * supplied in this file in the creation of products supporting the
+ * Unicode Standard, and to make copies of this file in any form
+ * for internal or external distribution as long as this notice
+ * remains attached.
+ */
+ 
+uint8_t isLegalUTF8(const uint8_t *source, int length) {
+    uint8_t a;
+    const uint8_t *srcptr = source+length;
+    switch (length) {
+    default: return false;
+	/* Everything else falls through when "true"... */
+    case 4: if ((a = (*--srcptr)) < 0x80 || a > 0xBF) return false;
+    case 3: if ((a = (*--srcptr)) < 0x80 || a > 0xBF) return false;
+    case 2: if ((a = (*--srcptr)) > 0xBF) return false;
+
+	switch (*source) {
+	    /* no fall-through in this inner switch */
+	    case 0xE0: if (a < 0xA0) return false; break;
+	    case 0xED: if (a > 0x9F) return false; break;
+	    case 0xF0: if (a < 0x90) return false; break;
+	    case 0xF4: if (a > 0x8F) return false; break;
+	    default:   if (a < 0x80) return false;
+	}
+
+    case 1: if (*source >= 0x80 && *source < 0xC2) return false;
+    }
+    if (*source > 0xF4) return false;
+    return true;
+}
+
