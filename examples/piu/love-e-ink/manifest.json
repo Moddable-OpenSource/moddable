@@ -23,6 +23,11 @@
 			"config": {
 				"rotation": 270
 			}
+		},
+		"esp/moddable_display_3": {
+			"config": {
+				"rotation": 90
+			}
 		}
 	},
 	"bundle": {
