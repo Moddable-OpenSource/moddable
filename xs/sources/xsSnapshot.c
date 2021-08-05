@@ -57,7 +57,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxAssert(_ASSERTION,...) { if (!(_ASSERTION)) { fxReport(the, __VA_ARGS__); snapshot->error = C_EINVAL; fxJump(the); } }
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 
-#define mxCallbacksLength 473
+#define mxCallbacksLength 474
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
