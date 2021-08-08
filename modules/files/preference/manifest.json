@@ -93,6 +93,16 @@
 					"$(MODULES)/files/preference/lin/*"
 				]
 			}
+		},
+		"wasm": {
+			"include": [
+				"$(MODULES)/files/file/manifest.json"
+			],
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/lin/*"
+				]
+			}
 		}
 	}
 }
