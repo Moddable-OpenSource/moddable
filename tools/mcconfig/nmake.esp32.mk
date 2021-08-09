@@ -24,7 +24,7 @@ ESP32_SUBCLASS = esp32
 !ENDIF
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v4.2.1
+EXPECTED_ESP_IDF = v4.3
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -35,6 +35,12 @@ IDF_PY_LOG_FLAG = -v
 !CMDSWITCHES +S
 CMAKE_LOG_LEVEL = ERROR
 IDF_PY_LOG_FLAG = -n
+!ENDIF
+
+!IF "$(ESP32_SUBCLASS)"=="esp32c3"
+ESP_ARCH = riscv
+!ELSE
+ESP_ARCH = xtensa
 !ENDIF
 
 !IF "$(UPLOAD_SPEED)"==""
@@ -111,6 +117,7 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components \
  	-I$(IDF_PATH)\components\bootloader_support\include \
  	-I$(IDF_PATH)\components\bt\include \
+	-I$(IDF_PATH)\components\bt\include\$(ESP32_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include\api \
  	-I$(IDF_PATH)\components\driver\include \
@@ -122,6 +129,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS) \
  	-I$(IDF_PATH)\components\esp_event\include \
 	-I$(IDF_PATH)\components\esp_eth\include \
+	-I$(IDF_PATH)\components\esp_hw_support\include \
  	-I$(IDF_PATH)\components\esp_netif\include \
  	-I$(IDF_PATH)\components\esp_ringbuf\include \
 	-I$(IDF_PATH)\components\esp_rom\include \
@@ -134,8 +142,10 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\freertos \
  	-I$(IDF_PATH)\components\freertos\include \
  	-I$(IDF_PATH)\components\freertos\include\freertos \
-	-I$(IDF_PATH)\components\freertos\xtensa\include \
-	-I$(IDF_PATH)\components\freertos\xtensa\include\freertos \
+	-I$(IDF_PATH)\components\freertos\port \
+ 	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
+	-I$(IDF_PATH)\components\hal\include \
+	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\heap\include \
 	-I$(IDF_PATH)\components\log\include \
 	-I$(IDF_PATH)\components\lwip\include\apps \
@@ -154,17 +164,14 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\porting\nimble\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\porting\npl\freertos\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\port\include \
-	-I$(IDF_PATH)\components\soc\esp32\include \
-	-I$(IDF_PATH)\components\soc\esp32\include\soc \
+	-I$(IDF_PATH)\components\soc\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\soc\include \
-	-I$(IDF_PATH)\components\soc\soc\$(ESP32_SUBCLASS)\include \
-	-I$(IDF_PATH)\components\soc\src\$(ESP32_SUBCLASS)\include \
-	-I$(IDF_PATH)\components\soc\soc\include \
+	-I$(IDF_PATH)\components\soc\include\soc \
 	-I$(IDF_PATH)\components\spiffs\include \
 	-I$(IDF_PATH)\components\fatfs\src \
 	-I$(IDF_PATH)\components\fatfs\vfs \
 	-I$(IDF_PATH)\components\wear_levelling\include \
-	-I$(IDF_PATH)\components\sdmmc⁩\include \
+    -I$(IDF_PATH)\components\sdmmc\include \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
 	-I$(IDF_PATH)\components\tcpip_adapter \
@@ -218,7 +225,9 @@ XS_OBJ = \
 
 SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)\config
 
-!IF "$(ESP32_SUBCLASS)"=="esp32s2"
+!IF "$(ESP32_SUBCLASS)"=="esp32s3"
+ESP32_TARGET = 3
+!ELSEIF "$(ESP32_SUBCLASS)"=="esp32s2"
 ESP32_TARGET = 2
 !ELSE
 ESP32_TARGET = 1

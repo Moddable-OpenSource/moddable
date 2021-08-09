@@ -22,12 +22,18 @@ HOST_OS := $(shell uname)
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 
-EXPECTED_ESP_IDF ?= v4.2.1
+EXPECTED_ESP_IDF ?= v4.3
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
 ESP32_SUBCLASS ?= esp32
 $(warning ESP32_SUBCLASS $(ESP32_SUBCLASS))
+
+ifeq ($(ESP32_SUBCLASS),"esp32c3")
+	ESP_ARCH = riscv
+else
+	ESP_ARCH = xtensa
+endif
 
 ifeq ($(VERBOSE),1)
 	CMAKE_LOG_LEVEL = VERBOSE
@@ -41,6 +47,7 @@ ESP32_BASE ?= $(HOME)/esp32-new
 IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 
+# TOOLS_ROOT ?= $(HOME)/.espressif/tools/xtensa-$(ESP32_SUBCLASS)-elf/esp-2021r1-8.4.0/xtensa-$(ESP32_SUBCLASS)-elf
 TOOLS_ROOT ?= $(HOME)/.espressif/tools/xtensa-$(ESP32_SUBCLASS)-elf/esp-2020r3-8.4.0/xtensa-$(ESP32_SUBCLASS)-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
@@ -80,12 +87,17 @@ else
 	endif
 endif
 
-SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)/config
+# SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)/config
+SDKCONFIG_H_DIR = $(PROJ_DIR)/build/config
 
-ifeq ("$(ESP32_SUBCLASS)","esp32s2")
-	ESP32_TARGET = 2
+ifeq ("$(ESP32_SUBCLASS)","esp32s3")
+	ESP32_TARGET = 3
 else
-	ESP32_TARGET = 1
+	ifeq ("$(ESP32_SUBCLASS)","esp32s2")
+		ESP32_TARGET = 2
+	else
+		ESP32_TARGET = 1
+	endif
 endif
 
 
@@ -93,6 +105,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components \
  	$(IDF_PATH)/components/bootloader_support/include \
  	$(IDF_PATH)/components/bt/include \
+	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
  	$(IDF_PATH)/components/driver/include \
@@ -104,6 +117,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/esp_event/include \
  	$(IDF_PATH)/components/esp_eth/include \
+ 	$(IDF_PATH)/components/esp_hw_support/include \
  	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_ringbuf/include \
  	$(IDF_PATH)/components/esp_rom/include \
@@ -116,8 +130,10 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
- 	$(IDF_PATH)/components/freertos/xtensa/include \
-	$(IDF_PATH)/components/freertos/xtensa/include/freertos \
+ 	$(IDF_PATH)/components/freertos/port \
+ 	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/hal/include \
+	$(IDF_PATH)/components/hal/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/lwip/include/apps/ \
@@ -137,17 +153,14 @@ INC_DIRS = \
  	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/nimble/include \
  	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/npl/freertos/include \
  	$(IDF_PATH)/components/bt/host/nimble/port/include \
- 	$(IDF_PATH)/components/soc/esp32/include \
- 	$(IDF_PATH)/components/soc/esp32/include/soc \
+ 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/soc/include \
-	$(IDF_PATH)/components/soc/soc/$(ESP32_SUBCLASS)/include \
-	$(IDF_PATH)/components/soc/src/$(ESP32_SUBCLASS)/include \
-	$(IDF_PATH)/components/soc/soc/include \
+ 	$(IDF_PATH)/components/soc/include/soc \
  	$(IDF_PATH)/components/spiffs/include \
 	$(IDF_PATH)/components/fatfs/src \
 	$(IDF_PATH)/components/fatfs/vfs \
 	$(IDF_PATH)/components/wear_levelling/include \
- 	$(IDF_PATH)/components/sdmmc⁩/include \
+	$(IDF_PATH)/components/sdmmc/include \
  	$(IDF_PATH)/components/spi_flash/include \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
@@ -326,20 +339,20 @@ else
 	PORT_SET = -p $(UPLOAD_PORT)
 	SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
 endif
-BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
-BUILD_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
 BUILD_ERR = "ESP-IDF Build Failed"
-DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
-IDF_RECONFIGURE_CMD = idf.py -B $(IDF_BUILD_DIR) $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
-RELEASE_LAUNCH_CMD = idf.py -B $(IDF_BUILD_DIR) $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
+DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
-PARTITIONS_PATH = $(IDF_BUILD_DIR)/partition_table/$(PARTITIONS_BIN)
+PARTITIONS_PATH = $(PROJ_DIR)/partition_table/$(PARTITIONS_BIN)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(IDF_BUILD_DIR)/xs_esp32.elf -bin $(TOOLS_ROOT)/bin/xtensa-$(ESP32_SUBCLASS)-elf-gdb"
+		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/xs_esp32.elf -bin $(TOOLS_ROOT)/bin/xtensa-$(ESP32_SUBCLASS)-elf-gdb"
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
@@ -362,12 +375,12 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
-	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/xs_esp32.elf $(BIN_DIR)
+	-cp $(PROJ_DIR)/xs_esp32.map $(BIN_DIR)
+	-cp $(PROJ_DIR)/xs_esp32.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/xs_esp32.elf $(BIN_DIR)
 	-cp $(PARTITIONS_PATH) $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
+	-cp $(PROJ_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
 	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
 	cd $(PROJ_DIR); \
@@ -376,24 +389,24 @@ all: precursor
 DEPLOY_PRE:
 	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to $(ESP32_SUBCLASS)"
-	-@mv $(IDF_BUILD_DIR)/xs_esp32.bin $(IDF_BUILD_DIR)/xs_esp32.bin_prev 2>/dev/null
+	-@mv $(PROJ_DIR)/xs_esp32.bin $(PROJ_DIR)/xs_esp32.bin_prev 2>/dev/null
 	-@mv $(PARTITIONS_PATH) $(PARTITIONS_BIN)_prev 2>/dev/null
-	-@mv $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(IDF_BUILD_DIR)/bootloader/bootloader.bin_prev 2>/dev/null
-	-@mv $(IDF_BUILD_DIR)/ota_data_initial.bin $(IDF_BUILD_DIR)/ota_data_initial.bin_prev 2>&1
+	-@mv $(PROJ_DIR)/bootloader/bootloader.bin $(PROJ_DIR)/bootloader/bootloader.bin_prev 2>/dev/null
+	-@mv $(PROJ_DIR)/ota_data_initial.bin $(PROJ_DIR)/ota_data_initial.bin_prev 2>&1
 
 DEPLOY_START:
 	idf.py set-target $(ESP32_SUBCLASS)
-	-cp $(BIN_DIR)/xs_esp32.bin $(IDF_BUILD_DIR)
+	-cp $(BIN_DIR)/xs_esp32.bin $(PROJ_DIR)
 	-cp $(BIN_DIR)/$(PARTITIONS_BIN) $(PARTITIONS_PATH)
-	-cp $(BIN_DIR)/bootloader.bin $(IDF_BUILD_DIR)/bootloader/bootloader.bin
-	-cp $(BIN_DIR)/ota_data_initial.bin $(IDF_BUILD_DIR)/ota_data_initial.bin
+	-cp $(BIN_DIR)/bootloader.bin $(PROJ_DIR)/bootloader/bootloader.bin
+	-cp $(BIN_DIR)/ota_data_initial.bin $(PROJ_DIR)/ota_data_initial.bin
 	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
 
 DEPLOY_END:
-	-@mv $(IDF_BUILD_DIR)/xs_esp32.bin_prev $(IDF_BUILD_DIR)/xs_esp32.bin 2>/dev/null
+	-@mv $(PROJ_DIR)/xs_esp32.bin_prev $(PROJ_DIR)/xs_esp32.bin 2>/dev/null
 	-@mv $(PARTITIONS_BIN)_prev $(PARTITIONS_PATH) 2>/dev/null
-	-@mv $(IDF_BUILD_DIR)/bootloader/bootloader.bin_prev $(IDF_BUILD_DIR)/bootloader/bootloader.bin 2>/dev/null
-	-@mv $(IDF_BUILD_DIR)/ota_data_initial.bin_prev $(IDF_BUILD_DIR)/ota_data_initial.bin 2>/dev/null
+	-@mv $(PROJ_DIR)/bootloader/bootloader.bin_prev $(PROJ_DIR)/bootloader/bootloader.bin 2>/dev/null
+	-@mv $(PROJ_DIR)/ota_data_initial.bin_prev $(PROJ_DIR)/ota_data_initial.bin 2>/dev/null
 
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
@@ -405,21 +418,31 @@ xsbug:
 	$(DO_LAUNCH)
 
 prepareOutput:
-	-@rm $(IDF_BUILD_DIR)/xs_esp32.elf 2>/dev/null
+	-@rm $(PROJ_DIR)/xs_esp32.elf 2>/dev/null
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
-	-@mkdir -p $(IDF_BUILD_DIR) 2>/dev/null
+#	-@mkdir -p $(PROJ_DIR) 2>/dev/null
+
+DUMP_VARS:
+	echo "#\n#\n# vars\n#\n#\n"
+	echo "# SDKCONFIGPATH=$(SDKCONFIGPATH)"
+	echo "# CONFIGDIR=$(CONFIGDIR)"
+	echo "# SDKCONFIG_FILE=$(SDKCONFIG_FILE)"
+	echo "# IDF_BUILD_DIR=$(IDF_BUILD_DIR)"
+	echo "# PROJ_DIR_FILES is $(PROJ_DIR_FILES)"
+	echo "# IDF_RECONFIGURE_CMD is $(IDF_RECONFIGURE_CMD)"
+	echo "# SDKCONFIG_H_DIR is $(SDKCONFIG_H_DIR)"
 
 precursor: partitionsFileCheck prepareOutput projDir bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
-	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(IDF_BUILD_DIR)/.
+	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(PROJ_DIR)/build/.
 	touch $(PROJ_DIR)/main/main.c
 
 build: precursor
 	-cd $(PROJ_DIR) ; $(BUILD_CMD)
-	-cp $(IDF_BUILD_DIR)/xs_esp32.map $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/xs_esp32.map $(BIN_DIR)
+	-cp $(PROJ_DIR)/xs_esp32.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/bootloader/bootloader.bin $(BIN_DIR)
 	-cp $(PARTITIONS_PATH) $(BIN_DIR)
-	-cp $(IDF_BUILD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>&1
+	-cp $(PROJ_DIR)/ota_data_initial.bin $(BIN_DIR) 2>&1
 	echo "#"
 	echo "# Built files at $(BIN_DIR)"
 	echo "#"
@@ -429,10 +452,10 @@ clean:
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null
-	-rm -rf $(IDF_BUILD_DIR) 2>/dev/null
+	-rm -rf $(PROJ_DIR) 2>/dev/null
 	-rm -rf $(PROJ_DIR) 2>/dev/null
 	-rm -rf $(CONFIGDIR) 2>/dev/null
-	-rm -f $(IDF_BUILD_DIR)/CMakeCache.txt
+	-rm -f $(PROJ_DIR)/CMakeCache.txt
 
 erase_flash:
 	$(ESPTOOL) --chip $(ESP32_SUBCLASS) --port $(UPLOAD_PORT) erase_flash
@@ -466,15 +489,15 @@ bootloaderCheck:
 ifneq ($(BOOTLOADERPATH),)
 	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
 		if ! cmp -s $(BOOTLOADERPATH)/subproject/main/bootloader_start.c $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
-			rm -rf $(IDF_BUILD_DIR)/bootloader; \
+			rm -rf $(PROJ_DIR)/bootloader; \
 		fi ; \
 	else \
-		rm -rf $(IDF_BUILD_DIR)/bootloader; \
+		rm -rf $(PROJ_DIR)/bootloader; \
 	fi
 else
 	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
 		rm -rf $(PROJ_DIR)/components; \
-		rm -rf $(IDF_BUILD_DIR)/bootloader; \
+		rm -rf $(PROJ_DIR)/bootloader; \
 	fi
 endif
 

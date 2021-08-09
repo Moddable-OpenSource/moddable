@@ -36,7 +36,7 @@
 
 #include "driver/gpio.h"
 
-#include "soc/gpio_caps.h"
+//#include "soc/gpio_caps.h"
 #include "soc/gpio_periph.h"
 #include "hal/gpio_hal.h"
 

@@ -138,6 +138,7 @@ export class MakeFile extends FILE {
 
 		tool.createDirectory(outputConfigDirectory);
 		tool.setenv("CONFIGDIR", outputConfigDirectory);
+		this.line("CONFIGDIR = ", outputConfigDirectory);
 
 		// For release builds merge base sdkconfig.defaults.release file
 		if (tool.debug === false) {
@@ -261,6 +262,7 @@ export class MakeFile extends FILE {
 		// Write the result, if it has changed
 		let buildConfigFile = outputConfigDirectory + tool.slash + "sdkconfig.mc";
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
+		this.line("SDKCONFIG_FILE=", buildConfigFile);
 		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
 			const oldConfig = tool.readFileString(buildConfigFile);
 			if (oldConfig == baseConfig) return;
