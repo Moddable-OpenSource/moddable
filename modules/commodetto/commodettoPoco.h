@@ -21,6 +21,10 @@
 #include "commodettoPocoBlit.h"
 #include "stddef.h"
 
+#ifndef false
+	#define false (0)
+#endif
+
 #define xsGetHostDataPoco(slot) ((void *)((char *)xsGetHostData(slot) - offsetof(PocoRecord, pixels)))
 #define xsmcGetHostDataPoco(slot) ((void *)((char *)xsmcGetHostData(slot) - offsetof(PocoRecord, pixels)))
 
