@@ -66,11 +66,9 @@ unexport LD_LIBRARY_PATH
 unexport CPPFLAGS
 
 ifeq ($(DEBUG),1)
-	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/idf-$(ESP32_SUBCLASS)
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/xsProj-$(ESP32_SUBCLASS)
+	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/$(NAME)/xsProj-$(ESP32_SUBCLASS)
 else
-	IDF_BUILD_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/idf-$(ESP32_SUBCLASS)
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/xsProj-$(ESP32_SUBCLASS)
+	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/$(NAME)/xsProj-$(ESP32_SUBCLASS)
 endif
 
 ifeq ($(MAKEFLAGS_JOBS),)
@@ -87,7 +85,6 @@ else
 	endif
 endif
 
-# SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)/config
 SDKCONFIG_H_DIR = $(PROJ_DIR)/build/config
 
 ifeq ("$(ESP32_SUBCLASS)","esp32s3")
@@ -325,6 +322,8 @@ PROJ_DIR_TEMPLATE = $(BUILD_DIR)/devices/esp32/xsProj-$(ESP32_SUBCLASS)
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)/main/main.c \
 	$(PROJ_DIR)/main/component.mk \
+	$(PROJ_DIR)/main/CMakeLists.txt \
+	$(PROJ_DIR)/CMakeLists.txt \
 	$(PROJ_DIR)/partitions.csv \
 	$(PROJ_DIR)/Makefile
 
@@ -346,7 +345,7 @@ DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D m
 IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
 RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
-PARTITIONS_PATH = $(PROJ_DIR)/partition_table/$(PARTITIONS_BIN)
+PARTITIONS_PATH = $(PROJ_DIR)/build/partition_table/$(PARTITIONS_BIN)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
@@ -375,12 +374,12 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
-	-cp $(PROJ_DIR)/xs_esp32.map $(BIN_DIR)
-	-cp $(PROJ_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(PROJ_DIR)/xs_esp32.elf $(BIN_DIR)
+	-cp $(PROJ_DIR)/build/xs_esp32.map $(BIN_DIR)
+	-cp $(PROJ_DIR)/build/xs_esp32.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/build/xs_esp32.elf $(BIN_DIR)
 	-cp $(PARTITIONS_PATH) $(BIN_DIR)
-	-cp $(PROJ_DIR)/bootloader/bootloader.bin $(BIN_DIR)
-	-cp $(PROJ_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
+	-cp $(PROJ_DIR)/build/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/build/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
 	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
 	cd $(PROJ_DIR); \
@@ -389,24 +388,24 @@ all: precursor
 DEPLOY_PRE:
 	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to $(ESP32_SUBCLASS)"
-	-@mv $(PROJ_DIR)/xs_esp32.bin $(PROJ_DIR)/xs_esp32.bin_prev 2>/dev/null
+	-@mv $(PROJ_DIR)/build/xs_esp32.bin $(PROJ_DIR)/build/xs_esp32.bin_prev 2>/dev/null
 	-@mv $(PARTITIONS_PATH) $(PARTITIONS_BIN)_prev 2>/dev/null
-	-@mv $(PROJ_DIR)/bootloader/bootloader.bin $(PROJ_DIR)/bootloader/bootloader.bin_prev 2>/dev/null
-	-@mv $(PROJ_DIR)/ota_data_initial.bin $(PROJ_DIR)/ota_data_initial.bin_prev 2>&1
+	-@mv $(PROJ_DIR)/build/bootloader/bootloader.bin $(PROJ_DIR)/build/bootloader/bootloader.bin_prev 2>/dev/null
+	-@mv $(PROJ_DIR)/build/ota_data_initial.bin $(PROJ_DIR)/build/ota_data_initial.bin_prev 2>&1
 
 DEPLOY_START:
 	idf.py set-target $(ESP32_SUBCLASS)
 	-cp $(BIN_DIR)/xs_esp32.bin $(PROJ_DIR)
 	-cp $(BIN_DIR)/$(PARTITIONS_BIN) $(PARTITIONS_PATH)
-	-cp $(BIN_DIR)/bootloader.bin $(PROJ_DIR)/bootloader/bootloader.bin
-	-cp $(BIN_DIR)/ota_data_initial.bin $(PROJ_DIR)/ota_data_initial.bin
+	-cp $(BIN_DIR)/bootloader.bin $(PROJ_DIR)/build/bootloader/bootloader.bin
+	-cp $(BIN_DIR)/ota_data_initial.bin $(PROJ_DIR)/build/ota_data_initial.bin
 	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
 
 DEPLOY_END:
-	-@mv $(PROJ_DIR)/xs_esp32.bin_prev $(PROJ_DIR)/xs_esp32.bin 2>/dev/null
+	-@mv $(PROJ_DIR)/build/xs_esp32.bin_prev $(PROJ_DIR)/build/xs_esp32.bin 2>/dev/null
 	-@mv $(PARTITIONS_BIN)_prev $(PARTITIONS_PATH) 2>/dev/null
-	-@mv $(PROJ_DIR)/bootloader/bootloader.bin_prev $(PROJ_DIR)/bootloader/bootloader.bin 2>/dev/null
-	-@mv $(PROJ_DIR)/ota_data_initial.bin_prev $(PROJ_DIR)/ota_data_initial.bin 2>/dev/null
+	-@mv $(PROJ_DIR)/build/bootloader/bootloader.bin_prev $(PROJ_DIR)/build/bootloader/bootloader.bin 2>/dev/null
+	-@mv $(PROJ_DIR)/build/ota_data_initial.bin_prev $(PROJ_DIR)/build/ota_data_initial.bin 2>/dev/null
 
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
@@ -427,22 +426,21 @@ DUMP_VARS:
 	echo "# SDKCONFIGPATH=$(SDKCONFIGPATH)"
 	echo "# CONFIGDIR=$(CONFIGDIR)"
 	echo "# SDKCONFIG_FILE=$(SDKCONFIG_FILE)"
-	echo "# IDF_BUILD_DIR=$(IDF_BUILD_DIR)"
 	echo "# PROJ_DIR_FILES is $(PROJ_DIR_FILES)"
 	echo "# IDF_RECONFIGURE_CMD is $(IDF_RECONFIGURE_CMD)"
 	echo "# SDKCONFIG_H_DIR is $(SDKCONFIG_H_DIR)"
 
-precursor: partitionsFileCheck prepareOutput projDir bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
+precursor: partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
 	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(PROJ_DIR)/build/.
 	touch $(PROJ_DIR)/main/main.c
 
 build: precursor
 	-cd $(PROJ_DIR) ; $(BUILD_CMD)
-	-cp $(PROJ_DIR)/xs_esp32.map $(BIN_DIR)
-	-cp $(PROJ_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(PROJ_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/build/xs_esp32.map $(BIN_DIR)
+	-cp $(PROJ_DIR)/build/xs_esp32.bin $(BIN_DIR)
+	-cp $(PROJ_DIR)/build/bootloader/bootloader.bin $(BIN_DIR)
 	-cp $(PARTITIONS_PATH) $(BIN_DIR)
-	-cp $(PROJ_DIR)/ota_data_initial.bin $(BIN_DIR) 2>&1
+	-cp $(PROJ_DIR)/build/ota_data_initial.bin $(BIN_DIR) 2>&1
 	echo "#"
 	echo "# Built files at $(BIN_DIR)"
 	echo "#"
@@ -452,10 +450,6 @@ clean:
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null
-	-rm -rf $(PROJ_DIR) 2>/dev/null
-	-rm -rf $(PROJ_DIR) 2>/dev/null
-	-rm -rf $(CONFIGDIR) 2>/dev/null
-	-rm -f $(PROJ_DIR)/CMakeCache.txt
 
 erase_flash:
 	$(ESPTOOL) --chip $(ESP32_SUBCLASS) --port $(UPLOAD_PORT) erase_flash
@@ -467,16 +461,14 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
-	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 	
 $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld xs_esp32.bin"
-	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
-	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)/buildinfo.c -o $(LIB_DIR)/buildinfo.c.o
-	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(LIB_DIR)/buildinfo.c.o
-
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)/partitions.csv
+	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
+	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
+	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
+	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
 
 partitionsFileCheck:
 	if test -e $(PROJ_DIR)/partitions.csv ; then \
@@ -502,17 +494,26 @@ else
 endif
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
-	cp -r $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
+	cp -r $(PROJ_DIR_TEMPLATE)/* $(PROJ_DIR)/*
 	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
+
+$(PROJ_DIR)/main:
+	mkdir -p $(PROJ_DIR)/main
 
 $(PROJ_DIR)/partitions.csv: $(PARTITIONS_FILE)
 	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
 
-$(PROJ_DIR)/main/main.c: $(PROJ_DIR_TEMPLATE)/main/main.c
-	cp -f $? $@
+$(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
+	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@
 
-$(PROJ_DIR)/main/component.mk: $(PROJ_DIR_TEMPLATE)/main/component.mk
-	cp -f $? $@
+$(PROJ_DIR)/main/component.mk: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/component.mk
+	cp -f $(PROJ_DIR_TEMPLATE)/main/component.mk $@
+
+$(PROJ_DIR)/main/CMakeLists.txt: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/CMakeLists.txt
+	cp -f $(PROJ_DIR_TEMPLATE)/main/CMakeLists.txt $@
+
+$(PROJ_DIR)/CMakeLists.txt: $(PROJ_DIR_TEMPLATE)/CMakeLists.txt
+	cp -f $(PROJ_DIR_TEMPLATE)/CMakeLists.txt $@
 
 $(PROJ_DIR)/Makefile: $(PROJ_DIR_TEMPLATE)/Makefile
 	cp -f $? $@

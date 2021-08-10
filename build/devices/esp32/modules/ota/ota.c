@@ -43,7 +43,7 @@ void xs_ota(xsMachine *the)
 {
 	esp_err_t err;
 	esp_ota_handle_t handle;
-	uint32_t size = OTA_SIZE_UNKNOWN;
+	uint32_t size = OTA_WITH_SEQUENTIAL_WRITES;
 	xsOTA ota = c_calloc(1, sizeof(xsOTARecord));
 	if (NULL == ota)
 		xsUnknownError("no memory");
