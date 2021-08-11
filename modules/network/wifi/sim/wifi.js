@@ -26,8 +26,7 @@ let state = "idle";
 let state_next = "idle";
 let timer;
 let scanning = false;
-let ap_mode=1;
-let pwd = '';
+let mode = 0;
 
 export default class WiFi {
     #onNotify;
@@ -45,99 +44,106 @@ export default class WiFi {
             }
             switch (state) {
                 case "starting":
-                    // simulate invalid password
-                    if ( pwd === 'invalid!')
-                        state_next = 'ending'
-                    else
-                        state_next = WiFi.connected
+					state_next = WiFi.connected 
                     break;
 
                 case WiFi.connected:
                     this.#onNotify(state);
                     state_next = WiFi.gotIP;
                     break;
+
                 case WiFi.gotIP:
                     this.#onNotify(state);
                     state_next = 'done';
                     break;
-                case 'ending': {
+
+                case "ending":
                     state_next = WiFi.disconnected;
                     break;
-                }
-                case 'done': {
-                    if (timer) {
-                        Timer.clear(timer)
-                        timer = undefined;
-                    }
-                }
-                case WiFi.disconnected: {
-                    this.#onNotify(state);
-                    if (timer) {
-                        Timer.clear(timer)
-                        timer = undefined;
-                    }
+
+                case "done":
                     state_next = 'idle';
-                }
+					break;
+
+				case "idle":
+					break;
+
+                case WiFi.disconnected:
+                    this.#onNotify(state);
+                    state_next = 'idle';
+					break;
             }
         }, timerInterval);
 
-        if (dictionary){
+        if (dictionary)
             WiFi.connect(dictionary);
-        }
     }
     close() {
-        if (timer) {
+        if (timer)
             Timer.clear(timer)
-            timer = undefined;
-        }
+		timer = undefined;
     }
     set onNotify(value) {
         this.#onNotify = value ?? function () { };
     }
-    static set mode(value) { 
-        ap_mode=value;
+    static set mode(value) {
+		if ((0 !== value) && (1 !== value) && (2 !== value) && (3 !== value))
+			throw new Error("invalid wi-fi mode");
+        mode = value;
     }
-    static get mode() { return ap_mode; }
+    static get mode() { return mode; }
     static scan(dictionary, callback) {
+		if (!mode)
+			throw new Error("Wi-Fi is disabled");
+
 		if (scanning)
 			throw new Error("already scanning");
 
 		scanning = true;
 		const items = accessPoints.slice();
-        let total=items.length+1;
+        let total = items.length + 1;
 		Timer.set(id => {
 			if (items.length) {
-
 				callback({...items.shift()});
-                let delay=10*(total-items.length);
-                Timer.schedule(id,10,delay);
+                const delay = 10 * (total - items.length);
+                Timer.schedule(id, 10, delay);
             }
 			else {
 				Timer.clear(id);
 				scanning = false;
 				callback();
 			}
-		}, 1500 );
+		}, 1500);
      }
     static connect(dictionary) {
+		if (0 === mode)
+			mode = 1;
+		else if ((1 !== mode) && (3 !== mode))
+			throw new Error("Wi-Fi station disabled");
+
         if (!dictionary) {
             state = "ending";
             return;
         }
 
         state_next = "starting";
-        pwd=dictionary?.password;
+		if ("invalid!" === dictionary?.password)		// simulate invalid passworod
+			state_next = "ending";
+
         if (timer)
             Timer.schedule(timer, timerInterval, timerInterval);
     }
     static accessPoint(dictionary) {
+		if (0 === mode)
+			mode = 2;
+		else  if ((2 !== mode) && (3 !== mode))
+			throw new Error("Wi-Fi access point disabled");
+
         trace(`Sim AP started ssid: ${dictionary.ssid}\n`);
     }
     static close() { WiFi.connect(); }
 	
-	static disconnect() {
-		state = WiFi.disconnected;
-	}
+	static disconnect() {WiFi.connect();}
 }
 WiFi.gotIP = "gotIP";
 WiFi.lostIP = "lostIP";
