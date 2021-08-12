@@ -9,20 +9,18 @@ request.callback = function(message, value, etc) {
 	switch (message) {
 		case Request.status:
 			if (200 !== value)
-				throw new Error("unexpected http status\n");
+				throw new Error("unexpected http status");
 			break;
 
 		case Request.header:
 			if ("content-length" === value) {
 				try {
-					const start = Date.now();
 					this.byteLength = parseInt(etc);
 					this.ota = new OTA({byteLength: this.byteLength});
-					trace(`ota.begin took ${(Date.now() - start) / 1000} seconds\n`);
 					this.received = 0;
 				}
-				catch {
-					throw new Error("unable to start OTA\n");
+				catch (e) {
+					throw new Error("unable to start OTA: " + e);
 				}
 			}
 			break;
@@ -36,13 +34,13 @@ request.callback = function(message, value, etc) {
 
 		case Request.responseComplete:
 			this.ota.complete();
-			trace("ota completed\n");
+			trace("ota complete\n");
 			break;
 
 		default:
 			if (message < 0) {
 				this.ota.cancel();
-				throw new Error("http error\n");
+				throw new Error("http error");
 			}
 			break;
 	}
