@@ -91,25 +91,25 @@ PORT_COMMAND = -p $(UPLOAD_PORT)
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-IDF_BUILD_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\idf-$(ESP32_SUBCLASS)
-PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\xsProj-$(ESP32_SUBCLASS)
+PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\$(NAME)\xsProj-$(ESP32_SUBCLASS)
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) -B $(IDF_BUILD_DIR) build -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
 BUILD_MSG =
-DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) flash -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) flash -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
 START_SERIAL2XSBUG = echo Launching app... & echo Type Ctrl-C twice after debugging app. & $(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1
 
 !ELSE
-IDF_BUILD_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\idf-$(ESP32_SUBCLASS)
-PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\xsProj-$(ESP32_SUBCLASS)
+PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\$(NAME)\xsProj-$(ESP32_SUBCLASS)
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 START_XSBUG=
 START_SERIAL2XSBUG = echo No debugger for a release build.
-BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) -B $(IDF_BUILD_DIR) build -D mxDebug=0 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
-DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) flash -D mxDebug=0 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=0 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
+DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) flash -D mxDebug=0 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
 
 !ENDIF
+
+BLD_DIR = $(PROJ_DIR)\build
 
 PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
 
@@ -171,7 +171,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\fatfs\src \
 	-I$(IDF_PATH)\components\fatfs\vfs \
 	-I$(IDF_PATH)\components\wear_levelling\include \
-    -I$(IDF_PATH)\components\sdmmc\include \
+	-I$(IDF_PATH)\components\sdmmc\include \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
 	-I$(IDF_PATH)\components\tcpip_adapter \
@@ -223,7 +223,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsmc.o \
 	$(LIB_DIR)\e_pow.o
 
-SDKCONFIG_H_DIR = $(IDF_BUILD_DIR)\config
+SDKCONFIG_H_DIR = $(BLD_DIR)\config
 
 !IF "$(ESP32_SUBCLASS)"=="esp32s3"
 ESP32_TARGET = 3
@@ -339,7 +339,7 @@ PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)\partitions.csv
 !ENDIF
 
 PARTITIONS_BIN = partition-table.bin
-PARTITIONS_PATH = $(IDF_BUILD_DIR)\partition_table\$(PARTITIONS_BIN)
+PARTITIONS_PATH = $(BLD_DIR)\partition_table\$(PARTITIONS_BIN)
 
 !IF [fc $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv > nul] == 1
 !IF [copy /Y $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv] == 0
@@ -351,18 +351,20 @@ PARTITIONS_PATH = $(IDF_BUILD_DIR)\partition_table\$(PARTITIONS_BIN)
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)\main\main.c	\
 	$(PROJ_DIR)\main\component.mk	\
+	$(PROJ_DIR)\main\CMakeLists.txt \
+	$(PROJ_DIR)\CMakeLists.txt \
 	$(PROJ_DIR)\partitions.csv \
 	$(PROJ_DIR)\Makefile
 
 !IF "$(BOOTLOADERPATH)"!=""
 !IF [fc $(BOOTLOADERPATH)\subproject\main\bootloader_start.c $(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c > nul 2> nul] != 0
-!IF [rmdir /S /Q $(IDF_BUILD_DIR)\bootloader > nul 2> nul] == 0
+!IF [rmdir /S /Q $(PROJ_DIR)\bootloader > nul 2> nul] == 0
 !ENDIF
 !ENDIF
 PROJ_DIR_FILES = $(PROJ_DIR_FILES) \
 	$(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c
 !ELSE
-!IF [rmdir /S /Q $(PROJ_DIR)\components > nul 2> nul && rmdir /S /Q $(IDF_BUILD_DIR)\bootloader > nul 2> nul] == 1
+!IF [rmdir /S /Q $(PROJ_DIR)\components > nul 2> nul && rmdir /S /Q $(PROJ_DIR)\bootloader > nul 2> nul] == 1
 !ENDIF
 !ENDIF
 
@@ -381,52 +383,44 @@ clean:
 	echo $(LIB_DIR)
 	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
 	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
-	echo $(IDF_BUILD_DIR)
-	if exist $(IDF_BUILD_DIR) del /s/q/f $(IDF_BUILD_DIR)\*.* > NUL
-	if exist $(IDF_BUILD_DIR) rmdir /s/q $(IDF_BUILD_DIR)
-	echo $(CONFIGDIR)
-	if exist $(CONFIGDIR) del /s/q/f $(CONFIGDIR)\*.* > NUL
-	if exist $(CONFIGDIR) rmdir /s/q $(CONFIGDIR)
 	echo $(PROJ_DIR)
 	if exist $(PROJ_DIR) del /s/q/f $(PROJ_DIR)\*.* > NUL
 	if exist $(PROJ_DIR) rmdir /s/q $(PROJ_DIR)
-	if exist $(IDF_BUILD_DIR)\CMakeCache.txt del /s/q/f $(IDF_BUILD_DIR)\CMakeCache.txt > NUL
 
-precursor: projDir $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a
-
+precursor: $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a
+	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
 
 debug: precursor
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
-	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
-	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(IDF_BUILD_DIR)\.
-
-	cd $(PROJ_DIR) & python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
-	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
-	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
-	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
-	copy $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\.
+	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
+	-cd $(PROJ_DIR) & python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) build flash -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS="$(SDKCONFIG_FILE)"
+	-copy $(BLD_DIR)\xs_esp32.map $(BIN_DIR)\.
+	-copy $(BLD_DIR)\xs_esp32.bin $(BIN_DIR)\.
+	-copy $(BLD_DIR)\partition_table\partition-table.bin $(BIN_DIR)\.
+	-copy $(BLD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\.
+	-copy $(PARTITIONS_PATH) $(BIN_DIR)\.
+	-copy $(BLD_DIR)\ota_data_initial.bin $(BIN_DIR)\.
 	(@echo Launching app. Type Ctrl-C twice after debugging app to close serial2xsbug...)
 	$(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1
 
 release: precursor
-	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
-	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
-	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(IDF_BUILD_DIR)\.
-	cd $(PROJ_DIR) & python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) build flash -D mxDebug=0 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
-	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)\.
-	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)\.
-	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
-	copy $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\.
-	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) -B $(IDF_BUILD_DIR) monitor
+	if exist $(BLD_DIR)\xs_esp32.elf del $(BLD_DIR)\xs_esp32.elf
+	if not exist $(BLD_DIR) mkdir $(BLD_DIR)
+	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
+	cd $(PROJ_DIR) & python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) build flash -D mxDebug=0 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDK_CONFIG_DEFAULTS=$(SDKCONFIG_FILE)
+	copy $(BLD_DIR)\xs_esp32.map $(BIN_DIR)\.
+	copy $(BLD_DIR)\xs_esp32.bin $(BIN_DIR)\.
+	copy $(BLD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
+	copy $(BLD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\.
+	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) monitor
 
 prepare:
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
-	if exist $(IDF_BUILD_DIR)\xs_esp32.elf del $(IDF_BUILD_DIR)\xs_esp32.elf
-	if not exist $(IDF_BUILD_DIR) mkdir $(IDF_BUILD_DIR)
-	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(IDF_BUILD_DIR)\.
+	if exist $(BLD_DIR)\xs_esp32.elf del $(BLD_DIR)\xs_esp32.elf
+	if not exist $(BLD_DIR) mkdir $(BLD_DIR)
+	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
 	set HOME=$(PROJ_DIR)
 	cd $(PROJ_DIR)
 		
@@ -434,11 +428,11 @@ build: precursor prepare
 	echo $(BUILD_CMD)
 	$(BUILD_CMD)
 	$(BUILD_MSG)
-	copy $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(BIN_DIR)
-	copy $(IDF_BUILD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
-	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin copy $(IDF_BUILD_DIR)\ota_data_initial.bin $(BIN_DIR)
-	copy $(IDF_BUILD_DIR)\xs_esp32.bin $(BIN_DIR)
-	copy $(IDF_BUILD_DIR)\xs_esp32.map $(BIN_DIR)
+	copy $(BLD_DIR)\bootloader\bootloader.bin $(BIN_DIR)
+	copy $(BLD_DIR)\partition_table\partition-table.bin $(BIN_DIR)
+	if exist $(BLD_DIR)\ota_data_initial.bin copy $(BLD_DIR)\ota_data_initial.bin $(BIN_DIR)
+	copy $(BLD_DIR)\xs_esp32.bin $(BIN_DIR)
+	copy $(BLD_DIR)\xs_esp32.map $(BIN_DIR)
 
 xsbug:
 	$(KILL_SERIAL2XSBUG)
@@ -449,30 +443,30 @@ DEPLOY_PRE:
 	$(KILL_SERIAL2XSBUG)
 	if not exist $(BIN_DIR)\xs_esp32.bin echo "Please build before deploy"
 	if not exist $(BIN_DIR)\xs_esp32.bin exit 1
-	if exist $(IDF_BUILD_DIR)\xs_esp32.bin move /Y $(IDF_BUILD_DIR)\xs_esp32.bin $(IDF_BUILD_DIR)\xs_esp32.bin_prev
+	if exist $(BLD_DIR)\xs_esp32.bin move /Y $(BLD_DIR)\xs_esp32.bin $(BLD_DIR)\xs_esp32.bin_prev
 	if exist $(PARTITIONS_PATH) move /Y $(PARTITIONS_PATH) $(PARTITIONS_PATH)_prev
-	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin move /Y $(IDF_BUILD_DIR)\bootloader\bootloader.bin $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev
-	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin move /Y $(IDF_BUILD_DIR)\ota_data_initial.bin $(IDF_BUILD_DIR)\ota_data_initial.bin_prev
+	if exist $(BLD_DIR)\bootloader\bootloader.bin move /Y $(BLD_DIR)\bootloader\bootloader.bin $(BLD_DIR)\bootloader\bootloader.bin_prev
+	if exist $(BLD_DIR)\ota_data_initial.bin move /Y $(BLD_DIR)\ota_data_initial.bin $(BLD_DIR)\ota_data_initial.bin_prev
 
 DEPLOY_START:
-	if exist $(BIN_DIR)\xs_esp32.bin copy $(BIN_DIR)\xs_esp32.bin $(IDF_BUILD_DIR)
+	if exist $(BIN_DIR)\xs_esp32.bin copy $(BIN_DIR)\xs_esp32.bin $(BLD_DIR)
 	if exist $(BIN_DIR)\$(PARTITIONS_BIN) copy $(BIN_DIR)\$(PARTITIONS_BIN) $(PARTITIONS_PATH)
-	if exist $(BIN_DIR)\bootloader.bin  copy $(BIN_DIR)\bootloader.bin $(IDF_BUILD_DIR)\bootloader\bootloader.bin
-	if exist $(BIN_DIR)\ota_data_initial.bin copy $(BIN_DIR)\ota_data_initial.bin $(IDF_BUILD_DIR)\ota_data_initial.bin
+	if exist $(BIN_DIR)\bootloader.bin  copy $(BIN_DIR)\bootloader.bin $(BLD_DIR)\bootloader\bootloader.bin
+	if exist $(BIN_DIR)\ota_data_initial.bin copy $(BIN_DIR)\ota_data_initial.bin $(BLD_DIR)\ota_data_initial.bin
 	set HOME=$(PROJ_DIR)
 	cd $(PROJ_DIR)
 	echo $(DEPLOY_CMD)
 	$(DEPLOY_CMD)
 
 DEPLOY_END:
-	if exist $(IDF_BUILD_DIR)\xs_esp32.bin del $(IDF_BUILD_DIR)\xs_esp32.bin
+	if exist $(BLD_DIR)\xs_esp32.bin del $(BLD_DIR)\xs_esp32.bin
 	if exist $(PARTITIONS_PATH) del $(PARTITIONS_PATH)
-	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin del $(IDF_BUILD_DIR)\bootloader\bootloader.bin
-	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin del $(IDF_BUILD_DIR)\ota_data_initial.bin
-	if exist $(IDF_BUILD_DIR)\xs_esp32.bin_prev move /Y $(IDF_BUILD_DIR)\xs_esp32.bin_prev $(IDF_BUILD_DIR)\xs_esp32.bin
+	if exist $(BLD_DIR)\bootloader\bootloader.bin del $(BLD_DIR)\bootloader\bootloader.bin
+	if exist $(BLD_DIR)\ota_data_initial.bin del $(BLD_DIR)\ota_data_initial.bin
+	if exist $(BLD_DIR)\xs_esp32.bin_prev move /Y $(BLD_DIR)\xs_esp32.bin_prev $(BLD_DIR)\xs_esp32.bin
 	if exist $(PARTITIONS_PATH)_prev move /Y $(PARTITIONS_PATH)_prev $(PARTITIONS_PATH)
-	if exist $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev move /Y $(IDF_BUILD_DIR)\bootloader\bootloader.bin_prev $(IDF_BUILD_DIR)\bootloader\bootloader.bin
-	if exist $(IDF_BUILD_DIR)\ota_data_initial.bin_prev move /Y $(IDF_BUILD_DIR)\ota_data_initial.bin_prev $(IDF_BUILD_DIR)\ota_data_initial.bin
+	if exist $(BLD_DIR)\bootloader\bootloader.bin_prev move /Y $(BLD_DIR)\bootloader\bootloader.bin_prev $(BLD_DIR)\bootloader\bootloader.bin
+	if exist $(BLD_DIR)\ota_data_initial.bin_prev move /Y $(BLD_DIR)\ota_data_initial.bin_prev $(BLD_DIR)\ota_data_initial.bin
 
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
@@ -480,34 +474,41 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	@echo Reconfiguring ESP-IDF...
 	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 
-	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) -B $(IDF_BUILD_DIR) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
-	COPY /B $(SDKCONFIG_H)+,, $(SDKCONFIG_H)
+	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE)
+	COPY /B $(SDKCONFIG_H)+,,
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
-	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 
 $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a: $(PROJ_DIR)\main\main.c $(SDKCONFIG_H) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
 	@echo # ld xs_esp32.bin
-	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
-	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.c.o
-	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.c.o
-
-projDir: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)\partitions.csv
+	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(TMP_DIR)\buildinfo.h
+	echo #include "buildinfo.h" > $(TMP_DIR)\buildinfo.c
+	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(TMP_DIR)\buildinfo.c
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\buildinfo.c -o $(TMP_DIR)\buildinfo.c.o
+	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\buildinfo.c.o
 
 $(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
-	echo d | xcopy /s $(PROJ_DIR_TEMPLATE) $(PROJ_DIR)
+	echo d | xcopy /s $(PROJ_DIR_TEMPLATE)\* $(PROJ_DIR)\
 	copy $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv
+
+$(PROJ_DIR)\main:
+	mkdir $(PROJ_DIR)\main
 
 $(PROJ_DIR)\partitions.csv: $(PARTITIONS_FILE)
 	copy $? $@
 
-$(PROJ_DIR)\main\main.c: $(PROJ_DIR_TEMPLATE)\main\main.c
-	copy $? $@
+$(PROJ_DIR)\main\main.c: $(PROJ_DIR)\main $(PROJ_DIR_TEMPLATE)\main\main.c
+	copy $(PROJ_DIR_TEMPLATE)\main\main.c $@
 
-$(PROJ_DIR)\main\component.mk: $(PROJ_DIR_TEMPLATE)\main\component.mk
-	copy $? $@
+$(PROJ_DIR)\main\component.mk: $(PROJ_DIR)\main $(PROJ_DIR_TEMPLATE)\main\component.mk
+	copy $(PROJ_DIR_TEMPLATE)\main\component.mk $@
+
+$(PROJ_DIR)\main\CMakeLists.txt: $(PROJ_DIR)\main $(PROJ_DIR_TEMPLATE)\main\CMakeLists.txt
+	copy $(PROJ_DIR_TEMPLATE)\main\CMakeLists.txt $@
+
+$(PROJ_DIR)\CMakeLists.txt: $(PROJ_DIR_TEMPLATE)\CMakeLists.txt
+	copy $(PROJ_DIR_TEMPLATE)\CMakeLists.txt $@
 
 $(PROJ_DIR)\Makefile: $(PROJ_DIR_TEMPLATE)\Makefile
 	copy $? $@
