@@ -70,7 +70,7 @@ void xs_textencoder_encode(xsMachine *the)
 		}
 	}
 	else
-		c_memmove(dst, src, length);
+		c_memcpy(dst, src, length);
 
 	xsResult = xsNew1(xsGlobal, xsID_Uint8Array, xsResult);
 }

@@ -279,8 +279,8 @@ void xs_textdecoder_decode(xsMachine *the)
 	}
 	*dst++ = 0;
 
-	c_memmove(td->buffer, buffer, bufferLength);
-	c_memmove(td->buffer + bufferLength, src, srcEnd - src);
+	c_memcpy(td->buffer, buffer, bufferLength);
+	c_memcpy(td->buffer + bufferLength, src, srcEnd - src);
 	td->bufferLength = bufferLength + (srcEnd - src);
 
 	return;
