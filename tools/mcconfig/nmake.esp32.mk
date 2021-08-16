@@ -19,10 +19,6 @@
 
 HOST_OS = win
 
-!IF "$(ESP32_SUBCLASS)"==""
-ESP32_SUBCLASS = esp32
-!ENDIF
-
 !IF "$(EXPECTED_ESP_IDF)"==""
 EXPECTED_ESP_IDF = v4.3
 !ENDIF
@@ -35,6 +31,10 @@ IDF_PY_LOG_FLAG = -v
 !CMDSWITCHES +S
 CMAKE_LOG_LEVEL = ERROR
 IDF_PY_LOG_FLAG = -n
+!ENDIF
+
+!IF "$(ESP32_SUBCLASS)"==""
+ESP32_SUBCLASS = esp32
 !ENDIF
 
 !IF "$(ESP32_SUBCLASS)"=="esp32c3"
@@ -109,6 +109,8 @@ DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -
 
 !ENDIF
 
+IDF_RECONFIGURE_CMD=python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE)
+
 BLD_DIR = $(PROJ_DIR)\build
 
 PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
@@ -131,6 +133,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\esp_eth\include \
 	-I$(IDF_PATH)\components\esp_hw_support\include \
  	-I$(IDF_PATH)\components\esp_netif\include \
+ 	-I$(IDF_PATH)\components\esp_pm\include \
  	-I$(IDF_PATH)\components\esp_ringbuf\include \
 	-I$(IDF_PATH)\components\esp_rom\include \
  	-I$(IDF_PATH)\components\esp_rom\include\$(ESP32_SUBCLASS) \
@@ -474,8 +477,9 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	@echo Reconfiguring ESP-IDF...
 	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 
-	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE)
+	$(IDF_RECONFIGURE_CMD)
 	COPY /B $(SDKCONFIG_H)+,,
+
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
