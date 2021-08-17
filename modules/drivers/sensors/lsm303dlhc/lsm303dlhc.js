@@ -258,7 +258,7 @@ class LSM303DLHC_Accel {
 	#onAlert;
 	#monitor;
 	#values = new Int16Array(3);
-	#multiplier = (1 / 16380) * Gconversion;;
+	#multiplier = (1 / 16380) * Gconversion;
 	#rate = Config.DataRate.DATARATE_400_HZ;
 	#range = Config.Range.RANGE_4_G;
 	#accelEnabled = Config.Features.ENABLE_X | Config.Features.ENABLE_Y | Config.Features.ENABLE_Z;
