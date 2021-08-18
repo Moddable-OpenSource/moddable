@@ -39,7 +39,7 @@ sensor.configure({
 	rate: Config.DataRate.DATARATE_10_HZ,
 	range: Config.Range.RANGE_2_G,
 	enable: Config.Features.ENABLE_X | Config.Features.ENABLE_Y | Config.Features.ENABLE_Z,
-	lowPower: false
+	lowPower: false,
 	alert: {
 		mode: Config.Alert.MOVEMENT,
 		threshold:	0x05,
