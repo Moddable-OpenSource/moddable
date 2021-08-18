@@ -285,7 +285,7 @@ export class Server {
 			socket.callback = server.bind(request);
 			request.state = 1;		// already connected socket
 			request.callback = this.callback;		// transfer server.callback to request.callback
-			request.callback(Server.connect);		// tell app we have a new connection
+			request.callback(Server.connect, this);	// tell app we have a new connection
 		};
 	}
 	close() {
