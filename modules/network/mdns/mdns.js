@@ -614,6 +614,25 @@ function dumpPacket(packet, address)
 		}
 		trace("\n");
 	}
+
+	for (let i = 0; i < packet.additionals; i++) {
+		let a = packet.additional(i);
+		trace("  +: ");
+		trace(a.qname.join("."), ", ");
+		trace("QTYPE: ", a.qtype.toString(), ", ");
+		trace("QCLASS: 0x", a.qclass.toString(16), ", ");
+		trace("TTL: ", a.ttl.toString());
+		if (a.rdata) {
+			trace(", ", "RDATA: ");
+			if (Array.isArray(a.rdata))
+				trace(a.rdata.join("."));
+			else if ("object" === typeof a.rdata)
+				trace(JSON.stringify(a.rdata));
+			else
+				trace(a.rdata);
+		}
+		trace("\n");
+	}
 }
 */
 
