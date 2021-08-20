@@ -13,17 +13,18 @@
  */
 
 import device from "embedded:provider/builtin";
-import { LSM303DLHC_Magnetic, LSM303DLHC_Inertial, Config } from "embedded:sensor/LSM303DLHC";
+import { LIS3DH, Config as Accel_Config } from "embedded:sensor/Accelerometer/LIS3DH";
+import { HMC5883, Config as Mag_Config } from "embedded:sensor/Magnetometer/HMC5883";
 import Timer from "timer";
 import config from "mc/config";
 const Digital = device.io.Digital;
 
 
-const magnetic_sensor = new LSM303DLHC_Magnetic({
-	...device.I2C.default,
-	rate: Config.Rate.RATE_15,
-	gain: Config.Gain.GAIN_1_3,
-	mode: Config.Mode.CONTINUOUS,
+const mag_sensor = new HMC5883({
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	},
 	alert: {
 		io: device.io.Digital,
 		pin: config.magnetometer_data_ready,
@@ -31,36 +32,43 @@ const magnetic_sensor = new LSM303DLHC_Magnetic({
 		edge: Digital.Falling
 	},
 	onAlert() {
-		const sample = magnetic_sensor.sample();
-//		trace(`DataReady: [${sample.x}, ${sample.y}, ${sample.z}]\n`);
+		const sample = mag_sensor.sample();
+		trace(`DataReady: [${sample.x}, ${sample.y}, ${sample.z}]\n`);
 	}
 });
 
-const inertial_sensor = new LSM303DLHC_Inertial({
-    ...device.I2C.default,
-    range: Config.Range.RANGE_8_G,
-    rate: Config.DataRate.DATARATE_25_HZ,
-	polarity: Config.Interrupt.ACTIVE_LOW,
-    enable: {
-        accel: Config.Features.ENABLE_X | Config.Features.ENABLE_Y | Config.Features_ENABLE_Z,
-    },
+mag_sensor.configure({
+	rate: Mag_Config.Rate.RATE_15,
+	gain: Mag_Config.Gain.GAIN_1_3,
+	mode: Mag_Config.Mode.CONTINUOUS
+});
+
+const accel_sensor = new LIS3DH({
+	sensor: {
+	    ...device.I2C.default,
+		address: 0x19,
+		io: device.io.SMBus
+	},
 	alert: {
 		io: device.io.Digital,
-		pin: config.motion_interrupt_pin,
-		mode: Digital.Input,		// device is internally pulled up
-		edge: Digital.Falling
+		pin: config.motion_interrupt_pin
 	},
 	onAlert() {
-		const sample = inertial_sensor.sample();
-		trace(`Motion: [${sample.x}, ${sample.y}, ${sample.z}]\n`);
+		const status = accel_sensor.status();		// clear interrupt
+		const sample = accel_sensor.sample();
+		trace(`Motion: [${sample.x.toFixed(2)}, ${sample.y.toFixed(2)}, ${sample.z.toFixed(2)}] - status: ${status}\n`);
 	}
 });
 
-inertial_sensor.configure({
+accel_sensor.configure({
+    enable: Accel_Config.Features.ENABLE_X | Accel_Config.Features.ENABLE_Y | Accel_Config.Features_ENABLE_Z,
+    range: Accel_Config.Range.RANGE_2_G,
+    rate: Accel_Config.DataRate.DATARATE_10_HZ,
+	lowPower: false,
 	alert: {
-		enable:	0x7F,				// 6-dir detection
-		threshold: 0x20			// about 2G with Range_8_G
+		mode:	Accel_Config.Alert.MOVEMENT,			// 6-dir detection
+		threshold: 0x05,
+		duration: 0x02
 	}
 });
-
 

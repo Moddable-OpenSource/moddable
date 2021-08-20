@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/files/zip/*"
+		]
+	},
+	"preload": [
+		"zip"
+	]
+}

@@ -20,7 +20,7 @@ const sensor = new BMP280({ sensor: device.I2C.default });
 
 sensor.configure({
 	mode: Config.Mode.NORMAL,
-	tempSampling: Config.Sampling.X2,
+	temperatureSampling: Config.Sampling.X2,
 	pressureSampling: Config.Sampling.X16,
 	filter: Config.Filter.X16,
 	standbyDuration: Config.Standby.MS_500
