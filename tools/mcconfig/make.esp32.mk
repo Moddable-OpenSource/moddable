@@ -382,7 +382,6 @@ DEPLOY_PRE:
 	-@mv $(IDF_BUILD_DIR)/ota_data_initial.bin $(IDF_BUILD_DIR)/ota_data_initial.bin_prev 2>&1
 
 DEPLOY_START:
-	idf.py set-target $(ESP32_SUBCLASS)
 	-cp $(BIN_DIR)/xs_esp32.bin $(IDF_BUILD_DIR)
 	-cp $(BIN_DIR)/$(PARTITIONS_BIN) $(PARTITIONS_PATH)
 	-cp $(BIN_DIR)/bootloader.bin $(IDF_BUILD_DIR)/bootloader/bootloader.bin

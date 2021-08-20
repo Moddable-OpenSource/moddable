@@ -20,7 +20,8 @@ import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import ILI9341 from "ili9341";
 import device from "embedded:provider/builtin";
-import Accelerometer from "embedded:sensor/Accelerometer-Magnetometer/LSM303DLHC";
+import Accelerometer from "embedded:sensor/Accelerometer/LIS3DH";
+
 
 let pixelsOut = new ILI9341({});
 const width = pixelsOut.width;
@@ -50,6 +51,7 @@ render.end();
 let sensor = new Accelerometer({
 	sensor: {
 		...device.I2C.default,
+		address: 0x19,
 		io: device.io.SMBus
 	}
 });

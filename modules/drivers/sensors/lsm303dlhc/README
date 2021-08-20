@@ -1,0 +1,1 @@
+The lsm303dlhc module contains a lis3dh at address 0x19 and hmc5883 at address 0x1e

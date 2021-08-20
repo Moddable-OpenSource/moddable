@@ -32,7 +32,7 @@ else {
 	const AccessPoints = [
 		{
 			ssid: "access point name one",
-			password: "password"
+			password: "invalid!"		// force failure in simulator
 		},
 		{
 			ssid: "access point name two",
@@ -47,7 +47,7 @@ else {
 	new WiFi(
 		{},
 		function (msg, value) {
-			trace(`Wi-Fi ${msg} @ ${value}\n`);
+			trace(`Wi-Fi ${msg}`, (undefined !== value) ? ` @ ${value}` : "", "\n");
 			if ("getAP" === msg)
 				return AccessPoints[value % AccessPoints.length];
 		}
