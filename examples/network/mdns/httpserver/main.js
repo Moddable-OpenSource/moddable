@@ -29,14 +29,19 @@ import {Server} from "http"
 import Net from "net"
 
 let hostName = "example";		// the hostName to claim. updated by callback to actual name claimed.
+const port = 80;
+
+const httpService = {name: "http", protocol: "tcp", port, txt: {}};
 
 new MDNS({hostName}, function(message, value) {
-	if (MDNS.hostName === message)
+	if ((MDNS.hostName === message) && value) {
 		hostName = value;
+		this.add(httpService);
+	}
 });
 
 let counter = 0;
-let server = new Server({port: 80});
+let server = new Server({port});
 server.callback = function(message, value) {
 	if (2 == message)
 		this.path = value;
