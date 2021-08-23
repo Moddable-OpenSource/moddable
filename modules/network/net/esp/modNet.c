@@ -60,7 +60,7 @@ getNIF(xsMachine *the)
 			if (ipaddr_aton(nif, &dst)) {
 				uint8_t ifc;
 				dst.u_addr.ip4.addr &= 0x00ffffff;		//@@ this only works for IPv4
-				for (ifc = 0; ifc <= TCPIP_ADAPTER_IF_MAX; ifc++) {
+				for (ifc = 0; ifc <= TCPIP_ADAPTER_IF_ETH; ifc++) {
 					tcpip_adapter_ip_info_t info = {0};
 					if ((ESP_OK == tcpip_adapter_get_ip_info(ifc, &info)) && ((info.ip.addr & 0x00ffffff) == dst.u_addr.ip4.addr))
 						return ifc;
