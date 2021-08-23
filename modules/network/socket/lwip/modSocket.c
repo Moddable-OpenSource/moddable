@@ -334,19 +334,21 @@ void xs_socket(xsMachine *the)
 		if (ttl) {
 			ip_addr_t ifaddr;
 	#if ESP32
-			tcpip_adapter_ip_info_t info;
-			tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &info);
-			ifaddr.u_addr.ip4 = info.ip;
+			uint8_t ifc;
+
+			for (ifc = 0; ifc <= TCPIP_ADAPTER_IF_ETH; ifc++) {
+				tcpip_adapter_ip_info_t info = {0};
+				if (ESP_OK == tcpip_adapter_get_ip_info(ifc, &info)) {
+					modLogInt(ifc);
+					igmp_joingroup(&info.ip.addr, &multicastIP);
+				}
+			}
+			(xss->udp)->mcast_ip4 = multicastIP.u_addr.ip4;
 	#else
 			struct ip_info staIpInfo;
 			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
 			ifaddr.addr = staIpInfo.ip.addr;
-	#endif
 			igmp_joingroup(&ifaddr, &multicastIP);
-
-	#if ESP32
-			(xss->udp)->mcast_ip4 = multicastIP.u_addr.ip4;
-	#else
 			(xss->udp)->multicast_ip = multicastIP;
 	#endif
 	
