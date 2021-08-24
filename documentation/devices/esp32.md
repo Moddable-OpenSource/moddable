@@ -123,7 +123,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3 and the CMake optio
 	brew install python3 cmake ninja dfu-util
 	brew upgrade python3 cmake ninja dfu-util
 	sudo easy_install pip
-	pip install --user pyserial
+	pip install pyserial
 	```
 
 6. Connect the ESP32 device to your macOS host with a USB cable.
@@ -273,7 +273,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	brew install python cmake ninja
 	brew upgrade python cmake ninja
 	sudo easy_install pip
-	pip install --user pyserial
+	pip install pyserial
 	```	
 		
 3. Verify the `IDF_PATH` environment variable is set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell).
@@ -414,7 +414,7 @@ If you had a previous version of Python (such as Python 2.7) installed on your s
 
 #### Python dependencies
 
-If you get an error about Python dependencies not being installed, it means that the ESP-IDF installer failed to update Python. This usually happens due to permissions issues on your machine. To correct it, run `python -m pip install --user -r %IDF_PATH%\requirements.txt` from the "x86 Native Tools Command Prompt for VS 2019."	
+If you get an error about Python dependencies not being installed, it means that the ESP-IDF installer failed to update Python. This usually happens due to permissions issues on your machine. To correct it, run `python -m pip install -r %IDF_PATH%\requirements.txt` from the "x86 Native Tools Command Prompt for VS 2019."	
 
 #### Device not connected/recognized
 
