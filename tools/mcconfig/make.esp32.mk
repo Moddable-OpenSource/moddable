@@ -380,7 +380,7 @@ all: precursor
 	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
 	-cp $(BLD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
 	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
-	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
+	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
 	cd $(PROJ_DIR); \
 	$(DO_LAUNCH)
 
@@ -411,7 +411,7 @@ xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL2XSBUG)
 	$(DO_XSBUG)
-	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk '{print($$3)}'); \
+	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
 	$(DO_LAUNCH)
 
 prepareOutput:
