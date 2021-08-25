@@ -48,7 +48,7 @@ IDF_PATH ?= $(ESP32_BASE)/esp-idf
 export IDF_PATH
 
 # TOOLS_ROOT ?= $(HOME)/.espressif/tools/xtensa-$(ESP32_SUBCLASS)-elf/esp-2021r1-8.4.0/xtensa-$(ESP32_SUBCLASS)-elf
-TOOLS_ROOT ?= $(HOME)/.espressif/tools/xtensa-$(ESP32_SUBCLASS)-elf/esp-2020r3-8.4.0/xtensa-$(ESP32_SUBCLASS)-elf
+# TOOLS_ROOT ?= $(HOME)/.espressif/tools/xtensa-$(ESP32_SUBCLASS)-elf/esp-2020r3-8.4.0/xtensa-$(ESP32_SUBCLASS)-elf
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
 IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always --abbrev=0")
@@ -225,11 +225,16 @@ XS_HEADERS = \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
-TOOLS_BIN = $(TOOLS_ROOT)/bin
-CC  = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-gcc
-CPP = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-g++
+# TOOLS_BIN = $(TOOLS_ROOT)/bin
+# CC  = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-gcc
+# CPP = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-g++
+# LD  = $(CPP)
+# AR  = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-ar
+# OBJCOPY = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-objcopy
+CC  = xtensa-$(ESP32_SUBCLASS)-elf-gcc
+CPP = xtensa-$(ESP32_SUBCLASS)-elf-g++
 LD  = $(CPP)
-AR  = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-ar
+AR  = xtensa-$(ESP32_SUBCLASS)-elf-ar
 OBJCOPY = $(TOOLS_BIN)/xtensa-$(ESP32_SUBCLASS)-elf-objcopy
 ESPTOOL = $(IDF_PATH)/components/esptool_py/esptool/esptool.py
 
