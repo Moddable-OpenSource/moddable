@@ -373,39 +373,21 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
-	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR)
-	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(BLD_DIR)/xs_esp32.elf $(BIN_DIR)
-	-cp $(PARTITIONS_PATH) $(BIN_DIR)
-	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
+	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null
+	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null
+	-cp $(BLD_DIR)/xs_esp32.elf $(BIN_DIR) 2> /dev/null
+	-cp $(PARTITIONS_PATH) $(BIN_DIR) 2> /dev/null
+	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
 	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
 	cd $(PROJ_DIR); \
 	$(DO_LAUNCH)
 
-DEPLOY_PRE:
+deploy: 
 	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to $(ESP32_SUBCLASS)"
-	-@mv $(BLD_DIR)/xs_esp32.bin $(BLD_DIR)/xs_esp32.bin_prev 2>/dev/null
-	-@mv $(PARTITIONS_PATH) $(PARTITIONS_BIN)_prev 2>/dev/null
-	-@mv $(BLD_DIR)/bootloader/bootloader.bin $(BLD_DIR)/bootloader/bootloader.bin_prev 2>/dev/null
-	-@mv $(BLD_DIR)/ota_data_initial.bin $(BLD_DIR)/ota_data_initial.bin_prev 2>&1
-
-DEPLOY_START:
-	-cp $(BIN_DIR)/xs_esp32.bin $(PROJ_DIR)
-	-cp $(BIN_DIR)/$(PARTITIONS_BIN) $(PARTITIONS_PATH)
-	-cp $(BIN_DIR)/bootloader.bin $(BLD_DIR)/bootloader/bootloader.bin
-	-cp $(BIN_DIR)/ota_data_initial.bin $(BLD_DIR)/ota_data_initial.bin
 	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
-
-DEPLOY_END:
-	-@mv $(BLD_DIR)/xs_esp32.bin_prev $(BLD_DIR)/xs_esp32.bin 2>/dev/null
-	-@mv $(PARTITIONS_BIN)_prev $(PARTITIONS_PATH) 2>/dev/null
-	-@mv $(BLD_DIR)/bootloader/bootloader.bin_prev $(BLD_DIR)/bootloader/bootloader.bin 2>/dev/null
-	-@mv $(BLD_DIR)/ota_data_initial.bin_prev $(BLD_DIR)/ota_data_initial.bin 2>/dev/null
-
-deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 xsbug:
 	@echo "# starting xsbug"
@@ -434,11 +416,11 @@ precursor: partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $
 
 build: precursor
 	-cd $(PROJ_DIR) ; $(BUILD_CMD)
-	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR)
-	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR)
-	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR)
-	-cp $(PARTITIONS_PATH) $(BIN_DIR)
-	-cp $(BLD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>&1
+	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null
+	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null
+	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR) 2> /dev/null
+	-cp $(PARTITIONS_PATH) $(BIN_DIR) 2> /dev/null
+	-cp $(BLD_DIR)/ota_data_initial.bin $(BIN_DIR) 2> /dev/null
 	echo "#"
 	echo "# Built files at $(BIN_DIR)"
 	echo "#"
