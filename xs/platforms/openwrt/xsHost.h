@@ -207,9 +207,6 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #define C_EOF EOF
 #define C_NULL NULL
 
-#define c_tolower tolower
-#define c_toupper toupper
-
 typedef jmp_buf c_jmp_buf;
 #define c_longjmp longjmp
 #define c_setjmp setjmp

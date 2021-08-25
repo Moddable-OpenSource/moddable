@@ -502,7 +502,7 @@ void fx_Date_parse(txMachine* the)
 			q = p + sizeof(buffer) - 1;
 			do {
 				if (p == q) goto fail;
-				*p++ = c_tolower(c);
+				*p++ = (c >= 'a') ? c : (c + ('a' - 'A'));
 				c = c_read8(aString++);
 			} while ((('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')));
 			*p = 0;
