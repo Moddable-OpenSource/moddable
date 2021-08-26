@@ -170,8 +170,10 @@ void modSPIInit(modSPIConfiguration config)
 		buscfg.quadhd_io_num = -1;
         buscfg.max_transfer_sz = 8 * 1024 * 1024;
 
-	#if kCPUESP32S2
-		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);		//@@
+	#if kCPUESP32S3
+		ret = spi_bus_initialize(config->spiPort, &buscfg, SPI_DMA_CH_AUTO);
+	#elif kCPUESP32S2
+		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);
 	#else
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
 	#endif

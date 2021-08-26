@@ -1396,11 +1396,7 @@ void espInstrumentMachineReset(txMachine *the)
 #if INSTRUMENT_CPULOAD
 void IRAM_ATTR timer_group0_isr(void *para)
 {
-#if kTargetCPUCount == 2
-	TIMERG0.int_clr_timers.t0 = 1;
-#else
-	TIMERG0.int_clr.t0 = 1;
-#endif
+	TIMERG0.kESP32TimerDef.t0 = 1;
     TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
 
 	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
