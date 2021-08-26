@@ -43,19 +43,26 @@ else
 	IDF_PY_LOG_FLAG = -n
 endif
 
-ESP32_BASE ?= $(HOME)/esp32-new
-IDF_PATH ?= $(ESP32_BASE)/esp-idf
-export IDF_PATH
-
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
 IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always --abbrev=0")
+MAJOR_VERSION := $(shell echo $(IDF_VERSION) | awk -F \. '{print($$1)}')
+MINOR_VERSION := $(shell echo $(IDF_VERSION) | awk -F \. '{print($$2)}')
+EXPECTED_MAJOR := $(shell echo $(EXPECTED_ESP_IDF) | awk -F \. '{print($$1)}')
+EXPECTED_MINOR := $(shell echo $(EXPECTED_ESP_IDF) | awk -F \. '{print($$2)}')
 
 ifeq ($(IDF_VERSION),)
 $(warning Could not detect ESP-IDF version.)
 else
 ifneq ($(IDF_VERSION),$(EXPECTED_ESP_IDF))
 $(warning Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).)
+ifneq ($(MAJOR_VERSION),$(EXPECTED_MAJOR))
+$(error ESP-IDF version is incompatible.)
+else
+ifneq ($(MINOR_VERSION),$(EXPECTED_MINOR))
+$(error ESP-IDF version is incompatible.)
+endif
+endif
 endif
 endif
 
