@@ -292,6 +292,7 @@ uint8_t i2cActivate(I2C i2c)
 	conf.master.clk_speed = i2c->hz;
 	conf.sda_pullup_en = i2c->pullup;
 	conf.scl_pullup_en = i2c->pullup;
+	conf.clk_flags = 0;
 	if (ESP_OK != i2c_param_config(i2c->port, &conf))
 		return 0;
 

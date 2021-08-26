@@ -124,6 +124,7 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 	conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
 	conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
 #endif
+	conf.clk_flags = 0;
 	if (ESP_OK != i2c_param_config(I2C_NUM_1, &conf)) {
 		modLog("i2c_param_config fail");
 		return 1;
