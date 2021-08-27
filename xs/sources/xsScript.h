@@ -652,7 +652,7 @@ struct sxParser {
 	txReport reportError;
 	txReport reportWarning;
 	
-	txSymbol* symbolMapPath;
+	txSymbol* source;
 	int* lines;
 
 	txNode* root;
