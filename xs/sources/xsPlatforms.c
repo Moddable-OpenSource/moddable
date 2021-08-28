@@ -430,18 +430,15 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	if (c_setjmp(jump.jmp_buf) == 0) {
 		fxParserTree(parser, stream, getter, flags, NULL);
 #ifdef mxDebug
-		if (parser->source) {
-			parser->flags |= mxDebugFlag;
-			if (fxIsConnected(the))
-				fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, parser->source->string);
-		}
-		else if (fxIsConnected(the)) {
+		parser->flags |= mxDebugFlag;
+		if (!parser->source) {
 			char tag[16];
 			parser->flags |= mxDebugFlag;
 			fxGenerateTag(the, tag, sizeof(tag), C_NULL);
-			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, tag);
 			parser->source = fxNewParserSymbol(parser, tag);
 		}
+		if (fxIsConnected(the))
+			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, parser->source->string);
 #endif
 		fxParserHoist(parser);
 		fxParserBind(parser);
