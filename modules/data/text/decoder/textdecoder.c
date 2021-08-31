@@ -308,7 +308,7 @@ void xs_textdecoder_get_fatal(xsMachine *the)
 	xsmcSetBoolean(xsResult, td->fatal);
 }
 
-void modInstalllTextDecoder(xsMachine *the)
+void modInstallTextDecoder(xsMachine *the)
 {
 	#define kPrototype (0)
 	#define kConstructor (1)
