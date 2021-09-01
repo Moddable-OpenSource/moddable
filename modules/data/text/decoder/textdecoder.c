@@ -53,6 +53,12 @@ void xs_textdecoder(xsMachine *the)
 	if (argc && c_strcmp(xsmcToString(xsArg(0)), "utf-8"))
 		xsRangeError("unsuppoorted encoding");
 
+#if !mxNoFunctionLength
+	xsmcGet(xsResult, xsTarget, xsID("prototype"));
+	xsResult = xsNewHostInstance(xsResult);
+	xsThis = xsResult;
+#endif
+
 	decoder.ignoreBOM = false;
 	decoder.fatal = false;
 	decoder.bufferLength = 0;
@@ -308,6 +314,7 @@ void xs_textdecoder_get_fatal(xsMachine *the)
 	xsmcSetBoolean(xsResult, td->fatal);
 }
 
+#if !mxNoFunctionLength
 void modInstallTextDecoder(xsMachine *the)
 {
 	#define kPrototype (0)
@@ -317,8 +324,8 @@ void modInstallTextDecoder(xsMachine *the)
 	xsBeginHost(the);
 	xsmcVars(3);
 
-	xsVar(kPrototype) = xsNewHostObject(xs_textdecoder_destructor);
-	xsVar(kConstructor) = xsNewHostConstructor(xs_textdecoder, 1, xsVar(kPrototype));
+	xsVar(kPrototype) = xsNewHostObject(NULL);
+	xsVar(kConstructor) = xsNewHostConstructor(xs_textdecoder, 2, xsVar(kPrototype));
 	xsmcSet(xsGlobal, xsID("TextDecoder"), xsVar(kConstructor));
 
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_decode, 1);
@@ -329,6 +336,7 @@ void modInstallTextDecoder(xsMachine *the)
 
 	xsEndHost(the);
 }
+#endif
 
 /*
  * Copyright 2001-2004 Unicode, Inc.

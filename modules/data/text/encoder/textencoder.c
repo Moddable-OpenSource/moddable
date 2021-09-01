@@ -31,13 +31,13 @@
 	#define xsID_written (xsID("written"))
 #endif
 
-void xs_textencoder_destructor(void *data)
-{
-}
-
+#if !mxNoFunctionLength
 void xs_textencoder(xsMachine *the)
 {
+	xsmcGet(xsResult, xsTarget, xsID("prototype"));
+	xsResult = xsNewHostInstance(xsResult);
 }
+#endif
 
 /*
 	null character maps to 0xF4, 0x90, 0x80, 0x80
@@ -160,7 +160,8 @@ void xs_textencoder_encodeInto(xsMachine *the)
 	xsmcSet(xsResult, xsID_written, xsVar(0));
 }
 
-void modInstalllTextEncoder(xsMachine *the)
+#if !mxNoFunctionLength
+void modInstallTextEncoder(xsMachine *the)
 {
 	#define kPrototype (0)
 	#define kConstructor (1)
@@ -169,7 +170,7 @@ void modInstalllTextEncoder(xsMachine *the)
 	xsBeginHost(the);
 	xsmcVars(3);
 
-	xsVar(kPrototype) = xsNewHostObject(xs_textencoder_destructor);
+	xsmcSetNewObject(xsVar(kPrototype));
 	xsVar(kConstructor) = xsNewHostConstructor(xs_textencoder, 1, xsVar(kPrototype));
 	xsmcSet(xsGlobal, xsID("TextEncoder"), xsVar(kConstructor));
 	xsVar(kScratch) = xsNewHostFunction(xs_textencoder_encode, 1);
@@ -179,3 +180,4 @@ void modInstalllTextEncoder(xsMachine *the)
 
 	xsEndHost(the);
 }
+#endif

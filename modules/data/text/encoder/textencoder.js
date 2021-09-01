@@ -17,8 +17,8 @@
 *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
 *
 */
-export default class  @ "xs_textencoder_destructor {
-	constructor() @ "xs_textencoder";
+
+export default class {
 	encode(value) @ "xs_textencoder_encode";
 	encodeInto(value, buffer) @ "xs_textencoder_encodeInto";
 }
