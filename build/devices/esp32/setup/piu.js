@@ -27,6 +27,7 @@ if (!config.Screen)
 
 class Screen extends config.Screen {
 	#timer;
+	#touch;
 
 	constructor(dictionary) {
 		super(dictionary);
@@ -42,11 +43,13 @@ class Screen extends config.Screen {
 				return;
 
 			const touch = new config.Touch;
+			this.#touch = touch;
 			touch.points = [];
 			while (touchCount--)
 				touch.points.push({});
 
-			Timer.repeat(() => {
+			touch.timer = Timer.repeat(() => {
+				const touch = this.#touch;
 				let points = touch.points;
 				touch.read(points);
 				for (let i = 0; i < points.length; i++) {
@@ -76,6 +79,13 @@ class Screen extends config.Screen {
 				}
 			}, 16);
 		}
+	}
+	set touch(value) {
+		if (!this.#touch?.timer)
+			return;
+		
+		Timer.clear(this.#touch?.timer);
+		this.#touch = undefined;
 	}
 	get rotation() {
 		return super.rotation;
