@@ -595,10 +595,11 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 		break;
 		
 	case XS_HOST_KIND:
-		mxAssert(slot->flag & XS_HOST_CHUNK_FLAG, "# snapshot: no host data!\n");
 		mxAssert(slot->value.host.variant.destructor == C_NULL, "# snapshot: no host destructor!\n");
-		if (slot->value.host.data)
+		if (slot->value.host.data) {
+			mxAssert(slot->flag & XS_HOST_CHUNK_FLAG, "# snapshot: no host data!\n");
 			fxMeasureChunk(the, snapshot, slot->value.host.data, chunkSize);
+		}
 		break;
 // 	case XS_PROMISE_KIND:
 // 		mxAssert(slot->value.integer != mxPendingStatus, "# snapshot: no pending promise instances!\n");
