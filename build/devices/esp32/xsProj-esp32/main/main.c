@@ -212,9 +212,11 @@ uint8_t ESP_setBaud(int baud) {
 void app_main() {
 	modPrelaunch();
 
+#if defined(CONFIG_LOG_DEFAULT_LEVEL) && (CONFIG_LOG_DEFAULT_LEVEL > 0)
 	esp_log_level_set("wifi", ESP_LOG_ERROR);
 	esp_log_level_set("phy_init", ESP_LOG_ERROR);
 	esp_log_level_set("I2S", ESP_LOG_ERROR);
+#endif
 
 	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED
