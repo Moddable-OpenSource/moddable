@@ -37,7 +37,6 @@
 
 #include "xsPlatform.h"
 #include "xsmc.h"
-#include "mc.xs.h"			// for xsID_ values
 
 #include "fips180.h"
 #include "rfc1321.h"
@@ -246,6 +245,38 @@ void xs_crypt_Digest_get_outputSize(xsMachine *the)
 {
 	xsCryptDigest cd = xsmcGetHostChunk(xsThis);
 	xsResult = xsInteger(cd->digest->digestSize);
+}
+
+void xs_cryptdigest(xsMachine *the)
+{
+	xsmcGet(xsResult, xsTarget, xsID("prototype"));
+	xsResult = xsNewHostInstance(xsResult);
+	xsThis = xsResult;
+	xs_crypt_Digest(the);
+}
+
+void modInstallCryptDigest(xsMachine *the)
+{
+	#define kPrototype (0)
+	#define kConstructor (1)
+	#define kScratch (2)
+
+	xsBeginHost(the);
+	xsmcVars(3);
+
+	xsVar(kPrototype) = xsNewHostObject(NULL);
+	xsVar(kConstructor) = xsNewHostConstructor(xs_cryptdigest, 1, xsVar(kPrototype));
+	xsmcSet(xsGlobal, xsID("Digest"), xsVar(kConstructor));
+	xsVar(kScratch) = xsNewHostFunction(xs_crypt_Digest_write, 1);
+	xsmcSet(xsVar(kPrototype), xsID("write"), xsVar(kScratch));
+	xsVar(kScratch) = xsNewHostFunction(xs_crypt_Digest_close, 0);
+	xsmcSet(xsVar(kPrototype), xsID("close"), xsVar(kScratch));
+	xsVar(kScratch) = xsNewHostFunction(xs_crypt_Digest_reset, 0);
+	xsmcSet(xsVar(kPrototype), xsID("reset"), xsVar(kScratch));
+	xsDefine(xsVar(kPrototype), xsID("blockSize"), xsNewHostFunction(xs_crypt_Digest_get_blockSize, 0), xsIsGetter);
+	xsDefine(xsVar(kPrototype), xsID("outputSize"), xsNewHostFunction(xs_crypt_Digest_get_outputSize, 0), xsIsGetter);
+
+	xsEndHost(the);
 }
 
 //
