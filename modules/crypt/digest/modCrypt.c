@@ -141,8 +141,10 @@ typedef struct xsCryptDigestRecord xsCryptDigestRecord;
 typedef xsCryptDigestRecord *xsCryptDigest;
 
 struct xsCryptDigestRecord {
+#if mxNoFunctionLength
 	CryptHandlePart;
-	digest			digest;
+#endif
+	uint8_t			digest;
 	unsigned char	ctx[1];
 };
 
@@ -161,8 +163,10 @@ void xs_crypt_Digest(xsMachine *the)
 		xsUnknownError("crypt: unsupported digest");
 
 	cd = xsmcSetHostChunk(xsThis, NULL, digest->ctxSize + sizeof(xsCryptDigestRecord) - sizeof(unsigned char));
+#if mxNoFunctionLength
 	cd->reference = xsToReference(xsThis);
-	cd->digest = digest;
+#endif
+	cd->digest = digest - gDigests;
 
 	(digest->doCreate)(cd->ctx);
 }
@@ -196,13 +200,13 @@ void xs_crypt_Digest_write(xsMachine *the)
 			use = sizeof(buffer);
 
 		c_memcpy(buffer, data, use);		// spool through RAM as it may be in ROM
-		(cd->digest->doUpdate)(cd->ctx, buffer, use);
+		(gDigests[cd->digest].doUpdate)(cd->ctx, buffer, use);
 
 		data += use;
 		size -= use;
 	}
 #else
-	(cd->digest->doUpdate)(cd->ctx, data, size);
+	(gDigests[cd->digest].doUpdate)(cd->ctx, data, size);
 #endif
 }
 
@@ -213,39 +217,41 @@ void xs_crypt_Digest_close(xsMachine *the)
 
 	if (argc && xsmcTest(xsArg(0))) {
 		xsmcVars(1);
-		xsmcSetArrayBuffer(xsVar(0), NULL, cd->digest->ctxSize);
+		xsmcSetArrayBuffer(xsVar(0), NULL, gDigests[cd->digest].ctxSize);
 		cd = xsmcGetHostChunk(xsThis);
-		c_memcpy(xsmcToArrayBuffer(xsVar(0)), cd->ctx, cd->digest->ctxSize);
+		c_memcpy(xsmcToArrayBuffer(xsVar(0)), cd->ctx, gDigests[cd->digest].ctxSize);
 	}
 	else
 		argc = 0;
 
-	xsmcSetArrayBuffer(xsResult, NULL, cd->digest->digestSize);
+	xsmcSetArrayBuffer(xsResult, NULL, gDigests[cd->digest].digestSize);
 
 	cd = xsmcGetHostChunk(xsThis);
-	(cd->digest->doFin)(cd->ctx, xsmcToArrayBuffer(xsResult));
+	(gDigests[cd->digest].doFin)(cd->ctx, xsmcToArrayBuffer(xsResult));
 
 	if (argc)
-		c_memcpy(cd->ctx, xsmcToArrayBuffer(xsVar(0)), cd->digest->ctxSize);
+		c_memcpy(cd->ctx, xsmcToArrayBuffer(xsVar(0)), gDigests[cd->digest].ctxSize);
 }
 
 void xs_crypt_Digest_reset(xsMachine *the)
 {
 	xsCryptDigest cd = xsmcGetHostChunk(xsThis);
-	(cd->digest->doCreate)(cd->ctx);
+	(gDigests[cd->digest].doCreate)(cd->ctx);
 }
 
 void xs_crypt_Digest_get_blockSize(xsMachine *the)
 {
 	xsCryptDigest cd = xsmcGetHostChunk(xsThis);
-	xsResult = xsInteger(cd->digest->blockSize);
+	xsResult = xsInteger(gDigests[cd->digest].blockSize);
 }
 
 void xs_crypt_Digest_get_outputSize(xsMachine *the)
 {
 	xsCryptDigest cd = xsmcGetHostChunk(xsThis);
-	xsResult = xsInteger(cd->digest->digestSize);
+	xsResult = xsInteger(gDigests[cd->digest].digestSize);
 }
+
+#if !mxNoFunctionLength
 
 void xs_cryptdigest(xsMachine *the)
 {
@@ -278,6 +284,8 @@ void modInstallCryptDigest(xsMachine *the)
 
 	xsEndHost(the);
 }
+
+#endif
 
 //
 // FIPS-198 HMAC implementation. See http://csrc.nist.gov/publications/fips/fips198-1/FIPS-198-1_final.pdf
