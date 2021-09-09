@@ -151,7 +151,7 @@ class ApplicationBehavior extends Behavior {
 			}
 			else
 				this.SCREEN.launch(this.localLibraryPath);
-			this.DEVICE.first.defer("onLaunch");
+			this.DEVICE.first.delegate("onLaunch");
 		}
 		application.updateMenus();
 		application.distribute("onInfoChanged");

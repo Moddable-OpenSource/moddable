@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -168,10 +168,12 @@ void modSPIInit(modSPIConfiguration config)
 		buscfg.sclk_io_num = MODDEF_SPI_SCK_PIN;
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
-        buscfg.max_transfer_sz = 8 * 1024 * 1024;
+        buscfg.max_transfer_sz = MODDEF_SPI_ESP32_TRANSACTIONSIZE;
 
-	#if kCPUESP32S2
-		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);		//@@
+	#if kCPUESP32S3
+		ret = spi_bus_initialize(config->spiPort, &buscfg, SPI_DMA_CH_AUTO);
+	#elif kCPUESP32S2
+		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);
 	#else
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
 	#endif

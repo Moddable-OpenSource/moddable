@@ -8,7 +8,9 @@ class ShellFile extends FILE {
 
 const devices = [
 	{ platform:"esp/moddable_one", id:"com.moddable.one", targets:[ "main.bin" ] },
+	{ platform:"esp/moddable_display_1", id:"com.moddable.display_1", targets:[ "main.bin" ] },
 	{ platform:"esp/moddable_three", id:"com.moddable.three", targets:[ "main.bin" ] },
+	{ platform:"esp/moddable_display_3", id:"com.moddable.display_3", targets:[ "main.bin" ] },
 	{ platform:"esp/nodemcu", id:"com.nodemcu.esp8266", targets:[ "main.bin" ] },
 	{ platform:"esp32/esp32_thing", id:"com.sparkfun.thing.esp32", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/esp32_thing_plus", id:"com.sparkfun.thing_plus.esp32", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
@@ -21,6 +23,7 @@ const devices = [
 	{ platform:"esp32/m5stack", id:"com.m5stack", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5stick_c", id:"com.m5stick.c", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/moddable_two", id:"com.moddable.two", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
+	{ platform:"esp32/moddable_display_2", id:"com.moddable.display_2", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/nodemcu", id:"com.nodemcu.esp32", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/saola_wroom", id:"com.espressif.saola", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/wrover_kit", id:"com.esp32.wrover", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
@@ -240,34 +243,64 @@ export default class extends TOOL {
 		const build = this.debug ? "debug" : "release";
 		const name = this.environment.NAME;
 		const option = this.debug ? "-d" : "";
-		const filePath = `${outputPath}/${id}.sh`;
+		const filePath = (this.windows) ? `${outputPath}\\${id}.bat` : `${outputPath}/${id}.sh`;
 		const file = new ShellFile(filePath)
-		file.line("#!/bin/bash");
-		file.line(`OUTPUT=${outputPath}/${id}`);
-		file.line(`rm -R $OUTPUT`);
-		file.line(`mkdir $OUTPUT`);
-		if (sourceESP32)
-			file.line(`source $IDF_PATH/export.sh`);
-		if (sourceWASM)
-			file.line(`source $EMSDK/emsdk_env.sh`);
-		for (let result of results) {
-			file.line(`echo "# ${result.id}"`);
-			file.line(`mcconfig ${option} -m -p ${result.platform} -s ${signature} -t build`);
-			file.line(`mkdir $OUTPUT/${result.id}`);
-			for (let target of result.targets) {
-				file.line(`cp $MODDABLE/build/bin/${result.platform}/${build}/${name}/${target} $OUTPUT/${result.id}/${target}`);
+		if (!this.windows) {
+			file.line("#!/bin/bash");
+			file.line(`OUTPUT=${outputPath}/${id}`);
+			file.line(`rm -R $OUTPUT`);
+			file.line(`mkdir $OUTPUT`);
+			if (sourceESP32)
+				file.line(`source $IDF_PATH/export.sh`);
+			if (sourceWASM)
+				file.line(`source $EMSDK/emsdk_env.sh`);
+			for (let result of results) {
+				file.line(`echo "# ${result.id}"`);
+				file.line(`mcconfig ${option} -m -p ${result.platform} -s ${signature} -t build`);
+				file.line(`mkdir $OUTPUT/${result.id}`);
+				for (let target of result.targets) {
+					file.line(`cp $MODDABLE/build/bin/${result.platform}/${build}/${name}/${target} $OUTPUT/${result.id}/${target}`);
+				}
 			}
+			if (iconPath)
+				file.line(`cp ${iconPath} $OUTPUT/icon.png`);
+			if (customPath) {
+				file.line(`cp -R ${customPath} $OUTPUT`);
+			}
+			file.line(`rm -f $OUTPUT.zip`);
+			file.line(`cd ${outputPath}`);
+			file.line(`zip -r ${id}.zip ${id}`);
+			file.close();
+			if (this.make)
+				this.then("bash", filePath);
 		}
-		if (iconPath)
-			file.line(`cp ${iconPath} $OUTPUT/icon.png`);
-		if (customPath) {
-			file.line(`cp -R ${customPath} $OUTPUT`);
+		else {
+			file.line(`set OUTPUT=${outputPath}\\${id}`);
+			file.line(`rmdir /s /q %OUTPUT%`);
+			file.line(`mkdir %OUTPUT%`);
+			if (sourceESP32)
+				file.line(`call %IDF_PATH%\\export.bat`);
+			if (sourceWASM)
+				throw new Error("WASM mcbundle not yet supported on Windows");
+			for (let result of results) {
+				file.line(`echo "# ${result.id}"`);
+				file.line(`call mcconfig ${option} -m -p ${result.platform} -s ${signature} -t build`);
+				file.line(`mkdir %OUTPUT%\\${result.id}`);
+				for (let target of result.targets) {
+					file.line(`copy %MODDABLE%\\build\\bin\\${this.resolveSlash(result.platform)}\\${build}\\${name}\\${target} %OUTPUT%\\${result.id}\\${target}`);
+				}
+			}
+			if (iconPath)
+				file.line(`copy ${iconPath} %OUTPUT%\\icon.png`);
+			if (customPath)
+				file.line(`xcopy ${customPath} %OUTPUT%\\custom /E/H/I`);
+				
+			file.line(`del /f/q %OUTPUT%.zip`);
+			file.line(`cd ${outputPath}`);
+			file.line(`tar.exe -a -c -f ${id}.zip ${id}`);
+			file.close();
+			if (this.make)
+				this.then(filePath);
 		}
-		file.line(`rm -f $OUTPUT.zip`);
-		file.line(`cd ${outputPath}`);
-		file.line(`zip -r ${id}.zip ${id}`);
-		file.close();
-		if (this.make)
-			this.then("bash", filePath);
 	}
 }

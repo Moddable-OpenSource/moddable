@@ -210,7 +210,10 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 	txSlot* aResult;
 	txSlot** aSlotAddress;
 
-	theResult->ID = fxDemarshallKey(the, theSlot->ID, theSymbolMap, alien);
+	if (!(theSlot->flag & XS_INTERNAL_FLAG))
+		theResult->ID = fxDemarshallKey(the, theSlot->ID, theSymbolMap, alien);
+	else
+		theResult->ID = theSlot->ID;
 	theResult->flag = theSlot->flag;
 	switch (theSlot->kind) {
 	case XS_UNDEFINED_KIND:
@@ -304,28 +307,30 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 		else {
         	theResult->value.instance.prototype = mxObjectPrototype.value.reference;
 			if (aSlot) {
-				if (aSlot->ID == XS_ARRAY_BEHAVIOR)
-					theResult->value.instance.prototype = mxArrayPrototype.value.reference;
-				else if (aSlot->flag & XS_INTERNAL_FLAG) {
-					switch (aSlot->kind) {
-					case XS_ARRAY_BUFFER_KIND: theResult->value.instance.prototype = mxArrayBufferPrototype.value.reference; break;
-					case XS_BOOLEAN_KIND: theResult->value.instance.prototype = mxBooleanPrototype.value.reference; break;
-					case XS_DATA_VIEW_KIND: theResult->value.instance.prototype = mxDataViewPrototype.value.reference; break;
-					case XS_DATE_KIND: theResult->value.instance.prototype = mxDatePrototype.value.reference; break;
-					case XS_ERROR_KIND: theResult->value.instance.prototype = mxErrorPrototypes(aSlot->value.error.which).value.reference; break;
-					case XS_HOST_KIND: theResult->value.instance.prototype = mxSharedArrayBufferPrototype.value.reference; break;
-					case XS_MAP_KIND: theResult->value.instance.prototype = mxMapPrototype.value.reference; break;
-					case XS_NUMBER_KIND: theResult->value.instance.prototype = mxNumberPrototype.value.reference; break;
-					case XS_REGEXP_KIND: theResult->value.instance.prototype = mxRegExpPrototype.value.reference; break;
-					case XS_SET_KIND: theResult->value.instance.prototype = mxSetPrototype.value.reference; break;
-					case XS_STRING_KIND: theResult->value.instance.prototype = mxStringPrototype.value.reference; break;
-					case XS_TYPED_ARRAY_KIND: {
-						txTypeDispatch* dispatch = (txTypeDispatch*)&gxTypeDispatches[aSlot->value.integer];
-						mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
-						mxGetID(mxID(_prototype));
-						theResult->value.instance.prototype = the->stack->value.reference;
-						mxPop();
-						} break;
+				if (aSlot->flag & XS_INTERNAL_FLAG) {
+					if (aSlot->ID == XS_ARRAY_BEHAVIOR)
+						theResult->value.instance.prototype = mxArrayPrototype.value.reference;
+					else {
+						switch (aSlot->kind) {
+						case XS_ARRAY_BUFFER_KIND: theResult->value.instance.prototype = mxArrayBufferPrototype.value.reference; break;
+						case XS_BOOLEAN_KIND: theResult->value.instance.prototype = mxBooleanPrototype.value.reference; break;
+						case XS_DATA_VIEW_KIND: theResult->value.instance.prototype = mxDataViewPrototype.value.reference; break;
+						case XS_DATE_KIND: theResult->value.instance.prototype = mxDatePrototype.value.reference; break;
+						case XS_ERROR_KIND: theResult->value.instance.prototype = mxErrorPrototypes(aSlot->value.error.which).value.reference; break;
+						case XS_HOST_KIND: theResult->value.instance.prototype = mxSharedArrayBufferPrototype.value.reference; break;
+						case XS_MAP_KIND: theResult->value.instance.prototype = mxMapPrototype.value.reference; break;
+						case XS_NUMBER_KIND: theResult->value.instance.prototype = mxNumberPrototype.value.reference; break;
+						case XS_REGEXP_KIND: theResult->value.instance.prototype = mxRegExpPrototype.value.reference; break;
+						case XS_SET_KIND: theResult->value.instance.prototype = mxSetPrototype.value.reference; break;
+						case XS_STRING_KIND: theResult->value.instance.prototype = mxStringPrototype.value.reference; break;
+						case XS_TYPED_ARRAY_KIND: {
+							txTypeDispatch* dispatch = (txTypeDispatch*)&gxTypeDispatches[aSlot->value.integer];
+							mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
+							mxGetID(mxID(_prototype));
+							theResult->value.instance.prototype = the->stack->value.reference;
+							mxPop();
+							} break;
+						}
 					}
 				}
 			}
@@ -604,7 +609,10 @@ txBoolean fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddres
 	
 	aResult = (txSlot*)(theBuffer->current);
 	theBuffer->current += sizeof(txSlot);
-	aResult->ID = fxMarshallKey(the, theSlot->ID, theBuffer, alien);
+	if (!(theSlot->flag & XS_INTERNAL_FLAG))
+		aResult->ID = fxMarshallKey(the, theSlot->ID, theBuffer, alien);
+	else
+		aResult->ID = theSlot->ID;
 	aResult->flag = theSlot->flag;
 	aResult->kind = theSlot->kind;
 	aResult->value = theSlot->value;
@@ -812,7 +820,8 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 {
 	txSlot* aSlot;
 
-	fxMeasureKey(the, theSlot->ID, theBuffer, alien);
+	if (!(theSlot->flag & XS_INTERNAL_FLAG))
+		fxMeasureKey(the, theSlot->ID, theBuffer, alien);
 	theBuffer->size += sizeof(txSlot);
 	switch (theSlot->kind) {
 	case XS_UNDEFINED_KIND:

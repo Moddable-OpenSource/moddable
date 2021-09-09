@@ -21,7 +21,7 @@
 export default class @ "xs_textdecoder_destructor" {
 	constructor(label, options) @ "xs_textdecoder";
 	decode(buffer) @ "xs_textdecoder_decode";
-	get encoding() @ "xs_textdecoder_get_enccoding";
+	get encoding() @ "xs_textdecoder_get_encoding";
 	get ignoreBOM() @ "xs_textdecoder_get_ignoreBOM";
 	get fatal() @ "xs_textdecoder_get_fatal";
 }

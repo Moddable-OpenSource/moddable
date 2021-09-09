@@ -121,8 +121,8 @@ class BMP280 extends aHostObject {
 			measureReg = (measureReg & 0b1111_1100) | options.mode;
 		if (undefined != options.pressureSampling)
 			measureReg = (measureReg & 0b1110_0011) | (options.pressureSampling << 2);
-		if (undefined != options.tempSampling)
-			measureReg = (measureReg & 0b0001_1111) | (options.tempSampling << 5);
+		if (undefined != options.temperatureSampling)
+			measureReg = (measureReg & 0b0001_1111) | (options.temperatureSampling << 5);
 		if (undefined != options.standbyDuration)
 			configReg = (configReg & 0b0001_1111) | (options.standbyDuration << 5);
 		if (undefined != options.filter)

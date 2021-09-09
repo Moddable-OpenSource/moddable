@@ -57,7 +57,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxAssert(_ASSERTION,...) { if (!(_ASSERTION)) { fxReport(the, __VA_ARGS__); snapshot->error = C_EINVAL; fxJump(the); } }
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 
-#define mxCallbacksLength 473
+#define mxCallbacksLength 474
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -595,7 +595,11 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 		break;
 		
 	case XS_HOST_KIND:
-		mxAssert((slot->value.host.data == C_NULL) && (slot->value.host.variant.destructor == C_NULL), "# snapshot: no host instances!\n");
+		mxAssert(slot->value.host.variant.destructor == C_NULL, "# snapshot: no host destructor!\n");
+		if (slot->value.host.data) {
+			mxAssert(slot->flag & XS_HOST_CHUNK_FLAG, "# snapshot: no host data!\n");
+			fxMeasureChunk(the, snapshot, slot->value.host.data, chunkSize);
+		}
 		break;
 // 	case XS_PROMISE_KIND:
 // 		mxAssert(slot->value.integer != mxPendingStatus, "# snapshot: no pending promise instances!\n");
@@ -1006,6 +1010,11 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 		slot->value.export.closure = fxUnprojectSlot(the, snapshot, slot->value.export.closure);
 		slot->value.export.module = fxUnprojectSlot(the, snapshot, slot->value.export.module);
 		break;
+		
+	case XS_HOST_KIND:
+		if (slot->value.host.data)
+			slot->value.host.data = (txByte*)mxUnprojectChunk(slot->value.host.data);
+		break;
 	}
 }
 
@@ -1122,6 +1131,11 @@ void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 	case XS_MAP_KIND:
 	case XS_SET_KIND:
 		fxWriteChunkTable(the, snapshot, slot->value.table.address, slot->value.table.length);
+		break;
+		
+	case XS_HOST_KIND:
+		if (slot->value.host.data)
+			fxWriteChunkData(the, snapshot, slot->value.host.data);
 		break;
 	}
 }
@@ -1362,6 +1376,11 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		break;
 	case XS_FRAME_KIND:
 		buffer.next = C_NULL;
+		break;
+		
+	case XS_HOST_KIND:
+		buffer.value.host.data = fxProjectChunk(the, slot->value.host.data);
+		buffer.value.host.variant.destructor = C_NULL;
 		break;
 	default:
 		fxReport(the, "# snapshot: invalid slot %d!\n", slot->kind);

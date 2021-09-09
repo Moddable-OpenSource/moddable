@@ -27,6 +27,7 @@ struct PiuQRCodeStruct {
 	PiuBehaviorPart;
 	PiuContentPart;
 	xsSlot* string;
+	xsIntegerValue maxVersion;
 	xsSlot* buffer;
 	PiuDimension scale;
 	PiuCoordinate dx;
@@ -91,6 +92,7 @@ void PiuQRCodeBuffer(PiuQRCode* self)
 	xsVar(1) = *((*self)->string);
 	xsVar(2) = xsNewObject();
 	xsSet(xsVar(2), xsID_input, xsVar(1));
+	xsSet(xsVar(2), xsID_maxVersion, xsInteger((*self)->maxVersion));
 	xsResult = xsCall1(xsVar(0), xsID_QRCodeBuffer, xsVar(2));
 	(*self)->buffer = xsToReference(xsResult);
 	xsEndHost((*self)->the);
@@ -99,9 +101,13 @@ void PiuQRCodeBuffer(PiuQRCode* self)
 void PiuQRCodeDictionary(xsMachine* the, void* it) 
 {
 	PiuQRCode* self = it;
+	xsIntegerValue integer;
 	if (xsFindResult(xsArg(1), xsID_string)) {
 		xsSlot* string = PiuString(xsResult);
 		(*self)->string = string;
+	}
+	if (xsFindInteger(xsArg(1), xsID_maxVersion, &integer)) {
+		(*self)->maxVersion = integer;
 	}
 }
 
@@ -209,6 +215,7 @@ void PiuQRCode_create(xsMachine* the)
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuQRCodeHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuQRCodeDispatchRecord;
 	(*self)->flags = piuVisible;
+	(*self)->maxVersion = 40;
 	PiuContentDictionary(the, self);
 	PiuQRCodeDictionary(the, self);
 	PiuBehaviorOnCreate(self);

@@ -74,6 +74,16 @@
 				}
 			}
 		},
+		"wasm": {
+			"modules": {
+				"*": "$(MODULES)/files/file/lin/*"
+			},
+			"config": {
+				"file": {
+					"root": "/tmp/"
+				}
+			}
+		},
 		"...": {
 			"error": "File module unsupported"
 		}

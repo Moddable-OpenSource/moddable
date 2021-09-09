@@ -346,10 +346,17 @@ void fxWriteSerial(txSerialTool self, char* buffer, int size)
 #if mxTrace
 	fprintf(stderr, "%.*s", size, buffer);
 #endif
-	size = write(CFSocketGetNative(self->serialSocket), buffer, size);
-	if (size < 0) {
-        fprintf(stderr, "Error writing serial - %s(%d).\n", strerror(errno), errno);
-//      exit(1);		// device disconnected and may return (nrf52 after restart)
+	while (size) {
+		int result = write(CFSocketGetNative(self->serialSocket), buffer, size);
+		if (result < 0) {
+			if (EAGAIN == errno)
+				continue;
+
+			fprintf(stderr, "Error writing serial - %s(%d).\n", strerror(errno), errno);
+			exit(1);
+		}
+		size -= result;
+		buffer += result;
 	}
 }
 

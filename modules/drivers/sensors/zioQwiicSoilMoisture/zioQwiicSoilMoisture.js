@@ -35,6 +35,7 @@ const Register = Object.freeze({
 
 class ZIOQWIICMOISTURE {
 	#io;
+	#averaging = 1;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
@@ -59,13 +60,18 @@ class ZIOQWIICMOISTURE {
 			else
 				this.#ledOff();
 		}
+		if (undefined !== options.averaging)
+			this.#averaging = options.averaging;
 	}
 	close() {
 		this.#io.close();
 		this.#io = undefined;
 	}
 	sample() {
-		return { value: this.#io.readWord(Register.GET_VALUE, 0) };
+		let accum = 0;
+		for (let i=0; i<this.#averaging; i++)
+			accum += this.#io.readWord(Register.GET_VALUE, 0);
+		return { value: (accum / this.#averaging) };
 	}
 	#ledOn() {
 		this.#io.sendByte(Register.LED_ON);

@@ -22,7 +22,6 @@
 	To do:
 		Proper TTL on Answer
 		Refresh / expire monitored records
-		case-insensitivity - publish unchanged (uppercase) compare case-insensitive
 		instance name
 		unicast reponse only to addresses on same subnet
 */
@@ -47,6 +46,7 @@ class MDNS extends Socket {
 
 		if (dictionary.hostName) {
 			this.hostName = dictionary.hostName;
+			this.hostNameLower = this.hostName.toLowerCase();
 			this.probing = 1;
 			Timer.set(() => this.probe(), 0);
 		}
@@ -208,7 +208,7 @@ class MDNS extends Socket {
 			switch (record.qtype) {
 				case DNS.RR.A:
 					//@@ if not probing, check to see if name matches and IP is different. If so there is a conflict, revert to probing state...
-					if ((this.probing > 0) && (this.hostName == name[0]) && (2 === name.length) && (LOCAL === name[1])) {
+					if ((this.probing > 0) && (this.hostNameLower == name[0].toLowerCase()) && (2 === name.length) && (LOCAL === name[1].toLowerCase())) {
 						trace(`probe conflict with ${address}\n`);
 						this.probing = -1;
 						this.probeAttempt += 1;
@@ -217,7 +217,7 @@ class MDNS extends Socket {
 					name = name.join(".");
 					this.monitors.forEach(monitor => {
 						monitor.forEach(instance => {
-							if (instance.target === name)
+							if (instance.target.toLowerCase() === name.toLowerCase())
 								instance.address = record.rdata;
 						});
 					});
@@ -241,7 +241,7 @@ class MDNS extends Socket {
 					monitor = this.monitors.find(monitor => monitor.service === service);
 					if (!monitor)
 						break;
-					instance = monitor.find(item => item.name === name[0]);
+					instance = monitor.find(item => item.name.toLowerCase() === name[0].toLowerCase());
 					if (!instance) {
 						instance = {name: name[0]};
 						monitor.push(instance);
@@ -264,7 +264,7 @@ class MDNS extends Socket {
 					}
 					else {
 						const target = record.rdata.target.join(".");
-						if ((instance.port !== record.rdata.port) || (instance.target !== target)) {
+						if ((instance.port !== record.rdata.port) || (instance.target.toLowerCase() !== target.toLowerCase())) {
 							instance.port = record.rdata.port;
 							instance.target = target;
 							instance.changed = changed = true;
@@ -331,7 +331,7 @@ class MDNS extends Socket {
 				const question = packet.question(i);
 				if (DNS.RR.ANY !== question.qtype)
 					continue;
-				if ((this.hostName !== question.qname[0]) || (2 !== question.qname.length) || (LOCAL !== question.qname[1]))
+				if ((this.hostNameLower !== question.qname[0].toLowerCase()) || (2 !== question.qname.length) || (LOCAL !== question.qname[1].toLowerCase()))
 					continue;
 
 				trace(`probe tie-break with ${address}\n`);
@@ -339,7 +339,7 @@ class MDNS extends Socket {
 					const authority = packet.authority(j);
 					if (DNS.RR.A !== authority.qtype)
 						continue;
-					if ((this.hostName !== authority.qname[0]) || (2 !== authority.qname.length) || (LOCAL !== authority.qname[1]))
+					if ((this.hostNameLower !== authority.qname[0].toLowerCase()) || (2 !== authority.qname.length) || (LOCAL !== authority.qname[1].toLowerCase()))
 						continue;
 					const rdata = authority.rdata.split(".");
 					const ip = Net.get("IP", address).split(".");
@@ -368,17 +368,19 @@ class MDNS extends Socket {
 			for (let i = 0; i < packet.questions; i++) {
 				const question = packet.question(i);
 				const name = question.qname;
+				for (let j = 0; j < name.length; j++)
+					name[j] = name[j].toLowerCase();
 
 				switch (question.qtype) {
 					case DNS.RR.A:
 						if (h)
 							;
-						else if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
+						else if ((2 === name.length) && (LOCAL === name[1]) && (this.hostNameLower == name[0]))
 							mask[question.qclass >> 15] |= 0x01;
 						break;
 
 					case DNS.RR.AAAA:
-						if (!h && (2 === name.length) && (LOCAL === name[1]) && (this.hostName == name[0]))
+						if (!h && (2 === name.length) && (LOCAL === name[1]) && (this.hostNameLower == name[0]))
 							mask[question.qclass >> 15] |= 0x20;
 						break;
 
@@ -395,11 +397,11 @@ class MDNS extends Socket {
 									let answer = packet.answer(j);
 									if (DNS.RR.PTR !== answer.qtype)
 									   continue;
-								   if ((3 !== answer.qname.length) || (("_" + service.name) !== answer.qname[0]) ||
-									   (("_" + service.protocol) !== answer.qname[1]) || (LOCAL !== answer.qname[2]))
+								   if ((3 !== answer.qname.length) || (("_" + service.name) !== answer.qname[0].toLowerCase()) ||
+									   (("_" + service.protocol) !== answer.qname[1].toLowerCase()) || (LOCAL !== answer.qname[2].toLowerCase()))
 									   continue;
-								   if ((4 !== answer.rdata.length) || (this.hostName !== answer.rdata[0]) || (("_" + service.name) !== answer.rdata[1]) ||
-									   (("_" + service.protocol) !== answer.rdata[2]) || (LOCAL !== answer.rdata[3]))
+								   if ((4 !== answer.rdata.length) || (this.hostNameLower !== answer.rdata[0].toLowerCase()) || (("_" + service.name) !== answer.rdata[1].toLowerCase()) ||
+									   (("_" + service.protocol) !== answer.rdata[2].toLowerCase()) || (LOCAL !== answer.rdata[3].toLowerCase()))
 									   continue;
 								   respond = false;
 								}
@@ -408,15 +410,15 @@ class MDNS extends Socket {
 							}
 						}
 						else
-						if ((4 === name.length) && ("_services" === name[0]) && ("_dns-sd" === name[1]) && ("_udp" === name[2]) && (LOCAL === name[3])) {
+						if ((4 === name.length) && ("_services" === name[0].toLowerCase()) && ("_dns-sd" === name[1].toLowerCase()) && ("_udp" === name[2].toLowerCase()) && (LOCAL === name[3].toLowerCase())) {
 							let respond = true;
 							for (let j = 0; (j < packet.answers) && respond; j++) {
 								let answer = packet.answer(j);
 								if (DNS.RR.PTR !== answer.qtype)
 									continue;
 
-								if ((3 === answer.rdata.length) && (("_" + service.name) === answer.rdata[0]) &&
-								   (("_" + service.protocol) === answer.rdata[1]) && (LOCAL === answer.rdata[2]))
+								if ((3 === answer.rdata.length) && (("_" + service.name.toLowerCase()) === answer.rdata[0].toLowerCase()) &&
+								   (("_" + service.protocol) === answer.rdata[1].toLowerCase()) && (LOCAL === answer.rdata[2].toLowerCase()))
 								   respond = false;
 							}
 							if (respond)
@@ -429,13 +431,13 @@ class MDNS extends Socket {
 						if (!service)
 							;
 						else
-						if ((4 === name.length) && (LOCAL === name[3]) && (this.hostName === name[0]) &&
-							(("_" + service.name) === name[1]) && (("_" + service.protocol) === name[2]))
+						if ((4 === name.length) && (LOCAL === name[3].toLowerCase()) && (this.hostNameLower === name[0].toLowerCase()) &&
+							(("_" + service.name.toLowerCase()) === name[1].toLowerCase()) && (("_" + service.protocol.toLowerCase()) === name[2].toLowerCase()))
 							mask[question.qclass >> 15] |= 0x02;		// not checking known answers... seems to never be populated.
 						break;
 
 					case DNS.RR.ANY:
-						if ((2 === name.length) && (LOCAL === name[1]) && (this.hostName === name[0]))
+						if ((2 === name.length) && (LOCAL === name[1].toLowerCase()) && (this.hostNameLower === name[0].toLowerCase()))
 							mask[question.qclass >> 15] |= service ? 0x1F : 0x01;
 						break;
 				}
@@ -524,6 +526,7 @@ class MDNS extends Socket {
 				 if (hostName) {
 					 if ("string" == typeof hostName) {
 						 this.hostName = hostName;
+						 this.hostNameLower = hostName.toLowerCase() 
 						 this.probeAttempt = 1;
 					 }
 					 else {
@@ -532,6 +535,7 @@ class MDNS extends Socket {
 //						delete this.probing;
 						delete this.probeAttempt;
 						delete this.hostName;	// no hostName claimed, no longer probing
+						delete this.hostNameLower;
 						this.client(MDNS.error);
 						return;
 					 }
@@ -544,6 +548,7 @@ class MDNS extends Socket {
 					 }
 					 if (this.probeAttempt >= 2)
 						 this.hostName += "-" + this.probeAttempt;
+					this.hostNameLower = this.hostName.toLowerCase();
 				}
 				Timer.schedule(id, -this.probing, 250);
 				this.probing = 1;
@@ -599,6 +604,25 @@ function dumpPacket(packet, address)
 	for (let i = 0; i < packet.answers; i++) {
 		let a = packet.answer(i);
 		trace("  A: ");
+		trace(a.qname.join("."), ", ");
+		trace("QTYPE: ", a.qtype.toString(), ", ");
+		trace("QCLASS: 0x", a.qclass.toString(16), ", ");
+		trace("TTL: ", a.ttl.toString());
+		if (a.rdata) {
+			trace(", ", "RDATA: ");
+			if (Array.isArray(a.rdata))
+				trace(a.rdata.join("."));
+			else if ("object" === typeof a.rdata)
+				trace(JSON.stringify(a.rdata));
+			else
+				trace(a.rdata);
+		}
+		trace("\n");
+	}
+
+	for (let i = 0; i < packet.additionals; i++) {
+		let a = packet.additional(i);
+		trace("  +: ");
 		trace(a.qname.join("."), ", ");
 		trace("QTYPE: ", a.qtype.toString(), ", ");
 		trace("QCLASS: 0x", a.qclass.toString(16), ", ");

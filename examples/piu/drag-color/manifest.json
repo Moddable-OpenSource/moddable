@@ -27,7 +27,9 @@
 		"devices": [
 			"wasm",
 			"esp/moddable_one",
+			"esp/moddable_display_1",
 			"esp32/moddable_two",
+			"esp32/moddable_display_2",
 			"esp32/m5stack_core2"
 		],
 		"icon": "./store/icon.png"

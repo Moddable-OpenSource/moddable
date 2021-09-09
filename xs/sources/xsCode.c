@@ -1071,6 +1071,9 @@ void fxCoderAddLine(txCoder* self, txInteger delta, txInteger id, txNode* node)
 			node->path = self->parser->path;
 			node->line = self->parser->lines[node->line];
 		}
+		else if (self->parser->source) {
+			node->path = self->parser->source;
+		}
 		if (self->path != node->path) {
 			if (node->path) {
 				fxCoderAddSymbol(self, 0, XS_CODE_FILE, node->path);

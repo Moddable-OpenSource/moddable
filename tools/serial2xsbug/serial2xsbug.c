@@ -22,7 +22,7 @@
 
 #define kInstallInitialFragmentSize (4)
 #define kInstallSkipFragmentSize (4)
-#define kInstallFragmentSize (512)
+#define kInstallFragmentSizeMax (4096)
 
 static void fxCommandReceived(txSerialTool self, void *buffer, int size);
 static int fxInitializeTarget(txSerialTool self);
@@ -37,7 +37,9 @@ static uint8_t gRestarting = 0;
 static char *gCmd = NULL;
 static char *gModuleName = NULL;
 static FILE *gInstallFD = 0;
+static unsigned int gInstallArchiveSize;
 static int gInstallOffset = 0;
+static int gInstallFragmentSize = 512;
 static uint8_t gBinaryState = 0;
 static uint16_t gBinaryLength;
 
@@ -144,8 +146,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 			uint32_t header[4];
 			fread(header, 1, sizeof(header), gInstallFD);
 			fseek(gInstallFD, gInstallOffset, SEEK_END);
+			gInstallArchiveSize = ftell(gInstallFD);
 
-			if ((ftell(gInstallFD) != ntohl(header[0])) ||
+			if ((gInstallArchiveSize != ntohl(header[0])) ||
 				strncmp((char *)&header[1], "XS_A", 4) ||
 				(12 != ntohl(header[2])) ||
 				strncmp((char *)&header[3], "VERS", 4)) {
@@ -277,7 +280,16 @@ int fxInitializeTarget(txSerialTool self)
 		fprintf(stderr, "Installing mod.");
 #endif
 		gInstallOffset = 0;
-		fxInstallFragment(self);
+
+		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+		fxWriteSerial(self, out, strlen(out));
+
+		out[0] = 0;
+		out[1] = 3;		// length
+		out[2] = 0x0f;	// get install space cmd
+		out[3] = 0xff;
+		out[4] = 0x0f;
+		fxWriteSerial(self, out, out[1] + 2);
 
 		gCmd = NULL;
 		return 1;
@@ -328,8 +340,37 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		return;
 	}
 
+	if (0xff0f == resultId) {	// get install space
+		uint32_t installSpace;
+		
+		if (0 != resultCode) {
+			fprintf(stderr, "getInstallSpace failed %d\n", (int)resultCode);
+			return;
+		}
+
+		installSpace = (buffer[5] << 24) | (buffer[6] << 16) | (buffer[7] << 8) | buffer[8];
+		
+		gInstallFragmentSize = 512;
+		if (size >= 13) {
+			gInstallFragmentSize = (buffer[9] << 24) | (buffer[10] << 16) | (buffer[11] << 8) | buffer[12];
+			if (gInstallFragmentSize > kInstallFragmentSizeMax)
+				gInstallFragmentSize = kInstallFragmentSizeMax;
+		}
+
+#if mxTraceCommands
+		fprintf(stderr, "### installSpace: %d, fragment size %d\n", (int)installSpace, (int)gInstallFragmentSize);
+#endif
+		if (installSpace < gInstallArchiveSize) {
+			fprintf(stderr, "install failed. mod needs %d bytes, only %d available\n", (int)gInstallArchiveSize, (int)installSpace);
+			return;
+		} 
+	
+		fxInstallFragment(self);
+		return;
+	}
+
 	if (0xe0e0 == resultId) {	// installed fragment
-		if ((gInstallOffset / 4096) != ((gInstallOffset - kInstallFragmentSize) / 4096))
+		if ((gInstallOffset / 4096) != ((gInstallOffset - gInstallFragmentSize) / 4096))
 			fprintf(stderr, ".");
 		fxInstallFragment(self);
 		return;
@@ -489,7 +530,7 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 				gBinaryState = 3;
 			}
 			if ((3 == gBinaryState) && ((2 + gBinaryLength) == (dst - self->buffer))) {
-				fxCommandReceived(self, self->buffer + 2, size - 2);
+				fxCommandReceived(self, self->buffer + 2, gBinaryLength);
 
 				dst = self->buffer;
 				offset = 0;
@@ -720,18 +761,17 @@ void fxSetTime(txSerialTool self, txSerialMachine machine)
 	fxWriteSerial(self, out, 17);
 }
 
-// erases first block and writes kInstallFragmentSize bytes of header
+// erases first block and writes gInstallFragmentSize bytes of header
 // skips kInstallSkipFragmentSize bytes
 // writes remaining for data
-// backs up to offset kInstallFragmentSize and writes the kInstallSkipFragmentSize bytes skipped
+// backs up to offset 0 and writes the kInstallSkipFragmentSize bytes skipped
 // this ensures that the mod header is only valid if all bytes are received
-//@@ add GET MOD SPACE
 //@@ add GET VERSION
 void fxInstallFragment(txSerialTool self)
 {
 	char preamble[32];
-	char out[kInstallFragmentSize + 16];
-	int use = (0 == gInstallOffset) ? kInstallInitialFragmentSize : kInstallFragmentSize;
+	char out[kInstallFragmentSizeMax + 16];
+	int use = (0 == gInstallOffset) ? kInstallInitialFragmentSize : gInstallFragmentSize;
 	uint8_t id = 0xe0;
 
 	fseek(gInstallFD, gInstallOffset, SEEK_SET);

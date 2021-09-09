@@ -26,7 +26,6 @@
 		
 	To do:
 
-		 PJPG_YH2V1
 		 PJPG_YH1V2
 
 		sliding CommodettoBitmap (e.g. pixels in chunk rather than malloc)
@@ -57,7 +56,7 @@ typedef struct {
 	convertto			convert;
 	int					totalBytesAvailable;
 	uint16_t			blocksRemaining;
-	uint16_t			bytesInBuffer;
+	int					bytesInBuffer;
 	char				isArrayBuffer;
 	CommodettoBitmapFormat pixelFormat;
 	uint8_t				pixelSize;

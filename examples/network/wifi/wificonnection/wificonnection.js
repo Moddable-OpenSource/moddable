@@ -57,7 +57,14 @@ class Connection extends WiFi {
 
 				this.#reconnect ??= Timer.set(() => {
 					this.#reconnect = undefined;
-					WiFi.connect(this.#callback?.("getAP", this.#index) ?? this.#options);
+
+					let options = this.#callback?.("getAP", this.#index) ?? this.#options;
+					if (false === options) {
+						this.#connecting = undefined;
+						return;
+					}
+
+					WiFi.connect(options);
 
 					this.#connecting = Timer.set(() => {
 						this.#connecting = undefined;

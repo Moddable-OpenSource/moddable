@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -122,7 +122,7 @@ export class MakeFile extends FILE {
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
-		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : "release") + tool.slash + "config-";
+		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
 
 		if (undefined === tool.environment.ESP32_SUBCLASS) {
 			baseConfigDirectory += "esp32";
@@ -138,6 +138,7 @@ export class MakeFile extends FILE {
 
 		tool.createDirectory(outputConfigDirectory);
 		tool.setenv("CONFIGDIR", outputConfigDirectory);
+		this.line("CONFIGDIR = ", outputConfigDirectory);
 
 		// For release builds merge base sdkconfig.defaults.release file
 		if (tool.debug === false) {
@@ -261,6 +262,7 @@ export class MakeFile extends FILE {
 		// Write the result, if it has changed
 		let buildConfigFile = outputConfigDirectory + tool.slash + "sdkconfig.mc";
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
+		this.line("SDKCONFIG_FILE=", buildConfigFile);
 		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
 			const oldConfig = tool.readFileString(buildConfigFile);
 			if (oldConfig == baseConfig) return;

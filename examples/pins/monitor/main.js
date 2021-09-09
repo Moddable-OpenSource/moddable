@@ -36,9 +36,9 @@ let monitor2 = null;
 
 if (undefined != config.button1_pin) {
 	if (config.button1_port)
-		monitor1 = new Monitor({pin: config.button1_pin, port: config.button1_port, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
+		monitor1 = new Monitor({pin: config.button1_pin, port: config.button1_port, mode: Digital.InputPullUp, edge: Monitor.Falling | Monitor.Rising});
 	else
-		monitor1 = new Monitor({pin: config.button1_pin, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling});
+		monitor1 = new Monitor({pin: config.button1_pin, mode: Digital.InputPullUp, edge: Monitor.Falling | Monitor.Rising});
 	monitor1.onChanged = function() {
 		trace(`Button 1: state: ${this.read()}, changed ${this.rises + this.falls} times\n`);
 	}
@@ -46,9 +46,9 @@ if (undefined != config.button1_pin) {
 
 if (undefined != config.button2_pin) {
 	if (config.button2_port)
-		monitor2 = new Monitor({pin: config.button2_pin, port: config.button2_port, mode: Digital.InputPullUp, edge: Monitor.Falling});
+		monitor2 = new Monitor({pin: config.button2_pin, port: config.button2_port, mode: Digital.InputPullUp, edge: Monitor.Falling | Monitor.Rising});
 	else
-		monitor2 = new Monitor({pin: config.button2_pin, mode: Digital.InputPullUp, edge: Monitor.Falling});
+		monitor2 = new Monitor({pin: config.button2_pin, mode: Digital.InputPullUp, edge: Monitor.Falling | Monitor.Rising});
 	monitor2.onChanged = function() {
 		trace(`Button 2: state: ${this.read()}, changed ${this.rises + this.falls} times\n`);
 	}

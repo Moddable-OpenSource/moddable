@@ -1,5 +1,8 @@
 {
-	"include": "$(MODDABLE)/modules/drivers/sensors/lsm303dlhc/manifest.json",
+	"include": [
+		"$(MODDABLE)/modules/drivers/sensors/lis3dh/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/hmc5883/manifest.json"
+	],
 	"modules": {
 		"*": "./main"
 	},

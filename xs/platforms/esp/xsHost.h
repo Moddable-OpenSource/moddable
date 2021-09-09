@@ -320,9 +320,6 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #define C_EOF EOF
 #define C_NULL NULL
 
-#define c_tolower tolower
-#define c_toupper toupper
-
 typedef jmp_buf c_jmp_buf;
 #define c_longjmp longjmp
 #define c_setjmp setjmp
@@ -547,13 +544,20 @@ char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 /* CPU */
 
-#if ESP32 == 2
+#if ESP32 == 3
+	#define kCPUESP32S3 1
+	#define kTargetCPUCount 2
+	#define kESP32TimerDef	int_clr
+#elif ESP32 == 2
 	#define kCPUESP32S2 1
 	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
 #elif ESP32 == 1 
 	#define kTargetCPUCount 2
+	#define kESP32TimerDef	int_clr_timers
 #else
 	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
 #endif
 
 #ifdef __cplusplus
