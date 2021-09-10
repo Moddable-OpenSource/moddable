@@ -1,7 +1,7 @@
 # Files
 
-Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: May 19, 2020
+Copyright 2017-2021 Moddable Tech, Inc.<BR>
+Revised: September 10, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -401,13 +401,19 @@ By default, the FAT32 file system is mounted at `/mod`. To change the default ro
 - **Source code:** [zip](../../modules/files/zip)
 - **Relevant Examples:** [zip](../../examples/files/zip/)
 
-The `ZIP` class implements read-only file system access to the contents of a ZIP file stored in memory. Typically these are stored in flash memory.
+The `ZIP` class implements read-only file system access to the contents of a ZIP file stored in memory. Typically these are stored in flash memory. A ZIP file is a convenient way to embed a read-only file system into a project.
 
-The `ZIP` implementation requires all files in the ZIP file to be uncompressed. The default in ZIP files is to compress files, so special steps are necessary to build a compatible ZIP file.
+The `ZIP` implementation provides access to the files contained in the ZIP file.   By default, the files in most ZIP files are compressed. The `ZIP` class does not decompress the data when reading. ZIP does not require files to be compressed, so one option is to build a ZIP file with uncompressed content. On devices with enough memory, ZIP files with compressed content may be used by decompressing the data after reading using the zlib `inflate` module.
 
-The [`zip`](https://linux.die.net/man/1/zip) command line tool creates uncompressed ZIP files when a compression level of zero is specified. The following command line creates a ZIP file named `test.zip` with the uncompressed contents of the directory `test`.
+One way to create a ZIP file with uncompressed content is the [`zip`](https://linux.die.net/man/1/zip) command line tool. It creates uncompressed ZIP files when a compression level of zero is specified. The following command line creates a ZIP file named `test.zip` with the uncompressed contents of the directory `test`.
 
 	zip -0r test.zip test
+
+To compress the content, use a different compression level. The highest compression level is `9`:
+
+	zip -9r test.zip test
+
+**Note**: The `zip` command line tool creates a directory named "test" at the root of the ZIP file. For example, the file at "test/example.txt" is accessed in the ZIP file as "test/example.txt" not "example.txt".
 
 ### `constructor(buffer)`
 
@@ -447,6 +453,18 @@ let root = archive.iterate("/");
 ### `map(path)`
 
 The `map` function returns a Host Buffer that references the bytes of the file at the specified path.
+
+***
+
+### `method`
+
+The read-only `method` property returns an integer indicating how the file is compressed in the ZIP file. The values are taken from the ZIP specification. For example, the value 8 indicates `deflate` compression was used.
+
+***
+
+### `crc`
+
+The read-only `crc` property returns an integer containing the CRC value stored for the file in the ZIP file. This property is useful for caching.
 
 ***
 
