@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -117,18 +117,12 @@ export class MakeFile extends FILE {
 	}
 	generateConfigurationRules(tool) {
 		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
-
-		let SDKCONFIGPATH = tool.resolveDirectoryPath(tool.environment.SDKCONFIGPATH);
-		let SUBPLATFORM_DIR;
-
-		if (typeof tool.environment.SUBPLATFORM_DIR == "string")
-			SUBPLATFORM_DIR = tool.environment.SUBPLATFORM_DIR;
-
+		
 		// Read base debug build sdkconfig.defaults file
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
-		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
+		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : "release") + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
 
 		if (undefined === tool.environment.ESP32_SUBCLASS) {
 			baseConfigDirectory += "esp32";
@@ -161,8 +155,8 @@ export class MakeFile extends FILE {
 		}
 		
 		// Merge any application sdkconfig files
-		if (SDKCONFIGPATH == baseConfigDirectory) {
-			let appConfigFile = SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
+		if (tool.environment.SDKCONFIGPATH != baseConfigDirectory) {
+			let appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
 			if (1 == tool.isDirectoryOrFile(appConfigFile)) {
 				let entries = tool.readFileString(appConfigFile);
 				mergedConfig = mergedConfig.concat(entries.split(regex));
@@ -174,38 +168,14 @@ export class MakeFile extends FILE {
 			}
 				
 			if (tool.debug === false && tool.instrument === true) {
-				appConfigFile = SDKCONFIGPATH + tool.slash + "sdkconfig.inst";
+				appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.inst";
 				if (1 == tool.isDirectoryOrFile(appConfigFile)) {
 					let entries = tool.readFileString(appConfigFile);
 					mergedConfig = mergedConfig.concat(entries.split(regex));
 				}
 			}
 		}
-
-		// Merge in SUBPLATFORM_DIR sdkconfig
-		if (SUBPLATFORM_DIR && (SUBPLATFORM_DIR != baseConfigDirectory)) {
-			let sdkconfigDir =  SUBPLATFORM_DIR + tool.slash + "sdkconfig" + tool.slash;
-			let appConfigFile = sdkconfigDir + "sdkconfig.defaults";
-
-			if (1 == tool.isDirectoryOrFile(appConfigFile)) {
-				let entries = tool.readFileString(appConfigFile);
-				mergedConfig = mergedConfig.concat(entries.split(regex));
-			}
-
-			if ((false === tool.debug) && (1 == tool.isDirectoryOrFile(appConfigFile + ".release"))) {
-				let entries = tool.readFileString(appConfigFile + ".release");
-				mergedConfig = mergedConfig.concat(entries.split(regex));
-			}
-
-			if (tool.debug === false && tool.instrument === true) {
-				appConfigFile = sdkconfigDir + "sdkconfig.inst";
-				if (1 == tool.isDirectoryOrFile(appConfigFile)) {
-					let entries = tool.readFileString(appConfigFile);
-					mergedConfig = mergedConfig.concat(entries.split(regex));
-				}
-			}
-		}
-
+		
 		let port = tool.getenv("UPLOAD_PORT");
 		if (port) {
 			if (port.charAt(0) != '"')
@@ -1388,7 +1358,6 @@ export class Tool extends TOOL {
 				break;
 			}
 		}
-
 		if (!this.fullplatform) {
 			this.fullplatform = this.platform = this.currentPlatform;
 			this.environment.PLATFORM = this.platform;
@@ -1490,24 +1459,9 @@ export class Tool extends TOOL {
 			this.createDirectory(path)
 		}
 	}
-	resolveFilePathSubplatformDir(name) {
-		let path = this.resolveVariable(name);
-		if (this.environment.SUBPLATFORM_DIR) {
-			let loc = name.lastIndexOf("targets/$(SUBPLATFORM)/");
-			if (loc >= 0) {
-				let item = name.lastIndexOf('/') + 1;
-				path = this.environment.SUBPLATFORM_DIR;
-				path += name.slice(item);
-				path = this.resolveVariable(path);
-			}
-		}
-		path = this.resolveFilePath(path);
-
-		return path;
-	}
 	includeManifest(name) {
 		var currentDirectory = this.currentDirectory;
-		var path = this.resolveFilePathSubplatformDir(name);
+		var path = this.resolveFilePath(name);
 		if (!path)
 			throw new Error("'" + name + "': manifest not found!");
 		if (!this.manifests.already[path]) {
@@ -1630,9 +1584,9 @@ export class Tool extends TOOL {
 		}
 		if ("include" in manifest) {
 			if (manifest.include instanceof Array)
-				manifest.include.forEach(include => this.includeManifest(include));
-			else 
-				this.includeManifest(manifest.include);
+				manifest.include.forEach(include => this.includeManifest(this.resolveVariable(include)));
+			else
+				this.includeManifest(this.resolveVariable(manifest.include));
 		}
 		this.manifests.push(manifest);
 		return manifest;
@@ -1655,16 +1609,6 @@ export class Tool extends TOOL {
 		if (slash < 0)
 			throw new Error("'" + source + "': path not found!");
 		var directory = this.resolveDirectoryPath(result.slice(0, slash));
-		if (this.environment.SUBPLATFORM_DIR && undefined === directory) {
-			var subp = source.lastIndexOf("$(SUBPLATFORM)/");
-			if (subp < 0)
-				throw new Error("SUBPLATFORM_DIR '" + source + "': directory not found!");
-			result = this.environment.SUBPLATFORM_DIR + source.slice(subp + 15);
-			slash = result.lastIndexOf(this.slash);
-			if (slash < 0)
-				throw new Error("SUBPLATFORM_DIR '" + source + "': path not found!");
-			directory = this.resolveDirectoryPath(result.slice(0, slash));
-		}
 		if (!directory)
 			throw new Error("'" + source + "': directory not found!");
 		result = directory + result.slice(slash);
