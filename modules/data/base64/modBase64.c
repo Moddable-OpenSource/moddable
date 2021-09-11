@@ -39,8 +39,8 @@
 	modeled on FskStrB64Decode and FskStrB64Encode from KPR.
 */
 
-#include "xsPlatform.h"
 #include "xs.h"
+#include "xsPlatform.h"
 
 void xs_base64_encode(xsMachine *the)
 {
@@ -166,3 +166,23 @@ void xs_base64_decode(xsMachine *the)
 			break;
 	}
 }
+
+#if !mxNoFunctionLength
+void modInstallBase64(xsMachine *the)
+{
+	#define kNamespace (0)
+	#define kScratch (1)
+
+	xsBeginHost(the);
+	xsVars(2);
+
+  xsVar(kNamespace) = xsNewObject();
+	xsSet(xsGlobal, xsID("Base64"), xsVar(kNamespace));
+	xsVar(kScratch) = xsNewHostFunction(xs_base64_encode, 1);
+	xsSet(xsVar(kNamespace), xsID("encode"), xsVar(kScratch));
+	xsVar(kScratch) = xsNewHostFunction(xs_base64_decode, 1);
+	xsSet(xsVar(kNamespace), xsID("decode"), xsVar(kScratch));
+
+	xsEndHost(the);
+}
+#endif
