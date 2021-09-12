@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -39,8 +39,8 @@
 	modeled on FskStrB64Decode and FskStrB64Encode from KPR.
 */
 
-#include "xs.h"
-#include "xsPlatform.h"
+#include "xsmc.h"
+#include "xsHost.h"
 
 void xs_base64_encode(xsMachine *the)
 {
@@ -50,21 +50,21 @@ void xs_base64_encode(xsMachine *the)
 	uint32_t	srcSize, dstSize;
 	uint8_t		a, b, c;
 
-	srcType = xsTypeOf(xsArg(0));
+	srcType = xsmcTypeOf(xsArg(0));
 	if (xsStringType == srcType) {
-		src = (uint8_t *)xsToString(xsArg(0));
+		src = (uint8_t *)xsmcToString(xsArg(0));
 		srcSize = c_strlen((char *)src);
 	}
 	else
-		srcSize = xsGetArrayBufferLength(xsArg(0));
+		xsmcGetBuffer(xsArg(0), NULL, &srcSize);
 	dstSize = (((srcSize + 2) / 3) * 4) + 1;
 
 	xsResult = xsStringBuffer(NULL, dstSize);
 	if (xsStringType == srcType)
-		src = (uint8_t *)xsToString(xsArg(0));		// refresh pointer
+		src = (uint8_t *)xsmcToString(xsArg(0));		// refresh pointer
 	else
-		src = xsToArrayBuffer(xsArg(0));
-	dst = (uint8_t *)xsToString(xsResult);
+		xsmcGetBuffer(xsArg(0), (void **)&src, NULL);
+	dst = (uint8_t *)xsmcToString(xsResult);
 
 	while (srcSize > 2) {
 		a = c_read8(src++);
@@ -94,8 +94,6 @@ void xs_base64_encode(xsMachine *the)
 	}
 
 	*dst++ = 0;
-
-//@@ may be a byte or three or slop at end of string.
 }
 
 void xs_base64_decode(xsMachine *the)
@@ -107,7 +105,7 @@ void xs_base64_decode(xsMachine *the)
 	uint8_t		aBuffer[4];
 	uint8_t		*dst;
 
-	src = (uint8_t *)xsToString(xsArg(0));
+	src = (uint8_t *)xsmcToString(xsArg(0));
 	srcSize = c_strlen((char *)src);
 
 	dstSize = (srcSize / 4) * 3;
@@ -117,8 +115,10 @@ void xs_base64_decode(xsMachine *the)
 		dstSize--;
 	srcIndex = 0;
 
-	xsResult = xsArrayBuffer(NULL, dstSize);
-	dst = xsToArrayBuffer(xsResult);
+	xsmcSetArrayBuffer(xsResult, NULL, dstSize);
+	dst = xsmcToArrayBuffer(xsResult);
+
+	src = (uint8_t *)xsmcToString(xsArg(0));	// refresh pointer
 
 	dstIndex = 3;
 	while ((aByte = c_read8(src++))) {
@@ -167,22 +167,20 @@ void xs_base64_decode(xsMachine *the)
 	}
 }
 
-#if !mxNoFunctionLength
 void modInstallBase64(xsMachine *the)
 {
 	#define kNamespace (0)
 	#define kScratch (1)
 
 	xsBeginHost(the);
-	xsVars(2);
+	xsmcVars(2);
 
-  xsVar(kNamespace) = xsNewObject();
-	xsSet(xsGlobal, xsID("Base64"), xsVar(kNamespace));
+	xsVar(kNamespace) = xsNewObject();
+	xsmcSet(xsGlobal, xsID("Base64"), xsVar(kNamespace));
 	xsVar(kScratch) = xsNewHostFunction(xs_base64_encode, 1);
-	xsSet(xsVar(kNamespace), xsID("encode"), xsVar(kScratch));
+	xsmcSet(xsVar(kNamespace), xsID("encode"), xsVar(kScratch));
 	xsVar(kScratch) = xsNewHostFunction(xs_base64_decode, 1);
-	xsSet(xsVar(kNamespace), xsID("decode"), xsVar(kScratch));
+	xsmcSet(xsVar(kNamespace), xsID("decode"), xsVar(kScratch));
 
 	xsEndHost(the);
 }
-#endif
