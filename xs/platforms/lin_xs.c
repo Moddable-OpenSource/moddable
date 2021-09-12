@@ -50,6 +50,7 @@ void fxCreateMachinePlatform(txMachine* the)
 {
 	the->workerContext = g_main_context_get_thread_default();
 	g_mutex_init(&(the->workerMutex));
+	the->demarshall = fxDemarshall;
 }
 
 void fxDeleteMachinePlatform(txMachine* the)

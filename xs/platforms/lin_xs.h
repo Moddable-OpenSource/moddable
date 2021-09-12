@@ -89,6 +89,7 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	void* waiterLink; \
 	GMainContext* workerContext; \
 	GMutex workerMutex; \
-	txWorkerJob* workerQueue;
+	txWorkerJob* workerQueue; \
+	void* demarshall;
 
 #endif /* __LINUX_XS__ */

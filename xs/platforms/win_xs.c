@@ -101,6 +101,7 @@ void fxCreateMachinePlatform(txMachine* the)
 #ifdef mxDebug
 	the->connection = INVALID_SOCKET;
 #endif
+	the->demarshall = fxDemarshall;
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
