@@ -93,14 +93,12 @@ void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLengt
 	mxPush(mxArrayBufferPrototype);
 	instance = fxNewArrayBufferInstance(the);
 	arrayBuffer = instance->next;
-	if (byteLength) {
-		arrayBuffer->value.arrayBuffer.address = fxNewChunk(the, byteLength);
-		arrayBuffer->value.arrayBuffer.length = byteLength;
-		if (data != NULL)
-			c_memcpy(arrayBuffer->value.arrayBuffer.address, data, byteLength);
-		else
-			c_memset(arrayBuffer->value.arrayBuffer.address, 0, byteLength);
-	}
+	arrayBuffer->value.arrayBuffer.address = fxNewChunk(the, byteLength);
+	arrayBuffer->value.arrayBuffer.length = byteLength;
+	if (data != NULL)
+		c_memcpy(arrayBuffer->value.arrayBuffer.address, data, byteLength);
+	else
+		c_memset(arrayBuffer->value.arrayBuffer.address, 0, byteLength);
 	mxPullSlot(slot);
 }
 
