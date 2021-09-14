@@ -73,7 +73,11 @@ unexport CPPFLAGS
 ifeq ($(DEBUG),1)
 	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/$(NAME)/xsProj-$(ESP32_SUBCLASS)
 else
+ifeq ($(INSTRUMENT),1)
+	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/instrument/$(NAME)/xsProj-$(ESP32_SUBCLASS)
+else
 	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/$(NAME)/xsProj-$(ESP32_SUBCLASS)
+endif
 endif
 BLD_DIR = $(PROJ_DIR)/build
 
