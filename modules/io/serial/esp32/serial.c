@@ -49,6 +49,7 @@ struct SerialRecord {
 	uint8_t		isWritable;
 	uint8_t		format;
 	uint8_t		uart;
+	uint8_t		useCount;
 	uart_dev_t	*uart_reg;
 	uint32_t	transmit;
 	uint32_t	receive;
@@ -155,6 +156,7 @@ void xs_serial_constructor(xsMachine *the)
 	else
 #endif
 		serial->uart_reg = uart ? &UART1 : &UART0;
+	serial->useCount = 1;
 
 	if (hasReadable || hasWritable) {
 		serial->the = the;
@@ -215,7 +217,8 @@ void xs_serial_destructor(void *data)
 	if (UART_PIN_NO_CHANGE != serial->receive)
 		builtinFreePin(serial->receive);
 
-	c_free(serial);
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
+		c_free(serial);
 }
 
 void xs_serial_close(xsMachine *the)
@@ -333,8 +336,10 @@ void ICACHE_RAM_ATTR serial_isr(void * arg)
 		uart_disable_rx_intr(serial->uart);
 	}
 
-	if (post)
+	if (post) {
+		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
+	}
 }
 
 void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -342,6 +347,11 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 	xsMachine *the = (xsMachine *)theIn;
 	Serial serial = (Serial)refcon;
 	int count;
+
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
+		c_free(serial);
+		return;
+	}
 
 	if (serial->isReadable) {
 		serial->isReadable = 0;
