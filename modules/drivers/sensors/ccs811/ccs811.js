@@ -24,7 +24,6 @@
 //		: shut down firmware on close
 
 import Timer from "timer";
-import SMBus from "embedded:io/smbus";
 
 const Register = Object.freeze({
 	STATUS: 0x00,
