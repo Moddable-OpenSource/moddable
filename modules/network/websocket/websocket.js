@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -51,16 +51,16 @@ import {Digest} from "crypt";
 export class Client {
 	constructor(dictionary) {
 		// port, host, address, path (everything after port)
-		this.path = dictionary.path ? dictionary.path : "/";
-		this.host = dictionary.host ? dictionary.host : dictionary.address;
-		this.headers = dictionary.headers ? dictionary.headers : [];
+		this.path = dictionary.path ?? "/";
+		this.host = dictionary.host ?? dictionary.address;
+		this.headers = dictionary.headers ?? [];
 		this.protocol = dictionary.protocol;
 		this.state = 0;
 
 		if (dictionary.socket)
 			this.socket = dictionary.socket;
 		else {
-			if (!dictionary.port) dictionary.port = 80;
+			dictionary.port ??= 80;
 			if (dictionary.Socket)
 				this.socket = new dictionary.Socket(Object.assign({}, dictionary.Socket, dictionary));
 			else
@@ -72,25 +72,25 @@ export class Client {
 
 	write(message) {
 	//@@ implement masking
-		let string = !(message instanceof ArrayBuffer);
-		if (string)
-			message = message.toString();
+		const type = (message instanceof ArrayBuffer) ? 0x02 : 0x01;
+		if (0x01 === type)
+			message = ArrayBuffer.fromString(message);
 
-		let length = string ? message.length : message.byteLength;
+		const length = message.byteLength;
 		// Note: WS spec requires XOR masking for clients, but w/ strongly random mask. We
 		// can't achieve that on this device for now, so just punt and use 0x00000000 for
 		// a no-op mask.
 		if (length < 126) {
 			if (this.doMask)
-				this.socket.write(string ? 0x81 : 0x82, length | 0x80, 0, 0, 0, 0, message);
+				this.socket.write(type, length | 0x80, 0, 0, 0, 0, message);
 			else
-				this.socket.write(string ? 0x81 : 0x82, length, message);
+				this.socket.write(type, length, message);
 		}
 		else if (length < 65536) {
 			if (this.doMask)
-				this.socket.write(string ? 0x81 : 0x82, 126 | 0x80, length >> 8, length & 0x0ff, 0, 0, 0, 0, message);
+				this.socket.write(type, 126 | 0x80, length >> 8, length & 0x0ff, 0, 0, 0, 0, message);
 			else
-				this.socket.write(string ? 0x81 : 0x82, 126, length >> 8, length & 0x0ff, message);
+				this.socket.write(type, 126, length >> 8, length & 0x0ff, message);
 		}
 		else
 			throw new Error("message too long");
@@ -102,8 +102,7 @@ export class Client {
 		return socket;
 	}
 	close() {
-		if (this.socket)
-			this.socket.close();
+		this.socket?.close();
 		delete this.socket;
 	}
 };
