@@ -57,7 +57,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxAssert(_ASSERTION,...) { if (!(_ASSERTION)) { fxReport(the, __VA_ARGS__); snapshot->error = C_EINVAL; fxJump(the); } }
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 
-#define mxCallbacksLength 474
+#define mxCallbacksLength 477
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -166,6 +166,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_DataView_prototype_setUint32,
 	fx_DataView,
 	fx_Date_now,
+	fx_Date_now_secure,
 	fx_Date_parse,
 	fx_Date_prototype_getDate,
 	fx_Date_prototype_getDay,
@@ -211,6 +212,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Date_prototype_valueOf,
 	fx_Date_UTC,
 	fx_Date,
+	fx_Date_secure,
 	fx_decodeURI,
 	fx_decodeURIComponent,
 	fx_encodeURI,
@@ -289,6 +291,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Math_mod,
 	fx_Math_pow,
 	fx_Math_random,
+	fx_Math_random_secure,
 	fx_Math_round,
 	fx_Math_sign,
 	fx_Math_sin,
