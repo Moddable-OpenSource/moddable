@@ -12,6 +12,8 @@
  *
  */
 
+import Timer from "timer";		//@@
+
 const none = Object.freeze([]);
 
 class FT6206  {
@@ -20,51 +22,84 @@ class FT6206  {
 	constructor(options) {
 		const io = this.#io = new options.io({
 			...options,
-			hz: 600000,
-			address: 0x38,
+			hz: 600_000,
+			address: 0x38
 		});
 
-		io.write(Uint8Array.of(0xA8));
-		if (17 !== (new Uint8Array(io.read(1)))[0])
+		const reset = options.reset;
+		if (reset) {
+			io.reset = new reset.io({
+				...reset,
+				mode: Digital.Output
+			});
+			io.reset.write(0);
+			Timer.delay(1);
+			io.reset.write(1);
+			Timer.delay(5);
+		}
+		
+		if (17 !== io.readByte(0xA8))
 			throw new Error("unexpected vendor");
 
-		io.write(Uint8Array.of(0xA3));
-		let id = (new Uint8Array(io.read(1)))[0];
+		const id = io.readByte(0xA3);
 		if ((6 !== id) && (100 !== id))
 			throw new Error("unexpected chip");
 
-		io.write(Uint8Array.of(0x80, 128));					// touch threshold
-		io.write(Uint8Array.of(0x86, 1));					// go to monitor mode when no touch active
+		if (!reset) {
+			this.configure({
+				active: false,
+				threshold: 128,
+				timeout: 10
+			});
+		}
+	}
+	close() {
+		this.#io?.reset?.close();
+		this.#io?.close();
+		this.#io = undefined;
 	}
 	configure(options) {
 		const io = this.#io;
 
-		if (options.threshold)
-			io.write(Uint8Array.of(0x80, options.threshold));
+		if ("threshold" in options)
+			io.writeByte(0x80, options.threshold);
 
-		if (options.monitor)
-			io.write(Uint8Array.of(0x86, options.monitor ? 1 : 0));
+		if ("active" in options)
+			io.writeByte(0x86, options.active ? 0 : 1);
 
-		if (undefined !== options.flipX)
-			this.flipX = options.flipX;
+		if ("timeout" in options)
+			io.writeByte(0x87, options.timeout);
 
-		if (undefined !== options.flipY)
-			this.flipY = options.flipY;
+		let value = options.flip;
+		if (value) {
+			if ("h" === value)
+				io.flipX = true; 
+			else if ("v" === value)
+				io.flipY = true; 
+			else if ("hv" === value)
+				io.flipX = io.flipY = true; 
+		}
+
+		value = options.length;
+		if (undefined !== value)
+			io.length = (1 === value) ? 1 : 2; 
 	}
 	sample() {
 		const io = this.#io;
 
-		io.write(Uint8Array.of(0x02));						// number of touches
-		const length = (new Uint8Array(io.read(1)))[0] & 0x0F;
+		const length = io.readByte(0x02) & 0x0F;			// number of touches
 		if (0 === length)
 			return none;
 
-		io.write(Uint8Array.of(0x03));						// read points
-		const data = new Uint8Array(io.read(6 * length));	// x, then y
+		const data = new Uint8Array(length * 6);
+		io.readBlock(0x03, data.buffer);
 		const result = new Array(length);
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;
-			let id = data[offset + 2] >> 4;
+			const id = data[offset + 2] >> 4;
+			if ((1 === io.length) && (id > 0))
+				continue;
+
 			let state = data[offset] >> 6;
 			let x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
 			let y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
@@ -78,10 +113,10 @@ class FT6206  {
 			else
 				throw new Error("unexpected");
 
-			if (this.flipX)
+			if (io.flipX)
 				x = 240 - x;
 
-			if (this.flipY)
+			if (io.flipY)
 				y = 320 - y;
 
 			result[id] = {x, y, state};

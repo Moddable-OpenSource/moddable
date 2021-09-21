@@ -4,9 +4,9 @@
 	],
 	"modules": {
 		"*": "./main",
-		"sensor/touch": "./ft6206"
+		"embedded:sensor/touch/FT6x06": "./ft6206"
 	},
 	"preload": [
-		"sensor/touch"
+		"embedded:sensor/touch/FT6x06"
 	]
 }

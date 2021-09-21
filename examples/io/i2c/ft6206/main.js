@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,18 +12,18 @@
  *
  */
 
-import Touch from "sensor/touch";
+import Touch from "embedded:sensor/touch/FT6x06";
 
-const touch = new Touch(device.I2C.default);
+const touch = new Touch({...device.I2C.default, io: device.io.SMBus});
 
-while (true) {
+System.setInterval(() => {
 	const points = touch.sample();
 	if (!points.length)
-		continue;
+		return;
 
 	if (points[0])
 		trace(`Point 1 {${points[0].x}, ${points[0].y}}\n`);
 
 	if (points[1])
 		trace(`Point 2 {${points[1].x}, ${points[1].y}}\n`);
-}
+}, 33);
