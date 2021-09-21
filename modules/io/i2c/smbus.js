@@ -94,11 +94,12 @@ class SMBus {
     }
 
     writeBlock(register, buffer) {
-		const io = this.#io;
-
-        this.#byteBuffer[0] = register;
-        io.write(this.#byteBuffer, this.#stop);
-        io.write(buffer);
+		if (buffer instanceof ArrayBuffer)
+			buffer = new Uint8Array(buffer);
+		const data = new Uint8Array(1 + buffer.length);
+		data[0] = register;
+		data.set(buffer, 1);
+		this.#io.write(data);
     }
 
 	sendByte(command) {
