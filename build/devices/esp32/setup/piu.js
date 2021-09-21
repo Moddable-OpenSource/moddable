@@ -37,13 +37,54 @@ class Screen extends config.Screen {
 		}, 1, 100);
 		Timer.schedule(this.#timer);
 
-		if (config.Touch) {
-			let touchCount = config.touchCount ?? 1;
-			if (!touchCount)
-				return;
+		const Touch = config.Touch || globalThis.device?.sensor?.Touch;
+		if (!Touch)
+			return;
 
-			const touch = new config.Touch;
-			this.#touch = touch;
+		let touchCount = config.touchCount ?? 1;
+		if (!touchCount)
+			return;
+
+		const touch = new Touch;
+		this.#touch = touch;
+
+		if (touch.sample) {
+			touch.points = new Array(touchCount);
+
+			touch.timer = Timer.repeat(() => {
+				const touch = this.#touch;
+				const points = touch.sample();
+
+				for (let i = 0, length = touch.points.length; i < length; i++) {
+					const point = points[i], last = touch.points[i];
+					if (!point) {
+						if (last) {				// synthetic up
+							touch.points[i] = undefined
+							this.context.onTouchEnded(i, last.x, last.y, Time.ticks);
+						}
+						continue;
+					}
+
+					this.rotate?.(point);
+					if (3 === point.state) {	// up
+						if (last) {
+							touch.points[i] = undefined
+							this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
+						}
+					}
+					else if (last) {			// moved
+						last.x = point.x;
+						last.y = point.y;
+						this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
+					}
+					else {						// down
+						touch.points[i] = {x: point.x, y: point.y};
+						this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
+					}
+				}
+			}, 16);
+		}
+		else {
 			touch.points = [];
 			while (touchCount--)
 				touch.points.push({});
@@ -52,29 +93,28 @@ class Screen extends config.Screen {
 				const touch = this.#touch;
 				let points = touch.points;
 				touch.read(points);
-				for (let i = 0; i < points.length; i++) {
-					let point = points[i];
-					if (this.rotate)
-						this.rotate(point);
+				for (let i = 0, length = points.length; i < length; i++) {
+					const point = points[i];
+					this.rotate?.(point);
 					switch (point.state) {
-						  case 0:
-						  case 3:
-								if (point.down) {
-									delete point.down;
-									this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
-									delete point.x;
-									delete point.y;
-								}
-							  break;
-						  case 1:
-						  case 2:
-								if (!point.down) {
-									point.down = true;
-									this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
-								}
-								else
-									this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
-								break;
+						case 0:
+						case 3:
+							if (point.down) {
+								delete point.down;
+								this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
+								delete point.x;
+								delete point.y;
+							}
+							break;
+						case 1:
+						case 2:
+							if (!point.down) {
+								point.down = true;
+								this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
+							}
+							else
+								this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
+						break;
 					}
 				}
 			}, 16);
