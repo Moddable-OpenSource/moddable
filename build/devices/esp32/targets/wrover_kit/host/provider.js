@@ -60,7 +60,7 @@ const device = {
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
-	pins: {
+	pin: {
 		button: 0,
 		led: 2,
 		backlight: 5,

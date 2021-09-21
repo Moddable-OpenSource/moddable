@@ -15,36 +15,25 @@
 const Digital = device.io.Digital;
 const SPI = device.io.SPI;
 
-if (undefined !== device.pins.backlight) {
+if (undefined !== device.pin.backlight) {
 	const backlight = new Digital({
-		pin: device.pins.backlight,
+		pin: device.pin.backlight,
 		mode: Digital.Output,
 	});
 	backlight.write(0);
 }
 
 const dc = new Digital({
-	pin: device.pins.displayDC,
+	pin: device.pin.displayDC,
 	mode: Digital.Output,
 });
 
 const spi = new SPI({
 	...device.SPI.default,
 	hz: 40_000_000,
-	select: device.pins.displaySelect,
+	select: device.pin.displaySelect,
 	active: 0
 });
-
-/*
-spi.flush(true);
-dc.write(0);
-spi.write(Uint8Array.of(4));
-dc.write(1);
-//let trans = Uint8Array.of(0x04, 0, 0, 0);
-//spi.transfer(trans);
-let trans = new Uint8Array(spi.read(3));
-let a = trans[0].toString(16), b = trans[1].toString(16);
-*/
 
 // registers for display in Moddable One and Moddable Two
 doCmd(0xCB, 0x39, 0x2C, 0x00, 0x34, 0x02);
