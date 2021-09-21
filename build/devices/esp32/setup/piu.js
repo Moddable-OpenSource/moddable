@@ -54,32 +54,32 @@ class Screen extends config.Screen {
 			touch.timer = Timer.repeat(() => {
 				const touch = this.#touch;
 				const points = touch.sample();
+				let mask = (1 << touchCount) - 1;
+				for (let i = 0, length = points?.length ?? 0; i < length; i++) {
+					const point = points[i];
+					const id = point.id;
+					const last = touch.points[id];
 
-				for (let i = 0, length = touch.points.length; i < length; i++) {
-					const point = points[i], last = touch.points[i];
-					if (!point) {
-						if (last) {				// synthetic up
-							touch.points[i] = undefined
-							this.context.onTouchEnded(i, last.x, last.y, Time.ticks);
-						}
-						continue;
-					}
-
+					mask ^= 1 << id;
 					this.rotate?.(point);
-					if (3 === point.state) {	// up
-						if (last) {
-							touch.points[i] = undefined
-							this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
-						}
-					}
-					else if (last) {			// moved
+					if (last) {
 						last.x = point.x;
 						last.y = point.y;
-						this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
+						this.context.onTouchMoved(id, point.x, point.y, Time.ticks);
 					}
-					else {						// down
-						touch.points[i] = {x: point.x, y: point.y};
-						this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
+					else {
+						touch.points[id] = {x: point.x, y: point.y};
+						this.context.onTouchBegan(id, point.x, point.y, Time.ticks);
+					}
+				}
+
+				for (let i = 0; mask; i += 1, mask >>= 1) {
+					if (mask & 1) {
+						const last = touch.points[i];
+						if (last) {
+							touch.points[i] = undefined;
+							this.context.onTouchEnded(i, last.x, last.y, Time.ticks);
+						}
 					}
 				}
 			}, 16);

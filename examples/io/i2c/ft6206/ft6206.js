@@ -14,8 +14,6 @@
 
 import Timer from "timer";		//@@
 
-const none = Object.freeze([]);
-
 class FT6206  {
 	#io;
 
@@ -89,7 +87,7 @@ class FT6206  {
 
 		const length = io.readByte(0x02) & 0x0F;			// number of touches
 		if (0 === length)
-			return none;
+			return;
 
 		const data = new Uint8Array(length * 6);
 		io.readBlock(0x03, data.buffer);
@@ -100,18 +98,8 @@ class FT6206  {
 			if ((1 === io.length) && (id > 0))
 				continue;
 
-			let state = data[offset] >> 6;
 			let x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
 			let y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
-
-			if (0 === state)									// down
-				state = 1;
-			else if (2 === state)								// contact
-				state = 2;
-			else if ((1 === state) || (3 === state))			// lift (not always delivered)
-				state = 3;
-			else
-				throw new Error("unexpected");
 
 			if (io.flipX)
 				x = 240 - x;
@@ -119,7 +107,7 @@ class FT6206  {
 			if (io.flipY)
 				y = 320 - y;
 
-			result[id] = {x, y, state};
+			result[i] = {x, y, id};
 		}
 
 		return result;
