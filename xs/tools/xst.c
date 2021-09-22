@@ -1171,9 +1171,12 @@ void fx_evalScript(xsMachine* the)
 void fx_print(xsMachine* the)
 {
 	xsIntegerValue c = xsToInteger(xsArgc), i;
+	xsVars(1);
+	xsVar(0) = xsGet(xsGlobal, xsID("String"));
 	for (i = 0; i < c; i++) {
 		if (i)
 			fprintf(stdout, " ");
+		xsArg(i) = xsCallFunction1(xsVar(0), xsUndefined, xsArg(i));
 		fprintf(stdout, "%s", xsToString(xsArg(i)));
 	}
 	fprintf(stdout, "\n");
