@@ -266,6 +266,7 @@ typedef union {
 	struct { txInteger* code; txInteger* data; } regexp;
 	struct { txSlot* address; txIndex length; } stack;
 	struct { txSlot** address; txSize length; } table;
+	struct { txSize entriesCount; txSize iteratorsCount; } tableInfo;
 	struct { txTypeDispatch* dispatch; txTypeAtomics* atomics; } typedArray;
 	struct { txSlot* check; txSlot* value; } weakEntry;
 	struct { txSlot* first; txSlot* link; } weakList;
