@@ -239,8 +239,8 @@ int main(int argc, char* argv[])
 			16 * 1024 * 1024, 	/* incrementalChunkSize */
 			1 * 1024 * 1024, 	/* initialHeapCount */
 			1 * 1024 * 1024, 	/* incrementalHeapCount */
-			4096, 				/* stackCount */
-			4096*3, 			/* keyCount */
+			256 * 1024, 		/* stackCount */
+			256 * 1024, 		/* keyCount */
 			1993, 				/* nameModulo */
 			127, 				/* symbolModulo */
 			64 * 1024,			/* parserBufferSize */
@@ -295,8 +295,8 @@ int main262(int argc, char* argv[])
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		4096, 				/* stackCount */
-		4096*3, 			/* keyCount */
+		256 * 1024, 		/* stackCount */
+		256 * 1024, 		/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -789,7 +789,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		256 * 1024, 		/* stackCount */
-		4096*3, 			/* keyCount */
+		256 * 1024, 		/* keyCount */
 		1993, 				/* nameModulo */
 		127,				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
