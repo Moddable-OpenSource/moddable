@@ -29,20 +29,16 @@ class Screen extends config.Screen {
 	#timer;
 	#touch;
 
-	constructor(dictionary) {
-		super(dictionary);
-
-		this.#timer = Timer.set(() => {
-			this.#touch?.context.onIdle();
-		}, 1, 100);
-		Timer.schedule(this.#timer);
-	}
 	set context(value) {
 		if (!value) {
 			if (this.#touch) {
 				Timer.clear(this.#touch.timer);
-				this.#touch.close();
+				this.#touch?.close();
 				this.#touch = undefined; 
+			}
+			if (this.#timer) {
+				Timer.clear(this.#timer);
+				this.#timer = undefined; 
 			}
 			return;
 		}
@@ -51,14 +47,19 @@ class Screen extends config.Screen {
 			return;
 		}		
 
-		// build touch instance
-		const Touch = config.Touch || globalThis.device?.sensor?.Touch;
-		if (!Touch)
-			return;
+		// build timer
+		this.#timer = Timer.set(() => {
+			this.#touch.context.onIdle();
+		}, 1, 100);
+		Timer.schedule(this.#timer);
 
+		// build touch instance
 		let touchCount = config.touchCount ?? 1;
-		if (!touchCount)
+		const Touch = config.Touch || globalThis.device?.sensor?.Touch;
+		if (!Touch || !touchCount) {
+			this.#touch = {context: value};
 			return;
+		}
 
 		const touch = new Touch;
 		this.#touch = touch;
