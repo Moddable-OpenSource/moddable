@@ -20,22 +20,22 @@ class FT6206  {
 	constructor(options) {
 		const io = this.#io = new options.io({
 			...options,
-			hz: 600_000,
+			hz: 100_000,
 			address: 0x38
 		});
 
 		const reset = options.reset;
 		if (reset) {
 			io.reset = new reset.io({
-				...reset,
-				mode: Digital.Output
+				...reset
 			});
+
 			io.reset.write(0);
-			Timer.delay(1);
-			io.reset.write(1);
 			Timer.delay(5);
+			io.reset.write(1);
+			Timer.delay(150);
 		}
-		
+
 		if (17 !== io.readByte(0xA8))
 			throw new Error("unexpected vendor");
 
@@ -110,7 +110,7 @@ class FT6206  {
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;
 			const id = data[offset + 2] >> 4;
-			if ((1 === io.length) && (id > 0))
+			if (id && (1 === io.length))
 				continue;
 
 			let x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
