@@ -33,10 +33,25 @@ class Screen extends config.Screen {
 		super(dictionary);
 
 		this.#timer = Timer.set(() => {
-			this.context.onIdle();
+			this.#touch?.context.onIdle();
 		}, 1, 100);
 		Timer.schedule(this.#timer);
+	}
+	set context(value) {
+		if (!value) {
+			if (this.#touch) {
+				Timer.clear(this.#touch.timer);
+				this.#touch.close();
+				this.#touch = undefined; 
+			}
+			return;
+		}
+		if (this.#touch) {
+			this.#touch.context = context;
+			return;
+		}		
 
+		// build touch instance
 		const Touch = config.Touch || globalThis.device?.sensor?.Touch;
 		if (!Touch)
 			return;
@@ -47,6 +62,7 @@ class Screen extends config.Screen {
 
 		const touch = new Touch;
 		this.#touch = touch;
+		this.#touch.context = value;
 
 		if (touch.sample) {
 			touch.points = new Array(touchCount);
@@ -65,11 +81,11 @@ class Screen extends config.Screen {
 					if (last) {
 						last.x = point.x;
 						last.y = point.y;
-						this.context.onTouchMoved(id, point.x, point.y, Time.ticks);
+						touch.context.onTouchMoved(id, point.x, point.y, Time.ticks);
 					}
 					else {
 						touch.points[id] = {x: point.x, y: point.y};
-						this.context.onTouchBegan(id, point.x, point.y, Time.ticks);
+						touch.context.onTouchBegan(id, point.x, point.y, Time.ticks);
 					}
 				}
 
@@ -78,7 +94,7 @@ class Screen extends config.Screen {
 						const last = touch.points[i];
 						if (last) {
 							touch.points[i] = undefined;
-							this.context.onTouchEnded(i, last.x, last.y, Time.ticks);
+							touch.context.onTouchEnded(i, last.x, last.y, Time.ticks);
 						}
 					}
 				}
@@ -101,7 +117,7 @@ class Screen extends config.Screen {
 						case 3:
 							if (point.down) {
 								delete point.down;
-								this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
+								touch.context.onTouchEnded(i, point.x, point.y, Time.ticks);
 								delete point.x;
 								delete point.y;
 							}
@@ -110,22 +126,18 @@ class Screen extends config.Screen {
 						case 2:
 							if (!point.down) {
 								point.down = true;
-								this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
+								touch.context.onTouchBegan(i, point.x, point.y, Time.ticks);
 							}
 							else
-								this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
+								touch.context.onTouchMoved(i, point.x, point.y, Time.ticks);
 						break;
 					}
 				}
 			}, 16);
 		}
 	}
-	set touch(value) {
-		if (!this.#touch?.timer)
-			return;
-		
-		Timer.clear(this.#touch?.timer);
-		this.#touch = undefined;
+	get context() {
+		return this.#touch?.context;
 	}
 	get rotation() {
 		return super.rotation;
