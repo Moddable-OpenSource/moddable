@@ -1860,8 +1860,10 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 					break;
 				case '\'':
 					l = size - (offset + length);
-					c_memcpy(s, string->value.string + offset + length, l);
-					s += l;
+                    if (l > 0) {
+                        c_memcpy(s, string->value.string + offset + length, l);
+                        s += l;
+                    }
 					break;
 				case '<':
 					if (groups && mxIsReference(groups)) {
