@@ -72,8 +72,8 @@ export class Client {
 
 	write(message) {
 	//@@ implement masking
-		const type = (message instanceof ArrayBuffer) ? 0x02 : 0x01;
-		if (0x01 === type)
+		const type = (message instanceof ArrayBuffer) ? 0x82 : 0x81;
+		if (0x81 === type)
 			message = ArrayBuffer.fromString(message);
 
 		const length = message.byteLength;
