@@ -70,6 +70,9 @@ class FT6206  {
 
 		let value = options.flip;
 		if (value) {
+			delete io.flipX;
+			delete io.flipY;
+
 			if ("h" === value)
 				io.flipX = true; 
 			else if ("v" === value)
@@ -81,6 +84,18 @@ class FT6206  {
 		value = options.length;
 		if (undefined !== value)
 			io.length = (1 === value) ? 1 : 2; 
+
+		if ("weight" in options) {
+			delete io.weight;
+			if (options.weight)
+				io.weight = true;
+		}
+
+		if ("area" in options) {
+			delete io.area;
+			if (options.area)
+				io.area = true;
+		}
 	}
 	sample() {
 		const io = this.#io;
@@ -108,6 +123,12 @@ class FT6206  {
 				y = 320 - y;
 
 			result[i] = {x, y, id};
+
+			if (io.weight)
+				result[i].weight = data[offset + 4];
+
+			if (io.area)
+				result[i].area = data[offset + 5] >> 4;
 		}
 
 		return result;
