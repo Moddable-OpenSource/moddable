@@ -338,6 +338,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Map_prototype_entries);
 		fxUnstripCallback(linker, fx_Map_prototype_set);
 		fxUnstripCallback(linker, fx_MapIterator_prototype_next);
+		fxUnstripCallback(linker, fx_MapIterator_prototype_return);
 	}
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Math)))
 		fxStripObject(linker, the, &mxMathObject);
@@ -422,6 +423,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Set_prototype_add);
 		fxUnstripCallback(linker, fx_Set_prototype_values);
 		fxUnstripCallback(linker, fx_SetIterator_prototype_next);
+		fxUnstripCallback(linker, fx_SetIterator_prototype_return);
 	}
 	if (fxIsCallbackStripped(linker, fx_SharedArrayBuffer))
 		fxStripClass(linker, the, &mxSharedArrayBufferConstructor);
