@@ -106,7 +106,7 @@ class Button {
 		this.#io = undefined;
 	}
 	get pressed() {
-		return this.#io.read() === this.#io.pressed;
+		return (this.#io.read() === this.#io.pressed) ? 1 : 0;
 	}
 }
 
