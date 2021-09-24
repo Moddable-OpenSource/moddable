@@ -181,11 +181,12 @@ void _xs_i2c_close(xsMachine *the)
 void _xs_i2c_read(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
-	int length, type;
+	xsUnsignedValue length;
+	int type;
 	int err;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
-	uint8_t *buffer;
+	void *buffer;
 
 	if (!i2c)
 		xsUnknownError("closed");
@@ -201,16 +202,11 @@ void _xs_i2c_read(xsMachine *the)
 	}
 	else {
 		xsResult = xsArg(0);
-//@@ assumes view is full buffer
-		if (xsmcIsInstanceOf(xsResult, xsTypedArrayPrototype))
-			xsmcGet(xsArg(0), xsResult, xsID_buffer);
-		length = xsmcGetArrayBufferLength(xsArg(0));
+		xsmcGetBuffer(xsResult, &buffer, &length);
 	}
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
-
-	buffer = xsmcToArrayBuffer(xsArg(0));
 
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
@@ -218,7 +214,7 @@ void _xs_i2c_read(xsMachine *the)
 	if (length > 0) {
 		if (length > 1)
 			i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
-		i2c_master_read(cmd, buffer + length - 1, 1, I2C_MASTER_NACK);
+		i2c_master_read(cmd, ((uint8_t *)buffer) + length - 1, 1, I2C_MASTER_NACK);
 	}
 	if (stop)
 		i2c_master_stop(cmd);
@@ -232,10 +228,11 @@ void _xs_i2c_read(xsMachine *the)
 void _xs_i2c_write(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
-	int err, length;
+	int err;
+	xsUnsignedValue length;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
-	uint8_t *buffer;
+	void *buffer;
 
 	if (!i2c)
 		xsUnknownError("closed");
@@ -243,14 +240,10 @@ void _xs_i2c_write(xsMachine *the)
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-		xsmcGet(xsArg(0), xsArg(0), xsID_buffer);		//@@ assumes view is full buffer
-	length = xsmcGetArrayBufferLength(xsArg(0));
+	xsmcGetBuffer(xsArg(0), &buffer, &length);
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
-
-	buffer = xsmcToArrayBuffer(xsArg(0));
 
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
