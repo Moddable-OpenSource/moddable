@@ -43,13 +43,11 @@ class FT6206  {
 		if ((6 !== id) && (100 !== id))
 			throw new Error("unexpected chip");
 
-		if (!reset) {
-			this.configure({
-				active: false,
-				threshold: 128,
-				timeout: 10
-			});
-		}
+		this.configure({
+			active: false,
+			threshold: 128,
+			timeout: 10
+		});
 	}
 	close() {
 		this.#io?.reset?.close();
