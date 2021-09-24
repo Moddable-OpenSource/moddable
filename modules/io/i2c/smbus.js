@@ -23,9 +23,9 @@ import I2C from "embedded:io/i2c"
 class SMBus {
 	#io;
 	#stop;
-	#byteBuffer = new Uint8Array(1);
-	#wordBuffer = new Uint8Array(2);
 	#writeWordBuffer = new Uint8Array(3);
+	#wordBuffer = new Uint8Array(this.#writeWordBuffer.buffer, 0, 2);
+	#byteBuffer = new Uint8Array(this.#writeWordBuffer.buffer, 0, 1);
 
     constructor(options) {
         this.#io = new I2C(options);
