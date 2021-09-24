@@ -65,7 +65,7 @@ class Screen extends config.Screen {
 		this.#touch = touch;
 		this.#touch.context = value;
 
-		if (touch.sample) {
+		if (touch.sample) {	// ECMA-419 driver
 			touch.points = new Array(touchCount);
 
 			touch.timer = Timer.repeat(() => {
@@ -101,7 +101,7 @@ class Screen extends config.Screen {
 				}
 			}, 16);
 		}
-		else {
+		else {		// legacy driver
 			touch.points = [];
 			while (touchCount--)
 				touch.points.push({});
@@ -171,6 +171,7 @@ class Screen extends config.Screen {
 	}
 	start(interval) {
 		const timer = this.#timer;
+		if (!timer) return;
 
 		if (interval <= 5)
 			interval = 5;
@@ -182,6 +183,8 @@ class Screen extends config.Screen {
 	}
 	stop() {
 		const timer = this.#timer;
+		if (!timer) return;
+
 		Timer.schedule(timer);
 		delete timer.interval;
 	}
