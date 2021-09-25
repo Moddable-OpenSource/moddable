@@ -266,7 +266,6 @@ typedef union {
 	struct { txInteger* code; txInteger* data; } regexp;
 	struct { txSlot* address; txIndex length; } stack;
 	struct { txSlot** address; txSize length; } table;
-	struct { txSize entriesCount; txSize iteratorsCount; } tableInfo;
 	struct { txTypeDispatch* dispatch; txTypeAtomics* atomics; } typedArray;
 	struct { txSlot* check; txSlot* value; } weakEntry;
 	struct { txSlot* first; txSlot* link; } weakList;
@@ -1616,7 +1615,6 @@ mxExport void fx_Map_prototype_set(txMachine* the);
 mxExport void fx_Map_prototype_size(txMachine* the);
 mxExport void fx_Map_prototype_values(txMachine* the);
 mxExport void fx_MapIterator_prototype_next(txMachine* the);
-mxExport void fx_MapIterator_prototype_return(txMachine* the);
 mxExport void fx_Set(txMachine* the);
 mxExport void fx_Set_prototype_add(txMachine* the);
 mxExport void fx_Set_prototype_clear(txMachine* the);
@@ -1627,7 +1625,6 @@ mxExport void fx_Set_prototype_has(txMachine* the);
 mxExport void fx_Set_prototype_size(txMachine* the);
 mxExport void fx_Set_prototype_values(txMachine* the);
 mxExport void fx_SetIterator_prototype_next(txMachine* the);
-mxExport void fx_SetIterator_prototype_return(txMachine* the);
 mxExport void fx_WeakMap(txMachine* the);
 mxExport void fx_WeakMap_prototype_delete(txMachine* the);
 mxExport void fx_WeakMap_prototype_get(txMachine* the);
@@ -2248,7 +2245,8 @@ enum {
 	)
 #define mxTemporary(_SLOT) \
 	(mxOverflow(-1), \
-	_SLOT = --the->stack)
+	_SLOT = --the->stack, \
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND))
 
 #define mxPop() \
 	(mxMeterOne(), the->stack++)
