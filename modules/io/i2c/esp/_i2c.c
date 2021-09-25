@@ -176,6 +176,7 @@ void _xs_i2c_read(xsMachine *the)
  		length = xsmcToInteger(xsArg(0));
 		xsmcSetArrayBuffer(xsResult, NULL, length);
 		xsArg(0) = xsResult;
+		buffer = xsmcToArrayBuffer(xsResult);
 	}
 	else {
 		xsResult = xsArg(0);
