@@ -38,6 +38,8 @@ static void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFla
 static void fxReadSlotArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length);
 static void fxReadSlotTable(txMachine* the, txSnapshot* snapshot, txSlot** address, txSize length);
 
+static void fxUnlinkChunks(txMachine* the);
+
 #define mxUnprojectChunk(ADDRESS) (snapshot->firstChunk + ((size_t)ADDRESS));
 static txCallback fxUnprojectCallback(txMachine* the, txSnapshot* snapshot, txCallback callback);
 static txSlot* fxUnprojectSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot);
@@ -56,6 +58,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 
 #define mxAssert(_ASSERTION,...) { if (!(_ASSERTION)) { fxReport(the, __VA_ARGS__); snapshot->error = C_EINVAL; fxJump(the); } }
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
+#define mxChunkFlag 0x80000000
 
 #define mxCallbacksLength 477
 static txCallback gxCallbacks[mxCallbacksLength] = {
@@ -616,20 +619,26 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 void fxMeasureChunk(txMachine* the, txSnapshot* snapshot, void* address, txSize* chunkSize)
 {
 	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
-	chunk->temporary = (txByte*)(*chunkSize + sizeof(txChunk));
-	*chunkSize += chunk->size;
+	if (!(chunk->size & mxChunkFlag)) {
+		chunk->temporary = (txByte*)(*chunkSize + sizeof(txChunk));
+		*chunkSize += chunk->size;
+		chunk->size |= mxChunkFlag;
+	}
 }
 
 void fxMeasureChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize* chunkSize)
 {
 	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
-	txSize size = chunk->size - sizeof(txChunk);
-	chunk->temporary = (txByte*)(*chunkSize + sizeof(txChunk));
-	*chunkSize += chunk->size;
-	while (size > 0) {
-		fxMeasureSlot(the, snapshot, address, chunkSize);
-		address++;
-		size -= sizeof(txSlot);
+	if (!(chunk->size & mxChunkFlag)) {
+		txSize size = chunk->size - sizeof(txChunk);
+		chunk->temporary = (txByte*)(*chunkSize + sizeof(txChunk));
+		*chunkSize += chunk->size;
+		while (size > 0) {
+			fxMeasureSlot(the, snapshot, address, chunkSize);
+			address++;
+			size -= sizeof(txSlot);
+		}
+		chunk->size |= mxChunkFlag;
 	}
 }
 
@@ -1041,6 +1050,22 @@ void fxReadSlotTable(txMachine* the, txSnapshot* snapshot, txSlot** address, txS
 	}
 }
 
+void fxUnlinkChunks(txMachine* the)
+{
+	txBlock* block = the->firstBlock;
+	while (block) {
+		txByte* current = ((txByte*)block) + sizeof(txBlock);
+		txByte* limit = block->current;
+		while (current < limit) {
+			txSize size = ((txChunk*)current)->size;
+			txByte* next = current + size;
+			((txChunk*)current)->temporary = C_NULL;
+			current = next;
+		}	
+		block = block->nextBlock;
+	}
+}
+
 txCallback fxUnprojectCallback(txMachine* the, txSnapshot* snapshot, txCallback callback) 
 {
 	size_t callbackIndex = (size_t)callback;
@@ -1146,44 +1171,53 @@ void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length)
 {
 	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
-	txByte* temporary = chunk->temporary;
-	chunk->temporary = C_NULL;
-	txSize size;
-	mxThrowIf((*snapshot->write)(snapshot->stream, chunk, sizeof(txChunk)));
-	chunk->temporary = temporary;
-	size = chunk->size - sizeof(txChunk);
-	while (size > 0) {
-		fxWriteSlot(the, snapshot, address, 0);
-		address++;
-		size -= sizeof(txSlot);
-	}
-	address = (txSlot*)(((txByte*)(chunk)) + sizeof(txChunk));
-	size = chunk->size - sizeof(txChunk);
-	while (size > 0) {
-		fxWriteChunk(the, snapshot, address);
-		address++;
-		size -= sizeof(txSlot);
+	if (chunk->size & mxChunkFlag) {
+		txByte* temporary = chunk->temporary;
+		chunk->size &= ~mxChunkFlag;
+		chunk->temporary = C_NULL;
+		txSize size;
+		mxThrowIf((*snapshot->write)(snapshot->stream, chunk, sizeof(txChunk)));
+		chunk->temporary = temporary;
+		size = chunk->size - sizeof(txChunk);
+		while (size > 0) {
+			fxWriteSlot(the, snapshot, address, 0);
+			address++;
+			size -= sizeof(txSlot);
+		}
+		address = (txSlot*)(((txByte*)(chunk)) + sizeof(txChunk));
+		size = chunk->size - sizeof(txChunk);
+		while (size > 0) {
+			fxWriteChunk(the, snapshot, address);
+			address++;
+			size -= sizeof(txSlot);
+		}
 	}
 }
 
 void fxWriteChunkData(txMachine* the, txSnapshot* snapshot, void* address)
 {
 	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
-	txByte* temporary = chunk->temporary;
-	chunk->temporary = C_NULL;
-	mxThrowIf((*snapshot->write)(snapshot->stream, chunk, chunk->size));
-	chunk->temporary = temporary;
+	if (chunk->size & mxChunkFlag) {
+		txByte* temporary = chunk->temporary;
+		chunk->size &= ~mxChunkFlag;
+		chunk->temporary = C_NULL;
+		mxThrowIf((*snapshot->write)(snapshot->stream, chunk, chunk->size));
+		chunk->temporary = temporary;
+	}
 }
 
 void fxWriteChunkTable(txMachine* the, txSnapshot* snapshot, txSlot** address, txSize length)
 {
 	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
-	txByte* temporary = chunk->temporary;
-	chunk->temporary = C_NULL;
-	mxThrowIf((*snapshot->write)(snapshot->stream, chunk, sizeof(txChunk)));
-	chunk->temporary = temporary;
-	fxWriteSlotTable(the, snapshot, address, length);
-	fxWriteChunkZero(the, snapshot, chunk->size - sizeof(txChunk) - (length * sizeof(txSlot*)));
+	if (chunk->size & mxChunkFlag) {
+		txByte* temporary = chunk->temporary;
+		chunk->size &= ~mxChunkFlag;
+		chunk->temporary = C_NULL;
+		mxThrowIf((*snapshot->write)(snapshot->stream, chunk, sizeof(txChunk)));
+		chunk->temporary = temporary;
+		fxWriteSlotTable(the, snapshot, address, length);
+		fxWriteChunkZero(the, snapshot, chunk->size - sizeof(txChunk) - (length * sizeof(txSlot*)));
+	}
 }
 
 void fxWriteChunkZero(txMachine* the, txSnapshot* snapshot, txSize size)
@@ -1446,7 +1480,8 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	mxTry(the) {
 		snapshot->error = 0;
 		fxCollectGarbage(the);
-
+		fxUnlinkChunks(the);
+		
 		heap = the->freeHeap;
 		while (heap) {
 			heap->flag |= XS_MARK_FLAG;
