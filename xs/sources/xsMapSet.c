@@ -705,8 +705,10 @@ void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paire
 		slot->kind = XS_UNDEFINED_KIND;
 		slot = slot->next;
 	}
+	c_memset(table->value.table.address, 0, table->value.table.length * sizeof(txSlot*));
 	list->next->value.integer = 0;
 	fxResizeEntries(the, table, list);
+	fxPurgeEntries(the, list);
 }
 
 txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txBoolean paired) 
