@@ -117,6 +117,12 @@ void xs_poco_drawGIF(xsMachine *the)
 	if ((sx >= cb->w) || (sy >= cb->h) || ((sx + sw) > cb->w) || ((sy + sh) > cb->h) || !sw || !sh)
 		return;
 
+	if (flipH)
+		sx = cb->w - (sx + sw);
+
+	if (flipV)
+		sy = cb->h - (sy + sh);
+
 	if (kCommodettoBitmapRGB565LE == cb->format) {
 		pixels += (sy * cb->w) + sx;
 		if (flipV)
