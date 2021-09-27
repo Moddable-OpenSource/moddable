@@ -59,9 +59,6 @@ IDF_VERSION = \
 !INCLUDE $(TMP_DIR)\_idf_version.tmp
 !IF [del $(TMP_DIR)\_idf_version.tmp] == 0
 !ENDIF
-!IF "$(IDF_VERSION)"!="$(EXPECTED_ESP_IDF)"
-!ERROR Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).
-!ENDIF
 !ELSE
 !MESSAGE Could not detect ESP-IDF version.
 !ENDIF
@@ -390,7 +387,7 @@ clean:
 	if exist $(PROJ_DIR) del /s/q/f $(PROJ_DIR)\*.* > NUL
 	if exist $(PROJ_DIR) rmdir /s/q $(PROJ_DIR)
 
-precursor: $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a
+precursor: idfVersionCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a
 	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
 
 debug: precursor
@@ -472,6 +469,9 @@ DEPLOY_END:
 	if exist $(BLD_DIR)\ota_data_initial.bin_prev move /Y $(BLD_DIR)\ota_data_initial.bin_prev $(BLD_DIR)\ota_data_initial.bin
 
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
+
+idfVersionCheck:
+	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	@echo Reconfiguring ESP-IDF...
