@@ -20,7 +20,7 @@
 HOST_OS = win
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v4.3
+EXPECTED_ESP_IDF = v4.3.1
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -471,7 +471,14 @@ DEPLOY_END:
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
+	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
+
+xidfVersionCheck:
+	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION)
+	if %ERRORLEVEL% NEQ 0 (
+		echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"
+		exit 1
+	)
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	@echo Reconfiguring ESP-IDF...
