@@ -633,12 +633,12 @@ void fxMeasureChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, 
 		txSize size = chunk->size - sizeof(txChunk);
 		chunk->temporary = (txByte*)(*chunkSize + sizeof(txChunk));
 		*chunkSize += chunk->size;
+		chunk->size |= mxChunkFlag;
 		while (size > 0) {
 			fxMeasureSlot(the, snapshot, address, chunkSize);
 			address++;
 			size -= sizeof(txSlot);
 		}
-		chunk->size |= mxChunkFlag;
 	}
 }
 
