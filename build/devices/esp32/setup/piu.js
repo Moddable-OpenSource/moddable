@@ -147,25 +147,7 @@ class Screen extends config.Screen {
 		if (config.rotation)
 			value = (value + config.rotation) % 360;
 		super.rotation = value;
-		if (0 === value)
-			delete this.rotate;
-		else if (90 === value)
-			this.rotate = function(point) {
-				const x = point.x;
-				point.x = point.y;
-				point.y = this.height - x;
-			};
-		else if (180 === value)
-			this.rotate = function(point) {
-				point.x = this.width - point.x;
-				point.y = this.height - point.y;
-			};
-		else if (270 === value)
-			this.rotate = function(point) {
-				const x = point.x;
-				point.x = this.width - point.y;
-				point.y = x;
-			};
+		this.rotate = rotate[value];
 	}
 	clear() {
 	}
@@ -193,6 +175,24 @@ class Screen extends config.Screen {
 		return true;		// need screen update
 	}
 }
+
+const rotate = {
+	90: function(point) {
+			const x = point.x;
+			point.x = point.y;
+			point.y = this.height - x;
+		},
+	180: function(point) {
+			point.x = this.width - point.x;
+			point.y = this.height - point.y;
+		},
+	270: function(point) {
+			const x = point.x;
+			point.x = this.width - point.y;
+			point.y = x;
+		},
+};
+Object.freeze(rotate, true);
 
 export default function (done) {
 	globalThis.screen = new Screen({});
