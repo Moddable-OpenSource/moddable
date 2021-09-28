@@ -22,6 +22,7 @@
 #include "mc.xs.h"
 #include "xsHost.h"
 #include "commodettoReadGIF.h"
+#include "mc.defines.h"
 
 // ick
 #include "AnimatedGIF.c"
@@ -322,6 +323,20 @@ void xs_readgif_next(xsMachine *the)
 				t[1] = pGIF->sGlobalColorTableCount;
 				c_memcpy(t + 2, palette, sizeof(uint16_t) * pGIF->sGlobalColorTableCount);
 				xg->pixels = &t[2 + pGIF->sGlobalColorTableCount];
+#if MODDEF_GIF_BOOST
+				uint16_t *c = t + 2;
+				int i;
+				for (i = 0; i < pGIF->sGlobalColorTableCount; i++) {
+					uint16_t pixel = *c;
+					int r = (pixel >> 11) & 0x1F;
+					int g = (pixel >> 5) & 0x3F;
+					int b = (pixel >> 0) & 0x1F;
+					r += MODDEF_GIF_BOOST; if (r > 31) r = 31;
+					g += MODDEF_GIF_BOOST << 1; if (g > 63) g = 63;
+					b += MODDEF_GIF_BOOST; if (b > 31) b = 31;
+					*c++ = (r << 11) | (g << 5) | b;
+				}
+#endif
 			}
 		}
 		else
