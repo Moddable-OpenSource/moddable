@@ -14,7 +14,12 @@
 
 import Touch from "embedded:sensor/touch/FT6x06";
 
-const touch = new Touch({...device.I2C.default, io: device.io.SMBus});
+const touch = new Touch({
+			i2c: {
+				...device.I2C.default,
+				io: device.io.SMBus
+			} });
+
 touch.configure({
 	flip: "hv"
 });

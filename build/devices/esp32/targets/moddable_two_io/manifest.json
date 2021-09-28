@@ -8,7 +8,7 @@
 	],
 	"modules": {
 		"setup/target": "./setup-target",
-		"embedded:sensor/touch/FT6x06": "$(MODDABLE)/examples/io/i2c/ft6206/ft6206"
+		"embedded:sensor/touch/FT6x06": "$(MODULES)/drivers/sensors/ft6206/ft6206"
 	},
 	"preload": [
 		"embedded:sensor/touch/FT6x06",

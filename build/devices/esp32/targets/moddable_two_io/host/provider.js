@@ -153,9 +153,11 @@ const device = {
 		Touch: class {
 			constructor(options) {
 				const result = new Touch({
-					...options,
-					...device.I2C.default,
-					io: device.io.SMBus
+					i2c: {
+						...device.I2C.default,
+						io: device.io.SMBus
+					},
+					...options
 				});
 				result.configure({threshold: 20});
 				return result;
