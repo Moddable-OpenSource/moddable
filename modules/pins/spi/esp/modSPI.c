@@ -75,6 +75,11 @@ static modSPIBufferLoader gSPIBufferLoader;
 void modSPIInit(modSPIConfiguration config)
 {
 	if (NULL == gConfig) {
+		if ((13 != config->mosi_pin) || (12 != config->miso_pin) || (14 != config->clock_pin)) {
+			modLog("invalid SPI");
+			return;
+		}
+
 		WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105); // clear bit 9
 
 		PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, 2); // HSPIQ MISO

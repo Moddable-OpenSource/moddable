@@ -158,6 +158,10 @@ void xs_spi_constructor(xsMachine *the)
 	spi->config.sync = true;
 	spi->config.mode = mode;
 
+	spi->config.clock_pin = clock;
+	spi->config.mosi_pin = mosi; 
+	spi->config.miso_pin = miso;
+
 	modSPIInit(&spi->config);
 	spi->doUninit = true;
 

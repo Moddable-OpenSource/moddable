@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "modSPI.h"
-#include "mc.defines.h"
 
 #include "esp_attr.h"		// IRAM_ATTR
 #include "esp_heap_caps.h"	// MALLOC_CAP_DMA, heap_caps_malloc
@@ -163,9 +162,9 @@ void modSPIInit(modSPIConfiguration config)
             gSPITransactionBuffer[i] = (uint32_t *)(SPI_BUFFER_SIZE + (uint8_t *)gSPITransactionBuffer[i - 1]);
         
 		memset(&buscfg, 0, sizeof(buscfg));
-		buscfg.miso_io_num = MODDEF_SPI_MISO_PIN;
-		buscfg.mosi_io_num = MODDEF_SPI_MOSI_PIN;
-		buscfg.sclk_io_num = MODDEF_SPI_SCK_PIN;
+		buscfg.miso_io_num = config->miso_pin;
+		buscfg.mosi_io_num = config->mosi_pin;
+		buscfg.sclk_io_num = config->clock_pin;
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
         buscfg.max_transfer_sz = MODDEF_SPI_ESP32_TRANSACTIONSIZE;

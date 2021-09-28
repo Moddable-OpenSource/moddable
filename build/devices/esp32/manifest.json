@@ -18,5 +18,12 @@
 		"esp32/*": {
 			"include": "./targets/$(SUBPLATFORM)/manifest.json"
 		}
+	},
+	"defines": {
+		"spi": {
+			"miso_pin": 12,
+			"mosi_pin": 13,
+			"sck_pin": 14
+		}
 	}
 }
