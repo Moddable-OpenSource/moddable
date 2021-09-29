@@ -18,14 +18,13 @@ class FT6206  {
 	#io;
 
 	constructor(options) {
-		const i2c = options.i2c;
+		const {i2c, reset, interrupt, onSample} = options;
 		const io = this.#io = new i2c.io({
 			hz: 100_000,
 			address: 0x38,
 			...i2c
 		});
 
-		const reset = options.reset;
 		if (reset) {
 			io.reset = new reset.io({
 				...reset
@@ -44,6 +43,14 @@ class FT6206  {
 		if ((6 !== id) && (100 !== id))
 			throw new Error("unexpected chip");
 
+		if (interrupt && onSample) {
+			io.interrupt = new interrupt.io({
+				...interrupt,
+				edge: interrupt.io.Falling,
+				onReadable: onSample.bind(this)
+			});
+		}
+
 		this.configure({
 			active: false,
 			threshold: 128,
@@ -52,6 +59,7 @@ class FT6206  {
 	}
 	close() {
 		this.#io?.reset?.close();
+		this.#io?.interrupt?.close();
 		this.#io?.close();
 		this.#io = undefined;
 	}
