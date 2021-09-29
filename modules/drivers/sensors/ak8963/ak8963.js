@@ -70,15 +70,23 @@ class AK8963 {
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000,
+			hz: 400_000,
 			address: 0x0C,
 			...options.sensor
 		});
 
 		this.#dataView = new DataView(this.#values);
 
-		if (0x48 !== io.readByte(0))
-			throw new Error("unexpected sensor");
+		try {
+			if (0x48 !== io.readByte(0)) {
+				this.close();
+				return undefined;
+			}
+		}
+		catch(e) {
+			this.close();
+			throw e;
+		}
 
 		// reset
 		io.writeByte(REGISTERS.MAG_CNTL2, 0b0000_0001);
@@ -96,6 +104,10 @@ class AK8963 {
 		io.writeByte(REGISTERS.MAG_CNTL2, 0b0000_0000);
 	}
 
+	close() {
+		this.#io?.close();
+		this.#io = undefined;
+	}
 	configure(options) {
 		const io = this.#io;
 
@@ -129,4 +141,4 @@ class AK8963 {
 }
 Object.freeze(AK8963.prototype);
 
-export {AK8963 as default, AK8963, Config};
+export default AK8963;

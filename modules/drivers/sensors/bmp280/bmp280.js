@@ -77,14 +77,17 @@ class BMP280 extends aHostObject {
 	#byteBuffer;
 	#wordBuffer;
 	#valueBuffer;
+	#onError;
 
 	constructor(options) {
 		super(options);
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000,
+			hz: 400_000,
 			address: 0x76,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		const bBuf = this.#byteBuffer = new Uint8Array(1);
 		const wBuf = this.#wordBuffer = new Uint8Array(2);
@@ -92,8 +95,12 @@ class BMP280 extends aHostObject {
 
 		bBuf[0] = Register.BMP280_CHIPID;
 		io.write(bBuf);
-		if (0x58 !== io.read(bBuf)[0])
-			throw new Error("unexpected sensor");
+		if (0x58 !== io.read(bBuf)[0]) {
+			this.#onError?.("unexpected sensor");
+			io.close();
+			this.#io = undefined;
+			return;
+		}
 
 		wBuf[0] = Register.BMP280_SOFTRESET;
 		wBuf[1] = Config.Mode.SOFT_RESET;
@@ -147,7 +154,8 @@ class BMP280 extends aHostObject {
 		io.read(vBuf);
 		const rawP = (vBuf[0] << 16) | (vBuf[1] << 8) | vBuf[2];
 		const rawT = (vBuf[3] << 16) | (vBuf[4] << 8) | vBuf[5];
-		return this.#calculate(rawT, rawP);
+		const val = this.#calculate(rawT, rawP);
+		return { barometer: { pressure: val.pressure }, thermometer: { temperature: val.temperature } };
 	}
 	#close() @ "xs_bmp280_close";
 	close() {

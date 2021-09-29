@@ -43,6 +43,7 @@ class HTU21D  {
 	#byteBuffer = new Uint8Array(1);
 	#valueBuffer = new Uint8Array(3);
 	#crc;
+	#onError;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
@@ -50,6 +51,8 @@ class HTU21D  {
 			address: 0x40,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		this.#byteBuffer[0] = Register.SOFT_RESET;
 		io.write(this.#byteBuffer);
@@ -66,10 +69,10 @@ class HTU21D  {
 		let ret = {};
 
 		let humid = this.#readValue(Register.HUMID_MEASURE_HOLD);
-		ret.humidity = (humid * 125.0 / 65536.0) - 6.0;
+		ret.hygrometer.humidity = (humid * 125.0 / 65536.0) - 6.0;
 
 		let temp = this.#readValue(Register.TEMP_MEASURE_HOLD);
-		ret.temperature = (temp * 175.72 / 65536.0) - 46.85;
+		ret.thermometer.temperature = (temp * 175.72 / 65536.0) - 46.85;
 
 		return ret;
 	}
@@ -87,10 +90,8 @@ class HTU21D  {
 
 		this.#crc.reset();
 		let chk = this.#crc.checksum(vBuf.subarray(0,2));
-		if (chk !== vBuf[2]) {
-			trace(`checksum failed: ${chk} vs ${vBuf[2]} on ${vBuf[0]}, ${vBuf[1]}\n`);
-			return -1;
-		}
+		if (chk !== vBuf[2])
+			this.#onError?.("bad checksum");
 
 		return ((vBuf[0] << 8) + vBuf[1]) & 0xfffc;
 	}

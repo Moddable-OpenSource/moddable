@@ -12,9 +12,8 @@
  *
  */
 
-import device from "embedded:provider/builtin";
 import Sensor from "embedded:sensor/AirQuality/CCS811";
-import Humidity from "embedded:sensor/Humidity-Temperature/HTU21D";
+import Humidity from "embedded:sensor/Humidity-Temperature/SI7020";
 import Timer from "timer";
 
 const sensor = new Sensor({
@@ -32,10 +31,10 @@ function CtoF(c) { return (c*1.8)+32; }
 
 Timer.repeat(() => {
 	const h = humidity.sample();
-	trace(`humidity: ${h.humidity.toFixed(2)} %RH, temperature: ${CtoF(h.temperature).toFixed(2)} F\n`);
+	trace(`humidity: ${h.hygrometer.humidity?.toFixed(2)} %RH, temperature: ${CtoF(h.thermometer.temperature)?.toFixed(2)} F\n`);
 	sensor.configure({
-		humidity: h.humidity,
-		temperature: h.temperature
+		humidity: h.hygrometer.humidity,
+		temperature: h.thermometer.temperature
 	});
 
 	const sample = sensor.sample();

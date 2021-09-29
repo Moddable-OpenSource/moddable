@@ -22,6 +22,8 @@ import ILI9341 from "ili9341";
 import device from "embedded:provider/builtin";
 import Accelerometer from "embedded:sensor/Accelerometer/LIS3DH";
 
+debugger;
+
 let pixelsOut = new ILI9341({});
 const width = pixelsOut.width;
 const height = pixelsOut.height;

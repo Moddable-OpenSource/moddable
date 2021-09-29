@@ -41,15 +41,18 @@ class TMP102  {
 	#extendedRange = false;
 	#shift = 4;
 	#onAlert;
+	#onError;
 	#monitor;
 	#status = "ready";
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000,
+			hz: 400_000,
 			address: 0x48,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		const {alert, onAlert} = options;
 		if (alert && onAlert) {
@@ -109,7 +112,7 @@ class TMP102  {
 			if (options.thermostatMode === "interrupt")
 				config |= 0b10_0000_0000;
 			else if (options.thermostatMode !== "comparator")
-				throw new Error("bad thermostatMode");
+				this.#onError?.("bad thermostatMode");
 		}
 
 		if (undefined !== options.conversionRate) {
@@ -119,7 +122,7 @@ class TMP102  {
 				case 1:		config |= 0b0100_0000;	break;
 				case 4:		config |= 0b1000_0000;	break;
 				case 8:		config |= 0b1100_0000;	break;
-				default: throw new Error("invalid conversionRate");
+				default: this.#onError?.("invalid conversionRate");
 			}
 		}
 
@@ -135,7 +138,7 @@ class TMP102  {
 				case 2: config |= 0b0000_1000_0000_0000; break;
 				case 4: config |= 0b0001_0000_0000_0000; break;
 				case 6: config |= 0b0001_1000_0000_0000; break;
-				default: throw new Error("invalid faultQueue");
+				default: this.#onError?.("invalid faultQueue");
 			}
 		}
 

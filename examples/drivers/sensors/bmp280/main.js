@@ -12,18 +12,17 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { BMP280, Config } from "embedded:sensor/AtmosphericPressure-Temperature/BMP280";
+import BMP280 from "embedded:sensor/AtmosphericPressure-Temperature/BMP280";
 import Timer from "timer";
 
 const sensor = new BMP280({ sensor: device.I2C.default });
 
 sensor.configure({
-	mode: Config.Mode.NORMAL,
-	temperatureSampling: Config.Sampling.X2,
-	pressureSampling: Config.Sampling.X16,
-	filter: Config.Filter.X16,
-	standbyDuration: Config.Standby.MS_500
+	mode: 3,					// NORMAL
+	temperatureSampling: 2,		// X2
+	pressureSampling: 5,		// X16
+	filter: 4,					// X16
+	standbyDuration: 4			// MS_500
 });
 		
 function CtoF(c) { return (c*1.8)+32; }
@@ -32,8 +31,7 @@ function PatoInHg(Pa) { return Pa * 0.0002953; }
 Timer.repeat(() => {
 	const sample = sensor.sample();
 
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C -- ${CtoF(sample.temperature).toFixed(2)} F\n`);
-	trace(`Pressure: ${sample.pressure.toFixed(2)} Pa -- ${PatoInHg(sample.pressure).toFixed(3)} inHg\n`);
-
+    trace(`Temperature: ${sample.thermometer.temperature?.toFixed(2)} C -- ${CtoF(sample.thermometer.temperature)?.toFixed(2)} F\n`);
+    trace(`Pressure: ${sample.barometer.pressure?.toFixed(2)} Pa -- ${PatoInHg(sample.barometer.pressure)?.toFixed(3)} inHg\n`);
 }, 2000);
 

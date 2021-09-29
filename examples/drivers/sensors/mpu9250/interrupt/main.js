@@ -12,9 +12,8 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { MPU9250, Config } from "embedded:sensor/Accelerometer-Gyroscope/MPU9250";
-import { AK8963, Config as MagConfig } from "embedded:sensor/Magnetometer/AK8963";
+import MPU9250 from "embedded:sensor/Accelerometer-Gyroscope/MPU9250";
+import AK8963 from "embedded:sensor/Magnetometer/AK8963";
 import Timer from "timer";
 import config from "mc/config";
 const Digital = device.io.Digital;
@@ -32,19 +31,19 @@ const sensor = new MPU9250({
 	},
 	onAlert() {
 		let sample = sensor.sample();
-		trace(`IRQ Accel: [${sample.x.toFixed(2)}, ${sample.y.toFixed(2)}, ${sample.z.toFixed(2)}] - `);
-		trace(`Gyro: [${sample.gyroX.toFixed(2)}, ${sample.gyroY.toFixed(2)}, ${sample.gyroZ.toFixed(2)}]\n`);
+		trace(`IRQ Accel: [${sample.accelerometer.x?.toFixed(2)}, ${sample.accelerometer.y?.toFixed(2)}, ${sample.accelerometer.z?.toFixed(2)}] - `);
+		trace(`Gyro: [${sample.gyroscope.x?.toFixed(2)}, ${sample.gyroscope.y?.toFixed(2)}, ${sample.gyroscope.z?.toFixed(2)}]\n`);
 		if (magSensor) {
 			const mag = magSensor.sample();
 			if (mag.x)
-				trace(`Mag: [${mag.x.toFixed(2)}, ${mag.y.toFixed(2)}, ${mag.z.toFixed(2)}]\n`);
+				trace(`Mag: [${mag.x.toFixed(7)}, ${mag.y.toFixed(7)}, ${mag.z.toFixed(7)}]\n`);
 		}
 	}
 });
 
 sensor.configure({
-	range: Config.Accel_Range.RANGE_4_G,
-	gyroRange: Config.Gyro_Range.RANGE_1000,
+	range: 1,			// RANGE_4_G
+	gyroRange: 2,		// RANGE_1000
 	lowPassFilter: 6,
 	sampleRateDivider: 250
 });
@@ -57,7 +56,7 @@ magSensor = new AK8963({
 });
 
 magSensor.configure({
-	range: MagConfig.Range.Range_14bit,
-	mode: MagConfig.Mode.MODE_CONT_1
+	range: 0,		// 14 bit
+	mode: 2			// MODE_CONT_1
 });
 

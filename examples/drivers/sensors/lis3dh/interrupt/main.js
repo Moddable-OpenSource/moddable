@@ -12,8 +12,7 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { LIS3DH, Config } from "embedded:sensor/Accelerometer/LIS3DH";
+import LIS3DH from "embedded:sensor/Accelerometer/LIS3DH";
 import Timer from "timer";
 import config from "mc/config";
 const Digital = device.io.Digital;
@@ -36,14 +35,14 @@ const sensor = new LIS3DH({
 
 
 sensor.configure({
-	rate: Config.DataRate.DATARATE_10_HZ,
-	range: Config.Range.RANGE_2_G,
-	enable: Config.Features.ENABLE_X | Config.Features.ENABLE_Y | Config.Features.ENABLE_Z,
+	rate: 2,		// 20 Hz
+	range: 0,		// 2 g
+	enable: 0b111,	// ENABLE_X ENABLE_Y ENABLE_Z,
 	lowPower: false,
 	alert: {
-		mode: Config.Alert.MOVEMENT,
+		mode: 1,
 		threshold:	0x05,
-		duration:	0x02,
+		duration:	0x02
 	}
 });
 

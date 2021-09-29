@@ -41,13 +41,16 @@ class SI7020  {
 	#byteBuffer = new Uint8Array(1);
 	#valueBuffer = new Uint8Array(3);
 	#crc;
+	#onError;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000,
+			hz: 400_000,
 			address: 0x40,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		const bBuf = this.#byteBuffer;
 		bBuf[0] = Register.SOFT_RESET;
@@ -62,13 +65,13 @@ class SI7020  {
 		this.#io = undefined;
 	}
 	sample() {
-		let ret = {};
+		let ret = { hygrometer: {}, thermometer: {} };
 
 		let humid = this.#readValue(Register.HUMID_MEASURE_HOLD);
-		ret.humidity = (humid * 125.0 / 65536.0) - 6.0;
+		ret.hygrometer.humidity = (humid * 125.0 / 65536.0) - 6.0;
 
 		let temp = this.#readValue(Register.TEMP_MEASURE_HOLD);
-		ret.temperature = (temp * 175.72 / 65536.0) - 46.85;
+		ret.thermometer.temperature = (temp * 175.72 / 65536.0) - 46.85;
 
 		return ret;
 	}
@@ -86,7 +89,7 @@ class SI7020  {
 
 		let chk = this.#crc.reset().checksum(vBuf.subarray(0, 2));
 		if (chk !== vBuf[2])
-			throw new Error("bad checksum");
+			this.#onError?.("bad checksum");
 
 		return ((vBuf[0] << 8) + vBuf[1]) & 0xfffc;
 	}

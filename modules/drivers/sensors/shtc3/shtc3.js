@@ -50,6 +50,7 @@ class SHTC3  {
 	#valueBuffer;
 	#lowPower = 0;
 	#autoSleep = 1;
+	#onError;
 	#crc;
 
 	constructor(options) {
@@ -58,6 +59,8 @@ class SHTC3  {
 			address: 0x70,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		const wBuf = this.#wordBuffer = new Uint8Array(2);
 		const sBuf = new Uint8Array(3);
@@ -70,8 +73,11 @@ class SHTC3  {
 
 		if ((sBuf[2] !== this.#crc.reset().checksum(sBuf.subarray(0,2)))
 			|| ((sBuf[0] & 0b00001000) != 0b00001000)
-			|| ((sBuf[1] & 0b0111) != 0b0111))
-			throw new Error("unexpected sensor");
+			|| ((sBuf[1] & 0b0111) != 0b0111)) {
+			this.#onError?.("unexpected sensor");
+			this.#io.close();
+			return;
+		}
 
 		this.#valueBuffer = new Uint8Array(6);
 		if (this.#autoSleep)
@@ -99,7 +105,7 @@ class SHTC3  {
 		const io = this.#io;
 		const lowPower = this.#lowPower;
 		const vBuf = this.#valueBuffer;
-		let ret = {};
+		let ret = { thermometer: {}, hygrometer: {} };
 
 		if (this.#autoSleep) {
 			this.#writeCommand(Register.CMD_WAKE);
@@ -116,10 +122,11 @@ class SHTC3  {
 
 		if ((vBuf[2] !== this.#crc.reset().checksum(vBuf.subarray(0,2)))
 			|| (vBuf[5] !== this.#crc.reset().checksum(vBuf.subarray(3,5))))
-            throw new Error("bad checksum");
-
-		ret.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
-		ret.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
+			this.#onError?.("bad checksum");
+		else {
+			ret.thermometer.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
+			ret.hygrometer.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
+		}
 		return ret;
 	}
 	#writeCommand(command) {
