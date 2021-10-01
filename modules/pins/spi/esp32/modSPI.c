@@ -162,9 +162,9 @@ void modSPIInit(modSPIConfiguration config)
             gSPITransactionBuffer[i] = (uint32_t *)(SPI_BUFFER_SIZE + (uint8_t *)gSPITransactionBuffer[i - 1]);
         
 		memset(&buscfg, 0, sizeof(buscfg));
-		buscfg.miso_io_num = config->miso_pin;
-		buscfg.mosi_io_num = config->mosi_pin;
-		buscfg.sclk_io_num = config->clock_pin;
+		buscfg.miso_io_num = (255 != config->miso_pin) ? config->miso_pin : MODDEF_SPI_MISO_PIN;
+		buscfg.mosi_io_num = (255 != config->mosi_pin) ? config->mosi_pin : MODDEF_SPI_MOSI_PIN;
+		buscfg.sclk_io_num = (255 != config->clock_pin) ? config->clock_pin : MODDEF_SPI_SCK_PIN;
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
         buscfg.max_transfer_sz = MODDEF_SPI_ESP32_TRANSACTIONSIZE;

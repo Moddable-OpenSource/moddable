@@ -27,8 +27,6 @@
 
 #include "stdint.h"
 
-#include "mc.defines.h"
-
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;
 typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 
@@ -58,9 +56,9 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.spiPort = SPI_PORT; \
 	config.sync = 1; \
 	config.mode = 0; \
-	config.clock_pin = MODDEF_SPI_SCK_PIN; \
-	config.mosi_pin = MODDEF_SPI_MOSI_PIN; \
-	config.miso_pin = MODDEF_SPI_MISO_PIN;
+	config.clock_pin = 255; \
+	config.mosi_pin = 255; \
+	config.miso_pin = 255;
 
 extern void modSPIInit(modSPIConfiguration config);
 extern void modSPIUninit(modSPIConfiguration config);
