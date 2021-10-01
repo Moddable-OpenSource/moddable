@@ -4,7 +4,7 @@
 		"crc": "$(MODDABLE)/modules/data/crc/crc"
 	},
 	"preload": [
-		"embedded:sensor/Humidity-Temperature/SHT3x"
+		"embedded:sensor/Humidity-Temperature/SHT3x",
+		"crc"
 	]
 }
-
