@@ -25,6 +25,8 @@
 #include <errno.h>
 #include "modSPI.h"
 
+#include "mc.defines.h"
+
 #include "esp_attr.h"		// IRAM_ATTR
 #include "esp_heap_caps.h"	// MALLOC_CAP_DMA, heap_caps_malloc
 
@@ -147,6 +149,17 @@ static void IRAM_ATTR postTransfer(spi_transaction_t *transIn)
 		portYIELD_FROM_ISR();
 }
 
+char foo[128];
+void modLog_init(char *str, int miso, int mosi, int sclk) {
+	sprintf(foo, "%s - miso:%d mosi:%d sck:%d\n", str, miso, mosi, sclk);
+	modLog_transmit(foo);
+}
+void modLog_error(char *str, int ret) {
+	sprintf(foo, str, ret);
+	modLog_transmit(foo);
+}
+
+
 static uint8_t gSPIInited;
 
 void modSPIInit(modSPIConfiguration config)
@@ -160,7 +173,8 @@ void modSPIInit(modSPIConfiguration config)
         gSPITransactionBuffer[0] = heap_caps_malloc(SPI_BUFFER_SIZE * kTransactions, MALLOC_CAP_DMA);      // use DMA capable memory for SPI driver
         for (i = 1; i < kTransactions; i++)
             gSPITransactionBuffer[i] = (uint32_t *)(SPI_BUFFER_SIZE + (uint8_t *)gSPITransactionBuffer[i - 1]);
-        
+
+modLog_init("before set - ", config->miso_pin, config->mosi_pin, config->clock_pin);
 		memset(&buscfg, 0, sizeof(buscfg));
 		buscfg.miso_io_num = (255 != config->miso_pin) ? config->miso_pin : MODDEF_SPI_MISO_PIN;
 		buscfg.mosi_io_num = (255 != config->mosi_pin) ? config->mosi_pin : MODDEF_SPI_MOSI_PIN;
@@ -168,6 +182,8 @@ void modSPIInit(modSPIConfiguration config)
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
         buscfg.max_transfer_sz = MODDEF_SPI_ESP32_TRANSACTIONSIZE;
+
+modLog_init("after set - ", buscfg.miso_io_num, buscfg.mosi_io_num, buscfg.sclk_io_num);
 
 	#if kCPUESP32S3
 		ret = spi_bus_initialize(config->spiPort, &buscfg, SPI_DMA_CH_AUTO);
@@ -177,6 +193,7 @@ void modSPIInit(modSPIConfiguration config)
 		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
 	#endif
 		if (ret) {
+modLog_error("spi_bus_initialize %d\n", ret);
             free(gSPITransactionBuffer[0]);
             gSPITransactionBuffer[0] = NULL;
 			return;
