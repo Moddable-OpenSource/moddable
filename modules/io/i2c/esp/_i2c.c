@@ -92,7 +92,7 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_hz);
 	hz = xsmcToInteger(xsVar(0));
-	if ((hz < 0) || (hz > 20000000))
+	if ((hz <= 0) || (hz > 20000000))
 		xsRangeError("invalid hz");
 
 	builtinInitializeTarget(the);
