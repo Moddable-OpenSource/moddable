@@ -20,11 +20,8 @@
 
 import Timer from "timer";
 
-//@@ more buffers
-
 class GT911 {
 	#io;
-	#byteBuffer = new Uint8Array(1);
 
 	constructor(options) {
 		const {i2c, interrupt, onSample, config} = options;
@@ -104,18 +101,15 @@ class GT911 {
 	}
 	sample() {
 		const io = this.#io;
-		const buf = this.#byteBuffer;
-		io.write(Uint8Array.of(0x81, 0x4E)); 		// GOODIX_READ_COOR_ADDR
-		io.read(buf);
 
-		const touchCount = buf[0] & 0b0000_1111;
-		if (0 == touchCount) {
+		io.write(Uint8Array.of(0x81, 0x4E)); 		// GOODIX_READ_COOR_ADDR
+		const touchCount = io.read(new Uint8Array(1))[0] & 0b0000_1111;
+		if (!touchCount) {
 			io.write(Uint8Array.of(0x81, 0x4E, 0));	// ready for next reading
 			return;
 		}
 
-		const data = new Uint8Array(touchCount * 8);
-		io.read(data);
+		const data = io.read(new Uint8Array(touchCount * 8));
 
 		const result = new Array(touchCount);
 		for (let i = 0; i < touchCount; i++) {
