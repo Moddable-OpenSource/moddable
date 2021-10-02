@@ -1,0 +1,7 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/peripherals/ds1307/manifest.json",
+	"strip": [ ],
+	"modules": {
+		"*": "./main"
+	}
+}
