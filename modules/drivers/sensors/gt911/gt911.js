@@ -59,7 +59,7 @@ class GT911 {
 				if ((address + use) > end)
 					use = end - address;
 				io.write(Uint8Array.of(address >> 8, address & 0xff));
-				const data = new Uint8Array(super.read(use));
+				const data = new Uint8Array(io.read(use));
 				for (let i = 0, offset = address - start; i < use; i++, offset++) {
 					if (data[i] !== config[offset])
 						update = true;
