@@ -56,7 +56,8 @@ class PCF8563 {
 	configure(options) {
 	}
 	get enabled() {
-		return this.#io.readByte(Register.CTRL1)? false : true;
+		const invalid = this.#io.readByte(Register.TIME) & Register.VALID_BIT;
+		return (invalid || this.#io.readByte(Register.CTRL1)) ? false : true;
 	}
 	get time() {
 		const io = this.#io;
@@ -64,10 +65,8 @@ class PCF8563 {
 
 		io.readBlock(Register.TIME, reg);
 
-		if (reg[0] & Register.VALID_BIT) {
-			// if high bit of seconds is set, then time is uncertain
+		if (reg[0] & Register.VALID_BIT) // if high bit of seconds is set, then time is uncertain
 			return undefined;
-		}
 
 		// yr, mo, day, hr, min, sec
 		return Date.UTC(
@@ -78,7 +77,6 @@ class PCF8563 {
 			bcdToDec(reg[1]),
 			bcdToDec(reg[0] & 0x7f) );
 	}
-
 	set time(v) {
 		let io = this.#io;
 		let b = this.#blockBuffer;
