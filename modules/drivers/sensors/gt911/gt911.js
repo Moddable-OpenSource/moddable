@@ -103,13 +103,23 @@ class GT911 {
 		const io = this.#io;
 
 		io.write(Uint8Array.of(0x81, 0x4E)); 		// GOODIX_READ_COOR_ADDR
-		const touchCount = io.read(new Uint8Array(1))[0] & 0b0000_1111;
+		const status = io.read(new Uint8Array(1))[0];
+		let touchCount, data
+		if (0x80 & status) {		// ready
+			touchCount = status & 0b0000_1111;
+			if (touchCount)
+				this.#io.last = data = io.read(new Uint8Array(touchCount << 3));
+		}
+		else {						// not read, use previous
+			data = this.#io.last;
+			if (data)
+				touchCount = data.length >> 3;
+		}
 		if (!touchCount) {
+			delete this.#io.last;
 			io.write(Uint8Array.of(0x81, 0x4E, 0));	// ready for next reading
 			return;
 		}
-
-		const data = io.read(new Uint8Array(touchCount * 8));
 
 		const result = new Array(touchCount);
 		for (let i = 0; i < touchCount; i++) {
