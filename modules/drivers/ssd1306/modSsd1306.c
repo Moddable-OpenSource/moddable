@@ -131,9 +131,10 @@ struct ssd1606Record {
 #if MODDEF_SSD1306_SPI
 	modGPIOConfigurationRecord	cs;
 	modGPIOConfigurationRecord	dc;
+#endif
+
 #ifdef MODDEF_SSD1306_RST_PIN
 	modGPIOConfigurationRecord	rst;
-#endif
 #endif
 
 	uint8_t				pixel;										// mask for white pixel on current row
@@ -228,25 +229,25 @@ void xs_SSD1306(xsMachine *the)
 
 	ssd->width = (uint8_t)width;
 	ssd->height = (uint8_t)height;
-
-#if MODDEF_SSD1306_SPI
-	SCREEN_CS_INIT;
-	SCREEN_DC_INIT;
+	
 #ifdef MODDEF_SSD1306_RST_PIN
 	SCREEN_RST_INIT;
-#endif
-
-	ssd->config.spi.hz = MODDEF_SSD1306_HZ;
-	ssd->config.spi.doChipSelect = ssd1306ChipSelect;
-	modSPIInit(&ssd->config.spi);
-
-#ifdef MODDEF_SSD1306_RST_PIN
+	// modDelayMilliseconds(10);
 	SCREEN_RST_DEACTIVE;
 	modDelayMilliseconds(1);
 	SCREEN_RST_ACTIVE;
 	modDelayMilliseconds(10);
 	SCREEN_RST_DEACTIVE;
 #endif
+
+#if MODDEF_SSD1306_SPI
+	SCREEN_CS_INIT;
+	SCREEN_DC_INIT;
+
+	ssd->config.spi.hz = MODDEF_SSD1306_HZ;
+	ssd->config.spi.doChipSelect = ssd1306ChipSelect;
+	modSPIInit(&ssd->config.spi);
+
 #elif MODDEF_SSD1306_I2C
 	#ifdef MODDEF_SSD1306_SDA_PIN
 		ssd->config.i2c.sda = MODDEF_SSD1306_SDA_PIN;
