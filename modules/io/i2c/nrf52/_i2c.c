@@ -292,19 +292,15 @@ void _xs_i2c_read(xsMachine *the)
  		length = xsmcToInteger(xsArg(0));
 		xsmcSetArrayBuffer(xsResult, NULL, length);
 		xsArg(0) = xsResult;
+		buffer = xsmcToArrayBuffer(xsResult);
 	}
 	else {
 		xsResult = xsArg(0);
-////@@ assumes view is full buffer
-		if (xsmcIsInstanceOf(xsResult, xsTypedArrayPrototype))
-			xsmcGet(xsArg(0), xsResult, xsID_buffer);
-		length = xsmcGetArrayBufferLength(xsArg(0));
+		xsmcGetBuffer(xsResult, &buffer, &length);
 	}
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
-
-	buffer = xsmcToArrayBuffer(xsArg(0));
 
 	while (NRF_ERROR_BUSY == (err = nrf_drv_twi_rx(&gTwi, i2c->address, buffer, length)))
 		taskYIELD();
@@ -330,14 +326,10 @@ void _xs_i2c_write(xsMachine *the)
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-		xsmcGet(xsArg(0), xsArg(0), xsID_buffer);		//@@ assumes view is full buffer
-	length = xsmcGetArrayBufferLength(xsArg(0));
+	xsmcGetBuffer(xsArg(0), &buffer, &length);
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
-
-	buffer = xsmcToArrayBuffer(xsArg(0));
 
 	while (NRF_ERROR_BUSY == (err = nrf_drv_twi_tx(&gTwi, i2c->address, buffer, length, stop ? 0 : 1)))
 		taskYIELD();
