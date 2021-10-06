@@ -88,7 +88,7 @@ void xs_dither_destructor(void *data)
 
 void xs_dither_close(xsMachine *the)
 {
-	Dither dither = xsmcGetHostData(xsThis);
+	Dither dither = xsmcGetHostChunk(xsThis);
 	xsmcSetHostData(xsThis, NULL);
 	xs_dither_destructor(dither);
 }
