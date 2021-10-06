@@ -19,7 +19,6 @@ import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import ILI9341 from "ili9341";
-import device from "embedded:provider/builtin";
 import Accelerometer from "embedded:sensor/Accelerometer-Gyroscope/MPU9250";
 
 let pixelsOut = new ILI9341({});
@@ -58,19 +57,19 @@ Timer.repeat(() => {
 	let values = sensor.sample();
 
 	if (180 === parseInt(config.orientation)) {
-		values.x = -values.x;
+		values.accelerometer.x = -values.accelerometer.x;
 	}
 
 	render.begin(0, 0, width, ball.yMin);
 		render.fillRectangle(backgroundColor, 0, 0, width, height);
 
-		drawBar("X", values.x, 0, 0, width, font.height);
-		drawBar("Y", values.y, 0, font.height, width, font.height);
-		drawBar("Z", values.z, 0, font.height * 2, width, font.height);
+		drawBar("X", values.accelerometer.x, 0, 0, width, font.height);
+		drawBar("Y", values.accelerometer.y, 0, font.height, width, font.height);
+		drawBar("Z", values.accelerometer.z, 0, font.height * 2, width, font.height);
 	render.end();
 
-	ball.vx = (ball.vx + values.y) * 0.98;
-	ball.vy = (ball.vy + values.x) * 0.98;
+	ball.vx = (ball.vx + values.accelerometer.y) * 0.98;
+	ball.vy = (ball.vy + values.accelerometer.x) * 0.98;
 	let x = ball.x + ball.vx;
 	let y = ball.y + ball.vy;
 	if (x < 0) {

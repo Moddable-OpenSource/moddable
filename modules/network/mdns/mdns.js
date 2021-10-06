@@ -217,7 +217,7 @@ class MDNS extends Socket {
 					name = name.join(".");
 					this.monitors.forEach(monitor => {
 						monitor.forEach(instance => {
-							if (instance.target.toLowerCase() === name.toLowerCase())
+							if (instance.target?.toLowerCase() === name.toLowerCase())
 								instance.address = record.rdata;
 						});
 					});

@@ -25,6 +25,17 @@ USE_USB ?= 0
 FTDI_TRACE ?= -DUSE_FTDI_TRACE=0
 
 NRF_ROOT ?= $(HOME)/nrf5
+NRFJPROG_ARGS ?= -f nrf52 --qspiini $(QSPI_INI_PATH)
+
+UPLOAD_SPEED ?= 921600
+DEBUGGER_SPEED ?= 921600
+DEBUGGER_PORT ?= $(UPLOAD_PORT)
+
+# for memory calculation
+SOFTDEVICE_ADDR = 0x27000
+SOFTDEVICE_RAM = 0x4200
+MOD_PREFS_SIZE = 0x2000
+BOOTLOADER_SIZE = 0xC000
 
 ifeq ($(USE_QSPI),1)
 	NRFJPROG_ARGS ?= -f nrf52 --qspiini $(QSPI_INI_PATH)
@@ -155,15 +166,18 @@ ASMFLAGS += -DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION
 ASMFLAGS += -D__HEAP_SIZE=$(HEAP_SIZE)
 
 # Linker flags
-LDFLAGS += -mthumb -mabi=aapcs -L$(NRF52_SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
-LDFLAGS += -mcpu=cortex-m4
-LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-# LDFLAGS += $(FP_OPTS)
-# let linker dump unused sections
-LDFLAGS += -Wl,--gc-sections
-# use newlib in nano version
-LDFLAGS += --specs=nano.specs
-LDFLAGS += -Xlinker -no-enum-size-warning -Xlinker -Map=$(BIN_DIR)/xs_lib.map
+LDFLAGS += \
+	-mabi=aapcs \
+	-mcpu=cortex-m4 \
+	-mfloat-abi=hard \
+	-mfpu=fpv4-sp-d16 \
+	-mthumb \
+	--specs=nano.specs \
+	-L$(NRF52_SDK_ROOT)/modules/nrfx/mdk \
+	-T$(LINKER_SCRIPT) \
+	-Wl,--gc-sections \
+	-Xlinker -no-enum-size-warning \
+	-Xlinker -Map=$(BIN_DIR)/xs_lib.map
 
 LIB_FILES += \
 	-lc -lnosys -lm \
@@ -597,13 +611,28 @@ C_FLAGS=\
 	-c	\
 	-std=gnu99 \
 	--sysroot=$(NRF52_GCC_ROOT)/arm-none-eabi \
-	-ffunction-sections -fdata-sections -fno-strict-aliasing \
-	-fno-common \
-	-fomit-frame-pointer \
-	-fno-dwarf2-cfi-asm \
+	-fdata-sections \
+	-ffunction-sections \
+	-fmessage-length=0 \
 	-fno-builtin \
+	-fno-common \
+	-fno-diagnostics-show-caret \
+	-fno-dwarf2-cfi-asm \
+	-fno-strict-aliasing \
+	-fomit-frame-pointer \
+	-fshort-enums \
 	-gdwarf-3 \
-	-gpubnames
+	-gpubnames \
+	-mcpu=$(HWCPU) \
+	-mfloat-abi=hard \
+	-mlittle-endian \
+	-mfpu=fpv4-sp-d16 \
+	-mthumb	\
+	-mthumb-interwork	\
+	-mtp=soft \
+	-munaligned-access \
+	-nostdinc
+
 
 ifeq ($(DEBUG),1)
 	C_DEFINES += \
@@ -635,29 +664,17 @@ C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_DIR),-I$(call qs,$(dir)))
 
 
-C_FLAGS +=  \
-	-fmessage-length=0 \
-	-fno-diagnostics-show-caret \
-	-mcpu=$(HWCPU) \
-	-mlittle-endian \
-	-mfloat-abi=hard \
-	-mfpu=fpv4-sp-d16 \
-	-mthumb	\
-	-mthumb-interwork	\
-	-mtp=soft \
-	-munaligned-access \
-	-nostdinc
-
 # Nordic example apps are built with -fshort-enums
-C_FLAGS := -fshort-enums $(C_FLAGS)
 C_DEFINES := -fshort-enums $(C_DEFINES)
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
 ifeq ($(USE_QSPI),1)
 	LINKER_SCRIPT := $(PLATFORM_DIR)/config/qspi_xsproj.ld
+	QSPI_COUNT = $$q
 else
 	LINKER_SCRIPT := $(PLATFORM_DIR)/config/xsproj.ld
+	QSPI_COUNT = $$f
 endif
 
 # Utility functions
@@ -669,11 +686,18 @@ BUILD_DATE = $(call time_string,"%Y-%m-%d")
 BUILD_TIME = $(call time_string,"%H:%M:%S")
 MEM_USAGE = \
   'while (<>) { \
-      $$r += $$1 if /^\.(?:data|rodata|bss)\s+(\d+)/;\
-		  $$f += $$1 if /^\.(?:irom0\.text|text|data|rodata)\s+(\d+)/;\
+      $$h += $$1 if /^\.(?:heap)\s+(\d+)/;\
+	  $$r += $$1 if /^\.(?:no_init|data|fs_data|bss|stack_dummy)\s+(\d+)/;\
+	  $$f += $$1 if /^\.(?:text|sdh*|crypto*|nrf*|ARM.exidx)\s+(\d+)/;\
+	  ${QSPI_COUNT} += $$1 if /^\.(?:rodata.resources|xs_lib_flash)\s+(\d+)/;\
+	  $$x += $$1 if /^\.(?:rodata.resources|xs_lib_flash)\s+(\d+)/;\
 	 }\
+	$$f += ${SOFTDEVICE_ADDR} ; \
+	$$f += ${MOD_PREFS_SIZE} ; \
+	$$f += ${BOOTLOADER_SIZE} ; \
+	$$r += ${SOFTDEVICE_RAM} ; \
 	 print "\# Memory usage\n";\
-	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
+	 print sprintf("\#  %-6s %6d bytes\n" x 4 ."\n", "Ram:", $$r, "Heap:", $$h, "Flash:", $$f, "QSPI:", $$q);'
 
 VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
@@ -738,32 +762,33 @@ allclean:
 
 flash: precursor $(BIN_DIR)/xs_nrf52.hex
 	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
-	$(NRFJPROG) $(NRFJPROG_ARGS) --program $(BIN_DIR)/xs_nrf52.hex $(NRFJPROG_ERASE)
-	$(NRFJPROG) $(NRFJPROG_ARGS) --verify $(BIN_DIR)/xs_nrf52.hex
-	$(NRFJPROG) --reset
+	"$(NRFJPROG)" $(NRFJPROG_ARGS) --program $(BIN_DIR)/xs_nrf52.hex $(NRFJPROG_ERASE)
+	"$(NRFJPROG)" $(NRFJPROG_ARGS) --verify $(BIN_DIR)/xs_nrf52.hex
+	"$(NRFJPROG)" --reset
 
 debugger:
+	@echo Starting xsbug. Reset device to connect.
 	serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
 
 use_jlink: flash xsbug
 
 flash_softdevice:
 	@echo Flashing: s140_nrf52_7.0.1_softdevice.hex
-	$(NRFJPROG) -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
-	$(NRFJPROG) -f nrf52 --reset
+	"$(NRFJPROG)" -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
+	"$(NRFJPROG)" -f nrf52 --reset
 
 $(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
 	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
 	$(UF2CONV) $(BIN_DIR)/xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)/xs_nrf52.uf2
 
 installBootloader:
-	$(NRFJPROG) --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
+	"$(NRFJPROG)" --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
 
 installSoftdevice:	
-	$(NRFJPROG) --program $(SOFTDEVICE_HEX) -f nrf52 --chiperase --reset
+	"$(NRFJPROG)" --program $(SOFTDEVICE_HEX) -f nrf52 --chiperase --reset
 
 erase:
-	$(NRFJPROG) -f nrf52 --eraseall
+	"$(NRFJPROG)" -f nrf52 --eraseall
 
 $(BIN_DIR)/xs_nrf52-merged.hex: $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex
 	@echo CR $<
@@ -779,6 +804,7 @@ installDFU: all dfu-package
 	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b $(UPLOAD_SPEED) --singlebank --touch 1200
 
 xsbug:
+	@echo Starting xsbug.
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	$(CONNECT_XSBUG)
@@ -787,9 +813,9 @@ xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	@echo Flashing xs_nrf52.hex to device.
-	$(NRFJPROG) -f nrf52 --program $(TMP_DIR)/xs_nrf52.hex --sectorerase
+	"$(NRFJPROG)" -f nrf52 --program $(TMP_DIR)/xs_nrf52.hex --sectorerase
 	@echo Resetting the device.
-	$(NRFJPROG) -f nrf52 --reset
+	"$(NRFJPROG)" -f nrf52 --reset
 
 $(NRF52_SDK_ROOT)/components/boards/moddable_four.h:
 	$(error ## Please add moddable_four.h to your nRF52 SDK. See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)

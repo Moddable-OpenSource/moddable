@@ -24,7 +24,6 @@
 //		: shut down firmware on close
 
 import Timer from "timer";
-import SMBus from "embedded:io/smbus";
 
 const Register = Object.freeze({
 	STATUS: 0x00,
@@ -69,27 +68,36 @@ class CCS811  {
 	#valueBuffer = new Uint8Array(8);
 	#status = {};
 	#mode = { INT_THRESH: 0, INT_DATARDY: 0, DRIVE_MODE: Config.Drive_Mode.IDLE };
+	#onError;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000,
+			hz: 400_000,
 			address: 0x5A,
 			sendStop: true,
 			...options.sensor
 		});
 
+		this.#onError = options.onError
+
 		io.writeBlock(Register.SW_RESET, Uint8Array.of(0x11, 0xE5, 0x72, 0x8A));
 		Timer.delay(100);
 
-		if (io.readByte(Register.HW_ID) != HW_ID_CODE)
-			throw new Error("unexpected sensor");
+		if (io.readByte(Register.HW_ID) != HW_ID_CODE) {
+			this.#onError?.("unexpected sensor");
+			this.close();
+			return;
+		}
 
 		io.sendByte(Register.BOOTLOADER_APP_START);
 		Timer.delay(100);
 
 		this.#readStatus();
-		if (this.#status.ERROR || !this.#status.FW_MODE)
-			throw new Error("sensor error");
+		if (this.#status.ERROR || !this.#status.FW_MODE) {
+			this.#onError?.("sensor error");
+			this.close();
+			return;
+		}
 
 		this.#disableInterrupt();
 		this.#driveMode = Config.Drive_Mode.MEAS_1SEC;
@@ -111,7 +119,7 @@ class CCS811  {
 			if (mode >= 0 && mode <= 4)
 				this.#driveMode = mode << 4;
 			else
-				throw new Error("bad drive mode");
+				this.#onError?.("bad drive mode");
 		}
 	}
 	#enableInterrupt() {
@@ -169,4 +177,4 @@ class CCS811  {
 	}
 }
 
-export { CCS811 as default, CCS811, Config };
+export default CCS811;

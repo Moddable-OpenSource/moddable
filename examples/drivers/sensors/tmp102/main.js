@@ -12,8 +12,7 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import Temperature from "embedded:sensor/temperature/TMP102";
+import Temperature from "embedded:sensor/Temperature/TMP102";
 import Timer from "timer";
 import config from "mc/config";
 

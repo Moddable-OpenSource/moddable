@@ -23,9 +23,9 @@ import I2C from "embedded:io/i2c"
 class SMBus {
 	#io;
 	#stop;
-	#byteBuffer = new Uint8Array(1);
-	#wordBuffer = new Uint8Array(2);
 	#writeWordBuffer = new Uint8Array(3);
+	#wordBuffer = new Uint8Array(this.#writeWordBuffer.buffer, 0, 2);
+	#byteBuffer = new Uint8Array(this.#writeWordBuffer.buffer, 0, 1);
 
     constructor(options) {
         this.#io = new I2C(options);
@@ -94,11 +94,12 @@ class SMBus {
     }
 
     writeBlock(register, buffer) {
-		const io = this.#io;
-
-        this.#byteBuffer[0] = register;
-        io.write(this.#byteBuffer, this.#stop);
-        io.write(buffer);
+		if (buffer instanceof ArrayBuffer)
+			buffer = new Uint8Array(buffer);
+		const data = new Uint8Array(1 + buffer.length);
+		data[0] = register;
+		data.set(buffer, 1);
+		this.#io.write(data);
     }
 
 	sendByte(command) {

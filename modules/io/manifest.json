@@ -39,7 +39,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
 				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/listener"
@@ -61,7 +61,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
 				"embedded:io/socket/tcp": "$(IO)/socket/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/listener",
@@ -82,7 +82,7 @@
 		},
 		"nrf52/*": {
 			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider"
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
 			}
 		},
 		"nrf52": {

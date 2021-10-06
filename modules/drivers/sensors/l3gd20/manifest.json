@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/Gyroscope/L3GD20": "$(MODDABLE)/modules/drivers/sensors/l3gd20/l3gd20"
+	},
+	"preload": [
+		"embedded:sensor/Gyroscope/L3GD20"
+	]
+}
+

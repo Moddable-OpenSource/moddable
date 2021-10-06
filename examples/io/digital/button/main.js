@@ -14,13 +14,13 @@
 
 const Digital = device.io.Digital;
 const led = new Digital({
-   pin: device.pins.led,
+   pin: device.pin.led,
    mode: Digital.Output,
 });
 led.write(1);		// off
 
 new Digital({
-	pin: device.pins.button,
+	pin: device.pin.button,
 	mode: Digital.InputPullUp,
 	edge: Digital.Rising | Digital.Falling,
 	onReadable() {

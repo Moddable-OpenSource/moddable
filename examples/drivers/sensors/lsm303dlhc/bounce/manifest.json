@@ -26,9 +26,6 @@
 		"esp/moddable_one": {
 		},
 		"esp32/moddable_two": {
-		},
-		"...": {
-			"error": "Untested on this platform"
 		}
 	}
 }

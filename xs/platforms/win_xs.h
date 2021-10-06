@@ -87,7 +87,8 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	void* waiterData; \
 	void* waiterLink; \
 	CRITICAL_SECTION workerMutex; \
-	txWorkerJob* workerQueue;
+	txWorkerJob* workerQueue; \
+	void* demarshall;
 
 #define WM_PROMISE WM_USER
 #define WM_SERVICE WM_USER + 1

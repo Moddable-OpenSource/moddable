@@ -1,0 +1,6 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/sensors/l3gd20/manifest.json",
+	"modules": {
+		"*": "./main"
+	}
+}

@@ -57,7 +57,7 @@ class URM09 {
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000, 
+			hz: 400_000, 
 			address: 0x11,
 			...options.sensor
 		});
@@ -78,24 +78,24 @@ class URM09 {
 	}
 	sample() {
 		const io = this.#io;
-		let ret = {};
+		let ret = { proximity: {}, thermometer: {}};
 
 		if ((this.#mode & Config.CONTINUOUS) !== Config.CONTINUOUS) {
 			io.writeByte(Register.COMMAND, CMD_READ_ONCE);
 			Timer.delay(READ_DELAY[this.#range]);
 		}
 		switch (this.#range) {
-			case Config.RANGE_500CM: ret.max = 500; break;
-			case Config.RANGE_300CM: ret.max = 300; break;
-			case Config.RANGE_150CM: ret.max = 150; break;
+			case Config.RANGE_500CM: ret.proximity.max = 500; break;
+			case Config.RANGE_300CM: ret.proximity.max = 300; break;
+			case Config.RANGE_150CM: ret.proximity.max = 150; break;
 		}
 
-		ret.distance = io.readWord(Register.DISTANCE_MSB, true);
-		if (ret.distance == 0xffff)
-			ret.distance = null;
-		ret.temperature = io.readWord(Register.TEMP_MSB, true) / 10;
-		if (ret.distance <= ret.max)
-			ret.near = true;
+		ret.proximity.distance = io.readWord(Register.DISTANCE_MSB, true);
+		if (ret.proximity.distance == 0xffff)
+			ret.proximity.distance = null;
+		if (ret.proximity.distance <= ret.proximity.max)
+			ret.proximity.near = true;
+		ret.thermometer.temperature = io.readWord(Register.TEMP_MSB, true) / 10;
 
 		return ret;
 	}

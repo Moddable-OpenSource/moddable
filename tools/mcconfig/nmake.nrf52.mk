@@ -193,6 +193,7 @@ NRF_SDK_INCLUDES=-iprefix $(NRF52_SDK_ROOT)\components\libraries\ \
 	-iwithprefix ringbuf \
 	-iwithprefix scheduler \
 	-iwithprefix serial \
+	-iwithprefix sortlist \
 	-iwithprefix stack_info \
 	-iwithprefix strerror \
 	-iwithprefix twi_sensor \
@@ -513,10 +514,16 @@ NRF_C_DEFINES = \
 	-DINITIALIZE_USER_SECTIONS \
 	-DNO_VTOR_CONFIG  \
 	-DNRF52840_XXAA \
-	-DNRF_SD_BLE_API_VERSION=6 \
+	-DNRF_SD_BLE_API_VERSION=7 \
+	-DNRF_USBD_REQUIRE_CLOSED_ON_PORT_OPEN=1 \
 	-DS140 \
 	-DSOFTDEVICE_PRESENT \
-	-Dnrf52
+	-Dnrf52 \
+	-DAPP_TIMER_V2 \
+	-DAPP_TIMER_V2_RTC1_ENABLED \
+	-DMBEDTLS_CONFIG_FILE=\"nrf_crypto_mbedtls_config.h\" \
+	-DNRF_CRYPTO_MAX_INSTANCE_COUNT=1 \
+	-DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION
 
 C_DEFINES = \
 	$(NRF_C_DEFINES) \
@@ -526,8 +533,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION) \
 	-DMODGCC=1 \
-	$(FTDI_TRACE) \
-	-fshort-enums
+	$(FTDI_TRACE)
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
 !ENDIF
@@ -579,14 +585,18 @@ ASMFLAGS = \
 	-mthumb \
 	-mabi=aapcs \
 	-D$(BOARD_DEF) \
+	-DAPP_TIMER_V2 \
+	-DAPP_TIMER_V2_RTC1_ENABLED \
 	-DCONFIG_GPIO_AS_PINRESET \
 	-DFLOAT_ABI_HARD \
 	-DNRF52840_XXAA \
 	$(FP_OPTS) \
 	-DFREERTOS \
-	-DNRF_SD_BLE_API_VERSION=6 \
+	-DNRF_SD_BLE_API_VERSION=7 \
 	-DS140 \
 	-DSOFTDEVICE_PRESENT \
+	-DNRF_CRYPTO_MAX_INSTANCE_COUNT=1 \
+	-DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION \
 	-D__HEAP_SIZE=$(HEAP_SIZE)
 
 LDFLAGS = \
@@ -674,7 +684,7 @@ $(BIN_DIR)\xs_nrf52.bin: $(TMP_DIR)\xs_nrf52.hex
 
 $(BIN_DIR)\xs_nrf52.hex: $(TMP_DIR)\xs_nrf52.out
 	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_size.tmp
-	$(ECHO_GIT_AND_SIZE)
+	$(ECHO_GIT_AND_SIZE) $(USE_QSPI)
 	$(OBJCOPY) -O ihex $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.hex
 
 $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)

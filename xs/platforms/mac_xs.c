@@ -60,6 +60,8 @@ void fxCreateMachinePlatform(txMachine* the)
 	sourceContext.perform = &fxQueueWorkerJobsCallback;
 	the->workerSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceContext);
 	CFRunLoopAddSource(the->workerLoop, the->workerSource, kCFRunLoopCommonModes);
+	
+	the->demarshall = fxDemarshall;
 }
 
 void fxDeleteMachinePlatform(txMachine* the)

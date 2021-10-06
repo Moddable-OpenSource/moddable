@@ -182,13 +182,6 @@
 	typedef uint64_t txU8;
 #endif
 
-#ifndef c_tolower
-	#define c_tolower tolower
-#endif
-#ifndef c_toupper
-	#define c_toupper toupper
-#endif
-
 #ifndef c_jmp_buf
 	typedef jmp_buf c_jmp_buf;
 #endif

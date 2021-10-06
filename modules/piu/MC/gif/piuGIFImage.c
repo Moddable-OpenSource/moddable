@@ -29,6 +29,7 @@ struct PiuGIFImageStruct {
 	PiuContentPart;
 	xsSlot* path;
 	xsSlot* buffer;
+	xsSlot* flip;
 	PiuColorRecord color;
 	xsSlot* gif;
 	PiuDimension gifWidth;
@@ -110,10 +111,13 @@ void PiuGIFImageDictionary(xsMachine* the, void* it)
 		xsSlot* path = PiuString(xsResult);
 		(*self)->path = path;
 	}
-	else
-	if (xsFindResult(xsArg(1), xsID_buffer)) {
+	else if (xsFindResult(xsArg(1), xsID_buffer)) {
 		xsSlot* buffer = xsToReference(xsResult);
 		(*self)->buffer = buffer;
+	}
+	if (xsFindResult(xsArg(1), xsID_flip)) {
+		xsSlot* flip = PiuString(xsResult);
+		(*self)->flip = flip;
 	}
 	if (xsFindResult(xsArg(1), xsID_color)) {
 		PiuColorRecord color;
@@ -140,7 +144,7 @@ void PiuGIFImageDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate 
 {
 	PiuGIFImage* self = it;
 	xsBeginHost((*self)->the);
-	xsVars(3);
+	xsVars(4);
 	xsVar(0) = xsReference((*view)->reference);
 	xsVar(0) = xsGet(xsVar(0), xsID_poco);
 	xsVar(1) = xsReference((*self)->gif);
@@ -151,7 +155,9 @@ void PiuGIFImageDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate 
 	}
 	else {
 		xsVar(2) = xsGet(xsVar(1), xsID_transparentColor);
-		xsCall4(xsVar(0), xsID_drawBitmapWithKeyColor, xsVar(1), xsInteger(x), xsInteger(y), xsVar(2));
+		if ((*self)->flip)
+			xsVar(3) = *((*self)->flip);
+		xsCall5(xsVar(0), xsID_drawBitmapWithKeyColor, xsVar(1), xsInteger(x), xsInteger(y), xsVar(2), xsVar(3));
 	}
 	xsEndHost((*self)->the);
 }
@@ -164,6 +170,8 @@ void PiuGIFImageMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		PiuMarkString(the, self->path);
 	if (self->buffer)
 		PiuMarkReference(the, self->buffer);
+	if (self->flip)
+		PiuMarkString(the, self->flip);
 	PiuMarkReference(the, self->gif);
 }
 

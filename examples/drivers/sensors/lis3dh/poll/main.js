@@ -12,8 +12,7 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { LIS3DH, Config } from "embedded:sensor/Accelerometer/LIS3DH";
+import LIS3DH from "embedded:sensor/Accelerometer/LIS3DH";
 import Timer from "timer";
 
 const sensor = new LIS3DH({
@@ -24,9 +23,9 @@ const sensor = new LIS3DH({
 });
 
 sensor.configure({
-	rate: Config.DataRate.DATARATE_10_HZ,
-	enable: Config.Features.ENABLE_X | Config.Features.ENABLE_Y | Config.Features.ENABLE_Z,
-	lowPower: Config.Features.DISABLE
+	rate: 2,		// 10 Hz
+	enable: 0b111,	// ENABLE_X ENABLE_Y ENABLE_Z,
+	lowPower: false
 });
 
 Timer.repeat(() => {

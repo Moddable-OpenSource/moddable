@@ -49,6 +49,8 @@ struct SerialRecord {
 	uint8_t		isWritable;
 	uint8_t		format;
 	uint8_t		uart;
+	uint8_t		useCount;
+	uint8_t		txInterruptEnabled;
 	uart_dev_t	*uart_reg;
 	uint32_t	transmit;
 	uint32_t	receive;
@@ -66,6 +68,8 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 	xs_serial_mark,
 	NULL
 };
+
+#define kTransmitTreshold (10)		// could be buildtime or runtime configuraable
 
 void xs_serial_constructor(xsMachine *the)
 {
@@ -155,6 +159,7 @@ void xs_serial_constructor(xsMachine *the)
 	else
 #endif
 		serial->uart_reg = uart ? &UART1 : &UART0;
+	serial->useCount = 1;
 
 	if (hasReadable || hasWritable) {
 		serial->the = the;
@@ -182,7 +187,7 @@ void xs_serial_constructor(xsMachine *the)
 			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
 			serial->onWritable = xsToReference(xsVar(0));
 
-			uart_enable_tx_intr(uart, 1, 20);
+			uart_enable_tx_intr(uart, 1, kTransmitTreshold);
 		}
 		else {
 			uart_disable_tx_intr(uart);
@@ -203,9 +208,7 @@ void xs_serial_destructor(void *data)
 	Serial serial = data;
 	if (!serial) return;
 
-	uart_ll_set_txfifo_empty_thr(serial->uart_reg, 0);
-	uart_enable_tx_intr(serial->uart, 0, 0);
-	uart_set_rx_timeout(serial->uart, 0);
+	uart_disable_tx_intr(serial->uart);
 	uart_disable_rx_intr(serial->uart);
 
 	uart_isr_free(serial->uart);
@@ -215,7 +218,8 @@ void xs_serial_destructor(void *data)
 	if (UART_PIN_NO_CHANGE != serial->receive)
 		builtinFreePin(serial->receive);
 
-	c_free(serial);
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
+		c_free(serial);
 }
 
 void xs_serial_close(xsMachine *the)
@@ -306,11 +310,12 @@ void xs_serial_write(xsMachine *the)
 
 		buffer = xsmcToArrayBuffer(xsArg(0));
 		uart_ll_write_txfifo(serial->uart_reg, buffer, requested);
+
 	}
 
-	if (serial->onWritable) {
-		uart_ll_set_txfifo_empty_thr(serial->uart_reg, 4);
-		uart_enable_tx_intr(serial->uart, 1, 20);
+	if (serial->onWritable && !serial->txInterruptEnabled) {
+		serial->txInterruptEnabled = 1;
+		uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
 	}
 }
 
@@ -323,7 +328,7 @@ void ICACHE_RAM_ATTR serial_isr(void * arg)
 	if ((status & UART_INTR_TXFIFO_EMPTY) && serial->onWritable) {
 		post |= (0 == serial->isWritable);
 		serial->isWritable = 1;
-		uart_ll_set_txfifo_empty_thr(serial->uart_reg, 0);
+		serial->txInterruptEnabled = 0;
 		uart_disable_tx_intr(serial->uart);
 	}
 
@@ -333,8 +338,10 @@ void ICACHE_RAM_ATTR serial_isr(void * arg)
 		uart_disable_rx_intr(serial->uart);
 	}
 
-	if (post)
+	if (post) {
+		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
+	}
 }
 
 void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -342,6 +349,11 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 	xsMachine *the = (xsMachine *)theIn;
 	Serial serial = (Serial)refcon;
 	int count;
+
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
+		c_free(serial);
+		return;
+	}
 
 	if (serial->isReadable) {
 		serial->isReadable = 0;
@@ -364,8 +376,6 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 				xsCallFunction1(xsReference(serial->onWritable), serial->obj, xsResult);
 			xsEndHost(the);
 		}
-		uart_ll_set_txfifo_empty_thr(serial->uart_reg, 4);
-		uart_enable_tx_intr(serial->uart, 1, 20);
 	}
 }
 

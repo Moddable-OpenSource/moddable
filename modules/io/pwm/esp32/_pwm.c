@@ -178,8 +178,8 @@ void xs_pwm_destructor_(void *data)
 	gLEDC |= 1 << pwm->ledc;
 
 	gTimers[pwm->timerIndex].useCount -= 1;
-//	if (0 == gTimers[pwm->timerIndex].useCount)
-//		;		/@@ how to stop the timer?
+	if (0 == gTimers[pwm->timerIndex].useCount)
+		gpio_set_direction(pwm->pin, GPIO_MODE_OUTPUT);		// this seems to disconnect pin from ledc / timer
 
     builtinFreePin(pwm->pin);
 

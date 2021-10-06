@@ -158,6 +158,10 @@ void xs_spi_constructor(xsMachine *the)
 	spi->config.sync = true;
 	spi->config.mode = mode;
 
+	spi->config.clock_pin = clock;
+	spi->config.mosi_pin = mosi; 
+	spi->config.miso_pin = miso;
+
 	modSPIInit(&spi->config);
 	spi->doUninit = true;
 
@@ -201,20 +205,20 @@ void xs_spi_read(xsMachine *the)
 {
 	SPI spi = xsmcGetHostData(xsThis);
 	void *data;
-	int count;
+	xsUnsignedValue count;
 
 	if (!spi)
 		xsUnknownError("closed");
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
-		data = builtinGetBufferPointer(the, &xsArg(0), &count);
+		xsmcGetBuffer(xsArg(0), &data, &count);
 		if (count > 65535)
-			xsRangeError("bad byteLength");
+			xsRangeError("unsupported byteLength");
 	}
 	else {
 		count = xsmcToInteger(xsArg(0));
 		if ((count < 0) || (count > 65535))
-			xsRangeError("bad byteLength");
+			xsRangeError("unsupported byteLength");
 		xsmcSetArrayBuffer(xsResult, NULL, count);
 		data = xsmcToArrayBuffer(xsResult);
 	}
@@ -226,14 +230,14 @@ void xs_spi_write(xsMachine *the)
 {
 	SPI spi = xsmcGetHostData(xsThis);
 	void *data;
-	int count;
+	xsUnsignedValue count;
 
 	if (!spi)
 		xsUnknownError("closed");
 
-	data = builtinGetBufferPointer(the, &xsArg(0), &count);
+	xsmcGetBuffer(xsArg(0), &data, &count);
 	if (count > 65535)
-		xsRangeError("bad byteLength");
+		xsRangeError("unsupported byteLength");
 
 	modSPITx(&spi->config, (uint8_t *)data, (uint16_t)count);
 }
@@ -242,14 +246,14 @@ void xs_spi_transfer(xsMachine *the)
 {
 	SPI spi = xsmcGetHostData(xsThis);
 	void *data;
-	int count;
+	xsUnsignedValue count;
 
 	if (!spi)
 		xsUnknownError("closed");
 
-	data = builtinGetBufferPointer(the, &xsArg(0), &count);
+	xsmcGetBuffer(xsArg(0), &data, &count);
 	if (count > 65535)
-		xsRangeError("bad byteLength");
+		xsRangeError("unsupported byteLength");
 
 	modSPITxRx(&spi->config, (uint8_t *)data, (uint16_t)count);
 }

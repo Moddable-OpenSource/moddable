@@ -62,7 +62,7 @@
 #endif
 #define mxMisalignedSettersCrash 1		//@@@ ?
 #define mxUseFreeRTOSTasks	1
-#define mxUseGCCAtomics		1
+// #define mxUseGCCAtomics		1		// undefine
 
 #ifndef __XS6PLATFORMMINIMAL__
 

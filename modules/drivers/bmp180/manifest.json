@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/pins/i2c/manifest.json"
+	],
+	"modules": {
+		"bmp180": "$(MODULES)/drivers/bmp180/*"
+	},
+	"preload": [
+		"bmp180"
+	]
+}

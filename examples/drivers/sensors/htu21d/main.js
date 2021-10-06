@@ -13,7 +13,7 @@
  */
 
 import device from "embedded:provider/builtin";
-import Humidity from "embedded:sensor/Humidity-Temperature/HTU21D";
+import Humidity from "embedded:sensor/Humidity-Temperature/SI7020";
 import Timer from "timer";
 
 const humidity = new Humidity({ sensor: device.I2C.default });
@@ -21,8 +21,8 @@ const humidity = new Humidity({ sensor: device.I2C.default });
 Timer.repeat(() => {
 	const sample = humidity.sample();
 
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C -- `);
-	trace(`Humidity: ${sample.humidity.toFixed(2)} %RH\n`);
+    trace(`Temperature: ${sample.thermometer.temperature?.toFixed(2)} C `);
+    trace(`Humidity: ${sample.hygrometer.humidity?.toFixed(2)} %RH\n`);
 
 }, 2000);
 

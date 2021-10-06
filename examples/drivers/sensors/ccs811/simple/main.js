@@ -12,7 +12,6 @@
  *
  */
 
-import device from "embedded:provider/builtin";
 import Sensor from "embedded:sensor/AirQuality/CCS811";
 import Timer from "timer";
 
@@ -25,6 +24,7 @@ const sensor = new Sensor({
 
 sensor.configure({ mode: 2 });
 
+trace(`waiting for data\n`);
 while (!sensor.available)
 	Timer.delay(500);
 
@@ -34,6 +34,7 @@ Timer.repeat(() => {
 
 		trace(`eCO2: ${sample.eCO2} ppm, VOC: ${sample.TVOC} ppb\n`);
 	}
-	trace(`no data\n`);
+	else
+		trace(`no data\n`);
 }, 5000);
 

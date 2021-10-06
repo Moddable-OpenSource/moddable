@@ -14,7 +14,7 @@
 
 const Digital = device.io.Digital;
 const led = new Digital({
-   pin: device.pins.led,
+   pin: device.pin.led,
    mode: Digital.Output,
 });
 led.write(1);		// off

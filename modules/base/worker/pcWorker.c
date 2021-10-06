@@ -141,7 +141,8 @@ void fxWorkerMessageAlien(void* machine, void* it)
 	{
 		xsVars(1);
 		xsTry {
-			xsResult = xsDemarshallAlien(job->argument);
+			(*((void (*)(xsMachine*, void*,  xsBooleanValue))(the->demarshall)))(the, job->argument, 1);
+			xsResult = fxPop();
 			xsVar(0) = xsAccess(*(job->reference));
 			xsCall1(xsVar(0), xsID("onmessage"), xsResult); // alien xsID!
 		}

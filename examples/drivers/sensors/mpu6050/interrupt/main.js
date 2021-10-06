@@ -12,9 +12,7 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { MPU6050, Config } from "embedded:sensor/Accelerometer-Gyroscope/MPU6050";
-import Timer from "timer";
+import MPU6050 from "embedded:sensor/Accelerometer-Gyroscope/MPU6050";
 import config from "mc/config";
 const Digital = device.io.Digital;
 
@@ -28,17 +26,15 @@ const sensor = new MPU6050({
 		pin: config.interrupt_pin,
 	},
 	onAlert() {
-//		let status = sensor.status();		 // clear interrupt
-//		trace(`status: ${status}\n`);
 		let sample = sensor.sample();
-		trace(`IRQ Accel: [${sample.x.toFixed(2)}, ${sample.y.toFixed(2)}, ${sample.z.toFixed(2)}] - `);
-		trace(`Gyro: [${sample.gyroX.toFixed(2)}, ${sample.gyroY.toFixed(2)}, ${sample.gyroZ.toFixed(2)}]\n`);
+		trace(`IRQ Accel: [${sample.accelerometer.x?.toFixed(2)}, ${sample.accelerometer.y?.toFixed(2)}, ${sample.accelerometer.z?.toFixed(2)}] - `);
+		trace(`Gyro: [${sample.gyroscope.x?.toFixed(2)}, ${sample.gyroscope.y?.toFixed(2)}, ${sample.gyroscope.z?.toFixed(2)}]\n`);
 	}
 });
 
 sensor.configure({
-	range: Config.Accel_Range.RANGE_4_G,
-	gyroRange: Config.Gyro_Range.RANGE_1000,
+	range: 1,			// RANGE_4_G,
+	gyroRange: 2,		// RANGE_1000
 	lowPassFilter: 6,
 	sampleRateDivider: 250
 });

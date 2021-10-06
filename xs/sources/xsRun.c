@@ -3070,7 +3070,7 @@ XS_CODE_JUMP:
 				
 		mxCase(XS_CODE_MINUS)
 			if (mxStack->kind == XS_INTEGER_KIND) {
-				if (mxStack->value.integer)
+				if ((mxStack->value.integer << 1) != 0)
 					mxStack->value.integer = -mxStack->value.integer;
 				else {
 					mxStack->kind = XS_NUMBER_KIND;

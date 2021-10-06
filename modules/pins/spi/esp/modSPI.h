@@ -23,6 +23,8 @@
 
 #include "stdint.h"
 
+#include "mc.defines.h"
+
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;
 typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 
@@ -34,6 +36,9 @@ struct modSPIConfigurationRecord {
 	uint32_t					reserved;	// set during modSPIInit to SPI flash bits
 	uint8_t						sync;
 	uint8_t						mode;
+	uint8_t						clock_pin;
+	uint8_t						mosi_pin;
+	uint8_t						miso_pin;
 };
 
 typedef struct modSPIConfigurationRecord modSPIConfigurationRecord;
@@ -45,7 +50,10 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.sync = 1; \
 	if (0 != espStrCmp(SPI_PORT, "HSPI")) \
 		xsUnknownError("invalid SPI port"); \
-	config.mode = 0;
+	config.mode = 0; \
+	config.clock_pin = MODDEF_SPI_SCK_PIN; \
+	config.mosi_pin = MODDEF_SPI_MOSI_PIN; \
+	config.miso_pin = MODDEF_SPI_MISO_PIN;
 
 //	config.spiPort = SPI_PORT; \
 //	config.csPort = CS_PORT; \

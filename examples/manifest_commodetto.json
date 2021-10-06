@@ -18,7 +18,7 @@
 		},
 		"esp32": {
 			"modules": {
-				"setup/commodetto": "$(BUILD)/devices/esp/setup/commodetto"
+				"setup/commodetto": "$(BUILD)/devices/esp32/setup/commodetto"
 			},
 			"preload": "setup/commodetto"
 		},

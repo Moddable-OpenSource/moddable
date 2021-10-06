@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "modSPI.h"
+
 #include "mc.defines.h"
 
 #include "esp_attr.h"		// IRAM_ATTR
@@ -161,11 +162,10 @@ void modSPIInit(modSPIConfiguration config)
         gSPITransactionBuffer[0] = heap_caps_malloc(SPI_BUFFER_SIZE * kTransactions, MALLOC_CAP_DMA);      // use DMA capable memory for SPI driver
         for (i = 1; i < kTransactions; i++)
             gSPITransactionBuffer[i] = (uint32_t *)(SPI_BUFFER_SIZE + (uint8_t *)gSPITransactionBuffer[i - 1]);
-        
 		memset(&buscfg, 0, sizeof(buscfg));
-		buscfg.miso_io_num = MODDEF_SPI_MISO_PIN;
-		buscfg.mosi_io_num = MODDEF_SPI_MOSI_PIN;
-		buscfg.sclk_io_num = MODDEF_SPI_SCK_PIN;
+		buscfg.miso_io_num = (255 != config->miso_pin) ? config->miso_pin : MODDEF_SPI_MISO_PIN;
+		buscfg.mosi_io_num = (255 != config->mosi_pin) ? config->mosi_pin : MODDEF_SPI_MOSI_PIN;
+		buscfg.sclk_io_num = (255 != config->clock_pin) ? config->clock_pin : MODDEF_SPI_SCK_PIN;
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
         buscfg.max_transfer_sz = MODDEF_SPI_ESP32_TRANSACTIONSIZE;
@@ -202,7 +202,6 @@ void modSPIInit(modSPIConfiguration config)
 
 	ret = spi_bus_add_device(config->spiPort, &devcfg, &config->spi_dev);
 	if (ret) {
-		modLog("spi_bus_add_device failed");
         free(gSPITransactionBuffer[0]);
         gSPITransactionBuffer[0] = NULL;
 		spi_bus_free(config->spiPort);

@@ -92,7 +92,7 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_hz);
 	hz = xsmcToInteger(xsVar(0));
-	if ((hz < 0) || (hz > 20000000))
+	if ((hz <= 0) || (hz > 20000000))
 		xsRangeError("invalid hz");
 
 	builtinInitializeTarget(the);
@@ -162,9 +162,11 @@ void _xs_i2c_close(xsMachine *the)
 void _xs_i2c_read(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
-	int length, type;
+	xsUnsignedValue length;
+	int type;
 	int err;
 	uint8_t stop = true;
+	void *buffer;
 
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
@@ -174,16 +176,15 @@ void _xs_i2c_read(xsMachine *the)
  		length = xsmcToInteger(xsArg(0));
 		xsmcSetArrayBuffer(xsResult, NULL, length);
 		xsArg(0) = xsResult;
+		buffer = xsmcToArrayBuffer(xsResult);
 	}
 	else {
 		xsResult = xsArg(0);
-		if (xsmcIsInstanceOf(xsResult, xsTypedArrayPrototype))
-			xsmcGet(xsArg(0), xsResult, xsID_buffer);
-		length = xsmcGetArrayBufferLength(xsArg(0));
+		xsmcGetBuffer(xsResult, &buffer, &length);
 	}
 
 	i2cActivate(i2c);
-	err = twi_readFrom(i2c->address, xsmcToArrayBuffer(xsArg(0)), length, stop);
+	err = twi_readFrom(i2c->address, buffer, length, stop);
 	if (length == 0) {
 		if (err)
 			xsmcSetInteger(xsResult, 1);
@@ -195,18 +196,18 @@ void _xs_i2c_read(xsMachine *the)
 void _xs_i2c_write(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
-	int err, length;
+	int err;
+	xsUnsignedValue length;
 	uint8_t stop = true;
+	void *buffer;
 
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-		xsmcGet(xsArg(0), xsArg(0), xsID_buffer);
-	length = xsmcGetArrayBufferLength(xsArg(0));
+	xsmcGetBuffer(xsArg(0), &buffer, &length);
 
 	i2cActivate(i2c);
-	err = twi_writeTo(i2c->address, xsmcToArrayBuffer(xsArg(0)), length, stop);
+	err = twi_writeTo(i2c->address, buffer, length, stop);
 	if (length == 0) {
 		if (err)
 			xsmcSetInteger(xsResult, 1);

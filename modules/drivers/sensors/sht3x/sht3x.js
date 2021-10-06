@@ -49,6 +49,7 @@ class SHT3x  {
 	#statusBuffer = new Uint8Array(3);
 	#valueBuffer = new Uint8Array(6);
 	#crc;
+	#onError;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
@@ -56,6 +57,8 @@ class SHT3x  {
 			address: 0x44,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		this.#writeCommand(Register.SOFTRESET);
 		this.#crc = new CRC8(0x31, 0xff);
@@ -69,7 +72,7 @@ class SHT3x  {
 	sample() {
 		const vBuf = this.#valueBuffer;
 		const status = this.#statusBuffer;
-		let ret = {};
+		let ret = { hygrometer: {}, thermometer: {} };
 
 		this.#writeCommand(Register.HIGHREP_STRETCH);
 		this.#io.read(vBuf);
@@ -77,14 +80,14 @@ class SHT3x  {
 		this.#writeCommand(Register.READSTATUS);
 		this.#io.read(status);
 		if (status[2] !== this.#crc.reset().checksum(status.subarray(0,2)))
-            throw new Error("bad checksum");
+			this.#onError?.("bad checksum");
 
 		this.#writeCommand(Register.CLEARSTATUS);
 
 		if (vBuf[2] == this.#crc.reset().checksum(vBuf.subarray(0,2)))
-			ret.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
+			ret.thermometer.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
 		if (vBuf[5] == this.#crc.reset().checksum(vBuf.subarray(3,5)))
-			ret.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
+			ret.hygrometer.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
 		return ret;
 	}
 	#writeCommand(command) {

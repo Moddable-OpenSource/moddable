@@ -12,8 +12,7 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { URM09, Config } from "embedded:sensor/Proximity-Temperature/URM09";
+import URM09 from "embedded:sensor/Proximity-Temperature/URM09";
 import Timer from "timer";
 
 const sensor = new URM09({
@@ -24,13 +23,13 @@ const sensor = new URM09({
 });
 
 sensor.configure({
-	mode: Config.ONE_SHOT,
-	range: Config.RANGE_300CM
+	mode: 0,		// ONE_SHOT,
+	range: 1,		// RANGE_300CM
 });
 	
 Timer.repeat(() => {
 	const sample = sensor.sample();
 
-	trace(`Distance: ${sample.near ? "NEAR" : ""}  ${sample.distance} cm, max: ${sample.max} -- Temperature ${sample.temperature} C\n`);
+	trace(`Distance: ${sample.proximity.near ? "NEAR" : ""}  ${sample.proximity.distance} cm, max: ${sample.proximity.max} -- Temperature ${sample.thermometer.temperature} C\n`);
 }, 2000);
 

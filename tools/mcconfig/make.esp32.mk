@@ -22,12 +22,12 @@ HOST_OS := $(shell uname)
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 
-EXPECTED_ESP_IDF ?= v4.3
+EXPECTED_ESP_IDF ?= v4.3.1
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
 ESP32_SUBCLASS ?= esp32
-$(warning ESP32_SUBCLASS $(ESP32_SUBCLASS))
+# $(warning ESP32_SUBCLASS $(ESP32_SUBCLASS))
 
 ifeq ($(ESP32_SUBCLASS),"esp32c3")
 	ESP_ARCH = riscv
@@ -46,24 +46,9 @@ endif
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
 IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always --abbrev=0")
-MAJOR_VERSION := $(shell echo $(IDF_VERSION) | awk -F \. '{print($$1)}')
-MINOR_VERSION := $(shell echo $(IDF_VERSION) | awk -F \. '{print($$2)}')
-EXPECTED_MAJOR := $(shell echo $(EXPECTED_ESP_IDF) | awk -F \. '{print($$1)}')
-EXPECTED_MINOR := $(shell echo $(EXPECTED_ESP_IDF) | awk -F \. '{print($$2)}')
 
 ifeq ($(IDF_VERSION),)
 $(warning Could not detect ESP-IDF version.)
-else
-ifneq ($(IDF_VERSION),$(EXPECTED_ESP_IDF))
-$(warning Detected ESP-IDF version $(IDF_VERSION). Expected ESP-IDF version $(EXPECTED_ESP_IDF).)
-ifneq ($(MAJOR_VERSION),$(EXPECTED_MAJOR))
-$(error ESP-IDF version is incompatible.)
-else
-ifneq ($(MINOR_VERSION),$(EXPECTED_MINOR))
-$(error ESP-IDF version is incompatible.)
-endif
-endif
-endif
 endif
 
 unexport LDFLAGS
@@ -73,7 +58,11 @@ unexport CPPFLAGS
 ifeq ($(DEBUG),1)
 	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/$(NAME)/xsProj-$(ESP32_SUBCLASS)
 else
+ifeq ($(INSTRUMENT),1)
+	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/instrument/$(NAME)/xsProj-$(ESP32_SUBCLASS)
+else
 	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/$(NAME)/xsProj-$(ESP32_SUBCLASS)
+endif
 endif
 BLD_DIR = $(PROJ_DIR)/build
 
@@ -417,7 +406,7 @@ DUMP_VARS:
 	echo "# IDF_RECONFIGURE_CMD is $(IDF_RECONFIGURE_CMD)"
 	echo "# SDKCONFIG_H_DIR is $(SDKCONFIG_H_DIR)"
 
-precursor: partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
+precursor: idfVersionCheck partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
 	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(BLD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
@@ -479,6 +468,10 @@ else
 		rm -rf $(PROJ_DIR)/bootloader; \
 	fi
 endif
+
+idfVersionCheck:
+	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
+
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE)/* $(PROJ_DIR)/

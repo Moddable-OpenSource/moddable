@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -71,30 +71,33 @@ void xs_flash_destructor(void *data)
 
 void xs_flash_erase(xsMachine *the)
 {
-	modFlash flash = xsmcGetHostChunk(xsThis);
+	modFlash flash;
 	int sector = xsmcToInteger(xsArg(0));
 
+	flash = xsmcGetHostChunk(xsThis);
 	if (ESP_OK != esp_partition_erase_range(flash->partition, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE))
 		xsUnknownError("erase failed");
 }
 
 void xs_flash_read(xsMachine *the)
 {
-	modFlash flash = xsmcGetHostChunk(xsThis);
+	modFlash flash;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 
 	xsmcSetArrayBuffer(xsResult, NULL, byteLength);
+	flash = xsmcGetHostChunk(xsThis);
 	if (ESP_OK != esp_partition_read(flash->partition, offset, xsmcToArrayBuffer(xsResult), byteLength))
 		xsUnknownError("read failed");
 }
 
 void xs_flash_write(xsMachine *the)
 {
-	modFlash flash = xsmcGetHostChunk(xsThis);
+	modFlash flash;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 	void *buffer = xsmcToArrayBuffer(xsArg(2));
+	flash = xsmcGetHostChunk(xsThis);
 	if (ESP_OK != esp_partition_write(flash->partition, offset, buffer, byteLength))
 		xsUnknownError("write failed");
 }
@@ -102,17 +105,18 @@ void xs_flash_write(xsMachine *the)
 void xs_flash_map(xsMachine *the)
 {
 	modFlash flash = xsmcGetHostChunk(xsThis);
+	int size = flash->partition->size;
 	const void *partitionAddress;
 	spi_flash_mmap_handle_t handle;
 
-	if (ESP_OK != esp_partition_mmap(flash->partition, 0, flash->partition->size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
+	if (ESP_OK != esp_partition_mmap(flash->partition, 0, size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
 		xsUnknownError("map failed");
 
 	xsmcVars(1);
 
 	xsResult = xsNewHostObject(NULL);
 	xsmcSetHostData(xsResult, (void *)partitionAddress);
-	xsmcSetInteger(xsVar(0), flash->partition->size);
+	xsmcSetInteger(xsVar(0), size);
 	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
 }
 

@@ -117,7 +117,8 @@ class BMP180 extends aHostObject {
 		let pr = (this.#valueBuffer[0] << 16) | (this.#valueBuffer[1] << 8) | this.#valueBuffer[2];
 		pr >>= (8 - this.#mode);
 
-		return this.#calculate(temp, pr, this.#mode);
+		const val = this.#calculate(temp, pr, this.#mode);
+		return { barometer: { pressure: val.pressure }, thermometer: { temperature: val.temperature } };
 	}
 	#initialize() {
 		let calib = {};

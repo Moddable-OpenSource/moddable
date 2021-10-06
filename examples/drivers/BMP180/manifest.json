@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/bmp180/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	}
+}

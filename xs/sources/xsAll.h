@@ -2245,7 +2245,8 @@ enum {
 	)
 #define mxTemporary(_SLOT) \
 	(mxOverflow(-1), \
-	_SLOT = --the->stack)
+	_SLOT = --the->stack, \
+	mxInitSlotKind(the->stack, XS_UNDEFINED_KIND))
 
 #define mxPop() \
 	(mxMeterOne(), the->stack++)

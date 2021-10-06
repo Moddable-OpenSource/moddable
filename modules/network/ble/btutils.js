@@ -194,8 +194,8 @@ function serializeString(data) {
 	return result;
 }
 
-function serializeManufacturerSpecificData({identifier, data = null}) {
-	let length = 2 + (data ? data.length : 0);
+function serializeManufacturerSpecificData({identifier, data}) {
+	let length = 2 + (data?.length ?? 0);
 	let result = new Uint8Array(length);
 	result[0] = identifier & 0xFF;
 	result[1] = (identifier >> 8) & 0xFF;
