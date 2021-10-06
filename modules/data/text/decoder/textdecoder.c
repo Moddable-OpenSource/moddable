@@ -23,6 +23,8 @@
 #if mxNoFunctionLength
 	#include "mc.xs.h"			// for xsID_ values
 #else
+	#include <stdbool.h>
+
 	#define xsID_ignoreBOM (xsID("ignoreBOM"))
 	#define xsID_fatal (xsID("fatal"))
 	#define xsID_stream (xsID("stream"))
@@ -50,6 +52,12 @@ void xs_textdecoder(xsMachine *the)
 
 	if (argc && c_strcmp(xsmcToString(xsArg(0)), "utf-8"))
 		xsRangeError("unsuppoorted encoding");
+
+#if !mxNoFunctionLength
+	xsmcGet(xsResult, xsTarget, xsID("prototype"));
+	xsResult = xsNewHostInstance(xsResult);
+	xsThis = xsResult;
+#endif
 
 	decoder.ignoreBOM = false;
 	decoder.fatal = false;
@@ -289,7 +297,7 @@ fatal:
 	xsTypeError("invalid utf-8");
 }
 
-void xs_textdecoder_get_enccoding(xsMachine *the)
+void xs_textdecoder_get_encoding(xsMachine *the)
 {
 	xsmcSetString(xsResult, "utf-8");
 }
@@ -306,6 +314,29 @@ void xs_textdecoder_get_fatal(xsMachine *the)
 	xsmcSetBoolean(xsResult, td->fatal);
 }
 
+#if !mxNoFunctionLength
+void modInstallTextDecoder(xsMachine *the)
+{
+	#define kPrototype (0)
+	#define kConstructor (1)
+	#define kScratch (2)
+
+	xsBeginHost(the);
+	xsmcVars(3);
+
+	xsVar(kPrototype) = xsNewHostObject(NULL);
+	xsVar(kConstructor) = xsNewHostConstructor(xs_textdecoder, 2, xsVar(kPrototype));
+	xsmcSet(xsGlobal, xsID("TextDecoder"), xsVar(kConstructor));
+
+	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_decode, 1);
+	xsmcSet(xsVar(kPrototype), xsID("decode"), xsVar(kScratch));
+	xsDefine(xsVar(kPrototype), xsID("encoding"), xsNewHostFunction(xs_textdecoder_get_encoding, 0), xsIsGetter);
+	xsDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0), xsIsGetter);
+	xsDefine(xsVar(kPrototype), xsID("fatal"), xsNewHostFunction(xs_textdecoder_get_fatal, 0), xsIsGetter);
+
+	xsEndHost(the);
+}
+#endif
 
 /*
  * Copyright 2001-2004 Unicode, Inc.

@@ -50,7 +50,7 @@ const device = {
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI},
-	pins: {}
+	pin: {}
 };
 
 export default device;

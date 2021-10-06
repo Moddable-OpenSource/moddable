@@ -37,6 +37,7 @@ class AM2320  {
 	#cmdBuffer = new Uint8Array(3);
 	#valueBuffer = new Uint8Array(6);
 	#crc;
+	#onError;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
@@ -44,6 +45,8 @@ class AM2320  {
 			address: 0x5C,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		this.#crc = new CRC16(0x8005, 0xFFFF, true, true);
 	}
@@ -54,17 +57,17 @@ class AM2320  {
 		this.#io = undefined;
 	}
 	sample() {
-		let ret = {};
+		let ret = { hygrometer: {}, thermometer: {} };
 
 		let humid = this.#readValue(Register.HUMID_MEASURE);
 		if (undefined !== humid)
-			ret.humidity = (humid / 10.0);
+			ret.hygrometer.humidity = (humid / 10.0);
 
 		let temp = this.#readValue(Register.TEMP_MEASURE);
 		if (undefined !== temp) {
 			if (temp & 0x8000)
 				temp = -(temp & 0x7fff);
-			ret.temperature = (temp / 10.0);
+			ret.thermometer.temperature = (temp / 10.0);
 		}
 
 		return ret;

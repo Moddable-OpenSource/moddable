@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -111,10 +111,11 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 
 static int parseQname(xsMachine *the, int offset)
 {
-	uint8_t *position = offset + (uint8_t *)getPacket(the, NULL);;
+	uint8_t *position;
 	int qnameEndPosition = 0;
 
 	xsVar(1) = xsNewArray(0);
+	position = offset + (uint8_t *)getPacket(the, NULL);;
 	while (true) {
 		char tmp[64];
 		uint8_t tag = *position++;
@@ -168,26 +169,18 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 
 	qtype = (position[0] << 8) | position[1];
 	qclass = (position[2] << 8) | position[3];
+	position += 4;
 	offset += 4;
-	xsmcSetInteger(xsVar(1), qtype);
-	xsmcSet(xsVar(0), xsID_qtype, xsVar(1));
-	xsmcSetInteger(xsVar(1), qclass);
-	xsmcSet(xsVar(0), xsID_qclass, xsVar(1));
 
 	if (answer) {
 		uint32_t ttl;
 		uint16_t rdlength;
 
-		position = offset + (uint8_t *)getPacket(the, NULL);
 		ttl = (position[0] << 24) | (position[1] << 16) | (position[2] << 8) | position[3];
 		rdlength = (position[4] << 8) | position[5];
 
-		xsmcSetInteger(xsVar(1), ttl);
-		xsmcSet(xsVar(0), xsID_ttl, xsVar(1));
-
 		position += 6;
 		offset += 6;
-		position = offset + (uint8_t *)getPacket(the, NULL);
 
 		if (rdlength) {
 			if (0x0001 == qtype) {	// A
@@ -273,7 +266,15 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 				xsmcSet(xsVar(0), xsID_rdata, xsVar(1));
 			}
 		}
+
+		xsmcSetInteger(xsVar(1), ttl);
+		xsmcSet(xsVar(0), xsID_ttl, xsVar(1));
 	}
+
+	xsmcSetInteger(xsVar(1), qtype);
+	xsmcSet(xsVar(0), xsID_qtype, xsVar(1));
+	xsmcSetInteger(xsVar(1), qclass);
+	xsmcSet(xsVar(0), xsID_qclass, xsVar(1));
 
 	xsResult = xsVar(0);
 }

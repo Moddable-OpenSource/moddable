@@ -12,8 +12,7 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { HMC5883, Config } from "embedded:sensor/Magnetometer/HMC5883";
+import HMC5883 from "embedded:sensor/Magnetometer/HMC5883";
 import Timer from "timer";
 
 
@@ -25,9 +24,9 @@ const sensor = new HMC5883({
 });
 
 sensor.configure({
-	rate: Config.Rate.RATE_15,
-	gain: Config.Gain.GAIN_1_3,
-	mode: Config.Mode.CONTINUOUS
+	rate: 4,		// 15 Hz
+	gain: 1,		// GAIN_1_3
+	mode: 0,		// Continuous measurement
 });
 
 Timer.repeat(() => {

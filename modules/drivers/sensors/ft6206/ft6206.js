@@ -12,93 +12,133 @@
  *
  */
 
-const none = Object.freeze([]);
+import Timer from "timer";		//@@
 
 class FT6206  {
 	#io;
 
 	constructor(options) {
-		const io = this.#io = new options.sensor.io({
-			hz: 600000,
+		const {i2c, reset, interrupt, onSample} = options;
+		const io = this.#io = new i2c.io({
+			hz: 100_000,
 			address: 0x38,
-			...options.sensor
+			...i2c
 		});
 
-		io.write(Uint8Array.of(0xA8));
-		if (17 !== (new Uint8Array(io.read(1)))[0])
+		if (reset) {
+			io.reset = new reset.io({
+				...reset
+			});
+
+			io.reset.write(0);
+			Timer.delay(5);
+			io.reset.write(1);
+			Timer.delay(150);
+		}
+
+		if (17 !== io.readByte(0xA8))
 			throw new Error("unexpected vendor");
 
-		io.write(Uint8Array.of(0xA3));
-		let id = (new Uint8Array(io.read(1)))[0];
+		const id = io.readByte(0xA3);
 		if ((6 !== id) && (100 !== id))
 			throw new Error("unexpected chip");
 
-		io.write(Uint8Array.of(0x80, 128));					// touch threshold
-		io.write(Uint8Array.of(0x86, 1));					// go to monitor mode when no touch active
+		if (interrupt && onSample) {
+			io.interrupt = new interrupt.io({
+				...interrupt,
+				edge: interrupt.io.Falling,
+				onReadable: onSample.bind(this)
+			});
+		}
+
+		this.configure({
+			active: false,
+			threshold: 128,
+			timeout: 10
+		});
+	}
+	close() {
+		this.#io?.reset?.close();
+		this.#io?.interrupt?.close();
+		this.#io?.close();
+		this.#io = undefined;
 	}
 	configure(options) {
 		const io = this.#io;
 
-		if (options.threshold)
-			io.write(Uint8Array.of(0x80, options.threshold));
+		if ("threshold" in options)
+			io.writeByte(0x80, options.threshold);
 
-		if (options.monitor)
-			io.write(Uint8Array.of(0x86, options.monitor ? 1 : 0));
+		if ("active" in options)
+			io.writeByte(0x86, options.active ? 0 : 1);
 
-		if (undefined !== options.flipX)
-			this.flipX = options.flipX;
+		if ("timeout" in options)
+			io.writeByte(0x87, options.timeout);
 
-		if (undefined !== options.flipY)
-			this.flipY = options.flipY;
+		let value = options.flip;
+		if (value) {
+			delete io.flipX;
+			delete io.flipY;
+
+			if ("h" === value)
+				io.flipX = true; 
+			else if ("v" === value)
+				io.flipY = true; 
+			else if ("hv" === value)
+				io.flipX = io.flipY = true; 
+		}
+
+		value = options.length;
+		if (undefined !== value)
+			io.length = (1 === value) ? 1 : 2; 
+
+		if ("weight" in options) {
+			delete io.weight;
+			if (options.weight)
+				io.weight = true;
+		}
+
+		if ("area" in options) {
+			delete io.area;
+			if (options.area)
+				io.area = true;
+		}
 	}
 	sample() {
 		const io = this.#io;
 
-		io.write(Uint8Array.of(0x02));						// number of touches
-		const length = (new Uint8Array(io.read(1)))[0] & 0x0F;
+		const length = io.readByte(0x02) & 0x0F;			// number of touches
 		if (0 === length)
-			return none;
+			return;
 
-		io.write(Uint8Array.of(0x03));						// read points
-		const data = new Uint8Array(io.read(6 * length));	// x, then y
+		const data = new Uint8Array(length * 6);
+		io.readBlock(0x03, data.buffer);
 		const result = new Array(length);
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;
-			let id = data[offset + 2] >> 4;
-			let state = data[offset] >> 6;
+			const id = data[offset + 2] >> 4;
+			if (id && (1 === io.length))
+				continue;
+
 			let x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
 			let y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
 
-			if (0 === state)									// down
-				state = 1;
-			else if (2 === state)								// contact
-				state = 2;
-			else if ((1 === state) || (3 === state))			// lift (not always delivered)
-				state = 3;
-			else
-				throw new Error("unexpected");
-
-			if (this.flipX)
+			if (io.flipX)
 				x = 240 - x;
 
-			if (this.flipY)
+			if (io.flipY)
 				y = 320 - y;
 
-			result[id] = {x, y, state};
+			result[i] = {x, y, id};
+
+			if (io.weight)
+				result[i].weight = data[offset + 4];
+
+			if (io.area)
+				result[i].area = data[offset + 5] >> 4;
 		}
 
 		return result;
-	}
-	read(points) {
-		const sample = this.sample();
-		for (let i=0; i<points.length; i++)
-			if (i < sample.length && sample[i] !== undefined) {
-				points[i].x = sample[i].x;
-				points[i].y = sample[i].y;
-				points[i].state = sample[i].state;
-			}
-			else
-				points[i].state = 0;
 	}
 }
 

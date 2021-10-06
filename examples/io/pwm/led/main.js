@@ -13,7 +13,7 @@
  */
 
 const led1 = new device.io.PWM({
-   pin: device.pins.led
+   pin: device.pin.led
 });
 
 const led2 = new device.io.PWM({

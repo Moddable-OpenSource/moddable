@@ -3190,7 +3190,7 @@ twoColorCommon:
 			}
 
 			do {
-				PocoPixel *src = out;
+				PocoPixel *src = (PocoPixel *)out;
 				uint8_t count = widthRemain & 3;
 				if (!count) count = 4;
 
@@ -3425,7 +3425,7 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		displayLinesAlt = displayLines >> 1;
 		displayLines -= displayLinesAlt;
 		pixelsAlt = (PocoPixel *)((displayLines * rowBytes) + (char *)pixels);
-		if (3 & (int)pixelsAlt)
+		if (3 & (uintptr_t)pixelsAlt)
 			pixelsAlt = (PocoPixel *)((4 + (uintptr_t)pixelsAlt) & ~3);
 	}
 	else {

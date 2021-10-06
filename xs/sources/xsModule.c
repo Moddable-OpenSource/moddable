@@ -1498,10 +1498,19 @@ void fx_Compartment(txMachine* the)
 			global = fxNewGlobalInstance(the);
 	#endif
 			slot = fxLastProperty(the, global);
-			for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
-				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
-			for (; id < _Compartment; id++)
-				slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+			if (mxCompartmentGlobal.kind == XS_UNDEFINED_KIND) {
+				for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
+					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+				for (; id < _Compartment; id++)
+					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+			}
+			else {
+				txSlot* item = mxCompartmentGlobal.value.reference->next->value.array.address;
+				for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
+					slot = fxNextSlotProperty(the, slot, item + id, mxID(id), XS_DONT_ENUM_FLAG);
+				for (; id < _Compartment; id++)
+					slot = fxNextSlotProperty(the, slot, item + id, mxID(id), XS_GET_ONLY);
+			}
 		}
 		else {
 			mxPush(mxCompartmentGlobal);

@@ -54,19 +54,26 @@ const DATA_READY = 0b0010_0000_0000_0000;
 class TMP117 {
 	#io;
 	#onAlert;
+	#onError;
 	#monitor;
 	#status;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000, 
+			hz: 400_000, 
 			address: 0x48,
 			...options.sensor
 		});
 
+		this.#onError = options.onError;
+
 		let conf = io.readWord(Register.TMP117_CHIPID, true);
-		if (0x117 != (conf & 0x0fff))
-			throw new Error("unexpected sensor");
+		if (0x117 != (conf & 0x0fff)) {
+			this.#onError?.("unexpected sensor");
+			this.#io.close();
+			this.#io = undefined;
+			return;
+		}
 
 		conf = io.readWord(Register.TMP117_CONF, true);
 		conf |= ConfigMask.SOFT_RESET;		// softreset
@@ -117,7 +124,7 @@ class TMP117 {
 			if (options.thermostatMode === "interrupt")
 				conf |= 0b1_0000;
 			else if (options.thermostatMode !== "comparator")
-				throw new Error("bad thermostatMode");
+				this.#onError?.("bad thermostatMode");
 		}
 
 		if (undefined !== options.conversionRate) {
@@ -137,7 +144,7 @@ class TMP117 {
 				case 8:  conf |= 0b0010_0000; break;
 				case 32: conf |= 0b0100_0000; break;
 				case 64: conf |= 0b0110_0000; break;
-				default: throw new Error("invalid averaging");
+				default: this.#onError?.("invalid averaging");
 			}
 		}
 

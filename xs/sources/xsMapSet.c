@@ -56,7 +56,7 @@ static txSlot* fxNewSetIteratorInstance(txMachine* the, txSlot* iterable, txInte
 static void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paired);
 static txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txBoolean paired); 
 static txSlot* fxGetEntry(txMachine* the, txSlot* table, txSlot* slot);
-//static void fxPurgeEntries(txMachine* the, txSlot* list);
+static void fxPurgeEntries(txMachine* the, txSlot* list);
 static void fxResizeEntries(txMachine* the, txSlot* table, txSlot* list);
 static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txSlot* pair); 
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
@@ -317,9 +317,12 @@ void fx_Map_prototype_forEach(txMachine* the)
 	txSlot* table = instance->next;
 	txSlot* list = table->next;
 	txSlot* function = fxArgToCallback(the, 0);
-	txSlot* key = list->value.list.first;
+	txSlot* key;
+	txSlot* value;
+	mxPushList();
+	key = the->stack->value.list.first = list->value.list.first;
 	while (key) {
-		txSlot* value = key->next;
+		value = key->next;
 		if (!(key->flag & XS_DONT_ENUM_FLAG)) {
 			/* THIS */
 			if (mxArgc > 1)
@@ -336,8 +339,9 @@ void fx_Map_prototype_forEach(txMachine* the)
 			mxRunCount(3);
 			mxPop();
 		}
-		key = value->next;
+		key = the->stack->value.list.first = value->next;
 	}
+	mxPop();
 }
 
 void fx_Map_prototype_get(txMachine* the)
@@ -401,8 +405,9 @@ txSlot* fxNewMapIteratorInstance(txMachine* the, txSlot* iterable, txInteger kin
 	mxPush(mxMapIteratorPrototype);
 	instance = fxNewIteratorInstance(the, iterable, mxID(_Map));
 	property = fxLastProperty(the, instance);
-	property->kind = XS_CLOSURE_KIND;
-	property->value.closure = C_NULL;
+	property->kind = XS_LIST_KIND;
+	property->value.list.first = C_NULL;
+	property->value.list.last = C_NULL;
 	property = fxNextIntegerProperty(the, property, kind, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	mxPullSlot(mxResult);
 	return instance;
@@ -417,9 +422,9 @@ void fx_MapIterator_prototype_next(txMachine* the)
 	mxResult->value = result->value;
 	result = result->value.reference->next;
 	if (result->next->value.boolean == 0) {
-		txSlot* index = iterable->next;
-		txInteger kind = index->next->value.integer;
-		txSlot* key = index->value.closure;
+		txSlot* list = iterable->next;
+		txInteger kind = list->next->value.integer;
+		txSlot* key = list->value.list.first;
 		if (key)
 			key = key->next->next;
 		else
@@ -441,12 +446,12 @@ void fx_MapIterator_prototype_next(txMachine* the)
 				result->kind = key->kind;
 				result->value = key->value;
 			}
-			index->value.closure = key;
+			list->value.list.first = key;
 		}
 		else {
 			result->kind = XS_UNDEFINED_KIND;
 			result->next->value.boolean = 1;
-			index->value.closure = C_NULL;
+			list->value.list.first = C_NULL;
 		}
 	}
 }
@@ -589,7 +594,9 @@ void fx_Set_prototype_forEach(txMachine* the)
 	txSlot* table = instance->next;
 	txSlot* list = table->next;
 	txSlot* function = fxArgToCallback(the, 0);
-	txSlot* value = list->value.list.first;
+	txSlot* value;
+	mxPushList();
+	value = the->stack->value.list.first = list->value.list.first;
 	while (value) {
 		if (!(value->flag & XS_DONT_ENUM_FLAG)) {
 			/* THIS */
@@ -607,8 +614,9 @@ void fx_Set_prototype_forEach(txMachine* the)
 			mxRunCount(3);
 			mxPop();
 		}
-		value = value->next;
+		value = the->stack->value.list.first = value->next;
 	}
+	mxPop();
 }
 
 void fx_Set_prototype_has(txMachine* the)
@@ -643,8 +651,9 @@ txSlot* fxNewSetIteratorInstance(txMachine* the, txSlot* iterable, txInteger kin
 	mxPush(mxSetIteratorPrototype);
 	instance = fxNewIteratorInstance(the, iterable, mxID(_Set));
 	property = fxLastProperty(the, instance);
-	property->kind = XS_CLOSURE_KIND;
-	property->value.closure = C_NULL;
+	property->kind = XS_LIST_KIND;
+	property->value.list.first = C_NULL;
+	property->value.list.last = C_NULL;
 	property = fxNextIntegerProperty(the, property, kind, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
 	mxPullSlot(mxResult);
 	return instance;
@@ -659,9 +668,9 @@ void fx_SetIterator_prototype_next(txMachine* the)
 	mxResult->value = result->value;
 	result = result->value.reference->next;
 	if (result->next->value.boolean == 0) {
-		txSlot* index = iterable->next;
-		txInteger kind = index->next->value.integer;
-		txSlot* value = index->value.closure;
+		txSlot* list = iterable->next;
+		txInteger kind = list->next->value.integer;
+		txSlot* value = list->value.list.first;
 		if (value)
 			value = value->next;
 		else
@@ -678,12 +687,12 @@ void fx_SetIterator_prototype_next(txMachine* the)
 				result->kind = value->kind;
 				result->value = value->value;
 			}
-			index->value.closure = value;
+			list->value.list.first = value;
 		}
 		else {
 			result->kind = XS_UNDEFINED_KIND;
 			result->next->value.boolean = 1;
-			index->value.closure = C_NULL;
+			list->value.list.first = C_NULL;
 		}
 	}
 }
@@ -696,12 +705,15 @@ void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paire
 		slot->kind = XS_UNDEFINED_KIND;
 		slot = slot->next;
 	}
+	c_memset(table->value.table.address, 0, table->value.table.length * sizeof(txSlot*));
 	list->next->value.integer = 0;
 	fxResizeEntries(the, table, list);
+	fxPurgeEntries(the, list);
 }
 
 txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txBoolean paired) 
 {
+	txSlot* info = list->next;
 	txU4 sum = fxSumEntry(the, key);
 	txU4 index = sum & (table->value.table.length - 1);
 	txSlot** address = &(table->value.table.address[index]);
@@ -721,8 +733,9 @@ txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key
 					last->flag = XS_DONT_ENUM_FLAG;
 					last->kind = XS_UNDEFINED_KIND;
 				}
-				list->next->value.integer--;
+				info->value.integer--;
 				fxResizeEntries(the, table, list);
+				fxPurgeEntries(the, list);
 				return 1;
 			}
 		}
@@ -748,22 +761,22 @@ txSlot* fxGetEntry(txMachine* the, txSlot* table, txSlot* slot)
 	return C_NULL;
 }
 
-// void fxPurgeEntries(txMachine* the, txSlot* list) 
-// {
-// 	txSlot* former = C_NULL;
-// 	txSlot** address = &(list->value.list.first);
-// 	txSlot* slot;
-// 	while ((slot = *address)) {
-// 		if (slot->flag & XS_DONT_ENUM_FLAG) {
-// 			*address = slot->next;
-// 		}
-// 		else {
-// 			former = slot;
-// 			address = &slot->next;
-// 		}
-// 	}
-// 	list->value.list.last = former;
-// }
+void fxPurgeEntries(txMachine* the, txSlot* list) 
+{
+	txSlot* former = C_NULL;
+	txSlot** address = &(list->value.list.first);
+	txSlot* slot;
+	while ((slot = *address)) {
+		if (slot->flag & XS_DONT_ENUM_FLAG) {
+			*address = slot->next;
+		}
+		else {
+			former = slot;
+			address = &slot->next;
+		}
+	}
+	list->value.list.last = former;
+}
 
 void fxResizeEntries(txMachine* the, txSlot* table, txSlot* list) 
 {
@@ -858,6 +871,7 @@ void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txSlot
 		mxPushClosure(last);
 	}
 	entry = fxNewSlot(the);
+	address = &(table->value.table.address[index]);
 	entry->next = *address;
 	entry->kind = XS_ENTRY_KIND;
 	entry->value.entry.slot = first;

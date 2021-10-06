@@ -93,14 +93,12 @@ void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLengt
 	mxPush(mxArrayBufferPrototype);
 	instance = fxNewArrayBufferInstance(the);
 	arrayBuffer = instance->next;
-	if (byteLength) {
-		arrayBuffer->value.arrayBuffer.address = fxNewChunk(the, byteLength);
-		arrayBuffer->value.arrayBuffer.length = byteLength;
-		if (data != NULL)
-			c_memcpy(arrayBuffer->value.arrayBuffer.address, data, byteLength);
-		else
-			c_memset(arrayBuffer->value.arrayBuffer.address, 0, byteLength);
-	}
+	arrayBuffer->value.arrayBuffer.address = fxNewChunk(the, byteLength);
+	arrayBuffer->value.arrayBuffer.length = byteLength;
+	if (data != NULL)
+		c_memcpy(arrayBuffer->value.arrayBuffer.address, data, byteLength);
+	else
+		c_memset(arrayBuffer->value.arrayBuffer.address, 0, byteLength);
 	mxPullSlot(slot);
 }
 
@@ -1249,6 +1247,12 @@ void fx_TypedArray(txMachine* the)
 			if (dispatch == arrayDispatch)
 				c_memcpy(data->value.arrayBuffer.address + offset, arrayData->value.arrayBuffer.address + arrayOffset, size);
 			else {
+				txBoolean contentType = (dispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
+						|| (dispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
+				txBoolean arrayContentType = (arrayDispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
+						|| (arrayDispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
+				if (contentType != arrayContentType)
+					mxTypeError("incompatible content type");
 				mxPushUndefined();
 				while (offset < size) {
 					(*arrayDispatch->value.typedArray.dispatch->getter)(the, arrayData, arrayOffset, the->stack, EndianNative);

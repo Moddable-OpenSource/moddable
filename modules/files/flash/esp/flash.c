@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -77,9 +77,11 @@ void xs_flash_destructor(void *data)
 void xs_flash_erase(xsMachine *the)
 {
 	modFlash flash = xsmcGetHostChunk(xsThis);
+	uint32_t partitionStart = flash->partitionStart; 
+	uint32_t partitionEnd = flash->partitionEnd; 
 	SpiFlashOpResult result;
-	int sector = xsmcToInteger(xsArg(0)) + (flash->partitionStart / SPI_FLASH_SEC_SIZE);
-	if ((sector < 0) || (sector >= (flash->partitionEnd / SPI_FLASH_SEC_SIZE)))
+	int sector = xsmcToInteger(xsArg(0)) + (partitionStart / SPI_FLASH_SEC_SIZE);
+	if ((sector < 0) || (sector >= (partitionEnd / SPI_FLASH_SEC_SIZE)))
 		xsUnknownError("invalid sector");
 
     ets_isr_mask(FLASH_INT_MASK);
@@ -92,11 +94,12 @@ void xs_flash_erase(xsMachine *the)
 
 void xs_flash_read(xsMachine *the)
 {
-	modFlash flash = xsmcGetHostChunk(xsThis);
+	modFlash flash;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 	uint8_t *buffer;
 
+	flash = xsmcGetHostChunk(xsThis);
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
 		xsUnknownError("invalid offset");
 
@@ -121,18 +124,20 @@ void xs_flash_read(xsMachine *the)
 		buffer = xsmcToArrayBuffer(xsResult);
 	}
 
+	flash = xsmcGetHostChunk(xsThis);
 	if (0 == modSPIRead(offset + flash->partitionStart, byteLength, buffer))
 		xsUnknownError("read fail");
 }
 
 void xs_flash_write(xsMachine *the)
 {
-	modFlash flash = xsmcGetHostChunk(xsThis);
+	modFlash flash;
 	SpiFlashOpResult result;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 	void *buffer;
 
+	flash = xsmcGetHostChunk(xsThis);
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
 		xsUnknownError("invalid offset");
 
@@ -141,6 +146,7 @@ void xs_flash_write(xsMachine *the)
 
 	buffer = xsmcToArrayBuffer(xsArg(2));
 
+	flash = xsmcGetHostChunk(xsThis);
 	if (0 == modSPIWrite(offset + flash->partitionStart, byteLength, buffer))
 		xsUnknownError("write fail");
 }

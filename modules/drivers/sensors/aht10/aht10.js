@@ -53,7 +53,7 @@ class AHT10 {
 	constructor(options) {
 		const cBuf = this.#cmdBuffer;
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000, 
+			hz: 400_000, 
 			address: 0x38,
 			...options.sensor
 		});
@@ -75,7 +75,7 @@ class AHT10 {
 		const io = this.#io;
 		const cBuf = this.#cmdBuffer;
 		const vBuf = this.#valueBuffer;
-		let ret = {};
+		let ret = { hygrometer: {}, thermometer: {}};
 
 		cBuf[0] = Register.CMD_MEAS;
 		cBuf[1] = 0x33;
@@ -88,8 +88,8 @@ class AHT10 {
 
 		let h = (vBuf[1] << 12) | (vBuf[2] << 4) | ((vBuf[3] & 0xF0) >> 4);
 		let t = ((vBuf[3] & 0x0F) << 16) | (vBuf[4] << 8) | vBuf[5];
-		ret.humidity = ((h * 625) >> 16) / 100;
-		ret.temperature = (((t * 625) >> 15) / 100) - 50;
+		ret.hygrometer.humidity = ((h * 625) >> 16) / 100;
+		ret.thermometer.temperature = (((t * 625) >> 15) / 100) - 50;
 
 		return ret;
 	}

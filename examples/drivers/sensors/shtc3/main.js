@@ -12,7 +12,6 @@
  *
  */
 
-import device from "embedded:provider/builtin";
 import Humidity from "embedded:sensor/Humidity-Temperature/SHTC3";
 import Timer from "timer";
 
@@ -26,7 +25,7 @@ sensor.configure({
 Timer.repeat(() => {
 	const sample = sensor.sample();
 
-	trace(`Temperature: ${sample.temperature.toFixed(2)} C `);
-	trace(`Humidity: ${sample.humidity.toFixed(2)} %RH\n`);
+	trace(`Temperature: ${sample.thermometer.temperature?.toFixed(2)} C `);
+	trace(`Humidity: ${sample.hygrometer.humidity?.toFixed(2)} %RH\n`);
 }, 2000);
 

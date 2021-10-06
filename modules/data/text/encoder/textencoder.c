@@ -23,10 +23,20 @@
 #if mxNoFunctionLength
 	#include "mc.xs.h"			// for xsID_ values
 #else
+	#include <stdbool.h>
+
 	#define xsID_read (xsID("read"))
 	#define xsID_String (xsID("String"))
 	#define xsID_Uint8Array (xsID("Uint8Array"))
 	#define xsID_written (xsID("written"))
+#endif
+
+#if !mxNoFunctionLength
+void xs_textencoder(xsMachine *the)
+{
+	xsmcGet(xsResult, xsTarget, xsID("prototype"));
+	xsResult = xsNewHostInstance(xsResult);
+}
 #endif
 
 /*
@@ -149,3 +159,25 @@ void xs_textencoder_encodeInto(xsMachine *the)
 	xsmcSetInteger(xsVar(0), dstTotal - dstRemaining);
 	xsmcSet(xsResult, xsID_written, xsVar(0));
 }
+
+#if !mxNoFunctionLength
+void modInstallTextEncoder(xsMachine *the)
+{
+	#define kPrototype (0)
+	#define kConstructor (1)
+	#define kScratch (2)
+
+	xsBeginHost(the);
+	xsmcVars(3);
+
+	xsmcSetNewObject(xsVar(kPrototype));
+	xsVar(kConstructor) = xsNewHostConstructor(xs_textencoder, 1, xsVar(kPrototype));
+	xsmcSet(xsGlobal, xsID("TextEncoder"), xsVar(kConstructor));
+	xsVar(kScratch) = xsNewHostFunction(xs_textencoder_encode, 1);
+	xsmcSet(xsVar(kPrototype), xsID("encode"), xsVar(kScratch));
+	xsVar(kScratch) = xsNewHostFunction(xs_textencoder_encodeInto, 2);
+	xsmcSet(xsVar(kPrototype), xsID("encodeInto"), xsVar(kScratch));
+
+	xsEndHost(the);
+}
+#endif

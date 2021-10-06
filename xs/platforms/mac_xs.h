@@ -87,7 +87,8 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	pthread_mutex_t workerMutex; \
 	CFRunLoopRef workerLoop; \
 	txWorkerJob* workerQueue; \
-	CFRunLoopSourceRef workerSource;
+	CFRunLoopSourceRef workerSource; \
+	void* demarshall;
 	
 
 #endif /* __MAC_XS__ */

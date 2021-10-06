@@ -31,13 +31,12 @@ const REGISTERS = {
     ACCEL_XOUT: 0x3B, //big endian
     ACCEL_YOUT: 0x3D,
     ACCEL_ZOUT: 0x3F,
-    TEMP_OUT: 0x41,
     GYRO_XOUT: 0x43,
     GYRO_YOUT: 0x45,
     GYRO_ZOUT: 0x47,
     PWR_MGMT_1: 0x6B,
     PWR_MGMT_2: 0x6C,
-    WHO_AM_I: 0x75,
+	WHO_AM_I: 0x75,
 
 	SAMPLERATE_DIV: 0x19,
 	DLPF_CONFIG: 0x1A,
@@ -80,20 +79,26 @@ class MPU6050 {
 	#range = Config.Accel_Range.RANGE_2_G;
 	#gyroRange = Config.Gyro_Range.RANGE_250;
 	#onAlert;
+	#onError;
 	#monitor;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000,
+			hz: 400_000,
 			address: 0x68,
 			...options.sensor
 		});
 
+		this.#onError = options.onError;
+
 		this.#xlView = new DataView(this.#xlRaw);
 		this.#gyroView = new DataView(this.#gyroRaw);
 		const gxlID = io.readByte(REGISTERS.WHO_AM_I) & 0b01111110;
-		if (gxlID != EXPECTED_WHO_AM_I)
-			throw new Error("unexpected sensor");
+		if (gxlID != EXPECTED_WHO_AM_I) {
+			this.#onError?.("unexpected sensor");
+			this.close();
+			return;
+		}
 
 		// device reset
 		io.writeByte(REGISTERS.PWR_MGMT_1, 0b1000_0000);
@@ -143,20 +148,20 @@ class MPU6050 {
 	}
 	sample() {
 		const io = this.#io;
-		let ret = {};
+		let ret = { accelerometer: {}, gyroscope: {} };
 
 		io.readBlock(REGISTERS.ACCEL_XOUT, this.#xlRaw);
-		ret.x = this.#xlView.getInt16(0) / ACCEL_SCALER[this.#range];
-		ret.y = this.#xlView.getInt16(2) / ACCEL_SCALER[this.#range];
-		ret.z = this.#xlView.getInt16(4) / ACCEL_SCALER[this.#range];
-		ret.x *= Gconversion;
-		ret.y *= Gconversion;
-		ret.z *= Gconversion;
+		ret.accelerometer.x = this.#xlView.getInt16(0) / ACCEL_SCALER[this.#range];
+		ret.accelerometer.y = this.#xlView.getInt16(2) / ACCEL_SCALER[this.#range];
+		ret.accelerometer.z = this.#xlView.getInt16(4) / ACCEL_SCALER[this.#range];
+		ret.accelerometer.x *= Gconversion;
+		ret.accelerometer.y *= Gconversion;
+		ret.accelerometer.z *= Gconversion;
 
 		io.readBlock(REGISTERS.GYRO_XOUT, this.#gyroRaw);
-		ret.gyroX = this.#gyroView.getInt16(0) / GYRO_SCALER[this.#gyroRange];
-		ret.gyroY = this.#gyroView.getInt16(2) / GYRO_SCALER[this.#gyroRange];
-		ret.gyroZ = this.#gyroView.getInt16(4) / GYRO_SCALER[this.#gyroRange];
+		ret.gyroscope.x = this.#gyroView.getInt16(0) / GYRO_SCALER[this.#gyroRange];
+		ret.gyroscope.y = this.#gyroView.getInt16(2) / GYRO_SCALER[this.#gyroRange];
+		ret.gyroscope.z = this.#gyroView.getInt16(4) / GYRO_SCALER[this.#gyroRange];
 
 		return ret;
 	}

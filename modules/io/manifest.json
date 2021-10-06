@@ -41,7 +41,7 @@
 	"platforms": {
 		"esp/*": {
 			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider"
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
 			}
 		},
 		"esp": {
@@ -51,7 +51,7 @@
 		},
 		"esp32/*": {
 			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/$(SUBPLATFORM)/provider",
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
 				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
 			}
 		},

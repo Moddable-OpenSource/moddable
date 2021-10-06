@@ -428,16 +428,18 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
+		fxParserTree(parser, stream, getter, flags, NULL);
 #ifdef mxDebug
-		if (fxIsConnected(the)) {
+		parser->flags |= mxDebugFlag;
+		if (!parser->source) {
 			char tag[16];
-			flags |= mxDebugFlag;
+			parser->flags |= mxDebugFlag;
 			fxGenerateTag(the, tag, sizeof(tag), C_NULL);
-			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, tag);
-			parser->path = fxNewParserSymbol(parser, tag);
+			parser->source = fxNewParserSymbol(parser, tag);
 		}
+		if (fxIsConnected(the))
+			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, parser->source->string);
 #endif
-		fxParserTree(parser, stream, getter, flags, C_NULL);
 		fxParserHoist(parser);
 		fxParserBind(parser);
 		script = fxParserCode(parser);

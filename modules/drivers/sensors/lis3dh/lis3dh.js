@@ -28,47 +28,19 @@
 
 import Timer from "timer";
 
-function asHex(v) { return `${v.toString(16).padStart(2, "0")}`; }
-
 const Register = Object.freeze({
-	STATUS1: 0x07,
-	OUTADC1_L: 0x08,
-	OUTADC1_H: 0x09,
-	OUTADC2_L: 0x0A,
-	OUTADC2_H: 0x0B,
-	OUTADC3_L: 0x0C,
-	OUTADC3_H: 0x0D,
-	INTCOUNT: 0x0E,
 	WHOAMI: 0x0F,
-	TEMPCFG: 0x1F,
 	CTRL1: 0x20,
 	CTRL2: 0x21,
 	CTRL3: 0x22,
 	CTRL4: 0x23,
 	CTRL5: 0x24,
 	CTRL6: 0x25,
-	REFERENCE: 0x26,
-	STATUS2: 0x27,
 	OUT_X_L: 0x28,
-	OUT_X_H: 0x29,
-	OUT_Y_L: 0x2A,
-	OUT_Y_H: 0x2B,
-	OUT_Z_L: 0x2C,
-	OUT_Z_H: 0x2D,
-	FIFOCTRL: 0x2E,
-	FIFOSRC: 0x2F,
 	INT1CFG: 0x30,
 	INT1SRC: 0x31,
 	INT1THS: 0x32,
-	INT1DUR: 0x33,
-	CLICKCFG: 0x38,
-	CLICKSRC: 0x39,
-	CLICKTHS: 0x3A,
-	TIMELIMIT: 0x3B,
-	TIMELATENCY: 0x3C,
-	TIMEWINDOW: 0x3D,
-	ACTTHS: 0x3E,
-	ACTDUR: 0x3F
+	INT1DUR: 0x33
 });
 
 const Config = Object.freeze({
@@ -112,6 +84,7 @@ const Gconversion = 9.80665;
 class LIS3DH {
 	#io;
 	#onAlert;
+	#onError;
 	#monitor;
 	#values = new Int16Array(3);
 	#multiplier = (1 / 16380) * Gconversion;
@@ -122,13 +95,18 @@ class LIS3DH {
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000,
+			hz: 400_000,
 			address: 0x18,
 			...options.sensor
 		});
 
-		if (0x33 !== io.readByte(Register.WHOAMI))
-			throw new Error("unexpected sensor");
+		this.#onError = options.onError;
+
+		if (0x33 !== io.readByte(Register.WHOAMI)) {
+			this.#onError("unexpected sensor");
+			this.close();
+			return;
+		}
 
 		const {alert, onAlert} = options;
 		if (alert && onAlert) {
@@ -228,4 +206,4 @@ class LIS3DH {
 }
 Object.freeze(LIS3DH.prototype);
 
-export {LIS3DH as default, LIS3DH, Config};
+export default LIS3DH;

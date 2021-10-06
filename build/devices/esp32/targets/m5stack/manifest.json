@@ -5,7 +5,7 @@
 	],
 	"config": {
 		"screen": "m5stack/screen",
-		"driverRotation": 0,
+		"driverRotation": 270,
 		"touch": "",
 		"startupSound": "bflatmajor.maud"
 	},

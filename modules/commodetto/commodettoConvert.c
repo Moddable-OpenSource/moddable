@@ -95,23 +95,13 @@ void xs_Convert(xsMachine *the)
 
 void xs_convert_process(xsMachine *the)
 {
+	void *src, *dst;
+	xsUnsignedValue srcLength, dstLength, pixelCount;
+
+	xsmcGetBuffer(xsArg(0), &src, &srcLength);
+	xsmcGetBuffer(xsArg(1), &dst, &dstLength);
+
 	xsConvert c = xsmcGetHostChunk(xsThis);
-	uint8_t *src, *dst;
-	int srcLength, dstLength, pixelCount;
-
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		src = xsmcToArrayBuffer(xsArg(0));
-		srcLength = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		xsmcVars(1);
-		src = xsmcGetHostData(xsArg(0));
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		srcLength = xsmcToInteger(xsVar(0));
-	}
-	dst = xsmcToArrayBuffer(xsArg(1));
-	dstLength = xsmcGetArrayBufferLength(xsArg(1));
-
 	pixelCount = (srcLength << 3) / c->srcPixelDepth;
 
 	if (((dstLength << 3) / c->dstPixelDepth) < pixelCount)

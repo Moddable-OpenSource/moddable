@@ -12,14 +12,13 @@
  *
  */
 
-import device from "embedded:provider/builtin";
-import { BMP180, Config } from "embedded:sensor/AtmosphericPressure-Temperature/BMP180";
+import BMP180 from "embedded:sensor/AtmosphericPressure-Temperature/BMP180";
 import Timer from "timer";
 
 const sensor = new BMP180({ sensor: device.I2C.default });
 
 sensor.configure({
-	mode: Config.Mode.ULTRAHIGHRES
+	mode: 3			// ULTRAHIGHRES
 });
 
 function CtoF(c) { return (c*1.8)+32; }
@@ -28,8 +27,8 @@ function PatoInHg(Pa) { return Pa * 0.0002953; }
 Timer.repeat(() => {
 	const sample = sensor.sample();
 
-    trace(`Temperature: ${sample.temperature.toFixed(2)} C -- ${CtoF(sample.temperature).toFixed(2)} F\n`);
-    trace(`Pressure: ${sample.pressure.toFixed(2)} Pa -- ${PatoInHg(sample.pressure).toFixed(3)} inHg\n`);
+    trace(`Temperature: ${sample.thermometer.temperature?.toFixed(2)} C -- ${CtoF(sample.thermometer.temperature)?.toFixed(2)} F\n`);
+    trace(`Pressure: ${sample.barometer.pressure?.toFixed(2)} Pa -- ${PatoInHg(sample.barometer.pressure)?.toFixed(3)} inHg\n`);
 
 }, 2000);
 

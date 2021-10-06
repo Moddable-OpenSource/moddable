@@ -1,5 +1,5 @@
 {
-	"include": "$(MODDABLE)/modules/drivers/sensors/htu21d/manifest.json",
+	"include": "$(MODDABLE)/modules/drivers/sensors/si7020/manifest.json",
 	"modules": {
 		"*": "./main"
 	}

@@ -12,7 +12,6 @@
  *
  */
 
-import device from "embedded:provider/builtin";
 import Temperature from "embedded:sensor/Temperature/MLX90614";
 import Timer from "timer";
 

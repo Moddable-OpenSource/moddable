@@ -36,6 +36,7 @@ const Register = Object.freeze({
 class LM75 {
 	#io;
 	#onAlert;
+	#onError;
 	#TOS;
 	#THYST;
 	#monitor;
@@ -43,10 +44,12 @@ class LM75 {
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
-			hz: 100_000, 
+			hz: 400_000, 
 			address: 0x48,
 			...options.sensor
 		});
+
+		this.#onError = options.onError;
 
 		const {alert, onAlert} = options;
 		if (alert && onAlert) {
@@ -102,7 +105,7 @@ class LM75 {
 			if (mode === "interrupt")
 				conf |= 0b10;
 			else if (mode !== "comparator")
-				throw new Error("bad thermostatMode");
+				this.#onError?.("bad thermostatMode");
 		}
 			
 		if (undefined !== options.polarity) {
@@ -117,7 +120,7 @@ class LM75 {
 				case 2: conf |= 0b0_1000; break;
 				case 4: conf |= 0b1_0000; break;
 				case 6: conf |= 0b1_1000; break;
-				default: throw new Error("invalid faultQueue");
+				default: this.#onError?.("invalid faultQueue");
 			}
 		}
 

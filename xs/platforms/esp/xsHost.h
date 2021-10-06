@@ -544,13 +544,20 @@ char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 /* CPU */
 
-#if ESP32 == 2
+#if ESP32 == 3
+	#define kCPUESP32S3 1
+	#define kTargetCPUCount 2
+	#define kESP32TimerDef	int_clr
+#elif ESP32 == 2
 	#define kCPUESP32S2 1
 	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
 #elif ESP32 == 1 
 	#define kTargetCPUCount 2
+	#define kESP32TimerDef	int_clr_timers
 #else
 	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
 #endif
 
 #ifdef __cplusplus
