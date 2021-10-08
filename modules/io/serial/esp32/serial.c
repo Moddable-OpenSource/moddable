@@ -51,6 +51,7 @@ struct SerialRecord {
 	uint8_t		uart;
 	uint8_t		useCount;
 	uint8_t		txInterruptEnabled;
+	uint8_t		hasOnReadableOrWritable;
 	uart_dev_t	*uart_reg;
 	uint32_t	transmit;
 	uint32_t	receive;
@@ -160,11 +161,12 @@ void xs_serial_constructor(xsMachine *the)
 #endif
 		serial->uart_reg = uart ? &UART1 : &UART0;
 	serial->useCount = 1;
+	serial->hasOnReadableOrWritable = hasReadable || hasWritable;
 
-	if (hasReadable || hasWritable) {
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
+
+	if (serial->hasOnReadableOrWritable) {
 		serial->the = the;
-
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
 
 		// store callbacks & configure interrupts
 		err = uart_isr_register(uart, serial_isr, serial, 0, NULL);
@@ -224,8 +226,9 @@ void xs_serial_destructor(void *data)
 
 void xs_serial_close(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	if (!xsmcGetHostData(xsThis)) return;
+
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 
 	xsmcSetHostData(xsThis, NULL);
 	xsForget(serial->obj);
@@ -234,15 +237,13 @@ void xs_serial_close(xsMachine *the)
 
 void xs_serial_get_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	builtinGetFormat(the, serial->format);
 }
 
 void xs_serial_set_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
@@ -251,11 +252,8 @@ void xs_serial_set_format(xsMachine *the)
 
 void xs_serial_read(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	int count;
-
-	if (!serial)
-		xsUnknownError("closed");
 
 	count = uart_ll_get_rxfifo_len(serial->uart_reg);
 	if (0 == count)
@@ -286,11 +284,8 @@ void xs_serial_read(xsMachine *the)
 
 void xs_serial_write(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	int count;
-
-	if (!serial)
-		xsUnknownError("closed");
 
 	count = uart_ll_get_txfifo_len(serial->uart_reg);
 	if (kIOFormatNumber == serial->format) {
@@ -382,6 +377,9 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	Serial serial = it;
+
+	if (!serial->hasOnReadableOrWritable)
+		return;
 
 	if (serial->onReadable)
 		(*markRoot)(the, serial->onReadable);

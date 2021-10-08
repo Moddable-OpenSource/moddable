@@ -194,8 +194,9 @@ void xs_spi_destructor(void *data)
 
 void xs_spi_close(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
-	if (!spi) return;
+	if (!xsmcGetHostData(xsThis)) return;
+
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 	xsForget(spi->obj);
 	xs_spi_destructor(spi);
 	xsmcSetHostData(xsThis, NULL);
@@ -203,12 +204,9 @@ void xs_spi_close(xsMachine *the)
 
 void xs_spi_read(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 	void *data;
 	xsUnsignedValue count;
-
-	if (!spi)
-		xsUnknownError("closed");
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsmcGetBuffer(xsArg(0), &data, &count);
@@ -228,12 +226,9 @@ void xs_spi_read(xsMachine *the)
 
 void xs_spi_write(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 	void *data;
 	xsUnsignedValue count;
-
-	if (!spi)
-		xsUnknownError("closed");
 
 	xsmcGetBuffer(xsArg(0), &data, &count);
 	if (count > 65535)
@@ -244,12 +239,9 @@ void xs_spi_write(xsMachine *the)
 
 void xs_spi_transfer(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 	void *data;
 	xsUnsignedValue count;
-
-	if (!spi)
-		xsUnknownError("closed");
 
 	xsmcGetBuffer(xsArg(0), &data, &count);
 	if (count > 65535)
@@ -260,10 +252,7 @@ void xs_spi_transfer(xsMachine *the)
 
 void xs_spi_flush(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
-
-	if (!spi)
-		xsUnknownError("closed");
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 
 	modSPIFlush();
 

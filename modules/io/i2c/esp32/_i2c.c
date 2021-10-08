@@ -171,7 +171,9 @@ void _xs_i2c_destructor(void *data)
 
 void _xs_i2c_close(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
+	if (!xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor)) return;
+
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	if (!i2c) return;
 	xsForget(i2c->obj);
 	_xs_i2c_destructor(i2c);
@@ -180,16 +182,13 @@ void _xs_i2c_close(xsMachine *the)
 
 void _xs_i2c_read(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	xsUnsignedValue length;
 	int type;
 	int err;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
 	void *buffer;
-
-	if (!i2c)
-		xsUnknownError("closed");
 
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
@@ -228,15 +227,12 @@ void _xs_i2c_read(xsMachine *the)
 
 void _xs_i2c_write(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	int err;
 	xsUnsignedValue length;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
 	void *buffer;
-
-	if (!i2c)
-		xsUnknownError("closed");
 
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;

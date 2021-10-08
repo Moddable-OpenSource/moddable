@@ -184,8 +184,9 @@ void xs_analog_destructor_(void *data)
 
 void xs_analog_close_(xsMachine *the)
 {
-	Analog analog = xsmcGetHostData(xsThis);
-	if (!analog) return;
+	if (!xsmcGetHostData(xsThis)) return;
+
+	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
 
 	xsForget(analog->obj);
 	xs_analog_destructor_(analog);
@@ -195,9 +196,7 @@ void xs_analog_close_(xsMachine *the)
 void xs_analog_read_(xsMachine *the)
 {
 	uint32_t millivolts;
-	Analog analog = xsmcGetHostData(xsThis);
-	if (!analog)
-		xsUnknownError("closed");
+	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
 
 	if (analog->port == 1) {
 		millivolts = esp_adc_cal_raw_to_voltage(adc1_get_raw(analog->channel), &gADC1Characteristics);

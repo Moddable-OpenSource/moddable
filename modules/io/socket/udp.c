@@ -108,10 +108,10 @@ void xs_udp_constructor(xsMachine *the)
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
 
-	if (builtinGetCallback(the, xsID_onReadable, &xsVar(0))) {
+	if (builtinGetCallback(the, xsID_onReadable, &xsVar(0)))
 		udp->onReadable = xsToReference(xsVar(0));
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
-	}
+
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
 }
 
 void xs_udp_destructor(void *data)
@@ -133,17 +133,19 @@ void xs_udp_destructor(void *data)
 
 void xs_udp_close(xsMachine *the)
 {
-	UDP udp = xsmcGetHostData(xsThis);
-	if (!udp) return;
+	if (xsmcGetHostData(xsThis)) {
+		UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
 
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(udp->obj);
-	xs_udp_destructor(udp);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+		xsForget(udp->obj);
+		xs_udp_destructor(udp);
+	}
 }
 
 void xs_udp_read(xsMachine *the)
 {
-	UDP udp = xsmcGetHostData(xsThis);
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
 	UDPPacket packet;
 
 	builtinCriticalSectionBegin();
@@ -170,7 +172,7 @@ void xs_udp_read(xsMachine *the)
 
 void xs_udp_write(xsMachine *the)
 {
-	UDP udp = xsmcGetHostData(xsThis);
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
 	char temp[32];
 	uint16_t port = xsmcToInteger(xsArg(1));
 	ip_addr_t dst;

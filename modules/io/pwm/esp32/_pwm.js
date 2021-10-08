@@ -24,7 +24,6 @@ class PWM @"xs_pwm_destructor_" {
     write() @ "xs_pwm_write_"
     
     get hz() @ "xs_pwm_get_hz_"
-    set hz(value) @ "xs_pwm_set_hz_"
     get resolution() @ "xs_pwm_get_resolution_"
 
     get format() {
