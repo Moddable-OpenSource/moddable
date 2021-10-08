@@ -120,8 +120,8 @@ void xs_tcp_constructor(xsMachine *the)
 			TCP from;
 
 			xsmcGet(xsVar(0), xsArg(0), xsID_from);
-			from = xsmcGetHostData(xsVar(0));
-			if (!from || !from->skt)
+			from = xsmcGetHostDataValidate(xsVar(0), (void *)&xsTCPHooks);
+			if (!from->skt)
 				xsUnknownError("invalid from");
 
 			skt = from->skt;
@@ -172,6 +172,7 @@ void xs_tcp_constructor(xsMachine *the)
 	}
 
 	xsmcSetHostData(xsThis, tcp);
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
 	tcp->the = the;
 	tcp->obj = xsThis;
 	xsRemember(tcp->obj);
@@ -199,7 +200,6 @@ void xs_tcp_constructor(xsMachine *the)
 
 	if (triggerable) {
 		tcp->triggerable = triggerable;
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
 
 		if (triggerable & kTCPReadable) {
 			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
@@ -689,7 +689,7 @@ void xs_listener_read(xsMachine *the)
 	builtinCriticalSectionEnd();
 
 	xsResult = xsArg(0);
-	tcp = xsmcGetHostData(xsArg(0));
+	tcp = xsmcGetHostDataValidate(xsArg(0), (void *)&xsTCPHooks);
 
 	tcp->skt = pending->skt;
 	c_free(pending);
