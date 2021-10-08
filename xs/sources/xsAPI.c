@@ -733,6 +733,21 @@ void* fxGetHostData(txMachine* the, txSlot* slot)
 	return NULL;
 }
 
+void* fxGetHostDataValidate(txMachine* the, txSlot* slot, void* validator)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		if (!(host->flag & XS_HOST_CHUNK_FLAG)) {
+			if (validator == host->value.host.variant.destructor)
+				return host->value.host.data;
+			mxSyntaxError("C: xsGetHostData: invalid");
+		}
+		mxSyntaxError("C: xsGetHostData: no host data");
+	}
+	mxSyntaxError("C: xsGetHostData: no host object");
+	return NULL;
+}
+
 void* fxGetHostDataIf(txMachine* the, txSlot* slot)
 {
 	txSlot* host = fxCheckHostObject(the, slot);

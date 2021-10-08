@@ -147,6 +147,9 @@ mxImport xsBooleanValue _xsTest(xsMachine *, xsSlot *);
 #define xsmcGetHostData(_SLOT)	fxGetHostData(the, &_SLOT)
 #define xsmcSetHostData(_SLOT, _DATA)	fxSetHostData(the, &_SLOT, _DATA)
 
+#undef xsGetHostDataValidate
+#define xsmcGetHostDataValidate(_SLOT, validator)	fxGetHostDataValidate(the, &_SLOT, validator)
+
 #undef xsGetHostChunk
 #undef xsSetHostChunk
 #define xsmcGetHostChunk(_SLOT)	fxGetHostChunk(the, &_SLOT)
