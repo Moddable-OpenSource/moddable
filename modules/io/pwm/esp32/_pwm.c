@@ -53,6 +53,7 @@ struct PWMRecord {
 	uint16_t	pin;
 	uint8_t		timerIndex;
 	uint8_t		ledc;
+	int			duty;
 	xsSlot		obj;
 };
 typedef struct PWMRecord PWMRecord;
@@ -156,6 +157,7 @@ void xs_pwm_constructor_(xsMachine *the)
 	pwm->pin = pin;
 	pwm->timerIndex = timerIndex;
 	pwm->ledc = ledc;
+	pwm->duty = 0;
 	pwm->obj = xsThis;
 
 	xsRemember(pwm->obj);
@@ -211,6 +213,7 @@ void xs_pwm_write_(xsMachine *the)
 		value += 1;
 	ledc_set_duty(kSpeedMode, pwm->ledc, value);
 	ledc_update_duty(kSpeedMode, pwm->ledc);
+	pwm->duty = value;
 }
 
 void xs_pwm_get_hz_(xsMachine *the)
@@ -220,6 +223,55 @@ void xs_pwm_get_hz_(xsMachine *the)
 		return;
 
 	xsmcSetInteger(xsResult, gTimers[pwm->timerIndex].hz);
+}
+
+void xs_pwm_set_hz_(xsMachine *the)
+{
+	PWM pwm = xsmcGetHostData(xsThis);
+	int32_t hz = xsmcToInteger(xsArg(0));
+
+	if (1 != gTimers[pwm->timerIndex].useCount) {
+		// need to use another timer
+		ledc_timer_config_t t;
+		ledc_channel_config_t ledcConfig = {0};
+
+		int8_t timerIndex = -1;
+		for (timerIndex = 0; timerIndex < LEDC_TIMER_MAX; timerIndex++) {
+			if (!gTimers[timerIndex].useCount)
+				break;
+		}
+		if (timerIndex >= LEDC_TIMER_MAX)
+			xsUnknownError("busy");
+
+		ledc_stop(kSpeedMode, pwm->ledc, 0);
+		gTimers[pwm->timerIndex].useCount -= 1;
+		gpio_set_direction(pwm->pin, GPIO_MODE_OUTPUT);
+
+		t.speed_mode = kSpeedMode;
+		t.duty_resolution = gTimers[pwm->timerIndex].resolution;
+		t.timer_num = timerIndex;
+		t.freq_hz = hz;
+		t.clk_cfg = LEDC_AUTO_CLK;
+		ledc_timer_config(&t);
+
+		ledcConfig.channel    = pwm->ledc;
+		ledcConfig.duty       = pwm->duty;
+		ledcConfig.gpio_num   = pwm->pin;
+		ledcConfig.speed_mode = kSpeedMode;
+		ledcConfig.timer_sel  = timerIndex;
+		ledc_channel_config(&ledcConfig);
+		
+		pwm->timerIndex = timerIndex;
+
+		gTimers[timerIndex].useCount = 1;
+		gTimers[timerIndex].resolution = t.duty_resolution;
+	}
+	else {
+		if (ESP_OK != ledc_set_freq(kSpeedMode, pwm->timerIndex, hz))
+			xsUnknownError("invalid value");
+	}
+
+	gTimers[pwm->timerIndex].hz = hz;
 }
 
 void xs_pwm_get_resolution_(xsMachine *the)
