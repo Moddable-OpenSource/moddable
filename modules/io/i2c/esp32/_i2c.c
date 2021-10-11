@@ -171,13 +171,13 @@ void _xs_i2c_destructor(void *data)
 
 void _xs_i2c_close(xsMachine *the)
 {
-	if (!xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor)) return;
-
-	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
-	if (!i2c) return;
-	xsForget(i2c->obj);
-	_xs_i2c_destructor(i2c);
-	xsmcSetHostData(xsThis, NULL);
+	I2C i2c = xsmcGetHostData(xsThis);
+	if (i2c && xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor)) {
+		xsForget(i2c->obj);
+		_xs_i2c_destructor(i2c);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void _xs_i2c_read(xsMachine *the)

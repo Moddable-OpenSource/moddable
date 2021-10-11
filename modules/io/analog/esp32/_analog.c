@@ -184,13 +184,13 @@ void xs_analog_destructor_(void *data)
 
 void xs_analog_close_(xsMachine *the)
 {
-	if (!xsmcGetHostData(xsThis)) return;
-
-	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
-
-	xsForget(analog->obj);
-	xs_analog_destructor_(analog);
-	xsmcSetHostData(xsThis, NULL);
+	Analog analog = xsmcGetHostData(xsThis);;
+	if (analog && xsmcGetHostDataValidate(xsThis, xs_analog_destructor_)) {
+		xsForget(analog->obj);
+		xs_analog_destructor_(analog);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_analog_read_(xsMachine *the)

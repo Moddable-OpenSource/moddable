@@ -174,7 +174,7 @@ void xs_pwm_constructor_(xsMachine *the)
 		gTimers[pwm->timerIndex].useCount -= 1;
 		xsForget(pwm->obj);
 		xsmcSetHostData(xsVar(1), NULL);
-		xsmcSetHostDestructor(xsVar(1), NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
 	}
 
 	pwm->pin = pin;
@@ -213,22 +213,20 @@ void xs_pwm_destructor_(void *data)
 
 void xs_pwm_close_(xsMachine *the)
 {
-	if (xsmcGetHostData(xsThis)) {
-		PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
+	PWM pwm = xsmcGetHostData(xsThis);
+	if (pwm && xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_)) {
 		xsForget(pwm->obj);
 		xs_pwm_destructor_(pwm);
 		xsmcSetHostData(xsThis, NULL);
-		xsmcSetHostDestructor(xsThis, NULL);
 	}
 }
 
 void xs_pwm_write_(xsMachine *the)
 {
-    int value, max;
 	PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
+	int max = (1 << gTimers[pwm->timerIndex].resolution) - 1;
+   int value = xsmcToInteger(xsArg(0));
 
-	max = (1 << gTimers[pwm->timerIndex].resolution) - 1;
-    value = xsmcToInteger(xsArg(0));
 	if ((value < 0) || (value > max))
 		xsUnknownError("invalid value");
 	if (value == max)

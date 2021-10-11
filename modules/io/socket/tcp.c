@@ -255,12 +255,11 @@ void xs_tcp_destructor(void *data)
 
 void doClose(xsMachine *the, xsSlot *instance)
 {
-	if (xsmcGetHostData(xsThis)) {
-		TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
-
+	TCP tcp = xsmcGetHostData(xsThis);
+	if (tcp && xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks)) {
 		xsmcSetHostData(*instance, NULL);
-		xsmcSetHostDestructor(*instance, NULL);
 		xsForget(tcp->obj);
+		xsmcSetHostDestructor(*instance, NULL);
 
 		tcpRelease(tcp);
 	}
@@ -657,13 +656,11 @@ void xs_listener_destructor_(void *data)
 
 void xs_listener_close_(xsMachine *the)
 {
-	if (xsmcGetHostData(xsThis)) {
-		Listener listener = xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks);
-
+	Listener listener = xsmcGetHostData(xsThis);
+	if (listener && xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks)) {
 		xsForget(listener->obj);
 		xs_listener_destructor_(listener);
 		xsmcSetHostData(xsThis, NULL);
-		xsmcSetHostDestructor(xsThis, NULL);
 	}
 }
 

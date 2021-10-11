@@ -194,12 +194,13 @@ void xs_spi_destructor(void *data)
 
 void xs_spi_close(xsMachine *the)
 {
-	if (!xsmcGetHostData(xsThis)) return;
-
-	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
-	xsForget(spi->obj);
-	xs_spi_destructor(spi);
-	xsmcSetHostData(xsThis, NULL);
+	SPI spi = xsmcGetHostData(xsThis);
+	if (spi && xsmcGetHostDataValidate(xsThis, xs_spi_destructor)) {
+		xsForget(spi->obj);
+		xs_spi_destructor(spi);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_spi_read(xsMachine *the)

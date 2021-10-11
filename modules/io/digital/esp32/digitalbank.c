@@ -272,12 +272,13 @@ void xs_digitalbank_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
 
 void xs_digitalbank_close(xsMachine *the)
 {
-	if (!xsmcGetHostData(xsThis)) return;
-
-	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(digital->obj);
-	xs_digitalbank_destructor(digital);
+	Digital digital = xsmcGetHostData(xsThis);
+	if (digital && xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks)) {
+		xsForget(digital->obj);
+		xs_digitalbank_destructor(digital);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_digitalbank_read(xsMachine *the)

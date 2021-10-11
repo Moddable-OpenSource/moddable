@@ -133,13 +133,12 @@ void xs_udp_destructor(void *data)
 
 void xs_udp_close(xsMachine *the)
 {
-	if (xsmcGetHostData(xsThis)) {
-		UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
-
-		xsmcSetHostData(xsThis, NULL);
-		xsmcSetHostDestructor(xsThis, NULL);
+	UDP udp = xsmcGetHostData(xsThis);
+	if (udp && xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks)) {
 		xsForget(udp->obj);
 		xs_udp_destructor(udp);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
 	}
 }
 

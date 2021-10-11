@@ -226,13 +226,13 @@ void xs_serial_destructor(void *data)
 
 void xs_serial_close(xsMachine *the)
 {
-	if (!xsmcGetHostData(xsThis)) return;
-
-	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(serial->obj);
-	xs_serial_destructor(serial);
+	Serial serial = xsmcGetHostData(xsThis);
+	if (serial && xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks)) {
+		xsForget(serial->obj);
+		xs_serial_destructor(serial);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_serial_get_format(xsMachine *the)

@@ -233,12 +233,13 @@ void xs_pulsecount_mark_(xsMachine* the, void *it, xsMarkRoot markRoot)
 
 void xs_pulsecount_close_(xsMachine *the)
 {
-	if (!xsmcGetHostData(xsThis)) return;
-
-	PulseCount pc = xsmcGetHostDataValidate(xsThis, (void *)&xsPulseCountHooks);
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(pc->obj);
-    xs_pulsecount_destructor_(pc);
+	PulseCount pc = xsmcGetHostData(xsThis);
+	if (pc && xsmcGetHostDataValidate(xsThis, (void *)&xsPulseCountHooks)) {
+		xsForget(pc->obj);
+		xs_pulsecount_destructor_(pc);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_pulsecount_read_(xsMachine *the)
