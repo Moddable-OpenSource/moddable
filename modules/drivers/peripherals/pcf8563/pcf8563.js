@@ -23,18 +23,30 @@
 	https://www.nxp.com/docs/en/data-sheet/PCF8563.pdf
 */
 
+import Timer from "timer";
+
 const Register = Object.freeze({
 	CTRL1:			0x00,
+	CTRL2:			0x01,
 	TIME:			0x02,
+	ALARM_MINUTES:	0x09,
+	ALARM_HOURS:	0x0a,
+	ALARM_DAY:		0x0b,
+	ALARM_WEEKDAY:	0x0c,
+
 	VALID_BIT:		0x80,
 	CENTURY_BIT:	0x80
 });
 
+const AlarmRange = 60 * 60 * 24 * 31 * 1000;
+
 class PCF8563 {
 	#io;
+	#alarmCallback;
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
+		const { interrupt, onAlarm } = options;
 		const io = this.#io = new options.io({
 			hz: 400_000,
 			address: 0x51,
@@ -48,8 +60,22 @@ class PCF8563 {
 			io.close();
 			throw e;
 		}
+
+		if (interrupt && onAlarm) {
+			io.alarmCallback = onAlarm;
+			io.interrupt = new interrupt.io({
+				mode: interrupt.io.InputPullUp,
+				...interrupt,
+				edge: interrupt.io.Falling,
+				onReadable: () => {
+					io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
+					io.alarmCallback();
+				}
+			});
+		}
 	}
 	close() {
+		this.#io.interrupt?.close();
 		this.#io.close();
 		this.#io = undefined;
 	}
@@ -98,6 +124,40 @@ class PCF8563 {
 		io.writeBlock(Register.TIME, b);
 
 		io.writeWord(Register.CTRL1, 0);			// enable
+	}
+	set alarm(v) {
+		let io = this.#io;
+		let now = this.time;
+
+		if (undefined === v) {
+			io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
+			return;
+		}
+
+		if (v - now > AlarmRange) {
+			this.onError?.("out of range");
+			throw new Error;
+		}
+
+		let future = new Date(v);
+		future.setUTCSeconds(0);
+		io.writeByte(Register.ALARM_MINUTES, decToBcd(future.getUTCMinutes()));
+		io.writeByte(Register.ALARM_HOURS, decToBcd(future.getUTCHours()));
+		io.writeByte(Register.ALARM_DAY, decToBcd(future.getUTCDate()));
+		io.writeByte(Register.ALARM_WEEKDAY, 0x80);		// disable
+
+		io.writeByte(Register.CTRL2, 0b0001_0010);	// pulse interrupt, clear alarm, enable interrupt
+	}
+	get alarm() {
+		let io = this.#io;
+		let now = new Date(this.time);
+
+		now.setUTCSeconds(0);
+		now.setUTCMinutes( bcdToDec(io.readByte(Register.ALARM_MINUTES) & 0x7f) );
+		now.setUTCHours( bcdToDec(io.readByte(Register.ALARM_HOURS) & 0x3f) );
+		now.setUTCDate( bcdToDec(io.readByte(Register.ALARM_DAY) & 0x3f) );
+
+		return now;
 	}
 }
 
