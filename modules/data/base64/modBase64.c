@@ -56,14 +56,14 @@ void xs_base64_encode(xsMachine *the)
 		srcSize = c_strlen((char *)src);
 	}
 	else
-		xsmcGetBuffer(xsArg(0), NULL, &srcSize);
+		xsmcGetBuffer(xsArg(0), (void **)&src, &srcSize);
 	dstSize = (((srcSize + 2) / 3) * 4) + 1;
 
 	xsResult = xsStringBuffer(NULL, dstSize);
 	if (xsStringType == srcType)
 		src = (uint8_t *)xsmcToString(xsArg(0));		// refresh pointer
 	else
-		xsmcGetBuffer(xsArg(0), (void **)&src, NULL);
+		xsmcGetBuffer(xsArg(0), (void **)&src, &srcSize);
 	dst = (uint8_t *)xsmcToString(xsResult);
 
 	while (srcSize > 2) {
