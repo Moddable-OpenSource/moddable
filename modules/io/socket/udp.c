@@ -176,19 +176,16 @@ void xs_udp_write(xsMachine *the)
 	char temp[32];
 	uint16_t port = xsmcToInteger(xsArg(1));
 	ip_addr_t dst;
-	int byteLength;
+	xsUnsignedValue byteLength;
 	err_t err;
-	struct pbuf *pb;
+	void *buffer;
 
 	xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
 	if (!ipaddr_aton(temp, &dst))
 		xsRangeError("invalid IP address");
 
-	if (xsmcIsInstanceOf(xsArg(2), xsTypedArrayPrototype))
-		xsmcGet(xsArg(2), xsArg(2), xsID_buffer);		//@@ ignoring view
-	byteLength = xsmcGetArrayBufferLength(xsArg(2));
-
-	udp_sendto_safe(udp->skt, xsmcToArrayBuffer(xsArg(2)), byteLength, &dst, port, &err);
+	xsmcGetBuffer(xsArg(2), &buffer, &byteLength);
+	udp_sendto_safe(udp->skt, buffer, byteLength, &dst, port, &err);
 	if (ERR_OK != err)
 		xsUnknownError("UDP send failed");
 }

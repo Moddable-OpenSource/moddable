@@ -262,11 +262,12 @@ void xs_serial_write(xsMachine *the)
 	}
 	else {
 		uint8_t *buffer;
-		int requested = xsmcGetArrayBufferLength(xsArg(0));
+		xsUnsignedValue requested;
+
+		xsmcGetBuffer(xsArg(0), (void **)&buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 
-		buffer = xsmcToArrayBuffer(xsArg(0));
 		while (requested--)
 			USF(UART_NR) = *buffer++;
 	}

@@ -285,9 +285,8 @@ void xs_serial_read(xsMachine *the)
 void xs_serial_write(xsMachine *the)
 {
 	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
-	int count;
+	int count = uart_ll_get_txfifo_len(serial->uart_reg);
 
-	count = uart_ll_get_txfifo_len(serial->uart_reg);
 	if (kIOFormatNumber == serial->format) {
 		uint8_t byte;
 
@@ -298,20 +297,28 @@ void xs_serial_write(xsMachine *the)
 		uart_ll_write_txfifo(serial->uart_reg, &byte, 1);
 	}
 	else {
-		uint8_t *buffer;
-		int requested = xsmcGetArrayBufferLength(xsArg(0));
+		void *buffer;
+		xsUnsignedValue requested;
+
+		xsmcGetBuffer(xsArg(0), &buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 
-		buffer = xsmcToArrayBuffer(xsArg(0));
 		uart_ll_write_txfifo(serial->uart_reg, buffer, requested);
-
 	}
 
 	if (serial->onWritable && !serial->txInterruptEnabled) {
 		serial->txInterruptEnabled = 1;
 		uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
 	}
+}
+
+void xs_serial_purge(xsMachine *the)
+{
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+
+	uart_ll_txfifo_rst(serial->uart_reg);
+	uart_ll_rxfifo_rst(serial->uart_reg);
 }
 
 void ICACHE_RAM_ATTR serial_isr(void * arg)

@@ -338,7 +338,7 @@ void xs_tcp_read(xsMachine *the)
 void xs_tcp_write(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
-	int needed;
+	xsUnsignedValue needed;
 	void *buffer;
 	uint8_t value;
 
@@ -348,11 +348,7 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	if (kIOFormatBuffer == tcp->format) {
-		if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-			xsmcGet(xsArg(0), xsArg(0), xsID_buffer);
-
-		needed = xsmcGetArrayBufferLength(xsArg(0));
-		buffer = xsmcToArrayBuffer(xsArg(0));
+		xsmcGetBuffer(xsArg(0), &buffer, &needed);
 	}
 	else {
 		needed = 1;
