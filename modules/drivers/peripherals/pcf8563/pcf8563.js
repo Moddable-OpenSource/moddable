@@ -23,8 +23,6 @@
 	https://www.nxp.com/docs/en/data-sheet/PCF8563.pdf
 */
 
-import Timer from "timer";
-
 const Register = Object.freeze({
 	CTRL1:			0x00,
 	CTRL2:			0x01,
@@ -42,7 +40,7 @@ const AlarmRange = 60 * 60 * 24 * 31 * 1000;
 
 class PCF8563 {
 	#io;
-	#alarmCallback;
+	#onAlarm;
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
@@ -62,21 +60,21 @@ class PCF8563 {
 		}
 
 		if (interrupt && onAlarm) {
-			io.alarmCallback = onAlarm;
+			this.#onAlarm = onAlarm;
 			io.interrupt = new interrupt.io({
 				mode: interrupt.io.InputPullUp,
 				...interrupt,
 				edge: interrupt.io.Falling,
 				onReadable: () => {
-					io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
-					io.alarmCallback();
+					this.#io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
+					this.#onAlarm();
 				}
 			});
 		}
 	}
 	close() {
-		this.#io.interrupt?.close();
-		this.#io.close();
+		this.#io?.interrupt?.close();
+		this.#io?.close();
 		this.#io = undefined;
 	}
 	configure(options) {
