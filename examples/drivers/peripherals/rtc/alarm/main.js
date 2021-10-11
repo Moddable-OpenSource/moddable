@@ -59,8 +59,17 @@ if (!rtc.enabled) {
 	rtc.time = new Date();
 }
 
+/* To check month/year boundary, uncomment below
+let now = new Date(rtc.time);
+now.setUTCDate(31);
+now.setUTCMonth(11);
+now.setUTCHours(23);
+now.setUTCMinutes(59);
+trace(`set time to ${now.toGMTString()}\n`);
+rtc.time = now;
+*/
+
 rtc.alarm = rtc.time + 60_000;	// 1 minute
 
 Timer.delay(2000);
 trace(`set alarm to ${new Date(rtc.alarm).toGMTString()}\n`);
-

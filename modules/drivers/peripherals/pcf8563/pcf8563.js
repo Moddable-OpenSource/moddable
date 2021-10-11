@@ -153,7 +153,17 @@ class PCF8563 {
 		now.setUTCSeconds(0);
 		now.setUTCMinutes( bcdToDec(io.readByte(Register.ALARM_MINUTES) & 0x7f) );
 		now.setUTCHours( bcdToDec(io.readByte(Register.ALARM_HOURS) & 0x3f) );
-		now.setUTCDate( bcdToDec(io.readByte(Register.ALARM_DAY) & 0x3f) );
+
+		let date = bcdToDec(io.readByte(Register.ALARM_DAY) & 0x3f);
+		if (date < now.getUTCDate()) {
+			let month = now.getUTCMonth() + 1;
+			if (month > 11) {
+				month = 0;
+				now.setUTCFullYear(now.getUTCFullYear() + 1);
+			}
+			now.setUTCMonth(month);
+		}
+		now.setUTCDate( date );
 
 		return now;
 	}
