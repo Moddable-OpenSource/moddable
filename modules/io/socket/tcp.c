@@ -282,19 +282,32 @@ void xs_tcp_read(xsMachine *the)
 
 	if (kIOFormatBuffer == tcp->format) {
 		int available = 0;
-
-		requested = (xsmcArgc > 0) ? xsmcToInteger(xsArg(0)) : 0x7FFFFFFF;
-		if (!requested)
-			return;
+		uint8_t allocate = 1;
+		xsUnsignedValue byteLength;
 
 		for (buffer = tcp->buffers; NULL != buffer; buffer = buffer->next)
 			available += buffer->bytes;
 
-		if (available < requested)
+		if (0 == xsmcArgc)
 			requested = available;
+		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+			xsmcGetBuffer(xsArg(0), (void **)&out, &byteLength);
+			requested = (int)byteLength;
+			xsResult = xsArg(0);
+			allocate = 0;
+		}
+		else {
+			requested = xsmcToInteger(xsArg(0));
+			if (requested <= 0)
+				xsUnknownError("invalid");
+			if (requested > available)
+				xsUnknownError("underflow");
+		}
 
-		xsmcSetArrayBuffer(xsResult, NULL, requested);
-		out = xsmcToArrayBuffer(xsResult);
+		if (allocate) {
+			xsmcSetArrayBuffer(xsResult, NULL, requested);
+			xsmcGetBuffer(xsResult, (void **)&out, &byteLength);
+		}
 	}
 	else {
 		requested = 1;
