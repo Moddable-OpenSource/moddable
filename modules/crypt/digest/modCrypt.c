@@ -1150,7 +1150,12 @@ void cbc_xor(uint8_t *t, const uint8_t *x, size_t count)
 
 void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count)
 {
-	xsmcGetBuffer(*slot, (void **)data, count);
+	xsUnsignedValue aCount;
+	void *aBuffer;
+
+	xsmcGetBuffer(*slot, &aBuffer, &aCount);
+	if (data) *data = aBuffer;
+	if (count) *count = aCount;
 }
 
 /*
