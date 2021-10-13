@@ -132,7 +132,7 @@ txSlot* fxNewProxyInstance(txMachine* the)
 	the->stack->value.reference = instance;
 
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_PROXY_KIND;
 	property->ID = XS_PROXY_BEHAVIOR;
 	if (prototype && ((slot = prototype->next)) && (slot->kind = XS_PROXY_KIND)) {

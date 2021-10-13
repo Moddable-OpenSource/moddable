@@ -757,7 +757,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 		else {
 			property = fxNewSlot(the);
 			property->next = *address;
-			property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+			property->flag = XS_INTERNAL_FLAG;
 			property->ID = 0;
 			property->kind = XS_ARRAY_KIND;
 			property->value.array.address = C_NULL;
@@ -1445,7 +1445,7 @@ txSlot* fxNewProgramInstance(txMachine* the)
 	the->stack->value.reference = instance;
 	the->stack->kind = XS_REFERENCE_KIND;
 	slot = instance->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	slot->flag = XS_INTERNAL_FLAG;
 	slot->kind = XS_PROGRAM_KIND;
 	slot->value.module.realm = C_NULL;
 	slot->value.module.id = XS_NO_ID;

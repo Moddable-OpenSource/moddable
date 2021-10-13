@@ -332,7 +332,7 @@ void fx_SharedArrayBuffer(txMachine* the)
 	the->stack->value.reference = instance;
 	the->stack->kind = XS_REFERENCE_KIND;
 	host = instance->next = fxNewSlot(the);
-	host->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	host->flag = XS_INTERNAL_FLAG;
 	host->kind = XS_HOST_KIND;
 	host->value.host.data = fxCreateSharedChunk(byteLength);
 	if (!host->value.host.data)

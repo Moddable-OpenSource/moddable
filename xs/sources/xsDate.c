@@ -140,7 +140,7 @@ txSlot* fxNewDateInstance(txMachine* the)
 	txSlot* instance;
 	txSlot* property;
 	instance = fxNewObjectInstance(the);
-	property = fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	property->kind = XS_DATE_KIND;
 	property->value.number = C_NAN;
 	return instance;

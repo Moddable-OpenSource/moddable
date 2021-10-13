@@ -81,7 +81,7 @@ txSlot* fxNewNumberInstance(txMachine* the)
 {
 	txSlot* instance;
 	instance = fxNewObjectInstance(the);
-	fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	return instance;
 }
 

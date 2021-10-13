@@ -284,7 +284,7 @@ void fxBuildDataView(txMachine* the)
 		slot->value.instance.prototype = constructor;
 		property = mxFunctionInstanceHome(slot);
 		slot = property->next;
-		property = fxNextTypeDispatchProperty(the, property, (txTypeDispatch*)dispatch, (txTypeAtomics*)atomics, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+		property = fxNextTypeDispatchProperty(the, property, (txTypeDispatch*)dispatch, (txTypeAtomics*)atomics, XS_NO_ID, XS_INTERNAL_FLAG);
 		property->next = slot;
 		slot = fxLastProperty(the, slot);
 		slot = fxNextIntegerProperty(the, slot, dispatch->size, mxID(_BYTES_PER_ELEMENT), XS_GET_ONLY);
@@ -406,7 +406,7 @@ txSlot* fxNewArrayBufferInstance(txMachine* the)
 	txSlot* property;
 	instance = fxNewObjectInstance(the);
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_ARRAY_BUFFER_KIND;
 	property->value.arrayBuffer.address = C_NULL;
 	property->value.arrayBuffer.length = 0;
@@ -557,11 +557,11 @@ txSlot* fxNewDataViewInstance(txMachine* the)
 	txSlot* property;
 	instance = fxNewObjectInstance(the);
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_DATA_VIEW_KIND;
 	property->value.dataView.offset = 0;
 	property->value.dataView.size = 0;
-	property = fxNextNullProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextNullProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
 	return instance;
 }
 
@@ -1145,13 +1145,13 @@ txSlot* fxNewTypedArrayInstance(txMachine* the, txTypeDispatch* dispatch, txType
 	txSlot* property;
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
-	property = fxNextTypeDispatchProperty(the, instance, dispatch, atomics, XS_TYPED_ARRAY_BEHAVIOR, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextTypeDispatchProperty(the, instance, dispatch, atomics, XS_TYPED_ARRAY_BEHAVIOR, XS_INTERNAL_FLAG);
 	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_DATA_VIEW_KIND;
 	property->value.dataView.offset = 0;
 	property->value.dataView.size = 0;
-	property = fxNextNullProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextNullProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
 	return instance;
 }
 
@@ -1555,7 +1555,7 @@ void fx_TypedArray_prototype_entries(txMachine* the)
 	fxCheckArrayBufferDetached(the, instance->next->next->next, XS_IMMUTABLE);
 	mxPush(mxArrayIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
-	property = fxNextIntegerProperty(the, property, 2, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, 2, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 
@@ -1796,7 +1796,7 @@ void fx_TypedArray_prototype_keys(txMachine* the)
 	fxCheckArrayBufferDetached(the, instance->next->next->next, XS_IMMUTABLE);
 	mxPush(mxArrayIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
-	property = fxNextIntegerProperty(the, property, 1, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, 1, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 
@@ -2252,7 +2252,7 @@ void fx_TypedArray_prototype_values(txMachine* the)
 	fxCheckArrayBufferDetached(the, instance->next->next->next, XS_IMMUTABLE);
 	mxPush(mxArrayIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
-	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 

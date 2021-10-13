@@ -591,14 +591,14 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	/* CALLBACK */
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CALLBACK_KIND;
 	property->value.callback.address = theCallback;
 	property->value.callback.IDs = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
 	if (the->frame && (mxFunction->kind == XS_REFERENCE_KIND) && (mxIsFunction(mxFunction->value.reference))) {
@@ -611,7 +611,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 #ifdef mxProfile
 	/* PROFILE */
 	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_INTEGER_KIND;
 	property->value.integer = the->profileID;
 	the->profileID++;
@@ -643,7 +643,7 @@ txSlot* fxNewHostInstance(txMachine* the)
 		txSlot* prototypeHost = prototype->next;
 		if (prototypeHost && (prototypeHost->kind == XS_HOST_KIND)) {
 			txSlot* instanceHost = instance->next = fxNewSlot(the);
-			instanceHost->flag = XS_INTERNAL_FLAG | (prototypeHost->flag & ~XS_MARK_FLAG);
+			instanceHost->flag = XS_INTERNAL_FLAG;
 			instanceHost->kind = XS_HOST_KIND;
 			instanceHost->value.host.data = C_NULL;
 			instanceHost->value.host.variant.destructor = prototypeHost->value.host.variant.destructor;
@@ -682,7 +682,7 @@ txSlot* fxNewHostObject(txMachine* the, txDestructor theDestructor)
 	the->stack->kind = XS_REFERENCE_KIND;
 
 	aProperty = anInstance->next = fxNewSlot(the);
-	aProperty->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	aProperty->flag = XS_INTERNAL_FLAG;
 	aProperty->kind = XS_HOST_KIND;
 	aProperty->value.host.data = C_NULL;
 	aProperty->value.host.variant.destructor = theDestructor;
@@ -1246,7 +1246,7 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
 	mxException.kind = XS_REFERENCE_KIND;
 	mxException.value.reference = slot;
 	slot = slot->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	slot->flag = XS_INTERNAL_FLAG;
 	slot->kind = XS_ERROR_KIND;
 	slot->value.error.info = C_NULL;
 	slot->value.error.which = error;

@@ -273,9 +273,9 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 	result = fxNewObjectInstance(the);
 	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
 	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	property = fxNextSlotProperty(the, instance, the->stack, id, XS_INTERNAL_FLAG | XS_GET_ONLY);
-	property = fxNextSlotProperty(the, property, iterable, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
-	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextSlotProperty(the, instance, the->stack, id, XS_INTERNAL_FLAG);
+	property = fxNextSlotProperty(the, property, iterable, XS_NO_ID, XS_INTERNAL_FLAG);
+	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	return instance;
 }
