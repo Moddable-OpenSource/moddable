@@ -177,7 +177,7 @@ static const xsHostHooks PiuViewHooks ICACHE_RODATA_ATTR = {
 
 #define xsGetHostDataPoco(slot) ((void *)((char *)xsGetHostData(slot) - offsetof(PocoRecord, pixels)))
 
-void PiuViewAdjust(PiuView* self) 
+void PiuViewAdjust(PiuView* self)
 {
 }
 
@@ -1412,7 +1412,7 @@ void PiuView_onIdle(xsMachine* the)
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
 	(*self)->idleTicks = 0;
-#ifdef piuGPU
+#if defined(piuGPU) && defined(mxInstrument)
 	modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
 #endif		
 }
