@@ -742,11 +742,12 @@ void xs_audioout_enqueue(xsMachine *the)
 
 		case kKindTone:
 		case kKindSilence: {
-			int frequency, count;
+			xsNumberValue frequency;
+			int count;
 			OUTPUTSAMPLETYPE value;
 
 			if (kKindTone == kind) {
-				frequency = xsmcToInteger(xsArg(2));
+				frequency = xsmcToNumber(xsArg(2));
 				count = -1;
 				if ((argc > 3) && (C_INFINITY != xsmcToNumber(xsArg(3))))
 					count = xsmcToInteger(xsArg(3));
@@ -765,7 +766,7 @@ void xs_audioout_enqueue(xsMachine *the)
 			else {
 				count = xsmcToInteger(xsArg(2));
 				if (0 == count)
-					xsUnknownError("invalid frequency");
+					xsUnknownError("invalid count");
 				frequency = 1;
 				value = 0;
 			}
@@ -789,7 +790,7 @@ void xs_audioout_enqueue(xsMachine *the)
 			element->sampleFormat = kSampleFormatTone;
 
 			element->tone.position = 0;
-			element->tone.max = ((uint64_t)out->sampleRate << 15) / frequency;		// 16.16 fixed
+			element->tone.max = (uint32_t)(32768.0 * (xsNumberValue)out->sampleRate / frequency);		// 16.16 fixed
 			element->tone.value = value;
 			element->tone.count = count;
 
