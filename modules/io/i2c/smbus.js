@@ -66,8 +66,7 @@ class SMBus {
         this.#byteBuffer[0] = register;
         io.write(this.#byteBuffer, this.#stop);
 
-        io.read(buffer);
-        return buffer;
+        return io.read(buffer);
     }
 
     writeByte(register, byte) {
