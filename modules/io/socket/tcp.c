@@ -113,7 +113,7 @@ void xs_tcp_constructor(xsMachine *the)
 
 		if (xsmcHas(xsArg(0), xsID_nodelay)) {
 			xsmcGet(xsVar(0), xsArg(0), xsID_nodelay);
-			nodelay = xsmcTest(xsVar(0)) ? 2 : 1;
+			nodelay = xsmcToBoolean(xsVar(0)) ? 2 : 1;
 		}
 
 		if (xsmcHas(xsArg(0), xsID_from)) {
@@ -291,23 +291,19 @@ void xs_tcp_read(xsMachine *the)
 		if (0 == xsmcArgc)
 			requested = available;
 		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
-			xsmcGetBuffer(xsArg(0), (void **)&out, &byteLength);
-			requested = (int)byteLength;
 			xsResult = xsArg(0);
+			xsmcGetBuffer(xsResult, (void **)&out, &byteLength);
+			requested = (int)byteLength;
 			allocate = 0;
 		}
-		else {
+		else
 			requested = xsmcToInteger(xsArg(0));
-			if (requested <= 0)
-				xsUnknownError("invalid");
-			if (requested > available)
-				xsUnknownError("underflow");
-		}
 
-		if (allocate) {
-			xsmcSetArrayBuffer(xsResult, NULL, requested);
-			xsmcGetBuffer(xsResult, (void **)&out, &byteLength);
-		}
+		if ((requested <= 0) || (requested > available)) 
+			xsUnknownError("invalid");
+
+		if (allocate)
+			out = xsmcSetArrayBuffer(xsResult, NULL, requested);
 	}
 	else {
 		requested = 1;

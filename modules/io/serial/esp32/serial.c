@@ -70,7 +70,7 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 	NULL
 };
 
-#define kTransmitTreshold (10)		// could be buildtime or runtime configuraable
+#define kTransmitTreshold (10)		// could be build-time or runtime configurable
 
 void xs_serial_constructor(xsMachine *the)
 {
@@ -253,10 +253,10 @@ void xs_serial_set_format(xsMachine *the)
 void xs_serial_read(xsMachine *the)
 {
 	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
-	int count;
+	int available;
 
-	count = uart_ll_get_rxfifo_len(serial->uart_reg);
-	if (0 == count)
+	available = uart_ll_get_rxfifo_len(serial->uart_reg);
+	if (0 == available)
 		return;
 
 	if (kIOFormatNumber == serial->format) {
@@ -268,12 +268,26 @@ void xs_serial_read(xsMachine *the)
 	}
 	else {
 		uint8_t *buffer;
-		int requested = xsmcArgc ? xsmcToInteger(xsArg(0)) : count;
-		if (requested > count)
-			requested = count;
+		int requested;
+		xsUnsignedValue byteLength;
+		uint8_t allocate = 1;
+		
+		if (0 == xsmcArgc)
+			requested = available;
+		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+			xsResult = xsArg(0);
+			xsmcGetBuffer(xsResult, (void **)&buffer, &byteLength);
+			requested = (int)byteLength;
+			allocate = 0;
+		}
+		else
+			requested = xsmcToInteger(xsArg(0));
 
-		xsmcSetArrayBuffer(xsResult, NULL, requested);
-		buffer = xsmcToArrayBuffer(xsResult);
+		if ((requested <= 0) || (requested > available)) 
+			xsUnknownError("invalid");
+
+		if (allocate)
+			buffer = xsmcSetArrayBuffer(xsResult, NULL, requested);
 
 		uart_ll_read_rxfifo(serial->uart_reg, buffer, requested);
 	}

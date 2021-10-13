@@ -215,11 +215,11 @@ void xs_spi_read(xsMachine *the)
 			xsRangeError("unsupported byteLength");
 	}
 	else {
-		count = xsmcToInteger(xsArg(0));
-		if ((count < 0) || (count > 65535))
+		int requested = xsmcToInteger(xsArg(0));
+		if ((requested < 0) || (requested > 65535))
 			xsRangeError("unsupported byteLength");
-		xsmcSetArrayBuffer(xsResult, NULL, count);
-		data = xsmcToArrayBuffer(xsResult);
+		count = requested;
+		data = xsmcSetArrayBuffer(xsResult, NULL, count);
 	}
 
 	modSPITxRx(&spi->config, data, (uint16_t)count);

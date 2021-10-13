@@ -102,7 +102,7 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_pullup)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_pullup);
-		pullup = xsmcTest(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
+		pullup = xsmcToBoolean(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
 	}
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
@@ -184,25 +184,21 @@ void _xs_i2c_read(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	xsUnsignedValue length;
-	int type;
 	int err;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
 	void *buffer;
 
-	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
+	if (xsmcArgc > 1)
+		stop = xsmcToBoolean(xsArg(1));
 
-	type = xsmcTypeOf(xsArg(0));
-	if ((xsIntegerType == type) || (xsNumberType == type)) {
- 		length = xsmcToInteger(xsArg(0));
-		xsmcSetArrayBuffer(xsResult, NULL, length);
-		xsArg(0) = xsResult;
-		buffer = xsmcToArrayBuffer(xsResult);
-	}
-	else {
+	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsResult = xsArg(0);
 		xsmcGetBuffer(xsResult, &buffer, &length);
+	}
+	else {
+ 		length = xsmcToInteger(xsArg(0));
+		buffer = xsmcSetArrayBuffer(xsResult, NULL, length);
 	}
 
 	if (!i2cActivate(i2c))
@@ -234,8 +230,8 @@ void _xs_i2c_write(xsMachine *the)
 	i2c_cmd_handle_t cmd;
 	void *buffer;
 
-	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
+	if (xsmcArgc > 1)
+		stop = xsmcToBoolean(xsArg(1));
 
 	xsmcGetBuffer(xsArg(0), &buffer, &length);
 
