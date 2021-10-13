@@ -20,8 +20,10 @@ trace(`Today's date: ${(new Date()).toGMTString()}\n`);
 
 
 const rtc = new RTC ({
-			...device.I2C.default,
-			io: device.io.SMBus,
+			i2c: {
+				...device.I2C.default,
+				io: device.io.SMBus
+			},
 			interrupt: {
 				io: device.io.Digital,
 				pin: config.AlarmPin
@@ -50,14 +52,14 @@ const rtc = new RTC ({
 						break;
 				}
 				trace(`set alarm to ${new Date(rtc.alarm).toGMTString()}\n`);
-			},
-			onError(v) { trace(v); }
+			}
 });
 
 if (!rtc.enabled) {
 	trace(`CLOCK NOT ENABLED\n`);
 	rtc.time = new Date();
 }
+trace(`rtc.time is ${new Date(rtc.alarm).toGMTString()}\n`);
 
 /* To check month/year boundary, uncomment below
 let now = new Date(rtc.time);

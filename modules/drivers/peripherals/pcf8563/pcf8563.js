@@ -44,11 +44,11 @@ class PCF8563 {
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const { interrupt, onAlarm } = options;
-		const io = this.#io = new options.io({
+		const { i2c, interrupt, onAlarm } = options;
+		const io = this.#io = new i2c.io({
 			hz: 400_000,
 			address: 0x51,
-			...options
+			...i2c
 		});
 
 		try {
@@ -109,7 +109,7 @@ class PCF8563 {
 		let year = now.getUTCFullYear();
 
 		if (year < 2000)
-			return undefined;
+			throw new Error;
 
 		b[0] = decToBcd(now.getUTCSeconds());
 		b[1] = decToBcd(now.getUTCMinutes());
@@ -132,10 +132,8 @@ class PCF8563 {
 			return;
 		}
 
-		if (v - now > AlarmRange) {
-			this.onError?.("out of range");
+		if (v - now > AlarmRange)
 			throw new Error;
-		}
 
 		let future = new Date(v);
 		future.setUTCSeconds(0);
