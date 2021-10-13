@@ -687,15 +687,6 @@ txSlot* fxNewHostObject(txMachine* the, txDestructor theDestructor)
 	aProperty->value.host.data = C_NULL;
 	aProperty->value.host.variant.destructor = theDestructor;
 	
-	if (the->frame && (mxFunction->kind == XS_REFERENCE_KIND) && (mxIsFunction(mxFunction->value.reference))) {
-		txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
-		if (slot->value.home.module) {
-			aProperty = aProperty->next = fxNewSlot(the);
-			aProperty->flag = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
-			aProperty->kind = XS_REFERENCE_KIND;
-			aProperty->value.reference = slot->value.home.module;
-		}
-	}
 	return anInstance;
 }
 
