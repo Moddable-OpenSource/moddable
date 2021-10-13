@@ -808,7 +808,7 @@ void xs_audioout_enqueue(xsMachine *the)
 
 			for (i = 0, element = stream->element; i < elementCount; i++, element++) {
 				if ((0 == element->repeat) && (element->position < 0) && (0 == element->sampleCount))
-					queueCallback(out, (xsIntegerValue)element->samples);
+					queueCallback(out, (xsIntegerValue)(uintptr_t)element->samples);
 			}
 
 			if (stream->decompressed)
@@ -1737,7 +1737,7 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 	while (0 == element->repeat) {
 		if (0 == element->sampleCount) {
 			if (element->position < 0)
-				queueCallback(out, (xsIntegerValue)element->samples);
+				queueCallback(out, (xsIntegerValue)(uintptr_t)element->samples);
 			else
 				setStreamVolume(out, stream, element->position);
 		}
