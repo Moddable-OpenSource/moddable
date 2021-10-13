@@ -606,8 +606,6 @@ txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, tx
 	if (result) {
 		if ((result->kind == XS_ACCESSOR_KIND) && (result->value.accessor.setter == C_NULL))
 			result = C_NULL;
-		else if (result->flag & XS_DONT_SET_FLAG)
-			result = C_NULL;
 	}
 	return result;
 }

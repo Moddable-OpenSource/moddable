@@ -189,7 +189,7 @@ txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_MAP_KIND) && (instance != mxMapPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 				mxTypeError("Map instance is read-only");
 			return instance;
 		}
@@ -461,7 +461,7 @@ txSlot* fxCheckSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_SET_KIND) && (instance != mxSetPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 				mxTypeError("Set instance is read-only");
 			return instance;
 		}
@@ -983,7 +983,7 @@ txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_MAP_KIND) && (instance != mxWeakMapPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag &  XS_DONT_SET_FLAG))
 				mxTypeError("WeakMap instance is read-only");
 			return instance;
 		}
@@ -1110,7 +1110,7 @@ txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_SET_KIND) && (instance != mxWeakSetPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 				mxTypeError("WeakSet instance is read-only");
 			return instance;
 		}

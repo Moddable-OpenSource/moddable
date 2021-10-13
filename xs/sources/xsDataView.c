@@ -359,7 +359,7 @@ txSlot* fxCheckArrayBufferDetached(txMachine* the, txSlot* slot, txBoolean mutab
 	slot = slot->value.reference->next;
 	if (slot->value.arrayBuffer.address == C_NULL)
 		mxTypeError("detached buffer");
-	if (mutable && (slot->flag & XS_MARK_FLAG))
+	if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 		mxTypeError("ArrayBuffer instance is read-only");
 	return slot;
 }
