@@ -1412,7 +1412,7 @@ extern void fxUint32Getter(txMachine* the, txSlot* data, txInteger offset, txSlo
 extern void fxUint32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8ClampedSetter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 
-mxExport void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength);
+mxExport void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength);
 mxExport void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport txInteger fxGetArrayBufferLength(txMachine* the, txSlot* slot);
 mxExport void fxSetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);

@@ -84,7 +84,7 @@ const txBehavior ICACHE_FLASH_ATTR gxTypedArrayBehavior = {
 	fxOrdinarySetPrototype,
 };
 
-void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength)
+void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength)
 {
 	txSlot* instance;
 	txSlot* arrayBuffer;
@@ -100,6 +100,7 @@ void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLengt
 	else
 		c_memset(arrayBuffer->value.arrayBuffer.address, 0, byteLength);
 	mxPullSlot(slot);
+	return arrayBuffer->value.arrayBuffer.address;
 }
 
 void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength)

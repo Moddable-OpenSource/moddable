@@ -1331,7 +1331,7 @@ mxImport xsStringValue fxToStringX(xsMachine*, xsSlot*);
 mxImport void fxUnsigned(xsMachine*, xsSlot*, xsUnsignedValue);
 mxImport xsUnsignedValue fxToUnsigned(xsMachine*, xsSlot*);
 
-mxImport void fxArrayBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
+mxImport void *fxArrayBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void fxGetArrayBufferData(xsMachine*, xsSlot*, xsIntegerValue, void*, xsIntegerValue);
 mxImport xsIntegerValue fxGetArrayBufferLength(xsMachine*, xsSlot*);
 mxImport void fxSetArrayBufferData(xsMachine*, xsSlot*, xsIntegerValue, void*, xsIntegerValue);
