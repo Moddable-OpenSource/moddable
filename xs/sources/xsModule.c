@@ -102,10 +102,12 @@ void fxBuildModule(txMachine* the)
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "Module", mxID(_Symbol_toStringTag), XS_GET_ONLY);
 	mxModulePrototype = *the->stack;
+    mxPop();
 	
 	mxPush(mxObjectPrototype);
 	fxNewObjectInstance(the);
 	mxTransferPrototype = *the->stack;
+    mxPop();
 
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -1266,7 +1268,7 @@ txBoolean fxModuleGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIn
 {
 	txSlot* property = fxModuleGetProperty(the, instance, id, index, XS_OWN);
 	if (property) {
-		slot->flag = property->flag | XS_DONT_DELETE_FLAG;
+		slot->flag = (id == mxID(_Symbol_toStringTag)) ? property->flag : XS_DONT_DELETE_FLAG;
 		slot->kind = property->kind;
 		slot->value = property->value;
 		return 1;
