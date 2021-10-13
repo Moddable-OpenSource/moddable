@@ -1404,6 +1404,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxNewInstance(the);
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
+			mxPop();
 
             the->collectFlag = XS_COLLECTING_FLAG;
 			

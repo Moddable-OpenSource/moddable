@@ -764,7 +764,6 @@ txInteger fxPrepareHeap(txMachine* the)
 					}
 					if (frozen) {
 						slot->ID = XS_NO_ID;
-						// petrify frozen instances
 						fxPetrifyInstance(the, slot);
 					}
 					else
