@@ -83,6 +83,9 @@ txSlot* fxAliasInstance(txMachine* the, txSlot* instance)
 				}
 			}
 		}
+		else if (to->kind == XS_DATE_KIND) {
+			to->flag &= ~XS_DONT_SET_FLAG;
+		}
 		else if (to->kind == XS_PRIVATE_KIND) {
 			txSlot** address = &to->value.private.first;
 			txSlot* slot;
