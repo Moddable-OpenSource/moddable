@@ -1189,9 +1189,9 @@ void fx_Array_prototype_copyWithin(txMachine* the)
 	if (array && ((txIndex)length == mxArraySize(array))) {
 		if (count > 0) {
 			if (from < to)
-				array = fxCheckArrayItems(the, array, from, to + count);
+				array = fxCheckArrayItems(the, array, (txIndex)from, (txIndex)(to + count));
 			else
-				array = fxCheckArrayItems(the, array, to, from + count);
+				array = fxCheckArrayItems(the, array, (txIndex)to, (txIndex)(from + count));
 		}
 	}
 	if (array && ((txIndex)length == mxArraySize(array))) {
@@ -2289,7 +2289,7 @@ void fx_Array_prototype_splice(txMachine* the)
 	resultArray = fxCreateArraySpecies(the, DELETIONS);
 	if (array && resultArray) {
 		if (INSERTIONS == DELETIONS)
-			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)START + DELETIONS);
+			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + DELETIONS));
 		else
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)LENGTH);
 	}

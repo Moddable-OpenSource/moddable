@@ -396,7 +396,7 @@ void PiuDebugBehavior_stop(xsMachine* the)
 
 void PiuDebugBehavior_formatBinaryMessage(xsMachine* the)
 {
-	xsIntegerValue length = c_strlen(xsToString(xsArg(0)));
+	xsIntegerValue length = (xsIntegerValue)c_strlen(xsToString(xsArg(0)));
 	if (length) {
 		xsStringValue from, to;
 		xsResult = xsStringBuffer(NULL, length + (length / 2) - 1);
@@ -1239,7 +1239,7 @@ void PiuDebugMachine_doBinaryCommandAux(xsMachine* the)
 	xsIntegerValue offset, length = 3;
 	uint8_t* header;
 	sprintf(buffer, "\15\12<?xs#%8.8X?>", address);
-	offset = c_strlen(buffer);
+	offset = (xsIntegerValue)c_strlen(buffer);
 	header = (uint8_t*)(buffer + offset);
 	if (payload)
 		length += xsGetArrayBufferLength(xsArg(2));
@@ -1393,7 +1393,7 @@ void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* bu
 	}
 	else {
 		xsResult = xsGet(xsThis, xsID_connection);
-		xsCall1(xsResult, xsID_write, xsArrayBuffer(buffer, length));
+		xsCall1(xsResult, xsID_write, xsArrayBuffer(buffer, (xsIntegerValue)length));
 	}
 }
 
