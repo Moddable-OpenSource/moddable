@@ -940,6 +940,10 @@ typedef void (*xsDestructor)(void*);
 	(the->scratch = (_SLOT), \
 	fxSetHostData(the, &(the->scratch), _DATA))
 	
+#define xsGetHostDataValidate(_SLOT, validator) \
+	(the->scratch = (_SLOT), \
+	fxGetHostDataValidate(the, &(the->scratch), validator))
+
 #define xsGetHostDestructor(_SLOT) \
 	(the->scratch = (_SLOT), \
 	fxGetHostDestructor(the, &(the->scratch)))
@@ -1327,7 +1331,7 @@ mxImport xsStringValue fxToStringX(xsMachine*, xsSlot*);
 mxImport void fxUnsigned(xsMachine*, xsSlot*, xsUnsignedValue);
 mxImport xsUnsignedValue fxToUnsigned(xsMachine*, xsSlot*);
 
-mxImport void fxArrayBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
+mxImport void *fxArrayBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void fxGetArrayBufferData(xsMachine*, xsSlot*, xsIntegerValue, void*, xsIntegerValue);
 mxImport xsIntegerValue fxGetArrayBufferLength(xsMachine*, xsSlot*);
 mxImport void fxSetArrayBufferData(xsMachine*, xsSlot*, xsIntegerValue, void*, xsIntegerValue);
@@ -1354,6 +1358,7 @@ mxImport xsSlot* fxNewHostObject(xsMachine*, xsDestructor);
 mxImport void* fxGetHostChunk(xsMachine*, xsSlot*);
 mxImport void *fxSetHostChunk(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void* fxGetHostData(xsMachine*, xsSlot*);
+mxImport void* fxGetHostDataValidate(xsMachine* the, xsSlot* slot, void* validator);
 mxImport void fxSetHostData(xsMachine*, xsSlot*, void*);
 mxImport xsDestructor fxGetHostDestructor(xsMachine*, xsSlot*);
 mxImport void fxSetHostDestructor(xsMachine*, xsSlot*, xsDestructor);

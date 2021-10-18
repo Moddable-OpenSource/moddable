@@ -188,30 +188,29 @@ void xs_serial_destructor(void *data)
 void xs_serial_close(xsMachine *the)
 {
 	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(serial->obj);
-	if (serial->hasReadable || serial->hasWritable) {
-		if (serial->hasReadable)
-			xsForget(serial->onReadable);
-		if (serial->hasWritable)
-			xsForget(serial->onWritable);
+	if (serial && xsmcGetHostDataValidate(xsThis, xs_serial_destructor)) {
+		xsForget(serial->obj);
+		if (serial->hasReadable || serial->hasWritable) {
+			if (serial->hasReadable)
+				xsForget(serial->onReadable);
+			if (serial->hasWritable)
+				xsForget(serial->onWritable);
+		}
+		xs_serial_destructor(serial);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
 	}
-	xs_serial_destructor(serial);
 }
 
 void xs_serial_get_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, xs_serial_destructor);
 	builtinGetFormat(the, serial->format);
 }
 
 void xs_serial_set_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, xs_serial_destructor);
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
@@ -220,11 +219,8 @@ void xs_serial_set_format(xsMachine *the)
 
 void xs_serial_read(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
+	Serial serial = xsmcGetHostDataValidate(xsThis, xs_serial_destructor);
 	int count;
-
-	if (!serial)
-		xsUnknownError("closed");
 
 	count = getBytesReadable();
 	if (0 == count)
@@ -247,13 +243,9 @@ void xs_serial_read(xsMachine *the)
 
 void xs_serial_write(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	int count;
+	Serial serial = xsmcGetHostDataValidate(xsThis, xs_serial_destructor);
+	int count = getBytesWritable();
 
-	if (!serial)
-		xsUnknownError("closed");
-
-	count = getBytesWritable();
 	if (kIOFormatNumber == serial->format) {
 		if (0 == count)
 			xsUnknownError("output full");
@@ -262,11 +254,12 @@ void xs_serial_write(xsMachine *the)
 	}
 	else {
 		uint8_t *buffer;
-		int requested = xsmcGetArrayBufferLength(xsArg(0));
+		xsUnsignedValue requested;
+
+		xsmcGetBuffer(xsArg(0), (void **)&buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 
-		buffer = xsmcToArrayBuffer(xsArg(0));
 		while (requested--)
 			USF(UART_NR) = *buffer++;
 	}

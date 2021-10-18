@@ -195,20 +195,19 @@ void xs_spi_destructor(void *data)
 void xs_spi_close(xsMachine *the)
 {
 	SPI spi = xsmcGetHostData(xsThis);
-	if (!spi) return;
-	xsForget(spi->obj);
-	xs_spi_destructor(spi);
-	xsmcSetHostData(xsThis, NULL);
+	if (spi && xsmcGetHostDataValidate(xsThis, xs_spi_destructor)) {
+		xsForget(spi->obj);
+		xs_spi_destructor(spi);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_spi_read(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 	void *data;
 	xsUnsignedValue count;
-
-	if (!spi)
-		xsUnknownError("closed");
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsmcGetBuffer(xsArg(0), &data, &count);
@@ -216,11 +215,11 @@ void xs_spi_read(xsMachine *the)
 			xsRangeError("unsupported byteLength");
 	}
 	else {
-		count = xsmcToInteger(xsArg(0));
-		if ((count < 0) || (count > 65535))
+		int requested = xsmcToInteger(xsArg(0));
+		if ((requested < 0) || (requested > 65535))
 			xsRangeError("unsupported byteLength");
-		xsmcSetArrayBuffer(xsResult, NULL, count);
-		data = xsmcToArrayBuffer(xsResult);
+		count = requested;
+		data = xsmcSetArrayBuffer(xsResult, NULL, count);
 	}
 
 	modSPITxRx(&spi->config, data, (uint16_t)count);
@@ -228,12 +227,9 @@ void xs_spi_read(xsMachine *the)
 
 void xs_spi_write(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 	void *data;
 	xsUnsignedValue count;
-
-	if (!spi)
-		xsUnknownError("closed");
 
 	xsmcGetBuffer(xsArg(0), &data, &count);
 	if (count > 65535)
@@ -244,12 +240,9 @@ void xs_spi_write(xsMachine *the)
 
 void xs_spi_transfer(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 	void *data;
 	xsUnsignedValue count;
-
-	if (!spi)
-		xsUnknownError("closed");
 
 	xsmcGetBuffer(xsArg(0), &data, &count);
 	if (count > 65535)
@@ -260,10 +253,7 @@ void xs_spi_transfer(xsMachine *the)
 
 void xs_spi_flush(xsMachine *the)
 {
-	SPI spi = xsmcGetHostData(xsThis);
-
-	if (!spi)
-		xsUnknownError("closed");
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
 
 	modSPIFlush();
 

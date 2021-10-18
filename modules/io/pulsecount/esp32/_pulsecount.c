@@ -32,6 +32,7 @@ struct PulseCountRecord {
     int32_t     signal;
     int32_t     control;
     xsSlot      obj;
+	uint8_t		hasOnReadable;
 	// fields after here only allocated if onReadable callback present
 	uint8_t		triggered;
     xsMachine   *the;
@@ -112,7 +113,7 @@ void xs_pulsecount_constructor_(xsMachine *the)
 {
 	PulseCount pc;
 	int signal, control, unit, filter = 100;
-    uint8_t hasReadable = 0;
+    uint8_t hasOnReadable = 0;
 	xsmcVars(1);
 	
 	xsmcGet(xsVar(0), xsArg(0), xsID_signal);
@@ -147,9 +148,9 @@ void xs_pulsecount_constructor_(xsMachine *the)
 	}
 
 	if (builtinHasCallback(the, xsID_onReadable))
-		hasReadable = 1;
+		hasOnReadable = 1;
 
-    pc = c_malloc(hasReadable ? sizeof(PulseCountRecord) : offsetof(PulseCountRecord, triggered));
+    pc = c_malloc(hasOnReadable ? sizeof(PulseCountRecord) : offsetof(PulseCountRecord, triggered));
     if (!pc)
         xsRangeError("no memory");
 
@@ -161,6 +162,7 @@ void xs_pulsecount_constructor_(xsMachine *the)
     pc->unit = unit;
     pc->signal = signal;
     pc->control = control;
+    pc->hasOnReadable = hasOnReadable;
 
     builtinInitializeTarget(the);
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
@@ -188,14 +190,12 @@ void xs_pulsecount_constructor_(xsMachine *the)
 	pcnt_set_filter_value(pc->unit, filter);
 	pcnt_filter_enable(pc->unit);
 
-	if (hasReadable) {
+	if (hasOnReadable) {
 		xsSlot tmp;
         
 		pc->the = the;
 		builtinGetCallback(the, xsID_onReadable, &tmp);
 		pc->onReadable = xsToReference(tmp);
-
-        xsSetHostHooks(xsThis, (xsHostHooks *)&xsPulseCountHooks);
 
 		if (NULL == gPulseCounts)
 			pcnt_isr_register(pulsecountISR, (void *)(uintptr_t)pc->unit, 0, &gPulseCountISRHandle);
@@ -216,6 +216,8 @@ void xs_pulsecount_constructor_(xsMachine *the)
 	pcnt_counter_clear(pc->unit);
 	pcnt_counter_resume(pc->unit);
 
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsPulseCountHooks);
+
     builtinUsePin(signal);
     if (control != PCNT_PIN_NOT_USED)
         builtinUsePin(control);
@@ -225,26 +227,25 @@ void xs_pulsecount_mark_(xsMachine* the, void *it, xsMarkRoot markRoot)
 {
 	PulseCount pc = it;
 	
-	(*markRoot)(the, pc->onReadable);
+	if (pc->hasOnReadable)
+		(*markRoot)(the, pc->onReadable);
 }
 
 void xs_pulsecount_close_(xsMachine *the)
 {
 	PulseCount pc = xsmcGetHostData(xsThis);
-	if (!pc) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(pc->obj);
-    xs_pulsecount_destructor_(pc);
+	if (pc && xsmcGetHostDataValidate(xsThis, (void *)&xsPulseCountHooks)) {
+		xsForget(pc->obj);
+		xs_pulsecount_destructor_(pc);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_pulsecount_read_(xsMachine *the)
 {
-	PulseCount pc = xsmcGetHostData(xsThis);
+	PulseCount pc = xsmcGetHostDataValidate(xsThis, (void *)&xsPulseCountHooks);
 	int16_t count;
-
-	if (!pc) 
-        xsUnknownError("closed");
 
 	pcnt_get_counter_value(pc->unit, &count);
 	xsmcSetInteger(xsResult, count + pc->base);
@@ -252,9 +253,7 @@ void xs_pulsecount_read_(xsMachine *the)
 
 void xs_pulsecount_write_(xsMachine *the)
 {
-	PulseCount pc = xsmcGetHostData(xsThis);
-	if (!pc)
-        xsUnknownError("closed");
+	PulseCount pc = xsmcGetHostDataValidate(xsThis, (void *)&xsPulseCountHooks);
 
 	pc->base = xsmcToInteger(xsArg(0));
 	pcnt_counter_clear(pc->unit);

@@ -84,7 +84,7 @@ const txBehavior ICACHE_FLASH_ATTR gxTypedArrayBehavior = {
 	fxOrdinarySetPrototype,
 };
 
-void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength)
+void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength)
 {
 	txSlot* instance;
 	txSlot* arrayBuffer;
@@ -100,6 +100,7 @@ void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLengt
 	else
 		c_memset(arrayBuffer->value.arrayBuffer.address, 0, byteLength);
 	mxPullSlot(slot);
+	return arrayBuffer->value.arrayBuffer.address;
 }
 
 void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength)
@@ -1532,7 +1533,6 @@ void fx_TypedArray_prototype_byteOffset_get(txMachine* the)
 void fx_TypedArray_prototype_copyWithin(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
-	txByte* address = data->value.arrayBuffer.address + view->value.dataView.offset;
 	txInteger target = (txInteger)fxArgToIndex(the, 0, 0, length);
 	txInteger start = (txInteger)fxArgToIndex(the, 1, 0, length);
 	txInteger end = (txInteger)fxArgToIndex(the, 2, length, length);
@@ -1541,6 +1541,7 @@ void fx_TypedArray_prototype_copyWithin(txMachine* the)
 	if (count > length - target)
 		count = length - target;
 	if (count > 0) {
+		txByte* address = data->value.arrayBuffer.address + view->value.dataView.offset;
 		c_memmove(address + (target * delta), address + (start * delta), count * delta);
 		mxMeterSome((txU4)count * 2);
 	}

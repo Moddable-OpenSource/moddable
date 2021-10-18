@@ -2174,7 +2174,8 @@ Returns the data
 
 To set the destructor of a host object (or to clear the destructor, by passing `NULL`), use the `xsSetHostDestructor` macro. This macro throws an exception if the `theThis` parameter does not refer to a host object.
 
-**`void xsSetHostDestructor(xsSlot theThis, xsDestructor theDestructor)`**
+**`void xsSetHostDestructor(xsSlot theThis, xsDestructor theDestructor)`<BR>
+`void xsmcSetHostDestructor(xsSlot theThis, xsDestructor theDestructor)`**
 
 | Arguments | Description |
 | --- | :-- |
