@@ -242,7 +242,7 @@ void* fxCheckAtomicsArrayBufferDetached(txMachine* the, txSlot* slot, txBoolean 
 {
 	if (slot->value.arrayBuffer.address == C_NULL)
 		mxTypeError("typedArray.buffer is detached");
-	if (mutable && (slot->flag & XS_MARK_FLAG))
+	if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 		mxTypeError("typedArray.buffer is read-only");
 	return slot->value.arrayBuffer.address;
 }
