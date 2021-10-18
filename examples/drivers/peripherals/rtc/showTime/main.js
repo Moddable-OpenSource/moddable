@@ -14,7 +14,12 @@
 
 import RTC from "embedded:peripherals/RTC-MaximIntegrated/DS1307";
 
-const rtc = new RTC({...device.I2C.default, io: device.io.SMBus});
+const rtc = new RTC({
+            rtc: {
+                ...device.I2C.default,
+                io: device.io.SMBus
+            }
+});
 
 if (rtc.enabled)
 	trace(new Date(rtc.time), "\n");

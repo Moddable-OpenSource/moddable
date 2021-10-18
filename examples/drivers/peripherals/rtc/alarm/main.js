@@ -20,7 +20,7 @@ trace(`Today's date: ${(new Date()).toGMTString()}\n`);
 
 
 const rtc = new RTC ({
-			i2c: {
+			rtc: {
 				...device.I2C.default,
 				io: device.io.SMBus
 			},

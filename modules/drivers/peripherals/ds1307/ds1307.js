@@ -37,10 +37,11 @@ class DS3231 {
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const io = this.#io = new options.io({
+		const { rtc } = options;
+		const io = this.#io = new rtc.io({
 			hz: 400_000,
 			address: 0x68,
-			...options
+			...rtc
 		});
 
 		try {
@@ -58,7 +59,7 @@ class DS3231 {
 	configure(options) {
 	}
 	get enabled() {
-		return (this.#io.readByte(0) & Register.ENABLE_BIT) ? true : false;
+		return (this.#io.readByte(0) & Register.ENABLE_BIT) ? false : true;
 	}
 	get time() {
 		const io = this.#io;
