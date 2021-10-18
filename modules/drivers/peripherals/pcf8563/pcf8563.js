@@ -44,11 +44,11 @@ class PCF8563 {
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const { i2c, interrupt, onAlarm } = options;
-		const io = this.#io = new i2c.io({
+		const { rtc, interrupt, onAlarm } = options;
+		const io = this.#io = new rtc.io({
 			hz: 400_000,
 			address: 0x51,
-			...i2c
+			...rtc
 		});
 
 		try {
