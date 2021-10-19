@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -144,7 +144,7 @@ struct xsCryptDigestRecord {
 #if mxNoFunctionLength
 	CryptHandlePart;
 #endif
-	uint8_t			digest;
+	uint32_t		digest;
 	unsigned char	ctx[1];
 };
 
