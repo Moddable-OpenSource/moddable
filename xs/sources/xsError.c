@@ -177,7 +177,7 @@ txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i)
 	instance = fxNewObjectInstance(the);
 	mxPullSlot(mxResult);
 	slot = instance->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	slot->flag = XS_INTERNAL_FLAG;
 	slot->kind = XS_ERROR_KIND;
 	slot->value.error.info = C_NULL;
 	slot->value.error.which = error;

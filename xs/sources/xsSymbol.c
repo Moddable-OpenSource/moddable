@@ -75,7 +75,7 @@ txSlot* fxNewSymbolInstance(txMachine* the)
 {
 	txSlot* instance;
 	instance = fxNewObjectInstance(the);
-	fxNextSymbolProperty(the, instance, XS_NO_ID, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	fxNextSymbolProperty(the, instance, XS_NO_ID, XS_NO_ID, XS_INTERNAL_FLAG);
 	return instance;
 }
 

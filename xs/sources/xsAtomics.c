@@ -242,7 +242,7 @@ void* fxCheckAtomicsArrayBufferDetached(txMachine* the, txSlot* slot, txBoolean 
 {
 	if (slot->value.arrayBuffer.address == C_NULL)
 		mxTypeError("typedArray.buffer is detached");
-	if (mutable && (slot->flag & XS_MARK_FLAG))
+	if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 		mxTypeError("typedArray.buffer is read-only");
 	return slot->value.arrayBuffer.address;
 }
@@ -332,7 +332,7 @@ void fx_SharedArrayBuffer(txMachine* the)
 	the->stack->value.reference = instance;
 	the->stack->kind = XS_REFERENCE_KIND;
 	host = instance->next = fxNewSlot(the);
-	host->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	host->flag = XS_INTERNAL_FLAG;
 	host->kind = XS_HOST_KIND;
 	host->value.host.data = fxCreateSharedChunk(byteLength);
 	if (!host->value.host.data)

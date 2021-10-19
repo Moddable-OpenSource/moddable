@@ -140,7 +140,7 @@ txSlot* fxNewDateInstance(txMachine* the)
 	txSlot* instance;
 	txSlot* property;
 	instance = fxNewObjectInstance(the);
-	property = fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	property->kind = XS_DATE_KIND;
 	property->value.number = C_NAN;
 	return instance;
@@ -610,7 +610,16 @@ void fx_Date_UTC(txMachine* the)
 
 txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean utc, txSlot* slot)
 {
-	txNumber number = slot->value.number;
+	txSlot* instance = mxThis->value.reference;
+	txNumber number;
+	if (instance->ID) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias) {
+			instance = alias;
+			slot = instance->next;
+		}
+	}
+	number = slot->value.number;
 	if (c_isnan(number)) {
 		mxResult->value.number = C_NAN;
 		mxResult->kind = XS_NUMBER_KIND;
@@ -622,10 +631,20 @@ txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean ut
 
 void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, txSlot* slot)
 {
-	txNumber number = slot->value.number;
+	txSlot* instance = mxThis->value.reference;
+	txNumber number;
+	if (instance->ID) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			instance = alias;
+		else
+			instance = fxAliasInstance(the, instance);
+		slot = instance->next;
+	}
+	number = slot->value.number;
 	if (c_isnan(number))
 		return;
-	if (slot->flag & XS_MARK_FLAG)
+	if (slot->flag & XS_DONT_SET_FLAG)
 		mxTypeError("Date instance is read-only");
 	mxResult->value.number = slot->value.number = fxDateMerge(dt, utc);
 	mxResult->kind = XS_NUMBER_KIND;

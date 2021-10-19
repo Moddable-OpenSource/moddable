@@ -466,6 +466,10 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
 	address = &(instance->next);
 	while ((property = *address)) {
+		if (!(property->flag & XS_INTERNAL_FLAG)) {
+			property = C_NULL;
+			break;
+		}
 		if (property->kind == XS_PRIVATE_KIND) {
 			if (property->value.private.check == check) {
 				break;
@@ -474,11 +478,13 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 		address = &(property->next);
 	}
 	if (!property) {
-		*address = property = fxNewSlot(the);
-		property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+		property = fxNewSlot(the);
+		property->next = *address;
+		property->flag = XS_INTERNAL_FLAG;
 		property->kind = XS_PRIVATE_KIND;
 		property->value.private.check = check;
 		property->value.private.first = C_NULL;
+		*address = property;
 	}
 	address = &(property->value.private.first);
 	while ((property = *address)) {
@@ -599,8 +605,6 @@ txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, tx
 	}
 	if (result) {
 		if ((result->kind == XS_ACCESSOR_KIND) && (result->value.accessor.setter == C_NULL))
-			result = C_NULL;
-		else if (result->flag & XS_DONT_SET_FLAG)
 			result = C_NULL;
 	}
 	return result;
