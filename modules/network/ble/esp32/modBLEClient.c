@@ -405,13 +405,13 @@ static void charSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 	characteristicSearchRecord *csr = (characteristicSearchRecord*)refcon;
 	
 	xsBeginHost(gBLE->the);
+	xsmcVars(4);
 	for (int i = 0; i < csr->count; ++i) {
 		esp_gattc_char_elem_t *char_elem = &csr->char_elem_result[i];
 		int index = modBLEConnectionSaveAttHandle(csr->connection, &char_elem->uuid, char_elem->char_handle);
 		uint16_t length;
 		uint8_t buffer[ESP_UUID_LEN_128];
 		uuidToBuffer(buffer, &char_elem->uuid, &length);
-		xsmcVars(4);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
 		xsmcSetInteger(xsVar(2), char_elem->char_handle);
@@ -485,13 +485,13 @@ static void descSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 {
 	descriptorSearchRecord *dsr = (descriptorSearchRecord*)refcon;
 	xsBeginHost(gBLE->the);
+	xsmcVars(3);
 	for (int i = 0; i < dsr->count; ++i) {
 		esp_gattc_descr_elem_t *descr_elem = &dsr->descr_elem_result[i];
 		int index = modBLEConnectionSaveAttHandle(dsr->connection, &descr_elem->uuid, descr_elem->handle);
 		uint16_t length;
 		uint8_t buffer[ESP_UUID_LEN_128];
 		uuidToBuffer(buffer, &descr_elem->uuid, &length);
-		xsmcVars(3);
 		xsVar(0) = xsmcNewObject();
 		xsmcSetArrayBuffer(xsVar(1), buffer, length);
 		xsmcSetInteger(xsVar(2), descr_elem->handle);
@@ -1079,8 +1079,8 @@ static void doCharEvent(void *the, const char *callback, uint16_t conn_id, uint1
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
 	xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString(callback), xsVar(0));
-	c_free(value);
 	xsEndHost(gBLE->the);
+	c_free(value);
 }
 
 static void gattcNotifyEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
