@@ -257,6 +257,7 @@ typedef union {
 	
 	struct { txSlot* address; txIndex length; } array;
 	struct { txByte* address; txInteger length; } arrayBuffer;
+	struct { txInteger length; txInteger maxLength; } bufferInfo;
 	struct { txCallback address; txID* IDs; } callback;
 	struct { txByte* address; txSlot* closures; } code;
 	struct { txInteger offset; txInteger size; } dataView;
@@ -1424,8 +1425,12 @@ mxExport void fx_ArrayBuffer_fromBigInt(txMachine* the);
 mxExport void fx_ArrayBuffer_fromString(txMachine* the);
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_get_resizable(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_concat(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_resize(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_slice(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_transfer(txMachine* the);
 
 mxExport void fx_DataView(txMachine* the);
 mxExport void fx_DataView_prototype_buffer_get(txMachine* the);
@@ -1943,6 +1948,7 @@ enum {
 	XS_INSTANCE_INSPECTOR_KIND,
 	XS_EXPORT_KIND,
 	XS_WEAK_ENTRY_KIND,
+	XS_BUFFER_INFO_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,
