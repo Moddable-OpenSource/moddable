@@ -443,7 +443,7 @@ void fx_ArrayBuffer(txMachine* the)
 		mxPullSlot(mxArgv(1));
 		maxByteLength = fxArgToByteLength(the, 1, -1);
 	}
-	if (maxByteLength > 0) {
+	if (maxByteLength >= 0) {
 		if (byteLength > maxByteLength)
 			mxRangeError("byteLength > maxByteLength");
 	}
@@ -510,69 +510,75 @@ void fx_ArrayBuffer_isView(txMachine* the)
 void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
-	txSlot* slot = instance->next;
+	txSlot* arrayBuffer = instance->next;
+	txSlot* bufferInfo = arrayBuffer->next;
 	mxResult->kind = XS_INTEGER_KIND;
-	if (slot->value.arrayBuffer.address == C_NULL)
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
 		mxResult->value.integer = 0;
 	else
-		mxResult->value.integer = slot->value.arrayBuffer.length;
+		mxResult->value.integer = bufferInfo->value.bufferInfo.length;
 }
 
 void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
-	txSlot* slot = instance->next;
+	txSlot* arrayBuffer = instance->next;
+	txSlot* bufferInfo = arrayBuffer->next;
 	mxResult->kind = XS_INTEGER_KIND;
-	if (slot->value.arrayBuffer.address == C_NULL)
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
 		mxResult->value.integer = 0;
-	else {
-		mxResult->value.integer = slot->value.arrayBuffer.length;
-		slot = slot->next;
-		if (slot->value.integer >= 0)
-			mxResult->value.integer = slot->value.integer;
-	}
+	else if (bufferInfo->value.bufferInfo.maxLength >= 0)
+		mxResult->value.integer = bufferInfo->value.bufferInfo.maxLength;
+	else
+		mxResult->value.integer = bufferInfo->value.bufferInfo.length;
 }
 
 void fx_ArrayBuffer_prototype_get_resizable(txMachine* the)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
-	txSlot* slot = instance->next->next;
+	txSlot* arrayBuffer = instance->next;
+	txSlot* bufferInfo = arrayBuffer->next;
 	mxResult->kind = XS_BOOLEAN_KIND;
-	mxResult->value.boolean = (slot->value.integer >= 0) ? 1 : 0;
+	mxResult->value.boolean = (bufferInfo->value.bufferInfo.maxLength >= 0) ? 1 : 0;
 }
 
 void fx_ArrayBuffer_prototype_concat(txMachine* the)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = instance->next;
-	txInteger length = arrayBuffer->value.arrayBuffer.length;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txInteger length = bufferInfo->value.bufferInfo.length;
 	txInteger c = mxArgc, i = 0;
 	txByte* address;
 	txSlot* slot;
 	while (i < c) {
 		arrayBuffer = C_NULL;
+		bufferInfo = C_NULL;
 		slot = mxArgv(i);
 		if (slot->kind == XS_REFERENCE_KIND) {
 			slot = slot->value.reference->next;
 			if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
 				arrayBuffer = slot;
+				bufferInfo = slot->next;
 		}
 		if (arrayBuffer)
-			length += arrayBuffer->value.arrayBuffer.length;
+			length += bufferInfo->value.bufferInfo.length;
 		else
 			mxTypeError("arguments[%ld] is no ArrayBuffer instance", i);
 		i++;
 	}
 	fxConstructArrayBufferResult(the, C_NULL, length);
-	address = mxResult->value.reference->next->value.arrayBuffer.address;
 	arrayBuffer = instance->next;
-	length = arrayBuffer->value.arrayBuffer.length;
+	bufferInfo = arrayBuffer->next;
+	address = mxResult->value.reference->next->value.arrayBuffer.address;
+	length = bufferInfo->value.bufferInfo.length;
 	c_memcpy(address, arrayBuffer->value.arrayBuffer.address, length);
 	address += length;
 	i = 0;
 	while (i < c) {
 		arrayBuffer = mxArgv(i)->value.reference->next;
-		length = arrayBuffer->value.arrayBuffer.length;
+		bufferInfo = arrayBuffer->next;
+		length = bufferInfo->value.bufferInfo.length;
 		c_memcpy(address, arrayBuffer->value.arrayBuffer.address, length);
 		address += length;
 		i++;
@@ -583,17 +589,14 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
-	txInteger maxByteLength = arrayBuffer->next->value.integer;
-	txInteger oldByteLength = arrayBuffer->value.arrayBuffer.length;
-	txInteger newByteLength = fxArgToByteLength(the, 0, oldByteLength);
+	txSlot* bufferInfo = arrayBuffer->next;
 	txInteger maxByteLength, oldByteLength, newByteLength;
 	txByte* chunk;
-	maxByteLength = arrayBuffer->next->value.integer;
+	maxByteLength = bufferInfo->value.bufferInfo.maxLength;
 	if (maxByteLength < 0)
 		mxTypeError("not resizable");
-	fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
-	oldByteLength = arrayBuffer->value.arrayBuffer.length;
-	newByteLength = fxArgToByteLength(the, 0, oldByteLength);
+	oldByteLength = bufferInfo->value.bufferInfo.length;
+	newByteLength = fxArgToByteLength(the, 0, 0);
 	if (newByteLength > maxByteLength)
 		mxRangeError("byteLength > maxByteLength");
 	chunk = (txByte*)fxRenewChunk(the, arrayBuffer->value.arrayBuffer.address, newByteLength);
@@ -605,13 +608,15 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 		c_memset(chunk + newByteLength, 0, newByteLength - oldByteLength);
 	arrayBuffer->value.arrayBuffer.length = newByteLength;
 	arrayBuffer->value.arrayBuffer.address = chunk;
+	bufferInfo->value.bufferInfo.length = newByteLength;
 }
 
 void fx_ArrayBuffer_prototype_slice(txMachine* the)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_IMMUTABLE);
-	txInteger length = arrayBuffer->value.arrayBuffer.length;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txInteger length = bufferInfo->value.bufferInfo.length;
 	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
 	txInteger stop = (txInteger)fxArgToIndex(the, 1, length, length);
 	txSlot* resultBuffer;
@@ -626,16 +631,19 @@ void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
-	txInteger oldByteLength = arrayBuffer->value.arrayBuffer.length;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txInteger oldByteLength = bufferInfo->value.bufferInfo.length;
 	txInteger newByteLength = fxArgToByteLength(the, 0, oldByteLength);
 	txSlot* resultBuffer;
 	fxConstructArrayBufferResult(the, C_NULL, newByteLength);
-	resultBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
+	resultBuffer = fxCheckArrayBufferDetached(the, mxResult, XS_MUTABLE);
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address, (newByteLength < oldByteLength) ? newByteLength : oldByteLength);
 	if (newByteLength > oldByteLength)
-		c_memset(resultBuffer->value.arrayBuffer.address + newByteLength, 0, newByteLength - oldByteLength);
+		c_memset(resultBuffer->value.arrayBuffer.address + oldByteLength, 0, newByteLength - oldByteLength);
 	arrayBuffer->value.arrayBuffer.address = C_NULL;
 	arrayBuffer->value.arrayBuffer.length = 0;
+	bufferInfo->value.bufferInfo.length = 0;
+	bufferInfo->value.bufferInfo.maxLength = 0;
 }
 
 txSlot* fxCheckDataViewInstance(txMachine* the, txSlot* slot)
@@ -651,60 +659,76 @@ txSlot* fxCheckDataViewInstance(txMachine* the, txSlot* slot)
 
 txInteger fxCheckDataViewSize(txMachine* the, txSlot* view, txSlot* buffer, txBoolean mutable)
 {
-	txInteger offset = view->value.dataView.offset;
 	txInteger size = view->value.dataView.size;
-	txSlot* buffer = buffer->value.reference->next;
-	if (buffer->kind == XS_ARRAY_BUFFER_KIND) {
-		if (buffer->value.arrayBuffer.address == C_NULL)
-			mxTypeError("detached buffer");
-		if (mutable && (buffer->flag & XS_DONT_SET_FLAG))
-			mxTypeError("read-only buffer");
-		if (buffer->next->value.integer >= 0) {
-			txInteger byteLength = buffer->value.arrayBuffer.length;
-			if (offset > byteLength)
-				mxTypeError("out of bounds view");
-			size = (size < 0) ? byteLength : offset + size;
-			if (size > byteLength)
-				mxTypeError("out of bounds view");
-			size -= offset;
-		}
+	txSlot* arrayBuffer = buffer->value.reference->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
+		mxTypeError("detached buffer");
+	if (mutable && (arrayBuffer->flag & XS_DONT_SET_FLAG))
+		mxTypeError("read-only buffer");
+	if (bufferInfo->value.bufferInfo.maxLength >= 0) {
+		txInteger offset = view->value.dataView.offset;
+		txInteger byteLength = bufferInfo->value.bufferInfo.length;
+		if (offset >= byteLength)
+			mxTypeError("out of bounds view");
+		size = (size < 0) ? byteLength : offset + size;
+		if (size > byteLength)
+			mxTypeError("out of bounds view");
+		size -= offset;
 	}
 	return size;
+}
+
+txSlot* fxGetBufferInfo(txMachine* the, txSlot* buffer)
+{
+	txSlot* arrayBuffer = buffer->value.reference->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	if (arrayBuffer->kind == XS_ARRAY_BUFFER_KIND) {
+		if (arrayBuffer->value.arrayBuffer.address == C_NULL)
+			mxTypeError("detached buffer");
+		return bufferInfo;
+	}
+	if (arrayBuffer->kind == XS_HOST_KIND) {
+		txInteger byteLength;
+		if (bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND))
+			return bufferInfo;
+		mxPushSlot(buffer);
+		mxGetID(mxID(_byteLength));
+		if (!fxCheckLength(the, the->stack, &byteLength))
+			mxTypeError("invalid byteLength");
+		mxPop();
+		bufferInfo = fxNewSlot(the);
+		bufferInfo->next = arrayBuffer->next;
+		bufferInfo->flag = XS_INTERNAL_FLAG;
+		bufferInfo->kind = XS_BUFFER_INFO_KIND;
+		bufferInfo->value.bufferInfo.length = byteLength;
+		bufferInfo->value.bufferInfo.maxLength = -1;
+		arrayBuffer->next = bufferInfo;
+		return bufferInfo;
+	}
+	mxTypeError("invalid buffer");
+	return C_NULL;
 }
 
 txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer)
 {
-	txInteger offset = view->value.dataView.offset;
 	txInteger size = view->value.dataView.size;
-	buffer = buffer->value.reference->next;
-	if (buffer->kind == XS_ARRAY_BUFFER_KIND) {
-		if (buffer->value.arrayBuffer.address == C_NULL)
+	txSlot* arrayBuffer = buffer->value.reference->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
+		return 0;
+	if (bufferInfo->value.bufferInfo.maxLength >= 0) {
+		txInteger offset = view->value.dataView.offset;
+		txInteger byteLength = bufferInfo->value.bufferInfo.length;
+		if (offset > byteLength)
 			return 0;
-		if (buffer->next->value.integer >= 0) {
-			txInteger byteLength = buffer->value.arrayBuffer.length;
-			if (offset > byteLength)
-				return 0;
-			size = (size < 0) ? byteLength : offset + size;
-			if (size > byteLength)
-				return 0;
-			size -= offset;
-		}
+		size = (size < 0) ? byteLength : offset + size;
+		if (size > byteLength)
+			return 0;
+		size -= offset;
 	}
 	return size;
 }
-
-void fxSetDataViewSize(txMachine* the, txSlot* view, txSlot* reference, txInteger offset, txInteger size)
-{
-	buffer = buffer->value.reference->next;
-	if (buffer->kind == XS_ARRAY_BUFFER_KIND) {
-		txInteger byteLength = buffer->value.arrayBuffer.length;
-		if (offset >= byteLength) {
-			mxRangeError("out of range byteOffset %ld", offset);
-		}
-		
-	}
-}
-
 
 txSlot* fxNewDataViewInstance(txMachine* the)
 {
@@ -722,46 +746,48 @@ txSlot* fxNewDataViewInstance(txMachine* the)
 
 void fx_DataView(txMachine* the)
 {
+	txSlot* slot;
+	txBoolean flag = 0;
+	txInteger offset, size;
+	txSlot* info;
 	txSlot* instance;
 	txSlot* view;
 	txSlot* buffer;
-	txSlot* slot;
-	txBoolean flag = 0;
-	txInteger limit, offset, size;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: DataView");
+	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_REFERENCE_KIND)) {
+		slot = mxArgv(0)->value.reference->next;
+		if (slot && ((slot->kind == XS_ARRAY_BUFFER_KIND) || (slot->kind == XS_HOST_KIND))) {
+			flag = 1;
+		}
+	}
+	if (!flag)
+		mxTypeError("buffer is no ArrayBuffer instance");
+		
+	offset = fxArgToByteOffset(the, 1, 0);
+	info = fxGetBufferInfo(the, mxArgv(0));
+	if (info->value.bufferInfo.length < offset)
+		mxRangeError("out of range byteOffset %ld", offset);
+	size = fxArgToByteLength(the, 2, -1);
+	if (size >= 0) {
+		if (info->value.bufferInfo.length < (offset + size))
+			mxRangeError("out of range byteLength %ld", size);
+	}
+	else {
+		if (info->value.bufferInfo.maxLength < 0)
+			size = info->value.bufferInfo.length - offset;
+	}
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxDataViewPrototype);
 	instance = fxNewDataViewInstance(the);
 	mxPullSlot(mxResult);
 	view = instance->next;
-	buffer = view->next;
-	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_REFERENCE_KIND)) {
-		slot = mxArgv(0)->value.reference->next;
-		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND)) {
-			flag = 1;
-			limit = slot->value.arrayBuffer.length;
-		}
-		else if (slot && (slot->kind == XS_HOST_KIND)) {
-			mxPushSlot(mxArgv(0));
-			mxGetID(mxID(_byteLength));
-			flag = fxCheckLength(the, the->stack, &limit);
-			mxPop();
-		}
-	}
-	if (!flag)
-		mxTypeError("buffer is no ArrayBuffer instance");
-	offset = fxArgToByteOffset(the, 1, 0);
-	fxCheckArrayBufferDetached(the, mxArgv(0), XS_IMMUTABLE);
-	if (limit < offset)
-		mxRangeError("out of range byteOffset %ld", offset);
-	size = fxArgToByteLength(the, 2, -1);
-	if ((size >= 0) && (limit < (offset + size)))
-		mxRangeError("out of range byteLength %ld", size);
 	view->value.dataView.offset = offset;
 	view->value.dataView.size = size;
+	buffer = view->next;
 	buffer->kind = XS_REFERENCE_KIND;
 	buffer->value.reference = mxArgv(0)->value.reference;
+	fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE);
 }
 
 void fx_DataView_prototype_buffer_get(txMachine* the)
@@ -977,7 +1003,7 @@ void fxTypedArrayGetter(txMachine* the)
 		txU2 shift = dispatch->value.typedArray.dispatch->shift;
 		txIndex length = fxGetDataViewSize(the, view, buffer) >> shift;
 		if ((!id) && (index < length)) {
-			(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, index << shift, mxResult, EndianNative);
+			(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + (index << shift), mxResult, EndianNative);
 		}
 	}
 }
@@ -995,16 +1021,19 @@ void fxTypedArraySetter(txMachine* the)
 		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
+		txSlot* slot = mxArgv(0);
 		txID id = the->scratch.value.at.id;
 		txIndex index = the->scratch.value.at.index;
 		txSlot* view = dispatch->next;
 		txSlot* buffer = view->next;
 		txU2 shift = dispatch->value.typedArray.dispatch->shift;
-		txIndex length = fxGetDataViewSize(the, view, buffer) >> shift;
-		txSlot* slot = mxArgv(0);
+		txIndex length;
+		txSlot* data;
 		dispatch->value.typedArray.dispatch->coerce(the, slot);
+		length = fxGetDataViewSize(the, view, buffer) >> shift;
+		data = buffer->value.reference->next;
 		if ((!id) && (index < length)) {
-			(*dispatch->value.typedArray.dispatch->setter)(the, buffer->value.reference->next, index << shift, slot, EndianNative);
+			(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + (index << shift), slot, EndianNative);
 		}
 	}
 }
@@ -1017,19 +1046,22 @@ txBoolean fxTypedArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID i
 		txSlot* buffer = view->next;
 		txU2 shift = dispatch->value.typedArray.dispatch->shift;
 		txIndex length = fxGetDataViewSize(the, view, buffer) >> shift;
+		txSlot* data = buffer->value.reference->next;
 		if (id || (index >= length))
 			return 0;
-		if (mask & XS_ACCESSOR_FLAG)
-			return 0;
-		if ((mask & XS_DONT_DELETE_FLAG) && (!(slot->flag & XS_DONT_DELETE_FLAG)))
+		if ((mask & XS_DONT_DELETE_FLAG) && (slot->flag & XS_DONT_DELETE_FLAG))
 			return 0;
 		if ((mask & XS_DONT_ENUM_FLAG) && (slot->flag & XS_DONT_ENUM_FLAG))
+			return 0;
+		if (mask & XS_ACCESSOR_FLAG)
 			return 0;
 		if ((mask & XS_DONT_SET_FLAG) && (slot->flag & XS_DONT_SET_FLAG))
 			return 0;
 		if (slot->kind != XS_UNINITIALIZED_KIND) {
 			dispatch->value.typedArray.dispatch->coerce(the, slot);
-			(*dispatch->value.typedArray.dispatch->setter)(the, buffer->value.reference->next, view->value.dataView.offset + (index << shift), slot, EndianNative);
+			length = fxGetDataViewSize(the, view, buffer) >> shift;
+			if (index < length)
+				(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + (index << shift), slot, EndianNative);
 		}
 		return 1;
 	}
@@ -1059,7 +1091,6 @@ txBoolean fxTypedArrayGetOwnProperty(txMachine* the, txSlot* instance, txID id, 
 		txIndex length = fxGetDataViewSize(the, view, buffer) >> shift;
 		if ((!id) && (index < length)) {
 			(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + (index << shift), slot, EndianNative);
-			slot->flag = XS_DONT_DELETE_FLAG;
 			return 1;
 		}
 		slot->kind = XS_UNDEFINED_KIND;
@@ -1144,21 +1175,21 @@ txBoolean fxTypedArraySetPropertyValue(txMachine* the, txSlot* instance, txID id
 		txSlot* view = dispatch->next;
 		txSlot* buffer = view->next;
 		txU2 shift = dispatch->value.typedArray.dispatch->shift;
-		txIndex length = fxGetDataViewSize(the, view, buffer) >> shift;
+		txIndex length;
 		dispatch->value.typedArray.dispatch->coerce(the, value);
+		length = fxGetDataViewSize(the, view, buffer) >> shift;
 		if ((!id) && (index < length)) {
 			(*dispatch->value.typedArray.dispatch->setter)(the, buffer->value.reference->next, view->value.dataView.offset + (index << shift), value, EndianNative);
-			return 1;
 		}
-		return 0;
+		return 1;
 	}
 	return fxOrdinarySetPropertyValue(the, instance, id, index, value, receiver);
 }
 
 void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index, txSlot* item)
 {
-	if (data->value.arrayBuffer.address == C_NULL)
-		mxTypeError("detached buffer");
+// 	if (data->value.arrayBuffer.address == C_NULL)
+// 		mxTypeError("detached buffer");
 	/* THIS */
 	if (mxArgc > 1)
 		mxPushSlot(mxArgv(1));
@@ -1168,8 +1199,8 @@ void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, tx
 	mxPushSlot(function);
 	mxCall();
 	/* ARGUMENTS */
-	mxPushUndefined();
-	(*dispatch->value.typedArray.dispatch->getter)(the, data, view->value.dataView.offset + (index << dispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
+	mxPushSlot(mxThis);
+	mxGetIndex(index);
 	if (item) {
 		item->kind = the->stack->kind;
 		item->value = the->stack->value;
@@ -1323,26 +1354,27 @@ void fx_TypedArray(txMachine* the)
 	txSlot* slot;
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_REFERENCE_KIND)) {
 		slot = mxArgv(0)->value.reference->next;
-		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND)) {
+		if (slot && ((slot->kind == XS_ARRAY_BUFFER_KIND) || (slot->kind == XS_HOST_KIND))) {
 			txInteger offset = fxArgToByteOffset(the, 1, 0);
 			txInteger size;
-			txInteger limit;
+			txSlot* info;
 			if (offset & ((1 << shift) - 1))
 				mxRangeError("invalid byteOffset %ld", offset);
 			size = fxArgToByteOffset(the, 2, -1);
-			fxCheckArrayBufferDetached(the, mxArgv(0), XS_IMMUTABLE);
-			limit = slot->value.arrayBuffer.length;
+			info = fxGetBufferInfo(the, mxArgv(0));
 			if (size >= 0) {
 				size <<= shift;
-				if (limit < (offset + size))
+				if (info->value.bufferInfo.length < (offset + size))
 					mxRangeError("out of range byteLength %ld", size);
 			}
 			else {
-// 				if (limit & ((1 << shift) - 1))
-// 					mxRangeError("invalid byteLength %ld", limit);
-// 				size = limit - offset;
-// 				if (size < 0)
-// 					mxRangeError("out of range byteLength %ld", size);
+				if (info->value.bufferInfo.length & ((1 << shift) - 1))
+					mxRangeError("invalid byteLength %ld", info->value.bufferInfo.length);
+				size = info->value.bufferInfo.length - offset;
+				if (size < 0)
+					mxRangeError("out of range byteLength %ld", size);
+				if (info->value.bufferInfo.maxLength >= 0)
+					size = -1;
 			}
 			view->value.dataView.offset = offset;
 			view->value.dataView.size = size;
@@ -1353,8 +1385,8 @@ void fx_TypedArray(txMachine* the)
 			txSlot* arrayDispatch = slot;
 			txSlot* arrayView = arrayDispatch->next;
 			txSlot* arrayBuffer = arrayView->next;
-			txSlot* arrayData = C_NULL;
-			txInteger arrayLength = fxCheckDataViewSize(the, arrayView, arrayBuffer, XS_IMMUTABLE) >> dispatch->value.typedArray.dispatch->shift;
+			txSlot* arrayData = arrayBuffer->value.reference->next;
+			txInteger arrayLength = fxCheckDataViewSize(the, arrayView, arrayBuffer, XS_IMMUTABLE) >> arrayDispatch->value.typedArray.dispatch->shift;
 			txInteger arrayDelta = arrayDispatch->value.typedArray.dispatch->size;
 			txInteger arrayOffset = arrayView->value.dataView.offset;
 			txInteger offset = 0;
@@ -1403,37 +1435,6 @@ void fx_TypedArray(txMachine* the)
 				}
 				mxPop();
 			}
-		}
-		else if (slot && (slot->kind == XS_HOST_KIND)) {
-			txInteger limit;
-			mxPushSlot(mxArgv(0));
-			mxGetID(mxID(_byteLength));
-			if (fxCheckLength(the, the->stack, &limit)) {
-				txInteger offset = fxArgToByteOffset(the, 1, 0);
-				txInteger size;
-				if (offset & ((1 << shift) - 1))
-					mxRangeError("invalid byteOffset %ld", offset);
-				size = fxArgToByteOffset(the, 2, -1);
-				if (size >= 0) {
-					size <<= shift;
-					if (limit < (offset + size))
-						mxRangeError("out of range byteLength %ld", size);
-				}
-				else {
-					if (limit & ((1 << shift) - 1))
-						mxRangeError("invalid byteLength %ld", limit);
-					size = limit - offset;
-					if (size < 0)
-						mxRangeError("out of range byteLength %ld", size);
-				}
-				view->value.dataView.offset = offset;
-				view->value.dataView.size = size;
-				buffer->kind = XS_REFERENCE_KIND;
-				buffer->value.reference = mxArgv(0)->value.reference;
-			}
-			else
-				fx_TypedArray_from_object(the, instance, C_NULL, C_NULL);
-			mxPop();
 		}
 		else {
 			fx_TypedArray_from_object(the, instance, C_NULL, C_NULL);
@@ -1616,7 +1617,7 @@ void fx_TypedArray_of(txMachine* the)
 			(*resultDispatch->value.typedArray.dispatch->coerce)(the, mxArgv(index));
 			if (resultBuffer->value.arrayBuffer.address == C_NULL)
 				mxTypeError("detached buffer");
-			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer, resultView->value.dataView.offset + (index << shift), mxArgv(index), EndianNative);
+			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << shift), mxArgv(index), EndianNative);
 			index++;
 		}
 	}
@@ -1682,7 +1683,7 @@ void fx_TypedArray_prototype_copyWithin(txMachine* the)
 	if (count > length - target)
 		count = length - target;
 	if (count > 0) {
-		txByte* address = buffer->value.reference->next.arrayBuffer.address + view->value.dataView.offset;
+		txByte* address = buffer->value.reference->next->value.arrayBuffer.address + view->value.dataView.offset;
 		c_memmove(address + (target * delta), address + (start * delta), count * delta);
 		mxMeterSome((txU4)count * 2);
 	}
@@ -1712,7 +1713,7 @@ void fx_TypedArray_prototype_every(txMachine* the)
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 1;
 	while (index < length) {
-		fxCallTypedArrayItem(the, function, dispatch, view, buffer, index, C_NULL);
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, C_NULL);
 		mxResult->value.boolean = fxToBoolean(the, the->stack++);
 		if (!mxResult->value.boolean)
 			break;
@@ -1755,7 +1756,7 @@ void fx_TypedArray_prototype_filter(txMachine* the)
 	txInteger index = 0;
 	mxPushUndefined();
 	while (index < length) {
-		fxCallTypedArrayItem(the, function, dispatch, view, buffer, index, the->stack);
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, the->stack);
 		if (fxToBoolean(the, the->stack++)) {
 			count++;
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
@@ -1776,7 +1777,7 @@ void fx_TypedArray_prototype_filter(txMachine* the)
 		slot = list->next;
 		while (slot) {
 			(*resultDispatch->value.typedArray.dispatch->coerce)(the, slot);
-			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer, resultOffset, slot, EndianNative);
+			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultOffset, slot, EndianNative);
 			resultOffset += resultSize;
 			slot = slot->next;
 		}
@@ -1791,7 +1792,7 @@ void fx_TypedArray_prototype_find(txMachine* the)
 	txInteger index = 0;
 	mxPushUndefined();
 	while (index < length) {
-		fxCallTypedArrayItem(the, function, dispatch, view, buffer, index, the->stack);
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, the->stack);
 		if (fxToBoolean(the, the->stack++)) {
 			mxResult->kind = the->stack->kind;
 			mxResult->value = the->stack->value;
@@ -1810,7 +1811,7 @@ void fx_TypedArray_prototype_findIndex(txMachine* the)
 	mxResult->kind = XS_INTEGER_KIND;
 	mxResult->value.integer = -1;
 	while (index < length) {
-		fxCallTypedArrayItem(the, function, dispatch, view, buffer, index, C_NULL);
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, C_NULL);
 		if (fxToBoolean(the, the->stack)) {
 			mxResult->value.integer = index;
 			break;
@@ -1826,7 +1827,7 @@ void fx_TypedArray_prototype_forEach(txMachine* the)
 	txSlot* function = fxArgToCallback(the, 0);
 	txInteger index = 0;
 	while (index < length) {
-		fxCallTypedArrayItem(the, function, dispatch, view, buffer, index, C_NULL);
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, C_NULL);
 		mxPop();
 		index++;
 	}
@@ -1839,7 +1840,7 @@ void fx_TypedArray_prototype_includes(txMachine* the)
 	fxBoolean(the, mxResult, 0);
 	if (length) {
 		txInteger index = (txInteger)fxArgToIndex(the, 1, 0, length);
-		length = fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE);
+		length = fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 		if (mxArgc > 0)
 			mxPushSlot(mxArgv(0));
 		else
@@ -1864,7 +1865,7 @@ void fx_TypedArray_prototype_indexOf(txMachine* the)
 	fxInteger(the, mxResult, -1);
 	if (length) {
 		txInteger index = (txInteger)fxArgToIndex(the, 1, 0, length);
-		length = fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE);
+		length = fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 		if (mxArgc > 0)
 			mxPushSlot(mxArgv(0));
 		else
@@ -1887,7 +1888,7 @@ void fx_TypedArray_prototype_join(txMachine* the)
 	mxTypedArrayDeclarations;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
 	txInteger offset = view->value.dataView.offset;
-	txInteger limit = length << dispatch->value.typedArray.dispatch->shift;
+	txInteger limit = offset + (length << dispatch->value.typedArray.dispatch->shift);
 	txString string;
 	txSlot* list = fxNewInstance(the);
 	txSlot* slot = list;
@@ -1904,6 +1905,7 @@ void fx_TypedArray_prototype_join(txMachine* the)
 		the->stack->kind += XS_KEY_KIND - XS_STRING_KIND;
 		the->stack->value.key.sum = 1;
 	}
+	length = offset + fxGetDataViewSize(the, view, buffer);
 	while (offset < limit) {
 		if (comma) {
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
@@ -1911,14 +1913,16 @@ void fx_TypedArray_prototype_join(txMachine* the)
 		}
 		else
 			comma = 1;
-		mxPushUndefined();
-		(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, offset, the->stack, EndianNative);
-		slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
-		string = fxToString(the, slot);
-		slot->kind += XS_KEY_KIND - XS_STRING_KIND;
-		slot->value.key.sum = mxStringLength(string);
-		size = fxAddChunkSizes(the, size, slot->value.key.sum);
-		mxPop();
+		if (offset < length) {
+			mxPushUndefined();
+			(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, offset, the->stack, EndianNative);
+			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
+			string = fxToString(the, slot);
+			slot->kind += XS_KEY_KIND - XS_STRING_KIND;
+			slot->value.key.sum = mxStringLength(string);
+			size = fxAddChunkSizes(the, size, slot->value.key.sum);
+			mxPop();
+		}
 		offset += delta;
 	}
 	mxPop();
@@ -1999,11 +2003,11 @@ void fx_TypedArray_prototype_map(txMachine* the)
 		if (resultLength < length)
 			mxTypeError("insufficient buffer");
 		while (index < length) {
-			fxCallTypedArrayItem(the, function, dispatch, view, buffer, index, C_NULL);
+			fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, C_NULL);
 			if (resultBuffer->value.arrayBuffer.address == C_NULL)
 				mxTypeError("detached buffer");
 			(*resultDispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer, resultView->value.dataView.offset + (index << shift), the->stack, EndianNative);
+			(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << shift), the->stack, EndianNative);
 			mxPop();
 			index++;
 		}
@@ -2024,7 +2028,7 @@ void fx_TypedArray_prototype_reduce(txMachine* the)
 	else
 		mxTypeError("no initial value");
 	while (index < length) {
-		fxReduceTypedArrayItem(the, function, dispatch, view, buffer, index);
+		fxReduceTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index);
 		mxPullSlot(mxResult);
 		index++;
 	}
@@ -2045,7 +2049,7 @@ void fx_TypedArray_prototype_reduceRight(txMachine* the)
 	else
 		mxTypeError("no initial value");
 	while (index >= 0) {
-		fxReduceTypedArrayItem(the, function, dispatch, view, buffer, index);
+		fxReduceTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index);
 		mxPullSlot(mxResult);
 		index--;
 	}
@@ -2057,7 +2061,7 @@ void fx_TypedArray_prototype_reverse(txMachine* the)
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
 	if (length) {
 		txByte tmp;
-		txByte* first = buffer->value.arrayBuffer.address + view->value.dataView.offset;
+		txByte* first = buffer->value.reference->next->value.arrayBuffer.address + view->value.dataView.offset;
 		txByte* last = first + (length << dispatch->value.typedArray.dispatch->shift) - delta;
 		txInteger offset;
 		while (first < last) {
@@ -2078,6 +2082,7 @@ void fx_TypedArray_prototype_reverse(txMachine* the)
 void fx_TypedArray_prototype_set(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
+	txSlot* data = buffer->value.reference->next;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
 	txSlot* array = fxArgToInstance(the, 0);
 	txInteger target = fxArgToByteOffset(the, 1, 0);
@@ -2092,7 +2097,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		txInteger limit = offset + (arrayLength * delta);
 		if ((target < 0) || (length - arrayLength < target))
 			mxRangeError("invalid offset");
-		if (buffer == arrayData) {
+		if (data == arrayData) {
 			txSlot* resultBuffer;
 			mxPush(mxArrayBufferConstructor);
 			mxNew();
@@ -2107,10 +2112,10 @@ void fx_TypedArray_prototype_set(txMachine* the)
 			mxPushUndefined();
 		if (arrayData->value.arrayBuffer.address == C_NULL)
 			mxTypeError("detached buffer");
-		if (buffer->value.arrayBuffer.address == C_NULL)
+		if (data->value.arrayBuffer.address == C_NULL)
 			mxTypeError("detached buffer");
 		if (dispatch == arrayDispatch) {
-			c_memcpy(buffer->value.arrayBuffer.address + offset, arrayData->value.arrayBuffer.address + arrayOffset, limit - offset);
+			c_memcpy(data->value.arrayBuffer.address + offset, arrayData->value.arrayBuffer.address + arrayOffset, limit - offset);
 			mxMeterSome(((txU4)(limit - offset)) * 2);
 		}
 		else {
@@ -2119,7 +2124,9 @@ void fx_TypedArray_prototype_set(txMachine* the)
 			while (offset < limit) {
 				(*arrayDispatch->value.typedArray.dispatch->getter)(the, arrayData, arrayOffset, the->stack, EndianNative);
 				(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-				(*dispatch->value.typedArray.dispatch->setter)(the, buffer->value.reference->next, offset, the->stack, EndianNative);
+                if (data->value.arrayBuffer.address == C_NULL)
+                    mxTypeError("detached buffer");
+				(*dispatch->value.typedArray.dispatch->setter)(the, data, offset, the->stack, EndianNative);
 				arrayOffset += arrayDelta;
 				offset += delta;
 			}
@@ -2139,10 +2146,10 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		while (index < count) {
 			mxPushSlot(mxArgv(0));
 			mxGetIndex(index);
-			if (buffer->value.arrayBuffer.address == C_NULL)
-				mxTypeError("detached buffer");
 			(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-			(*dispatch->value.typedArray.dispatch->setter)(the, buffer->value.reference->next, offset, the->stack, EndianNative);
+			if (data->value.arrayBuffer.address == C_NULL)
+				mxTypeError("detached buffer");
+			(*dispatch->value.typedArray.dispatch->setter)(the, data, offset, the->stack, EndianNative);
 			mxPop();
 			offset += delta;
 			index++;
@@ -2172,14 +2179,14 @@ void fx_TypedArray_prototype_slice(txMachine* the)
 			while ((start < length) && (start < end)) {
 				(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + (start * delta), the->stack, EndianNative);
 				(*resultDispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-				(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
+				(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
 				start++;
 				index++;
 			}
 			while (start < end) {
 				the->stack->kind = XS_UNDEFINED_KIND;
 				(*resultDispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-				(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
+				(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
 				start++;
 				index++;
 			}
@@ -2196,7 +2203,7 @@ void fx_TypedArray_prototype_some(txMachine* the)
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
 	while (index < length) {
-		fxCallTypedArrayItem(the, function, dispatch, view, buffer, index, C_NULL);
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, C_NULL);
 		mxResult->value.boolean = fxToBoolean(the, the->stack++);
 		if (mxResult->value.boolean)
 			break;
@@ -2207,6 +2214,7 @@ void fx_TypedArray_prototype_some(txMachine* the)
 void fx_TypedArray_prototype_sort(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
+	txSlot* data = buffer->value.reference->next;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
 	txSlot* function = C_NULL;
 	if (mxArgc > 0) {
@@ -2221,16 +2229,16 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 	if (function) {
 		/* like GCC qsort */
 		#define COMPARE(INDEX) \
-			fxCompareTypedArrayItem(the, function, dispatch, view, buffer, INDEX)
+			fxCompareTypedArrayItem(the, function, dispatch, view, data, INDEX)
 		#define MOVE(FROM,TO) \
-			from = buffer->value.arrayBuffer.address + view->value.dataView.offset + ((FROM) * delta); \
-			to = buffer->value.arrayBuffer.address + view->value.dataView.offset + ((TO) * delta); \
+			from = data->value.arrayBuffer.address + view->value.dataView.offset + ((FROM) * delta); \
+			to = data->value.arrayBuffer.address + view->value.dataView.offset + ((TO) * delta); \
 			for (k = 0; k < delta; k++) *to++ = *from++
 		#define PUSH(INDEX) \
 			mxPushUndefined(); \
-			(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + ((INDEX) * delta), the->stack, EndianNative)
+			(*dispatch->value.typedArray.dispatch->getter)(the, data, view->value.dataView.offset + ((INDEX) * delta), the->stack, EndianNative)
 		#define PULL(INDEX) \
-			(*dispatch->value.typedArray.dispatch->setter)(the, buffer->value.reference->next, view->value.dataView.offset + ((INDEX) * delta), the->stack++, EndianNative)
+			(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + ((INDEX) * delta), the->stack++, EndianNative)
 		if (length > 0) {
 			txInteger i, j, k;
 			txByte* from;
@@ -2312,7 +2320,7 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 		}
 	}
 	else
-		c_qsort(buffer->value.arrayBuffer.address, length, delta, dispatch->value.typedArray.dispatch->compare);
+		c_qsort(data->value.arrayBuffer.address, length, delta, dispatch->value.typedArray.dispatch->compare);
 	mxResult->kind = mxThis->kind;
 	mxResult->value = mxThis->value;
 }
@@ -2324,12 +2332,11 @@ void fx_TypedArray_prototype_subarray(txMachine* the)
 	txSlot* view = dispatch->next;
 	txSlot* buffer = view->next;
 	txU2 shift = dispatch->value.typedArray.dispatch->shift;
-	txInteger length = view->value.dataView.size >> shift;
+	txInteger length = fxGetDataViewSize(the, view, buffer) >> shift;
 	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
 	txInteger stop = (txInteger)fxArgToIndex(the, 1, length, length);
 	if (stop < start) 
 		stop = start;
-	fxCheckArrayBufferDetached(the, buffer, XS_IMMUTABLE);
 	fxCreateTypedArraySpecies(the);
 	mxPushSlot(buffer);
 	mxPushInteger(view->value.dataView.offset + (start << shift));
