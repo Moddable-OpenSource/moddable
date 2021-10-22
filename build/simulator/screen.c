@@ -174,7 +174,7 @@ void fxAbort(xsMachine* the, int status)
 			xsLog("XS abort: %s\n", why);
 		if (screen)
 			(*screen->abort)(screen, status);
-		if (exitToHost) {
+		if (exitToHost && the->firstJump) {
 			exitToHost = 0;
 			fxExitToHost(the);
 		}
