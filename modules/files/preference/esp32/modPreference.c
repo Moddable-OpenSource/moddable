@@ -24,14 +24,19 @@
 
 #include "nvs_flash/include/nvs_flash.h"
 
+// ESP IDF bug: if type of key changes, new type is ignored. work around by deleting first.
+#define ERASE_KEY(handle, key) \
+	do { \
+		nvs_erase_key(handle, key); \
+		if ((ESP_OK != err) && (ESP_ERR_NVS_NOT_FOUND != err)) \
+			goto bail; \
+	} while (false)
+
 void xs_preference_set(xsMachine *the)
 {
 	esp_err_t err;
 	nvs_handle handle;
-	uint8_t b;
-	int32_t integer;
-	char *str, key[64];
-	double dbl;
+	char key[64];
 
 	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
 
@@ -39,48 +44,63 @@ void xs_preference_set(xsMachine *the)
 	if (ESP_OK != err)
 		xsUnknownError("nvs_open fail");
 
-	nvs_erase_key(handle, key);		// ESP IDF bug: if type of key changes, new type is ignored. work around by deleting first.
-	if ((ESP_OK != err) && (ESP_ERR_NVS_NOT_FOUND != err))
-		goto bail;
+	xsTry {
+		switch (xsmcTypeOf(xsArg(2))) {
+			case xsBooleanType: {
+				uint8_t b = xsmcToBoolean(xsArg(2));
+				ERASE_KEY(handle, key);
+				err = nvs_set_u8(handle, key, b);
+				} break;
 
-	switch (xsmcTypeOf(xsArg(2))) {
-		case xsBooleanType:
-			err = nvs_set_u8(handle, key, xsmcToBoolean(xsArg(2)));
-			break;
+			case xsIntegerType: {
+				int32_t i = xsmcToInteger(xsArg(2));
+				ERASE_KEY(handle, key);
+				err = nvs_set_i32(handle, key, i);
+				} break;
 
-		case xsIntegerType:
-			err = nvs_set_i32(handle, key, xsmcToInteger(xsArg(2)));
-			break;
+			case xsNumberType: {
+				double dbl = xsmcToNumber(xsArg(2));
+				if (dbl != (int)dbl) {
+					nvs_close(handle);
+					xsUnknownError("float unsupported");
+				}
+				ERASE_KEY(handle, key);
+				err = nvs_set_i32(handle, key, (int)dbl);
+				} break;
 
-		case xsNumberType:
-			dbl = xsmcToNumber(xsArg(2));
-			if (dbl != (int)dbl) {
+			case xsStringType: {
+				char *s = xsmcToString(xsArg(2));
+				ERASE_KEY(handle, key);
+				err = nvs_set_str(handle, key, s);
+				} break;
+
+			case xsReferenceType:
+				if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
+					void *data;
+					xsUnsignedValue length;
+
+					xsmcGetBuffer(xsArg(2), &data, &length);
+					ERASE_KEY(handle, key);
+					err = nvs_set_blob(handle, key, data, length);
+				}
+				else
+					goto unknown;
+				break;
+
+			unknown:
+			default:
 				nvs_close(handle);
-				xsUnknownError("float unsupported");
-			}
-			err = nvs_set_i32(handle, key, (int)dbl);
-			break;
+				xsUnknownError("unsupported type");
+		}
 
-		case xsStringType:
-			err = nvs_set_str(handle, key, xsmcToString(xsArg(2)));
-			break;
+		if (ESP_OK != err) goto bail;
 
-		case xsReferenceType:
-			if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype))
-				err = nvs_set_blob(handle, key, xsmcToArrayBuffer(xsArg(2)), xsmcGetArrayBufferLength(xsArg(2)));
-			else
-				goto unknown;
-			break;
-
-		unknown:
-		default:
-			nvs_close(handle);
-			xsUnknownError("unsupported type");
+		err = nvs_commit(handle);
 	}
-
-	if (ESP_OK != err) goto bail;
-
-	err = nvs_commit(handle);
+	xsCatch {
+		nvs_close(handle);
+		xsThrow(xsException);
+	}
 
 bail:
 	nvs_close(handle);
