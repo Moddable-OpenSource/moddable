@@ -1317,6 +1317,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"finally",
 	"find",
 	"findIndex",
+	"findLast",
+	"findLastIndex",
 	"flags",
 	"flat",
 	"flatMap",

@@ -108,6 +108,8 @@ void fxBuildArray(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_filter), 1, mxID(_filter), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_find), 1, mxID(_find), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_findIndex), 1, mxID(_findIndex), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_findLast), 1, mxID(_findLast), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_findLastIndex), 1, mxID(_findLastIndex), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_flat), 0, mxID(_flat), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_flatMap), 1, mxID(_flatMap), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_forEach), 1, mxID(_forEach), XS_DONT_ENUM_FLAG);
@@ -1413,6 +1415,40 @@ void fx_Array_prototype_findIndex(txMachine* the)
 			break;
 		}
 		index++;
+	}
+}
+
+void fx_Array_prototype_findLast(txMachine* the)
+{
+	txIndex index = fxGetArrayLimit(the, mxThis);
+	txSlot* function = fxArgToCallback(the, 0);
+	txSlot* item;
+	mxPushUndefined();
+	item = the->stack;
+	while (index > 0) {
+		index--;
+		fxFindThisItem(the, function, index, item);
+		if (fxToBoolean(the, the->stack++)) {
+			mxResult->kind = item->kind;
+			mxResult->value = item->value;
+			break;
+		}
+	}
+	mxPop();
+}
+
+void fx_Array_prototype_findLastIndex(txMachine* the)
+{
+	txIndex index = fxGetArrayLimit(the, mxThis);
+	txSlot* function = fxArgToCallback(the, 0);
+	fxInteger(the, mxResult, -1);
+	while (index > 0) {
+		index--;
+		fxFindThisItem(the, function, index, C_NULL);
+		if (fxToBoolean(the, the->stack++)) {
+			fxUnsigned(the, mxResult, index);
+			break;
+		}
 	}
 }
 

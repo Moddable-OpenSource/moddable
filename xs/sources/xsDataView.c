@@ -254,6 +254,8 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_filter), 1, mxID(_filter), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_find), 1, mxID(_find), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_findIndex), 1, mxID(_findIndex), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_findLast), 1, mxID(_findLast), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_findLastIndex), 1, mxID(_findLastIndex), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_forEach), 1, mxID(_forEach), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_includes), 1, mxID(_includes), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_indexOf), 1, mxID(_indexOf), XS_DONT_ENUM_FLAG);
@@ -1826,12 +1828,46 @@ void fx_TypedArray_prototype_findIndex(txMachine* the)
 	mxResult->value.integer = -1;
 	while (index < length) {
 		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, C_NULL);
-		if (fxToBoolean(the, the->stack)) {
+		if (fxToBoolean(the, the->stack++)) {
 			mxResult->value.integer = index;
 			break;
 		}
-		mxPop();
 		index++;
+	}
+}
+
+void fx_TypedArray_prototype_findLast(txMachine* the)
+{
+	mxTypedArrayDeclarations;
+	txSlot* function = fxArgToCallback(the, 0);
+	txInteger index = length;
+	mxPushUndefined();
+	while (index > 0) {
+		index--;
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, the->stack);
+		if (fxToBoolean(the, the->stack++)) {
+			mxResult->kind = the->stack->kind;
+			mxResult->value = the->stack->value;
+			break;
+		}
+	}
+	mxPop();
+}
+
+void fx_TypedArray_prototype_findLastIndex(txMachine* the)
+{
+	mxTypedArrayDeclarations;
+	txSlot* function = fxArgToCallback(the, 0);
+	txInteger index = length;
+	mxResult->kind = XS_INTEGER_KIND;
+	mxResult->value.integer = -1;
+	while (index > 0) {
+		index--;
+		fxCallTypedArrayItem(the, function, dispatch, view, buffer->value.reference->next, index, C_NULL);
+		if (fxToBoolean(the, the->stack++)) {
+			mxResult->value.integer = index;
+			break;
+		}
 	}
 }
 

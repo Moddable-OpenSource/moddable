@@ -820,6 +820,8 @@ enum {
 	_finally_,
 	_find,
 	_findIndex,
+	_findLast,
+	_findLastIndex,
 	_flags,
 	_flat,
 	_flatMap,
