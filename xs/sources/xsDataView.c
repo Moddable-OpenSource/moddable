@@ -428,9 +428,9 @@ txSlot* fxNewArrayBufferInstance(txMachine* the)
 
 void fx_ArrayBuffer(txMachine* the)
 {
+	txSlot* instance;
 	txInteger byteLength;
 	txInteger maxByteLength = -1;
-	txSlot* instance;
 	txSlot* property;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: ArrayBuffer");

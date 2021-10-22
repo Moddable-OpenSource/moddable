@@ -1597,6 +1597,9 @@ extern void fxBuildAtomics(txMachine* the);
 
 mxExport void fx_SharedArrayBuffer(txMachine* the);
 mxExport void fx_SharedArrayBuffer_prototype_get_byteLength(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_get_growable(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_get_maxByteLength(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_grow(txMachine* the);
 mxExport void fx_SharedArrayBuffer_prototype_slice(txMachine* the);
 mxExport void fx_Atomics_add(txMachine* the);
 mxExport void fx_Atomics_and(txMachine* the);
