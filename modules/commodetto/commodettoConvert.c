@@ -338,12 +338,16 @@ void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixel
 			if (!srcPixel)		// any non-zero pixel is black
 				mono |= mask;
 		}
-		else {
+		else if (0) {
 			uint8_t r = srcPixel >> 11;
 			uint8_t g = (srcPixel >> 5) & 0x3F;
 			uint8_t b = (srcPixel & 0x1F);
 
 			if (!toGray(r, g, b))
+				mono |= mask;
+		}
+		else {
+			if (!(srcPixel & 0x8410))
 				mono |= mask;
 		}
 
