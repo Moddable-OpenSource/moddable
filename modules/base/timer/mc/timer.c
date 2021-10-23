@@ -191,6 +191,7 @@ void modTimerUnschedule(modTimer timer)
 	modCriticalSectionDeclare;
 	modCriticalSectionBegin();
 	timer->flags |= kTimerFlagUnscheduled;
+	timer->flags &= ~kTimerFlagFire;	
 	timer->repeatInterval = -1;
 	modCriticalSectionEnd();
 }
