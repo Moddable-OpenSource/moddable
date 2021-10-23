@@ -85,17 +85,20 @@ const txBehavior ICACHE_FLASH_ATTR gxTypedArrayBehavior = {
 	fxOrdinarySetPrototype,
 };
 
-void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength)
+void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength, txInteger maxByteLength)
 {
 	txSlot* instance;
 	txSlot* arrayBuffer;
+	txSlot* bufferInfo;
 	if (byteLength < 0)
 		mxRangeError("invalid byteLength %ld", byteLength);
 	mxPush(mxArrayBufferPrototype);
 	instance = fxNewArrayBufferInstance(the);
 	arrayBuffer = instance->next;
 	arrayBuffer->value.arrayBuffer.address = fxNewChunk(the, byteLength);
-	arrayBuffer->value.arrayBuffer.length = byteLength;
+	bufferInfo = arrayBuffer->next;
+	bufferInfo->value.bufferInfo.length = byteLength;
+	bufferInfo->value.bufferInfo.maxLength = maxByteLength;
 	if (data != NULL)
 		c_memcpy(arrayBuffer->value.arrayBuffer.address, data, byteLength);
 	else
@@ -108,7 +111,8 @@ void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, vo
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, slot);
 	txSlot* arrayBuffer = instance->next;
-	txInteger length = arrayBuffer->value.arrayBuffer.length;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txInteger length = bufferInfo->value.bufferInfo.length;
 	if ((byteOffset < 0) || (length < byteOffset))
 		mxRangeError("out of range byteOffset %ld", byteOffset);
 	if ((byteLength < 0) || (length < (byteOffset + byteLength)))
@@ -120,14 +124,24 @@ txInteger fxGetArrayBufferLength(txMachine* the, txSlot* slot)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, slot);
 	txSlot* arrayBuffer = instance->next;
-	return arrayBuffer->value.arrayBuffer.length;
+	txSlot* bufferInfo = arrayBuffer->next;
+	return bufferInfo->value.bufferInfo.length;
+}
+
+txInteger fxGetArrayBufferMaxLength(txMachine* the, txSlot* slot)
+{
+	txSlot* instance = fxCheckArrayBufferInstance(the, slot);
+	txSlot* arrayBuffer = instance->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	return bufferInfo->value.bufferInfo.maxLength;
 }
 
 void fxSetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, slot);
 	txSlot* arrayBuffer = instance->next;
-	txInteger length = arrayBuffer->value.arrayBuffer.length;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txInteger length = bufferInfo->value.bufferInfo.length;
 	if ((byteOffset < 0) || (length < byteOffset))
 		mxRangeError("out of range byteOffset %ld", byteOffset);
 	if ((byteLength < 0) || (length < (byteOffset + byteLength)))
@@ -139,7 +153,8 @@ void fxSetArrayBufferLength(txMachine* the, txSlot* slot, txInteger target)
 {
 	txSlot* instance = fxCheckArrayBufferInstance(the, slot);
 	txSlot* arrayBuffer = instance->next;
-	txInteger length = arrayBuffer->value.arrayBuffer.length;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txInteger length = bufferInfo->value.bufferInfo.length;
 	txByte* address = arrayBuffer->value.arrayBuffer.address;
 	if (length != target) {
 		if (address)
@@ -157,8 +172,8 @@ void fxSetArrayBufferLength(txMachine* the, txSlot* slot, txInteger target)
 			else
 				c_memcpy(address, arrayBuffer->value.arrayBuffer.address, target);
 		}
-		arrayBuffer->value.arrayBuffer.length = target;
 		arrayBuffer->value.arrayBuffer.address = address;
+		bufferInfo->value.bufferInfo.length = target;
 	}
 }
 
@@ -403,7 +418,7 @@ void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger
 		mxTypeError("no ArrayBuffer instance");
 	if (!constructor && (mxThis->value.reference == instance))
 		mxTypeError("same ArrayBuffer instance");
-	if (instance->next->value.arrayBuffer.length < length)
+	if (instance->next->next->value.bufferInfo.length < length)
 		mxTypeError("smaller ArrayBuffer instance");
 	mxPullSlot(mxResult);
 }
@@ -417,7 +432,7 @@ txSlot* fxNewArrayBufferInstance(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_ARRAY_BUFFER_KIND;
 	property->value.arrayBuffer.address = C_NULL;
-	property->value.arrayBuffer.length = 0;
+	property->value.arrayBuffer.detachKey = C_NULL;
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_BUFFER_INFO_KIND;
@@ -450,7 +465,6 @@ void fx_ArrayBuffer(txMachine* the)
 			mxRangeError("byteLength > maxByteLength");
 	}
 	property = instance->next;
-	property->value.arrayBuffer.length = byteLength;
 	property->value.arrayBuffer.address = fxNewChunk(the, byteLength);
 	c_memset(property->value.arrayBuffer.address, 0, byteLength);
 	property = property->next;
@@ -608,7 +622,6 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 	}
 	if (newByteLength > oldByteLength)
 		c_memset(chunk + newByteLength, 0, newByteLength - oldByteLength);
-	arrayBuffer->value.arrayBuffer.length = newByteLength;
 	arrayBuffer->value.arrayBuffer.address = chunk;
 	bufferInfo->value.bufferInfo.length = newByteLength;
 }
@@ -643,9 +656,7 @@ void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 	if (newByteLength > oldByteLength)
 		c_memset(resultBuffer->value.arrayBuffer.address + oldByteLength, 0, newByteLength - oldByteLength);
 	arrayBuffer->value.arrayBuffer.address = C_NULL;
-	arrayBuffer->value.arrayBuffer.length = 0;
 	bufferInfo->value.bufferInfo.length = 0;
-	bufferInfo->value.bufferInfo.maxLength = 0;
 }
 
 txSlot* fxCheckDataViewInstance(txMachine* the, txSlot* slot)
@@ -698,6 +709,7 @@ txSlot* fxGetBufferInfo(txMachine* the, txSlot* buffer)
 		mxGetID(mxID(_byteLength));
 		if (!fxCheckLength(the, the->stack, &byteLength))
 			mxTypeError("invalid byteLength");
+		fxReport(the, "# Use xsSetHostBuffer instead of xsSetHostData\n");
 		mxPop();
 		bufferInfo = fxNewSlot(the);
 		bufferInfo->next = arrayBuffer->next;
@@ -1523,7 +1535,7 @@ void fx_TypedArray_from_object(txMachine* the, txSlot* instance, txSlot* functio
 		mxPullSlot(buffer);
 		data = fxCheckArrayBufferDetached(the, buffer, XS_MUTABLE);
 		view->value.dataView.offset = 0;
-		view->value.dataView.size = data->value.arrayBuffer.length;
+		view->value.dataView.size = data->next->value.bufferInfo.length;
 	}
 	else {
 		mxPushSlot(mxThis);

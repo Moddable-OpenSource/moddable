@@ -1145,8 +1145,7 @@ void fx_detachArrayBuffer(xsMachine* the)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_ARRAY_BUFFER_KIND) && (instance != mxArrayBufferPrototype.value.reference)) {
 			slot->value.arrayBuffer.address = C_NULL;
-			slot->value.arrayBuffer.length = 0;
-			slot->next->value.integer = 0;
+			slot->next->value.bufferInfo.length = 0;
 			return;
 		}
 	}

@@ -1318,7 +1318,10 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		break;
 	case XS_ARRAY_BUFFER_KIND:
 		buffer.value.arrayBuffer.address = (txByte*)fxProjectChunk(the, slot->value.arrayBuffer.address);
-		buffer.value.arrayBuffer.length = slot->value.arrayBuffer.length;
+		break;
+	case XS_BUFFER_INFO_KIND:
+		buffer.value.bufferInfo.length = slot->value.bufferInfo.length;
+		buffer.value.bufferInfo.maxLength = slot->value.bufferInfo.maxLength;
 		break;
 	case XS_CALLBACK_KIND:
 		buffer.value.callback.address = fxProjectCallback(the, snapshot, slot->value.callback.address);

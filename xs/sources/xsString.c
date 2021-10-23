@@ -313,6 +313,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 {
 	txSlot* slot;
 	txSlot* arrayBuffer = C_NULL;
+	txSlot* bufferInfo;
 	txInteger limit, offset;
 	txInteger inLength, outLength = 0;
 	unsigned char *in;
@@ -327,8 +328,8 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	}
 	if (!arrayBuffer)
 		mxTypeError("argument is no ArrayBuffer instance");
-
-	limit = arrayBuffer->value.arrayBuffer.length;
+	bufferInfo = arrayBuffer->next;
+	limit = bufferInfo->value.bufferInfo.length;
 	offset = fxArgToByteOffset(the, 1, 0);
 	if (limit < offset)
 		mxRangeError("out of range byteOffset %ld", offset);

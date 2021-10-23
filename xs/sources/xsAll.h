@@ -256,7 +256,7 @@ typedef union {
 	struct { txSlot* garbage; txSlot* prototype; } instance;
 	
 	struct { txSlot* address; txIndex length; } array;
-	struct { txByte* address; txInteger length; } arrayBuffer;
+	struct { txByte* address; void* detachKey; } arrayBuffer;
 	struct { txInteger length; txInteger maxLength; } bufferInfo;
 	struct { txCallback address; txID* IDs; } callback;
 	struct { txByte* address; txSlot* closures; } code;
@@ -597,6 +597,7 @@ mxExport txSlot* fxNewHostConstructor(txMachine*, txCallback, txInteger, txInteg
 mxExport txSlot* fxNewHostFunction(txMachine*, txCallback, txInteger, txInteger);
 mxExport txSlot* fxNewHostInstance(txMachine* the);
 mxExport txSlot* fxNewHostObject(txMachine*, txDestructor);
+mxExport txInteger fxGetHostBufferLength(txMachine* the, txSlot* slot);
 mxExport void* fxGetHostChunk(txMachine*, txSlot*);
 mxExport void* fxGetHostChunkIf(txMachine*, txSlot*);
 mxExport void* fxGetHostData(txMachine*, txSlot*);
@@ -1415,9 +1416,10 @@ extern void fxUint32Getter(txMachine* the, txSlot* data, txInteger offset, txSlo
 extern void fxUint32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8ClampedSetter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 
-mxExport void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength);
+mxExport void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength, txInteger maxByteLength);
 mxExport void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport txInteger fxGetArrayBufferLength(txMachine* the, txSlot* slot);
+mxExport txInteger fxGetArrayBufferMaxLength(txMachine* the, txSlot* slot);
 mxExport void fxSetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport void fxSetArrayBufferLength(txMachine* the, txSlot* slot, txInteger byteLength);
 mxExport void* fxToArrayBuffer(txMachine* the, txSlot* slot);
@@ -1506,6 +1508,7 @@ extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, tx
 
 extern txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset);
 extern txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length);
+extern txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer);
 
 /* xsAtomics.c */
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
