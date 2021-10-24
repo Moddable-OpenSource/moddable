@@ -156,6 +156,8 @@ void fxSetArrayBufferLength(txMachine* the, txSlot* slot, txInteger target)
 	txSlot* bufferInfo = arrayBuffer->next;
 	txInteger length = bufferInfo->value.bufferInfo.length;
 	txByte* address = arrayBuffer->value.arrayBuffer.address;
+	if (bufferInfo->value.bufferInfo.maxLength < 0)
+		fxReport(the, "# Use xsArrayBufferResizable instead of xsArrayBuffer\n");
 	if (length != target) {
 		if (address)
 			address = (txByte*)fxRenewChunk(the, address, target);
@@ -314,27 +316,6 @@ void fxBuildDataView(txMachine* the)
 		mxPop();
 	}
 	mxPop();
-}
-
-txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset)
-{
-	txSlot *arg = mxArgv(argi);
-	if ((mxArgc > argi) && (arg->kind != XS_UNDEFINED_KIND)) {
-		txNumber value;
-		if (XS_INTEGER_KIND == arg->kind) {
-			if (arg->value.integer < 0)
-				mxRangeError("out of range byteOffset");
-			return arg->value.integer;
-		}
-
-		value = c_trunc(fxToNumber(the, arg));
-		if (c_isnan(value))
-			return 0;
-		if ((value < 0) || (0x7FFFFFFF < value)) 	//@@ is this correct?? it looks like it overflows a 32 bit signed int
-			mxRangeError("out of range byteOffset");
-		return (txInteger)value;
-	}
-	return offset;
 }
 
 txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length)
@@ -684,10 +665,10 @@ txInteger fxCheckDataViewSize(txMachine* the, txSlot* view, txSlot* buffer, txBo
 		txInteger byteLength = bufferInfo->value.bufferInfo.length;
 		if (offset > byteLength)
 			mxTypeError("out of bounds view");
-		size = (size < 0) ? byteLength : offset + size;
-		if (size > byteLength)
+		else if (size < 0)
+			size = byteLength - offset;
+		else if (offset + size > byteLength)
 			mxTypeError("out of bounds view");
-		size -= offset;
 	}
 	return size;
 }
@@ -735,11 +716,11 @@ txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer)
 		txInteger offset = view->value.dataView.offset;
 		txInteger byteLength = bufferInfo->value.bufferInfo.length;
 		if (offset > byteLength)
-			return 0;
-		size = (size < 0) ? byteLength : offset + size;
-		if (size > byteLength)
-			return 0;
-		size -= offset;
+			size = 0;
+		else if (size < 0)
+			size = byteLength - offset;
+		else if (offset + size > byteLength)
+			size = 0;
 	}
 	return size;
 }
@@ -778,7 +759,7 @@ void fx_DataView(txMachine* the)
 	if (!flag)
 		mxTypeError("buffer is no ArrayBuffer instance");
 		
-	offset = fxArgToByteOffset(the, 1, 0);
+	offset = fxArgToByteLength(the, 1, 0);
 	info = fxGetBufferInfo(the, mxArgv(0));
 	if (info->value.bufferInfo.length < offset)
 		mxRangeError("out of range byteOffset %ld", offset);
@@ -838,7 +819,7 @@ void fx_DataView_prototype_get(txMachine* the, txNumber delta, txTypeCallback ge
 	txSlot* instance = fxCheckDataViewInstance(the, mxThis);
 	txSlot* view = instance->next;
 	txSlot* buffer = view->next;
-	txInteger offset = fxArgToByteOffset(the, 0, 0);
+	txInteger offset = fxArgToByteLength(the, 0, 0);
 	txInteger size;
 	int endian = EndianBig;
 	if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
@@ -905,7 +886,7 @@ void fx_DataView_prototype_set(txMachine* the, txNumber delta, txTypeCoerce coer
 	txSlot* instance = fxCheckDataViewInstance(the, mxThis);
 	txSlot* view = instance->next;
 	txSlot* buffer = view->next;
-	txInteger offset = fxArgToByteOffset(the, 0, 0);
+	txInteger offset = fxArgToByteLength(the, 0, 0);
 	txInteger size;
 	int endian = EndianBig;
 	txSlot* value;
@@ -1202,8 +1183,6 @@ txBoolean fxTypedArraySetPropertyValue(txMachine* the, txSlot* instance, txID id
 
 void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index, txSlot* item)
 {
-// 	if (data->value.arrayBuffer.address == C_NULL)
-// 		mxTypeError("detached buffer");
 	/* THIS */
 	if (mxArgc > 1)
 		mxPushSlot(mxArgv(1));
@@ -1339,23 +1318,6 @@ txSlot* fxNewTypedArrayInstance(txMachine* the, txTypeDispatch* dispatch, txType
 	return instance;
 }
 
-txSlot* fxSetTypedArrayValue(txMachine* the, txSlot* instance, txInteger index)
-{
-	txSlot* dispatch = instance->next;
-	txSlot* view = dispatch->next;
-	txSlot* buffer = view->next;
-	txSlot* data;
-	txU2 shift = dispatch->value.typedArray.dispatch->shift;
-	index <<= shift;
-	(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-	data = fxCheckArrayBufferDetached(the, buffer, XS_MUTABLE);
-	if ((0 <= index) && ((index + (1 << shift)) <= view->value.dataView.size))
-		(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + index, the->stack, EndianNative);
-	the->scratch.kind = XS_UNDEFINED_KIND;
-	the->scratch.flag= 0;
-	return &the->scratch;
-}
-
 void fx_TypedArray(txMachine* the)
 {
 	txSlot* instance = fxConstructTypedArray(the);
@@ -1368,12 +1330,12 @@ void fx_TypedArray(txMachine* the)
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_REFERENCE_KIND)) {
 		slot = mxArgv(0)->value.reference->next;
 		if (slot && ((slot->kind == XS_ARRAY_BUFFER_KIND) || (slot->kind == XS_HOST_KIND))) {
-			txInteger offset = fxArgToByteOffset(the, 1, 0);
+			txInteger offset = fxArgToByteLength(the, 1, 0);
 			txInteger size;
 			txSlot* info;
 			if (offset & ((1 << shift) - 1))
 				mxRangeError("invalid byteOffset %ld", offset);
-			size = fxArgToByteOffset(the, 2, -1);
+			size = fxArgToByteLength(the, 2, -1);
 			info = fxGetBufferInfo(the, mxArgv(0));
 			if (size >= 0) {
 				size <<= shift;
@@ -2151,7 +2113,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 	txSlot* data = buffer->value.reference->next;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
 	txSlot* source = fxArgToInstance(the, 0);
-	txInteger target = fxArgToByteOffset(the, 1, 0);
+	txInteger target = fxArgToByteLength(the, 1, 0);
 	txInteger offset = view->value.dataView.offset + (target * delta);	
 	if (source->next && (source->next->kind == XS_TYPED_ARRAY_KIND)) {
 		txSlot* sourceDispatch = source->next;

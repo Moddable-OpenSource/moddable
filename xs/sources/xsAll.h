@@ -1506,7 +1506,6 @@ mxExport void fx_TypedArray_prototype_values(txMachine* the);
 extern void fxBuildDataView(txMachine* the);
 extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);
 
-extern txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset);
 extern txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length);
 extern txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer);
 

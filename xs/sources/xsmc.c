@@ -294,7 +294,7 @@ void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count
 		else {
 			// for compatibilty. should throw eventually.
 			txSlot tmp, ref;
-			fxReport(the, "# Use xsSetHostBuffer instead of xsSetHostData\n");
+			fxReport(the, "# Use xsmcSetHostBuffer instead of xsmcSetHostData\n");
 			fxReference(the, &ref, instance);
 			_xsGet(the, &tmp, &ref, _byteLength);
 			*data = (uint8_t *)slot->value.host.data;

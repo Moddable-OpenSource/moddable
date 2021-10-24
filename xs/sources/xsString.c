@@ -330,7 +330,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 		mxTypeError("argument is no ArrayBuffer instance");
 	bufferInfo = arrayBuffer->next;
 	limit = bufferInfo->value.bufferInfo.length;
-	offset = fxArgToByteOffset(the, 1, 0);
+	offset = fxArgToByteLength(the, 1, 0);
 	if (limit < offset)
 		mxRangeError("out of range byteOffset %ld", offset);
 	inLength = fxArgToByteLength(the, 2, limit - offset);
