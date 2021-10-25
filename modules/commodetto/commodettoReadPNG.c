@@ -319,8 +319,7 @@ void xs_PNG_constructor(xsMachine *the)
 				png->byteOffset = pngBytes - pngBytesInitial;
 
 				xsVar(1) = xsNewHostObject(scanDestructor);
-				xsVar(0) = xsInteger(png->scanLineByteCount);
-				xsSet(xsVar(1), xsID_byteLength, xsVar(0));
+				xsSetHostBuffer(xsVar(1), NULL, png->scanLineByteCount);
 				png->scanLineSlot = xsVar(1);
 
 				xsVar(1) = xsNew1(xsGlobal, xsID_Uint8Array, xsVar(1));
@@ -389,7 +388,7 @@ void xs_PNG_read(xsMachine *the)
 
 	// return a scan line of data
 	xsResult = xsGet(xsThis, xsID_data);
-	xsSetHostData(png->scanLineSlot, png->scanLine + kScanLineSlop);
+	xsSetHostBuffer(png->scanLineSlot, png->scanLine + kScanLineSlop, png->scanLineByteCount);
 
 	// swap previous and current scan line buffers
 	swap = png->prevScanLine;

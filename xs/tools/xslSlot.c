@@ -1081,12 +1081,12 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	case XS_ARRAY_BUFFER_KIND: {
 		fprintf(file, ".kind = XS_ARRAY_BUFFER_KIND}, ");
 		fprintf(file, ".value = { .arrayBuffer = { (txByte*)");
-		fxWriteCData(file, slot->value.arrayBuffer.address, slot->next.value.bufferInfo.length);
+		fxWriteCData(file, slot->value.arrayBuffer.address, slot->next->value.bufferInfo.length);
 		fprintf(file, ", NULL } } ");
 	} break;
 	case XS_BUFFER_INFO_KIND: {
 		fprintf(file, ".kind = XS_BUFFER_INFO_KIND}, ");
-		fprintf(file, ".value = { .bufferInfo = {  %d, %d } } ", slot->value.bufferInfo.length, slot->value.bufferInfo.maxLength));
+		fprintf(file, ".value = { .bufferInfo = {  %d, %d } } ", slot->value.bufferInfo.length, slot->value.bufferInfo.maxLength);
 	} break;
 	case XS_CALLBACK_KIND: {
 		fprintf(file, ".kind = XS_CALLBACK_X_KIND}, ");

@@ -3250,7 +3250,7 @@ again:
 		fxPushNodeStruct(parser, 1, theToken, ((txAccessNode*)theNode)->line);
 		return fxPopNode(parser);
 	}
-	if ((aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT) || (aToken == XS_TOKEN_UNDEFINED)) {
+	if ((aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT) || (aToken == XS_TOKEN_PRIVATE_MEMBER) || (aToken == XS_TOKEN_UNDEFINED)) {
 		return theNode;
 	}
 	if (aToken == XS_TOKEN_ASSIGN) {
