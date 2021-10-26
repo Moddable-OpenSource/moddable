@@ -210,7 +210,6 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 		anInstance = fxNewStringInstance(the);
 		anInstance->next->kind = theSlot->kind;
 		anInstance->next->value.string = theSlot->value.string;
-		anInstance->next->value.key.sum = fxUnicodeLength(theSlot->value.string);
 		if (the->frame->flag & XS_STRICT_FLAG)
 			anInstance->flag |= XS_DONT_PATCH_FLAG;
 		mxPullSlot(theSlot);

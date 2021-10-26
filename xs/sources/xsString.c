@@ -44,7 +44,7 @@
 	#include <CoreFoundation/CoreFoundation.h>
 #endif
 
-#define mxStringInstanceLength(INSTANCE) ((txIndex)((INSTANCE)->next->value.key.sum))
+#define mxStringInstanceLength(INSTANCE) ((txIndex)fxUnicodeLength(instance->next->value.string))
 
 static void fx_String_prototype_replaceAux(txMachine* the, txInteger size, txInteger offset, txSlot* function, txSlot* match, txInteger matchLength, txSlot* replace);
 static txSlot* fx_String_prototype_split_aux(txMachine* the, txSlot* theString, txSlot* theArray, txSlot* theItem, txInteger theStart, txInteger theStop);
@@ -160,7 +160,6 @@ txSlot* fxNewStringInstance(txMachine* the)
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	property = fxNextSlotProperty(the, instance, &mxEmptyString, XS_STRING_BEHAVIOR, XS_INTERNAL_FLAG);
-	property->value.key.sum = 0;	
 	return instance;
 }
 
@@ -179,7 +178,7 @@ void fxStringAccessorGetter(txMachine* the)
 		instance = fxGetPrototype(the, instance);
 	}
 	if (id == mxID(_length)) {
-		mxResult->value.integer = string->value.key.sum;
+		mxResult->value.integer = mxStringInstanceLength(instance);
 		mxResult->kind = XS_INTEGER_KIND;
 	}
 	else {
@@ -217,11 +216,10 @@ txBoolean fxStringDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 txBoolean fxStringGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* descriptor)
 {
 	if (id == mxID(_length)) {
-		txSlot* string = instance->next;
 		descriptor->flag = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
 		descriptor->ID = id;
 		descriptor->kind = XS_INTEGER_KIND;
-		descriptor->value.integer = string->value.key.sum;
+		descriptor->value.integer = mxStringInstanceLength(instance);
 		return 1;
 	}
 	if (!id && (mxStringInstanceLength(instance) > index)) {
@@ -305,7 +303,6 @@ void fx_String(txMachine* the)
 	instance = fxNewStringInstance(the);
 	instance->next->kind = slot->kind; // @@
 	instance->next->value.key.string = slot->value.string;
-	instance->next->value.key.sum = fxUnicodeLength(slot->value.string);	
 	mxPullSlot(mxResult);
 }
 
