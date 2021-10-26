@@ -421,6 +421,7 @@ void fx_String_fromCharCode(txMachine* the)
 		}	
 		length += fxUTF8Length(c);
 	}		
+	mxMeterSome(count);
 	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
 	mxResult->kind = XS_STRING_KIND;
 	p = mxResult->value.string;
@@ -459,6 +460,7 @@ void fx_String_fromCodePoint(txMachine* the)
 		length += fxUTF8Length(c);
 		index++;
 	}
+	mxMeterSome(count);
 	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
 	mxResult->kind = XS_STRING_KIND;
 	p = mxResult->value.string;
@@ -659,6 +661,7 @@ void fx_String_prototype_concat(txMachine* the)
 	c_strcpy(mxResult->value.string, mxThis->value.string);
 	for (anIndex = 0; anIndex < aCount; anIndex++)
 		c_strcat(mxResult->value.string, mxArgv(anIndex)->value.string);
+	mxMeterSome(aCount);
 }
 
 void fx_String_prototype_endsWith(txMachine* the)
@@ -679,8 +682,30 @@ void fx_String_prototype_endsWith(txMachine* the)
 	offset = fxUnicodeToUTF8Offset(string, fxArgToPosition(the, 1, length, length));
 	if (offset < searchLength)
 		return;
+	mxMeterSome(fxUnicodeLength(searchString));
 	if (!c_strncmp(string + offset - searchLength, searchString, searchLength))
 		mxResult->value.boolean = 1;
+}
+
+static txString fx_String_prototype_includes_aux(txMachine* the, txString string, txSize stringLength, txString searchString, txSize searchLength)
+{
+	txString result = string;
+	txString limit = string + stringLength - searchLength;
+	while (result <= limit) {
+		txU1 c;
+		txU1* p = (txU1*)result;
+		txU1* q = (txU1*)searchString;
+		while ((c = c_read8(q)) && (c_read8(p) == c)) {
+			mxMeterSome(((c & 0xC0) != 0x80) ? 1 : 0);
+			p++;
+			q++;
+		}
+		if (c)
+			result++;
+		else
+			return result;
+	}
+	return C_NULL;
 }
 
 void fx_String_prototype_includes(txMachine* the)
@@ -701,7 +726,7 @@ void fx_String_prototype_includes(txMachine* the)
 	offset = fxUnicodeToUTF8Offset(string, fxArgToPosition(the, 1, 0, fxUnicodeLength(string)));
 	if ((length - offset) < searchLength)
 		return;
-	if (c_strstr(string + offset, searchString))
+	if (fx_String_prototype_includes_aux(the, string + offset, length - offset, searchString, searchLength))
 		mxResult->value.boolean = 1;
 }
 
@@ -714,8 +739,6 @@ void fx_String_prototype_indexOf(txMachine* the)
 	txInteger anOffset;
 	txNumber aNumber;
 	txInteger aLimit;
-	txString p;
-	txString q;
 	
 	aString = fxCoerceToString(the, mxThis);
 	if (mxArgc < 1) {
@@ -735,13 +758,15 @@ void fx_String_prototype_indexOf(txMachine* the)
 		anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
 		aLimit = mxStringLength(aString) - mxStringLength(aSubString);
 		while (anOffset <= aLimit) {
-			p = aString + anOffset;
-			q = aSubString;
-			while (c_read8(q) && (c_read8(p) == c_read8(q))) {
+			txU1 c;
+			txU1* p = (txU1*)aString + anOffset;
+			txU1* q = (txU1*)aSubString;
+			while ((c = c_read8(q)) && (c_read8(p) == c)) {
+				mxMeterSome(((c & 0xC0) != 0x80) ? 1 : 0);
 				p++;
 				q++;
 			}
-			if (c_read8(q))
+			if (c)
 				anOffset++;
 			else
 				break;
@@ -761,19 +786,18 @@ static txInteger fx_String_prototype_indexOf_aux(txMachine* the, txString theStr
 		txInteger theLength, txInteger theOffset,
 		txString theSubString, txInteger theSubLength, txInteger* theOffsets)
 {
-	txString p;
-	txString q;
-	
 	theOffsets[0] = theOffset;
 	theOffsets[1] = theOffset + theSubLength;
 	while (theOffsets[1] <= theLength) {
-		p = theString + theOffsets[0];
-		q = theSubString;
-		while (c_read8(q) && (c_read8(p) == c_read8(q))) {
+		txU1 c;
+		txU1* p = (txU1*)theString + theOffsets[0];
+		txU1* q = (txU1*)theSubString;
+		while ((c = c_read8(q)) && (c_read8(p) == c)) {
+			mxMeterSome(((c & 0xC0) != 0x80) ? 1 : 0);
 			p++;
 			q++;
 		}
-		if (c_read8(q)) {
+		if (c) {
 			theOffsets[0]++;
 			theOffsets[1]++;
 		}
@@ -791,8 +815,6 @@ void fx_String_prototype_lastIndexOf(txMachine* the)
 	txInteger aSubLength;
 	txInteger anOffset;
 	txNumber aNumber;
-	txString p;
-	txString q;
 
 	aString = fxCoerceToString(the, mxThis);
 	if (mxArgc < 1) {
@@ -814,13 +836,15 @@ void fx_String_prototype_lastIndexOf(txMachine* the)
 	if (anOffset - aSubLength >= 0) {
 		anOffset = fxUnicodeToUTF8Offset(aString, anOffset - aSubLength);
 		while (anOffset >= 0) {
-			p = aString + anOffset;
-			q = aSubString;
-			while (c_read8(q) && (c_read8(p) == c_read8(q))) {
+			txU1 c;
+			txU1* p = (txU1*)aString + anOffset;
+			txU1* q = (txU1*)aSubString;
+			while ((c = c_read8(q)) && (c_read8(p) == c)) {
+				mxMeterSome(((c & 0xC0) != 0x80) ? 1 : 0);
 				p++;
 				q++;
 			}
-			if (c_read8(q))
+			if (c)
 				anOffset--;
 			else
 				break;
@@ -836,14 +860,28 @@ void fx_String_prototype_lastIndexOf(txMachine* the)
 void fx_String_prototype_localeCompare(txMachine* the)
 {
 	txString aString;
+	txString bString;
 
-	aString = fxCoerceToString(the, mxThis);
-	if (mxArgc < 1)
-		mxResult->value.integer = c_strcmp(aString, "undefined");
+	if (mxArgc < 1) {
+		aString = fxCoerceToString(the, mxThis);
+		bString = "undefined";
+	}
 	else {
 		fxToString(the, mxArgv(0));
-		mxResult->value.integer = c_strcmp(aString, mxArgv(0)->value.string);
+		aString = fxCoerceToString(the, mxThis);
+		bString = mxArgv(0)->value.string;
 	}
+#ifdef mxMetering
+	{
+		txSize aLength = fxUnicodeLength(aString);
+		txSize bLength = fxUnicodeLength(bString);
+		if (aLength < bLength)
+			the->meterIndex += aLength;
+		else
+			the->meterIndex += bLength;
+	}
+#endif	
+	mxResult->value.integer = c_strcmp(aString, bString);
 	mxResult->kind = XS_INTEGER_KIND;
 }
 
@@ -867,6 +905,7 @@ void fx_String_prototype_normalize(txMachine* the)
 	#if (mxWindows && (WINVER >= 0x0600))
 	txString string = fxCoerceToString(the, mxThis);
 	txInteger stringLength = mxStringLength(string);
+	mxMeterSome(fxUnicodeLength(string));
 	{
 		NORM_FORM form;
 		txInteger unicodeLength;
@@ -992,12 +1031,14 @@ void fx_String_prototype_pad(txMachine* the, txBoolean flag)
 				c_memcpy(result, string, stringLength);
 				result += stringLength;
 			}
+			mxMeterSome(count);
 			while (count) {
 				c_memcpy(result, filler, fillerLength);
 				count--;
 				result += fillerLength;
 			}
 			if (rest) {
+				mxMeterSome(1);
 				c_memcpy(result, filler, rest);
 				result += rest;
 			}
@@ -1044,6 +1085,7 @@ void fx_String_prototype_repeat(txMachine* the)
 			}
 		}
 	}
+	mxMeterSome(count);
 	result = mxResult->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, fxMultiplyChunkSizes(the, length, count), 1));
 	mxResult->kind = XS_STRING_KIND;
 	string = fxToString(the, mxThis);
@@ -1062,6 +1104,8 @@ void fx_String_prototype_replace(txMachine* the)
 {
 	txString string;
 	txSlot* match;
+	txSize size;
+	txSize matchLength;
 	txSlot* function = C_NULL;
 	txSlot* replace;
 
@@ -1084,11 +1128,11 @@ void fx_String_prototype_replace(txMachine* the)
 		replace = the->stack;
 		fxToString(the, replace);
 	}
-	string = c_strstr(mxThis->value.string, match->value.string);
+	size = mxStringLength(mxThis->value.string);
+	matchLength = mxStringLength(match->value.string);
+	string = fx_String_prototype_includes_aux(the, mxThis->value.string, size, match->value.string, matchLength);
 	if (string) {
 		txSize offset = mxPtrDiff(string - mxThis->value.string);
-		txSize size = mxStringLength(mxThis->value.string);
-		txSize matchLength = mxStringLength(match->value.string);
 		txSize replaceLength;
  		fx_String_prototype_replaceAux(the, size, offset, function, match, matchLength, replace);
 		replaceLength = mxStringLength(the->stack->value.string);
@@ -1156,8 +1200,8 @@ void fx_String_prototype_replaceAll(txMachine* the)
 			current = offset + fxUnicodeToUTF8Offset(mxThis->value.string + offset, 1);
 		}
 		else {
-			txString string = c_strstr(mxThis->value.string + offset, match->value.string);
-			if (string)
+			txString string = fx_String_prototype_includes_aux(the, mxThis->value.string + offset, size - offset, match->value.string, matchLength);
+            if (string)
 				current = mxPtrDiff(string - mxThis->value.string);
 			else
 				current = size;
@@ -1344,6 +1388,7 @@ void fx_String_prototype_startsWith(txMachine* the)
 	offset = fxUnicodeToUTF8Offset(string, fxArgToPosition(the, 1, 0, fxUnicodeLength(string)));
 	if (length - offset < searchLength)
 		return;
+	mxMeterSome(fxUnicodeLength(searchString));
 	if (!c_strncmp(string + offset, searchString, searchLength))
 		mxResult->value.boolean = 1;
 }
@@ -1425,6 +1470,7 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 {
 	txString string = fxCoerceToString(the, mxThis);
 	txInteger stringLength = mxStringLength(string);
+	mxMeterSome(fxUnicodeLength(string));
 	if (stringLength) {
 	#if mxWindows
 		txInteger unicodeLength;
@@ -1544,6 +1590,7 @@ void fx_String_prototype_trimAux(txMachine* the, txBoolean trimStart, txBoolean 
 	if (trimStart) {
 		start = fxSkipSpaces(string);
 		offset = mxPtrDiff(start - string);
+		mxMeterSome(offset);
 	}
 	else {
 		start = string;
@@ -1557,6 +1604,7 @@ void fx_String_prototype_trimAux(txMachine* the, txBoolean trimStart, txBoolean 
 			current = fxSkipSpaces(end);
 		}
 		length = mxPtrDiff(end - start);
+		mxMeterSome(length);
 	}
 	else
 		length = mxStringLength(start);
