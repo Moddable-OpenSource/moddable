@@ -60,7 +60,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#define mxCallbacksLength 477
+#define mxCallbacksLength 488
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -75,6 +75,8 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Array_prototype_filter,
 	fx_Array_prototype_find,
 	fx_Array_prototype_findIndex,
+	fx_Array_prototype_findLast,
+	fx_Array_prototype_findLastIndex,
 	fx_Array_prototype_flat,
 	fx_Array_prototype_flatMap,
 	fx_Array_prototype_forEach,
@@ -104,7 +106,11 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_ArrayBuffer_isView,
 	fx_ArrayBuffer_prototype_concat,
 	fx_ArrayBuffer_prototype_get_byteLength,
+	fx_ArrayBuffer_prototype_get_maxByteLength,
+	fx_ArrayBuffer_prototype_get_resizable,
+	fx_ArrayBuffer_prototype_resize,
 	fx_ArrayBuffer_prototype_slice,
+	fx_ArrayBuffer_prototype_transfer,
 	fx_ArrayBuffer,
 	fx_ArrayIterator_prototype_next,
 	fx_AsyncFromSyncIterator_prototype_next,
@@ -408,6 +414,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Set,
 	fx_SetIterator_prototype_next,
 	fx_SharedArrayBuffer_prototype_get_byteLength,
+	fx_SharedArrayBuffer_prototype_get_growable,
+	fx_SharedArrayBuffer_prototype_get_maxByteLength,
+	fx_SharedArrayBuffer_prototype_grow,
 	fx_SharedArrayBuffer_prototype_slice,
 	fx_SharedArrayBuffer,
 	fx_species_get,
@@ -474,6 +483,8 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_TypedArray_prototype_filter,
 	fx_TypedArray_prototype_find,
 	fx_TypedArray_prototype_findIndex,
+	fx_TypedArray_prototype_findLast,
+	fx_TypedArray_prototype_findLastIndex,
 	fx_TypedArray_prototype_forEach,
 	fx_TypedArray_prototype_includes,
 	fx_TypedArray_prototype_indexOf,
@@ -1307,7 +1318,10 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		break;
 	case XS_ARRAY_BUFFER_KIND:
 		buffer.value.arrayBuffer.address = (txByte*)fxProjectChunk(the, slot->value.arrayBuffer.address);
-		buffer.value.arrayBuffer.length = slot->value.arrayBuffer.length;
+		break;
+	case XS_BUFFER_INFO_KIND:
+		buffer.value.bufferInfo.length = slot->value.bufferInfo.length;
+		buffer.value.bufferInfo.maxLength = slot->value.bufferInfo.maxLength;
 		break;
 	case XS_CALLBACK_KIND:
 		buffer.value.callback.address = fxProjectCallback(the, snapshot, slot->value.callback.address);

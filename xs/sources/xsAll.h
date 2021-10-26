@@ -256,7 +256,8 @@ typedef union {
 	struct { txSlot* garbage; txSlot* prototype; } instance;
 	
 	struct { txSlot* address; txIndex length; } array;
-	struct { txByte* address; txInteger length; } arrayBuffer;
+	struct { txByte* address; void* detachKey; } arrayBuffer;
+	struct { txInteger length; txInteger maxLength; } bufferInfo;
 	struct { txCallback address; txID* IDs; } callback;
 	struct { txByte* address; txSlot* closures; } code;
 	struct { txInteger offset; txInteger size; } dataView;
@@ -596,6 +597,7 @@ mxExport txSlot* fxNewHostConstructor(txMachine*, txCallback, txInteger, txInteg
 mxExport txSlot* fxNewHostFunction(txMachine*, txCallback, txInteger, txInteger);
 mxExport txSlot* fxNewHostInstance(txMachine* the);
 mxExport txSlot* fxNewHostObject(txMachine*, txDestructor);
+mxExport txInteger fxGetHostBufferLength(txMachine* the, txSlot* slot);
 mxExport void* fxGetHostChunk(txMachine*, txSlot*);
 mxExport void* fxGetHostChunkIf(txMachine*, txSlot*);
 mxExport void* fxGetHostData(txMachine*, txSlot*);
@@ -1338,6 +1340,8 @@ mxExport void fx_Array_prototype_fill(txMachine* the);
 mxExport void fx_Array_prototype_filter(txMachine* the);
 mxExport void fx_Array_prototype_find(txMachine* the);
 mxExport void fx_Array_prototype_findIndex(txMachine* the);
+mxExport void fx_Array_prototype_findLast(txMachine* the);
+mxExport void fx_Array_prototype_findLastIndex(txMachine* the);
 mxExport void fx_Array_prototype_flat(txMachine* the);
 mxExport void fx_Array_prototype_flatMap(txMachine* the);
 mxExport void fx_Array_prototype_forEach(txMachine* the);
@@ -1412,9 +1416,10 @@ extern void fxUint32Getter(txMachine* the, txSlot* data, txInteger offset, txSlo
 extern void fxUint32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8ClampedSetter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 
-mxExport void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength);
+mxExport void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength, txInteger maxByteLength);
 mxExport void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport txInteger fxGetArrayBufferLength(txMachine* the, txSlot* slot);
+mxExport txInteger fxGetArrayBufferMaxLength(txMachine* the, txSlot* slot);
 mxExport void fxSetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport void fxSetArrayBufferLength(txMachine* the, txSlot* slot, txInteger byteLength);
 mxExport void* fxToArrayBuffer(txMachine* the, txSlot* slot);
@@ -1424,8 +1429,12 @@ mxExport void fx_ArrayBuffer_fromBigInt(txMachine* the);
 mxExport void fx_ArrayBuffer_fromString(txMachine* the);
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_get_resizable(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_concat(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_resize(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_slice(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_transfer(txMachine* the);
 
 mxExport void fx_DataView(txMachine* the);
 mxExport void fx_DataView_prototype_buffer_get(txMachine* the);
@@ -1472,6 +1481,8 @@ mxExport void fx_TypedArray_prototype_fill(txMachine* the);
 mxExport void fx_TypedArray_prototype_filter(txMachine* the);
 mxExport void fx_TypedArray_prototype_find(txMachine* the);
 mxExport void fx_TypedArray_prototype_findIndex(txMachine* the);
+mxExport void fx_TypedArray_prototype_findLast(txMachine* the);
+mxExport void fx_TypedArray_prototype_findLastIndex(txMachine* the);
 mxExport void fx_TypedArray_prototype_forEach(txMachine* the);
 mxExport void fx_TypedArray_prototype_includes(txMachine* the);
 mxExport void fx_TypedArray_prototype_indexOf(txMachine* the);
@@ -1495,8 +1506,8 @@ mxExport void fx_TypedArray_prototype_values(txMachine* the);
 extern void fxBuildDataView(txMachine* the);
 extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);
 
-extern txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset);
 extern txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length);
+extern txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer);
 
 /* xsAtomics.c */
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
@@ -1588,6 +1599,9 @@ extern void fxBuildAtomics(txMachine* the);
 
 mxExport void fx_SharedArrayBuffer(txMachine* the);
 mxExport void fx_SharedArrayBuffer_prototype_get_byteLength(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_get_growable(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_get_maxByteLength(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_grow(txMachine* the);
 mxExport void fx_SharedArrayBuffer_prototype_slice(txMachine* the);
 mxExport void fx_Atomics_add(txMachine* the);
 mxExport void fx_Atomics_and(txMachine* the);
@@ -1943,6 +1957,7 @@ enum {
 	XS_INSTANCE_INSPECTOR_KIND,
 	XS_EXPORT_KIND,
 	XS_WEAK_ENTRY_KIND,
+	XS_BUFFER_INFO_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,

@@ -437,8 +437,12 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 			fxGenerateTag(the, tag, sizeof(tag), C_NULL);
 			parser->source = fxNewParserSymbol(parser, tag);
 		}
-		if (fxIsConnected(the))
-			fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, parser->source->string);
+		if (fxIsConnected(the)) {
+			if (getter == fxStringGetter)
+				fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, parser->source->string);
+			else if (getter == fxStringCGetter)
+				fxFileEvalString(the, ((txStringCStream*)stream)->buffer, parser->source->string);
+		}
 #endif
 		fxParserHoist(parser);
 		fxParserBind(parser);

@@ -206,6 +206,7 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 {
 	txSlot* slot;
 	txSlot* arrayBuffer = C_NULL;
+	txSlot* bufferInfo;
 	txBoolean sign = 0;
 	int endian = EndianBig;
 	txInteger length;
@@ -221,11 +222,12 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 	}
 	if (!arrayBuffer)
 		mxTypeError("argument is no ArrayBuffer instance");
+	bufferInfo = arrayBuffer->next;
+	length = bufferInfo->value.bufferInfo.length;
 	if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
 		sign = 1;
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		endian = EndianLittle;
-	length = arrayBuffer->value.arrayBuffer.length;
 	if (length == 0) {
 		mxResult->value.bigint = gxBigIntNaN;
 		mxResult->kind = XS_BIGINT_X_KIND;

@@ -992,6 +992,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 		#endif
 			break;
 		case XS_ARRAY_BUFFER_KIND:
+			aProperty = aProperty->next;
 			fxEchoProperty(the, aProperty, theList, "(buffer)", -1, C_NULL);
 			aProperty = aProperty->next;
 			break;
@@ -1283,9 +1284,13 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 			fxEchoInteger(the, theProperty->value.array.length);
 			fxEcho(the, " items\"/>");
 			break;
-		case XS_ARRAY_BUFFER_KIND:
+		case XS_BUFFER_INFO_KIND:
 			fxEcho(the, " value=\"");
-			fxEchoInteger(the, theProperty->value.arrayBuffer.length);
+			fxEchoInteger(the, theProperty->value.bufferInfo.length);
+			if (theProperty->value.bufferInfo.maxLength >= 0) {
+				fxEcho(the, " bytes <= ");
+				fxEchoInteger(the, theProperty->value.bufferInfo.maxLength);
+			}
 			fxEcho(the, " bytes\"/>");
 			break;
 		case XS_STRING_KIND:

@@ -505,7 +505,10 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 			property->value.accessor.setter = C_NULL;
 		}
 		if (mask & XS_GETTER_FLAG) {
-			txSlot* function = property->value.accessor.getter = slot->value.accessor.getter;
+			txSlot* function = slot->value.accessor.getter;
+			if (property->value.accessor.getter)
+				return 0;
+			property->value.accessor.getter = function;
 			if ((function->flag & XS_MARK_FLAG) == 0) {
 				txSlot* home = mxFunctionInstanceHome(function);
 				home->value.home.object = instance;
@@ -513,7 +516,10 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 			fxRenameFunction(the, function, id, 0, mxID(_get), "get ");
 		}
 		else {
-			txSlot*  function = property->value.accessor.setter = slot->value.accessor.setter;
+			txSlot* function = slot->value.accessor.setter;
+			if (property->value.accessor.setter)
+				return 0;
+			property->value.accessor.setter = function;
 			if ((function->flag & XS_MARK_FLAG) == 0) {
 				txSlot* home = mxFunctionInstanceHome(function);
 				home->value.home.object = instance;

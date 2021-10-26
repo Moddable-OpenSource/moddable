@@ -728,6 +728,14 @@ void fxRunFile(txContext* context, char* path)
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
  			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
+ 			||	!strcmp((char*)node->data.scalar.value, "Object.hasOwn")
+  			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
+ 			||	!strcmp((char*)node->data.scalar.value, "Temporal")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private-in")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-static-block")
+			||	!strcmp((char*)node->data.scalar.value, "error-cause")
+ 			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
+ 			||	!strcmp((char*)node->data.scalar.value, "json-modules")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
@@ -1145,7 +1153,7 @@ void fx_detachArrayBuffer(xsMachine* the)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_ARRAY_BUFFER_KIND) && (instance != mxArrayBufferPrototype.value.reference)) {
 			slot->value.arrayBuffer.address = C_NULL;
-			slot->value.arrayBuffer.length = 0;
+			slot->next->value.bufferInfo.length = 0;
 			return;
 		}
 	}

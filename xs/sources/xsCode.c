@@ -1178,7 +1178,7 @@ txInteger fxCoderCountParameters(txCoder* self, txNode* params)
 	while (item) {
 		if (item->description->token == XS_TOKEN_REST_BINDING)
 			break;
-		if (item->description->token != XS_TOKEN_ARG)
+		if ((item->description->token != XS_TOKEN_ARG) && (item->description->token != XS_TOKEN_ARRAY_BINDING) && (item->description->token != XS_TOKEN_OBJECT_BINDING))
 			break;
 		count++;
 		item = item->next;
@@ -1847,12 +1847,8 @@ void fxAccessNodeCodeAssign(void* it, void* param, txFlag flag)
 {
 	txAccessNode* self = it;
 	txDeclareNode* declaration = self->declaration;
-	if (!declaration) {
-		if (flag)
-			fxCoderAddSymbol(param, -1, XS_CODE_SET_PROPERTY, self->symbol);
-		else
-			fxCoderAddSymbol(param, -1, XS_CODE_SET_VARIABLE, self->symbol);
-	}
+	if (!declaration)
+		fxCoderAddSymbol(param, -1, XS_CODE_SET_VARIABLE, self->symbol);
 	else
 		fxCoderAddIndex(param, 0, (declaration->flags & mxDeclareNodeClosureFlag) ? XS_CODE_SET_CLOSURE_1 : XS_CODE_SET_LOCAL_1, declaration->index);
 }

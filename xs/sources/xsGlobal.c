@@ -562,17 +562,18 @@ void fx_trace_aux(txMachine* the, txInteger flags)
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_REFERENCE_KIND)) {
 		txSlot* slot = mxArgv(0)->value.reference->next;
 		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND)) {
-			length = slot->value.arrayBuffer.length;
+			txSlot* bufferInfo = slot->next;
+			length = bufferInfo->value.bufferInfo.length;
 			message = slot->value.arrayBuffer.address;
 			flags |= XS_BUBBLE_BINARY;
 		}
 		else if (slot && (slot->kind == XS_HOST_KIND)) {
-			mxPushSlot(mxArgv(0));
-			mxGetID(mxID(_byteLength));
-			length = fxToInteger(the, the->stack);
-			mxPop();
-			message = slot->value.host.data;
-			flags |= XS_BUBBLE_BINARY;
+			txSlot* bufferInfo = slot->next;
+			if (bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND)) {
+				length = bufferInfo->value.bufferInfo.length;
+				message = slot->value.host.data;
+				flags |= XS_BUBBLE_BINARY;
+			}
 		}
 	}
 	if (!message)

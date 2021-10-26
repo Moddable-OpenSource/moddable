@@ -100,7 +100,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 11
-#define XS_MINOR_VERSION 3
+#define XS_MINOR_VERSION 4
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -820,6 +820,8 @@ enum {
 	_finally_,
 	_find,
 	_findIndex,
+	_findLast,
+	_findLastIndex,
 	_flags,
 	_flat,
 	_flatMap,
@@ -875,6 +877,8 @@ enum {
 	_global,
 	_globalThis,
 	_groups,
+	_grow,
+	_growable,
 	_has,
 	_hasInstance,
 	_hasOwnProperty,
@@ -926,6 +930,7 @@ enum {
 	_match,
 	_matchAll,
 	_max,
+	_maxByteLength,
 	_message,
 	_min,
 	_mod,
@@ -963,6 +968,8 @@ enum {
 	_repeat,
 	_replace,
 	_replaceAll,
+	_resizable,
+	_resize,
 	_resolve,
 	_result,
 	_return,
@@ -1049,6 +1056,7 @@ enum {
 	_toTimeString,
 	_toUTCString,
 	_toUpperCase,
+	_transfer,
 	_transfers,
 	_trim,
 	_trimEnd,

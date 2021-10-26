@@ -690,6 +690,21 @@ txSlot* fxNewHostObject(txMachine* the, txDestructor theDestructor)
 	return anInstance;
 }
 
+txInteger xsGetHostBufferLength(txMachine* the, txSlot* slot)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		txSlot* bufferInfo = host->next;
+		if (host->flag & XS_HOST_CHUNK_FLAG)
+			mxSyntaxError("C: xsGetHostBufferLength: no host data");
+		if (!bufferInfo || (bufferInfo->kind != XS_BUFFER_INFO_KIND))
+			mxSyntaxError("C: xsGetHostBufferLength: no host buffer");
+		return bufferInfo->value.bufferInfo.length;
+	}
+	mxSyntaxError("C: xsGetHostData: no host object");
+	return 0;
+}
+
 void* fxGetHostChunk(txMachine* the, txSlot* slot)
 {
 	txSlot* host = fxCheckHostObject(the, slot);
@@ -781,6 +796,28 @@ txHostHooks* fxGetHostHooks(txMachine* the, txSlot* slot)
 	}
 	mxSyntaxError("C: xsGetHostHooks: no host object");
 	return NULL;
+}
+
+void fxSetHostBuffer(txMachine* the, txSlot* slot, void* theData, txSize theSize)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		txSlot* bufferInfo = host->next;
+		if (!bufferInfo || (bufferInfo->kind != XS_BUFFER_INFO_KIND)) {
+			bufferInfo = fxNewSlot(the);
+			bufferInfo->next = host->next;
+			bufferInfo->flag = XS_INTERNAL_FLAG;
+			bufferInfo->kind = XS_BUFFER_INFO_KIND;
+			bufferInfo->value.bufferInfo.length = 0;
+			bufferInfo->value.bufferInfo.maxLength = -1;
+			host->next = bufferInfo;
+		}
+		host->flag &= ~XS_HOST_CHUNK_FLAG;
+		host->value.host.data = theData;
+		bufferInfo->value.bufferInfo.length = theSize;
+	}
+	else
+		mxSyntaxError("C: xsSetHostData: no host object");
 }
 
 void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSize)

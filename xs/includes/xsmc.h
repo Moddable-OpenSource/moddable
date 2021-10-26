@@ -69,7 +69,9 @@ extern "C" {
 #define xsmcSetStringBuffer(_SLOT, _BUFFER,_SIZE)	fxStringBuffer(the, &_SLOT, _BUFFER ,_SIZE)
 
 #undef xsArrayBuffer
-#define xsmcSetArrayBuffer(_SLOT, _BUFFER, _SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE)
+#define xsmcSetArrayBuffer(_SLOT, _BUFFER, _SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE, -1)
+#undef xsArrayBufferResizable
+#define xsmcSetArrayBufferResizable(_SLOT, _BUFFER, _SIZE, _MAX_SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE, _MAX_SIZE)
 #undef xsGetArrayBufferData
 #define xsmcGetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE)	fxGetArrayBufferData(the, &_SLOT, _OFFSET, _BUFFER, _SIZE)
 #undef xsSetArrayBufferData
@@ -79,6 +81,9 @@ extern "C" {
 #undef xsGetArrayBufferLength
 #undef xsmcGetArrayBufferLength
 #define xsmcGetArrayBufferLength(_SLOT) fxGetArrayBufferLength(the, &(_SLOT))
+#undef xsGetArrayBufferMaxLength
+#undef xsmcGetArrayBufferMaxLength
+#define xsmcGetArrayBufferMaxLength(_SLOT) fxGetArrayBufferMaxLength(the, &(_SLOT))
 
 mxImport void _xsNewArray(xsMachine*, xsSlot*, xsIntegerValue);
 #define xsmcNewArray(_LENGTH)	(_xsNewArray(the, &the->scratch, _LENGTH), the->scratch)
@@ -141,6 +146,11 @@ mxImport void _xsNew(xsMachine *, xsSlot *, xsSlot *, xsUnsignedValue, ...);
 mxImport xsBooleanValue _xsTest(xsMachine *, xsSlot *);
 #undef xsTest
 #define xsmcTest(_SLOT)	_xsTest(the, &_SLOT)
+
+#undef xsGetHostBufferLength
+#undef xsSetHostBuffer
+#define xsmcGetHostBufferLength(_SLOT)	fxGetHostBufferLength(the, &_SLOT)
+#define xsmcSetHostBuffer(_SLOT, _DATA, _SIZE)	fxSetHostBuffer(the, &_SLOT, _DATA, _SIZE)
 
 #undef xsGetHostData
 #undef xsSetHostData

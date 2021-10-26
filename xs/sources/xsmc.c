@@ -235,6 +235,31 @@ txInteger _xsArgc(txMachine *the)
 	return mxArgc;
 }
 
+static void _xsmcGetViewBuffer(txMachine *the, txSlot* view, txSlot* buffer, void **data, txUnsigned *count)
+{
+	txInteger offset = view->value.dataView.offset;
+	txInteger size = view->value.dataView.size;
+	txSlot* arrayBuffer = buffer->value.reference->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
+		goto bail;
+	if (bufferInfo->value.bufferInfo.maxLength >= 0) {
+		txInteger byteLength = bufferInfo->value.bufferInfo.length;
+		if (offset > byteLength)
+			goto bail;
+		if (size < 0)
+			size = byteLength - offset;
+		else if (offset + size > byteLength)
+			goto bail;
+	}
+	*data = arrayBuffer->value.arrayBuffer.address + offset;
+	*count = size;
+	return;
+bail:
+	*data = C_NULL;
+	*count = 0;
+}
+
 void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count)
 {
 	txSlot* instance;
@@ -247,62 +272,39 @@ void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count
 		goto bail;
 
 	if (slot->kind == XS_ARRAY_BUFFER_KIND) {
-		*count = slot->value.arrayBuffer.length;
+		txSlot* bufferInfo = slot->next;
 		*data = slot->value.arrayBuffer.address;
+		*count = bufferInfo->value.bufferInfo.length;
 	}
 	else if (slot->kind == XS_TYPED_ARRAY_KIND) {
 		txSlot* view = slot->next;
 		txSlot* buffer = view->next;
-		uint8_t *address = (uint8_t *)buffer->value.reference->next->value.arrayBuffer.address;
-
 		if (1 != slot->value.typedArray.dispatch->size)
 			goto bail;
-
-		if (address) {
-			*count = view->value.dataView.size;
-			address += view->value.dataView.offset;
-		}
-		else
-			*count = 0;
-
-		*data = address;
+		_xsmcGetViewBuffer(the, view, buffer, data, count);
 	}
 	else if (slot->kind == XS_HOST_KIND) {
-		uint8_t *address = (uint8_t *)slot->value.host.data;
-
-		if (!address || (slot->flag & XS_HOST_CHUNK_FLAG))
+		txSlot* bufferInfo = slot->next;
+		if (slot->flag & XS_HOST_CHUNK_FLAG)
 			goto bail;
-
-#if 0
-		txSlot* view = slot->next;
-		if (view && (view->kind == XS_DATA_VIEW_KIND)) {
-			address += view->value.dataView.offset;
-			*count = view->value.dataView.size;
+		if (bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND)) {
+			*data = (uint8_t *)slot->value.host.data;
+			*count = slot->value.bufferInfo.length;
 		}
-		else
-#endif
-		{	// for compatibilty. should throw eventually.
+		else {
+			// for compatibilty. should throw eventually.
 			txSlot tmp, ref;
+			fxReport(the, "# Use xsmcSetHostBuffer instead of xsmcSetHostData\n");
 			fxReference(the, &ref, instance);
 			_xsGet(the, &tmp, &ref, _byteLength);
+			*data = (uint8_t *)slot->value.host.data;
 			*count = (txUnsigned)fxToInteger(the, &tmp);
 		}
-
-		*data = address;
 	}
 	else if (slot->kind == XS_DATA_VIEW_KIND) {
 		txSlot* view = slot;
 		txSlot* buffer = view->next;
-		uint8_t *address = (uint8_t *)buffer->value.reference->next->value.arrayBuffer.address;
-
-		if (address) {
-			*count = view->value.dataView.size;
-			address += view->value.dataView.offset;
-		}
-		else
-			*count = 0;
-
-		*data = address;
+		_xsmcGetViewBuffer(the, view, buffer, data, count);
 	}
 	else
 		goto bail;
