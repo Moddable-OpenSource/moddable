@@ -690,7 +690,7 @@ txSlot* fxNewHostObject(txMachine* the, txDestructor theDestructor)
 	return anInstance;
 }
 
-txInteger xsGetHostBufferLength(txMachine* the, txSlot* slot)
+txInteger fxGetHostBufferLength(txMachine* the, txSlot* slot)
 {
 	txSlot* host = fxCheckHostObject(the, slot);
 	if (host) {

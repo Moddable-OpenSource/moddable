@@ -41,8 +41,8 @@ void Resource_constructor(xsMachine *the)
 		data = mcGetResource(the, path, &size);
 	if (!data)
 		xsURIError("Resource not found: %s", path);
-	xsSetHostData(xsThis, (void *)data);
-	xsSet(xsThis, xsID_byteLength, xsInteger(size));
+	xsSetHostBuffer(xsThis, (void *)data, size);
+	xsSet(xsThis, xsID_byteLength, xsInteger(size));		//@@
 }
 
 void Resource_exists(xsMachine *the)
@@ -59,14 +59,11 @@ void Resource_exists(xsMachine *the)
 void Resource_slice(xsMachine *the)
 {
 	int argc = xsToInteger(xsArgc);
-	unsigned char *data = (unsigned char *)xsGetHostData(xsThis);
+	unsigned char *data = xsGetHostData(xsThis);
 	int start = xsToInteger(xsArg(0));
 	int end;
-	int byteLength;
+	int byteLength = xsGetHostBufferLength(xsThis);
 	xsBooleanValue copy = 1;
-
-	xsResult = xsGet(xsThis, xsID_byteLength);
-	byteLength = xsToInteger(xsResult);
 
 	if (argc > 1) {
 		end = xsToInteger(xsArg(1));
@@ -82,7 +79,7 @@ void Resource_slice(xsMachine *the)
 		xsResult = xsArrayBuffer(data + start, end - start);
 	else {
 		xsResult = xsNewHostObject(NULL);
-		xsSetHostData(xsResult, data + start);
-		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));
+		xsSetHostBuffer(xsResult, (void *)(data + start), end - start);
+		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));		//@@
 	}
 }

@@ -92,22 +92,23 @@ void xs_readgif_destructor(void *data)
 void xs_readgif(xsMachine *the)
 {
 	xsGIF xg = xsmcSetHostChunk(xsThis, NULL, sizeof(xsGIFRecord));
-	int32_t bufferSize, available;
 	void *buffer;
+	xsUnsignedValue bufferSize;
+	xsIntegerValue available;
 	int format = kCommodettoBitmapDefault;
 
-	xsmcVars(1);
-	buffer = xsmcGetHostData(xsArg(0));
-	xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-	bufferSize = available = xsmcToInteger(xsVar(0));
+	xsmcGetBuffer(xsArg(0), &buffer, &bufferSize);
+	available = (xsIntegerValue)bufferSize;
 
 	xg = xsmcGetHostChunk(xsThis);
 	xg->bufferSize = bufferSize;
 
 	if (xsmcArgc > 1) {
+		xsmcVars(1);
+
 		if (xsmcHas(xsArg(1), xsID_available)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_available);
-			available = xsmcToInteger(xsVar(0));
+			xsUnsignedValue available = xsmcToInteger(xsVar(0));
 			if ((available < 0) || (available > bufferSize))
 				xsUnknownError("invalid");
 		}
@@ -134,7 +135,7 @@ void xs_readgif(xsMachine *the)
 	pGIF->GIFFile.pData = buffer;
 	GIFInit(pGIF);
 
-	if ((available == bufferSize) && (kCommodettoBitmapDefault == format)) {
+	if (((xsUnsignedValue)available == bufferSize) && (kCommodettoBitmapDefault == format)) {
 		if (GIFGetInfo(&xg->gi, &xg->ginfo, xg->gi.pPalette)) {
 			xg->ready = 2;
 

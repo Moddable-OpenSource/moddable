@@ -584,7 +584,7 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 
 void fx_ArrayBuffer_prototype_resize(txMachine* the)
 {
-	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
+	/* txSlot* instance = */ fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	txSlot* bufferInfo = arrayBuffer->next;
 	txInteger maxByteLength, oldByteLength, newByteLength;
@@ -609,7 +609,7 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 
 void fx_ArrayBuffer_prototype_slice(txMachine* the)
 {
-	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
+	/* txSlot* instance = */ fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_IMMUTABLE);
 	txSlot* bufferInfo = arrayBuffer->next;
 	txInteger length = bufferInfo->value.bufferInfo.length;
@@ -625,7 +625,7 @@ void fx_ArrayBuffer_prototype_slice(txMachine* the)
 
 void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 {
-	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
+	/* txSlot* instance = */ fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	txSlot* bufferInfo = arrayBuffer->next;
 	txInteger oldByteLength = bufferInfo->value.bufferInfo.length;
