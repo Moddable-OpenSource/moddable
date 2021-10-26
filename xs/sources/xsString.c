@@ -168,26 +168,30 @@ void fxStringAccessorGetter(txMachine* the)
 	txSlot* string;
 	txID id = the->scratch.value.at.id;
 	txIndex index = the->scratch.value.at.index;
-	txSlot* instance = fxToInstance(the, mxThis);
-	while (instance) {
-		if (instance->flag & XS_EXOTIC_FLAG) {
-			string = instance->next;
-			if (string->ID == XS_STRING_BEHAVIOR)
-				break;
+	if ((mxThis->kind == XS_STRING_KIND) || (mxThis->kind == XS_STRING_X_KIND))
+		string = mxThis;
+	else {
+		txSlot* instance = fxToInstance(the, mxThis);
+		while (instance) {
+			if (instance->flag & XS_EXOTIC_FLAG) {
+				string = instance->next;
+				if (string->ID == XS_STRING_BEHAVIOR)
+					break;
+			}
+			instance = fxGetPrototype(the, instance);
 		}
-		instance = fxGetPrototype(the, instance);
 	}
 	if (id == mxID(_length)) {
-		mxResult->value.integer = mxStringInstanceLength(instance);
+		mxResult->value.integer = fxUnicodeLength(string->value.string);
 		mxResult->kind = XS_INTEGER_KIND;
 	}
 	else {
-		txInteger from = fxUnicodeToUTF8Offset(string->value.key.string, index);
+		txInteger from = fxUnicodeToUTF8Offset(string->value.string, index);
 		if (from >= 0) {
-			txInteger to = fxUnicodeToUTF8Offset(string->value.key.string, index + 1);
+			txInteger to = fxUnicodeToUTF8Offset(string->value.string, index + 1);
 			if (to >= 0) {
 				mxResult->value.string = fxNewChunk(the, to - from + 1);
-				c_memcpy(mxResult->value.string, string->value.key.string + from, to - from);
+				c_memcpy(mxResult->value.string, string->value.string + from, to - from);
 				mxResult->value.string[to - from] = 0;
 				mxResult->kind = XS_STRING_KIND;
 			}
