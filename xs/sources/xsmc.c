@@ -235,32 +235,30 @@ txInteger _xsArgc(txMachine *the)
 	return mxArgc;
 }
 
-static void _xsmcGetViewBuffer(txMachine *the, txSlot* view, txSlot* buffer, void **data, txUnsigned *count)
+static void _xsmcGetViewBuffer(txMachine *the, txSlot* view, txSlot* buffer, void **data, txUnsigned *count, txBoolean writable)
 {
 	txInteger offset = view->value.dataView.offset;
 	txInteger size = view->value.dataView.size;
 	txSlot* arrayBuffer = buffer->value.reference->next;
 	txSlot* bufferInfo = arrayBuffer->next;
 	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
-		goto bail;
+		mxTypeError("detached buffer");
+	if (writable && (arrayBuffer->flag & XS_DONT_SET_FLAG))
+		mxTypeError("read-only buffer");
 	if (bufferInfo->value.bufferInfo.maxLength >= 0) {
 		txInteger byteLength = bufferInfo->value.bufferInfo.length;
 		if (offset > byteLength)
-			goto bail;
+			mxTypeError("out of bounds view");
 		if (size < 0)
 			size = byteLength - offset;
 		else if (offset + size > byteLength)
-			goto bail;
+			mxTypeError("out of bounds view");
 	}
 	*data = arrayBuffer->value.arrayBuffer.address + offset;
 	*count = size;
-	return;
-bail:
-	*data = C_NULL;
-	*count = 0;
 }
 
-void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count)
+void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count, txBoolean writable)
 {
 	txSlot* instance;
 
@@ -273,6 +271,10 @@ void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count
 
 	if (slot->kind == XS_ARRAY_BUFFER_KIND) {
 		txSlot* bufferInfo = slot->next;
+		if (slot->value.arrayBuffer.address == C_NULL)
+			mxTypeError("detached buffer");
+		if (writable && (slot->flag & XS_DONT_SET_FLAG))
+			mxTypeError("read-only buffer");
 		*data = slot->value.arrayBuffer.address;
 		*count = bufferInfo->value.bufferInfo.length;
 	}
@@ -281,7 +283,7 @@ void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count
 		txSlot* buffer = view->next;
 		if (1 != slot->value.typedArray.dispatch->size)
 			goto bail;
-		_xsmcGetViewBuffer(the, view, buffer, data, count);
+		_xsmcGetViewBuffer(the, view, buffer, data, count, writable);
 	}
 	else if (slot->kind == XS_HOST_KIND) {
 		txSlot* bufferInfo = slot->next;
@@ -304,7 +306,7 @@ void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count
 	else if (slot->kind == XS_DATA_VIEW_KIND) {
 		txSlot* view = slot;
 		txSlot* buffer = view->next;
-		_xsmcGetViewBuffer(the, view, buffer, data, count);
+		_xsmcGetViewBuffer(the, view, buffer, data, count, writable);
 	}
 	else
 		goto bail;
