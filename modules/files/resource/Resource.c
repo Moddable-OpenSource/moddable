@@ -42,7 +42,6 @@ void Resource_constructor(xsMachine *the)
 	if (!data)
 		xsURIError("Resource not found: %s", path);
 	xsSetHostBuffer(xsThis, (void *)data, size);
-	xsSet(xsThis, xsID_byteLength, xsInteger(size));		//@@
 }
 
 void Resource_exists(xsMachine *the)
@@ -54,6 +53,12 @@ void Resource_exists(xsMachine *the)
 	if (!data)
 		data = mcGetResource(the, path, &size);
 	xsResult = data ? xsTrue : xsFalse;
+}
+
+void Resource_get_byteLength(xsMachine *the)
+{
+	int byteLength = xsGetHostBufferLength(xsThis);
+	xsResult = xsInteger(byteLength);
 }
 
 void Resource_slice(xsMachine *the)
