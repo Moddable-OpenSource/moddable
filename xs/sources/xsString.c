@@ -188,7 +188,7 @@ void fxStringAccessorGetter(txMachine* the)
 	else {
 		txInteger from = fxUnicodeToUTF8Offset(string->value.string, index);
 		if (from >= 0) {
-			txInteger to = fxUnicodeToUTF8Offset(string->value.string, index + 1);
+			txInteger to = from + fxUnicodeToUTF8Offset(string->value.string + from, 1);
 			if (to >= 0) {
 				mxResult->value.string = fxNewChunk(the, to - from + 1);
 				c_memcpy(mxResult->value.string, string->value.string + from, to - from);

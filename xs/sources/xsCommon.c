@@ -1117,20 +1117,25 @@ done:
 }
 
 #endif
-txSize fxUnicodeToUTF8Offset(txString theString, txSize unicodeOffset)
+txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset)
 {
 	txU1* p = (txU1*)theString;
+	txU1 c;
+	txSize unicodeOffset = 0;
+	txSize utf8Offset = 0;
 	
-	while (1) {
-		txU1 c = c_read8(p++);
+    while ((c = c_read8(p++))) {
 		if ((c & 0xC0) != 0x80) {
-			if (!unicodeOffset || !c)
-				return (p - 1) - (txU1 *)theString;
-			unicodeOffset--;
+			if (unicodeOffset == theOffset)
+				return utf8Offset;
+			unicodeOffset++;
 		}
+        utf8Offset++;
 	}
-
-	return -1;
+	if (unicodeOffset == theOffset)
+		return utf8Offset;
+	else
+		return -1;
 }
 
 txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex)
