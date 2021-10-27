@@ -50,7 +50,7 @@ void xs_Convert_destructor(void *data)
 	if (data) {
 		xsConvert c = data;
 		if (c->clut)
-			free(c->clut);
+			c_free(c->clut);
 	}
 }
 
@@ -86,20 +86,35 @@ void xs_Convert(xsMachine *the)
 			clutBytes = xsmcToInteger(xsVar(0));
 		}
 
-		c->clut = malloc(clutBytes);
+		c->clut = c_malloc(clutBytes);
 		if (NULL == c->clut)
 			xsErrorPrintf("not enough memory to clone clut");
-		memcpy(c->clut, clut, clutBytes);
+		c_memcpy(c->clut, clut, clutBytes);
 	}
 }
 
 void xs_convert_process(xsMachine *the)
 {
-	void *src, *dst;
+	uint8_t *src, *dst;
 	xsUnsignedValue srcLength, dstLength, pixelCount;
 
-	xsmcGetBuffer(xsArg(0), &src, &srcLength);
-	xsmcGetBuffer(xsArg(1), &dst, &dstLength);
+	xsmcGetBuffer(xsArg(0), (void **)&src, &srcLength);
+	if (xsmcArgc < 6) 
+		xsmcGetBuffer(xsArg(1), (void **)&dst, &dstLength);
+	else {
+		xsIntegerValue srcOffset = xsmcToInteger(xsArg(1));
+		xsIntegerValue srcCount = xsmcToInteger(xsArg(2));
+		xsIntegerValue dstOffset = xsmcToInteger(xsArg(4));
+		xsIntegerValue dstCount = xsmcToInteger(xsArg(5));
+		xsmcGetBuffer(xsArg(3), (void **)&dst, &dstLength);
+		if ((srcOffset < 0) || ((srcOffset + srcCount) > srcLength) ||  
+			(dstOffset < 0) || ((dstOffset + dstCount) > dstLength))
+			xsUnknownError("dst buffer too small");
+		src += srcOffset;
+		srcLength = srcCount;
+		dst += dstOffset;
+		dstLength = dstCount;
+	}
 
 	xsConvert c = xsmcGetHostChunk(xsThis);
 	pixelCount = (srcLength << 3) / c->srcPixelDepth;
