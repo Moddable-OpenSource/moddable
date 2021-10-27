@@ -107,8 +107,8 @@ void xs_convert_process(xsMachine *the)
 		xsIntegerValue dstOffset = xsmcToInteger(xsArg(4));
 		xsIntegerValue dstCount = xsmcToInteger(xsArg(5));
 		xsmcGetBuffer(xsArg(3), (void **)&dst, &dstLength);
-		if ((srcOffset < 0) || ((srcOffset + srcCount) > srcLength) ||  
-			(dstOffset < 0) || ((dstOffset + dstCount) > dstLength))
+		if ((srcOffset < 0) || ((xsUnsignedValue)(srcOffset + srcCount) > srcLength) ||  
+			(dstOffset < 0) || ((xsUnsignedValue)(dstOffset + dstCount) > dstLength))
 			xsUnknownError("dst buffer too small");
 		src += srcOffset;
 		srcLength = srcCount;
