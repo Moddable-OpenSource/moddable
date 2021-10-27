@@ -1049,6 +1049,7 @@ txSize fxUTF8ToUnicodeOffset(txString theString, txSize theOffset)
 		return -1;
 }
 
+#if 0
 txSize fxUnicodeLength(txString theString)
 {
 	txU1* p = (txU1*)theString;
@@ -1061,26 +1062,75 @@ txSize fxUnicodeLength(txString theString)
 	}
 	return anIndex;
 }
+#else
+ // http://www.daemonology.net/blog/2008-06-05-faster-utf8-strlen.html
 
-txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset)
+#define ONEMASK ((size_t)(-1) / 0xFF)
+
+txSize fxUnicodeLength(txString _s)
+{
+	const char * s;
+	size_t count = 0;
+	size_t u;
+	unsigned char b;
+
+	/* Handle any initial misaligned bytes. */
+	for (s = _s; (uintptr_t)(s) & (sizeof(size_t) - 1); s++) {
+		b = c_read8(s);
+
+		/* Exit if we hit a zero byte. */
+		if (b == '\0')
+			goto done;
+
+		/* Is this byte NOT the first byte of a character? */
+		count += (b >> 7) & ((~b) >> 6);
+	}
+
+	/* Handle complete blocks. */
+	for (; ; s += sizeof(size_t)) {
+		/* Grab 4 or 8 bytes of UTF-8 data. */
+		u = *(size_t *)(s);
+
+		/* Exit the loop if there are any zero bytes. */
+		if ((u - ONEMASK) & (~u) & (ONEMASK * 0x80))
+			break;
+
+		/* Count bytes which are NOT the first byte of a character. */
+		u = ((u & (ONEMASK * 0x80)) >> 7) & ((~u) >> 6);
+		count += (u * ONEMASK) >> ((sizeof(size_t) - 1) * 8);
+	}
+
+	/* Take care of any left-over bytes. */
+	for (; ; s++) {
+		b = c_read8(s);
+
+		/* Exit if we hit a zero byte. */
+		if (b == '\0')
+			break;
+
+		/* Is this byte NOT the first byte of a character? */
+		count += (b >> 7) & ((~b) >> 6);
+	}
+
+done:
+	return ((s - _s) - count);
+}
+
+#endif
+txSize fxUnicodeToUTF8Offset(txString theString, txSize unicodeOffset)
 {
 	txU1* p = (txU1*)theString;
-	txU1 c;
-	txSize unicodeOffset = 0;
-	txSize utf8Offset = 0;
 	
-	while ((c = c_read8(p++))) {
+	while (1) {
+		txU1 c = c_read8(p++);
 		if ((c & 0xC0) != 0x80) {
-			if (unicodeOffset == theOffset)
-				return utf8Offset;
-			unicodeOffset++;
+			if (!unicodeOffset || !c)
+				return (p - 1) - (txU1 *)theString;
+			unicodeOffset--;
 		}
-		utf8Offset++;
 	}
-	if (unicodeOffset == theOffset)
-		return utf8Offset;
-	else
-		return -1;
+
+	return -1;
 }
 
 txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex)
