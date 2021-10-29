@@ -177,7 +177,7 @@ void xs_audioin_read(xsMachine *the)
 		if ((offset < 0) || ((offset + byteCount) > dataSize))
 			xsRangeError("invalid");
 
-		samples = (void *)(offset + (uintptr_t)data)
+		samples = (void *)(offset + (uintptr_t)data);
 
 		xsResult = xsArg(1);
 	}
