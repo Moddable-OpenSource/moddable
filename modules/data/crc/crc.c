@@ -108,7 +108,7 @@ void xs_crc8_checksum(xsMachine *the)
 	uint8_t *data;
 	uint32_t length;
 
-	xsmcGetBuffer(xsArg(0), (void **)&data, &length);
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &length);
 	crc8->initial = checksum8(data, length, crc8->table, crc8->initial, crc8->reflectInput, crc8->reflectOutput, crc8->xorOutput);
 
 	xsmcSetInteger(xsResult, crc8->initial);
@@ -201,7 +201,7 @@ void xs_crc16_checksum(xsMachine *the)
 	uint8_t *data;
 	uint32_t length;
 
-	xsmcGetBuffer(xsArg(0), (void **)&data, &length);
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &length);
 	crc16->initial = checksum16(data, length, crc16->table, crc16->initial, crc16->reflectInput, crc16->reflectOutput, crc16->xorOutput);
 
 	xsmcSetInteger(xsResult, crc16->initial);

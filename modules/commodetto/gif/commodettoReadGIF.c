@@ -97,7 +97,7 @@ void xs_readgif(xsMachine *the)
 	xsIntegerValue available;
 	int format = kCommodettoBitmapDefault;
 
-	xsmcGetBuffer(xsArg(0), &buffer, &bufferSize);
+	xsmcGetBufferReadable(xsArg(0), &buffer, &bufferSize);
 	available = (xsIntegerValue)bufferSize;
 
 	xg = xsmcGetHostChunk(xsThis);

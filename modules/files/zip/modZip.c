@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -202,22 +202,11 @@ void xs_zip_destructor(void *data)
 
 void xs_zip(xsMachine *the)
 {
-	uint8_t *data;
-	uint32_t dataSize;
+	uint8_t *data = xsmcGetHostBuffer(xsArg(0));
+	uint32_t dataSize = xsmcGetHostBufferLength(xsArg(0));
 	Zip zip;
 
 	xsmcSet(xsThis, xsID_buffer, xsArg(0));
-
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		dataSize = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		xsmcVars(1);
-		data = xsmcGetHostData(xsArg(0));
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		dataSize = xsmcToInteger(xsVar(0));
-	}
 
 	if (0 == ZipOpen(&zip, data, dataSize))
 		xsErrorPrintf("can't handle zip archive");

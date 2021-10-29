@@ -292,7 +292,7 @@ void xs_tcp_read(xsMachine *the)
 			requested = available;
 		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 			xsResult = xsArg(0);
-			xsmcGetBuffer(xsResult, (void **)&out, &byteLength);
+			xsmcGetBufferWritable(xsResult, (void **)&out, &byteLength);
 			requested = (int)byteLength;
 			allocate = 0;
 		}
@@ -356,7 +356,7 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	if (kIOFormatBuffer == tcp->format) {
-		xsmcGetBuffer(xsArg(0), &buffer, &needed);
+		xsmcGetBufferReadable(xsArg(0), &buffer, &needed);
 	}
 	else {
 		needed = 1;

@@ -194,7 +194,7 @@ void _xs_i2c_read(xsMachine *the)
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsResult = xsArg(0);
-		xsmcGetBuffer(xsResult, &buffer, &length);
+		xsmcGetBufferWritable(xsResult, &buffer, &length);
 	}
 	else {
  		length = xsmcToInteger(xsArg(0));
@@ -233,7 +233,7 @@ void _xs_i2c_write(xsMachine *the)
 	if (xsmcArgc > 1)
 		stop = xsmcToBoolean(xsArg(1));
 
-	xsmcGetBuffer(xsArg(0), &buffer, &length);
+	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");

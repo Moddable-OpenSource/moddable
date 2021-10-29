@@ -85,6 +85,6 @@ void Resource_slice(xsMachine *the)
 	else {
 		xsResult = xsNewHostObject(NULL);
 		xsSetHostBuffer(xsResult, (void *)(data + start), end - start);
-		xsSet(xsResult, xsID_byteLength, xsInteger(end - start));		//@@
+		xsDefine(xsResult, xsID_byteLength, xsInteger(end - start), xsDefault);
 	}
 }

@@ -95,7 +95,7 @@ void xs_textencoder_encodeInto(xsMachine *the)
 		xsUnknownError("Uint8Array only");
 
 	xsArg(0) = xsCall1(xsGlobal, xsID_String, xsArg(0));
-	xsmcGetBuffer(xsArg(1), (void **)&dst, &dstTotal);
+	xsmcGetBufferWritable(xsArg(1), (void **)&dst, &dstTotal);
 	dstRemaining = dstTotal; 
 	src = (uint8_t *)xsmcToString(xsArg(0));
 

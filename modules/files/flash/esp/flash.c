@@ -112,11 +112,11 @@ void xs_flash_read(xsMachine *the)
 		buffer = c_malloc(byteLength);
 		if (NULL == buffer)
 			xsUnknownError("no memory");
-		xsmcSetHostData(xsResult, buffer);
+		xsmcSetHostBuffer(xsResult, buffer, byteLength);
 		xsVar(0) = xsNewHostFunction(flashCloseBuffer, 0);
 		xsmcSet(xsResult, xsID_close, xsVar(0));
 		xsmcSetInteger(xsVar(0), byteLength);
-		xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+		xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 
 	}
 	else {

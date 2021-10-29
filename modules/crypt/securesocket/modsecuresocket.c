@@ -190,37 +190,16 @@ void xs_securesocket_write(xsMachine *the)
 				}
 			}
 			else if (xsReferenceType == t) {
-				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					int msgLen = xsmcGetArrayBufferLength(xsArg(arg));
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						char *msg = xsmcToArrayBuffer(xsArg(arg));
-						dst = (uint8_t *)xsmcToArrayBuffer(xsVar(0)) + outputOffset;
-						c_memcpy(dst, msg, msgLen);
-						outputOffset += msgLen;
-					}
-				}
-				else if (xsmcIsInstanceOf(xsArg(arg), xsTypedArrayPrototype)) {
-					int msgLen, byteOffset;
+				void *msg;
+				xsUnsignedValue msgLen;
 
-					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
-					msgLen = xsmcToInteger(xsResult);
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						xsSlot tmp;
-						char *msg;
-
-						xsmcGet(tmp, xsArg(arg), xsID_byteOffset);
-						byteOffset = xsmcToInteger(tmp);
-
-						xsmcGet(tmp, xsArg(arg), xsID_buffer);
-						msg = byteOffset + (char *)xsmcToArrayBuffer(tmp);
-						dst = (uint8_t *)xsmcToArrayBuffer(xsVar(0)) + outputOffset;
-						c_memcpy(dst, msg, msgLen);
-						outputOffset += msgLen;
-					}
+				xsmcGetBufferReadable(xsArg(arg), (void **)&msg, &msgLen);
+				if (0 == pass)
+					needed += msgLen;
+				else {
+					dst = (uint8_t *)xsmcToArrayBuffer(xsVar(0)) + outputOffset;
+					c_memcpy(dst, msg, msgLen);
+					outputOffset += msgLen;
 				}
 			}
 			else

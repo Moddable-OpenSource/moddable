@@ -70,21 +70,9 @@ void xs_Convert(xsMachine *the)
 
 	if (kCommodettoBitmapCLUT16 == c->dstPixelFormat) {
 		void *clut;
-		uint32_t clutBytes;
+		xsUnsignedValue clutBytes;
 
-		if (!xsmcTest(xsArg(2)))
-			xsErrorPrintf("clut required");
-
-		if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-			clut = xsmcToArrayBuffer(xsArg(2));
-			clutBytes = xsmcGetArrayBufferLength(xsArg(2));
-		}
-		else {
-			xsmcVars(1);
-			clut = xsmcGetHostData(xsArg(2));
-			xsmcGet(xsVar(0), xsArg(2), xsID_byteLength);
-			clutBytes = xsmcToInteger(xsVar(0));
-		}
+		xsmcGetBufferReadable(xsArg(2), (void **)&clut, &clutBytes);
 
 		c->clut = c_malloc(clutBytes);
 		if (NULL == c->clut)
@@ -98,15 +86,15 @@ void xs_convert_process(xsMachine *the)
 	uint8_t *src, *dst;
 	xsUnsignedValue srcLength, dstLength, pixelCount;
 
-	xsmcGetBuffer(xsArg(0), (void **)&src, &srcLength);
+	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
 	if (xsmcArgc < 6) 
-		xsmcGetBuffer(xsArg(1), (void **)&dst, &dstLength);
+		xsmcGetBufferWritable(xsArg(1), (void **)&dst, &dstLength);
 	else {
 		xsIntegerValue srcOffset = xsmcToInteger(xsArg(1));
 		xsIntegerValue srcCount = xsmcToInteger(xsArg(2));
 		xsIntegerValue dstOffset = xsmcToInteger(xsArg(4));
 		xsIntegerValue dstCount = xsmcToInteger(xsArg(5));
-		xsmcGetBuffer(xsArg(3), (void **)&dst, &dstLength);
+		xsmcGetBufferWritable(xsArg(3), (void **)&dst, &dstLength);
 		if ((srcOffset < 0) || ((xsUnsignedValue)(srcOffset + srcCount) > srcLength) ||  
 			(dstOffset < 0) || ((xsUnsignedValue)(dstOffset + dstCount) > dstLength))
 			xsUnknownError("dst buffer too small");

@@ -183,7 +183,7 @@ void xs_udp_write(xsMachine *the)
 	if (!ipaddr_aton(temp, &dst))
 		xsRangeError("invalid IP address");
 
-	xsmcGetBuffer(xsArg(2), &buffer, &byteLength);
+	xsmcGetBufferReadable(xsArg(2), &buffer, &byteLength);
 	udp_sendto_safe(udp->skt, buffer, byteLength, &dst, port, &err);
 	if (ERR_OK != err)
 		xsUnknownError("UDP send failed");

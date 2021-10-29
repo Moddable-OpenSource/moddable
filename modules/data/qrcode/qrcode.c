@@ -55,18 +55,9 @@ void xs_qrcode(xsMachine *the)
 					qrcodegen_Ecc_MEDIUM, qrcodegen_VERSION_MIN, maxVersion, qrcodegen_Mask_AUTO, true);
 		}
 		else {
-			unsigned int dataSize;
+			xsUnsignedValue dataSize;
 
-			if (xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype)) {
-				data = xsmcToArrayBuffer(xsVar(0));
-				dataSize = xsmcGetArrayBufferLength(xsVar(0));
-			}
-			else {
-				data = xsmcGetHostData(xsVar(0));
-				xsmcGet(xsVar(0), xsVar(0), xsID_byteLength);
-				dataSize = xsmcToInteger(xsVar(0));
-			}
-
+			xsmcGetBufferReadable(xsVar(0), &data, &dataSize);
 			c_memcpy(qr0 + bufferSize, data, dataSize);
 			ok = qrcodegen_encodeBinary(qr0 + bufferSize, dataSize, qr0,
 					qrcodegen_Ecc_MEDIUM, qrcodegen_VERSION_MIN, maxVersion, qrcodegen_Mask_AUTO, true);

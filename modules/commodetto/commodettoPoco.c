@@ -103,7 +103,7 @@ void xs_poco_build(xsMachine *the)
 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), pixelsLength);
-	xsmcSet(xsThis, xsID_byteLength, xsVar(0));
+	xsDefine(xsThis, xsID_byteLength, xsVar(0), xsDefault);
 
 	if (NULL == gCFE)
 		gCFE = CFENew();
@@ -178,9 +178,9 @@ void xs_poco_begin(xsMachine *the)
 			xsmcSetInteger(xsVar(3), poco->w);
 			xsmcSetInteger(xsVar(4), poco->h);
 			xsResult = xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
-			pixels = xsmcGetHostData(xsResult);
+			pixels = xsmcGetHostBuffer(xsResult);
 
-			xsmcGet(xsVar(0), xsResult, xsID_byteLength);
+			xsmcSetInteger(xsResult, xsmcGetHostBufferLength(xsResult));
 #if (0 == kPocoRotation) || (180 == kPocoRotation)
 			rowBytes = (int16_t)(xsmcToInteger(xsVar(0)) / poco->height);
 #elif (90 == kPocoRotation) || (270 == kPocoRotation)
@@ -689,11 +689,8 @@ void xs_poco_getTextWidth(xsMachine *the)
 	uint32_t previousUnicode = 0;
 #endif
 
-	xsmcVars(1);
-
 	fontData = xsmcGetHostData(xsArg(1));
-	xsmcGet(xsVar(0), xsArg(1), xsID_byteLength);
-	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
+	CFESetFontData(gCFE, fontData, xsmcGetHostBufferLength(xsArg(1)));
 
 	while (true) {
 		CFEGlyph glyph;
@@ -745,8 +742,7 @@ void xs_poco_drawText(xsMachine *the)
 	xsmcVars(2);
 
 	fontData = xsmcGetHostData(xsArg(1));
-	xsmcGet(xsVar(0), xsArg(1), xsID_byteLength);
-	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
+	CFESetFontData(gCFE, fontData, xsmcGetHostBufferLength(xsArg(1)));
 
 	if (argc > 5) {
 		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, 0x2026, false);

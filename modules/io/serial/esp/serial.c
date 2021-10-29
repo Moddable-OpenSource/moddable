@@ -256,7 +256,7 @@ void xs_serial_write(xsMachine *the)
 		uint8_t *buffer;
 		xsUnsignedValue requested;
 
-		xsmcGetBuffer(xsArg(0), (void **)&buffer, &requested);
+		xsmcGetBufferReadable(xsArg(0), (void **)&buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 

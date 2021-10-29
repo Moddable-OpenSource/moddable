@@ -115,9 +115,9 @@ void xs_flash_map(xsMachine *the)
 	xsmcVars(1);
 
 	xsResult = xsNewHostObject(NULL);
-	xsmcSetHostData(xsResult, (void *)partitionAddress);
+	xsmcSetHostBuffer(xsResult, (void *)partitionAddress, size);
 	xsmcSetInteger(xsVar(0), size);
-	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+	xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 }
 
 void xs_flash_byteLength(xsMachine *the)

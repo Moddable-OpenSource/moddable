@@ -210,7 +210,7 @@ void xs_spi_read(xsMachine *the)
 	xsUnsignedValue count;
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
-		xsmcGetBuffer(xsArg(0), &data, &count);
+		xsmcGetBufferWritable(xsArg(0), &data, &count);
 		if (count > 65535)
 			xsRangeError("unsupported byteLength");
 	}
@@ -231,7 +231,7 @@ void xs_spi_write(xsMachine *the)
 	void *data;
 	xsUnsignedValue count;
 
-	xsmcGetBuffer(xsArg(0), &data, &count);
+	xsmcGetBufferReadable(xsArg(0), &data, &count);
 	if (count > 65535)
 		xsRangeError("unsupported byteLength");
 
@@ -244,7 +244,7 @@ void xs_spi_transfer(xsMachine *the)
 	void *data;
 	xsUnsignedValue count;
 
-	xsmcGetBuffer(xsArg(0), &data, &count);
+	xsmcGetBufferWritable(xsArg(0), &data, &count);
 	if (count > 65535)
 		xsRangeError("unsupported byteLength");
 

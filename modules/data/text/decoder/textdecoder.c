@@ -100,7 +100,7 @@ void xs_textdecoder_decode(xsMachine *the)
 		stream = xsmcToBoolean(xsVar(0));
 	}
 
-	xsmcGetBuffer(xsArg(0), (void **)&src, &srcLength);
+	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
 	srcEnd = src + srcLength;
 
 	td = xsmcGetHostChunk(xsThis);
@@ -180,7 +180,7 @@ void xs_textdecoder_decode(xsMachine *the)
 
 	xsmcSetStringBuffer(xsResult, NULL, outLength + 1);
 
-	xsmcGetBuffer(xsArg(0), (void **)&src, &srcLength);
+	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
 	srcEnd = src + srcLength;
 	src += srcOffset;
 

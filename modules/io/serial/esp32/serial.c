@@ -276,7 +276,7 @@ void xs_serial_read(xsMachine *the)
 			requested = available;
 		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 			xsResult = xsArg(0);
-			xsmcGetBuffer(xsResult, (void **)&buffer, &byteLength);
+			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
 			requested = (int)byteLength;
 			allocate = 0;
 		}
@@ -314,7 +314,7 @@ void xs_serial_write(xsMachine *the)
 		void *buffer;
 		xsUnsignedValue requested;
 
-		xsmcGetBuffer(xsArg(0), &buffer, &requested);
+		xsmcGetBufferReadable(xsArg(0), &buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 

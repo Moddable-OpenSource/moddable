@@ -566,7 +566,7 @@ void xs_socket_write(xsMachine *the)
 	xsSocket xss = xsmcGetHostData(xsThis);
 	int argc = xsmcArgc;
 	char *msg;
-	size_t msgLen;
+	xsUnsignedValue msgLen;
 	u16_t available, needed = 0;
 	err_t err;
 	unsigned char pass, arg;
@@ -649,34 +649,8 @@ void xs_socket_write(xsMachine *the)
 					msg = &byte;
 				}
 			}
-			else if (xsReferenceType == t) {
-				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					msgLen = xsmcGetArrayBufferLength(xsArg(arg));
-					if (pass)
-						msg = xsmcToArrayBuffer(xsArg(arg));
-				}
-				else if (xsmcIsInstanceOf(xsArg(arg), xsTypedArrayPrototype)) {
-					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
-					msgLen = xsmcToInteger(xsResult);
-					if (pass) {
-						int byteOffset;
-
-						xsmcGet(xsResult, xsArg(arg), xsID_byteOffset);
-						byteOffset = xsmcToInteger(xsResult);
-
-						xsmcGet(xsResult, xsArg(arg), xsID_buffer);
-						msg = byteOffset + (char *)xsmcToArrayBuffer(xsResult);
-					}
-				}
-				else if (xsmcHas(xsArg(arg), xsID_byteLength)) {	// host data
-					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
-					msgLen = xsmcToInteger(xsResult);
-					if (pass)
-						msg = xsmcGetHostData(xsArg(arg));
-				}
-				else
-					xsUnknownError("unsupported type for write");
-			}
+			else if (xsReferenceType == t)
+				xsmcGetBufferReadable(xsArg(arg), (void **)&msg, &msgLen);
 			else
 				xsUnknownError("unsupported type for write");
 

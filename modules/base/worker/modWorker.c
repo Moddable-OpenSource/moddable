@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -265,9 +265,11 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 #else
 	xsmcVars(2);
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsmcGetArrayBufferLength(xsArg(0));
+	if (xsStringType !== xsmcTypeOf(xsArg(0))) {
+		xsUnsignedValue dataSize;
+
+		xsmcGetBufferReadable(xsArg(0), (void **)&message, &dataSize);
+		messageLength = (uint32_t)dataSize;
 		kind = 1;
 	}
 	else {
@@ -300,9 +302,11 @@ void xs_worker_postfromworker(xsMachine *the)
 		if (modMessagePostToMachine(worker->parent, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
 			xsUnknownError("post from worker failed");
 #else
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsmcGetArrayBufferLength(xsArg(0));
+	if (xsStringType !== xsmcTypeOf(xsArg(0))) {
+		xsUnsignedValue dataSize;
+
+		xsmcGetBufferReadable(xsArg(0), (void **)&message, &dataSize);
+		messageLength = (uint32_t)dataSize;
 		kind = 1;
 	}
 	else {

@@ -79,7 +79,7 @@ void xs_preference_set(xsMachine *the)
 					void *data;
 					xsUnsignedValue length;
 
-					xsmcGetBuffer(xsArg(2), &data, &length);
+					xsmcGetBufferReadable(xsArg(2), &data, &length);
 					ERASE_KEY(handle, key);
 					err = nvs_set_blob(handle, key, data, length);
 				}
