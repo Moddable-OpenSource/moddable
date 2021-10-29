@@ -202,9 +202,12 @@ void xs_zip_destructor(void *data)
 
 void xs_zip(xsMachine *the)
 {
-	uint8_t *data = xsmcGetHostBuffer(xsArg(0));
-	uint32_t dataSize = xsmcGetHostBufferLength(xsArg(0));
+	uint8_t *data;
+	xsUnsignedValue dataSize;
 	Zip zip;
+
+	if (xsBufferRelocatable == xsmcGetBuffer(xsArg(0), (void **)&data, &dataSize))
+		xsUnknownError("invalild");
 
 	xsmcSet(xsThis, xsID_buffer, xsArg(0));
 

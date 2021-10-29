@@ -28,11 +28,10 @@ void xs_parseRLE(xsMachine *the)
 {
 	unsigned char *bytes;
 	CommodettoBitmap bitmap;
+	xsUnsignedValue dataSize;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		bytes = xsmcToArrayBuffer(xsArg(0));
-	else
-		bytes = xsmcGetHostData(xsArg(0));
+	if (xsBufferRelocatable == xsmcGetBufferReadable(xsArg(0), (void **)&bytes, &dataSize))
+		xsUnknownError("invaild");
 
 	if ((109 != c_read8(bytes + 0)) || (100 != c_read8(bytes + 1)))		// "md"
 		xsUnknownError("invalid commodetto rle");

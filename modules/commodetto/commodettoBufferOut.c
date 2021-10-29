@@ -77,7 +77,7 @@ void xs_BufferOut_init(xsMachine *the)
 		xsVar(0) = xsArg(3);
 	else
 		xsmcSetArrayBuffer(xsVar(0), NULL, pixelsToBytes(bo->width) * bo->height);
-	xsmcSet(xsThis, xsID_buffer, xsVar(0));
+	xsDefine(xsThis, xsID_buffer, xsVar(0), xsDontSet);
 }
 
 void xs_BufferOut_begin(xsMachine *the)
@@ -100,6 +100,7 @@ void xs_BufferOut_send(xsMachine *the)
 	char *src, *dst;
 	int offsetIn, count, offsetOut;
 	xsUnsignedValue available;
+	xsSlot bufferSlot;
 
 	offsetIn = (argc > 1) ? xsmcToInteger(xsArg(1)) : 0;
 
@@ -112,9 +113,8 @@ void xs_BufferOut_send(xsMachine *the)
 	if (argc <= 2)
 		count = available - offsetIn;
 
-	xsmcVars(1);
-	xsmcGet(xsVar(0), xsThis, xsID_buffer);
-	xsmcGetBufferWritable(xsVar(0), (void **)&dst, &available);
+	xsmcGet(bufferSlot, xsThis, xsID_buffer);
+	xsmcGetBufferWritable(bufferSlot, (void **)&dst, &available);
 
 	offsetOut = bo->offset;
 

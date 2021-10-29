@@ -41,6 +41,8 @@ void xs_Bitmap(xsMachine *the)
 	int offset;
 	int32_t byteLength = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 0;
 	CommodettoBitmap cb = xsmcSetHostChunk(xsThis, NULL, sizeof(CommodettoBitmapRecord) /* - (byteLength ? sizeof(int32_t) : 0) */);
+	void *data;
+	xsUnsignedValue dataSize;
 
 	cb->w = (CommodettoDimension)xsmcToInteger(xsArg(0));
 	cb->h = (CommodettoDimension)xsmcToInteger(xsArg(1));
@@ -51,13 +53,13 @@ void xs_Bitmap(xsMachine *the)
 		xsErrorPrintf("invalid bitmap format");
 	offset = xsmcToInteger(xsArg(4));
 
-	if (xsmcIsInstanceOf(xsArg(3), xsArrayBufferPrototype)) {
+	if (xsBufferRelocatable == xsmcGetBufferReadable(xsArg(3), (void **)&data, &dataSize)) {
 		cb->havePointer = false;
 		cb->bits.offset = offset;
 	}
 	else {
 		cb->havePointer = true;
-		cb->bits.data = offset + (char *)xsmcGetHostData(xsArg(3));
+		cb->bits.data = offset + (char *)data;
 	}
 
 	#if COMMODETTO_BITMAP_ID
@@ -69,7 +71,7 @@ void xs_Bitmap(xsMachine *the)
 		cb->byteLength = byteLength;
 	}
 
-	xsmcSet(xsThis, xsID_buffer, xsArg(3));
+	xsDefine(xsThis, xsID_buffer, xsArg(3), xsDontSet);
 }
 
 void xs_bitmap_get_width(xsMachine *the)
@@ -96,8 +98,12 @@ void xs_bitmap_get_offset(xsMachine *the)
 	int32_t offset;
 
 	if (cb->havePointer) {
+		void *data;
+		xsUnsignedValue dataSize;
+
 		xsmcGet(xsResult, xsThis, xsID_buffer);
-		offset = (char *)cb->bits.data - (char *)xsmcGetHostData(xsResult);
+		xsmcGetBuffer(xsResult, &data, &dataSize);
+		offset = (char *)cb->bits.data - (char *)data;
 	}
 	else
 		offset = cb->bits.offset;
