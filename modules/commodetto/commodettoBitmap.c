@@ -102,7 +102,7 @@ void xs_bitmap_get_offset(xsMachine *the)
 		xsUnsignedValue dataSize;
 
 		xsmcGet(xsResult, xsThis, xsID_buffer);
-		xsmcGetBuffer(xsResult, &data, &dataSize);
+		xsmcGetBufferReadable(xsResult, &data, &dataSize);
 		offset = (char *)cb->bits.data - (char *)data;
 	}
 	else

@@ -894,7 +894,7 @@ PocoPixel *pocoGetBitmapPixels(xsMachine *the, Poco poco, CommodettoBitmap cb, i
 		return (PocoPixel *)cb->bits.data;
 	
 	xsmcGet(buffer, xsArg(arg), xsID_buffer);
-	xsmcGetBuffer(buffer, &data, &dataSize);
+	xsmcGetBufferReadable(buffer, &data, &dataSize);
 	PocoDisableGC(poco);
 	return (PocoPixel *)(cb->bits.offset + (char *)data);
 }

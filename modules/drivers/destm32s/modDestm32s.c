@@ -234,8 +234,6 @@ typedef struct {
 
 	CommodettoDimension			updateWidth;
 
-	uint8_t						*clut;
-
 	uint8_t						full;
 	uint8_t						powered;
 	uint8_t						doPowerOff;
@@ -423,29 +421,19 @@ void xs_destm32s_send(xsMachine *the)
 	spiDisplay sd = xsmcGetHostData(xsThis);
 	int argc = xsmcArgc;
 	const uint8_t *data;
-	int count;
+	xsUnsignedValue count;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		count = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		data = xsmcGetHostData(xsArg(0));
-
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		count = xsmcToInteger(xsVar(0));
-	}
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &count);
 
 	if (argc > 1) {
-		int offset = xsmcToInteger(xsArg(1));
+		xsIntegerValue offset = xsmcToInteger(xsArg(1));
 
+		if ((xsUnsignedValue)offset >= count)
+			xsUnknownError("bad offset");
 		data += offset;
 		count -= offset;
-		if (count < 0)
-			xsUnknownError("bad offset");
 		if (argc > 2) {
-			int c = xsmcToInteger(xsArg(2));
+			xsIntegerValue c = xsmcToInteger(xsArg(2));
 			if (c > count)
 				xsUnknownError("bad count");
 			count = c;
@@ -486,21 +474,6 @@ void xs_destm32s_get_width(xsMachine *the)
 void xs_destm32s_get_height(xsMachine *the)
 {
 	xsmcSetInteger(xsResult, MODDEF_DESTM32S_HEIGHT);
-}
-
-void xs_destm32s_get_clut(xsMachine *the)
-{
-	spiDisplay sd = xsmcGetHostData(xsThis);
-	if (sd->clut) {
-		xsResult = xsNewHostObject(NULL);
-		xsmcSetHostData(xsResult, sd->clut);
-	}
-}
-
-void xs_destm32s_set_clut(xsMachine *the)
-{
-	spiDisplay sd = xsmcGetHostData(xsThis);
-	sd->clut = xsmcGetHostData(xsArg(0));		// cannot be array buffer
 }
 
 void xs_destm32s_get_c_dispatch(xsMachine *the)

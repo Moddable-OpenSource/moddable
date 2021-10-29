@@ -206,7 +206,7 @@ void xs_zip(xsMachine *the)
 	xsUnsignedValue dataSize;
 	Zip zip;
 
-	if (xsBufferRelocatable == xsmcGetBuffer(xsArg(0), (void **)&data, &dataSize))
+	if (xsBufferRelocatable == xsmcGetBufferReadable(xsArg(0), (void **)&data, &dataSize))
 		xsUnknownError("invalild");
 
 	xsmcSet(xsThis, xsID_buffer, xsArg(0));
@@ -229,10 +229,10 @@ void xs_zip_file_map(xsMachine *the)
 		xsErrorPrintf("can't find path");
 
 	xsResult = xsNewHostObject(NULL);
-	xsmcSetHostData(xsResult, data);
+	xsmcSetHostBuffer(xsResult, data, dataSize);
 	xsmcVars(1);
 	xsVar(0) = xsInteger(dataSize);
-	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+	xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 }
 
 typedef struct {

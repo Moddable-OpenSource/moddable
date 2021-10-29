@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -267,29 +267,19 @@ void xs_ILI9341_send(xsMachine *the)
 	spiDisplay sd = xsmcGetHostData(xsThis);
 	int argc = xsmcArgc;
 	const uint8_t *data;
-	int count;
+	xsUnsignedValue count;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		count = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		data = xsmcGetHostData(xsArg(0));
-
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		count = xsmcToInteger(xsVar(0));
-	}
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &count);
 
 	if (argc > 1) {
-		int offset = xsmcToInteger(xsArg(1));
+		xsIntegerValue offset = xsmcToInteger(xsArg(1));
 
+		if ((xsUnsignedValue)offset >= count)
+			xsUnknownError("bad offset");
 		data += offset;
 		count -= offset;
-		if (count < 0)
-			xsUnknownError("bad offset");
 		if (argc > 2) {
-			int c = xsmcToInteger(xsArg(2));
+			xsIntegerValue c = xsmcToInteger(xsArg(2));
 			if (c > count)
 				xsUnknownError("bad count");
 			count = c;
@@ -344,7 +334,7 @@ void xs_ILI9341_get_clut(xsMachine *the)
 	spiDisplay sd = xsmcGetHostData(xsThis);
 	if (sd->haveCLUT) {
 		xsResult = xsNewHostObject(NULL);
-		xsmcSetHostData(xsResult, sd->clut);
+		xsmcSetHostBuffer(xsResult, sd->clut, sizeof(sd->clut));
 	}
 #else
 	// returns undefined
@@ -355,11 +345,15 @@ void xs_ILI9341_set_clut(xsMachine *the)
 {
 #if kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 	spiDisplay sd = xsmcGetHostData(xsThis);
+	void data;
+	xsUnsignedValue dataSize;
+
+	xsmcGetHostBuffer(xsArg(0), &data, &dataSize);
+	if (dataSize > sizeof(sd->clut))
+		xsUnknownError("invalild");
+
+	c_memmove(sd->clut, data, dataSize);
 	sd->haveCLUT = 1;
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		xsmcGetArrayBufferData(xsArg(0), 0, sd->clut, sizeof(sd->clut));
-	else
-		c_memmove(sd->clut, xsmcGetHostData(xsArg(0)), sizeof(sd->clut));
 #else
 	xsUnknownError("unsupported");
 #endif
