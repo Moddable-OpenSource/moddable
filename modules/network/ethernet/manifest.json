@@ -10,6 +10,9 @@
             "build": {
                 "ETHERNETDRIVER": "$(IDF_PATH)/examples/ethernet/enc28j60/main"
             },
+            "include": [
+                "$(MODULES)/pins/spi/manifest.json"
+            ],
             "modules": { 
                 "*": [
                     "$(ETHERNET)/*",
