@@ -98,19 +98,19 @@ The driver maintains a back buffer, which is more-or-less necessary because of t
 
 The display driver does a full screen refresh on the first draw after instantiation. To disable this, set `refresh` to false.
 
-```
+```js
 screen.configure({refresh: false});
 ```
 
 The display driver uses partial updates after the first frame. To force a full screen update: 
 
-```
+```js
 screen.configure({refresh: true});
 ```
 
 A partial update may be performed on power-up to avoid an initial full screen flash. To do this, the previous frame must first be redrawn to put it back into the controller's memory. To do that, first draw the previous frame with `previous` set to true, then draw the next frame as usual. The driver resets the value of `previous` to `false` after one frame is drawn.
 
-```
+```js
 screen.configure({previous: true, refresh: false});
 // draw previous
 // draw next
@@ -214,7 +214,6 @@ power.main.write(1);
 
 To turn the device off when running on battery power, set the power hold line to 0.
 
-
 ```js
 power.main.write(0);
 ```
@@ -228,7 +227,7 @@ That said, not every example is compatible with M5Core Ink hardware. For example
 
 The Moddable SDK Piu examples that do not depend on touch generally seem to work as-is, though some don't look their best on an ePaper display. The display refresh rate on the M5Core Ink is about 3 FPS, so examples like `balls` will not look good.
 
-There are several example applications in the Moddable SDK that show how to take make best use of the M5Paper. See the [ePaper blog](https://blog.moddable.com/blog/epaper#examples) post for details.
+There are several example applications in the Moddable SDK that show how to take make best use of the M5Core Ink. See the [ePaper blog](https://blog.moddable.com/blog/epaper#examples) post for details.
 
 <a id="documentation"></a>
 ### Documentation
