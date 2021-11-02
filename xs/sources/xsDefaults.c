@@ -54,7 +54,6 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxTerminateSharedCluster,
 	fxNewFunctionLength,
 	fxNewFunctionName,
-	fxExecuteModules,
 	fxRunImport,
 	fxDefinePrivateProperty,
 	fxGetPrivateProperty,

@@ -166,6 +166,7 @@ static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 static void fx_gc(xsMachine* the);
+static void fx_loadModuleScript(xsMachine* the);
 static void fx_print(xsMachine* the);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
@@ -419,6 +420,7 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_loadModuleScript, 1, xsID("loadModuleScript"), XS_DONT_ENUM_FLAG);
 
 	mxPop();
 	mxPop();
@@ -1174,6 +1176,51 @@ void fx_evalScript(xsMachine* the)
 	aStream.size = mxStringLength(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
+}
+
+void fx_loadModuleScriptDestructor(void* data)
+{
+	if (data) {
+		fxDeleteScript(data);
+	}
+}
+
+void fx_loadModuleScript(txMachine* the)
+{
+	txString path;
+	txScript* script = NULL;
+	txSlot* promise;
+	txSlot* status;
+	txSlot* fulfillFunction;
+	txSlot* rejectFunction;
+	if (mxArgc < 1)
+		mxSyntaxError("no specifier parameter");
+	path = fxToString(the, 	mxArgv(0));
+	mxPush(mxPromisePrototype);
+	promise = fxNewPromiseInstance(the);
+	mxPullSlot(mxResult);
+	status = mxPromiseStatus(promise);
+	status->value.integer = mxPendingStatus;
+	fxPushPromiseFunctions(the, promise);
+	fulfillFunction = the->stack + 1;
+	rejectFunction = the->stack;
+	{
+		mxTry(the) {
+			script = fxLoadScript(the, path, mxDebugFlag);
+			if (!script) {
+				mxSyntaxError("cannot load module script");
+			}
+			mxPushUndefined();
+			mxPushSlot(fulfillFunction);
+			mxCall();
+			fxNewHostObject(the, fx_loadModuleScriptDestructor);
+			fxSetHostData(the, the->stack, script);
+			mxRunCount(1);
+		}
+		mxCatch(the) {
+			fxRejectException(the, rejectFunction);
+		}
+	}
 }
 
 void fx_print(xsMachine* the)

@@ -122,7 +122,6 @@ typedef struct {
 	void (*terminateSharedCluster)();
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txNumber length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix);
-    void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
     void (*runImport)(txMachine* the, txSlot* realm, txID id);
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
 	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
@@ -1763,8 +1762,6 @@ extern const txBehavior gxModuleBehavior;
 
 extern void fxBuildModule(txMachine* the);
 
-extern void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
-extern void fxExecuteModulesSync(txMachine* the, txSlot* realm, txFlag flag);
 extern void fxFulfillModule(txMachine* the);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
 extern void fxPrepareModule(txMachine* the);

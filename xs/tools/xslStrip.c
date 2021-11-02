@@ -529,10 +529,6 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	}
 	fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "\tC_NULL,\n");
-	if (fxIsCallbackStripped(linker, fx_Promise))
-		fprintf(file, "\tfxExecuteModulesSync,\n");
-	else
-		fprintf(file, "\tfxExecuteModules,\n");
 	if (fxIsCodeUsed(XS_CODE_IMPORT) || !fxIsCallbackStripped(linker, fx_Compartment_prototype_import))
 		fprintf(file, "\tfxRunImport,\n");
 	else
