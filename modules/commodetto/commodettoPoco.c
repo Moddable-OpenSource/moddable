@@ -66,7 +66,7 @@ void xs_poco_build(xsMachine *the)
 	poco = c_malloc(sizeof(PocoRecord) + byteLength + 8);		// overhang when dividing
 	if (!poco)
 		xsErrorPrintf("out of menory");
-	xsmcSetHostBuffer(xsThis, poco->pixels, byteLength + 8);
+	xsmcSetHostBuffer(xsThis, poco->pixels, pixelsLength);
 
 	poco->width = (PocoDimension)xsmcToInteger(xsArg(0));
 	poco->height = (PocoDimension)xsmcToInteger(xsArg(1));
