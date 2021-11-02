@@ -45,8 +45,6 @@ static void fxCompleteModule(txMachine* the, txSlot* realm, txSlot* module, txSl
 
 static void fxExecuteModules(txMachine* the, txSlot* realm, txSlot* queue);
 static txID fxExecuteModulesFrom(txMachine* the, txSlot* realm, txSlot* queue, txSlot* module, txSlot** exception);
-static void fxExecuteModulesFulfilled(txMachine* the);
-static void fxExecuteModulesRejected(txMachine* the);
 
 static txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID);
 
@@ -60,8 +58,6 @@ static void fxLinkTransfer(txMachine* the, txSlot* realm, txID fromID, txID impo
 static void fxLoadModuleScript(txMachine* the, txID moduleID, txSlot* module, txScript* script);
 static void fxLoadModules(txMachine* the, txSlot* realm, txSlot* queue);
 static void fxLoadModulesFrom(txMachine* the, txSlot* realm, txSlot* queue, txSlot* module);
-static void fxLoadModulesFulfilled(txMachine* the);
-static void fxLoadModulesRejected(txMachine* the);
 
 static void fxNewModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module);
 static txID fxResolveSpecifier(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);

@@ -60,7 +60,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#define mxCallbacksLength 488
+#define mxCallbacksLength 490
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -526,8 +526,11 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxAsyncFromSyncIteratorDone,
 	fxArrayLengthGetter,
 	fxArrayLengthSetter,
-	fxFulfillModule,
+	fxExecuteModulesFulfilled,
+	fxExecuteModulesRejected,
 	fxInitializeRegExp,
+	fxLoadModulesFulfilled,
+	fxLoadModulesRejected,
 	fxOnRejectedPromise,
 	fxOnResolvedPromise,
 	fxOnThenable,
@@ -543,7 +546,6 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxCombinePromisesCallback,
 	fxNewPromiseCapabilityCallback,
 	fxRejectAwait,
-	fxRejectModule,
 	fxRejectPromise,
 	fxResolveAwait,
 	fxResolvePromise,

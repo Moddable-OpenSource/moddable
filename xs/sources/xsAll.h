@@ -1762,13 +1762,16 @@ extern const txBehavior gxModuleBehavior;
 
 extern void fxBuildModule(txMachine* the);
 
-extern void fxFulfillModule(txMachine* the);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
+extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
+
+extern void fxExecuteModulesFulfilled(txMachine* the);
+extern void fxExecuteModulesRejected(txMachine* the);
+extern void fxLoadModulesFulfilled(txMachine* the);
+extern void fxLoadModulesRejected(txMachine* the);
 extern void fxPrepareModule(txMachine* the);
 extern void fxPrepareTransfer(txMachine* the);
-extern void fxRejectModule(txMachine* the);
 extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
-extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
 mxExport void fx_Compartment(txMachine* the);
