@@ -94,7 +94,10 @@ void xs_preference_set(xsMachine *the)
 		} break;
 	case xsNumberType: {
 		xsNumberValue number = xsToNumber(xsArg(2));
-		value = CFNumberCreate(NULL, kCFNumberDoubleType, &number);
+		xsIntegerValue integer = (int)number;
+		if (number != integer)
+			xsUnknownError("float unsupported");
+		value = CFNumberCreate(NULL, kCFNumberLongType, &integer);
 		} break;
 	case xsStringType:
 		value = CFStringCreateWithCString(NULL, xsToString(xsArg(2)), kCFStringEncodingUTF8);
