@@ -1,0 +1,69 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"preload": [
+		"main"
+	],
+	"platforms": {
+		"mac": {
+			"resources":{
+				"*": "./assets/320x240/*"
+			}
+		},
+		"win": {
+			"resources":{
+				"*": "./assets/320x240/*"
+			}
+		},
+		"lin": {
+			"resources":{
+				"*": "./assets/320x240/*"
+			}
+		},
+		"esp32/moddable_two": {
+			"config": {
+				"rotation": 90
+			},
+			"resources":{
+				"*": "./assets/320x240/*"
+			}
+		},
+		"esp/moddable_three": {
+			"defines": {
+				"destm32s": {
+					"full": true,
+					"dither": true
+				}
+			},
+			"config": {
+				"rotation": 90
+			},
+			"resources":{
+				"*": "./assets/255x122/*"
+			}
+		},
+		"esp32/m5paper": {
+			"config": {
+				"updateMode": "GC16"
+			},
+			"resources":{
+				"*": "./assets/960x540/*"
+			}
+		},
+		"esp32/m5core_ink": {
+			"resources":{
+				"*": "./assets/200x200/*"
+			}
+		},
+		"...": {
+			"error": "Platform not supported"
+		}
+	}
+}

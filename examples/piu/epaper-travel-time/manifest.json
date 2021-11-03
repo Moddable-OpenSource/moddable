@@ -1,0 +1,41 @@
+{
+	"config": {
+		"API_KEY": "API_KEY",
+		"HOME": "HOME_ADDRESS",
+		"WORK": "WORK_ADDRESS"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/crypt/tls.json"
+	],
+	"creation": {
+		"static": 98304
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./directions",
+			"$(MODULES)/network/http/*"
+		]
+	},
+	"preload": [
+		"http"
+	],
+	"resources":{
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-52",
+			"./assets/masks/*"
+		],
+		"*": [
+			"$(MODULES)/crypt/data/ca22"
+		]
+	},
+	"platforms": {
+		"esp32/m5paper": {},
+		"...": {
+			"error": "Platform not supported"
+		}
+	}
+}
