@@ -23,6 +23,16 @@ const base = import.meta.uri;
 const ledSkin = { texture:{ base, path:"nodemcu/led.png" }, x:0, y:0, width:160, height:190, variants:160 };
 
 class MockupBehavior extends DeviceBehavior {
+	onAbort(container, status) {
+		if (this.reloadOnAbort) {
+			application.defer("doReloadFile");
+			return true;
+		}
+	}
+	onCreate(container, device) {
+		super.onCreate(container, device);
+		this.reloadOnAbort = false;
+	}
 	onDefaultButtonDown(container) {
 		this.postJSON(container, { button:1 });
 	}
@@ -42,6 +52,13 @@ class MockupBehavior extends DeviceBehavior {
 	onJSON(container, json) {
 		if ("led" in json)
 			container.distribute("onLEDChanged", json);
+		else if ("xsbug" in json) {
+			if (json.xsbug == "abort")
+				application.defer("doReloadFile");
+		}
+	}
+	onReloadOnAbortChanged(container, data) {
+		this.reloadOnAbort = data.value;
 	}
 }
 
@@ -64,6 +81,13 @@ export default {
 				buttons: [
 					{ eventDown:"onDefaultButtonDown", eventUp:"onDefaultButtonUp", label:"Default" },
 				],
+			}),
+			SwitchRow({ 
+				event: "onReloadOnAbortChanged",
+				label: "Reload On Abort",
+				on: "Yes",
+				off: "No",
+				value: false
 			}),
 		]
 	})),
