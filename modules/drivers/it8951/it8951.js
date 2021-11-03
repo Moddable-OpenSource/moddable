@@ -466,7 +466,7 @@ class Display {		// implementation of PixelsOut
 			area.w = (area.w + 3) & ~3;
 		}
 	}
-	clear() {
+	refresh() {
 		this.#epd.updateFull(UpdateMode.INIT);
 	}
 	get width() {
