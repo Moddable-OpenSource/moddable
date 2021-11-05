@@ -586,11 +586,21 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.doCommand(command, path, line);
 	}
 	doCommand(command) @ "PiuDebugMachine_doCommand"
-	doModule(path) {
-		this.doCommand(mxModuleCommand, path, system.readFileBuffer(path));
+	doModule(path, wait) {
+		let buffer;
+		if (wait)
+			buffer = ArrayBuffer.fromString(system.readFileString(path) + "\n$WAIT();\n");
+		else
+			buffer = system.readFileBuffer(path);
+		this.doCommand(mxModuleCommand, path, buffer);
 	}
-	doScript(path) {
-		this.doCommand(mxScriptCommand, path, system.readFileBuffer(path));
+	doScript(path, wait) {
+		let buffer;
+		if (wait)
+			buffer = ArrayBuffer.fromString(system.readFileString(path) + "\n$WAIT();\n");
+		else
+			buffer = system.readFileBuffer(path);
+		this.doCommand(mxScriptCommand, path, buffer);
 	}
 	onBinaryResult(data) {
 		const view = new DataView(data);

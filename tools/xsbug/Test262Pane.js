@@ -142,9 +142,9 @@ export class Test262Context {
 				else if (metadata.paths.length > 0) {
 					let path = metadata.paths.shift();
 					if (metadata.module)
-						machine.doModule(path);
+						machine.doModule(path, metadata.async);
 					else
-						machine.doScript(path);
+						machine.doScript(path, metadata.async);
 				}
 				else {
 					if (metadata.negative)
@@ -221,17 +221,24 @@ export class Test262Context {
 		let node = this.node;
 		while (node = node.next()) {
 			let path = node.path;
-			this.metadata = this.getMetadata(path);
-			if (this.metadata.strict || this.metadata.module) {
+			let metadata = this.metadata = this.getMetadata(path);
+			if (metadata.strict || metadata.module) {
 				this.node = node;
 				let directory = system.getPathDirectory(this.home.path);
 				let harness = system.buildPath(directory, "harness");
-				this.metadata.paths = this.metadata.paths.map(name => system.buildPath(harness, name));
-				this.metadata.paths.push(path);
-				this.metadata.path = path;
-				this.report.status = this.metadata.name = path.slice(this.home.path.length + 1);
-				path = this.metadata.paths.shift();
-				machine.doScript(path);
+				metadata.paths = metadata.paths.map(name => system.buildPath(harness, name));
+				metadata.paths.push(path);
+				metadata.path = path;
+				this.report.status = metadata.name = path.slice(this.home.path.length + 1);
+				path = metadata.paths.shift();
+				if (metadata.paths.length == 0) {
+					if (metadata.module)
+						machine.doModule(path, metadata.async);
+					else
+						machine.doScript(path, metadata.async);
+				}
+				else
+					machine.doScript(path);
 				return;
 			}
 			this.report.skipped++;
