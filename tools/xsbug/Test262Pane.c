@@ -87,8 +87,6 @@ void Test262Context_getMetadata(xsMachine* the)
 	sloppy = 1;	
 	strict = 1;	
 	module = 0;	
-	xsCall1(xsVar(0), xsID_push, xsString("sta.js"));
-	xsCall1(xsVar(0), xsID_push, xsString("assert.js"));
 	value = fxGetMappingValue(document, root, "includes");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;
