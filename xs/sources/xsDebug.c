@@ -1366,7 +1366,7 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 			fxEcho(the, " value=\"");
 			fxEchoInteger(the, theProperty->value.dataView.offset);
 			fxEcho(the, ", ");
-			fxEchoInteger(the, theProperty->value.dataView.size);
+			fxEchoInteger(the, fxGetDataViewSize(the, theProperty, theProperty->next));
 			fxEcho(the, " bytes\"/>");
 			break;
 		case XS_TYPED_ARRAY_KIND:
