@@ -116,8 +116,13 @@ export class Test262Context {
 		}
 	}
 	onDisconnected(machine) {
-		if (this.machine == machine)
+		if (this.machine == machine) {
 			this.machine = null;
+			let metadata = this.metadata;
+			if (metadata) {
+				this.fail(`Unhandled exception`);
+			}
+		}
 	}
 	onImport(machine, path) {
 		if (system.fileExists(path))
