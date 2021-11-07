@@ -4753,12 +4753,12 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 
 			mxPushUndefined();
 			mxPull(mxHosts);
-			if (script->symbolsBuffer)
-				fxDeleteScript(script);
+// 			if (script->symbolsBuffer)
+// 				fxDeleteScript(script);
 		}
 		mxCatch(the) {
-			if (script->symbolsBuffer)
-				fxDeleteScript(script);
+// 			if (script->symbolsBuffer)
+// 				fxDeleteScript(script);
 			fxJump(the);
 		}
 	}

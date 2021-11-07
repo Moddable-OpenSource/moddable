@@ -1397,9 +1397,13 @@ void fxRunProgramEnvironment(txMachine* the)
 
 txSlot* fxNewRealmInstance(txMachine* the)
 {
-	txSlot* global = the->stack + 2;
-	txSlot* filter = the->stack + 1;
-	txSlot* own = the->stack;
+	txSlot* global = the->stack + 6;
+	txSlot* moduleMap = the->stack + 5;
+	txSlot* own = the->stack + 4;
+	txSlot* resolveHook = the->stack + 3;
+	txSlot* moduleMapHook = the->stack + 2;
+	txSlot* loadHook = the->stack + 1;
+	txSlot* loadNowHook = the->stack;
 	txSlot* realm = fxNewInstance(the);
 	txSlot* slot;
 	/* mxRealmGlobal */
@@ -1411,28 +1415,23 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	/* mxRealmTemplateCache */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
-	/* mxAvailableModules */
-	slot = fxNextSlotProperty(the, slot, filter, XS_NO_ID, XS_GET_ONLY);
 	/* mxOwnModules */
 	slot = fxNextSlotProperty(the, slot, own, XS_NO_ID, XS_GET_ONLY);
-	/* mxLoadingModules */
+	/* mxImports */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
-	/* mxLoadedModules */
-	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
-	mxPop();
-	/* mxWaitingModules */
-	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
-	mxPop();
-	/* mxRunningModules */
-	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
-	mxPop();
-	/* mxRejectedModules */
-	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
-	mxPop();
+	/* mxResolveHook */
+	slot = fxNextSlotProperty(the, slot, resolveHook, XS_NO_ID, XS_GET_ONLY);
+	/* mxModuleMap */
+	slot = fxNextSlotProperty(the, slot, moduleMap, XS_NO_ID, XS_GET_ONLY);
+	/* mxModuleMapHook */
+	slot = fxNextSlotProperty(the, slot, moduleMapHook, XS_NO_ID, XS_GET_ONLY);
+	/* mxLoadHook */
+	slot = fxNextSlotProperty(the, slot, loadHook, XS_NO_ID, XS_GET_ONLY);
+	/* mxLoadNowHook */
+	slot = fxNextSlotProperty(the, slot, loadNowHook, XS_NO_ID, XS_GET_ONLY);
 	global->value.reference = realm;
-    mxPop();
-    mxPop();
+    the->stack = global;
 	return realm;
 }
 

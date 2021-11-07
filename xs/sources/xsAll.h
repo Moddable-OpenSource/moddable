@@ -716,10 +716,9 @@ extern txSlot* fxAllocateSlots(txMachine* the, txSize theCount);
 extern void fxBuildKeys(txMachine* the);
 extern void fxCreateMachinePlatform(txMachine* the);
 extern void fxDeleteMachinePlatform(txMachine* the);
-extern txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 extern void fxFreeChunks(txMachine* the, void* theChunks);
 extern void fxFreeSlots(txMachine* the, void* theSlots);
-extern void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID);
+extern txBoolean fxLoadModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
 extern txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags);
 extern void fxQueuePromiseJobs(txMachine* the);
 extern void fxInitializeSharedCluster();
@@ -1771,7 +1770,6 @@ extern void fxLoadModulesFulfilled(txMachine* the);
 extern void fxLoadModulesRejected(txMachine* the);
 extern void fxPrepareModule(txMachine* the);
 extern void fxPrepareTransfer(txMachine* the);
-extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
 mxExport void fx_Compartment(txMachine* the);
@@ -1779,6 +1777,9 @@ mxExport void fx_Compartment_prototype_get_globalThis(txMachine* the);
 mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
 mxExport void fx_Compartment_prototype_import(txMachine* the);
 mxExport void fx_Compartment_prototype_importNow(txMachine* the);
+mxExport void fx_Compartment_prototype_module(txMachine* the);
+
+mxExport void fx_StaticModuleRecord(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
@@ -2322,13 +2323,13 @@ enum {
 #define mxRealmGlobal(REALM)			((REALM)->next)
 #define mxRealmClosures(REALM)			((REALM)->next->next)
 #define mxRealmTemplateCache(REALM)		((REALM)->next->next->next)
-#define mxAvailableModules(REALM)		((REALM)->next->next->next->next)
-#define mxOwnModules(REALM)				((REALM)->next->next->next->next->next)
-#define mxLoadingModules(REALM)			((REALM)->next->next->next->next->next->next)
-#define mxLoadedModules(REALM)			((REALM)->next->next->next->next->next->next->next)
-#define mxWaitingModules(REALM)			((REALM)->next->next->next->next->next->next->next->next)
-#define mxRunningModules(REALM)			((REALM)->next->next->next->next->next->next->next->next->next)
-#define mxRejectedModules(REALM)		((REALM)->next->next->next->next->next->next->next->next->next->next)
+#define mxOwnModules(REALM)				((REALM)->next->next->next->next)
+#define mxImports(REALM)				((REALM)->next->next->next->next->next)
+#define mxResolveHook(REALM)			((REALM)->next->next->next->next->next->next)
+#define mxModuleMap(REALM)				((REALM)->next->next->next->next->next->next->next)
+#define mxModuleMapHook(REALM)			((REALM)->next->next->next->next->next->next->next->next)
+#define mxLoadHook(REALM)				((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxLoadNowHook(REALM)			((REALM)->next->next->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,
@@ -2421,6 +2422,7 @@ enum {
 	mxSharedArrayBufferPrototypeStackIndex,
 	mxBigIntPrototypeStackIndex,
 	mxCompartmentPrototypeStackIndex,
+	mxStaticModuleRecordPrototypeStackIndex,
 	mxWeakRefPrototypeStackIndex,
 	mxFinalizationRegistryPrototypeStackIndex,
 
@@ -2529,6 +2531,7 @@ enum {
 #define mxRegExpConstructor the->stackPrototypes[-1 - _RegExp]
 #define mxSetConstructor the->stackPrototypes[-1 - _Set]
 #define mxSharedArrayBufferConstructor the->stackPrototypes[-1 - _SharedArrayBuffer]
+#define mxStaticModuleRecordConstructor the->stackPrototypes[-1 - _StaticModuleRecord]
 #define mxStringConstructor the->stackPrototypes[-1 - _String]
 #define mxSymbolConstructor the->stackPrototypes[-1 - _Symbol]
 #define mxSyntaxErrorConstructor the->stackPrototypes[-1 - _SyntaxError]
@@ -2589,6 +2592,7 @@ enum {
 #define mxSharedArrayBufferPrototype the->stackPrototypes[-1 - mxSharedArrayBufferPrototypeStackIndex]
 #define mxBigIntPrototype the->stackPrototypes[-1 - mxBigIntPrototypeStackIndex]
 #define mxCompartmentPrototype the->stackPrototypes[-1 - mxCompartmentPrototypeStackIndex]
+#define mxStaticModuleRecordPrototype the->stackPrototypes[-1 - mxStaticModuleRecordPrototypeStackIndex]
 #define mxWeakRefPrototype the->stackPrototypes[-1 - mxWeakRefPrototypeStackIndex]
 #define mxFinalizationRegistryPrototype the->stackPrototypes[-1 - mxFinalizationRegistryPrototypeStackIndex]
 

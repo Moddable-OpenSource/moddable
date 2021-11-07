@@ -74,7 +74,6 @@ static txSlot* fxFindFrame(txMachine* the);
 static txSlot* fxFindRealm(txMachine* the);
 static void fxGo(txMachine* the);
 static void fxIndexToString(txMachine* the, txIndex theIndex, txString theBuffer, txSize theSize);
-static txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module);
 static void fxListFrames(txMachine* the);
 static void fxListGlobal(txMachine* the);
 static void fxListLocal(txMachine* the);
@@ -1771,29 +1770,18 @@ void fxListModules(txMachine* the)
 	txSlot* module = mxOwnModules(realm)->value.reference->next;
 	fxEcho(the, "<grammar>");
 	while (module) {
-		fxEchoModule(the, module, &aList);
+        if (mxIsReference(module))
+            fxEchoModule(the, module, &aList);
 		module = module->next;
 	}
-	
-	module = the->sharedModules;
-	while (module) {
-		if (fxIsModuleAvailable(the, realm, module))
+	if (realm == mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm) {
+		module = the->sharedModules;
+		while (module) {
 			fxEchoModule(the, module, &aList);
-		module = module->next;
+			module = module->next;
+		}
 	}
 	fxEcho(the, "</grammar>");
-}
-
-txBoolean fxIsModuleAvailable(txMachine* the, txSlot* realm, txSlot* module)
-{
-	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
-	while (slot) {
-		if (slot->value.symbol == mxModuleInternal(module)->value.module.id) {
-			return 1;
-		}
-		slot = slot->next;
-	}
-	return 0;
 }
 
 void fxLogin(txMachine* the)

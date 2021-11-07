@@ -1454,8 +1454,11 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxGlobal.kind = the->stack->kind;
 			fxNewInstance(the);
 			fxNewInstance(the);
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
-			mxPop();
 			mxPop();
 
             the->collectFlag = XS_COLLECTING_FLAG;
@@ -1641,6 +1644,10 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
 			fxBuildModuleMap(the);
 			fxNewInstance(the);
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = slot = fxNewRealmInstance(the);
 			
 			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
