@@ -212,8 +212,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Set);
 			else if (!c_strcmp(name, "SharedArrayBuffer"))
 				fxStripCallback(linker, fx_SharedArrayBuffer);
-			else if (!c_strcmp(name, "StaticModuleRecord"))
+			else if (!c_strcmp(name, "StaticModuleRecord")) {
 				fxStripCallback(linker, fx_StaticModuleRecord);
+				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_exports);
+				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_imports);
+				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_reexports);
+			}
 			else if (!c_strcmp(name, "Uint8Array")) {
 				fxUnuseSymbol(linker, mxID(_Uint8Array));
 				fxStripCallback(linker, fx_Uint8Array);

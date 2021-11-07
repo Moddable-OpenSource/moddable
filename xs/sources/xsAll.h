@@ -1782,6 +1782,9 @@ mxExport void fx_Compartment_prototype_importNow(txMachine* the);
 mxExport void fx_Compartment_prototype_module(txMachine* the);
 
 mxExport void fx_StaticModuleRecord(txMachine* the);
+mxExport void fx_StaticModuleRecord_prototype_get_exports(txMachine* the);
+mxExport void fx_StaticModuleRecord_prototype_get_imports(txMachine* the);
+mxExport void fx_StaticModuleRecord_prototype_get_reexports(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
