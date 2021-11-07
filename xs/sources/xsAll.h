@@ -718,7 +718,8 @@ extern void fxCreateMachinePlatform(txMachine* the);
 extern void fxDeleteMachinePlatform(txMachine* the);
 extern void fxFreeChunks(txMachine* the, void* theChunks);
 extern void fxFreeSlots(txMachine* the, void* theSlots);
-extern txBoolean fxLoadModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
+extern txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot);
+extern void fxLoadModule(txMachine* the, txSlot* module, txID moduleID);
 extern txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags);
 extern void fxQueuePromiseJobs(txMachine* the);
 extern void fxInitializeSharedCluster();
@@ -1770,6 +1771,7 @@ extern void fxLoadModulesFulfilled(txMachine* the);
 extern void fxLoadModulesRejected(txMachine* the);
 extern void fxPrepareModule(txMachine* the);
 extern void fxPrepareTransfer(txMachine* the);
+extern void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
 mxExport void fx_Compartment(txMachine* the);
@@ -1960,6 +1962,7 @@ enum {
 	XS_EXPORT_KIND,
 	XS_WEAK_ENTRY_KIND,
 	XS_BUFFER_INFO_KIND,
+	XS_STATIC_MODULE_RECORD_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,
@@ -2295,6 +2298,16 @@ enum {
 #define mxFunctionInstanceProfile(INSTANCE) 	((INSTANCE)->next->next->next)
 #endif
 
+#define mxRealmGlobal(REALM)			((REALM)->next)
+#define mxRealmClosures(REALM)			((REALM)->next->next)
+#define mxRealmTemplateCache(REALM)		((REALM)->next->next->next)
+#define mxOwnModules(REALM)				((REALM)->next->next->next->next)
+#define mxResolveHook(REALM)			((REALM)->next->next->next->next->next)
+#define mxModuleMap(REALM)				((REALM)->next->next->next->next->next->next)
+#define mxModuleMapHook(REALM)			((REALM)->next->next->next->next->next->next->next)
+#define mxLoadHook(REALM)				((REALM)->next->next->next->next->next->next->next->next)
+#define mxLoadNowHook(REALM)			((REALM)->next->next->next->next->next->next->next->next->next)
+
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)
 #define mxModuleInstanceExports(MODULE)		((MODULE)->next->next)
 #define mxModuleInstanceMeta(MODULE)			((MODULE)->next->next->next)
@@ -2315,21 +2328,16 @@ enum {
 #define mxModuleFulfill(MODULE) 	mxModuleInstanceFulfill((MODULE)->value.reference)
 #define mxModuleReject(MODULE) 		mxModuleInstanceReject((MODULE)->value.reference)
 
+#define mxTransferLocal(TRANSFER)	(TRANSFER)->value.reference->next
+#define mxTransferFrom(TRANSFER) 	(TRANSFER)->value.reference->next->next
+#define mxTransferImport(TRANSFER) 	(TRANSFER)->value.reference->next->next->next
+#define mxTransferAliases(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next
+#define mxTransferClosure(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next->next
+
 #define mxPromiseStatus(INSTANCE) ((INSTANCE)->next)
 #define mxPromiseThens(INSTANCE) ((INSTANCE)->next->next)
 #define mxPromiseResult(INSTANCE) ((INSTANCE)->next->next->next)
 #define mxPromiseEnvironment(INSTANCE) ((INSTANCE)->next->next->next->next)
-
-#define mxRealmGlobal(REALM)			((REALM)->next)
-#define mxRealmClosures(REALM)			((REALM)->next->next)
-#define mxRealmTemplateCache(REALM)		((REALM)->next->next->next)
-#define mxOwnModules(REALM)				((REALM)->next->next->next->next)
-#define mxImports(REALM)				((REALM)->next->next->next->next->next)
-#define mxResolveHook(REALM)			((REALM)->next->next->next->next->next->next)
-#define mxModuleMap(REALM)				((REALM)->next->next->next->next->next->next->next)
-#define mxModuleMapHook(REALM)			((REALM)->next->next->next->next->next->next->next->next)
-#define mxLoadHook(REALM)				((REALM)->next->next->next->next->next->next->next->next->next)
-#define mxLoadNowHook(REALM)			((REALM)->next->next->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,
@@ -2337,12 +2345,6 @@ enum {
 	mxFulfilledStatus,
 	mxRejectedStatus
 };
-
-#define mxTransferLocal(TRANSFER)	(TRANSFER)->value.reference->next
-#define mxTransferFrom(TRANSFER) 	(TRANSFER)->value.reference->next->next
-#define mxTransferImport(TRANSFER) 	(TRANSFER)->value.reference->next->next->next
-#define mxTransferAliases(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next
-#define mxTransferClosure(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next->next
 
 #define mxBehavior(INSTANCE) (gxBehaviors[((INSTANCE)->flag & XS_EXOTIC_FLAG) ? (INSTANCE)->next->ID : 0])
 #define mxBehaviorCall(THE, INSTANCE, THIS, ARGUMENTS) \
@@ -2381,6 +2383,7 @@ enum {
 	mxExceptionStackIndex,
 	mxProgramStackIndex,
 	mxHostsStackIndex,
+	mxModuleQueueStackIndex,
 
 	mxDuringJobsStackIndex,
 	mxFinalizationRegistriesStackIndex,
@@ -2488,6 +2491,7 @@ enum {
 #define mxException the->stackTop[-1 - mxExceptionStackIndex]
 #define mxProgram the->stackTop[-1 - mxProgramStackIndex]
 #define mxHosts the->stackTop[-1 - mxHostsStackIndex]
+#define mxModuleQueue the->stackTop[-1 - mxModuleQueueStackIndex]
 #define mxDuringJobs the->stackTop[-1 - mxDuringJobsStackIndex]
 #define mxFinalizationRegistries the->stackTop[-1 - mxFinalizationRegistriesStackIndex]
 #define mxPendingJobs the->stackTop[-1 - mxPendingJobsStackIndex]

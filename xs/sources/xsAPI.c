@@ -40,7 +40,6 @@
 #define	XS_PROFILE_COUNT (256 * 1024)
 
 static txSlot* fxCheckHostObject(txMachine* the, txSlot* it);
-static void fxBuildModuleMap(txMachine* the);
 
 #ifdef mxFrequency
 static void fxReportFrequency(txMachine* the);
@@ -1366,6 +1365,8 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
+			/* mxModuleQueue */
+			fxNewInstance(the);
 			/* mxDuringJobs */
 			fxNewInstance(the);
 			/* mxFinalizationRegistries */
@@ -1618,6 +1619,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			fxNewProgramInstance(the);
 			/* mxHosts */
 			mxPushUndefined();
+			/* mxModuleQueue */
+			fxNewInstance(the);
 			/* mxDuringJobs */
 			fxNewInstance(the);
 			/* mxFinalizationRegistries */
@@ -1642,7 +1645,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
-			fxBuildModuleMap(the);
+			fxNewInstance(the);
 			fxNewInstance(the);
 			mxPushUndefined();
 			mxPushUndefined();
@@ -1744,6 +1747,7 @@ void fxShareMachine(txMachine* the)
 				}
 				mxPull(mxHosts); //@@
 			}
+			mxModuleQueue = mxUndefined;
 			mxDuringJobs = mxUndefined;
 			mxFinalizationRegistries = mxUndefined;
 			mxPendingJobs = mxUndefined;
@@ -1970,51 +1974,6 @@ void fxBuildArchiveKeys(txMachine* the)
 				p += mxStringLength((txString)p) + 1;
 			}
 		}
-	}
-}
-
-void fxBuildModuleMap(txMachine* the)
-{
-	txPreparation* preparation = the->preparation;
-	if (preparation && the->archive) {
-		char* path = the->nameBuffer;
-		txSlot* source = the->stack->value.reference->next;
-		txSlot* target = fxNewInstance(the);
-		txU1* p = the->archive;
-		txU1* q;
-		txU4 atomSize;
-		while (source) {
-			target = target->next = fxDuplicateSlot(the, source);
-			source = source->next;
-		}
-		c_memcpy(path, preparation->base, preparation->baseLength);
-		p += mxArchiveHeaderSize;
-		// NAME
-		atomSize = c_read32be(p);
-		p += atomSize;
-		// SYMB
-		atomSize = c_read32be(p);
-		p += atomSize;
-		// MODS
-		atomSize = c_read32be(p);
-		q = p + atomSize;
-		p += sizeof(Atom);
-		while (p < q) {
-			// PATH
-			atomSize = c_read32be(p);
-			target = target->next = fxNewSlot(the);
-			c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
-			target->value.symbol = fxNewNameC(the, path);
-			target->kind = XS_SYMBOL_KIND;
-			path[atomSize - sizeof(Atom) - 4] = 0;
-			target->ID = fxNewNameC(the, path + preparation->baseLength);
-			p += atomSize;
-			// CODE
-			atomSize = c_read32be(p);
-			p += atomSize;
-		}
-		*(the->stack + 1) = *(the->stack);
-		mxPop();
 	}
 }
 

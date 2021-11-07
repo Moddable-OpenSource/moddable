@@ -467,6 +467,7 @@ int main(int argc, char* argv[])
 				}
 			}
 			xsEndHost(the);
+			mxModuleQueue = mxUndefined;
 			mxDuringJobs = mxUndefined;
 			mxFinalizationRegistries = mxUndefined;
 			mxPendingJobs = mxUndefined;
@@ -930,14 +931,15 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxPop();
 }
 
-void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
+void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
 	txSlot* key = fxGetKey(the, moduleID);
  	char buffer[C_PATH_MAX];
  	txString path = buffer;
  	c_strcpy(path, key->value.key.string);
  	txScript* script = fxLoadScript(the, path);
-	fxResolveModule(the, realm, moduleID, script, C_NULL, C_NULL);
+ 	if (script)
+		fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
 }
 
 txScript* fxLoadScript(txMachine* the, txString path)
