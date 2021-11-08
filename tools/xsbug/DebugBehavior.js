@@ -57,8 +57,9 @@ const mxStepCommand = 8;
 const mxStepInCommand = 9;
 const mxStepOutCommand = 10;
 const mxToggleCommand = 11;
-const mxScriptCommand = 12;
-const mxModuleCommand = 13;
+const mxImportCommand = 12;
+const mxScriptCommand = 13;
+const mxModuleCommand = 14;
 const serialConnectStrings = ["Connect", "Disconnect", "Connecting...", "Installing..."];
 
 export class DebugBehavior @ "PiuDebugBehaviorDelete" {
@@ -586,21 +587,17 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.doCommand(command, path, line);
 	}
 	doCommand(command) @ "PiuDebugMachine_doCommand"
+	doGo() {
+		this.doCommand(mxGoCommand);
+	}
+	doImport(path, wait) {
+		this.doCommand(mxImportCommand, path, wait);
+	}
 	doModule(path, wait) {
-		let buffer;
-		if (wait)
-			buffer = ArrayBuffer.fromString(system.readFileString(path) + "\n$WAIT();\n");
-		else
-			buffer = system.readFileBuffer(path);
-		this.doCommand(mxModuleCommand, path, buffer);
+		this.doCommand(mxModuleCommand, path, wait, system.readFileBuffer(path));
 	}
 	doScript(path, wait) {
-		let buffer;
-		if (wait)
-			buffer = ArrayBuffer.fromString(system.readFileString(path) + "\n$WAIT();\n");
-		else
-			buffer = system.readFileBuffer(path);
-		this.doCommand(mxScriptCommand, path, buffer);
+		this.doCommand(mxScriptCommand, path, wait, system.readFileBuffer(path));
 	}
 	onBinaryResult(data) {
 		const view = new DataView(data);

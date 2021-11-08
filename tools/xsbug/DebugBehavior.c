@@ -181,6 +181,7 @@ enum {
 	mxStepInCommand,
 	mxStepOutCommand,
 	mxToggleCommand,
+	mxImportCommand,
 	mxScriptCommand,
 	mxModuleCommand,
 };
@@ -1336,20 +1337,31 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			c_strcat(buffer, xsToString(xsArg(1)));
 			c_strcat(buffer, "\"/>");
 			break;
+		case mxImportCommand:
+			c_strcat(buffer, "<import path=\"");
+			c_strcat(buffer, xsToString(xsArg(1)));
+			if (xsTest(xsArg(2)))
+				c_strcat(buffer, "\" line=\"1\"/>");
+			else
+				c_strcat(buffer, "\" line=\"0\"/>");
+			break;
 		}
 		c_strcat(buffer, "\15\12");
 //     	fprintf(stderr, "%s", buffer);
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 	}
 	else {
-		void* data = xsToArrayBuffer(xsArg(2));
-		size_t length = xsGetArrayBufferLength(xsArg(2));
+		void* data = xsToArrayBuffer(xsArg(3));
+		size_t length = xsGetArrayBufferLength(xsArg(3));
 		if (command == mxModuleCommand)
 			c_strcat(buffer, "\15\12<module path=\"");
 		else
 			c_strcat(buffer, "\15\12<script path=\"");
 		c_strcat(buffer, xsToString(xsArg(1)));
-		c_strcat(buffer, "\" line=\"0\"><![CDATA[");
+		if (xsTest(xsArg(2)))
+			c_strcat(buffer, "\" line=\"1\"><![CDATA[");
+		else
+			c_strcat(buffer, "\" line=\"0\"><![CDATA[");
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 		PiuDebugMachine_doCommandAux(the, self, data, length);
 		if (command == mxModuleCommand)

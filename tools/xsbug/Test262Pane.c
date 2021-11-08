@@ -144,6 +144,16 @@ void Test262Context_getMetadata(xsMachine* the)
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
+ 			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
+ 			||	!strcmp((char*)node->data.scalar.value, "Object.hasOwn")
+  			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
+ 			||	!strcmp((char*)node->data.scalar.value, "Temporal")
+ 			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private-in")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-static-block")
+			||	!strcmp((char*)node->data.scalar.value, "error-cause")
+ 			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
+ 			||	!strcmp((char*)node->data.scalar.value, "json-modules")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif

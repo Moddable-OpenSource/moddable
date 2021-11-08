@@ -456,6 +456,7 @@ struct sxMachine {
 	txFlag debugTag;
 	txFlag nameIndex;
 	txFlag pathIndex;
+	txSlot* debugModule;
 	size_t idValue;
 	txInteger lineValue;
 	char pathValue[256];

@@ -128,7 +128,7 @@ export class Test262Context {
 		if (system.fileExists(path))
 			machine.doModule(path);
 		else
-			machine.doAbort();
+			machine.doGo();
 	}
 	onMessage(machine, message) {
 		if (message == ">") {
@@ -147,7 +147,7 @@ export class Test262Context {
 				else if (metadata.paths.length > 0) {
 					let path = metadata.paths.shift();
 					if (metadata.module)
-						machine.doModule(path, metadata.async);
+						machine.doImport(path, metadata.async);
 					else
 						machine.doScript(path, metadata.async);
 				}
@@ -238,7 +238,7 @@ export class Test262Context {
 				path = metadata.paths.shift();
 				if (metadata.paths.length == 0) {
 					if (metadata.module)
-						machine.doModule(path, metadata.async);
+						machine.doImport(path, metadata.async);
 					else
 						machine.doScript(path, metadata.async);
 				}

@@ -133,6 +133,7 @@ enum {
 	XS_CLEAR_ALL_BREAKPOINTS_TAG,
 	XS_CLEAR_BREAKPOINTS_TAG,
 	XS_GO_TAG,
+	XS_IMPORT_TAG,
 	XS_LOGOUT_TAG,
 	XS_MODULE_TAG,
 	XS_SCRIPT_TAG,
@@ -204,6 +205,7 @@ void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine)
 void fxDebugCommand(txMachine* the)
 {
 	the->debugExit = 0;
+	the->debugModule = C_NULL;
 	while (fxIsConnected(the)) {
 		fxReceive(the);
 		fxDebugParse(the);
@@ -212,11 +214,13 @@ void fxDebugCommand(txMachine* the)
 	}
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
-	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG))
-		fxQueueJob(the, 3, C_NULL);
+	if (the->debugTag == XS_IMPORT_TAG)
+		fxQueueJob(the, 2, C_NULL);
+	else if (the->debugTag == XS_SCRIPT_TAG)
+		fxQueueJob(the, 4, C_NULL);
 }
 
-void fxDebugImport(txMachine* the, txString path)
+void fxDebugImport(txMachine* the, txSlot* module, txString path)
 {
 	if (!fxIsConnected(the))
 		return;
@@ -226,6 +230,7 @@ void fxDebugImport(txMachine* the, txString path)
 	fxEcho(the, "\"/>");
 	fxEchoStop(the);
 	the->debugExit = 0;
+	the->debugModule = module;
 	while (fxIsConnected(the)) {
 		fxReceive(the);
 		fxDebugParse(the);
@@ -233,7 +238,7 @@ void fxDebugImport(txMachine* the, txString path)
 			break;
 	}
     if (the->debugTag == XS_MODULE_TAG){
-        mxRunCount(3);
+        mxRunCount(4);
         mxPop();
     }
 }
@@ -293,6 +298,7 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	fxEchoStop(the);
 
 	the->debugExit = 0;
+	the->debugModule = C_NULL;
 	while (fxIsConnected(the)) {
 		fxReceive(the);
 		fxDebugParse(the);
@@ -604,6 +610,8 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_CLEAR_BREAKPOINTS_TAG;
 	else if (!c_strcmp(name, "go"))
 		the->debugTag = XS_GO_TAG;
+	else if (!c_strcmp(name, "import"))
+		the->debugTag = XS_IMPORT_TAG;
 	else if (!c_strcmp(name, "logout"))
 		the->debugTag = XS_LOGOUT_TAG;
 	else if (!c_strcmp(name, "module"))
@@ -643,6 +651,9 @@ void fxDebugPopTag(txMachine* the)
 		the->debugExit |= 1;
 		break;
 	case XS_GO_TAG:
+		the->debugExit |= 2;
+		break;
+	case XS_IMPORT_TAG:
 		the->debugExit |= 2;
 		break;
 	case XS_LOGOUT_TAG:
@@ -696,6 +707,17 @@ void fxDebugPushTag(txMachine* the)
 	case XS_GO_TAG:
 		fxGo(the);
 		break;
+	case XS_IMPORT_TAG:
+		/* THIS */
+		mxPushUndefined();
+		/* FUNCTION */
+		mxPush(mxGlobal);
+		mxGetID(fxID(the, "<xsbug:import>"));
+        mxCall();
+		mxPushStringC("xsbug://");
+		fxConcatStringC(the, the->stack, the->pathValue);
+		mxPushInteger(the->lineValue);
+		break;
 	case XS_LOGOUT_TAG:
 		fxLogout(the);
 		fxGo(the);
@@ -711,6 +733,10 @@ void fxDebugPushTag(txMachine* the)
 		else
 			mxGetID(mxID(__xsbug_script_));
 		mxCall();
+		if (the->debugModule)
+			mxPushSlot(the->debugModule);
+		else
+			mxPushUndefined();
 		mxPushUndefined();
 		fxStringBuffer(the, the->stack, C_NULL, 256);
 		mxPushStringC(the->pathValue);
