@@ -1,0 +1,49 @@
+{
+	"config": {
+		"API_KEY": "API_KEY",
+		"HOME": "HOME_ADDRESS",
+		"WORK": "WORK_ADDRESS",
+		"sntp": "pool.ntp.org"
+	},
+	"defines": {
+		"destm32s": {
+			"full": true
+		}
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/crypt/tls.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/network/http/*"
+		]
+	},
+	"preload": [
+		"http"
+	],
+	"resources":{
+		"*-mask": [
+			"./assets/masks/*"
+		],
+		"*": [
+			"$(MODULES)/crypt/data/ca22"
+		]
+	},
+	"platforms": {
+		"esp/moddable_three": {
+			"config": {
+				"rotation": 90
+			}
+		},
+		"mac": {},
+		"win": {},
+		"lin": {},
+		"...": {
+			"error": "Platform not supported"
+		}
+	}
+}
