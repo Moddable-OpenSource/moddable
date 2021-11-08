@@ -313,7 +313,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -75
+#define prototypesStackIndex -76
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])

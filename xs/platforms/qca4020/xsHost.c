@@ -485,21 +485,6 @@ void fxBuildKeys(txMachine* the)
 {
 }
 
-static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID* id)
-{
-	txID result = fxFindName(the, path);
-	txSlot* slot = mxAvailableModules(realm)->value.reference->next;
-	while (slot) {
-		if (slot->value.symbol == result) {
-			*id = result;
-			return 1;
-		}
-		slot = slot->next;
-	}
-	*id = XS_NO_ID;
-	return 0;
-}
-
 #if MODDEF_XS_MODS
 
 #define FOURCC(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
@@ -537,6 +522,32 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 	return NULL;
 }
 #endif
+
+static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID* id)
+{
+	txPreparation* preparation = the->preparation;
+	txInteger c = preparation->scriptCount;
+	txScript* script = preparation->scripts;
+#if MODDEF_XS_MODS
+	uint8_t *mod;
+	int modSize;
+
+	mod = findMod(the, path + preparation->baseLength, &modSize);
+	if (mod) {
+		*id = fxNewNameC(the, path);
+		return 1;
+	}
+#endif
+	while (c > 0) {
+		if (!c_strcmp(path + preparation->baseLength, script->path)) {
+			*id = fxNewNameC(the, path);
+			return 1;
+		}
+		c--;
+		script++;
+	}
+	return 0;
+}
 
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
@@ -607,13 +618,12 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #endif
 	}
 	if (search) {
-		txSlot* slot = mxAvailableModules(realm);
-		slot = slot->value.reference->next;
-		while (slot) {
-			txSlot* key = fxGetKey(the, slot->ID);
-			if (key && !c_strcmp(key->value.key.string, name))
-				return slot->value.symbol;
-			slot = slot->next;
+		c_strcpy(path, preparation->base);
+		c_strcat(path, name);
+		c_strcat(path, ".xsb");
+		if (fxFindScript(the, realm, path, &id)) {
+// 			fxReport(the, "SEARCH %s\n", path);
+			return id;
 		}
 	}
 	return XS_NO_ID;

@@ -1644,7 +1644,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
+// 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
 			fxNewInstance(the);
 			fxNewInstance(the);
 			mxPushUndefined();

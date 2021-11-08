@@ -443,21 +443,21 @@ int main(int argc, char* argv[])
                     mxException.value.reference = mxRealmClosures(realm)->value.reference;
 					mxProgram.value.reference = modules; //@@
 				}
-				{
-					txSlot* target = fxNewInstance(the);
-					script = linker->firstScript;
-					c_memcpy(path, linker->base, linker->baseLength);
-					while (script) {
-						target = target->next = fxNewSlot(the);
-						c_strcpy(path + linker->baseLength, script->path);
-						target->value.symbol = fxNewNameC(the, path);
-						target->kind = XS_SYMBOL_KIND;
-						path[mxStringLength(path) - 4] = 0;
-						target->ID = fxNewNameC(the, path + linker->baseLength);
-						script = script->nextScript;
-					}
-					mxPull(mxHosts); //@@
-				}
+// 				{
+// 					txSlot* target = fxNewInstance(the);
+// 					script = linker->firstScript;
+// 					c_memcpy(path, linker->base, linker->baseLength);
+// 					while (script) {
+// 						target = target->next = fxNewSlot(the);
+// 						c_strcpy(path + linker->baseLength, script->path);
+// 						target->value.symbol = fxNewNameC(the, path);
+// 						target->kind = XS_SYMBOL_KIND;
+// 						path[mxStringLength(path) - 4] = 0;
+// 						target->ID = fxNewNameC(the, path + linker->baseLength);
+// 						script = script->nextScript;
+// 					}
+// 					mxPull(mxHosts); //@@
+// 				}
 				if (linker->freezeFlag) {
 					fxFreezeBuiltIns(the);
 				}

@@ -17,6 +17,50 @@
  *   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
+ 
+import * as piuAllNamespace from "piu/All";
+import * as piuButtonsNamespace from "piu/Buttons";
+import * as piuPCNamespace from "piu/PC";
+import * as piuScreenNamespace from "piu/Screen";
+import * as piuScrollbarsNamespace from "piu/Scrollbars";
+import * as piuSlidersNamespace from "piu/Sliders";
+import * as piuSwitchesNamespace from "piu/Switches";
+import * as BinaryMessageNamespace from "BinaryMessage";
+import * as ControlsPaneNamespace from "ControlsPane";
+import * as DevicePaneNamespace from "DevicePane";
+import * as assetsNamespace from "assets";
+
+const compartmentModuleMap = {
+	"piu/All": piuAllNamespace,
+	"piu/Buttons": piuButtonsNamespace,
+	"piu/PC": piuPCNamespace,
+	"piu/Screen": piuScreenNamespace,
+	"piu/Scrollbars": piuScrollbarsNamespace,
+	"piu/Sliders": piuSlidersNamespace,
+	"piu/Switches": piuSwitchesNamespace,
+	"BinaryMessage": BinaryMessageNamespace,
+	"ControlsPane": ControlsPaneNamespace,
+	"DevicePane": DevicePaneNamespace,
+	"assets": assetsNamespace,
+}
+const compartmentOptions = {
+	resolveHook(specifier, refererSpecifier) {
+		if (specifier[0] == '.') {
+			let dot = 1;
+			let slash = refererSpecifier.lastIndexOf("/");
+			if (specifier[1] == '.') {
+				dot++;
+				slash = refererSpecifier.lastIndexOf("/", slash - 1);
+			}
+			return refererSpecifier.slice(0, slash) + specifier.slice(dot);
+		}
+		return specifier;
+	},
+	loadNowHook(specifier) {
+		return new StaticModuleRecord(system.readFileString(specifier));
+	},
+}
 
 import {} from "piu/PC";
 
@@ -178,7 +222,7 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment({...Object.getPrototypeOf(globalThis), ...globalThis});
+						let compartment = new Compartment({...Object.getPrototypeOf(globalThis), ...globalThis}, compartmentModuleMap, compartmentOptions);
 						let device = compartment.importNow(info.path).default;
 						if (device && (("DeviceTemplate" in device) || ("DeviceTemplates" in device))) {
 							device.compartment = compartment;
