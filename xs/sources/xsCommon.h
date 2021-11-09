@@ -756,6 +756,7 @@ enum {
 	_atanh,
 	_atan2,
 	_bind,
+	_bindings,
 	_bitLength,
 	_boundArguments,
 	_boundFunction,

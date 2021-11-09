@@ -58,7 +58,7 @@ const compartmentOptions = {
 		return specifier;
 	},
 	loadNowHook(specifier) {
-		return new StaticModuleRecord(system.readFileString(specifier));
+		return new StaticModuleRecord({ source:system.readFileString(specifier) });
 	},
 }
 

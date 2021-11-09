@@ -1308,6 +1308,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"atanh",
 	"atan2",
 	"bind",
+	"bindings",
 	"bitLength",
 	"boundArguments",
 	"boundFunction",
