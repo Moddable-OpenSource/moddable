@@ -871,6 +871,7 @@ void *mc_xs_chunk_allocator(txMachine* the, size_t size)
 		if (the->heap_ptr + grow <= the->heap_pend) {
 			the->heap_ptr += grow;
 			block->limit = (txByte*)the->heap_ptr - size; // fxGrowChunks adds theSize
+			the->maximumChunksSize += grow - (size - sizeof(txBlock));		 // fxGrowChunks adds theSize - sizeof(txBlocK)
 			return block->limit;
 		}
 	}
@@ -906,8 +907,6 @@ void *mc_xs_slot_allocator(txMachine* the, size_t size)
 		return ptr;
 	}
 
-	fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-
 	return NULL;
 }
 
@@ -941,20 +940,20 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 		return (txSlot*)c_malloc(theCount * sizeof(txSlot));
 
 	result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
-	if (!result) {
+	if (!result && the->firstBlock) {
+#ifdef mxDebug
 		fxReport(the, "# Slot allocation: failed. trying to make room...\n");
+#endif
 		fxCollect(the, 1);	/* expecting memory from the chunk pool */
-		if (the->firstBlock != C_NULL && the->firstBlock->limit == mc_xs_chunk_allocator(the, 0)) {	/* sanity check just in case */
-			fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
-			the->maximumChunksSize -= the->firstBlock->limit - the->firstBlock->current;
-			the->heap_ptr = the->firstBlock->current;
-			the->firstBlock->limit = the->firstBlock->current;
-		}
+#ifdef mxDebug
+		fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
+#endif
+		the->maximumChunksSize -= the->firstBlock->limit - the->firstBlock->current;
+		the->heap_ptr = the->firstBlock->current;
+		the->firstBlock->limit = the->firstBlock->current;
+
 		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
 	}
-
-	if (!result)
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
 	return result;
 }
@@ -963,16 +962,16 @@ void fxFreeChunks(txMachine* the, void* theChunks)
 {
 	if (NULL == the->heap)
 		c_free(theChunks);
-
-	mc_xs_chunk_disposer(the, theChunks);
+	else
+		mc_xs_chunk_disposer(the, theChunks);
 }
 
 void fxFreeSlots(txMachine* the, void* theSlots)
 {
 	if (NULL == the->heap)
 		c_free(theSlots);
-
-	mc_xs_slot_disposer(the, theSlots);
+	else
+		mc_xs_slot_disposer(the, theSlots);
 }
 
 void fxBuildKeys(txMachine* the)
@@ -1216,7 +1215,7 @@ static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
 	txMachine *the = theIn;
 #if ESP32
-	return (uint32_t)esp_get_free_heap_size();
+	return (uint32_t)heap_caps_get_free_size(MALLOC_CAP_8BIT);
 #else
 	return (int32_t)system_get_free_heap_size();
 #endif
