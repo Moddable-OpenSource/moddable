@@ -163,8 +163,9 @@ void fx_Date_aux(txMachine* the, txFlag secure)
 			mxTypeError("secure mode");
 		mxResult->value.number = fxDateNow();
 		mxResult->kind = XS_NUMBER_KIND;
-		if (fx_Date_prototype_get_aux(the, &dt, 0, mxResult)) {
+		if (!c_isnan(mxResult->value.number)) {
 			txString p = buffer;
+			fxDateSplit(mxResult->value.number, 0, &dt);
 			p = fxDatePrintDay(p, dt.day);
 			*p++ = ' ';
 			p = fxDatePrintDate(p, (txInteger)dt.year, (txInteger)dt.month, (txInteger)dt.date);
