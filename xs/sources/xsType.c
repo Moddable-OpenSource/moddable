@@ -61,7 +61,7 @@ txSlot* fxAliasInstance(txMachine* the, txSlot* instance)
 	txSlot* from;
 	txSlot* to;
 	the->aliasArray[instance->ID] = alias = fxNewSlot(the);
-	alias->flag = instance->flag & ~XS_MARK_FLAG;
+	alias->flag = instance->flag & ~(XS_MARK_FLAG | XS_DONT_MARSHALL_FLAG);
 	alias->kind = XS_INSTANCE_KIND;
 	alias->value.instance.garbage =  instance->value.instance.garbage;
 	alias->value.instance.prototype = instance->value.instance.prototype;
