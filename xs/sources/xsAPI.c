@@ -1367,6 +1367,8 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPushUndefined();
 			/* mxModuleQueue */
 			fxNewInstance(the);
+			/* mxUnhandledPromises */
+			fxNewInstance(the);
 			/* mxDuringJobs */
 			fxNewInstance(the);
 			/* mxFinalizationRegistries */
@@ -1620,6 +1622,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			/* mxHosts */
 			mxPushUndefined();
 			/* mxModuleQueue */
+			fxNewInstance(the);
+			/* mxUnhandledPromises */
 			fxNewInstance(the);
 			/* mxDuringJobs */
 			fxNewInstance(the);
@@ -1895,6 +1899,7 @@ void fxEndJob(txMachine* the)
 		mxDuringJobs.value.reference->next = C_NULL;
 	if (gxDefaults.cleanupFinalizationRegistries)
 		gxDefaults.cleanupFinalizationRegistries(the);
+	fxCheckUnhandledRejections(the, 0);
 }
 
 void fxExitToHost(txMachine* the)

@@ -468,6 +468,7 @@ int main(int argc, char* argv[])
 			}
 			xsEndHost(the);
 			mxModuleQueue = mxUndefined;
+			mxUnhandledPromises = mxUndefined;
 			mxDuringJobs = mxUndefined;
 			mxFinalizationRegistries = mxUndefined;
 			mxPendingJobs = mxUndefined;

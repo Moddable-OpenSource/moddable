@@ -1714,13 +1714,13 @@ mxExport void fx_Promise_prototype_then(txMachine* the);
 mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
-mxExport void fxOnUnhandledRejection(txMachine* the);
 
 extern void fx_Promise_prototype_finallyAux(txMachine* the);
 extern void fx_Promise_prototype_finallyReturn(txMachine* the);
 extern void fx_Promise_prototype_finallyThrow(txMachine* the);
 
 extern void fxBuildPromise(txMachine* the);
+extern void fxCheckUnhandledRejections(txMachine* the, txBoolean atExit);
 extern void fxCombinePromisesCallback(txMachine* the);
 extern txSlot* fxNewPromiseCapability(txMachine* the, txSlot* resolveFunction, txSlot* rejectFunction);
 extern void fxNewPromiseCapabilityCallback(txMachine* the);
@@ -2387,6 +2387,7 @@ enum {
 	mxHostsStackIndex,
 	mxModuleQueueStackIndex,
 
+	mxUnhandledPromisesStackIndex,
 	mxDuringJobsStackIndex,
 	mxFinalizationRegistriesStackIndex,
 	mxPendingJobsStackIndex,
@@ -2443,7 +2444,6 @@ enum {
 	mxOnRejectedPromiseFunctionStackIndex,
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
-	mxOnUnhandledRejectionFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
 	mxProxyAccessorStackIndex,
 	mxStringAccessorStackIndex,
@@ -2494,6 +2494,7 @@ enum {
 #define mxProgram the->stackTop[-1 - mxProgramStackIndex]
 #define mxHosts the->stackTop[-1 - mxHostsStackIndex]
 #define mxModuleQueue the->stackTop[-1 - mxModuleQueueStackIndex]
+#define mxUnhandledPromises the->stackTop[-1 - mxUnhandledPromisesStackIndex]
 #define mxDuringJobs the->stackTop[-1 - mxDuringJobsStackIndex]
 #define mxFinalizationRegistries the->stackTop[-1 - mxFinalizationRegistriesStackIndex]
 #define mxPendingJobs the->stackTop[-1 - mxPendingJobsStackIndex]
@@ -2627,7 +2628,6 @@ enum {
 #define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
-#define mxOnUnhandledRejectionFunction the->stackPrototypes[-1 - mxOnUnhandledRejectionFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
 #define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
 #define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]
