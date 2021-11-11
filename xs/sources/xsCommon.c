@@ -1113,7 +1113,7 @@ txSize fxUnicodeLength(txString _s)
 	}
 
 done:
-	return ((s - _s) - count);
+	return (txSize)((s - _s) - count);
 }
 
 #endif

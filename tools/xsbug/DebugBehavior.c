@@ -1393,7 +1393,7 @@ void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* bu
 	#elif mxWindows
 		if (self->socket != INVALID_SOCKET) {
 		again:
-			int count = send(self->socket, buffer, length, 0);
+			int count = send(self->socket, buffer, (int)length, 0);
 			if (count < 0) {
 				if (WSAEWOULDBLOCK == WSAGetLastError()) {
 					WaitMessage();
