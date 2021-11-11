@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -51,6 +51,11 @@
 #include "xsHost.h"
 
 #include "xsPlatform.h"
+// #include "mc.defines.h"
+
+#ifndef MODDEF_XS_TEST
+	#define MODDEF_XS_TEST 1
+#endif
 
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
@@ -59,7 +64,11 @@
 extern void fx_putc(void *refcon, char c);		//@@
 extern void mc_setup(xsMachine *the);
 
-static xsMachine *gThe;		// the main XS virtual machine running
+
+#if !MODDEF_XS_TEST
+static
+#endif
+	xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
@@ -108,53 +117,31 @@ static void debug_task(void *pvParameter)
 }
 #endif
 
-void setup(void)
+void loop_task(void *pvParameter)
 {
-	esp_err_t err;
-	uart_config_t uartConfig;
-#ifdef mxDebug
-	uartConfig.baud_rate = DEBUGGER_SPEED;
-#else
-	uartConfig.baud_rate = 115200;		//@@ different from ESP8266
-#endif
-	uartConfig.data_bits = UART_DATA_8_BITS;
-	uartConfig.parity = UART_PARITY_DISABLE;
-	uartConfig.stop_bits = UART_STOP_BITS_1;
-	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
-//	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
-
-	err = uart_param_config(USE_UART, &uartConfig);
-	if (err)
-		printf("uart_param_config err %d\n", err);
-	err = uart_set_pin(USE_UART, USE_UART_TX, USE_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-	if (err)
-		printf("uart_set_pin err %d\n", err);
-
-#ifdef mxDebug
-	QueueHandle_t uartQueue;
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
-	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
-#else
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
-#endif
-
-	gThe = ESP_cloneMachine(0, 0, 0, NULL);
-
-	mc_setup(gThe);
-
 #if CONFIG_TASK_WDT
 	esp_task_wdt_add(NULL);
 #endif
-}
-
-void loop_task(void *pvParameter)
-{
-	setup();
 
 	while (true) {
-		modTimersExecute();
-		modMessageService(gThe, modTimersNext());
+		gThe = ESP_cloneMachine(0, 0, 0, NULL);
+
+		mc_setup(gThe);
+
+#if MODDEF_XS_TEST
+		xsMachine *the = gThe;
+		while (gThe) {
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+		}
+
+		xsDeleteMachine(the);
+#else
+		while (true) {
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+		}
+#endif
 	}
 }
 
@@ -221,6 +208,35 @@ void app_main() {
 	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+#endif
+
+	esp_err_t err;
+	uart_config_t uartConfig;
+#ifdef mxDebug
+	uartConfig.baud_rate = DEBUGGER_SPEED;
+#else
+	uartConfig.baud_rate = 115200;		//@@ different from ESP8266
+#endif
+	uartConfig.data_bits = UART_DATA_8_BITS;
+	uartConfig.parity = UART_PARITY_DISABLE;
+	uartConfig.stop_bits = UART_STOP_BITS_1;
+	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
+	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
+//	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
+
+	err = uart_param_config(USE_UART, &uartConfig);
+	if (err)
+		printf("uart_param_config err %d\n", err);
+	err = uart_set_pin(USE_UART, USE_UART_TX, USE_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+	if (err)
+		printf("uart_set_pin err %d\n", err);
+
+#ifdef mxDebug
+	QueueHandle_t uartQueue;
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
+	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
+#else
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL

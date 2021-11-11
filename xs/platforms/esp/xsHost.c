@@ -1301,6 +1301,13 @@ void espDebugBreak(txMachine* the, uint8_t stop)
 
 void espInitInstrumentation(txMachine *the)
 {
+#if MODDEF_XS_TEST
+	static uint8_t initialized = 0;
+	if (initialized)
+		return;
+	initialized = 1;
+#endif
+
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
@@ -1382,6 +1389,7 @@ void espInstrumentMachineEnd(txMachine *the)
 
 	modInstrumentationAdjust(Timers, +1);
 	modTimerRemove(the->instrumentationTimer);
+	the->instrumentationTimer = NULL;
 }
 
 void espInstrumentMachineReset(txMachine *the)
