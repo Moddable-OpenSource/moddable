@@ -185,6 +185,17 @@ static void fx_setTimerCallback(txJob* job);
 static txAgentCluster gxAgentCluster;
 
 static txSlot* gxException = NULL;
+static char *gxAbortStrings[] = {
+	"debugger",
+	"memory full",
+	"stack overflow",
+	"fatal",
+	"dead strip",
+	"unhandled exception",
+	"not enough keys",
+	"too much computation",
+	"unhandled rejection"
+};
 
 int main(int argc, char* argv[]) 
 {
@@ -279,8 +290,13 @@ int main(int argc, char* argv[])
 				error = 1;
 			}
 		}
-		xsEndHost(machine);
 		fxCheckUnhandledRejections(machine, 1);
+		xsEndHost(machine);
+		if (machine->abortStatus) {
+			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+			fprintf(stderr, "Error: %s\n", why);
+			error = 1;
+		}
 		xsDeleteMachine(machine);
 		fxTerminateSharedCluster();
 	}
@@ -878,6 +894,11 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 		}
 	}
 	xsEndHost(machine);
+	if (machine->abortStatus) {
+		char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+		snprintf(message, 1024, "# %s", why);
+		success = 0;
+	}
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	fxCountResult(context, success, 0);
@@ -1364,6 +1385,18 @@ void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 	mxModuleInstanceInternal(mxProgram.value.reference)->value.module.id = fxID(the, path);
 	fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
+}
+
+void fxAbort(txMachine* the, int status)
+{
+	if (the->abortStatus) // xsEndHost calls fxAbort!
+		return;
+	if (status) {
+		the->abortStatus = status;
+		fxExitToHost(the);
+	}
+	else
+		c_exit(1);
 }
 
 /* DEBUG */

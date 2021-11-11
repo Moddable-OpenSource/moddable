@@ -90,7 +90,8 @@
 	void* host; \
 	void* waiterCondition; \
 	void* waiterData; \
-	txMachine* waiterLink;
+	txMachine* waiterLink; \
+	int abortStatus;
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1
@@ -99,7 +100,6 @@
 #define mxUseDefaultLoadModule 1
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
-#define mxUseDefaultAbort 1
 
 #if INTPTR_MAX == INT64_MAX
 	#define mx32bitID 1
