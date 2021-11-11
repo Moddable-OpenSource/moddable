@@ -64,6 +64,9 @@
 #ifndef mxUseDefaultQueuePromiseJobs
 	#define mxUseDefaultQueuePromiseJobs 0
 #endif
+#ifndef mxUseDefaultAbort
+	#define mxUseDefaultAbort 0
+#endif
 #ifndef mxUseDefaultDebug
 	#define mxUseDefaultDebug 0
 #endif
@@ -480,35 +483,51 @@ void fxQueuePromiseJobs(txMachine* the)
 
 #endif  /* mxUseDefaultQueuePromiseJobs */
 
-#if mxUseDefaultDebug
+#if mxUseDefaultAbort
 
 void fxAbort(txMachine* the, int status)
 {
+	txString why = C_NULL;
+	switch (status) {
+	case XS_STACK_OVERFLOW_EXIT:
+		why = "stack overflow";
+		break;
+	case XS_NOT_ENOUGH_MEMORY_EXIT:
+		why = "memory full";
+		break;
+	case XS_NO_MORE_KEYS_EXIT:
+		why = "not enough keys";
+		break;
+	case XS_DEAD_STRIP_EXIT:
+		why = "dead strip";
+		break;
+	case XS_DEBUGGER_EXIT:
+		break;
+	case XS_FATAL_CHECK_EXIT:
+		break;
+	case XS_UNHANDLED_EXCEPTION_EXIT:
+		why = "unhandled exception";
+		break;
+	case XS_UNHANDLED_REJECTION_EXIT:
+		why = "unhandled rejection";
+		break;
+	case XS_TOO_MUCH_COMPUTATION_EXIT:
+		why = "too much computation";
+		break;
+	default:
+		why = "unknown";
+		break;
+	}
+	if (why)
+		fprintf(stderr, "Error: %s\n", why);
 	c_exit(status);
 }
 
-#endif  /* mxUseDefaultDebug */
+#endif  /* mxUseDefaultAbort */
 
 #ifdef mxDebug
 
 #if mxUseDefaultDebug
-
-void fxAbort(txMachine* the, int status)
-{
-	mxTry(the) {
-		if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
-			mxUnknownError("not enough memory");
-		else if (status == XS_STACK_OVERFLOW_EXIT)
-			mxUnknownError("stack overflow");
-		else if (status == XS_DEAD_STRIP_EXIT)
-			mxUnknownError("dead strip");
-		else if (status == XS_NO_MORE_KEYS_EXIT)
-			mxUnknownError("not enough keys");
-	}
-	mxCatch(the) {
-	}
-	c_exit(status);
-}
 
 void fxConnect(txMachine* the)
 {

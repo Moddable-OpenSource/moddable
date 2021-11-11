@@ -1013,19 +1013,6 @@ void fxQueuePromiseJobs(txMachine* the)
 	linker->promiseJobsFlag = 1;
 }
 
-void fxAbort(txMachine* the, int status)
-{
-	mxTry(the) {
-		if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
-			mxUnknownError("not enough memory");
-		else if (status == XS_STACK_OVERFLOW_EXIT)
-			mxUnknownError("stack overflow");
-	}
-	mxCatch(the) {
-	}
-	c_exit(status);
-}
-
 #ifdef mxDebug
 
 void fxConnect(txMachine* the)

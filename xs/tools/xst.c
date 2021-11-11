@@ -166,7 +166,6 @@ static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 static void fx_gc(xsMachine* the);
-static void fx_loadModuleScript(xsMachine* the);
 static void fx_print(xsMachine* the);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
@@ -185,9 +184,7 @@ static void fx_setTimerCallback(txJob* job);
 
 static txAgentCluster gxAgentCluster;
 
-static int gx262 = 0;
-static int gxError = 0;
-static int gxUnhandledErrors = 0;
+static txSlot* gxException = NULL;
 
 int main(int argc, char* argv[]) 
 {
@@ -200,6 +197,7 @@ int main(int argc, char* argv[])
 #else
     char* harnessPath = "../harness";
 #endif
+	int error = 0;
 	if (argc == 1) {
 		fxPrintUsage();
 		return 1;
@@ -217,8 +215,6 @@ int main(int argc, char* argv[])
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
 			option = 4;
-		else if (!strcmp(argv[argi], "-u"))
-			gxUnhandledErrors = 1;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -231,8 +227,7 @@ int main(int argc, char* argv[])
 			option  = 4;
 	}
 	if (option == 4) {
-		gx262 = 1;
-		gxError = main262(argc, argv);
+		error = main262(argc, argv);
 	}
 	else {
 		xsCreation _creation = {
@@ -256,13 +251,14 @@ int main(int argc, char* argv[])
 		{
 			xsVars(1);
 			xsTry {
+				xsVar(0) = xsUndefined;
+				gxException = &xsVar(0);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
 					if (option == 1) {
-						xsVar(0) = xsGet(xsGlobal, xsID("$262"));
 						xsResult = xsString(argv[argi]);
-						xsCall1(xsVar(0), xsID("evalScript"), xsResult);
+						xsCall1(xsGet(xsGlobal, xsID("$262")), xsID("evalScript"), xsResult);
 					}
 					else {	
 						if (!c_realpath(argv[argi], path))
@@ -274,18 +270,21 @@ int main(int argc, char* argv[])
 							fxRunProgramFile(the, path, mxProgramFlag | mxDebugFlag);
 					}
 				}
+				fxRunLoop(the);
+				if (xsTest(xsVar(0))) 
+					xsThrow(xsVar(0));
 			}
 			xsCatch {
 				fprintf(stderr, "%s\n", xsToString(xsException));
-				gxError = 1;
+				error = 1;
 			}
 		}
 		xsEndHost(machine);
-		fxRunLoop(machine);
+		fxCheckUnhandledRejections(machine, 1);
 		xsDeleteMachine(machine);
 		fxTerminateSharedCluster();
 	}
-	return gxError;
+	return error;
 }
 
 int main262(int argc, char* argv[]) 
@@ -420,7 +419,6 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, fx_loadModuleScript, 1, xsID("loadModuleScript"), XS_DONT_ENUM_FLAG);
 
 	mxPop();
 	mxPop();
@@ -722,7 +720,6 @@ void fxRunFile(txContext* context, char* path)
 		}
 	}
 
-	// @@ skip test cases beyond 2019...
 	value = fxGetMappingValue(document, root, "features");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;
@@ -791,7 +788,6 @@ bail:
 		fclose(file);
 }
 
-static char gxDoneMessage[1024];
 int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message)
 {
 	xsCreation _creation = {
@@ -816,9 +812,9 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 #else
 	machine = xsCreateMachine(creation, "xst", NULL);
 #endif
-	gxDoneMessage[0] = 0;
 	xsBeginHost(machine);
 	{
+		xsVars(1);
 		xsTry {
 			fxBuildAgent(the);
 			c_strcpy(buffer, context->harnessPath);
@@ -830,8 +826,10 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 			if (async) {
 				xsResult = xsNewHostFunction(fx_done, 1);
 				xsSet(xsGlobal, xsID("$DONE"), xsResult);
-				xsSet(xsGlobal, xsID("$DONE_RESULT"), xsString("Test did not run to completion"));
+				xsVar(0) = xsString("Test did not run to completion");
 			}
+			else
+				xsVar(0) = xsUndefined;
 			if (context->includes) {
 				yaml_node_item_t* item = context->includes->data.sequence.items.start;
 				while (item < context->includes->data.sequence.items.top) {
@@ -843,33 +841,15 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 				}
 			}
 			mxPop();
+			gxException = &xsVar(0);
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
 				fxRunModuleFile(the, path);
-		}
-		xsCatch {
-		}
-	}
-	xsEndHost(machine);
-	fxRunLoop(machine);
-	xsBeginHost(machine);
-	{
-		if (xsTypeOf(xsException) == xsUndefinedType) {
-			if (async) {
-				xsResult = xsGet(xsGlobal, xsID("$DONE_RESULT"));
-				if (xsTypeOf(xsResult) == xsUndefinedType) {
-					snprintf(message, 1024, "OK");
-					success = 1;
-				}
-				else if (xsTypeOf(xsResult) == xsSymbolType) {
-					snprintf(message, 1024, "# %s", xsName(xsResult.value.symbol));
-				}
-				else {
-					snprintf(message, 1024, "# %s", xsToString(xsResult));
-				}
-			}
-			else if (context->negative) {
+			fxRunLoop(the);
+			if (xsTest(xsVar(0))) 
+				xsThrow(xsVar(0));
+			if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);
 			}
 			else {
@@ -877,7 +857,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 				success = 1;
 			}
 		}
-		else {
+		xsCatch {
 			if (context->negative) {
 				txString name;
 				xsResult = xsGet(xsException, xsID("constructor"));
@@ -892,24 +872,16 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 			else {
 				snprintf(message, 1024, "# %s", xsToString(xsException));
 			}
+			xsResult = xsGet(xsGlobal, xsID("$262"));
+			xsResult = xsGet(xsResult, xsID("agent"));
+			xsCall0(xsResult, xsID("stop"));
 		}
-		xsResult = xsGet(xsGlobal, xsID("$262"));
-		xsResult = xsGet(xsResult, xsID("agent"));
-		xsCall0(xsResult, xsID("stop"));
 	}
 	xsEndHost(machine);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	fxCountResult(context, success, 0);
 	return success;
-}
-
-void fx_done(xsMachine* the)
-{
-	if ((xsToInteger(xsArgc) > 0) && (xsTest(xsArg(0))))
-		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsArg(0));
-	else
-		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsUndefined);
 }
 
 int fxStringEndsWith(const char *string, const char *suffix)
@@ -1163,6 +1135,14 @@ void fx_detachArrayBuffer(xsMachine* the)
 	mxTypeError("this is no ArrayBuffer instance");
 }
 
+void fx_done(xsMachine* the)
+{
+	if ((xsToInteger(xsArgc) > 0) && (xsTest(xsArg(0))))
+		*gxException = xsArg(0);
+	else
+		*gxException = xsUndefined;
+}
+
 void fx_gc(xsMachine* the)
 {
 	xsCollectGarbage();
@@ -1177,51 +1157,6 @@ void fx_evalScript(xsMachine* the)
 	aStream.size = mxStringLength(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 	mxPullSlot(mxResult);
-}
-
-void fx_loadModuleScriptDestructor(void* data)
-{
-	if (data) {
-		fxDeleteScript(data);
-	}
-}
-
-void fx_loadModuleScript(txMachine* the)
-{
-	txString path;
-	txScript* script = NULL;
-	txSlot* promise;
-	txSlot* status;
-	txSlot* fulfillFunction;
-	txSlot* rejectFunction;
-	if (mxArgc < 1)
-		mxSyntaxError("no specifier parameter");
-	path = fxToString(the, 	mxArgv(0));
-	mxPush(mxPromisePrototype);
-	promise = fxNewPromiseInstance(the);
-	mxPullSlot(mxResult);
-	status = mxPromiseStatus(promise);
-	status->value.integer = mxPendingStatus;
-	fxPushPromiseFunctions(the, promise);
-	fulfillFunction = the->stack + 1;
-	rejectFunction = the->stack;
-	{
-		mxTry(the) {
-			script = fxLoadScript(the, path, mxDebugFlag);
-			if (!script) {
-				mxSyntaxError("cannot load module script");
-			}
-			mxPushUndefined();
-			mxPushSlot(fulfillFunction);
-			mxCall();
-			fxNewHostObject(the, fx_loadModuleScriptDestructor);
-			fxSetHostData(the, the->stack, script);
-			mxRunCount(1);
-		}
-		mxCatch(the) {
-			fxRejectException(the, rejectFunction);
-		}
-	}
 }
 
 void fx_print(xsMachine* the)
@@ -1405,12 +1340,7 @@ void fxFulfillModuleFile(txMachine* the)
 
 void fxRejectModuleFile(txMachine* the)
 {
-	if (gx262)
-		xsException = xsArg(0);
-	else {
-		fprintf(stderr, "%s\n", xsToString(xsArg(0)));
-		gxError = 1;
-	}
+	*gxException = xsArg(0);
 }
 
 void fxRunModuleFile(txMachine* the, txString path)
@@ -1437,23 +1367,6 @@ void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 }
 
 /* DEBUG */
-
-void fxAbort(txMachine* the, int status)
-{
-	if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
-		mxUnknownError("not enough memory");
-	else if (status == XS_STACK_OVERFLOW_EXIT)
-		mxUnknownError("stack overflow");
-	else if ((status == XS_UNHANDLED_EXCEPTION_EXIT) || (status == XS_UNHANDLED_REJECTION_EXIT)) {
-		if (gxUnhandledErrors) {
-			fprintf(stderr, "%s\n", xsToString(xsException));
-			gxError = 1;
-		}
-		xsException = xsUndefined;
-	}
-	else
-		c_exit(status);
-}
 
 #ifdef mxDebug
 

@@ -99,6 +99,7 @@
 #define mxUseDefaultLoadModule 1
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
+#define mxUseDefaultAbort 1
 
 #if INTPTR_MAX == INT64_MAX
 	#define mx32bitID 1

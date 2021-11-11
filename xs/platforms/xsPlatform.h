@@ -50,7 +50,7 @@
 #include "xsHost.h"
 
 #ifndef XSPLATFORM	
-	/* for XS tools only: xsc, xsid, xsl on Linux, macOS or Windows */
+	/* for xsc and xsid on Linux, macOS or Windows */
 	#if defined(_MSC_VER)
 		#if defined(_M_IX86) || defined(_M_X64)
 			#undef mxWindows
@@ -109,7 +109,6 @@
 		void* waiterCondition; \
 		void* waiterData; \
 		txMachine* waiterLink;
-	#define mxUseDefaultDebug 1
 	#define mxUseDefaultMachinePlatform 1
 	#define mxUseDefaultBuildKeys 1
 	#define mxUseDefaultChunkAllocation 1
@@ -119,6 +118,8 @@
 	#define mxUseDefaultParseScript 1
 	#define mxUseDefaultQueuePromiseJobs 1
 	#define mxUseDefaultSharedChunks 1
+	#define mxUseDefaultAbort 1
+	#define mxUseDefaultDebug 1
 #else
 	#include XSPLATFORM
 #endif
