@@ -153,7 +153,7 @@ int main(int argc, char** argv)
 
 void fxAbort(xsMachine *the, int status)
 {
-	//@@
+    g_application_quit(G_APPLICATION(gtkApplication));
 }
 
 void PiuApplication_createMenus(xsMachine *the)
