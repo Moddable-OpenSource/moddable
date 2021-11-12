@@ -1042,11 +1042,10 @@ static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID
 	return 0;
 }
 
-#define XSBUG_MODULES 0
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txPreparation* preparation = the->preparation;
-#if XSBUG_MODULES
+#if MODDEF_XS_TEST
 	char extension[5] = "";
 #endif
 	char name[PATH_MAX];
@@ -1086,7 +1085,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		slash = name;
 	slash = c_strrchr(slash, '.');
 	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs"))) {
-#if XSBUG_MODULES
+#if MODDEF_XS_TEST
 		c_strcpy(extension, slash);
 #endif
 		*slash = 0;
@@ -1122,7 +1121,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 				return id;
 			}
 		}
-#if XSBUG_MODULES
+#if MODDEF_XS_TEST
 		if (!c_strncmp(path, "xsbug://", 8)) {
             *slash = 0;
 			c_strcat(path, name + dot);
@@ -1139,7 +1138,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 // 			fxReport(the, "SEARCH %s\n", path);
 			return id;
 		}
-#if XSBUG_MODULES
+#if MODDEF_XS_TEST
         if (!c_strncmp(name, "xsbug://", 8)) {
 			c_strcpy(path, name);
 			c_strcat(path, extension);
@@ -1191,7 +1190,7 @@ void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 		script++;
 	}
 	
-#if XSBUG_MODULES
+#if MODDEF_XS_TEST
 	path -= preparation->baseLength;
 	if (!c_strncmp(path, "xsbug://", 8))
 		fxDebugImport(the, realm, path);
