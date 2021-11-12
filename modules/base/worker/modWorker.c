@@ -95,12 +95,8 @@ void xs_worker_destructor(void *data)
 			vTaskDelay(1);	// necessary to allow idle task to run so task memory is freed. perhaps there's a better solution?
 		}
 #endif
-		if (worker->the) {
-#ifdef mxInstrument
-			espInstrumentMachineEnd(worker->the);
-#endif
+		if (worker->the)
 			xsDeleteMachine(worker->the);
-		}
 
 		modCriticalSectionBegin();
 			for (walker = gWorkers, prev = NULL; NULL != walker; walker = walker->next) {

@@ -49,6 +49,8 @@ export default class ILI9341 @ "xs_ILI9341_destructor" {
 
 	// driver specific
 	command(id, data) @ "xs_ILI9341_command";
+
+	close() @ "xs_ILI9341_close";
 }
 
 Object.freeze(ILI9341.prototype);

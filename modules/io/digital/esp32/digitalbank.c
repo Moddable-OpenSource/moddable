@@ -23,7 +23,6 @@
 
 	To do:
 
-		read not blocked on input instances, write not blocked on output instances
 		ESP8266 implementation assumes a single VM
 
 */
@@ -58,6 +57,7 @@ struct DigitalRecord {
 	xsSlot		obj;
 	uint8_t		bank;
 	uint8_t		hasOnReadable;
+	uint8_t		isInput;
 	// fields after here only allocated if onReadable callback present
 	uint32_t	triggered;
 	uint32_t	rises;
@@ -85,16 +85,16 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
-	int hasOnReadable = 0, mode, pins, rises = 0, falls = 0;
+	int mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
-	uint8_t bank = 0;
+	uint8_t bank = 0, hasOnReadable = 0, isInput = 1;
 	xsSlot tmp;
 
 #if kPinBanks > 1
 	if (xsmcHas(xsArg(0), xsID_bank)) {
 		uint32_t b;
 		xsmcGet(tmp, xsArg(0), xsID_bank);
-		b = xsmcToInteger(tmp);
+		b = (uint32_t)xsmcToInteger(tmp);
 		if (b >= kPinBanks)
 			xsUnknownError("invalid bank");
 		bank = (uint8_t)b;
@@ -103,11 +103,13 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
 	pins = xsmcToInteger(tmp);
+	if (!pins)
+		xsUnknownError("invalid");
 	if (!builtinArePinsFree(bank, pins))
 		xsUnknownError("in use");
 
 	xsmcGet(tmp, xsArg(0), xsID_mode);
-	mode = xsmcToInteger(tmp);
+	mode = builtinGetSignedInteger(the, &tmp);
 	if (!(((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) ||
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
@@ -174,6 +176,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 			case kDigitalOutputOpenDrain:
 				gpio_set_level(pin, 0);
 				gpio_set_direction(pin, (kDigitalOutputOpenDrain == mode) ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT);
+				isInput = 0;
 				break;
 		}
 	}
@@ -220,6 +223,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	digital->pins = pins;
 	digital->bank = bank;
 	digital->hasOnReadable = hasOnReadable;
+	digital->isInput = isInput;
 	builtinUsePins(bank, pins);
 }
 
@@ -286,6 +290,9 @@ void xs_digitalbank_read(xsMachine *the)
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
 	uint32_t result;
 
+	if (!digital->isInput)
+		xsUnknownError("unimplemented");
+
 	gpio_dev_t *hw = &GPIO;
 
     if (digital->bank)
@@ -299,9 +306,13 @@ void xs_digitalbank_read(xsMachine *the)
 void xs_digitalbank_write(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	uint32_t value = xsmcToInteger(xsArg(0)) & digital->pins;
+	uint32_t value;
+
+	if (digital->isInput)
+		xsUnknownError("unimplemented");
 
 	gpio_dev_t *hw = &GPIO;
+	value = xsmcToInteger(xsArg(0)) & digital->pins;
 
 	if (digital->bank) {
 		hw->out1_w1ts.data = value;

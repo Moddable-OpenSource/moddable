@@ -229,6 +229,10 @@ void modSPIUninit(modSPIConfiguration config)
 
     free(gSPITransactionBuffer[0]);
     gSPITransactionBuffer[0] = NULL;
+	vTaskDelete(gSPITask);
+	gSPITask = NULL;
+	vSemaphoreDelete(gSPIMutex);
+	gSPIMutex = NULL;
 }
 
 void modSPIActivateConfiguration(modSPIConfiguration config)

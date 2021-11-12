@@ -102,14 +102,14 @@ void xs_serial_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		uart = xsmcToInteger(xsVar(0));
+		uart = builtinGetSignedInteger(the, &xsVar(0));
 		if ((uart < 0) || (uart >= UART_NUM_MAX))
 			xsRangeError("invalid port");
 	}
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
-	if ((baud < 0) || (baud > 20000000))
+	if ((baud <= 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
 
 	hasReadable = (UART_PIN_NO_CHANGE != receive) && builtinHasCallback(the, xsID_onReadable);

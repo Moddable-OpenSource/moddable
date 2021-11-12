@@ -75,11 +75,13 @@
 	#define SCREEN_CS_DEACTIVE	modGPIOWrite(&sd->cs, 1)
 	#define SCREEN_CS_INIT		modGPIOInit(&sd->cs, MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, kModGPIOOutput); \
 			SCREEN_CS_DEACTIVE
+	#define SCREEN_CS_UNINIT	modGPIOUninit(&sd->cs);
 #else
 	#define MODDEF_ILI9341_CS_PIN	NULL
 	#define SCREEN_CS_ACTIVE
 	#define SCREEN_CS_DEACTIVE
 	#define SCREEN_CS_INIT
+	#define SCREEN_CS_UNINIT
 #endif
 
 #ifndef MODDEF_ILI9341_SPI_MODE
@@ -90,11 +92,12 @@
 #define SCREEN_DC_COMMAND		modGPIOWrite(&sd->dc, 0)
 #define SCREEN_DC_INIT			modGPIOInit(&sd->dc, MODDEF_ILI9341_DC_PORT, MODDEF_ILI9341_DC_PIN, kModGPIOOutput); \
 		SCREEN_DC_DATA
-
+#define SCREEN_DC_UNINIT		modGPIOUninit(&sd->dc)
 #define SCREEN_RST_ACTIVE		modGPIOWrite(&sd->rst, 0)
 #define SCREEN_RST_DEACTIVE		modGPIOWrite(&sd->rst, 1)
 #define SCREEN_RST_INIT			modGPIOInit(&sd->rst, MODDEF_ILI9341_RST_PORT, MODDEF_ILI9341_RST_PIN, kModGPIOOutput); \
 		SCREEN_RST_DEACTIVE;
+#define SCREEN_RST_UNINIT		modGPIOUninit(&sd->rst);
 
 #ifndef ILI9341_GRAM_WIDTH
 	#define ILI9341_GRAM_WIDTH		MODDEF_ILI9341_WIDTH
@@ -196,8 +199,17 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 
 void xs_ILI9341_destructor(void *data)
 {
-	if (data)
-		c_free(data);
+	spiDisplay sd = data;
+	if (!data) return;
+
+	SCREEN_CS_UNINIT;
+	SCREEN_DC_UNINIT;
+	modSPIUninit(&sd->spiConfig);
+
+#ifdef MODDEF_ILI9341_RST_PIN
+	SCREEN_RST_UNINIT;
+#endif
+	c_free(data);
 }
 
 void xs_ILI9341(xsMachine *the)
@@ -397,6 +409,14 @@ void xs_ILI9341_command(xsMachine *the)
 	}
 
 	ili9341Command(sd, command, data, dataSize);
+}
+
+void xs_ILI9341_close(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	if (!sd) return;
+	xs_ILI9341_destructor(sd);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE

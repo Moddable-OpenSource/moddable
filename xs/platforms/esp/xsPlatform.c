@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -107,6 +107,10 @@ void fxDeleteMachinePlatform(txMachine* the)
 	}
 #endif
 
+#ifdef mxInstrument
+	espInstrumentMachineEnd(the);		// removed from modWorker!!!
+#endif
+
 	modMachineTaskUninit(the);
 }
 
@@ -212,11 +216,22 @@ const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
 
 void fxAbort(txMachine* the, int status)
 {
+#if MODDEF_XS_TEST
+	if (XS_DEBUGGER_EXIT == status) {
+		extern txMachine *gThe;
+		gThe = NULL;		// soft reset
+		return;
+	}
+
+	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
+		mxUnknownError("fxAbort: out of memory");
+#endif
+
 #if defined(mxDebug) || defined(mxInstrument)
 	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
 
 	fxReport(the, "XS abort: %s\n", msg);
-	#if defined(mxDebug)
+	#if defined(mxDebug) && !MODDEF_XS_TEST
 		fxDebugger(the, (char *)__FILE__, __LINE__);
 	#endif
 #endif

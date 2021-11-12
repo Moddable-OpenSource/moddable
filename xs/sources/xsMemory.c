@@ -1265,6 +1265,9 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 	txBlock* aBlock = the->firstBlock;
 	size = fxAdjustChunkSize(the, size);
 	if (size <= capacity) {
+		the->currentChunksSize += size - aChunk->size;
+		if (the->peakChunksSize < the->currentChunksSize)
+			the->peakChunksSize = the->currentChunksSize;
 		aChunk->size = size;
 	#ifdef mxNever
 		gxRenewChunkCases[0]++;
@@ -1280,12 +1283,12 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 		if (aChunk->temporary == aBlock->current) {
 			txSize delta = size - capacity;
 			if (aBlock->current + delta <= aBlock->limit) {
+				the->currentChunksSize += size - aChunk->size;
+				if (the->peakChunksSize < the->currentChunksSize)
+					the->peakChunksSize = the->currentChunksSize;
 				aBlock->current += delta;
 				aChunk->temporary = aBlock->current;
 				aChunk->size = size;
-				the->currentChunksSize += size;
-				if (the->peakChunksSize < the->currentChunksSize)
-					the->peakChunksSize = the->currentChunksSize;
 			#ifdef mxNever
 				gxRenewChunkCases[1]++;
 			#endif

@@ -153,17 +153,28 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format)
 	return format;
 }
 
-uint32_t builtinGetPin(xsMachine *the, xsSlot *slot)
+// standard converstion to signed integer but disallows undefined 
+int32_t builtinGetSignedInteger(xsMachine *the, xsSlot *slot)
 {
-	xsIntegerValue pin;
 	xsType type = fxTypeOf(the, slot);
 	if (xsUndefinedType == type)
 		xsUnknownError("invalid");
 
-	pin = fxToInteger(the, slot);
-	if (pin < 0)
+	return fxToInteger(the, slot);;
+}
+
+// standard converstion to unsigned integer but disallows undefined 
+uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot)
+{
+	xsIntegerValue value;
+	xsType type = fxTypeOf(the, slot);
+	if (xsUndefinedType == type)
+		xsUnknownError("invalid");
+
+	value = fxToInteger(the, slot);
+	if (value < 0)
 		xsRangeError("negative");
 
-	return (uint32_t)pin;
+	return (uint32_t)value;
 }
 
