@@ -178,7 +178,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	}	
 #endif
 	else {
-		relative = 1;
 		search = 1;
 	}
 #if mxWindows
