@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+	/*
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1077,7 +1077,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		relative = 1;
 	}
 	else {
-		relative = 1;
 		search = 1;
 	}
 	slash = c_strrchr(name, '/');
