@@ -66,26 +66,32 @@ void Resource_slice(xsMachine *the)
 {
 	int argc = xsToInteger(xsArgc);
 	unsigned char *data = xsGetHostData(xsThis);
-	int start = xsToInteger(xsArg(0));
-	int end;
+	int start = 0;
 	int byteLength = xsGetHostBufferLength(xsThis);
+	int end = byteLength;
 	xsBooleanValue copy = 1;
 
-	if (argc > 1) {
-		end = xsToInteger(xsArg(1));
-		if (end > byteLength)
-			end = byteLength;
-		if (argc > 2)
-			copy = xsTest(xsArg(2));
+	if (argc) {
+		start = xsToInteger(xsArg(0));
+		if ((start < 0) || (start >= byteLength))
+			xsUnknownError("invalid");
+		if (argc > 1) {
+			end = xsToInteger(xsArg(1));
+			if (end < start) 
+				xsUnknownError("invalid");
+			if (end > byteLength)
+				end = byteLength;
+			if (argc > 2)
+				copy = xsTest(xsArg(2));
+		}
 	}
-	else
-		end = byteLength;
 
 	if (copy)
 		xsResult = xsArrayBuffer(data + start, end - start);
 	else {
 		xsResult = xsNewHostObject(NULL);
 		xsSetHostBuffer(xsResult, (void *)(data + start), end - start);
-		xsDefine(xsResult, xsID_byteLength, xsInteger(end - start), xsDefault);
+		xsPetrifyHostBuffer(xsResult);
+		xsDefine(xsResult, xsID_byteLength, xsInteger(end - start), xsDontDelete | xsDontSet);
 	}
 }
