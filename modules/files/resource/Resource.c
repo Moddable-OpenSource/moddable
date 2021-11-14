@@ -73,13 +73,12 @@ void Resource_slice(xsMachine *the)
 
 	if (argc) {
 		start = xsToInteger(xsArg(0));
-		if ((start < 0) || (start >= byteLength))
-			xsUnknownError("invalid");
+		if (start < 0) start = 0;
 		if (argc > 1) {
 			end = xsToInteger(xsArg(1));
 			if (end < start) 
-				xsUnknownError("invalid");
-			if (end > byteLength)
+				end = start;
+			else if (end > byteLength)
 				end = byteLength;
 			if (argc > 2)
 				copy = xsTest(xsArg(2));
