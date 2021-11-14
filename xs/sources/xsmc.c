@@ -301,6 +301,8 @@ txInteger _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *
 		txSlot* bufferInfo = slot->next;
 		if (slot->flag & XS_HOST_CHUNK_FLAG)
 			goto bail;
+		if (writable && (slot->flag & XS_DONT_SET_FLAG))
+			mxTypeError("read-only buffer");
 		if (bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND)) {
 			*data = (uint8_t *)slot->value.host.data;
 			*count = bufferInfo->value.bufferInfo.length;
