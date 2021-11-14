@@ -2,11 +2,19 @@ import increment from "increment";
 function test() {
     trace("app " + increment() + "\n");
 }
-let compartment = new Compartment({}, {
-	"mod":"mod", 
-	"increment":"increment" 
+const modules = {
+	increment: new StaticModuleRecord({ archive:"increment" }),
+	mod: new StaticModuleRecord({ archive:"mod" }),
+};
+let compartment = new Compartment({}, {}, {
+	resolveHook(specifier, refererSpecifier) {
+		return specifier;
+	},
+	loadNowHook(specifier) {
+		return modules[specifier];
+	}
 });
-let modNS = await compartment.import("mod");
+let modNS = compartment.importNow("mod");
 test();
 modNS.test();
 test();

@@ -228,6 +228,13 @@ void fxDuplicateModuleTransfers(txMachine* the, txSlot* srcModule, txSlot* dstMo
 	dstSlot = mxModuleInitialize(dstModule);
 	dstSlot->kind = srcSlot->kind;
 	dstSlot->value = srcSlot->value;
+	srcSlot = mxModuleInitialize(srcModule);
+	dstSlot = mxModuleInitialize(dstModule);
+	if (srcSlot->kind == XS_REFERENCE_KIND) {
+		function = fxDuplicateInstance(the, srcSlot->value.reference);
+		mxPullSlot(dstSlot);
+		mxFunctionInstanceHome(function)->value.home.module = 	dstModule->value.reference;
+	}
 	srcSlot = mxModuleExecute(srcModule);
 	dstSlot = mxModuleExecute(dstModule);
 	function = fxDuplicateInstance(the, srcSlot->value.reference);
@@ -961,6 +968,7 @@ void fxLoadModulesFrom(txMachine* the, txSlot* queue, txSlot* module, txBoolean 
 		}
 	}
 }
+
 void fxLoadModulesFulfilled(txMachine* the)
 {
 	txSlot* home = mxFunctionInstanceHome(mxFunction->value.reference);
@@ -1150,9 +1158,11 @@ void fxPrepareTransfer(txMachine* the)
 
 void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor)
 {
-	mxPushClosure(module);
-	fxRunScript(the, script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
-	mxPop();
+	if (script->codeBuffer) {
+		mxPushClosure(module);
+		fxRunScript(the, script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
+		mxPop();
+	}
 }
 
 txID fxResolveSpecifier(txMachine* the, txSlot* realm, txID moduleID, txSlot* name)
@@ -2052,8 +2062,6 @@ void fx_StaticModuleRecord(txMachine* the)
 {
 	txSlot* instance;
 	txSlot* slot;
-	txStringStream stream;
-	txScript* script;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: StaticModuleRecord");
 	mxPushSlot(mxTarget);
@@ -2062,10 +2070,13 @@ void fx_StaticModuleRecord(txMachine* the)
 	mxPullSlot(mxResult);
 	if (mxArgc == 0)
 		mxTypeError("no options");
+#ifdef mxParse
 	mxPushSlot(mxArgv(0));
 	mxGetID(fxID(the, "source"));
 	slot = the->stack;
 	if (slot->kind != XS_UNDEFINED_KIND) {
+		txStringStream stream;
+		txScript* script;
 		stream.slot = slot;
 		stream.offset = 0;
 		stream.size = mxStringLength(fxToString(the, slot));
@@ -2075,10 +2086,25 @@ void fx_StaticModuleRecord(txMachine* the)
 		mxPop();
 		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
 			mxTypeError("no module");
-	
 		mxPop();
 		return;
 	}
+	mxPop();
+#endif
+	mxPushSlot(mxArgv(0));
+	mxGetID(fxID(the, "archive"));
+	slot = the->stack;
+	if (slot->kind != XS_UNDEFINED_KIND) {
+		txID moduleID = fxFindModule(the, C_NULL, XS_NO_ID, slot);
+		if (moduleID == XS_NO_ID) {
+			mxTypeError("no module");
+		}
+		fxLoadModule(the, mxResult, moduleID);
+		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
+			mxTypeError("no module");
+		mxPop();
+		return;
+	}		
 	mxTypeError("invalid options");
 }
 
