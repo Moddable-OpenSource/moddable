@@ -42,6 +42,7 @@ void Resource_constructor(xsMachine *the)
 	if (!data)
 		xsURIError("Resource not found: %s", path);
 	xsSetHostBuffer(xsThis, (void *)data, size);
+	xsPetrifyHostBuffer(xsThis);
 }
 
 void Resource_exists(xsMachine *the)

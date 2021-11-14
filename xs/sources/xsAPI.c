@@ -797,6 +797,16 @@ txHostHooks* fxGetHostHooks(txMachine* the, txSlot* slot)
 	return NULL;
 }
 
+void fxPetrifyHostBuffer(txMachine* the, txSlot* slot)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (!host)
+		mxSyntaxError("C: xsPetrifyHostBuffer: no host object");
+	if (host->flag & XS_HOST_CHUNK_FLAG)
+		mxSyntaxError("C: xsPetrifyHostBuffer: no host data");
+	host->flag |= XS_DONT_SET_FLAG;
+}
+
 void fxSetHostBuffer(txMachine* the, txSlot* slot, void* theData, txSize theSize)
 {
 	txSlot* host = fxCheckHostObject(the, slot);

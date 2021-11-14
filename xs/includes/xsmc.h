@@ -148,8 +148,10 @@ mxImport xsBooleanValue _xsTest(xsMachine *, xsSlot *);
 #define xsmcTest(_SLOT)	_xsTest(the, &_SLOT)
 
 #undef xsGetHostBufferLength
+#undef xsPetrifyHostBuffer
 #undef xsSetHostBuffer
 #define xsmcGetHostBufferLength(_SLOT)	fxGetHostBufferLength(the, &_SLOT)
+#define xsmcPetrifyHostBuffer(_SLOT) fxPetrifyHostBuffer(the, &_SLOT)
 #define xsmcSetHostBuffer(_SLOT, _DATA, _SIZE)	fxSetHostBuffer(the, &_SLOT, _DATA, _SIZE)
 
 #undef xsGetHostData

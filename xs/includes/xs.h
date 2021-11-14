@@ -935,6 +935,9 @@ typedef void (*xsDestructor)(void*);
 #define xsGetHostBufferLength(_SLOT) \
 	(the->scratch = (_SLOT), \
 	fxGetHostBufferLength(the, &(the->scratch)))
+#define xsPetrifyHostBuffer(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxPetrifyHostBuffer(the, &(the->scratch)))
 #define xsSetHostBuffer(_SLOT,_DATA,_SIZE) \
 	(the->scratch = (_SLOT), \
 	fxSetHostBuffer(the, &(the->scratch), _DATA, _SIZE))
@@ -1374,6 +1377,7 @@ mxImport void* fxGetHostChunk(xsMachine*, xsSlot*);
 mxImport void *fxSetHostChunk(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void* fxGetHostData(xsMachine*, xsSlot*);
 mxImport void* fxGetHostDataValidate(xsMachine* the, xsSlot* slot, void* validator);
+mxImport void fxPetrifyHostBuffer(xsMachine* the, xsSlot* slot);
 mxImport void fxSetHostBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void fxSetHostData(xsMachine*, xsSlot*, void*);
 mxImport xsDestructor fxGetHostDestructor(xsMachine*, xsSlot*);
