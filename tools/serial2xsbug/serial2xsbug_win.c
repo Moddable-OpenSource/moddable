@@ -118,6 +118,7 @@ txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value)
 		
 		fxReadNetwork(machine, fxReadNetworkAux(machine));
 	}
+	machine->receiveCount += 1;
 	return machine;
 }
 

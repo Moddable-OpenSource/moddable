@@ -114,6 +114,7 @@ txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value)
 		machine->networkSource = CFSocketCreateRunLoopSource(NULL, machine->networkSocket, 0);
 		CFRunLoopAddSource(CFRunLoopGetCurrent(), machine->networkSource, kCFRunLoopCommonModes);
 	}
+	machine->receiveCount += 1;
 	return machine;
 }
 

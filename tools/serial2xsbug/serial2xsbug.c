@@ -31,7 +31,6 @@ static void fxSetTime(txSerialTool self, txSerialMachine machine);
 static void fxInstallFragment(txSerialTool self);
 static void fxSetPref(txSerialTool self);
 
-static uint8_t gReset = 0;
 static uint8_t gRestarting = 0;
 static char *gCmd = NULL;
 static char *gModuleName = NULL;
@@ -209,8 +208,6 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 int fxInitializeTarget(txSerialTool self)
 {
 	char out[64];
-
-	gReset = 0;
 
 #if 0
 	{
@@ -537,13 +534,12 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 				}
 				else {
 					fxCloseNetwork(self, value);
-					gReset = 0 == value;
 					gRestarting = 0;
 				}
 			}
 			else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
 				txSerialMachine machine = self->currentMachine;
-				if (gReset) {
+				if ((1 == machine->receiveCount) && !self->firstMachine->nextMachine) {	// first command when after transitioning from 0 to 1 machines
 					if (fxInitializeTarget(self))
 						self->currentMachine->suppress = 1;
 				}

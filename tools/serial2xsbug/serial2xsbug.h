@@ -112,6 +112,7 @@ struct txSerialMachineStruct {
 	txSerialMachine nextMachine;
 	uint32_t value;
 	uint8_t suppress;
+	int receiveCount;
 	char tag[mxTagSize + 1];
 };
 
