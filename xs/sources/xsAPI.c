@@ -438,7 +438,7 @@ void fxReference(txMachine* the, txSlot* theSlot, txSlot* theReference)
 		theSlot->kind = XS_REFERENCE_KIND;
 	}
 	else
-		theSlot->kind = XS_REFERENCE_KIND;
+		theSlot->kind = XS_NULL_KIND;
 }
 
 txSlot* fxToReference(txMachine* the, txSlot* theSlot)
