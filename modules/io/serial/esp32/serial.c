@@ -77,6 +77,7 @@ void xs_serial_constructor(xsMachine *the)
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
+	xsSlot *onReadable, *onWritable;
 	esp_err_t err;
 	uart_config_t uartConfig = {0};
 	int uart = 0;
@@ -112,8 +113,11 @@ void xs_serial_constructor(xsMachine *the)
 	if ((baud <= 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
 
-	hasReadable = (UART_PIN_NO_CHANGE != receive) && builtinHasCallback(the, xsID_onReadable);
-	hasWritable = (UART_PIN_NO_CHANGE != transmit) && builtinHasCallback(the, xsID_onWritable);
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	onWritable = builtinGetCallback(the, xsID_onWritable);
+
+	hasReadable = (UART_PIN_NO_CHANGE != receive) && onReadable;
+	hasWritable = (UART_PIN_NO_CHANGE != transmit) && onWritable;
 
 	builtinInitializeTarget(the);
 
@@ -174,8 +178,7 @@ void xs_serial_constructor(xsMachine *the)
 			xsUnknownError("uart_isr_register failed");
 
 		if (hasReadable) {
-			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
-			serial->onReadable = xsToReference(xsVar(0));
+			serial->onReadable = onReadable;
 
 			uart_enable_rx_intr(uart);
 			uart_set_rx_timeout(uart, 4);
@@ -186,8 +189,7 @@ void xs_serial_constructor(xsMachine *the)
 		}
 
 		if (hasWritable) {
-			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
-			serial->onWritable = xsToReference(xsVar(0));
+			serial->onWritable = onWritable;
 
 			uart_enable_tx_intr(uart, 1, kTransmitTreshold);
 		}

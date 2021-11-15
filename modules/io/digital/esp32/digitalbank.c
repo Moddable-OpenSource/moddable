@@ -87,7 +87,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 	Digital digital;
 	int mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
-	uint8_t bank = 0, hasOnReadable = 0, isInput = 1;
+	uint8_t bank = 0, isInput = 1;
+	xsSlot *onReadable;
 	xsSlot tmp;
 
 #if kPinBanks > 1
@@ -114,7 +115,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
-	if (builtinHasCallback(the, xsID_onReadable)) {
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	if (onReadable) {
 		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
 			xsRangeError("invalid mode");
 
@@ -129,8 +131,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 		if (!rises & !falls)
 			xsRangeError("invalid edges");
-
-		hasOnReadable = 1;
 	}
 
 	builtinInitializeTarget(the);
@@ -141,7 +141,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if (bank && (~3 & pins) && ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");		// input-only pins
 
-	digital = c_malloc(hasOnReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
+	digital = c_malloc(onReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
 		xsRangeError("no memory");
 
@@ -181,7 +181,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		}
 	}
 
-	if (hasOnReadable) {
+	if (onReadable) {
 		xsSlot tmp;
 
 		digital->the = the;
@@ -189,8 +189,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		digital->falls = falls;
 		digital->triggered = 0;
 // exception for rise/fall on pin 16
-		builtinGetCallback(the, xsID_onReadable, &tmp);
-		digital->onReadable = xsToReference(tmp);
+		digital->onReadable = onReadable;
 
 		if (NULL == gDigitals)
 			gpio_install_isr_service(0);
@@ -222,7 +221,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	digital->pins = pins;
 	digital->bank = bank;
-	digital->hasOnReadable = hasOnReadable;
+	digital->hasOnReadable = onReadable ? 1 : 0;
 	digital->isInput = isInput;
 	builtinUsePins(bank, pins);
 }

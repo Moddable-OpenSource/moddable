@@ -113,7 +113,7 @@ void xs_pulsecount_constructor_(xsMachine *the)
 {
 	PulseCount pc;
 	int signal, control, unit, filter = 100;
-    uint8_t hasOnReadable = 0;
+    xsSlot *onReadable;
 	xsmcVars(1);
 	
 	xsmcGet(xsVar(0), xsArg(0), xsID_signal);
@@ -147,10 +147,8 @@ void xs_pulsecount_constructor_(xsMachine *the)
 		filter = xsmcToInteger(xsVar(0));
 	}
 
-	if (builtinHasCallback(the, xsID_onReadable))
-		hasOnReadable = 1;
-
-    pc = c_malloc(hasOnReadable ? sizeof(PulseCountRecord) : offsetof(PulseCountRecord, triggered));
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+    pc = c_malloc(onReadable ? sizeof(PulseCountRecord) : offsetof(PulseCountRecord, triggered));
     if (!pc)
         xsRangeError("no memory");
 
@@ -162,7 +160,7 @@ void xs_pulsecount_constructor_(xsMachine *the)
     pc->unit = unit;
     pc->signal = signal;
     pc->control = control;
-    pc->hasOnReadable = hasOnReadable;
+    pc->hasOnReadable = onReadable ? 1 : 0;
 
     builtinInitializeTarget(the);
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
@@ -190,12 +188,11 @@ void xs_pulsecount_constructor_(xsMachine *the)
 	pcnt_set_filter_value(pc->unit, filter);
 	pcnt_filter_enable(pc->unit);
 
-	if (hasOnReadable) {
+	if (onReadable) {
 		xsSlot tmp;
         
 		pc->the = the;
-		builtinGetCallback(the, xsID_onReadable, &tmp);
-		pc->onReadable = xsToReference(tmp);
+		pc->onReadable = onReadable;
 
 		if (NULL == gPulseCounts)
 			pcnt_isr_register(pulsecountISR, (void *)(uintptr_t)pc->unit, 0, &gPulseCountISRHandle);

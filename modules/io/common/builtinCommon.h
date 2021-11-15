@@ -29,8 +29,7 @@ uint8_t builtinArePinsFree(uint32_t bank, uint32_t pin);
 uint8_t builtinUsePins(uint32_t bank, uint32_t pin);
 void builtinFreePins(uint32_t bank, uint32_t pin);
 
-uint8_t builtinHasCallback(xsMachine *the, xsIdentifier id);
-uint8_t builtinGetCallback(xsMachine *the, xsIdentifier id, xsSlot *slot);
+xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 #if ESP32
 	#define kPinBanks (2)
