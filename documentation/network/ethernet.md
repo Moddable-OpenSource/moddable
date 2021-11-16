@@ -60,7 +60,7 @@ If you want to use Ethernet in these examples, you can simply replace `manifest_
 ```js
 "include": [
 	/* other included manifests here */,
-	"$(MODDABLE)/examples/manifest_net_ethernet.json"
+	"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"
 ],
 ```
 
