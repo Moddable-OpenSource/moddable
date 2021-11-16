@@ -1,7 +1,7 @@
 # Ethernet
 
 Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: November 15, 2021
+Revised: November 16, 2021
 
 ## Overview
 
@@ -144,7 +144,7 @@ monitor.close();
 
 The following example begins the process of connecting to Ethernet and traces to the console when the connection succeeds with an IP address being assigned to the Ethernet device.
 
-The `Net.get` method is documented in the **Net** section of the [networking documentation](./network.md). Note that there is a second argument passed into the `Net.get` function in this example: the string `"ethernet"`. This specifies that you want to get the IP address assigned to the ethernet adaptor.
+The `Net.get` method can be used to get the IP and MAC addresses of the Ethernet interface, as with Wi-Fi. An optional second argument to `Net.get` specifies which interface to query: `"ethernet"`, `"ap"`, or `"station"`. If no second argument is provided, `Net.get` defaults to the active network interface (for example, when the only network connection is Ethernet, the Ethernet interface is the default).
 
 ```js
 Ethernet.start();

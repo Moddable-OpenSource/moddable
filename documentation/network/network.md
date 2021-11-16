@@ -1,7 +1,7 @@
 # Networking
 
 Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: July 1, 2021
+Revised: November 16, 2021
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -711,7 +711,7 @@ The `Net` class provides access to status information about the active network c
 import Net from "net";
 ```
 
-### `static get(property)`
+### `static get(property [, interface])`
 
 The `get` function returns properties of the active network connection.
 
@@ -733,6 +733,8 @@ trace(`Connected to Wi-Fi access point: ${Net.get("SSID")}\n`);
 ```
 
 For a device operating as both a Wi-Fi station (client) and a Wi-Fi access point, the static `get` method accepts an optional second argument to indicate if the request is for the station or access point interface. The interface accepts values of `"station"` and `"ap"`. It is used for the `IP` and `MAC` properties. 
+
+On ESP32, the optional second argument can also be used to explicitly request information about the Ethernet interface by providing the value `"ethernet"`.
 
 ```
 trace(`IP default ${Net.get("IP")}\n`);
