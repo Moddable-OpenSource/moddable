@@ -58,6 +58,7 @@ struct DigitalRecord {
 	uint8_t		bank;
 	uint8_t		hasOnReadable;
 	uint8_t		isInput;
+	uint8_t		useCount;
 	// fields after here only allocated if onReadable callback present
 	uint32_t	triggered;
 	uint32_t	rises;
@@ -148,6 +149,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	xsmcSetHostData(xsThis, digital);
 	digital->pins = 0;
 	digital->obj = xsThis;
+	digital->useCount = 1;
 	xsRemember(digital->obj);
 
 	int lastPin = bank ? GPIO_NUM_MAX - 1 : 31;
@@ -262,7 +264,8 @@ void xs_digitalbank_destructor(void *data)
 
 	builtinCriticalSectionEnd();
 
-	c_free(data);
+	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST))
+		c_free(data);
 }
 
 void xs_digitalbank_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
@@ -295,11 +298,11 @@ void xs_digitalbank_read(xsMachine *the)
 	gpio_dev_t *hw = &GPIO;
 
     if (digital->bank)
-        result = hw->in1.data & digital->pins;
+        result = hw->in1.data;
     else
-        result = hw->in & digital->pins;
+        result = hw->in;
 
-	xsmcSetInteger(xsResult, result);
+	xsmcSetInteger(xsResult, result & digital->pins);
 }
 
 void xs_digitalbank_write(xsMachine *the)
@@ -337,8 +340,10 @@ void IRAM_ATTR digitalISR(void *refcon)
 
 		uint32_t triggered = walker->triggered;
 		walker->triggered |= pin;
-		if (!triggered)
+		if (!triggered) {
+			__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
 			modMessagePostToMachineFromISR(walker->the, digitalDeliver, walker);
+		}
 		break;
 	}
 }
@@ -347,6 +352,11 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 {
 	Digital digital = refcon;
 	uint32_t triggered;
+
+	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST)) {
+		c_free(digital);
+		return;
+	}
 
 	builtinCriticalSectionBegin();
 		triggered = digital->triggered;
