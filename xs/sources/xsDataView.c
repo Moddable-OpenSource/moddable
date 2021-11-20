@@ -558,8 +558,8 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 				arrayBuffer = slot;
 				bufferInfo = slot->next;
 		}
-		if (arrayBuffer)
-			length += bufferInfo->value.bufferInfo.length;
+		if (arrayBuffer) 
+			length = fxAddChunkSizes(the, length, bufferInfo->value.bufferInfo.length);
 		else
 			mxTypeError("arguments[%ld] is no ArrayBuffer instance", i);
 		i++;
