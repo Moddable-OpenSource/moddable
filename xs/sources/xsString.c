@@ -1406,11 +1406,11 @@ void fx_String_prototype_substr(txMachine* the)
 	}	
 	if (start < stop) {
 		txInteger length;
-		start = fxUnicodeToUTF8Offset(string, start);
-		stop = fxUnicodeToUTF8Offset(string, stop);
+		start = fxUnicodeToUTF8Offset(mxThis->value.string, start);
+		stop = fxUnicodeToUTF8Offset(mxThis->value.string, stop);
 		length = stop - start;
 		mxResult->value.string = (txString)fxNewChunk(the, length + 1);
-		c_memcpy(mxResult->value.string, string + start, length);
+		c_memcpy(mxResult->value.string, mxThis->value.string + start, length);
 		mxResult->value.string[length] = 0;
 		mxResult->kind = XS_STRING_KIND;
 	}
@@ -1447,8 +1447,8 @@ void fx_String_prototype_substring(txMachine* the)
 		aStop = aLength;
 	}
 	if (aStart < aStop) {
-		anOffset = fxUnicodeToUTF8Offset(aString, aStart);
-		aLength = fxUnicodeToUTF8Offset(aString + anOffset, aStop - aStart);
+		anOffset = fxUnicodeToUTF8Offset(mxThis->value.string, aStart);
+		aLength = fxUnicodeToUTF8Offset(mxThis->value.string + anOffset, aStop - aStart);
 		if ((anOffset >= 0) && (aLength > 0)) {
 			mxResult->value.string = (txString)fxNewChunk(the, aLength + 1);
 			c_memcpy(mxResult->value.string, mxThis->value.string + anOffset, aLength);
