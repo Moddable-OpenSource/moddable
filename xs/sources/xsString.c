@@ -655,8 +655,8 @@ void fx_String_prototype_concat(txMachine* the)
 	aCount = mxArgc;
 	aLength = mxStringLength(mxThis->value.string);
 	for (anIndex = 0; anIndex < aCount; anIndex++)
-		aLength += mxStringLength(fxToString(the, mxArgv(anIndex)));
-	mxResult->value.string = (txString)fxNewChunk(the, aLength + 1);
+		aLength = fxAddChunkSizes(the, aLength, mxStringLength(fxToString(the, mxArgv(anIndex))));
+	mxResult->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, aLength, 1));
 	mxResult->kind = XS_STRING_KIND;
 	c_strcpy(mxResult->value.string, mxThis->value.string);
 	for (anIndex = 0; anIndex < aCount; anIndex++)
