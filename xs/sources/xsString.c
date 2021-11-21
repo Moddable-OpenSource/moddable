@@ -1389,7 +1389,7 @@ void fx_String_prototype_startsWith(txMachine* the)
 	if (fxIsRegExp(the, mxArgv(0)))
 		mxTypeError("future editions");
 	searchString = fxToString(the, mxArgv(0));
-	offset = fxArgToPosition(the, 1, 0, fxUnicodeLength(string));
+	offset = fxArgToPosition(the, 1, 0, length);
 	string = mxThis->value.string;
 	length = mxStringLength(string);
 	searchString = mxArgv(0)->value.string;
