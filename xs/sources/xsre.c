@@ -602,6 +602,10 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 			result = fxCharSetSingle(parser, parser->character);
 			fxPatternParserNext(parser);
 		}
+		else if (!(parser->flags & XS_REGEXP_U)) {
+			result = fxCharSetSingle(parser, parser->character); // UnicodeIDContinue?
+			fxPatternParserNext(parser);
+		}
 	} break;
 
 	case 'u': {
@@ -609,6 +613,10 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 		if (fxParseUnicodeEscape(&p, &parser->character, (parser->flags & XS_REGEXP_U) ? 1 : 0, (parser->flags & XS_REGEXP_U) ? '\\' : 0)) {
 			parser->offset = mxPtrDiff(p - parser->pattern);
 			result = fxCharSetSingle(parser, parser->character);
+			fxPatternParserNext(parser);
+		}
+		else if (!(parser->flags & XS_REGEXP_U)) {
+			result = fxCharSetSingle(parser, parser->character); // UnicodeIDContinue?
 			fxPatternParserNext(parser);
 		}
 	} break;
