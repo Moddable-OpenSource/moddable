@@ -550,12 +550,12 @@ void fx_String_prototype_at(txMachine* the)
 	if (index < 0)
 		index = length + index;
 	if ((0 <= index) && (index < length)) {
-		txInteger from = fxUnicodeToUTF8Offset(string, (txIndex)index);
+		txInteger from = fxUnicodeToUTF8Offset(mxThis->value.string, (txIndex)index);
 		if (from >= 0) {
-			txInteger to = fxUnicodeToUTF8Offset(string, (txIndex)(index + 1));
+			txInteger to = fxUnicodeToUTF8Offset(mxThis->value.string, (txIndex)(index + 1));
 			if (to >= 0) {
 				mxResult->value.string = fxNewChunk(the, to - from + 1);
-				c_memcpy(mxResult->value.string, fxToString(the, mxThis) + from, to - from);
+				c_memcpy(mxResult->value.string, mxThis->value.string + from, to - from);
 				mxResult->value.string[to - from] = 0;
 				mxResult->kind = XS_STRING_KIND;
 			}
@@ -565,11 +565,10 @@ void fx_String_prototype_at(txMachine* the)
 
 void fx_String_prototype_charAt(txMachine* the)
 {
-	txString aString;
-	txInteger aLength;
 	txInteger anOffset;
-
-	aString = fxCoerceToString(the, mxThis);
+	txInteger aLength;
+	
+	fxCoerceToString(the, mxThis);
 	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
 		anOffset = fxToInteger(the, mxArgv(0));
 		if (anOffset < 0) goto fail;
@@ -577,10 +576,10 @@ void fx_String_prototype_charAt(txMachine* the)
 	else
 		anOffset = 0;
 
-	anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
+	anOffset = fxUnicodeToUTF8Offset(mxThis->value.string, anOffset);
 	if (anOffset < 0) goto fail;
 
-	aLength = fxUnicodeToUTF8Offset(aString + anOffset, 1);
+	aLength = fxUnicodeToUTF8Offset(mxThis->value.string + anOffset, 1);
 	if (aLength < 0) goto fail;
 
 	mxResult->value.string = (txString)fxNewChunk(the, aLength + 1);
@@ -596,10 +595,9 @@ fail:
 
 void fx_String_prototype_charCodeAt(txMachine* the)
 {
-	txString aString;
 	txInteger anOffset;
 
-	aString = fxCoerceToString(the, mxThis);
+	fxCoerceToString(the, mxThis);
 	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
 		anOffset = fxToInteger(the, mxArgv(0));
 		if (anOffset < 0) goto fail;
@@ -607,13 +605,13 @@ void fx_String_prototype_charCodeAt(txMachine* the)
 	else
 		anOffset = 0;
 
-	anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
+	anOffset = fxUnicodeToUTF8Offset(mxThis->value.string, anOffset);
 	if (anOffset < 0) goto fail;
 
-	if (fxUnicodeToUTF8Offset(aString + anOffset, 1) < 0)
+	if (fxUnicodeToUTF8Offset(mxThis->value.string + anOffset, 1) < 0)
 		goto fail;
 
-	fxUTF8Decode(aString + anOffset, &mxResult->value.integer);
+	fxUTF8Decode(mxThis->value.string + anOffset, &mxResult->value.integer);
 	mxResult->kind = XS_INTEGER_KIND;
 	return;
 
@@ -636,10 +634,10 @@ void fx_String_prototype_codePointAt(txMachine* the)
 	if (c_isnan(at))
 		at = 0;
 	if ((0 <= at) && (at < (txNumber)length)) {
-		txInteger offset = fxUnicodeToUTF8Offset(string, (txInteger)at);
-		length = fxUnicodeToUTF8Offset(string + offset, 1);
+		txInteger offset = fxUnicodeToUTF8Offset(mxThis->value.string, (txInteger)at);
+		length = fxUnicodeToUTF8Offset(mxThis->value.string + offset, 1);
 		if ((offset >= 0) && (length > 0)) {
-			fxUTF8Decode(string + offset, &mxResult->value.integer);
+			fxUTF8Decode(mxThis->value.string + offset, &mxResult->value.integer);
 			mxResult->kind = XS_INTEGER_KIND;
 		}
 	}
@@ -678,8 +676,11 @@ void fx_String_prototype_endsWith(txMachine* the)
 	if (fxIsRegExp(the, mxArgv(0)))
 		mxTypeError("future editions");
 	searchString = fxToString(the, mxArgv(0));
+	offset = fxArgToPosition(the, 1, length, length);
+	string = mxThis->value.string;
+	searchString = mxArgv(0)->value.string;
 	searchLength = mxStringLength(searchString);
-	offset = fxUnicodeToUTF8Offset(string, fxArgToPosition(the, 1, length, length));
+	offset = fxUnicodeToUTF8Offset(string, offset);
 	if (offset < searchLength)
 		return;
 	mxMeterSome(fxUnicodeLength(searchString));
@@ -711,7 +712,7 @@ static txString fx_String_prototype_includes_aux(txMachine* the, txString string
 void fx_String_prototype_includes(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis);
-	txInteger length = mxStringLength(string);
+	txInteger length = fxUnicodeLength(string);
 	txString searchString;
 	txInteger searchLength;
 	txInteger offset;
@@ -722,8 +723,12 @@ void fx_String_prototype_includes(txMachine* the)
 	if (fxIsRegExp(the, mxArgv(0)))
 		mxTypeError("future editions");
 	searchString = fxToString(the, mxArgv(0));
+	offset = fxArgToPosition(the, 1, 0, length);
+	string = mxThis->value.string;
+	length = mxStringLength(string);
+	searchString = mxArgv(0)->value.string;
 	searchLength = mxStringLength(searchString);
-	offset = fxUnicodeToUTF8Offset(string, fxArgToPosition(the, 1, 0, fxUnicodeLength(string)));
+	offset = fxUnicodeToUTF8Offset(string, offset);
 	if ((length - offset) < searchLength)
 		return;
 	if (fx_String_prototype_includes_aux(the, string + offset, length - offset, searchString, searchLength))
@@ -1274,7 +1279,7 @@ void fx_String_prototype_slice(txMachine* the)
 	txNumber end = fxArgToIndex(the, 1, length, length);
 	if (start < end) {
 		txInteger offset = fxUnicodeToUTF8Offset(string, (txInteger)start);
-		length = fxUnicodeToUTF8Offset(string + offset, (txInteger)(end - start));
+		length = fxUnicodeToUTF8Offset(mxThis->value.string + offset, (txInteger)(end - start));
 		if ((offset >= 0) && (length > 0)) {
 			mxResult->value.string = (txString)fxNewChunk(the, length + 1);
 			c_memcpy(mxResult->value.string, mxThis->value.string + offset, length);
@@ -1373,7 +1378,7 @@ txSlot* fx_String_prototype_split_aux(txMachine* the, txSlot* theString, txSlot*
 void fx_String_prototype_startsWith(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis);
-	txInteger length = mxStringLength(string);
+	txInteger length = fxUnicodeLength(string);
 	txString searchString;
 	txInteger searchLength;
 	txInteger offset;
@@ -1384,8 +1389,12 @@ void fx_String_prototype_startsWith(txMachine* the)
 	if (fxIsRegExp(the, mxArgv(0)))
 		mxTypeError("future editions");
 	searchString = fxToString(the, mxArgv(0));
+	offset = fxArgToPosition(the, 1, 0, fxUnicodeLength(string));
+	string = mxThis->value.string;
+	length = mxStringLength(string);
+	searchString = mxArgv(0)->value.string;
 	searchLength = mxStringLength(searchString);
-	offset = fxUnicodeToUTF8Offset(string, fxArgToPosition(the, 1, 0, fxUnicodeLength(string)));
+	offset = fxUnicodeToUTF8Offset(string, offset);
 	if (length - offset < searchLength)
 		return;
 	mxMeterSome(fxUnicodeLength(searchString));
@@ -1725,11 +1734,11 @@ txString fxCoerceToString(txMachine* the, txSlot* theSlot)
 
 void fx_String_prototype_iterator(txMachine* the)
 {
-	txString string = fxCoerceToString(the, mxThis);
 	txSlot* property;
+	fxCoerceToString(the, mxThis);
 	mxPush(mxStringIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_String)));
-	property = fxNextIntegerProperty(the, property, fxUnicodeLength(string), XS_NO_ID, XS_INTERNAL_FLAG);
+	property = fxNextIntegerProperty(the, property, fxUnicodeLength(mxThis->value.string), XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 
