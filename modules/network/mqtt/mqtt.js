@@ -59,13 +59,10 @@ export default class Client {
 			return;
 		}
 
-		if (!dictionary.id)
-			throw new Error("parameter id is required");
-
 		if (!dictionary.host)
 			throw new Error("parameter host is required");
 
-		this.connect = {id: dictionary.id};
+		this.connect = {id: dictionary.id ?? ""};
 		if (dictionary.user)
 			this.connect.user = dictionary.user;
 		if (dictionary.password)
@@ -79,10 +76,8 @@ export default class Client {
 //		this.onMessage = function() {};
 //		this.onClose = function() {};
 
-		const path = dictionary.path ? dictionary.path : null; // includes query string
-
-		if (dictionary.timeout)
-			this.timeout = dictionary.timeout;
+		const path = dictionary.path ?? null; // includes query string
+		this.timeout = dictionary.timeout ?? 60_000;
 
 		if (path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path
