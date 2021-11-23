@@ -2248,6 +2248,12 @@ enum {
 	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
 	the->stack->value.string = (THE_STRING))
 #endif
+
+#define mxPushSymbol(THE_SYMBOL) \
+	(mxOverflow(-1), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_SYMBOL_KIND), \
+	the->stack->value.symbol = (THE_SYMBOL))
 #define mxPushUndefined() \
 	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \

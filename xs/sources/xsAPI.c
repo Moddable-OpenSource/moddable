@@ -1472,6 +1472,8 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxNewInstance(the);
 			fxNewInstance(the);
 			mxPushUndefined();
+			fxNewEnvironmentInstance(the, C_NULL);
+			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
@@ -1662,21 +1664,20 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-// 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
 			fxNewInstance(the);
 			fxNewInstance(the);
 			mxPushUndefined();
-			mxPushUndefined();
-			mxPushUndefined();
-			mxPushUndefined();
-			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = slot = fxNewRealmInstance(the);
-			
+			slot = fxLastProperty(the, fxNewEnvironmentInstance(the, C_NULL));
 			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
-			slot = fxLastProperty(the, mxRealmClosures(slot)->value.reference);
 			while (sharedSlot) {
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
 				sharedSlot = sharedSlot->next;
 			}
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
+			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
 		
 			the->sharedModules = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference->next; //@@
