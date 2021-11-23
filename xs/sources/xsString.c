@@ -491,6 +491,7 @@ void fx_String_raw(txMachine* the)
 	mxPop();
 	if (rawCount <= 0) {
 		mxResult->value = mxEmptyString.value;
+		mxResult->kind = mxEmptyString.kind;
 	}
 	else {
 		txSlot* list;
@@ -535,8 +536,8 @@ void fx_String_raw(txMachine* the)
 		}
 		mxResult->value.string[size] = 0;
 		mxPop();
+		mxResult->kind = XS_STRING_KIND;
 	}
-	mxResult->kind = XS_STRING_KIND;
 	mxPop();
 }
 
