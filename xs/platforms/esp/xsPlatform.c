@@ -219,12 +219,11 @@ void fxAbort(txMachine* the, int status)
 #if MODDEF_XS_TEST
 	if (XS_DEBUGGER_EXIT == status) {
 		extern txMachine *gThe;
-		gThe = NULL;		// soft reset
-		return;
+		if (gThe == the) {
+			gThe = NULL;		// soft reset
+			return;
+		}
 	}
-
-	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
-		mxUnknownError("fxAbort: out of memory");
 #endif
 
 #if defined(mxDebug) || defined(mxInstrument)
@@ -290,6 +289,7 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
 		}
 
 		if (the->connection) {
+/*
 			tcp_recv(the->connection, NULL);
 			tcp_err(the->connection, NULL);
 #if ESP32
@@ -297,6 +297,7 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
 			tcp_close(the->connection);
 			tcp_abort(the->connection);		// not _safe inside callback. must call tcp_abort on ESP8266 or memory leak
 #endif
+*/
 			the->connection = NULL;
 
 			return ERR_ABRT;
