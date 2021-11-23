@@ -28,9 +28,14 @@ class AppBehavior extends Behavior {
 		this.questions = Object.keys(CARDS);
 	}
 	onDisplaying(application) {
-		if (config.updateMode)
-			screen.configure({updateMode: config.updateMode});
+		screen.refresh?.();
+		screen.configure?.({updateMode: config.firstDrawMode ?? config.updateMode});
+		if (config.firstDrawMode)
+			application.defer("onFinishedFirstDraw", config.updateMode);
 		this.showNextCard(application, 1);
+	}
+	onFinishedFirstDraw(application, mode) {
+		screen.configure({updateMode: mode});
 	}
 	showNextCard(application, delta) {
 		let data = this.data;

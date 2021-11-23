@@ -27,6 +27,7 @@
 		"lin": {},
 		"esp32/m5paper": {
 			"config": {
+				"firstDrawMode": "GC16",
 				"updateMode": "A2"
 			}
 		},

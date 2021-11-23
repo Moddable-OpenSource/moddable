@@ -106,6 +106,34 @@ The display controller supports several different [update modes](https://github.
 screen.config({updateMode: "A2"});
 ```
 
+You may see artifacts that remain on the screen from previous apps when you install a new app on your device. To get rid of these, it is helpful to draw at least one complete frame in a high-quality mode (e.g. `GC16`) before switching to a faster update mode (e.g. `A2`). The [epaper-flashcards](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/piu/epaper-flashcards/main.js) example does this using a pattern that can be applied to most apps:
+
+```js
+onDisplaying(application) {
+	screen.refresh?.();
+	screen.configure?.({updateMode: config.firstDrawMode ?? config.updateMode});
+	if (config.firstDrawMode)
+		application.defer("onFinishedFirstDraw", config.updateMode);
+	this.showNextCard(application, 1); // render the initial screen of the app
+}
+onFinishedFirstDraw(application, mode) {
+	screen.configure({updateMode: mode});
+}
+```
+
+Using this pattern, per-device `firstDrawMode` and `updateMode` settings can be applied in the project's `manifest.json`:
+
+```json
+"platforms": {
+	"esp32/m5paper": {
+		"config": {
+			"firstDrawMode": "GC16",
+			"updateMode": "A2"
+		}
+	}
+}
+```
+
 <a id="image-filters"></a>
 #### Image Filters
 The display driver supports several different [pixel filters](https://github.com/phoddie/m5paper/blob/4110701c8084c07d7f777a44e17e970ffd18f729/targets/m5paper/it8951.js#L342-L349). These filter adjust the luminance of the pixels. The are useful for optimizing image and applying special effects. The default filter is "none". The filter may be changed on each frame. To change the filter, call the `config` method of the global `screen` object. For example:
