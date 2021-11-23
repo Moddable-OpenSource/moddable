@@ -2443,8 +2443,8 @@ txSlot* fxNewStaticModuleRecordTransfers(txMachine* the, txSlot* transfers, txSl
 			transfer = (*step)(the, transfers, transfer, nameID, asID);
 			mxPop(); // item or specifier
 		}
-		mxPop(); // array
 	}
+	mxPop();
 	return transfer;
 }
 

@@ -1247,6 +1247,8 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txString name;
 	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
+        if (!theProperty)
+            return;
 		if (theProperty->ID) {
 			txSlot* slot = the->aliasArray[theProperty->ID];
 			if (slot)
