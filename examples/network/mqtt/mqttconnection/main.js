@@ -19,7 +19,8 @@ import WiFi from "wifi/connection";
 import config from "mc/config";
 
 const mqtt = new Client({
-	host: "test.mosquitto.org"
+	host: "test.mosquitto.org",
+	timeout: 60_000
 });
 mqtt.subscribe("moddable/mqtt/example/#");
 
