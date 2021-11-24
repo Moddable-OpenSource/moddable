@@ -243,10 +243,9 @@ static txSize fxSizeToCapacity(txMachine* the, txSize size)
 txBoolean fxDeleteIndexProperty(txMachine* the, txSlot* array, txIndex index) 
 {
 	txSlot* address = array->value.array.address;
-	txSlot* chunk = address;
 	if (address) {
 		txIndex length = array->value.array.length;
-		txIndex size = (((txChunk*)(((txByte*)chunk) - sizeof(txChunk)))->size) / sizeof(txSlot);
+		txIndex size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
 		txSlot* result = address;
 		txSlot* limit = result + size;
 		if (length == size)
@@ -265,14 +264,15 @@ txBoolean fxDeleteIndexProperty(txMachine* the, txSlot* array, txIndex index)
 		if (result < limit) {
 			if (result->flag & XS_DONT_DELETE_FLAG)
 				return 0;
+			index = result - address;
 			size--;
 			if (size > 0) {
-				chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
-				if (result > address)
-					c_memcpy(chunk, address, (result - address) * sizeof(txSlot));
-				result++;
-				if (result < limit)
-					c_memcpy(chunk + (result - address - 1), result, (limit - result) * sizeof(txSlot));
+				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+				address = array->value.array.address;
+				if (index > 0)
+					c_memcpy(chunk, address, index * sizeof(txSlot));
+				if (index < size)
+					c_memcpy(chunk + index, address + index + 1, (size - index) * sizeof(txSlot));
 				array->value.array.address = chunk;
 			}
 			else
