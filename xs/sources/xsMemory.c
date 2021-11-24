@@ -1175,11 +1175,11 @@ txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b)
 {
 	txSize c;
 #if __has_builtin(__builtin_mul_overflow)
-	if (__builtin_mul_overflow(a, b, &c)) {
+	if (__builtin_mul_overflow(a, b, &c) || (c < 0)) {
 #else
 	txNumber C = (txNumber)a * (txNumber)b;
 	c = (txSize)C;
-	if (C > (txNumber)0x7FFFFFFF) {
+	if ((C > (txNumber)0x7FFFFFFF) || (C < (txNumber)0)) {
 #endif
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
