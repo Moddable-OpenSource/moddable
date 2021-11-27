@@ -317,14 +317,18 @@ class LoRa_ST127x {
 
 		// set up our buffer (if arg is number, allocate it; otherwise assume it's a buffer)
 		let buf, result;
-		if ("number" == typeof arg)
-			buf = result = new ArrayBuffer(len);
+		if (undefined === arg) {
+			buf = new Uint8Array(len);
+			result = buf.buffer;
+		}
 		else {
 			result = len;
 			if (arg instanceof ArrayBuffer)
 				buf = new Uint8Array(arg);
-			else		// could make data view work... also assumes Uint8/Int8Array
+			else if (arg instanceof Uint8Array)
 				buf = arg; 
+			else
+				throw new Error("unsupported");				// to do: dataview, Int8Array, SharedArrayBuffer
 
 			//  ensure sufficient room in our buffer
 			if (len > buf.byteLength) {
@@ -385,7 +389,7 @@ class LoRa_ST127x {
 
 		// track that we are done transmitting, and handle the completion
 		this.#radioTransmitting = false;
-		this.#options?.onWritable();
+		this.#options.onWritable?.();
 	}
 
 	/**
@@ -496,7 +500,7 @@ class LoRa_ST127x {
 				this.#packetAvailable = true;
 
 				const count = this.#runtimeOptions.implicitHeader ? this.#register.PAYLOAD_LENGTH : this.#register.RX_NB_BYTES; 
-				this.#options?.onReadable(count);
+				this.#options.onReadable?.(count);
 			}
 		}
 	}

@@ -55,4 +55,4 @@ function doTransmit() {
 	for (let l = 0; l < length; ++l)
 		buffer[l] = message.charCodeAt(l);
 	lora.write(buffer, length);
- }
+}

@@ -1,0 +1,18 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/data/text/decoder/manifest.json",
+		"$(MODDABLE)/modules/data/text/encoder/manifest.json"
+	],
+	"modules": {
+		"~": "$(COMMODETTO)/cfeBMF",
+		"*": [
+			"./main",
+			"$(COMMODETTO)/cfe8x8"
+		]
+	},
+	"resources": {
+		"*": "$(MODDABLE)/examples/commodetto/cfe8x8/assets/8x8font"
+	}
+}
