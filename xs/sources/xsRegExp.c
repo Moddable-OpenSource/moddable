@@ -863,10 +863,10 @@ void fx_RegExp_prototype_replace(txMachine* the)
 	item = list->next;
 	while (item) {
 		item->value.key.sum = mxStringLength(item->value.string);
-		size += item->value.key.sum;
+        size = fxAddChunkSizes(the, size, item->value.key.sum);
 		item = item->next;
 	}
-	size++;
+    size = fxAddChunkSizes(the, size, 1);
 	mxResult->value.string = (txString)fxNewChunk(the, size);
 	size = 0;
 	item = list->next;
