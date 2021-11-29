@@ -38,13 +38,13 @@ void xs_preference_set(xsMachine *the)
 	nvs_handle handle;
 	char key[64];
 
-	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
-
 	err = nvs_open(xsmcToString(xsArg(0)), NVS_READWRITE, &handle);
 	if (ESP_OK != err)
 		xsUnknownError("nvs_open fail");
 
 	xsTry {
+		xsmcToStringBuffer(xsArg(1), key, sizeof(key));
+
 		switch (xsmcTypeOf(xsArg(2))) {
 			case xsBooleanType: {
 				uint8_t b = xsmcToBoolean(xsArg(2));
@@ -152,11 +152,12 @@ void xs_preference_delete(xsMachine *the)
 {
 	esp_err_t err;
 	nvs_handle handle;
-	char key[64];
+	char domain[64], key[64];
 
+	xsmcToStringBuffer(xsArg(0), domain, sizeof(domain));
 	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
 
-	err = nvs_open(xsmcToString(xsArg(0)), NVS_READWRITE, &handle);
+	err = nvs_open(domain, NVS_READWRITE, &handle);
 	if (ESP_OK != err)
 		return;  // most likely that domain doesn't exist yet
 
