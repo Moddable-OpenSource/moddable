@@ -602,7 +602,7 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 		c_memcpy(chunk, arrayBuffer->value.arrayBuffer.address, (newByteLength < oldByteLength) ? newByteLength : oldByteLength);
 	}
 	if (newByteLength > oldByteLength)
-		c_memset(chunk + newByteLength, 0, newByteLength - oldByteLength);
+		c_memset(chunk + oldByteLength, 0, newByteLength - oldByteLength);
 	arrayBuffer->value.arrayBuffer.address = chunk;
 	bufferInfo->value.bufferInfo.length = newByteLength;
 }
