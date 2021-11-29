@@ -1942,7 +1942,7 @@ void fx_TypedArray_prototype_join(txMachine* the)
 	while (offset < limit) {
 		if (comma) {
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
-			size += slot->value.key.sum;
+            size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		}
 		else
 			comma = 1;
