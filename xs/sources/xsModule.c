@@ -1031,13 +1031,25 @@ void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 			mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
 		}
 		else {
-			//??
+			mxTypeError("no module");
 		}
 	}
 	else {
-		fxToString(the, the->stack);
-		moduleID = fxNewName(the, the->stack);
+		txID resultID = fxToID(the, the->stack);
+		txSlot* result = the->sharedModules;
+		while (result) {
+			if (result->ID == resultID) {
+				module->kind = result->kind;
+				module->value = result->value;
+				return;
+			}
+			result = result->next;
+		}
 		fxNewModule(the, realm, moduleID, module);
+		fxLoadModule(the, module, resultID);
+		if (mxModuleExecute(module)->kind == XS_NULL_KIND)
+			mxTypeError("no module");
+		mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
 	}
 }
 

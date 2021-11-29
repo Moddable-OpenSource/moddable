@@ -1,11 +1,11 @@
-import * as increment from "increment";
+import increment from "increment";
 function test() {
-    trace("app " + increment.default() + "\n");
+    trace("app " + increment() + "\n");
 }
-const modules = {
-	mod: new StaticModuleRecord({ archive:"mod" }),
-};
-let compartment = new Compartment({}, { increment }, {
+let compartment = new Compartment({}, {
+	increment: "/increment.xsb",
+	mod: "/mod.xsb",
+}, {
 	resolveHook(specifier, refererSpecifier) {
 		return specifier;
 	},
