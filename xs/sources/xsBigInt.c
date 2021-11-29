@@ -592,6 +592,11 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	txSlot* result;
 	txSlot* stack;
 	
+	if (mxBigIntIsNaN(&slot->value.bigint)) {
+		fxStringX(the, slot, "NaN");
+		return;
+	}
+	
 	mxMeterSome(slot->value.bigint.size);
 	
 	mxPushUndefined();
