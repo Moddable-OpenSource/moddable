@@ -342,6 +342,8 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 	txSlot* address = array->value.array.address;
 	txSlot* a = address + i;
 	txSlot* b = the->stack;
+	txSlot* ai = a->next;
+	txSlot* bi = b->next;
 	int result;
 	
 	if (a->kind == XS_UNDEFINED_KIND)
@@ -379,7 +381,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 		}
 	}
 	if (result == 0)
-		result = (b->next > a->next) ? -1 : (b->next < a->next) ? 1 : 0;
+		result = (bi > ai) ? -1 : (bi < ai) ? 1 : 0;
 	return result;
 }
 
