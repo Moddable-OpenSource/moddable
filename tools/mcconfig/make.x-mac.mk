@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -18,12 +18,12 @@
 #
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/mac/debug/lib
+	LIB_DIR = $(TMP_DIR)/mac/debug/lib
 else
 	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/mac/instrument/lib
+		LIB_DIR = $(TMP_DIR)/mac/instrument/lib
 	else
-		LIB_DIR = $(BUILD_DIR)/tmp/mac/release/lib
+		LIB_DIR = $(TMP_DIR)/mac/release/lib
 	endif
 endif
 

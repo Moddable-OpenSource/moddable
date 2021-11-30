@@ -64,11 +64,11 @@ IDF_VERSION = \
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\lib
+LIB_DIR = $(TMP_DIR)\$(PLATFORMPATH)\debug\lib
 !ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\instrument\lib
+LIB_DIR = $(TMP_DIR)\$(PLATFORMPATH)\instrument\lib
 !ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
+LIB_DIR = $(TMP_DIR)\$(PLATFORMPATH)\release\lib
 !ENDIF
 
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj-$(ESP32_SUBCLASS)
@@ -88,7 +88,7 @@ PORT_COMMAND = -p $(UPLOAD_PORT)
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\$(NAME)\xsProj-$(ESP32_SUBCLASS)
+PROJ_DIR = $(TMP_DIR)\$(PLATFORMPATH)\debug\$(NAME)\xsProj-$(ESP32_SUBCLASS)
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
@@ -97,7 +97,7 @@ DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -
 START_SERIAL2XSBUG = echo Launching app... & echo Type Ctrl-C twice after debugging app. & $(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1
 
 !ELSE
-PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\$(NAME)\xsProj-$(ESP32_SUBCLASS)
+PROJ_DIR = $(TMP_DIR)\$(PLATFORMPATH)\release\$(NAME)\xsProj-$(ESP32_SUBCLASS)
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 START_XSBUG=
 START_SERIAL2XSBUG = echo No debugger for a release build.

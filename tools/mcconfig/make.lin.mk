@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -20,12 +20,12 @@
 PKGCONFIG = $(shell which pkg-config)
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/lin/mc/debug/lib
+	LIB_DIR = $(TMP_DIR)/lin/mc/debug/lib
 else
 	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/lin/mc/instrument/lib
+		LIB_DIR = $(TMP_DIR)/lin/mc/instrument/lib
 	else
-		LIB_DIR = $(BUILD_DIR)/tmp/lin/mc/release/lib
+		LIB_DIR = $(TMP_DIR)/lin/mc/release/lib
 	endif
 endif
 

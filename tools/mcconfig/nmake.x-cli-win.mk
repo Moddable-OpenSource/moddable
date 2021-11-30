@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -24,11 +24,11 @@
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\debug\lib
+LIB_DIR = $(TMP_DIR)\win\debug\lib
 !ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\instrument\lib
+LIB_DIR = $(TMP_DIR)\win\instrument\lib
 !ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\win\release\lib
+LIB_DIR = $(TMP_DIR)\win\release\lib
 !ENDIF
 
 XS_DIRECTORIES = \

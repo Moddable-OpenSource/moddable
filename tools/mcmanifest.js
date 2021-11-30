@@ -122,7 +122,7 @@ export class MakeFile extends FILE {
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
-		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
+		let outputConfigDirectory = tool.outputPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
 
 		if (undefined === tool.environment.ESP32_SUBCLASS) {
 			baseConfigDirectory += "esp32";
@@ -325,7 +325,7 @@ export class MakeFile extends FILE {
 			this.write(" -s ");
 			this.write(sdkconfigFile);
 			if (tool.windows) {
-				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
+				let idfBuildDir = tool.outputPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
 				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
 				if (sdkconfigFile  !== undefined){

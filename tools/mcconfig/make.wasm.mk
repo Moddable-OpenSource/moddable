@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -23,9 +23,9 @@ CC = emcc
 OPT = wasm-opt
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/wasm/debug/mc/lib
+	LIB_DIR = $(TMP_DIR)/wasm/debug/mc/lib
 else
-	LIB_DIR = $(BUILD_DIR)/tmp/wasm/release/mc/lib
+	LIB_DIR = $(TMP_DIR)/wasm/release/mc/lib
 endif
 
 XS_DIRECTORIES = \

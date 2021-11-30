@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -40,11 +40,11 @@ PLATFORM_DIR = $(MODDABLE)\build\devices\esp
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\esp\debug\lib
+LIB_DIR = $(TMP_DIR)\esp\debug\lib
 !ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\esp\instrument\lib
+LIB_DIR = $(TMP_DIR)\esp\instrument\lib
 !ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\esp\release\lib
+LIB_DIR = $(TMP_DIR)\esp\release\lib
 !ENDIF
 
 # serial port configuration
