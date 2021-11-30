@@ -483,8 +483,10 @@ void fxDisconnect(txMachine* the)
 				tcp_close_safe((struct tcp_pcb *)the->connection);
 */		}
 		else {
+			mxDebugMutexTake();
 			fx_putpi(the, '-', true);
 			the->debugConnectionVerified = 0;
+			mxDebugMutexGive();
 			//@@ clear debug fragments?
 		}
 		the->connection = NULL;
