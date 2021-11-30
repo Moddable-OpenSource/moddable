@@ -37,6 +37,10 @@
 
 #include "xsAll.h"
 
+#ifndef mxIntegerDivideOverflowException
+	#define mxIntegerDivideOverflowException 1
+#endif
+
 void fxBuildMath(txMachine* the)
 {
 	txSlot* slot;
@@ -295,66 +299,64 @@ void fx_Math_hypot(txMachine* the)
 
 void fx_Math_idiv(txMachine* the)
 {
-	txS8 x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
-	txS8 y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
 	if (y == 0) {
 		mxResult->kind = XS_NUMBER_KIND;
 		mxResult->value.number = C_NAN;
 	}
 	else {
-		txS8 r = x / y;
-		if ((-2147483648LL <= r) && (r <= 2147483647LL)) {
-			mxResult->kind = XS_INTEGER_KIND;
-			mxResult->value.integer = (txInteger)r;
-		}
-		else {
-			mxResult->kind = XS_NUMBER_KIND;
-			mxResult->value.number = (txNumber)r;
-		}
+		mxResult->kind = XS_INTEGER_KIND;
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1))
+			mxResult->value.integer = x;
+		else
+#endif
+			mxResult->value.integer = x / y;
 	}
 }
 
 void fx_Math_idivmod(txMachine* the)
 {
-	txS8 x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
-	txS8 y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
 	if (y == 0) {
 		mxPushNumber(C_NAN);
 		mxPushNumber(C_NAN);
 	}
 	else {
-		txS8 r = x / y;
-		if ((-2147483648LL <= r) && (r <= 2147483647LL))
-			mxPushInteger((txInteger)r);
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1)) {
+			mxPushInteger(x);
+			mxPushInteger(0);
+			
+		}
 		else
-			mxPushNumber((txNumber)r);
-		r = (x % y + y) % y;
-		if ((-2147483648LL <= r) && (r <= 2147483647LL))
-			mxPushInteger((txInteger)r);
-		else
-			mxPushNumber((txNumber)r);
+#endif
+		{
+			mxPushInteger(x / y);
+			mxPushInteger((x % y + y) % y);
+		}
 	}
 	fxConstructArrayEntry(the, mxResult);
 }
 
 void fx_Math_imod(txMachine* the)
 {
-	txS8 x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
-	txS8 y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
 	if (y == 0) {
 		mxResult->kind = XS_NUMBER_KIND;
 		mxResult->value.number = C_NAN;
 	}
 	else {
-		txS8 r = (x % y + y) % y;
-		if ((-2147483648LL <= r) && (r <= 2147483647LL)) {
-			mxResult->kind = XS_INTEGER_KIND;
-			mxResult->value.integer = (txInteger)r;
-		}
-		else {
-			mxResult->kind = XS_NUMBER_KIND;
-			mxResult->value.number = (txNumber)r;
-		}
+		mxResult->kind = XS_INTEGER_KIND;
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1))
+			mxResult->value.integer = 0;
+		else
+#endif
+			mxResult->value.integer = (x % y + y) % y;
 	}
 }
 
@@ -390,22 +392,20 @@ void fx_Math_imuldiv(txMachine* the)
 
 void fx_Math_irem(txMachine* the)
 {
-	txS8 x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
-	txS8 y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
+	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
 	if (y == 0) {
 		mxResult->kind = XS_NUMBER_KIND;
 		mxResult->value.number = C_NAN;
 	}
 	else {
-		txS8 r = x % y;
-		if ((-2147483648LL <= r) && (r <= 2147483647LL)) {
-			mxResult->kind = XS_INTEGER_KIND;
-			mxResult->value.integer = (txInteger)r;
-		}
-		else {
-			mxResult->kind = XS_NUMBER_KIND;
-			mxResult->value.number = (txNumber)r;
-		}
+		mxResult->kind = XS_INTEGER_KIND;
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1))
+			mxResult->value.integer = 0;
+		else
+#endif
+			mxResult->value.integer = x % y;
 	}
 }
 
