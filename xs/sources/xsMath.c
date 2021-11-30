@@ -453,6 +453,8 @@ void fx_Math_max(txMachine* the)
 	for (i = 0; i < c; i++) {
 		txNumber n = fxToNumber(the, mxArgv(i));
 		if (c_isnan(n)) {
+			for (; i < c; i++)
+				fxToNumber(the, mxArgv(i));
 			mxResult->value.number = C_NAN;
 			return;
 		}
@@ -473,6 +475,8 @@ void fx_Math_min(txMachine* the)
 	for (i = 0; i < c; i++) {
 		txNumber n = fxToNumber(the, mxArgv(i));
 		if (c_isnan(n)) {
+			for (; i < c; i++)
+				fxToNumber(the, mxArgv(i));
 			mxResult->value.number = C_NAN;
 			return;
 		}
