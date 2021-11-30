@@ -523,7 +523,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 		txSlot* data = buffer->value.reference->next;
 		if (data->value.arrayBuffer.address == C_NULL)
 			mxTypeError("detached buffer");
-		return view->value.dataView.size >> array->value.typedArray.dispatch->shift;
+		return fxGetDataViewSize(the, view, buffer) >> array->value.typedArray.dispatch->shift;
 	}
 	mxPushReference(instance);
 	mxGetID(mxID(_length));
