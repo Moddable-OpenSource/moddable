@@ -67,6 +67,8 @@
 	#define mxUseFreeRTOSTasks 1
 #endif
 
+#define mxIntegerDivideOverflowException 0
+
 #ifndef __XS6PLATFORMMINIMAL__
 
 #define mxExport extern
