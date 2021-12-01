@@ -454,7 +454,7 @@ void fxLinkerScriptCallback(txMachine* the)
 	txLinker* linker = xsGetContext(the);
     txSlot* slot = mxModuleInternal(mxThis);
     txSlot* key = fxGetKey(the, slot->value.module.id);
-    txString path = key->value.key.string + linker->baseLength;
+ 	txString path = key->value.key.string;
 	txLinkerScript* linkerScript = linker->firstScript;
 	mxPush(mxArrayPrototype);
 	fxNewArrayInstance(the);

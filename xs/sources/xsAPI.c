@@ -2019,7 +2019,7 @@ void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
 			while (p < q) {
 				// PATH
 				atomSize = c_read32be(p);
-				if (!c_strcmp(path + preparation->baseLength, (txString)(p + sizeof(Atom)))) {
+				if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
 					p += atomSize;
 					atomSize = c_read32be(p);
 					*size = atomSize - sizeof(Atom);

@@ -245,14 +245,14 @@ void fxDuplicateModuleTransfers(txMachine* the, txSlot* srcModule, txSlot* dstMo
 	}
 	srcSlot = mxModuleInitialize(srcModule);
 	dstSlot = mxModuleInitialize(dstModule);
-	dstSlot->kind = srcSlot->kind;
-	dstSlot->value = srcSlot->value;
-	srcSlot = mxModuleInitialize(srcModule);
-	dstSlot = mxModuleInitialize(dstModule);
 	if (srcSlot->kind == XS_REFERENCE_KIND) {
 		function = fxDuplicateInstance(the, srcSlot->value.reference);
 		mxPullSlot(dstSlot);
 		mxFunctionInstanceHome(function)->value.home.module = 	dstModule->value.reference;
+	}
+	else {
+		dstSlot->kind = srcSlot->kind;
+		dstSlot->value = srcSlot->value;
 	}
 	srcSlot = mxModuleExecute(srcModule);
 	dstSlot = mxModuleExecute(dstModule);
@@ -945,7 +945,7 @@ void fxLoadModulesFrom(txMachine* the, txSlot* queue, txSlot* module, txBoolean 
 				fxQueueModule(the, queue, importModule);
 			}
 			else if (now) {
-				if (status == XS_MODULE_STATUS_LOADED) {
+				if (status == XS_MODULE_STATUS_LINKING) {
 					txSlot* slot = queue->next;
 					while (slot) {
 						if (slot->value.reference == importModule->value.reference)
@@ -1493,12 +1493,6 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 				}
 				else
 					module = module->next;
-			}
-			module = queue->next;
-			while (module) {
-				if (mxModuleStatus(module) == XS_MODULE_STATUS_LOADED)
-					mxModuleStatus(module) = XS_MODULE_STATUS_LINKING;
-				module = module->next;
 			}
 			fxLinkModules(the, queue);
 			mxReportModuleQueue("INIT");
@@ -2187,6 +2181,33 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
+#define mxByteCodeCheck(_ASSERTION) if (!(_ASSERTION)) mxTypeError("invalid bytecode");
+
+static txU1* fxByteCodeRead4(txMachine* the, txU1* p, txU1* q, txU4* result)
+{
+	mxByteCodeCheck(p + 4 <= q);
+	*result = *p++ << 24;
+	*result |= *p++ << 16;
+	*result |= *p++ << 8;
+	*result |= *p++;
+	return p;
+}
+
+static txU1* fxByteCodeReadAtom(txMachine* the, txU1* p, txU1* q, Atom* atom)
+{
+	p = fxByteCodeRead4(the, p, q, (txU4*)&(atom->atomSize));
+	p = fxByteCodeRead4(the, p, q, &(atom->atomType));
+	return p;
+}
+
+static txU1* fxByteCodeReadBuffer(txMachine* the, txU1* p, txU1* q, void* buffer, txSize size)
+{
+	mxByteCodeCheck(p + size <= q);
+	c_memcpy(buffer, p, size);
+	return p + size;	
+}
+
+
 void fx_StaticModuleRecord(txMachine* the)
 {
 	txSlot* instance;
@@ -2229,6 +2250,61 @@ void fx_StaticModuleRecord(txMachine* the)
 			mxTypeError("no module");
 		}
 		fxLoadModule(the, mxResult, moduleID);
+		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
+			mxTypeError("no module");
+		mxPop();
+		return;
+	}
+	mxPushSlot(mxArgv(0));
+	mxGetID(fxID(the, "bytecode"));
+	slot = the->stack;
+	if (slot->kind != XS_UNDEFINED_KIND) {
+		txU1* p = fxToArrayBuffer(the, slot);
+		txU1* q = p + fxGetArrayBufferLength(the, slot);
+		txScript* script = C_NULL;
+	
+		mxTry(the) {
+			Atom atom;
+			txU1 version[4];
+			
+			script = c_malloc(sizeof(txScript));
+			if (!script) fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			c_memset(script, 0, sizeof(txScript));
+			
+			p = fxByteCodeReadAtom(the, p, q, &atom);
+			mxByteCodeCheck(atom.atomType == XS_ATOM_BINARY);
+			p = fxByteCodeReadAtom(the, p, q, &atom);
+			mxByteCodeCheck(atom.atomType == XS_ATOM_VERSION);
+			fxByteCodeReadBuffer(the, p, q, version, sizeof(version));
+			p += sizeof(version);
+			mxByteCodeCheck(version[0] == XS_MAJOR_VERSION);
+			mxByteCodeCheck(version[1] == XS_MINOR_VERSION);
+			mxByteCodeCheck(version[3] == 0);
+			
+			p = fxByteCodeReadAtom(the, p, q, &atom);
+			mxByteCodeCheck(atom.atomType == XS_ATOM_SYMBOLS);
+			script->symbolsSize = atom.atomSize - sizeof(atom);
+			script->symbolsBuffer = c_malloc(script->symbolsSize);
+			if (!script->symbolsBuffer) fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			fxByteCodeReadBuffer(the, p, q, script->symbolsBuffer, script->symbolsSize);
+			p += script->symbolsSize;
+			
+			p = fxByteCodeReadAtom(the, p, q, &atom);
+			mxByteCodeCheck(atom.atomType == XS_ATOM_CODE);
+			script->codeSize = atom.atomSize - sizeof(atom);
+			script->codeBuffer = c_malloc(script->codeSize);
+			if (!script->codeBuffer) fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			fxByteCodeReadBuffer(the, p, q, script->codeBuffer, script->codeSize);
+		}
+		mxCatch(the) {
+			if (script)
+				fxDeleteScript(script);
+			fxJump(the);
+		}
+			
+		mxPushClosure(mxResult);
+		fxRunScript(the, script, mxResult, C_NULL, C_NULL, C_NULL, instance);
+		mxPop();
 		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
 			mxTypeError("no module");
 		mxPop();

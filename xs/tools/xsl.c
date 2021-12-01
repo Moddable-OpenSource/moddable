@@ -348,8 +348,8 @@ int main(int argc, char* argv[])
 						c_strcpy(path, linker->base);
 						script = linker->firstScript;
 						while (script) {
-							c_strcpy(path + linker->baseLength, script->path);
-							fxNewNameC(the, path);
+// 							c_strcpy(path + linker->baseLength, script->path);
+// 							fxNewNameC(the, path);
 							path[linker->baseLength + script->pathSize - 5] = 0;
 							fxNewNameC(the, path + linker->baseLength);
 							script = script->nextScript;
@@ -761,7 +761,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		relative = 1;
 	}
 	else {
-		relative = 1;
 		search = 1;
 	}
 	separator = linker->base[0];
@@ -771,14 +770,9 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		slash = name;
 	slash = c_strrchr(slash, '.');
 	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs") || !c_strcmp(slash, ".xsb")))
-		c_strcpy(slash, ".xsb");
-	else
-		c_strcat(name, ".xsb");
+		*slash = 0;
 	if (absolute) {
-		c_strcpy(path, linker->base);
-		c_strcat(path, name + 1);
-		if (fxFindScript(the, path, &id))
-			return id;
+		return XS_NO_ID;
 	}
 	if (relative && (moduleID != XS_NO_ID)) {
 		key = fxGetKey(the, moduleID);
@@ -802,9 +796,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		}
 	}
 	if (search) {
-		c_strcpy(path, linker->base);
-		c_strcat(path, name);
-		if (fxFindScript(the, path, &id))
+		if (fxFindScript(the, name, &id))
 			return id;
 	}
 	return XS_NO_ID;
@@ -814,10 +806,8 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txLinkerScript* linkerScript = linker->firstScript;
-	path += linker->baseLength;
 	while (linkerScript) {
 		if (!c_strcmp(path, linkerScript->path)) {
-			path -= linker->baseLength;
 			*id = fxNewNameC(the, path);
 			return 1;
 		}
@@ -920,10 +910,7 @@ void fxFreezeBuiltIns(txMachine* the)
 void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
 	txSlot* key = fxGetKey(the, moduleID);
- 	char buffer[C_PATH_MAX];
- 	txString path = buffer;
- 	c_strcpy(path, key->value.key.string);
- 	txScript* script = fxLoadScript(the, path);
+ 	txScript* script = fxLoadScript(the, key->value.key.string);
  	if (script)
 		fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
 }
@@ -932,7 +919,6 @@ txScript* fxLoadScript(txMachine* the, txString path)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txLinkerScript* linkerScript = linker->firstScript;
-	path += linker->baseLength;
 	while (linkerScript) {
 		if (!c_strcmp(path, linkerScript->path)) {
 			txScript* script = fxNewLinkerChunk(linker, sizeof(txScript));
