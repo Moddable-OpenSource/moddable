@@ -39,14 +39,6 @@ PLATFORM_DIR = $(MODDABLE)\build\devices\esp
 !CMDSWITCHES +S
 !ENDIF
 
-!IF "$(DEBUG)"=="1"
-LIB_DIR = $(TMP_DIR)\esp\debug\lib
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(TMP_DIR)\esp\instrument\lib
-!ELSE
-LIB_DIR = $(TMP_DIR)\esp\release\lib
-!ENDIF
-
 # serial port configuration
 !IF "$(UPLOAD_SPEED)"==""
 UPLOAD_SPEED = 921600
@@ -382,8 +374,7 @@ xsbug:
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)
 
-$(LIB_DIR):
-	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
+$(LIB_DIR)\buildinfo.h:
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 
 delAr:
@@ -398,7 +389,7 @@ $(LIB_ARCHIVE): $(XS_OBJ) $(SDK_OBJ)
 	@echo # archive $(LIB_ARCHIVE)
 #	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(LIB_DIR)\xsHost.o $(LIB_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\main.o
 
-$(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o
+$(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o $(LIB_DIR)\buildinfo.h
 	@echo # ld main.bin
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c

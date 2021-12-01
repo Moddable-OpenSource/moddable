@@ -17,16 +17,6 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ifeq ($(DEBUG),1)
-	LIB_DIR = $(TMP_DIR)/lin/debug/lib
-else
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(TMP_DIR)/lin/instrument/lib
-	else
-		LIB_DIR = $(TMP_DIR)/lin/release/lib
-	endif
-endif
-
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \

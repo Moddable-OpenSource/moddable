@@ -18,17 +18,11 @@
 #
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(TMP_DIR)/mac/mc/debug/lib
 	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 else
 	START_XSBUG =
 	KILL_SERIAL2XSBUG =
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(TMP_DIR)/mac/mc/instrument/lib
-	else
-		LIB_DIR = $(TMP_DIR)/mac/mc/release/lib
-	endif
 endif
 
 XS_DIRECTORIES = \

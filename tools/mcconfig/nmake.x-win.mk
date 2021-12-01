@@ -23,14 +23,6 @@
 !CMDSWITCHES +S
 !ENDIF
 
-!IF "$(DEBUG)"=="1"
-LIB_DIR = $(TMP_DIR)\win\debug\lib
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(TMP_DIR)\win\instrument\lib
-!ELSE
-LIB_DIR = $(TMP_DIR)\win\release\lib
-!ENDIF
-
 XS_DIRECTORIES = \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \

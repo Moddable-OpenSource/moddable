@@ -359,6 +359,7 @@ export class MakeFile extends FILE {
 		this.line("MODULES_DIR = ", tool.modulesPath);
 		this.line("RESOURCES_DIR = ", tool.resourcesPath);
 		this.line("TMP_DIR = ", tool.tmpPath);
+		this.line("LIB_DIR = ", tool.libPath);
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("");
 

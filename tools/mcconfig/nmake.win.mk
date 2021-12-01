@@ -24,12 +24,8 @@
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-LIB_DIR = $(TMP_DIR)\win\mc\debug\lib
 START_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(TMP_DIR)\win\mc\instrument\lib
 !ELSE
-LIB_DIR = $(TMP_DIR)\win\mc\release\lib
 START_XSBUG =
 !ENDIF
 

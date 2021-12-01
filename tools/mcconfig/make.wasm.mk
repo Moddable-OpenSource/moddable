@@ -22,12 +22,6 @@ HOST_OS := $(shell uname)
 CC = emcc
 OPT = wasm-opt
 
-ifeq ($(DEBUG),1)
-	LIB_DIR = $(TMP_DIR)/wasm/debug/mc/lib
-else
-	LIB_DIR = $(TMP_DIR)/wasm/release/mc/lib
-endif
-
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
