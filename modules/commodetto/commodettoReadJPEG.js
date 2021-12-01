@@ -18,7 +18,7 @@
  *
  */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 
 export default class JPEG @ "xs_JPEG_destructor" {
 	constructor(buffer) @ "xs_JPEG_constructor"

@@ -36,8 +36,8 @@
 		scan lines are packed (e.g. scan line may begin mid-byte)
 */
 
-import PixelsOut from "PixelsOut";
-import Bitmap from "Bitmap";
+import PixelsOut from "commodetto/PixelsOut";
+import Bitmap from "commodetto/Bitmap";
 
 export default class RLE4Out extends PixelsOut {
 	constructor(dictionary) {

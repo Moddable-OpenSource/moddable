@@ -19,7 +19,7 @@
  */
 
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 
 export default class ColorCellOut @ "xs_colorcell_destructor" /* extends PixelsOut */ {
 	constructor(dictionary) @ "xs_colorcell";
