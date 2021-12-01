@@ -497,7 +497,8 @@ void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* ite
 txNumber fxGetArrayLength(txMachine* the, txSlot* reference)
 {
 	txNumber length;
-	mxPushReference(fxToInstance(the, reference));
+	txSlot* instance = fxToInstance(the, reference);
+	mxPushReference(instance);
 	mxGetID(mxID(_length));
 	length = fxToLength(the, the->stack);
 	mxPop();
