@@ -37,6 +37,10 @@
 
 #include "xsAll.h"
 
+#ifndef mxIntegerDivideOverflowException
+	#define mxIntegerDivideOverflowException 1
+#endif
+
 void fxBuildMath(txMachine* the)
 {
 	txSlot* slot;
@@ -303,7 +307,12 @@ void fx_Math_idiv(txMachine* the)
 	}
 	else {
 		mxResult->kind = XS_INTEGER_KIND;
-		mxResult->value.integer = x / y;
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1))
+			mxResult->value.integer = x;
+		else
+#endif
+			mxResult->value.integer = x / y;
 	}
 }
 
@@ -316,8 +325,18 @@ void fx_Math_idivmod(txMachine* the)
 		mxPushNumber(C_NAN);
 	}
 	else {
-		mxPushInteger(x / y);
-		mxPushInteger((x % y + y) % y);
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1)) {
+			mxPushInteger(x);
+			mxPushInteger(0);
+			
+		}
+		else
+#endif
+		{
+			mxPushInteger(x / y);
+			mxPushInteger((x % y + y) % y);
+		}
 	}
 	fxConstructArrayEntry(the, mxResult);
 }
@@ -332,7 +351,12 @@ void fx_Math_imod(txMachine* the)
 	}
 	else {
 		mxResult->kind = XS_INTEGER_KIND;
-		mxResult->value.integer = (x % y + y) % y;
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1))
+			mxResult->value.integer = 0;
+		else
+#endif
+			mxResult->value.integer = (x % y + y) % y;
 	}
 }
 
@@ -376,7 +400,12 @@ void fx_Math_irem(txMachine* the)
 	}
 	else {
 		mxResult->kind = XS_INTEGER_KIND;
-		mxResult->value.integer = x % y;
+#if mxIntegerDivideOverflowException
+		if ((x == -2147483648L) && (y == -1))
+			mxResult->value.integer = 0;
+		else
+#endif
+			mxResult->value.integer = x % y;
 	}
 }
 
@@ -424,6 +453,8 @@ void fx_Math_max(txMachine* the)
 	for (i = 0; i < c; i++) {
 		txNumber n = fxToNumber(the, mxArgv(i));
 		if (c_isnan(n)) {
+			for (; i < c; i++)
+				fxToNumber(the, mxArgv(i));
 			mxResult->value.number = C_NAN;
 			return;
 		}
@@ -444,6 +475,8 @@ void fx_Math_min(txMachine* the)
 	for (i = 0; i < c; i++) {
 		txNumber n = fxToNumber(the, mxArgv(i));
 		if (c_isnan(n)) {
+			for (; i < c; i++)
+				fxToNumber(the, mxArgv(i));
 			mxResult->value.number = C_NAN;
 			return;
 		}

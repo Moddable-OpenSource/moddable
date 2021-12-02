@@ -255,7 +255,7 @@ txInteger fxCheckAtomicsIndex(txMachine* the, txInteger i, txInteger length)
 	txNumber index = (mxArgc > i) ? c_trunc(fxToNumber(the, mxArgv(i))) : C_NAN; 
 	if (c_isnan(index))
 		index = 0;
-	else if (index < 0)
+	if (index < 0)
 		mxRangeError("invalid index");
 	else if (index >= length)
 		mxRangeError("invalid index");

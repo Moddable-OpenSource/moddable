@@ -342,6 +342,8 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 	txSlot* address = array->value.array.address;
 	txSlot* a = address + i;
 	txSlot* b = the->stack;
+	txSlot* ai = a->next;
+	txSlot* bi = b->next;
 	int result;
 	
 	if (a->kind == XS_UNDEFINED_KIND)
@@ -379,7 +381,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 		}
 	}
 	if (result == 0)
-		result = (b->next > a->next) ? -1 : (b->next < a->next) ? 1 : 0;
+		result = (bi > ai) ? -1 : (bi < ai) ? 1 : 0;
 	return result;
 }
 
@@ -495,7 +497,8 @@ void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* ite
 txNumber fxGetArrayLength(txMachine* the, txSlot* reference)
 {
 	txNumber length;
-	mxPushReference(fxToInstance(the, reference));
+	txSlot* instance = fxToInstance(the, reference);
+	mxPushReference(instance);
 	mxGetID(mxID(_length));
 	length = fxToLength(the, the->stack);
 	mxPop();
@@ -521,7 +524,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 		txSlot* data = buffer->value.reference->next;
 		if (data->value.arrayBuffer.address == C_NULL)
 			mxTypeError("detached buffer");
-		return view->value.dataView.size >> array->value.typedArray.dispatch->shift;
+		return fxGetDataViewSize(the, view, buffer) >> array->value.typedArray.dispatch->shift;
 	}
 	mxPushReference(instance);
 	mxGetID(mxID(_length));

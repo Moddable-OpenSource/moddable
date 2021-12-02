@@ -77,7 +77,7 @@ export default class Client {
 //		this.onClose = function() {};
 
 		const path = dictionary.path ?? null; // includes query string
-		this.timeout = dictionary.timeout ?? 60_000;
+		this.timeout = dictionary.timeout ?? 0;
 
 		if (path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path

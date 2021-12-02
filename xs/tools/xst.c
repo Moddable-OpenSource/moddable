@@ -899,6 +899,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 		snprintf(message, 1024, "# %s", why);
 		success = 0;
 	}
+	fx_agent_stop(machine);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	fxCountResult(context, success, 0);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -24,12 +24,8 @@
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\mc\debug\lib
 START_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\mc\instrument\lib
 !ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\win\mc\release\lib
 START_XSBUG =
 !ENDIF
 

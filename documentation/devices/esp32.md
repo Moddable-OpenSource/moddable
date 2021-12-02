@@ -1,7 +1,7 @@
 # Using the Moddable SDK with ESP32
 
 Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: November 2, 2021
+Revised: November 29, 2021
 
 This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) and [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2) with the Moddable SDK.
 
@@ -157,11 +157,11 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 (2e74914) and the
 	
 	If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
-4. If this is your first install, clone the release/v4.3 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. If this is your first install, clone the v4.3.1 tag of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b release/v4.3 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
 	```
 
 	If you already have an install of the `releaes/v4.3` branch, update to `v4.3.1` by using the [update instructions below](#mac-update).
@@ -388,7 +388,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake opt
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
 
-	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "release/v4.3.1 (release branch)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
+	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.3.1 (release version)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
 
 
 4. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
@@ -398,11 +398,11 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake opt
     mkdir esp32
     ```
 
-5. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the release/v4.3 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.3.1 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
     ```text
     cd ~/esp32
-    git clone -b release/v4.3 --recursive https://github.com/espressif/esp-idf.git
+    git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
     ```
 
 	If you already have a cloned copy of the ESP-IDF, the simplest way to do the update is to delete the existing `esp-idf` folder and clone it again. [See Espressif's Get ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32/get-started/index.html#get-started-get-esp-idf)
@@ -507,11 +507,11 @@ To ensure that your build environment is up to date, perform the following steps
     If you choose to close the ESP-IDF, select the `v4.3.1 (release version)` of the esp-idf.
 
 
-2. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the release/v4.3 branch of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. For instance, in **Git Bash**:
+2. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.3.1 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. For instance, in **Git Bash**:
 
     ```text
     cd ~/esp32
-    git clone -b release/v4.3 --recursive https://github.com/espressif/esp-idf.git
+    git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
     ```
     
 Check out the `v4.3.1 tag` of the ESP-IDF.
@@ -600,14 +600,14 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake opt
 
 3. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
-4. If this is your first install, clone the release/v4.3 branch of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. If this is your first install, clone the v4.3.1 tag of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b release/v4.3 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	If you already have an install of the `releaes/v4.3` branch, update to `v4.3.1` by using the [update instructions below](#lin-update).
+	If you already have an install of the `release/v4.3` branch, update to `v4.3.1` by using the [update instructions below](#lin-update).
 
 	```text
 	cd ~/esp32/esp-idf

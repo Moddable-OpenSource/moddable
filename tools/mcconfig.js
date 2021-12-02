@@ -1036,6 +1036,7 @@ export default class extends Tool {
 		else
 			this.binPath = this.createDirectories(this.outputPath, "bin", name);
 		this.tmpPath = this.createDirectories(this.outputPath, "tmp", name);
+		this.libPath = this.createDirectories(this.outputPath, "tmp", "lib");
 			
 		this.modulesPath = this.tmpPath + this.slash + "modules";
 		this.createDirectory(this.modulesPath);

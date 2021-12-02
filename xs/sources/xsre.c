@@ -1285,6 +1285,10 @@ void fxQuantifierMeasure(txPatternParser* parser, void* it, txInteger direction)
 void fxSequenceMeasure(txPatternParser* parser, void* it, txInteger direction)
 {
 	txSequence* self = it;
+#ifdef mxRun
+	if (parser->the)
+		fxCheckCStack(parser->the);
+#endif
 	if (direction == 1) {
 		(*self->left->dispatch.measure)(parser, self->left, direction);
 		self->step = self->left->step;

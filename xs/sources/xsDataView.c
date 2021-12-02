@@ -602,7 +602,7 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 		c_memcpy(chunk, arrayBuffer->value.arrayBuffer.address, (newByteLength < oldByteLength) ? newByteLength : oldByteLength);
 	}
 	if (newByteLength > oldByteLength)
-		c_memset(chunk + newByteLength, 0, newByteLength - oldByteLength);
+		c_memset(chunk + oldByteLength, 0, newByteLength - oldByteLength);
 	arrayBuffer->value.arrayBuffer.address = chunk;
 	bufferInfo->value.bufferInfo.length = newByteLength;
 }
@@ -1942,7 +1942,7 @@ void fx_TypedArray_prototype_join(txMachine* the)
 	while (offset < limit) {
 		if (comma) {
 			slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_NO_FLAG);
-			size += slot->value.key.sum;
+            size = fxAddChunkSizes(the, size, slot->value.key.sum);
 		}
 		else
 			comma = 1;

@@ -2051,6 +2051,7 @@ void fxLiteralExpression(txParser* parser, txUnsigned flag)
 	txInteger aLine = parser->line;
 	txUnsigned flags = 0;
 	char c = 0;
+	fxCheckParserStack(parser, aLine);
 	switch (parser->token) {
 	case XS_TOKEN_NULL:
 	case XS_TOKEN_TRUE:

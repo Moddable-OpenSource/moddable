@@ -1,0 +1,128 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules",
+		"TEST262": "$(MODDABLE)/tools/test262"
+	},
+	"creation": {
+		"static": 65536,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 512
+		},
+		"heap": {
+			"initial": 512,
+			"incremental": 64
+		},
+		"stack": 256,
+		"keys": {
+			"available": 16386,
+			"name": 127,
+			"symbol": 127
+		},
+		"parser": {
+			"buffer": 9000,
+			"table": 127
+		},
+		"main": "main"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/base/modules/manifest.json",
+		"$(MODULES)/files/preference/manifest.json",
+		"$(MODULES)/crypt/digest/manifest.json",
+		"$(MODDABLE)/modules/crypt/tls.json",
+		"$(MODDABLE)/modules/network/mqtt/manifest.json",
+		"$(MODDABLE)/modules/network/websocket/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(TEST262)/_262",
+			"$(TEST262)/harness",
+			"./main",
+			"./hosttest",
+			"$(MODULES)/base/instrumentation/*",
+			"$(MODULES)/network/http/*"
+		],
+		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
+		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
+		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
+		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
+		"commodetto/checksumOut": "./commodettoChecksumOut"
+	},
+	"preload": [
+		"main",
+		"harness",
+		"commodetto/*",
+		"instrumentation",
+		"http"
+	],
+	"strip": [],
+	"defines": {
+		"XS_TEST": 1
+	},
+	"platforms": {
+		"esp": {
+			"error": "testmc is unsupported on esp8266"
+		},
+		"esp32": {
+			"modules": {
+				"~": [
+					"$(BUILD)/devices/esp32/setup/piu",
+					"$(BUILD)/devices/esp32/setup/network"
+				]
+			},
+			"config": {
+				"digital": [12, 13, 16, 17, 26, 27]
+			}
+		},
+		"lin": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/lin/debug/mcsim"
+			},
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/timer/timer",
+					"$(MODULES)/base/timer/lin/*"
+				]
+			}
+		},
+		"mac": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/mac/debug/mcsim.app"
+			},
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/mac/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mac/*"
+				]
+			}
+		},
+		"win": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/win/debug/mcsim.exe"
+			},
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/win/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/win/*"
+				]
+			}
+		}
+	},
+	"data": { 
+		"*": [
+			"$(MODDABLE)/examples/assets/images/image-info",
+			"$(MODULES)/crypt/data/ca222"
+		]
+	}
+}

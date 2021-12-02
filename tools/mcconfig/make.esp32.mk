@@ -55,29 +55,12 @@ unexport LDFLAGS
 unexport LD_LIBRARY_PATH
 unexport CPPFLAGS
 
-ifeq ($(DEBUG),1)
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/$(NAME)/xsProj-$(ESP32_SUBCLASS)
-else
-ifeq ($(INSTRUMENT),1)
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/instrument/$(NAME)/xsProj-$(ESP32_SUBCLASS)
-else
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/$(NAME)/xsProj-$(ESP32_SUBCLASS)
-endif
-endif
+PROJ_DIR = $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)
+
 BLD_DIR = $(PROJ_DIR)/build
 
 ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs
-endif
-
-ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/lib
-else
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/instrument/lib
-	else
-		LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/lib
-	endif
 endif
 
 SDKCONFIG_H_DIR = $(BLD_DIR)/config

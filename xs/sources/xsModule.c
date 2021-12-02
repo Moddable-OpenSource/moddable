@@ -1756,9 +1756,11 @@ txBoolean fxModuleSetPrototype(txMachine* the, txSlot* instance, txSlot* prototy
 
 txSlot* fxCheckCompartmentInstance(txMachine* the, txSlot* slot)
 {
-	txSlot* instance = slot->value.reference;
-	if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_PROGRAM_KIND)) {
-		return instance;
+	if (slot->kind == XS_REFERENCE_KIND) {
+		txSlot* instance = slot->value.reference;
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_PROGRAM_KIND)) {
+			return instance;
+		}
 	}
 	mxTypeError("this is no Compartment instance");
 	return C_NULL;

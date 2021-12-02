@@ -1,0 +1,12 @@
+{
+	"modules": {
+		"*": [
+			"./st127x",
+			"./st127x_registers"
+		]
+	},
+	"preload": [
+		"st127x",
+		"st127x_registers"
+	]
+}

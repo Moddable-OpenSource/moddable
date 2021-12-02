@@ -1,14 +1,21 @@
 import Control from "control";
 export default class extends Control {
 	#onPush;
-	#target;
+	#pressed
 	constructor(options) {
 		super();
 		this.#onPush = options.onPush ?? this.onPush;
-		this.#target = options.target ?? this;
+		if (options.target)
+			this.target = options.target;
 	}
 	onJSON(json) {
-		if (json.button == 1)
-			this.#onPush.call(this.#target, 1);
+		this.#pressed = json.button; 
+		this.#onPush();
+	}
+	read() {
+		return this.#pressed;
+	}
+	get pressed() {
+		return this.#pressed;
 	}
 };
