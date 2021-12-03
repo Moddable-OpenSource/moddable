@@ -248,7 +248,7 @@ function callback(message, value) {
 
 			this.callback(Request.status, parseInt(status[1]));
 
-			if (this.state >= 11) || !socket.read() || this.suspended)
+			if ((this.state >= 11) || !socket.read() || this.suspended)
 				return;
 		}
 
