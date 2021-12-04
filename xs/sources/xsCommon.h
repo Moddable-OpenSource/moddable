@@ -1106,6 +1106,10 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #define mxPtrDiff(_DIFF) ((txSize)(_DIFF))
 
+#ifndef mxIntegerDivideOverflowException
+	#define mxIntegerDivideOverflowException 1
+#endif
+
 #ifdef __cplusplus
 }
 #endif

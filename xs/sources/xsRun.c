@@ -3391,7 +3391,11 @@ XS_CODE_JUMP:
 			slot = mxStack + 1;
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
-					if (mxStack->value.integer != 0)
+					if ((mxStack->value.integer != 0) 
+#if mxIntegerDivideOverflowException
+						&& (mxStack->value.integer != -1)
+#endif
+						)
 						slot->value.integer %= mxStack->value.integer;
 					else {
 						slot->kind = XS_NUMBER_KIND;
