@@ -1397,23 +1397,21 @@ void fxAwaitImport(txMachine* the, txBoolean defaultFlag)
 void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txSlot* stack = the->stack;
-	txSlot* queue = C_NULL;
-	txSlot** address = &queue;
 	txSlot* module;
 	txID status;
 	txSlot* slot;
-	mxTry(the) {
-		fxToString(the, stack);
-		moduleID = fxResolveSpecifier(the, realm, moduleID, stack);
-		module = fxGetModule(the, realm, moduleID);
-		if (!module) {
-			module = mxBehaviorSetProperty(the, mxOwnModules(realm)->value.reference, moduleID, 0, XS_OWN);
-			fxMapModule(the, realm, moduleID, module);
-		}
-		status = mxModuleStatus(module);
-		if (status == XS_MODULE_STATUS_NEW) {
-			queue = fxNewInstance(the);
-		
+	
+	fxToString(the, stack);
+	moduleID = fxResolveSpecifier(the, realm, moduleID, stack);
+	module = fxGetModule(the, realm, moduleID);
+	if (!module) {
+		module = mxBehaviorSetProperty(the, mxOwnModules(realm)->value.reference, moduleID, 0, XS_OWN);
+		fxMapModule(the, realm, moduleID, module);
+	}
+	status = mxModuleStatus(module);
+	if (status == XS_MODULE_STATUS_NEW) {
+		txSlot* queue = fxNewInstance(the);
+		mxTry(the) {
 			stack->kind = module->kind;
 			stack->value = module->value;
 
@@ -1494,22 +1492,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 			}
 			mxPop();
 		}
-		else if (status == XS_MODULE_STATUS_EXECUTED) {
-			stack->kind = module->kind;
-			stack->value = module->value;
-		}
-		else if (status == XS_MODULE_STATUS_ERROR) {
-			mxPushSlot(mxModuleMeta(module));
-			mxPull(mxException);
-			fxJump(the);
-		}
-		else {
-			mxTypeError("async module");
-		}
-	}
-	mxCatch(the) {
-		queue = *address;
-		if (queue) {
+		mxCatch(the) {
 			module = queue->next;
 			while (module) {
 				if (mxModuleStatus(module) < XS_MODULE_STATUS_EXECUTED) {
@@ -1518,10 +1501,22 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 				}
 				module = module->next;
 			}
+			mxPushUndefined();
+			mxPull(mxHosts);
+			fxJump(the);
 		}
-		mxPushUndefined();
-		mxPull(mxHosts);
+	}
+	else if (status == XS_MODULE_STATUS_EXECUTED) {
+		stack->kind = module->kind;
+		stack->value = module->value;
+	}
+	else if (status == XS_MODULE_STATUS_ERROR) {
+		mxPushSlot(mxModuleMeta(module));
+		mxPull(mxException);
 		fxJump(the);
+	}
+	else {
+		mxTypeError("async module");
 	}
 	the->stack = stack;
 }
