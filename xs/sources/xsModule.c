@@ -1398,6 +1398,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txSlot* stack = the->stack;
 	txSlot* queue = C_NULL;
+	txSlot** address = &queue;
 	txSlot* module;
 	txID status;
 	txSlot* slot;
@@ -1507,6 +1508,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 		}
 	}
 	mxCatch(the) {
+		queue = *address;
 		if (queue) {
 			module = queue->next;
 			while (module) {
