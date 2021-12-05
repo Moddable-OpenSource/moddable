@@ -509,22 +509,26 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 			if (property->value.accessor.getter)
 				return 0;
 			property->value.accessor.getter = function;
-			if ((function->flag & XS_MARK_FLAG) == 0) {
-				txSlot* home = mxFunctionInstanceHome(function);
-				home->value.home.object = instance;
+			if (mxIsFunction(function)) {
+				if (((mask & XS_METHOD_FLAG) && (function->flag & XS_MARK_FLAG) == 0)) {
+					txSlot* home = mxFunctionInstanceHome(function);
+					home->value.home.object = instance;
+				}
+				fxRenameFunction(the, function, id, 0, mxID(_get), "get ");
 			}
-			fxRenameFunction(the, function, id, 0, mxID(_get), "get ");
 		}
 		else {
 			txSlot* function = slot->value.accessor.setter;
 			if (property->value.accessor.setter)
 				return 0;
 			property->value.accessor.setter = function;
-			if ((function->flag & XS_MARK_FLAG) == 0) {
-				txSlot* home = mxFunctionInstanceHome(function);
-				home->value.home.object = instance;
+			if (mxIsFunction(function)) {
+				if (((mask & XS_METHOD_FLAG) && (function->flag & XS_MARK_FLAG) == 0)) {
+					txSlot* home = mxFunctionInstanceHome(function);
+					home->value.home.object = instance;
+				}
+				fxRenameFunction(the, function, id, 0, mxID(_set), "set ");
 			}
-			fxRenameFunction(the, function, id, 0, mxID(_set), "set ");
 		}
 	}
 	else {
