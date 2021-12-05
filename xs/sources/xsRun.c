@@ -3391,17 +3391,22 @@ XS_CODE_JUMP:
 			slot = mxStack + 1;
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
-					if ((mxStack->value.integer != 0) 
-#if mxIntegerDivideOverflowException
-						&& (mxStack->value.integer != -1)
-#endif
-						)
-						slot->value.integer %= mxStack->value.integer;
-					else {
+					if (mxStack->value.integer == 0) {
 						slot->kind = XS_NUMBER_KIND;
-						slot->value.number = c_fmod((txNumber)(slot->value.integer), (txNumber)(mxStack->value.integer));
-						mxFloatingPointOp("modulo");
+						slot->value.number = C_NAN;
 					}
+#if mxIntegerDivideOverflowException
+					else if ((mxStack->value.integer == 1) || (mxStack->value.integer == -1)) {
+						if (slot->value.integer >= 0)
+							slot->value.integer = 0;
+						else {
+							slot->kind = XS_NUMBER_KIND;
+							slot->value.number = -0.0;
+						}
+					}
+					else
+#endif
+						slot->value.integer %= mxStack->value.integer;
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
