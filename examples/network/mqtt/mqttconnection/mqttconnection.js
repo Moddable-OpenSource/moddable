@@ -71,12 +71,12 @@ class Connection {
 
 		mqtt?.close();
 	}
-	publish(topic, data) {
+	publish(topic, data, flags) {
 		if (!this.#ready)
 			throw new Error;
 
 		try {
-			return this.#mqtt.publish(topic, data);
+			return this.#mqtt.publish(topic, data, flags);
 		}
 		catch (e) {
 			this.#restart();
