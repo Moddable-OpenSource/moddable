@@ -299,6 +299,8 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 txSlot* fxCheckArrayItems(txMachine* the, txSlot* array, txIndex from, txIndex to)
 {
 	txSlot* address = array->value.array.address;
+	if (!address)
+		return C_NULL;
 	address += from;
 	while (from < to) {
 		if (address->flag)
@@ -438,7 +440,6 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 {
 	txSlot* instance = fxToInstance(the, mxThis);
 	txFlag flag = 1;
-	txSlot* array = C_NULL;
 	if (fxIsArray(the, instance)) {
 		mxPushSlot(mxThis);
 		mxGetID(mxID(_constructor));
@@ -464,11 +465,7 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	mxPushNumber(length);
 	mxRunCount(1);
 	mxPullSlot(mxResult);
-	if (flag) {
-		array = mxResult->value.reference->next;
-		fxSetIndexSize(the, array, (txIndex)length, XS_CHUNK);
-	}
-	return array;
+	return (flag) ? mxResult->value.reference->next : C_NULL;
 }
 
 void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* item)
@@ -1752,6 +1749,7 @@ void fx_Array_prototype_map(txMachine* the)
 	txIndex index = 0;
 	if (resultArray) {
 		txIndex resultLength = 0;
+		fxSetIndexSize(the, resultArray, length, XS_CHUNK);
 		while (index < length) {
 			if (fxCallThisItem(the, function, index, C_NULL)) {
 				txSlot* slot = resultArray->value.array.address + resultLength;
@@ -2066,12 +2064,13 @@ void fx_Array_prototype_slice(txMachine* the)
 	txNumber COUNT = (END > START) ? END - START : 0;
 	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* resultArray = fxCreateArraySpecies(the, COUNT);
-	if (array && resultArray)
+	if (array)
 		array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + COUNT));
 	if (array && resultArray) {
 		txIndex start = (txIndex)START;
 		txIndex count = (txIndex)COUNT;
 		if (count) {
+			fxSetIndexSize(the, resultArray, count, XS_CHUNK);
 			c_memcpy(resultArray->value.array.address, array->value.array.address + start, count * sizeof(txSlot));
 			fxIndexArray(the, resultArray);
 			mxMeterSome(count * 10);
@@ -2341,6 +2340,7 @@ void fx_Array_prototype_splice(txMachine* the)
 		txIndex index;
 		if (LENGTH + INSERTIONS - DELETIONS > 0xFFFFFFFF)
 			mxTypeError("array overflow");
+		fxSetIndexSize(the, resultArray, deletions, XS_CHUNK);
 		c_memcpy(resultArray->value.array.address, array->value.array.address + start, deletions * sizeof(txSlot));
 		fxIndexArray(the, resultArray);
 		mxMeterSome(deletions * 10);
