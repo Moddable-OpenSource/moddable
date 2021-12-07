@@ -3404,8 +3404,8 @@ XS_CODE_JUMP:
 							slot->value.number = -0.0;
 						}
 					}
-					else
 #endif
+					else
 						slot->value.integer %= mxStack->value.integer;
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
