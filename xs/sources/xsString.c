@@ -335,7 +335,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	if (limit < offset)
 		mxRangeError("out of range byteOffset %ld", offset);
 	inLength = fxArgToByteLength(the, 2, limit - offset);
-	if (limit < (offset + inLength))
+	if ((limit < (offset + inLength)) || ((offset + inLength) < offset))
 		mxRangeError("out of range byteLength %ld", inLength);
 
 	in = offset + (unsigned char *)arrayBuffer->value.arrayBuffer.address;
