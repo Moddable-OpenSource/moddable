@@ -1205,7 +1205,7 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
-#ifdef mxDebug
+#if defined(mxDebug) && !MODDEF_XS_TEST
 		if (fxIsConnected(the)) {
 			char tag[16];
 			flags |= mxDebugFlag;
