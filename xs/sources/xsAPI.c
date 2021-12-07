@@ -644,7 +644,7 @@ txSlot* fxNewHostInstance(txMachine* the)
 	the->stack->kind = XS_REFERENCE_KIND;
 	if (prototype) {
 		txSlot* prototypeHost = prototype->next;
-		if (prototypeHost && (prototypeHost->kind == XS_HOST_KIND)) {
+		if (prototypeHost && (prototypeHost->kind == XS_HOST_KIND) && (prototypeHost->value.host.variant.destructor != fxReleaseSharedChunk)) {
 			txSlot* instanceHost = instance->next = fxNewSlot(the);
 			instanceHost->flag = XS_INTERNAL_FLAG;
 			instanceHost->kind = XS_HOST_KIND;
