@@ -408,7 +408,6 @@ void fx_Number_prototype_toPrecision(txMachine* the)
 
 void fx_Number_prototype_toString(txMachine* the)
 {
-	char buffer[256];
 	txInteger radix;
 	txSlot* slot = fxCheckNumber(the, mxThis);
 	if (!slot) mxTypeError("this is no number");
@@ -424,11 +423,7 @@ void fx_Number_prototype_toString(txMachine* the)
 	if (radix == 10)
 		fxToString(the, mxResult);
 	else {
-		static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
-		txString string = buffer + sizeof(buffer);
-		txNumber value;
-		txBoolean minus;
-		value = mxResult->value.number;
+		txNumber value = mxResult->value.number;
 		switch (c_fpclassify(value)) {
 		case C_FP_INFINITE:
 			if (value < 0)
@@ -442,24 +437,42 @@ void fx_Number_prototype_toString(txMachine* the)
 		case C_FP_ZERO:
 			fxStringX(the, mxResult, "0");
 			break;
-		default:
-			*(--string) = 0;
+		default: {
+			static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
+			txInteger minus;
+			txSize length;
+			txString string;
+			txNumber modulo;
 			if (value < 0) {
 				minus = 1;
 				value = -value;
 			} 
 			else
 				minus = 0;
-			do {
-				if (string == buffer)
-					fxAbort(the, XS_STACK_OVERFLOW_EXIT);
-				*(--string) = c_read8(gxDigits + (txInteger)c_fmod(value, radix));
+			value = c_trunc(value);
+			length = minus + (txSize)c_floor(c_log(value) / c_log(radix)) + 2;
+			string = mxResult->value.string = fxNewChunk(the, length);
+			mxResult->kind = XS_STRING_KIND;
+			string += length;
+			*(--string) = 0;
+			modulo = C_MAX_SAFE_INTEGER * radix;
+			while (value > modulo) {
+				*(--string) = '0';
 				value = value / radix;
+			}
+			do {
+				modulo = c_fmod(value, radix);
+				*(--string) = c_read8(gxDigits + (txInteger)modulo);
+				value = (value - modulo) / radix;
 			} while (value >= 1);
-			if (minus)
+			if (minus) {
 				*(--string) = '-';
-			fxCopyStringC(the, mxResult, string);
-		}
+			}
+			if (string > mxResult->value.string) {
+				fprintf(stderr, "oops\n");
+				c_memmove(mxResult->value.string, string, length - (string - mxResult->value.string));\
+			}
+		}}
 	}
 }
 
