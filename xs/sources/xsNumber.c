@@ -451,6 +451,8 @@ void fx_Number_prototype_toString(txMachine* the)
 			else
 				minus = 0;
 			do {
+				if (string == buffer)
+					fxAbort(the, XS_STACK_OVERFLOW_EXIT);
 				*(--string) = c_read8(gxDigits + (txInteger)c_fmod(value, radix));
 				value = value / radix;
 			} while (value >= 1);
