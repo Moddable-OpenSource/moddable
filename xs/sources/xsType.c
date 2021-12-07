@@ -414,35 +414,44 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 			property->flag &= ~XS_DONT_ENUM_FLAG;
 	}
 	if (mask & XS_ACCESSOR_FLAG) {
+		txSlot* getter = C_NULL;
+		txSlot* setter = C_NULL;
 		if (property->kind != XS_ACCESSOR_KIND) {
 			property->kind = XS_ACCESSOR_KIND;
 			property->value.accessor.getter = C_NULL;
 			property->value.accessor.setter = C_NULL;
 		}
-		if (mask & XS_GETTER_FLAG) {
-			txSlot* function = slot->value.accessor.getter;
-			property->value.accessor.getter = function;
-			if (mxIsFunction(function)) {
-				if ((mask & XS_METHOD_FLAG) && ((function->flag & XS_MARK_FLAG) == 0)) {
-					txSlot* home = mxFunctionInstanceHome(function);
+		if (mask & XS_GETTER_FLAG)
+			getter = property->value.accessor.getter = slot->value.accessor.getter;
+		if (mask & XS_SETTER_FLAG)
+			setter = property->value.accessor.setter = slot->value.accessor.setter;
+		if (getter) {
+			if (mxIsFunction(getter)) {
+				if ((mask & XS_METHOD_FLAG) && ((getter->flag & XS_MARK_FLAG) == 0)) {
+					txSlot* home = mxFunctionInstanceHome(getter);
 					home->value.home.object = instance;
 				}
-				fxRenameFunction(the, slot->value.accessor.getter, id, index, mxID(_get), "get ");
+				fxRenameFunction(the, getter, id, index, mxID(_get), "get ");
 			}
 		}
-		if (mask & XS_SETTER_FLAG) {
-			txSlot* function = slot->value.accessor.setter;
-			property->value.accessor.setter = function;
-			if (mxIsFunction(function)) {
-				if ((mask & XS_METHOD_FLAG) && ((function->flag & XS_MARK_FLAG) == 0)) {
-					txSlot* home = mxFunctionInstanceHome(slot->value.accessor.setter);
+		if (setter) {
+			if (mxIsFunction(setter)) {
+				if ((mask & XS_METHOD_FLAG) && ((setter->flag & XS_MARK_FLAG) == 0)) {
+					txSlot* home = mxFunctionInstanceHome(setter);
 					home->value.home.object = instance;
 				}
-				fxRenameFunction(the, slot->value.accessor.setter, id, index, mxID(_set), "set ");
+				fxRenameFunction(the, setter, id, index, mxID(_set), "set ");
 			}
 		}
 	}
 	else if ((mask & XS_DONT_SET_FLAG) || (slot->kind != XS_UNINITIALIZED_KIND)) {
+        if (mask & XS_DONT_SET_FLAG) {
+            if (slot->flag & XS_DONT_SET_FLAG) {
+                property->flag |= XS_DONT_SET_FLAG;
+            }
+            else
+                property->flag &= ~XS_DONT_SET_FLAG;
+        }
 		if (slot->kind != XS_UNINITIALIZED_KIND) {
 			property->kind = slot->kind;
 			property->value = slot->value;
@@ -456,13 +465,6 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 					fxRenameFunction(the, function, id, index, mxID(_value), C_NULL);
 				}
 			}
-		}
-		if (mask & XS_DONT_SET_FLAG) {
-			if (slot->flag & XS_DONT_SET_FLAG) {
-				property->flag |= XS_DONT_SET_FLAG;
-			}
-			else
-				property->flag &= ~XS_DONT_SET_FLAG;
 		}
 	}
 	return 1;
