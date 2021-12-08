@@ -553,6 +553,9 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 
 				// esp32 core dump - capture to temporary file then run espcoredump.py 
 				if (TOOLS_BIN && elfPath && !gCoreDump && strstr(self->buffer, "================= CORE DUMP START =================")) {
+					char *msg = "<xsbug><log># ESP32 Core Dump!!\n</log></xsbug>\r\n";
+					fxWriteNetwork(self->currentMachine, msg, strlen(msg));
+
 					strcpy(gCoreDumpPath, elfPath);
 					strcpy(strrchr(gCoreDumpPath, '/') + 1, "coredump.txt");
 					fprintf(stderr, "Writing CORE DUMP to %s\n", gCoreDumpPath);
