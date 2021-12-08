@@ -150,6 +150,7 @@ txSlot* fxNewProxyInstance(txMachine* the)
 txSlot* fxCheckProxyFunction(txMachine* the, txSlot* proxy, txID index)
 {
 	txSlot* function;
+	mxCheckCStack();
 	if (!proxy->value.proxy.handler)
 		mxTypeError("(proxy).%s: handler is no object", fxName(the, mxID(index)));
 	if (!proxy->value.proxy.target)
@@ -675,9 +676,8 @@ void fxProxyOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* list)
 			}
 		}
 	}
-	else {
+	else
 		mxBehaviorOwnKeys(the, proxy->value.proxy.target, flag, list);
-	}
 	mxPop();
 }
 
