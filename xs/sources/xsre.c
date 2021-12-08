@@ -973,6 +973,10 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 	void* former = NULL;
 	txSequence* formerBranch = NULL;
 	txInteger length;
+#ifdef mxRun
+	if (parser->the)
+		fxCheckCStack(parser->the);
+#endif
 	while ((parser->character != C_EOF) && (parser->character != character)) {
 		txInteger currentIndex = parser->captureIndex;
 		void* term = NULL;
