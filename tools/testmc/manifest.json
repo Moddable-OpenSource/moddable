@@ -68,6 +68,9 @@
 			"error": "testmc is unsupported on esp8266"
 		},
 		"esp32": {
+			"include": [
+				"$(MODULES)/files/flash/manifest.json"
+			],
 			"modules": {
 				"~": [
 					"$(BUILD)/devices/esp32/setup/piu",
@@ -75,7 +78,8 @@
 				]
 			},
 			"config": {
-				"digital": [12, 13, 16, 17, 26, 27]
+				"digital": [12, 13, 16, 17, 26, 27],
+				"flashParition": "xs"
 			}
 		},
 		"lin": {
