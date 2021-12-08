@@ -661,9 +661,14 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 				switch (aProperty->kind) {
 				case XS_INSTANCE_KIND:
 					aTemporary = aProperty->value.instance.prototype;
-					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG))
-						fxMarkInstance(the, aTemporary, theMarker);
-					aProperty = aProperty->next;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aProperty->value.instance.prototype = theCurrent;
+						theCurrent = aTemporary;
+						theCurrent->value.instance.garbage = aProperty;
+						aProperty = theCurrent;
+					}
+					else
+						aProperty = aProperty->next;
 					break;
 				case XS_REFERENCE_KIND:
 					aTemporary = aProperty->value.reference;
@@ -676,6 +681,29 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					else
 						aProperty = aProperty->next;
 					break;
+					
+				case XS_PROXY_KIND:
+					aTemporary = aProperty->value.proxy.handler;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aProperty->flag |= XS_INSPECTOR_FLAG;
+						aProperty->value.proxy.handler = theCurrent;
+						theCurrent = aTemporary;
+						theCurrent->value.instance.garbage = aProperty;
+						aProperty = theCurrent;
+					}
+					else {
+						aTemporary = aProperty->value.proxy.target;
+						if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+							aProperty->value.proxy.target = theCurrent;
+							theCurrent = aTemporary;
+							theCurrent->value.instance.garbage = aProperty;
+							aProperty = theCurrent;
+						}
+						else
+							aProperty = aProperty->next;
+					}
+					break;
+					
 				default:
 					(*theMarker)(the, aProperty);
 					aProperty = aProperty->next;
@@ -688,12 +716,45 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 		else if (theCurrent->value.instance.garbage) {
 			aProperty = theCurrent->value.instance.garbage;
 			theCurrent->value.instance.garbage = C_NULL;
-			
-			aTemporary = aProperty->value.reference;
-			aProperty->value.reference = theCurrent;
-			theCurrent = aTemporary;
-
-			aProperty = aProperty->next;
+			switch (aProperty->kind) {
+			case XS_INSTANCE_KIND:
+				aTemporary = aProperty->value.instance.prototype;
+				aProperty->value.instance.prototype = theCurrent;
+				theCurrent = aTemporary;
+				aProperty = aProperty->next;
+				break;
+			case XS_REFERENCE_KIND:
+				aTemporary = aProperty->value.reference;
+				aProperty->value.reference = theCurrent;
+				theCurrent = aTemporary;
+				aProperty = aProperty->next;
+				break;
+			case XS_PROXY_KIND:
+				if (aProperty->flag & XS_INSPECTOR_FLAG) {
+					aProperty->flag &= ~XS_INSPECTOR_FLAG;
+					aTemporary = aProperty->value.proxy.handler;
+					aProperty->value.proxy.handler = theCurrent;
+					theCurrent = aTemporary;
+					
+					aTemporary = aProperty->value.proxy.target;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aProperty->value.proxy.target = theCurrent;
+						theCurrent = aTemporary;
+						theCurrent->value.instance.garbage = aProperty;
+						aProperty = theCurrent;
+					}
+					else {
+						aProperty = aProperty->next;
+					}
+				}
+				else {
+					aTemporary = aProperty->value.proxy.target;
+					aProperty->value.proxy.target = theCurrent;
+					theCurrent = aTemporary;
+					aProperty = aProperty->next;
+				}
+				break;
+			}
 		}
 		else
 			break;
