@@ -469,7 +469,6 @@ void fx_Number_prototype_toString(txMachine* the)
 				*(--string) = '-';
 			}
 			if (string > mxResult->value.string) {
-				fprintf(stderr, "oops\n");
 				c_memmove(mxResult->value.string, string, length - (string - mxResult->value.string));\
 			}
 		}}
