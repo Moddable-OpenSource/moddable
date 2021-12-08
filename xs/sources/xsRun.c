@@ -2546,9 +2546,14 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_SUPER)
 			mxNextCode(1);
-			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference);
-			variable = mxBehaviorGetProperty(the, variable->value.home.object, mxID(_constructor), 0, XS_ANY);
-			variable = fxGetPrototype(the, variable->value.reference);
+			variable = mxFrameFunction->value.reference;
+            if (mxIsConstructor(variable))
+				variable = fxGetPrototype(the, variable);
+			else {
+				variable = mxFunctionInstanceHome(variable);
+				variable = mxBehaviorGetProperty(the, variable->value.home.object, mxID(_constructor), 0, XS_ANY);
+				variable = fxGetPrototype(the, variable->value.reference);
+			}
             if (!mxIsConstructor(variable))
 				mxRunDebug(XS_TYPE_ERROR, "super: no constructor");
 			mxAllocStack(6);
