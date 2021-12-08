@@ -1103,6 +1103,7 @@ void fxBody(txParser* parser)
 	txInteger count = parser->nodeCount;
 	txInteger line = parser->line;
 	txNode* node;
+    fxCheckParserStack(parser, line);
 	while ((parser->token != XS_TOKEN_EOF) && (parser->token != XS_TOKEN_RIGHT_BRACE)) {
 		fxStatement(parser, 1);
 		node = parser->root;
