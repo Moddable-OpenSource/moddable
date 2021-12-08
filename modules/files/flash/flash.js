@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,6 +29,5 @@ class Flash @ "xs_flash_destructor" {
 	get byteLength()  @ "xs_flash_byteLength";
 	get blockSize()  @ "xs_flash_blockSize";
 }
-Object.freeze(Flash.prototype);
 
 export default Flash;
