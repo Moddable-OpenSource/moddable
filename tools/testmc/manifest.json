@@ -43,6 +43,7 @@
 			"$(TEST262)/harness",
 			"./main",
 			"./hosttest",
+			"./testworker",
 			"$(MODULES)/base/instrumentation/*",
 			"$(MODULES)/network/http/*"
 		],
@@ -54,6 +55,7 @@
 	},
 	"preload": [
 		"main",
+		"hosttest",
 		"harness",
 		"commodetto/*",
 		"instrumentation",
@@ -69,6 +71,7 @@
 		},
 		"esp32": {
 			"include": [
+				"$(MODULES)/base/worker/manifest.json",
 				"$(MODULES)/files/flash/manifest.json"
 			],
 			"modules": {
