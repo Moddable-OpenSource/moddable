@@ -27,7 +27,7 @@
 
 void xs_flash(xsMachine *the)
 {
-	esp_partition_t *partition;
+	const esp_partition_t *partition;
 	char *partitionName = xsmcToString(xsArg(0));
 
 	if (0 == c_strcmp(partitionName, "xs"))
@@ -99,8 +99,9 @@ void xs_flash_map(xsMachine *the)
 
 	xsResult = xsNewHostObject(NULL);
 	xsmcSetHostBuffer(xsResult, (void *)partitionAddress, size);
+	xsmcPetrifyHostBuffer(xsResult);
 	xsmcSetInteger(xsVar(0), size);
-	xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
+	xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDontDelete | xsDontSet);
 }
 
 void xs_flash_byteLength(xsMachine *the)
