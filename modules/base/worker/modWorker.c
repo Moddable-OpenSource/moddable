@@ -51,6 +51,7 @@ struct modWorkerRecord {
 	uint32_t				allocation;
 	uint32_t				stackCount;
 	uint32_t				slotCount;
+	uint32_t				keyCount;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
 #if ESP32 || qca4020
@@ -180,6 +181,10 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 		if (xsmcHas(xsArg(1), xsID_slotCount)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
 			worker->slotCount = xsmcToInteger(xsVar(0));
+		}
+		if (xsmcHas(xsArg(1), xsID_keyCount)) {
+			xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
+			worker->keyCount = xsmcToInteger(xsVar(0));
 		}
 	}
 
@@ -420,7 +425,7 @@ int workerStart(modWorker worker)
 	xsMachine *the;
 	int result = 0;
 
-	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->module);
+	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->keyCount, worker->module);
 	if (!the)
 		return -1;
 
