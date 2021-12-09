@@ -40,6 +40,7 @@ import SSLStream from "ssl/stream";
 import supportedCipherSuites from "ssl/ciphersuites";
 import Mont from "mont";
 import PRF from "ssl/prf";
+import TLSError from "ssl/error";
 import Bin from "bin";
 import RNG from "rng";
 import PKCS1_5 from "pkcs1_5";
@@ -170,7 +171,7 @@ const handshakeProtocol = {
 			s = this.finished;
 			break;
 		default:
-			throw new Error("SSL: handshake: unknown type: " + tbuf[0]);
+			throw new TLSError("handshake: unknown type: " + tbuf[0]);
 			break;
 		}
 		s.unpacketize(session, body ? new SSLStream(body) : undefined);
@@ -240,7 +241,7 @@ const handshakeProtocol = {
 						return suites[i];
 				}
 			}
-			throw new Error("SSL: handshake: unsuppoorted cipher");
+			throw new TLSError("handshake: unsuppoorted cipher");
 		},
 		selectCompressionMethod(peerMethods) {
 			for (var i = 0, methods = supportedCompressionMethods; i < methods.length; i++) {
@@ -249,7 +250,7 @@ const handshakeProtocol = {
 						return methods[i];
 				}
 			}
-			throw new Error("SSL: handshake: unsupported compression");
+			throw new TLSError("handshake: unsupported compression");
 		},
 		unpacketize(session, s, msgType) {
 			var ver = s.readChars(2);
@@ -500,12 +501,12 @@ const handshakeProtocol = {
 				ttlSize -= certSize + 3;
 			}
 			if (!session.certificateManager.verify(certs))
-				throw new Error("SSL: certificate: auth err");
+				throw new TLSError("certificate: auth err");
 
 /*
 			if (session.options.verifyHost) {
 				if (!this.verifyHost(session, certs[0]))
-					throw new Error("SSL: certificate: bad host");
+					throw new TLSError("certificate: bad host");
 			}
 */
 			session.peerCert = certs[0].slice(0).buffer;		// could we store only the key?
@@ -562,12 +563,12 @@ const handshakeProtocol = {
 					//		ECCurveType
 					let curve_type = s.readChars(1);
 					if (curve_type != 3)	// named_curve
-						throw new Error("SSL: invalid curve type");
+						throw new TLSError("invalid curve type");
 					//		NamedCurve
 					tbs.writeChars(curve_type, 1)
 					let named_curve = s.readChars(2);
 					if (!session.options.tls_elliptic_curves.includes(named_curve))
-						throw new Error("SSL: unsupported curve");
+						throw new TLSError("unsupported curve");
 					dhparams.named_curve = named_curve;
 					tbs.writeChars(named_curve, 2);
 					//	ECPoint
@@ -618,7 +619,7 @@ const handshakeProtocol = {
 					let H = hash.process(session.clientRandom, session.serverRandom, tbs.getChunk());
 					if (!v.verify(H, sig, true)) {
 						// should send an alert, probably...
-						throw new Error("SSL: serverKeyExchange: failed to verify signature");
+						throw new TLSError("serverKeyExchange: failed to verify signature");
 					}
 				}
 				hash = v = sig = tbs = null;
@@ -631,7 +632,7 @@ const handshakeProtocol = {
 			case DH_RSA:
 			default:
 				// not supported
-				throw new Error("SSL: serverKeyExchange: unsupported algorithm: " + algo);
+				throw new TLSError("serverKeyExchange: unsupported algorithm: " + algo);
 				break;
 			}
 		},
@@ -673,7 +674,7 @@ const handshakeProtocol = {
 					}
 					switch (hash_algo) {
 					default:
-					case this.none: throw new Error("SSL: serverKeyExchange: no hash algorithm"); break;
+					case this.none: throw new TLSError("serverKeyExchange: no hash algorithm"); break;
 					case this.sha1: hash = Crypt.SHA1; oid = [1, 3, 14, 3, 2, 26]; break;
 					case this.md5: hash = Crypt.MD5; oid = [1, 2, 840, 113549, 2, 5]; break;
 					case this.sha224: hash = Crypt.SHA224; oid = [2, 16, 840, 1, 101, 3, 4, 2, 4]; break;
@@ -683,7 +684,7 @@ const handshakeProtocol = {
 					}
 					switch (sig_algo) {
 					default:
-					case this.anonymous: throw new Error("SSL: serverKeyExchange: no signature algorithm"); break;
+					case this.anonymous: throw new TLSError("serverKeyExchange: no signature algorithm"); break;
 					case this.rsa: pk = Crypt.PKCS1_5; break;
 					case this.dsa: pk = Crypt.DSA; break;
 					case this.ecdsa: pk = Crypt.ECDSA; break;
@@ -806,7 +807,7 @@ const handshakeProtocol = {
 			case RSA:
 				// PKCS1.5
 				if (!session.myCert)
-					throw new Error("SSL: clientKeyExchange: no cert");	// out of sequence
+					throw new TLSError("clientKeyExchange: no cert");	// out of sequence
 				var key = session.certificateManager.getKey(/* self */);
 				var rsa = new Crypt.PKCS1_5(key, true);
 				var plain = rsa.decrypt(cipher);
@@ -831,7 +832,7 @@ const handshakeProtocol = {
 				preMasterSecret = ArrayBuffer.fromBigInt(y);
 				break;
 			default:
-				throw new Error("SSL: clientKeyExchange: unsupported algorithm");
+				throw new TLSError("clientKeyExchange: unsupported algorithm");
 				break;
 			}
 			return this.generateMasterSecret(session, preMasterSecret);		// tail call optimization
@@ -857,7 +858,7 @@ const handshakeProtocol = {
 			case DH_RSA:
 				// we don't support fixed key DH in cert so should send DH anyway
 				if (!session.dhparams)
-					throw new Error("SSL: clientKeyExchange: no DH params");
+					throw new TLSError("clientKeyExchange: no DH params");
 				let dh = session.dhparams;
 				let r = RNG.get(dh.dh_p.byteLength);
 				let x = BigInt.fromArrayBuffer(r);
@@ -874,7 +875,7 @@ const handshakeProtocol = {
 				break;
 			case ECDHE_RSA:
 				if (!session.dhparams)
-					throw new Error("SSL: clientKeyExchange: no DH params");
+					throw new TLSError("clientKeyExchange: no DH params");
 				for (let name in named_curves) {
 					if (named_curves[name] == session.dhparams.named_curve) {
 						let curve = new Curve(name);
@@ -889,7 +890,7 @@ const handshakeProtocol = {
 				}
 				break;
 			default:
-				throw new Error("SSL: clientKeyExchange: unsupported algorithm");
+				throw new TLSError("clientKeyExchange: unsupported algorithm");
 				break;
 			}
 			this.generateMasterSecret(session, preMasterSecret);
@@ -913,16 +914,16 @@ const handshakeProtocol = {
 				var key = session.certificateManager.getKey(session.peerCert);
 				var rsa = new Crypt.PKCS1_5(key);
 				if (!rsa.verify(this.calculateDigest(session), sig))
-					throw new Error("SSL: certificateVerify: auth err");
+					throw new TLSError("certificateVerify: auth err");
 			}
 			else
-				throw new Error("SSL: certificateVerify: unimplemented");	// unimplemented
+				throw new TLSError("certificateVerify: unimplemented");	// unimplemented
 		},
 		packetize(session, cert) {
 			session.traceProtocol(this);
 			if (session.chosenCipher.keyExchangeAlgorithm == RSA) {
 				if (!session.myCert)
-					throw new Error("SSL: certificateVerify: no cert");	// out of sequence
+					throw new TLSError("certificateVerify: no cert");	// out of sequence
 				var key = session.certificateManager.getKey(cert);
 
 				var s = new SSLStream(), rsa, sig;
@@ -940,7 +941,7 @@ const handshakeProtocol = {
 				s.writeChunk(sig);
 			}
 			else
-				throw new Error("SSL: certificateVerify: unimplemented");	// unimplemented
+				throw new TLSError("certificateVerify: unimplemented");	// unimplemented
 			return handshakeProtocol.packetize(session, certificate_verify, s);
 		},
 	},
@@ -961,7 +962,7 @@ const handshakeProtocol = {
 			let verify = this.calculateVerifyData(session, 1);
 			if (Bin.comp(verify, s.readChunk(verify.byteLength)) != 0) {
 				session.masterSecret = null;
-				throw new Error("SSL: finished: auth err");
+				throw new TLSError("finished: auth err");
 			}
 		},
 		packetize(session) {
