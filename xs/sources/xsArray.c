@@ -299,7 +299,10 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 txSlot* fxCheckArrayItems(txMachine* the, txSlot* array, txIndex from, txIndex to)
 {
 	txSlot* address = array->value.array.address;
-	if (!address)
+	txIndex length = array->value.array.length;
+	if (length < from)
+		return C_NULL;
+	if (length < to)
 		return C_NULL;
 	address += from;
 	while (from < to) {
@@ -1179,16 +1182,15 @@ void fx_Array_prototype_concat(txMachine* the)
 
 void fx_Array_prototype_copyWithin(txMachine* the)
 {
+	txNumber length = fxGetArrayLength(the, mxThis);
+	txNumber to = fxArgToIndex(the, 0, 0, length);
+	txNumber from = fxArgToIndex(the, 1, 0, length);
+	txNumber final = fxArgToIndex(the, 2, length, length);
+	txNumber count = (final > from) ? final - from : 0;
 	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
-	txNumber length, to, from, final, count;
-	length = (array) ? array->value.array.length : fxGetArrayLength(the, mxThis);
-	to = fxArgToIndex(the, 0, 0, length);
-	from = fxArgToIndex(the, 1, 0, length);
-	final = fxArgToIndex(the, 2, length, length);
-	count = (final > from) ? final - from : 0;
 	if (count > length - to)
 		count = length - to;
-	if (array && ((txIndex)length == mxArraySize(array))) {
+	if (array) {
 		if (count > 0) {
 			if (from < to)
 				array = fxCheckArrayItems(the, array, (txIndex)from, (txIndex)(to + count));
@@ -1196,7 +1198,7 @@ void fx_Array_prototype_copyWithin(txMachine* the)
 				array = fxCheckArrayItems(the, array, (txIndex)to, (txIndex)(from + count));
 		}
 	}
-	if (array && ((txIndex)length == mxArraySize(array))) {
+	if (array) {
 		if (count > 0) {
 			c_memmove(array->value.array.address + (txIndex)to, array->value.array.address + (txIndex)from, (txIndex)count * sizeof(txSlot));
 			fxIndexArray(the, array);
@@ -2062,11 +2064,13 @@ void fx_Array_prototype_slice(txMachine* the)
 	txNumber START = fxArgToIndex(the, 0, 0, LENGTH);
 	txNumber END = fxArgToIndex(the, 1, LENGTH, LENGTH);
 	txNumber COUNT = (END > START) ? END - START : 0;
-	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* resultArray = fxCreateArraySpecies(the, COUNT);
+	txSlot* array = C_NULL;
+	if (resultArray)
+		array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	if (array)
 		array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + COUNT));
-	if (array && resultArray) {
+	if (array) {
 		txIndex start = (txIndex)START;
 		txIndex count = (txIndex)COUNT;
 		if (count) {
@@ -2308,8 +2312,8 @@ void fx_Array_prototype_splice(txMachine* the)
 	txNumber LENGTH = fxGetArrayLength(the, mxThis);
 	txNumber START = fxArgToIndex(the, 0, 0, LENGTH);
 	txNumber INSERTIONS, DELETIONS;
-	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	txSlot* resultArray;
+	txSlot* array = C_NULL;
 	if (c == 0) {
 		INSERTIONS = 0;
 		DELETIONS = 0;
@@ -2325,13 +2329,15 @@ void fx_Array_prototype_splice(txMachine* the)
 	if (LENGTH + INSERTIONS - DELETIONS > C_MAX_SAFE_INTEGER)
 		mxTypeError("unsafe integer");
 	resultArray = fxCreateArraySpecies(the, DELETIONS);
-	if (array && resultArray) {
+	if (resultArray)
+		array = fxCheckArray(the, mxThis, XS_MUTABLE);
+	if (array) {
 		if (INSERTIONS == DELETIONS)
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + DELETIONS));
 		else
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)LENGTH);
 	}
-	if (array && resultArray) {
+	if (array) {
 		txSlot* address;
 		txIndex length = (txIndex)LENGTH;
 		txIndex start = (txIndex)START;
