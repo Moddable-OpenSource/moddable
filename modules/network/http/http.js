@@ -406,13 +406,11 @@ function callback(message, value) {
 			else if ((undefined === this.total) && (undefined === this.chunk))	// end of data - no content-length and no chunk
 				error = false;
 		}
-		done.call(this, error);
+		done.call(this, error, value);
 	}
 }
 
-function done(error = false) {
-	let data;
-
+function done(error = false, data) {
 	if (6 === this.state) return;
 
 	this.state = 6;
