@@ -212,9 +212,9 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 	fxStringX(the, slot, "Symbol(");
 	if (key) {
 		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
-			fxConcatStringC(the, slot, key->value.key.string);
+			fxConcatString(the, slot, key);
 		else if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND))
-			fxConcatStringC(the, slot, key->value.string);
+			fxConcatString(the, slot, key);
 	}
 	fxConcatStringC(the, slot, ")");
 }
