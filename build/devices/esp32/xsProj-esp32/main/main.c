@@ -124,7 +124,7 @@ void loop_task(void *pvParameter)
 #endif
 
 	while (true) {
-		gThe = ESP_cloneMachine(0, 0, 0, NULL);
+		gThe = ESP_cloneMachine(0, 0, 0, 0, NULL);
 
 		mc_setup(gThe);
 

@@ -335,7 +335,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	if (limit < offset)
 		mxRangeError("out of range byteOffset %ld", offset);
 	inLength = fxArgToByteLength(the, 2, limit - offset);
-	if (limit < (offset + inLength))
+	if ((limit < (offset + inLength)) || ((offset + inLength) < offset))
 		mxRangeError("out of range byteLength %ld", inLength);
 
 	in = offset + (unsigned char *)arrayBuffer->value.arrayBuffer.address;
@@ -753,6 +753,7 @@ void fx_String_prototype_indexOf(txMachine* the)
 		return;
 	}
 	aSubString = fxToString(the, mxArgv(0));
+	aString = mxThis->value.string;
 	aLength = fxUnicodeLength(aString);
 	aSubLength = fxUnicodeLength(aSubString);
 	anOffset = 0;
@@ -829,6 +830,7 @@ void fx_String_prototype_lastIndexOf(txMachine* the)
 		return;
 	}
 	aSubString = fxToString(the, mxArgv(0));
+	aString = mxThis->value.string;
 	aLength = fxUnicodeLength(aString);
 	aSubLength = fxUnicodeLength(aSubString);
 	anOffset = aLength;
@@ -1279,7 +1281,7 @@ void fx_String_prototype_slice(txMachine* the)
 	txNumber start = fxArgToIndex(the, 0, 0, length);
 	txNumber end = fxArgToIndex(the, 1, length, length);
 	if (start < end) {
-		txInteger offset = fxUnicodeToUTF8Offset(string, (txInteger)start);
+		txInteger offset = fxUnicodeToUTF8Offset(mxThis->value.string, (txInteger)start);
 		length = fxUnicodeToUTF8Offset(mxThis->value.string + offset, (txInteger)(end - start));
 		if ((offset >= 0) && (length > 0)) {
 			mxResult->value.string = (txString)fxNewChunk(the, length + 1);

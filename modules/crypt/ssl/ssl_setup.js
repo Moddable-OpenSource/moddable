@@ -38,6 +38,7 @@
 import PRF from "ssl/prf";
 import HMAC from "hmac";
 import SSLStream from "ssl/stream";
+import TLSError from "ssl/error";
 import {BlockCipher, Digest, Mode, StreamCipher} from "crypt";
 import {AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
 import Gcm from "gcm";
@@ -60,7 +61,7 @@ function setupSub(o, cipher)
 		enc = new StreamCipher("RC4", o.key);
 		break;
 	default:
-		throw new Error("SSL: SetupCipher: unkown encryption algorithm");
+		throw new TLSError("SetupCipher: unkown encryption algorithm");
 	}
 	switch (cipher.encryptionMode) {
 	case CBC:
@@ -71,7 +72,7 @@ function setupSub(o, cipher)
 		case SHA256: h = "SHA256"; break;
 		case SHA384: h = "SHA384"; break;
 		default:
-			throw new Error("SSL: SetupCipher: unknown hash algorithm");
+			throw new TLSError("SetupCipher: unknown hash algorithm");
 		}
 		o.hmac = new HMAC(new Digest(h), o.macSecret);
 		if (cipher.encryptionMode == CBC)

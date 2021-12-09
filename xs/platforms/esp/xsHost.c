@@ -742,7 +742,7 @@ void modPrelaunch(void)
 #endif
 }
 
-void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name)
+void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint32_t keyCount, const char *name)
 {
 	xsMachine *the;
 	uint8_t *context[2];
@@ -768,6 +768,9 @@ void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCo
 
 		if (slotCount)
 			creation.initialHeapCount = slotCount;
+		
+		if (keyCount)
+			creation.keyCount = keyCount;
 
 		context[0] = c_malloc(allocation);
 		if (NULL == context[0]) {
@@ -1205,7 +1208,7 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
-#ifdef mxDebug
+#if defined(mxDebug) && !MODDEF_XS_TEST
 		if (fxIsConnected(the)) {
 			char tag[16];
 			flags |= mxDebugFlag;

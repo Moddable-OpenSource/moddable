@@ -37,10 +37,6 @@
 
 #include "xsAll.h"
 
-#ifndef mxIntegerDivideOverflowException
-	#define mxIntegerDivideOverflowException 1
-#endif
-
 void fxBuildMath(txMachine* the)
 {
 	txSlot* slot;
@@ -329,7 +325,6 @@ void fx_Math_idivmod(txMachine* the)
 		if ((x == -2147483648L) && (y == -1)) {
 			mxPushInteger(x);
 			mxPushInteger(0);
-			
 		}
 		else
 #endif

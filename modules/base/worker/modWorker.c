@@ -51,6 +51,7 @@ struct modWorkerRecord {
 	uint32_t				allocation;
 	uint32_t				stackCount;
 	uint32_t				slotCount;
+	uint32_t				keyCount;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
 #if ESP32 || qca4020
@@ -79,6 +80,9 @@ static int workerStart(modWorker worker);
 static void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
 
 static modWorker gWorkers;
+
+static void xs_emptyworker_destructor(void *data) {
+}
 
 void xs_worker_destructor(void *data)
 {
@@ -181,6 +185,10 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
 			worker->slotCount = xsmcToInteger(xsVar(0));
 		}
+		if (xsmcHas(xsArg(1), xsID_keyCount)) {
+			xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
+			worker->keyCount = xsmcToInteger(xsVar(0));
+		}
 	}
 
 #if ESP32
@@ -209,8 +217,13 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 	workerStart(worker);
 #endif
 
-	if (NULL == worker->the)
+	if (NULL == worker->the) {
+		if (worker->task) {
+			vTaskDelete(worker->task);
+			worker->task = NULL;
+		}
 		xsUnknownError("unable to instantiate worker");
+	}
 
 done:
 	xsRemember(worker->owner);
@@ -233,17 +246,15 @@ void xs_sharedworker(xsMachine *the)
 
 void xs_worker_terminate(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
-
-	if (NULL == worker)
+	if (NULL == xsmcGetHostData(xsThis))
 		return;
 
-	workerTerminate(the, worker, NULL, 0);
+	workerTerminate(the, xsmcGetHostDataValidate(xsThis, (void *)xs_worker_destructor), NULL, 0);
 }
 
 void xs_worker_postfrominstantiator(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
+	modWorker worker = xsmcGetHostDataValidate(xsThis, (void *)xs_worker_destructor);
 	char *message;
 	uint32_t messageLength;
 	uint8_t kind;
@@ -283,7 +294,7 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 
 void xs_worker_postfromworker(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
+	modWorker worker = xsmcGetHostDataValidate(xsThis, (void *)xs_emptyworker_destructor);
 	char *message;
 	uint32_t messageLength;
 	uint8_t kind;
@@ -320,7 +331,7 @@ void xs_worker_postfromworker(xsMachine *the)
 
 void xs_worker_close(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
+	modWorker worker = xsmcGetHostDataValidate(xsThis, (void *)xs_emptyworker_destructor);
 	modMessagePostToMachine(worker->parent, NULL, 0, (modMessageDeliver)workerTerminate, worker);
 }
 
@@ -398,7 +409,7 @@ void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *message, ui
 	xsmcVars(4);
 
 	xsVar(0) = xsmcNewArray(0);									// ports = []
-	xsVar(1) = xsNewHostObject(NULL);							// port = {}
+	xsVar(1) = xsNewHostObject(xs_emptyworker_destructor);		// port = {}
 	xsmcSetHostData(xsVar(1), worker);
 	worker->workerPort = xsVar(1);
 	xsRemember(worker->workerPort);
@@ -420,7 +431,7 @@ int workerStart(modWorker worker)
 	xsMachine *the;
 	int result = 0;
 
-	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->module);
+	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->keyCount, worker->module);
 	if (!the)
 		return -1;
 
@@ -434,7 +445,7 @@ int workerStart(modWorker worker)
 
 	xsTry {
 		if (!worker->shared) {
-			xsVar(0) = xsNewHostObject(NULL);
+			xsVar(0) = xsNewHostObject(xs_emptyworker_destructor);
 			xsmcSetHostData(xsVar(0), worker);
 			xsmcSet(xsGlobal, xsID_self, xsVar(0));
 			worker->workerPort = xsVar(0);
@@ -475,6 +486,7 @@ void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_
 
 	xsForget(worker->owner);
 	xsmcSetHostData(worker->owner, NULL);
+	xsmcSetHostDestructor(worker->owner, NULL);
 
 	xs_worker_destructor(worker);
 }
@@ -485,15 +497,17 @@ void workerLoop(void *pvParameter)
 {
 	modWorker worker = (modWorker)pvParameter;
 
-	if (workerStart(worker)) {
-		modMachineTaskWake(worker->parent);
-		return;
-	}
-	modMachineTaskWake(worker->parent);
-
 #if CONFIG_TASK_WDT
 	esp_task_wdt_add(NULL);
 #endif
+
+	if (workerStart(worker)) {
+		modMachineTaskWake(worker->parent);
+		while (true)		// wait: caller deletes task
+			vTaskDelay(1000);
+	}
+	modMachineTaskWake(worker->parent);
+
 
 	while (true) {
 		modTimersExecute();
@@ -502,10 +516,6 @@ void workerLoop(void *pvParameter)
 		qca4020_watchdog();
 #endif
 	}
-
-#if CONFIG_TASK_WDT
-	esp_task_wdt_delete(NULL);
-#endif
 }
 #endif
 

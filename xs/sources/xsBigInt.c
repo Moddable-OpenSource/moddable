@@ -228,13 +228,13 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 		sign = 1;
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		endian = EndianLittle;
-	if (length == 0) {
+    if (sign)
+        length--;
+	if (length <= 0) {
 		mxResult->value.bigint = gxBigIntNaN;
 		mxResult->kind = XS_BIGINT_X_KIND;
 		return;
 	}
-	if (sign)
-		length--;
 	bigint = fxBigInt_alloc(the, howmany(length, sizeof(txU4)));
 	bigint->data[bigint->size - 1] = 0;
 	src = (txU1*)(arrayBuffer->value.arrayBuffer.address);
@@ -258,7 +258,7 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 		}
 	}
 	length = bigint->size - 1;
-	while (bigint->data[length] == 0)
+	while (length && (bigint->data[length] == 0))
 		length--;
 	bigint->size = length + 1;
 	mxPullSlot(mxResult);

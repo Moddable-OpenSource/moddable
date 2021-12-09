@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,16 +18,8 @@
  *
  */
 
-class Flash @ "xs_flash_destructor" {
-	constructor(name) @ "xs_flash"
-
-	// sector and offsets are relative to area opened in constructor
-	erase(sector) @ "xs_flash_erase";
-	read(offset, byteLength, buffer) @ "xs_flash_read";
-	write(offset, byteLength, buffer) @ "xs_flash_write";
-	map() @ "xs_flash_map"
-	get byteLength()  @ "xs_flash_byteLength";
-	get blockSize()  @ "xs_flash_blockSize";
+class TLSError extends Error {
 }
+TLSError.prototype.name = "TLS"
 
-export default Flash;
+export default TLSError;

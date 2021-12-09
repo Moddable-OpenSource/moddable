@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -37,6 +37,7 @@
 
 import recordProtocol from "ssl/record";
 import SSLStream from "ssl/stream";
+import TLSError from "ssl/error";
 
 //const warning = 1;
 //const fatal = 2;
@@ -76,16 +77,16 @@ const alert = {
 
 	unpacketize(session, fragment) {
 		session.traceProtocol(this);
-		let s = new SSLStream(fragment);
+		const s = new SSLStream(fragment);
 		session.alert = {level: s.readChar(), description: s.readChar()};
-		if (session.alert.description != close_notify)
-			throw new Error("SSL: alert: " + session.alert.level + ", " + session.alert.description);
-		else
-			trace("SSL: close notify\n");
+		if (close_notify !== session.alert.description)
+			throw new TLSError("alert: " + session.alert.level + ", " + session.alert.description);
+		trace("SSL: close notify\n");
 	},
 	packetize(session, level, description) {
 		session.traceProtocol(this);
-		let s = new SSLStream();
+
+		const s = new SSLStream();
 		s.writeChar(level);
 		s.writeChar(description);
 		return recordProtocol.packetize(session, recordProtocol.alert, s.getChunk());

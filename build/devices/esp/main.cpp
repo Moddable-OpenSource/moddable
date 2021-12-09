@@ -80,11 +80,11 @@ void setup()
 	wifi_set_opmode_current(NULL_MODE);
 
 #ifdef mxDebug
-	gThe = ESP_cloneMachine(0, 0, 0, NULL);
+	gThe = ESP_cloneMachine(0, 0, 0, 0, NULL);
 
 	mc_setup(gThe);
 #else
-	mc_setup(ESP_cloneMachine(0, 0, 0, NULL));
+	mc_setup(ESP_cloneMachine(0, 0, 0, 0, NULL));
 #endif
 }
 

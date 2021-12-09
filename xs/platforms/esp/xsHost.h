@@ -252,11 +252,11 @@ double __ieee754_fmod_patch(double x, double y);
 */
 
 #ifdef __XS__
-	extern xsMachine *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, const char *name);
+	extern xsMachine *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint32_t keyCount, const char *name);
 
 	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
 #else
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, const char *name);
+	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint32_t keyCount, const char *name);
 #endif
 
 void modLoadModule(void *the, const char *name);

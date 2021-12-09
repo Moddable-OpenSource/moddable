@@ -299,6 +299,11 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 txSlot* fxCheckArrayItems(txMachine* the, txSlot* array, txIndex from, txIndex to)
 {
 	txSlot* address = array->value.array.address;
+	txIndex length = array->value.array.length;
+	if (length < from)
+		return C_NULL;
+	if (length < to)
+		return C_NULL;
 	address += from;
 	while (from < to) {
 		if (address->flag)
@@ -438,7 +443,6 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 {
 	txSlot* instance = fxToInstance(the, mxThis);
 	txFlag flag = 1;
-	txSlot* array = C_NULL;
 	if (fxIsArray(the, instance)) {
 		mxPushSlot(mxThis);
 		mxGetID(mxID(_constructor));
@@ -464,11 +468,7 @@ txSlot* fxCreateArraySpecies(txMachine* the, txNumber length)
 	mxPushNumber(length);
 	mxRunCount(1);
 	mxPullSlot(mxResult);
-	if (flag) {
-		array = mxResult->value.reference->next;
-		fxSetIndexSize(the, array, (txIndex)length, XS_CHUNK);
-	}
-	return array;
+	return (flag) ? mxResult->value.reference->next : C_NULL;
 }
 
 void fxFindThisItem(txMachine* the, txSlot* function, txIndex index, txSlot* item)
@@ -1182,16 +1182,15 @@ void fx_Array_prototype_concat(txMachine* the)
 
 void fx_Array_prototype_copyWithin(txMachine* the)
 {
+	txNumber length = fxGetArrayLength(the, mxThis);
+	txNumber to = fxArgToIndex(the, 0, 0, length);
+	txNumber from = fxArgToIndex(the, 1, 0, length);
+	txNumber final = fxArgToIndex(the, 2, length, length);
+	txNumber count = (final > from) ? final - from : 0;
 	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
-	txNumber length, to, from, final, count;
-	length = (array) ? array->value.array.length : fxGetArrayLength(the, mxThis);
-	to = fxArgToIndex(the, 0, 0, length);
-	from = fxArgToIndex(the, 1, 0, length);
-	final = fxArgToIndex(the, 2, length, length);
-	count = (final > from) ? final - from : 0;
 	if (count > length - to)
 		count = length - to;
-	if (array && ((txIndex)length == mxArraySize(array))) {
+	if (array) {
 		if (count > 0) {
 			if (from < to)
 				array = fxCheckArrayItems(the, array, (txIndex)from, (txIndex)(to + count));
@@ -1199,7 +1198,7 @@ void fx_Array_prototype_copyWithin(txMachine* the)
 				array = fxCheckArrayItems(the, array, (txIndex)to, (txIndex)(from + count));
 		}
 	}
-	if (array && ((txIndex)length == mxArraySize(array))) {
+	if (array) {
 		if (count > 0) {
 			c_memmove(array->value.array.address + (txIndex)to, array->value.array.address + (txIndex)from, (txIndex)count * sizeof(txSlot));
 			fxIndexArray(the, array);
@@ -1752,6 +1751,7 @@ void fx_Array_prototype_map(txMachine* the)
 	txIndex index = 0;
 	if (resultArray) {
 		txIndex resultLength = 0;
+		fxSetIndexSize(the, resultArray, length, XS_CHUNK);
 		while (index < length) {
 			if (fxCallThisItem(the, function, index, C_NULL)) {
 				txSlot* slot = resultArray->value.array.address + resultLength;
@@ -2064,14 +2064,17 @@ void fx_Array_prototype_slice(txMachine* the)
 	txNumber START = fxArgToIndex(the, 0, 0, LENGTH);
 	txNumber END = fxArgToIndex(the, 1, LENGTH, LENGTH);
 	txNumber COUNT = (END > START) ? END - START : 0;
-	txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
 	txSlot* resultArray = fxCreateArraySpecies(the, COUNT);
-	if (array && resultArray)
+	txSlot* array = C_NULL;
+	if (resultArray)
+		array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
+	if (array)
 		array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + COUNT));
-	if (array && resultArray) {
+	if (array) {
 		txIndex start = (txIndex)START;
 		txIndex count = (txIndex)COUNT;
 		if (count) {
+			fxSetIndexSize(the, resultArray, count, XS_CHUNK);
 			c_memcpy(resultArray->value.array.address, array->value.array.address + start, count * sizeof(txSlot));
 			fxIndexArray(the, resultArray);
 			mxMeterSome(count * 10);
@@ -2309,8 +2312,8 @@ void fx_Array_prototype_splice(txMachine* the)
 	txNumber LENGTH = fxGetArrayLength(the, mxThis);
 	txNumber START = fxArgToIndex(the, 0, 0, LENGTH);
 	txNumber INSERTIONS, DELETIONS;
-	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	txSlot* resultArray;
+	txSlot* array = C_NULL;
 	if (c == 0) {
 		INSERTIONS = 0;
 		DELETIONS = 0;
@@ -2326,13 +2329,15 @@ void fx_Array_prototype_splice(txMachine* the)
 	if (LENGTH + INSERTIONS - DELETIONS > C_MAX_SAFE_INTEGER)
 		mxTypeError("unsafe integer");
 	resultArray = fxCreateArraySpecies(the, DELETIONS);
-	if (array && resultArray) {
+	if (resultArray)
+		array = fxCheckArray(the, mxThis, XS_MUTABLE);
+	if (array) {
 		if (INSERTIONS == DELETIONS)
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + DELETIONS));
 		else
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)LENGTH);
 	}
-	if (array && resultArray) {
+	if (array) {
 		txSlot* address;
 		txIndex length = (txIndex)LENGTH;
 		txIndex start = (txIndex)START;
@@ -2341,6 +2346,7 @@ void fx_Array_prototype_splice(txMachine* the)
 		txIndex index;
 		if (LENGTH + INSERTIONS - DELETIONS > 0xFFFFFFFF)
 			mxTypeError("array overflow");
+		fxSetIndexSize(the, resultArray, deletions, XS_CHUNK);
 		c_memcpy(resultArray->value.array.address, array->value.array.address + start, deletions * sizeof(txSlot));
 		fxIndexArray(the, resultArray);
 		mxMeterSome(deletions * 10);

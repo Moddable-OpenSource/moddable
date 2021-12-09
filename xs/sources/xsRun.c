@@ -2546,9 +2546,14 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_SUPER)
 			mxNextCode(1);
-			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference);
-			variable = mxBehaviorGetProperty(the, variable->value.home.object, mxID(_constructor), 0, XS_ANY);
-			variable = fxGetPrototype(the, variable->value.reference);
+			variable = mxFrameFunction->value.reference;
+            if (mxIsConstructor(variable))
+				variable = fxGetPrototype(the, variable);
+			else {
+				variable = mxFunctionInstanceHome(variable);
+				variable = mxBehaviorGetProperty(the, variable->value.home.object, mxID(_constructor), 0, XS_ANY);
+				variable = fxGetPrototype(the, variable->value.reference);
+			}
             if (!mxIsConstructor(variable))
 				mxRunDebug(XS_TYPE_ERROR, "super: no constructor");
 			mxAllocStack(6);
@@ -3391,13 +3396,22 @@ XS_CODE_JUMP:
 			slot = mxStack + 1;
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
-					if (mxStack->value.integer != 0)
-						slot->value.integer %= mxStack->value.integer;
-					else {
+					if (mxStack->value.integer == 0) {
 						slot->kind = XS_NUMBER_KIND;
-						slot->value.number = c_fmod((txNumber)(slot->value.integer), (txNumber)(mxStack->value.integer));
-						mxFloatingPointOp("modulo");
+						slot->value.number = C_NAN;
 					}
+#if mxIntegerDivideOverflowException
+					else if ((mxStack->value.integer == 1) || (mxStack->value.integer == -1)) {
+						if (slot->value.integer >= 0)
+							slot->value.integer = 0;
+						else {
+							slot->kind = XS_NUMBER_KIND;
+							slot->value.number = -0.0;
+						}
+					}
+#endif
+					else
+						slot->value.integer %= mxStack->value.integer;
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;

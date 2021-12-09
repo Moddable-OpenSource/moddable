@@ -2452,9 +2452,9 @@ void fxClassNodeCode(void* it, void* param)
 				if (item->flags & mxMethodFlag)
 					flag |= XS_METHOD_FLAG;
 				else if (item->flags & mxGetterFlag)
-					flag |= XS_GETTER_FLAG;
+					flag |= XS_METHOD_FLAG | XS_GETTER_FLAG;
 				else if (item->flags & mxSetterFlag)
-					flag |= XS_SETTER_FLAG;
+					flag |= XS_METHOD_FLAG | XS_SETTER_FLAG;
 				fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, flag);
 			}
 		}
@@ -2473,9 +2473,9 @@ void fxClassNodeCode(void* it, void* param)
 				if (item->flags & mxMethodFlag)
 					flag |= XS_METHOD_FLAG;
 				else if (item->flags & mxGetterFlag)
-					flag |= XS_GETTER_FLAG;
+					flag |= XS_METHOD_FLAG | XS_GETTER_FLAG;
 				else if (item->flags & mxSetterFlag)
-					flag |= XS_SETTER_FLAG;
+					flag |= XS_METHOD_FLAG | XS_SETTER_FLAG;
 				fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, flag);
 			}
 			else {
@@ -2913,9 +2913,9 @@ void fxFieldNodeCode(void* it, void* param)
 		if (item->flags & mxMethodFlag)
 			fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, XS_METHOD_FLAG);
 		else if (item->flags & mxGetterFlag)
-			fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, XS_GETTER_FLAG);
+			fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, XS_METHOD_FLAG | XS_GETTER_FLAG);
 		else if (item->flags & mxSetterFlag)
-			fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, XS_SETTER_FLAG);
+			fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, XS_METHOD_FLAG | XS_SETTER_FLAG);
 		else
 			fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, 0);
 	}
@@ -3612,9 +3612,9 @@ void fxObjectNodeCode(void* it, void* param)
 				if (item->flags & mxMethodFlag)
 					flag |= XS_METHOD_FLAG;
 				else if (item->flags & mxGetterFlag)
-					flag |= XS_GETTER_FLAG;
+					flag |= XS_METHOD_FLAG | XS_GETTER_FLAG;
 				else if (item->flags & mxSetterFlag)
-					flag |= XS_SETTER_FLAG;
+					flag |= XS_METHOD_FLAG | XS_SETTER_FLAG;
 				fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, flag);
 			}
 			item = item->next;
