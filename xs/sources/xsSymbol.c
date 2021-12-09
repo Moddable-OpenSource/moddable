@@ -161,9 +161,15 @@ void fx_Symbol_prototype_get_description(txMachine* the)
 	txSlot* slot = fxCheckSymbol(the, mxThis);
 	if (!slot) mxTypeError("this is no symbol");
 	slot = fxGetKey(the, slot->value.symbol);
-	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND))) {
-		mxResult->kind = slot->kind;
-		mxResult->value = slot->value;
+	if (slot) {
+		if ((slot->kind == XS_KEY_KIND) || (slot->kind == XS_KEY_X_KIND)) {
+			mxResult->kind = (slot->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
+			mxResult->value.string = slot->value.key.string;
+		}
+		else if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
+			mxResult->kind = slot->kind;
+			mxResult->value = slot->value;
+		}
 	}
 }
 
