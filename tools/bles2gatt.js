@@ -568,7 +568,7 @@ class NimBLEGATTFile extends ESP32GATTFile {
 						}
 						else
 							file.line("\t\t\t\t\t\t.access_cb = NULL,");
-						let flags = this.parseAccess(descriptor.permissions.split(","), descriptor.properties.split(","));
+						let flags = this.parseAccess(descriptor.permissions.split(","), descriptor.properties.split(","), "descriptor");
 						file.line(`\t\t\t\t\t\t.att_flags = ${flags},`);
 						file.line("\t\t\t\t\t},")
 						++descriptorIndex;
@@ -601,7 +601,7 @@ class NimBLEGATTFile extends ESP32GATTFile {
 		file.line("};");
 		file.line("");
 	}
-	parseAccess(permissions, properties) {
+	parseAccess(permissions, properties, type="characteristic") {
 		const BLE_GATT_CHR_F_BROADCAST = 0x0001;
 		const BLE_GATT_CHR_F_READ = 0x0002;
 		const BLE_GATT_CHR_F_WRITE_NO_RSP = 0x0004;
@@ -617,14 +617,26 @@ class NimBLEGATTFile extends ESP32GATTFile {
 		const BLE_GATT_CHR_F_WRITE_ENC = 0x1000;
 		const BLE_GATT_CHR_F_WRITE_AUTHEN = 0x2000;
 		const BLE_GATT_CHR_F_WRITE_AUTHOR = 0x4000;
+
+		const BLE_GATT_DESC_F_READ = 0x01;
+		const BLE_GATT_DESC_F_WRITE = 0x02;
+		const BLE_GATT_DESC_F_READ_ENC = 0x04;
+		const BLE_GATT_DESC_F_READ_AUTHEN = 0x08;
+		const BLE_GATT_DESC_F_READ_AUTHOR = 0x10;
+		const BLE_GATT_DESC_F_WRITE_ENC = 0x20;
+		const BLE_GATT_DESC_F_WRITE_AUTHEN = 0x40;
+		const BLE_GATT_DESC_F_WRITE_AUTHOR = 0x80;
+
+		const isCharacteristic = (type == "characteristic");
+
 		let flags = 0;
 		properties.forEach(p => {
 			switch(p.trim()) {
 				case "read":
-					flags |= BLE_GATT_CHR_F_READ;
+					flags |= (isCharacteristic ? BLE_GATT_CHR_F_READ : BLE_GATT_DESC_F_READ);
 					break;
 				case "write":
-					flags |= BLE_GATT_CHR_F_WRITE;
+					flags |= (isCharacteristic ? BLE_GATT_CHR_F_WRITE : BLE_GATT_DESC_F_WRITE);
 					break;
 				case "writeNoResponse":
 					flags |= BLE_GATT_CHR_F_WRITE_NO_RSP;
@@ -648,19 +660,19 @@ class NimBLEGATTFile extends ESP32GATTFile {
 			switch(p.trim()) {
 				case "read":
 					++readPerms;
-					flags |= BLE_GATT_CHR_F_READ;
+					flags |= (isCharacteristic ? BLE_GATT_CHR_F_READ : BLE_GATT_DESC_F_READ);
 					break;
 				case "readEncrypted":
 					++readPerms;
-					flags |= BLE_GATT_CHR_F_READ_ENC;
+					flags |= (isCharacteristic ? BLE_GATT_CHR_F_READ_ENC : BLE_GATT_DESC_F_READ_ENC);
 					break;
 				case "write":
 					++writePerms;
-					flags |= BLE_GATT_CHR_F_WRITE;
+					flags |= (isCharacteristic ? BLE_GATT_CHR_F_WRITE : BLE_GATT_DESC_F_WRITE);
 					break;
 				case "writeEncrypted":
 					++writePerms;
-					flags |= BLE_GATT_CHR_F_WRITE_ENC;
+					flags |= (isCharacteristic ? BLE_GATT_CHR_F_WRITE_ENC : BLE_GATT_DESC_F_WRITE_ENC);
 					break;
 				default:
 					throw new Error("unsupported permission");
@@ -670,6 +682,8 @@ class NimBLEGATTFile extends ESP32GATTFile {
 			throw new Error("only one of read/readEncrypted can be specified");
 		if (writePerms > 1)
 			throw new Error("only one of write/writeEncrypted can be specified");
+		if (!isCharacteristic && flags > 0xFF)
+			throw new Error("characteristic properties cannot be applied to descriptors");
 		return flags;
 	}
 };
