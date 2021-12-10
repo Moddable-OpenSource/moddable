@@ -139,10 +139,11 @@ txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b)
 
 txSize fxAdjustChunkSize(txMachine* the, txSize size)
 {
-	txSize modulo = size & (sizeof(txSize) - 1);
-    if (modulo)
-		size = fxAddChunkSizes(the, size, sizeof(txSize) - modulo);
-	return fxAddChunkSizes(the, size, sizeof(txChunk));
+	txSize adjust = sizeof(txChunk);
+	txSize modulo = size & (sizeof(size_t) - 1);
+	if (modulo)
+		adjust += sizeof(size_t) - modulo;
+	return fxAddChunkSizes(the, size, adjust);
 }
 
 void fxAllocate(txMachine* the, txCreation* theCreation)
