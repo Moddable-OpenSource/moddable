@@ -68,65 +68,69 @@ export default function (done) {
   }
 
   // accelerometer and gyrometer
-  state.accelerometerGyro = new MPU6886(INTERNAL_I2C);
+  try {
+    state.accelerometerGyro = new MPU6886(INTERNAL_I2C);
 
-  globalThis.accelerometer = {
-    onreading: nop,
-  };
+    globalThis.accelerometer = {
+      onreading: nop,
+    };
 
-  globalThis.gyro = {
-    onreading: nop,
-  };
+    globalThis.gyro = {
+      onreading: nop,
+    };
 
-  accelerometer.start = function (frequency) {
-    accelerometer.stop();
-    state.accelerometerTimerID = Timer.repeat((id) => {
-      state.accelerometerGyro.configure({
-        operation: "accelerometer",
-      });
-      const sample = state.accelerometerGyro.sample();
-      if (sample) {
-        state.handleRotation(sample);
-        accelerometer.onreading(sample);
-      }
-    }, frequency);
-  };
-
-  gyro.start = function (frequency) {
-    gyro.stop();
-    state.gyroTimerID = Timer.repeat((id) => {
-      state.accelerometerGyro.configure({
-        operation: "gyroscope",
-      });
-      const sample = state.accelerometerGyro.sample();
-      if (sample) {
-        let { x, y, z } = sample;
-        const temp = x;
-        x = y * -1;
-        y = temp * -1;
-        z *= -1;
-        gyro.onreading({
-          x,
-          y,
-          z,
+    accelerometer.start = function (frequency) {
+      accelerometer.stop();
+      state.accelerometerTimerID = Timer.repeat((id) => {
+        state.accelerometerGyro.configure({
+          operation: "accelerometer",
         });
-      }
-    }, frequency);
-  };
+        const sample = state.accelerometerGyro.sample();
+        if (sample) {
+          state.handleRotation(sample);
+          accelerometer.onreading(sample);
+        }
+      }, frequency);
+    };
 
-  accelerometer.stop = function () {
-    if (undefined !== state.accelerometerTimerID)
-      Timer.clear(state.accelerometerTimerID);
-    delete state.accelerometerTimerID;
-  };
+    gyro.start = function (frequency) {
+      gyro.stop();
+      state.gyroTimerID = Timer.repeat((id) => {
+        state.accelerometerGyro.configure({
+          operation: "gyroscope",
+        });
+        const sample = state.accelerometerGyro.sample();
+        if (sample) {
+          let { x, y, z } = sample;
+          const temp = x;
+          x = y * -1;
+          y = temp * -1;
+          z *= -1;
+          gyro.onreading({
+            x,
+            y,
+            z,
+          });
+        }
+      }, frequency);
+    };
 
-  gyro.stop = function () {
-    if (undefined !== state.gyroTimerID) Timer.clear(state.gyroTimerID);
-    delete state.gyroTimerID;
-  };
+    accelerometer.stop = function () {
+      if (undefined !== state.accelerometerTimerID)
+        Timer.clear(state.accelerometerTimerID);
+      delete state.accelerometerTimerID;
+    };
+
+    gyro.stop = function () {
+      if (undefined !== state.gyroTimerID) Timer.clear(state.gyroTimerID);
+      delete state.gyroTimerID;
+    };
+  } catch (e) {
+    trace(`Error initializing: ${e}\n`);
+  }
 
   // autorotate
-  if (config.autorotate && globalThis.Application) {
+  if (config.autorotate && globalThis.Application && globalThis.accelerometer) {
     state.handleRotation = function (reading) {
       if (globalThis.application === undefined) return;
 
