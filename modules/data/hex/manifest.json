@@ -1,0 +1,11 @@
+{
+	"modules": {
+		"*": [
+			"./hex",
+			"./modHex"
+		]
+	},
+	"preload": [
+		"hex"
+	]
+}
