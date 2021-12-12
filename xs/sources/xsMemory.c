@@ -1262,6 +1262,9 @@ void* fxNewChunk(txMachine* the, txSize size)
 
 void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 {
+#if mxNoChunks
+	return fxNewChunk(the, size);
+#endif
 	txChunk* chunk;
 	txBoolean once = 1;
 	size = fxAdjustChunkSize(the, size);
@@ -1321,6 +1324,9 @@ again:
 
 void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 {
+#if mxNoChunks
+	return C_NULL;
+#endif
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
 	txSize capacity = (txSize)(aChunk->temporary - aData);
@@ -1336,11 +1342,6 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 	#endif
 		return theData;
 	}
-	
-#if mxNoChunks
-	return C_NULL;
-#endif
-
 	while (aBlock) {
 		if (aChunk->temporary == aBlock->current) {
 			txSize delta = size - capacity;
