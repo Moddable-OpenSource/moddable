@@ -25,33 +25,54 @@
 #include "esp_partition.h"
 #include "app_update/include/esp_ota_ops.h"
 
+struct modFlashRecord {
+	const esp_partition_t *partition;
+	spi_flash_mmap_handle_t map;
+	const void *partitionAddress;
+};
+
+typedef struct modFlashRecord modFlashRecord;
+typedef struct modFlashRecord *modFlash;
+
+#define VALIDATE() \
+	do { \
+		if (xs_flash_destructor != xsGetHostDestructor(xsThis)) \
+			xsSyntaxError("invalid"); \
+	} while (0)
+
 void xs_flash(xsMachine *the)
 {
-	const esp_partition_t *partition;
+	modFlashRecord mrf = {0};
 	char *partitionName = xsmcToString(xsArg(0));
 
 	if (0 == c_strcmp(partitionName, "xs"))
-		partition = esp_partition_find_first(0x40, 1,  NULL);
+		mrf.partition = esp_partition_find_first(0x40, 1,  NULL);
 	else if (0 == c_strcmp(partitionName, "running"))
-		partition = esp_ota_get_running_partition();
+		mrf.partition = esp_ota_get_running_partition();
 	else if (0 == c_strcmp(partitionName, "nextota"))
-		partition = esp_ota_get_next_update_partition(NULL);
+		mrf.partition = esp_ota_get_next_update_partition(NULL);
 	else
-		partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, partitionName);
+		mrf.partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, partitionName);
 
-	if (!partition)
+	if (!mrf.partition)
 		xsUnknownError("can't find partition");
 
-	xsmcSetHostData(xsThis, (void *)partition);
+	xsmcSetHostChunk(xsThis, (void *)&mrf, sizeof(mrf));
 }
 
 void xs_flash_destructor(void *data)
 {
+	modFlash mrf = data;
+
+	if (mrf && mrf->map)
+		spi_flash_munmap(mrf->map);
 }
 
 void xs_flash_erase(xsMachine *the)
 {
-	esp_partition_t *partition = xsmcGetHostDataValidate(xsThis, (void *)xs_flash_destructor);
+	VALIDATE();
+	modFlash mrf = xsmcGetHostChunk(xsThis);
+	const esp_partition_t *partition = mrf->partition;
 	int sector = xsmcToInteger(xsArg(0));
 
 	if (ESP_OK != esp_partition_erase_range(partition, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE))
@@ -60,7 +81,9 @@ void xs_flash_erase(xsMachine *the)
 
 void xs_flash_read(xsMachine *the)
 {
-	esp_partition_t *partition = xsmcGetHostDataValidate(xsThis, (void *)xs_flash_destructor);
+	VALIDATE();
+	modFlash mrf = xsmcGetHostChunk(xsThis);
+	const esp_partition_t *partition = mrf->partition;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 
@@ -71,7 +94,9 @@ void xs_flash_read(xsMachine *the)
 
 void xs_flash_write(xsMachine *the)
 {
-	esp_partition_t *partition = xsmcGetHostDataValidate(xsThis, (void *)xs_flash_destructor);
+	VALIDATE();
+	modFlash mrf = xsmcGetHostChunk(xsThis);
+	const esp_partition_t *partition = mrf->partition;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 	void *buffer;
@@ -87,16 +112,21 @@ void xs_flash_write(xsMachine *the)
 
 void xs_flash_map(xsMachine *the)
 {
-	esp_partition_t *partition = xsmcGetHostDataValidate(xsThis, (void *)xs_flash_destructor);
+	VALIDATE();
+	modFlash mrf = xsmcGetHostChunk(xsThis);
+	const esp_partition_t *partition = mrf->partition;
 	int size = partition->size;
-	const void *partitionAddress;
-	spi_flash_mmap_handle_t handle;
-
-	if (ESP_OK != esp_partition_mmap(partition, 0, size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
-		xsUnknownError("map failed");
+	const void *partitionAddress = mrf->partitionAddress;
+	spi_flash_mmap_handle_t map = mrf->map;
+	
+	if (!mrf->map) {
+		if (ESP_OK != esp_partition_mmap(partition, 0, size, SPI_FLASH_MMAP_DATA, &partitionAddress, &map))
+			xsUnknownError("map failed");
+		mrf->map = map;
+		mrf->partitionAddress = partitionAddress;
+	}
 
 	xsmcVars(1);
-
 	xsResult = xsNewHostObject(NULL);
 	xsmcSetHostBuffer(xsResult, (void *)partitionAddress, size);
 	xsmcPetrifyHostBuffer(xsResult);
@@ -106,7 +136,9 @@ void xs_flash_map(xsMachine *the)
 
 void xs_flash_byteLength(xsMachine *the)
 {
-	esp_partition_t *partition = xsmcGetHostDataValidate(xsThis, (void *)xs_flash_destructor);
+	VALIDATE();
+	modFlash mrf = xsmcGetHostChunk(xsThis);
+	const esp_partition_t *partition = mrf->partition;
 	xsmcSetInteger(xsResult, partition->size);
 }
 
