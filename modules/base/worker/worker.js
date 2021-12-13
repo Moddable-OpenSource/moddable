@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,7 +25,7 @@
 
 class Worker @ "xs_worker_destructor" {
 	constructor(module, options) @ "xs_worker";
-	postMessage(message) @ "xs_worker_postfrominstantiator";
+	postMessage(message) @ "xs_worker_postfromworkerinstantiator";
 	terminate() @ "xs_worker_terminate";
 };
 Object.freeze(Worker.prototype);
