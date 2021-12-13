@@ -132,6 +132,7 @@ void xs_flash_map(xsMachine *the)
 	xsmcPetrifyHostBuffer(xsResult);
 	xsmcSetInteger(xsVar(0), size);
 	xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDontDelete | xsDontSet);
+	xsDefine(xsResult, xsID_flash, xsThis, xsDontDelete | xsDontSet);	// reference flash instance so it isn't GC-ed while map is alive
 }
 
 void xs_flash_byteLength(xsMachine *the)
