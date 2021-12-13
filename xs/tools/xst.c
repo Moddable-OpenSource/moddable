@@ -1392,6 +1392,10 @@ void fxAbort(txMachine* the, int status)
 {
 	if (the->abortStatus) // xsEndHost calls fxAbort!
 		return;
+	if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
+		mxRangeError("memory full");
+	if (status == XS_STACK_OVERFLOW_EXIT)
+		mxRangeError("stack overflow");
 	if (status) {
 		the->abortStatus = status;
 		fxExitToHost(the);

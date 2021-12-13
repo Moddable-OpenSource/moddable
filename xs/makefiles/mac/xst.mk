@@ -75,8 +75,10 @@ ifneq ("x$(SDKROOT)", "x")
 	LINK_OPTIONS += -isysroot $(SDKROOT)
 endif
 
-# C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
-# LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+ifeq ($(GOAL),debug)
+	C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+endif
 
 OBJECTS = \
 	$(TMP_DIR)/xsAll.o \
