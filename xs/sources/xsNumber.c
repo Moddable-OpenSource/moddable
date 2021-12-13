@@ -438,8 +438,14 @@ void fx_Number_prototype_toString(txMachine* the)
 			fxStringX(the, mxResult, "0");
 			break;
 		default: {
+			// Thanks Google V8 for the fraction part
 			static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
 			txInteger minus;
+			txNumber integer;
+			txNumber fraction;
+			txNumber next;
+			txU8* nextCast = (txU8*)&next;
+			txNumber delta;
 			txSize length;
 			txString string;
 			txNumber modulo;
@@ -449,28 +455,80 @@ void fx_Number_prototype_toString(txMachine* the)
 			} 
 			else
 				minus = 0;
-			value = c_trunc(value);
-			length = minus + (txSize)c_floor(c_log(value) / c_log(radix)) + 2;
-			string = mxResult->value.string = fxNewChunk(the, length);
-			mxResult->kind = XS_STRING_KIND;
-			string += length;
-			*(--string) = 0;
+			integer = c_floor(value);
+			fraction = value - integer;
+			next = value;
+			*nextCast = *nextCast + 1;
+			delta = 0.5 * (next - value);
+			next = 0;
+			*nextCast = *nextCast + 1;
+			if (delta < next)
+				delta = next;
+			length = minus + ((integer)? (txSize)c_floor(c_log(integer) / c_log(radix)) : 0) + 1;
+			if (fraction >= delta) {
+				#define mxFractionPartLength 2048
+				txString dot;
+				txInteger i = 0;
+				txInteger digit;
+				string = mxResult->value.string = fxNewChunk(the, length + 1 + mxFractionPartLength + 1);
+				dot = string + length;
+				dot[i++] = '.';
+				do {
+					fraction *= radix;
+					delta *= radix;
+					digit = (txInteger)fraction;
+					dot[i++] = c_read8(gxDigits + digit);
+					fraction -= digit;
+					if (fraction > 0.5 || (fraction == 0.5 && (digit & 1))) {
+						if (fraction + delta > 1) {
+							for (;;) {
+								char c;
+								i--;
+								if (i == 0) {
+									integer += 1;
+									break;
+								}
+								c = dot[i];
+								digit = c > '9' ? (c - 'a' + 10) : (c - '0');
+								if (digit + 1 < radix) {
+									dot[i++] = c_read8(gxDigits + digit + 1);
+									break;
+								}
+							}
+							break;
+						}
+					}
+				} while ((fraction >= delta) && (i < mxFractionPartLength));
+				dot[i++] = 0;
+				length += i;
+				string = dot;
+			}
+			else {
+				length++;
+				string = mxResult->value.string = fxNewChunk(the, length);
+				string += length;
+				*(--string) = 0;
+			}
 			modulo = C_MAX_SAFE_INTEGER * radix;
-			while (value > modulo) {
+			while (integer > modulo) {
 				*(--string) = '0';
-				value = value / radix;
+				integer = integer / radix;
 			}
 			do {
-				modulo = c_fmod(value, radix);
+				modulo = c_fmod(integer, radix);
 				*(--string) = c_read8(gxDigits + (txInteger)modulo);
-				value = (value - modulo) / radix;
-			} while (value >= 1);
+				integer = (integer - modulo) / radix;
+			} while (integer >= 1);
 			if (minus) {
 				*(--string) = '-';
 			}
-			if (string > mxResult->value.string) {
-				c_memmove(mxResult->value.string, string, length - (string - mxResult->value.string));\
+			minus = (txInteger)(string - mxResult->value.string);
+			if (minus > 0) {
+				length -= minus;
+				c_memmove(mxResult->value.string, string, length);
 			}
+			mxResult->value.string = fxRenewChunk(the, mxResult->value.string, length);
+			mxResult->kind = XS_STRING_KIND;
 		}}
 	}
 }

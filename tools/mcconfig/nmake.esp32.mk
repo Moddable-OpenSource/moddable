@@ -135,6 +135,7 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\freertos\include\freertos \
 	-I$(IDF_PATH)\components\freertos\port \
  	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
+	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include\freertos \
 	-I$(IDF_PATH)\components\hal\include \
 	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\heap\include \

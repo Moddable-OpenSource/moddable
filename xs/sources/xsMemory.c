@@ -139,10 +139,11 @@ txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b)
 
 txSize fxAdjustChunkSize(txMachine* the, txSize size)
 {
-	txSize modulo = size & (sizeof(txSize) - 1);
-    if (modulo)
-		size = fxAddChunkSizes(the, size, sizeof(txSize) - modulo);
-	return fxAddChunkSizes(the, size, sizeof(txChunk));
+	txSize adjust = sizeof(txChunk);
+	txSize modulo = size & (sizeof(size_t) - 1);
+	if (modulo)
+		adjust += sizeof(size_t) - modulo;
+	return fxAddChunkSizes(the, size, adjust);
 }
 
 void fxAllocate(txMachine* the, txCreation* theCreation)
@@ -1261,6 +1262,9 @@ void* fxNewChunk(txMachine* the, txSize size)
 
 void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 {
+#if mxNoChunks
+	return fxNewChunk(the, size);
+#else
 	txChunk* chunk;
 	txBoolean once = 1;
 	size = fxAdjustChunkSize(the, size);
@@ -1276,6 +1280,7 @@ void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 		}
 	}
 	return fxCheckChunk(the, chunk, size);
+#endif
 }
 
 txSlot* fxNewSlot(txMachine* the) 
@@ -1320,6 +1325,14 @@ again:
 
 void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 {
+#if mxNoChunks
+	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
+	txChunk* aChunk = (txChunk*)aData;
+	size = fxAdjustChunkSize(the, size);
+	if (size <= aChunk->size)
+		return theData;
+	return C_NULL;
+#else
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
 	txSize capacity = (txSize)(aChunk->temporary - aData);
@@ -1335,11 +1348,6 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 	#endif
 		return theData;
 	}
-	
-#if mxNoChunks
-	return C_NULL;
-#endif
-
 	while (aBlock) {
 		if (aChunk->temporary == aBlock->current) {
 			txSize delta = size - capacity;
@@ -1368,6 +1376,7 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 	gxRenewChunkCases[3]++;
 #endif
 	return C_NULL;
+#endif
 }
 
 void fxShare(txMachine* the)

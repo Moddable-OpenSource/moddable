@@ -28,9 +28,13 @@ void xs_hex_toString(xsMachine *the)
 	int argc = xsmcArgc;
 	const uint8_t *bytes;
 	char *string;
-	int i, length = xsmcGetArrayBufferLength(xsArg(0));
+	xsUnsignedValue length, i;
 	char separator = 0;
 	char *gHex = (char *)gHexUpper;
+
+	xsmcGetBufferReadable(xsArg(0), (void **)&bytes, &length);
+	if (0 == length)
+		xsUnknownError("0 length buffer");
 
 	if (argc > 1) {
 		char *str = xsmcToString(xsArg(1));
@@ -42,12 +46,9 @@ void xs_hex_toString(xsMachine *the)
 		}
 	}
 
-	if (0 == length)
-		xsUnknownError("0 length buffer");
-
 	xsResult = xsStringBuffer(NULL, (length * 2) + (separator ? (length - 1) : 0));
 	string = xsmcToString(xsResult);
-	bytes = xsmcToArrayBuffer(xsArg(0));
+	xsmcGetBufferReadable(xsArg(0), (void **)&bytes, &length);
 
 	for (i = 0; i < length; i++) {
 		uint8_t byte = c_read8(bytes++);

@@ -675,7 +675,6 @@ struct sxParser {
 	txSymbol* constructorSymbol;
 	txSymbol* defaultSymbol;
 	txSymbol* doneSymbol;
-	txSymbol* ErrorSymbol;
 	txSymbol* evalSymbol;
 	txSymbol* exportsSymbol;
 	txSymbol* fillSymbol;
@@ -696,6 +695,7 @@ struct sxParser {
 	txSymbol* ofSymbol;
 	txSymbol* privateConstructorSymbol;
 	txSymbol* prototypeSymbol;
+	txSymbol* RangeErrorSymbol;
 	txSymbol* rawSymbol;
 	txSymbol* returnSymbol;
 	txSymbol* setSymbol;
