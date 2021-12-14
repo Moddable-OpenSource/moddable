@@ -34,12 +34,6 @@ struct modFlashRecord {
 typedef struct modFlashRecord modFlashRecord;
 typedef struct modFlashRecord *modFlash;
 
-#define VALIDATE() \
-	do { \
-		if (xs_flash_destructor != xsGetHostDestructor(xsThis)) \
-			xsSyntaxError("invalid"); \
-	} while (0)
-
 void xs_flash(xsMachine *the)
 {
 	modFlashRecord mrf = {0};
@@ -70,8 +64,7 @@ void xs_flash_destructor(void *data)
 
 void xs_flash_erase(xsMachine *the)
 {
-	VALIDATE();
-	modFlash mrf = xsmcGetHostChunk(xsThis);
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
 	const esp_partition_t *partition = mrf->partition;
 	int sector = xsmcToInteger(xsArg(0));
 
@@ -81,8 +74,7 @@ void xs_flash_erase(xsMachine *the)
 
 void xs_flash_read(xsMachine *the)
 {
-	VALIDATE();
-	modFlash mrf = xsmcGetHostChunk(xsThis);
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
 	const esp_partition_t *partition = mrf->partition;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
@@ -94,8 +86,7 @@ void xs_flash_read(xsMachine *the)
 
 void xs_flash_write(xsMachine *the)
 {
-	VALIDATE();
-	modFlash mrf = xsmcGetHostChunk(xsThis);
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
 	const esp_partition_t *partition = mrf->partition;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
@@ -112,8 +103,7 @@ void xs_flash_write(xsMachine *the)
 
 void xs_flash_map(xsMachine *the)
 {
-	VALIDATE();
-	modFlash mrf = xsmcGetHostChunk(xsThis);
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
 	const esp_partition_t *partition = mrf->partition;
 	int size = partition->size;
 	const void *partitionAddress = mrf->partitionAddress;
@@ -137,8 +127,7 @@ void xs_flash_map(xsMachine *the)
 
 void xs_flash_byteLength(xsMachine *the)
 {
-	VALIDATE();
-	modFlash mrf = xsmcGetHostChunk(xsThis);
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
 	const esp_partition_t *partition = mrf->partition;
 	xsmcSetInteger(xsResult, partition->size);
 }

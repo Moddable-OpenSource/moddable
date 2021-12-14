@@ -42,7 +42,7 @@ void xs_Bitmap(xsMachine *the)
 	int32_t byteLength = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 0;
 	CommodettoBitmapRecord cb;
 	void *data;
-	xsUnsignedValue dataSize;
+	xsUnsignedValue dataSize, neededSize;
 
 	cb.w = (CommodettoDimension)xsmcToInteger(xsArg(0));
 	cb.h = (CommodettoDimension)xsmcToInteger(xsArg(1));
@@ -61,8 +61,10 @@ void xs_Bitmap(xsMachine *the)
 		cb.havePointer = true;
 		cb.bits.data = offset + (char *)data;
 	}
-	if ((offset < 0) || ((xsUnsignedValue)offset >= dataSize))
-		xsErrorPrintf("invalid offset");
+
+	neededSize = (((CommodettoBitmapGetDepth(cb.format) * cb.w) + 7) >> 3) * cb.h;
+	if ((offset < 0) || (((xsUnsignedValue)offset + neededSize) > dataSize))
+		xsErrorPrintf("invalid");
 
 	#if COMMODETTO_BITMAP_ID
 		cb.id = ++gBitmapID;
@@ -80,25 +82,25 @@ void xs_Bitmap(xsMachine *the)
 
 void xs_bitmap_get_width(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	xsmcSetInteger(xsResult, cb->w);
 }
 
 void xs_bitmap_get_height(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	xsmcSetInteger(xsResult, cb->h);
 }
 
 void xs_bitmap_get_pixelFormat(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	xsmcSetInteger(xsResult, cb->format);
 }
 
 void xs_bitmap_get_offset(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	int32_t offset;
 
 	if (cb->havePointer) {
