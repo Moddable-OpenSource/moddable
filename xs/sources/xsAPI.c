@@ -720,6 +720,21 @@ void* fxGetHostChunk(txMachine* the, txSlot* slot)
 	return NULL;
 }
 
+void* fxGetHostChunkValidate(txMachine* the, txSlot* slot, void* validator)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		if (host->flag & XS_HOST_CHUNK_FLAG) {
+			if (validator == host->value.host.variant.destructor)
+				return host->value.host.data;
+			mxSyntaxError("C: xsGetHostChunk: invalid");
+		}
+		mxSyntaxError("C: xsGetHostChunk: no host data");
+	}
+	mxSyntaxError("C: xsGetHostChunk: no host object");
+	return NULL;
+}
+
 void* fxGetHostChunkIf(txMachine* the, txSlot* slot)
 {
 	txSlot* host = fxCheckHostObject(the, slot);
