@@ -115,6 +115,10 @@ class HostObject @ "xs_hostobject_destructor" {
 	constructor() @ "xs_hostobject"
 }
 
+class HostObjectChunk @ "xs_hostobjectchunk_destructor" {
+	constructor() @ "xs_hostobjectchunk"
+}
+
 class HostBuffer @ "xs_hostbuffer_destructor" {
 	constructor() @ "xs_hostbuffer"
 }
@@ -126,6 +130,7 @@ globalThis.$TESTMC = {
 		}, ms);
 	},
 	HostObject,
+	HostObjectChunk,
 	HostBuffer,
 	config
 }; 

@@ -38,6 +38,15 @@ void xs_hostbuffer_destructor(void *data)
 		c_free(data);
 }
 
+void xs_hostobjectchunk(xsMachine *the)
+{
+	xsmcSetHostChunk(xsThis, NULL, 16);
+}
+
+void xs_hostobjectchunk_destructor(void *data)
+{
+}
+
 void xs_hostbuffer(xsMachine *the)
 {
 	int byteLength = xsmcToInteger(xsArg(0));
