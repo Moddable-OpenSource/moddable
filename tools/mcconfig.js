@@ -1027,6 +1027,7 @@ export default class extends Tool {
 		this.filterPreload(this.manifest.preload);
 		this.filterRecipes(this.manifest.recipes);
 		this.strip = this.manifest.strip;
+		this.tsconfig = this.manifest.tsconfig;
 		
 		var name = this.environment.NAME
 		if (this.platform == "x-mac")

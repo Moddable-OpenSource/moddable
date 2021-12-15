@@ -783,7 +783,8 @@ export class TSConfigFile extends FILE {
 				sourceMap: true,
 				target: "ES2020",
 				types: [
-					tool.xsPath + tool.slash + "includes" + tool.slash +"xs"
+					tool.xsPath + tool.slash + "includes" + tool.slash +"xs",
+					...tool.tsconfig.types
 				]
 			},
 			files: [
@@ -1528,6 +1529,9 @@ export class Tool extends TOOL {
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
 		this.mergeProperties(all.run, platform.run);
+		if (platform.tsconfig?.types)
+			all.tsconfig.types = this.concatProperty(all.tsconfig.types, platform.tsconfig.types.map(path => this.resolveSource(path)));
+		return;
 	}
 	mergeProperties(targets, sources) {
 		if (sources) {
@@ -1645,6 +1649,7 @@ export class Tool extends TOOL {
 			errors:[],
 			warnings:[],
 			run:{},
+			tsconfig: {types: []}
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 
