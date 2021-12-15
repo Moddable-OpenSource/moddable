@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,8 +25,10 @@
 	#define false (0)
 #endif
 
-#define xsGetHostDataPoco(slot) ((void *)((char *)xsGetHostData(slot) - offsetof(PocoRecord, pixels)))
-#define xsmcGetHostDataPoco(slot) ((void *)((char *)xsmcGetHostData(slot) - offsetof(PocoRecord, pixels)))
+extern void xs_poco_destructor(void *data);
+
+#define xsGetHostDataPoco(slot) ((void *)((char *)xsGetHostDataValidate(slot, xs_poco_destructor) - offsetof(PocoRecord, pixels)))
+#define xsmcGetHostDataPoco(slot) ((void *)((char *)xsmcGetHostDataValidate(slot, xs_poco_destructor) - offsetof(PocoRecord, pixels)))
 
 #define PocoDisableGC(poco) \
 if (!(poco->flags & kPocoFlagGCDisabled)) {	\

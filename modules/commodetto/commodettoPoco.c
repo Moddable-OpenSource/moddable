@@ -113,8 +113,13 @@ void xs_poco_build(xsMachine *the)
 
 void xs_poco_close(xsMachine *the)
 {
-	xs_poco_destructor(xsmcGetHostData(xsThis));
-	xsmcSetHostData(xsThis, NULL);
+	void *data = xsmcGetHostData(xsThis);
+	if (data) {
+		(void)xsmcGetHostDataPoco(xsThis);
+		xs_poco_destructor(data);
+		xsmcSetHostData(xsThis, NULL);
+		xsSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_poco_begin(xsMachine *the)
@@ -213,6 +218,9 @@ void xs_poco_end(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
+
+	if (!(poco->flags & kPocoFlagDidBegin))
+		xsUnknownError("inactive");
 
 	if (!(poco->flags & kPocoFlagFrameBuffer)) {
 		int result;
