@@ -62,7 +62,10 @@ void xs_Bitmap(xsMachine *the)
 		cb.bits.data = offset + (char *)data;
 	}
 
-	neededSize = (((CommodettoBitmapGetDepth(cb.format) * cb.w) + 7) >> 3) * cb.h;
+	if (kCommodettoBitmapPacked & cb.format)
+		neededSize = 0;
+	else
+		neededSize = (((CommodettoBitmapGetDepth(cb.format) * cb.w) + 7) >> 3) * cb.h;
 	if ((offset < 0) || (((xsUnsignedValue)offset + neededSize) > dataSize))
 		xsErrorPrintf("invalid");
 
