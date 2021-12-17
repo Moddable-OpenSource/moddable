@@ -897,14 +897,16 @@ PocoPixel *pocoGetBitmapPixels(xsMachine *the, Poco poco, CommodettoBitmap cb, i
 	xsSlot buffer;
 	void *data;
 	xsUnsignedValue dataSize;
+	int32_t offset;
 
 	if (cb->havePointer)
 		return (PocoPixel *)cb->bits.data;
 	
+	offset = cb->bits.offset;
 	xsmcGet(buffer, xsArg(arg), xsID_buffer);
 	xsmcGetBufferReadable(buffer, &data, &dataSize);
 	PocoDisableGC(poco);
-	return (PocoPixel *)(cb->bits.offset + (char *)data);
+	return (PocoPixel *)(offset + (char *)data);
 }
 
 void xs_rectangle_get_x(xsMachine *the)
