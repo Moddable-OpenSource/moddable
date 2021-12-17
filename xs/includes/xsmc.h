@@ -109,6 +109,7 @@ mxImport xsBooleanValue _xsIsInstanceOf(xsMachine *, xsSlot *, xsSlot *);
 #undef xsSet
 #undef xsSetAt
 #undef xsSetIndex
+#undef xsDefine
 #undef xsDelete
 #undef xsDeleteAt
 
@@ -130,6 +131,9 @@ mxImport void _xsSetAt(xsMachine *, xsSlot *, xsSlot *, xsSlot *);
 #define xsmcSetAt(_THIS, _AT, _SLOT)	_xsSetAt(the, &_THIS, &_AT, &_SLOT)
 mxImport void _xsSetIndex(xsMachine *, xsSlot *, xsIndex, xsSlot *);
 #define xsmcSetIndex(_THIS, _INDEX, _SLOT)	_xsSetIndex(the, &_THIS, _INDEX, &_SLOT)
+
+mxImport void _xsDefine(xsMachine *, xsSlot *, xsIdentifier, xsSlot *, xsAttribute);
+#define xsmcDefine(_THIS, _ID, _SLOT, _ATTRIBUTES)	_xsDefine(the, &_THIS, _ID, &_SLOT, _ATTRIBUTES)
 
 mxImport void _xsDelete(xsMachine *, xsSlot *, xsIdentifier);
 #define xsmcDelete(_THIS, _ID)	_xsDelete(the, &_THIS, _ID)

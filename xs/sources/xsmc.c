@@ -140,6 +140,15 @@ void _xsSetIndex(txMachine *the, txSlot *self, txIndex index, txSlot *v)
 	mxPop();
 }
 
+void _xsDefine(txMachine *the, txSlot *self, txID id, txSlot *v, txFlag attributes)
+{
+	mxOverflow(-2);
+	fxPush(*v);
+	fxPush(*self);
+	fxDefineID(the, id, attributes, attributes | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxPop();
+}
+
 void _xsDelete(txMachine *the, txSlot *self, txID id)
 {
 	mxOverflow(-1);
