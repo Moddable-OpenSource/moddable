@@ -105,7 +105,7 @@ void xs_poco_build(xsMachine *the)
 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), pixelsLength);
-	xsDefine(xsThis, xsID_byteLength, xsVar(0), xsDefault);
+	xsmcDefine(xsThis, xsID_byteLength, xsVar(0), xsDefault);
 
 	if (NULL == gCFE)
 		gCFE = CFENew();
