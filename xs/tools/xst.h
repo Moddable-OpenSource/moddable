@@ -96,8 +96,6 @@
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1
 #define mxUseDefaultSlotAllocation 1
-#define mxUseDefaultFindModule 1
-#define mxUseDefaultLoadModule 1
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
 

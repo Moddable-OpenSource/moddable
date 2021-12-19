@@ -23,8 +23,6 @@
 #include "xs.h"
 #include "yaml.h"
 
-extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
-
 #if mxWindows
 	#include <direct.h>
 	#include <errno.h>
@@ -176,6 +174,8 @@ static void fxRejectModuleFile(txMachine* the);
 static void fxRunModuleFile(txMachine* the, txString path);
 static void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags);
 static void fxRunLoop(txMachine* the);
+
+static txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
 
 static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
 static void fx_destroyTimer(void* data);
@@ -1402,6 +1402,121 @@ void fxAbort(txMachine* the, int status)
 	}
 	else
 		c_exit(1);
+}
+
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
+{
+	char name[C_PATH_MAX];
+	char path[C_PATH_MAX];
+	char real[C_PATH_MAX];
+	txInteger dot = 0;
+	txString slash;
+	fxToStringBuffer(the, slot, name, sizeof(name));
+	if (name[0] == '.') {
+		if (name[1] == '/') {
+			dot = 1;
+		}
+		else if ((name[1] == '.') && (name[2] == '/')) {
+			dot = 2;
+		}
+	}
+	if (dot) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strrchr(path, mxSeparator);
+		if (!slash)
+			return XS_NO_ID;
+		if (dot == 2) {
+			*slash = 0;
+			slash = c_strrchr(path, mxSeparator);
+			if (!slash)
+				return XS_NO_ID;
+		}
+#if mxWindows
+		{
+			char c;
+			char* s = name;
+			while ((c = *s)) {
+				if (c == '/')
+					*s = '\\';
+				s++;
+			}
+		}
+#endif
+	}
+	else
+		slash = path;
+	*slash = 0;
+	c_strcat(path, name + dot);
+	if (c_realpath(path, real))
+		return fxNewNameC(the, real);
+	return XS_NO_ID;
+}
+
+void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
+{
+	char path[C_PATH_MAX];
+	txScript* script;
+#ifdef mxDebug
+	txUnsigned flags = mxDebugFlag;
+#else
+	txUnsigned flags = 0;
+#endif
+	c_strcpy(path, fxGetKeyName(the, moduleID));
+	script = fxLoadScript(the, path, flags);
+	if (script)
+		fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
+}
+
+txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
+{
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	FILE* file = NULL;
+	txString name = NULL;
+	char map[C_PATH_MAX];
+	txScript* script = NULL;
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
+	parser->firstJump = &jump;
+	file = fopen(path, "r");
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		mxParserThrowElse(file);
+		parser->path = fxNewParserSymbol(parser, path);
+		fxParserTree(parser, file, (txGetter)fgetc, flags, &name);
+		fclose(file);
+		file = NULL;
+		if (name) {
+			txString slash = c_strrchr(path, mxSeparator);
+			if (slash) *slash = 0;
+			c_strcat(path, name);
+			mxParserThrowElse(c_realpath(path, map));
+			parser->path = fxNewParserSymbol(parser, map);
+			file = fopen(map, "r");
+			mxParserThrowElse(file);
+			fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
+			fclose(file);
+			file = NULL;
+			if (parser->errorCount == 0) {
+				if (slash) *slash = 0;
+				c_strcat(path, name);
+				mxParserThrowElse(c_realpath(path, map));
+				parser->path = fxNewParserSymbol(parser, map);
+			}
+		}
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+	}
+	if (file)
+		fclose(file);
+#ifdef mxInstrument
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
+#endif
+	fxTerminateParser(parser);
+	return script;
 }
 
 /* DEBUG */

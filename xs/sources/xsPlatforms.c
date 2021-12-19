@@ -71,19 +71,6 @@
 	#define mxUseDefaultDebug 0
 #endif
 
-#if mxUseDefaultFindModule
-	static txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* id);
-#endif
-
-#ifdef mxParse
-	#if mxUseDefaultFindModule
-		static txBoolean fxFindScript(txMachine* the, txString path, txID* id);
-	#endif
-	#if mxUseDefaultLoadModule
-		extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
-	#endif
-#endif
-
 #if mxUseDefaultMachinePlatform
 
 void fxCreateMachinePlatform(txMachine* the)
@@ -155,7 +142,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	char path[C_PATH_MAX];
 	txInteger dot = 0;
 	txString slash;
-	txID id;
 	fxToStringBuffer(the, slot, name, sizeof(name));
 	if (name[0] == '.') {
 		if (name[1] == '/') {
@@ -201,10 +187,19 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	else
 		slash = path;
 	if (preparation) {
+		txInteger c = preparation->scriptCount;
+		txScript* script = preparation->scripts;
+		txSize size;
 		*slash = 0;
 		c_strcat(path, name + dot);
-		if (fxFindPreparation(the, realm, path, &id))
-			return id;
+		if (fxGetArchiveCode(the, path, &size))
+			return fxNewNameC(the, path);
+		while (c > 0) {
+			if (!c_strcmp(path, script->path))
+				return fxNewNameC(the, path);
+			c--;
+			script++;
+		}
 	}
 #ifdef mxDebug
 	if (!c_strncmp(path, "xsbug://", 8)) {
@@ -214,49 +209,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		return fxNewNameC(the, path);
 	}
 #endif
-#ifdef mxParse
-	*slash = 0;
-	c_strcat(path, name + dot);
-	c_strcat(path, extension);
-	if (fxFindScript(the, path, &id))
-		return id;
-#endif
 	return XS_NO_ID;
 }
-
-txBoolean fxFindPreparation(txMachine* the, txSlot* realm, txString path, txID* id)
-{
-	txPreparation* preparation = the->preparation;
-	txInteger c = preparation->scriptCount;
-	txScript* script = preparation->scripts;
-	txSize size;
-	txByte* code = fxGetArchiveCode(the, path, &size);
-	if (code) {
-		*id = fxNewNameC(the, path);
-		return 1;
-	}
-	while (c > 0) {
-		if (!c_strcmp(path, script->path)) {
-			*id = fxNewNameC(the, path);
-			return 1;
-		}
-		c--;
-		script++;
-	}
-	return 0;
-}
-
-#ifdef mxParse
-txBoolean fxFindScript(txMachine* the, txString path, txID* id)
-{
-	char real[C_PATH_MAX];
-	if (c_realpath(path, real)) {
-		*id = fxNewNameC(the, real);
-		return 1;
-	}
-	return 0;
-}	
-#endif
 
 #endif /* mxUseDefaultFindModule */
 
@@ -307,72 +261,7 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 		return;
 	}
 #endif
-#ifdef mxParse
-	{
- 		txScript* script;
-	#ifdef mxDebug
-		txUnsigned flags = mxDebugFlag;
-	#else
-		txUnsigned flags = 0;
-	#endif
- 		script = fxLoadScript(the, path, flags);
-		if (script)
- 			fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
- 	}
-#endif
 }
-
-#ifdef mxParse
-txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
-{
-	txParser _parser;
-	txParser* parser = &_parser;
-	txParserJump jump;
-	FILE* file = NULL;
-	txString name = NULL;
-	char map[C_PATH_MAX];
-	txScript* script = NULL;
-	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
-	parser->firstJump = &jump;
-	file = fopen(path, "r");
-	if (c_setjmp(jump.jmp_buf) == 0) {
-		mxParserThrowElse(file);
-		parser->path = fxNewParserSymbol(parser, path);
-		fxParserTree(parser, file, (txGetter)fgetc, flags, &name);
-		fclose(file);
-		file = NULL;
-		if (name) {
-			txString slash = c_strrchr(path, mxSeparator);
-			if (slash) *slash = 0;
-			c_strcat(path, name);
-			mxParserThrowElse(c_realpath(path, map));
-			parser->path = fxNewParserSymbol(parser, map);
-			file = fopen(map, "r");
-			mxParserThrowElse(file);
-			fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
-			fclose(file);
-			file = NULL;
-			if (parser->errorCount == 0) {
-				if (slash) *slash = 0;
-				c_strcat(path, name);
-				mxParserThrowElse(c_realpath(path, map));
-				parser->path = fxNewParserSymbol(parser, map);
-			}
-		}
-		fxParserHoist(parser);
-		fxParserBind(parser);
-		script = fxParserCode(parser);
-	}
-	if (file)
-		fclose(file);
-#ifdef mxInstrument
-	if (the->peakParserSize < parser->total)
-		the->peakParserSize = parser->total;
-#endif
-	fxTerminateParser(parser);
-	return script;
-}
-#endif
 
 #endif  /* mxUseDefaultLoadModule */
 

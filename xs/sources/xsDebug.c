@@ -1802,13 +1802,13 @@ void fxListModules(txMachine* the)
             fxEchoModule(the, module, &aList);
 		module = module->next;
 	}
-	if (realm == mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm) {
-		module = the->sharedModules;
-		while (module) {
-			fxEchoModule(the, module, &aList);
-			module = module->next;
-		}
-	}
+//	if (realm == mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm) {
+//		module = the->sharedModules;
+//		while (module) {
+//			fxEchoModule(the, module, &aList);
+//			module = module->next;
+//		}
+//	}
 	fxEcho(the, "</grammar>");
 }
 

@@ -1405,6 +1405,7 @@ void fxRunProgramEnvironment(txMachine* the)
 
 txSlot* fxNewRealmInstance(txMachine* the)
 {
+	txSlot* parent = the->stack + 8;
 	txSlot* global = the->stack + 7;
 	txSlot* moduleMap = the->stack + 6;
 	txSlot* own = the->stack + 5;
@@ -1434,8 +1435,10 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	slot = fxNextSlotProperty(the, slot, loadHook, XS_NO_ID, XS_GET_ONLY);
 	/* mxLoadNowHook */
 	slot = fxNextSlotProperty(the, slot, loadNowHook, XS_NO_ID, XS_GET_ONLY);
-	global->value.reference = realm;
-    the->stack = global;
+	/* mxRealmParent */
+	slot = fxNextSlotProperty(the, slot, parent, XS_NO_ID, XS_GET_ONLY);
+    parent->value.reference = realm;
+    the->stack = parent;
 	return realm;
 }
 
