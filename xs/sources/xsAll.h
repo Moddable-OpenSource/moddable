@@ -438,7 +438,6 @@ struct sxMachine {
 
 	txBoolean shared;
 	txMachine* sharedMachine;
-	txSlot* sharedModules;
 
 	txBoolean collectFlag;
 	void* dtoa;

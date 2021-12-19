@@ -998,22 +998,7 @@ void fxLoadModulesRejected(txMachine* the)
 
 void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 {
-	txSlot* targetRealm = realm;
-	txID targetModuleID = moduleID;
 	txSlot* moduleMap = mxModuleMap(realm);
-
-	if (realm == mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm) {
-		txSlot* result = the->sharedModules;
-		while (result) {
-			if (result->ID == moduleID) {
-				module->kind = result->kind;
-				module->value = result->value;
-				return;
-			}
-			result = result->next;
-		}
-	}
-	moduleMap = mxModuleMap(realm);
 	mxPushSlot(moduleMap);
 	mxGetID(moduleID);
 	if (mxIsUndefined(the->stack)) {
@@ -1028,7 +1013,7 @@ void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 	if (mxIsUndefined(the->stack)) {
 		txSlot* meta;
 		txSlot* loader;
-		fxNewModule(the, targetRealm, targetModuleID, module);
+		fxNewModule(the, realm, moduleID, module);
 		meta = mxModuleMeta(module)->value.reference;
 		loader = fxNewSlot(the);
 		loader->next = meta->next;
@@ -1044,7 +1029,7 @@ void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 			module->value = the->stack->value;
 		}
 		else if (mxIsStaticModuleRecord(the->stack->value.reference)) {
-			fxNewModule(the, targetRealm, targetModuleID, module);
+			fxNewModule(the, realm, moduleID, module);
 			fxDuplicateModuleTransfers(the, the->stack, module);
 			mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
 		}
@@ -1056,16 +1041,16 @@ void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 		if (mxIsReference(parent)) {
 			txSlot* meta;
 			txSlot* loader;
-			realm = parent->value.reference;
-			moduleID = the->stack->value.symbol;
-			fxNewModule(the, targetRealm, targetModuleID, module);
+			txSlot* loaderRealm = parent->value.reference;
+			txID loaderModuleID = the->stack->value.symbol;
+			fxNewModule(the, realm, moduleID, module);
 			meta = mxModuleMeta(module)->value.reference;
 			loader = fxNewSlot(the);
 			loader->next = meta->next;
 			loader->flag = XS_INTERNAL_FLAG;
 			loader->kind = XS_MODULE_KIND;
-			loader->value.module.realm = realm;
-			loader->value.module.id = moduleID;
+			loader->value.module.realm = loaderRealm;
+			loader->value.module.id = loaderModuleID;
 			meta->next = loader;
 		}
 		else

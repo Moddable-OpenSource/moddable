@@ -1683,8 +1683,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxPushUndefined();
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
-		
-// 			the->sharedModules = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference->next; //@@
 			
 			the->collectFlag = XS_COLLECTING_FLAG;
 
