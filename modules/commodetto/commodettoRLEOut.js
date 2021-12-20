@@ -36,8 +36,8 @@
 			11  > skip 1 to 64
 */
 
-import PixelsOut from "PixelsOut";
-import Bitmap from "Bitmap";
+import PixelsOut from "commodetto/PixelsOut";
+import Bitmap from "commodetto/Bitmap";
 import Poco from "commodetto/Poco";
 
 export default class RLEOut extends PixelsOut {

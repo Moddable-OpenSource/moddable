@@ -27,7 +27,7 @@
 	//@@ rework so it accepts file object
 */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 import PixelsOut from "PixelsOut";
 import File from "file";
 

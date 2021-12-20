@@ -40,7 +40,7 @@
 	Commodetto PNG reader
 */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 import BufferOut from "commodetto/BufferOut";
 import Converter from "commodetto/Convert";
 
