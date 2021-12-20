@@ -152,7 +152,7 @@ void xs_colorcell_end(xsMachine *the)
 	c_memmove(xsmcToArrayBuffer(xsVar(0)), cc->output, cc->outputOffset);
 	xsmcSetHostChunk(xsThis, NULL, 0);
 
-	xsCall4(xsThis, xsID_build, xsInteger(cc->width), xsInteger(cc->height), xsInteger(kCommodettoBitmapRGB565LE), xsVar(0));
+	xsCall4(xsThis, xsID_build, xsInteger(cc->width), xsInteger(cc->height), xsInteger(kCommodettoBitmapColorCell), xsVar(0));
 }
 
 void outputByte(xsMachine *the, ColorCellOut cc, uint8_t value)
