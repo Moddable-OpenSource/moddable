@@ -175,8 +175,6 @@ static const xsHostHooks PiuViewHooks ICACHE_RODATA_ATTR = {
 		switch(ID)
 #endif
 
-#define xsGetHostDataPoco(slot) ((void *)((char *)xsGetHostData(slot) - offsetof(PocoRecord, pixels)))
-
 void PiuViewAdjust(PiuView* self)
 {
 }

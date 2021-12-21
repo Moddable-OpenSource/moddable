@@ -44,6 +44,8 @@
 			"./main",
 			"./hosttest",
 			"./testworker",
+			"./testsharedworker",
+			"./testthrowworker",
 			"$(MODULES)/base/instrumentation/*",
 			"$(MODULES)/network/http/*"
 		],

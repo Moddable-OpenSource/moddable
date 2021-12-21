@@ -608,7 +608,7 @@ uint8_t tryInitialize(xsMachine *the, JPEG jpeg)
 	xsVar(0) = xsNewHostObject(pixelsDestructor);
 	xsmcSetHostBuffer(xsVar(0), jpeg->pixels, pixelsLength);
 	xsmcSetInteger(xsVar(1), pixelsLength);
-	xsDefine(xsVar(0), xsID_byteLength, xsVar(1), xsDefault);
+	xsmcDefine(xsVar(0), xsID_byteLength, xsVar(1), xsDefault);
 	xsmcSet(xsThis, xsID_pixels, xsVar(0));
 
 	xsmcSetInteger(xsVar(0), info.m_width);

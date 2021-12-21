@@ -77,7 +77,7 @@ void xs_BufferOut_init(xsMachine *the)
 		xsVar(0) = xsArg(3);
 	else
 		xsmcSetArrayBuffer(xsVar(0), NULL, pixelsToBytes(bo->width) * bo->height);
-	xsDefine(xsThis, xsID_buffer, xsVar(0), xsDontSet);
+	xsmcDefine(xsThis, xsID_buffer, xsVar(0), xsDontSet);
 }
 
 void xs_BufferOut_begin(xsMachine *the)

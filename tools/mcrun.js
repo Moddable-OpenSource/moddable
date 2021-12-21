@@ -404,6 +404,7 @@ export default class extends Tool {
 		this.preloads = null;
 		this.recipes = null;
 		this.strip = null;
+		this.tsconfig = this.manifest.tsconfig;
 
 		if (this.rotation === undefined)
 			this.rotation = this.config.rotation ?? 0;

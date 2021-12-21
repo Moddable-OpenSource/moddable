@@ -574,10 +574,15 @@ void xs_readgif_get_frameBounds(xsMachine *the)
 	uint16_t frameW = xg->frameW;;
 	uint16_t frameH = xg->frameH;;
 	xsmcSetNewObject(xsResult);
-	xsDefine(xsResult, xsID_x, xsInteger(frameX), xsDefault);
-	xsDefine(xsResult, xsID_y, xsInteger(frameY), xsDefault);
-	xsDefine(xsResult, xsID_width, xsInteger(frameW), xsDefault);
-	xsDefine(xsResult, xsID_height, xsInteger(frameH), xsDefault);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), frameX);
+	xsmcDefine(xsResult, xsID_x, xsVar(0), xsDefault);
+	xsmcSetInteger(xsVar(0), frameY);
+	xsmcDefine(xsResult, xsID_y, xsVar(0), xsDefault);
+	xsmcSetInteger(xsVar(0), frameW);
+	xsmcDefine(xsResult, xsID_width, xsVar(0), xsDefault);
+	xsmcSetInteger(xsVar(0), frameH);
+	xsmcDefine(xsResult, xsID_height, xsVar(0), xsDefault);
 }
 
 void xs_readgif_get_frameCount(xsMachine *the)

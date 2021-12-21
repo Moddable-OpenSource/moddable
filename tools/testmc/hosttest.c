@@ -38,6 +38,15 @@ void xs_hostbuffer_destructor(void *data)
 		c_free(data);
 }
 
+void xs_hostobjectchunk(xsMachine *the)
+{
+	xsmcSetHostChunk(xsThis, NULL, 16);
+}
+
+void xs_hostobjectchunk_destructor(void *data)
+{
+}
+
 void xs_hostbuffer(xsMachine *the)
 {
 	int byteLength = xsmcToInteger(xsArg(0));
@@ -49,5 +58,5 @@ void xs_hostbuffer(xsMachine *the)
 
 	xsSlot tmp;
 	xsmcSetInteger(tmp, byteLength);
-	xsDefine(xsThis, xsID_byteLength, tmp, xsDontDelete | xsDontSet);
+	xsmcDefine(xsThis, xsID_byteLength, tmp, xsDontDelete | xsDontSet);
 }
