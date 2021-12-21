@@ -1790,6 +1790,7 @@ txInteger fxArgToPosition(txMachine* the, txInteger argi, txInteger index, txInt
 void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, txInteger offset, txSlot* match, txInteger length, txInteger count, txSlot* captures, txSlot* groups, txSlot* replace)
 {
 	txString r;
+	txInteger m;
 	txInteger l;
 	txBoolean flag;
 	txByte c, d;
@@ -1797,9 +1798,14 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 	txSlot* capture;
 	txString s;
 	r = replace->value.string;
+	m = 0;
 	l = 0;
 	flag = 0;
 	while ((c = c_read8(r++))) {
+		if (m <= l)
+			m = l;
+		else
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		if (c == '$') {
 			c = c_read8(r++);
 			switch (c) {
@@ -1899,7 +1905,7 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 	}
 	if (flag) {
 		mxPushUndefined();
-		the->stack->value.string = (txString)fxNewChunk(the, l + 1);
+		the->stack->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, l, 1));
 		the->stack->kind = XS_STRING_KIND;
 		r = replace->value.string;
 		s = the->stack->value.string;
