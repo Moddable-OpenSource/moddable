@@ -115,7 +115,7 @@ export class Request {
 	}
 
 	close() {
-		this.socket?.close();
+		if( 16 & this.flags == 0) this.socket?.close();
 		delete this.socket;
 		delete this.buffers;
 		delete this.callback;
@@ -452,7 +452,7 @@ function done(error = false, data) {
 	state:
 	
 		0 - connecting
-		1 - receieving request status
+		1 - receiving request status
 		2 - receiving request headers
 		
 		
@@ -661,8 +661,10 @@ function server(message, value, etc) {
 				const status = response?.status ?? 200;
 				const message = response?.reason?.toString() ?? reason(status);
 				const parts = ["HTTP/1.1 ", status.toString(), " ", message, "\r\n",
-							"connection: ", "close\r\n"];
-
+							"connection: ", "close\r\n"];				
+				if ( status === 101 ) {
+					this.flags = 16;
+				}
 				if (response) {
 					let byteLength;
 
@@ -682,11 +684,13 @@ function server(message, value, etc) {
 							this.flags = 4;
 					}
 					else {
-						this.flags = 1;
-						let count = 0;
-						if (this.body)
-							count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
-						parts.push("content-length: ", count.toString(), "\r\n");
+						if ( this.flags !== 16 ) {
+							this.flags = 1;
+							let count = 0;
+							if (this.body)
+								count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
+							parts.push("content-length: ", count.toString(), "\r\n");
+						}
 					}
 				}
 				else
@@ -701,6 +705,11 @@ function server(message, value, etc) {
 					let count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;
 					if (count > (socket.write() - ((2 & this.flags) ? 8 : 0)))
 						return;
+				}
+
+				if ( this.flags === 16 ) {
+					this.state = 10;
+					return;
 				}
 			}
 			if (8 === this.state) {
@@ -741,7 +750,7 @@ function server(message, value, etc) {
 				}
 				finally {
 					this.server.connections.splice(this.server.connections.indexOf(this), 1);
-					this.close();
+					if ( this.flags !== 16 ) this.close();
 				}
 			}
 		}

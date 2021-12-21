@@ -1,0 +1,23 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/files/zip/*",
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/hex/*",
+			"$(MODULES)/data/logical/*"
+
+		],
+		"dns/server": "$(MODULES)/network/dns/dnsserver",
+		"websocket/websocket": "$(MODULES)/network/websocket/websocket"
+	},
+	"preload": [
+		"http",
+		"dns/server",
+        "websocket/websocket",
+		"base64",
+		"hex",
+		"logical",
+		"websocket"
+	]
+}
