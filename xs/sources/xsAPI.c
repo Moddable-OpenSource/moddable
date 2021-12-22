@@ -625,10 +625,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 		gxDefaults.newFunctionLength(the, instance, theLength);
 
 	/* NAME */
-	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
-	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, 0, XS_NO_ID, C_NULL);
+	fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
 
 	return instance;
 }

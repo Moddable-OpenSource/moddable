@@ -167,10 +167,7 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 		gxDefaults.newFunctionLength(the, instance, 0);
 		
 	/* NAME */
-	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
-	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, 0, XS_NO_ID, C_NULL);
+	fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -233,9 +230,13 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 	txSlot* property;
 	txSlot* key;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), 0, XS_OWN);
-	if (!property)
+	if (property) {
+		if ((property->kind != mxEmptyString.kind) || (property->value.string != mxEmptyString.value.string))
+			return property;
+	}
+	else
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	if (id) {
+	if (id != XS_NO_ID) {
 		key = fxGetKey(the, (txID)id);
 		if (key) {
 			txKind kind = mxGetKeySlotKind(key);
@@ -279,11 +280,9 @@ void fxRenameFunction(txMachine* the, txSlot* instance, txID id, txIndex index, 
 		return;
 	property = mxFunctionInstanceCode(instance);
 	if ((property->ID == XS_NO_ID) || (property->ID == former)) {
-		if (id)
+		if (id != XS_NO_ID)
 			property->ID = (txID)id;
 	}
-	else
-		return;
 	if (gxDefaults.newFunctionName)
 		property = gxDefaults.newFunctionName(the, instance, id, index, former, prefix);
 }

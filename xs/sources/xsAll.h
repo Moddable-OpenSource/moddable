@@ -1875,6 +1875,7 @@ enum {
 	XS_EACH_SYMBOL_FLAG = 2,
 	
 	/* mxBehaviorDefineOwnProperty flags */
+	/* XS_NAME_FLAG = 1, */
 	/* XS_DONT_DELETE_FLAG = 2, */
 	/* XS_DONT_ENUM_FLAG = 4, */
 	/* XS_DONT_SET_FLAG = 8, */

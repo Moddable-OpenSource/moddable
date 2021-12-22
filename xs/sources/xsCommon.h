@@ -379,6 +379,7 @@ extern const txString gxCodeNames[XS_CODE_COUNT];
 extern const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR;
 
 enum {
+	XS_NAME_FLAG = 1,
 	XS_DONT_DELETE_FLAG = 2,
 	XS_DONT_ENUM_FLAG = 4,
 	XS_DONT_SET_FLAG = 8,

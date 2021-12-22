@@ -431,7 +431,8 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 					txSlot* home = mxFunctionInstanceHome(getter);
 					home->value.home.object = instance;
 				}
-				fxRenameFunction(the, getter, id, index, mxID(_get), "get ");
+				if ((mask & XS_NAME_FLAG) && ((getter->flag & XS_MARK_FLAG) == 0))
+					fxRenameFunction(the, getter, id, index, mxID(_get), "get ");
 			}
 		}
 		if (setter) {
@@ -440,7 +441,8 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 					txSlot* home = mxFunctionInstanceHome(setter);
 					home->value.home.object = instance;
 				}
-				fxRenameFunction(the, setter, id, index, mxID(_set), "set ");
+				if ((mask & XS_NAME_FLAG) && ((setter->flag & XS_MARK_FLAG) == 0))
+					fxRenameFunction(the, setter, id, index, mxID(_set), "set ");
 			}
 		}
 	}
@@ -462,7 +464,8 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 						txSlot* home = mxFunctionInstanceHome(function);
 						home->value.home.object = instance;
 					}
-					fxRenameFunction(the, function, id, index, mxID(_value), C_NULL);
+					if ((mask & XS_NAME_FLAG) && ((function->flag & XS_MARK_FLAG) == 0))
+						fxRenameFunction(the, function, id, index, mxID(_value), C_NULL);
 				}
 			}
 		}
