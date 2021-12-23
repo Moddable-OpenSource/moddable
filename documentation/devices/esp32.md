@@ -142,7 +142,7 @@ Omitting the `-d` and `-i` options on the `mcconfig` command line selects a rele
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 (2e74914) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.2 (8bf14a9) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -157,19 +157,19 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 (2e74914) and the
 	
 	If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
-4. If this is your first install, clone the v4.3.1 tag of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. If this is your first install, clone the v4.3.2 tag of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v4.3.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	If you already have an install of the `releaes/v4.3` branch, update to `v4.3.1` by using the [update instructions below](#mac-update).
+	If you already have an install of the `release/v4.3` branch, update to `v4.3.2` by using the [update instructions below](#mac-update).
 
 	```text
 	cd ~/esp32/esp-idf
 	git pull
-	git checkout v4.3.1
+	git checkout v4.3.2
 	git submodule update --init --recursive
 	```
 
@@ -311,12 +311,12 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 <a id="mac-update"></a>	
 ### Updating
 
-1. If you already have an install of the `releaes/v4.3` branch, update to `v4.3.1`.
+1. If you already have an install of the `release/v4.3` branch, update to `v4.3.2`.
 
 	```text
 	cd ~/esp32/esp-idf
 	git pull
-	git checkout v4.3.1
+	git checkout v4.3.2
 	git submodule update --init --recursive
 	```
 	
@@ -373,7 +373,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 <a id="win"></a>	
 ## Windows
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="win-instructions"></a>
 ### Installing
@@ -388,7 +388,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake opt
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
 
-	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.3.1 (release version)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
+	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.3.2 (release version)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
 
 
 4. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
@@ -398,11 +398,11 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake opt
     mkdir esp32
     ```
 
-5. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.3.1 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.3.2 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
     ```text
     cd ~/esp32
-    git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
+    git clone -b v4.3.2 --recursive https://github.com/espressif/esp-idf.git
     ```
 
 	If you already have a cloned copy of the ESP-IDF, the simplest way to do the update is to delete the existing `esp-idf` folder and clone it again. [See Espressif's Get ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32/get-started/index.html#get-started-get-esp-idf)
@@ -462,7 +462,7 @@ For other issues that are common on macOS, Windows, and Linux, see the [Troubles
 
 #### Python Versions
 
-Espressif recommends using Python 3.9 or later when building with ESP-IDF v4.3.1. Python 3.9 will be installed by the ESP-IDF Tools Installer.
+Espressif recommends using Python 3.9 or later when building with ESP-IDF v4.3.2. Python 3.9 will be installed by the ESP-IDF Tools Installer.
 
 If you had a previous version of Python (such as Python 2.7) installed on your system, you may need to remove it from the System PATH so that Python 3.9 is chosen by default. Look for entries like `C:\Python27\` or `C:\Python27\Scripts\` in your PATH and remove them if you encounter Python errors during the build process. 
 
@@ -504,22 +504,22 @@ To ensure that your build environment is up to date, perform the following steps
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
     
-    If you choose to close the ESP-IDF, select the `v4.3.1 (release version)` of the esp-idf.
+    If you choose to close the ESP-IDF, select the `v4.3.2 (release version)` of the esp-idf.
 
 
-2. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.3.1 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. For instance, in **Git Bash**:
+2. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.3.2 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. For instance, in **Git Bash**:
 
     ```text
     cd ~/esp32
-    git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
+    git clone -b v4.3.2 --recursive https://github.com/espressif/esp-idf.git
     ```
     
-Check out the `v4.3.1 tag` of the ESP-IDF.
+Check out the `v4.3.2 tag` of the ESP-IDF.
 
 	```text
 	cd ~/esp32/esp-idf
 	git pull
-	git checkout v4.3.1
+	git checkout v4.3.2
 	git submodule update --init --recursive
 	```
 
@@ -568,7 +568,7 @@ Check out the `v4.3.1 tag` of the ESP-IDF.
 <a id="esp32-linux"></a>
 ## Linux
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.2 and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="lin-instructions"></a>
 ### Installing
@@ -600,19 +600,19 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.1 and the CMake opt
 
 3. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
-4. If this is your first install, clone the v4.3.1 tag of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+4. If this is your first install, clone the v4.3.2 tag of the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
 	```text
 	cd ~/esp32
-	git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
+	git clone -b v4.3.2 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-	If you already have an install of the `release/v4.3` branch, update to `v4.3.1` by using the [update instructions below](#lin-update).
+	If you already have an install of the `release/v4.3` branch, update to `v4.3.2` by using the [update instructions below](#lin-update).
 
 	```text
 	cd ~/esp32/esp-idf
 	git pull
-	git checkout v4.3.1
+	git checkout v4.3.2
 	git submodule update --init --recursive
 	```
 
@@ -718,12 +718,12 @@ export UPLOAD_PORT=/dev/ttyUSB1
 <a id="lin-update"></a>	
 ### Updating
 
-1. If you already have an install of the `releaes/v4.3` branch, update to `v4.3.1`.
+1. If you already have an install of the `release/v4.3` branch, update to `v4.3.2`.
 
 	```text
 	cd ~/esp32/esp-idf
 	git pull
-	git checkout v4.3.1
+	git checkout v4.3.2
 	git submodule update --init --recursive
 	```
 
