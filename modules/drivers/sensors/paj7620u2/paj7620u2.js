@@ -18,6 +18,11 @@
  *
  */
 
+/*
+  PAJ7620U2 Gesture recognition sensor
+  https://datasheetspdf.com/pdf-file/1309990/PixArt/PAJ7620U2/1
+*/
+
 import Timer from "timer";
 
 const REGISTERS = Object.freeze({
@@ -139,7 +144,6 @@ const GESTURE_MODE_REGISTERS = Object.freeze([
 class PAJ7620U2 {
   #io;
   #onError;
-  #invertAxis = false;
 
   constructor(options) {
     const io = this.#io = new options.sensor.io({
@@ -158,12 +162,46 @@ class PAJ7620U2 {
     if (partid != 0x7620) throw new Error("ERR_IC_VERSION");
 
     this.#initializeDeviceSettings();
-    this.setGestureMode();
+    this.#setGestureMode();
 
     this.#selectBank(0);
+
+    this.configure({
+      enabled: true,
+      invert: false,
+      flip: "none"
+    });
   }
 
   configure(options) {
+    const io = this.#io;
+
+    this.#selectBank(1);
+
+    if ("enabled" in options) {
+      io.writeByte(REGISTERS.OPERATION_ENABLE, Number(options.enabled));
+    }
+
+    if ("invert" in options) {
+      delete io.invert;
+      if (options.invert)
+        io.invert = true;
+    }
+
+    let value = options.flip;
+    if (value) {
+      let data = io.readByte(REGISTERS.LENS_ORIENTATION);
+
+      if ("h" === value) {
+        data ^= 1 << (io.invert ? 1 : 0);
+      } else if ("v" === value) {
+        data ^= 1 << (io.invert ? 0 : 1);
+      } else if ("hv" === value) {
+        data ^= 0b11;
+      }
+      io.writeByte(REGISTERS.LENS_ORIENTATION, data);
+    }
+    this.#selectBank(0);
   }
 
   close() {
@@ -182,25 +220,11 @@ class PAJ7620U2 {
     this.#selectBank(0);
   }
 
-  setGestureMode() {
+  #setGestureMode() {
     GESTURE_MODE_REGISTERS.forEach((reg) => {
       this.#io.writeByte(reg.addr, reg.val);
     });
     this.#selectBank(0);
-  }
-
-  set enable(bool) {
-    this.#selectBank(1);
-    this.#io.writeByte(REGISTERS.OPERATION_ENABLE, Number(bool));
-    this.#selectBank(0);
-  }
-
-  get enable() {
-    this.#selectBank(1);
-    let enable = this.#io.readByte(REGISTERS.OPERATION_ENABLE);
-    this.#selectBank(0);
-
-    return Boolean(enable);
   }
 
   sample() {
@@ -227,29 +251,30 @@ class PAJ7620U2 {
   }
 
   #getGesture() {
-    let res1 = this.#io.readByte(REGISTERS.GES_RESULT_1);
+    const io = this.#io;
+    let res1 = io.readByte(REGISTERS.GES_RESULT_1);
     if (res1 == GESTURE_FLAG.WAVE) {
       return "Wave";
     }
 
-    let res0 = this.#io.readByte(REGISTERS.GES_RESULT_0);
+    let res0 = io.readByte(REGISTERS.GES_RESULT_0);
     if (!res0) {
-      return "None";
+      return undefined;
     }
 
-    let result = "None";
+    let result = undefined;
     switch (res0) {
       case GESTURE_FLAG.UP:
-        result = this.#forwardBackwardGestureCheck(this.#invertAxis ? "Up" : "Right");
+        result = this.#forwardBackwardGestureCheck(io.invert ? "Right" : "Up");
         break;
       case GESTURE_FLAG.DOWN:
-        result = this.#forwardBackwardGestureCheck(this.#invertAxis ? "Down" : "Left");
+        result = this.#forwardBackwardGestureCheck(io.invert ? "Left" : "Down");
         break;
       case GESTURE_FLAG.LEFT:
-        result = this.#forwardBackwardGestureCheck(this.#invertAxis ? "Left" : "Up");
+        result = this.#forwardBackwardGestureCheck(io.invert ? "Up" : "Left");
         break;
       case GESTURE_FLAG.RIGHT:
-        result = this.#forwardBackwardGestureCheck(this.#invertAxis ? "Right" : "Down");
+        result = this.#forwardBackwardGestureCheck(io.invert ? "Down" : "Right");
         break;
       case GESTURE_FLAG.FORWARD:
         Timer.delay(EXIT_TIME);
@@ -270,28 +295,6 @@ class PAJ7620U2 {
     }
     return result;
   }
-
-  invertXAxis() {
-    this.#selectBank(1);
-    let data = this.#io.readByte(REGISTERS.LENS_ORIENTATION);
-    data ^= 1 << (this.#invertAxis ? 0 : 1);
-    this.#io.writeByte(REGISTERS.LENS_ORIENTATION, data);
-    this.#selectBank(0);
-  }
-
-  invertYAxis() {
-    this.#selectBank(1);
-    let data = this.#io.readByte(REGISTERS.LENS_ORIENTATION);
-    data ^= 1 << (this.#invertAxis ? 1 : 0);
-    this.#io.writeByte(REGISTERS.LENS_ORIENTATION, data);
-    this.#selectBank(0);
-  }
-
-  invertAxis() {
-    this.#invertAxis = this.#invertAxis;
-  }
 }
-
-Object.freeze(PAJ7620U2.prototype);
 
 export default PAJ7620U2;

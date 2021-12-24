@@ -24,7 +24,7 @@ const sensor = new Gesture({
 
 Timer.repeat(function () {
   const sample = sensor.sample();
-  if (sample != "None") {
+  if (sample) {
     trace(`Gesture:${sample}\n`);
   }
 }, 100);
