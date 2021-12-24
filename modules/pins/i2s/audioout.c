@@ -889,7 +889,7 @@ void xs_audioout_mix(xsMachine *the)
 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), bytesNeeded);
-	xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
+	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 }
 
 void xs_audioout_length(xsMachine *the)
