@@ -232,7 +232,7 @@ void xs_zip_file_map(xsMachine *the)
 	xsmcSetHostBuffer(xsResult, data, dataSize);
 	xsmcVars(1);
 	xsVar(0) = xsInteger(dataSize);
-	xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
+	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 }
 
 typedef struct {

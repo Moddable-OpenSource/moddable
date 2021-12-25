@@ -58,5 +58,5 @@ void xs_hostbuffer(xsMachine *the)
 
 	xsSlot tmp;
 	xsmcSetInteger(tmp, byteLength);
-	xsDefine(xsThis, xsID_byteLength, tmp, xsDontDelete | xsDontSet);
+	xsmcDefine(xsThis, xsID_byteLength, tmp, xsDontDelete | xsDontSet);
 }

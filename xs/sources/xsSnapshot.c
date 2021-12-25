@@ -18,7 +18,11 @@
  *
  */
 
+#define _GNU_SOURCE
 #include "xsSnapshot.h"
+#if mxMacOSX || mxLinux
+#include <dlfcn.h>
+#endif
 
 static void fxLinkChunks(txMachine* the);
 
@@ -60,7 +64,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#define mxCallbacksLength 492
+#define mxCallbacksLength 493
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -369,6 +373,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Promise_resolve,
 	fx_Promise,
 	fx_Proxy_revocable,
+	fx_Proxy_revoke,
 	fx_Proxy,
 	fx_RangeError,
 	fx_ReferenceError,
@@ -676,7 +681,16 @@ txCallback fxProjectCallback(txMachine* the, txSnapshot* snapshot, txCallback ca
 			callbackIndex++;
 			callbackItem++;
 		}
-		mxAssert(0, "# snapshot: unknown callback!\n");
+		{
+#if mxMacOSX || mxLinux
+			Dl_info info;
+		    if (dladdr(callback, &info)) {
+				mxAssert(0, "# snapshot: unknown callback: %s!\n", info.dli_sname);
+			}
+		    else
+#endif
+				mxAssert(0, "# snapshot: unknown callback!\n");
+		}
 	}
 	return C_NULL;
 }

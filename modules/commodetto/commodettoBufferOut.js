@@ -25,7 +25,7 @@
 		implements PixelOut to write pixels to an ArrayBuffer
 */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 
 export default class BufferOut @ "xs_BufferOut_destructor"{
 	constructor(dictionary) {

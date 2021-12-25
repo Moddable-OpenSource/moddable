@@ -80,7 +80,7 @@ void xs_Bitmap(xsMachine *the)
 
 	xsmcSetHostChunk(xsThis, &cb, sizeof(CommodettoBitmapRecord) /* - (byteLength ? sizeof(int32_t) : 0) */);
 
-	xsDefine(xsThis, xsID_buffer, xsArg(3), xsDontSet);
+	xsmcDefine(xsThis, xsID_buffer, xsArg(3), xsDontSet);
 }
 
 void xs_bitmap_get_width(xsMachine *the)
