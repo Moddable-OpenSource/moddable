@@ -1797,8 +1797,6 @@ void fx_Compartment(txMachine* the)
 	
 	if (!module) module = mxProgram.value.reference;
 	mxTry(the) {
-// 		if (the->sharedMachine == C_NULL)
-// 			mxTypeError("no compartments");
 		if (mxIsUndefined(mxTarget))
 			mxTypeError("call Compartment");
 			

@@ -52,7 +52,6 @@ C_OPTIONS = \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
 	-DmxSnapshot=1 \
-	-DmxRegExpUnicodePropertyEscapes=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
@@ -65,7 +64,7 @@ endif
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -O3
+	C_OPTIONS += -DmxMultipleThreads=1 -g -O3
 endif
 
 LIBRARIES = -framework CoreServices

@@ -91,7 +91,8 @@
 	void* waiterCondition; \
 	void* waiterData; \
 	txMachine* waiterLink; \
-	int abortStatus;
+	int abortStatus; \
+	void* rejection;
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1

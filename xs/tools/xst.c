@@ -29,6 +29,7 @@
 	#include <process.h>
 	typedef CONDITION_VARIABLE txCondition;
 	typedef CRITICAL_SECTION txMutex;
+    typedef HANDLE txThread;
 	#define fxCreateCondition(CONDITION) InitializeConditionVariable(CONDITION)
 	#define fxCreateMutex(MUTEX) InitializeCriticalSection(MUTEX)
 	#define fxDeleteCondition(CONDITION) (void)(CONDITION)
@@ -36,6 +37,7 @@
 	#define fxLockMutex(MUTEX) EnterCriticalSection(MUTEX)
 	#define fxUnlockMutex(MUTEX) LeaveCriticalSection(MUTEX)
 	#define fxSleepCondition(CONDITION,MUTEX) SleepConditionVariableCS(CONDITION,MUTEX,INFINITE)
+	#define fxWakeAllCondition(CONDITION) WakeAllConditionVariable(CONDITION)
 	#define fxWakeCondition(CONDITION) WakeConditionVariable(CONDITION)
 #else
 	#include <dirent.h>
@@ -43,6 +45,7 @@
 	#include <sys/stat.h>
 	typedef pthread_cond_t txCondition;
 	typedef pthread_mutex_t txMutex;
+	typedef pthread_t txThread;
 	#define fxCreateCondition(CONDITION) pthread_cond_init(CONDITION,NULL)
 	#define fxCreateMutex(MUTEX) pthread_mutex_init(MUTEX,NULL)
 	#define fxDeleteCondition(CONDITION) pthread_cond_destroy(CONDITION)
@@ -50,6 +53,7 @@
 	#define fxLockMutex(MUTEX) pthread_mutex_lock(MUTEX)
 	#define fxUnlockMutex(MUTEX) pthread_mutex_unlock(MUTEX)
 	#define fxSleepCondition(CONDITION,MUTEX) pthread_cond_wait(CONDITION,MUTEX)
+	#define fxWakeAllCondition(CONDITION) pthread_cond_broadcast(CONDITION)
 	#define fxWakeCondition(CONDITION) pthread_cond_signal(CONDITION)
 #endif
 
@@ -59,7 +63,14 @@ typedef struct sxAgentReport txAgentReport;
 typedef struct sxContext txContext;
 typedef struct sxJob txJob;
 typedef void (*txJobCallback)(txJob*);
+typedef struct sxPool txPool;
 typedef struct sxResult txResult;
+
+#ifdef mxMultipleThreads
+	#define mxPoolSize 3
+#else
+	#define mxPoolSize 1
+#endif
 
 struct sxAgent {
 	txAgent* next;
@@ -78,6 +89,8 @@ struct sxAgentReport {
 };
 
 struct sxAgentCluster {
+	txMutex mainMutex;
+
 	txAgent* firstAgent;
 	txAgent* lastAgent;
 	
@@ -96,15 +109,12 @@ struct sxAgentCluster {
 };
 
 struct sxContext {
-#ifdef mxTestSharedMachine
-	txMachine* shared;
-#endif
-	char harnessPath[C_PATH_MAX];
-	int testPathLength;
-	txResult* current;
+	txContext* next;
+	txResult* result;
 	yaml_document_t* document;
 	yaml_node_t* includes;
 	yaml_node_t* negative;
+	char path[1];
 };
 
 struct sxJob {
@@ -115,6 +125,18 @@ struct sxJob {
 	txSlot function;
 	txSlot argument;
 	txNumber interval;
+};
+
+struct sxPool {
+	txContext* first;
+	txInteger count;
+	txCondition countCondition;
+	txMutex countMutex;
+	txResult* current;
+	txMutex resultMutex;
+	txThread threads[mxPoolSize];
+	char harnessPath[C_PATH_MAX];
+	int testPathLength;
 };
 
 struct sxResult {
@@ -131,15 +153,25 @@ struct sxResult {
 static int main262(int argc, char* argv[]);
 
 static void fxBuildAgent(xsMachine* the);
-static void fxCountResult(txContext* context, int success, int pending);
+static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
-static void fxPopResult(txContext* context);
-static void fxPrintResult(txContext* context, txResult* result, int c);
+static void fxPopResult(txPool* pool);
+#ifdef mxMultipleThreads
+static void fxPrintBusy(txPool* pool);
+static void fxPrintClear(txPool* pool);
+#endif
+static void fxPrintResult(txPool* pool, txResult* result, int c);
 static void fxPrintUsage();
-static void fxPushResult(txContext* context, char* path);
-static void fxRunDirectory(txContext* context, char* path);
-static void fxRunFile(txContext* context, char* path);
-static int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message);
+static void fxPushResult(txPool* pool, char* path);
+static void fxRunDirectory(txPool* pool, char* path);
+static void fxRunFile(txPool* pool, char* path);
+#if mxWindows
+static unsigned int __stdcall fxRunFileThread(void* it);
+#else
+static void* fxRunFileThread(void* it);
+#endif
+static void fxRunContext(txPool* pool, txContext* context);
+static int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
 
 static void fx_agent_get_safeBroadcast(xsMachine* the);
@@ -182,9 +214,6 @@ static void fx_destroyTimer(void* data);
 static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setTimerCallback(txJob* job);
 
-static txAgentCluster gxAgentCluster;
-
-static txSlot* gxException = NULL;
 static char *gxAbortStrings[] = {
 	"debugger",
 	"memory full",
@@ -197,8 +226,11 @@ static char *gxAbortStrings[] = {
 	"unhandled rejection"
 };
 
+static txAgentCluster gxAgentCluster;
+
 int main(int argc, char* argv[]) 
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	int argi;
 	int option = 0;
 	char path[C_PATH_MAX];
@@ -209,6 +241,15 @@ int main(int argc, char* argv[])
     char* harnessPath = "../harness";
 #endif
 	int error = 0;
+	
+	c_memset(agentCluster, 0, sizeof(txAgentCluster));
+	fxCreateMutex(&(agentCluster->mainMutex));
+	fxCreateCondition(&(agentCluster->countCondition));
+	fxCreateMutex(&(agentCluster->countMutex));
+	fxCreateCondition(&(agentCluster->dataCondition));
+	fxCreateMutex(&(agentCluster->dataMutex));
+	fxCreateMutex(&(agentCluster->reportMutex));
+
 	if (argc == 1) {
 		fxPrintUsage();
 		return 1;
@@ -255,7 +296,6 @@ int main(int argc, char* argv[])
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
-		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
  		fxBuildAgent(machine);
 		xsBeginHost(machine);
@@ -263,7 +303,7 @@ int main(int argc, char* argv[])
 			xsVars(1);
 			xsTry {
 				xsVar(0) = xsUndefined;
-				gxException = &xsVar(0);
+				the->rejection = &xsVar(0);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
@@ -298,29 +338,13 @@ int main(int argc, char* argv[])
 			error = 1;
 		}
 		xsDeleteMachine(machine);
-		fxTerminateSharedCluster();
 	}
 	return error;
 }
 
 int main262(int argc, char* argv[]) 
 {
-#ifdef mxTestSharedMachine
-	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
-		1993, 				/* nameModulo */
-		127, 				/* symbolModulo */
-		64 * 1024,			/* parserBufferSize */
-		1993,				/* parserTableModulo */
-	};
-	xsCreation* creation = &_creation;
-#endif
-	txContext context;
+	txPool pool;
 	char separator[2];
 	char path[C_PATH_MAX];
 	int error = 0;
@@ -329,38 +353,37 @@ int main262(int argc, char* argv[])
 	c_timeval from;
 	c_timeval to;
 	
-	c_memset(&context, 0, sizeof(txContext));
-	
-	c_memset(&gxAgentCluster, 0, sizeof(txAgentCluster));
-	fxCreateCondition(&(gxAgentCluster.countCondition));
-	fxCreateMutex(&(gxAgentCluster.countMutex));
-	fxCreateCondition(&(gxAgentCluster.dataCondition));
-	fxCreateMutex(&(gxAgentCluster.dataMutex));
-	fxCreateMutex(&(gxAgentCluster.reportMutex));
-
-#ifdef mxTestSharedMachine
-	context.shared = fxCreateMachine(creation, "xsr", NULL);
-	fxShareMachine(context.shared);
-#endif
+	c_memset(&pool, 0, sizeof(txPool));
+	fxCreateCondition(&(pool.countCondition));
+	fxCreateMutex(&(pool.countMutex));
+	fxCreateMutex(&(pool.resultMutex));
+	for (argi = 0; argi < mxPoolSize; argi++) {
+	#if mxWindows
+		pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
+	#else	
+		pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
+	#endif
+	}
+	fxInitializeSharedCluster();
 
 	separator[0] = mxSeparator;
 	separator[1] = 0;
 	c_strcpy(path, "..");
 	c_strcat(path, separator);
 	c_strcat(path, "harness");
-	if (!c_realpath(path, context.harnessPath)) {
+	if (!c_realpath(path, pool.harnessPath)) {
 		fprintf(stderr, "### directory not found: %s\n", path);
 		return 1;
 	}
-	c_strcat(context.harnessPath, separator);
+	c_strcat(pool.harnessPath, separator);
 	if (!c_realpath(".", path)) {
 		fprintf(stderr, "### directory not found: .\n");
 		return 1;
 	}
 	c_strcat(path, separator);
-	context.testPathLength = mxStringLength(path);
-	context.current = NULL;
-	fxPushResult(&context, "");
+	pool.testPathLength = mxStringLength(path);
+	pool.current = NULL;
+	fxPushResult(&pool, "");
 	
 	c_gettimeofday(&from, NULL);
 	for (argi = 1; argi < argc; argi++) {
@@ -377,12 +400,12 @@ int main262(int argc, char* argv[])
 			if (stat(path, &a_stat) == 0) {
 				if (S_ISDIR(a_stat.st_mode)) {
 #endif
-					fxPushResult(&context, path + context.testPathLength);
-					fxRunDirectory(&context, path);
-					fxPopResult(&context);
+					fxPushResult(&pool, path + pool.testPathLength);
+					fxRunDirectory(&pool, path);
+					fxPopResult(&pool);
 				}
 				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-					fxRunFile(&context, path);
+					fxRunFile(&pool, path);
 			}
 		}
 		else {
@@ -390,13 +413,33 @@ int main262(int argc, char* argv[])
 			error = 1;
 		}
 	}
+    fxLockMutex(&(pool.countMutex));
+    while (pool.count > 0)
+		fxSleepCondition(&(pool.countCondition), &(pool.countMutex));
+	pool.count = -1;
+	fxWakeAllCondition(&(pool.countCondition));
+    fxUnlockMutex(&(pool.countMutex));
+	for (argi = 0; argi < mxPoolSize; argi++) {
+	#if mxWindows
+		WaitForSingleObject(pool.threads[argi], INFINITE);
+		CloseHandle(pool.threads[argi]);
+	#else
+		pthread_join(pool.threads[argi], NULL);
+	#endif
+	}
+	
+	fxTerminateSharedCluster();
+	
 	c_gettimeofday(&to, NULL);
 	if (argj) {
 		int seconds = to.tv_sec - from.tv_sec;
 		int minutes = seconds / 60;
 		int hours = minutes / 60;
+	#ifdef mxMultipleThreads	
+		fxPrintClear(&pool);
+	#endif
 		fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
-		fxPrintResult(&context, context.current, 0);
+		fxPrintResult(&pool, pool.current, 0);
 	}
 	return error;
 }
@@ -440,15 +483,17 @@ void fxBuildAgent(xsMachine* the)
 	mxPop();
 }
 
-void fxCountResult(txContext* context, int success, int pending) 
+void fxCountResult(txPool* pool, txContext* context, int success, int pending) 
 {
-	txResult* result = context->current;
+	txResult* result = context->result;
+    fxLockMutex(&(pool->resultMutex));
 	while (result) {
 		result->testCount++;
 		result->successCount += success;
 		result->pendingCount += pending;
 		result = result->parent;
 	}
+    fxUnlockMutex(&(pool->resultMutex));
 }
 
 yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name)
@@ -464,12 +509,27 @@ yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, 
 	return NULL;
 }
 
-void fxPopResult(txContext* context) 
+void fxPopResult(txPool* pool) 
 {
-	context->current = context->current->parent;
+	pool->current = pool->current->parent;
 }
 
-void fxPrintResult(txContext* context, txResult* result, int c)
+#ifdef mxMultipleThreads
+static int c = 0;
+
+void fxPrintBusy(txPool* pool)
+{
+	fprintf(stderr, "\b\b\b\b\b\b\b\b# %6.6d", c++);	
+}
+
+void fxPrintClear(txPool* pool)
+{
+	fprintf(stderr, "\b\b\b\b\b\b\b\b");
+	c++;
+}
+#endif
+
+void fxPrintResult(txPool* pool, txResult* result, int c)
 {
 	int i = 0;
 	while (i < c) {
@@ -487,7 +547,7 @@ void fxPrintResult(txContext* context, txResult* result, int c)
 	result = result->first;
 	c++;
 	while (result) {
-		fxPrintResult(context, result, c);
+		fxPrintResult(pool, result, c);
 		result = result->next;
 	}
 }
@@ -508,9 +568,9 @@ void fxPrintUsage()
 	printf("\telse strings are paths to scripts\n");
 }
 
-void fxPushResult(txContext* context, char* path) 
+void fxPushResult(txPool* pool, char* path) 
 {
-	txResult* parent = context->current;
+	txResult* parent = pool->current;
 	txResult* result = c_malloc(sizeof(txResult) + mxStringLength(path));
 	if (!result) {
 		c_exit(1);
@@ -530,10 +590,10 @@ void fxPushResult(txContext* context, char* path)
 			parent->first = result;
 		parent->last = result;
 	}
-	context->current = result;
+	pool->current = result;
 }
 
-void fxRunDirectory(txContext* context, char* path)
+void fxRunDirectory(txPool* pool, char* path)
 {
 	typedef struct sxEntry txEntry;
 	struct sxEntry {
@@ -581,12 +641,12 @@ void fxRunDirectory(txContext* context, char* path)
 			attributes = GetFileAttributes(path);
 			if (attributes != 0xFFFFFFFF) {
 				if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
-					fxPushResult(context, firstEntry->name);
-					fxRunDirectory(context, path);
-					fxPopResult(context);
+					fxPushResult(pool, firstEntry->name);
+					fxRunDirectory(pool, path);
+					fxPopResult(pool);
 				}
 				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-					fxRunFile(context, path);
+					fxRunFile(pool, path);
 			}
 			nextEntry = firstEntry->nextEntry;
 			free(firstEntry);
@@ -628,12 +688,12 @@ void fxRunDirectory(txContext* context, char* path)
 			strcpy(path + length, firstEntry->name);
 			if (stat(path, &a_stat) == 0) {
 				if (S_ISDIR(a_stat.st_mode)) {
-					fxPushResult(context, firstEntry->name);
-					fxRunDirectory(context, path);
-					fxPopResult(context);
+					fxPushResult(pool, firstEntry->name);
+					fxRunDirectory(pool, path);
+					fxPopResult(pool);
 				}
 				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-					fxRunFile(context, path);
+					fxRunFile(pool, path);
 			}
 			nextEntry = firstEntry->nextEntry;
 			free(firstEntry);
@@ -643,8 +703,65 @@ void fxRunDirectory(txContext* context, char* path)
 #endif
 }
 
-void fxRunFile(txContext* context, char* path)
+void fxRunFile(txPool* pool, char* path)
 {
+	txContext* context = c_malloc(sizeof(txContext) + c_strlen(path));
+	txContext** address;
+	txContext* former;
+	if (!context) return;
+	c_memset(context, 0, sizeof(txContext));
+	context->result = pool->current;
+	c_strcpy(context->path, path);
+    fxLockMutex(&(pool->countMutex));
+    while (pool->count == mxPoolSize)
+		fxSleepCondition(&(pool->countCondition), &(pool->countMutex));
+	address = &(pool->first);	
+	while ((former = *address))
+		address = &(former->next);
+	*address = context;
+	pool->count++;
+	fxWakeAllCondition(&(pool->countCondition));
+    fxUnlockMutex(&(pool->countMutex));
+}
+
+#if mxWindows
+unsigned int __stdcall fxRunFileThread(void* it)
+#else
+void* fxRunFileThread(void* it)
+#endif
+{
+	txPool* pool = it;
+	txContext* context;
+	for (;;) {
+    	fxLockMutex(&(pool->countMutex));
+    	while (pool->count == 0)
+			fxSleepCondition(&(pool->countCondition), &(pool->countMutex));
+		if (pool->count > 0) {
+			context = pool->first;
+			pool->first = context->next;
+			pool->count--;
+			fxWakeAllCondition(&(pool->countCondition));
+			fxUnlockMutex(&(pool->countMutex));
+			
+			fxRunContext(pool, context);
+			free(context);
+		}
+		else if (pool->count < 0) {
+			fxUnlockMutex(&(pool->countMutex));
+			break;
+		}
+	}
+#if mxWindows
+	return 0;
+#else
+	return NULL;
+#endif
+}
+
+void fxRunContext(txPool* pool, txContext* context)
+{
+	txAgentCluster* agentCluster = &gxAgentCluster;
+	char* path = context->path;
 	FILE* file = NULL;
 	size_t size;
 	char* buffer = NULL;
@@ -657,6 +774,7 @@ void fxRunFile(txContext* context, char* path)
 	yaml_node_t* root;
 	yaml_node_t* value;
 	int async = 0;
+	int atomics = 0;
 	int sloppy = 1;
 	int strict = 1;
 	int module = 0;
@@ -761,34 +879,72 @@ void fxRunFile(txContext* context, char* path)
 				module = 0;
 				pending = 1;
 			}
+			if (!strcmp((char*)node->data.scalar.value, "Atomics")) {
+				atomics = 1;
+			}
 			item++;
 		}
 	}
+	uint64_t tid;
+	pthread_threadid_np(NULL, &tid);
+
+	if (atomics) {
+		fxLockMutex(&(agentCluster->mainMutex));
+	}
 
 	if (sloppy) {
-		fprintf(stderr, "### %s (sloppy): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag, async, message))
-			fprintf(stderr, "%s\n", message);
+#ifdef mxMultipleThreads
+		if (!fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag, async, message)) {
+			fxPrintClear(pool);
+			fprintf(stderr, "### %s (sloppy): %s\n", path + pool->testPathLength, message);
+		}
 		else
-			fprintf(stderr, "%s\n", message);
+			fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s (sloppy): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag, async, message);
+		fprintf(stderr, "%s\n", message);
+#endif
 	}
 	if (strict) {
-		fprintf(stderr, "### %s (strict): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message))
-			fprintf(stderr, "%s\n", message);
+#ifdef mxMultipleThreads
+		if (!fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message)) {
+			fxPrintClear(pool);
+			fprintf(stderr, "### %s (strict): %s\n", path + pool->testPathLength, message);
+		}
 		else
-			fprintf(stderr, "%s\n", message);
+			fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s (strict): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message);
+		fprintf(stderr, "%s\n", message);
+#endif
 	}
 	if (module) {
-		fprintf(stderr, "### %s (module): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, 0, async, message))
-			fprintf(stderr, "%s\n", message);
+#ifdef mxMultipleThreads
+		if (!fxRunTestCase(pool, context, path, 0, async, message)) {
+			fxPrintClear(pool);
+			fprintf(stderr, "### %s (module): %s\n", path + pool->testPathLength, message);
+		}
 		else
-			fprintf(stderr, "%s\n", message);
+			fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s (module): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, 0, async, message);
+		fprintf(stderr, "%s\n", message);
+#endif
 	}
+	if (atomics) {
+		fxUnlockMutex(&(agentCluster->mainMutex));
+	}
+
 	if (pending) {
-		fprintf(stderr, "### %s: SKIP\n", path + context->testPathLength);
-		fxCountResult(context, 0, 1);
+		fxCountResult(pool, context, 0, 1);
+#ifdef mxMultipleThreads
+		fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s: SKIP\n", path + pool->testPathLength);
+#endif
 	}
 bail:	
 	context->negative = NULL;
@@ -804,7 +960,7 @@ bail:
 		fclose(file);
 }
 
-int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message)
+int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message)
 {
 	xsCreation _creation = {
 		16 * 1024 * 1024, 	/* initialChunkSize */
@@ -821,22 +977,17 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 	xsCreation* creation = &_creation;
 	xsMachine* machine;
 	char buffer[C_PATH_MAX];
-	int success = 0;
-	fxInitializeSharedCluster();
-#ifdef mxTestSharedMachine
-	machine = xsCloneMachine(creation, context->shared, "xst", NULL);
-#else
+	int success = 0;	
 	machine = xsCreateMachine(creation, "xst", NULL);
-#endif
 	xsBeginHost(machine);
 	{
 		xsVars(1);
 		xsTry {
 			fxBuildAgent(the);
-			c_strcpy(buffer, context->harnessPath);
+			c_strcpy(buffer, pool->harnessPath);
 			c_strcat(buffer, "sta.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
-			c_strcpy(buffer, context->harnessPath);
+			c_strcpy(buffer, pool->harnessPath);
 			c_strcat(buffer, "assert.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 			if (async) {
@@ -850,14 +1001,14 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 				yaml_node_item_t* item = context->includes->data.sequence.items.start;
 				while (item < context->includes->data.sequence.items.top) {
 					yaml_node_t* node = yaml_document_get_node(context->document, *item);
-					c_strcpy(buffer, context->harnessPath);
+					c_strcpy(buffer, pool->harnessPath);
 					c_strcat(buffer, (char*)node->data.scalar.value);
 					fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 					item++;
 				}
 			}
 			mxPop();
-			gxException = &xsVar(0);
+			the->rejection = &xsVar(0);
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
@@ -901,8 +1052,8 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 	}
 	fx_agent_stop(machine);
 	xsDeleteMachine(machine);
-	fxTerminateSharedCluster();
-	fxCountResult(context, success, 0);
+
+	fxCountResult(pool, context, success, 0);
 	return success;
 }
 
@@ -926,35 +1077,32 @@ void fx_agent_set_safeBroadcast(xsMachine* the)
 
 void fx_agent_broadcast(xsMachine* the)
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	if (xsIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
 		xsArg(0) = xsGet(xsArg(0), xsID("buffer"));
 	}
-
-    fxLockMutex(&(gxAgentCluster.dataMutex));
-	gxAgentCluster.dataBuffer = xsMarshallAlien(xsArg(0));
+    fxLockMutex(&(agentCluster->dataMutex));
+	agentCluster->dataBuffer = xsMarshallAlien(xsArg(0));
 	if (mxArgc > 1)
-		gxAgentCluster.dataValue = xsToInteger(xsArg(1));
-#if mxWindows
-	WakeAllConditionVariable(&(gxAgentCluster.dataCondition));
-#else
-	pthread_cond_broadcast(&(gxAgentCluster.dataCondition));
-#endif
-    fxUnlockMutex(&(gxAgentCluster.dataMutex));
+		agentCluster->dataValue = xsToInteger(xsArg(1));
+	fxWakeAllCondition(&(agentCluster->dataCondition));
+    fxUnlockMutex(&(agentCluster->dataMutex));
     
-    fxLockMutex(&(gxAgentCluster.countMutex));
-    while (gxAgentCluster.count > 0)
-		fxSleepCondition(&(gxAgentCluster.countCondition), &(gxAgentCluster.countMutex));
-    fxUnlockMutex(&(gxAgentCluster.countMutex));
+    fxLockMutex(&(agentCluster->countMutex));
+    while (agentCluster->count > 0)
+		fxSleepCondition(&(agentCluster->countCondition), &(agentCluster->countMutex));
+    fxUnlockMutex(&(agentCluster->countMutex));
 }
 
 void fx_agent_getReport(xsMachine* the)
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	txAgentReport* report = C_NULL;
-    fxLockMutex(&(gxAgentCluster.reportMutex));
-	report = gxAgentCluster.firstReport;
+    fxLockMutex(&(agentCluster->reportMutex));
+	report = agentCluster->firstReport;
 	if (report)
-		gxAgentCluster.firstReport = report->next;
-    fxUnlockMutex(&(gxAgentCluster.reportMutex));
+		agentCluster->firstReport = report->next;
+    fxUnlockMutex(&(agentCluster->reportMutex));
     if (report) {
     	xsResult = xsString(report->message);
     	c_free(report);
@@ -981,35 +1129,37 @@ void fx_agent_monotonicNow(xsMachine* the)
 
 void fx_agent_receiveBroadcast(xsMachine* the)
 {
-    fxLockMutex(&(gxAgentCluster.dataMutex));
-	while (gxAgentCluster.dataBuffer == NULL)
-		fxSleepCondition(&(gxAgentCluster.dataCondition), &(gxAgentCluster.dataMutex));
-	xsResult = xsDemarshallAlien(gxAgentCluster.dataBuffer);
-    fxUnlockMutex(&(gxAgentCluster.dataMutex));
+ 	txAgentCluster* agentCluster = &gxAgentCluster;
+   fxLockMutex(&(agentCluster->dataMutex));
+	while (agentCluster->dataBuffer == NULL)
+		fxSleepCondition(&(agentCluster->dataCondition), &(agentCluster->dataMutex));
+	xsResult = xsDemarshallAlien(agentCluster->dataBuffer);
+    fxUnlockMutex(&(agentCluster->dataMutex));
 	
-    fxLockMutex(&(gxAgentCluster.countMutex));
-    gxAgentCluster.count--;
-    fxWakeCondition(&(gxAgentCluster.countCondition));
-    fxUnlockMutex(&(gxAgentCluster.countMutex));
+    fxLockMutex(&(agentCluster->countMutex));
+    agentCluster->count--;
+    fxWakeCondition(&(agentCluster->countCondition));
+    fxUnlockMutex(&(agentCluster->countMutex));
 		
-	xsCallFunction2(xsArg(0), xsGlobal, xsResult, xsInteger(gxAgentCluster.dataValue));
+	xsCallFunction2(xsArg(0), xsGlobal, xsResult, xsInteger(agentCluster->dataValue));
 }
 
 void fx_agent_report(xsMachine* the)
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	xsStringValue message = xsToString(xsArg(0));
 	xsIntegerValue messageLength = mxStringLength(message);
 	txAgentReport* report = c_malloc(sizeof(txAgentReport) + messageLength);
 	if (!report) xsUnknownError("not enough memory");
     report->next = C_NULL;
 	c_memcpy(&(report->message[0]), message, messageLength + 1);
-    fxLockMutex(&(gxAgentCluster.reportMutex));
-    if (gxAgentCluster.firstReport)
-		gxAgentCluster.lastReport->next = report;
+    fxLockMutex(&(agentCluster->reportMutex));
+    if (agentCluster->firstReport)
+		agentCluster->lastReport->next = report;
     else
-		gxAgentCluster.firstReport = report;
-	gxAgentCluster.lastReport = report;
-    fxUnlockMutex(&(gxAgentCluster.reportMutex));
+		agentCluster->firstReport = report;
+	agentCluster->lastReport = report;
+    fxUnlockMutex(&(agentCluster->reportMutex));
 }
 
 void fx_agent_sleep(xsMachine* the)
@@ -1026,15 +1176,16 @@ void fx_agent_start(xsMachine* the)
 {
 	xsStringValue script = xsToString(xsArg(0));
 	xsIntegerValue scriptLength = mxStringLength(script);
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	txAgent* agent = c_malloc(sizeof(txAgent) + scriptLength);
 	if (!agent) xsUnknownError("not enough memory");
 	c_memset(agent, 0, sizeof(txAgent));
-	if (gxAgentCluster.firstAgent)
-		gxAgentCluster.lastAgent->next = agent;
+	if (agentCluster->firstAgent)
+		agentCluster->lastAgent->next = agent;
 	else
-		gxAgentCluster.firstAgent = agent;
-	gxAgentCluster.lastAgent = agent;
-	gxAgentCluster.count++;
+		agentCluster->firstAgent = agent;
+	agentCluster->lastAgent = agent;
+	agentCluster->count++;
 	agent->scriptLength = scriptLength;
 	c_memcpy(&(agent->script[0]), script, scriptLength + 1);
 #if mxWindows
@@ -1113,29 +1264,32 @@ void* fx_agent_start_aux(void* it)
 
 void fx_agent_stop(xsMachine* the)
 {
-	txAgent* agent = gxAgentCluster.firstAgent;
-	while (agent) {
-		txAgent* next = agent->next;
-		if (agent->thread) {
-			#if mxWindows
-				WaitForSingleObject(agent->thread, INFINITE);
-				CloseHandle(agent->thread);
-			#else
-				pthread_join(agent->thread, NULL);
-			#endif
+	txAgentCluster* agentCluster = &gxAgentCluster;
+	txAgent* agent = agentCluster->firstAgent;
+	if (agent) {
+		while (agent) {
+			txAgent* next = agent->next;
+			if (agent->thread) {
+				#if mxWindows
+					WaitForSingleObject(agent->thread, INFINITE);
+					CloseHandle(agent->thread);
+				#else
+					pthread_join(agent->thread, NULL);
+				#endif
+			}
+			c_free(agent);
+			agent = next;
 		}
-		c_free(agent);
-		agent = next;
+		if (agentCluster->dataBuffer)
+			c_free(agentCluster->dataBuffer);
+		agentCluster->firstAgent = C_NULL;
+		agentCluster->lastAgent = C_NULL;
+		agentCluster->count = 0;
+		agentCluster->dataBuffer = C_NULL;
+		agentCluster->dataValue = 0;
+		agentCluster->firstReport = C_NULL;
+		agentCluster->lastReport = C_NULL;
 	}
-	if (gxAgentCluster.dataBuffer)
-		c_free(gxAgentCluster.dataBuffer);
-	gxAgentCluster.firstAgent = C_NULL;
-	gxAgentCluster.lastAgent = C_NULL;
-	gxAgentCluster.count = 0;
-	gxAgentCluster.dataBuffer = C_NULL;
-	gxAgentCluster.dataValue = 0;
-	gxAgentCluster.firstReport = C_NULL;
-	gxAgentCluster.lastReport = C_NULL;
 }
 
 void fx_createRealm(xsMachine* the)
@@ -1160,9 +1314,9 @@ void fx_detachArrayBuffer(xsMachine* the)
 void fx_done(xsMachine* the)
 {
 	if ((xsToInteger(xsArgc) > 0) && (xsTest(xsArg(0))))
-		*gxException = xsArg(0);
+		*((txSlot*)the->rejection) = xsArg(0);
 	else
-		*gxException = xsUndefined;
+		*((txSlot*)the->rejection) = xsUndefined;
 }
 
 void fx_gc(xsMachine* the)
@@ -1362,7 +1516,7 @@ void fxFulfillModuleFile(txMachine* the)
 
 void fxRejectModuleFile(txMachine* the)
 {
-	*gxException = xsArg(0);
+	*((txSlot*)the->rejection) = xsArg(0);
 }
 
 void fxRunModuleFile(txMachine* the, txString path)
@@ -1525,6 +1679,8 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 
 void fxConnect(txMachine* the)
 {
+#ifdef mxMultipleThreads
+#else
 	char name[256];
 	char* colon;
 	int port;
@@ -1629,6 +1785,7 @@ void fxConnect(txMachine* the)
 	return;
 bail:
 	fxDisconnect(the);
+#endif		
 }
 
 void fxDisconnect(txMachine* the)

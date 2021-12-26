@@ -1580,6 +1580,9 @@ void fxDeleteMachine(txMachine* the)
 	fxDeleteMachinePlatform(the);
 	fxFree(the);
 	c_free(the);
+
+	if (gxDefaults.terminateSharedCluster)
+		gxDefaults.terminateSharedCluster();
 }
 
 txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext)
