@@ -938,6 +938,7 @@ enum {
 
 	mxStringEscapeFlag = 1 << 0,
 	mxStringErrorFlag = 1 << 1,
+	mxStringLegacyFlag = 1 << 2,
 };
 
 /* xsScript.c */
@@ -1043,6 +1044,7 @@ extern void fxProgramNodeBind(void* it, void* param);
 extern void fxProgramNodeHoist(void* it, void* param); 
 extern void fxSpreadNodeBind(void* it, void* param);
 extern void fxStatementNodeHoist(void* it, void* param);
+extern void fxStringNodeHoist(void* it, void* param);
 extern void fxSuperNodeBind(void* it, void* param);
 extern void fxSwitchNodeBind(void* it, void* param); 
 extern void fxSwitchNodeHoist(void* it, void* param); 

@@ -796,6 +796,14 @@ void fxStatementNodeHoist(void* it, void* param)
 	fxNodeDispatchHoist(self->expression, param);
 }
 
+void fxStringNodeHoist(void* it, void* param)
+{
+	txStringNode* self = it;
+	txHoister* hoister = param;
+	if ((self->flags & mxStringLegacyFlag) && (hoister->scope->flags & mxStrictFlag))
+		self->flags |= mxStringErrorFlag;
+}
+
 void fxSwitchNodeHoist(void* it, void* param) 
 {
 	txSwitchNode* self = it;

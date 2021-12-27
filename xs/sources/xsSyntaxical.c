@@ -49,6 +49,7 @@ static void fxPushNodeStruct(txParser* parser, txInteger count, txToken token, t
 static void fxPushNodeList(txParser* parser, txInteger count);
 static void fxPushNULL(txParser* parser);
 static void fxPushNumberNode(txParser* parser, txNumber value, txInteger line);
+static void fxPushRawNode(txParser* parser, txInteger length, txString value, txInteger line);
 static void fxPushStringNode(txParser* parser, txInteger length, txString value, txInteger line);
 static void fxPushSymbol(txParser* parser, txSymbol* symbol);
 static void fxSwapNodes(txParser* parser);
@@ -649,6 +650,18 @@ void fxPushNumberNode(txParser* parser, txNumber value, txInteger line)
 	node->path = parser->path;
 	node->line = line;
 	node->flags = 0;
+	node->value = value;
+	fxPushNode(parser, (txNode*)node);
+}
+
+void fxPushRawNode(txParser* parser, txInteger length, txString value, txInteger line)
+{
+	txStringNode* node = fxNewParserChunk(parser, sizeof(txStringNode));
+	node->description = &gxTokenDescriptions[XS_TOKEN_STRING];
+	node->path = parser->path;
+	node->line = line;
+	node->flags = 0;
+	node->length = length;
 	node->value = value;
 	fxPushNode(parser, (txNode*)node);
 }
@@ -1994,7 +2007,7 @@ void fxCallExpression(txParser* parser)
 				if (chainFlag)
 					fxReportParserError(parser, parser->line, "invalid template");
 				fxPushStringNode(parser, parser->stringLength, parser->string, aLine);
-				fxPushStringNode(parser, parser->rawLength, parser->raw, aLine);
+				fxPushRawNode(parser, parser->rawLength, parser->raw, aLine);
 				fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE_MIDDLE, aLine);
 				fxGetNextToken(parser);
 				fxPushNodeList(parser, 1);
@@ -2223,7 +2236,7 @@ void fxLiteralExpression(txParser* parser, txUnsigned flag)
 	case XS_TOKEN_TEMPLATE:
 		fxPushNULL(parser);
 		fxPushStringNode(parser, parser->stringLength, parser->string, aLine);
-		fxPushStringNode(parser, parser->rawLength, parser->raw, aLine);
+		fxPushRawNode(parser, parser->rawLength, parser->raw, aLine);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE_MIDDLE, aLine);
 		fxGetNextToken(parser);
 		fxPushNodeList(parser, 1);
@@ -2778,7 +2791,7 @@ void fxNewExpression(txParser* parser)
 		}
 		else if (parser->token == XS_TOKEN_TEMPLATE) {
 			fxPushStringNode(parser, parser->stringLength, parser->string, aLine);
-			fxPushStringNode(parser, parser->rawLength, parser->raw, aLine);
+			fxPushRawNode(parser, parser->rawLength, parser->raw, aLine);
 			fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE_MIDDLE, aLine);
 			fxGetNextToken(parser);
 			fxPushNodeList(parser, 1);
@@ -2898,7 +2911,7 @@ void fxTemplateExpression(txParser* parser)
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
 	fxPushStringNode(parser, parser->stringLength, parser->string, aLine);
-	fxPushStringNode(parser, parser->rawLength, parser->raw, aLine);
+	fxPushRawNode(parser, parser->rawLength, parser->raw, aLine);
 	fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE_MIDDLE, aLine);
 	aCount++;
 	for (;;) {
@@ -2912,7 +2925,7 @@ void fxTemplateExpression(txParser* parser)
 		}
 		fxGetNextTokenTemplate(parser);
 		fxPushStringNode(parser, parser->stringLength, parser->string, aLine);
-		fxPushStringNode(parser, parser->rawLength, parser->raw, aLine);
+		fxPushRawNode(parser, parser->rawLength, parser->raw, aLine);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_TEMPLATE_MIDDLE, aLine);
 		aCount++;
 		if (parser->token == XS_TOKEN_TEMPLATE_TAIL) {
