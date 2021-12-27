@@ -255,7 +255,7 @@ These objects cannot be stored in flash memory:
 - RegExp
 - SharedArrayBuffer
 
-In the future XS may support storing additional built-in objects in flash memory. For detais on built-in obiects stored in flash memory see the [XS Linker Warnings](./XS%20linker%20warnings.md) document. 
+In the future XS may support storing additional built-in objects in flash memory. For details on built-in objects stored in flash memory see the [XS Linker Warnings](./XS%20linker%20warnings.md) document. 
 
 These objects cannot be stored in flash. However, they maybe used during preload as long as they do not need to be stored. For example, code that executes a part of preload can safely use `RegExp` as long as there are no regular expression instances remaining when the preload phase ends.
 
