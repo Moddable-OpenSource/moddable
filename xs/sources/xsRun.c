@@ -494,6 +494,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_GET_PRIVATE_2,
 		&&XS_CODE_GET_PROPERTY,
 		&&XS_CODE_GET_PROPERTY_AT,
+		&&XS_CODE_GET_RESULT,
 		&&XS_CODE_GET_SUPER,
 		&&XS_CODE_GET_SUPER_AT,
 		&&XS_CODE_GET_THIS,
@@ -557,7 +558,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_RESET_CLOSURE_2,
 		&&XS_CODE_RESET_LOCAL_1,
 		&&XS_CODE_RESET_LOCAL_2,
-		&&XS_CODE_RESULT,
 		&&XS_CODE_RETHROW,
 		&&XS_CODE_RETRIEVE_1,
 		&&XS_CODE_RETRIEVE_2,
@@ -581,6 +581,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_SET_PRIVATE_2,
 		&&XS_CODE_SET_PROPERTY,
 		&&XS_CODE_SET_PROPERTY_AT,
+		&&XS_CODE_SET_RESULT,
 		&&XS_CODE_SET_SUPER,
 		&&XS_CODE_SET_SUPER_AT,
 		&&XS_CODE_SET_THIS,
@@ -1244,7 +1245,12 @@ XS_CODE_JUMP:
 			*mxStack = *mxFrameFunction;
 			mxNextCode(1);
 			mxBreak;
-		mxCase(XS_CODE_RESULT)
+		mxCase(XS_CODE_GET_RESULT)
+			mxAllocStack(1);
+			*mxStack = *mxFrameResult;
+			mxNextCode(1);
+			mxBreak;
+		mxCase(XS_CODE_SET_RESULT)
 			*mxFrameResult = *(mxStack++);
 			mxNextCode(1);
 			mxBreak;

@@ -1261,13 +1261,13 @@ void fxTemplateNodeBind(void* it, void* param)
 void fxTryNodeBind(void* it, void* param) 
 {
 	txTryNode* self = it;
-	fxBinderPushVariables(param, 2);
+	fxBinderPushVariables(param, 3);
 	fxNodeDispatchBind(self->tryBlock, param);
 	if (self->catchBlock)
 		fxNodeDispatchBind(self->catchBlock, param);
 	if (self->finallyBlock)
 		fxNodeDispatchBind(self->finallyBlock, param);
-	fxBinderPopVariables(param, 2);
+	fxBinderPopVariables(param, 3);
 }
 
 void fxWithNodeBind(void* it, void* param) 
