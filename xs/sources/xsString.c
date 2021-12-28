@@ -205,8 +205,24 @@ void fxStringAccessorSetter(txMachine* the)
 
 txBoolean fxStringDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask)
 {
-	if ((id == mxID(_length)) || (!id && (mxStringInstanceLength(instance) > index)))
-		return 0;
+	if (id == mxID(_length)) {
+		if ((mask & XS_DONT_DELETE_FLAG) && !(slot->flag & XS_DONT_DELETE_FLAG))
+			return 0;
+		if ((mask & XS_DONT_ENUM_FLAG) && !(slot->flag & XS_DONT_ENUM_FLAG))
+			return 0;
+		if ((mask & XS_DONT_SET_FLAG) && !(slot->flag & XS_DONT_SET_FLAG))
+			return 0;
+		return 1;
+	}
+	if (!id && (mxStringInstanceLength(instance) > index)) {
+		if ((mask & XS_DONT_DELETE_FLAG) && !(slot->flag & XS_DONT_DELETE_FLAG))
+			return 0;
+		if ((mask & XS_DONT_ENUM_FLAG) && (slot->flag & XS_DONT_ENUM_FLAG))
+			return 0;
+		if ((mask & XS_DONT_SET_FLAG) && !(slot->flag & XS_DONT_SET_FLAG))
+			return 0;
+		return 1;
+	}
 	return fxOrdinaryDefineOwnProperty(the, instance, id, index, slot, mask);
 }
 
