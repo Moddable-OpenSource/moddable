@@ -3215,7 +3215,7 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxScopeCodeStore(self->scope, param);
 		fxCoderAddByte(coder, -1, XS_CODE_POP);
 	}
-	if ((self->flags & (mxArrowFlag | mxBaseFlag | mxDerivedFlag | mxGeneratorFlag | mxStrictFlag)) == 0) {
+	if ((self->flags & (mxArrowFlag | mxBaseFlag | mxDerivedFlag | mxGeneratorFlag | mxStrictFlag | mxMethodFlag)) == 0) {
 		fxCoderAddByte(param, 1, XS_CODE_DUB);
 		fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
 		fxCoderAddSymbol(param, -2, XS_CODE_NEW_PROPERTY, coder->parser->callerSymbol);
