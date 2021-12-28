@@ -1290,6 +1290,7 @@ mxExport void fx_RegExp(txMachine* the);
 mxExport void fx_RegExp_prototype_get_dotAll(txMachine* the);
 mxExport void fx_RegExp_prototype_get_flags(txMachine* the);
 mxExport void fx_RegExp_prototype_get_global(txMachine* the);
+mxExport void fx_RegExp_prototype_get_hasIndices(txMachine* the);
 mxExport void fx_RegExp_prototype_get_ignoreCase(txMachine* the);
 mxExport void fx_RegExp_prototype_get_multiline(txMachine* the);
 mxExport void fx_RegExp_prototype_get_source(txMachine* the);

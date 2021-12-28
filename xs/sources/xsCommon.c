@@ -1403,6 +1403,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"grow",
 	"growable",
 	"has",
+	"hasIndices",
 	"hasInstance",
 	"hasOwnProperty",
 	"hypot",

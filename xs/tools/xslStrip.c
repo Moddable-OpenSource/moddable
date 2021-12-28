@@ -377,6 +377,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		else {
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_dotAll);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_hasIndices);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_ignoreCase);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_multiline);

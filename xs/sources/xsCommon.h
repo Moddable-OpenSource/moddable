@@ -461,6 +461,7 @@ enum {
 	XS_REGEXP_S = 1 << 4,
 	XS_REGEXP_U = 1 << 5,
 	XS_REGEXP_Y = 1 << 6,
+	XS_REGEXP_D = 1 << 7,
 };
 mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString errorBuffer, txInteger errorSize);
 mxExport void fxDeleteRegExp(void* the, txInteger* code, txInteger* data);
@@ -886,6 +887,7 @@ enum {
 	_grow,
 	_growable,
 	_has,
+	_hasIndices,
 	_hasInstance,
 	_hasOwnProperty,
 	_hypot_,

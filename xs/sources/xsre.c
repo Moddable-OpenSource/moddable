@@ -1645,6 +1645,8 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 				parser->flags |= XS_REGEXP_U;
 			else if ((c == 'y') && !(parser->flags & XS_REGEXP_Y))
 				parser->flags |= XS_REGEXP_Y;
+			else if ((c == 'd') && !(parser->flags & XS_REGEXP_D))
+				parser->flags |= XS_REGEXP_D;
 			else
 				break;
 		}

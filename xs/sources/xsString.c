@@ -212,6 +212,8 @@ txBoolean fxStringDefineOwnProperty(txMachine* the, txSlot* instance, txID id, t
 			return 0;
 		if ((mask & XS_DONT_SET_FLAG) && !(slot->flag & XS_DONT_SET_FLAG))
 			return 0;
+		if (slot->kind != XS_UNINITIALIZED_KIND)
+			return 0;
 		return 1;
 	}
 	if (!id && (mxStringInstanceLength(instance) > index)) {
@@ -220,6 +222,8 @@ txBoolean fxStringDefineOwnProperty(txMachine* the, txSlot* instance, txID id, t
 		if ((mask & XS_DONT_ENUM_FLAG) && (slot->flag & XS_DONT_ENUM_FLAG))
 			return 0;
 		if ((mask & XS_DONT_SET_FLAG) && !(slot->flag & XS_DONT_SET_FLAG))
+			return 0;
+		if (slot->kind != XS_UNINITIALIZED_KIND)
 			return 0;
 		return 1;
 	}
