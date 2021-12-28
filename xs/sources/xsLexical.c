@@ -39,6 +39,7 @@
 
 static txString fxGetNextDigits(txParser* parser, txString (*f)(txParser*, txString, txString), txString p, txString q, int empty);
 static txString fxGetNextDigitsB(txParser* parser, txString p, txString q);
+static txString fxGetNextDigitsD(txParser* parser, txString p, txString q, int* base);
 static txString fxGetNextDigitsE(txParser* parser, txString p, txString q);
 static txString fxGetNextDigitsO(txParser* parser, txString p, txString q);
 static txString fxGetNextDigitsX(txParser* parser, txString p, txString q);
@@ -196,6 +197,20 @@ txString fxGetNextDigitsB(txParser* parser, txString p, txString q)
 	int c = parser->character;
 	while (('0' <= c) && (c <= '1')) {
 		if (p < q) *p++ = (char)c;
+		fxGetNextCharacter(parser);
+		c = parser->character;
+	}
+	return p;
+}
+
+txString fxGetNextDigitsD(txParser* parser, txString p, txString q, int* base)
+{
+	int c = parser->character;
+	*base = 8;
+	while (('0' <= c) && (c <= '9')) {
+		if (p < q) *p++ = (char)c;
+		if (('8' <= c) && (c <= '9'))
+			*base = 10;
 		fxGetNextCharacter(parser);
 		c = parser->character;
 	}
@@ -424,7 +439,7 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
 	if (legacy) {
-		p = fxGetNextDigitsO(parser, p, q);
+		p = fxGetNextDigitsD(parser, p, q, &legacy);
 		if (parser->character == '_')
 			fxReportParserError(parser, parser->line, "invalid number");			
 		if (parser->character == 'n')
@@ -432,6 +447,7 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	}
 	else {
 		fxGetNextCharacter(parser);
+		legacy = 8;
 		p = fxGetNextDigits(parser, fxGetNextDigitsO, p, q, 1);
 	}
 	c = parser->character;
@@ -453,7 +469,7 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	else {	
 		txNumber n = 0;
 		while ((c = *q++))
-			n = (n * 8) + (c - '0');
+			n = (n * legacy) + (c - '0');
 		fxGetNextNumber(parser, n);
 	}
 }
@@ -918,7 +934,7 @@ void fxGetNextTokenAux(txParser* parser)
 			else if ((c == 'x') || (c == 'X')) {
 				fxGetNextNumberX(parser);
 			}
-			else if (('0' <= c) && (c <= '7')) {
+			else if (('0' <= c) && (c <= '9')) {
 				if ((parser->flags & mxStrictFlag))
 					fxReportParserError(parser, parser->line, "octal number (strict mode)");			
 				fxGetNextNumberO(parser, c, 1);
