@@ -53,6 +53,7 @@ static void fxRunExtends(txMachine* the);
 static void fxRunForOf(txMachine* the);
 static txBoolean fxRunHas(txMachine* the, txSlot* instance, txID id, txIndex index);
 static void fxRunIn(txMachine* the);
+static void fxRunInstantiate(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
 static txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b);
@@ -2511,7 +2512,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_INSTANTIATE)
 			mxSaveState;
-			fxNewHostInstance(the);
+			fxRunInstantiate(the);
 			mxRestoreState;
 			mxNextCode(1);
 			mxBreak;
@@ -4404,6 +4405,22 @@ void fxRunInstanceOf(txMachine* the)
 	mxPullSlot(left);
 	fxEndHost(the);
 	mxPop();
+}
+
+void fxRunInstantiate(txMachine* the)
+{
+	if (the->stack->kind == XS_NULL_KIND) {
+		mxPop();
+		fxNewInstance(the);
+	}
+	else if (the->stack->kind == XS_REFERENCE_KIND) {
+		fxNewHostInstance(the);
+	}
+	else {
+		mxPop();
+		mxPush(mxObjectPrototype);
+		fxNewObjectInstance(the);
+	}
 }
 
 void fxRunProxy(txMachine* the, txSlot* instance)
