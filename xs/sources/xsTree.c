@@ -1751,6 +1751,8 @@ void fxNodePrintTree(void* it, void* param)
 				fprintf(stderr, " derived");
 			if (node->flags & mxEvalFlag)
 				fprintf(stderr, " eval");
+			if (node->flags & mxFieldFlag)
+				fprintf(stderr, " field");
 			if (node->flags & mxTargetFlag)
 				fprintf(stderr, " function");
 			if (node->flags & mxGeneratorFlag)
