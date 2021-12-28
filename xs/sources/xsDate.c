@@ -1266,10 +1266,11 @@ txNumber fxDateClip(txNumber value)
 		value = C_NAN;
 	else if (c_fabs(value) > 8.64e15)
 		value = C_NAN;
-	else if (value == 0)
-		value = 0;
-	else
+	else {
 		value = c_trunc(value);
+		if (value == 0)
+			value = 0;
+	}
 	return value;	
 }
 
