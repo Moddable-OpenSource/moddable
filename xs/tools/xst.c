@@ -433,11 +433,28 @@ int main262(int argc, char* argv[])
 		int seconds = to.tv_sec - from.tv_sec;
 		int minutes = seconds / 60;
 		int hours = minutes / 60;
+		txResult* result = pool.current;
+		int value;
+		
 	#ifdef mxMultipleThreads	
 		fxPrintClear(&pool);
 	#endif
 		fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
-		fxPrintResult(&pool, pool.current, 0);
+		
+		if (result->testCount) {
+			value = (10000 * result->successCount) / result->testCount;
+			fprintf(stderr, "# %d.%.2d%%", value / 100, value % 100);
+			if (result->pendingCount) {
+				if (result->successCount + result->pendingCount == result->testCount)
+					value = 10000 - value;
+				else
+					value = (10000 * result->pendingCount) / result->testCount;
+				fprintf(stderr, " (%d.%.2d%%)", value / 100, value % 100);
+			}
+		}
+		else
+			fprintf(stderr, "# 0.00%%");
+		fxPrintResult(&pool, result, 0);
 	}
 	return error;
 }
@@ -534,11 +551,7 @@ void fxPrintResult(txPool* pool, txResult* result, int c)
 		fprintf(stderr, "    ");
 		i++;
 	}
-	if (result->testCount > result->pendingCount)
-		fprintf(stderr, "%3d%%", 100 * result->successCount / (result->testCount - result->pendingCount));
-	else
-		fprintf(stderr, "  0%%");
-	fprintf(stderr, " %d/%d", result->successCount, result->testCount - result->pendingCount);
+	fprintf(stderr, " %d/%d", result->successCount, result->testCount);
 	if (result->pendingCount)
 		fprintf(stderr, " (%d)", result->pendingCount);
 	fprintf(stderr, " %s\n", result->path);
