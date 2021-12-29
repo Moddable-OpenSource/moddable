@@ -87,10 +87,11 @@
 #endif
 #define mxMachinePlatform \
 	txSocket connection; \
-	void* host; \
 	void* waiterCondition; \
 	void* waiterData; \
 	txMachine* waiterLink; \
+	int promiseJobs; \
+	void* timerJobs; \
 	int abortStatus; \
 	void* rejection;
 
