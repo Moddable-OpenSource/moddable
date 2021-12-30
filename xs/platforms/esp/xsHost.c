@@ -42,6 +42,7 @@
 #include "xsScript.h"
 
 #if ESP32
+	#include "sys/time.h"
 	#define rtc_timeval timeval
 	#define rtctime_gettimeofday(a) gettimeofday(a, NULL)
 

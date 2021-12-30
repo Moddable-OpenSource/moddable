@@ -110,7 +110,7 @@ void xs_flash_read(xsMachine *the)
 		xsVar(0) = xsNewHostFunction(flashCloseBuffer, 0);
 		xsmcSet(xsResult, xsID_close, xsVar(0));
 		xsmcSetInteger(xsVar(0), byteLength);
-		xsDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
+		xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 
 	}
 	else {

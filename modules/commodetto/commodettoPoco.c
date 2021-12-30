@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -17,6 +17,10 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
+ /*
+ 	validate source rectangles on all bitmaps (not just drawBitmap)
+*/
 
 #include "xsPlatform.h"
 #include "xsmc.h"
@@ -410,20 +414,25 @@ void xs_poco_drawBitmap(xsMachine *the)
 	x = (PocoCoordinate)xsmcToInteger(xsArg(1)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->yOrigin;
 
-	sx = 0, sy = 0;
+	if (argc <= 3) {
+		sx = 0, sy = 0;
 #if (90 == kPocoRotation) || (270 == kPocoRotation)
-	sw = bits.height, sh = bits.width;
+		sw = bits.height, sh = bits.width;
 #else
-	sw = bits.width, sh = bits.height;
+		sw = bits.width, sh = bits.height;
 #endif
-
-	if (argc > 3) {
-		sx = (PocoCoordinate)xsmcToInteger(xsArg(3));
-		sy = (PocoCoordinate)xsmcToInteger(xsArg(4));
-		if (argc > 5) {
-			sw = (PocoDimension)xsmcToInteger(xsArg(5));
-			sh = (PocoDimension)xsmcToInteger(xsArg(6));
-		}
+	}
+	else {
+		sx = (PocoDimension)xsmcToInteger(xsArg(3));
+		sy = (PocoDimension)xsmcToInteger(xsArg(4));
+		sw = (PocoDimension)xsmcToInteger(xsArg(5));
+		sh = (PocoDimension)xsmcToInteger(xsArg(6));
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
 	}
 
 	PocoBitmapDraw(poco, &bits, x, y, sx, sy, sw, sh);
@@ -463,16 +472,26 @@ void xs_poco_drawMonochrome(xsMachine *the)
 	x = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(4)) + poco->yOrigin;
 
-	sx = 0, sy = 0;
-	sw = bits.width, sh = bits.height;
-
-	if (argc > 5) {
+	if (argc == 5) {
+		sx = 0, sy = 0;
+#if (90 == kPocoRotation) || (270 == kPocoRotation)
+		sw = bits.height, sh = bits.width;
+#else
+		sw = bits.width, sh = bits.height;
+#endif
+	}
+	else {
 		sx = (PocoDimension)xsmcToInteger(xsArg(5));
 		sy = (PocoDimension)xsmcToInteger(xsArg(6));
-		if (argc > 7) {
-			sw = (PocoDimension)xsmcToInteger(xsArg(7));
-			sh = (PocoDimension)xsmcToInteger(xsArg(8));
-		}
+		sw = (PocoDimension)xsmcToInteger(xsArg(7));
+		sh = (PocoDimension)xsmcToInteger(xsArg(8));
+
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
 	}
 
 	PocoMonochromeBitmapDraw(poco, &bits, mode, fgColor, bgColor, x, y, sx, sy, sw, sh);
@@ -504,23 +523,29 @@ void xs_poco_drawGray(xsMachine *the)
 	x = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->yOrigin;
 
-	sx = 0, sy = 0;
-#if (90 == kPocoRotation) || (270 == kPocoRotation)
-	sw = bits.height, sh = bits.width;
-#else
-	sw = bits.width, sh = bits.height;
-#endif
-
-	if (argc > 4) {
+	if (argc <= 4) {
+		sx = 0, sy = 0;
+	#if (90 == kPocoRotation) || (270 == kPocoRotation)
+		sw = bits.height, sh = bits.width;
+	#else
+		sw = bits.width, sh = bits.height;
+	#endif
+	}
+	else {
 		sx = (PocoDimension)xsmcToInteger(xsArg(4));
 		sy = (PocoDimension)xsmcToInteger(xsArg(5));
-		if (argc > 6) {
-			sw = (PocoDimension)xsmcToInteger(xsArg(6));
-			sh = (PocoDimension)xsmcToInteger(xsArg(7));
+		sw = (PocoDimension)xsmcToInteger(xsArg(6));
+		sh = (PocoDimension)xsmcToInteger(xsArg(7));
 
-			if (argc > 8)
-				blend = (uint8_t)xsmcToInteger(xsArg(8));
-		}
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
+
+		if (argc > 8)
+			blend = (uint8_t)xsmcToInteger(xsArg(8));
 	}
 
 	PocoGrayBitmapDraw(poco, &bits, color, blend, x, y, sx, sy, sw, sh);

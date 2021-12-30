@@ -28,6 +28,11 @@
 	https://github.com/Kinoma/kinomajs/blob/master/extensions/fsZip/sources/FskZip.c
 */
 
+
+#if defined(__clang__)
+	#pragma clang diagnostic ignored "-Waddress-of-packed-member"
+#endif
+
 #pragma pack(2)
 
 #if mxWindows

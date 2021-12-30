@@ -330,9 +330,9 @@ void modInstallTextDecoder(xsMachine *the)
 
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_decode, 1);
 	xsmcSet(xsVar(kPrototype), xsID("decode"), xsVar(kScratch));
-	xsDefine(xsVar(kPrototype), xsID("encoding"), xsNewHostFunction(xs_textdecoder_get_encoding, 0), xsIsGetter);
-	xsDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0), xsIsGetter);
-	xsDefine(xsVar(kPrototype), xsID("fatal"), xsNewHostFunction(xs_textdecoder_get_fatal, 0), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("encoding"), xsNewHostFunction(xs_textdecoder_get_encoding, 0), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("fatal"), xsNewHostFunction(xs_textdecoder_get_fatal, 0), xsIsGetter);
 
 	xsEndHost(the);
 }
