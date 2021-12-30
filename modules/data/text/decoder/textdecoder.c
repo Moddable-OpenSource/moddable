@@ -51,7 +51,7 @@ void xs_textdecoder(xsMachine *the)
 	int argc = xsmcArgc;
 
 	if (argc && c_strcmp(xsmcToString(xsArg(0)), "utf-8"))
-		xsRangeError("unsuppoorted encoding");
+		xsRangeError("unsupported encoding");
 
 #if !mxNoFunctionLength
 	xsmcGet(xsResult, xsTarget, xsID("prototype"));
@@ -103,7 +103,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
 	srcEnd = src + srcLength;
 
-	td = xsmcGetHostChunk(xsThis);
+	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	buffer = td->buffer;
 	bufferLength = td->bufferLength;
 
@@ -184,7 +184,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	srcEnd = src + srcLength;
 	src += srcOffset;
 
-	td = xsmcGetHostChunk(xsThis);
+	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	buffer = td->buffer;
 	bufferLength = td->bufferLength;
 
@@ -304,13 +304,13 @@ void xs_textdecoder_get_encoding(xsMachine *the)
 
 void xs_textdecoder_get_ignoreBOM(xsMachine *the)
 {
-	modTextDecoder td = xsmcGetHostChunk(xsThis);
+	modTextDecoder td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	xsmcSetBoolean(xsResult, td->ignoreBOM);
 }
 
 void xs_textdecoder_get_fatal(xsMachine *the)
 {
-	modTextDecoder td = xsmcGetHostChunk(xsThis);
+	modTextDecoder td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	xsmcSetBoolean(xsResult, td->fatal);
 }
 
@@ -324,15 +324,18 @@ void modInstallTextDecoder(xsMachine *the)
 	xsBeginHost(the);
 	xsmcVars(3);
 
-	xsVar(kPrototype) = xsNewHostObject(NULL);
+	xsVar(kPrototype) = xsNewHostObject(xs_textdecoder_destructor);
 	xsVar(kConstructor) = xsNewHostConstructor(xs_textdecoder, 2, xsVar(kPrototype));
 	xsmcSet(xsGlobal, xsID("TextDecoder"), xsVar(kConstructor));
 
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_decode, 1);
 	xsmcSet(xsVar(kPrototype), xsID("decode"), xsVar(kScratch));
-	xsmcDefine(xsVar(kPrototype), xsID("encoding"), xsNewHostFunction(xs_textdecoder_get_encoding, 0), xsIsGetter);
-	xsmcDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0), xsIsGetter);
-	xsmcDefine(xsVar(kPrototype), xsID("fatal"), xsNewHostFunction(xs_textdecoder_get_fatal, 0), xsIsGetter);
+	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_encoding, 0);
+	xsmcDefine(xsVar(kPrototype), xsID("encoding"), xsVar(kScratch), xsIsGetter);
+	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0);
+	xsmcDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsVar(kScratch), xsIsGetter);
+	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_fatal, 0);
+	xsmcDefine(xsVar(kPrototype), xsID("fatal"), xsVar(kScratch), xsIsGetter);
 
 	xsEndHost(the);
 }
