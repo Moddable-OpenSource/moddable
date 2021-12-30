@@ -528,28 +528,34 @@ void fx_Function_prototype_call(txMachine* the)
 
 void fx_Function_prototype_hasInstance(txMachine* the)
 {	
+	txSlot* function;
+	txSlot* slot;
 	txSlot* instance;
 	txSlot* prototype;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
+	if (!fxIsCallable(the, mxThis))
+		return;
+	function = fxToInstance(the, mxThis);
+	if (!function)
+		return;
+	slot = mxFunctionInstanceHome(function)->next;
+	if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == mxID(_boundFunction))) {
+		if (!fxIsCallable(the, slot))
+			return;
+		function = fxToInstance(the, slot);
+		if (!function)
+			return;
+	}
 	if (mxArgc == 0)
 		return;
 	instance = fxGetInstance(the, mxArgv(0));
 	if (!instance)
 		return;
-	mxPushSlot(mxThis);
+	mxPushReference(function);
 	mxGetID(mxID(_prototype));
 	prototype = fxGetInstance(the, the->stack);
 	mxPop();
-	if (!prototype) {
-		txSlot* slot = mxFunctionInstanceHome(mxThis->value.reference)->next;
-		if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == mxID(_boundFunction))) {
-			mxPushSlot(slot);
-			mxGetID(mxID(_prototype));
-			prototype = fxGetInstance(the, the->stack);
-			mxPop();
-		}
-	}
 	if (!prototype)
 		mxTypeError("prototype is no object");
 	if (prototype->ID) {
