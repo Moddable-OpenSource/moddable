@@ -1923,6 +1923,8 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 		else
 			l++;
 	}
+	if (m > l)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	if (flag) {
 		mxPushUndefined();
 		the->stack->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, l, 1));
