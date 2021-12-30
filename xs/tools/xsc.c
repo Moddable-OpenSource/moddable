@@ -47,7 +47,6 @@ typedef struct {
 	txInteger index;
 } txFunctionStream;
 
-static txString fxCombinePath(txParser* parser, txString theBase, txString theName);
 static txBoolean fxIsCIdentifier(txString string);
 static txString fxRealDirectoryPath(txParser* parser, txString path);
 static txString fxRealFilePath(txParser* parser, txString path);
@@ -100,34 +99,6 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 }
 
 #endif
-
-txString fxCombinePath(txParser* parser, txString base, txString name)
-{
-	txSize baseLength, nameLength;
-	txString path;
-	txString separator ;
-#if mxWindows
-	separator = name;
-	while (*separator) {
-		if (*separator == '/')
-			*separator = mxSeparator;
-		separator++;
-	}
-#endif
-	separator = strrchr(base, mxSeparator);
-	if (separator) {
-		separator++;
-		baseLength = mxPtrDiff(separator - base);
-	}
-	else
-		baseLength = 0;
-	nameLength = mxStringLength(name);
-	path = fxNewParserChunk(parser, baseLength + nameLength + 1);
-	if (baseLength)
-		c_memcpy(path, base, baseLength);
-	c_memcpy(path + baseLength, name, nameLength + 1);
-	return fxRealFilePath(parser, path);
-}
 
 txBoolean fxIsCIdentifier(txString string)
 {
@@ -369,7 +340,7 @@ int main(int argc, char* argv[])
 		fclose(file);
 		file = NULL;
 		if (name) {
-			map = fxCombinePath(parser, input, name);
+			map = fxRealFilePath(parser, fxCombinePath(parser, input, name));
 			parser->path = fxNewParserSymbol(parser, map);
 			file = fopen(map, "r");
 			mxParserThrowElse(file);
@@ -377,7 +348,7 @@ int main(int argc, char* argv[])
 			fclose(file);
 			file = NULL;
 			if (parser->errorCount == 0) {
-				map = fxCombinePath(parser, map, name);
+				map = fxRealFilePath(parser, fxCombinePath(parser, map, name));
 				parser->path = fxNewParserSymbol(parser, map);
 			}
 		}

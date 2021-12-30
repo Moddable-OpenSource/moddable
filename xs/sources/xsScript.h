@@ -944,6 +944,7 @@ enum {
 /* xsScript.c */
 
 extern void fxCheckParserStack(txParser* parser, txInteger line);
+extern txString fxCombinePath(txParser* parser, txString base, txString name);
 extern void fxDisposeParserChunks(txParser* parser);
 extern void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSize symbolModulo);
 extern void* fxNewParserChunk(txParser* parser, txSize size);

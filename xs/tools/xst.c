@@ -1649,20 +1649,15 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 		fclose(file);
 		file = NULL;
 		if (name) {
-			txString slash = c_strrchr(path, mxSeparator);
-			if (slash) *slash = 0;
-			c_strcat(path, name);
-			mxParserThrowElse(c_realpath(path, map));
+			mxParserThrowElse(c_realpath(fxCombinePath(parser, path, name), map));
 			parser->path = fxNewParserSymbol(parser, map);
 			file = fopen(map, "r");
 			mxParserThrowElse(file);
 			fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
 			fclose(file);
 			file = NULL;
-			if (parser->errorCount == 0) {
-				if (slash) *slash = 0;
-				c_strcat(path, name);
-				mxParserThrowElse(c_realpath(path, map));
+			if ((parser->errorCount == 0) && name) {
+				mxParserThrowElse(c_realpath(fxCombinePath(parser, map, name), map));
 				parser->path = fxNewParserSymbol(parser, map);
 			}
 		}
