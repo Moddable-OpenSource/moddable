@@ -18,7 +18,7 @@
  *
  */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 import {Digest} from "crypt";
 
 export default class ChecksumOut {
