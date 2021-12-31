@@ -264,7 +264,7 @@ txBoolean fxDeleteIndexProperty(txMachine* the, txSlot* array, txIndex index)
 		if (result < limit) {
 			if (result->flag & XS_DONT_DELETE_FLAG)
 				return 0;
-			index = result - address;
+			index = (txIndex)(result - address);
 			size--;
 			if (size > 0) {
 				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));

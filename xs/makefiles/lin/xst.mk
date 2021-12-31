@@ -62,7 +62,7 @@ C_OPTIONS += \
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -O3
+	C_OPTIONS += -DmxMultipleThreads=1 -O3
 endif
 
 LIBRARIES = -ldl -lm -lpthread -latomic

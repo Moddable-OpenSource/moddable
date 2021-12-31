@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
  		fxBuildAgent(machine);
 		xsBeginHost(machine);
 		{
-			xsVars(1);
+			xsVars(2);
 			xsTry {
 				xsVar(0) = xsUndefined;
 				the->rejection = &xsVar(0);
@@ -306,8 +306,9 @@ int main(int argc, char* argv[])
 					if (argv[argi][0] == '-')
 						continue;
 					if (option == 1) {
+						xsVar(1) = xsGet(xsGlobal, xsID("$262"));
 						xsResult = xsString(argv[argi]);
-						xsCall1(xsGet(xsGlobal, xsID("$262")), xsID("evalScript"), xsResult);
+						xsCall1(xsVar(1), xsID("evalScript"), xsResult);
 					}
 					else {	
 						if (!c_realpath(argv[argi], path))
@@ -896,9 +897,6 @@ void fxRunContext(txPool* pool, txContext* context)
 			item++;
 		}
 	}
-	uint64_t tid;
-	pthread_threadid_np(NULL, &tid);
-
 	if (atomics) {
 		fxLockMutex(&(agentCluster->mainMutex));
 	}

@@ -304,7 +304,7 @@ void fx_Math_idiv(txMachine* the)
 	else {
 		mxResult->kind = XS_INTEGER_KIND;
 #if mxIntegerDivideOverflowException
-		if ((x == -2147483648L) && (y == -1))
+		if ((x == (txInteger)0x80000000) && (y == -1))
 			mxResult->value.integer = x;
 		else
 #endif
@@ -322,7 +322,7 @@ void fx_Math_idivmod(txMachine* the)
 	}
 	else {
 #if mxIntegerDivideOverflowException
-		if ((x == -2147483648L) && (y == -1)) {
+		if ((x == (txInteger)0x80000000) && (y == -1)) {
 			mxPushInteger(x);
 			mxPushInteger(0);
 		}
@@ -347,7 +347,7 @@ void fx_Math_imod(txMachine* the)
 	else {
 		mxResult->kind = XS_INTEGER_KIND;
 #if mxIntegerDivideOverflowException
-		if ((x == -2147483648L) && (y == -1))
+		if ((x == (txInteger)0x80000000) && (y == -1))
 			mxResult->value.integer = 0;
 		else
 #endif
@@ -396,7 +396,7 @@ void fx_Math_irem(txMachine* the)
 	else {
 		mxResult->kind = XS_INTEGER_KIND;
 #if mxIntegerDivideOverflowException
-		if ((x == -2147483648L) && (y == -1))
+		if ((x == (txInteger)0x80000000) && (y == -1))
 			mxResult->value.integer = 0;
 		else
 #endif

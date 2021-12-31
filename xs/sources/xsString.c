@@ -156,10 +156,9 @@ void fxBuildString(txMachine* the)
 txSlot* fxNewStringInstance(txMachine* the)
 {
 	txSlot* instance;
-	txSlot* property;
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
-	property = fxNextSlotProperty(the, instance, &mxEmptyString, XS_STRING_BEHAVIOR, XS_INTERNAL_FLAG);
+	fxNextSlotProperty(the, instance, &mxEmptyString, XS_STRING_BEHAVIOR, XS_INTERNAL_FLAG);
 	return instance;
 }
 

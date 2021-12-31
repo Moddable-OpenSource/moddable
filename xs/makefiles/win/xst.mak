@@ -67,6 +67,7 @@ C_OPTIONS = $(C_OPTIONS) \
 	/Z7
 !ELSE
 C_OPTIONS = $(C_OPTIONS) \
+	/D mxMultipleThreads=1 \
 	/D NDEBUG \
 	/Fp$(TMP_DIR_RLS)\ \
 	/O2 \

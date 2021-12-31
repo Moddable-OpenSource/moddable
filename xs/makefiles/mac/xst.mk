@@ -64,7 +64,7 @@ endif
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -DmxMultipleThreads=1 -g -O3
+	C_OPTIONS += -DmxMultipleThreads=1 -O3
 endif
 
 LIBRARIES = -framework CoreServices
