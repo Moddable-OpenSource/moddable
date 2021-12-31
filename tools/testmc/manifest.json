@@ -53,6 +53,7 @@
 		],
 		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
 		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
+		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
 		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
 		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
 		"commodetto/checksumOut": "./commodettoChecksumOut"
