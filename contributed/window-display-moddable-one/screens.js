@@ -400,7 +400,7 @@ class CrosshairBehavior extends Behavior {
     	let y = content.y+36;
 
         this.pocoOff.begin();
-        this.pocoOff.drawBitmap(this.backgroundGraphic, 0, 0, x, y, 1, 1);
+        this.pocoOff.drawBitmap(this.backgroundGraphic, -x, -y);
         this.pocoOff.end();
 
         let buff = this.pocoOff.pixelsOut.buffer;
