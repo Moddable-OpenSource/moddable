@@ -160,7 +160,6 @@ txInteger fxCheckAliases(txMachine* the)
 
 void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag) 
 {
-	txLinker* linker = xsGetContext(the);
 	txAliasIDLink* link = list->first;
 	if (flag > 1)
 		fprintf(stderr, "### error");
@@ -180,17 +179,7 @@ void fxCheckAliasesError(txMachine* the, txAliasIDList* list, txFlag flag)
 		if (link->id != XS_NO_ID) {
 			char* string = fxGetKeyName(the, link->id);
 			if (string) {
-				if (link->flag == XSL_MODULE_FLAG) {
-					char* dot = c_strrchr(string, '.');
-					if (dot) {
-						*dot = 0;
-						fprintf(stderr, "\"%s\"", string + linker->baseLength);
-						*dot = '.';
-					}
-					else
-						fprintf(stderr, "%s", string);
-				}
-				else if (link->flag == XSL_GLOBAL_FLAG) {
+				if (link->flag == XSL_GLOBAL_FLAG) {
 					fprintf(stderr, "globalThis."); 
 					fprintf(stderr, "%s", string);
 				}

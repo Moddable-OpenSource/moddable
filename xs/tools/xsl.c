@@ -345,15 +345,15 @@ int main(int argc, char* argv[])
 				{
 					xsTry {
 						xsCollectGarbage();
-						c_strcpy(path, linker->base);
-						script = linker->firstScript;
-						while (script) {
+// 						c_strcpy(path, linker->base);
+// 						script = linker->firstScript;
+// 						while (script) {
 // 							c_strcpy(path + linker->baseLength, script->path);
 // 							fxNewNameC(the, path);
-							path[linker->baseLength + script->pathSize - 5] = 0;
-							fxNewNameC(the, path + linker->baseLength);
-							script = script->nextScript;
-						}
+// 							path[linker->baseLength + script->pathSize - 5] = 0;
+// 							fxNewNameC(the, path + linker->baseLength);
+// 							script = script->nextScript;
+// 						}
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
@@ -658,10 +658,6 @@ int main(int argc, char* argv[])
 			fprintf(file, "\t(txSlot**)gxNames,\n");
 			fprintf(file, "\tmxSymbolsCount,\n");
 			fprintf(file, "\t(txSlot**)gxSymbols,\n");
-			fprintf(file, "\t%d,\n", (int)linker->baseLength);
-			fprintf(file, "\t");
-			fxWriteCString(file, linker->base);
-			fprintf(file, ",\n");
 			fprintf(file, "\tmxScriptsCount,\n");
 			fprintf(file, "\t(txScript*)gxScripts,\n");
 			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
@@ -740,28 +736,22 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	char name[C_PATH_MAX];
-	char path[C_PATH_MAX];
+	char buffer[C_PATH_MAX];
 	char separator;
-	txBoolean absolute = 0, relative = 0, search = 0;
 	txInteger dot = 0;
 	txSlot *key;
 	txString slash;
+	txString path;
 	txID id;
 		
 	fxToStringBuffer(the, slot, name, sizeof(name) - 4);
-	if (!c_strncmp(name, "/", 1)) {
-		absolute = 1;
-	}	
-	else if (!c_strncmp(name, "./", 2)) {
-		dot = 1;
-		relative = 1;
-	}	
-	else if (!c_strncmp(name, "../", 3)) {
-		dot = 2;
-		relative = 1;
-	}
-	else {
-		search = 1;
+	if (name[0] == '.') {
+		if (name[1] == '/') {
+			dot = 1;
+		}
+		else if ((name[1] == '.') && (name[2] == '/')) {
+			dot = 2;
+		}
 	}
 	separator = linker->base[0];
 	fxSlashPath(name, '/', separator);
@@ -771,34 +761,28 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	slash = c_strrchr(slash, '.');
 	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs") || !c_strcmp(slash, ".xsb")))
 		*slash = 0;
-	if (absolute) {
-		return XS_NO_ID;
-	}
-	if (relative && (moduleID != XS_NO_ID)) {
-		key = fxGetKey(the, moduleID);
-		c_strcpy(path, key->value.key.string);
-		slash = c_strrchr(path, separator);
+	if (dot) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		buffer[0] = separator;
+		path = buffer + 1;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strrchr(buffer, separator);
 		if (!slash)
 			return XS_NO_ID;
-		if (dot == 0)
-			slash++;
-		else if (dot == 2) {
+		if (dot == 2) {
 			*slash = 0;
-			slash = c_strrchr(path, separator);
+			slash = c_strrchr(buffer, separator);
 			if (!slash)
 				return XS_NO_ID;
 		}
-		if (!c_strncmp(path, linker->base, linker->baseLength)) {
-			*slash = 0;
-			c_strcat(path, name + dot);
-			if (fxFindScript(the, path, &id))
-				return id;
-		}
+		*slash = 0;
+		c_strcat(buffer, name + dot);
 	}
-	if (search) {
-		if (fxFindScript(the, name, &id))
-			return id;
-	}
+	else
+		path = name;
+	if (fxFindScript(the, path, &id))
+		return id;
 	return XS_NO_ID;
 }
 
@@ -909,8 +893,7 @@ void fxFreezeBuiltIns(txMachine* the)
 
 void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
-	txSlot* key = fxGetKey(the, moduleID);
- 	txScript* script = fxLoadScript(the, key->value.key.string);
+ 	txScript* script = fxLoadScript(the, fxGetKeyName(the, moduleID));
  	if (script)
 		fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
 }

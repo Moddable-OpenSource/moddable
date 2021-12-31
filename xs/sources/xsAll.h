@@ -529,8 +529,6 @@ struct sxPreparation {
 	txSize symbolModulo;
 	txSlot** symbols;
 
-	txSize baseLength;
-	txString base;
 	txSize scriptCount;
 	txScript* scripts;
 	

@@ -55,11 +55,13 @@ txString fxCombinePath(txParser* parser, txString base, txString name)
 	separator = name;
 	while (*separator) {
 		if (*separator == '/')
-			*separator = mxSeparator;
+			*separator = '\\';
 		separator++;
 	}
+	separator = strrchr(base, '\\');
+#else
+	separator = strrchr(base, '/');
 #endif
-	separator = strrchr(base, mxSeparator);
 	if (separator) {
 		separator++;
 		baseLength = mxPtrDiff(separator - base);

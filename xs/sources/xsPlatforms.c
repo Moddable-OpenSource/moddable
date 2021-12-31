@@ -139,9 +139,10 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	txPreparation* preparation = the->preparation;
 	char name[C_PATH_MAX];
 	char extension[5] = "";
-	char path[C_PATH_MAX];
+	char buffer[C_PATH_MAX];
 	txInteger dot = 0;
 	txString slash;
+	txString path;
 	fxToStringBuffer(the, slot, name, sizeof(name));
 	if (name[0] == '.') {
 		if (name[1] == '/') {
@@ -173,25 +174,27 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (dot) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
+		buffer[0] = mxSeparator;
+		path = buffer + 1;
 		c_strcpy(path, fxGetKeyName(the, moduleID));
-		slash = c_strrchr(path, mxSeparator);
+		slash = c_strrchr(buffer, mxSeparator);
 		if (!slash)
 			return XS_NO_ID;
 		if (dot == 2) {
 			*slash = 0;
-			slash = c_strrchr(path, mxSeparator);
+			slash = c_strrchr(buffer, mxSeparator);
 			if (!slash)
 				return XS_NO_ID;
 		}
+		*slash = 0;
+		c_strcat(buffer, name + dot);
 	}
 	else
-		slash = path;
+		path = name;
 	if (preparation) {
 		txInteger c = preparation->scriptCount;
 		txScript* script = preparation->scripts;
 		txSize size;
-		*slash = 0;
-		c_strcat(path, name + dot);
 		if (fxGetArchiveCode(the, path, &size))
 			return fxNewNameC(the, path);
 		while (c > 0) {
@@ -203,8 +206,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	}
 #ifdef mxDebug
 	if (!c_strncmp(path, "xsbug://", 8)) {
-		*slash = 0;
-		c_strcat(path, name + dot);
 		c_strcat(path, extension);
 		return fxNewNameC(the, path);
 	}
@@ -219,10 +220,9 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 extern void fxDebugImport(txMachine* the, txSlot* module, txString path);
 void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
-	char path[C_PATH_MAX];
+	txString path = fxGetKeyName(the, moduleID);
 	txByte* code;
 	txSize size;
-	c_strcpy(path, fxGetKeyName(the, moduleID));
 	code = fxGetArchiveCode(the, path, &size);
 	if (code) {
 		txScript script;
