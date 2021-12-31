@@ -158,6 +158,26 @@ void xs_textdecoder_decode(xsMachine *the)
 			if (td->fatal)
 				goto fatal;
 
+			uint8_t lower = 0x80, upper = 0xBF;
+			if (0xE0 == first)
+				lower = 0xA0;
+			else if (0xED == first)
+				lower = 0x9F;
+			else if (0xF0 == first)
+				lower = 0x90;
+			else if (0xF4 == first)
+				lower = 0x8F;
+			else if (first > 0xF4)	// no valid next byte
+				clen = 0;
+
+			while (clen-- > 0) {
+				uint8_t c = c_read8(src);
+				if ((lower <= c) && (c <= upper))
+					src++;
+				else
+					break;
+			}
+
 			outLength += 3;
 			continue;
 		}
@@ -260,6 +280,27 @@ void xs_textdecoder_decode(xsMachine *the)
 			*dst++ = 0xEF;
 			*dst++ = 0xBF;
 			*dst++ = 0xBD;
+
+			uint8_t lower = 0x80, upper = 0xBF;
+			if (0xE0 == first)
+				lower = 0xA0;
+			else if (0xED == first)
+				lower = 0x9F;
+			else if (0xF0 == first)
+				lower = 0x90;
+			else if (0xF4 == first)
+				lower = 0x8F;
+			else if (first > 0xF4)	// no valid next byte
+				clen = 0;
+
+			while (clen-- > 0) {
+				uint8_t c = c_read8(src);
+				if ((lower <= c) && (c <= upper))
+					src++;
+				else
+					break;
+			}
+
 			continue;
 		}
 
