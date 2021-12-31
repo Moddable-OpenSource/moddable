@@ -135,5 +135,11 @@
 			"$(MODDABLE)/examples/assets/images/image-info",
 			"$(MODULES)/crypt/data/ca222"
 		]
+	},
+	"resources": {
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-16",
+            "./assets/circleish"
+		]
 	}
 }
