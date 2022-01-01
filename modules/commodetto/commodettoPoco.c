@@ -556,8 +556,8 @@ void xs_poco_drawMasked(xsMachine *the)
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoBitmapRecord bits, mask;
-	PocoCoordinate x, y, mask_sx, mask_sy;
-	PocoDimension sx, sy, sw, sh;
+	PocoCoordinate x, y;
+	PocoDimension sx, sy, sw, sh, mask_sx, mask_sy;
 	CommodettoBitmap cb;
 
 	cb = xsmcGetHostChunk(xsArg(0));
@@ -572,10 +572,17 @@ void xs_poco_drawMasked(xsMachine *the)
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(1)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->yOrigin;
-	sx = (PocoCoordinate)xsmcToInteger(xsArg(3));
-	sy = (PocoCoordinate)xsmcToInteger(xsArg(4));
+	sx = (PocoDimension)xsmcToInteger(xsArg(3));
+	sy = (PocoDimension)xsmcToInteger(xsArg(4));
 	sw = (PocoDimension)xsmcToInteger(xsArg(5));
 	sh = (PocoDimension)xsmcToInteger(xsArg(6));
+
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+	if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+	if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+		xsRangeError("invalid src");
 
 	cb = xsmcGetHostChunk(xsArg(7));
 	mask.width = cb->w;
@@ -587,8 +594,10 @@ void xs_poco_drawMasked(xsMachine *the)
 #endif
 	mask.pixels = pocoGetBitmapPixels(the, poco, cb, 7);
 
-	mask_sx = (PocoCoordinate)xsmcToInteger(xsArg(8));
-	mask_sy = (PocoCoordinate)xsmcToInteger(xsArg(9));
+	mask_sx = (PocoDimension)xsmcToInteger(xsArg(8));
+	mask_sy = (PocoDimension)xsmcToInteger(xsArg(9));
+	if ((mask_sx >= mask.width) || (mask_sy >= mask.height) || ((mask_sx + sw) > mask.width) || ((mask_sy + sh) > mask.height))
+		xsRangeError("invalid mask src");
 
 	if (argc > 10) {
 		uint8_t blend = (uint8_t)xsmcToInteger(xsArg(10));
@@ -626,6 +635,14 @@ void xs_poco_fillPattern(xsMachine *the)
 		sy = (PocoCoordinate)xsmcToInteger(xsArg(6));
 		sw = (PocoDimension)xsmcToInteger(xsArg(7));
 		sh = (PocoDimension)xsmcToInteger(xsArg(8));
+
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
+
 		PocoBitmapPattern(poco, &bits, x, y, w, h, sx, sy, sw, sh);
 	}
 	else
