@@ -1247,6 +1247,8 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txString name;
 	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
+        if (!theProperty)
+            return;
 		if (theProperty->ID) {
 			txSlot* slot = the->aliasArray[theProperty->ID];
 			if (slot)
@@ -1793,19 +1795,29 @@ void fxListModules(txMachine* the)
 {
 	txInspectorNameList aList = { C_NULL, C_NULL };
 	txSlot* realm = fxFindRealm(the);
+	txSlot* moduleMap = mxModuleMap(realm);
+	txSlot* instance = fxGetInstance(the, moduleMap);
+	txSlot* instanceInspector = fxToInstanceInspector(the, instance);
 	txSlot* module = mxOwnModules(realm)->value.reference->next;
 	fxEcho(the, "<grammar>");
+	fxEcho(the, "<node");
+	if (instanceInspector)
+		fxEchoFlags(the, "-", moduleMap->flag);
+	else
+		fxEchoFlags(the, "+", moduleMap->flag);
+	fxEcho(the, " name=\"(map)\"");
+	fxEchoAddress(the, instance);
+	if (instanceInspector) {
+		fxEcho(the, ">");
+		fxEchoInstance(the, instance, &aList);
+		fxEcho(the, "</node>");
+	}
+	else
+		fxEcho(the, "/>");
 	while (module) {
         if (mxIsReference(module))
             fxEchoModule(the, module, &aList);
 		module = module->next;
-	}
-	if (realm == mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm) {
-		module = the->sharedModules;
-		while (module) {
-			fxEchoModule(the, module, &aList);
-			module = module->next;
-		}
 	}
 	fxEcho(the, "</grammar>");
 }

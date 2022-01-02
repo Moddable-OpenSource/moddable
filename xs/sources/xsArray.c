@@ -143,6 +143,8 @@ void fxBuildArray(txMachine* the)
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_fill), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_find), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findIndex), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findLast), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findLastIndex), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flat), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flatMap), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_includes), XS_NO_FLAG);

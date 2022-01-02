@@ -777,12 +777,20 @@ void fx_DataView(txMachine* the)
 	instance = fxNewDataViewInstance(the);
 	mxPullSlot(mxResult);
 	view = instance->next;
-	view->value.dataView.offset = offset;
-	view->value.dataView.size = size;
 	buffer = view->next;
 	buffer->kind = XS_REFERENCE_KIND;
 	buffer->value.reference = mxArgv(0)->value.reference;
-	fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE);
+	info = fxGetBufferInfo(the, buffer);
+	if (info->value.bufferInfo.maxLength >= 0) {
+		if (info->value.bufferInfo.length < offset)
+			mxRangeError("out of range byteOffset %ld", offset);
+		else if (size >= 0) {
+			if (info->value.bufferInfo.length < (offset + size))
+				mxRangeError("out of range byteLength %ld", size);
+		}
+	}
+	view->value.dataView.offset = offset;
+	view->value.dataView.size = size;
 }
 
 void fx_DataView_prototype_buffer_get(txMachine* the)

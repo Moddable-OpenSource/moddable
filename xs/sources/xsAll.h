@@ -438,7 +438,6 @@ struct sxMachine {
 
 	txBoolean shared;
 	txMachine* sharedMachine;
-	txSlot* sharedModules;
 
 	txBoolean collectFlag;
 	void* dtoa;
@@ -530,8 +529,6 @@ struct sxPreparation {
 	txSize symbolModulo;
 	txSlot** symbols;
 
-	txSize baseLength;
-	txString base;
 	txSize scriptCount;
 	txScript* scripts;
 	
@@ -1291,6 +1288,7 @@ mxExport void fx_RegExp(txMachine* the);
 mxExport void fx_RegExp_prototype_get_dotAll(txMachine* the);
 mxExport void fx_RegExp_prototype_get_flags(txMachine* the);
 mxExport void fx_RegExp_prototype_get_global(txMachine* the);
+mxExport void fx_RegExp_prototype_get_hasIndices(txMachine* the);
 mxExport void fx_RegExp_prototype_get_ignoreCase(txMachine* the);
 mxExport void fx_RegExp_prototype_get_multiline(txMachine* the);
 mxExport void fx_RegExp_prototype_get_source(txMachine* the);
@@ -1784,6 +1782,7 @@ mxExport void fx_Compartment_prototype_importNow(txMachine* the);
 mxExport void fx_Compartment_prototype_module(txMachine* the);
 
 mxExport void fx_StaticModuleRecord(txMachine* the);
+mxExport void fx_StaticModuleRecord_initialize(txMachine* the);
 mxExport void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the);
 
 /* xsProfile.c */
@@ -1875,6 +1874,7 @@ enum {
 	XS_EACH_SYMBOL_FLAG = 2,
 	
 	/* mxBehaviorDefineOwnProperty flags */
+	/* XS_NAME_FLAG = 1, */
 	/* XS_DONT_DELETE_FLAG = 2, */
 	/* XS_DONT_ENUM_FLAG = 4, */
 	/* XS_DONT_SET_FLAG = 8, */
@@ -2248,6 +2248,12 @@ enum {
 	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
 	the->stack->value.string = (THE_STRING))
 #endif
+
+#define mxPushSymbol(THE_SYMBOL) \
+	(mxOverflow(-1), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_SYMBOL_KIND), \
+	the->stack->value.symbol = (THE_SYMBOL))
 #define mxPushUndefined() \
 	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
@@ -2310,6 +2316,7 @@ enum {
 #define mxModuleMapHook(REALM)			((REALM)->next->next->next->next->next->next->next)
 #define mxLoadHook(REALM)				((REALM)->next->next->next->next->next->next->next->next)
 #define mxLoadNowHook(REALM)			((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxRealmParent(REALM)			((REALM)->next->next->next->next->next->next->next->next->next->next)
 
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)
 #define mxModuleInstanceExports(MODULE)		((MODULE)->next->next)

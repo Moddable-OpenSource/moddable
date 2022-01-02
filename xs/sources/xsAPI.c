@@ -625,10 +625,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 		gxDefaults.newFunctionLength(the, instance, theLength);
 
 	/* NAME */
-	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
-	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, 0, XS_NO_ID, C_NULL);
+	fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -1468,6 +1465,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			fxBuildMapSet(the);
 			fxBuildModule(the);
 			
+			mxPushUndefined();
 			mxPush(mxObjectPrototype);
 	#ifdef mxLink
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -1486,6 +1484,8 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxGlobal.kind = the->stack->kind;
 			fxNewInstance(the);
 			fxNewInstance(the);
+			mxPushUndefined();
+			fxNewEnvironmentInstance(the, C_NULL);
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
@@ -1580,6 +1580,9 @@ void fxDeleteMachine(txMachine* the)
 	fxDeleteMachinePlatform(the);
 	fxFree(the);
 	c_free(the);
+
+	if (gxDefaults.terminateSharedCluster)
+		gxDefaults.terminateSharedCluster();
 }
 
 txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext)
@@ -1671,30 +1674,30 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 
 			the->stackPrototypes = theMachine->stackTop;
 
+			mxPushUndefined();
 			mxPush(theMachine->stackTop[-1 - mxGlobalStackIndex]);
 			slot = fxLastProperty(the, fxNewObjectInstance(the));
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-// 			mxPush(theMachine->stackTop[-1 - mxHostsStackIndex]); //@@
-			fxNewInstance(the);
-			fxNewInstance(the);
-			mxPushUndefined();
-			mxPushUndefined();
-			mxPushUndefined();
-			mxPushUndefined();
-			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = slot = fxNewRealmInstance(the);
 			
+			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
+			
+			fxNewInstance(the);
+			mxPushUndefined();
+			slot = fxLastProperty(the, fxNewEnvironmentInstance(the, C_NULL));
 			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
-			slot = fxLastProperty(the, mxRealmClosures(slot)->value.reference);
 			while (sharedSlot) {
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
 				sharedSlot = sharedSlot->next;
 			}
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
+			mxPushUndefined();
+			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
-		
-			the->sharedModules = theMachine->stackTop[-1 - mxProgramStackIndex].value.reference->next; //@@
 			
 			the->collectFlag = XS_COLLECTING_FLAG;
 
@@ -2033,7 +2036,7 @@ void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
 			while (p < q) {
 				// PATH
 				atomSize = c_read32be(p);
-				if (!c_strcmp(path + preparation->baseLength, (txString)(p + sizeof(Atom)))) {
+				if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
 					p += atomSize;
 					atomSize = c_read32be(p);
 					*size = atomSize - sizeof(Atom);

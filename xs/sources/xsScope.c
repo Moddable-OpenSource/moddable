@@ -796,6 +796,14 @@ void fxStatementNodeHoist(void* it, void* param)
 	fxNodeDispatchHoist(self->expression, param);
 }
 
+void fxStringNodeHoist(void* it, void* param)
+{
+	txStringNode* self = it;
+	txHoister* hoister = param;
+	if ((self->flags & mxStringLegacyFlag) && (hoister->scope->flags & mxStrictFlag))
+		self->flags |= mxStringErrorFlag;
+}
+
 void fxSwitchNodeHoist(void* it, void* param) 
 {
 	txSwitchNode* self = it;
@@ -1253,13 +1261,13 @@ void fxTemplateNodeBind(void* it, void* param)
 void fxTryNodeBind(void* it, void* param) 
 {
 	txTryNode* self = it;
-	fxBinderPushVariables(param, 2);
+	fxBinderPushVariables(param, 3);
 	fxNodeDispatchBind(self->tryBlock, param);
 	if (self->catchBlock)
 		fxNodeDispatchBind(self->catchBlock, param);
 	if (self->finallyBlock)
 		fxNodeDispatchBind(self->finallyBlock, param);
-	fxBinderPopVariables(param, 2);
+	fxBinderPopVariables(param, 3);
 }
 
 void fxWithNodeBind(void* it, void* param) 

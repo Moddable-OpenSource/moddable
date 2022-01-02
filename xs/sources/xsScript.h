@@ -938,11 +938,13 @@ enum {
 
 	mxStringEscapeFlag = 1 << 0,
 	mxStringErrorFlag = 1 << 1,
+	mxStringLegacyFlag = 1 << 2,
 };
 
 /* xsScript.c */
 
 extern void fxCheckParserStack(txParser* parser, txInteger line);
+extern txString fxCombinePath(txParser* parser, txString base, txString name);
 extern void fxDisposeParserChunks(txParser* parser);
 extern void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSize symbolModulo);
 extern void* fxNewParserChunk(txParser* parser, txSize size);
@@ -1043,6 +1045,7 @@ extern void fxProgramNodeBind(void* it, void* param);
 extern void fxProgramNodeHoist(void* it, void* param); 
 extern void fxSpreadNodeBind(void* it, void* param);
 extern void fxStatementNodeHoist(void* it, void* param);
+extern void fxStringNodeHoist(void* it, void* param);
 extern void fxSuperNodeBind(void* it, void* param);
 extern void fxSwitchNodeBind(void* it, void* param); 
 extern void fxSwitchNodeHoist(void* it, void* param); 

@@ -100,7 +100,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 11
-#define XS_MINOR_VERSION 5
+#define XS_MINOR_VERSION 6
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -237,6 +237,7 @@ enum {
 	XS_CODE_GET_PRIVATE_2,
 	XS_CODE_GET_PROPERTY,
 	XS_CODE_GET_PROPERTY_AT,
+	XS_CODE_GET_RESULT,
 	XS_CODE_GET_SUPER,
 	XS_CODE_GET_SUPER_AT,
 	XS_CODE_GET_THIS,
@@ -300,7 +301,6 @@ enum {
 	XS_CODE_RESET_CLOSURE_2,
 	XS_CODE_RESET_LOCAL_1,
 	XS_CODE_RESET_LOCAL_2,
-	XS_CODE_RESULT,
 	XS_CODE_RETHROW,
 	XS_CODE_RETRIEVE_1,
 	XS_CODE_RETRIEVE_2,
@@ -324,6 +324,7 @@ enum {
 	XS_CODE_SET_PRIVATE_2,
 	XS_CODE_SET_PROPERTY,
 	XS_CODE_SET_PROPERTY_AT,
+	XS_CODE_SET_RESULT,
 	XS_CODE_SET_SUPER,
 	XS_CODE_SET_SUPER_AT,
 	XS_CODE_SET_THIS,
@@ -379,6 +380,7 @@ extern const txString gxCodeNames[XS_CODE_COUNT];
 extern const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR;
 
 enum {
+	XS_NAME_FLAG = 1,
 	XS_DONT_DELETE_FLAG = 2,
 	XS_DONT_ENUM_FLAG = 4,
 	XS_DONT_SET_FLAG = 8,
@@ -459,6 +461,7 @@ enum {
 	XS_REGEXP_S = 1 << 4,
 	XS_REGEXP_U = 1 << 5,
 	XS_REGEXP_Y = 1 << 6,
+	XS_REGEXP_D = 1 << 7,
 };
 mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString errorBuffer, txInteger errorSize);
 mxExport void fxDeleteRegExp(void* the, txInteger* code, txInteger* data);
@@ -884,6 +887,7 @@ enum {
 	_grow,
 	_growable,
 	_has,
+	_hasIndices,
 	_hasInstance,
 	_hasOwnProperty,
 	_hypot_,

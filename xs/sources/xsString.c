@@ -156,10 +156,9 @@ void fxBuildString(txMachine* the)
 txSlot* fxNewStringInstance(txMachine* the)
 {
 	txSlot* instance;
-	txSlot* property;
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
-	property = fxNextSlotProperty(the, instance, &mxEmptyString, XS_STRING_BEHAVIOR, XS_INTERNAL_FLAG);
+	fxNextSlotProperty(the, instance, &mxEmptyString, XS_STRING_BEHAVIOR, XS_INTERNAL_FLAG);
 	return instance;
 }
 
@@ -205,8 +204,28 @@ void fxStringAccessorSetter(txMachine* the)
 
 txBoolean fxStringDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask)
 {
-	if ((id == mxID(_length)) || (!id && (mxStringInstanceLength(instance) > index)))
-		return 0;
+	if (id == mxID(_length)) {
+		if ((mask & XS_DONT_DELETE_FLAG) && !(slot->flag & XS_DONT_DELETE_FLAG))
+			return 0;
+		if ((mask & XS_DONT_ENUM_FLAG) && !(slot->flag & XS_DONT_ENUM_FLAG))
+			return 0;
+		if ((mask & XS_DONT_SET_FLAG) && !(slot->flag & XS_DONT_SET_FLAG))
+			return 0;
+		if (slot->kind != XS_UNINITIALIZED_KIND)
+			return 0;
+		return 1;
+	}
+	if (!id && (mxStringInstanceLength(instance) > index)) {
+		if ((mask & XS_DONT_DELETE_FLAG) && !(slot->flag & XS_DONT_DELETE_FLAG))
+			return 0;
+		if ((mask & XS_DONT_ENUM_FLAG) && (slot->flag & XS_DONT_ENUM_FLAG))
+			return 0;
+		if ((mask & XS_DONT_SET_FLAG) && !(slot->flag & XS_DONT_SET_FLAG))
+			return 0;
+		if (slot->kind != XS_UNINITIALIZED_KIND)
+			return 0;
+		return 1;
+	}
 	return fxOrdinaryDefineOwnProperty(the, instance, id, index, slot, mask);
 }
 
@@ -1903,6 +1922,8 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 		else
 			l++;
 	}
+	if (m > l)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	if (flag) {
 		mxPushUndefined();
 		the->stack->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, l, 1));

@@ -39,6 +39,7 @@
 
 static txString fxGetNextDigits(txParser* parser, txString (*f)(txParser*, txString, txString), txString p, txString q, int empty);
 static txString fxGetNextDigitsB(txParser* parser, txString p, txString q);
+static txString fxGetNextDigitsD(txParser* parser, txString p, txString q, int* base);
 static txString fxGetNextDigitsE(txParser* parser, txString p, txString q);
 static txString fxGetNextDigitsO(txParser* parser, txString p, txString q);
 static txString fxGetNextDigitsX(txParser* parser, txString p, txString q);
@@ -196,6 +197,20 @@ txString fxGetNextDigitsB(txParser* parser, txString p, txString q)
 	int c = parser->character;
 	while (('0' <= c) && (c <= '1')) {
 		if (p < q) *p++ = (char)c;
+		fxGetNextCharacter(parser);
+		c = parser->character;
+	}
+	return p;
+}
+
+txString fxGetNextDigitsD(txParser* parser, txString p, txString q, int* base)
+{
+	int c = parser->character;
+	*base = 8;
+	while (('0' <= c) && (c <= '9')) {
+		if (p < q) *p++ = (char)c;
+		if (('8' <= c) && (c <= '9'))
+			*base = 10;
 		fxGetNextCharacter(parser);
 		c = parser->character;
 	}
@@ -424,7 +439,7 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
 	if (legacy) {
-		p = fxGetNextDigitsO(parser, p, q);
+		p = fxGetNextDigitsD(parser, p, q, &legacy);
 		if (parser->character == '_')
 			fxReportParserError(parser, parser->line, "invalid number");			
 		if (parser->character == 'n')
@@ -432,6 +447,7 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	}
 	else {
 		fxGetNextCharacter(parser);
+		legacy = 8;
 		p = fxGetNextDigits(parser, fxGetNextDigitsO, p, q, 1);
 	}
 	c = parser->character;
@@ -453,7 +469,7 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	else {	
 		txNumber n = 0;
 		while ((c = *q++))
-			n = (n * 8) + (c - '0');
+			n = (n * legacy) + (c - '0');
 		fxGetNextNumber(parser, n);
 	}
 }
@@ -662,7 +678,6 @@ void fxGetNextString(txParser* parser, int c)
 	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
 	if (parser->escaped2) {
 		txInteger character;
-		int errorCount = 0;
 		txString s;
 		txU1* u;
 		p = parser->buffer;
@@ -714,14 +729,14 @@ void fxGetNextString(txParser* parser, int c)
 					if (fxParseHexEscape(&s, &character))
 						p = fxUTF8Buffer(parser, character, p, q);
 					else
-						errorCount++;
+						parser->escaped2 |= mxStringErrorFlag;
 					break;
 				case 'u':
 					s++;
 					if (fxParseUnicodeEscape(&s, &character, 1, '\\'))
 						p = fxUTF8Buffer(parser, character, p, q);
 					else
-						errorCount++;
+						parser->escaped2 |= mxStringErrorFlag;
 					break;
 				case '0':
 				case '1':
@@ -731,16 +746,11 @@ void fxGetNextString(txParser* parser, int c)
 				case '5':
 				case '6':
 				case '7':
-				case '8':
-				case '9':
 					character = *s++ - '0';
-					if ((parser->flags & mxStrictFlag) || (c == '`')) {
-						if ((character == 0) && ((*s < '0') || ('9' < *s)))
-							p = fxUTF8Buffer(parser, character, p, q);
-						else
-							errorCount++;
-					}
-					else {
+					if ((character == 0) && ((*s < '0') || ('9' < *s)))
+						p = fxUTF8Buffer(parser, character, p, q);
+					else {	
+						parser->escaped2 |= mxStringLegacyFlag;
 						if ((0 <= character) && (character <= 3)) {
 							if (('0' <= *s) && (*s <= '7'))
 								character = (character * 8) + *s++ - '0';
@@ -749,6 +759,11 @@ void fxGetNextString(txParser* parser, int c)
 							character = (character * 8) + *s++ - '0';
 						p = fxUTF8Buffer(parser, character, p, q);
 					}
+					break;
+				case '8':
+				case '9':
+					parser->escaped2 |= mxStringLegacyFlag;
+					*p++ = *s++;
 					break;
 				default:
 					u = (txU1*)s;
@@ -767,12 +782,8 @@ void fxGetNextString(txParser* parser, int c)
 		*p = 0;
 		parser->stringLength2 = mxPtrDiff(p - parser->buffer);
 		parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
-		if (errorCount > 0) {
-			if (c == '`')
-				parser->escaped2 |= mxStringErrorFlag;
-			else
-				fxReportParserError(parser, parser->line, "invalid escape sequence");	
-		}	
+		if ((c == '`') && (parser->escaped2 & mxStringLegacyFlag))
+			parser->escaped2 |= mxStringErrorFlag;
 	}
 	else {
 		parser->stringLength2 = parser->rawLength2;
@@ -923,7 +934,7 @@ void fxGetNextTokenAux(txParser* parser)
 			else if ((c == 'x') || (c == 'X')) {
 				fxGetNextNumberX(parser);
 			}
-			else if (('0' <= c) && (c <= '7')) {
+			else if (('0' <= c) && (c <= '9')) {
 				if ((parser->flags & mxStrictFlag))
 					fxReportParserError(parser, parser->line, "octal number (strict mode)");			
 				fxGetNextNumberO(parser, c, 1);

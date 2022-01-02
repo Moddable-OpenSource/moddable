@@ -228,16 +228,22 @@ txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot*
 
 void fxIteratorReturn(txMachine* the, txSlot* iterator)
 {
-	mxPushSlot(iterator);
-	mxDub();
-	mxGetID(mxID(_return));
-	if (mxIsUndefined(the->stack)) 
+	mxPush(mxException);
+	mxTry(the) {
+		mxPushSlot(iterator);
+		mxDub();
+		mxGetID(mxID(_return));
+		if (mxIsUndefined(the->stack)) 
+			mxPop();
+		else {
+			mxCall();
+			mxRunCount(0);
+		}
 		mxPop();
-	else {
-		mxCall();
-		mxRunCount(0);
 	}
-	mxPop();
+	mxCatch(the) {
+	}
+	mxPull(mxException);
 }
 
 txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional)

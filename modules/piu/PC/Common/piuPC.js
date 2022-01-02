@@ -18,7 +18,7 @@
  *
  */
 
-import {} from "All";
+import {} from "piu/All";
 
 global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
 

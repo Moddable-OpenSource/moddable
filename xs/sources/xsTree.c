@@ -1354,7 +1354,7 @@ static const txNodeDispatch gxStatementsNodeDispatch ICACHE_FLASH_ATTR = {
 static const txNodeDispatch gxStringNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
 	fxNodeBind,
-	fxNodeHoist,
+	fxStringNodeHoist,
 	fxStringNodeCode,
 	fxNodeCodeAssign,
 	fxNodeCodeDelete,
@@ -1751,6 +1751,8 @@ void fxNodePrintTree(void* it, void* param)
 				fprintf(stderr, " derived");
 			if (node->flags & mxEvalFlag)
 				fprintf(stderr, " eval");
+			if (node->flags & mxFieldFlag)
+				fprintf(stderr, " field");
 			if (node->flags & mxTargetFlag)
 				fprintf(stderr, " function");
 			if (node->flags & mxGeneratorFlag)
