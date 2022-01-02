@@ -1943,7 +1943,6 @@ void fx_Compartment(txMachine* the)
 				}
 				mxPop(); // property
 				mxPop(); // at
-				mxPop(); // source
 			}
 			mxPop(); // globalLexicals
 	
