@@ -1,20 +1,18 @@
-import increment from "increment";
-function test() {
-    trace("app " + increment() + "\n");
-}
-let compartment = new Compartment({}, {
-	increment: "/increment.xsb",
-	mod: "/mod.xsb",
-}, {
-	resolveHook(specifier, refererSpecifier) {
-		return specifier;
-	},
-	loadNowHook(specifier) {
-		return modules[specifier];
-	}
+import * as increment from "increment";
+const mod = "mod"
+let compartment1 = new Compartment({}, { 
+	increment,
+	mod
 });
-let modNS = compartment.importNow("mod");
-test();
-modNS.test();
-test();
-modNS.test();
+let compartment2 = new Compartment({}, { 
+	increment,
+	mod
+});
+
+let modNS1 = compartment1.importNow("mod")
+let modNS2 = compartment2.importNow("mod")
+
+modNS1.test();
+modNS2.test();
+modNS1.test();
+modNS2.test();

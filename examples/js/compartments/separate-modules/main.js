@@ -3,14 +3,8 @@ function test() {
     trace("app " + increment() + "\n");
 }
 let compartment = new Compartment({}, {
-		increment: "/increment.xsb",
-		mod: "/mod.xsb",
-	}, {
-	resolveHook(specifier, refererSpecifier) {
-		return specifier;
-	},
-	loadNowHook(specifier) {
-	}
+	increment: "increment",
+	mod: "mod",
 });
 let modNS = compartment.importNow("mod");
 test();
