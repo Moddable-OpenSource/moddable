@@ -1029,13 +1029,14 @@ void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 		else
 			mxTypeError("no module");
 	}
-	else {
+	else if (mxIsStringPrimitive(the->stack)) {
 		txSlot* parent = mxRealmParent(realm);
 		if (mxIsReference(parent)) {
 			txSlot* meta;
 			txSlot* loader;
 			txSlot* loaderRealm = parent->value.reference;
-			txID loaderModuleID = the->stack->value.symbol;
+			txSlot* loaderSlot = the->stack;
+			fxResolveSpecifier(the, loaderRealm, XS_NO_ID, loaderSlot);
 			fxNewModule(the, realm, moduleID, module);
 			meta = mxModuleMeta(module)->value.reference;
 			loader = fxNewSlot(the);
@@ -1043,12 +1044,14 @@ void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 			loader->flag = XS_INTERNAL_FLAG;
 			loader->kind = XS_MODULE_KIND;
 			loader->value.module.realm = loaderRealm;
-			loader->value.module.id = loaderModuleID;
+			loader->value.module.id = loaderSlot->value.symbol;
 			meta->next = loader;
 		}
 		else
-			mxTypeError("no module");
+			mxTypeError("no compartment");
 	}	
+	else
+		mxTypeError("no specifier");
 }
 
 void fxNewModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
@@ -1769,22 +1772,6 @@ txSlot* fxCheckCompartmentInstance(txMachine* the, txSlot* slot)
 	return C_NULL;
 }
 
-txID fxGetActiveScriptOrModuleID(txMachine* the)
-{
-	txSlot* frame = the->frame;
-	while (frame) {
-		txSlot* function = frame + 3;
-		txSlot* module = mxFunctionInstanceHome(function->value.reference)->value.home.module;
-		if (module) {
-			txSlot* internal = mxModuleInstanceInternal(module);
-			if (internal->value.module.id != XS_NO_ID)
-				return internal->value.module.id;
-		}
-		frame = frame->next;
-	}
-	return XS_NO_ID;
-}
-
 void fx_Compartment(txMachine* the)
 {
 	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
@@ -1874,27 +1861,24 @@ void fx_Compartment(txMachine* the)
 				if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 					mxPushReference(source);
 					mxGetAll(at->value.at.id, at->value.at.index);
-					if (mxIsReference(the->stack) && mxIsModule(the->stack->value.reference)) {
+					if (mxIsReference(the->stack)) { 
+						if (mxIsModule(the->stack->value.reference) || mxIsStaticModuleRecord(the->stack->value.reference)) {
+							target = target->next = fxNewSlot(the);
+							target->ID = at->value.at.id;
+							target->kind = the->stack->kind;
+							target->value = the->stack->value;
+						}
+						else
+							mxTypeError("no module");
+					}
+					else if (mxIsStringPrimitive(the->stack)) {
 						target = target->next = fxNewSlot(the);
 						target->ID = at->value.at.id;
 						target->kind = the->stack->kind;
 						target->value = the->stack->value;
 					}
-					else if (mxIsReference(the->stack) && mxIsStaticModuleRecord(the->stack->value.reference)) {
-						target = target->next = fxNewSlot(the);
-						target->ID = at->value.at.id;
-						target->kind = the->stack->kind;
-						target->value = the->stack->value;
-					}
-					else {
-						txSlot* internal = mxModuleInstanceInternal(module);
-						fxToString(the, the->stack);
-						fxResolveSpecifier(the, internal->value.module.realm, fxGetActiveScriptOrModuleID(the), the->stack);
-						target = target->next = fxNewSlot(the);
-						target->ID = at->value.at.id;
-						target->kind = the->stack->kind;
-						target->value = the->stack->value;
-					}
+					else
+						mxTypeError("no specifier");
 					mxPop();
 				}
 			}
