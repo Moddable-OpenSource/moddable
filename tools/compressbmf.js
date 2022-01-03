@@ -259,7 +259,7 @@ export default class extends TOOL {
 	}
 
 	readU32(bytes) {
-		let value = bytes[bytes.position] |  (bytes[bytes.position + 1] << 8) | (bytes[bytes.position + 2] << 8) | (bytes[bytes.position + 3] << 8);
+		let value = bytes[bytes.position] |  (bytes[bytes.position + 1] << 8) | (bytes[bytes.position + 2] << 16) | (bytes[bytes.position + 3] << 24);
 		bytes.position += 4;
 		return value;
 	}
