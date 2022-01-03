@@ -11,9 +11,7 @@ void xs_modules_host(xsMachine *the)
 		txInteger scriptCount = preparation->scriptCount, i = 0;
 		txScript* script = preparation->scripts;
 		while (scriptCount--) {
-			char path[C_PATH_MAX];
-			c_strcpy(path, script->path);
-			xsSetIndex(xsResult, i++, xsString(path));
+			xsSetIndex(xsResult, i++, xsString(script->path));
 			script++;
 		}
 	}
