@@ -1858,7 +1858,7 @@ void fx_Compartment(txMachine* the)
 		
 		// MODULE MAP
 		
-		if (mxArgc > 1) {
+		if ((mxArgc > 1) && (mxIsReference(mxArgv(1)))) {
 			txSlot* target;
 			txSlot* source;
 			txSlot* at;

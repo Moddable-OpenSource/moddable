@@ -1567,7 +1567,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	char name[C_PATH_MAX];
 	char path[C_PATH_MAX];
-	char real[C_PATH_MAX];
 	txInteger dot = 0;
 	txString slash;
 	fxToStringBuffer(the, slot, name, sizeof(name));
@@ -1608,14 +1607,13 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		slash = path;
 	*slash = 0;
 	c_strcat(path, name + dot);
-	if (c_realpath(path, real))
-		return fxNewNameC(the, real);
-	return XS_NO_ID;
+	return fxNewNameC(the, path);
 }
 
 void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
 	char path[C_PATH_MAX];
+	char real[C_PATH_MAX];
 	txScript* script;
 #ifdef mxDebug
 	txUnsigned flags = mxDebugFlag;
@@ -1623,9 +1621,11 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 	txUnsigned flags = 0;
 #endif
 	c_strcpy(path, fxGetKeyName(the, moduleID));
-	script = fxLoadScript(the, path, flags);
-	if (script)
-		fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
+	if (c_realpath(path, real)) {
+		script = fxLoadScript(the, real, flags);
+		if (script)
+			fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
+	}
 }
 
 txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
