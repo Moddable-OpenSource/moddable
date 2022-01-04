@@ -141,7 +141,7 @@ void setup(void)
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 
-	gThe = ESP_cloneMachine(0, 0, 0, NULL);
+	gThe = ESP_cloneMachine(0, 0, 0, 0, NULL);
 
 	mc_setup(gThe);
 
