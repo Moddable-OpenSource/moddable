@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -19,6 +19,7 @@
  */
 
 import { FILE, TOOL } from "tool";
+import UncodeRanges from "unicode-ranges";
 
 var formatNames = {
 	gray16: "gray16",
@@ -501,6 +502,21 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
+		for (var result of tool.outlineFontFiles) {
+			result.faces.forEach(face => {
+				this.write("\\\n\t$(RESOURCES_DIR)");
+				this.write(tool.slash);
+				if ("-alpha" === face.suffix) {
+					this.write(face.name + `-${face.size}.fnt`);
+					this.write("\\\n\t$(RESOURCES_DIR)");
+					this.write(tool.slash);
+					this.write(face.name + `-${face.size}-alpha.bmp`);
+				}
+				else if ("-mask" === face.suffix) {
+					this.write(face.name + `-${face.size}.bf4`);
+				}
+			});
+		}
 		for (var result of tool.soundFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
@@ -689,7 +705,7 @@ export class MakeFile extends FILE {
 			}
 			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
 			this.echo(tool, "png2bmp ", bmpTarget);
-			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t", name);
+			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t ", name);
 		}
 
 		for (var result of tool.imageFiles) {
@@ -712,6 +728,53 @@ export class MakeFile extends FILE {
 				this.echo(tool, "image2cs ", target);
 				this.line("\t$(IMAGE2CS) ", source, " -o $(@D) -r ", tool.rotation);
 			}
+		}
+
+		for (var result of tool.outlineFontFiles) {
+			var source = result.source;
+			
+			result.faces.forEach(face => {
+				const name = face.name + "-" + face.size;
+
+				this.line("$(RESOURCES_DIR)", tool.slash, ("-alpha" === face.suffix) ? `${name}.fnt` : `${name}.bf4`, ": ", source,
+							" ", "$(RESOURCES_DIR)", tool.slash, name + ".txt",
+							" ", "$(RESOURCES_DIR)", tool.slash, name + ".json");
+				this.echo(tool, "fontbm ", name);
+
+				let characters = face.characters ?? "";
+				let blocks = ("string" === typeof face.blocks) ? [face.blocks] : (face.blocks ?? (characters ? [] : ["Basic Latin"]));
+				blocks.forEach(block => {
+					const info = UncodeRanges.find(info => info.category === block);
+					if (!info)
+						tool.reportWarning(NULL, 0, `Unknown Unicode block: "${block}"`);
+					const count = info.range[1] - info.range[0] + 1;
+					const c = new Array(count);
+					for (let i = 0; i < count; i++)
+						c[i] = String.fromCharCode(i + info.range[0]);
+					characters += c.join("");
+				});
+				
+				let path = tool.resourcesPath + tool.slash + name + ".txt";
+				let former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+				if (former !== characters)
+					tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
+
+				path = tool.resourcesPath + tool.slash + name + ".json";
+				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false});
+				former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+				if (former !== options)
+					tool.writeFileString(path, options);				
+
+				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--include-kerning-pairs" : ""} ${face.monochrome ? "--monochrome" : ""} --chars-file "$(RESOURCES_DIR)${tool.slash}${name}.txt"`);
+				if ("-alpha" === face.suffix) {
+					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
+					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
+				}
+				else if ("-mask" === face.suffix) {
+					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
+					this.line("\t$(COMPRESSBMF) ", "$(RESOURCES_DIR)", tool.slash, name + ".fnt", " -i ", "$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", " -o $(@D) -r ", tool.rotation);
+				}
+			});
 		}
 
 		let bitsPerSample = 16, numChannels = 1, sampleRate = 11025, audioFormat = "uncompressed";
@@ -883,8 +946,9 @@ class Rule {
 	}
 	appendTarget(target) {
 	}
-	iterate(target, source, include, suffix, straight) {
+	iterate(target, sourceIn, include, suffix, straight) {
 		var tool = this.tool;
+		var source = (typeof sourceIn == "string") ? sourceIn : sourceIn.source;
 		var slash = source.lastIndexOf(tool.slash);
 		var directory = this.tool.resolveDirectoryPath(source.slice(0, slash));
 		if (directory) {
@@ -916,10 +980,11 @@ class Rule {
 						continue;
 				}
 				var kind = tool.isDirectoryOrFile(path);
+				var query = (typeof sourceIn === "string") ? {} : {...sourceIn};
 				if (straight)
-					this.appendSource(target, path, include, suffix, parts, kind);
+					this.appendSource(target, path, include, suffix, parts, kind, query);
 				else
-					this.appendSource(target + name, path, include, suffix, parts, kind);
+					this.appendSource(target + name, path, include, suffix, parts, kind, query);
 			}
 			if (!this.count)
 				this.noFilesMatch(source, star);
@@ -1136,12 +1201,27 @@ class ResourcesRule extends Rule {
 		files.push({ target, source, quality });
 		this.count++;
 	}
+	appendOutlineFont(name, path, include, suffix, query) {
+		const tool = this.tool;
+		let file = this.appendFile(tool.outlineFontFiles, name + ".fnt", path, include);
+		if (!file)
+			file = tool.outlineFontFiles.find(file => file.source == path);
+
+		const face = {...query, suffix, name: query.name ?? name};
+		if (!face.size)
+			throw new Error(`missing required font size for "${face.name}"`);
+
+		if (file.faces?.find(item => (item.size === face.size) && (item.name === face.name))) 
+			throw new Error(`duplicate font "${face.name}", size ${face.size}`);
+
+		file.faces ??= [];
+		file.faces.push(face);
+	}
 	appendSound(name, path, include, suffix) {
 		var tool = this.tool;
 		this.appendFile(tool.soundFiles, name + ".maud", path, include);
-		return true;
 	}
-	appendSource(target, source, include, suffix, parts, kind) {
+	appendSource(target, source, include, suffix, parts, kind, query) {
 		var tool = this.tool;
 		if (kind < 0) {
 			if (tool.format) {
@@ -1189,8 +1269,12 @@ class ResourcesRule extends Rule {
 				this.appendImage(target, source, include, suffix);
 				return;
 			}
-			if ((parts.extension == ".wav")) {
+			if (parts.extension == ".wav") {
 				this.appendSound(target, source, include, suffix);
+				return;
+			}
+			if (parts.extension == ".ttf") {
+				this.appendOutlineFont(target, source, include, suffix, query);
 				return;
 			}
 		}
@@ -1608,7 +1692,8 @@ export class Tool extends TOOL {
 			value = value.replace(/\//g, "\\");
 		return value;
 	}
-	resolveSource(source) {
+	resolveSource(sourceIn) {
+		var source = ("string" == typeof sourceIn) ? sourceIn : sourceIn.source;
 		var result = this.resolveVariable(source);
 		var slash = result.lastIndexOf(this.slash);
 		if (slash < 0)
@@ -1617,7 +1702,9 @@ export class Tool extends TOOL {
 		if (!directory)
 			throw new Error("'" + source + "': directory not found!");
 		result = directory + result.slice(slash);
-		return result;
+		if ("string" == typeof sourceIn)
+			return result;
+		return {...sourceIn, source: result};
 	}
 	resolveVariable(value) {
 		value = value.replace(/\$\(([^\)]+)\)/g, (offset, value) => {
@@ -1704,6 +1791,8 @@ export class Tool extends TOOL {
 		this.clutFiles.current = "";
 		this.imageFiles = [];
 		this.imageFiles.already = {};
+		this.outlineFontFiles = [];
+		this.outlineFontFiles.already = {};
 		this.soundFiles = [];
 		this.soundFiles.already = {};
 		this.stringFiles = [];
