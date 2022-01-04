@@ -736,9 +736,12 @@ export class MakeFile extends FILE {
 			result.faces.forEach(face => {
 				const name = face.name + "-" + face.size;
 
-				this.line("$(RESOURCES_DIR)", tool.slash, ("-alpha" === face.suffix) ? `${name}.fnt` : `${name}.bf4`, ": ", source,
+				let line = Array.of("$(RESOURCES_DIR)", tool.slash, ("-alpha" === face.suffix) ? `${name}.fnt` : `${name}.bf4`, ": ", source,
 							" ", "$(RESOURCES_DIR)", tool.slash, name + ".txt",
 							" ", "$(RESOURCES_DIR)", tool.slash, name + ".json");
+				if (face.localization)
+					line.push(" ", "$(RESOURCES_DIR)", tool.slash, "locals.mhi");
+				this.line.apply(this, line);
 				this.echo(tool, "fontbm ", name);
 
 				let characters = face.characters ?? "";
@@ -760,12 +763,13 @@ export class MakeFile extends FILE {
 					tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
 
 				path = tool.resourcesPath + tool.slash + name + ".json";
-				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false});
+				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false});
 				former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
 				if (former !== options)
 					tool.writeFileString(path, options);				
 
-				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--include-kerning-pairs" : ""} ${face.monochrome ? "--monochrome" : ""} --chars-file "$(RESOURCES_DIR)${tool.slash}${name}.txt"`);
+				const localization = face.localization ? `--chars-file "$(RESOURCES_DIR)${tool.slash}locals.txt"` : "";
+				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--include-kerning-pairs" : ""} ${face.monochrome ? "--monochrome" : ""} --chars-file "$(RESOURCES_DIR)${tool.slash}${name}.txt" ${localization}`);
 				if ("-alpha" === face.suffix) {
 					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
 					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
