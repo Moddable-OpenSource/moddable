@@ -1026,7 +1026,11 @@ class Rule {
 					target = target.slice(0, star);
 					if (sources instanceof Array) {
 						for (var source of sources) {
-							source = tool.resolveSlash(source);
+							if (typeof source == "string") {
+								source = tool.resolveSlash(source);
+							} else {
+								source.source = tool.resolveSlash(source.source);
+							}
 							this.iterate(target, source, true, suffix, false);
 						}
 					}
