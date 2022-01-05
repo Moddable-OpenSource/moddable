@@ -1,7 +1,7 @@
 # Using the Moddable SDK with ESP32
 
-Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: December 23, 2021
+Copyright 2016-2022 Moddable Tech, Inc.<BR>
+Revised: January 5, 2022
 
 This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) and [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2) with the Moddable SDK.
 
@@ -434,7 +434,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.2 and the CMake opt
 9. The ESP-IDF tools provide an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
-	"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
 	```
 
 	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the ESP-IDF Command Prompt shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF Command Prompt (cmd.exe)" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
@@ -446,10 +446,10 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.3.2 and the CMake opt
 	You can change the Target to include the path to `vcvars32.bat` as follows. Adjust the paths as necessary for your system.
 
 	```text
-	%comspec% /k ""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"
+	%comspec% /k ""%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"
 	```
 
-	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
 
 	It is also convenient to update the "Start in" field of the shortcut to `%MODDABLE%` to start your Command Prompt session in the Moddable SDK directory.
 
@@ -476,7 +476,7 @@ If you had a previous version of Python (such as Python 2.7) installed on your s
 
 #### Python dependencies
 
-If you get an error about Python dependencies not being installed, it means that the ESP-IDF installer failed to update Python. This usually happens due to permissions issues on your machine. To correct it, run `python -m pip install -r %IDF_PATH%\requirements.txt` from the "x86 Native Tools Command Prompt for VS 2019."	
+If you get an error about Python dependencies not being installed, it means that the ESP-IDF installer failed to update Python. This usually happens due to permissions issues on your machine. To correct it, run `python -m pip install -r %IDF_PATH%\requirements.txt` from the "x86 Native Tools Command Prompt for VS 2022."	
 
 #### Device not connected/recognized
 
@@ -537,7 +537,7 @@ To ensure that your build environment is up to date, perform the following steps
 
 	- `IDF_PATH` should have the value `C:\Users\<user>\esp32\esp-idf`
 		
-6. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2019" command line console:
+6. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2022" command line console:
 
     ```text
     cd %MODDABLE%\build
@@ -548,7 +548,7 @@ To ensure that your build environment is up to date, perform the following steps
 7. The ESP-IDF tools provide an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
-	"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
 	```
 
 	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the ESP-IDF Command Prompt shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF Command Prompt (cmd.exe)" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
@@ -560,10 +560,10 @@ To ensure that your build environment is up to date, perform the following steps
 	You can change the Target to include the path to `vcvars32.bat` as follows. Adjust the paths as necessary for your system.
 
 	```text
-	%comspec% /k ""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"
+	%comspec% /k ""%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"
 	```
 
-	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
+	If this string is too long to fit in the Target field, you may need to add it to your System Environment Variables and then reference the environment variable in the shortcut target. For instance, you could set an environment variable `MODDABLE_ESP32_LAUNCH` to the `""%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" "%LOCALAPPDATA%\Programs\Python\Python39\" "%ProgramFiles%\Git\cmd" && popd"` portion of the command, and then set the shortcut target to `C:\Windows\system32\cmd.exe /k %MODDABLE_ESP32_LAUNCH%`.
 
 	It is also convenient to update the "Start in" field of the shortcut to `%MODDABLE%` to start your Command Prompt session in the Moddable SDK directory.
 
