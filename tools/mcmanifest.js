@@ -769,7 +769,7 @@ export class MakeFile extends FILE {
 					tool.writeFileString(path, options);				
 
 				const localization = face.localization ? `--chars-file "$(RESOURCES_DIR)${tool.slash}locals.txt"` : "";
-				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--include-kerning-pairs" : ""} ${face.monochrome ? "--monochrome" : ""} --chars-file "$(RESOURCES_DIR)${tool.slash}${name}.txt" ${localization}`);
+				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} --chars-file "$(RESOURCES_DIR)${tool.slash}${name}.txt" ${localization}`);
 				if ("-alpha" === face.suffix) {
 					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
 					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
@@ -1026,11 +1026,10 @@ class Rule {
 					target = target.slice(0, star);
 					if (sources instanceof Array) {
 						for (var source of sources) {
-							if (typeof source == "string") {
+							if (typeof source == "string")
 								source = tool.resolveSlash(source);
-							} else {
+							else
 								source.source = tool.resolveSlash(source.source);
-							}
 							this.iterate(target, source, true, suffix, false);
 						}
 					}
