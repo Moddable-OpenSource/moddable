@@ -1658,7 +1658,8 @@ txSlot* fxFindRealm(txMachine* the)
             txSlot* instance = function->value.reference;
             txSlot* home = mxFunctionInstanceHome(instance);
 			txSlot* module = home->value.home.module;
-			realm = mxModuleInstanceInternal(module)->value.module.realm;
+            if (module)
+                realm = mxModuleInstanceInternal(module)->value.module.realm;
 		}
 	}
 	if (!realm)
