@@ -963,8 +963,15 @@ void fxLoadModulesFulfilled(txMachine* the)
 	txSlot* module = home->value.home.module;
 	mxTry(the) {
 		txSlot* record = mxArgv(0);
-		if (!mxIsReference(record) || !mxIsStaticModuleRecord(record->value.reference))
-			mxTypeError("no StaticModuleRecord");
+		if (!mxIsReference(record))
+			mxTypeError("no module");
+		if (!mxIsStaticModuleRecord(record->value.reference)) {
+			mxPush(mxStaticModuleRecordConstructor);
+			mxNew();
+			mxPushSlot(record);
+			mxRunCount(1);
+			mxPullSlot(record);
+		}
 		mxPushReference(module);
 		fxDuplicateModuleTransfers(the, record, the->stack);
 		mxPop();
@@ -1027,8 +1034,17 @@ void fxMapModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 			fxDuplicateModuleTransfers(the, the->stack, module);
 			mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
 		}
-		else
-			mxTypeError("no module");
+		else {
+			txSlot* descriptor = the->stack;
+			mxPush(mxStaticModuleRecordConstructor);
+			mxNew();
+			mxPushSlot(descriptor);
+			mxRunCount(1);
+			mxPullSlot(descriptor);
+			fxNewModule(the, realm, moduleID, module);
+			fxDuplicateModuleTransfers(the, the->stack, module);
+			mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
+		}
 	}
 	else if (mxIsStringPrimitive(the->stack)) {
 		txSlot* parent = mxRealmParent(realm);
@@ -1487,8 +1503,15 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 						fxPushKeyString(the, moduleID);
 						mxRunCount(1);
 						record = the->stack;
-						if (!mxIsReference(record) || !mxIsStaticModuleRecord(record->value.reference))
-							mxTypeError("no StaticModuleRecord");
+						if (!mxIsReference(record))
+							mxTypeError("no module");
+						if (!mxIsStaticModuleRecord(record->value.reference)) {
+							mxPush(mxStaticModuleRecordConstructor);
+							mxNew();
+							mxPushSlot(record);
+							mxRunCount(1);
+							mxPullSlot(record);
+						}
 						fxDuplicateModuleTransfers(the, record, module);
 						mxPop();
 					}
@@ -1869,8 +1892,18 @@ void fx_Compartment(txMachine* the)
 							target->kind = the->stack->kind;
 							target->value = the->stack->value;
 						}
-						else
-							mxTypeError("no module");
+						else {
+							txSlot* descriptor = the->stack;
+							mxPush(mxStaticModuleRecordConstructor);
+							mxNew();
+							mxPushSlot(descriptor);
+							mxRunCount(1);
+							mxPullSlot(descriptor);
+							target = target->next = fxNewSlot(the);
+							target->ID = at->value.at.id;
+							target->kind = the->stack->kind;
+							target->value = the->stack->value;
+						}
 					}
 					else if (mxIsStringPrimitive(the->stack)) {
 						target = target->next = fxNewSlot(the);
@@ -2094,9 +2127,16 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 {
 	txSlot* instance = mxFunction->value.reference;
 	txSlot* function = fxLastProperty(the, instance);
-	txSlot* module = mxFunctionInstanceHome(instance)->value.home.module;
+	txSlot* home = mxFunctionInstanceHome(instance);
+	txSlot* module = home->value.home.module;
+	txSlot* meta = mxModuleInstanceMeta(module);
 	txSlot* closures = mxFunctionInstanceCode(instance)->value.code.closures;
 	txSlot* property;
+// 	if (mxIsReference(function)) {
+// 		instance = function->value.reference;
+// 		if (mxIsFunction(instance))
+// 			mxFunctionInstanceHome(instance)->value.home.module = module;
+// 	}
 	closures->flag |= XS_DONT_PATCH_FLAG;
 	property = closures->next->next;
 	while (property) {
@@ -2104,13 +2144,14 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 		property = property->next;
 	}
 	/* THIS */
-	mxPushReference(closures);
+	mxPushReference(home->value.home.object);
 	/* FUNCTION */
 	mxPushSlot(function);
 	mxCall();
 	/* ARGUMENTS */
-	mxPushReference(module);
-	mxRunCount(1);
+	mxPushReference(closures);
+	mxPushSlot(meta);
+	mxRunCount(2);
 	mxPullSlot(mxResult);
 }
 
@@ -2125,7 +2166,7 @@ void fx_StaticModuleRecord(txMachine* the)
 	instance = fxNewStaticModuleRecordInstance(the);
 	mxPullSlot(mxResult);
 	if (mxArgc == 0)
-		mxTypeError("no options");
+		mxTypeError("no descriptor");
 		
 #ifdef mxParse
 	mxPushSlot(mxArgv(0));
@@ -2157,8 +2198,11 @@ void fx_StaticModuleRecord(txMachine* the)
 		if (!fxIsCallable(the, slot))
 			mxTypeError("initialize is no function");
 			
-		transfer = fxLastProperty(the, fxNewHostFunction(the, fx_StaticModuleRecord_initialize, 0, XS_NO_ID));
-		transfer = fxNextSlotProperty(the, transfer, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
+		transfers = fxNewHostFunction(the, fx_StaticModuleRecord_initialize, 0, XS_NO_ID);
+		mxFunctionInstanceHome(transfers)->value.home.object = fxToInstance(the, mxArgv(0));
+		transfer = fxLastProperty(the, transfers);
+		transfer = fxNextSlotProperty(the, transfer, mxArgv(0), XS_NO_ID, XS_INTERNAL_FLAG);
+		transfer = fxNextSlotProperty(the, transfer, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 		mxPullSlot(mxModuleInstanceExecute(instance));
 			
 		mxPush(mxObjectPrototype);
