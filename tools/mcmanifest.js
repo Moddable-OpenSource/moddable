@@ -1379,11 +1379,10 @@ export class Tool extends TOOL {
 				if (this.platform)
 					throw new Error("-p '" + name + "': too many platforms!");
 				name = name.toLowerCase();
-				this.fullplatform = name;
-				this.environment.FULLPLATFORM = name;
-				this.environment.PLATFORMPATH = "";
 				let parts = name.split("/");
-				if ((parts[0] == "sim") || (parts[0] == "simulator")) {
+				if ("esp8266" === parts[0])
+					parts[0] = "esp";
+				else if ((parts[0] == "sim") || (parts[0] == "simulator")) {
 					parts[0] = this.currentPlatform;
 					this.mcsim = true;
 				}
