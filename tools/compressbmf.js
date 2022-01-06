@@ -193,8 +193,10 @@ export default class extends TOOL {
 						for (let j = 0; j < sourceLineBytes - 1; j++)
 							slb[j] = (slb[j] << 4) | (slb[j + 1] >> 4);
 						slb[sourceLineBytes - 1] = (slb[sourceLineBytes - 1] << 4) | 0x0F;
+						writer.send(sourceLine, 0, (sw + 1) >> 1);
 					}
-					writer.send(sourceLine);
+					else
+						writer.send(sourceLine);
 				}
 				else {
 					convert.process(sourceLine, destLine);
