@@ -49,10 +49,9 @@
 
 #include "xs.h"
 #include "xsHost.h"
+#include "xsHosts.h"
 
-#include "xsPlatform.h"
 // #include "mc.defines.h"
-
 #ifndef MODDEF_XS_TEST
 	#define MODDEF_XS_TEST 1
 #endif
@@ -64,6 +63,11 @@
 extern void fx_putc(void *refcon, char c);		//@@
 extern void mc_setup(xsMachine *the);
 
+#if 0 == CONFIG_LOG_DEFAULT_LEVEL
+	#define kStack (((8 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+#else
+	#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+#endif
 
 #if !MODDEF_XS_TEST
 static
@@ -124,9 +128,9 @@ void loop_task(void *pvParameter)
 #endif
 
 	while (true) {
-		gThe = ESP_cloneMachine(0, 0, 0, 0, NULL);
+		gThe = modCloneMachine(0, 0, 0, 0, NULL);
 
-		mc_setup(gThe);
+		modRunMachineSetup(gThe);
 
 #if MODDEF_XS_TEST
 		xsMachine *the = gThe;
@@ -171,24 +175,35 @@ void modLog_transmit(const char *msg)
 }
 
 void ESP_put(uint8_t *c, int count) {
+//#ifdef mxDebug
 	uart_write_bytes(USE_UART, (char *)c, count);
+//#endif
 }
 
 void ESP_putc(int c) {
+//	#ifdef mxDebug
 	char cx = c;
 	uart_write_bytes(USE_UART, &cx, 1);
+//#endif
+
 }
 
 int ESP_getc(void) {
+//#ifdef mxDebug
 	uint8_t c;
 	int err = uart_read_bytes(USE_UART, &c, 1, 0);
 	return (1 == err) ? c : -1;
+//#endif
+return -1;
 }
 
 uint8_t ESP_isReadable() {
+//#ifdef mxDebug
 	size_t s;
 	uart_get_buffered_data_len(USE_UART, &s);
 	return s > 0;
+//#endif
+return 0;
 }
 
 uint8_t ESP_setBaud(int baud) {
@@ -239,11 +254,6 @@ void app_main() {
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 
-	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack (((8 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
-	#else
-		#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
-	#endif
-
-    xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
+	xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
+//	xTaskCreatePinnedToCore(loop_task, "main", kStack, NULL, 4, NULL, 0);
 }

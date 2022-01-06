@@ -54,7 +54,8 @@
 	#include "spi_flash.h"
 #endif
 
-#include "xsHost.h"
+#include "xs.h"
+#include "xsHosts.h"
 
 #ifdef mxDebug
 	#include "modPreference.h"
@@ -108,7 +109,7 @@ void fxDeleteMachinePlatform(txMachine* the)
 #endif
 
 #ifdef mxInstrument
-	espInstrumentMachineEnd(the);		// removed from modWorker!!!
+	modInstrumentMachineEnd(the);
 #endif
 
 	modMachineTaskUninit(the);
@@ -1203,7 +1204,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 16: {
 			int atomSize;
-			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			char *atom = modGetModAtom(the, c_read32be(cmd), &atomSize);
 			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
 				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
 				the->echoOffset += atomSize;
@@ -1222,7 +1223,12 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->echoBuffer[the->echoOffset++] = '-';
 			the->echoBuffer[the->echoOffset++] = 's';
 			the->echoBuffer[the->echoOffset++] = '2';
+#elif kCPUESP32S3
+			the->echoBuffer[the->echoOffset++] = '-';
+			the->echoBuffer[the->echoOffset++] = 's';
+			the->echoBuffer[the->echoOffset++] = '3';
 #endif
+
 #endif
 			break;
 

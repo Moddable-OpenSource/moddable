@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -191,6 +191,7 @@ XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/platforms/esp \
+	$(XS_DIR)/platforms/mc \
 	$(SDKCONFIG_H_DIR) \
 	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
@@ -199,6 +200,7 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/platforms/esp/xsHost.h \
+	$(XS_DIR)/platforms/mc/xsHosts.h \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
@@ -421,7 +423,7 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	
-$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld xs_esp32.bin"
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
@@ -497,6 +499,10 @@ $(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 	
 $(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+	@echo "# cc" $(<F) "(strings in flash)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+$(TMP_DIR)/xsHosts.c.o: xsHosts.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
