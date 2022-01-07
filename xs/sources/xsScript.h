@@ -612,7 +612,9 @@ struct sxParser {
 	int ahead;
 	txU4 character;
 	txU4 lookahead;
-
+#if mxCESU8
+	txU4 surrogate;
+#endif
 	int line;
 	int crlf;
 	int escaped;

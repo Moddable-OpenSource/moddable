@@ -1346,13 +1346,52 @@ void fx_evalScript(xsMachine* the)
 void fx_print(xsMachine* the)
 {
 	xsIntegerValue c = xsToInteger(xsArgc), i;
+	xsStringValue string, p, q;
 	xsVars(1);
 	xsVar(0) = xsGet(xsGlobal, xsID("String"));
 	for (i = 0; i < c; i++) {
 		if (i)
 			fprintf(stdout, " ");
 		xsArg(i) = xsCallFunction1(xsVar(0), xsUndefined, xsArg(i));
-		fprintf(stdout, "%s", xsToString(xsArg(i)));
+		p = string = xsToString(xsArg(i));
+	#if mxCESU8
+		for (;;) {
+			xsIntegerValue character;
+			q = fxUTF8Decode(p, &character);
+		again:
+			if (character == C_EOF)
+				break;
+			if ((0x0000D800 <= character) && (character <= 0x0000DBFF)) {
+				xsStringValue r = q;
+				xsIntegerValue surrogate;
+				q = fxUTF8Decode(r, &surrogate);
+				if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF)) {
+					char buffer[5];
+					character = (txInteger)(0x00010000 + ((character & 0x03FF) << 10) + (surrogate & 0x03FF));
+					if (p > string) {
+						char c = *p;
+						*p = 0;
+						fprintf(stdout, "%s", string);
+						*p = c;
+					}
+					buffer[0] = (txU1)(0xF0 | (((txU4)character) >> 18));
+					buffer[1] = (txU1)(0x80 | ((((txU4)character) >> 12) & 0x3F));
+					buffer[2] = (txU1)(0x80 | ((((txU4)character) >> 6) & 0x3F));
+					buffer[3] = (txU1)(0x80 | (((txU4)character) & 0x3F));
+					buffer[4] = 0;
+					fprintf(stdout, "%s", buffer);
+					string = q;
+				}
+				else {
+					p = r;
+					character = surrogate;
+					goto again;
+				}
+			}
+			p = q;
+		}
+	#endif	
+		fprintf(stdout, "%s", string);
 	}
 	fprintf(stdout, "\n");
 }

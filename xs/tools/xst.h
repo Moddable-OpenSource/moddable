@@ -105,4 +105,6 @@
 	#define mx32bitID 1
 #endif
 
+#define mxCESU8 1
+
 #endif /* __XST__ */

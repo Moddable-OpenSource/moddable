@@ -406,7 +406,7 @@ void fx_String_fromCharCode(txMachine* the)
 	txInteger length = 0;
 	txInteger count = mxArgc;
 	txInteger index = 0;
-	txInteger c, d; 
+	txInteger c; 
 	txString p;
 	while (index < count) {
 		txNumber number = fxToNumber(the, mxArgv(index));
@@ -432,13 +432,13 @@ void fx_String_fromCharCode(txMachine* the)
 		c = mxArgv(index)->value.integer;
 		index++;
 		if (index < count) {
-			d = mxArgv(index)->value.integer;
+			txInteger d = mxArgv(index)->value.integer;
 			if ((0x0000D800 <= c) && (c <= 0x0000DBFF) && (0x0000DC00 <= d) && (d <= 0x0000DFFF)) {
 				c = 0x00010000 + ((c & 0x000003FF) << 10) + (d & 0x000003FF);
 				index++;
 			}
 		}	
-		length += fxUTF8Length(c);
+		length += mxStringByteLength(c);
 	}		
 	mxMeterSome(count);
 	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
@@ -449,13 +449,13 @@ void fx_String_fromCharCode(txMachine* the)
 		c = mxArgv(index)->value.integer;
 		index++;
 		if (index < count) {
-			d = mxArgv(index)->value.integer;
+			txInteger d = mxArgv(index)->value.integer;
 			if ((0x0000D800 <= c) && (c <= 0x0000DBFF) && (0x0000DC00 <= d) && (d <= 0x0000DFFF)) {
 				c = 0x00010000 + ((c & 0x000003FF) << 10) + (d & 0x000003FF);
 				index++;
 			}
 		}	
-		p = fxUTF8Encode(p, c);
+		p = mxStringByteEncode(p, c);
 	}	
 	*p = 0;
 }
@@ -465,7 +465,7 @@ void fx_String_fromCodePoint(txMachine* the)
 	txInteger length = 0;
 	txInteger count = mxArgc;
 	txInteger index = 0;
-	txInteger c; 
+	txInteger character; 
 	txString p;
 	while (index < count) {
 		txNumber number = fxToNumber(the, mxArgv(index));
@@ -474,9 +474,14 @@ void fx_String_fromCodePoint(txMachine* the)
 			mxRangeError("invalid code point %lf", number);
 		if ((number < 0) || (0x10FFFF < number))
 			mxRangeError("invalid code point %lf", number);
-		c = mxArgv(index)->value.integer = (txInteger)number;
+		mxArgv(index)->value.integer = (txInteger)number;
 		mxArgv(index)->kind = XS_INTEGER_KIND;
-		length += fxUTF8Length(c);
+		index++;
+	}
+	index = 0;
+	while (index < count) {
+		character = mxArgv(index)->value.integer;
+		length += mxStringByteLength(character);
 		index++;
 	}
 	mxMeterSome(count);
@@ -485,8 +490,8 @@ void fx_String_fromCodePoint(txMachine* the)
 	p = mxResult->value.string;
 	index = 0;
 	while (index < count) {
-		c = mxArgv(index)->value.integer;
-		p = fxUTF8Encode(p, c);
+		character = mxArgv(index)->value.integer;
+		p = mxStringByteEncode(p, character);
 		index++;
 	}	
 	*p = 0;
@@ -657,7 +662,7 @@ void fx_String_prototype_codePointAt(txMachine* the)
 		txInteger offset = fxUnicodeToUTF8Offset(mxThis->value.string, (txInteger)at);
 		length = fxUnicodeToUTF8Offset(mxThis->value.string + offset, 1);
 		if ((offset >= 0) && (length > 0)) {
-			fxUTF8Decode(mxThis->value.string + offset, &mxResult->value.integer);
+			mxStringByteDecode(mxThis->value.string + offset, &mxResult->value.integer);
 			mxResult->kind = XS_INTEGER_KIND;
 		}
 	}
@@ -1503,67 +1508,6 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 	txInteger stringLength = mxStringLength(string);
 	mxMeterSome(fxUnicodeLength(string));
 	if (stringLength) {
-	#if mxWindows
-		txInteger unicodeLength;
-		txU2* unicodeBuffer = NULL;
-		txInteger resultLength;
-		txString result;
-		mxTry(the) {
-			unicodeLength = MultiByteToWideChar(CP_UTF8, 0, string, stringLength, NULL, 0);
-			if (unicodeLength == 0) fxJump(the);
-			unicodeBuffer = c_malloc(unicodeLength * 2);
-			if (unicodeBuffer == NULL) fxJump(the);
-			MultiByteToWideChar(CP_UTF8, 0, string, stringLength, unicodeBuffer, unicodeLength);
-			if (flag)
-				CharUpperBuffW(unicodeBuffer, unicodeLength);
-			else
-				CharLowerBuffW(unicodeBuffer, unicodeLength);
-			resultLength = WideCharToMultiByte(CP_UTF8, 0, unicodeBuffer, unicodeLength, NULL, 0, NULL, NULL);
-			result = fxNewChunk(the, resultLength + 1);
-			WideCharToMultiByte(CP_UTF8, 0, unicodeBuffer, unicodeLength, result, resultLength, NULL, NULL);
-			result[resultLength] = 0;
-			c_free(unicodeBuffer);
-			mxResult->value.string = result;
-			mxResult->kind = XS_STRING_KIND;
-		}
-		mxCatch(the) {
-			if (unicodeBuffer)
-				c_free(unicodeBuffer);
-			fxJump(the);
-		}
-	#elif (mxMacOSX || mxiOS)
-		CFStringRef cfString = NULL;
-		CFMutableStringRef mutableCFString = NULL;
-		CFRange range;
-		CFIndex resultLength;
-		txString result;
-		mxTry(the) {
-			cfString = CFStringCreateWithBytes(kCFAllocatorDefault, (const UInt8 *)string, stringLength, kCFStringEncodingUTF8, false);
-			if (cfString == NULL) fxJump(the);
-			mutableCFString = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, cfString);
-			if (mutableCFString == NULL) fxJump(the);
-			if (flag)
-				CFStringUppercase(mutableCFString, 0);
-			else
-				CFStringLowercase(mutableCFString, 0);
-			range = CFRangeMake(0, CFStringGetLength(mutableCFString));
-			CFStringGetBytes(mutableCFString, range, kCFStringEncodingUTF8, 0, false, NULL, 0, &resultLength);
-			result = fxNewChunk(the, resultLength + 1);
-			CFStringGetBytes(mutableCFString, range, kCFStringEncodingUTF8, 0, false, (UInt8 *)result, resultLength, NULL);
-			result[resultLength] = 0;
-			CFRelease(mutableCFString);
-			CFRelease(cfString);
-			mxResult->value.string = result;
-			mxResult->kind = XS_STRING_KIND;
-		}
-		mxCatch(the) {
-			if (mutableCFString)
-				CFRelease(mutableCFString);
-			if (cfString)
-				CFRelease(cfString);
-			fxJump(the);
-		}
-	#else
 		txString s, r;
 		txInteger c;
 		const txCharCase* current;
@@ -1572,7 +1516,7 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 		mxResult->kind = XS_STRING_KIND;
 		s = mxThis->value.string;
 		r = mxResult->value.string;
-		while (((s = fxUTF8Decode(s, &c))) && (c != C_EOF)) {
+		while (((s = mxStringByteDecode(s, &c))) && (c != C_EOF)) {
 			current = flag ? gxCharCaseToUpper : gxCharCaseToLower;
 			while (current < limit) {
 				if (c < current->from)
@@ -1588,10 +1532,9 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 				}
 				current++;
 			}
-			r = fxUTF8Encode(r, c);
+			r = mxStringByteEncode(r, c);
 		}
 		*r = 0;
-	#endif
 	}
 	else {
 		mxResult->value.string = mxEmptyString.value.string;

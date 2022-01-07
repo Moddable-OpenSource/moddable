@@ -344,7 +344,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 					case 'u':
 						p++;
 						if (fxParseUnicodeEscape(&p, &character, 0, '\\'))
-							size += fxUTF8Length(character);
+							size += mxStringByteLength(character);
 						else
 							goto error;
 						break;
@@ -353,7 +353,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 					}
 				}
 				else {
-					size += fxUTF8Length(character);
+					size += mxStringByteLength(character);
 				}
 			}
 			s = theParser->string->value.string = fxNewChunk(the, size + 1);
@@ -396,7 +396,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 						case 'u':
 							p++;
 							fxParseUnicodeEscape(&p, &character, 0, '\\');
-							s = fxUTF8Encode(s, character);
+							s = mxStringByteEncode(s, character);
 							break;
 						}
 					}
@@ -961,10 +961,13 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 
 void fxStringifyJSONString(txMachine* the, txJSONStringifier* theStringifier, txString theString)
 {
-	txString string;
-	txInteger character;	
 	fxStringifyJSONChar(the, theStringifier, '"');
-	while (((string = fxUTF8Decode(theString, &character))) && (character != C_EOF)) {
+	for (;;) {
+		txInteger character;	
+		txString string = fxUTF8Decode(theString, &character);
+	again:
+		if (character == C_EOF)
+			break;
 		if (character < 8)
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
 		else if (character == 8)
@@ -991,8 +994,27 @@ void fxStringifyJSONString(txMachine* the, txJSONStringifier* theStringifier, tx
 			fxStringifyJSONChars(the, theStringifier, "\\\\", 0);
 		else if (character < 127)
 			fxStringifyJSONChar(the, theStringifier, (char)character);
+	#if mxCESU8			
+		else if ((0x0000D800 <= character) && (character <= 0x0000DBFF)) {
+			txString former = string;
+			txInteger surrogate;	
+			string = fxUTF8Decode(former, &surrogate);
+			if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF)) {
+				fxStringifyJSONChars(the, theStringifier, theString, mxPtrDiff(string - theString));
+			}
+			else {
+				fxStringifyJSONUnicodeEscape(the, theStringifier, character);
+				theString = former;
+				character = surrogate;
+				goto again;
+			}
+		}
+		else if ((0x0000DC00 <= character) && (character <= 0x0000DFFF))
+			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
+	#else		
 		else if ((0xD800 <= character) && (character <= 0xDFFF))
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
+	#endif
 		else
 			fxStringifyJSONChars(the, theStringifier, theString, mxPtrDiff(string - theString));
 		theString = string;

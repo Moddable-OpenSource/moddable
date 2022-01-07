@@ -1540,7 +1540,7 @@ void fxPatternParserName(txPatternParser* parser, txInteger* length)
 	if (parser->character == '\\')
 		fxPatternParserNameEscape(parser);
 	if (fxIsIdentifierFirst(parser->character)) {
-		p = fxUTF8Encode(p, parser->character);
+		p = mxStringByteEncode(p, parser->character);
 		fxPatternParserNext(parser);
 	}
 	else
@@ -1549,9 +1549,9 @@ void fxPatternParserName(txPatternParser* parser, txInteger* length)
 		if (parser->character == '\\')
 			fxPatternParserNameEscape(parser);
 		if (fxIsIdentifierNext(parser->character)) {
-			if (fxUTF8Length(parser->character) > (q - p))
+			if (mxStringByteLength(parser->character) > (q - p))
 				fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
-			p = fxUTF8Encode(p, parser->character);
+			p = mxStringByteEncode(p, parser->character);
 			fxPatternParserNext(parser);
 		}
 		else
@@ -1596,7 +1596,7 @@ void fxPatternParserNext(txPatternParser* parser)
 		parser->surrogate = 0;
 	}
 	else {
-		p = fxUTF8Decode(p, &character);
+		p = mxStringByteDecode(p, &character);
 		if (character != C_EOF) {
 			parser->offset = mxPtrDiff(p - parser->pattern);
 			if (!(parser->flags & XS_REGEXP_U) && (character > 0xFFFF)) {
@@ -1754,7 +1754,7 @@ txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction)
 txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags)
 {
 	txInteger character;
-	fxUTF8Decode(input + offset, &character);
+	mxStringByteDecode(input + offset, &character);
 	if (flags & XS_REGEXP_I) {
 		txBoolean flag = (flags & XS_REGEXP_U) ? 1 : 0, inside;
 		txCharCase* current = fxCharCaseFind(character, flag, &inside);

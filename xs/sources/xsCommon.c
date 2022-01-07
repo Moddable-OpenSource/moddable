@@ -849,21 +849,19 @@ txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, txInteger
 	if (c && (c == separator) && (0x0000D800 <= value) && (value <= 0x0000DBFF)) {
 		c = c_read8(p++);
 		if (c == 'u') {
-			txU4 surrogate = 0;
+			txU4 other = 0;
 			c = c_read8(p++);
-			if (!fxParseHex(c, &surrogate)) return 1;
+			if (!fxParseHex(c, &other)) return 1;
 			c = c_read8(p++);
-			if (!fxParseHex(c, &surrogate)) return 1;
+			if (!fxParseHex(c, &other)) return 1;
 			c = c_read8(p++);
-			if (!fxParseHex(c, &surrogate)) return 1;
+			if (!fxParseHex(c, &other)) return 1;
 			c = c_read8(p++);
-			if (!fxParseHex(c, &surrogate)) return 1;
-			if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF))
-				value = 0x00010000 + ((value & 0x03FF) << 10) + (surrogate & 0x03FF);
-			else
-				return 1;
-			*character = (txInteger)value;
-			*string = (txString)p;
+			if (!fxParseHex(c, &other)) return 1;
+			if ((0x0000DC00 <= other) && (other <= 0x0000DFFF)) {
+				*character = (txInteger)(0x00010000 + ((value & 0x03FF) << 10) + (other & 0x03FF));
+				*string = (txString)p;
+			}
 		}
 	}
 	return 1;
@@ -999,6 +997,83 @@ txSize fxUTF8Length(txInteger character)
 	return length;
 }
 
+#if mxCESU8
+txString fxCESU8Decode(txString string, txInteger* character)
+{
+	txInteger result;
+	string = fxUTF8Decode(string, &result);
+	if ((0x0000D800 <= result) && (result <= 0x0000DBFF)) {
+		txString former = string;
+		txInteger surrogate;
+		string = fxUTF8Decode(former, &surrogate);
+		if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF))
+			result = 0x00010000 + ((result & 0x000003FF) << 10) + (surrogate & 0x000003FF);
+		else
+			string = former;
+	}
+	*character = result;
+	return string;
+}
+
+txString fxCESU8Encode(txString string, txInteger character)
+{
+	txU1* p = (txU1*)string;
+	if (character < 0) {
+	}
+	else if (character == 0) {
+		*p++ = 0xF4;
+		*p++ = 0x90;
+		*p++ = 0x80;
+		*p++ = 0x80;
+	}
+	else if (character < 0x80) {
+		*p++ = (txU1)character;
+	}
+	else if (character < 0x800) {
+		*p++ = (txU1)(0xC0 | (((txU4)character) >> 6));
+		*p++ = (txU1)(0x80 | (((txU4)character) & 0x3F));
+	}
+	else if (character < 0x10000) {
+		*p++ = (txU1)(0xE0 | (((txU4)character) >> 12));
+		*p++ = (txU1)(0x80 | ((((txU4)character) >> 6) & 0x3F));
+		*p++ = (txU1)(0x80 | (((txU4)character) & 0x3F));
+	}
+	else if (character < 0x110000) {
+		txInteger surrogate;
+		character -= 0x00010000;
+		surrogate = 0xDC00 | (character & 0x3FF);
+		character = 0xD800 | ((character >> 10) & 0x3FF);
+		*p++ = (txU1)(0xE0 | (((txU4)character) >> 12));
+		*p++ = (txU1)(0x80 | ((((txU4)character) >> 6) & 0x3F));
+		*p++ = (txU1)(0x80 | (((txU4)character) & 0x3F));
+		*p++ = (txU1)(0xE0 | (((txU4)surrogate) >> 12));
+		*p++ = (txU1)(0x80 | ((((txU4)surrogate) >> 6) & 0x3F));
+		*p++ = (txU1)(0x80 | (((txU4)surrogate) & 0x3F));
+	}
+	return (txString)p;
+}
+
+txSize fxCESU8Length(txInteger character)
+{
+	txSize length;
+	if (character < 0)
+		length = 0;
+	else if (character == 0)
+		length = 4;
+	else if (character < 0x80)
+		length = 1;
+	else if (character < 0x800)
+		length = 2;
+	else if (character < 0x10000)
+		length = 3;
+	else if (character < 0x110000)
+		length = 6;
+	else
+		length = 0;
+	return length;
+}
+#endif
+
 txSize fxUTF8ToUnicodeOffset(txString theString, txSize theOffset)
 {
 	txU1* p = (txU1*)theString;
@@ -1086,8 +1161,8 @@ txSize fxUnicodeLength(txString _s)
 done:
 	return (txSize)((s - _s) - count);
 }
-
 #endif
+
 txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset)
 {
 	txU1* p = (txU1*)theString;
