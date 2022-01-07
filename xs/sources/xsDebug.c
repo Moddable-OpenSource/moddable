@@ -214,12 +214,15 @@ void fxDebugCommand(txMachine* the)
 	}
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
+#if MODDEF_XS_TEST
 	if (the->debugTag == XS_IMPORT_TAG)
 		fxQueueJob(the, 2, C_NULL);
 	else if (the->debugTag == XS_SCRIPT_TAG)
 		fxQueueJob(the, 4, C_NULL);
+#endif
 }
 
+#if MODDEF_XS_TEST
 void fxDebugImport(txMachine* the, txSlot* module, txString path)
 {
 	if (!fxIsConnected(the))
@@ -242,6 +245,7 @@ void fxDebugImport(txMachine* the, txSlot* module, txString path)
         mxPop();
     }
 }
+#endif
 
 void fxDebugLine(txMachine* the, txID id, txInteger line)
 {
@@ -610,14 +614,8 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_CLEAR_BREAKPOINTS_TAG;
 	else if (!c_strcmp(name, "go"))
 		the->debugTag = XS_GO_TAG;
-	else if (!c_strcmp(name, "import"))
-		the->debugTag = XS_IMPORT_TAG;
 	else if (!c_strcmp(name, "logout"))
 		the->debugTag = XS_LOGOUT_TAG;
-	else if (!c_strcmp(name, "module"))
-		the->debugTag = XS_MODULE_TAG;
-	else if (!c_strcmp(name, "script"))
-		the->debugTag = XS_SCRIPT_TAG;
 	else if (!c_strcmp(name, "select"))
 		the->debugTag = XS_SELECT_TAG;
 	else if (!c_strcmp(name, "set-all-breakpoints"))
@@ -632,6 +630,14 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_STEP_OUTSIDE_TAG;
 	else if (!c_strcmp(name, "toggle"))
 		the->debugTag = XS_TOGGLE_TAG;
+#if MODDEF_XS_TEST
+	else if (!c_strcmp(name, "import"))
+		the->debugTag = XS_IMPORT_TAG;
+	else if (!c_strcmp(name, "module"))
+		the->debugTag = XS_MODULE_TAG;
+	else if (!c_strcmp(name, "script"))
+		the->debugTag = XS_SCRIPT_TAG;
+#endif
 	else
 		the->debugTag = XS_UNKNOWN_TAG;
 }
@@ -653,16 +659,7 @@ void fxDebugPopTag(txMachine* the)
 	case XS_GO_TAG:
 		the->debugExit |= 2;
 		break;
-	case XS_IMPORT_TAG:
-		the->debugExit |= 2;
-		break;
 	case XS_LOGOUT_TAG:
-		the->debugExit |= 2;
-		break;
-	case XS_MODULE_TAG:
-	case XS_SCRIPT_TAG:
-		mxPop();
-		mxPop();
 		the->debugExit |= 2;
 		break;
 	case XS_SELECT_TAG:
@@ -684,6 +681,17 @@ void fxDebugPopTag(txMachine* the)
 		break;
 	case XS_TOGGLE_TAG:
 		break;
+#if MODDEF_XS_TEST
+	case XS_IMPORT_TAG:
+		the->debugExit |= 2;
+		break;
+	case XS_MODULE_TAG:
+	case XS_SCRIPT_TAG:
+		mxPop();
+		mxPop();
+		the->debugExit |= 2;
+		break;
+#endif
 	}
 }
 
@@ -707,42 +715,9 @@ void fxDebugPushTag(txMachine* the)
 	case XS_GO_TAG:
 		fxGo(the);
 		break;
-	case XS_IMPORT_TAG:
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPush(mxGlobal);
-		mxGetID(fxID(the, "<xsbug:import>"));
-        mxCall();
-		mxPushStringC("xsbug://");
-		fxConcatStringC(the, the->stack, the->pathValue);
-		mxPushInteger(the->lineValue);
-		break;
 	case XS_LOGOUT_TAG:
 		fxLogout(the);
 		fxGo(the);
-		break;
-	case XS_MODULE_TAG:
-	case XS_SCRIPT_TAG:
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPush(mxGlobal);
-		if (the->debugTag == XS_MODULE_TAG)
-			mxGetID(fxID(the, "<xsbug:module>"));
-		else
-			mxGetID(mxID(__xsbug_script_));
-		mxCall();
-		if (the->debugModule)
-			mxPushSlot(the->debugModule);
-		else
-			mxPushUndefined();
-		mxPushUndefined();
-		fxStringBuffer(the, the->stack, C_NULL, 256);
-		mxPushStringC(the->pathValue);
-		mxPushInteger(the->lineValue);
-		mxPushInteger(256);
-		mxPushInteger(0);
 		break;
 	case XS_SELECT_TAG:
 		fxSelect(the, (txSlot*)the->idValue);
@@ -774,11 +749,47 @@ void fxDebugPushTag(txMachine* the)
 		fxListModules(the);
 		fxEchoStop(the);
 		break;
+#if MODDEF_XS_TEST
+	case XS_IMPORT_TAG:
+		/* THIS */
+		mxPushUndefined();
+		/* FUNCTION */
+		mxPush(mxGlobal);
+		mxGetID(fxID(the, "<xsbug:import>"));
+        mxCall();
+		mxPushStringC("xsbug://");
+		fxConcatStringC(the, the->stack, the->pathValue);
+		mxPushInteger(the->lineValue);
+		break;
+	case XS_MODULE_TAG:
+	case XS_SCRIPT_TAG:
+		/* THIS */
+		mxPushUndefined();
+		/* FUNCTION */
+		mxPush(mxGlobal);
+		if (the->debugTag == XS_MODULE_TAG)
+			mxGetID(fxID(the, "<xsbug:module>"));
+		else
+			mxGetID(mxID(__xsbug_script_));
+		mxCall();
+		if (the->debugModule)
+			mxPushSlot(the->debugModule);
+		else
+			mxPushUndefined();
+		mxPushUndefined();
+		fxStringBuffer(the, the->stack, C_NULL, 256);
+		mxPushStringC(the->pathValue);
+		mxPushInteger(the->lineValue);
+		mxPushInteger(256);
+		mxPushInteger(0);
+		break;
+#endif
 	}
 }
 
 void fxDebugScriptCDATA(txMachine* the, char c)
 {
+#if MODDEF_XS_TEST
 	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG)) {
 		txString string = the->stack[4].value.string;
 		txInteger size = the->stack[1].value.integer;
@@ -796,6 +807,7 @@ void fxDebugScriptCDATA(txMachine* the, char c)
 		string[offset++] = c;
 		the->stack[0].value.integer = offset;
 	}
+#endif
 }
 
 void fxDebugThrow(txMachine* the, txString path, txInteger line, txString message)

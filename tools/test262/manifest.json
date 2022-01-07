@@ -34,14 +34,14 @@
 		]
 	},
 	"strip": [],
-	"defines": {
-		"XS_TEST": 1
-	},
 	"platforms": {
 		"esp": {
 			"error": "test262 is unsupported on esp8266"
 		},
 		"esp32": {
+			"defines": {
+				"XS_TEST": 1
+			},
 			"modules": {
 				"*": [
 					"$(MODULES)/base/timer/*",
