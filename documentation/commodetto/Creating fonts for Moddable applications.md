@@ -39,7 +39,7 @@ To use fontbm, you must first install it on your system. For Windows users, a bi
 
 Once you have fontbm, you may use it from the command line to generate the .fnt and .png files needed to add fonts to the Moddable SDK.
 
-There is experimental support in the Moddable SDK project manifest.json file to invoke fontbm automatically as needed as part of building a project. This makes it much easier to use different fonts and font sizes in your projects. To use fontmb support in `mcconfig` or `mcrun`, you must first set the environment variable `FONTBM` to the path to the fontbm executable to allow the Moddable SDK build tools to find fontbm.
+There is experimental support in the Moddable SDK project manifest.json file to invoke fontbm automatically as needed as part of building a project. This makes it much easier to use different fonts and font sizes in your projects. To use fontbm support in `mcconfig` or `mcrun`, you must first set the environment variable `FONTBM` to the path to the fontbm executable to allow the Moddable SDK build tools to find fontbm.
 
 ### fontbm in manifest.json
 
