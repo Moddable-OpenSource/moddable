@@ -1374,11 +1374,8 @@ void fx_print(xsMachine* the)
 						fprintf(stdout, "%s", string);
 						*p = c;
 					}
-					buffer[0] = (txU1)(0xF0 | (((txU4)character) >> 18));
-					buffer[1] = (txU1)(0x80 | ((((txU4)character) >> 12) & 0x3F));
-					buffer[2] = (txU1)(0x80 | ((((txU4)character) >> 6) & 0x3F));
-					buffer[3] = (txU1)(0x80 | (((txU4)character) & 0x3F));
-					buffer[4] = 0;
+					p = fxUTF8Encode(buffer, character);
+					*p = 0;
 					fprintf(stdout, "%s", buffer);
 					string = q;
 				}
