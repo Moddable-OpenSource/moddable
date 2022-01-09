@@ -1703,7 +1703,7 @@ void fx_String_prototype_iterator(txMachine* the)
 	fxCoerceToString(the, mxThis);
 	mxPush(mxStringIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_String)));
-	property = fxNextIntegerProperty(the, property, fxUnicodeLength(mxThis->value.string), XS_NO_ID, XS_INTERNAL_FLAG);
+	property = fxNextIntegerProperty(the, property, c_strlen(mxThis->value.string), XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 
@@ -1717,13 +1717,14 @@ void fx_String_prototype_iterator_next(txMachine* the)
 	txSlot* value = result->value.reference->next;
 	txSlot* done = value->next;
 	if (index->value.integer < length->value.integer) {
-		txInteger offset = fxUnicodeToUTF8Offset(iterable->value.string, index->value.integer);
-		txInteger length = fxUnicodeToUTF8Offset(iterable->value.string + offset, 1);
-		value->value.string = (txString)fxNewChunk(the, length + 1);
-		c_memcpy(value->value.string, iterable->value.string + offset, length);
-		value->value.string[length] = 0;
+		txInteger character, size;
+		txString string = mxStringByteDecode(iterable->value.string + index->value.integer, &character);
+		index->value.integer = mxPtrDiff(string - iterable->value.string);
+		size = mxStringByteLength(character);
+		value->value.string = (txString)fxNewChunk(the, size + 1);
+		string = mxStringByteEncode(value->value.string, character);
+		*string = 0;
 		value->kind = XS_STRING_KIND;
-		index->value.integer++;
 	}
 	else {
 		value->kind = XS_UNDEFINED_KIND;

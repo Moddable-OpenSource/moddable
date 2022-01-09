@@ -158,6 +158,10 @@ typedef struct {
 	txTerm* right;
 } txSequence;
 
+enum {
+	XS_REGEXP_NAME = 1 << 8,
+};
+
 struct sxPatternParser {
 	txMachine* the;
 	txTerm* first;
@@ -319,7 +323,7 @@ struct sxStateData {
 	txCaptureData captures[1];
 };
 
-static txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction);
+static txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction, txInteger flags);
 static txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags);
 static txBoolean fxMatchCharacter(txInteger* characters, txInteger character);
 static txStateData* fxPopStates(txMachine* the, txStateData* fromState, txStateData* toState);
@@ -1002,6 +1006,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 				fxPatternParserNext(parser);
 				if (parser->character != '<')
 					fxPatternParserError(parser, gxErrors[mxInvalidName]);
+				parser->flags |= XS_REGEXP_NAME;
 				fxPatternParserNext(parser);
 				fxPatternParserName(parser, &length);
 				current = fxTermCreate(parser, sizeof(txCaptureReference) + length, fxCaptureReferenceMeasure);
@@ -1068,6 +1073,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 					current = fxQuantifierParse(parser, current, currentIndex);
 				}
 				else if (parser->character == '<') {
+					parser->flags |= XS_REGEXP_NAME;
 					fxPatternParserNext(parser);
 					if (parser->character == '=') {
 						fxPatternParserNext(parser);
@@ -1557,6 +1563,7 @@ void fxPatternParserName(txPatternParser* parser, txInteger* length)
 		else
 			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
 	}
+	parser->flags &= ~XS_REGEXP_NAME;
 	fxPatternParserNext(parser);
 	*p = 0;
 	*length = mxPtrDiff(p - parser->error);
@@ -1569,7 +1576,7 @@ void fxPatternParserNameEscape(txPatternParser* parser)
 	if (parser->character != 'u')
 		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
 	p = parser->pattern + parser->offset;
-	if (!fxParseUnicodeEscape(&p, &parser->character, (parser->flags & XS_REGEXP_U) ? 1 : 0, (parser->flags & XS_REGEXP_U) ? '\\' : 0))
+	if (!fxParseUnicodeEscape(&p, &parser->character, 1, '\\'))
 		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
 	parser->offset = mxPtrDiff(p - parser->pattern);
 }
@@ -1599,7 +1606,7 @@ void fxPatternParserNext(txPatternParser* parser)
 		p = mxStringByteDecode(p, &character);
 		if (character != C_EOF) {
 			parser->offset = mxPtrDiff(p - parser->pattern);
-			if (!(parser->flags & XS_REGEXP_U) && (character > 0xFFFF)) {
+			if (!(parser->flags & (XS_REGEXP_U | XS_REGEXP_NAME)) && (character > 0xFFFF)) {
 				character -= 0x10000;
 				parser->surrogate = 0xDC00 | (character & 0x3FF);
 				character = 0xD800 | (character >> 10);
@@ -1738,15 +1745,46 @@ void fxDeleteRegExp(void* the, txInteger* code, txInteger* data)
 
 // MATCH
 
-txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction)
+txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction, txInteger flags)
 {
 	txU1* p = (txU1*)input + offset;
 	txU1 c;
-	p += direction;
-	while ((c = c_read8(p))) {
-		if ((c & 0xC0) != 0x80)
-			break;
+#if mxCESU8
+	if (flags & XS_REGEXP_U) {
+		txInteger character;
+		if (direction > 0) {
+			p = (txU1*)mxStringByteDecode((txString)p, &character);
+		}
+		else {
+			p--;
+			while ((c = c_read8(p))) {
+				if ((c & 0xC0) != 0x80)
+					break;
+				p--;
+			}
+			fxUTF8Decode((txString)p, &character);
+			if ((0x0000DC00 <= character) && (character <= 0x0000DFFF)) {
+				txU1* q = p - 1;
+				while ((c = c_read8(q))) {
+					if ((c & 0xC0) != 0x80)
+						break;
+					q--;
+				}
+				fxUTF8Decode((txString)q, &character);
+				if ((0x0000D800 <= character) && (character <= 0x0000DBFF))
+					p = q;
+			}
+		}
+	}
+	else
+#endif
+	{
 		p += direction;
+		while ((c = c_read8(p))) {
+			if ((c & 0xC0) != 0x80)
+				break;
+			p += direction;
+		}
 	}
 	return mxPtrDiff(p - (txU1*)input);
 }
@@ -1754,7 +1792,14 @@ txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction)
 txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags)
 {
 	txInteger character;
+#if mxCESU8
+	if (flags & XS_REGEXP_U)
+		mxStringByteDecode(input + offset, &character);
+	else
+		fxUTF8Decode(input + offset, &character);
+#else
 	mxStringByteDecode(input + offset, &character);
+#endif
 	if (flags & XS_REGEXP_I) {
 		txBoolean flag = (flags & XS_REGEXP_U) ? 1 : 0, inside;
 		txCharCase* current = fxCharCaseFind(character, flag, &inside);
@@ -2021,8 +2066,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							while (from < to) {
 								if (fxGetCharacter(subject, g, flags) != fxGetCharacter(subject, from, flags))
 									goto mxPopState;
-								g = fxFindCharacter(subject, g, 1);
-								from = fxFindCharacter(subject, from, 1);
+								g = fxFindCharacter(subject, g, 1, flags);
+								from = fxFindCharacter(subject, from, 1, flags);
 							}
 							offset = f;
 						}
@@ -2044,8 +2089,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							while (from < to) {
 								if (fxGetCharacter(subject, g, flags) != fxGetCharacter(subject, from, flags))
 									goto mxPopState;
-								g = fxFindCharacter(subject, g, 1);
-								from = fxFindCharacter(subject, from, 1);
+								g = fxFindCharacter(subject, g, 1, flags);
+								from = fxFindCharacter(subject, from, 1, flags);
 							}
 							offset = f;
 						}
@@ -2055,7 +2100,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						e = offset;
 						if (e == 0)
 							goto mxPopState;
-						e = fxFindCharacter(subject, e, -1);
+						e = fxFindCharacter(subject, e, -1, flags);
 						if (!fxMatchCharacter(pointer, fxGetCharacter(subject, e, flags)))
 							goto mxPopState;
 						offset = e;
@@ -2067,7 +2112,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							goto mxPopState;
 						if (!fxMatchCharacter(pointer, fxGetCharacter(subject, e, flags)))
 							goto mxPopState;
-						e = fxFindCharacter(subject, e, 1);
+						e = fxFindCharacter(subject, e, 1, flags);
 						offset = e;
 						mxBreak;
 					mxCase(cxDisjunctionStep):
@@ -2084,7 +2129,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						step = *pointer;
 						if (offset == 0)
 							mxBreak;
-						if ((flags & XS_REGEXP_M) && fxMatchCharacter((txInteger*)gxLineCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags)))
+						if ((flags & XS_REGEXP_M) && fxMatchCharacter((txInteger*)gxLineCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1, flags), flags)))
 							mxBreak;
 						goto mxPopState;
 					mxCase(cxLineEndStep):
@@ -2179,14 +2224,14 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						mxBreak;
 					mxCase(cxWordBreakStep):
 						step = *pointer;
-						e = (offset == 0) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags));
+						e = (offset == 0) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1, flags), flags));
 						f = (offset == stop) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, offset, flags));
 						if (e != f)
 							mxBreak;
 						goto mxPopState;
 					mxCase(cxWordContinueStep):
 						step = *pointer;
-						e = (offset == 0) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1), flags));
+						e = (offset == 0) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, fxFindCharacter(subject, offset, -1, flags), flags));
 						f = (offset == stop) ? 0 : fxMatchCharacter((txInteger*)gxWordCharacters, fxGetCharacter(subject, offset, flags));
 						if (e == f)
 							mxBreak;
@@ -2224,7 +2269,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 				break;
 			if (start == stop)
 				break;
-			start = fxFindCharacter(subject, start, 1);
+			start = fxFindCharacter(subject, start, 1, flags);
 		}
 	}
 	return result;

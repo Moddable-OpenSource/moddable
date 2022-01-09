@@ -685,6 +685,8 @@ again:
 		txInteger length = slot->value.integer;
 		if (length < 0)
 			length = 0;
+		slot->value.number = (txNumber)length;
+		slot->kind = XS_NUMBER_KIND;
 		return (txNumber)length;
 	}
 	if (slot->kind == XS_NUMBER_KIND) {
@@ -697,6 +699,7 @@ again:
 			length = C_MAX_SAFE_INTEGER;
 		else
 			length = c_trunc(length);
+		slot->value.number = length;
 		return length;
 	}
 	fxToNumber(the, slot);
