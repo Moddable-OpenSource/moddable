@@ -557,9 +557,10 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 		slot = mxArgv(i);
 		if (slot->kind == XS_REFERENCE_KIND) {
 			slot = slot->value.reference->next;
-			if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
+			if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND)) {
 				arrayBuffer = slot;
 				bufferInfo = slot->next;
+			}
 		}
 		if (arrayBuffer) 
 			length = fxAddChunkSizes(the, length, bufferInfo->value.bufferInfo.length);
