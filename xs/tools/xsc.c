@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -50,6 +50,7 @@ typedef struct {
 static txBoolean fxIsCIdentifier(txString string);
 static txString fxRealDirectoryPath(txParser* parser, txString path);
 static txString fxRealFilePath(txParser* parser, txString path);
+static txString fxRealFilePathIf(txParser* parser, txString path);
 static void fxWriteExterns(txScript* script, FILE* file);
 static void fxWriteHosts(txScript* script, FILE* file);
 static void fxWriteIDs(txScript* script, FILE* file);
@@ -177,6 +178,32 @@ txString fxRealFilePath(txParser* parser, txString path)
 	fprintf(stderr, "#  file not found: %s!\n", path);
 	c_longjmp(parser->firstJump->jmp_buf, 1); 
 }
+
+txString fxRealFilePathIf(txParser* parser, txString path)
+{
+#if mxWindows
+	char buffer[C_PATH_MAX];
+	DWORD attributes;
+	if (_fullpath(buffer, path, C_PATH_MAX) != NULL) {
+		attributes = GetFileAttributes(buffer);
+		if ((attributes != 0xFFFFFFFF) && (!(attributes & FILE_ATTRIBUTE_DIRECTORY))) {
+			return fxNewParserString(parser, buffer, mxStringLength(buffer));
+		}
+	}
+#else
+	char buffer[C_PATH_MAX];
+	struct stat a_stat;
+	if (realpath(path, buffer) != NULL) {
+		if (stat(buffer, &a_stat) == 0) {
+			if (S_ISREG(a_stat.st_mode)) {
+				return fxNewParserString(parser, buffer, mxStringLength(buffer));
+			}
+		}
+	}
+#endif
+	return NULL;
+}
+
 
 void fxWriteBuffer(txScript* script, FILE* file, txString name, txU1* buffer, txSize size)
 {
@@ -340,17 +367,23 @@ int main(int argc, char* argv[])
 		fclose(file);
 		file = NULL;
 		if (name) {
-			map = fxRealFilePath(parser, fxCombinePath(parser, input, name));
-			parser->path = fxNewParserSymbol(parser, map);
-			file = fopen(map, "r");
-			mxParserThrowElse(file);
-			fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
-			fclose(file);
-			file = NULL;
-			if (parser->errorCount == 0) {
-				map = fxRealFilePath(parser, fxCombinePath(parser, map, name));
+			char *combined = fxCombinePath(parser, input, name);
+			map = fxRealFilePathIf(parser, combined);
+			if (map) {
 				parser->path = fxNewParserSymbol(parser, map);
+				file = fopen(map, "r");
+				mxParserThrowElse(file);
+				fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
+				fclose(file);
+				file = NULL;
+				if (parser->errorCount == 0) {
+					char *combined = fxCombinePath(parser, map, name);
+					map = fxRealFilePath(parser, combined);
+					parser->path = fxNewParserSymbol(parser, map ? map : combined);
+				}
 			}
+			else
+				fprintf(stderr, "### warning: source map not found %s!\n", combined);
 		}
 		fxParserHoist(parser);
 		fxParserBind(parser);
