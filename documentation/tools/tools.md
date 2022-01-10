@@ -125,7 +125,7 @@ mcrez files... [-o output] [-r name] [-p platform]
 - `files`: the paths of the assets to include.
 - `-o output`: the path of the output directory. Defaults to the current directory.
 - `-r name`: the name of the generated C file. Defaults to `mc.resources.c`.
-- `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin` or `mac`. Defaults to the host build platform:`mac`, `win` or `lin`.
+- `-p platform`: to select the platform: `esp`, `esp32`, `win`, `lin` or `mac`. Defaults to the host build platform:`mac`, `win` or `lin`. `esp8266` may be used as an alias for `esp`.
 
 <a id="png2bmp"></a>
 ## png2bmp
