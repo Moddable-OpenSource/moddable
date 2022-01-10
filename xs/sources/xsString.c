@@ -140,7 +140,9 @@ void fxBuildString(txMachine* the)
 	slot = fxBuildHostConstructor(the, mxCallback(fx_String), 1, mxID(_String));
 	mxStringConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
+#ifndef mxCESU8
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_fromArrayBuffer), 1, mxID(_fromArrayBuffer), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_fromCharCode), 1, mxID(_fromCharCode), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_fromCodePoint), 1, mxID(_fromCodePoint), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_raw), 1, mxID(_raw), XS_DONT_ENUM_FLAG);
@@ -329,6 +331,7 @@ void fx_String(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
+#ifndef mxCESU8
 void fx_String_fromArrayBuffer(txMachine* the)
 {
 	txSlot* slot;
@@ -400,6 +403,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 badUTF8:
 	mxTypeError("invalid UTF-8");
 }
+#endif
 
 void fx_String_fromCharCode(txMachine* the)
 {

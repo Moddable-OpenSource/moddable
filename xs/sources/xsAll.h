@@ -1238,7 +1238,9 @@ extern txNumber fxDateNow();
 extern const txBehavior gxStringBehavior;
 
 mxExport void fx_String(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_String_fromArrayBuffer(txMachine* the);
+#endif
 mxExport void fx_String_fromCharCode(txMachine* the);
 mxExport void fx_String_fromCodePoint(txMachine* the);
 mxExport void fx_String_raw(txMachine* the);
@@ -1426,7 +1428,9 @@ mxExport void* fxToArrayBuffer(txMachine* the, txSlot* slot);
 
 mxExport void fx_ArrayBuffer(txMachine* the);
 mxExport void fx_ArrayBuffer_fromBigInt(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_ArrayBuffer_fromString(txMachine* the);
+#endif
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the);

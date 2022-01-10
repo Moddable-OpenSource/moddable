@@ -210,7 +210,9 @@ void fxBuildDataView(txMachine* the)
 	mxArrayBufferConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_fromBigInt), 1, mxID(_fromBigInt), XS_DONT_ENUM_FLAG);
+#ifndef mxCESU8
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_fromString), 1, mxID(_fromString), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_isView), 1, mxID(_isView), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	mxPop();
@@ -474,6 +476,7 @@ void fx_ArrayBuffer_fromBigInt(txMachine* the)
 	}
 }
 
+#ifndef mxCESU8
 void fx_ArrayBuffer_fromString(txMachine* the)
 {
 	txSize length;
@@ -483,7 +486,7 @@ void fx_ArrayBuffer_fromString(txMachine* the)
 	fxConstructArrayBufferResult(the, mxThis, length);
 	c_memcpy(mxResult->value.reference->next->value.arrayBuffer.address, mxArgv(0)->value.string, length);
 }
-
+#endif
 
 void fx_ArrayBuffer_isView(txMachine* the)
 {
