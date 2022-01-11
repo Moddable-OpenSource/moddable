@@ -464,7 +464,7 @@ void fx_Number_prototype_toString(txMachine* the)
 			*nextCast = *nextCast + 1;
 			if (delta < next)
 				delta = next;
-			length = minus + ((integer)? (txSize)c_floor(c_log(integer) / c_log(radix)) : 0) + 1;
+			length = minus + ((integer)? (txSize)c_floor(c_log1p(integer) / c_log(radix)) : 0) + 1;
 			if (fraction >= delta) {
 				#define mxFractionPartLength 2048
 				txString dot;

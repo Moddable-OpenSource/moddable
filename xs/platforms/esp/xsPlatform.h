@@ -71,6 +71,8 @@
 
 #ifndef __XS6PLATFORMMINIMAL__
 
+#include "mc.defines.h"
+
 #define mxExport extern
 #define mxImport
 
