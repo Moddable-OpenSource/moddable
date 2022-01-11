@@ -378,8 +378,14 @@ int main(int argc, char* argv[])
 				file = NULL;
 				if (parser->errorCount == 0) {
 					char *combined = fxCombinePath(parser, map, name);
-					map = fxRealFilePath(parser, combined);
-					parser->path = fxNewParserSymbol(parser, map ? map : combined);
+					map = fxRealFilePathIf(parser, combined);
+					if (map)
+						parser->path = fxNewParserSymbol(parser, map);
+					else {
+						parser->lines = NULL;
+						parser->path = parser->origin;
+						fprintf(stderr, "### warning: file referenced by source map not found %s!\n", combined);
+					}
 				}
 			}
 			else
