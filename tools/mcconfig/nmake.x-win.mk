@@ -97,7 +97,8 @@ C_DEFINES = \
 	/D mxNoFunctionLength=1 \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
-	/D mxFewGlobalsTable=1
+	/D mxFewGlobalsTable=1 \
+	/D mxMessageWindowClass=\"fxMessageWindowClassX\"
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) \
 	/D MODINSTRUMENTATION=1 \

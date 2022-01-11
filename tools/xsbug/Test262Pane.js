@@ -55,10 +55,12 @@ export class Test262Context {
 		this.reset();
 	}
 	editFilter(name) {
-		this.home.filter = system.buildPath(this.home.path, name);
-		this.home.name = name;
-		this.reset();
-		application.distribute("onTest262FilterChanged", this.home.filter);
+		if (this.home.name != name) {
+			this.home.filter = system.buildPath(this.home.path, name);
+			this.home.name = name;
+			this.reset();
+			application.distribute("onTest262FilterChanged", this.home.filter);
+		}
 	}
 	fail(reason) {
 		let metadata = this.metadata;
@@ -524,11 +526,14 @@ class Test262FailureRowBehavior extends RowBehavior {
 };
 
 class Test262LocateRowBehavior extends RowBehavior {
+	doOpenDirectoryCallback(button, path) {
+		this.data.locate(system.buildPath(path, "test"));
+	}
 	onTap(button) {
 		var dictionary = { message:"Open test262 repository", prompt:"Open" };
 		system.openDirectory(dictionary, path => { 
 			if (path)
-				this.data.locate(system.buildPath(path, "test"));
+				button.defer("doOpenDirectoryCallback", new String(path)); 
 		});
 	}
 };
