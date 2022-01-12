@@ -108,7 +108,11 @@ globalThis.$NETWORK = {
 			});
 		});
 	},
-	invalidDomain: "fail.moddable.com"
+	async wifi(options) {
+		// could be async to allow time to bring up an AP 
+		return {ssid: config.ssid, password: config.password};
+	},
+	invalidDomain: "fail.moddable.com",
 };
 
 class HostObject @ "xs_hostobject_destructor" {
