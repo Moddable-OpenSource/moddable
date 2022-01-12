@@ -1506,53 +1506,15 @@ void fx_String_prototype_substring(txMachine* the)
 	}
 }
 
-void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
-{
-	txString string = fxCoerceToString(the, mxThis);
-	txInteger stringLength = mxStringLength(string);
-	mxMeterSome(fxUnicodeLength(string));
-	if (stringLength) {
-		txString s, r;
-		txInteger c;
-		const txCharCase* current;
-		const txCharCase* limit = flag ? &gxCharCaseToUpper[mxCharCaseToUpperCount] : &gxCharCaseToLower[mxCharCaseToLowerCount];
-		mxResult->value.string = fxNewChunk(the, stringLength + 1);
-		mxResult->kind = XS_STRING_KIND;
-		s = mxThis->value.string;
-		r = mxResult->value.string;
-		while (((s = mxStringByteDecode(s, &c))) && (c != C_EOF)) {
-			current = flag ? gxCharCaseToUpper : gxCharCaseToLower;
-			while (current < limit) {
-				if (c < current->from)
-					break;
-				if (c <= current->to) {
-					if (current->delta)
-						c += current->delta;
-					else if (flag)
-						c &= ~1;
-					else
-						c |= 1;
-					break;
-				}
-				current++;
-			}
-			r = mxStringByteEncode(r, c);
-		}
-		*r = 0;
-	}
-	else {
-		mxResult->value.string = mxEmptyString.value.string;
-		mxResult->kind = mxEmptyString.kind;
-	}
-}
-
 void fx_String_prototype_toLowerCase(txMachine* the)
 {
+	fxCoerceToString(the, mxThis);
 	fx_String_prototype_toCase(the, 0);
 }
 
 void fx_String_prototype_toUpperCase(txMachine* the)
 {
+	fxCoerceToString(the, mxThis);
 	fx_String_prototype_toCase(the, 1);
 }
 

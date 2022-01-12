@@ -114,6 +114,7 @@ typedef struct {
 typedef struct {
 	txInteger from; 
 	txInteger to; 
+	txInteger count;
 	txInteger delta;
 } txCharCase;
 
@@ -410,10 +411,6 @@ enum {
 
 extern void fxDeleteScript(txScript* script);
 
-#define mxCharCaseToLowerCount 84
-extern const txCharCase gxCharCaseToLower[];
-#define mxCharCaseToUpperCount 84
-extern const txCharCase gxCharCaseToUpper[];
 extern const txUTF8Sequence gxUTF8Sequences[];
 
 extern txBoolean fxIsIdentifierFirst(txU4 c);

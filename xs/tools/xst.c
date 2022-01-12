@@ -1361,7 +1361,16 @@ void fx_print(xsMachine* the)
 		again:
 			if (character == C_EOF)
 				break;
-			if ((0x0000D800 <= character) && (character <= 0x0000DBFF)) {
+			if (character == 0) {
+				if (p > string) {
+					char c = *p;
+					*p = 0;
+					fprintf(stdout, "%s", string);
+					*p = c;
+				}
+				string = q;
+			}
+			else if ((0x0000D800 <= character) && (character <= 0x0000DBFF)) {
 				xsStringValue r = q;
 				xsIntegerValue surrogate;
 				q = fxUTF8Decode(r, &surrogate);

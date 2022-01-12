@@ -1311,6 +1311,7 @@ mxExport void fxInitializeRegExp(txMachine* the);
 extern void fxBuildRegExp(txMachine* the);
 extern txBoolean fxIsRegExp(txMachine* the, txSlot* slot);
 extern txSlot* fxNewRegExpInstance(txMachine* the);
+extern void fx_String_prototype_toCase(txMachine* the, txBoolean flag);
 
 /* xsArguments.c */
 extern const txBehavior gxArgumentsSloppyBehavior;
