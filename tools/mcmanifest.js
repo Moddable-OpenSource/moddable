@@ -536,7 +536,6 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateResourcesRules(tool) {
-		var definesPath = "$(TMP_DIR)" + tool.slash + "mc.defines.h";
 		var formatPath = "$(TMP_DIR)" + tool.slash + "mc.format.h";
 		var rotationPath = "$(TMP_DIR)" + tool.slash + "mc.rotation.h";
 
@@ -763,7 +762,7 @@ export class MakeFile extends FILE {
 					tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
 
 				path = tool.resourcesPath + tool.slash + name + ".json";
-				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false});
+				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false, source});
 				former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
 				if (former !== options)
 					tool.writeFileString(path, options);				
@@ -1280,7 +1279,7 @@ class ResourcesRule extends Rule {
 				this.appendSound(target, source, include, suffix);
 				return;
 			}
-			if (parts.extension == ".ttf") {
+			if ((parts.extension == ".ttf") || (parts.extension == ".otf")) {
 				this.appendOutlineFont(target, source, include, suffix, query);
 				return;
 			}
