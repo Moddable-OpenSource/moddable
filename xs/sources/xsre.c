@@ -7253,13 +7253,26 @@ static txBoolean fxIsFinalSigma(txString s, txInteger where)
     return 0;
 }
 
+static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txString* r, txInteger length, txInteger delta)
+{
+	if (delta > 0) {
+		txSize qo = mxPtrDiff(*q - mxThis->value.string);
+		txSize ro = mxPtrDiff(*r - mxResult->value.string);
+		length += delta;
+		mxResult->value.string = fxRenewChunk(the, mxResult->value.string, length);
+		*q = mxThis->value.string + qo;
+		*r = mxResult->value.string + ro;
+	}
+	return length;
+}
+
 void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 {
 	txString string = mxThis->value.string;
 	txInteger stringLength = mxStringLength(string);
 	mxMeterSome(fxUnicodeLength(string));
 	if (stringLength) {
-		txString s, r;
+		txString p, r;
 		txInteger c;
 		const txCharCase* base = flag ? gxCharCaseToUpper : gxCharCaseToLower;
 		const txCharCase* current;
@@ -7267,52 +7280,62 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 		const txInteger* specials = flag ? gxSpecialCharCaseToUpper : gxSpecialCharCaseToLower;
 		mxResult->value.string = fxNewChunk(the, stringLength + 1);
 		mxResult->kind = XS_STRING_KIND;
-		string = mxThis->value.string;
-		s = mxThis->value.string;
+		p = mxThis->value.string;
 		r = mxResult->value.string;
-		while (((s = mxStringByteDecode(s, &c))) && (c != C_EOF)) {
+		for (;;) {
+			txString q = mxStringByteDecode(p, &c);
+			if (c == C_EOF)
+				break;
 			if (!flag && (c == 0x03a3)) {
-				if (fxIsFinalSigma(string, mxPtrDiff(s - string) - 2))
+				string = mxThis->value.string;
+				if (fxIsFinalSigma(string, mxPtrDiff(p - string)))
 					c = 0x03c2;
 				else
 					c = 0x03c3;
+				r = mxStringByteEncode(r, c);
 			}
 			else {
 				current = base;
 				while (current < limit) {
-					if (c < current->from)
+					if (c < current->from) {
+						r = mxStringByteEncode(r, c);
 						break;
+					}
 					if (c <= current->to) {
 						if (current->count) {
-							txInteger i = current->count - 1;
 							const txInteger* special = specials + current->delta;
-							txSize so = mxPtrDiff(s - mxThis->value.string);
-							txSize ro = mxPtrDiff(r - mxResult->value.string);
-							stringLength += i;
-							mxResult->value.string = fxRenewChunk(the, mxResult->value.string, stringLength + 1);
-							string = mxThis->value.string;
-							s = string + so;
-							r = mxResult->value.string + ro;
-							while (i) {
-								r = mxStringByteEncode(r, *special++);
-								i--;
+							txInteger specialIndex = current->count;
+							txInteger specialLength = 0;
+							while (specialIndex) {
+								specialLength += mxStringByteLength(*special++);
+								specialIndex--;
 							}
-							c = *special;
+							stringLength = fx_String_prototype_toCase_aux(the, &q, &r, stringLength, specialLength - mxPtrDiff(q - p));
+							special = specials + current->delta;
+							specialIndex = current->count;
+							while (specialIndex) {
+								r = mxStringByteEncode(r, *special++);
+								specialIndex--;
+							}
 						}
-						else if (current->delta)
-							c += current->delta;
+						else if (current->delta) {
+							txInteger d = c + current->delta;
+							stringLength = fx_String_prototype_toCase_aux(the, &q, &r, stringLength, mxStringByteLength(d) - mxPtrDiff(q - p));
+							r = mxStringByteEncode(r, d);
+						}
 						else if ((current->from & 1) == (c & 1)) {
-							if (flag)
-								c--;
-							else
-								c++;
+							txInteger d = (flag) ? c - 1 : c + 1;
+							stringLength = fx_String_prototype_toCase_aux(the, &q, &r, stringLength, mxStringByteLength(d) - mxPtrDiff(q - p));
+							r = mxStringByteEncode(r, d);
 						}
+						else
+							r = mxStringByteEncode(r, c);
 						break;
 					}
 					current++;
 				}
 			}
-			r = mxStringByteEncode(r, c);
+			p = q;
 		}
 		*r = 0;
 	}
