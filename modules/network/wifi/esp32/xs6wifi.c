@@ -86,7 +86,7 @@ void xs_wifi_get_mode(xsMachine *the)
 void xs_wifi_scan(xsMachine *the)
 {
 	wifi_mode_t mode;
-	wifi_scan_config_t config;
+	wifi_scan_config_t config = {0};
 
 	initWiFi();
 
@@ -111,45 +111,41 @@ void xs_wifi_scan(xsMachine *the)
 	if (gScan)
 		xsUnknownError("already scanning");
 
+	if ((xsmcArgc < 2) || (xsReferenceType != xsmcTypeOf(xsArg(0))))
+		xsUnknownError("invalid");
+
+	config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+
+	xsmcVars(1);
+
+	if (xsmcHas(xsArg(0), xsID_hidden)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
+		config.show_hidden = xsmcTest(xsVar(0));
+	}
+
+	if (xsmcHas(xsArg(0), xsID_channel)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+		config.channel = xsmcToInteger(xsVar(0));
+	}
+
+	if (xsmcHas(xsArg(0), xsID_active)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_active);
+		config.scan_type = xsmcTest(xsVar(0)) ? WIFI_SCAN_TYPE_ACTIVE : WIFI_SCAN_TYPE_PASSIVE;
+	}
+
 	gScan = (wifiScanRecord *)c_calloc(1, sizeof(wifiScanRecord));
 	if (NULL == gScan)
 		xsUnknownError("out of memory");
-	gScan->callback = xsArg(1);
 	gScan->the = the;
-	xsRemember(gScan->callback);
-
-	config.ssid = NULL;
-	config.bssid = NULL;
-	config.channel = 0;
-	config.show_hidden = 0;
-	config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-	config.scan_time.active.min = config.scan_time.active.max = 0;
-
-	if (xsmcArgc) {
-		xsmcVars(1);
-
-		if (xsmcHas(xsArg(0), xsID_hidden)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
-			config.show_hidden = xsmcTest(xsVar(0));
-		}
-
-		if (xsmcHas(xsArg(0), xsID_channel)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_channel);
-			config.channel = xsmcToInteger(xsVar(0));
-		}
-
-		if (xsmcHas(xsArg(0), xsID_active)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_active);
-			config.scan_type = xsmcTest(xsVar(0)) ? WIFI_SCAN_TYPE_ACTIVE : WIFI_SCAN_TYPE_PASSIVE;
-		}
-	}
 
 	if (ESP_OK != esp_wifi_scan_start(&config, 0)) {
-		xsForget(gScan->callback);
 		c_free(gScan);
 		gScan = NULL;
 		xsUnknownError("scan request failed");
 	}
+
+	gScan->callback = xsArg(1);
+	xsRemember(gScan->callback);
 }
 
 void xs_wifi_connect(xsMachine *the)
