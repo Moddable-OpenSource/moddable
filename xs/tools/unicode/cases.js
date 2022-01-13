@@ -179,14 +179,10 @@ export default class extends TOOL {
 			let upper = fields[12];
 			let lower = fields[13];
 			if (upper) {
-// 				if (category != "Ll")
-// 					this.report(`[${code.toString(16)}] Ll ${category} ${upper.toString(16)}`); 
 				const delta = parseInt(upper, 16) - code;
 				uppers.push({ code, count:0, delta })
 			}
 			if (lower) {
-// 				if (category != "Lu")
-// 					this.report(`[${code.toString(16)}] Lu ${category} ${lower.toString(16)}`); 
 				const delta = parseInt(lower, 16) - code;
 				lowers.push({ code, count:0, delta })
 			}
@@ -208,62 +204,12 @@ export default class extends TOOL {
 		this.parseUnicodeData();
 		this.filterIgnoreCases();
 		this.parseSpecialCasing();
-		this.pushConditional(this.lowers, 0x03a3, 0);
+		this.pushConditional(this.lowers, 0x03a3, 0); // fxFinalSigmaToLower
 		this.lowers.sort((a, b) => a.code - b.code);
 		this.uppers.sort((a, b) => a.code - b.code);
 		this.compress(this.foldings, [], "Fold", 1);
 		this.compress(this.ignoreCases, [], "Ignore", 1);
 		this.compress(this.lowers, this.specialLowers, "ToLower", 0);
 		this.compress(this.uppers, this.specialUppers, "ToUpper", 1);
-// 
-// 		this.lowers.forEach(item => {
-// 			if (min > item.delta)
-// 				min = item.delta;
-// 			if (max < item.delta)
-// 				max = item.delta;
-// 		});
-// 		this.uppers.forEach(item => {
-// 			if (min > item.delta)
-// 				min = item.delta;
-// 			if (max < item.delta)
-// 				max = item.delta;
-// 		});
-// 		this.report(`${min} ${max}`);
-// 		
-// 		
-// 		this.report("LOWER");
-// 		this.lowers.forEach(item => {
-// 			let r = item.code.toString(16);
-// 			if (item.special) {
-// 				for (let u of item.special)
-// 					r += " " + u.toString(16);
-// 			}
-// 			else
-// 			  r += " " + (item.code + item.delta).toString(16);
-// 			this.report(r);
-// 		});
-// 		this.report("UPPER");
-// 		this.uppers.forEach(item => {
-// 			let r = item.code.toString(16);
-// 			if (item.special) {
-// 				for (let u of item.special)
-// 					r += " " + u.toString(16);
-// 			}
-// 			else
-// 			  r += " " + (item.code + item.delta).toString(16);
-// 			this.report(r);
-// 		});
-// 		
-// 		this.report(`[${item.code.toString(16)}] ${item.special ? item.special.map(x => x.toString(16)) + ")" : item.delta}`));
-// 		this.report("UPPER");
-// 		this.uppers.forEach(item => this.report(`[${item.code.toString(16)}] ${item.special ? "(" + item.special.map(x => x.toString(16)) + ")" : item.delta}`));
-// 			
-// 			let result = code.toString();
-// 			result += " L: " + lowers.join(",");
-// 			result += " U: " + uppers.join(",");
-// 			this.report(result);
-// 		
-// 		this.compress(lowers, "Lower", 1);
-// 		this.compress(uppers, "Upper", -1);
 	}
 }
