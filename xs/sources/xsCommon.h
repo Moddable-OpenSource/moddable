@@ -112,13 +112,6 @@ typedef struct {
 } Atom;
 
 typedef struct {
-	txInteger from; 
-	txInteger to; 
-	txInteger count;
-	txInteger delta;
-} txCharCase;
-
-typedef struct {
 	void* callback;
 	txS1* symbolsBuffer;
 	txSize symbolsSize;
