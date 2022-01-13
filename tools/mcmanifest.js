@@ -762,7 +762,7 @@ export class MakeFile extends FILE {
 					tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
 
 				path = tool.resourcesPath + tool.slash + name + ".json";
-				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false, source});
+				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false, source, rotation: tool.rotation});
 				former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
 				if (former !== options)
 					tool.writeFileString(path, options);				
