@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -241,10 +241,10 @@ void _xs_i2c_write(xsMachine *the)
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
 	if (length == 0)
-		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_NACK);
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
 	else {
-		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_ACK);
-		i2c_master_write(cmd, (uint8_t *)buffer, length, I2C_MASTER_ACK);
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
+		i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
 	}
 	if (stop)
 		i2c_master_stop(cmd);
