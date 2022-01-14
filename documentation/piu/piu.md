@@ -1,7 +1,7 @@
 # Piu JavaScript Reference
 
-Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: July 2, 2021
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: January 14, 2022
 
 ## About This Document
 
@@ -2930,13 +2930,13 @@ application.add(samplePort);
 
 ***
 
-**`fillTexture(texture, color, x, y, width, height [, sx, sy, sw, sh])`**
+**`fillTexture(texture, color, x, y, width, height, sx, sy, sw, sh)`**
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `texture ` | `texture` | The filling image
 | `x, y, width, height` | `number` | The destination area--the local position and size of the area to copy pixels to, in pixels
-| `sx, sy, sw, sh` | `number` | The source area--the position and size of the area to copy pixels from, in pixels. The default is the entire image.
+| `sx, sy, sw, sh` | `number` | The source area--the position and size of the area to copy pixels from, in pixels.
 
 Fills the area with the image. The source area of the image is repeated to cover the destination area.
 
