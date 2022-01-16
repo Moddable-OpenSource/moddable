@@ -1627,9 +1627,12 @@ void fxEchoString(txMachine* the, txString theString)
 		if (tmp & 0x80) {
 			txInteger character;
 			src = (txU1*)fxCESU8Decode((txString)src - 1, &character);
-			dst = (txU1*)fxUTF8Encode((txString)dst, character);
+			if (character > 128) {
+				dst = (txU1*)fxUTF8Encode((txString)dst, character);
+				continue;
+			}
+			tmp = (txU1)character;
 		}
-		else
 #endif
 		if (c_read8(gxEscape + tmp))
 			*dst++ = tmp;
