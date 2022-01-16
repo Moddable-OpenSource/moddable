@@ -897,18 +897,14 @@ int fxUTF8Compare(txString p1, txString p2)
 		c2 = (unsigned char) *s2++;
 		if (c1 == '\0')
 			return c1 - c2;
-		if (c2 == '\0')
-			return c1 - c2;
-		if ((c1 == 0xC0) && (*s1 == 0x80)) {
-			c1 = 0;
-			s1++;
-		}
-		if ((c2 == 0xC0) && (*s2 == 0x80)) {
-			c2 = 0;
-			s2++;
-		}
 	}
 	while (c1 == c2);
+	if (c2 == '\0')
+		return c1 - c2;
+	if ((c1 == 0xC0) && (*s1 == 0x80))
+		return 0 - c2;
+	if ((c2 == 0xC0) && (*s2 == 0x80))
+		return c1 - 0;
 	return c1 - c2;
 }
 
