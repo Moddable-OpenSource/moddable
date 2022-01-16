@@ -416,6 +416,7 @@ extern txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, tx
 extern txString fxStringifyHexEscape(txString string, txInteger character);
 extern txString fxStringifyUnicodeEscape(txString string, txInteger character, txInteger separator);
 
+mxExport int fxUTF8Compare(txString p1, txString p2);
 mxExport txString fxUTF8Decode(txString string, txInteger* character);
 mxExport txString fxUTF8Encode(txString string, txInteger character);
 mxExport txSize fxUTF8Length(txInteger character);

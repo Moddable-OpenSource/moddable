@@ -381,7 +381,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 			mxPushSlot(b);
 			fxToString(the, the->stack + 1);
 			fxToString(the, the->stack);
-			result = c_strcmp((the->stack + 1)->value.string, the->stack->value.string);
+			result = fxUTF8Compare((the->stack + 1)->value.string, the->stack->value.string);
 			mxPop();
 			mxPop();
 			mxMeterSome(3);

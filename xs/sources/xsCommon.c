@@ -887,6 +887,31 @@ txString fxStringifyUnicodeEscape(txString string, txInteger character, txIntege
 	return (txString)p;
 }
 
+int fxUTF8Compare(txString p1, txString p2)
+{
+	register const unsigned char *s1 = (const unsigned char *) p1;
+	register const unsigned char *s2 = (const unsigned char *) p2;
+	unsigned char c1, c2;
+	do {
+		c1 = (unsigned char) *s1++;
+		c2 = (unsigned char) *s2++;
+		if (c1 == '\0')
+			return c1 - c2;
+		if (c2 == '\0')
+			return c1 - c2;
+		if ((c1 == 0xC0) && (*s1 == 0x80)) {
+			c1 = 0;
+			s1++;
+		}
+		if ((c2 == 0xC0) && (*s2 == 0x80)) {
+			c2 = 0;
+			s2++;
+		}
+	}
+	while (c1 == c2);
+	return c1 - c2;
+}
+
 txString fxUTF8Decode(txString string, txInteger* character)
 {
 	txU1* p = (txU1*)string;
@@ -905,8 +930,6 @@ txString fxUTF8Decode(txString string, txInteger* character)
 				c = (c << 6) | (c_read8(p++) & 0x3F);
 			}
 			c &= sequence->lmask;
-			if (c == 0x110000)
-				c = 0;
 		}
 		*character = (txInteger)c;
 		return (txString)p;
@@ -921,9 +944,7 @@ txString fxUTF8Encode(txString string, txInteger character)
 	if (character < 0) {
 	}
 	else if (character == 0) {
-		*p++ = 0xF4;
-		*p++ = 0x90;
-		*p++ = 0x80;
+		*p++ = 0xC0;
 		*p++ = 0x80;
 	}
 	else if (character < 0x80) {
@@ -953,7 +974,7 @@ txSize fxUTF8Length(txInteger character)
 	if (character < 0)
 		length = 0;
 	else if (character == 0)
-		length = 4;
+		length = 2;
 	else if (character < 0x80)
 		length = 1;
 	else if (character < 0x800)
@@ -991,9 +1012,7 @@ txString fxCESU8Encode(txString string, txInteger character)
 	if (character < 0) {
 	}
 	else if (character == 0) {
-		*p++ = 0xF4;
-		*p++ = 0x90;
-		*p++ = 0x80;
+		*p++ = 0xC0;
 		*p++ = 0x80;
 	}
 	else if (character < 0x80) {
@@ -1029,7 +1048,7 @@ txSize fxCESU8Length(txInteger character)
 	if (character < 0)
 		length = 0;
 	else if (character == 0)
-		length = 4;
+		length = 2;
 	else if (character < 0x80)
 		length = 1;
 	else if (character < 0x800)
