@@ -256,7 +256,7 @@ void fxGetNextKeyword(txParser* parser)
 	
 	parser->symbol2 = fxNewParserSymbol(parser, parser->buffer);
 	parser->token2 = XS_TOKEN_IDENTIFIER;
-	if (parser->token == XS_TOKEN_DOT) 
+	if ((parser->token == XS_TOKEN_DOT) || (parser->token == XS_TOKEN_CHAIN))
 		return;
 	for (low = 0, high = XS_KEYWORD_COUNT; high > low;
 			(aDelta < 0) ? (low = anIndex + 1) : (high = anIndex)) {
