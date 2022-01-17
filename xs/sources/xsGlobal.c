@@ -197,7 +197,7 @@ txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		instance = slot->value.reference;
 		slot = instance->next;
-		if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == id)) {
+		if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == id) && (slot->kind == XS_REFERENCE_KIND)) {
 			return instance;
 		}
 	}
