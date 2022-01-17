@@ -1849,10 +1849,24 @@ void fx_Compartment(txMachine* the)
 			slot = fxLastProperty(the, global);
 			id = _Compartment;
 		}
-		for (; id < XS_INTRINSICS_COUNT; id++) {
-			txSlot* instance = fxDuplicateInstance(the, the->stackPrototypes[-1 - id].value.reference);
+		{
+			txSlot* instance;
+			
+			mxPush(mxCompartmentPrototype);
+			instance = fxBuildHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
 			mxFunctionInstanceHome(instance)->value.home.module = program;
-			slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_DONT_ENUM_FLAG);
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_Compartment), XS_DONT_ENUM_FLAG);
+			mxPop();
+			
+			mxPush(mxFunctionPrototype);
+			instance = fxBuildHostConstructor(the, mxCallback(fx_Function), 1, mxID(_Function));
+			mxFunctionInstanceHome(instance)->value.home.module = program;
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_Function), XS_DONT_ENUM_FLAG);
+			mxPop();
+			
+			instance = fxBuildHostFunction(the, mxCallback(fx_eval), 1, mxID(_eval));
+			mxFunctionInstanceHome(instance)->value.home.module = program;
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_eval), XS_DONT_ENUM_FLAG);
 			mxPop();
 		}
 		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
