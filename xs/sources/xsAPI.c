@@ -646,7 +646,13 @@ txSlot* fxNewHostInstance(txMachine* the)
 			instanceHost->flag = XS_INTERNAL_FLAG;
 			instanceHost->kind = XS_HOST_KIND;
 			instanceHost->value.host.data = C_NULL;
-			instanceHost->value.host.variant.destructor = prototypeHost->value.host.variant.destructor;
+			if (prototypeHost->flag & XS_HOST_HOOKS_FLAG) {
+				instanceHost->flag |= XS_HOST_HOOKS_FLAG;
+				instanceHost->value.host.variant.hooks = prototypeHost->value.host.variant.hooks;
+			}
+			else {
+				instanceHost->value.host.variant.destructor = prototypeHost->value.host.variant.destructor;
+			}
 		}
 	}
 	return instance;
