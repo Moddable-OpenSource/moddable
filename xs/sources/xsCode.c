@@ -1069,8 +1069,10 @@ void fxCoderAddLine(txCoder* self, txInteger delta, txInteger id, txNode* node)
 {
 	if (self->parser->flags & mxDebugFlag) {
 		if (self->parser->lines) {
-			node->path = self->parser->path;
-			node->line = self->parser->lines[node->line];
+			if (node->path != self->parser->path) {
+				node->path = self->parser->path;
+				node->line = self->parser->lines[node->line];
+			}
 		}
 		else if (self->parser->source) {
 			node->path = self->parser->source;
