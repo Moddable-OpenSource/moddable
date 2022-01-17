@@ -1733,9 +1733,9 @@ let sampleContent = new Content(null, {
 });
 application.add(sampleContent);
 
-let measuredSize = sampleContent2.measure(); 	// {height: 0, width: 0}
-let fittedHeight = sampleContent2.height;		// 320 (assuming running on 240x320 screen)
-let fittedWidth = sampleContent2.width;			// 240 (assuming running on 240x320 screen)
+let measuredSize = sampleContent.measure(); 	// {height: 0, width: 0}
+let fittedHeight = sampleContent.height;		// 320 (assuming running on 240x320 screen)
+let fittedWidth = sampleContent.width;			// 240 (assuming running on 240x320 screen)
 ```
 
 ***
