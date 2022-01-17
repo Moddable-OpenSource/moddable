@@ -356,8 +356,11 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 			chunk = (txSlot*)fxRenewChunk(the, address, size);
 			if (!chunk) {
 			#ifndef mxNoArrayOverallocation
-				if (array->ID == XS_ARRAY_BEHAVIOR)
-					chunk = (txSlot*)fxNewGrowableChunk(the, size, fxSizeToCapacity(the, size));
+				if (array->ID == XS_ARRAY_BEHAVIOR) {
+					txSize capacity = fxSizeToCapacity(the, size);
+					chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
+					c_memset(chunk + current, 0, capacity - size);
+				}
 				else
 			#endif
 					chunk = (txSlot*)fxNewChunk(the, size);
@@ -431,8 +434,11 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 				chunk = (txSlot*)fxRenewChunk(the, address, size);
 				if (!chunk) {
 				#ifndef mxNoArrayOverallocation
-					if (growable)
-						chunk = (txSlot*)fxNewGrowableChunk(the, size, fxSizeToCapacity(the, size));
+					if (growable) {
+						txSize capacity = fxSizeToCapacity(the, size);
+						chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
+						c_memset(chunk + target, 0, capacity - size);
+					}
 					else
 				#endif
 						chunk = (txSlot*)fxNewChunk(the, size);
@@ -446,8 +452,11 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 		}
 		else {
 		#ifndef mxNoArrayOverallocation
-			if (growable)
-				chunk = (txSlot*)fxNewGrowableChunk(the, size, fxSizeToCapacity(the, size));
+			if (growable) {
+				txSize capacity = fxSizeToCapacity(the, size);
+				chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
+				c_memset(chunk + target, 0, capacity - size);
+			}
 			else
 		#endif
 				chunk = (txSlot*)fxNewChunk(the, size);
