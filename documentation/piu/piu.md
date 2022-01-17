@@ -1,7 +1,7 @@
 # Piu JavaScript Reference
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: January 14, 2022
+Revised: January 17, 2022
 
 ## About This Document
 
@@ -111,6 +111,7 @@ let unconstrainedContent = new Content(null, {
 
 #### Measure and Fit
 
+<a id="measured-size"></a>
 ##### Measured size
 
 All contents have a *measured width* and *measured height*, which are the default width and height computed by the content itself. For example, the measured width of the following content object will be 100.
@@ -1707,22 +1708,34 @@ let sampleContent = new Content(null, {
  
 **`measure()`**
 
-Returns the measured size of this content, as an object with `width` and `height` parameters.
+Returns the [measured size](#measured-size) of this content, as an object with `width` and `height` parameters.
 
-> Note that this function should only be used after a content has been measured and fitted (that is, after it triggers `onDisplaying`); otherwise it will always return `undefined`.
+Example 1:
 
 ```javascript
 let sampleContent = new Content(null, { 
-    active: true, top: 0, left: 0, height: 100, width: 100, 
-    skin: new Skin({fill: "blue"}),
-    Behavior: class extends Behavior {
-        onDisplaying(content) {
-            let size = content.measure(); 	// {height: 100, width: 100}
-            let height = size.height;		// 100
-        }
-    }
+    top: 0, left: 0, height: 100, width: 100, 
+    skin: new Skin({fill: "blue"})
 });
 application.add(sampleContent);
+
+let measuredSize = sampleContent.measure(); 	// {height: 100, width: 100}
+let fittedHeight = sampleContent.height;		// 100
+let fittedWidth = sampleContent.width;			// 100
+```
+
+Example 2:
+
+```javascript
+let sampleContent = new Content(null, { 
+    top: 0, bottom: 0, left: 0, right: 0,
+    skin: new Skin({fill: "blue"})
+});
+application.add(sampleContent);
+
+let measuredSize = sampleContent2.measure(); 	// {height: 0, width: 0}
+let fittedHeight = sampleContent2.height;		// 320 (assuming running on 240x320 screen)
+let fittedWidth = sampleContent2.width;			// 240 (assuming running on 240x320 screen)
 ```
 
 ***
