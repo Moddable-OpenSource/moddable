@@ -87,7 +87,16 @@
 			},
 			"config": {
 				"digital": [12, 13, 16, 17, 26, 27],
-				"flashParition": "xs"
+				"flashParition": "xs",
+				"i2c": {
+					"hz": 100000,
+					"address": 53,
+					"unusedAddress": 99
+				},
+			 	"invalidPins": [
+					-10,
+					500
+				]
 			}
 		},
 		"lin": {
