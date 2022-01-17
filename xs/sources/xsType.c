@@ -299,7 +299,7 @@ void fxToSpeciesConstructor(txMachine* the, txSlot* constructor)
 
 void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arguments)
 {
-	txInteger c, i;
+    txIndex c, i;
 	/* THIS */
 	mxPushSlot(_this);
 	/* FUNCTION */
@@ -315,7 +315,7 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
 	mxGetID(mxID(_length));
-	c = fxToInteger(the, the->stack);
+    c = (txIndex)fxToLength(the, the->stack);
 	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
