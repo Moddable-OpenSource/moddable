@@ -275,7 +275,7 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 {
 	txSlot* instance = fxToInstance(the, slot);
 	txSlot* array = instance->next;
-	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
+	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
 		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
@@ -512,7 +512,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	txNumber length;
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* array = instance->next;
-	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
+	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
 		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
@@ -520,7 +520,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 		}
 		return array->value.array.length;
 	}
-	if (array && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
+	if (array && (array->kind == XS_TYPED_ARRAY_KIND) && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
 		txSlot* view = array->next;
 		txSlot* buffer = view->next;
 		txSlot* data = buffer->value.reference->next;

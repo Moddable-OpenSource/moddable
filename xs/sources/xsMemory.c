@@ -783,6 +783,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 	case XS_ARGUMENTS_STRICT_KIND:
 	case XS_ARRAY_KIND:
 	case XS_STACK_KIND:
+		fxCheckCStack(the);
 		if ((aSlot = theSlot->value.array.address)) {
 			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
 			while (aLength) {
@@ -969,6 +970,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_ARGUMENTS_STRICT_KIND:
 	case XS_ARRAY_KIND:
 	case XS_STACK_KIND:
+		fxCheckCStack(the);
 		if ((aSlot = theSlot->value.array.address)) {
 			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
 			while (aLength) {

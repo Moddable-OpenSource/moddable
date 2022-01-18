@@ -39,9 +39,35 @@ globalThis.$DO = function(f) {
 }
 
 class Screen extends ChecksumOut {
+	#timer;
+
 	clear() {}
-	start(interval) {}
-	stop() {}
+	start(interval) {
+		if (!this.#timer) {
+			this.#timer = Timer.set(() => {
+				this.context.onIdle();
+			}, 1, 100);
+			Timer.schedule(this.#timer);
+		}
+
+		const timer = this.#timer;
+		if (!timer) return;
+
+		if (interval <= 5)
+			interval = 5;
+		if (timer.interval === interval)
+			return;
+
+		Timer.schedule(timer, interval, interval);
+		timer.interval = interval;
+	}
+	stop() {
+		const timer = this.#timer;
+		if (!timer) return;
+
+		Timer.schedule(timer);
+		delete timer.interval;
+	}
 	animateColors(clut) {}
 	checkImage(checksum, message) {
 		delete this.checksum;
@@ -108,7 +134,11 @@ globalThis.$NETWORK = {
 			});
 		});
 	},
-	invalidDomain: "fail.moddable.com"
+	async wifi(options) {
+		// could be async to allow time to bring up an AP 
+		return {ssid: config.ssid, password: config.password};
+	},
+	invalidDomain: "fail.moddable.com",
 };
 
 class HostObject @ "xs_hostobject_destructor" {

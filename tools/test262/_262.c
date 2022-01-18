@@ -379,15 +379,16 @@ void _262_agent_leaving(txMachine* the)
 
 void _262_agent_monotonicNow(xsMachine* the)
 {
-#ifdef mxUseFreeRTOSTasks
-	TickType_t ticks = xTaskGetTickCount();
-	txNumber now = (txNumber)ticks * 1000.0 / (txNumber)configTICK_RATE_HZ;
-    xsResult = xsNumber(c_trunc(now));
-#else
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-    xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
-#endif		
+	xsResult = xsNumber(fxDateNow());
+// #ifdef mxUseFreeRTOSTasks
+// 	TickType_t ticks = xTaskGetTickCount();
+// 	txNumber now = (txNumber)ticks * 1000.0 / (txNumber)configTICK_RATE_HZ;
+//     xsResult = xsNumber(c_trunc(now));
+// #else
+// 	struct timespec now;
+// 	clock_gettime(CLOCK_MONOTONIC, &now);
+//     xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
+// #endif		
 }
 
 void _262_agent_receiveBroadcast(xsMachine* the)
@@ -470,7 +471,7 @@ void _262_agent_start(txMachine* the)
 #ifdef mxUseFreeRTOSTasks
 void _262_agent_start_aux(void *it)
 #elif mxWindows
-unsigned int __stdcall fx_agent_start_aux(void* it)
+unsigned int __stdcall _262_agent_start_aux(void* it)
 #else
 void* _262_agent_start_aux(void* it)
 #endif

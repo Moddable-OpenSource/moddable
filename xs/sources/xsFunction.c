@@ -539,13 +539,15 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 	function = fxToInstance(the, mxThis);
 	if (!function)
 		return;
-	slot = mxFunctionInstanceHome(function)->next;
-	if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == mxID(_boundFunction))) {
-		if (!fxIsCallable(the, slot))
-			return;
-		function = fxToInstance(the, slot);
-		if (!function)
-			return;
+	if (mxIsFunction(function)) {
+		slot = mxFunctionInstanceHome(function)->next;
+		if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == mxID(_boundFunction))) {
+			if (!fxIsCallable(the, slot))
+				return;
+			function = fxToInstance(the, slot);
+			if (!function)
+				return;
+		}
 	}
 	if (mxArgc == 0)
 		return;
