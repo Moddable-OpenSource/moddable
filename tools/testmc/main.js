@@ -162,7 +162,10 @@ globalThis.$TESTMC = {
 	HostObject,
 	HostObjectChunk,
 	HostBuffer,
-	config
+	config,
+	wifiInvalidConnectionTimeout: 20_000,
+	wifiConnectionTimeout: 10_000,
+	wifiScanTimeout: 10_000
 }; 
 Object.freeze(globalThis.$TESTMC, true);
 
