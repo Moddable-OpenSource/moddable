@@ -153,6 +153,20 @@ class HostBuffer @ "xs_hostbuffer_destructor" {
 	constructor() @ "xs_hostbuffer"
 }
 
+class TestBehavior extends Behavior {
+	constructor() {
+		super();
+
+		for (const name of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+			if (!name.startsWith("on")) continue;
+			const value = this[name];
+			Object.defineProperty(this, name, {
+				value: (application, data) => {try {return value.call(this, application, data);} catch (e) {$DONE(e)}}
+			});
+		}
+	}
+}
+
 globalThis.$TESTMC = {
 	timeout(ms, message = "timeout") {
 		Timer.set(function() {
@@ -165,9 +179,11 @@ globalThis.$TESTMC = {
 	config,
 	wifiInvalidConnectionTimeout: 20_000,
 	wifiConnectionTimeout: 10_000,
-	wifiScanTimeout: 10_000
-}; 
-Object.freeze(globalThis.$TESTMC, true);
+	wifiScanTimeout: 10_000,
+	Behavior: TestBehavior
+};
+
+Object.freeze([globalThis.$TESTMC, globalThis.$NETWORK], true);
 
 export default function() {
 	$MAIN();
