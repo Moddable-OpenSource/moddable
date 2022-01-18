@@ -17,7 +17,8 @@
 			"$(TOOLS)/tool",
 			"$(MODULES)/data/binaryMessage/*",
 			"./cases",
-			"./identifiers"
+			"./identifiers",
+			"./properties"
 		]
 	}
 }

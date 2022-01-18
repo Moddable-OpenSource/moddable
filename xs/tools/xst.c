@@ -885,6 +885,7 @@ void fxRunContext(txPool* pool, txContext* context)
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
+			||	!strcmp((char*)node->data.scalar.value, "regexp-v-flag")
 			) {
 				sloppy = 0;
 				strict = 0;
