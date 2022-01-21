@@ -161,7 +161,7 @@ class TestBehavior extends Behavior {
 			if (!name.startsWith("on")) continue;
 			const value = this[name];
 			Object.defineProperty(this, name, {
-				value: (application, data) => {try {return value.call(this, application, data);} catch (e) {$DONE(e)}}
+				value: (content, ...args) => {try {return value.call(this, content, ...args);} catch (e) {$DONE(e)}}
 			});
 		}
 	}
