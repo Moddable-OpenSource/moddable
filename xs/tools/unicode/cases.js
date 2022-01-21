@@ -175,7 +175,6 @@ export default class extends TOOL {
 		for (let line of lines) {
 			const fields = line.split(";");
 			const code = parseInt(fields[0], 16);
-			let category = fields[2];
 			let upper = fields[12];
 			let lower = fields[13];
 			if (upper) {

@@ -52,6 +52,7 @@ C_OPTIONS = \
 	/D mxSloppy=1 \
 	/D mxSnapshot=1 \
 	/D mxRegExpUnicodePropertyEscapes=1 \
+	/D mxStringNormalize=1 \
 	/I$(INC_DIR) \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \

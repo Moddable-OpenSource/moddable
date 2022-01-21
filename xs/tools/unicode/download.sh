@@ -4,6 +4,7 @@ url="https://www.unicode.org/Public/UCD/latest/ucd"
 
 names="\
 CaseFolding.txt \
+CompositionExclusions.txt \
 DerivedCoreProperties.txt \
 SpecialCasing.txt \
 UnicodeData.txt"

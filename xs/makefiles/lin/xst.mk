@@ -50,6 +50,7 @@ C_OPTIONS = \
 	-DmxSloppy=1 \
 	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \
+	-DmxStringNormalize=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \

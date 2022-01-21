@@ -17,8 +17,10 @@
 			"$(TOOLS)/tool",
 			"$(MODULES)/data/binaryMessage/*",
 			"./cases",
+			"./forms",
 			"./identifiers",
-			"./properties"
+			"./properties",
+			"./tests"
 		]
 	}
 }
