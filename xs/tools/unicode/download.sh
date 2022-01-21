@@ -6,6 +6,7 @@ names="\
 CaseFolding.txt \
 CompositionExclusions.txt \
 DerivedCoreProperties.txt \
+NormalizationTest.txt \
 SpecialCasing.txt \
 UnicodeData.txt"
 
