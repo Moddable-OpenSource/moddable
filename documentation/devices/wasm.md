@@ -45,7 +45,7 @@ This document provides instructions to build and run Moddable SDK apps for the W
 
 	```text
 	cd ~/Projects
-	git clone https://github.com/WebAssembly/binaryen.git
+	git clone --recursive https://github.com/WebAssembly/binaryen.git
 	cd binaryen
 	cmake . && make
 	```
