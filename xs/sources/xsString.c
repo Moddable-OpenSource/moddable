@@ -977,10 +977,10 @@ void fx_String_prototype_normalize(txMachine* the)
 		}
 		if (max < 128) {
 		}
-		else if ((max < 255) && (form == 2)) {
+		else if ((max < 256) && (form == 2)) {
 		}
 		else {
-			mxRangeError("unsupported");
+			mxRangeError("not built-in");
 		}
 	}
 #endif
