@@ -7414,6 +7414,8 @@ txInteger fxFinalSigmaToLower(txMachine* the, txInteger where, txInteger charact
     return 0x03c3;
 }
 
+#ifdef mxRun
+
 static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txString* r, txInteger length, txInteger delta)
 {
 	if (delta > 0) {
@@ -7507,5 +7509,4 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 	}
 }
 
-
-
+#endif
