@@ -3063,7 +3063,7 @@ txInteger fxGetCompositionPairs(txInteger character, txU2** pairs, txInteger* pa
 		data = (txU2*)gxCompositionData1;
 		code = (txU2)(character & 0xFFFF);
 	}
-	it = (txU2*)bsearch(&code, index, count >> 1, sizeof(txU2) << 1, fxCompareComposition);
+	it = (txU2*)bsearch(&code, index, (count - 1) >> 1, sizeof(txU2) << 1, fxCompareComposition);
 	if (it) {
 		*pairs = data + (it[1] << 1);
 		*pairCount = it[3] - it[1];
@@ -3113,7 +3113,7 @@ txInteger fxGetDecompositionBuffer(txInteger character, txInteger* buffer, txFla
 		data = (txString)gxDecompositionData2;
 		code = (txU2)(character & 0xFFFF);
 	}
-	it = (txU2*)bsearch(&code, index, count >> 1, sizeof(txU2) << 1, fxCompareComposition);
+	it = (txU2*)bsearch(&code, index, (count - 1) >> 1, sizeof(txU2) << 1, fxCompareComposition);
 	if (it) {
 		txInteger offset = it[1];
 		txString p, q;
@@ -3290,8 +3290,8 @@ void fxNormalizeString(txMachine* the, txSlot* string, txFlag form)
 	if (form & 2)
 		fxNormalizeComposition(the, buffer);
 	if (buffer->count) {
+		txInteger resultIndex;
 		txInteger stringLength = 0;
-		txInteger resultIndex = 0;
 		for (resultIndex = 0; resultIndex < buffer->count; resultIndex++)
 			stringLength += mxStringByteLength(buffer->address[resultIndex]);
 		stringLength++;
