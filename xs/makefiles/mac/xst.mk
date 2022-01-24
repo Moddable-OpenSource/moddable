@@ -133,9 +133,16 @@ OBJECTS = \
 	$(TMP_DIR)/reader.o \
 	$(TMP_DIR)/scanner.o \
 	$(TMP_DIR)/writer.o \
+	$(TMP_DIR)/xsmc.o \
+	$(TMP_DIR)/textdecoder.o \
+	$(TMP_DIR)/textencoder.o \
+	$(TMP_DIR)/modBase64.o \
 	$(TMP_DIR)/xst.o
 
 VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml
+VPATH += $(MODDABLE)/modules/data/text/decoder
+VPATH += $(MODDABLE)/modules/data/text/encoder
+VPATH += $(MODDABLE)/modules/data/base64
 
 build: $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME)
 

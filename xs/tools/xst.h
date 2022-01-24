@@ -89,7 +89,7 @@
 	txSocket connection; \
 	void* waiterCondition; \
 	void* waiterData; \
-	txMachine* waiterLink; \
+	void* waiterLink; \
 	int promiseJobs; \
 	void* timerJobs; \
 	int abortStatus; \

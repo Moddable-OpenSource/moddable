@@ -460,6 +460,10 @@ int main262(int argc, char* argv[])
 	return error;
 }
 
+extern void modInstallTextDecoder(xsMachine *the);
+extern void modInstallTextEncoder(xsMachine *the);
+extern void modInstallBase64(xsMachine *the);
+
 void fxBuildAgent(xsMachine* the) 
 {
 	txSlot* slot;
@@ -497,6 +501,10 @@ void fxBuildAgent(xsMachine* the)
 
 	mxPop();
 	mxPop();
+	
+	modInstallTextDecoder(the);
+	modInstallTextEncoder(the);
+	modInstallBase64(the);
 }
 
 void fxCountResult(txPool* pool, txContext* context, int success, int pending) 
