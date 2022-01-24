@@ -699,6 +699,9 @@ enum {
 	_escape,
 	_isFinite,
 	_isNaN,
+#ifdef FUZZILLI
+	_fuzzilli,
+#endif
 	_parseFloat,
 	_parseInt,
 	_trace,

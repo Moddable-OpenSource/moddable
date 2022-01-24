@@ -1219,6 +1219,9 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"escape",
 	"isFinite",
 	"isNaN",
+#ifdef FUZZILLI
+	"fuzzilli",
+#endif
 	"parseFloat",
 	"parseInt",
 	"trace",

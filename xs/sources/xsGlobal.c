@@ -138,7 +138,11 @@ void fxBuildGlobal(txMachine* the)
 	mxPull(mxEvalFunction);
 	fxBuildHostFunction(the, mxCallback(fx_unescape), 1, mxID(_unescape));
 	mxPull(mxUnescapeFunction);
-	
+#ifdef FUZZILLI
+	fxBuildHostFunction(the, mxCallback(fx_fuzzilli), 1, mxID(_fuzzilli));
+	mxPull(mxFuzzilliFunction);
+#endif
+
 	slot = fxBuildHostFunction(the, mxCallback(fx_trace), 1, mxID(_trace));
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_center), 1, mxID(_center), XS_DONT_ENUM_FLAG);
@@ -827,3 +831,59 @@ void fxEncodeURI(txMachine* the, txString theSet)
 	}
 	*dst = 0;
 }
+
+#ifdef FUZZILLI
+#include <assert.h>
+
+void fx_fuzzilli(txMachine* the){
+	if (mxArgc < 1)
+		mxSyntaxError("no param");
+	if (!mxIsStringPrimitive(mxArgv(0)))
+		mxSyntaxError("first param must be a string");
+
+	const char* str = fxToString(the, mxArgv(0));
+	if (!strcmp(str, "FUZZILLI_CRASH")) {
+		
+		printf("js_fuzzilli CRASH\n");
+		if (mxArgc < 2)
+			mxSyntaxError("FUZZILLI_CRASH takes 2 params");
+
+		int arg = fxToInteger(the, mxArgv(1));
+		switch (arg) {
+			case 0:
+					// check crash
+					*((char *) 0) = 0;
+					break;
+			case 1: {
+					// check ASAN
+					char *data = malloc(64);
+					free(data);
+					data[0]++;
+					break;
+			}
+			case 2: {
+					// check assert
+					assert(0);
+					break;
+			}
+		}
+	} else if (!strcmp(str, "FUZZILLI_PRINT")) {
+			// get next argument off the stack to print
+			if (mxArgc < 2)
+				mxSyntaxError("FUZZILLI_PRINT takes 2 params");
+
+			const char* print_str = fxToString(the, mxArgv(1));
+			printf("js_fuzzilli PRINT %s\n", print_str);
+			FILE* fzliout = fdopen(REPRL_DWFD, "w");
+			if (!fzliout) {
+					fprintf(stderr, "Fuzzer output channel not available, printing to stdout instead\n");
+					fzliout = stdout;
+			}
+			if (print_str) {
+					fprintf(fzliout, "%s\n", print_str);
+			}
+			fflush(fzliout);
+	}
+}
+#endif
+

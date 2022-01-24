@@ -75,7 +75,7 @@ ifneq ("x$(SDKROOT)", "x")
 endif
 
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer -DmxASANStackMargin=32768
+	C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer -DmxASANStackMargin=32768 -DFUZZILLI -fsanitize-coverage=trace-pc-guard
 	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 endif
 

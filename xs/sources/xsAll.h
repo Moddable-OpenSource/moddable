@@ -912,6 +912,9 @@ mxExport void fx_trace_center(txMachine* the);
 mxExport void fx_trace_left(txMachine* the);
 mxExport void fx_trace_right(txMachine* the);
 mxExport void fx_unescape(txMachine* the);
+#ifdef FUZZILLI
+mxExport void fx_fuzzilli(txMachine* the);
+#endif
 
 extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id);
 extern txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
@@ -2573,6 +2576,14 @@ enum {
 #define mxTraceFunction the->stackPrototypes[-1 - _trace]
 #define mxUndefined the->stackPrototypes[-1 - _undefined]
 #define mxUnescapeFunction the->stackPrototypes[-1 - _unescape]
+#ifdef FUZZILLI
+#define mxFuzzilliFunction the->stackPrototypes[-1 - _fuzzilli]
+#define REPRL_CRFD 100
+#define REPRL_CWFD 101
+#define REPRL_DRFD 102
+#define REPRL_DWFD 103
+
+#endif
 
 #define mxObjectPrototype the->stackPrototypes[-1 - mxObjectPrototypeStackIndex]
 #define mxFunctionPrototype the->stackPrototypes[-1 - mxFunctionPrototypeStackIndex]
