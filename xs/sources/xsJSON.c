@@ -693,7 +693,7 @@ void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier)
 				aCount = fxUnicodeToUTF8Offset(aSlot->value.string, 10);
 			}
 			else {
-				aCount = c_strlen(aSlot->value.string);
+				aCount = (txInteger)c_strlen(aSlot->value.string);
 			}
 			c_memcpy(theStringifier->indent, aSlot->value.string, aCount);
 			theStringifier->indent[aCount] = 0;
@@ -759,7 +759,7 @@ void fxStringifyJSONInteger(txMachine* the, txJSONStringifier* theStringifier, t
 {
 	char aBuffer[256];
 	fxIntegerToString(the->dtoa, theInteger, aBuffer, sizeof(aBuffer));
-	fxStringifyJSONChars(the, theStringifier, aBuffer, c_strlen(aBuffer));
+	fxStringifyJSONChars(the, theStringifier, aBuffer, (txSize)c_strlen(aBuffer));
 }
 
 void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txInteger* theFlag)
@@ -792,7 +792,7 @@ void fxStringifyJSONNumber(txMachine* the, txJSONStringifier* theStringifier, tx
 	if ((fpclass != FP_NAN) && (fpclass != FP_INFINITE)) {
 		char aBuffer[256];
 		fxNumberToString(the->dtoa, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
-		fxStringifyJSONChars(the, theStringifier, aBuffer, c_strlen(aBuffer));
+		fxStringifyJSONChars(the, theStringifier, aBuffer, (txSize)c_strlen(aBuffer));
 	}
 	else
 		fxStringifyJSONChars(the, theStringifier, "null", 4);

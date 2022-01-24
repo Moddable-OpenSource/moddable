@@ -69,8 +69,7 @@ const txConditionalCharCase gxConditionalCharCaseToLower[mxConditionalCharCaseTo
 	fxFinalSigmaToLower,
 };
 #define mxConditionalCharCaseToUpperCount 0
-const txConditionalCharCase gxConditionalCharCaseToUpper[mxConditionalCharCaseToUpperCount] ICACHE_XS6RO_ATTR = {
-};
+const txConditionalCharCase* gxConditionalCharCaseToUpper = C_NULL;
 
 #define mxCharCaseFoldCount 205
 const txCharCase gxCharCaseFold[mxCharCaseFoldCount] ICACHE_XS6RO_ATTR = {

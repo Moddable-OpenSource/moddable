@@ -1615,7 +1615,7 @@ void fx_String_prototype_iterator(txMachine* the)
 	fxCoerceToString(the, mxThis);
 	mxPush(mxStringIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_String)));
-	property = fxNextIntegerProperty(the, property, c_strlen(mxThis->value.string), XS_NO_ID, XS_INTERNAL_FLAG);
+	property = fxNextIntegerProperty(the, property, (txInteger)c_strlen(mxThis->value.string), XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 
@@ -3128,7 +3128,7 @@ txInteger fxGetDecompositionBuffer(txInteger character, txInteger* buffer, txFla
 		r = buffer;
 		while (p < q)
 			p = fxUTF8Decode(p, r++);
-		return r - buffer;
+		return mxPtrDiff(r - buffer);
 	}
 	return 0;
 }
@@ -3280,7 +3280,7 @@ void fxNormalizeString(txMachine* the, txSlot* string, txFlag form)
 			sourceIndex++;
 		}
 		if (sourceIndex) {
-			txInteger offset = p - string->value.string;
+			txInteger offset = mxPtrDiff(p - string->value.string);
 			fxNormalizeDecomposition(the, buffer, source, sourceIndex, form & 1);
 			p = string->value.string + offset;
 		}
