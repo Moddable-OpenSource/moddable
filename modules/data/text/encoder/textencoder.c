@@ -40,7 +40,7 @@ void xs_textencoder(xsMachine *the)
 #endif
 
 /*
-	null character maps to 0xF4, 0x90, 0x80, 0x80
+	null character maps to 0xC0, 0x80
 */
 
 void xs_textencoder_encode(xsMachine *the)
@@ -57,8 +57,8 @@ void xs_textencoder_encode(xsMachine *the)
 		if (!c) break;
 
 		length += 1;
-		if ((0xF4 == c) && (0x90 == c_read8(src)) && (0x80 == c_read8(src + 1)) && (0x80 == c_read8(src + 2))) {
-			src += 3;
+		if ((0xC0 == c) && (0x80 == c_read8(src))) {
+			src += 1;
 			hasNull = 1;
 		}
 	}
@@ -71,9 +71,9 @@ void xs_textencoder_encode(xsMachine *the)
 			uint8_t c = c_read8(src++);
 			if (!c) break;
 
-			if ((0xF4 == c) && (0x90 == c_read8(src)) && (0x80 == c_read8(src + 1)) && (0x80 == c_read8(src + 2))) {
+			if ((0xC0 == c) && (0x80 == c_read8(src))) {
 				*dst++ = 0;
-				src += 3;
+				src += 1;
 			}
 			else
 				*dst++ = c;
@@ -108,6 +108,14 @@ void xs_textencoder_encodeInto(xsMachine *the)
 			dstRemaining -= 1;
 		}
 		else if (0xC0 == (first & 0xE0)) {
+			if ((0xC0 == first) && (0x80 == c_read8(src))) {
+				*dst++ = 0;
+				dstRemaining -= 1;
+				src += 1;
+				read += 1;
+				continue;
+			}
+
 			if (dstRemaining < 2)
 				break;
 
@@ -127,14 +135,6 @@ void xs_textencoder_encodeInto(xsMachine *the)
 			dstRemaining -= 3;
 		}
 		else if (0xF0 == (first & 0xF0)) {
-			if ((0xF4 == first) && (0x90 == c_read8(src)) && (0x80 == c_read8(src + 1)) && (0x80 == c_read8(src + 2))) {
-				*dst++ = 0;
-				dstRemaining -= 1;
-				src += 3;
-				read += 1;
-				continue;
-			}
-
 			if (dstRemaining < 4)
 				break;
 

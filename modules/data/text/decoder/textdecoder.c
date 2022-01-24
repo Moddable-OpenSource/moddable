@@ -78,7 +78,7 @@ void xs_textdecoder(xsMachine *the)
 /*
 	UTF-8 BOM is sequence 0xEF,0xBB,0xBF
 	Replacement character sequence in UTF-8 is 0xEF 0xBF 0xBD
-	null character maps to 0xF4, 0x90, 0x80, 0x80
+	null character maps to 0xC0, 0x80
 	
 	implementation overallocates by 3 bytes if BOM is present and ignoreBOM is false
 */
@@ -118,7 +118,7 @@ void xs_textdecoder_decode(xsMachine *the)
 		else
 			first = c_read8(src++);
 		if (first < 0x80) {
-			outLength += (0 == first) ? 4 : 1;
+			outLength += (0 == first) ? 2 : 1;
 			continue;
 		}
 
@@ -228,9 +228,7 @@ void xs_textdecoder_decode(xsMachine *the)
 			if (first)
 				*dst++ = first;
 			else {
-				*dst++ = 0xF4;
-				*dst++ = 0x90;
-				*dst++ = 0x80;
+				*dst++ = 0xC0;
 				*dst++ = 0x80;
 			}
 			continue;
