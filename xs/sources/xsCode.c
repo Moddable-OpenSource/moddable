@@ -2952,6 +2952,7 @@ void fxForNodeCode(void* it, void* param)
 		fxNodeDispatchCode(self->expression, param);
 		fxCoderAddBranch(param, -1, XS_CODE_BRANCH_ELSE_1, doneTarget);
 	}
+	coder->firstContinueTarget->environmentLevel = coder->environmentLevel;
 	coder->firstContinueTarget->scopeLevel = coder->scopeLevel;
 	fxNodeDispatchCode(self->statement, param);
 	fxCoderAdd(param, 0, coder->firstContinueTarget);
@@ -3043,6 +3044,7 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxNodeDispatchCodeAssign(self->reference, param, 0);
 	fxCoderAddByte(param, -1, XS_CODE_POP);
 
+	coder->firstContinueTarget->environmentLevel = coder->environmentLevel;
 	coder->firstContinueTarget->scopeLevel = coder->scopeLevel;
 	fxNodeDispatchCode(self->statement, param);
 	
