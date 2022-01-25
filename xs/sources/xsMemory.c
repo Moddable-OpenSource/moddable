@@ -796,8 +796,10 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 	case XS_CODE_KIND:
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		break;
 	case XS_HOME_KIND:
 		aSlot = theSlot->value.home.object;
@@ -994,8 +996,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		/* continue */
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_GLOBAL_KIND:
 		mxMarkChunk(theSlot->value.table.address);
