@@ -182,8 +182,11 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
+#if mxCESU8
+		outLength += (3 == clen) ? 6 : (clen + 1);
+#else
 		outLength += clen + 1;
-
+#endif
 		if (bufferLength) {
 			if (bufferLength >= clen) {
 				bufferLength -= clen;
@@ -302,9 +305,26 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
+#if mxCESU8
+	if (3 != clen) {
 		*dst++ = first;
 		for (i = 0; i < clen; i++)
 			*dst++ = utf8[i + 1];
+	}
+	else {
+		xsIntegerValue c;
+		fxUTF8Decode((xsStringValue)utf8, &c);
+		c -= 0x10000;
+		fxUTF8Encode((xsStringValue)dst, 0xD800 + (c >> 10));
+		dst += 3;
+		fxUTF8Encode((xsStringValue)dst, 0xDC00 + (c & 0x3FF));
+		dst += 3;
+	}
+#else
+		*dst++ = first;
+		for (i = 0; i < clen; i++)
+			*dst++ = utf8[i + 1];
+#endif
 		
 		if ((0xEF == first) && (dst == dst3)) {
 			if ((0xBF == dst[-1]) && (0xBB == dst[-2]))
