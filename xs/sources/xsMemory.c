@@ -694,6 +694,29 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					}
 					break;
 					
+				case XS_CLOSURE_KIND:
+					aTemporary = aProperty->value.closure;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aTemporary->flag |= XS_MARK_FLAG; 
+						if (aTemporary->kind == XS_REFERENCE_KIND) {
+							aTemporary = aTemporary->value.reference;
+							if (!(aTemporary->flag & XS_MARK_FLAG)) {
+								aProperty->value.closure->value.reference = theCurrent;
+								theCurrent = aTemporary;
+								theCurrent->value.instance.garbage = aProperty;
+								aProperty = theCurrent;
+						
+							}
+						}
+						else {
+							(*theMarker)(the, aTemporary);
+							aProperty = aProperty->next;
+						}
+					}
+					else
+						aProperty = aProperty->next;
+					break;
+					
 				default:
 					(*theMarker)(the, aProperty);
 					aProperty = aProperty->next;
@@ -743,6 +766,12 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					theCurrent = aTemporary;
 					aProperty = aProperty->next;
 				}
+				break;
+			case XS_CLOSURE_KIND:
+				aTemporary = aProperty->value.closure->value.reference;
+				aProperty->value.closure->value.reference = theCurrent;
+				theCurrent = aTemporary;
+				aProperty = aProperty->next;
 				break;
 			}
 		}
