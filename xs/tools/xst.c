@@ -1064,9 +1064,20 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	}
 	xsEndHost(machine);
 	if (machine->abortStatus) {
-		char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
-		snprintf(message, 1024, "# %s", why);
 		success = 0;
+		if ((machine->abortStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->abortStatus == XS_STACK_OVERFLOW_EXIT)) {
+			if (context->negative) {
+				if (!strcmp("RangeError", (char*)context->negative->data.scalar.value)) {
+					snprintf(message, 1024, "OK");
+					success = 1;
+				}
+			}
+		}
+		if (!success) {
+			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+			snprintf(message, 1024, "# %s", why);
+			success = 0;
+		}
 	}
 	fx_agent_stop(machine);
 	xsDeleteMachine(machine);
@@ -1605,10 +1616,6 @@ void fxAbort(txMachine* the, int status)
 {
 	if (the->abortStatus) // xsEndHost calls fxAbort!
 		return;
-	if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
-		mxRangeError("memory full");
-	if (status == XS_STACK_OVERFLOW_EXIT)
-		mxRangeError("stack overflow");
 	if (status) {
 		the->abortStatus = status;
 		fxExitToHost(the);
