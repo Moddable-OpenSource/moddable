@@ -4,55 +4,87 @@ export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
 	}
+	
+	printCaseIndex(which, array) {
+		const c = array.length;
+		this.report(`#define mxCharCase${which}Count ${c}`);
+		let string = `const txCharCase gxCharCase${which}[mxCharCase${which}Count] ICACHE_XS6RO_ATTR = {`;
+		for (let i = 0; i < c; i++) {
+			if (i % 8 == 0) {
+				this.report(string);
+				string = "\t";
+			}
+			let item = array[i];
+			let operand = 0;
+			let delta = item.delta;
+			if (item.count == 0) {
+				if (delta < 0) {
+					delta = -delta;
+					operand |= 0x80;
+				}
+				else
+					operand |= 0x40;
+				if (delta == 1) {
+					if (item.from & 1)
+						operand |= 0x10;
+					else
+						operand |= 0x20;
+				}
+			}
+			else if (item.count > 0) {
+				operand = item.count;	
+			}
+			string += `{0x${this.toCode(item.from)},0x${this.toByte(item.to - item.from + 1)},0x${this.toByte(operand.toString(16))},0x${this.toCode(delta)}},`;
+		}
+		this.report(string);
+		this.report("};");
+	}
+
 	compress(items, specials, which, flag) {
 		let results = [];
 		let c = items.length;
 		let item = items[0];
 		let from = item.code;
-		let delta = item.delta;
 		let count = item.count;
+		let delta = item.delta;
 		let to = from;
 		for (let i = 1; i < c; i++) {
 		  let item = items[i];
-		  let current = item.code;
-		  if ((to + 1 == current) && (delta == item.delta) && (count == 0)) {
+		  if ((count == 0) && (to + 1 == item.code) && (delta == item.delta) && (count == item.count)) {
 			to++;
 		  }
 		  else {
 			results.push({from, to, count, delta});
-			from = to = current;
-			delta = item.delta;
+			from = item.code;
 			count = item.count;
+			delta = item.delta;
+			to = from;
 		  }
 		}
 		results.push({from, to, count, delta});
 		
 		let former = results[0];
-		if ((former.count == 0) && (Math.abs(former.delta) == 1)) {
+		if ((former.count == 0) && (Math.abs(former.delta) == 1))
 			delta = former.delta;
-			former.delta = 0;	
-		}
 		else
 			delta = 0;
 		let i = 1;
 		while (i < results.length) {
 			let current = results[i];
-			if ((current.count == 0) && (current.delta == delta) && (former.count == 0) && (former.delta == 0) && ((former.to + 2) == current.from)) {
+			if (delta && (current.count == 0) && (current.delta == delta) && ((former.to + 2) == current.from)) {
 				former.to = current.to;
 				results.splice(i, 1);
 			}
 			else {
 				former = current;
-				if ((former.count == 0) && (Math.abs(former.delta) == 1)) {
+				if ((former.count == 0) && (Math.abs(former.delta) == 1))
 					delta = former.delta;
-					former.delta = 0;	
-				}
 				else
 					delta = 0;
 				i++;
 			}
 		}
-		
+
 		let string;
 		c = specials.length;
 		if (c) {
@@ -68,19 +100,18 @@ export default class extends TOOL {
 			this.report(string);
 			this.report("};");
 		}
+		
+		let indexGroups = [ [], [] ];
 		c = results.length;
-		this.report(`#define mxCharCase${which}Count ${c}`);
-		string = `const txCharCase gxCharCase${which}[mxCharCase${which}Count] ICACHE_XS6RO_ATTR = {`;
 		for (let i = 0; i < c; i++) {
-			if (i % 8 == 0) {
-				this.report(string);
-				string = "\t";
-			}
 			let result = results[i];
-			string += `{0x${result.from.toString(16)},0x${result.to.toString(16)},${result.count},${result.delta}},`;
+			let from = result.from;
+			result.from &= 0xFFFF;
+			result.to &= 0xFFFF;
+			indexGroups[from >> 16].push(result);
 		}
-		this.report(string);
-		this.report("};");
+		this.printCaseIndex(which + 0, indexGroups[0]);
+		this.printCaseIndex(which + 1, indexGroups[1]);
 	}
 	filterIgnoreCases() {
 		let results = [];
@@ -210,5 +241,21 @@ export default class extends TOOL {
 		this.compress(this.ignoreCases, [], "Ignore", 1);
 		this.compress(this.lowers, this.specialLowers, "ToLower", 0);
 		this.compress(this.uppers, this.specialUppers, "ToUpper", 1);
+	}
+	toByte(code) {
+		let result = code.toString(16).toUpperCase();
+		if (result.length == 1)
+			result = "0" + result;
+		return result;
+	}
+	toCode(code) {
+		let result = code.toString(16).toUpperCase();
+		if (result.length == 1)
+			result = "000" + result;
+		else if (result.length == 2)
+			result = "00" + result;
+		else if (result.length == 3)
+			result = "0" + result;
+		return result;
 	}
 }
