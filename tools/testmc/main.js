@@ -40,12 +40,13 @@ globalThis.$DO = function(f) {
 
 class Screen extends ChecksumOut {
 	#timer;
+	#promises = [];
 
 	clear() {}
 	start(interval) {
 		if (!this.#timer) {
 			this.#timer = Timer.set(() => {
-				this.context.onIdle();
+				this.doIdle();
 			}, 1, 100);
 			Timer.schedule(this.#timer);
 		}
@@ -71,8 +72,41 @@ class Screen extends ChecksumOut {
 	animateColors(clut) {}
 	checkImage(checksum, message) {
 		delete this.checksum;
-		this.context.onIdle();
+		this.doIdle();
 		assert.sameValue(checksum, this.checksum, message ?? "image mismatch");
+	}
+	doIdle() {
+		this.context.onIdle();
+		const promises = this.#promises;
+		this.#promises = [];
+		for (let i = 0; i < promises.length; i++)
+			promises[i]();
+	}
+	doTouchBegan(id, x, y, ticks) {
+		return new Promise((resolve, reject) => {
+			Timer.set(() => {
+				this.context.onTouchBegan(id, x, y, ticks);
+				this.#promises.push(resolve);
+				this.doIdle();
+			});
+		});
+	}
+	doTouchMoved(id, x, y, ticks) {
+		return new Promise((resolve, reject) => {
+			Timer.set(() => {
+				this.context.onTouchMoved(id, x, y, ticks);
+				this.#promises.push(resolve);
+			});
+		});
+	}
+	doTouchEnded(id, x, y, ticks) {
+		return new Promise((resolve, reject) => {
+			Timer.set(() => {
+				this.context.onTouchEnded(id, x, y, ticks);
+				this.#promises.push(resolve);
+				this.doIdle();
+			});
+		});
 	}
 }
 
