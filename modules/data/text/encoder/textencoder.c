@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2022 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -41,13 +41,14 @@ void xs_textencoder(xsMachine *the)
 
 /*
 	null character maps to 0xC0, 0x80
+	surrogate pair pattern: ED Ax xx ED Bx xx
 */
 
 void xs_textencoder_encode(xsMachine *the)
 {
 	uint8_t *src, *dst;
 	int length = 0;
-	uint8_t hasNull = 0;
+	uint8_t remap = false;
 
 	xsArg(0) = xsCall1(xsGlobal, xsID_String, xsArg(0));
 	src = (uint8_t *)xsmcToString(xsArg(0));
@@ -56,20 +57,44 @@ void xs_textencoder_encode(xsMachine *the)
 		uint8_t c = c_read8(src++);
 		if (!c) break;
 
+		if ((0xED == c) &&
+			(0xA0 == (0xF0 & c_read8(src))) &&
+			(0xED == c_read8(src + 2)) &&
+			(0xB0 == (0xF0 & c_read8(src + 3)))) {
+			src += 5;
+			length += 4;
+			remap = true;
+			continue;
+		}
+
 		length += 1;
 		if ((0xC0 == c) && (0x80 == c_read8(src))) {
 			src += 1;
-			hasNull = 1;
+			remap = true;
 		}
 	}
 
 	xsmcSetArrayBuffer(xsResult, NULL, length);
 	src = (uint8_t *)xsmcToString(xsArg(0));
 	dst = xsmcToArrayBuffer(xsResult);
-	if (hasNull) {
+	if (remap) {
 		while (true) {
 			uint8_t c = c_read8(src++);
 			if (!c) break;
+
+			if ((0xED == c) &&
+				(0xA0 == (0xF0 & c_read8(src))) &&
+				(0xED == c_read8(src + 2)) &&
+				(0xB0 == (0xF0 & c_read8(src + 3)))) {
+				xsIntegerValue high, low;
+
+				fxUTF8Decode((xsStringValue)(src - 1), &high);
+				fxUTF8Decode((xsStringValue)(src + 2), &low);
+				fxUTF8Encode((xsStringValue)dst, 0x10000 + ((high & 0x3FF) << 10) + (low & 0x3FF));
+				src += 5;
+				dst += 4;
+				continue;
+			}
 
 			if ((0xC0 == c) && (0x80 == c_read8(src))) {
 				*dst++ = 0;
@@ -125,6 +150,25 @@ void xs_textencoder_encodeInto(xsMachine *the)
 			dstRemaining -= 2;
 		}
 		else if (0xE0 == (first & 0xF0)) {
+			if ((0xED == first) &&
+				(0xA0 == (0xF0 & c_read8(src))) &&
+				(0xED == c_read8(src + 2)) &&
+				(0xB0 == (0xF0 & c_read8(src + 3)))) {
+				xsIntegerValue high, low;
+
+				if (dstRemaining < 4)
+					break;
+
+				fxUTF8Decode((xsStringValue)(src - 1), &high);
+				fxUTF8Decode((xsStringValue)(src + 2), &low);
+				fxUTF8Encode((xsStringValue)dst, 0x10000 + ((high & 0x3FF) << 10) + (low & 0x3FF));
+				src += 5;
+				dst += 4;
+				dstRemaining -= 4;
+				read += 6;
+				continue;
+			}
+
 			if (dstRemaining < 3)
 				break;
 
