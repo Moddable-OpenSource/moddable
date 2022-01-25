@@ -1,7 +1,7 @@
 # Piu JavaScript Reference
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: January 17, 2022
+Revised: January 24, 2022
 
 ## About This Document
 
@@ -141,6 +141,7 @@ sampleContent.coordinates = {
 };
 ```
 
+<a id="fitted-size"></a>
 ##### Fitted size
 
 All contents also have a *fitted width* and *fitted height*, which are the effective width and height of the content computed by its container.
@@ -425,22 +426,22 @@ All `content` objects have a `coordinates` property. The coordinates property is
 When a content's container is an `application`, `container`, `scroller`, or `layout` object:
 
 - `top`, `bottom`, `left`, and `right` coordinates are all relative to their container
-- If `width`, `left`, and `right` coordinates are all specified, the width will be overruled
+- If `width`, `left`, and `right` coordinates are all specified, the `left` and `right` coordinates will be overruled
 - If `left` and `right` are both unspecified, the content will be centered horizontally in its container with the width specified (or a width of 0, if unspecified)
-- If `height`, `top`, and `bottom` coordinates are all specified, the height will be overruled
+- If `height`, `top`, and `bottom` coordinates are all specified, the `top` and `bottom` coordinates will be overruled
 - If `top` and `bottom` are both unspecified, the content will be centered vertically in its container with the height specified (or a height of 0, if unspecified)
 
 When a content's container is a `column` object:
 
 -  `top` and `bottom` coordinates are relative to their `previous` and `next` properties
 - `left` and `right` coordinates are relative to their container
-- If `width`, `left`, and `right` coordinates are all specified, the width will be overruled
+- If `width`, `left`, and `right` coordinates are all specified, the `left` and `right` coordinates will be overruled
 
 When a content's container is a `row` object:
 
 - `left` and `right` coordinates are relative to their `previous` and `next` properties
 - `top` and `bottom`  coordinates are relative to their container
-- If `height`, `top`, and `bottom` coordinates are all specified, the height will be overruled
+- If `height`, `top`, and `bottom` coordinates are all specified, the `top` and `bottom` coordinates will be overruled
 
 ### Duration, Fraction, Interval, Loop, and Time
 
@@ -2606,7 +2607,7 @@ Same as for `container` object (see [Events](#container-events) in the section [
 | `layout` | `object` | The `layout` object that triggered the event
 | `width` | `number` | The fitted width of the `layout` object, in pixels
 
-This event is triggered when the fitted width of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents. Returns the fitted width of the `layout` object, in pixels. 
+This event is triggered when the [fitted width](#fitted-size) of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents. Returns the fitted width of the `layout` object, in pixels. 
 
 ***
 
@@ -2617,7 +2618,7 @@ This event is triggered when the fitted width of the `layout` object is calculat
 | `layout` | `object` | The `layout` object that triggered the event
 | `height` | `number` | The fitted height of the `layout` object, in pixels
 
-This event is triggered when the fitted height of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents.  Returns the height of the `layout` object, in pixels.
+This event is triggered when the [fitted height](#fitted-size) of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents.  Returns the height of the `layout` object, in pixels.
 
 ***
 
@@ -2628,7 +2629,7 @@ This event is triggered when the fitted height of the `layout` object is calcula
 | `layout` | `object` | The `layout` object that triggered the event
 | `width` | `number` | The measured width of the `layout` object, in pixels
 
-This event is triggered when the measured width of the `layout` object is calculated. Returns the measured width of the `layout` object, in pixels.
+This event is triggered when the [measured width](#measured-size) of the `layout` object is calculated. Returns the measured width of the `layout` object, in pixels.
 
 ***
 
@@ -2639,7 +2640,7 @@ This event is triggered when the measured width of the `layout` object is calcul
 | `layout` | `object` | The `layout` object that triggered the event
 | `height` | `number` | The measured height of the `layout` object, in pixels
 
-This event is triggered when the measured height of the `layout` object is calculated. Returns the measured height of the `layout` object, in pixels.
+This event is triggered when the [measured height](#measured-size) of the `layout` object is calculated. Returns the measured height of the `layout` object, in pixels.
 
 ***
 
