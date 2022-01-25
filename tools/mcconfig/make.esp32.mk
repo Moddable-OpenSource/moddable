@@ -108,6 +108,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos/include/freertos \
  	$(IDF_PATH)/components/freertos/port \
  	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
 	$(IDF_PATH)/components/hal/include \
 	$(IDF_PATH)/components/hal/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/heap/include \
