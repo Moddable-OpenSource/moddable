@@ -327,7 +327,7 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 
 void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlot* target)
 {
-	txInteger c, i;
+    txIndex c, i;
 	/* THIS */
 	mxPushUninitialized();
 	/* FUNCTION */
@@ -343,7 +343,7 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
 	mxGetID(mxID(_length));
-	c = fxToInteger(the, the->stack);
+    c = (txIndex)fxToLength(the, the->stack);
 	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
