@@ -832,11 +832,15 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_HOME_KIND:
 		aSlot = theSlot->value.home.object;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		aSlot = theSlot->value.home.module;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		break;
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
@@ -1066,11 +1070,15 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_HOME_KIND:
 		aSlot = theSlot->value.home.object;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		aSlot = theSlot->value.home.module;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
