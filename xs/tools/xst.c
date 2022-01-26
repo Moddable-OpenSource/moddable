@@ -351,17 +351,30 @@ int main262(int argc, char* argv[])
 	int argj = 0;
 	c_timeval from;
 	c_timeval to;
-	
+
 	c_memset(&pool, 0, sizeof(txPool));
 	fxCreateCondition(&(pool.countCondition));
 	fxCreateMutex(&(pool.countMutex));
 	fxCreateMutex(&(pool.resultMutex));
-	for (argi = 0; argi < mxPoolSize; argi++) {
+	{
 	#if mxWindows
-		pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
-	#else	
-		pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
-	#endif
+	#elif mxMacOSX
+		pthread_attr_t attr; 
+		pthread_t self = pthread_self();
+   		size_t size = pthread_get_stacksize_np(self);
+   		pthread_attr_init(&attr);
+   		pthread_attr_setstacksize(&attr, size);
+	#elif mxLinux
+	#endif	
+		for (argi = 0; argi < mxPoolSize; argi++) {
+		#if mxWindows
+			pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
+		#elif mxMacOSX
+			pthread_create(&(pool.threads[argi]), &attr, &fxRunFileThread, &pool);
+		#else
+			pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
+		#endif
+		}
 	}
 	fxInitializeSharedCluster();
 

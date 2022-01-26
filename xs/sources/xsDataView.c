@@ -2288,7 +2288,7 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 			txByte* to;
 			if (length > mxSortThreshold) {
 				txInteger lo = 0, hi = length - 1;
-				txSortPartition stack[mxSortStackSize];
+				txSortPartition stack[mxSortPartitionCount];
 				txSortPartition *top = stack + 1;
 				while (stack < top) {
 					txIndex mid = lo + ((hi - lo) >> 1);

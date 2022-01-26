@@ -2204,7 +2204,7 @@ again:
 		txSlot* to;
 		if (length > mxSortThreshold) {
 			txIndex lo = 0, hi = length - 1;
-			txSortPartition stack[mxSortStackSize];
+			txSortPartition stack[mxSortPartitionCount];
 			txSortPartition *top = stack + 1;
 			while (stack < top) {
 				txIndex mid = lo + ((hi - lo) >> 1);
