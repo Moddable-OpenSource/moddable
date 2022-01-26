@@ -165,7 +165,7 @@ void xs_textencoder_encodeInto(xsMachine *the)
 				src += 5;
 				dst += 4;
 				dstRemaining -= 4;
-				read += 6;
+				read += 2;
 				continue;
 			}
 
