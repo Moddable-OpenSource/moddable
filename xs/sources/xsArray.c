@@ -2238,6 +2238,7 @@ again:
 				do {
 					while ((COMPARE(i) < 0) && (i <= j)) { CHECK; i++; }
 					while ((COMPARE(j) > 0) && (i <= j)) { CHECK; j--; }
+					CHECK;
 					if (i < j) {
 						PUSH(i);
 						MOVE(j, i);
