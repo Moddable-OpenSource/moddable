@@ -1,7 +1,7 @@
 # Wasm
 
 Copyright 2019-2022 Moddable Tech, Inc.<BR>
-Revised: January 20, 2022
+Revised: January 27, 2022
 
 This document provides instructions to build and run Moddable SDK apps for the Wasm platform.
 
@@ -122,38 +122,64 @@ This document provides instructions to build and run Moddable SDK apps for the W
 <a id="lin"></a>
 ## Linux
 
-1. Clone the [Emscripten](https://emscripten.org/) repository into your `~/Projects` directory and activate the latest version.
+1. If you do not already have the [Emscripten](https://emscripten.org/) repository into your `~/Projects` directory and activate the latest version.
 
 	```text
 	cd ~/Projects
 	git clone https://github.com/emscripten-core/emsdk.git
 	cd emsdk
-	./emsdk install latest
-	./emsdk activate latest
 	```
-	
+
 	If you already have the Emscripten repository, upgrade to the latest version using the following commands:
 	
 	```text
 	cd ~/Projects/emsdk
 	git pull
+	```
+
+2. Make sure you have all of the Emscripten prerequisites listed for your host platform in the **Platform-specific notes** section of the [Emscripten Download and install webpage](https://emscripten.org/docs/getting_started/downloads.html#platform-notes-installation-instructions-sdk).
+
+3. Install and activate the latest version of Emscripten.
+
+	```text
+	cd ~/Projects/emsdk
 	./emsdk install latest
 	./emsdk activate latest
 	```
 	
-	> We last tested using version 2.0.4 (commit `88b4ec65923815c3077e3637eefb54ab272d2646`).
+	> We last tested using version 3.1.2 (commit `476a14d60d0d25ff5a1bfee18af73a4b9bfbd385`).
 		
-2. Clone the [Binaryen](https://github.com/WebAssembly/binaryen) repository into your `~/Projects` directory and build it.
+4. If you do not already have the [Binaryen](https://github.com/WebAssembly/binaryen) repository, clone the repository into your `~/Projects` directory.
 
 	```text
 	cd ~/Projects
-	git clone https://github.com/WebAssembly/binaryen.git
-	cd binaryen
+	git clone --recursive https://github.com/WebAssembly/binaryen.git
+	```
+	
+	If you already have the Binaryen repository, upgrade to the latest version using the following commands:
+	
+	```text
+	cd ~/Projects/binaryen
+	git pull origin main --recurse-submodules
+	```
+	
+	If you experience any problems updating the Binaryen repository, you can simply delete the binaryen directory and re-clone it instead:
+
+	```text
+	cd ~/Projects
+	rm -rf binaryen
+	git clone --recursive https://github.com/WebAssembly/binaryen.git
+	```
+
+5. Build the Binaryen tools.
+	
+	```text
+	cd ~/Projects/binaryen
 	cmake . && make
 	```
 	
-	> We last tested using wasm-opt version 96 (commit `a96e8310e1a58c0a43b2d0e2ff4f9db24dd9a18a`)	
-3. 	Setup the `PATH` and other environment variables by pasting the following commands into your `~/.bashrc`. The first command sources a shell script that sets environment variables for Emscripten. The second updates your `PATH` to include BinaryEn.
+	> We last tested using wasm-opt version 105 (commit `707be2b55075dccaaf0a70e23352c972fce5aa76`)	
+6. 	Setup the `PATH` and other environment variables by pasting the following commands into your `~/.bashrc`. The first command sources a shell script that sets environment variables for Emscripten. The second updates your `PATH` to include BinaryEn.
 
 	```text
 	source ~/Projects/emsdk/emsdk_env.sh
