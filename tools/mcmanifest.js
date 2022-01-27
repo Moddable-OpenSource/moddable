@@ -455,7 +455,7 @@ export class MakeFile extends FILE {
 			else
 				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
 			this.echo(tool, "tsc ", "tsconfig.json");
-			this.line("\ttsc -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
+			this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
 		}
 	}
@@ -848,10 +848,7 @@ export class TSConfigFile extends FILE {
 				lib: ["es2020"],
 				sourceMap: true,
 				target: "ES2020",
-				types: [
-					tool.xsPath + tool.slash + "includes" + tool.slash +"xs",
-					...tool.tsconfig.types
-				]
+				...tool.typescript.tsconfig?.compilerOptions
 			},
 			files: [
 			]
@@ -1618,8 +1615,37 @@ export class Tool extends TOOL {
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
 		this.mergeProperties(all.run, platform.run);
-		if (platform.tsconfig?.types)
-			all.tsconfig.types = this.concatProperty(all.tsconfig.types, platform.tsconfig.types.map(path => this.resolveSource(path)));
+		if (platform.typescript) {
+			let tsconfig = platform.typescript.tsconfig;
+			if (tsconfig) {
+				tsconfig = JSON.parse(JSON.stringify(tsconfig), (name, value) => {
+					if ("string" === typeof value)
+						value = this.resolveVariable(value);
+					return value;
+				});
+
+				const compilerOptions = tsconfig.compilerOptions;
+				for (let name in compilerOptions) {
+					let value = compilerOptions[name];
+					if ("types" === name)
+						value = value.map(path => this.resolveSource(path));
+					if ("object" === typeof value) {
+						if (value instanceof Array) {
+							all.typescript.tsconfig.compilerOptions[name] ??= [];
+							all.typescript.tsconfig.compilerOptions[name] = value.concat(all.typescript.tsconfig.compilerOptions[name]); 
+						}
+						else {
+							all.typescript.tsconfig.compilerOptions[name] ??= {};
+							this.mergeProperties(all.typescript.tsconfig.compilerOptions[name], value);
+						}
+					}
+					else
+						all.typescript.tsconfig.compilerOptions[name] = value;
+				}
+			}
+
+			all.typescript.compiler = platform.typescript.compiler ?? all.typescript.compiler;
+		}
 		return;
 	}
 	mergeProperties(targets, sources) {
@@ -1741,7 +1767,7 @@ export class Tool extends TOOL {
 			errors:[],
 			warnings:[],
 			run:{},
-			tsconfig: {types: []}
+			typescript: {compiler: "tsc", tsconfig: {compilerOptions: {}}}
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 

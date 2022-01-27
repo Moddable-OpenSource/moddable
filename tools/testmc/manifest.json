@@ -150,6 +150,15 @@
 		"*-mask": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-16",
             "./assets/circleish"
+		],
+		"*" : [
+			"./assets/color-dots-20"
+		],
+		"*-image": [
+			"$(MODDABLE)/examples/assets/images/robby"
+		],
+		"*-image(40)": [
+			"$(MODDABLE)/examples/assets/images/screen2"
 		]
 	}
 }

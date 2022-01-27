@@ -1,7 +1,7 @@
 # Wasm
 
-Copyright 2019-2021 Moddable Tech, Inc.<BR>
-Revised: June 14, 2021
+Copyright 2019-2022 Moddable Tech, Inc.<BR>
+Revised: January 20, 2022
 
 This document provides instructions to build and run Moddable SDK apps for the Wasm platform.
 
@@ -20,38 +20,63 @@ This document provides instructions to build and run Moddable SDK apps for the W
 <a id="mac"></a>
 ## macOS
 
-1. Clone the [Emscripten](https://emscripten.org/) repository into your `~/Projects` directory and activate the latest version.
+1. If you do not already have the [Emscripten](https://emscripten.org/) repository, clone the repository into your `~/Projects` directory.
 
 	```text
 	cd ~/Projects
 	git clone https://github.com/emscripten-core/emsdk.git
-	cd emsdk
-	./emsdk install latest
-	./emsdk activate latest
 	```
-	
+
 	If you already have the Emscripten repository, upgrade to the latest version using the following commands:
 	
 	```text
 	cd ~/Projects/emsdk
 	git pull
+	```
+
+2. Make sure you have all of the Emscripten prerequisites listed for your host platform in the **Platform-specific notes** section of the [Emscripten Download and install webpage](https://emscripten.org/docs/getting_started/downloads.html#platform-notes-installation-instructions-sdk).
+
+3. Install and activate the latest version of Emscripten.
+	 
+	```text
+	cd ~/Projects/emsdk
 	./emsdk install latest
 	./emsdk activate latest
 	```
 	
-	> We last tested using version 2.0.24 (commit `e2dc11e0dbd8f9367d70c76e57cdb9a45515390e`).
+	> We last tested using version 3.1.1 (commit `0f0ea34526515d0b2caa262ab5915bc1a7e5dd71`).
 	
-2. Clone the [Binaryen](https://github.com/WebAssembly/binaryen) repository into your `~/Projects` directory and build it.
+4. If you do not already have the [Binaryen](https://github.com/WebAssembly/binaryen) repository, clone the repository into your `~/Projects` directory.
 
 	```text
 	cd ~/Projects
-	git clone https://github.com/WebAssembly/binaryen.git
-	cd binaryen
+	git clone --recursive https://github.com/WebAssembly/binaryen.git
+	```
+	
+	If you already have the Binaryen repository, upgrade to the latest version using the following commands:
+	
+	```text
+	cd ~/Projects/binaryen
+	git pull origin main --recurse-submodules
+	```
+	
+	If you experience any problems updating the Binaryen repository, you can simply delete the binaryen directory and re-clone it instead:
+	
+	```text
+	cd ~/Projects
+	rm -rf binaryen
+	git clone --recursive https://github.com/WebAssembly/binaryen.git
+	```
+
+5. Build the Binaryen tools.
+
+	```text
+	cd ~/Projects/binaryen
 	cmake . && make
 	```
 	
-	> We last tested using wasm-opt version 101 (commit `aec8d12282b5279b80e79f21d54491db5d55278e`)	
-3. 	Setup the `PATH` and other environment variables by pasting the following commands into your `~/.profile`. The first command sources a shell script that sets environment variables for Emscripten. The second updates your `PATH` to include BinaryEn.
+	> We last tested using wasm-opt version 105 (commit `060442225165d0423d06ea33ab865e850b54f61b`)	
+6. 	Setup the `PATH` and other environment variables by pasting the following commands into your `~/.profile`. The first command sources a shell script that sets environment variables for Emscripten. The second updates your `PATH` to include BinaryEn.
 
 	```text
 	source ~/Projects/emsdk/emsdk_env.sh
@@ -62,14 +87,14 @@ This document provides instructions to build and run Moddable SDK apps for the W
 
 	> Note: You must open a new shell instance or manually run the export statements in your shell before proceeding. Adding the export statements to your `~/.profile` does not update the environment variables in active shell instances.
 
-4. Build the Moddable Wasm tools from the command line:
+7. Build the Moddable Wasm tools from the command line:
 
 	```text
 	cd ${MODDABLE}/build/makefiles/wasm
 	make
 	```
 	
-5. To test, build the `balls` example for the `wasm` target.
+8. To test, build the `balls` example for the `wasm` target.
 
 	```text
 	cd $MODDABLE/examples/piu/balls
