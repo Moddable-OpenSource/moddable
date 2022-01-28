@@ -351,17 +351,30 @@ int main262(int argc, char* argv[])
 	int argj = 0;
 	c_timeval from;
 	c_timeval to;
-	
+
 	c_memset(&pool, 0, sizeof(txPool));
 	fxCreateCondition(&(pool.countCondition));
 	fxCreateMutex(&(pool.countMutex));
 	fxCreateMutex(&(pool.resultMutex));
-	for (argi = 0; argi < mxPoolSize; argi++) {
+	{
 	#if mxWindows
-		pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
-	#else	
-		pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
-	#endif
+	#elif mxMacOSX
+		pthread_attr_t attr; 
+		pthread_t self = pthread_self();
+   		size_t size = pthread_get_stacksize_np(self);
+   		pthread_attr_init(&attr);
+   		pthread_attr_setstacksize(&attr, size);
+	#elif mxLinux
+	#endif	
+		for (argi = 0; argi < mxPoolSize; argi++) {
+		#if mxWindows
+			pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
+		#elif mxMacOSX
+			pthread_create(&(pool.threads[argi]), &attr, &fxRunFileThread, &pool);
+		#else
+			pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
+		#endif
+		}
 	}
 	fxInitializeSharedCluster();
 
@@ -460,6 +473,10 @@ int main262(int argc, char* argv[])
 	return error;
 }
 
+extern void modInstallTextDecoder(xsMachine *the);
+extern void modInstallTextEncoder(xsMachine *the);
+extern void modInstallBase64(xsMachine *the);
+
 void fxBuildAgent(xsMachine* the) 
 {
 	txSlot* slot;
@@ -497,6 +514,10 @@ void fxBuildAgent(xsMachine* the)
 
 	mxPop();
 	mxPop();
+	
+	modInstallTextDecoder(the);
+	modInstallTextEncoder(the);
+	modInstallBase64(the);
 }
 
 void fxCountResult(txPool* pool, txContext* context, int success, int pending) 
@@ -885,6 +906,7 @@ void fxRunContext(txPool* pool, txContext* context)
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
+			||	!strcmp((char*)node->data.scalar.value, "regexp-v-flag")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -1055,9 +1077,20 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	}
 	xsEndHost(machine);
 	if (machine->abortStatus) {
-		char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
-		snprintf(message, 1024, "# %s", why);
 		success = 0;
+		if ((machine->abortStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->abortStatus == XS_STACK_OVERFLOW_EXIT)) {
+			if (context->negative) {
+				if (!strcmp("RangeError", (char*)context->negative->data.scalar.value)) {
+					snprintf(message, 1024, "OK");
+					success = 1;
+				}
+			}
+		}
+		if (!success) {
+			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+			snprintf(message, 1024, "# %s", why);
+			success = 0;
+		}
 	}
 	fx_agent_stop(machine);
 	xsDeleteMachine(machine);
@@ -1346,13 +1379,58 @@ void fx_evalScript(xsMachine* the)
 void fx_print(xsMachine* the)
 {
 	xsIntegerValue c = xsToInteger(xsArgc), i;
+	xsStringValue string, p, q;
 	xsVars(1);
 	xsVar(0) = xsGet(xsGlobal, xsID("String"));
 	for (i = 0; i < c; i++) {
 		if (i)
 			fprintf(stdout, " ");
 		xsArg(i) = xsCallFunction1(xsVar(0), xsUndefined, xsArg(i));
-		fprintf(stdout, "%s", xsToString(xsArg(i)));
+		p = string = xsToString(xsArg(i));
+	#if mxCESU8
+		for (;;) {
+			xsIntegerValue character;
+			q = fxUTF8Decode(p, &character);
+		again:
+			if (character == C_EOF)
+				break;
+			if (character == 0) {
+				if (p > string) {
+					char c = *p;
+					*p = 0;
+					fprintf(stdout, "%s", string);
+					*p = c;
+				}
+				string = q;
+			}
+			else if ((0x0000D800 <= character) && (character <= 0x0000DBFF)) {
+				xsStringValue r = q;
+				xsIntegerValue surrogate;
+				q = fxUTF8Decode(r, &surrogate);
+				if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF)) {
+					char buffer[5];
+					character = (txInteger)(0x00010000 + ((character & 0x03FF) << 10) + (surrogate & 0x03FF));
+					if (p > string) {
+						char c = *p;
+						*p = 0;
+						fprintf(stdout, "%s", string);
+						*p = c;
+					}
+					p = fxUTF8Encode(buffer, character);
+					*p = 0;
+					fprintf(stdout, "%s", buffer);
+					string = q;
+				}
+				else {
+					p = r;
+					character = surrogate;
+					goto again;
+				}
+			}
+			p = q;
+		}
+	#endif	
+		fprintf(stdout, "%s", string);
 	}
 	fprintf(stdout, "\n");
 }
@@ -1551,10 +1629,6 @@ void fxAbort(txMachine* the, int status)
 {
 	if (the->abortStatus) // xsEndHost calls fxAbort!
 		return;
-	if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
-		mxRangeError("memory full");
-	if (status == XS_STACK_OVERFLOW_EXIT)
-		mxRangeError("stack overflow");
 	if (status) {
 		the->abortStatus = status;
 		fxExitToHost(the);

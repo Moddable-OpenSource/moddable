@@ -100,7 +100,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 11
-#define XS_MINOR_VERSION 6
+#define XS_MINOR_VERSION 7
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -110,12 +110,6 @@ typedef struct {
 	txS4 atomSize;
 	txU4 atomType;
 } Atom;
-
-typedef struct {
-	txInteger from; 
-	txInteger to; 
-	txInteger delta;
-} txCharCase;
 
 typedef struct {
 	void* callback;
@@ -410,10 +404,6 @@ enum {
 
 extern void fxDeleteScript(txScript* script);
 
-#define mxCharCaseToLowerCount 84
-extern const txCharCase gxCharCaseToLower[];
-#define mxCharCaseToUpperCount 84
-extern const txCharCase gxCharCaseToUpper[];
 extern const txUTF8Sequence gxUTF8Sequences[];
 
 extern txBoolean fxIsIdentifierFirst(txU4 c);
@@ -426,9 +416,24 @@ extern txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, tx
 extern txString fxStringifyHexEscape(txString string, txInteger character);
 extern txString fxStringifyUnicodeEscape(txString string, txInteger character, txInteger separator);
 
+mxExport int fxUTF8Compare(txString p1, txString p2);
 mxExport txString fxUTF8Decode(txString string, txInteger* character);
 mxExport txString fxUTF8Encode(txString string, txInteger character);
 mxExport txSize fxUTF8Length(txInteger character);
+
+#if mxCESU8
+mxExport txString fxCESU8Decode(txString string, txInteger* character);
+mxExport txString fxCESU8Encode(txString string, txInteger character);
+mxExport txSize fxCESU8Length(txInteger character);
+#define mxStringByteDecode fxCESU8Decode
+#define mxStringByteEncode fxCESU8Encode
+#define mxStringByteLength fxCESU8Length
+#else
+#define mxStringByteDecode fxUTF8Decode
+#define mxStringByteEncode fxUTF8Encode
+#define mxStringByteLength fxUTF8Length
+#endif
+
 mxExport txSize fxUTF8ToUnicodeOffset(txString theString, txSize theOffset);
 mxExport txSize fxUnicodeLength(txString theString);
 mxExport txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset);

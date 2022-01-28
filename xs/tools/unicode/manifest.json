@@ -1,0 +1,26 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules",
+		"TOOLS": "$(MODDABLE)/tools"
+	},
+	"creation": {
+		"stack": 10000,
+		"keys": {
+			"available":16386,
+			"name":127,
+			"symbol":127
+		}
+	},
+	"modules": {
+		"*": [
+			"$(TOOLS)/tool",
+			"$(MODULES)/data/binaryMessage/*",
+			"./cases",
+			"./forms",
+			"./identifiers",
+			"./properties",
+			"./tests"
+		]
+	}
+}

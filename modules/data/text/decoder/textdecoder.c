@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2022  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -78,7 +78,7 @@ void xs_textdecoder(xsMachine *the)
 /*
 	UTF-8 BOM is sequence 0xEF,0xBB,0xBF
 	Replacement character sequence in UTF-8 is 0xEF 0xBF 0xBD
-	null character maps to 0xF4, 0x90, 0x80, 0x80
+	null character maps to 0xC0, 0x80
 	
 	implementation overallocates by 3 bytes if BOM is present and ignoreBOM is false
 */
@@ -118,7 +118,7 @@ void xs_textdecoder_decode(xsMachine *the)
 		else
 			first = c_read8(src++);
 		if (first < 0x80) {
-			outLength += (0 == first) ? 4 : 1;
+			outLength += (0 == first) ? 2 : 1;
 			continue;
 		}
 
@@ -182,8 +182,11 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
+#if mxCESU8
+		outLength += (3 == clen) ? 6 : (clen + 1);
+#else
 		outLength += clen + 1;
-
+#endif
 		if (bufferLength) {
 			if (bufferLength >= clen) {
 				bufferLength -= clen;
@@ -228,9 +231,7 @@ void xs_textdecoder_decode(xsMachine *the)
 			if (first)
 				*dst++ = first;
 			else {
-				*dst++ = 0xF4;
-				*dst++ = 0x90;
-				*dst++ = 0x80;
+				*dst++ = 0xC0;
 				*dst++ = 0x80;
 			}
 			continue;
@@ -304,9 +305,26 @@ void xs_textdecoder_decode(xsMachine *the)
 			continue;
 		}
 
+#if mxCESU8
+	if (3 != clen) {
 		*dst++ = first;
 		for (i = 0; i < clen; i++)
 			*dst++ = utf8[i + 1];
+	}
+	else {
+		xsIntegerValue c;
+		fxUTF8Decode((xsStringValue)utf8, &c);
+		c -= 0x10000;
+		fxUTF8Encode((xsStringValue)dst, 0xD800 + (c >> 10));
+		dst += 3;
+		fxUTF8Encode((xsStringValue)dst, 0xDC00 + (c & 0x3FF));
+		dst += 3;
+	}
+#else
+		*dst++ = first;
+		for (i = 0; i < clen; i++)
+			*dst++ = utf8[i + 1];
+#endif
 		
 		if ((0xEF == first) && (dst == dst3)) {
 			if ((0xBF == dst[-1]) && (0xBB == dst[-2]))

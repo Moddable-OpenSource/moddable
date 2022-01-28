@@ -167,7 +167,7 @@ typedef struct {
     txInteger hi;
 } txSortPartition;
 #define mxSortThreshold 4
-#define mxSortStackSize 8 * sizeof(txUnsigned)
+#define mxSortPartitionCount 8
 
 #define mxTypeArrayCount 11
 
@@ -1238,7 +1238,9 @@ extern txNumber fxDateNow();
 extern const txBehavior gxStringBehavior;
 
 mxExport void fx_String(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_String_fromArrayBuffer(txMachine* the);
+#endif
 mxExport void fx_String_fromCharCode(txMachine* the);
 mxExport void fx_String_fromCodePoint(txMachine* the);
 mxExport void fx_String_raw(txMachine* the);
@@ -1309,6 +1311,7 @@ mxExport void fxInitializeRegExp(txMachine* the);
 extern void fxBuildRegExp(txMachine* the);
 extern txBoolean fxIsRegExp(txMachine* the, txSlot* slot);
 extern txSlot* fxNewRegExpInstance(txMachine* the);
+extern void fx_String_prototype_toCase(txMachine* the, txBoolean flag);
 
 /* xsArguments.c */
 extern const txBehavior gxArgumentsSloppyBehavior;
@@ -1426,7 +1429,9 @@ mxExport void* fxToArrayBuffer(txMachine* the, txSlot* slot);
 
 mxExport void fx_ArrayBuffer(txMachine* the);
 mxExport void fx_ArrayBuffer_fromBigInt(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_ArrayBuffer_fromString(txMachine* the);
+#endif
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the);

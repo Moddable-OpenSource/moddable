@@ -89,7 +89,7 @@
 	txSocket connection; \
 	void* waiterCondition; \
 	void* waiterData; \
-	txMachine* waiterLink; \
+	void* waiterLink; \
 	int promiseJobs; \
 	void* timerJobs; \
 	int abortStatus; \
@@ -104,5 +104,7 @@
 #if INTPTR_MAX == INT64_MAX
 	#define mx32bitID 1
 #endif
+
+#define mxCESU8 1
 
 #endif /* __XST__ */

@@ -67,7 +67,8 @@ typedef struct {
 
 typedef struct {
 	txString buffer;
-	char indent[16];
+	char indent[64];
+	txInteger indentLength;
 	txInteger level;
 	txSize offset;
 	txSize size;
@@ -84,7 +85,7 @@ static void fxParseJSONValue(txMachine* the, txJSONParser* theParser);
 static void fxReviveJSON(txMachine* the, txSlot* reviver);
 
 static void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier);
-static void fxStringifyJSONChar(txMachine* the, txJSONStringifier* theStringifier, char c);
+static void fxStringifyJSONCharacter(txMachine* the, txJSONStringifier* theStringifier, txInteger character);
 static void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, char* s, txSize theSize);
 static void fxStringifyJSONIndent(txMachine* the, txJSONStringifier* theStringifier);
 static void fxStringifyJSONInteger(txMachine* the, txJSONStringifier* theStringifier, txInteger theInteger);
@@ -320,7 +321,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			offset = mxPtrDiff(p - theParser->slot->value.string);
 			size = 0;
 			for (;;) {
-				p = fxUTF8Decode(p, &character);
+				p = mxStringByteDecode(p, &character);
 				if (character < 32) {
 					goto error;
 				}
@@ -344,7 +345,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 					case 'u':
 						p++;
 						if (fxParseUnicodeEscape(&p, &character, 0, '\\'))
-							size += fxUTF8Length(character);
+							size += mxStringByteLength(character);
 						else
 							goto error;
 						break;
@@ -353,7 +354,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 					}
 				}
 				else {
-					size += fxUTF8Length(character);
+					size += mxStringByteLength(character);
 				}
 			}
 			s = theParser->string->value.string = fxNewChunk(the, size + 1);
@@ -396,7 +397,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 						case 'u':
 							p++;
 							fxParseUnicodeEscape(&p, &character, 0, '\\');
-							s = fxUTF8Encode(s, character);
+							s = mxStringByteEncode(s, character);
 							break;
 						}
 					}
@@ -629,7 +630,7 @@ void fx_JSON_stringify(txMachine* the)
 		c_memset((txJSONStringifier*)&aStringifier, 0, sizeof(aStringifier));
 		fxStringifyJSON(the, (txJSONStringifier*)&aStringifier);
 		if (aStringifier.offset) {
-			fxStringifyJSONChar(the, (txJSONStringifier*)&aStringifier, 0);
+			fxStringifyJSONChars(the, (txJSONStringifier*)&aStringifier, "\0", 1);
 			mxResult->value.string = (txString)fxNewChunk(the, aStringifier.offset);
 			c_memcpy(mxResult->value.string, aStringifier.buffer, aStringifier.offset);
 			mxResult->kind = XS_STRING_KIND;
@@ -684,9 +685,20 @@ void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier)
 				aCount = 10;
 			for (anIndex = 0; anIndex < aCount; anIndex++)
 				theStringifier->indent[anIndex] = ' ';
+			theStringifier->indentLength = aCount;
 		}
-		else if (mxIsStringPrimitive(aSlot))
-			c_strncpy((char *)theStringifier->indent, aSlot->value.string, 10);
+		else if (mxIsStringPrimitive(aSlot)) {
+			txInteger aCount = fxUnicodeLength(aSlot->value.string);
+			if (aCount > 10) {
+				aCount = fxUnicodeToUTF8Offset(aSlot->value.string, 10);
+			}
+			else {
+				aCount = (txInteger)c_strlen(aSlot->value.string);
+			}
+			c_memcpy(theStringifier->indent, aSlot->value.string, aCount);
+			theStringifier->indent[aCount] = 0;
+			theStringifier->indentLength = aCount;
+		}
 	}
 
 	theStringifier->stack = the->stack;
@@ -703,26 +715,24 @@ void fxStringifyJSON(txMachine* the, txJSONStringifier* theStringifier)
 	mxPop();
 }
 
-void fxStringifyJSONChar(txMachine* the, txJSONStringifier* theStringifier, char c)
+void fxStringifyJSONCharacter(txMachine* the, txJSONStringifier* theStringifier, txInteger character)
 {
-    //fprintf(stderr, "%c", c);
-	if (theStringifier->offset == theStringifier->size) {
+    txSize size = mxStringByteLength(character);
+	if ((theStringifier->offset + size) >= theStringifier->size) {
 		char* aBuffer;
-		theStringifier->size += 1024;
+		theStringifier->size += ((size / 1024) + 1) * 1024;
 		aBuffer = c_realloc(theStringifier->buffer, theStringifier->size);
 		if (!aBuffer)
 			mxUnknownError("out of memory");
 		theStringifier->buffer = aBuffer;
 	}
-	theStringifier->buffer[theStringifier->offset] = c;
-	theStringifier->offset++;
+	mxStringByteEncode(theStringifier->buffer + theStringifier->offset, character);
+	theStringifier->offset += size;
 }
 
 void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, char* s, txSize theSize)
 {
     //fprintf(stderr, "%s", s);
-    if (!theSize)
-    	theSize = mxStringLength(s);
 	if ((theStringifier->offset + theSize) >= theStringifier->size) {
 		char* aBuffer;
 		theStringifier->size += ((theSize / 1024) + 1) * 1024;
@@ -739,9 +749,9 @@ void fxStringifyJSONIndent(txMachine* the, txJSONStringifier* theStringifier)
 {
 	txInteger aLevel;
 	if (theStringifier->indent[0]) {
-		fxStringifyJSONChar(the, theStringifier, '\n');
+		fxStringifyJSONChars(the, theStringifier, "\n", 1);
 		for (aLevel = 0; aLevel < theStringifier->level; aLevel++)
-			fxStringifyJSONChars(the, theStringifier, theStringifier->indent, 0);
+			fxStringifyJSONChars(the, theStringifier, theStringifier->indent, theStringifier->indentLength);
 	}
 }
 
@@ -749,29 +759,29 @@ void fxStringifyJSONInteger(txMachine* the, txJSONStringifier* theStringifier, t
 {
 	char aBuffer[256];
 	fxIntegerToString(the->dtoa, theInteger, aBuffer, sizeof(aBuffer));
-	fxStringifyJSONChars(the, theStringifier, aBuffer, 0);
+	fxStringifyJSONChars(the, theStringifier, aBuffer, (txSize)c_strlen(aBuffer));
 }
 
 void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txInteger* theFlag)
 {
 	txSlot* aSlot = the->stack;
 	if (*theFlag & 1) {
-		fxStringifyJSONChar(the, theStringifier, ',');
+		fxStringifyJSONChars(the, theStringifier, ",", 1);
 		fxStringifyJSONIndent(the, theStringifier);
 	}
 	else
 		*theFlag |= 1;
 	if (*theFlag & 2) {
 		if (aSlot->kind == XS_INTEGER_KIND) {
-			fxStringifyJSONChar(the, theStringifier, '"');
+			fxStringifyJSONChars(the, theStringifier, "\"", 1);
 			fxStringifyJSONInteger(the, theStringifier, aSlot->value.integer);
-			fxStringifyJSONChar(the, theStringifier, '"');
+			fxStringifyJSONChars(the, theStringifier, "\"", 1);
 		}
 		else
 			fxStringifyJSONString(the, theStringifier, aSlot->value.string);
-		fxStringifyJSONChar(the, theStringifier, ':');
+		fxStringifyJSONChars(the, theStringifier, ":", 1);
 		if (theStringifier->indent[0])
-			fxStringifyJSONChar(the, theStringifier, ' ');
+			fxStringifyJSONChars(the, theStringifier, " ", 1);
 	}
 	mxPop(); // POP KEY
 }
@@ -782,10 +792,10 @@ void fxStringifyJSONNumber(txMachine* the, txJSONStringifier* theStringifier, tx
 	if ((fpclass != FP_NAN) && (fpclass != FP_INFINITE)) {
 		char aBuffer[256];
 		fxNumberToString(the->dtoa, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
-		fxStringifyJSONChars(the, theStringifier, aBuffer, 0);
+		fxStringifyJSONChars(the, theStringifier, aBuffer, (txSize)c_strlen(aBuffer));
 	}
 	else
-		fxStringifyJSONChars(the, theStringifier, "null", 0);
+		fxStringifyJSONChars(the, theStringifier, "null", 4);
 }
 
 void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, txInteger* theFlag)
@@ -851,11 +861,14 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	}
 	if (aValue->kind == XS_NULL_KIND) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
-		fxStringifyJSONChars(the, theStringifier, "null", 0);
+		fxStringifyJSONChars(the, theStringifier, "null", 4);
 	}
 	else if (aValue->kind == XS_BOOLEAN_KIND) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
-		fxStringifyJSONChars(the, theStringifier, aValue->value.boolean ? "true" : "false", 0);
+		if (aValue->value.boolean)
+			fxStringifyJSONChars(the, theStringifier, "true", 4);
+		else
+			fxStringifyJSONChars(the, theStringifier, "false", 5);
 	}
 	else if (aValue->kind == XS_INTEGER_KIND) {
 		fxStringifyJSONName(the, theStringifier, theFlag);
@@ -877,7 +890,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 			fxStringifyJSONName(the, theStringifier, theFlag);
 			anInstance->flag |= XS_LEVEL_FLAG;
 			if (fxIsArray(the, anInstance)) {
-				fxStringifyJSONChar(the, theStringifier, '[');
+				fxStringifyJSONChars(the, theStringifier, "[", 1);
 				theStringifier->level++;
 				fxStringifyJSONIndent(the, theStringifier);
 				aFlag = 4;
@@ -893,10 +906,10 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 				}
 				theStringifier->level--;
 				fxStringifyJSONIndent(the, theStringifier);
-				fxStringifyJSONChar(the, theStringifier, ']');
+				fxStringifyJSONChars(the, theStringifier, "]", 1);
 			}
 			else {
-				fxStringifyJSONChar(the, theStringifier, '{');
+				fxStringifyJSONChars(the, theStringifier, "{", 1);
 				theStringifier->level++;
 				fxStringifyJSONIndent(the, theStringifier);
 				aFlag = 2;
@@ -936,7 +949,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 				}
 				theStringifier->level--;
 				fxStringifyJSONIndent(the, theStringifier);
-				fxStringifyJSONChar(the, theStringifier, '}');
+				fxStringifyJSONChars(the, theStringifier, "}", 1);
 			}
 			anInstance->flag &= ~XS_LEVEL_FLAG;
 		}
@@ -948,12 +961,12 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	else {
 		if (*theFlag & 4) {
 			if (*theFlag & 1) {
-				fxStringifyJSONChar(the, theStringifier, ',');
+				fxStringifyJSONChars(the, theStringifier, ",", 1);
 				fxStringifyJSONIndent(the, theStringifier);
 			}
 			else
 				*theFlag |= 1;
-			fxStringifyJSONChars(the, theStringifier, "null", 0);
+			fxStringifyJSONChars(the, theStringifier, "null", 4);
 		}
 	}
 	mxPop(); // POP VALUE
@@ -961,43 +974,44 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 
 void fxStringifyJSONString(txMachine* the, txJSONStringifier* theStringifier, txString theString)
 {
-	txString string;
-	txInteger character;	
-	fxStringifyJSONChar(the, theStringifier, '"');
-	while (((string = fxUTF8Decode(theString, &character))) && (character != C_EOF)) {
+	fxStringifyJSONChars(the, theStringifier, "\"", 1);
+	for (;;) {
+		txInteger character;	
+		theString = mxStringByteDecode(theString, &character);
+		if (character == C_EOF)
+			break;
 		if (character < 8)
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
 		else if (character == 8)
-			fxStringifyJSONChars(the, theStringifier, "\\b", 0); 
+			fxStringifyJSONChars(the, theStringifier, "\\b", 2); 
 		else if (character == 9)
-			fxStringifyJSONChars(the, theStringifier, "\\t", 0); 
+			fxStringifyJSONChars(the, theStringifier, "\\t", 2); 
 		else if (character == 10)
-			fxStringifyJSONChars(the, theStringifier, "\\n", 0); 
+			fxStringifyJSONChars(the, theStringifier, "\\n", 2); 
 		else if (character == 11)
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character); 
 		else if (character == 12)
-			fxStringifyJSONChars(the, theStringifier, "\\f", 0);
+			fxStringifyJSONChars(the, theStringifier, "\\f", 2);
 		else if (character == 13)
-			fxStringifyJSONChars(the, theStringifier, "\\r", 0);
+			fxStringifyJSONChars(the, theStringifier, "\\r", 2);
 		else if (character < 32)
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
 		else if (character < 34)
-			fxStringifyJSONChar(the, theStringifier, (char)character);
+			fxStringifyJSONCharacter(the, theStringifier, character);
 		else if (character == 34)
-			fxStringifyJSONChars(the, theStringifier, "\\\"", 0);
+			fxStringifyJSONChars(the, theStringifier, "\\\"", 2);
 		else if (character < 92)
-			fxStringifyJSONChar(the, theStringifier, (char)character);
+			fxStringifyJSONCharacter(the, theStringifier, character);
 		else if (character == 92)
-			fxStringifyJSONChars(the, theStringifier, "\\\\", 0);
+			fxStringifyJSONChars(the, theStringifier, "\\\\", 2);
 		else if (character < 127)
-			fxStringifyJSONChar(the, theStringifier, (char)character);
+			fxStringifyJSONCharacter(the, theStringifier, character);
 		else if ((0xD800 <= character) && (character <= 0xDFFF))
 			fxStringifyJSONUnicodeEscape(the, theStringifier, character);
 		else
-			fxStringifyJSONChars(the, theStringifier, theString, mxPtrDiff(string - theString));
-		theString = string;
+			fxStringifyJSONCharacter(the, theStringifier, character);
 	}
-	fxStringifyJSONChar(the, theStringifier, '"');
+	fxStringifyJSONChars(the, theStringifier, "\"", 1);
 }
 
 void fxStringifyJSONUnicodeEscape(txMachine* the, txJSONStringifier* theStringifier, txInteger character)

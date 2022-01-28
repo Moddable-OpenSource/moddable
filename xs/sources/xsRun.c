@@ -3488,7 +3488,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) < 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) < 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 1, 0, 0, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
@@ -3536,7 +3536,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) <= 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) <= 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 1, 1, 0, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
@@ -3584,7 +3584,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) > 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) > 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 0, 0, 1, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
@@ -3632,7 +3632,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) >= 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) >= 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 0, 1, 1, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))

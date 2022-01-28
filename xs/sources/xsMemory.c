@@ -694,6 +694,29 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					}
 					break;
 					
+				case XS_CLOSURE_KIND:
+					aTemporary = aProperty->value.closure;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aTemporary->flag |= XS_MARK_FLAG; 
+						if (aTemporary->kind == XS_REFERENCE_KIND) {
+							aTemporary = aTemporary->value.reference;
+							if (!(aTemporary->flag & XS_MARK_FLAG)) {
+								aProperty->value.closure->value.reference = theCurrent;
+								theCurrent = aTemporary;
+								theCurrent->value.instance.garbage = aProperty;
+								aProperty = theCurrent;
+						
+							}
+						}
+						else {
+							(*theMarker)(the, aTemporary);
+							aProperty = aProperty->next;
+						}
+					}
+					else
+						aProperty = aProperty->next;
+					break;
+					
 				default:
 					(*theMarker)(the, aProperty);
 					aProperty = aProperty->next;
@@ -743,6 +766,12 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					theCurrent = aTemporary;
 					aProperty = aProperty->next;
 				}
+				break;
+			case XS_CLOSURE_KIND:
+				aTemporary = aProperty->value.closure->value.reference;
+				aProperty->value.closure->value.reference = theCurrent;
+				theCurrent = aTemporary;
+				aProperty = aProperty->next;
 				break;
 			}
 		}
@@ -796,16 +825,22 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 	case XS_CODE_KIND:
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		break;
 	case XS_HOME_KIND:
 		aSlot = theSlot->value.home.object;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		aSlot = theSlot->value.home.module;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		break;
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
@@ -994,8 +1029,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		/* continue */
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_GLOBAL_KIND:
 		mxMarkChunk(theSlot->value.table.address);
@@ -1033,11 +1070,15 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_HOME_KIND:
 		aSlot = theSlot->value.home.object;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		aSlot = theSlot->value.home.module;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:

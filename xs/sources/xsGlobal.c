@@ -489,7 +489,7 @@ void fx_escape(txMachine* the)
 	}
 	src = fxToString(the, mxArgv(0));
 	length = 0;
-	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
+	while (((src = mxStringByteDecode(src, &c))) && (c != C_EOF)) {
 		if ((c < 128) && c_read8(gxSet + (int)c))
 			length = fxAddChunkSizes(the, length, 1);
 		else if (c < 256)
@@ -508,7 +508,7 @@ void fx_escape(txMachine* the)
 	mxResult->kind = XS_STRING_KIND;
 	src = mxArgv(0)->value.string;
 	dst = mxResult->value.string;
-	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
+	while (((src = mxStringByteDecode(src, &c))) && (c != C_EOF)) {
 		if ((c < 128) && c_read8(gxSet + (int)c))
 			*dst++ = (char)c;
 		else if (c < 256) {
@@ -622,14 +622,14 @@ void fx_unescape(txMachine* the)
 			c = c_read8(src++);
 			if (c == 'u') {
 				if (fxParseUnicodeEscape(&src, &d, 0, '%'))
-					length += fxUTF8Length(d);
+					length += mxStringByteLength(d);
 				else
 					length += 2;
 			}
 			else {
 				src--;
 				if (fxParseHexEscape(&src, &d))
-					length += fxUTF8Length(d);
+					length += mxStringByteLength(d);
 				else
 					length += 1;
 			}
@@ -653,7 +653,7 @@ void fx_unescape(txMachine* the)
 			d = 0;
 			if (c == 'u') {
 				if (fxParseUnicodeEscape(&src, &d, 0, '%'))
-					dst = fxUTF8Encode(dst, d);
+					dst = mxStringByteEncode(dst, d);
 				else {
 					*dst++ = '%';
 					*dst++ = 'u';
@@ -662,7 +662,7 @@ void fx_unescape(txMachine* the)
 			else {
 				src--;
 				if (fxParseHexEscape(&src, &d))
-					dst = fxUTF8Encode(dst, d);
+					dst = mxStringByteEncode(dst, d);
 				else
 					*dst++ = '%';
 			}
@@ -710,7 +710,7 @@ void fxDecodeURI(txMachine* the, txString theSet)
 					size--;
 				}
 				d &= sequence->lmask;
-				length += fxUTF8Length(d);
+				length += mxStringByteLength(d);
 			}
 		}
 		else
@@ -747,7 +747,7 @@ void fxDecodeURI(txMachine* the, txString theSet)
 					size--;
 				}
 				d &= sequence->lmask;
-				dst = fxUTF8Encode(dst, d);
+				dst = mxStringByteEncode(dst, d);
 			}
 		}
 		else
@@ -765,7 +765,7 @@ void fxEncodeURI(txMachine* the, txString theSet)
 
 	src = fxToString(the, mxArgv(0));
 	length = 0;
-	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
+	while (((src = mxStringByteDecode(src, &c))) && (c != C_EOF)) {
 		if (c < 0x80) {
 			if (c_read8(theSet + c))
 				length += 1;
@@ -791,7 +791,7 @@ void fxEncodeURI(txMachine* the, txString theSet)
 	mxResult->kind = XS_STRING_KIND;
 	src = mxArgv(0)->value.string;
 	dst = mxResult->value.string;
-	while (((src = fxUTF8Decode(src, &c))) && (c != C_EOF)) {
+	while (((src = mxStringByteDecode(src, &c))) && (c != C_EOF)) {
 		if (c < 0x80) {
 			if (c_read8(theSet + c))
 				*dst++ = (char)c;

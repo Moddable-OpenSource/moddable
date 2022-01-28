@@ -1606,16 +1606,16 @@ void fxEchoString(txMachine* the, txString theString)
 		 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* EX                    */
 		 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 	/* FX                    */
 	};
-	unsigned char tmp;
-	unsigned char* src;
-	unsigned char* dst;
-	unsigned char* start;
-	unsigned char* stop;
+	txU1 tmp;
+	txU1* src;
+	txU1* dst;
+	txU1* start;
+	txU1* stop;
 
-	src = (unsigned char*)theString;
-	dst = (unsigned char*)the->echoBuffer + the->echoOffset;
-	start = (unsigned char*)the->echoBuffer;
-	stop = (unsigned char*)the->echoBuffer + sizeof(the->echoBuffer) - 1;
+	src = (txU1*)theString;
+	dst = (txU1*)the->echoBuffer + the->echoOffset;
+	start = (txU1*)the->echoBuffer;
+	stop = (txU1*)the->echoBuffer + sizeof(the->echoBuffer) - 1;
 	while ((tmp = c_read8(src))) {
 		src++;
 		if (dst + 6 > stop) {
@@ -1623,6 +1623,17 @@ void fxEchoString(txMachine* the, txString theString)
 			fxSend(the, 1);
 			dst = start;
 		}
+#if mxCESU8
+		if (tmp & 0x80) {
+			txInteger character;
+			src = (txU1*)fxCESU8Decode((txString)src - 1, &character);
+			if (character > 128) {
+				dst = (txU1*)fxUTF8Encode((txString)dst, character);
+				continue;
+			}
+			tmp = (txU1)character;
+		}
+#endif
 		if (c_read8(gxEscape + tmp))
 			*dst++ = tmp;
 		else {

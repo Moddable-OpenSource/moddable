@@ -52,6 +52,7 @@ C_OPTIONS = \
 	/D mxSloppy=1 \
 	/D mxSnapshot=1 \
 	/D mxRegExpUnicodePropertyEscapes=1 \
+	/D mxStringNormalize=1 \
 	/I$(INC_DIR) \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \
@@ -133,6 +134,10 @@ OBJECTS = \
 	$(TMP_DIR)\reader.o \
 	$(TMP_DIR)\scanner.o \
 	$(TMP_DIR)\writer.o \
+	$(TMP_DIR)\xsmc.o \
+	$(TMP_DIR)\textdecoder.o \
+	$(TMP_DIR)\textencoder.o \
+	$(TMP_DIR)\modBase64.o \
 	$(TMP_DIR)\xst.o
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
@@ -162,6 +167,12 @@ $(OBJECTS) : $(SRC_DIR)\xsScript.h
 {$(TLS_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TLS_DIR)\yaml\}.c{$(TMP_DIR)\}.o:
+	cl $< $(C_OPTIONS) /Fo$@
+{$(MODDABLE)/modules/data/text/decoder\}.c{$(TMP_DIR)\}.o:
+	cl $< $(C_OPTIONS) /Fo$@
+{$(MODDABLE)/modules/data/text/encoder\}.c{$(TMP_DIR)\}.o:
+	cl $< $(C_OPTIONS) /Fo$@
+{$(MODDABLE)/modules/data/base64\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 
 clean :

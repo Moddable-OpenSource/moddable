@@ -739,7 +739,6 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	char buffer[C_PATH_MAX];
 	char separator;
 	txInteger dot = 0;
-	txSlot *key;
 	txString slash;
 	txString path;
 	txID id;

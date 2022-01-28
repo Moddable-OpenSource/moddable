@@ -381,7 +381,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 			mxPushSlot(b);
 			fxToString(the, the->stack + 1);
 			fxToString(the, the->stack);
-			result = c_strcmp((the->stack + 1)->value.string, the->stack->value.string);
+			result = fxUTF8Compare((the->stack + 1)->value.string, the->stack->value.string);
 			mxPop();
 			mxPop();
 			mxMeterSome(3);
@@ -685,6 +685,8 @@ again:
 		txInteger length = slot->value.integer;
 		if (length < 0)
 			length = 0;
+		slot->value.number = (txNumber)length;
+		slot->kind = XS_NUMBER_KIND;
 		return (txNumber)length;
 	}
 	if (slot->kind == XS_NUMBER_KIND) {
@@ -697,6 +699,7 @@ again:
 			length = C_MAX_SAFE_INTEGER;
 		else
 			length = c_trunc(length);
+		slot->value.number = length;
 		return length;
 	}
 	fxToNumber(the, slot);
@@ -2201,7 +2204,7 @@ again:
 		txSlot* to;
 		if (length > mxSortThreshold) {
 			txIndex lo = 0, hi = length - 1;
-			txSortPartition stack[mxSortStackSize];
+			txSortPartition stack[mxSortPartitionCount];
 			txSortPartition *top = stack + 1;
 			while (stack < top) {
 				txIndex mid = lo + ((hi - lo) >> 1);
@@ -2235,6 +2238,7 @@ again:
 				do {
 					while ((COMPARE(i) < 0) && (i <= j)) { CHECK; i++; }
 					while ((COMPARE(j) > 0) && (i <= j)) { CHECK; j--; }
+					CHECK;
 					if (i < j) {
 						PUSH(i);
 						MOVE(j, i);
