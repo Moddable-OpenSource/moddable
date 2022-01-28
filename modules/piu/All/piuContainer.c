@@ -652,6 +652,7 @@ void PiuContainer_empty(xsMachine *the)
 		}
 		while (index < stop) {
 			PiuContentReflow(content, piuSizeChanged);
+			PiuContentInvalidate(content, NULL);
 			PiuContainerUnbindContent(self, content);
 			content = (*content)->next;
 			index++;
@@ -898,5 +899,6 @@ void PiuContainer_swap(xsMachine *the)
 	}
 	else
 		(*content0)->next = content1;
-	PiuContentReflow(self, piuContentsChanged);
+	PiuContentReflow(content0, piuOrderChanged);
+	PiuContentReflow(content1, piuOrderChanged);
 }

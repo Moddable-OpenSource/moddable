@@ -131,7 +131,7 @@ void PiuRowReflow(void* it, PiuFlags flags)
 {
 	PiuContainer* self = it;
 	PiuContainer* container = (*self)->container;
-	if (flags & piuHorizontallyChanged)
+	if (flags & (piuHorizontallyChanged | piuOrderChanged))
 		(*self)->flags |= piuWidthChanged;
 	else if (flags & piuContentsHorizontallyChanged)
 		(*self)->flags |= piuContentsHorizontallyChanged;
