@@ -641,10 +641,13 @@ void fx_Object_freeze(txMachine* the)
 		txSlot* slot = mxArgv(0);
 		if (slot->kind == XS_REFERENCE_KIND) {
 			txSlot* instance = slot->value.reference;
+			txBoolean deep = 0;
 			txSlot* at;
 			txSlot* property;
 			if (!mxBehaviorPreventExtensions(the, instance))
 				mxTypeError("extensible object");
+			if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
+				deep = 1;
 			at = fxNewInstance(the);
 			mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
 			mxPushUndefined();
@@ -658,12 +661,14 @@ void fx_Object_freeze(txMachine* the)
 						property->flag |= XS_DONT_SET_FLAG;
 					}
 					property->kind = XS_UNINITIALIZED_KIND;
-					if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask))
-						mxTypeError("cannot configure property");
+					if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask)) {
+						if (!deep)
+							mxTypeError("cannot configure property");
+					}
 				}
 			}
 			mxPop();
-			if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1))) {
+			if (deep) {
 				at = the->stack->value.reference;
 				mxPushUndefined();
 				property = the->stack;
