@@ -414,7 +414,8 @@ clean:
 	-rm -rf $(LIB_DIR) 2>/dev/null
 
 erase_flash:
-	$(ESPTOOL) --chip $(ESP32_SUBCLASS) --port $(UPLOAD_PORT) erase_flash
+	echo "# Erase flash"
+	$(ESPTOOL) --chip $(ESP32_SUBCLASS) $(PORT_SET) erase_flash
 	
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
