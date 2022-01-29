@@ -22,7 +22,7 @@ HOST_OS := $(shell uname)
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 
-EXPECTED_ESP_IDF ?= v4.3.1
+EXPECTED_ESP_IDF ?= v4.3.2
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
