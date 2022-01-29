@@ -520,7 +520,6 @@ class NimBLEGATTFile extends ESP32GATTFile {
 		file.line(`static const struct ble_gatt_svc_def gatt_svr_svcs[] = {`);
 		services.forEach((service, index) => {
 			characteristicIndex = 0;
-			descriptorIndex = 0;
 			file.line("\t{");
 			
 			file.line(`\t\t// Service ${service.uuid}`);
@@ -530,6 +529,7 @@ class NimBLEGATTFile extends ESP32GATTFile {
 			file.line("\t\t{");
 			let characteristics = service.characteristics;
 			for (let key in characteristics) {
+				descriptorIndex = 0;
 				let characteristic = characteristics[key];
 				file.line("\t\t\t{")
 				file.line(`\t\t\t\t.uuid = &service${index}_chr${characteristicIndex}_uuid.u,`);
