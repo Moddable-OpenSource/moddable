@@ -204,8 +204,7 @@ const device = {
 				}
 				read() {
 					let value = this.#analog.read() * 3300;
-					value *= 25.1 / 5.1 / 1000;
-					return value / (1 << this.#analog.resolution);
+					return value / (1 << this.#analog.resolution) / 0.5;
 				}
 			}
 		}
