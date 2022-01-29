@@ -2,7 +2,7 @@
 
 Copyright 2016-2021 Moddable Tech, Inc.
 
-Revised: December 29, 2021
+Revised: January 29, 2022
 
 ## Caveat
 
@@ -10,11 +10,7 @@ Revised: December 29, 2021
 
 XS supports one realm by virtual machine. Tests that expect `$262.createRealm` to return a new realm fail.
 
-#### String
-
-Strings are UTF-8 encoded, their length is the number of code points they contain and they are indexed by code points. The *Unicode Escape Sequence* parser and `String.fromCharCode` combine surrogate pairs into one code point. But some tests related to code units fail.
-
-XS depends on the platform for `String.prototype.normalize`, which succeeds only on iOS, macOS and Windows. For `String.prototype.toLowerCase` and `String.prototype.toUpperCase`, XS relies on the platform when possible, or uses compact tables that do do not completely conform to the specifications. 
+#### Internationalization
 
 XS does not implement ECMA-402, the Internationalization API Specification, so the `intl402` tests are skipped.
 
@@ -63,13 +59,13 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.47%** of the language tests and **88.36%** of the built-ins tests. Mostly because of `Temporal`, XS skips **11.41%** of the built-ins tests.
+Currently, on macOS, XS passes **99.48%** of the language tests and **90.03%** of the built-ins tests. Mostly because of `Temporal`, XS skips **9.84%** of the built-ins tests.
 
 Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
-     42203/42424 (186) language
+     42293/42512 (186) language
          460/460 arguments-object
              43/43 mapped
              8/8 unmapped
@@ -268,7 +264,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
          85/85 future-reserved-words
          73/73 global-code
          19/21 (1) identifier-resolution
-         383/383 identifiers
+         471/471 identifiers
          4/16 (12) import
          50/50 keywords
          82/82 line-terminators
@@ -290,7 +286,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
          22/22 punctuators
          53/53 reserved-words
          22/22 rest-parameters
-         0/2 source-text
+         2/2 source-text
          160/160 statementList
          17494/17544 (45) statements
              133/133 async-function
@@ -442,18 +438,18 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
 
 ### Built-ins
 
-     31735/35913 (4098) built-ins
-         5547/5561 Array
+     32907/36548 (3597) built-ins
+         5549/5561 Array
              8/8 Symbol.species
              90/90 from
              58/58 isArray
              58/58 length
              32/32 of
-             5201/5215 prototype
+             5203/5215 prototype
                  2/2 Symbol.iterator
                  4/4 Symbol.unscopables
                  22/22 at
-                 133/137 concat
+                 135/137 concat
                  76/76 copyWithin
                  18/18 entries
                  427/427 every
@@ -578,11 +574,11 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  46/46 setUint16
                  46/46 setUint32
                  42/42 setUint8
-         1512/1512 Date
+         1536/1536 Date
              44/44 UTC
              12/12 now
              24/24 parse
-             1280/1280 prototype
+             1304/1304 prototype
                  36/36 Symbol.toPrimitive
                  14/14 constructor
                  26/26 getDate
@@ -603,21 +599,21 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  26/26 getUTCMinutes
                  26/26 getUTCMonth
                  26/26 getUTCSeconds
-                 32/32 setDate
+                 34/34 setDate
                  46/46 setFullYear
-                 50/50 setHours
-                 32/32 setMilliseconds
-                 40/40 setMinutes
-                 38/38 setMonth
-                 38/38 setSeconds
+                 52/52 setHours
+                 34/34 setMilliseconds
+                 42/42 setMinutes
+                 40/40 setMonth
+                 40/40 setSeconds
                  32/32 setTime
-                 18/18 setUTCDate
+                 20/20 setUTCDate
                  18/18 setUTCFullYear
-                 18/18 setUTCHours
-                 18/18 setUTCMilliseconds
-                 18/18 setUTCMinutes
-                 18/18 setUTCMonth
-                 18/18 setUTCSeconds
+                 20/20 setUTCHours
+                 20/20 setUTCMilliseconds
+                 20/20 setUTCMinutes
+                 20/20 setUTCMonth
+                 20/20 setUTCSeconds
                  24/24 toDateString
                  34/34 toISOString
                  26/26 toJSON
@@ -838,23 +834,24 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              20/20 preventExtensions
              36/36 set
              28/28 setPrototypeOf
-         1838/2430 (556) RegExp
+         2970/3018 (32) RegExp
              48/48 CharacterClassEscapes
              8/8 Symbol.species
-             4/8 dotall
+             8/8 dotall
              34/34 lookBehind
-             24/28 match-indices
-             50/52 named-groups
-             0/556 (556) property-escapes
-                 0/413 (413) generated
-             856/882 prototype
-                 100/102 Symbol.match
+             28/28 match-indices
+             52/52 named-groups
+             1112/1144 (32) property-escapes
+                 826/858 (32) generated
+                     0/32 (32) strings
+             866/882 prototype
+                 102/102 Symbol.match
                  52/52 Symbol.matchAll
-                 130/134 Symbol.replace
+                 134/134 Symbol.replace
                  46/46 Symbol.search
                  88/88 Symbol.split
                  14/16 dotAll
-                 148/152 exec
+                 152/152 exec
                  32/32 flags
                  18/20 global
                  14/16 hasIndices
@@ -895,15 +892,15 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  18/18 growable
                  20/20 maxByteLength
                  64/64 slice
-         2313/2325 String
+         2325/2325 String
              30/30 fromCharCode
              22/22 fromCodePoint
-             2020/2030 prototype
+             2030/2030 prototype
                  12/12 Symbol.iterator
                  22/22 at
                  60/60 charAt
                  50/50 charCodeAt
-                 30/32 codePointAt
+                 32/32 codePointAt
                  44/44 concat
                  4/4 constructor
                  54/54 endsWith
@@ -914,8 +911,8 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  88/88 match
                  40/40 matchAll
                  28/28 normalize
-                 24/26 padEnd
-                 24/26 padStart
+                 26/26 padEnd
+                 26/26 padStart
                  32/32 repeat
                  92/92 replace
                  82/82 replaceAll
@@ -924,9 +921,9 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  232/232 split
                  42/42 startsWith
                  88/88 substring
-                 54/56 toLocaleLowerCase
+                 56/56 toLocaleLowerCase
                  52/52 toLocaleUpperCase
-                 54/56 toLowerCase
+                 56/56 toLowerCase
                  14/14 toString
                  52/52 toUpperCase
                  258/258 trim
@@ -934,8 +931,8 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  46/46 trimStart
                  14/14 valueOf
              60/60 raw
-         12/14 StringIteratorPrototype
-             8/10 next
+         14/14 StringIteratorPrototype
+             10/10 next
          176/180 Symbol
              4/4 asyncIterator
              16/18 for
@@ -957,7 +954,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              4/4 toPrimitive
              4/4 toStringTag
              4/4 unscopables
-         0/3310 (3310) Temporal
+         0/3333 (3333) Temporal
              0/373 (373) Calendar
                  0/12 (12) from
                  0/355 (355) prototype
@@ -1046,11 +1043,11 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  0/2 (2) toStringTag
                  0/20 (20) zonedDateTime
                  0/13 (13) zonedDateTimeISO
-             0/349 (349) PlainDate
-                 0/15 (15) compare
-                 0/24 (24) from
-                 0/299 (299) prototype
-                     0/20 (20) add
+             0/369 (369) PlainDate
+                 0/19 (19) compare
+                 0/26 (26) from
+                 0/312 (312) prototype
+                     0/21 (21) add
                      0/2 (2) calendar
                      0/3 (3) day
                      0/3 (3) dayOfWeek
@@ -1058,20 +1055,20 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/2 (2) daysInMonth
                      0/3 (3) daysInWeek
                      0/2 (2) daysInYear
-                     0/16 (16) equals
+                     0/23 (23) equals
                      0/9 (9) getISOFields
                      0/2 (2) inLeapYear
                      0/3 (3) month
                      0/2 (2) monthCode
                      0/3 (3) monthsInYear
                      0/40 (40) since
-                     0/20 (20) subtract
+                     0/21 (21) subtract
                      0/6 (6) toJSON
                      0/7 (7) toLocaleString
                      0/18 (18) toPlainDateTime
                      0/8 (8) toPlainMonthDay
                      0/8 (8) toPlainYearMonth
-                     0/10 (10) toString
+                     0/14 (14) toString
                      0/24 (24) toZonedDateTime
                      0/42 (42) until
                      0/7 (7) valueOf
@@ -1079,10 +1076,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/19 (19) with
                      0/10 (10) withCalendar
                      0/3 (3) year
-             0/422 (422) PlainDateTime
+             0/423 (423) PlainDateTime
                  0/17 (17) compare
                  0/24 (24) from
-                 0/364 (364) prototype
+                 0/365 (365) prototype
                      0/19 (19) add
                      0/2 (2) calendar
                      0/3 (3) day
@@ -1108,7 +1105,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/19 (19) subtract
                      0/6 (6) toJSON
                      0/7 (7) toLocaleString
-                     0/6 (6) toPlainDate
+                     0/7 (7) toPlainDate
                      0/8 (8) toPlainMonthDay
                      0/6 (6) toPlainTime
                      0/8 (8) toPlainYearMonth
@@ -1122,9 +1119,9 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/16 (16) withPlainDate
                      0/17 (17) withPlainTime
                      0/3 (3) year
-             0/132 (132) PlainMonthDay
+             0/133 (133) PlainMonthDay
                  0/22 (22) from
-                 0/97 (97) prototype
+                 0/98 (98) prototype
                      0/2 (2) calendar
                      0/4 (4) day
                      0/13 (13) equals
@@ -1133,7 +1130,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/3 (3) monthCode
                      0/7 (7) toJSON
                      0/6 (6) toLocaleString
-                     0/12 (12) toPlainDate
+                     0/13 (13) toPlainDate
                      0/13 (13) toString
                      0/7 (7) valueOf
                      0/19 (19) with
@@ -1162,10 +1159,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/33 (33) until
                      0/6 (6) valueOf
                      0/17 (17) with
-             0/246 (246) PlainYearMonth
+             0/247 (247) PlainYearMonth
                  0/10 (10) compare
                  0/16 (16) from
-                 0/208 (208) prototype
+                 0/209 (209) prototype
                      0/22 (22) add
                      0/2 (2) calendar
                      0/2 (2) daysInMonth
@@ -1180,7 +1177,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/22 (22) subtract
                      0/6 (6) toJSON
                      0/6 (6) toLocaleString
-                     0/11 (11) toPlainDate
+                     0/12 (12) toPlainDate
                      0/10 (10) toString
                      0/29 (29) until
                      0/6 (6) valueOf
@@ -1478,10 +1475,6 @@ XS does not support bigint as property name.
 	
 XS checks if super is a constructor before evaluating arguments.
 
-	language/source-text/6.1.js
-	
-Code points vs code units.	
-
 	language/statements/class/subclass/default-constructor-spread-override.js
 	
 The default derived constructor should not use `%Array.prototype%  @@iterator`
@@ -1501,25 +1494,6 @@ XS does not tail call optimize `return` inside `catch`
 To be investigated.		
 
 ### Built-ins
-
-	built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-string-wrapper.js
-	built-ins/RegExp/dotall/with-dotall.js
-	built-ins/RegExp/dotall/without-dotall.js
-	built-ins/RegExp/match-indices/indices-array-non-unicode-match.js
-	built-ins/RegExp/match-indices/indices-array-unicode-match.js
-	built-ins/RegExp/prototype/Symbol.match/builtin-infer-unicode.js
-	built-ins/RegExp/prototype/Symbol.replace/coerce-unicode.js
-	built-ins/RegExp/prototype/exec/u-captured-value.js
-	built-ins/RegExp/prototype/exec/u-lastindex-value.js
-	built-ins/String/length.js 
-	built-ins/String/prototype/codePointAt/return-code-unit-coerced-position.js 
-	built-ins/String/prototype/padEnd/normal-operation.js 
-	built-ins/String/prototype/padStart/normal-operation.js 
-	built-ins/String/prototype/toLocaleLowerCase/special_casing_conditional.js 
-	built-ins/String/prototype/toLowerCase/special_casing_conditional.js 
-	built-ins/StringIteratorPrototype/next/next-iteration-surrogate-pairs.js 
-	
-Code points vs code units.	
 
 	built-ins/Array/prototype/concat/create-proto-from-ctor-realm-array.js
 	built-ins/Array/prototype/filter/create-proto-from-ctor-realm-array.js
@@ -1542,12 +1516,6 @@ One realm.
 	built-ins/Array/prototype/reduceRight/length-near-integer-limit.js
 	built-ins/AsyncFromSyncIteratorPrototype/next/absent-value-not-passed.js	built-ins/AsyncFromSyncIteratorPrototype/return/absent-value-not-passed.js
 	built-ins/JSON/stringify/replacer-function-object-deleted-property.js
-	built-ins/RegExp/named-groups/non-unicode-property-names-valid.js
-	built-ins/RegExp/prototype/Symbol.replace/coerce-lastindex.js
-	built-ins/RegExp/prototype/Symbol.replace/result-coerce-groups-err.js
-	built-ins/RegExp/prototype/Symbol.replace/result-coerce-groups-prop-err.js
-	built-ins/RegExp/prototype/Symbol.replace/result-coerce-groups-prop.js
-	built-ins/RegExp/prototype/Symbol.replace/result-coerce-groups.js
 	
 To be investigated.
 
@@ -1575,5 +1543,4 @@ Sorting typed arrays is unstable.
 - `error-cause`
 - `import-assertions`
 - `json-modules`
-- `regexp-unicode-property-escapes`
 
