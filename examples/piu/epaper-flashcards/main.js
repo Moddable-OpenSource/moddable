@@ -26,6 +26,21 @@ class AppBehavior extends Behavior {
 		this.data = data;
 		this.index = -1;
 		this.questions = Object.keys(CARDS);
+		const thisBehavior = this;
+		new device.peripheral.button.B({
+			onPush() {
+				if (this.pressed) {
+					thisBehavior.showNextCard(application, -1);
+				}
+			}
+		});
+		new device.peripheral.button.C({
+			onPush() {
+				if (this.pressed) {
+					thisBehavior.showNextCard(application, 1);
+				}
+			}
+		});
 	}
 	onDisplaying(application) {
 		screen.refresh?.();
@@ -65,6 +80,13 @@ class AppBehavior extends Behavior {
 }
 
 class AnswerBehavior extends Behavior {
+	onCreate(row) {
+		new device.peripheral.button.A({
+			onPush() {
+				row.first.visible = this.pressed;
+			}
+		})
+	}
 	onTouchBegan(row) {
 		row.first.visible = true;
 	}
