@@ -62,6 +62,8 @@ END
 0002-moddable_two PNG DISCARDABLE "..\\screens\\0002-moddable_two.png"
 0003-moddable_three JSON DISCARDABLE "..\\screens\\0003-moddable_three.json"
 0003-moddable_three PNG DISCARDABLE "..\\screens\\0003-moddable_three.png"
+0004-m5stack_paper JSON DISCARDABLE "..\\screens\\0004-m5stack_paper.json"
+0004-m5stack_paper PNG DISCARDABLE "..\\screens\\0004-m5stack_paper.png"
 0080x0160 JSON DISCARDABLE "..\\screens\\0080x0160.json"
 0080x0160 PNG DISCARDABLE "..\\screens\\0080x0160.png"
 0096x0200 JSON DISCARDABLE "..\\screens\\0096x0200.json"
