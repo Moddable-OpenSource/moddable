@@ -73,7 +73,7 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
 - `-p platform`: to select the platform. Consult the documentation for your device target for its platform identifier. The supported values include: `esp`, `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue`, `gecko/thunderboard2`, and `wasm`.  Defaults to the host build platform:`mac`, `win` or `lin`. 
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
-- `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See **Build Targets** below for more detail.
+- `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, `all` or `erase_flash`. Defaults to `all`. See **Build Targets** below for more detail.
 - `-v`: to trace all commands executed by `make`
 - config arguments specified in the form of `key-=value` or `key="value"`. These are merged into the `config` section of the manifest. Import the `mc/config` module to access them. Moddable provided hosts that support networking and/or displays define the following config properties:
   - `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
@@ -89,7 +89,8 @@ mcconfig takes an optional `-t target` argument to specify a build target. The o
 - `build`: builds the app, but does not deploy it
 - `deploy`: deploys a previously built app without rebuilding
 - `xsbug`: connect the xsbug debugger to a previously-deployed app
-- `all`: performs all steps (This is the default value, when the `-t` flag is omitted)
+- `all`: performs all the steps above (This is the default value, when the `-t` flag is omitted)
+- `erase_flash`: erase microcontroller flash memory (only for Espressif microcontrollers)
 
 <a id="mcrun"></a>
 ## mcrun
@@ -104,7 +105,7 @@ There are a few important differences between `mcrun` and `mcconfig`:
 ### Arguments
 
 ```text
-mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+mcrun [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 ```
 
 The command line arguments to `mcrun` are nearly identical to those for `mcconfig`, except that `mcrun` does not support the `-t` option. See the [`mcconfig` Arguments](#mcconfig-arguments) section for a description of each argument.
