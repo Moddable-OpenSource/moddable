@@ -431,6 +431,13 @@ class NimBLEGATTFile extends ESP32GATTFile {
 							file.write(");");
 						}
 						file.line("");
+						if ("value" in descriptor) {
+							let buffer = typedValueToBuffer(descriptor.type, descriptor.value);
+							file.write(`static const uint8_t service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value[${buffer.byteLength}] = { `);
+							file.write(buffer2hexlist(buffer));
+							file.write(" };");
+							file.line("");
+						}
 						++descriptorIndex;
 					}
 				}
@@ -500,6 +507,21 @@ class NimBLEGATTFile extends ESP32GATTFile {
 							file.line("\t\treturn rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;");
 							file.line("\t}");
 						}
+
+						if (characteristic._descriptors) {
+							descriptorIndex = 0;
+							for (let dkey in characteristic.descriptors) {
+								let descriptor = characteristic.descriptors[dkey];
+								if ("value" in descriptor) {
+									file.line(`\tif (ble_uuid_cmp(uuid, &service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_uuid.u) == 0) {`);
+									file.line(`\t\trc = os_mbuf_append(ctxt->om, service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value, sizeof(service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value));`);
+									file.line("\t\treturn rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;");
+									file.line("\t}");
+								}
+								++descriptorIndex;
+							}
+						}
+
 						++characteristicIndex;
 					}
 				});
