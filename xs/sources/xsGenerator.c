@@ -311,31 +311,38 @@ void fxAsyncGeneratorRejectYield(txMachine* the)
 	txSlot* generator = home->value.home.object;
 	txSlot* stack = generator->next;
 	txSlot* state = stack->next;
-	txSlot* queue = state->next;
-	txSlot* current = queue->value.list.first;
-	txSlot* resolveFunction = current->value.reference->next;
-	txSlot* rejectFunction = resolveFunction->next;
-
-	mxPushUndefined();
-	mxPushSlot(rejectFunction);
-	mxCall();
-	mxPushSlot(mxArgv(0));
-	
-	queue->value.list.first = current = current->next;
-	if (current == C_NULL)
-		queue->value.list.last = C_NULL;
-	
-	mxRunCount(1);
-	mxPop();
-	
-	if (current) {
+	if (state->value.integer == XS_CODE_END) {
+		txSlot* queue = state->next;
+		txSlot* current = queue->value.list.first;
 		txSlot* resolveFunction = current->value.reference->next;
 		txSlot* rejectFunction = resolveFunction->next;
-		txSlot* status = rejectFunction->next;
-		txSlot* value = status->next;
-		the->scratch.kind = value->kind;
-		the->scratch.value = value->value;
-		fxAsyncGeneratorStep(the, generator, status->value.integer);
+
+		mxPushUndefined();
+		mxPushSlot(rejectFunction);
+		mxCall();
+		mxPushSlot(mxArgv(0));
+	
+		queue->value.list.first = current = current->next;
+		if (current == C_NULL)
+			queue->value.list.last = C_NULL;
+	
+		mxRunCount(1);
+		mxPop();
+	
+		if (current) {
+			txSlot* resolveFunction = current->value.reference->next;
+			txSlot* rejectFunction = resolveFunction->next;
+			txSlot* status = rejectFunction->next;
+			txSlot* value = status->next;
+			the->scratch.kind = value->kind;
+			the->scratch.value = value->value;
+			fxAsyncGeneratorStep(the, generator, status->value.integer);
+		}
+	}
+	else {
+		mxPushSlot(mxArgv(0));
+		mxPull(the->scratch);
+		fxAsyncGeneratorStep(the, generator, XS_THROW_STATUS);
 	}
 }
 
@@ -444,8 +451,8 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 #ifdef mxPromisePrint
 				fprintf(stderr, "fxAsyncGeneratorStep %d\n", value->value.reference->next->ID);
 #endif
-				if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
-					state->value.integer = XS_CODE_END;
+// 				if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
+// 					state->value.integer = XS_CODE_END;
 				if (state->value.integer == XS_CODE_AWAIT) {
 					fxPromiseThen(the, value->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
 				}
