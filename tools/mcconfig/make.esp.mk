@@ -359,7 +359,8 @@ clean:
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
-erase:
+erase_flash:
+	echo "# Erase flash"
 	$(ESPTOOL) -p $(UPLOAD_PORT) erase_flash
 
 $(LIB_DIR)/buildinfo.h:
