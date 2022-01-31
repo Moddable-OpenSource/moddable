@@ -359,9 +359,6 @@ clean:
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
-erase:
-	$(ESPTOOL) -p $(UPLOAD_PORT) erase_flash
-
 $(LIB_DIR)/buildinfo.h:
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 

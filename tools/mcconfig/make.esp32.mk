@@ -411,11 +411,7 @@ clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
-	-rm -rf $(LIB_DIR) 2>/dev/null
-
-erase_flash:
-	$(ESPTOOL) --chip $(ESP32_SUBCLASS) --port $(UPLOAD_PORT) erase_flash
-	
+	-rm -rf $(LIB_DIR) 2>/dev/null	
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
