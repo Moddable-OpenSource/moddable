@@ -737,7 +737,7 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 					char_index = 0;
 					const struct ble_gatt_chr_def *characteristic = &service->characteristics[char_index];
 					while (characteristic->uuid != 0) {
-						if (ctxt->op == BLE_GATT_REGISTER_OP_CHR && 0 == ble_uuid_cmp((const ble_uuid_t*)chr_def->uuid, (const ble_uuid_t*)characteristic->uuid)) {
+						if (ctxt->op == BLE_GATT_REGISTER_OP_CHR && chr_def == characteristic) {
 							gBLE->handles[service_index][att_index] = ctxt->chr.val_handle;
 							return;
 						}
@@ -747,7 +747,7 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 							dsc_index = 0;
 							const struct ble_gatt_dsc_def *descriptor = &characteristic->descriptors[dsc_index];
 							while (descriptor->uuid != 0) {
-								if (ctxt->op == BLE_GATT_REGISTER_OP_DSC && 0 == ble_uuid_cmp((const ble_uuid_t*)dsc_def->uuid, (const ble_uuid_t*)descriptor->uuid)) {
+								if (ctxt->op == BLE_GATT_REGISTER_OP_DSC && dsc_def == descriptor) {
 									gBLE->handles[service_index][att_index] = ctxt->dsc.handle;
 									return;
 								}
