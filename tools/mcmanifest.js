@@ -422,11 +422,16 @@ export class MakeFile extends FILE {
 				directories.sort();
 				const first =  directories[0];
 				const last = directories[length - 1];
-				const firstLength = first.length;
-				const lastLength = last.length;
+				const stop = Math.min(first.lastIndexOf("/"), last.lastIndexOf("/"));
 				common = 0;
-    			while ((common < firstLength) && (common < lastLength) && (first.charAt(common) === last.charAt(common))) 
-    				common++;
+				for (let i = 0; i <= stop; i++) {
+					const c = first.charAt(i);
+					if (c !== last.charAt(i)) 
+						break;
+
+					if ("/" === c)
+						common = i;
+				}
 			}
 			else
 				common = directories[0].length;
