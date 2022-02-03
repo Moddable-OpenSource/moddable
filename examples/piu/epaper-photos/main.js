@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -20,6 +20,19 @@ class PhotoPortBehavior extends Behavior {
 		this.data = data;
 		this.index = 0;
 		this.textures = [1, 2, 3, 4, 5].map(i => new Texture({ path: `${i}.png` }));
+
+		if (globalThis.device?.peripheral?.button?.A) {
+			new device.peripheral.button.A({
+				onPush() {
+					if (this.pressed) {
+						port.bubble("onTimeChanged", port);
+						port.stop();
+						port.time = 0;
+						port.start();
+					}
+				}
+			});
+		}
 	}
 	onDisplaying(port) {
 		port.interval = 5000;
