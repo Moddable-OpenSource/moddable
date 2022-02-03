@@ -287,20 +287,31 @@ trace("partial header!!\n");		//@@ untested
 export class Server {
 	#listener;
 	constructor(dictionary = {}) {
-		this.#listener = new Listener({port: dictionary.port ?? 80});
-		this.#listener.callback = () => {
-			const socket = new Socket({listener: this.#listener});
-			const request = new Client({socket});
-			request.doMask = false;
-			socket.callback = server.bind(request);
-			request.state = 1;		// already connected socket
-			request.callback = this.callback;		// transfer server.callback to request.callback
-			request.callback(Server.connect, this);	// tell app we have a new connection
-		};
+		if (dictionary.socket) {
+			let socket=dictionary.socket;
+			this.attach(socket,2);
+			socket.callback(2, socket.read());
+		}
+		else {
+			this.#listener = new Listener({port: dictionary.port ?? 80});
+			this.#listener.callback = () => {
+				this.attach(new Socket({listener: this.#listener}),1);
+			}
+		}
 	}
+	
 	close() {
 		this.#listener.close();
 		this.#listener = undefined;
+	}
+
+	attach(socket,state) {
+		const request = new Client({socket});
+		request.doMask = false;
+		socket.callback = server.bind(request);
+		request.state = state;		// already connected or handshake
+		request.callback = this.callback;		// transfer server.callback to request.callback
+		request.callback(Server.connect, this);	// tell app we have a new connection;
 	}
 };
 

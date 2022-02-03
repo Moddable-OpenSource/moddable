@@ -115,7 +115,7 @@ export class Request {
 	}
 
 	close() {
-		if( 16 & this.flags == 0) this.socket?.close();
+		this.socket?.close();
 		delete this.socket;
 		delete this.buffers;
 		delete this.callback;
@@ -512,6 +512,20 @@ export class Server {
 		this.#listener.close();
 		this.#listener = undefined;
 	}
+	detach(connection) {
+		const i = this.connections.indexOf(connection);
+		if (i < 0) throw new Error;
+
+		this.connections.splice(i, 1);
+
+		const socket = connection.socket;
+		delete socket.callback;
+		connection.state = 10;
+		delete connection.socket;
+		connection.close();
+		
+		return socket;
+	}
 }
 Server.connection = 1;
 Server.status = 2;
@@ -589,6 +603,8 @@ function server(message, value, etc) {
 						let method = line.shift();
 						let path = line.join(" ");	// re-aassemble path
 						this.callback(Server.status, path, method);
+						if (!this.socket)
+							return;
 
 						this.total = undefined;
 						this.state = 2;
@@ -661,10 +677,8 @@ function server(message, value, etc) {
 				const status = response?.status ?? 200;
 				const message = response?.reason?.toString() ?? reason(status);
 				const parts = ["HTTP/1.1 ", status.toString(), " ", message, "\r\n",
-							"connection: ", "close\r\n"];				
-				if ( status === 101 ) {
-					this.flags = 16;
-				}
+							"connection: ", "close\r\n"];
+
 				if (response) {
 					let byteLength;
 
@@ -684,13 +698,11 @@ function server(message, value, etc) {
 							this.flags = 4;
 					}
 					else {
-						if ( this.flags !== 16 ) {
-							this.flags = 1;
-							let count = 0;
-							if (this.body)
-								count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
-							parts.push("content-length: ", count.toString(), "\r\n");
-						}
+						this.flags = 1;
+						let count = 0;
+						if (this.body)
+							count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;	//@@ utf-8 hell
+						parts.push("content-length: ", count.toString(), "\r\n");
 					}
 				}
 				else
@@ -705,11 +717,6 @@ function server(message, value, etc) {
 					let count = ("string" === typeof this.body) ? this.body.length : this.body.byteLength;
 					if (count > (socket.write() - ((2 & this.flags) ? 8 : 0)))
 						return;
-				}
-
-				if ( this.flags === 16 ) {
-					this.state = 10;
-					return;
 				}
 			}
 			if (8 === this.state) {
@@ -750,7 +757,7 @@ function server(message, value, etc) {
 				}
 				finally {
 					this.server.connections.splice(this.server.connections.indexOf(this), 1);
-					if ( this.flags !== 16 ) this.close();
+					this.close();
 				}
 			}
 		}

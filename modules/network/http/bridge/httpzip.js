@@ -13,7 +13,8 @@
  *
  */
 
-import { Middleware, Server } from "middleware/server";
+import { Bridge, HTTPServer } from "bridge/webserver";
+import Resource from "Resource";
 import {ZIP} from "zip"
 
 const mime = new Map;
@@ -30,16 +31,16 @@ mime.set("webp", "image/webp");
 mime.set("jpg", "image/jpeg");
 mime.set("jpeg", "image/jpeg");
 
-export class MiddlewareStaticZip extends Middleware {
-	constructor(archive) {
+export class BridgeHttpZip extends Bridge {
+	constructor(resource) {
 		super();
 
-		this.archive = new ZIP(archive);
+		this.archive = new ZIP(new Resource(resource));
 	}
 	
 	handler(req, message, value, etc) {
 		switch (message) {
-			case Server.status:
+			case HTTPServer.status:
 				// redirect home page
 				if (value === '/') value='/index.html';
 				req.path = value;		
@@ -54,11 +55,11 @@ export class MiddlewareStaticZip extends Middleware {
 				}
 				break;
 
-			case Server.header:
+			case HTTPServer.header:
 				req.match ||= ("if-none-match" === value) && (req.etag === etc);
 				return this.next?.handler(req, message, value, etc);
 
-			case Server.prepareResponse:
+			case HTTPServer.prepareResponse:
 				if (req.match) {
 					return {
 						status: 304,
@@ -87,7 +88,7 @@ export class MiddlewareStaticZip extends Middleware {
 					result.headers.push("Content-Encoding", "deflate");
 				return result;
 
-			case Server.responseFragment:
+			case HTTPServer.responseFragment:
 				if (req.data.current >= req.data.length)
 					return;
 

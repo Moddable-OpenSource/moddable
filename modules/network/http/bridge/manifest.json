@@ -1,12 +1,12 @@
 {
 	"modules": {
 		"*": [
+			"$(MODULES)/files/resource/*",
 			"$(MODULES)/files/zip/*",
 			"$(MODULES)/network/http/*",
 			"$(MODULES)/data/base64/*",
 			"$(MODULES)/data/hex/*",
 			"$(MODULES)/data/logical/*"
-
 		],
 		"dns/server": "$(MODULES)/network/dns/dnsserver",
 		"websocket/websocket": "$(MODULES)/network/websocket/websocket"
@@ -18,6 +18,8 @@
 		"base64",
 		"hex",
 		"logical",
-		"websocket"
+		"websocket",
+		"resource",
+		"zip"
 	]
 }

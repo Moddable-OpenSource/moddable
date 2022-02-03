@@ -13,28 +13,21 @@
  *
  */
 
-import { Middleware, Server } from "middleware/server";
+import { Bridge, HTTPServer } from "bridge/webserver";
 
-// Single Page application. Map page requests back to /
-
-export class MiddlewareRewriteSPA extends Middleware {
-	#routes
-	constructor(routes) {
+export class BridgeStatus extends Bridge {
+	#status;
+	constructor(status=404) {
 		super();
-		this.#routes=routes
+		this.#status=status
 	}
-
 	handler(req, message, value, etc) {
-		
 		switch (message) {
-			case Server.status:
-				if ( this.#routes.includes(value) ) { // To do: possibly use Set?
-					trace(`Rewrite: ${value}\n`);
-					value='/';
-					trace(`Rewrite now: ${value}\n`);
-				}
-				break;
+
+			case HTTPServer.prepareResponse:
+				return {
+					status: this.#status
+				};
 		}
-		return this.next?.handler(req, message, value, etc);
 	}
 }

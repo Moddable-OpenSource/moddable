@@ -13,7 +13,7 @@
  *
  */
 
-import { Middleware, Server } from "middleware/server";
+import { Bridge, HTTPServer } from "bridge/webserver";
 import Net from "net"
 
 const hotspot = new Map;
@@ -32,26 +32,26 @@ hotspot.set("/mobile/status.php", {status:302}); // Android 8.0 (Samsung s9+)
 hotspot.set("/generate_204", {status:302}); // Android actual redirect
 hotspot.set("/gen_204", {status:204}); // Android 9.0
 
-export class MiddlewareHotspot extends Middleware {
+export class BridgeHotspot extends Bridge {
 	constructor() {
 		super();
 	}
 	handler(req, message, value, etc) {
 		switch (message) {
-			case Server.status:
+			case HTTPServer.status:
 				
 				req.redirect=hotspot.get(value); // value is path
 				if ( req.redirect) return; // Hotspot url match
 				delete req.redirect;
 				return this.next?.handler(req, message, value, etc);
-			case Server.header: {
+			case HTTPServer.header: {
 					if ( "host" === value ) {
 						req.host=etc;
-						trace(`MiddlewareHotspot: http://${req.host}${req.path}\n`);
+						trace(`BridgeHotspot: http://${req.host}${req.path}\n`);
 					}
 					return this.next?.handler(req, message, value, etc);
 				}			
-			case Server.prepareResponse:
+			case HTTPServer.prepareResponse:
 
 				if( req.redirect) {
 					let apIP=Net.get("IP", "ap");

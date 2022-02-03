@@ -13,9 +13,9 @@
  *
  */
 
-import {Server} from "http"
+import {Server as HTTPServer} from "http"
 
-class Middleware {
+class Bridge {
 	#next;
 	constructor() {
 		this.#next = null
@@ -28,7 +28,7 @@ class Middleware {
 	}
 }
 
-class WebServer extends Server {
+class WebServer extends HTTPServer {
 	#last;
 	#first;
 
@@ -47,18 +47,18 @@ class WebServer extends Server {
 			this.#last.next=handler;
 			this.#last=handler;
 		}
-		// Advise middleware of http parent - needed by websocket for connection management
+		// Advise Bridge of http parent - needed by websocket for connection management
 		if ( 'parent' in handler ) 
 			handler.parent=this;
 	}
 	
 	callback(message, value, etc) {
 		switch (message) {
-			case Server.status: 
+			case HTTPServer.status: 
 				this.path=value;
 				this.method = etc;
 			break;
-			case Server.header: 
+			case HTTPServer.header: 
 				value=value.toLowerCase(); // Header field names are case-insensitive - force lower for easy compare
 		}
 		return this.server.#first?.handler(this, message, value, etc);
@@ -72,4 +72,4 @@ class WebServer extends Server {
 
 Object.freeze(WebServer.prototype);
 
-export { WebServer as Server, Middleware };
+export { WebServer, HTTPServer, Bridge };
