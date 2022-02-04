@@ -22,7 +22,7 @@ HOST_OS := $(shell uname)
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 
-EXPECTED_ESP_IDF ?= v4.3.1
+EXPECTED_ESP_IDF ?= v4.4
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -108,9 +108,12 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos/include/freertos \
  	$(IDF_PATH)/components/freertos/port \
  	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/include/esp_additions \
+	$(IDF_PATH)/components/freertos/include/esp_additions/freertos \
 	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
 	$(IDF_PATH)/components/hal/include \
 	$(IDF_PATH)/components/hal/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/hal/platform_port/include \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/lwip/include/apps/ \
