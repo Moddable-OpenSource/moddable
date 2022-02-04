@@ -141,7 +141,6 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\hal\include \
 	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\hal\platform_port\include \
-	-I$(IDF_PATH)\components\freertos\include\esp_additions \
 	-I$(IDF_PATH)\components\heap\include \
 	-I$(IDF_PATH)\components\log\include \
 	-I$(IDF_PATH)\components\lwip\include\apps \
