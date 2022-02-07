@@ -1,9 +1,9 @@
 {
   "modules": {
-    "*": ["../modules/control", "../modules/button", "./host"]
+    "*": ["../modules/control", "../modules/button", "./peripherals", "./host"]
   },
-  "preload": ["control", "button", "host"],
-	"config": {
-		"format": "Gray16"
-	}
+  "preload": ["control", "button", "peripherals", "host"],
+  "config": {
+    "format": "Gray16"
+  }
 }
