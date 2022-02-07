@@ -32,7 +32,7 @@ export class RTC extends Control {
   }
 
   enabled() {
-    return this.#config.enabeld;
+    return this.#config.enabled;
   }
 
   get time() {
