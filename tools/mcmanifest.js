@@ -863,6 +863,7 @@ export class TSConfigFile extends FILE {
 			var specifier = result.target.slice(0, -2);
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
+			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
@@ -1854,6 +1855,12 @@ export class Tool extends TOOL {
 		this.environment.DASH_SIGNATURE = signature.join("-");
 		this.environment.DOT_SIGNATURE = signature.join(".");
 		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
+	}
+	unresolvePrefix(value) {
+		if (value.startsWith("~.")) {
+			value = value.slice(2).replace("/", ":");
+		}
+		return value;
 	}
 }
 
