@@ -1,7 +1,9 @@
 import Button from 'button';
+import { RTC, Battery } from 'peripherals';
 
 globalThis.device = {
   peripheral: {
+    RTC: RTC,
     button: {
       A: class {
         constructor(options) {
@@ -28,6 +30,8 @@ globalThis.device = {
         }
       },
     },
+    battery: {
+      Default: Battery,
+    },
   },
 };
-

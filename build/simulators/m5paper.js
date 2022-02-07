@@ -62,6 +62,9 @@ class MockupBehavior extends DeviceBehavior {
     if (code == 98 /* b */) this.onBButtonUp(container);
     if (code == 99 /* c */) this.onCButtonUp(container);
   }
+  onBatteryChanged(container, data) {
+    this.postJSON(container, { battery: data.value });
+  }
   onJSON(container, json) {
     if ('xsbug' in json) {
       if (json.xsbug == 'abort') application.defer('doReloadFile');
@@ -69,12 +72,6 @@ class MockupBehavior extends DeviceBehavior {
   }
   onReloadOnAbortChanged(container, data) {
     this.reloadOnAbort = data.value;
-  }
-}
-
-class LEDBehavior extends Behavior {
-  onLEDChanged(content, state) {
-    content.visible = state;
   }
 }
 
@@ -104,6 +101,17 @@ export default {
             label: 'C',
           },
         ],
+      }),
+      SliderRow({
+        anchor: 'BATTERY_SLIDER',
+        label: 'Battery',
+        unit: 'mV',
+        active: true,
+        min: 3300,
+        max: 4300,
+        value: 4300,
+        step: 1,
+        event: 'onBatteryChanged',
       }),
       SwitchRow({
         event: 'onReloadOnAbortChanged',
