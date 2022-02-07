@@ -1130,7 +1130,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 		case 9:
-#if MODDEF_XS_DONT_INITIALIZE_TIME
+#if !MODDEF_XS_DONTINITIALIZETIME
 			if (cmdLen >= 4)
 				modSetTime(c_read32be(cmd + 0));
 			if (cmdLen >= 8)
