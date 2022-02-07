@@ -1130,12 +1130,14 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 		case 9:
+#if MODDEF_XS_DONT_INITIALIZE_TIME
 			if (cmdLen >= 4)
 				modSetTime(c_read32be(cmd + 0));
 			if (cmdLen >= 8)
 				modSetTimeZone(c_read32be(cmd + 4));
 			if (cmdLen >= 12)
 				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
+#endif
 			break;
 
 		case 10: {
