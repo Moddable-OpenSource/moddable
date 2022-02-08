@@ -203,8 +203,9 @@ const device = {
 					this.#analog?.close();
 				}
 				read() {
-					let value = this.#analog.read() * 3300;
-					return value / (1 << this.#analog.resolution) / 0.5;
+          let voltage = (this.#analog.read() / (1 << this.#analog.resolution) / 0.5) * 3300;
+          let cappedVolt = Math.max(3300, Math.min(4300, voltage));
+          return ((cappedVolt - 3300) / (4300 - 3300));
 				}
 			}
 		}

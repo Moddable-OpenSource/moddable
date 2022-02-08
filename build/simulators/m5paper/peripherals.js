@@ -1,21 +1,21 @@
 import Control from 'control';
 
 export class Battery extends Control {
-  #voltage;
+  #battery;
 
   constructor(options) {
     super(options);
-    this.#voltage = 4300; // in mV
+    this.#battery = 1.0;
     this.postJSON({
-      battery: this.#voltage,
+      battery: this.#battery,
     });
   }
   read() {
-    return this.#voltage;
+    return this.#battery;
   }
   onJSON(json) {
     if ('battery' in json) {
-      this.#voltage = json.battery;
+      this.#battery = json.battery;
     }
   }
 }
