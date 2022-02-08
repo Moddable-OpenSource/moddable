@@ -63,7 +63,7 @@ class MockupBehavior extends DeviceBehavior {
     if (code == 99 /* c */) this.onCButtonUp(container);
   }
   onBatteryChanged(container, data) {
-    this.postJSON(container, { battery: data.value });
+    this.postJSON(container, { battery: data.value / 100 });
   }
   onJSON(container, json) {
     if ('xsbug' in json) {
@@ -105,11 +105,11 @@ export default {
       SliderRow({
         anchor: 'BATTERY_SLIDER',
         label: 'Battery',
-        unit: 'mV',
+        unit: '%',
         active: true,
-        min: 3300,
-        max: 4300,
-        value: 4300,
+        min: 0,
+        max: 100,
+        value: 100,
         step: 1,
         event: 'onBatteryChanged',
       }),
