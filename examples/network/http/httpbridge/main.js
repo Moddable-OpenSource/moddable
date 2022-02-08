@@ -7,6 +7,7 @@ const http = new HTTPServer({
 });
 
 let ws = new BridgeWebsocket('/api');
+//let ws = new WebSocketServer('/api');
 http.use( ws );
 http.use( new BridgeHttpZip('site.zip'));
 
@@ -30,7 +31,7 @@ let observer = {
   
 const model = new Proxy(_model, observer);
 
-ws.callback =function cb(websock,message, value) {
+ws.callback = function cb(websock,message, value) {
 	switch (message) {		
 		case BridgeWebsocket.connect:
 			break;

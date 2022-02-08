@@ -13,8 +13,8 @@
  *
  */
 
-import { Bridge, HTTPServer } from "bridge/webserver";
-import {Server as WebSocketServer} from "websocket"
+import {Bridge, HTTPServer} from "bridge/webserver";
+import {Server as WebSocketServer} from "websocket";
 
 class WebSocketUpgrade extends WebSocketServer {
 	static connections = [];
