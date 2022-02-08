@@ -1541,6 +1541,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 							mxPullSlot(record);
 						}
 						fxDuplicateModuleTransfers(the, record, module);
+						fxCopyModuleMeta(the, record, module);
 						mxPop();
 					}
 					mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
