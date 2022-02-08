@@ -116,17 +116,6 @@ export default {
         step: 1,
         event: 'onBatteryChanged',
       }),
-      SliderRow({
-        anchor: 'BATTERY_SLIDER',
-        label: 'Battery',
-        unit: 'mV',
-        active: true,
-        min: 3300,
-        max: 4300,
-        value: 4300,
-        step: 1,
-        event: 'onBatteryChanged',
-      }),
       SwitchRow({
         event: 'onReloadOnAbortChanged',
         label: 'Reload On Abort',
