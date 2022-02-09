@@ -390,7 +390,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 and the CMake optio
 
 2. Download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers). The driver zip file contains x64 and x86 versions of the installer. Most modern PCs run 64-bit Windows and should use the x64 version of the VCP driver. If you run a 32-bit version of Windows, use the x86 version of the driver. (You can determine if your computer is running a 64-bit version of Windows by checking "About your PC" in System Settings.)
 
-3. Download and run the Espressif [ESP-IDF Tools Installer](https://dl.espressif.com/dl/esp-idf-tools-setup-2.4.exe). This will install the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
+3. Download and run the Espressif [ESP-IDF Windows Installer](https://dl.espressif.com/dl/esp-idf/?idf=4.4). This will install the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
 
     It is safe to accept all of the default options in the installer, or to change install locations as necessary.
 
@@ -399,14 +399,14 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 and the CMake optio
 	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.4 (release version)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
 
 
-4. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
+4. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
 
     ```text
     cd ~
     mkdir esp32
     ```
 
-5. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.4 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
+5. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone the v4.4 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option:
 
     ```text
     cd ~/esp32
@@ -431,7 +431,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 and the CMake optio
 
 8. Newly-set environment variables will not take effect in existing Command Prompt instances, so be sure to open a new Command Prompt instance after applying these changes.
 	
-9. The ESP-IDF tools provide an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
+9. The ESP-IDF Windows Installer provides an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
 	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
@@ -468,9 +468,13 @@ When you're trying to install applications, you may experience roadblocks in the
 
 For other issues that are common on macOS, Windows, and Linux, see the [Troubleshooting section](#troubleshooting) at the bottom of this document.
 
+#### ESP-IDF Build is Extremely Slow
+
+The built-in anti-virus software included with Windows 10 and 11 (Microsoft Defender, formerly Windows Defender) can significantly slow down ESP-IDF builds. Espressif's [ESP-IDF Windows Installer](https://dl.espressif.com/dl/esp-idf/?idf=4.4) includes an option to automatically configure Microsoft Defender with all the exclusions needed to bypass realtime scanning during builds. If your build is slow, try re-running the ESP-IDF Windows Installer to verify that that option is selected. You may also need to manually exclude your Moddable build folder or other custom build output directories by following [these instructions](https://support.microsoft.com/en-us/windows/add-an-exclusion-to-windows-security-811816c0-4dfd-af4a-47e4-c301afe13b26).
+
 #### Python Versions
 
-Espressif recommends using Python 3.9 or later when building with ESP-IDF v4.4. Python 3.9 will be installed by the ESP-IDF Tools Installer.
+Espressif recommends using Python 3.9 or later when building with ESP-IDF v4.4. Python 3.9 will be installed by the ESP-IDF Windows Installer.
 
 If you had a previous version of Python (such as Python 2.7) installed on your system, you may need to remove it from the System PATH so that Python 3.9 is chosen by default. Look for entries like `C:\Python27\` or `C:\Python27\Scripts\` in your PATH and remove them if you encounter Python errors during the build process. 
 
@@ -506,7 +510,7 @@ set UPLOAD_PORT=COM5
 
 To ensure that your build environment is up to date, perform the following steps:
 
-1. Download and run the Espressif [ESP-IDF Tools Installer](https://dl.espressif.com/dl/esp-idf-tools-setup-2.4.exe). This will install the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
+1. Download and run the Espressif [ESP-IDF Windows Installer](https://dl.espressif.com/dl/esp-idf/?idf=4.4). This will update the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
 
     It is safe to accept all of the default options in the installer, or to change install locations as necessary.
 
@@ -515,7 +519,7 @@ To ensure that your build environment is up to date, perform the following steps
     If you choose to clone the ESP-IDF, select the `v4.4 (release version)` of the esp-idf.
 
 
-2. If you did not clone the ESP-IDF during the ESP-IDF Tools installation, clone the v4.4 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. For instance, in **Git Bash**:
+2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone the v4.4 tag of the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. For instance, in **Git Bash**:
 
     ```text
     cd ~/esp32
@@ -545,7 +549,7 @@ To ensure that your build environment is up to date, perform the following steps
     rmdir /S /Q tmp\esp32
     ```
 
-7. The ESP-IDF tools provide an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
+7. The ESP-IDF Windows Installer provides an "ESP-IDF Command Prompt" that automatically sets important environment variables and paths. We recommend building ESP32 projects with the "ESP-IDF Command Prompt." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
 	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
