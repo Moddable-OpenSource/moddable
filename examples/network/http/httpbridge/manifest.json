@@ -3,7 +3,6 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODULES)/network/http/manifest.json",
-		"$(MODULES)/network/http/bridge/manifest.json",
 		"$(MODULES)/network/websocket/manifest.json",
 		"$(MODULES)/files/zip/manifest.json"
 	],
@@ -15,6 +14,8 @@
 		"model":"site/public/model"
 		},
 	"preload": [
+		"model",
+		"bridge/httpzip"
 	],
 	"data": {
 		"*": "./site/dist/site"
