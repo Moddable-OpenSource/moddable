@@ -1,6 +1,7 @@
 import { WebServer as HTTPServer } from "bridge/webserver";
 import { BridgeWebsocket } from "bridge/websocket";
 import { BridgeHttpZip } from "bridge/httpzip";
+import Preference from "preference";
 
 const http = new HTTPServer({
   port: 80,
@@ -12,13 +13,7 @@ http.use(new BridgeHttpZip("site.zip"));
 
 import { _model } from "model";
 
-let observer = {
-  set: function (obj, prop, value) {
-    trace(`set prop: ${prop} ${JSON.stringify(value)}\n`);
-    obj[prop] = value;
-    return true;
-  },
-};
+const preference_domain = "bridge";
 
 class App {
   minus(value) {
@@ -37,11 +32,28 @@ class App {
     model.language = value.language;
     return model;
   }
+  restore() {
+    let keys = Preference.keys(preference_domain);
+    trace(`${keys}`);
+    for (let key of keys) {
+      trace(`${key}: ${Preference.get(preference_domain, key)}\n`);
+
+      let pref_settings = Preference.get(preference_domain, key);
+      if (pref_settings) {
+        Object.assign(model, JSON.parse(pref_settings));
+      }
+      trace(`restore ${key}: `, pref_settings, "\n");
+    }
+    return model;
+  }
+  save() {
+    Preference.set(preference_domain, "settings", JSON.stringify(model));
+  }
 }
 
-const app = new App();
-
 let model = { ..._model };
+const app = new App();
+app.restore()
 
 ws.callback = function cb(websock, message, value) {
   switch (message) {
@@ -62,8 +74,7 @@ ws.callback = function cb(websock, message, value) {
         if (typeof app[action] === "function") {
           value = app[action](value);
         }
-
-        websock.broadcast(value);
+        if (value) websock.broadcast(value);
       } catch (e) {
         trace(`WebSocket parse received data error: ${e}\n`);
       }
