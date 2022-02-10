@@ -712,7 +712,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 				let path = behavior.unmapPath(item.path);
 				if (path) {
 					let line = item.line;
-					items.push({ path, line });
+					items.push({ path, line, enabled:item.enabled });
 				}
 			});
 			this.doCommand(mxSetAllBreakpointsCommand, items.filter(
