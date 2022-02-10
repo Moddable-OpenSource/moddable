@@ -12,9 +12,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "alpinejs": "^3.8.1",
     "rollup-plugin-zip": "^1.0.3",
-    "vite-plugin-singlefile": "^0.6.3",
     "wmr": "^3.7.2"
   },
   "devDependencies": {
