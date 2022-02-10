@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) Wilberforce
+ *
+ *   This file is part of the Moddable SDK.
+ *
+ *   This work is licensed under the
+ *       Creative Commons Attribution 4.0 International License.
+ *   To view a copy of this license, visit
+ *       <http://creativecommons.org/licenses/by/4.0>.
+ *   or send a letter to Creative Commons, PO Box 1866,
+ *   Mountain View, CA 94042, USA.
+ *
+ */
 import { WebServer as HTTPServer } from "bridge/webserver";
 import { BridgeWebsocket } from "bridge/websocket";
 import { BridgeHttpZip } from "bridge/httpzip";
@@ -7,53 +21,63 @@ const http = new HTTPServer({
   port: 80,
 });
 
-let ws = new BridgeWebsocket("/api");
-http.use(ws);
+let ws = http.use(new BridgeWebsocket("/api"));
 http.use(new BridgeHttpZip("site.zip"));
 
-import { _model } from "model";
-
-const preference_domain = "bridge";
-
 class App {
+  #preference_domain = "bridge";
+  #model;
+
+  constructor(m) {
+    this.#model = m;
+  }
+
+  get model() {
+    return this.#model;
+  }
+
+  set model(m) {
+    this.#model = m;
+  }
+
   minus(value) {
-    model.satisfaction = Math.max(0, model.satisfaction - 1);
-    return model;
+    this.model.satisfaction = Math.max(0, this.model.satisfaction - 1);
+    return this.model;
   }
   plus(value) {
-    model.satisfaction = Math.min(10, model.satisfaction + 1);
-    return model;
+    this.model.satisfaction = Math.min(10, this.model.satisfaction + 1);
+    return this.model;
   }
   shutdown() {
     ws.close();
     http.close();
   }
   language() {
-    model.language = value.language;
-    return model;
+    this.model.language = value.language;
+    return this.model;
   }
   restore() {
-    let keys = Preference.keys(preference_domain);
-    trace(`${keys}`);
+    let keys = Preference.keys(this.#preference_domain);
     for (let key of keys) {
-      trace(`${key}: ${Preference.get(preference_domain, key)}\n`);
-
-      let pref_settings = Preference.get(preference_domain, key);
+      let pref_settings = Preference.get(this.#preference_domain, key);
       if (pref_settings) {
-        Object.assign(model, JSON.parse(pref_settings));
+        Object.assign(this.model, JSON.parse(pref_settings));
       }
-      trace(`restore ${key}: `, pref_settings, "\n");
     }
-    return model;
+    return this.model;
   }
   save() {
-    Preference.set(preference_domain, "settings", JSON.stringify(model));
+    Preference.set(
+      this.#preference_domain,
+      "settings",
+      JSON.stringify(this.model)
+    );
   }
 }
 
-let model = { ..._model };
-const app = new App();
-app.restore()
+import { _model } from "model";
+const app = new App({ ..._model });
+app.restore();
 
 ws.callback = function cb(websock, message, value) {
   switch (message) {
@@ -61,7 +85,7 @@ ws.callback = function cb(websock, message, value) {
       break;
 
     case BridgeWebsocket.handshake:
-      websock.broadcast(model);
+      websock.broadcast(app.model);
       break;
 
     case BridgeWebsocket.receive:
@@ -73,6 +97,8 @@ ws.callback = function cb(websock, message, value) {
 
         if (typeof app[action] === "function") {
           value = app[action](value);
+        } else {
+          trace("No matching action found\n");
         }
         if (value) websock.broadcast(value);
       } catch (e) {

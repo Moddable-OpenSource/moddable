@@ -50,6 +50,7 @@ class WebServer extends HTTPServer {
 		// Advise Bridge of http parent - needed by websocket for connection management
 		if ( 'parent' in handler ) 
 			handler.parent=this;
+		return handler;
 	}
 	
 	callback(message, value, etc) {
