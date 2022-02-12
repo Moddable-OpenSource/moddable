@@ -210,6 +210,7 @@ CPP = xtensa-$(ESP32_SUBCLASS)-elf-g++
 LD  = $(CPP)
 AR  = xtensa-$(ESP32_SUBCLASS)-elf-ar
 OBJCOPY = xtensa-$(ESP32_SUBCLASS)-elf-objcopy
+OBJDUMP = xtensa-$(ESP32_SUBCLASS)-elf-objdump
 ESPTOOL = $(IDF_PATH)/components/esptool_py/esptool/esptool.py
 
 AR_FLAGS = crs
@@ -355,6 +356,7 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
+	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.elf $(BIN_DIR) 2> /dev/null
@@ -398,6 +400,7 @@ precursor: idfVersionCheck partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) b
 
 build: precursor
 	-cd $(PROJ_DIR) ; $(BUILD_CMD)
+	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR) 2> /dev/null
