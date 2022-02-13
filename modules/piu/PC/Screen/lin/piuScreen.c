@@ -521,6 +521,11 @@ void PiuScreen_quit(xsMachine* the)
 	PiuScreenQuit(self);
 }
 
+void PiuScreen_writePNG(xsMachine* the)
+{
+	xsUnknownError("to be implemented");
+}
+
 void fxScreenAbort(txScreen* screen, int status)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;

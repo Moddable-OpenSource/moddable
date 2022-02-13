@@ -383,6 +383,12 @@ class ApplicationBehavior extends Behavior {
 	canReloadSimulators() {
 		return true;
 	}
+	canSaveScreen() {
+		return this.SCREEN && this.SCREEN.running;
+	}
+	canSaveSequence() {
+		return this.SCREEN && this.SCREEN.running;
+	}
 	doCloseApp() {
 		this.libraryPath = "";
 		this.quitScreen();
@@ -430,6 +436,44 @@ class ApplicationBehavior extends Behavior {
 		this.quitScreen();
 		this.reloadDevices(application);
 		this.launchScreen();
+	}
+	doSaveScreen() {
+		system.saveFile({ prompt:"Save Screen", name:"screen.png" }, path => { if (path) application.defer("doSaveScreenCallback", new String(path)); });
+	}
+	doSaveScreenCallback(application, path) {
+		this.SCREEN.writePNG(path);
+	}
+	doSaveSequence() {
+		system.saveDirectory({ prompt:"Save Sequence", name:"screens" }, path => { if (path) application.defer("doSaveSequenceCallback", new String(path)); });
+	}
+	doSaveSequenceCallback(application, directory) {
+		const screen = this.SCREEN;
+		const behavior = screen.behavior;
+		let i = 0;
+		screen.behavior = {
+			onMessage(screen, message) {
+				message = JSON.parse(message);
+				if (message.about == "mcsim") {
+					if (message.command == "step") {
+						let name = i + ".png";
+						if (i < 10)
+							name = "000" + name;
+						else if (i < 100)
+							name = "00" + name;
+						else if (i < 1000)
+							name = "0" + name;
+						let path = system.buildPath(directory, name);
+						screen.writePNG(path);
+						i++;
+						screen.postMessage(`{ "about":"mcsim", "frame":${i} }`);
+					}
+					else
+						screen.behavior = behavior;
+				}
+			}
+		}
+		system.ensureDirectory(directory);
+		screen.postMessage(`{ "about":"mcsim", "frame":${i} }`);
 	}
 /* VIEW MENU */
 	canToggleControls(target, item) {
@@ -727,6 +771,9 @@ let mcsimApplication = Application.template($ => ({
 				{ title:"Locate Simulators...", key:"L", command:"LocateSimulators" },
 				{ title:"Reload Simulators", shift:true, key:"R", command:"ReloadSimulators" },
 				null,
+// 				{ title:"Save Screen...", key:"S", command:"SaveScreen" },
+// 				{ title:"Save Sequence...", command:"SaveSequence" },
+// 				null,
 				{ title:"Quit", key:"Q", command:"Quit" },
 			],
 		},
