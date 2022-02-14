@@ -246,8 +246,12 @@ void PiuContainerInvalidate(void* it, PiuRectangle area)
 void PiuContainerMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuContainer self = it;
+	PiuContent* content = self->first;
 	PiuContentMark(the, it, markRoot);
-	PiuMarkHandle(the, self->first);
+	while (content) {
+		PiuMarkHandle(the, content);
+		content = (*content)->next;
+	}
 	PiuMarkHandle(the, self->transition);
 }
 

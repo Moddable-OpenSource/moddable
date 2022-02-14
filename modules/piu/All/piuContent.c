@@ -375,7 +375,6 @@ void PiuContentMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuContent self = it;
 	PiuMarkReference(the, self->behavior);
 	PiuMarkHandle(the, self->container);
-	PiuMarkHandle(the, self->next);
 	PiuMarkHandle(the, self->skin);
 	PiuMarkHandle(the, self->style);
 	PiuMarkString(the, self->name);
