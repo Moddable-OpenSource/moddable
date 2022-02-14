@@ -63,7 +63,17 @@ The `docs` example includes all of the examples in the [Poco documentation](../.
 
 The `epaper-mini-travel-time` is a miniature version of the `piu/epaper-travel-time` example designed for Moddable Three.
 
-> See the [blog post](https://blog.moddable.com/blog/epaper) Getting the Most from ePaper Displays for more information about this example.
+> See the [blog post](https://blog.moddable.com/blog/epaper) "Getting the Most from ePaper Displays" for more information about this example.
+
+***
+
+### `fonts`
+
+![](https://www.moddable.com/assets/commodetto-gifs/fonts.gif)
+
+The `fonts` example displays messages in English and Japanese using eight different fonts. It demonstrates how to use scalable TrueType and OpenType fonts in projects.
+
+> See the [blog post](https://blog.moddable.com/blog/fonts/) "Using More Fonts More Easily in IoT Products" for more information about this example.
 
 ***
 
@@ -71,7 +81,7 @@ The `epaper-mini-travel-time` is a miniature version of the `piu/epaper-travel-t
 
 ![](https://www.moddable.com/assets/commodetto-gifs/gif.gif)
 
-The `gif` example shows an animated flag. It demonstrates how to render an animated GIF.
+The `gif` example shows an animated flag. It demonstrates how to render an animated GIF directly.
 
 ***
 
@@ -79,7 +89,7 @@ The `gif` example shows an animated flag. It demonstrates how to render an anima
 
 ![](https://www.moddable.com/assets/commodetto-gifs/image-frames.gif)
 
-The `image-frames` example shows an animated flag. It demonstrates how to render an animated GIF.
+The `image-frames` example shows an animated flag. It demonstrates how to render an animated GIF converted to a lightweight color cell encoded stream.
 
 ***
 
