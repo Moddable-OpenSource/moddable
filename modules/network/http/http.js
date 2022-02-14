@@ -501,7 +501,6 @@ export class Server {
 		if (connections) {
 			this.connections.forEach(request => {
 				try {
-					trace("close http server request\n");
 					request.close();
 				}
 				catch {
@@ -511,6 +510,20 @@ export class Server {
 		}
 		this.#listener.close();
 		this.#listener = undefined;
+	}
+	detach(connection) {
+		const i = this.connections.indexOf(connection);
+		if (i < 0) throw new Error;
+
+		this.connections.splice(i, 1);
+
+		const socket = connection.socket;
+		delete socket.callback;
+		connection.state = 10;
+		delete connection.socket;
+		connection.close();
+		
+		return socket;
 	}
 }
 Server.connection = 1;
@@ -589,6 +602,8 @@ function server(message, value, etc) {
 						let method = line.shift();
 						let path = line.join(" ");	// re-aassemble path
 						this.callback(Server.status, path, method);
+						if (!this.socket)
+							return;
 
 						this.total = undefined;
 						this.state = 2;
