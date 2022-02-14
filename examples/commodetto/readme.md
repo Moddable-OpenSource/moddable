@@ -69,7 +69,7 @@ The `epaper-mini-travel-time` is a miniature version of the `piu/epaper-travel-t
 
 ### `fonts`
 
-![](https://www.moddable.com/assets/commodetto-gifs/fonts.gif)
+<img src="https://www.moddable.com/assets/commodetto-gifs/fonts.gif" width=180>
 
 The `fonts` example displays messages in English and Japanese using eight different fonts. It demonstrates how to use scalable TrueType and OpenType fonts in projects.
 
