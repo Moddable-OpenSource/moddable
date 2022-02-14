@@ -101,6 +101,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		if (fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2))
 			fxUnstripCallback(linker, fx_BigInt);
 			
+		if (fxIsCodeUsed(XS_CODE_REGEXP))
+			fxUnstripCallback(linker, fx_RegExp);
 	}
 	linkerStrip = linker->firstStrip;
 	while (linkerStrip) {
