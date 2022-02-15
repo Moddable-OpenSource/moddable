@@ -514,9 +514,60 @@ void PiuScreen_quit(xsMachine* the)
 	PiuScreenQuit(self);
 }
 
+static int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
+{
+   UINT  num = 0;          // number of image encoders
+   UINT  size = 0;         // size of the image encoder array in bytes
+
+   ImageCodecInfo* pImageCodecInfo = NULL;
+
+   GetImageEncodersSize(&num, &size);
+   if(size == 0)
+      return -1;  // Failure
+
+   pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
+   if(pImageCodecInfo == NULL)
+      return -1;  // Failure
+
+   GetImageEncoders(num, size, pImageCodecInfo);
+
+   for(UINT j = 0; j < num; ++j)
+   {
+      if( wcscmp(pImageCodecInfo[j].MimeType, format) == 0 )
+      {
+         *pClsid = pImageCodecInfo[j].Clsid;
+         free(pImageCodecInfo);
+         return j;  // Success
+      }    
+   }
+
+   free(pImageCodecInfo);
+   return -1;  // Failure
+}
+
 void PiuScreen_writePNG(xsMachine* the)
 {
-	xsUnknownError("to be implemented");
+	PiuScreen* self = PIU(Screen, xsThis);
+	txScreen* screen = (*self)->screen;
+	wchar_t* path = NULL;
+	Bitmap* bitmap = NULL;
+	CLSID encoderClsid;
+	Status status;
+	xsTry {
+		path = xsToStringCopyW(xsArg(0));
+		bitmap = new Bitmap(screen->width, screen->height, 4 * screen->width, PixelFormat32bppRGB, screen->buffer);
+		GetEncoderClsid(L"image/png", &encoderClsid);
+  		status = bitmap->Save(path, &encoderClsid, NULL);
+		xsElseThrow(status == Ok);
+		delete bitmap;
+		free(path);
+	}
+	xsCatch {
+		if (bitmap != NULL)
+			delete bitmap;
+		if (path != NULL)
+			free(path);
+	}
 }
 
 void fxScreenAbort(txScreen* screen, int status)
