@@ -130,7 +130,7 @@ class ApplicationBehavior extends Behavior {
 		
 		this.keys = {};
 		this.controlsCurrent = 320;
-		this.controlsStatus = false;
+		this.controlsStatus = true;
 		this.infoStatus = true;
 		
 		let path = system.applicationPath;
@@ -540,10 +540,6 @@ class ApplicationBehavior extends Behavior {
 					this.deviceIndex = preferences.deviceIndex;
 				if ("deviceRotation" in preferences)
 					this.deviceRotation = preferences.deviceRotation;
-				if (("libraryPath" in preferences) && system.fileExists(preferences.libraryPath))
-					this.libraryPath = preferences.libraryPath;
-				if (("archivePath" in preferences) && system.fileExists(preferences.archivePath))
-					this.archivePath = preferences.archivePath;
 			}
 		}
 		catch(e) {
@@ -561,8 +557,6 @@ class ApplicationBehavior extends Behavior {
 				devicesPath: this.devicesPath,
 				deviceIndex: this.deviceIndex,
 				deviceRotation: this.deviceRotation,
-				libraryPath: this.libraryPath,
-				archivePath: this.archivePath,
 			};
 			let string = JSON.stringify(preferences, null, "\t");
 			system.writePreferenceString("main", string);
