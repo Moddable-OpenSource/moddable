@@ -20,7 +20,7 @@
 HOST_OS = win
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v4.3.1
+EXPECTED_ESP_IDF = v4.4
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -136,8 +136,11 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\freertos\port \
  	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
 	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include\freertos \
+	-I$(IDF_PATH)\components\freertos\include\esp_additions \
+	-I$(IDF_PATH)\components\freertos\include\esp_additions\freertos \
 	-I$(IDF_PATH)\components\hal\include \
 	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\hal\platform_port\include \
 	-I$(IDF_PATH)\components\heap\include \
 	-I$(IDF_PATH)\components\log\include \
 	-I$(IDF_PATH)\components\lwip\include\apps \
