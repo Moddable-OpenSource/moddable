@@ -34,22 +34,6 @@ let ShapeApplication = Application.template($ => ({
 		onLabel(application, string) {
 			application.last.string = string;
 		},
-		onMessage(application, message) {
-			message = JSON.parse(message);
-			if (message.about == "mcsim") {
-				const shape = application.first;
-				const count = shape.duration / 20;
-				if (message.frame < count) {
-					shape.stop();
-					shape.time = (message.frame * shape.duration) / count;
-					application.postMessage(`{ "about":"mcsim", "command":"step" }`);
-				}
-				else {
-					shape.start();
-					application.postMessage(`{ "about":"mcsim", "command":"stop" }`);
-				}
-			}
-		}
 	},
 }));
 
