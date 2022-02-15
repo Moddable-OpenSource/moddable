@@ -14,7 +14,8 @@
 	},
 	"modules": {
 		"*": [
-			"./main"
+			"./main",
+			"$(MODULES)/base/modules/*"
 		]
 	},
 	"strip": "[]",
