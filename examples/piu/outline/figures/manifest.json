@@ -1,0 +1,26 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/outline/manifest.json"
+	],
+	"config": {
+		"rotation": 90
+	},
+	"creation": {
+		"keys": {
+			"available": 256
+		}
+	},
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"strip": "[]",
+	"resources":{
+		"*-alpha": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
+		]
+	}
+}

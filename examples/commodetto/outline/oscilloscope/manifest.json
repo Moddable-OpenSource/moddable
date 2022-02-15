@@ -1,0 +1,14 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/commodetto/outline/manifest.json"
+	],
+	"config": {
+		"rotation": 90
+	},
+	"modules": {
+		"*": "./main"
+	}
+}
+
