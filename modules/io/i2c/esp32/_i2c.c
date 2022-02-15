@@ -180,6 +180,8 @@ void _xs_i2c_close(xsMachine *the)
 	}
 }
 
+// Note: The stop bit argument to read and write is currently ignored due to ESP-IDF Issue #8248 (https://github.com/espressif/esp-idf/issues/8348).
+
 void _xs_i2c_read(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);

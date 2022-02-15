@@ -49,6 +49,8 @@ void modI2CUninit(modI2CConfiguration config)
 	}
 }
 
+// Note: The sendStop argument to modI2CRead and modI2CWrite is currently ignored due to ESP-IDF Issue #8248 (https://github.com/espressif/esp-idf/issues/8348).
+
 uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
 	int ret;
