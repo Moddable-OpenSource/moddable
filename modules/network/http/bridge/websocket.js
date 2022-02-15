@@ -113,7 +113,9 @@ class BridgeWebsocket extends Bridge {
 				if ( value === this.#path ) {
 					WebSocketUpgrade.bridge=this;
 					const socket = this.parent.detach(req);
-					const websocket = new WebSocketUpgrade({socket:socket});
+					//const websocket = new WebSocketUpgrade({socket:socket});
+					const websocket = new WebSocketUpgrade({port:null});
+					websocket.attach(socket,2);
 					return;
 				}
 				break;

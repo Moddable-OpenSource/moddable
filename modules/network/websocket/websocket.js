@@ -29,6 +29,7 @@ import {Socket, Listener} from "socket";
 import Base64 from "base64";
 import Logical from "logical";
 import {Digest} from "crypt";
+import Timer from "timer";
 
 /*
 	state:
@@ -287,10 +288,12 @@ trace("partial header!!\n");		//@@ untested
 export class Server {
 	#listener;
 	constructor(dictionary = {}) {
+		if (null === dictionary.port)
+		return;
+
 		if (dictionary.socket) {
 			let socket=dictionary.socket;
 			this.attach(socket,2);
-			socket.callback(2, socket.read());
 		}
 		else {
 			this.#listener = new Listener({port: dictionary.port ?? 80});
@@ -305,13 +308,17 @@ export class Server {
 		this.#listener = undefined;
 	}
 
-	attach(socket,state) {
+	attach(socket,state = 2) {
 		const request = new Client({socket});
 		request.doMask = false;
 		socket.callback = server.bind(request);
 		request.state = state;		// already connected or handshake
 		request.callback = this.callback;		// transfer server.callback to request.callback
 		request.callback(Server.connect, this);	// tell app we have a new connection;
+
+		if ( state === 2) { // continue handshake
+			socket.callback(2, socket.read());
+		}
 	}
 };
 
