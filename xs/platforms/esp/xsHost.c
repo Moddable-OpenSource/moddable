@@ -1,4 +1,4 @@
-	/*
+/*
  * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
@@ -854,8 +854,13 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #if INSTRUMENT_CPULOAD
 void IRAM_ATTR timer_group0_isr(void *para)
 {
+#if kCPUESP32S3
+	TIMERG0.int_st_timers.t0_int_st = 1;
+	TIMERG0.hw_timer[TIMER_0].config.tn_alarm_en = TIMER_ALARM_EN;
+#else
 	TIMERG0.kESP32TimerDef.t0 = 1;
-    TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
+	TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
+#endif
 
 	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
 #if kTargetCPUCount > 1
