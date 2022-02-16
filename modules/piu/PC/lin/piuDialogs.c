@@ -66,25 +66,29 @@ void PiuSystem_alert(xsMachine* the)
 		(void)xsCallFunction1(xsArg(1), xsNull, (result == 0) ? xsTrue : (result == 1) ? xsUndefined : xsFalse);
 }
 
-void PiuSystem_open(xsMachine* the, xsBooleanValue flag)
+void PiuSystem_open(xsMachine* the, GtkFileChooserAction action)
 {
 	PiuApplication* application = xsGetContext(the);
 	PiuView* view = (*application)->view;
  	xsIntegerValue argc = xsToInteger(xsArgc);
 	xsStringValue string;
- 	xsStringValue prompt = NULL;
  	xsStringValue message = NULL;
+ 	xsStringValue name = NULL;
+ 	xsStringValue prompt = NULL;
 	GtkWidget *dialog;
 	GtkFileFilter *filter = NULL;
 	if ((argc > 0) && xsTest(xsArg(0))) {
-		if (xsFindString(xsArg(0), xsID_prompt, &string)) {
-			prompt = strdup(string);
-		}
 		if (xsFindString(xsArg(0), xsID_message, &string)) {
 			message = strdup(string);
 		}
+		if (xsFindString(xsArg(0), xsID_name, &string)) {
+			name = strdup(string);
+		}
+		if (xsFindString(xsArg(0), xsID_prompt, &string)) {
+			prompt = strdup(string);
+		}
 	}
-	dialog = gtk_file_chooser_dialog_new((message) ? message : prompt, (*view)->gtkWindow, flag ? GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER : GTK_FILE_CHOOSER_ACTION_OPEN, "Cancel", GTK_RESPONSE_CANCEL, prompt, GTK_RESPONSE_ACCEPT, NULL);
+	dialog = gtk_file_chooser_dialog_new((message) ? message : prompt, (*view)->gtkWindow, action, "Cancel", GTK_RESPONSE_CANCEL, prompt, GTK_RESPONSE_ACCEPT, NULL);
 	if ((argc > 0) && xsTest(xsArg(0))) {
 		if (xsFindString(xsArg(0), xsID_fileType, &string)) {
 			filter = gtk_file_filter_new();
@@ -93,6 +97,8 @@ void PiuSystem_open(xsMachine* the, xsBooleanValue flag)
 			gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
 		}	
 	}
+	if (name)
+		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), name);
 	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
  		(void)xsCallFunction1(xsArg(1), xsNull, xsString(filename));
@@ -100,23 +106,26 @@ void PiuSystem_open(xsMachine* the, xsBooleanValue flag)
 	}
 	gtk_widget_destroy(dialog);
 	if (message) free(message);
+	if (name) free(name);
 	if (prompt) free(prompt);
 }
 
 void PiuSystem_openDirectory(xsMachine* the)
 {
-	PiuSystem_open(the, 1);
+	PiuSystem_open(the, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
 }
 
 void PiuSystem_openFile(xsMachine* the)
 {
-	PiuSystem_open(the, 0);
+	PiuSystem_open(the, GTK_FILE_CHOOSER_ACTION_OPEN);
 }
 
 void PiuSystem_saveDirectory(xsMachine* the)
 {
+	PiuSystem_open(the, GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER);
 }
 
 void PiuSystem_saveFile(xsMachine* the)
 {
+	PiuSystem_open(the, GTK_FILE_CHOOSER_ACTION_SAVE);
 }

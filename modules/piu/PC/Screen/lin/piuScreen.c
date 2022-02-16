@@ -523,7 +523,12 @@ void PiuScreen_quit(xsMachine* the)
 
 void PiuScreen_writePNG(xsMachine* the)
 {
-	xsUnknownError("to be implemented");
+	PiuScreen* self = PIU(Screen, xsThis);
+	cairo_surface_t *surface = (*self)->surface;
+	char* path = xsToString(xsArg(0));
+	cairo_status_t	status = cairo_surface_write_to_png(surface, path);
+	if (status != CAIRO_STATUS_SUCCESS)
+		xsUnknownError("%s", cairo_status_to_string(status));
 }
 
 void fxScreenAbort(txScreen* screen, int status)

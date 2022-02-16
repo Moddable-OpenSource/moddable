@@ -441,7 +441,18 @@ class ApplicationBehavior extends Behavior {
 		system.saveFile({ prompt:"Save Screen", name:"screen.png" }, path => { if (path) application.defer("doSaveScreenCallback", new String(path)); });
 	}
 	doSaveScreenCallback(application, path) {
-		this.SCREEN.writePNG(path);
+		try  {
+			this.SCREEN.writePNG(path);
+		}
+		catch (e){
+			system.alert({ 
+				type:"stop",
+				prompt:"mcsim",
+				info:`Error saving ${path}: ${e}`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+		}
 	}
 /* VIEW MENU */
 	canToggleControls(target, item) {
