@@ -29,7 +29,6 @@ import {Socket, Listener} from "socket";
 import Base64 from "base64";
 import Logical from "logical";
 import {Digest} from "crypt";
-import Timer from "timer";
 
 /*
 	state:
