@@ -23,16 +23,6 @@ class WebSocketUpgrade extends WebSocketServer {
 		super(opts);
 	}
 
-	/*
-	send(packet) {
-		packet=JSON.stringify(packet);
-		let encoded = WebSocketUpgrade.bridge?.callback.call( this, BridgeWebsocket.encode, packet);
-		if (encoded)
-			packet = encoded;
-		this.write(packet);
-	}
-	*/
-
 	callback(message, value) {
 		const ws = this.ws;
 
@@ -113,9 +103,9 @@ class BridgeWebsocket extends Bridge {
 				if ( value === this.#path ) {
 					WebSocketUpgrade.bridge=this;
 					const socket = this.parent.detach(req);
-					//const websocket = new WebSocketUpgrade({socket:socket});
-					const websocket = new WebSocketUpgrade({port:null});
-					websocket.attach(socket,2);
+					const websocket = new WebSocketUpgrade({socket:socket});
+					//const websocket = new WebSocketUpgrade({port:null});
+					//websocket.attach(socket,2);
 					return;
 				}
 				break;

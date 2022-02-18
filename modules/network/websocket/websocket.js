@@ -293,12 +293,15 @@ export class Server {
 
 		if (dictionary.socket) {
 			let socket=dictionary.socket;
-			this.attach(socket,2);
+			let request = this.attach(socket,2);
+			request.callback(Server.connect, this);	// tell app we have a new connection;
+			socket.callback(2, socket.read());  // continue handshake
 		}
 		else {
 			this.#listener = new Listener({port: dictionary.port ?? 80});
 			this.#listener.callback = () => {
 				this.attach(new Socket({listener: this.#listener}),1);
+				request.callback(Server.connect, this);	// tell app we have a new connection;
 			}
 		}
 	}
@@ -308,17 +311,13 @@ export class Server {
 		this.#listener = undefined;
 	}
 
-	attach(socket,state = 2) {
+	attach(socket,state) {
 		const request = new Client({socket});
 		request.doMask = false;
 		socket.callback = server.bind(request);
 		request.state = state;		// already connected or handshake
 		request.callback = this.callback;		// transfer server.callback to request.callback
-		request.callback(Server.connect, this);	// tell app we have a new connection;
-
-		if ( state === 2) { // continue handshake
-			socket.callback(2, socket.read());
-		}
+		return request;	
 	}
 };
 
