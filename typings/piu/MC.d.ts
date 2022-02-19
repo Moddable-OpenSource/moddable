@@ -162,7 +162,7 @@ declare module "piu/MC" {
     name?: string;
     anchor?: string;
     Behavior?: BehaviorConstructor;
-    skin?: Skin;
+    skin?: Skin | SkinDictionary;
     Skin?: SkinConstructor;
     style?: Style;
     Style?: StyleConstructor;
@@ -442,6 +442,7 @@ declare module "piu/MC" {
     displayListLength?: number;
     commandListLength?: number;
     touchCount?: number;
+    pixels?: number;
   }
   interface ApplicationConstructor {
     new(behaviorData: any, dictionary: ApplicationDictionary): Application;
@@ -513,6 +514,14 @@ declare module "piu/MC" {
     new(behaviorData: any, dictionary: ScrollerDictionary): Scroller;
   }
 
+  interface rgb {
+    (r: number, g: number, b: number): Color
+  }
+  interface rgba {
+    (r: number, g: number, b: number, a: number): Color
+  }
+
+
   global {
     const Skin: SkinConstructor
     const Texture: TextureConstructor
@@ -530,6 +539,8 @@ declare module "piu/MC" {
     const Label: LabelConstructor
     const Transition: TransitionConstructor
     const Text: TextConstructor
+    const rgb: rgb
+    const rgba: rgba
   }
  }
 

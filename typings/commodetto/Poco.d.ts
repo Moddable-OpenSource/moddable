@@ -18,10 +18,11 @@
 *
 */
 
-import PixelsOut from "commodetto/PixelsOut"
-import Bitmap from "commodetto/Bitmap"
 
 declare module "commodetto/Poco" {
+  import PixelsOut from "commodetto/PixelsOut"
+  import Bitmap from "commodetto/Bitmap"
+
   type Rectangle = {
     x: number,
     y: number,
@@ -29,7 +30,7 @@ declare module "commodetto/Poco" {
     height: number,
   }
 
-  type Font = HostBuffer    //@@ share full interface with commodetto/parseBMF
+  type Font = any    //@@ share full interface with commodetto/parseBMF
 
   class Poco {
     constructor(pixelsOut, options?: {
@@ -87,6 +88,10 @@ declare module "commodetto/Poco" {
     readonly height: number
     readonly pixelsOut: PixelsOut
   }
-}
 
-export {Poco as default};
+  global {
+		const screen: PixelsOut
+	}
+
+  export default Poco
+}
