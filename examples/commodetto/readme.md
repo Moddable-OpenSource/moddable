@@ -115,6 +115,30 @@ The `origin` example demonstrates the use of the Poco drawing origin stack.
 
 ***
 
+### `outline/oscilloscope`
+
+<img src="https://www.moddable.com/assets/commodetto-gifs/outline-oscilloscope.png" width=200>
+
+The `outline/oscilloscope ` example demonstrates using both stroked and filled polygons to render a simple oscilloscope.
+
+***
+
+### `outline/random-ellipses`
+
+<img src="https://www.moddable.com/assets/commodetto-gifs/outline-random-ellipses.png" width=200>
+
+The `outline/random-ellipses ` example demonstrates using both stroked and filled polygons to render a simple oscilloscope.
+
+***
+
+### `outline/random-triangles`
+
+<img src="https://www.moddable.com/assets/commodetto-gifs/outline-random-triangles.png" width=200>
+
+The `outline/random-triangles` example demonstrates using both stroked and filled polygons to render a simple oscilloscope.
+
+***
+
 ### `pngdisplay`
 
 The `pngdisplay` allows you to use the curl command line tool to push PNG images to the display. Created for use by user interface designers, not developers. 
