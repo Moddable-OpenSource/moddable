@@ -220,6 +220,10 @@ void fxCopyModuleMeta(txMachine* the, txSlot* srcModule, txSlot* dstModule)
 {
 	txSlot* srcSlot;
 	txSlot* dstSlot;
+	srcSlot = mxModuleInternal(srcModule);
+	dstSlot = mxModuleInternal(dstModule);
+	if (srcSlot->value.module.id != XS_NO_ID)
+		dstSlot->value.module.id = srcSlot->value.module.id;
 	srcSlot = mxModuleMeta(srcModule);
 	dstSlot = mxModuleMeta(dstModule);
 	fxDuplicateInstance(the, srcSlot->value.reference);
@@ -2218,6 +2222,19 @@ void fx_StaticModuleRecord(txMachine* the)
 	if (mxArgc == 0)
 		mxTypeError("no descriptor");
 		
+	mxPushSlot(mxArgv(0));
+	mxGetID(fxID(the, "specifier"));
+	slot = the->stack;
+	if (slot->kind != XS_UNDEFINED_KIND) {
+		txSlot* internal = mxModuleInstanceInternal(instance);
+		fxToString(the, slot);
+		if (slot->kind == XS_STRING_X_KIND)
+			internal->value.module.id = fxNewNameX(the, slot->value.string);
+		else
+			internal->value.module.id = fxNewName(the, slot);
+	}
+	mxPop();
+
 	mxPushSlot(mxArgv(0));
 	mxGetID(fxID(the, "meta"));
 	slot = the->stack;
