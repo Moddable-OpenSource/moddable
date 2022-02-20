@@ -91,12 +91,11 @@ declare module "commodetto/outline" {
   }
 }
 
-/*
-declare module "commodetto/poco" {
-  import { Outline } from "commodetto/outline"
+declare module "commodetto/Poco" {
+  import {Outline} from "commodetto/outline"
 
   interface PocoPrototype {
-    blendOutline(color: number, blend: number, outline: Outline, x: number, y: number): void
+    blendOutline(color: number, blend: number, outline: Outline, x?: number, y?: number): void
+    blendPolygon(color: number, blend: number, ...points: Array<number>): void
   }
 }
-*/

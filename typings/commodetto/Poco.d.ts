@@ -32,12 +32,7 @@ declare module "commodetto/Poco" {
 
   type Font = any    //@@ share full interface with commodetto/parseBMF
 
-  class Poco {
-    constructor(pixelsOut, options?: {
-      pixels?: number,
-      displayListLength?: number,
-      rotation?: (0 | 90 | 180 | 270)
-    })
+  export interface PocoPrototype {
     close(): void
     begin(x?: number, y?: number, width?: number, height?: number): void
     begin(rectangle: Rectangle): void
@@ -88,6 +83,18 @@ declare module "commodetto/Poco" {
     readonly height: number
     readonly pixelsOut: PixelsOut
   }
+
+  interface PocoDictionary {
+    pixels?: number,
+    displayListLength?: number,
+    rotation?: (0 | 90 | 180 | 270)
+}
+
+  export interface PocoConstructor {
+    new(pixelsOut: PixelsOut, options?: PocoDictionary): PocoPrototype
+  }
+
+  var Poco: PocoConstructor
 
   global {
 		const screen: PixelsOut
