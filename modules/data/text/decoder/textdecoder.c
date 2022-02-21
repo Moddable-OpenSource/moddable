@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2022  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -51,7 +51,7 @@ void xs_textdecoder(xsMachine *the)
 	int argc = xsmcArgc;
 
 	if (argc && c_strcmp(xsmcToString(xsArg(0)), "utf-8"))
-		xsRangeError("unsuppoorted encoding");
+		xsRangeError("unsupported encoding");
 
 #if !mxNoFunctionLength
 	xsmcGet(xsResult, xsTarget, xsID("prototype"));
@@ -78,7 +78,7 @@ void xs_textdecoder(xsMachine *the)
 /*
 	UTF-8 BOM is sequence 0xEF,0xBB,0xBF
 	Replacement character sequence in UTF-8 is 0xEF 0xBF 0xBD
-	null character maps to 0xF4, 0x90, 0x80, 0x80
+	null character maps to 0xC0, 0x80
 	
 	implementation overallocates by 3 bytes if BOM is present and ignoreBOM is false
 */
@@ -103,7 +103,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
 	srcEnd = src + srcLength;
 
-	td = xsmcGetHostChunk(xsThis);
+	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	buffer = td->buffer;
 	bufferLength = td->bufferLength;
 
@@ -118,7 +118,7 @@ void xs_textdecoder_decode(xsMachine *the)
 		else
 			first = c_read8(src++);
 		if (first < 0x80) {
-			outLength += (0 == first) ? 4 : 1;
+			outLength += (0 == first) ? 2 : 1;
 			continue;
 		}
 
@@ -158,12 +158,35 @@ void xs_textdecoder_decode(xsMachine *the)
 			if (td->fatal)
 				goto fatal;
 
+			uint8_t lower = 0x80, upper = 0xBF;
+			if (0xE0 == first)
+				lower = 0xA0;
+			else if (0xED == first)
+				lower = 0x9F;
+			else if (0xF0 == first)
+				lower = 0x90;
+			else if (0xF4 == first)
+				lower = 0x8F;
+			else if (first > 0xF4)	// no valid next byte
+				clen = 0;
+
+			while (clen-- > 0) {
+				uint8_t c = c_read8(src);
+				if ((lower <= c) && (c <= upper))
+					src++;
+				else
+					break;
+			}
+
 			outLength += 3;
 			continue;
 		}
 
+#if mxCESU8
+		outLength += (3 == clen) ? 6 : (clen + 1);
+#else
 		outLength += clen + 1;
-
+#endif
 		if (bufferLength) {
 			if (bufferLength >= clen) {
 				bufferLength -= clen;
@@ -184,7 +207,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	srcEnd = src + srcLength;
 	src += srcOffset;
 
-	td = xsmcGetHostChunk(xsThis);
+	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	buffer = td->buffer;
 	bufferLength = td->bufferLength;
 
@@ -208,9 +231,7 @@ void xs_textdecoder_decode(xsMachine *the)
 			if (first)
 				*dst++ = first;
 			else {
-				*dst++ = 0xF4;
-				*dst++ = 0x90;
-				*dst++ = 0x80;
+				*dst++ = 0xC0;
 				*dst++ = 0x80;
 			}
 			continue;
@@ -260,12 +281,50 @@ void xs_textdecoder_decode(xsMachine *the)
 			*dst++ = 0xEF;
 			*dst++ = 0xBF;
 			*dst++ = 0xBD;
+
+			uint8_t lower = 0x80, upper = 0xBF;
+			if (0xE0 == first)
+				lower = 0xA0;
+			else if (0xED == first)
+				lower = 0x9F;
+			else if (0xF0 == first)
+				lower = 0x90;
+			else if (0xF4 == first)
+				lower = 0x8F;
+			else if (first > 0xF4)	// no valid next byte
+				clen = 0;
+
+			while (clen-- > 0) {
+				uint8_t c = c_read8(src);
+				if ((lower <= c) && (c <= upper))
+					src++;
+				else
+					break;
+			}
+
 			continue;
 		}
 
+#if mxCESU8
+	if (3 != clen) {
 		*dst++ = first;
 		for (i = 0; i < clen; i++)
 			*dst++ = utf8[i + 1];
+	}
+	else {
+		xsIntegerValue c;
+		fxUTF8Decode((xsStringValue)utf8, &c);
+		c -= 0x10000;
+		fxUTF8Encode((xsStringValue)dst, 0xD800 + (c >> 10));
+		dst += 3;
+		fxUTF8Encode((xsStringValue)dst, 0xDC00 + (c & 0x3FF));
+		dst += 3;
+	}
+#else
+		*dst++ = first;
+		for (i = 0; i < clen; i++)
+			*dst++ = utf8[i + 1];
+#endif
 		
 		if ((0xEF == first) && (dst == dst3)) {
 			if ((0xBF == dst[-1]) && (0xBB == dst[-2]))
@@ -304,13 +363,13 @@ void xs_textdecoder_get_encoding(xsMachine *the)
 
 void xs_textdecoder_get_ignoreBOM(xsMachine *the)
 {
-	modTextDecoder td = xsmcGetHostChunk(xsThis);
+	modTextDecoder td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	xsmcSetBoolean(xsResult, td->ignoreBOM);
 }
 
 void xs_textdecoder_get_fatal(xsMachine *the)
 {
-	modTextDecoder td = xsmcGetHostChunk(xsThis);
+	modTextDecoder td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	xsmcSetBoolean(xsResult, td->fatal);
 }
 
@@ -324,15 +383,18 @@ void modInstallTextDecoder(xsMachine *the)
 	xsBeginHost(the);
 	xsmcVars(3);
 
-	xsVar(kPrototype) = xsNewHostObject(NULL);
+	xsVar(kPrototype) = xsNewHostObject(xs_textdecoder_destructor);
 	xsVar(kConstructor) = xsNewHostConstructor(xs_textdecoder, 2, xsVar(kPrototype));
 	xsmcSet(xsGlobal, xsID("TextDecoder"), xsVar(kConstructor));
 
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_decode, 1);
 	xsmcSet(xsVar(kPrototype), xsID("decode"), xsVar(kScratch));
-	xsDefine(xsVar(kPrototype), xsID("encoding"), xsNewHostFunction(xs_textdecoder_get_encoding, 0), xsIsGetter);
-	xsDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0), xsIsGetter);
-	xsDefine(xsVar(kPrototype), xsID("fatal"), xsNewHostFunction(xs_textdecoder_get_fatal, 0), xsIsGetter);
+	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_encoding, 0);
+	xsmcDefine(xsVar(kPrototype), xsID("encoding"), xsVar(kScratch), xsIsGetter);
+	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0);
+	xsmcDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsVar(kScratch), xsIsGetter);
+	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_fatal, 0);
+	xsmcDefine(xsVar(kPrototype), xsID("fatal"), xsVar(kScratch), xsIsGetter);
 
 	xsEndHost(the);
 }

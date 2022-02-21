@@ -46,6 +46,36 @@ void fxCheckParserStack(txParser* parser, txInteger line)
     }
 }
 
+txString fxCombinePath(txParser* parser, txString base, txString name)
+{
+	txSize baseLength, nameLength;
+	txString path;
+	txString separator ;
+#if mxWindows
+	separator = name;
+	while (*separator) {
+		if (*separator == '/')
+			*separator = '\\';
+		separator++;
+	}
+	separator = strrchr(base, '\\');
+#else
+	separator = strrchr(base, '/');
+#endif
+	if (separator) {
+		separator++;
+		baseLength = mxPtrDiff(separator - base);
+	}
+	else
+		baseLength = 0;
+	nameLength = mxStringLength(name);
+	path = fxNewParserChunk(parser, baseLength + nameLength + 1);
+	if (baseLength)
+		c_memcpy(path, base, baseLength);
+	c_memcpy(path + baseLength, name, nameLength + 1);
+	return path;
+}
+
 void fxDisposeParserChunks(txParser* parser)
 {
 	txParserChunk** address = &parser->first;

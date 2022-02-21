@@ -87,22 +87,24 @@
 #endif
 #define mxMachinePlatform \
 	txSocket connection; \
-	void* host; \
 	void* waiterCondition; \
 	void* waiterData; \
-	txMachine* waiterLink; \
-	int abortStatus;
+	void* waiterLink; \
+	int promiseJobs; \
+	void* timerJobs; \
+	int abortStatus; \
+	void* rejection;
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1
 #define mxUseDefaultSlotAllocation 1
-#define mxUseDefaultFindModule 1
-#define mxUseDefaultLoadModule 1
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
 
 #if INTPTR_MAX == INT64_MAX
 	#define mx32bitID 1
 #endif
+
+#define mxCESU8 1
 
 #endif /* __XST__ */

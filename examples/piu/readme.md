@@ -223,6 +223,30 @@ The `one-line` and `one-line-keyboard` examples are designed to work together. T
 
 ***
 
+### `outline/clock`
+
+<img src="http://www.moddable.com/assets/piu-gifs/outline-clock.png" width=200>
+
+The `outline/clock` example renders an analog clock using Canvas outlines.
+
+***
+
+### `outline/figures`
+
+<img src="http://www.moddable.com/assets/piu-gifs/outline-figures.png" width=200>
+
+The `outline/figures` example contains mods to draw all of the figures from the Outline documentation.
+
+***
+
+### `outline/shapes`
+
+<img src="http://www.moddable.com/assets/piu-gifs/outline-shapes.png" width=160>
+
+The `outline/shapes` example renders four different outline shapes in a manner similar to the balls example.
+
+***
+
 ### `preferences`
 
 <img src="https://www.moddable.com/assets/piu-gifs/preferences.png" width=190>

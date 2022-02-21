@@ -1570,7 +1570,11 @@ txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		txU4 c = fxBigInt_bitsize(a);
 		txBigInt *t = fxBigInt_umul1(the, NULL, b, c);
 		t = fxBigInt_ulsr1(the, t, t, 5);
-		c = 2 + t->data[0]; //@@
+#ifdef mxRun
+		if ((t->size > 1) || (t->data[0] > 0xFFFF))
+			mxRangeError("too big exponent");
+#endif
+		c = 2 + t->data[0];
 		fxBigInt_free(the, t);
         if (r == NULL)
 			r = fxBigInt_alloc(the, c);

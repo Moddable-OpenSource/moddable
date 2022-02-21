@@ -14,17 +14,17 @@
 	"platforms": {
 		"mac": {
 			"resources":{
-				"*": "./assets/320x240/*"
+				"*-color": "./assets/320x240/*"
 			}
 		},
 		"win": {
 			"resources":{
-				"*": "./assets/320x240/*"
+				"*-color": "./assets/320x240/*"
 			}
 		},
 		"lin": {
 			"resources":{
-				"*": "./assets/320x240/*"
+				"*-color": "./assets/320x240/*"
 			}
 		},
 		"esp32/moddable_two": {
@@ -32,7 +32,7 @@
 				"rotation": 90
 			},
 			"resources":{
-				"*": "./assets/320x240/*"
+				"*-color": "./assets/320x240/*"
 			}
 		},
 		"esp/moddable_three": {
@@ -46,20 +46,27 @@
 				"rotation": 90
 			},
 			"resources":{
-				"*": "./assets/255x122/*"
+				"*-color": "./assets/255x122/*"
 			}
 		},
-		"esp32/m5paper": {
-			"config": {
-				"updateMode": "GC16"
-			},
+		"mac/m5paper": {
 			"resources":{
-				"*": "./assets/960x540/*"
+				"*-color": "./assets/960x540/*"
+			}
+		},
+		"win/m5paper": {
+			"resources":{
+				"*-color": "./assets/960x540/*"
+			}
+		},
+		"lin/m5paper": {
+			"resources":{
+				"*-color": "./assets/960x540/*"
 			}
 		},
 		"esp32/m5core_ink": {
 			"resources":{
-				"*": "./assets/200x200/*"
+				"*-color": "./assets/200x200/*"
 			}
 		},
 		"...": {

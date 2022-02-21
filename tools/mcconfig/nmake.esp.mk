@@ -145,6 +145,7 @@ XS_DIRS = \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\sources\pcre \
 	-I$(XS_DIR)\platforms\esp \
+	-I$(XS_DIR)\platforms\mc \
 	-I$(BUILD_DIR)\devices\esp
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
@@ -153,6 +154,7 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsHost.h \
+	$(XS_DIR)\platforms\mc\xsHosts.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 SDK_SRC = \
 	$(CORE_DIR)\abi.cpp \
@@ -381,9 +383,9 @@ delAr:
 	@del $(APP_ARCHIVE)
 	@del $(LIB_ARCHIVE)
 
-$(APP_ARCHIVE): $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\main.o
+$(APP_ARCHIVE): $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsHosts.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\main.o
 	@echo # archive $(APP_ARCHIVE)
-	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(TMP_DIR)\main.o
+	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsHosts.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(TMP_DIR)\main.o
 
 $(LIB_ARCHIVE): $(XS_OBJ) $(SDK_OBJ)
 	@echo # archive $(LIB_ARCHIVE)
@@ -471,6 +473,11 @@ $(LIB_DIR)\tinyi2s.o: $(PLATFORM_DIR)\lib\tinyi2s\tinyi2s.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
+	@echo # cc $(@F)
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
+	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
+
+$(TMP_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c
 	@echo # cc $(@F)
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@

@@ -36,6 +36,7 @@ export const Screen = Template(Object.freeze({
 	launch(path) @ "PiuScreen_launch",
 	postMessage(json) @ "PiuScreen_postMessage",
 	quit() @ "PiuScreen_quit",
+	writePNG(path) @ "PiuScreen_writePNG",
 }));
 
 export class ScreenWorker @ "PiuScreenWorkerDelete" {

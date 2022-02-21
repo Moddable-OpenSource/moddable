@@ -194,6 +194,7 @@ XS_DIRS = \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/sources/pcre \
 	$(XS_DIR)/platforms/esp \
+	$(XS_DIR)/platforms/mc \
 	$(BUILD_DIR)/devices/esp
 XS_HEADERS = \
 	$(XS_DIR)/includes/xs.h \
@@ -202,7 +203,8 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/platforms/esp/xsHost.h \
-	$(XS_DIR)/platforms/esp/xsPlatform.h
+	$(XS_DIR)/platforms/esp/xsPlatform.h \
+	$(XS_DIR)/platforms/mc/xsHosts.h
 HEADERS += $(XS_HEADERS)
 
 TOOLS_BIN = $(TOOLS_ROOT)/xtensa-lx106-elf/bin
@@ -357,13 +359,10 @@ clean:
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
-erase:
-	$(ESPTOOL) -p $(UPLOAD_PORT) erase_flash
-
 $(LIB_DIR)/buildinfo.h:
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 
-$(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(LIB_DIR)/buildinfo.h
+$(BIN_DIR)/main.bin: $(SDK_OBJ) $(LIB_DIR)/lib_a-setjmp.o $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(LIB_DIR)/buildinfo.h
 	@echo "# ld main.bin"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.cpp
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(XS_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.cpp
@@ -391,6 +390,10 @@ $(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
 $(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+	@echo "# cc" $(<F) "(strings in flash + force-l32)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
+	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
+$(TMP_DIR)/xsHosts.c.o: xsHosts.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
 	@echo "# cc" $(<F) "(strings in flash + force-l32)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 $< -o $@.unmapped
 	$(TOOLS_BIN)/xtensa-lx106-elf-objcopy --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@

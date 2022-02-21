@@ -42,12 +42,6 @@ var formatValues = {
 	x: 0,
 };
 
-var resourceExtensions = [  
-	".act", ".fnt", ".json", ".png", ".gif", ".jpg", ".jpeg", 
-	".bmp", ".cct", ".nfnt", ".rle", ".ttf", ".zip", // copy
-	".dat", ".der", ".pk8", ".ski", ".subject",
-];
-
 class MakeFile extends MAKEFILE {
 	constructor(path) {
 		super(path)
@@ -1027,7 +1021,7 @@ export default class extends Tool {
 		this.filterPreload(this.manifest.preload);
 		this.filterRecipes(this.manifest.recipes);
 		this.strip = this.manifest.strip;
-		this.tsconfig = this.manifest.tsconfig;
+		this.typescript = this.manifest.typescript;
 		
 		var name = this.environment.NAME
 		if (this.platform == "x-mac")

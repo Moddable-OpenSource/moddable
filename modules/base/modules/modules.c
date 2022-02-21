@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2018-2022  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "xsAll.h"
 #include "xs.h"
 
@@ -6,23 +26,14 @@ extern void* xsPreparationAndCreation(xsCreation **creation);
 void xs_modules_host(xsMachine *the)
 {
 	txPreparation *preparation = xsPreparationAndCreation(NULL);
-	txInteger scriptCount = preparation->scriptCount, i = 0;
-	txScript* script = preparation->scripts;
-
 	xsResult = xsNewArray(0);
-
-	while (scriptCount--) {
-		char path[C_PATH_MAX];
-		char *dot;
-
-		c_strcpy(path, script->path);
-		dot = c_strchr(path, '.');
-		if (dot)
-			*dot = 0;
-
-		xsSetIndex(xsResult, i++, xsString(path));
-
-		script++;
+	if (preparation) {
+		txInteger scriptCount = preparation->scriptCount, i = 0;
+		txScript* script = preparation->scripts;
+		while (scriptCount--) {
+			xsSetIndex(xsResult, i++, xsString(script->path));
+			script++;
+		}
 	}
 }
 
@@ -30,40 +41,25 @@ void xs_modules_host(xsMachine *the)
 
 void xs_modules_archive(xsMachine *the)
 {
-	uint8_t *p, *q;
-	int i = 0;
-	char path[128];
-	txPreparation *preparation;
-
+	uint8_t *p = the->archive;
 	xsResult = xsNewArray(0);
-
-	preparation = xsPreparationAndCreation(NULL);
-	if (!preparation)
-		return;
-	c_memcpy(path, preparation->base, preparation->baseLength);
-
-	p = the->archive;
-	if (!p) return;
-
-	p += mxArchiveHeaderSize;
-	// NAME
-	p += c_read32be(p);
-	// SYMB
-	p += c_read32be(p);
-	// MODS
-	q = p + c_read32be(p);
-	p += sizeof(Atom);
-
-	while (p < q) {
-		int atomSize = c_read32be(p);
-
-		c_strcpy(path + preparation->baseLength, (txString)(p + sizeof(Atom)));
-		path[atomSize - sizeof(Atom) - 4] = 0;
-
-		xsSetIndex(xsResult, i++, xsString(path + preparation->baseLength));
-
-		p += atomSize;
+	if (p) {
+		uint8_t *q;
+		int i = 0;
+		p += mxArchiveHeaderSize;
+		// NAME
 		p += c_read32be(p);
+		// SYMB
+		p += c_read32be(p);
+		// MODS
+		q = p + c_read32be(p);
+		p += sizeof(Atom);
+		while (p < q) {
+			int atomSize = c_read32be(p);
+			xsSetIndex(xsResult, i++, xsString((txString)(p + sizeof(Atom))));
+			p += atomSize;
+			p += c_read32be(p);
+		}
 	}
 }
 

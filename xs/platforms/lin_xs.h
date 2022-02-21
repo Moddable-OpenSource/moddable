@@ -91,5 +91,9 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	GMutex workerMutex; \
 	txWorkerJob* workerQueue; \
 	void* demarshall;
+	
+#ifdef mxDebug
+	#define MODDEF_XS_TEST 1
+#endif
 
 #endif /* __LINUX_XS__ */

@@ -345,15 +345,15 @@ int main(int argc, char* argv[])
 				{
 					xsTry {
 						xsCollectGarbage();
-						c_strcpy(path, linker->base);
-						script = linker->firstScript;
-						while (script) {
-							c_strcpy(path + linker->baseLength, script->path);
-							fxNewNameC(the, path);
-							path[linker->baseLength + script->pathSize - 5] = 0;
-							fxNewNameC(the, path + linker->baseLength);
-							script = script->nextScript;
-						}
+// 						c_strcpy(path, linker->base);
+// 						script = linker->firstScript;
+// 						while (script) {
+// 							c_strcpy(path + linker->baseLength, script->path);
+// 							fxNewNameC(the, path);
+// 							path[linker->baseLength + script->pathSize - 5] = 0;
+// 							fxNewNameC(the, path + linker->baseLength);
+// 							script = script->nextScript;
+// 						}
 						preload = linker->firstPreload;
 						while (preload) {
 							fxSlashPath(preload->name, mxSeparator, url[0]);
@@ -439,25 +439,10 @@ int main(int argc, char* argv[])
 						module = module->next;
 					}
 					mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
-                    mxException.kind = XS_REFERENCE_KIND;
-                    mxException.value.reference = mxRealmClosures(realm)->value.reference;
+					mxException.kind = XS_REFERENCE_KIND; //@@
+					mxException.value.reference = mxRealmClosures(realm)->value.reference; //@@
 					mxProgram.value.reference = modules; //@@
 				}
-// 				{
-// 					txSlot* target = fxNewInstance(the);
-// 					script = linker->firstScript;
-// 					c_memcpy(path, linker->base, linker->baseLength);
-// 					while (script) {
-// 						target = target->next = fxNewSlot(the);
-// 						c_strcpy(path + linker->baseLength, script->path);
-// 						target->value.symbol = fxNewNameC(the, path);
-// 						target->kind = XS_SYMBOL_KIND;
-// 						path[mxStringLength(path) - 4] = 0;
-// 						target->ID = fxNewNameC(the, path + linker->baseLength);
-// 						script = script->nextScript;
-// 					}
-// 					mxPull(mxHosts); //@@
-// 				}
 				if (linker->freezeFlag) {
 					fxFreezeBuiltIns(the);
 				}
@@ -673,10 +658,6 @@ int main(int argc, char* argv[])
 			fprintf(file, "\t(txSlot**)gxNames,\n");
 			fprintf(file, "\tmxSymbolsCount,\n");
 			fprintf(file, "\t(txSlot**)gxSymbols,\n");
-			fprintf(file, "\t%d,\n", (int)linker->baseLength);
-			fprintf(file, "\t");
-			fxWriteCString(file, linker->base);
-			fprintf(file, ",\n");
 			fprintf(file, "\tmxScriptsCount,\n");
 			fprintf(file, "\t(txScript*)gxScripts,\n");
 			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
@@ -755,29 +736,21 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	char name[C_PATH_MAX];
-	char path[C_PATH_MAX];
+	char buffer[C_PATH_MAX];
 	char separator;
-	txBoolean absolute = 0, relative = 0, search = 0;
 	txInteger dot = 0;
-	txSlot *key;
 	txString slash;
+	txString path;
 	txID id;
 		
 	fxToStringBuffer(the, slot, name, sizeof(name) - 4);
-	if (!c_strncmp(name, "/", 1)) {
-		absolute = 1;
-	}	
-	else if (!c_strncmp(name, "./", 2)) {
-		dot = 1;
-		relative = 1;
-	}	
-	else if (!c_strncmp(name, "../", 3)) {
-		dot = 2;
-		relative = 1;
-	}
-	else {
-		relative = 1;
-		search = 1;
+	if (name[0] == '.') {
+		if (name[1] == '/') {
+			dot = 1;
+		}
+		else if ((name[1] == '.') && (name[2] == '/')) {
+			dot = 2;
+		}
 	}
 	separator = linker->base[0];
 	fxSlashPath(name, '/', separator);
@@ -786,42 +759,29 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		slash = name;
 	slash = c_strrchr(slash, '.');
 	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs") || !c_strcmp(slash, ".xsb")))
-		c_strcpy(slash, ".xsb");
-	else
-		c_strcat(name, ".xsb");
-	if (absolute) {
-		c_strcpy(path, linker->base);
-		c_strcat(path, name + 1);
-		if (fxFindScript(the, path, &id))
-			return id;
-	}
-	if (relative && (moduleID != XS_NO_ID)) {
-		key = fxGetKey(the, moduleID);
-		c_strcpy(path, key->value.key.string);
-		slash = c_strrchr(path, separator);
+		*slash = 0;
+	if (dot) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		buffer[0] = separator;
+		path = buffer + 1;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strrchr(buffer, separator);
 		if (!slash)
 			return XS_NO_ID;
-		if (dot == 0)
-			slash++;
-		else if (dot == 2) {
+		if (dot == 2) {
 			*slash = 0;
-			slash = c_strrchr(path, separator);
+			slash = c_strrchr(buffer, separator);
 			if (!slash)
 				return XS_NO_ID;
 		}
-		if (!c_strncmp(path, linker->base, linker->baseLength)) {
-			*slash = 0;
-			c_strcat(path, name + dot);
-			if (fxFindScript(the, path, &id))
-				return id;
-		}
+		*slash = 0;
+		c_strcat(buffer, name + dot);
 	}
-	if (search) {
-		c_strcpy(path, linker->base);
-		c_strcat(path, name);
-		if (fxFindScript(the, path, &id))
-			return id;
-	}
+	else
+		path = name;
+	if (fxFindScript(the, path, &id))
+		return id;
 	return XS_NO_ID;
 }
 
@@ -829,10 +789,8 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txLinkerScript* linkerScript = linker->firstScript;
-	path += linker->baseLength;
 	while (linkerScript) {
 		if (!c_strcmp(path, linkerScript->path)) {
-			path -= linker->baseLength;
 			*id = fxNewNameC(the, path);
 			return 1;
 		}
@@ -934,11 +892,7 @@ void fxFreezeBuiltIns(txMachine* the)
 
 void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
-	txSlot* key = fxGetKey(the, moduleID);
- 	char buffer[C_PATH_MAX];
- 	txString path = buffer;
- 	c_strcpy(path, key->value.key.string);
- 	txScript* script = fxLoadScript(the, path);
+ 	txScript* script = fxLoadScript(the, fxGetKeyName(the, moduleID));
  	if (script)
 		fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
 }
@@ -947,7 +901,6 @@ txScript* fxLoadScript(txMachine* the, txString path)
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txLinkerScript* linkerScript = linker->firstScript;
-	path += linker->baseLength;
 	while (linkerScript) {
 		if (!c_strcmp(path, linkerScript->path)) {
 			txScript* script = fxNewLinkerChunk(linker, sizeof(txScript));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -373,12 +373,11 @@ class Display {		// implementation of PixelsOut
 	begin(x, y, width, height) {
 		const epd = this.#epd, area = this.#area;
 
+		if ((x | width) & 3)
+			throw new Error;
+
 		if (this.#epd._rotation & 1) { 
 			if ((y | height) & 3)
-				throw new Error;
-		}
-		else {
-			if ((x | width) & 3)
 				throw new Error;
 		}
 
@@ -451,19 +450,18 @@ class Display {		// implementation of PixelsOut
 		this.#area.continue = true;
 	}
 	adaptInvalid(area) {
+		if (area.x & 3) {
+			area.w += area.x & 3;
+			area.x &= ~3;
+		}
+		area.w = (area.w + 3) & ~3;
+
 		if (this.#epd._rotation & 1) {
 			if (area.y & 3) {
 				area.h += area.y & 3;
 				area.y &= ~3;
 			}
 			area.h = (area.h + 3) & ~3;
-		}
-		else {
-			if (area.x & 3) {
-				area.w += area.x & 3;
-				area.x &= ~3;
-			}
-			area.w = (area.w + 3) & ~3;
 		}
 	}
 	refresh() {
@@ -479,10 +477,11 @@ class Display {		// implementation of PixelsOut
 		const rotation = Math.idiv(value, 90);
 		if (rotation & ~3)
 			throw new Error;
-		this.#epd._rotation = rotation;
+		this.#epd._rotation = (rotation & 1) ? ((~rotation & 2) | 1) : rotation;
 	}
 	get rotation() {
-		return this.#epd._rotation * 90;
+		const rotation = this.#epd._rotation; 
+		return 90 * ((rotation & 1) ? ((~rotation & 2) | 1) : rotation);
 	}
 	get pixelFormat() {
 		return Bitmap.Gray16;

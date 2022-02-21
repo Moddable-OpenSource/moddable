@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
+#include "xsHosts.h"
 
 #include "mc.xs.h"			// for xsID_ values
 
@@ -54,7 +55,7 @@ struct modWorkerRecord {
 	uint32_t				keyCount;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
-#if ESP32 || qca4020
+#ifdef INC_FREERTOS_H
 	TaskHandle_t			task;
 #endif
 	char					module[1];
@@ -101,7 +102,7 @@ void xs_worker_destructor(void *data)
 		}
 		
 		if (1 == useCount) {
-#if ESP32 || qca4020
+#ifdef INC_FREERTOS_H
 			if (worker->task) {
 				vTaskDelete(worker->task);
 				worker->task = NULL;
@@ -177,31 +178,29 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 		if (target) {
 			worker->the = target->the;
+#ifdef INC_FREERTOS_H
 			worker->task = target->task;
+#endif
 			modMessagePostToMachine(worker->the, NULL, 0, (modMessageDeliver)workerDeliverConnect, worker);
 			goto done;
 		}
 	}
 
 	if (xsmcArgc > 1) {
-		if (xsmcHas(xsArg(1), xsID_allocation)) {
-			xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
-			worker->allocation = xsmcToInteger(xsVar(0));
-		}
-		if (xsmcHas(xsArg(1), xsID_stackCount)) {
-			xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
-			worker->stackCount = xsmcToInteger(xsVar(0));
-		}
-		if (xsmcHas(xsArg(1), xsID_slotCount)) {
-			xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
-			worker->slotCount = xsmcToInteger(xsVar(0));
-		}
-		if (xsmcHas(xsArg(1), xsID_keyCount)) {
-			xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
-			worker->keyCount = xsmcToInteger(xsVar(0));
-		}
+		xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
+		worker->allocation = xsmcToInteger(xsVar(0));
+
+		xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
+		worker->stackCount = xsmcToInteger(xsVar(0));
+
+		xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
+		worker->slotCount = xsmcToInteger(xsVar(0));
+
+		xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
+		worker->keyCount = xsmcToInteger(xsVar(0));
 	}
 
+#ifdef INC_FREERTOS_H
 #if ESP32
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
 		#define kStack (((5 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
@@ -209,10 +208,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 		#define kStack (((6 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#endif
 
-	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 8, &worker->task);
-
-	modMachineTaskWait(the);
 #elif qca4020
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
 		#define kStack ((9 * 1024) / sizeof(StackType_t))
@@ -220,19 +216,22 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 		#define kStack ((10 * 1024) / sizeof(StackType_t))
 	#endif
 
-	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
+#endif
 
 	modMachineTaskWait(the);
-#else
+
+#else // !INC_FREERTOS_H
 	workerStart(worker);
 #endif
 
 	if (NULL == worker->the) {
+#ifdef INC_FREERTOS_H
 		if (worker->task) {
 			vTaskDelete(worker->task);
 			worker->task = NULL;
 		}
+#endif
 		xsUnknownError("unable to instantiate worker");
 	}
 
@@ -350,7 +349,7 @@ void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *message, ui
 	xsmcSet(xsVar(1), xsID_postMessage, xsVar(3));				// port.postMessage = postMessage
 	xsCall1(xsGlobal, xsID_onconnect, xsVar(2));					// onconnect(e)
 
-	//@@ this eats any exception in onconnect... should be propagated
+	//@@ this eats any exception in onconnect... should be propagated?
 	xsEndHost(the);
 }
 
@@ -359,12 +358,12 @@ int workerStart(modWorker worker)
 	xsMachine *the;
 	int result = 0;
 
-	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->keyCount, worker->module);
+	the = modCloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->keyCount, worker->module);
 	if (!the)
 		return -1;
 
 #ifdef mxInstrument
-	espInstrumentMachineBegin(the, workerSampleInstrumentation, 0, NULL, NULL);
+	modInstrumentMachineBegin(the, workerSampleInstrumentation, 0, NULL, NULL);
 #endif
 
 	xsBeginHost(the);
@@ -419,7 +418,7 @@ void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_
 	xs_worker_destructor(worker);
 }
 
-#if ESP32 || qca4020
+#ifdef INC_FREERTOS_H
 
 void workerLoop(void *pvParameter)
 {
@@ -454,6 +453,6 @@ void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	xsMachine *the = *(xsMachine **)refcon;
 	fxSampleInstrumentation(the, 0, NULL);
-	espInstrumentMachineReset(the);
+	modInstrumentMachineReset(the);
 }
 #endif

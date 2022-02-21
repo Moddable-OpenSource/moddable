@@ -146,10 +146,62 @@ void PiuSystem_openFile(xsMachine* the)
 	PiuSystem_open(the, 0);
 }
 
+void PiuSystem_save(xsMachine* the, xsBooleanValue flag)
+{
+	HRESULT hr;
+	xsIntegerValue argc = xsToInteger(xsArgc);
+	IFileSaveDialog *pFileSave = NULL;
+	IShellItem *pItem = NULL;
+	xsStringValue string;
+	PWSTR wideString = NULL;
+	hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL, IID_IFileSaveDialog, (LPVOID *)&pFileSave);
+	if (!SUCCEEDED(hr)) goto bail;
+	if ((argc > 0) && xsTest(xsArg(0))) {
+		if (xsFindString(xsArg(0), xsID_prompt, &string)) {
+			wideString = xsStringToWideString(string);
+			hr = pFileSave->SetOkButtonLabel(wideString);
+			if (!SUCCEEDED(hr)) goto bail;
+			hr = pFileSave->SetTitle(wideString);
+			if (!SUCCEEDED(hr)) goto bail;
+			CoTaskMemFree(wideString);
+			wideString = NULL;
+		}
+		if (xsFindString(xsArg(0), xsID_name, &string)) {
+			wideString = xsStringToWideString(string);
+			hr = pFileSave->SetFileName(wideString);
+			if (!SUCCEEDED(hr)) goto bail;
+			CoTaskMemFree(wideString);
+			wideString = NULL;
+		}
+	}
+	if (flag) {
+		hr = pFileSave->SetOptions(FOS_PICKFOLDERS);
+		if (!SUCCEEDED(hr)) goto bail;
+	}
+	hr = pFileSave->Show(GetForegroundWindow());
+	if (!SUCCEEDED(hr)) goto bail;
+	hr = pFileSave->GetResult(&pItem);
+	if (!SUCCEEDED(hr)) goto bail;
+	hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &wideString);
+	if (!SUCCEEDED(hr)) goto bail;
+	xsResult = xsStringW(wideString);
+	(void)xsCallFunction1(xsArg(1), xsNull, xsResult);
+	
+bail:
+	if (wideString)
+		CoTaskMemFree(wideString);
+	if (pItem)
+		pItem->Release();
+	if (pFileSave)
+		pFileSave->Release();
+}
+
 void PiuSystem_saveDirectory(xsMachine* the)
 {
+	PiuSystem_save(the, 1);
 }
 
 void PiuSystem_saveFile(xsMachine* the)
 {
+	PiuSystem_save(the, 0);
 }

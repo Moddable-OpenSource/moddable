@@ -501,7 +501,6 @@ export class Server {
 		if (connections) {
 			this.connections.forEach(request => {
 				try {
-					trace("close http server request\n");
 					request.close();
 				}
 				catch {

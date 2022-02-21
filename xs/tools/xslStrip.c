@@ -101,6 +101,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		if (fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2))
 			fxUnstripCallback(linker, fx_BigInt);
 			
+		if (fxIsCodeUsed(XS_CODE_REGEXP))
+			fxUnstripCallback(linker, fx_RegExp);
 	}
 	linkerStrip = linker->firstStrip;
 	while (linkerStrip) {
@@ -377,6 +379,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		else {
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_dotAll);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_hasIndices);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_ignoreCase);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_multiline);

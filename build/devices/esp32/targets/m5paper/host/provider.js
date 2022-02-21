@@ -203,9 +203,13 @@ const device = {
 					this.#analog?.close();
 				}
 				read() {
-					let value = this.#analog.read() * 3300;
-					value *= 25.1 / 5.1 / 1000;
-					return value / (1 << this.#analog.resolution);
+					let value = 0;
+					for (let i = 0; i < 100; i++) {
+						let voltage = (this.#analog.read() / (1 << this.#analog.resolution) / 0.5) * 3300;
+						value += Math.max(3300, Math.min(4300, voltage));
+					}
+					value /= 100;
+					return ((value - 3300) / (4300 - 3300));
 				}
 			}
 		}

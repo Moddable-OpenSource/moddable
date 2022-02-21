@@ -113,7 +113,9 @@ void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInt
 	if (c_strncmp(script->path, base, baseLength))
 		fxReportLinkerError(linker, "'%s': not relative to '%s'", script->path, base);
 	script->path = fxBasePrefix(linker, script->path + baseLength);
-	script->pathSize = mxStringLength(script->path) + 1;
+	script->pathSize = mxStringLength(script->path) - 4;
+	script->path[script->pathSize] = 0;
+	script->pathSize++;
 	script->scriptIndex = linker->scriptCount;
 	linker->scriptCount++;
 }
@@ -386,6 +388,9 @@ txLinkerPreload* fxNewLinkerPreload(txLinker* linker, txString name)
 	txLinkerPreload* result = fxNewLinkerChunkClear(linker, sizeof(txLinkerPreload));
 	result->name = fxNewLinkerString(linker, name, mxStringLength(name));
 	result->name = fxBasePrefix(linker, result->name);
+	name = c_strrchr(result->name, '.');
+	if (name && (!c_strcmp(name, ".js") || !c_strcmp(name, ".mjs") || !c_strcmp(name, ".xsb")))
+		*name = 0;
 	return result;
 }
 

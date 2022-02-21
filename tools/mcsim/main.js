@@ -58,7 +58,7 @@ const compartmentOptions = {
 		return specifier;
 	},
 	loadNowHook(specifier) {
-		return new StaticModuleRecord({ source:system.readFileString(specifier) });
+		return { source:system.readFileString(specifier), meta:{ uri:specifier } };
 	},
 }
 
@@ -130,7 +130,7 @@ class ApplicationBehavior extends Behavior {
 		
 		this.keys = {};
 		this.controlsCurrent = 320;
-		this.controlsStatus = false;
+		this.controlsStatus = true;
 		this.infoStatus = true;
 		
 		let path = system.applicationPath;
@@ -383,6 +383,12 @@ class ApplicationBehavior extends Behavior {
 	canReloadSimulators() {
 		return true;
 	}
+	canSaveScreen() {
+		return this.SCREEN && this.SCREEN.running;
+	}
+	canSaveSequence() {
+		return this.SCREEN && this.SCREEN.running;
+	}
 	doCloseApp() {
 		this.libraryPath = "";
 		this.quitScreen();
@@ -430,6 +436,23 @@ class ApplicationBehavior extends Behavior {
 		this.quitScreen();
 		this.reloadDevices(application);
 		this.launchScreen();
+	}
+	doSaveScreen() {
+		system.saveFile({ prompt:"Save Screen", name:"screen.png" }, path => { if (path) application.defer("doSaveScreenCallback", new String(path)); });
+	}
+	doSaveScreenCallback(application, path) {
+		try  {
+			this.SCREEN.writePNG(path);
+		}
+		catch (e){
+			system.alert({ 
+				type:"stop",
+				prompt:"mcsim",
+				info:`Error saving ${path}: ${e}`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+		}
 	}
 /* VIEW MENU */
 	canToggleControls(target, item) {
@@ -496,10 +519,6 @@ class ApplicationBehavior extends Behavior {
 					this.deviceIndex = preferences.deviceIndex;
 				if ("deviceRotation" in preferences)
 					this.deviceRotation = preferences.deviceRotation;
-				if (("libraryPath" in preferences) && system.fileExists(preferences.libraryPath))
-					this.libraryPath = preferences.libraryPath;
-				if (("archivePath" in preferences) && system.fileExists(preferences.archivePath))
-					this.archivePath = preferences.archivePath;
 			}
 		}
 		catch(e) {
@@ -517,8 +536,6 @@ class ApplicationBehavior extends Behavior {
 				devicesPath: this.devicesPath,
 				deviceIndex: this.deviceIndex,
 				deviceRotation: this.deviceRotation,
-				libraryPath: this.libraryPath,
-				archivePath: this.archivePath,
 			};
 			let string = JSON.stringify(preferences, null, "\t");
 			system.writePreferenceString("main", string);
@@ -727,6 +744,8 @@ let mcsimApplication = Application.template($ => ({
 				{ title:"Locate Simulators...", key:"L", command:"LocateSimulators" },
 				{ title:"Reload Simulators", shift:true, key:"R", command:"ReloadSimulators" },
 				null,
+// 				{ title:"Save Screen...", key:"S", command:"SaveScreen" },
+// 				null,
 				{ title:"Quit", key:"Q", command:"Quit" },
 			],
 		},

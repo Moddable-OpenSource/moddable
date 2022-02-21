@@ -719,6 +719,8 @@ void xs_listener(xsMachine *the)
 
 	xsl->cfRunLoopSource = CFSocketCreateRunLoopSource(kCFAllocatorDefault, xsl->cfSkt, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), xsl->cfRunLoopSource, kCFRunLoopCommonModes);
+	
+	modInstrumentationAdjust(NetworkSockets, 1);
 }
 
 void xs_listener_destructor(void *data)
@@ -734,6 +736,8 @@ void xs_listener_destructor(void *data)
 			CFRelease(xsl->cfSkt);
 		}
 		c_free(xsl);
+
+		modInstrumentationAdjust(NetworkSockets, -1);
 	}
 }
 

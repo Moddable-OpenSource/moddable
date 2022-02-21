@@ -167,7 +167,7 @@ typedef struct {
     txInteger hi;
 } txSortPartition;
 #define mxSortThreshold 4
-#define mxSortStackSize 8 * sizeof(txUnsigned)
+#define mxSortPartitionCount 8
 
 #define mxTypeArrayCount 11
 
@@ -438,7 +438,6 @@ struct sxMachine {
 
 	txBoolean shared;
 	txMachine* sharedMachine;
-	txSlot* sharedModules;
 
 	txBoolean collectFlag;
 	void* dtoa;
@@ -530,8 +529,6 @@ struct sxPreparation {
 	txSize symbolModulo;
 	txSlot** symbols;
 
-	txSize baseLength;
-	txString base;
 	txSize scriptCount;
 	txScript* scripts;
 	
@@ -1241,7 +1238,9 @@ extern txNumber fxDateNow();
 extern const txBehavior gxStringBehavior;
 
 mxExport void fx_String(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_String_fromArrayBuffer(txMachine* the);
+#endif
 mxExport void fx_String_fromCharCode(txMachine* the);
 mxExport void fx_String_fromCodePoint(txMachine* the);
 mxExport void fx_String_raw(txMachine* the);
@@ -1291,6 +1290,7 @@ mxExport void fx_RegExp(txMachine* the);
 mxExport void fx_RegExp_prototype_get_dotAll(txMachine* the);
 mxExport void fx_RegExp_prototype_get_flags(txMachine* the);
 mxExport void fx_RegExp_prototype_get_global(txMachine* the);
+mxExport void fx_RegExp_prototype_get_hasIndices(txMachine* the);
 mxExport void fx_RegExp_prototype_get_ignoreCase(txMachine* the);
 mxExport void fx_RegExp_prototype_get_multiline(txMachine* the);
 mxExport void fx_RegExp_prototype_get_source(txMachine* the);
@@ -1311,6 +1311,7 @@ mxExport void fxInitializeRegExp(txMachine* the);
 extern void fxBuildRegExp(txMachine* the);
 extern txBoolean fxIsRegExp(txMachine* the, txSlot* slot);
 extern txSlot* fxNewRegExpInstance(txMachine* the);
+extern void fx_String_prototype_toCase(txMachine* the, txBoolean flag);
 
 /* xsArguments.c */
 extern const txBehavior gxArgumentsSloppyBehavior;
@@ -1428,7 +1429,9 @@ mxExport void* fxToArrayBuffer(txMachine* the, txSlot* slot);
 
 mxExport void fx_ArrayBuffer(txMachine* the);
 mxExport void fx_ArrayBuffer_fromBigInt(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_ArrayBuffer_fromString(txMachine* the);
+#endif
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the);
@@ -1784,6 +1787,7 @@ mxExport void fx_Compartment_prototype_importNow(txMachine* the);
 mxExport void fx_Compartment_prototype_module(txMachine* the);
 
 mxExport void fx_StaticModuleRecord(txMachine* the);
+mxExport void fx_StaticModuleRecord_initialize(txMachine* the);
 mxExport void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the);
 
 /* xsProfile.c */
@@ -1875,6 +1879,7 @@ enum {
 	XS_EACH_SYMBOL_FLAG = 2,
 	
 	/* mxBehaviorDefineOwnProperty flags */
+	/* XS_NAME_FLAG = 1, */
 	/* XS_DONT_DELETE_FLAG = 2, */
 	/* XS_DONT_ENUM_FLAG = 4, */
 	/* XS_DONT_SET_FLAG = 8, */
@@ -2248,6 +2253,12 @@ enum {
 	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
 	the->stack->value.string = (THE_STRING))
 #endif
+
+#define mxPushSymbol(THE_SYMBOL) \
+	(mxOverflow(-1), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_SYMBOL_KIND), \
+	the->stack->value.symbol = (THE_SYMBOL))
 #define mxPushUndefined() \
 	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
@@ -2310,6 +2321,7 @@ enum {
 #define mxModuleMapHook(REALM)			((REALM)->next->next->next->next->next->next->next)
 #define mxLoadHook(REALM)				((REALM)->next->next->next->next->next->next->next->next)
 #define mxLoadNowHook(REALM)			((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxRealmParent(REALM)			((REALM)->next->next->next->next->next->next->next->next->next->next)
 
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)
 #define mxModuleInstanceExports(MODULE)		((MODULE)->next->next)

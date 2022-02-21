@@ -39,14 +39,74 @@ globalThis.$DO = function(f) {
 }
 
 class Screen extends ChecksumOut {
+	#timer;
+	#promises = [];
+
 	clear() {}
-	start(interval) {}
-	stop() {}
+	start(interval) {
+		if (!this.#timer) {
+			this.#timer = Timer.set(() => {
+				this.doIdle();
+			}, 1, 100);
+			Timer.schedule(this.#timer);
+		}
+
+		const timer = this.#timer;
+		if (!timer) return;
+
+		if (interval <= 5)
+			interval = 5;
+		if (timer.interval === interval)
+			return;
+
+		Timer.schedule(timer, interval, interval);
+		timer.interval = interval;
+	}
+	stop() {
+		const timer = this.#timer;
+		if (!timer) return;
+
+		Timer.schedule(timer);
+		delete timer.interval;
+	}
 	animateColors(clut) {}
 	checkImage(checksum, message) {
 		delete this.checksum;
-		this.context.onIdle();
+		this.doIdle();
 		assert.sameValue(checksum, this.checksum, message ?? "image mismatch");
+	}
+	doIdle() {
+		this.context.onIdle();
+		const promises = this.#promises;
+		this.#promises = [];
+		for (let i = 0; i < promises.length; i++)
+			promises[i]();
+	}
+	doTouchBegan(id, x, y, ticks) {
+		return new Promise((resolve, reject) => {
+			Timer.set(() => {
+				this.context.onTouchBegan(id, x, y, ticks);
+				this.#promises.push(resolve);
+				this.doIdle();
+			});
+		});
+	}
+	doTouchMoved(id, x, y, ticks) {
+		return new Promise((resolve, reject) => {
+			Timer.set(() => {
+				this.context.onTouchMoved(id, x, y, ticks);
+				this.#promises.push(resolve);
+			});
+		});
+	}
+	doTouchEnded(id, x, y, ticks) {
+		return new Promise((resolve, reject) => {
+			Timer.set(() => {
+				this.context.onTouchEnded(id, x, y, ticks);
+				this.#promises.push(resolve);
+				this.doIdle();
+			});
+		});
 	}
 }
 
@@ -108,7 +168,11 @@ globalThis.$NETWORK = {
 			});
 		});
 	},
-	invalidDomain: "fail.moddable.com"
+	async wifi(options) {
+		// could be async to allow time to bring up an AP 
+		return {ssid: config.ssid, password: config.password};
+	},
+	invalidDomain: "fail.moddable.com",
 };
 
 class HostObject @ "xs_hostobject_destructor" {
@@ -123,6 +187,20 @@ class HostBuffer @ "xs_hostbuffer_destructor" {
 	constructor() @ "xs_hostbuffer"
 }
 
+class TestBehavior extends Behavior {
+	constructor() {
+		super();
+
+		for (const name of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+			if (!name.startsWith("on")) continue;
+			const value = this[name];
+			Object.defineProperty(this, name, {
+				value: (content, ...args) => {try {return value.call(this, content, ...args);} catch (e) {$DONE(e)}}
+			});
+		}
+	}
+}
+
 globalThis.$TESTMC = {
 	timeout(ms, message = "timeout") {
 		Timer.set(function() {
@@ -132,9 +210,14 @@ globalThis.$TESTMC = {
 	HostObject,
 	HostObjectChunk,
 	HostBuffer,
-	config
-}; 
-Object.freeze(globalThis.$TESTMC, true);
+	config,
+	wifiInvalidConnectionTimeout: 20_000,
+	wifiConnectionTimeout: 10_000,
+	wifiScanTimeout: 10_000,
+	Behavior: TestBehavior
+};
+
+Object.freeze([globalThis.$TESTMC, globalThis.$NETWORK], true);
 
 export default function() {
 	$MAIN();

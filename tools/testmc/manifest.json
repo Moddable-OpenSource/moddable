@@ -31,6 +31,8 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODULES)/base/modules/manifest.json",
+		"$(MODULES)/data/text/decoder/manifest.json",
+		"$(MODULES)/data/text/encoder/manifest.json",
 		"$(MODULES)/files/preference/manifest.json",
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
@@ -51,6 +53,7 @@
 		],
 		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
 		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
+		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
 		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
 		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
 		"commodetto/checksumOut": "./commodettoChecksumOut"
@@ -64,14 +67,14 @@
 		"http"
 	],
 	"strip": [],
-	"defines": {
-		"XS_TEST": 1
-	},
 	"platforms": {
 		"esp": {
 			"error": "testmc is unsupported on esp8266"
 		},
 		"esp32": {
+			"defines": {
+				"XS_TEST": 1
+			},
 			"include": [
 				"$(MODULES)/base/worker/manifest.json",
 				"$(MODULES)/files/flash/manifest.json"
@@ -84,7 +87,16 @@
 			},
 			"config": {
 				"digital": [12, 13, 16, 17, 26, 27],
-				"flashParition": "xs"
+				"flashParition": "xs",
+				"i2c": {
+					"hz": 100000,
+					"address": 53,
+					"unusedAddress": 99
+				},
+			 	"invalidPins": [
+					-10,
+					500
+				]
 			}
 		},
 		"lin": {
@@ -132,6 +144,21 @@
 		"*": [
 			"$(MODDABLE)/examples/assets/images/image-info",
 			"$(MODULES)/crypt/data/ca222"
+		]
+	},
+	"resources": {
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-16",
+            "./assets/circleish"
+		],
+		"*" : [
+			"./assets/color-dots-20"
+		],
+		"*-image": [
+			"$(MODDABLE)/examples/assets/images/robby"
+		],
+		"*-image(40)": [
+			"$(MODDABLE)/examples/assets/images/screen2"
 		]
 	}
 }

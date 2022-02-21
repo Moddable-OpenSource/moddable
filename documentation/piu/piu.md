@@ -1,7 +1,7 @@
 # Piu JavaScript Reference
 
-Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: July 2, 2021
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: January 24, 2022
 
 ## About This Document
 
@@ -37,6 +37,7 @@ Piu is a user interface framework designed to run on microcontrollers. The progr
  	 * [Port Object](#port-object)
  	 * [Row Object](#row-object)
  	 * [Scroller Object](#scroller-object)
+ 	 * [Shape Object](../commodetto/outline/Outlines.md)
  	 * [Skin Object](#skin-object)
  	 * [Sound Object](#sound-object)
  	 * [Style Object](#style-object)
@@ -111,6 +112,7 @@ let unconstrainedContent = new Content(null, {
 
 #### Measure and Fit
 
+<a id="measured-size"></a>
 ##### Measured size
 
 All contents have a *measured width* and *measured height*, which are the default width and height computed by the content itself. For example, the measured width of the following content object will be 100.
@@ -140,6 +142,7 @@ sampleContent.coordinates = {
 };
 ```
 
+<a id="fitted-size"></a>
 ##### Fitted size
 
 All contents also have a *fitted width* and *fitted height*, which are the effective width and height of the content computed by its container.
@@ -424,22 +427,22 @@ All `content` objects have a `coordinates` property. The coordinates property is
 When a content's container is an `application`, `container`, `scroller`, or `layout` object:
 
 - `top`, `bottom`, `left`, and `right` coordinates are all relative to their container
-- If `width`, `left`, and `right` coordinates are all specified, the width will be overruled
+- If `width`, `left`, and `right` coordinates are all specified, the `left` and `right` coordinates will be overruled
 - If `left` and `right` are both unspecified, the content will be centered horizontally in its container with the width specified (or a width of 0, if unspecified)
-- If `height`, `top`, and `bottom` coordinates are all specified, the height will be overruled
+- If `height`, `top`, and `bottom` coordinates are all specified, the `top` and `bottom` coordinates will be overruled
 - If `top` and `bottom` are both unspecified, the content will be centered vertically in its container with the height specified (or a height of 0, if unspecified)
 
 When a content's container is a `column` object:
 
 -  `top` and `bottom` coordinates are relative to their `previous` and `next` properties
 - `left` and `right` coordinates are relative to their container
-- If `width`, `left`, and `right` coordinates are all specified, the width will be overruled
+- If `width`, `left`, and `right` coordinates are all specified, the `left` and `right` coordinates will be overruled
 
 When a content's container is a `row` object:
 
 - `left` and `right` coordinates are relative to their `previous` and `next` properties
 - `top` and `bottom`  coordinates are relative to their container
-- If `height`, `top`, and `bottom` coordinates are all specified, the height will be overruled
+- If `height`, `top`, and `bottom` coordinates are all specified, the `top` and `bottom` coordinates will be overruled
 
 ### Duration, Fraction, Interval, Loop, and Time
 
@@ -1707,22 +1710,34 @@ let sampleContent = new Content(null, {
  
 **`measure()`**
 
-Returns the measured size of this content, as an object with `width` and `height` parameters.
+Returns the [measured size](#measured-size) of this content, as an object with `width` and `height` parameters.
 
-> Note that this function should only be used after a content has been measured and fitted (that is, after it triggers `onDisplaying`); otherwise it will always return `undefined`.
+Example 1:
 
 ```javascript
 let sampleContent = new Content(null, { 
-    active: true, top: 0, left: 0, height: 100, width: 100, 
-    skin: new Skin({fill: "blue"}),
-    Behavior: class extends Behavior {
-        onDisplaying(content) {
-            let size = content.measure(); 	// {height: 100, width: 100}
-            let height = size.height;		// 100
-        }
-    }
+    top: 0, left: 0, height: 100, width: 100, 
+    skin: new Skin({fill: "blue"})
 });
 application.add(sampleContent);
+
+let measuredSize = sampleContent.measure(); 	// {height: 100, width: 100}
+let fittedHeight = sampleContent.height;		// 100
+let fittedWidth = sampleContent.width;			// 100
+```
+
+Example 2:
+
+```javascript
+let sampleContent = new Content(null, { 
+    top: 0, bottom: 0, left: 0, right: 0,
+    skin: new Skin({fill: "blue"})
+});
+application.add(sampleContent);
+
+let measuredSize = sampleContent.measure(); 	// {height: 0, width: 0}
+let fittedHeight = sampleContent.height;		// 320 (assuming running on 240x320 screen)
+let fittedWidth = sampleContent.width;			// 240 (assuming running on 240x320 screen)
 ```
 
 ***
@@ -2593,7 +2608,7 @@ Same as for `container` object (see [Events](#container-events) in the section [
 | `layout` | `object` | The `layout` object that triggered the event
 | `width` | `number` | The fitted width of the `layout` object, in pixels
 
-This event is triggered when the fitted width of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents. Returns the fitted width of the `layout` object, in pixels. 
+This event is triggered when the [fitted width](#fitted-size) of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents. Returns the fitted width of the `layout` object, in pixels. 
 
 ***
 
@@ -2604,7 +2619,7 @@ This event is triggered when the fitted width of the `layout` object is calculat
 | `layout` | `object` | The `layout` object that triggered the event
 | `height` | `number` | The fitted height of the `layout` object, in pixels
 
-This event is triggered when the fitted height of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents.  Returns the height of the `layout` object, in pixels.
+This event is triggered when the [fitted height](#fitted-size) of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents.  Returns the height of the `layout` object, in pixels.
 
 ***
 
@@ -2615,7 +2630,7 @@ This event is triggered when the fitted height of the `layout` object is calcula
 | `layout` | `object` | The `layout` object that triggered the event
 | `width` | `number` | The measured width of the `layout` object, in pixels
 
-This event is triggered when the measured width of the `layout` object is calculated. Returns the measured width of the `layout` object, in pixels.
+This event is triggered when the [measured width](#measured-size) of the `layout` object is calculated. Returns the measured width of the `layout` object, in pixels.
 
 ***
 
@@ -2626,7 +2641,7 @@ This event is triggered when the measured width of the `layout` object is calcul
 | `layout` | `object` | The `layout` object that triggered the event
 | `height` | `number` | The measured height of the `layout` object, in pixels
 
-This event is triggered when the measured height of the `layout` object is calculated. Returns the measured height of the `layout` object, in pixels.
+This event is triggered when the [measured height](#measured-size) of the `layout` object is calculated. Returns the measured height of the `layout` object, in pixels.
 
 ***
 
@@ -2930,13 +2945,13 @@ application.add(samplePort);
 
 ***
 
-**`fillTexture(texture, color, x, y, width, height [, sx, sy, sw, sh])`**
+**`fillTexture(texture, color, x, y, width, height, sx, sy, sw, sh)`**
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
 | `texture ` | `texture` | The filling image
 | `x, y, width, height` | `number` | The destination area--the local position and size of the area to copy pixels to, in pixels
-| `sx, sy, sw, sh` | `number` | The source area--the position and size of the area to copy pixels from, in pixels. The default is the entire image.
+| `sx, sy, sw, sh` | `number` | The source area--the position and size of the area to copy pixels from, in pixels.
 
 Fills the area with the image. The source area of the image is repeated to cover the destination area.
 

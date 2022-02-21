@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -807,8 +807,8 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		esp_ble_gatts_send_response(gBLE->gatts_if, write->conn_id, write->trans_id, ESP_GATT_OK, NULL);
 	}
 	xsmcVars(6);
-	if (cccd) {
-		uint16_t descr_value = write->value[1]<<8 | write->value[0];
+	if (cccd && write->len == 2) {
+		uint16_t descr_value = value[1]<<8 | value[0];
 		if (descr_value < 0x0003) {
 			att = handleToAtt(write->handle - 1);
 			att_desc = &att->att_desc;
@@ -818,6 +818,9 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		else {
 			xsUnknownError("invalid cccd value");
 		}
+	} 
+	else {
+		xsUnknownError("invalid cccd value length");
 	}
 	c_memmove(uuid.uuid.uuid128, att_desc->uuid_p, att_desc->uuid_length);
 	uuid.len = att_desc->uuid_length;

@@ -357,12 +357,12 @@ void xs_ILI9341_set_clut(xsMachine *the)
 {
 #if kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 	spiDisplay sd = xsmcGetHostData(xsThis);
-	void data;
+	void *data;
 	xsUnsignedValue dataSize;
 
-	xsmcGetHostBuffer(xsArg(0), &data, &dataSize);
+	xsmcGetBufferReadable(xsArg(0), &data, &dataSize);
 	if (dataSize > sizeof(sd->clut))
-		xsUnknownError("invalild");
+		xsUnknownError("invalid");
 
 	c_memmove(sd->clut, data, dataSize);
 	sd->haveCLUT = 1;

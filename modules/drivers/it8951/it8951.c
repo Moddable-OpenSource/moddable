@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -28,10 +28,6 @@ void xs_applyFilter(xsMachine *the)
 	xsUnsignedValue filterLen, srcLen, dstLen;
 	int srcOffset = xsmcToInteger(xsArg(2)), dstOffset = xsmcToInteger(xsArg(5)), byteLength = xsmcToInteger(xsArg(3));
 
-	if (xsUndefinedType != xsmcTypeOf(xsArg(0)))
-		xsmcGetBufferReadable(xsArg(0), (void **)&filter, &filterLen);
-	else
-		filter = NULL;
 	xsmcGetBufferReadable(xsArg(1), (void **)&src, &srcLen);
 	xsmcGetBufferWritable(xsArg(4), (void **)&dst, &dstLen);
 
@@ -41,7 +37,8 @@ void xs_applyFilter(xsMachine *the)
 	
 	src += srcOffset;
 	dst += dstOffset;
-	if (filter) {
+	if (xsUndefinedType != xsmcTypeOf(xsArg(0))) {
+		xsmcGetBufferReadable(xsArg(0), (void **)&filter, &filterLen);
 		while (byteLength--) {
 			uint8_t pixels = *src++;
 			*dst++ = (filter[pixels >> 4] << 4) | filter[pixels & 0x0F];

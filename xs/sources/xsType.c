@@ -299,7 +299,7 @@ void fxToSpeciesConstructor(txMachine* the, txSlot* constructor)
 
 void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arguments)
 {
-	txInteger c, i;
+    txIndex c, i;
 	/* THIS */
 	mxPushSlot(_this);
 	/* FUNCTION */
@@ -315,7 +315,7 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
 	mxGetID(mxID(_length));
-	c = fxToInteger(the, the->stack);
+    c = (txIndex)fxToLength(the, the->stack);
 	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
@@ -327,7 +327,7 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 
 void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlot* target)
 {
-	txInteger c, i;
+    txIndex c, i;
 	/* THIS */
 	mxPushUninitialized();
 	/* FUNCTION */
@@ -343,7 +343,7 @@ void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, tx
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
 	mxGetID(mxID(_length));
-	c = fxToInteger(the, the->stack);
+    c = (txIndex)fxToLength(the, the->stack);
 	mxPop();
 	for (i = 0; i < c; i++) {
 		mxPushSlot(arguments);
@@ -431,7 +431,8 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 					txSlot* home = mxFunctionInstanceHome(getter);
 					home->value.home.object = instance;
 				}
-				fxRenameFunction(the, getter, id, index, mxID(_get), "get ");
+				if ((mask & XS_NAME_FLAG) && ((getter->flag & XS_MARK_FLAG) == 0))
+					fxRenameFunction(the, getter, id, index, mxID(_get), "get ");
 			}
 		}
 		if (setter) {
@@ -440,7 +441,8 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 					txSlot* home = mxFunctionInstanceHome(setter);
 					home->value.home.object = instance;
 				}
-				fxRenameFunction(the, setter, id, index, mxID(_set), "set ");
+				if ((mask & XS_NAME_FLAG) && ((setter->flag & XS_MARK_FLAG) == 0))
+					fxRenameFunction(the, setter, id, index, mxID(_set), "set ");
 			}
 		}
 	}
@@ -462,7 +464,8 @@ txBoolean fxOrdinaryDefineOwnProperty(txMachine* the, txSlot* instance, txID id,
 						txSlot* home = mxFunctionInstanceHome(function);
 						home->value.home.object = instance;
 					}
-					fxRenameFunction(the, function, id, index, mxID(_value), C_NULL);
+					if ((mask & XS_NAME_FLAG) && ((function->flag & XS_MARK_FLAG) == 0))
+						fxRenameFunction(the, function, id, index, mxID(_value), C_NULL);
 				}
 			}
 		}
@@ -1405,9 +1408,11 @@ void fxRunProgramEnvironment(txMachine* the)
 
 txSlot* fxNewRealmInstance(txMachine* the)
 {
-	txSlot* global = the->stack + 6;
-	txSlot* moduleMap = the->stack + 5;
-	txSlot* own = the->stack + 4;
+	txSlot* parent = the->stack + 8;
+	txSlot* global = the->stack + 7;
+	txSlot* moduleMap = the->stack + 6;
+	txSlot* own = the->stack + 5;
+	txSlot* closures = the->stack + 4;
 	txSlot* resolveHook = the->stack + 3;
 	txSlot* moduleMapHook = the->stack + 2;
 	txSlot* loadHook = the->stack + 1;
@@ -1417,9 +1422,7 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	/* mxRealmGlobal */
 	slot = fxNextSlotProperty(the, realm, global, XS_NO_ID, XS_GET_ONLY);
 	/* mxRealmClosures */
-	mxPushUndefined();
-	slot = fxNextReferenceProperty(the, slot, fxNewEnvironmentInstance(the, C_NULL), XS_NO_ID, XS_GET_ONLY);
-	mxPop();
+	slot = fxNextSlotProperty(the, slot, closures, XS_NO_ID, XS_GET_ONLY);
 	/* mxRealmTemplateCache */
 	slot = fxNextReferenceProperty(the, slot, fxNewInstance(the), XS_NO_ID, XS_GET_ONLY);
 	mxPop();
@@ -1435,8 +1438,10 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	slot = fxNextSlotProperty(the, slot, loadHook, XS_NO_ID, XS_GET_ONLY);
 	/* mxLoadNowHook */
 	slot = fxNextSlotProperty(the, slot, loadNowHook, XS_NO_ID, XS_GET_ONLY);
-	global->value.reference = realm;
-    the->stack = global;
+	/* mxRealmParent */
+	slot = fxNextSlotProperty(the, slot, parent, XS_NO_ID, XS_GET_ONLY);
+    parent->value.reference = realm;
+    the->stack = parent;
 	return realm;
 }
 

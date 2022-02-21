@@ -28,7 +28,7 @@
 */
 
 import Bitmap from "commodetto/Bitmap";
-import PixelsOut from "PixelsOut";
+import PixelsOut from "commodetto/PixelsOut";
 import File from "file";
 
 export default class BMPOut extends PixelsOut {

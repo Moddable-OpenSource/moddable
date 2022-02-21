@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Shinya Ishikawa
+ * Copyright (c) 2020-21 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -162,7 +162,7 @@ declare module "piu/MC" {
     name?: string;
     anchor?: string;
     Behavior?: BehaviorConstructor;
-    skin?: Skin;
+    skin?: Skin | SkinDictionary;
     Skin?: SkinConstructor;
     style?: Style;
     Style?: StyleConstructor;
@@ -442,6 +442,7 @@ declare module "piu/MC" {
     displayListLength?: number;
     commandListLength?: number;
     touchCount?: number;
+    pixels?: number;
   }
   interface ApplicationConstructor {
     new(behaviorData: any, dictionary: ApplicationDictionary): Application;
@@ -513,36 +514,13 @@ declare module "piu/MC" {
     new(behaviorData: any, dictionary: ScrollerDictionary): Scroller;
   }
 
-  interface Timeline {
-    duration: number;
-    fraction: number;
-    time: number;
-    from(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: string,
-      delay?: number
-    ): Timeline;
-    on(
-      target: object,
-      onProperties: object,
-      duration: number,
-      easing?: number,
-      delay?: number
-    ): Timeline;
-    seekTo(time: number): void;
-    to(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: string,
-      delay?: number
-    ): Timeline;
+  interface rgb {
+    (r: number, g: number, b: number): Color
   }
-  interface TimelineConstructor {
-    new(): Timeline
+  interface rgba {
+    (r: number, g: number, b: number, a: number): Color
   }
+
 
   global {
     const Skin: SkinConstructor
@@ -561,7 +539,8 @@ declare module "piu/MC" {
     const Label: LabelConstructor
     const Transition: TransitionConstructor
     const Text: TextConstructor
-    const Timeline: TimelineConstructor
+    const rgb: rgb
+    const rgba: rgba
   }
  }
 

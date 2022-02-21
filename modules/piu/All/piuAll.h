@@ -407,6 +407,8 @@ enum {
 	/* Window */
 	piuAdjusting = 1 << 24,
 	piuMenusChanged = 1 << 25,
+	
+	piuOrderChanged = 1 << 28,
 };
 
 

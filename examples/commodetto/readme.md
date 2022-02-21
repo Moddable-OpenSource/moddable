@@ -63,7 +63,17 @@ The `docs` example includes all of the examples in the [Poco documentation](../.
 
 The `epaper-mini-travel-time` is a miniature version of the `piu/epaper-travel-time` example designed for Moddable Three.
 
-> See the [blog post](https://blog.moddable.com/blog/epaper) Getting the Most from ePaper Displays for more information about this example.
+> See the [blog post](https://blog.moddable.com/blog/epaper) "Getting the Most from ePaper Displays" for more information about this example.
+
+***
+
+### `fonts`
+
+<img src="https://www.moddable.com/assets/commodetto-gifs/fonts.gif" width=180>
+
+The `fonts` example displays messages in English and Japanese using eight different fonts. It demonstrates how to use scalable TrueType and OpenType fonts in projects.
+
+> See the [blog post](https://blog.moddable.com/blog/fonts/) "Using More Fonts More Easily in IoT Products" for more information about this example.
 
 ***
 
@@ -71,7 +81,7 @@ The `epaper-mini-travel-time` is a miniature version of the `piu/epaper-travel-t
 
 ![](https://www.moddable.com/assets/commodetto-gifs/gif.gif)
 
-The `gif` example shows an animated flag. It demonstrates how to render an animated GIF.
+The `gif` example shows an animated flag. It demonstrates how to render an animated GIF directly.
 
 ***
 
@@ -79,7 +89,7 @@ The `gif` example shows an animated flag. It demonstrates how to render an anima
 
 ![](https://www.moddable.com/assets/commodetto-gifs/image-frames.gif)
 
-The `image-frames` example shows an animated flag. It demonstrates how to render an animated GIF.
+The `image-frames` example shows an animated flag. It demonstrates how to render an animated GIF converted to a lightweight color cell encoded stream.
 
 ***
 
@@ -102,6 +112,30 @@ The `mini-drag` example is great for testing touch on displays. You can move the
 ![](https://www.moddable.com/assets/commodetto-gifs/origin.png)
 
 The `origin` example demonstrates the use of the Poco drawing origin stack.
+
+***
+
+### `outline/oscilloscope`
+
+<img src="https://www.moddable.com/assets/commodetto-gifs/outline-oscilloscope.png" width=200>
+
+The `outline/oscilloscope ` example demonstrates using both stroked and filled polygons to render a simple oscilloscope.
+
+***
+
+### `outline/random-ellipses`
+
+<img src="https://www.moddable.com/assets/commodetto-gifs/outline-random-ellipses.png" width=200>
+
+The `outline/random-ellipses ` example demonstrates using both stroked and filled polygons to render a simple oscilloscope.
+
+***
+
+### `outline/random-triangles`
+
+<img src="https://www.moddable.com/assets/commodetto-gifs/outline-random-triangles.png" width=200>
+
+The `outline/random-triangles` example demonstrates using both stroked and filled polygons to render a simple oscilloscope.
 
 ***
 

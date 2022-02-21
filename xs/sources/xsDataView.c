@@ -210,7 +210,9 @@ void fxBuildDataView(txMachine* the)
 	mxArrayBufferConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_fromBigInt), 1, mxID(_fromBigInt), XS_DONT_ENUM_FLAG);
+#ifndef mxCESU8
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_fromString), 1, mxID(_fromString), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_isView), 1, mxID(_isView), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	mxPop();
@@ -474,6 +476,7 @@ void fx_ArrayBuffer_fromBigInt(txMachine* the)
 	}
 }
 
+#ifndef mxCESU8
 void fx_ArrayBuffer_fromString(txMachine* the)
 {
 	txSize length;
@@ -483,7 +486,7 @@ void fx_ArrayBuffer_fromString(txMachine* the)
 	fxConstructArrayBufferResult(the, mxThis, length);
 	c_memcpy(mxResult->value.reference->next->value.arrayBuffer.address, mxArgv(0)->value.string, length);
 }
-
+#endif
 
 void fx_ArrayBuffer_isView(txMachine* the)
 {
@@ -554,9 +557,10 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 		slot = mxArgv(i);
 		if (slot->kind == XS_REFERENCE_KIND) {
 			slot = slot->value.reference->next;
-			if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
+			if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND)) {
 				arrayBuffer = slot;
 				bufferInfo = slot->next;
+			}
 		}
 		if (arrayBuffer) 
 			length = fxAddChunkSizes(the, length, bufferInfo->value.bufferInfo.length);
@@ -777,12 +781,20 @@ void fx_DataView(txMachine* the)
 	instance = fxNewDataViewInstance(the);
 	mxPullSlot(mxResult);
 	view = instance->next;
-	view->value.dataView.offset = offset;
-	view->value.dataView.size = size;
 	buffer = view->next;
 	buffer->kind = XS_REFERENCE_KIND;
 	buffer->value.reference = mxArgv(0)->value.reference;
-	fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE);
+	info = fxGetBufferInfo(the, buffer);
+	if (info->value.bufferInfo.maxLength >= 0) {
+		if (info->value.bufferInfo.length < offset)
+			mxRangeError("out of range byteOffset %ld", offset);
+		else if (size >= 0) {
+			if (info->value.bufferInfo.length < (offset + size))
+				mxRangeError("out of range byteLength %ld", size);
+		}
+	}
+	view->value.dataView.offset = offset;
+	view->value.dataView.size = size;
 }
 
 void fx_DataView_prototype_buffer_get(txMachine* the)
@@ -2276,7 +2288,7 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 			txByte* to;
 			if (length > mxSortThreshold) {
 				txInteger lo = 0, hi = length - 1;
-				txSortPartition stack[mxSortStackSize];
+				txSortPartition stack[mxSortPartitionCount];
 				txSortPartition *top = stack + 1;
 				while (stack < top) {
 					txIndex mid = lo + ((hi - lo) >> 1);

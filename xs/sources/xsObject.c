@@ -641,33 +641,34 @@ void fx_Object_freeze(txMachine* the)
 		txSlot* slot = mxArgv(0);
 		if (slot->kind == XS_REFERENCE_KIND) {
 			txSlot* instance = slot->value.reference;
+			txBoolean deep = 0;
 			txSlot* at;
 			txSlot* property;
 			if (!mxBehaviorPreventExtensions(the, instance))
 				mxTypeError("extensible object");
+			if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
+				deep = 1;
 			at = fxNewInstance(the);
 			mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
 			mxPushUndefined();
 			property = the->stack;
 			while ((at = at->next)) {
 				if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
-					txFlag mask = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
-					if (property->kind == XS_ACCESSOR_KIND) {
-						if (property->value.accessor.getter)
-							mask |= XS_GETTER_FLAG;
-						if (property->value.accessor.setter)
-							mask |= XS_SETTER_FLAG;
-					}
-					else {
+					txFlag mask = XS_DONT_DELETE_FLAG;
+					property->flag |= XS_DONT_DELETE_FLAG;
+					if (property->kind != XS_ACCESSOR_KIND) {
 						mask |= XS_DONT_SET_FLAG;
 						property->flag |= XS_DONT_SET_FLAG;
 					}
-					property->flag |= XS_DONT_DELETE_FLAG;
-					mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask);
+					property->kind = XS_UNINITIALIZED_KIND;
+					if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask)) {
+						if (!deep)
+							mxTypeError("cannot configure property");
+					}
 				}
 			}
 			mxPop();
-			if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1))) {
+			if (deep) {
 				at = the->stack->value.reference;
 				mxPushUndefined();
 				property = the->stack;
@@ -1017,18 +1018,11 @@ void fx_Object_seal(txMachine* the)
 			property = the->stack;
 			while ((at = at->next)) {
 				if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
-					txFlag mask = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
-					if (property->kind == XS_ACCESSOR_KIND) {
-						if (property->value.accessor.getter)
-							mask |= XS_GETTER_FLAG;
-						if (property->value.accessor.setter)
-							mask |= XS_SETTER_FLAG;
-					}
-					else {
-						mask |= XS_DONT_SET_FLAG;
-					}
+					txFlag mask = XS_DONT_DELETE_FLAG;
 					property->flag |= XS_DONT_DELETE_FLAG;
-					mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask);
+					property->kind = XS_UNINITIALIZED_KIND;
+					if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask))
+						mxTypeError("cannot configure property");
 				}
 			}
 			mxPop();

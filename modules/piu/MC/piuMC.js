@@ -24,8 +24,8 @@ import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
-import {} from "All";
-export * from "All";
+import {} from "piu/All";
+export * from "piu/All";
 
 export class CLUT extends Resource {
 	constructor(path) {

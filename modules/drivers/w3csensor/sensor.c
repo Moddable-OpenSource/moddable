@@ -413,10 +413,10 @@ again:
 				xsmcSetString(xsVar(1), "activate");
 			if (kEventKindError == eventKind)
 				xsmcSetString(xsVar(1), "error");
-			xsDefine(xsVar(0), xsID_type, xsVar(1), xsDontDelete | xsDontSet);
+			xsmcDefine(xsVar(0), xsID_type, xsVar(1), xsDontDelete | xsDontSet);
 
 			xsmcSetNumber(xsVar(1), sensor->timestamp);
-			xsDefine(xsVar(0), xsID_timeStamp, xsVar(1), xsDontDelete | xsDontSet);
+			xsmcDefine(xsVar(0), xsID_timeStamp, xsVar(1), xsDontDelete | xsDontSet);
 
 			if (errorMsg) {
 				xsmcSetString(xsVar(1), (char *)errorMsg);

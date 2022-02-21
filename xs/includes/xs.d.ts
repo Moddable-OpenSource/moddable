@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Moddable Tech, Inc
+ * Copyright (c) 2020-2022 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -31,6 +31,19 @@ declare class HostBuffer {
 	private brand: boolean;
 }
 
+interface ArrayBufferTypes {
+	HostBuffer: HostBuffer;
+}
+
+interface BufferTypes extends ArrayBufferTypes  {
+	Uint8Array: Uint8Array,
+	Uint8ClampedArray: Uint8ClampedArray,
+	Int8Array: Int8Array,
+	DataView: DataView
+}
+
+type BufferLike = BufferTypes[keyof BufferTypes];
+
 interface ObjectConstructor {
 	freeze<T>(obj: T, freeze?: boolean | number): Readonly<T>;
 }
@@ -55,50 +68,6 @@ interface ArrayBuffer {
 interface BigIntConstructor {
 	bitLength(value: BigInt): number
 	fromArrayBuffer(buffer: ArrayBuffer): BigInt
-}
-
-interface Uint8ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Uint8Array
-}
-
-interface Uint8ClampedArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Uint8ClampedArrayConstructor
-}
-
-interface Uint16ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Uint16Array
-}
-
-interface Uint32ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Uint32Array
-}
-
-interface Int8ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Int8Array
-}
-
-interface Int16ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Int16Array
-}
-
-interface Int32ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Uint32Array
-}
-
-interface Float32ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Float32Array
-}
-
-interface Float64ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): Float64Array
-}
-
-interface BigInt64ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): BigInt64ArrayConstructor
-}
-
-interface BigUint64ArrayConstructor {
-	new(buffer: HostBuffer, byteOffset?: number, length?: number): BigUint64ArrayConstructor
 }
 
 // Compartment?

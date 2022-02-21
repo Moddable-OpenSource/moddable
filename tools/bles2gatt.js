@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -351,6 +351,11 @@ class NimBLEGATTFile extends ESP32GATTFile {
 		file.line("\tconst char *type;");
 		file.line("} char_name_table;");
 		file.line("");
+		file.line("typedef struct {");
+		file.line("\tconst uint8_t *value;");
+		file.line("\tsize_t length;");
+		file.line("} static_value;");
+		file.line("");
 		if (0 == services.length) {
 			file.line("#define service_count 0");
 			file.line("#define char_name_count 0");
@@ -413,6 +418,7 @@ class NimBLEGATTFile extends ESP32GATTFile {
 					file.write(buffer2hexlist(buffer));
 					file.write(" };");
 					file.line("");
+					file.line(`static static_value service${index}_chr${characteristicIndex}_value_struct = { .value = service${index}_chr${characteristicIndex}_value, .length = sizeof(service${index}_chr${characteristicIndex}_value)};`);
 				}
 				if (characteristic._descriptors) {
 					descriptorIndex = 0;
@@ -431,6 +437,14 @@ class NimBLEGATTFile extends ESP32GATTFile {
 							file.write(");");
 						}
 						file.line("");
+						if ("value" in descriptor) {
+							let buffer = typedValueToBuffer(descriptor.type, descriptor.value);
+							file.write(`static const uint8_t service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value[${buffer.byteLength}] = { `);
+							file.write(buffer2hexlist(buffer));
+							file.write(" };");
+							file.line("");
+							file.line(`static static_value service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value_struct = {.value = service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value, .length = sizeof(service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value)};`);
+						}
 						++descriptorIndex;
 					}
 				}
@@ -483,28 +497,11 @@ class NimBLEGATTFile extends ESP32GATTFile {
 			if (hasStaticCharacteristicValues) {
 				file.line("static int gatt_svr_chr_static_value_access_cb(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)");
 				file.line("{");
-				file.line("\tconst ble_uuid_t *uuid;");
-				file.line("\tint rc;");
+				file.line("\tif (arg == NULL) return BLE_ATT_ERR_UNLIKELY;");
 				file.line("");
-				file.line("\tuuid = ctxt->chr->uuid;");
-				file.line("");
-				services.forEach((service, index) => {
-					characteristicIndex = 0;
-					let attributeCount = 1;
-					let characteristics = service.characteristics;
-					for (let key in characteristics) {
-						let characteristic = characteristics[key];
-						if ("value" in characteristic) {
-							file.line(`\tif (ble_uuid_cmp(uuid, &service${index}_chr${characteristicIndex}_uuid.u) == 0) {`);
-							file.line(`\t\trc = os_mbuf_append(ctxt->om, service${index}_chr${characteristicIndex}_value, sizeof(service${index}_chr${characteristicIndex}_value));`);
-							file.line("\t\treturn rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;");
-							file.line("\t}");
-						}
-						++characteristicIndex;
-					}
-				});
-				file.line("");
-				file.line("\treturn BLE_ATT_ERR_UNLIKELY;");
+				file.line("\tstatic_value value = *(static_value*)arg;");
+				file.line(`\tint rc = os_mbuf_append(ctxt->om, value.value, value.length);`);
+				file.line("\treturn rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;");
 				file.line("}");
 				file.line("");
 			}
@@ -520,7 +517,6 @@ class NimBLEGATTFile extends ESP32GATTFile {
 		file.line(`static const struct ble_gatt_svc_def gatt_svr_svcs[] = {`);
 		services.forEach((service, index) => {
 			characteristicIndex = 0;
-			descriptorIndex = 0;
 			file.line("\t{");
 			
 			file.line(`\t\t// Service ${service.uuid}`);
@@ -530,6 +526,7 @@ class NimBLEGATTFile extends ESP32GATTFile {
 			file.line("\t\t{");
 			let characteristics = service.characteristics;
 			for (let key in characteristics) {
+				descriptorIndex = 0;
 				let characteristic = characteristics[key];
 				file.line("\t\t\t{")
 				file.line(`\t\t\t\t.uuid = &service${index}_chr${characteristicIndex}_uuid.u,`);
@@ -544,7 +541,11 @@ class NimBLEGATTFile extends ESP32GATTFile {
 				let flags = this.parseAccess(characteristic.permissions.split(","), characteristic.properties.split(","));
 				file.line(`\t\t\t\t.flags = ${flags},`);
 				if (this.server) {
-					file.line(`\t\t\t\t.arg = NULL,`);
+					if ("value" in characteristic) {
+						file.line(`\t\t\t\t.arg = &service${index}_chr${characteristicIndex}_value_struct,`);
+					} else {
+						file.line(`\t\t\t\t.arg = NULL,`);
+					}
 					file.line(`\t\t\t\t.val_handle = &service${index}_chr${characteristicIndex}_handle,`);
 				}
 				
@@ -561,10 +562,13 @@ class NimBLEGATTFile extends ESP32GATTFile {
 						file.line("\t\t\t\t\t{")
 						file.line(`\t\t\t\t\t\t.uuid = &service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_uuid.u,`);
 						if (this.server) {
-							if ("value" in descriptor)
+							if ("value" in descriptor) {
 								file.line("\t\t\t\t\t\t.access_cb = gatt_svr_chr_static_value_access_cb,");
-							else
+								file.line(`\t\t\t\t\t\t.arg = &service${index}_chr${characteristicIndex}_dsc${descriptorIndex}_value_struct,`);
+							} else {
 								file.line("\t\t\t\t\t\t.access_cb = gatt_svr_chr_dynamic_value_access_cb,");
+								file.line(`\t\t\t\t\t\t.arg = NULL,`);
+							}
 						}
 						else
 							file.line("\t\t\t\t\t\t.access_cb = NULL,");

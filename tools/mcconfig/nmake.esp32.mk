@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -20,7 +20,7 @@
 HOST_OS = win
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v4.3.1
+EXPECTED_ESP_IDF = v4.4
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -136,8 +136,11 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\freertos\port \
  	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
 	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include\freertos \
+	-I$(IDF_PATH)\components\freertos\include\esp_additions \
+	-I$(IDF_PATH)\components\freertos\include\esp_additions\freertos \
 	-I$(IDF_PATH)\components\hal\include \
 	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\hal\platform_port\include \
 	-I$(IDF_PATH)\components\heap\include \
 	-I$(IDF_PATH)\components\log\include \
 	-I$(IDF_PATH)\components\lwip\include\apps \
@@ -171,6 +174,7 @@ INC_DIRS = \
 
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
+	$(LIB_DIR)\xsHosts.o \
 	$(LIB_DIR)\xsPlatform.o \
 	$(LIB_DIR)\xsAll.o \
 	$(LIB_DIR)\xsAPI.o \
@@ -229,6 +233,7 @@ XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\esp \
+	-I$(XS_DIR)\platforms\mc \
 	-I$(SDKCONFIG_H_DIR) \
 	-I$(PLATFORM_DIR)\lib\pow
 
@@ -238,6 +243,7 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsHost.h \
+	$(XS_DIR)\platforms\mc\xsHosts.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 
 !IF "$(SDKCONFIGPATH)"==""
@@ -527,6 +533,10 @@ $(XS_OBJ): $(XS_HEADERS)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
 {$(XS_DIR)\platforms\esp\}.c{$(LIB_DIR)\}.o:
+	@echo # cc $(@F) (strings in flash)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+{$(XS_DIR)\platforms\mc\}.c{$(LIB_DIR)\}.o:
 	@echo # cc $(@F) (strings in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 

@@ -51,7 +51,8 @@
 	],
 	"resources": {
 		"assets/*": "./assets/*",
-		"fonts/*": "./fonts/*"
+		"fonts/FiraMono-*": "$(MODDABLE)/examples/assets/scalablefonts/FiraMono/FiraMono-*",
+		"fonts/OpenSans-*": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-*"
 	},
 	"platforms":{
 		"x-lin": {

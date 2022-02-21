@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 Moddable Tech, Inc.
+* Copyright (c) 2020-2022 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -24,7 +24,7 @@ declare module "flash" {
     constructor(offset: number, byteLength: number);
     erase(sector: number): void;
     read(offset: number, byteLength: number, useHostBuffer?: boolean): ArrayBuffer | HostBuffer;
-    write(offset: number, byteLength: number, buffer: ArrayBuffer): void;
+    write(offset: number, byteLength: number, buffer: BufferLike): void;
     readonly byteLength: number;
     readonly blockSize: number;
     map(): HostBuffer;

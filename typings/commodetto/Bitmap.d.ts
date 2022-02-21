@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 Moddable Tech, Inc.
+* Copyright (c) 2020-2022 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -22,7 +22,7 @@ declare module "commodetto/Bitmap" {
   type PixelFormat = number
 
   class Bitmap {
-    constructor(width: number, height: number, format: PixelFormat, buffer: (ArrayBuffer | HostBuffer), offset: number, byteLength?: number)
+    constructor(width: number, height: number, format: PixelFormat, buffer: BufferLike, offset: number, byteLength?: number)
 
     readonly pixelFormat: PixelFormat
     readonly offset: number

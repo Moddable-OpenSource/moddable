@@ -143,6 +143,8 @@ void fxBuildArray(txMachine* the)
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_fill), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_find), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findIndex), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findLast), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_findLastIndex), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flat), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flatMap), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_includes), XS_NO_FLAG);
@@ -273,7 +275,7 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 {
 	txSlot* instance = fxToInstance(the, slot);
 	txSlot* array = instance->next;
-	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
+	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
 		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
@@ -379,7 +381,7 @@ int fxCompareArrayItem(txMachine* the, txSlot* function, txSlot* array, txIntege
 			mxPushSlot(b);
 			fxToString(the, the->stack + 1);
 			fxToString(the, the->stack);
-			result = c_strcmp((the->stack + 1)->value.string, the->stack->value.string);
+			result = fxUTF8Compare((the->stack + 1)->value.string, the->stack->value.string);
 			mxPop();
 			mxPop();
 			mxMeterSome(3);
@@ -510,7 +512,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	txNumber length;
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* array = instance->next;
-	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
+	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
 		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
@@ -518,7 +520,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 		}
 		return array->value.array.length;
 	}
-	if (array && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
+	if (array && (array->kind == XS_TYPED_ARRAY_KIND) && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
 		txSlot* view = array->next;
 		txSlot* buffer = view->next;
 		txSlot* data = buffer->value.reference->next;
@@ -683,6 +685,8 @@ again:
 		txInteger length = slot->value.integer;
 		if (length < 0)
 			length = 0;
+		slot->value.number = (txNumber)length;
+		slot->kind = XS_NUMBER_KIND;
 		return (txNumber)length;
 	}
 	if (slot->kind == XS_NUMBER_KIND) {
@@ -695,6 +699,7 @@ again:
 			length = C_MAX_SAFE_INTEGER;
 		else
 			length = c_trunc(length);
+		slot->value.number = length;
 		return length;
 	}
 	fxToNumber(the, slot);
@@ -2199,7 +2204,7 @@ again:
 		txSlot* to;
 		if (length > mxSortThreshold) {
 			txIndex lo = 0, hi = length - 1;
-			txSortPartition stack[mxSortStackSize];
+			txSortPartition stack[mxSortPartitionCount];
 			txSortPartition *top = stack + 1;
 			while (stack < top) {
 				txIndex mid = lo + ((hi - lo) >> 1);
@@ -2233,6 +2238,7 @@ again:
 				do {
 					while ((COMPARE(i) < 0) && (i <= j)) { CHECK; i++; }
 					while ((COMPARE(j) > 0) && (i <= j)) { CHECK; j--; }
+					CHECK;
 					if (i < j) {
 						PUSH(i);
 						MOVE(j, i);

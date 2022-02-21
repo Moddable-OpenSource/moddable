@@ -95,5 +95,9 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 #define WM_XSBUG WM_USER + 2
 #define WM_CALLBACK WM_USER + 3
 #define WM_WORKER WM_USER + 4
+	
+#ifdef mxDebug
+	#define MODDEF_XS_TEST 1
+#endif
 
 #endif /* __WIN_XS__ */

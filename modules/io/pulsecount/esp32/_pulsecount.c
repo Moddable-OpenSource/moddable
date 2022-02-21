@@ -25,6 +25,7 @@
 #include "builtinCommon.h"
 
 #include "driver/pcnt.h"
+#include "soc/pcnt_struct.h"
 
 struct PulseCountRecord {
 	int			unit;
@@ -42,7 +43,7 @@ struct PulseCountRecord {
 typedef struct PulseCountRecord PulseCountRecord;
 typedef struct PulseCountRecord *PulseCount;
 
-#define PCNT_AVAILABLE ((1 << SOC_PCNT_UNIT_NUM) - 1)
+#define PCNT_AVAILABLE (SOC_PCNT_GROUPS * SOC_PCNT_UNITS_PER_GROUP)
 
 static uint8_t gPulseCountUnitsAvailable = PCNT_AVAILABLE;
 

@@ -18,10 +18,11 @@
 *
 */
 
-import PixelsOut from "commodetto/PixelsOut"
-import Bitmap from "commodetto/Bitmap"
 
 declare module "commodetto/Poco" {
+  import PixelsOut from "commodetto/PixelsOut"
+  import Bitmap from "commodetto/Bitmap"
+
   type Rectangle = {
     x: number,
     y: number,
@@ -29,14 +30,9 @@ declare module "commodetto/Poco" {
     height: number,
   }
 
-  type Font = HostBuffer    //@@ share full interface with commodetto/parseBMF
+  type Font = any    //@@ share full interface with commodetto/parseBMF
 
-  class Poco {
-    constructor(pixelsOut, options?: {
-      pixels?: number,
-      displayListLength?: number,
-      rotation?: (0 | 90 | 180 | 270)
-    })
+  export interface PocoPrototype {
     close(): void
     begin(x?: number, y?: number, width?: number, height?: number): void
     begin(rectangle: Rectangle): void
@@ -87,6 +83,22 @@ declare module "commodetto/Poco" {
     readonly height: number
     readonly pixelsOut: PixelsOut
   }
+
+  interface PocoDictionary {
+    pixels?: number,
+    displayListLength?: number,
+    rotation?: (0 | 90 | 180 | 270)
 }
 
-export {Poco as default};
+  export interface PocoConstructor {
+    new(pixelsOut: PixelsOut, options?: PocoDictionary): PocoPrototype
+  }
+
+  var Poco: PocoConstructor
+
+  global {
+		const screen: PixelsOut
+	}
+
+  export default Poco
+}

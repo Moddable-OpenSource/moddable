@@ -41,6 +41,7 @@ static void initWiFi(void);
 struct wifiScanRecord {
 	xsSlot			callback;
 	xsMachine		*the;
+	int				canceled;
 };
 typedef struct wifiScanRecord wifiScanRecord;
 
@@ -85,14 +86,9 @@ void xs_wifi_get_mode(xsMachine *the)
 
 void xs_wifi_scan(xsMachine *the)
 {
-	wifi_mode_t mode;
-	wifi_scan_config_t config;
+	wifi_scan_config_t config = {0};
 
 	initWiFi();
-
-	esp_wifi_get_mode(&mode);
-	if (WIFI_MODE_AP == mode)
-		xsUnknownError("can't scan in WIFI_MODE_AP");
 
 	if (0 == xsmcArgc) {
 		// clear gScan first because SYSTEM_EVENT_SCAN_DONE is triggered by esp_wifi_scan_stop
@@ -111,45 +107,41 @@ void xs_wifi_scan(xsMachine *the)
 	if (gScan)
 		xsUnknownError("already scanning");
 
+	if ((xsmcArgc < 2) || (xsReferenceType != xsmcTypeOf(xsArg(0))))
+		xsUnknownError("invalid");
+
+	config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+
+	xsmcVars(1);
+
+	if (xsmcHas(xsArg(0), xsID_hidden)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
+		config.show_hidden = xsmcTest(xsVar(0));
+	}
+
+	if (xsmcHas(xsArg(0), xsID_channel)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+		config.channel = xsmcToInteger(xsVar(0));
+	}
+
+	if (xsmcHas(xsArg(0), xsID_active)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_active);
+		config.scan_type = xsmcTest(xsVar(0)) ? WIFI_SCAN_TYPE_ACTIVE : WIFI_SCAN_TYPE_PASSIVE;
+	}
+
 	gScan = (wifiScanRecord *)c_calloc(1, sizeof(wifiScanRecord));
 	if (NULL == gScan)
 		xsUnknownError("out of memory");
-	gScan->callback = xsArg(1);
 	gScan->the = the;
-	xsRemember(gScan->callback);
-
-	config.ssid = NULL;
-	config.bssid = NULL;
-	config.channel = 0;
-	config.show_hidden = 0;
-	config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-	config.scan_time.active.min = config.scan_time.active.max = 0;
-
-	if (xsmcArgc) {
-		xsmcVars(1);
-
-		if (xsmcHas(xsArg(0), xsID_hidden)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
-			config.show_hidden = xsmcTest(xsVar(0));
-		}
-
-		if (xsmcHas(xsArg(0), xsID_channel)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_channel);
-			config.channel = xsmcToInteger(xsVar(0));
-		}
-
-		if (xsmcHas(xsArg(0), xsID_active)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_active);
-			config.scan_type = xsmcTest(xsVar(0)) ? WIFI_SCAN_TYPE_ACTIVE : WIFI_SCAN_TYPE_PASSIVE;
-		}
-	}
 
 	if (ESP_OK != esp_wifi_scan_start(&config, 0)) {
-		xsForget(gScan->callback);
 		c_free(gScan);
 		gScan = NULL;
 		xsUnknownError("scan request failed");
 	}
+
+	gScan->callback = xsArg(1);
+	xsRemember(gScan->callback);
 }
 
 void xs_wifi_connect(xsMachine *the)
@@ -223,19 +215,24 @@ void xs_wifi_connect(xsMachine *the)
 static void reportScan(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	uint16_t count, i;
-	wifi_ap_record_t *aps;
+	wifi_ap_record_t *aps = NULL;
 	wifiScanRecord *scan = gScan;
 
 	gScan = NULL;
 
-	esp_wifi_scan_get_ap_num(&count);
-
-	aps = malloc(sizeof(wifi_ap_record_t) * count);
-	esp_wifi_scan_get_ap_records(&count, aps);
-
 	xsBeginHost(the);
 
+	if (!scan || scan->canceled)
+		goto done;
+
 	xsmcVars(2);
+	esp_wifi_scan_get_ap_num(&count);
+
+	aps = c_malloc(sizeof(wifi_ap_record_t) * count);
+	if (!aps) goto done;
+
+	esp_wifi_scan_get_ap_records(&count, aps);
+
 	for (i = 0; i < count; i++) {
 		wifi_ap_record_t *bss = &aps[i];
 
@@ -278,12 +275,17 @@ static void reportScan(void *the, void *refcon, uint8_t *message, uint16_t messa
 		}
 	}
 
-	xsCallFunction1(scan->callback, xsGlobal, xsNull);		// end of scan
+done:
+	if (scan)
+		xsCallFunction1(scan->callback, xsGlobal, xsNull);		// end of scan
 
 	xsEndHost(the);
 
-	xsForget(scan->callback);
-	c_free(aps);
+	if (scan)
+		xsForget(scan->callback);
+bail:
+	if (aps)
+		c_free(aps);
 }
 
 typedef struct xsWiFiRecord xsWiFiRecord;
@@ -432,6 +434,10 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 			break;
 		case WIFI_EVENT_STA_STOP:
 			gWiFiState = 1;
+			if (gScan) {
+				gScan->canceled = 1;
+				modMessagePostToMachine(gScan->the, NULL, 0, reportScan, NULL);
+			}
 			break;
 		case WIFI_EVENT_STA_CONNECTED:
 			gWiFiState = 4;
