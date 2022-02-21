@@ -49,7 +49,7 @@ declare module "commodetto/outline" {
     (...points: Array<number>): CommodettoPath
   }
   interface RoundRectPath {
-    (...points: Array<number>): CommodettoPath
+    (x: number, y: number, w: number, h: number, r: number): CommodettoPath
   }
   interface SVGPath {
     (path: string): CommodettoPath
