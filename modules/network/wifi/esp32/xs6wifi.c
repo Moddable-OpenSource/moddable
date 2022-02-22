@@ -524,12 +524,12 @@ void initWiFi(void)
 	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 	esp_wifi_set_mode(WIFI_MODE_NULL);
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, NULL, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, NULL, NULL));
-
 	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
 
     gStation = esp_netif_create_default_wifi_sta();
+
+	ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, NULL, NULL));
     
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
