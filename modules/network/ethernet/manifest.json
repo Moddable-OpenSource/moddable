@@ -8,7 +8,7 @@
     "platforms": {
         "esp32": {
             "build": {
-                "ETHERNETDRIVER": "$(IDF_PATH)/examples/ethernet/enc28j60/main"
+                "ETHERNETDRIVER": "$(IDF_PATH)/examples/ethernet/enc28j60/components/eth_enc28j60"
             },
             "include": [
                 "$(MODULES)/pins/spi/manifest.json"
@@ -19,9 +19,6 @@
                     "$(ETHERNET)/esp32/*",
                     "$(ETHERNET)/esp32/drivers/enc28j60/*",
                     "$(ETHERNETDRIVER)/*"
-                ],
-                "~": [
-                    "$(ETHERNETDRIVER)/enc28j60_example_main"
                 ]
             }
         },
