@@ -1,14 +1,13 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json"
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/data/text/decoder/manifest.json"
 	],
 	"modules": {
-		"*": [
-			"./httpclient",
-			"./main"
-		]
+		"*": "./main",
+		"embedded:network/http/request": "./../httpclient/httpclient"
 	},
 	"preload": [
-		"httpclient"
+		"embedded:network/http/request"
 	]
 }

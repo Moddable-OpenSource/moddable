@@ -18,7 +18,7 @@
  *
  */
  
- import HTTPClient from "httpclient";
+import HTTPRequest from "embedded:network/http/request";
 
 let urlRegExp = null;
 function URLParts(url) {
@@ -44,7 +44,7 @@ function Client(authority) {
 		const authorityParts = authority.match(authorityRegExp);
 		const host = authorityParts[1];
 		const port = authorityParts[3] ?? 80;
-		client = new HTTPClient({ 
+		client = new HTTPRequest({ 
 			host, 
 			port,  
 			onClose() {
@@ -101,9 +101,6 @@ const statusTexts = {
 };
 
 class Headers extends Map {
-	constructor(map) {
-		super(map);
-	}
 	delete(key) {
 		return super.delete(key.toString().toLowerCase());
 	}

@@ -12,33 +12,28 @@
  *
  */
 
-import HTTPClient from "httpclient";
+import HTTPRequest from "embedded:network/http/request";
+import TextDecoder from "text/decoder"
 
-const client = new HTTPClient({
+const http = new HTTPRequest({
 	host: "example.com"
 });
 for (let i = 0; i < 3; i++) {
-	client.request({
+	http.request({
 		path: `/?${i}`,
 		headers: new Map([
-			["Date", Date()],
+			["date", Date()],
 			["user-agent", "ecma-419 test"]
 		]),
 		onHeaders(status, headers) {
 			trace(`Status ${status}, Content-Type ${headers.get("content-type")}\n`);
+			this.decoder = new TextDecoder;
 		},
 		onReadable(count) {
-			let data = this.read(count);
-			try {
-				data = String.fromArrayBuffer(data); 
-			}
-			catch {
-				data = " ** ENCODING ERROR ** ";
-			}
-			trace(data);
+			trace(this.decoder.decode(this.read(count), {stream: true}), "\n"); 
 		},
 		onDone() {
-			trace(`\n\n **DONE ${i} **\n\n`);
+			trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
 		}
 	});
 }

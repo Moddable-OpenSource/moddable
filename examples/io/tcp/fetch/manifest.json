@@ -10,9 +10,10 @@
 			"./../httpclient/httpclient",
 			"./fetch",
 			"./main"
-		]
+		],
+		"embedded:network/http/request": "./../httpclient/httpclient"
 	},
 	"preload": [
-		"httpclient"
+		"embedded:network/http/request"
 	]
 }
