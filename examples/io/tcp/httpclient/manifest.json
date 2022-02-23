@@ -1,0 +1,14 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./httpclient",
+			"./main"
+		]
+	},
+	"preload": [
+		"httpclient"
+	]
+}
