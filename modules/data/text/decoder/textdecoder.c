@@ -92,22 +92,27 @@ void xs_textdecoder_decode(xsMachine *the)
 	uint8_t srcOffset = 0;
 	uint32_t outLength = 0;
 	uint8_t stream = 0;
+	int argc = xsmcArgc;
 
-	if (xsmcArgc > 1) {
+	if (argc > 1) {
 		xsmcVars(1);
 
 		xsmcGet(xsVar(0), xsArg(1), xsID_stream);
 		stream = xsmcToBoolean(xsVar(0));
 	}
 
-	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
-	srcEnd = src + srcLength;
+	if (argc) {
+		xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
+		srcEnd = src + srcLength;
+	}
+	else
+		src = srcEnd = NULL;
 
 	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	buffer = td->buffer;
 	bufferLength = td->bufferLength;
 
-	while (src < srcEnd) {
+	while ((src < srcEnd) || bufferLength) {
 		unsigned char first, clen, i;
 		uint8_t utf8[4];
 
@@ -203,9 +208,13 @@ void xs_textdecoder_decode(xsMachine *the)
 
 	xsmcSetStringBuffer(xsResult, NULL, outLength + 1);
 
-	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
-	srcEnd = src + srcLength;
-	src += srcOffset;
+	if (argc) {
+		xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
+		srcEnd = src + srcLength;
+		src += srcOffset;
+	}
+	else
+		src = srcEnd = NULL;
 
 	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 	buffer = td->buffer;
@@ -214,7 +223,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	dst = (uint8_t *)xsmcToString(xsResult);
 	dst3 = td->ignoreBOM ? NULL : (dst + 3);
 
-	while (src < srcEnd) {
+	while ((src < srcEnd) || bufferLength) {
 		unsigned char first, clen, i, firstFromBuffer;
 		uint8_t utf8[4];
 
@@ -306,20 +315,20 @@ void xs_textdecoder_decode(xsMachine *the)
 		}
 
 #if mxCESU8
-	if (3 != clen) {
-		*dst++ = first;
-		for (i = 0; i < clen; i++)
-			*dst++ = utf8[i + 1];
-	}
-	else {
-		xsIntegerValue c;
-		fxUTF8Decode((xsStringValue)utf8, &c);
-		c -= 0x10000;
-		fxUTF8Encode((xsStringValue)dst, 0xD800 + (c >> 10));
-		dst += 3;
-		fxUTF8Encode((xsStringValue)dst, 0xDC00 + (c & 0x3FF));
-		dst += 3;
-	}
+		if (3 != clen) {
+			*dst++ = first;
+			for (i = 0; i < clen; i++)
+				*dst++ = utf8[i + 1];
+		}
+		else {
+			xsIntegerValue c;
+			fxUTF8Decode((xsStringValue)utf8, &c);
+			c -= 0x10000;
+			fxUTF8Encode((xsStringValue)dst, 0xD800 + (c >> 10));
+			dst += 3;
+			fxUTF8Encode((xsStringValue)dst, 0xDC00 + (c & 0x3FF));
+			dst += 3;
+		}
 #else
 		*dst++ = first;
 		for (i = 0; i < clen; i++)
