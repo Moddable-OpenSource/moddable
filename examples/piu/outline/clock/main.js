@@ -69,8 +69,9 @@ class MinuteBehavior extends HandBehavior {
 
 class SecondBehavior extends HandBehavior {
 	onCreate(shape) {
+		const width = 2;
 		const path = new Outline.CanvasPath();
-		path.rect(-1, -30, 2, 96);
+		path.rect(-(width / 2), -30, width, 96);
 		path.arc(0, 0, 4, 0, 2 * Math.PI);
 		path.closePath();
 		path.arc(0, 67, 6, 0, 2 * Math.PI);
@@ -82,14 +83,14 @@ class SecondBehavior extends HandBehavior {
 class ClockApplicationBehavior extends Behavior {
 	onCreate(application, $) {
 		this.$ = $;
-		application.interval = 500;
+		application.interval = 33;
 		application.start();
 	}
 	onTimeChanged(application) {
 		const date = new Date();
 		const hours = date.getHours() % 12;
 		const minutes = date.getMinutes();
-		const seconds = date.getSeconds();
+		const seconds = date.getSeconds() + (date.getMilliseconds() / 1000);
 		const $ = this.$;
 		$.HOURS.delegate("onClockChanged", (hours * 5) + (minutes / 12));
 		$.MINUTES.delegate("onClockChanged", minutes);
@@ -107,5 +108,5 @@ let ClockApplication = Application.template($ => ({
 		Shape($, { anchor:"SECONDS", width:240, height:240, Behavior:SecondBehavior, skin:{ fill:"red" } } ),
 	]
 }));
-export default new ClockApplication({}, { pixels: 240 * 64 });
+export default new ClockApplication({}, { pixels: 240 * 32 });
 
