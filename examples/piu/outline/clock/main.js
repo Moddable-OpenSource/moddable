@@ -34,7 +34,7 @@ class DialBehavior extends Behavior {
 
 class HandBehavior extends Behavior {
 	onClockChanged(shape, t) {
-		const a = ((90 - (t * 6)) % 360) * Math.PI / 180;
+		const a = ((180 - (t * 6)) % 360) * Math.PI / 180;
 		const cx = shape.width >> 1;
 		const cy = shape.height >> 1;
 		shape.fillOutline = this.outline.clone().rotate(a).translate(cx, cy);
@@ -107,5 +107,5 @@ let ClockApplication = Application.template($ => ({
 		Shape($, { anchor:"SECONDS", width:240, height:240, Behavior:SecondBehavior, skin:{ fill:"red" } } ),
 	]
 }));
-export default new ClockApplication({}, { displayListLength:4096, touchCount:1, pixels: 240 * 64 });
+export default new ClockApplication({}, { pixels: 240 * 64 });
 
