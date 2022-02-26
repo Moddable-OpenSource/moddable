@@ -37,38 +37,7 @@
 
 const isMac = system.platform == "mac";
 
-const INSPECTOR_FLASH = "#082080";
-const INSPECTOR_CACHE = "#804f13";
-
 const TRANSPARENT = "transparent";
-
-const LITE_CODE_COMMENT = "#008d32";
-const LITE_CODE_KEYWORD = "#103ffb";
-const LITE_CODE_LITERAL = "#b22821";
-const LITE_CODE_RESULT = "#FBF4BB";
-const LITE_CODE_SELECTION = "#D1E0FF";
-const FILE_SELECTION = "#6497ff";
-const FRAME_SELECTION = "#fe9d27";
-
-
-const DARK_CODE_COMMENT = "#00e550";
-const DARK_CODE_KEYWORD = "#7e97fb";
-const DARK_CODE_LITERAL = "#f7897a";
-const DARK_CODE_RESULT = "#FBF4BB";
-const DARK_CODE_SELECTION = "#495c82";
-
-
-
-const BLACK = "black";
-const WHITE = "white";
-var LITE_GRAYS = new Array(101).fill();
-var DARK_GRAYS = new Array(101).fill();
-for (let i = 0; i <= 100; i++) {
-	LITE_GRAYS[i] = blendColors(i / 100, WHITE, BLACK);
-	DARK_GRAYS[i] = blendColors(i / 100, "#202020", WHITE);
-}
-const BLUE = "#192eab";
-const ORANGE = "#f68100"
 
 const liteColors = {
 	".button:disabled": { "backgroundColor": "transparent", "color": "#808080" },
@@ -84,7 +53,6 @@ const liteColors = {
 	".scrollbarThumb": { "backgroundColor": "#e0e0e0" },
 	".scrollbarThumb:hover": { "backgroundColor": "#e6e6e6" },
 	".scrollbarThumb:active": { "backgroundColor": "#e6e6e6" },
-	
 	".switch:disabled": { "backgroundColor": "transparent", "borderColor":"#e6e6e6" },
 	".switch": { "backgroundColor": "#b0b0b0", "borderColor":"#b0b0b0" },
 	".switch:hover": { "backgroundColor": "#b0b0b0", "borderColor":"#b0b0b0" },
@@ -94,7 +62,6 @@ const liteColors = {
 	".switch .thumb:hover": { "backgroundColor": "#ffffff", "borderColor":"#ffffff" },
 	".switch .thumb:active": { "backgroundColor": "#ffffff", "borderColor":"#ffffff" },
 
-	".tabsPane": { "backgroundColor": "#dbdbdb" },
 	".tab:active": { "backgroundColor": "#f0f0f0", "color": "#000000" },
 	".tab": { "backgroundColor": "#dbdbdb", "color": "#404040", "borderColor": "#c2c2c2" },
 	".tab:hover": { "backgroundColor": "#e6e6e6", "color": "#000000" },
@@ -114,7 +81,6 @@ const liteColors = {
 	".lineNumber .breakpoint": { "color": "#ffffff" },
 	".lineNumbers": { "backgroundColor": "#fafafa", "borderColor": "#dbdbdb" },
 
-	".background": { "backgroundColor": "#ffffff" },
 	".code": { "backgroundColor": "#ffffff", "color": "#000000" },
 	".code .result": { "backgroundColor": "#fbf4bb" },
 	".code .selection": { "backgroundColor": "#d1e0ff" },
@@ -171,7 +137,6 @@ const liteColors = {
 };
 
 const darkColors = {
-	
 	".button:disabled": { "backgroundColor": "transparent", "color": "#808080" },
 	".button": { "backgroundColor": "transparent", "color": "#ffffff" },
 	".button:hover": { "backgroundColor": "#000000", "color": "#ffffff" },
@@ -214,7 +179,6 @@ const darkColors = {
 	".lineNumber .breakpoint": { "color": "#ffffff" },
 	".lineNumbers": { "backgroundColor": "#333333", "borderColor": "#545454" },
 
-	".background": { "backgroundColor": "#2a2a2a" },
 	".code": { "backgroundColor": "#2a2a2a", "color": "#f0f0f0" },
 	".code .result": { "backgroundColor": "#7d4900" },
 	".code .selection": { "backgroundColor": "#003663" },
@@ -227,11 +191,11 @@ const darkColors = {
 	".findMode": { "backgroundColor": "transparent", "color": "#e0e0e0" },
 	".findMode:hover": { "backgroundColor": "#4b4b4b", "color": "#ffffff" },
 	".findMode:active": { "backgroundColor": "#5b5b5b", "color": "#e0e0e0" },
-	".resultCount": { "color": "#808080" },
+	".resultCount": { "color": "#a0a0a0" },
 	".resultRow": { "backgroundColor": "#2a2a2a" },
 	".resultRow:hover": { "backgroundColor": "#3a3a3a" },
 	".resultRow:active": { "backgroundColor": "#4a4a4a" },
-	".searchEmpty": { "color": "#808080" },
+	".searchEmpty": { "color": "#a0a0a0" },
 
 	".tableHeader": { "backgroundColor": "#3b3b3b", "borderColor": "#4e4e4e", "color": "#f0f0f0" },
 	".tableHeader:hover": { "backgroundColor": "#4b4b4b", "color": "red" },
@@ -241,7 +205,7 @@ const darkColors = {
 	".tableRow:active": { "backgroundColor": "#474747", "color": "#ffffff" },
 
 	".fileRow:selected": { "backgroundColor": "#6497ff", "color": "#ffffff" },
-	".infoRow": { "color": "#808080" },
+	".infoRow": { "color": "#a0a0a0" },
 
 	".messages-0": { "backgroundColor": "#545454", "borderColor":"#545454" },
 	".messages-1": { "backgroundColor": "#540000", "borderColor":"#540000" },
@@ -274,6 +238,12 @@ const themes = [
 	darkColors,
 ];
 Object.freeze(themes, true)
+
+const codeFonts = [
+	"11px Fira Mono",
+	"medium 12px Fira Mono",
+];
+Object.freeze(codeFonts, true)
 
 const textures = {
 	icons: { path:"assets/icons.png", scale:2 },
@@ -310,14 +280,14 @@ function buildTheme($, codeFont) {
 	skins.verticalScrollbar = new Skin({ fill:[f('.scrollbar'),f('.scrollbar:hover'),f('.scrollbar:active')], stroke:[s('.scrollbar'),s('.scrollbar:hover'),s('.scrollbar:active')], left:1 });
 	
 	// TABS
-	skins.tabsPane = new Skin({ fill:f('.tabsPane'), stroke:f('.divider'), borders: { bottom:1 }  });
+	skins.tabsPane = new Skin({ fill:f('.tab'), stroke:f('.divider'), borders: { bottom:1 }  });
 	skins.tab = new Skin({ fill:[f('.tab:active'),f('.tab'),f('.tab:hover')], stroke:s('.tab'), borders: { right:1 }  });
 	styles.tab = new Style({ font:"semibold 12px Open Sans", color:[c('.tab:active'),c('.tab'),c('.tab:hover')], horizontal:"center", left:26, right:26 });
 	styles.tabTest262 = new Style({ font:"semibold 12px Open Sans", color:[c('.tab:active'),c('.tab'),c('.tab:hover')], horizontal:"center", left:13, right:13 });
 	skins.tabBreakpoint = new Skin({ texture:textures.lineNumber, x:16, y:16, width:24, height:16, tiles: { left:2, right: 12 }, });
-	styles.tabBreakpoint = new Style({ font:"bold 10px", horizontal:"right", right:15, color: LITE_GRAYS[0] });
+	styles.tabBreakpoint = new Style({ font:"bold 10px", horizontal:"right", right:15, color:c('.tabBubble') });
 	skins.tabBubble = new Skin({ texture:textures.lineNumber, x:0, y:48, width:48, height:16, tiles: { left:16, right: 16 }, });
-	styles.tabBubble = new Style({ font:"bold 10px", horizontal:"right", right:10, color: LITE_GRAYS[0] });
+	styles.tabBubble = new Style({ font:"bold 10px", horizontal:"right", right:10, color:c('.tabBreakpoint') });
 	skins.tabBroken = new Skin({ texture:textures.lineNumber, x:40, y:0, width:16, height:16 });
 
 	// CODE, CONSOLE, PREFERENCES
@@ -333,21 +303,21 @@ function buildTheme($, codeFont) {
 	styles.lineNumber = new Style({ font:"bold 10px", horizontal:"right", right:15, color: [ c('.lineNumber'),c('.lineNumber .breakpoint') ] });
 	skins.lineNumbers = new Skin({ fill:f('.lineNumbers'), stroke:s('.lineNumbers'), borders: { right:1 } });
 	
-	skins.background = new Skin({ fill:f('.background') });
+	skins.background = new Skin({ fill:f('.code') });
 	skins.code = new Skin({ fill:[f('.code .result'), TRANSPARENT, f('.code .selection'), f('.code .selection')] });
 	styles.code = new Style({ font:codeFont, horizontal:"left", left:8, right:8, color: [c('.code'),c('.code .keyword'),c('.code .literal'),c('.code .comment')]});
 	
 	skins.noCode = new Skin({ fill:f('.tableRow')});
 	skins.logo = new Skin({ texture:textures.logo, x:0, y:0, width:80, height:80 });
-	styles.error = new Style({ color:LITE_GRAYS[85] });
+	styles.error = new Style({ color:c('.error') });
 
 	// FIND SEARCH
-	styles.findLabel = new Style({ color:LITE_GRAYS[100], horizontal:"left", left:5, right:5});
+	styles.findLabel = new Style({ color:c('.findLabel'), horizontal:"left", left:5, right:5});
 	skins.findModeButton = new Skin({ texture:textures.findModes, color:[TRANSPARENT,f('.findMode'),f('.findMode:hover'),f('.findMode:active')], x:0, y:20, width:20, height:20, variants:20 });
 	skins.findModeIcon = new Skin({ texture:textures.findModes, color:[TRANSPARENT,c('.findMode'),c('.findMode:hover'),c('.findMode:active')], x:0, y:0, width:20, height:20, variants:20 });
 	
 	skins.resultRow = new Skin({ fill:[f('.resultRow'),f('.resultRow:hover'),f('.resultRow:active'),f('.resultRow')] });
-	styles.resultCount = new Style({ color:LITE_GRAYS[50], horizontal:"right", right:5 });
+	styles.resultCount = new Style({ color:c('.resultCount'), horizontal:"right", right:5 });
 	skins.resultLabel = new Skin({ fill:[TRANSPARENT, TRANSPARENT, f('.code .result'), f('.code .result')] });
 	styles.resultLabel = new Style({ font:codeFont, color:c('.code'), horizontal:"left" });
 	styles.searchEmpty = new Style({ color:c('.infoRow') });
@@ -421,12 +391,6 @@ function buildTheme($, codeFont) {
 	skins.switchBar = new Skin({ fill:[f('.switch:disabled'),f('.switch'),f('.switch:active'),f('.switch:active')], stroke:[s('.switch:disabled'),s('.switch'),s('.switch:active'),s('.switch:active')] });
 	skins.switchButton = new Skin({ fill:[f('.switch .thumb:disabled'),f('.switch .thumb'),f('.switch .thumb:active'),f('.switch .thumb:active')], stroke:[s('.switch .thumb:disabled'),s('.switch .thumb'),s('.switch .thumb:active'),s('.switch .thumb:active')] });
 }
-
-const codeFonts = [
-	"11px Fira Mono",
-	"medium 12px Fira Mono",
-];
-Object.freeze(codeFonts, true)
 
 export function buildAssets(which) { 
 	buildTheme(themes[which], codeFonts[which]);
