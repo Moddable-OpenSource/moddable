@@ -51,33 +51,6 @@
 // 	}
 // });
 
-// ASSETS
-
-import {
-	glyphsSkin,
-	buttonSkin,
-	buttonStyle,
-	buttonsSkin,
-	
-	fieldScrollerSkin,
-	
-	paneBorderSkin,
-	paneHeaderSkin,
-	paneHeaderStyle,
-	
-	preferenceHeaderSkin,
-	preferenceRowSkin,
-	preferenceCommentStyle,
-	preferenceFirstNameStyle,
-	preferenceSecondNameStyle,
-	preferenceThirdNameStyle,
-	preferenceValueStyle,
-	
-	toggleBarSkin,
-	toggleButtonSkin,
-	
-	noCodeSkin,
-} from "assets";	
 
 // BEHAVIORS
 
@@ -90,6 +63,11 @@ import {
 	HeaderBehavior,
 	TableBehavior,
 } from "behaviors";
+
+import {
+	SwitchBehavior,
+	Switch,
+} from "piu/Switches";	
 
 class PreferencesColumnBehavior extends Behavior {
 	onCreate(column) {
@@ -314,6 +292,12 @@ class ToggleRowBehavior extends RowBehavior {
 	}
 }
 
+class ToggleButtonBehavior extends SwitchBehavior {
+	onValueChanged(container) {
+		container.container.bubble("onToggleChanged", this.data);
+	}
+}
+
 // TEMPLATES
 
 import {
@@ -325,9 +309,9 @@ export var PreferencesView = Container.template($ => ({
 	left:0, right:0, top:0, bottom:0,
 	contents: [
 		Container($, {
-			left:0, right:0, top:26, bottom:0, skin:noCodeSkin,
+			left:0, right:0, top:26, bottom:0, skin:skins.noCode,
 			contents: [
-				Content($, { left:0, right:0, top:0, height:1, skin:paneBorderSkin, }),
+				Content($, { left:0, right:0, top:0, height:1, skin:skins.paneBorder, }),
 				Scroller($, {
 					left:0, right:0, top:1, bottom:0, clip:true, active:true, 
 					Behavior:ScrollerBehavior,
@@ -343,12 +327,12 @@ export var PreferencesView = Container.template($ => ({
 			],
 		}),
 		Row($, {
-			left:0, right:0, top:0, height:26, skin:paneHeaderSkin, 
+			left:0, right:0, top:0, height:26, skin:skins.paneHeader, 
 			contents: [
 				Content($, { width:8 }),
-				Label($, { left:0, right:0, style:paneHeaderStyle, string:"PREFERENCES" }),
-				Content($, { 
-					width:30, height:30, skin:buttonsSkin, variant:6, state:1, active:true, 
+				Label($, { left:0, right:0, style:styles.paneHeader, string:"PREFERENCES" }),
+				IconButton($, { 
+					width:30, height:30, variant:6, state:1, active:true, 
 					Behavior: class extends ButtonBehavior {
 						onTap(button) {
 							button.bubble("doCloseFile");
@@ -366,28 +350,28 @@ var PreferencesTable = Column.template(function($) { return {
 	Behavior: PreferencesTableBehavior,
 	contents: [
 		Row($, {
-			left:0, right:0, height:27, skin:preferenceHeaderSkin, active:true,
+			left:0, right:0, height:27, skin:skins.preferenceHeader, active:true,
 			Behavior: HeaderBehavior,
 			contents: [
 				Content($, { width:0 }),
-				Content($, { width:26, top:3, skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0 }),
-				Label($, { left:0, right:0, style:preferenceFirstNameStyle, string:$.name }),
+				Content($, { width:26, top:5, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
+				Label($, { left:0, right:0, style:styles.preferenceFirstName, string:$.name }),
 			],
 		}),
 	],
 }});
 
 var FieldRow = Row.template($ => ({
-	left:0, right:0, height:26, skin:preferenceRowSkin, active:true,
+	left:0, right:0, height:26, skin:skins.preferenceRow, active:true,
 	Behavior: FieldRowBehavior,
 	contents: [
 		Content($, { width:50 }),
-		Label($, { width:180, style:preferenceSecondNameStyle, string:$.name }),
+		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
 		Container($, {
 			width:$.width, height:26,
 			contents: [
 				Field($, { 
-					anchor:"FIELD", left:0, right:0, top:2, bottom:2, skin:fieldScrollerSkin, style:preferenceValueStyle, string:$.value, 
+					anchor:"FIELD", left:0, right:0, top:2, bottom:2, skin:skins.fieldScroller, style:styles.preferenceValue, string:$.value, 
 					Behavior: class extends Behavior {
 						onCreate(field, data) {
 							this.data = data;
@@ -411,7 +395,7 @@ var FieldRow = Row.template($ => ({
 			],
 		}),
 		Container($, {
-			width:60, skin:buttonSkin, active:true, visible:false,
+			height:30, width:60, active:true, visible:false,
 			Behavior: class extends ButtonBehavior {
 				onTap(button) {
 					let field = button.previous.first;
@@ -420,20 +404,21 @@ var FieldRow = Row.template($ => ({
 				}
 			},
 			contents: [
-				Label($, { left:0, right:0, style:buttonStyle, string:"Set" }),
+				RoundContent($, { left:5, right:5, top:5, bottom:5, radius:5, skin:skins.iconButton }),
+				Label($, { left:0, right:0, style:styles.iconButton, string:"Set" }),
 			],
 		}),
 	],
 }));
 
 var LocationRow = Row.template($ => ({
-	left:0, right:0, height:26, skin:preferenceRowSkin, active:true,
+	left:0, right:0, height:26, skin:skins.preferenceRow, active:true,
 	Behavior: LocationRowBehavior,
 	contents: [
 		Content($, { width:50 }),
-		Label($, { width:180, style:preferenceSecondNameStyle, string:$.name }),
-		Label($, { width:180, style:preferenceValueStyle, string:$.value }),
-		Content($, { skin:buttonsSkin, variant:5, active:true, visible:false, 
+		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
+		Label($, { width:180, style:styles.preferenceValue, string:$.value }),
+		IconButton($, { variant:5, active:true, visible:false, 
 			Behavior: class extends ButtonBehavior {
 				onTap(button) {
 					button.bubble("doRemoveMapping", this.data.index);
@@ -444,12 +429,12 @@ var LocationRow = Row.template($ => ({
 }));
 
 var InterfacesRow = Row.template($ => ({
-	left:0, right:0, height:26, skin:preferenceRowSkin,
+	left:0, right:0, height:26, skin:skins.preferenceRow,
 	contents: [
 		Content($, { width:50 }),
-		Label($, { width:180, style:preferenceSecondNameStyle, string:$.name }),
+		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
 		Label($, { 
-			left:0, right:0, style:preferenceValueStyle, 
+			left:0, right:0, style:styles.preferenceValue, 
 			Behavior: class extends Behavior {
 				onCreate(label) {
 					this.onNetworkInterfacesChanged(label);
@@ -466,109 +451,12 @@ var InterfacesRow = Row.template($ => ({
 }));
 
 var ToggleRow = Row.template(function($) { return {
-	left:0, right:0, height:26, skin:preferenceRowSkin, active:true,
+	left:0, right:0, height:26, skin:skins.preferenceRow, active:true,
 	Behavior: ToggleRowBehavior,
 	contents: [
 		Content($, { width:50 }),
-		Label($, { width:180, style:preferenceSecondNameStyle, string:$.name }),
-		ToggleButton($, { }),
-		Label($, { left:0, right:0, style:preferenceCommentStyle, string:$.comment, visible:false }),
+		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
+		Switch($, { Behavior: ToggleButtonBehavior }),
+		Label($, { left:0, right:0, style:styles.preferenceComment, string:$.comment, visible:false }),
 	],
 }});
-
-class ToggleButtonBehavior extends Behavior {
-	changeOffset(container, offset) {
-		var bar = container.first;
-		var button = bar.next;
-		if (offset < 0)
-			offset = 0;
-		else if (offset > this.size)
-			offset = this.size;
-		else
-			offset = Math.round(offset);
-		this.offset = offset;
-		bar.state = this.offset / this.size;
-		button.x = container.x + this.offset;
-	}
-	onCreate(container, data) {
-		this.data = data;
-	}
-	onDisplaying(container) {
-		var bar = container.first;
-		var button = bar.next;
-		this.size = bar.width - button.width;
-		let data = this.data;
-		this.changeOffset(container, (data.value == 0) ? 0 : (data.value == 1) ? this.size : this.size >> 1);
-	}
-	onTimeChanged(container) {
-		this.changeOffset(container, this.anchor + Math.round(this.delta * container.fraction));
-	}
-	onTouchBegan(container, id, x, y, ticks) {
-		if (container.running) {
-			container.stop();
-			container.time = container.duration;
-		}
-		this.anchor = x;
-		this.moved = false;
-		this.delta = this.offset;
-		container.captureTouch(id, x, y, ticks);
-	}
-	onTouchEnded(container, id, x, y, ticks) {
-		var offset = this.offset;
-		var size =  this.size;
-		var delta = size >> 1;
-		if (this.moved) {
-			if (offset < delta)
-				delta = 0 - offset;
-			else 
-				delta = size - offset;
-		}
-		else {
-			if (offset == 0)
-				delta = size;
-			else if (offset == size)
-				delta = 0 - size;
-			else if (x > (container.x + (container.width >> 1)))
-				delta = size - offset;
-			else
-				delta = 0 - offset;
-		}
-		if (delta) {
-			this.anchor = offset;
-			this.delta = delta;
-			container.duration = 125 * Math.abs(delta) / size;
-			container.time = 0;
-			container.start();
-		}
-		var value = ((this.offset + delta) == 0) ? 0 : 1;
-		if (this.data.value != value) {
-			this.data.value = value;
-			container.container.bubble("onToggleChanged", this.data);
-		}
-	}
-	onTouchMoved(container, id, x, y, ticks) {
-		this.moved = Math.abs(x - this.anchor) >= 8;
-		this.changeOffset(container, this.delta + x - this.anchor);
-	}
-	onValueChanged(container, data) {
-		if (this.data == data) {
-			let offset = (data.value == 0) ? 0 : (data.value == 1) ? this.size : this.size >> 1;
-			if (this.offset != offset) {
-				this.anchor = this.offset;
-				this.delta = offset - this.offset;
-				container.duration = 125 * Math.abs(this.delta) / this.size;
-				container.time = 0;
-				container.start();
-			}
-		}
-	}
-};
-
-var ToggleButton = Container.template($ => ({
-	width:50, height:30, active:true,
-	Behavior: ToggleButtonBehavior,
-	contents: [
-		Content($, { left:0, right:0, height:30, skin:toggleBarSkin }),
-		Content($, { left:0, width:30, height:30, skin:toggleButtonSkin }),
-	],
-}));

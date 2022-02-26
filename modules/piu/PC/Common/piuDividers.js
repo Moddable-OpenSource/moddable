@@ -18,12 +18,6 @@
  *
  */
 
-// ASSETS
-
-import {
-	dividerSkin,
-} from "assets";
-
 // BEHAVIORS
 
 export class DividerLayoutBehavior extends Behavior {
@@ -182,14 +176,14 @@ export class VerticalDividerBehavior extends DividerBehavior {
 export var HorizontalDivider = Container.template($ => ({
 	left:0, right:0, height:6, active:true, Behavior:HorizontalDividerBehavior,
 	 contents: [
-	 	Content($, { left:0, right:0, height:1, bottom:3, skin:dividerSkin }),
+	 	Content($, { left:0, right:0, height:1, bottom:3, skin:skins.divider }),
 	 ],
 }));
 
 export var VerticalDivider = Container.template($ => ({
 	 width:6, top:0, bottom:0, active:true, Behavior:VerticalDividerBehavior,
 	 contents: [
-	 	Content($, { width:1, right:3, top:0, bottom:0, skin:dividerSkin }),
+	 	Content($, { width:1, right:3, top:0, bottom:0, skin:skins.divider }),
 	 ],
  }));
 

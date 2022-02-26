@@ -85,6 +85,20 @@ export class Texture @ "PiuTextureDelete" {
 Object.freeze(Texture.prototype);
 global.Texture = Texture;
 
+// PiuRoundContent.c
+
+var roundContent = {
+	__proto__: Content.prototype,
+	_create($, it) @ "PiuRoundContent_create",
+
+	get radius() @ "PiuRoundContent_get_radius",
+	
+	set radius(it) @ "PiuRoundContent_set_radius",
+};
+export var RoundContent = Template(roundContent);
+Object.freeze(roundContent);
+global.RoundContent = RoundContent;
+
 // PiuField.c
 
 var field = {

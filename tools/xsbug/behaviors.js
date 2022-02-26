@@ -691,7 +691,7 @@ export class RowBehavior extends Behavior {
 
 export class HeaderBehavior extends RowBehavior {
 	changeArrowState(row, state) {
-		row.first.next.state = state;
+		row.first.next.variant = state;
 	}
 	expand(row, expandIt) {
 		this.changeArrowState(row, expandIt ? 3 : 1);

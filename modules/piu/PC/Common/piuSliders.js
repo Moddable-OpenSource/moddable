@@ -45,18 +45,30 @@ class SliderBehavior extends Behavior {
 	onCreate(container, data) {
 		this.data = data;
 	}
-	onDisplaying(container) {
+	onDataChanged(container) {
+		let active = container.active;
+		var button = container.last;
+		var bar = button.previous;
+		var background = bar.previous;
+		background.state = active ? 1 : 0;
+		bar.state = active ? 2 : 0;
+		button.state = active ? 1 : 0;
 		this.onLayoutChanged(container);
+	}
+	onDisplaying(container) {
+		var button = container.last;
+		this.dx = button.x - container.x;
+		this.dy = button.y - container.y;
+		let data = this.data;
+		this.onDataChanged(container);
 	}
 	onLayoutChanged(container) {
 	}
 	onTouchBegan(container, id, x, y, ticks) {
 		container.captureTouch(id, x, y, ticks);
-		this.changeState(container, 1);
 		this.onTouchMoved(container, id, x, y, ticks);
 	}
 	onTouchEnded(container, id, x, y, ticks) {
-		this.changeState(container, 0);
 		this.onValueChanged(container);
 	}
 	onTouchMoved(container, id, x, y, ticks) {
@@ -87,17 +99,17 @@ export class HorizontalSliderBehavior extends SliderBehavior {
 		var button = container.last;
 		var bar = button.previous;
 		var background = bar.previous;
-		var size = (background.width - button.width);
+		var size = (container.width - button.width - (this.dx << 1));
 		var offset = this.getOffset(container, size);
-		button.x = background.x + offset;
-		bar.width = button.width + offset;
+		var x = button.x = container.x + this.dx + offset;
+		bar.width = x - background.x + (button.width >> 1);
 	}
 	onTouchMoved(container, id, x, y, ticks) {
 		var button = container.last;
 		var bar = button.previous;
 		var background = bar.previous;
-		var size = (background.width - button.width);
-		var offset = (x - (button.width >> 1) - background.x);
+		var size = (container.width - button.width - (this.dx << 1));
+		var offset = (x - (button.width >> 1) - container.x - this.dx);
 		this.setOffset(container, size, offset);
 		this.onLayoutChanged(container);
 		this.onValueChanging(container);
@@ -130,17 +142,17 @@ export class VerticalSliderBehavior extends SliderBehavior {
 		var button = container.last;
 		var bar = button.previous;
 		var background = bar.previous;
-		var size = (background.height - button.height);
+		var size = (container.height - button.height - (this.dy << 1));
 		var offset = this.getOffset(container, size);
-		button.y = background.y + background.height - offset - button.height;
-		bar.height = button.height + offset;
+		var y = button.y = container.y + this.dy + offset;
+		bar.height = y - background.y + (button.height >> 1);
 	}
 	onTouchMoved(container, id, x, y, ticks) {
 		var button = container.last;
 		var bar = button.previous;
 		var background = bar.previous;
-		var size = (background.height - button.height);
-		var offset = background.y + background.height - (y + (button.height >> 1));
+		var size = (container.height - button.height - (this.dy << 1));
+		var offset = (y - (button.height >> 1) - container.y - this.dy);
 		this.setOffset(container, size, offset);
 		this.onLayoutChanged(container);
 		this.onValueChanging(container);
@@ -171,37 +183,37 @@ export class VerticalLogSliderBehavior extends VerticalSliderBehavior {
 // TEMPLATES
 
 export var HorizontalSlider = Container.template(($, it) => ({
-	active:true, Behavior:HorizontalSliderBehavior,
+	height:30, active:true, Behavior:HorizontalSliderBehavior,
 	contents:[
-		Content($, { left:0, right:0, top:0, bottom:0, skin:it.barSkin, state:0 }),
-		Content($, { left:0, width:0, top:0, bottom:0, skin:it.barSkin, state:1 }),
-		Content($, { left:0, top:0, bottom:0, skin:it.buttonSkin, state:0 }),
+		RoundContent($, { left:11, right:11, top:11, height:8, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:11, width:0, top:11, height:8, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:6, width:18, top:6, height:18, border:1, radius:9, skin:skins.sliderButton }),
 	]
 }));
 
 export var HorizontalLogSlider = Container.template(($, it) => ({
 	active:true, Behavior:HorizontalLogSliderBehavior,
 	contents:[
-		Content($, { left:0, right:0, top:0, bottom:0, skin:it.barSkin, state:0 }),
-		Content($, { left:0, width:0, top:0, bottom:0, skin:it.barSkin, state:1 }),
-		Content($, { left:0, top:0, bottom:0, skin:it.buttonSkin, state:0 }),
+		RoundContent($, { left:11, right:11, top:11, height:8, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:11, width:0, top:11, height:8, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:6, width:18, top:6, height:18, border:1, radius:9, skin:skins.sliderButton }),
 	]
 }));
 
 export var VerticalSlider = Container.template(($, it) => ({
 	active:true, Behavior:VerticalSliderBehavior,
 	contents:[
-		Content($, { left:0, right:0, top:0, bottom:0, skin:it.barSkin, state:0 }),
-		Content($, { left:0, right:0, height:0, bottom:0, skin:it.barSkin, state:1 }),
-		Content($, { left:0, right:0, top:0, skin:it.buttonSkin, state:0 }),
+		RoundContent($, { left:11, width:8, top:11, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:11, width:8, height:0, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:6, width:18, top:6, height:18, border:1, radius:9, skin:skins.sliderButton }),
 	]
 }));
 
 export var VerticalLogSlider = Container.template(($, it) => ({
 	active:true, Behavior:VerticalLogSliderBehavior,
 	contents:[
-		Content($, { left:0, right:0, top:0, bottom:0, skin:it.barSkin, state:0 }),
-		Content($, { left:0, right:0, height:0, bottom:0, skin:it.barSkin, state:1 }),
-		Content($, { left:0, right:0, top:0, skin:it.buttonSkin, state:0 }),
+		RoundContent($, { left:11, width:8, top:11, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:11, width:8, height:0, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
+		RoundContent($, { left:6, width:18, top:6, height:18, border:1, radius:9, skin:skins.sliderButton }),
 	]
 }));

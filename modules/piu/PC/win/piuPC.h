@@ -64,17 +64,21 @@ struct PiuViewStruct {
 	PiuApplication* application;
 	HWND window;
 	HACCEL acceleratorTable;
+	ColorMatrix* colorMatrix;
+	ImageAttributes* imageAttributes;
 	PrivateFontCollection* fontCollection;
 	SolidBrush* solidBrush;
 	Graphics* graphics;
 	xsIntegerValue graphicsStatesIndex;
 	GraphicsState graphicsStates[256];
+	xsBooleanValue filtered;
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 extern xsMachine* ServiceThreadMain(void* context);
+extern void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor);
 extern void fxAbort(xsMachine *the, int status);
 #ifdef __cplusplus
 }

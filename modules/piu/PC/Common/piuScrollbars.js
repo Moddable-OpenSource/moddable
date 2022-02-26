@@ -17,14 +17,6 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-// ASSETS
-
-import {
-	horizontalScrollbarSkin,
-	verticalScrollbarSkin,
-	scrollbarThumbSkin,
-} from "assets";
 	
 // BEHAVIORS
 
@@ -187,15 +179,15 @@ class VerticalScrollbarBehavior extends ScrollbarBehavior {
 // TEMPLATES
 
 export var HorizontalScrollbar = Container.template($ => ({
-	left:0, right:0, height:10, bottom:0, skin: horizontalScrollbarSkin, active:true, Behavior:HorizontalScrollbarBehavior,
+	left:0, right:0, height:10, bottom:0, skin:skins.horizontalScrollbar, active:true, Behavior:HorizontalScrollbarBehavior,
 	contents: [
-		Content($, { left:0, width:0, height:9, bottom:0, skin: scrollbarThumbSkin }),
+		Content($, { left:0, width:0, height:9, bottom:0, skin:skins.scrollbarThumb }),
 	],
 }));
 
 export var VerticalScrollbar = Container.template($ => ({
-	width:10, right:0, top:0, bottom:0, skin: verticalScrollbarSkin, active:true, Behavior:VerticalScrollbarBehavior,
+	width:10, right:0, top:0, bottom:0, skin:skins.verticalScrollbar, active:true, Behavior:VerticalScrollbarBehavior,
 	contents: [
-		Content($, { right:0, width:9, top:0, height:0, skin: scrollbarThumbSkin }),
+		Content($, { right:0, width:9, top:0, height:0, skin:skins.scrollbarThumb }),
 	],
 }));

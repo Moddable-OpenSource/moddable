@@ -567,6 +567,32 @@ void PiuViewDictionary(xsMachine* the, void* it)
 	
 }
 
+void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor)
+{
+	cairo_t* cr = (*self)->cairo;
+	double fx = x, fy = y, fw = w, fh = h, fr = radius, fl = lineWidth;
+	if (fl > 0) {
+		double delta = fl / 2;
+		fx += delta;
+		fy += delta;
+		fw -= fl;
+		fh -= fl;
+		fr -= delta;
+	}
+	double degrees = M_PI / 180.0;
+	cairo_new_sub_path (cr);
+	cairo_arc (cr, fx + fw - fr, fy + fr, fr, -90 * degrees, 0 * degrees);
+	cairo_arc (cr, fx + fw - fr, fy + fh - fr, fr, 0 * degrees, 90 * degrees);
+	cairo_arc (cr, fx + fr, fy + fh - fr, fr, 90 * degrees, 180 * degrees);
+	cairo_arc (cr, fx + fr, fy + fr, fr, 180 * degrees, 270 * degrees);
+	cairo_close_path (cr);
+	cairo_set_source_rgba(cr, ((double)fillColor->r) / 255.0, ((double)fillColor->g) / 255.0, ((double)fillColor->b) / 255.0, ((double)fillColor->a) / 255.0);
+	cairo_fill_preserve (cr);
+	cairo_set_source_rgba(cr, ((double)strokeColor->r) / 255.0, ((double)strokeColor->g) / 255.0, ((double)strokeColor->b) / 255.0, ((double)strokeColor->a) / 255.0);
+	cairo_set_line_width(cr, fl);
+	cairo_stroke (cr);
+}
+
 void PiuViewDrawString(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
 {
 	PiuViewDrawStringSubPixel(self, slot, offset, length, font, x, y, w, sw);
@@ -615,15 +641,41 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 {
 	cairo_t* cr = (*self)->cairo;
 	double scale = (*texture)->scale;
-	cairo_set_source_surface(cr, (*texture)->image, 0, 0);
-	cairo_pattern_t *pattern = cairo_get_source(cr);	
-	cairo_matrix_t matrix;
-	cairo_matrix_init_identity(&matrix);
-	cairo_matrix_scale(&matrix, scale, scale);
-	cairo_matrix_translate(&matrix, sx - x, sy - y);
-	cairo_pattern_set_matrix (pattern, &matrix);
-	cairo_rectangle(cr, x, y, sw, sh);
-	cairo_fill(cr);
+	if ((*self)->filtered) {
+		double w = sw * scale;
+		double h = sh * scale;
+		cairo_surface_t* maskImage = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+		cairo_t* maskContext = cairo_create(maskImage);
+		cairo_set_source_surface(maskContext, (*texture)->image, 0, 0);
+		cairo_pattern_t *pattern = cairo_get_source(maskContext);	
+		cairo_matrix_t matrix;
+		cairo_matrix_init_identity(&matrix);
+		cairo_matrix_translate(&matrix, sx * scale, sy * scale);
+		cairo_pattern_set_matrix (pattern, &matrix);
+		cairo_rectangle(maskContext, 0, 0, w, h);
+		cairo_fill(maskContext);
+	
+		cairo_get_matrix(cr, &matrix);
+  		cairo_matrix_scale(&matrix, 1 / scale, 1 / scale);
+		cairo_set_matrix(cr, &matrix);
+		cairo_mask_surface(cr, maskImage, x, y);
+//  		cairo_rectangle(cr, x, y, sw, sh);
+ 		cairo_fill(cr);   
+  		
+  		cairo_destroy(maskContext);   
+  		cairo_surface_destroy(maskImage);   
+	}
+	else {
+		cairo_set_source_surface(cr, (*texture)->image, 0, 0);
+		cairo_pattern_t *pattern = cairo_get_source(cr);	
+		cairo_matrix_t matrix;
+		cairo_matrix_init_identity(&matrix);
+		cairo_matrix_scale(&matrix, scale, scale);
+		cairo_matrix_translate(&matrix, sx - x, sy - y);
+		cairo_pattern_set_matrix (pattern, &matrix);
+		cairo_rectangle(cr, x, y, sw, sh);
+		cairo_fill(cr);
+	}
 }
 
 void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
@@ -754,6 +806,7 @@ void PiuViewPopColor(PiuView* self)
 
 void PiuViewPopColorFilter(PiuView* self)
 {
+	(*self)->filtered = 0;
 }
 
 void PiuViewPopOrigin(PiuView* self)
@@ -778,6 +831,9 @@ void PiuViewPushColor(PiuView* self, PiuColor color)
 
 void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 {
+	cairo_t* cr = (*self)->cairo;
+	cairo_set_source_rgba(cr, ((double)color->r) / 255.0, ((double)color->g) / 255.0, ((double)color->b) / 255.0, ((double)color->a) / 255.0);
+	(*self)->filtered = 1;
 }
 
 void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)
