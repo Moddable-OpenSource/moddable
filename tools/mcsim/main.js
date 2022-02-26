@@ -58,30 +58,20 @@ const compartmentOptions = {
 		return specifier;
 	},
 	loadNowHook(specifier) {
-		return { source:system.readFileString(specifier), meta:{ uri:specifier } };
+		return { source:system.readFileString(specifier), meta:{ uri:specifier }, specifier };
 	},
 }
 
 import {} from "piu/PC";
 
 import {
-	applicationStyle,
-	backgroundSkin,
-	buttonsSkin,
-	controlsMenuSkin,
-	controlsMenuGlyphSkin,
-	controlsMenuItemSkin,
-	controlsMenuItemStyle,
-	dotSkin,
-	paneBorderSkin,
-	paneHeaderSkin,
-	paneHeaderStyle,
-	paneFooterLeftStyle,
-	paneFooterRightStyle,
+	buildAssets
 } from "assets";
 
 import {
 	ButtonBehavior,
+	Button,
+	IconButton,
 } from "piu/Buttons";
 
 import { 
@@ -91,7 +81,6 @@ import {
 } from "piu/Dividers";
 
 import {
-	Button,
 	ControlsPane,
 } from "ControlsPane";
 
@@ -108,7 +97,7 @@ let noDevice = {
 	ControlsTemplate: Container.template($ => ({
 		left:0, right:0, top:0, bottom:0,
 		contents:[
-			Button({ label:"Locate..." }, {
+			Button($, { string:"Locate..." }, {
 				Behavior: class extends ButtonBehavior {
 					onTap(container) {
 						container.bubble("doLocateSimulators");
@@ -166,10 +155,18 @@ class ApplicationBehavior extends Behavior {
 		}
 		catch {
 		}
-
-		application.add(new MainContainer(this));
+	}
+	onAppearanceChanged(application, which) {
+		buildAssets(which);
+		if (application.first) {
+			this.quitScreen();
+			application.replace(application.first, new MainContainer(this));
+			this.reloadDevices(application);
+			this.launchScreen();
+		}
 	}
 	onDisplaying(application) {
+		application.add(new MainContainer(this));
 		if (this.devicesPath)
 			this.reloadDevices(application);
 		else
@@ -656,8 +653,8 @@ var ControlsMenu = Layout.template($ => ({
 	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
 	Behavior: ControlsMenuBehavior,
 	contents: [
-		Container($, { skin:controlsMenuSkin, contents:[
-			Scroller($, { clip:true, active:true, contents:[
+		Container($, { skin:skins.popupMenuShadow, contents:[
+			Scroller($, { clip:true, active:true, skin:skins.popupMenu, contents:[
 				Column($, { left:0, right:0, top:0, 
 					contents: $.items.map($$ => new ControlsMenuItem($$)),
 				}),
@@ -667,22 +664,22 @@ var ControlsMenu = Layout.template($ => ({
 }));
 
 var ControlsMenuItem = Row.template($ => ({
-	left:0, right:0, height:30, skin:controlsMenuItemSkin, active:true,
+	left:0, right:0, height:30, skin:skins.popupMenuItem, active:true,
 	Behavior:ControlsMenuItemBehavior,
 	contents: [
-		Content($, { width:20, height:30, skin:dotSkin, visible:false }),
-		Label($, {left:0, right:20, height:30, style:controlsMenuItemStyle, string:$.title }),
+		Content($, { width:20, height:30, skin:skins.popupIcons, variant:1, visible:false }),
+		Label($, {left:0, right:20, height:30, style:styles.popupMenuItem, string:$.title }),
 	]
 }));
 
 var MainContainer = Container.template($ => ({ 
 	left:0, right:0, top:0, bottom:0, 
 	contents: [
-		Row($, { left:0, right:0, top:0, height:26, skin:paneHeaderSkin, active:true, Behavior:HeaderBehavior, contents: [
-			Content($, { width:30, height:26, skin:controlsMenuGlyphSkin, }),
-			Label($, { left:0, right:0, style:paneHeaderStyle, }),
-			Content($, {
-				width:30, skin:buttonsSkin, variant:3, active:true, visible:true, 
+		Row($, { left:0, right:0, top:0, height:26, skin:skins.paneHeader, active:true, Behavior:HeaderBehavior, contents: [
+			Content($, { width:30, top:-2, height:30, skin:skins.icons, variant:0 }),
+			Label($, { left:0, right:0, style:styles.paneHeader, }),
+			IconButton($, {
+				variant:1, 
 				Behavior: class extends ButtonBehavior {
 					onTap(button) {
 						button.bubble("onRotate", 90);
@@ -690,12 +687,12 @@ var MainContainer = Container.template($ => ({
 				},
 			}),
 		]}), 
-		Content($, { left:0, right:0, top:26, height:1, skin:paneBorderSkin, }),
+		Content($, { left:0, right:0, top:26, height:1, skin:skins.paneBorder, }),
 		Layout($, { anchor:"BODY", left:0, right:0, top:27, bottom:$.infoStatus ? 27 : 0, Behavior:DividerLayoutBehavior, contents: [
 			Container($, { left:0, width:0, top:0, bottom:0, contents: [
 				ControlsPane($, { anchor:"CONTROLS" }),
 			]}),
-			Container($, { anchor:"DEVICE", width:0, right:0, top:0, bottom:0, skin:backgroundSkin, clip:true, contents:[
+			Container($, { anchor:"DEVICE", width:0, right:0, top:0, bottom:0, skin:skins.background, clip:true, contents:[
 				Content($, {}),
 			]}),
 			VerticalDivider($, { 
@@ -704,17 +701,17 @@ var MainContainer = Container.template($ => ({
 			}),
 		]}),
 		Container($, { anchor:"FOOTER", left:0, right:0, height:$.infoStatus ? 27 : 0, bottom:0, clip:true, contents:[
-			Content($, { left:0, right:0, height:1, bottom:26, skin:paneBorderSkin, }),
-			Row($, { left:0, right:0, height:26, bottom:0, skin:paneHeaderSkin, Behavior:FooterBehavior, contents: [
-				Label($, { left:0, right:0, style:paneFooterLeftStyle, }),
-				Label($, { left:0, right:0, style:paneFooterRightStyle, }),
+			Content($, { left:0, right:0, height:1, bottom:26, skin:skins.paneBorder, }),
+			Row($, { left:0, right:0, height:26, bottom:0, skin:skins.paneHeader, Behavior:FooterBehavior, contents: [
+				Label($, { left:0, right:0, style:styles.paneFooterLeft, }),
+				Label($, { left:0, right:0, style:styles.paneFooterRight, }),
 			]}), 
 		]}),
 	]
 }));
 
 let mcsimApplication = Application.template($ => ({
-	style:applicationStyle,
+	style:{ font:"12px Open Sans" },
 	Behavior: ApplicationBehavior,
 	contents: [
 	],

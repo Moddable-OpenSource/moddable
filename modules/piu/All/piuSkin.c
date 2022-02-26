@@ -215,7 +215,7 @@ void PiuSkinDrawAux(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVarian
 	PiuCoordinate db = (*self)->data.pattern.tiles.bottom;
 	if (flags & piuRepeatX) {
 		if (flags & piuRepeatY) {
-			PiuViewDrawTexture(view, texture, x, y, u, v, dl, dr);
+			PiuViewDrawTexture(view, texture, x, y, u, v, dl, dt);
 			PiuViewFillTexture(view, texture, x + dl, y, dx - dl - dr, dt, u + dl, v, du - dl - dr, dt);
 			PiuViewDrawTexture(view, texture, x + dx - dr, y, u + du - dr, v, dr, dt);
 			PiuViewFillTexture(view, texture, x + dx - dr, y + dt, dr, dy - dt - db, u + du - dr, v + dt, dr, dv - dt - db);

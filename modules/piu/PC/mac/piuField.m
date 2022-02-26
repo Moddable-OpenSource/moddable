@@ -210,14 +210,14 @@ void PiuField_create(xsMachine* the)
     NSPiuTextField *textField = [[NSPiuTextField alloc] init];
 	[textField setBezeled:NO];
     [textField setDelegate:(id)textField];
-    [textField setDrawsBackground:NO];
+    [textField setDrawsBackground:YES];
 	[textField setFocusRingType:NSFocusRingTypeNone];
 	[textField setMaximumNumberOfLines:1];
 	textField.piuField = self;
 
 	NSPiuClipView *clipView = [[NSPiuClipView alloc] init];
     [clipView setDocumentView:textField];
-    [clipView setDrawsBackground:NO];
+    [clipView setDrawsBackground:YES];
 	clipView.piuContent = (PiuContent*)self;
 	
 	(*self)->nsClipView = clipView;

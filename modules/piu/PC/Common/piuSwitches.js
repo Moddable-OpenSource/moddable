@@ -31,17 +31,22 @@ export class SwitchBehavior extends Behavior {
 		else
 			offset = Math.round(offset);
 		this.offset = offset;
-		bar.state = this.offset / this.size;
-		button.x = container.x + this.offset;
+		bar.state = container.active ? 1 + (this.offset / this.size) : 0;
+		button.state = container.active ? 1 : 0;
+		button.x = bar.x + this.offset + 1;
 	}
 	onCreate(container, data) {
 		this.data = data;
 	}
+	onDataChanged(container) {
+		this.changeOffset(container, this.data.value ? this.size : 0);
+	}
 	onDisplaying(container) {
 		var bar = container.first;
 		var button = bar.next;
-		this.size = bar.width - button.width;
-		this.changeOffset(container, this.data.value ? this.size : 0);
+		this.size = bar.width - button.width - 2;
+		let data = this.data;
+		this.onDataChanged(container);
 	}
 	onTimeChanged(container) {
 		this.changeOffset(container, this.anchor + Math.round(this.delta * container.fraction));
@@ -87,7 +92,6 @@ export class SwitchBehavior extends Behavior {
 		let data = this.data;
 		if (data.value != value) {
 			data.value = value;
-			container.next.string = value ? data.on : data.off;
 			this.onValueChanged(container);
 		}
 	}
@@ -105,8 +109,8 @@ export var Switch = Container.template(($, it) => ({
 	width:50, height:30, active:true,
 	Behavior: SwitchBehavior,
 	contents: [
-		Content($, { left:0, right:0, height:30, skin:it.barSkin }),
-		Content($, { left:0, width:30, height:30, skin:it.buttonSkin }),
+		RoundContent($, { left:5, width:40, top:5, height:20, border:1, radius:10, skin:skins.switchBar }),
+		RoundContent($, { left:6, width:18, top:6, height:18, border:1, radius:9, skin:skins.switchButton }),
 	],
 }));
 

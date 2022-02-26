@@ -38,10 +38,7 @@
 import {} from "piu/PC";
 
 import {
-	applicationStyle,
-	backgroundSkin,
-	logoSkin,
-	noCodeSkin
+	buildAssets
 } from "assets";
 
 import {
@@ -126,6 +123,25 @@ class Home {
 	}
 };
 
+const conversations = [
+	{ visible:true, id:"WOW", tint:0 },
+	{ visible:true, id:"OOPS", tint:1 },
+	{ visible:true, id:"OOPS", tint:2 },
+	{ visible:true, id:"OOPS", tint:3 },
+	{ visible:true, id:"OOPS", tint:4 },
+	{ visible:true, id:"OOPS", tint:5 },
+	{ visible:true, id:"OOPS", tint:6 },
+];
+const items = [
+	{ conversation:conversations[0], flags:4, message:"This ia a test. This ia a test. This ia a test. This ia a test. This ia a test. This ia a test. " },
+	{ conversation:conversations[1], flags:5, message:"This ia a test. This ia a test. This ia a test. This ia a test. This ia a test. This ia a test. " },
+	{ conversation:conversations[2], flags:6, message:"This ia a test. This ia a test. This ia a test. This ia a test. This ia a test. This ia a test. " },
+	{ conversation:conversations[3], flags:4, message:"This ia a test" },
+	{ conversation:conversations[4], flags:5, message:"This ia a test" },
+	{ conversation:conversations[5], flags:6, message:"This ia a test" },
+	{ conversation:conversations[6], flags:6, message:"This ia a test" },
+];
+
 class ApplicationBehavior extends DebugBehavior {
 	onCreate(application) {
 		global.model = this;
@@ -184,13 +200,27 @@ class ApplicationBehavior extends DebugBehavior {
 				this.state = item.state;
 			}
 		}
-		application.add(new MainContainer(this));
-		this.doOpenView();
 			
 		this.start();
 		application.updateMenus();
 	}
+	onAppearanceChanged(application, which) {
+		buildAssets(which);
+		
+		globalThis.tableRowStyle = new Style(styles.tableRow);
 	
+		if (application.first) {
+			application.distribute("onMachineDeselected", this.currentMachine, this.currentTab);
+			application.replace(application.first, new MainContainer(this));
+			this.doOpenView();
+			application.distribute("onMachineSelected", this.currentMachine, this.currentTab);
+		}
+		
+	}
+	onDisplaying(application) {
+		application.add(new MainContainer(this));
+		this.doOpenView();
+	}
 	selectMachine(machine, tab = 0) {
 		if ((this.currentMachine != machine) || (this.currentTab != tab)) {
 			application.distribute("onMachineDeselected", this.currentMachine, this.currentTab);
@@ -203,8 +233,10 @@ class ApplicationBehavior extends DebugBehavior {
 				if ((this.currentMachine) || (this.currentTab != tab)) {
 					if (tab == 0)
 						container.replace(container.first, new FilePane(this));
-					else if (tab == 1)
+					else if (tab == 1) {
 						container.replace(container.first, new MessagePane(this));
+						application.distribute("onBubblesChanged", items);
+					}
 					else if (tab == 2)
 						container.replace(container.first, new SerialPane(this));
 					else
@@ -559,7 +591,12 @@ var MainContainer = Container.template($ => ({
 				Container($, { 
 					anchor:"FEATURE", left:0, width:0, top:0, bottom:0,
 					contents: [
-						FilePane($, {}),
+						$.currentMachine ?  DebugPane($, {}) : 
+							$.currentTab == 0 ?  FilePane($, {}) : 
+							$.currentTab == 1 ?  MessagePane($, {}) : 
+							$.currentTab == 2 ?  SerialPane($, {}) : Test262Pane($, {})
+// 					
+// 						FilePane($, {}),
 					]
 				}),
 				($.arrangement) ? HorizontalLayout($, { width:0 }) : VerticalLayout($, { width:0 }),
@@ -614,15 +651,14 @@ var VerticalLayout = Layout.template($ => ({
 }));
 
 var NoCodePane = Container.template($ => ({
-	left:0, right:0, top:0, bottom:0, skin:noCodeSkin,
+	left:0, right:0, top:0, bottom:0, skin:skins.noCode,
 	contents: [
-		Content($, { skin:logoSkin }),
+		Content($, { skin:skins.logo }),
 	],
 }));
 
 let DebuggerApplication = Application.template($ => ({
-	skin:backgroundSkin,
-	style:applicationStyle,
+	style:{ font:"12px Open Sans" },
 	Behavior: ApplicationBehavior,
 	contents: [
 	],

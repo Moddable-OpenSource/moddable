@@ -67,3 +67,31 @@ export class ButtonBehavior extends Behavior {
 		this.changeState(container, container.hit(x, y) ? 3 : 2);
 	}
 };
+
+// TEMPLATES
+
+export var Button = Container.template(($, it) => ({
+	width:80, height:30, Behavior:ButtonBehavior, active:true,
+	contents: [
+		RoundContent($, { left:5, right:5, top:5, height:20, border:1, radius:5, skin:skins.button, state:0 }),
+		Label($, { left:0, right:0, height:30, style:styles.button, string:it.string }),
+	],
+}));
+
+export var IconButton = Container.template(($, it) => ({
+	Behavior:ButtonBehavior, active:true,
+	contents: [
+		RoundContent($, { left:2, right:2, top:2, bottom:2, radius:4, skin:skins.iconButton }),
+		Content($, { skin:skins.icons, variant:it.variant }),
+	],
+}));
+globalThis.IconButton = IconButton;
+
+export var PopupButton = Container.template(($, it) => ({
+	width:80, height:30, Behavior:ButtonBehavior, active:true,
+	contents: [
+		RoundContent($, { left:5, right:5, top:5, height:20, border:1, radius:5, skin:skins.button, state:0 }),
+		Label($, { left:20, right:0, height:30, style:styles.popupButton, string:it.string }),
+		Content($, { right:5, skin:skins.popupIcons }),
+	],
+}));

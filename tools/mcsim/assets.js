@@ -19,7 +19,6 @@
  */
 
 const BLACK = "black";
-const BLUE = "#192eab";
 const TRANSPARENT = "transparent";
 const WHITE = "white";
 const GRAYS = [
@@ -34,101 +33,210 @@ const GRAYS = [
 	"#333333", "#303030", "#2E2E2E", "#2B2B2B", "#292929", "#262626", "#242424", "#212121", "#1F1F1F", "#1C1C1C",
 	"#191919", "#171717", "#141414", "#121212", "#0F0F0F", "#0D0D0D", "#0A0A0A", "#080808", "#050505", "#030303",
 ];
-// piu/Scrollbars
-export const dividerSkin = { fill:GRAYS[24] };
+const BLUE = "#192eab";
+const ORANGE = "#f68100"
 
-// piu/Dividers
-export const horizontalScrollbarSkin = { 
-	fill: [ TRANSPARENT, GRAYS[2], GRAYS[2] ],
-	stroke: [ TRANSPARENT, GRAYS[14], GRAYS[14] ],
-	borders: { top:1 },
+const liteColors = {
+	background: GRAYS[20],
+	
+	divider: GRAYS[14],
+	
+	footer: {
+		background: [GRAYS[6], GRAYS[10], GRAYS[14], GRAYS[6]],
+		text: BLACK
+	},
+	header: {
+		background: [GRAYS[6], GRAYS[10], GRAYS[14], GRAYS[6]],
+		text: [GRAYS[30], GRAYS[85], GRAYS[85], GRAYS[85]],
+	},
+	pane: {
+		background: GRAYS[2],
+		border: GRAYS[14],
+	},
+	
+	button: {
+		background:[TRANSPARENT, WHITE, GRAYS[12], BLUE],
+		border: [GRAYS[10], GRAYS[20], GRAYS[20], BLUE],
+		text:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE],
+	},
+	controlName: {
+		text:GRAYS[85],
+	},
+	controlValue: {
+		text:[GRAYS[85],GRAYS[19]],
+	},
+	
+	icon: {
+		background: [TRANSPARENT, TRANSPARENT, WHITE, BLUE],
+		border: [GRAYS[10], GRAYS[20], GRAYS[20], BLUE],
+		text: [GRAYS[19], GRAYS[85], GRAYS[85], WHITE],
+	},
+	popupMenu: {
+		background:WHITE,
+		border:GRAYS[12],
+	},
+	popupMenuItem: {
+		background:[TRANSPARENT, TRANSPARENT, GRAYS[10], BLUE],
+		text:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE],
+	},
+	scrollbar: {
+		background:[ TRANSPARENT, GRAYS[2], GRAYS[2] ],
+		border:[ TRANSPARENT, GRAYS[14], GRAYS[14] ],
+		thumb: [ "#e0e0e000", GRAYS[10], GRAYS[10], GRAYS[10] ],
+	},
+	slider: {
+		background:[TRANSPARENT, GRAYS[41], BLUE, BLUE],
+		border:[GRAYS[10], GRAYS[41], BLUE, BLUE],
+		button: {
+			background:[GRAYS[2], WHITE, WHITE, WHITE],
+			border:[GRAYS[10], GRAYS[41], GRAYS[41], GRAYS[41]],
+		}
+	},
+	switch: {
+		background:[TRANSPARENT, GRAYS[41], BLUE, BLUE],
+		border:[GRAYS[10], GRAYS[41], BLUE, BLUE],
+		button: {
+			background:[TRANSPARENT, WHITE, WHITE, WHITE],
+			border:[GRAYS[10], WHITE, WHITE, WHITE],
+		}
+	},
+	timer: {
+		background:[WHITE, BLUE],
+		border:GRAYS[14],
+	},
 };
-export const verticalScrollbarSkin = { 
-	fill: [ TRANSPARENT, GRAYS[2], GRAYS[2] ],
-	stroke: [ TRANSPARENT, GRAYS[14], GRAYS[14] ],
-	borders: { left:1 },
+
+const darkColors = {
+	background: "#4D4D4D",
+	
+	divider: GRAYS[67],
+	
+	footer: {
+		background: [GRAYS[84], GRAYS[80], GRAYS[76], GRAYS[84]],
+		text: WHITE
+	},
+	header: {
+		background: [GRAYS[84], GRAYS[80], GRAYS[76], GRAYS[84]],
+		text: [GRAYS[70], GRAYS[15], GRAYS[15], GRAYS[15]],
+	},
+	pane: {
+		background: GRAYS[80],
+		border: GRAYS[67],
+	},
+	
+	button: {
+		background:[TRANSPARENT, "#5D5D5D", "#5D5D5D", ORANGE],
+		border: ["#5D5D5D", "#707070", "#707070", ORANGE],
+		text:["#5D5D5D", "#E4E4E4", "#E4E4E4", WHITE],
+	},
+	controlName: {
+		text:GRAYS[15],
+	},
+	controlValue: {
+		text:[GRAYS[15],GRAYS[81]],
+	},
+	
+	icon: {
+		background: [TRANSPARENT, TRANSPARENT, BLACK, ORANGE],
+		border: [GRAYS[10], GRAYS[20], GRAYS[20], ORANGE],
+		text: [GRAYS[81], GRAYS[15], GRAYS[15], WHITE],
+	},
+	popupMenu: {
+		background:"#353535",
+		border:"#707070",
+	},
+	popupMenuItem: {
+		background:[TRANSPARENT, TRANSPARENT, "#707070", ORANGE],
+		text:[GRAYS[81], WHITE, WHITE, WHITE],
+	},
+	scrollbar: {
+		background:[ TRANSPARENT, GRAYS[98], GRAYS[98] ],
+		border:[ TRANSPARENT, GRAYS[86], GRAYS[86] ],
+		thumb: [ "#e0e0e000", GRAYS[90], GRAYS[90], GRAYS[90] ],
+	},
+	slider: {
+		background:[TRANSPARENT, "#5D5D5D", ORANGE, ORANGE],
+		border:["#5D5D5D", "#5D5D5D", ORANGE, ORANGE],
+		button: {
+			background:[GRAYS[80], "#E4E4E4", "#E4E4E4", "#E4E4E4"],
+			border:["#5D5D5D", "#707070", "#707070", "#707070"],
+		}
+	},
+	switch: {
+		background:[TRANSPARENT, "#5D5D5D", ORANGE, ORANGE],
+		border:["#5D5D5D", "#5D5D5D", ORANGE, ORANGE],
+		button: {
+			background:[TRANSPARENT, "#E4E4E4", "#E4E4E4", "#E4E4E4"],
+			border:["#5D5D5D", "#E4E4E4", "#E4E4E4", "#E4E4E4"],
+		}
+	},
+	timer: {
+		background:[BLACK, ORANGE],
+		border:"#707070",
+	},
 };
-export const scrollbarThumbSkin = {
-	fill: [ "#e0e0e000", GRAYS[10], GRAYS[10], GRAYS[10] ],
+
+const themes = [
+	liteColors,
+	darkColors,
+];
+Object.freeze(themes, true)
+
+const textures = {
+	icons: { path:"assets/icons.png", scale:2 },
+	popup: { path:"assets/popup.png", scale:2 },
+	shadow: { path:"assets/shadow.png", scale:1 },
 };
+Object.freeze(textures, true)
 
-export const backgroundSkin = { fill:GRAYS[20] };
-export const applicationStyle = { font:"12px Open Sans" };
+function buildSkins($) {
+	globalThis.skins = {
+		background: new Skin({ fill:$.background }),
+		button: new Skin({ fill:$.button.background, stroke:$.button.border }),
+		iconButton: new Skin({ fill:$.icon.background, stroke:$.icon.border }),
+		icons: new Skin({ texture:textures.icons, color:$.icon.text, x:0, y:0, width:30, height:30, variants:30 }),
+		divider: new Skin({ fill:$.divider }),
+		
+		paneBody: new Skin({ fill:$.pane.background }),
+		paneBorder: new Skin({ fill:$.pane.border }),
+		
+		paneHeader: new Skin({ fill:$.header.background }),
+		
+		popupIcons: new Skin({ texture:textures.popup, color:$.popupMenuItem.text, x:0, y:0, width:20, height:30, variants:20 }),
+		popupMenu: new Skin({ fill:$.popupMenu.background, stroke:$.popupMenu.border, left:1, right:1, top:1, bottom:1 }),
+		popupMenuItem: new Skin({ fill:$.popupMenuItem.background }),
+		popupMenuShadow: new Skin({ texture:textures.shadow, x:0, y:0, width:60, height:40, left:20, right:20, top:10, bottom:20 }),
+	
+		scrollbarThumb: new Skin({ fill:$.scrollbar.thumb }),
+		horizontalScrollbar: new Skin({ fill:$.scrollbar.background, stroke:$.scrollbar.border, top:1 }),
+		verticalScrollbar: new Skin({ fill:$.scrollbar.background, stroke:$.scrollbar.border, left:1 }),
 
-export const controlsScrollerSkin = { fill:GRAYS[2] };
-export const controlRowSkin = { fill:[GRAYS[2], GRAYS[6]] };
-export const controlNameStyle = { color:GRAYS[85], horizontal:"left", left:10 };
-export const controlValueStyle = { font:"light", color:[GRAYS[85],GRAYS[19]], horizontal:"left", left:10 };
+		sliderBar: new Skin({ fill:$.slider.background, stroke:$.slider.border }),
+		sliderButton: new Skin({ fill:$.slider.button.background, stroke:$.slider.button.border }),
+		
+		switchBar: new Skin({ fill:$.switch.background, stroke:$.switch.border }),
+		switchButton: new Skin({ fill:$.switch.button.background, stroke:$.switch.button.border }),
+		
+		timer: new Skin({ fill:$.timer.background, stroke:$.timer.border, left:1, right:1, top:1, bottom:1 }),
+	};
+}
 
-const dialogTexture = { path:"assets/dialog.png", scale:1 };
-const menuTexture = { path:"assets/menu.png", scale:2 };
-const buttonsTexture = { path:"assets/buttons.png", scale:2 };
-export const buttonsSkin = { texture:buttonsTexture, x:2, y:2, width:26, height:26, variants:30, states:30 };
+function buildStyles($) {
+	globalThis.styles = {
+		button: new Style({ font:"semibold", color:$.button.text }),
+		controlName: new Style({ color:$.controlName.text, horizontal:"left", left:10 }),
+		controlValue: new Style({ font:"light", color:$.controlValue.text, horizontal:"left", left:10 }),
+		paneFooterLeft: new Style({ font:"light", color:$.footer.text, horizontal:"left", left:10 }),
+		paneFooterRight: new Style({ font:"light", color:$.footer.text, horizontal:"right", right:10 }),
+		paneHeader: new Style({ font:"semibold", color:$.header.text, horizontal:"left" }),
+		popupButton: new Style({ font:"semibold", color:$.button.text, horizontal:"left" }),
+		popupMenuItem: new Style({ font: "semibold", color:$.popupMenuItem.text, horizontal:"left" }),
+	};
+}
 
-export const controlsMenuSkin = { texture:dialogTexture, x:0, y:0, width:60, height:40, left:20, right:20, top:10, bottom:20 };
-export const controlsMenuGlyphSkin = { texture:menuTexture, x:0, y:0, width:20, height:20, variants:20, states:20 };
-export const controlsMenuItemSkin = { fill:[TRANSPARENT, TRANSPARENT, GRAYS[10], BLUE] };
-export const controlsMenuItemStyle = { font: "semibold", color:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE], horizontal:"left" }
+export function buildAssets(which) { 
+	const theme = themes[which];
+	buildSkins(theme);
+	buildStyles(theme);
+}
 
-const glyphsTexture = { path:"assets/glyphs.png", scale:2 };
-export const glyphsSkin = { texture:glyphsTexture, x:0, y:0, width:20, height:20, variants:20, states:20 };
-
-const buttonTexture = { path:"assets/button.png", scale:2 };
-export const buttonSkin = { texture:buttonTexture, x:0, y:0, width:60, height:30, states:30, tiles:{ left:15, right:40 }, variants:60 };
-export const buttonStyle = { font:"semibold", color:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE] };
-export const popupStyle = { font:"semibold", color:[GRAYS[19], GRAYS[85], GRAYS[85], WHITE], horizontal:"left",  };
-const dotTexture = { path:"assets/dot.png", scale:2 };
-export const dotSkin = { texture:dotTexture, x:0, y:0, width:20, height:30 };
-
-const sliderTexture = { path:"assets/slider.png", scale:2};
-export const sliderBarSkin = { texture:sliderTexture, x:0, y:0, width:60, height:30, left:15, right:15, variants:90, states:30 };
-export const sliderButtonSkin = { texture:sliderTexture, x:60, y:0, width:30, height:30, variants:90, states:30 };
-
-const switchTexture = { path:"assets/switch.png", scale:2 };
-export const switchBarSkin = { texture:switchTexture, x:0, y:0, width:60, height:30, variants:90, states:30, tiles: { left:20, right:20 }  };
-export const switchButtonSkin = { texture:switchTexture, x:60, y:0, width:30, height:30, variants:90, states:30 };
-
-export const paneBackgroundSkin = { fill:GRAYS[6] };
-export const paneBodySkin = { fill:GRAYS[2] };
-export const paneHeaderSkin = { fill:[GRAYS[6], GRAYS[10], GRAYS[14], GRAYS[6]] };
-export const paneHeaderStyle = { font:"semibold", color:[GRAYS[30], GRAYS[85], GRAYS[85], GRAYS[85]], horizontal:"left" };
-export const paneBorderSkin = { fill:GRAYS[14] };
-export const paneSeparatorSkin = { fill:GRAYS[14] };
-export const paneFooterLeftStyle = { font:"light", color:BLACK, horizontal:"left", left:10 };
-export const paneFooterRightStyle = { font:"light", color:BLACK, horizontal:"right", right:10 };
-
-export const timerSkin = { fill:[WHITE, BLUE], stroke:GRAYS[14], left:1, right:1, top:1, bottom:1 };
-
-Object.freeze(dividerSkin, true)
-Object.freeze(horizontalScrollbarSkin, true)
-Object.freeze(verticalScrollbarSkin, true)
-Object.freeze(scrollbarThumbSkin, true)
-Object.freeze(backgroundSkin, true)
-Object.freeze(applicationStyle, true)
-Object.freeze(controlsScrollerSkin, true)
-Object.freeze(controlRowSkin, true)
-Object.freeze(controlNameStyle, true)
-Object.freeze(controlValueStyle, true)
-Object.freeze(buttonsSkin, true)
-Object.freeze(controlsMenuSkin, true)
-Object.freeze(controlsMenuGlyphSkin, true)
-Object.freeze(controlsMenuItemSkin, true)
-Object.freeze(controlsMenuItemStyle, true)
-Object.freeze(glyphsSkin, true)
-Object.freeze(buttonSkin, true)
-Object.freeze(buttonStyle, true)
-Object.freeze(popupStyle, true)
-Object.freeze(dotSkin, true)
-Object.freeze(sliderBarSkin, true)
-Object.freeze(sliderButtonSkin, true)
-Object.freeze(switchBarSkin, true)
-Object.freeze(switchButtonSkin, true)
-Object.freeze(paneBackgroundSkin, true)
-Object.freeze(paneBodySkin, true)
-Object.freeze(paneHeaderSkin, true)
-Object.freeze(paneHeaderStyle, true)
-Object.freeze(paneBorderSkin, true)
-Object.freeze(paneSeparatorSkin, true)
-Object.freeze(paneFooterLeftStyle, true)
-Object.freeze(paneFooterRightStyle, true)
-Object.freeze(timerSkin, true)

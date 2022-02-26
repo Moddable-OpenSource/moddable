@@ -35,25 +35,6 @@
  *       limitations under the License.
  */
 
-// ASSETS
-
-import {
-	paneBorderSkin,
-	paneHeaderSkin,
-	paneHeaderStyle,
-	buttonSkin,
-	buttonStyle,
-	buttonsSkin,
-	codeSkin,
-	codeStyle,
-	errorStyle,
-	lineNumberSkin,
-	lineNumberStyle,
-	lineNumbersSkin,
-	pathSpanStyle,
-	pathNameStyle,
-} from "assets";	
-
 // BEHAVIORS
 
 import { 
@@ -600,16 +581,16 @@ export var CodeView = Container.template($ => ({
 		Container($, {
 			left:0, right:0, top:26, bottom:0,
 			contents: [
-				Content($, { left:0, right:0, top:0, height:1, skin:paneBorderSkin, }),
+				Content($, { left:0, right:0, top:0, height:1, skin:skins.paneBorder, }),
 				Scroller($, {
-					left:50, right:0, top:1, bottom:0, clip:true, active:true, 
+					left:50, right:0, top:1, bottom:0, skin:skins.background, clip:true, active:true, 
 					Behavior: class extends ScrollerBehavior {
 						onScrolled(scroller) {
 							scroller.next.first.next.scrollTo(0, scroller.scroll.y);
 						}
 					},
 					contents: [
-						Code($, { anchor:"CODE", left:0, top:0, skin:codeSkin, style:codeStyle, active:true, selectable:true, Behavior:CodeBehavior }),
+						Code($, { anchor:"CODE", left:0, top:0, skin:skins.code, style:styles.code, active:true, selectable:true, Behavior:CodeBehavior }),
 						HorizontalScrollbar($, {}),
 						VerticalScrollbar($, {}),
 					],
@@ -617,7 +598,7 @@ export var CodeView = Container.template($ => ({
 				Container($, {
 					left:0, width:60, top:1, bottom:0, clip:true,
 					contents: [
-						Content($, { left:0, width:50, top:0, bottom:0, skin:lineNumbersSkin, }),
+						Content($, { left:0, width:50, top:0, bottom:0, skin:skins.lineNumbers, }),
 						Scroller($, {
 							left:0, width:50, top:0, bottom:0, active:true,
 							Behavior: class extends Behavior {
@@ -638,7 +619,7 @@ export var CodeView = Container.template($ => ({
 		}),
 		FindRow($, { anchor:"FIND" }),
 		Row($, {
-			left:0, right:0, top:0, height:26, skin:paneHeaderSkin, active:true, 
+			left:0, right:0, top:0, height:26, skin:skins.paneHeader, active:true, 
 			Behavior: class extends Behavior {
 				onCreate(row, data) {
 					this.data = data;
@@ -650,16 +631,16 @@ export var CodeView = Container.template($ => ({
 			contents: [
 				Content($, { width:8 }),
 				PathLayout($, {}),
-				Content($, {
-					skin:buttonsSkin, variant:10, state:1, active:true, 
+				IconButton($, {
+					variant:10, state:1, active:true, 
 					Behavior: class extends ButtonBehavior {
 						onTap(button) {
 							system.launchPath(this.data.path);
 						}
 					},
 				}),
-				Content($, { skin:buttonsSkin, variant:11, state:1, active:true, Behavior:ButtonBehavior, name:"doFind" }),
-				Content($, { skin:buttonsSkin, variant:6, state:1, active:true, Behavior:ButtonBehavior, name:"doCloseFile" }),
+				IconButton($, { variant:11, state:1, active:true, Behavior:ButtonBehavior, name:"doFind" }),
+				IconButton($, { variant:6, state:1, active:true, Behavior:ButtonBehavior, name:"doCloseFile" }),
 			],
 		}),
 	],
@@ -668,7 +649,7 @@ export var CodeView = Container.template($ => ({
 var LineNumber = Container.template($ => ({
 	left:0, right:0, height:16,
 	contents: [
-		Label($, { left:0, right:-8, height:16, skin:lineNumberSkin, style:lineNumberStyle, string:++$ }),
+		Label($, { left:0, right:-8, height:16, skin:skins.lineNumber, style:styles.lineNumber, string:++$ }),
 	],
 }));
 
@@ -676,7 +657,7 @@ var PathLayout = Layout.template($ => ({
 	left:0, right:0, clip:true,
 	Behavior: class extends Behavior {
 		onCreate(layout, data) {
-			this.width = pathSpanStyle.measure(data.path).width + 90;
+			this.width = styles.pathSpan.measure(data.path).width + 90;
 		}
 		onAdapt(layout) {
 			let text = layout.first;
@@ -686,7 +667,7 @@ var PathLayout = Layout.template($ => ({
 	},
 	contents: [
 		Text($, { 
-			left:0, right:0, style:pathSpanStyle, active:true,
+			left:0, right:0, style:styles.pathSpan, active:true,
 			Behavior: class extends Behavior {
 				onCreate(text, data) {
 					let separator = (system.platform == "win") ? "\\" : "/";
@@ -700,14 +681,12 @@ var PathLayout = Layout.template($ => ({
 						let link = new PathLink(url);
 						return { link, spans:string };
 					});
-					items.push({ spans:name, style:pathNameStyle });
+					items.push({ spans:name, style:styles.pathName });
 					text.blocks = [{ spans:items }];
 				}
 			},
 		}),
-		Content($, {
-			left:0, width:30, height:30, skin:buttonsSkin, variant:13, visible:false,
-		}),
+		IconButton($, { left:0, width:30, height:30, variant:13, visible:false }),
 	],
 }));
 
@@ -743,14 +722,14 @@ export var ErrorView = Container.template($ => ({
 		Container($, {
 			left:0, right:0, top:26, bottom:0,
 			contents: [
-				Content($, { left:0, right:0, top:0, height:1, skin:paneBorderSkin, }),
+				Content($, { left:0, right:0, top:0, height:1, skin:skins.paneBorder, }),
 				Column($, {
 					contents: [
-						Label($, { state:1, style:errorStyle, string:"File not found!" }),
+						Label($, { state:1, style:styles.error, string:"File not found!" }),
 						Container($, {
-							anchor:"BUTTON", width:80, skin:buttonSkin, active:true, name:"onEnter",
+							anchor:"BUTTON", width:80, skin:skins.button, active:true,
 							Behavior: class extends ButtonBehavior {
-								onEnter(button) {
+								onTap(button) {
 									var path = this.data.path;
 									var dictionary = { message:"Locate " + path, prompt:"Open" };
 									var extension = system.getPathExtension(path);
@@ -760,7 +739,8 @@ export var ErrorView = Container.template($ => ({
 								}
 							},
 							contents: [
-								Label($, { left:0, right:0, style:buttonStyle, string:"Locate..." }),
+								RoundContent($, { left:3, right:3, top:4, bottom:4, radius:5, skin:skins.iconButton }),
+								Label($, { left:0, right:0, style:styles.iconButton, string:"Locate..." }),
 							],
 						}),
 					]
@@ -768,11 +748,11 @@ export var ErrorView = Container.template($ => ({
 			],
 		}),
 		Row($, {
-			left:0, right:0, top:0, height:26, skin:paneHeaderSkin, 
+			left:0, right:0, top:0, height:26, skin:skins.paneHeader, 
 			contents: [
 				Content($, { width:8 }),
-				Label($, { left:0, right:0, style: paneHeaderStyle, string:$.path }),
-				Content($, { skin:buttonsSkin, variant:6, state:1, active:true, Behavior:ButtonBehavior, name:"doCloseFile" }),
+				Label($, { left:0, right:0, style:styles.paneHeader, string:$.path }),
+				IconButton($, { variant:6, state:1, active:true, Behavior:ButtonBehavior, name:"doCloseFile" }),
 			],
 		}),
 	],

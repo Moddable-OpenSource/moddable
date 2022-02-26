@@ -91,12 +91,14 @@ struct PiuViewStruct {
 	GtkWidget* gtkView;
 	GtkCssProvider* gtkCssProvider;
 	cairo_t* cairo;
-	PiuBoolean running;
 	guint timer;
+	PiuBoolean running;
 	PiuBoolean touching;
+	PiuBoolean filtered;
 };
 
 extern xsMachine* ServiceThreadMain(void* context);
+extern void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor);
 extern void fxAbort(xsMachine *the, int status);
 extern void PiuConfigPath(char* path);
 extern char gtkApplicationPath[];

@@ -36,19 +36,6 @@
  */
 
 import {
-	tabBreakpointSkin,
-	tabBreakpointStyle,
-	tabBubbleSkin,
-	tabBubbleStyle,
-	tabBrokenSkin,
-	tabSkin,
-	tabStyle,
-	tabTest262Style,
-	tabsPaneSkin,
-	buttonsSkin,
-} from "assets";
-
-import {
 	ButtonBehavior,
 	ScrollerBehavior,
 } from "behaviors";
@@ -75,7 +62,7 @@ class TabsPaneBehavior extends Behavior {
 	onMeasureHorizontally(layout, width) {
 		let scroller = layout.first;
 		let row = scroller.first;
-		let sum = this.data.machines.reduce((sum, machine) => sum + tabStyle.measure(machine.title).width, 62);
+		let sum = this.data.machines.reduce((sum, machine) => sum + styles.tab.measure(machine.title).width, 62);
 		row.width = Math.max(sum, application.width);
 		return width;
 	}
@@ -201,7 +188,7 @@ class MachineTabBehavior extends TabBehavior {
 };
 
 export var TabsPane = Layout.template($ => ({
-	left:0, right:0, top:0, height:27, skin:tabsPaneSkin, Behavior:TabsPaneBehavior,
+	left:0, right:0, top:0, height:27, skin:skins.tabsPane, Behavior:TabsPaneBehavior,
 	contents: [
 		Scroller($, {
 			left:0, right:0, top:0, bottom:1, clip:true, active:true, Behavior:ScrollerBehavior, 
@@ -217,10 +204,10 @@ export var TabsPane = Layout.template($ => ({
 }));
 
 var BreakpointsTab = Container.template($ => ({
-	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:BreakpointsTabBehavior,
+	width:52, top:0, bottom:0, skin:skins.tab, active:true, Behavior:BreakpointsTabBehavior,
 	contents: [
 		Label($, { 
-			left:5, right:5, height:16, skin:tabBreakpointSkin, style:tabBreakpointStyle,
+			left:5, right:5, height:16, skin:skins.tabBreakpoint, style:styles.tabBreakpoint,
 			Behavior: class extends Behavior {
 				onCreate(label) {
 					this.onBreakpointsChanged(label);
@@ -234,10 +221,10 @@ var BreakpointsTab = Container.template($ => ({
 }));
 
 var BubblesTab = Container.template($ => ({
-	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:BubblesTabBehavior,
+	width:52, top:0, bottom:0, skin:skins.tab, active:true, Behavior:BubblesTabBehavior,
 	contents: [
 		Label($, { 
-			left:2, right:5, height:16, skin:tabBubbleSkin, style:tabBubbleStyle,
+			left:2, right:5, height:16, skin:skins.tabBubble, style:styles.tabBubble,
 			Behavior: class extends Behavior {
 				onCreate(label) {
 					this.onBubblesChanged(label);
@@ -251,29 +238,39 @@ var BubblesTab = Container.template($ => ({
 }));
 
 var SerialTab = Container.template($ => ({
-	top:0, bottom:0, skin:tabSkin, active:true, Behavior:SerialTabBehavior,
-	contents: [
-		Label($, { top:0, bottom:0, style:tabTest262Style, string:"SERIAL" }),
-	],
-}));
-
-var Test262Tab = Container.template($ => ({
-	top:0, bottom:0, skin:tabSkin, active:true, Behavior:Test262TabBehavior,
-	contents: [
-		Label($, { top:0, bottom:0, style:tabTest262Style, string:"TEST262" }),
-	],
-}));
-
-var MachineTab = Container.template($ => ({
-	top:0, bottom:0, skin:tabSkin, active:true, Behavior:MachineTabBehavior,
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:SerialTabBehavior,
 	contents: [
 		Container($, { 
 			top:0, bottom:0,
 			contents: [
-				Content($, { left:3, width:20, visible:$.broken, skin:tabBrokenSkin, }),
-				Label($, { top:0, bottom:0, style:tabStyle, string:$.title }),
+				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"SERIAL" }),
 			],
 		}),
-		Content($, { left:0, width:26, active:true, visible:false, skin:buttonsSkin, variant:6, state:1, Behavior:ButtonBehavior, name:"onCloseTab" }),
+	],
+}));
+
+var Test262Tab = Container.template($ => ({
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:Test262TabBehavior,
+	contents: [
+		Container($, { 
+			top:0, bottom:0,
+			contents: [
+				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"TEST262" }),
+			],
+		}),
+	],
+}));
+
+var MachineTab = Container.template($ => ({
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:MachineTabBehavior,
+	contents: [
+		Container($, { 
+			top:0, bottom:0,
+			contents: [
+				Content($, { left:3, width:20, visible:$.broken, skin:skins.tabBroken, }),
+				Label($, { top:0, bottom:0, style:styles.tab, string:$.title }),
+			],
+		}),
+		IconButton($, { left:0, width:26, active:true, visible:false, variant:6, state:1, Behavior:ButtonBehavior, name:"onCloseTab" }),
 	],
 }));
