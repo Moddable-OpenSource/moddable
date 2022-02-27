@@ -156,6 +156,9 @@ class Test262TabBehavior extends TabBehavior {
 };
 
 class MachineTabBehavior extends TabBehavior {
+	changeState(container, state) {
+		container.state = container.first.last.state = state;
+	}
 	isSelected(container) {
 		return model.currentMachine == this.machine ;
 	}
@@ -206,8 +209,9 @@ export var TabsPane = Layout.template($ => ({
 var BreakpointsTab = Container.template($ => ({
 	width:52, top:0, bottom:0, skin:skins.tab, active:true, Behavior:BreakpointsTabBehavior,
 	contents: [
+		Content($, { left:5, skin:skins.lineBreakpoint, state:1 }),
 		Label($, { 
-			left:5, right:5, height:16, skin:skins.tabBreakpoint, style:styles.tabBreakpoint,
+			left:5, right:5, height:16, style:styles.tabBreakpoint,
 			Behavior: class extends Behavior {
 				onCreate(label) {
 					this.onBreakpointsChanged(label);
@@ -267,7 +271,7 @@ var MachineTab = Container.template($ => ({
 		Container($, { 
 			top:0, bottom:0,
 			contents: [
-				Content($, { left:3, width:20, visible:$.broken, skin:skins.tabBroken, }),
+				Content($, { left:6, visible:$.broken, skin:skins.lineCall, state:1 }),
 				Label($, { top:0, bottom:0, style:styles.tab, string:$.title }),
 			],
 		}),

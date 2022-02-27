@@ -647,18 +647,19 @@ export class HolderContainerBehavior extends Behavior {
 export class RowBehavior extends Behavior {
 	changeState(row) {
 		switch(this.flags) {
-		case 0: row.state = 0; break;
-		case 1: row.state = 1; break;
-		case 2: case 3: row.state = 2; break;
-		default: row.state = 3; break;
+		case 0: row.state = 1; break;
+		case 1: row.state = 2; break;
+		case 2: case 3: row.state = 3; break;
+		default: row.state = 1; break;
 		}
 	}
 	select(row, selectIt) {
-		if (selectIt)
-			this.flags |= 4;
-		else
-			this.flags &= ~4;
-		this.changeState(row);
+		debugger
+// 		if (selectIt)
+// 			this.flags |= 4;
+// 		else
+// 			this.flags &= ~4;
+// 		this.changeState(row);
 	}
 	onChanged(row, data) {
 		this.data = data;

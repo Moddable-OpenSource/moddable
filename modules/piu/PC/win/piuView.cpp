@@ -711,6 +711,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 	RectF source(scale * sx, scale * sy, scale * sw, scale * sh);
 	RectF destination((REAL)x, (REAL)y, (REAL)sw, (REAL)sh);
 	if ((*self)->filtered) {
+		if ((*self)->transparent) return;
 		graphics->DrawImage((*texture)->image, destination, source, UnitPixel, (*self)->imageAttributes);
 	}
 	else {
@@ -721,6 +722,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
 {
 	if ((w <= 0) || (h <= 0)) return;
+	if ((*self)->transparent) return;
 	Graphics* graphics = (*self)->graphics;
 	graphics->FillRectangle((*self)->solidBrush, x, y, w, h);
 }
@@ -848,6 +850,7 @@ void PiuViewPushClip(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimensi
 void PiuViewPushColor(PiuView* self, PiuColor color)
 {
 	(*self)->solidBrush->SetColor(Color(color->a, color->r, color->g, color->b));
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 }
 
 void PiuViewPushColorFilter(PiuView* self, PiuColor color)
@@ -857,12 +860,11 @@ void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 	(*self)->colorMatrix->m[2][2] = 1;
 	(*self)->colorMatrix->m[3][3] = 1;
 	(*self)->colorMatrix->m[4][4] = 1;
-
-
 	(*self)->colorMatrix->m[4][0] = ((REAL)(color->r)) / 255;
 	(*self)->colorMatrix->m[4][1] = ((REAL)(color->g)) / 255;
 	(*self)->colorMatrix->m[4][2] = ((REAL)(color->b)) / 255;
 	(*self)->imageAttributes->SetColorMatrix((*self)->colorMatrix);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 	(*self)->filtered = 1;
 }
 

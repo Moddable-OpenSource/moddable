@@ -246,7 +246,7 @@ var ConversationRow = Row.template(function($) { return {
 		Content($, { width:rowIndent, skin:skins.conversation, variant:$.visible ? 1 : 0 }),
 		Container($, { clip:true,
 			contents:[
-				RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.tint], variant:1 }),
+				RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:0, skin:skins.messages[$.tint], variant:1 }),
 				Label($, { string:$.id || "anonymous" }),
 			]
 		}),
@@ -264,7 +264,7 @@ var BubbleCenterCodeRow = Layout.template($ => ({
 	clip:true, active:true,
 	Behavior: BubbleCodeRowBehavior,
 	contents: [
-		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:1 }),
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:0, skin:skins.messages[$.conversation.tint] }),
 		Container($, { left:12, right:12, clip:true,
 			contents:[
 				Code($, { left:0, top:0, string:$.message, type:"json", active:false }),
@@ -277,8 +277,9 @@ var BubbleLeftCodeRow = Layout.template($ => ({
 	left:0, clip:true, active:true,
 	Behavior: BubbleCodeRowBehavior,
 	contents: [
-		RoundContent($, { left:6, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:0 }), 
-		Container($, { left:14, right:12, clip:true,
+		RoundContent($, { left:8, right:4, top:2, bottom:2, radius:8, border:0, skin:skins.messages[$.conversation.tint] }), 
+		Content($, { left:0, bottom:2, skin:skins.messageMarks[$.conversation.tint], variant:0 }),
+		Container($, { left:16, right:12, clip:true,
 			contents:[
 				Code($, { left:0, top:0, string:$.message, type:"json", active:false }),
 			]
@@ -290,8 +291,9 @@ var BubbleRightCodeRow = Layout.template($ => ({
 	right:0, clip:true, active:true,
 	Behavior: BubbleCodeRowBehavior,
 	contents: [
-		RoundContent($, { left:4, right:6, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:2 }), 
-		Container($, { left:12, right:14, clip:true,
+		RoundContent($, { left:4, right:8, top:2, bottom:2, radius:8, border:0, skin:skins.messages[$.conversation.tint] }), 
+		Content($, { right:0, bottom:2, skin:skins.messageMarks[$.conversation.tint], variant:1 }),
+		Container($, { left:12, right:16, clip:true,
 			contents:[
 				Code($, { left:0, top:0, string:$.message, type:"json", active:false }),
 			]
@@ -303,7 +305,7 @@ var BubbleCenterTextRow = Layout.template($ => ({
 	clip:true, active:true,
 	Behavior: BubbleTextRowBehavior,
 	contents: [
-		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:1 }), 
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:0, skin:skins.messages[$.conversation.tint] }), 
 		Column($, { left:12, right:12, clip:true,
 			contents:[
 				Content($, { height:4 }),
@@ -318,8 +320,9 @@ var BubbleLeftTextRow = Layout.template($ => ({
 	left:0, clip:true, active:true,
 	Behavior: BubbleTextRowBehavior,
 	contents: [
-		RoundContent($, { left:6, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:0 }), 
-		Column($, { left:14, right:12, clip:true,
+		RoundContent($, { left:8, right:4, top:2, bottom:2, radius:8, border:0, skin:skins.messages[$.conversation.tint] }), 
+		Content($, { left:0, bottom:2, skin:skins.messageMarks[$.conversation.tint], variant:0 }),
+		Column($, { left:16, right:12, clip:true,
 			contents:[
 				Content($, { height:4 }),
 				Text($, { left:0, right:0, top:0, string:$.message }),
@@ -333,8 +336,9 @@ var BubbleRightTextRow = Layout.template($ => ({
 	right:0, clip:true, active:true,
 	Behavior: BubbleTextRowBehavior,
 	contents: [
-		RoundContent($, { left:4, right:6, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:2 }), 
-		Column($, { left:12, right:14, clip:true,
+		RoundContent($, { left:4, right:8, top:2, bottom:2, radius:8, border:0, skin:skins.messages[$.conversation.tint] }), 
+		Content($, { right:0, bottom:2, skin:skins.messageMarks[$.conversation.tint], variant:1 }),
+		Column($, { left:12, right:16, clip:true,
 			contents:[
 				Content($, { height:4 }),
 				Text($, { left:0, right:0, top:0, string:$.message }),

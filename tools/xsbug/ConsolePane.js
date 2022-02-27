@@ -164,7 +164,7 @@ export var ConsolePane = Container.template($ => ({
 			],
 		}),
 		Row($, {
-			left:0, right:0, top:0, height:26, skin:skins.paneHeader, active:true, Behavior:ConsoleHeaderBehavior,
+			left:0, right:0, top:0, height:26, skin:skins.paneHeader, state:1, active:true, Behavior:ConsoleHeaderBehavior,
 			contents: [
 				Content($, { width:30, height:26, skin:skins.glyphs }),
 				Label($, { 

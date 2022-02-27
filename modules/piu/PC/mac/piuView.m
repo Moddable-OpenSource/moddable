@@ -768,6 +768,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 	CGFloat scale = (*texture)->scale;
 	PiuDimension th = (*texture)->height;
 	if ((*self)->filtered) {
+		if ((*self)->transparent) return;
 		CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceGray();
 		CGContextRef maskContext = CGBitmapContextCreate(NULL, scale * sw, scale * sh, 8, scale * sw, colorspace, 0);
 		CGColorSpaceRelease(colorspace);
@@ -801,6 +802,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
 {
 	if ((w <= 0) || (h <= 0)) return;
+	if ((*self)->transparent) return;
 	CGContextRef context = (*self)->context;
 	CGContextSetFillColorWithColor(context, (*self)->color);
 	CGRect rect = CGRectMake(x, y, w, h);
@@ -936,6 +938,7 @@ void PiuViewPushColor(PiuView* self, PiuColor color)
 	components[2] = (float)color->b / 255;
 	components[3] = (float)color->a / 255;
 	(*self)->color = CGColorCreate((*self)->colorSpace, components);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 }
 
 void PiuViewPushColorFilter(PiuView* self, PiuColor color)
@@ -946,6 +949,7 @@ void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 	components[2] = (float)color->b / 255;
 	components[3] = (float)color->a / 255;
 	(*self)->color = CGColorCreate((*self)->colorSpace, components);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 	(*self)->filtered = 1;
 }
 

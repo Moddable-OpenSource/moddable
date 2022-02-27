@@ -149,7 +149,7 @@ export var FindRow = Row.template(function($) { return {
 	left:0, right:0, top:26, height:27, visible:false, clip:true,
 	contents: [
 		Row($, {
-			left:0, right:0, top:-30, height:30, skin:skins.paneHeader, state:0, 
+			left:0, right:0, top:-30, height:30, skin:skins.paneHeader, state:1, 
 			contents: [
 				Content($, { width:4 }),
 				FindField($, {}),
