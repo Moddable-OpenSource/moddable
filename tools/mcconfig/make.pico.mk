@@ -320,6 +320,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/lib/tinyusb/src		\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/common		\
 	$(PICO_SDK_DIR)/lib/tinyusb/hw		\
+	$(PICO_SDK_DIR)/src/common/pico_usb_reset_interface/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/include	\
 	$(XS_DIR)/../modules/files/preference \
 	$(XS_DIR)/../modules/base/instrumentation \
