@@ -51,6 +51,7 @@ struct SerialRecord {
 	uint8_t		uart;
 	uint8_t		useCount;
 	uint8_t		txInterruptEnabled;
+	uint8_t		hasOnReadableOrWritable;
 	uart_dev_t	*uart_reg;
 	uint32_t	transmit;
 	uint32_t	receive;
@@ -69,13 +70,14 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 	NULL
 };
 
-#define kTransmitTreshold (10)		// could be buildtime or runtime configuraable
+#define kTransmitTreshold (10)		// could be build-time or runtime configurable
 
 void xs_serial_constructor(xsMachine *the)
 {
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
+	xsSlot *onReadable, *onWritable;
 	esp_err_t err;
 	uart_config_t uartConfig = {0};
 	int uart = 0;
@@ -101,18 +103,21 @@ void xs_serial_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		uart = xsmcToInteger(xsVar(0));
+		uart = builtinGetSignedInteger(the, &xsVar(0));
 		if ((uart < 0) || (uart >= UART_NUM_MAX))
 			xsRangeError("invalid port");
 	}
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
-	if ((baud < 0) || (baud > 20000000))
+	if ((baud <= 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
 
-	hasReadable = (UART_PIN_NO_CHANGE != receive) && builtinHasCallback(the, xsID_onReadable);
-	hasWritable = (UART_PIN_NO_CHANGE != transmit) && builtinHasCallback(the, xsID_onWritable);
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	onWritable = builtinGetCallback(the, xsID_onWritable);
+
+	hasReadable = (UART_PIN_NO_CHANGE != receive) && onReadable;
+	hasWritable = (UART_PIN_NO_CHANGE != transmit) && onWritable;
 
 	builtinInitializeTarget(the);
 
@@ -160,11 +165,12 @@ void xs_serial_constructor(xsMachine *the)
 #endif
 		serial->uart_reg = uart ? &UART1 : &UART0;
 	serial->useCount = 1;
+	serial->hasOnReadableOrWritable = hasReadable || hasWritable;
 
-	if (hasReadable || hasWritable) {
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
+
+	if (serial->hasOnReadableOrWritable) {
 		serial->the = the;
-
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
 
 		// store callbacks & configure interrupts
 		err = uart_isr_register(uart, serial_isr, serial, 0, NULL);
@@ -172,8 +178,7 @@ void xs_serial_constructor(xsMachine *the)
 			xsUnknownError("uart_isr_register failed");
 
 		if (hasReadable) {
-			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
-			serial->onReadable = xsToReference(xsVar(0));
+			serial->onReadable = onReadable;
 
 			uart_enable_rx_intr(uart);
 			uart_set_rx_timeout(uart, 4);
@@ -184,8 +189,7 @@ void xs_serial_constructor(xsMachine *the)
 		}
 
 		if (hasWritable) {
-			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
-			serial->onWritable = xsToReference(xsVar(0));
+			serial->onWritable = onWritable;
 
 			uart_enable_tx_intr(uart, 1, kTransmitTreshold);
 		}
@@ -225,24 +229,23 @@ void xs_serial_destructor(void *data)
 void xs_serial_close(xsMachine *the)
 {
 	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(serial->obj);
-	xs_serial_destructor(serial);
+	if (serial && xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks)) {
+		xsForget(serial->obj);
+		xs_serial_destructor(serial);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_serial_get_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	builtinGetFormat(the, serial->format);
 }
 
 void xs_serial_set_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
@@ -251,14 +254,11 @@ void xs_serial_set_format(xsMachine *the)
 
 void xs_serial_read(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	int count;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+	int available;
 
-	if (!serial)
-		xsUnknownError("closed");
-
-	count = uart_ll_get_rxfifo_len(serial->uart_reg);
-	if (0 == count)
+	available = uart_ll_get_rxfifo_len(serial->uart_reg);
+	if (0 == available)
 		return;
 
 	if (kIOFormatNumber == serial->format) {
@@ -270,12 +270,26 @@ void xs_serial_read(xsMachine *the)
 	}
 	else {
 		uint8_t *buffer;
-		int requested = xsmcArgc ? xsmcToInteger(xsArg(0)) : count;
-		if (requested > count)
-			requested = count;
+		int requested;
+		xsUnsignedValue byteLength;
+		uint8_t allocate = 1;
+		
+		if (0 == xsmcArgc)
+			requested = available;
+		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+			xsResult = xsArg(0);
+			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
+			requested = (int)byteLength;
+			allocate = 0;
+		}
+		else
+			requested = xsmcToInteger(xsArg(0));
 
-		xsmcSetArrayBuffer(xsResult, NULL, requested);
-		buffer = xsmcToArrayBuffer(xsResult);
+		if ((requested <= 0) || (requested > available)) 
+			xsUnknownError("invalid");
+
+		if (allocate)
+			buffer = xsmcSetArrayBuffer(xsResult, NULL, requested);
 
 		uart_ll_read_rxfifo(serial->uart_reg, buffer, requested);
 	}
@@ -286,13 +300,9 @@ void xs_serial_read(xsMachine *the)
 
 void xs_serial_write(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	int count;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+	int count = uart_ll_get_txfifo_len(serial->uart_reg);
 
-	if (!serial)
-		xsUnknownError("closed");
-
-	count = uart_ll_get_txfifo_len(serial->uart_reg);
 	if (kIOFormatNumber == serial->format) {
 		uint8_t byte;
 
@@ -303,20 +313,28 @@ void xs_serial_write(xsMachine *the)
 		uart_ll_write_txfifo(serial->uart_reg, &byte, 1);
 	}
 	else {
-		uint8_t *buffer;
-		int requested = xsmcGetArrayBufferLength(xsArg(0));
+		void *buffer;
+		xsUnsignedValue requested;
+
+		xsmcGetBufferReadable(xsArg(0), &buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 
-		buffer = xsmcToArrayBuffer(xsArg(0));
 		uart_ll_write_txfifo(serial->uart_reg, buffer, requested);
-
 	}
 
 	if (serial->onWritable && !serial->txInterruptEnabled) {
 		serial->txInterruptEnabled = 1;
 		uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
 	}
+}
+
+void xs_serial_purge(xsMachine *the)
+{
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+
+	uart_ll_txfifo_rst(serial->uart_reg);
+	uart_ll_rxfifo_rst(serial->uart_reg);
 }
 
 void ICACHE_RAM_ATTR serial_isr(void * arg)
@@ -382,6 +400,9 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	Serial serial = it;
+
+	if (!serial->hasOnReadableOrWritable)
+		return;
 
 	if (serial->onReadable)
 		(*markRoot)(the, serial->onReadable);

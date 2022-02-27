@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -144,7 +144,7 @@ struct xsCryptDigestRecord {
 #if mxNoFunctionLength
 	CryptHandlePart;
 #endif
-	uint8_t			digest;
+	uint32_t		digest;
 	unsigned char	ctx[1];
 };
 
@@ -279,8 +279,8 @@ void modInstallCryptDigest(xsMachine *the)
 	xsmcSet(xsVar(kPrototype), xsID("close"), xsVar(kScratch));
 	xsVar(kScratch) = xsNewHostFunction(xs_crypt_Digest_reset, 0);
 	xsmcSet(xsVar(kPrototype), xsID("reset"), xsVar(kScratch));
-	xsDefine(xsVar(kPrototype), xsID("blockSize"), xsNewHostFunction(xs_crypt_Digest_get_blockSize, 0), xsIsGetter);
-	xsDefine(xsVar(kPrototype), xsID("outputSize"), xsNewHostFunction(xs_crypt_Digest_get_outputSize, 0), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("blockSize"), xsNewHostFunction(xs_crypt_Digest_get_blockSize, 0), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("outputSize"), xsNewHostFunction(xs_crypt_Digest_get_outputSize, 0), xsIsGetter);
 
 	xsEndHost(the);
 }
@@ -1150,7 +1150,12 @@ void cbc_xor(uint8_t *t, const uint8_t *x, size_t count)
 
 void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count)
 {
-	xsmcGetBuffer(*slot, (void **)data, count);
+	xsUnsignedValue aCount;
+	void *aBuffer;
+
+	xsmcGetBuffer(*slot, &aBuffer, &aCount);
+	if (data) *data = aBuffer;
+	if (count) *count = aCount;
 }
 
 /*

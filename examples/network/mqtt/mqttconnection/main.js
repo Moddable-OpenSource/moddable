@@ -19,44 +19,33 @@ import WiFi from "wifi/connection";
 import config from "mc/config";
 
 const mqtt = new Client({
-	host: "test.mosquitto.org"
+	host: "test.mosquitto.org",
+	timeout: 60_000
 });
+mqtt.subscribe("moddable/mqtt/example/#");
 
-mqtt.onReady = function() {
-	this.subscribe("moddable/mqtt/example/#");
+const timer = Timer.repeat(() => {
+	mqtt.publish("moddable/mqtt/example/date", Date());
+	mqtt.publish("moddable/mqtt/example/random", Math.random());
+ }, 1000);
+Timer.schedule(timer);
 
-	this.timer = Timer.repeat(() => {
-		this.publish("moddable/mqtt/example/date", (new Date()).toString());
-		this.publish("moddable/mqtt/example/random", Math.random());
-	 }, 1000);
-};
-mqtt.onMessage = function(topic, body) {
-	if (body.byteLength > 128)
-		trace(`received "${topic}": ${body.byteLength} bytes\n`);
-	else
-		trace(`received "${topic}": ${String.fromArrayBuffer(body)}\n`);
-};
-mqtt.onClose = function() {
-	trace('lost connection to server\n');
-	if (this.timer) {
-		Timer.clear(this.timer);
-		delete this.timer;
-	}
-};
+mqtt.onReady = () => Timer.schedule(timer, 0, 1000);
+mqtt.onClose = () => Timer.schedule(timer);
+mqtt.onMessage = (topic, body) => trace(`received "${topic}": ${String.fromArrayBuffer(body)}\n`);
 
 
-
-new WiFi(
-	{
+// calling mqtt.wait is optional, but recommended.
+// if wait is not set to false when disconected from a network, the mqttconnection module
+//	will still continue to try to reconnect
+new WiFi({
 		ssid: config.ssid,
 		password: config.password
 	},
 	function (msg) {
 		trace(`Wi-Fi ${msg}\n`);
-		if (WiFi.gotIP === msg) {
-			mqtt.id = "moddable_" + Net.get("MAC");
+		if (WiFi.gotIP === msg)
 			mqtt.wait(false);		// connected
-		}
 		else if (WiFi.disconnected === msg)
 			mqtt.wait(true);		// lost connection
 	}
@@ -64,8 +53,9 @@ new WiFi(
 mqtt.wait(true);	// not connected yet
 
 // enable this on ESP8266 and ESP32 to test Wi-Fi disconnect handling
-if (0) {
+if (1) {
 	Timer.repeat(() => {
 		WiFi.disconnect();
 	}, 15_000);
 }
+

@@ -320,6 +320,11 @@ LRESULT CALLBACK PiuWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM 
 		}
 		xsEndHost((*piuView)->the);
 	} break;
+	case WM_SETCURSOR: {
+		if (LOWORD(lParam) == HTCLIENT)
+			return FALSE;
+		return DefWindowProc(window, message, wParam, lParam);
+	} break;
 	
 	case WM_ERASEBKGND:
 		return TRUE;

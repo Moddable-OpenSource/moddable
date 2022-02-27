@@ -37,6 +37,15 @@
 		"Resource"
 	],
 	"strip": "*",
+	"typescript": {
+		"tsconfig": {
+			"compilerOptions": {
+				"types": [
+					"$(MODDABLE)/xs/includes/xs"
+				]
+			}
+		}
+	},
 	"platforms": {
 		"esp": {
 			"include": "$(BUILD)/devices/esp/manifest.json",

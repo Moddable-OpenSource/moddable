@@ -72,7 +72,14 @@ getNIF(xsMachine *the)
 
 #if ESP32
 	wifi_mode_t mode;
-	if (ESP_OK != esp_wifi_get_mode(&mode))
+	esp_err_t err = esp_wifi_get_mode(&mode);
+
+	if (err == ESP_ERR_WIFI_NOT_INIT) {
+		if (tcpip_adapter_is_netif_up(TCPIP_ADAPTER_IF_ETH))
+			return TCPIP_ADAPTER_IF_ETH;
+	} 
+	
+	if (err != ESP_OK)
 		return 255;
 
 	if (wantsStation && ((WIFI_MODE_STA == mode) || (WIFI_MODE_APSTA == mode)))

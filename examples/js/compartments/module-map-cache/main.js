@@ -1,9 +1,28 @@
-let counts = {"mod":0, "increment":0 };
-let proxy = new Proxy({ "mod":"mod", "increment":"increment" }, {
+import * as increment from "increment";
+import * as mod1 from "mod";
+import * as mod2 from "mod";
+let counts = {
+	increment: 0,
+	mod1: 0,
+	mod2: 0,
+};
+let proxy = new Proxy({ 
+	increment, 
+	mod1, 
+	mod2
+}, {
 	get(target, key) {
 		counts[key]++;
 		return target[key];
 	}
 });
-let mod = new Compartment({}, proxy);
-trace(counts.mod + " " + counts.increment + "\n"); // 1 1
+let compartment = new Compartment({}, proxy, {
+	resolveHook(specifier, refererSpecifier) {
+		return specifier;
+	},
+	loadNowHook(specifier) {
+	}
+});
+compartment.importNow("mod1");
+compartment.importNow("mod2");
+trace(counts.increment + " " + counts.mod1 + " " + counts.mod2 + "\n"); // 1 1 1

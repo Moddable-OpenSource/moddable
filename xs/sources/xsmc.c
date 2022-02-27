@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -140,6 +140,15 @@ void _xsSetIndex(txMachine *the, txSlot *self, txIndex index, txSlot *v)
 	mxPop();
 }
 
+void _xsDefine(txMachine *the, txSlot *self, txID id, txSlot *v, txFlag attributes)
+{
+	mxOverflow(-2);
+	fxPush(*v);
+	fxPush(*self);
+	fxDefineID(the, id, attributes, attributes | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxPop();
+}
+
 void _xsDelete(txMachine *the, txSlot *self, txID id)
 {
 	mxOverflow(-1);
@@ -235,42 +244,97 @@ txInteger _xsArgc(txMachine *the)
 	return mxArgc;
 }
 
-void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count)
+#ifndef __XSMC_H__
+enum {
+	xsBufferNonrelocatable,
+	xsBufferRelocatable
+};
+#endif
+
+static txInteger _xsmcGetViewBuffer(txMachine *the, txSlot* view, txSlot* buffer, void **data, txUnsigned *count, txBoolean writable)
 {
-	txSlot tmp;
-
-	if (_xsIsInstanceOf(the, slot, &mxArrayBufferPrototype)) {
-		if (count)
-			*count = (txUnsigned)fxGetArrayBufferLength(the, slot);
-		if (data)
-			*data = fxToArrayBuffer(the, slot);
+	txInteger offset = view->value.dataView.offset;
+	txInteger size = view->value.dataView.size;
+	txSlot* arrayBuffer = buffer->value.reference->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
+		mxTypeError("detached buffer");
+	if (writable && (arrayBuffer->flag & XS_DONT_SET_FLAG))
+		mxTypeError("read-only buffer");
+	if (bufferInfo->value.bufferInfo.maxLength >= 0) {
+		txInteger byteLength = bufferInfo->value.bufferInfo.length;
+		if (offset > byteLength)
+			mxTypeError("out of bounds view");
+		if (size < 0)
+			size = byteLength - offset;
+		else if (offset + size > byteLength)
+			mxTypeError("out of bounds view");
 	}
-	else if (_xsIsInstanceOf(the, slot, &mxTypedArrayPrototype)) {
-		if (count) {
-			_xsGet(the, &tmp, slot, _byteLength);
+	*data = arrayBuffer->value.arrayBuffer.address + offset;
+	*count = size;
+
+	return (XS_ARRAY_BUFFER_KIND == arrayBuffer->kind) ? xsBufferRelocatable : xsBufferNonrelocatable;
+}
+
+txInteger _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count, txBoolean writable)
+{
+	txSlot* instance;
+
+	if (slot->kind != XS_REFERENCE_KIND)
+		goto bail;
+
+	instance = slot->value.reference;
+	if (!(((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG)))
+		goto bail;
+
+	if (slot->kind == XS_ARRAY_BUFFER_KIND) {
+		txSlot* bufferInfo = slot->next;
+		if (slot->value.arrayBuffer.address == C_NULL)
+			mxTypeError("detached buffer");
+		if (writable && (slot->flag & XS_DONT_SET_FLAG))
+			mxTypeError("read-only buffer");
+		*data = slot->value.arrayBuffer.address;
+		*count = bufferInfo->value.bufferInfo.length;
+		return xsBufferRelocatable;
+	}
+
+	if (slot->kind == XS_TYPED_ARRAY_KIND) {
+		txSlot* view = slot->next;
+		txSlot* buffer = view->next;
+		if (1 != slot->value.typedArray.dispatch->size)
+			goto bail;
+		return _xsmcGetViewBuffer(the, view, buffer, data, count, writable);
+	}
+	
+	if (slot->kind == XS_HOST_KIND) {
+		txSlot* bufferInfo = slot->next;
+		if (slot->flag & XS_HOST_CHUNK_FLAG)
+			goto bail;
+		if (writable && (slot->flag & XS_DONT_SET_FLAG))
+			mxTypeError("read-only buffer");
+		if (bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND)) {
+			*data = (uint8_t *)slot->value.host.data;
+			*count = bufferInfo->value.bufferInfo.length;
+		}
+		else {
+			// for compatibility. should throw eventually.
+			txSlot tmp, ref;
+			fxReport(the, "# Use xsmcSetHostBuffer instead of xsmcSetHostData\n");
+			fxReference(the, &ref, instance);
+			_xsGet(the, &tmp, &ref, _byteLength);
+			*data = (uint8_t *)slot->value.host.data;
 			*count = (txUnsigned)fxToInteger(the, &tmp);
 		}
-
-		if (data) {
-			txInteger byteOffset;
-
-			_xsGet(the, &tmp, slot, _byteOffset);
-			byteOffset = fxToInteger(the, &tmp);
-
-			_xsGet(the, &tmp, slot, _buffer);
-			if (_xsIsInstanceOf(the, &tmp, &mxArrayBufferPrototype))
-				*data = byteOffset + (uint8_t *)fxToArrayBuffer(the, &tmp);
-			else
-				*data = byteOffset + (uint8_t *)fxGetHostData(the, &tmp);
-		}
+		return xsBufferNonrelocatable;
 	}
-	else {	// host buffer
-		if (count) {
-			_xsGet(the, &tmp, slot, _byteLength);
-			*count = (txUnsigned)fxToInteger(the, &tmp);
-		}
 
-		if (data)
-			*data = (uint8_t *)fxGetHostData(the, slot);
+	if (slot->kind == XS_DATA_VIEW_KIND) {
+		txSlot* view = slot;
+		txSlot* buffer = view->next;
+		return _xsmcGetViewBuffer(the, view, buffer, data, count, writable);
 	}
+
+bail:
+	mxTypeError("this is no buffer");
+	return xsBufferNonrelocatable;
 }

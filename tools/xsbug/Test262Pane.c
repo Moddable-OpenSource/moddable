@@ -48,13 +48,14 @@ void Test262Context_getMetadata(xsMachine* the)
 	yaml_document_t* document = NULL;
 	yaml_node_t* root;
 	yaml_node_t* value;
-	int sloppy = 1;
-	int strict = 1;
-	int module = 0;
+	int sloppy = 0;
+	int strict = 0;
+	int module = 1;
 	int async = 0;
 	int pending = 0;
 	xsVars(1);
 	xsResult = xsNewObject();
+	xsVar(0) = xsNewArray(0);	
 	
 	file = fopen(xsToString(xsArg(0)), "rb");
 	if (!file) goto bail;
@@ -83,9 +84,9 @@ void Test262Context_getMetadata(xsMachine* the)
 	root = yaml_document_get_root_node(document);
 	if (!root) goto bail;
 		
-	xsVar(0) = xsNewArray(0);	
-	xsCall1(xsVar(0), xsID_push, xsString("sta.js"));
-	xsCall1(xsVar(0), xsID_push, xsString("assert.js"));
+	sloppy = 1;	
+	strict = 1;	
+	module = 0;	
 	value = fxGetMappingValue(document, root, "includes");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;
@@ -95,7 +96,6 @@ void Test262Context_getMetadata(xsMachine* the)
 			item++;
 		}
 	}
-	xsSet(xsResult, xsID_paths, xsVar(0));
 
 	value = fxGetMappingValue(document, root, "negative");
 	if (value) {
@@ -138,28 +138,25 @@ void Test262Context_getMetadata(xsMachine* the)
 		}
 	}
 
-	// @@ skip test cases beyond 8th...
 	value = fxGetMappingValue(document, root, "features");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (!strcmp((char*)node->data.scalar.value, "BigInt")
-			||	!strcmp((char*)node->data.scalar.value, "class-fields")
-			||	!strcmp((char*)node->data.scalar.value, "class-fields-private")
-			||	!strcmp((char*)node->data.scalar.value, "class-fields-public")
+			if (0
+ 			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
+ 			||	!strcmp((char*)node->data.scalar.value, "Object.hasOwn")
+  			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
+ 			||	!strcmp((char*)node->data.scalar.value, "Temporal")
+ 			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private-in")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-static-block")
+			||	!strcmp((char*)node->data.scalar.value, "error-cause")
+ 			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
+ 			||	!strcmp((char*)node->data.scalar.value, "json-modules")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatten")
-			||	!strcmp((char*)node->data.scalar.value, "Array.prototype.flatMap")
-			||	!strcmp((char*)node->data.scalar.value, "numeric-separator-literal")
-			||	!strcmp((char*)node->data.scalar.value, "string-trimming")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimEnd")
-			||	!strcmp((char*)node->data.scalar.value, "String.prototype.trimStart")
-			||	!strcmp((char*)node->data.scalar.value, "Symbol.matchAll")
-			||	!strcmp((char*)node->data.scalar.value, "Symbol.prototype.description")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -169,12 +166,13 @@ void Test262Context_getMetadata(xsMachine* the)
 			item++;
 		}
 	}
+bail:	
+	xsSet(xsResult, xsID_paths, xsVar(0));
 	xsSet(xsResult, xsID_async, xsBoolean(async));
 	xsSet(xsResult, xsID_sloppy, xsBoolean(sloppy));
 	xsSet(xsResult, xsID_strict, xsBoolean(strict));
 	xsSet(xsResult, xsID_module, xsBoolean(module));
 	xsSet(xsResult, xsID_pending, xsBoolean(pending));
-bail:	
 	if (document)
 		yaml_document_delete(document);
 	if (parser)

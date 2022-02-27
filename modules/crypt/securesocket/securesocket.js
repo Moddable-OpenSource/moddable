@@ -37,6 +37,7 @@
 
 import {Socket} from "socket";
 import Session from "ssl/session";
+import TLSError from "ssl/error";
 
 class SecureSocket {
 	constructor(dict) {
@@ -86,11 +87,13 @@ class SecureSocket {
 				}
 			}
 			catch (e) {
-				this.error = true;
+				this.callback(-2, e);
+				this.close();
+				return;
 			}
 
-			if (this.closing || this.error) {
-				this.callback(this.error ? - 2 : -1);
+			if (this.closing) {
+				this.callback(-1);
 				this.close();
 			}
 		}
@@ -99,8 +102,7 @@ class SecureSocket {
 	write() @ "xs_securesocket_write";
 	close() {
 		this.closing = true;
-		if (this.sock)
-			this.sock.close();
+		this.sock?.close();
 		delete this.ssl;
 		delete this.sock;
 	}

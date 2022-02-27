@@ -75,7 +75,7 @@ txSlot* fxNewSymbolInstance(txMachine* the)
 {
 	txSlot* instance;
 	instance = fxNewObjectInstance(the);
-	fxNextSymbolProperty(the, instance, XS_NO_ID, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	fxNextSymbolProperty(the, instance, XS_NO_ID, XS_NO_ID, XS_INTERNAL_FLAG);
 	return instance;
 }
 
@@ -161,9 +161,15 @@ void fx_Symbol_prototype_get_description(txMachine* the)
 	txSlot* slot = fxCheckSymbol(the, mxThis);
 	if (!slot) mxTypeError("this is no symbol");
 	slot = fxGetKey(the, slot->value.symbol);
-	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND))) {
-		mxResult->kind = slot->kind;
-		mxResult->value = slot->value;
+	if (slot) {
+		if ((slot->kind == XS_KEY_KIND) || (slot->kind == XS_KEY_X_KIND)) {
+			mxResult->kind = (slot->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
+			mxResult->value.string = slot->value.key.string;
+		}
+		else if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
+			mxResult->kind = slot->kind;
+			mxResult->value = slot->value;
+		}
 	}
 }
 
@@ -212,9 +218,9 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 	fxStringX(the, slot, "Symbol(");
 	if (key) {
 		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
-			fxConcatStringC(the, slot, key->value.key.string);
+			fxConcatString(the, slot, key);
 		else if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND))
-			fxConcatStringC(the, slot, key->value.string);
+			fxConcatString(the, slot, key);
 	}
 	fxConcatStringC(the, slot, ")");
 }

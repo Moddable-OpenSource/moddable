@@ -140,7 +140,7 @@ txSlot* fxNewDateInstance(txMachine* the)
 	txSlot* instance;
 	txSlot* property;
 	instance = fxNewObjectInstance(the);
-	property = fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	property->kind = XS_DATE_KIND;
 	property->value.number = C_NAN;
 	return instance;
@@ -158,24 +158,21 @@ void fx_Date_aux(txMachine* the, txFlag secure)
 	txSlot* instance;
 	if (mxIsUndefined(mxTarget)) {
 		char buffer[256];
+		txString p = buffer;
 		txDateTime dt;
 		if (secure)
 			mxTypeError("secure mode");
 		mxResult->value.number = fxDateNow();
 		mxResult->kind = XS_NUMBER_KIND;
-		if (fx_Date_prototype_get_aux(the, &dt, 0, mxResult)) {
-			txString p = buffer;
-			p = fxDatePrintDay(p, dt.day);
-			*p++ = ' ';
-			p = fxDatePrintDate(p, (txInteger)dt.year, (txInteger)dt.month, (txInteger)dt.date);
-			*p++ = ' ';
-			p = fxDatePrintTime(p, (txInteger)dt.hours, (txInteger)dt.minutes, (txInteger)dt.seconds);
-			*p++ = ' ';
-			p = fxDatePrintTimezone(p, (txInteger)dt.offset);
-			*p = 0;
-		}
-		else
-			c_strcpy(buffer, "Invalid Date");
+		fxDateSplit(mxResult->value.number, 0, &dt);
+		p = fxDatePrintDay(p, dt.day);
+		*p++ = ' ';
+		p = fxDatePrintDate(p, (txInteger)dt.year, (txInteger)dt.month, (txInteger)dt.date);
+		*p++ = ' ';
+		p = fxDatePrintTime(p, (txInteger)dt.hours, (txInteger)dt.minutes, (txInteger)dt.seconds);
+		*p++ = ' ';
+		p = fxDatePrintTimezone(p, (txInteger)dt.offset);
+		*p = 0;
 		fxCopyStringC(the, mxResult, buffer);
 		return;
 	}
@@ -610,7 +607,16 @@ void fx_Date_UTC(txMachine* the)
 
 txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean utc, txSlot* slot)
 {
-	txNumber number = slot->value.number;
+	txSlot* instance = mxThis->value.reference;
+	txNumber number;
+	if (instance->ID) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias) {
+			instance = alias;
+			slot = instance->next;
+		}
+	}
+	number = slot->value.number;
 	if (c_isnan(number)) {
 		mxResult->value.number = C_NAN;
 		mxResult->kind = XS_NUMBER_KIND;
@@ -622,10 +628,20 @@ txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean ut
 
 void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, txSlot* slot)
 {
-	txNumber number = slot->value.number;
+	txSlot* instance = mxThis->value.reference;
+	txNumber number;
+	if (instance->ID) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			instance = alias;
+		else
+			instance = fxAliasInstance(the, instance);
+		slot = instance->next;
+	}
+	number = slot->value.number;
 	if (c_isnan(number))
 		return;
-	if (slot->flag & XS_MARK_FLAG)
+	if (slot->flag & XS_DONT_SET_FLAG)
 		mxTypeError("Date instance is read-only");
 	mxResult->value.number = slot->value.number = fxDateMerge(dt, utc);
 	mxResult->kind = XS_NUMBER_KIND;
@@ -1250,10 +1266,11 @@ txNumber fxDateClip(txNumber value)
 		value = C_NAN;
 	else if (c_fabs(value) > 8.64e15)
 		value = C_NAN;
-	else if (value == 0)
-		value = 0;
-	else
+	else {
 		value = c_trunc(value);
+		if (value == 0)
+			value = 0;
+	}
 	return value;	
 }
 

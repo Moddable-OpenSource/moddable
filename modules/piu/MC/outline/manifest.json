@@ -1,0 +1,21 @@
+{
+	"build": {
+		"COMMODETTO_OUTLINE": "../../../commodetto/outline"
+	},
+	"modules": {
+		"*": [
+			"$(COMMODETTO_OUTLINE)/freetype/src/*",
+			"$(COMMODETTO_OUTLINE)/freetype/include/*",
+			"$(COMMODETTO_OUTLINE)/freetype/include/freetype/*",
+			"$(COMMODETTO_OUTLINE)/freetype/include/freetype/internal/*"
+		],
+		"commodetto/outline": "$(COMMODETTO_OUTLINE)/commodettoOutline",
+		"commodetto/pocoOutline": "$(COMMODETTO_OUTLINE)/commodettoPocoOutline",
+		"piu/shape": "./piuShape"
+	},
+	"preload": [
+		"commodetto/outline",
+		"commodetto/pocoOutline",
+		"piu/shape"
+	]
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,6 +20,7 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
+#include "xsHosts.h"
 
 #include "mc.xs.h"			// for xsID_ values
 
@@ -51,9 +52,10 @@ struct modWorkerRecord {
 	uint32_t				allocation;
 	uint32_t				stackCount;
 	uint32_t				slotCount;
+	uint32_t				keyCount;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
-#if ESP32 || qca4020
+#ifdef INC_FREERTOS_H
 	TaskHandle_t			task;
 #endif
 	char					module[1];
@@ -65,13 +67,10 @@ typedef modWorkerRecord *modWorker;
 static void xs_worker_postfromworker(xsMachine *the);
 static void xs_worker_close(xsMachine *the);
 
-#define USE_MARSHALL 1
-#if USE_MARSHALL
-	static void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
-#else
-	static void workerDeliverArrayBuffer(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
-	static void workerDeliverJSON(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
-#endif
+static void xs_worker_postfromsharedinstantiator(xsMachine *the);
+static void xs_worker_postfrominstantiator(xsMachine *the);
+
+static void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
 
 static void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
 
@@ -80,6 +79,9 @@ static void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, 
 
 static modWorker gWorkers;
 
+static void xs_emptyworker_destructor(void *data) {
+}
+
 void xs_worker_destructor(void *data)
 {
 	modCriticalSectionDeclare;
@@ -87,19 +89,28 @@ void xs_worker_destructor(void *data)
 
 	if (worker) {
 		modWorker walker, prev;
+		int useCount = 1;
 
-#if ESP32 || qca4020
-		if (worker->task) {
-			vTaskDelete(worker->task);
-			worker->task = NULL;
-			vTaskDelay(1);	// necessary to allow idle task to run so task memory is freed. perhaps there's a better solution?
+		if (worker->shared) {
+			useCount = 0;
+			modCriticalSectionBegin();
+				for (walker = gWorkers; NULL != walker; walker = walker->next) {
+					if (walker->the == worker->the)
+						useCount += 1;
+				}
+			modCriticalSectionEnd();
 		}
+		
+		if (1 == useCount) {
+#ifdef INC_FREERTOS_H
+			if (worker->task) {
+				vTaskDelete(worker->task);
+				worker->task = NULL;
+				vTaskDelay(1);	// necessary to allow idle task to run so task memory is freed. perhaps there's a better solution?
+			}
 #endif
-		if (worker->the) {
-#ifdef mxInstrument
-			espInstrumentMachineEnd(worker->the);
-#endif
-			xsDeleteMachine(worker->the);
+			if (worker->the)
+				xsDeleteMachine(worker->the);
 		}
 
 		modCriticalSectionBegin();
@@ -141,12 +152,12 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 	if (!shared)
 		worker->ownerPort = xsThis;
 	else {
-		xsVar(0) = xsNewHostObject(NULL);
+		xsVar(0) = xsNewHostObject(xs_emptyworker_destructor);
 		xsmcSetHostData(xsVar(0), worker);
 		worker->ownerPort = xsVar(0);
 		xsmcSet(xsThis, xsID_port, xsVar(0));
 
-		xsVar(1) = xsNewHostFunction(xs_worker_postfrominstantiator, 1);
+		xsVar(1) = xsNewHostFunction(xs_worker_postfromsharedinstantiator, 1);
 		xsmcSet(xsVar(0), xsID_postMessage, xsVar(1));
 	}
 
@@ -157,7 +168,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 		modCriticalSectionBegin();
 		for (walker = gWorkers; NULL != walker; walker = walker->next) {
-			if (0 != c_strcmp(walker->module, worker->module))
+			if (!walker->shared || (0 != c_strcmp(walker->module, worker->module)))
 				continue;
 			target = walker;
 			break;
@@ -167,26 +178,29 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 		if (target) {
 			worker->the = target->the;
+#ifdef INC_FREERTOS_H
+			worker->task = target->task;
+#endif
 			modMessagePostToMachine(worker->the, NULL, 0, (modMessageDeliver)workerDeliverConnect, worker);
 			goto done;
 		}
 	}
 
 	if (xsmcArgc > 1) {
-		if (xsmcHas(xsArg(1), xsID_allocation)) {
-			xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
-			worker->allocation = xsmcToInteger(xsVar(0));
-		}
-		if (xsmcHas(xsArg(1), xsID_stackCount)) {
-			xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
-			worker->stackCount = xsmcToInteger(xsVar(0));
-		}
-		if (xsmcHas(xsArg(1), xsID_slotCount)) {
-			xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
-			worker->slotCount = xsmcToInteger(xsVar(0));
-		}
+		xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
+		worker->allocation = xsmcToInteger(xsVar(0));
+
+		xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
+		worker->stackCount = xsmcToInteger(xsVar(0));
+
+		xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
+		worker->slotCount = xsmcToInteger(xsVar(0));
+
+		xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
+		worker->keyCount = xsmcToInteger(xsVar(0));
 	}
 
+#ifdef INC_FREERTOS_H
 #if ESP32
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
 		#define kStack (((5 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
@@ -194,10 +208,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 		#define kStack (((6 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#endif
 
-	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 8, &worker->task);
-
-	modMachineTaskWait(the);
 #elif qca4020
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
 		#define kStack ((9 * 1024) / sizeof(StackType_t))
@@ -205,16 +216,24 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 		#define kStack ((10 * 1024) / sizeof(StackType_t))
 	#endif
 
-	//	xTaskCreatePinnedToCore(workerLoop, worker->module, 4096, worker, 5, &worker->task, xTaskGetAffinity(xTaskGetCurrentTaskHandle()) ? 0 : 1);
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
+#endif
 
 	modMachineTaskWait(the);
-#else
+
+#else // !INC_FREERTOS_H
 	workerStart(worker);
 #endif
 
-	if (NULL == worker->the)
+	if (NULL == worker->the) {
+#ifdef INC_FREERTOS_H
+		if (worker->task) {
+			vTaskDelete(worker->task);
+			worker->task = NULL;
+		}
+#endif
 		xsUnknownError("unable to instantiate worker");
+	}
 
 done:
 	xsRemember(worker->owner);
@@ -237,20 +256,28 @@ void xs_sharedworker(xsMachine *the)
 
 void xs_worker_terminate(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
-
-	if (NULL == worker)
+	if (NULL == xsmcGetHostData(xsThis))
 		return;
 
-	workerTerminate(the, worker, NULL, 0);
+	workerTerminate(the, xsmcGetHostDataValidate(xsThis, (void *)xs_worker_destructor), NULL, 0);
+}
+
+void xs_worker_postfromsharedinstantiator(xsMachine *the)
+{
+	xsmcGetHostDataValidate(xsThis, (void *)xs_emptyworker_destructor);
+	xs_worker_postfrominstantiator(the);
+}
+
+void xs_worker_postfromworkerinstantiator(xsMachine *the)
+{
+	xsmcGetHostDataValidate(xsThis, (void *)xs_worker_destructor);
+	xs_worker_postfrominstantiator(the);
 }
 
 void xs_worker_postfrominstantiator(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
+	modWorker worker = xsmcGetHostData(xsThis);		// caller validates
 	char *message;
-	uint32_t messageLength;
-	uint8_t kind;
 
 	if (NULL == worker->the)
 		xsUnknownError("worker terminated");
@@ -258,73 +285,29 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 	if (worker->closing)
 		xsUnknownError("worker closing");
 
-#if USE_MARSHALL
-		message = xsMarshall(xsArg(0));
-		if (modMessagePostToMachine(worker->the, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
-			xsUnknownError("post from instantiator failed");
-#else
-	xsmcVars(2);
-
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsmcGetArrayBufferLength(xsArg(0));
-		kind = 1;
-	}
-	else {
-		xsmcGet(xsVar(0), xsGlobal, xsID_JSON);
-		xsVar(1) = xsCall1(xsVar(0), xsID_stringify, xsArg(0));
-		message = xsmcToString(xsVar(1));
-		messageLength = c_strlen(message) + 1;
-		kind = 0;
-	}
-
-	if (modMessagePostToMachine(worker->the, message, messageLength, (modMessageDeliver)(kind ? workerDeliverArrayBuffer : workerDeliverJSON), worker))
+	message = xsMarshall(xsArg(0));
+	if (modMessagePostToMachine(worker->the, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
 		xsUnknownError("post from instantiator failed");
-#endif
 }
 
 void xs_worker_postfromworker(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
+	modWorker worker = xsmcGetHostDataValidate(xsThis, (void *)xs_emptyworker_destructor);
 	char *message;
-	uint32_t messageLength;
-	uint8_t kind;
 
 	if (worker->closing)
 		xsUnknownError("worker closing");
 
-	xsmcVars(2);
-
-#if USE_MARSHALL
-		message = xsMarshall(xsArg(0));
-		if (modMessagePostToMachine(worker->parent, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
-			xsUnknownError("post from worker failed");
-#else
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		message = xsmcToArrayBuffer(xsArg(0));
-		messageLength = xsmcGetArrayBufferLength(xsArg(0));
-		kind = 1;
-	}
-	else {
-		xsmcGet(xsVar(0), xsGlobal, xsID_JSON);
-		xsVar(1) = xsCall1(xsVar(0), xsID_stringify, xsArg(0));
-		message = xsmcToString(xsVar(1));
-		messageLength = c_strlen(message) + 1;
-		kind = 0;
-	}
-
-	if (modMessagePostToMachine(worker->parent, message, messageLength, (modMessageDeliver)(kind ? workerDeliverArrayBuffer : workerDeliverJSON), worker))
+	message = xsMarshall(xsArg(0));
+	if (modMessagePostToMachine(worker->parent, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
 		xsUnknownError("post from worker failed");
-#endif
 }
 
 void xs_worker_close(xsMachine *the)
 {
-	modWorker worker = xsmcGetHostData(xsThis);
+	modWorker worker = xsmcGetHostDataValidate(xsThis, (void *)xs_emptyworker_destructor);
 	modMessagePostToMachine(worker->parent, NULL, 0, (modMessageDeliver)workerTerminate, worker);
 }
-
-#if USE_MARSHALL
 
 void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength)
 {
@@ -337,59 +320,14 @@ void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, u
 	xsResult = xsDemarshall(*(char **)message);
 	c_free(*(char **)message);
 
-	if (xsmcTest(xsResult)) {
-		if (the == worker->parent)
-			xsCall1(worker->ownerPort, xsID_onmessage, xsResult);
-		else
-			xsCall1(worker->workerPort, xsID_onmessage, xsResult);
+	if (xsUndefinedType != xsmcTypeOf(xsResult)) {
+		xsSlot *port = (the == worker->parent) ? &worker->ownerPort : &worker->workerPort;
+		if (xsmcHas(*port, xsID_onmessage))
+			xsCall1(*port, xsID_onmessage, xsResult);
 	}
-	else
-		;	//@@ unable to deliver message
 
 	xsEndHost(the);
 }
-
-#else
-void workerDeliverArrayBuffer(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength)
-{
-	if (worker->closing)
-		return;
-
-	xsBeginHost(the);
-
-	xsmcVars(2);
-
-	xsmcSetArrayBuffer(xsVar(0), message, messageLength);
-
-	if (the == worker->parent)
-		xsCall1(worker->ownerPort, xsID_onmessage, xsVar(0));
-	else
-		xsCall1(worker->workerPort, xsID_onmessage, xsVar(0));
-
-	xsEndHost(the);
-}
-
-void workerDeliverJSON(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength)
-{
-	if (worker->closing)
-		return;
-
-	xsBeginHost(the);
-
-	xsmcVars(3);
-
-	xsVar(0) = xsString(message);
-	xsmcGet(xsVar(1), xsGlobal, xsID_JSON);
-	xsVar(2) = xsCall1(xsVar(1), xsID_parse, xsVar(0));
-
-	if (the == worker->parent)
-		xsCall1(worker->ownerPort, xsID_onmessage, xsVar(2));
-	else
-		xsCall1(worker->workerPort, xsID_onmessage, xsVar(2));
-
-	xsEndHost(the);
-}
-#endif
 
 void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength)
 {
@@ -398,7 +336,7 @@ void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *message, ui
 	xsmcVars(4);
 
 	xsVar(0) = xsmcNewArray(0);									// ports = []
-	xsVar(1) = xsNewHostObject(NULL);							// port = {}
+	xsVar(1) = xsNewHostObject(xs_emptyworker_destructor);		// port = {}
 	xsmcSetHostData(xsVar(1), worker);
 	worker->workerPort = xsVar(1);
 	xsRemember(worker->workerPort);
@@ -411,7 +349,7 @@ void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *message, ui
 	xsmcSet(xsVar(1), xsID_postMessage, xsVar(3));				// port.postMessage = postMessage
 	xsCall1(xsGlobal, xsID_onconnect, xsVar(2));					// onconnect(e)
 
-	//@@ this eats any exception in onconnect... should be propagated
+	//@@ this eats any exception in onconnect... should be propagated?
 	xsEndHost(the);
 }
 
@@ -420,12 +358,12 @@ int workerStart(modWorker worker)
 	xsMachine *the;
 	int result = 0;
 
-	the = ESP_cloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->module);
+	the = modCloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->keyCount, worker->module);
 	if (!the)
 		return -1;
 
 #ifdef mxInstrument
-	espInstrumentMachineBegin(the, workerSampleInstrumentation, 0, NULL, NULL);
+	modInstrumentMachineBegin(the, workerSampleInstrumentation, 0, NULL, NULL);
 #endif
 
 	xsBeginHost(the);
@@ -434,7 +372,7 @@ int workerStart(modWorker worker)
 
 	xsTry {
 		if (!worker->shared) {
-			xsVar(0) = xsNewHostObject(NULL);
+			xsVar(0) = xsNewHostObject(xs_emptyworker_destructor);
 			xsmcSetHostData(xsVar(0), worker);
 			xsmcSet(xsGlobal, xsID_self, xsVar(0));
 			worker->workerPort = xsVar(0);
@@ -475,25 +413,28 @@ void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_
 
 	xsForget(worker->owner);
 	xsmcSetHostData(worker->owner, NULL);
+	xsmcSetHostDestructor(worker->owner, NULL);
 
 	xs_worker_destructor(worker);
 }
 
-#if ESP32 || qca4020
+#ifdef INC_FREERTOS_H
 
 void workerLoop(void *pvParameter)
 {
 	modWorker worker = (modWorker)pvParameter;
 
-	if (workerStart(worker)) {
-		modMachineTaskWake(worker->parent);
-		return;
-	}
-	modMachineTaskWake(worker->parent);
-
 #if CONFIG_TASK_WDT
 	esp_task_wdt_add(NULL);
 #endif
+
+	if (workerStart(worker)) {
+		modMachineTaskWake(worker->parent);
+		while (true)		// wait: caller deletes task
+			vTaskDelay(1000);
+	}
+	modMachineTaskWake(worker->parent);
+
 
 	while (true) {
 		modTimersExecute();
@@ -502,10 +443,6 @@ void workerLoop(void *pvParameter)
 		qca4020_watchdog();
 #endif
 	}
-
-#if CONFIG_TASK_WDT
-	esp_task_wdt_delete(NULL);
-#endif
 }
 #endif
 
@@ -516,6 +453,6 @@ void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	xsMachine *the = *(xsMachine **)refcon;
 	fxSampleInstrumentation(the, 0, NULL);
-	espInstrumentMachineReset(the);
+	modInstrumentMachineReset(the);
 }
 #endif

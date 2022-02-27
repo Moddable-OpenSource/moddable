@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -54,7 +54,8 @@
 	#include "spi_flash.h"
 #endif
 
-#include "xsHost.h"
+#include "xs.h"
+#include "xsHosts.h"
 
 #ifdef mxDebug
 	#include "modPreference.h"
@@ -105,6 +106,10 @@ void fxDeleteMachinePlatform(txMachine* the)
 		c_free(the->debugFragments);
 		the->debugFragments = next;
 	}
+#endif
+
+#ifdef mxInstrument
+	modInstrumentMachineEnd(the);
 #endif
 
 	modMachineTaskUninit(the);
@@ -212,11 +217,21 @@ const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
 
 void fxAbort(txMachine* the, int status)
 {
+#if MODDEF_XS_TEST
+	if (XS_DEBUGGER_EXIT == status) {
+		extern txMachine *gThe;
+		if (gThe == the) {
+			gThe = NULL;		// soft reset
+			return;
+		}
+	}
+#endif
+
 #if defined(mxDebug) || defined(mxInstrument)
 	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
 
 	fxReport(the, "XS abort: %s\n", msg);
-	#if defined(mxDebug)
+	#if defined(mxDebug) && !MODDEF_XS_TEST
 		fxDebugger(the, (char *)__FILE__, __LINE__);
 	#endif
 #endif
@@ -275,6 +290,7 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
 		}
 
 		if (the->connection) {
+/*
 			tcp_recv(the->connection, NULL);
 			tcp_err(the->connection, NULL);
 #if ESP32
@@ -282,6 +298,7 @@ static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t
 			tcp_close(the->connection);
 			tcp_abort(the->connection);		// not _safe inside callback. must call tcp_abort on ESP8266 or memory leak
 #endif
+*/
 			the->connection = NULL;
 
 			return ERR_ABRT;
@@ -467,8 +484,10 @@ void fxDisconnect(txMachine* the)
 				tcp_close_safe((struct tcp_pcb *)the->connection);
 */		}
 		else {
+			mxDebugMutexTake();
 			fx_putpi(the, '-', true);
 			the->debugConnectionVerified = 0;
+			mxDebugMutexGive();
 			//@@ clear debug fragments?
 		}
 		the->connection = NULL;
@@ -1111,12 +1130,14 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 		case 9:
+#if !MODDEF_XS_DONTINITIALIZETIME
 			if (cmdLen >= 4)
 				modSetTime(c_read32be(cmd + 0));
 			if (cmdLen >= 8)
 				modSetTimeZone(c_read32be(cmd + 4));
 			if (cmdLen >= 12)
 				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
+#endif
 			break;
 
 		case 10: {
@@ -1185,7 +1206,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 16: {
 			int atomSize;
-			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			char *atom = modGetModAtom(the, c_read32be(cmd), &atomSize);
 			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
 				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
 				the->echoOffset += atomSize;
@@ -1204,7 +1225,12 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->echoBuffer[the->echoOffset++] = '-';
 			the->echoBuffer[the->echoOffset++] = 's';
 			the->echoBuffer[the->echoOffset++] = '2';
+#elif kCPUESP32S3
+			the->echoBuffer[the->echoOffset++] = '-';
+			the->echoBuffer[the->echoOffset++] = 's';
+			the->echoBuffer[the->echoOffset++] = '3';
 #endif
+
 #endif
 			break;
 

@@ -88,7 +88,7 @@ HMODULE gxLibrary = NULL;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	COPYDATASTRUCT cds;
-	cds.cbData = strlen(lpCmdLine);
+	cds.cbData = (DWORD)strlen(lpCmdLine);
 	if (cds.cbData > 0) {
 		cds.cbData++;
 		cds.lpData = lpCmdLine;
@@ -161,19 +161,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	accelerators[1][0] = FCONTROL | FVIRTKEY;
 	accelerators[1][1] = LOBYTE(VkKeyScan('Q'));
 	accelerators[1][2] = 0x0102;
-	AppendMenu(menubar, MF_POPUP, (UINT)fileMenu, "File");
+	AppendMenu(menubar, MF_POPUP, (UINT_PTR)fileMenu, "File");
 	
 	HMENU sizeMenu = CreateMenu();
 	for (gxMockupIndex = 0; gxMockupIndex < gxMockupCount; gxMockupIndex++)
 		AppendMenu(sizeMenu, MF_STRING, (UINT)0x0200 + gxMockupIndex, gxMockups[gxMockupIndex]->title);
 	gxMockupIndex = 0;
-	AppendMenu(menubar, MF_POPUP, (UINT)sizeMenu, "Size");
+	AppendMenu(menubar, MF_POPUP, (UINT_PTR)sizeMenu, "Size");
 	
 	HMENU helpMenu = CreateMenu();
 	AppendMenu(helpMenu, MF_STRING, 0x0301, "Moddable Developer");
 	AppendMenu(helpMenu, MF_SEPARATOR, 0, NULL);
 	AppendMenu(helpMenu, MF_STRING, 0x0302, "About Screen Test");
-	AppendMenu(menubar, MF_POPUP, (UINT)helpMenu, "Help");
+	AppendMenu(menubar, MF_POPUP, (UINT_PTR)helpMenu, "Help");
 
 	char path[MAX_PATH];
 	SHGetSpecialFolderPath(NULL, path, CSIDL_LOCAL_APPDATA, TRUE);

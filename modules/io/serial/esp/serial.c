@@ -58,18 +58,27 @@ struct SerialRecord {
 	uint8_t		isReadable;
 	uint8_t		isWritable;
 	uint8_t		format;
+	// fields after here only allocated if callbacks used
 	xsMachine	*the;
-	xsSlot		onReadable;
-	xsSlot		onWritable;
+	xsSlot		*onReadable;
+	xsSlot		*onWritable;
 };
 
+static void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLength);
+
+static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
+	xs_serial_destructor,
+	xs_serial_mark,
+	NULL
+};
 
 void xs_serial_constructor(xsMachine *the)
 {
 	Serial serial;
 	int baud;
-	uint8_t hasReadable, hasWritable, format;
+	uint8_t format;
+	xsSlot *onReadable, *onWritable;
 
 	if (!builtinIsPinFree(kTXPin) || !builtinIsPinFree(kRXPin))
 		xsUnknownError("in use");
@@ -81,8 +90,8 @@ void xs_serial_constructor(xsMachine *the)
 	if ((baud < 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
 
-	hasReadable = builtinHasCallback(the, xsID_onReadable);
-	hasWritable = builtinHasCallback(the, xsID_onWritable);
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	onWritable = builtinGetCallback(the, xsID_onWritable);
 
 	builtinInitializeTarget(the);
 
@@ -90,7 +99,7 @@ void xs_serial_constructor(xsMachine *the)
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
-	serial = c_malloc((hasReadable || hasWritable) ? sizeof(SerialRecord) : offsetof(SerialRecord, the));
+	serial = c_malloc((onReadable || onWritable) ? sizeof(SerialRecord) : offsetof(SerialRecord, the));
 	if (!serial)
 		xsRangeError("no memory");
 
@@ -98,23 +107,22 @@ void xs_serial_constructor(xsMachine *the)
 
 	serial->obj = xsThis;
 	xsRemember(serial->obj);
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
 
 	serial->format = format;
-	serial->hasReadable = hasReadable;
-	serial->hasWritable = hasWritable;
-	if (hasReadable || hasWritable) {
+	serial->hasReadable = onReadable ? 1 : 0;
+	serial->hasWritable = onWritable ? 1 : 0;
+	if (onReadable || onWritable) {
 		serial->the = the;
 
-		if (hasReadable) {
+		if (onReadable) {
 			serial->isReadable = 0;
-			builtinGetCallback(the, xsID_onReadable, &serial->onReadable);
-			xsRemember(serial->onReadable);
+			serial->onReadable = onReadable; 
 		}
 
-		if (hasWritable) {
+		if (onWritable) {
 			serial->isWritable = 0;
-			builtinGetCallback(the, xsID_onWritable, &serial->onWritable);
-			xsRemember(serial->onWritable);
+			serial->onWritable = onWritable; 
 		}
 	}
 
@@ -141,13 +149,13 @@ void xs_serial_constructor(xsMachine *the)
 	USC0(UART_NR) &= ~RXTX_RESET_MASK;
 
 	// configure interrupts
-	if (hasReadable || hasWritable) {
+	if (onReadable || onWritable) {
 		uint32_t usie = 0, usc1 = 0;
-		if (hasReadable) {
+		if (onReadable) {
 			usc1 = (120 << UCFFT) | (0x02 << UCTOT) | (1 << UCTOE );		// generate interrupt after 120 bytes received or 2 character time recieve timeout
 			usie = (1 << UIFF) | (1 << UITO);
 		}
-		if (hasWritable) {
+		if (onWritable) {
 			usc1 |= (16 << UCFET);		// 16 characters remain to transmit
 			usie |= (1 << UIFE);
 		}
@@ -159,7 +167,7 @@ void xs_serial_constructor(xsMachine *the)
 
 	ETS_UART_INTR_ENABLE();
 
-	if (hasWritable) {
+	if (onWritable) {
 		serial->isWritable = 1;
 		modMessagePostToMachineFromPool(serial->the, serialDeliver, serial);
 	}
@@ -188,30 +196,23 @@ void xs_serial_destructor(void *data)
 void xs_serial_close(xsMachine *the)
 {
 	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(serial->obj);
-	if (serial->hasReadable || serial->hasWritable) {
-		if (serial->hasReadable)
-			xsForget(serial->onReadable);
-		if (serial->hasWritable)
-			xsForget(serial->onWritable);
+	if (serial && xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks)) {
+		xsForget(serial->obj);
+		xs_serial_destructor(serial);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
 	}
-	xs_serial_destructor(serial);
 }
 
 void xs_serial_get_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	builtinGetFormat(the, serial->format);
 }
 
 void xs_serial_set_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
@@ -220,11 +221,8 @@ void xs_serial_set_format(xsMachine *the)
 
 void xs_serial_read(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	int count;
-
-	if (!serial)
-		xsUnknownError("closed");
 
 	count = getBytesReadable();
 	if (0 == count)
@@ -247,13 +245,9 @@ void xs_serial_read(xsMachine *the)
 
 void xs_serial_write(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	int count;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+	int count = getBytesWritable();
 
-	if (!serial)
-		xsUnknownError("closed");
-
-	count = getBytesWritable();
 	if (kIOFormatNumber == serial->format) {
 		if (0 == count)
 			xsUnknownError("output full");
@@ -262,11 +256,12 @@ void xs_serial_write(xsMachine *the)
 	}
 	else {
 		uint8_t *buffer;
-		int requested = xsmcGetArrayBufferLength(xsArg(0));
+		xsUnsignedValue requested;
+
+		xsmcGetBufferReadable(xsArg(0), (void **)&buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 
-		buffer = xsmcToArrayBuffer(xsArg(0));
 		while (requested--)
 			USF(UART_NR) = *buffer++;
 	}
@@ -309,7 +304,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		if (count) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, count);
-				xsCallFunction1(serial->onReadable, serial->obj, xsResult);
+				xsCallFunction1(xsReference(serial->onReadable), serial->obj, xsResult);
 			xsEndHost(the);
 		}
 	}
@@ -320,10 +315,20 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		if (count) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, count);
-				xsCallFunction1(serial->onWritable, serial->obj, xsResult);
+				xsCallFunction1(xsReference(serial->onWritable), serial->obj, xsResult);
 			xsEndHost(the);
 		}
 	}
 
 	ETS_UART_INTR_ENABLE();
+}
+
+void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	Serial serial = it;
+
+	if (serial->hasReadable)
+		(*markRoot)(the, serial->onReadable);
+	if (serial->hasWritable)
+		(*markRoot)(the, serial->onWritable);
 }

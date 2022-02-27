@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2019-2022 Bradley Farias
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -20,7 +20,7 @@
 
 declare module "zip" {
   class Zip {
-    constructor(buffer: ArrayBuffer | HostBuffer);
+    constructor(buffer: BufferLike);
     file(path: string): import("file").File;
     iterate(path: string): import("file").Iterator;
     map(path: string): HostBuffer;

@@ -71,6 +71,7 @@ void xs_udp_constructor(xsMachine *the)
 	UDP udp;
 	int port = 0;
 	struct udp_pcb *skt;
+	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
 
 	xsmcVars(1);
 
@@ -108,10 +109,9 @@ void xs_udp_constructor(xsMachine *the)
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
 
-	if (builtinGetCallback(the, xsID_onReadable, &xsVar(0))) {
-		udp->onReadable = xsToReference(xsVar(0));
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
-	}
+	udp->onReadable = onReadable;
+
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
 }
 
 void xs_udp_destructor(void *data)
@@ -134,16 +134,17 @@ void xs_udp_destructor(void *data)
 void xs_udp_close(xsMachine *the)
 {
 	UDP udp = xsmcGetHostData(xsThis);
-	if (!udp) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(udp->obj);
-	xs_udp_destructor(udp);
+	if (udp && xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks)) {
+		xsForget(udp->obj);
+		xs_udp_destructor(udp);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_udp_read(xsMachine *the)
 {
-	UDP udp = xsmcGetHostData(xsThis);
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
 	UDPPacket packet;
 
 	builtinCriticalSectionBegin();
@@ -170,23 +171,20 @@ void xs_udp_read(xsMachine *the)
 
 void xs_udp_write(xsMachine *the)
 {
-	UDP udp = xsmcGetHostData(xsThis);
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
 	char temp[32];
 	uint16_t port = xsmcToInteger(xsArg(1));
 	ip_addr_t dst;
-	int byteLength;
+	xsUnsignedValue byteLength;
 	err_t err;
-	struct pbuf *pb;
+	void *buffer;
 
 	xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
 	if (!ipaddr_aton(temp, &dst))
 		xsRangeError("invalid IP address");
 
-	if (xsmcIsInstanceOf(xsArg(2), xsTypedArrayPrototype))
-		xsmcGet(xsArg(2), xsArg(2), xsID_buffer);		//@@ ignoring view
-	byteLength = xsmcGetArrayBufferLength(xsArg(2));
-
-	udp_sendto_safe(udp->skt, xsmcToArrayBuffer(xsArg(2)), byteLength, &dst, port, &err);
+	xsmcGetBufferReadable(xsArg(2), &buffer, &byteLength);
+	udp_sendto_safe(udp->skt, buffer, byteLength, &dst, port, &err);
 	if (ERR_OK != err)
 		xsUnknownError("UDP send failed");
 }

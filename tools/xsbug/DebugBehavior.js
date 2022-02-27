@@ -57,8 +57,9 @@ const mxStepCommand = 8;
 const mxStepInCommand = 9;
 const mxStepOutCommand = 10;
 const mxToggleCommand = 11;
-const mxScriptCommand = 12;
-const mxModuleCommand = 13;
+const mxImportCommand = 12;
+const mxScriptCommand = 13;
+const mxModuleCommand = 14;
 const serialConnectStrings = ["Connect", "Disconnect", "Connecting...", "Installing..."];
 
 export class DebugBehavior @ "PiuDebugBehaviorDelete" {
@@ -586,11 +587,17 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.doCommand(command, path, line);
 	}
 	doCommand(command) @ "PiuDebugMachine_doCommand"
-	doModule(path) {
-		this.doCommand(mxModuleCommand, path, system.readFileBuffer(path));
+	doGo() {
+		this.doCommand(mxGoCommand);
 	}
-	doScript(path) {
-		this.doCommand(mxScriptCommand, path, system.readFileBuffer(path));
+	doImport(path, wait) {
+		this.doCommand(mxImportCommand, path, wait);
+	}
+	doModule(path, wait) {
+		this.doCommand(mxModuleCommand, path, wait, system.readFileBuffer(path));
+	}
+	doScript(path, wait) {
+		this.doCommand(mxScriptCommand, path, wait, system.readFileBuffer(path));
 	}
 	onBinaryResult(data) {
 		const view = new DataView(data);
@@ -705,7 +712,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 				let path = behavior.unmapPath(item.path);
 				if (path) {
 					let line = item.line;
-					items.push({ path, line });
+					items.push({ path, line, enabled:item.enabled });
 				}
 			});
 			this.doCommand(mxSetAllBreakpointsCommand, items.filter(

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016-2020 Moddable Tech, Inc.
+* Copyright (c) 2016-2021 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK.
 *
@@ -14,7 +14,6 @@
 
 import Client from "mqtt";
 import SecureSocket from "securesocket";
-import Net from "net";
 import Timer from "timer";
 import Resource from "Resource";
 
@@ -22,16 +21,13 @@ class SecureClient extends Client {
 	onReady() {
 		this.subscribe("moddable/mqtt/example/#");
 
-		Timer.repeat(() => {
-			this.publish("moddable/mqtt/example/date", (new Date()).toString());
+		Timer.set(() => {
+			this.publish("moddable/mqtt/example/date", Date());
 			this.publish("moddable/mqtt/example/random", Math.random());
-		 }, 1000);
+		 }, 0, 1000);
 	};
 	onMessage(topic, body) {
-		if (body.byteLength > 128)
-			trace(`received "${topic}": ${body.byteLength} bytes\n`);
-		else
-			trace(`received "${topic}": ${String.fromArrayBuffer(body)}\n`);
+		trace(`received "${topic}": ${String.fromArrayBuffer(body)}\n`);
 	};
 	onClose() {
 		trace('lost connection to server\n');
@@ -40,7 +36,7 @@ class SecureClient extends Client {
 
 new SecureClient({
 	host: "test.mosquitto.org",
-	id: "moddable_" + Net.get("MAC"),
+	timeout: 60_000,
 	port: 8883,
 	Socket: SecureSocket,
 	secure: {

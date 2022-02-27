@@ -81,7 +81,7 @@ txSlot* fxNewNumberInstance(txMachine* the)
 {
 	txSlot* instance;
 	instance = fxNewObjectInstance(the);
-	fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	fxNextNumberProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	return instance;
 }
 
@@ -408,7 +408,6 @@ void fx_Number_prototype_toPrecision(txMachine* the)
 
 void fx_Number_prototype_toString(txMachine* the)
 {
-	char buffer[256];
 	txInteger radix;
 	txSlot* slot = fxCheckNumber(the, mxThis);
 	if (!slot) mxTypeError("this is no number");
@@ -424,11 +423,7 @@ void fx_Number_prototype_toString(txMachine* the)
 	if (radix == 10)
 		fxToString(the, mxResult);
 	else {
-		static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
-		txString string = buffer + sizeof(buffer);
-		txNumber value;
-		txBoolean minus;
-		value = mxResult->value.number;
+		txNumber value = mxResult->value.number;
 		switch (c_fpclassify(value)) {
 		case C_FP_INFINITE:
 			if (value < 0)
@@ -442,22 +437,99 @@ void fx_Number_prototype_toString(txMachine* the)
 		case C_FP_ZERO:
 			fxStringX(the, mxResult, "0");
 			break;
-		default:
-			*(--string) = 0;
+		default: {
+			// Thanks Google V8 for the fraction part
+			static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
+			txInteger minus;
+			txNumber integer;
+			txNumber fraction;
+			txNumber next;
+			txU8* nextCast = (txU8*)&next;
+			txNumber delta;
+			txSize length;
+			txString string;
+			txNumber modulo;
 			if (value < 0) {
 				minus = 1;
 				value = -value;
 			} 
 			else
 				minus = 0;
+			integer = c_floor(value);
+			fraction = value - integer;
+			next = value;
+			*nextCast = *nextCast + 1;
+			delta = 0.5 * (next - value);
+			next = 0;
+			*nextCast = *nextCast + 1;
+			if (delta < next)
+				delta = next;
+			length = minus + ((integer)? (txSize)c_floor(c_log1p(integer) / c_log(radix)) : 0) + 1;
+			if (fraction >= delta) {
+				#define mxFractionPartLength 2048
+				txString dot;
+				txInteger i = 0;
+				txInteger digit;
+				string = mxResult->value.string = fxNewChunk(the, length + 1 + mxFractionPartLength + 1);
+				dot = string + length;
+				dot[i++] = '.';
+				do {
+					fraction *= radix;
+					delta *= radix;
+					digit = (txInteger)fraction;
+					dot[i++] = c_read8(gxDigits + digit);
+					fraction -= digit;
+					if (fraction > 0.5 || (fraction == 0.5 && (digit & 1))) {
+						if (fraction + delta > 1) {
+							for (;;) {
+								char c;
+								i--;
+								if (i == 0) {
+									integer += 1;
+									break;
+								}
+								c = dot[i];
+								digit = c > '9' ? (c - 'a' + 10) : (c - '0');
+								if (digit + 1 < radix) {
+									dot[i++] = c_read8(gxDigits + digit + 1);
+									break;
+								}
+							}
+							break;
+						}
+					}
+				} while ((fraction >= delta) && (i < mxFractionPartLength));
+				dot[i++] = 0;
+				length += i;
+				string = dot;
+			}
+			else {
+				length++;
+				string = mxResult->value.string = fxNewChunk(the, length);
+				string += length;
+				*(--string) = 0;
+			}
+			modulo = C_MAX_SAFE_INTEGER * radix;
+			while (integer > modulo) {
+				*(--string) = '0';
+				integer = integer / radix;
+			}
 			do {
-				*(--string) = c_read8(gxDigits + (txInteger)c_fmod(value, radix));
-				value = value / radix;
-			} while (value >= 1);
-			if (minus)
+				modulo = c_fmod(integer, radix);
+				*(--string) = c_read8(gxDigits + (txInteger)modulo);
+				integer = (integer - modulo) / radix;
+			} while (integer >= 1);
+			if (minus) {
 				*(--string) = '-';
-			fxCopyStringC(the, mxResult, string);
-		}
+			}
+			minus = (txInteger)(string - mxResult->value.string);
+			if (minus > 0) {
+				length -= minus;
+				c_memmove(mxResult->value.string, string, length);
+			}
+			mxResult->value.string = fxRenewChunk(the, mxResult->value.string, length);
+			mxResult->kind = XS_STRING_KIND;
+		}}
 	}
 }
 

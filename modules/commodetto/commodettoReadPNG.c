@@ -35,7 +35,7 @@
 */
 
 #include "xsPlatform.h"
-#include "xs.h"
+#include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #define MINIZ_HEADER_FILE_ONLY
@@ -179,24 +179,21 @@ void xs_PNG_constructor(xsMachine *the)
 	const unsigned char *pngBytes, *pngBytesInitial;
 	int tagCount = 0;
 	int8_t colorType, compressionMethod, filterMethod, interlaceMethod, bitsPerPixel;
+	xsUnsignedValue dataSize;
 
 	png = calloc(1, sizeof(PNGRecord));
 	if (!png)
 		xsErrorPrintf("no memory for PNG");
-	xsSetHostData(xsThis, png);
+	xsmcSetHostData(xsThis, png);
 
-	xsVars(2);
+	xsmcVars(2);
 
-	if (xsIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		pngBytesInitial = xsToArrayBuffer(xsArg(0));
-	else
-		pngBytesInitial = xsGetHostData(xsArg(0));
-	pngBytes = pngBytesInitial;
 	png->data = xsArg(0);
-	xsSet(xsThis, xsID_buffer, png->data);
+	xsmcSet(xsThis, xsID_buffer, png->data);
 
-	xsVar(0) = xsGet(xsArg(0), xsID_byteLength);
-	png->byteLength = xsToInteger(xsVar(0));
+	xsmcGetBufferReadable(xsArg(0), (void **)&pngBytesInitial, &dataSize);
+	pngBytes = pngBytesInitial;
+	png->byteLength = dataSize;
 
 	if ((0x89 != pngBytes[0]) || (0x50 != pngBytes[1]) || (0x4e != pngBytes[2]) || (0x47 != pngBytes[3]) ||
 		(0x0d != pngBytes[4]) || (0x0a != pngBytes[5]) || (0x1a != pngBytes[6]) || (0x0a != pngBytes[7]))
@@ -283,9 +280,9 @@ void xs_PNG_constructor(xsMachine *the)
 				const unsigned char *src = pngBytes;
 				unsigned char *dst;
 
-				xsVar(0) = xsArrayBuffer(NULL, colors * 4);
-				xsSet(xsThis, xsID_palette, xsVar(0));
-				dst = xsToArrayBuffer(xsVar(0));
+				xsmcSetArrayBuffer(xsVar(0), NULL, colors * 4);
+				xsmcSet(xsThis, xsID_palette, xsVar(0));
+				dst = xsmcToArrayBuffer(xsVar(0));
 
 				while (colors--) {
 					*dst++ = *src++;		// r
@@ -297,11 +294,11 @@ void xs_PNG_constructor(xsMachine *the)
 				break;
 
 			case 'tRNS':
-				xsVar(0) = xsGet(xsThis, xsID_palette);
-				if (xsTest(xsVar(0))) {
+				xsmcGet(xsVar(0), xsThis, xsID_palette);
+				if (xsmcTest(xsVar(0))) {
 					int colors = tagLen;
 					const unsigned char *src = pngBytes;
-					unsigned char *dst = (unsigned char *)xsToArrayBuffer(xsVar(0)) + 3;
+					unsigned char *dst = (unsigned char *)xsmcToArrayBuffer(xsVar(0)) + 3;
 
 					while (colors--) {
 						*dst = *src++;
@@ -319,12 +316,11 @@ void xs_PNG_constructor(xsMachine *the)
 				png->byteOffset = pngBytes - pngBytesInitial;
 
 				xsVar(1) = xsNewHostObject(scanDestructor);
-				xsVar(0) = xsInteger(png->scanLineByteCount);
-				xsSet(xsVar(1), xsID_byteLength, xsVar(0));
+				xsmcSetHostBuffer(xsVar(1), NULL, png->scanLineByteCount);
 				png->scanLineSlot = xsVar(1);
 
 				xsVar(1) = xsNew1(xsGlobal, xsID_Uint8Array, xsVar(1));
-				xsSet(xsThis, xsID_data, xsVar(1));
+				xsmcSet(xsThis, xsID_data, xsVar(1));
 				return;
 		}
 
@@ -334,20 +330,18 @@ void xs_PNG_constructor(xsMachine *the)
 
 void xs_PNG_read(xsMachine *the)
 {
-	PNG png = xsGetHostData(xsThis);
+	PNG png = xsmcGetHostData(xsThis);
 	const unsigned char *pngBytes, *pngBytesInitial;
 	unsigned char *swap;
 	int result;
 	uint8_t filter;
+	xsUnsignedValue size;
 
 	if (png->row++ >= png->height)
 		return;
 
 	// refresh source data pointer
-	if (xsIsInstanceOf(png->data, xsArrayBufferPrototype))
-		pngBytesInitial = xsToArrayBuffer(png->data);
-	else
-		pngBytesInitial = xsGetHostData(png->data);
+	xsmcGetBufferReadable(png->data, (void **)&pngBytesInitial, &size);
 	pngBytes = pngBytesInitial + png->byteOffset;
 
 	// decompress another scan line
@@ -388,8 +382,8 @@ void xs_PNG_read(xsMachine *the)
 	gFilters[filter](png->scanLine + kScanLineSlop, png->prevScanLine + kScanLineSlop, png->scanLineByteCount, png->filterBytesPerPixel);
 
 	// return a scan line of data
-	xsResult = xsGet(xsThis, xsID_data);
-	xsSetHostData(png->scanLineSlot, png->scanLine + kScanLineSlop);
+	xsmcGet(xsResult, xsThis, xsID_data);
+	xsmcSetHostBuffer(png->scanLineSlot, png->scanLine + kScanLineSlop, png->scanLineByteCount);
 
 	// swap previous and current scan line buffers
 	swap = png->prevScanLine;
@@ -402,24 +396,24 @@ void xs_PNG_read(xsMachine *the)
 
 void xs_PNG_get_width(xsMachine *the)
 {
-	PNG png = xsGetHostData(xsThis);
-	xsResult = xsInteger(png->width);
+	PNG png = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, png->width);
 }
 
 void xs_PNG_get_height(xsMachine *the)
 {
-	PNG png = xsGetHostData(xsThis);
-	xsResult = xsInteger(png->height);
+	PNG png = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, png->height);
 }
 
 void xs_PNG_get_channels(xsMachine *the)
 {
-	PNG png = xsGetHostData(xsThis);
-	xsResult = xsInteger(png->channelCount);
+	PNG png = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, png->channelCount);
 }
 
 void xs_PNG_get_depth(xsMachine *the)
 {
-	PNG png = xsGetHostData(xsThis);
-	xsResult = xsInteger(png->bitDepth);
+	PNG png = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, png->bitDepth);
 }

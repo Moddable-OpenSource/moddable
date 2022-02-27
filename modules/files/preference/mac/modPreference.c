@@ -84,6 +84,14 @@ void xs_preference_keys(xsMachine *the)
 void xs_preference_set(xsMachine *the)
 {
 	CFTypeRef value = NULL;
+	char buffer[1024];
+	char keyBuffer[64];
+	c_strcpy(buffer, PIU_DOT_SIGNATURE);
+	c_strcat(buffer, "."); 
+	c_strcat(buffer, xsToString(xsArg(0))); 
+	
+	xsToStringBuffer(xsArg(1), keyBuffer, sizeof(keyBuffer));
+
 	switch (xsTypeOf(xsArg(2))) {
 	case xsBooleanType:
 		value = (xsToBoolean(xsArg(2))) ? kCFBooleanTrue : kCFBooleanFalse;
@@ -94,7 +102,10 @@ void xs_preference_set(xsMachine *the)
 		} break;
 	case xsNumberType: {
 		xsNumberValue number = xsToNumber(xsArg(2));
-		value = CFNumberCreate(NULL, kCFNumberDoubleType, &number);
+		xsIntegerValue integer = (int)number;
+		if (number != integer)
+			xsUnknownError("float unsupported");
+		value = CFNumberCreate(NULL, kCFNumberLongType, &integer);
 		} break;
 	case xsStringType:
 		value = CFStringCreateWithCString(NULL, xsToString(xsArg(2)), kCFStringEncodingUTF8);
@@ -105,12 +116,8 @@ void xs_preference_set(xsMachine *the)
 		break;
 	}
 	if (value) {
-		char buffer[1024];
-		c_strcpy(buffer, PIU_DOT_SIGNATURE);
-		c_strcat(buffer, "."); 
-		c_strcat(buffer, xsToString(xsArg(0))); 
 		CFStringRef domain = CFStringCreateWithCString(NULL, buffer, kCFStringEncodingUTF8);
-		CFStringRef key = CFStringCreateWithCString(NULL, xsToString(xsArg(1)), kCFStringEncodingUTF8);
+		CFStringRef key = CFStringCreateWithCString(NULL, keyBuffer, kCFStringEncodingUTF8);
 		CFPreferencesSetAppValue(key, value, domain);
 		CFPreferencesAppSynchronize(domain);
 		CFRelease(key);

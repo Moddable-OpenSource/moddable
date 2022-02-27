@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,13 +23,13 @@
 #include <Arduino.h>
 #include "xs.h"
 #include "xsHost.h"
+#include "xsHosts.h"
 #include "modTimer.h"
 
 extern "C" {
 	#include "user_interface.h"		// to get system_soft_wdt_feed
 
 	extern void fx_putc(void *refcon, char c);
-	extern void mc_setup(xsMachine *the);
 	extern void __wrap_espconn_init(void);
 	extern uint8_t uart_set_baud(uart_t* uart, int baudrate);
 }
@@ -80,11 +80,11 @@ void setup()
 	wifi_set_opmode_current(NULL_MODE);
 
 #ifdef mxDebug
-	gThe = ESP_cloneMachine(0, 0, 0, NULL);
+	gThe = modCloneMachine(0, 0, 0, 0, NULL);
 
-	mc_setup(gThe);
+	modRunMachineSetup(gThe);
 #else
-	mc_setup(ESP_cloneMachine(0, 0, 0, NULL));
+	modRunMachineSetup(modCloneMachine(0, 0, 0, 0, NULL));
 #endif
 }
 

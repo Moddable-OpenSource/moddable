@@ -40,82 +40,84 @@ void xs_Bitmap(xsMachine *the)
 {
 	int offset;
 	int32_t byteLength = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 0;
-	CommodettoBitmap cb = xsmcSetHostChunk(xsThis, NULL, sizeof(CommodettoBitmapRecord) /* - (byteLength ? sizeof(int32_t) : 0) */);
+	CommodettoBitmapRecord cb;
+	void *data;
+	xsUnsignedValue dataSize, neededSize;
 
-	cb->w = (CommodettoDimension)xsmcToInteger(xsArg(0));
-	cb->h = (CommodettoDimension)xsmcToInteger(xsArg(1));
-	cb->format = (CommodettoBitmapFormat)xsmcToInteger(xsArg(2));
-	if (kCommodettoBitmapDefault == cb->format)
-		cb->format = kCommodettoBitmapFormat;
-	else if (0 == cb->format)
-		xsErrorPrintf("invalid bitmap format");
+	cb.w = (CommodettoDimension)xsmcToInteger(xsArg(0));
+	cb.h = (CommodettoDimension)xsmcToInteger(xsArg(1));
+	cb.format = (CommodettoBitmapFormat)xsmcToInteger(xsArg(2));
+	if (kCommodettoBitmapDefault == cb.format)
+		cb.format = kCommodettoBitmapFormat;
+	else if (0 == cb.format)
+		xsErrorPrintf("invalid format");
 	offset = xsmcToInteger(xsArg(4));
 
-	if (xsmcIsInstanceOf(xsArg(3), xsArrayBufferPrototype)) {
-		cb->havePointer = false;
-		cb->bits.offset = offset;
+	if (xsBufferRelocatable == xsmcGetBufferReadable(xsArg(3), (void **)&data, &dataSize)) {
+		cb.havePointer = false;
+		cb.bits.offset = offset;
 	}
 	else {
-		cb->havePointer = true;
-		cb->bits.data = offset + (char *)xsmcGetHostData(xsArg(3));
+		cb.havePointer = true;
+		cb.bits.data = offset + (char *)data;
 	}
 
+	if (kCommodettoBitmapPacked & cb.format)
+		neededSize = 0;
+	else
+		neededSize = (((CommodettoBitmapGetDepth(cb.format) * cb.w) + 7) >> 3) * cb.h;
+	if ((offset < 0) || (((xsUnsignedValue)offset + neededSize) > dataSize))
+		xsErrorPrintf("invalid");
+
 	#if COMMODETTO_BITMAP_ID
-		cb->id = ++gBitmapID;
+		cb.id = ++gBitmapID;
 	#endif
 
 	if (byteLength) {
-		cb->flags |= kCommodettoBitmapHaveByteLength;
-		cb->byteLength = byteLength;
+		cb.flags |= kCommodettoBitmapHaveByteLength;
+		cb.byteLength = byteLength;
 	}
 
-	xsmcSet(xsThis, xsID_buffer, xsArg(3));
+	xsmcSetHostChunk(xsThis, &cb, sizeof(CommodettoBitmapRecord) /* - (byteLength ? sizeof(int32_t) : 0) */);
+
+	xsmcDefine(xsThis, xsID_buffer, xsArg(3), xsDontSet);
 }
 
 void xs_bitmap_get_width(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	xsmcSetInteger(xsResult, cb->w);
 }
 
 void xs_bitmap_get_height(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	xsmcSetInteger(xsResult, cb->h);
 }
 
 void xs_bitmap_get_pixelFormat(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	xsmcSetInteger(xsResult, cb->format);
 }
 
 void xs_bitmap_get_offset(xsMachine *the)
 {
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
+	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, xs_Bitmap_destructor);
 	int32_t offset;
 
 	if (cb->havePointer) {
+		void *data;
+		xsUnsignedValue dataSize;
+
 		xsmcGet(xsResult, xsThis, xsID_buffer);
-		offset = (char *)cb->bits.data - (char *)xsmcGetHostData(xsResult);
+		xsmcGetBufferReadable(xsResult, &data, &dataSize);
+		offset = (char *)cb->bits.data - (char *)data;
 	}
 	else
 		offset = cb->bits.offset;
 
 	xsmcSetInteger(xsResult, offset);
-}
-
-void xs_bitmap_get_byteLength(xsMachine *the)
-{
-	CommodettoBitmap cb = xsmcGetHostChunk(xsThis);
-	int32_t byteLength;
-
-	if (cb->flags & kCommodettoBitmapHaveByteLength)
-		byteLength = cb->byteLength;
-	else
-		byteLength = (((CommodettoBitmapGetDepth(cb->format) *  cb->w) + 7) >> 3) * cb->h;
-
-	xsmcSetInteger(xsResult, byteLength);
 }
 
 void xs_bitmap_get_depth(xsMachine *the)
@@ -147,6 +149,10 @@ uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format)
 		depth = 24;
 	else if (kCommodettoBitmap32RGBA == format)
 		depth = 32;
+	else if (kCommodettoBitmapRGB444 == format)
+		depth = 12;
+	else if (kCommodettoBitmapCLUT32 == format)
+		depth = 5;
 
 	return depth;
 }

@@ -38,9 +38,11 @@
 #include "xsAll.h"
 #include "xsScript.h"
 
-#ifdef mxDebug
-static LRESULT CALLBACK fxMessageWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+#ifndef mxMessageWindowClass
+	#define mxMessageWindowClass "fxMessageWindowClass"
 #endif
+
+static LRESULT CALLBACK fxMessageWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK fxMessageWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -93,9 +95,9 @@ void fxCreateMachinePlatform(txMachine* the)
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.cbWndExtra = sizeof(txMachine*);
 	wcex.lpfnWndProc = fxMessageWindowProc;
-	wcex.lpszClassName = "fxMessageWindowClass";
+	wcex.lpszClassName = mxMessageWindowClass;
 	RegisterClassEx(&wcex);
-	the->window = CreateWindowEx(0, "fxMessageWindowClass", NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+	the->window = CreateWindowEx(0, mxMessageWindowClass, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
 	SetWindowLongPtr(the->window, 0, (LONG_PTR)the);
 	InitializeCriticalSection(&(the->workerMutex));
 #ifdef mxDebug
@@ -125,7 +127,7 @@ void fxDeleteMachinePlatform(txMachine* the)
 		DestroyWindow(the->window);
 		the->window = NULL;
 	}
-	UnregisterClass("fxMessageWindowClass", NULL);
+	UnregisterClass(mxMessageWindowClass, NULL);
 }
 
 void fxQueuePromiseJobs(txMachine* the)

@@ -206,6 +206,7 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 {
 	txSlot* slot;
 	txSlot* arrayBuffer = C_NULL;
+	txSlot* bufferInfo;
 	txBoolean sign = 0;
 	int endian = EndianBig;
 	txInteger length;
@@ -221,18 +222,19 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 	}
 	if (!arrayBuffer)
 		mxTypeError("argument is no ArrayBuffer instance");
+	bufferInfo = arrayBuffer->next;
+	length = bufferInfo->value.bufferInfo.length;
 	if ((mxArgc > 1) && fxToBoolean(the, mxArgv(1)))
 		sign = 1;
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		endian = EndianLittle;
-	length = arrayBuffer->value.arrayBuffer.length;
-	if (length == 0) {
+    if (sign)
+        length--;
+	if (length <= 0) {
 		mxResult->value.bigint = gxBigIntNaN;
 		mxResult->kind = XS_BIGINT_X_KIND;
 		return;
 	}
-	if (sign)
-		length--;
 	bigint = fxBigInt_alloc(the, howmany(length, sizeof(txU4)));
 	bigint->data[bigint->size - 1] = 0;
 	src = (txU1*)(arrayBuffer->value.arrayBuffer.address);
@@ -256,7 +258,7 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 		}
 	}
 	length = bigint->size - 1;
-	while (bigint->data[length] == 0)
+	while (length && (bigint->data[length] == 0))
 		length--;
 	bigint->size = length + 1;
 	mxPullSlot(mxResult);
@@ -414,7 +416,7 @@ txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot)
 	mxPush(mxBigIntPrototype);
 	instance = fxNewObjectInstance(the);
 	internal = instance->next = fxNewSlot(the);
-	internal->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	internal->flag = XS_INTERNAL_FLAG;
 	internal->kind = slot->kind;
 	internal->value = slot->value;
 	if (the->frame->flag & XS_STRICT_FLAG)
@@ -589,6 +591,11 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	txBoolean minus = 0;
 	txSlot* result;
 	txSlot* stack;
+	
+	if (mxBigIntIsNaN(&slot->value.bigint)) {
+		fxStringX(the, slot, "NaN");
+		return;
+	}
 	
 	mxMeterSome(slot->value.bigint.size);
 	
@@ -1563,7 +1570,11 @@ txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		txU4 c = fxBigInt_bitsize(a);
 		txBigInt *t = fxBigInt_umul1(the, NULL, b, c);
 		t = fxBigInt_ulsr1(the, t, t, 5);
-		c = 2 + t->data[0]; //@@
+#ifdef mxRun
+		if ((t->size > 1) || (t->data[0] > 0xFFFF))
+			mxRangeError("too big exponent");
+#endif
+		c = 2 + t->data[0];
 		fxBigInt_free(the, t);
         if (r == NULL)
 			r = fxBigInt_alloc(the, c);

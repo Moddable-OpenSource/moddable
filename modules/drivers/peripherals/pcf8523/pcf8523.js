@@ -35,10 +35,11 @@ class PCF8523 {
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const io = this.#io = new options.io({
+		const { rtc } = options;
+		const io = this.#io = new rtc.io({
 			hz: 400_000,
 			address: 0x68,
-			...options
+			...rtc
 		});
 
 		try {

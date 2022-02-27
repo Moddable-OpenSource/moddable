@@ -44,7 +44,7 @@ class Digital extends DigitalBank {
 		return super.read() ? 1 : 0;
 	}
 	write(value) {
-		super.write(value ? ~0 : 0);
+		super.write(Number(value) ? ~0 : 0);
 	}
 }
 Digital.Input = DigitalBank.Input;

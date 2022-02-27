@@ -53,6 +53,7 @@ C_OPTIONS = \
 	-DmxSloppy=1 \
 	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \
+	-DmxStringNormalize=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
@@ -65,7 +66,7 @@ endif
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -O3
+	C_OPTIONS += -DmxMultipleThreads=1 -O3
 endif
 
 LIBRARIES = -framework CoreServices
@@ -75,8 +76,10 @@ ifneq ("x$(SDKROOT)", "x")
 	LINK_OPTIONS += -isysroot $(SDKROOT)
 endif
 
-# C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
-# LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+ifeq ($(GOAL),debug)
+	C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer -DmxASANStackMargin=16384
+	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+endif
 
 OBJECTS = \
 	$(TMP_DIR)/xsAll.o \
@@ -130,9 +133,16 @@ OBJECTS = \
 	$(TMP_DIR)/reader.o \
 	$(TMP_DIR)/scanner.o \
 	$(TMP_DIR)/writer.o \
+	$(TMP_DIR)/xsmc.o \
+	$(TMP_DIR)/textdecoder.o \
+	$(TMP_DIR)/textencoder.o \
+	$(TMP_DIR)/modBase64.o \
 	$(TMP_DIR)/xst.o
 
 VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml
+VPATH += $(MODDABLE)/modules/data/text/decoder
+VPATH += $(MODDABLE)/modules/data/text/encoder
+VPATH += $(MODDABLE)/modules/data/base64
 
 build: $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME)
 

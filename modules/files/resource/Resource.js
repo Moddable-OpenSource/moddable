@@ -21,5 +21,6 @@
 export default class Resource @ "Resource_destructor" {
      constructor(path) @ "Resource_constructor";
      static exists(path) @ "Resource_exists";
+     get byteLength() @ "Resource_get_byteLength";
      slice(begin, end) @ "Resource_slice";
 }

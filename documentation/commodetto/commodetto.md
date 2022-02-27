@@ -1,7 +1,7 @@
 # Commodetto
 
 Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: May 4, 2021
+Revised: October 26, 2021
 
 ## About This Document
 
@@ -931,8 +931,11 @@ let converter = new Convert(Bitmap.RGB565LE, Bitmap.Gray256);
 ***
 
 #### `process(src, dst)`
+#### `process(src, srcOffset, srcLength, dst, src, dstOffset, dstLength)`
 
-The `process` function performs a pixel conversion. The `src` argument is the input pixels in the format specified in the constructor. The input pixels are stored either in an `ArrayBuffer` or a `HostBuffer`. The `dst` argument is where the output pixels will be returned. It must be an `ArrayBuffer`.
+The `process` function performs a pixel conversion. The `src` argument is the input pixels in the format specified in the constructor. The input and output pixels are stored in a buffer -- `ArrayBuffer`, `TypedArray`, `DataView`, or `HostBuffer`.
+
+There are two ways to call `process`. The first passes only the input and output buffers. The second passes offsets and lengths within the input and output buffers to use. Note that `process` always respects the view of the input and output buffers and applies passed offset and lengths to the view.
 
 ```js
 converter.process(inputPixels, outputPixels);

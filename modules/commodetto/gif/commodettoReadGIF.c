@@ -92,22 +92,23 @@ void xs_readgif_destructor(void *data)
 void xs_readgif(xsMachine *the)
 {
 	xsGIF xg = xsmcSetHostChunk(xsThis, NULL, sizeof(xsGIFRecord));
-	int32_t bufferSize, available;
 	void *buffer;
+	xsUnsignedValue bufferSize;
+	xsIntegerValue available;
 	int format = kCommodettoBitmapDefault;
 
-	xsmcVars(1);
-	buffer = xsmcGetHostData(xsArg(0));
-	xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-	bufferSize = available = xsmcToInteger(xsVar(0));
+	xsmcGetBufferReadable(xsArg(0), &buffer, &bufferSize);
+	available = (xsIntegerValue)bufferSize;
 
 	xg = xsmcGetHostChunk(xsThis);
 	xg->bufferSize = bufferSize;
 
 	if (xsmcArgc > 1) {
+		xsmcVars(1);
+
 		if (xsmcHas(xsArg(1), xsID_available)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_available);
-			available = xsmcToInteger(xsVar(0));
+			xsUnsignedValue available = xsmcToInteger(xsVar(0));
 			if ((available < 0) || (available > bufferSize))
 				xsUnknownError("invalid");
 		}
@@ -134,7 +135,7 @@ void xs_readgif(xsMachine *the)
 	pGIF->GIFFile.pData = buffer;
 	GIFInit(pGIF);
 
-	if ((available == bufferSize) && (kCommodettoBitmapDefault == format)) {
+	if (((xsUnsignedValue)available == bufferSize) && (kCommodettoBitmapDefault == format)) {
 		if (GIFGetInfo(&xg->gi, &xg->ginfo, xg->gi.pPalette)) {
 			xg->ready = 2;
 
@@ -573,10 +574,15 @@ void xs_readgif_get_frameBounds(xsMachine *the)
 	uint16_t frameW = xg->frameW;;
 	uint16_t frameH = xg->frameH;;
 	xsmcSetNewObject(xsResult);
-	xsDefine(xsResult, xsID_x, xsInteger(frameX), xsDefault);
-	xsDefine(xsResult, xsID_y, xsInteger(frameY), xsDefault);
-	xsDefine(xsResult, xsID_width, xsInteger(frameW), xsDefault);
-	xsDefine(xsResult, xsID_height, xsInteger(frameH), xsDefault);
+	xsmcVars(1);
+	xsmcSetInteger(xsVar(0), frameX);
+	xsmcDefine(xsResult, xsID_x, xsVar(0), xsDefault);
+	xsmcSetInteger(xsVar(0), frameY);
+	xsmcDefine(xsResult, xsID_y, xsVar(0), xsDefault);
+	xsmcSetInteger(xsVar(0), frameW);
+	xsmcDefine(xsResult, xsID_width, xsVar(0), xsDefault);
+	xsmcSetInteger(xsVar(0), frameH);
+	xsmcDefine(xsResult, xsID_height, xsVar(0), xsDefault);
 }
 
 void xs_readgif_get_frameCount(xsMachine *the)

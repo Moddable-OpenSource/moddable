@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Moddable Tech, Inc.
+# Copyright (c) 2020-2022 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -20,7 +20,7 @@
 
 file(TO_CMAKE_PATH "$ENV{MODDABLE}" ENV_MODDABLE)
 set(COMPONENT_SRCS "main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ${ENV_MODDABLE}/xs/platforms/esp ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation)
+set(COMPONENT_ADD_INCLUDEDIRS ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation)
 
 register_component()
 

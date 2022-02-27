@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -102,7 +102,7 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_pullup)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_pullup);
-		pullup = xsmcTest(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
+		pullup = xsmcToBoolean(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
 	}
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
@@ -172,38 +172,35 @@ void _xs_i2c_destructor(void *data)
 void _xs_i2c_close(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
-	if (!i2c) return;
-	xsForget(i2c->obj);
-	_xs_i2c_destructor(i2c);
-	xsmcSetHostData(xsThis, NULL);
+	if (i2c && xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor)) {
+		xsForget(i2c->obj);
+		_xs_i2c_destructor(i2c);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
+
+// Note: The stop bit argument to read and write is currently ignored due to ESP-IDF Issue #8248 (https://github.com/espressif/esp-idf/issues/8348).
 
 void _xs_i2c_read(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	xsUnsignedValue length;
-	int type;
 	int err;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
 	void *buffer;
 
-	if (!i2c)
-		xsUnknownError("closed");
+	if (xsmcArgc > 1)
+		stop = xsmcToBoolean(xsArg(1));
 
-	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
-
-	type = xsmcTypeOf(xsArg(0));
-	if ((xsIntegerType == type) || (xsNumberType == type)) {
- 		length = xsmcToInteger(xsArg(0));
-		xsmcSetArrayBuffer(xsResult, NULL, length);
-		xsArg(0) = xsResult;
-		buffer = xsmcToArrayBuffer(xsResult);
+	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+		xsResult = xsArg(0);
+		xsmcGetBufferWritable(xsResult, &buffer, &length);
 	}
 	else {
-		xsResult = xsArg(0);
-		xsmcGetBuffer(xsResult, &buffer, &length);
+ 		length = xsmcToInteger(xsArg(0));
+		buffer = xsmcSetArrayBuffer(xsResult, NULL, length);
 	}
 
 	if (!i2cActivate(i2c))
@@ -217,8 +214,7 @@ void _xs_i2c_read(xsMachine *the)
 			i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
 		i2c_master_read(cmd, ((uint8_t *)buffer) + length - 1, 1, I2C_MASTER_NACK);
 	}
-	if (stop)
-		i2c_master_stop(cmd);
+	i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
@@ -228,20 +224,17 @@ void _xs_i2c_read(xsMachine *the)
 
 void _xs_i2c_write(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	int err;
 	xsUnsignedValue length;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
 	void *buffer;
 
-	if (!i2c)
-		xsUnknownError("closed");
+	if (xsmcArgc > 1)
+		stop = xsmcToBoolean(xsArg(1));
 
-	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
-
-	xsmcGetBuffer(xsArg(0), &buffer, &length);
+	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
@@ -249,13 +242,13 @@ void _xs_i2c_write(xsMachine *the)
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
 	if (length == 0)
-		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_NACK);
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
 	else {
-		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_ACK);
-		i2c_master_write(cmd, (uint8_t *)buffer, length, I2C_MASTER_ACK);
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
+		i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
 	}
-	if (stop)
-		i2c_master_stop(cmd);
+
+	i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 

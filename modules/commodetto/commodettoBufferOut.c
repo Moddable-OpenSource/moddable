@@ -27,6 +27,7 @@
 
 
 #include "xsmc.h"
+#include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 
 #include "string.h"
@@ -76,7 +77,7 @@ void xs_BufferOut_init(xsMachine *the)
 		xsVar(0) = xsArg(3);
 	else
 		xsmcSetArrayBuffer(xsVar(0), NULL, pixelsToBytes(bo->width) * bo->height);
-	xsmcSet(xsThis, xsID_buffer, xsVar(0));
+	xsmcDefine(xsThis, xsID_buffer, xsVar(0), xsDontSet);
 }
 
 void xs_BufferOut_begin(xsMachine *the)
@@ -97,38 +98,23 @@ void xs_BufferOut_send(xsMachine *the)
 	xsBufferOut bo = xsmcGetHostData(xsThis);
 	int argc = xsmcArgc;
 	char *src, *dst;
-	uint32_t *header;
 	int offsetIn, count, offsetOut;
+	xsUnsignedValue available;
+	xsSlot bufferSlot;
 
-	xsmcVars(1);
-
-	if (argc > 1)
-		offsetIn = xsmcToInteger(xsArg(1));
-	else
-		offsetIn = 0;
+	offsetIn = (argc > 1) ? xsmcToInteger(xsArg(1)) : 0;
 
 	if (argc > 2)
 		count = xsmcToInteger(xsArg(2));
 
- 	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		src = xsmcToArrayBuffer(xsArg(0));
-		if (argc <= 2)
-			count = xsmcGetArrayBufferLength(xsArg(0)) - offsetIn;
-	}
-	else {
-		src = xsmcGetHostData(xsArg(0));
-		if (argc <= 2) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-			count = xsmcToInteger(xsVar(0)) - offsetIn;
-		}
-	}
+	xsmcGetBufferReadable(xsArg(0), (void **)&src, &available);
+	if (((xsUnsignedValue)offsetIn >= available) || (offsetIn < 0) || ((xsUnsignedValue)(offsetIn + count) > available) || (count <= 0))
+		xsUnknownError("invalid");
+	if (argc <= 2)
+		count = available - offsetIn;
 
-	xsmcGet(xsVar(0), xsThis, xsID_buffer);
-	if (xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype))
-		header = xsmcToArrayBuffer(xsVar(0));
-	else
-		header = xsmcGetHostData(xsVar(0));
-	dst = (char *)header;
+	xsmcGet(bufferSlot, xsThis, xsID_buffer);
+	xsmcGetBufferWritable(bufferSlot, (void **)&dst, &available);
 
 	offsetOut = bo->offset;
 
@@ -138,7 +124,7 @@ void xs_BufferOut_send(xsMachine *the)
 			copy = count;
 		count -= copy;
 		bo->windowOffset += copy;
-		memcpy(dst + offsetOut, src + offsetIn, copy);
+		c_memcpy(dst + offsetOut, src + offsetIn, copy);
 		offsetOut += copy;
 		offsetIn += copy;
 		if (bo->windowOffset == bo->windowWidth) {

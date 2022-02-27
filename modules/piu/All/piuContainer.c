@@ -246,8 +246,12 @@ void PiuContainerInvalidate(void* it, PiuRectangle area)
 void PiuContainerMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuContainer self = it;
+	PiuContent* content = self->first;
 	PiuContentMark(the, it, markRoot);
-	PiuMarkHandle(the, self->first);
+	while (content) {
+		PiuMarkHandle(the, content);
+		content = (*content)->next;
+	}
 	PiuMarkHandle(the, self->transition);
 }
 
@@ -652,6 +656,7 @@ void PiuContainer_empty(xsMachine *the)
 		}
 		while (index < stop) {
 			PiuContentReflow(content, piuSizeChanged);
+			PiuContentInvalidate(content, NULL);
 			PiuContainerUnbindContent(self, content);
 			content = (*content)->next;
 			index++;
@@ -898,5 +903,6 @@ void PiuContainer_swap(xsMachine *the)
 	}
 	else
 		(*content0)->next = content1;
-	PiuContentReflow(self, piuContentsChanged);
+	PiuContentReflow(content0, piuOrderChanged);
+	PiuContentReflow(content1, piuOrderChanged);
 }

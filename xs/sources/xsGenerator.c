@@ -146,7 +146,7 @@ txSlot* fxNewGeneratorInstance(txMachine* the)
 	the->stack->kind = XS_REFERENCE_KIND;
 
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_STACK_KIND;
 	property->ID = XS_NO_ID;
     property->value.stack.length = 0;
@@ -160,7 +160,7 @@ txSlot* fxNewGeneratorInstance(txMachine* the)
 	}
 	
     property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_INTEGER_KIND;
 	property->value.integer = XS_CODE_START_GENERATOR;
 	
@@ -311,31 +311,38 @@ void fxAsyncGeneratorRejectYield(txMachine* the)
 	txSlot* generator = home->value.home.object;
 	txSlot* stack = generator->next;
 	txSlot* state = stack->next;
-	txSlot* queue = state->next;
-	txSlot* current = queue->value.list.first;
-	txSlot* resolveFunction = current->value.reference->next;
-	txSlot* rejectFunction = resolveFunction->next;
-
-	mxPushUndefined();
-	mxPushSlot(rejectFunction);
-	mxCall();
-	mxPushSlot(mxArgv(0));
-	
-	queue->value.list.first = current = current->next;
-	if (current == C_NULL)
-		queue->value.list.last = C_NULL;
-	
-	mxRunCount(1);
-	mxPop();
-	
-	if (current) {
+	if (state->value.integer == XS_CODE_END) {
+		txSlot* queue = state->next;
+		txSlot* current = queue->value.list.first;
 		txSlot* resolveFunction = current->value.reference->next;
 		txSlot* rejectFunction = resolveFunction->next;
-		txSlot* status = rejectFunction->next;
-		txSlot* value = status->next;
-		the->scratch.kind = value->kind;
-		the->scratch.value = value->value;
-		fxAsyncGeneratorStep(the, generator, status->value.integer);
+
+		mxPushUndefined();
+		mxPushSlot(rejectFunction);
+		mxCall();
+		mxPushSlot(mxArgv(0));
+	
+		queue->value.list.first = current = current->next;
+		if (current == C_NULL)
+			queue->value.list.last = C_NULL;
+	
+		mxRunCount(1);
+		mxPop();
+	
+		if (current) {
+			txSlot* resolveFunction = current->value.reference->next;
+			txSlot* rejectFunction = resolveFunction->next;
+			txSlot* status = rejectFunction->next;
+			txSlot* value = status->next;
+			the->scratch.kind = value->kind;
+			the->scratch.value = value->value;
+			fxAsyncGeneratorStep(the, generator, status->value.integer);
+		}
+	}
+	else {
+		mxPushSlot(mxArgv(0));
+		mxPull(the->scratch);
+		fxAsyncGeneratorStep(the, generator, XS_THROW_STATUS);
 	}
 }
 
@@ -444,8 +451,8 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 #ifdef mxPromisePrint
 				fprintf(stderr, "fxAsyncGeneratorStep %d\n", value->value.reference->next->ID);
 #endif
-				if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
-					state->value.integer = XS_CODE_END;
+// 				if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
+// 					state->value.integer = XS_CODE_END;
 				if (state->value.integer == XS_CODE_AWAIT) {
 					fxPromiseThen(the, value->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
 				}
@@ -508,7 +515,7 @@ txSlot* fxNewAsyncGeneratorInstance(txMachine* the)
 	the->stack->kind = XS_REFERENCE_KIND;
 
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_STACK_KIND;
 	property->ID = XS_NO_ID;
     property->value.stack.length = 0;
@@ -522,12 +529,12 @@ txSlot* fxNewAsyncGeneratorInstance(txMachine* the)
 	}
 	
     property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_INTEGER_KIND;
 	property->value.integer = XS_CODE_START_ASYNC_GENERATOR;
 	
     property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_LIST_KIND;
 	property->value.list.first = C_NULL;
 	property->value.list.last = C_NULL;
@@ -535,25 +542,25 @@ txSlot* fxNewAsyncGeneratorInstance(txMachine* the)
 	function = fxNewHostFunction(the, fxAsyncGeneratorResolveAwait, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	function = fxNewHostFunction(the, fxAsyncGeneratorRejectAwait, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	function = fxNewHostFunction(the, fxAsyncGeneratorResolveYield, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	function = fxNewHostFunction(the, fxAsyncGeneratorRejectYield, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	return instance;
@@ -590,13 +597,13 @@ void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status)
 			generator = fxCheckAsyncGeneratorInstance(the, mxThis);
 			queue = generator->next->next->next;
 			instance = property = fxNewInstance(the);
-			property = fxNextSlotProperty(the, property, resolveFunction, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-			property = fxNextSlotProperty(the, property, rejectFunction, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-			property = fxNextIntegerProperty(the, property, status, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+			property = fxNextSlotProperty(the, property, resolveFunction, XS_NO_ID, XS_INTERNAL_FLAG);
+			property = fxNextSlotProperty(the, property, rejectFunction, XS_NO_ID, XS_INTERNAL_FLAG);
+			property = fxNextIntegerProperty(the, property, status, XS_NO_ID, XS_INTERNAL_FLAG);
 			if (mxArgc > 0)
-				property = fxNextSlotProperty(the, property, mxArgv(0), XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+				property = fxNextSlotProperty(the, property, mxArgv(0), XS_NO_ID, XS_INTERNAL_FLAG);
 			else
-				property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+				property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
 			slot = fxNewSlot(the);
 			slot->kind = XS_REFERENCE_KIND;
 			slot->value.reference = instance;
@@ -727,20 +734,20 @@ txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the)
 	instance = fxNewObjectInstance(the);
 	slot = fxLastProperty(the, instance);
 	
-	slot = fxNextSlotProperty(the, slot, iterator, mxID(_iterator), XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	slot = fxNextSlotProperty(the, slot, iterator, mxID(_iterator), XS_INTERNAL_FLAG);
 
 	mxPushSlot(iterator);
 	mxGetID(mxID(_next));
-	slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	function = fxNewHostFunction(the, fxAsyncFromSyncIteratorDone, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
-    slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
-    slot = fxNextBooleanProperty(the, slot, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    slot = fxNextBooleanProperty(the, slot, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 
 	mxPullSlot(iterator);
 	return instance;

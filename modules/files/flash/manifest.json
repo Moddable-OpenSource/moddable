@@ -1,0 +1,26 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"./flash",
+					"./esp/flash"
+				]
+			},
+			"preload": [
+				"flash"
+			]		
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"./flash",
+					"./esp32/flash"
+				]
+			},
+			"preload": [
+				"flash"
+			]		
+		}
+	}
+}

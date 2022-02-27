@@ -122,7 +122,6 @@ typedef struct {
 	void (*terminateSharedCluster)();
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txNumber length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix);
-    void (*executeModules)(txMachine* the, txSlot* realm, txFlag flag);
     void (*runImport)(txMachine* the, txSlot* realm, txID id);
 	txBoolean (*definePrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id, txSlot* slot, txFlag mask);
 	txSlot* (*getPrivateProperty)(txMachine* the, txSlot* instance, txSlot* check, txID id);
@@ -168,7 +167,7 @@ typedef struct {
     txInteger hi;
 } txSortPartition;
 #define mxSortThreshold 4
-#define mxSortStackSize 8 * sizeof(txUnsigned)
+#define mxSortPartitionCount 8
 
 #define mxTypeArrayCount 11
 
@@ -256,7 +255,8 @@ typedef union {
 	struct { txSlot* garbage; txSlot* prototype; } instance;
 	
 	struct { txSlot* address; txIndex length; } array;
-	struct { txByte* address; txInteger length; } arrayBuffer;
+	struct { txByte* address; void* detachKey; } arrayBuffer;
+	struct { txInteger length; txInteger maxLength; } bufferInfo;
 	struct { txCallback address; txID* IDs; } callback;
 	struct { txByte* address; txSlot* closures; } code;
 	struct { txInteger offset; txInteger size; } dataView;
@@ -438,7 +438,6 @@ struct sxMachine {
 
 	txBoolean shared;
 	txMachine* sharedMachine;
-	txSlot* sharedModules;
 
 	txBoolean collectFlag;
 	void* dtoa;
@@ -456,6 +455,7 @@ struct sxMachine {
 	txFlag debugTag;
 	txFlag nameIndex;
 	txFlag pathIndex;
+	txSlot* debugModule;
 	size_t idValue;
 	txInteger lineValue;
 	char pathValue[256];
@@ -529,8 +529,6 @@ struct sxPreparation {
 	txSize symbolModulo;
 	txSlot** symbols;
 
-	txSize baseLength;
-	txString base;
 	txSize scriptCount;
 	txScript* scripts;
 	
@@ -596,6 +594,7 @@ mxExport txSlot* fxNewHostConstructor(txMachine*, txCallback, txInteger, txInteg
 mxExport txSlot* fxNewHostFunction(txMachine*, txCallback, txInteger, txInteger);
 mxExport txSlot* fxNewHostInstance(txMachine* the);
 mxExport txSlot* fxNewHostObject(txMachine*, txDestructor);
+mxExport txInteger fxGetHostBufferLength(txMachine* the, txSlot* slot);
 mxExport void* fxGetHostChunk(txMachine*, txSlot*);
 mxExport void* fxGetHostChunkIf(txMachine*, txSlot*);
 mxExport void* fxGetHostData(txMachine*, txSlot*);
@@ -603,6 +602,8 @@ mxExport void* fxGetHostDataIf(txMachine*, txSlot*);
 mxExport void* fxGetHostHandle(txMachine*, txSlot*);
 mxExport txDestructor fxGetHostDestructor(txMachine*, txSlot*);
 mxExport txHostHooks* fxGetHostHooks(txMachine*, txSlot*);
+mxExport void fxPetrifyHostBuffer(txMachine* the, txSlot* slot);
+mxExport void fxSetHostBuffer(txMachine* the, txSlot* slot, void* theData, txSize theSize);
 mxExport void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSize);
 mxExport void fxSetHostData(txMachine*, txSlot*, void*);
 mxExport void fxSetHostDestructor(txMachine*, txSlot*, txDestructor);
@@ -714,10 +715,10 @@ extern txSlot* fxAllocateSlots(txMachine* the, txSize theCount);
 extern void fxBuildKeys(txMachine* the);
 extern void fxCreateMachinePlatform(txMachine* the);
 extern void fxDeleteMachinePlatform(txMachine* the);
-extern txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* name);
 extern void fxFreeChunks(txMachine* the, void* theChunks);
 extern void fxFreeSlots(txMachine* the, void* theSlots);
-extern void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID);
+extern txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot);
+extern void fxLoadModule(txMachine* the, txSlot* module, txID moduleID);
 extern txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags);
 extern void fxQueuePromiseJobs(txMachine* the);
 extern void fxInitializeSharedCluster();
@@ -1237,7 +1238,9 @@ extern txNumber fxDateNow();
 extern const txBehavior gxStringBehavior;
 
 mxExport void fx_String(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_String_fromArrayBuffer(txMachine* the);
+#endif
 mxExport void fx_String_fromCharCode(txMachine* the);
 mxExport void fx_String_fromCodePoint(txMachine* the);
 mxExport void fx_String_raw(txMachine* the);
@@ -1287,6 +1290,7 @@ mxExport void fx_RegExp(txMachine* the);
 mxExport void fx_RegExp_prototype_get_dotAll(txMachine* the);
 mxExport void fx_RegExp_prototype_get_flags(txMachine* the);
 mxExport void fx_RegExp_prototype_get_global(txMachine* the);
+mxExport void fx_RegExp_prototype_get_hasIndices(txMachine* the);
 mxExport void fx_RegExp_prototype_get_ignoreCase(txMachine* the);
 mxExport void fx_RegExp_prototype_get_multiline(txMachine* the);
 mxExport void fx_RegExp_prototype_get_source(txMachine* the);
@@ -1307,6 +1311,7 @@ mxExport void fxInitializeRegExp(txMachine* the);
 extern void fxBuildRegExp(txMachine* the);
 extern txBoolean fxIsRegExp(txMachine* the, txSlot* slot);
 extern txSlot* fxNewRegExpInstance(txMachine* the);
+extern void fx_String_prototype_toCase(txMachine* the, txBoolean flag);
 
 /* xsArguments.c */
 extern const txBehavior gxArgumentsSloppyBehavior;
@@ -1338,6 +1343,8 @@ mxExport void fx_Array_prototype_fill(txMachine* the);
 mxExport void fx_Array_prototype_filter(txMachine* the);
 mxExport void fx_Array_prototype_find(txMachine* the);
 mxExport void fx_Array_prototype_findIndex(txMachine* the);
+mxExport void fx_Array_prototype_findLast(txMachine* the);
+mxExport void fx_Array_prototype_findLastIndex(txMachine* the);
 mxExport void fx_Array_prototype_flat(txMachine* the);
 mxExport void fx_Array_prototype_flatMap(txMachine* the);
 mxExport void fx_Array_prototype_forEach(txMachine* the);
@@ -1412,20 +1419,27 @@ extern void fxUint32Getter(txMachine* the, txSlot* data, txInteger offset, txSlo
 extern void fxUint32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8ClampedSetter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 
-mxExport void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength);
+mxExport void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength, txInteger maxByteLength);
 mxExport void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport txInteger fxGetArrayBufferLength(txMachine* the, txSlot* slot);
+mxExport txInteger fxGetArrayBufferMaxLength(txMachine* the, txSlot* slot);
 mxExport void fxSetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport void fxSetArrayBufferLength(txMachine* the, txSlot* slot, txInteger byteLength);
 mxExport void* fxToArrayBuffer(txMachine* the, txSlot* slot);
 
 mxExport void fx_ArrayBuffer(txMachine* the);
 mxExport void fx_ArrayBuffer_fromBigInt(txMachine* the);
+#ifndef mxCESU8
 mxExport void fx_ArrayBuffer_fromString(txMachine* the);
+#endif
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_get_resizable(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_concat(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_resize(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_slice(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_transfer(txMachine* the);
 
 mxExport void fx_DataView(txMachine* the);
 mxExport void fx_DataView_prototype_buffer_get(txMachine* the);
@@ -1472,6 +1486,8 @@ mxExport void fx_TypedArray_prototype_fill(txMachine* the);
 mxExport void fx_TypedArray_prototype_filter(txMachine* the);
 mxExport void fx_TypedArray_prototype_find(txMachine* the);
 mxExport void fx_TypedArray_prototype_findIndex(txMachine* the);
+mxExport void fx_TypedArray_prototype_findLast(txMachine* the);
+mxExport void fx_TypedArray_prototype_findLastIndex(txMachine* the);
 mxExport void fx_TypedArray_prototype_forEach(txMachine* the);
 mxExport void fx_TypedArray_prototype_includes(txMachine* the);
 mxExport void fx_TypedArray_prototype_indexOf(txMachine* the);
@@ -1495,8 +1511,8 @@ mxExport void fx_TypedArray_prototype_values(txMachine* the);
 extern void fxBuildDataView(txMachine* the);
 extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);
 
-extern txInteger fxArgToByteOffset(txMachine* the, txInteger argi, txInteger offset);
 extern txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length);
+extern txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer);
 
 /* xsAtomics.c */
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);
@@ -1588,6 +1604,9 @@ extern void fxBuildAtomics(txMachine* the);
 
 mxExport void fx_SharedArrayBuffer(txMachine* the);
 mxExport void fx_SharedArrayBuffer_prototype_get_byteLength(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_get_growable(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_get_maxByteLength(txMachine* the);
+mxExport void fx_SharedArrayBuffer_prototype_grow(txMachine* the);
 mxExport void fx_SharedArrayBuffer_prototype_slice(txMachine* the);
 mxExport void fx_Atomics_add(txMachine* the);
 mxExport void fx_Atomics_and(txMachine* the);
@@ -1699,13 +1718,13 @@ mxExport void fx_Promise_prototype_then(txMachine* the);
 mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
-mxExport void fxOnUnhandledRejection(txMachine* the);
 
 extern void fx_Promise_prototype_finallyAux(txMachine* the);
 extern void fx_Promise_prototype_finallyReturn(txMachine* the);
 extern void fx_Promise_prototype_finallyThrow(txMachine* the);
 
 extern void fxBuildPromise(txMachine* the);
+extern void fxCheckUnhandledRejections(txMachine* the, txBoolean atExit);
 extern void fxCombinePromisesCallback(txMachine* the);
 extern txSlot* fxNewPromiseCapability(txMachine* the, txSlot* resolveFunction, txSlot* rejectFunction);
 extern void fxNewPromiseCapabilityCallback(txMachine* the);
@@ -1748,15 +1767,16 @@ extern const txBehavior gxModuleBehavior;
 
 extern void fxBuildModule(txMachine* the);
 
-extern void fxExecuteModules(txMachine* the, txSlot* realm, txFlag flag);
-extern void fxExecuteModulesSync(txMachine* the, txSlot* realm, txFlag flag);
-extern void fxFulfillModule(txMachine* the);
 extern txBoolean fxIsLoadingModule(txMachine* the, txSlot* realm, txID moduleID);
+extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
+
+extern void fxExecuteModulesFulfilled(txMachine* the);
+extern void fxExecuteModulesRejected(txMachine* the);
+extern void fxLoadModulesFulfilled(txMachine* the);
+extern void fxLoadModulesRejected(txMachine* the);
 extern void fxPrepareModule(txMachine* the);
 extern void fxPrepareTransfer(txMachine* the);
-extern void fxRejectModule(txMachine* the);
-extern void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script, void* data, txDestructor destructor);
-extern void fxRunModule(txMachine* the, txSlot* realm, txID moduleID, txScript* script);
+extern void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
 mxExport void fx_Compartment(txMachine* the);
@@ -1764,6 +1784,11 @@ mxExport void fx_Compartment_prototype_get_globalThis(txMachine* the);
 mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
 mxExport void fx_Compartment_prototype_import(txMachine* the);
 mxExport void fx_Compartment_prototype_importNow(txMachine* the);
+mxExport void fx_Compartment_prototype_module(txMachine* the);
+
+mxExport void fx_StaticModuleRecord(txMachine* the);
+mxExport void fx_StaticModuleRecord_initialize(txMachine* the);
+mxExport void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
@@ -1822,7 +1847,7 @@ enum {
 	/* frame flags */
 	/* ? = 1, */
 	XS_C_FLAG = 2,
-	/* ? =  4, */
+	XS_FIELD_FLAG = 4,
 	XS_STEP_INTO_FLAG = 8,
 	XS_STEP_OVER_FLAG = 16,
 	XS_STRICT_FLAG = 32,
@@ -1833,7 +1858,7 @@ enum {
 	XS_EXOTIC_FLAG = 1,
 	XS_CAN_CALL_FLAG = 2,
 	XS_CAN_CONSTRUCT_FLAG = 4,
-	XS_FIELD_FLAG = 8,
+	XS_DONT_MODIFY_FLAG = 8,
 	XS_DONT_PATCH_FLAG = 16,
 	XS_LEVEL_FLAG = 32,
 	XS_DONT_MARSHALL_FLAG = 64,
@@ -1854,6 +1879,7 @@ enum {
 	XS_EACH_SYMBOL_FLAG = 2,
 	
 	/* mxBehaviorDefineOwnProperty flags */
+	/* XS_NAME_FLAG = 1, */
 	/* XS_DONT_DELETE_FLAG = 2, */
 	/* XS_DONT_ENUM_FLAG = 4, */
 	/* XS_DONT_SET_FLAG = 8, */
@@ -1931,7 +1957,7 @@ enum {
 	XS_HOME_KIND,
 	XS_KEY_KIND,
 	XS_KEY_X_KIND,
-	XS_LIST_KIND,
+	XS_LIST_KIND,  // 45
 	XS_PRIVATE_KIND,
 	XS_STACK_KIND,
 	XS_VAR_KIND,
@@ -1943,6 +1969,8 @@ enum {
 	XS_INSTANCE_INSPECTOR_KIND,
 	XS_EXPORT_KIND,
 	XS_WEAK_ENTRY_KIND,
+	XS_BUFFER_INFO_KIND,
+	XS_STATIC_MODULE_RECORD_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,
@@ -2225,6 +2253,12 @@ enum {
 	mxInitSlotKind(the->stack, XS_STRING_X_KIND), \
 	the->stack->value.string = (THE_STRING))
 #endif
+
+#define mxPushSymbol(THE_SYMBOL) \
+	(mxOverflow(-1), \
+	(--the->stack)->next = C_NULL, \
+	mxInitSlotKind(the->stack, XS_SYMBOL_KIND), \
+	the->stack->value.symbol = (THE_SYMBOL))
 #define mxPushUndefined() \
 	(mxOverflow(-1), \
 	(--the->stack)->next = C_NULL, \
@@ -2278,6 +2312,17 @@ enum {
 #define mxFunctionInstanceProfile(INSTANCE) 	((INSTANCE)->next->next->next)
 #endif
 
+#define mxRealmGlobal(REALM)			((REALM)->next)
+#define mxRealmClosures(REALM)			((REALM)->next->next)
+#define mxRealmTemplateCache(REALM)		((REALM)->next->next->next)
+#define mxOwnModules(REALM)				((REALM)->next->next->next->next)
+#define mxResolveHook(REALM)			((REALM)->next->next->next->next->next)
+#define mxModuleMap(REALM)				((REALM)->next->next->next->next->next->next)
+#define mxModuleMapHook(REALM)			((REALM)->next->next->next->next->next->next->next)
+#define mxLoadHook(REALM)				((REALM)->next->next->next->next->next->next->next->next)
+#define mxLoadNowHook(REALM)			((REALM)->next->next->next->next->next->next->next->next->next)
+#define mxRealmParent(REALM)			((REALM)->next->next->next->next->next->next->next->next->next->next)
+
 #define mxModuleInstanceInternal(MODULE)		((MODULE)->next)
 #define mxModuleInstanceExports(MODULE)		((MODULE)->next->next)
 #define mxModuleInstanceMeta(MODULE)			((MODULE)->next->next->next)
@@ -2298,21 +2343,16 @@ enum {
 #define mxModuleFulfill(MODULE) 	mxModuleInstanceFulfill((MODULE)->value.reference)
 #define mxModuleReject(MODULE) 		mxModuleInstanceReject((MODULE)->value.reference)
 
+#define mxTransferLocal(TRANSFER)	(TRANSFER)->value.reference->next
+#define mxTransferFrom(TRANSFER) 	(TRANSFER)->value.reference->next->next
+#define mxTransferImport(TRANSFER) 	(TRANSFER)->value.reference->next->next->next
+#define mxTransferAliases(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next
+#define mxTransferClosure(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next->next
+
 #define mxPromiseStatus(INSTANCE) ((INSTANCE)->next)
 #define mxPromiseThens(INSTANCE) ((INSTANCE)->next->next)
 #define mxPromiseResult(INSTANCE) ((INSTANCE)->next->next->next)
 #define mxPromiseEnvironment(INSTANCE) ((INSTANCE)->next->next->next->next)
-
-#define mxRealmGlobal(REALM)			((REALM)->next)
-#define mxRealmClosures(REALM)			((REALM)->next->next)
-#define mxRealmTemplateCache(REALM)		((REALM)->next->next->next)
-#define mxAvailableModules(REALM)		((REALM)->next->next->next->next)
-#define mxOwnModules(REALM)				((REALM)->next->next->next->next->next)
-#define mxLoadingModules(REALM)			((REALM)->next->next->next->next->next->next)
-#define mxLoadedModules(REALM)			((REALM)->next->next->next->next->next->next->next)
-#define mxWaitingModules(REALM)			((REALM)->next->next->next->next->next->next->next->next)
-#define mxRunningModules(REALM)			((REALM)->next->next->next->next->next->next->next->next->next)
-#define mxRejectedModules(REALM)		((REALM)->next->next->next->next->next->next->next->next->next->next)
 
 enum {
 	mxUndefinedStatus,
@@ -2320,12 +2360,6 @@ enum {
 	mxFulfilledStatus,
 	mxRejectedStatus
 };
-
-#define mxTransferLocal(TRANSFER)	(TRANSFER)->value.reference->next
-#define mxTransferFrom(TRANSFER) 	(TRANSFER)->value.reference->next->next
-#define mxTransferImport(TRANSFER) 	(TRANSFER)->value.reference->next->next->next
-#define mxTransferAliases(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next
-#define mxTransferClosure(TRANSFER)	(TRANSFER)->value.reference->next->next->next->next->next
 
 #define mxBehavior(INSTANCE) (gxBehaviors[((INSTANCE)->flag & XS_EXOTIC_FLAG) ? (INSTANCE)->next->ID : 0])
 #define mxBehaviorCall(THE, INSTANCE, THIS, ARGUMENTS) \
@@ -2364,7 +2398,9 @@ enum {
 	mxExceptionStackIndex,
 	mxProgramStackIndex,
 	mxHostsStackIndex,
+	mxModuleQueueStackIndex,
 
+	mxUnhandledPromisesStackIndex,
 	mxDuringJobsStackIndex,
 	mxFinalizationRegistriesStackIndex,
 	mxPendingJobsStackIndex,
@@ -2405,6 +2441,7 @@ enum {
 	mxSharedArrayBufferPrototypeStackIndex,
 	mxBigIntPrototypeStackIndex,
 	mxCompartmentPrototypeStackIndex,
+	mxStaticModuleRecordPrototypeStackIndex,
 	mxWeakRefPrototypeStackIndex,
 	mxFinalizationRegistryPrototypeStackIndex,
 
@@ -2420,7 +2457,6 @@ enum {
 	mxOnRejectedPromiseFunctionStackIndex,
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
-	mxOnUnhandledRejectionFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
 	mxProxyAccessorStackIndex,
 	mxStringAccessorStackIndex,
@@ -2470,6 +2506,8 @@ enum {
 #define mxException the->stackTop[-1 - mxExceptionStackIndex]
 #define mxProgram the->stackTop[-1 - mxProgramStackIndex]
 #define mxHosts the->stackTop[-1 - mxHostsStackIndex]
+#define mxModuleQueue the->stackTop[-1 - mxModuleQueueStackIndex]
+#define mxUnhandledPromises the->stackTop[-1 - mxUnhandledPromisesStackIndex]
 #define mxDuringJobs the->stackTop[-1 - mxDuringJobsStackIndex]
 #define mxFinalizationRegistries the->stackTop[-1 - mxFinalizationRegistriesStackIndex]
 #define mxPendingJobs the->stackTop[-1 - mxPendingJobsStackIndex]
@@ -2513,6 +2551,7 @@ enum {
 #define mxRegExpConstructor the->stackPrototypes[-1 - _RegExp]
 #define mxSetConstructor the->stackPrototypes[-1 - _Set]
 #define mxSharedArrayBufferConstructor the->stackPrototypes[-1 - _SharedArrayBuffer]
+#define mxStaticModuleRecordConstructor the->stackPrototypes[-1 - _StaticModuleRecord]
 #define mxStringConstructor the->stackPrototypes[-1 - _String]
 #define mxSymbolConstructor the->stackPrototypes[-1 - _Symbol]
 #define mxSyntaxErrorConstructor the->stackPrototypes[-1 - _SyntaxError]
@@ -2573,6 +2612,7 @@ enum {
 #define mxSharedArrayBufferPrototype the->stackPrototypes[-1 - mxSharedArrayBufferPrototypeStackIndex]
 #define mxBigIntPrototype the->stackPrototypes[-1 - mxBigIntPrototypeStackIndex]
 #define mxCompartmentPrototype the->stackPrototypes[-1 - mxCompartmentPrototypeStackIndex]
+#define mxStaticModuleRecordPrototype the->stackPrototypes[-1 - mxStaticModuleRecordPrototypeStackIndex]
 #define mxWeakRefPrototype the->stackPrototypes[-1 - mxWeakRefPrototypeStackIndex]
 #define mxFinalizationRegistryPrototype the->stackPrototypes[-1 - mxFinalizationRegistryPrototypeStackIndex]
 
@@ -2601,7 +2641,6 @@ enum {
 #define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
-#define mxOnUnhandledRejectionFunction the->stackPrototypes[-1 - mxOnUnhandledRejectionFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
 #define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
 #define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]

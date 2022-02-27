@@ -27,9 +27,8 @@
 
 struct modFlashRecord {
 	const esp_partition_t *partition;
-	uint32_t partitionStart;
-	uint32_t partitionByteLength;
-	uint32_t partitionEnd;
+	spi_flash_mmap_handle_t map;
+	const void *partitionAddress;
 };
 
 typedef struct modFlashRecord modFlashRecord;
@@ -37,97 +36,103 @@ typedef struct modFlashRecord *modFlash;
 
 void xs_flash(xsMachine *the)
 {
-	modFlashRecord flash;
+	modFlashRecord mrf = {0};
+	char *partitionName = xsmcToString(xsArg(0));
 
-	if (xsStringType == xsmcTypeOf(xsArg(0))) {
-		char *partition = xsmcToString(xsArg(0));
+	if (0 == c_strcmp(partitionName, "xs"))
+		mrf.partition = esp_partition_find_first(0x40, 1,  NULL);
+	else if (0 == c_strcmp(partitionName, "running"))
+		mrf.partition = esp_ota_get_running_partition();
+	else if (0 == c_strcmp(partitionName, "nextota"))
+		mrf.partition = esp_ota_get_next_update_partition(NULL);
+	else
+		mrf.partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, partitionName);
 
-		if (0 == c_strcmp(partition, "xs"))
-			flash.partition = esp_partition_find_first(0x40, 1,  NULL);
-		else if (0 == c_strcmp(partition, "running"))
-			flash.partition = esp_ota_get_running_partition();
-		else if (0 == c_strcmp(partition, "nextota"))
-			flash.partition = esp_ota_get_next_update_partition(NULL);
-		else
-			flash.partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, partition);
+	if (!mrf.partition)
+		xsUnknownError("can't find partition");
 
-		if (!flash.partition)
-			xsUnknownError("can't find partition");
-
-		flash.partitionByteLength = flash.partition->size;
-	}
-	else {
-		xsUnknownError("must specify partion name");
-
-		//flash.partitionEnd = flash.partitionStart + flash.partitionByteLength;
-	}
-
-	xsmcSetHostChunk(xsThis, &flash, sizeof(flash));
+	xsmcSetHostChunk(xsThis, (void *)&mrf, sizeof(mrf));
 }
 
 void xs_flash_destructor(void *data)
 {
+	modFlash mrf = data;
+
+	if (mrf && mrf->map)
+		spi_flash_munmap(mrf->map);
 }
 
 void xs_flash_erase(xsMachine *the)
 {
-	modFlash flash;
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
+	const esp_partition_t *partition = mrf->partition;
 	int sector = xsmcToInteger(xsArg(0));
 
-	flash = xsmcGetHostChunk(xsThis);
-	if (ESP_OK != esp_partition_erase_range(flash->partition, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE))
+	if (ESP_OK != esp_partition_erase_range(partition, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE))
 		xsUnknownError("erase failed");
 }
 
 void xs_flash_read(xsMachine *the)
 {
-	modFlash flash;
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
+	const esp_partition_t *partition = mrf->partition;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 
 	xsmcSetArrayBuffer(xsResult, NULL, byteLength);
-	flash = xsmcGetHostChunk(xsThis);
-	if (ESP_OK != esp_partition_read(flash->partition, offset, xsmcToArrayBuffer(xsResult), byteLength))
+	if (ESP_OK != esp_partition_read(partition, offset, xsmcToArrayBuffer(xsResult), byteLength))
 		xsUnknownError("read failed");
 }
 
 void xs_flash_write(xsMachine *the)
 {
-	modFlash flash;
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
+	const esp_partition_t *partition = mrf->partition;
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
-	void *buffer = xsmcToArrayBuffer(xsArg(2));
-	flash = xsmcGetHostChunk(xsThis);
-	if (ESP_OK != esp_partition_write(flash->partition, offset, buffer, byteLength))
+	void *buffer;
+	xsUnsignedValue bufferLength;
+
+	xsmcGetBufferReadable(xsArg(2), &buffer, &bufferLength);
+	if ((byteLength <= 0) || (bufferLength < (xsUnsignedValue)byteLength))
+		xsUnknownError("invalid");
+
+	if (ESP_OK != esp_partition_write(partition, offset, buffer, byteLength))
 		xsUnknownError("write failed");
 }
 
 void xs_flash_map(xsMachine *the)
 {
-	modFlash flash = xsmcGetHostChunk(xsThis);
-	int size = flash->partition->size;
-	const void *partitionAddress;
-	spi_flash_mmap_handle_t handle;
-
-	if (ESP_OK != esp_partition_mmap(flash->partition, 0, size, SPI_FLASH_MMAP_DATA, &partitionAddress, &handle))
-		xsUnknownError("map failed");
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
+	const esp_partition_t *partition = mrf->partition;
+	int size = partition->size;
+	const void *partitionAddress = mrf->partitionAddress;
+	spi_flash_mmap_handle_t map = mrf->map;
+	
+	if (!mrf->map) {
+		if (ESP_OK != esp_partition_mmap(partition, 0, size, SPI_FLASH_MMAP_DATA, &partitionAddress, &map))
+			xsUnknownError("map failed");
+		mrf->map = map;
+		mrf->partitionAddress = partitionAddress;
+	}
 
 	xsmcVars(1);
-
 	xsResult = xsNewHostObject(NULL);
-	xsmcSetHostData(xsResult, (void *)partitionAddress);
+	xsmcSetHostBuffer(xsResult, (void *)partitionAddress, size);
+	xsmcPetrifyHostBuffer(xsResult);
 	xsmcSetInteger(xsVar(0), size);
-	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDontDelete | xsDontSet);
+	xsmcDefine(xsResult, xsID_flash, xsThis, xsDontDelete | xsDontSet);	// reference flash instance so it isn't GC-ed while map is alive
 }
 
 void xs_flash_byteLength(xsMachine *the)
 {
-	modFlash flash = xsmcGetHostChunk(xsThis);
-	xsmcSetInteger(xsResult, flash->partitionByteLength);
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
+	const esp_partition_t *partition = mrf->partition;
+	xsmcSetInteger(xsResult, partition->size);
 }
 
 void xs_flash_blockSize(xsMachine *the)
 {
 	xsmcSetInteger(xsResult, SPI_FLASH_SEC_SIZE);
 }
-

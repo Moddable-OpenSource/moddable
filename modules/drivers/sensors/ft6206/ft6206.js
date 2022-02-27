@@ -18,12 +18,13 @@ class FT6206  {
 	#io;
 
 	constructor(options) {
-		const {i2c, reset, interrupt, onSample} = options;
+		const {i2c, reset, interrupt, onSample, target} = options;
 		const io = this.#io = new i2c.io({
 			hz: 100_000,
 			address: 0x38,
 			...i2c
 		});
+		io.buffer = new Uint8Array(12);		// two touch points
 
 		if (reset) {
 			io.reset = new reset.io({
@@ -50,6 +51,8 @@ class FT6206  {
 				onReadable: onSample.bind(this)
 			});
 		}
+		if (target)
+			this.target = target;
 
 		this.configure({
 			active: false,
@@ -111,8 +114,7 @@ class FT6206  {
 		if (0 === length)
 			return;
 
-		const data = new Uint8Array(length * 6);
-		io.readBlock(0x03, data.buffer);
+		const data = io.readBlock(0x03, io.buffer);
 		const result = new Array(length);
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;

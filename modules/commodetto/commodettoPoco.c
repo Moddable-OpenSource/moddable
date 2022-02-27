@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -17,6 +17,17 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
+ /*
+ 	validate source rectangles on all bitmaps (not just drawBitmap)
+*/
+
+#include "xsPlatform.h"
+#include "xsmc.h"
+#include "mc.xs.h"			// for xsID_ values
+#if !XSTOOLS
+	#include "mc.defines.h"
+#endif
 
 #include "commodettoPoco.h"
 #include "commodettoPixelsOut.h"
@@ -27,18 +38,13 @@
 #include "stdlib.h"
 #include "stdbool.h"
 
-#include "xsPlatform.h"
-#include "xsmc.h"
-#include "mc.xs.h"			// for xsID_ values
-#if !XSTOOLS
-	#include "mc.defines.h"
-#endif
-
 #ifndef MODDEF_CFE_KERN
 	#define MODDEF_CFE_KERN (0)
 #endif
 
 CommodettoFontEngine gCFE;
+
+static PocoPixel *pocoGetBitmapPixels(xsMachine *the, Poco poco, CommodettoBitmap cb, int arg);
 
 void xs_poco_destructor(void *data)
 {
@@ -64,7 +70,7 @@ void xs_poco_build(xsMachine *the)
 	poco = c_malloc(sizeof(PocoRecord) + byteLength + 8);		// overhang when dividing
 	if (!poco)
 		xsErrorPrintf("out of menory");
-	xsmcSetHostData(xsThis, poco->pixels);
+	xsmcSetHostBuffer(xsThis, poco->pixels, pixelsLength);
 
 	poco->width = (PocoDimension)xsmcToInteger(xsArg(0));
 	poco->height = (PocoDimension)xsmcToInteger(xsArg(1));
@@ -103,7 +109,7 @@ void xs_poco_build(xsMachine *the)
 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), pixelsLength);
-	xsmcSet(xsThis, xsID_byteLength, xsVar(0));
+	xsmcDefine(xsThis, xsID_byteLength, xsVar(0), xsDefault);
 
 	if (NULL == gCFE)
 		gCFE = CFENew();
@@ -111,8 +117,13 @@ void xs_poco_build(xsMachine *the)
 
 void xs_poco_close(xsMachine *the)
 {
-	xs_poco_destructor(xsmcGetHostData(xsThis));
-	xsmcSetHostData(xsThis, NULL);
+	void *data = xsmcGetHostData(xsThis);
+	if (data) {
+		(void)xsmcGetHostDataPoco(xsThis);
+		xs_poco_destructor(data);
+		xsmcSetHostData(xsThis, NULL);
+		xsSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_poco_begin(xsMachine *the)
@@ -178,9 +189,9 @@ void xs_poco_begin(xsMachine *the)
 			xsmcSetInteger(xsVar(3), poco->w);
 			xsmcSetInteger(xsVar(4), poco->h);
 			xsResult = xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
-			pixels = xsmcGetHostData(xsResult);
+			pixels = xsmcGetHostBuffer(xsResult);
 
-			xsmcGet(xsVar(0), xsResult, xsID_byteLength);
+			xsmcSetInteger(xsResult, xsmcGetHostBufferLength(xsResult));
 #if (0 == kPocoRotation) || (180 == kPocoRotation)
 			rowBytes = (int16_t)(xsmcToInteger(xsVar(0)) / poco->height);
 #elif (90 == kPocoRotation) || (270 == kPocoRotation)
@@ -211,6 +222,9 @@ void xs_poco_end(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
+
+	if (!(poco->flags & kPocoFlagDidBegin))
+		xsUnknownError("inactive");
 
 	if (!(poco->flags & kPocoFlagFrameBuffer)) {
 		int result;
@@ -387,8 +401,6 @@ void xs_poco_drawBitmap(xsMachine *the)
 	PocoDimension sx, sy, sw, sh;
 	CommodettoBitmap cb;
 
-	xsmcVars(1);
-
 	cb = xsmcGetHostChunk(xsArg(0));
 	bits.width = cb->w;
 	bits.height = cb->h;
@@ -397,32 +409,30 @@ void xs_poco_drawBitmap(xsMachine *the)
 	bits.id = cb->id;
 	bits.byteLength = (cb->flags & kCommodettoBitmapHaveByteLength) ? cb->byteLength : 0;
 #endif
-
-	if (cb->havePointer)
-		bits.pixels = cb->bits.data;
-	else {
-		xsmcGet(xsVar(0), xsArg(0), xsID_buffer);
-		bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(0)) + cb->bits.offset);
-		PocoDisableGC(poco);
-	}
+	bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(1)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->yOrigin;
 
-	sx = 0, sy = 0;
+	if (argc <= 3) {
+		sx = 0, sy = 0;
 #if (90 == kPocoRotation) || (270 == kPocoRotation)
-	sw = bits.height, sh = bits.width;
+		sw = bits.height, sh = bits.width;
 #else
-	sw = bits.width, sh = bits.height;
+		sw = bits.width, sh = bits.height;
 #endif
-
-	if (argc > 3) {
-		sx = (PocoCoordinate)xsmcToInteger(xsArg(3));
-		sy = (PocoCoordinate)xsmcToInteger(xsArg(4));
-		if (argc > 5) {
-			sw = (PocoDimension)xsmcToInteger(xsArg(5));
-			sh = (PocoDimension)xsmcToInteger(xsArg(6));
-		}
+	}
+	else {
+		sx = (PocoDimension)xsmcToInteger(xsArg(3));
+		sy = (PocoDimension)xsmcToInteger(xsArg(4));
+		sw = (PocoDimension)xsmcToInteger(xsArg(5));
+		sh = (PocoDimension)xsmcToInteger(xsArg(6));
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
 	}
 
 	PocoBitmapDraw(poco, &bits, x, y, sx, sy, sw, sh);
@@ -439,8 +449,6 @@ void xs_poco_drawMonochrome(xsMachine *the)
 	PocoMonochromeMode mode = 0;
 	CommodettoBitmap cb;
 
-	xsmcVars(1);
-
 	cb = xsmcGetHostChunk(xsArg(0));
 	bits.width = cb->w;
 	bits.height = cb->h;
@@ -449,14 +457,7 @@ void xs_poco_drawMonochrome(xsMachine *the)
 	bits.id = cb->id;
 	bits.byteLength = 0;
 #endif
-
-	if (cb->havePointer)
-		bits.pixels = cb->bits.data;
-	else {
-		xsmcGet(xsVar(0), xsArg(0), xsID_buffer);
-		bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(0)) + cb->bits.offset);
-		PocoDisableGC(poco);
-	}
+	bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
 	if (xsUndefinedType != xsmcTypeOf(xsArg(1))) {
 		fgColor = (PocoColor)xsmcToInteger(xsArg(1));
@@ -471,16 +472,26 @@ void xs_poco_drawMonochrome(xsMachine *the)
 	x = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(4)) + poco->yOrigin;
 
-	sx = 0, sy = 0;
-	sw = bits.width, sh = bits.height;
-
-	if (argc > 5) {
+	if (argc == 5) {
+		sx = 0, sy = 0;
+#if (90 == kPocoRotation) || (270 == kPocoRotation)
+		sw = bits.height, sh = bits.width;
+#else
+		sw = bits.width, sh = bits.height;
+#endif
+	}
+	else {
 		sx = (PocoDimension)xsmcToInteger(xsArg(5));
 		sy = (PocoDimension)xsmcToInteger(xsArg(6));
-		if (argc > 7) {
-			sw = (PocoDimension)xsmcToInteger(xsArg(7));
-			sh = (PocoDimension)xsmcToInteger(xsArg(8));
-		}
+		sw = (PocoDimension)xsmcToInteger(xsArg(7));
+		sh = (PocoDimension)xsmcToInteger(xsArg(8));
+
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
 	}
 
 	PocoMonochromeBitmapDraw(poco, &bits, mode, fgColor, bgColor, x, y, sx, sy, sw, sh);
@@ -497,8 +508,6 @@ void xs_poco_drawGray(xsMachine *the)
 	CommodettoBitmap cb;
 	uint8_t blend = kPocoOpaque;
 
-	xsmcVars(1);
-
 	cb = xsmcGetHostChunk(xsArg(0));
 	bits.width = cb->w;
 	bits.height = cb->h;
@@ -507,37 +516,36 @@ void xs_poco_drawGray(xsMachine *the)
 	bits.id = cb->id;
 	bits.byteLength = 0;
 #endif
-
-	if (cb->havePointer)
-		bits.pixels = cb->bits.data;
-	else {
-		xsmcGet(xsVar(0), xsArg(0), xsID_buffer);
-		bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(0)) + cb->bits.offset);
-		PocoDisableGC(poco);
-	}
+	bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
 	color = (PocoColor)xsmcToInteger(xsArg(1));
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->yOrigin;
 
-	sx = 0, sy = 0;
-#if (90 == kPocoRotation) || (270 == kPocoRotation)
-	sw = bits.height, sh = bits.width;
-#else
-	sw = bits.width, sh = bits.height;
-#endif
-
-	if (argc > 4) {
+	if (argc <= 4) {
+		sx = 0, sy = 0;
+	#if (90 == kPocoRotation) || (270 == kPocoRotation)
+		sw = bits.height, sh = bits.width;
+	#else
+		sw = bits.width, sh = bits.height;
+	#endif
+	}
+	else {
 		sx = (PocoDimension)xsmcToInteger(xsArg(4));
 		sy = (PocoDimension)xsmcToInteger(xsArg(5));
-		if (argc > 6) {
-			sw = (PocoDimension)xsmcToInteger(xsArg(6));
-			sh = (PocoDimension)xsmcToInteger(xsArg(7));
+		sw = (PocoDimension)xsmcToInteger(xsArg(6));
+		sh = (PocoDimension)xsmcToInteger(xsArg(7));
 
-			if (argc > 8)
-				blend = (uint8_t)xsmcToInteger(xsArg(8));
-		}
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
+
+		if (argc > 8)
+			blend = (uint8_t)xsmcToInteger(xsArg(8));
 	}
 
 	PocoGrayBitmapDraw(poco, &bits, color, blend, x, y, sx, sy, sw, sh);
@@ -548,11 +556,9 @@ void xs_poco_drawMasked(xsMachine *the)
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoBitmapRecord bits, mask;
-	PocoCoordinate x, y, mask_sx, mask_sy;
-	PocoDimension sx, sy, sw, sh;
+	PocoCoordinate x, y;
+	PocoDimension sx, sy, sw, sh, mask_sx, mask_sy;
 	CommodettoBitmap cb;
-
-	xsmcVars(1);
 
 	cb = xsmcGetHostChunk(xsArg(0));
 	bits.width = cb->w;
@@ -562,21 +568,21 @@ void xs_poco_drawMasked(xsMachine *the)
 	bits.id = cb->id;
 	bits.byteLength = 0;
 #endif
-
-	if (cb->havePointer)
-		bits.pixels = cb->bits.data;
-	else {
-		xsmcGet(xsVar(0), xsArg(0), xsID_buffer);
-		bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(0)) + cb->bits.offset);
-		PocoDisableGC(poco);
-	}
+	bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(1)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->yOrigin;
-	sx = (PocoCoordinate)xsmcToInteger(xsArg(3));
-	sy = (PocoCoordinate)xsmcToInteger(xsArg(4));
+	sx = (PocoDimension)xsmcToInteger(xsArg(3));
+	sy = (PocoDimension)xsmcToInteger(xsArg(4));
 	sw = (PocoDimension)xsmcToInteger(xsArg(5));
 	sh = (PocoDimension)xsmcToInteger(xsArg(6));
+
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+	if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+	if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+		xsRangeError("invalid src");
 
 	cb = xsmcGetHostChunk(xsArg(7));
 	mask.width = cb->w;
@@ -586,17 +592,12 @@ void xs_poco_drawMasked(xsMachine *the)
 	mask.id = cb->id;
 	mask.byteLength = 0;
 #endif
+	mask.pixels = pocoGetBitmapPixels(the, poco, cb, 7);
 
-	if (cb->havePointer)
-		mask.pixels = cb->bits.data;
-	else {
-		xsmcGet(xsVar(0), xsArg(7), xsID_buffer);
-		mask.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(0)) + cb->bits.offset);
-		PocoDisableGC(poco);
-	}
-
-	mask_sx = (PocoCoordinate)xsmcToInteger(xsArg(8));
-	mask_sy = (PocoCoordinate)xsmcToInteger(xsArg(9));
+	mask_sx = (PocoDimension)xsmcToInteger(xsArg(8));
+	mask_sy = (PocoDimension)xsmcToInteger(xsArg(9));
+	if ((mask_sx >= mask.width) || (mask_sy >= mask.height) || ((mask_sx + sw) > mask.width) || ((mask_sy + sh) > mask.height))
+		xsRangeError("invalid mask src");
 
 	if (argc > 10) {
 		uint8_t blend = (uint8_t)xsmcToInteger(xsArg(10));
@@ -615,8 +616,6 @@ void xs_poco_fillPattern(xsMachine *the)
 	CommodettoBitmap cb;
 	int argc = xsmcArgc;
 
-	xsmcVars(1);
-
 	cb = xsmcGetHostChunk(xsArg(0));
 	bits.width = cb->w;
 	bits.height = cb->h;
@@ -625,14 +624,7 @@ void xs_poco_fillPattern(xsMachine *the)
 	bits.id = cb->id;
 	bits.byteLength = 0;
 #endif
-
-	if (cb->havePointer)
-		bits.pixels = cb->bits.data;
-	else {
-		xsmcGet(xsVar(0), xsArg(0), xsID_buffer);
-		bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(0)) + cb->bits.offset);
-		PocoDisableGC(poco);
-	}
+	bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(1)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->yOrigin;
@@ -643,6 +635,14 @@ void xs_poco_fillPattern(xsMachine *the)
 		sy = (PocoCoordinate)xsmcToInteger(xsArg(6));
 		sw = (PocoDimension)xsmcToInteger(xsArg(7));
 		sh = (PocoDimension)xsmcToInteger(xsArg(8));
+
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+		if ((sx >= bits.width) || (sy >= bits.height) || ((sx + sw) > bits.width) || ((sy + sh) > bits.height))
+#else
+		if ((sx >= bits.height) || (sy >= bits.width) || ((sx + sw) > bits.height) || ((sy + sh) > bits.width))
+#endif
+			xsRangeError("invalid src");
+
 		PocoBitmapPattern(poco, &bits, x, y, w, h, sx, sy, sw, sh);
 	}
 	else
@@ -653,21 +653,9 @@ void xs_poco_drawFrame(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	uint8_t *data;
-	uint32_t dataSize;
+	xsUnsignedValue dataSize;
 	PocoCoordinate x, y;
 	PocoDimension w, h;
-
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		dataSize = xsmcGetArrayBufferLength(xsArg(0));
-		PocoDisableGC(poco);
-	}
-	else {
-		data = (uint8_t *)xsmcGetHostData(xsArg(0));
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		dataSize = xsmcToInteger(xsVar(0));
-	}
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(2)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->yOrigin;
@@ -676,6 +664,9 @@ void xs_poco_drawFrame(xsMachine *the)
 	w = xsmcToInteger(xsResult);
 	xsmcGet(xsResult, xsArg(1), xsID_height);
 	h = xsmcToInteger(xsResult);
+
+	if (xsBufferRelocatable == xsmcGetBufferReadable(xsArg(0), (void **)&data, &dataSize))
+		PocoDisableGC(poco);
 
 	PocoDrawFrame(poco, data, dataSize, x, y, w, h);
 }
@@ -689,11 +680,8 @@ void xs_poco_getTextWidth(xsMachine *the)
 	uint32_t previousUnicode = 0;
 #endif
 
-	xsmcVars(1);
-
 	fontData = xsmcGetHostData(xsArg(1));
-	xsmcGet(xsVar(0), xsArg(1), xsID_byteLength);
-	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
+	CFESetFontData(gCFE, fontData, xsmcGetHostBufferLength(xsArg(1)));
 
 	while (true) {
 		CFEGlyph glyph;
@@ -745,8 +733,7 @@ void xs_poco_drawText(xsMachine *the)
 	xsmcVars(2);
 
 	fontData = xsmcGetHostData(xsArg(1));
-	xsmcGet(xsVar(0), xsArg(1), xsID_byteLength);
-	CFESetFontData(gCFE, fontData, xsmcToInteger(xsVar(0)));
+	CFESetFontData(gCFE, fontData, xsmcGetHostBufferLength(xsArg(1)));
 
 	if (argc > 5) {
 		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, 0x2026, false);
@@ -863,14 +850,7 @@ void xs_poco_drawText(xsMachine *the)
 				bits.id = cb->id;
 				bits.byteLength = 0;
 #endif
-
-				if (cb->havePointer)
-					bits.pixels = cb->bits.data;
-				else {
-					xsmcGet(xsVar(1), xsVar(0), xsID_buffer);
-					bits.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(1)) + cb->bits.offset);
-					PocoDisableGC(poco);
-				}
+				bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
 				if (kPocoPixelFormat == cb->format) {
 					isColor = 1;
@@ -885,13 +865,7 @@ void xs_poco_drawText(xsMachine *the)
 						mask.id = cb->id;
 						mask.byteLength = 0;
 #endif
-						if (cb->havePointer)
-							mask.pixels = cb->bits.data;
-						else {
-							xsmcGet(xsVar(1), xsArg(2), xsID_buffer);
-							mask.pixels = (PocoPixel *)((char *)xsmcToArrayBuffer(xsVar(1)) + cb->bits.offset);
-							PocoDisableGC(poco);
-						}
+						mask.pixels = pocoGetBitmapPixels(the, poco, cb, 2);
 					}
 				}
 				else {
@@ -958,6 +932,23 @@ void xs_poco_get_height(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	xsmcSetInteger(xsResult, poco->height);
+}
+
+PocoPixel *pocoGetBitmapPixels(xsMachine *the, Poco poco, CommodettoBitmap cb, int arg)
+{
+	xsSlot buffer;
+	void *data;
+	xsUnsignedValue dataSize;
+	int32_t offset;
+
+	if (cb->havePointer)
+		return (PocoPixel *)cb->bits.data;
+	
+	offset = cb->bits.offset;
+	xsmcGet(buffer, xsArg(arg), xsID_buffer);
+	xsmcGetBufferReadable(buffer, &data, &dataSize);
+	PocoDisableGC(poco);
+	return (PocoPixel *)(offset + (char *)data);
 }
 
 void xs_rectangle_get_x(xsMachine *the)

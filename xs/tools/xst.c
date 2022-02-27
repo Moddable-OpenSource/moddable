@@ -23,14 +23,13 @@
 #include "xs.h"
 #include "yaml.h"
 
-extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
-
 #if mxWindows
 	#include <direct.h>
 	#include <errno.h>
 	#include <process.h>
 	typedef CONDITION_VARIABLE txCondition;
 	typedef CRITICAL_SECTION txMutex;
+    typedef HANDLE txThread;
 	#define fxCreateCondition(CONDITION) InitializeConditionVariable(CONDITION)
 	#define fxCreateMutex(MUTEX) InitializeCriticalSection(MUTEX)
 	#define fxDeleteCondition(CONDITION) (void)(CONDITION)
@@ -38,6 +37,7 @@ extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
 	#define fxLockMutex(MUTEX) EnterCriticalSection(MUTEX)
 	#define fxUnlockMutex(MUTEX) LeaveCriticalSection(MUTEX)
 	#define fxSleepCondition(CONDITION,MUTEX) SleepConditionVariableCS(CONDITION,MUTEX,INFINITE)
+	#define fxWakeAllCondition(CONDITION) WakeAllConditionVariable(CONDITION)
 	#define fxWakeCondition(CONDITION) WakeConditionVariable(CONDITION)
 #else
 	#include <dirent.h>
@@ -45,6 +45,7 @@ extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
 	#include <sys/stat.h>
 	typedef pthread_cond_t txCondition;
 	typedef pthread_mutex_t txMutex;
+	typedef pthread_t txThread;
 	#define fxCreateCondition(CONDITION) pthread_cond_init(CONDITION,NULL)
 	#define fxCreateMutex(MUTEX) pthread_mutex_init(MUTEX,NULL)
 	#define fxDeleteCondition(CONDITION) pthread_cond_destroy(CONDITION)
@@ -52,6 +53,7 @@ extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
 	#define fxLockMutex(MUTEX) pthread_mutex_lock(MUTEX)
 	#define fxUnlockMutex(MUTEX) pthread_mutex_unlock(MUTEX)
 	#define fxSleepCondition(CONDITION,MUTEX) pthread_cond_wait(CONDITION,MUTEX)
+	#define fxWakeAllCondition(CONDITION) pthread_cond_broadcast(CONDITION)
 	#define fxWakeCondition(CONDITION) pthread_cond_signal(CONDITION)
 #endif
 
@@ -60,8 +62,14 @@ typedef struct sxAgentCluster txAgentCluster;
 typedef struct sxAgentReport txAgentReport;
 typedef struct sxContext txContext;
 typedef struct sxJob txJob;
-typedef void (*txJobCallback)(txJob*);
+typedef struct sxPool txPool;
 typedef struct sxResult txResult;
+
+#ifdef mxMultipleThreads
+	#define mxPoolSize 3
+#else
+	#define mxPoolSize 1
+#endif
 
 struct sxAgent {
 	txAgent* next;
@@ -80,6 +88,8 @@ struct sxAgentReport {
 };
 
 struct sxAgentCluster {
+	txMutex mainMutex;
+
 	txAgent* firstAgent;
 	txAgent* lastAgent;
 	
@@ -98,25 +108,34 @@ struct sxAgentCluster {
 };
 
 struct sxContext {
-#ifdef mxTestSharedMachine
-	txMachine* shared;
-#endif
-	char harnessPath[C_PATH_MAX];
-	int testPathLength;
-	txResult* current;
+	txContext* next;
+	txResult* result;
 	yaml_document_t* document;
 	yaml_node_t* includes;
 	yaml_node_t* negative;
+	char path[1];
 };
 
 struct sxJob {
 	txJob* next;
 	txMachine* the;
 	txNumber when;
-	txJobCallback callback;
+	txSlot self;
 	txSlot function;
 	txSlot argument;
 	txNumber interval;
+};
+
+struct sxPool {
+	txContext* first;
+	txInteger count;
+	txCondition countCondition;
+	txMutex countMutex;
+	txResult* current;
+	txMutex resultMutex;
+	txThread threads[mxPoolSize];
+	char harnessPath[C_PATH_MAX];
+	int testPathLength;
 };
 
 struct sxResult {
@@ -133,15 +152,25 @@ struct sxResult {
 static int main262(int argc, char* argv[]);
 
 static void fxBuildAgent(xsMachine* the);
-static void fxCountResult(txContext* context, int success, int pending);
+static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
-static void fxPopResult(txContext* context);
-static void fxPrintResult(txContext* context, txResult* result, int c);
+static void fxPopResult(txPool* pool);
+#ifdef mxMultipleThreads
+static void fxPrintBusy(txPool* pool);
+static void fxPrintClear(txPool* pool);
+#endif
+static void fxPrintResult(txPool* pool, txResult* result, int c);
 static void fxPrintUsage();
-static void fxPushResult(txContext* context, char* path);
-static void fxRunDirectory(txContext* context, char* path);
-static void fxRunFile(txContext* context, char* path);
-static int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message);
+static void fxPushResult(txPool* pool, char* path);
+static void fxRunDirectory(txPool* pool, char* path);
+static void fxRunFile(txPool* pool, char* path);
+#if mxWindows
+static unsigned int __stdcall fxRunFileThread(void* it);
+#else
+static void* fxRunFileThread(void* it);
+#endif
+static void fxRunContext(txPool* pool, txContext* context);
+static int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
 
 static void fx_agent_get_safeBroadcast(xsMachine* the);
@@ -160,36 +189,46 @@ static unsigned int __stdcall fx_agent_start_aux(void* it);
 static void* fx_agent_start_aux(void* it);
 #endif
 static void fx_agent_stop(xsMachine* the);
-extern void fx_clearTimer(txMachine* the);
 static void fx_createRealm(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 static void fx_gc(xsMachine* the);
 static void fx_print(xsMachine* the);
+
+extern void fx_clearTimer(txMachine* the);
+static void fx_destroyTimer(void* data);
+static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
+static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
 
-static void fxQueuePromiseJobsCallback(txJob* job);
 static void fxFulfillModuleFile(txMachine* the);
 static void fxRejectModuleFile(txMachine* the);
 static void fxRunModuleFile(txMachine* the, txString path);
 static void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags);
 static void fxRunLoop(txMachine* the);
 
-static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
-static void fx_destroyTimer(void* data);
-static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
-static void fx_setTimerCallback(txJob* job);
+static txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
+
+
+static char *gxAbortStrings[] = {
+	"debugger",
+	"memory full",
+	"stack overflow",
+	"fatal",
+	"dead strip",
+	"unhandled exception",
+	"not enough keys",
+	"too much computation",
+	"unhandled rejection"
+};
 
 static txAgentCluster gxAgentCluster;
 
-static int gx262 = 0;
-static int gxError = 0;
-static int gxUnhandledErrors = 0;
-
 int main(int argc, char* argv[]) 
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	int argi;
 	int option = 0;
 	char path[C_PATH_MAX];
@@ -199,6 +238,16 @@ int main(int argc, char* argv[])
 #else
     char* harnessPath = "../harness";
 #endif
+	int error = 0;
+	
+	c_memset(agentCluster, 0, sizeof(txAgentCluster));
+	fxCreateMutex(&(agentCluster->mainMutex));
+	fxCreateCondition(&(agentCluster->countCondition));
+	fxCreateMutex(&(agentCluster->countMutex));
+	fxCreateCondition(&(agentCluster->dataCondition));
+	fxCreateMutex(&(agentCluster->dataMutex));
+	fxCreateMutex(&(agentCluster->reportMutex));
+
 	if (argc == 1) {
 		fxPrintUsage();
 		return 1;
@@ -216,8 +265,6 @@ int main(int argc, char* argv[])
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
 			option = 4;
-		else if (!strcmp(argv[argi], "-u"))
-			gxUnhandledErrors = 1;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -230,8 +277,7 @@ int main(int argc, char* argv[])
 			option  = 4;
 	}
 	if (option == 4) {
-		gx262 = 1;
-		gxError = main262(argc, argv);
+		error = main262(argc, argv);
 	}
 	else {
 		xsCreation _creation = {
@@ -248,20 +294,21 @@ int main(int argc, char* argv[])
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
-		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
  		fxBuildAgent(machine);
 		xsBeginHost(machine);
 		{
-			xsVars(1);
+			xsVars(2);
 			xsTry {
+				xsVar(0) = xsUndefined;
+				the->rejection = &xsVar(0);
 				for (argi = 1; argi < argc; argi++) {
 					if (argv[argi][0] == '-')
 						continue;
 					if (option == 1) {
-						xsVar(0) = xsGet(xsGlobal, xsID("$262"));
+						xsVar(1) = xsGet(xsGlobal, xsID("$262"));
 						xsResult = xsString(argv[argi]);
-						xsCall1(xsVar(0), xsID("evalScript"), xsResult);
+						xsCall1(xsVar(1), xsID("evalScript"), xsResult);
 					}
 					else {	
 						if (!c_realpath(argv[argi], path))
@@ -273,38 +320,30 @@ int main(int argc, char* argv[])
 							fxRunProgramFile(the, path, mxProgramFlag | mxDebugFlag);
 					}
 				}
+				fxRunLoop(the);
+				if (xsTest(xsVar(0))) 
+					xsThrow(xsVar(0));
 			}
 			xsCatch {
 				fprintf(stderr, "%s\n", xsToString(xsException));
-				gxError = 1;
+				error = 1;
 			}
 		}
+		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
-		fxRunLoop(machine);
+		if (machine->abortStatus) {
+			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+			fprintf(stderr, "Error: %s\n", why);
+			error = 1;
+		}
 		xsDeleteMachine(machine);
-		fxTerminateSharedCluster();
 	}
-	return gxError;
+	return error;
 }
 
 int main262(int argc, char* argv[]) 
 {
-#ifdef mxTestSharedMachine
-	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
-		1993, 				/* nameModulo */
-		127, 				/* symbolModulo */
-		64 * 1024,			/* parserBufferSize */
-		1993,				/* parserTableModulo */
-	};
-	xsCreation* creation = &_creation;
-#endif
-	txContext context;
+	txPool pool;
 	char separator[2];
 	char path[C_PATH_MAX];
 	int error = 0;
@@ -312,39 +351,51 @@ int main262(int argc, char* argv[])
 	int argj = 0;
 	c_timeval from;
 	c_timeval to;
-	
-	c_memset(&context, 0, sizeof(txContext));
-	
-	c_memset(&gxAgentCluster, 0, sizeof(txAgentCluster));
-	fxCreateCondition(&(gxAgentCluster.countCondition));
-	fxCreateMutex(&(gxAgentCluster.countMutex));
-	fxCreateCondition(&(gxAgentCluster.dataCondition));
-	fxCreateMutex(&(gxAgentCluster.dataMutex));
-	fxCreateMutex(&(gxAgentCluster.reportMutex));
 
-#ifdef mxTestSharedMachine
-	context.shared = fxCreateMachine(creation, "xsr", NULL);
-	fxShareMachine(context.shared);
-#endif
+	c_memset(&pool, 0, sizeof(txPool));
+	fxCreateCondition(&(pool.countCondition));
+	fxCreateMutex(&(pool.countMutex));
+	fxCreateMutex(&(pool.resultMutex));
+	{
+// 	#if mxWindows
+// 	#elif mxMacOSX
+// 		pthread_attr_t attr; 
+// 		pthread_t self = pthread_self();
+//    		size_t size = pthread_get_stacksize_np(self);
+//    		pthread_attr_init(&attr);
+//    		pthread_attr_setstacksize(&attr, size);
+// 	#elif mxLinux
+// 	#endif	
+		for (argi = 0; argi < mxPoolSize; argi++) {
+		#if mxWindows
+			pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
+// 		#elif mxMacOSX
+// 			pthread_create(&(pool.threads[argi]), &attr, &fxRunFileThread, &pool);
+		#else
+			pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
+		#endif
+		}
+	}
+	fxInitializeSharedCluster();
 
 	separator[0] = mxSeparator;
 	separator[1] = 0;
 	c_strcpy(path, "..");
 	c_strcat(path, separator);
 	c_strcat(path, "harness");
-	if (!c_realpath(path, context.harnessPath)) {
+	if (!c_realpath(path, pool.harnessPath)) {
 		fprintf(stderr, "### directory not found: %s\n", path);
 		return 1;
 	}
-	c_strcat(context.harnessPath, separator);
+	c_strcat(pool.harnessPath, separator);
 	if (!c_realpath(".", path)) {
 		fprintf(stderr, "### directory not found: .\n");
 		return 1;
 	}
 	c_strcat(path, separator);
-	context.testPathLength = mxStringLength(path);
-	context.current = NULL;
-	fxPushResult(&context, "");
+	pool.testPathLength = mxStringLength(path);
+	pool.current = NULL;
+	fxPushResult(&pool, "");
 	
 	c_gettimeofday(&from, NULL);
 	for (argi = 1; argi < argc; argi++) {
@@ -361,12 +412,12 @@ int main262(int argc, char* argv[])
 			if (stat(path, &a_stat) == 0) {
 				if (S_ISDIR(a_stat.st_mode)) {
 #endif
-					fxPushResult(&context, path + context.testPathLength);
-					fxRunDirectory(&context, path);
-					fxPopResult(&context);
+					fxPushResult(&pool, path + pool.testPathLength);
+					fxRunDirectory(&pool, path);
+					fxPopResult(&pool);
 				}
 				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-					fxRunFile(&context, path);
+					fxRunFile(&pool, path);
 			}
 		}
 		else {
@@ -374,16 +425,57 @@ int main262(int argc, char* argv[])
 			error = 1;
 		}
 	}
+    fxLockMutex(&(pool.countMutex));
+    while (pool.count > 0)
+		fxSleepCondition(&(pool.countCondition), &(pool.countMutex));
+	pool.count = -1;
+	fxWakeAllCondition(&(pool.countCondition));
+    fxUnlockMutex(&(pool.countMutex));
+	for (argi = 0; argi < mxPoolSize; argi++) {
+	#if mxWindows
+		WaitForSingleObject(pool.threads[argi], INFINITE);
+		CloseHandle(pool.threads[argi]);
+	#else
+		pthread_join(pool.threads[argi], NULL);
+	#endif
+	}
+	
+	fxTerminateSharedCluster();
+	
 	c_gettimeofday(&to, NULL);
 	if (argj) {
 		int seconds = to.tv_sec - from.tv_sec;
 		int minutes = seconds / 60;
 		int hours = minutes / 60;
+		txResult* result = pool.current;
+		int value;
+		
+	#ifdef mxMultipleThreads	
+		fxPrintClear(&pool);
+	#endif
 		fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
-		fxPrintResult(&context, context.current, 0);
+		
+		if (result->testCount) {
+			value = (10000 * result->successCount) / result->testCount;
+			fprintf(stderr, "# %d.%.2d%%", value / 100, value % 100);
+			if (result->pendingCount) {
+				if (result->successCount + result->pendingCount == result->testCount)
+					value = 10000 - value;
+				else
+					value = (10000 * result->pendingCount) / result->testCount;
+				fprintf(stderr, " (%d.%.2d%%)", value / 100, value % 100);
+			}
+		}
+		else
+			fprintf(stderr, "# 0.00%%");
+		fxPrintResult(&pool, result, 0);
 	}
 	return error;
 }
+
+extern void modInstallTextDecoder(xsMachine *the);
+extern void modInstallTextEncoder(xsMachine *the);
+extern void modInstallBase64(xsMachine *the);
 
 void fxBuildAgent(xsMachine* the) 
 {
@@ -422,17 +514,23 @@ void fxBuildAgent(xsMachine* the)
 
 	mxPop();
 	mxPop();
+	
+	modInstallTextDecoder(the);
+	modInstallTextEncoder(the);
+	modInstallBase64(the);
 }
 
-void fxCountResult(txContext* context, int success, int pending) 
+void fxCountResult(txPool* pool, txContext* context, int success, int pending) 
 {
-	txResult* result = context->current;
+	txResult* result = context->result;
+    fxLockMutex(&(pool->resultMutex));
 	while (result) {
 		result->testCount++;
 		result->successCount += success;
 		result->pendingCount += pending;
 		result = result->parent;
 	}
+    fxUnlockMutex(&(pool->resultMutex));
 }
 
 yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name)
@@ -448,30 +546,41 @@ yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, 
 	return NULL;
 }
 
-void fxPopResult(txContext* context) 
+void fxPopResult(txPool* pool) 
 {
-	context->current = context->current->parent;
+	pool->current = pool->current->parent;
 }
 
-void fxPrintResult(txContext* context, txResult* result, int c)
+#ifdef mxMultipleThreads
+static int c = 0;
+
+void fxPrintBusy(txPool* pool)
+{
+	fprintf(stderr, "\b\b\b\b\b\b\b\b# %6.6d", c++);	
+}
+
+void fxPrintClear(txPool* pool)
+{
+	fprintf(stderr, "\b\b\b\b\b\b\b\b");
+	c++;
+}
+#endif
+
+void fxPrintResult(txPool* pool, txResult* result, int c)
 {
 	int i = 0;
 	while (i < c) {
 		fprintf(stderr, "    ");
 		i++;
 	}
-	if (result->testCount > result->pendingCount)
-		fprintf(stderr, "%3d%%", 100 * result->successCount / (result->testCount - result->pendingCount));
-	else
-		fprintf(stderr, "  0%%");
-	fprintf(stderr, " %d/%d", result->successCount, result->testCount - result->pendingCount);
+	fprintf(stderr, " %d/%d", result->successCount, result->testCount);
 	if (result->pendingCount)
 		fprintf(stderr, " (%d)", result->pendingCount);
 	fprintf(stderr, " %s\n", result->path);
 	result = result->first;
 	c++;
 	while (result) {
-		fxPrintResult(context, result, c);
+		fxPrintResult(pool, result, c);
 		result = result->next;
 	}
 }
@@ -492,9 +601,9 @@ void fxPrintUsage()
 	printf("\telse strings are paths to scripts\n");
 }
 
-void fxPushResult(txContext* context, char* path) 
+void fxPushResult(txPool* pool, char* path) 
 {
-	txResult* parent = context->current;
+	txResult* parent = pool->current;
 	txResult* result = c_malloc(sizeof(txResult) + mxStringLength(path));
 	if (!result) {
 		c_exit(1);
@@ -514,10 +623,10 @@ void fxPushResult(txContext* context, char* path)
 			parent->first = result;
 		parent->last = result;
 	}
-	context->current = result;
+	pool->current = result;
 }
 
-void fxRunDirectory(txContext* context, char* path)
+void fxRunDirectory(txPool* pool, char* path)
 {
 	typedef struct sxEntry txEntry;
 	struct sxEntry {
@@ -565,12 +674,12 @@ void fxRunDirectory(txContext* context, char* path)
 			attributes = GetFileAttributes(path);
 			if (attributes != 0xFFFFFFFF) {
 				if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
-					fxPushResult(context, firstEntry->name);
-					fxRunDirectory(context, path);
-					fxPopResult(context);
+					fxPushResult(pool, firstEntry->name);
+					fxRunDirectory(pool, path);
+					fxPopResult(pool);
 				}
 				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-					fxRunFile(context, path);
+					fxRunFile(pool, path);
 			}
 			nextEntry = firstEntry->nextEntry;
 			free(firstEntry);
@@ -612,12 +721,12 @@ void fxRunDirectory(txContext* context, char* path)
 			strcpy(path + length, firstEntry->name);
 			if (stat(path, &a_stat) == 0) {
 				if (S_ISDIR(a_stat.st_mode)) {
-					fxPushResult(context, firstEntry->name);
-					fxRunDirectory(context, path);
-					fxPopResult(context);
+					fxPushResult(pool, firstEntry->name);
+					fxRunDirectory(pool, path);
+					fxPopResult(pool);
 				}
 				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-					fxRunFile(context, path);
+					fxRunFile(pool, path);
 			}
 			nextEntry = firstEntry->nextEntry;
 			free(firstEntry);
@@ -627,8 +736,65 @@ void fxRunDirectory(txContext* context, char* path)
 #endif
 }
 
-void fxRunFile(txContext* context, char* path)
+void fxRunFile(txPool* pool, char* path)
 {
+	txContext* context = c_malloc(sizeof(txContext) + c_strlen(path));
+	txContext** address;
+	txContext* former;
+	if (!context) return;
+	c_memset(context, 0, sizeof(txContext));
+	context->result = pool->current;
+	c_strcpy(context->path, path);
+    fxLockMutex(&(pool->countMutex));
+    while (pool->count == mxPoolSize)
+		fxSleepCondition(&(pool->countCondition), &(pool->countMutex));
+	address = &(pool->first);	
+	while ((former = *address))
+		address = &(former->next);
+	*address = context;
+	pool->count++;
+	fxWakeAllCondition(&(pool->countCondition));
+    fxUnlockMutex(&(pool->countMutex));
+}
+
+#if mxWindows
+unsigned int __stdcall fxRunFileThread(void* it)
+#else
+void* fxRunFileThread(void* it)
+#endif
+{
+	txPool* pool = it;
+	txContext* context;
+	for (;;) {
+    	fxLockMutex(&(pool->countMutex));
+    	while (pool->count == 0)
+			fxSleepCondition(&(pool->countCondition), &(pool->countMutex));
+		if (pool->count > 0) {
+			context = pool->first;
+			pool->first = context->next;
+			pool->count--;
+			fxWakeAllCondition(&(pool->countCondition));
+			fxUnlockMutex(&(pool->countMutex));
+			
+			fxRunContext(pool, context);
+			free(context);
+		}
+		else if (pool->count < 0) {
+			fxUnlockMutex(&(pool->countMutex));
+			break;
+		}
+	}
+#if mxWindows
+	return 0;
+#else
+	return NULL;
+#endif
+}
+
+void fxRunContext(txPool* pool, txContext* context)
+{
+	txAgentCluster* agentCluster = &gxAgentCluster;
+	char* path = context->path;
 	FILE* file = NULL;
 	size_t size;
 	char* buffer = NULL;
@@ -641,6 +807,7 @@ void fxRunFile(txContext* context, char* path)
 	yaml_node_t* root;
 	yaml_node_t* value;
 	int async = 0;
+	int atomics = 0;
 	int sloppy = 1;
 	int strict = 1;
 	int module = 0;
@@ -720,7 +887,6 @@ void fxRunFile(txContext* context, char* path)
 		}
 	}
 
-	// @@ skip test cases beyond 2019...
 	value = fxGetMappingValue(document, root, "features");
 	if (value) {
 		yaml_node_item_t* item = value->data.sequence.items.start;
@@ -728,43 +894,88 @@ void fxRunFile(txContext* context, char* path)
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
  			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
+ 			||	!strcmp((char*)node->data.scalar.value, "Object.hasOwn")
+  			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
+ 			||	!strcmp((char*)node->data.scalar.value, "Temporal")
+ 			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private-in")
+ 			||	!strcmp((char*)node->data.scalar.value, "class-static-block")
+			||	!strcmp((char*)node->data.scalar.value, "error-cause")
+ 			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
+ 			||	!strcmp((char*)node->data.scalar.value, "json-modules")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
+			||	!strcmp((char*)node->data.scalar.value, "regexp-v-flag")
 			) {
 				sloppy = 0;
 				strict = 0;
 				module = 0;
 				pending = 1;
 			}
+			if (!strcmp((char*)node->data.scalar.value, "Atomics")) {
+				atomics = 1;
+			}
 			item++;
 		}
 	}
+	if (atomics) {
+		fxLockMutex(&(agentCluster->mainMutex));
+	}
 
 	if (sloppy) {
-		fprintf(stderr, "### %s (sloppy): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag, async, message))
-			fprintf(stderr, "%s\n", message);
+#ifdef mxMultipleThreads
+		if (!fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag, async, message)) {
+			fxPrintClear(pool);
+			fprintf(stderr, "### %s (sloppy): %s\n", path + pool->testPathLength, message);
+		}
 		else
-			fprintf(stderr, "%s\n", message);
+			fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s (sloppy): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag, async, message);
+		fprintf(stderr, "%s\n", message);
+#endif
 	}
 	if (strict) {
-		fprintf(stderr, "### %s (strict): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message))
-			fprintf(stderr, "%s\n", message);
+#ifdef mxMultipleThreads
+		if (!fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message)) {
+			fxPrintClear(pool);
+			fprintf(stderr, "### %s (strict): %s\n", path + pool->testPathLength, message);
+		}
 		else
-			fprintf(stderr, "%s\n", message);
+			fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s (strict): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message);
+		fprintf(stderr, "%s\n", message);
+#endif
 	}
 	if (module) {
-		fprintf(stderr, "### %s (module): ", path + context->testPathLength);
-		if (fxRunTestCase(context, path, 0, async, message))
-			fprintf(stderr, "%s\n", message);
+#ifdef mxMultipleThreads
+		if (!fxRunTestCase(pool, context, path, 0, async, message)) {
+			fxPrintClear(pool);
+			fprintf(stderr, "### %s (module): %s\n", path + pool->testPathLength, message);
+		}
 		else
-			fprintf(stderr, "%s\n", message);
+			fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s (module): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, 0, async, message);
+		fprintf(stderr, "%s\n", message);
+#endif
 	}
+	if (atomics) {
+		fxUnlockMutex(&(agentCluster->mainMutex));
+	}
+
 	if (pending) {
-		fprintf(stderr, "### %s: SKIP\n", path + context->testPathLength);
-		fxCountResult(context, 0, 1);
+		fxCountResult(pool, context, 0, 1);
+#ifdef mxMultipleThreads
+		fxPrintBusy(pool);
+#else
+		fprintf(stderr, "### %s: SKIP\n", path + pool->testPathLength);
+#endif
 	}
 bail:	
 	context->negative = NULL;
@@ -780,8 +991,7 @@ bail:
 		fclose(file);
 }
 
-static char gxDoneMessage[1024];
-int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, char* message)
+int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message)
 {
 	xsCreation _creation = {
 		16 * 1024 * 1024, 	/* initialChunkSize */
@@ -798,67 +1008,46 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 	xsCreation* creation = &_creation;
 	xsMachine* machine;
 	char buffer[C_PATH_MAX];
-	int success = 0;
-	fxInitializeSharedCluster();
-#ifdef mxTestSharedMachine
-	machine = xsCloneMachine(creation, context->shared, "xst", NULL);
-#else
+	int success = 0;	
 	machine = xsCreateMachine(creation, "xst", NULL);
-#endif
-	gxDoneMessage[0] = 0;
 	xsBeginHost(machine);
 	{
+		xsVars(1);
 		xsTry {
 			fxBuildAgent(the);
-			c_strcpy(buffer, context->harnessPath);
+			c_strcpy(buffer, pool->harnessPath);
 			c_strcat(buffer, "sta.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
-			c_strcpy(buffer, context->harnessPath);
+			c_strcpy(buffer, pool->harnessPath);
 			c_strcat(buffer, "assert.js");
 			fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 			if (async) {
 				xsResult = xsNewHostFunction(fx_done, 1);
 				xsSet(xsGlobal, xsID("$DONE"), xsResult);
-				xsSet(xsGlobal, xsID("$DONE_RESULT"), xsString("Test did not run to completion"));
+				xsVar(0) = xsString("Test did not run to completion");
 			}
+			else
+				xsVar(0) = xsUndefined;
 			if (context->includes) {
 				yaml_node_item_t* item = context->includes->data.sequence.items.start;
 				while (item < context->includes->data.sequence.items.top) {
 					yaml_node_t* node = yaml_document_get_node(context->document, *item);
-					c_strcpy(buffer, context->harnessPath);
+					c_strcpy(buffer, pool->harnessPath);
 					c_strcat(buffer, (char*)node->data.scalar.value);
 					fxRunProgramFile(the, buffer, mxProgramFlag | mxDebugFlag);
 					item++;
 				}
 			}
 			mxPop();
+			the->rejection = &xsVar(0);
 			if (flags)
 				fxRunProgramFile(the, path, flags);
 			else
 				fxRunModuleFile(the, path);
-		}
-		xsCatch {
-		}
-	}
-	xsEndHost(machine);
-	fxRunLoop(machine);
-	xsBeginHost(machine);
-	{
-		if (xsTypeOf(xsException) == xsUndefinedType) {
-			if (async) {
-				xsResult = xsGet(xsGlobal, xsID("$DONE_RESULT"));
-				if (xsTypeOf(xsResult) == xsUndefinedType) {
-					snprintf(message, 1024, "OK");
-					success = 1;
-				}
-				else if (xsTypeOf(xsResult) == xsSymbolType) {
-					snprintf(message, 1024, "# %s", xsName(xsResult.value.symbol));
-				}
-				else {
-					snprintf(message, 1024, "# %s", xsToString(xsResult));
-				}
-			}
-			else if (context->negative) {
+			fxRunLoop(the);
+			if (xsTest(xsVar(0))) 
+				xsThrow(xsVar(0));
+			if (context->negative) {
 				snprintf(message, 1024, "# Expected a %s but got no errors", context->negative->data.scalar.value);
 			}
 			else {
@@ -866,7 +1055,7 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 				success = 1;
 			}
 		}
-		else {
+		xsCatch {
 			if (context->negative) {
 				txString name;
 				xsResult = xsGet(xsException, xsID("constructor"));
@@ -881,24 +1070,33 @@ int fxRunTestCase(txContext* context, char* path, txUnsigned flags, int async, c
 			else {
 				snprintf(message, 1024, "# %s", xsToString(xsException));
 			}
+			xsResult = xsGet(xsGlobal, xsID("$262"));
+			xsResult = xsGet(xsResult, xsID("agent"));
+			xsCall0(xsResult, xsID("stop"));
 		}
-		xsResult = xsGet(xsGlobal, xsID("$262"));
-		xsResult = xsGet(xsResult, xsID("agent"));
-		xsCall0(xsResult, xsID("stop"));
 	}
 	xsEndHost(machine);
+	if (machine->abortStatus) {
+		success = 0;
+		if ((machine->abortStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->abortStatus == XS_STACK_OVERFLOW_EXIT)) {
+			if (context->negative) {
+				if (!strcmp("RangeError", (char*)context->negative->data.scalar.value)) {
+					snprintf(message, 1024, "OK");
+					success = 1;
+				}
+			}
+		}
+		if (!success) {
+			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+			snprintf(message, 1024, "# %s", why);
+			success = 0;
+		}
+	}
+	fx_agent_stop(machine);
 	xsDeleteMachine(machine);
-	fxTerminateSharedCluster();
-	fxCountResult(context, success, 0);
-	return success;
-}
 
-void fx_done(xsMachine* the)
-{
-	if ((xsToInteger(xsArgc) > 0) && (xsTest(xsArg(0))))
-		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsArg(0));
-	else
-		xsSet(xsGlobal, xsID("$DONE_RESULT"), xsUndefined);
+	fxCountResult(pool, context, success, 0);
+	return success;
 }
 
 int fxStringEndsWith(const char *string, const char *suffix)
@@ -921,35 +1119,32 @@ void fx_agent_set_safeBroadcast(xsMachine* the)
 
 void fx_agent_broadcast(xsMachine* the)
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	if (xsIsInstanceOf(xsArg(0), xsTypedArrayPrototype)) {
 		xsArg(0) = xsGet(xsArg(0), xsID("buffer"));
 	}
-
-    fxLockMutex(&(gxAgentCluster.dataMutex));
-	gxAgentCluster.dataBuffer = xsMarshallAlien(xsArg(0));
+    fxLockMutex(&(agentCluster->dataMutex));
+	agentCluster->dataBuffer = xsMarshallAlien(xsArg(0));
 	if (mxArgc > 1)
-		gxAgentCluster.dataValue = xsToInteger(xsArg(1));
-#if mxWindows
-	WakeAllConditionVariable(&(gxAgentCluster.dataCondition));
-#else
-	pthread_cond_broadcast(&(gxAgentCluster.dataCondition));
-#endif
-    fxUnlockMutex(&(gxAgentCluster.dataMutex));
+		agentCluster->dataValue = xsToInteger(xsArg(1));
+	fxWakeAllCondition(&(agentCluster->dataCondition));
+    fxUnlockMutex(&(agentCluster->dataMutex));
     
-    fxLockMutex(&(gxAgentCluster.countMutex));
-    while (gxAgentCluster.count > 0)
-		fxSleepCondition(&(gxAgentCluster.countCondition), &(gxAgentCluster.countMutex));
-    fxUnlockMutex(&(gxAgentCluster.countMutex));
+    fxLockMutex(&(agentCluster->countMutex));
+    while (agentCluster->count > 0)
+		fxSleepCondition(&(agentCluster->countCondition), &(agentCluster->countMutex));
+    fxUnlockMutex(&(agentCluster->countMutex));
 }
 
 void fx_agent_getReport(xsMachine* the)
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	txAgentReport* report = C_NULL;
-    fxLockMutex(&(gxAgentCluster.reportMutex));
-	report = gxAgentCluster.firstReport;
+    fxLockMutex(&(agentCluster->reportMutex));
+	report = agentCluster->firstReport;
 	if (report)
-		gxAgentCluster.firstReport = report->next;
-    fxUnlockMutex(&(gxAgentCluster.reportMutex));
+		agentCluster->firstReport = report->next;
+    fxUnlockMutex(&(agentCluster->reportMutex));
     if (report) {
     	xsResult = xsString(report->message);
     	c_free(report);
@@ -976,35 +1171,37 @@ void fx_agent_monotonicNow(xsMachine* the)
 
 void fx_agent_receiveBroadcast(xsMachine* the)
 {
-    fxLockMutex(&(gxAgentCluster.dataMutex));
-	while (gxAgentCluster.dataBuffer == NULL)
-		fxSleepCondition(&(gxAgentCluster.dataCondition), &(gxAgentCluster.dataMutex));
-	xsResult = xsDemarshallAlien(gxAgentCluster.dataBuffer);
-    fxUnlockMutex(&(gxAgentCluster.dataMutex));
+ 	txAgentCluster* agentCluster = &gxAgentCluster;
+   fxLockMutex(&(agentCluster->dataMutex));
+	while (agentCluster->dataBuffer == NULL)
+		fxSleepCondition(&(agentCluster->dataCondition), &(agentCluster->dataMutex));
+	xsResult = xsDemarshallAlien(agentCluster->dataBuffer);
+    fxUnlockMutex(&(agentCluster->dataMutex));
 	
-    fxLockMutex(&(gxAgentCluster.countMutex));
-    gxAgentCluster.count--;
-    fxWakeCondition(&(gxAgentCluster.countCondition));
-    fxUnlockMutex(&(gxAgentCluster.countMutex));
+    fxLockMutex(&(agentCluster->countMutex));
+    agentCluster->count--;
+    fxWakeCondition(&(agentCluster->countCondition));
+    fxUnlockMutex(&(agentCluster->countMutex));
 		
-	xsCallFunction2(xsArg(0), xsGlobal, xsResult, xsInteger(gxAgentCluster.dataValue));
+	xsCallFunction2(xsArg(0), xsGlobal, xsResult, xsInteger(agentCluster->dataValue));
 }
 
 void fx_agent_report(xsMachine* the)
 {
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	xsStringValue message = xsToString(xsArg(0));
 	xsIntegerValue messageLength = mxStringLength(message);
 	txAgentReport* report = c_malloc(sizeof(txAgentReport) + messageLength);
 	if (!report) xsUnknownError("not enough memory");
     report->next = C_NULL;
 	c_memcpy(&(report->message[0]), message, messageLength + 1);
-    fxLockMutex(&(gxAgentCluster.reportMutex));
-    if (gxAgentCluster.firstReport)
-		gxAgentCluster.lastReport->next = report;
+    fxLockMutex(&(agentCluster->reportMutex));
+    if (agentCluster->firstReport)
+		agentCluster->lastReport->next = report;
     else
-		gxAgentCluster.firstReport = report;
-	gxAgentCluster.lastReport = report;
-    fxUnlockMutex(&(gxAgentCluster.reportMutex));
+		agentCluster->firstReport = report;
+	agentCluster->lastReport = report;
+    fxUnlockMutex(&(agentCluster->reportMutex));
 }
 
 void fx_agent_sleep(xsMachine* the)
@@ -1021,15 +1218,16 @@ void fx_agent_start(xsMachine* the)
 {
 	xsStringValue script = xsToString(xsArg(0));
 	xsIntegerValue scriptLength = mxStringLength(script);
+	txAgentCluster* agentCluster = &gxAgentCluster;
 	txAgent* agent = c_malloc(sizeof(txAgent) + scriptLength);
 	if (!agent) xsUnknownError("not enough memory");
 	c_memset(agent, 0, sizeof(txAgent));
-	if (gxAgentCluster.firstAgent)
-		gxAgentCluster.lastAgent->next = agent;
+	if (agentCluster->firstAgent)
+		agentCluster->lastAgent->next = agent;
 	else
-		gxAgentCluster.firstAgent = agent;
-	gxAgentCluster.lastAgent = agent;
-	gxAgentCluster.count++;
+		agentCluster->firstAgent = agent;
+	agentCluster->lastAgent = agent;
+	agentCluster->count++;
 	agent->scriptLength = scriptLength;
 	c_memcpy(&(agent->script[0]), script, scriptLength + 1);
 #if mxWindows
@@ -1059,7 +1257,6 @@ void* fx_agent_start_aux(void* it)
 	};
 	txAgent* agent = it;
 	xsMachine* machine = xsCreateMachine(&creation, "xst-agent", NULL);
-	machine->host = it;
 	xsBeginHost(machine);
 	{
 		xsTry {
@@ -1108,29 +1305,32 @@ void* fx_agent_start_aux(void* it)
 
 void fx_agent_stop(xsMachine* the)
 {
-	txAgent* agent = gxAgentCluster.firstAgent;
-	while (agent) {
-		txAgent* next = agent->next;
-		if (agent->thread) {
-			#if mxWindows
-				WaitForSingleObject(agent->thread, INFINITE);
-				CloseHandle(agent->thread);
-			#else
-				pthread_join(agent->thread, NULL);
-			#endif
+	txAgentCluster* agentCluster = &gxAgentCluster;
+	txAgent* agent = agentCluster->firstAgent;
+	if (agent) {
+		while (agent) {
+			txAgent* next = agent->next;
+			if (agent->thread) {
+				#if mxWindows
+					WaitForSingleObject(agent->thread, INFINITE);
+					CloseHandle(agent->thread);
+				#else
+					pthread_join(agent->thread, NULL);
+				#endif
+			}
+			c_free(agent);
+			agent = next;
 		}
-		c_free(agent);
-		agent = next;
+		if (agentCluster->dataBuffer)
+			c_free(agentCluster->dataBuffer);
+		agentCluster->firstAgent = C_NULL;
+		agentCluster->lastAgent = C_NULL;
+		agentCluster->count = 0;
+		agentCluster->dataBuffer = C_NULL;
+		agentCluster->dataValue = 0;
+		agentCluster->firstReport = C_NULL;
+		agentCluster->lastReport = C_NULL;
 	}
-	if (gxAgentCluster.dataBuffer)
-		c_free(gxAgentCluster.dataBuffer);
-	gxAgentCluster.firstAgent = C_NULL;
-	gxAgentCluster.lastAgent = C_NULL;
-	gxAgentCluster.count = 0;
-	gxAgentCluster.dataBuffer = C_NULL;
-	gxAgentCluster.dataValue = 0;
-	gxAgentCluster.firstReport = C_NULL;
-	gxAgentCluster.lastReport = C_NULL;
 }
 
 void fx_createRealm(xsMachine* the)
@@ -1145,11 +1345,19 @@ void fx_detachArrayBuffer(xsMachine* the)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_ARRAY_BUFFER_KIND) && (instance != mxArrayBufferPrototype.value.reference)) {
 			slot->value.arrayBuffer.address = C_NULL;
-			slot->value.arrayBuffer.length = 0;
+			slot->next->value.bufferInfo.length = 0;
 			return;
 		}
 	}
 	mxTypeError("this is no ArrayBuffer instance");
+}
+
+void fx_done(xsMachine* the)
+{
+	if ((xsToInteger(xsArgc) > 0) && (xsTest(xsArg(0))))
+		*((txSlot*)the->rejection) = xsArg(0);
+	else
+		*((txSlot*)the->rejection) = xsUndefined;
 }
 
 void fx_gc(xsMachine* the)
@@ -1171,26 +1379,63 @@ void fx_evalScript(xsMachine* the)
 void fx_print(xsMachine* the)
 {
 	xsIntegerValue c = xsToInteger(xsArgc), i;
+	xsStringValue string, p, q;
 	xsVars(1);
 	xsVar(0) = xsGet(xsGlobal, xsID("String"));
 	for (i = 0; i < c; i++) {
 		if (i)
 			fprintf(stdout, " ");
 		xsArg(i) = xsCallFunction1(xsVar(0), xsUndefined, xsArg(i));
-		fprintf(stdout, "%s", xsToString(xsArg(i)));
+		p = string = xsToString(xsArg(i));
+	#if mxCESU8
+		for (;;) {
+			xsIntegerValue character;
+			q = fxUTF8Decode(p, &character);
+		again:
+			if (character == C_EOF)
+				break;
+			if (character == 0) {
+				if (p > string) {
+					char c = *p;
+					*p = 0;
+					fprintf(stdout, "%s", string);
+					*p = c;
+				}
+				string = q;
+			}
+			else if ((0x0000D800 <= character) && (character <= 0x0000DBFF)) {
+				xsStringValue r = q;
+				xsIntegerValue surrogate;
+				q = fxUTF8Decode(r, &surrogate);
+				if ((0x0000DC00 <= surrogate) && (surrogate <= 0x0000DFFF)) {
+					char buffer[5];
+					character = (txInteger)(0x00010000 + ((character & 0x03FF) << 10) + (surrogate & 0x03FF));
+					if (p > string) {
+						char c = *p;
+						*p = 0;
+						fprintf(stdout, "%s", string);
+						*p = c;
+					}
+					p = fxUTF8Encode(buffer, character);
+					*p = 0;
+					fprintf(stdout, "%s", buffer);
+					string = q;
+				}
+				else {
+					p = r;
+					character = surrogate;
+					goto again;
+				}
+			}
+			p = q;
+		}
+	#endif	
+		fprintf(stdout, "%s", string);
 	}
 	fprintf(stdout, "\n");
 }
 
-void fx_setInterval(txMachine* the)
-{
-	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 1);
-}
-
-void fx_setTimeout(txMachine* the)
-{
-	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 0);
-}
+/* TIMER */
 
 static txHostHooks gxTimerHooks = {
 	fx_destroyTimer,
@@ -1199,21 +1444,17 @@ static txHostHooks gxTimerHooks = {
 
 void fx_clearTimer(txMachine* the)
 {
-	txJob* data = fxGetHostData(the, mxThis);
-	if (data) {
-		txJob* job;
-		txJob** address;
-		address = (txJob**)&(the->context);
-		while ((job = *address)) {
-			if (job == data) {
-				*address = job->next;
-				c_free(job);
-				break;
-			}
-			address = &(job->next);
+	txHostHooks* hooks = fxGetHostHooks(the, mxArgv(0));
+	if (hooks == &gxTimerHooks) {
+		txJob* job = fxGetHostData(the, mxArgv(0));
+		if (job) {
+			fxForget(the, &job->self);
+			fxSetHostData(the, mxArgv(0), NULL);
+			job->the = NULL;
 		}
-		fxSetHostData(the, mxThis, NULL);
 	}
+	else
+		mxTypeError("no timer");
 }
 
 void fx_destroyTimer(void* data)
@@ -1229,53 +1470,42 @@ void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot)
 	}
 }
 
+void fx_setInterval(txMachine* the)
+{
+	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 1);
+}
+
+void fx_setTimeout(txMachine* the)
+{
+	fx_setTimer(the, fxToNumber(the, mxArgv(1)), 0);
+}
+
 void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 {
 	c_timeval tv;
 	txJob* job;
-	txJob** address = (txJob**)&(the->context);
+	txJob** address = (txJob**)&(the->timerJobs);
 	while ((job = *address))
 		address = &(job->next);
 	job = *address = malloc(sizeof(txJob));
 	c_memset(job, 0, sizeof(txJob));
 	job->the = the;
-	job->callback = fx_setTimerCallback;
 	c_gettimeofday(&tv, NULL);
 	if (repeat)
 		job->interval = interval;
 	job->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + interval;
-	job->function.kind = mxArgv(0)->kind;
-	job->function.value = mxArgv(0)->value;
-	if (mxArgc > 2) {
-		job->argument.kind = mxArgv(2)->kind;
-		job->argument.value = mxArgv(2)->value;
-	}
-	fxNewHostObject(the, C_NULL);
-	fxSetHostData(the, the->stack, job);
-	fxSetHostHooks(the, the->stack, &gxTimerHooks);
-	mxPullSlot(mxResult);
-}
-
-void fx_setTimerCallback(txJob* job)
-{
-	txMachine* the = job->the;
-	fxBeginHost(the);
-	{
-		mxTry(the) {
-			/* THIS */
-			mxPushUndefined();
-			/* FUNCTION */
-			mxPush(job->function);
-			mxCall();
-			mxPush(job->argument);
-			/* ARGC */
-			mxRunCount(1);
-			mxPop();
-		}
-		mxCatch(the) {
-		}
-	}
-	fxEndHost(the);
+	fxNewHostObject(the, NULL);
+    mxPull(job->self);
+	job->function = *mxArgv(0);
+	if (mxArgc > 2)
+		job->argument = *mxArgv(2);
+	else
+		job->argument = mxUndefined;
+	fxSetHostData(the, &job->self, job);
+	fxSetHostHooks(the, &job->self, &gxTimerHooks);
+	fxRemember(the, &job->self);
+	fxAccess(the, &job->self);
+	*mxResult = the->scratch;
 }
 
 /* PLATFORM */
@@ -1285,7 +1515,6 @@ void fxCreateMachinePlatform(txMachine* the)
 #ifdef mxDebug
 	the->connection = mxNoSocket;
 #endif
-	the->host = NULL;
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
@@ -1294,23 +1523,7 @@ void fxDeleteMachinePlatform(txMachine* the)
 
 void fxQueuePromiseJobs(txMachine* the)
 {
-	c_timeval tv;
-	txJob* job;
-	txJob** address = (txJob**)&(the->context);
-	while ((job = *address))
-		address = &(job->next);
-	job = *address = malloc(sizeof(txJob));
-    c_memset(job, 0, sizeof(txJob));
-    job->the = the;
-    job->callback = fxQueuePromiseJobsCallback;
-	c_gettimeofday(&tv, NULL);
-	job->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0);
-}
-
-void fxQueuePromiseJobsCallback(txJob* job) 
-{
-	txMachine* the = job->the;
-	fxRunPromiseJobs(the);
+	the->promiseJobs = 1;
 }
 
 void fxRunLoop(txMachine* the)
@@ -1320,25 +1533,62 @@ void fxRunLoop(txMachine* the)
 	txJob* job;
 	txJob** address;
 	
+	fxEndJob(the);
 	for (;;) {
+		while (the->promiseJobs) {
+			while (the->promiseJobs) {
+				the->promiseJobs = 0;
+				fxRunPromiseJobs(the);
+			}
+			fxEndJob(the);
+		}
 		c_gettimeofday(&tv, NULL);
 		when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0);
-		address = (txJob**)&(the->context);
+		address = (txJob**)&(the->timerJobs);
 		if (!*address)
 			break;
 		while ((job = *address)) {
-			if (job->when <= when) {
-				(*job->callback)(job);	
-				if (job->interval) {
-					job->when += job->interval;
+			txMachine* the = job->the;
+			if (the) {
+				if (job->when <= when) {
+					fxBeginHost(the);
+					mxTry(the) {
+						mxPushUndefined();
+						mxPush(job->function);
+						mxCall();
+						mxPush(job->argument);
+						mxRunCount(1);
+						mxPop();
+						if (job->the) {
+							if (job->interval) {
+								job->when += job->interval;
+							}
+							else {
+								fxAccess(the, &job->self);
+								*mxResult = the->scratch;
+								fxForget(the, &job->self);
+								fxSetHostData(the, mxResult, NULL);
+								job->the = NULL;
+							}
+						}
+					}
+					mxCatch(the) {
+						*((txSlot*)the->rejection) = mxException;
+						fxAccess(the, &job->self);
+						*mxResult = the->scratch;
+						fxForget(the, &job->self);
+						fxSetHostData(the, mxResult, NULL);
+						job->the = NULL;
+					}
+					fxEndHost(the);
+					break; // to run promise jobs queued by the timer in the same "tick"
 				}
-				else {
-					*address = job->next;
-					c_free(job);
-				}
-			}
-			else
 				address = &(job->next);
+			}
+			else {
+				*address = job->next;
+				c_free(job);
+			}
 		}
 	}
 }
@@ -1349,12 +1599,7 @@ void fxFulfillModuleFile(txMachine* the)
 
 void fxRejectModuleFile(txMachine* the)
 {
-	if (gx262)
-		xsException = xsArg(0);
-	else {
-		fprintf(stderr, "%s\n", xsToString(xsArg(0)));
-		gxError = 1;
-	}
+	*((txSlot*)the->rejection) = xsArg(0);
 }
 
 void fxRunModuleFile(txMachine* the, txString path)
@@ -1380,29 +1625,136 @@ void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 	mxPullSlot(mxResult);
 }
 
-/* DEBUG */
-
 void fxAbort(txMachine* the, int status)
 {
-	if (status == XS_NOT_ENOUGH_MEMORY_EXIT)
-		mxUnknownError("not enough memory");
-	else if (status == XS_STACK_OVERFLOW_EXIT)
-		mxUnknownError("stack overflow");
-	else if ((status == XS_UNHANDLED_EXCEPTION_EXIT) || (status == XS_UNHANDLED_REJECTION_EXIT)) {
-		if (gxUnhandledErrors) {
-			fprintf(stderr, "%s\n", xsToString(xsException));
-			gxError = 1;
-		}
-		xsException = xsUndefined;
+	if (the->abortStatus) // xsEndHost calls fxAbort!
+		return;
+	if (status) {
+		the->abortStatus = status;
+		fxExitToHost(the);
 	}
 	else
-		c_exit(status);
+		c_exit(1);
 }
+
+txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
+{
+	char name[C_PATH_MAX];
+	char path[C_PATH_MAX];
+	txInteger dot = 0;
+	txString slash;
+	fxToStringBuffer(the, slot, name, sizeof(name));
+	if (name[0] == '.') {
+		if (name[1] == '/') {
+			dot = 1;
+		}
+		else if ((name[1] == '.') && (name[2] == '/')) {
+			dot = 2;
+		}
+	}
+	if (dot) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strrchr(path, mxSeparator);
+		if (!slash)
+			return XS_NO_ID;
+		if (dot == 2) {
+			*slash = 0;
+			slash = c_strrchr(path, mxSeparator);
+			if (!slash)
+				return XS_NO_ID;
+		}
+#if mxWindows
+		{
+			char c;
+			char* s = name;
+			while ((c = *s)) {
+				if (c == '/')
+					*s = '\\';
+				s++;
+			}
+		}
+#endif
+	}
+	else
+		slash = path;
+	*slash = 0;
+	c_strcat(path, name + dot);
+	return fxNewNameC(the, path);
+}
+
+void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
+{
+	char path[C_PATH_MAX];
+	char real[C_PATH_MAX];
+	txScript* script;
+#ifdef mxDebug
+	txUnsigned flags = mxDebugFlag;
+#else
+	txUnsigned flags = 0;
+#endif
+	c_strcpy(path, fxGetKeyName(the, moduleID));
+	if (c_realpath(path, real)) {
+		script = fxLoadScript(the, real, flags);
+		if (script)
+			fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);
+	}
+}
+
+txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
+{
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	FILE* file = NULL;
+	txString name = NULL;
+	char map[C_PATH_MAX];
+	txScript* script = NULL;
+	fxInitializeParser(parser, the, the->parserBufferSize, the->parserTableModulo);
+	parser->firstJump = &jump;
+	file = fopen(path, "r");
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		mxParserThrowElse(file);
+		parser->path = fxNewParserSymbol(parser, path);
+		fxParserTree(parser, file, (txGetter)fgetc, flags, &name);
+		fclose(file);
+		file = NULL;
+		if (name) {
+			mxParserThrowElse(c_realpath(fxCombinePath(parser, path, name), map));
+			parser->path = fxNewParserSymbol(parser, map);
+			file = fopen(map, "r");
+			mxParserThrowElse(file);
+			fxParserSourceMap(parser, file, (txGetter)fgetc, flags, &name);
+			fclose(file);
+			file = NULL;
+			if ((parser->errorCount == 0) && name) {
+				mxParserThrowElse(c_realpath(fxCombinePath(parser, map, name), map));
+				parser->path = fxNewParserSymbol(parser, map);
+			}
+		}
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+	}
+	if (file)
+		fclose(file);
+#ifdef mxInstrument
+	if (the->peakParserSize < parser->total)
+		the->peakParserSize = parser->total;
+#endif
+	fxTerminateParser(parser);
+	return script;
+}
+
+/* DEBUG */
 
 #ifdef mxDebug
 
 void fxConnect(txMachine* the)
 {
+#ifdef mxMultipleThreads
+#else
 	char name[256];
 	char* colon;
 	int port;
@@ -1507,6 +1859,7 @@ void fxConnect(txMachine* the)
 	return;
 bail:
 	fxDisconnect(the);
+#endif		
 }
 
 void fxDisconnect(txMachine* the)

@@ -53,6 +53,7 @@ struct PWMRecord {
 	uint16_t	pin;
 	uint8_t		timerIndex;
 	uint8_t		ledc;
+	int			duty;
 	xsSlot		obj;
 };
 typedef struct PWMRecord PWMRecord;
@@ -60,43 +61,54 @@ typedef struct PWMRecord *PWM;
 
 void xs_pwm_constructor_(xsMachine *the)
 {
-	PWM pwm;
+	PWM pwm = NULL;
 	int pin;
 	int hz = 1024;
 	int resolution = 10;
 	int8_t i, free = -1, timerIndex = -1;
-	int ledc = -1;
+	int ledc = -1, duty = 0;
 	ledc_channel_config_t ledcConfig = {0};
 
-	xsmcVars(1);
-	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
-	pin = builtinGetPin(the, &xsVar(0));
+	xsmcVars(2);
 
-    if (!builtinIsPinFree(pin))
-		xsRangeError("in use");
+    if (xsmcHas(xsArg(0), xsID_from)) {
+		xsmcGet(xsVar(1), xsArg(0), xsID_from);
+		pwm = xsmcGetHostDataValidate(xsVar(1), xs_pwm_destructor_);
+		pin = pwm->pin;
+		ledc = pwm->ledc;
+		duty = pwm->duty;
+		resolution = gTimers[pwm->timerIndex].resolution;
+    }
+    else {
+		xsmcGet(xsVar(0), xsArg(0), xsID_pin);
+		pin = builtinGetPin(the, &xsVar(0));
+
+		if (!builtinIsPinFree(pin))
+			xsRangeError("in use");
+
+		if (xsmcHas(xsArg(0), xsID_port)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_port);
+			ledc = builtinGetSignedInteger(the, &xsVar(0));
+			if ((ledc < 0) || (ledc >= LEDC_CHANNEL_MAX))
+				xsRangeError("invalid port");
+			if (!(gLEDC & (1 << ledc)))
+				xsRangeError("port unavailable");
+		}
+	}
 
     if (xsmcHas(xsArg(0), xsID_hz)) {
         xsmcGet(xsVar(0), xsArg(0), xsID_hz);
         hz = xsmcToInteger(xsVar(0));
-        if (hz < 0)
+        if (hz <= 0)
 			xsRangeError("invalid hz");
     }
 
     if (xsmcHas(xsArg(0), xsID_resolution)) {
         xsmcGet(xsVar(0), xsArg(0), xsID_resolution);
         resolution = xsmcToInteger(xsVar(0));
-        if ((resolution < 0) || (resolution >= LEDC_TIMER_BIT_MAX))
+        if ((resolution <= 0) || (resolution >= LEDC_TIMER_BIT_MAX))
 			xsRangeError("invalid resolution");
     }
-
-	if (xsmcHas(xsArg(0), xsID_port)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		ledc = xsmcToInteger(xsVar(0));
-		if ((ledc < 0) || (ledc >= LEDC_CHANNEL_MAX))
-			xsRangeError("invalid port");
-		if (!(gLEDC & (1 << ledc)))
-			xsRangeError("port unavailable");
-	}
 
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
@@ -110,12 +122,16 @@ void xs_pwm_constructor_(xsMachine *the)
 			xsUnknownError("no ledc channel");
 	}
 
-	for (i = 0; i < LEDC_TIMER_MAX; i++) {
-		if (!gTimers[i].useCount)
-			free = i;
-		else if ((resolution == gTimers[i].resolution) && (hz == gTimers[i].hz)) {
-			timerIndex = i;
-			break;
+	if (pwm && (1 == gTimers[pwm->timerIndex].useCount))
+		free = pwm->timerIndex; // reuse, but reinitialize
+	else {
+		for (i = 0; i < LEDC_TIMER_MAX; i++) {
+			if (!gTimers[i].useCount)
+				free = i;
+			else if ((resolution == gTimers[i].resolution) && (hz == gTimers[i].hz)) {
+				timerIndex = i;
+				break;
+			}
 		}
 	}
 
@@ -140,22 +156,31 @@ void xs_pwm_constructor_(xsMachine *the)
 	builtinInitializeTarget(the);
 
 	ledcConfig.channel    = ledc;
-	ledcConfig.duty       = 0;
+	ledcConfig.duty       = duty;
 	ledcConfig.gpio_num   = pin;
 	ledcConfig.speed_mode = kSpeedMode;
 	ledcConfig.timer_sel  = timerIndex;
 	if (ESP_OK != ledc_channel_config(&ledcConfig))
 		xsUnknownError("can't configure");
 
-	pwm = c_malloc(sizeof(PWMRecord));
-	if (!pwm) {
-		//@@ disable ledc_channel
-		xsRangeError("no memory");
+	if (NULL == pwm) {
+		pwm = c_malloc(sizeof(PWMRecord));
+		if (!pwm) {
+			//@@ disable ledc_channel
+			xsRangeError("no memory");
+		}
+	}
+	else {
+		gTimers[pwm->timerIndex].useCount -= 1;
+		xsForget(pwm->obj);
+		xsmcSetHostData(xsVar(1), NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
 	}
 
 	pwm->pin = pin;
 	pwm->timerIndex = timerIndex;
 	pwm->ledc = ledc;
+	pwm->duty = duty;
 	pwm->obj = xsThis;
 
 	xsRemember(pwm->obj);
@@ -189,44 +214,38 @@ void xs_pwm_destructor_(void *data)
 void xs_pwm_close_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
-	if (!pwm) return;
-
-	xsForget(pwm->obj);
-	xs_pwm_destructor_(pwm);
-	xsmcSetHostData(xsThis, NULL);
+	if (pwm && xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_)) {
+		xsForget(pwm->obj);
+		xs_pwm_destructor_(pwm);
+		xsmcSetHostData(xsThis, NULL);
+	}
 }
 
 void xs_pwm_write_(xsMachine *the)
 {
-    int value, max;
-	PWM pwm = xsmcGetHostData(xsThis);
-	if (!pwm)
-		xsUnknownError("closed");
+	PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
+	int max = (1 << gTimers[pwm->timerIndex].resolution) - 1;
+   int value = xsmcToInteger(xsArg(0));
 
-	max = (1 << gTimers[pwm->timerIndex].resolution) - 1;
-    value = xsmcToInteger(xsArg(0));
 	if ((value < 0) || (value > max))
 		xsUnknownError("invalid value");
 	if (value == max)
 		value += 1;
 	ledc_set_duty(kSpeedMode, pwm->ledc, value);
 	ledc_update_duty(kSpeedMode, pwm->ledc);
+	pwm->duty = value;
 }
 
 void xs_pwm_get_hz_(xsMachine *the)
 {
-	PWM pwm = xsmcGetHostData(xsThis);
-	if (!pwm)
-		return;
+	PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
 
 	xsmcSetInteger(xsResult, gTimers[pwm->timerIndex].hz);
 }
 
 void xs_pwm_get_resolution_(xsMachine *the)
 {
-	PWM pwm = xsmcGetHostData(xsThis);
-	if (!pwm)
-		return;
+	PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
 
 	xsmcSetInteger(xsResult, gTimers[pwm->timerIndex].resolution);
 }

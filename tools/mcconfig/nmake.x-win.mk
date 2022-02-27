@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -21,14 +21,6 @@
 !CMDSWITCHES -S
 !ELSE
 !CMDSWITCHES +S
-!ENDIF
-
-!IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\debug\lib
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\win\instrument\lib
-!ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\win\release\lib
 !ENDIF
 
 XS_DIRECTORIES = \
@@ -105,7 +97,8 @@ C_DEFINES = \
 	/D mxNoFunctionLength=1 \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
-	/D mxFewGlobalsTable=1
+	/D mxFewGlobalsTable=1 \
+	/D mxMessageWindowClass=\"fxMessageWindowClassX\"
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) \
 	/D MODINSTRUMENTATION=1 \

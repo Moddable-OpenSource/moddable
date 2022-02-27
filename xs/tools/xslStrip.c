@@ -101,6 +101,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		if (fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2))
 			fxUnstripCallback(linker, fx_BigInt);
 			
+		if (fxIsCodeUsed(XS_CODE_REGEXP))
+			fxUnstripCallback(linker, fx_RegExp);
 	}
 	linkerStrip = linker->firstStrip;
 	while (linkerStrip) {
@@ -190,7 +192,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fxOnRejectedPromise);
 				fxStripCallback(linker, fxOnResolvedPromise);
 				fxStripCallback(linker, fxOnThenable);
-				fxStripCallback(linker, fxOnUnhandledRejection);
 				fxUnuseCode(XS_CODE_ASYNC_FUNCTION);
 				fxUnuseCode(XS_CODE_ASYNC_GENERATOR_FUNCTION);
 				fxUnuseCode(XS_CODE_IMPORT);
@@ -212,6 +213,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Set);
 			else if (!c_strcmp(name, "SharedArrayBuffer"))
 				fxStripCallback(linker, fx_SharedArrayBuffer);
+			else if (!c_strcmp(name, "StaticModuleRecord")) {
+				fxStripCallback(linker, fx_StaticModuleRecord);
+				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_bindings);
+			}
 			else if (!c_strcmp(name, "Uint8Array")) {
 				fxUnuseSymbol(linker, mxID(_Uint8Array));
 				fxStripCallback(linker, fx_Uint8Array);
@@ -351,7 +356,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fxOnRejectedPromise);
 		fxUnstripCallback(linker, fxOnResolvedPromise);
 		fxUnstripCallback(linker, fxOnThenable);
-		fxUnstripCallback(linker, fxOnUnhandledRejection);
 	}
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Reflect)))
 		fxStripObject(linker, the, &mxReflectObject);
@@ -375,6 +379,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		else {
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_dotAll);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_hasIndices);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_flags);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_ignoreCase);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_multiline);
@@ -529,10 +534,6 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	}
 	fprintf(file, "\tC_NULL,\n");
 	fprintf(file, "\tC_NULL,\n");
-	if (fxIsCallbackStripped(linker, fx_Promise))
-		fprintf(file, "\tfxExecuteModulesSync,\n");
-	else
-		fprintf(file, "\tfxExecuteModules,\n");
 	if (fxIsCodeUsed(XS_CODE_IMPORT) || !fxIsCallbackStripped(linker, fx_Compartment_prototype_import))
 		fprintf(file, "\tfxRunImport,\n");
 	else

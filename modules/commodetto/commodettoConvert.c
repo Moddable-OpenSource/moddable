@@ -50,7 +50,7 @@ void xs_Convert_destructor(void *data)
 	if (data) {
 		xsConvert c = data;
 		if (c->clut)
-			free(c->clut);
+			c_free(c->clut);
 	}
 }
 
@@ -70,36 +70,39 @@ void xs_Convert(xsMachine *the)
 
 	if (kCommodettoBitmapCLUT16 == c->dstPixelFormat) {
 		void *clut;
-		uint32_t clutBytes;
+		xsUnsignedValue clutBytes;
 
-		if (!xsmcTest(xsArg(2)))
-			xsErrorPrintf("clut required");
+		xsmcGetBufferReadable(xsArg(2), (void **)&clut, &clutBytes);
 
-		if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-			clut = xsmcToArrayBuffer(xsArg(2));
-			clutBytes = xsmcGetArrayBufferLength(xsArg(2));
-		}
-		else {
-			xsmcVars(1);
-			clut = xsmcGetHostData(xsArg(2));
-			xsmcGet(xsVar(0), xsArg(2), xsID_byteLength);
-			clutBytes = xsmcToInteger(xsVar(0));
-		}
-
-		c->clut = malloc(clutBytes);
+		c->clut = c_malloc(clutBytes);
 		if (NULL == c->clut)
 			xsErrorPrintf("not enough memory to clone clut");
-		memcpy(c->clut, clut, clutBytes);
+		c_memcpy(c->clut, clut, clutBytes);
 	}
 }
 
 void xs_convert_process(xsMachine *the)
 {
-	void *src, *dst;
+	uint8_t *src, *dst;
 	xsUnsignedValue srcLength, dstLength, pixelCount;
 
-	xsmcGetBuffer(xsArg(0), &src, &srcLength);
-	xsmcGetBuffer(xsArg(1), &dst, &dstLength);
+	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
+	if (xsmcArgc < 6) 
+		xsmcGetBufferWritable(xsArg(1), (void **)&dst, &dstLength);
+	else {
+		xsIntegerValue srcOffset = xsmcToInteger(xsArg(1));
+		xsIntegerValue srcCount = xsmcToInteger(xsArg(2));
+		xsIntegerValue dstOffset = xsmcToInteger(xsArg(4));
+		xsIntegerValue dstCount = xsmcToInteger(xsArg(5));
+		xsmcGetBufferWritable(xsArg(3), (void **)&dst, &dstLength);
+		if ((srcOffset < 0) || ((xsUnsignedValue)(srcOffset + srcCount) > srcLength) ||  
+			(dstOffset < 0) || ((xsUnsignedValue)(dstOffset + dstCount) > dstLength))
+			xsUnknownError("dst buffer too small");
+		src += srcOffset;
+		srcLength = srcCount;
+		dst += dstOffset;
+		dstLength = dstCount;
+	}
 
 	xsConvert c = xsmcGetHostChunk(xsThis);
 	pixelCount = (srcLength << 3) / c->srcPixelDepth;
@@ -127,6 +130,7 @@ static void ccGray256toGray16(uint32_t pixelCount, void *src, void *dst, void *c
 static void ccGray256toRGB332(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void ccGray256toRGB565LE(uint32_t pixelCount, void *src, void *dst, void *clut);
 
+static void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 static void ccRGB565LEtoGray256(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
 static void cc24RGBtoMonochrome(uint32_t pixelCount, void *src, void *dst, void *clut);
@@ -171,7 +175,7 @@ static const CommodettoConverter gFromGray256[] ICACHE_XS6RO_ATTR = {
 };
 
 static const CommodettoConverter gFromRGB565LE[] ICACHE_XS6RO_ATTR = {
-	NULL,					// toMonochrome
+	ccRGB565LEtoMonochrome,	// toMonochrome
 	NULL,					// toGray16
 	ccRGB565LEtoGray256,	// toGray256
 	NULL,					// toRGB332
@@ -320,6 +324,42 @@ void ccGray256toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, 
 	while (pixelCount--) {
 		uint8_t gray256 = *src++;
 		*dst++ = ((gray256 >> 3) << 11) | ((gray256 >> 2) << 5) | (gray256 >> 3);
+	}
+}
+
+void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint16_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+	uint8_t mask = 0x80;
+	uint8_t mono = 0;
+
+	while (pixelCount--) {
+		uint16_t srcPixel = *src++;
+
+		if (0) {
+			if (!srcPixel)		// any non-zero pixel is black
+				mono |= mask;
+		}
+		else if (0) {
+			uint8_t r = srcPixel >> 11;
+			uint8_t g = (srcPixel >> 5) & 0x3F;
+			uint8_t b = (srcPixel & 0x1F);
+
+			if (!toGray(r, g, b))
+				mono |= mask;
+		}
+		else {
+			if (!(srcPixel & 0x8410))
+				mono |= mask;
+		}
+
+		mask >>= 1;
+		if (!mask) {
+			*dst++ = mono;
+			mono = 0;
+			mask = 0x80;
+		}
 	}
 }
 

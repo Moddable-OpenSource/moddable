@@ -55,10 +55,12 @@ export class Test262Context {
 		this.reset();
 	}
 	editFilter(name) {
-		this.home.filter = system.buildPath(this.home.path, name);
-		this.home.name = name;
-		this.reset();
-		application.distribute("onTest262FilterChanged", this.home.filter);
+		if (this.home.name != name) {
+			this.home.filter = system.buildPath(this.home.path, name);
+			this.home.name = name;
+			this.reset();
+			application.distribute("onTest262FilterChanged", this.home.filter);
+		}
 	}
 	fail(reason) {
 		let metadata = this.metadata;
@@ -116,14 +118,19 @@ export class Test262Context {
 		}
 	}
 	onDisconnected(machine) {
-		if (this.machine == machine)
+		if (this.machine == machine) {
 			this.machine = null;
+			let metadata = this.metadata;
+			if (metadata) {
+				this.fail(`Unhandled exception`);
+			}
+		}
 	}
 	onImport(machine, path) {
 		if (system.fileExists(path))
 			machine.doModule(path);
 		else
-			machine.doAbort();
+			machine.doGo();
 	}
 	onMessage(machine, message) {
 		if (message == ">") {
@@ -142,9 +149,9 @@ export class Test262Context {
 				else if (metadata.paths.length > 0) {
 					let path = metadata.paths.shift();
 					if (metadata.module)
-						machine.doModule(path);
+						machine.doImport(path, metadata.async);
 					else
-						machine.doScript(path);
+						machine.doScript(path, metadata.async);
 				}
 				else {
 					if (metadata.negative)
@@ -221,17 +228,24 @@ export class Test262Context {
 		let node = this.node;
 		while (node = node.next()) {
 			let path = node.path;
-			this.metadata = this.getMetadata(path);
-			if (this.metadata.strict || this.metadata.module) {
+			let metadata = this.metadata = this.getMetadata(path);
+			if (metadata.strict || metadata.module) {
 				this.node = node;
 				let directory = system.getPathDirectory(this.home.path);
 				let harness = system.buildPath(directory, "harness");
-				this.metadata.paths = this.metadata.paths.map(name => system.buildPath(harness, name));
-				this.metadata.paths.push(path);
-				this.metadata.path = path;
-				this.report.status = this.metadata.name = path.slice(this.home.path.length + 1);
-				path = this.metadata.paths.shift();
-				machine.doScript(path);
+				metadata.paths = metadata.paths.map(name => system.buildPath(harness, name));
+				metadata.paths.push(path);
+				metadata.path = path;
+				this.report.status = metadata.name = path.slice(this.home.path.length + 1);
+				path = metadata.paths.shift();
+				if (metadata.paths.length == 0) {
+					if (metadata.module)
+						machine.doImport(path, metadata.async);
+					else
+						machine.doScript(path, metadata.async);
+				}
+				else
+					machine.doScript(path);
 				return;
 			}
 			this.report.skipped++;
@@ -512,11 +526,14 @@ class Test262FailureRowBehavior extends RowBehavior {
 };
 
 class Test262LocateRowBehavior extends RowBehavior {
+	doOpenDirectoryCallback(button, path) {
+		this.data.locate(system.buildPath(path, "test"));
+	}
 	onTap(button) {
 		var dictionary = { message:"Open test262 repository", prompt:"Open" };
 		system.openDirectory(dictionary, path => { 
 			if (path)
-				this.data.locate(system.buildPath(path, "test"));
+				button.defer("doOpenDirectoryCallback", new String(path)); 
 		});
 	}
 };

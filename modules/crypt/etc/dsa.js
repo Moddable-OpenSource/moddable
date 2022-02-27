@@ -63,11 +63,11 @@ export default class DSA {
 		return sig;
 	};
 	sign(H, asn1) {
+		var sig = this._sign(H);
 		if (asn1) {
 			return BER.encode([0x30, [0x02, sig.r], [0x02, sig.s]]);
 		}
 		else {
-			var sig = this._sign(H);
 			var os = new ArrayBuffer();
 			return os.concat(Crypt.PKCS1.I2OSP(sig.r, 20), Crypt.PKCS1.I2OSP(sig.s, 20));
 		}

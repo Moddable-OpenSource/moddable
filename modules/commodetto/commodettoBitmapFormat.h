@@ -39,6 +39,7 @@
 #define kCommodettoBitmapPNG (15)
 #define kCommodettoBitmapCLUT256 (16)
 #define kCommodettoBitmapCLUT32 (17)
+#define kCommodettoBitmapColorCell (18)
 
 
 #define kCommodettoBitmapPacked (0x80)

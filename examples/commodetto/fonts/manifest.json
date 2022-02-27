@@ -1,0 +1,47 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/files/resourceiterator/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"resources": {
+		"*-mask": [
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
+				"size": 28
+			},
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Bold",
+				"size": 28
+			},
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Light",
+				"size": 28
+			},
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Smibold",
+				"size": 28
+			},
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/FiraMono/FiraMono-Regular",
+				"size": 28
+			},
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/Radley/Radley-Italic",
+				"size": 28
+			},
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/NotoSans/NotoSansJP-Regular",
+				"size": 24,
+				"characters": "JavaScript（ジャバスクリプト）とは、プログラミング言語のひとつである。"
+			},
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/SourceCodePro/SourceCodePro-Regular",
+				"size": 28
+			}
+		]
+	}
+}

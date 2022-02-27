@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Moddable Tech, Inc.
+ * Copyright (c) 2019-2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -29,8 +29,7 @@ uint8_t builtinArePinsFree(uint32_t bank, uint32_t pin);
 uint8_t builtinUsePins(uint32_t bank, uint32_t pin);
 void builtinFreePins(uint32_t bank, uint32_t pin);
 
-uint8_t builtinHasCallback(xsMachine *the, xsIdentifier id);
-uint8_t builtinGetCallback(xsMachine *the, xsIdentifier id, xsSlot *slot);
+xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 #if ESP32
 	#define kPinBanks (2)
@@ -67,8 +66,9 @@ uint8_t builtinSetFormat(xsMachine *the);
 void builtinInitializeTarget(xsMachine *the);
 uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format);
 
-uint32_t builtinGetPin(xsMachine *the, xsSlot *slot);
+int32_t builtinGetSignedInteger(xsMachine *the, xsSlot *slot);
+uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 
-void *builtinGetBufferPointer(xsMachine *the, xsSlot *slot, uint32_t *byteLength);
+#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
 
 #endif

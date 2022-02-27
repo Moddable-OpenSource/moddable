@@ -66,8 +66,7 @@ class SMBus {
         this.#byteBuffer[0] = register;
         io.write(this.#byteBuffer, this.#stop);
 
-        io.read(buffer);
-        return buffer;
+        return io.read(buffer);
     }
 
     writeByte(register, byte) {
@@ -122,6 +121,14 @@ class SMBus {
 
 	writeQuick() {
 		this.#io.write(new ArrayBuffer, this.#stop);
+	}
+
+	get format() {
+		return "buffer";
+	}
+	set format(value) {
+		if ("buffer" !== value)
+			throw new Error;
 	}
 }
 

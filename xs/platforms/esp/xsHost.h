@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -248,20 +248,6 @@ double __ieee754_fmod_patch(double x, double y);
 #endif
 
 /*
-	VM
-*/
-
-#ifdef __XS__
-	extern xsMachine *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, const char *name);
-
-	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
-#else
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, const char *name);
-#endif
-
-void modLoadModule(void *the, const char *name);
-
-/*
 	debugging
 */
 
@@ -299,18 +285,6 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 	#define MOD_TASKS (true)
 
 	#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
-#endif
-
-/*
-	instrumentation
-*/
-
-#if defined(mxInstrument) && defined(__XS__)
-	#include "modTimer.h"
-
-	void espInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
-	void espInstrumentMachineEnd(xsMachine *the);
-	void espInstrumentMachineReset(xsMachine *the);
 #endif
 
 /*
@@ -539,8 +513,6 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 uint8_t modSPIErase(uint32_t offset, uint32_t size);
-
-char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 /* CPU */
 

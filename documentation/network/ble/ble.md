@@ -1154,7 +1154,7 @@ The `filterPolicy` property can be one of the following:
 
 The `startAdvertising` function starts broadcasting advertisement and scan response packets. The function is also used to configure discoverable and connectable modes.
 
-The `advertisementData` and `scanResponseData` contain one or more properties corresponding to the [Bluetooth Advertisement Data Types](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile):
+The `advertisingData` and `scanResponseData` contain one or more properties corresponding to the [Bluetooth Advertisement Data Types](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile):
 
 | Property | Type | Description |
 | --- | --- | :--- |

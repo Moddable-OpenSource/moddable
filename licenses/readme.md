@@ -1,7 +1,7 @@
 # Moddable SDK – Licenses
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2017-2022 Moddable Tech, Inc.
 
-Revised: November 26, 2017
+Revised: February 14, 2022
 
 This directory contains documents related to licensing.
 
@@ -23,6 +23,9 @@ The example code in the Moddable SDK is provided under the Creative Commons [Att
 Some of the software in the Moddable SDK, primarily that related to the XS JavaScript engine, is derived from work done by the Kinoma team as an independent company and part of Marvell Semiconductor. XS is licensed by Marvell under the Apache 2.0 license. Files that carry the Apache license from Marvell and have since been modified as part of the Moddable SDK carry both the GPL 3.0 (or LGPL 3.0) license and the original Apache license.
 
 The [`license/NOTICE`](NOTICE) file contains the license grant by Marvell Semiconductor, from the [KinomaJS](https://github.com/Kinoma/kinomajs/) repository on GitHub.
+
+### SIL OPEN FONT LICENSE Version 1.1
+Some of the fonts in the Moddable SDK are provided under the SIL OPEN FONT LICENSE Version 1.1 license. The text of this license is provided in [OFL.txt](./OFT.txt).
 
 ### Contributor License Agreement
 Moddable welcomes third party contributions to the Moddable SDK. Before we can accept a change, we ask that you complete a Contributor License Agreement. This ensures all users of the Moddable SDK that you have the right to make the contribution, and that they can continue to use the Moddable SDK with your changes under the existing licenses. The contributor license agreements are in the files [Moddable CLA - individual.pdf](Moddable%20CLA%20-%20individual.pdf) and [Moddable CLA - corporate.pdf](Moddable%20CLA%20-%20corporate.pdf).

@@ -32,7 +32,6 @@ static void fxInstallFragment(txSerialTool self);
 static int mapHex(char c);
 static void fxSetPref(txSerialTool self);
 
-static uint8_t gReset = 0;
 static uint8_t gRestarting = 0;
 static char *gCmd = NULL;
 static char *gModuleName = NULL;
@@ -51,6 +50,8 @@ static char* gEPC1Buffer;
 static int gStackIndex;
 static int gExceptionNumber = -1;
 static int gdbMode = 0;
+static FILE *gCoreDump = 0;
+static char gCoreDumpPath[1024];
 
 typedef struct {
 	void	*next;
@@ -238,8 +239,6 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 int fxInitializeTarget(txSerialTool self)
 {
 	char out[64];
-
-	gReset = 0;
 
 #if 0
 	{
@@ -566,13 +565,12 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 				}
 				else {
 					fxCloseNetwork(self, value);
-					gReset = 0 == value;
 					gRestarting = 0;
 				}
 			}
 			else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
 				txSerialMachine machine = self->currentMachine;
-				if (gReset) {
+				if ((1 == machine->receiveCount) && !self->firstMachine->nextMachine) {	// first command when after transitioning from 0 to 1 machines
 					if (fxInitializeTarget(self))
 						self->currentMachine->suppress = 1;
 				}
@@ -581,7 +579,43 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 			}
 			else {
 				dst[-2] = 0;
-				if (offset > 2) fprintf(stderr, "%s\n", self->buffer);
+
+				// esp32 core dump - capture to temporary file then run espcoredump.py 
+				if (TOOLS_BIN && elfPath && !gCoreDump && strstr(self->buffer, "================= CORE DUMP START =================")) {
+					char *msg = "<xsbug><log># ESP32 Core Dump!!\n</log></xsbug>\r\n";
+					fxWriteNetwork(self->currentMachine, msg, strlen(msg));
+
+					strcpy(gCoreDumpPath, elfPath);
+					strcpy(strrchr(gCoreDumpPath, '/') + 1, "coredump.txt");
+					fprintf(stderr, "Writing CORE DUMP to %s\n", gCoreDumpPath);
+					gCoreDump = fopen(gCoreDumpPath, "wb");
+					dst = self->buffer;
+					offset = 0;
+					continue;
+				}
+				if (gCoreDump) {
+					if (strstr(self->buffer, "================= CORE DUMP END =================")) {
+						fclose(gCoreDump);
+						gCoreDump = NULL;
+
+						char *output;
+						char command[2048];
+						sprintf(command, "espcoredump.py info_corefile -t b64 -c %s %s", gCoreDumpPath, elfPath);
+						fprintf(stderr, "%s\n", command);
+						systemCommand(command, &output);
+						fprintf(stderr, "%s\n", output);
+						free(output);
+					}
+					else {
+						fwrite(self->buffer, 1, strlen(self->buffer), gCoreDump);
+						fwrite("\n", 1, 1, gCoreDump);
+					}
+					dst = self->buffer;
+					offset = 0;
+					continue;
+				}
+
+				if (offset > 2) fprintf(stderr, "%s\n", self->buffer);				
 
 				if (TOOLS_BIN && elfPath && strstr(self->buffer, "gdb stub")) {
 					gdbMode = 1;

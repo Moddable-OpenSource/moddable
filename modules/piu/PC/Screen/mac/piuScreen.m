@@ -647,6 +647,20 @@ void PiuScreen_quit(xsMachine* the)
     [(*self)->nsScreenView quitMachine];
 }
 
+void PiuScreen_writePNG(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	txScreen* screen = (*self)->screen;
+	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+	CGDataProviderRef provider = CGDataProviderCreateWithData(nil, screen->buffer, screen->width * screen->height * screenBytesPerPixel, nil);
+	CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big | kCGImageAlphaNoneSkipLast, provider, nil, NO, kCGRenderingIntentDefault);
+    CFStringRef path = CFStringCreateWithCString(NULL, xsToString(xsArg(0)), kCFStringEncodingUTF8);
+	CFURLRef url = CFURLCreateWithFileSystemPath(NULL, path, kCFURLPOSIXPathStyle, false);
+	CGImageDestinationRef destination = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, NULL);
+    CGImageDestinationAddImage(destination, image, NULL);
+	CGImageDestinationFinalize(destination);
+}
+
 void fxScreenAbort(txScreen* screen, int status)
 {
 	NSPiuScreenView *screenView = screen->view;

@@ -788,6 +788,7 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 {
 	serviceSearchRecord *entry;
 	xsBeginHost(gBLE->the);
+	xsmcVars(4);
 	while (NULL != (entry = (serviceSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
 		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
 		if (!connection)
@@ -800,7 +801,6 @@ static void serviceDiscoveryEvent(void *the, void *refcon, uint8_t *message, uin
 			uint16_t length;
 			uint8_t buffer[16];
 			uuidToBuffer(buffer, &service->uuid, &length);
-			xsmcVars(4);
 			xsmcSetNewObject(xsVar(0));
 			xsmcSetArrayBuffer(xsVar(1), buffer, length);
 			xsmcSetInteger(xsVar(2), service->start_handle);
@@ -819,6 +819,7 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 {
 	characteristicSearchRecord *entry;
 	xsBeginHost(gBLE->the);
+	xsmcVars(4);
 	while (NULL != (entry = (characteristicSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
 		modBLEConnection connection = modBLEConnectionFindByConnectionID(entry->conn_id);
 		if (!connection)
@@ -834,7 +835,6 @@ static void characteristicDiscoveryEvent(void *the, void *refcon, uint8_t *messa
 			uint16_t length;
 			uint8_t buffer[16];
 			uuidToBuffer(buffer, &chr->uuid, &length);
-			xsmcVars(4);
 			xsmcSetNewObject(xsVar(0));
 			xsmcSetArrayBuffer(xsVar(1), buffer, length);
 			xsmcSetInteger(xsVar(2), chr->val_handle);
@@ -889,6 +889,7 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 {
 	descriptorSearchRecord *entry;
 	xsBeginHost(gBLE->the);
+	xsmcVars(4);
 	while (NULL != (entry = (descriptorSearchRecord*)modBLEMessageQueueDequeue(&gBLE->discoveryQueue))) {		
 		modBLEConnection connection = modBLEConnectionFindByConnectionID(entry->conn_id);
 		if (!connection)
@@ -904,7 +905,6 @@ static void descriptorDiscoveryEvent(void *the, void *refcon, uint8_t *message, 
 			uint16_t length;
 			uint8_t buffer[16];
 			uuidToBuffer(buffer, &dsc->uuid, &length);
-			xsmcVars(4);
 			xsmcSetNewObject(xsVar(0));
 			xsmcSetArrayBuffer(xsVar(1), buffer, length);
 			xsmcSetInteger(xsVar(2), dsc->handle);
@@ -927,11 +927,11 @@ static void notificationEvent(void *the, void *refcon, uint8_t *message, uint16_
 {
 	attributeNotificationRecord *entry;
 	xsBeginHost(gBLE->the);
+	xsmcVars(3);
 	while (NULL != (entry = (attributeNotificationRecord*)modBLEMessageQueueDequeue(&gBLE->notificationQueue))) {
 		modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(entry->conn_id);
 		if (!connection)
 			xsUnknownError("connection not found");
-		xsmcVars(3);
 		xsmcSetNewObject(xsVar(0));
 		xsmcSetArrayBuffer(xsVar(1), entry->data, entry->length);
 		xsmcSetInteger(xsVar(2), entry->handle);

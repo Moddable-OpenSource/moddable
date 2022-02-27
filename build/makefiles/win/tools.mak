@@ -126,6 +126,7 @@ MODULES = \
 	$(MOD_DIR)\resampler.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
 	$(MOD_DIR)\tool.xsb \
+	$(MOD_DIR)\unicode-ranges.xsb \
 	$(MOD_DIR)\wav2maud.xsb \
 	$(MOD_DIR)\bles2gatt.xsb \
 	$(TMP_DIR)\commodettoBitmap.xsi \
@@ -154,6 +155,7 @@ PRELOADS =\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
 	-p resampler.xsb\
+	-p unicode-ranges.xsb\
 	-p file.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 

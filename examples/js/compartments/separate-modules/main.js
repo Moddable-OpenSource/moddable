@@ -3,10 +3,10 @@ function test() {
     trace("app " + increment() + "\n");
 }
 let compartment = new Compartment({}, {
-	"mod":"mod", 
-	"increment":"increment" 
+	increment: "increment",
+	mod: "mod",
 });
-let modNS = await compartment.import("mod");
+let modNS = compartment.importNow("mod");
 test();
 modNS.test();
 test();

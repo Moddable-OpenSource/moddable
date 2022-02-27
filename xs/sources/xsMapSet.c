@@ -189,7 +189,7 @@ txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_MAP_KIND) && (instance != mxMapPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 				mxTypeError("Map instance is read-only");
 			return instance;
 		}
@@ -227,17 +227,17 @@ txSlot* fxNewMapInstance(txMachine* the)
 	address = (txSlot**)fxNewChunk(the, mxTableMinLength * sizeof(txSlot*));
 	c_memset(address, 0, mxTableMinLength * sizeof(txSlot*));
 	/* TABLE */
-	table->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	table->flag = XS_INTERNAL_FLAG;
 	table->kind = XS_MAP_KIND;
 	table->value.table.address = address;
 	table->value.table.length = mxTableMinLength;
 	/* LIST */
-	list->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	list->flag = XS_INTERNAL_FLAG;
 	list->kind = XS_LIST_KIND;
 	list->value.list.first = C_NULL;
 	list->value.list.last = C_NULL;
 	/* SIZE */
-	size->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	size->flag = XS_INTERNAL_FLAG;
 	size->kind = XS_INTEGER_KIND;
 	size->value.integer = 0;
  	return map;
@@ -408,7 +408,7 @@ txSlot* fxNewMapIteratorInstance(txMachine* the, txSlot* iterable, txInteger kin
 	property->kind = XS_LIST_KIND;
 	property->value.list.first = C_NULL;
 	property->value.list.last = C_NULL;
-	property = fxNextIntegerProperty(the, property, kind, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, kind, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 	return instance;
 }
@@ -461,7 +461,7 @@ txSlot* fxCheckSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_SET_KIND) && (instance != mxSetPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 				mxTypeError("Set instance is read-only");
 			return instance;
 		}
@@ -499,17 +499,17 @@ txSlot* fxNewSetInstance(txMachine* the)
 	address = (txSlot**)fxNewChunk(the, mxTableMinLength * sizeof(txSlot*));
 	c_memset(address, 0, mxTableMinLength * sizeof(txSlot*));
 	/* TABLE */
-	table->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	table->flag = XS_INTERNAL_FLAG;
 	table->kind = XS_SET_KIND;
 	table->value.table.address = address;
 	table->value.table.length = mxTableMinLength;
 	/* LIST */
-	list->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	list->flag = XS_INTERNAL_FLAG;
 	list->kind = XS_LIST_KIND;
 	list->value.list.first = C_NULL;
 	list->value.list.last = C_NULL;
 	/* SIZE */
-	size->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	size->flag = XS_INTERNAL_FLAG;
 	size->kind = XS_INTEGER_KIND;
 	size->value.integer = 0;
  	return set;
@@ -654,7 +654,7 @@ txSlot* fxNewSetIteratorInstance(txMachine* the, txSlot* iterable, txInteger kin
 	property->kind = XS_LIST_KIND;
 	property->value.list.first = C_NULL;
 	property->value.list.last = C_NULL;
-	property = fxNextIntegerProperty(the, property, kind, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, kind, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 	return instance;
 }
@@ -983,7 +983,7 @@ txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_MAP_KIND) && (instance != mxWeakMapPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag &  XS_DONT_SET_FLAG))
 				mxTypeError("WeakMap instance is read-only");
 			return instance;
 		}
@@ -1014,7 +1014,7 @@ txSlot* fxNewWeakMapInstance(txMachine* the)
 	the->stack->value.reference = map;
 	/* LIST */
 	list = map->next = fxNewSlot(the);
-	list->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	list->flag = XS_INTERNAL_FLAG;
 	list->kind = XS_WEAK_MAP_KIND;
 	list->value.weakList.first = C_NULL;
 	list->value.weakList.link = the->firstWeakListLink;
@@ -1110,7 +1110,7 @@ txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_SET_KIND) && (instance != mxWeakSetPrototype.value.reference)) {
-			if (mutable && (slot->flag & XS_MARK_FLAG))
+			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
 				mxTypeError("WeakSet instance is read-only");
 			return instance;
 		}
@@ -1141,7 +1141,7 @@ txSlot* fxNewWeakSetInstance(txMachine* the)
 	the->stack->value.reference = set;
 	/* LIST */
 	list = set->next = fxNewSlot(the);
-	list->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	list->flag = XS_INTERNAL_FLAG;
 	list->kind = XS_WEAK_SET_KIND;
 	list->value.weakList.first = C_NULL;
 	list->value.weakList.link = the->firstWeakListLink;
@@ -1271,14 +1271,14 @@ void fxSetWeakEntry(txMachine* the, txSlot* list, txSlot* key, txSlot* value)
 	slot->value = value->value;
 	
 	keyEntry->next = *address;
-	keyEntry->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	keyEntry->flag = XS_INTERNAL_FLAG;
 	keyEntry->kind = XS_WEAK_ENTRY_KIND;
 	keyEntry->value.weakEntry.check = list;
 	keyEntry->value.weakEntry.value = slot;
 	*address = keyEntry;
 	
 	listEntry->next = list->value.weakList.first;
-	listEntry->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	listEntry->flag = XS_INTERNAL_FLAG;
 	listEntry->kind = XS_WEAK_ENTRY_KIND;
 	listEntry->value.weakEntry.check = key;
 	listEntry->value.weakEntry.value = slot;
@@ -1324,7 +1324,7 @@ txSlot* fxNewWeakRefInstance(txMachine* the)
 	the->stack->kind = XS_REFERENCE_KIND;
 	the->stack->value.reference = instance;
 	slot = instance->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	slot->flag = XS_INTERNAL_FLAG;
 	slot->kind = XS_WEAK_REF_KIND;
 	slot->value.weakRef.target = C_NULL;
 	slot->value.weakRef.link = C_NULL;
@@ -1400,7 +1400,7 @@ void fx_FinalizationRegistry(txMachine* the)
 	the->stack->value.reference = instance;
 	mxPullSlot(mxResult);
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CLOSURE_KIND;
 	property->value.closure = C_NULL;
 	registry = fxNewSlot(the);

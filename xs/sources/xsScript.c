@@ -46,6 +46,36 @@ void fxCheckParserStack(txParser* parser, txInteger line)
     }
 }
 
+txString fxCombinePath(txParser* parser, txString base, txString name)
+{
+	txSize baseLength, nameLength;
+	txString path;
+	txString separator ;
+#if mxWindows
+	separator = name;
+	while (*separator) {
+		if (*separator == '/')
+			*separator = '\\';
+		separator++;
+	}
+	separator = strrchr(base, '\\');
+#else
+	separator = strrchr(base, '/');
+#endif
+	if (separator) {
+		separator++;
+		baseLength = mxPtrDiff(separator - base);
+	}
+	else
+		baseLength = 0;
+	nameLength = mxStringLength(name);
+	path = fxNewParserChunk(parser, baseLength + nameLength + 1);
+	if (baseLength)
+		c_memcpy(path, base, baseLength);
+	c_memcpy(path + baseLength, name, nameLength + 1);
+	return path;
+}
+
 void fxDisposeParserChunks(txParser* parser)
 {
 	txParserChunk** address = &parser->first;
@@ -88,7 +118,6 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->constructorSymbol = fxNewParserSymbol(parser, "constructor");
 	parser->defaultSymbol = fxNewParserSymbol(parser, "default");
 	parser->doneSymbol = fxNewParserSymbol(parser, "done");
-	parser->ErrorSymbol = fxNewParserSymbol(parser, "Error");
 	parser->evalSymbol = fxNewParserSymbol(parser, "eval");
 	parser->exportsSymbol = fxNewParserSymbol(parser, "exports");
 	parser->fillSymbol = fxNewParserSymbol(parser, "fill");
@@ -109,6 +138,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->ofSymbol = fxNewParserSymbol(parser, "of");
 	parser->privateConstructorSymbol = fxNewParserSymbol(parser, "#constructor");
 	parser->prototypeSymbol = fxNewParserSymbol(parser, "prototype");
+	parser->RangeErrorSymbol = fxNewParserSymbol(parser, "RangeError");
 	parser->rawSymbol = fxNewParserSymbol(parser, "raw");
 	parser->returnSymbol = fxNewParserSymbol(parser, "return");
 	parser->setSymbol = fxNewParserSymbol(parser, "set");
@@ -203,7 +233,7 @@ void fxReportMemoryError(txParser* parser, txInteger line, txString theFormat, .
     (*parser->reportError)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
 	c_va_end(arguments);
 	if (parser->console) {
-		parser->errorSymbol = parser->ErrorSymbol;
+		parser->errorSymbol = parser->RangeErrorSymbol;
 		if (parser->buffer != theFormat) {
 			c_va_start(arguments, theFormat);
 			c_vsnprintf(parser->buffer, parser->bufferSize, theFormat, arguments);

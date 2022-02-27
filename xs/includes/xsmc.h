@@ -69,7 +69,9 @@ extern "C" {
 #define xsmcSetStringBuffer(_SLOT, _BUFFER,_SIZE)	fxStringBuffer(the, &_SLOT, _BUFFER ,_SIZE)
 
 #undef xsArrayBuffer
-#define xsmcSetArrayBuffer(_SLOT, _BUFFER, _SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE)
+#define xsmcSetArrayBuffer(_SLOT, _BUFFER, _SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE, -1)
+#undef xsArrayBufferResizable
+#define xsmcSetArrayBufferResizable(_SLOT, _BUFFER, _SIZE, _MAX_SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE, _MAX_SIZE)
 #undef xsGetArrayBufferData
 #define xsmcGetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE)	fxGetArrayBufferData(the, &_SLOT, _OFFSET, _BUFFER, _SIZE)
 #undef xsSetArrayBufferData
@@ -79,6 +81,9 @@ extern "C" {
 #undef xsGetArrayBufferLength
 #undef xsmcGetArrayBufferLength
 #define xsmcGetArrayBufferLength(_SLOT) fxGetArrayBufferLength(the, &(_SLOT))
+#undef xsGetArrayBufferMaxLength
+#undef xsmcGetArrayBufferMaxLength
+#define xsmcGetArrayBufferMaxLength(_SLOT) fxGetArrayBufferMaxLength(the, &(_SLOT))
 
 mxImport void _xsNewArray(xsMachine*, xsSlot*, xsIntegerValue);
 #define xsmcNewArray(_LENGTH)	(_xsNewArray(the, &the->scratch, _LENGTH), the->scratch)
@@ -104,6 +109,7 @@ mxImport xsBooleanValue _xsIsInstanceOf(xsMachine *, xsSlot *, xsSlot *);
 #undef xsSet
 #undef xsSetAt
 #undef xsSetIndex
+#undef xsDefine
 #undef xsDelete
 #undef xsDeleteAt
 
@@ -126,6 +132,9 @@ mxImport void _xsSetAt(xsMachine *, xsSlot *, xsSlot *, xsSlot *);
 mxImport void _xsSetIndex(xsMachine *, xsSlot *, xsIndex, xsSlot *);
 #define xsmcSetIndex(_THIS, _INDEX, _SLOT)	_xsSetIndex(the, &_THIS, _INDEX, &_SLOT)
 
+mxImport void _xsDefine(xsMachine *, xsSlot *, xsIdentifier, xsSlot *, xsAttribute);
+#define xsmcDefine(_THIS, _ID, _SLOT, _ATTRIBUTES)	_xsDefine(the, &_THIS, _ID, &_SLOT, _ATTRIBUTES)
+
 mxImport void _xsDelete(xsMachine *, xsSlot *, xsIdentifier);
 #define xsmcDelete(_THIS, _ID)	_xsDelete(the, &_THIS, _ID)
 mxImport void _xsDeleteAt(xsMachine *, xsSlot *, xsSlot *);
@@ -142,15 +151,31 @@ mxImport xsBooleanValue _xsTest(xsMachine *, xsSlot *);
 #undef xsTest
 #define xsmcTest(_SLOT)	_xsTest(the, &_SLOT)
 
+#undef xsGetHostBufferLength
+#undef xsPetrifyHostBuffer
+#undef xsSetHostBuffer
+#define xsmcGetHostBufferLength(_SLOT)	fxGetHostBufferLength(the, &_SLOT)
+#define xsmcPetrifyHostBuffer(_SLOT) fxPetrifyHostBuffer(the, &_SLOT)
+#define xsmcSetHostBuffer(_SLOT, _DATA, _SIZE)	fxSetHostBuffer(the, &_SLOT, _DATA, _SIZE)
+
 #undef xsGetHostData
 #undef xsSetHostData
 #define xsmcGetHostData(_SLOT)	fxGetHostData(the, &_SLOT)
 #define xsmcSetHostData(_SLOT, _DATA)	fxSetHostData(the, &_SLOT, _DATA)
 
+#undef xsGetHostDataValidate
+#define xsmcGetHostDataValidate(_SLOT, validator)	fxGetHostDataValidate(the, &_SLOT, validator)
+
 #undef xsGetHostChunk
 #undef xsSetHostChunk
 #define xsmcGetHostChunk(_SLOT)	fxGetHostChunk(the, &_SLOT)
 #define xsmcSetHostChunk(_SLOT, _DATA, _SIZE)	fxSetHostChunk(the, &_SLOT, _DATA, _SIZE)
+
+#undef xsGetHostChunkValidate
+#define xsmcGetHostChunkValidate(_SLOT, validator)	fxGetHostChunkValidate(the, &_SLOT, validator)
+
+// note yet... #undef xsSetHostDestructor
+#define xsmcSetHostDestructor(_SLOT,_DESTRUCTOR) fxSetHostDestructor(the, &_SLOT, _DESTRUCTOR)
 
 #undef xsVars
 mxImport xsIntegerValue fxIncrementalVars(xsMachine*, xsIntegerValue);
@@ -159,8 +184,15 @@ mxImport xsIntegerValue fxIncrementalVars(xsMachine*, xsIntegerValue);
 mxImport xsIntegerValue _xsArgc(xsMachine*);
 #define xsmcArgc _xsArgc(the)
 
-mxImport void _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data, xsUnsignedValue *count);
-#define xsmcGetBuffer(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count)
+enum {
+	xsBufferNonrelocatable,
+	xsBufferRelocatable
+};
+
+mxImport xsIntegerValue _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data, xsUnsignedValue *count, xsBooleanValue writable);
+#define xsmcGetBuffer(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count, 0)
+#define xsmcGetBufferReadable(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count, 0)
+#define xsmcGetBufferWritable(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count, 1)
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,19 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"creation": {
+		"static": 65536
+	},
+	"modules": {
+		"*": [
+			"./../httpclient/httpclient",
+			"./fetch",
+			"./main"
+		],
+		"embedded:network/http/request": "./../httpclient/httpclient"
+	},
+	"preload": [
+		"embedded:network/http/request"
+	]
+}

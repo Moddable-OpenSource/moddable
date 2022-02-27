@@ -251,7 +251,7 @@ void xs_worker(xsMachine *the)
     }
 }
 
-void xs_worker_postfrominstantiator(xsMachine *the)
+void xs_worker_postfromworkerinstantiator(xsMachine *the)
 {
 	txWorker* worker = xsGetHostData(xsThis);
 	txWorkerMessageJob* job = c_calloc(sizeof(txWorkerMessageJob), 1);

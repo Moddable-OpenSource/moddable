@@ -1,7 +1,7 @@
 # Moddable SDK
 
-Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: December 4, 2020
+Copyright 2017-2021 Moddable Tech, Inc.<BR>
+Revised: November 4, 2021
 
 ## Modern software development for microcontrollers
 
@@ -11,7 +11,7 @@ Microcontrollers are highly constrained devices compared to modern computers and
 
 <a href="https://tc39.es/ecma262/">![JS logo](./documentation/assets/moddable/js.png)</a>
 
-The primary programming language for development is JavaScript. The XS JavaScript engine at the center of the Moddable SDK implements the [2020 JavaScript language standard](http://www.ecma-international.org/ecma-262/11.0/index.html) with better than 99% conformance.<sup>[[1](#footnotes)]</sup> The constraints of the target microcontroller may limit the number of language features that can be used in combination by a single application.
+The primary programming language for development is JavaScript. The XS JavaScript engine at the center of the Moddable SDK implements the [2021 JavaScript language standard](http://www.ecma-international.org/ecma-262/11.0/index.html) with better than 99% conformance.<sup>[[1](#footnotes)]</sup> The constraints of the target microcontroller may limit the number of language features that can be used in combination by a single application.
 
 The JavaScript language implemented in the Moddable SDK is the same language used in web pages and Node.js. The microcontroller that the scripts run on, however, is very different from a personal computer, server, or mobile device. These differences often require a different approach to using JavaScript. The APIs and objects in the Moddable SDK are quite different, being designed with the goal of minimizing memory use. Bring your existing experience with JavaScript, but be prepared to think about performance, code size, and memory use in a different way.<sup>[[2](#footnotes)]</sup>
 
@@ -204,7 +204,7 @@ We work to ensure that there are no security holes in the Moddable SDK. Still, i
 
 ## Questions? We're here to help
 
-If you're an independent developer, we recommend you [open an issue](./issues) or join us in our [Gitter chatroom](https://gitter.im/embedded-javascript/moddable). We'll respond as quickly as practical, and other developers can benefit from the answers to your questions.
+If you're an independent developer, we recommend you [start a discussion](./discussions) or join us in our [Gitter chatroom](https://gitter.im/embedded-javascript/moddable) if you have a question or want to talk about your projects. If you have trouble getting started or find any bugs, please [open an issue](./issues). We'll respond as quickly as practical, and other developers can benefit from the answers to your questions.
 
 <a href="http://www.moddable.com">![Moddable logo](./documentation/assets/moddable/moddable.png)</a>
 

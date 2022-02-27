@@ -181,6 +181,7 @@ enum {
 	mxStepInCommand,
 	mxStepOutCommand,
 	mxToggleCommand,
+	mxImportCommand,
 	mxScriptCommand,
 	mxModuleCommand,
 };
@@ -396,7 +397,7 @@ void PiuDebugBehavior_stop(xsMachine* the)
 
 void PiuDebugBehavior_formatBinaryMessage(xsMachine* the)
 {
-	xsIntegerValue length = c_strlen(xsToString(xsArg(0)));
+	xsIntegerValue length = (xsIntegerValue)c_strlen(xsToString(xsArg(0)));
 	if (length) {
 		xsStringValue from, to;
 		xsResult = xsStringBuffer(NULL, length + (length / 2) - 1);
@@ -1239,7 +1240,7 @@ void PiuDebugMachine_doBinaryCommandAux(xsMachine* the)
 	xsIntegerValue offset, length = 3;
 	uint8_t* header;
 	sprintf(buffer, "\15\12<?xs#%8.8X?>", address);
-	offset = c_strlen(buffer);
+	offset = (xsIntegerValue)c_strlen(buffer);
 	header = (uint8_t*)(buffer + offset);
 	if (payload)
 		length += xsGetArrayBufferLength(xsArg(2));
@@ -1336,20 +1337,31 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			c_strcat(buffer, xsToString(xsArg(1)));
 			c_strcat(buffer, "\"/>");
 			break;
+		case mxImportCommand:
+			c_strcat(buffer, "<import path=\"");
+			c_strcat(buffer, xsToString(xsArg(1)));
+			if (xsTest(xsArg(2)))
+				c_strcat(buffer, "\" line=\"1\"/>");
+			else
+				c_strcat(buffer, "\" line=\"0\"/>");
+			break;
 		}
 		c_strcat(buffer, "\15\12");
 //     	fprintf(stderr, "%s", buffer);
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 	}
 	else {
-		void* data = xsToArrayBuffer(xsArg(2));
-		size_t length = xsGetArrayBufferLength(xsArg(2));
+		void* data = xsToArrayBuffer(xsArg(3));
+		size_t length = xsGetArrayBufferLength(xsArg(3));
 		if (command == mxModuleCommand)
 			c_strcat(buffer, "\15\12<module path=\"");
 		else
 			c_strcat(buffer, "\15\12<script path=\"");
 		c_strcat(buffer, xsToString(xsArg(1)));
-		c_strcat(buffer, "\" line=\"0\"><![CDATA[");
+		if (xsTest(xsArg(2)))
+			c_strcat(buffer, "\" line=\"1\"><![CDATA[");
+		else
+			c_strcat(buffer, "\" line=\"0\"><![CDATA[");
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 		PiuDebugMachine_doCommandAux(the, self, data, length);
 		if (command == mxModuleCommand)
@@ -1381,7 +1393,7 @@ void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* bu
 	#elif mxWindows
 		if (self->socket != INVALID_SOCKET) {
 		again:
-			int count = send(self->socket, buffer, length, 0);
+			int count = send(self->socket, buffer, (int)length, 0);
 			if (count < 0) {
 				if (WSAEWOULDBLOCK == WSAGetLastError()) {
 					WaitMessage();
@@ -1393,7 +1405,7 @@ void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* bu
 	}
 	else {
 		xsResult = xsGet(xsThis, xsID_connection);
-		xsCall1(xsResult, xsID_write, xsArrayBuffer(buffer, length));
+		xsCall1(xsResult, xsID_write, xsArrayBuffer(buffer, (xsIntegerValue)length));
 	}
 }
 

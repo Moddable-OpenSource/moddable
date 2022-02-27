@@ -175,9 +175,7 @@ static const xsHostHooks PiuViewHooks ICACHE_RODATA_ATTR = {
 		switch(ID)
 #endif
 
-#define xsGetHostDataPoco(slot) ((void *)((char *)xsGetHostData(slot) - offsetof(PocoRecord, pixels)))
-
-void PiuViewAdjust(PiuView* self) 
+void PiuViewAdjust(PiuView* self)
 {
 }
 
@@ -1169,7 +1167,7 @@ void PiuApplication_animateColors(xsMachine* the)
 	PiuColorRecord color;
 	PocoColor colors[16];
 	xsIntegerValue i = 0;
-	xsVars(2);
+	xsVars(3);
 	while (i < 16) {
 		xsVar(0) = xsGetAt(xsArg(0), xsInteger(i));
 		PiuColorDictionary(the, &xsVar(0), &color);
@@ -1178,10 +1176,17 @@ void PiuApplication_animateColors(xsMachine* the)
 	}
 	xsVar(0) = xsReference((*view)->screen);
 	xsVar(1) = xsNewHostObject(NULL);
-	xsSetHostData(xsVar(1), colors);
-	xsVar(1) = xsCall1(xsVar(0), xsID_animateColors, xsVar(1));
-	if (xsTest(xsVar(1)))
-		PiuViewInvalidate(view, NULL);
+	xsSetHostBuffer(xsVar(1), colors, 16 * 2);
+	xsTry {
+		xsVar(2) = xsCall1(xsVar(0), xsID_animateColors, xsVar(1));
+		xsSetHostBuffer(xsVar(1), NULL, 0);
+		if (xsTest(xsVar(2)))
+			PiuViewInvalidate(view, NULL);
+	}
+	xsCatch {
+		xsSetHostBuffer(xsVar(1), NULL, 0);
+		xsThrow(xsException);
+	}
 #endif
 }
 
@@ -1193,7 +1198,7 @@ void PiuApplication_get_clut(xsMachine* the)
 	Poco poco = (*view)->poco;
 	xsVars(1);
 	xsResult = xsNewHostObject(NULL);
-	xsSetHostData(xsResult, poco->clut);
+	xsSetHostBuffer(xsResult, poco->clut, 16 * 2);
 #endif
 }
 
@@ -1207,7 +1212,7 @@ void PiuApplication_set_clut(xsMachine* the)
 	xsVars(2);
 	xsVar(0) = xsReference((*view)->screen);
 	xsVar(1) = xsNewHostObject(NULL);
-	xsSetHostData(xsVar(1), (16 * 16 * 16) + (16 * 2) + (uint8_t *)poco->clut);
+	xsSetHostBuffer(xsVar(1), (16 * 16 * 16) + (16 * 2) + (uint8_t *)poco->clut, 16 * 2);
 	xsSet(xsVar(0), xsID_clut, xsVar(1));
 	PiuViewInvalidate(view, NULL);
 #endif
@@ -1412,7 +1417,7 @@ void PiuView_onIdle(xsMachine* the)
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
 	(*self)->idleTicks = 0;
-#ifdef piuGPU
+#if defined(piuGPU) && defined(mxInstrument)
 	modInstrumentationMax(PiuCommandListUsed, piuTextureSize);
 #endif		
 }

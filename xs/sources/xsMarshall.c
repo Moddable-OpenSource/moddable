@@ -226,6 +226,7 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 	case XS_BIGINT_X_KIND:
 	case XS_DATA_VIEW_KIND:
 	case XS_KEY_X_KIND:
+	case XS_BUFFER_INFO_KIND:
 		theResult->value = theSlot->value;
 		theResult->kind = theSlot->kind;
 		break;
@@ -245,7 +246,6 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 			fxDemarshallChunk(the, theSlot->value.arrayBuffer.address, (void **)&(theResult->value.arrayBuffer.address));
 		else
 			theResult->value.arrayBuffer.address = C_NULL;
-		theResult->value.arrayBuffer.length = theSlot->value.arrayBuffer.length;
 		theResult->kind = theSlot->kind;
 		break;
 	case XS_REGEXP_KIND:
@@ -628,6 +628,7 @@ txBoolean fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddres
 	case XS_BIGINT_X_KIND:
 	case XS_DATA_VIEW_KIND:
 	case XS_KEY_X_KIND:
+	case XS_BUFFER_INFO_KIND:
 		break;
 		
 	case XS_STRING_KIND:
@@ -834,6 +835,7 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 	case XS_BIGINT_X_KIND:
 	case XS_DATA_VIEW_KIND:
 	case XS_KEY_X_KIND:
+	case XS_BUFFER_INFO_KIND:
 		break;
 		
 	case XS_STRING_KIND:

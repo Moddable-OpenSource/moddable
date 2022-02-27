@@ -57,7 +57,6 @@ typedef struct {
 	int					totalBytesAvailable;
 	uint16_t			blocksRemaining;
 	int					bytesInBuffer;
-	char				isArrayBuffer;
 	CommodettoBitmapFormat pixelFormat;
 	uint8_t				pixelSize;
 	uint8_t				bufferIndex;
@@ -155,6 +154,8 @@ void xs_JPEG_constructor(xsMachine *the)
 void xs_JPEG_push(xsMachine *the)
 {
 	JPEG jpeg = xsmcGetHostData(xsThis);
+	void *src;
+	xsUnsignedValue srcBytes;
 
 	if (!xsmcArgc) {
 		jpeg->endOfData = true;
@@ -169,12 +170,8 @@ void xs_JPEG_push(xsMachine *the)
 	if (0 == jpeg->totalBytesAvailable)
 		activateBuffer(jpeg);
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		jpeg->totalBytesAvailable += xsmcGetArrayBufferLength(xsArg(0));
-	else {
-		xsmcGet(xsResult, xsArg(0), xsID_byteLength);
-		jpeg->totalBytesAvailable += xsmcToInteger(xsResult);
-	}
+	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcBytes);
+	jpeg->totalBytesAvailable += srcBytes;
 
 	if (NULL == jpeg->r)
 		tryInitialize(the, jpeg);
@@ -609,9 +606,9 @@ uint8_t tryInitialize(xsMachine *the, JPEG jpeg)
 	if (!jpeg->pixels)
 		xsUnknownError("out of memory");
 	xsVar(0) = xsNewHostObject(pixelsDestructor);
-	xsmcSetHostData(xsVar(0), jpeg->pixels);
+	xsmcSetHostBuffer(xsVar(0), jpeg->pixels, pixelsLength);
 	xsmcSetInteger(xsVar(1), pixelsLength);
-	xsmcSet(xsVar(0), xsID_byteLength, xsVar(1));
+	xsmcDefine(xsVar(0), xsID_byteLength, xsVar(1), xsDefault);
 	xsmcSet(xsThis, xsID_pixels, xsVar(0));
 
 	xsmcSetInteger(xsVar(0), info.m_width);
@@ -635,6 +632,7 @@ unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned ch
 	JPEG jpeg = pCallback_data;
 	const unsigned char *buffer;
 	xsMachine *the = jpeg->the;
+	xsUnsignedValue srcBytes;
 
 	if (buf_size > (jpeg->bytesInBuffer - jpeg->position)) {
 		buf_size = jpeg->bytesInBuffer - jpeg->position;
@@ -646,10 +644,9 @@ unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned ch
 	xsmcGet(xsVar(0), xsThis, xsID_buffers);
 	xsmcGetIndex(xsVar(0), xsVar(0), jpeg->bufferIndex);
 
-	if (jpeg->isArrayBuffer)
-		buffer = xsmcToArrayBuffer(xsVar(0));
-	else
-		buffer = xsmcGetHostData(xsVar(0));
+	xsmcGetBufferReadable(xsVar(0), (void **)&buffer, &srcBytes);
+	if (srcBytes < buf_size)
+		return PJPG_STREAM_READ_ERROR;
 
 	c_memcpy(pBuf, buffer + jpeg->position, buf_size);
 
@@ -671,6 +668,8 @@ unsigned char needBytes(unsigned char* pBuf, unsigned char buf_size, unsigned ch
 void activateBuffer(JPEG jpeg)
 {
 	xsMachine *the = jpeg->the;
+	void *src;
+	xsUnsignedValue srcBytes;
 
 	xsmcGet(xsVar(0), xsThis, xsID_buffers);
 	xsmcGetIndex(xsVar(0), xsVar(0), jpeg->bufferIndex);
@@ -679,11 +678,6 @@ void activateBuffer(JPEG jpeg)
 
 	jpeg->position = 0;
 
-	jpeg->isArrayBuffer = xsmcIsInstanceOf(xsVar(0), xsArrayBufferPrototype);
-	if (jpeg->isArrayBuffer)
-		jpeg->bytesInBuffer = xsmcGetArrayBufferLength(xsVar(0));
-	else {
-		xsmcGet(xsVar(0), xsVar(0), xsID_byteLength);
-		jpeg->bytesInBuffer = xsmcToInteger(xsVar(0));
-	}
+	xsmcGetBufferReadable(xsVar(0), (void **)&src, &srcBytes);
+	jpeg->bytesInBuffer = srcBytes;
 }

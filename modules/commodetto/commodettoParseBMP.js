@@ -28,7 +28,7 @@
 
 */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 
 function parse() @ "xs_parseBMP";
 

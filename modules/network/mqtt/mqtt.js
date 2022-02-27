@@ -59,13 +59,10 @@ export default class Client {
 			return;
 		}
 
-		if (!dictionary.id)
-			throw new Error("parameter id is required");
-
 		if (!dictionary.host)
 			throw new Error("parameter host is required");
 
-		this.connect = {id: dictionary.id};
+		this.connect = {id: dictionary.id ?? ""};
 		if (dictionary.user)
 			this.connect.user = dictionary.user;
 		if (dictionary.password)
@@ -79,10 +76,8 @@ export default class Client {
 //		this.onMessage = function() {};
 //		this.onClose = function() {};
 
-		const path = dictionary.path ? dictionary.path : null; // includes query string
-
-		if (dictionary.timeout)
-			this.timeout = dictionary.timeout;
+		const path = dictionary.path ?? null; // includes query string
+		this.timeout = dictionary.timeout ?? 0;
 
 		if (path) {
 			// presence of this.path triggers WebSockets mode, as MQTT has no native concept of path
@@ -101,7 +96,7 @@ export default class Client {
 			this.ws.callback = socket_callback.bind(this);
 		}
 	}
-	publish(topic, data) {
+	publish(topic, data, flags) {
 		if (this.state < 2)
 			throw new Error("connection closed");
 
@@ -111,17 +106,29 @@ export default class Client {
 		if (!(data instanceof ArrayBuffer))
 			data = ArrayBuffer.fromString(data);
 		data = new Uint8Array(data);
-		let payload = topic.length + data.length + 0;
+		const quality = flags?.quality;
+		let payload = topic.length + data.length + (quality ? 2 : 0);
 
 		let length = 1;	// PUBLISH
 		length += getRemainingLength(payload);
 		length += payload;
 
-		let msg = new Uint8Array(length), position = 0;
-		msg[position++] = 0x30;		// PUBLISH
+		let msg = new Uint8Array(length), position = 0, header = 0;
+		if (flags) {
+			if (flags.retain)
+				header |= 1; 
+			if (quality)
+				header |= (quality & 3) << 1; 
+			if (flags.duplicate)
+				header |= 8; 
+		}
+		msg[position++] = PUBLISH | header;
 		position = writeRemainingLength(payload, msg, position);
 		msg.set(topic, position); position += topic.length;
-		// packetID goes here if QoS > 0 (unimplemented)
+		if (quality) {
+			msg[position++] = this.packet >> 8;
+			msg[position++] = this.packet;
+		}
 		msg.set(data, position); position += data.length;
 
 		this.ws.write(msg.buffer);
@@ -419,6 +426,10 @@ export default class Client {
 					parse = this.parse = {state: 0};
 					break;
 
+				case 0xE0:		// DISCONNECT
+					debugger;		//@@ mosquitto_pub doesn't transmit this?
+					break;
+
 				default:
 					return this.fail("bad parse state");
 			}
@@ -451,7 +462,10 @@ export default class Client {
 		let will = new Uint8Array(0);
 		if (connect.will) {
 			const topic = makeStringBuffer(connect.will.topic);
-			const payload = new Uint8Array(("string" === typeof connect.will.message) ? ArrayBuffer.fromString(connect.will.message) : connect.will.message);
+			let payload = connect.will.message;
+			if (!(payload instanceof ArrayBuffer))
+				payload = ArrayBuffer.fromString(payload);
+			payload = new Uint8Array(payload);
 			will = new Uint8Array(topic.length + 2 + payload.length);
 			will.set(topic, 0);
 			will[topic.length] = payload.length >> 8;
@@ -469,7 +483,7 @@ export default class Client {
 		position = writeRemainingLength(payload, msg, position);
 
 		msg.set(header, position);
-		msg[position + 7] |= (user.length ? 0x80 : 0) | (password.length ? 0x40 : 0) | (will.length ? 0x04 : 0);
+		msg[position + 7] |= (user.length ? 0x80 : 0) | (password.length ? 0x40 : 0) | (will.length ? 0x04 : 0) | ((will.length && connect.will.retain) ? 32 : 0);
 		position += header.length;
 
 		msg.set(id, position); position += id.length;

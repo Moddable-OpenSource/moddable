@@ -49,8 +49,7 @@
 
 #include "xs.h"
 #include "xsHost.h"
-
-#include "xsPlatform.h"
+#include "xsHosts.h"
 
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
@@ -141,9 +140,9 @@ void setup(void)
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 
-	gThe = ESP_cloneMachine(0, 0, 0, NULL);
+	gThe = modCloneMachine(0, 0, 0, 0, NULL);
 
-	mc_setup(gThe);
+	modRunMachineSetup(gThe);
 
 #if CONFIG_TASK_WDT
 	esp_task_wdt_add(NULL);

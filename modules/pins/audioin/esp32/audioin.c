@@ -169,20 +169,15 @@ void xs_audioin_read(xsMachine *the)
 	}
 	else {
 		int offset = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
-		int byteLength;
+		void *data;
+		xsUnsignedValue dataSize;
 
-		xsmcGet(xsResult, xsArg(1), xsID_byteLength);
-		byteLength = xsmcToInteger(xsResult);
+		xsmcGetBufferWritable(xsArg(1), &data, &dataSize);
 
-		if ((byteLength <= 0) || (offset < 0) || ((offset + byteCount) > byteLength))
+		if ((offset < 0) || ((offset + byteCount) > dataSize))
 			xsRangeError("invalid");
 
-		if (xsmcIsInstanceOf(xsArg(1), xsArrayBufferPrototype))
-			samples = xsmcToArrayBuffer(xsArg(1));
-		else
-			samples = xsmcGetHostData(xsArg(1));
-
-		samples = (void *)(offset + (uintptr_t)samples);
+		samples = (void *)(offset + (uintptr_t)data);
 
 		xsResult = xsArg(1);
 	}

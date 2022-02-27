@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -112,9 +112,7 @@ void xs_timer_repeat(xsMachine *the)
 void xs_timer_schedule(xsMachine *the)
 {
 	int argc = xsmcArgc;
-	modTimer timer = xsmcGetHostData(xsArg(0));
-	if (NULL == timer)
-		xsUnknownError("invalid timer");
+	modTimer timer = xsmcGetHostDataValidate(xsArg(0), (void *)&modTimerHooks);
 
 	if (1 == argc)
 		modTimerUnschedule(timer);
@@ -128,15 +126,14 @@ void xs_timer_schedule(xsMachine *the)
 void xs_timer_clear(xsMachine *the)
 {
 	modTimerScript ts;
-	modTimer timer = xsmcGetHostData(xsArg(0));
-	if (NULL == timer)
-		xsUnknownError("invalid timer");
+	modTimer timer = xsmcGetHostDataValidate(xsArg(0), (void *)&modTimerHooks);
 
 	ts = (modTimerScript)modTimerGetRefcon(timer);
 	xsForget(ts->self);
 	ts->callback = NULL;
 	modTimerRemove(timer);
 	xsmcSetHostData(xsArg(0), NULL);
+	xsmcSetHostDestructor(xsArg(0), NULL);
 }
 
 void xs_timer_delay(xsMachine *the)

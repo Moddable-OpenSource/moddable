@@ -3387,6 +3387,8 @@ void PocoDrawingBegin(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimensi
 	poco->xMax = x + w;
 	poco->yMax = y + h;
 
+	poco->flags |= kPocoFlagDidBegin;
+
 #if kPocoFrameBuffer
 	poco->frameBuffer = NULL;
 #endif
@@ -3400,6 +3402,10 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 	PocoCommand displayList, displayListEnd;
 	PocoCommand walker;
 	PocoPixel *pixelsAlt;
+
+	if (!(poco->flags & kPocoFlagDidBegin))
+		return 4;
+	poco->flags &= ~kPocoFlagDidBegin;
 
 	if (poco->flags & kPocoFlagErrorDisplayListOverflow)
 		return 1;

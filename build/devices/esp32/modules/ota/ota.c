@@ -53,15 +53,6 @@ void xs_ota(xsMachine *the)
 	if (NULL == ota->partition)
 		xsUnknownError("no update parition");
 
-/*	OTA_WITH_SEQUENTIAL_WRITES is now available obsoleting this
-	if (xsmcArgc) {
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		size = xsmcToInteger(xsVar(0));
-		size = (size + 4095) & ~4095;
-	}
-*/
-
 	err = esp_ota_begin(ota->partition, size, &ota->handle);
 	if (ESP_OK != err)
 		xsUnknownError("begin failed");
@@ -71,8 +62,10 @@ void xs_ota_write(xsMachine *the)
 {
 	esp_err_t err;
 	xsOTA ota = xsmcGetHostData(xsThis);
-	int size = xsmcGetArrayBufferLength(xsArg(0));
-	void *data = xsmcToArrayBuffer(xsArg(0));
+	xsUnsignedValue size;
+	void *data;
+
+	xsmcGetBufferReadable(xsArg(0), &data, &size);
 
 	err = esp_ota_write(ota->handle, data, size);
 	if (ESP_OK != err)

@@ -90,5 +90,8 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	CFRunLoopSourceRef workerSource; \
 	void* demarshall;
 	
+#ifdef mxDebug
+	#define MODDEF_XS_TEST 1
+#endif
 
 #endif /* __MAC_XS__ */

@@ -116,20 +116,20 @@ class Client {
 			case "onCharacteristicNotificationEnabled": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
 				if (characteristic)
-					this.ble.onCharacteristicNotificationEnabled(characteristic);		
+					return this.ble.onCharacteristicNotificationEnabled(characteristic);		
 				break;
 			}
 			case "onCharacteristicNotificationDisabled": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
 				if (characteristic)
-					this.ble.onCharacteristicNotificationDisabled(characteristic);		
+					return this.ble.onCharacteristicNotificationDisabled(characteristic);		
 				break;
 			}
 			case "onCharacteristicNotification": {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
 				if (characteristic) {
 					params.value = typedBufferToValue(characteristic.type, params.value);
-					this.ble.onCharacteristicNotification(characteristic, params.value);		
+					return this.ble.onCharacteristicNotification(characteristic, params.value);		
 				}
 				break;
 			}
@@ -137,7 +137,7 @@ class Client {
 				let characteristic = this._findCharacteristicByHandle(params.handle);
 				if (characteristic) {
 					params.value = typedBufferToValue(characteristic.type, params.value);
-					this.ble.onCharacteristicValue(characteristic, params.value);		
+					return this.ble.onCharacteristicValue(characteristic, params.value);		
 				}
 				break;
 			}
@@ -145,14 +145,14 @@ class Client {
 				let descriptor = this._findDescriptorByHandle(params.handle);
 				if (descriptor) {
 					params.value = typedBufferToValue(descriptor.type, params.value);
-					this.ble.onDescriptorValue(descriptor, params.value);		
+					return this.ble.onDescriptorValue(descriptor, params.value);		
 				}
 				break;
 			}
 			case "onDescriptorWritten": {
 				let descriptor = this._findDescriptorByHandle(params.handle);
 				if (descriptor)
-					this.ble.onDescriptorWritten(descriptor);		
+					return this.ble.onDescriptorWritten(descriptor);		
 				break;
 			}
 		}
