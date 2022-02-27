@@ -121,8 +121,8 @@ const darkColors = {
 	"codeComment": { "color": "#3cb878" },
 	"codeKeyword": { "color": "#77bafc" },
 	"codeLiteral": { "color": "#f26c4f" },
-	"codeResult": { "fill": "#7d4900" },
-	"codeSelection": { "fill": "#003663" },
+	"codeResult": { "fill": "#f68100" },
+	"codeSelection": { "fill": "#5b5b5b" },
 	"error": { "color": "#262626" },
 	
 	"findLabel": { "color": "#000000" },
@@ -280,7 +280,7 @@ function buildTheme($, codeFont) {
 		new Skin({ texture:textures.glyphs, color:$.messages[5].fill, x:0, y:56, width:16, height:8, variants:80 }),	
 		new Skin({ texture:textures.glyphs, color:$.messages[6].fill, x:0, y:56, width:16, height:8, variants:80 }),	
 	];
-	styles.message = new Style({ font:codeFont, color:$.code.color, top:5, bottom:5, horizontal:"left" });
+	styles.message = new Style({ font:codeFont, color:[$.code.color, $.codeKeyword.color, $.codeLiteral.color, $.codeComment.color], top:5, bottom:5, horizontal:"left" });
 		
 	// SERIAL
 	skins.progressBar = new Skin({ fill:$.progressBar.fill });
