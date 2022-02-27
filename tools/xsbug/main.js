@@ -235,7 +235,7 @@ class ApplicationBehavior extends DebugBehavior {
 						container.replace(container.first, new FilePane(this));
 					else if (tab == 1) {
 						container.replace(container.first, new MessagePane(this));
-						application.distribute("onBubblesChanged", items);
+// 						application.distribute("onBubblesChanged", items);
 					}
 					else if (tab == 2)
 						container.replace(container.first, new SerialPane(this));

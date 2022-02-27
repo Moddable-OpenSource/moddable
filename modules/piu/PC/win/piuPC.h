@@ -71,7 +71,8 @@ struct PiuViewStruct {
 	Graphics* graphics;
 	xsIntegerValue graphicsStatesIndex;
 	GraphicsState graphicsStates[256];
-	xsBooleanValue filtered;
+	PiuBoolean filtered;
+	PiuBoolean transparent;
 };
 
 #ifdef __cplusplus

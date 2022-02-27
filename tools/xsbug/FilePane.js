@@ -129,10 +129,12 @@ export class FileRowBehavior extends RowBehavior {
 	}
 	onPathChanged(row, path) {
 		if (this.data.path == path) {
+			row.skin = skins.fileRow;
 			row.last.style = styles.fileRow; 
 			this.flags |= 4;
 		}
 		else {
+			row.skin = skins.tableRow;
 			row.last.style = styles.tableRow;
 			this.flags &= ~4;
 		}
@@ -557,7 +559,7 @@ var FolderHeader = Row.template(function($) { return {
 }});
 
 var FileRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:skins.fileRow, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true,
 	Behavior: FileRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),

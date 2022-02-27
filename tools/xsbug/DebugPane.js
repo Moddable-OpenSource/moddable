@@ -214,10 +214,12 @@ class CallRowBehavior extends RowBehavior {
 	}
 	select(row, selectIt) {
 		if (selectIt) {
+			row.skin = skins.callRow; 
 			row.last.style = styles.callRow; 
 			this.flags |= 4;
 		}
 		else {
+			row.skin = skins.tableRow; 
 			row.last.style = styles.tableRow;
 			this.flags &= ~4;
 		}
@@ -472,7 +474,7 @@ var CallFooter = Row.template(function($) { return {
 }});
 
 var CallRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:skins.callRow, active:true, 
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true, 
 	Behavior:CallRowBehavior,
 	contents: [
 		Content($, { width:rowIndent, }),

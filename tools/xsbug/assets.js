@@ -37,200 +37,126 @@
 
 const isMac = system.platform == "mac";
 
-const TRANSPARENT = "transparent";
-
 const liteColors = {
-	".button:disabled": { "backgroundColor": "transparent", "color": "#808080" },
-	".button": { "backgroundColor": "transparent", "color": "#262626" },
-	".button:hover": { "backgroundColor": "#ffffff", "color": "#262626" },
-	".button:active": { "backgroundColor": "#192eab", "color": "#ffffff" },
-	".divider": { "backgroundColor": "#c2c2c2" },
-	".fieldScroller": { "backgroundColor": "#ffffff", "borderColor": "#f0f0f0" },
-	".scrollbar": { "backgroundColor": "transparent", "borderColor": "transparent" },
-	".scrollbar:hover": { "backgroundColor": "#fafafa", "borderColor": "#dbdbdb" },
-	".scrollbar:active": { "backgroundColor": "#fafafa", "borderColor": "#dbdbdb" },
-	".scrollbarThumb:disabled": { "backgroundColor": "#e0e0e000" },
-	".scrollbarThumb": { "backgroundColor": "#e0e0e0" },
-	".scrollbarThumb:hover": { "backgroundColor": "#e6e6e6" },
-	".scrollbarThumb:active": { "backgroundColor": "#e6e6e6" },
-	".switch:disabled": { "backgroundColor": "transparent", "borderColor":"#e6e6e6" },
-	".switch": { "backgroundColor": "#b0b0b0", "borderColor":"#b0b0b0" },
-	".switch:hover": { "backgroundColor": "#b0b0b0", "borderColor":"#b0b0b0" },
-	".switch:active": { "backgroundColor": "#192eab", "borderColor":"#192eab" },
-	".switch .thumb:disabled": { "backgroundColor": "transparent", "borderColor":"#e6e6e6" },
-	".switch .thumb": { "backgroundColor": "#ffffff", "borderColor":"#ffffff" },
-	".switch .thumb:hover": { "backgroundColor": "#ffffff", "borderColor":"#ffffff" },
-	".switch .thumb:active": { "backgroundColor": "#ffffff", "borderColor":"#ffffff" },
-
-	".tab:active": { "backgroundColor": "#f0f0f0", "color": "#000000" },
-	".tab": { "backgroundColor": "#dbdbdb", "color": "#404040", "borderColor": "#c2c2c2" },
-	".tab:hover": { "backgroundColor": "#e6e6e6", "color": "#000000" },
-	".tabBreakpoint": { "color": "#ffffff" },
-	".tabBubble": { "color": "#ffffff" },
-
-	".paneHeader": { "backgroundColor": "#f0f0f0", "borderColor": "#dbdbdb", "color": "#404040"  },
-	".paneHeader:hover": { "backgroundColor": "#e6e6e6", "color": "#404040" },
-	".paneHeader:active": { "backgroundColor": "#dbdbdb", "color": "#404040"  },
+	"button": { "fill": [ "transparent", "transparent", "#ffffff", "#192eab" ], "color": [ "#cdcdcd", "#404040", "#262626", "#ffffff" ] },
+	"divider": { "fill": "#c2c2c2" },
+	"fieldScroller": { "fill": "#ffffff", "stroke": "#f0f0f0" },
+	"scrollbar": { "fill": [ "transparent", "#fafafa", "#fafafa", "#fafafa" ], "stroke": [ "transparent", "#dbdbdb", "#dbdbdb", "#dbdbdb" ] },
+	"scrollbarThumb": { "fill": [ "#e0e0e000", "#e0e0e0", "#e6e6e6", "#e6e6e6" ] },
+	"switchBar": { "fill": [ "transparent", "#b0b0b0", "#192eab", "#192eab" ], "stroke": [ "#e6e6e6", "#b0b0b0", "#192eab", "#192eab" ] },
+	"switchButton": { "fill": [ "transparent", "#ffffff", "#ffffff", "#ffffff" ], "stroke": [ "#e6e6e6", "#ffffff", "#ffffff", "#ffffff" ] },
 	
-	".pathName": { "color": "#000000" },
-	".pathSpan": { "color": "#ababab" },
-	".pathSpan:hover": { "color": "#787878" },
-	".pathSpan:active": { "color": "#454545" },
-
-	".lineNumber": { "color": "#ababab" },
-	".lineNumber .breakpoint": { "color": "#ffffff" },
-	".lineNumbers": { "backgroundColor": "#fafafa", "borderColor": "#dbdbdb" },
-
-	".code": { "backgroundColor": "#ffffff", "color": "#000000" },
-	".code .result": { "backgroundColor": "#fbf4bb" },
-	".code .selection": { "backgroundColor": "#d1e0ff" },
-	".code .literal": { "color": "#b22821" },
-	".code .keyword": { "color": "#103ffb" },
-	".code .comment": { "color": "#008d32" },
-
-	".error": { "color": "#262626" },
-
-	".findLabel": { "color": "#000000" },
-	".findMode": { "backgroundColor": "transparent", "color": "#ffffff" },
-	".findMode:hover": { "backgroundColor": "#e0e0e0", "color": "#e0e0e0" },
-	".findMode:active": { "backgroundColor": "#a0a0a0", "color": "#555555" },
-	".resultCount": { "color": "#808080" },
-	".resultRow": { "backgroundColor": "#ffffff" },
-	".resultRow:hover": { "backgroundColor": "#fafafa" },
-	".resultRow:active": { "backgroundColor": "#f0f0f0" },
-	".searchEmpty": { "color": "#808080" },
+	"tab": { "fill": [ "#f0f0f0", "#dbdbdb", "#e6e6e6", "#f0f0f0" ], "stroke": "#c2c2c2", "color": [ "#000000", "#404040", "#000000", "#000000" ] },
+	"tabBreakpoint": { "fill": "#7fbd3b", "color": "#ffffff" },
+	"tabBubble": { "fill": "#6573c7", "color": "#ffffff" },
 	
-	".tableHeader": { "backgroundColor": "#f0f0f0", "borderColor": "#dbdbdb", "color": "#404040" },
-	".tableHeader:hover": { "backgroundColor": "#e6e6e6", "color": "#404040" },
-	".tableHeader:active": { "backgroundColor": "#dbdbdb", "color": "#404040" },
-	".tableRow": { "backgroundColor": "#fafafa", "color": "#000000" },
-	".tableRow:hover": { "backgroundColor": "#f0f0f0", "color": "#000000" },
-	".tableRow:active": { "backgroundColor": "#e6e6e6", "color": "#000000" },
+	"pathName": { "color": "#000000" },
+	"pathSpan": { "color": [ "#ababab", "#ababab", "#787878", "#454545" ] },
 	
-	".fileRow:selected": { "backgroundColor": "#6497ff", "color": "#ffffff" },
-	".infoRow": { "color": "#808080" },
+	"lineNumber": { "color": "#ababab", "fill": "#fafafa", "stroke": "#dbdbdb" },
+	"lineBreakpoint": { "color": "#ffffff", "fill": "#7fbd3b" },
 
-	".messages-0": { "backgroundColor": "#ffffff", "borderColor":"#dbdbdb" },
-	".messages-1": { "backgroundColor": "#ffefef", "borderColor":"#dbdbdb" },
-	".messages-2": { "backgroundColor": "#ffffef", "borderColor":"#dbdbdb" },
-	".messages-3": { "backgroundColor": "#efffef", "borderColor":"#dbdbdb" },
-	".messages-4": { "backgroundColor": "#efffff", "borderColor":"#dbdbdb" },
-	".messages-5": { "backgroundColor": "#efefff", "borderColor":"#dbdbdb" },
-	".messages-6": { "backgroundColor": "#ffefff", "borderColor":"#dbdbdb" },
+	"code": { "fill": "#ffffff", "color": "#000000" },
+	"codeComment": { "color": "#008d32" },
+	"codeKeyword": { "color": "#103ffb" },
+	"codeLiteral": { "color": "#b22821" },
+	"codeResult": { "fill": "#fbf4bb" },
+	"codeSelection": { "fill": "#d1e0ff" },
+	"error": { "color": "#262626" },
 	
-	".progressBar": { "backgroundColor": "#f0f0f0" },
-	".progressBar:hover": { "backgroundColor": "#404040" },
+	"findLabel": { "color": "#000000" },
+	"findMode": { "fill": [ "transparent", "transparent", "#e0e0e0", "#a0a0a0" ], "color": [ "transparent", "#ffffff", "#e0e0e0", "#555555" ] },
+	"resultCount": { "color": "#808080" },
+	"resultRow": { "fill": [ "#ffffff", "#ffffff", "#fafafa", "#f0f0f0" ] },
+	"resultLabel": { "fill": [ "#000000", "#000000", "#fbf4bb", "#fbf4bb" ], "color": "#000000" },
+	"searchEmpty": { "color": "#808080" },
 	
-	".test262 .fail": { "color": "#b22821" },
-	".test262 .pass": { "color": "#008d32" },
-	".test262 .skip": { "color": "#103ffb" },
+	"tableRow": { "color": "#000000", "fill": [ "#fafafa", "#fafafa", "#f0f0f0", "#e6e6e6" ] },
+	"tableHeader": { "color": "#404040", "fill": [ "#f0f0f0", "#f0f0f0", "#e6e6e6", "#dbdbdb" ], "stroke": "#dbdbdb", },
+	"fileRow": { "fill": "#6497ff", "color": "#ffffff" },
+	"infoRow": { "color": "#808080" },
 	
-	".callRow:selected": { "backgroundColor": "#fe9d27", "color": "#ffffff" },
-	".debugRow": { "color": "#000000" },
-	".debugRow .flash": { "color": "#082080" },
-	".debugRow .cache": { "color": "#804f13" },
-	".instrumentRowName": { "color": "#000000" },
-	".instrumentRowValue": { "color": "#000000" },
-	".instrumentBar": { "color": "#404040" },
-	".instrumentBar:hover": { "color": "#fe9d27" },
-	".instrumentLine": { "color": "#dbdbdb" },
+	"messageBackground": { "fill": "#f0f0f0" },
+	"messages": [
+		{ "fill": "#ffffff" },
+		{ "fill": "#ffefef" },
+		{ "fill": "#ffffef" },
+		{ "fill": "#efffef" },
+		{ "fill": "#efffff" },
+		{ "fill": "#efefff" },
+		{ "fill": "#ffefff" }
+	],
+	
+	"progressBar": { "fill": [ "#f0f0f0", "#404040", "#000000", "#000000" ] },
+	
+	"callRow": { "fill": "#fe9d27", "color": "#ffffff" },
+	"inspectFlash": { "color":  "#082080" },
+	"inspectCache": { "color": "#804f13" },
+	
+	"test262Fail": { "color": "#b22821" },
+	"test262Pass": { "color": "#008d32" },
+	"test262Skip": { "color": "#103ffb" }
 };
 
 const darkColors = {
-	".button:disabled": { "backgroundColor": "transparent", "color": "#808080" },
-	".button": { "backgroundColor": "transparent", "color": "#ffffff" },
-	".button:hover": { "backgroundColor": "#000000", "color": "#ffffff" },
-	".button:active": { "backgroundColor": "#f68100", "color": "#ffffff" },
-	".fieldScroller": { "backgroundColor": "#1e1e1e", "borderColor": "#545454" },
-	".divider": { "backgroundColor": "#545454" },
-	".scrollbar": { "backgroundColor": "transparent", "borderColor": "transparent" },
-	".scrollbar:hover": { "backgroundColor": "#3b3b3b", "borderColor": "#454545" },
-	".scrollbar:active": { "backgroundColor": "#3b3b3b", "borderColor": "#454545" },
-	".scrollbarThumb:disabled": { "backgroundColor": "#a2a2a200" },
-	".scrollbarThumb": { "backgroundColor": "#a2a2a2" },
-	".scrollbarThumb:hover": { "backgroundColor": "#a2a2a2" },
-	".scrollbarThumb:active": { "backgroundColor": "#a2a2a2" },
-	".switch:disabled": { "backgroundColor": "transparent", "borderColor":"#5d5d5d" },
-	".switch": { "backgroundColor": "#5d5d5d", "borderColor":"#5d5d5d" },
-	".switch:hover": { "backgroundColor": "#5d5d5d", "borderColor":"#5d5d5d" },
-	".switch:active": { "backgroundColor": "#f68100", "borderColor":"#f68100" },
-	".switch .thumb:disabled": { "backgroundColor": "transparent", "borderColor":"#5d5d5d" },
-	".switch .thumb": { "backgroundColor": "#e4e4e4", "borderColor":"#e4e4e4" },
-	".switch .thumb:hover": { "backgroundColor": "#e4e4e4", "borderColor":"#e4e4e4" },
-	".switch .thumb:active": { "backgroundColor": "#e4e4e4", "borderColor":"#e4e4e4" },
+	"button": { "fill": [ "transparent", "transparent", "#000000", "#f68100" ], "color": [ "#808080", "#ffffff", "#ffffff", "#ffffff" ] },
+	"divider": { "fill": "#545454" },
+	"fieldScroller": { "fill": "#1e1e1e", "stroke": "#545454" },
+	"scrollbar": { "fill": [ "transparent", "#3b3b3b", "#3b3b3b", "#3b3b3b" ], "stroke": [ "transparent", "#454545", "#454545", "#454545" ] },
+	"scrollbarThumb": { "fill": [ "#a2a2a200", "#a2a2a2", "#a2a2a2", "#a2a2a2" ] },
+	"switchBar": { "fill": [ "#000000", "#5d5d5d", "#f68100", "#f68100" ], "stroke": [ "#5d5d5d", "#5d5d5d", "#f68100", "#f68100" ] },
+	"switchButton": { "fill": [ "#000000", "#e4e4e4", "#e4e4e4", "#e4e4e4" ], "stroke": [ "#5d5d5d", "#e4e4e4", "#e4e4e4", "#e4e4e4" ] },
 	
-	".tabsPane": { "backgroundColor": "#212121" },
-	".tab:active": { "backgroundColor": "#3b3b3b", "color": "#ffffff" },
-	".tab": { "backgroundColor": "#212121", "color": "#c0c0c0", "borderColor": "#4a4a4a" },
-	".tab:hover": { "backgroundColor": "#343434", "color": "#e0e0e0" },
-	".tabBreakpoint": { "color": "#ffffff" },
-	".tabBubble": { "color": "#ffffff" },
+	"tab": { "fill": [ "#3b3b3b", "#212121", "#343434", "#3b3b3b" ], "stroke": "#4a4a4a", "color": [ "#ffffff", "#c0c0c0", "#e0e0e0", "#ffffff" ] },
+	"tabBreakpoint": { "color": "#ffffff" },
+	"tabBubble": { "fill": "#6573c7", "color": "#ffffff" },
 	
-	".paneHeader": { "backgroundColor": "#3b3b3b", "borderColor": "#454545", "color": "#f0f0f0" },
-	".paneHeader:hover": { "backgroundColor": "#4b4b4b", "color": "red" },
-	".paneHeader:active": { "backgroundColor": "#5b5b5b", "color": "blue" },
+	"pathName": { "color": "#f0f0f0" },
+	"pathSpan": { "color": [ "#a0a0a0", "#a0a0a0", "#c0c0c0", "#f0f0f0" ] },
 	
-	".pathName": { "color": "#f0f0f0" },
-	".pathSpan": { "color": "#a0a0a0" },
-	".pathSpan:hover": { "color": "#c0c0c0" },
-	".pathSpan:active": { "color": "#f0f0f0" },
-	
-	".lineNumber": { "color": "#ababab" },
-	".lineNumber .breakpoint": { "color": "#ffffff" },
-	".lineNumbers": { "backgroundColor": "#333333", "borderColor": "#545454" },
+	"lineNumber": { "color": "#ababab", "fill": "#333333", "stroke": "#545454" },
+	"lineBreakpoint": { "color": "#ffffff", "fill": "#7fbd3b" },
 
-	".code": { "backgroundColor": "#2a2a2a", "color": "#f0f0f0" },
-	".code .result": { "backgroundColor": "#7d4900" },
-	".code .selection": { "backgroundColor": "#003663" },
-	".code .keyword": { "color": "#77bafc" },
-	".code .literal": { "color": "#f26c4f" },
-	".code .comment": { "color": "#3cb878" },
-	".error": { "color": "#262626" },
-
-	".findLabel": { "color": "#000000" },
-	".findMode": { "backgroundColor": "transparent", "color": "#e0e0e0" },
-	".findMode:hover": { "backgroundColor": "#4b4b4b", "color": "#ffffff" },
-	".findMode:active": { "backgroundColor": "#5b5b5b", "color": "#e0e0e0" },
-	".resultCount": { "color": "#a0a0a0" },
-	".resultRow": { "backgroundColor": "#2a2a2a" },
-	".resultRow:hover": { "backgroundColor": "#3a3a3a" },
-	".resultRow:active": { "backgroundColor": "#4a4a4a" },
-	".searchEmpty": { "color": "#a0a0a0" },
-
-	".tableHeader": { "backgroundColor": "#3b3b3b", "borderColor": "#4e4e4e", "color": "#f0f0f0" },
-	".tableHeader:hover": { "backgroundColor": "#4b4b4b", "color": "red" },
-	".tableHeader:active": { "backgroundColor": "#5b5b5b", "color": "blue" },
-	".tableRow": { "backgroundColor": "#272727", "color": "#ffffff" },
-	".tableRow:hover": { "backgroundColor": "#373737", "color": "#ffffff" },
-	".tableRow:active": { "backgroundColor": "#474747", "color": "#ffffff" },
-
-	".fileRow:selected": { "backgroundColor": "#6497ff", "color": "#ffffff" },
-	".infoRow": { "color": "#a0a0a0" },
-
-	".messages-0": { "backgroundColor": "#545454", "borderColor":"#545454" },
-	".messages-1": { "backgroundColor": "#540000", "borderColor":"#540000" },
-	".messages-2": { "backgroundColor": "#545400", "borderColor":"#545400" },
-	".messages-3": { "backgroundColor": "#005400", "borderColor":"#005400" },
-	".messages-4": { "backgroundColor": "#005454", "borderColor":"#005454" },
-	".messages-5": { "backgroundColor": "#000054", "borderColor":"#000054" },
-	".messages-6": { "backgroundColor": "#540054", "borderColor":"#540054" },
+	"code": { "fill": "#2a2a2a", "color": "#f0f0f0" },
+	"codeComment": { "color": "#3cb878" },
+	"codeKeyword": { "color": "#77bafc" },
+	"codeLiteral": { "color": "#f26c4f" },
+	"codeResult": { "fill": "#7d4900" },
+	"codeSelection": { "fill": "#003663" },
+	"error": { "color": "#262626" },
 	
-	".progressBar": { "backgroundColor": "#f0f0f0" },
-	".progressBar:hover": { "backgroundColor": "#404040" },
+	"findLabel": { "color": "#000000" },
+	"findMode": { "fill": [ "transparent", "transparent", "#4b4b4b", "#5b5b5b" ], "color": [ "transparent", "#e0e0e0", "#ffffff", "#e0e0e0" ] },
+	"resultCount": { "color": "#a0a0a0" },
+	"resultRow": { "fill": [ "#2a2a2a", "#2a2a2a", "#3a3a3a", "#4a4a4a" ] },
+	"resultLabel": { "fill": [ "#000000", "#000000", "#7d4900", "#7d4900" ], "color": "#f0f0f0" },
+	"searchEmpty": { "color": "#a0a0a0" },
 	
-	".test262 .fail": { "color": "#f26c4f" },
-	".test262 .pass": { "color": "#3cb878" },
-	".test262 .skip": { "color": "#77bafc" },
+	"tableRow": { "color": "#ffffff", "fill": [ "#272727", "#272727", "#373737", "#474747" ], },
+	"tableHeader": { "color": "#f0f0f0", "fill": [ "#3b3b3b", "#3b3b3b", "#4b4b4b", "#5b5b5b" ], "stroke": "#4e4e4e", },
+	"fileRow": { "fill": "#6497ff", "color": "#ffffff" },
+	"infoRow": { "color": "#a0a0a0" },
+
+	"messageBackground": { "fill": "#3b3b3b" },
+	"messages": [
+		{ "fill": "#545454" },
+		{ "fill": "#540000" },
+		{ "fill": "#545400" },
+		{ "fill": "#005400" },
+		{ "fill": "#005454" },
+		{ "fill": "#000054" },
+		{ "fill": "#540054" }
+	],
 	
-	".callRow:selected": { "backgroundColor": "#fe9d27", "color": "#ffffff" },
-	".debugRow": { "color": "#ffffff" },
-	".debugRow .flash": { "color": "#d9caff" },
-	".debugRow .cache": { "color": "#ffdf9e" },
-	".instrumentRowName": { "color": "#000000" },
-	".instrumentRowValue": { "color": "#000000" },
-	".instrumentBar": { "color": "#f0f0f0" },
-	".instrumentBar:hover": { "color": "#fe9d27" },
-	".instrumentLine": { "color": "#4e4e4e" },
+	"progressBar": { "fill": [ "#f0f0f0", "#404040", "#000000", "#000000" ] },
+	
+	"callRow": { "fill": "#fe9d27", "color": "#ffffff" },
+	"inspectFlash": { "color":  "#d9caff" },
+	"inspectCache": { "color": "#ffdf9e" },
+
+	"test262Fail": { "color": "#f26c4f" },
+	"test262Pass": { "color": "#3cb878" },
+	"test262Skip": { "color": "#77bafc" }
 };
 
 const themes = [
@@ -240,7 +166,7 @@ const themes = [
 Object.freeze(themes, true)
 
 const codeFonts = [
-	"11px Fira Mono",
+	"12px Fira Mono",
 	"medium 12px Fira Mono",
 ];
 Object.freeze(codeFonts, true)
@@ -249,147 +175,146 @@ const textures = {
 	icons: { path:"assets/icons.png", scale:2 },
 	findModes: { path:"assets/findModes.png", scale:2 },
 	glyphs: { path:"assets/glyphs.png", scale:2 },
-	lineNumber: { path:"assets/flags.png", scale:2 },
 	logo: { path:"assets/logo.png", scale:2 },
 	wait: { path:"assets/wait.png", scale:2 },
 };
 
 function buildTheme($, codeFont) {
-	function c(selector) {
-		return $[selector].color;
-	}
-	function f(selector) {
-		return $[selector].backgroundColor;
-	}
-	function s(selector) {
-		return $[selector].borderColor;
-	}
 	const colors = globalThis.colors = {};
 	const skins = globalThis.skins = {};
 	const styles = globalThis.styles = {};
 	
-	skins.button = new Skin({ fill:[f('.button:disabled'),f('.button'),f('.button:hover'),f('.button:active')] });
-	styles.iconButton = new Style({ font:"semibold", color:[c('.button:disabled'),c('.button'),c('.button:hover'),c('.button:active')] });
-	skins.iconButton = new Skin({ fill:[f('.button:disabled'),f('.button'),f('.button:hover'),f('.button:active')] });
-	styles.serialButton = new Style({ font:"semibold", color:[c('.button:disabled'),c('.button'),c('.button:hover'),c('.button:active')] , left:15, right:15 });
-	skins.icons = new Skin({ texture:textures.icons, color:[c('.button:disabled'),c('.button'),c('.button:hover'),c('.button:active')], x:2, y:2, width:26, height:26, variants:30 });
-	skins.divider = new Skin({ fill:f('.divider') });
-	skins.fieldScroller = new Skin({ fill: [f('.fieldScroller')], stroke:s('.fieldScroller'), borders: { left:1, right:1, bottom:1, top:1 } });
-	skins.scrollbarThumb = new Skin({ fill:[f('.scrollbarThumb:disabled'),f('.scrollbarThumb'),f('.scrollbarThumb:hover'),f('.scrollbarThumb:active')] });
-	skins.horizontalScrollbar = new Skin({ fill:[f('.scrollbar'),f('.scrollbar:hover'),f('.scrollbar:active')], stroke:[s('.scrollbar'),s('.scrollbar:hover'),s('.scrollbar:active')], top:1 });
-	skins.verticalScrollbar = new Skin({ fill:[f('.scrollbar'),f('.scrollbar:hover'),f('.scrollbar:active')], stroke:[s('.scrollbar'),s('.scrollbar:hover'),s('.scrollbar:active')], left:1 });
+	skins.button = new Skin({ fill:$.button.fill });
+	styles.iconButton = new Style({ font:"semibold", color:$.button.color });
+	skins.iconButton = new Skin({ fill:$.button.fill });
+	styles.serialButton = new Style({ font:"semibold", color:$.button.color , left:15, right:15 });
+	skins.icons = new Skin({ texture:textures.icons, color:$.button.color, x:2, y:2, width:26, height:26, variants:30 });
+	skins.divider = new Skin({ fill:$.divider.fill });
+	skins.fieldScroller = new Skin({ fill: [$.fieldScroller.fill], stroke:$.fieldScroller.stroke, borders: { left:1, right:1, bottom:1, top:1 } });
+	skins.scrollbarThumb = new Skin({ fill:$.scrollbarThumb.fill });
+	skins.horizontalScrollbar = new Skin({ fill:$.scrollbar.fill, stroke:$.scrollbar.stroke, top:1 });
+	skins.verticalScrollbar = new Skin({ fill:$.scrollbar.fill, stroke:$.scrollbar.stroke, left:1 });
+	skins.switchBar = new Skin({ fill:$.switchBar.fill, stroke:$.switchBar.stroke });
+	skins.switchButton = new Skin({ fill:$.switchButton.fill, stroke:$.switchButton.stroke });
 	
 	// TABS
-	skins.tabsPane = new Skin({ fill:f('.tab'), stroke:f('.divider'), borders: { bottom:1 }  });
-	skins.tab = new Skin({ fill:[f('.tab:active'),f('.tab'),f('.tab:hover')], stroke:s('.tab'), borders: { right:1 }  });
-	styles.tab = new Style({ font:"semibold 12px Open Sans", color:[c('.tab:active'),c('.tab'),c('.tab:hover')], horizontal:"center", left:26, right:26 });
-	styles.tabTest262 = new Style({ font:"semibold 12px Open Sans", color:[c('.tab:active'),c('.tab'),c('.tab:hover')], horizontal:"center", left:13, right:13 });
-	skins.tabBreakpoint = new Skin({ texture:textures.lineNumber, x:16, y:16, width:24, height:16, tiles: { left:2, right: 12 }, });
-	styles.tabBreakpoint = new Style({ font:"bold 10px", horizontal:"right", right:15, color:c('.tabBubble') });
-	skins.tabBubble = new Skin({ texture:textures.lineNumber, x:0, y:48, width:48, height:16, tiles: { left:16, right: 16 }, });
-	styles.tabBubble = new Style({ font:"bold 10px", horizontal:"right", right:10, color:c('.tabBreakpoint') });
-	skins.tabBroken = new Skin({ texture:textures.lineNumber, x:40, y:0, width:16, height:16 });
+	skins.tabsPane = new Skin({ fill:$.tab.fill[1], stroke:$.divider.fill, borders: { bottom:1 }  });
+	skins.tab = new Skin({ fill:$.tab.fill, stroke:$.tab.stroke, borders: { right:1 }  });
+	styles.tab = new Style({ font:"semibold 12px Open Sans", color:$.tab.color, horizontal:"center", left:26, right:26 });
+	styles.tabTest262 = new Style({ font:"semibold 12px Open Sans", color:$.tab.color, horizontal:"center", left:13, right:13 });
+	styles.tabBreakpoint = new Style({ font:"bold 10px", horizontal:"right", right:15, color:$.tabBubble.color });
+	skins.tabBubble = new Skin({ texture:textures.glyphs, color:$.tabBubble.fill, x:0, y:48, width:48, height:16 });
+	styles.tabBubble = new Style({ font:"bold 10px", horizontal:"right", right:10, color:$.tabBreakpoint.color });
 
 	// CODE, CONSOLE, PREFERENCES
-	skins.paneBorder = new Skin({ fill:s('.paneHeader') });
-	skins.paneHeader = new Skin({ fill:[f('.paneHeader'),f('.paneHeader:hover'),f('.paneHeader:active')] });
-	styles.paneHeader = new Style({ font:"semibold", color:c('.paneHeader'), horizontal:"left" });
+	skins.paneBorder = new Skin({ fill:$.tableHeader.stroke });
+	skins.paneHeader = new Skin({ fill:$.tableHeader.fill });
+	styles.paneHeader = new Style({ font:"semibold", color:$.tableHeader.color, horizontal:"left" });
 
 	// CODE
-	styles.pathName = new Style({ font:"semibold", color:c('.pathName'), horizontal:"left" });
-	styles.pathSpan = new Style({ font:"semibold 12px Open Sans", color:[c('.pathSpan'),c('.pathSpan'),c('.pathSpan:hover'),c('.pathSpan:active')], horizontal:"left" });
+	styles.pathName = new Style({ font:"semibold", color:$.pathName.color, horizontal:"left" });
+	styles.pathSpan = new Style({ font:"semibold 12px Open Sans", color:$.pathSpan.color, horizontal:"left" });
 	
-	skins.lineNumber = new Skin({ texture:textures.lineNumber, x:0, y:0, width:40, height:16, tiles: { left:20, right: 12 }, states:16, variants:40 });
-	styles.lineNumber = new Style({ font:"bold 10px", horizontal:"right", right:15, color: [ c('.lineNumber'),c('.lineNumber .breakpoint') ] });
-	skins.lineNumbers = new Skin({ fill:f('.lineNumbers'), stroke:s('.lineNumbers'), borders: { right:1 } });
+	skins.lineNumber = new Skin({ fill:$.lineNumber.fill, stroke:$.lineNumber.stroke, borders: { right:1 } });
+	styles.lineNumber = new Style({ font:"bold 10px", horizontal:"right", right:15, color: [ $.lineNumber.color,$.lineBreakpoint.color ] });
+
+	skins.lineBreakpoint = new Skin({ texture:textures.glyphs, color:["transparent", $.lineBreakpoint.fill], x:16, y:32, width:42, height:16, variants:42 });
+	skins.lineCall = new Skin({ texture:textures.glyphs, color:["transparent", $.callRow.fill], x:0, y:32, width:16, height:16 });
 	
-	skins.background = new Skin({ fill:f('.code') });
-	skins.code = new Skin({ fill:[f('.code .result'), TRANSPARENT, f('.code .selection'), f('.code .selection')] });
-	styles.code = new Style({ font:codeFont, horizontal:"left", left:8, right:8, color: [c('.code'),c('.code .keyword'),c('.code .literal'),c('.code .comment')]});
+	skins.background = new Skin({ fill:$.code.fill });
+	skins.code = new Skin({ fill:[$.codeResult.fill, "transparent", $.codeSelection.fill, $.codeSelection.fill] });
+	styles.code = new Style({ font:codeFont, horizontal:"left", left:8, right:8, color:[$.code.color, $.codeKeyword.color, $.codeLiteral.color, $.codeComment.color] });
 	
-	skins.noCode = new Skin({ fill:f('.tableRow')});
+	skins.noCode = new Skin({ fill:$.tableRow.fill});
 	skins.logo = new Skin({ texture:textures.logo, x:0, y:0, width:80, height:80 });
-	styles.error = new Style({ color:c('.error') });
+	styles.error = new Style({ color:$.error.color });
 
 	// FIND SEARCH
-	styles.findLabel = new Style({ color:c('.findLabel'), horizontal:"left", left:5, right:5});
-	skins.findModeButton = new Skin({ texture:textures.findModes, color:[TRANSPARENT,f('.findMode'),f('.findMode:hover'),f('.findMode:active')], x:0, y:20, width:20, height:20, variants:20 });
-	skins.findModeIcon = new Skin({ texture:textures.findModes, color:[TRANSPARENT,c('.findMode'),c('.findMode:hover'),c('.findMode:active')], x:0, y:0, width:20, height:20, variants:20 });
+	styles.findLabel = new Style({ color:$.findLabel.color, horizontal:"left", left:5, right:5});
+	skins.findModeButton = new Skin({ texture:textures.findModes, color:$.findMode.fill, x:0, y:20, width:20, height:20, variants:20 });
+	skins.findModeIcon = new Skin({ texture:textures.findModes, color:$.findMode.color, x:0, y:0, width:20, height:20, variants:20 });
 	
-	skins.resultRow = new Skin({ fill:[f('.resultRow'),f('.resultRow:hover'),f('.resultRow:active'),f('.resultRow')] });
-	styles.resultCount = new Style({ color:c('.resultCount'), horizontal:"right", right:5 });
-	skins.resultLabel = new Skin({ fill:[TRANSPARENT, TRANSPARENT, f('.code .result'), f('.code .result')] });
-	styles.resultLabel = new Style({ font:codeFont, color:c('.code'), horizontal:"left" });
-	styles.searchEmpty = new Style({ color:c('.infoRow') });
+	skins.resultRow = new Skin({ fill:$.resultRow.fill });
+	styles.resultCount = new Style({ color:$.resultCount.color, horizontal:"right", right:5 });
+	skins.resultLabel = new Skin({ fill:["transparent", "transparent", $.codeResult.fill, $.codeResult.fill] });
+	styles.resultLabel = new Style({ font:codeFont, color:$.code.color, horizontal:"left" });
+	styles.searchEmpty = new Style({ color:$.infoRow.color });
 	skins.wait = new Skin({ texture:textures.wait, x:0, y:0, width:20, height:20, variants:20 });
 
 	// TABLES
-	skins.glyphs = new Skin({ texture:textures.glyphs, color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], x:0, y:0, width:16, height:16, variants:16 });
-	skins.tableRow = new Skin({ fill:[f('.tableRow'),f('.tableRow:hover'),f('.tableRow:active'),f('.tableRow')]  });
-	styles.tableRow = new Style({ color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], horizontal:"left" });
-	skins.tableFooter = new Skin({ fill:f('.tableRow'), stroke:s('.tableHeader'), borders: { bottom:1 }  });
-	skins.tableHeader = new Skin({ fill:[f('.tableHeader'),f('.tableHeader:hover'),f('.tableHeader:active'),f('.tableHeader')], stroke:s('.tableHeader'), borders: { bottom:1 } });
-	styles.tableHeader = new Style({ font:"bold", color:c('.tableHeader'), horizontal:"left" });
-	skins.paneBackground = new Skin({ fill:f('.tableHeader') });
-	skins.paneSeparator = new Skin({ fill:s('.tableHeader') });
+	skins.glyphs = new Skin({ texture:textures.glyphs, color:$.tableRow.color, x:0, y:0, width:16, height:16, variants:16 });
+	skins.tableRow = new Skin({ fill:$.tableRow.fill  });
+	styles.tableRow = new Style({ color:$.tableRow.color, horizontal:"left" });
+	skins.tableFooter = new Skin({ fill:$.tableHeader.fill[0], stroke:$.tableHeader.stroke, borders: { bottom:1 }  });
+	skins.tableHeader = new Skin({ fill:$.tableHeader.fill, stroke:$.tableHeader.stroke, borders: { bottom:1 } });
+	styles.tableHeader = new Style({ font:"bold", color:$.tableHeader.color, horizontal:"left" });
+	skins.paneBackground = new Skin({ fill:$.tableHeader.fill[0] });
+	skins.paneSeparator = new Skin({ fill:$.tableHeader.stroke });
 	
 	// FILES
-	styles.breakpointRowName = new Style({ color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')] });
-	styles.breakpointRowLine = new Style({ font:"light", color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')] });
-	skins.fileRow = new Skin({ fill:[f('.tableRow'),f('.tableRow:hover'),f('.tableRow:active'),f('.fileRow:selected')] });
-	styles.fileRow = new Style({ font:"semibold", color:c('.fileRow:selected'), horizontal:"left" });
-	styles.infoRow = new Style({ color:c('.infoRow'), horizontal:"left" });
+	styles.breakpointRowName = new Style({ color:$.tableRow.color });
+	styles.breakpointRowLine = new Style({ font:"light", color:$.tableRow.color });
+	skins.fileRow = new Skin({ fill:$.fileRow.fill });
+	styles.fileRow = new Style({ font:"semibold", color:$.fileRow.color, horizontal:"left" });
+	styles.infoRow = new Style({ color:$.infoRow.color, horizontal:"left" });
 		
 	// MESSAGES
-	skins.messageBackground = new Skin({ fill:f('.tableHeader') });
-	skins.conversation = new Skin({ texture:textures.glyphs, color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], x:64, y:0, width:16, height:16, variants:16 });
-	styles.conversation = new Style({ font:codeFont, color:c('.code'), left:12, right:12, top:4, bottom:4, horizontal:"left" });
+	skins.messageBackground = new Skin({ fill:$.tableHeader.fill });
+	skins.conversation = new Skin({ texture:textures.glyphs, color:$.tableRow.color, x:64, y:0, width:16, height:16, variants:16 });
+	styles.conversation = new Style({ font:codeFont, color:$.code.color, left:12, right:12, top:4, bottom:4, horizontal:"left" });
 	skins.messages = [
-		new Skin({ fill:f('.messages-0'), stroke:s('.messages-0') }),
-		new Skin({ fill:f('.messages-1'), stroke:s('.messages-1') }),
-		new Skin({ fill:f('.messages-2'), stroke:s('.messages-2') }),
-		new Skin({ fill:f('.messages-3'), stroke:s('.messages-3') }),
-		new Skin({ fill:f('.messages-4'), stroke:s('.messages-4') }),
-		new Skin({ fill:f('.messages-5'), stroke:s('.messages-5') }),
-		new Skin({ fill:f('.messages-6'), stroke:s('.messages-6') }),
+		new Skin({ fill:$.messages[0].fill }),
+		new Skin({ fill:$.messages[1].fill }),
+		new Skin({ fill:$.messages[2].fill }),
+		new Skin({ fill:$.messages[3].fill }),
+		new Skin({ fill:$.messages[4].fill }),
+		new Skin({ fill:$.messages[5].fill }),
+		new Skin({ fill:$.messages[6].fill }),
 	];
-	styles.message = new Style({ font:codeFont, color:[c('.code'),c('.code .keyword'),c('.code .literal'),c('.code .comment')], top:5, bottom:5, horizontal:"left" });
+	skins.messageMarks = [
+		new Skin({ texture:textures.glyphs, color:$.messages[0].fill, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[1].fill, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[2].fill, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[3].fill, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[4].fill, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[5].fill, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[6].fill, x:0, y:56, width:16, height:8, variants:80 }),	
+	];
+	styles.message = new Style({ font:codeFont, color:$.code.color, top:5, bottom:5, horizontal:"left" });
 		
 	// SERIAL
-	skins.progressBar = new Skin({ fill:[f('.progressBar'),f('.progressBar:hover')] });
+	skins.progressBar = new Skin({ fill:$.progressBar.fill });
 	
 	// TEST262
-	skins.filterTest262 = new Skin({ texture:textures.glyphs, color:[c('.tableRow'),c('.fileRow:selected')], x:0, y:16, width:16, height:16, variants:16 });
+	skins.filterTest262 = new Skin({ texture:textures.glyphs, color:$.tableRow.color, x:0, y:16, width:16, height:16, variants:16 });
 	styles.test262Headers = [
-		new Style({ font:"bold", color:c('.test262 .fail'), horizontal:"right", right:2 }),
-		new Style({ font:"bold", color:c('.test262 .fail'), horizontal:"left", left:2 }),
-		new Style({ font:"bold", color:c('.test262 .pass'), horizontal:"right", right:2 }),
-		new Style({ font:"bold", color:c('.test262 .pass'), horizontal:"left", left:2 }),
-		new Style({ font:"bold", color:c('.test262 .skip'), horizontal:"right", right:2 }),
-		new Style({ font:"bold", color:c('.test262 .skip'), horizontal:"left", left:2 }),
+		new Style({ font:"bold", color:$.test262Fail.color, horizontal:"right", right:2 }),
+		new Style({ font:"bold", color:$.test262Fail.color, horizontal:"left", left:2 }),
+		new Style({ font:"bold", color:$.test262Pass.color, horizontal:"right", right:2 }),
+		new Style({ font:"bold", color:$.test262Pass.color, horizontal:"left", left:2 }),
+		new Style({ font:"bold", color:$.test262Skip.color, horizontal:"right", right:2 }),
+		new Style({ font:"bold", color:$.test262Skip.color, horizontal:"left", left:2 }),
 	];
 		
 	// DEBUG
-	skins.callRow = new Skin({ fill:[f('.tableRow'),f('.tableRow:hover'),f('.tableRow:active'),f('.callRow:selected')]  });
-	styles.callRow = new Style({ font:"semibold", color:c('.callRow:selected'), horizontal:"left" });
-	styles.debugRowName = new Style({ color:[c('.debugRow'),c('.debugRow .flash'),c('.debugRow .cache'),c('.tableRow')] });
-	styles.debugRowValue = new Style({ font:"light", color:[c('.debugRow'),c('.debugRow .flash'),c('.debugRow .cache'),c('.tableRow')] });
-	styles.instrumentRowName = new Style({ font:"10px", color:c('.tableRow'), horizontal:"left", vertical:"top" });
-	styles.instrumentRowValue = new Style({ font:"light 10px", color:c('.tableRow'), horizontal:"right", vertical:"top" });
-	colors.instrumentBar = c('.instrumentBar');
-	colors.instrumentBarHover = c('.instrumentBar:hover');
-	colors.instrumentLine = c('.instrumentLine');
+	skins.callRow = new Skin({ fill:$.callRow.fill  });
+	styles.callRow = new Style({ font:"semibold", color:$.callRow.color, horizontal:"left" });
+	styles.debugRowName = new Style({ color:[$.tableRow.color, $.inspectFlash.color, $.inspectCache.color, $.tableRow.color] });
+	styles.debugRowValue = new Style({ font:"light", color:[$.tableRow.color, $.inspectFlash.color, $.inspectCache.color, $.tableRow.color] });
+	styles.instrumentRowName = new Style({ font:"10px", color:$.tableRow.color, horizontal:"left", vertical:"top" });
+	styles.instrumentRowValue = new Style({ font:"light 10px", color:$.tableRow.color, horizontal:"right", vertical:"top" });
+	colors.instrumentBar = $.tableRow.color;
+	colors.instrumentBarHover = $.callRow.fill;
+	colors.instrumentLine = $.tableHeader.stroke;
 		
 	// PREFERENCES	
-	skins.preferenceHeader = new Skin({ fill:[f('.tableRow'),f('.tableRow:hover'),f('.tableRow:active'),f('.tableRow')] });
-	skins.preferenceRow = new Skin({ fill:[f('.tableRow'),f('.tableRow:hover'),f('.tableRow:active'),f('.tableRow')] });
-	styles.preferenceComment = new Style({ font:"light", color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], horizontal:"left", left:10 });
-	styles.preferenceFirstName = new Style({ font:"semibold", color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], horizontal:"left" });
-	styles.preferenceSecondName = new Style({ font:"semibold", color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], horizontal:"left" });
-	styles.preferenceThirdName = new Style({ color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], horizontal:"left" });
-	styles.preferenceValue = new Style({ color:[c('.tableRow'),c('.tableRow:hover'),c('.tableRow:active'),c('.tableRow')], horizontal:"left", left:2 });
-	skins.switchBar = new Skin({ fill:[f('.switch:disabled'),f('.switch'),f('.switch:active'),f('.switch:active')], stroke:[s('.switch:disabled'),s('.switch'),s('.switch:active'),s('.switch:active')] });
-	skins.switchButton = new Skin({ fill:[f('.switch .thumb:disabled'),f('.switch .thumb'),f('.switch .thumb:active'),f('.switch .thumb:active')], stroke:[s('.switch .thumb:disabled'),s('.switch .thumb'),s('.switch .thumb:active'),s('.switch .thumb:active')] });
+	skins.preferenceHeader = new Skin({ fill:$.tableRow.fill });
+	skins.preferenceRow = new Skin({ fill:$.tableRow.fill });
+	styles.preferenceComment = new Style({ font:"light", color:$.tableRow.color, horizontal:"left", left:10 });
+	styles.preferenceFirstName = new Style({ font:"semibold", color:$.tableRow.color, horizontal:"left" });
+	styles.preferenceSecondName = new Style({ font:"semibold", color:$.tableRow.color, horizontal:"left" });
+	styles.preferenceThirdName = new Style({ color:$.tableRow.color, horizontal:"left" });
+	styles.preferenceValue = new Style({ color:$.tableRow.color, horizontal:"left", left:2 });
 }
 
 export function buildAssets(which) { 

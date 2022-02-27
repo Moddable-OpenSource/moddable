@@ -581,10 +581,10 @@ void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, Pi
 	}
 	double degrees = M_PI / 180.0;
 	cairo_new_sub_path (cr);
-	cairo_arc (cr, fx + fw - fr, fy + fr, fr, -90 * degrees, 0 * degrees);
-	cairo_arc (cr, fx + fw - fr, fy + fh - fr, fr, 0 * degrees, 90 * degrees);
-	cairo_arc (cr, fx + fr, fy + fh - fr, fr, 90 * degrees, 180 * degrees);
-	cairo_arc (cr, fx + fr, fy + fr, fr, 180 * degrees, 270 * degrees);
+	cairo_arc(cr, fx + fw - fr, fy + fr, fr, -90 * degrees, 0 * degrees);
+	cairo_arc(cr, fx + fw - fr, fy + fh - fr, fr, 0 * degrees, 90 * degrees);
+	cairo_arc(cr, fx + fr, fy + fh - fr, fr, 90 * degrees, 180 * degrees);
+	cairo_arc(cr, fx + fr, fy + fr, fr, 180 * degrees, 270 * degrees);
 	cairo_close_path (cr);
 	cairo_set_source_rgba(cr, ((double)fillColor->r) / 255.0, ((double)fillColor->g) / 255.0, ((double)fillColor->b) / 255.0, ((double)fillColor->a) / 255.0);
 	cairo_fill_preserve (cr);
@@ -642,6 +642,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 	cairo_t* cr = (*self)->cairo;
 	double scale = (*texture)->scale;
 	if ((*self)->filtered) {
+		if ((*self)->transparent) return;
 		double w = sw * scale;
 		double h = sh * scale;
 		cairo_surface_t* maskImage = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
@@ -681,6 +682,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
 {
 	if ((w <= 0) || (h <= 0)) return;
+	if ((*self)->transparent) return;
 	cairo_t* cr = (*self)->cairo;
 	cairo_rectangle(cr, x, y, w, h);
 	cairo_fill(cr);
@@ -827,12 +829,14 @@ void PiuViewPushColor(PiuView* self, PiuColor color)
 {
 	cairo_t* cr = (*self)->cairo;
 	cairo_set_source_rgba(cr, ((double)color->r) / 255.0, ((double)color->g) / 255.0, ((double)color->b) / 255.0, ((double)color->a) / 255.0);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 }
 
 void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 {
 	cairo_t* cr = (*self)->cairo;
 	cairo_set_source_rgba(cr, ((double)color->r) / 255.0, ((double)color->g) / 255.0, ((double)color->b) / 255.0, ((double)color->a) / 255.0);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 	(*self)->filtered = 1;
 }
 

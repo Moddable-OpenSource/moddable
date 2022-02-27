@@ -78,7 +78,7 @@ class SerialButtonBehavior extends ButtonBehavior {
 		this.onSerialChanged(container);
 	}
 	onSerialChanged(container) {
-		container.active = model[this.can](application, container.first);
+		container.active = model[this.can](application, container.first.next);
 		this.changeState(container, container.active ? 1 : 0);
 	}
 	onTap(container) {
@@ -294,7 +294,7 @@ var SerialRow = Row.template(function($) { return {
 	contents: [
 		Content($, { width:rowIndent }),
 		Content($, { width:20 }),
-		Label($, { left:0, right:0, string:$ }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$ }),
 	],
 }});
 

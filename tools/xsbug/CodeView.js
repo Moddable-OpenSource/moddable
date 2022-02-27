@@ -171,17 +171,19 @@ class CodeBehavior extends _CodeBehavior {
 		let location = code.locate(code.selectionOffset);
 		var lines = this.data.LINES;
 		var line = lines.content(Math.floor(location.y / code.lineHeight));
-		if (line.first.state === 0) {
+		var content = line.first.next;
+		if (content.state === 0) {
 			return false;
 		}
-		item.state = line.first.state & 1;
+		item.state = (content.variant & 1) ? 0 : 1;
 		return true;
 	}
 	canToggleBreakpoint(code, item) {
 		let location = code.locate(code.selectionOffset);
 		var lines = this.data.LINES;
 		var line = lines.content(Math.floor(location.y / code.lineHeight));
-		item.state = line.first.state & 1;
+		var content = line.first.next;
+		item.state = content.state & 1;
 		return true;
 	}
 	doDisableBreakpoint(code, item) {
@@ -469,18 +471,23 @@ class LineNumbersBehavior extends Behavior {
 		let length = column.length;
 		let path = data.path;
 		let machine = data.currentMachine;
-		let content = column.first;
-		while (content) {
-			content.first.variant = 0;
-			content.first.state = 0;
-			content = content.next;
+		let container = column.first;
+		while (container) {
+			let content = container.first;
+			while (content) {
+				content.state = 0;
+				content = content.next;
+			}
+			container = container.next;
 		}
 		data.breakpoints.items.forEach(breakpoint => {
 			if (breakpoint.path == path) {
 				let at = breakpoint.line - 1;
 				if ((0 <= at) && (at < length)) {
-					let content = column.content(at);
-					content.first.state = breakpoint.enabled ? 1 : 2;
+					let container = column.content(at);
+					let content = container.first.next;
+					content.state = content.next.state = 1;
+					content.variant = breakpoint.enabled ? 0 : 1;
 				}
 			}
 		});
@@ -490,8 +497,8 @@ class LineNumbersBehavior extends Behavior {
 				if (data.path == path) {
 					let at = data.line - 1;
 					if ((0 <= at) && (at < length)) {
-						let content = column.content(at);
-						content.first.variant |= 1;
+						let container = column.content(at);
+						container.first.state = 1;
 					}
 				}
 			});
@@ -598,7 +605,7 @@ export var CodeView = Container.template($ => ({
 				Container($, {
 					left:0, width:60, top:1, bottom:0, clip:true,
 					contents: [
-						Content($, { left:0, width:50, top:0, bottom:0, skin:skins.lineNumbers, }),
+						Content($, { left:0, width:50, top:0, bottom:0, skin:skins.lineNumber, }),
 						Scroller($, {
 							left:0, width:50, top:0, bottom:0, active:true,
 							Behavior: class extends Behavior {
@@ -619,7 +626,7 @@ export var CodeView = Container.template($ => ({
 		}),
 		FindRow($, { anchor:"FIND" }),
 		Row($, {
-			left:0, right:0, top:0, height:26, skin:skins.paneHeader, active:true, 
+			left:0, right:0, top:0, height:26, skin:skins.paneHeader, state:1, active:true, 
 			Behavior: class extends Behavior {
 				onCreate(row, data) {
 					this.data = data;
@@ -649,7 +656,9 @@ export var CodeView = Container.template($ => ({
 var LineNumber = Container.template($ => ({
 	left:0, right:0, height:16,
 	contents: [
-		Label($, { left:0, right:-8, height:16, skin:skins.lineNumber, style:styles.lineNumber, string:++$ }),
+		Content($, { left:0, skin:skins.lineCall, state:0 }),
+		Content($, { left:16, skin:skins.lineBreakpoint, state:0 }),
+		Label($, { left:0, right:-8, height:16, style:styles.lineNumber, string:++$ }),
 	],
 }));
 
@@ -748,7 +757,7 @@ export var ErrorView = Container.template($ => ({
 			],
 		}),
 		Row($, {
-			left:0, right:0, top:0, height:26, skin:skins.paneHeader, 
+			left:0, right:0, top:0, height:26, skin:skins.paneHeader, state:1, 
 			contents: [
 				Content($, { width:8 }),
 				Label($, { left:0, right:0, style:styles.paneHeader, string:$.path }),

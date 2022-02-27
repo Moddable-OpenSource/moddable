@@ -86,8 +86,9 @@ struct PiuViewStruct {
 	CGContextRef context;
 	CGColorSpaceRef colorSpace;
 	CGColorRef color;
-	xsBooleanValue filtered;
-	xsBooleanValue appearanceChanged;
+	PiuBoolean filtered;
+	PiuBoolean transparent;
+	PiuBoolean appearanceChanged;
 };
 
 extern xsMachine* ServiceThreadMain(void* context);

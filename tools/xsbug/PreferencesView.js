@@ -327,7 +327,7 @@ export var PreferencesView = Container.template($ => ({
 			],
 		}),
 		Row($, {
-			left:0, right:0, top:0, height:26, skin:skins.paneHeader, 
+			left:0, right:0, top:0, height:26, skin:skins.paneHeader, state:1, 
 			contents: [
 				Content($, { width:8 }),
 				Label($, { left:0, right:0, style:styles.paneHeader, string:"PREFERENCES" }),

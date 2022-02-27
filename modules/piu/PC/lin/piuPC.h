@@ -95,6 +95,7 @@ struct PiuViewStruct {
 	PiuBoolean running;
 	PiuBoolean touching;
 	PiuBoolean filtered;
+	PiuBoolean transparent;
 };
 
 extern xsMachine* ServiceThreadMain(void* context);
