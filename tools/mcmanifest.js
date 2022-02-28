@@ -382,6 +382,11 @@ export class MakeFile extends FILE {
 	}
 	generateModulesDefinitions(tool) {
 		this.write("MODULES =");
+		for (var result of tool.cdvFiles) {
+			this.write("\\\n\t$(MODULES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target + ".xsb");
+		}
 		for (var result of tool.jsFiles) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
@@ -396,6 +401,35 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateModulesRules(tool) {
+		const generatedTS = [];
+
+		for (let result of tool.cdvFiles) {
+			let source = result.source;
+			let target = result.target;
+			const extension = ("typescript" === result.query?.language) ? ".ts" : ".js";
+			const output = "$(MODULES_DIR)" + tool.slash + target + extension;
+			this.line(output, ": ", source);
+			this.echo(tool, "cdv ", target);
+			let pragmas = "";
+			for (const name in result.query)
+				pragmas += " " + "-p " + name + "=" + result.query[name];
+			this.line("\tcdv ", source, " -o $(@D)", " -n ", target, pragmas);
+
+			if (".js" === extension) {
+				tool.jsFiles.push({
+					source: tool.modulesPath + tool.slash + target + extension,
+					target: target + ".xsb"
+				});
+			}
+			else {
+				tool.tsFiles.push({
+					source: tool.modulesPath + tool.slash + target + extension,
+					target: target + ".xsb"
+				});
+				generatedTS.push(output);
+			}
+		}
+
 		for (var result of tool.jsFiles) {
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
@@ -458,7 +492,7 @@ export class MakeFile extends FILE {
 			if (tool.windows)
 				this.line("TSCONFIG:");
 			else
-				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
+				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
 			this.echo(tool, "tsc ", "tsconfig.json");
 			this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
@@ -1081,7 +1115,7 @@ class BLERule extends Rule {
 };
 
 class ModulesRule extends Rule {
-	appendSource(target, source, include, suffix, parts, kind) {
+	appendSource(target, source, include, suffix, parts, kind, query) {
 		var tool = this.tool;
 		if (kind < 0)
 			return;
@@ -1102,6 +1136,16 @@ class ModulesRule extends Rule {
 		else if (parts.extension == ".h") {
 			this.appendFolder(tool.cFolders, parts.directory);
 			this.appendFolder(tool.hFiles, source);
+			if ("cdv" === query.transform) {
+				const result = this.appendFile(tool.cdvFiles, target, source, include);
+				if (result) {
+					result.query = {...query};
+					delete result.query.source; 
+					delete result.query.transform; 
+				}
+			}
+			else if (parts.name.endsWith(".cdv"))
+				this.appendFile(tool.cdvFiles, target.slice(0, -4), source, include);
 		}
 		else if (parts.extension == ".ts") {
 			if (parts.name.endsWith(".d")) {
@@ -1809,6 +1853,9 @@ export class Tool extends TOOL {
 		this.tsFiles.already = {};
 		this.dtsFiles = [];
 		this.dtsFiles.already = {};
+		
+		this.cdvFiles = [];
+		this.cdvFiles.already = {};
 
 		this.resourcesFiles = [];
 		this.resourcesFiles.already = {};
