@@ -186,7 +186,7 @@ OBJECTS = \
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
-	$(BIN_DIR)\cdv \
+	$(BIN_DIR)\cdv.bat \
 	$(BIN_DIR)\colorcellencode.bat \
 	$(BIN_DIR)\compressbmf.bat \
 	$(BIN_DIR)\image2cs.bat \
