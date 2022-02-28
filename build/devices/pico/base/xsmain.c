@@ -22,14 +22,20 @@
 #include "xsmain.h"
 #include "modTimer.h"
 #include "modInstrumentation.h"
-#include "mc.defines.h"
 
 #include "xsPlatform.h"
 #include "xsHost.h"
+#include "xsHosts.h"
 
-#ifdef mxDebug
-	static xsMachine *gThe = NULL;		// main VM
+//#include "mc.defines.h"
+#ifndef MODDEF_XS_TEST
+	#define MODDEF_XS_TEST 1
 #endif
+
+#if !MODDEF_XS_TEST
+static
+#endif
+	xsMachine *gThe;		// the main XS virtual machine running
 
 void xs_setup(void)
 {
@@ -39,19 +45,28 @@ void xs_setup(void)
 	setupDebugger();
 #endif
 
-	the = ESP_cloneMachine(0, 0, 0, 0);
+	while (true) {
+		gThe = modCloneMachine(0, 0, 0, 0, NULL);
 
-#ifdef mxDebug
-	gThe = the;
+		modRunMachineSetup(gThe);
+
+#if MODDEF_XS_TEST
+		xsMachine *the = gThe;
+		while (gThe) {
+			modTimersExecute();
+			modMessageService(the, modTimersNext());
+
+			modInstrumentationAdjust(Turns, +1);
+		}
+		xsDeleteMachine(the);
+#else
+		while (true) {
+			modTimersExecute();
+			modMessageService(the, modTimersNext());
+
+			modInstrumentationAdjust(Turns, +1);
+		}
 #endif
-
-	mc_setup(the);
-
-	while (1) {
-		modTimersExecute();
-		modMessageService(the, modTimersNext());
-
-		modInstrumentationAdjust(Turns, +1);
 	}
 }
 

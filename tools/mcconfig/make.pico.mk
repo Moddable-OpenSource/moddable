@@ -327,12 +327,14 @@ INC_DIRS = \
 	$(XS_DIR)/../modules/base/timer \
 	$(PLATFORM_DIR)	\
 	$(PLATFORM_DIR)/base \
-	$(PLATFORM_DIR)/config
+	$(PLATFORM_DIR)/config \
+	$(LIB_DIR)
 
 #	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
 
 
 XS_OBJ = \
+	$(LIB_DIR)/xsHosts.c.o \
 	$(LIB_DIR)/xsHost.c.o \
 	$(LIB_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
@@ -381,6 +383,7 @@ XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/platforms/pico \
+	$(XS_DIR)/platforms/mc \
 	$(BUILD_DIR)/devices/pico
 
 XS_HEADERS = \
@@ -389,7 +392,8 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/platforms/pico/xsPlatform.h \
-	$(XS_DIR)/platforms/pico/xsHost.h
+	$(XS_DIR)/platforms/pico/xsHost.h \
+	$(XS_DIR)/platforms/mc/xsHosts.h
 
 HEADERS += $(XS_HEADERS)
 
@@ -764,9 +768,11 @@ $(TMP_DIR):
 	@echo "TMP_DIR"
 	mkdir -p $(TMP_DIR)
 
+$(LIB_DIR)/buildinfo.h:
+	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
-	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 	
 FINAL_LINK_OBJ:=\
 	$(XS_OBJ) \
@@ -794,8 +800,10 @@ $(BIN_DIR)/xs_pico.elf: $(FINAL_LINK_OBJ)
 	@echo "# make .dis file"
 	$(OBJDUMP) -h $(BIN_DIR)/xs_pico.elf > $(BIN_DIR)/xs_pico.dis
 	$(OBJDUMP) -d $(BIN_DIR)/xs_pico.elf >> $(BIN_DIR)/xs_pico.dis
+	$(OBJDUMP) -t $(BIN_DIR)/xs_pico.elf >> $(BIN_DIR)/xs_pico.sym
 
-$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
+
+$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(LIB_DIR)/buildinfo.h
 	@echo "# buildinfo"
 	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c

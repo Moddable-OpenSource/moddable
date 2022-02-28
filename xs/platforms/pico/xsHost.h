@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -16,23 +16,6 @@
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- * This file incorporates work covered by the following copyright and
- * permission notice:
- *
- *       Copyright (C) 2010-2016 Marvell International Ltd.
- *       Copyright (C) 2002-2010 Kinoma, Inc.
- *
- *       Licensed under the Apache License, Version 2.0 (the "License");
- *       you may not use this file except in compliance with the License.
- *       You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *       Unless required by applicable law or agreed to in writing, software
- *       distributed under the License is distributed on an "AS IS" BASIS,
- *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *       See the License for the specific language governing permissions and
- *       limitations under the License.
  */
 
 #ifndef __XSHOST__
@@ -52,8 +35,10 @@ extern "C" {
  */
 
 #define ICACHE_RAM_ATTR __attribute__((section(".data.xsram")))
-#define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
-#define ICACHE_FLASH1_ATTR __attribute__((section(".flash.1")))
+//#define ICACHE_FLASH_ATTR __attribute__((section(".flash")))
+//#define ICACHE_FLASH1_ATTR __attribute__((section(".flash.1")))
+#define ICACHE_FLASH_ATTR __attribute__((section(".rodata")))
+#define ICACHE_FLASH1_ATTR __attribute__((section(".rodata")))
 #define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 #define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
 #define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
@@ -177,18 +162,6 @@ extern void ESP_putc(int c);
 	#define modWatchDogReset()
 #endif
 
-/*
-    VM
-*/
-
-#ifdef __XS__
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
-
-	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
-#else
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
-
-#endif
 
 /*
 	debugging
@@ -223,18 +196,6 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #define MOD_TASKS (false)
 
 #define modTaskGetCurrent() (1)
-
-/*
-	instrumentation
-*/
-
-#if defined(mxInstrument) && defined(__XS__)
-	#include "modTimer.h"
-
-	void espInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
-	void espInstrumentMachineEnd(xsMachine *the);
-	void espInstrumentMachineReset(xsMachine *the);
-#endif
 
 /* 
 	c libraries
@@ -437,8 +398,6 @@ extern uint8_t modSPIFlashInit(void);
 extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 extern uint8_t modSPIErase(uint32_t offset, uint32_t size);
-
-char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 /* RESERVED MEMORY */
 // from elf2uf2/main.cpp

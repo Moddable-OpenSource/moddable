@@ -53,9 +53,13 @@
 #endif
 #define mxMisalignedSettersCrash 1		//@@@ ?
 // #define mxUseGCCAtomics		1
+
 #define mxUnalignedAccess 0
+#define mxIntegerDivideOverflowException 0		// esp does this.
 
 #ifndef __XS6PLATFORMMINIMAL__
+
+#include "mc.defines.h"
 
 #define mxExport extern
 #ifndef mxImport
@@ -142,7 +146,6 @@ typedef struct DebugFragmentRecord *DebugFragment;
 #endif
 
 #define mxMachinePlatform \
-	void* host; \
 	uint8_t *heap; \
 	uint8_t *heap_ptr; \
 	uint8_t *heap_pend; \

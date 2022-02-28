@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -41,7 +41,8 @@
 #include "xsPlatform.h"
 
 #include "mc.defines.h"
-#include "xsHost.h"
+#include "xs.h"
+#include "xsHosts.h"
 #include "pico/sem.h"
 
 #ifdef mxDebug
@@ -71,14 +72,6 @@ static int gDebugMutexInited = 0;
 #define mxDebugMutexGive()	sem_release(&gDebugMutex)
 #define mxDebugMutexAllocated() (gDebugMutexInited)
 
-int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
-// int modMessagePostToMachineFromPool(txMachine *the, modMessageDeliver callback, void *refcon);
-int modMessageService(void);
-
-void modMachineTaskInit(txMachine *the);
-void modMachineTaskUninit(txMachine *the);
-void modMachineTaskWait(txMachine *the);
-void modMachineTaskWake(txMachine *the);
 
 void fxCreateMachinePlatform(txMachine* the)
 {
@@ -100,6 +93,10 @@ void fxDeleteMachinePlatform(txMachine* the)
         c_free(the->debugFragments);
         the->debugFragments = next;
     }
+#endif
+
+#ifdef mxInstrument
+	modInstrumentMachineEnd(the);
 #endif
 
 	modMachineTaskUninit(the);
@@ -182,12 +179,54 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
+const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
+	"debugger",
+	"memory full",
+	"stack overflow",
+	"fatal",
+	"dead strip",
+	"unhandled exception",
+	"not enough keys",
+	"too much computation",
+	"unhandled rejection"
+};
+
 void fxAbort(txMachine* the, int status)
 {
-#ifdef mxDebug
-	flushDebugger();
+#if MODDEF_XS_TEST
+	if (XS_DEBUGGER_EXIT == status) {
+		extern txMachine *gThe;
+		if (gThe == the) {
+			gThe = NULL;		// soft reset
+			return;
+		}
+	}
 #endif
+
+#if defined(mxDebug) || defined(mxInstrument)
+	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
+
+	fxReport(the, "XS abort: %s\n", msg);
+	#if defined(mxDebug) && !MODDEF_XS_TEST
+		fxDebugger(the, (char*)__FILE__, __LINE__);
+	#endif
+#endif
+
+#ifdef MODDEF_XS_RESTARTON
+	static const int restart[] = {
+		#if defined(mxDebug)
+			XS_DEBUGGER_EXIT,
+			XS_FATAL_CHECK_EXIT,
+		#endif
+			MODDEF_XS_RESTARTON };
+	int i;
+	for (i = 0; i < sizeof(restart) / sizeof(int); i++) {
+		if (restart[i] == status)
+			c_exit(status);
+	}
+#else
 	c_exit(status);
+#endif
 }
 
 #ifdef mxDebug
@@ -205,7 +244,7 @@ void fxConnect(txMachine* the)
 			static const char *piReset = "<?xs-00000000?>\r\n";
 			const char *cp = piReset;
 
-			modDelayMilliseconds(200);
+			modDelayMilliseconds(250);
 
 			while (true) {
 				char c = c_read8(cp++);
@@ -223,8 +262,10 @@ void fxConnect(txMachine* the)
 void fxDisconnect(txMachine* the)
 {
 	if (the->connection) {
+		mxDebugMutexTake();
 		fx_putpi(the, '-', true);
 		the->debugConnectionVerified = 0;
+		mxDebugMutexGive();
 		//@@ clear debug fragments?
 	}
 	the->connection = (txSocket)NULL;
@@ -637,7 +678,7 @@ printf("get id\n");
 
 		case 16: {
 			int atomSize;
-			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			char *atom = modGetModAtom(the, c_read32be(cmd), &atomSize);
 			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
 				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
 				the->echoOffset += atomSize;
