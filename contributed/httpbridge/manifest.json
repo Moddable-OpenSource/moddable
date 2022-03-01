@@ -11,7 +11,7 @@
 		"*": [
 			"./main"
 		],
-		"bridge/*": "$(MODULES)/network/http/bridge/*",
+		"bridge/*": "$(MODDABLE)/contributed/httpbridge/modules/*",
 		"model":"site/public/model"
 		},
 	"preload": [

@@ -98,7 +98,11 @@ ws.callback = function cb(websock, message, value) {
         if (typeof app[action] === "function") {
           value = app[action](value);
         } else {
-          trace("No matching action found\n");
+          if (value.hasOwnProperty('language')) {
+            Object.assign(app.model,value)
+          } else {
+            trace("No matching action found\n");
+          }
         }
         if (value) websock.broadcast(value);
       } catch (e) {
