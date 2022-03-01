@@ -1,0 +1,22 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/data/qrcode/manifest.json",
+		"$(MODDABLE)/modules/commodetto/qrcode/manifest.json"		
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/data/qrcode/qrcode",
+			"$(MODULES)/data/qrcode/qrcodegen"
+		],
+		"piu/QRCode":"$(PIU)/MC/qrcode/piuQRCode"
+		},
+	"preload": [
+		"qrcode",
+		"qrcodegen",
+		"piu/QRCode"
+	]
+}
