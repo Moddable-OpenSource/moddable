@@ -38,12 +38,12 @@
 const isMac = system.platform == "mac";
 
 const liteColors = {
-	"button": { "fill": [ "transparent", "transparent", "#ffffff", "#192eab" ], "color": [ "#cdcdcd", "#404040", "#262626", "#ffffff" ] },
+	"button": { "fill": [ "transparent", "transparent", "#00000020", "#6573c7" ], "color": [ "#cdcdcd", "#404040", "#262626", "#ffffff" ] },
 	"divider": { "fill": "#c2c2c2" },
 	"fieldScroller": { "fill": "#ffffff", "stroke": "#f0f0f0" },
 	"scrollbar": { "fill": [ "transparent", "#fafafa", "#fafafa", "#fafafa" ], "stroke": [ "transparent", "#dbdbdb", "#dbdbdb", "#dbdbdb" ] },
 	"scrollbarThumb": { "fill": [ "#e0e0e000", "#e0e0e0", "#e6e6e6", "#e6e6e6" ] },
-	"switchBar": { "fill": [ "transparent", "#b0b0b0", "#192eab", "#192eab" ], "stroke": [ "#e6e6e6", "#b0b0b0", "#192eab", "#192eab" ] },
+	"switchBar": { "fill": [ "transparent", "#b0b0b0", "#6573c7", "#6573c7" ], "stroke": [ "#e6e6e6", "#b0b0b0", "#6573c7", "#6573c7" ] },
 	"switchButton": { "fill": [ "transparent", "#ffffff", "#ffffff", "#ffffff" ], "stroke": [ "#e6e6e6", "#ffffff", "#ffffff", "#ffffff" ] },
 	
 	"tab": { "fill": [ "#f0f0f0", "#dbdbdb", "#e6e6e6", "#f0f0f0" ], "stroke": "#c2c2c2", "color": [ "#000000", "#404040", "#000000", "#000000" ] },
@@ -99,12 +99,12 @@ const liteColors = {
 };
 
 const darkColors = {
-	"button": { "fill": [ "transparent", "transparent", "#000000", "#f68100" ], "color": [ "#808080", "#ffffff", "#ffffff", "#ffffff" ] },
+	"button": { "fill": [ "transparent", "transparent", "#ffffff60", "#6573c7" ], "color": [ "#808080", "#ffffff", "#ffffff", "#ffffff" ] },
 	"divider": { "fill": "#545454" },
 	"fieldScroller": { "fill": "#1e1e1e", "stroke": "#545454" },
 	"scrollbar": { "fill": [ "transparent", "#3b3b3b", "#3b3b3b", "#3b3b3b" ], "stroke": [ "transparent", "#454545", "#454545", "#454545" ] },
 	"scrollbarThumb": { "fill": [ "#a2a2a200", "#a2a2a2", "#a2a2a2", "#a2a2a2" ] },
-	"switchBar": { "fill": [ "#000000", "#5d5d5d", "#f68100", "#f68100" ], "stroke": [ "#5d5d5d", "#5d5d5d", "#f68100", "#f68100" ] },
+	"switchBar": { "fill": [ "#000000", "#5d5d5d", "#6573c7", "#6573c7" ], "stroke": [ "#5d5d5d", "#5d5d5d", "#6573c7", "#6573c7" ] },
 	"switchButton": { "fill": [ "#000000", "#e4e4e4", "#e4e4e4", "#e4e4e4" ], "stroke": [ "#5d5d5d", "#e4e4e4", "#e4e4e4", "#e4e4e4" ] },
 	
 	"tab": { "fill": [ "#3b3b3b", "#212121", "#343434", "#3b3b3b" ], "stroke": "#4a4a4a", "color": [ "#ffffff", "#c0c0c0", "#e0e0e0", "#ffffff" ] },
@@ -117,12 +117,12 @@ const darkColors = {
 	"lineNumber": { "color": "#ababab", "fill": "#333333", "stroke": "#545454" },
 	"lineBreakpoint": { "color": "#ffffff", "fill": "#7fbd3b" },
 
-	"code": { "fill": "#2a2a2a", "color": "#f0f0f0" },
-	"codeComment": { "color": "#3cb878" },
-	"codeKeyword": { "color": "#77bafc" },
-	"codeLiteral": { "color": "#f26c4f" },
-	"codeResult": { "fill": "#f68100" },
-	"codeSelection": { "fill": "#5b5b5b" },
+	"code": { "fill": "#2a2a2a", "color": "#fffffff0" },
+	"codeComment": { "color": "#00ff00f0" },
+	"codeKeyword": { "color": "#a6bafff0" },
+	"codeLiteral": { "color": "#ff9c7df0" },
+	"codeResult": { "fill": "#fbf4bb" },
+	"codeSelection": { "fill": "#4b4b4b" },
 	"error": { "color": "#262626" },
 	
 	"findLabel": { "color": "#000000" },
