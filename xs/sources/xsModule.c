@@ -88,7 +88,7 @@ static txBoolean fxModuleSetPropertyValue(txMachine* the, txSlot* instance, txID
 static txBoolean fxModuleSetPrototype(txMachine* the, txSlot* instance, txSlot* prototype);
 
 static txSlot* fxCheckCompartmentInstance(txMachine* the, txSlot* slot);
-// static void fxObjectToModule(txMachine* the, txSlot* realm, txID id);
+static void fxPrepareCompartmentFunction(txMachine* the, txSlot* program, txSlot* instance);
 
 static txSlot* fxCheckStaticModuleRecordInstance(txMachine* the, txSlot* slot);
 static txSlot* fxNewStaticModuleRecordInstance(txMachine* the);
@@ -1829,6 +1829,21 @@ txSlot* fxCheckCompartmentInstance(txMachine* the, txSlot* slot)
 	return C_NULL;
 }
 
+void fxPrepareCompartmentFunction(txMachine* the, txSlot* program, txSlot* instance)
+{
+	txSlot* property = mxFunctionInstanceHome(instance);
+	property->value.home.module = program;
+	if (mxCompartmentGlobal.kind != XS_UNDEFINED_KIND) {
+		instance->flag |= XS_DONT_PATCH_FLAG;
+		property = property->next;
+		while (property) {
+			if (!(property->flag & XS_INTERNAL_FLAG))
+				property->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
+			property = property->next;
+		}
+	}
+}
+
 void fx_Compartment(txMachine* the)
 {
 	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
@@ -1882,7 +1897,7 @@ void fx_Compartment(txMachine* the)
 			instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 			property = fxLastProperty(the, instance);
 			fxNextSlotProperty(the, property, &mxCompartmentPrototype, mxID(_prototype), XS_GET_ONLY);
-			mxFunctionInstanceHome(instance)->value.home.module = program;
+			fxPrepareCompartmentFunction(the, program, instance);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_Compartment), XS_DONT_ENUM_FLAG);
 			mxPop();
 			
@@ -1890,12 +1905,12 @@ void fx_Compartment(txMachine* the)
 			instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 			property = fxLastProperty(the, instance);
 			fxNextSlotProperty(the, property, &mxFunctionPrototype, mxID(_prototype), XS_GET_ONLY);
-			mxFunctionInstanceHome(instance)->value.home.module = program;
+			fxPrepareCompartmentFunction(the, program, instance);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_Function), XS_DONT_ENUM_FLAG);
 			mxPop();
 			
 			instance = fxBuildHostFunction(the, mxCallback(fx_eval), 1, mxID(_eval));
-			mxFunctionInstanceHome(instance)->value.home.module = program;
+			fxPrepareCompartmentFunction(the, program, instance);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_eval), XS_DONT_ENUM_FLAG);
 			mxPop();
 		}
