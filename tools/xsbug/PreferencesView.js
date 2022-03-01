@@ -332,7 +332,7 @@ export var PreferencesView = Container.template($ => ({
 				Content($, { width:8 }),
 				Label($, { left:0, right:0, style:styles.paneHeader, string:"PREFERENCES" }),
 				IconButton($, { 
-					width:30, height:30, variant:6, state:1, active:true, 
+					variant:6, state:1, active:true, 
 					Behavior: class extends ButtonBehavior {
 						onTap(button) {
 							button.bubble("doCloseFile");
