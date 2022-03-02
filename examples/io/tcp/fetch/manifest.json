@@ -7,7 +7,6 @@
 	},
 	"modules": {
 		"*": [
-			"./../httpclient/httpclient",
 			"./fetch",
 			"./main"
 		],
