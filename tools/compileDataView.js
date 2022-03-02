@@ -104,6 +104,7 @@ let header;
 let usesText;
 let conditionals;
 let final;
+let paddingPrefix;
 
 class Output extends Array {
 	add(line) {
@@ -308,7 +309,7 @@ function flushBitfields(bitsToAdd = 32) {
 		const shiftLeft = bitOffset ? " << " + bitOffset : "";
 		const shiftRight = bitOffset ? " >> " + bitOffset : "";
 
-		if (doGet) {
+		if (doGet && !bitfield.name.startsWith(paddingPrefix)) {
 			output.add({
 				javascript: `   get ${bitfield.name}() {`,
 				typescript: `   get ${bitfield.name}(): ${bitfield.boolean ? "boolean" : "number"} {`,
@@ -320,7 +321,7 @@ function flushBitfields(bitsToAdd = 32) {
 			output.push(`   }`);
 		}
 
-		if (doSet) {
+		if (doSet && !bitfield.name.startsWith(paddingPrefix)) {
 			output.add({
 				javascript: `   set ${bitfield.name}(value) {`,
 				typescript: `   set ${bitfield.name}(value: ${bitfield.boolean ? "boolean" : "number"}) {`,
@@ -477,6 +478,7 @@ function compileDataView(input, pragmas = {}) {
 	header = "";
 	usesText = false;
 	conditionals = [{active: true, else: true}];
+	paddingPrefix = "__pad";
 
 	final = [];
 	const errors = [];
@@ -953,7 +955,7 @@ function compileDataView(input, pragmas = {}) {
 					if (classAlign < align)
 						classAlign = align;
 
-					if (doGet) {
+					if (doGet && !name.startsWith(paddingPrefix)) {
 						output.add({
 							javascript: `   get ${name}() {`,
 							typescript: `   get ${name}(): ${(undefined === arrayCount) ? TypeScriptTypeAliases[type] : `${type}Array`} {`
@@ -970,7 +972,7 @@ function compileDataView(input, pragmas = {}) {
 						output.push(`   }`);
 					}
 
-					if (doSet) {
+					if (doSet && !name.startsWith(paddingPrefix)) {
 						output.add({
 							javascript: `   set ${name}(value) {`,
 							typescript: `   set ${name}(value: ${(undefined === arrayCount) ? TypeScriptTypeAliases[type] : `ArrayLike<${TypeScriptTypeAliases[type]}>`}) {`,
@@ -995,15 +997,17 @@ function compileDataView(input, pragmas = {}) {
 
 					endField((arrayCount ?? 1) * byteCount);
 
-					if (undefined === arrayCount)
-						jsonOutput.push(`         ${name}: this.${name},`);
-					else
-						jsonOutput.push(`         ${name}: Array.from(this.${name}),`);
+					if (!name.startsWith(paddingPrefix)) {
+						if (undefined === arrayCount)
+							jsonOutput.push(`         ${name}: this.${name},`);
+						else
+							jsonOutput.push(`         ${name}: Array.from(this.${name}),`);
 
-					fromOutput.add({
-						javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
-						typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`
-					});
+						fromOutput.add({
+							javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
+							typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`
+						});
+					}
 					} break;
 
 				case "char":
@@ -1028,7 +1032,7 @@ function compileDataView(input, pragmas = {}) {
 						output.push(`   }`);
 					}
 
-					if (doSet) {
+					if (doSet && !name.startsWith(paddingPrefix)) {
 						output.add({
 							javascript: `   set ${name}(value) {`,
 							typescript: `   set ${name}(value: string) {`,
@@ -1054,12 +1058,14 @@ function compileDataView(input, pragmas = {}) {
 
 					endField(arrayCount ?? 1);
 
-					jsonOutput.push(`         ${name}: this.${name},`);
+					if (!name.startsWith(paddingPrefix)) {
+						jsonOutput.push(`         ${name}: this.${name},`);
 
-					fromOutput.add({
-						javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
-						typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`,
-					});
+						fromOutput.add({
+							javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
+							typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`,
+						});
+					}
 					
 					usesText = true;
 					break;
@@ -1075,12 +1081,14 @@ function compileDataView(input, pragmas = {}) {
 						bitCount
 					});
 
-					jsonOutput.push(`         ${name}: this.${name},`);
+					if (!name.startsWith(paddingPrefix)) {
+						jsonOutput.push(`         ${name}: this.${name},`);
 
-					fromOutput.add({
-						javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
-						typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`,
-					});
+						fromOutput.add({
+							javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
+							typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`,
+						});
+					}
 					break;
 
 				case "Boolean":
@@ -1098,12 +1106,15 @@ function compileDataView(input, pragmas = {}) {
 						boolean: true
 					});
 
-					jsonOutput.push(`         ${name}: this.${name},`);
 
-					fromOutput.add({
-						javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
-						typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`,
-					});
+					if (!name.startsWith(paddingPrefix)) {
+						jsonOutput.push(`         ${name}: this.${name},`);
+
+						fromOutput.add({
+							javascript: `      if ("${name}" in obj) result.${name} = obj.${name};`,
+							typescript: `      if ("${name}" in obj) result.${name} = (<##LATE_CAST##> obj).${name};`,
+						});
+					}
 					break;
 
 				default: {
@@ -1132,7 +1143,7 @@ function compileDataView(input, pragmas = {}) {
 						output.push(`   }`);
 					}
 
-					if (doSet) {
+					if (doSet && !name.startsWith(paddingPrefix)) {
 						output.add({
 							javascript: `   set ${name}(value) {`,
 							typescript: `   set ${name}(value: ${type}) {`,
@@ -1144,12 +1155,14 @@ function compileDataView(input, pragmas = {}) {
 
 					endField(classes[type].byteLength);
 
-					jsonOutput.push(`         ${name}: this.${name}.toJSON(),`);
+					if (!name.startsWith(paddingPrefix)) {
+						jsonOutput.push(`         ${name}: this.${name}.toJSON(),`);
 
-					fromOutput.add({
-						javascript: `      if ("${name}" in obj) result.${name} = ${type}.from(obj.${name});`,
-						typescript: `      if ("${name}" in obj) result.${name} = ${type}.from((<##LATE_CAST##> obj).${name});`,
-					});
+						fromOutput.add({
+							javascript: `      if ("${name}" in obj) result.${name} = ${type}.from(obj.${name});`,
+							typescript: `      if ("${name}" in obj) result.${name} = ${type}.from((<##LATE_CAST##> obj).${name});`,
+						});
+					}
 					} break;
 			}
 		}
