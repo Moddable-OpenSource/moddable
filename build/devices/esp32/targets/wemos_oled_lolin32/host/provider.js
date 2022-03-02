@@ -18,7 +18,13 @@
  *
  * FIXME: Analog port needs updating.
  * NOTES: Not sure how the I2C screen works here.
- * NOTES: backlight: 18, displayDC: 2, displaySelect: 15 are placeholders.
+ * NOTES: Pins LED is updated.  backlight: 18, displayDC: 2, displaySelect: 15 are placeholders.
+ * Pinout is referenced below.
+ * https://resource.heltec.cn/download/WiFi_Kit_32/WIFI_Kit_32_pinoutDiagram_V2.pdf
+ */
+
+/**
+ * NOTES: There is no built-in LED's
  * Pinout is referenced below:
  * https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2019/07/lolin32-oled-pinout.jpg
  * 
