@@ -73,10 +73,7 @@ const device = {
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pins: {
-		button: 0,
-		backlight: 18,
-		displayDC: 2,
-		displaySelect: 15
+		button: 0
 	}
 };
 
