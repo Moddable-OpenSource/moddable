@@ -44,6 +44,10 @@ for (let i = 0; true; i++) {
 	break;
 }
 
+// determine the size of one slot -- assumes Object is one slot
+let slots = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset);
+const holdOneSlot = {};
+const slotSize = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset) - slots; 
 Debug.gc();
 
 measure("Boolean", () => true);
@@ -121,9 +125,9 @@ function measure(name, what)
 	chunks = Instrumentation.get(xsInstrumentation.chunk_used + xsInstrumentationOffset) - chunks;
 
 	if (slots && chunks)
-		trace(`${name}: ${slots / 16} slots + ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
+		trace(`${name}: ${slots / slotSize} slots + ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
 	else if (slots)
-		trace(`${name}: ${slots / 16} slots = ${slots + chunks} bytes\n`)
+		trace(`${name}: ${slots / slotSize} slots = ${slots + chunks} bytes\n`)
 	else if (chunks)
 		trace(`${name}: ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
 	else
