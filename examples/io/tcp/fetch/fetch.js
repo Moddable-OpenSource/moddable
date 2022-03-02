@@ -212,10 +212,13 @@ function fetch(url, info = {}) {
 				}
 				if (!headers)
 					headers = new Headers();
-				length = headers.get("content-length");
-				if (length == undefined) {
-					length = body.byteLength;
-					headers.set("content-length", length);
+				else {
+					length = headers.get("content-length");
+					if (length == undefined) {
+						headers = new Headers(headers);
+						length = body.byteLength;
+						headers.set("content-length", length);
+					}
 				}
 			}
 			const client = Client(parts.authority);
