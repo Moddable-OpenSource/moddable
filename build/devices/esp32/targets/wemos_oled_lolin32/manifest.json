@@ -1,0 +1,29 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/ssd1306/manifest_i2c.json"
+	],
+	"config": {
+		"screen": "ssd1306",
+		"touch": "",
+		"format": "Gray256"
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 21,
+			"scl_pin": 22
+		},
+		"spi": {
+			"miso_pin": 19,
+			"mosi_pin": 23,
+			"sck_pin": 18
+		},
+		"ssd1306": {
+			"hz": 400000,
+			"width": 128,
+			"height": 64,
+			"sda_pin": 5,
+			"scl_pin": 4,
+			"rst_pin": 16
+		}
+	}
+}
