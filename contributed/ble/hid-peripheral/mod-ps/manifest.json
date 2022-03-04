@@ -1,0 +1,25 @@
+{
+    "include": [
+        "$(MODDABLE)/examples/manifest_mod.json"
+    ],
+    "modules": {
+        "UI" : "./ps-shortcuts",
+        "*": [
+            "./assets"
+        ]
+    },
+    "preload": [
+        "UI",
+        "assets",
+        "ps-shortcuts"
+    ],
+    "resources":{
+		"*-mask": [
+			"./assets/*"
+		],
+		"*-alpha": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-24",
+            "$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20"
+		]
+	}
+}
