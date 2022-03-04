@@ -1,0 +1,23 @@
+{
+	"service": {
+		"uuid": "1800",
+		"characteristics": {
+			"device_name": {
+				"uuid": "2A00",
+				"maxBytes": 11,
+				"type": "String",
+				"permissions": "read",
+				"properties": "read",
+				"value": "Moddable Media"
+			},
+			"appearance": {
+				"uuid": "2A01",
+				"maxBytes": 2,
+				"type": "Uint16",
+				"permissions": "read",
+				"properties": "read",
+				"value": 961
+			}
+		}
+	}
+}

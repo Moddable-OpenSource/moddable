@@ -1,0 +1,32 @@
+{
+    "include": "$(MODDABLE)/examples/manifest_mod.json",
+    "modules": {
+        "UI" : "./fancy-controller",
+        "*": [
+            "./assets"
+        ]
+    },
+    "resources": {
+        "*": [
+            "./assets/center-btns",
+            "./assets/next-track-btns",
+            "./assets/prev-track-btns",
+            "./assets/vol-down-btns",
+            "./assets/vol-up-btns",
+            "./assets/arc-inner-shadow"
+        ],
+        "*-color": [
+            "./assets/bkg"
+        ],
+        "*-mask": [
+            "./assets/vert-ticks",
+            "./assets/bt-logo",
+            "./assets/arc-mask-shape"
+        ],
+        "*-alpha": [
+            "$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20"
+        ]
+    }
+}
+
+
