@@ -88,7 +88,7 @@ static uint8_t tx_buffer[tx_buffer_size];
 
 static __INLINE uint32_t fifo_length(app_fifo_t *const fifo)
 {
-	uint32_t ret, tmp = fifo->read_pos;
+	uint32_t tmp = fifo->read_pos;
 	return fifo->write_pos - tmp;
 }
 

@@ -26,12 +26,20 @@
 #include "xsPlatform.h"
 #include "xsHost.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
+#ifndef MODDEF_XS_TEST
+	#define MODDEF_XS_TEST 1
+#endif
+
+xsMachine *gThe = NULL;        // main VM
+
 #ifdef mxDebug
-	static xsMachine *gThe = NULL;		// main VM
 	TaskHandle_t gMainTask = NULL;
 #endif
 
-static void xsTask(void *pvParameter);
+void loop_task(void *pvParameter);
 
 #define kStack ((10 * 1024) / sizeof(StackType_t))
 #define kTaskPriority	1
@@ -41,33 +49,53 @@ void xs_setup(void)
 #if configSUPPORT_STATIC_ALLOCATION
 	static StaticTask_t taskBuffer;
 	static StackType_t stackBuffer[kStack];
-	xTaskCreateStatic(xsTask, "main", kStack, NULL, kTaskPriority, stackBuffer, &taskBuffer);
+	xTaskCreateStatic(loop_task, "main", kStack, NULL, kTaskPriority, stackBuffer, &taskBuffer);
 #else
-	xTaskCreate(xsTask, "main", kStack, NULL, kTaskPriority, NULL);
+	xTaskCreate(loop_task, "main", kStack, NULL, kTaskPriority, NULL);
 #endif
 }
 
-void xsTask(void *pvParameter)
+void loop_task(void *pvParameter)
 {
-	xsMachine *the;
+	taskYIELD();
 
 #ifdef mxDebug
 	gMainTask = xTaskGetCurrentTaskHandle();
 	setupDebugger();
 #endif
 
-	the = ESP_cloneMachine(0, 0, 0, 0);
+#if MODDEF_XS_TEST
+	while (true) {
+	    gThe = modCloneMachine(0, 0, 0, 0, NULL);
+
+		modRunMachineSetup(gThe);
+
+		xsMachine *the = gThe;
+		while (gThe) {
 #ifdef mxDebug
-	gThe = the;
+			uint32_t num = ulTaskNotifyTake(pdTRUE, 0);
+			if (num) // got notification from usb driver that there is data available.
+				fxReceiveLoop();
 #endif
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
+		}
 
-	mc_setup(the);
+		xsDeleteMachine(the);
 
-	while (1) {
-		modTimersExecute();
-		modMessageService(the, modTimersNext());
-
-		modInstrumentationAdjust(Turns, +1);
+#else
+		while (true) {
+#ifdef mxDebug
+			uint32_t num = ulTaskNotifyTake(pdTRUE, 0);
+			if (num) // got notification from usb driver that there is data available.
+				fxReceiveLoop();
+#endif
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
+		}
+#endif
 	}
 }
 

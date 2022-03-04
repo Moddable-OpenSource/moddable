@@ -97,6 +97,7 @@ static void clock_init(void)
 {
 	ret_code_t err_code = nrf_drv_clock_init();
 	APP_ERROR_CHECK(err_code);
+	NRF_POWER->TASKS_CONSTLAT = 1;
 }
 
 static void timer_init(void)

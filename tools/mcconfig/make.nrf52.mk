@@ -95,8 +95,10 @@ else
 	endif
 endif
 
-NRF52_GNU_VERSION ?= 8.2.1
-NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
+# NRF52_GNU_VERSION ?= 8.2.1
+# NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
+NRF52_GNU_VERSION ?= 7.2.1
+NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-7-2017-q4-major
 
 NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
 UF2CONV ?= $(NRF_ROOT)/uf2conv.py
@@ -287,6 +289,7 @@ NRF_PATHS += \
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
+	$(LIB_DIR)/xsHosts.c.o \
 	$(LIB_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
@@ -333,6 +336,7 @@ XS_OBJ = \
 XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
+	$(XS_DIR)/platforms/mc \
 	$(XS_DIR)/platforms/nrf52 \
 	$(BUILD_DIR)/devices/nrf52
 

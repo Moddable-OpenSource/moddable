@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -108,13 +108,16 @@ typedef int txSocket;
 
 #define mxVolatile(type, name, value) type name = value; type *name ## Address __attribute__((unused)) = &name
 
+#define mxGetKeySlotID(SLOT) (SLOT)->ID
+#define mxGetKeySlotKind(SLOT) (SLOT)->kind
+
 extern void fx_putc(void *refcon, char c);
 
-#define mxMapSetLength (1)
+#define mxTableMinLength (1)
 
 struct DebugFragmentRecord {
 	struct DebugFragmentRecord *next;
-	uint16_t count;
+	uint8_t count;
 	uint8_t binary;
 	uint8_t pad;
 	uint8_t bytes[1];

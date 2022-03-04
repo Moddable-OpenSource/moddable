@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,12 +36,15 @@
  */
 
 #include "xsAll.h"
+#include "modTimer.h"
 #include "stdio.h"
 
 #include "xsPlatform.h"
 
 #include "mc.defines.h"
-#include "xsHost.h"
+
+#include "xs.h"
+#include "xsHosts.h"
 
 #ifdef mxDebug
 	#include "modPreference.h"
@@ -76,6 +79,7 @@ void fxReceiveLoop(void);
 #else
 	#define mxDebugMutexTake()
 	#define mxDebugMutexGive()
+	#define mxDebugMutexAllocated()  (true)
 #endif
 
 int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
@@ -108,6 +112,9 @@ void fxDeleteMachinePlatform(txMachine* the)
     }
 #endif
 
+#ifdef mxInstrument
+	modInstrumentMachineEnd(the);
+#endif
 	modMachineTaskUninit(the);
 }
 
@@ -188,12 +195,57 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
+const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
+	"debugger",
+	"memory full",
+	"stack overflow",
+	"fatal",
+	"dead strip",
+	"unhandled exception",
+	"not enough keys",
+	"too much computation",
+	"unhandled rejection"
+};
+
 void fxAbort(txMachine* the, int status)
 {
-#ifdef mxDebug
-	flushDebugger();
+#if MODDEF_XS_TEST
+	if (XS_DEBUGGER_EXIT == status) {
+		extern txMachine *gThe;
+		if (gThe == the) {
+			gThe = NULL;		// soft reset
+			return;
+		}
+	}
+
+	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
+		mxUnknownError("fxAbort: out of memory");
 #endif
+
+#if defined(mxDebug) || defined(mxInstrument)
+	const char *msg = (status < XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
+
+	fxReport(the, "XS abort: %s\n", msg);
+	#if defined(mxDebug) && !MODDEF_XS_TEST
+		fxDebugger(the, (char*)__FILE__, __LINE__);
+	#endif
+#endif
+
+#ifdef MODDEF_XS_RESTARTON
+	static const int restart[] = {
+		#if defined(mxDebug)
+			XS_DEBUGGER_EXIT,
+			XS_FATAL_CHECK_EXIT,
+		#endif
+			MODDEF_XS_RESTARTON };
+	int i;
+	for (i = 0; i < sizeof(restart) / sizeof(int); i++) {
+		if (restart[i] == status)
+			c_exit(status);
+	}
+#else
 	c_exit(status);
+#endif
 }
 
 #ifdef mxDebug
@@ -516,7 +568,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		case 1:		// restart
 			break;
 
-#if MODDEF_XS_MODS
+//#if MODDEF_XS_MODS
 		case 2: {		// uninstall
 			uint8_t erase[16] = {0};
 			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
@@ -544,7 +596,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				resultCode = -1;
 			}
 			break;
-#endif /* MODDEF_XS_MODS */
+//#endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
@@ -593,7 +645,8 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					the->echoOffset += byteCountOut + 1;
 				}
 			}
-		} break;
+		}
+		break;
 
 		case 9:
 			if (cmdLen >= 4)
@@ -637,12 +690,20 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 		case 16: {
 			int atomSize;
-			char *atom = getModAtom(c_read32be(cmd), &atomSize);
+			char *atom = modGetModAtom(the, c_read32be(cmd), &atomSize);
 			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
 				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
 				the->echoOffset += atomSize;
 			}
 			} break;
+
+		case 17:
+			the->echoBuffer[the->echoOffset++] = 'n';
+			the->echoBuffer[the->echoOffset++] = 'r';
+			the->echoBuffer[the->echoOffset++] = 'f';
+			the->echoBuffer[the->echoOffset++] = '5';
+			the->echoBuffer[the->echoOffset++] = '2';
+			break;
 #endif
 
 		default:

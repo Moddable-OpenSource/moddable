@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -47,9 +47,7 @@
 
 #include "nrf_fstorage_sd.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "mc.defines.h"
 
 /*
 	link locations
@@ -63,31 +61,72 @@ extern "C" {
 #define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
 #define ICACHE_XS6STRING_ATTR __attribute__((section(".rodata.xs6string"))) __attribute__((aligned(4)))
 
-#if defined(__XS__)
-	extern void mc_setup(xsMachine *the);
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+
+/*
+    report
+*/
+
+extern void modLog_transmit(const char *msg);
+extern void ESP_putc(int c);
+
+//@@ MDK I'm using a local variable for scratch below to force the string into
+// ram so EasyDMA can access it.
+//		static const char scratch[] = msg ; \
+
+#define modLog(msg) \
+	do { \
+		char scratch[] = msg; \
+		modLog_transmit(scratch); \
+	} while (0)
+#define modLogVar(msg) modLog_transmit(msg)
+#define modLogInt(msg) \
+	do { \
+		char temp[10]; \
+		itoa(msg, temp, 10); \
+		modLog_transmit(temp); \
+	} while (0)
+#define modLogHex(msg) \
+	do { \
+		char temp[10]; \
+		itoa((int)(msg), temp, 16); \
+		modLog_transmit(temp); \
+	} while (0)
+#define xmodLog(msg)
+#define xmodLogVar(msg)
+#define xmodLogInt(msg)
+#define xmodLogHex(msg)
+
+extern const char *gXSAbortStrings[];
 
 /*
     timer
 */
 
-extern void modTimersExecute(void);
-extern int modTimersNext(void);
-
 extern uint32_t nrf52_milliseconds();
-extern void nrf52_delay(uint32_t delayMS);
-
-#define modDelayMilliseconds(ms) vTaskDelay(((uint64_t)ms << 10) / 1000) // nrf52_delay(ms)		//@@ adjust 1024/1000
-#define modDelayMicroseconds(us) nrf52_delay(((us) + 500) / 1000)
 #define modMilliseconds() nrf52_milliseconds()
 #define modMicroseconds() (uint32_t)(nrf52_milliseconds() * 1000)
+
+// extern void nrf52_delay(uint32_t delayMS);
+
+//#define modDelayMilliseconds(ms) nrf52_delay(ms)
+//#define modDelayMicroseconds(us) nrf52_delay(((us) + 500) / 1000)
+#define modDelayMilliseconds(ms) vTaskDelay(ms)
+#define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
+
+extern void modTimersExecute(void);
+extern int modTimersNext(void);
 
 /*
 	critical section
 */
+
 #define modCriticalSectionDeclare
-#define modCriticalSectionBegin()	taskENTER_CRITICAL()	// vPortEnterCritical()
-#define modCriticalSectionEnd()		taskEXIT_CRITICAL()		//vPortExitCritical()
+#define modCriticalSectionBegin()	vPortEnterCritical()
+#define modCriticalSectionEnd()		vPortExitCritical()
 
 /*
 	date and time
@@ -131,39 +170,6 @@ int32_t modGetDaylightSavingsOffset(void);					// seconds
 void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 
 /*
-    report
-*/
-
-extern void modLog_transmit(const char *msg);
-extern void ESP_putc(int c);
-
-//@@ MDK I'm using a local variable for scratch below to force the string into
-// ram so EasyDMA can access it.
-//		static const char scratch[] = msg ; \
-
-#define modLog(msg) \
-	do { \
-		char scratch[] = msg; \
-		modLog_transmit(scratch); \
-	} while (0)
-#define modLogVar(msg) modLog_transmit(msg)
-#define modLogInt(msg) \
-	do { \
-		char temp[10]; \
-		itoa(msg, temp, 10); \
-		modLog_transmit(temp); \
-	} while (0)
-#define modLogHex(msg) \
-	do { \
-		char temp[10]; \
-		itoa((int)(msg), temp, 16); \
-		modLog_transmit(temp); \
-	} while (0)
-#define xmodLog(msg)
-#define xmodLogVar(msg)
-#define xmodLogInt(msg)
-
-/*
 	watchdog timer
 */
 
@@ -177,14 +183,8 @@ extern void ESP_putc(int c);
     VM
 */
 
-#ifdef __XS__
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
-
-	uint8_t modRunPromiseJobs(xsMachine *the);		// returns true if promises still pending
-#else
-	extern void *ESP_cloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, const char *name);
-
-#endif
+void xs_setup();
+void xs_loop();
 
 /*
 	debugging
@@ -194,9 +194,11 @@ void fxReceiveLoop(void);
 void setupDebugger(void);
 void flushDebugger(void);
 extern TaskHandle_t gMainTask;
+
 /*
 	messages
 */
+
 typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 #if defined(__XS__)
@@ -209,27 +211,15 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 	task
  */
 
-#if defined(__XS__)
+#ifdef __XS__
     void modMachineTaskInit(xsMachine *the);
     void modMachineTaskUninit(xsMachine *the);
     void modMachineTaskWait(xsMachine *the);
     void modMachineTaskWake(xsMachine *the);
 #endif
 
-#define MOD_TASKS	(true)
-#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
-
-/*
-	instrumentation
-*/
-
-#if defined(mxInstrument) && defined(__XS__)
-	#include "modTimer.h"
-
-	void espInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
-	void espInstrumentMachineEnd(xsMachine *the);
-	void espInstrumentMachineReset(xsMachine *the);
-#endif
+#define MOD_TASKS (true)
+#define modTaskGetCurrent()		((uintptr_t)xTaskGetCurrentTaskHandle());
 
 /* 
 	c libraries
@@ -242,9 +232,6 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define C_EOF EOF
-#define C_NULL NULL
 
 #ifndef PATH_MAX
 #define PATH_MAX 128
@@ -278,9 +265,12 @@ extern void *my_malloc(size_t size);
 #define c_realloc realloc
 #endif
 
-extern void nrf52_reboot(uint32_t kind);
+extern void nrf52_reset(void);
+extern void nrf52_rebootToDFU(void);
+extern void nrf52_get_mac(uint8_t *mac);
 
-#define c_exit(n) { nrf52_reboot(0); }
+
+#define c_exit(n) { nrf52_reset(); }
 #define c_free free
 #define c_qsort qsort
 #define c_strtod strtod
@@ -307,10 +297,19 @@ extern void nrf52_reboot(uint32_t kind);
 #define c_strftime modStrfTime
 //#define c_time time
 
+/* ERROR */
+
+#define C_EOF EOF
+#define C_NULL NULL
+#define C_ENOMEM NRF_ERROR_NO_MEM
+#define C_EINVAL NRF_ERROR_INVALID_PARAM
+
+
 /* MATH */
 
 #include <math.h>
 #include <float.h>
+
 #define C_DBL_MAX DBL_MAX
 #define C_DBL_MIN (double)5e-324
 #define C_EPSILON (double)2.2204460492503130808472633361816e-16

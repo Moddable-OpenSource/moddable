@@ -545,9 +545,6 @@ ULONG GetCurrentThreadStackLimits_Win7( _Out_ PULONG_PTR LowLimit, _Out_ PULONG_
     GetCurrentThreadStackLimits(LowLimit, HighLimit);
     return 0;
 }
-
-#ifndef mxASANStackMargin
-	#define mxASANStackMargin 0
 #endif
 
 char* fxCStackLimit()

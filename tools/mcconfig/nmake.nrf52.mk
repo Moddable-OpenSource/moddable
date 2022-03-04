@@ -476,6 +476,7 @@ OBJECTS = \
 FINAL_LINK_OBJ = \
 	$(LIB_DIR)\buildinfo.o \
 	$(LIB_DIR)\xsHost.o \
+	$(LIB_DIR)\xsHosts.o \
 	$(LIB_DIR)\xsPlatform.o \
 	$(OBJECTS) \
 	$(SDK_GLUE_OBJ) \
@@ -711,6 +712,10 @@ $(XS_OBJ): $(XS_HEADERS)
 {$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
 	@echo # library xs: $(@F)
 	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+$(LIB_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c
+	@echo # library xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
 $(LIB_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c
 	@echo # library xs: $(@F)
