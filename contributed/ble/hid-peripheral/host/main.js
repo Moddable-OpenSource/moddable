@@ -15,11 +15,11 @@
 import {default as KeyboardService, KEYINFO, HID_MODIFIERS} from "keyboardService";
 import Modules from "modules";
 
+const BLUE = "blue";
 const WHITE = "white";
-const BLACK = "black";
 
 const BackgroundSkin = Skin.template({ fill: WHITE });
-const OpenSans24 = Style.template({ font: "24px Open Sans", color: BLACK });
+const OpenSans24 = Style.template({ font: "24px Open Sans", color: BLUE });
 
 class MediaBehavior extends Behavior {
 	onCreate(application, data) {
@@ -60,8 +60,8 @@ const NoModUI = Container.template($ => ({
 	Skin: BackgroundSkin, left: 0, right: 0, top: 0, bottom: 0,
 	contents: [
 		Text($, {
-			height: 200, top: 50, left: 0, right: 0, Style: OpenSans24,
-			string: "Please install a UI mod from the Moddable Store." 
+			left: 0, right: 0, Style: OpenSans24,
+			string: "BLE HID Host installed.\nReady for mod." 
 		})
 	]
 }));
