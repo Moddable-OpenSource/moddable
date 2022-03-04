@@ -279,8 +279,8 @@ void modInstallCryptDigest(xsMachine *the)
 	xsmcSet(xsVar(kPrototype), xsID("close"), xsVar(kScratch));
 	xsVar(kScratch) = xsNewHostFunction(xs_crypt_Digest_reset, 0);
 	xsmcSet(xsVar(kPrototype), xsID("reset"), xsVar(kScratch));
-	xsDefine(xsVar(kPrototype), xsID("blockSize"), xsNewHostFunction(xs_crypt_Digest_get_blockSize, 0), xsIsGetter);
-	xsDefine(xsVar(kPrototype), xsID("outputSize"), xsNewHostFunction(xs_crypt_Digest_get_outputSize, 0), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("blockSize"), xsNewHostFunction(xs_crypt_Digest_get_blockSize, 0), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("outputSize"), xsNewHostFunction(xs_crypt_Digest_get_outputSize, 0), xsIsGetter);
 
 	xsEndHost(the);
 }

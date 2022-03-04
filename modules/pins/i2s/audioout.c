@@ -885,11 +885,11 @@ void xs_audioout_mix(xsMachine *the)
 
 	audioMix(out, samplesNeeded, result);
 	xsResult = xsNewHostObject(c_free);
-	xsmcSetHostData(xsResult, result);
+	xsmcSetHostBuffer(xsResult, result, bytesNeeded);
 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), bytesNeeded);
-	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 }
 
 void xs_audioout_length(xsMachine *the)

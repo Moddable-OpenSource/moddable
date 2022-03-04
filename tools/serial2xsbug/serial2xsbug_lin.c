@@ -117,6 +117,7 @@ txSerialMachine fxOpenNetwork(txSerialTool self, uint32_t value)
 		
 		fxCountMachines(self);
 	}
+	machine->receiveCount += 1;
 	return machine;
 }
 

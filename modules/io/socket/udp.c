@@ -71,6 +71,7 @@ void xs_udp_constructor(xsMachine *the)
 	UDP udp;
 	int port = 0;
 	struct udp_pcb *skt;
+	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
 
 	xsmcVars(1);
 
@@ -108,8 +109,7 @@ void xs_udp_constructor(xsMachine *the)
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
 
-	if (builtinGetCallback(the, xsID_onReadable, &xsVar(0)))
-		udp->onReadable = xsToReference(xsVar(0));
+	udp->onReadable = onReadable;
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
 }
@@ -183,7 +183,7 @@ void xs_udp_write(xsMachine *the)
 	if (!ipaddr_aton(temp, &dst))
 		xsRangeError("invalid IP address");
 
-	xsmcGetBuffer(xsArg(2), &buffer, &byteLength);
+	xsmcGetBufferReadable(xsArg(2), &buffer, &byteLength);
 	udp_sendto_safe(udp->skt, buffer, byteLength, &dst, port, &err);
 	if (ERR_OK != err)
 		xsUnknownError("UDP send failed");

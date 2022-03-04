@@ -1,0 +1,66 @@
+{
+    "build": {
+		"ETHERNET": "$(MODDABLE)/modules/network/ethernet"
+	},
+    "config": {
+		"ethernet": true
+	},
+    "platforms": {
+        "esp32": {
+            "build": {
+                "ETHERNETDRIVER": "$(IDF_PATH)/examples/ethernet/enc28j60/components/eth_enc28j60"
+            },
+            "include": [
+                "$(MODULES)/pins/spi/manifest.json"
+            ],
+            "modules": { 
+                "*": [
+                    "$(ETHERNET)/*",
+                    "$(ETHERNET)/esp32/*",
+                    "$(ETHERNET)/esp32/drivers/enc28j60/*",
+                    "$(ETHERNETDRIVER)/*"
+                ]
+            }
+        },
+        "lin": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
+        "mac": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
+        "win": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
+        "...": {
+            "error": "ethernet - unsupported platform"
+        }
+    },
+    "preload": [
+        "ethernet"
+    ],
+    "defines": {
+        "ethernet": {
+            "hz": 6000000,
+            "int_pin": 33,
+            "spi": {
+                "cs_pin": 27,
+                "port": "VSPI_HOST",
+                "miso_pin": 35,
+                "mosi_pin": 26,
+                "sck_pin": 0
+            }
+        }
+    }
+}

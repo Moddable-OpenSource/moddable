@@ -217,49 +217,60 @@ trace("partial header!!\n");		//@@ untested
 			}
 		}
 		if (3 == this.state) {		// receive message
-			let tag = socket.read(Number);
-			let length = socket.read(Number);
-			let mask = 0 != (length & 0x80);
-			length &= 0x7f;
-			if (126 == length) {
-				length = socket.read(Number) << 8;
-				length |= socket.read(Number);
-			}
-			else if (127 == length)
-				; //@@ crazy unsupported 8 byte length
+			while (value) {
+				let tag = socket.read(Number);
+				let length = socket.read(Number);
+				value -= 2;
+				let mask = 0 != (length & 0x80);
+				length &= 0x7f;
+				if (126 == length) {
+					length = socket.read(Number) << 8;
+					length |= socket.read(Number);
+					value -= 2;
+				}
+				else if (127 == length)
+					; //@@ crazy unsupported 8 byte length
 
-			switch (tag & 0x0f) {
-				case 1:
-				case 2:
-					let data;
-					if (mask) {
-						mask = socket.read(ArrayBuffer, 4);
-						data = socket.read(ArrayBuffer, length);
-						Logical.xor(data, mask);
-						if (1 === (tag & 0x0f))
-							data = String.fromArrayBuffer(data);
-					}
-					else
-						data = socket.read((1 === (tag & 0x0f)) ? String : ArrayBuffer, length);
-					this.callback(Client.receive, data);
+				switch (tag & 0x0f) {
+					case 1:
+					case 2:
+						let data;
+						if (mask) {
+							mask = socket.read(ArrayBuffer, 4);
+							data = socket.read(ArrayBuffer, length);
+							value -= 4;
+							Logical.xor(data, mask);
+							if (1 === (tag & 0x0f))
+								data = String.fromArrayBuffer(data);
+						}
+						else
+							data = socket.read((1 === (tag & 0x0f)) ? String : ArrayBuffer, length);
+						value -= length;
+						this.callback(Client.receive, data);
+						break;
+					case 8:
+						this.state = 4;
+						this.callback(Client.disconnect);		// close
+						this.close();
+						return;
+					case 9:		// ping
+						if (length)
+							socket.write(0x8a, length, socket.read(ArrayBuffer, length));		//@@ assumes length is 125 or less
+						else
+							socket.write(0x8a, 0);
+						break;
+					case 10:		// pong
+						value -= length;
+						socket.read(null, length);
+						break;
+					default:
+						trace("unrecognized frame type\n");
+						break;
+				}
+				if (value < 0) {
+					message = -1;		// corrupt stream
 					break;
-				case 8:
-					this.state = 4;
-					this.callback(Client.disconnect);		// close
-					this.close();
-					return;
-				case 9:		// ping
-					if (length)
-						socket.write(0x8a, length, socket.read(ArrayBuffer, length));		//@@ assumes length is 125 or less
-					else
-						socket.write(0x8a, 0);
-					break;
-				case 10:		// pong
-					socket.read(null, length);
-					break;
-				default:
-					trace("unrecognized frame type\n");
-					break;
+				}
 			}
 		}
 	}

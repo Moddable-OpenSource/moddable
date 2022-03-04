@@ -1,0 +1,96 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules"
+	},
+	"creation": {
+		"static": 65536,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 512
+		},
+		"heap": {
+			"initial": 512,
+			"incremental": 64
+		},
+		"stack": 256,
+		"keys": {
+			"available": 16386,
+			"name": 127,
+			"symbol": 127
+		},
+		"parser": {
+			"buffer": 9000,
+			"table": 127
+		},
+		"main": "main"
+	},
+	"modules": {
+		"*": [
+			"./_262",
+			"./harness",
+			"./main",
+			"$(MODULES)/base/instrumentation/modInstrumentation"
+		]
+	},
+	"strip": [],
+	"platforms": {
+		"esp": {
+			"error": "test262 is unsupported on esp8266"
+		},
+		"esp32": {
+			"defines": {
+				"XS_TEST": 1
+			},
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mc/*",
+					"$(MODULES)/network/socket/lwip/modLwipSafe",
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/esp32/*"
+				]
+			}
+		},
+		"lin": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/lin/debug/mcsim"
+			},
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/timer/timer",
+					"$(MODULES)/base/timer/lin/*"
+				]
+			}
+		},
+		"mac": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/mac/debug/mcsim.app"
+			},
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/mac/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mac/*"
+				]
+			}
+		},
+		"win": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/win/debug/mcsim.exe"
+			},
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/win/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/win/*"
+				]
+			}
+		}
+	}
+}

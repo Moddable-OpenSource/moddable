@@ -77,6 +77,7 @@ void xs_serial_constructor(xsMachine *the)
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
+	xsSlot *onReadable, *onWritable;
 	esp_err_t err;
 	uart_config_t uartConfig = {0};
 	int uart = 0;
@@ -102,18 +103,21 @@ void xs_serial_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		uart = xsmcToInteger(xsVar(0));
+		uart = builtinGetSignedInteger(the, &xsVar(0));
 		if ((uart < 0) || (uart >= UART_NUM_MAX))
 			xsRangeError("invalid port");
 	}
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
-	if ((baud < 0) || (baud > 20000000))
+	if ((baud <= 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
 
-	hasReadable = (UART_PIN_NO_CHANGE != receive) && builtinHasCallback(the, xsID_onReadable);
-	hasWritable = (UART_PIN_NO_CHANGE != transmit) && builtinHasCallback(the, xsID_onWritable);
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	onWritable = builtinGetCallback(the, xsID_onWritable);
+
+	hasReadable = (UART_PIN_NO_CHANGE != receive) && onReadable;
+	hasWritable = (UART_PIN_NO_CHANGE != transmit) && onWritable;
 
 	builtinInitializeTarget(the);
 
@@ -174,8 +178,7 @@ void xs_serial_constructor(xsMachine *the)
 			xsUnknownError("uart_isr_register failed");
 
 		if (hasReadable) {
-			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
-			serial->onReadable = xsToReference(xsVar(0));
+			serial->onReadable = onReadable;
 
 			uart_enable_rx_intr(uart);
 			uart_set_rx_timeout(uart, 4);
@@ -186,8 +189,7 @@ void xs_serial_constructor(xsMachine *the)
 		}
 
 		if (hasWritable) {
-			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
-			serial->onWritable = xsToReference(xsVar(0));
+			serial->onWritable = onWritable;
 
 			uart_enable_tx_intr(uart, 1, kTransmitTreshold);
 		}
@@ -276,7 +278,7 @@ void xs_serial_read(xsMachine *the)
 			requested = available;
 		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 			xsResult = xsArg(0);
-			xsmcGetBuffer(xsResult, (void **)&buffer, &byteLength);
+			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
 			requested = (int)byteLength;
 			allocate = 0;
 		}
@@ -314,7 +316,7 @@ void xs_serial_write(xsMachine *the)
 		void *buffer;
 		xsUnsignedValue requested;
 
-		xsmcGetBuffer(xsArg(0), &buffer, &requested);
+		xsmcGetBufferReadable(xsArg(0), &buffer, &requested);
 		if (requested > count)
 			xsUnknownError("output full");
 

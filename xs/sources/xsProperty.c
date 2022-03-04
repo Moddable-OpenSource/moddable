@@ -45,20 +45,21 @@ txSlot* fxLastProperty(txMachine* the, txSlot* slot)
 	return slot;
 }
 
+#ifndef mxLink
 txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback get, txCallback set, txID id, txFlag flag)
 {
 	txSlot *getter = NULL, *setter = NULL, *home = the->stack, *slot;
 	if (get) {
-		getter = fxBuildHostFunction(the, get, 0, id);
+		getter = fxBuildHostFunction(the, get, 0, XS_NO_ID);
 		slot = mxFunctionInstanceHome(getter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, getter, id, 0, id, "get ");
+		fxRenameFunction(the, getter, id, 0, XS_NO_ID, "get ");
 	}
 	if (set) {
-		setter = fxBuildHostFunction(the, set, 1, id);
+		setter = fxBuildHostFunction(the, set, 1, XS_NO_ID);
 		slot = mxFunctionInstanceHome(setter);
 		slot->value.home.object = home->value.reference;
-		fxRenameFunction(the, setter, id, 0, id, "set ");
+		fxRenameFunction(the, setter, id, 0, XS_NO_ID, "set ");
 	}
 	property = property->next = fxNewSlot(the);
 	property->flag = flag;
@@ -73,7 +74,6 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 	return property;
 }
 
-#ifndef mxLink
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
 	txSlot *function, *home = the->stack, *slot;
@@ -243,10 +243,9 @@ static txSize fxSizeToCapacity(txMachine* the, txSize size)
 txBoolean fxDeleteIndexProperty(txMachine* the, txSlot* array, txIndex index) 
 {
 	txSlot* address = array->value.array.address;
-	txSlot* chunk = address;
 	if (address) {
 		txIndex length = array->value.array.length;
-		txIndex size = (((txChunk*)(((txByte*)chunk) - sizeof(txChunk)))->size) / sizeof(txSlot);
+		txIndex size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
 		txSlot* result = address;
 		txSlot* limit = result + size;
 		if (length == size)
@@ -265,14 +264,15 @@ txBoolean fxDeleteIndexProperty(txMachine* the, txSlot* array, txIndex index)
 		if (result < limit) {
 			if (result->flag & XS_DONT_DELETE_FLAG)
 				return 0;
+			index = (txIndex)(result - address);
 			size--;
 			if (size > 0) {
-				chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
-				if (result > address)
-					c_memcpy(chunk, address, (result - address) * sizeof(txSlot));
-				result++;
-				if (result < limit)
-					c_memcpy(chunk + (result - address - 1), result, (limit - result) * sizeof(txSlot));
+				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+				address = array->value.array.address;
+				if (index > 0)
+					c_memcpy(chunk, address, index * sizeof(txSlot));
+				if (index < size)
+					c_memcpy(chunk + index, address + index + 1, (size - index) * sizeof(txSlot));
 				array->value.array.address = chunk;
 			}
 			else
@@ -356,8 +356,11 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 			chunk = (txSlot*)fxRenewChunk(the, address, size);
 			if (!chunk) {
 			#ifndef mxNoArrayOverallocation
-				if (array->ID == XS_ARRAY_BEHAVIOR)
-					chunk = (txSlot*)fxNewGrowableChunk(the, size, fxSizeToCapacity(the, size));
+				if (array->ID == XS_ARRAY_BEHAVIOR) {
+					txSize capacity = fxSizeToCapacity(the, size);
+					chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
+					c_memset(chunk + current, 0, capacity - size);
+				}
 				else
 			#endif
 					chunk = (txSlot*)fxNewChunk(the, size);
@@ -431,8 +434,11 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 				chunk = (txSlot*)fxRenewChunk(the, address, size);
 				if (!chunk) {
 				#ifndef mxNoArrayOverallocation
-					if (growable)
-						chunk = (txSlot*)fxNewGrowableChunk(the, size, fxSizeToCapacity(the, size));
+					if (growable) {
+						txSize capacity = fxSizeToCapacity(the, size);
+						chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
+						c_memset(chunk + target, 0, capacity - size);
+					}
 					else
 				#endif
 						chunk = (txSlot*)fxNewChunk(the, size);
@@ -446,8 +452,11 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 		}
 		else {
 		#ifndef mxNoArrayOverallocation
-			if (growable)
-				chunk = (txSlot*)fxNewGrowableChunk(the, size, fxSizeToCapacity(the, size));
+			if (growable) {
+				txSize capacity = fxSizeToCapacity(the, size);
+				chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
+				c_memset(chunk + target, 0, capacity - size);
+			}
 			else
 		#endif
 				chunk = (txSlot*)fxNewChunk(the, size);
@@ -505,20 +514,32 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 			property->value.accessor.setter = C_NULL;
 		}
 		if (mask & XS_GETTER_FLAG) {
-			txSlot* function = property->value.accessor.getter = slot->value.accessor.getter;
-			if ((function->flag & XS_MARK_FLAG) == 0) {
-				txSlot* home = mxFunctionInstanceHome(function);
-				home->value.home.object = instance;
+			txSlot* function = slot->value.accessor.getter;
+			if (property->value.accessor.getter)
+				return 0;
+			property->value.accessor.getter = function;
+			if (mxIsFunction(function)) {
+				if (((mask & XS_METHOD_FLAG) && (function->flag & XS_MARK_FLAG) == 0)) {
+					txSlot* home = mxFunctionInstanceHome(function);
+					home->value.home.object = instance;
+				}
+				if ((mask & XS_NAME_FLAG) && ((function->flag & XS_MARK_FLAG) == 0))
+					fxRenameFunction(the, function, id, 0, mxID(_get), "get ");
 			}
-			fxRenameFunction(the, function, id, 0, mxID(_get), "get ");
 		}
 		else {
-			txSlot*  function = property->value.accessor.setter = slot->value.accessor.setter;
-			if ((function->flag & XS_MARK_FLAG) == 0) {
-				txSlot* home = mxFunctionInstanceHome(function);
-				home->value.home.object = instance;
+			txSlot* function = slot->value.accessor.setter;
+			if (property->value.accessor.setter)
+				return 0;
+			property->value.accessor.setter = function;
+			if (mxIsFunction(function)) {
+				if (((mask & XS_METHOD_FLAG) && (function->flag & XS_MARK_FLAG) == 0)) {
+					txSlot* home = mxFunctionInstanceHome(function);
+					home->value.home.object = instance;
+				}
+				if ((mask & XS_NAME_FLAG) && ((function->flag & XS_MARK_FLAG) == 0))
+					fxRenameFunction(the, function, id, 0, mxID(_set), "set ");
 			}
-			fxRenameFunction(the, function, id, 0, mxID(_set), "set ");
 		}
 	}
 	else {
@@ -536,7 +557,7 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 					txSlot* home = mxFunctionInstanceHome(function);
 					home->value.home.object = instance;
 				}
-				if (id)
+				if ((mask & XS_NAME_FLAG) && ((function->flag & XS_MARK_FLAG) == 0))
 					fxRenameFunction(the, function, id, 0, mxID(_value), C_NULL);
 			}
 		}

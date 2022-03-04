@@ -38,6 +38,7 @@
 import recordProtocol from "ssl/record";
 import SetupCipher from "ssl/setup";
 import SSLStream from "ssl/stream";
+import TLSError from "ssl/error";
 
 // type
 const change_cipher_spec = 1;
@@ -52,7 +53,7 @@ const changeCipherSpec = Object.freeze({
 			return SetupCipher(session, !session.connectionEnd);		// tail call optimization
 		}
 		else
-			throw new Error("SSL: changeCipherSpec: bad type");
+			throw new TLSError("changeCipherSpec: bad type");
 	},
 	packetize(session, type) {
 		session.traceProtocol(this);

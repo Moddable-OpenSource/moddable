@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -20,7 +20,7 @@
 HOST_OS = win
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v4.3.1
+EXPECTED_ESP_IDF = v4.4
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -63,14 +63,6 @@ IDF_VERSION = \
 !MESSAGE Could not detect ESP-IDF version.
 !ENDIF
 
-!IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\lib
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\instrument\lib
-!ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
-!ENDIF
-
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj-$(ESP32_SUBCLASS)
 
 !IF "$(UPLOAD_PORT)"==""
@@ -87,17 +79,16 @@ PORT_TO_USE = $(UPLOAD_PORT)
 PORT_COMMAND = -p $(UPLOAD_PORT)
 !ENDIF
 
+PROJ_DIR = $(TMP_DIR)\xsProj-$(ESP32_SUBCLASS)
+
 !IF "$(DEBUG)"=="1"
-PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\$(NAME)\xsProj-$(ESP32_SUBCLASS)
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 BUILD_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
 BUILD_MSG =
 DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) flash -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS)
 START_SERIAL2XSBUG = echo Launching app... & echo Type Ctrl-C twice after debugging app. & $(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1
-
 !ELSE
-PROJ_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\$(NAME)\xsProj-$(ESP32_SUBCLASS)
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 START_XSBUG=
 START_SERIAL2XSBUG = echo No debugger for a release build.
@@ -144,8 +135,12 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\freertos\include\freertos \
 	-I$(IDF_PATH)\components\freertos\port \
  	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
+	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include\freertos \
+	-I$(IDF_PATH)\components\freertos\include\esp_additions \
+	-I$(IDF_PATH)\components\freertos\include\esp_additions\freertos \
 	-I$(IDF_PATH)\components\hal\include \
 	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\hal\platform_port\include \
 	-I$(IDF_PATH)\components\heap\include \
 	-I$(IDF_PATH)\components\log\include \
 	-I$(IDF_PATH)\components\lwip\include\apps \
@@ -179,6 +174,7 @@ INC_DIRS = \
 
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
+	$(LIB_DIR)\xsHosts.o \
 	$(LIB_DIR)\xsPlatform.o \
 	$(LIB_DIR)\xsAll.o \
 	$(LIB_DIR)\xsAPI.o \
@@ -237,6 +233,7 @@ XS_DIRS = \
 	-I$(XS_DIR)\includes \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\platforms\esp \
+	-I$(XS_DIR)\platforms\mc \
 	-I$(SDKCONFIG_H_DIR) \
 	-I$(PLATFORM_DIR)\lib\pow
 
@@ -246,6 +243,7 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsHost.h \
+	$(XS_DIR)\platforms\mc\xsHosts.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 
 !IF "$(SDKCONFIGPATH)"==""
@@ -535,6 +533,10 @@ $(XS_OBJ): $(XS_HEADERS)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
 {$(XS_DIR)\platforms\esp\}.c{$(LIB_DIR)\}.o:
+	@echo # cc $(@F) (strings in flash)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+{$(XS_DIR)\platforms\mc\}.c{$(LIB_DIR)\}.o:
 	@echo # cc $(@F) (strings in flash)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 

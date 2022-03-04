@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -37,14 +37,6 @@ PLATFORM_DIR = $(MODDABLE)\build\devices\esp
 !CMDSWITCHES -S
 !ELSE
 !CMDSWITCHES +S
-!ENDIF
-
-!IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\esp\debug\lib
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\esp\instrument\lib
-!ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\esp\release\lib
 !ENDIF
 
 # serial port configuration
@@ -153,6 +145,7 @@ XS_DIRS = \
 	-I$(XS_DIR)\sources \
 	-I$(XS_DIR)\sources\pcre \
 	-I$(XS_DIR)\platforms\esp \
+	-I$(XS_DIR)\platforms\mc \
 	-I$(BUILD_DIR)\devices\esp
 XS_HEADERS = \
 	$(XS_DIR)\includes\xs.h \
@@ -161,6 +154,7 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsAll.h \
 	$(XS_DIR)\sources\xsCommon.h \
 	$(XS_DIR)\platforms\esp\xsHost.h \
+	$(XS_DIR)\platforms\mc\xsHosts.h \
 	$(XS_DIR)\platforms\esp\xsPlatform.h
 SDK_SRC = \
 	$(CORE_DIR)\abi.cpp \
@@ -382,23 +376,22 @@ xsbug:
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)
 
-$(LIB_DIR):
-	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
+$(LIB_DIR)\buildinfo.h:
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 
 delAr:
 	@del $(APP_ARCHIVE)
 	@del $(LIB_ARCHIVE)
 
-$(APP_ARCHIVE): $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\main.o
+$(APP_ARCHIVE): $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsHosts.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\main.o
 	@echo # archive $(APP_ARCHIVE)
-	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(TMP_DIR)\main.o
+	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(TMP_DIR)\xsHost.o $(TMP_DIR)\xsHosts.o $(TMP_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(TMP_DIR)\main.o
 
 $(LIB_ARCHIVE): $(XS_OBJ) $(SDK_OBJ)
 	@echo # archive $(LIB_ARCHIVE)
 #	$(AR) $(AR_OPTIONS) $@ $(TMP_DIR)\mc.xs.o $(LIB_DIR)\xsHost.o $(LIB_DIR)\xsPlatform.o $(TMP_DIR)\mc.resources.o $(LIB_DIR)\main.o
 
-$(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o
+$(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o $(LIB_DIR)\buildinfo.h
 	@echo # ld main.bin
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
@@ -480,6 +473,11 @@ $(LIB_DIR)\tinyi2s.o: $(PLATFORM_DIR)\lib\tinyi2s\tinyi2s.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\esp\xsHost.c
+	@echo # cc $(@F)
+	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
+	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@
+
+$(TMP_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c
 	@echo # cc $(@F)
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -mforce-l32 -o $@.unmapped
 	$(TOOLS_BIN)\xtensa-lx106-elf-objcopy --rename-section .data=.irom0.str.1 --rename-section .rodata=.irom0.str.1 --rename-section .rodata.str1.1=.irom0.str.1 $@.unmapped $@

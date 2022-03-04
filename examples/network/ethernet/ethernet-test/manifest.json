@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"
+	],
+	"modules": {
+		"~": [
+			"$(MODDABLE)/modules/network/ethernet/esp32/setup/ethernet"
+		],
+		"*": [
+			"./main"
+		]
+	},
+	"platforms": {
+		"esp32": {},
+		"...": {
+			"error": "Platform not supported"
+		}
+	}
+}

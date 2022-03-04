@@ -74,18 +74,11 @@ void builtinFreePins(uint32_t bank, uint32_t pins)
 		gDigitalAvailable[bank] |= pins;
 }
 
-uint8_t builtinHasCallback(xsMachine *the, xsIdentifier id)
+xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id)
 {
 	xsSlot slot;
-
 	xsmcGet(slot, xsArg(0), id);
-	return xsmcTest(slot);
-}
-
-uint8_t builtinGetCallback(xsMachine *the, xsIdentifier id, xsSlot *slot)
-{
-	xsmcGet(*slot, xsArg(0), id);
-	return xsmcTest(*slot);
+	return fxToReference(the, &slot);
 }
 
 void builtinGetFormat(xsMachine *the, uint8_t format)
@@ -158,17 +151,28 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format)
 	return format;
 }
 
-uint32_t builtinGetPin(xsMachine *the, xsSlot *slot)
+// standard converstion to signed integer but disallows undefined 
+int32_t builtinGetSignedInteger(xsMachine *the, xsSlot *slot)
 {
-	xsIntegerValue pin;
 	xsType type = fxTypeOf(the, slot);
 	if (xsUndefinedType == type)
 		xsUnknownError("invalid");
 
-	pin = fxToInteger(the, slot);
-	if (pin < 0)
+	return fxToInteger(the, slot);;
+}
+
+// standard converstion to unsigned integer but disallows undefined 
+uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot)
+{
+	xsIntegerValue value;
+	xsType type = fxTypeOf(the, slot);
+	if (xsUndefinedType == type)
+		xsUnknownError("invalid");
+
+	value = fxToInteger(the, slot);
+	if (value < 0)
 		xsRangeError("negative");
 
-	return (uint32_t)pin;
+	return (uint32_t)value;
 }
 

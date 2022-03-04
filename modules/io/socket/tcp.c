@@ -92,6 +92,7 @@ void xs_tcp_constructor(xsMachine *the)
 	TCP tcp;
 	uint8_t create = xsmcArgc > 0;
 	uint8_t connect = 0, triggerable = 0, triggered = 0, nodelay = 0, format = kIOFormatBuffer;
+	xsSlot *onReadable, *onWritable, *onError;
 	int port;
 	struct tcp_pcb *skt;
 	TCPBuffer buffers = NULL;
@@ -104,11 +105,16 @@ void xs_tcp_constructor(xsMachine *the)
 		if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 			xsRangeError("unimplemented");
 
-		if (builtinHasCallback(the, xsID_onReadable))
+		onReadable = builtinGetCallback(the, xsID_onReadable);
+		if (onReadable)
 			triggerable |= kTCPReadable;
-		if (builtinHasCallback(the, xsID_onWritable))
+
+		onWritable = builtinGetCallback(the, xsID_onWritable);
+		if (onWritable)
 			triggerable |= kTCPWritable;
-		if (builtinHasCallback(the, xsID_onError))
+
+		onError = builtinGetCallback(the, xsID_onError);
+		if (onError)
 			triggerable |= kTCPError;
 
 		if (xsmcHas(xsArg(0), xsID_nodelay)) {
@@ -198,26 +204,13 @@ void xs_tcp_constructor(xsMachine *the)
 	tcp_err(skt, tcpError);
 	tcp_recv(skt, tcpReceive);
 
-	if (triggerable) {
-		tcp->triggerable = triggerable;
+	tcp->triggerable = triggerable;
+	tcp->onReadable = onReadable;
+	tcp->onWritable = onWritable;
+	tcp->onError = onError;
 
-		if (triggerable & kTCPReadable) {
-			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
-			tcp->onReadable = xsToReference(xsVar(0));
-		}
-
-		if (triggerable & kTCPWritable) {
-			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
-			tcp->onWritable = xsToReference(xsVar(0));
-
-			tcp_sent(skt, tcpSent);
-		}
-
-		if (triggerable & kTCPError) {
-			builtinGetCallback(the, xsID_onError, &xsVar(0));
-			tcp->onError = xsToReference(xsVar(0));
-		}
-	}
+	if (onWritable)
+		tcp_sent(skt, tcpSent);
 
 	if (connect) {
 		if (tcp_connect(skt, &address, port, tcpConnect))
@@ -292,7 +285,7 @@ void xs_tcp_read(xsMachine *the)
 			requested = available;
 		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 			xsResult = xsArg(0);
-			xsmcGetBuffer(xsResult, (void **)&out, &byteLength);
+			xsmcGetBufferWritable(xsResult, (void **)&out, &byteLength);
 			requested = (int)byteLength;
 			allocate = 0;
 		}
@@ -356,7 +349,7 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	if (kIOFormatBuffer == tcp->format) {
-		xsmcGetBuffer(xsArg(0), &buffer, &needed);
+		xsmcGetBufferReadable(xsArg(0), &buffer, &needed);
 	}
 	else {
 		needed = 1;
@@ -589,7 +582,7 @@ void xs_listener_constructor(xsMachine *the)
 	struct tcp_pcb *skt;
 	ip_addr_t address = *(IP_ADDR_ANY);
 	uint16_t port = 0;
-	uint8_t hasOnReadable = 0;
+	xsSlot *onReadable;
 
 	xsmcVars(1);
 
@@ -599,7 +592,7 @@ void xs_listener_constructor(xsMachine *the)
 	}
 	//@@ address
 
-	hasOnReadable = builtinHasCallback(the, xsID_onReadable);
+	onReadable = builtinGetCallback(the, xsID_onReadable);
 	// hasOnError
 
 	if (kIOFormatSocketTCP != builtinInitializeFormat(the, kIOFormatSocketTCP))
@@ -638,10 +631,7 @@ void xs_listener_constructor(xsMachine *the)
 	tcp_arg(skt, listener);
 	tcp_accept(skt, listenerAccept);
 
-	if (hasOnReadable) {
-		builtinGetCallback(the, xsID_onReadable, &xsVar(0));
-		listener->onReadable = xsToReference(xsVar(0));
-	}
+	listener->onReadable = onReadable;
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
 }
 

@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/commodetto/qrcode/manifest.json",
+		"$(MODDABLE)/modules/data/qrcode/manifest.json"
+	],
+	"modules": {
+		"piu/QRCode": "./piuQRCode"
+	},
+	"preload": "piu/QRCode"
+}

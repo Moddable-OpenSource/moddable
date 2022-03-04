@@ -110,8 +110,8 @@ void xs_dither_send(xsMachine *the)
 	uint8_t *src, *dst;
 	xsUnsignedValue srcLength, dstLength, pixelCount;
 
-	xsmcGetBuffer(xsArg(1), (void **)&src, &srcLength);
-	xsmcGetBuffer(xsArg(3), (void **)&dst, &dstLength);
+	xsmcGetBufferReadable(xsArg(1), (void **)&src, &srcLength);
+	xsmcGetBufferWritable(xsArg(3), (void **)&dst, &dstLength);
 
 	src += srcOffset;
 	dst += dstOffset;

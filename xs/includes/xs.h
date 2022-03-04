@@ -271,7 +271,10 @@ typedef txU4 xsUnsignedValue;
 	fxToStringBuffer(the, &(the->scratch), _BUFFER ,_SIZE))
 
 #define xsArrayBuffer(_BUFFER,_SIZE) \
-	(fxArrayBuffer(the, &the->scratch, _BUFFER, _SIZE), \
+	(fxArrayBuffer(the, &the->scratch, _BUFFER, _SIZE, -1), \
+	the->scratch)
+#define xsArrayBufferResizable(_BUFFER,_SIZE,_MAX_SIZE) \
+	(fxArrayBuffer(the, &the->scratch, _BUFFER, _SIZE,_MAX_SIZE), \
 	the->scratch)
 #define xsGetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE) \
 	(the->scratch = (_SLOT), \
@@ -279,6 +282,9 @@ typedef txU4 xsUnsignedValue;
 #define xsGetArrayBufferLength(_SLOT) \
 	(the->scratch = (_SLOT), \
 	fxGetArrayBufferLength(the, &(the->scratch)))
+#define xsGetArrayBufferMaxLength(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxGetArrayBufferMaxLength(the, &(the->scratch)))
 #define xsSetArrayBufferData(_SLOT,_OFFSET,_BUFFER,_SIZE) \
 	(the->scratch = (_SLOT), \
 	fxSetArrayBufferData(the, &(the->scratch), _OFFSET, _BUFFER, _SIZE))
@@ -307,7 +313,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -75
+#define prototypesStackIndex -76
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
@@ -925,6 +931,16 @@ typedef void (*xsDestructor)(void*);
 #define xsNewHostObject(_DESTRUCTOR) \
 	(fxNewHostObject(the, _DESTRUCTOR), \
 	fxPop())
+	
+#define xsGetHostBufferLength(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxGetHostBufferLength(the, &(the->scratch)))
+#define xsPetrifyHostBuffer(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxPetrifyHostBuffer(the, &(the->scratch)))
+#define xsSetHostBuffer(_SLOT,_DATA,_SIZE) \
+	(the->scratch = (_SLOT), \
+	fxSetHostBuffer(the, &(the->scratch), _DATA, _SIZE))
 
 #define xsGetHostChunk(_SLOT) \
 	(the->scratch = (_SLOT), \
@@ -1331,9 +1347,10 @@ mxImport xsStringValue fxToStringX(xsMachine*, xsSlot*);
 mxImport void fxUnsigned(xsMachine*, xsSlot*, xsUnsignedValue);
 mxImport xsUnsignedValue fxToUnsigned(xsMachine*, xsSlot*);
 
-mxImport void *fxArrayBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
+mxImport void *fxArrayBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue, xsIntegerValue);
 mxImport void fxGetArrayBufferData(xsMachine*, xsSlot*, xsIntegerValue, void*, xsIntegerValue);
 mxImport xsIntegerValue fxGetArrayBufferLength(xsMachine*, xsSlot*);
+mxImport xsIntegerValue fxGetArrayBufferMaxLength(xsMachine*, xsSlot*);
 mxImport void fxSetArrayBufferData(xsMachine*, xsSlot*, xsIntegerValue, void*, xsIntegerValue);
 mxImport void fxSetArrayBufferLength(xsMachine*, xsSlot*, xsIntegerValue);
 mxImport void* fxToArrayBuffer(xsMachine*, xsSlot*);
@@ -1355,10 +1372,14 @@ mxImport void fxNewHostConstructor(xsMachine*, xsCallback, xsIntegerValue, xsInt
 mxImport void fxNewHostFunction(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue);
 mxImport void fxNewHostInstance(xsMachine*);
 mxImport xsSlot* fxNewHostObject(xsMachine*, xsDestructor);
+mxImport xsIntegerValue fxGetHostBufferLength(xsMachine*, xsSlot*);
 mxImport void* fxGetHostChunk(xsMachine*, xsSlot*);
+mxImport void* fxGetHostChunkValidate(xsMachine*, xsSlot*, void*);
 mxImport void *fxSetHostChunk(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void* fxGetHostData(xsMachine*, xsSlot*);
-mxImport void* fxGetHostDataValidate(xsMachine* the, xsSlot* slot, void* validator);
+mxImport void* fxGetHostDataValidate(xsMachine* the, xsSlot* slot, void*);
+mxImport void fxPetrifyHostBuffer(xsMachine* the, xsSlot* slot);
+mxImport void fxSetHostBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void fxSetHostData(xsMachine*, xsSlot*, void*);
 mxImport xsDestructor fxGetHostDestructor(xsMachine*, xsSlot*);
 mxImport void fxSetHostDestructor(xsMachine*, xsSlot*, xsDestructor);

@@ -1,7 +1,7 @@
 # Moddable SDK - Driver Examples
 
-Copyright 2017-2019 Moddable Tech, Inc.<BR>
-Revised: August 23, 2019
+Copyright 2017-2021 Moddable Tech, Inc.<BR>
+Revised: November 3, 2021
 
 These examples use various sensor, display, and touch drivers available in the Moddable SDK. This document provides a brief description of each example and components supported. The source code for each driver is located in the [$MODDABLE/modules/drivers](../../modules/drivers) directory.
 
@@ -49,6 +49,12 @@ Progressively renders each row of a color image to an [Adafruit DotStar 144 LED 
 
 ***
 
+### [`ft6206calibrate`](./ft6206calibrate)
+
+Calibration application for FT6206 touch screen on Moddable One and Moddable Two.
+
+***
+
 ### [`ga1auv100wp`](./ga1auv100wp)
 Reads ambient and UV light measurements from the dual-mode [Sharp UV Light Sensor](http://www.sharp-world.com/products/device/lineup/selection/opto/receiving_light/opic/ultraviolet/index.html). The application configures the sensor operating mode. The [driver](../../modules/drivers/ga1auv100wp) communicates with the sensor over I<sup>2</sup>C using the SMBus protocol.
 
@@ -70,6 +76,20 @@ Demonstrates use of the the Hitachi HD44780 character LCD module.
 Reads digital compass measurements at 250ms intervals from the I<sup>2</sup>C [SparkFun Triple Axis Magnetometer Breakout - HMC5883L](https://www.sparkfun.com/products/retired/10530).	
 ***
 
+### [`hx711`](./hx711)
+
+Demonstrates use of the the HX711 Load Cell Amplifier to measure weight.
+
+***
+
+### [`kaluga-buttons`](./kaluga-buttons)
+
+Demonstrates how to use both the touch pad buttons and push buttons on the ESP32‑S2 powered Kaluga board.
+
+> For more information about the Kaluga board, see [this blog post](https://blog.moddable.com/blog/espidf42/).
+
+***
+
 ### [`lis3dh`](./lis3dh)
 
 Reads the [Adafruit LIS3DH Triple-Axis Accelerometer](https://www.adafruit.com/product/2809) at 100ms intervals. The [driver](../../modules/drivers/lis3dh) communicates with the accelerometer over I<sup>2</sup>C.
@@ -85,6 +105,32 @@ Reads the [Adafruit LIS3DH Triple-Axis Accelerometer](https://www.adafruit.com/p
 ### [`ls013b4dn04`](./ls013b4dn04)
 
 [Commodetto](../../documentation/commodetto/commodetto.md) app for Silicon Labs Gecko devices. Demonstrates use of [this Sharp mirror display](../../documentation/displays/wiring-guide-sharp-memory-1.3-spi.md)  and deep sleep modes.
+
+***
+
+### [`m5atom-echo`](./m5atom-echo)
+
+A simple example to demonstrate built-in hardware features of the M5Atom Echo development board.
+
+***
+
+### [`m5atom-lite`](./m5atom-lite)
+
+A simple example to demonstrate built-in hardware features of the M5Atom Lite development board.
+
+***
+
+### [`m5atom-matrix`](./m5atom-matrix)
+
+A simple example to demonstrate built-in hardware features of the M5Atom Matrix development board.
+
+***
+
+### [`m5core_ink-clock`](./m5core_ink-clock)
+
+Draws a basic digital clock on an ePaper display that updates once a minute. Only runs on M5 Paper and M5Core Ink because they are battery powered. Uses special power management techniques, including one to eliminate drawing flicker on the M5Core Ink.
+
+> See the [blog post](ADDLINK) Getting the Most from ePaper Displays for more information about this example.
 
 ***
 
@@ -149,8 +195,20 @@ Reads the temperature from one or more DS18X20 temperature sensors connected to 
 
 ***
 
+### [`peripherals/rtc`](./peripherals/rtc)
+
+A set of examples to demonstrate use of a real-time clock (RTC).
+
+***
+
 ### [`qm1h0p0073`](./qm1h0p0073)
 Reads the [Sharp Temperature and Humidity sensor](http://www.sharp-world.com/products/device/lineup/selection/rf/tem_hum/index.html) at 100ms intervals. The [driver](../../modules/drivers/qm1h0p0073) communicates with the sensor over I<sup>2</sup>C.
+
+***
+
+### [`qwiictwist`](./qwiictwist)
+
+Demonstrates use of a [SparkFun Qwiic Twist](https://www.sparkfun.com/products/15083) (a digital RGB rotary encoder). Displays the numbers of twists and presses of the encoder and allows you to change its color using an onscreen color picker.
 
 ***
 
@@ -167,6 +225,36 @@ Renders bitmaps on ePaper displays compatible with the [DESTM32S](../../modules/
 
 ### [`sakuraio`](./sakuraio)
 Demonstrates how to interface with the [Sakura IO LTE module](http://python-sakuraio.readthedocs.io/en/latest/index.html) to send/receive packets and read module status. The [driver](../../modules/drivers/sakuraio) communicates with the sensor over I<sup>2</sup>C.
+
+***
+
+### [`sensors`](./sensors)
+
+A set of examples for the following sensors, written in the TC53 [IO Class Pattern](../../documentation/io/io.md).
+
+- `aht10`
+- `am2320`
+- `bmp180`
+- `bmp280`
+- `capacitiveMoisture`
+- `ccs811`
+- `hmc5883`
+- `htu21d`
+- `l3gd20`
+- `lis3dh`
+- `lm75`
+- `lsm303dlhc`
+- `mlx90614`
+- `mpu6050`
+- `mpu9250`
+- `ntcThermistor`
+- `sht3x`
+- `shtc3`
+- `si7020`
+- `tmp102`
+- `tmp117`
+- `urm09`
+- `zioQwiicSoilMoisture`
 
 ***
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2021  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -16,16 +16,6 @@
 #   You should have received a copy of the GNU General Public License
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
-
-ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/lin/debug/lib
-else
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/lin/instrument/lib
-	else
-		LIB_DIR = $(BUILD_DIR)/tmp/lin/release/lib
-	endif
-endif
 
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \

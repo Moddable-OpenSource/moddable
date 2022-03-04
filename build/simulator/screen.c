@@ -163,8 +163,10 @@ void fxAbort(xsMachine* the, int status)
 			why = "unhandled exception";
 			break;
 		case XS_UNHANDLED_REJECTION_EXIT:
-			exitToHost = 0;
 			why = "unhandled rejection";
+			break;
+		case XS_TOO_MUCH_COMPUTATION_EXIT:
+			why = "too much computation";
 			break;
 		default:
 			why = "unknown";
@@ -174,7 +176,7 @@ void fxAbort(xsMachine* the, int status)
 			xsLog("XS abort: %s\n", why);
 		if (screen)
 			(*screen->abort)(screen, status);
-		if (exitToHost) {
+		if (exitToHost && the->firstJump) {
 			exitToHost = 0;
 			fxExitToHost(the);
 		}

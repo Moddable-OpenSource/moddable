@@ -501,35 +501,15 @@ void xs_socket_write(xsMachine *the)
 					*dst++ = (unsigned char)xsmcToInteger(xsArg(arg));
 			}
 			else if (xsReferenceType == t) {
-				if (xsmcIsInstanceOf(xsArg(arg), xsArrayBufferPrototype)) {
-					int msgLen = xsmcGetArrayBufferLength(xsArg(arg));
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						char *msg = xsmcToArrayBuffer(xsArg(arg));
-						c_memcpy(dst, msg, msgLen);
-						dst += msgLen;
-					}
-				}
-				else if (xsmcIsInstanceOf(xsArg(arg), xsTypedArrayPrototype)) {
-					int msgLen, byteOffset;
+				void *msg;
+				xsUnsignedValue msgLen;
 
-					xsmcGet(xsResult, xsArg(arg), xsID_byteLength);
-					msgLen = xsmcToInteger(xsResult);
-					if (0 == pass)
-						needed += msgLen;
-					else {
-						xsSlot tmp;
-						char *msg;
-
-						xsmcGet(tmp, xsArg(arg), xsID_byteOffset);
-						byteOffset = xsmcToInteger(tmp);
-
-						xsmcGet(tmp, xsArg(arg), xsID_buffer);
-						msg = byteOffset + xsmcToArrayBuffer(tmp);
-						c_memcpy(dst, msg, msgLen);
-						dst += msgLen;
-					}
+				xsmcGetBufferReadable(xsArg(arg), (void **)&msg, &msgLen);
+				if (0 == pass)
+					needed += msgLen;
+				else {
+					c_memcpy(dst, msg, msgLen);
+					dst += msgLen;
 				}
 			}
 			else
@@ -739,6 +719,8 @@ void xs_listener(xsMachine *the)
 
 	xsl->cfRunLoopSource = CFSocketCreateRunLoopSource(kCFAllocatorDefault, xsl->cfSkt, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), xsl->cfRunLoopSource, kCFRunLoopCommonModes);
+	
+	modInstrumentationAdjust(NetworkSockets, 1);
 }
 
 void xs_listener_destructor(void *data)
@@ -754,6 +736,8 @@ void xs_listener_destructor(void *data)
 			CFRelease(xsl->cfSkt);
 		}
 		c_free(xsl);
+
+		modInstrumentationAdjust(NetworkSockets, -1);
 	}
 }
 

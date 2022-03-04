@@ -98,7 +98,7 @@ static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 	txSlot* buffer = view->next; \
 	txSlot* host = fxCheckAtomicsArrayBuffer(the, buffer, onlyShared); \
 	txU2 shift = dispatch->value.typedArray.dispatch->shift; \
-	txInteger index = fxCheckAtomicsIndex(the, 1, view->value.dataView.size >> shift); \
+	txInteger index = fxCheckAtomicsIndex(the, 1, fxGetDataViewSize(the, view, buffer) >> shift); \
 	txInteger offset = view->value.dataView.offset + (index << shift)
 
 void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }
@@ -192,6 +192,9 @@ void fxBuildAtomics(txMachine* the)
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_SharedArrayBuffer_prototype_get_byteLength), C_NULL, mxID(_byteLength), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_SharedArrayBuffer_prototype_get_growable), C_NULL, mxID(_growable), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_SharedArrayBuffer_prototype_get_maxByteLength), C_NULL, mxID(_maxByteLength), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_SharedArrayBuffer_prototype_grow), 1, mxID(_grow), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_SharedArrayBuffer_prototype_slice), 2, mxID(_slice), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "SharedArrayBuffer", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxSharedArrayBufferPrototype = *the->stack;
@@ -252,7 +255,7 @@ txInteger fxCheckAtomicsIndex(txMachine* the, txInteger i, txInteger length)
 	txNumber index = (mxArgc > i) ? c_trunc(fxToNumber(the, mxArgv(i))) : C_NAN; 
 	if (c_isnan(index))
 		index = 0;
-	else if (index < 0)
+	if (index < 0)
 		mxRangeError("invalid index");
 	else if (index >= length)
 		mxRangeError("invalid index");
@@ -319,39 +322,93 @@ void fx_SharedArrayBuffer(txMachine* the)
 {
 	txSlot* instance;
 	txInteger byteLength;
-	txSlot* host;
+	txInteger maxByteLength = -1;
+	txSlot* property;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: SharedArrayBuffer");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxSharedArrayBufferPrototype);
 	byteLength = fxCheckAtomicsIndex(the, 0, 0x7FFFFFFF);
+	if ((mxArgc > 1) && mxIsReference(mxArgv(1))) {
+		mxPushSlot(mxArgv(1));
+		mxGetID(mxID(_maxByteLength));
+		mxPullSlot(mxArgv(1));
+		maxByteLength = fxArgToByteLength(the, 1, -1);
+	}
+	if (maxByteLength >= 0) {
+		if (byteLength > maxByteLength)
+			mxRangeError("byteLength > maxByteLength");
+	}
 	instance = fxNewSlot(the);
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
 	instance->value.instance.prototype = the->stack->value.reference;
 	the->stack->value.reference = instance;
 	the->stack->kind = XS_REFERENCE_KIND;
-	host = instance->next = fxNewSlot(the);
-	host->flag = XS_INTERNAL_FLAG;
-	host->kind = XS_HOST_KIND;
-	host->value.host.data = fxCreateSharedChunk(byteLength);
-	if (!host->value.host.data)
+	property = instance->next = fxNewSlot(the);
+	property->flag = XS_INTERNAL_FLAG;
+	property->kind = XS_HOST_KIND;
+	property->value.host.data = fxCreateSharedChunk(byteLength);
+	if (!property->value.host.data)
 		mxRangeError("cannot allocate SharedArrayBuffer");
-	host->value.host.variant.destructor = fxReleaseSharedChunk;
+	property->value.host.variant.destructor = fxReleaseSharedChunk;
+	property = property->next = fxNewSlot(the);
+	property->flag = XS_INTERNAL_FLAG;
+	property->kind = XS_BUFFER_INFO_KIND;
+	property->value.bufferInfo.length = byteLength;
+	property->value.bufferInfo.maxLength = maxByteLength;
 	mxPullSlot(mxResult);
 }
 
 void fx_SharedArrayBuffer_prototype_get_byteLength(txMachine* the)
 {
 	txSlot* host = fxCheckSharedArrayBuffer(the, mxThis, "this");
-	mxResult->value.integer = fxMeasureSharedChunk(host->value.host.data);
+	txSlot* bufferInfo = host->next; 
 	mxResult->kind = XS_INTEGER_KIND;
+	mxResult->value.integer = bufferInfo->value.bufferInfo.length;
+}
+
+void fx_SharedArrayBuffer_prototype_get_growable(txMachine* the)
+{
+	txSlot* host = fxCheckSharedArrayBuffer(the, mxThis, "this");
+	txSlot* bufferInfo = host->next;
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = (bufferInfo->value.bufferInfo.maxLength >= 0) ? 1 : 0;
+}
+
+void fx_SharedArrayBuffer_prototype_get_maxByteLength(txMachine* the)
+{
+	txSlot* host = fxCheckSharedArrayBuffer(the, mxThis, "this");
+	txSlot* bufferInfo = host->next; 
+	mxResult->kind = XS_INTEGER_KIND;
+	if (bufferInfo->value.bufferInfo.maxLength >= 0)
+		mxResult->value.integer = bufferInfo->value.bufferInfo.maxLength;
+	else
+		mxResult->value.integer = bufferInfo->value.bufferInfo.length;
+}
+
+void fx_SharedArrayBuffer_prototype_grow(txMachine* the)
+{
+	txSlot* host = fxCheckSharedArrayBuffer(the, mxThis, "this");
+	txSlot* bufferInfo = host->next; 
+	txInteger maxByteLength, oldByteLength, newByteLength;
+	maxByteLength = bufferInfo->value.bufferInfo.maxLength;
+	if (maxByteLength < 0)
+		mxTypeError("not resizable");
+	oldByteLength = bufferInfo->value.bufferInfo.length;
+	newByteLength = fxArgToByteLength(the, 0, 0);
+	if (newByteLength < oldByteLength)
+		mxRangeError("newLength < byteLength");
+	if (newByteLength > maxByteLength)
+		mxRangeError("newLength > maxByteLength");
+	mxRangeError("cannot grow SharedArrayBuffer");
 }
 
 void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 {
 	txSlot* host = fxCheckSharedArrayBuffer(the, mxThis, "this");
-	txInteger length = fxMeasureSharedChunk(host->value.host.data);
+	txSlot* bufferInfo = host->next; 
+	txInteger length = bufferInfo->value.bufferInfo.length;
 	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
 	txInteger stop = (txInteger)fxArgToIndex(the, 1, length, length);
 	txSlot* result;
@@ -368,7 +425,8 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 	result = fxCheckSharedArrayBuffer(the, mxResult, "result");
 	if (result == host)
 		mxTypeError("same SharedArrayBuffer instance");
-	if (fxMeasureSharedChunk(result->value.host.data) < length)
+	bufferInfo = result->next; 
+	if (bufferInfo->value.bufferInfo.length < length)
 		mxTypeError("smaller SharedArrayBuffer instance");
 	c_memcpy(result->value.host.data, ((txByte*)host->value.host.data + start), stop - start);
 }

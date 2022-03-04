@@ -182,7 +182,7 @@ void _xs_i2c_read(xsMachine *the)
 	}
 	else {
 		xsResult = xsArg(0);
-		xsmcGetBuffer(xsResult, &buffer, &length);
+		xsmcGetBufferWritable(xsResult, &buffer, &length);
 	}
 
 	i2cActivate(i2c);
@@ -206,7 +206,7 @@ void _xs_i2c_write(xsMachine *the)
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
 		stop = false;
 
-	xsmcGetBuffer(xsArg(0), &buffer, &length);
+	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
 	i2cActivate(i2c);
 	err = twi_writeTo(i2c->address, buffer, length, stop);

@@ -140,6 +140,15 @@ void _xsSetIndex(txMachine *the, txSlot *self, txIndex index, txSlot *v)
 	mxPop();
 }
 
+void _xsDefine(txMachine *the, txSlot *self, txID id, txSlot *v, txFlag attributes)
+{
+	mxOverflow(-2);
+	fxPush(*v);
+	fxPush(*self);
+	fxDefineID(the, id, attributes, attributes | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxPop();
+}
+
 void _xsDelete(txMachine *the, txSlot *self, txID id)
 {
 	mxOverflow(-1);
@@ -235,7 +244,39 @@ txInteger _xsArgc(txMachine *the)
 	return mxArgc;
 }
 
-void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count)
+#ifndef __XSMC_H__
+enum {
+	xsBufferNonrelocatable,
+	xsBufferRelocatable
+};
+#endif
+
+static txInteger _xsmcGetViewBuffer(txMachine *the, txSlot* view, txSlot* buffer, void **data, txUnsigned *count, txBoolean writable)
+{
+	txInteger offset = view->value.dataView.offset;
+	txInteger size = view->value.dataView.size;
+	txSlot* arrayBuffer = buffer->value.reference->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
+		mxTypeError("detached buffer");
+	if (writable && (arrayBuffer->flag & XS_DONT_SET_FLAG))
+		mxTypeError("read-only buffer");
+	if (bufferInfo->value.bufferInfo.maxLength >= 0) {
+		txInteger byteLength = bufferInfo->value.bufferInfo.length;
+		if (offset > byteLength)
+			mxTypeError("out of bounds view");
+		if (size < 0)
+			size = byteLength - offset;
+		else if (offset + size > byteLength)
+			mxTypeError("out of bounds view");
+	}
+	*data = arrayBuffer->value.arrayBuffer.address + offset;
+	*count = size;
+
+	return (XS_ARRAY_BUFFER_KIND == arrayBuffer->kind) ? xsBufferRelocatable : xsBufferNonrelocatable;
+}
+
+txInteger _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count, txBoolean writable)
 {
 	txSlot* instance;
 
@@ -247,68 +288,53 @@ void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count
 		goto bail;
 
 	if (slot->kind == XS_ARRAY_BUFFER_KIND) {
-		*count = slot->value.arrayBuffer.length;
+		txSlot* bufferInfo = slot->next;
+		if (slot->value.arrayBuffer.address == C_NULL)
+			mxTypeError("detached buffer");
+		if (writable && (slot->flag & XS_DONT_SET_FLAG))
+			mxTypeError("read-only buffer");
 		*data = slot->value.arrayBuffer.address;
+		*count = bufferInfo->value.bufferInfo.length;
+		return xsBufferRelocatable;
 	}
-	else if (slot->kind == XS_TYPED_ARRAY_KIND) {
+
+	if (slot->kind == XS_TYPED_ARRAY_KIND) {
 		txSlot* view = slot->next;
 		txSlot* buffer = view->next;
-		uint8_t *address = (uint8_t *)buffer->value.reference->next->value.arrayBuffer.address;
-
 		if (1 != slot->value.typedArray.dispatch->size)
 			goto bail;
-
-		if (address) {
-			*count = view->value.dataView.size;
-			address += view->value.dataView.offset;
-		}
-		else
-			*count = 0;
-
-		*data = address;
+		return _xsmcGetViewBuffer(the, view, buffer, data, count, writable);
 	}
-	else if (slot->kind == XS_HOST_KIND) {
-		uint8_t *address = (uint8_t *)slot->value.host.data;
-
-		if (!address || (slot->flag & XS_HOST_CHUNK_FLAG))
+	
+	if (slot->kind == XS_HOST_KIND) {
+		txSlot* bufferInfo = slot->next;
+		if (slot->flag & XS_HOST_CHUNK_FLAG)
 			goto bail;
-
-#if 0
-		txSlot* view = slot->next;
-		if (view && (view->kind == XS_DATA_VIEW_KIND)) {
-			address += view->value.dataView.offset;
-			*count = view->value.dataView.size;
+		if (writable && (slot->flag & XS_DONT_SET_FLAG))
+			mxTypeError("read-only buffer");
+		if (bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND)) {
+			*data = (uint8_t *)slot->value.host.data;
+			*count = bufferInfo->value.bufferInfo.length;
 		}
-		else
-#endif
-		{	// for compatibilty. should throw eventually.
+		else {
+			// for compatibility. should throw eventually.
 			txSlot tmp, ref;
+			fxReport(the, "# Use xsmcSetHostBuffer instead of xsmcSetHostData\n");
 			fxReference(the, &ref, instance);
 			_xsGet(the, &tmp, &ref, _byteLength);
+			*data = (uint8_t *)slot->value.host.data;
 			*count = (txUnsigned)fxToInteger(the, &tmp);
 		}
-
-		*data = address;
+		return xsBufferNonrelocatable;
 	}
-	else if (slot->kind == XS_DATA_VIEW_KIND) {
+
+	if (slot->kind == XS_DATA_VIEW_KIND) {
 		txSlot* view = slot;
 		txSlot* buffer = view->next;
-		uint8_t *address = (uint8_t *)buffer->value.reference->next->value.arrayBuffer.address;
-
-		if (address) {
-			*count = view->value.dataView.size;
-			address += view->value.dataView.offset;
-		}
-		else
-			*count = 0;
-
-		*data = address;
+		return _xsmcGetViewBuffer(the, view, buffer, data, count, writable);
 	}
-	else
-		goto bail;
-
-	return;
 
 bail:
 	mxTypeError("this is no buffer");
+	return xsBufferNonrelocatable;
 }

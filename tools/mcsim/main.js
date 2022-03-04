@@ -17,6 +17,50 @@
  *   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
+ 
+import * as piuAllNamespace from "piu/All";
+import * as piuButtonsNamespace from "piu/Buttons";
+import * as piuPCNamespace from "piu/PC";
+import * as piuScreenNamespace from "piu/Screen";
+import * as piuScrollbarsNamespace from "piu/Scrollbars";
+import * as piuSlidersNamespace from "piu/Sliders";
+import * as piuSwitchesNamespace from "piu/Switches";
+import * as BinaryMessageNamespace from "BinaryMessage";
+import * as ControlsPaneNamespace from "ControlsPane";
+import * as DevicePaneNamespace from "DevicePane";
+import * as assetsNamespace from "assets";
+
+const compartmentModuleMap = {
+	"piu/All": piuAllNamespace,
+	"piu/Buttons": piuButtonsNamespace,
+	"piu/PC": piuPCNamespace,
+	"piu/Screen": piuScreenNamespace,
+	"piu/Scrollbars": piuScrollbarsNamespace,
+	"piu/Sliders": piuSlidersNamespace,
+	"piu/Switches": piuSwitchesNamespace,
+	"BinaryMessage": BinaryMessageNamespace,
+	"ControlsPane": ControlsPaneNamespace,
+	"DevicePane": DevicePaneNamespace,
+	"assets": assetsNamespace,
+}
+const compartmentOptions = {
+	resolveHook(specifier, refererSpecifier) {
+		if (specifier[0] == '.') {
+			let dot = 1;
+			let slash = refererSpecifier.lastIndexOf("/");
+			if (specifier[1] == '.') {
+				dot++;
+				slash = refererSpecifier.lastIndexOf("/", slash - 1);
+			}
+			return refererSpecifier.slice(0, slash) + specifier.slice(dot);
+		}
+		return specifier;
+	},
+	loadNowHook(specifier) {
+		return { source:system.readFileString(specifier), meta:{ uri:specifier } };
+	},
+}
 
 import {} from "piu/PC";
 
@@ -86,7 +130,7 @@ class ApplicationBehavior extends Behavior {
 		
 		this.keys = {};
 		this.controlsCurrent = 320;
-		this.controlsStatus = false;
+		this.controlsStatus = true;
 		this.infoStatus = true;
 		
 		let path = system.applicationPath;
@@ -178,7 +222,7 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment({...Object.getPrototypeOf(globalThis), ...globalThis});
+						let compartment = new Compartment({...Object.getPrototypeOf(globalThis), ...globalThis}, compartmentModuleMap, compartmentOptions);
 						let device = compartment.importNow(info.path).default;
 						if (device && (("DeviceTemplate" in device) || ("DeviceTemplates" in device))) {
 							device.compartment = compartment;
@@ -339,6 +383,12 @@ class ApplicationBehavior extends Behavior {
 	canReloadSimulators() {
 		return true;
 	}
+	canSaveScreen() {
+		return this.SCREEN && this.SCREEN.running;
+	}
+	canSaveSequence() {
+		return this.SCREEN && this.SCREEN.running;
+	}
 	doCloseApp() {
 		this.libraryPath = "";
 		this.quitScreen();
@@ -386,6 +436,23 @@ class ApplicationBehavior extends Behavior {
 		this.quitScreen();
 		this.reloadDevices(application);
 		this.launchScreen();
+	}
+	doSaveScreen() {
+		system.saveFile({ prompt:"Save Screen", name:"screen.png" }, path => { if (path) application.defer("doSaveScreenCallback", new String(path)); });
+	}
+	doSaveScreenCallback(application, path) {
+		try  {
+			this.SCREEN.writePNG(path);
+		}
+		catch (e){
+			system.alert({ 
+				type:"stop",
+				prompt:"mcsim",
+				info:`Error saving ${path}: ${e}`,
+				buttons:["Cancel"]
+			}, ok => {
+			});
+		}
 	}
 /* VIEW MENU */
 	canToggleControls(target, item) {
@@ -452,10 +519,6 @@ class ApplicationBehavior extends Behavior {
 					this.deviceIndex = preferences.deviceIndex;
 				if ("deviceRotation" in preferences)
 					this.deviceRotation = preferences.deviceRotation;
-				if (("libraryPath" in preferences) && system.fileExists(preferences.libraryPath))
-					this.libraryPath = preferences.libraryPath;
-				if (("archivePath" in preferences) && system.fileExists(preferences.archivePath))
-					this.archivePath = preferences.archivePath;
 			}
 		}
 		catch(e) {
@@ -473,8 +536,6 @@ class ApplicationBehavior extends Behavior {
 				devicesPath: this.devicesPath,
 				deviceIndex: this.deviceIndex,
 				deviceRotation: this.deviceRotation,
-				libraryPath: this.libraryPath,
-				archivePath: this.archivePath,
 			};
 			let string = JSON.stringify(preferences, null, "\t");
 			system.writePreferenceString("main", string);
@@ -683,6 +744,8 @@ let mcsimApplication = Application.template($ => ({
 				{ title:"Locate Simulators...", key:"L", command:"LocateSimulators" },
 				{ title:"Reload Simulators", shift:true, key:"R", command:"ReloadSimulators" },
 				null,
+// 				{ title:"Save Screen...", key:"S", command:"SaveScreen" },
+// 				null,
 				{ title:"Quit", key:"Q", command:"Quit" },
 			],
 		},

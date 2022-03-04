@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016-2020 Moddable Tech, Inc.
+* Copyright (c) 2016-2021 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK.
 *
@@ -13,27 +13,23 @@
 */
 
 import Client from "mqtt";
-import Net from "net";
 import Timer from "timer";
 
-let mqtt  = new Client({
+const mqtt  = new Client({
 	host: "test.mosquitto.org",
-	id: "moddable_" + Net.get("MAC"),
+	timeout: 60_000
 });
 
 mqtt.onReady = function() {
 	this.subscribe("moddable/mqtt/example/#");
 
-	this.timer = Timer.repeat(() => {
-		this.publish("moddable/mqtt/example/date", (new Date()).toString());
+	this.timer = Timer.set(() => {
+		this.publish("moddable/mqtt/example/date", Date());
 		this.publish("moddable/mqtt/example/random", Math.random());
-	 }, 1000);
+	 }, 0, 1000);
 };
 mqtt.onMessage = function(topic, body) {
-	if (body.byteLength > 128)
-		trace(`received "${topic}": ${body.byteLength} bytes\n`);
-	else
-		trace(`received "${topic}": ${String.fromArrayBuffer(body)}\n`);
+	trace(`received "${topic}": ${String.fromArrayBuffer(body)}\n`);
 };
 mqtt.onClose = function() {
 	trace('lost connection to server\n');

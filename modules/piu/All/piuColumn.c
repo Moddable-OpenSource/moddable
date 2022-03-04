@@ -139,7 +139,7 @@ void PiuColumnReflow(void* it, PiuFlags flags)
 	}
 	else if (flags & piuContentsHorizontallyChanged)
 		(*self)->flags |= piuContentsHorizontallyChanged;
-	if (flags & piuVerticallyChanged)
+	if (flags & (piuVerticallyChanged | piuOrderChanged))
 		(*self)->flags |= piuHeightChanged;
 	else if (flags & piuContentsVerticallyChanged)
 		(*self)->flags |= piuContentsVerticallyChanged;

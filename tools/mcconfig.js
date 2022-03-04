@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -42,12 +42,6 @@ var formatValues = {
 	x: 0,
 };
 
-var resourceExtensions = [  
-	".act", ".fnt", ".json", ".png", ".gif", ".jpg", ".jpeg", 
-	".bmp", ".cct", ".nfnt", ".rle", ".ttf", ".zip", // copy
-	".dat", ".der", ".pk8", ".ski", ".subject",
-];
-
 class MakeFile extends MAKEFILE {
 	constructor(path) {
 		super(path)
@@ -87,6 +81,11 @@ class MakeFile extends MAKEFILE {
 	}
 	generateModulesDefinitions(tool) {
 		this.write("MODULES =");
+		for (var result of tool.cdvFiles) {
+			this.write("\\\n\t$(MODULES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target + ".xsb");
+		}
 		for (var result of tool.jsFiles) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
@@ -922,6 +921,9 @@ export default class extends Tool {
 			for (var tsFile of this.tsFiles) {
 				tsFile.preload = false;
 			}
+			for (var cdvFile of this.cdvFiles) {
+				cdvFile.preload = false;
+			}
 			for (var pattern of preload) {
 				pattern = this.resolvePrefix(pattern);
 				pattern = this.resolveSlash(pattern);
@@ -950,6 +952,13 @@ export default class extends Tool {
 						if (target == pattern) {
 							result.preload = true;
 							this.preloads.push(result.target);
+						}
+					}
+					for (var result of this.cdvFiles) {
+						const target = result.target + ".xsb";
+						if (target == pattern) {
+							result.preload = true;
+							this.preloads.push(target);
 						}
 					}
 				}
@@ -1049,6 +1058,7 @@ export default class extends Tool {
 		this.filterPreload(this.manifest.preload);
 		this.filterRecipes(this.manifest.recipes);
 		this.strip = this.manifest.strip;
+		this.typescript = this.manifest.typescript;
 		
 		var name = this.environment.NAME
 		if (this.platform == "x-mac")
@@ -1058,6 +1068,7 @@ export default class extends Tool {
 		else
 			this.binPath = this.createDirectories(this.outputPath, "bin", name);
 		this.tmpPath = this.createDirectories(this.outputPath, "tmp", name);
+		this.libPath = this.createDirectories(this.outputPath, "tmp", "lib");
 			
 		this.modulesPath = this.tmpPath + this.slash + "modules";
 		this.createDirectory(this.modulesPath);

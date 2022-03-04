@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,7 +34,7 @@ import Timer from "timer";
 		1 - sending request headers
 		2 - sending request body
 		3 - receiving status
-		4 - receeving response headers
+		4 - receiving response headers
 		5 - receiving response body
 		6 - done
 		
@@ -248,7 +248,7 @@ function callback(message, value) {
 
 			this.callback(Request.status, parseInt(status[1]));
 
-			if (!socket.read() || this.suspended)
+			if ((this.state >= 11) || !socket.read() || this.suspended)
 				return;
 		}
 
@@ -310,7 +310,7 @@ function callback(message, value) {
 						return done.call(this);
 				}
 
-				if (this.suspended)
+				if ((this.state >= 11) || this.suspended)
 					return;
 			}
 		}
@@ -406,13 +406,11 @@ function callback(message, value) {
 			else if ((undefined === this.total) && (undefined === this.chunk))	// end of data - no content-length and no chunk
 				error = false;
 		}
-		done.call(this, error);
+		done.call(this, error, value);
 	}
 }
 
-function done(error = false) {
-	let data;
-
+function done(error = false, data) {
 	if (6 === this.state) return;
 
 	this.state = 6;
@@ -503,7 +501,6 @@ export class Server {
 		if (connections) {
 			this.connections.forEach(request => {
 				try {
-					trace("close http server request\n");
 					request.close();
 				}
 				catch {
@@ -513,6 +510,20 @@ export class Server {
 		}
 		this.#listener.close();
 		this.#listener = undefined;
+	}
+	detach(connection) {
+		const i = this.connections.indexOf(connection);
+		if (i < 0) throw new Error;
+
+		this.connections.splice(i, 1);
+
+		const socket = connection.socket;
+		delete socket.callback;
+		connection.state = 10;
+		delete connection.socket;
+		connection.close();
+		
+		return socket;
 	}
 }
 Server.connection = 1;
@@ -591,6 +602,8 @@ function server(message, value, etc) {
 						let method = line.shift();
 						let path = line.join(" ");	// re-aassemble path
 						this.callback(Server.status, path, method);
+						if (!this.socket)
+							return;
 
 						this.total = undefined;
 						this.state = 2;
@@ -658,13 +671,12 @@ function server(message, value, etc) {
 			let first;
 
 			if (7 === this.state) {
-				let response = this.callback(Server.prepareResponse);		// prepare response
+				const response = this.callback(Server.prepareResponse);		// prepare response
 
-				let parts = [];
-				let status = (!response || (undefined === response.status)) ? 200 : response.status;
-				let message = (!response || (undefined === response.reason)) ? reason(status) : response.reason.toString();
-				parts.push("HTTP/1.1 ", status.toString(), " ", message, "\r\n",
-							"connection: ", "close\r\n");
+				const status = response?.status ?? 200;
+				const message = response?.reason?.toString() ?? reason(status);
+				const parts = ["HTTP/1.1 ", status.toString(), " ", message, "\r\n",
+							"connection: ", "close\r\n"];
 
 				if (response) {
 					let byteLength;

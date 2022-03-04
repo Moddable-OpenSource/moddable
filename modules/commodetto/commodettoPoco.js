@@ -33,19 +33,20 @@
 // class Poco extends Render
 
 export default class Poco @ "xs_poco_destructor" {
-	constructor(pixelsOut, dictionary = {}) {
+	constructor(pixelsOut, options = {}) {
 		this.pixelsOut = pixelsOut;
 
 		let pixels = pixelsOut.width << 1;								// default is enough for double buffering at full width to allow async pixel transmission
-		if (dictionary.pixels >= pixelsOut.width)						// caller can request larger or smaller (down to a single scan line)
-			pixels = dictionary.pixels;
+		if (options.pixels >= pixelsOut.width)							// caller can request larger or smaller (down to a single scan line)
+			pixels = options.pixels;
 
-		this.build(	pixelsOut.width,
+		build.call(this,
+					pixelsOut.width,
 					pixelsOut.height,
 					pixelsOut.pixelsToBytes(pixels),
 					pixelsOut.pixelFormat,
-					dictionary.displayListLength ? dictionary.displayListLength : 1024,
-					dictionary.rotation ? dictionary.rotation : 0,
+					options.displayListLength ?? 1024,
+					options.rotation ?? 0,
 					pixelsOut.async,
 					pixelsOut.adaptInvalid,
 					pixelsOut.c_dispatch,
@@ -95,9 +96,9 @@ export default class Poco @ "xs_poco_destructor" {
 		return new Rectangle(0, 0, 0, 0);
 	}
 
-	// internal implementation
-	build(width, height, byteLength, pixelFormat, displayListLength, rotation) @ "xs_poco_build"
 }
+
+function build(width, height, byteLength, pixelFormat, displayListLength, rotation) @ "xs_poco_build";
 
 class Rectangle @ "xs_rectangle_destructor" {
 	constructor(x, y, w, h) @ "xs_rectangle_constructor"

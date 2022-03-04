@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -124,7 +124,7 @@
 	#define MODDEF_DESTM32S_MODDABLE_THREE 0
 #endif
 #ifndef MODDEF_DESTM32S_DITHER
-	#define MODDEF_DESTM32S_DITHER (0)
+	#define MODDEF_DESTM32S_DITHER (1)
 #endif
 #ifndef MODDEF_DESTM32S_FULL
 	#define MODDEF_DESTM32S_FULL (0)
@@ -234,8 +234,6 @@ typedef struct {
 
 	CommodettoDimension			updateWidth;
 
-	uint8_t						*clut;
-
 	uint8_t						full;
 	uint8_t						powered;
 	uint8_t						doPowerOff;
@@ -255,6 +253,7 @@ typedef struct {
 	uint8_t						bufferB[256];
 
 #if MODDEF_DESTM32S_DITHER
+	uint8_t						dither;
 	uint8_t						ditherPhase;
 	int16_t						ditherA[MODDEF_DESTM32S_WIDTH + 4];
 	int16_t						ditherB[MODDEF_DESTM32S_WIDTH + 4];
@@ -397,19 +396,13 @@ void xs_destm32s(xsMachine *the)
 		clear = xsmcTest(xsVar(0));
 	}
 
-	if (clear) {
-		PocoPixel line[MODDEF_DESTM32S_WIDTH];
-		uint16_t count;
-
-		c_memset(line, 0xFF, MODDEF_DESTM32S_WIDTH);		//@@ all white
-
-		sd->forceFull = 1;
-		(sd->dispatch->doBegin)(sd, 0, 0, MODDEF_DESTM32S_WIDTH, MODDEF_DESTM32S_HEIGHT);
-			for (count = MODDEF_DESTM32S_HEIGHT; 0 != count; count--)
-				(sd->dispatch->doSend)(line, MODDEF_DESTM32S_WIDTH, sd);
-		(sd->dispatch->doEnd)(sd);
-	}
 	sd->forceFull = MODDEF_DESTM32S_FULL;
+#if MODDEF_DESTM32S_DITHER 
+	sd->dither = true;
+#endif
+
+	if (clear)
+		xsCall0(xsThis, xsID_refresh);
 }
 
 void xs_destm32s_begin(xsMachine *the)
@@ -428,29 +421,19 @@ void xs_destm32s_send(xsMachine *the)
 	spiDisplay sd = xsmcGetHostData(xsThis);
 	int argc = xsmcArgc;
 	const uint8_t *data;
-	int count;
+	xsUnsignedValue count;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		count = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		data = xsmcGetHostData(xsArg(0));
-
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		count = xsmcToInteger(xsVar(0));
-	}
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &count);
 
 	if (argc > 1) {
-		int offset = xsmcToInteger(xsArg(1));
+		xsIntegerValue offset = xsmcToInteger(xsArg(1));
 
+		if ((xsUnsignedValue)offset >= count)
+			xsUnknownError("bad offset");
 		data += offset;
 		count -= offset;
-		if (count < 0)
-			xsUnknownError("bad offset");
 		if (argc > 2) {
-			int c = xsmcToInteger(xsArg(2));
+			xsIntegerValue c = xsmcToInteger(xsArg(2));
 			if (c > count)
 				xsUnknownError("bad count");
 			count = c;
@@ -493,24 +476,44 @@ void xs_destm32s_get_height(xsMachine *the)
 	xsmcSetInteger(xsResult, MODDEF_DESTM32S_HEIGHT);
 }
 
-void xs_destm32s_get_clut(xsMachine *the)
-{
-	spiDisplay sd = xsmcGetHostData(xsThis);
-	if (sd->clut) {
-		xsResult = xsNewHostObject(NULL);
-		xsmcSetHostData(xsResult, sd->clut);
-	}
-}
-
-void xs_destm32s_set_clut(xsMachine *the)
-{
-	spiDisplay sd = xsmcGetHostData(xsThis);
-	sd->clut = xsmcGetHostData(xsArg(0));		// cannot be array buffer
-}
-
 void xs_destm32s_get_c_dispatch(xsMachine *the)
 {
 	xsResult = xsThis;
+}
+
+void xs_destm32s_refresh(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	PocoPixel line[MODDEF_DESTM32S_WIDTH];
+	uint16_t count;
+	uint8_t forceFull = sd->forceFull;
+
+	c_memset(line, 0xFF, MODDEF_DESTM32S_WIDTH);		// all white
+
+	sd->forceFull = 1;
+	(sd->dispatch->doBegin)(sd, 0, 0, MODDEF_DESTM32S_WIDTH, MODDEF_DESTM32S_HEIGHT);
+		for (count = MODDEF_DESTM32S_HEIGHT; 0 != count; count--)
+			(sd->dispatch->doSend)(line, MODDEF_DESTM32S_WIDTH, sd);
+	(sd->dispatch->doEnd)(sd);
+	sd->forceFull = forceFull;
+}
+
+void xs_destm32s_configure(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_full)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_full);
+		sd->forceFull = xsmcToBoolean(xsVar(0));
+	}
+
+#if MODDEF_DESTM32S_DITHER
+	if (xsmcHas(xsArg(0), xsID_dither)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_dither);
+		sd->dither = xsmcToBoolean(xsVar(0));
+	}
+#endif
 }
 
 // caller provides 8-bit gray pixels. convert to 1-bit.
@@ -538,65 +541,69 @@ void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon)
 		}
 
 #if MODDEF_DESTM32S_DITHER
-		int16_t *thisLineErrors, *nextLineErrors;
+		if (sd->dither) {
+			int16_t *thisLineErrors, *nextLineErrors;
 
-		if (sd->ditherPhase) {
-			thisLineErrors = sd->ditherA + 2;
-			nextLineErrors = sd->ditherB + 2;
-			sd->ditherPhase = 0;
-		}
-		else {
-			thisLineErrors = sd->ditherB + 2;
-			nextLineErrors = sd->ditherA + 2;
-			sd->ditherPhase = 1;
-		}
-
-		uint8_t mask = 0x80 >> ((remain & 7) - 1);
-		uint8_t outPixels = 0;
-		while (remain--) {
-			int16_t thisPixel = *pixels++ + (thisLineErrors[0] >> 3);
-
-			if (thisPixel >= 128) {
-				outPixels |= mask;
-				thisPixel -= 255;
+			if (sd->ditherPhase) {
+				thisLineErrors = sd->ditherA + 2;
+				nextLineErrors = sd->ditherB + 2;
+				sd->ditherPhase = 0;
+			}
+			else {
+				thisLineErrors = sd->ditherB + 2;
+				nextLineErrors = sd->ditherA + 2;
+				sd->ditherPhase = 1;
 			}
 
-			thisLineErrors[ 0]  = thisPixel;		// next next!
-			thisLineErrors[+1] += thisPixel;
-			thisLineErrors[+2] += thisPixel;
-
-			nextLineErrors[-1] += thisPixel;
-			nextLineErrors[ 0] += thisPixel;
-			nextLineErrors[+1] += thisPixel;
-
-			thisLineErrors++;
-			nextLineErrors++;
-
-			mask <<= 1;
-			if (!mask) {
-				mono[i--] = outPixels;	
-				mask = 0x01;
-				outPixels = 0;
-			}
-		}
-
-#else
-		if (remain & 7) {
 			uint8_t mask = 0x80 >> ((remain & 7) - 1);
-			mono[i] = 0;
-			while (remain & 7) {
-				if (*pixels++ & 0x80)
-					mono[i] |= mask;
+			uint8_t outPixels = 0;
+			while (remain--) {
+				int16_t thisPixel = *pixels++ + (thisLineErrors[0] >> 3);
+
+				if (thisPixel >= 128) {
+					outPixels |= mask;
+					thisPixel -= 255;
+				}
+
+				thisLineErrors[ 0]  = thisPixel;		// next next!
+				thisLineErrors[+1] += thisPixel;
+				thisLineErrors[+2] += thisPixel;
+
+				nextLineErrors[-1] += thisPixel;
+				nextLineErrors[ 0] += thisPixel;
+				nextLineErrors[+1] += thisPixel;
+
+				thisLineErrors++;
+				nextLineErrors++;
+
 				mask <<= 1;
-				remain--;
+				if (!mask) {
+					mono[i--] = outPixels;	
+					mask = 0x01;
+					outPixels = 0;
+				}
 			}
-			i--;
+		}
+		else
+#endif
+		{
+			if (remain & 7) {
+				uint8_t mask = 0x80 >> ((remain & 7) - 1);
+				mono[i] = 0;
+				while (remain & 7) {
+					if (*pixels++ & 0x80)
+						mono[i] |= mask;
+					mask <<= 1;
+					remain--;
+				}
+				i--;
+			}
+
+			for (; remain >= 8; i--, remain > 0, pixels += 8, remain -= 8)
+				mono[i] = ((pixels[0] & 0x80) >> 7) | ((pixels[1] & 0x80) >> 6) | ((pixels[2] & 0x80) >> 5) | ((pixels[3] & 0x80) >> 4) |
+						((pixels[4] & 0x80) >> 3) | ((pixels[5] & 0x80) >> 2) | ((pixels[6] & 0x80) >> 1) | (pixels[7] & 0x80);
 		}
 
-		for (; remain >= 8; i--, remain > 0, pixels += 8, remain -= 8)
-			mono[i] = ((pixels[0] & 0x80) >> 7) | ((pixels[1] & 0x80) >> 6) | ((pixels[2] & 0x80) >> 5) | ((pixels[3] & 0x80) >> 4) |
-					((pixels[4] & 0x80) >> 3) | ((pixels[5] & 0x80) >> 2) | ((pixels[6] & 0x80) >> 1) | (pixels[7] & 0x80);
-#endif
 		spaceInOutput -= updateBytes;
 		mono += updateBytes;
 		pixels = nextPixels;
@@ -881,9 +888,11 @@ void destm32sBegin_bw(void *refcon, CommodettoCoordinate x, CommodettoCoordinate
 	sd->updateWidth = w;
 
 #if MODDEF_DESTM32S_DITHER
-	c_memset(sd->ditherA, 0, sizeof(sd->ditherA));
-	c_memset(sd->ditherB, 0, sizeof(sd->ditherB));
-	sd->ditherPhase = 0;
+	if (sd->dither) {
+		c_memset(sd->ditherA, 0, sizeof(sd->ditherA));
+		c_memset(sd->ditherB, 0, sizeof(sd->ditherB));
+		sd->ditherPhase = 0;
+	}
 #endif
 }
 

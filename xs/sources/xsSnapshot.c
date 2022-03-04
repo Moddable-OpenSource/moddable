@@ -18,7 +18,11 @@
  *
  */
 
+#define _GNU_SOURCE
 #include "xsSnapshot.h"
+#if mxMacOSX || mxLinux
+#include <dlfcn.h>
+#endif
 
 static void fxLinkChunks(txMachine* the);
 
@@ -60,7 +64,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#define mxCallbacksLength 477
+#define mxCallbacksLength 493
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -75,6 +79,8 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Array_prototype_filter,
 	fx_Array_prototype_find,
 	fx_Array_prototype_findIndex,
+	fx_Array_prototype_findLast,
+	fx_Array_prototype_findLastIndex,
 	fx_Array_prototype_flat,
 	fx_Array_prototype_flatMap,
 	fx_Array_prototype_forEach,
@@ -100,11 +106,14 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Array_prototype_values,
 	fx_Array,
 	fx_ArrayBuffer_fromBigInt,
-	fx_ArrayBuffer_fromString,
 	fx_ArrayBuffer_isView,
 	fx_ArrayBuffer_prototype_concat,
 	fx_ArrayBuffer_prototype_get_byteLength,
+	fx_ArrayBuffer_prototype_get_maxByteLength,
+	fx_ArrayBuffer_prototype_get_resizable,
+	fx_ArrayBuffer_prototype_resize,
 	fx_ArrayBuffer_prototype_slice,
+	fx_ArrayBuffer_prototype_transfer,
 	fx_ArrayBuffer,
 	fx_ArrayIterator_prototype_next,
 	fx_AsyncFromSyncIterator_prototype_next,
@@ -143,6 +152,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Compartment_prototype_get_globalThis,
 	fx_Compartment_prototype_import,
 	fx_Compartment_prototype_importNow,
+	fx_Compartment_prototype_module,
 	fx_Compartment,
 	fx_DataView_prototype_buffer_get,
 	fx_DataView_prototype_byteLength_get,
@@ -362,6 +372,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Promise_resolve,
 	fx_Promise,
 	fx_Proxy_revocable,
+	fx_Proxy_revoke,
 	fx_Proxy,
 	fx_RangeError,
 	fx_ReferenceError,
@@ -383,6 +394,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_RegExp_prototype_get_dotAll,
 	fx_RegExp_prototype_get_flags,
 	fx_RegExp_prototype_get_global,
+	fx_RegExp_prototype_get_hasIndices,
 	fx_RegExp_prototype_get_ignoreCase,
 	fx_RegExp_prototype_get_multiline,
 	fx_RegExp_prototype_get_source,
@@ -408,10 +420,15 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Set,
 	fx_SetIterator_prototype_next,
 	fx_SharedArrayBuffer_prototype_get_byteLength,
+	fx_SharedArrayBuffer_prototype_get_growable,
+	fx_SharedArrayBuffer_prototype_get_maxByteLength,
+	fx_SharedArrayBuffer_prototype_grow,
 	fx_SharedArrayBuffer_prototype_slice,
 	fx_SharedArrayBuffer,
 	fx_species_get,
-	fx_String_fromArrayBuffer,
+	fx_StaticModuleRecord,
+	fx_StaticModuleRecord_initialize,
+	fx_StaticModuleRecord_prototype_get_bindings,
 	fx_String_fromCharCode,
 	fx_String_fromCodePoint,
 	fx_String_prototype_at,
@@ -474,6 +491,8 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_TypedArray_prototype_filter,
 	fx_TypedArray_prototype_find,
 	fx_TypedArray_prototype_findIndex,
+	fx_TypedArray_prototype_findLast,
+	fx_TypedArray_prototype_findLastIndex,
 	fx_TypedArray_prototype_forEach,
 	fx_TypedArray_prototype_includes,
 	fx_TypedArray_prototype_indexOf,
@@ -515,12 +534,14 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxAsyncFromSyncIteratorDone,
 	fxArrayLengthGetter,
 	fxArrayLengthSetter,
-	fxFulfillModule,
+	fxExecuteModulesFulfilled,
+	fxExecuteModulesRejected,
 	fxInitializeRegExp,
+	fxLoadModulesFulfilled,
+	fxLoadModulesRejected,
 	fxOnRejectedPromise,
 	fxOnResolvedPromise,
 	fxOnThenable,
-	fxOnUnhandledRejection,
 	fxOrdinaryToPrimitive,
 	fxProxyGetter,
 	fxProxySetter,
@@ -532,7 +553,6 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxCombinePromisesCallback,
 	fxNewPromiseCapabilityCallback,
 	fxRejectAwait,
-	fxRejectModule,
 	fxRejectPromise,
 	fxResolveAwait,
 	fxResolvePromise,
@@ -661,7 +681,16 @@ txCallback fxProjectCallback(txMachine* the, txSnapshot* snapshot, txCallback ca
 			callbackIndex++;
 			callbackItem++;
 		}
-		mxAssert(0, "# snapshot: unknown callback!\n");
+		{
+#if mxMacOSX || mxLinux
+			Dl_info info;
+		    if (dladdr(callback, &info)) {
+				mxAssert(0, "# snapshot: unknown callback: %s!\n", info.dli_sname);
+			}
+		    else
+#endif
+				mxAssert(0, "# snapshot: unknown callback!\n");
+		}
 	}
 	return C_NULL;
 }
@@ -981,6 +1010,7 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
+	case XS_STATIC_MODULE_RECORD_KIND:
 		slot->value.module.realm = fxUnprojectSlot(the, snapshot, slot->value.module.realm);
 		break;
 		
@@ -1307,7 +1337,10 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		break;
 	case XS_ARRAY_BUFFER_KIND:
 		buffer.value.arrayBuffer.address = (txByte*)fxProjectChunk(the, slot->value.arrayBuffer.address);
-		buffer.value.arrayBuffer.length = slot->value.arrayBuffer.length;
+		break;
+	case XS_BUFFER_INFO_KIND:
+		buffer.value.bufferInfo.length = slot->value.bufferInfo.length;
+		buffer.value.bufferInfo.maxLength = slot->value.bufferInfo.maxLength;
 		break;
 	case XS_CALLBACK_KIND:
 		buffer.value.callback.address = fxProjectCallback(the, snapshot, slot->value.callback.address);
@@ -1360,6 +1393,7 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
+	case XS_STATIC_MODULE_RECORD_KIND:
 		buffer.value.module.realm = fxProjectSlot(the, snapshot->firstProjection, slot->value.module.realm);
 		buffer.value.module.id = slot->value.module.id;
 		break;

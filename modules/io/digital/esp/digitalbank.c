@@ -104,6 +104,7 @@ struct DigitalRecord {
 	uint32_t	pins;
 	xsSlot		obj;
 	uint8_t		bank;
+	uint8_t		hasOnReadable;
 	// fields after here only allocated if onReadable callback present
 	uint16_t	triggered;
 	uint16_t	rises;
@@ -133,9 +134,10 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
-	int hasOnReadable = 0, mode, pins, rises = 0, falls = 0;
+	int mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
 	uint8_t bank = 0;
+	xsSlot *onReadable;
 	xsSlot tmp;
 
 #if kPinBanks > 1
@@ -160,7 +162,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
-	if (builtinHasCallback(the, xsID_onReadable)) {
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	if (onReadable) {
 		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
 			xsRangeError("invalid mode");
 
@@ -175,8 +178,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 		if (!rises & !falls)
 			xsRangeError("invalid edges");
-
-		hasOnReadable = 1;
 	}
 
 	builtinInitializeTarget(the);
@@ -190,7 +191,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if ((16 == pin) && ((kDigitalInput != mode) && (kDigitalOutput != mode)))
 		xsRangeError("invalid mode");
 
-	digital = c_malloc(hasOnReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
+	digital = c_malloc(onReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
 		xsRangeError("no memory");
 
@@ -249,7 +250,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		}
 	}
 
-	if (hasOnReadable) {
+	if (onReadable) {
 		xsSlot tmp;
 
 		digital->the = the;
@@ -257,10 +258,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		digital->falls = falls;
 		digital->triggered = 0;
 // exception for rise/fall on pin 16
-		builtinGetCallback(the, xsID_onReadable, &tmp);
-		digital->onReadable = xsToReference(tmp);
-
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
+		digital->onReadable = onReadable;
 
 		builtinCriticalSectionBegin();
 
@@ -286,8 +284,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 		builtinCriticalSectionEnd();
 	}
 
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
+
 	digital->pins = pins;
 	digital->bank = bank;
+	digital->hasOnReadable = onReadable ? 1 : 0;
 	builtinUsePins(bank, pins);
 }
 
@@ -337,7 +338,8 @@ void xs_digitalbank_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
 {
 	Digital digital = it;
 
-	(*markRoot)(the, digital->onReadable);
+	if (digital->hasOnReadable)
+		(*markRoot)(the, digital->onReadable);
 }
 
 void xs_digitalbank_close(xsMachine *the)

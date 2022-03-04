@@ -167,10 +167,7 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 		gxDefaults.newFunctionLength(the, instance, 0);
 		
 	/* NAME */
-	if (name != XS_NO_ID)
-		fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
-	else if (gxDefaults.newFunctionName)
-		property = gxDefaults.newFunctionName(the, instance, XS_NO_ID, 0, XS_NO_ID, C_NULL);
+	fxRenameFunction(the, instance, name, 0, XS_NO_ID, C_NULL);
 
 	return instance;
 }
@@ -233,9 +230,13 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 	txSlot* property;
 	txSlot* key;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), 0, XS_OWN);
-	if (!property)
+	if (property) {
+		if ((property->kind != mxEmptyString.kind) || (property->value.string != mxEmptyString.value.string))
+			return property;
+	}
+	else
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-	if (id) {
+	if (id != XS_NO_ID) {
 		key = fxGetKey(the, (txID)id);
 		if (key) {
 			txKind kind = mxGetKeySlotKind(key);
@@ -279,11 +280,9 @@ void fxRenameFunction(txMachine* the, txSlot* instance, txID id, txIndex index, 
 		return;
 	property = mxFunctionInstanceCode(instance);
 	if ((property->ID == XS_NO_ID) || (property->ID == former)) {
-		if (id)
+		if (id != XS_NO_ID)
 			property->ID = (txID)id;
 	}
-	else
-		return;
 	if (gxDefaults.newFunctionName)
 		property = gxDefaults.newFunctionName(the, instance, id, index, former, prefix);
 }
@@ -529,28 +528,36 @@ void fx_Function_prototype_call(txMachine* the)
 
 void fx_Function_prototype_hasInstance(txMachine* the)
 {	
+	txSlot* function;
+	txSlot* slot;
 	txSlot* instance;
 	txSlot* prototype;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
+	if (!fxIsCallable(the, mxThis))
+		return;
+	function = fxToInstance(the, mxThis);
+	if (!function)
+		return;
+	if (mxIsFunction(function)) {
+		slot = mxFunctionInstanceHome(function)->next;
+		if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == mxID(_boundFunction))) {
+			if (!fxIsCallable(the, slot))
+				return;
+			function = fxToInstance(the, slot);
+			if (!function)
+				return;
+		}
+	}
 	if (mxArgc == 0)
 		return;
 	instance = fxGetInstance(the, mxArgv(0));
 	if (!instance)
 		return;
-	mxPushSlot(mxThis);
+	mxPushReference(function);
 	mxGetID(mxID(_prototype));
 	prototype = fxGetInstance(the, the->stack);
 	mxPop();
-	if (!prototype) {
-		txSlot* slot = mxFunctionInstanceHome(mxThis->value.reference)->next;
-		if (slot && (slot->flag & XS_INTERNAL_FLAG) && (slot->ID == mxID(_boundFunction))) {
-			mxPushSlot(slot);
-			mxGetID(mxID(_prototype));
-			prototype = fxGetInstance(the, the->stack);
-			mxPop();
-		}
-	}
 	if (!prototype)
 		mxTypeError("prototype is no object");
 	if (prototype->ID) {

@@ -20,7 +20,7 @@
 
 #include "piuAll.h"
 
-static void PiuHSL2RGB(const uint8_t *hsl, uint8_t *rgb);
+static void PiuHSL2RGB(xsMachine* the, PiuColor color);
 static uint32_t PiuStringHexToNum(const char *string, uint32_t i);
 
 #define PiuColorCount 18
@@ -180,36 +180,43 @@ void PiuColorsSerialize(xsMachine *the, PiuColor colors)
 	}
 }
 
-void PiuHSL2RGB(const uint8_t *hsl, uint8_t *rgb)
+static xsNumberValue PiuHSL2RGBAux(xsNumberValue v1, xsNumberValue v2, xsNumberValue vH)
 {
-	int v;
+	if (vH < 0)
+		vH += 1;
+	if (vH > 1)
+		vH -= 1;
+	if ((6 * vH) < 1)
+		return (v1 + (v2 - v1) * 6 * vH);
+	if ((2 * vH) < 1)
+		return v2;
+	if ((3 * vH) < 2)
+		return (v1 + (v2 - v1) * ((2.0f / 3) - vH) * 6);
+	return v1;
+}
 
-	v = (hsl[2] <= 255/2)	? (((int)hsl[2] * (255 + (int)hsl[1])) + (255 >> 1)) / 255
-							: (int)hsl[2] + (int)hsl[1] - ((int)hsl[2] * (int)hsl[1] + (255 >> 1)) / 255;
-	if (v <= 0) {
-		rgb[0] = rgb[1] = rgb[2] = 0;
+void PiuHSL2RGB(xsMachine* the, PiuColor color)
+{
+	xsNumberValue H = xsToNumber(xsArg(0));
+	xsNumberValue S = xsToNumber(xsArg(1));
+	xsNumberValue L = xsToNumber(xsArg(2));
+	if (S < 0) S = 0;
+	else if (S > 1) S = 1;
+	if (L < 0) L = 0;
+	else if (L > 1) L = 1;
+	if (S == 0) {
+		color->r = color->g = color->b = (uint8_t)(L * 255);
 	}
 	else {
-		int m, sv, h, fract, vsf, mid1, mid2, sextant;
-		m = (int)hsl[2] + (int)hsl[2] - v;
-		sv = (((v - m) << 8) + (v >> 1)) / v;	/* 24.8: [0, 255/256] */
-		h = (int)hsl[0] * 6 * 257;				/* 16.16 */
-		h = (h + (1 << (8 - 1))) >> 8;			/* 24.8: [0, 5 + 255/256] */
-		sextant = h >> 8;
-		if (sextant > 5)
-			sextant -= 6;
-		fract = h & 0xFF;						/* 24.8: [0, 255/256] */
-		vsf = (v * sv * fract + (1 << (16 - 1))) >> 16;
-		mid1 = m + vsf;
-		mid2 = v - vsf;
-		switch (sextant) {
-			case 0:		rgb[0] = v;		rgb[1] = mid1;	rgb[2] = m;		break;
-			case 1:		rgb[0] = mid2;	rgb[1] = v;		rgb[2] = m;		break;
-			case 2:		rgb[0] = m;		rgb[1] = v;		rgb[2] = mid1;	break;
-			case 3:		rgb[0] = m;		rgb[1] = mid2;	rgb[2] = v;		break;
-			case 4:		rgb[0] = mid1;	rgb[1] = m;		rgb[2] = v;		break;
-			case 5:		rgb[0] = v;		rgb[1] = m;		rgb[2] = mid2;	break;
-		}
+		xsNumberValue v1, v2;
+		H = c_fmod(H, 360);
+		if (H < 0) H += 360;
+		H /= 360;
+		v2 = (L < 0.5) ? (L * (1 + S)) : ((L + S) - (L * S));
+		v1 = 2 * L - v2;
+		color->r = (uint8_t)(255 * PiuHSL2RGBAux(v1, v2, H + (1.0 / 3)));
+		color->g = (uint8_t)(255 * PiuHSL2RGBAux(v1, v2, H));
+		color->b = (uint8_t)(255 * PiuHSL2RGBAux(v1, v2, H - (1.0 / 3)));
 	}
 }
 
@@ -256,28 +263,16 @@ void Piu_blendColors(xsMachine* the)
 
 void Piu_hsl(xsMachine* the)
 {
-	uint8_t hsl[3];
 	PiuColorRecord color;
-	xsNumberValue value = c_fmod(xsToNumber(xsArg(0)), 360.f);
-	if (value < 0) value += 360.f;
-	hsl[0] = (uint8_t)c_round(value * 255.f / 360.f);
-	hsl[1] = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(1)) * 255.f), 255);
-	hsl[2] = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(2)) * 255.f), 255);
-	PiuHSL2RGB(hsl, (uint8_t*)&color);
+	PiuHSL2RGB(the, &color);
     color.a = 255;
 	fxUnsigned(the, &xsResult, ((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }
 
 void Piu_hsla(xsMachine* the)
 {
-	uint8_t hsl[3];
 	PiuColorRecord color;
-	xsNumberValue value = c_fmod(xsToNumber(xsArg(0)), 360.f);
-	if (value < 0)  value += 360.f;
-	hsl[0] = (uint8_t)c_round(value * 255.f / 360.f);
-	hsl[1] = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(1)) * 255.f), 255);
-	hsl[2] = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(2)) * 255.f), 255);
-	PiuHSL2RGB(hsl, (uint8_t*)&color);
+	PiuHSL2RGB(the, &color);
     color.a = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(3)) * 255.f), 255);
 	fxUnsigned(the, &xsResult, ((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }

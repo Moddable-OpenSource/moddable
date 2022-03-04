@@ -53,6 +53,7 @@ static void fxRunExtends(txMachine* the);
 static void fxRunForOf(txMachine* the);
 static txBoolean fxRunHas(txMachine* the, txSlot* instance, txID id, txIndex index);
 static void fxRunIn(txMachine* the);
+static void fxRunInstantiate(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
 static txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b);
@@ -494,6 +495,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_GET_PRIVATE_2,
 		&&XS_CODE_GET_PROPERTY,
 		&&XS_CODE_GET_PROPERTY_AT,
+		&&XS_CODE_GET_RESULT,
 		&&XS_CODE_GET_SUPER,
 		&&XS_CODE_GET_SUPER_AT,
 		&&XS_CODE_GET_THIS,
@@ -557,7 +559,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_RESET_CLOSURE_2,
 		&&XS_CODE_RESET_LOCAL_1,
 		&&XS_CODE_RESET_LOCAL_2,
-		&&XS_CODE_RESULT,
 		&&XS_CODE_RETHROW,
 		&&XS_CODE_RETRIEVE_1,
 		&&XS_CODE_RETRIEVE_2,
@@ -581,6 +582,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_SET_PRIVATE_2,
 		&&XS_CODE_SET_PROPERTY,
 		&&XS_CODE_SET_PROPERTY_AT,
+		&&XS_CODE_SET_RESULT,
 		&&XS_CODE_SET_SUPER,
 		&&XS_CODE_SET_SUPER_AT,
 		&&XS_CODE_SET_THIS,
@@ -1244,7 +1246,12 @@ XS_CODE_JUMP:
 			*mxStack = *mxFrameFunction;
 			mxNextCode(1);
 			mxBreak;
-		mxCase(XS_CODE_RESULT)
+		mxCase(XS_CODE_GET_RESULT)
+			mxAllocStack(1);
+			*mxStack = *mxFrameResult;
+			mxNextCode(1);
+			mxBreak;
+		mxCase(XS_CODE_SET_RESULT)
 			*mxFrameResult = *(mxStack++);
 			mxNextCode(1);
 			mxBreak;
@@ -2505,7 +2512,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_INSTANTIATE)
 			mxSaveState;
-			fxNewHostInstance(the);
+			fxRunInstantiate(the);
 			mxRestoreState;
 			mxNextCode(1);
 			mxBreak;
@@ -2546,9 +2553,14 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_SUPER)
 			mxNextCode(1);
-			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference);
-			variable = mxBehaviorGetProperty(the, variable->value.home.object, mxID(_constructor), 0, XS_ANY);
-			variable = fxGetPrototype(the, variable->value.reference);
+			variable = mxFrameFunction->value.reference;
+            if (mxIsConstructor(variable))
+				variable = fxGetPrototype(the, variable);
+			else {
+				variable = mxFunctionInstanceHome(variable);
+				variable = mxBehaviorGetProperty(the, variable->value.home.object, mxID(_constructor), 0, XS_ANY);
+				variable = fxGetPrototype(the, variable->value.reference);
+			}
             if (!mxIsConstructor(variable))
 				mxRunDebug(XS_TYPE_ERROR, "super: no constructor");
 			mxAllocStack(6);
@@ -3391,13 +3403,22 @@ XS_CODE_JUMP:
 			slot = mxStack + 1;
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
-					if (mxStack->value.integer != 0)
-						slot->value.integer %= mxStack->value.integer;
-					else {
+					if (mxStack->value.integer == 0) {
 						slot->kind = XS_NUMBER_KIND;
-						slot->value.number = c_fmod((txNumber)(slot->value.integer), (txNumber)(mxStack->value.integer));
-						mxFloatingPointOp("modulo");
+						slot->value.number = C_NAN;
 					}
+#if mxIntegerDivideOverflowException
+					else if ((mxStack->value.integer == 1) || (mxStack->value.integer == -1)) {
+						if (slot->value.integer >= 0)
+							slot->value.integer = 0;
+						else {
+							slot->kind = XS_NUMBER_KIND;
+							slot->value.number = -0.0;
+						}
+					}
+#endif
+					else
+						slot->value.integer %= mxStack->value.integer;
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
@@ -3467,7 +3488,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) < 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) < 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 1, 0, 0, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
@@ -3515,7 +3536,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) <= 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) <= 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 1, 1, 0, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
@@ -3563,7 +3584,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) > 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) > 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 0, 0, 1, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
@@ -3611,7 +3632,7 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, slot, XS_NUMBER_HINT); 
 				fxToPrimitive(the, mxStack, XS_NUMBER_HINT); 
 				if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)))
-					offset = c_strcmp(slot->value.string, mxStack->value.string) >= 0;
+					offset = fxUTF8Compare(slot->value.string, mxStack->value.string) >= 0;
 				else if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
 					offset = gxTypeBigInt.compare(the, 0, 1, 1, slot, mxStack);
 				else if ((mxStack->kind == XS_BIGINT_KIND) || (mxStack->kind == XS_BIGINT_X_KIND))
@@ -4384,6 +4405,22 @@ void fxRunInstanceOf(txMachine* the)
 	mxPullSlot(left);
 	fxEndHost(the);
 	mxPop();
+}
+
+void fxRunInstantiate(txMachine* the)
+{
+	if (the->stack->kind == XS_NULL_KIND) {
+		mxPop();
+		fxNewInstance(the);
+	}
+	else if (the->stack->kind == XS_REFERENCE_KIND) {
+		fxNewHostInstance(the);
+	}
+	else {
+		mxPop();
+		mxPush(mxObjectPrototype);
+		fxNewObjectInstance(the);
+	}
 }
 
 void fxRunProxy(txMachine* the, txSlot* instance)

@@ -1,0 +1,17 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/files/preference/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"preload": "main",
+	"resources": {
+		"*-alpha": "./digits"
+	},
+	"config": {
+		"sntp": "pool.ntp.org"
+	}
+}

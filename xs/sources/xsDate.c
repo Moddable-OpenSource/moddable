@@ -158,24 +158,21 @@ void fx_Date_aux(txMachine* the, txFlag secure)
 	txSlot* instance;
 	if (mxIsUndefined(mxTarget)) {
 		char buffer[256];
+		txString p = buffer;
 		txDateTime dt;
 		if (secure)
 			mxTypeError("secure mode");
 		mxResult->value.number = fxDateNow();
 		mxResult->kind = XS_NUMBER_KIND;
-		if (fx_Date_prototype_get_aux(the, &dt, 0, mxResult)) {
-			txString p = buffer;
-			p = fxDatePrintDay(p, dt.day);
-			*p++ = ' ';
-			p = fxDatePrintDate(p, (txInteger)dt.year, (txInteger)dt.month, (txInteger)dt.date);
-			*p++ = ' ';
-			p = fxDatePrintTime(p, (txInteger)dt.hours, (txInteger)dt.minutes, (txInteger)dt.seconds);
-			*p++ = ' ';
-			p = fxDatePrintTimezone(p, (txInteger)dt.offset);
-			*p = 0;
-		}
-		else
-			c_strcpy(buffer, "Invalid Date");
+		fxDateSplit(mxResult->value.number, 0, &dt);
+		p = fxDatePrintDay(p, dt.day);
+		*p++ = ' ';
+		p = fxDatePrintDate(p, (txInteger)dt.year, (txInteger)dt.month, (txInteger)dt.date);
+		*p++ = ' ';
+		p = fxDatePrintTime(p, (txInteger)dt.hours, (txInteger)dt.minutes, (txInteger)dt.seconds);
+		*p++ = ' ';
+		p = fxDatePrintTimezone(p, (txInteger)dt.offset);
+		*p = 0;
 		fxCopyStringC(the, mxResult, buffer);
 		return;
 	}
@@ -1269,10 +1266,11 @@ txNumber fxDateClip(txNumber value)
 		value = C_NAN;
 	else if (c_fabs(value) > 8.64e15)
 		value = C_NAN;
-	else if (value == 0)
-		value = 0;
-	else
+	else {
 		value = c_trunc(value);
+		if (value == 0)
+			value = 0;
+	}
 	return value;	
 }
 

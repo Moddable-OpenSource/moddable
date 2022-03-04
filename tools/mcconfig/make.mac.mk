@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020 Moddable Tech, Inc.
+# Copyright (c) 2016-2021 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -18,17 +18,11 @@
 #
 
 ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/mac/mc/debug/lib
 	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 else
 	START_XSBUG =
 	KILL_SERIAL2XSBUG =
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/mac/mc/instrument/lib
-	else
-		LIB_DIR = $(BUILD_DIR)/tmp/mac/mc/release/lib
-	endif
 endif
 
 XS_DIRECTORIES = \

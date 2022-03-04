@@ -1,0 +1,11 @@
+{
+	"modules": {
+		"*": [
+			"./base64",
+			"./modBase64"
+		]
+	},
+	"preload": [
+		"base64"
+	]
+}

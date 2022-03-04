@@ -39,6 +39,7 @@ import handshakeProtocol from "ssl/handshake";
 import changeCipherSpec from "ssl/changecipher";
 import SSLStream from "ssl/stream";
 import SSLAlert from "ssl/alert";
+import TLSError from "ssl/error";
 import Bin from "bin";
 import RNG from "rng";
 import {CBC, GCM, NONE} from "ssl/constants";
@@ -81,7 +82,7 @@ const recordProtocol = {
 				session.putData(fragment);
 				break;
 			default:
-				throw new Error("SSL: recordProtocol: bad data");
+				throw new TLSError("recordProtocol: bad data");
 			}
 		},
 		packetize(session, type, fragment) {
@@ -156,7 +157,7 @@ const recordProtocol = {
 						fragment = new Uint8Array(fragment.buffer, fragment.byteOffset, fragmentLen);
 					if (cipher.hmac) {
 						if (Bin.comp(mac, this.calculateMac(cipher.hmac, session.readSeqNum, type, version, fragment)) != 0)
-							throw new Error("SSL: recordProtocol: auth failed");
+							throw new TLSError("recordProtocol: auth failed");
 					}
 					break;
 				case GCM:
@@ -167,7 +168,7 @@ const recordProtocol = {
 					const additional_data = this.aeadAdditionalData(session.readSeqNum, type, version, fragmentLen - cipher.enc.tagLength);
 					if (!(fragment = cipher.enc.process(fragment, fragment, nonce, additional_data, false))) {
 						// @@ should send an alert
-						throw new Error("SSL: recordProtocol auth failed");
+						throw new TLSError("recordProtocol auth failed");
 					}
 					break;
 				}

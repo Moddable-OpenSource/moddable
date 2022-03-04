@@ -67,7 +67,11 @@
 	#define mxUseFreeRTOSTasks 1
 #endif
 
+#define mxIntegerDivideOverflowException 0
+
 #ifndef __XS6PLATFORMMINIMAL__
+
+#include "mc.defines.h"
 
 #define mxExport extern
 #define mxImport
@@ -171,7 +175,6 @@ typedef struct DebugFragmentRecord *DebugFragment;
 
 #if ESP32
 	#define mxMachinePlatform \
-		void* host; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
 		uint8_t *heap_pend; \
@@ -184,7 +187,6 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		mxMachineInstrument
 #else
 	#define mxMachinePlatform \
-		void* host; \
 		uint8_t *heap; \
 		uint8_t *heap_ptr; \
 		uint8_t *heap_pend; \

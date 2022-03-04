@@ -1,0 +1,75 @@
+{
+	"build": {
+		"ETHERNET": "$(MODDABLE)/modules/network/ethernet"
+	},
+	"include": "$(ETHERNET)/manifest.json",
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/esp/*",
+					"$(MODULES)/network/sntp/*"
+				],
+				"setup/network": "$(ETHERNET)/esp32/setup/ethernet"
+			},
+			"preload": [
+				"socket",
+				"setup/network",
+				"sntp",
+				"net"
+			]
+		},
+		"lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lin/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/lin/*"
+				]
+			},
+			"preload": [
+				"socket",
+				"net"
+			]
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/mac/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/mac/*",
+					"$(MODULES)/network/sntp/*"
+				]
+			},
+			"preload": [
+				"socket",
+				"sntp",
+				"net"
+			]
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/win/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/win/*",
+					"$(MODULES)/network/sntp/*"
+				]
+			},
+			"preload": [
+				"socket",
+				"sntp",
+				"net"
+			]
+		},
+		"...": {
+			"error": "manifest_net_ethernet - unsupported platform"
+		}
+	}
+}

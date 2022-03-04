@@ -5,8 +5,18 @@ globalThis.increment = function() {
 globalThis.test = function() {
     trace("app " + increment() + "\n");
 }
-let compartment = new Compartment({ increment });
-await compartment.import("mod");
+const modules = {
+	mod: new StaticModuleRecord({ archive:"mod" }),
+};
+let compartment = new Compartment({ increment }, {}, {
+	resolveHook(specifier, refererSpecifier) {
+		return specifier;
+	},
+	loadNowHook(specifier) {
+		return modules[specifier];
+	}
+});
+compartment.importNow("mod");
 test();
 compartment.globalThis.test();
 test();

@@ -1,7 +1,7 @@
 # Networking
 
-Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: July 1, 2021
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: February 14, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -445,6 +445,16 @@ server.close();
 
 ***
 
+### `detach(connection)`
+
+The `detach` function accepts an active HTTP connection of the server instance and removes it from the server, returning the socket instance of the connection. This is useful for implementing an HTTP endpoint that accepts both HTTP and WebSocket connections by allowing the existing connection of HTTP server to be handed off to the WebSocket server.
+
+```js
+server.detach(connnection);
+```
+
+***
+
 ### `callback(message, val1, val2)`
 
 The user of the server receives status information through the callback function. The callback receives messages and, for some messages, additional data values. Positive `message` values indicate normal operation and negative `message` values indicate an error.
@@ -711,7 +721,7 @@ The `Net` class provides access to status information about the active network c
 import Net from "net";
 ```
 
-### `static get(property)`
+### `static get(property [, interface])`
 
 The `get` function returns properties of the active network connection.
 
@@ -733,6 +743,8 @@ trace(`Connected to Wi-Fi access point: ${Net.get("SSID")}\n`);
 ```
 
 For a device operating as both a Wi-Fi station (client) and a Wi-Fi access point, the static `get` method accepts an optional second argument to indicate if the request is for the station or access point interface. The interface accepts values of `"station"` and `"ap"`. It is used for the `IP` and `MAC` properties. 
+
+On ESP32, the optional second argument can also be used to explicitly request information about the Ethernet interface by providing the value `"ethernet"`.
 
 ```
 trace(`IP default ${Net.get("IP")}\n`);

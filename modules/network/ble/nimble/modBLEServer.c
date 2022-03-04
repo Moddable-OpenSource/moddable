@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -322,8 +322,9 @@ static void deployServices(xsMachine *the)
 	for (int service_index = 0; service_index < service_count; ++service_index) {
 		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
 		if (0 == ble_uuid_cmp((const ble_uuid_t*)service->uuid, &BT_UUID_GAP.u)) {
-			for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
-				const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
+			int index = 0;
+			const struct ble_gatt_chr_def *characteristic = &service->characteristics[index];
+			while (characteristic->uuid != 0) {
 				if (0 == ble_uuid_cmp((const ble_uuid_t*)characteristic->uuid, &BT_UUID_GAP_DEVICE_NAME.u)) {
 					chr_def.uuid = &BT_UUID_GAP_DEVICE_NAME.u;
 					ctxt.om = os_msys_get_pkthdr(32, 0);
@@ -343,6 +344,7 @@ static void deployServices(xsMachine *the)
 					}
 					os_mbuf_free_chain(ctxt.om);
 				}
+				characteristic = &service->characteristics[++index];
 			}
 			break;
 		}
@@ -717,23 +719,43 @@ void nimble_on_sync(void)
 
 static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {
-	int service_index, att_index;
+	int service_index, att_index, char_index, dsc_index;
 	
 	if (!gBLE) return;
 
 	switch (ctxt->op) {
-		case BLE_GATT_REGISTER_OP_CHR: {
-			const struct ble_gatt_svc_def *svc_def = ctxt->chr.svc_def;
+		case BLE_GATT_REGISTER_OP_CHR: 
+		case BLE_GATT_REGISTER_OP_DSC: {
+			const struct ble_gatt_svc_def *svc_def = (ctxt->op == BLE_GATT_REGISTER_OP_CHR) ? ctxt->chr.svc_def : ctxt->dsc.svc_def;
 			const struct ble_gatt_chr_def *chr_def = ctxt->chr.chr_def;
+			const struct ble_gatt_dsc_def *dsc_def = ctxt->dsc.dsc_def;
+
 			for (service_index = 0; service_index < service_count; ++service_index) {
 				const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
 				if (0 == ble_uuid_cmp((const ble_uuid_t*)svc_def->uuid, (const ble_uuid_t*)service->uuid)) {
-					for (att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
-						const struct ble_gatt_chr_def *characteristic = &service->characteristics[att_index];
-						if (0 == ble_uuid_cmp((const ble_uuid_t*)chr_def->uuid, (const ble_uuid_t*)characteristic->uuid)) {
+					att_index = 0;
+					char_index = 0;
+					const struct ble_gatt_chr_def *characteristic = &service->characteristics[char_index];
+					while (characteristic->uuid != 0) {
+						if (ctxt->op == BLE_GATT_REGISTER_OP_CHR && chr_def == characteristic) {
 							gBLE->handles[service_index][att_index] = ctxt->chr.val_handle;
 							return;
 						}
+						++att_index;
+
+						if (characteristic->descriptors != NULL) {
+							dsc_index = 0;
+							const struct ble_gatt_dsc_def *descriptor = &characteristic->descriptors[dsc_index];
+							while (descriptor->uuid != 0) {
+								if (ctxt->op == BLE_GATT_REGISTER_OP_DSC && dsc_def == descriptor) {
+									gBLE->handles[service_index][att_index] = ctxt->dsc.handle;
+									return;
+								}
+								descriptor = &characteristic->descriptors[++dsc_index];
+								++att_index;
+							}
+						}
+						characteristic = &service->characteristics[++char_index];
 					}
 				}
 			}
@@ -840,10 +862,12 @@ const char_name_table *handleToCharName(uint16_t handle) {
 const ble_uuid16_t *handleToUUID(uint16_t handle) {
 	for (int service_index = 0; service_index < service_count; ++service_index) {
 		const struct ble_gatt_svc_def *service = &gatt_svr_svcs[service_index];
-		for (int att_index = 0; att_index < attribute_counts[service_index]; ++att_index) {
-			const struct ble_gatt_chr_def *chr_def = &service->characteristics[att_index];
+		int index = 0;
+		const struct ble_gatt_chr_def *chr_def = &service->characteristics[index];
+		while (chr_def->uuid != 0) {
 			if (handle == *chr_def->val_handle)
 				return (ble_uuid16_t *)chr_def->uuid;
+			chr_def = &service->characteristics[++index];
 		}
 	}
 	return NULL;

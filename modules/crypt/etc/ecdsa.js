@@ -61,7 +61,7 @@ export default class ECDSA {
 		do {
 			var k = this.k;
 			if (!k)
-				var k = this.randint(n.m);
+				k = ECDSA.randint(n.m);
 			var R = ec.mul(G, k);
 			var r = R.X;
 			var s = n.mul(n.add(e, n.mul(du, r)), n.mulinv(k));
@@ -72,11 +72,11 @@ export default class ECDSA {
 		return sig;
 	};
 	sign(H, asn1) {
+		var sig = this._sign(H);
 		if (asn1) {
 			return BER.encode([0x30, [0x02, sig.r], [0x02, sig.s]]);
 		}
 		else {
-			var sig = this._sign(H);
 			var os = new ArrayBuffer();
 			var l = this.orderSize;
 			return os.concat(PKCS1.I2OSP(sig.r, l), PKCS1.I2OSP(sig.s, l));

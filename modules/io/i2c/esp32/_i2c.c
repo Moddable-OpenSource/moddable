@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -180,6 +180,8 @@ void _xs_i2c_close(xsMachine *the)
 	}
 }
 
+// Note: The stop bit argument to read and write is currently ignored due to ESP-IDF Issue #8248 (https://github.com/espressif/esp-idf/issues/8348).
+
 void _xs_i2c_read(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
@@ -194,7 +196,7 @@ void _xs_i2c_read(xsMachine *the)
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsResult = xsArg(0);
-		xsmcGetBuffer(xsResult, &buffer, &length);
+		xsmcGetBufferWritable(xsResult, &buffer, &length);
 	}
 	else {
  		length = xsmcToInteger(xsArg(0));
@@ -212,8 +214,7 @@ void _xs_i2c_read(xsMachine *the)
 			i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
 		i2c_master_read(cmd, ((uint8_t *)buffer) + length - 1, 1, I2C_MASTER_NACK);
 	}
-	if (stop)
-		i2c_master_stop(cmd);
+	i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
@@ -233,7 +234,7 @@ void _xs_i2c_write(xsMachine *the)
 	if (xsmcArgc > 1)
 		stop = xsmcToBoolean(xsArg(1));
 
-	xsmcGetBuffer(xsArg(0), &buffer, &length);
+	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
@@ -241,13 +242,13 @@ void _xs_i2c_write(xsMachine *the)
 	cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
 	if (length == 0)
-		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_NACK);
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
 	else {
-		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, I2C_MASTER_ACK);
-		i2c_master_write(cmd, (uint8_t *)buffer, length, I2C_MASTER_ACK);
+		i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
+		i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
 	}
-	if (stop)
-		i2c_master_stop(cmd);
+
+	i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 

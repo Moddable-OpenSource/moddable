@@ -109,30 +109,21 @@ void xs_colorcell_send(xsMachine *the)
 	ColorCellOut cc;
 	int argc = xsmcArgc;
 	const uint8_t *data;
-	int count, rows;
+	int rows;
+	xsUnsignedValue count;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		count = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		data = xsmcGetHostData(xsArg(0));
-
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		count = xsmcToInteger(xsVar(0));
-	}
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &count);
 
 	if (argc > 1) {
 		int offset = xsmcToInteger(xsArg(1));
 
+		if ((offset < 0) || ((xsUnsignedValue)offset >= count))
+			xsUnknownError("bad offset");
 		data += offset;
 		count -= offset;
-		if (count < 0)
-			xsUnknownError("bad offset");
 		if (argc > 2) {
 			int c = xsmcToInteger(xsArg(2));
-			if (c > count)
+			if ((c < 0) || ((xsUnsignedValue)c >= count))
 				xsUnknownError("bad count");
 			count = c;
 		}
@@ -161,7 +152,7 @@ void xs_colorcell_end(xsMachine *the)
 	c_memmove(xsmcToArrayBuffer(xsVar(0)), cc->output, cc->outputOffset);
 	xsmcSetHostChunk(xsThis, NULL, 0);
 
-	xsCall4(xsThis, xsID_build, xsInteger(cc->width), xsInteger(cc->height), xsInteger(kCommodettoBitmapRGB565LE), xsVar(0));
+	xsCall4(xsThis, xsID_build, xsInteger(cc->width), xsInteger(cc->height), xsInteger(kCommodettoBitmapColorCell), xsVar(0));
 }
 
 void outputByte(xsMachine *the, ColorCellOut cc, uint8_t value)

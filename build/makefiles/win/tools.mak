@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -114,7 +114,9 @@ MODULES = \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
 	$(MOD_DIR)\file.xsb \
 	$(MOD_DIR)\buildclut.xsb \
+	$(MOD_DIR)\cdv.xsb \
 	$(MOD_DIR)\colorcellencode.xsb \
+	$(MOD_DIR)\compileDataView.xsb \
 	$(MOD_DIR)\compressbmf.xsb \
 	$(MOD_DIR)\image2cs.xsb \
 	$(MOD_DIR)\mcbundle.xsb \
@@ -126,6 +128,7 @@ MODULES = \
 	$(MOD_DIR)\resampler.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
 	$(MOD_DIR)\tool.xsb \
+	$(MOD_DIR)\unicode-ranges.xsb \
 	$(MOD_DIR)\wav2maud.xsb \
 	$(MOD_DIR)\bles2gatt.xsb \
 	$(TMP_DIR)\commodettoBitmap.xsi \
@@ -154,6 +157,7 @@ PRELOADS =\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
 	-p resampler.xsb\
+	-p unicode-ranges.xsb\
 	-p file.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 
@@ -182,6 +186,7 @@ OBJECTS = \
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
+	$(BIN_DIR)\cdv.bat \
 	$(BIN_DIR)\colorcellencode.bat \
 	$(BIN_DIR)\compressbmf.bat \
 	$(BIN_DIR)\image2cs.bat \
@@ -351,6 +356,9 @@ $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 $(BIN_DIR)\buildclut.bat :
 	@echo # buildclut.bat
 	echo @$(BIN_DIR)\tools buildclut %%* 1> $(BIN_DIR)\buildclut.bat
+$(BIN_DIR)\cdv.bat :
+	@echo # cdv.bat
+	echo @$(BIN_DIR)\tools cdv %%* 1> $(BIN_DIR)\cdv.bat
 $(BIN_DIR)\colorcellencode.bat :
 	@echo # colorcellencode.bat
 	echo @$(BIN_DIR)\tools colorcellencode %%* 1> $(BIN_DIR)\colorcellencode.bat

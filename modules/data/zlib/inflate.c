@@ -67,13 +67,13 @@ void xs_inflate_push(xsMachine *the)
 	int inputEnd = xsmcTest(xsArg(1));
 	int status = Z_OK;
 
-	xsmcGetBuffer(xsArg(0), (void **)&input, &inputRemaining);
+	xsmcGetBufferReadable(xsArg(0), (void **)&input, &inputRemaining);
 	while (Z_OK == status) {
 		zlib->next_out	= output;
 		zlib->avail_out	= sizeof(output);
 		zlib->total_out	= 0;
 
-		xsmcGetBuffer(xsArg(0), (void **)&input, &ignore);
+		xsmcGetBufferReadable(xsArg(0), (void **)&input, &ignore);
 		zlib->next_in = inputOffset + input;
 		zlib->avail_in = inputRemaining;
 		zlib->total_in = 0;

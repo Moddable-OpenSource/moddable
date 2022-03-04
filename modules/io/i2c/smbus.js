@@ -122,6 +122,14 @@ class SMBus {
 	writeQuick() {
 		this.#io.write(new ArrayBuffer, this.#stop);
 	}
+
+	get format() {
+		return "buffer";
+	}
+	set format(value) {
+		if ("buffer" !== value)
+			throw new Error;
+	}
 }
 
 export default SMBus;

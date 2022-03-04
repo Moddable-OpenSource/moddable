@@ -51,6 +51,39 @@ static char** then = NULL;
 
 void fxAbort(xsMachine* the, int status)
 {
+	xsStringValue why = C_NULL;
+	switch (status) {
+	case xsStackOverflowExit:
+		why = "stack overflow";
+		break;
+	case xsNotEnoughMemoryExit:
+		why = "memory full";
+		break;
+	case xsNoMoreKeysExit:
+		why = "not enough keys";
+		break;
+	case xsDeadStripExit:
+		why = "dead strip";
+		break;
+	case xsDebuggerExit:
+		break;
+	case xsFatalCheckExit:
+		break;
+	case xsUnhandledExceptionExit:
+		why = "unhandled exception";
+		break;
+	case xsUnhandledRejectionExit:
+		why = "unhandled rejection";
+		break;
+	case xsTooMuchComputationExit:
+		why = "too much computation";
+		break;
+	default:
+		why = "unknown";
+		break;
+	}
+	if (why)
+		fprintf(stderr, "Error: %s\n", why);
 	exit(status);
 }
 

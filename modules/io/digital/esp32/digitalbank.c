@@ -23,7 +23,6 @@
 
 	To do:
 
-		read not blocked on input instances, write not blocked on output instances
 		ESP8266 implementation assumes a single VM
 
 */
@@ -58,6 +57,8 @@ struct DigitalRecord {
 	xsSlot		obj;
 	uint8_t		bank;
 	uint8_t		hasOnReadable;
+	uint8_t		isInput;
+	uint8_t		useCount;
 	// fields after here only allocated if onReadable callback present
 	uint32_t	triggered;
 	uint32_t	rises;
@@ -85,16 +86,17 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
-	int hasOnReadable = 0, mode, pins, rises = 0, falls = 0;
+	int mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
-	uint8_t bank = 0;
+	uint8_t bank = 0, isInput = 1;
+	xsSlot *onReadable;
 	xsSlot tmp;
 
 #if kPinBanks > 1
 	if (xsmcHas(xsArg(0), xsID_bank)) {
 		uint32_t b;
 		xsmcGet(tmp, xsArg(0), xsID_bank);
-		b = xsmcToInteger(tmp);
+		b = (uint32_t)xsmcToInteger(tmp);
 		if (b >= kPinBanks)
 			xsUnknownError("invalid bank");
 		bank = (uint8_t)b;
@@ -103,16 +105,19 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
 	pins = xsmcToInteger(tmp);
+	if (!pins)
+		xsUnknownError("invalid");
 	if (!builtinArePinsFree(bank, pins))
 		xsUnknownError("in use");
 
 	xsmcGet(tmp, xsArg(0), xsID_mode);
-	mode = xsmcToInteger(tmp);
+	mode = builtinGetSignedInteger(the, &tmp);
 	if (!(((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) ||
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
-	if (builtinHasCallback(the, xsID_onReadable)) {
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	if (onReadable) {
 		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
 			xsRangeError("invalid mode");
 
@@ -127,8 +132,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 		if (!rises & !falls)
 			xsRangeError("invalid edges");
-
-		hasOnReadable = 1;
 	}
 
 	builtinInitializeTarget(the);
@@ -139,13 +142,14 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if (bank && (~3 & pins) && ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");		// input-only pins
 
-	digital = c_malloc(hasOnReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
+	digital = c_malloc(onReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
 		xsRangeError("no memory");
 
 	xsmcSetHostData(xsThis, digital);
 	digital->pins = 0;
 	digital->obj = xsThis;
+	digital->useCount = 1;
 	xsRemember(digital->obj);
 
 	int lastPin = bank ? GPIO_NUM_MAX - 1 : 31;
@@ -174,11 +178,12 @@ void xs_digitalbank_constructor(xsMachine *the)
 			case kDigitalOutputOpenDrain:
 				gpio_set_level(pin, 0);
 				gpio_set_direction(pin, (kDigitalOutputOpenDrain == mode) ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT);
+				isInput = 0;
 				break;
 		}
 	}
 
-	if (hasOnReadable) {
+	if (onReadable) {
 		xsSlot tmp;
 
 		digital->the = the;
@@ -186,8 +191,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		digital->falls = falls;
 		digital->triggered = 0;
 // exception for rise/fall on pin 16
-		builtinGetCallback(the, xsID_onReadable, &tmp);
-		digital->onReadable = xsToReference(tmp);
+		digital->onReadable = onReadable;
 
 		if (NULL == gDigitals)
 			gpio_install_isr_service(0);
@@ -219,7 +223,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	digital->pins = pins;
 	digital->bank = bank;
-	digital->hasOnReadable = hasOnReadable;
+	digital->hasOnReadable = onReadable ? 1 : 0;
+	digital->isInput = isInput;
 	builtinUsePins(bank, pins);
 }
 
@@ -259,7 +264,8 @@ void xs_digitalbank_destructor(void *data)
 
 	builtinCriticalSectionEnd();
 
-	c_free(data);
+	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST))
+		c_free(data);
 }
 
 void xs_digitalbank_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
@@ -286,22 +292,29 @@ void xs_digitalbank_read(xsMachine *the)
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
 	uint32_t result;
 
+	if (!digital->isInput)
+		xsUnknownError("unimplemented");
+
 	gpio_dev_t *hw = &GPIO;
 
     if (digital->bank)
-        result = hw->in1.data & digital->pins;
+        result = hw->in1.data;
     else
-        result = hw->in & digital->pins;
+        result = hw->in;
 
-	xsmcSetInteger(xsResult, result);
+	xsmcSetInteger(xsResult, result & digital->pins);
 }
 
 void xs_digitalbank_write(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	uint32_t value = xsmcToInteger(xsArg(0)) & digital->pins;
+	uint32_t value;
+
+	if (digital->isInput)
+		xsUnknownError("unimplemented");
 
 	gpio_dev_t *hw = &GPIO;
+	value = xsmcToInteger(xsArg(0)) & digital->pins;
 
 	if (digital->bank) {
 		hw->out1_w1ts.data = value;
@@ -327,8 +340,10 @@ void IRAM_ATTR digitalISR(void *refcon)
 
 		uint32_t triggered = walker->triggered;
 		walker->triggered |= pin;
-		if (!triggered)
+		if (!triggered) {
+			__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
 			modMessagePostToMachineFromISR(walker->the, digitalDeliver, walker);
+		}
 		break;
 	}
 }
@@ -337,6 +352,11 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 {
 	Digital digital = refcon;
 	uint32_t triggered;
+
+	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST)) {
+		c_free(digital);
+		return;
+	}
 
 	builtinCriticalSectionBegin();
 		triggered = digital->triggered;

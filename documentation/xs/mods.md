@@ -1,7 +1,7 @@
 # Mods - User Installed Extensions
 
 Copyright 2020-2021 Moddable Tech, Inc.<BR>
-Revised: June 1, 2021
+Revised: November 23, 2021
 
 Mods are scripts that users can install on their IoT products to add new features and change existing behaviors. A mod is one or more JavaScript modules together with assets like images, audio, and certificates. A mod augments the software of a product without changing the factory installed firmware. To minimize safety, security, and privacy risks, products may sandbox mods using Secure EMCAScript. Mods are a new core feature of the Moddable SDK supported by the XS JavaScript engine.
 
@@ -137,7 +137,7 @@ Add the manifest for the `Modules` module to your project manifest:
 
 ```
 "include": [
-	$(MODULES)/module/manifest.json
+	$(MODULES)/base/modules/manifest.json
 ]
 ```
 

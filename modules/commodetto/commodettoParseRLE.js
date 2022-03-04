@@ -23,7 +23,7 @@
 	Commodetto RLE parser
 */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 
 /*
 export default function parseRLE(buffer) {

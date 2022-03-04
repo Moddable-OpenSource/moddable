@@ -16,16 +16,19 @@ import {} from "piu/MC";
 import SCREENS from "screens";
 
 class AppBehavior extends Behavior {
-	onCreate(application) {
-		this.index = -1;
-		this.switchScreen(application);
+	onDisplaying(application) {
+		this.index = 0;
+		application.defer("doSwitchScreen");
 	}
 	switchScreen(application) {
 		this.index += 1;
-		if (this.index >= SCREENS.length) this.index = 0;
+		if (this.index >= SCREENS.length)  {
+			screen.refresh();
+			this.index = 0;
+		}
 		application.defer("doSwitchScreen");
 	}
-	doSwitchScreen(application, nextScreenName, nextScreenData) {
+	doSwitchScreen(application) {
 		if (application.length) 
 			application.remove(application.first);
 		application.purge();

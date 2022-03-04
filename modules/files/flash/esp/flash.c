@@ -45,26 +45,20 @@ void xs_flash(xsMachine *the)
 	modFlashRecord flash;
 	int kind = xsmcTypeOf(xsArg(0));
 
-	if (xsStringType == kind) {
-		char *partition = xsmcToString(xsArg(0));
-		if (0 == c_strcmp(partition, "xs")) {
-			flash.partitionStart = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
-			flash.partitionByteLength = kModulesByteLength;
-		}
-		else if (0 == c_strcmp(partition, "storage")) {
-			extern uint8_t _SPIFFS_start;
-			extern uint8_t _SPIFFS_end;
+	char *partition = xsmcToString(xsArg(0));
+	if (0 == c_strcmp(partition, "xs")) {
+		flash.partitionStart = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
+		flash.partitionByteLength = kModulesByteLength;
+	}
+	else if (0 == c_strcmp(partition, "storage")) {
+		extern uint8_t _SPIFFS_start;
+		extern uint8_t _SPIFFS_end;
 
-			flash.partitionStart = (uintptr_t)&_SPIFFS_start - (uintptr_t)kFlashStart;
-			flash.partitionByteLength = &_SPIFFS_end - &_SPIFFS_start;
-		}
-		else
-			xsUnknownError("unknown partition");
+		flash.partitionStart = (uintptr_t)&_SPIFFS_start - (uintptr_t)kFlashStart;
+		flash.partitionByteLength = &_SPIFFS_end - &_SPIFFS_start;
 	}
-	else {
-		flash.partitionStart = xsmcToInteger(xsArg(0));
-		flash.partitionByteLength = xsmcToInteger(xsArg(1));
-	}
+	else
+		xsUnknownError("unknown partition");
 
 	flash.partitionEnd = flash.partitionStart + flash.partitionByteLength;
 	xsmcSetHostChunk(xsThis, &flash, sizeof(flash));
@@ -112,11 +106,11 @@ void xs_flash_read(xsMachine *the)
 		buffer = c_malloc(byteLength);
 		if (NULL == buffer)
 			xsUnknownError("no memory");
-		xsmcSetHostData(xsResult, buffer);
+		xsmcSetHostBuffer(xsResult, buffer, byteLength);
 		xsVar(0) = xsNewHostFunction(flashCloseBuffer, 0);
 		xsmcSet(xsResult, xsID_close, xsVar(0));
 		xsmcSetInteger(xsVar(0), byteLength);
-		xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+		xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 
 	}
 	else {

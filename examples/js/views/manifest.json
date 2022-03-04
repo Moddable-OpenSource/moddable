@@ -1,0 +1,17 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_base.json",
+	"modules": {
+		"*": [
+			"./main",
+			"./accessView",
+			{
+				"source": "./exampleView",
+				"transform": "cdv",
+				"json": true
+			}
+		]
+	},
+	"preload": [
+		"exampleView"
+	]
+}

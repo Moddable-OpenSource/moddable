@@ -27,8 +27,12 @@
 		- call wait(false) if no network connection to turn off reconnect attempts and wait(true) to restart
 		- onConnected and onReady called on each reconnection
 		- onClose may be called more than once between connections
-		- any subscriptions are lost on disconnect and must be restablished on reconnect
+		- subscriptions are retained and automatically resubscribed on reconnect. set options.subscribe to false to disable. 
 
+	To do:
+
+		- if needed, could make connection timeout (10 seconds) configurable
+		- if needed, could make reconnect interval (500 ms) configurable
 */
 
 import MQTT from "mqtt";
@@ -42,9 +46,12 @@ class Connection {
 	#reconnect;
 	#timeout;
 	#wait = false;		// if true, will not attempt to reconnect
+	#subscriptions;
 
 	constructor(options) {
 		this.#options = {...options};
+		if (false !== this.#options.subscribe)
+			this.#subscriptions = [];
 
 		this.#restart();
 	}
@@ -64,12 +71,12 @@ class Connection {
 
 		mqtt?.close();
 	}
-	publish(topic, data) {
+	publish(topic, data, flags) {
 		if (!this.#ready)
 			throw new Error;
 
 		try {
-			return this.#mqtt.publish(topic, data);
+			return this.#mqtt.publish(topic, data, flags);
 		}
 		catch (e) {
 			this.#restart();
@@ -77,6 +84,12 @@ class Connection {
 		}
 	}
 	subscribe(topic) {
+		if (this.#subscriptions && !this.#subscriptions.includes(topic)) {
+			this.#subscriptions.push(topic);
+			if (!this.ready)
+				return;
+		}
+
 		if (!this.#ready)
 			throw new Error;
 
@@ -89,6 +102,12 @@ class Connection {
 		}
 	}
 	unsubscribe(topic) {
+		if (this.#subscriptions && (this.#subscriptions.indexOf(topic) >= 0)) {
+			this.#subscriptions.splice(this.#subscriptions.indexOf(topic), 1);
+			if (!this.ready)
+				return;
+		}
+
 		if (!this.#ready)
 			throw new Error;
 
@@ -108,6 +127,8 @@ class Connection {
 		this.#mqtt.onReady = () => {
 			Timer.clear(this.#timeout);
 			this.#timeout = undefined;
+
+			this.#subscriptions?.forEach(topic => this.#mqtt.subscribe(topic));
 
 			this.#ready = true;
 			this.onReady?.();
@@ -167,6 +188,9 @@ class Connection {
 			throw new Error("may only set once");
 
 		this.#options.id = value;
+	}
+	get ready() {
+		return this.#ready;
 	}
 }
 

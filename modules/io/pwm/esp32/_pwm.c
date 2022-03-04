@@ -88,7 +88,7 @@ void xs_pwm_constructor_(xsMachine *the)
 
 		if (xsmcHas(xsArg(0), xsID_port)) {
 			xsmcGet(xsVar(0), xsArg(0), xsID_port);
-			ledc = xsmcToInteger(xsVar(0));
+			ledc = builtinGetSignedInteger(the, &xsVar(0));
 			if ((ledc < 0) || (ledc >= LEDC_CHANNEL_MAX))
 				xsRangeError("invalid port");
 			if (!(gLEDC & (1 << ledc)))
@@ -99,14 +99,14 @@ void xs_pwm_constructor_(xsMachine *the)
     if (xsmcHas(xsArg(0), xsID_hz)) {
         xsmcGet(xsVar(0), xsArg(0), xsID_hz);
         hz = xsmcToInteger(xsVar(0));
-        if (hz < 0)
+        if (hz <= 0)
 			xsRangeError("invalid hz");
     }
 
     if (xsmcHas(xsArg(0), xsID_resolution)) {
         xsmcGet(xsVar(0), xsArg(0), xsID_resolution);
         resolution = xsmcToInteger(xsVar(0));
-        if ((resolution < 0) || (resolution >= LEDC_TIMER_BIT_MAX))
+        if ((resolution <= 0) || (resolution >= LEDC_TIMER_BIT_MAX))
 			xsRangeError("invalid resolution");
     }
 

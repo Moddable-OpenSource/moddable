@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -121,8 +121,9 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
 	$(MOD_DIR)/file.xsb \
-	$(MOD_DIR)/buildclut.xsb \
+	$(MOD_DIR)/cdv.xsb \
 	$(MOD_DIR)/colorcellencode.xsb \
+	$(MOD_DIR)/compileDataView.xsb \
 	$(MOD_DIR)/compressbmf.xsb \
 	$(MOD_DIR)/image2cs.xsb \
 	$(MOD_DIR)/mcconfig.xsb \
@@ -133,6 +134,7 @@ MODULES = \
 	$(MOD_DIR)/resampler.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
 	$(MOD_DIR)/tool.xsb \
+	$(MOD_DIR)/unicode-ranges.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
@@ -162,6 +164,7 @@ PRELOADS =\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
 	-p resampler.xsb\
+	-p unicode-ranges.xsb\
 	-p file.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 

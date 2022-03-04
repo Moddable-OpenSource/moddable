@@ -161,8 +161,10 @@ void fxAbort(xsMachine* the, int status)
 			why = "unhandled exception";
 			break;
 		case XS_UNHANDLED_REJECTION_EXIT:
-			exitToHost = 0;
 			why = "unhandled rejection";
+			break;
+		case XS_TOO_MUCH_COMPUTATION_EXIT:
+			why = "too much computation";
 			break;
 		default:
 			why = "unknown";
@@ -172,7 +174,7 @@ void fxAbort(xsMachine* the, int status)
 			xsLog("XS abort: %s\n", why);
 		if (screen)
 			(*screen->abort)(screen, status);
-		if (exitToHost) {
+		if (exitToHost && the->firstJump) {
 			exitToHost = 0;
 			fxExitToHost(the);
 		}
@@ -273,6 +275,37 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 	}
 }
 
+static int32_t modInstrumentationSlotHeapSize(xsMachine *the)
+{
+	return the->currentHeapCount * sizeof(txSlot);
+}
+
+static int32_t modInstrumentationChunkHeapSize(xsMachine *the)
+{
+	return the->currentChunksSize;
+}
+
+static int32_t modInstrumentationKeysUsed(xsMachine *the)
+{
+	return the->keyIndex - the->keyOffset;
+}
+
+static int32_t modInstrumentationGarbageCollectionCount(xsMachine *the)
+{
+	return the->garbageCollectionCount;
+}
+
+static int32_t modInstrumentationModulesLoaded(xsMachine *the)
+{
+	return the->loadedModulesCount;
+}
+
+static int32_t modInstrumentationStackRemain(xsMachine *the)
+{
+	if (the->stackPeak > the->stack)
+		the->stackPeak = the->stack;
+	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
+}
 
 void fxScreenLaunch(txScreen* screen)
 {
@@ -292,6 +325,12 @@ void fxScreenLaunch(txScreen* screen)
 	screen->rotation = -1;
 #ifdef mxInstrument
 	modInstrumentationInit();
+	modInstrumentationSetCallback(SlotHeapSize, (ModInstrumentationGetter)modInstrumentationSlotHeapSize);
+	modInstrumentationSetCallback(ChunkHeapSize, (ModInstrumentationGetter)modInstrumentationChunkHeapSize);
+	modInstrumentationSetCallback(KeysUsed, (ModInstrumentationGetter)modInstrumentationKeysUsed);
+	modInstrumentationSetCallback(GarbageCollectionCount, (ModInstrumentationGetter)modInstrumentationGarbageCollectionCount);
+	modInstrumentationSetCallback(ModulesLoaded, (ModInstrumentationGetter)modInstrumentationModulesLoaded);
+	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
 	((txMachine*)(screen->machine))->onBreak = debugBreak;
 	fxDescribeInstrumentation(screen->machine, screenInstrumentCount, screenInstrumentNames, screenInstrumentUnits);
 	fxScreenSampleInstrumentation(screen);

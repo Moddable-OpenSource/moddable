@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -78,11 +78,13 @@
 	#define SCREEN_CS_DEACTIVE	modGPIOWrite(&sd->cs, 1)
 	#define SCREEN_CS_INIT		modGPIOInit(&sd->cs, MODDEF_ILI9341_CS_PORT, MODDEF_ILI9341_CS_PIN, kModGPIOOutput); \
 			SCREEN_CS_DEACTIVE
+	#define SCREEN_CS_UNINIT	modGPIOUninit(&sd->cs);
 #else
 	#define MODDEF_ILI9341_CS_PIN	NULL
 	#define SCREEN_CS_ACTIVE
 	#define SCREEN_CS_DEACTIVE
 	#define SCREEN_CS_INIT
+	#define SCREEN_CS_UNINIT
 #endif
 
 #ifndef MODDEF_ILI9341_SPI_MODE
@@ -93,11 +95,12 @@
 #define SCREEN_DC_COMMAND		modGPIOWrite(&sd->dc, 0)
 #define SCREEN_DC_INIT			modGPIOInit(&sd->dc, MODDEF_ILI9341_DC_PORT, MODDEF_ILI9341_DC_PIN, kModGPIOOutput); \
 		SCREEN_DC_DATA
-
+#define SCREEN_DC_UNINIT		modGPIOUninit(&sd->dc)
 #define SCREEN_RST_ACTIVE		modGPIOWrite(&sd->rst, 0)
 #define SCREEN_RST_DEACTIVE		modGPIOWrite(&sd->rst, 1)
 #define SCREEN_RST_INIT			modGPIOInit(&sd->rst, MODDEF_ILI9341_RST_PORT, MODDEF_ILI9341_RST_PIN, kModGPIOOutput); \
 		SCREEN_RST_DEACTIVE;
+#define SCREEN_RST_UNINIT		modGPIOUninit(&sd->rst);
 
 #define SCREEN_POWER_ACTIVE		modGPIOWrite(&sd->power, 1)
 #define SCREEN_POWER_DEACTIVE	modGPIOWrite(&sd->power, 0)
@@ -208,8 +211,17 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 
 void xs_ILI9341_destructor(void *data)
 {
-	if (data)
-		c_free(data);
+	spiDisplay sd = data;
+	if (!data) return;
+
+	SCREEN_CS_UNINIT;
+	SCREEN_DC_UNINIT;
+	modSPIUninit(&sd->spiConfig);
+
+#ifdef MODDEF_ILI9341_RST_PIN
+	SCREEN_RST_UNINIT;
+#endif
+	c_free(data);
 }
 
 void xs_ILI9341(xsMachine *the)
@@ -297,29 +309,19 @@ void xs_ILI9341_send(xsMachine *the)
 	spiDisplay sd = xsmcGetHostData(xsThis);
 	int argc = xsmcArgc;
 	const uint8_t *data;
-	int count;
+	xsUnsignedValue count;
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		count = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		data = xsmcGetHostData(xsArg(0));
-
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		count = xsmcToInteger(xsVar(0));
-	}
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &count);
 
 	if (argc > 1) {
-		int offset = xsmcToInteger(xsArg(1));
+		xsIntegerValue offset = xsmcToInteger(xsArg(1));
 
+		if ((xsUnsignedValue)offset >= count)
+			xsUnknownError("bad offset");
 		data += offset;
 		count -= offset;
-		if (count < 0)
-			xsUnknownError("bad offset");
 		if (argc > 2) {
-			int c = xsmcToInteger(xsArg(2));
+			xsIntegerValue c = xsmcToInteger(xsArg(2));
 			if (c > count)
 				xsUnknownError("bad count");
 			count = c;
@@ -374,7 +376,7 @@ void xs_ILI9341_get_clut(xsMachine *the)
 	spiDisplay sd = xsmcGetHostData(xsThis);
 	if (sd->haveCLUT) {
 		xsResult = xsNewHostObject(NULL);
-		xsmcSetHostData(xsResult, sd->clut);
+		xsmcSetHostBuffer(xsResult, sd->clut, sizeof(sd->clut));
 	}
 #else
 	// returns undefined
@@ -385,11 +387,15 @@ void xs_ILI9341_set_clut(xsMachine *the)
 {
 #if kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 	spiDisplay sd = xsmcGetHostData(xsThis);
+	void *data;
+	xsUnsignedValue dataSize;
+
+	xsmcGetBufferReadable(xsArg(0), &data, &dataSize);
+	if (dataSize > sizeof(sd->clut))
+		xsUnknownError("invalid");
+
+	c_memmove(sd->clut, data, dataSize);
 	sd->haveCLUT = 1;
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype))
-		xsmcGetArrayBufferData(xsArg(0), 0, sd->clut, sizeof(sd->clut));
-	else
-		c_memmove(sd->clut, xsmcGetHostData(xsArg(0)), sizeof(sd->clut));
 #else
 	xsUnknownError("unsupported");
 #endif
@@ -433,6 +439,14 @@ void xs_ILI9341_command(xsMachine *the)
 	}
 
 	ili9341Command(sd, command, data, dataSize);
+}
+
+void xs_ILI9341_close(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	if (!sd) return;
+	xs_ILI9341_destructor(sd);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE

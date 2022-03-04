@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/Gesture/PAJ7620U2": "$(MODDABLE)/modules/drivers/sensors/paj7620u2/paj7620u2"
+	},
+	"preload": [
+		"embedded:sensor/Gesture/PAJ7620U2"
+	]
+}

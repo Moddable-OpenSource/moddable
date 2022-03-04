@@ -27,7 +27,7 @@ class ReadGIF @ "xs_readgif_destructor" {
 	// bitmap
 	get width()  @ "xs_readgif_get_width";
 	get height()  @ "xs_readgif_get_height";
-	get pixelFormat() @ "xs_bitmap_get_pixelFormat"
+	get pixelFormat() @ "xs_readgif_get_pixelFormat"
 	get offset() {
 		return 0;
 	}

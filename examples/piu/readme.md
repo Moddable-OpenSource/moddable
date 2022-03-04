@@ -1,11 +1,11 @@
 # Moddable SDK - Piu Examples
 
-Copyright 2020 Moddable Tech, Inc.<BR>
-Revised: September 28, 2020
+Copyright 2021 Moddable Tech, Inc.<BR>
+Revised: November 4, 2021
 
 These examples demonstrate how to use features of the [Piu user interface framework](../../documentation/piu/piu.md). Piu is an object-based framework that makes it easier to create complex, responsive layouts.
 
-Most of the examples are designed for a QVGA (320x240) screen, but many feature responsive layouts that work on a variety of screen sizes. All of the examples in this folder run on the desktop simulator with the exception of the `one-line` and `one-line-keyboard` examples.
+Most of the examples are designed for a QVGA (320x240) screen, but many feature responsive layouts that work on a variety of screen sizes. All of the examples in this folder run on the desktop simulator with the exception of the `backlight`, `epaper-travel-time`, `one-line`, and `one-line-keyboard` examples.
 
 This document provides a brief description of each example and a preview of each app running on the desktop simulator. If you are looking for an example that demonstrates how to use a specific feature, see the list below. Keep in mind that this list provides only a few recommendations and is not a complete list of examples that use each feature.
 
@@ -15,6 +15,14 @@ This document provides a brief description of each example and a preview of each
 - **Touch input:** <a href="#drag">`drag`</a>, <a href="#keyboard">`keyboard`</a>, <a href="#map-puzzle">`map-puzzle`</a>
 - **Scrolling content:** <a href="#scroller">`scroller`</a>, <a href="#list">`list`</a>
 - **Networking:** <a href="#wifi-config">`wifi-config`</a>, <a href="#weather-and-mini-weather">`weather` and `mini-weather`</a>, <a href="#one-line-and-one-line-keyboard">`one-line` and `one-line-keyboard`</a>
+
+***
+
+### `backlight`
+
+The `backlight` example allows you to adjust the backlight brightness on Moddable Two. 
+
+> For more information about the backlight, see the **Backlight** section of the [Moddable Two documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-two.md#backlight).
 
 ***
 
@@ -82,7 +90,37 @@ The `easing-equations` example demonstrates the use of the easing equations buil
 
 ***
 
+### `epaper-flashcards`
+
+<img src="https://www.moddable.com/assets/piu-gifs/epaper-flashcards" width=250>
+
+The `epaper-flashcards` example shows a sequence of flash cards. The answer is displayed when tapped. A swipe left or swipe right moves to the previous or next card.
+
+> For more information about this example and ePaper displays, see our blog post [Getting the Most from ePaper Displays](https://blog.moddable.com/blog/epaper).
+
+***
+
+### `epaper-photos`
+
+<img src="http://www.moddable.com/assets/piu-gifs/epaper-photos" width=180>
+
+The `epaper-photos` example displays a slideshow of photographs.
+
+> For more information about this example and ePaper displays, see our blog post [Getting the Most from ePaper Displays](https://blog.moddable.com/blog/epaper).
+
+***
+
+### `epaper-travel-time`
+
+The `epaper-epaper-travel-time` example displays the travel time between your home and work. It uses the Google Maps Web API to determine the current travel time.
+
+> For more information about this example and ePaper displays, see our blog post [Getting the Most from ePaper Displays](https://blog.moddable.com/blog/epaper).
+
+***
+
 ### `hardware-rotation`
+
+<img src="https://www.moddable.com/assets/piu-gifs/hardware-rotation.png" width=180>
 
 The `hardware-rotation` example rotates the image and text on the display every three seconds. This example is only compatible with display controllers that support hardware rotation.
 
@@ -185,7 +223,33 @@ The `one-line` and `one-line-keyboard` examples are designed to work together. T
 
 ***
 
+### `outline/clock`
+
+<img src="http://www.moddable.com/assets/piu-gifs/outline-clock.png" width=200>
+
+The `outline/clock` example renders an analog clock using Canvas outlines.
+
+***
+
+### `outline/figures`
+
+<img src="http://www.moddable.com/assets/piu-gifs/outline-figures.png" width=200>
+
+The `outline/figures` example contains mods to draw all of the figures from the Outline documentation.
+
+***
+
+### `outline/shapes`
+
+<img src="http://www.moddable.com/assets/piu-gifs/outline-shapes.png" width=160>
+
+The `outline/shapes` example renders four different outline shapes in a manner similar to the balls example.
+
+***
+
 ### `preferences`
+
+<img src="https://www.moddable.com/assets/piu-gifs/preferences.png" width=190>
 
 The `preferences` example demonstrates how to set preferences that are saved across boot. Tap a color to change the background color and set a background color preference. When the device is rebooted, the background color will be the last color selected.
 
@@ -200,6 +264,8 @@ The `scroller` example shows how to create vertical and horizontal scrolling con
 ***
 
 ### `sound`
+
+<img src="http://www.moddable.com/assets/piu-gifs/sound.png" width=190>
 
 The `sound` example demonstrates how to use the Piu `Sound` object. Tap the play button to play a sound. Tap the volume buttons to adjust the volume.
 

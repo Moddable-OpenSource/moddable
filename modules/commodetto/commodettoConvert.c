@@ -50,7 +50,7 @@ void xs_Convert_destructor(void *data)
 	if (data) {
 		xsConvert c = data;
 		if (c->clut)
-			free(c->clut);
+			c_free(c->clut);
 	}
 }
 
@@ -70,36 +70,39 @@ void xs_Convert(xsMachine *the)
 
 	if (kCommodettoBitmapCLUT16 == c->dstPixelFormat) {
 		void *clut;
-		uint32_t clutBytes;
+		xsUnsignedValue clutBytes;
 
-		if (!xsmcTest(xsArg(2)))
-			xsErrorPrintf("clut required");
+		xsmcGetBufferReadable(xsArg(2), (void **)&clut, &clutBytes);
 
-		if (xsmcIsInstanceOf(xsArg(2), xsArrayBufferPrototype)) {
-			clut = xsmcToArrayBuffer(xsArg(2));
-			clutBytes = xsmcGetArrayBufferLength(xsArg(2));
-		}
-		else {
-			xsmcVars(1);
-			clut = xsmcGetHostData(xsArg(2));
-			xsmcGet(xsVar(0), xsArg(2), xsID_byteLength);
-			clutBytes = xsmcToInteger(xsVar(0));
-		}
-
-		c->clut = malloc(clutBytes);
+		c->clut = c_malloc(clutBytes);
 		if (NULL == c->clut)
 			xsErrorPrintf("not enough memory to clone clut");
-		memcpy(c->clut, clut, clutBytes);
+		c_memcpy(c->clut, clut, clutBytes);
 	}
 }
 
 void xs_convert_process(xsMachine *the)
 {
-	void *src, *dst;
+	uint8_t *src, *dst;
 	xsUnsignedValue srcLength, dstLength, pixelCount;
 
-	xsmcGetBuffer(xsArg(0), &src, &srcLength);
-	xsmcGetBuffer(xsArg(1), &dst, &dstLength);
+	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
+	if (xsmcArgc < 6) 
+		xsmcGetBufferWritable(xsArg(1), (void **)&dst, &dstLength);
+	else {
+		xsIntegerValue srcOffset = xsmcToInteger(xsArg(1));
+		xsIntegerValue srcCount = xsmcToInteger(xsArg(2));
+		xsIntegerValue dstOffset = xsmcToInteger(xsArg(4));
+		xsIntegerValue dstCount = xsmcToInteger(xsArg(5));
+		xsmcGetBufferWritable(xsArg(3), (void **)&dst, &dstLength);
+		if ((srcOffset < 0) || ((xsUnsignedValue)(srcOffset + srcCount) > srcLength) ||  
+			(dstOffset < 0) || ((xsUnsignedValue)(dstOffset + dstCount) > dstLength))
+			xsUnknownError("dst buffer too small");
+		src += srcOffset;
+		srcLength = srcCount;
+		dst += dstOffset;
+		dstLength = dstCount;
+	}
 
 	xsConvert c = xsmcGetHostChunk(xsThis);
 	pixelCount = (srcLength << 3) / c->srcPixelDepth;
@@ -338,12 +341,16 @@ void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixel
 			if (!srcPixel)		// any non-zero pixel is black
 				mono |= mask;
 		}
-		else {
+		else if (0) {
 			uint8_t r = srcPixel >> 11;
 			uint8_t g = (srcPixel >> 5) & 0x3F;
 			uint8_t b = (srcPixel & 0x1F);
 
 			if (!toGray(r, g, b))
+				mono |= mask;
+		}
+		else {
+			if (!(srcPixel & 0x8410))
 				mono |= mask;
 		}
 

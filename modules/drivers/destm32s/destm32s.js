@@ -45,10 +45,10 @@ export default class DESTM32S @ "xs_destm32s_destructor" {
 	get height() @ "xs_destm32s_get_height";
 	get async() {return false;}
 
-	get clut() @ "xs_destm32s_get_clut";
-	set clut() @ "xs_destm32s_set_clut";
-
 	get c_dispatch() @ "xs_destm32s_get_c_dispatch";
+
+	refresh() @ "xs_destm32s_refresh";
+	configure(options) @ "xs_destm32s_configure";
 }
 
 Object.freeze(DESTM32S.prototype);

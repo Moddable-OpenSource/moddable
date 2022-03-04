@@ -25,7 +25,7 @@
 		Receives a stream of pixels
 */
 
-import Bitmap from "Bitmap";
+import Bitmap from "commodetto/Bitmap";
 
 export default class PixelsOut {
 	/*

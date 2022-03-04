@@ -1,0 +1,38 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"creation": {
+		"static": 65536,
+		"stack": 500
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./cards"
+		]
+	},
+	"preload": [
+		"cards"
+	],
+	"resources":{
+		"*-mask": [
+			"./assets/masks/*"
+		]
+	},
+	"platforms": {
+		"mac": {},
+		"win": {},
+		"lin": {},
+		"esp32/m5paper": {
+			"config": {
+				"firstDrawMode": "GC16",
+				"updateMode": "A2"
+			}
+		},
+		"...": {
+			"error": "Platform not supported"
+		}
+	}
+}

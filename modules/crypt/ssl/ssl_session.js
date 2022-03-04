@@ -41,6 +41,7 @@ import changeCipherSpec from "ssl/changecipher";
 import SSLAlert from "ssl/alert";
 import cacheManager from "ssl/cache";
 import CertificateManager from "ssl/cert";
+import TLSError from "ssl/error";
 import Bin from "bin";
 import {minProtocolVersion, maxProtocolVersion, protocolVersion} from "ssl/constants";
 import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
@@ -51,7 +52,7 @@ class SSLSession {
 	constructor(options = {}) {
 		if (options.protocolVersion) {
 			if ((options.protocolVersion < minProtocolVersion) || (options.protocolVersion > maxProtocolVersion))
-				throw new Error("SSL: protocolVersion: not supported");
+				throw new TLSError("protocolVersion: not supported");
 		}
 		if ('serverName' in options) {
 			options.tls_server_name = options.serverName;
@@ -114,7 +115,7 @@ class SSLSession {
 				// S -> C: Certificate   (always -- i.e. not support anonymous auth.)
 				let certs = this.certificateManager.getCerts();
 				if (!certs || !certs.length)
-					throw new Error("SSL: client_hello: no certificate");
+					throw new TLSError("client_hello: no certificate");
 				this.doProtocol(s, handshakeProtocol.certificate, certs);
 				// S -> C: ServerKeyExchange (may not do anything depending on the chosen cipher)
 				this.doProtocol(s, handshakeProtocol.serverKeyExchange);

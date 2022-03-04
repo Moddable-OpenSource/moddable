@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -27,6 +27,11 @@
 
 	https://github.com/Kinoma/kinomajs/blob/master/extensions/fsZip/sources/FskZip.c
 */
+
+
+#if defined(__clang__)
+	#pragma clang diagnostic ignored "-Waddress-of-packed-member"
+#endif
 
 #pragma pack(2)
 
@@ -203,21 +208,13 @@ void xs_zip_destructor(void *data)
 void xs_zip(xsMachine *the)
 {
 	uint8_t *data;
-	uint32_t dataSize;
+	xsUnsignedValue dataSize;
 	Zip zip;
 
-	xsmcSet(xsThis, xsID_buffer, xsArg(0));
+	if (xsBufferRelocatable == xsmcGetBufferReadable(xsArg(0), (void **)&data, &dataSize))
+		xsUnknownError("invalild");
 
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		data = xsmcToArrayBuffer(xsArg(0));
-		dataSize = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		xsmcVars(1);
-		data = xsmcGetHostData(xsArg(0));
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		dataSize = xsmcToInteger(xsVar(0));
-	}
+	xsmcSet(xsThis, xsID_buffer, xsArg(0));
 
 	if (0 == ZipOpen(&zip, data, dataSize))
 		xsErrorPrintf("can't handle zip archive");
@@ -237,10 +234,10 @@ void xs_zip_file_map(xsMachine *the)
 		xsErrorPrintf("can't find path");
 
 	xsResult = xsNewHostObject(NULL);
-	xsmcSetHostData(xsResult, data);
+	xsmcSetHostBuffer(xsResult, data, dataSize);
 	xsmcVars(1);
 	xsVar(0) = xsInteger(dataSize);
-	xsmcSet(xsResult, xsID_byteLength, xsVar(0));
+	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 }
 
 typedef struct {

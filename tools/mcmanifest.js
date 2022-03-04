@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -19,6 +19,7 @@
  */
 
 import { FILE, TOOL } from "tool";
+import UncodeRanges from "unicode-ranges";
 
 var formatNames = {
 	gray16: "gray16",
@@ -122,7 +123,7 @@ export class MakeFile extends FILE {
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
 		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
-		let outputConfigDirectory = tool.buildPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
+		let outputConfigDirectory = tool.outputPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
 
 		if (undefined === tool.environment.ESP32_SUBCLASS) {
 			baseConfigDirectory += "esp32";
@@ -325,7 +326,7 @@ export class MakeFile extends FILE {
 			this.write(" -s ");
 			this.write(sdkconfigFile);
 			if (tool.windows) {
-				let idfBuildDir = tool.buildPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
+				let idfBuildDir = tool.outputPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
 				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
 				if (sdkconfigFile  !== undefined){
@@ -359,6 +360,7 @@ export class MakeFile extends FILE {
 		this.line("MODULES_DIR = ", tool.modulesPath);
 		this.line("RESOURCES_DIR = ", tool.resourcesPath);
 		this.line("TMP_DIR = ", tool.tmpPath);
+		this.line("LIB_DIR = ", tool.libPath);
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("");
 
@@ -380,6 +382,11 @@ export class MakeFile extends FILE {
 	}
 	generateModulesDefinitions(tool) {
 		this.write("MODULES =");
+		for (var result of tool.cdvFiles) {
+			this.write("\\\n\t$(MODULES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target + ".xsb");
+		}
 		for (var result of tool.jsFiles) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
@@ -394,6 +401,35 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateModulesRules(tool) {
+		const generatedTS = [];
+
+		for (let result of tool.cdvFiles) {
+			let source = result.source;
+			let target = result.target;
+			const extension = ("typescript" === result.query?.language) ? ".ts" : ".js";
+			const output = "$(MODULES_DIR)" + tool.slash + target + extension;
+			this.line(output, ": ", source);
+			this.echo(tool, "cdv ", target);
+			let pragmas = "";
+			for (const name in result.query)
+				pragmas += " " + "-p " + name + "=" + result.query[name];
+			this.line("\tcdv ", source, " -o $(@D)", " -n ", target, pragmas);
+
+			if (".js" === extension) {
+				tool.jsFiles.push({
+					source: tool.modulesPath + tool.slash + target + extension,
+					target: target + ".xsb"
+				});
+			}
+			else {
+				tool.tsFiles.push({
+					source: tool.modulesPath + tool.slash + target + extension,
+					target: target + ".xsb"
+				});
+				generatedTS.push(output);
+			}
+		}
+
 		for (var result of tool.jsFiles) {
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
@@ -420,11 +456,16 @@ export class MakeFile extends FILE {
 				directories.sort();
 				const first =  directories[0];
 				const last = directories[length - 1];
-				const firstLength = first.length;
-				const lastLength = last.length;
+				const stop = Math.min(first.lastIndexOf("/"), last.lastIndexOf("/"));
 				common = 0;
-    			while ((common < firstLength) && (common < lastLength) && (first.charAt(common) === last.charAt(common))) 
-    				common++;
+				for (let i = 0; i <= stop; i++) {
+					const c = first.charAt(i);
+					if (c !== last.charAt(i)) 
+						break;
+
+					if ("/" === c)
+						common = i;
+				}
 			}
 			else
 				common = directories[0].length;
@@ -451,9 +492,9 @@ export class MakeFile extends FILE {
 			if (tool.windows)
 				this.line("TSCONFIG:");
 			else
-				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json");
+				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
 			this.echo(tool, "tsc ", "tsconfig.json");
-			this.line("\ttsc -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
+			this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
 		}
 	}
@@ -500,6 +541,21 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
+		for (var result of tool.outlineFontFiles) {
+			result.faces.forEach(face => {
+				this.write("\\\n\t$(RESOURCES_DIR)");
+				this.write(tool.slash);
+				if ("-alpha" === face.suffix) {
+					this.write(face.name + `-${face.size}.fnt`);
+					this.write("\\\n\t$(RESOURCES_DIR)");
+					this.write(tool.slash);
+					this.write(face.name + `-${face.size}-alpha.bmp`);
+				}
+				else if ("-mask" === face.suffix) {
+					this.write(face.name + `-${face.size}.bf4`);
+				}
+			});
+		}
 		for (var result of tool.soundFiles) {
 			this.write("\\\n\t$(RESOURCES_DIR)");
 			this.write(tool.slash);
@@ -519,7 +575,6 @@ export class MakeFile extends FILE {
 		this.line("");
 	}
 	generateResourcesRules(tool) {
-		var definesPath = "$(TMP_DIR)" + tool.slash + "mc.defines.h";
 		var formatPath = "$(TMP_DIR)" + tool.slash + "mc.format.h";
 		var rotationPath = "$(TMP_DIR)" + tool.slash + "mc.rotation.h";
 
@@ -688,7 +743,7 @@ export class MakeFile extends FILE {
 			}
 			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
 			this.echo(tool, "png2bmp ", bmpTarget);
-			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t", name);
+			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t ", name);
 		}
 
 		for (var result of tool.imageFiles) {
@@ -711,6 +766,57 @@ export class MakeFile extends FILE {
 				this.echo(tool, "image2cs ", target);
 				this.line("\t$(IMAGE2CS) ", source, " -o $(@D) -r ", tool.rotation);
 			}
+		}
+
+		for (var result of tool.outlineFontFiles) {
+			var source = result.source;
+			
+			result.faces.forEach(face => {
+				const name = face.name + "-" + face.size;
+
+				let line = Array.of("$(RESOURCES_DIR)", tool.slash, ("-alpha" === face.suffix) ? `${name}.fnt` : `${name}.bf4`, ": ", source,
+							" ", "$(RESOURCES_DIR)", tool.slash, name + ".txt",
+							" ", "$(RESOURCES_DIR)", tool.slash, name + ".json");
+				if (face.localization)
+					line.push(" ", "$(RESOURCES_DIR)", tool.slash, "locals.mhi");
+				this.line.apply(this, line);
+				this.echo(tool, "fontbm ", name);
+
+				let characters = face.characters ?? "";
+				let blocks = ("string" === typeof face.blocks) ? [face.blocks] : (face.blocks ?? (characters ? [] : ["Basic Latin"]));
+				blocks.forEach(block => {
+					const info = UncodeRanges.find(info => info.category === block);
+					if (!info)
+						tool.reportWarning(NULL, 0, `Unknown Unicode block: "${block}"`);
+					const count = info.range[1] - info.range[0] + 1;
+					const c = new Array(count);
+					for (let i = 0; i < count; i++)
+						c[i] = String.fromCharCode(i + info.range[0]);
+					characters += c.join("");
+				});
+				
+				let path = tool.resourcesPath + tool.slash + name + ".txt";
+				let former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+				if (former !== characters)
+					tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
+
+				path = tool.resourcesPath + tool.slash + name + ".json";
+				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false, source, rotation: tool.rotation});
+				former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+				if (former !== options)
+					tool.writeFileString(path, options);				
+
+				const localization = face.localization ? `--chars-file "$(RESOURCES_DIR)${tool.slash}locals.txt"` : "";
+				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} --chars-file "$(RESOURCES_DIR)${tool.slash}${name}.txt" ${localization}`);
+				if ("-alpha" === face.suffix) {
+					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
+					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
+				}
+				else if ("-mask" === face.suffix) {
+					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
+					this.line("\t$(COMPRESSBMF) ", "$(RESOURCES_DIR)", tool.slash, name + ".fnt", " -i ", "$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", " -o $(@D) -r ", tool.rotation);
+				}
+			});
 		}
 
 		let bitsPerSample = 16, numChannels = 1, sampleRate = 11025, audioFormat = "uncompressed";
@@ -781,9 +887,7 @@ export class TSConfigFile extends FILE {
 				lib: ["es2020"],
 				sourceMap: true,
 				target: "ES2020",
-				types: [
-					tool.xsPath + tool.slash + "includes" + tool.slash +"xs"
-				]
+				...tool.typescript.tsconfig?.compilerOptions
 			},
 			files: [
 			]
@@ -793,6 +897,7 @@ export class TSConfigFile extends FILE {
 			var specifier = result.target.slice(0, -2);
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
+			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -5) ];
 		}
 		for (var result of tool.tsFiles) {
@@ -881,8 +986,9 @@ class Rule {
 	}
 	appendTarget(target) {
 	}
-	iterate(target, source, include, suffix, straight) {
+	iterate(target, sourceIn, include, suffix, straight) {
 		var tool = this.tool;
+		var source = (typeof sourceIn == "string") ? sourceIn : sourceIn.source;
 		var slash = source.lastIndexOf(tool.slash);
 		var directory = this.tool.resolveDirectoryPath(source.slice(0, slash));
 		if (directory) {
@@ -914,10 +1020,11 @@ class Rule {
 						continue;
 				}
 				var kind = tool.isDirectoryOrFile(path);
+				var query = (typeof sourceIn === "string") ? {} : {...sourceIn};
 				if (straight)
-					this.appendSource(target, path, include, suffix, parts, kind);
+					this.appendSource(target, path, include, suffix, parts, kind, query);
 				else
-					this.appendSource(target + name, path, include, suffix, parts, kind);
+					this.appendSource(target + name, path, include, suffix, parts, kind, query);
 			}
 			if (!this.count)
 				this.noFilesMatch(source, star);
@@ -955,7 +1062,10 @@ class Rule {
 					target = target.slice(0, star);
 					if (sources instanceof Array) {
 						for (var source of sources) {
-							source = tool.resolveSlash(source);
+							if (typeof source == "string")
+								source = tool.resolveSlash(source);
+							else
+								source.source = tool.resolveSlash(source.source);
 							this.iterate(target, source, true, suffix, false);
 						}
 					}
@@ -1005,7 +1115,7 @@ class BLERule extends Rule {
 };
 
 class ModulesRule extends Rule {
-	appendSource(target, source, include, suffix, parts, kind) {
+	appendSource(target, source, include, suffix, parts, kind, query) {
 		var tool = this.tool;
 		if (kind < 0)
 			return;
@@ -1026,6 +1136,16 @@ class ModulesRule extends Rule {
 		else if (parts.extension == ".h") {
 			this.appendFolder(tool.cFolders, parts.directory);
 			this.appendFolder(tool.hFiles, source);
+			if ("cdv" === query.transform) {
+				const result = this.appendFile(tool.cdvFiles, target, source, include);
+				if (result) {
+					result.query = {...query};
+					delete result.query.source; 
+					delete result.query.transform; 
+				}
+			}
+			else if (parts.name.endsWith(".cdv"))
+				this.appendFile(tool.cdvFiles, target.slice(0, -4), source, include);
 		}
 		else if (parts.extension == ".ts") {
 			if (parts.name.endsWith(".d")) {
@@ -1134,12 +1254,27 @@ class ResourcesRule extends Rule {
 		files.push({ target, source, quality });
 		this.count++;
 	}
+	appendOutlineFont(name, path, include, suffix, query) {
+		const tool = this.tool;
+		let file = this.appendFile(tool.outlineFontFiles, name + ".fnt", path, include);
+		if (!file)
+			file = tool.outlineFontFiles.find(file => file.source == path);
+
+		const face = {...query, suffix, name: query.name ?? name};
+		if (!face.size)
+			throw new Error(`missing required font size for "${face.name}"`);
+
+		if (file.faces?.find(item => (item.size === face.size) && (item.name === face.name))) 
+			throw new Error(`duplicate font "${face.name}", size ${face.size}`);
+
+		file.faces ??= [];
+		file.faces.push(face);
+	}
 	appendSound(name, path, include, suffix) {
 		var tool = this.tool;
 		this.appendFile(tool.soundFiles, name + ".maud", path, include);
-		return true;
 	}
-	appendSource(target, source, include, suffix, parts, kind) {
+	appendSource(target, source, include, suffix, parts, kind, query) {
 		var tool = this.tool;
 		if (kind < 0) {
 			if (tool.format) {
@@ -1187,8 +1322,12 @@ class ResourcesRule extends Rule {
 				this.appendImage(target, source, include, suffix);
 				return;
 			}
-			if ((parts.extension == ".wav")) {
+			if (parts.extension == ".wav") {
 				this.appendSound(target, source, include, suffix);
+				return;
+			}
+			if ((parts.extension == ".ttf") || (parts.extension == ".otf")) {
+				this.appendOutlineFont(target, source, include, suffix, query);
 				return;
 			}
 		}
@@ -1286,11 +1425,10 @@ export class Tool extends TOOL {
 				if (this.platform)
 					throw new Error("-p '" + name + "': too many platforms!");
 				name = name.toLowerCase();
-				this.fullplatform = name;
-				this.environment.FULLPLATFORM = name;
-				this.environment.PLATFORMPATH = "";
 				let parts = name.split("/");
-				if ((parts[0] == "sim") || (parts[0] == "simulator")) {
+				if ("esp8266" === parts[0])
+					parts[0] = "esp";
+				else if ((parts[0] == "sim") || (parts[0] == "simulator")) {
 					parts[0] = this.currentPlatform;
 					this.mcsim = true;
 				}
@@ -1527,6 +1665,38 @@ export class Tool extends TOOL {
 		all.errors = this.concatProperty(all.errors, platform.error);
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
 		this.mergeProperties(all.run, platform.run);
+		if (platform.typescript) {
+			let tsconfig = platform.typescript.tsconfig;
+			if (tsconfig) {
+				tsconfig = JSON.parse(JSON.stringify(tsconfig), (name, value) => {
+					if ("string" === typeof value)
+						value = this.resolveVariable(value);
+					return value;
+				});
+
+				const compilerOptions = tsconfig.compilerOptions;
+				for (let name in compilerOptions) {
+					let value = compilerOptions[name];
+					if ("types" === name)
+						value = value.map(path => this.resolveSource(path));
+					if ("object" === typeof value) {
+						if (value instanceof Array) {
+							all.typescript.tsconfig.compilerOptions[name] ??= [];
+							all.typescript.tsconfig.compilerOptions[name] = value.concat(all.typescript.tsconfig.compilerOptions[name]); 
+						}
+						else {
+							all.typescript.tsconfig.compilerOptions[name] ??= {};
+							this.mergeProperties(all.typescript.tsconfig.compilerOptions[name], value);
+						}
+					}
+					else
+						all.typescript.tsconfig.compilerOptions[name] = value;
+				}
+			}
+
+			all.typescript.compiler = platform.typescript.compiler ?? all.typescript.compiler;
+		}
+		return;
 	}
 	mergeProperties(targets, sources) {
 		if (sources) {
@@ -1603,7 +1773,8 @@ export class Tool extends TOOL {
 			value = value.replace(/\//g, "\\");
 		return value;
 	}
-	resolveSource(source) {
+	resolveSource(sourceIn) {
+		var source = ("string" == typeof sourceIn) ? sourceIn : sourceIn.source;
 		var result = this.resolveVariable(source);
 		var slash = result.lastIndexOf(this.slash);
 		if (slash < 0)
@@ -1612,7 +1783,9 @@ export class Tool extends TOOL {
 		if (!directory)
 			throw new Error("'" + source + "': directory not found!");
 		result = directory + result.slice(slash);
-		return result;
+		if ("string" == typeof sourceIn)
+			return result;
+		return {...sourceIn, source: result};
 	}
 	resolveVariable(value) {
 		value = value.replace(/\$\(([^\)]+)\)/g, (offset, value) => {
@@ -1644,6 +1817,7 @@ export class Tool extends TOOL {
 			errors:[],
 			warnings:[],
 			run:{},
+			typescript: {compiler: "tsc", tsconfig: {compilerOptions: {}}}
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 
@@ -1679,6 +1853,9 @@ export class Tool extends TOOL {
 		this.tsFiles.already = {};
 		this.dtsFiles = [];
 		this.dtsFiles.already = {};
+		
+		this.cdvFiles = [];
+		this.cdvFiles.already = {};
 
 		this.resourcesFiles = [];
 		this.resourcesFiles.already = {};
@@ -1698,6 +1875,8 @@ export class Tool extends TOOL {
 		this.clutFiles.current = "";
 		this.imageFiles = [];
 		this.imageFiles.already = {};
+		this.outlineFontFiles = [];
+		this.outlineFontFiles.already = {};
 		this.soundFiles = [];
 		this.soundFiles.already = {};
 		this.stringFiles = [];
@@ -1723,6 +1902,12 @@ export class Tool extends TOOL {
 		this.environment.DASH_SIGNATURE = signature.join("-");
 		this.environment.DOT_SIGNATURE = signature.join(".");
 		this.environment.SLASH_SIGNATURE = "/" + signature.join("/");
+	}
+	unresolvePrefix(value) {
+		if (value.startsWith("~.")) {
+			value = value.slice(2).replace("/", ":");
+		}
+		return value;
 	}
 }
 

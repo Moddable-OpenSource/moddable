@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -22,7 +22,7 @@ HOST_OS := $(shell uname)
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 
-EXPECTED_ESP_IDF ?= v4.3.1
+EXPECTED_ESP_IDF ?= v4.4
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -55,29 +55,12 @@ unexport LDFLAGS
 unexport LD_LIBRARY_PATH
 unexport CPPFLAGS
 
-ifeq ($(DEBUG),1)
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/$(NAME)/xsProj-$(ESP32_SUBCLASS)
-else
-ifeq ($(INSTRUMENT),1)
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/instrument/$(NAME)/xsProj-$(ESP32_SUBCLASS)
-else
-	PROJ_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/$(NAME)/xsProj-$(ESP32_SUBCLASS)
-endif
-endif
+PROJ_DIR = $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)
+
 BLD_DIR = $(PROJ_DIR)/build
 
 ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs
-endif
-
-ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/debug/lib
-else
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/instrument/lib
-	else
-		LIB_DIR = $(BUILD_DIR)/tmp/$(FULLPLATFORM)/release/lib
-	endif
 endif
 
 SDKCONFIG_H_DIR = $(BLD_DIR)/config
@@ -125,8 +108,12 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos/include/freertos \
  	$(IDF_PATH)/components/freertos/port \
  	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/include/esp_additions \
+	$(IDF_PATH)/components/freertos/include/esp_additions/freertos \
+	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
 	$(IDF_PATH)/components/hal/include \
 	$(IDF_PATH)/components/hal/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/hal/platform_port/include \
 	$(IDF_PATH)/components/heap/include \
  	$(IDF_PATH)/components/log/include \
  	$(IDF_PATH)/components/lwip/include/apps/ \
@@ -208,6 +195,7 @@ XS_DIRS = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/sources \
 	$(XS_DIR)/platforms/esp \
+	$(XS_DIR)/platforms/mc \
 	$(SDKCONFIG_H_DIR) \
 	$(PLATFORM_DIR)/lib/pow
 XS_HEADERS = \
@@ -216,6 +204,7 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/platforms/esp/xsHost.h \
+	$(XS_DIR)/platforms/mc/xsHosts.h \
 	$(XS_DIR)/platforms/esp/xsPlatform.h
 HEADERS += $(XS_HEADERS)
 
@@ -224,6 +213,7 @@ CPP = xtensa-$(ESP32_SUBCLASS)-elf-g++
 LD  = $(CPP)
 AR  = xtensa-$(ESP32_SUBCLASS)-elf-ar
 OBJCOPY = xtensa-$(ESP32_SUBCLASS)-elf-objcopy
+OBJDUMP = xtensa-$(ESP32_SUBCLASS)-elf-objdump
 ESPTOOL = $(IDF_PATH)/components/esptool_py/esptool/esptool.py
 
 AR_FLAGS = crs
@@ -346,7 +336,7 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/xs_esp32.elf -bin xtensa-$(ESP32_SUBCLASS)-elf-gdb"
+		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin xtensa-$(ESP32_SUBCLASS)-elf-gdb"
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
@@ -369,6 +359,7 @@ all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
+	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.elf $(BIN_DIR) 2> /dev/null
@@ -412,6 +403,7 @@ precursor: idfVersionCheck partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) b
 
 build: precursor
 	-cd $(PROJ_DIR) ; $(BUILD_CMD)
+	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR) 2> /dev/null
@@ -425,11 +417,7 @@ clean:
 	echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
-	-rm -rf $(LIB_DIR) 2>/dev/null
-
-erase_flash:
-	$(ESPTOOL) --chip $(ESP32_SUBCLASS) --port $(UPLOAD_PORT) erase_flash
-	
+	-rm -rf $(LIB_DIR) 2>/dev/null	
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
@@ -438,7 +426,7 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	
-$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld xs_esp32.bin"
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
@@ -514,6 +502,10 @@ $(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 	
 $(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+	@echo "# cc" $(<F) "(strings in flash)"
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
+
+$(TMP_DIR)/xsHosts.c.o: xsHosts.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 

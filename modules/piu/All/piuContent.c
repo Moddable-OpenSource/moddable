@@ -375,7 +375,6 @@ void PiuContentMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuContent self = it;
 	PiuMarkReference(the, self->behavior);
 	PiuMarkHandle(the, self->container);
-	PiuMarkHandle(the, self->next);
 	PiuMarkHandle(the, self->skin);
 	PiuMarkHandle(the, self->style);
 	PiuMarkString(the, self->name);
@@ -1139,7 +1138,7 @@ void PiuContent_set_state(xsMachine *the)
 	PiuState state = xsToNumber(xsArg(0));
 	if ((*self)->state != state) {
 		(*self)->state = state;
-		PiuContentInvalidate(self, NULL);
+		(*(*self)->dispatch->invalidate)(self, NULL);
 	}
 }
 
@@ -1166,7 +1165,7 @@ void PiuContent_set_variant(xsMachine *the)
 	PiuVariant variant = (PiuVariant)xsToInteger(xsArg(0)); 
 	if ((*self)->variant != variant) {
 		(*self)->variant = variant;
-		PiuContentInvalidate(self, NULL);
+		(*(*self)->dispatch->invalidate)(self, NULL);
 	}
 }
 
