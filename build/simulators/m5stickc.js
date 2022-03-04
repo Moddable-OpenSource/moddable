@@ -18,7 +18,7 @@ import {
 } from 'DevicePane';
 
 const base = import.meta.uri;
-const ledSkin = { texture:{ base, path:"m5stickC/led.png" }, x:0, y:0, width:160, height:160 };
+const ledSkin = { texture:{ base, path:"m5stickc/led.png" }, x:0, y:0, width:160, height:160 };
 
 class MockupBehavior extends DeviceBehavior {
   onAbort(container, status) {
@@ -124,7 +124,7 @@ export default {
         Content($, { Behavior: LEDBehavior, right:0, bottom:0, skin:ledSkin, visible:false }),
         Content($, {
           skin: {
-            texture: { base, path: 'm5stickC/0.png' },
+            texture: { base, path: 'm5stickc/0.png' },
             x: 0,
             y: 0,
             width: 342,
@@ -145,7 +145,7 @@ export default {
         Content($, { Behavior: LEDBehavior, right:0, bottom:0, skin:ledSkin, visible:false }),
         Content($, {
           skin: {
-            texture: { base, path: 'm5stickC/90.png' },
+            texture: { base, path: 'm5stickc/90.png' },
             x: 0,
             y: 0,
             width: 170,
@@ -166,7 +166,7 @@ export default {
         Content($, { Behavior: LEDBehavior, right:0, bottom:0, skin:ledSkin, visible:false }),
         Content($, {
           skin: {
-            texture: { base, path: 'm5stickC/180.png' },
+            texture: { base, path: 'm5stickc/180.png' },
             x: 0,
             y: 0,
             width: 342,
@@ -187,7 +187,7 @@ export default {
         Content($, { Behavior: LEDBehavior, right:0, bottom:0, skin:ledSkin, visible:false }),
         Content($, {
           skin: {
-            texture: { base, path: 'm5stickC/270.png' },
+            texture: { base, path: 'm5stickc/270.png' },
             x: 0,
             y: 0,
             width: 170,
