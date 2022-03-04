@@ -22,11 +22,11 @@ const BUTTON_BOUNCE_BACK = 400;
 const BUTTON_WIDTH = 56;
 const BUTTON_HEIGHT = 54;
 
-const ButtonSkin = Skin.template({ fill: ["white", "black"] });
-const BlackSkin = Skin.template({fill: "black"});
+const ButtonSkin = Skin.template({ fill: ["#505050", "#cccccc"] });
+const DividerSkin = Skin.template({fill: "#cccccc"});
 
-const OpenSans24Black = Style.template({ font: "24px Open Sans", color: "black" });
-const OpenSans20Blue = Style.template({ font: "20px Open Sans", color: "blue" });
+const TitleStyle = Style.template({ font: "24px Open Sans", color: "#cccccc" });
+const MessageStyle = Style.template({ font: "20px Open Sans", color: "#cccccc" });
 
 class ButtonBehavior extends Behavior {
     onCreate(container, data) {
@@ -69,11 +69,11 @@ class ButtonBehavior extends Behavior {
 }
 
 const HDivider = Content.template($ => ({
-    active: false, visible: true, height: 2, Skin: BlackSkin, top: $.top, left: LEFTMARGIN - 1, right: RIGHTMARGIN
+    active: false, visible: true, height: 2, Skin: DividerSkin, top: $.top, left: LEFTMARGIN - 1, right: RIGHTMARGIN
 }));
 
 const VDivider = Content.template($ => ({
-    active: false, visible: true, top: TOPMARGIN, bottom: BOTTOMMARGIN - 1, Skin: BlackSkin, left: $.left, width: 2
+    active: false, visible: true, top: TOPMARGIN, bottom: BOTTOMMARGIN - 1, Skin: DividerSkin, left: $.left, width: 2
 }));
 
 
@@ -128,12 +128,13 @@ class ControllerBehavior extends Behavior {
 
 const PSController = Container.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0,
+	skin: new Skin({fill: "#505050"}),
 	contents: [
         Container($, {
             left: 0, right: 0, top: 0, bottom: 0, anchor: "NOTPAIRED",
             contents: [
                 Text($, {
-                    left: 0, right: 0, Style: OpenSans20Blue,
+                    left: 0, right: 0, Style: MessageStyle,
                     string: "Not connected to a computer.\nConnect using your operating system's Bluetooth settings."
                 })
             ]
@@ -141,7 +142,7 @@ const PSController = Container.template($ => ({
 		Container($, {
             left: 0, right: 0, top: 0, bottom: 0, anchor: "CONTROLS", visible: false,
             contents: [
-                Label($, { height: TOPMARGIN, left: 0, right: 0, top: 0, string: "Photoshop Tools", Style: OpenSans24Black})
+                Label($, { height: TOPMARGIN, left: 0, right: 0, top: 0, string: "Photoshop Tools", Style: TitleStyle})
             ]
 		})
 	],
