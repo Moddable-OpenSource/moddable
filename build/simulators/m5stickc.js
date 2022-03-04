@@ -77,9 +77,8 @@ class LEDBehavior extends Behavior {
 }
 
 export default {
-  applicationName: 'm5stickC/debug/.*',
-  sortingTitle: '0000',
-  title: 'M5StickC',
+  applicationName: 'm5stickc/debug/.*',
+  title: 'M5stickc',
   Workers: {},
   ControlsTemplate: ControlsColumn.template(($) => ({
     contents: [
