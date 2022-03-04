@@ -26,7 +26,7 @@ const ButtonSkin = Skin.template({ fill: ["white", "black"] });
 const BlackSkin = Skin.template({fill: "black"});
 
 const OpenSans24Black = Style.template({ font: "24px Open Sans", color: "black" });
-const OpenSans20Black = Style.template({ font: "20px Open Sans", color: "black" });
+const OpenSans20Blue = Style.template({ font: "20px Open Sans", color: "blue" });
 
 class ButtonBehavior extends Behavior {
     onCreate(container, data) {
@@ -133,8 +133,8 @@ const PSController = Container.template($ => ({
             left: 0, right: 0, top: 0, bottom: 0, anchor: "NOTPAIRED",
             contents: [
                 Text($, {
-                    height: 200, top: 50, left: 0, right: 0, Style: OpenSans20Black,
-                    string: "This device is not connected to a computer.\nPlease wait to reconnect or pair via your operating system's BlueTooth settings."
+                    left: 0, right: 0, Style: OpenSans20Blue,
+                    string: "Not connected to a computer.\nConnect using your operating system's Bluetooth settings."
                 })
             ]
         }),
