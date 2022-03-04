@@ -414,7 +414,7 @@ txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot)
 	mxPush(mxBigIntPrototype);
 	instance = fxNewObjectInstance(the);
 	internal = instance->next = fxNewSlot(the);
-	internal->flag = XS_INTERNAL_FLAG | XS_GET_ONLY;
+	internal->flag = XS_INTERNAL_FLAG;
 	internal->kind = slot->kind;
 	internal->value = slot->value;
 	if (the->frame->flag & XS_STRICT_FLAG)

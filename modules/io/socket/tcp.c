@@ -113,15 +113,15 @@ void xs_tcp_constructor(xsMachine *the)
 
 		if (xsmcHas(xsArg(0), xsID_nodelay)) {
 			xsmcGet(xsVar(0), xsArg(0), xsID_nodelay);
-			nodelay = xsmcTest(xsVar(0)) ? 2 : 1;
+			nodelay = xsmcToBoolean(xsVar(0)) ? 2 : 1;
 		}
 
 		if (xsmcHas(xsArg(0), xsID_from)) {
 			TCP from;
 
 			xsmcGet(xsVar(0), xsArg(0), xsID_from);
-			from = xsmcGetHostData(xsVar(0));
-			if (!from || !from->skt)
+			from = xsmcGetHostDataValidate(xsVar(0), (void *)&xsTCPHooks);
+			if (!from->skt)
 				xsUnknownError("invalid from");
 
 			skt = from->skt;
@@ -172,6 +172,7 @@ void xs_tcp_constructor(xsMachine *the)
 	}
 
 	xsmcSetHostData(xsThis, tcp);
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
 	tcp->the = the;
 	tcp->obj = xsThis;
 	xsRemember(tcp->obj);
@@ -199,7 +200,6 @@ void xs_tcp_constructor(xsMachine *the)
 
 	if (triggerable) {
 		tcp->triggerable = triggerable;
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
 
 		if (triggerable & kTCPReadable) {
 			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
@@ -255,13 +255,14 @@ void xs_tcp_destructor(void *data)
 
 void doClose(xsMachine *the, xsSlot *instance)
 {
-	TCP tcp = xsmcGetHostData(*instance);
-	if (!tcp) return;
+	TCP tcp = xsmcGetHostData(xsThis);
+	if (tcp && xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks)) {
+		xsmcSetHostData(*instance, NULL);
+		xsForget(tcp->obj);
+		xsmcSetHostDestructor(*instance, NULL);
 
-	xsmcSetHostData(*instance, NULL);
-	xsForget(tcp->obj);
-
-	tcpRelease(tcp);
+		tcpRelease(tcp);
+	}
 }
 
 void xs_tcp_close(xsMachine *the)
@@ -271,32 +272,38 @@ void xs_tcp_close(xsMachine *the)
 
 void xs_tcp_read(xsMachine *the)
 {
-	TCP tcp = xsmcGetHostData(xsThis);
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
 	TCPBuffer buffer;
 	int requested;
 	uint8_t *out, value;
-
-	if (!tcp)
-		xsUnknownError("closed");
 
 	if (!tcp->buffers)
 		return;
 
 	if (kIOFormatBuffer == tcp->format) {
 		int available = 0;
-
-		requested = (xsmcArgc > 0) ? xsmcToInteger(xsArg(0)) : 0x7FFFFFFF;
-		if (!requested)
-			return;
+		uint8_t allocate = 1;
+		xsUnsignedValue byteLength;
 
 		for (buffer = tcp->buffers; NULL != buffer; buffer = buffer->next)
 			available += buffer->bytes;
 
-		if (available < requested)
+		if (0 == xsmcArgc)
 			requested = available;
+		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+			xsResult = xsArg(0);
+			xsmcGetBuffer(xsResult, (void **)&out, &byteLength);
+			requested = (int)byteLength;
+			allocate = 0;
+		}
+		else
+			requested = xsmcToInteger(xsArg(0));
 
-		xsmcSetArrayBuffer(xsResult, NULL, requested);
-		out = xsmcToArrayBuffer(xsResult);
+		if ((requested <= 0) || (requested > available)) 
+			xsUnknownError("invalid");
+
+		if (allocate)
+			out = xsmcSetArrayBuffer(xsResult, NULL, requested);
 	}
 	else {
 		requested = 1;
@@ -338,13 +345,10 @@ void xs_tcp_read(xsMachine *the)
 
 void xs_tcp_write(xsMachine *the)
 {
-	TCP tcp = xsmcGetHostData(xsThis);
-	int needed;
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+	xsUnsignedValue needed;
 	void *buffer;
 	uint8_t value;
-
-	if (!tcp)
-		xsUnknownError("closed");
 
 	if (!tcp->skt) {
 		xsTrace("write to closed socket\n");
@@ -352,11 +356,7 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	if (kIOFormatBuffer == tcp->format) {
-		if (xsmcIsInstanceOf(xsArg(0), xsTypedArrayPrototype))
-			xsmcGet(xsArg(0), xsArg(0), xsID_buffer);
-
-		needed = xsmcGetArrayBufferLength(xsArg(0));
-		buffer = xsmcToArrayBuffer(xsArg(0));
+		xsmcGetBuffer(xsArg(0), &buffer, &needed);
 	}
 	else {
 		needed = 1;
@@ -375,15 +375,13 @@ void xs_tcp_write(xsMachine *the)
 
 void xs_tcp_get_format(xsMachine *the)
 {
-	TCP tcp = xsmcGetHostData(xsThis);
-	if (!tcp) return;
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
 	builtinGetFormat(the, tcp->format);
 }
 
 void xs_tcp_set_format(xsMachine *the)
 {
-	TCP tcp = xsmcGetHostData(xsThis);
-	if (!tcp) return;
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
@@ -535,12 +533,14 @@ void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	TCP tcp = it;
 
-	if (tcp->onReadable)
-		(*markRoot)(the, tcp->onReadable);
-	if (tcp->onWritable)
-		(*markRoot)(the, tcp->onWritable);
-	if (tcp->onError)
-		(*markRoot)(the, tcp->onError);
+	if (tcp->triggerable) {
+		if (tcp->onReadable)
+			(*markRoot)(the, tcp->onReadable);
+		if (tcp->onWritable)
+			(*markRoot)(the, tcp->onWritable);
+		if (tcp->onError)
+			(*markRoot)(the, tcp->onError);
+	}
 }
 
 /*
@@ -621,7 +621,7 @@ void xs_listener_constructor(xsMachine *the)
 		xsRangeError("no memory");
 	}
 
-	listener = c_calloc(1, hasOnReadable ? sizeof(ListenerRecord) : offsetof(ListenerRecord, onReadable));
+	listener = c_calloc(1, sizeof(ListenerRecord));
 	if (!listener) {
 		tcp_close(skt);
 		xsRangeError("no memory");
@@ -641,8 +641,8 @@ void xs_listener_constructor(xsMachine *the)
 	if (hasOnReadable) {
 		builtinGetCallback(the, xsID_onReadable, &xsVar(0));
 		listener->onReadable = xsToReference(xsVar(0));
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
 	}
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
 }
 
 void xs_listener_destructor_(void *data)
@@ -666,16 +666,16 @@ void xs_listener_destructor_(void *data)
 void xs_listener_close_(xsMachine *the)
 {
 	Listener listener = xsmcGetHostData(xsThis);
-	if (!listener) return;
-
-	xsForget(listener->obj);
-	xs_listener_destructor_(listener);
-	xsmcSetHostData(xsThis, NULL);
+	if (listener && xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks)) {
+		xsForget(listener->obj);
+		xs_listener_destructor_(listener);
+		xsmcSetHostData(xsThis, NULL);
+	}
 }
 
 void xs_listener_read(xsMachine *the)
 {
-	Listener listener = xsmcGetHostData(xsThis);
+	Listener listener = xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks);
 	ListenerPending pending;
 	TCP tcp;
 
@@ -691,7 +691,7 @@ void xs_listener_read(xsMachine *the)
 	builtinCriticalSectionEnd();
 
 	xsResult = xsArg(0);
-	tcp = xsmcGetHostData(xsArg(0));
+	tcp = xsmcGetHostDataValidate(xsArg(0), (void *)&xsTCPHooks);
 
 	tcp->skt = pending->skt;
 	c_free(pending);
@@ -786,5 +786,6 @@ void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	Listener listener = it;
 
-	(*markRoot)(the, listener->onReadable);
+	if (listener->onReadable)
+		(*markRoot)(the, listener->onReadable);
 }

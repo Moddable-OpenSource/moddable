@@ -1,0 +1,10 @@
+{
+	"include": "$(MODDABLE)/modules/drivers/peripherals/pcf8563/manifest.json",
+	"strip": [ ],
+	"modules": {
+		"*": "./main"
+	},
+	"config": {
+		"AlarmPin": 16
+	}
+}

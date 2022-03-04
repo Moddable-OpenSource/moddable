@@ -15,13 +15,14 @@
 import Timer from "timer";
 import RTC from "embedded:peripherals/RTC-MaximIntegrated/DS1307";
 
-trace(`Today's date: ${new Date()}\n`);
-
-const rtc = new RTC ({
-			...device.I2C.default,
-			io: device.io.SMBus,
-			onError(v) { trace(v); }
+const rtc = new RTC({
+            rtc: {
+                ...device.I2C.default,
+                io: device.io.SMBus
+            }
 });
+
+trace(`Today's date: ${new Date()}\n`);
 
 if (!rtc.enabled)
 	trace(`CLOCK NOT ENABLED\n`);
@@ -42,11 +43,16 @@ let testset = [
 for (let i=0; i<testset.length; i++) {
 	let v = (new Date(testset[i])).getTime();
 	trace(`set  javascript: date(${v}): ${(new Date(v)).toGMTString()}\n`);
-	rtc.time = v;
-	trace(`wait ${i} seconds\n`);
-	Timer.delay(i * 1000);
-	let t = rtc.time;
-	trace(`read from   RTC: date(${t}): ${(new Date(t)).toGMTString()}\n`);
+	try {
+		rtc.time = v;
+		trace(`wait ${i} seconds\n`);
+		Timer.delay(i * 1000);
+		let t = rtc.time;
+		trace(`read from   RTC: date(${t}): ${(new Date(t)).toGMTString()}\n`);
+	}
+	catch (e) {
+		trace(`Error setting time.\n`);
+	}
 	trace(`---------------\n`);
 }
 

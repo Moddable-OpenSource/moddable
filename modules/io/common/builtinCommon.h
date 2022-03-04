@@ -75,6 +75,4 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format);
 
 uint32_t builtinGetPin(xsMachine *the, xsSlot *slot);
 
-void *builtinGetBufferPointer(xsMachine *the, xsSlot *slot, uint32_t *byteLength);
-
 #endif

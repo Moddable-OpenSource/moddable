@@ -239,6 +239,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT:
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
+		case XS_CODE_BEGIN_STRICT_FIELD:
 			size += 2;
 			break;
 
@@ -250,7 +251,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
-		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -403,6 +403,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT:
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
+		case XS_CODE_BEGIN_STRICT_FIELD:
 			size += 2;
 			break;
 		case XS_CODE_LINE:
@@ -413,7 +414,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
-		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -614,7 +614,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
-		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -649,6 +648,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT:
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
+		case XS_CODE_BEGIN_STRICT_FIELD:
 		case XS_CODE_RESERVE_1:
 		case XS_CODE_RETRIEVE_1:
 		case XS_CODE_UNWIND_1:
@@ -819,6 +819,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT:
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
+		case XS_CODE_BEGIN_STRICT_FIELD:
 		case XS_CODE_LINE:
 			fprintf(stderr, "%s %d\n", gxCodeNames[code->id], ((txIndexCode*)code)->index);
 			break;
@@ -828,7 +829,6 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_CONSTRUCTOR_FUNCTION:
 		case XS_CODE_DELETE_PROPERTY:
 		case XS_CODE_DELETE_SUPER:
-		case XS_CODE_FIELD_FUNCTION:
 		case XS_CODE_FILE:
 		case XS_CODE_FUNCTION:
 		case XS_CODE_GENERATOR_FUNCTION:
@@ -3152,12 +3152,12 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 1, XS_CODE_GENERATOR_FUNCTION, name);
 	else if (self->flags & (mxArrowFlag | mxMethodFlag | mxGetterFlag | mxSetterFlag))
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
-	else if (self->flags & mxFieldFlag)
-		fxCoderAddSymbol(param, 1, XS_CODE_FIELD_FUNCTION, name);
 	else
 		fxCoderAddSymbol(param, 1, XS_CODE_CONSTRUCTOR_FUNCTION, name);
 	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
-	if (self->flags & mxDerivedFlag)
+	if (self->flags & mxFieldFlag)
+		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT_FIELD, fxCoderCountParameters(coder, self->params));
+	else if (self->flags & mxDerivedFlag)
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT_DERIVED, fxCoderCountParameters(coder, self->params));
 	else if (self->flags & mxBaseFlag)
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT_BASE, fxCoderCountParameters(coder, self->params));

@@ -810,7 +810,7 @@ void fxExport(txParser* parser)
 			fxSemicolon(parser);
 			fxPushSymbol(parser, parser->defaultSymbol);
 			fxPushNULL(parser);
-			fxPushNodeStruct(parser, 2, XS_TOKEN_LET, line);
+			fxPushNodeStruct(parser, 2, XS_TOKEN_CONST, line);
 			fxSwapNodes(parser);
 			fxPushNodeStruct(parser, 2, XS_TOKEN_ASSIGN, line);
 			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, line);

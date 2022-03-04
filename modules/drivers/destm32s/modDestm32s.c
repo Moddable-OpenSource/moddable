@@ -123,6 +123,12 @@
 #ifndef MODDEF_DESTM32S_MODDABLE_THREE
 	#define MODDEF_DESTM32S_MODDABLE_THREE 0
 #endif
+#ifndef MODDEF_DESTM32S_DITHER
+	#define MODDEF_DESTM32S_DITHER (0)
+#endif
+#ifndef MODDEF_DESTM32S_FULL
+	#define MODDEF_DESTM32S_FULL (0)
+#endif
 
 #define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
 #define SCREEN_CS_DEACTIVE	modGPIOWrite(&sd->cs, 1)
@@ -248,6 +254,12 @@ typedef struct {
 	uint8_t						bufferA[256];
 	uint8_t						bufferB[256];
 
+#if MODDEF_DESTM32S_DITHER
+	uint8_t						ditherPhase;
+	int16_t						ditherA[MODDEF_DESTM32S_WIDTH + 4];
+	int16_t						ditherB[MODDEF_DESTM32S_WIDTH + 4];
+#endif
+
 	char						*redP;
 	uint8_t						red[(MODDEF_DESTM32S_WIDTH / 8) * MODDEF_DESTM32S_HEIGHT];
 } spiDisplayRecord, *spiDisplay;
@@ -319,7 +331,7 @@ void xs_destm32s_destructor(void *data)
 void xs_destm32s(xsMachine *the)
 {
 	spiDisplay sd;
-	uint8_t clear = MODDEF_DESTM32S_CLEAR;
+	uint8_t clear = MODDEF_DESTM32S_CLEAR && !MODDEF_DESTM32S_FULL;
 
 #if EPAPER == kePaperBlackWhite
 	if (kCommodettoBitmapGray256 != kCommodettoBitmapFormat)
@@ -396,9 +408,8 @@ void xs_destm32s(xsMachine *the)
 			for (count = MODDEF_DESTM32S_HEIGHT; 0 != count; count--)
 				(sd->dispatch->doSend)(line, MODDEF_DESTM32S_WIDTH, sd);
 		(sd->dispatch->doEnd)(sd);
-
-		sd->forceFull = 0;
 	}
+	sd->forceFull = MODDEF_DESTM32S_FULL;
 }
 
 void xs_destm32s_begin(xsMachine *the)
@@ -526,6 +537,50 @@ void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon)
 			spaceInOutput = sizeof(sd->bufferA);
 		}
 
+#if MODDEF_DESTM32S_DITHER
+		int16_t *thisLineErrors, *nextLineErrors;
+
+		if (sd->ditherPhase) {
+			thisLineErrors = sd->ditherA + 2;
+			nextLineErrors = sd->ditherB + 2;
+			sd->ditherPhase = 0;
+		}
+		else {
+			thisLineErrors = sd->ditherB + 2;
+			nextLineErrors = sd->ditherA + 2;
+			sd->ditherPhase = 1;
+		}
+
+		uint8_t mask = 0x80 >> ((remain & 7) - 1);
+		uint8_t outPixels = 0;
+		while (remain--) {
+			int16_t thisPixel = *pixels++ + (thisLineErrors[0] >> 3);
+
+			if (thisPixel >= 128) {
+				outPixels |= mask;
+				thisPixel -= 255;
+			}
+
+			thisLineErrors[ 0]  = thisPixel;		// next next!
+			thisLineErrors[+1] += thisPixel;
+			thisLineErrors[+2] += thisPixel;
+
+			nextLineErrors[-1] += thisPixel;
+			nextLineErrors[ 0] += thisPixel;
+			nextLineErrors[+1] += thisPixel;
+
+			thisLineErrors++;
+			nextLineErrors++;
+
+			mask <<= 1;
+			if (!mask) {
+				mono[i--] = outPixels;	
+				mask = 0x01;
+				outPixels = 0;
+			}
+		}
+
+#else
 		if (remain & 7) {
 			uint8_t mask = 0x80 >> ((remain & 7) - 1);
 			mono[i] = 0;
@@ -541,7 +596,7 @@ void destm32sSend_bw(PocoPixel *pixels, int byteLength, void *refcon)
 		for (; remain >= 8; i--, remain > 0, pixels += 8, remain -= 8)
 			mono[i] = ((pixels[0] & 0x80) >> 7) | ((pixels[1] & 0x80) >> 6) | ((pixels[2] & 0x80) >> 5) | ((pixels[3] & 0x80) >> 4) |
 					((pixels[4] & 0x80) >> 3) | ((pixels[5] & 0x80) >> 2) | ((pixels[6] & 0x80) >> 1) | (pixels[7] & 0x80);
-
+#endif
 		spaceInOutput -= updateBytes;
 		mono += updateBytes;
 		pixels = nextPixels;
@@ -824,6 +879,12 @@ void destm32sBegin_bw(void *refcon, CommodettoCoordinate x, CommodettoCoordinate
 	SCREEN_DC_DATA;
 
 	sd->updateWidth = w;
+
+#if MODDEF_DESTM32S_DITHER
+	c_memset(sd->ditherA, 0, sizeof(sd->ditherA));
+	c_memset(sd->ditherB, 0, sizeof(sd->ditherB));
+	sd->ditherPhase = 0;
+#endif
 }
 
 void destm32sContinue(void *refcon)

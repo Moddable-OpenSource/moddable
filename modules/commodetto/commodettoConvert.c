@@ -95,23 +95,13 @@ void xs_Convert(xsMachine *the)
 
 void xs_convert_process(xsMachine *the)
 {
+	void *src, *dst;
+	xsUnsignedValue srcLength, dstLength, pixelCount;
+
+	xsmcGetBuffer(xsArg(0), &src, &srcLength);
+	xsmcGetBuffer(xsArg(1), &dst, &dstLength);
+
 	xsConvert c = xsmcGetHostChunk(xsThis);
-	uint8_t *src, *dst;
-	int srcLength, dstLength, pixelCount;
-
-	if (xsmcIsInstanceOf(xsArg(0), xsArrayBufferPrototype)) {
-		src = xsmcToArrayBuffer(xsArg(0));
-		srcLength = xsmcGetArrayBufferLength(xsArg(0));
-	}
-	else {
-		xsmcVars(1);
-		src = xsmcGetHostData(xsArg(0));
-		xsmcGet(xsVar(0), xsArg(0), xsID_byteLength);
-		srcLength = xsmcToInteger(xsVar(0));
-	}
-	dst = xsmcToArrayBuffer(xsArg(1));
-	dstLength = xsmcGetArrayBufferLength(xsArg(1));
-
 	pixelCount = (srcLength << 3) / c->srcPixelDepth;
 
 	if (((dstLength << 3) / c->dstPixelDepth) < pixelCount)
@@ -137,6 +127,7 @@ static void ccGray256toGray16(uint32_t pixelCount, void *src, void *dst, void *c
 static void ccGray256toRGB332(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void ccGray256toRGB565LE(uint32_t pixelCount, void *src, void *dst, void *clut);
 
+static void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 static void ccRGB565LEtoGray256(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
 static void cc24RGBtoMonochrome(uint32_t pixelCount, void *src, void *dst, void *clut);
@@ -181,7 +172,7 @@ static const CommodettoConverter gFromGray256[] ICACHE_XS6RO_ATTR = {
 };
 
 static const CommodettoConverter gFromRGB565LE[] ICACHE_XS6RO_ATTR = {
-	NULL,					// toMonochrome
+	ccRGB565LEtoMonochrome,	// toMonochrome
 	NULL,					// toGray16
 	ccRGB565LEtoGray256,	// toGray256
 	NULL,					// toRGB332
@@ -330,6 +321,38 @@ void ccGray256toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, 
 	while (pixelCount--) {
 		uint8_t gray256 = *src++;
 		*dst++ = ((gray256 >> 3) << 11) | ((gray256 >> 2) << 5) | (gray256 >> 3);
+	}
+}
+
+void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint16_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+	uint8_t mask = 0x80;
+	uint8_t mono = 0;
+
+	while (pixelCount--) {
+		uint16_t srcPixel = *src++;
+
+		if (0) {
+			if (!srcPixel)		// any non-zero pixel is black
+				mono |= mask;
+		}
+		else {
+			uint8_t r = srcPixel >> 11;
+			uint8_t g = (srcPixel >> 5) & 0x3F;
+			uint8_t b = (srcPixel & 0x1F);
+
+			if (!toGray(r, g, b))
+				mono |= mask;
+		}
+
+		mask >>= 1;
+		if (!mask) {
+			*dst++ = mono;
+			mono = 0;
+			mask = 0x80;
+		}
 	}
 }
 

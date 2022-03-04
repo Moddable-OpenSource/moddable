@@ -102,10 +102,12 @@ void fxBuildModule(txMachine* the)
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "Module", mxID(_Symbol_toStringTag), XS_GET_ONLY);
 	mxModulePrototype = *the->stack;
+    mxPop();
 	
 	mxPush(mxObjectPrototype);
 	fxNewObjectInstance(the);
 	mxTransferPrototype = *the->stack;
+    mxPop();
 
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -592,7 +594,7 @@ txSlot* fxQueueModule(txMachine* the, txSlot* realm, txID moduleID)
 	
 	mxPush(mxModulePrototype);
 	slot = fxNewObjectInstance(the);
-	slot->flag |= XS_EXOTIC_FLAG;
+	slot->flag |= XS_EXOTIC_FLAG | XS_DONT_PATCH_FLAG;
 	/* HOST */
 	slot = slot->next = fxNewSlot(the);
 	slot->ID = XS_MODULE_BEHAVIOR;
@@ -601,17 +603,17 @@ txSlot* fxQueueModule(txMachine* the, txSlot* realm, txID moduleID)
 	slot->value.module.realm = realm;
 	slot->value.module.id = moduleID;
 	/* EXPORTS */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
+	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 	/* META */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
+	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 	/* TRANSFERS */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
+	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 	/* INITIALIZE */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
+	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 	/* FUNCTION */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
+	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 	/* HOSTS */
-	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_DONT_ENUM_FLAG);
+	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 
 	*address = slot = fxNewSlot(the);
 	slot->ID = moduleID;
@@ -776,12 +778,15 @@ void fxRejectModule(txMachine* the)
 
 void fxResolveExports(txMachine* the, txSlot* realm, txSlot* module)
 {
+	txSlot* exports;
 	txSlot* transfer;
 	txSlot* from;
 	txSlot* import;
 	txSlot* closure;
 
-	transfer = mxModuleExports(module)->value.reference->next;
+	exports = mxModuleExports(module)->value.reference;
+	exports->flag |= XS_DONT_PATCH_FLAG;
+	transfer = exports->next;
 	while (transfer) {
 		if (transfer->kind != XS_EXPORT_KIND) {
 			from = mxTransferFrom(transfer);
@@ -796,6 +801,7 @@ void fxResolveExports(txMachine* the, txSlot* realm, txSlot* module)
 			transfer->kind = closure->kind;
 			transfer->value = closure->value;
 		}
+		transfer->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 		transfer = transfer->next;
 	}
 }
@@ -886,6 +892,7 @@ void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* scr
 	}
 	
 	slot = fxNewInstance(the);
+	slot->flag |= XS_DONT_PATCH_FLAG;
 	key = fxGetKey(the, moduleID);
 	if (key) {
 		slot = slot->next = fxNewSlot(the);
@@ -895,6 +902,7 @@ void fxResolveModule(txMachine* the, txSlot* realm, txID moduleID, txScript* scr
 		else
 			slot->kind = XS_STRING_X_KIND;
 		slot->ID = mxID(_uri);
+		slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 	}
 	slot = mxModuleMeta(module);	
 	mxPullSlot(slot);
@@ -1266,7 +1274,7 @@ txBoolean fxModuleGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIn
 {
 	txSlot* property = fxModuleGetProperty(the, instance, id, index, XS_OWN);
 	if (property) {
-		slot->flag = property->flag | XS_DONT_DELETE_FLAG;
+		slot->flag = (id == mxID(_Symbol_toStringTag)) ? property->flag : XS_DONT_DELETE_FLAG;
 		slot->kind = property->kind;
 		slot->value = property->value;
 		return 1;

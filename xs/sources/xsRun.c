@@ -411,6 +411,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_BEGIN_STRICT,
 		&&XS_CODE_BEGIN_STRICT_BASE,
 		&&XS_CODE_BEGIN_STRICT_DERIVED,
+		&&XS_CODE_BEGIN_STRICT_FIELD,
 		&&XS_CODE_BIGINT_1,
 		&&XS_CODE_BIGINT_2,
 		&&XS_CODE_BIT_AND,
@@ -478,7 +479,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_EXPONENTIATION,
 		&&XS_CODE_EXTEND,
 		&&XS_CODE_FALSE,
-		&&XS_CODE_FIELD_FUNCTION,
 		&&XS_CODE_FILE,
 		&&XS_CODE_FOR_AWAIT_OF,
 		&&XS_CODE_FOR_IN,
@@ -943,6 +943,15 @@ XS_CODE_JUMP:
 			mxSaveState;
 			fxRunDerived(the);
 			mxRestoreState;
+			mxNextCode(2);
+			mxBreak;
+		mxCase(XS_CODE_BEGIN_STRICT_FIELD)
+			mxFrame->flag |= XS_STRICT_FLAG | XS_FIELD_FLAG;
+            if (mxFrameTarget->kind != XS_UNDEFINED_KIND) {
+				mxSaveState;
+				fxRunConstructor(the);
+				mxRestoreState;
+			}
 			mxNextCode(2);
 			mxBreak;
 					
@@ -2610,19 +2619,6 @@ XS_CODE_JUMP:
 			fxNewFunctionInstance(the, (txID)offset);
 			fxDefaultFunctionPrototype(the);
 			mxRestoreState;
-			mxNextCode(1 + sizeof(txID));
-			mxBreak;
-		mxCase(XS_CODE_FIELD_FUNCTION)
-			offset = mxRunID(1);
-#ifdef mxTrace
-			if (gxDoTrace) fxTraceID(the, (txID)offset, 0);
-#endif
-			mxAllocStack(1);
-			*mxStack = mxFunctionPrototype;
-			mxSaveState;
-			fxNewFunctionInstance(the, XS_NO_ID);
-			mxRestoreState;
-			mxStack->value.reference->flag |= XS_CAN_CONSTRUCT_FLAG | XS_FIELD_FLAG;
 			mxNextCode(1 + sizeof(txID));
 			mxBreak;
 		mxCase(XS_CODE_FUNCTION)
@@ -4302,11 +4298,11 @@ void fxRunEval(txMachine* the)
 		flags = mxProgramFlag | mxEvalFlag;
 		if (the->frame->flag & XS_STRICT_FLAG)
 			flags |= mxStrictFlag;
+		if (the->frame->flag & XS_FIELD_FLAG)
+			flags |= mxFieldFlag;
 		function = mxFunction->value.reference;
 		if (function->flag & XS_CAN_CONSTRUCT_FLAG)
 			flags |= mxTargetFlag;
-		if (function->flag & XS_FIELD_FLAG)
-			flags |= mxFieldFlag;
 		home = mxFunctionInstanceHome(function);
 		if (home->value.home.object)
 			flags |= mxSuperFlag;

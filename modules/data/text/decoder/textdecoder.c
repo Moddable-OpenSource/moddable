@@ -180,7 +180,7 @@ void xs_textdecoder_decode(xsMachine *the)
 
 	xsmcSetStringBuffer(xsResult, NULL, outLength + 1);
 
-	xsmcGetBuffer(xsArg(0), (void **)&src, NULL);
+	xsmcGetBuffer(xsArg(0), (void **)&src, &srcLength);
 	srcEnd = src + srcLength;
 	src += srcOffset;
 

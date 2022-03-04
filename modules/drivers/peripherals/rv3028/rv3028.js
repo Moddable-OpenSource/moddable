@@ -35,10 +35,11 @@ class RV3028 {
 	#blockBuffer = new Uint8Array(4);
 
 	constructor(options) {
-		const io = this.#io = new options.io({
+		const { rtc } = options;
+		const io = this.#io = new rtc.io({
 			hz: 400_000,
 			address: 0x52,
-			...options
+			...rtc
 		});
 
 		try {

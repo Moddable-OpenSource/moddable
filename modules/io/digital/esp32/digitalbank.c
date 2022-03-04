@@ -57,6 +57,7 @@ struct DigitalRecord {
 	uint32_t	pins;
 	xsSlot		obj;
 	uint8_t		bank;
+	uint8_t		hasOnReadable;
 	// fields after here only allocated if onReadable callback present
 	uint32_t	triggered;
 	uint32_t	rises;
@@ -188,36 +189,37 @@ void xs_digitalbank_constructor(xsMachine *the)
 		builtinGetCallback(the, xsID_onReadable, &tmp);
 		digital->onReadable = xsToReference(tmp);
 
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
+		if (NULL == gDigitals)
+			gpio_install_isr_service(0);
 
-			if (NULL == gDigitals)
-				gpio_install_isr_service(0);
+		builtinCriticalSectionBegin();
+			digital->next = gDigitals;
+			gDigitals = digital;
+		builtinCriticalSectionEnd();
 
-			builtinCriticalSectionBegin();
-				digital->next = gDigitals;
-				gDigitals = digital;
-			builtinCriticalSectionEnd();
+		for (pin = bank ? 32 : 0; pin <= lastPin; pin++) {
+			uint32_t mask = 1 << (pin & 0x1f);
+			if (pins & mask) {
+				gpio_isr_handler_add(pin, digitalISR, (void *)(uintptr_t)pin);
+				gpio_intr_enable(pin);
 
-			for (pin = bank ? 32 : 0; pin <= lastPin; pin++) {
-				uint32_t mask = 1 << (pin & 0x1f);
-				if (pins & mask) {
-					gpio_isr_handler_add(pin, digitalISR, (void *)(uintptr_t)pin);
-					gpio_intr_enable(pin);
-
-					if ((rises & mask) && (falls & mask))
-						gpio_set_intr_type(pin, GPIO_INTR_ANYEDGE);
-					else if (rises & mask)
-						gpio_set_intr_type(pin, GPIO_INTR_POSEDGE);
-					else if (falls & mask)
-						gpio_set_intr_type(pin, GPIO_INTR_NEGEDGE);
-					else
-						gpio_set_intr_type(pin, GPIO_INTR_DISABLE);
-				}
+				if ((rises & mask) && (falls & mask))
+					gpio_set_intr_type(pin, GPIO_INTR_ANYEDGE);
+				else if (rises & mask)
+					gpio_set_intr_type(pin, GPIO_INTR_POSEDGE);
+				else if (falls & mask)
+					gpio_set_intr_type(pin, GPIO_INTR_NEGEDGE);
+				else
+					gpio_set_intr_type(pin, GPIO_INTR_DISABLE);
 			}
+		}
 	}
+
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
 	digital->pins = pins;
 	digital->bank = bank;
+	digital->hasOnReadable = hasOnReadable;
 	builtinUsePins(bank, pins);
 }
 
@@ -264,26 +266,25 @@ void xs_digitalbank_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
 {
 	Digital digital = it;
 
-	(*markRoot)(the, digital->onReadable);
+	if (digital->hasOnReadable)
+		(*markRoot)(the, digital->onReadable);
 }
 
 void xs_digitalbank_close(xsMachine *the)
 {
 	Digital digital = xsmcGetHostData(xsThis);
-	if (!digital) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(digital->obj);
-	xs_digitalbank_destructor(digital);
+	if (digital && xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks)) {
+		xsForget(digital->obj);
+		xs_digitalbank_destructor(digital);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_digitalbank_read(xsMachine *the)
 {
-	Digital digital = xsmcGetHostData(xsThis);
+	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
 	uint32_t result;
-
-	if (!digital)
-		xsUnknownError("bad state");
 
 	gpio_dev_t *hw = &GPIO;
 
@@ -297,11 +298,8 @@ void xs_digitalbank_read(xsMachine *the)
 
 void xs_digitalbank_write(xsMachine *the)
 {
-	Digital digital = xsmcGetHostData(xsThis);
+	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
 	uint32_t value = xsmcToInteger(xsArg(0)) & digital->pins;
-
-	if (!digital)
-		xsUnknownError("bad state");
 
 	gpio_dev_t *hw = &GPIO;
 

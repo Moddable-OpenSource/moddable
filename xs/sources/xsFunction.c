@@ -136,14 +136,14 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 
 	/* CODE */
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = mxEmptyCode.kind;
 	property->value.code.address = mxEmptyCode.value.code.address;
 	property->value.code.closures = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
 	if (the->frame && (mxFunction->kind == XS_REFERENCE_KIND) && (mxIsFunction(mxFunction->value.reference))) {
@@ -156,7 +156,7 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 #ifdef mxProfile
 	/* PROFILE */
 	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_INTEGER_KIND;
 	property->value.integer = the->profileID;
 	the->profileID++;
@@ -374,23 +374,23 @@ void fx_Function_prototype_bind(txMachine* the)
     	
 	/* CODE */
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CALLBACK_KIND;
 	property->value.callback.address = fx_Function_prototype_bound;
 	property->value.callback.IDs = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
 	property->value.home.module = C_NULL;
 
-	property = fxNextSlotProperty(the, property, mxThis, mxID(_boundFunction), XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextSlotProperty(the, property, mxThis, mxID(_boundFunction), XS_INTERNAL_FLAG);
 	if (c > 0)
-		property = fxNextSlotProperty(the, property, mxArgv(0), mxID(_boundThis), XS_INTERNAL_FLAG | XS_GET_ONLY);
+		property = fxNextSlotProperty(the, property, mxArgv(0), mxID(_boundThis), XS_INTERNAL_FLAG);
 	else
-		property = fxNextUndefinedProperty(the, property, mxID(_boundThis), XS_INTERNAL_FLAG | XS_GET_ONLY);
+		property = fxNextUndefinedProperty(the, property, mxID(_boundThis), XS_INTERNAL_FLAG);
 	
 	if (c > 1) {
 		mxPush(mxArrayPrototype);
@@ -404,11 +404,11 @@ void fx_Function_prototype_bind(txMachine* the)
 		}
 		arguments->next->value.array.length = c - 1;
 		fxCacheArray(the, arguments);
-		property = fxNextSlotProperty(the, property, the->stack, mxID(_boundArguments), XS_INTERNAL_FLAG | XS_GET_ONLY);
+		property = fxNextSlotProperty(the, property, the->stack, mxID(_boundArguments), XS_INTERNAL_FLAG);
 		mxPop();
 	}
 	else {
-		property = fxNextNullProperty(the, property, mxID(_boundArguments), XS_INTERNAL_FLAG | XS_GET_ONLY);
+		property = fxNextNullProperty(the, property, mxID(_boundArguments), XS_INTERNAL_FLAG);
 	}
 	
 	if (gxDefaults.newFunctionLength) {
@@ -603,37 +603,37 @@ txSlot* fxNewAsyncInstance(txMachine* the)
 	the->stack->kind = XS_REFERENCE_KIND;
 
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_STACK_KIND;
 	property->ID = XS_NO_ID;
 	property->value.stack.length = 0;
 	property->value.stack.address = C_NULL;
 	
-    property = fxNextIntegerProperty(the, property, XS_CODE_START_ASYNC, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextIntegerProperty(the, property, XS_CODE_START_ASYNC, XS_NO_ID, XS_INTERNAL_FLAG);
 
 	mxPush(mxPromisePrototype);
 	promise = fxNewPromiseInstance(the);
 	status = mxPromiseStatus(promise);
 	status->value.integer = mxPendingStatus;
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	fxPushPromiseFunctions(the, promise);
-    property = fxNextSlotProperty(the, property, the->stack + 1, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack + 1, XS_NO_ID, XS_INTERNAL_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	mxPop();
 	
 	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	function = fxNewHostFunction(the, fxRejectAwait, 1, XS_NO_ID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
-    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+    property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
 	return instance;

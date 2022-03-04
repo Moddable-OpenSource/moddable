@@ -159,7 +159,7 @@ txSlot* fxNewStringInstance(txMachine* the)
 	txSlot* property;
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
-	property = fxNextSlotProperty(the, instance, &mxEmptyString, XS_STRING_BEHAVIOR, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextSlotProperty(the, instance, &mxEmptyString, XS_STRING_BEHAVIOR, XS_INTERNAL_FLAG);
 	property->value.key.sum = 0;	
 	return instance;
 }
@@ -1679,7 +1679,7 @@ void fx_String_prototype_iterator(txMachine* the)
 	txSlot* property;
 	mxPush(mxStringIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_String)));
-	property = fxNextIntegerProperty(the, property, fxUnicodeLength(string), XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, fxUnicodeLength(string), XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 

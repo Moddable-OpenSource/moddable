@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -237,40 +237,78 @@ txInteger _xsArgc(txMachine *the)
 
 void _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *count)
 {
-	txSlot tmp;
+	txSlot* instance;
 
-	if (_xsIsInstanceOf(the, slot, &mxArrayBufferPrototype)) {
-		if (count)
-			*count = (txUnsigned)fxGetArrayBufferLength(the, slot);
-		if (data)
-			*data = fxToArrayBuffer(the, slot);
+	if (slot->kind != XS_REFERENCE_KIND)
+		goto bail;
+
+	instance = slot->value.reference;
+	if (!(((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG)))
+		goto bail;
+
+	if (slot->kind == XS_ARRAY_BUFFER_KIND) {
+		*count = slot->value.arrayBuffer.length;
+		*data = slot->value.arrayBuffer.address;
 	}
-	else if (_xsIsInstanceOf(the, slot, &mxTypedArrayPrototype)) {
-		if (count) {
-			_xsGet(the, &tmp, slot, _byteLength);
+	else if (slot->kind == XS_TYPED_ARRAY_KIND) {
+		txSlot* view = slot->next;
+		txSlot* buffer = view->next;
+		uint8_t *address = (uint8_t *)buffer->value.reference->next->value.arrayBuffer.address;
+
+		if (1 != slot->value.typedArray.dispatch->size)
+			goto bail;
+
+		if (address) {
+			*count = view->value.dataView.size;
+			address += view->value.dataView.offset;
+		}
+		else
+			*count = 0;
+
+		*data = address;
+	}
+	else if (slot->kind == XS_HOST_KIND) {
+		uint8_t *address = (uint8_t *)slot->value.host.data;
+
+		if (!address || (slot->flag & XS_HOST_CHUNK_FLAG))
+			goto bail;
+
+#if 0
+		txSlot* view = slot->next;
+		if (view && (view->kind == XS_DATA_VIEW_KIND)) {
+			address += view->value.dataView.offset;
+			*count = view->value.dataView.size;
+		}
+		else
+#endif
+		{	// for compatibilty. should throw eventually.
+			txSlot tmp, ref;
+			fxReference(the, &ref, instance);
+			_xsGet(the, &tmp, &ref, _byteLength);
 			*count = (txUnsigned)fxToInteger(the, &tmp);
 		}
 
-		if (data) {
-			txInteger byteOffset;
-
-			_xsGet(the, &tmp, slot, _byteOffset);
-			byteOffset = fxToInteger(the, &tmp);
-
-			_xsGet(the, &tmp, slot, _buffer);
-			if (_xsIsInstanceOf(the, &tmp, &mxArrayBufferPrototype))
-				*data = byteOffset + (uint8_t *)fxToArrayBuffer(the, &tmp);
-			else
-				*data = byteOffset + (uint8_t *)fxGetHostData(the, &tmp);
-		}
+		*data = address;
 	}
-	else {	// host buffer
-		if (count) {
-			_xsGet(the, &tmp, slot, _byteLength);
-			*count = (txUnsigned)fxToInteger(the, &tmp);
-		}
+	else if (slot->kind == XS_DATA_VIEW_KIND) {
+		txSlot* view = slot;
+		txSlot* buffer = view->next;
+		uint8_t *address = (uint8_t *)buffer->value.reference->next->value.arrayBuffer.address;
 
-		if (data)
-			*data = (uint8_t *)fxGetHostData(the, slot);
+		if (address) {
+			*count = view->value.dataView.size;
+			address += view->value.dataView.offset;
+		}
+		else
+			*count = 0;
+
+		*data = address;
 	}
+	else
+		goto bail;
+
+	return;
+
+bail:
+	mxTypeError("this is no buffer");
 }

@@ -104,22 +104,19 @@ void xs_pwm_destructor_(void *data)
 void xs_pwm_close_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostData(xsThis);
-	if (!pwm) return;
-
-	xsForget(pwm->obj);
-	xs_pwm_destructor_(pwm);
-	xsmcSetHostData(xsThis, NULL);
+	if (pwm && xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_)) {
+		xsForget(pwm->obj);
+		xs_pwm_destructor_(pwm);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_pwm_write_(xsMachine *the)
 {
-	PWM pwm = xsmcGetHostData(xsThis);
-    int value = xsmcToInteger(xsArg(0));
-    
-	if (!pwm)
-		xsUnknownError("write to closed pwm pin");
+	PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
 
-    analogWrite(pwm->pin, value);
+   analogWrite(pwm->pin, xsmcToInteger(xsArg(0)));
 }
 
 void xs_pwm_get_hz_(xsMachine *the)

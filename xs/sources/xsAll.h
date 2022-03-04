@@ -1412,7 +1412,7 @@ extern void fxUint32Getter(txMachine* the, txSlot* data, txInteger offset, txSlo
 extern void fxUint32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxUint8ClampedSetter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 
-mxExport void fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength);
+mxExport void *fxArrayBuffer(txMachine* the, txSlot* slot, void* data, txInteger byteLength);
 mxExport void fxGetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
 mxExport txInteger fxGetArrayBufferLength(txMachine* the, txSlot* slot);
 mxExport void fxSetArrayBufferData(txMachine* the, txSlot* slot, txInteger byteOffset, void* data, txInteger byteLength);
@@ -1822,7 +1822,7 @@ enum {
 	/* frame flags */
 	/* ? = 1, */
 	XS_C_FLAG = 2,
-	/* ? =  4, */
+	XS_FIELD_FLAG = 4,
 	XS_STEP_INTO_FLAG = 8,
 	XS_STEP_OVER_FLAG = 16,
 	XS_STRICT_FLAG = 32,
@@ -1833,7 +1833,7 @@ enum {
 	XS_EXOTIC_FLAG = 1,
 	XS_CAN_CALL_FLAG = 2,
 	XS_CAN_CONSTRUCT_FLAG = 4,
-	XS_FIELD_FLAG = 8,
+	XS_DONT_MODIFY_FLAG = 8,
 	XS_DONT_PATCH_FLAG = 16,
 	XS_LEVEL_FLAG = 32,
 	XS_DONT_MARSHALL_FLAG = 64,

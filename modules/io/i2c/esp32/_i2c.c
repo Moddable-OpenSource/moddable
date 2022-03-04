@@ -102,7 +102,7 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_pullup)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_pullup);
-		pullup = xsmcTest(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
+		pullup = xsmcToBoolean(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
 	}
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
@@ -172,38 +172,33 @@ void _xs_i2c_destructor(void *data)
 void _xs_i2c_close(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
-	if (!i2c) return;
-	xsForget(i2c->obj);
-	_xs_i2c_destructor(i2c);
-	xsmcSetHostData(xsThis, NULL);
+	if (i2c && xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor)) {
+		xsForget(i2c->obj);
+		_xs_i2c_destructor(i2c);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void _xs_i2c_read(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	xsUnsignedValue length;
-	int type;
 	int err;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
 	void *buffer;
 
-	if (!i2c)
-		xsUnknownError("closed");
+	if (xsmcArgc > 1)
+		stop = xsmcToBoolean(xsArg(1));
 
-	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
-
-	type = xsmcTypeOf(xsArg(0));
-	if ((xsIntegerType == type) || (xsNumberType == type)) {
- 		length = xsmcToInteger(xsArg(0));
-		xsmcSetArrayBuffer(xsResult, NULL, length);
-		xsArg(0) = xsResult;
-		buffer = xsmcToArrayBuffer(xsResult);
-	}
-	else {
+	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsResult = xsArg(0);
 		xsmcGetBuffer(xsResult, &buffer, &length);
+	}
+	else {
+ 		length = xsmcToInteger(xsArg(0));
+		buffer = xsmcSetArrayBuffer(xsResult, NULL, length);
 	}
 
 	if (!i2cActivate(i2c))
@@ -228,18 +223,15 @@ void _xs_i2c_read(xsMachine *the)
 
 void _xs_i2c_write(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
 	int err;
 	xsUnsignedValue length;
 	uint8_t stop = true;
 	i2c_cmd_handle_t cmd;
 	void *buffer;
 
-	if (!i2c)
-		xsUnknownError("closed");
-
-	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
+	if (xsmcArgc > 1)
+		stop = xsmcToBoolean(xsArg(1));
 
 	xsmcGetBuffer(xsArg(0), &buffer, &length);
 

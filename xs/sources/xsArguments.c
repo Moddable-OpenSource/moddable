@@ -84,7 +84,7 @@ txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count)
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	array = instance->next = fxNewSlot(the);
-	array->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+	array->flag = XS_INTERNAL_FLAG;
 	array->ID = XS_ARGUMENTS_SLOPPY_BEHAVIOR;
 	array->kind = XS_ARRAY_KIND;
 	array->value.array.length = 0;
@@ -192,7 +192,7 @@ txSlot* fxNewArgumentsStrictInstance(txMachine* the, txIndex count)
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	array = instance->next = fxNewSlot(the);
-	array->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
+	array->flag = XS_INTERNAL_FLAG;
 	array->ID = XS_ARGUMENTS_STRICT_BEHAVIOR;
 	array->kind = XS_ARRAY_KIND;
 	array->value.array.length = 0;

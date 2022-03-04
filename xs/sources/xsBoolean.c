@@ -56,7 +56,7 @@ txSlot* fxNewBooleanInstance(txMachine* the)
 {
 	txSlot* instance;
 	instance = fxNewObjectInstance(the);
-	fxNextBooleanProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	fxNextBooleanProperty(the, instance, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	return instance;
 }
 

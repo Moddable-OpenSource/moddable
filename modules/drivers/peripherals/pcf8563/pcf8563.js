@@ -25,20 +25,30 @@
 
 const Register = Object.freeze({
 	CTRL1:			0x00,
+	CTRL2:			0x01,
 	TIME:			0x02,
+	ALARM_MINUTES:	0x09,
+	ALARM_HOURS:	0x0a,
+	ALARM_DAY:		0x0b,
+	ALARM_WEEKDAY:	0x0c,
+
 	VALID_BIT:		0x80,
 	CENTURY_BIT:	0x80
 });
 
+const AlarmRange = 60 * 60 * 24 * 31 * 1000;
+
 class PCF8563 {
 	#io;
+	#onAlarm;
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const io = this.#io = new options.io({
+		const { rtc, interrupt, onAlarm } = options;
+		const io = this.#io = new rtc.io({
 			hz: 400_000,
 			address: 0x51,
-			...options
+			...rtc
 		});
 
 		try {
@@ -48,9 +58,23 @@ class PCF8563 {
 			io.close();
 			throw e;
 		}
+
+		if (interrupt && onAlarm) {
+			this.#onAlarm = onAlarm;
+			io.interrupt = new interrupt.io({
+				mode: interrupt.io.InputPullUp,
+				...interrupt,
+				edge: interrupt.io.Falling,
+				onReadable: () => {
+					this.#io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
+					this.#onAlarm();
+				}
+			});
+		}
 	}
 	close() {
-		this.#io.close();
+		this.#io?.interrupt?.close();
+		this.#io?.close();
 		this.#io = undefined;
 	}
 	configure(options) {
@@ -85,7 +109,7 @@ class PCF8563 {
 		let year = now.getUTCFullYear();
 
 		if (year < 2000)
-			return undefined;
+			throw new Error;
 
 		b[0] = decToBcd(now.getUTCSeconds());
 		b[1] = decToBcd(now.getUTCMinutes());
@@ -98,6 +122,48 @@ class PCF8563 {
 		io.writeBlock(Register.TIME, b);
 
 		io.writeWord(Register.CTRL1, 0);			// enable
+	}
+	set alarm(v) {
+		let io = this.#io;
+		let now = this.time;
+
+		if (undefined === v) {
+			io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
+			return;
+		}
+
+		if (v - now > AlarmRange)
+			throw new Error;
+
+		let future = new Date(v);
+		future.setUTCSeconds(0);
+		io.writeByte(Register.ALARM_MINUTES, decToBcd(future.getUTCMinutes()));
+		io.writeByte(Register.ALARM_HOURS, decToBcd(future.getUTCHours()));
+		io.writeByte(Register.ALARM_DAY, decToBcd(future.getUTCDate()));
+		io.writeByte(Register.ALARM_WEEKDAY, 0x80);		// disable
+
+		io.writeByte(Register.CTRL2, 0b0001_0010);	// pulse interrupt, clear alarm, enable interrupt
+	}
+	get alarm() {
+		let io = this.#io;
+		let now = new Date(this.time);
+
+		now.setUTCSeconds(0);
+		now.setUTCMinutes( bcdToDec(io.readByte(Register.ALARM_MINUTES) & 0x7f) );
+		now.setUTCHours( bcdToDec(io.readByte(Register.ALARM_HOURS) & 0x3f) );
+
+		let date = bcdToDec(io.readByte(Register.ALARM_DAY) & 0x3f);
+		if (date < now.getUTCDate()) {
+			let month = now.getUTCMonth() + 1;
+			if (month > 11) {
+				month = 0;
+				now.setUTCFullYear(now.getUTCFullYear() + 1);
+			}
+			now.setUTCMonth(month);
+		}
+		now.setUTCDate( date );
+
+		return now;
 	}
 }
 

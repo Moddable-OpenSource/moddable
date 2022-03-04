@@ -166,13 +166,13 @@ txSlot* fxNewRegExpInstance(txMachine* the)
 	instance = fxNewObjectInstance(the);
 
 	property = instance->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_REGEXP_KIND;
 	property->value.regexp.code = C_NULL;
 	property->value.regexp.data = C_NULL;
 
 	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	property->flag = XS_INTERNAL_FLAG;
 	property->kind = (mxEmptyString.kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
 	property->value.key.string = mxEmptyString.value.string;
 	property->value.key.sum = 0;
@@ -654,8 +654,8 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 	property = fxLastProperty(the, iterator);
 	property->kind = argument->kind;
 	property->value = argument->value;
-	property = fxNextBooleanProperty(the, property, global, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
-	property = fxNextBooleanProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextBooleanProperty(the, property, global, XS_NO_ID, XS_INTERNAL_FLAG);
+	property = fxNextBooleanProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 #endif
 }

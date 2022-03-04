@@ -102,7 +102,7 @@ txSlot* fxNewPromiseInstance(txMachine* the)
 	the->stack->value.reference = promise;
 	/* STATUS */
 	slot = promise->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	slot->flag = XS_INTERNAL_FLAG;
 #ifdef mxPromisePrint
 	slot->ID = gID++;
 #endif
@@ -110,7 +110,7 @@ txSlot* fxNewPromiseInstance(txMachine* the)
 	slot->value.integer = mxUndefinedStatus;
 	/* THENS */
 	slot = slot->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	slot->flag = XS_INTERNAL_FLAG;
 	slot->value.reference = instance = fxNewSlot(the);
     slot->kind = XS_REFERENCE_KIND;
 	instance->kind = XS_INSTANCE_KIND;
@@ -118,11 +118,11 @@ txSlot* fxNewPromiseInstance(txMachine* the)
 	instance->value.instance.prototype = C_NULL;
 	/* RESULT */
 	slot = slot->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	slot->flag = XS_INTERNAL_FLAG;
 #ifdef mxDebug
 	/* ENVIRONMENT */
 	slot = slot->next = fxNewSlot(the);
-	slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
+	slot->flag = XS_INTERNAL_FLAG;
 	instance = the->frame;
 	while (instance) {
 		txSlot* environment = mxFrameToEnvironment(instance);

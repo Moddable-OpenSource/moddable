@@ -1189,9 +1189,9 @@ void fx_Array_prototype_copyWithin(txMachine* the)
 	if (array && ((txIndex)length == mxArraySize(array))) {
 		if (count > 0) {
 			if (from < to)
-				array = fxCheckArrayItems(the, array, from, to + count);
+				array = fxCheckArrayItems(the, array, (txIndex)from, (txIndex)(to + count));
 			else
-				array = fxCheckArrayItems(the, array, to, from + count);
+				array = fxCheckArrayItems(the, array, (txIndex)to, (txIndex)(from + count));
 		}
 	}
 	if (array && ((txIndex)length == mxArraySize(array))) {
@@ -1227,7 +1227,7 @@ void fx_Array_prototype_entries(txMachine* the)
 	fxToInstance(the, mxThis);
 	mxPush(mxArrayIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
-	property = fxNextIntegerProperty(the, property, 2, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, 2, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 
@@ -1649,7 +1649,7 @@ void fx_Array_prototype_keys(txMachine* the)
 	fxToInstance(the, mxThis);
 	mxPush(mxArrayIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
-	property = fxNextIntegerProperty(the, property, 1, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, 1, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 
@@ -2289,7 +2289,7 @@ void fx_Array_prototype_splice(txMachine* the)
 	resultArray = fxCreateArraySpecies(the, DELETIONS);
 	if (array && resultArray) {
 		if (INSERTIONS == DELETIONS)
-			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)START + DELETIONS);
+			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)(START + DELETIONS));
 		else
 			array = fxCheckArrayItems(the, array, (txIndex)START, (txIndex)LENGTH);
 	}
@@ -2518,7 +2518,7 @@ void fx_Array_prototype_values(txMachine* the)
 	fxToInstance(the, mxThis);
 	mxPush(mxArrayIteratorPrototype);
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
-	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG | XS_GET_ONLY);
+	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
 }
 

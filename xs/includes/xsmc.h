@@ -147,10 +147,16 @@ mxImport xsBooleanValue _xsTest(xsMachine *, xsSlot *);
 #define xsmcGetHostData(_SLOT)	fxGetHostData(the, &_SLOT)
 #define xsmcSetHostData(_SLOT, _DATA)	fxSetHostData(the, &_SLOT, _DATA)
 
+#undef xsGetHostDataValidate
+#define xsmcGetHostDataValidate(_SLOT, validator)	fxGetHostDataValidate(the, &_SLOT, validator)
+
 #undef xsGetHostChunk
 #undef xsSetHostChunk
 #define xsmcGetHostChunk(_SLOT)	fxGetHostChunk(the, &_SLOT)
 #define xsmcSetHostChunk(_SLOT, _DATA, _SIZE)	fxSetHostChunk(the, &_SLOT, _DATA, _SIZE)
+
+// note yet... #undef xsSetHostDestructor
+#define xsmcSetHostDestructor(_SLOT,_DESTRUCTOR) fxSetHostDestructor(the, &_SLOT, _DESTRUCTOR)
 
 #undef xsVars
 mxImport xsIntegerValue fxIncrementalVars(xsMachine*, xsIntegerValue);

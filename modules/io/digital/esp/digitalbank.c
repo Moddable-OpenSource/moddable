@@ -343,20 +343,18 @@ void xs_digitalbank_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
 void xs_digitalbank_close(xsMachine *the)
 {
 	Digital digital = xsmcGetHostData(xsThis);
-	if (!digital) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(digital->obj);
-	xs_digitalbank_destructor(digital);
+	if (digital && xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks)) {
+		xsForget(digital->obj);
+		xs_digitalbank_destructor(digital);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_digitalbank_read(xsMachine *the)
 {
-	Digital digital = xsmcGetHostData(xsThis);
+	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
 	uint32_t result;
-
-	if (!digital)
-		xsUnknownError("bad state");
 
 	result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
 	if (digital->pins & 0x10000) {
@@ -371,11 +369,8 @@ void xs_digitalbank_read(xsMachine *the)
 
 void xs_digitalbank_write(xsMachine *the)
 {
-	Digital digital = xsmcGetHostData(xsThis);
+	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
 	uint32_t value = xsmcToInteger(xsArg(0)) & digital->pins;
-
-	if (!digital)
-		xsUnknownError("bad state");
 
 	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
 	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);

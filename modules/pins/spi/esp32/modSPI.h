@@ -56,9 +56,9 @@ typedef struct modSPIConfigurationRecord *modSPIConfiguration;
 	config.spiPort = SPI_PORT; \
 	config.sync = 1; \
 	config.mode = 0; \
-	config.clock_pin = 255; \
-	config.mosi_pin = 255; \
-	config.miso_pin = 255;
+	config.clock_pin = 254; \
+	config.mosi_pin = 254; \
+	config.miso_pin = 254;
 
 extern void modSPIInit(modSPIConfiguration config);
 extern void modSPIUninit(modSPIConfiguration config);
