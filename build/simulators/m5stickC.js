@@ -167,7 +167,7 @@ export default {
         Content($, { Behavior: LEDBehavior, right:0, bottom:0, skin:ledSkin, visible:false }),
         Content($, {
           skin: {
-            texture: { base, path: 'm5stickC/0.png' },
+            texture: { base, path: 'm5stickC/180.png' },
             x: 0,
             y: 0,
             width: 342,
@@ -175,7 +175,7 @@ export default {
           },
         }),
         DeviceScreen($, {
-          left: 31,
+          left: 151,
           width: 160,
           top: 45,
           height: 80,
