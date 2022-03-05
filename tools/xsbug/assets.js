@@ -35,12 +35,16 @@
  *       limitations under the License.
  */
 
-const isMac = system.platform == "mac";
-
 const liteColors = {
-	"button": { "fill": [ "transparent", "transparent", "#00000020", "#6573c7" ], "color": [ "#cdcdcd", "#404040", "#262626", "#ffffff" ] },
+	"button": { "fill": [ "transparent", "#ffffff", "#ffffff", "#6573c7" ], "stroke": [ "#e6e6e6", "#dbdbdb", "#dbdbdb", "#6573c7" ], "color": [ "#cdcdcd", "#404040", "#262626", "#ffffff" ] },
 	"divider": { "fill": "#c2c2c2" },
-	"fieldScroller": { "fill": "#ffffff", "stroke": "#f0f0f0" },
+	"field": { "fill": "#ffffff", "stroke": "#dbdbdb", "color":"#000000" },
+	"fieldSelection": { "fill": "#6573c7", "color":"#ffffff" },
+	"iconButton": { "fill": [ "transparent", "transparent", "#00000020", "#6573c7" ], "color": [ "#cdcdcd", "#404040", "#262626", "#ffffff" ] },
+	"popupButton": { "fill": [ "transparent", "#ffffff", "#ffffff", "#6573c7" ], "stroke": [ "#e6e6e6", "#dbdbdb", "#dbdbdb", "#6573c7" ], "color": [ "#cdcdcd", "#404040", "#262626", "#ffffff" ] },
+	"popupMenu": { "fill":"#ffffff", "stroke": "#e0e0e0", },
+	"popupMenuItem": { "fill":["transparent", "transparent", "#e6e6e6", "#6573c7"], "color":["#D1D1D1", "#262626", "#262626", "#ffffff"] },
+	
 	"scrollbar": { "fill": [ "transparent", "#fafafa", "#fafafa", "#fafafa" ], "stroke": [ "transparent", "#dbdbdb", "#dbdbdb", "#dbdbdb" ] },
 	"scrollbarThumb": { "fill": [ "#e0e0e000", "#e0e0e0", "#e6e6e6", "#e6e6e6" ] },
 	"switchBar": { "fill": [ "transparent", "#b0b0b0", "#6573c7", "#6573c7" ], "stroke": [ "#e6e6e6", "#b0b0b0", "#6573c7", "#6573c7" ] },
@@ -64,7 +68,6 @@ const liteColors = {
 	"codeSelection": { "fill": "#d1e0ff" },
 	"error": { "color": "#262626" },
 	
-	"findLabel": { "color": "#000000" },
 	"findMode": { "fill": [ "transparent", "transparent", "#e0e0e0", "#a0a0a0" ], "color": [ "transparent", "#ffffff", "#e0e0e0", "#555555" ] },
 	"resultCount": { "color": "#808080" },
 	"resultRow": { "fill": [ "#ffffff", "#ffffff", "#fafafa", "#f0f0f0" ] },
@@ -78,13 +81,13 @@ const liteColors = {
 	
 	"messageBackground": { "fill": "#f0f0f0" },
 	"messages": [
-		{ "fill": "#ffffff" },
-		{ "fill": "#ffefef" },
-		{ "fill": "#ffffef" },
-		{ "fill": "#efffef" },
-		{ "fill": "#efffff" },
-		{ "fill": "#efefff" },
-		{ "fill": "#ffefff" }
+		{ "fill": "#ffffff", "stroke": "#454545" },
+		{ "fill": "#ffffff", "stroke": "#b22821" },
+		{ "fill": "#ffffff", "stroke": "#e0d200" },
+		{ "fill": "#ffffff", "stroke": "#008d32" },
+		{ "fill": "#ffffff", "stroke": "#0076a3" },
+		{ "fill": "#ffffff", "stroke": "#103ffb" },
+		{ "fill": "#ffffff", "stroke": "#9e005d" }
 	],
 	
 	"progressBar": { "fill": [ "#f0f0f0", "#404040", "#000000", "#000000" ] },
@@ -99,9 +102,15 @@ const liteColors = {
 };
 
 const darkColors = {
-	"button": { "fill": [ "transparent", "transparent", "#ffffff60", "#6573c7" ], "color": [ "#808080", "#ffffff", "#ffffff", "#ffffff" ] },
+	"button": { "fill": [ "transparent", "#5d5d5d", "#5d5d5d", "#6573c7" ], "stroke": [ "transparent", "#707070", "#707070", "#6573c7" ], "color": [ "#808080", "#ffffff", "#ffffff", "#ffffff" ] },
 	"divider": { "fill": "#545454" },
-	"fieldScroller": { "fill": "#1e1e1e", "stroke": "#545454" },
+	"field": { "fill": "#1e1e1e", "stroke": "#4e4e4e", "color":"#ffffff" },
+	"fieldSelection": { "fill": "#6573c7", "color":"#ffffff" },
+	"iconButton": { "fill": [ "transparent", "transparent", "#ffffff60", "#6573c7" ], "color": [ "#808080", "#ffffff", "#ffffff", "#ffffff" ] },
+	"popupButton": { "fill": [ "transparent", "#5d5d5d", "#5d5d5d", "#6573c7" ], "stroke": [ "transparent", "#707070", "#707070", "#6573c7" ], "color": [ "#808080", "#ffffff", "#ffffff", "#ffffff" ] },
+	"popupMenu": { "fill":"#353535", "stroke": "#707070", },
+	"popupMenuItem": { "fill":["transparent", "transparent", "#707070", "#6573c7"], "color":["#303030", "#ffffff", "#ffffff", "#ffffff"] },
+
 	"scrollbar": { "fill": [ "transparent", "#3b3b3b", "#3b3b3b", "#3b3b3b" ], "stroke": [ "transparent", "#454545", "#454545", "#454545" ] },
 	"scrollbarThumb": { "fill": [ "#a2a2a200", "#a2a2a2", "#a2a2a2", "#a2a2a2" ] },
 	"switchBar": { "fill": [ "#000000", "#5d5d5d", "#6573c7", "#6573c7" ], "stroke": [ "#5d5d5d", "#5d5d5d", "#6573c7", "#6573c7" ] },
@@ -118,14 +127,13 @@ const darkColors = {
 	"lineBreakpoint": { "color": "#ffffff", "fill": "#7fbd3b" },
 
 	"code": { "fill": "#2a2a2a", "color": "#fffffff0" },
-	"codeComment": { "color": "#00ff00f0" },
-	"codeKeyword": { "color": "#a6bafff0" },
-	"codeLiteral": { "color": "#ff9c7df0" },
+	"codeComment": { "color": "#3cb878" },
+	"codeKeyword": { "color": "#77bafc" },
+	"codeLiteral": { "color": "#f26c4f" },
 	"codeResult": { "fill": "#fbf4bb" },
 	"codeSelection": { "fill": "#4b4b4b" },
 	"error": { "color": "#262626" },
 	
-	"findLabel": { "color": "#000000" },
 	"findMode": { "fill": [ "transparent", "transparent", "#4b4b4b", "#5b5b5b" ], "color": [ "transparent", "#e0e0e0", "#ffffff", "#e0e0e0" ] },
 	"resultCount": { "color": "#a0a0a0" },
 	"resultRow": { "fill": [ "#2a2a2a", "#2a2a2a", "#3a3a3a", "#4a4a4a" ] },
@@ -139,13 +147,13 @@ const darkColors = {
 
 	"messageBackground": { "fill": "#3b3b3b" },
 	"messages": [
-		{ "fill": "#545454" },
-		{ "fill": "#540000" },
-		{ "fill": "#545400" },
-		{ "fill": "#005400" },
-		{ "fill": "#005454" },
-		{ "fill": "#000054" },
-		{ "fill": "#540054" }
+		{ "fill": "#2a2a2a", "stroke": "#f0f0f0" },
+		{ "fill": "#2a2a2a", "stroke": "#f26c4f" },
+		{ "fill": "#2a2a2a", "stroke": "#fff568" },
+		{ "fill": "#2a2a2a", "stroke": "#3cb878" },
+		{ "fill": "#2a2a2a", "stroke": "#00bff3" },
+		{ "fill": "#2a2a2a", "stroke": "#77bafc" },
+		{ "fill": "#2a2a2a", "stroke": "#f26d7d" }
 	],
 	
 	"progressBar": { "fill": [ "#f0f0f0", "#404040", "#000000", "#000000" ] },
@@ -176,6 +184,8 @@ const textures = {
 	findModes: { path:"assets/findModes.png", scale:2 },
 	glyphs: { path:"assets/glyphs.png", scale:2 },
 	logo: { path:"assets/logo.png", scale:2 },
+	popup: { path:"assets/popup.png", scale:2 },
+	shadow: { path:"assets/shadow.png", scale:1 },
 	wait: { path:"assets/wait.png", scale:2 },
 };
 
@@ -184,16 +194,29 @@ function buildTheme($, codeFont) {
 	const skins = globalThis.skins = {};
 	const styles = globalThis.styles = {};
 	
-	skins.button = new Skin({ fill:$.button.fill });
-	styles.iconButton = new Style({ font:"semibold", color:$.button.color });
-	skins.iconButton = new Skin({ fill:$.button.fill });
+	skins.button = new Skin({ fill:$.button.fill, stroke:$.button.stroke });
+	styles.button = new Style({ font:"semibold", color:$.button.color });
 	styles.serialButton = new Style({ font:"semibold", color:$.button.color , left:15, right:15 });
+	skins.iconButton = new Skin({ fill:$.iconButton.fill });
+	styles.iconButton = new Style({ font:"semibold", color:$.button.color });
 	skins.icons = new Skin({ texture:textures.icons, color:$.button.color, x:2, y:2, width:26, height:26, variants:30 });
 	skins.divider = new Skin({ fill:$.divider.fill });
-	skins.fieldScroller = new Skin({ fill: [$.fieldScroller.fill], stroke:$.fieldScroller.stroke, borders: { left:1, right:1, bottom:1, top:1 } });
+	skins.fieldScroller = new Skin({ fill: $.field.fill, stroke:$.field.stroke, borders: { left:1, right:1, bottom:1, top:1 } });
+	skins.field = new Skin({ fill: [$.field.fill, $.fieldSelection.fill], });
+	styles.field = new Style({ color:[$.field.color, $.fieldSelection.color], horizontal:"left", left:5, right:5 });
+	
+	skins.popupButton = new Skin({ fill:$.popupButton.fill, stroke:$.popupButton.stroke });
+	styles.popupButton = new Style({ font:"semibold", color:$.popupButton.color, horizontal:"left" }),
+	skins.popupIcons = new Skin({ texture:textures.popup, color:$.popupMenuItem.color, x:0, y:0, width:20, height:30, variants:20 });
+	skins.popupMenu = new Skin({ fill:$.popupMenu.fill, stroke:$.popupMenu.stroke, left:1, right:1, top:1, bottom:1 });
+	skins.popupMenuItem = new Skin({ fill:$.popupMenuItem.fill });
+	styles.popupMenuItem = new Style({ font: "semibold", color:$.popupMenuItem.color, horizontal:"left" });
+	skins.popupMenuShadow = new Skin({ texture:textures.shadow, x:0, y:0, width:60, height:40, left:20, right:20, top:10, bottom:20 });
+	
 	skins.scrollbarThumb = new Skin({ fill:$.scrollbarThumb.fill });
 	skins.horizontalScrollbar = new Skin({ fill:$.scrollbar.fill, stroke:$.scrollbar.stroke, top:1 });
 	skins.verticalScrollbar = new Skin({ fill:$.scrollbar.fill, stroke:$.scrollbar.stroke, left:1 });
+	
 	skins.switchBar = new Skin({ fill:$.switchBar.fill, stroke:$.switchBar.stroke });
 	skins.switchButton = new Skin({ fill:$.switchButton.fill, stroke:$.switchButton.stroke });
 	
@@ -230,7 +253,6 @@ function buildTheme($, codeFont) {
 	styles.error = new Style({ color:$.error.color });
 
 	// FIND SEARCH
-	styles.findLabel = new Style({ color:$.findLabel.color, horizontal:"left", left:5, right:5});
 	skins.findModeButton = new Skin({ texture:textures.findModes, color:$.findMode.fill, x:0, y:20, width:20, height:20, variants:20 });
 	skins.findModeIcon = new Skin({ texture:textures.findModes, color:$.findMode.color, x:0, y:0, width:20, height:20, variants:20 });
 	
@@ -263,22 +285,23 @@ function buildTheme($, codeFont) {
 	skins.conversation = new Skin({ texture:textures.glyphs, color:$.tableRow.color, x:64, y:0, width:16, height:16, variants:16 });
 	styles.conversation = new Style({ font:codeFont, color:$.code.color, left:12, right:12, top:4, bottom:4, horizontal:"left" });
 	skins.messages = [
-		new Skin({ fill:$.messages[0].fill }),
-		new Skin({ fill:$.messages[1].fill }),
-		new Skin({ fill:$.messages[2].fill }),
-		new Skin({ fill:$.messages[3].fill }),
-		new Skin({ fill:$.messages[4].fill }),
-		new Skin({ fill:$.messages[5].fill }),
-		new Skin({ fill:$.messages[6].fill }),
+		new Skin({ fill:$.messages[0].fill, stroke:$.messages[0].stroke }),
+		new Skin({ fill:$.messages[1].fill, stroke:$.messages[1].stroke }),
+		new Skin({ fill:$.messages[2].fill, stroke:$.messages[2].stroke }),
+		new Skin({ fill:$.messages[3].fill, stroke:$.messages[3].stroke }),
+		new Skin({ fill:$.messages[4].fill, stroke:$.messages[4].stroke }),
+		new Skin({ fill:$.messages[5].fill, stroke:$.messages[5].stroke }),
+		new Skin({ fill:$.messages[6].fill, stroke:$.messages[6].stroke }),
 	];
 	skins.messageMarks = [
+		new Skin({ texture:textures.glyphs, color:$.messages[0].stroke, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[1].stroke, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[2].stroke, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[3].stroke, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[4].stroke, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[5].stroke, x:0, y:56, width:16, height:8, variants:80 }),	
+		new Skin({ texture:textures.glyphs, color:$.messages[6].stroke, x:0, y:56, width:16, height:8, variants:80 }),	
 		new Skin({ texture:textures.glyphs, color:$.messages[0].fill, x:0, y:56, width:16, height:8, variants:80 }),	
-		new Skin({ texture:textures.glyphs, color:$.messages[1].fill, x:0, y:56, width:16, height:8, variants:80 }),	
-		new Skin({ texture:textures.glyphs, color:$.messages[2].fill, x:0, y:56, width:16, height:8, variants:80 }),	
-		new Skin({ texture:textures.glyphs, color:$.messages[3].fill, x:0, y:56, width:16, height:8, variants:80 }),	
-		new Skin({ texture:textures.glyphs, color:$.messages[4].fill, x:0, y:56, width:16, height:8, variants:80 }),	
-		new Skin({ texture:textures.glyphs, color:$.messages[5].fill, x:0, y:56, width:16, height:8, variants:80 }),	
-		new Skin({ texture:textures.glyphs, color:$.messages[6].fill, x:0, y:56, width:16, height:8, variants:80 }),	
 	];
 	styles.message = new Style({ font:codeFont, color:[$.code.color, $.codeKeyword.color, $.codeLiteral.color, $.codeComment.color], top:5, bottom:5, horizontal:"left" });
 		

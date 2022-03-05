@@ -20,7 +20,7 @@
 
 #include "piuAll.h"
 
-extern void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor);
+extern void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor);
 
 typedef struct PiuRoundContentStruct PiuRoundContentRecord, *PiuRoundContent;
 struct PiuRoundContentStruct {
@@ -89,7 +89,7 @@ void PiuRoundContentDraw(void* it, PiuView* view, PiuRectangle area)
 		PiuColorsBlend((*skin)->data.color.stroke, state, &strokeColor);
 		PiuRectangleSet(&bounds, 0, 0, (*self)->bounds.width, (*self)->bounds.height);
 		PiuViewPushClip(view, 0, 0, bounds.width, bounds.height);
-		PiuViewDrawRoundContent(view, 0, 0, bounds.width, bounds.height, (*self)->radius, (*self)->border, &fillColor, &strokeColor);
+		PiuViewDrawRoundContent(view, 0, 0, bounds.width, bounds.height, (*self)->radius, (*self)->border, (*self)->variant, &fillColor, &strokeColor);
 		PiuViewPopClip(view);
 	}
 }

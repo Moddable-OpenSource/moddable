@@ -92,4 +92,4 @@ struct PiuViewStruct {
 };
 
 extern xsMachine* ServiceThreadMain(void* context);
-extern void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor);
+extern void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor);

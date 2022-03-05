@@ -433,6 +433,15 @@ LRESULT CALLBACK PiuClipWindowProc(HWND window, UINT message, WPARAM wParam, LPA
 		}
 		return TRUE;
 	} break;
+	case WM_CTLCOLOREDIT: {
+		PiuField* self = (PiuField*)GetWindowLongPtr(window, 0);
+		PiuSkin* skin = (*self)->skin;
+		PiuStyle* style = (*self)->computedStyle;
+		SetBkMode((HDC)wParam,OPAQUE);
+		SetBkColor((HDC)wParam, RGB((*skin)->data.color.fill[0].r, (*skin)->data.color.fill[0].g, (*skin)->data.color.fill[0].b));
+		SetTextColor((HDC)wParam, RGB((*style)->color[0].r, (*style)->color[0].g, (*style)->color[0].b));
+		return (LRESULT)((*self)->solidBrush);
+	} break;
 	default:
 		return DefWindowProc(window, message, wParam, lParam);
 	}
@@ -619,43 +628,47 @@ void PiuViewDictionary(xsMachine* the, void* it)
 	
 }
 
-void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor)
+void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor)
 {
 	Graphics* graphics = (*self)->graphics;
  	graphics->SetSmoothingMode(SmoothingModeAntiAlias);
-	REAL fx = (REAL)x, fy = (REAL)y, fw = (REAL)w, fh = (REAL)h, fr = (REAL)radius, flineWidth = (REAL)lineWidth;
-	if (flineWidth > 0) {
-		REAL delta = flineWidth / 2;
-		fx += delta;
-		fy += delta;
-		fw -= lineWidth;
-		fh -= lineWidth;
-		fr -= delta;
+	REAL lx = (REAL)x, ty = (REAL)y, rx = lx + (REAL)w, by = ty + (REAL)h, r = (REAL)radius, t, u = (REAL)border;
+// 	if (r > fw / 2)
+// 		r = fw / 2;
+// 	if (r > fh / 2)
+// 		r = fh / 2;
+// 	
+	if (variant == 1)
+		lx += r;
+	else if (variant == 2)
+		rx -= r;
+	if (u > 0) {
+		REAL delta = u / 2;
+		lx += delta;
+		ty += delta;
+		rx -= delta;
+		by -= delta;
+		r -= delta;
 	}
+	t = r * 0.552284749831;
 	GraphicsPath path;
-	if (fr > fw / 2)
-		fr = fw / 2;
-	if (fr > fh / 2)
-		fr = fh / 2;
-	if (fr > fw / 2)
- 		path.AddLine(fx + fr, fy, fx + fw - (fr * 2), fy);
-	path.AddArc(fx + fw - (fr * 2), fy, fr * 2, fr * 2, 270, 90);
-	if (fr > fh / 2)
-		path.AddLine(fx + fw, fy + fr, fx + fw, fy + fh - (fr * 2));
-	path.AddArc(fx + fw - (fr * 2), fy + fh - (fr * 2), fr * 2, fr * 2, 0, 90);
-	if (fr > fw / 2)
-		path.AddLine(fx + fw - (fr * 2), fy + fh, fx + fr, fy + fh);
-	path.AddArc(fx, fy + fh - (fr * 2), fr * 2, fr * 2, 90, 90);
-	if (fr > fh / 2)
-		path.AddLine(fx, fy + fh - (fr * 2), fx, fy + fr);
-	path.AddArc(fx, fy, fr * 2, fr * 2, 180, 90);
+	path.AddBezier(lx, ty + r, lx, ty + r - t, lx + r - t, ty, lx + r, ty);
+	path.AddBezier(rx - r, ty, rx - r + t, ty, rx, ty + r - t, rx, ty + r);
+	if (variant == 2)
+		path.AddBezier(rx, by - r, rx, by - r + t, rx + r - t, by, rx + r, by);
+	else
+		path.AddBezier(rx, by - r, rx, by - r + t, rx - r + t, by, rx - r, by);
+	if (variant == 1)
+		path.AddBezier(lx - r, by, lx - r + t, by, lx, by - r + t, lx, by - r);
+	else
+		path.AddBezier(lx + r, by, lx + r - t, by, lx, by - r + t, lx, by - r);
     path.CloseFigure();
 	if (fillColor->a) {
 		(*self)->solidBrush->SetColor(Color(fillColor->a, fillColor->r, fillColor->g, fillColor->b));
 		graphics->FillPath((*self)->solidBrush, &path);
 	}
-	if ((flineWidth > 0) && (strokeColor->a)) {
-		Pen pen(Color(strokeColor->a, strokeColor->r, strokeColor->g, strokeColor->b), flineWidth);
+	if ((border > 0) && (strokeColor->a)) {
+		Pen pen(Color(strokeColor->a, strokeColor->r, strokeColor->g, strokeColor->b), u);
 		graphics->DrawPath(&pen, &path);
 	}
 }

@@ -149,6 +149,12 @@ class ApplicationBehavior extends DebugBehavior {
   		application.interval = 100;
   		application.start();
 		
+		this.appearance = 0;
+		if (system.platform == "mac")
+			this.appearanceTheme = 2;
+		else
+			this.appearanceTheme = 0;
+		
 		this.arrangement = true;
 		this.featureDividerCurrent = 320;
 		this.featureDividerStatus = true;
@@ -205,7 +211,14 @@ class ApplicationBehavior extends DebugBehavior {
 		application.updateMenus();
 	}
 	onAppearanceChanged(application, which) {
-		buildAssets(which);
+		this.appearance = which;
+		this.onAppearanceThemeChanged(application);
+	}
+	onAppearanceThemeChanged(application) {
+		let appearance = this.appearanceTheme;
+		if (appearance == 2)
+			appearance = this.appearance;
+		buildAssets(appearance);
 		
 		globalThis.tableRowStyle = new Style(styles.tableRow);
 	
@@ -235,7 +248,7 @@ class ApplicationBehavior extends DebugBehavior {
 						container.replace(container.first, new FilePane(this));
 					else if (tab == 1) {
 						container.replace(container.first, new MessagePane(this));
-// 						application.distribute("onBubblesChanged", items);
+						application.distribute("onBubblesChanged", items);
 					}
 					else if (tab == 2)
 						container.replace(container.first, new SerialPane(this));
@@ -482,6 +495,8 @@ class ApplicationBehavior extends DebugBehavior {
 			let string = system.readPreferenceString("main");
 			if (string) {
 				let preferences = JSON.parse(string);
+				if ("appearanceTheme" in preferences)
+					this.appearanceTheme = preferences.appearanceTheme;
 				if ("arrangement" in preferences)
 					this.arrangement = preferences.arrangement;
 				if ("featureDividerCurrent" in preferences)
@@ -551,6 +566,7 @@ class ApplicationBehavior extends DebugBehavior {
 		try {
 			let content;
 			let preferences = {
+				appearanceTheme: this.appearanceTheme,
 				arrangement: this.arrangement,
 				featureDividerCurrent: this.FEATURE_DIVIDER.behavior.current,
 				featureDividerStatus: this.FEATURE_DIVIDER.behavior.status,

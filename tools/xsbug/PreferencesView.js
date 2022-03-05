@@ -65,7 +65,11 @@ import {
 } from "behaviors";
 
 import {
-	SwitchBehavior,
+	Button,
+	PopupButton,
+} from "piu/Buttons";	
+
+import {
 	Switch,
 } from "piu/Switches";	
 
@@ -76,10 +80,32 @@ class PreferencesColumnBehavior extends Behavior {
 				{
 					Template: PreferencesTable,
 					expanded: true,
+					name: "APPEARANCE",
+					items: [
+						{
+							Template: PopupRow,
+							name: "Colors",
+							items: [
+								{ title: "Lite", value:0 },
+								{ title: "Dark", value:1 },
+							],
+							get value() {
+								return model.appearanceTheme;
+							},
+							set value(it) {
+								model.appearanceTheme = it;
+								application.delegate("onAppearanceThemeChanged");
+							},
+						},
+					],
+				},
+				{
+					Template: PreferencesTable,
+					expanded: true,
 					name: "BREAK",
 					items: [
 						{
-							Template: ToggleRow,
+							Template: SwitchRow,
 							comment: "Break when the debuggee starts",
 							name: "On Start",
 							get value() {
@@ -90,7 +116,7 @@ class PreferencesColumnBehavior extends Behavior {
 							},
 						},
 						{
-							Template: ToggleRow,
+							Template: SwitchRow,
 							comment: "Break when the debuggee throws exceptions",
 							name: "On Exceptions",
 							get value() {
@@ -108,7 +134,7 @@ class PreferencesColumnBehavior extends Behavior {
 					name: "INSTRUMENTS",
 					items: [
 						{
-							Template: ToggleRow,
+							Template: SwitchRow,
 							comment: "Show when the debuggee is running, hide when the debuggee is broken",
 							name: "Automatically Show & Hide",
 							get value() {
@@ -143,7 +169,7 @@ class PreferencesColumnBehavior extends Behavior {
 						{
 							Template: FieldRow,
 							name: "Port Number",
-							width: 52,
+							width: 208,
 							get value() {
 								return model.port;
 							},
@@ -198,7 +224,7 @@ class PreferencesColumnBehavior extends Behavior {
 					name: "TABS",
 					items: [
 						{
-							Template: ToggleRow,
+							Template: SwitchRow,
 							comment: "Show Messages tab",
 							name: "Messages",
 							get value() {
@@ -209,7 +235,7 @@ class PreferencesColumnBehavior extends Behavior {
 							},
 						},
 						{
-							Template: ToggleRow,
+							Template: SwitchRow,
 							comment: "Show Serial tab",
 							name: "Serial",
 							get value() {
@@ -220,7 +246,7 @@ class PreferencesColumnBehavior extends Behavior {
 							},
 						},
 						{
-							Template: ToggleRow,
+							Template: SwitchRow,
 							comment: "Show Test262 tab",
 							name: "Test262",
 							get value() {
@@ -234,6 +260,8 @@ class PreferencesColumnBehavior extends Behavior {
 				},
 			]
 		}
+		if (system.platform == "mac")
+			preferences.items[0].items[0].items.push({ title: "Auto", value:2 });
 		preferences.items.forEach(item => column.add(new item.Template(item)));
 	}
 }
@@ -283,18 +311,20 @@ class LocationRowBehavior extends RowBehavior {
 	}
 };
 
-class ToggleRowBehavior extends RowBehavior {
+class PopupRowBehavior extends RowBehavior {
 	changeState(row) {
 		super.changeState(row);
-		row.last.visible = (this.flags & 1) ? true : false;
 	}
 	onTap() {
 	}
 }
 
-class ToggleButtonBehavior extends SwitchBehavior {
-	onValueChanged(container) {
-		container.container.bubble("onToggleChanged", this.data);
+class SwitchRowBehavior extends RowBehavior {
+	changeState(row) {
+		super.changeState(row);
+		row.last.visible = (this.flags & 1) ? true : false;
+	}
+	onTap() {
 	}
 }
 
@@ -368,10 +398,10 @@ var FieldRow = Row.template($ => ({
 		Content($, { width:50 }),
 		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
 		Container($, {
-			width:$.width, height:26,
+			width:$.width, height:22, skin:skins.fieldScroller,
 			contents: [
 				Field($, { 
-					anchor:"FIELD", left:0, right:0, top:2, bottom:2, skin:skins.fieldScroller, style:styles.preferenceValue, string:$.value, 
+					anchor:"FIELD", left:1, right:1, top:1, bottom:1, skin:skins.field, style:styles.field, string:$.value, 
 					Behavior: class extends Behavior {
 						onCreate(field, data) {
 							this.data = data;
@@ -394,36 +424,15 @@ var FieldRow = Row.template($ => ({
 				}),
 			],
 		}),
-		Container($, {
-			height:30, width:60, active:true, visible:false,
+		Button($, {
+			height:30, width:60, active:true, visible:false, string:"Set",
 			Behavior: class extends ButtonBehavior {
 				onTap(button) {
 					let field = button.previous.first;
 					this.data.value = field.string;
 					field.focus();
 				}
-			},
-			contents: [
-				RoundContent($, { left:5, right:5, top:5, bottom:5, radius:5, skin:skins.iconButton }),
-				Label($, { left:0, right:0, style:styles.iconButton, string:"Set" }),
-			],
-		}),
-	],
-}));
-
-var LocationRow = Row.template($ => ({
-	left:0, right:0, height:26, skin:skins.preferenceRow, active:true,
-	Behavior: LocationRowBehavior,
-	contents: [
-		Content($, { width:50 }),
-		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
-		Label($, { width:180, style:styles.preferenceValue, string:$.value }),
-		IconButton($, { variant:5, active:true, visible:false, 
-			Behavior: class extends ButtonBehavior {
-				onTap(button) {
-					button.bubble("doRemoveMapping", this.data.index);
-				}
-			},
+			}
 		}),
 	],
 }));
@@ -450,13 +459,40 @@ var InterfacesRow = Row.template($ => ({
 	],
 }));
 
-var ToggleRow = Row.template(function($) { return {
+var LocationRow = Row.template($ => ({
 	left:0, right:0, height:26, skin:skins.preferenceRow, active:true,
-	Behavior: ToggleRowBehavior,
+	Behavior: LocationRowBehavior,
 	contents: [
 		Content($, { width:50 }),
 		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
-		Switch($, { Behavior: ToggleButtonBehavior }),
+		Label($, { width:180, style:styles.preferenceValue, string:$.value }),
+		IconButton($, { variant:5, active:true, visible:false, 
+			Behavior: class extends ButtonBehavior {
+				onTap(button) {
+					button.bubble("doRemoveMapping", this.data.index);
+				}
+			},
+		}),
+	],
+}));
+
+var PopupRow = Row.template(function($) { return {
+	left:0, right:0, height:30, skin:skins.preferenceRow, active:true,
+	Behavior:PopupRowBehavior,
+	contents: [
+		Content($, { width:50 }),
+		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
+		PopupButton($, { width:160, height:30, active:true }),
+	],
+}});
+
+var SwitchRow = Row.template(function($) { return {
+	left:0, right:0, height:26, skin:skins.preferenceRow, active:true,
+	Behavior: SwitchRowBehavior,
+	contents: [
+		Content($, { width:50 }),
+		Label($, { width:180, style:styles.preferenceSecondName, string:$.name }),
+		Switch($, { }),
 		Label($, { left:0, right:0, style:styles.preferenceComment, string:$.comment, visible:false }),
 	],
 }});

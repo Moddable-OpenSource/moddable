@@ -202,6 +202,7 @@ static gboolean gtk_piu_view_scroll_event(GtkWidget *widget, GdkEventScroll *eve
 	if (delta_x || delta_y) {
 		GtkPiuView* gtkView = GTK_PIU_VIEW(widget);
 		PiuView* view = gtkView->piuView;
+		gtk_widget_grab_focus(widget);
 		xsBeginHost((*view)->the);
 		{
 			PiuApplication* application = (*view)->application;
@@ -449,8 +450,12 @@ static void PiuViewAdjustAux(GtkWidget *widget, gpointer it)
 		gtk_fixed_move(gtkFixed, widget, clipBounds.x, clipBounds.y);
 		gtk_widget_set_size_request(widget, clipBounds.width, clipBounds.height);
 		widget = gtkClip->widget;
-		gtk_fixed_move(GTK_FIXED(gtkClip), widget, bounds.x - clipBounds.x, bounds.y - clipBounds.y);
 		gtk_widget_set_size_request(widget, bounds.width, bounds.height);
+		if (PiuRectangleContains(&clipBounds, &bounds))
+    		gtk_widget_show(widget);
+		else
+	    	gtk_widget_hide(widget);
+    	
 	}
 }
 
@@ -543,18 +548,6 @@ void PiuViewCreate(xsMachine* the)
 	gtk_widget_set_can_focus(GTK_WIDGET(gtkView), TRUE);
 	gtk_widget_grab_focus(GTK_WIDGET(gtkView));
 	
-	(*self)->gtkCssProvider = gtk_css_provider_new();
-	gtk_css_provider_load_from_data((*self)->gtkCssProvider,
-		 "* {\n"
-		 "   background-image: none;\n"
-		 "   border: 0 none transparent;\n"
-		 "   box-shadow: none;\n"
-		 "   outline: transparent none 0;\n"
-		 "   margin: 0;\n"
-		 "   padding: 0px 4px 0px 4px;\n"
-		 "}\n"
-		 , -1, NULL);
-	
 	xsResult = xsThis;
 }
 
@@ -567,29 +560,46 @@ void PiuViewDictionary(xsMachine* the, void* it)
 	
 }
 
-void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor)
+void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor)
 {
 	cairo_t* cr = (*self)->cairo;
-	double fx = x, fy = y, fw = w, fh = h, fr = radius, fl = lineWidth;
-	if (fl > 0) {
-		double delta = fl / 2;
-		fx += delta;
-		fy += delta;
-		fw -= fl;
-		fh -= fl;
-		fr -= delta;
+	double lx = x, ty = y, rx = x + w, by = y + h, r = radius, t, u = border;
+	if (variant == 1)
+		lx += r;
+	else if (variant == 2)
+		rx -= r;
+	if (u > 0) {
+		double delta = u / 2;
+		lx += delta;
+		ty += delta;
+		rx -= delta;
+		by -= delta;
+		r -= delta;
 	}
-	double degrees = M_PI / 180.0;
-	cairo_new_sub_path (cr);
-	cairo_arc(cr, fx + fw - fr, fy + fr, fr, -90 * degrees, 0 * degrees);
-	cairo_arc(cr, fx + fw - fr, fy + fh - fr, fr, 0 * degrees, 90 * degrees);
-	cairo_arc(cr, fx + fr, fy + fh - fr, fr, 90 * degrees, 180 * degrees);
-	cairo_arc(cr, fx + fr, fy + fr, fr, 180 * degrees, 270 * degrees);
-	cairo_close_path (cr);
+	t = r * 0.552284749831;
+	cairo_new_sub_path(cr);
+	cairo_move_to(cr, lx, ty + r);
+	cairo_curve_to(cr, lx, ty + r - t, lx + r - t, ty, lx + r, ty);
+	cairo_line_to(cr, rx - r, ty);
+	cairo_curve_to(cr, rx - r + t, ty, rx, ty + r - t, rx, ty + r);
+	cairo_line_to(cr, rx, by - r);
+	if (variant == 2)
+		cairo_curve_to(cr, rx, by - r + t, rx + r - t, by, rx + r, by);
+	else
+		cairo_curve_to(cr, rx, by - r + t, rx - r + t, by, rx - r, by);
+	if (variant == 1) {
+		cairo_line_to(cr, lx - r, by);
+		cairo_curve_to(cr, lx - r + t, by, lx, by - r + t, lx, by - r);
+	}
+	else {
+		cairo_line_to(cr, lx + r, by);
+		cairo_curve_to(cr, lx + r - t, by, lx, by - r + t, lx, by - r);
+	}
+	cairo_close_path(cr);
 	cairo_set_source_rgba(cr, ((double)fillColor->r) / 255.0, ((double)fillColor->g) / 255.0, ((double)fillColor->b) / 255.0, ((double)fillColor->a) / 255.0);
 	cairo_fill_preserve (cr);
 	cairo_set_source_rgba(cr, ((double)strokeColor->r) / 255.0, ((double)strokeColor->g) / 255.0, ((double)strokeColor->b) / 255.0, ((double)strokeColor->a) / 255.0);
-	cairo_set_line_width(cr, fl);
+	cairo_set_line_width(cr, u);
 	cairo_stroke (cr);
 }
 
@@ -656,12 +666,14 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 		cairo_rectangle(maskContext, 0, 0, w, h);
 		cairo_fill(maskContext);
 	
+		cairo_save(cr);
 		cairo_get_matrix(cr, &matrix);
   		cairo_matrix_scale(&matrix, 1 / scale, 1 / scale);
 		cairo_set_matrix(cr, &matrix);
 		cairo_mask_surface(cr, maskImage, x, y);
 //  		cairo_rectangle(cr, x, y, sw, sh);
  		cairo_fill(cr);   
+		cairo_restore(cr);
   		
   		cairo_destroy(maskContext);   
   		cairo_surface_destroy(maskImage);   
