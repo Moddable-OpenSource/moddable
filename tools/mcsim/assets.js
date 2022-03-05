@@ -202,6 +202,7 @@ function buildSkins($) {
 		
 		paneHeader: new Skin({ fill:$.header.background }),
 		
+		popupButton: new Skin({ fill:$.button.background, stroke:$.button.border }),
 		popupIcons: new Skin({ texture:textures.popup, color:$.popupMenuItem.text, x:0, y:0, width:20, height:30, variants:20 }),
 		popupMenu: new Skin({ fill:$.popupMenu.background, stroke:$.popupMenu.border, left:1, right:1, top:1, bottom:1 }),
 		popupMenuItem: new Skin({ fill:$.popupMenuItem.background }),

@@ -80,28 +80,6 @@ class PreferencesColumnBehavior extends Behavior {
 				{
 					Template: PreferencesTable,
 					expanded: true,
-					name: "APPEARANCE",
-					items: [
-						{
-							Template: PopupRow,
-							name: "Colors",
-							items: [
-								{ title: "Lite", value:0 },
-								{ title: "Dark", value:1 },
-							],
-							get value() {
-								return model.appearanceTheme;
-							},
-							set value(it) {
-								model.appearanceTheme = it;
-								application.delegate("onAppearanceThemeChanged");
-							},
-						},
-					],
-				},
-				{
-					Template: PreferencesTable,
-					expanded: true,
 					name: "BREAK",
 					items: [
 						{
@@ -260,8 +238,6 @@ class PreferencesColumnBehavior extends Behavior {
 				},
 			]
 		}
-		if (system.platform == "mac")
-			preferences.items[0].items[0].items.push({ title: "Auto", value:2 });
 		preferences.items.forEach(item => column.add(new item.Template(item)));
 	}
 }

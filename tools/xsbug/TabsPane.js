@@ -40,6 +40,11 @@ import {
 	ScrollerBehavior,
 } from "behaviors";
 
+import {
+	PopupMenuBehavior,
+	PopupMenu,
+} from "piu/Buttons";
+
 class TabsPaneBehavior extends Behavior {
 	onCreate(layout, data) {
 		this.data = data;
@@ -190,11 +195,55 @@ class MachineTabBehavior extends TabBehavior {
 	}
 };
 
+class ColorsButtonBehavior extends ButtonBehavior {
+	onCreate(container) {
+		const data = {
+			button: container,
+			items: [
+				{ title:"Lite Colors", value:0 },
+				{ title:"Dark Colors", value:1 }
+			],
+		};
+		if (system.platform == "mac")
+			data.items.push({ title:"Default", value:2 });
+		data.selection = data.items.findIndex(item => item.value == model.colors);
+		super.onCreate(container, data);
+	}
+	onMenuSelected(container, index) {
+		const data = this.data;
+		if ((index >= 0) && (data.selection != index)) {
+			let item = data.items[index];
+			data.selection = index;
+			model.colors = data.items[index].value;
+			application.delegate("onColorsChanged");
+		}
+	}
+	onTap(container) {
+		application.add(new PopupMenu(this.data, { Behavior:ColorsMenuBehavior } ));
+	}
+}
+
+class ColorsMenuBehavior extends PopupMenuBehavior {
+	onFitVertically(layout, value) {
+		let data = this.data;
+		let button = data.button;
+		let container = layout.first;
+		let scroller = container.first;
+		let size = scroller.first.measure();
+		let y = button.y + button.height + 1
+		let height = Math.min(size.height, application.height - y - 20);
+		container.coordinates = { right:0, width:size.width + 30, top:y, height:height + 10 };
+		scroller.coordinates = { left:10, width:size.width + 10, top:0, height:height };
+		scroller.first.content(data.selection).first.visible = true;
+		return value;
+	}
+}
+
 export var TabsPane = Layout.template($ => ({
 	left:0, right:0, top:0, height:27, skin:skins.tabsPane, Behavior:TabsPaneBehavior,
 	contents: [
 		Scroller($, {
-			left:0, right:0, top:0, bottom:1, clip:true, active:true, Behavior:ScrollerBehavior, 
+			left:0, right:27, top:0, bottom:1, clip:true, active:true, Behavior:ScrollerBehavior, 
 			contents: [
 				Row($, {
 					left:0, width:0, top:0, bottom:0, 
@@ -202,6 +251,10 @@ export var TabsPane = Layout.template($ => ({
 					]
 				}),
 			]
+		}),
+		IconButton($, {
+			right:0, variant:13, 
+			Behavior: ColorsButtonBehavior,
 		}),
 	]
 }));

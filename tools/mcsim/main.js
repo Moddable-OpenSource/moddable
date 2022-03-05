@@ -72,6 +72,8 @@ import {
 	ButtonBehavior,
 	Button,
 	IconButton,
+	PopupMenuBehavior,
+	PopupMenu,
 } from "piu/Buttons";
 
 import { 
@@ -118,6 +120,11 @@ class ApplicationBehavior extends Behavior {
   		application.interval = 100;
 		
 		this.keys = {};
+		this.appearance = 0;
+		if (system.platform == "mac")
+			this.colors = 2;
+		else
+			this.colors = 0;
 		this.controlsCurrent = 320;
 		this.controlsStatus = true;
 		this.infoStatus = true;
@@ -158,6 +165,22 @@ class ApplicationBehavior extends Behavior {
 	}
 	onAppearanceChanged(application, which) {
 		buildAssets(which);
+		if (application.first) {
+			this.quitScreen();
+			application.replace(application.first, new MainContainer(this));
+			this.reloadDevices(application);
+			this.launchScreen();
+		}
+	}
+	onAppearanceChanged(application, which) {
+		this.appearance = which;
+		this.onColorsChanged(application);
+	}
+	onColorsChanged(application) {
+		let appearance = this.colors;
+		if (appearance == 2)
+			appearance = this.appearance;
+		buildAssets(appearance);
 		if (application.first) {
 			this.quitScreen();
 			application.replace(application.first, new MainContainer(this));
@@ -504,6 +527,8 @@ class ApplicationBehavior extends Behavior {
 			let string = system.readPreferenceString("main");
 			if (string) {
 				let preferences = JSON.parse(string);
+				if ("colors" in preferences)
+					this.colors = preferences.colors;
 				if ("controlsCurrent" in preferences)
 					this.controlsCurrent = preferences.controlsCurrent;
 				if ("controlsStatus" in preferences)
@@ -527,6 +552,7 @@ class ApplicationBehavior extends Behavior {
 		try {
 			let content;
 			let preferences = {
+				colors: this.colors,
 				controlsCurrent: this.controlsCurrent,
 				controlsStatus: this.controlsStatus,
 				infoStatus: this.infoStatus,
@@ -636,6 +662,10 @@ class ControlsMenuBehavior extends Behavior {
 // 		scroller.first.content(model.deviceIndex).first.visible = true;
 		return value;
 	}
+	onMenuSelected(row, index) {
+		if (index >= 0)
+			model.onSelectDevice(application, index);
+	}
 	onTouchEnded(layout, id, x, y, ticks) {
 		var content = layout.first.first.first;
 		if (!content.hit(x, y))
@@ -672,6 +702,50 @@ var ControlsMenuItem = Row.template($ => ({
 	]
 }));
 
+class ColorsButtonBehavior extends ButtonBehavior {
+	onCreate(container) {
+		const data = {
+			button: container,
+			items: [
+				{ title:"Lite Colors", value:0 },
+				{ title:"Dark Colors", value:1 }
+			],
+		};
+		if (system.platform == "mac")
+			data.items.push({ title:"Default", value:2 });
+		data.selection = data.items.findIndex(item => item.value == model.colors);
+		super.onCreate(container, data);
+	}
+	onMenuSelected(container, index) {
+		const data = this.data;
+		if ((index >= 0) && (data.selection != index)) {
+			let item = data.items[index];
+			data.selection = index;
+			model.colors = data.items[index].value;
+			application.delegate("onColorsChanged");
+		}
+	}
+	onTap(container) {
+		application.add(new PopupMenu(this.data, { Behavior:ColorsMenuBehavior } ));
+	}
+}
+
+class ColorsMenuBehavior extends PopupMenuBehavior {
+	onFitVertically(layout, value) {
+		let data = this.data;
+		let button = data.button;
+		let container = layout.first;
+		let scroller = container.first;
+		let size = scroller.first.measure();
+		let y = button.y + button.height + 1
+		let height = Math.min(size.height, application.height - y - 20);
+		container.coordinates = { right:0, width:size.width + 30, top:y, height:height + 10 };
+		scroller.coordinates = { left:10, width:size.width + 10, top:0, height:height };
+		scroller.first.content(data.selection).first.visible = true;
+		return value;
+	}
+}
+
 var MainContainer = Container.template($ => ({ 
 	left:0, right:0, top:0, bottom:0, 
 	contents: [
@@ -685,6 +759,10 @@ var MainContainer = Container.template($ => ({
 						button.bubble("onRotate", 90);
 					}
 				},
+			}),
+			IconButton($, {
+				variant:2, 
+				Behavior: ColorsButtonBehavior,
 			}),
 		]}), 
 		Content($, { left:0, right:0, top:26, height:1, skin:skins.paneBorder, }),

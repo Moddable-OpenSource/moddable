@@ -127,11 +127,11 @@ const darkColors = {
 	"lineBreakpoint": { "color": "#ffffff", "fill": "#7fbd3b" },
 
 	"code": { "fill": "#2a2a2a", "color": "#fffffff0" },
-	"codeComment": { "color": "#3cb878" },
-	"codeKeyword": { "color": "#77bafc" },
-	"codeLiteral": { "color": "#f26c4f" },
+	"codeComment": { "color": "#00bff3" },
+	"codeKeyword": { "color": "#f26d7d" },
+	"codeLiteral": { "color": "#fff568" },
 	"codeResult": { "fill": "#fbf4bb" },
-	"codeSelection": { "fill": "#4b4b4b" },
+	"codeSelection": { "fill": "#666e81" },
 	"error": { "color": "#262626" },
 	
 	"findMode": { "fill": [ "transparent", "transparent", "#4b4b4b", "#5b5b5b" ], "color": [ "transparent", "#e0e0e0", "#ffffff", "#e0e0e0" ] },
@@ -266,7 +266,7 @@ function buildTheme($, codeFont) {
 	// TABLES
 	skins.glyphs = new Skin({ texture:textures.glyphs, color:$.tableRow.color, x:0, y:0, width:16, height:16, variants:16 });
 	skins.tableRow = new Skin({ fill:$.tableRow.fill  });
-	styles.tableRow = new Style({ color:$.tableRow.color, horizontal:"left" });
+	styles.tableRow = new Style({ font:"normal 12px Open Sans", color:$.tableRow.color, horizontal:"left" });
 	skins.tableFooter = new Skin({ fill:$.tableHeader.fill[0], stroke:$.tableHeader.stroke, borders: { bottom:1 }  });
 	skins.tableHeader = new Skin({ fill:$.tableHeader.fill, stroke:$.tableHeader.stroke, borders: { bottom:1 } });
 	styles.tableHeader = new Style({ font:"bold", color:$.tableHeader.color, horizontal:"left" });
