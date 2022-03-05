@@ -117,7 +117,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			xsVar(0) = xsReference((*application)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onAppearanceChanged)) {
 				xsVar(1) = xsReference((*application)->reference);
-				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsInteger(0));
+				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsUndefined);
 			}
 		}
 	}

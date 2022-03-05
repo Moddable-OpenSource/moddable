@@ -85,17 +85,22 @@ struct PiuFieldStruct {
 	frame.origin.x += (*style)->margins.left;
 	frame.size.width -= (*style)->margins.left + (*style)->margins.right;
 	frame.origin.y += (*style)->margins.top;
+	
+	CTFontRef fref = (CTFontRef)(self.font);
+	CGFloat ascent = CTFontGetAscent(fref);
+	CGFloat descent = CTFontGetDescent(fref);
+	CGFloat height = ascent + descent;
 	switch ((*style)->vertical) {
 	case piuTop:
 		break;
 	case piuBottom:
-		frame.origin.y += frame.size.height - PiuFontGetHeight((*style)->font);
+		frame.origin.y += frame.size.height - height;
 		break;
 	default:
-		frame.origin.y += (frame.size.height - PiuFontGetHeight((*style)->font)) / 2;
+		frame.origin.y += (frame.size.height - height) / 2;
 		break;
 	}
-	frame.size.height = PiuFontGetHeight((*style)->font);
+	frame.size.height = height;
 	[super setFrame:frame];
 }
 @end
@@ -154,7 +159,7 @@ void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 	g = (float)(*style)->color[0].g / 255;
 	b = (float)(*style)->color[0].b / 255;
 	a = (float)(*style)->color[0].a / 255;
-   [textField setTextColor:[NSColor colorWithSRGBRed:r green:g blue:b alpha:a]];
+	[textField setTextColor:[NSColor colorWithSRGBRed:r green:g blue:b alpha:a]];	
     [(*view)->nsView addSubview:(*self)->nsClipView];
 }
 
@@ -184,8 +189,6 @@ void PiuFieldComputeStyle(PiuField* self)
 	if (chain) {
 		PiuStyle* result = PiuStyleLinkCompute(the, chain, application);
 		(*self)->computedStyle = result;
-		PiuFont* font = (*result)->font;
-		[(*self)->nsTextField setFont:(NSFont*)(*font)->fref];
 	}
 }
 
@@ -195,13 +198,13 @@ void PiuFieldDictionary(xsMachine* the, void* it)
 	xsStringValue string;
 	if (xsFindString(xsArg(1), xsID_string, &string)) 
 		(*self)->nsTextField.stringValue = [NSString stringWithUTF8String:string];
-	if (xsFindString(xsArg(1), xsID_placeholder, &string))
-// 		(*self)->nsTextField.placeholderString = [NSString stringWithUTF8String:string];
-		(*self)->nsTextField.placeholderAttributedString = 
+	if (xsFindString(xsArg(1), xsID_placeholder, &string)) {
+		(*self)->nsTextField.placeholderAttributedString =
 			[[NSAttributedString alloc] initWithString:[NSString stringWithUTF8String:string] attributes:@{ 
 				NSForegroundColorAttributeName: [NSColor grayColor],
-             	NSFontAttributeName :(*self)->nsTextField.font
+           		NSFontAttributeName: (*self)->nsTextField.font
 			}];	
+	}
 }
 
 void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot)
@@ -271,7 +274,10 @@ void PiuField_set_placeholder(xsMachine *the)
 	PiuField* self = PIU(Field, xsThis);
 	xsStringValue string = xsToString(xsArg(0));
 	(*self)->nsTextField.placeholderAttributedString = 
-		[[NSAttributedString alloc] initWithString:[NSString stringWithUTF8String:string] attributes:@{ NSForegroundColorAttributeName : [NSColor grayColor] }];	
+		[[NSAttributedString alloc] initWithString:[NSString stringWithUTF8String:string] attributes:@{ 
+			NSForegroundColorAttributeName: [NSColor grayColor],
+			NSFontAttributeName: (*self)->nsTextField.font
+		}];	
 }
 
 void PiuField_set_string(xsMachine *the)

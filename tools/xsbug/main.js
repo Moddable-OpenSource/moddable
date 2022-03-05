@@ -151,10 +151,9 @@ class ApplicationBehavior extends DebugBehavior {
 		
 		this.appearance = 0;
 		if (system.platform == "mac")
-			this.appearanceTheme = 2;
+			this.colors = 2;
 		else
-			this.appearanceTheme = 0;
-		
+			this.colors = 0;
 		this.arrangement = true;
 		this.featureDividerCurrent = 320;
 		this.featureDividerStatus = true;
@@ -212,23 +211,19 @@ class ApplicationBehavior extends DebugBehavior {
 	}
 	onAppearanceChanged(application, which) {
 		this.appearance = which;
-		this.onAppearanceThemeChanged(application);
+		this.onColorsChanged(application);
 	}
-	onAppearanceThemeChanged(application) {
-		let appearance = this.appearanceTheme;
+	onColorsChanged(application) {
+		let appearance = this.colors;
 		if (appearance == 2)
 			appearance = this.appearance;
-		buildAssets(appearance);
-		
-		globalThis.tableRowStyle = new Style(styles.tableRow);
-	
+		buildAssets(appearance);	
 		if (application.first) {
 			application.distribute("onMachineDeselected", this.currentMachine, this.currentTab);
 			application.replace(application.first, new MainContainer(this));
 			this.doOpenView();
 			application.distribute("onMachineSelected", this.currentMachine, this.currentTab);
 		}
-		
 	}
 	onDisplaying(application) {
 		application.add(new MainContainer(this));
@@ -495,8 +490,8 @@ class ApplicationBehavior extends DebugBehavior {
 			let string = system.readPreferenceString("main");
 			if (string) {
 				let preferences = JSON.parse(string);
-				if ("appearanceTheme" in preferences)
-					this.appearanceTheme = preferences.appearanceTheme;
+				if ("colors" in preferences)
+					this.colors = preferences.colors;
 				if ("arrangement" in preferences)
 					this.arrangement = preferences.arrangement;
 				if ("featureDividerCurrent" in preferences)
@@ -566,7 +561,7 @@ class ApplicationBehavior extends DebugBehavior {
 		try {
 			let content;
 			let preferences = {
-				appearanceTheme: this.appearanceTheme,
+				colors: this.colors,
 				arrangement: this.arrangement,
 				featureDividerCurrent: this.FEATURE_DIVIDER.behavior.current,
 				featureDividerStatus: this.FEATURE_DIVIDER.behavior.status,
