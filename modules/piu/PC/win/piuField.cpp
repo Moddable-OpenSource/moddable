@@ -20,20 +20,6 @@
 
 #include "piuPC.h"
 
-typedef struct PiuFieldStruct PiuFieldRecord, *PiuField;
-
-struct PiuFieldStruct {
-	PiuHandlePart;
-	PiuIdlePart;
-	PiuBehaviorPart;
-	PiuContentPart;
-	xsSlot* hint;
-	xsSlot* string;
-	PiuStyle* computedStyle;
-	HWND window;
-	HWND control;
-};
-
 static void PiuFieldBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuFieldCascade(void* it);
 static void PiuFieldComputeStyle(PiuField* self);
@@ -102,7 +88,7 @@ LRESULT CALLBACK PiuFieldProc(HWND control, UINT message, WPARAM wParam, LPARAM 
 		if ((*self)->application)
 			PiuApplicationSetFocus((*self)->application, self);
 	}
-    return DefSubclassProc(control, message, wParam, lParam);
+   return DefSubclassProc(control, message, wParam, lParam);
 }
 
 void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
@@ -111,6 +97,10 @@ void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 	xsMachine* the = (*self)->the;
 	PiuContentBind(it, application, view);
 	PiuFieldComputeStyle(self);
+	PiuSkin* skin = (*self)->skin;
+	PiuStyle* style = (*self)->computedStyle;
+
+	(*self)->solidBrush = CreateSolidBrush(RGB((*skin)->data.color.fill[0].r, (*skin)->data.color.fill[0].g, (*skin)->data.color.fill[0].b));
 	(*self)->window = CreateWindowEx(0, "PiuClipWindow", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE, 0, 0, 0, 0, (*view)->window, NULL, gInstance, (LPVOID)self);
 	(*self)->control = CreateWindowEx(0, "Edit", NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, (*self)->window, NULL, gInstance, NULL);
 	SetWindowSubclass((*self)->control, PiuFieldProc, 0, (DWORD_PTR)self);
@@ -182,8 +172,10 @@ void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = (PiuField*)it;
 	DestroyWindow((*self)->window);
+	DeleteObject((*self)->solidBrush);
 	(*self)->control = NULL;
 	(*self)->window = NULL;
+	(*self)->solidBrush = NULL;
 	(*self)->computedStyle = NULL;
 	PiuContentUnbind(it, application, view);
 }
@@ -200,8 +192,6 @@ void PiuField_create(xsMachine* the)
 	(*self)->dispatch = (PiuDispatch)&PiuFieldDispatchRecord;
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
-	
-
 	PiuFieldDictionary(the, self);
 	PiuBehaviorOnCreate(self);
 }

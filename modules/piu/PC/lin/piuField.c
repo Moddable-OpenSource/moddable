@@ -32,6 +32,7 @@ struct PiuFieldStruct {
 	PiuStyle* computedStyle;
 	GtkWidget* gtkClip;
 	GtkWidget* gtkField;
+	GtkCssProvider* gtkCssProvider;
 };
 
 static void PiuFieldBind(void* it, PiuApplication* application, PiuView* view);
@@ -70,7 +71,22 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuFieldHooks = {
 	NULL
 };
 
-static void gtk_entry_changed(GtkEditable *editable, gpointer user_data)
+static void gtk_entry_activate(GtkWidget *widget, gpointer user_data)
+{
+	PiuField* self = (PiuField*)user_data;
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(2);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onEnter)) {
+			xsVar(1) = xsReference((*self)->reference);
+			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+		}
+		xsEndHost((*self)->the);
+	}
+}
+
+static void gtk_entry_changed(GtkWidget *widget, gpointer user_data)
 {
 	PiuField* self = (PiuField*)user_data;
 	if ((*self)->behavior) {
@@ -84,6 +100,14 @@ static void gtk_entry_changed(GtkEditable *editable, gpointer user_data)
 		xsEndHost((*self)->the);
 	}
 }
+
+static gboolean gtk_entry_focused(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+	PiuField* self = (PiuField*)user_data;
+    PiuApplication* application =  (*self)->application;
+    PiuApplicationSetFocus(application, self);
+    return FALSE;
+}
                
 void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 {
@@ -91,13 +115,43 @@ void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 	xsMachine* the = (*self)->the;
 	PiuContentBind(it, application, view);
 	PiuFieldComputeStyle(self);
+	PiuSkin* skin = (*self)->skin;
 	PiuStyle* style = (*self)->computedStyle;
-	PiuFont* font = (*style)->font;
+	
+	char buffer[1024];
+	snprintf(buffer, sizeof(buffer), 
+		 "#field {\n"
+		 "   background-color: transparent;\n"
+		 "   background-image: none;\n"
+		 "   border: 0 none transparent;\n"
+		 "   box-shadow: none;\n"
+		 "   color: #%2.2x%2.2x%2.2x;\n"
+		 "   outline: transparent none 0;\n"
+		 "   margin: 0;\n"
+		 "   padding: 0px 4px 0px 4px;\n"
+		 "}\n"
+		 "#field selection {\n"
+		 "   background-color: #%2.2x%2.2x%2.2x;\n"
+		 "   color: #%2.2x%2.2x%2.2x;\n"
+		 "}\n", 
+		 (*style)->color[0].r, (*style)->color[0].g, (*style)->color[0].b, 
+		 (*skin)->data.color.fill[1].r, (*skin)->data.color.fill[1].g, (*skin)->data.color.fill[1].b, 
+		 (*style)->color[1].r, (*style)->color[1].g, (*style)->color[1].b);
+	
+	(*self)->gtkCssProvider = gtk_css_provider_new();
+	gtk_css_provider_load_from_data((*self)->gtkCssProvider, buffer, -1, NULL);
+	
+	
 	GtkFixed* gtkFixed = (*view)->gtkFixed;
 	GtkWidget* gtkField = gtk_entry_new();
+	g_signal_connect(G_OBJECT(gtkField), "activate", G_CALLBACK(gtk_entry_activate), self);
 	g_signal_connect(G_OBJECT(gtkField), "changed", G_CALLBACK(gtk_entry_changed), self);
-	gtk_entry_set_attributes(GTK_ENTRY(gtkField), (*font)->pangoAttributes);
-	gtk_style_context_add_provider(gtk_widget_get_style_context(gtkField), GTK_STYLE_PROVIDER((*view)->gtkCssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	g_signal_connect(G_OBJECT(gtkField), "focus-in-event", G_CALLBACK(gtk_entry_focused), self);
+// 	gtk_entry_set_attributes(GTK_ENTRY(gtkField), (*font)->pangoAttributes);
+	gtk_widget_set_name(GTK_WIDGET(gtkField), "field");
+	GtkStyleContext* style_context = gtk_widget_get_style_context(gtkField);
+    gtk_style_context_add_class(style_context, GTK_STYLE_CLASS_VIEW );
+	gtk_style_context_add_provider(style_context, GTK_STYLE_PROVIDER((*self)->gtkCssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 	if ((*self)->hint) {
  		xsStringValue string = PiuToString((*self)->hint);
    		gtk_entry_set_placeholder_text(GTK_ENTRY(gtkField), string);
@@ -109,8 +163,6 @@ void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 	GtkPiuClip* gtkClip = gtk_piu_clip_new((PiuContent*)self, GTK_WIDGET(gtkField));
 	gtk_container_add(GTK_CONTAINER(gtkClip), GTK_WIDGET(gtkField));
 	gtk_container_add(GTK_CONTAINER(gtkFixed), GTK_WIDGET(gtkClip));
-
-    gtk_widget_show(gtkField);
     gtk_widget_show(GTK_WIDGET(gtkClip));
 	(*self)->gtkClip = GTK_WIDGET(gtkClip);
 	(*self)->gtkField = gtkField;
@@ -170,6 +222,7 @@ void PiuFieldMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuField* self = (PiuField*)it;
+	GtkCssProvider* gtkCssProvider = (*self)->gtkCssProvider;
 	GtkWidget* gtkClip = (*self)->gtkClip;
 	GtkWidget* gtkField = (*self)->gtkField;
 	gtk_widget_destroy(gtkField);
@@ -177,6 +230,8 @@ void PiuFieldUnbind(void* it, PiuApplication* application, PiuView* view)
 	gtk_widget_destroy(gtkClip);
 	(*self)->gtkClip = NULL;
 	(*self)->computedStyle = NULL;
+	g_clear_object(&gtkCssProvider);
+	(*self)->gtkCssProvider = NULL;
 	PiuContentUnbind(it, application, view);
 }
 
@@ -232,7 +287,7 @@ void PiuField_set_string(xsMachine *the)
 	PiuField* self = PIU(Field, xsThis);
 	xsSlot* string = PiuString(xsArg(0));
 	(*self)->string = string;
-	if ((*self)->application) {
+	if ((*self)->gtkField) {
  		GtkWidget* gtkField = (*self)->gtkField;
  		xsStringValue text = PiuToString(string);
    		gtk_entry_set_text(GTK_ENTRY(gtkField), text);

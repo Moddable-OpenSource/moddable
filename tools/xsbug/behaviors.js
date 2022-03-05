@@ -35,61 +35,9 @@
  *       limitations under the License.
  */
 
-export class ButtonBehavior extends Behavior {
-	changeState(container, state) {
-		container.state = state;
-		var content = container.first;
-		while (content) {
-			content.state = state;
-			content = content.next;
-		}
-	}
-	onCreate(container, data) {
-		this.data = data;
-	}
-	onDisplaying(container) {
-		this.changeState(container, container.active ? 1 : 0);
-	}
-	onMouseEntered(container, x, y) {
-		application.cursor = cursors.arrow;
-		this.changeState(container, 2);
-	}
-	onMouseExited(container, x, y) {
-		this.changeState(container, container.active ? 1 : 0);
-	}
-	onTap(container) {
-		let name = container.name;
-		if (name)
-			container.bubble(name, this.data);
-		else
-			debugger;
-	}
-	onTouchBegan(container, id, x, y, ticks) {
-		this.changeState(container, 3);
-		container.captureTouch(id, x, y, ticks);
-	}
-	onTouchEnded(container, id, x, y, ticks) {
-		if (container.hit(x, y)) {
-			this.changeState(container, 2);
-			this.onTap(container);
-		}
-		else {
-			this.changeState(container, 1);
-		}
-	}
-	onTouchMoved(container, id, x, y, ticks) {
-		this.changeState(container, container.hit(x, y) ? 3 : 2);
-	}
-};
-
-export class ScrollerBehavior extends Behavior {
-	onMouseScrolled(scroller, dx, dy) {
-		if (Math.abs(dx) > Math.abs(dy))
-			scroller.scrollBy(-dx, 0);
-		else
-			scroller.scrollBy(0, -dy);
-	}
-};
+export { ButtonBehavior } from "piu/Buttons";
+import { ScrollerBehavior } from "piu/Scrollbars";
+export { ScrollerBehavior };
 
 const CHAR_MODE = 0;
 const LINE_MODE = 1;

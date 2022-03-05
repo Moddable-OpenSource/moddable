@@ -234,6 +234,8 @@ void PiuCodeDraw(void* it, PiuView* view, PiuRectangle area)
 		PiuViewPopColor(view);
 	}
 	{
+		int32_t selectionFrom = (*self)->from;
+		int32_t selectionTo = (*self)->to;
 		double clipLeft = area->x;
 		double clipRight = clipLeft + area->width;
 		double clipTop = area->y;
@@ -263,80 +265,106 @@ void PiuCodeDraw(void* it, PiuView* view, PiuRectangle area)
 				break;
 			default:
 				if (flag && run->count) {
-					xsStringValue start = string + offset;
 					double right = x + (fxUTF8ToUnicodeOffset(string + offset, run->count) * columnWidth);
 					if ((clipLeft < right) && (x < clipRight)) {
-						PiuCodeResult result = (PiuCodeResult)((char*)(*results) + sizeof(PiuTextBufferRecord));
-						if (result->count > 0) {
-							PiuColorRecord runColor = (*style)->color[run->color];
-							PiuColorRecord black = { 0, 0, 0, 255 };
+						PiuColorRecord runColor = (*style)->color[run->color];
+						PiuColorRecord black = { 0, 0, 0, 255 };
+						if ((*self)->variant == 1) {
 							int32_t from = offset;
 							int32_t to = offset + run->count;
-							while ((result->count > 0) && (result->to < from)) {
-								result = (PiuCodeResult)(((char*)result) + (*self)->resultsSize);
+							int32_t to0 = (to < selectionFrom) ? to : selectionFrom;
+							int32_t to1 = (to < selectionTo) ? to : selectionTo;
+							if (from < to0) {
+								PiuViewPushColor(view, &runColor);
+								PiuViewDrawStringSubPixel(view, (*self)->string, from, to0 - from, (*style)->font, x, y, 0, 0);
+								PiuViewPopColor(view);
+								x += fxUTF8ToUnicodeOffset(string + from, to0 - from) * columnWidth;
+								from = to0;
 							}
-							while ((result->count > 0) && (result->from < to)) {
-								if (from < result->from) {
-									PiuViewPushColor(view, &runColor);
-									PiuViewDrawStringSubPixel(view, (*self)->string, from, result->from - from, (*style)->font, x, y, 0, 0);
-									PiuViewPopColor(view);
-									x += fxUTF8ToUnicodeOffset(string + from, result->from - from) * columnWidth;
-									from = result->from;
-								}
-								int32_t resultTo = (result->to < to) ? result->to : to;
-								int32_t selectionFrom = (*self)->from;
-								int32_t selectionTo = (*self)->to;
-								int32_t to0 = (resultTo < selectionFrom) ? resultTo : selectionFrom;
-								int32_t to1 = (resultTo < selectionTo) ? resultTo : selectionTo;
-								
-								if (from < to0) {
-									PiuViewPushColor(view, &black);
-									PiuViewDrawStringSubPixel(view, (*self)->string, from, to0 - from, (*style)->font, x, y, 0, 0);
-									PiuViewPopColor(view);
-									x += fxUTF8ToUnicodeOffset(string + from, to0 - from) * columnWidth;
-									from = to0;
-								}
-								if (from < to1) {
-									PiuViewPushColor(view, &runColor);
-									PiuViewDrawStringSubPixel(view, (*self)->string, from, to1 - from, (*style)->font, x, y, 0, 0);
-									PiuViewPopColor(view);
-									x += fxUTF8ToUnicodeOffset(string + from, to1 - from) * columnWidth;
-									from = to1;
-								}
-								if (from < resultTo) {
-									PiuViewPushColor(view, &black);
-									PiuViewDrawStringSubPixel(view, (*self)->string, from, resultTo - from, (*style)->font, x, y, 0, 0);
-									PiuViewPopColor(view);
-									x += fxUTF8ToUnicodeOffset(string + from, resultTo - from) * columnWidth;
-									from = resultTo;
-								}
-								
-								if (result->to < to) {
-									PiuViewPushColor(view, &black);
-									PiuViewDrawStringSubPixel(view, (*self)->string, from, result->to - from, (*style)->font, x, y, 0, 0);
-									PiuViewPopColor(view);
-									x += fxUTF8ToUnicodeOffset(string + from, result->to - from) * columnWidth;
-									from = result->to;
-								}
-								else {
-									PiuViewPushColor(view, &black);
-									PiuViewDrawStringSubPixel(view, (*self)->string, from, to - from, (*style)->font, x, y, 0, 0);
-									PiuViewPopColor(view);
-									x += fxUTF8ToUnicodeOffset(string + from, to - from) * columnWidth;
-									from = to;
-								}
-								result = (PiuCodeResult)(((char*)result) + (*self)->resultsSize);
+							if (from < to1) {
+								PiuViewPushColor(view, &black);
+								PiuViewDrawStringSubPixel(view, (*self)->string, from, to1 - from, (*style)->font, x, y, 0, 0);
+								PiuViewPopColor(view);
+								x += fxUTF8ToUnicodeOffset(string + from, to1 - from) * columnWidth;
+								from = to1;
 							}
 							if (from < to) {
 								PiuViewPushColor(view, &runColor);
 								PiuViewDrawStringSubPixel(view, (*self)->string, from, to - from, (*style)->font, x, y, 0, 0);
 								PiuViewPopColor(view);
+								x += fxUTF8ToUnicodeOffset(string + from, to - from) * columnWidth;
+								from = to;
 							}
 						}
 						else {
-							PiuViewPushColor(view, &((*style)->color[run->color]));
-							PiuViewDrawStringSubPixel(view, (*self)->string, offset, run->count, (*style)->font, x, y, 0, 0);
-							PiuViewPopColor(view);
+							PiuCodeResult result = (PiuCodeResult)((char*)(*results) + sizeof(PiuTextBufferRecord));
+							if (result->count > 0) {
+								int32_t from = offset;
+								int32_t to = offset + run->count;
+								while ((result->count > 0) && (result->to < from)) {
+									result = (PiuCodeResult)(((char*)result) + (*self)->resultsSize);
+								}
+								while ((result->count > 0) && (result->from < to)) {
+									if (from < result->from) {
+										PiuViewPushColor(view, &runColor);
+										PiuViewDrawStringSubPixel(view, (*self)->string, from, result->from - from, (*style)->font, x, y, 0, 0);
+										PiuViewPopColor(view);
+										x += fxUTF8ToUnicodeOffset(string + from, result->from - from) * columnWidth;
+										from = result->from;
+									}
+									int32_t resultTo = (result->to < to) ? result->to : to;
+									int32_t to0 = (resultTo < selectionFrom) ? resultTo : selectionFrom;
+									int32_t to1 = (resultTo < selectionTo) ? resultTo : selectionTo;
+								
+									if (from < to0) {
+										PiuViewPushColor(view, &black);
+										PiuViewDrawStringSubPixel(view, (*self)->string, from, to0 - from, (*style)->font, x, y, 0, 0);
+										PiuViewPopColor(view);
+										x += fxUTF8ToUnicodeOffset(string + from, to0 - from) * columnWidth;
+										from = to0;
+									}
+									if (from < to1) {
+										PiuViewPushColor(view, &runColor);
+										PiuViewDrawStringSubPixel(view, (*self)->string, from, to1 - from, (*style)->font, x, y, 0, 0);
+										PiuViewPopColor(view);
+										x += fxUTF8ToUnicodeOffset(string + from, to1 - from) * columnWidth;
+										from = to1;
+									}
+									if (from < resultTo) {
+										PiuViewPushColor(view, &black);
+										PiuViewDrawStringSubPixel(view, (*self)->string, from, resultTo - from, (*style)->font, x, y, 0, 0);
+										PiuViewPopColor(view);
+										x += fxUTF8ToUnicodeOffset(string + from, resultTo - from) * columnWidth;
+										from = resultTo;
+									}
+								
+									if (result->to < to) {
+										PiuViewPushColor(view, &black);
+										PiuViewDrawStringSubPixel(view, (*self)->string, from, result->to - from, (*style)->font, x, y, 0, 0);
+										PiuViewPopColor(view);
+										x += fxUTF8ToUnicodeOffset(string + from, result->to - from) * columnWidth;
+										from = result->to;
+									}
+									else {
+										PiuViewPushColor(view, &black);
+										PiuViewDrawStringSubPixel(view, (*self)->string, from, to - from, (*style)->font, x, y, 0, 0);
+										PiuViewPopColor(view);
+										x += fxUTF8ToUnicodeOffset(string + from, to - from) * columnWidth;
+										from = to;
+									}
+									result = (PiuCodeResult)(((char*)result) + (*self)->resultsSize);
+								}
+								if (from < to) {
+									PiuViewPushColor(view, &runColor);
+									PiuViewDrawStringSubPixel(view, (*self)->string, from, to - from, (*style)->font, x, y, 0, 0);
+									PiuViewPopColor(view);
+								}
+							}
+							else {
+								PiuViewPushColor(view, &((*style)->color[run->color]));
+								PiuViewDrawStringSubPixel(view, (*self)->string, offset, run->count, (*style)->font, x, y, 0, 0);
+								PiuViewPopColor(view);
+							}
 						}
 					}
 					x = right;

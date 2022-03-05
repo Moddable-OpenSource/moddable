@@ -672,21 +672,44 @@ void PiuViewDictionary(xsMachine* the, void* it)
 	}
 }
 
-void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension lineWidth, PiuColor fillColor, PiuColor strokeColor)
+void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor)
 {
 	if ((w <= 0) || (h <= 0)) return;
-	CGFloat fx = x, fy = y, fw = w, fh = h, fradius = radius, flineWidth = lineWidth;
-	
-	if (flineWidth > 0) {
-		CGFloat delta = flineWidth / 2;
-		fx += delta;
-		fy += delta;
-		fw -= lineWidth;
-		fh -= lineWidth;
-		fradius -= delta;
+	CGFloat lx = x, ty = y, rx = x + w, by = y + h, r = radius, t, u = border;
+	if (variant == 1)
+		lx += r;
+	else if (variant == 2)
+		rx -= r;
+	if (u > 0) {
+		CGFloat delta = u / 2;
+		lx += delta;
+		ty += delta;
+		rx -= delta;
+		by -= delta;
+		r -= delta;
 	}
-	NSRect rect = NSMakeRect(fx, fy, fw, fh);
-	NSBezierPath* path = [NSBezierPath bezierPathWithRoundedRect:rect xRadius:fradius yRadius:fradius];
+	t = r * 0.552284749831;
+		
+	
+	NSBezierPath* path = [NSBezierPath bezierPath];
+	[path moveToPoint:NSMakePoint(lx, ty + r)];
+	[path curveToPoint:NSMakePoint(lx + r, ty) controlPoint1:NSMakePoint(lx, ty + r - t) controlPoint2:NSMakePoint(lx + r - t, ty)];
+	[path lineToPoint:NSMakePoint(rx - r, ty)];
+	[path curveToPoint:NSMakePoint(rx, ty + r) controlPoint1:NSMakePoint(rx - r + t, ty) controlPoint2:NSMakePoint(rx, ty + r - t)];
+	[path lineToPoint:NSMakePoint(rx, by - r)];
+	if (variant == 2)
+		[path curveToPoint:NSMakePoint(rx + r, by) controlPoint1:NSMakePoint(rx, by - r + t) controlPoint2:NSMakePoint(rx + r - t, by)];
+	else
+		[path curveToPoint:NSMakePoint(rx - r, by) controlPoint1:NSMakePoint(rx, by - r + t) controlPoint2:NSMakePoint(rx - r + t, by)];
+	if (variant == 1) {
+		[path lineToPoint:NSMakePoint(lx - r, by)];
+		[path curveToPoint:NSMakePoint(lx, by - r) controlPoint1:NSMakePoint(lx - r + t, by) controlPoint2:NSMakePoint(lx, by - r + t)];
+	}
+	else {
+		[path lineToPoint:NSMakePoint(lx + r, by)];
+		[path curveToPoint:NSMakePoint(lx, by - r) controlPoint1:NSMakePoint(lx + r - t, by) controlPoint2:NSMakePoint(lx, by - r + t)];
+	}
+	[path closePath];
 	if (fillColor->a) {
 		CGFloat r, g, b, a;
 		r = (float)fillColor->r / 255;
@@ -696,14 +719,14 @@ void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, Pi
     	[[NSColor colorWithSRGBRed:r green:g blue:b alpha:a] set];
 		[path fill];
 	}
-	if ((lineWidth > 0) && (strokeColor->a)) {
+	if ((border > 0) && (strokeColor->a)) {
 		CGFloat r, g, b, a;
 		r = (float)strokeColor->r / 255;
 		g = (float)strokeColor->g / 255;
 		b = (float)strokeColor->b / 255;
 		a = (float)strokeColor->a / 255;
     	[[NSColor colorWithSRGBRed:r green:g blue:b alpha:a] set];
-    	path.lineWidth = flineWidth;
+    	path.lineWidth = u;
 		[path stroke];
 	}
 }

@@ -647,7 +647,7 @@ var ResultRow = Row.template(function($) { return {
 	Behavior: ResultRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + 40 }),
-		Code($, { left:0, skin:skins.resultLabel, style:styles.resultLabel, string:$.string, active:false }),
+		Code($, { left:0, skin:skins.resultLabel, style:styles.resultLabel, string:$.string, active:false, variant:1 }),
 	],
 }});
 

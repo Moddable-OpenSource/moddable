@@ -866,17 +866,18 @@ var Test262HomeHeader = Row.template(function($) { return {
 			contents: [
 				Field($, {
 					anchor:"SELECT_FOCUS",
-					left:0, right:0, top:0, bottom:0,
+					left:1, right:1, top:1, bottom:1,
 					clip:true,
 					active:true,
-					style:styles.findLabel,
+					skin:skins.field,
+					style:styles.field,
 					placeholder:"SELECT",
 					string:$.name,
 					Behavior: Test262HomeFieldBehavior,
 				}),
 			],
 		}),
-		Content($, { width:3 }),
+		Content($, { width:26 }),
 	],
 }});
 

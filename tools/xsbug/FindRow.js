@@ -104,10 +104,11 @@ export var FindField = Row.template($ => ({
 	contents: [
 		Field($, {
 			anchor:"FIND_FOCUS",
-			left:0, right:0, top:0, bottom:0,
+			left:1, right:1, top:1, bottom:1,
 			clip:true,
 			active:true,
-			style:styles.findLabel,
+			skin:skins.field,
+			style:styles.field,
 			placeholder:$.findHint,
 			Behavior: class extends Behavior {
 				onCreate(field, data) {
@@ -120,8 +121,8 @@ export var FindField = Row.template($ => ({
 				}
 				onSave(field) {
 					var data = this.data;
-					field.placeholder = "";
-					field.string = "";
+// 					field.placeholder = "";
+// 					field.string = "";
 					data.FIND_FOCUS = null;
 				}
 				onRestore(field) {
