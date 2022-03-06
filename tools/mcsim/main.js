@@ -570,7 +570,7 @@ class ApplicationBehavior extends Behavior {
 
 class HeaderBehavior extends Behavior {	
 	onDeviceSelected(row, device) {
-		const glyph = row.first;
+		const glyph = row.first.first.first.next;
 		const label = glyph.next;
 		label.string = device.title;
 		if (model.devices.length > 0) {
@@ -640,15 +640,35 @@ class FooterBehavior extends Behavior {
 	}
 };
 
-class ControlsMenuBehavior extends Behavior {	
-	onClose(layout, index) {
-		let data = this.data;
-		application.remove(application.last);
-		data.button.delegate("onMenuSelected", index);
+class ControlsButtonBehavior extends ButtonBehavior {
+	changeState(container, state) {
+		var content = container.first
+		content.state = state;
+		content = content.next.first;
+		while (content) {
+			content.state = state;
+			content = content.next;
+		}
 	}
-	onCreate(layout, data) {
-		this.data = data;
+	onDeviceSelected(container, device) {
+		container.first.next.first.next.string = device.title;
+		this.changeState(container, model.devices.length > 0 ? 1 : 0);
 	}
+	onMenuSelected(row, index) {
+		if (index >= 0)
+			model.onSelectDevice(application, this.data.items[index].value);
+	}
+	onTap(container) {
+		this.data = {
+			button: container,
+			items: model.devices.map((device, index) => ({ title: device.title, value:index })),
+		};
+		this.data.items.splice(model.deviceIndex, 1);
+		application.add(new PopupMenu(this.data, { Behavior:ControlsMenuBehavior } ));
+	}
+}
+	
+class ControlsMenuBehavior extends PopupMenuBehavior {	
 	onFitVertically(layout, value) {
 		let data = this.data;
 		let button = data.button;
@@ -657,50 +677,11 @@ class ControlsMenuBehavior extends Behavior {
 		let size = scroller.first.measure();
 		let y = button.y + button.height + 1
 		let height = Math.min(size.height, application.height - y - 20);
-		container.coordinates = { left:button.x, width:size.width + 20, top:y, height:height + 10 }
-		scroller.coordinates = { left:10, width:size.width, top:0, height:height }
-// 		scroller.first.content(model.deviceIndex).first.visible = true;
+		container.coordinates = { left:0, width:size.width + 30, top:y, height:height + 10 }
+		scroller.coordinates = { left:10, width:size.width + 10, top:0, height:height }
 		return value;
 	}
-	onMenuSelected(row, index) {
-		if (index >= 0)
-			model.onSelectDevice(application, index);
-	}
-	onTouchEnded(layout, id, x, y, ticks) {
-		var content = layout.first.first.first;
-		if (!content.hit(x, y))
-			this.onClose(layout, -1);
-	}
 };
-
-class ControlsMenuItemBehavior extends ButtonBehavior {
-	onTap(item) {
-		item.bubble("onClose", this.data.index);
-	}
-}
-
-var ControlsMenu = Layout.template($ => ({
-	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
-	Behavior: ControlsMenuBehavior,
-	contents: [
-		Container($, { skin:skins.popupMenuShadow, contents:[
-			Scroller($, { clip:true, active:true, skin:skins.popupMenu, contents:[
-				Column($, { left:0, right:0, top:0, 
-					contents: $.items.map($$ => new ControlsMenuItem($$)),
-				}),
-			]}),
-		]}),
-	],
-}));
-
-var ControlsMenuItem = Row.template($ => ({
-	left:0, right:0, height:30, skin:skins.popupMenuItem, active:true,
-	Behavior:ControlsMenuItemBehavior,
-	contents: [
-		Content($, { width:20, height:30, skin:skins.popupIcons, variant:1, visible:false }),
-		Label($, {left:0, right:20, height:30, style:styles.popupMenuItem, string:$.title }),
-	]
-}));
 
 class ColorsButtonBehavior extends ButtonBehavior {
 	onCreate(container) {
@@ -749,9 +730,22 @@ class ColorsMenuBehavior extends PopupMenuBehavior {
 var MainContainer = Container.template($ => ({ 
 	left:0, right:0, top:0, bottom:0, 
 	contents: [
-		Row($, { left:0, right:0, top:0, height:26, skin:skins.paneHeader, active:true, Behavior:HeaderBehavior, contents: [
-			Content($, { width:30, top:-2, height:30, skin:skins.icons, variant:0 }),
-			Label($, { left:0, right:0, style:styles.paneHeader, }),
+		Row($, { left:0, right:0, top:0, height:26, skin:skins.paneHeader, contents: [
+			Container($, {
+				left:0, top:0, bottom:0, active:true, Behavior:ControlsButtonBehavior,
+				contents: [
+					RoundContent($, { left:2, right:2, top:2, bottom:2, radius:4, skin:skins.iconButton }),
+					Row($, {
+						left:0, top:0, bottom:0,
+						contents: [
+							Content($, { width:30, height:30, skin:skins.icons, variant:0 }),
+							Label($, { left:0, top:0, bottom:0, style:styles.iconButton, }),
+							Content($, { width:10, height:30 }),
+						]
+					}),
+				]
+			}),
+			Content($, { left:0, right:0 }),
 			IconButton($, {
 				variant:1, 
 				Behavior: class extends ButtonBehavior {
