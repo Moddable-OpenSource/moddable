@@ -69,6 +69,8 @@ import {
 } from "piu/Scrollbars";
 
 import {
+	ProgressBarBehavior,
+	ProgressBar,
 	HorizontalSliderBehavior,
 	HorizontalSlider,
 	HorizontalLogSliderBehavior,
@@ -217,6 +219,40 @@ export var PopupRow = Row.template(function($) { return {
 				}
 			}
 		}),
+	],
+}});
+
+export var ProgressRow = Row.template(function($) { return {
+	left:0, right:0, height:30,
+	contents: [
+		Label($, { width:120, style:styles.controlName, string:$.label }),
+		ProgressBar($, { 
+			width:160,
+			Behavior: class extends ProgressBarBehavior {
+				activate(container, active) {
+					if (this.data.active != active) {
+						this.data.active = container.active = active;
+						this.onDataChanged(container);
+					}
+				}
+				onDisplaying(container) {
+					let data = this.data;
+					if (data.active === undefined)
+						data.active = true;
+					else
+						container.active = data.active;
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+					super.onDisplaying(container);
+				}
+				onDataChanged(container) {
+					super.onDataChanged(container);
+					let data = this.data;
+					container.next.string = data.value + data.unit;
+				}
+			},
+		}),
+		Label($, { left:0, right:0, style:styles.controlValue, string:$.value + $.unit }),
 	],
 }});
 
@@ -418,9 +454,9 @@ export var TimerRow = Row.template(function($) { return {
 	contents: [
 		Label($, { width:120, style:styles.controlName, string:$.label }),
 		Container($, { 
-			width:160, height:10, skin:skins.timer,
+			width:160, height:10, skin:skins.progressBar, state:1,
 			contents: [
-				Content($, { width:0, right:0, top:0, bottom:0, skin:skins.timer, state:1 }),
+				Content($, { width:0, right:0, top:0, bottom:0, skin:skins.progressBar, state:3 }),
 			],
 		}),
 		Label($, { left:0, right:0, style:styles.controlValue }),

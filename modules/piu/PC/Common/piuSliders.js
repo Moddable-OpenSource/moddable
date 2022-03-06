@@ -20,6 +20,43 @@
 
 // BEHAVIORS
 
+export class ProgressBarBehavior extends Behavior {
+	getMax(container) {
+		return this.data.max;
+	}
+	getMin(container) {
+		return this.data.min;
+	}
+	getValue(container) {
+		return this.data.value;
+	}
+	onAdapt(container) {
+		this.onLayoutChanged(container);
+	}
+	onCreate(container, data) {
+		this.data = data;
+	}
+	onDataChanged(container) {
+		let active = container.active;
+		var bar = container.first;
+		var progress = bar.first;
+		bar.state = active ? 1 : 0;
+		progress.state = active ? 3 : 0;
+		this.onLayoutChanged(container);
+	}
+	onDisplaying(container) {
+		this.onDataChanged(container);
+	}
+	onLayoutChanged(container) {
+		var bar = container.first;
+		var progress = bar.first;
+		var min = this.getMin(container);
+		var max = this.getMax(container);
+		var value = this.getValue(container);
+		progress.width = Math.round(((value - min) * bar.width) / (max - min));
+	}
+}
+
 class SliderBehavior extends Behavior {
 	changeState(container, state) {
 		container.last.state = state;
@@ -182,6 +219,18 @@ export class VerticalLogSliderBehavior extends VerticalSliderBehavior {
 
 // TEMPLATES
 
+export var ProgressBar = Container.template(($, it) => ({
+	height:30, active:true, Behavior:ProgressBarBehavior,
+	contents:[
+		Container($, { 
+			left:5, right:5, height:10, skin:skins.progressBar, state:1,
+			contents: [
+				Content($, { left:0, width:0, top:0, bottom:0, skin:skins.progressBar, state:3 }),
+			],
+		}),
+	]
+}));
+
 export var HorizontalSlider = Container.template(($, it) => ({
 	height:30, active:true, Behavior:HorizontalSliderBehavior,
 	contents:[
@@ -192,7 +241,7 @@ export var HorizontalSlider = Container.template(($, it) => ({
 }));
 
 export var HorizontalLogSlider = Container.template(($, it) => ({
-	active:true, Behavior:HorizontalLogSliderBehavior,
+	height:30, active:true, Behavior:HorizontalLogSliderBehavior,
 	contents:[
 		RoundContent($, { left:11, right:11, top:11, height:8, border:1, radius:4, skin:skins.sliderBar }),
 		RoundContent($, { left:11, width:0, top:11, height:8, border:1, radius:4, skin:skins.sliderBar }),
@@ -201,7 +250,7 @@ export var HorizontalLogSlider = Container.template(($, it) => ({
 }));
 
 export var VerticalSlider = Container.template(($, it) => ({
-	active:true, Behavior:VerticalSliderBehavior,
+	width:30, active:true, Behavior:VerticalSliderBehavior,
 	contents:[
 		RoundContent($, { left:11, width:8, top:11, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
 		RoundContent($, { left:11, width:8, height:0, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
@@ -210,7 +259,7 @@ export var VerticalSlider = Container.template(($, it) => ({
 }));
 
 export var VerticalLogSlider = Container.template(($, it) => ({
-	active:true, Behavior:VerticalLogSliderBehavior,
+	width:30, active:true, Behavior:VerticalLogSliderBehavior,
 	contents:[
 		RoundContent($, { left:11, width:8, top:11, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
 		RoundContent($, { left:11, width:8, height:0, bottom:11, border:1, radius:4, skin:skins.sliderBar }),
