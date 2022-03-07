@@ -18,6 +18,8 @@ An HID peripheral must describe its own input capabilities to the BLE central it
  - a standard 101 English language keyboard with basic ASCII characters and 8 modifiers
  - a fixed set of 8 "Consumer Device" media controls
 
+The implemented HID Report Descriptor is provided for reference at the end of this document.
+
 ## BLE HID Host API 
 
 ### Host Events 
@@ -126,4 +128,63 @@ Send a quick tap of the `Mute` HID Consumer Device media key to the BLE Central:
 
 ```javascript
 application.delegate("doKeyTap", {hidCode: HIDKEYS.MUTE.HID});
+```
+
+## HID Report Descriptor 
+
+Experienced HID developers may want to review the HID Report Descriptor used by the BLE HID Host. The report follows (annotations courtesy of [https://eleccelerator.com/usbdescreqparser/](https://eleccelerator.com/usbdescreqparser/)):
+
+```c
+0x05, 0x01,        // Usage Page (Generic Desktop Controls)
+0x09, 0x06,        // Usage (Keyboard)
+0xA1, 0x01,        // Collection (Application)
+0x85, 0x01,        //   Report ID (1)
+0x05, 0x07,        //   Usage Page (Keyboard/Keypad)
+0x19, 0xE0,        //   Usage Minimum (0xE0)
+0x29, 0xE7,        //   Usage Maximum (0xE7)
+0x15, 0x00,        //   Logical Minimum (0)
+0x25, 0x01,        //   Logical Maximum (1)
+0x75, 0x01,        //   Report Size (1)
+0x95, 0x08,        //   Report Count (8)
+0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+0x95, 0x01,        //   Report Count (1)
+0x75, 0x08,        //   Report Size (8)
+0x81, 0x01,        //   Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+0x95, 0x05,        //   Report Count (5)
+0x75, 0x01,        //   Report Size (1)
+0x05, 0x08,        //   Usage Page (LEDs)
+0x19, 0x01,        //   Usage Minimum (Num Lock)
+0x29, 0x05,        //   Usage Maximum (Kana)
+0x91, 0x02,        //   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+0x95, 0x01,        //   Report Count (1)
+0x75, 0x03,        //   Report Size (3)
+0x91, 0x01,        //   Output (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+0x95, 0x06,        //   Report Count (6)
+0x75, 0x08,        //   Report Size (8)
+0x15, 0x00,        //   Logical Minimum (0)
+0x25, 0x65,        //   Logical Maximum (101)
+0x05, 0x07,        //   Usage Page (Keyboard/Keypad)
+0x19, 0x00,        //   Usage Minimum (0x00)
+0x29, 0x65,        //   Usage Maximum (0x65)
+0x81, 0x00,        //   Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+0xC0,              // End Collection
+0x05, 0x0C,        // Usage Page (Consumer)
+0x09, 0x01,        // Usage (Consumer Control)
+0xA1, 0x01,        // Collection (Application)
+0x85, 0x02,        //   Report ID (2)
+0x05, 0x0C,        //   Usage Page (Consumer)
+0x15, 0x00,        //   Logical Minimum (0)
+0x25, 0x01,        //   Logical Maximum (1)
+0x75, 0x01,        //   Report Size (1)
+0x95, 0x08,        //   Report Count (8)
+0x09, 0xE9,        //   Usage (Volume Increment)
+0x09, 0xEA,        //   Usage (Volume Decrement)
+0x09, 0xE2,        //   Usage (Mute)
+0x09, 0xB6,        //   Usage (Previous Track)
+0x09, 0xB5,        //   Usage (Next Track)
+0x09, 0xB0,        //   Usage (Play)
+0x09, 0xCD,        //   Usage (Play/Pause)
+0x09, 0xB9,        //   Usage (Shuffle)
+0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+0xC0,              // End Collection
 ```
