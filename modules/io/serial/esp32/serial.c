@@ -173,7 +173,7 @@ void xs_serial_constructor(xsMachine *the)
 		serial->the = the;
 
 		// store callbacks & configure interrupts
-		err = uart_isr_register(uart, serial_isr, serial, 0, NULL);
+		err = esp_intr_alloc(uart_periph_signal[uart].irq, 0, serial_isr, serial, NULL);
 		if (err)
 			xsUnknownError("uart_isr_register failed");
 
