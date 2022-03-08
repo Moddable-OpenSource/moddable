@@ -246,7 +246,7 @@ function buildTheme($, codeFont) {
 	styles.code = new Style({ font:codeFont, horizontal:"left", left:8, right:8, color:[$.code.color, $.codeKeyword.color, $.codeLiteral.color, $.codeComment.color] });
 	
 	skins.noCode = new Skin({ fill:$.tableRow.fill});
-	skins.logo = new Skin({ texture:textures.logo, x:0, y:0, width:80, height:80 });
+	skins.logo = new Skin({ texture:textures.logo, color:$.divider.fill, x:0, y:0, width:80, height:80 });
 	styles.error = new Style({ color:$.error.color });
 
 	// FIND SEARCH
