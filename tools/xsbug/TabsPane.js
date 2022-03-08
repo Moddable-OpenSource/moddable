@@ -36,22 +36,14 @@
  */
 
 import {
-	tabBreakpointSkin,
-	tabBreakpointStyle,
-	tabBubbleSkin,
-	tabBubbleStyle,
-	tabBrokenSkin,
-	tabSkin,
-	tabStyle,
-	tabTest262Style,
-	tabsPaneSkin,
-	buttonsSkin,
-} from "assets";
-
-import {
 	ButtonBehavior,
 	ScrollerBehavior,
 } from "behaviors";
+
+import {
+	PopupMenuBehavior,
+	PopupMenu,
+} from "piu/Buttons";
 
 class TabsPaneBehavior extends Behavior {
 	onCreate(layout, data) {
@@ -75,7 +67,7 @@ class TabsPaneBehavior extends Behavior {
 	onMeasureHorizontally(layout, width) {
 		let scroller = layout.first;
 		let row = scroller.first;
-		let sum = this.data.machines.reduce((sum, machine) => sum + tabStyle.measure(machine.title).width, 62);
+		let sum = this.data.machines.reduce((sum, machine) => sum + styles.tab.measure(machine.title).width, 62);
 		row.width = Math.max(sum, application.width);
 		return width;
 	}
@@ -169,6 +161,9 @@ class Test262TabBehavior extends TabBehavior {
 };
 
 class MachineTabBehavior extends TabBehavior {
+	changeState(container, state) {
+		container.state = container.first.last.state = state;
+	}
 	isSelected(container) {
 		return model.currentMachine == this.machine ;
 	}
@@ -200,11 +195,55 @@ class MachineTabBehavior extends TabBehavior {
 	}
 };
 
+class ColorsButtonBehavior extends ButtonBehavior {
+	onCreate(container) {
+		const data = {
+			button: container,
+			items: [
+				{ title:"Lite Colors", value:0 },
+				{ title:"Dark Colors", value:1 }
+			],
+		};
+		if (system.platform == "mac")
+			data.items.push({ title:"Default", value:2 });
+		data.selection = data.items.findIndex(item => item.value == model.colors);
+		super.onCreate(container, data);
+	}
+	onMenuSelected(container, index) {
+		const data = this.data;
+		if ((index >= 0) && (data.selection != index)) {
+			let item = data.items[index];
+			data.selection = index;
+			model.colors = data.items[index].value;
+			application.delegate("onColorsChanged");
+		}
+	}
+	onTap(container) {
+		application.add(new PopupMenu(this.data, { Behavior:ColorsMenuBehavior } ));
+	}
+}
+
+class ColorsMenuBehavior extends PopupMenuBehavior {
+	onFitVertically(layout, value) {
+		let data = this.data;
+		let button = data.button;
+		let container = layout.first;
+		let scroller = container.first;
+		let size = scroller.first.measure();
+		let y = button.y + button.height + 1
+		let height = Math.min(size.height, application.height - y - 20);
+		container.coordinates = { right:0, width:size.width + 30, top:y, height:height + 10 };
+		scroller.coordinates = { left:10, width:size.width + 10, top:0, height:height };
+		scroller.first.content(data.selection).first.visible = true;
+		return value;
+	}
+}
+
 export var TabsPane = Layout.template($ => ({
-	left:0, right:0, top:0, height:27, skin:tabsPaneSkin, Behavior:TabsPaneBehavior,
+	left:0, right:0, top:0, height:27, skin:skins.tabsPane, Behavior:TabsPaneBehavior,
 	contents: [
 		Scroller($, {
-			left:0, right:0, top:0, bottom:1, clip:true, active:true, Behavior:ScrollerBehavior, 
+			left:0, right:27, top:0, bottom:1, clip:true, active:true, Behavior:ScrollerBehavior, 
 			contents: [
 				Row($, {
 					left:0, width:0, top:0, bottom:0, 
@@ -213,14 +252,19 @@ export var TabsPane = Layout.template($ => ({
 				}),
 			]
 		}),
+		IconButton($, {
+			right:0, variant:13, 
+			Behavior: ColorsButtonBehavior,
+		}),
 	]
 }));
 
 var BreakpointsTab = Container.template($ => ({
-	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:BreakpointsTabBehavior,
+	width:52, top:0, bottom:0, skin:skins.tab, active:true, Behavior:BreakpointsTabBehavior,
 	contents: [
+		Content($, { left:5, skin:skins.lineBreakpoint, state:1 }),
 		Label($, { 
-			left:5, right:5, height:16, skin:tabBreakpointSkin, style:tabBreakpointStyle,
+			left:5, right:5, height:16, style:styles.tabBreakpoint,
 			Behavior: class extends Behavior {
 				onCreate(label) {
 					this.onBreakpointsChanged(label);
@@ -234,10 +278,10 @@ var BreakpointsTab = Container.template($ => ({
 }));
 
 var BubblesTab = Container.template($ => ({
-	width:52, top:0, bottom:0, skin:tabSkin, active:true, Behavior:BubblesTabBehavior,
+	width:52, top:0, bottom:0, skin:skins.tab, active:true, Behavior:BubblesTabBehavior,
 	contents: [
 		Label($, { 
-			left:2, right:5, height:16, skin:tabBubbleSkin, style:tabBubbleStyle,
+			left:2, right:5, height:16, skin:skins.tabBubble, style:styles.tabBubble,
 			Behavior: class extends Behavior {
 				onCreate(label) {
 					this.onBubblesChanged(label);
@@ -251,29 +295,39 @@ var BubblesTab = Container.template($ => ({
 }));
 
 var SerialTab = Container.template($ => ({
-	top:0, bottom:0, skin:tabSkin, active:true, Behavior:SerialTabBehavior,
-	contents: [
-		Label($, { top:0, bottom:0, style:tabTest262Style, string:"SERIAL" }),
-	],
-}));
-
-var Test262Tab = Container.template($ => ({
-	top:0, bottom:0, skin:tabSkin, active:true, Behavior:Test262TabBehavior,
-	contents: [
-		Label($, { top:0, bottom:0, style:tabTest262Style, string:"TEST262" }),
-	],
-}));
-
-var MachineTab = Container.template($ => ({
-	top:0, bottom:0, skin:tabSkin, active:true, Behavior:MachineTabBehavior,
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:SerialTabBehavior,
 	contents: [
 		Container($, { 
 			top:0, bottom:0,
 			contents: [
-				Content($, { left:3, width:20, visible:$.broken, skin:tabBrokenSkin, }),
-				Label($, { top:0, bottom:0, style:tabStyle, string:$.title }),
+				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"SERIAL" }),
 			],
 		}),
-		Content($, { left:0, width:26, active:true, visible:false, skin:buttonsSkin, variant:6, state:1, Behavior:ButtonBehavior, name:"onCloseTab" }),
+	],
+}));
+
+var Test262Tab = Container.template($ => ({
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:Test262TabBehavior,
+	contents: [
+		Container($, { 
+			top:0, bottom:0,
+			contents: [
+				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"TEST262" }),
+			],
+		}),
+	],
+}));
+
+var MachineTab = Container.template($ => ({
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:MachineTabBehavior,
+	contents: [
+		Container($, { 
+			top:0, bottom:0,
+			contents: [
+				Content($, { left:6, visible:$.broken, skin:skins.lineCall, state:1 }),
+				Label($, { top:0, bottom:0, style:styles.tab, string:$.title }),
+			],
+		}),
+		IconButton($, { left:0, width:26, active:true, visible:false, variant:6, state:1, Behavior:ButtonBehavior, name:"onCloseTab" }),
 	],
 }));

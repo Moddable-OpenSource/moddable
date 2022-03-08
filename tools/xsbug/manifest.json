@@ -43,6 +43,7 @@
 	},
 	"preload": [
 		"piu/All",
+		"piu/Buttons",
 		"piu/PC",
 		"io/serial",
 		"timer",

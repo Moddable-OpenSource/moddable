@@ -433,6 +433,15 @@ LRESULT CALLBACK PiuClipWindowProc(HWND window, UINT message, WPARAM wParam, LPA
 		}
 		return TRUE;
 	} break;
+	case WM_CTLCOLOREDIT: {
+		PiuField* self = (PiuField*)GetWindowLongPtr(window, 0);
+		PiuSkin* skin = (*self)->skin;
+		PiuStyle* style = (*self)->computedStyle;
+		SetBkMode((HDC)wParam,OPAQUE);
+		SetBkColor((HDC)wParam, RGB((*skin)->data.color.fill[0].r, (*skin)->data.color.fill[0].g, (*skin)->data.color.fill[0].b));
+		SetTextColor((HDC)wParam, RGB((*style)->color[0].r, (*style)->color[0].g, (*style)->color[0].b));
+		return (LRESULT)((*self)->solidBrush);
+	} break;
 	default:
 		return DefWindowProc(window, message, wParam, lParam);
 	}
@@ -598,6 +607,8 @@ void PiuViewCreate(xsMachine* the)
 	if (xsFindResult(xsArg(1), xsID_window))
 		title = xsToString(xsGet(xsResult, xsID_title));
 	(*self)->acceleratorTable = CreateAcceleratorTable((LPACCEL)accelerators, acceleratorsCount);
+	(*self)->colorMatrix = new ColorMatrix();
+	(*self)->imageAttributes = new ImageAttributes();
 	(*self)->solidBrush = new SolidBrush(Color(255, 0, 0, 0));
 	(*self)->window = CreateWindowEx(WS_EX_COMPOSITED | WS_EX_LAYERED, "PiuWindow", title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 
 		NULL, menuBar, gInstance, (LPVOID)self);
@@ -615,6 +626,51 @@ void PiuViewDelete(void* it)
 void PiuViewDictionary(xsMachine* the, void* it)
 {
 	
+}
+
+void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor)
+{
+	Graphics* graphics = (*self)->graphics;
+ 	graphics->SetSmoothingMode(SmoothingModeAntiAlias);
+	REAL lx = (REAL)x, ty = (REAL)y, rx = lx + (REAL)w, by = ty + (REAL)h, r = (REAL)radius, t, u = (REAL)border;
+// 	if (r > fw / 2)
+// 		r = fw / 2;
+// 	if (r > fh / 2)
+// 		r = fh / 2;
+// 	
+	if (variant == 1)
+		lx += r;
+	else if (variant == 2)
+		rx -= r;
+	if (u > 0) {
+		REAL delta = u / 2;
+		lx += delta;
+		ty += delta;
+		rx -= delta;
+		by -= delta;
+		r -= delta;
+	}
+	t = r * 0.552284749831;
+	GraphicsPath path;
+	path.AddBezier(lx, ty + r, lx, ty + r - t, lx + r - t, ty, lx + r, ty);
+	path.AddBezier(rx - r, ty, rx - r + t, ty, rx, ty + r - t, rx, ty + r);
+	if (variant == 2)
+		path.AddBezier(rx, by - r, rx, by - r + t, rx + r - t, by, rx + r, by);
+	else
+		path.AddBezier(rx, by - r, rx, by - r + t, rx - r + t, by, rx - r, by);
+	if (variant == 1)
+		path.AddBezier(lx - r, by, lx - r + t, by, lx, by - r + t, lx, by - r);
+	else
+		path.AddBezier(lx + r, by, lx + r - t, by, lx, by - r + t, lx, by - r);
+    path.CloseFigure();
+	if (fillColor->a) {
+		(*self)->solidBrush->SetColor(Color(fillColor->a, fillColor->r, fillColor->g, fillColor->b));
+		graphics->FillPath((*self)->solidBrush, &path);
+	}
+	if ((border > 0) && (strokeColor->a)) {
+		Pen pen(Color(strokeColor->a, strokeColor->r, strokeColor->g, strokeColor->b), u);
+		graphics->DrawPath(&pen, &path);
+	}
 }
 
 void PiuViewDrawString(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
@@ -667,12 +723,19 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 	REAL scale = (REAL)(*texture)->scale;
 	RectF source(scale * sx, scale * sy, scale * sw, scale * sh);
 	RectF destination((REAL)x, (REAL)y, (REAL)sw, (REAL)sh);
-	graphics->DrawImage((*texture)->image, destination, source, UnitPixel, NULL);
+	if ((*self)->filtered) {
+		if ((*self)->transparent) return;
+		graphics->DrawImage((*texture)->image, destination, source, UnitPixel, (*self)->imageAttributes);
+	}
+	else {
+		graphics->DrawImage((*texture)->image, destination, source, UnitPixel, NULL);
+	}
 }
 
 void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
 {
 	if ((w <= 0) || (h <= 0)) return;
+	if ((*self)->transparent) return;
 	Graphics* graphics = (*self)->graphics;
 	graphics->FillRectangle((*self)->solidBrush, x, y, w, h);
 }
@@ -778,6 +841,7 @@ void PiuViewPopColor(PiuView* self)
 
 void PiuViewPopColorFilter(PiuView* self)
 {
+	(*self)->filtered = 0;
 }
 
 void PiuViewPopOrigin(PiuView* self)
@@ -799,10 +863,22 @@ void PiuViewPushClip(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimensi
 void PiuViewPushColor(PiuView* self, PiuColor color)
 {
 	(*self)->solidBrush->SetColor(Color(color->a, color->r, color->g, color->b));
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 }
 
 void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 {
+	(*self)->colorMatrix->m[0][0] = 1;
+	(*self)->colorMatrix->m[1][1] = 1;
+	(*self)->colorMatrix->m[2][2] = 1;
+	(*self)->colorMatrix->m[3][3] = 1;
+	(*self)->colorMatrix->m[4][4] = 1;
+	(*self)->colorMatrix->m[4][0] = ((REAL)(color->r)) / 255;
+	(*self)->colorMatrix->m[4][1] = ((REAL)(color->g)) / 255;
+	(*self)->colorMatrix->m[4][2] = ((REAL)(color->b)) / 255;
+	(*self)->imageAttributes->SetColorMatrix((*self)->colorMatrix);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
+	(*self)->filtered = 1;
 }
 
 void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)

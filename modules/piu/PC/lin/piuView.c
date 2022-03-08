@@ -202,6 +202,7 @@ static gboolean gtk_piu_view_scroll_event(GtkWidget *widget, GdkEventScroll *eve
 	if (delta_x || delta_y) {
 		GtkPiuView* gtkView = GTK_PIU_VIEW(widget);
 		PiuView* view = gtkView->piuView;
+		gtk_widget_grab_focus(widget);
 		xsBeginHost((*view)->the);
 		{
 			PiuApplication* application = (*view)->application;
@@ -449,8 +450,12 @@ static void PiuViewAdjustAux(GtkWidget *widget, gpointer it)
 		gtk_fixed_move(gtkFixed, widget, clipBounds.x, clipBounds.y);
 		gtk_widget_set_size_request(widget, clipBounds.width, clipBounds.height);
 		widget = gtkClip->widget;
-		gtk_fixed_move(GTK_FIXED(gtkClip), widget, bounds.x - clipBounds.x, bounds.y - clipBounds.y);
 		gtk_widget_set_size_request(widget, bounds.width, bounds.height);
+		if (PiuRectangleContains(&clipBounds, &bounds))
+    		gtk_widget_show(widget);
+		else
+	    	gtk_widget_hide(widget);
+    	
 	}
 }
 
@@ -543,18 +548,6 @@ void PiuViewCreate(xsMachine* the)
 	gtk_widget_set_can_focus(GTK_WIDGET(gtkView), TRUE);
 	gtk_widget_grab_focus(GTK_WIDGET(gtkView));
 	
-	(*self)->gtkCssProvider = gtk_css_provider_new();
-	gtk_css_provider_load_from_data((*self)->gtkCssProvider,
-		 "* {\n"
-		 "   background-image: none;\n"
-		 "   border: 0 none transparent;\n"
-		 "   box-shadow: none;\n"
-		 "   outline: transparent none 0;\n"
-		 "   margin: 0;\n"
-		 "   padding: 0px 4px 0px 4px;\n"
-		 "}\n"
-		 , -1, NULL);
-	
 	xsResult = xsThis;
 }
 
@@ -565,6 +558,49 @@ void PiuViewDelete(void* it)
 void PiuViewDictionary(xsMachine* the, void* it)
 {
 	
+}
+
+void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor)
+{
+	cairo_t* cr = (*self)->cairo;
+	double lx = x, ty = y, rx = x + w, by = y + h, r = radius, t, u = border;
+	if (variant == 1)
+		lx += r;
+	else if (variant == 2)
+		rx -= r;
+	if (u > 0) {
+		double delta = u / 2;
+		lx += delta;
+		ty += delta;
+		rx -= delta;
+		by -= delta;
+		r -= delta;
+	}
+	t = r * 0.552284749831;
+	cairo_new_sub_path(cr);
+	cairo_move_to(cr, lx, ty + r);
+	cairo_curve_to(cr, lx, ty + r - t, lx + r - t, ty, lx + r, ty);
+	cairo_line_to(cr, rx - r, ty);
+	cairo_curve_to(cr, rx - r + t, ty, rx, ty + r - t, rx, ty + r);
+	cairo_line_to(cr, rx, by - r);
+	if (variant == 2)
+		cairo_curve_to(cr, rx, by - r + t, rx + r - t, by, rx + r, by);
+	else
+		cairo_curve_to(cr, rx, by - r + t, rx - r + t, by, rx - r, by);
+	if (variant == 1) {
+		cairo_line_to(cr, lx - r, by);
+		cairo_curve_to(cr, lx - r + t, by, lx, by - r + t, lx, by - r);
+	}
+	else {
+		cairo_line_to(cr, lx + r, by);
+		cairo_curve_to(cr, lx + r - t, by, lx, by - r + t, lx, by - r);
+	}
+	cairo_close_path(cr);
+	cairo_set_source_rgba(cr, ((double)fillColor->r) / 255.0, ((double)fillColor->g) / 255.0, ((double)fillColor->b) / 255.0, ((double)fillColor->a) / 255.0);
+	cairo_fill_preserve (cr);
+	cairo_set_source_rgba(cr, ((double)strokeColor->r) / 255.0, ((double)strokeColor->g) / 255.0, ((double)strokeColor->b) / 255.0, ((double)strokeColor->a) / 255.0);
+	cairo_set_line_width(cr, u);
+	cairo_stroke (cr);
 }
 
 void PiuViewDrawString(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
@@ -615,20 +651,50 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 {
 	cairo_t* cr = (*self)->cairo;
 	double scale = (*texture)->scale;
-	cairo_set_source_surface(cr, (*texture)->image, 0, 0);
-	cairo_pattern_t *pattern = cairo_get_source(cr);	
-	cairo_matrix_t matrix;
-	cairo_matrix_init_identity(&matrix);
-	cairo_matrix_scale(&matrix, scale, scale);
-	cairo_matrix_translate(&matrix, sx - x, sy - y);
-	cairo_pattern_set_matrix (pattern, &matrix);
-	cairo_rectangle(cr, x, y, sw, sh);
-	cairo_fill(cr);
+	if ((*self)->filtered) {
+		if ((*self)->transparent) return;
+		double w = sw * scale;
+		double h = sh * scale;
+		cairo_surface_t* maskImage = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+		cairo_t* maskContext = cairo_create(maskImage);
+		cairo_set_source_surface(maskContext, (*texture)->image, 0, 0);
+		cairo_pattern_t *pattern = cairo_get_source(maskContext);	
+		cairo_matrix_t matrix;
+		cairo_matrix_init_identity(&matrix);
+		cairo_matrix_translate(&matrix, sx * scale, sy * scale);
+		cairo_pattern_set_matrix (pattern, &matrix);
+		cairo_rectangle(maskContext, 0, 0, w, h);
+		cairo_fill(maskContext);
+	
+		cairo_save(cr);
+		cairo_get_matrix(cr, &matrix);
+  		cairo_matrix_scale(&matrix, 1 / scale, 1 / scale);
+		cairo_set_matrix(cr, &matrix);
+		cairo_mask_surface(cr, maskImage, x, y);
+//  		cairo_rectangle(cr, x, y, sw, sh);
+ 		cairo_fill(cr);   
+		cairo_restore(cr);
+  		
+  		cairo_destroy(maskContext);   
+  		cairo_surface_destroy(maskImage);   
+	}
+	else {
+		cairo_set_source_surface(cr, (*texture)->image, 0, 0);
+		cairo_pattern_t *pattern = cairo_get_source(cr);	
+		cairo_matrix_t matrix;
+		cairo_matrix_init_identity(&matrix);
+		cairo_matrix_scale(&matrix, scale, scale);
+		cairo_matrix_translate(&matrix, sx - x, sy - y);
+		cairo_pattern_set_matrix (pattern, &matrix);
+		cairo_rectangle(cr, x, y, sw, sh);
+		cairo_fill(cr);
+	}
 }
 
 void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
 {
 	if ((w <= 0) || (h <= 0)) return;
+	if ((*self)->transparent) return;
 	cairo_t* cr = (*self)->cairo;
 	cairo_rectangle(cr, x, y, w, h);
 	cairo_fill(cr);
@@ -754,6 +820,7 @@ void PiuViewPopColor(PiuView* self)
 
 void PiuViewPopColorFilter(PiuView* self)
 {
+	(*self)->filtered = 0;
 }
 
 void PiuViewPopOrigin(PiuView* self)
@@ -774,10 +841,15 @@ void PiuViewPushColor(PiuView* self, PiuColor color)
 {
 	cairo_t* cr = (*self)->cairo;
 	cairo_set_source_rgba(cr, ((double)color->r) / 255.0, ((double)color->g) / 255.0, ((double)color->b) / 255.0, ((double)color->a) / 255.0);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 }
 
 void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 {
+	cairo_t* cr = (*self)->cairo;
+	cairo_set_source_rgba(cr, ((double)color->r) / 255.0, ((double)color->g) / 255.0, ((double)color->b) / 255.0, ((double)color->a) / 255.0);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
+	(*self)->filtered = 1;
 }
 
 void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)

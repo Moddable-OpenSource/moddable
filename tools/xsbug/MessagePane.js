@@ -39,28 +39,9 @@
 // ASSETS
 
 import {
-	buttonsSkin,
-	glyphsSkin,
-	
 	headerHeight,
 	rowHeight,
 	rowIndent,
-	
-	paneBackgroundSkin,
-	paneSeparatorSkin,
-	
-	tableHeaderSkin,
-	tableHeaderStyle,
-	tableRowSkin,
-	tableRowStyle,
-	tableFooterSkin,
-	
-	messageLeftSkin,
-	messageRightSkin,
-	messageCenterSkin,
-	messageStyle,
-	conversationSkin,
-	conversationStyle,
 } from "assets";
 
 // BEHAVIORS
@@ -179,7 +160,7 @@ class BubbleCodeRowBehavior extends RowBehavior {
 class BubbleTextRowBehavior extends RowBehavior {
 	onCreate(layout, data) {
 		this.data = data;
-		let size = messageStyle.measure("_");
+		let size = styles.message.measure("_");
 		this.width = size.width;
 	}
 	onMeasureHorizontally(layout, width) {
@@ -204,7 +185,7 @@ import {
 } from "piu/Scrollbars";
 
 export var MessagePane = Container.template(function($) { return {
-	left:0, right:0, top:0, bottom:0, skin:paneBackgroundSkin,
+	left:0, right:0, top:0, bottom:0, skin:skins.messageBackground,
 	Behavior: MessagePaneBehavior,
 	contents: [
 		Column($, {
@@ -233,13 +214,13 @@ var ConversationTable = Column.template($ => ({
 }));
 
 var ConversationHeader = Row.template(function($) { return {
-	left:0, right:0, height:headerHeight, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:headerHeight, skin:skins.tableHeader, active:true,
 	Behavior: ConversationHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0, state:1 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:"MESSAGES" }),
-		Content($, { top:0, skin:buttonsSkin, variant:5, active:true, visible:false, 
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:1 }),
+		Label($, { left:0, right:0, style:styles.tableHeader, string:"MESSAGES" }),
+		IconButton($, { top:0, variant:5, active:true, visible:false, 
 			Behavior: class extends ButtonBehavior {
 				onBubblesChanged(button) {
 					button.active = model.canClearAllBubbles();
@@ -254,31 +235,37 @@ var ConversationHeader = Row.template(function($) { return {
 }});
 
 var ConversationFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+	left:0, right:0, height:3, skin:skins.tableFooter,
 }});
 
 var ConversationRow = Row.template(function($) { return {
-	left:0, right:0, height:headerHeight, skin:tableRowSkin, style:conversationStyle, active:true, 
+	left:0, right:0, height:headerHeight, skin:skins.tableRow, style:styles.conversation, active:true, 
 	Behavior:ConversationRowBehavior,
 	contents: [
 		Content($, { width:rowIndent, }),
-		Content($, { width:rowIndent, skin:conversationSkin, variant:$.visible ? 1 : 0 }),
-		Label($, { skin:messageCenterSkin, variant:$.tint, string:$.id || "anonymous" }),
+		Content($, { width:rowIndent, skin:skins.conversation, variant:$.visible ? 1 : 0 }),
+		Container($, { clip:true,
+			contents:[
+				RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.tint] }),
+				Label($, { string:$.id || "anonymous" }),
+			]
+		}),
 	]
 }});
 
 var BubbleTable = Column.template($ => ({
-	left:0, right:0, top:0, active:false, style:messageStyle,
+	left:0, right:0, top:0, active:false, style:styles.message,
 	Behavior:BubbleTableBehavior,
 	contents: [
 	],
 }));
 
 var BubbleCenterCodeRow = Layout.template($ => ({
-	skin:messageCenterSkin, variant:$.conversation.tint, clip:true, active:true,
+	clip:true, active:true,
 	Behavior: BubbleCodeRowBehavior,
 	contents: [
-		Container($, { left:15, right:15, clip:true,
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint] }),
+		Container($, { left:12, right:12, clip:true,
 			contents:[
 				Code($, { left:0, top:0, string:$.message, type:"json", active:false }),
 			]
@@ -287,10 +274,11 @@ var BubbleCenterCodeRow = Layout.template($ => ({
 }));
 
 var BubbleLeftCodeRow = Layout.template($ => ({
-	left:0, skin:messageLeftSkin, variant:$.conversation.tint, clip:true, active:true,
+	left:0, clip:true, active:true,
 	Behavior: BubbleCodeRowBehavior,
 	contents: [
-		Container($, { left:15, right:15, clip:true,
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:1 } ), 
+		Container($, { left:20, right:12, clip:true,
 			contents:[
 				Code($, { left:0, top:0, string:$.message, type:"json", active:false }),
 			]
@@ -299,10 +287,11 @@ var BubbleLeftCodeRow = Layout.template($ => ({
 }));
 
 var BubbleRightCodeRow = Layout.template($ => ({
-	right:0, skin:messageRightSkin, variant:$.conversation.tint, clip:true, active:true,
+	right:0, clip:true, active:true,
 	Behavior: BubbleCodeRowBehavior,
 	contents: [
-		Container($, { left:15, right:15, clip:true,
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:2 } ), 
+		Container($, { left:12, right:20, clip:true,
 			contents:[
 				Code($, { left:0, top:0, string:$.message, type:"json", active:false }),
 			]
@@ -311,36 +300,45 @@ var BubbleRightCodeRow = Layout.template($ => ({
 }));
 
 var BubbleCenterTextRow = Layout.template($ => ({
-	skin:messageCenterSkin, variant:$.conversation.tint, clip:true, active:true,
+	clip:true, active:true,
 	Behavior: BubbleTextRowBehavior,
 	contents: [
-		Container($, { left:15, right:15, clip:true,
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint] }), 
+		Column($, { left:12, right:12, clip:true,
 			contents:[
+				Content($, { height:4 }),
 				Text($, { left:0, right:0, top:0, string:$.message }),
+				Content($, { height:4 }),
 			]
 		}),
 	],
 }));
 
 var BubbleLeftTextRow = Layout.template($ => ({
-	left:0, skin:messageLeftSkin, variant:$.conversation.tint, clip:true, active:true,
+	left:0, clip:true, active:true,
 	Behavior: BubbleTextRowBehavior,
 	contents: [
-		Container($, { left:15, right:15, clip:true,
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:1 } ), 
+		Column($, { left:20, right:12, clip:true,
 			contents:[
+				Content($, { height:4 }),
 				Text($, { left:0, right:0, top:0, string:$.message }),
+				Content($, { height:4 }),
 			]
 		}),
 	],
 }));
 
 var BubbleRightTextRow = Layout.template($ => ({
-	right:0, skin:messageRightSkin, variant:$.conversation.tint, clip:true, active:true,
+	right:0, clip:true, active:true,
 	Behavior: BubbleTextRowBehavior,
 	contents: [
-		Container($, { left:15, right:15, clip:true,
+		RoundContent($, { left:4, right:4, top:2, bottom:2, radius:8, border:1, skin:skins.messages[$.conversation.tint], variant:2 } ), 
+		Column($, { left:12, right:20, clip:true,
 			contents:[
+				Content($, { height:4 }),
 				Text($, { left:0, right:0, top:0, string:$.message }),
+				Content($, { height:4 }),
 			]
 		}),
 	],

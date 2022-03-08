@@ -11,7 +11,7 @@
 	<key>CFBundleIdentifier</key>
 	<string>tech.moddable.mcsim</string>
 	<key>CFBundleVersion</key>
-	<string>1.0b1</string>
+	<string>2.0</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleName</key>
@@ -23,9 +23,9 @@
 	<key>CFBundleIconFile</key>
 	<string>main.icns</string>
 	<key>CFBundleShortVersionString</key>
-	<string>mcsim 1.0b1</string>
+	<string>mcsim 2.0</string>
 	<key>CFBundleGetInfoString</key>
-	<string>mcsim 1.0b1 Copyright © 2017-2020 Moddable Tech, Inc.</string>
+	<string>mcsim 2.0 Copyright © 2017-2022 Moddable Tech, Inc.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

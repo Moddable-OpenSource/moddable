@@ -41,33 +41,9 @@ var searchService = new Service(searchThread, "SearchService");
 // ASSETS
 
 import {
-	buttonsSkin,
-	glyphsSkin,
-	waitSkin,
-	
 	headerHeight,
 	rowHeight,
 	rowIndent,
-	
-	paneBackgroundSkin,
-	paneSeparatorSkin,
-	
-	tableHeaderSkin,
-	tableHeaderStyle,
-	tableRowSkin,
-	tableRowStyle,
-	tableFooterSkin,
-	
-	breakpointRowNameStyle,
-	breakpointRowLineStyle,
-	fileRowSkin,
-	fileRowStyle,
-	infoRowStyle,
-	searchEmptyStyle,
-	resultRowSkin,
-	resultLabelSkin,
-	resultLabelStyle,
-	resultCountStyle,
 } from "assets";
 
 // BEHAVIORS
@@ -153,11 +129,13 @@ export class FileRowBehavior extends RowBehavior {
 	}
 	onPathChanged(row, path) {
 		if (this.data.path == path) {
-			row.last.style = fileRowStyle; 
+			row.skin = skins.fileRow;
+			row.last.style = styles.fileRow; 
 			this.flags |= 4;
 		}
 		else {
-			row.last.style = tableRowStyle;
+			row.skin = skins.tableRow;
+			row.last.style = styles.tableRow;
 			this.flags &= ~4;
 		}
 		this.changeState(row);
@@ -475,7 +453,7 @@ import {
 } from "piu/Scrollbars";
 
 export var FilePane = Container.template(function($) { return {
-	left:0, right:0, top:0, bottom:0, skin:paneBackgroundSkin,
+	left:0, right:0, top:0, bottom:0, skin:skins.paneBackground,
 	Behavior: FilePaneBehavior,
 	contents: [
 		Scroller($, {
@@ -505,13 +483,13 @@ var BreakpointTable = Column.template($ => ({
 }));
 
 var BreakpointHeader = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: BreakpointHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0, state:1 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:"BREAKPOINTS" }),
-		Content($, { top:0, skin:buttonsSkin, variant:5, active:true, visible:false, 
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:1 }),
+		Label($, { left:0, right:0, style:styles.tableHeader, string:"BREAKPOINTS" }),
+		IconButton($, { top:0, variant:5, active:true, visible:false, 
 			Behavior: class extends ButtonBehavior {
 				onBreakpointsChanged(button) {
 					button.active = model.canClearAllBreakpoints();
@@ -526,16 +504,16 @@ var BreakpointHeader = Row.template(function($) { return {
 }});
 
 var BreakpointFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+	left:0, right:0, height:3, skin:skins.tableFooter,
 }});
 
 var BreakpointRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:true, 
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true, 
 	Behavior:BreakpointRowBehavior,
 	contents: [
 		Content($, { width:rowIndent, }),
-		Label($, { style:breakpointRowNameStyle, string:$.name }),
-		Label($, { style:breakpointRowLineStyle, string:" (" + $.line + ")" }),
+		Label($, { style:styles.breakpointRowName, string:$.name }),
+		Label($, { style:styles.breakpointRowLine, string:" (" + $.line + ")" }),
 	]
 }});
 
@@ -548,18 +526,18 @@ var HomeTable = Column.template(function($) { return {
 }});
 
 var HomeHeader = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: HomeHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0 }),
-		Label($, { name:"TITLE", left:0, right:0, style:tableHeaderStyle, string:$.name }),
-		Content($, { name:"CLOSE", top:0, skin:buttonsSkin, variant:6, state:1, active:true, visible:false, Behavior:HomeCloseButtonBehavior }),
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
+		Label($, { name:"TITLE", left:0, right:0, style:styles.tableHeader, string:$.name }),
+		IconButton($, { name:"CLOSE", top:0, variant:6, state:1, active:true, visible:false, Behavior:HomeCloseButtonBehavior }),
 	],
 }});
 
 var HomeFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+	left:0, right:0, height:3, skin:skins.tableFooter,
 }});
 
 var FolderTable = Column.template(function($) { return {
@@ -571,32 +549,32 @@ var FolderTable = Column.template(function($) { return {
 }});
 
 var FolderHeader = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true,
 	Behavior: FolderRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),
-		Content($, { skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0}),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
+		Content($, { width:20, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
 	],
 }});
 
 var FileRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:fileRowSkin, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true,
 	Behavior: FileRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),
 		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
 	],
 }});
 
 var InfoRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow,
 	Behavior: RowBehavior,
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),
 		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:infoRowStyle, string:$.name }),
+		Label($, { left:0, right:0, style:styles.infoRow, string:$.name }),
 	],
 }});
 
@@ -617,31 +595,31 @@ var SearchTable = Column.template(function($) { return {
 }});
 
 var SearchHeader = Row.template(function($) { return {
-	left:0, right:1, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:1, height:27, skin:skins.tableHeader, active:true,
 	Behavior: SearchHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0 }),
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
 		FindField($, { top:2, bottom:3 }),
 		Content($, { width:2 }),
 	],
 }});
 
 var SearchFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+	left:0, right:0, height:3, skin:skins.tableFooter,
 }});
 
 var SearchSpinner = Container.template($ => ({
-	left:0, right:0, height:26, skin:tableRowSkin, 
+	left:0, right:0, height:26, skin:skins.tableRow, 
 	contents: [
-		Content($, { skin:waitSkin, Behavior: SpinnerBehavior }),
+		Content($, { skin:skins.wait, Behavior: SpinnerBehavior }),
 	],
 }));
 
 var SearchEmpty = Row.template($ => ({
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, 
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, 
 	contents: [
-		Label($, { left:0, right:0, style:searchEmptyStyle, string:"Not Found!" }),
+		Label($, { left:0, right:0, style:styles.searchEmpty, string:"Not Found!" }),
 	],
 }));
 
@@ -654,22 +632,22 @@ var ResultTable = Column.template(function($) { return {
 }});
 
 var ResultHeader = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true,
 	Behavior: ResultHeaderBehavior,
 	contents: [
 		Content($, { width:rowIndent }),
-		Content($, { skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0}),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
-		Label($, { style:resultCountStyle, string:$.count }),
+		Content($, { width:20, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
+		Label($, { style:styles.resultCount, string:$.count }),
 	],
 }});
 
 var ResultRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:resultRowSkin, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.resultRow, active:true,
 	Behavior: ResultRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + 40 }),
-		Code($, { left:0, skin:resultLabelSkin, style:resultLabelStyle, string:$.string, active:false }),
+		Code($, { left:0, skin:skins.resultLabel, style:styles.resultLabel, string:$.string, active:false, variant:1 }),
 	],
 }});
 

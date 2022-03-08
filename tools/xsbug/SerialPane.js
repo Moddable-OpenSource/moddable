@@ -38,30 +38,9 @@
 // ASSETS
 
 import {
-	glyphsSkin,
-	buttonSkin,
-	buttonStyle,
-	buttonsSkin,
-	progressBarSkin,
-	
 	headerHeight,
 	rowHeight,
 	rowIndent,
-	
-	paneBackgroundSkin,
-	paneBorderSkin,
-	paneHeaderSkin,
-	paneHeaderStyle,
-	paneSeparatorSkin,
-	
-	tableHeaderSkin,
-	tableHeaderStyle,
-	tableRowSkin,
-	tableRowStyle,
-	tableFooterSkin,
-	
-	serialRowStyle,
-	serialButtonStyle,
 } from "assets";	
 
 // BEHAVIORS
@@ -99,7 +78,7 @@ class SerialButtonBehavior extends ButtonBehavior {
 		this.onSerialChanged(container);
 	}
 	onSerialChanged(container) {
-		container.active = model[this.can](application, container.first);
+		container.active = model[this.can](application, container.first.next);
 		this.changeState(container, container.active ? 1 : 0);
 	}
 	onTap(container) {
@@ -196,7 +175,7 @@ import {
 } from "piu/Scrollbars";
 
 export var SerialPane = Container.template($ => ({
-	left:0, right:0, top:0, bottom:0, skin:paneBackgroundSkin,
+	left:0, right:0, top:0, bottom:0, skin:skins.paneBackground,
 	Behavior: SerialPaneBehavior,
 	contents: [
 		Scroller($, {
@@ -227,12 +206,12 @@ var DeviceTable = Column.template(function($) { return {
 }});
 
 var DeviceHeader = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: HeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0, state:1 }),
-		Label($, { width:52, style:tableHeaderStyle, string:"DEVICE" }),
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:1 }),
+		Label($, { width:52, style:styles.tableHeader, string:"DEVICE" }),
 		SerialButton({ name:"Connect" }, { name:"SerialConnect", }),
 	],
 }});
@@ -246,12 +225,12 @@ var AppTable = Column.template(function($) { return {
 }});
 
 var AppHeader = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: HeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0, state:1 }),
-		Label($, { width:52, style:tableHeaderStyle, string:"APP" }),
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:1 }),
+		Label($, { width:52, style:styles.tableHeader, string:"APP" }),
 		SerialButton({ name:"Install" }, { name:"SerialInstallApp" }),
 		SerialButton({ name:"Restart" }, { name:"SerialRestart", }),
 	],
@@ -266,42 +245,43 @@ var ModTable = Column.template(function($) { return {
 }});
 
 var ModHeader = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: HeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0, state:1 }),
-		Label($, { width:52, style:tableHeaderStyle, string:"MOD" }),
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:1 }),
+		Label($, { width:52, style:styles.tableHeader, string:"MOD" }),
 		SerialButton({ name:"Install" }, { name:"SerialInstallMod" }),
 		SerialButton({ name:"Uninstall" }, { name:"SerialUninstallMod", }),
 	],
 }});
 
 var SerialButton = Container.template($ => ({
-	skin:buttonSkin, active:true, Behavior:SerialButtonBehavior,
+	height:26, active:true, Behavior:SerialButtonBehavior,
 	contents: [
-		Label($, { left:0, right:0, style:serialButtonStyle, string:$.name }),
+		RoundContent($, { left:3, right:3, top:4, bottom:4, radius:5, skin:skins.iconButton }),
+		Label($, { left:0, right:0, style:styles.serialButton, string:$.name }),
 	],
 }));
 
 var SerialInfoRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow,
 	contents: [
 		Content($, { width:rowIndent }),
 		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:serialRowStyle, state:1, string:$ }),
+		Label($, { left:0, right:0, style:styles.infoRow, string:$ }),
 	],
 }});
 
 var SerialProgressRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow,
 	contents: [
 		Content($, { width:rowIndent }),
 		Content($, { width:20 }),
 		Container($, { 
-			left:0, right:0, height:10, skin:progressBarSkin, Behavior:SerialProgressBehavior,
+			left:0, right:0, height:10, skin:skins.progressBar, Behavior:SerialProgressBehavior,
 			contents:[
-				Content($, { left:0, width:0, top:0, bottom:0, skin:progressBarSkin, state:1 }),
+				Content($, { left:0, width:0, top:0, bottom:0, skin:skins.progressBar, state:1 }),
 			],
 		}),
 		Content($, { width:20 }),
@@ -310,16 +290,16 @@ var SerialProgressRow = Row.template(function($) { return {
 }});
 
 var SerialRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow,
 	contents: [
 		Content($, { width:rowIndent }),
 		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:serialRowStyle, string:$ }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$ }),
 	],
 }});
 
 var SerialFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+	left:0, right:0, height:3, skin:skins.tableFooter,
 }});
 
 

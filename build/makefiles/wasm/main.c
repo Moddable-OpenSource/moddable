@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <emscripten.h>
-#include "../screen.h"
+#include "screen.h"
 #include "xsCommon.h"
 
 extern void fxScreenLaunch(txScreen* screen);
