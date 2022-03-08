@@ -44,10 +44,12 @@ export class Texture @ "PiuTextureDelete" {
 			this._create(alphaBitmap, colorBitmap);
 			return;
 		}
+		let archive;
 		if (typeof(it) == "object") {
+			archive = it.archive
 			if (it.alpha && it.color) {
-				alphaBitmap = parseBMP(new Resource(it.alpha));
-				colorBitmap = parseBMP(new Resource(it.color));
+				alphaBitmap = parseBMP(new Resource(it.alpha, archive));
+				colorBitmap = parseBMP(new Resource(it.color, archive));
 				this._create(alphaBitmap, colorBitmap);
 				return;
 			}
@@ -56,24 +58,24 @@ export class Texture @ "PiuTextureDelete" {
 		if (it.endsWith(".png")) {
 			let name = it.slice(0, -4);
 			let path = name + "-alpha.bm4";
-			if (Resource.exists(path)) {
-				alphaBitmap = parseRLE(new Resource(path));
+			if (Resource.exists(path, archive)) {
+				alphaBitmap = parseRLE(new Resource(path, archive));
 			}
 			else {
 				path = name + "-alpha.bmp";
 				if (Resource.exists(path)) {
-					alphaBitmap = parseBMP(new Resource(path));
+					alphaBitmap = parseBMP(new Resource(path, archive));
 				}
 				path = name + "-color.bmp";
 				if (Resource.exists(path)) {
-					colorBitmap = parseBMP(new Resource(path));
+					colorBitmap = parseBMP(new Resource(path, archive));
 				}
 			}
 		}
 		else if (it.endsWith("-alpha.bmp"))
-			alphaBitmap = parseBMP(new Resource(it));
+			alphaBitmap = parseBMP(new Resource(it, archive));
 		else if (it.endsWith("-color.bmp"))
-			colorBitmap = parseBMP(new Resource(it));
+			colorBitmap = parseBMP(new Resource(it, archive));
 		if (alphaBitmap || colorBitmap)
 			this._create(alphaBitmap, colorBitmap);
 		else

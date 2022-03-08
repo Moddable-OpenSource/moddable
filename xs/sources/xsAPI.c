@@ -2020,11 +2020,11 @@ void fxBuildArchiveKeys(txMachine* the)
 	}
 }
 
-void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
+void* fxGetArchiveCode(txMachine* the, void* archive, txString path, txSize* size)
 {
 	txPreparation* preparation = the->preparation;
 	if (preparation) {
-		txU1* p = the->archive;
+		txU1* p = archive;
 		if (p) {
 			txU4 atomSize;
 			txU1* q;
@@ -2058,7 +2058,7 @@ void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
 	return C_NULL;
 }
 
-static txU1 *fxGetArchiveResources(txMachine *the, txU4 *size)
+static txU1 *fxGetArchiveResources(txMachine *the, void* archive, txU4 *size)
 {
 	txPreparation* preparation = the->preparation;
 	txU1* p = the->archive;
@@ -2080,11 +2080,11 @@ static txU1 *fxGetArchiveResources(txMachine *the, txU4 *size)
 	return p + sizeof(Atom);
 }
 
-txInteger fxGetArchiveDataCount(txMachine* the)
+txInteger fxGetArchiveDataCount(txMachine* the, void* archive)
 {
 	txInteger count = 0;
 	txU4 size;
-	txU1 *p = fxGetArchiveResources(the, &size);
+	txU1 *p = fxGetArchiveResources(the, archive, &size);
 	if (p) {
 		txU1 *q = p + size;
 		while (p < q) {
@@ -2099,10 +2099,10 @@ txInteger fxGetArchiveDataCount(txMachine* the)
 	return count;
 }
 
-void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
+void* fxGetArchiveData(txMachine* the, void* archive, txString path, txSize* size)
 {
 	txU4 atomSize;
-	txU1 *p = fxGetArchiveResources(the, &atomSize), *q;
+	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
 	if (!p)
 		return NULL; 
 
@@ -2125,10 +2125,10 @@ void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
 	return C_NULL;
 }
 
-void* fxGetArchiveDataName(txMachine* the, txInteger index)
+void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index)
 {
 	txU4 atomSize;
-	txU1 *p = fxGetArchiveResources(the, &atomSize), *q;
+	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
 	if (!p)
 		return NULL;
 

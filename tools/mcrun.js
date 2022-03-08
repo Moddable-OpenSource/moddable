@@ -461,9 +461,9 @@ export default class extends Tool {
 			file.generate(this);
 			if (this.make) {
 				if (this.windows)
-					this.then("nmake", "/nologo", "/f", path);
+					this.then("nmake", "/nologo", "/f", path, this.buildTarget);
 				else
-					this.then("make", "-f", path);
+					this.then("make", "-f", path, this.buildTarget);
 			}
 		}
 		else {

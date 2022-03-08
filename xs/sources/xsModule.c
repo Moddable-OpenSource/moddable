@@ -2292,6 +2292,44 @@ void fx_StaticModuleRecord(txMachine* the)
 	mxPop();
 #endif
 	mxPushSlot(mxArgv(0));
+	mxGetID(fxID(the, "archive"));
+	slot = the->stack;
+	if (slot->kind != XS_UNDEFINED_KIND) {
+		void* archive = fxGetHostData(the, slot);
+		txString path;
+		void* code;
+		txSize size;
+		txScript script;
+		mxPushSlot(mxArgv(0));
+		mxGetID(fxID(the, "path"));
+		slot = the->stack;
+		path = fxToString(the, slot);
+		code = fxGetArchiveCode(the, archive, path, &size);
+		if (code == C_NULL)
+			mxURIError("module not found: %s", path);
+		script.callback = NULL;
+		script.symbolsBuffer = NULL;
+		script.symbolsSize = 0;
+		script.codeBuffer = code;
+		script.codeSize = size;
+		script.hostsBuffer = NULL;
+		script.hostsSize = 0;
+		script.path = path;
+		script.version[0] = XS_MAJOR_VERSION;
+		script.version[1] = XS_MINOR_VERSION;
+		script.version[2] = XS_PATCH_VERSION;
+		script.version[3] = 0;
+		mxPushClosure(mxResult);
+		fxRunScript(the, &script, mxResult, C_NULL, C_NULL, C_NULL, instance);
+		mxPop();
+		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
+			mxTypeError("no module");
+		mxPop();
+		return;
+	}
+	mxPop();
+
+	mxPushSlot(mxArgv(0));
 	mxGetID(fxID(the, "record"));
 	slot = the->stack;
 	if (!mxIsUndefined(slot)) {

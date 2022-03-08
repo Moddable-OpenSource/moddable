@@ -100,8 +100,13 @@ void xs_file_read(xsMachine *the)
 		dst = xsmcToString(xsResult);
 	}
 	else {
-		xsmcSetArrayBuffer(xsResult, NULL, dstLen);
-		dst = xsmcToArrayBuffer(xsResult);
+		xsResult = (xsOverflow(-XS_FRAME_COUNT-1),
+			fxPush(xsArg(0)),
+			fxNew(the),
+			fxPush(xsInteger(dstLen)),
+			fxRunCount(the, 1),
+			fxPop());
+		xsmcGetBufferWritable(xsResult, &dst, &dstLen);
 	}
 
 	result = fread(dst, 1, dstLen, file);

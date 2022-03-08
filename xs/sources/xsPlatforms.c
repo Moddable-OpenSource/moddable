@@ -199,7 +199,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		txInteger c = preparation->scriptCount;
 		txScript* script = preparation->scripts;
 		txSize size;
-		if (fxGetArchiveCode(the, path, &size))
+		if (fxGetArchiveCode(the, the->archive, path, &size))
 			return fxNewNameC(the, path);
 		while (c > 0) {
 			if (!c_strcmp(path, script->path))
@@ -230,7 +230,7 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 	txString path = fxGetKeyName(the, moduleID);
 	txByte* code;
 	txSize size;
-	code = fxGetArchiveCode(the, path, &size);
+	code = fxGetArchiveCode(the, the->archive, path, &size);
 	if (code) {
 		txScript script;
 		script.callback = NULL;

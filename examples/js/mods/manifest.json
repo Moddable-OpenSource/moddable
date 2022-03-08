@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/files/file/manifest.json"
+	],
+	"creation": {
+		"keys": {
+			"available": 256
+		}
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./ModArchive"
+		]
+	},
+	"preload": [
+	],
+	"strip": []
+}

@@ -65,15 +65,16 @@ export default class Sound {
 			return;
 		}
 
+		let archive = it.archive;
 		let path = it.path;
 		if (!path)
 			throw new URIError("Sound: no path!");
 		if (!path.endsWith(".wav"))
 			throw new URIError("Sound: not .wav!");
 		path = path.slice(0, -4) + ".maud";
-		if (!Resource.exists(path))
+		if (!Resource.exists(path, archive))
 			throw new URIError("Sound: " + it.path + " not found!");
-		this.buffer = new Resource(path);
+		this.buffer = new Resource(path, archive);
 		this.offset = it.offset || 0;
 		this.size = it.size || -1;
 	}
