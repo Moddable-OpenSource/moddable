@@ -1,6 +1,6 @@
 # Base
-Copyright 2017-2020 Moddable Tech, Inc.<BR>
-Revised: October 7, 2020
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: March 8, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -97,6 +97,9 @@ Timer.clear(aTimer);
 ```
 
 > **Note**: Immediate and one shot timers are automatically cleared after invoking their callback function. There is no need to call `clear` except to cancel the timer before it fires.
+
+> **Note**: If `Timer.clear` is passed a value of `undefined` or `null` for the ID, no exception is generated.
+
 
 ***
 
