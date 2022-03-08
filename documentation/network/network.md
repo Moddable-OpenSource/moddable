@@ -1,7 +1,7 @@
 # Networking
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: February 14, 2022
+Revised: March 8, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -675,7 +675,7 @@ The WebSocket server implementation is designed for sending and receiving small 
 
 ### `constructor(dictionary)`
 
-A new WebSocket `Server` is configured using a dictionary of properties. The dictionary is a super-set of the `Listener` dictionary. The server is a Socket Listener. If no port is provided in the dictionary, port 80 is used.
+A new WebSocket `Server` is configured using a dictionary of properties. The dictionary is a super-set of the `Listener` dictionary. The server is a Socket Listener. If no port is provided in the dictionary, port 80 is used. If port is set to `null`, no listener is created which is useful when sharing a listener with an http server (see `attach` below).
 
 At this time, the WebSocket `Server` does not define any additional properties for the dictionary.
 
@@ -694,6 +694,14 @@ The `close` function immediately terminates the WebSocket server listener, freei
 ```js
 ws.close();
 ```
+
+***
+
+### `attach(socket)`
+
+The `attach` function creates a new incoming WebSockets connection from the provided socket. The server issues the `Server.connect` callback and then performs the WebSockets handshake. The status line has been read from the socket, but none of the HTTP headers have been read as these are required to complete the handshake. 
+
+See the [httpserverwithwebsockets](../../examples/network/http/httpserverwithwebsockets/main.js) for an example of sharing a single listener socket between the HTTP and WebSockets servers.
 
 ***
 
