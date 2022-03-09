@@ -1,7 +1,7 @@
 # Data
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: February 23, 2022
+Revised: March 7, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -9,6 +9,7 @@ Revised: February 23, 2022
 
 * [Base64](#base64)
 * [Hex](#hex)
+* [CRC](#crc)
 * [QRCode](#qrcode)
 * [Text](#text)
 * [zlib](#zlib)
@@ -90,6 +91,92 @@ let s1 = Hex.toString(buffer);
 // s1 is 0123456789ABCDEF
 ```
 
+<a id="crc"></a>
+## class CRC8, CRC16
+
+The `CRC8` and `CRC16` classes calculate CRC checksums on data.
+
+```
+import {CRC8} from "crc";
+import {CRC16} from "crc";
+```
+
+Include the module's manifest to use it in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/crc/manifest.json"
+	]
+```
+
+#### `CRC8(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
+#### `CRC16(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
+
+The `CRC8` and `CRC16` functions take a number of options used to specify the CRC checksum to calculate. 
+
+| Parameter | Default | Description |
+| :---: | :---: | :--- |
+| `polynomial` | (none) | Polynomial to use (required) |
+| `initial` | `0` | Initial CRC accumulator value (optional) |
+| `reflectInput` | `false` | If `true`, each input byte is reflected (bits used in reverse order) before being used (optional) |
+| `reflectOutput` | `false` | If `true`, each output byte is reflected before being returned. The output reflection is done over the whole CRC value (optional) |
+| `xorOutput` | `0` | Value to XOR to the final CRC value (optional) |
+
+The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8 and 16-bit integers for CRC16.
+
+The [crc example](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
+
+- `CRC-8` 
+- `CRC-8/CDMA2000` 
+- `CRC-8/DARC` 
+- `CRC-8/DVB-S2` 
+- `CRC-8/EBU` 
+- `CRC-8/I-CODE` 
+- `CRC-8/ITU` 
+- `CRC-8/MAXIM` 
+- `CRC-8/ROHC` 
+- `CRC-8/WCDM` 
+- `CRC-16/CCITT-FALSE` 
+- `CRC-16/ARC` 
+- `CRC-16/ARG-CCITT` 
+- `CRC-16/BUYPASS` 
+- `CRC-16/CDMA2000` 
+- `CRC-16/DDS-110` 
+- `CRC-16/DECT-R` 
+- `CRC-16/DECT-X` 
+- `CRC-16/DNP` 
+- `CRC-16/EN-13757` 
+- `CRC-16/GENIBUS` 
+- `CRC-16/MAXIM` 
+- `CRC-16/MCRF4XX` 
+- `CRC-16/RIELLO` 
+- `CRC-16/T10-DIF` 
+- `CRC-16/TELEDISK` 
+- `CRC-16/TMS37157` 
+- `CRC-16/USB` 
+- `CRC-A` 
+- `CRC-16/KERMIT` 
+- `CRC-16/MODBUS` 
+- `CRC-16/X-25` 
+- `CRC-16/XMODE` 
+
+
+### `close()`
+
+The `close` function frees resources associated with the CRC checksum calculation.
+
+### `checksum(buffer)`
+
+The `checksum` function applies the CRC calculation to the data provided in `buffer`. The CRC checksum is returned.
+
+The `buffer` parameter may be a `String` or buffer.
+
+The `checksum` function may be called multiple times. Each time it is called the CRC updated and returned. Call the `reset` function to start a new calculation.
+
+### `reset()`
+
+The `reset` function clears the CRC accumulator to the `initial` value.
+
 <a id="qrcode"></a>
 ## class QRCode
 The `QRCode` class generates QR Code data from Strings and buffers. The data may then be rendering in various ways. Extensions are provided to [Poco](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/commodetto/qrcode) and [Piu](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/piu/MC/qrcode) to efficiently render QR Codes. The core implementation is the QR Code Generator Library from [Project Nayuki](https://www.nayuki.io/page/qr-code-generator-library).
@@ -98,7 +185,7 @@ The `QRCode` class generates QR Code data from Strings and buffers. The data may
 import qrCode from "qrcode";
 ```
 
-Include the modules' manifest to use them in a project:
+Include the module's manifest to use them in a project:
 
 ```json
 	"include": [

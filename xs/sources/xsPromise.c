@@ -196,12 +196,14 @@ void fxNewPromiseCapabilityCallback(txMachine* the)
 
 void fxAddUnhandledRejection(txMachine* the, txSlot* promise)
 {
+	txSlot* reason = mxPromiseResult(promise);
 	txSlot* list = &mxUnhandledPromises;
 	txSlot** address = &list->value.reference->next;
 	txSlot* slot;
 	while ((slot = *address)) {
 		if (slot->value.weakRef.target == promise)
 			break;
+		slot = slot->next;
 		address = &slot->next;
 	}
 	if (!slot) {
@@ -211,6 +213,9 @@ void fxAddUnhandledRejection(txMachine* the, txSlot* promise)
  		slot = *address = fxNewSlot(the);
 		slot->kind = XS_WEAK_REF_KIND;
 		slot->value.weakRef.target = promise;
+ 		slot = slot->next = fxNewSlot(the);
+		slot->kind = reason->kind;
+		slot->value = reason->value;
 	}
 }
 
@@ -218,19 +223,30 @@ void fxCheckUnhandledRejections(txMachine* the, txBoolean atExit)
 {
 	txSlot* list = &mxUnhandledPromises;
 	if (atExit) {
-		if (list->value.reference->next)
+		txSlot* slot = list->value.reference->next;
+		while (slot) {
+			slot = slot->next;
+			mxException.value = slot->value;
+			mxException.kind = slot->kind;
 			fxAbort(the, XS_UNHANDLED_REJECTION_EXIT);
+			slot = slot->next;
+		}
 	}
 	else {
 		txSlot** address = &list->value.reference->next;
 		txSlot* slot;
 		while ((slot = *address)) {
 			if (slot->value.weakRef.target == C_NULL) {
+				slot = slot->next;
 				*address = slot->next;
+				mxException.value = slot->value;
+				mxException.kind = slot->kind;
 				fxAbort(the, XS_UNHANDLED_REJECTION_EXIT);
 			}
-			else
+			else {
+				slot = slot->next;
 				address = &slot->next;
+			}
 		}
 	}
 }
@@ -1105,9 +1121,11 @@ void fxQueueJob(txMachine* the, txInteger count, txSlot* promise)
 		txSlot** address = &list->value.reference->next;
 		while ((slot = *address)) {
 			if (slot->value.weakRef.target == promise) {
+				slot = slot->next;
 				*address = slot->next;
 				break;
 			}
+			slot = slot->next;
 			address = &slot->next;
 		}
 #ifdef mxPromisePrint

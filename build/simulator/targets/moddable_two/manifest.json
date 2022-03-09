@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"*": [
+			"../modules/sensor",
+			"../modules/button",
+			"../modules/led",
+			"./host"
+		]
+	},
+	"preload": [
+		"sensor",
+		"button",
+		"led",
+		"host"
+	]
+}

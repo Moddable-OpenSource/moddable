@@ -126,8 +126,12 @@ void xs_timer_schedule(xsMachine *the)
 void xs_timer_clear(xsMachine *the)
 {
 	modTimerScript ts;
-	modTimer timer = xsmcGetHostDataValidate(xsArg(0), (void *)&modTimerHooks);
+	modTimer timer;
 
+	if (xsReferenceType != xsmcTypeOf(xsArg(0)))
+		return;
+	
+	timer = xsmcGetHostDataValidate(xsArg(0), (void *)&modTimerHooks);
 	ts = (modTimerScript)modTimerGetRefcon(timer);
 	xsForget(ts->self);
 	ts->callback = NULL;
