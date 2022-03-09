@@ -1364,7 +1364,7 @@ export class Tool extends TOOL {
 		this.mainPath = null;
 		this.make = false;
 		this.manifestPath = null;
-		this.mcsim = false;
+		this.mcsim = true;
 		this.outputPath = null;
 		this.platform = null;
 		this.rotation = undefined;
@@ -1431,6 +1431,10 @@ export class Tool extends TOOL {
 				else if ((parts[0] == "sim") || (parts[0] == "simulator")) {
 					parts[0] = this.currentPlatform;
 					this.mcsim = true;
+				}
+				else if ((parts[0] == "screentest")) {
+					parts[0] = this.currentPlatform;
+					this.mcsim = false;
 				}
 				this.platform = parts[0];
 				if (parts[1]) {
@@ -1559,7 +1563,6 @@ export class Tool extends TOOL {
 				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
 			else if (this.platform == "lin")
 				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
-			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 		}
 		else {
 			if (this.platform == "mac")
@@ -1568,8 +1571,8 @@ export class Tool extends TOOL {
 				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
 			else if (this.platform == "lin")
 				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
-			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulator";
 		}
+		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 	}
 	concatProperties(object, properties, flag) {
 		if (properties) {
