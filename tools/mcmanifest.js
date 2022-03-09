@@ -1563,6 +1563,7 @@ export class Tool extends TOOL {
 				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
 			else if (this.platform == "lin")
 				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
+			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 		}
 		else {
 			if (this.platform == "mac")
@@ -1571,8 +1572,8 @@ export class Tool extends TOOL {
 				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
 			else if (this.platform == "lin")
 				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
+            this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulator";
 		}
-		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 	}
 	concatProperties(object, properties, flag) {
 		if (properties) {

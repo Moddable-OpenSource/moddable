@@ -277,6 +277,37 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 	}
 }
 
+static int32_t modInstrumentationSlotHeapSize(xsMachine *the)
+{
+	return the->currentHeapCount * sizeof(txSlot);
+}
+
+static int32_t modInstrumentationChunkHeapSize(xsMachine *the)
+{
+	return the->currentChunksSize;
+}
+
+static int32_t modInstrumentationKeysUsed(xsMachine *the)
+{
+	return the->keyIndex - the->keyOffset;
+}
+
+static int32_t modInstrumentationGarbageCollectionCount(xsMachine *the)
+{
+	return the->garbageCollectionCount;
+}
+
+static int32_t modInstrumentationModulesLoaded(xsMachine *the)
+{
+	return the->loadedModulesCount;
+}
+
+static int32_t modInstrumentationStackRemain(xsMachine *the)
+{
+	if (the->stackPeak > the->stack)
+		the->stackPeak = the->stack;
+	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
+}
 
 void fxScreenLaunch(txScreen* screen)
 {
@@ -296,6 +327,12 @@ void fxScreenLaunch(txScreen* screen)
 	screen->rotation = -1;
 #ifdef mxInstrument
 	modInstrumentationInit();
+	modInstrumentationSetCallback(SlotHeapSize, (ModInstrumentationGetter)modInstrumentationSlotHeapSize);
+	modInstrumentationSetCallback(ChunkHeapSize, (ModInstrumentationGetter)modInstrumentationChunkHeapSize);
+	modInstrumentationSetCallback(KeysUsed, (ModInstrumentationGetter)modInstrumentationKeysUsed);
+	modInstrumentationSetCallback(GarbageCollectionCount, (ModInstrumentationGetter)modInstrumentationGarbageCollectionCount);
+	modInstrumentationSetCallback(ModulesLoaded, (ModInstrumentationGetter)modInstrumentationModulesLoaded);
+	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
 	((txMachine*)(screen->machine))->onBreak = debugBreak;
 	fxDescribeInstrumentation(screen->machine, screenInstrumentCount, screenInstrumentNames, screenInstrumentUnits);
 	fxScreenSampleInstrumentation(screen);
@@ -447,10 +484,12 @@ void fxScreenTouch(txScreen* screen, int kind, int index, int x, int y, double w
 		{
 			xsVars(2);
 			xsVar(0) = xsGet(xsGlobal, xsID_screen);
-			xsVar(1) = xsGet(xsVar(0), xsID_context);
-			if (xsTest(xsVar(1))) {
-				if (xsFindResult(xsVar(1), xsID(gxTouchEventNames[kind]))) {
-					xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(modMilliseconds()));
+			if (xsTest(xsVar(0))) {
+				xsVar(1) = xsGet(xsVar(0), xsID_context);
+				if (xsTest(xsVar(1))) {
+					if (xsFindResult(xsVar(1), xsID(gxTouchEventNames[kind]))) {
+						xsCallFunction4(xsResult, xsVar(1), xsInteger(index), xsInteger(x), xsInteger(y), xsNumber(modMilliseconds()));
+					}
 				}
 			}
 		}
@@ -593,7 +632,7 @@ void screen_send(xsMachine* the)
 			count >>= 1;
 			while (count) {
 				unsigned short pixel = *pixels++;
-			#if mxLinux
+			#if (mxLinux || mxWindows)
 				*rowAddress++ = (pixel & 0x001F) << 3;
 				*rowAddress++ = (pixel & 0x07E0) >> 3;
 				*rowAddress++ = (pixel & 0xF800) >> 8;
@@ -619,7 +658,7 @@ void screen_send(xsMachine* the)
 			count >>= 1;
 			while (count) {
 				unsigned short pixel = *pixels++;
-			#if mxLinux
+			#if (mxLinux || mxWindows)
 				*rowAddress++ = (pixel & 0xF800) >> 8;
 				*rowAddress++ = (pixel & 0x07E0) >> 3;
 				*rowAddress++ = (pixel & 0x001F) << 3;
@@ -667,7 +706,7 @@ void screen_send(xsMachine* the)
 				r = pixel >> 5;
 				g = (pixel >> 2) & 7;
 				b = pixel & 3;
-			#if mxLinux
+			#if (mxLinux || mxWindows)
 				*rowAddress++ = (b << 6) | (b << 4) | (b << 2) | b;
 				*rowAddress++ = (g << 5) | (g << 2) | (g >> 1);
 				*rowAddress++ = (r << 5) | (r << 2) | (r >> 1);
@@ -732,7 +771,7 @@ void screen_send(xsMachine* the)
 				uint8_t index = twoPixels & 0x0F;
 #endif
 				uint8_t* component = components + (index << 2);
-			#if mxLinux
+			#if (mxLinux || mxWindows)
 				*rowAddress++ = component[2];
 				*rowAddress++ = component[1];
 				*rowAddress++ = component[0];
@@ -754,7 +793,7 @@ void screen_send(xsMachine* the)
 				index = twoPixels >> 4;
 #endif
 				component = components + (index << 2);
-			#if mxLinux
+			#if (mxLinux || mxWindows)
 				*rowAddress++ = component[2];
 				*rowAddress++ = component[1];
 				*rowAddress++ = component[0];
