@@ -18,7 +18,7 @@
  *
  */
 
-#include "enc28j60.h"
+#include "esp_eth_enc28j60.h"
 #include "mc.defines.h"
 
 esp_eth_mac_t* mod_ethernet_get_mac(spi_device_handle_t spi_handle, int interrupt_pin)

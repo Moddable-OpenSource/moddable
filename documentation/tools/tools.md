@@ -1,7 +1,7 @@
 # Tools
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: January 10, 2022
+Revised: March 5, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -67,13 +67,13 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
 - `-d`: to build a debug instrumented version.
-- `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See **png2bmp** here under.
+- `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See [png2bmp](#png2bmp) for more detail.
 - `-i`: to build a release instrumented version.
 - `-m`: to run `make` automatically, otherwise **mcconfig** just generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
 - `-p platform`: to select the platform. Consult the documentation for your device target for its platform identifier. The supported values include: `esp`, `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `gecko/mighty`, `gecko/giant`, `gecko/blue`, `gecko/thunderboard2`, and `wasm`.  Defaults to the host build platform:`mac`, `win` or `lin`. 
-- `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See **png2bmp** here under.
-- `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See **Build Targets** below for more detail.
+- `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See [png2bmp](#png2bmp) for more detail.
+- `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See [Build Targets](#buildtargets) for more detail.
 - `-v`: to trace all commands executed by `make`
 - config arguments specified in the form of `key-=value` or `key="value"`. These are merged into the `config` section of the manifest. Import the `mc/config` module to access them. Moddable provided hosts that support networking and/or displays define the following config properties:
   - `ssid="wifi ssid"` and `password="wifi password"`: to specify network credentials and connect to the network before launching the app.
@@ -81,15 +81,18 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 > **Note**: To generate a release build, exclude both `-d` and `-i` from the command line.
 
+<a id="buildtargets"></a>
 **Build Targets**
 
-mcconfig takes an optional `-t target` argument to specify a build target. The options for the target are:
+**mcconfig** takes an optional `-t target` argument to specify a build target. The options for the target are:
 
 - `clean`: removes build outputs for the app
-- `build`: builds the app, but does not deploy it
-- `deploy`: deploys a previously built app without rebuilding
-- `xsbug`: connect the xsbug debugger to a previously-deployed app
-- `all`: performs all steps (This is the default value, when the `-t` flag is omitted)
+- `build`: builds the app
+- `deploy`: deploys the app
+- `xsbug`: connects to the xsbug debugger
+- `all`: performs the `build`, `deploy`, and `xsbug` steps
+
+When the `-t` flag is omitted, the default value is `all`.
 
 <a id="mcrun"></a>
 ## mcrun

@@ -1,0 +1,133 @@
+{
+	"service": {
+		"uuid": "1812",
+		"characteristics": {
+			"info": {
+				"uuid": "2A4A",
+				"maxBytes": 4,
+				"type": "Array",
+				"permissions": "readEncrypted,writeEncrypted",
+				"properties": "read",
+				"value": [11,1,0,21]
+			},
+			"report_map": {
+				"uuid": "2A4B",
+				"maxBytes": 110,
+				"type": "Uint8Array",
+				"permissions": "readEncrypted,writeEncrypted",
+				"properties": "read",
+				"value": [
+						5,1,
+						9,6,
+						161,1,
+						133,1,
+						5,7,
+						25,224,
+						41,231,
+						21,0,
+						37,1,
+						117,1,
+						149,8,
+						129,2,
+						149,1,
+						117,8,
+						129,1,
+						149,5,
+						117,1,
+						5,8,
+						25,1,
+						41,5,
+						145,2,
+						149,1,
+						117,3,
+						145,1,
+						149,6,
+						117,8,
+						21,0,
+						37,101,
+						5,7,
+						25,0,
+						41,101,
+						129,0,
+						192,
+						5,12,
+						9,1,
+						161,1,
+						133,2,
+						5,12,
+						21,0,
+						37,1,
+						117,1,
+						149,8,
+						9,233,
+						9,234,
+						9,226,
+						9,182,
+						9,181,
+						9,176,
+						9,205,
+						9,185,
+						129,2,
+						192
+						]
+			}, 
+			"control_point": {
+				"uuid": "2A4C",
+				"maxBytes": 1,
+				"type": "Uint8",
+				"permissions": "readEncrypted,writeEncrypted",
+				"properties": "writeNoResponse"
+			},
+			"protocol_mode": {
+				"uuid": "2A4E",
+				"maxBytes": 1,
+				"type": "Uint8",
+				"permissions": "readEncrypted,writeEncrypted",
+				"properties": "read,writeNoResponse",
+				"value": 1
+			},
+			"keyboard_input_report": {
+				"uuid": "2A4D",
+				"maxBytes": 8,
+				"type": "Uint8Array",
+				"permissions": "read",
+				"properties": "read,notify",
+				"descriptors": {
+					"report_reference": {
+						"uuid": "2908",
+						"maxBytes": 2,
+						"type": "Uint8Array",
+						"permissions": "read",
+						"properties": "read,write",
+						"value": [
+							1,
+							1
+						]
+					}
+				}
+			},
+			"media_input_report": {
+				"uuid": "2A4D",
+				"maxBytes": 1,
+				"type": "Uint8Array",
+				"permissions": "read",
+				"properties": "read,notify",
+				"descriptors": {
+					"report_reference": {
+						"uuid": "2908",
+						"maxBytes": 2,
+						"type": "Uint8Array",
+						"permissions": "read",
+						"properties": "read,write",
+						"value": [
+							2,
+							1
+						]
+					}
+				}
+			}
+		}
+	}
+}
+		
+		

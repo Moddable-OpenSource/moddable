@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,6 +15,16 @@
 import Instrumentation from "instrumentation";
 import Debug from "debug";
 
+// see modInstrumentation.h starting at kModInstrumentationSlotHeapSize
+const xsInstrumentation = {
+	slot_used: 0,
+	chunk_used: 1,
+	keys_used: 2,
+	garbage_collections: 3,
+	modules_loaded: 4,
+	stack_used: 5
+};
+
 let proxyTarget = {}, proxyObject = {};
 let buffer = new ArrayBuffer(4);
 let promise_a = new Promise(empty), promise_b = new Promise(empty), promises = [promise_a, promise_b];
@@ -24,16 +34,34 @@ function* idMaker() {
         yield index++;
 }
 
+// xs instrumentation is at the end, by convention, so find the end and back-up
+let xsInstrumentationOffset;
+for (let i = 0; true; i++) {
+	if (undefined !== Instrumentation.get(i))
+		continue;
+	
+	xsInstrumentationOffset = i - 6;
+	break;
+}
+
+// determine the size of one slot -- assumes Object is one slot
+let slots = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset);
+const holdOneSlot = {};
+const slotSize = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset) - slots; 
+Debug.gc();
+
 measure("Boolean", () => true);
 measure("Number", () => 1);
 measure("String `String in ROM`",  () => "String in ROM");
 measure("String `fromCharCode(32)`",  () => String.fromCharCode(32));
 measure("String `String in ` + 'RAM'",  () => "String in " + "RAM");
-measure("Object {}",  () => {});
+measure("Object {}",  () => {return {}});
 measure("Object {x: 1}",  () => {return {x: 1}});
 measure("Object {x: 1, y: 2}",  () => {return {x: 1, y: 2}});
 measure("Object {x: 1, y: 2, z: 3}",  () => {return {x: 1, y: 2, z: 3}});
 measure("Date",  () => new Date);
+measure("BigInt 1n", () => 1n);
+measure("BigInt 100000000001n", () => 100000000001n);
 measure("Function () => {}",  () => {return () => {}});
 measure("Function closure (1 variable)",  () => {let a = 1; return function() {return a}});
 measure("Function closure (2 variables)",  () => {let a = 1, b = 2; return function() {return a + b;}});
@@ -82,24 +110,24 @@ measure("WeakSet (empty)",  () => new WeakSet);
 
 function measure(name, what)
 {
-	let slots, chunks, result = undefined /* {} */;
+	let slots, chunks, result;
 
 	Debug.gc();
 
-	slots = Instrumentation.get(11);
-	chunks = Instrumentation.get(12);
+	slots = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset);
+	chunks = Instrumentation.get(xsInstrumentation.chunk_used + xsInstrumentationOffset);
 
 	result = what();
 
 	Debug.gc();
 
-	slots = Instrumentation.get(11) - slots;
-	chunks = Instrumentation.get(12) - chunks;
+	slots = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset) - slots;
+	chunks = Instrumentation.get(xsInstrumentation.chunk_used + xsInstrumentationOffset) - chunks;
 
 	if (slots && chunks)
-		trace(`${name}: ${slots / 16} slots + ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
+		trace(`${name}: ${slots / slotSize} slots + ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
 	else if (slots)
-		trace(`${name}: ${slots / 16} slots = ${slots + chunks} bytes\n`)
+		trace(`${name}: ${slots / slotSize} slots = ${slots + chunks} bytes\n`)
 	else if (chunks)
 		trace(`${name}: ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
 	else

@@ -1,7 +1,7 @@
 # Data
 
-Copyright 2017 Moddable Tech, Inc.<BR>
-Revised: November 21, 2018
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: March 7, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -9,6 +9,10 @@ Revised: November 21, 2018
 
 * [Base64](#base64)
 * [Hex](#hex)
+* [CRC](#crc)
+* [QRCode](#qrcode)
+* [Text](#text)
+* [zlib](#zlib)
 
 <a id="base64"></a>
 ## class Base64
@@ -17,6 +21,14 @@ The `Base64` class provides static functions to encode and decode using the Base
 
 ```js
 import Base64 from "base64";
+```
+
+Include the module's manifest to use it in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/base64/manifest.json"
+	]
 ```
 
 ### `static decode(str)`
@@ -30,7 +42,7 @@ trace(Base64.decode("aGVsbG8sIHdvcmxk") + "\n");
 
 ### `static encode(data)`
 
-The `encode` function takes a `String` or `ArrayBuffer` and returns an `ArrayBuffer` containing the data with Base64 encoding applied.
+The `encode` function takes a `String` or buffer and returns an `ArrayBuffer` containing the data with Base64 encoding applied.
 
 ```js
 trace(Base64.encode("hello, world") + "\n");
@@ -48,6 +60,14 @@ The `Hex` class provides static functions to convert between an `ArrayBuffer` an
 import Hex from "hex";
 ```
 
+Include the module's manifest to use it in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/hex/manifest.json"
+	]
+```
+
 ### `static toBuffer(string [, separator])`
 
 The `toBuffer` function converts a [hexadecimal](https://en.wikipedia.org/wiki/Hexadecimal) encoded `String`, with optional separator, to an `ArrayBuffer`.
@@ -61,7 +81,7 @@ The hexadecimal digits may be uppercase or lowercase. If the optional separator 
 
 ### `static toString(buffer [, separator]);`
 
-The `toString` function converts an `ArrayBuffer` to a hexadecimal encoded `String`.
+The `toString` function converts a buffer to a hexadecimal encoded `String`.
 
 ```js
 let buffer = Hex.toBuffer("0123456789abcdef");
@@ -70,3 +90,174 @@ let s0 = Hex.toString(buffer, ".");
 let s1 = Hex.toString(buffer);
 // s1 is 0123456789ABCDEF
 ```
+
+<a id="crc"></a>
+## class CRC8, CRC16
+
+The `CRC8` and `CRC16` classes calculate CRC checksums on data.
+
+```
+import {CRC8} from "crc";
+import {CRC16} from "crc";
+```
+
+Include the module's manifest to use it in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/crc/manifest.json"
+	]
+```
+
+#### `CRC8(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
+#### `CRC16(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
+
+The `CRC8` and `CRC16` functions take a number of options used to specify the CRC checksum to calculate. 
+
+| Parameter | Default | Description |
+| :---: | :---: | :--- |
+| `polynomial` | (none) | Polynomial to use (required) |
+| `initial` | `0` | Initial CRC accumulator value (optional) |
+| `reflectInput` | `false` | If `true`, each input byte is reflected (bits used in reverse order) before being used (optional) |
+| `reflectOutput` | `false` | If `true`, each output byte is reflected before being returned. The output reflection is done over the whole CRC value (optional) |
+| `xorOutput` | `0` | Value to XOR to the final CRC value (optional) |
+
+The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8 and 16-bit integers for CRC16.
+
+The [crc example](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
+
+- `CRC-8` 
+- `CRC-8/CDMA2000` 
+- `CRC-8/DARC` 
+- `CRC-8/DVB-S2` 
+- `CRC-8/EBU` 
+- `CRC-8/I-CODE` 
+- `CRC-8/ITU` 
+- `CRC-8/MAXIM` 
+- `CRC-8/ROHC` 
+- `CRC-8/WCDM` 
+- `CRC-16/CCITT-FALSE` 
+- `CRC-16/ARC` 
+- `CRC-16/ARG-CCITT` 
+- `CRC-16/BUYPASS` 
+- `CRC-16/CDMA2000` 
+- `CRC-16/DDS-110` 
+- `CRC-16/DECT-R` 
+- `CRC-16/DECT-X` 
+- `CRC-16/DNP` 
+- `CRC-16/EN-13757` 
+- `CRC-16/GENIBUS` 
+- `CRC-16/MAXIM` 
+- `CRC-16/MCRF4XX` 
+- `CRC-16/RIELLO` 
+- `CRC-16/T10-DIF` 
+- `CRC-16/TELEDISK` 
+- `CRC-16/TMS37157` 
+- `CRC-16/USB` 
+- `CRC-A` 
+- `CRC-16/KERMIT` 
+- `CRC-16/MODBUS` 
+- `CRC-16/X-25` 
+- `CRC-16/XMODE` 
+
+
+### `close()`
+
+The `close` function frees resources associated with the CRC checksum calculation.
+
+### `checksum(buffer)`
+
+The `checksum` function applies the CRC calculation to the data provided in `buffer`. The CRC checksum is returned.
+
+The `buffer` parameter may be a `String` or buffer.
+
+The `checksum` function may be called multiple times. Each time it is called the CRC updated and returned. Call the `reset` function to start a new calculation.
+
+### `reset()`
+
+The `reset` function clears the CRC accumulator to the `initial` value.
+
+<a id="qrcode"></a>
+## class QRCode
+The `QRCode` class generates QR Code data from Strings and buffers. The data may then be rendering in various ways. Extensions are provided to [Poco](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/commodetto/qrcode) and [Piu](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/piu/MC/qrcode) to efficiently render QR Codes. The core implementation is the QR Code Generator Library from [Project Nayuki](https://www.nayuki.io/page/qr-code-generator-library).
+
+```js
+import qrCode from "qrcode";
+```
+
+Include the module's manifest to use them in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/qrcode/manifest.json"
+	]
+```
+
+For additional details see the article [QR Code module for the Moddable SDK](https://blog.moddable.com/blog/qrcode/).
+
+### `qrCode(options)`
+
+The `qrCode` function accepts an options object that describes the QR Code to generate. It returns an `ArrayBuffer` where each byte is 0 or 1 for a white or black pixel. The returned buffer has a `size` property that indicate the number of cells in one dimension of the generated QR Code.
+
+The following properties are supported in the options object:
+
+| Property | Description |
+| :---: | :--- |
+| `maxVersion` |  A number between 1 and 40 inclusive indicating the maximum version of the generated QR Code. The version number determines the amount of data the QR Code can contain. This property is optional and defaults to 40. |
+| `input` |  A `String` or buffer containing the data to encode into the QR Code. This property is required. |
+
+```js
+const code = qrCode({input: "Welcome to Moddable", maxVersion: 4});
+
+// trace QR Code to console
+code = new Uint8Array(code);
+for (let y = 0; y < = code.size; y++) {
+    for (let x = 0; x < = code.size; x++)
+        trace(code[(y * code.size) + x] ? "X" : ".", "\n");
+    trace("\n");
+}
+```
+
+<a id="text"></a>
+## class TextDecoder and class TextEncoder
+
+The `TextDecoder` and `TextEncoder` classes implement conversion between JavaScript strings and memory buffers containing UTF-8 data.
+
+```js
+import TextDecoder from "text/decoder";
+import TextEncoder from "text/encoder";
+```
+
+Include the modules' manifest to use them in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/text/decoder/manifest.json",
+		"$(MODULES)/data/text/encoder/manifest.json"
+	]
+```
+
+The `TextDecoder` implements the [TextDecoder class](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder) as [specified by WhatWG](https://encoding.spec.whatwg.org/#interface-textdecoder). It accepts only UTF-8 input data.
+
+The `TextEncoder` implements the [TextEncoder class](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) as [specified by WhatWG](https://encoding.spec.whatwg.org/#interface-textencoder). The implementation includes `encodeInto()`.
+
+<a id="zlib"></a>
+## zlib: class Inflate and class Deflate
+
+The `Inflate` and `Deflate` classes implement zlib decompression and compression. The JavaScript API follows the API defined by the [pako](https://github.com/nodeca/pako) library.
+
+```js
+import Inflate from "inflate";
+import Deflate from "deflate";
+```
+
+Include the modules' manifest to use them in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/zlib/manifest_deflate.json",
+		"$(MODULES)/data/zlib/manifest_inflate.json"
+	]
+```
+
+> **Note**: A significant amount of memory is required for zlib decompresssion and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.

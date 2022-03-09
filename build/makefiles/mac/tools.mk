@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2018  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -118,7 +118,9 @@ MODULES = \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
 	$(MOD_DIR)/file.xsb \
 	$(MOD_DIR)/buildclut.xsb \
+	$(MOD_DIR)/cdv.xsb \
 	$(MOD_DIR)/colorcellencode.xsb \
+	$(MOD_DIR)/compileDataView.xsb \
 	$(MOD_DIR)/compressbmf.xsb \
 	$(MOD_DIR)/image2cs.xsb \
 	$(MOD_DIR)/mcbundle.xsb \
@@ -189,6 +191,7 @@ OBJECTS = \
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
+	$(BIN_DIR)/cdv \
 	$(BIN_DIR)/colorcellencode \
 	$(BIN_DIR)/compressbmf \
 	$(BIN_DIR)/image2cs \
@@ -296,6 +299,11 @@ $(BIN_DIR)/buildclut: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": buildclut"
 	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
 	chmod +x $(BIN_DIR)/buildclut
+
+$(BIN_DIR)/cdv: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": cdv"
+	echo '#!/bin/bash\n$$MODDABLE/build/bin/mac/'$(GOAL)'/tools cdv "$$@"' > $(BIN_DIR)/cdv
+	chmod +x $(BIN_DIR)/cdv
 
 $(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"

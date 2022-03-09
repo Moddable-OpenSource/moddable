@@ -53,6 +53,10 @@ txKind fxTypeOf(txMachine* the, txSlot* theSlot)
 		return XS_STRING_KIND;
 	if (theSlot->kind == XS_BIGINT_X_KIND)
 		return XS_BIGINT_KIND;
+#ifdef mxHostFunctionPrimitive
+	if (theSlot->kind == XS_HOST_FUNCTION_KIND)
+		return XS_REFERENCE_KIND;
+#endif
 	return theSlot->kind;
 }
 

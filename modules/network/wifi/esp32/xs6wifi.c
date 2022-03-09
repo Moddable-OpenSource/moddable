@@ -174,14 +174,14 @@ void xs_wifi_connect(xsMachine *the)
 		xsUnknownError("ssid required");
 	str = xsmcToString(xsVar(0));
 	if (espStrLen(str) > (sizeof(config.sta.ssid) - 1))
-		xsUnknownError("ssid too long - 32 bytes max");
+		xsUnknownError("ssid too long - 31 bytes max");
 	espMemCpy(config.sta.ssid, str, espStrLen(str));
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_password);
 	if (xsmcTest(xsVar(0))) {
 		str = xsmcToString(xsVar(0));
 		if (espStrLen(str) > (sizeof(config.sta.password) - 1))
-			xsUnknownError("password too long - 64 bytes max");
+			xsUnknownError("password too long - 63 bytes max");
 		espMemCpy(config.sta.password, str, espStrLen(str));
 	}
 
@@ -201,11 +201,7 @@ void xs_wifi_connect(xsMachine *the)
 		config.sta.channel = channel;
 	}
 
-	esp_wifi_get_mode(&mode);
-	if ((WIFI_MODE_STA != mode) && (WIFI_MODE_APSTA != mode))
-		esp_wifi_set_mode(WIFI_MODE_STA);
-
-	esp_wifi_set_config(WIFI_IF_STA, &config);
+	esp_wifi_set_config(WIFI_IF_STA, &config); 
 
 	gWiFiConnectRetryRemaining = MODDEF_WIFI_ESP32_CONNECT_RETRIES;
 	if (0 != esp_wifi_connect())
@@ -524,12 +520,12 @@ void initWiFi(void)
 	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 	esp_wifi_set_mode(WIFI_MODE_NULL);
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, NULL, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, NULL, NULL));
-
 	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
 
     gStation = esp_netif_create_default_wifi_sta();
+
+	ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, NULL, NULL));
     
     ESP_ERROR_CHECK( esp_wifi_start() );
 }

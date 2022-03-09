@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,13 +22,13 @@
 	websocket client and server
 
 	- validate Sec-WebSocket-Accept in client
-	- messages with characters with ascii values above 255 will fail
 */
 
 import {Socket, Listener} from "socket";
 import Base64 from "base64";
 import Logical from "logical";
 import {Digest} from "crypt";
+import Timer from "timer";
 
 /*
 	state:
@@ -56,6 +56,7 @@ export class Client {
 		this.headers = dictionary.headers ?? [];
 		this.protocol = dictionary.protocol;
 		this.state = 0;
+		this.flags = 0;
 
 		if (dictionary.socket)
 			this.socket = dictionary.socket;
@@ -104,6 +105,10 @@ export class Client {
 	close() {
 		this.socket?.close();
 		delete this.socket;
+		
+		if (this.timer)
+			Timer.clear(this.timer);
+		delete this.timer;
 	}
 };
 
@@ -287,22 +292,37 @@ trace("partial header!!\n");		//@@ untested
 export class Server {
 	#listener;
 	constructor(dictionary = {}) {
+		if (null === dictionary.port)
+			return;
+
 		this.#listener = new Listener({port: dictionary.port ?? 80});
 		this.#listener.callback = () => {
-			const socket = new Socket({listener: this.#listener});
-			const request = new Client({socket});
-			request.doMask = false;
-			socket.callback = server.bind(request);
-			request.state = 1;		// already connected socket
-			request.callback = this.callback;		// transfer server.callback to request.callback
+			const request = addClient(new Socket({listener: this.#listener}), 1, this.callback);
 			request.callback(Server.connect, this);	// tell app we have a new connection
 		};
 	}
 	close() {
-		this.#listener.close();
+		this.#listener?.close();
 		this.#listener = undefined;
 	}
+	attach(socket) {
+		const request = addClient(socket, 2, this.callback);
+		request.timer = Timer.set(() => {
+			delete request.timer;
+			request.callback(Server.connect, this);	// tell app we have a new connection
+			socket.callback(2, socket.read());
+		});
+	}
 };
+
+function addClient(socket, state, callback) {
+	const request = new Client({socket});
+	delete request.doMask;
+	socket.callback = server.bind(request);
+	request.state = state;
+	request.callback = callback;		// transfer server.callback to request.callback
+	return request;
+}
 
 /*
 	callback for server handshake. after that, switches to client callback
