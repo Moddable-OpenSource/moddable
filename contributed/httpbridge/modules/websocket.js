@@ -18,9 +18,17 @@ import {Server as WebSocketServer} from "websocket";
 
 class WebSocketUpgrade extends WebSocketServer {
 	static connections = [];
+	#bridge;
 
 	constructor(opts) {
 		super(opts);
+	}
+	set bridge(value) {
+		this.#bridge = value;
+	}
+
+	get bridge() {
+		return this.#bridge;
 	}
 
 	callback(message, value) {
@@ -103,9 +111,8 @@ class BridgeWebsocket extends Bridge {
 				if ( value === this.#path ) {
 					WebSocketUpgrade.bridge=this;
 					const socket = this.parent.detach(req);
-					const websocket = new WebSocketUpgrade({socket:socket});
-					//const websocket = new WebSocketUpgrade({port:null});
-					//websocket.attach(socket,2);
+					const websocket = new WebSocketUpgrade({port:null});
+					websocket.attach(socket);
 					return;
 				}
 				break;
