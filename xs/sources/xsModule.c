@@ -2307,6 +2307,7 @@ void fx_StaticModuleRecord(txMachine* the)
 		code = fxGetArchiveCode(the, archive, path, &size);
 		if (code == C_NULL)
 			mxURIError("module not found: %s", path);
+		mxPop();
 		script.callback = NULL;
 		script.symbolsBuffer = NULL;
 		script.symbolsSize = 0;
