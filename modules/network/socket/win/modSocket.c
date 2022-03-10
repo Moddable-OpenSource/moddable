@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -52,6 +52,7 @@ struct xsSocketRecord {
 	int32_t						unreportedSent;		// bytes sent to the socket but not yet reported to object as sent
 
 	uint8_t						writeBuf[1024];
+	uint8_t 					readBuf[1024];
 };
 
 typedef struct xsListenerRecord xsListenerRecord;
@@ -218,22 +219,22 @@ DWORD WINAPI hostResolveProc(LPVOID lpParameter)
 
 int doReadSocket(xsMachine *the, xsSocket xss)
 {
-	unsigned char buffer[1024];
-	int count;
+	int count = 0;
+	int full = sizeof(xss->readBuf) == xss->readBytes;
 
-	count = recv(xss->skt, buffer, sizeof(buffer), 0);
-	if (count > 0) {
+	if (!full) {
+		if (xss->readBytes)
+			c_memcpy(xss->readBuf, xss->readBuffer, xss->readBytes);
+		xss->readBuffer = xss->readBuf;
+		count = recv(xss->skt, xss->readBuf + xss->readBytes, sizeof(xss->readBuf) - xss->readBytes, 0);
+	}
+	if ((count > 0) || full) {
 		modInstrumentationAdjust(NetworkBytesRead, count);
-
-		xss->readBuffer = buffer;
-		xss->readBytes = count;
+		xss->readBytes += count;
 
 		xsBeginHost(the);
-		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(count));
+		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->readBytes));
 		xsEndHost(the);
-
-		xss->readBuffer = NULL;
-		xss->readBytes = 0;
 	}
 
 	return count;
@@ -262,9 +263,11 @@ LRESULT CALLBACK modSocketWindowProc(HWND window, UINT message, WPARAM wParam, L
 							count = doReadSocket(the, xss);
 						} while (count > 0);
 
-						xsBeginHost(the);
-						xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
-						xsEndHost(the);
+						if (!xss->done) {
+							xsBeginHost(the);
+							xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
+							xsEndHost(the);
+						}
 					} break;
 					case FD_READ: {
 						doReadSocket(the, xss);
