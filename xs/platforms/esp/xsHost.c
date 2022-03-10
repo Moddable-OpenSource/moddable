@@ -1355,7 +1355,7 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 	gPartition = esp_partition_find_first(0x40, 1,  NULL);
 	if (gPartition) {
 		if (ESP_OK == esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle)) {
-			if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, kFlashSectorSize, spiRead, spiWrite))
+			if (fxMapArchive(C_NULL, preparation, (void *)gPartition, kFlashSectorSize, spiRead, spiWrite))
 				result = (void *)gPartitionAddress;
 		}
 	}
@@ -1396,7 +1396,7 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn; 
 
-	if (fxMapArchive(preparation, (void *)kModulesStart, kModulesStart, kFlashSectorSize, spiRead, spiWrite))
+	if (fxMapArchive(C_NULL, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
 		return kModulesStart;
 
 	return NULL;

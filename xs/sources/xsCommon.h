@@ -92,6 +92,7 @@ typedef struct {
 #define XS_ATOM_CODE 0x434F4445 /* 'CODE' */
 #define XS_ATOM_DATA 0x44415441 /* 'DATA' */
 #define XS_ATOM_HOSTS 0x484F5354 /* 'HOST' */
+#define XS_ATOM_MAPS 0x4D415053 /* 'MAPS' */
 #define XS_ATOM_MODULES 0x4D4F4453 /* 'MODS' */
 #define XS_ATOM_NAME 0x4E414D45 /* 'NAME' */
 #define XS_ATOM_PATH 0x50415448 /* 'PATH' */

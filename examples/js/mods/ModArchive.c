@@ -45,7 +45,7 @@ void ModArchiveCreate(xsMachine* the)
 	self->buffer = xsToReference(xsArg(0));
 
 	_xsmcGetBuffer(the, &xsArg(0), &data, &size, 1);
-    self->archive = fxMapArchive(preparation, data, data, size, fxArchiveRead, fxArchiveWrite);
+    self->archive = fxMapArchive(the, preparation, data, size, fxArchiveRead, fxArchiveWrite);
 	
 	xsSetHostChunk(xsThis, self, sizeof(record));
 	xsSetHostHooks(xsThis, &ModArchiveHooks);
@@ -83,6 +83,8 @@ void ModArchive_get_modulePaths(xsMachine *the)
 		p += c_read32be(p);
 		// SYMB
 		p += c_read32be(p);
+		// MAPS
+		p += c_read32be(p);
 		// MODS
 		q = p + c_read32be(p);
 		p += sizeof(Atom);
@@ -107,6 +109,8 @@ void ModArchive_get_resourcePaths(xsMachine *the)
 		// NAME
 		p += c_read32be(p);
 		// SYMB
+		p += c_read32be(p);
+		// MAPS
 		p += c_read32be(p);
 		// MODS
 		p += c_read32be(p);

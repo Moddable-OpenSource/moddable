@@ -19,4 +19,4 @@ const c = new Compartment({}, {
 });
 const ns = c.importNow("test");
 
-trace(`${ ns.default }\n`);
+trace(`${ ns.default(1, 2) }\n`);

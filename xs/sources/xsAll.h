@@ -681,7 +681,7 @@ mxExport void* fxGetArchiveCode(txMachine* the, void* archive, txString path, tx
 mxExport void* fxGetArchiveData(txMachine* the, void* archive, txString path, txSize* size);
 mxExport txInteger fxGetArchiveDataCount(txMachine* the, void* archive);
 mxExport void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index);
-mxExport void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
+mxExport void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
 
