@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -81,6 +81,11 @@ class MakeFile extends MAKEFILE {
 	}
 	generateModulesDefinitions(tool) {
 		this.write("MODULES =");
+		for (var result of tool.cdvFiles) {
+			this.write("\\\n\t$(MODULES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target + ".xsb");
+		}
 		for (var result of tool.jsFiles) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
@@ -894,6 +899,9 @@ export default class extends Tool {
 			for (var tsFile of this.tsFiles) {
 				tsFile.preload = false;
 			}
+			for (var cdvFile of this.cdvFiles) {
+				cdvFile.preload = false;
+			}
 			for (var pattern of preload) {
 				pattern = this.resolvePrefix(pattern);
 				pattern = this.resolveSlash(pattern);
@@ -922,6 +930,13 @@ export default class extends Tool {
 						if (target == pattern) {
 							result.preload = true;
 							this.preloads.push(result.target);
+						}
+					}
+					for (var result of this.cdvFiles) {
+						const target = result.target + ".xsb";
+						if (target == pattern) {
+							result.preload = true;
+							this.preloads.push(target);
 						}
 					}
 				}

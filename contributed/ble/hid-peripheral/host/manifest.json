@@ -1,0 +1,46 @@
+{
+	"build": {
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+	},
+	"defines": {
+		"XS_MODS": 1
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/ble/manifest_server.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/base/modules/manifest.json"
+	],
+	"creation": {
+		"static": 90000,
+		"stack": 720,
+		"keys": {
+			"available": 512
+		}
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./keyboardService",
+			"./hidkeyboard",
+			"./hidmedia"
+		]
+	},
+	"strip": [],
+	"ble":{
+		"*": [
+			"./bleservices/*"
+		]
+	},
+	"resources": {
+        "*-alpha": [
+            "$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-24"
+        ]
+    },
+	"preload": [
+		"main",
+		"keyboardService",
+		"hidkeyboard",
+		"hidmedia"
+	]
+}

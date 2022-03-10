@@ -1,0 +1,8 @@
+{
+  "modules": {
+    "*": ["../modules/control", "../modules/button", "./peripherals","../modules/led","./host"]
+  },
+  "preload": ["control", "button", "peripherals", "led", "host"],
+  "config": {
+  }
+}
