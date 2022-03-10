@@ -33,6 +33,7 @@
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
+	#include "freertos/semphr.h"
 
 	static void workerLoop(void *pvParameter);
 #elif qca4020
@@ -452,7 +453,16 @@ extern void fxSampleInstrumentation(xsMachine * the, xsIntegerValue count, xsInt
 void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	xsMachine *the = *(xsMachine **)refcon;
+#if ESP32
+	extern SemaphoreHandle_t gInstrumentMutex;
+	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
+#endif
+
 	fxSampleInstrumentation(the, 0, NULL);
 	modInstrumentMachineReset(the);
+
+#if ESP32
+	xSemaphoreGive(gInstrumentMutex);
+#endif
 }
 #endif
