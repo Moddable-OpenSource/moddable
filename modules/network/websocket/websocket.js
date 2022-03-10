@@ -22,6 +22,7 @@
 	websocket client and server
 
 	- validate Sec-WebSocket-Accept in client
+	- messages with characters with ascii values above 255 will fail
 */
 
 import {Socket, Listener} from "socket";
