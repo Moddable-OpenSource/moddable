@@ -517,6 +517,10 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 
 #if mxUseDefaultCStackLimit
 
+#ifndef mxASANStackMargin
+	#define mxASANStackMargin 0
+#endif
+
 #if mxWindows
 ULONG GetCurrentThreadStackLimits_Win7( _Out_ PULONG_PTR LowLimit, _Out_ PULONG_PTR HighLimit )
 {
