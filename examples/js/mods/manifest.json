@@ -1,7 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/files/file/manifest.json"
+		"$(MODDABLE)/examples/manifest_base.json"
 	],
 	"creation": {
 		"keys": {
@@ -11,7 +10,7 @@
 	"modules": {
 		"*": [
 			"./main",
-			"./ModArchive"
+			"./ArchiveFileMapping"
 		]
 	},
 	"preload": [

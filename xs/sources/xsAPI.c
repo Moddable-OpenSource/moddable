@@ -2000,7 +2000,7 @@ static void fxMapperStep(txMapper* self);
 #define mxElseNotEnoughMemory(_ASSERTION) mxElseStatus(_ASSERTION, XS_NOT_ENOUGH_MEMORY_EXIT)
 #define mxElseInstall(_ASSERTION) if (!(_ASSERTION)) goto install
 
-#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
+#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE)
 
 void fxBuildArchiveKeys(txMachine* the)
 {
@@ -2039,6 +2039,9 @@ void* fxGetArchiveCode(txMachine* the, void* archive, txString path, txSize* siz
 			atomSize = c_read32be(p);
 			p += atomSize;
 			// SYMB
+			atomSize = c_read32be(p);
+			p += atomSize;
+			// CHKS
 			atomSize = c_read32be(p);
 			p += atomSize;
 			// MAPS
@@ -2081,6 +2084,8 @@ static txU1 *fxGetArchiveResources(txMachine *the, void* archive, txU4 *size)
 	// NAME
 	p += c_read32be(p);
 	// SYMB
+	p += c_read32be(p);
+	// CHKS
 	p += c_read32be(p);
 	// MAPS
 	p += c_read32be(p);
@@ -2163,11 +2168,11 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 	Atom atom;
 	txU1* p;
 	txU1* q;
-	txU1* flag;
 	txU1* signature;
 	txU1* checksum;
 	txID id;
 	txID c, i;
+	txFlag clean;
 
 	c_memset(self, 0, sizeof(txMapper));
 	if (c_setjmp(self->jmp_buf) == 0) {
@@ -2197,27 +2202,16 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 		mxElseFatalCheck(*p++ == XS_MAJOR_VERSION);
 		mxElseFatalCheck(*p++ == XS_MINOR_VERSION);
 		p++;
-		flag = p;
 		p++;
-		mxMapAtom(p);
-		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
-		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-		signature = p;
-		p += XS_DIGEST_SIZE;
-		mxMapAtom(p);
-		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
-		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-	
-		checksum = preparation->checksum;
-		if (*flag) {
-			if (c_memcmp(p, checksum, XS_DIGEST_SIZE) == 0)
-				goto bail;
-		}
-
-		*flag = 1;
-		c_memcpy(p, checksum, XS_DIGEST_SIZE);
-        p += XS_DIGEST_SIZE;
-		self->dirty = 1;
+// 		mxMapAtom(p);
+// 		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
+// 		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+// 		signature = p;
+// 		p += XS_DIGEST_SIZE;
+// 		mxMapAtom(p);
+// 		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
+// 		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+//         p += XS_DIGEST_SIZE;
 		
 		self->bufferOffset = mxArchiveHeaderSize;
 		if (self->bufferSize > self->size)
@@ -2248,22 +2242,56 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 			}
 			mxElseFatalCheck(p < q);
 			*p = 0;
-			sum &= 0x7FFFFFFF;
-			modulo = sum % preparation->nameModulo;
-			result = preparation->names[modulo];
-			while (result != C_NULL) {
-				if (result->value.key.sum == sum)
-					if (c_strcmp(result->value.key.string, (txString)self->scratch) == 0)
-						break;
-				result = result->next;
-			}
-			if (result)
-				self->ids[i] = result->ID;
+			if (the)
+				self->ids[i] = fxID(the, (txString)self->scratch);
 			else {
-				self->ids[i] = id;
-				id++;
+				sum &= 0x7FFFFFFF;
+				modulo = sum % preparation->nameModulo;
+				result = preparation->names[modulo];
+				while (result != C_NULL) {
+					if (result->value.key.sum == sum)
+						if (c_strcmp(result->value.key.string, (txString)self->scratch) == 0)
+							break;
+					result = result->next;
+				}
+				if (result)
+					self->ids[i] = result->ID;
+				else {
+					self->ids[i] = id;
+					id++;
+				}
 			}
 		}
+		
+		fxMapperReadAtom(self, &atom);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
+		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
+		i = 0;
+		clean = 1;
+		while (self->bufferOffset < self->bufferLoop) {
+			txID id = self->ids[i];
+			txU1 low = (txU1)(id & 0x00FF);
+			txU1 high =  (txU1)(id >> 8);
+			if (self->bufferOffset == self->bufferSize)
+				fxMapperStep(self);
+			if (*(self->buffer + self->bufferOffset) != low) {
+				*(self->buffer + self->bufferOffset) = low;
+				self->dirty = 1;
+				clean = 0;
+			}
+			self->bufferOffset++;
+			if (self->bufferOffset == self->bufferSize)
+				fxMapperStep(self);
+			if (*(self->buffer + self->bufferOffset) != high) {
+				*(self->buffer + self->bufferOffset) = high;
+				self->dirty = 1;
+				clean = 0;
+			}
+			self->bufferOffset++;
+			i++;
+		}
+		if (clean)
+			goto bail;
 		
 		fxMapperReadAtom(self, &atom);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_MAPS);
