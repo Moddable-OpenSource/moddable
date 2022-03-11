@@ -1,7 +1,7 @@
 # Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico
 
 Copyright 2021 Moddable Tech, Inc.  
-Revised: February 26, 2021
+Revised: March 4, 2022
 
 ![](./images/spi-touch-display.jpg)
 
@@ -27,6 +27,12 @@ cd $MODDABLE/examples/piu/balls
 mcconfig -d -m -p pico/ili9341
 ```
 
+## ili9341 Module pinout
+
+This is a typical layout of the ili9341 module. 
+
+![](./images/ili9341-pinout.png)
+
 ## Raspberry Pi Pico Pinout
 
 | ILI9341 Display | Pico
@@ -39,11 +45,11 @@ mcconfig -d -m -p pico/ili9341
 | SDI / MOSI | GPIO 11
 | SCK | GPIO 10
 | LED | 3.3V
-| SDO / MISO | GPIO 8
 <!--
+| SDO / MISO | GPIO 8
 | T_CLK | GPIO 10
 | T_CS | GPIO 13
 | T_DIn | GPIO 11
 | T_DO | GPIO 8
 | T_IRQ | GPIO 14
--->
+--> 
