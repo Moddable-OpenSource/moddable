@@ -121,6 +121,10 @@
 		#endif
 	#endif
 	};
+
+	#if ESP32
+		SemaphoreHandle_t gInstrumentMutex;
+	#endif
 #endif
 
 ICACHE_RAM_ATTR uint8_t espRead8(const void *addr)
@@ -826,6 +830,10 @@ void espInitInstrumentation(txMachine *the)
 
 	timer_start(TIMER_GROUP_0, TIMER_0);
 #endif
+
+#if ESP32
+	gInstrumentMutex = xSemaphoreCreateMutex();
+#endif
 }
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
@@ -833,6 +841,10 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	txInteger values[espInstrumentCount];
 	int what;
 	xsMachine *the = *(xsMachine **)refcon;
+
+#if ESP32
+	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
+#endif
 
 	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
@@ -849,6 +861,10 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(SPIFlashErases, 0);
 #endif
 	modInstrumentMachineReset(the);
+
+#if ESP32
+	xSemaphoreGive(gInstrumentMutex);
+#endif
 }
 
 #if INSTRUMENT_CPULOAD
