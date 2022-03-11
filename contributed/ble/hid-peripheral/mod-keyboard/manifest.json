@@ -1,0 +1,18 @@
+{
+    "include": [
+        "$(MODDABLE)/examples/manifest_mod.json",
+		"$(MODDABLE)/modules/input/expanding-keyboard/vertical/manifest.json"
+    ],
+    "modules": {
+        "UI" : "./basic-keyboard"
+    },
+    "resources":{
+		"*-mask": [
+			"./assets/moddable-logo-mask"
+		],
+		"*-alpha": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
+			"$(MODDABLE)/examples/assets/fonts/Roboto-Regular-18"
+		]
+	}
+}

@@ -1,0 +1,24 @@
+{
+    "include": [
+        "$(MODDABLE)/examples/manifest_mod.json",
+		"$(MODDABLE)/modules/input/expanding-keyboard/vertical/manifest.json"
+    ],
+    "modules": {
+        "UI" : "./combo"
+    },
+    "resources":{
+		"*-mask": [
+			"./assets/down",
+			"./assets/up",
+			"./assets/playpause",
+			"./assets/forward",
+			"./assets/back",
+			"./assets/mute",
+			"./assets/shuffle"
+		],
+		"*-alpha": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Regular-20",
+			"$(MODDABLE)/examples/assets/fonts/Roboto-Regular-18"
+		]
+	}
+}

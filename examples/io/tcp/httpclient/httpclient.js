@@ -155,7 +155,10 @@ class HTTPClient {
 		this.#requests.push(options);
 		if (("connected" === this.#state) && (1 === this.#requests.length)) {
 			this.#next();
-			//@@ schedule timer to call #onWritable
+			this.#timer = Timer.set(() => {
+				this.#timer = undefined;
+				this.#onWritable(this.#writable);
+			});
 		}
 		options.request = new HTTPClient.#Request(this); 
 		return options.request;
@@ -181,7 +184,7 @@ class HTTPClient {
 			switch (this.#state) {
 				case "receiveResponseStatus": {
 					const status = this.#line.split(" ");
-					if (3 !== status.length)
+					if (status.length < 3)
 						throw new Error("");
 					this.#status = parseInt(status[1]);
 					this.#line = "";
@@ -332,6 +335,7 @@ class HTTPClient {
 	#done() {
 		this.#timer = undefined;
 
+		this.#state = "connected";
 		this.#current.onDone?.call(this.#current.request);
 		this.#next();
 		if (this.#current)

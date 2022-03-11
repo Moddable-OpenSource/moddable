@@ -390,7 +390,7 @@ void fxScreenLaunch(txScreen* screen)
 		xsSet(xsVar(0), xsID_when, xsNumber(C_NAN));
 		xsSet(xsGlobal, xsID_screen, xsVar(0));
 
-		xsVar(1) = xsAwaitImport("main", XS_IMPORT_DEFAULT);
+		xsVar(1) = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
 		if (xsTest(xsVar(1))) {
 			if (xsIsInstanceOf(xsVar(1), xsFunctionPrototype)) {
 				xsCallFunction0(xsVar(1), xsGlobal);
