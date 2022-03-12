@@ -2,22 +2,22 @@
  * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- * This file incorporates work covered by the following copyright and  
- * permission notice:  
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
  *
  *       Copyright (C) 2010-2016 Marvell International Ltd.
  *       Copyright (C) 2002-2010 Kinoma, Inc.
@@ -49,7 +49,7 @@
 #include "semphr.h"
 
 #ifndef MODDEF_XS_MODS
-	#define MODDEF_XS_MODS
+	#define MODDEF_XS_MODS	0
 #endif
 
 #ifdef mxInstrument
@@ -87,6 +87,8 @@
 		(char *)" turns",
 		(char *)" bytes",
 	};
+
+	SemaphoreHandle_t gInstrumentMutex;
 #endif
 
 
@@ -225,14 +227,14 @@ int32_t modGetDaylightSavingsOffset(void)
 	return gDaylightSavings;
 }
 
-
-//#if MODDEF_XS_MODS
+#if MODDEF_XS_MODS
 	static void *installModules(txPreparation *preparation);
 	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
 	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
 
 	static uint8_t gHasMods;
-//#endif
+#endif
+
 
 /*
 	Instrumentation
@@ -270,7 +272,12 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(GarbageCollectionCount, (ModInstrumentationGetter)modInstrumentationGarbageCollectionCount);
 	modInstrumentationSetCallback(ModulesLoaded, (ModInstrumentationGetter)modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
+
+	gInstrumentMutex = xSemaphoreCreateMutex();
 }
+
+extern SemaphoreHandle_t gDebugMutex;
+#include "semphr.h"
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
@@ -278,11 +285,13 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	int what;
 	xsMachine *the = *(xsMachine **)refcon;
 
+	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
+
 	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
 	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
-		values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;     // ignore the turn that generates instrumentation
+		values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;		// ignore the turn that generates instrumentation
 
 	fxSampleInstrumentation(the, espInstrumentCount, values);
 
@@ -294,6 +303,8 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(NetworkBytesWritten, 0);
 	modInstrumentationSet(Turns, 0);
 	modInstrumentMachineReset(the);
+
+	xSemaphoreGive(gInstrumentMutex);
 }
 
 #endif
@@ -339,7 +350,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg.refcon = refcon;
 #ifdef mxDebug
 	do {
-		if (uxQueueSpacesAvailable(the->msgQueue) > 1) {		// keep one entry free for debugger
+		if (uxQueueSpacesAvailable(the->msgQueue) > 1) {			// keep one entry free for debugger
 			xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
 			break;
 		}
@@ -348,7 +359,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 #else
 	xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
 #endif
-	
+
 	return 0;
 }
 
@@ -356,7 +367,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 {
 	modMessageRecord msg;
 	portBASE_TYPE ignore;
-	
+
 	msg.message = NULL;
 	msg.length = 0;
 	msg.callback = callback;
@@ -458,8 +469,8 @@ void fxQueuePromiseJobs(txMachine* the)
 	 user installable modules
 */
 
-//#if MODDEF_XS_MODS
-
+#if MODDEF_XS_MODS
+#error
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
@@ -480,13 +491,13 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
 }
 
-void *modInstallModules(void *preparationIn, uint8_t *status)
+void *modInstallMods(void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
 
 	if (fxMapArchive(preparation, (void *)kModulesStart, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
-		return (void *)kModulesStart;
+		result = (void *)kModulesStart;
 
 	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart)) {
 		*status = *(8 + (uint8_t *)kModulesStart);
@@ -498,7 +509,7 @@ void *modInstallModules(void *preparationIn, uint8_t *status)
 	return result;
 }
 
-//#endif /* MODDEF_XS_MODS */
+#endif /* MODDEF_XS_MODS */
 
 /*
 	flash

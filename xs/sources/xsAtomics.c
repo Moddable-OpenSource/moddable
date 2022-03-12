@@ -568,8 +568,13 @@ void fx_Atomics_xor(txMachine* the)
 	#define mxThreads 1
 
 	#include "FreeRTOS.h"
+#if ESP32
+	#include "freertos/queue.h"
+	#include "freertos/semphr.h"
+#else
 	#include "queue.h"
 	#include "semphr.h"
+#endif
 	typedef TaskHandle_t txCondition;
 	typedef struct {
 #if nrf52
