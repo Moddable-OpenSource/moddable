@@ -1,9 +1,9 @@
 {
 	"modules": {
-		"embedded:sensor/AirQuality/CCS811": "$(MODDABLE)/modules/drivers/sensors/ccs811/ccs811"
+		"embedded:sensor/CarbonDioxideGasSensor-VOCSensor/CCS811": "$(MODDABLE)/modules/drivers/sensors/ccs811/ccs811"
 	},
 	"preload": [
-		"embedded:sensor/AirQuality/CCS811"
+		"embedded:sensor/CarbonDioxideGasSensor-VOCSensor/CCS811"
 	]
 }
 

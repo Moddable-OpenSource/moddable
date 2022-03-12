@@ -169,8 +169,8 @@ class CCS811  {
 		if (!this.available)
 			return false;
 		io.readBlock(Register.ALG_RESULT, vBuf);
-		ret.eCO2 = (vBuf[0] << 8) | vBuf[1];
-		ret.TVOC = (vBuf[2] << 8) | vBuf[3];
+		ret.carbonDioxideGasSensor = {C02: (vBuf[0] << 8) | vBuf[1] };
+		ret.vocSensor = {tvoc: (vBuf[2] << 8) | vBuf[3]};
 		ret.current = vBuf[6] >> 2;
 		ret.rawADC = ((vBuf[6] & 3) << 8) | vBuf[7];
 		return ret;
