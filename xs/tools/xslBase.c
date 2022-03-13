@@ -734,8 +734,8 @@ void fxUseCodes()
 
 void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 {
-	txSize checksSize;
-	void* checksBuffer;
+	txSize identifiersSize;
+	void* identifiersBuffer;
 	FILE* file = NULL;
 	txMD5 md5;
 	txSize modsSize;
@@ -747,8 +747,8 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	txSize size;
 	txByte byte;
 	
-	checksSize = linker->symbolIndex * sizeof(txID);
-	checksBuffer = fxNewLinkerChunkClear(linker, checksSize);
+	identifiersSize = linker->symbolIndex * sizeof(txID);
+	identifiersBuffer = fxNewLinkerChunkClear(linker, identifiersSize);
 	
 	file = fopen(path, "wb");
 	mxThrowElse(file);
@@ -769,11 +769,11 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	}
 	size = 8 
 		+ 8 + 4 
-// 		+ 8 + sizeof(signature) 
-// 		+ 8 + sizeof(signature) 
+		+ 8 + sizeof(signature) 
+		+ 8 + sizeof(signature) 
 		+ 8 + linker->nameSize
 		+ 8 + linker->symbolsSize 
-		+ 8 + checksSize
+		+ 8 + identifiersSize
 		+ 8 + linker->mapsSize 
 		+ 8 + modsSize
 		+ 8;
@@ -812,18 +812,18 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	byte = 0;
 	mxThrowElse(fwrite(&byte, 1, 1, file) == 1);
 
-// 	size = 8 + sizeof(signature);
-// 	size = htonl(size);
-// 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
-// 	mxThrowElse(fwrite("SIGN", 4, 1, file) == 1);
-// 	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
-// 
-// 	c_memset(signature, 0, sizeof(signature));
-// 	size = 8 + sizeof(signature);
-// 	size = htonl(size);
-// 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
-// 	mxThrowElse(fwrite("CHKS", 4, 1, file) == 1);
-// 	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
+	size = 8 + sizeof(signature);
+	size = htonl(size);
+	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
+	mxThrowElse(fwrite("SIGN", 4, 1, file) == 1);
+	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
+
+	c_memset(signature, 0, sizeof(signature));
+	size = 8 + sizeof(signature);
+	size = htonl(size);
+	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
+	mxThrowElse(fwrite("CHKS", 4, 1, file) == 1);
+	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
 	
 	size = 8 + linker->nameSize;
 	size = htonl(size);
@@ -837,11 +837,11 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	mxThrowElse(fwrite("SYMB", 4, 1, file) == 1);
 	mxThrowElse(fwrite(linker->symbolsBuffer, linker->symbolsSize, 1, file) == 1);
 
-	size = 8 + checksSize;
+	size = 8 + identifiersSize;
 	size = htonl(size);
 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
-	mxThrowElse(fwrite("CHKS", 4, 1, file) == 1);
-	mxThrowElse(fwrite(checksBuffer, checksSize, 1, file) == 1);
+	mxThrowElse(fwrite("IDEN", 4, 1, file) == 1);
+	mxThrowElse(fwrite(identifiersBuffer, identifiersSize, 1, file) == 1);
 
 	size = 8 + linker->mapsSize;
 	size = htonl(size);

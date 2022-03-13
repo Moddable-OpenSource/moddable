@@ -2000,7 +2000,7 @@ static void fxMapperStep(txMapper* self);
 #define mxElseNotEnoughMemory(_ASSERTION) mxElseStatus(_ASSERTION, XS_NOT_ENOUGH_MEMORY_EXIT)
 #define mxElseInstall(_ASSERTION) if (!(_ASSERTION)) goto install
 
-#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE)
+#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
 
 void fxBuildArchiveKeys(txMachine* the)
 {
@@ -2026,46 +2026,84 @@ void fxBuildArchiveKeys(txMachine* the)
 	}
 }
 
-void* fxGetArchiveCode(txMachine* the, void* archive, txString path, txSize* size)
+static txU1 *fxGetArchiveModules(txMachine *the, void* archive, txU4 *size)
 {
 	txPreparation* preparation = the->preparation;
-	if (preparation) {
-		txU1* p = archive;
-		if (p) {
-			txU4 atomSize;
-			txU1* q;
-			p += mxArchiveHeaderSize;
-			// NAME
-			atomSize = c_read32be(p);
+	txU1* p = archive;
+	if (!preparation || !p) {
+		*size = 0;
+		return NULL;
+	}
+	p += mxArchiveHeaderSize;
+	// NAME
+	p += c_read32be(p);
+	// SYMB
+	p += c_read32be(p);
+	// IDEN
+	p += c_read32be(p);
+	// MAPS
+	p += c_read32be(p);
+	// MODS
+	*size = c_read32be(p) - sizeof(Atom);
+	return p + sizeof(Atom);
+}
+
+void* fxGetArchiveCode(txMachine* the, void* archive, txString path, txSize* size)
+{
+	txU4 atomSize;
+	txU1 *p = fxGetArchiveModules(the, archive, &atomSize), *q;
+	if (!p)
+		return NULL; 
+	q = p + atomSize;
+	while (p < q) {
+		// PATH
+		atomSize = c_read32be(p);
+		if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
 			p += atomSize;
-			// SYMB
 			atomSize = c_read32be(p);
-			p += atomSize;
-			// CHKS
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// MAPS
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// MODS
-			atomSize = c_read32be(p);
-			q = p + atomSize;
-			p += sizeof(Atom);
-			while (p < q) {
-				// PATH
-				atomSize = c_read32be(p);
-				if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
-					p += atomSize;
-					atomSize = c_read32be(p);
-					*size = atomSize - sizeof(Atom);
-					return p + sizeof(Atom);
-				}
-				p += atomSize;
-				// CODE
-				atomSize = c_read32be(p);
-				p += atomSize;
-			}
+			*size = atomSize - sizeof(Atom);
+			return p + sizeof(Atom);
 		}
+		p += atomSize;
+		// CODE
+		atomSize = c_read32be(p);
+		p += atomSize;
+	}
+	return C_NULL;
+}
+
+txInteger fxGetArchiveCodeCount(txMachine* the, void* archive)
+{
+	txInteger count = 0;
+	txU4 size;
+	txU1 *p = fxGetArchiveModules(the, archive, &size);
+	if (p) {
+		txU1 *q = p + size;
+		while (p < q) {
+			// PATH
+			p += c_read32be(p);
+			// CODE
+			p += c_read32be(p);
+			count += 1;
+		}
+	}
+	return count;
+}
+
+void* fxGetArchiveCodeName(txMachine* the, void* archive, txInteger index)
+{
+	txU4 atomSize;
+	txU1 *p = fxGetArchiveModules(the, archive, &atomSize), *q;
+	if (!p)
+		return NULL;
+	q = p + atomSize;
+	while (p < q) {
+		// PATH
+		if (!index--)
+			return (txString)(p + sizeof(Atom));
+		p += c_read32be(p);
+		// CODE
+		p += c_read32be(p);
 	}
 	return C_NULL;
 }
@@ -2073,19 +2111,17 @@ void* fxGetArchiveCode(txMachine* the, void* archive, txString path, txSize* siz
 static txU1 *fxGetArchiveResources(txMachine *the, void* archive, txU4 *size)
 {
 	txPreparation* preparation = the->preparation;
-	txU1* p = the->archive;
-
+	txU1* p = archive;
 	if (!preparation || !p) {
 		*size = 0;
 		return NULL;
 	}
-
 	p += mxArchiveHeaderSize;
 	// NAME
 	p += c_read32be(p);
 	// SYMB
 	p += c_read32be(p);
-	// CHKS
+	// IDEN
 	p += c_read32be(p);
 	// MAPS
 	p += c_read32be(p);
@@ -2094,6 +2130,30 @@ static txU1 *fxGetArchiveResources(txMachine *the, void* archive, txU4 *size)
 	// RSRC
 	*size = c_read32be(p) - sizeof(Atom);
 	return p + sizeof(Atom);
+}
+
+void* fxGetArchiveData(txMachine* the, void* archive, txString path, txSize* size)
+{
+	txU4 atomSize;
+	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
+	if (!p)
+		return NULL; 
+	q = p + atomSize;
+	while (p < q) {
+		// PATH
+		atomSize = c_read32be(p);
+		if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
+			p += atomSize;
+			atomSize = c_read32be(p);
+			*size = atomSize - sizeof(Atom);
+			return p + sizeof(Atom);
+		}
+		p += atomSize;
+		// DATA
+		atomSize = c_read32be(p);
+		p += atomSize;
+	}
+	return C_NULL;
 }
 
 txInteger fxGetArchiveDataCount(txMachine* the, void* archive)
@@ -2111,34 +2171,7 @@ txInteger fxGetArchiveDataCount(txMachine* the, void* archive)
 			count += 1;
 		}
 	}
-
 	return count;
-}
-
-void* fxGetArchiveData(txMachine* the, void* archive, txString path, txSize* size)
-{
-	txU4 atomSize;
-	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
-	if (!p)
-		return NULL; 
-
-	q = p + atomSize;
-	while (p < q) {
-		// PATH
-		atomSize = c_read32be(p);
-		if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
-			p += atomSize;
-			atomSize = c_read32be(p);
-			*size = atomSize - sizeof(Atom);
-			return p + sizeof(Atom);
-		}
-		p += atomSize;
-		// DATA
-		atomSize = c_read32be(p);
-		p += atomSize;
-	}
-
-	return C_NULL;
 }
 
 void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index)
@@ -2147,7 +2180,6 @@ void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index)
 	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
 	if (!p)
 		return NULL;
-
 	q = p + atomSize;
 	while (p < q) {
 		// PATH
@@ -2157,7 +2189,6 @@ void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index)
 		// DATA
 		p += c_read32be(p);
 	}
-
 	return C_NULL;
 }
 
@@ -2203,15 +2234,15 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 		mxElseFatalCheck(*p++ == XS_MINOR_VERSION);
 		p++;
 		p++;
-// 		mxMapAtom(p);
-// 		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
-// 		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-// 		signature = p;
-// 		p += XS_DIGEST_SIZE;
-// 		mxMapAtom(p);
-// 		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
-// 		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-//         p += XS_DIGEST_SIZE;
+		mxMapAtom(p);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
+		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+		signature = p;
+		p += XS_DIGEST_SIZE;
+		mxMapAtom(p);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
+		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
+		p += XS_DIGEST_SIZE;
 		
 		self->bufferOffset = mxArchiveHeaderSize;
 		if (self->bufferSize > self->size)
@@ -2264,7 +2295,7 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 		}
 		
 		fxMapperReadAtom(self, &atom);
-		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_IDENTIFIERS);
 		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
 		i = 0;
 		clean = 1;

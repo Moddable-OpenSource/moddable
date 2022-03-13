@@ -17,7 +17,7 @@ struct ArchiveFileMappingStruct {
 
 static void ArchiveFileMappingMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE)
+static xsBooleanValue remapped = 0;
 
 static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size_t size)
 {
@@ -27,6 +27,7 @@ static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size
 
 static xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t size)
 {
+	remapped = 1;
 	c_memcpy(((txU1*)dst) + offset, buffer, size);
 	return 1;
 }
@@ -65,7 +66,10 @@ void ArchiveFileMappingCreate(xsMachine* the)
 			xsUnknownError("%s", strerror(errno));
 		}
 	#endif
+		remapped = 0;
 		fxMapArchive(the, preparation, self->address, 4 * 1024, fxArchiveRead, fxArchiveWrite);
+		if (remapped)
+			xsLog("# remap archive %s\n", path);
 		xsResult = xsNewHostObject(NULL);
 		xsSetHostBuffer(xsResult, self->address, self->size);
 		self->archive = xsToReference(xsResult);
@@ -116,65 +120,5 @@ void ArchiveFileMapping_get_archive(xsMachine *the)
 {
 	ArchiveFileMapping* self = xsGetHostHandle(xsThis);
 	xsResult = xsReference((*self)->archive);
-}
-
-void ArchiveFileMapping_get_modulePaths(xsMachine *the)
-{
-	ArchiveFileMapping* self = xsGetHostHandle(xsThis);
-	uint8_t *p = (*self)->address;
-	xsResult = xsNewArray(0);
-	if (p) {
-		uint8_t *q;
-		int i = 0;
-		p += mxArchiveHeaderSize;
-		// NAME
-		p += c_read32be(p);
-		// SYMB
-		p += c_read32be(p);
-		// CHKS
-		p += c_read32be(p);
-		// MAPS
-		p += c_read32be(p);
-		// MODS
-		q = p + c_read32be(p);
-		p += sizeof(Atom);
-		while (p < q) {
-			int atomSize = c_read32be(p);
-			xsSetIndex(xsResult, i++, xsString((txString)(p + sizeof(Atom))));
-			p += atomSize;
-			p += c_read32be(p);
-		}
-	}
-}
-
-void ArchiveFileMapping_get_resourcePaths(xsMachine *the)
-{
-	ArchiveFileMapping* self = xsGetHostHandle(xsThis);
-	uint8_t *p = (*self)->address;
-	xsResult = xsNewArray(0);
-	if (p) {
-		uint8_t *q;
-		int i = 0;
-		p += mxArchiveHeaderSize;
-		// NAME
-		p += c_read32be(p);
-		// SYMB
-		p += c_read32be(p);
-		// CHKS
-		p += c_read32be(p);
-		// MAPS
-		p += c_read32be(p);
-		// MODS
-		p += c_read32be(p);
-		// RSRC
-		q = p + c_read32be(p);
-		p += sizeof(Atom);
-		while (p < q) {
-			int atomSize = c_read32be(p);
-			xsSetIndex(xsResult, i++, xsString((txString)(p + sizeof(Atom))));
-			p += atomSize;
-			p += c_read32be(p);
-		}
-	}
 }
 

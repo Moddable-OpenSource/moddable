@@ -678,9 +678,12 @@ mxExport void* fxMarshall(txMachine* the, txBoolean alien);
 
 mxExport void fxBuildArchiveKeys(txMachine* the);
 mxExport void* fxGetArchiveCode(txMachine* the, void* archive, txString path, txSize* size);
+mxExport txInteger fxGetArchiveCodeCount(txMachine* the, void* archive);
+mxExport void* fxGetArchiveCodeName(txMachine* the, void* archive, txInteger index);
 mxExport void* fxGetArchiveData(txMachine* the, void* archive, txString path, txSize* size);
 mxExport txInteger fxGetArchiveDataCount(txMachine* the, void* archive);
 mxExport void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index);
+mxExport void* fxGetArchiveName(txMachine* the, void* archive);
 mxExport void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
