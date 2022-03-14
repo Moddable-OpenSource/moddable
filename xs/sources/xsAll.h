@@ -167,7 +167,7 @@ typedef struct {
     txInteger hi;
 } txSortPartition;
 #define mxSortThreshold 4
-#define mxSortPartitionCount 8
+#define mxSortPartitionCount 30
 
 #define mxTypeArrayCount 11
 
