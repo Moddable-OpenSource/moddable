@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -337,7 +337,7 @@ static void fxScreenStop(txScreen* screen);
 	NSAlert *alert = [[[NSAlert alloc] init] autorelease];
 	[alert setAlertStyle:NSAlertStyleInformational];
 	[alert setMessageText:@"Screen Test"];
-	[alert setInformativeText:@"Copyright 2017 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others."];
+	[alert setInformativeText:@"Copyright 2017-2022 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others."];
 	[alert beginSheetModalForWindow:window completionHandler:^(NSInteger result) {
 		[alert.window close]; 
 	}];

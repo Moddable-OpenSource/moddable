@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -540,7 +540,7 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 				params.lpszCaption = L"About";
 				params.dwStyle = MB_USERICON;
 				params.lpszIcon = (LPCWSTR)MAKEINTRESOURCE(100);
-				params.lpszText = L"Screen Test\n\nCopyright 2017 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.";
+				params.lpszText = L"Screen Test\n\nCopyright 2017-2022 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.";
 				MessageBoxIndirectW(&params);
 				} break;
 			}
