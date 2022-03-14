@@ -24,6 +24,7 @@
 #include <freetype/internal/ftobjs.h>
 
 
+#if 0
   /* declare an extern to access `ft_outline_glyph_class' globally */
   /* allocated  in `ftglyph.c'                                     */
   FT_CALLBACK_TABLE const FT_Glyph_Class  ft_outline_glyph_class;
@@ -53,7 +54,7 @@
     return o == FT_ORIENTATION_TRUETYPE ? FT_STROKER_BORDER_LEFT
                                         : FT_STROKER_BORDER_RIGHT;
   }
-
+#endif 
 
   /*************************************************************************/
   /*************************************************************************/
@@ -2244,7 +2245,7 @@
     return FT_THROW( Invalid_Outline );
   }
 
-
+#if 0
   /* documentation is in ftstroke.h */
 
   FT_EXPORT_DEF( FT_Error )
@@ -2403,6 +2404,6 @@
   Exit:
     return error;
   }
-
+#endif
 
 /* END */
