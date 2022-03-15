@@ -28,3 +28,17 @@ void xs_zero(xsMachine *the)
 	data->y = 0;
 	data->z = 0;
 }
+
+void xs_increment(xsMachine *the)
+{
+	ThreeIntegers *data;
+	xsUnsignedValue count;
+
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &count);
+	if (count < sizeof(ThreeIntegers))
+		xsUnknownError("invalid buffer");
+	
+	data->x++;
+	data->y++;
+	data->z++;
+}

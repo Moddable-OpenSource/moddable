@@ -15,14 +15,17 @@
 import {ThreeIntegers} from "exampleView";
 
 function zero(view) @ "xs_zero";
+function increment(view) @ "xs_increment";
 
 const i3 = new ThreeIntegers;
+
 i3.x = 1; 
 i3.y = 2; 
 i3.z = 3; 
+trace(JSON.stringify(i3), "\n");
 
+increment(i3);
 trace(JSON.stringify(i3), "\n");
 
 zero(i3);
-
 trace(JSON.stringify(i3), "\n");
