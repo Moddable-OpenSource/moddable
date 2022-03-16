@@ -130,7 +130,7 @@ export var ButtonsRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
 		Label($, { width:120, style:styles.controlName, string:$.label }),
-		$.buttons.map($$ => new Button($$, { Behavior:ButtonsRowBehavior, string:$.label })),
+		$.buttons.map($$ => new Button($$, { Behavior:ButtonsRowBehavior, string: $$.label })),
 		Content($, { left:0, right:0 }),
 	],
 }});
