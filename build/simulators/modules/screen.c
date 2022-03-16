@@ -309,10 +309,38 @@ static int32_t modInstrumentationStackRemain(xsMachine *the)
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
 
+static uint16_t gSetupPending = 0;
+
+static void setStepDone(txMachine *the)
+{
+	gSetupPending -= 1;
+	if (gSetupPending)
+		return;
+
+	xsBeginHost(the);
+	{
+		xsVars(1);
+		xsVar(0) = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
+		if (xsTest(xsVar(0))) {
+			if (xsIsInstanceOf(xsVar(0), xsFunctionPrototype)) {
+				xsCallFunction0(xsVar(0), xsGlobal);
+			}
+			else if (xsFindResult(xsVar(0), xsID_onLaunch)) {
+				xsCallFunction0(xsResult, xsVar(0));
+			}
+		}
+		xsCollectGarbage();
+	}
+	xsEndHost(the);
+
+	txScreen* screen = the->host;
+	screen->start(screen, 5);
+}
+
 void fxScreenLaunch(txScreen* screen)
 {
 	static xsStringValue signature = PIU_DOT_SIGNATURE;
-	void* preparation = xsPreparation();
+	txPreparation* preparation = xsPreparation();
 	void* archive = (screen->archive) ? fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
 	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, archive);
 	if (!screen->machine)
@@ -396,20 +424,37 @@ void fxScreenLaunch(txScreen* screen)
 		xsSet(xsVar(0), xsID_when, xsNumber(C_NAN));
 		xsSet(xsGlobal, xsID_screen, xsVar(0));
 
-		xsVar(1) = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
-		if (xsTest(xsVar(1))) {
-			if (xsIsInstanceOf(xsVar(1), xsFunctionPrototype)) {
-				xsCallFunction0(xsVar(1), xsGlobal);
-			}
-			else if (xsFindResult(xsVar(1), xsID_onLaunch)) {
-				xsCallFunction0(xsResult, xsVar(1));
-			}
-		}
+		txInteger scriptCount = preparation->scriptCount;
+		txScript* script = preparation->scripts;
+
+		xsVar(0) = xsNewHostFunction(setStepDone, 0);
+
+		gSetupPending = 1;
+
+		while (scriptCount--) {
+			if (0 == c_strncmp(script->path, "setup/", 6)) {
+				char path[PATH_MAX];
+				char *dot;
+
+				c_strcpy(path, script->path);
+				dot = c_strchr(path, '.');
+				if (dot)
+					*dot = 0;
+
+				xsResult = xsAwaitImport(path, XS_IMPORT_DEFAULT);
+				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
+					gSetupPending += 1;
+					xsCallFunction1(xsResult, xsGlobal, xsVar(0));
+				}
+ 			}
+			script++;
+ 		}
 		
 		xsCollectGarbage();
 	}
 	xsEndHost(screen->machine);
-	(*screen->start)(screen, 5);
+	
+  setStepDone(screen->machine);
 }
 
 #ifdef mxInstrument
