@@ -3,7 +3,7 @@
     "*": ["../modules/control", "../modules/button", "./peripherals", "./host"],
     "setup/target": "./setup-target"
   },
-  "preload": ["control", "button", "peripherals", "host", "setup/targe"],
+  "preload": ["control", "button", "peripherals", "host", "setup/target"],
   "config": {
     "format": "Gray16"
   }
