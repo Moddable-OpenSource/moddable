@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -58,30 +58,22 @@ const compartmentOptions = {
 		return specifier;
 	},
 	loadNowHook(specifier) {
-		return { source:system.readFileString(specifier), meta:{ uri:specifier } };
+		return { source:system.readFileString(specifier), meta:{ uri:specifier }, specifier };
 	},
 }
 
 import {} from "piu/PC";
 
 import {
-	applicationStyle,
-	backgroundSkin,
-	buttonsSkin,
-	controlsMenuSkin,
-	controlsMenuGlyphSkin,
-	controlsMenuItemSkin,
-	controlsMenuItemStyle,
-	dotSkin,
-	paneBorderSkin,
-	paneHeaderSkin,
-	paneHeaderStyle,
-	paneFooterLeftStyle,
-	paneFooterRightStyle,
+	buildAssets
 } from "assets";
 
 import {
 	ButtonBehavior,
+	Button,
+	IconButton,
+	PopupMenuBehavior,
+	PopupMenu,
 } from "piu/Buttons";
 
 import { 
@@ -91,7 +83,6 @@ import {
 } from "piu/Dividers";
 
 import {
-	Button,
 	ControlsPane,
 } from "ControlsPane";
 
@@ -108,7 +99,7 @@ let noDevice = {
 	ControlsTemplate: Container.template($ => ({
 		left:0, right:0, top:0, bottom:0,
 		contents:[
-			Button({ label:"Locate..." }, {
+			Button($, { string:"Locate..." }, {
 				Behavior: class extends ButtonBehavior {
 					onTap(container) {
 						container.bubble("doLocateSimulators");
@@ -129,6 +120,11 @@ class ApplicationBehavior extends Behavior {
   		application.interval = 100;
 		
 		this.keys = {};
+		this.appearance = 0;
+		if (system.platform == "mac")
+			this.colors = 2;
+		else
+			this.colors = 0;
 		this.controlsCurrent = 320;
 		this.controlsStatus = true;
 		this.infoStatus = true;
@@ -166,10 +162,34 @@ class ApplicationBehavior extends Behavior {
 		}
 		catch {
 		}
-
-		application.add(new MainContainer(this));
+	}
+	onAppearanceChanged(application, which) {
+		buildAssets(which);
+		if (application.first) {
+			this.quitScreen();
+			application.replace(application.first, new MainContainer(this));
+			this.reloadDevices(application);
+			this.launchScreen();
+		}
+	}
+	onAppearanceChanged(application, which) {
+		this.appearance = which;
+		this.onColorsChanged(application);
+	}
+	onColorsChanged(application) {
+		let appearance = this.colors;
+		if (appearance == 2)
+			appearance = this.appearance;
+		buildAssets(appearance);
+		if (application.first) {
+			this.quitScreen();
+			application.replace(application.first, new MainContainer(this));
+			this.reloadDevices(application);
+			this.launchScreen();
+		}
 	}
 	onDisplaying(application) {
+		application.add(new MainContainer(this));
 		if (this.devicesPath)
 			this.reloadDevices(application);
 		else
@@ -356,7 +376,7 @@ class ApplicationBehavior extends Behavior {
 		system.alert({ 
 			type:"about",
 			prompt:"mcsim",
-			info:"Copyright 2018 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.",
+			info:"Copyright 2018-2022 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.",
 			buttons:["OK"]
 		}, ok => {
 		});
@@ -507,6 +527,8 @@ class ApplicationBehavior extends Behavior {
 			let string = system.readPreferenceString("main");
 			if (string) {
 				let preferences = JSON.parse(string);
+				if ("colors" in preferences)
+					this.colors = preferences.colors;
 				if ("controlsCurrent" in preferences)
 					this.controlsCurrent = preferences.controlsCurrent;
 				if ("controlsStatus" in preferences)
@@ -530,6 +552,7 @@ class ApplicationBehavior extends Behavior {
 		try {
 			let content;
 			let preferences = {
+				colors: this.colors,
 				controlsCurrent: this.controlsCurrent,
 				controlsStatus: this.controlsStatus,
 				infoStatus: this.infoStatus,
@@ -547,7 +570,7 @@ class ApplicationBehavior extends Behavior {
 
 class HeaderBehavior extends Behavior {	
 	onDeviceSelected(row, device) {
-		const glyph = row.first;
+		const glyph = row.first.first.first.next;
 		const label = glyph.next;
 		label.string = device.title;
 		if (model.devices.length > 0) {
@@ -617,15 +640,35 @@ class FooterBehavior extends Behavior {
 	}
 };
 
-class ControlsMenuBehavior extends Behavior {	
-	onClose(layout, index) {
-		let data = this.data;
-		application.remove(application.last);
-		data.button.delegate("onMenuSelected", index);
+class ControlsButtonBehavior extends ButtonBehavior {
+	changeState(container, state) {
+		var content = container.first
+		content.state = state;
+		content = content.next.first;
+		while (content) {
+			content.state = state;
+			content = content.next;
+		}
 	}
-	onCreate(layout, data) {
-		this.data = data;
+	onDeviceSelected(container, device) {
+		container.first.next.first.next.string = device.title;
+		this.changeState(container, model.devices.length > 0 ? 1 : 0);
 	}
+	onMenuSelected(row, index) {
+		if (index >= 0)
+			model.onSelectDevice(application, this.data.items[index].value);
+	}
+	onTap(container) {
+		this.data = {
+			button: container,
+			items: model.devices.map((device, index) => ({ title: device.title, value:index })),
+		};
+		this.data.items.splice(model.deviceIndex, 1);
+		application.add(new PopupMenu(this.data, { Behavior:ControlsMenuBehavior } ));
+	}
+}
+	
+class ControlsMenuBehavior extends PopupMenuBehavior {	
 	onFitVertically(layout, value) {
 		let data = this.data;
 		let button = data.button;
@@ -634,68 +677,94 @@ class ControlsMenuBehavior extends Behavior {
 		let size = scroller.first.measure();
 		let y = button.y + button.height + 1
 		let height = Math.min(size.height, application.height - y - 20);
-		container.coordinates = { left:button.x, width:size.width + 20, top:y, height:height + 10 }
-		scroller.coordinates = { left:10, width:size.width, top:0, height:height }
-// 		scroller.first.content(model.deviceIndex).first.visible = true;
+		container.coordinates = { left:0, width:size.width + 30, top:y, height:height + 10 }
+		scroller.coordinates = { left:10, width:size.width + 10, top:0, height:height }
 		return value;
-	}
-	onTouchEnded(layout, id, x, y, ticks) {
-		var content = layout.first.first.first;
-		if (!content.hit(x, y))
-			this.onClose(layout, -1);
 	}
 };
 
-class ControlsMenuItemBehavior extends ButtonBehavior {
-	onTap(item) {
-		item.bubble("onClose", this.data.index);
+class ColorsButtonBehavior extends ButtonBehavior {
+	onCreate(container) {
+		const data = {
+			button: container,
+			items: [
+				{ title:"Lite Colors", value:0 },
+				{ title:"Dark Colors", value:1 }
+			],
+		};
+		if (system.platform == "mac")
+			data.items.push({ title:"Default", value:2 });
+		data.selection = data.items.findIndex(item => item.value == model.colors);
+		super.onCreate(container, data);
+	}
+	onMenuSelected(container, index) {
+		const data = this.data;
+		if ((index >= 0) && (data.selection != index)) {
+			let item = data.items[index];
+			data.selection = index;
+			model.colors = data.items[index].value;
+			application.delegate("onColorsChanged");
+		}
+	}
+	onTap(container) {
+		application.add(new PopupMenu(this.data, { Behavior:ColorsMenuBehavior } ));
 	}
 }
 
-var ControlsMenu = Layout.template($ => ({
-	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
-	Behavior: ControlsMenuBehavior,
-	contents: [
-		Container($, { skin:controlsMenuSkin, contents:[
-			Scroller($, { clip:true, active:true, contents:[
-				Column($, { left:0, right:0, top:0, 
-					contents: $.items.map($$ => new ControlsMenuItem($$)),
-				}),
-			]}),
-		]}),
-	],
-}));
-
-var ControlsMenuItem = Row.template($ => ({
-	left:0, right:0, height:30, skin:controlsMenuItemSkin, active:true,
-	Behavior:ControlsMenuItemBehavior,
-	contents: [
-		Content($, { width:20, height:30, skin:dotSkin, visible:false }),
-		Label($, {left:0, right:20, height:30, style:controlsMenuItemStyle, string:$.title }),
-	]
-}));
+class ColorsMenuBehavior extends PopupMenuBehavior {
+	onFitVertically(layout, value) {
+		let data = this.data;
+		let button = data.button;
+		let container = layout.first;
+		let scroller = container.first;
+		let size = scroller.first.measure();
+		let y = button.y + button.height + 1
+		let height = Math.min(size.height, application.height - y - 20);
+		container.coordinates = { right:0, width:size.width + 30, top:y, height:height + 10 };
+		scroller.coordinates = { left:10, width:size.width + 10, top:0, height:height };
+		scroller.first.content(data.selection).first.visible = true;
+		return value;
+	}
+}
 
 var MainContainer = Container.template($ => ({ 
 	left:0, right:0, top:0, bottom:0, 
 	contents: [
-		Row($, { left:0, right:0, top:0, height:26, skin:paneHeaderSkin, active:true, Behavior:HeaderBehavior, contents: [
-			Content($, { width:30, height:26, skin:controlsMenuGlyphSkin, }),
-			Label($, { left:0, right:0, style:paneHeaderStyle, }),
-			Content($, {
-				width:30, skin:buttonsSkin, variant:3, active:true, visible:true, 
+		Row($, { left:0, right:0, top:0, height:26, skin:skins.paneHeader, contents: [
+			Container($, {
+				left:0, top:0, bottom:0, active:true, Behavior:ControlsButtonBehavior,
+				contents: [
+					RoundContent($, { left:2, right:2, top:2, bottom:2, radius:4, skin:skins.iconButton }),
+					Row($, {
+						left:0, top:0, bottom:0,
+						contents: [
+							Content($, { width:30, height:30, skin:skins.icons, variant:0 }),
+							Label($, { left:0, top:0, bottom:0, style:styles.iconButton, }),
+							Content($, { width:10, height:30 }),
+						]
+					}),
+				]
+			}),
+			Content($, { left:0, right:0 }),
+			IconButton($, {
+				variant:1, 
 				Behavior: class extends ButtonBehavior {
 					onTap(button) {
 						button.bubble("onRotate", 90);
 					}
 				},
 			}),
+			IconButton($, {
+				variant:2, 
+				Behavior: ColorsButtonBehavior,
+			}),
 		]}), 
-		Content($, { left:0, right:0, top:26, height:1, skin:paneBorderSkin, }),
+		Content($, { left:0, right:0, top:26, height:1, skin:skins.paneBorder, }),
 		Layout($, { anchor:"BODY", left:0, right:0, top:27, bottom:$.infoStatus ? 27 : 0, Behavior:DividerLayoutBehavior, contents: [
 			Container($, { left:0, width:0, top:0, bottom:0, contents: [
 				ControlsPane($, { anchor:"CONTROLS" }),
 			]}),
-			Container($, { anchor:"DEVICE", width:0, right:0, top:0, bottom:0, skin:backgroundSkin, clip:true, contents:[
+			Container($, { anchor:"DEVICE", width:0, right:0, top:0, bottom:0, skin:skins.background, clip:true, contents:[
 				Content($, {}),
 			]}),
 			VerticalDivider($, { 
@@ -704,17 +773,17 @@ var MainContainer = Container.template($ => ({
 			}),
 		]}),
 		Container($, { anchor:"FOOTER", left:0, right:0, height:$.infoStatus ? 27 : 0, bottom:0, clip:true, contents:[
-			Content($, { left:0, right:0, height:1, bottom:26, skin:paneBorderSkin, }),
-			Row($, { left:0, right:0, height:26, bottom:0, skin:paneHeaderSkin, Behavior:FooterBehavior, contents: [
-				Label($, { left:0, right:0, style:paneFooterLeftStyle, }),
-				Label($, { left:0, right:0, style:paneFooterRightStyle, }),
+			Content($, { left:0, right:0, height:1, bottom:26, skin:skins.paneBorder, }),
+			Row($, { left:0, right:0, height:26, bottom:0, skin:skins.paneHeader, Behavior:FooterBehavior, contents: [
+				Label($, { left:0, right:0, style:styles.paneFooterLeft, }),
+				Label($, { left:0, right:0, style:styles.paneFooterRight, }),
 			]}), 
 		]}),
 	]
 }));
 
 let mcsimApplication = Application.template($ => ({
-	style:applicationStyle,
+	style:{ font:"12px Open Sans" },
 	Behavior: ApplicationBehavior,
 	contents: [
 	],

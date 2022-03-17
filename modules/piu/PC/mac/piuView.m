@@ -19,6 +19,24 @@
  */
 
 #include "piuPC.h"
+int gxAppearanceChanged = 0;
+
+void printComponent(CGFloat c) {
+	xsIntegerValue i = c * 255;
+	fprintf(stderr, "%2.2X", i);
+}
+
+void printColor(xsStringValue name, NSColor* color) {
+	fprintf(stderr, "%s: #", name);
+	NSColorSpace* colorSpace = [NSColorSpace deviceRGBColorSpace];
+	color = [color colorUsingColorSpace:colorSpace];
+	CGFloat r, g, b, a;
+	[color getRed:&r green:&g blue:&b alpha:&a];
+	printComponent(r);
+	printComponent(g);
+	printComponent(b);
+	fprintf(stderr, " %f\n", a);
+}
 
 @implementation NSPiuAppDelegate
 @synthesize machine;
@@ -172,6 +190,24 @@
 }
 - (void)drawRect:(NSRect)rect {
 	if (piuView) {
+		if ((*piuView)->appearanceChanged) {
+			(*piuView)->appearanceChanged = 0;
+			NSColorSpace* colorSpace = [NSColorSpace deviceRGBColorSpace];
+			NSColor* color = [[NSColor textColor] colorUsingColorSpace:colorSpace];
+			CGFloat r, g, b, a;
+			[color getRed:&r green:&g blue:&b alpha:&a];
+			PiuApplication* application = (*piuView)->application;
+			if ((*application)->behavior) {
+				xsBeginHost((*piuView)->the);
+				xsVars(2);
+				xsVar(0) = xsReference((*application)->behavior);
+				if (xsFindResult(xsVar(0), xsID_onAppearanceChanged)) {
+					xsVar(1) = xsReference((*application)->reference);
+					(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsInteger((xsIntegerValue)r));
+				}
+				xsEndHost((*piuView)->the);
+			}
+		}
 		PiuRectangleRecord area;
 		area.x = rect.origin.x;
 		area.y = rect.origin.y;
@@ -353,6 +389,10 @@
 		xsEndHost((*piuView)->the);
 	}
 }
+- (void)viewDidChangeEffectiveAppearance {
+	if (piuView)
+		(*piuView)->appearanceChanged = 1;
+}
 @end
 
 @implementation NSPiuClipView
@@ -487,6 +527,8 @@ void PiuViewCreate(xsMachine* the)
 	(*self)->nsWindow = nsWindow;
 	
 	(*self)->colorSpace = CGColorSpaceCreateDeviceRGB();
+	(*self)->appearanceChanged = 1;
+	
 	xsResult = xsThis;
 }
 
@@ -628,7 +670,65 @@ void PiuViewDictionary(xsMachine* the, void* it)
 		[application setServicesMenu: servicesMenu];
 		xsSet(xsThis, xsID_menus, xsResult);
 	}
+}
+
+void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor)
+{
+	if ((w <= 0) || (h <= 0)) return;
+	CGFloat lx = x, ty = y, rx = x + w, by = y + h, r = radius, t, u = border;
+	if (variant == 1)
+		lx += r;
+	else if (variant == 2)
+		rx -= r;
+	if (u > 0) {
+		CGFloat delta = u / 2;
+		lx += delta;
+		ty += delta;
+		rx -= delta;
+		by -= delta;
+		r -= delta;
+	}
+	t = r * 0.552284749831;
+		
 	
+	NSBezierPath* path = [NSBezierPath bezierPath];
+	[path moveToPoint:NSMakePoint(lx, ty + r)];
+	[path curveToPoint:NSMakePoint(lx + r, ty) controlPoint1:NSMakePoint(lx, ty + r - t) controlPoint2:NSMakePoint(lx + r - t, ty)];
+	[path lineToPoint:NSMakePoint(rx - r, ty)];
+	[path curveToPoint:NSMakePoint(rx, ty + r) controlPoint1:NSMakePoint(rx - r + t, ty) controlPoint2:NSMakePoint(rx, ty + r - t)];
+	[path lineToPoint:NSMakePoint(rx, by - r)];
+	if (variant == 2)
+		[path curveToPoint:NSMakePoint(rx + r, by) controlPoint1:NSMakePoint(rx, by - r + t) controlPoint2:NSMakePoint(rx + r - t, by)];
+	else
+		[path curveToPoint:NSMakePoint(rx - r, by) controlPoint1:NSMakePoint(rx, by - r + t) controlPoint2:NSMakePoint(rx - r + t, by)];
+	if (variant == 1) {
+		[path lineToPoint:NSMakePoint(lx - r, by)];
+		[path curveToPoint:NSMakePoint(lx, by - r) controlPoint1:NSMakePoint(lx - r + t, by) controlPoint2:NSMakePoint(lx, by - r + t)];
+	}
+	else {
+		[path lineToPoint:NSMakePoint(lx + r, by)];
+		[path curveToPoint:NSMakePoint(lx, by - r) controlPoint1:NSMakePoint(lx + r - t, by) controlPoint2:NSMakePoint(lx, by - r + t)];
+	}
+	[path closePath];
+	if (fillColor->a) {
+		CGFloat r, g, b, a;
+		r = (float)fillColor->r / 255;
+		g = (float)fillColor->g / 255;
+		b = (float)fillColor->b / 255;
+		a = (float)fillColor->a / 255;
+    	[[NSColor colorWithSRGBRed:r green:g blue:b alpha:a] set];
+		[path fill];
+	}
+	if ((border > 0) && (strokeColor->a)) {
+		CGFloat r, g, b, a;
+		r = (float)strokeColor->r / 255;
+		g = (float)strokeColor->g / 255;
+		b = (float)strokeColor->b / 255;
+		a = (float)strokeColor->a / 255;
+    	[[NSColor colorWithSRGBRed:r green:g blue:b alpha:a] set];
+    	path.lineWidth = u;
+		[path stroke];
+	}
 }
 
 void PiuViewDrawString(PiuView* self, xsSlot* slot, xsIntegerValue offset, xsIntegerValue length, PiuFont* font, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension sw)
@@ -690,15 +790,42 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 {
 	CGFloat scale = (*texture)->scale;
 	PiuDimension th = (*texture)->height;
-	NSRect source = NSMakeRect(scale * sx, scale * (th - sy - sh), scale * sw, scale * sh);
-	NSRect destination = NSMakeRect(x, y, sw, sh);
-	[(*texture)->image drawInRect:destination fromRect:source operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
-	
+	if ((*self)->filtered) {
+		if ((*self)->transparent) return;
+		CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceGray();
+		CGContextRef maskContext = CGBitmapContextCreate(NULL, scale * sw, scale * sh, 8, scale * sw, colorspace, 0);
+		CGColorSpaceRelease(colorspace);
+		NSGraphicsContext *maskGraphicsContext = [NSGraphicsContext graphicsContextWithCGContext:maskContext flipped:YES];
+		[NSGraphicsContext saveGraphicsState];
+		[NSGraphicsContext setCurrentContext:maskGraphicsContext];
+		[[NSColor whiteColor] setFill];
+		CGContextFillRect(maskContext, CGRectMake(0, 0, scale * sw, scale * sh));
+		NSRect source = NSMakeRect(scale * sx, scale * (th - sy - sh), scale * sw, scale * sh);
+		NSRect destination = NSMakeRect(0, 0, scale * sw, scale * sh);
+		[(*texture)->image drawInRect:destination fromRect:source operation:NSCompositingOperationDestinationIn fraction:1 respectFlipped:YES hints:nil];
+		[NSGraphicsContext restoreGraphicsState];
+		CGImageRef maskImage = CGBitmapContextCreateImage(maskContext);
+		CGContextRef context = (*self)->context;
+		CGContextSaveGState(context);
+        CGContextScaleCTM(context, 1 / scale, 1/ scale);
+		CGRect rect = CGRectMake(scale * x, scale * y, scale * sw, scale * sh);
+		CGContextClipToMask(context, rect, maskImage);
+		CGContextSetFillColorWithColor(context, (*self)->color);
+		CGContextFillRect(context, rect);
+		CGContextRestoreGState(context);
+		CGImageRelease(maskImage);
+	}
+	else {
+		NSRect source = NSMakeRect(scale * sx, scale * (th - sy - sh), scale * sw, scale * sh);
+		NSRect destination = NSMakeRect(x, y, sw, sh);
+		[(*texture)->image drawInRect:destination fromRect:source operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
+	}
 }
 
 void PiuViewFillColor(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h)
 {
 	if ((w <= 0) || (h <= 0)) return;
+	if ((*self)->transparent) return;
 	CGContextRef context = (*self)->context;
 	CGContextSetFillColorWithColor(context, (*self)->color);
 	CGRect rect = CGRectMake(x, y, w, h);
@@ -807,6 +934,9 @@ void PiuViewPopColor(PiuView* self)
 
 void PiuViewPopColorFilter(PiuView* self)
 {
+	CGColorRelease((*self)->color);
+	(*self)->color = NULL;
+	(*self)->filtered = 0;
 }
 
 void PiuViewPopOrigin(PiuView* self)
@@ -831,10 +961,19 @@ void PiuViewPushColor(PiuView* self, PiuColor color)
 	components[2] = (float)color->b / 255;
 	components[3] = (float)color->a / 255;
 	(*self)->color = CGColorCreate((*self)->colorSpace, components);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
 }
 
 void PiuViewPushColorFilter(PiuView* self, PiuColor color)
 {
+	CGFloat components[4];
+	components[0] = (float)color->r / 255;
+	components[1] = (float)color->g / 255;
+	components[2] = (float)color->b / 255;
+	components[3] = (float)color->a / 255;
+	(*self)->color = CGColorCreate((*self)->colorSpace, components);
+	(*self)->transparent = (color->a == 0) ? 1 : 0;
+	(*self)->filtered = 1;
 }
 
 void PiuViewPushOrigin(PiuView* self, PiuCoordinate x, PiuCoordinate y)

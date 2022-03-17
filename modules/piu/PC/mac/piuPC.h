@@ -86,6 +86,10 @@ struct PiuViewStruct {
 	CGContextRef context;
 	CGColorSpaceRef colorSpace;
 	CGColorRef color;
+	PiuBoolean filtered;
+	PiuBoolean transparent;
+	PiuBoolean appearanceChanged;
 };
 
 extern xsMachine* ServiceThreadMain(void* context);
+extern void PiuViewDrawRoundContent(PiuView* self, PiuCoordinate x, PiuCoordinate y, PiuDimension w, PiuDimension h, PiuDimension radius, PiuDimension border, PiuVariant variant, PiuColor fillColor, PiuColor strokeColor);

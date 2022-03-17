@@ -114,8 +114,19 @@ static void gtk_piu_application_startup(GApplication *app)
 	xsMachine* machine = gtkApplication->machine = ServiceThreadMain(NULL);
 	xsBeginHost(machine);
 	{
+		xsVars(2);
 		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		gtkApplication->piuApplication = PIU(Application, xsResult);
+
+		PiuApplication* application = gtkApplication->piuApplication;
+		if ((*application)->behavior) {
+			xsVar(0) = xsReference((*application)->behavior);
+			if (xsFindResult(xsVar(0), xsID_onAppearanceChanged)) {
+				xsVar(1) = xsReference((*application)->reference);
+				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsUndefined);
+			}
+		}
+		
 		PiuApplicationAdjust(gtkApplication->piuApplication);
 		xsCollectGarbage();
 	}

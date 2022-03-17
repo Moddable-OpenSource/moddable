@@ -50,37 +50,10 @@ import {
 // ASSETS
 
 import {
-	buttonSkin,
-	buttonStyle,
-	buttonsSkin,
-	glyphsSkin,
-	waitSkin,
-	waitStyle,
-	
 	headerHeight,
 	footerHeight,
 	rowHeight,
 	rowIndent,
-	
-	paneBackgroundSkin,
-	paneSeparatorSkin,
-	
-	tableHeaderSkin,
-	tableHeaderStyle,
-	tableRowSkin,
-	tableRowStyle,
-	tableFooterSkin,
-	
-	callRowSkin,
-	callRowStyle,
-	debugRowNameStyle,
-	debugRowValueStyle,
-	instrumentBarHoverColor,
-	instrumentBarHilightColor,
-	instrumentBarColor,
-	instrumentLineColor,
-	instrumentRowNameStyle,
-	instrumentRowValueStyle,
 } from "assets";
 
 // BEHAVIORS
@@ -115,9 +88,6 @@ class DebugPaneBehavior extends Behavior {
 				column.add(DebugTable(data, { Behavior:ModulesTableBehavior }));
 				column.add(DebugTable(data, { Behavior:GlobalsTableBehavior }));
 			}
-// 			else {
-// 				spinner.add(RunningContent(data, {}));
-// 			}
 		}
 	}
 	onMachineDeselected(container, machine) {
@@ -244,11 +214,13 @@ class CallRowBehavior extends RowBehavior {
 	}
 	select(row, selectIt) {
 		if (selectIt) {
-			row.last.style = callRowStyle; 
+			row.skin = skins.callRow; 
+			row.last.style = styles.callRow; 
 			this.flags |= 4;
 		}
 		else {
-			row.last.style = tableRowStyle;
+			row.skin = skins.tableRow; 
+			row.last.style = styles.tableRow;
 			this.flags &= ~4;
 		}
 		this.changeState(row);
@@ -396,12 +368,10 @@ class InstrumentPortBehavior extends Behavior {
 			while (index < samplesCount) {
 				let delta = Math.max(Math.round((values[index] - min) * range), 1);
 				if ((x <= hover) && (hover < (x + 3))) {
-// 					if (undefined != this.hover)
-// 						port.fillColor(instrumentBarHilightColor, x - 1, y + height - delta - 1, 4, delta + 1);
-					port.fillColor(instrumentBarHoverColor, x, y + height - delta, 2, delta);
+					port.fillColor(colors.instrumentBarHover, x, y + height - delta, 2, delta);
 				}
 				else
-					port.fillColor(instrumentBarColor, x, y + height - delta, 2, delta);
+					port.fillColor(colors.instrumentBar, x, y + height - delta, 2, delta);
 				index++;
 				x += 3;
 			}
@@ -410,16 +380,14 @@ class InstrumentPortBehavior extends Behavior {
 		while (index < samplesIndex) {
 			let delta = Math.max(Math.round((values[index] - min) * range), 1);
 			if ((x <= hover) && (hover < x + 3)) {
-// 				if (undefined != this.hover)
-// 					port.fillColor(instrumentBarHilightColor, x - 1, y + height - delta - 1, 4, delta + 1);
-				port.fillColor(instrumentBarHoverColor, x, y + height - delta, 2, delta);
+				port.fillColor(colors.instrumentBarHover, x, y + height - delta, 2, delta);
 			}
 			else
-				port.fillColor(instrumentBarColor, x, y + height - delta, 2, delta);
+				port.fillColor(colors.instrumentBar, x, y + height - delta, 2, delta);
 			index++;
 			x += 3;
 		}
-		port.fillColor(instrumentLineColor, 0, height + 1, width, 1);
+		port.fillColor(colors.instrumentLine, 0, height + 1, width, 1);
 	}
 	onMachineSampled(port) {
 		port.invalidate();
@@ -442,7 +410,7 @@ import {
 } from "piu/Scrollbars";
 
 export var DebugPane = Container.template($ => ({
-	left:0, right:0, top:0, bottom:0, skin:paneBackgroundSkin, 
+	left:0, right:0, top:0, bottom:0, skin:skins.paneBackground, 
 	Behavior: DebugPaneBehavior,
 	contents: [
 		Scroller($, {
@@ -459,7 +427,7 @@ export var DebugPane = Container.template($ => ({
 				VerticalScrollbar($, {}),
 			]
 		}),
-		Content($, { left:0, right:0, top:26, height:1, skin:paneSeparatorSkin, }),
+		Content($, { left:0, right:0, top:26, height:1, skin:skins.paneSeparator, }),
 		DebugToolsHeader(model, { }),
 		Container($, { left:0, right:0, top:27, bottom:0 }),
 	]
@@ -478,8 +446,8 @@ var DebugToolsHeader = Row.template($ => ({
 }));
 
 
-var DebugToolButton = Content.template($ => ({
-	skin:buttonsSkin, active:false, Behavior: DebugButtonBehavior,
+var DebugToolButton = IconButton.template($ => ({
+	active:false, Behavior: DebugButtonBehavior,
 }));
 
 
@@ -492,25 +460,25 @@ var CallTable = Column.template($ => ({
 }));
 
 var CallHeader = Row.template(function($) { return {
-	left:0, right:0, height:headerHeight, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:headerHeight, skin:skins.tableHeader, active:true,
 	Behavior: CallHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:"CALLS" }),
+		Content($, { width:26, top:5, skin:skins.glyphs }),
+		Label($, { left:0, right:0, style:styles.tableHeader, string:"CALLS" }),
 	],
 }});
 
 var CallFooter = Row.template(function($) { return {
-	left:0, right:0, height:footerHeight, skin:tableFooterSkin,
+	left:0, right:0, height:footerHeight, skin:skins.tableFooter,
 }});
 
 var CallRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:callRowSkin, active:true, 
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true, 
 	Behavior:CallRowBehavior,
 	contents: [
 		Content($, { width:rowIndent, }),
-		Label($, { style:tableRowStyle, string:$.name }),
+		Label($, { style:styles.tableRow, string:$.name }),
 	]
 }});
 
@@ -522,27 +490,27 @@ var DebugTable = Column.template($ => ({
 }));
 
 var DebugHeader = Row.template(function($) { return {
-	left:0, right:0, height:headerHeight, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:headerHeight, skin:skins.tableHeader, active:true,
 	Behavior: DebugHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle }),
+		Content($, { width:26, top:5, skin:skins.glyphs }),
+		Label($, { left:0, right:0, style:styles.tableHeader }),
 	],
 }});
 
 var DebugFooter = Row.template(function($) { return {
-	left:0, right:0, height:footerHeight, skin:tableFooterSkin,
+	left:0, right:0, height:footerHeight, skin:skins.tableFooter,
 }});
 
 var DebugRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:$.state > 0, 
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:$.state > 0, 
 	Behavior:DebugRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + ($.column * 20) }),
-		Content($, { skin:glyphsSkin, state:$.state }),
-		Label($, { style:debugRowNameStyle, string:$.name, state:$.variant }),
-		Label($, { style:debugRowValueStyle, string:$.state == 0 ? (" = " + $.value) : "", state:$.variant }),
+		Content($, { skin:skins.glyphs, variant:$.state }),
+		Label($, { style:styles.debugRowName, string:$.name, state:$.variant }),
+		Label($, { style:styles.debugRowValue, string:$.state == 0 ? (" = " + $.value) : "", state:$.variant }),
 	]
 }});
 
@@ -555,28 +523,26 @@ var InstrumentTable = Column.template($ => ({
 }));
 
 var InstrumentHeader = Row.template(function($) { return {
-	left:0, right:0, height:headerHeight, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:headerHeight, skin:skins.tableHeader, active:true,
 	Behavior: InstrumentHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, variant:0 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:"INSTRUMENTS" }),
+		Content($, { width:26, top:5, skin:skins.glyphs }),
+		Label($, { left:0, right:0, style:styles.tableHeader, string:"INSTRUMENTS" }),
 	],
 }});
 
 var InstrumentFooter = Row.template(function($) { return {
-	left:0, right:0, height:footerHeight, skin:tableFooterSkin,
+	left:0, right:0, height:footerHeight, skin:skins.tableFooter,
 }});
 
 var InstrumentRow = Container.template(function($) { return {
-	left:0, right:0, height:36, skin:tableRowSkin,
+	left:0, right:0, height:36, skin:skins.tableRow,
 	Behavior: InstrumentRowBehavior,
 	contents: [
-		Label($, { left:rowIndent + 10, right:10, top:4, bottom:4, style:instrumentRowNameStyle, string:$.name } ),
-		Label($, { left:rowIndent + 10, right:10, top:4, bottom:4, style:instrumentRowValueStyle, string:$.value, Behavior:InstrumentLabelBehavior } ),
+		Label($, { left:rowIndent + 10, right:10, top:4, bottom:4, style:styles.instrumentRowName, string:$.name } ),
+		Label($, { left:rowIndent + 10, right:10, top:4, bottom:4, style:styles.instrumentRowValue, string:$.value, Behavior:InstrumentLabelBehavior } ),
 		Port($, { left:rowIndent + 10, right:10, height:14, bottom:4, active:true, Behavior:InstrumentPortBehavior } ),
 	]
 }});
-
-var RunningContent = Content.template($ => ({ skin:waitSkin, Behavior: SpinnerBehavior}));
 

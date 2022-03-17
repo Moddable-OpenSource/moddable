@@ -108,9 +108,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	xsMachine* machine = ServiceThreadMain(NULL);
 	xsBeginHost(machine);
 	{
+		xsVars(2);
 		xsResult = xsAwaitImport("main", XS_IMPORT_DEFAULT);
 		application = PIU(Application, xsResult);
 		xsCollectGarbage();
+
+		if ((*application)->behavior) {
+			xsVar(0) = xsReference((*application)->behavior);
+			if (xsFindResult(xsVar(0), xsID_onAppearanceChanged)) {
+				xsVar(1) = xsReference((*application)->reference);
+				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsUndefined);
+			}
+		}
 	}
 	xsEndHost(machine);
 

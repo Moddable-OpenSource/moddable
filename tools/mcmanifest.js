@@ -454,18 +454,16 @@ export class MakeFile extends FILE {
 			let common;
 			if (length > 1) {
 				directories.sort();
-				const first =  directories[0];
-				const last = directories[length - 1];
-				const stop = Math.min(first.lastIndexOf("/"), last.lastIndexOf("/"));
-				common = 0;
-				for (let i = 0; i <= stop; i++) {
-					const c = first.charAt(i);
-					if (c !== last.charAt(i)) 
+				let first = directories[0].split(tool.slash);
+				let last = directories[length - 1].split(tool.slash);
+				const c = Math.min(first.length, last.length);
+				let i = 0;
+				while (i < c) {
+					if (first[i] != last[i])
 						break;
-
-					if ("/" === c)
-						common = i;
+					i++;
 				}
+				common = first.slice(0, i).join(tool.slash).length;
 			}
 			else
 				common = directories[0].length;
@@ -475,7 +473,7 @@ export class MakeFile extends FILE {
 				var target = result.target;
 				var targetParts = tool.splitPath(target);
 				var temporary = source.slice(common, -3) + ".js"
-				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", tool.slash, temporary);
+				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", temporary);
 				this.echo(tool, "xsc ", target);
 				var options = "";
 				if (result.commonjs)
@@ -484,9 +482,9 @@ export class MakeFile extends FILE {
 					options += " -d";
 				if (tool.config)
 					options += " -c";
-				this.line("\t$(XSC) $(MODULES_DIR)", tool.slash, temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
 				if (tool.windows)
-					this.line("$(MODULES_DIR)", tool.slash, temporary, ": TSCONFIG");
+					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
 			if (tool.windows)
@@ -1364,7 +1362,7 @@ export class Tool extends TOOL {
 		this.mainPath = null;
 		this.make = false;
 		this.manifestPath = null;
-		this.mcsim = false;
+		this.mcsim = true;
 		this.outputPath = null;
 		this.platform = null;
 		this.rotation = undefined;
@@ -1431,6 +1429,10 @@ export class Tool extends TOOL {
 				else if ((parts[0] == "sim") || (parts[0] == "simulator")) {
 					parts[0] = this.currentPlatform;
 					this.mcsim = true;
+				}
+				else if ((parts[0] == "screentest")) {
+					parts[0] = this.currentPlatform;
+					this.mcsim = false;
 				}
 				this.platform = parts[0];
 				if (parts[1]) {
@@ -1568,7 +1570,7 @@ export class Tool extends TOOL {
 				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
 			else if (this.platform == "lin")
 				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
-			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulator";
+            this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulator";
 		}
 	}
 	concatProperties(object, properties, flag) {

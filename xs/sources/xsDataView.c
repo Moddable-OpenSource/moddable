@@ -2351,6 +2351,7 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 						top++;
 						hi = j;
 					}
+					mxPop();
 				}
 			}
 			for (i = 1; i < length; i++) {

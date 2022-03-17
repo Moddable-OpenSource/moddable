@@ -65,3 +65,4 @@ clean:
 install:
 	make install -f simulator.mk
 	make install -f $(BUILD_DIR)/tmp/lin/release/xsbug/makefile
+	make install -f $(BUILD_DIR)/tmp/lin/release/mcsim/makefile

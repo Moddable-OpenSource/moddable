@@ -18,29 +18,12 @@
  *
  */
 
-// ASSETS
-
-import {
-	buttonSkin,
-	buttonStyle,
-	controlsMenuSkin,
-	controlsMenuItemSkin,
-	controlsMenuItemStyle,
-	controlNameStyle,
-	controlValueStyle,
-	dotSkin,
-	paneBodySkin,
-	sliderBarSkin,
-	sliderButtonSkin,
-	switchBarSkin,
-	switchButtonSkin,
-	timerSkin,
-} from "assets";	
-
 // BEHAVIORS
 
 import {
 	ButtonBehavior,
+	Button,
+	PopupButton,
 } from "piu/Buttons";
 
 class PopupMenuBehavior extends Behavior {	
@@ -86,6 +69,8 @@ import {
 } from "piu/Scrollbars";
 
 import {
+	ProgressBarBehavior,
+	ProgressBar,
 	HorizontalSliderBehavior,
 	HorizontalSlider,
 	HorizontalLogSliderBehavior,
@@ -100,7 +85,7 @@ import {
 export var ControlsPane = Container.template($ => ({ 
 	left:0, right:0, top:0, bottom:0, 
 	contents:[
-		Scroller($, { left:0, right:0, top:0, bottom:0, skin:paneBodySkin, active:true, Behavior:ScrollerBehavior, contents: [
+		Scroller($, { left:0, right:0, top:0, bottom:0, skin:skins.paneBody, active:true, Behavior:ScrollerBehavior, contents: [
 			Content($, {}),
 			VerticalScrollbar($, {}),
 		]}),
@@ -109,48 +94,43 @@ export var ControlsPane = Container.template($ => ({
 
 export var ControlsColumn = Column.template($ => ({ left:0, right:0, top:0 }));
 
-export var Button = Container.template($ => ({
-	width:80, height:30, skin:buttonSkin, active:true,
-	Behavior: class extends ButtonBehavior {
-		activate(container, active) {
-			container.active = active;
-			this.onStateChanged(container);
-		}
-		onDisplaying(container) {
-			let data = this.data;
-			if ("active" in data)
-				this.activate(container, data.active);
-			if ("name" in data)
-				model.DEVICE.first.behavior[data.name] = container;
-			super.onDisplaying(container);
-		}
-		onTouchBegan(container, id, x, y, ticks) {
-			super.onTouchBegan(container, id, x, y, ticks);
-			let data = this.data;
-			if (data.eventDown)
-				model.DEVICE.first.delegate(data.eventDown, data);
-		}
-		onTouchEnded(container, id, x, y, ticks) {
-			super.onTouchEnded(container, id, x, y, ticks);
-			let data = this.data;
-			if (data.eventUp)
-				model.DEVICE.first.delegate(data.eventUp, data);
-		}
-		onTap(container) {
-			let data = this.data;
-			if (data.event)
-				model.DEVICE.first.delegate(data.event, data);
-		}
-	},
-	contents: [
-		Label($, { left:0, right:0, height:30, style:buttonStyle, string:$.label }),
-]}));
+class ButtonsRowBehavior extends ButtonBehavior {
+	activate(container, active) {
+		container.active = active;
+		this.onStateChanged(container);
+	}
+	onDisplaying(container) {
+		let data = this.data;
+		if ("active" in data)
+			this.activate(container, data.active);
+		if ("name" in data)
+			model.DEVICE.first.behavior[data.name] = container;
+		super.onDisplaying(container);
+	}
+	onTouchBegan(container, id, x, y, ticks) {
+		super.onTouchBegan(container, id, x, y, ticks);
+		let data = this.data;
+		if (data.eventDown)
+			model.DEVICE.first.delegate(data.eventDown, data);
+	}
+	onTouchEnded(container, id, x, y, ticks) {
+		super.onTouchEnded(container, id, x, y, ticks);
+		let data = this.data;
+		if (data.eventUp)
+			model.DEVICE.first.delegate(data.eventUp, data);
+	}
+	onTap(container) {
+		let data = this.data;
+		if (data.event)
+			model.DEVICE.first.delegate(data.event, data);
+	}
+}
 
 export var ButtonsRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
-		$.buttons.map($$ => new Button($$)),
+		Label($, { width:120, style:styles.controlName, string:$.label }),
+		$.buttons.map($$ => new Button($$, { Behavior:ButtonsRowBehavior, string: $$.label })),
 		Content($, { left:0, right:0 }),
 	],
 }});
@@ -158,8 +138,8 @@ export var ButtonsRow = Row.template(function($) { return {
 export var InfoRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
-		Label($, { left:0, right:0, style:controlValueStyle, string:$.value,
+		Label($, { width:120, style:styles.controlName, string:$.label }),
+		Label($, { left:0, right:0, style:styles.controlValue, string:$.value,
 			Behavior: class extends Behavior {
 				onCreate(label, data) {
 					this.data = data;
@@ -178,8 +158,8 @@ var PopupMenu = Layout.template($ => ({
 	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
 	Behavior: PopupMenuBehavior,
 	contents: [
-		Container($, { skin:controlsMenuSkin, contents:[
-			Scroller($, { clip:true, active:true, contents:[
+		Container($, { skin:skins.popupMenuShadow, contents:[
+			Scroller($, { clip:true, active:true, skin:skins.popupMenu, contents:[
 				Column($, { left:0, right:0, top:0, 
 					contents: $.items.map($$ => new PopupMenuItem($$)),
 				}),
@@ -189,20 +169,20 @@ var PopupMenu = Layout.template($ => ({
 }));
 
 var PopupMenuItem = Row.template($ => ({
-	left:0, right:0, height:30, skin:controlsMenuItemSkin, active:true,
+	left:0, right:0, height:30, skin:skins.popupMenuItem, active:true,
 	Behavior:PopupMenuItemBehavior,
 	contents: [
-		Content($, { width:20, height:30, skin:dotSkin, visible:false }),
-		Label($, { left:0, right:0, height:30, style:controlsMenuItemStyle, string:$.title }),
+		Content($, { width:20, height:30, skin:skins.popupIcons, variant:1, visible:false }),
+		Label($, { left:0, right:0, height:30, style:styles.popupMenuItem, string:$.title }),
 	]
 }));
 
 export var PopupRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
-		Container($, { 
-			width:160, height:30, active:true, skin:buttonSkin, variant:1,
+		Label($, { width:120, style:styles.controlName, string:$.label }),
+		PopupButton($, { 
+			width:160, height:30, active:true,
 			Behavior: class extends ButtonBehavior {
 				activate(container, active) {
 					container.active = active;
@@ -216,7 +196,7 @@ export var PopupRow = Row.template(function($) { return {
 						model.DEVICE.first.behavior[data.name] = container;
 					super.onDisplaying(container);
 					this.selection = data.items.findIndex(item => item.value == data.value);
-					container.first.string = data.items[this.selection].title;
+					container.first.next.string = data.items[this.selection].title;
 				}
 				onMenuSelected(container, index) {
 					if ((index >= 0) && (this.selection != index)) {
@@ -224,7 +204,7 @@ export var PopupRow = Row.template(function($) { return {
 						let item = data.items[index];
 						this.selection = index;
 						data.value = item.value;
-						container.first.string = item.title;
+						container.first.next.string = item.title;
 						model.DEVICE.first.delegate(data.event, data);
 					}
 				}
@@ -237,36 +217,64 @@ export var PopupRow = Row.template(function($) { return {
 					};
 					application.add(new PopupMenu(it));
 				}
-			},
-			contents: [
-				Label($, { left:15, right:40, height:30, style:controlsMenuItemStyle, string:$.value }),
-			],
+			}
 		}),
+	],
+}});
+
+export var ProgressRow = Row.template(function($) { return {
+	left:0, right:0, height:30,
+	contents: [
+		Label($, { width:120, style:styles.controlName, string:$.label }),
+		ProgressBar($, { 
+			width:160,
+			Behavior: class extends ProgressBarBehavior {
+				activate(container, active) {
+					if (this.data.active != active) {
+						this.data.active = container.active = active;
+						this.onDataChanged(container);
+					}
+				}
+				onDisplaying(container) {
+					let data = this.data;
+					if (data.active === undefined)
+						data.active = true;
+					else
+						container.active = data.active;
+					if ("name" in data)
+						model.DEVICE.first.behavior[data.name] = container;
+					super.onDisplaying(container);
+				}
+				onDataChanged(container) {
+					super.onDataChanged(container);
+					let data = this.data;
+					container.next.string = data.value + data.unit;
+				}
+			},
+		}),
+		Label($, { left:0, right:0, style:styles.controlValue, string:$.value + $.unit }),
 	],
 }});
 
 export var SliderRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { width:120, style:styles.controlName, string:$.label }),
 		HorizontalSlider($, { 
-			width:160, barSkin: sliderBarSkin, buttonSkin: sliderButtonSkin,
+			width:160,
 			Behavior: class extends HorizontalSliderBehavior {
 				activate(container, active) {
-					var button = container.last;
-					var bar = button.previous;
-					var background = bar.previous;
-					var label = container.next;
-					container.active = active;
-					background.variant = active ? 0 : 1;
-					bar.variant = active ? 0 : 1;
-					button.variant = active ? 0 : 1;
-					label.state = active ? 0 : 1;
+					if (this.data.active != active) {
+						this.data.active = container.active = active;
+						this.onDataChanged(container);
+					}
 				}
 				onDisplaying(container) {
 					let data = this.data;
-					if ("active" in data)
-						this.activate(container, data.active);
+					if (data.active === undefined)
+						data.active = true;
+					else
+						container.active = data.active;
 					if ("name" in data)
 						model.DEVICE.first.behavior[data.name] = container;
 					super.onDisplaying(container);
@@ -281,32 +289,29 @@ export var SliderRow = Row.template(function($) { return {
 				}
 			},
 		}),
-		Label($, { left:0, right:0, style:controlValueStyle, string:$.value + $.unit }),
+		Label($, { left:0, right:0, style:styles.controlValue, string:$.value + $.unit }),
 	],
 }});
 
 export var LogSliderRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { width:120, style:styles.controlName, string:$.label }),
 		HorizontalLogSlider($, { 
-			width:160, barSkin: sliderBarSkin, buttonSkin: sliderButtonSkin,
+			width:160,
 			Behavior: class extends HorizontalLogSliderBehavior {
 				activate(container, active) {
-					var button = container.last;
-					var bar = button.previous;
-					var background = bar.previous;
-					var label = container.next;
-					container.active = active;
-					background.variant = active ? 0 : 1;
-					bar.variant = active ? 0 : 1;
-					button.variant = active ? 0 : 1;
-					label.state = active ? 0 : 1;
+					if (this.data.active != active) {
+						this.data.active = container.active = active;
+						this.onDataChanged(container);
+					}
 				}
 				onDisplaying(container) {
 					let data = this.data;
-					if ("active" in data)
-						this.activate(container, data.active);
+					if (data.active === undefined)
+						data.active = true;
+					else
+						container.active = data.active;
 					if ("name" in data)
 						model.DEVICE.first.behavior[data.name] = container;
 					super.onDisplaying(container);
@@ -321,16 +326,16 @@ export var LogSliderRow = Row.template(function($) { return {
 				}
 			},
 		}),
-		Label($, { left:0, right:0, style:controlValueStyle, string:$.value + $.unit }),
+		Label($, { left:0, right:0, style:styles.controlValue, string:$.value + $.unit }),
 	],
 }});
 
 export var StatusRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { width:120, style:styles.controlName, string:$.label }),
 		Label($, { 
-			left:0, right:0, style:controlValueStyle,
+			left:0, right:0, style:styles.controlValue,
 			Behavior: class extends Behavior {
 				onCreate(label, data) {
 					this.data = data;
@@ -355,30 +360,28 @@ export var StatusRow = Row.template(function($) { return {
 export var SwitchRow = Row.template(function($) { return {
 	left:0, right:0, height:30,
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { width:120, style:styles.controlName, string:$.label }),
 		Switch($, {
-			barSkin: switchBarSkin, buttonSkin: switchButtonSkin,
 			Behavior: class extends SwitchBehavior {
 				activate(container, active) {
-					var bar = container.first;
-					var button = bar.next;
-					var label = container.next;
-					container.active = active;
-					bar.variant = active ? 0 : 1;
-					button.variant = active ? 0 : 1;
-					label.state = active ? 0 : 1;
+					if (this.data.active != active) {
+						this.data.active = container.active = active;
+						this.onDataChanged(container);
+					}
 				}
 				onDisplaying(container) {
 					let data = this.data;
-					if ("active" in data)
-						this.activate(container, data.active);
+					if (data.active === undefined)
+						data.active = true;
+					else
+						container.active = data.active;
 					if ("name" in data)
 						model.DEVICE.first.behavior[data.name] = container;
 					super.onDisplaying(container);
 				}
 				onDataChanged(container) {
+					super.onDataChanged(container);
 					let data = this.data;
-					this.changeOffset(container, data.value ? this.size : 0);
 					container.next.string = data.value ? data.on : data.off;
 				}
 				onValueChanged(container) {
@@ -388,7 +391,7 @@ export var SwitchRow = Row.template(function($) { return {
 				}
 			},
 		}),
-		Label($, { left:0, right:0, style:controlValueStyle, string:$.value ? $.on : $.off }),
+		Label($, { left:0, right:0, style:styles.controlValue, string:$.value ? $.on : $.off }),
 	],
 }});
 
@@ -449,13 +452,13 @@ export var TimerRow = Row.template(function($) { return {
 		}
 	},
 	contents: [
-		Label($, { width:120, style:controlNameStyle, string:$.label }),
+		Label($, { width:120, style:styles.controlName, string:$.label }),
 		Container($, { 
-			width:160, height:10, skin:timerSkin,
+			width:160, height:10, skin:skins.progressBar, state:1,
 			contents: [
-				Content($, { width:0, right:0, top:0, bottom:0, skin:timerSkin, state:1 }),
+				Content($, { width:0, right:0, top:0, bottom:0, skin:skins.progressBar, state:3 }),
 			],
 		}),
-		Label($, { left:0, right:0, style:controlValueStyle }),
+		Label($, { left:0, right:0, style:styles.controlValue }),
 	],
 }});

@@ -38,6 +38,9 @@
 #define NSControlStateValueOff NSOffState
 #endif
 
+#ifndef MAC_OS_X_VERSION_10_14
+#endif
+
 #define piuPC 1
 typedef int32_t PiuCoordinate;
 typedef int32_t PiuDimension;

@@ -3,7 +3,7 @@
 		"NAME": "mcsim",
 		"MODULES": "$(MODDABLE)/modules",
 		"PIU": "$(MODULES)/piu",
-		"SIMULATOR": "$(MODDABLE)/build/simulator"
+		"SIMULATOR": "$(MODDABLE)/build/simulators"
 	},
 	"creation": {
 		"chunk": {
@@ -28,7 +28,7 @@
 	},
 	"modules": {
 		"~": [
-			"$(SIMULATOR)/screen"
+			"$(SIMULATOR)/modules/screen"
 		],
 		"piu/*": [
 			"$(PIU)/All/piu*",
@@ -39,7 +39,7 @@
 		],
 		"*": [
 			"./*",
-			"$(SIMULATOR)/screen",
+			"$(SIMULATOR)/modules/screen",
 			"$(MODULES)/base/worker/pcWorker",
 			"$(MODULES)/data/binaryMessage/*"
 		]

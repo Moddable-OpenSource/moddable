@@ -8,6 +8,7 @@ import {
   StatusRow,
   SwitchRow,
   TimerRow,
+  InfoRow
 } from 'ControlsPane';
 
 import {
@@ -18,6 +19,12 @@ import {
 } from 'DevicePane';
 
 const base = import.meta.uri;
+
+const pins = {
+  powerMain: 2,
+  powerExternal: 5,
+  powerEPD: 23,
+}
 
 class MockupBehavior extends DeviceBehavior {
   onAbort(container, status) {
@@ -71,6 +78,13 @@ class MockupBehavior extends DeviceBehavior {
   onJSON(container, json) {
     if ('xsbug' in json) {
       if (json.xsbug == 'abort') application.defer('doReloadFile');
+    } else if ('digital' in json) {
+      const { pin, value } = json.digital;
+      const POWER_INFO_NAME = `POWER_INFO_${pin}`;
+      const behaviors = model.DEVICE.first.behavior;
+      if (POWER_INFO_NAME in behaviors) {
+        behaviors[POWER_INFO_NAME].string = value ? "On" : "Off";
+      }
     }
   }
   onReloadOnAbortChanged(container, data) {
@@ -122,6 +136,21 @@ export default {
         on: 'Yes',
         off: 'No',
         value: false,
+      }),
+      InfoRow({
+        name: `POWER_INFO_${pins.powerMain}`,
+        label: 'Main Power',
+        value: 'Off'
+      }),
+      InfoRow({
+        name: `POWER_INFO_${pins.powerEPD}`,
+        label: 'EPD Power',
+        value: 'Off'
+      }),
+      InfoRow({
+        name: `POWER_INFO_${pins.powerExternal}`,
+        label: 'External Power',
+        value: 'Off'
       }),
     ],
   })),

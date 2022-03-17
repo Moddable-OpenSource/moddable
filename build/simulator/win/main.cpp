@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -73,9 +73,7 @@ char* gxFormatNames[pixelFormatCount] = {
 };
 
 txScreen* gxScreen = NULL;
-HBITMAP gxScreenBitmap = NULL;
-BITMAPINFO* gxScreenBitmapInfo = NULL;
-HDC gxScreenDC = NULL;
+Bitmap* gxScreenBitmap = NULL;
 
 char gxArchiveName[MAX_PATH] = "";
 char gxArchivePath[MAX_PATH] = "";
@@ -429,7 +427,6 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 		if ((gxMockupIndex < 0) || (gxMockupCount <= gxMockupIndex))
 			gxMockupIndex = 4;
 		
-		gxScreenDC = CreateCompatibleDC(gDC); 
 		SendMessage(window, WM_CREATE_SCREEN, 0, 0);
 		
 		if (RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\moddable.tech\\Screen Test\\window", 0, KEY_READ, &key) == ERROR_SUCCESS) {
@@ -463,25 +460,13 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 		gxScreen->width = mockup->width;
 		gxScreen->height = mockup->height;
 
-		gxScreenBitmap = CreateCompatibleBitmap(gDC, mockup->width, mockup->height);
-		gxScreenBitmapInfo = (BITMAPINFO*)calloc(1, sizeof(BITMAPINFO) + (2 * sizeof(RGBQUAD)));
-		gxScreenBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		gxScreenBitmapInfo->bmiHeader.biWidth = mockup->width;
-		gxScreenBitmapInfo->bmiHeader.biHeight = -mockup->height;
-		gxScreenBitmapInfo->bmiHeader.biPlanes = 1;
-		gxScreenBitmapInfo->bmiHeader.biBitCount = 32;
-		gxScreenBitmapInfo->bmiHeader.biCompression = BI_BITFIELDS;
-		gxScreenBitmapInfo->bmiColors[0].rgbBlue = 0xFF;
-		gxScreenBitmapInfo->bmiColors[1].rgbGreen = 0xFF;
-		gxScreenBitmapInfo->bmiColors[2].rgbRed = 0xFF;
+    	gxScreenBitmap = new Bitmap(gxScreen->width, gxScreen->height, 4 * gxScreen->width, PixelFormat32bppRGB, gxScreen->buffer);
 
 		InvalidateRect(window, NULL, TRUE);
 		SendMessage(window, WM_SIZE, SIZE_RESTORED, 0);
 		} break;
 	case WM_DELETE_SCREEN: {
-		free(gxScreenBitmapInfo);
-		gxScreenBitmapInfo = NULL;
-		DeleteObject(gxScreenBitmap);
+		delete gxScreenBitmap;
 		gxScreenBitmap = NULL;
 		free(gxScreen);
 		gxScreen = NULL;
@@ -555,7 +540,7 @@ LRESULT CALLBACK fxScreenWindowProc(HWND window, UINT message, WPARAM wParam, LP
 				params.lpszCaption = L"About";
 				params.dwStyle = MB_USERICON;
 				params.lpszIcon = (LPCWSTR)MAKEINTRESOURCE(100);
-				params.lpszText = L"Screen Test\n\nCopyright 2017 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.";
+				params.lpszText = L"Screen Test\n\nCopyright 2017-2022 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.";
 				MessageBoxIndirectW(&params);
 				} break;
 			}
@@ -746,10 +731,11 @@ LRESULT CALLBACK fxScreenViewProc(HWND view, UINT message, WPARAM wParam, LPARAM
 	case WM_PAINT: {
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(view, &ps);
-		HGDIOBJ object = SelectObject(gxScreenDC, gxScreenBitmap);
-		SetDIBits(gxScreenDC, gxScreenBitmap, 0, gxScreen->height, gxScreen->buffer, gxScreenBitmapInfo, DIB_RGB_COLORS);
-		BitBlt(hdc, 0, 0, gxScreen->width, gxScreen->height, gxScreenDC, 0, 0, SRCCOPY);
-		SelectObject(gxScreenDC, object);
+		Graphics graphics(hdc);
+   		graphics.SetCompositingQuality(CompositingQualityHighQuality);
+		graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+		graphics.SetTextRenderingHint(TextRenderingHintClearTypeGridFit);
+  		graphics.DrawImage(gxScreenBitmap, PointF(0.0f, 0.0f));
 		EndPaint(view, &ps);
 		return TRUE;
 		} break;

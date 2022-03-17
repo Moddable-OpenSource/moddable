@@ -191,8 +191,8 @@ void PiuStyleLookupFont(PiuStyle* self)
 	(*font)->height = extents.height;
 
 	PangoAttrList* pangoAttributes = pango_attr_list_new();
-	pango_attr_list_insert(pangoAttributes, pango_attr_size_new_absolute((*self)->size * PANGO_SCALE));
-	pango_attr_list_insert(pangoAttributes, pango_attr_weight_new(PANGO_WEIGHT_MEDIUM));
+// 	pango_attr_list_insert(pangoAttributes, pango_attr_size_new_absolute((*self)->size * PANGO_SCALE));
+// 	pango_attr_list_insert(pangoAttributes, pango_attr_weight_new(PANGO_WEIGHT_MEDIUM));
 	(*font)->pangoAttributes = pangoAttributes;
 	
 	(*self)->font = font;

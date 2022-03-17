@@ -331,34 +331,9 @@ class Test262Node {
 // ASSETS
 
 import {
-	buttonsSkin,
-	glyphsSkin,
-	
 	headerHeight,
 	rowHeight,
 	rowIndent,
-	
-	paneBackgroundSkin,
-	paneSeparatorSkin,
-	
-	fieldScrollerSkin,
-	findLabelStyle,
-	
-	tableHeaderSkin,
-	tableHeaderStyle,
-	tableRowSkin,
-	tableRowStyle,
-	tableFooterSkin,
-	test262HeaderStyles,
-	
-	buttonSkin,
-	buttonStyle,
-	fileRowSkin,
-	fileRowStyle,
-	resultRowSkin,
-	resultLabelStyle,
-	
-	filterTest262Skin,
 } from "assets";
 
 // BEHAVIORS
@@ -544,34 +519,45 @@ class Test262FilterButtonBehavior extends Behavior {
 	}
 	onCreate(button, data) {
 		this.data = data;
+		this.flags = 0;
 		this.onTest262FilterChanged(button, model.test262Context.home.filter);
 	}
 	onMouseEntered(button, x, y) {
-		this.changeState(button, 2);
+		button.variant |= 4;
+		return true;
 	}
 	onMouseExited(button, x, y) {
-		this.changeState(button, 1);
+		button.variant &= ~4;
+		return true;
+	}
+	onRowEntered(button) {
+		button.variant |= 2;
+	}
+	onRowExited(button) {
+		button.variant &= ~2;
+	}
+	onRowSelected(button, select) {
+		button.state = select ? 1 : 0;
 	}
 	onTap(button) {
 		button.bubble("onTest262SelectFilter", this.data.path);
 	}
 	onTouchBegan(button, id, x, y, ticks) {
 		this.variant = button.variant;
-		button.variant |= 1;
+		button.variant = 5;
 		button.captureTouch(id, x, y, ticks);
 	}
 	onTouchEnded(button, id, x, y, ticks) {
 		button.variant = this.variant;
 		if (button.hit(x, y)) {
-			this.changeState(button, 2);
 			this.onTap(button);
 		}
 		else {
-			this.changeState(button, 1);
+// 			this.changeState(button, 1);
 		}
 	}
 	onTouchMoved(button, id, x, y, ticks) {
-		button.variant = button.hit(x, y) ? this.variant | 1 : this.variant;
+		button.variant = button.hit(x, y) ? 5 : 4;
 	}
 	onTest262FilterChanged(button, filter) {
 		if (this.data.path == filter)
@@ -585,38 +571,33 @@ class Test262FileRowBehavior extends FileRowBehavior {
 	changeState(row) {
 		super.changeState(row);
 		let button = row.first;
-		if (this.flags & 4)
-			button.variant |= 2;
-		else
-			button.variant &= ~2;
+		button.behavior.onRowSelected(button, this.flags & 4 ? true : false);
 	}
 	onMouseEntered(row, x, y) {
 		super.onMouseEntered(row, x, y);
 		let button = row.first;
-		if (button.state == 0)
-			button.behavior.changeState(button, 1);
+		button.behavior.onRowEntered(button);
 	}
 	onMouseExited(row, x, y) {
 		super.onMouseExited(row, x, y);
 		let button = row.first;
-		button.behavior.changeState(button, 0);
+		button.behavior.onRowExited(button);
 	}
 };
 
 class Test262FolderRowBehavior extends FolderRowBehavior {
 	changeArrowState(row, state) {
-		row.first.next.next.state = state;
+		row.first.next.next.variant = state;
 	}
 	onMouseEntered(row, x, y) {
 		super.onMouseEntered(row, x, y);
 		let button = row.first;
-		if (button.state == 0)
-			button.behavior.changeState(button, 1);
+		button.behavior.onRowEntered(button);
 	}
 	onMouseExited(row, x, y) {
 		super.onMouseExited(row, x, y);
 		let button = row.first;
-		button.behavior.changeState(button, 0);
+		button.behavior.onRowExited(button);
 	}
 };
 
@@ -731,7 +712,7 @@ import {
 } from "piu/Scrollbars";
 
 export var Test262Pane = Container.template(function($) { return {
-	left:0, right:0, top:0, bottom:0, skin:paneBackgroundSkin,
+	left:0, right:0, top:0, bottom:0, skin:skins.paneBackground,
 	Behavior: Test262PaneBehavior,
 	contents: [
 		Scroller($, {
@@ -748,7 +729,7 @@ export var Test262Pane = Container.template(function($) { return {
 				VerticalScrollbar($, {}),
 			]
 		}),
-		Content($, { left:0, right:0, top:26, height:1, skin:paneSeparatorSkin, }),
+		Content($, { left:0, right:0, top:26, height:1, skin:skins.paneSeparator, }),
 		Test262Header($.test262Context.report, { }),
 		Container($, { left:0, right:0, top:27, bottom:0 }),
 	]
@@ -758,14 +739,14 @@ var Test262Header = Row.template($ => ({
 	left:0, top:0, height:headerHeight,
 	Behavior: Test262HeaderBehavior,
 	contents: [
-		Content($, { width:26, skin:buttonsSkin, variant:$.node ? 0 : 1, active:true, Behavior:Test262ButtonBehavior }),
-		Label($, { width:40, style:tableHeaderStyle, string:$.failed + $.passed + $.skipped }),
-		Label($, { width:40, style:test262HeaderStyles[0], string:"FAIL" }),
-		Label($, { width:40, style:test262HeaderStyles[1], string:$.failed }),
-		Label($, { width:40, style:test262HeaderStyles[2], string:"PASS" }),
-		Label($, { width:40, style:test262HeaderStyles[3], string:$.passed }),
-		Label($, { width:40, style:test262HeaderStyles[4], string:"SKIP" }),
-		Label($, { width:40, style:test262HeaderStyles[5], string:$.skipped }),
+		IconButton($, { width:26, variant:$.node ? 0 : 1, active:true, Behavior:Test262ButtonBehavior }),
+		Label($, { width:40, style:styles.tableHeader, string:$.failed + $.passed + $.skipped }),
+		Label($, { width:40, style:styles.test262Headers[0], string:"FAIL" }),
+		Label($, { width:40, style:styles.test262Headers[1], string:$.failed }),
+		Label($, { width:40, style:styles.test262Headers[2], string:"PASS" }),
+		Label($, { width:40, style:styles.test262Headers[3], string:$.passed }),
+		Label($, { width:40, style:styles.test262Headers[4], string:"SKIP" }),
+		Label($, { width:40, style:styles.test262Headers[5], string:$.skipped }),
 	],
 }));
 
@@ -779,18 +760,18 @@ var Test262ReportTable = Column.template(function($) { return {
 }});
 
 var Test262ReportHeader = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: Test262ReportHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:$.status }),
-		Content($, { top:0, skin:buttonsSkin, variant:10, active:true, visible:false, name:"onOpenLog", Behavior:ButtonBehavior }),
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
+		Label($, { left:0, right:0, style:styles.tableHeader, string:$.status }),
+		IconButton($, { top:0, variant:10, active:true, visible:false, name:"onOpenLog", Behavior:ButtonBehavior }),
 	],
 }});
 
 var Test262ReportFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+	left:0, right:0, height:3, skin:skins.tableFooter,
 }});
 
 var Test262FailureTable = Column.template(function($) { return {
@@ -802,43 +783,43 @@ var Test262FailureTable = Column.template(function($) { return {
 }});
 
 var Test262FailureHeader = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true,
 	Behavior: Test262FailureHeaderBehavior,
 	contents: [
 		Content($, { width:26 }),
-		Content($, { skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0}),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
+		Content($, { width:20, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
 	],
 }});
 
 var Test262FailureRow = Row.template(function($) { return {
-	left:0, right:0, skin:resultRowSkin, active:true,
+	left:0, right:0, skin:skins.resultRow, active:true,
 	Behavior: Test262FailureRowBehavior,
 	contents: [
 		Content($, { width:46 }),
-		Text($, { left:0, right:0, style:resultLabelStyle, string:$.reason, active:false }),
+		Text($, { left:0, right:0, style:styles.resultLabel, string:$.reason, active:false }),
 	],
 }});
 
 
 var Test262LocateRow = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: Test262LocateRowBehavior,
 	contents: [
 		Content($, { width:26 }),
-		Label($, { left:0, right:0, style:tableHeaderStyle, string:"REPOSITORY..." }),
+		Label($, { left:0, right:0, style:styles.tableHeader, string:"REPOSITORY..." }),
 	],
 }});
 
 
 var Test262FileRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:fileRowSkin, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.fileRow, active:true,
 	Behavior: Test262FileRowBehavior,
 	contents: [
-		Content($, { width:26, skin:filterTest262Skin, active:true, Behavior:Test262FilterButtonBehavior }),
+		Content($, { width:26, skin:skins.filterTest262, active:true, Behavior:Test262FilterButtonBehavior }),
 		Content($, { width:(($.depth - 1) * 20) }),
 		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
 	],
 }});
 
@@ -851,13 +832,13 @@ var Test262FolderTable = Column.template(function($) { return {
 }});
 
 var Test262FolderHeader = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:tableRowSkin, active:true,
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true,
 	Behavior: Test262FolderRowBehavior,
 	contents: [
-		Content($, { width:26, skin:filterTest262Skin, active:true, Behavior:Test262FilterButtonBehavior }),
+		Content($, { width:26, skin:skins.filterTest262, active:true, Behavior:Test262FilterButtonBehavior }),
 		Content($, { width:(($.depth - 1) * 20) }),
-		Content($, { skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0}),
-		Label($, { left:0, right:0, style:tableRowStyle, string:$.name }),
+		Content($, { width:20, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
 	],
 }});
 
@@ -875,30 +856,31 @@ var Test262HomeTable = Column.template(function($) { return {
 }});
 
 var Test262HomeHeader = Row.template(function($) { return {
-	left:0, right:0, height:27, skin:tableHeaderSkin, active:true,
+	left:0, right:0, height:27, skin:skins.tableHeader, active:true,
 	Behavior: Test262HomeHeaderBehavior,
 	contents: [
 		Content($, { width:0 }),
-		Content($, { width:26, top:3, skin:glyphsSkin, state:$.expanded ? 3 : 1, variant:0 }),
+		Content($, { width:26, top:5, skin:skins.glyphs, variant:$.expanded ? 3 : 1 }),
 		Container($, { 
-			left:0, right:0, top:2, bottom:3, skin: fieldScrollerSkin,
+			left:0, right:0, top:2, bottom:3, skin:skins.fieldScroller,
 			contents: [
 				Field($, {
 					anchor:"SELECT_FOCUS",
-					left:0, right:0, top:0, bottom:0,
+					left:1, right:1, top:1, bottom:1,
 					clip:true,
 					active:true,
-					style:findLabelStyle,
+					skin:skins.field,
+					style:styles.field,
 					placeholder:"SELECT",
 					string:$.name,
 					Behavior: Test262HomeFieldBehavior,
 				}),
 			],
 		}),
-		Content($, { width:3 }),
+		Content($, { width:26 }),
 	],
 }});
 
 var Test262HomeFooter = Row.template(function($) { return {
-	left:0, right:0, height:3, skin:tableFooterSkin,
+	left:0, right:0, height:3, skin:skins.tableFooter,
 }});
