@@ -18,6 +18,8 @@ import Timer from "timer";
 import WiFi from "wifi/connection";
 import config from "mc/config";
 
+WiFi.mode = 1;
+
 const mqtt = new Client({
 	host: "test.mosquitto.org",
 	timeout: 60_000
@@ -53,7 +55,7 @@ new WiFi({
 mqtt.wait(true);	// not connected yet
 
 // enable this on ESP8266 and ESP32 to test Wi-Fi disconnect handling
-if (1) {
+if (0) {
 	Timer.repeat(() => {
 		WiFi.disconnect();
 	}, 15_000);
