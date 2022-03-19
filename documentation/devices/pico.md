@@ -1,11 +1,21 @@
 # Getting Started with Raspberry Pi Pico
 
 Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: April 27, 2021
-
-> Note: This is preliminary documentation for a port-in-progress. The Raspberry Pi Pico port of the Moddable SDK is not ready for general use. The port and this documentation are provided for the community to work together to finish the port.
+Revised: March 18, 2022
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
+
+> Note: The Pico port is solid and mostly complete. Future work to include:
+> 
+> - Mods
+> - TC53 IO
+> - PWM output
+> - Audio
+> - JavaScript Atomics
+> - Web Workers making use of the second core
+> - PIO integration
+> - Building on Windows
+
 
 ## Table of Contents
 
@@ -94,15 +104,7 @@ Please see the [Raspberry Pi Pico documentation](https://www.raspberrypi.org/doc
 
 After you've setup your macOS host environment, take the following steps to install an application on your Pico.
 
-1. Put the device into programming mode by holding the __BOOTSEL__ button when powering on the Pico.
-
-	Make sure you're using a data-sync capable cable, not one that is power-only.
-
-	> Note: a USB hub with power switch is very helpful here.
-
-	You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
-
-3. Build and deploy the app with `mcconfig`.
+1. Build and deploy the app with `mcconfig`.
 
 	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
 	
@@ -114,6 +116,18 @@ After you've setup your macOS host environment, take the following steps to inst
 	```
 
 The app will be built and installed. `xsbug` will be launched and connected to the Pico after a few seconds.
+
+> Note: If the device is unresponsive, you may see this message:
+>	
+>	```text
+>	Hold the BOOTSEL button and power-cycle the device.
+>	Waiting for /Volumes/RPI-RPI2.....
+>	```
+>
+>  Put the device into programming mode by holding the __BOOTSEL__ button when powering on the Pico.
+>
+>    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
+
 
 <a id="windows-setup"></a>
 
