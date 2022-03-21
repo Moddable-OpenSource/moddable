@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2022 Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK.
+ * 
+ *   This work is licensed under the
+ *       Creative Commons Attribution 4.0 International License.
+ *   To view a copy of this license, visit
+ *       <http://creativecommons.org/licenses/by/4.0>
+ *   or send a letter to Creative Commons, PO Box 1866,
+ *   Mountain View, CA 94042, USA.
+ *
+ */
+ 
 import Poco from "commodetto/Poco";
 import Timer from "timer";
 import config from "mc/config";
@@ -49,13 +63,13 @@ function resetFirework(firework) {
 	}
 }
 
-render.begin(0, 0, render.width, render.height);
-render.fillRectangle(render.makeColor(64, 64, 64), 0, 0, render.width, render.height);
+render.begin(0, 0, width, height);
+render.fillRectangle(render.makeColor(64, 64, 64), 0, 0, width, height);
 render.end();
 
 function explode() {
 	render.begin(0, 0, width, height);
-	render.fillRectangle(render.makeColor(background.red, background.green, background.blue), 0, 0, render.width, render.height);
+	render.fillRectangle(render.makeColor(background.red, background.green, background.blue), 0, 0, width, height);
 	fireworks.forEach((firework, index) => {
 		if (firework.phase == 'explode') {
 			firework.sparks.forEach((spark) => {
@@ -77,7 +91,7 @@ function explode() {
 				let color = render.makeColor(index * 50, spark * 17, 0);
 				render.fillRectangle(color, firework.x + Math.random() * spark - spark / 2, firework.y + spark * 4, 4, 4);
 			}
-			if (Math.random() < .001 || firework.y < (render.width / 3)) firework.phase = 'explode';
+			if (Math.random() < .001 || firework.y < (width / 3)) firework.phase = 'explode';
 		}
 	});
 	render.end();
