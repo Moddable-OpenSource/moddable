@@ -20,6 +20,8 @@ This document describes how to start building Moddable applications for the Rasp
 ## Table of Contents
 
 - [About Raspberry Pi Pico](#about-pico)
+- [Overview](#overview)
+- [Platforms](#platforms)
 - MacOS
  - [SDK and Host Environment Setup - macOS](#macos-setup)
  - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
@@ -39,6 +41,48 @@ This document describes how to start building Moddable applications for the Rasp
 <img src="../assets/devices/pi-pico.png" width="300">
 
 Please see the [Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/) for details.
+
+<a id="overview"></a>
+## Overview
+
+Before you can build applications, you need to:
+
+- Install the Moddable SDK and build its tools
+- Install the required development tools for the Raspberry Pi Pico platform
+
+The instructions below will have you verify your setup by running the `helloworld` example on your device using `mcconfig`, a command line tool that builds and runs Moddable applications.
+
+> See the [Tools documentation](./../tools/tools.md) for more information about `mcconfig`
+
+
+When building with `mcconfig`, you specify your device target by providing the **platform identifier** of your development board to the `-p` argument. For example, use the following command to build for the Pico Display:
+
+```text
+mcconfig -d -m -p pico/pico_display
+```
+
+A list of available Pico subplatforms and their platform identifiers is provided in the **Platforms** section below.
+
+<a id="platforms"></a>
+## Platforms
+
+### Pico
+
+The Raspberry Pi Pico has the following features:
+
+- RP2040 microcontroller running up to 133 MHz
+- Dual-core Arm Cortex M0+
+- 264 KB RAM
+- 2 MB flash
+
+The Moddable SDK supports devices built with the Pico. The following table lists esch device, its platform identifier, a list of key features specific to the device, and links to additional resources.
+
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+| <img src="../assets/devices/pi-pico.png" width=220><BR>Rasberry Pi<BR>Pico | `pico` | LED, 26 External pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display | `pico/pico_display` | **1.4" IPS display**<BR>135 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display](https://pimoroni.com/picodisplay)</li> |
+| <img src="../assets/devices/pico-display-sim.png" width=200></a><BR>Pico Display<BR>Simulator | `sim/pico_display` | 135 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | |
+| <img src="../assets/devices/pico-ili9341.png" width=85></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
