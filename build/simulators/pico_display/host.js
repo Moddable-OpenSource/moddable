@@ -36,9 +36,10 @@ class Y {
 
 class RGBLED extends Control {
 	close() {
-		this.postJSON({led: {red: 0, green: 0, blue: 0}});
+		this.write(0);
 	}
 	write(led) {
+		led ??= {red: 0, green: 0, blue: 0};
 		this.postJSON({led});
 	}
 }

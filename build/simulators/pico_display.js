@@ -87,14 +87,14 @@ class LEDBehavior extends Behavior {
 		}
 		
 		content.visible = true;
-		content.skin = new Skin({...ledSkin, color: rgb(color.red, color.blue, color.green)});
+		content.skin = new Skin({...ledSkin, color: rgb(color.red, color.green, color.blue)});
 	}
 }
 
 export default {
 	applicationName: "pico_display/debug/.*",
 	sortingTitle:"0004",
-	title:"Pico Display",
+	title:"Pico Display (Pimoroni)",
 	Workers: {
 	},
 	ControlsTemplate:ControlsColumn.template($ => ({

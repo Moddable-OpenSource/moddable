@@ -27,6 +27,7 @@ globalThis.Host = Object.freeze({
 				this.#pin.blue.close();
 			}
 			write(color) {
+				color ??= {red: 0, green: 0, blue: 0};
 				this.#pin.red.write((color.red >= 128) ? 0 : 1);
 				this.#pin.green.write((color.green >= 128) ? 0 : 1);
 				this.#pin.blue.write((color.blue >= 128) ? 0 : 1);
