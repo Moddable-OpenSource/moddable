@@ -1,3 +1,4 @@
+import * as ResourceNS from "Resource";
 import config from "mc/config";
 import ArchiveFileMapping from "ArchiveFileMapping";
 
@@ -14,8 +15,9 @@ const archive = archiveFileMapping.archive;
 // trace(`### \n`);
 
 const c = new Compartment({}, {
-	test: { archive, path:"mod", meta: { archive } }
+	Resource: ResourceNS,
+	test: { archive, path:"mod", meta: { archive } },
 });
 const ns = c.importNow("test");
-
+debugger
 trace(`${ ns.default(1, 2) }\n`);
