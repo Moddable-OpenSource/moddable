@@ -2,6 +2,7 @@
 	"modules": {
 		"*": "./*"
 	},
-	"resources":{
+	"data": {
+		"data": "./data"
 	}
 }
