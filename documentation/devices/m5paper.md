@@ -1,7 +1,7 @@
 # M5Paper Developer Guide 
 
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: November 2, 2021
+Copyright 2021-2022 Moddable Tech, Inc.<BR>
+Revised: March 22, 2022
 
 This document provides information about using the M5Paper with the Moddable SDK, including how to build and deploy apps and links to other development resources.
 
@@ -61,6 +61,8 @@ After you've set up your host environment and ESP32 tools, take the following st
 	```
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+
+	Use the platform `-p simulator/m5paper` with `mcconfig` to build for the M5Paper simulator.
 	
 <a id="troubleshooting"></a>
 ## Troubleshooting
