@@ -1,11 +1,11 @@
 # Getting Started with Raspberry Pi Pico
 
-Copyright 2021 Moddable Tech, Inc.<BR>
+Copyright 2021-2022 Moddable Tech, Inc.<BR>
 Revised: March 18, 2022
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
-> Note: The Pico port is solid and mostly complete. Future work to include:
+> Note: The Pico port is solid and mostly complete. Possible future work includes:
 > 
 > - Mods
 > - TC53 IO
@@ -31,7 +31,6 @@ This document describes how to start building Moddable applications for the Rasp
 - Linux
  - [SDK and Host Environment Setup - Linux](#linux-setup)
  - [Building and Deploying apps - Linux](#linux-building-and-deploying-apps)
-
 - [Debugging Native Code](#debugging-native-code)
 - [Reference Documents](#reference)
 
@@ -75,7 +74,7 @@ The Raspberry Pi Pico has the following features:
 - 264 KB RAM
 - 2 MB flash
 
-The Moddable SDK supports devices built with the Pico. The following table lists esch device, its platform identifier, a list of key features specific to the device, and links to additional resources.
+The Moddable SDK supports devices built with the Pico. The following table lists each device, its platform identifier, a list of key features specific to the device, and links to additional resources.
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
@@ -328,3 +327,4 @@ These instructions have been tested on a macOS host using the two Pico SWD setup
 [picogettingstarteddoc]:https://datasheets.raspberrypi.org/pico/getting-started-with-pico.pdf
 [picohwdoc]:https://datasheets.raspberrypi.org/rp2040/hardware-design-with-rp2040.pdf
 [picosdkdoc]:https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf
+
