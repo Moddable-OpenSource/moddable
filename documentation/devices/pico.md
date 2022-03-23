@@ -124,16 +124,16 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 	git clone -b master https://github.com/raspberrypi/pico-examples
 	```
 	
-6. Set the `PICO_SDK_PATH` environment variable to point to the Pico SDK directory:
+6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
 
 	```text
-	export PICO_SDK_PATH=$HOME/pico/pico-sdk
+	export PICO_SDK_DIR=$HOME/pico/pico-sdk
 	```
 
 7. Build some `pico` tools:
 
 	```text
-	cd $PICO_SDK_PATH
+	cd $PICO_SDK_DIR
 	mkdir build
 	cd build
 	cmake ..
@@ -229,16 +229,16 @@ Not yet available.
 	git clone -b master https://github.com/raspberrypi/pico-examples
 	```
 	
-6. Set the `PICO_SDK_PATH` environment variable to point to the Pico SDK directory:
+6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
 
 	```text
-	export PICO_SDK_PATH=$HOME/pico/pico-sdk
+	export PICO_SDK_DIR=$HOME/pico/pico-sdk
 	```
 
 7. Build some `pico` tools:
 
 	```text
-	cd $PICO_SDK_PATH
+	cd $PICO_SDK_DIR
 	mkdir build
 	cd build
 	cmake ..
