@@ -80,6 +80,7 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 | :---: | :--- | :--- | :--- |
 | <img src="../assets/devices/pi-pico.png" width=220><BR>Rasberry Pi<BR>Pico | `pico` | LED, 26 External pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
 | <img src="../assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display | `pico/pico_display`<BR>`simulator/pico_display` | **1.4" IPS display**<BR>135 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display](https://pimoroni.com/picodisplay)</li> |
+| <img src="../assets/devices/pico-display-2.png" width=300></a><BR>Pimoroni<BR>Pico Display 2 | `pico/pico_display_2`<BR>`simulator/pico_display_2` | **2.0" IPS display**<BR>320 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display 2](https://shop.pimoroni.com/products/pico-display-pack-2-0)</li> |
 | <img src="../assets/devices/pico-ili9341.png" width=85></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
 
 <a id="setup"></a>
