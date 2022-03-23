@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -433,7 +433,7 @@ void fxScreenLaunch(txScreen* screen)
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
-				char path[PATH_MAX];
+				char path[C_PATH_MAX];
 				char *dot;
 
 				c_strcpy(path, script->path);
