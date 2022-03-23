@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -225,20 +225,24 @@ void xs_file_rename(xsMachine *the)
 	char path[SPIFFS_OBJ_NAME_LEN + 1];
 	char toPath[SPIFFS_OBJ_NAME_LEN + 1];
 	s32_t result;
-	char* slash;
-	size_t pathLength = 0;
-
+	
 	xsmcToStringBuffer(xsArg(0), path, sizeof(path));		// in case name is in ROM
+	xsmcToStringBuffer(xsArg(1), toPath, sizeof(toPath));
+	if ('/' != toPath[0]) {
+		if (c_strchr(toPath + 1, '/'))
+			xsUnknownError("invalid to");
+		
+		char *slash = c_strrchr(path, '/');
+		if (!slash)
+			xsUnknownError("invalid from");
 
-	slash = c_strrchr(path, '/');
-    if (slash){
-        pathLength = slash - path + 1;
-		if (pathLength >= sizeof(toPath)) xsUnknownError("path is too long");
-        c_memcpy(toPath, path, pathLength);
-        toPath[pathLength] = '\0';
-    }
+		int pathLength = slash - path + 1;
+		if (pathLength >= (c_strlen(path) + sizeof(toPath)))
+			xsUnknownError("path too long");
 
-	xsmcToStringBuffer(xsArg(1), toPath + pathLength, sizeof(toPath) - pathLength); // in case name is in ROM
+		c_strcpy(toPath, path);
+		xsmcToStringBuffer(xsArg(1), toPath + pathLength, sizeof(toPath) - pathLength);
+	}
 
 	startSPIFFS();
 	result = SPIFFS_rename(gSPIFFS, path, toPath);

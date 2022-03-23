@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -252,20 +252,24 @@ void xs_file_rename(xsMachine *the)
     char* path;
     char toPath[MAX_FILENAME_LENGTH + 1];
     int32_t result;
-    char* slash;
-    size_t pathLength = 0;
 
-    path = xsmcToString(xsArg(0));
-    slash = c_strrchr(path, '/');
-    if (slash){
-        pathLength = slash - path + 1;
-		if (pathLength >= sizeof(toPath)) xsUnknownError("path is too long");
-        c_memcpy(toPath, path, pathLength);
-        toPath[pathLength] = '\0';
-    }
+	xsmcToStringBuffer(xsArg(1), toPath, sizeof(toPath));
+	path = xsmcToString(xsArg(0));
+	if ('/' != toPath[0]) {
+		if (c_strchr(toPath + 1, '/'))
+			xsUnknownError("invalid to");
+		
+		char *slash = c_strrchr(path, '/');
+		if (!slash)
+			xsUnknownError("invalid from");
 
-    xsmcToStringBuffer(xsArg(1), toPath + pathLength, sizeof(toPath) - pathLength);
-    path = xsmcToString(xsArg(0));
+		size_t pathLength = slash - path + 1;
+		if (pathLength >= (c_strlen(path) + sizeof(toPath)))
+			xsUnknownError("path too long");
+
+		c_strcpy(toPath, path);
+		xsmcToStringBuffer(xsArg(1), toPath + pathLength, sizeof(toPath) - pathLength);
+	}
 
     startFS();
 
