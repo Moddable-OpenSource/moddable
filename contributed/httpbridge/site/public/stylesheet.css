@@ -1,0 +1,75 @@
+* {
+  box-sizing: inherit;
+}
+
+div,
+input {
+  font-size: 1em;
+  vertical-align:middle;
+  padding: 4px
+}
+
+body {
+  font-family: sans-serif;
+}
+
+h1 {
+  text-align: center;
+}
+
+#log {
+  padding:0.5em;
+  text-align: left;
+  color: wheat;
+  background-color: #1c1c1c;
+  overflow-x: scroll;
+}
+
+#log pre {
+  overflow-x: scroll
+}
+
+#log .v {
+  color: #888888;
+}
+
+#log .d {
+  color: #00DDDD;
+}
+
+#log .c {
+  color: magenta;
+}
+
+#log .i {
+  color: limegreen;
+}
+
+#log .w {
+  color: yellow;
+}
+
+#log .e {
+  color: red;
+  font-weight: bold;
+}
+
+.flow-x {
+  overflow-x:auto
+}
+
+.right {
+  float: right;
+}
+
+button {
+  border-radius: 1rem;
+  border-width: 1px;
+  min-width: 0.8rem;
+  font-size: 1.2rem;
+}
+
+label {
+  min-width: 6rem;
+  float:left;
+}

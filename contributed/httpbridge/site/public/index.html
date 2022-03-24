@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	<meta charset="UTF-8" />
+	<link rel="icon" href="data:image" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" type="text/css" href="./stylesheet.css" />
+<title>Moddable</title>
+</head>
+<body>
+
+<header><button class="e-action right" id="connect">Connect</button>
+<img style="width:25%;margin-bottom:2rem" src="./moddable.svg" alt="Moddable" />
+</header>
+
+<main>
+
+<div class="row">
+<label>Language:</label>
+<input class="e-watch" type="radio" name="language" id="language-javascript" value="javascript">Javascript</input>
+<input class="e-watch" type="radio" name="language" id="language-typescript" value="typescript">Typescript</input>
+</div>
+<div class="row"><label for="satisfaction">Satisfaction:</label>
+<button class="e-action" id="minus">-</button>
+<input class="e-watch" type="range" name="satisfaction" id="satisfaction" min="1" max="10"></input>
+<button class="e-action" id="plus">+</button>
+</div>
+<hr>
+<h2>Debug Log</h2>
+<div class="flow-x">
+	<pre id="log"></pre>
+</div>
+
+<button class="e-action right" id="shutdown">Shutdown</button>
+
+<button class="e-action" id="restore">restore</button>
+<button class="e-action" id="save">save</button>
+</main>
+<script type="module" src="./app.ts"></script>
+
+</body>
+</html>

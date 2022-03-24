@@ -1,0 +1,25 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/network/http/manifest.json",
+		"$(MODULES)/network/websocket/manifest.json",
+		"$(MODULES)/files/zip/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/files/resource/*"
+		],
+		"dns/server": "$(MODULES)/network/dns/dnsserver"
+	},
+	"preload": [
+		"http",
+		"dns/server",
+        "websocket/websocket",
+		"base64",
+		"hex",
+		"logical",
+		"resource",
+		"zip"
+	]
+}
