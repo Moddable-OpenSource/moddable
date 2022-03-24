@@ -2298,7 +2298,7 @@ void fx_StaticModuleRecord(txMachine* the)
 		void* archive = fxGetHostData(the, slot);
 		txString path;
 		void* code;
-		txSize size;
+		size_t size;
 		txScript script;
 		mxPushSlot(mxArgv(0));
 		mxGetID(fxID(the, "path"));

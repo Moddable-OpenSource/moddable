@@ -770,7 +770,6 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	size = 8 
 		+ 8 + 4 
 		+ 8 + sizeof(signature) 
-		+ 8 + sizeof(signature) 
 		+ 8 + linker->nameSize
 		+ 8 + linker->symbolsSize 
 		+ 8 + identifiersSize
@@ -816,13 +815,6 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	size = htonl(size);
 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
 	mxThrowElse(fwrite("SIGN", 4, 1, file) == 1);
-	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
-
-	c_memset(signature, 0, sizeof(signature));
-	size = 8 + sizeof(signature);
-	size = htonl(size);
-	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
-	mxThrowElse(fwrite("CHKS", 4, 1, file) == 1);
 	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
 	
 	size = 8 + linker->nameSize;

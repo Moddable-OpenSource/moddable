@@ -22,7 +22,8 @@ import Bitmap from "commodetto/Bitmap";
 import parseBMP from "commodetto/parseBMP";
 import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
-import Resource from "Resource";
+import _Resource from "Resource";
+globalThis.Resource = _Resource;
 
 import {} from "piu/All";
 export * from "piu/All";
@@ -63,11 +64,11 @@ export class Texture @ "PiuTextureDelete" {
 			}
 			else {
 				path = name + "-alpha.bmp";
-				if (Resource.exists(path)) {
+				if (Resource.exists(path, archive)) {
 					alphaBitmap = parseBMP(new Resource(path, archive));
 				}
 				path = name + "-color.bmp";
-				if (Resource.exists(path)) {
+				if (Resource.exists(path, archive)) {
 					colorBitmap = parseBMP(new Resource(path, archive));
 				}
 			}

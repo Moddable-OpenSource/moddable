@@ -2000,7 +2000,7 @@ static void fxMapperStep(txMapper* self);
 #define mxElseNotEnoughMemory(_ASSERTION) mxElseStatus(_ASSERTION, XS_NOT_ENOUGH_MEMORY_EXIT)
 #define mxElseInstall(_ASSERTION) if (!(_ASSERTION)) goto install
 
-#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
+#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
 
 void fxBuildArchiveKeys(txMachine* the)
 {
@@ -2048,7 +2048,7 @@ static txU1 *fxGetArchiveModules(txMachine *the, void* archive, txU4 *size)
 	return p + sizeof(Atom);
 }
 
-void* fxGetArchiveCode(txMachine* the, void* archive, txString path, txSize* size)
+void* fxGetArchiveCode(txMachine* the, void* archive, txString path, size_t* size)
 {
 	txU4 atomSize;
 	txU1 *p = fxGetArchiveModules(the, archive, &atomSize), *q;
@@ -2132,7 +2132,7 @@ static txU1 *fxGetArchiveResources(txMachine *the, void* archive, txU4 *size)
 	return p + sizeof(Atom);
 }
 
-void* fxGetArchiveData(txMachine* the, void* archive, txString path, txSize* size)
+void* fxGetArchiveData(txMachine* the, void* archive, txString path, size_t* size)
 {
 	txU4 atomSize;
 	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
@@ -2192,6 +2192,16 @@ void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index)
 	return C_NULL;
 }
 
+void* fxGetArchiveName(txMachine* the, void* archive)
+{
+	txU1* p = archive;
+	if (!p)
+		return NULL;
+	p += mxArchiveHeaderSize;
+	// NAME
+	return p + sizeof(Atom);
+}
+
 void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, size_t bufferSize, txArchiveRead read, txArchiveWrite write)
 {
 	txMapper mapper;
@@ -2238,10 +2248,6 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
 		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
 		signature = p;
-		p += XS_DIGEST_SIZE;
-		mxMapAtom(p);
-		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
-		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
 		p += XS_DIGEST_SIZE;
 		
 		self->bufferOffset = mxArchiveHeaderSize;

@@ -81,6 +81,8 @@ void PiuImageBind(void* it, PiuApplication* application, PiuView* view)
 void PiuImageDictionary(xsMachine* the, void* it) 
 {
 	PiuImage* self = it;
+	if (xsFindResult(xsArg(1), xsID_archive))
+		(*self)->archive = xsToReference(xsResult);
 	if (xsFindResult(xsArg(1), xsID_path)) {
 		xsSlot* path = PiuString(xsResult);
 		(*self)->path = path;
@@ -190,6 +192,7 @@ void PiuImageUnbind(void* it, PiuApplication* application, PiuView* view)
 void PiuImage_create(xsMachine* the)
 {
 	PiuImage* self;
+	void* archive = NULL;
 	xsStringValue path;
 	uint8_t* data;
 	size_t dataSize;
@@ -205,8 +208,12 @@ void PiuImage_create(xsMachine* the)
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuImageDictionary(the, self);
+	if ((*self)->archive) {
+		xsResult = xsReference((*self)->archive);
+		archive = xsGetHostData(xsResult);
+	}
 	path = PiuToString((*self)->path);
-	data = (uint8_t *)fxGetResource(the, path, &dataSize);
+	data = (uint8_t *)fxGetResource(the, archive, path, &dataSize);
 	if (!data)
 		xsURIError("image not found: %s", path);	
 	cch = (ColorCellHeader)data;

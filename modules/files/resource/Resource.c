@@ -35,9 +35,9 @@ void Resource_constructor(xsMachine *the)
 	const void *data = NULL;
 	size_t size;
 	if ((xsToInteger(xsArgc) > 1) && xsTest(xsArg(1)))
-		data = fxGetArchiveData(the, xsGetHostData(xsArg(1)), path, (xsIntegerValue*)&size);
+		data = fxGetArchiveData(the, xsGetHostData(xsArg(1)), path, &size);
 	if (!data)
-		data = fxGetArchiveData(the, the->archive, path, (xsIntegerValue*)&size);
+		data = fxGetArchiveData(the, the->archive, path, &size);
 	if (!data)
 		data = mcGetResource(the, path, &size);
 	if (!data)
@@ -52,9 +52,9 @@ void Resource_exists(xsMachine *the)
 	const void *data = NULL;
 	size_t size;
 	if ((xsToInteger(xsArgc) > 1) && xsTest(xsArg(1)))
-		data = fxGetArchiveData(the, xsGetHostData(xsArg(1)), path, (xsIntegerValue*)&size);
+		data = fxGetArchiveData(the, xsGetHostData(xsArg(1)), path, &size);
 	if (!data)
-		data = fxGetArchiveData(the, the->archive, path, (xsIntegerValue*)&size);
+		data = fxGetArchiveData(the, the->archive, path, &size);
 	if (!data)
 		data = mcGetResource(the, path, &size);
 	xsResult = data ? xsTrue : xsFalse;

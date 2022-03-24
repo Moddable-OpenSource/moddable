@@ -163,6 +163,7 @@ struct PiuImageStruct {
 	PiuIdlePart;
 	PiuBehaviorPart;
 	PiuContentPart;
+	xsSlot* archive;
 	xsSlot* path;
 	uint8_t *data;
 	uint32_t dataSize;

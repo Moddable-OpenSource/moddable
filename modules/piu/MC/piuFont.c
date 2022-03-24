@@ -162,6 +162,7 @@ void PiuFontUnbind(PiuFont* self, PiuApplication* application, PiuView* view)
 void PiuStyleLookupFont(PiuStyle* self)
 {
 	xsMachine* the = (*self)->the;
+	void* archive = NULL;
 	PiuFontList* fontList;
 	PiuFont* font = NULL;
 	xsStringValue name;
@@ -169,7 +170,11 @@ void PiuStyleLookupFont(PiuStyle* self)
 	void* buffer;
 	size_t bufferSize;
 	int32_t ascent, descent, leading;
-
+	
+	if ((*self)->archive) {
+		xsResult = xsReference((*self)->archive);
+		archive = xsGetHostData(xsResult);
+	}
 	xsResult = xsGet(xsGlobal, xsID_fonts);
 	if (xsTest(xsResult)) {
 		fontList = PIU(FontList, xsResult);
@@ -229,7 +234,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 #if MODDEF_CFE_TTF
 	c_strcat(path, ".ttf");
 //	fprintf(stderr, "%s %d %d %d\n", path, (*self)->size, (*self)->weight, (*self)->flags & piuStyleBits);
-	buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
+	buffer = (uint8_t *)fxGetResource(the, archive, path, &bufferSize);
 	if (!buffer)
 		xsURIError("font not found: %s", path);
 	(*font)->next = (*fontList)->first;
@@ -242,17 +247,21 @@ void PiuStyleLookupFont(PiuStyle* self)
 	}
 	name = path + c_strlen(path);
 	c_strcpy(name, ".bf4");
-	buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
+	buffer = (uint8_t *)fxGetResource(the, archive, path, &bufferSize);
 	if (!buffer) {
 		c_strcpy(name, ".fnt");
-		buffer = (uint8_t *)fxGetResource(the, path, &bufferSize);
+		buffer = (uint8_t *)fxGetResource(the, archive, path, &bufferSize);
 		if (!buffer)
 			xsURIError("font not found: %s", path);
 		c_strcpy(name, ".png");
 		(*font)->next = (*fontList)->first;
 		(*fontList)->first = font;
-    	xsResult = xsGet(xsGlobal, xsID_Texture);
-		xsResult = xsNewFunction1(xsResult, xsString(path));
+		
+		xsResult = xsNewObject();
+		if (archive)
+			xsDefine(xsResult, xsID_archive, xsReference((*self)->archive), xsDefault);
+		xsDefine(xsResult, xsID_path, xsString(path), xsDefault);
+		xsResult = xsNew1(xsGlobal, xsID_Texture, xsResult);
 		(*font)->texture = PIU(Texture, xsResult);
 	}
 	else {

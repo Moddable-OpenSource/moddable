@@ -752,11 +752,16 @@ void PiuApplication_invalidateMenus(xsMachine* the)
 
 #endif
 
-const void *fxGetResource(xsMachine* the, const char* path, size_t* size)
+const void *fxGetResource(xsMachine* the, void* archive, const char* path, size_t* size)
 {
-	const void* data = fxGetArchiveData(the, the->archive, path, size);
-	if (!data)
-		data = mcGetResource(the, path, size);
+	const void* data;
+	if (archive)
+		data = fxGetArchiveData(the, archive, (xsStringValue)path, size);
+	else {
+		data = fxGetArchiveData(the, the->archive, (xsStringValue)path, size);
+		if (!data)
+			data = mcGetResource(the, path, size);
+	}
 	return data;
 }
 

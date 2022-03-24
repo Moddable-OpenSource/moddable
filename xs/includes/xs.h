@@ -1467,8 +1467,10 @@ mxImport xsBooleanValue fxIsProfiling(xsMachine*);
 mxImport void fxStartProfiling(xsMachine*);
 mxImport void fxStopProfiling(xsMachine*);
 	
-mxImport void* fxGetArchiveCode(xsMachine*, void*, xsStringValue, xsIntegerValue*);
-mxImport void* fxGetArchiveData(xsMachine*, void*, xsStringValue, xsIntegerValue*);
+mxImport void* fxGetArchiveCode(xsMachine*, void*, xsStringValue, size_t*);
+mxImport xsIntegerValue fxGetArchiveCodeCount(xsMachine*, void*);
+mxImport void* fxGetArchiveCodeName(xsMachine*, void*, xsIntegerValue);
+mxImport void* fxGetArchiveData(xsMachine*, void*, xsStringValue, size_t*);
 mxImport xsIntegerValue fxGetArchiveDataCount(xsMachine*, void*);
 mxImport void* fxGetArchiveDataName(xsMachine*, void*, xsIntegerValue);
 
