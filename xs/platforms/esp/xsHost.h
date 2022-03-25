@@ -153,15 +153,15 @@ extern uint8_t ESP_setBaud(int baud);
 */
 
 #if ESP32
-	extern uint32_t modMilliseconds(void);
-	#define modMicroseconds() (uint32_t)(esp_timer_get_time())
+	#define modMilliseconds() ((uint32_t)(UINT32_MAX - 10000 + xTaskGetTickCount()))
+	#define modMicroseconds() ((uint32_t)(esp_timer_get_time()))
 
 	#define modDelayMilliseconds(ms) vTaskDelay(ms)
 	#define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
 
 #else
-	#define modMilliseconds() (uint32_t)(millis())
-	#define modMicroseconds() (uint32_t)(system_get_time())
+	#define modMilliseconds() ((uint32_t)(millis()))
+	#define modMicroseconds() ((uint32_t)(system_get_time()))
 
 	#define modDelayMilliseconds(ms) delay(ms)
 	#define modDelayMicroseconds(us) ets_delay_us(us)
