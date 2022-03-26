@@ -62,6 +62,9 @@
 				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
 			}
 		},
+		"pico": {
+			"include": "$(BUILD)/devices/pico/manifest.json"
+		},
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"
 		},

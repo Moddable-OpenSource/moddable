@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -400,7 +400,7 @@ void fxScreenStop(txScreen* screen)
 void onApplicationAbout(GSimpleAction *action, GVariant *parameter, gpointer app)
 {
     GtkWidget *dialog = gtk_message_dialog_new(gxWindow, GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "Screen Test");
-	gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog), "Copyright 2017 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.");
+	gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog), "Copyright 2017-2022 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.");
 	gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
 }

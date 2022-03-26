@@ -19,6 +19,11 @@
 				"*": "$(MODULES)/pins/digital/gecko/*"
 			}
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/pico/*"
+			}
+		},
 		"qca4020": {
 			"modules": {
 				"*": "$(MODULES)/pins/digital/qca4020/*"

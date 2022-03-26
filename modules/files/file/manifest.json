@@ -10,7 +10,7 @@
 			},
 			"config": {
 				"file": {
-					"root": "/spiffs/"
+					"root": "/"
 				}
 			}
 		},

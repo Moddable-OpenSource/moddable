@@ -1,7 +1,7 @@
 # Files
 
-Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: September 10, 2021
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: March 23, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -125,6 +125,12 @@ The static `rename` function renames the file specified by the `from` argument t
 
 ```js
 File.rename(config.file.root + "test.txt", "betterName.txt");
+```
+
+The `to` argument may be either a file name, as in the example above, or a full file path, as in the example below. The full file path form is useful when the host file system supports using `rename` to move a file between directories.
+
+```js
+File.rename(config.file.root + "test.txt", config.file.root + "better/name.txt");
 ```
 
 ***

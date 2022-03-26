@@ -11,7 +11,10 @@ export default class extends Control {
 			this.target = options.target;
 	}
 	onJSON(json) {
-		this.#pressed = json[this.#buttonKey]; 
+		const pressed = json[this.#buttonKey];
+		if (undefined === pressed)
+			return;
+		this.#pressed = pressed; 
 		this.#onPush();
 	}
 	read() {

@@ -148,6 +148,8 @@ struct txSerialToolStruct {
 	HANDLE events[2 + mxMachinesCount];
 #endif
 	char* path;
+	int vendorID;
+	int productID;
 	int baud;
 	int data;
 	int parity;
@@ -155,6 +157,10 @@ struct txSerialToolStruct {
 	char* host;
 	int port;
 	int dtr;
+	int programming;
+	int restartOnConnect;
+	int showPath;
+	int timeout;
 	txSerialMachine firstMachine;
 	txSerialMachine currentMachine;
 	int index;

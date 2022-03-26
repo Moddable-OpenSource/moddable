@@ -14,6 +14,11 @@
 				"*": "$(MODULES)/base/worker/modWorker"
 			}
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/modWorker"
+			}
+		},
 		"qca4020": {
 			"modules": {
 				"*": "$(MODULES)/base/worker/modWorker"

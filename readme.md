@@ -1,7 +1,7 @@
 # Moddable SDK
 
-Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: November 4, 2021
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: March 21, 2022
 
 ## Modern software development for microcontrollers
 
@@ -111,6 +111,19 @@ The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platfo
 <a id="footnotes3"></a>
 > <sup>[8]</sup> *See also: [Moddable Two Developer Guide](./documentation/devices/moddable-two.md), Moddable [product page](https://www.moddable.com/product)*<BR>
 <sup>[9]</sup> *See also: [Using the Moddable SDK with ESP32](./documentation/devices/esp32.md)*<BR>
+
+### Pico by Raspberry Pi
+
+To use the Moddable SDK with Pico devices, you need to:
+
+1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
+2. Install [Pico tools](./documentation/devices/pico.md)
+
+The Moddable SDK supports devices built with the Raspberry Pi Pico, including the devices shown below:
+
+| | | |
+| :---: | :---: | :---: |
+| <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pi-pico.png" width=125></a><BR>Raspberry Pi<BR>Pico | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display |  <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-ili9341.png" width=85></a><BR>ili9341 
 
 ### Gecko by Silicon Labs
 

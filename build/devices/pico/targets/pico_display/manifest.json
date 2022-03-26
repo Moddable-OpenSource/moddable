@@ -1,0 +1,60 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/st7789/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "st7789",
+		"touch": "",
+		"rgb_r": 6,
+		"rgb_g": 7,
+		"rgb_b": 8
+	},
+	"defines": {
+		"buttons": {
+			"a_pin": 16,
+			"b_pin": 17,
+			"x_pin": 18,
+			"y_pin": 19
+		},
+		"i2c": {
+			"sda_pin": 4,
+			"scl_pin": 5
+		},
+		"spi": {
+			"mosi_pin": 19,
+			"sck_pin": 18,
+			"buffersize": 540
+		},
+		"ili9341": {
+			"hz": 64000000,
+			"width": 135,
+			"height": 240,
+			"cs_pin": 17,
+			"dc_pin": 16,
+			"spi_port": 0,
+			"backlight_pin": 20,
+			"backlight_on": 1,
+			"column_offset": 52,
+			"row_offset": 40,
+			"registers": [
+				"0x01, 0,",
+				"0xff, 150,",
+				"0x36, 1, 0x10,",
+				"0x3A, 1, 0x05,",
+				"0x21, 0,",
+				"0x11, 0,",
+				"0x29, 0,",
+				"0xff, 100,", 
+				"0x2B, 4, 0x00, 0x35, 0x00, 0xbb,",
+				"0x2A, 4, 0x00, 0x28, 0x01, 0x17,",
+				"0xff, 100,"
+			]
+		}
+	}
+}

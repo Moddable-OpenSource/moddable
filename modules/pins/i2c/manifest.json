@@ -21,6 +21,13 @@
 			},
 			"preload": "pins/i2c"
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/pins/i2c/pico/*",
+				"pins/i2c": "$(MODULES)/pins/i2c/i2c"
+			},
+			"preload": "pins/i2c"
+		},
 		"...": {
 			"error": "pins/i2c module unsupported"
 		}

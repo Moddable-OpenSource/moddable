@@ -1,0 +1,21 @@
+#!/bin/bash
+if [ "$#" -lt 2 ] ; then
+	echo "Usage: $0 <vid> <pid> [<driver>]"
+	echo " returns path of USB device matching <vid> and <pid>"
+	echo " <driver> is cdc_acm or usb-storage"
+	exit 1
+fi
+
+for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
+    (
+        syspath="${sysdevpath%/dev}"
+        devname="$(udevadm info -q name -p $syspath)"
+        [[ "$devname" == "bus/"* ]] && exit
+# echo "$(udevadm info -q property --export -p $syspath)"
+        eval "$(udevadm info -q property --export -p $syspath)"
+	[[ "$ID_VENDOR_ID" != "$1" || "$ID_MODEL_ID" != "$2" ]] && exit
+	[[ "$3" != "" && "$ID_USB_DRIVER" != "$3" ]] && exit
+        echo "/dev/$devname"
+    )
+done
+

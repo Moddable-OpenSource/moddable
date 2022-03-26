@@ -452,7 +452,7 @@ function done(error = false, data) {
 	state:
 	
 		0 - connecting
-		1 - receieving request status
+		1 - receiving request status
 		2 - receiving request headers
 		
 		

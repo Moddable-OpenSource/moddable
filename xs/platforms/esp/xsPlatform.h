@@ -67,6 +67,10 @@
 	#define mxUseFreeRTOSTasks 1
 #endif
 
+#ifdef __ets__
+	#define mxUnalignedAccess 0
+#endif
+
 #define mxIntegerDivideOverflowException 0
 
 #ifndef __XS6PLATFORMMINIMAL__

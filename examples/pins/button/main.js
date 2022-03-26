@@ -18,7 +18,11 @@ import Digital from "pins/digital";
 // traces to console when FLASH button on ESP8266 NodeMCU boards is pressed.
 // traces to console when IO0 button on ESP32 NodeMCU boards is pressed.
 
-const button = new Digital(0, Digital.InputPullUp);
+const BUTTON_PIN = 0;
+
+trace(`Using pin ${BUTTON_PIN} for button.`);
+
+const button = new Digital(BUTTON_PIN, Digital.InputPullUp);
 let previous = 0;
 Timer.repeat(() => {
 	const current = button.read();

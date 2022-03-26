@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -28,6 +28,7 @@ struct txSerialDescriptionStruct {
 	char path[1];
 };
 
+static void fxProgrammingModeSerial(txSerialTool self);
 static void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
 static void fxReadSerial(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context);
 static void fxRegisterSerial(void *refcon, io_iterator_t iterator);
@@ -123,7 +124,6 @@ void fxOpenSerial(txSerialTool self)
 	int fd = -1;
 	struct termios options;
 	CFSocketContext context;
-	static uint8_t first = true;
 
 	fd = open(self->path, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (fd == -1) {
@@ -192,10 +192,43 @@ void fxOpenSerial(txSerialTool self)
 	self->serialSource = CFSocketCreateRunLoopSource(NULL, self->serialSocket, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), self->serialSource, kCFRunLoopCommonModes);
 
-	if (first) {
-		first = false;
+	if (self->programming) {
+#if mxTraceCommands
+		fprintf(stderr, "### programming mode\n");
+#endif
+		fxProgrammingModeSerial(self);
+		exit(0);
+	}
+
+	if (self->restartOnConnect) {
+#if mxTraceCommands
+		fprintf(stderr, "### restart\n");
+#endif
+		self->restartOnConnect = 0;
 		fxRestart(self);
 	}
+}
+
+void fxProgrammingModeSerial(txSerialTool self)
+{
+	int fd = CFSocketGetNative(self->serialSocket), flags;
+	ioctl(fd, TIOCMGET, &flags);
+
+	flags |= TIOCM_RTS | TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(10 * 1000);
+
+	flags &= ~TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(100 * 1000);
+
+	flags &= ~TIOCM_RTS;
+	flags |= TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(50 * 1000);
+
+	flags &= ~TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
 }
 
 void fxReadNetwork(CFSocketRef socketRef, CFSocketCallBackType cbType, CFDataRef addr, const void* data, void* context)
@@ -232,7 +265,23 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
     io_service_t usbDevice;
     while ((usbDevice = IOIteratorNext(iterator))) {
 		kern_return_t kr;
-		CFTypeRef typeRef;
+		CFTypeRef typeRef, vendorRef, productRef;
+		int vendorID = 0, productID = 0;
+		int match = 0;
+
+		vendorRef = IORegistryEntrySearchCFProperty(usbDevice, kIOServicePlane, CFSTR("idVendor"),
+											kCFAllocatorDefault, kIORegistryIterateRecursively | kIORegistryIterateParents);
+		if (vendorRef)
+			CFNumberGetValue(vendorRef , kCFNumberIntType, &vendorID);
+
+		productRef = IORegistryEntrySearchCFProperty(usbDevice, kIOServicePlane, CFSTR("idProduct"),
+											kCFAllocatorDefault, kIORegistryIterateRecursively | kIORegistryIterateParents);
+		if (productRef)
+			CFNumberGetValue(productRef , kCFNumberIntType, &productID);
+
+//fprintf(stderr, "checking productID %04x:%04x\n", vendorID, productID);
+		match = (!self->productID || (productID == self->productID)) &&
+			 		(!self->vendorID || (vendorID == self->vendorID));
 
 		if ((typeRef = IORegistryEntryCreateCFProperty(usbDevice, CFSTR(kIOCalloutDeviceKey), kCFAllocatorDefault, 0))) {
 			CFIndex length = CFStringGetLength(typeRef);
@@ -241,6 +290,20 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 			if (description) {
 				description->tool = self;
 				CFStringGetCString(typeRef, &description->path[0], maxSize + 1, kCFStringEncodingUTF8);
+				if (!strcmp(self->path, "") && match) {
+					self->path = malloc(strlen(description->path) + 1);
+					strcpy(self->path, description->path);
+
+					if (self->showPath) {
+						fprintf(stderr, "%s\n", description->path);
+						exit(0);
+					}
+					else {
+						fprintf(stderr, "product/vendor match: %s\n", description->path);
+						fxOpenSerial(self);
+					}
+				}
+				else
 				if (!strcmp(self->path, description->path)
 						&& IOServiceAddInterestNotification(self->notificationPort, usbDevice, kIOGeneralInterest, fxUnregisterSerial, description, &description->notification) == KERN_SUCCESS) {
 					fxOpenSerial(self);
@@ -249,6 +312,7 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 					free(description);
 			}
 		}
+
 		kr = IOObjectRelease(usbDevice);
 	}
 }
@@ -309,6 +373,12 @@ static void fxSignalHandler(int s) {
 	exit(1);
 }
 
+static void timeoutHandler(CFRunLoopTimerRef cfTimer, void *info)
+{
+	printf("timeout\n");
+	exit(1);
+}
+
 int main(int argc, char* argv[])
 {
 	txSerialToolRecord tool;
@@ -316,16 +386,23 @@ int main(int argc, char* argv[])
 	int result = fxArguments(self, argc, argv);
 	if (result)
 		return result;
-    CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOSerialBSDServiceValue);
+	CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOSerialBSDServiceValue);
 	self->notificationPort = IONotificationPortCreate(kIOMasterPortDefault);
-    CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(self->notificationPort);
-    CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopDefaultMode);
+	CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(self->notificationPort);
+	CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopDefaultMode);
 	IOServiceAddMatchingNotification(self->notificationPort, kIOPublishNotification, matchingDict, fxRegisterSerial, self, &self->ioIterator);
 	fxRegisterSerial(self, self->ioIterator);
 
+	if (self->showPath) {
+		CFRunLoopTimerRef cfTimer;
+		CFRunLoopTimerContext context = {0};
+
+		cfTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + (self->timeout / 1000.0), 0, 0, 0, timeoutHandler, &context);
+		CFRunLoopAddTimer(CFRunLoopGetCurrent(), cfTimer, kCFRunLoopCommonModes);
+	}
+
 	signal(SIGINT, fxSignalHandler);
-
+	
 	CFRunLoopRun();
-
-	return result;
-}
+	
+}   

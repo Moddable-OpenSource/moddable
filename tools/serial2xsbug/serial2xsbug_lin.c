@@ -21,6 +21,7 @@
 #include "serial2xsbug.h"
 
 static void fxCountMachines(txSerialTool self);
+static void fxProgrammingModeSerial(txSerialTool self);
 static void fxReadNetwork(txSerialMachine machine);
 static void fxReadSerial(txSerialTool self);
 
@@ -163,7 +164,41 @@ void fxOpenSerial(txSerialTool self)
 		ioctl(self->serialConnection, TCSETS2, &tio2);
 	}
 	usleep(5000);
-	fxRestart(self);
+
+	if (self->programming) {
+#if mxTraceCommands
+		fprintf(stderr, "### programming mode\n");
+#endif
+		fxProgrammingModeSerial(self);
+		exit(0);
+	}
+
+	if (self->restartOnConnect) {
+		self->restartOnConnect = 0;
+		fxRestart(self);
+	}
+}
+
+void fxProgrammingModeSerial(txSerialTool self)
+{
+	int fd = self->serialConnection, flags;
+	ioctl(fd, TIOCMGET, &flags);
+
+	flags |= TIOCM_RTS | TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(10 * 1000);
+
+	flags &= ~TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(100 * 1000);
+
+	flags &= ~TIOCM_RTS;
+	flags |= TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
+	usleep(50 * 1000);
+
+	flags &= ~TIOCM_DTR;
+	ioctl(fd, TIOCMSET, &flags);
 }
 
 void fxReadNetwork(txSerialMachine machine)

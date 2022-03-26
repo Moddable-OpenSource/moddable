@@ -29,6 +29,7 @@ static int fxInitializeTarget(txSerialTool self);
 static uint8_t fxMatchProcessingInstruction(char* p, uint8_t* flag, uint32_t* value);
 static void fxSetTime(txSerialTool self, txSerialMachine machine);
 static void fxInstallFragment(txSerialTool self);
+static int mapHex(char c);
 static void fxSetPref(txSerialTool self);
 
 static uint8_t gRestarting = 0;
@@ -101,24 +102,46 @@ static char* gExceptionList[33] = {
 int fxArguments(txSerialTool self, int argc, char* argv[])
 {
 	int argi;
-	if (argc < 4) {
+	if (argc < 3) {
 		fprintf(stderr, "### serial2xsbug <port name> <baud rate> <data bits><parity><stop bits>\n");
+		fprintf(stderr, "### serial2xsbug <vid:pid> -showPath [-timeout <ms>]\n");
 		return 1;
 	}
 	memset(self, 0, sizeof(txSerialToolRecord));
 	self->path = argv[1];
-	self->baud = atoi(argv[2]);
-	self->data = argv[3][0] - '0';
-	self->parity = argv[3][1];
-	self->stop = argv[3][2] - '0';
+	if (argc > 2) {
+		self->baud = atoi(argv[2]);
+		if (argc > 3) {
+			self->data = argv[3][0] - '0';
+			self->parity = argv[3][1];
+			self->stop = argv[3][2] - '0';
+		}
+	}
 	self->host = "localhost";
 	self->port = 5002;
+	self->restartOnConnect = 1;
+	self->showPath = 0;
+	self->timeout = 5000;	// for showpath
 	
+	if (9 == strlen(self->path) && (':' == self->path[4])) {
+			self->vendorID = (mapHex(self->path[0]) << 12) | (mapHex(self->path[1]) << 8) | (mapHex(self->path[2]) << 4) | mapHex(self->path[3]);
+			self->productID = (mapHex(self->path[5]) << 12) | (mapHex(self->path[6]) << 8) | (mapHex(self->path[7]) << 4) | mapHex(self->path[8]);
+			self->path = "";
+	}
+
 	TOOLS_BIN = NULL;
 	elfPath = NULL;
 	gCmd = NULL;
-	for (argi = 4; argi < argc; argi++) {
-		if (!strcmp(argv[argi], "-elf") && ((argi + 1) < argc)) {
+
+	for (argi = 2; argi < argc; argi++) {
+		if (argv[argi][0] != '-')
+			continue;
+		if (!strcmp(argv[argi], "-showPath"))
+			self->showPath = 1;
+		else if (!strcmp(argv[argi], "-timeout") && ((argi + 1) < argc)) {
+			self->timeout = atoi(argv[++argi]);
+		}
+		else if (!strcmp(argv[argi], "-elf") && ((argi + 1) < argc)) {
 			elfPath = argv[++argi];
 		}
 		else if (!strcmp(argv[argi], "-bin") && ((argi + 1) < argc)) {
@@ -198,6 +221,12 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		}
 		else if (!strcmp(argv[argi], "-dtr")) {
 			self->dtr = 1;
+		}
+		else if (!strcmp(argv[argi], "-programming")) {
+			self->programming = 1;
+		}
+		else if (!strcmp(argv[argi], "-norestart")) {
+			self->restartOnConnect = 0;
 		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
@@ -826,6 +855,19 @@ void fxInstallFragment(txSerialTool self)
 	fxWriteSerial(self, out, use + 4 + 5);
 
 	gInstallOffset += use;
+}
+
+int mapHex(char c)
+{
+	if (('a' <= c) && (c <= 'f'))
+		return 10 + c - 'a';
+	if (('A' <= c) && (c <= 'F'))
+		return 10 + c - 'A';
+	if (('0' <= c) && (c <= '9'))
+		return c - '0';
+
+	fprintf(stderr, "bad hex digit %c\n", c);
+	exit(1);
 }
 
 void fxSetPref(txSerialTool self)

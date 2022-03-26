@@ -21,6 +21,7 @@
 #include "serial2xsbug.h"
 
 static void fxCountMachines(txSerialTool self);
+static void fxProgrammingModeSerial(txSerialTool self);
 static void fxReadNetwork(txSerialMachine machine, DWORD size);
 static DWORD fxReadNetworkAux(txSerialMachine machine);
 static void fxReadSerial(txSerialTool self, DWORD size);
@@ -198,7 +199,36 @@ void fxOpenSerial(txSerialTool self)
 
 	fxReadSerial(self, fxReadSerialAux(self));
 	
-	fxRestart(self);
+	if (self->programming) {
+#if mxTraceCommands
+		fprintf(stderr, "### programming mode\n");
+#endif
+		fxProgrammingModeSerial(self);
+		exit(0);
+	}
+
+	if (self->restartOnConnect) {
+		self->restartOnConnect = 0;
+		fxRestart(self);
+	}
+}
+
+void fxProgrammingModeSerial(txSerialTool self)
+{
+	mxThrowElse(EscapeCommFunction(self->serialConnection, SETRTS) != 0);
+	mxThrowElse(EscapeCommFunction(self->serialConnection, SETDTR) != 0);
+
+	Sleep(10);
+
+	mxThrowElse(EscapeCommFunction(self->serialConnection, CLRDTR) != 0);	
+	Sleep(100);
+
+	mxThrowElse(EscapeCommFunction(self->serialConnection, CLRRTS) != 0);
+	mxThrowElse(EscapeCommFunction(self->serialConnection, SETDTR) != 0);
+	
+	Sleep(50);
+
+	mxThrowElse(EscapeCommFunction(self->serialConnection, CLRDTR) != 0);
 }
 
 void fxReadNetwork(txSerialMachine machine, DWORD size)

@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/network/http/manifest.json",
+		"$(MODULES)/network/websocket/manifest.json",
+		"$(MODULES)/files/zip/manifest.json",
+		"$(MODULES)/files/preference/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		],
+		"bridge/*": "$(MODDABLE)/contributed/httpbridge/modules/*",
+		"model":"site/public/model"
+		},
+	"preload": [
+		"model",
+		"bridge/httpzip"
+	],
+	"data": {
+		"*": "./site/dist/site"
+	}
+}

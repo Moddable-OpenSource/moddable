@@ -1,7 +1,16 @@
 import Button from 'button';
 import { RTC, Battery } from 'peripherals';
 
-globalThis.device = {
+globalThis.device = {	
+  pin: {
+    powerMain: 2,
+    powerExternal: 5,
+    powerEPD: 23,
+    touchInterrupt: 36,
+    epdSelect: 15,     
+    epdBusy: 27,
+    batteryVoltage: 35
+  },
   peripheral: {
     RTC: RTC,
     button: {
