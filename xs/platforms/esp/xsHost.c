@@ -886,15 +886,6 @@ void IRAM_ATTR timer_group0_isr(void *para)
 #endif
 #endif
 
-#if ESP32
-
-uint32_t modMilliseconds(void)
-{
-	return xTaskGetTickCount();
-}
-
-#endif
-
 /*
 	64-bit atomics
 */
