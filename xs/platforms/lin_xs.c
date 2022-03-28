@@ -234,7 +234,7 @@ void fxReceive(txMachine* the)
 		gssize count;
 	again:
 		count = g_socket_receive(the->socket, the->debugBuffer + the->debugOffset, sizeof(the->debugBuffer) - the->debugOffset - 1, NULL, &error);
-		if (count < 0) {
+		if (count <= 0) {
 			if (error->code == G_IO_ERROR_WOULD_BLOCK) {
 				g_clear_error(&error);
 				if (the->debugOffset == 0)
