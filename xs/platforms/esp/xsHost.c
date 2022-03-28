@@ -646,6 +646,10 @@ void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
 	}
 }
 
+#if ESP32
+int64_t RTC_SLOW_ATTR __microsecondsOffset = 0;
+#endif
+
 void modSetTime(uint32_t seconds)
 {
 #if !ESP32
@@ -668,7 +672,9 @@ void modSetTime(uint32_t seconds)
 	tv.tv_sec = seconds;
 	tv.tv_usec = 0;
 
+	uint64_t usBefore = kMicroseconds64();
 	settimeofday(&tv, NULL);		//@@ implementation doesn't use timezone yet....
+	__microsecondsOffset += kMicroseconds64() - usBefore;
 #endif
 }
 
@@ -888,9 +894,11 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
 #if ESP32
 
-uint32_t modMilliseconds(void)
+uint64_t kMicroseconds64(void) 
 {
-	return xTaskGetTickCount();
+	struct timeval tv_now;
+	gettimeofday(&tv_now, NULL);
+	return (uint64_t) tv_now.tv_sec * 1000000L + (uint64_t) tv_now.tv_usec - __microsecondsOffset;
 }
 
 #endif
