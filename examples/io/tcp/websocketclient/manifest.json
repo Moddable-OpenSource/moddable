@@ -1,0 +1,18 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/data/text/decoder/manifest.json",
+		"$(MODDABLE)/modules/data/base64/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/data/logical/*"
+		],
+		"embedded:network/websocket/client": "./websocketclient"
+	},
+	"preload": [
+		"embedded:network/websocket/client",
+		"logical"
+	]
+}
