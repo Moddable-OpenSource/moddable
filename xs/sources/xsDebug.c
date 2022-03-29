@@ -761,8 +761,6 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_MODULE_TAG:
 	case XS_SCRIPT_TAG:
-		modLogVar(the->pathValue);
-
 		fxCollectGarbage(the);
 		/* THIS */
 		mxPushUndefined();
@@ -798,8 +796,6 @@ void fxDebugScriptCDATA(txMachine* the, char c)
 		if (offset == size) {
 			txString result = (txString)fxRenewChunk(the, string, size + 256);
 			if (!result) {
-				txInteger tmp = size + 256;
-				modLogInt(tmp);
 				result = (txString)fxNewChunk(the, size + 256);
 				string = the->stack[2].value.string;
 				c_memcpy(result, string, size);
