@@ -213,7 +213,7 @@ txBoolean fxIsCanonicalIndex(txMachine* the, txID id)
 		char buffer[256], c;
 		txNumber number;
 		c = c_read8(string);
-		if (('+' != c) && ('-' != c) && ('.' != c) && ('I' != c) && !(('0' <= c) && ('9' >= c)))
+		if (('+' != c) && ('-' != c) && ('.' != c) && ('I' != c) && ('N' != c) && !(('0' <= c) && ('9' >= c)))
 			return 0;
 		number = fxStringToNumber(the->dtoa, string, 1);
 		if (number == -0)
