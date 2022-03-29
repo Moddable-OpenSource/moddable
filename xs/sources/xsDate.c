@@ -265,7 +265,7 @@ txInteger fx_Date_parse_fraction(txByte* theCharacter, txString* theString)
 	}
 	*theCharacter = c;
 	*theString = p;
-	return (txInteger)c_round(aResult);
+	return (txInteger)c_trunc(aResult);
 }
 
 void fx_Date_parse(txMachine* the)
