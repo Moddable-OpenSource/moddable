@@ -60,11 +60,7 @@ void modTimersExecute(void)
 	// determine who is firing this time (timers added during this call are ineligible)
 	modCriticalSectionBegin();
 	for (walker = gTimers; NULL != walker; walker = walker->next) {
-		if ((walker->flags & kTimerFlagUnscheduled)
-#if MOD_TASKS
-			|| (task != walker->task)
-#endif
-			)
+		if (walker->flags & (kTimerFlagUnscheduled | kTimerFlagFire))
 			continue;
 		int32_t delta = walker->triggerTime - now;
 		if (delta <= 0)
@@ -73,7 +69,11 @@ void modTimersExecute(void)
 
 	// service eligible callbacks. then reschedule (repeating) or remove (one shot)
 	for (walker = gTimers; NULL != walker; ) {
-		if (!(walker->flags & kTimerFlagFire)) {
+		if (!(walker->flags & kTimerFlagFire)
+#if MOD_TASKS
+			|| (task != walker->task)
+#endif
+			) {
 			walker = walker->next;
 			continue;
 		}
@@ -114,17 +114,14 @@ int modTimersNext(void)
 	modCriticalSectionBegin();
 
 	for (walker = gTimers; NULL != walker; walker = walker->next) {
-		int delta;
-
-		if (!walker->cb ||
-			(walker->flags & kTimerFlagUnscheduled)
+		if ((walker->flags & kTimerFlagUnscheduled)
 #if MOD_TASKS
 			|| (task != walker->task)
 #endif
 			)
 			continue;
 
-		delta = walker->triggerTime - now;
+		int32_t delta = walker->triggerTime - now;
 		if (delta < next) {
 			if (delta <= 0) {
 				modCriticalSectionEnd();
@@ -217,7 +214,7 @@ void modTimerRemove(modTimer timer)
 
 	for (walker = gTimers; NULL != walker; prev = walker, walker = walker->next) {
 		if (timer == walker) {
-			walker->flags = kTimerFlagUnscheduled;
+			timer->flags = kTimerFlagUnscheduled;
 
 			timer->useCount--;
 			if (timer->useCount <= 0) {
