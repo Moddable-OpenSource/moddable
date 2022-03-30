@@ -9,7 +9,7 @@ The examples in this directory use the [TCP socket](https://419.ecma-internation
 - [httpclient](./httpclient) – An HTTP client API built on TCP socket. The `HTTPRequest` class implements most of the [draft spec](https://github.com/EcmaTC53/spec/blob/master/docs/proposals/Network%20Classes.md#http-request-class) for version 2 of Ecma-419.
 - [fetch](./fetch) – An implementation of the standard HTML5 `fetch` API built on the proposed Ecma-419 `HTTPRequest`. Implements most of `fetch` with the exception of streams (under investigation).
 - [websocketclient](./websocketclient) – A WebSocket client API built on TCP socket. The `WebSocketClient` class implements most of the [draft spec](https://github.com/EcmaTC53/spec/blob/master/docs/proposals/Network%20Classes.md#websocket-client-class) for version 2 of Ecma-419.
-- [websocket](./WebSocket) – An implementation of the standard HTML5 `WebSocket` API built on the proposed Ecma-419 `WebSocketClient `.
+- [websocket](./websocket) – An implementation of the standard HTML5 `WebSocket` API built on the proposed Ecma-419 `WebSocketClient `.
 
 The `HTTPRequest ` and `WebSocketClient` classes are designed to use runtime resources efficiently while supporting all the fundamental capabilities of the underlying protocol. They give the most control and the lightest footprint, but as lower-level APIs they are less convenient to use.
 
