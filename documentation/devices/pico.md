@@ -111,7 +111,13 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 	brew install arm-none-eabi-gcc
 	```
 
-4. Install the __pico__ sdk and examples:
+4. Set `PICO_GCC_ROOT` environment variable to point to the `bin` directory of your `arm-none-eabi` toolchain. For macOS, it is set to `brew --prefix`; typically this is `/usr/local` on x86_64 architecture and `/opt/homebrew` on arm64.
+
+	```text
+	export PICO_GCC_ROOT=$(brew --prefix)
+	```
+
+5. Install the __pico__ sdk and examples:
 
 	```text
 	cd $HOME/pico
