@@ -448,6 +448,8 @@ void workerLoop(void *pvParameter)
 		modMessageService(worker->the, modTimersNext());
 #if qca4020
 		qca4020_watchdog();
+#elif nrf52
+		modWatchDogReset();
 #endif
 	}
 }
