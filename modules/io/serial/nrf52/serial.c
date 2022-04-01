@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -54,6 +54,8 @@ struct SerialRecord {
 	nrf_libuarte_async_t	uart;
 	int32_t		transmitPin;
 	int32_t		receivePin;
+	uint8_t		useCount;
+	uint8_t		hasOnReadableOrWritable;
 
 	uint8_t		receiveTriggered;
 	uint16_t	receiveCount;
@@ -97,20 +99,21 @@ void xs_serial_constructor(xsMachine *the)
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
+	xsSlot *onReadable, *onWritable;
 	int transmitPin = kInvalidPin, receivePin = kInvalidPin;
 
 	xsmcVars(1);
 
 	if (xsmcHas(xsArg(0), xsID_transmit)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_transmit);
-		transmitPin = xsmcToInteger(xsVar(0));
+		transmitPin = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(transmitPin))
 			xsUnknownError("in use");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_receive)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_receive);
-		receivePin = xsmcToInteger(xsVar(0));
+		receivePin = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(receivePin))
 			xsUnknownError("in use");
 	}
@@ -173,8 +176,11 @@ void xs_serial_constructor(xsMachine *the)
 			break;
 	}
 
-	hasReadable = (kInvalidPin != receivePin) && builtinHasCallback(the, xsID_onReadable);
-	hasWritable = (kInvalidPin != transmitPin) && builtinHasCallback(the, xsID_onWritable);
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	onWritable = builtinGetCallback(the, xsID_onWritable);
+
+	hasReadable = (kInvalidPin != receivePin) && onReadable;
+	hasWritable = (kInvalidPin != transmitPin) && onWritable;
 
 	builtinInitializeTarget(the);
 
@@ -182,7 +188,7 @@ void xs_serial_constructor(xsMachine *the)
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
-	serial = c_calloc(1, sizeof(SerialRecord));
+	serial = c_malloc((hasReadable || hasWritable) ?  sizeof(SerialRecord) : offsetof(SerialRecord, the));
 	if (!serial)
 		xsRangeError("no memory");
 
@@ -206,29 +212,35 @@ void xs_serial_constructor(xsMachine *the)
 
 	xsmcSetHostData(xsThis, serial);
 
-	serial->the = the;
 	serial->obj = xsThis;
-	xsRemember(serial->obj);
 
 	serial->transmitPin = transmitPin;
 	serial->receivePin = receivePin;
 	serial->format = format;
+	serial->useCount = 1;
+	serial->hasOnReadableOrWritable = hasReadable || hasWritable;
 
-	if (hasReadable || hasWritable) {
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
+
+	if (serial->hasOnReadableOrWritable) {
+		serial->the = the;
 
 		if (hasReadable) {
-			builtinGetCallback(the, xsID_onReadable, &xsVar(0));
-			serial->onReadable = xsToReference(xsVar(0));
+			serial->onReadable = onReadable;
 		}
+		else
+			serial->onReadable = NULL;
 
 		if (hasWritable) {
-			builtinGetCallback(the, xsID_onWritable, &xsVar(0));
-			serial->onWritable = xsToReference(xsVar(0));
+			serial->onWritable = onWritable;
 		}
+		else
+			serial->onWritable = NULL;
 	}
 
 	nrf_libuarte_async_enable(&serial->uart);
+
+	xsRemember(serial->obj);
 
 	if (kInvalidPin != transmitPin)
 		builtinUsePin(transmitPin);
@@ -253,28 +265,30 @@ void xs_serial_destructor(void *data)
 	if (kInvalidPin != serial->receivePin)
 		builtinFreePin(serial->receivePin);
 
-	c_free(serial);
+//	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
+//		c_free(serial);
 }
 
 void xs_serial_close(xsMachine *the)
 {
 	Serial serial = xsmcGetHostData(xsThis);
-	if (!serial) return;
-
-	xsmcSetHostData(xsThis, NULL);
-	xsForget(serial->obj);
-	xs_serial_destructor(serial);
+	if (serial && xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks)) {
+		xsForget(serial->obj);
+		xs_serial_destructor(serial);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_serial_get_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	builtinGetFormat(the, serial->format);
 }
 
 void xs_serial_set_format(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
@@ -283,14 +297,14 @@ void xs_serial_set_format(xsMachine *the)
 
 void xs_serial_read(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	int receiveCount;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+	int available;
 
 	if (!serial)
 		xsUnknownError("closed");
 
-	receiveCount = serial->receiveCount;
-	if (0 == receiveCount)
+	available = serial->receiveCount;
+	if (0 == available)
 		return;
 
 	if (kIOFormatNumber == serial->format) {
@@ -303,11 +317,30 @@ void xs_serial_read(xsMachine *the)
 		builtinCriticalSectionEnd();
 	}
 	else {
-		int requested = xsmcArgc ? xsmcToInteger(xsArg(0)) : receiveCount;
-		if (requested > receiveCount)
-			requested = receiveCount;
+		uint8_t *buffer;
+		int requested;
+		xsUnsignedValue byteLength;
+		uint8_t allocate = 1;
 
-		xsmcSetArrayBuffer(xsResult, serial->receive, requested);
+		if (0 == xsmcArgc)
+			requested = available;
+		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+			xsResult = xsArg(0);
+			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
+			requested = (int)byteLength;
+			allocate = 0;
+		}
+		else
+			requested = xsmcToInteger(xsArg(0));
+
+		if ((requested <= 0) || (requested > available))
+			xsUnknownError("invalid");
+
+		if (allocate)
+			buffer = xsmcSetArrayBuffer(xsResult, NULL, requested);
+
+		c_memcpy(buffer, serial->receive, requested);
+	
 		builtinCriticalSectionBegin();
 			serial->receiveCount -= requested;
 			if (serial->receiveCount)
@@ -318,45 +351,118 @@ void xs_serial_read(xsMachine *the)
 
 void xs_serial_write(xsMachine *the)
 {
-	Serial serial = xsmcGetHostData(xsThis);
-	int available;
-	uint8_t *src;
-	uint8_t b;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+	int count;
+	void *src;
+	uint8_t byte;
 
-	if (!serial)
-		xsUnknownError("closed");
-
-	available = kTransmitBytes - serial->transmitPosition;
+	count = kTransmitBytes - serial->transmitPosition;
 
 	if (kIOFormatNumber == serial->format) {
-		if (0 == available)
-			xsUnknownError("output full");
+		if (0 == count)
+			xsUnknownError("output full: count == 0");
 
-		b = (uint8_t)xsmcToInteger(xsArg(0));
-		src = &b;
-		available = 1;
+		byte = (uint8_t)xsmcToInteger(xsArg(0));
+		src = &byte;
+		count = 1;
 	}
 	else {
-		int requested = xsmcGetArrayBufferLength(xsArg(0));
-		if (requested > available)
-			xsUnknownError("output full");
+		xsUnsignedValue requested;
 
-		src = xsmcToArrayBuffer(xsArg(0));
-		available = requested;
+		xsmcGetBufferReadable(xsArg(0), &src, &requested);
+		if (requested > count)
+			xsUnknownError("output full: requested > count");
+
+		count = requested;
 	}
 
 	builtinCriticalSectionBegin();
-		c_memmove(&serial->transmit[serial->transmitPosition], src, available);
-		serial->transmitPosition += available;
+		c_memmove(&serial->transmit[serial->transmitPosition], src, count);
+		serial->transmitPosition += count;
 
-		if (available == serial->transmitPosition)
+		if (count == serial->transmitPosition)
 			nrf_libuarte_async_tx(&serial->uart, serial->transmit, serial->transmitPosition);
 	builtinCriticalSectionEnd();
 }
 
-static void serialDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void xs_serial_purge(xsMachine *the)
 {
-	Serial serial = refcon;
+	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
+	serial->transmitPosition = 0;
+}
+
+void uart_handler(void *p_context, nrf_libuarte_async_evt_t *p_event)
+{
+	Serial serial = p_context;
+	uint8_t post = 0;
+
+	if (NRF_LIBUARTE_ASYNC_EVT_TX_DONE == p_event->type) {
+		serial->transmitSent += p_event->data.rxtx.length;
+
+		if (serial->transmitSent == serial->transmitPosition) {
+			post = 1;
+			serial->transmitSent = serial->transmitPosition = 0;
+			serial->transmitTriggered = true;
+		}
+		else {
+			c_memmove(serial->transmit, &serial->transmit[serial->transmitSent], serial->transmitPosition - serial->transmitSent);
+			serial->transmitPosition -= serial->transmitSent;
+			serial->transmitSent = 0;
+			nrf_libuarte_async_tx(&serial->uart, serial->transmit, serial->transmitPosition);
+		}
+	}
+	else if (NRF_LIBUARTE_ASYNC_EVT_RX_DATA == p_event->type) {
+		if (kReceiveBytes == serial->receiveCount)
+			;	// overflow!
+		else {
+			size_t length = p_event->data.rxtx.length;
+			if (length > (kReceiveBytes - serial->receiveCount))
+				length = kReceiveBytes - serial->receiveCount;
+			c_memmove(&serial->receive[serial->receiveCount], p_event->data.rxtx.p_data, length);
+			serial->receiveCount += length;
+			if (serial->onReadable && !serial->receiveTriggered) {
+				post = 1;
+				if (!serial->transmitTriggered) {
+					serial->receiveTriggered = true;
+//					modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
+				}
+			}
+		}
+
+		if (post) {
+//			__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
+			modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
+		}
+
+		nrf_libuarte_async_rx_free(&serial->uart, p_event->data.rxtx.p_data, p_event->data.rxtx.length);
+	}
+}
+
+void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	xsMachine *the = (xsMachine *)theIn;
+	Serial serial = (Serial)refcon;
+	int count;
+	uint8_t post = 0;
+
+//	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
+//		c_free(serial);
+//		return;
+//	}
+
+	if (serial->receiveTriggered) {
+		builtinCriticalSectionBegin();
+			count = serial->receiveCount;
+			serial->receiveTriggered = false;
+		builtinCriticalSectionEnd();
+
+		if (serial->onReadable && count) {
+			xsBeginHost(the);
+				xsmcSetInteger(xsResult, count);
+				xsCallFunction1(xsReference(serial->onReadable), serial->obj, xsResult);
+			xsEndHost(the);
+		}
+	}
 
 	if (serial->transmitTriggered) {
 		serial->transmitTriggered = false;
@@ -368,71 +474,18 @@ static void serialDeliver(void *the, void *refcon, uint8_t *message, uint16_t me
 		}
 	}
 
-	if (serial->receiveTriggered) {
-		int32_t receiveCount;
-
-		builtinCriticalSectionBegin();
-			receiveCount = serial->receiveCount;
-			serial->receiveTriggered = false;
-		builtinCriticalSectionEnd();
-
-		if (serial->onReadable && receiveCount) {
-			xsBeginHost(the);
-				xsmcSetInteger(xsResult, receiveCount);
-				xsCallFunction1(xsReference(serial->onReadable), serial->obj, xsResult);
-			xsEndHost(the);
-		}
-	}
-}
-
-void uart_handler(void *p_context, nrf_libuarte_async_evt_t *p_event)
-{
-	Serial serial = p_context;
-
-	if (NRF_LIBUARTE_ASYNC_EVT_RX_DATA == p_event->type) {
-		if (kReceiveBytes == serial->receiveCount)
-			;	// overflow!
-		else {
-			size_t length = p_event->data.rxtx.length;
-			if (length > (kReceiveBytes - serial->receiveCount))
-				length = kReceiveBytes - serial->receiveCount;
-			c_memmove(&serial->receive[serial->receiveCount], p_event->data.rxtx.p_data, length);
-			serial->receiveCount += length;
-			if (serial->onReadable && !serial->receiveTriggered) {
-				if (!serial->transmitTriggered) {
-					serial->receiveTriggered = true;
-					modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
-				}
-			}
-		}
-		
-		nrf_libuarte_async_rx_free(&serial->uart, p_event->data.rxtx.p_data, p_event->data.rxtx.length);
-	}
-	else if (NRF_LIBUARTE_ASYNC_EVT_TX_DONE == p_event->type) {
-		serial->transmitSent += p_event->data.rxtx.length;
-
-		if (serial->transmitSent == serial->transmitPosition) {
-			serial->transmitSent = serial->transmitPosition = 0;
-			if (serial->onWritable && !serial->receiveTriggered) {
-				serial->transmitTriggered = true;
-				modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
-			}
-		}
-		else {
-			c_memmove(serial->transmit, &serial->transmit[serial->transmitSent], serial->transmitPosition - serial->transmitSent);
-			serial->transmitPosition -= serial->transmitSent;
-			serial->transmitSent = 0;
-			nrf_libuarte_async_tx(&serial->uart, serial->transmit, serial->transmitPosition);
-		}
-	}
 }
 
 void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	Serial serial = it;
 
+	if (!serial->hasOnReadableOrWritable)
+		return;
+
 	if (serial->onReadable)
 		(*markRoot)(the, serial->onReadable);
 	if (serial->onWritable)
 		(*markRoot)(the, serial->onWritable);
 }
+
