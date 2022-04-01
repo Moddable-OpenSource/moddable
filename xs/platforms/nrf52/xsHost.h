@@ -280,8 +280,10 @@ extern void nrf52_get_mac(uint8_t *mac);
 #define c_printf printf
 #define c_vsnprintf vsnprintf
 #define c_snprintf snprintf
-#define c_fprintf fprintf
+//#define c_fprintf fprintf
+#define c_fprintf(a, ...) myprintf(a, __VA_ARGS__)
 
+#define myprintf(a, ...) do { char out[256]; sprintf(out, __VA_ARGS__); modLogVar(out); } while (0)
 
 /* DATE */
 
