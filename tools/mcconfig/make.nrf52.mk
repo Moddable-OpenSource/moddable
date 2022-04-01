@@ -557,6 +557,7 @@ CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
 LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
 OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
+OBJDUMP = $(TOOLS_BIN)/$(TOOLS_PREFIX)objdump
 SIZE  = $(TOOLS_BIN)/$(TOOLS_PREFIX)size
 
 AR_FLAGS = crs
@@ -705,7 +706,7 @@ MEM_USAGE = \
 
 VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
-.PHONY: all	
+.PHONY: all	precursor deploy sym flash use_jlink
 .SUFFIXES:
 %.d:
 .PRECIOUS: %.d %.o
@@ -735,7 +736,7 @@ SCRIPTS=\
 $(MODDABLE_TOOLS_DIR)/findUSBLinux: $(PLATFORM_DIR)/config/findUSBLinux
 	cp  $(PLATFORM_DIR)/config/findUSBLinux $(MODDABLE_TOOLS_DIR)/findUSBLinux
 
-precursor: mod_sdk $(SCRIPTS) $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex
+precursor: mod_sdk $(SCRIPTS) $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex sym
 
 sdk_mod_txt="nRF5 SDK needs to be modified to support SPIM3 - See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details."
 
@@ -823,6 +824,9 @@ xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
 
 $(NRF52_SDK_ROOT)/components/boards/moddable_four.h:
 	$(error ## Please add moddable_four.h to your nRF52 SDK. See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)
+
+sym: $(TMP_DIR)/xs_nrf52.out
+	$(OBJDUMP) -t $(TMP_DIR)/xs_nrf52.out > $(BIN_DIR)/xs_nrf52.sym
 
 boards_h: $(NRF52_SDK_ROOT)/components/boards/moddable_four.h
 
