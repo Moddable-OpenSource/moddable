@@ -1289,6 +1289,7 @@ void fxStatement(txParser* parser, txBoolean blockIt)
 			//	fxReportParserError(parser, parser->line, "labeled function (strict code)");
 			if (parser->token == XS_TOKEN_FUNCTION)
 				fxReportParserError(parser, parser->line, "labeled function");
+			fxCheckParserStack(parser, line);
 			fxStatement(parser, 0);
 			fxPushNodeStruct(parser, 2, XS_TOKEN_LABEL, line);
 			break;
