@@ -26,6 +26,7 @@
 				"*": "$(MODULES)/pins/i2c/nrf52/*",
 				"pins/i2c": "$(MODULES)/pins/i2c/i2c"
 			},
+			"preload": "pins/i2c"
 		},
 		"pico": {
 			"modules": {
