@@ -279,6 +279,7 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 		if (productRef)
 			CFNumberGetValue(productRef , kCFNumberIntType, &productID);
 
+//fprintf(stderr, "checking productID %04x:%04x\n", vendorID, productID);
 		match = (!self->productID || (productID == self->productID)) &&
 			 		(!self->vendorID || (vendorID == self->vendorID));
 
@@ -292,8 +293,15 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 				if (!strcmp(self->path, "") && match) {
 					self->path = malloc(strlen(description->path) + 1);
 					strcpy(self->path, description->path);
-					// fprintf(stderr, "product/vendor match: %s\n", description->path);
-					fxOpenSerial(self);
+
+					if (self->showPath) {
+						fprintf(stderr, "%s\n", description->path);
+						exit(0);
+					}
+					else {
+						fprintf(stderr, "product/vendor match: %s\n", description->path);
+						fxOpenSerial(self);
+					}
 				}
 				else
 				if (!strcmp(self->path, description->path)
@@ -365,6 +373,12 @@ static void fxSignalHandler(int s) {
 	exit(1);
 }
 
+static void timeoutHandler(CFRunLoopTimerRef cfTimer, void *info)
+{
+	printf("timeout\n");
+	exit(1);
+}
+
 int main(int argc, char* argv[])
 {
 	txSerialToolRecord tool;
@@ -379,9 +393,16 @@ int main(int argc, char* argv[])
 	IOServiceAddMatchingNotification(self->notificationPort, kIOPublishNotification, matchingDict, fxRegisterSerial, self, &self->ioIterator);
 	fxRegisterSerial(self, self->ioIterator);
 
+	if (self->showPath) {
+		CFRunLoopTimerRef cfTimer;
+		CFRunLoopTimerContext context = {0};
+
+		cfTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + (self->timeout / 1000.0), 0, 0, 0, timeoutHandler, &context);
+		CFRunLoopAddTimer(CFRunLoopGetCurrent(), cfTimer, kCFRunLoopCommonModes);
+	}
+
 	signal(SIGINT, fxSignalHandler);
-
+	
 	CFRunLoopRun();
-
-	return result;
-}
+	
+}   

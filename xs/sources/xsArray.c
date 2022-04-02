@@ -2277,6 +2277,7 @@ again:
 					top++;
 					hi = j;
 				}
+				mxPop();
 			}
 		}
 		for (i = 1; i < length; i++) {

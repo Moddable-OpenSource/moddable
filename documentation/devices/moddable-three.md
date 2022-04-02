@@ -1,7 +1,7 @@
 # Moddable Three Developer Guide
 
-Copyright 2019-2020 Moddable Tech, Inc.<BR>
-Revised: October 21, 2020
+Copyright 2019-2022 Moddable Tech, Inc.<BR>
+Revised: March 22, 2022
 
 This document provides information about Moddable Three, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
@@ -66,6 +66,8 @@ After you've set up your host environment and ESP8266 tools, take the following 
 	```
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+
+	Use the platform `-p simulator/moddable_three` with `mcconfig` to build for the Moddable Three simulator.
 
 <a id="troubleshooting"></a>
 ## Troubleshooting

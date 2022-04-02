@@ -1,7 +1,7 @@
 # Moddable Two Developer Guide
 
-Copyright 2019-2020 Moddable Tech, Inc.<BR>
-Revised: January 19, 2021
+Copyright 2019-2022 Moddable Tech, Inc.<BR>
+Revised: March 22, 2022
 
 This document provides information about Moddable Two, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
@@ -140,6 +140,9 @@ After you've set up your host environment and ESP32 tools, take the following st
 	```
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
+	
+	Use the platform `-p simulator/moddable_two` with `mcconfig` to build for the Moddable Two simulator.
+	
 
 <a id="troubleshooting"></a>
 ## Troubleshooting

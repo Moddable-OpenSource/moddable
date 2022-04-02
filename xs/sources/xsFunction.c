@@ -243,10 +243,14 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 			if (kind == XS_KEY_KIND) {
 				property->kind = XS_STRING_KIND;
 				property->value.string = key->value.key.string;
+				if (!(key->flag & XS_DONT_ENUM_FLAG))
+					fxAdornStringC(the, "[", property, "]");
 			}
 			else if (kind == XS_KEY_X_KIND) {
 				property->kind = XS_STRING_X_KIND;
 				property->value.string = key->value.key.string;
+				if (!(key->flag & XS_DONT_ENUM_FLAG))
+					fxAdornStringC(the, "[", property, "]");
 			}
 			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
 				property->kind = kind;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -376,7 +376,7 @@ class ApplicationBehavior extends Behavior {
 		system.alert({ 
 			type:"about",
 			prompt:"mcsim",
-			info:"Copyright 2018 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.",
+			info:"Copyright 2018-2022 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.",
 			buttons:["OK"]
 		}, ok => {
 		});

@@ -1,0 +1,14 @@
+{
+	"modules": {
+		"*": [
+			"../modules/control",
+			"../modules/button",
+			"./host"
+		]
+	},
+	"preload": [
+		"control",
+		"button",
+		"host"
+	]
+}

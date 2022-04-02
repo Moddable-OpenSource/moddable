@@ -1,7 +1,7 @@
 ## Moddable SDK – Documentation Overview
 
-Copyright 2019-2020 Moddable Tech, Inc.<BR>
-Revised: December 4, 2020
+Copyright 2019-2022 Moddable Tech, Inc.<BR>
+Revised: March 18, 2020
 
 This directory contains documentation for the Moddable SDK.
 
@@ -15,6 +15,7 @@ Guides for working with specific microcontrollers supported by the Moddable SDK 
 - [ESP8266](./devices/esp8266.md) by Espressif
 - [Gecko](./devices/gecko/GeckoBuild.md) by Silicon Labs
 - [QCA4020](./devices/qca4020/README.md) by Qualcomm
+- [Pico](./devices/pico.md) by Raspberry Pi
 
 ### API Documentation for Modules
 

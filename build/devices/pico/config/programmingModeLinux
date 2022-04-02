@@ -1,0 +1,36 @@
+#!/bin/bash
+
+vid=$1
+pid=$2
+name=$3
+volumefile=$4
+serial=$( findUSBLinux $vid $pid cdc_acm )
+
+rm "$volumefile" 2> /dev/null
+
+volume=$( df -P | grep "$name" | awk '{print($6)}' )
+if [ -d "$volume" ];
+then
+	echo "Already in programming mode."
+else
+	if [ -z "$serial" ];
+	then
+		echo "Hold the BOOTSEL button and power-cycle the device."
+	else
+		echo "Triggering serial port $serial."
+		serial2xsbug $serial 921600 8N1 -programming
+	fi
+
+echo -n "Waiting for $name."
+# echo -n "Double-tap the reset button to enter programming mode."
+set -o pipefail
+volume=$( df -P | grep "$name" | awk '{print($6)}' )
+while [ -z "$volume"  ]; do
+        echo -n "."
+        sleep 1
+        volume=$( df -P | grep "$name" | awk '{print($6)}' )
+done
+echo
+fi
+
+echo $volume >> "$volumefile"

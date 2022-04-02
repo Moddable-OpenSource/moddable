@@ -25,6 +25,11 @@
 				"*": "$(MODULES)/pins/digital/monitor/gecko/*"
 			}
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/pico/*"
+			}
+		},
 		"qca4020": {
 			"modules": {
 				"*": "$(MODULES)/pins/digital/monitor/qca4020/*"

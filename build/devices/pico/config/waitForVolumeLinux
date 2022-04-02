@@ -1,0 +1,51 @@
+#!/bin/bash
+
+MISSING=0
+
+while [[ "$#" -gt 2 ]]
+do
+	case "$1" in
+		-x|--missing)
+			MISSING=1
+			shift;
+			;;
+		*)
+		;;
+	esac
+done
+
+name=$1
+volumefile=$2
+
+if [[ -f "$volumefile" ]]
+then
+	rm "$volumefile" 2> /dev/null
+fi
+
+volume=$( df -P | grep "$name" | awk '{print($6)}' )
+set -o pipefail
+
+if [[ $MISSING == 0 ]]
+then
+	echo "Waiting for $name."
+	echo -n "Double-tap the reset button to enter programming mode."
+	while [ -z "$volume"  ]; do
+	        echo -n "."
+	        sleep .1
+	        volume=$( df -P | grep "$name" | awk '{print($6)}' )
+	done
+else
+	echo -n "Waiting for copy to complete."
+	while [ ! -z "$volume"  ]; do
+	        echo -n "."
+	        sleep .1
+	        volume=$( df -P | grep "$name" | awk '{print($6)}' )
+	done
+fi
+echo
+	
+if [[ -f "$volumefile" ]]
+then
+	echo $volume >> "$volumefile"
+fi
+

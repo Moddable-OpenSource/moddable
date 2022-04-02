@@ -19,6 +19,11 @@
 				"*": "$(MODULES)/pins/analog/nrf52/*"
 			}
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/pins/analog/pico/*"
+			}
+		},
 		"gecko": {
 			"modules": {
 				"*": "$(MODULES)/pins/analog/gecko/*"

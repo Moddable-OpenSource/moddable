@@ -44,15 +44,20 @@ declare module "file" {
     readonly length: number;
     position: number;
 
-    static delete(path: string): void;
+    static delete(path: string): boolean;
     static exists(path: string): boolean;
-    static rename(from: string, to: string): void;
+    static rename(from: string, to: string): boolean;
   }
   type IteratorDirectoryEntry = {name: string, length: undefined};
   type IteratorFileEntry = {name: string, length: number};
   class Iterator {
     constructor(path: string);
     next(): IteratorDirectoryEntry | IteratorFileEntry | undefined;
+  }
+
+  class Directory {
+    static create(path): void;
+    static delete(path): void;
   }
 
   class System {

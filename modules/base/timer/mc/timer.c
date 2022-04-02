@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,16 +34,16 @@ typedef modTimerRecord *modTimer;
 struct modTimerRecord {
 	struct modTimerRecord  *next;
 
-	txS4 triggerTime;				// ms
-	txS4 repeatInterval;			// ms
-	txU2 refconSize;
-	txS1 flags;
-	txS1 useCount;
-	modTimerCallback cb;
+	uint32_t			triggerTime;			// ms
+	uint32_t			repeatInterval;			// ms
+	uint16_t			refconSize;
+	uint8_t				flags;
+	int8_t				useCount;
+	modTimerCallback 	cb;
 #if MOD_TASKS
-	uintptr_t task;
+	uintptr_t			task;
 #endif
-	char refcon[1];
+	char 				refcon[1];
 };
 
 static modTimer gTimers = NULL;
@@ -51,7 +51,7 @@ static modTimer gTimers = NULL;
 void modTimersExecute(void)
 {
 	modCriticalSectionDeclare;
-	int now = modMilliseconds();
+	uint32_t now = modMilliseconds();
 	modTimer walker;
 #if MOD_TASKS
 	uintptr_t task = modTaskGetCurrent();
@@ -60,14 +60,16 @@ void modTimersExecute(void)
 	// determine who is firing this time (timers added during this call are ineligible)
 	modCriticalSectionBegin();
 	for (walker = gTimers; NULL != walker; walker = walker->next) {
-		if (walker->flags & kTimerFlagUnscheduled)
+		if (walker->flags & (kTimerFlagUnscheduled | kTimerFlagFire))
 			continue;
-		walker->flags |= (walker->triggerTime <= now) ? kTimerFlagFire : 0;
+		int32_t delta = walker->triggerTime - now;
+		if (delta <= 0)
+			walker->flags |= kTimerFlagFire;
 	}
 
 	// service eligible callbacks. then reschedule (repeating) or remove (one shot)
 	for (walker = gTimers; NULL != walker; ) {
-		if (!(walker->flags & kTimerFlagFire) || !walker->cb
+		if (!(walker->flags & kTimerFlagFire)
 #if MOD_TASKS
 			|| (task != walker->task)
 #endif
@@ -103,7 +105,7 @@ int modTimersNext(void)
 {
 	modCriticalSectionDeclare;
 	int next = 60 * 60 * 1000;		// an hour
-	int now = modMilliseconds();
+	uint32_t now = modMilliseconds();
 	modTimer walker;
 #if MOD_TASKS
 	uintptr_t task = modTaskGetCurrent();
@@ -112,17 +114,14 @@ int modTimersNext(void)
 	modCriticalSectionBegin();
 
 	for (walker = gTimers; NULL != walker; walker = walker->next) {
-		int delta;
-
-		if (!walker->cb ||
-			(walker->flags & kTimerFlagUnscheduled)
+		if ((walker->flags & kTimerFlagUnscheduled)
 #if MOD_TASKS
 			|| (task != walker->task)
 #endif
 			)
 			continue;
 
-		delta = walker->triggerTime - now;
+		int32_t delta = walker->triggerTime - now;
 		if (delta < next) {
 			if (delta <= 0) {
 				modCriticalSectionEnd();
@@ -215,7 +214,7 @@ void modTimerRemove(modTimer timer)
 
 	for (walker = gTimers; NULL != walker; prev = walker, walker = walker->next) {
 		if (timer == walker) {
-			timer->cb = NULL;
+			timer->flags = kTimerFlagUnscheduled;
 
 			timer->useCount--;
 			if (timer->useCount <= 0) {

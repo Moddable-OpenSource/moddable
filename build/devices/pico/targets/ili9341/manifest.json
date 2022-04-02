@@ -1,0 +1,45 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "ili9341",
+		"touch": "xpt2046",
+		"xbacklight": 14
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 4,
+			"scl_pin": 5
+		},
+		"spi": {
+			"miso_pin": 8,
+			"mosi_pin": 11,
+			"sck_pin": 10
+		},
+		"ili9341": {
+			"hz": 64000000,
+			"cs_pin": 9,
+			"dc_pin": 7,
+			"rst_pin": 12,
+			"spi_port": 1,
+			"backlight_on": 1
+		},
+		"xpt2046": {
+			"hz": 10000000,
+			"cs_pin": 13,
+			"touch_pin": 14,
+			"spi_port": 1,
+			"raw_left": 141,
+			"raw_right": 1955,
+			"raw_top": 1970,
+			"raw_bottom": 158
+		}
+	}
+}

@@ -1,0 +1,18 @@
+{
+  "name": "moddable",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.ts",
+  "scripts": {
+    "dev": "wmr",
+    "build": "wmr build",
+    "serve": "wmr serve",    
+    "mcconfig": "wmr build && cd .. && mcconfig -d -m"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "rollup-plugin-zip": "^1.0.3",
+    "wmr": "^3.7.2"
+  }
+}

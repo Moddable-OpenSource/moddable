@@ -244,7 +244,7 @@ The `TextEncoder` implements the [TextEncoder class](https://developer.mozilla.o
 <a id="zlib"></a>
 ## zlib: class Inflate and class Deflate
 
-The `Inflate` and `Deflate` classes implement zlib decompression and compression. The JavaScript API follows the API defined by the [pako](https://github.com/nodeca/pako) library.
+The `Inflate` and `Deflate` classes implement zlib decompression and compression. The JavaScript API follows [the API](http://nodeca.github.io/pako/) defined by the [pako](https://github.com/nodeca/pako) library.
 
 ```js
 import Inflate from "inflate";

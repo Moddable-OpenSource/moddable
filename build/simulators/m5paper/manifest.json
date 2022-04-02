@@ -1,8 +1,9 @@
 {
   "modules": {
-    "*": ["../modules/control", "../modules/button", "./peripherals", "./host"]
+    "*": ["../modules/control", "../modules/button", "./peripherals", "./host"],
+    "setup/target": "./setup-target"
   },
-  "preload": ["control", "button", "peripherals", "host"],
+  "preload": ["control", "button", "peripherals", "host", "setup/target"],
   "config": {
     "format": "Gray16"
   }

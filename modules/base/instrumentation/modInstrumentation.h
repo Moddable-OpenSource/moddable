@@ -54,7 +54,7 @@ enum {
 	/* SPI flash */
 	kModInstrumentationSPIFlashErases,
 #endif
-#if nrf52
+#if nrf52 || PICO_BUILD
 	/* turns */
 	kModInstrumentationTurns,
 #endif

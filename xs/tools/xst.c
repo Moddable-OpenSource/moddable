@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -150,6 +150,9 @@ struct sxResult {
 };
 
 static int main262(int argc, char* argv[]);
+#if FUZZILLI
+static int fuzz(int argc, char* argv[]);
+#endif
 
 static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
@@ -265,6 +268,10 @@ int main(int argc, char* argv[])
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
 			option = 4;
+#if FUZZILLI
+		else if (!strcmp(argv[argi], "-f"))
+			option = 5;
+#endif
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -279,6 +286,11 @@ int main(int argc, char* argv[])
 	if (option == 4) {
 		error = main262(argc, argv);
 	}
+#if FUZZILLI
+ 	else if (option == 5) {
+ 		error = fuzz(argc, argv);
+ 	}
+#endif
 	else {
 		xsCreation _creation = {
 			16 * 1024 * 1024, 	/* initialChunkSize */
@@ -599,6 +611,9 @@ void fxPrintUsage()
 	printf("\tif ../harness exists, strings are paths to test262 cases or directories\n");
 	printf("\telse if the extension is .mjs, strings are paths to modules\n");
 	printf("\telse strings are paths to scripts\n");
+#if FUZZILLI
+	printf("\t-f: fuzz with REPRL harness\n");
+ #endif
 }
 
 void fxPushResult(txPool* pool, char* path) 
@@ -1508,6 +1523,233 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 	*mxResult = the->scratch;
 }
 
+/* FUZZILLI */
+
+#if FUZZILLI
+#include <stdint.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <assert.h>
+
+#ifdef  __linux__
+#define S_IREAD __S_IREAD
+#define S_IWRITE __S_IWRITE
+#endif
+
+#define SHM_SIZE 0x100000
+#define MAX_EDGES ((SHM_SIZE - 4) * 8)
+
+struct shmem_data {
+	uint32_t num_edges;
+	unsigned char edges[];
+};
+
+struct shmem_data* __shmem;
+uint32_t *__edges_start, *__edges_stop;
+
+void __sanitizer_cov_reset_edgeguards()
+{
+	uint64_t N = 0;
+	for (uint32_t *x = __edges_start; x < __edges_stop && N < MAX_EDGES; x++)
+		*x = ++N;
+}
+
+void __sanitizer_cov_trace_pc_guard_init(uint32_t *start, uint32_t *stop)
+{
+	// Avoid duplicate initialization
+	if (start == stop || *start)
+		return;
+
+	if (__edges_start != NULL || __edges_stop != NULL) {
+		fprintf(stderr, "Coverage instrumentation is only supported for a single module\n");
+		c_exit(-1);
+	}
+
+	__edges_start = start;
+	__edges_stop = stop;
+
+	// Map the shared memory region
+	const char* shm_key = getenv("SHM_ID");
+	if (!shm_key) {
+		puts("[COV] no shared memory bitmap available, skipping");
+		__shmem = (struct shmem_data*) malloc(SHM_SIZE);
+	} else {
+		int fd = shm_open(shm_key, O_RDWR, S_IREAD | S_IWRITE);
+		if (fd <= -1) {
+			fprintf(stderr, "Failed to open shared memory region: %s\n", strerror(errno));
+			c_exit(-1);
+		}
+
+		__shmem = (struct shmem_data*) mmap(0, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		if (__shmem == MAP_FAILED) {
+			fprintf(stderr, "Failed to mmap shared memory region\n");
+			c_exit(-1);
+		}
+	}
+
+	__sanitizer_cov_reset_edgeguards();
+
+	__shmem->num_edges = stop - start;
+	printf("[COV] edge counters initialized. Shared memory: %s with %u edges\n", shm_key, __shmem->num_edges);
+}
+
+void __sanitizer_cov_trace_pc_guard(uint32_t *guard)
+{
+	// There's a small race condition here: if this function executes in two threads for the same
+	// edge at the same time, the first thread might disable the edge (by setting the guard to zero)
+	// before the second thread fetches the guard value (and thus the index). However, our
+	// instrumentation ignores the first edge (see libcoverage.c) and so the race is unproblematic.
+	uint32_t index = *guard;
+	// If this function is called before coverage instrumentation is properly initialized we want to return early.
+	if (!index) return;
+	__shmem->edges[index / 8] |= 1 << (index % 8);
+	*guard = 0;
+}
+
+#define REPRL_CRFD 100
+#define REPRL_CWFD 101
+#define REPRL_DRFD 102
+#define REPRL_DWFD 103
+
+void fx_fuzzilli(xsMachine* the)
+{
+	const char* str = xsToString(xsArg(0));
+	if (!strcmp(str, "FUZZILLI_CRASH")) {
+ 		switch (xsToInteger(xsArg(1))) {
+ 			case 0:
+				// check crash
+				*((volatile char *)0) = 0;
+				break;
+ 			case 1: {
+				// check ASAN
+				char *data = malloc(64);
+				free(data);
+				data[0]++;
+				} break;
+ 			case 2:
+				// check assert
+				assert(0);
+				break;
+		}
+ 	}
+	else if (!strcmp(str, "FUZZILLI_PRINT")) {
+		const char* print_str = xsToString(xsArg(1));
+		FILE* fzliout = fdopen(REPRL_DWFD, "w");
+		if (!fzliout) {
+			fprintf(stderr, "Fuzzer output channel not available, printing to stdout instead\n");
+			fzliout = stdout;
+		}
+		fprintf(fzliout, "%s\n", print_str);
+		fflush(fzliout);
+	}
+}
+
+int fuzz(int argc, char* argv[])
+{
+	char helo[] = "HELO";
+	if (4 != write(REPRL_CWFD, helo, 4)) {
+		fprintf(stderr, "Error writing HELO\n");
+		c_exit(-1);
+	}
+	if (4 != read(REPRL_CRFD, helo, 4)) {
+		fprintf(stderr, "Error reading HELO\n");
+		c_exit(-1);
+	}
+	if (0 != memcmp(helo, "HELO", 4)) {
+		fprintf(stderr, "Invalid response from parent\n");
+		c_exit(-1);
+	}
+	xsCreation _creation = {
+		16 * 1024 * 1024, 	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* incrementalChunkSize */
+		1 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* incrementalHeapCount */
+		256 * 1024, 		/* stackCount */
+		256 * 1024, 		/* keyCount */
+		1993, 				/* nameModulo */
+		127, 				/* symbolModulo */
+		64 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
+	};
+
+	while (1) {
+		char action[4];
+		ssize_t nread = read(REPRL_CRFD, action, 4);
+		fflush(0);		//@@
+		if (nread != 4 || memcmp(action, "exec", 4) != 0) {
+			fprintf(stderr, "Unknown action: %s\n", action);
+			c_exit(-1);
+		}
+
+		size_t script_size = 0;
+		read(REPRL_CRFD, &script_size, 8);
+
+		ssize_t remaining = (ssize_t)script_size;
+		char* buffer = (char *)malloc(script_size + 1);
+		ssize_t rv = read(REPRL_DRFD, buffer, (size_t) remaining);
+		if (rv <= 0) {
+			fprintf(stderr, "Failed to load script\n");
+			c_exit(-1);
+		}
+		buffer[script_size] = 0;	// required when debugger active
+
+		xsCreation* creation = &_creation;
+		xsMachine* machine;
+		fxInitializeSharedCluster();
+		machine = xsCreateMachine(creation, "xst", NULL);
+		xsBeginHost(machine);
+		{
+			xsTry {
+				xsVars(1);
+				xsResult = xsNewHostFunction(fx_fuzzilli, 2);
+				xsSet(xsGlobal, xsID("fuzzilli"), xsResult);
+				xsResult = xsNewHostFunction(fx_gc, 0);
+				xsSet(xsGlobal, xsID("gc"), xsResult);
+				xsResult = xsNewHostFunction(fx_print, 1);
+				xsSet(xsGlobal, xsID("print"), xsResult);
+
+				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
+				txStringCStream aStream;
+				aStream.buffer = buffer;
+				aStream.offset = 0;
+				aStream.size = script_size;
+				fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+				mxPullSlot(mxResult);
+
+				fxRunLoop(the);
+			}
+			xsCatch {
+				fprintf(stderr, "%s\n", xsToString(xsException));
+				exit(-1);
+			}
+		}
+		fxCheckUnhandledRejections(machine, 1);
+		xsEndHost(machine);
+		if (machine->abortStatus) {
+			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+			fprintf(stderr, "Error: %s\n", why);
+		}
+		if (machine->abortStatus != 0) {
+			fprintf(stderr, "Failed to eval_buf reprl\n");
+		}
+		fflush(stdout);		//@@
+		fflush(stderr);		//@@
+		int status = (machine->abortStatus & 0xff) << 8;
+		if (write(REPRL_CWFD, &status, 4) != 4) {
+			fprintf(stderr, "Erroring writing return value over REPRL_CWFD\n");
+		}
+
+		xsDeleteMachine(machine);
+		fxTerminateSharedCluster();
+
+		__sanitizer_cov_reset_edgeguards();
+	}
+
+	return 0;
+}
+ #endif 
+
 /* PLATFORM */
 
 void fxCreateMachinePlatform(txMachine* the)
@@ -1753,6 +1995,9 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 
 void fxConnect(txMachine* the)
 {
+#if FUZZILLI
+	return;
+#endif
 #ifdef mxMultipleThreads
 #else
 	char name[256];

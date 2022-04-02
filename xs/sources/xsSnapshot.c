@@ -571,6 +571,8 @@ void fxLinkChunks(txMachine* the)
 		txByte* limit = block->current;
 		while (current < limit) {
 			txSize size = ((txChunk*)current)->size;
+			size &= ~mxChunkFlag;
+			((txChunk*)current)->size = size;
 			txByte* next = current + size;
 			((txChunk*)current)->temporary = next;
 			current = next;
@@ -621,7 +623,24 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 		break;
 		
 	case XS_HOST_KIND:
+#if mxMacOSX || mxLinux
+		if (slot->value.host.variant.destructor) {
+			txDestructor destructor;
+			Dl_info info;
+			if (slot->flag & XS_HOST_HOOKS_FLAG)
+				destructor = slot->value.host.variant.hooks->destructor;
+			else
+				destructor = slot->value.host.variant.destructor;
+		    if (dladdr(destructor, &info)) {
+				mxAssert(0, "# snapshot: no host destructor: %s!\n", info.dli_sname);
+			}
+			else {
+				mxAssert(0, "# snapshot: no host destructor!\n");
+			}
+		}
+#else
 		mxAssert(slot->value.host.variant.destructor == C_NULL, "# snapshot: no host destructor!\n");
+#endif
 		if (slot->value.host.data) {
 			mxAssert(slot->flag & XS_HOST_CHUNK_FLAG, "# snapshot: no host data!\n");
 			fxMeasureChunk(the, snapshot, slot->value.host.data, chunkSize);

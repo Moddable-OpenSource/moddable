@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/pins/i2c//manifest.json",
-		"$(MODDABLE)/modules/files/preference//manifest.json"
+		"$(MODDABLE)/modules/pins/i2c/manifest.json",
+		"$(MODDABLE)/modules/files/preference/manifest.json"
 	],
 	"defines": {
 		"ft6206": {
