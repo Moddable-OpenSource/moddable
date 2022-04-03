@@ -186,7 +186,7 @@ void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
 	modTime_t theTime;
 	uint32_t ms;
 
-	ms = nrf52_milliseconds();
+	ms = modMilliseconds();
 	theTime = (ms / 1000) + gTimeOfDayOffset;
 
 	if (tv) {
@@ -202,7 +202,7 @@ void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
 void modSetTime(uint32_t seconds)
 {
 	uint32_t ms;
-	ms = nrf52_milliseconds();
+	ms = modMilliseconds();
 
 	gTimeOfDayOffset = seconds - (ms / 1000);
 }
@@ -470,7 +470,6 @@ void fxQueuePromiseJobs(txMachine* the)
 */
 
 #if MODDEF_XS_MODS
-#error
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);

@@ -106,14 +106,9 @@ extern const char *gXSAbortStrings[];
     timer
 */
 
-extern uint32_t nrf52_milliseconds();
 #define modMilliseconds() nrf52_milliseconds()
-#define modMicroseconds() (uint32_t)(nrf52_milliseconds() * 1000)
+#define modMilliseconds() ((uint32_t)(UINT32_MAX - 10000 + xTaskGetTickCount()))
 
-// extern void nrf52_delay(uint32_t delayMS);
-
-//#define modDelayMilliseconds(ms) nrf52_delay(ms)
-//#define modDelayMicroseconds(us) nrf52_delay(((us) + 500) / 1000)
 #define modDelayMilliseconds(ms) vTaskDelay(ms)
 #define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
 

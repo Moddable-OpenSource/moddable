@@ -30,9 +30,9 @@ void nrf52_delay(uint32_t delayMS) {
 	nrf_delay_us(delayMS * 1000);
 }
 
-uint32_t nrf52_milliseconds() {
-	return ((uint64_t)xTaskGetTickCount() * (uint64_t)1000) >> 10;
-}
+//uint32_t nrf52_milliseconds() {
+//	return ((uint64_t)xTaskGetTickCount() * (uint64_t)1000) >> 10;
+//}
 
 /* https://devzone.nordicsemi.com/f/nordic-q-a/38551/three-errors-found-from-sdk15-2-0 */
 uint32_t app_timer_cnt_get(void)
