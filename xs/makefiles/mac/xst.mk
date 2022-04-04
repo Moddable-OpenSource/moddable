@@ -79,13 +79,11 @@ ifneq ("x$(SDKROOT)", "x")
 endif
 
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+	C_OPTIONS += -DmxASANStackMargin=65536 -fsanitize=address -fno-omit-frame-pointer
 	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 
 	ifeq ($(FUZZILLI),0)
-		C_OPTIONS += -DmxASANStackMargin=16384
-	else
-		C_OPTIONS += -DmxASANStackMargin=32768 -DFUZZILLI=1 -fsanitize-coverage=trace-pc-guard
+		C_OPTIONS += -DFUZZILLI=1 -fsanitize-coverage=trace-pc-guard
 	endif
 endif
 
