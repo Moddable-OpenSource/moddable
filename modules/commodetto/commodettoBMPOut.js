@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,7 +38,7 @@ export default class BMPOut extends PixelsOut {
 		this.depth = Bitmap.depth(dictionary.pixelFormat);
 
 		if ((Bitmap.Gray16 != dictionary.pixelFormat) && (Bitmap.Gray256 != dictionary.pixelFormat) && (Bitmap.RGB565LE != dictionary.pixelFormat) && (Bitmap.RGB332 != dictionary.pixelFormat) && (Bitmap.CLUT16 != dictionary.pixelFormat) && (Bitmap.Monochrome != dictionary.pixelFormat) &&
-			(Bitmap.ARGB4444 != dictionary.pixelFormat))
+			(Bitmap.ARGB4444 != dictionary.pixelFormat) && (Bitmap.BGRA32 != dictionary.pixelFormat))
 			throw new Error("unsupported BMP pixel fornat");
 
 		this.file = new File(dictionary.path, 1);
@@ -52,7 +52,27 @@ export default class BMPOut extends PixelsOut {
 		this.file.length = 0;
 		this.file.position = 0;
 
-		if (16 == this.depth) {
+		if (32 == this.depth) {
+			this.file.write("BM");						// imageFileType
+			this.write32((rowBytes * height) + 0x38);	// fileSize
+			this.write16(0);							// reserved1
+			this.write16(0);							// reserved2
+			this.write32(0x36);							// imageDataOffset
+
+			this.write32(0x28);							// biSize
+			this.write32(width);						// biWidth
+			this.write32(-height);						// biHeight (negative, because we write top-to-bottom)
+
+			this.write16(1);							// biPlanes
+			this.write16(32);							// biBitCount
+			this.write32(0);							// biCompression
+			this.write32((rowBytes * height) + 2);		// biSizeImage
+			this.write32(0x0b12);						// biXPelsPerMeter
+			this.write32(0x0b12);						// biYPelsPerMeter
+			this.write32(0);							// biClrUsed
+			this.write32(0);							// biClrImportant
+		}
+		else if (16 == this.depth) {
 			if (width % 2)
 				throw new Error("width must be multiple of 2");
 
