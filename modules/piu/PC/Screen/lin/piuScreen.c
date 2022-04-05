@@ -48,6 +48,7 @@ struct PiuScreenStruct {
 	PiuRectangleRecord hole;
 	xsIntegerValue rotation;
 	xsIntegerValue status;
+	xsNumberValue transparency;
 };
 
 struct PiuScreenMessageStruct {
@@ -99,7 +100,10 @@ gboolean onScreenDraw(GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_rotate(cr,(*self)->rotation * (M_PI/180.0));
 	cairo_translate(cr,-srcWidth/2,-srcHeight/2);
 	cairo_set_source_surface(cr, surface, 0, 0);
-	cairo_paint(cr);
+	if ((*self)->transparency)
+		cairo_paint_with_alpha(cr, 1.0 - (*self)->transparency);
+	else
+		cairo_paint(cr);
 	return TRUE;
 }
 
@@ -433,6 +437,20 @@ void PiuScreen_get_running(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
 	xsResult = (*self)->library ? xsTrue : xsFalse;
+}
+	
+void PiuScreen_get_transparency(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsNumber((*self)->transparency);
+}
+
+void PiuScreen_set_transparency(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	(*self)->transparency = xsToNumber(xsArg(0));
+	PiuContentInvalidate(self, NULL);
+	gtk_widget_queue_draw_area((*self)->gtkDrawingArea, 0, 0, (*self)->screen->width, (*self)->screen->height);
 }
 
 void PiuScreen_launch(xsMachine* the)
