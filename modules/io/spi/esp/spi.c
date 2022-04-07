@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Moddable Tech, Inc.
+ * Copyright (c) 2021-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -43,6 +43,7 @@ struct SPIRecord {
 	uint8_t		select;
 	uint8_t		active;
 	uint8_t		doUninit;
+	uint8_t		transform;
 };
 typedef struct SPIRecord SPIRecord;
 typedef struct SPIRecord *SPI;
@@ -235,7 +236,10 @@ void xs_spi_write(xsMachine *the)
 	if (count > 65535)
 		xsRangeError("unsupported byteLength");
 
-	modSPITx(&spi->config, (uint8_t *)data, (uint16_t)count);
+	if (spi->transform)
+		modSPITxSwap16(&spi->config, (uint8_t *)data, (uint16_t)count);
+	else
+		modSPITx(&spi->config, (uint8_t *)data, (uint16_t)count);
 }
 
 void xs_spi_transfer(xsMachine *the)
@@ -259,6 +263,13 @@ void xs_spi_flush(xsMachine *the)
 
 	if (xsmcArgc && xsmcTest(xsArg(0)))
 		modSPIActivateConfiguration(NULL);
+}
+
+void xs_spi_set_transform(xsMachine *the)
+{
+	SPI spi = xsmcGetHostDataValidate(xsThis, xs_spi_destructor);
+
+	spi->transform = xsmcTest(xsArg(0));
 }
 
 void doChipSelect(uint8_t active, modSPIConfiguration config)
