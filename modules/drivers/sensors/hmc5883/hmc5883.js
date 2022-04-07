@@ -23,7 +23,7 @@
 	Implementation inspired by Adafruit https://github.com/adafruit/Adafruit_HMC5883_Unified
 
 	device DataReady pin is internally pulled up
-	magnetometer sample value in Tesla
+	magnetometer sample value in microtesla
 */
 
 const Register = Object.freeze({
@@ -182,9 +182,9 @@ class HMC5883 {
 
 		// data registers configured in XZY order
 		io.readBlock(Register.DATA_X_MSB, vBuf);
-		ret.x = this.#twoC16(vBuf[0], vBuf[1]) / this.#gauss_xy * 0.0001;
-		ret.z = this.#twoC16(vBuf[1], vBuf[3]) / this.#gauss_z * 0.0001;
-		ret.y = this.#twoC16(vBuf[4], vBuf[5]) / this.#gauss_xy * 0.0001;
+		ret.x = this.#twoC16(vBuf[0], vBuf[1]) / this.#gauss_xy * 0.1;
+		ret.z = this.#twoC16(vBuf[1], vBuf[3]) / this.#gauss_z * 0.1;
+		ret.y = this.#twoC16(vBuf[4], vBuf[5]) / this.#gauss_xy * 0.1;
 
 		return ret;
 	}

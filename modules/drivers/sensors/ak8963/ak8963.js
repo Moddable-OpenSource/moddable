@@ -23,7 +23,7 @@
 
 	https://www.alldatasheet.com/datasheet-pdf/pdf/535561/AKM/AK8963.html
 
-	sample value in MicroTesla T
+	sample value in microtesla
 */
 
 import Timer from "timer";
@@ -131,9 +131,6 @@ class AK8963 {
 			ret.x = this.#dataView.getInt16(0) * this.#coefX * this.#res;	// µT/LSB
 			ret.y = this.#dataView.getInt16(2) * this.#coefY * this.#res;
 			ret.z = this.#dataView.getInt16(4) * this.#coefZ * this.#res;
-			ret.x /= 1_000_000;					// µT -> T
-			ret.y /= 1_000_000;
-			ret.z /= 1_000_000;
 		}
 
 		return ret;
