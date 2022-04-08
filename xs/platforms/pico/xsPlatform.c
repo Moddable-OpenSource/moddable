@@ -293,10 +293,10 @@ void fxReceive(txMachine* the)
 	the->debugOffset = 0;
 
 	if ((txSocket)kSerialConnection == the->connection) {
-		uint32_t timeout = the->debugConnectionVerified ? 0 : (modMilliseconds() + kXsbugConnectionTimeout);
+		uint32_t start = the->debugConnectionVerified ? 0 : modMilliseconds();
 
 		while (!the->debugOffset) {
-			if (timeout && (timeout < modMilliseconds())) {
+			if (!the->debugConnectionVerified && (((int)modMilliseconds() - start) >= kXsbugConnectionTimeout)) {
 				fxDisconnect(the);
 				break;
 			}
@@ -320,7 +320,8 @@ void fxReceive(txMachine* the)
 				break;
 			}
 		}
-		the->debugConnectionVerified = 1;
+		if (the->debugOffset)
+			the->debugConnectionVerified = 1;
 	}
 }
 
