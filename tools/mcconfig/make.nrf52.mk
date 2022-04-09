@@ -115,8 +115,9 @@ SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.2
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
 BOARD_DEF = BOARD_MODDABLE_FOUR
 
+# HEAP_SIZE can be overridden by the manifest.json
 #HEAP_SIZE = 0x13000
-HEAP_SIZE ?= 0x32800
+HEAP_SIZE ?= 0x32800	
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto

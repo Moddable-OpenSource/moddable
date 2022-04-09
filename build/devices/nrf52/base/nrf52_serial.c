@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -32,7 +32,7 @@
 #else
 
 #define SERIAL_TASK_STACK	2048
-#define kDebuggerTaskPriority	1
+#define kSerialTaskPriority	_PRIO_APP_LOW_MID	// 1
 
 #ifndef MODDEF_SERIAL_RX_PIN
 	#define MODDEF_SERIAL_RX_PIN	31
@@ -199,7 +199,7 @@ void setupSerial() {
 
 	ret = app_fifo_init(&ser_tx_fifo, ser_tx_fifo_buffer, MODDEF_SERIAL_TX_FIFO_SIZE);
 	ret = app_fifo_init(&ser_rx_fifo, ser_rx_fifo_buffer, MODDEF_SERIAL_RX_FIFO_SIZE);
-	xTaskCreate(serial_task, "serial", SERIAL_TASK_STACK/sizeof(StackType_t), (void*)&gSecondUarte, kDebuggerTaskPriority, NULL);
+	xTaskCreate(serial_task, "serial", SERIAL_TASK_STACK/sizeof(StackType_t), (void*)&gSecondUarte, kSerialTaskPriority, NULL);
 
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -91,7 +91,7 @@ void modI2CInit(modI2CConfiguration config)
 		.scl = MODDEF_I2C_SCL_PIN,
 		.sda = MODDEF_I2C_SDA_PIN,
 		.frequency = 0,
-		.interrupt_priority = APP_IRQ_PRIORITY_HIGH,
+		.interrupt_priority = _PRIO_APP_HIGH, 		// 2 APP_IRQ_PRIORITY_HIGH,
 		.clear_bus_init = false
 	};
 

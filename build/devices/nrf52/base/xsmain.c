@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -42,7 +42,7 @@ xsMachine *gThe = NULL;        // main VM
 void loop_task(void *pvParameter);
 
 #define kStack ((10 * 1024) / sizeof(StackType_t))
-#define kTaskPriority	1
+#define kTaskPriority	6	// 1
 
 void xs_setup(void)
 {

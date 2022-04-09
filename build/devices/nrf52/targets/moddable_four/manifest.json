@@ -44,7 +44,7 @@
 		"setup/target"
    ],
 	"defines": {
-		"debugger": {
+		"xdebugger": {
 			"xtx_pin": "NRF_GPIO_PIN_MAP(0,30)",
 			"xrx_pin": "NRF_GPIO_PIN_MAP(0,31)",
 			"tx_pin": "3",

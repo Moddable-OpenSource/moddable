@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -114,7 +114,7 @@ void xs_pulsecount(xsMachine *the)
         .pselled            = NRF_QDEC_LED_NOT_CONNECTED,
         .ledpre             = NRFX_QDEC_CONFIG_LEDPRE,
         .ledpol             = (nrf_qdec_ledpol_t)NRFX_QDEC_CONFIG_LEDPOL,
-        .interrupt_priority = NRFX_QDEC_CONFIG_IRQ_PRIORITY,
+        .interrupt_priority = _PRIO_APP_LOW,	// 6 - NRFX_QDEC_CONFIG_IRQ_PRIORITY,
         .dbfen              = 1,		// debounce enabled
         .sample_inten       = NRFX_QDEC_CONFIG_SAMPLE_INTEN      
 	};

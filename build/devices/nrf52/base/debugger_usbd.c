@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -89,7 +89,7 @@ APP_USBD_VENDOR_GLOBAL_DEF(
 		
 
 #define USBD_STACK_SIZE			256
-#define USBD_PRIORITY			1
+#define USBD_PRIORITY			5			// 1
 #define USB_THREAD_MAX_BLOCK_TIME portMAX_DELAY
 
 #define kTXBufferSize 2048

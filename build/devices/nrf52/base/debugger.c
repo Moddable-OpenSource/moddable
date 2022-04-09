@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -34,7 +34,7 @@
 #ifdef mxDebug
 
 #define DEBUGGER_STACK	2048
-#define kDebuggerTaskPriority	1
+#define kDebuggerTaskPriority	5	// 1
 
 #ifndef MODDEF_DEBUGGER_RX_PIN
 	#define MODDEF_DEBUGGER_RX_PIN	31
@@ -80,7 +80,7 @@ static app_fifo_t m_tx_fifo;
 static uint8_t *tx_fifo_buffer;
 static uint8_t *rx_fifo_buffer;
 
-#define tx_buffer_size	255
+#define tx_buffer_size	511
 static uint8_t tx_buffer[tx_buffer_size];
 
 #define MODDEF_DEBUGGER_TX_FIFO_SIZE	2048
@@ -169,6 +169,10 @@ static void debug_task(void *pvParameter) {
 			if (i) {
 				ret_code_t ret;
 				ret = nrf_libuarte_async_tx(p_libuarte, tx_buffer, i);
+				if (ret) {
+					modLog("debugger - tx failed");
+					modLogInt(ret);
+				}
 			}
 		}
 	}
