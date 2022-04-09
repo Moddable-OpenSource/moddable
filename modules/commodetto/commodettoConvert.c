@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -147,6 +147,7 @@ static void cc32RGBAtoRGB332(uint32_t pixelCount, void *src, void *dst, void *cl
 static void cc32RGBAtoRGB565LE(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoCLUT16(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoARGB4444(uint32_t pixelCount, void *src, void *dst, void *clut);
+static void cc32RGBAtoBGRA32(uint32_t pixelCount, void *src, void *dst, void *clut);
 
 static const CommodettoConverter gFromGray16[] ICACHE_XS6RO_ATTR = {
 	NULL,					// toMonochrome
@@ -158,7 +159,9 @@ static const CommodettoConverter gFromGray16[] ICACHE_XS6RO_ATTR = {
 	NULL,					// to24RGB
 	NULL,					// to32RGBA
 	NULL,					// toCLUT16
-	NULL					// toARGB4444
+	NULL,					// toARGB4444
+	NULL,					// toRGB444
+	NULL					// toBGRA32
 };
 
 static const CommodettoConverter gFromGray256[] ICACHE_XS6RO_ATTR = {
@@ -171,7 +174,9 @@ static const CommodettoConverter gFromGray256[] ICACHE_XS6RO_ATTR = {
 	NULL,					// to24RGB
 	NULL,					// to32RGBA
 	NULL,					// toCLUT16
-	NULL					// toARGB4444
+	NULL,					// toARGB4444
+	NULL,					// toRGB444
+	NULL					// toBGRA32
 };
 
 static const CommodettoConverter gFromRGB565LE[] ICACHE_XS6RO_ATTR = {
@@ -184,7 +189,9 @@ static const CommodettoConverter gFromRGB565LE[] ICACHE_XS6RO_ATTR = {
 	NULL,					// to24RGB
 	NULL,					// to32RGBA
 	NULL,					// toCLUT16
-	NULL					// toARGB4444
+	NULL,					// toARGB4444
+	NULL,					// toRGB444
+	NULL					// toBGRA32
 };
 
 static const CommodettoConverter gFrom24RGB[] ICACHE_XS6RO_ATTR = {
@@ -197,7 +204,9 @@ static const CommodettoConverter gFrom24RGB[] ICACHE_XS6RO_ATTR = {
 	NULL,					// to24RGB
 	NULL,					// to32RGBA
 	cc24RGBtoCLUT16,		// toCLUT16
-	NULL					// toARGB4444
+	NULL,					// toARGB4444
+	NULL,					// toRGB444
+	NULL					// toBGRA32
 };
 
 static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-multiplied alpha
@@ -210,7 +219,9 @@ static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-mu
 	NULL,					// to24RGB
 	NULL,					// to32RGBA
 	cc32RGBAtoCLUT16,		// toCLUT16
-	cc32RGBAtoARGB4444		// toARGB4444
+	cc32RGBAtoARGB4444,		// toARGB4444
+	NULL,					// toRGB444
+	cc32RGBAtoBGRA32		// toBGRA32
 };
 
 static const CommodettoConverter *gFromConverters[] ICACHE_RODATA_ATTR = {
@@ -233,7 +244,7 @@ uint8_t CommodettoPixelsConvert(uint32_t pixelCount,
 	if ((srcFormat < kCommodettoBitmapMonochrome) || (dstFormat < kCommodettoBitmapMonochrome))
 		return 0;
 
-	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmap32RGBA))
+	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmapBGRA32))
 		return 0;
 
 	(gFromConverters[srcFormat - kCommodettoBitmapMonochrome])[dstFormat - kCommodettoBitmapMonochrome](pixelCount, srcPixels, dstPixels, NULL);
@@ -246,7 +257,7 @@ CommodettoConverter CommodettoPixelsConverterGet(CommodettoBitmapFormat srcForma
 	if ((srcFormat < kCommodettoBitmapMonochrome) || (dstFormat < kCommodettoBitmapMonochrome))
 		return 0;
 
-	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmapARGB4444))
+	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmapBGRA32))
 		return 0;
 
 	return (gFromConverters[srcFormat - kCommodettoBitmapMonochrome])[dstFormat - kCommodettoBitmapMonochrome];
@@ -670,3 +681,20 @@ void cc32RGBAtoARGB4444(uint32_t pixelCount, void *srcPixels, void *dstPixels, v
 		src += 4;
 	}
 }
+
+void cc32RGBAtoBGRA32(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+
+	while (pixelCount--) {
+		dst[0] = src[2];
+		dst[1] = src[1];
+		dst[2] = src[0];
+		dst[3] = src[3];
+
+		src += 4;
+		dst += 4;
+	}
+}
+

@@ -462,8 +462,12 @@ void fx_ArrayBuffer_fromBigInt(txMachine* the)
 	int endian = EndianBig;
 	if (mxArgc < 1)
 		mxTypeError("no argument");
-	if (mxArgc > 1)
-		minBytes = fxToInteger(the, mxArgv(1));
+	if (mxArgc > 1) {
+		txInteger m = fxToInteger(the, mxArgv(1));
+		if (m < 0)
+			mxRangeError("minBytes < 0");
+		minBytes = (txU4)m;
+	}
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		sign = 1;
 	if ((mxArgc > 3) && fxToBoolean(the, mxArgv(3)))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -111,5 +111,11 @@ class Rectangle @ "xs_rectangle_destructor" {
 	set y() @ "xs_rectangle_set_y"
 	set w() @ "xs_rectangle_set_w"
 	set h() @ "xs_rectangle_set_h"
+
+	// for Ecma-419 adaptInvalid
+	get width() @ "xs_rectangle_get_w"
+	get height() @ "xs_rectangle_get_h"
+	set width() @ "xs_rectangle_set_w"
+	set height() @ "xs_rectangle_set_h"
 }
 

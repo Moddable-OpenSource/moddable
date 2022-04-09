@@ -541,7 +541,7 @@ again:
 				txID color = the->colors[id];
 				if (color) {
 					result = instance + color;
-					if (result->ID == id)
+					if ((result->ID == id) && (result->kind != XS_INSTANCE_KIND))
 						return result;
 				}
 			}

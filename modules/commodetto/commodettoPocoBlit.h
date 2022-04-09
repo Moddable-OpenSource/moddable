@@ -89,7 +89,8 @@ enum {
 	kPocoFlagFrameBuffer = 1 << 3,
 	kPocoFlagErrorDisplayListOverflow = 1 << 4,
 	kPocoFlagErrorStackProblem = 1 << 5,
-	kPocoFlagDidBegin = 1 << 6
+	kPocoFlagDidBegin = 1 << 6,
+	kPocoFlagContinue = 1 << 7
 };
 
 struct PocoRecord {
