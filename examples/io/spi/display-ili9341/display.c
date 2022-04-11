@@ -87,23 +87,33 @@ void xs_display_destructor(void *data)
 
 void xs_display_initialize(xsMachine* the)
 {
-	Display disp = c_malloc(sizeof(DisplayRecord));
-	if (!disp)
-		xsUnknownError("no memory");
-	xsmcSetHostData(xsThis, disp);
+	if (xsmcArgc) {
+		Display disp = c_malloc(sizeof(DisplayRecord));
+		if (!disp)
+			xsUnknownError("no memory");
+		xsmcSetHostData(xsThis, disp);
 
-	disp->spi = xsmcGetHostDataValidate(xsArg(0), xs_spi_destructor);
-	disp->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
-	disp->state = xsToReference(xsArg(2));
-	disp->the = the;
-	disp->flags = kDisplayFlagFirstFrame;
+		disp->spi = xsmcGetHostDataValidate(xsArg(0), xs_spi_destructor);
+		disp->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
+		disp->state = xsToReference(xsArg(2));
+		disp->the = the;
+		disp->flags = kDisplayFlagFirstFrame;
 
-	if (&xsDigitalBankHooks == xsGetHostHooks(xsArg(1))) {
-		disp->dc.bank = xsmcGetHostData(xsArg(1));
-		disp->flags |= kDisplayFlagDCIsBank; 
+		if (&xsDigitalBankHooks == xsGetHostHooks(xsArg(1))) {
+			disp->dc.bank = xsmcGetHostData(xsArg(1));
+			disp->flags |= kDisplayFlagDCIsBank; 
+		}
+		else
+			disp->dc.obj = xsToReference(xsArg(1));
 	}
-	else
-		disp->dc.obj = xsToReference(xsArg(1));
+	else {
+		Display disp = xsmcGetHostData(xsThis);
+		if (disp && xsmcGetHostDataValidate(xsThis, xs_display_destructor)) {
+			xs_display_destructor(disp);
+			xsmcSetHostData(xsThis, NULL);
+			xsmcSetHostDestructor(xsThis, NULL);
+		}
+	}
 }
 
 void xs_display_configure(xsMachine *the)

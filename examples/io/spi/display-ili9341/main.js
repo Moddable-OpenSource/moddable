@@ -124,6 +124,8 @@ else {
 	fill(0x07FF, width / 2, height / 2, width / 2, height / 2);
 
 	fill(0xFFFF, 0, 0, 20, 20);
+	
+	d.close();
 
 	function fill(color, x, y, width, height, doEnd = true, doContinue = false) {
 		if (doContinue)

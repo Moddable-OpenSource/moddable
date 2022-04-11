@@ -29,7 +29,6 @@ class Display @ "xs_display_destructor" {
 //		invert
 	};
 
-// initialize row/column offsets (x/y/w/h of actual display? 
 	constructor(options) {
 		let {reset, dc, display} = options;
 		this.#spi = new (display.io)({
@@ -93,6 +92,8 @@ class Display @ "xs_display_destructor" {
 
 		this.#state?.reset?.close();
 		this.#state = undefined;
+
+		initialize.call(this);
 	}
 	configure(options) {
 		if ("width" in options) {
