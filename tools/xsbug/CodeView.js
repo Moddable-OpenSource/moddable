@@ -725,6 +725,10 @@ var PathLink = Link.template($ => ({
 	}
 }));
 
+import {
+	Button,
+} from "piu/Buttons";	
+
 export var ErrorView = Container.template($ => ({
 	left:0, right:0, top:0, bottom:0,
 	contents: [
@@ -735,8 +739,8 @@ export var ErrorView = Container.template($ => ({
 				Column($, {
 					contents: [
 						Label($, { state:1, style:styles.error, string:"File not found!" }),
-						Container($, {
-							anchor:"BUTTON", width:80, skin:skins.button, active:true,
+						Button($, {
+							anchor:"BUTTON", height:30, width:80, active:true, string:"Locate...",
 							Behavior: class extends ButtonBehavior {
 								onTap(button) {
 									var path = this.data.path;
@@ -747,10 +751,6 @@ export var ErrorView = Container.template($ => ({
 									system.openFile(dictionary, path => { if (path) model.mapFile(path); });
 								}
 							},
-							contents: [
-								RoundContent($, { left:3, right:3, top:4, bottom:4, radius:5, skin:skins.iconButton }),
-								Label($, { left:0, right:0, style:styles.iconButton, string:"Locate..." }),
-							],
 						}),
 					]
 				}),
