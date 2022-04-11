@@ -928,6 +928,24 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 
 			fxLinkChunks(the);
 
+			{
+            	txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+            	txSlot* slot = mxRealmTemplateCache(realm);
+				slot = slot->value.reference->next;
+				while (slot) {
+					txString name = fxGetKeyName(the, slot->ID);
+					if (name) {
+						txString hash = c_strrchr(name, '#');
+						if (hash) {
+							txInteger tag = (txInteger)fxStringToNumber(the->dtoa, hash + 1, 1);
+							if (the->tag <= tag)
+								the->tag = tag + 1;
+						}
+					}
+					slot = slot->next;
+				}
+			}
+
 		#ifdef mxDebug
 			fxLogin(the);
 		#endif
