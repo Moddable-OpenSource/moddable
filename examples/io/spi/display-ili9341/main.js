@@ -12,6 +12,10 @@
  *
  */
 
+/*
+	Warning: This is test code! Work in progress.
+*/
+
 import Display from "embedded:display/LCD/ILI9341"
 import Poco from "commodetto/Poco";
 import Timer from "timer"
@@ -37,49 +41,103 @@ d.pixelsToBytes = function(pixels) {
 }
 d.pixelFormat = 7;
 
-const render = new Poco(d);
+if (0) {
+	//@@ patch in functions required by Piu
+	d.start = function (interval) {
+		let timer = this.timer;
+		if (!timer) {
+			timer = this.timer = Timer.set(() => {
+				this.context.onIdle();
+			}, 1, 100);
+			Timer.schedule(timer);
+		}
 
-let r = render.rectangle(10, 20, 50, 60);
-render.adaptInvalid(r);
+		if (interval <= 5)
+			interval = 5;
+		if (timer.interval === interval)
+			return;
 
-render.begin();
-	render.fillRectangle(0xF800, 0, 0, render.width, render.height);
-	render.fillRectangle(0x001F, 30, 30, render.width - 60, render.height - 60);
-	render.fillRectangle(0x07E0, 60, 60, render.width - 120, render.height - 120);
-render.end();
+		Timer.schedule(timer, interval, interval);
+		timer.interval = interval;
+	}
+	d.stop = function () {
+		const timer = this.timer;
+		if (!timer) return;
 
-const width = d.width, height = d.height;
+		Timer.schedule(timer);
+		delete timer.interval;
+	}
+	globalThis.screen = d;
 
-fill(0xFFFF, 0, 0, width, height, false, false);
+	globalThis.application = new Application(null, {
+		displayListLength: 2048, commandListLength: 2048,
+		skin: new Skin({ fill: "white" })
+	});
 
-fill(0xF800, 0, 0, width, height, true, true);
-d.configure({
-	invert: true
-});
+	let animatedContent = new Content(null, {
+		height: 100, width: 100, loop: true,
+		skin: new Skin({ fill: ["red", "yellow", "blue"] }),
+		Behavior: class extends Behavior {
+			onCreate(content) {
+				this.startAnimation(content);
+			}
+			startAnimation(content) {
+				content.duration = 3000;
+				content.time = 0;
+				content.start();
+			}
+			onTimeChanged(content) {
+				content.state = content.fraction*2;
+			}
+		}
+	});
+	application.add(animatedContent);
+}
+else {
+	const render = new Poco(d);
 
-fill(0x001F, 0, 0, width, height);
-d.configure({
-	invert: false
-});
-fill(0x07E0, 0, 0, width, height);
+	let r = render.rectangle(10, 20, 50, 60);
+	render.adaptInvalid(r);
 
-fill(0xF81F, 0, 0, width / 2, height / 2);
-fill(0x07FF, width / 2, height / 2, width, height);
+	render.begin();
+		render.fillRectangle(0xF800, 0, 0, render.width, render.height);
+		render.fillRectangle(0x001F, 30, 30, render.width - 60, render.height - 60);
+		render.fillRectangle(0x07E0, 60, 60, render.width - 120, render.height - 120);
+	render.end();
 
-fill(0xFFFF, 0, 0, 20, 20);
+	const width = d.width, height = d.height;
 
-function fill(color, x, y, width, height, doEnd = true, doContinue = false) {
-	if (doContinue)
-		d.begin({x, y, width, height, continue: doContinue});
-	else
-		d.begin({x, y, width, height});
+	fill(0xFFFF, 0, 0, width, height, false, false);
 
-		const lines = 4;
-		const pixels = new Uint16Array(width * lines);
-		pixels.fill(color);
+	fill(0xF800, 0, 0, width, height, true, true);
+	d.configure({
+		invert: true
+	});
 
-		for (; y < height; y += lines)
-			d.send(pixels.buffer);
-	if (doEnd)
-		d.end();
+	fill(0x001F, 0, 0, width, height);
+	d.configure({
+		invert: false
+	});
+	fill(0x07E0, 0, 0, width, height);
+
+	fill(0xF81F, 0, 0, width / 2, height / 2);
+	fill(0x07FF, width / 2, height / 2, width / 2, height / 2);
+
+	fill(0xFFFF, 0, 0, 20, 20);
+
+	function fill(color, x, y, width, height, doEnd = true, doContinue = false) {
+		if (doContinue)
+			d.begin({x, y, width, height, continue: doContinue});
+		else
+			d.begin({x, y, width, height});
+
+			const lines = 4;
+			const pixels = new Uint16Array(width * lines);
+			pixels.fill(color);
+
+			for (; height > 0; height -= lines)
+				d.send(pixels.buffer);
+		if (doEnd)
+			d.end();
+	}
 }

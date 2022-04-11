@@ -18,22 +18,18 @@
  *
  */
  
- import Timer from "timer";
+import Timer from "timer";
 
-class Display {
+class Display @ "xs_display_destructor" {
 	#spi;
 	#dc;
-	#width = 240;
-	#height = 320;
 	#state = {
-		transform: 0,
-//		rotation: 0			// 0 => 0, 1 => 90, 2 => 180, 3 => 270
 //		reset
 //		mac
 //		invert
-//		drawing
 	};
-	
+
+// initialize row/column offsets (x/y/w/h of actual display? 
 	constructor(options) {
 		let {reset, dc, display} = options;
 		this.#spi = new (display.io)({
@@ -56,6 +52,8 @@ class Display {
 			reset.write(1);
 			Timer.delay(1);
 		}
+
+		initialize.call(this, this.#spi, this.#dc, this.#state);
 
 		// registers for display in Moddable One and Moddable Two
 		// shouldn't be baked into the driver
@@ -83,7 +81,8 @@ class Display {
 		this.command(0x21);
 
 		this.command(0x11);
-		this.command(0x29);
+		
+		this.configure({width: 240, height: 320});
 	}
 	close() {
 		this.#spi?.close();
@@ -96,25 +95,24 @@ class Display {
 		this.#state = undefined;
 	}
 	configure(options) {
-		if ("format" in options) {
-			if (8 === options.format)
-				this.#state.transform = 0;		// 16-bit big endian pixels: no transformation needed
-			else if (7 === options.format)
-				this.#state.transform = 1;		// 16-bit big little pixels: SPI transforms (swaps bytes)
-			else
+		if ("width" in options) {
+			if (!("height" in options))
 				throw new RangeError;
+			configure.call(this, 0, options.width, options.height);
 		}
+		if ("x" in options) {
+			if (!("y" in options))
+				throw new RangeError;
+			configure.call(this, 3, options.x, options.y);
+		}
+		if ("format" in options)
+			configure.call(this, 1, options.format);
 		if ("rotation" in options) {
 			const rotation = options.rotation / 90;
 			if ((0 !== rotation) && (1 !== rotation) && (2 !== rotation) && (3 !== rotation)) 
 				throw new RangeError;
 
-			if (rotation ^ (this.#state.rotation ?? 0)) {
-				const t = this.#width;
-				this.#width = this.#height;
-				this.#height = t;
-			}
-			this.#state.rotation = rotation;
+			configure.call(this, 2, rotation);
 
 			this.command(0x36, this.#state.mac ^ [0x00, 0x60, 0xc0, 0xa0][rotation]);
 		}
@@ -143,57 +141,25 @@ class Display {
 		if ("adaptiveBrightnessMinimum" in options)
 			this.command(0x5e, options.adaptiveBrightnessMinimum);
 	}
-	adaptInvalid(options) {
-	}
-	begin(options = {x: 0, y: 0, width: this.#width, height: this.#height}) {
-		const state = this.#state;
-		if (this.#state.drawing) {
-			if (!options.continue)
-				throw new Error;
-			this.#spi.transform = 0;
-		}
-		this.#state.drawing = true;
-
-		const xMin = options.x;
-		const yMin = options.y;
-		const xMax = xMin + options.width;
-		const yMax = yMin + options.height;
-		this.command(0x2a, xMin >> 8, xMin, xMax >> 8, xMax);
-		this.command(0x2b, yMin >> 8, yMin, yMax >> 8, yMax);
-		this.command(0x2c);
-
-		this.#dc.write(1);
-		this.#spi.transform = this.#state.transform;
-	}
-	send(buffer) {
-		this.#spi.write(buffer);
-	}
-	end() {
-		this.#spi.transform = 0;
-		this.#state.drawing = false;
-	}
-	get width() {
-		return this.#width;
-	}
-	get height() {
-		return this.#height;
-	}
-
-	command(register, ...data) {		// this is public in Moddable SDK. Maybe should be here too....
-		if (0x36 === register)
-			this.#state.mac ??= data[0];
-		else if (0x20 === (register & 0xFE))
-			this.#state.invert ??= register & 1;
-
-		this.#spi.flush(true);
-		this.#dc.write(0);
-		this.#spi.write(Uint8Array.of(register));
-
-		if (data.length) {
-			this.#dc.write(1);
-			this.#spi.write(Uint8Array.from(data));
-		}
+	begin(options) @ "xs_display_begin"
+	send(buffer) @ "xs_display_send"
+	end() @ "xs_display_end"
+	adaptInvalid(options) @ "xs_display_adaptInvalid" 
+	get width() @ "xs_display_get_width"
+	get height() @ "xs_display_get_height"
+	command(command, data) @ "xs_display_command"
+	get c_dispatch() {
+		return this;		//@@ temporary?!
 	}
 }
+
+function initialize() @ "xs_display_initialize";
+function configure() @ "xs_display_configure";
+/*
+	0 - width / height
+	1 - format
+	2 - rotation
+	3 - position
+*/
 
 export default Display;
