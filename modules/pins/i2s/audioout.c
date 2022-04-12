@@ -60,6 +60,7 @@
 	#endif
 	#if MODDEF_AUDIOOUT_I2S_DAC
 		#ifndef MODDEF_AUDIOOUT_I2S_DAC_CHANNEL
+			// I2S_DAC_CHANNEL_BOTH_EN = 3
 			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL 3
 		#endif
 	#endif
@@ -1254,8 +1255,14 @@ void audioOutLoop(void *pvParameter)
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 		.sample_rate = out->sampleRate,
 		.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+#if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 3
 		.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-		.communication_format = I2S_COMM_FORMAT_STAND_I2S,
+#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1		// I2S_DAC_CHANNEL_RIGHT_EN
+		.channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
+#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 2		// I2S_DAC_CHANNEL_LEFT_EN
+		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+#endif
+		.communication_format = I2S_COMM_FORMAT_STAND_MSB,
 		.intr_alloc_flags = 0,
 		.dma_buf_count = 2,
 		.dma_buf_len = sizeof(out->buffer) / 2,
@@ -1314,19 +1321,21 @@ void audioOutLoop(void *pvParameter)
 		int16_t *src = (int16_t *)out->buffer;
 		int32_t *dst = out->buffer32;
 
-		while (i--){
+#if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL != 3 // one channel
+		while (i--) {
 			uint16_t s = (uint16_t)(*src++ ^ 0x8000);
-#if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 3 //I2S_DAC_CHANNEL_BOTH_EN
 			*dst++ = (s << 16) | s;
-#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1 //I2S_DAC_CHANNEL_RIGHT_EN
-			*dst++ = s;
-#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 2 //I2S_DAC_CHANNEL_LEFT_EN
-			*dst++ = s << 16;
-#endif
 		}
-			
-
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
+#else	// I2S_DAC_CHANNEL_BOTH_EN
+		while (i--) {
+			uint32_t s = (uint16_t)(*src++ ^ 0x8000);
+			s = (s << 16) | s;
+			*dst++ = s;
+			*dst++ = s;
+		}
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 8, &bytes_written, portMAX_DELAY);
+#endif
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
