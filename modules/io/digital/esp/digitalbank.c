@@ -125,7 +125,7 @@ static Digital gDigitals;	// pins with onReadable callbacks
 
 static uint8_t gDigitalCallbackPending;
 
-static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
+/* static */ const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 	xs_digitalbank_destructor,
 	xs_digitalbank_mark,
 	NULL
@@ -434,3 +434,26 @@ void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messa
 	}
 }
 
+//@@ verify read is allowed
+uint32_t modDigitalBankRead(Digital digital)
+{
+	uint32_t result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
+	if (digital->pins & 0x10000) {
+		if (READ_PERI_REG(RTC_GPIO_IN_DATA) & 1)
+			result |= 0x10000;
+		else
+			result &= ~0x10000;
+	}
+	return result;
+}
+
+//@@ verify write is allowed
+void modDigitalBankWrite(Digital digital, uint32_t value)
+{
+	value &= digital->pins;
+
+	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
+	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);
+	if (digital->pins & 0x10000)
+		WRITE_PERI_REG(RTC_GPIO_OUT, (READ_PERI_REG(RTC_GPIO_OUT) & (uint32)0xfffffffe) | (value >> 16));
+}
