@@ -759,8 +759,6 @@ void *my_malloc(size_t size) {
 
 #include "nrf_sdh.h"
 
-#define DFU_DBL_RESET_MEM	0x20007F7C		// defined in bootloader
-#define DFU_MODDABLE_MAGIC	0xBEEFCAFE		// boot directly to DFU
 uint32_t *dbl_reset_mem = ((uint32_t*)DFU_DBL_RESET_MEM);
 
 void nrf52_reboot(uint32_t kind)

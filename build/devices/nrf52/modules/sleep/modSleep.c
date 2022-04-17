@@ -206,7 +206,7 @@ void xs_sleep_deep(xsMachine *the)
 		// System OFF sleep, wake on reset or preconfigured analog/digital wake-up trigger
 
 #if MODDEF_SLEEP_FASTRESET
-		*((uint32_t*)DFU_DBL_RESET_MEM) = 0x4ee5677e;
+		*((uint32_t*)DFU_DBL_RESET_MEM) = REBOOT_FAST_RESET;
 #endif
 
 		// Enable LPCOMP if configured
@@ -358,7 +358,7 @@ void sleep_wake_on_timer()
 
 	// Reset device
 #if MODDEF_SLEEP_FASTRESET
-	*((uint32_t*)DFU_DBL_RESET_MEM) = 0x4ee5677e;
+	*((uint32_t*)DFU_DBL_RESET_MEM) = REBOOT_FAST_RESET;
 #else 
 	*((uint32_t*)DFU_DBL_RESET_MEM) = 0;
 #endif

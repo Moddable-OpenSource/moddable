@@ -102,9 +102,41 @@ extern void ESP_putc(int c);
 
 extern const char *gXSAbortStrings[];
 
+/* RESERVED MEMORY */
+
+extern uint32_t *dbl_reset_mem;
+
+#define DFU_DBL_RESET_MEM		0x200041FC		// uint32_t, defined in bootloader
+#define MOD_TIME_RESTORE_MEM	0x200041F0		// uint32_t + c_timeval
+#define MOD_WAKEUP_REASON_MEM	0x200041E8		// uint32_t + uint32_t
+
+/* reset */
+#define REBOOT_FAST_RESET		0x4ee5677e
+#define REBOOT_TO_PROGRAMMING	0xbeefcafe
+#define REBOOT_TO_VENDOR		0xf00dcafe
+
+/* wake */
+#define MOD_GPIO_WAKE_MAGIC		0x04dfcfbf
+#define MOD_ANALOG_WAKE_MAGIC	0x9e60bfca
+
+void nrf52_reboot(uint32_t kind);
+
+#define nrf52_reset()			nrf52_reboot(0)
+#define nrf52_rebootToDFU()		nrf52_reboot(REBOOT_TO_PROGRAMMING)
+#define nrf52_rebootToVendor()	nrf52_reboot(REBOOT_TO_VENDOR)
+
+extern void nrf52_get_mac(uint8_t *mac);
+
+void nrf52_set_reset_reason(uint32_t resetReason);
+uint32_t nrf52_get_reset_reason(void);
+
+uint8_t nrf52_softdevice_enabled(void);
+
+
 /*
     timer
 */
+extern uint32_t nrf52_milliseconds();
 
 #define modMilliseconds() ((uint32_t)(nrf52_milliseconds()))
 #define modMicroseconds() ((uint32_t)(nrf52_milliseconds() * 1000))
@@ -259,11 +291,6 @@ extern void *my_malloc(size_t size);
 #define c_malloc malloc
 #define c_realloc realloc
 #endif
-
-extern void nrf52_reset(void);
-extern void nrf52_rebootToDFU(void);
-extern void nrf52_get_mac(uint8_t *mac);
-
 
 #define c_exit(n) { nrf52_reset(); }
 #define c_free free
@@ -451,31 +478,6 @@ extern uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
-
-/* RESERVED MEMORY */
-
-#define DFU_DBL_RESET_MEM		0x200041FC		// uint32_t, defined in bootloader
-#define MOD_TIME_RESTORE_MEM	0x200041F0		// uint32_t + c_timeval
-#define MOD_WAKEUP_REASON_MEM	0x200041E8		// uint32_t + uint32_t
-
-/* reset */
-#define REBOOT_TO_PROGRAMMING	0xbeefcafe
-#define REBOOT_TO_VENDOR		0xf00dcafe
-
-/* wake */
-#define MOD_GPIO_WAKE_MAGIC		0x04dfcfbf
-#define MOD_ANALOG_WAKE_MAGIC	0x9e60bfca
-
-#define nrf52_reset()			nrf52_reboot(0)
-#define nrf52_rebootToDFU()		nrf52_reboot(REBOOT_TO_PROGRAMMING)
-#define nrf52_rebootToVendor()	nrf52_reboot(REBOOT_TO_VENDOR)
-
-extern void nrf52_get_mac(uint8_t *mac);
-
-void nrf52_set_reset_reason(uint32_t resetReason);
-uint32_t nrf52_get_reset_reason(void);
-
-uint8_t nrf52_softdevice_enabled(void);
 
 #ifdef __cplusplus
 }

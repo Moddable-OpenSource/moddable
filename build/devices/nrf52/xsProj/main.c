@@ -140,6 +140,7 @@ static void timer_init(void)
 
 /**@brief Function for application main entry.
  */
+uint32_t startup_gpio_masks[2];
 
 int main(void)
 {
@@ -152,7 +153,9 @@ int main(void)
 
 	// Grab the reset reason early. Because the reset reason register is cumulative, clear it now.
 	nrf52_set_reset_reason(NRF_POWER->RESETREAS);
-	NRF_POWER->RESETREAS = 0xFFFFFFFF;
+nrf_gpio_latches_read_and_clear(0, 2, startup_gpio_masks);
+//	NRF_POWER->RESETREAS = 0xFFFFFFFF;
+	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;	// A field is cleared by writing `1` to it
 
 	watchdog_init();
 
