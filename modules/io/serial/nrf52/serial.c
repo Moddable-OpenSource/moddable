@@ -41,6 +41,9 @@
 #include "queue.h"
 #include "sdk_config.h"
 
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
+int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon);
+
 typedef struct SerialRecord SerialRecord;
 typedef struct SerialRecord *Serial;
 

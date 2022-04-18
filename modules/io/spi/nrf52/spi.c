@@ -57,3 +57,7 @@ void xs_spi_flush(xsMachine *the)
 {
 }
 
+void xs_spi_set_transform(xsMachine *the)
+{
+}
+

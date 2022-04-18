@@ -275,28 +275,22 @@ void _xs_i2c_close(xsMachine *the)
 
 void _xs_i2c_read(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
-	int length, type;
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	xsUnsignedValue length;
 	int err;
 	uint8_t stop = true;
-	uint8_t *buffer;
+	void *buffer;
 
-	if (!i2c)
-		xsUnknownError("closed");
+	if (xsmcArgc > 1)
+		stop = xsmcToBoolean(xsArg(1));;
 
-	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
-
-	type = xsmcTypeOf(xsArg(0));
-	if ((xsIntegerType == type) || (xsNumberType == type)) {
- 		length = xsmcToInteger(xsArg(0));
-		xsmcSetArrayBuffer(xsResult, NULL, length);
-		xsArg(0) = xsResult;
-		buffer = xsmcToArrayBuffer(xsResult);
+	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+		xsResult = xsArg(0);
+		xsmcGetBufferWritable(xsResult, &buffer, &length);
 	}
 	else {
-		xsResult = xsArg(0);
-		xsmcGetBuffer(xsResult, &buffer, &length);
+		length = xsmcToInteger(xsArg(0));
+		buffer = xsmcSetArrayBuffer(xsResult, NULL, length);
 	}
 
 	if (!i2cActivate(i2c))
@@ -315,18 +309,16 @@ void _xs_i2c_read(xsMachine *the)
 
 void _xs_i2c_write(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostData(xsThis);
-	int err, length;
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	int err;
+	xsUnsignedValue length;
 	uint8_t stop = true;
-	uint8_t *buffer;
-
-	if (!i2c)
-		xsUnknownError("closed");
+	void *buffer;
 
 	if ((xsmcArgc > 1) && !xsmcTest(xsArg(1)))
-		stop = false;
+		stop = xsmcToBoolean(xsArg(1));
 
-	xsmcGetBuffer(xsArg(0), &buffer, &length);
+	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
