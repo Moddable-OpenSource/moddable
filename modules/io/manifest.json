@@ -4,65 +4,17 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/spi/manifest.json"
-	],
-	"modules": {
-		"*": [
-			"$(IO)/common/builtinCommon",
-			"$(IO)/digital/$(PLATFORM)/*",
-			"$(IO)/i2c/$(PLATFORM)/*",
-			"$(IO)/spi/$(PLATFORM)/*"
-		],
-		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-
-		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
-		"embedded:io/digital": "$(IO)/digital/digital",
-		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
-		"embedded:io/i2c": "$(IO)/i2c/_i2c",
-		"embedded:io/smbus": "$(IO)/i2c/smbus",
-		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
-		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
-		"embedded:io/spi": "$(IO)/spi/spi",
-
-		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
-
-		"embedded:io/socket/tcp": "$(IO)/socket/tcp",
-		"embedded:io/socket/udp": "$(IO)/socket/udp",
-		"embedded:io/socket/listener": "$(IO)/socket/listener",
-
-		"system": "$(IO)/system/*"
-	},
-	"preload": [
-		"embedded:*",
-		"system"
+		"$(MODDABLE)/examples/manifest_net.json"
 	],
 	"platforms": {
-		"esp/*": {
-			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
-			}
-		},
 		"esp": {
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
-			}
-		},
-		"esp32/*": {
-			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
-			}
+			"include": "./manifests/esp/manifest.json"
 		},
 		"esp32": {
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
-			}
+			"include": "./manifests/esp32/manifest.json"
 		},
-		"...": {
-			"error": "Experimental TC53 IO modules currently available for ESP8266 and ESP32 only. For now, use the modules in the pins directory instead"
+		"mac": {
+			"include": "./manifests/mac/manifest.json"
 		}
 	}
 }
