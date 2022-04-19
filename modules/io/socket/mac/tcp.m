@@ -318,6 +318,7 @@ void xs_tcp_read(xsMachine *the)
 			xsResult = xsArg(0);
 			xsmcGetBufferWritable(xsResult, (void **)&out, &byteLength);
 			requested = (int)byteLength;
+			xsmcSetInteger(xsResult, requested);
 			allocate = 0;
 		}
 		else
