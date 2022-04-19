@@ -467,10 +467,9 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 			tcp->bytesReadable += bytesRead;
 		else {
 			tcp->error = 1;
-			if (0 == tcp->bytesReadable) {
+			if (0 == tcp->bytesReadable)
 				tcpTrigger(tcp, kTCPError);
-				goto done;
-			}
+			goto done;
 		}
 		tcpTrigger(tcp, kTCPReadable);
 	}
