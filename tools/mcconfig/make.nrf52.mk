@@ -240,7 +240,6 @@ INC_DIRS += \
 	$(NRF52_SDK_ROOT)/components/libraries/hardfault \
 	$(NRF52_SDK_ROOT)/components/libraries/hardfault/nrf52 \
 	$(NRF52_SDK_ROOT)/components/libraries/hardfault/nrf52/handler \
-	$(NRF52_SDK_ROOT)/components/libraries/libuarte \
 	$(NRF52_SDK_ROOT)/components/libraries/log \
 	$(NRF52_SDK_ROOT)/components/libraries/log/src \
 	$(NRF52_SDK_ROOT)/components/libraries/queue \
@@ -284,6 +283,8 @@ INC_DIRS += \
 	$(NRF52_SDK_ROOT)/modules/nrfx/drivers/include \
 	$(NRF52_SDK_ROOT)/modules/nrfx/drivers/src \
 	$(NRF52_SDK_ROOT)/modules/nrfx/drivers/src/prs
+
+#	$(NRF52_SDK_ROOT)/components/libraries/libuarte 
 
 NRF_PATHS += \
 	$(INC_DIRS)
@@ -355,12 +356,13 @@ HEADERS += $(XS_HEADERS)
 SDK_GLUE_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
 	$(TMP_DIR)/systemclock.c.o \
-	$(TMP_DIR)/nrf52_serial.c.o \
 	$(TMP_DIR)/main.c.o \
 	$(TMP_DIR)/debugger_usbd.c.o \
 	$(TMP_DIR)/ftdi_trace.c.o \
 	$(TMP_DIR)/app_usbd_vendor.c.o \
 	$(TMP_DIR)/debugger.c.o
+
+#	$(TMP_DIR)/nrf52_serial.c.o 
 
 SDK_GLUE_HEADERS = \
 	$(BUILD_DIR)/devices/nrf52/base/app_usbd_vendor.h \
@@ -475,11 +477,11 @@ NRF_DRIVERS = \
 	$(LIB_DIR)/nrfx_systick.c.o \
 	$(LIB_DIR)/nrfx_timer.c.o \
 	$(LIB_DIR)/nrfx_twim.c.o \
+	$(LIB_DIR)/nrfx_uarte.c.o \
 	$(LIB_DIR)/nrfx_wdt.c.o
 
 #	$(LIB_DIR)/nrf_drv_uart.c.o \
 #	$(LIB_DIR)/nrfx_uart.c.o \
-#	$(LIB_DIR)/nrfx_uarte.c.o \
 
 NRF_LIBRARIES = \
 	$(LIB_DIR)/app_button.c.o \
@@ -499,8 +501,6 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_fprintf_format.c.o \
 	$(LIB_DIR)/nrf_fstorage_sd.c.o \
 	$(LIB_DIR)/nrf_fstorage.c.o \
-	$(LIB_DIR)/nrf_libuarte_drv.c.o \
-	$(LIB_DIR)/nrf_libuarte_async.c.o \
 	$(LIB_DIR)/nrf_memobj.c.o \
 	$(LIB_DIR)/nrf_queue.c.o \
 	$(LIB_DIR)/nrf_ringbuf.c.o \
@@ -508,6 +508,9 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_strerror.c.o \
 	$(LIB_DIR)/nrf_twi_mngr.c.o \
 	$(LIB_DIR)/nrf_twi_sensor.c.o
+
+#	$(LIB_DIR)/nrf_libuarte_drv.c.o
+#	$(LIB_DIR)/nrf_libuarte_async.c.o
 
 NRF_LOG_OBJECTS = \
 	$(LIB_DIR)/nrf_log_backend_rtt.c.o \
@@ -540,11 +543,12 @@ OBJECTS += \
 	$(NRF_CRYPTO_OBJECTS) \
 	$(NRF_CRYPTO_BACKEND_CC310_OBJECTS) \
 	$(NRF_HW_CRYPTO_BACKEND_OBJECTS) \
-	$(NRF_LOG_OBJECTS) \
 	$(NRF_DRIVERS) \
 	$(NRF_LIBRARIES) \
 	$(NRF_SOFTDEVICE) \
 	$(NRF_USBD)
+
+#	$(NRF_LOG_OBJECTS)
 
 OTHER_STUFF += \
 	boards_h \

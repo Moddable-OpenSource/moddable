@@ -25,6 +25,7 @@
 
 #include "xsPlatform.h"
 #include "xsHost.h"
+#include "xsHosts.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -42,7 +43,7 @@ xsMachine *gThe = NULL;        // main VM
 void loop_task(void *pvParameter);
 
 #define kStack ((10 * 1024) / sizeof(StackType_t))
-#define kTaskPriority	6	// 1
+#define kTaskPriority	(tskIDLE_PRIORITY + 1)
 
 void xs_setup(void)
 {

@@ -24,17 +24,15 @@
 
 #include "mc.defines.h"
 
-#include "nrf_libuarte_async.h"
+#include "nrfx_uarte.h"
 #include "app_fifo.h"
-
-#include "ftdi_trace.h"
 
 #if !USE_DEBUGGER_USBD
 
 #ifdef mxDebug
 
 #define DEBUGGER_STACK	2048
-#define kDebuggerTaskPriority	5	// 1
+#define kDebuggerTaskPriority	(tskIDLE_PRIORITY + 1)
 
 #ifndef MODDEF_DEBUGGER_RX_PIN
 	#define MODDEF_DEBUGGER_RX_PIN	31
@@ -46,45 +44,45 @@
 	#define MODDEF_DEBUGGER_BAUDRATE	NRF_UARTE_BAUDRATE_921600
 #endif
 
-// name, uarte_idx, timer0_idx, rtc1_idx, timer1_idx, rx_buf_size, rx_buf_cnt
-// We use an app_timer for the timer0
-// - sdk_config.h has NRF_LIBUARTE_UARTE_ASYNC_WITH_APP_TIMER
-#define DBG_UARTE_NAME	gDebuggerUarte
-#define DBG_UARTE_IDX	0
-#define DBG_TIMER0_IDX	2
-#define DBG_RTC1_IDX	0
-#define DBG_TIMER1_IDX	NRF_LIBUARTE_PERIPHERAL_NOT_USED
-#define DBG_RX_BUF_SIZE	255
-#define DBG_RX_BUF_CNT	3
-
-NRF_LIBUARTE_ASYNC_DEFINE(DBG_UARTE_NAME, DBG_UARTE_IDX, DBG_TIMER0_IDX, DBG_RTC1_IDX, DBG_TIMER1_IDX, DBG_RX_BUF_SIZE, DBG_RX_BUF_CNT);
-
-static uint32_t xx_tx_data_count = 0;
-static uint32_t xx_rx_data_count = 0;
-static uint32_t xx_tx_drv_err = 0;
-
-/* this queue for freertos signaling to debugger thread */
 #define DEBUG_QUEUE_LEN			8
-#define DEBUG_QUEUE_ITEM_SIZE   4
-static QueueHandle_t gUARTQueue;
+#define DEBUG_QUEUE_ITEM_SIZE	4
+static QueueHandle_t gDebuggerQueue;
 
-#define DEBUG_TASK_CREATED		6
-#define DEBUG_READABLE			13
-#define DEBUG_WRITABLE			14
-#define DEBUG_TASK_WRITE		15
-#define DEBUG_DRV_ERR			16
-#define DEBUG_RX_FIFO_OVERFLOW	17
 
 static app_fifo_t m_rx_fifo;
 static app_fifo_t m_tx_fifo;
 static uint8_t *tx_fifo_buffer;
 static uint8_t *rx_fifo_buffer;
 
-#define tx_buffer_size	511
+#define tx_buffer_size	128
 static uint8_t tx_buffer[tx_buffer_size];
+#define rx_buffer_size	1		// 4
+static uint8_t rx_buffer[rx_buffer_size];
 
-#define MODDEF_DEBUGGER_TX_FIFO_SIZE	2048
-#define MODDEF_DEBUGGER_RX_FIFO_SIZE	1024
+#define MODDEF_DEBUGGER_TX_FIFO_SIZE	512
+#define MODDEF_DEBUGGER_RX_FIFO_SIZE	512
+
+#define DEBUG_WRITABLE			14
+#define DEBUG_READABLE			15
+#define DEBUG_RX_FIFO_OVERFLOW	16
+#define DEBUG_TX_FIFO_ERROR		17
+#define DEBUG_UARTE_ERROR		18
+#define DEBUG_RX_FAIL			19
+
+char notifyOutstanding = 0;
+char gTransmitInProgress = 0;
+char gReceiveInProgress = 0;
+
+const nrfx_uarte_t gDebuggerUARTE = NRFX_UARTE_INSTANCE(0);
+
+void die(char *x) {
+	uint8_t DIE_BUF[256];
+	c_strcpy(DIE_BUF, x);
+	while (1) {
+	
+	}
+}
+#define DIE(x, ...)	die(x)
 
 static __INLINE uint32_t fifo_length(app_fifo_t *const fifo)
 {
@@ -99,152 +97,144 @@ uint32_t fillBufFromFifo(app_fifo_t *fifo, uint8_t *buf, uint32_t bufSize) {
 	return i;
 }
 
-// uarte_handler happens in IRQ
-static void uarte_handler(void *context, nrf_libuarte_async_evt_t *p_event)
+static void uarte_handler(nrfx_uarte_event_t *p_event, void *p_context)
 {
-	nrf_libuarte_async_t * p_libuarte = (nrf_libuarte_async_t *)context;
-	uint32_t i, msg = 0;
-	ret_code_t ret;
+	nrfx_err_t	err;
+	uint8_t		data;
+	uint32_t	msg = 0;
+	int			i;
 
 	switch (p_event->type) {
-		case NRF_LIBUARTE_ASYNC_EVT_ERROR:
-			msg = DEBUG_DRV_ERR;
-			xx_tx_drv_err++;
-			break;
-		case NRF_LIBUARTE_ASYNC_EVT_RX_DATA:
+		case NRFX_UARTE_EVT_RX_DONE:
 			msg = DEBUG_READABLE;
-			for (i=0; i<p_event->data.rxtx.length; i++) {
-				ret = app_fifo_put(&m_rx_fifo, p_event->data.rxtx.p_data[i]);
-				if (NRF_SUCCESS != ret)
+			for (i=0; i<p_event->data.rxtx.bytes; i++) {
+				err = app_fifo_put(&m_rx_fifo, p_event->data.rxtx.p_data[i]);
+				if (NRF_SUCCESS != err)
 					msg = DEBUG_RX_FIFO_OVERFLOW;
 			}
-			nrf_libuarte_async_rx_free(p_libuarte, p_event->data.rxtx.p_data, p_event->data.rxtx.length);
-			xx_rx_data_count++;
+			err = nrfx_uarte_rx(&gDebuggerUARTE, rx_buffer, rx_buffer_size);
+			if (NRF_SUCCESS != err) {
+				gReceiveInProgress = 0;
+				msg = DEBUG_RX_FAIL;
+			}
 			break;
-		case NRF_LIBUARTE_ASYNC_EVT_TX_DONE:
-			i = fillBufFromFifo(&m_tx_fifo, tx_buffer, tx_buffer_size);
-			if (i)
-				ret = nrf_libuarte_async_tx(p_libuarte, tx_buffer, i);
-			else
-				msg = DEBUG_WRITABLE;
-			xx_tx_data_count++;
-			break;
-		default:
-			break;
-	}
-	if (msg)
-		xQueueSendFromISR(gUARTQueue, &msg, 0);
-}
-
-static uint32_t rxoverflow = 0;
-static void debug_task(void *pvParameter) {
-	nrf_libuarte_async_t * p_libuarte = (nrf_libuarte_async_t *)pvParameter;
-	uint32_t	msg;
-	uint8_t		writable = 1;
-	uint32_t	i;
-
-	nrf_libuarte_async_enable(p_libuarte);
-
-	msg = DEBUG_TASK_CREATED;
-	xQueueSend(gUARTQueue, &msg, 0);
-
-	while (true) {
-		if (!xQueueReceive(gUARTQueue, (void*)&msg, portMAX_DELAY))
-			continue;
-
-		if (DEBUG_WRITABLE == msg) {
-			writable = 1;
-		}
-		else if (DEBUG_RX_FIFO_OVERFLOW == msg) {
-			rxoverflow++;
-			modLog("rx fifo overflow error\n");
-		}
-
-		if (fifo_length(&m_rx_fifo))
-			fxReceiveLoop();
-
-		if (writable && fifo_length(&m_tx_fifo)) {
-			writable = 0;
+		case NRFX_UARTE_EVT_TX_DONE:
 			i = fillBufFromFifo(&m_tx_fifo, tx_buffer, tx_buffer_size);
 			if (i) {
-				ret_code_t ret;
-				ret = nrf_libuarte_async_tx(p_libuarte, tx_buffer, i);
-				if (ret) {
-					modLog("debugger - tx failed");
-					modLogInt(ret);
-				}
+				err = nrfx_uarte_tx(&gDebuggerUARTE, tx_buffer, i);
+				if (NRF_SUCCESS != err)
+					msg = DEBUG_TX_FIFO_ERROR;
+			}
+			else
+				gTransmitInProgress = 0;
+			break;
+		case NRFX_UARTE_EVT_ERROR:
+			msg = DEBUG_UARTE_ERROR;
+			break;
+	}
+
+	if (msg && !(++notifyOutstanding))
+		xQueueSendFromISR(gDebuggerQueue, &msg, 0);
+}
+
+static void debug_task(void *pvParameter) {
+	nrfx_err_t	err;
+	uint8_t		data;
+	uint8_t		writable = 1;
+	uint32_t	msg;
+	uint32_t	i;
+
+	while (true) {
+		if (!fifo_length(&m_rx_fifo) && !fifo_length(&m_tx_fifo)) {
+			xQueueReceive(gDebuggerQueue, (void*)&msg, 1000);
+			notifyOutstanding = 0;
+		}
+
+		if (fifo_length(&m_tx_fifo) && !gTransmitInProgress) {
+			i = fillBufFromFifo(&m_tx_fifo, tx_buffer, tx_buffer_size);
+			if (i) {
+				gTransmitInProgress = 1;
+				err = nrfx_uarte_tx(&gDebuggerUARTE, tx_buffer, i);
+				if (NRFX_SUCCESS != err)
+					DIE("nrfx_uarte_tx fail");
 			}
 		}
+
+		if (!gReceiveInProgress) {
+			err = nrfx_uarte_rx(&gDebuggerUARTE, rx_buffer, rx_buffer_size);
+			if (NRFX_SUCCESS == err)
+				gReceiveInProgress = 1;
+			else
+				DIE("nrfx_uarte_rr fail");
+		}
+
+		// necessary to allow xsbug to break a running app
+		if (fifo_length(&m_rx_fifo))
+			fxReceiveLoop();
 	}
 }
-		
+
 //---------
 void setupDebugger() {
-	ret_code_t ret;
+	ret_code_t err;
 
-#if USE_FTDI_TRACE
-	ftdiTraceInit();
-#endif
-
-	nrf_libuarte_async_config_t nrf_libuarte_async_config = {
-		.tx_pin = MODDEF_DEBUGGER_TX_PIN,
-		.rx_pin = MODDEF_DEBUGGER_RX_PIN,
-		.baudrate = MODDEF_DEBUGGER_BAUDRATE,
-		.parity = NRF_UARTE_PARITY_EXCLUDED,
+	nrfx_uarte_config_t uart_config = {
+		.pseltxd = MODDEF_DEBUGGER_TX_PIN,
+		.pselrxd = MODDEF_DEBUGGER_RX_PIN,
+		.pselcts = NRF_UARTE_PSEL_DISCONNECTED,
+		.pselrts = NRF_UARTE_PSEL_DISCONNECTED,
+		.p_context = NULL,
 		.hwfc = NRF_UARTE_HWFC_DISABLED,
-		.timeout_us = 100,
-		.int_prio = 5
+		.parity = NRF_UARTE_PARITY_EXCLUDED,
+		.baudrate = MODDEF_DEBUGGER_BAUDRATE,
+		.interrupt_priority = 5
 	};
 
-	gUARTQueue = xQueueCreate(DEBUG_QUEUE_LEN, DEBUG_QUEUE_ITEM_SIZE);
-
-	ret = nrf_libuarte_async_init(&gDebuggerUarte, &nrf_libuarte_async_config, uarte_handler, (void*)&gDebuggerUarte);
-	if (ret)
-		ftdiTrace("init debuggerUarte failed\n");
+	err = nrfx_uarte_init(&gDebuggerUARTE, &uart_config, uarte_handler);
+	if (NRFX_SUCCESS != err)
+		DIE("nrfx_uarte_init fail");
 
 	tx_fifo_buffer = c_malloc(MODDEF_DEBUGGER_TX_FIFO_SIZE);
 	rx_fifo_buffer = c_malloc(MODDEF_DEBUGGER_RX_FIFO_SIZE);
 
-	ret = app_fifo_init(&m_tx_fifo, tx_fifo_buffer, MODDEF_DEBUGGER_TX_FIFO_SIZE);
-	ret = app_fifo_init(&m_rx_fifo, rx_fifo_buffer, MODDEF_DEBUGGER_RX_FIFO_SIZE);
-	xTaskCreate(debug_task, "debug", DEBUGGER_STACK/sizeof(StackType_t), (void*)&gDebuggerUarte, kDebuggerTaskPriority, NULL);
+	err = app_fifo_init(&m_tx_fifo, tx_fifo_buffer, MODDEF_DEBUGGER_TX_FIFO_SIZE);
+	err = app_fifo_init(&m_rx_fifo, rx_fifo_buffer, MODDEF_DEBUGGER_RX_FIFO_SIZE);
 
-	ftdiTrace("setupDebugger done.");
+	gDebuggerQueue = xQueueCreate(DEBUG_QUEUE_LEN, DEBUG_QUEUE_ITEM_SIZE);
 
+	xTaskCreate(debug_task, "debug", DEBUGGER_STACK/sizeof(StackType_t), (void*)&gDebuggerUARTE, kDebuggerTaskPriority, NULL);
 }
 
 void flushDebugger() {
 }
 
-static int oof = 0;
-static int waiting = 0;
 void ESP_putc(int c) {
 	int ret;
 	uint8_t ch;
-	uint32_t msg;
+	uint32_t msg = DEBUG_WRITABLE;
 
 	ch = c;
-	while (fifo_length(&m_tx_fifo) > m_tx_fifo.buf_size_mask) {
-		ftdiTraceAndInt("ESP_putc waiting:", waiting);
-		waiting++;
-		taskYIELD();
-	}
+	if (fifo_length(&m_tx_fifo) > m_tx_fifo.buf_size_mask)
+		nrf52_delay(50);	// drain a little
+	if (fifo_length(&m_tx_fifo) > m_tx_fifo.buf_size_mask)
+		DIE("ESP_putc waiting");
 
 	ret = app_fifo_put(&m_tx_fifo, ch);
 	if (NRF_SUCCESS != ret)
-		oof++;
-
-	msg = DEBUG_TASK_WRITE;
-	xQueueSend(gUARTQueue, &msg, 0);
+		DIE("tx fifo put");
+	if (!notifyOutstanding++)
+		xQueueSend(gDebuggerQueue, &msg, 0);
 }
 
 int ESP_getc(void) {
 	uint8_t ch;
+	uint32_t msg = DEBUG_READABLE;
 
-	if (fifo_length(&m_rx_fifo)) {
-		if (NRF_SUCCESS == app_fifo_get(&m_rx_fifo, &ch))
-			return ch;
-	}
+	if (NRF_SUCCESS == app_fifo_get(&m_rx_fifo, &ch))
+		return ch;
+
+	if (!notifyOutstanding++)
+		xQueueSend(gDebuggerQueue, &msg, 0);
 
 	return -1;
 }

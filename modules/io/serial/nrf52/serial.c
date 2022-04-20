@@ -36,10 +36,9 @@
 
 #include "builtinCommon.h"
 
-#include "nrf.h"
-#include "nrf_libuarte_async.h"
+#include "nrfx_uarte.h"
 #include "queue.h"
-#include "sdk_config.h"
+//#include "sdk_config.h"
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon);
@@ -54,7 +53,6 @@ typedef struct SerialRecord *Serial;
 struct SerialRecord {
 	xsSlot		obj;
 	uint8_t		format;
-	nrf_libuarte_async_t	uart;
 	int32_t		transmitPin;
 	int32_t		receivePin;
 	uint8_t		useCount;
@@ -63,6 +61,7 @@ struct SerialRecord {
 	uint8_t		receiveTriggered;
 	uint16_t	receiveCount;
 	uint8_t		receive[kReceiveBytes];
+	uint8_t		rx_buffer[1];
 
 	uint8_t		transmit[kTransmitBytes];
 	uint16_t	transmitPosition;
@@ -72,9 +71,10 @@ struct SerialRecord {
 	xsMachine	*the;
 	xsSlot		*onReadable;
 	xsSlot		*onWritable;
+	uint8_t		postedMessage;
 };
 
-static void uart_handler(void *context, nrf_libuarte_async_evt_t * p_evt);
+static void io_uart_handler(nrfx_uarte_event_t *p_event, void *p_context);
 static void serialDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
@@ -87,15 +87,11 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 	NULL
 };
 
-#define SER_UARTE_NAME	gUART
-#define SER_UARTE_IDX	1
-#define SER_TIMER0_IDX	1
-#define SER_RTC1_IDX	0
-#define SER_TIMER1_IDX	NRF_LIBUARTE_PERIPHERAL_NOT_USED
-#define SER_RX_BUF_SIZE	255
-#define SER_RX_BUF_CNT	3
-
-NRF_LIBUARTE_ASYNC_DEFINE(SER_UARTE_NAME, SER_UARTE_IDX, SER_TIMER0_IDX, SER_RTC1_IDX, SER_TIMER1_IDX, SER_RX_BUF_SIZE, SER_RX_BUF_CNT);
+#if mxDebug
+const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(1);
+#else
+const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(0);
+#endif
 
 void xs_serial_constructor(xsMachine *the)
 {
@@ -195,19 +191,19 @@ void xs_serial_constructor(xsMachine *the)
 	if (!serial)
 		xsRangeError("no memory");
 
-	nrf_libuarte_async_config_t uartConfig = {
-		.tx_pin = transmitPin,
-		.rx_pin = receivePin,
-		.baudrate = baud,
-		.parity = NRF_UARTE_PARITY_EXCLUDED,
+	nrfx_uarte_config_t uartConfig = {
+		.pseltxd = transmitPin,
+		.pselrxd = receivePin,
+		.pselcts = NRF_UARTE_PSEL_DISCONNECTED,
+		.pselrts = NRF_UARTE_PSEL_DISCONNECTED,
+		.p_context = serial,
 		.hwfc = NRF_UARTE_HWFC_DISABLED,
-		.timeout_us = 100,
-		.int_prio = 5
+		.parity = NRF_UARTE_PARITY_EXCLUDED,
+		.baudrate = baud,
+		.interrupt_priority = 5
 	};
 
-	serial->uart = gUART;
-
-	ret_code_t ret = nrf_libuarte_async_init(&serial->uart, &uartConfig, uart_handler, serial);
+	ret_code_t ret = nrfx_uarte_init(&gSerialUARTE, &uartConfig, io_uart_handler);
 	if (ret) {
 		c_free(serial);
 		xsRangeError("init failed");
@@ -241,7 +237,7 @@ void xs_serial_constructor(xsMachine *the)
 			serial->onWritable = NULL;
 	}
 
-	nrf_libuarte_async_enable(&serial->uart);
+	ret = nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, 1);
 
 	xsRemember(serial->obj);
 
@@ -261,7 +257,7 @@ void xs_serial_destructor(void *data)
 	Serial serial = data;
 	if (!serial) return;
 
-	nrf_libuarte_async_uninit(&serial->uart);
+	nrfx_uarte_uninit(&gSerialUARTE);
 
 	if (kInvalidPin != serial->transmitPin)
 		builtinFreePin(serial->transmitPin);
@@ -269,7 +265,7 @@ void xs_serial_destructor(void *data)
 		builtinFreePin(serial->receivePin);
 
 //	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
-//		c_free(serial);
+		c_free(serial);
 }
 
 void xs_serial_close(xsMachine *the)
@@ -384,7 +380,7 @@ void xs_serial_write(xsMachine *the)
 		serial->transmitPosition += count;
 
 		if (count == serial->transmitPosition)
-			nrf_libuarte_async_tx(&serial->uart, serial->transmit, serial->transmitPosition);
+			nrfx_uarte_tx(&gSerialUARTE, serial->transmit, serial->transmitPosition);
 	builtinCriticalSectionEnd();
 }
 
@@ -394,13 +390,13 @@ void xs_serial_purge(xsMachine *the)
 	serial->transmitPosition = 0;
 }
 
-void uart_handler(void *p_context, nrf_libuarte_async_evt_t *p_event)
+static void io_uart_handler(nrfx_uarte_event_t *p_event, void *p_context)
 {
 	Serial serial = p_context;
 	uint8_t post = 0;
 
-	if (NRF_LIBUARTE_ASYNC_EVT_TX_DONE == p_event->type) {
-		serial->transmitSent += p_event->data.rxtx.length;
+	if (NRFX_UARTE_EVT_TX_DONE == p_event->type) {
+		serial->transmitSent += p_event->data.rxtx.bytes;
 
 		if (serial->transmitSent == serial->transmitPosition) {
 			post = 1;
@@ -411,14 +407,14 @@ void uart_handler(void *p_context, nrf_libuarte_async_evt_t *p_event)
 			c_memmove(serial->transmit, &serial->transmit[serial->transmitSent], serial->transmitPosition - serial->transmitSent);
 			serial->transmitPosition -= serial->transmitSent;
 			serial->transmitSent = 0;
-			nrf_libuarte_async_tx(&serial->uart, serial->transmit, serial->transmitPosition);
+			nrfx_uarte_tx(&gSerialUARTE, serial->transmit, serial->transmitPosition);
 		}
 	}
-	else if (NRF_LIBUARTE_ASYNC_EVT_RX_DATA == p_event->type) {
+	else if (NRFX_UARTE_EVT_RX_DONE == p_event->type) {
 		if (kReceiveBytes == serial->receiveCount)
 			;	// overflow!
 		else {
-			size_t length = p_event->data.rxtx.length;
+			size_t length = p_event->data.rxtx.bytes;
 			if (length > (kReceiveBytes - serial->receiveCount))
 				length = kReceiveBytes - serial->receiveCount;
 			c_memmove(&serial->receive[serial->receiveCount], p_event->data.rxtx.p_data, length);
@@ -430,14 +426,15 @@ void uart_handler(void *p_context, nrf_libuarte_async_evt_t *p_event)
 //					modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 				}
 			}
+			nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, 1);
 		}
 
-		if (post) {
+//		if (post) {
+		if (post && !serial->postedMessage) {
+			serial->postedMessage = 1;
 //			__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
 			modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 		}
-
-		nrf_libuarte_async_rx_free(&serial->uart, p_event->data.rxtx.p_data, p_event->data.rxtx.length);
 	}
 }
 
@@ -448,6 +445,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 	int count;
 	uint8_t post = 0;
 
+	serial->postedMessage = 0;
 //	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
 //		c_free(serial);
 //		return;

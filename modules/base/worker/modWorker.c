@@ -220,10 +220,10 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
 #elif nrf52
-	#define kWorkerPriority 6	// was 1
-	#define kStack ((7 * 1024) / sizeof(StackType_t))
+	#define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) 
+	#define kStack ((10 * 1024) / sizeof(StackType_t))
 
-	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerPriority, &worker->task);
+	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerTaskPriority, &worker->task);
 #endif
 
 	modMachineTaskWait(the);

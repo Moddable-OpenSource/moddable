@@ -478,6 +478,7 @@ extern uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
+uint8_t nrf52_softdevice_enabled(void);
 
 #ifdef __cplusplus
 }
