@@ -88,7 +88,7 @@ void xs_display_destructor(void *data)
 void xs_display_initialize(xsMachine* the)
 {
 	if (xsmcArgc) {
-		Display disp = c_malloc(sizeof(DisplayRecord));
+		Display disp = c_calloc(1, sizeof(DisplayRecord));
 		if (!disp)
 			xsUnknownError("no memory");
 		xsmcSetHostData(xsThis, disp);
