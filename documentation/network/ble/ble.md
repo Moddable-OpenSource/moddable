@@ -284,6 +284,16 @@ The `onConnected` callback function is called when the client connects to a targ
 
 ***
 
+#### `onDisconnected(device)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
+
+The `onDisconnected` callback is called when the connection is closed.
+
+***
+
 #### `securityParameters`
 
 BLE clients can optionally request link-layer security to protect data transferred between devices. The `securityParameters` property accessor function is used to configure the device security requirements and I/O capabilities.
