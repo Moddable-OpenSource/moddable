@@ -95,10 +95,10 @@ else
 	endif
 endif
 
-# NRF52_GNU_VERSION ?= 8.2.1
-# NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
-NRF52_GNU_VERSION ?= 7.2.1
-NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-7-2017-q4-major
+NRF52_GNU_VERSION ?= 8.2.1
+NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
+# NRF52_GNU_VERSION ?= 7.2.1
+# NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-7-2017-q4-major
 
 NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
 UF2CONV ?= $(NRF_ROOT)/uf2conv.py
