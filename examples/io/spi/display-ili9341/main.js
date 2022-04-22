@@ -32,14 +32,16 @@ const d = new Display({
 });
 
 d.configure({
-	format: 7		// 16-bit RGB 5:6:5 little-endian
-})
+	format: 7,		// 16-bit RGB 5:6:5 little-endian
+	async: true
+});
 
 //@@ patch in a two properties for Poco compatibility
 d.pixelsToBytes = function(pixels) {
 	return pixels << 1;
 }
 d.pixelFormat = 7;
+d.async = true;
 
 if (0) {
 	//@@ patch in functions required by Piu
@@ -105,6 +107,8 @@ else {
 		render.fillRectangle(0x07E0, 60, 60, render.width - 120, render.height - 120);
 	render.end();
 
+	d.configure({async: false});
+
 	const width = d.width, height = d.height;
 
 	fill(0xFFFF, 0, 0, width, height, false, false);
@@ -124,7 +128,16 @@ else {
 	fill(0x07FF, width / 2, height / 2, width / 2, height / 2);
 
 	fill(0xFFFF, 0, 0, 20, 20);
-	
+
+	let start = Date.now();
+	stripes(0, 0, width, height);
+	trace("sync stripes: ", Date.now() - start, "\n");
+
+	d.configure({async: true});
+	start = Date.now();
+	stripes(0, 0, width, height);
+	trace("async stripes: ", Date.now() - start, "\n");
+
 	d.close();
 
 	function fill(color, x, y, width, height, doEnd = true, doContinue = false) {
@@ -142,4 +155,25 @@ else {
 		if (doEnd)
 			d.end();
 	}
+}
+
+function stripes(x, y, width, height) {
+	let color = (Math.random() * 65535) | 0;
+
+	d.begin({x, y, width, height});
+
+	const lines = 2;
+	let pixelsA = new Uint16Array(new SharedArrayBuffer(width * lines * 2));
+	let pixelsB = new Uint16Array(new SharedArrayBuffer(width * lines * 2));
+
+	for (; height > 0; height -= lines) {
+		pixelsA.fill(color);
+		d.send(pixelsA.buffer);
+
+		const t = pixelsA;
+		pixelsA = pixelsB;
+		pixelsB = t;
+		color += 0x08041
+	}
+	d.end();
 }
