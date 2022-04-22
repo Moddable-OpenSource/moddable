@@ -188,6 +188,11 @@ void xs_tcp_constructor(xsMachine *the)
 				xsUnknownError("no socket");
 			}
 
+			int set = 1;
+			setsockopt(tcp->skt, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+
+			fcntl(tcp->skt, F_SETFL, O_NONBLOCK | fcntl(tcp->skt, F_GETFL, 0));
+
 			tcp->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, tcp->cfSkt, 0);
 			CFRunLoopAddSource(CFRunLoopGetCurrent(), tcp->cfRunLoopSource, kCFRunLoopCommonModes);
 
@@ -437,7 +442,7 @@ void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *er
 	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
 	addr.sin_port = htons(tcp->port);
 
-	CFSocketError err = CFSocketConnectToAddress(tcp->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&addr, sizeof(addr)), (CFTimeInterval)10000);
+	CFSocketError err = CFSocketConnectToAddress(tcp->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&addr, sizeof(addr)), (CFTimeInterval)-1);
 	if (err) {
 		tcpTrigger(tcp, kTCPError);
 		return;
@@ -453,8 +458,14 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 
 	tcpHold(tcp);
 
-	if (cbType & kCFSocketConnectCallBack)
+	if (cbType & kCFSocketConnectCallBack) {
+		if (data) {
+			// connection failed
+			tcpTrigger(tcp, kTCPError);
+			return;
+		}
 		cbType |= kCFSocketWriteCallBack;
+	}
 
 	if ((cbType & kCFSocketReadCallBack) && (tcp->bytesReadable < kBufferSize)) {
 		if (tcp->readPosition) {
@@ -524,8 +535,10 @@ void tcpTrigger(TCP tcp, uint8_t trigger)
 {
 	CFRunLoopTimerContext context = {0};
 
-	if (kTCPError & trigger)
+	if (kTCPError & trigger) {
+		CFSocketDisableCallBacks(tcp->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack | kCFSocketConnectCallBack);
 		tcp->error = 1;
+	}
 
 	trigger &= tcp->triggerable;
 	if (!trigger)
