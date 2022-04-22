@@ -1,7 +1,7 @@
 # Using the Moddable SDK with ESP32
 
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
-Revised: March 22, 2022
+Revised: April 22, 2022
 
 This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) and [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2) with the Moddable SDK.
 
@@ -170,7 +170,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 (8153bfe) and the C
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4
+	git checkout c29343
 	git submodule update --init --recursive
 	```
 
@@ -317,7 +317,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4
+	git checkout c29343
 	git submodule update --init --recursive
 	```
 
@@ -531,7 +531,7 @@ To ensure that your build environment is up to date, perform the following steps
 	```text
 	cd %IDF_PATH%
 	git fetch --all --tags
-	git checkout v4.4
+	git checkout c29343
 	git submodule update --init --recursive
 	```
 
@@ -626,7 +626,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 and the CMake optio
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4
+	git checkout c29343
 	git submodule update --init --recursive
 	```
 
@@ -737,7 +737,7 @@ export UPLOAD_PORT=/dev/ttyUSB1
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4
+	git checkout c29343
 	git submodule update --init --recursive
 	```
 
