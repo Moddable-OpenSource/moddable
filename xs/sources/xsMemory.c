@@ -218,8 +218,17 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size)
 {
 	if (chunk) {
 		txByte* data = (txByte*)chunk;
+#if mxNoChunks
 		chunk->size = size;
-		the->currentChunksSize += (txSize)(chunk->temporary - data);
+		the->currentChunksSize += size;
+#else
+		txSize capacity = (txSize)(chunk->temporary - data);
+	#ifdef mxSnapshot
+		c_memset(data + size, 0, capacity - size);
+	#endif
+		chunk->size = size;
+		the->currentChunksSize += capacity;
+#endif
 		if (the->peakChunksSize < the->currentChunksSize)
 			the->peakChunksSize = the->currentChunksSize;
 		return data + sizeof(txChunk);
