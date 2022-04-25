@@ -3297,6 +3297,7 @@ void fxNormalizeString(txMachine* the, txSlot* string, txFlag form)
 			stringLength += mxStringByteLength(buffer->address[resultIndex]);
 		stringLength++;
 		p = string->value.string = fxNewChunk(the, stringLength);
+		buffer->address = fxToArrayBuffer(the, the->stack);
 		for (resultIndex = 0; resultIndex < buffer->count; resultIndex++)
 			p = mxStringByteEncode(p, buffer->address[resultIndex]);
 		*p = 0;
