@@ -83,7 +83,7 @@ ifeq ($(GOAL),debug)
 	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 
 	ifneq ($(FUZZILLI),0)
-		C_OPTIONS += -DFUZZILLI=1 -fsanitize-coverage=trace-pc-guard
+		C_OPTIONS += -DFUZZILLI=1 -fsanitize-coverage=trace-pc-guard -DmxStress=1
 	endif
 endif
 
