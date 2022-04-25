@@ -57,11 +57,16 @@
 #if mxStress
 int gxStress = 0;
 
-static int fxShouldStress() {
-	if (gxStress)
+static int fxShouldStress()
+{
+	if (!gxStress)
+		return 0;
+
+	if (gxStress > 0)
 		return 1;
-	else
-  		return (c_rand() < (C_RAND_MAX / 2)) ? 1 : 0;
+
+	gxStress += 1;
+	return 0 == gxStress;
 }
 #endif
 
@@ -161,6 +166,9 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 {
 #ifdef mxNever
 	startTime(&gxLifeTime);
+#endif
+#if mxStress
+	gxStress = 0;
 #endif
 
 	the->currentChunksSize = 0;
