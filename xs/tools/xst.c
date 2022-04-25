@@ -312,6 +312,11 @@ int main(int argc, char* argv[])
 		{
 			xsVars(2);
 			xsTry {
+#if FUZZILLI
+				xsResult = xsNewHostFunction(fx_gc, 0);
+				xsSet(xsGlobal, xsID("gc"), xsResult);
+#endif
+
 				xsVar(0) = xsUndefined;
 				the->rejection = &xsVar(0);
 				for (argi = 1; argi < argc; argi++) {
@@ -1377,7 +1382,21 @@ void fx_done(xsMachine* the)
 
 void fx_gc(xsMachine* the)
 {
+#if !FUZZILLI
 	xsCollectGarbage();
+#else
+	extern int gxStress;
+	xsResult = xsInteger(gxStress);
+
+	xsIntegerValue c = xsToInteger(xsArgc);
+	if (!c) {
+		xsCollectGarbage();
+		return;
+	}
+	
+	int count = xsToInteger(xsArg(0));
+	gxStress = (count < 0) ? count : -count;
+#endif
 }
 
 void fx_evalScript(xsMachine* the)
