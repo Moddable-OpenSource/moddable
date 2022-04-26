@@ -958,7 +958,7 @@ void fx_String_prototype_normalize(txMachine* the)
 		else
 			mxRangeError("invalid form");
 	}
-	mxMeterSome(fxUnicodeLength(string));
+	mxMeterSome(fxUnicodeLength(mxThis->value.string));
 	mxResult->value.string = mxThis->value.string;
 	mxResult->kind = XS_STRING_KIND;
 #ifdef mxStringNormalize
