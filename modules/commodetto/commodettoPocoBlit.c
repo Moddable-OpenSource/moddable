@@ -3253,7 +3253,7 @@ uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells)
 	Frame f = (Frame)pc;
 	PocoPixel prev0 = f->prev0, prev1 = f->prev1;
 	const uint8_t *data = f->data;
-	PocoPixel color0, color1;
+	PocoPixel color0;
 	uint8_t repeat;
 	uint8_t repeatSkip = 0;
 
@@ -3289,7 +3289,6 @@ uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells)
 				if (!(command & kReuse1Mask)) {
 					prev1 = c_read16(data); data += 2;		//@@ assumes 16 bit pixel
 				}
-				color1 = prev1;
 
 				data += 2;
 				break;
@@ -3303,7 +3302,6 @@ uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells)
 				if (!(command & kReuse1Mask)) {
 					prev1 = c_read16(data); data += 2;		//@@ assumes 16 bit pixel
 				}
-				color1 = prev1;
 
 				data += 4;
 				break;
@@ -3321,7 +3319,6 @@ uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells)
 				command &= 0x1f;
 				color0 = prev0 = (command << 11) | (command << 6) | command;		//@@ low bit of green
 				command = c_read8(data); data += 3;
-				color1 = prev1 = (command << 11) | (command << 6) | command;		//@@ low bit of green
 				break;
 
 			default:

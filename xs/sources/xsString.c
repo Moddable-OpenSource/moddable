@@ -3261,14 +3261,15 @@ void fxNormalizeString(txMachine* the, txSlot* string, txFlag form)
 	txNormalizeBuffer _buffer;
 	txNormalizeBuffer* buffer = &_buffer;
 	txInteger source[mxSourceBufferCount];
-	txString p = string->value.string;
+	txString p;
 
 	mxPushUndefined();
 	buffer->slot = the->stack;
 	buffer->address = fxArrayBuffer(the, the->stack, C_NULL, 64, 0x7FFFFFFF);
 	buffer->count = 0;
 	buffer->starterIndex = 0;
-	
+
+	p = string->value.string;
 	for (;;) {
 		txInteger* sourceAddress = source;
 		txInteger sourceIndex = 0;

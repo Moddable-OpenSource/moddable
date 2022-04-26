@@ -26,6 +26,8 @@
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
 		while connecting cannot safely transfer native socket
+		
+		//@@ why not using lwip _safe more??
 */
 
 #include "lwip/tcp.h"

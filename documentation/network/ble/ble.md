@@ -195,7 +195,7 @@ The `params` object contains the following properties:
 The `filterPolicy` parameter can be one of the following:
 
 | Name | Description |
-| --- | :--- | 
+| --- | :--- |
 | `GAP.ScanFilterPolicy.NONE` | No filtering.
 | `GAP.ScanFilterPolicy.WHITELIST` | Receive advertisements only from whitelist devices.
 | `GAP.ScanFilterPolicy.NOT_RESOLVED_DIRECTED` | Receive all undirected advertisements and all directed advertisements where the initiator address is a resolvable private address.
@@ -358,7 +358,7 @@ Use the `exchangeMTU ` function to request a higher MTU once the peripheral conn
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classclient) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 | `mtu` | `number` | Exchanged MTU value |
 
 The `onMTUExchanged` callback function is called when the MTU exchange procedure has been completed.
@@ -386,7 +386,7 @@ Use the `readRSSI` function to read the connected peripheral's signal strength.
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classclient) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 | `rssi` | `number` | Received signal strength |
 
 The `onRSSI` callback function is called when the peripheral signal strength is read.
@@ -1350,7 +1350,7 @@ onDisconnected(device) {
 #### `onConnected(device)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classclient) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onConnected` callback function is called when a client connects to the `BLEServer`.
 
@@ -1359,7 +1359,7 @@ The `onConnected` callback function is called when a client connects to the `BLE
 #### `onDisconnected(device)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classclient) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onDisconnected` callback function is called when the client connection is closed.
 
