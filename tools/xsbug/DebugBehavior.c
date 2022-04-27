@@ -1004,7 +1004,6 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 			const PiuDebugUTF8Sequence *sequence;
 			txU1* q = p + 1;
 			txS4 size;
-			fprintf(stderr, "%2.2X ", c);
 			for (sequence = sequences; sequence->size; sequence++) {
 				if ((c & sequence->cmask) == sequence->cval)
 					break;
@@ -1012,11 +1011,9 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 			size = sequence->size - 1;
 			while (size > 0) {
 				size--;
-				fprintf(stderr, "%2.2X ", *q);
 				c = (c << 6) | (*q++ & 0x3F);
 			}
 			c &= sequence->lmask;
-			fprintf(stderr, "%8.8X\n", c);
 			if (((0x00000000 < c) && (c < 0x0000D800)) || ((0x0000DFFF < c) && (c < 0x00110000)))
 				p = q;
 			else {
