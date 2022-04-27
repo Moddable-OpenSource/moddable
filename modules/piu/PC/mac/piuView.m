@@ -805,6 +805,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 		[(*texture)->image drawInRect:destination fromRect:source operation:NSCompositingOperationDestinationIn fraction:1 respectFlipped:YES hints:nil];
 		[NSGraphicsContext restoreGraphicsState];
 		CGImageRef maskImage = CGBitmapContextCreateImage(maskContext);
+		CGContextRelease(maskContext);
 		CGContextRef context = (*self)->context;
 		CGContextSaveGState(context);
         CGContextScaleCTM(context, 1 / scale, 1/ scale);
