@@ -253,6 +253,17 @@ void xs_tcp_destructor(void *data)
 	TCP tcp = data;
 	if (!tcp) return;
 
+	if (tcp->cfTriggeredTimer) {
+		CFRunLoopTimerInvalidate(tcp->cfTriggeredTimer);
+		tcp->cfTriggeredTimer = NULL;
+	}
+
+	if (tcp->cfRunLoopSource) {
+		CFRunLoopRemoveSource(CFRunLoopGetCurrent(), tcp->cfRunLoopSource, kCFRunLoopCommonModes);
+		CFRelease(tcp->cfRunLoopSource);
+		tcp->cfRunLoopSource = NULL;
+	}
+
 	if (tcp->cfSkt) {
 		CFSocketInvalidate(tcp->cfSkt);
 		CFRelease(tcp->cfSkt);
@@ -279,22 +290,13 @@ void doClose(xsMachine *the, xsSlot *instance)
 	if (tcp && xsmcGetHostDataValidate(*instance, (void *)&xsTCPHooks)) {
 		tcp->done = 1;
 		tcp->triggerable = 0;
+		tcp->triggered = 0;
 
-		if (tcp->cfTriggeredTimer) {
-			CFRunLoopTimerInvalidate(tcp->cfTriggeredTimer);
-			tcp->cfTriggeredTimer = NULL;
-		}
-
-		if (tcp->cfRunLoopSource) {
-			CFRunLoopRemoveSource(CFRunLoopGetCurrent(), tcp->cfRunLoopSource, kCFRunLoopCommonModes);
-			CFRelease(tcp->cfRunLoopSource);
-			tcp->cfRunLoopSource = NULL;
-		}
+		CFSocketDisableCallBacks(tcp->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack | kCFSocketConnectCallBack);
 
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
 		xsmcSetHostDestructor(*instance, NULL);
-		tcp->triggered = 0;
 		tcpRelease(tcp);
 	}
 }
