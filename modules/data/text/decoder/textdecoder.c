@@ -58,7 +58,7 @@ void xs_textdecoder(xsMachine *the)
 	xsResult = xsNewHostInstance(xsResult);
 	xsThis = xsResult;
 	xsmcSetHostDestructor(xsThis, NULL);
-	memset(&decoder, 0, sizeof(decoder));
+	c_memset(&decoder, 0, sizeof(decoder));
 #endif
 
 	decoder.ignoreBOM = false;
