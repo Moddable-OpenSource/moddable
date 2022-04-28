@@ -299,6 +299,9 @@ struct sxBlock {
 
 struct sxChunk {
 	txSize size;
+#if INTPTR_MAX == INT64_MAX
+	txS4 dummy;
+#endif
 	txByte* temporary;
 };
 

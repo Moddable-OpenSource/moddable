@@ -745,7 +745,7 @@ void fxProjectTable(txMachine* the, txSnapshot* snapshot, txSlot* table)
 	txSlot** last = &first;
 	txSlot** address = table->value.table.address;
 	txSize length = table->value.table.length;
-	txU4 modulo;
+	txU4 mask = length - 1;
 	while (length > 0) {
 		txSlot* slot = *address;
 		if (slot) {
@@ -764,16 +764,18 @@ void fxProjectTable(txMachine* the, txSnapshot* snapshot, txSlot* table)
 	while (first) {
 		txSlot* slot = first->value.entry.slot;
 		if (slot->kind == XS_REFERENCE_KIND) {
-			txSlot buffer;
-			buffer.kind = XS_REFERENCE_KIND;
-			buffer.value.reference = fxProjectSlot(the, snapshot->firstProjection, slot->value.reference);
-			first->value.entry.sum = fxSumEntry(the, &buffer);
+			size_t projection = (size_t)fxProjectSlot(the, snapshot->firstProjection, slot->value.reference);
+			first->value.entry.sum = (txU4)(projection & 0xFFFFFFFF);
 		}
-		modulo = first->value.entry.sum % length;
+		last = address + (first->value.entry.sum & mask);
+		while ((slot = *last)) {
+			if (first->value.entry.sum < slot->value.entry.sum)
+				break;
+			last = &(slot->next);
+		}
 		slot = first->next;
-		first->next = C_NULL;
-		first->next = *(address + modulo);
-		*(address + modulo) = first;
+		first->next = *last;
+		*last = first;
 		first = slot;
 	}
 }
@@ -1158,7 +1160,7 @@ void fxUnprojectTable(txMachine* the, txSnapshot* snapshot, txSlot* table)
 	txSlot** last = &first;
 	txSlot** address = table->value.table.address;
 	txSize length = table->value.table.length;
-	txU4 modulo;
+	txU4 mask = length - 1;
 	while (length > 0) {
 		txSlot* slot = *address;
 		if (slot) {
@@ -1178,11 +1180,10 @@ void fxUnprojectTable(txMachine* the, txSnapshot* snapshot, txSlot* table)
 		txSlot* slot = first->value.entry.slot;
 		if (slot->kind == XS_REFERENCE_KIND)
 			first->value.entry.sum = fxSumEntry(the, slot);
-		modulo = first->value.entry.sum % length;
+		last = address + (first->value.entry.sum & mask);
 		slot = first->next;
-		first->next = C_NULL;
-		first->next = *(address + modulo);
-		*(address + modulo) = first;
+		first->next = *last;
+		*last = first;
 		first = slot;
 	}
 }
@@ -1325,8 +1326,10 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 	c_memset(&buffer, 0, sizeof(buffer));
 	if (flag)
 		buffer.next = fxProjectSlot(the, snapshot->firstProjection, slot->next);
-	else
-		buffer.next = slot->next;
+	else {
+		buffer.next = C_NULL;
+		*((txIndex*)&buffer) = *((txIndex*)slot);
+	}
 	buffer.ID = slot->ID;
 	buffer.flag = slot->flag;
 	buffer.kind = slot->kind;

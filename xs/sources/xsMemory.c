@@ -73,7 +73,7 @@ static int fxShouldStress()
 #define mxChunkFlag 0x80000000
 
 static txSize fxAdjustChunkSize(txMachine* the, txSize size);
-static void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size);
+static void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset);
 static void* fxFindChunk(txMachine* the, txSize size, txBoolean *once);
 static void* fxGrowChunk(txMachine* the, txSize size);
 static void* fxGrowChunks(txMachine* the, txSize theSize); 
@@ -222,7 +222,7 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->parserTableModulo = theCreation->parserTableModulo;
 }
 
-void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size)
+void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 {
 	if (chunk) {
 		txByte* data = (txByte*)chunk;
@@ -232,7 +232,9 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size)
 #else
 		txSize capacity = (txSize)(chunk->temporary - data);
 	#ifdef mxSnapshot
-		c_memset(data + size, 0, capacity - size);
+		chunk->dummy = 0;
+		offset += sizeof(txChunk);
+		c_memset(data + offset, 0, capacity - offset);
 	#endif
 		chunk->size = size;
 		the->currentChunksSize += capacity;
@@ -1299,6 +1301,7 @@ txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b)
 
 void* fxNewChunk(txMachine* the, txSize size)
 {
+	txSize offset = size;
 	txChunk* chunk;
 	txBoolean once = 1;
 	size = fxAdjustChunkSize(the, size);
@@ -1306,11 +1309,12 @@ void* fxNewChunk(txMachine* the, txSize size)
 	if (!chunk) {
 		chunk = fxGrowChunk(the, size);
 	}
-	return fxCheckChunk(the, chunk, size);
+	return fxCheckChunk(the, chunk, size, offset);
 }
 
 void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 {
+	txSize offset = size;
 #if mxNoChunks
 	return fxNewChunk(the, size);
 #else
@@ -1328,7 +1332,7 @@ void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 			}
 		}
 	}
-	return fxCheckChunk(the, chunk, size);
+	return fxCheckChunk(the, chunk, size, offset);
 #endif
 }
 
@@ -1350,6 +1354,13 @@ again:
 		aSlot->next = C_NULL;
 		aSlot->ID = XS_NO_ID;
 		aSlot->flag = XS_NO_FLAG;
+	#ifdef mxSnapshot
+		#if mx32bitID
+			aSlot->dummy = 0;
+		#elif INTPTR_MAX == INT64_MAX
+			aSlot->dummy = 0;
+		#endif
+	#endif
 #if mxPoisonSlots
 		ASAN_UNPOISON_MEMORY_REGION(&aSlot->value, sizeof(aSlot->value));
 #endif
