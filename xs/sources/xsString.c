@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -792,6 +792,9 @@ void fx_String_prototype_indexOf(txMachine* the)
 	if ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) {
 		aNumber = fxToNumber(the, mxArgv(1));
 		anOffset = (c_isnan(aNumber)) ? 0 : (aNumber < 0) ? 0 : (aNumber > aLength) ? aLength : (txInteger)c_floor(aNumber);
+
+		aString = mxThis->value.string;
+		aSubString = mxArgv(0)->value.string;
 	}
 	if (anOffset + aSubLength <= aLength) {
 		anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
@@ -872,6 +875,9 @@ void fx_String_prototype_lastIndexOf(txMachine* the)
 		anOffset += aSubLength;
 		if (anOffset > aLength)
 			anOffset = aLength;
+
+		aString = mxThis->value.string;
+		aSubString = mxArgv(0)->value.string;
 	}
 	if (anOffset - aSubLength >= 0) {
 		anOffset = fxUnicodeToUTF8Offset(aString, anOffset - aSubLength);
@@ -1079,7 +1085,7 @@ void fx_String_prototype_repeat(txMachine* the)
 		}
 	}
 	*result = 0;
-	string = mxThis->value.string;
+	string = mxThis->value.string;		//@@ unused!
 }
 
 void fx_String_prototype_replace(txMachine* the)
