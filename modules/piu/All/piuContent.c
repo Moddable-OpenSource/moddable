@@ -405,7 +405,7 @@ void PiuContentMoveBy(PiuContent* self, PiuCoordinate dx, PiuCoordinate dy)
 	PiuAlignment horizontal = (*self)->coordinates.horizontal & piuLeftRightWidth;
 	PiuAlignment vertical = (*self)->coordinates.vertical & piuTopBottomHeight;
 	if ((horizontal == piuLeftRight) || (horizontal == piuWidth) || (horizontal == piuCenter)) dx = 0;
-	if ((vertical == piuTopBottom) || (vertical == piuHeight) || (vertical == piuCenter)) dy = 0;
+	if ((vertical == piuTopBottom) || (vertical == piuHeight) || (vertical == piuMiddle)) dy = 0;
 	if (dx || dy) {
 		PiuContainer* container = (*self)->container;
 		if (container)
