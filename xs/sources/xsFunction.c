@@ -370,7 +370,7 @@ void fx_Function_prototype_bind(txMachine* the)
 	txSize c = mxArgc, i;
 
 	fxCheckCallable(the, mxThis);
-	mxBehaviorGetPrototype(the, function, the->stack);
+    mxPushReference(function->value.instance.prototype);
 	instance = fxNewObjectInstance(the);
 	instance->flag |= function->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
     mxPullSlot(mxResult);
