@@ -414,7 +414,8 @@ static void fxVerifyCode(txMachine* the, txSlot* list, txSlot* path, txByte* cod
 static void fxVerifyError(txMachine* the, txSlot* path, txID id, txIndex index, txString name);
 static void fxVerifyErrorString(txMachine* the, txSlot* slot, txID id, txIndex index, txString name);
 static void fxVerifyInstance(txMachine* the, txSlot* list, txSlot* path, txSlot* instance);
-static void fxVerifyProperty(txMachine* the, txSlot *list, txSlot *path, txSlot* property, txID id, txIndex index, txSlot* array);
+static void fxVerifyProperty(txMachine* the, txSlot *list, txSlot *path, txSlot* property, txID id);
+static void fxVerifyPropertyError(txMachine* the, txSlot *list, txSlot *path, txSlot* property, txID id, txIndex index);
 static void fxVerifyQueue(txMachine* the, txSlot* list, txSlot* path, txSlot* instance, txID id, txIndex index, txString name);
 
 void fx_mutabilities(txMachine* the)
@@ -697,10 +698,21 @@ void fxVerifyInstance(txMachine* the, txSlot* list, txSlot* path, txSlot* instan
 				{
 					txSlot* address = property->value.array.address;
 					if (address) {
-						txIndex offset = 0, size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+						txIndex index, offset = 0, size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
 						while (offset < size) {
 							address = property->value.array.address + offset;
-							fxVerifyProperty(the, list, path, address, XS_NO_ID, *((txIndex*)address), property);
+							index = *((txIndex*)address);
+							fxVerifyPropertyError(the, list, path, address, XS_NO_ID, index);
+							address = property->value.array.address + offset;
+							if (address->kind == XS_REFERENCE_KIND)
+								fxVerifyQueue(the, list, path, address->value.reference, XS_NO_ID, index, C_NULL);
+							else if (address->kind == XS_ACCESSOR_KIND) {
+								if (address->value.accessor.getter)
+									fxVerifyQueue(the, list, path, address->value.accessor.getter, XS_NO_ID, index, C_NULL);
+								address = property->value.array.address + offset;
+								if (address->value.accessor.setter)
+									fxVerifyQueue(the, list, path, address->value.accessor.setter, XS_NO_ID, index, C_NULL);
+							}
 							offset++;
 						}
 					}
@@ -741,7 +753,7 @@ void fxVerifyInstance(txMachine* the, txSlot* list, txSlot* path, txSlot* instan
 							if (property->value.export.closure) {
 								txSlot* closure = property->value.export.closure;
 								closure->flag |= XS_DONT_DELETE_FLAG;
-								fxVerifyProperty(the, list, path, closure, property->ID, 0, C_NULL);
+								fxVerifyProperty(the, list, path, closure, property->ID);
 								closure->flag &= ~XS_DONT_DELETE_FLAG;
 							}
 							property = property->next;
@@ -753,7 +765,7 @@ void fxVerifyInstance(txMachine* the, txSlot* list, txSlot* path, txSlot* instan
 				{
 					txSlot* item = property->value.private.first;
 					while (item) {
-						fxVerifyProperty(the, list, path, item, item->ID, 0, C_NULL);
+						fxVerifyProperty(the, list, path, item, item->ID);
 						item = item->next;
 					}
 				}
@@ -781,34 +793,35 @@ void fxVerifyInstance(txMachine* the, txSlot* list, txSlot* path, txSlot* instan
 			}
 		}
 		else {
-			fxVerifyProperty(the, list, path, property, property->ID, 0, C_NULL);
+			fxVerifyProperty(the, list, path, property, property->ID);
 		}
 		property = property->next;
 	}
 }
 
-void fxVerifyProperty(txMachine* the, txSlot *list, txSlot *path, txSlot* property, txID id, txIndex index, txSlot* array)
+void fxVerifyProperty(txMachine* the, txSlot *list, txSlot *path, txSlot* property, txID id)
+{
+	fxVerifyPropertyError(the, list, path, property, id, 0);
+	if (property->kind == XS_REFERENCE_KIND)
+		fxVerifyQueue(the, list, path, property->value.reference, id, 0, C_NULL);
+	else if (property->kind == XS_ACCESSOR_KIND) {
+		if (property->value.accessor.getter)
+			fxVerifyQueue(the, list, path, property->value.accessor.getter, id, 0, C_NULL);
+		if (property->value.accessor.setter)
+			fxVerifyQueue(the, list, path, property->value.accessor.setter, id, 0, C_NULL);
+	}
+}
+
+void fxVerifyPropertyError(txMachine* the, txSlot *list, txSlot *path, txSlot* property, txID id, txIndex index)
 {
 	txBoolean immutable = 1;
-
 	if (property->kind != XS_ACCESSOR_KIND) 
 		if (!(property->flag & XS_DONT_SET_FLAG))
 			immutable = 0;
 	if (!(property->flag & XS_DONT_DELETE_FLAG))
 		immutable = 0;
-	if (!immutable) {
+	if (!immutable)
 		fxVerifyError(the, path, id, index, C_NULL);
-		if (array)
-			property = array->value.array.address + index;
-	}	
-	if (property->kind == XS_REFERENCE_KIND)
-		fxVerifyQueue(the, list, path, property->value.reference, id, index, C_NULL);
-	else if (property->kind == XS_ACCESSOR_KIND) {
-		if (property->value.accessor.getter)
-			fxVerifyQueue(the, list, path, property->value.accessor.getter, id, index, C_NULL);
-		if (property->value.accessor.setter)
-			fxVerifyQueue(the, list, path, property->value.accessor.setter, id, index, C_NULL);
-	}
 }
 
 void fxVerifyQueue(txMachine* the, txSlot* list, txSlot* path, txSlot* instance, txID id, txIndex index, txString string)
