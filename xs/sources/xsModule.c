@@ -1886,11 +1886,17 @@ void fx_Compartment(txMachine* the)
 					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
 			}
 			else {
-				txSlot* item = mxCompartmentGlobal.value.reference->next->value.array.address;
-				for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
-					slot = fxNextSlotProperty(the, slot, item + id, mxID(id), XS_DONT_ENUM_FLAG);
-				for (; id < _Compartment; id++)
-					slot = fxNextSlotProperty(the, slot, item + id, mxID(id), XS_GET_ONLY);
+				txSlot* item = mxCompartmentGlobal.value.reference->next;
+				for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++) {
+					mxPushSlot(item->value.array.address + id);
+					slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_DONT_ENUM_FLAG);
+					mxPop();
+				}
+				for (; id < _Compartment; id++) {
+					mxPushSlot(item->value.array.address + id);
+					slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_GET_ONLY);
+					mxPop();
+				}
 			}
 			
 			instance = fxBuildHostFunction(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
