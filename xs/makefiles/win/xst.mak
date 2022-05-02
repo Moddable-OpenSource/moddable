@@ -46,6 +46,7 @@ C_OPTIONS = \
 	/D INCLUDE_XSPLATFORM \
 	/D XSPLATFORM=\"xst.h\" \
 	/D mxDebug=1 \
+	/D mxLockdown=1 \
 	/D mxNoConsole=1 \
 	/D mxParse=1 \
 	/D mxRun=1 \
@@ -102,6 +103,7 @@ OBJECTS = \
 	$(TMP_DIR)\xsGlobal.o \
 	$(TMP_DIR)\xsJSON.o \
 	$(TMP_DIR)\xsLexical.o \
+	$(TMP_DIR)\xsLockdown.o \
 	$(TMP_DIR)\xsMapSet.o \
 	$(TMP_DIR)\xsMarshall.o \
 	$(TMP_DIR)\xsMath.o \

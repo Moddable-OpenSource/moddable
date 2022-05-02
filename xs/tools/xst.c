@@ -315,6 +315,15 @@ int main(int argc, char* argv[])
 #if FUZZILLI
 				xsResult = xsNewHostFunction(fx_gc, 0);
 				xsSet(xsGlobal, xsID("gc"), xsResult);
+
+				xsResult = xsNewHostFunction(fx_harden, 1);
+				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_lockdown, 0);
+				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_petrify, 1);
+				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_mutabilities, 1);
+				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
 #endif
 
 				xsVar(0) = xsUndefined;
@@ -1721,6 +1730,18 @@ int fuzz(int argc, char* argv[])
 		{
 			xsTry {
 				xsVars(1);
+
+				// hardened javascript
+				xsResult = xsNewHostFunction(fx_harden, 1);
+				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_lockdown, 0);
+				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_petrify, 1);
+				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_mutabilities, 1);
+				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+
+				// fuzzilli
 				xsResult = xsNewHostFunction(fx_fuzzilli, 2);
 				xsSet(xsGlobal, xsID("fuzzilli"), xsResult);
 				xsResult = xsNewHostFunction(fx_gc, 0);
