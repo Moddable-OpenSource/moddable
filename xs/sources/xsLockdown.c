@@ -553,18 +553,17 @@ void fxVerifyCode(txMachine* the, txSlot* list, txSlot* path, txByte* codeBuffer
 		name->value.string = "GlobalEnvironment";
 		name->kind = XS_STRING_X_KIND;
 		name->next = path;
+		flags = fxGetHostChunk(the, mxVarv(0));
 		id = 0;
-		p = flags;			//@@ unsafe?
-		q = flags + the->keyIndex;
-		while (p < q) {
-			if (*p) {
+		while (id < the->keyIndex) {
+			if (flags[id]) {
 				txSlot* property = mxBehaviorGetProperty(the, instance, id, 0, XS_OWN);
 				if (property)
-					fxVerifyProperty(the, list, name, property, id, 0, NULL);
-				*p = 0;
+					fxVerifyProperty(the, list, name, property, id);
+				flags = fxGetHostChunk(the, mxVarv(0));
+				flags[id]= 0;
 			}
 			id++;
-			p++;
 		}
 	}
 }
