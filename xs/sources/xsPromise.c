@@ -141,8 +141,11 @@ txSlot* fxNewPromiseCapability(txMachine* the, txSlot* resolveFunction, txSlot* 
 	txSlot* slot;
 	txSlot* function;
 	mxNew();
-	capability = fxNewHostFunction(the, fxNewPromiseCapabilityCallback, 2, XS_NO_ID);
+	resolveFunction->value.reference = fxNewHostFunction(the, fxNewPromiseCapabilityCallback, 2, XS_NO_ID);
+	resolveFunction->kind = XS_REFERENCE_KIND;
     mxRunCount(1);
+    capability = resolveFunction->value.reference;
+	resolveFunction->kind = XS_UNDEFINED_KIND;
 	slot = mxFunctionInstanceHome(capability)->value.home.object;
 	if (!slot)
 		mxTypeError("executor not called");
