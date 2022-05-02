@@ -1389,11 +1389,6 @@ again:
 void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 {
 #if mxNoChunks
-	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
-	txChunk* aChunk = (txChunk*)aData;
-	size = fxAdjustChunkSize(the, size);
-	if (size <= aChunk->size)
-		return theData;
 	return C_NULL;
 #else
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
