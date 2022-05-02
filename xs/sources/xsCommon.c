@@ -531,7 +531,7 @@ char* fxCStackLimit()
 		pthread_t self = pthread_self();
     	void* stackAddr = pthread_get_stackaddr_np(self);
    		size_t stackSize = pthread_get_stacksize_np(self);
-		return (char*)stackAddr - stackSize + (16 * 1024) + mxASANStackMargin;
+		return (char*)stackAddr - stackSize + (128 * 1024) + mxASANStackMargin;
 	#elif mxLinux
 		pthread_attr_t attrs;
 		if (pthread_getattr_np(pthread_self(), &attrs) == 0) {
