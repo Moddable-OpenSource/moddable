@@ -20,9 +20,13 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
-#if mxNoFunctionLength
+#ifdef kPocoRotation
+	// Moddable SDK
 	#include "mc.xs.h"			// for xsID_ values
+
+	#define VALIDATE 1
 #else
+	// xst, xsnap, etc
 	#include <stdbool.h>
 
 	#define xsID_read (xsID("read"))
@@ -31,7 +35,7 @@
 	#define xsID_written (xsID("written"))
 #endif
 
-#if !mxNoFunctionLength
+#if !VALIDATE
 void xs_textencoder(xsMachine *the)
 {
 	xsmcGet(xsResult, xsTarget, xsID("prototype"));
@@ -205,7 +209,7 @@ void xs_textencoder_encodeInto(xsMachine *the)
 	xsmcSet(xsResult, xsID_written, xsVar(0));
 }
 
-#if !mxNoFunctionLength
+#if !VALIDATE
 void modInstallTextEncoder(xsMachine *the)
 {
 	#define kPrototype (0)
