@@ -550,10 +550,19 @@ void fxVerifyCode(txMachine* the, txSlot* list, txSlot* path, txByte* codeBuffer
 	}
 	if (flag) {
 		txSlot* instance = fxGetInstance(the, mxVarv(1));
-		txSlot* name = fxNewSlot(the);
+		txSlot* item;
+		txSlot* name;
+		
+		mxTemporary(item);
+		
+		item->value.list.first = name = fxNewSlot(the);
+		item->value.list.last = C_NULL;
+		item->kind = XS_LIST_KIND;
+
 		name->value.string = "GlobalEnvironment";
 		name->kind = XS_STRING_X_KIND;
 		name->next = path;
+		
 		flags = fxGetHostChunk(the, mxVarv(0));
 		id = 0;
 		while (id < the->keyIndex) {
@@ -566,6 +575,8 @@ void fxVerifyCode(txMachine* the, txSlot* list, txSlot* path, txByte* codeBuffer
 			}
 			id++;
 		}
+		
+		mxPop();
 	}
 }
 
