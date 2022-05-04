@@ -1783,6 +1783,8 @@ int fuzz(int argc, char* argv[])
 		xsDeleteMachine(machine);
 		fxTerminateSharedCluster();
 
+		free(buffer);
+
 		__sanitizer_cov_reset_edgeguards();
 	}
 
