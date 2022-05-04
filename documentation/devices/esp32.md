@@ -406,17 +406,17 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` 
 	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.4 (release version)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
 
 
-4. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, create an `esp32` directory in your home folder, either from File Explorer or a terminal. For instance, in Git Bash:
+4. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, create an `esp32` directory in your home folder, either from File Explorer or a Command Prompt:
 
     ```text
-    cd ~
+    cd %USERPROFILE%
     mkdir esp32
     ```
 
 5. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout commit `c29343`:
 
     ```text
-    cd ~/esp32
+    cd %USERPROFILE%\esp32
     git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
 	git checkout c29343
@@ -530,10 +530,10 @@ To ensure that your build environment is up to date, perform the following steps
 	If you use the installer to clone the ESP-IDF, please follow the instructions in the next step to update to commit `c29343`.
 
 
-2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout commit `c29343`. For instance, in **Git Bash**:
+2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout commit `c29343`:
 
     ```text
-    cd ~/esp32
+    cd %USERPROFILE%\esp32
     git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
 	git checkout c29343

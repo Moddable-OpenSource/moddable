@@ -257,32 +257,34 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 <a id="win-update"></a>
 ### Updating
 
-The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps:
+The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps.
 
-1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable). For instance, using `Git Bash`:
+	> Note: The following commands should all be run in the "x86 Native Tools Command Prompt for VS 2022" command line console.
+
+1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable):
 
 	```text
-	cd $MODDABLE
+	cd %MODDABLE%
 	git pull
 	```
 
 	> Note that if you have any local changes to Moddable repository files, you may need to stash your changes and then reapply them after pulling:
 
 	```text
-	cd $MODDABLE
+	cd %MODDABLE%
 	git stash push
 	git pull
 	git stash pop
 	```
 
-2. Launch the "x86 Native Tools Command Prompt for VS 2022" command line console. Delete any existing Moddable SDK build outputs:
+2. Delete any existing Moddable SDK build outputs:
 
 	```text
 	cd %MODDABLE%\build\makefiles\win
 	build clean
 	```
 
-3. In the "x86 Native Tools Command Prompt for VS 2022" command line console, build the Moddable command line tools, simulator, and debugger:
+3. Build the Moddable command line tools, simulator, and debugger:
 
 	```text
 	cd %MODDABLE%\build\makefiles\win
