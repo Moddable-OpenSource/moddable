@@ -74,6 +74,7 @@ static void fxRunImportNow(txMachine* the, txSlot* realm, txID id);
 
 static txBoolean fxModuleDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
 static txBoolean fxModuleDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
+static txSlot* fxModuleFindProperty(txMachine* the, txSlot* instance, txID id, txIndex index);
 static txBoolean fxModuleGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot);
 static txSlot* fxModuleGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 static txBoolean fxModuleGetPropertyValue(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* receiver, txSlot* value);
@@ -160,6 +161,15 @@ static void fxPushKeyString(txMachine* the, txID id)
 void fxBuildModule(txMachine* the)
 {
 	txSlot* slot;
+	
+	fxNewHostFunction(the, mxCallback(fxModuleGetter), 0, XS_NO_ID);
+	mxPushUndefined();
+	the->stack->flag = XS_DONT_DELETE_FLAG;
+	the->stack->kind = XS_ACCESSOR_KIND;
+	the->stack->value.accessor.getter = (the->stack + 1)->value.reference;
+	the->stack->value.accessor.setter = C_NULL;
+	mxPull(mxModuleAccessor);
+	the->stack += 1;
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -1615,9 +1625,13 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 
 /* BEHAVIOR */
 
+void fxModuleGetter(txMachine* the) {
+	mxReferenceError("not initialized yet");
+}
+
 txBoolean fxModuleDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask)
 {
-	txSlot* property = fxModuleGetProperty(the, instance, id, index, XS_OWN);
+	txSlot* property = fxModuleFindProperty(the, instance, id, index);
 	if (property) {
 		if ((mask & XS_DONT_DELETE_FLAG) && !(slot->flag & XS_DONT_DELETE_FLAG))
 			return 0;
@@ -1650,12 +1664,12 @@ txBoolean fxModuleDefineOwnProperty(txMachine* the, txSlot* instance, txID id, t
 txBoolean fxModuleDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index)
 {
 	if (fxIsKeySymbol(the, id)) {
-		if (id == mxID(_Symbol_toStringTag))
-			return 0;
+		return (id == mxID(_Symbol_toStringTag)) ? 0 : 1;
 	}
-	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED)
+	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
 		mxReferenceError("module not initialized yet");
-	{
+	}
+	else {
 		txSlot* exports = mxModuleInstanceExports(instance);
 		if (mxIsReference(exports)) {
 			txSlot* property = exports->value.reference->next;
@@ -1669,29 +1683,16 @@ txBoolean fxModuleDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 	return 1;
 }
 
-txBoolean fxModuleGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot)
-{
-	txSlot* property = fxModuleGetProperty(the, instance, id, index, XS_OWN);
-	if (property) {
-		slot->flag = (id == mxID(_Symbol_toStringTag)) ? property->flag : XS_DONT_DELETE_FLAG;
-		slot->kind = property->kind;
-		slot->value = property->value;
-		return 1;
-	}
-	slot->flag = XS_NO_FLAG;
-	slot->kind = XS_UNDEFINED_KIND;
-	return 0;
-}
-
-txSlot* fxModuleGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
+txSlot* fxModuleFindProperty(txMachine* the, txSlot* instance, txID id, txIndex index)
 {
 	if (fxIsKeySymbol(the, id)) {
 		if (id == mxID(_Symbol_toStringTag))
 			return mxModulePrototype.value.reference->next;
 	}
-	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED)
+	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
 		mxReferenceError("module not initialized yet");
-	{
+	}
+	else {
 		txSlot* exports = mxModuleInstanceExports(instance);
 		if (mxIsReference(exports)) {
 			txSlot* property = exports->value.reference->next;
@@ -1711,9 +1712,51 @@ txSlot* fxModuleGetProperty(txMachine* the, txSlot* instance, txID id, txIndex i
 	return C_NULL;
 }
 
+txBoolean fxModuleGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot)
+{
+	txSlot* property = fxModuleFindProperty(the, instance, id, index);
+	if (property) {
+		slot->flag = (id == mxID(_Symbol_toStringTag)) ? property->flag : XS_DONT_DELETE_FLAG;
+		slot->kind = property->kind;
+		slot->value = property->value;
+		return 1;
+	}
+	slot->flag = XS_NO_FLAG;
+	slot->kind = XS_UNDEFINED_KIND;
+	return 0;
+}
+
+txSlot* fxModuleGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
+{
+	if (fxIsKeySymbol(the, id)) {
+		if (id == mxID(_Symbol_toStringTag))
+			return mxModulePrototype.value.reference->next;
+	}
+	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
+		return &mxModuleAccessor;
+	}
+	else {
+		txSlot* exports = mxModuleInstanceExports(instance);
+		if (mxIsReference(exports)) {
+			txSlot* property = exports->value.reference->next;
+			while (property) {
+				if (property->ID == id) {
+					property = property->value.export.closure;
+					if (property && (property->kind == XS_UNINITIALIZED_KIND)) {
+						return &mxModuleAccessor;
+					}
+					return property;
+				}
+				property = property->next;
+			}
+		}
+	}
+	return C_NULL;
+}
+
 txBoolean fxModuleGetPropertyValue(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* receiver, txSlot* value)
 {
-	txSlot* property = fxModuleGetProperty(the, instance, id, index, XS_OWN);
+	txSlot* property = fxModuleFindProperty(the, instance, id, index);
 	if (property) {
 		value->kind = property->kind;
 		value->value = property->value;
@@ -1732,12 +1775,12 @@ txBoolean fxModuleGetPrototype(txMachine* the, txSlot* instance, txSlot* result)
 txBoolean fxModuleHasProperty(txMachine* the, txSlot* instance, txID id, txIndex index) 
 {
 	if (fxIsKeySymbol(the, id)) {
-		if (id == mxID(_Symbol_toStringTag))
-			return 1;
+		return (id == mxID(_Symbol_toStringTag)) ? 1 : 0;
 	}
-	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED)
+	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
 		mxReferenceError("module not initialized yet");
-	{
+	}
+	else {
 		txSlot* exports = mxModuleInstanceExports(instance);
 		if (mxIsReference(exports)) {
 			txSlot* property = exports->value.reference->next;
@@ -1761,9 +1804,10 @@ txBoolean fxModuleIsExtensible(txMachine* the, txSlot* instance)
 void fxModuleOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys)
 {
 	if (flag & XS_EACH_NAME_FLAG) {
-		if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED)
+		if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
 			mxReferenceError("module not initialized yet");
-		{
+		}
+		else {
 			txSlot* exports = mxModuleInstanceExports(instance);
 			if (mxIsReference(exports)) {
 				txSlot* property = exports->value.reference->next;
