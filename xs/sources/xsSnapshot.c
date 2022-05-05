@@ -50,7 +50,7 @@ static txSlot* fxUnprojectSlot(txMachine* the, txSnapshot* snapshot, txSlot* slo
 static void fxUnprojectTable(txMachine* the, txSnapshot* snapshot, txSlot* table);
 
 static void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot);
-static void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length);
+static void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length, txFlag flag);
 static void fxWriteChunkData(txMachine* the, txSnapshot* snapshot, void* address);
 static void fxWriteChunkTable(txMachine* the, txSnapshot* snapshot, txSlot** address, txSize length);
 static void fxWriteChunkZero(txMachine* the, txSnapshot* snapshot, txSize size);
@@ -1201,9 +1201,12 @@ void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 	case XS_ARGUMENTS_SLOPPY_KIND:
 	case XS_ARGUMENTS_STRICT_KIND:
 	case XS_ARRAY_KIND:
+		if (slot->value.array.address)
+			fxWriteChunkArray(the, snapshot, slot->value.array.address, slot->value.array.length, 2);
+		break;
 	case XS_STACK_KIND:
 		if (slot->value.array.address)
-			fxWriteChunkArray(the, snapshot, slot->value.array.address, slot->value.array.length);
+			fxWriteChunkArray(the, snapshot, slot->value.array.address, slot->value.array.length, 0);
 		break;
 	case XS_ARRAY_BUFFER_KIND:
 		if (slot->value.arrayBuffer.address)
@@ -1237,7 +1240,7 @@ void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 	}
 }
 
-void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length)
+void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length, txFlag flag)
 {
 	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
 	if (chunk->size & mxChunkFlag) {
@@ -1249,7 +1252,7 @@ void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, tx
 		chunk->temporary = temporary;
 		size = chunk->size - sizeof(txChunk);
 		while (size > 0) {
-			fxWriteSlot(the, snapshot, address, 0);
+			fxWriteSlot(the, snapshot, address, flag);
 			address++;
 			size -= sizeof(txSlot);
 		}
@@ -1325,12 +1328,10 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 {
 	txSlot buffer;
 	c_memset(&buffer, 0, sizeof(buffer));
-	if (flag)
+	if (flag == 1)
 		buffer.next = fxProjectSlot(the, snapshot->firstProjection, slot->next);
-	else {
-		buffer.next = C_NULL;
+	else if (flag == 2)
 		*((txIndex*)&buffer) = *((txIndex*)slot);
-	}
 	buffer.ID = slot->ID;
 	buffer.flag = slot->flag;
 	buffer.kind = slot->kind;
