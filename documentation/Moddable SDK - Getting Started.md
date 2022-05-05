@@ -2,7 +2,7 @@
 ### A guide to installing the Moddable SDK and building its tools
 
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
-Revised: March 18, 2022
+Revised: May 4, 2022
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
@@ -457,4 +457,4 @@ The table below links to some of the documents in the `devices` folder to help y
 | ESP8266 or ESP8266-based products<BR>including Moddable One, Moddable Three,<BR> and NodeMCU ESP8266 | [Using the Moddable SDK with ESP8266](./devices/esp8266.md)
 | Giant Gecko, Mighty Gecko,<BR>Thunderboard Sense 2, or Blue Gecko | [Using the Moddable SDK with Gecko](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md)
 | QCA4020 | [Using the Moddable SDK with QCA4020](./devices/qca4020/README.md)
-| Pico | [Using the Moddable SDK with Pico](./devices/pico/) |
+| Raspberry Pi Pico | [Using the Moddable SDK with Pico](./devices/pico.md) |
