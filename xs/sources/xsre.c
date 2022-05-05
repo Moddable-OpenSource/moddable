@@ -7301,7 +7301,7 @@ void* fxCharSetUnicodeProperty(txPatternParser* parser)
 	txString name = NULL;
 	txString value = NULL;
 	txString p = parser->error;
-	txString q = name + sizeof(parser->error) - 1;
+	txString q = p + sizeof(parser->error) - 1;
 	txInteger c;
 	txCharSetUnicodeProperty* it = NULL;
 	txCharSet* result = NULL;
