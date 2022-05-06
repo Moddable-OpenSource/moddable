@@ -87,6 +87,7 @@ ifeq ($(GOAL),debug)
 
 	ifneq ($(FUZZING),0)
 		C_OPTIONS += -DmxStress=1
+		C_OPTIONS += -DFUZZING=1
 	endif
 	ifneq ($(OSSFUZZ),0)
 		C_OPTIONS += -DOSSFUZZ=1
