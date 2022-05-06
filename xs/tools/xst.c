@@ -153,7 +153,9 @@ static int main262(int argc, char* argv[]);
 #if FUZZILLI
 static int fuzz(int argc, char* argv[]);
 #endif
-
+#if OSSFUZZ
+static int fuzz_oss(const uint8_t *Data, size_t Size);
+#endif
 static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
@@ -229,7 +231,16 @@ static char *gxAbortStrings[] = {
 
 static txAgentCluster gxAgentCluster;
 
+#if OSSFUZZ
+int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+    fuzz_oss(Data, Size);
+    return 0;
+}
+
+int omain(int argc, char* argv[]) 
+#else
 int main(int argc, char* argv[]) 
+#endif
 {
 	txAgentCluster* agentCluster = &gxAgentCluster;
 	int argi;
@@ -312,7 +323,7 @@ int main(int argc, char* argv[])
 		{
 			xsVars(2);
 			xsTry {
-#if FUZZILLI
+#if FUZZING
 				xsResult = xsNewHostFunction(fx_gc, 0);
 				xsSet(xsGlobal, xsID("gc"), xsResult);
 
@@ -1391,7 +1402,7 @@ void fx_done(xsMachine* the)
 
 void fx_gc(xsMachine* the)
 {
-#if !FUZZILLI
+#if !FUZZING
 	xsCollectGarbage();
 #else
 	extern int gxStress;
@@ -1560,11 +1571,6 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 #include <fcntl.h>
 #include <assert.h>
 
-#ifdef  __linux__
-#define S_IREAD __S_IREAD
-#define S_IWRITE __S_IWRITE
-#endif
-
 #define SHM_SIZE 0x100000
 #define MAX_EDGES ((SHM_SIZE - 4) * 8)
 
@@ -1582,7 +1588,7 @@ void __sanitizer_cov_reset_edgeguards()
 	for (uint32_t *x = __edges_start; x < __edges_stop && N < MAX_EDGES; x++)
 		*x = ++N;
 }
-
+#ifndef __linux__
 void __sanitizer_cov_trace_pc_guard_init(uint32_t *start, uint32_t *stop)
 {
 	// Avoid duplicate initialization
@@ -1634,6 +1640,7 @@ void __sanitizer_cov_trace_pc_guard(uint32_t *guard)
 	__shmem->edges[index / 8] |= 1 << (index % 8);
 	*guard = 0;
 }
+#endif
 
 #define REPRL_CRFD 100
 #define REPRL_CWFD 101
@@ -1786,11 +1793,81 @@ int fuzz(int argc, char* argv[])
 		free(buffer);
 
 		__sanitizer_cov_reset_edgeguards();
+		free(buffer);
 	}
 
 	return 0;
 }
- #endif 
+#endif 
+#if OSSFUZZ
+int fuzz_oss(const uint8_t *Data, size_t Size)
+{
+	xsCreation _creation = {
+		16 * 1024 * 1024, 	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* incrementalChunkSize */
+		1 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* incrementalHeapCount */
+		256 * 1024, 		/* stackCount */
+		256 * 1024, 		/* keyCount */
+		1993, 				/* nameModulo */
+		127, 				/* symbolModulo */
+		64 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
+	};
+	size_t script_size = 0;
+
+	char* buffer = (char *)malloc(Size + 1);
+	memcpy(buffer, Data, Size);
+	script_size = Size;
+
+	buffer[script_size] = 0;	// required when debugger active
+
+	xsCreation* creation = &_creation;
+	xsMachine* machine;
+	fxInitializeSharedCluster();
+	machine = xsCreateMachine(creation, "xst", NULL);
+
+	xsBeginHost(machine);
+	{
+		xsTry {
+			xsVars(1);
+
+			// hardened javascript
+			xsResult = xsNewHostFunction(fx_harden, 1);
+			xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+			xsResult = xsNewHostFunction(fx_lockdown, 0);
+			xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+			xsResult = xsNewHostFunction(fx_petrify, 1);
+			xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+			xsResult = xsNewHostFunction(fx_mutabilities, 1);
+			xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+
+			xsResult = xsNewHostFunction(fx_gc, 0);
+			xsSet(xsGlobal, xsID("gc"), xsResult);
+			xsResult = xsNewHostFunction(fx_print, 1);
+			xsSet(xsGlobal, xsID("print"), xsResult);
+
+			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
+			txStringCStream aStream;
+			aStream.buffer = buffer;
+			aStream.offset = 0;
+			aStream.size = script_size;
+			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+			mxPullSlot(mxResult);
+			fxRunLoop(the);
+		}
+		xsCatch {
+		}
+	}
+	xsEndHost(machine);
+	fflush(stdout);	
+	fflush(stderr);	
+	xsDeleteMachine(machine);
+	fxTerminateSharedCluster();
+	free(buffer);
+	return 0;
+}
+#endif 
 
 /* PLATFORM */
 
@@ -2037,7 +2114,7 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 
 void fxConnect(txMachine* the)
 {
-#if FUZZILLI
+#if FUZZING || FUZZILLI || OSSFUZZ
 	return;
 #endif
 #ifdef mxMultipleThreads
