@@ -1793,7 +1793,6 @@ int fuzz(int argc, char* argv[])
 		free(buffer);
 
 		__sanitizer_cov_reset_edgeguards();
-		free(buffer);
 	}
 
 	return 0;
