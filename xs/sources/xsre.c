@@ -1825,8 +1825,12 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 					+ parser->assertionIndex * sizeof(txAssertionData)
 					+ parser->quantifierIndex * sizeof(txQuantifierData);
 		#ifdef mxRun
-			if (the)
+			if (the) {
 				*data = fxNewChunk(the, size);
+			#ifdef mxSnapshot
+				c_memset(*data, 0, size);
+			#endif
+			}
 			else
 		#endif
 				*data = c_malloc(size);
@@ -1841,6 +1845,9 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 		#ifdef mxRun
 			if (the) {
 				*code = fxNewChunk(the, parser->size);
+			#ifdef mxSnapshot
+				c_memset(*code, 0, parser->size);
+			#endif
 			}
 			else
 		#endif
