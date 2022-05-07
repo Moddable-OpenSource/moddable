@@ -342,6 +342,9 @@ void xs_tcp_read(xsMachine *the)
 		out = &value;
 	}
 
+	if (tcp->bytesReadable == kBufferSize)
+		CFSocketEnableCallBacks(tcp->cfSkt, kCFSocketReadCallBack);
+
 	c_memmove(out, tcp->readBuf + tcp->readPosition, requested);
 	tcp->readPosition += requested;
 	tcp->bytesReadable -= requested;
@@ -485,6 +488,9 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 			goto done;
 		}
 		tcpTrigger(tcp, kTCPReadable);
+
+		if (tcp->bytesReadable == kBufferSize)
+			CFSocketDisableCallBacks(tcp->cfSkt, kCFSocketReadCallBack);
 	}
 
 	if (cbType & kCFSocketWriteCallBack) {
