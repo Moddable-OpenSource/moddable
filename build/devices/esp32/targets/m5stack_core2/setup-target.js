@@ -69,7 +69,7 @@ export default function (done) {
   }
 
   // accelerometer and gyrometer
-  const test = new I2C({...INTERNAL_I2C, address: 0x68, throw: true});
+  const test = new I2C({...INTERNAL_I2C, address: 0x68, throw: false});
   test.write(0x75, false);
   const ok = test.read(1);
   test.close();
