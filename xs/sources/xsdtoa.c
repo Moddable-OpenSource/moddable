@@ -2618,8 +2618,12 @@ match(const char **sp, const char *t)
 	const char *s = *sp;
 
 	while((d = *t++)) {
+#ifndef __XS__
 		if ((c = *++s) >= 'A' && c <= 'Z')
 			c += 'a' - 'A';
+#else
+        c = *++s;
+#endif
 		if (c != d)
 			return 0;
 		}
@@ -3727,20 +3731,28 @@ strtod2(const char *s00, char **se __XS__d)
 			 switch(c) {
 #ifndef __XS__
 			  case 'i':
-#endif
 			  case 'I':
 				if (match(&s,"nf")) {
 					--s;
 					if (!match(&s,"inity"))
 						++s;
+#else
+			  case 'I':
+				if (match(&s,"nfinity")) {
+#endif
 					word0(&rv) = 0x7ff00000;
 					word1(&rv) = 0;
 					goto ret;
 					}
 				break;
+#ifndef __XS__
 			  case 'n':
 			  case 'N':
 				if (match(&s, "an")) {
+#else
+			  case 'N':
+				if (match(&s, "aN")) {
+#endif
 					word0(&rv) = NAN_WORD0;
 					word1(&rv) = NAN_WORD1;
 #ifndef No_Hex_NaN

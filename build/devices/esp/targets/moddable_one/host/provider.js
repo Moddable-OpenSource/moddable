@@ -44,8 +44,8 @@ const device = {
 		default: {
 			io: SPI,
 			clock: 14,
-			in: 13,
-			out: 12,
+			in: 12,
+			out: 13,
 			port: "HSPI"
 		}
 	},

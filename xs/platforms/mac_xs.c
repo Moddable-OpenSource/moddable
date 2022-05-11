@@ -213,7 +213,7 @@ void fxReceive(txMachine* the)
 		int count;
 	again:
 		count = read(CFSocketGetNative(the->connection), the->debugBuffer, sizeof(the->debugBuffer));
-		if (count < 0) {
+		if (count <= 0) {
 			if (errno == EINTR)
 				goto again;
 			fxDisconnect(the);

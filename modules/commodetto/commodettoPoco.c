@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -69,7 +69,7 @@ void xs_poco_build(xsMachine *the)
 
 	poco = c_malloc(sizeof(PocoRecord) + byteLength + 8);		// overhang when dividing
 	if (!poco)
-		xsErrorPrintf("out of menory");
+		xsErrorPrintf("no memory");
 	xsmcSetHostBuffer(xsThis, poco->pixels, pixelsLength);
 
 	poco->width = (PocoDimension)xsmcToInteger(xsArg(0));
@@ -182,6 +182,9 @@ void xs_poco_begin(xsMachine *the)
 		if (pixelsOutDispatch)
 			(pixelsOutDispatch->doBeginFrameBuffer)(poco->outputRefcon, &pixels, &rowBytes);
 		else {
+#if MODDEF_DISPLAY_VERSION == 2
+			*(int *)0 = 0;		// to do
+#else
 			xsmcVars(5);
 			xsmcGet(xsVar(0), xsThis, xsID_pixelsOut);
 			xsmcSetInteger(xsVar(1), poco->x);
@@ -189,6 +192,7 @@ void xs_poco_begin(xsMachine *the)
 			xsmcSetInteger(xsVar(3), poco->w);
 			xsmcSetInteger(xsVar(4), poco->h);
 			xsResult = xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
+#endif
 			pixels = xsmcGetHostBuffer(xsResult);
 
 			xsmcSetInteger(xsResult, xsmcGetHostBufferLength(xsResult));
@@ -236,11 +240,28 @@ void xs_poco_end(xsMachine *the)
 		}
 		else {
 			xsmcGet(xsVar(0), xsThis, xsID_pixelsOut);
+#if MODDEF_DISPLAY_VERSION == 2
+			xsmcSetNewObject(xsVar(1));
+			xsmcSetInteger(xsVar(2), poco->x);
+			xsmcSet(xsVar(1), xsID_x, xsVar(2));
+			xsmcSetInteger(xsVar(2), poco->y);
+			xsmcSet(xsVar(1), xsID_y, xsVar(2));
+			xsmcSetInteger(xsVar(2), poco->w);
+			xsmcSet(xsVar(1), xsID_width, xsVar(2));
+			xsmcSetInteger(xsVar(2), poco->h);
+			xsmcSet(xsVar(1), xsID_height, xsVar(2));
+			if (poco->flags & kPocoFlagContinue) {
+				xsmcSetTrue(xsVar(2));
+				xsmcSet(xsVar(1), xsID_continue, xsVar(2));
+			}
+			xsCall1(xsVar(0), xsID_begin, xsVar(1));
+#else
 			xsmcSetInteger(xsVar(1), poco->x);
 			xsmcSetInteger(xsVar(2), poco->y);
 			xsmcSetInteger(xsVar(3), poco->w);
 			xsmcSetInteger(xsVar(4), poco->h);
 			xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
+#endif
 		}
 
 		if (poco->outputRefcon)
@@ -279,12 +300,19 @@ void xs_poco_end(xsMachine *the)
 	}
 
 	if ((xsmcArgc > 0) && xsmcTest(xsArg(0))) {
+#if MODDEF_DISPLAY_VERSION == 2
+		poco->flags |= kPocoFlagContinue;
+#else
 		if (pixelsOutDispatch)
 			(pixelsOutDispatch->doContinue)(poco->outputRefcon);
 		else
 			xsCall0(xsVar(0), xsID_continue);
+#endif
 	}
 	else {
+#if MODDEF_DISPLAY_VERSION == 2
+		poco->flags &= ~kPocoFlagContinue;
+#endif
 		if (pixelsOutDispatch)
 			(pixelsOutDispatch->doEnd)(poco->outputRefcon);
 		else

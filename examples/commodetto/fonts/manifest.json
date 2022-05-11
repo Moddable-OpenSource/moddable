@@ -22,7 +22,7 @@
 				"size": 28
 			},
 			{
-				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Smibold",
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Semibold",
 				"size": 28
 			},
 			{

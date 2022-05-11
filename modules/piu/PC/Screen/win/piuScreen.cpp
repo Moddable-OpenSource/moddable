@@ -18,6 +18,7 @@
  *
  */
 
+#define GDIPVER     0x0110
 #include "piuPC.h"
 #include "screen.h"
 
@@ -38,14 +39,14 @@ struct PiuScreenStruct {
 	HWND control;
     txScreen* screen;
     Bitmap* bitmap;
-//     HDC dc;
-//     HBITMAP bitmap;
-//     BITMAPINFO* bitmapInfo;
+	ColorMatrix* colorMatrix;
+	ImageAttributes* imageAttributes;
 	HMODULE library;
 	HANDLE archiveFile;
 	HANDLE archiveMapping;
 	PiuRectangleRecord hole;
 	xsIntegerValue rotation;
+	xsNumberValue transparency;
 };
 
 struct PiuScreenMessageStruct {
@@ -126,7 +127,18 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		graphics.TranslateTransform(((REAL)(*self)->bounds.width)/2.0, ((REAL)(*self)->bounds.height)/2.0);
 		graphics.RotateTransform((REAL)(*self)->rotation);
 		graphics.TranslateTransform(-((REAL)screen->width)/2.0, -((REAL)screen->height)/2.0);
-  		graphics.DrawImage((*self)->bitmap, PointF(0.0f, 0.0f));
+		if ((*self)->transparency) {
+			RectF bounds(0, 0, screen->width, screen->height);
+			(*self)->colorMatrix->m[0][0] = 1;
+			(*self)->colorMatrix->m[1][1] = 1;
+			(*self)->colorMatrix->m[2][2] = 1;
+			(*self)->colorMatrix->m[3][3] = 1 - (REAL)((*self)->transparency);
+			(*self)->colorMatrix->m[4][4] = 1;
+			(*self)->imageAttributes->SetColorMatrix((*self)->colorMatrix);
+			graphics.DrawImage((*self)->bitmap, bounds, bounds, UnitPixel, (*self)->imageAttributes);
+		}
+		else
+  			graphics.DrawImage((*self)->bitmap, PointF(0.0f, 0.0f));
 		EndPaint(window, &ps);
 		return TRUE;
 	} break;
@@ -261,6 +273,8 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     (*self)->screen = screen;
     
     (*self)->bitmap = new Bitmap(width, height, 4 * width, PixelFormat32bppRGB, screen->buffer);
+    (*self)->colorMatrix = new ColorMatrix();
+    (*self)->imageAttributes = new ImageAttributes();
     
 	(*self)->window = CreateWindowEx(0, "PiuClipWindow", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE, 0, 0, 0, 0, (*view)->window, NULL, gInstance, (LPVOID)self);
 	(*self)->control = CreateWindowEx(0, "PiuScreenControl", NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, (*self)->window, NULL, gInstance, (LPVOID)self);
@@ -372,6 +386,10 @@ void PiuScreenUnbind(void* it, PiuApplication* application, PiuView* view)
 	(*self)->control = NULL;
 	(*self)->window = NULL;
 	
+	delete (*self)->colorMatrix;
+	(*self)->colorMatrix = NULL;
+	delete (*self)->imageAttributes;
+	(*self)->imageAttributes = NULL;
 	delete (*self)->bitmap;
 	(*self)->bitmap = NULL;
 	mxDeleteMutex(&screen->workersMutex);
@@ -436,7 +454,20 @@ void PiuScreen_get_running(xsMachine* the)
 	PiuScreen* self = PIU(Screen, xsThis);
 	xsResult = (*self)->library ? xsTrue : xsFalse;
 }
-	
+		
+void PiuScreen_get_transparency(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = xsNumber((*self)->transparency);
+}
+
+void PiuScreen_set_transparency(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	(*self)->transparency = xsToNumber(xsArg(0));
+	PiuContentInvalidate(self, NULL);
+}
+
 void PiuScreen_launch(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);

@@ -153,12 +153,9 @@ void xs_udp_read(xsMachine *the)
 		builtinCriticalSectionEnd();
 		return;
 	}
-	udp->packets = packet->next;
 	builtinCriticalSectionEnd();
 
 	xsmcSetArrayBuffer(xsResult, packet->pb->payload, packet->pb->len);
-	pbuf_free_safe(packet->pb);
-	c_free(packet);
 
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), packet->port);
@@ -167,6 +164,13 @@ void xs_udp_read(xsMachine *the)
 	xsVar(0) = xsStringBuffer(NULL, 32);
 	ipaddr_ntoa_r(&packet->address, xsmcToString(xsVar(0)), 32);
 	xsmcSet(xsResult, xsID_address, xsVar(0));
+
+	builtinCriticalSectionBegin();
+	udp->packets = packet->next;
+	builtinCriticalSectionEnd();
+
+	pbuf_free_safe(packet->pb);
+	c_free(packet);
 }
 
 void xs_udp_write(xsMachine *the)

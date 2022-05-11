@@ -21,16 +21,12 @@
 #ifndef __BUILTINCOMMON_H__
 #define __BUILTINCOMMON_H__
 
-#define builtinIsPinFree(pin) builtinArePinsFree(pin >> 5, 1 << (pin & 0x1F))
-#define builtinUsePin(pin) builtinUsePins(pin >> 5, 1 << (pin & 0x1F))
-#define builtinFreePin(pin) builtinFreePins(pin >> 5, 1 << (pin & 0x1F))
 
-uint8_t builtinArePinsFree(uint32_t bank, uint32_t pin);
-uint8_t builtinUsePins(uint32_t bank, uint32_t pin);
-void builtinFreePins(uint32_t bank, uint32_t pin);
+
 
 xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
+#define __COMMON__PINS__ 1
 #if ESP32
 	#define kPinBanks (2)
 
@@ -46,8 +42,9 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 	#define builtinCriticalSectionBegin() xt_rsil(0)
 	#define builtinCriticalSectionEnd() xt_rsil(15)
 #else
-	#error - unsupported platform
+	#undef __COMMON__PINS__
 #endif
+
 
 enum {
 	kIOFormatNumber = 1,
@@ -69,6 +66,17 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format);
 int32_t builtinGetSignedInteger(xsMachine *the, xsSlot *slot);
 uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 
-#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
+#if __COMMON__PINS__
+	#define builtinIsPinFree(pin) builtinArePinsFree(pin >> 5, 1 << (pin & 0x1F))
+	#define builtinUsePin(pin) builtinUsePins(pin >> 5, 1 << (pin & 0x1F))
+	#define builtinFreePin(pin) builtinFreePins(pin >> 5, 1 << (pin & 0x1F))
+
+	uint8_t builtinArePinsFree(uint32_t bank, uint32_t pin);
+	uint8_t builtinUsePins(uint32_t bank, uint32_t pin);
+	void builtinFreePins(uint32_t bank, uint32_t pin);
+
+	#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
+#endif
+
 
 #endif

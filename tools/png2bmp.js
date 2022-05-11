@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -35,17 +35,19 @@ var formatNames = {
 	rgb565be: "rgb565be",
 	clut16: "clut16",
 	argb4444: "argb4444",
+	bgra32: "bgra32",
 };
 
 var formatValues = {
-	monochrome: 3,
-	gray16: 4,
-	gray256: 5,
-	rgb332: 6,
-	rgb565le: 7,
-	rgb565be: 8,
-	clut16: 11,
-	argb4444: 12,
+	monochrome: Bitmap.Monochrome,
+	gray16: Bitmap.Gray16,
+	gray256: Bitmap.Gray256,
+	rgb332: Bitmap.RGB332,
+	rgb565le: Bitmap.RGB565LE,
+	rgb565be: Bitmap.RGB565BE,
+	clut16: Bitmap.CLUT16,
+	argb4444: Bitmap.ARGB4444,
+	bgra32: Bitmap.BGRA32,
 };
 
 export default class extends TOOL {

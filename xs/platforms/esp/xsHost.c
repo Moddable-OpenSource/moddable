@@ -818,7 +818,9 @@ void espInitInstrumentation(txMachine *the)
 	};
 
 	gIdles[0] = xTaskGetIdleTaskHandleForCPU(0);
+#if kTargetCPUCount > 1
 	gIdles[1] = xTaskGetIdleTaskHandleForCPU(1);
+#endif
 
 	timer_init(TIMER_GROUP_0, TIMER_0, &config);
 

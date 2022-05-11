@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,10 +40,11 @@ Bitmap.RGBA32 = 10;
 Bitmap.CLUT16 = 11;
 Bitmap.ARGB4444 = 12;
 Bitmap.RGB444 = 13;
-Bitmap.JPEG = 14;
-Bitmap.PNG = 15;
-Bitmap.CLUT256 = 16;
-Bitmap.CLUT32 = 17;
+Bitmap.BGRA32 = 14;
+Bitmap.JPEG = 15;
+Bitmap.PNG = 16;
+Bitmap.CLUT256 = 17;
+Bitmap.CLUT32 = 18;
 
 Bitmap.RLE = 0x80;	// flag applied to pixel types
 

@@ -16,20 +16,20 @@
 	"config": {
 		"screen": "",
 		"led": {
-			"pin": 47,
+			"pin": 48,
 			"rainbow": true,
 			"brightness": 32
 		}
 	},
 	"defines": {
 		"i2c": {
-			"sda_pin": 20,
-			"scl_pin": 19
+			"sda_pin": 4,
+			"scl_pin": 5
 		},
 		"spi": {
-			"miso_pin":8,
-			"mosi_pin":9,
-			"sck_pin": 15
+			"miso_pin":37,
+			"mosi_pin":35,
+			"sck_pin": 36
 		}
 	}
 }

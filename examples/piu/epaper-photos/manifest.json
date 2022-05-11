@@ -69,6 +69,14 @@
 				"*-color": "./assets/200x200/*"
 			}
 		},
+		"esp32/m5paper": {
+			"config": {
+				"updateMode": "GC16"
+			},
+			"resources":{
+				"*-color": "./assets/960x540/*"
+			}
+		},
 		"...": {
 			"error": "Platform not supported"
 		}

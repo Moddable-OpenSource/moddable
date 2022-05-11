@@ -244,10 +244,10 @@ void _xsbug_module_(txMachine* the)
 		parser->firstJump = &jump;
 		if (c_setjmp(jump.jmp_buf) == 0) {
 			txStringStream stream;
-			stream.slot = mxArgv(1);
+			stream.slot = mxArgv(3);
 			stream.offset = 0;
-			stream.size = c_strlen(stream.slot->value.string);
-			parser->path = fxNewParserSymbol(parser, fxToString(the, mxArgv(2)));
+			stream.size = fxToInteger(the, mxArgv(5)) - 1;
+			parser->path = fxNewParserSymbol(parser, fxToString(the, mxArgv(1)));
 			fxParserTree(parser, &stream, fxStringGetter, mxDebugFlag | mxStrictFlag, &name);
 			fxParserHoist(parser);
 			fxParserBind(parser);
@@ -283,10 +283,10 @@ void _xsbug_script_(txMachine* the)
 		parser->firstJump = &jump;
 		if (c_setjmp(jump.jmp_buf) == 0) {
 			txStringStream stream;
-			stream.slot = mxArgv(1);
+			stream.slot = mxArgv(3);
 			stream.offset = 0;
-			stream.size = c_strlen(stream.slot->value.string);
-			parser->path = fxNewParserSymbol(parser, fxToString(the, mxArgv(2)));
+			stream.size = fxToInteger(the, mxArgv(5)) - 1;
+			parser->path = fxNewParserSymbol(parser, fxToString(the, mxArgv(1)));
 			fxParserTree(parser, &stream, fxStringGetter, mxProgramFlag | mxDebugFlag | mxStrictFlag, &name);
 			fxParserHoist(parser);
 			fxParserBind(parser);
@@ -301,7 +301,7 @@ void _xsbug_script_(txMachine* the)
 		strcat(name, parser->path->string);
 		mxModuleInstanceInternal(mxProgram.value.reference)->value.module.id = fxID(the, name);
 		fxTerminateParser(parser);
-		if (xsTest(xsArg(3)))
+		if (xsTest(xsArg(2)))
 			gxTest262Async = TEST262_ASYNC_WAITING;
 		fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 		mxPop();

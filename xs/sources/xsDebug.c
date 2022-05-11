@@ -218,7 +218,7 @@ void fxDebugCommand(txMachine* the)
 	if (the->debugTag == XS_IMPORT_TAG)
 		fxQueueJob(the, 2, C_NULL);
 	else if (the->debugTag == XS_SCRIPT_TAG)
-		fxQueueJob(the, 4, C_NULL);
+		fxQueueJob(the, 6, C_NULL);
 #endif
 }
 
@@ -241,7 +241,7 @@ void fxDebugImport(txMachine* the, txSlot* module, txString path)
 			break;
 	}
     if (the->debugTag == XS_MODULE_TAG){
-        mxRunCount(4);
+        mxRunCount(6);
         mxPop();
     }
 }
@@ -687,8 +687,6 @@ void fxDebugPopTag(txMachine* the)
 		break;
 	case XS_MODULE_TAG:
 	case XS_SCRIPT_TAG:
-		mxPop();
-		mxPop();
 		the->debugExit |= 2;
 		break;
 #endif
@@ -763,6 +761,7 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_MODULE_TAG:
 	case XS_SCRIPT_TAG:
+		fxCollectGarbage(the);
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
@@ -776,10 +775,10 @@ void fxDebugPushTag(txMachine* the)
 			mxPushSlot(the->debugModule);
 		else
 			mxPushUndefined();
-		mxPushUndefined();
-		fxStringBuffer(the, the->stack, C_NULL, 256);
 		mxPushStringC(the->pathValue);
 		mxPushInteger(the->lineValue);
+		mxPushUndefined();
+		fxStringBuffer(the, the->stack, C_NULL, 256);
 		mxPushInteger(256);
 		mxPushInteger(0);
 		break;
@@ -791,17 +790,17 @@ void fxDebugScriptCDATA(txMachine* the, char c)
 {
 #if MODDEF_XS_TEST
 	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG)) {
-		txString string = the->stack[4].value.string;
+		txString string = the->stack[2].value.string;
 		txInteger size = the->stack[1].value.integer;
 		txInteger offset = the->stack[0].value.integer;
 		if (offset == size) {
 			txString result = (txString)fxRenewChunk(the, string, size + 256);
 			if (!result) {
 				result = (txString)fxNewChunk(the, size + 256);
-				string = the->stack[4].value.string;
+				string = the->stack[2].value.string;
 				c_memcpy(result, string, size);
 			}
-			the->stack[4].value.string = string = result;
+			the->stack[2].value.string = string = result;
 			the->stack[1].value.integer = size + 256;
 		}
 		string[offset++] = c;

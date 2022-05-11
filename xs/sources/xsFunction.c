@@ -243,10 +243,14 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 			if (kind == XS_KEY_KIND) {
 				property->kind = XS_STRING_KIND;
 				property->value.string = key->value.key.string;
+				if (!(key->flag & XS_DONT_ENUM_FLAG))
+					fxAdornStringC(the, "[", property, "]");
 			}
 			else if (kind == XS_KEY_X_KIND) {
 				property->kind = XS_STRING_X_KIND;
 				property->value.string = key->value.key.string;
+				if (!(key->flag & XS_DONT_ENUM_FLAG))
+					fxAdornStringC(the, "[", property, "]");
 			}
 			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
 				property->kind = kind;
@@ -366,8 +370,13 @@ void fx_Function_prototype_bind(txMachine* the)
 	txSize c = mxArgc, i;
 
 	fxCheckCallable(the, mxThis);
-    mxPushReference(function->value.instance.prototype);
-	instance = fxNewObjectInstance(the);
+	mxPushNull();
+	if (mxBehaviorGetPrototype(the, function, the->stack))
+		instance = fxNewObjectInstance(the);
+	else {
+		mxPop();
+		instance = fxNewInstance(the);
+	}
 	instance->flag |= function->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
     mxPullSlot(mxResult);
     	

@@ -33,6 +33,9 @@ class SPI @ "xs_spi_destructor" {
 		if ("buffer" != value)
 			throw new RangeError;
 	}
+
+	// experimental, to support Display
+	set transform() @ "xs_spi_set_transform"
 }
 
 export default SPI;

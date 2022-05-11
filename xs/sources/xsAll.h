@@ -299,6 +299,9 @@ struct sxBlock {
 
 struct sxChunk {
 	txSize size;
+#if INTPTR_MAX == INT64_MAX
+	txS4 dummy;
+#endif
 	txByte* temporary;
 };
 
@@ -1784,6 +1787,8 @@ extern void fxPrepareTransfer(txMachine* the);
 extern void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
+mxExport void fxModuleGetter(txMachine* the);
+
 mxExport void fx_Compartment(txMachine* the);
 mxExport void fx_Compartment_prototype_get_globalThis(txMachine* the);
 mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
@@ -1794,6 +1799,14 @@ mxExport void fx_Compartment_prototype_module(txMachine* the);
 mxExport void fx_StaticModuleRecord(txMachine* the);
 mxExport void fx_StaticModuleRecord_initialize(txMachine* the);
 mxExport void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the);
+
+/* xsLockdown.c */
+#ifdef mxLockdown
+mxExport void fx_harden(txMachine* the);
+mxExport void fx_lockdown(txMachine* the);
+mxExport void fx_petrify(txMachine* the);
+mxExport void fx_mutabilities(txMachine* the);
+#endif
 
 /* xsProfile.c */
 #ifdef mxProfile
@@ -2463,6 +2476,7 @@ enum {
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
+	mxModuleAccessorStackIndex,
 	mxProxyAccessorStackIndex,
 	mxStringAccessorStackIndex,
 	mxTypedArrayAccessorStackIndex,
@@ -2647,6 +2661,7 @@ enum {
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
+#define mxModuleAccessor the->stackPrototypes[-1 - mxModuleAccessorStackIndex]
 #define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
 #define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]
 #define mxTypedArrayAccessor the->stackPrototypes[-1 - mxTypedArrayAccessorStackIndex]

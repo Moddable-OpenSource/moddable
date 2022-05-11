@@ -1,0 +1,36 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"embedded:display/LCD/ILI9341": "./display",
+		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
+		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
+		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
+		"piu/*": "$(PIU)/All/piu*",
+		"piu/MC": "$(PIU)/MC/piuMC",
+		"*": [
+			"./main",
+			"$(PIU)/MC/piuDie",
+			"$(PIU)/MC/piuFont",
+			"$(PIU)/MC/piuImage",
+			"$(PIU)/MC/piuRegion",
+			"$(PIU)/MC/piuTexture",
+			"$(PIU)/MC/piuView"
+		]
+	},
+	"preload": [
+		"embedded:display/LCD/ILI9341",
+		"commodetto/*",
+		"piu/*"
+	],
+    "defines": {
+		"display": {
+			"version": 2
+		}
+    }
+}

@@ -706,7 +706,8 @@ void fxReceive(txMachine* the)
 				break;
 			}
 		}
-		the->debugConnectionVerified = 1;
+		if (the->debugOffset)
+			the->debugConnectionVerified = 1;
 	}
 }
 

@@ -462,8 +462,12 @@ void fx_ArrayBuffer_fromBigInt(txMachine* the)
 	int endian = EndianBig;
 	if (mxArgc < 1)
 		mxTypeError("no argument");
-	if (mxArgc > 1)
-		minBytes = fxToInteger(the, mxArgv(1));
+	if (mxArgc > 1) {
+		txInteger m = fxToInteger(the, mxArgv(1));
+		if (m < 0)
+			mxRangeError("minBytes < 0");
+		minBytes = (txU4)m;
+	}
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		sign = 1;
 	if ((mxArgc > 3) && fxToBoolean(the, mxArgv(3)))
@@ -769,7 +773,8 @@ void fx_DataView(txMachine* the)
 		mxRangeError("out of range byteOffset %ld", offset);
 	size = fxArgToByteLength(the, 2, -1);
 	if (size >= 0) {
-		if (info->value.bufferInfo.length < (offset + size))
+		txInteger end = offset + size;
+		if ((info->value.bufferInfo.length < end) || (end < offset))
 			mxRangeError("out of range byteLength %ld", size);
 	}
 	else {
@@ -789,7 +794,8 @@ void fx_DataView(txMachine* the)
 		if (info->value.bufferInfo.length < offset)
 			mxRangeError("out of range byteOffset %ld", offset);
 		else if (size >= 0) {
-			if (info->value.bufferInfo.length < (offset + size))
+			txInteger end = offset + size;
+			if ((info->value.bufferInfo.length < end) || (end < offset))
 				mxRangeError("out of range byteLength %ld", size);
 		}
 	}
@@ -1356,9 +1362,11 @@ void fx_TypedArray(txMachine* the)
 			size = fxArgToByteLength(the, 2, -1);
 			info = fxGetBufferInfo(the, mxArgv(0));
 			if (size >= 0) {
-				size <<= shift;
-				if (info->value.bufferInfo.length < (offset + size))
-					mxRangeError("out of range byteLength %ld", size);
+				txInteger delta = size << shift;
+				txInteger end = offset + delta;
+				if ((info->value.bufferInfo.length < end) || (end < offset))
+					mxRangeError("out of range length %ld", size);
+				size = delta;
 			}
 			else {
 				if (info->value.bufferInfo.length & ((1 << shift) - 1))

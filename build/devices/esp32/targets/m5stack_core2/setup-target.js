@@ -4,6 +4,7 @@ import AudioOut from "pins/audioout";
 import Resource from "Resource";
 import Timer from "timer";
 import config from "mc/config";
+import I2C from "pins/i2c";
 
 const INTERNAL_I2C = Object.freeze({
 	sda: 21,
@@ -68,7 +69,11 @@ export default function (done) {
   }
 
   // accelerometer and gyrometer
-  try {
+  const test = new I2C({...INTERNAL_I2C, address: 0x68, throw: false});
+  test.write(0x75, false);
+  const ok = test.read(1);
+  test.close();
+  if (undefined !== ok) {
     state.accelerometerGyro = new MPU6886(INTERNAL_I2C);
 
     globalThis.accelerometer = {
@@ -125,8 +130,6 @@ export default function (done) {
       if (undefined !== state.gyroTimerID) Timer.clear(state.gyroTimerID);
       delete state.gyroTimerID;
     };
-  } catch (e) {
-    trace(`Error initializing: ${e}\n`);
   }
 
   // autorotate

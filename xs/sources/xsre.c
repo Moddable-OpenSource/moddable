@@ -1157,6 +1157,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 					fxPatternParserNext(parser);
 				current = fxTermCreate(parser, sizeof(txCaptureReference), fxCaptureReferenceMeasure);
 				((txCaptureReference*)current)->captureIndex = value;
+				((txCaptureReference*)current)->name[0] = 0;
 				current = fxQuantifierParse(parser, current, currentIndex);
 			}
 			else {
@@ -1824,8 +1825,12 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 					+ parser->assertionIndex * sizeof(txAssertionData)
 					+ parser->quantifierIndex * sizeof(txQuantifierData);
 		#ifdef mxRun
-			if (the)
+			if (the) {
 				*data = fxNewChunk(the, size);
+			#ifdef mxSnapshot
+				c_memset(*data, 0, size);
+			#endif
+			}
 			else
 		#endif
 				*data = c_malloc(size);
@@ -1840,6 +1845,9 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 		#ifdef mxRun
 			if (the) {
 				*code = fxNewChunk(the, parser->size);
+			#ifdef mxSnapshot
+				c_memset(*code, 0, parser->size);
+			#endif
 			}
 			else
 		#endif
@@ -7300,7 +7308,7 @@ void* fxCharSetUnicodeProperty(txPatternParser* parser)
 	txString name = NULL;
 	txString value = NULL;
 	txString p = parser->error;
-	txString q = name + sizeof(parser->error) - 1;
+	txString q = p + sizeof(parser->error) - 1;
 	txInteger c;
 	txCharSetUnicodeProperty* it = NULL;
 	txCharSet* result = NULL;

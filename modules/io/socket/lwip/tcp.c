@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,6 +26,8 @@
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
 		while connecting cannot safely transfer native socket
+		
+		//@@ why not using lwip _safe more??
 */
 
 #include "lwip/tcp.h"
@@ -68,6 +70,7 @@ struct TCPRecord {
 typedef struct TCPRecord TCPRecord;
 typedef struct TCPRecord *TCP;
 
+static void removeTCPCallbacks(TCP tcp);
 static void tcpHold(TCP tcp);
 static void tcpRelease(TCP tcp);
 
@@ -226,9 +229,7 @@ void xs_tcp_destructor(void *data)
 	if (!tcp) return;
 
 	if (tcp->skt) {
-		tcp_recv(tcp->skt, NULL);
-		tcp_sent(tcp->skt, NULL);
-		tcp_err(tcp->skt, NULL);
+		removeTCPCallbacks(tcp);
 
 		tcp_close(tcp->skt);
 #if !ESP32
@@ -246,14 +247,34 @@ void xs_tcp_destructor(void *data)
 	c_free(data);
 }
 
+void removeTCPCallbacks(TCP tcp)
+{
+	if (tcp->skt) {
+		tcp_recv(tcp->skt, NULL);
+		tcp_sent(tcp->skt, NULL);
+		tcp_err(tcp->skt, NULL);
+	}
+
+	tcp->triggerable &= ~kTCPWritable;
+}
+
 void doClose(xsMachine *the, xsSlot *instance)
 {
 	TCP tcp = xsmcGetHostData(xsThis);
 	if (tcp && xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks)) {
+		tcp->triggerable = 0;
+		removeTCPCallbacks(tcp);
+
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
 		xsmcSetHostDestructor(*instance, NULL);
-
+#if TCP_ATOMICS
+		builtinCriticalSectionBegin();
+		modAtomicsExchange_n(&tcp->triggered, 0);
+		builtinCriticalSectionEnd();
+#else
+		tcp->triggered = 0;
+#endif
 		tcpRelease(tcp);
 	}
 }
@@ -383,13 +404,21 @@ void xs_tcp_set_format(xsMachine *the)
 
 void tcpHold(TCP tcp)
 {
+#if TCP_ATOMICS
+	modAtomicsAddFetch(&tcp->useCount, 1);
+#else
 	builtinCriticalSectionBegin();
 	tcp->useCount += 1;
 	builtinCriticalSectionEnd();
+#endif
 }
 
 void tcpRelease(TCP tcp)
 {
+#if TCP_ATOMICS
+	if (0 == modAtomicsSubFetch(&tcp->useCount, 1))
+		xs_tcp_destructor(tcp);
+#else
 	uint8_t unused;
 
 	builtinCriticalSectionBegin();
@@ -398,22 +427,25 @@ void tcpRelease(TCP tcp)
 	builtinCriticalSectionEnd();
 	if (unused)
 		xs_tcp_destructor(tcp);
+#endif
+
 }
 
 void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	TCP tcp = refcon;
-	uint8_t triggered;
-
+#if TCP_ATOMICS
+	uint8_t triggered = modAtomicsExchange_n(&tcp->triggered, 0);
+#else
 	builtinCriticalSectionBegin();
-	triggered = tcp->triggered;
+	uint8_t triggered = tcp->triggered;
 	tcp->triggered = 0;
 	builtinCriticalSectionEnd();
-
+#endif
 	if ((triggered & kTCPOutput) && tcp->skt)
 		tcp_output(tcp->skt);
 
-	if ((triggered & kTCPReadable) && tcp->buffers) {
+	if ((triggered & tcp->triggerable & kTCPReadable) && tcp->buffers) {
 		TCPBuffer walker;
 		int bytes = 0;
 
@@ -427,7 +459,7 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 	}
 
 	if (!(triggered & kTCPError)) {
-		if ((triggered & kTCPWritable) && tcp->skt) {
+		if ((triggered & tcp->triggerable & kTCPWritable) && tcp->skt) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, tcp_sndbuf(tcp->skt));
 				xsCallFunction1(xsReference(tcp->onWritable), tcp->obj, xsResult);
@@ -453,6 +485,7 @@ void tcpError(void *arg, err_t err)
 {
 	TCP tcp = arg;
 
+	removeTCPCallbacks(tcp);
 	tcp->skt = NULL;		// "pcb is already freed when this callback is called"
 	if (kTCPError & tcp->triggerable)
 		tcpTrigger(tcp, kTCPError);
@@ -464,8 +497,9 @@ err_t tcpReceive(void *arg, struct tcp_pcb *pcb, struct pbuf *pb, err_t err)
 	TCPBuffer buffer;
 
 	if ((NULL == pb) || (ERR_OK != err)) {		//@@ when is err set here?
+		removeTCPCallbacks(tcp);
 #if ESP32
-		tcp->skt = NULL;			// no close on socket if disconnected.
+//@@		tcp->skt = NULL;			// no close on socket if disconnected.
 #endif
 		tcpTrigger(tcp, kTCPError);
 		return ERR_OK;
@@ -510,12 +544,16 @@ err_t tcpSent(void *arg, struct tcp_pcb *pcb, u16_t len)
 
 void tcpTrigger(TCP tcp, uint8_t trigger)
 {
+#if TCP_ATOMICS
+	uint8_t triggered = modAtomicsFetchOr(&tcp->triggered, trigger);
+#else
 	uint8_t triggered;
 
 	builtinCriticalSectionBegin();
 	triggered = tcp->triggered;
 	tcp->triggered |= trigger;
 	builtinCriticalSectionEnd();
+#endif
 	if (!triggered) {
 		tcpHold(tcp);
 		modMessagePostToMachine(tcp->the, NULL, 0, tcpDeliver, tcp);
