@@ -2210,7 +2210,6 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 	txU1* p;
 	txU1* q;
 	txU1* signature;
-	txU1* checksum;
 	txID id;
 	txID c, i;
 	txFlag clean;
