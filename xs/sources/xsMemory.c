@@ -233,7 +233,9 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 		txSize capacity = (txSize)(chunk->temporary - data);
 	#ifdef mxSnapshot
 		chunk->dummy = 0;
-// 		arc4random_buf(data + sizeof(txChunk), offset);
+	#ifdef mxSnapshotRandomInit
+		arc4random_buf(data + sizeof(txChunk), offset);
+	#endif		
 		offset += sizeof(txChunk);
 		c_memset(data + offset, 0, capacity - offset);
 	#endif
