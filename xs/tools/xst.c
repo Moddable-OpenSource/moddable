@@ -198,6 +198,9 @@ static void fx_createRealm(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
+#if FUZZING || FUZZILLI
+static void fx_fillBuffer(txMachine *the);
+#endif
 static void fx_gc(xsMachine* the);
 static void fx_print(xsMachine* the);
 
@@ -326,6 +329,8 @@ int main(int argc, char* argv[])
 #if FUZZING
 				xsResult = xsNewHostFunction(fx_gc, 0);
 				xsSet(xsGlobal, xsID("gc"), xsResult);
+				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
+				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
 
 				xsResult = xsNewHostFunction(fx_harden, 1);
 				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
@@ -1755,6 +1760,8 @@ int fuzz(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("gc"), xsResult);
 				xsResult = xsNewHostFunction(fx_print, 1);
 				xsSet(xsGlobal, xsID("print"), xsResult);
+				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
+				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
 
 				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 				txStringCStream aStream;
@@ -1867,6 +1874,21 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 	return 0;
 }
 #endif 
+
+#if FUZZING || FUZZILLI
+
+void fx_fillBuffer(txMachine *the)
+{
+	xsIntegerValue seed = xsToInteger(xsArg(1));
+	xsIntegerValue length = xsGetArrayBufferLength(xsArg(0)), i;
+	uint8_t *buffer = xsToArrayBuffer(xsArg(0));
+	
+	for (i = 0; i < length; i++) {
+		seed = (uint64_t)seed * 48271 % 0x7fffffff;
+		*buffer++ = (uint8_t)seed;
+	}
+}
+#endif
 
 /* PLATFORM */
 
