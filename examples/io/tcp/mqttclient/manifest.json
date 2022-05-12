@@ -1,0 +1,14 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		],
+		"embedded:network/mqtt/client": "./mqttclient"
+	},
+	"preload": [
+		"embedded:network/mqtt/client"
+	]
+}
