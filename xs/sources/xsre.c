@@ -7430,10 +7430,16 @@ static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txS
 	if (delta > 0) {
 		txSize qo = mxPtrDiff(*q - mxThis->value.string);
 		txSize ro = mxPtrDiff(*r - mxResult->value.string);
-		length = fxAddChunkSizes(the, length, delta);
-		mxResult->value.string = fxRenewChunk(the, mxResult->value.string, length);
+		txInteger sum = fxAddChunkSizes(the, length, delta);
+		txString string = fxRenewChunk(the, mxResult->value.string, sum);
+		if (!string) {
+			string = (txString)fxNewChunk(the, sum);
+			c_memcpy(string, mxResult->value.string, length);
+		}
 		*q = mxThis->value.string + qo;
-		*r = mxResult->value.string + ro;
+		*r = string + ro;
+		mxResult->value.string = string;
+		return sum;
 	}
 	return length;
 }
