@@ -109,6 +109,9 @@
 			#define mxImport extern
 		#endif
 
+		#if defined(__ets__)
+			typedef uint32_t size_t; 
+		#endif
 	#else 
 		#error unknown compiler
 	#endif
