@@ -27,6 +27,8 @@
 		allow collection (xsForget) once error /  disconnect
 		while connecting cannot safely transfer native socket
 		
+		on ESP8266, data in flash needs to be spooled through RAM before sending to lwip
+		
 		//@@ why not using lwip _safe more??
 */
 
