@@ -1926,13 +1926,13 @@ txMachine* fxBeginHost(txMachine* the)
 
 void fxEndHost(txMachine* the)
 {
+    if (the->frame->next == C_NULL) {
+        fxEndJob(the);
+    }
 	the->stack = the->frame + 5;
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;
-	if (the->frame == C_NULL) {
-		fxEndJob(the);
-	}
 }
 
 void fxEndJob(txMachine* the)
