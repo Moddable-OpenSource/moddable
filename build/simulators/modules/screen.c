@@ -277,6 +277,8 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 	}
 }
 
+#ifdef mxInstrument
+
 static int32_t modInstrumentationSlotHeapSize(xsMachine *the)
 {
 	return the->currentHeapCount * sizeof(txSlot);
@@ -308,6 +310,8 @@ static int32_t modInstrumentationStackRemain(xsMachine *the)
 		the->stackPeak = the->stack;
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
+
+#endif
 
 static uint16_t gSetupPending = 0;
 
