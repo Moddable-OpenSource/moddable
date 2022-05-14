@@ -130,6 +130,7 @@ void xs_flash_write(xsMachine *the)
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 	void *buffer;
+	xsUnsignedValue bufferLength;
 
 	flash = xsmcGetHostChunk(xsThis);
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
@@ -138,7 +139,9 @@ void xs_flash_write(xsMachine *the)
 	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
 		xsUnknownError("invalid length");
 
-	buffer = xsmcToArrayBuffer(xsArg(2));
+	xsmcGetBufferReadable(xsArg(2), &buffer, &bufferLength);
+	if (bufferLength < (xsUnsignedValue)byteLength)
+		xsUnknownError("invalid");
 
 	flash = xsmcGetHostChunk(xsThis);
 	if (0 == modSPIWrite(offset + flash->partitionStart, byteLength, buffer))

@@ -277,6 +277,8 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 	}
 }
 
+#ifdef mxInstrument
+
 static int32_t modInstrumentationSlotHeapSize(xsMachine *the)
 {
 	return the->currentHeapCount * sizeof(txSlot);
@@ -308,6 +310,8 @@ static int32_t modInstrumentationStackRemain(xsMachine *the)
 		the->stackPeak = the->stack;
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
+
+#endif
 
 static uint16_t gSetupPending = 0;
 
@@ -341,7 +345,7 @@ void fxScreenLaunch(txScreen* screen)
 {
 	static xsStringValue signature = PIU_DOT_SIGNATURE;
 	txPreparation* preparation = xsPreparation();
-	void* archive = (screen->archive) ? fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
+	void* archive = (screen->archive) ? fxMapArchive(C_NULL, preparation, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
 	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, archive);
 	if (!screen->machine)
 		return;	

@@ -54,6 +54,7 @@ static void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static void fxMapHosts(txLinker* linker, txLinkerScript* script, txID* theIDs);
 static txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag);
 static void fxReferenceLinkerSymbol(txLinker* linker, txID id);
+static void fxRemapCode(txLinker* linker, txLinkerScript* script);
 static void md5_create(txMD5 *s);
 static void md5_update(txMD5 *s, const void *data, uint32_t size);
 static void md5_fin(txMD5 *s, uint8_t *dgst);
@@ -118,6 +119,22 @@ void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInt
 	script->pathSize++;
 	script->scriptIndex = linker->scriptCount;
 	linker->scriptCount++;
+}
+
+void fxBufferMaps(txLinker* linker)
+{
+	txSize size;
+	txLinkerScript* script;
+	
+	size = linker->mapIndex * sizeof(txID);
+	linker->mapsBuffer = fxNewLinkerChunk(linker, size);
+	linker->mapsSize = size;
+	linker->map = linker->mapsBuffer;
+	script = linker->firstScript;
+	while (script) {
+		fxRemapCode(linker, script);
+		script = script->nextScript;
+	}
 }
 
 void fxBufferSymbols(txLinker* linker)
@@ -260,14 +277,12 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 		else if (0 == offset) {
 			p++;
 			mxDecodeID(p, id);
-			if (id != XS_NO_ID) {
-				id = theIDs[id];
-				p -= sizeof(txID);
-				mxEncodeID(p, id);
-				if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_THIS_VARIABLE == code) || (XS_CODE_GET_VARIABLE == code)) {
-					fxReferenceLinkerSymbol(linker, id);
-				}
-			}
+			id = theIDs[id];
+			p -= sizeof(txID);
+			mxEncodeID(p, id);
+			linker->mapIndex++;
+			if ((XS_CODE_GET_PROPERTY == code) || (XS_CODE_GET_SUPER == code) || (XS_CODE_GET_THIS_VARIABLE == code) || (XS_CODE_GET_VARIABLE == code))
+				fxReferenceLinkerSymbol(linker, id);
 		}
 		else if (-1 == offset) {
 			p++;
@@ -623,6 +638,49 @@ void fxReferenceLinkerSymbol(txLinker* linker, txID id)
 	linkerSymbol->flag |= 1;
 }
 
+void fxRemapCode(txLinker* linker, txLinkerScript* script)
+{
+	register const txS1* sizes = gxCodeSizes;
+	register txByte* p = script->codeBuffer;
+	register txByte* q = p + script->codeSize;
+	register txByte* r = (txByte*)linker->map;
+	register txS1 offset;
+	txU1 code;
+	txU2 index;
+	txID id;
+	while (p < q) {
+		code = *((txU1*)p);
+		offset = (txS1)sizes[code];
+		if (0 < offset) {
+			p += offset;
+		}
+		else if (0 == offset) {
+			p++;
+			mxDecodeID(p, id);
+			mxEncodeID(r, id);
+			p -= sizeof(txID);
+			id = XS_NO_ID;
+			mxEncodeID(p, id);
+		}
+		else if (-1 == offset) {
+			p++;
+			index = *((txU1*)p);
+			p += 1 + index;
+		}
+		else if (-2 == offset) {
+			p++;
+			mxDecode2(p, index);
+			p += index;
+		}
+		else if (-4 == offset) {
+			p++;
+			mxDecode4(p, index);
+			p += index;
+		}
+	}
+	linker->map = (txID*)r;
+}
+
 void fxReportLinkerError(txLinker* linker, txString theFormat, ...)
 {
 	c_va_list arguments;
@@ -676,9 +734,10 @@ void fxUseCodes()
 
 void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 {
+	txSize identifiersSize;
+	void* identifiersBuffer;
 	FILE* file = NULL;
 	txMD5 md5;
-	txSize nameSize;
 	txSize modsSize;
 	txSize padSize;
 	txLinkerScript* script;
@@ -688,14 +747,17 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	txSize size;
 	txByte byte;
 	
+	identifiersSize = linker->symbolIndex * sizeof(txID);
+	identifiersBuffer = fxNewLinkerChunkClear(linker, identifiersSize);
+	
 	file = fopen(path, "wb");
 	mxThrowElse(file);
 	*fileAddress = file;
 	
 	md5_create(&md5);
-	nameSize = mxStringLength(linker->name) + 1;
-	md5_update(&md5, linker->name, nameSize);
+	md5_update(&md5, linker->name, linker->nameSize);
 	md5_update(&md5, linker->symbolsBuffer, linker->symbolsSize);
+	md5_update(&md5, linker->mapsBuffer, linker->mapsSize);
 	modsSize = 0;
 	script = linker->firstScript;
 	while (script) {
@@ -708,9 +770,10 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	size = 8 
 		+ 8 + 4 
 		+ 8 + sizeof(signature) 
-		+ 8 + sizeof(signature) 
-		+ 8 + nameSize
+		+ 8 + linker->nameSize
 		+ 8 + linker->symbolsSize 
+		+ 8 + identifiersSize
+		+ 8 + linker->mapsSize 
 		+ 8 + modsSize
 		+ 8;
 	rsrcSize = 0;
@@ -753,25 +816,30 @@ void fxWriteArchive(txLinker* linker, txString path, FILE** fileAddress)
 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
 	mxThrowElse(fwrite("SIGN", 4, 1, file) == 1);
 	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
-
-	c_memset(signature, 0, sizeof(signature));
-	size = 8 + sizeof(signature);
-	size = htonl(size);
-	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
-	mxThrowElse(fwrite("CHKS", 4, 1, file) == 1);
-	mxThrowElse(fwrite(signature, sizeof(signature), 1, file) == 1);
 	
-	size = 8 + nameSize;
+	size = 8 + linker->nameSize;
 	size = htonl(size);
 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
 	mxThrowElse(fwrite("NAME", 4, 1, file) == 1);
-	mxThrowElse(fwrite(linker->name, nameSize, 1, file) == 1);
+	mxThrowElse(fwrite(linker->name, linker->nameSize, 1, file) == 1);
 
 	size = 8 + linker->symbolsSize;
 	size = htonl(size);
 	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
 	mxThrowElse(fwrite("SYMB", 4, 1, file) == 1);
 	mxThrowElse(fwrite(linker->symbolsBuffer, linker->symbolsSize, 1, file) == 1);
+
+	size = 8 + identifiersSize;
+	size = htonl(size);
+	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
+	mxThrowElse(fwrite("IDEN", 4, 1, file) == 1);
+	mxThrowElse(fwrite(identifiersBuffer, identifiersSize, 1, file) == 1);
+
+	size = 8 + linker->mapsSize;
+	size = htonl(size);
+	mxThrowElse(fwrite(&size, 4, 1, file) == 1);
+	mxThrowElse(fwrite("MAPS", 4, 1, file) == 1);
+	mxThrowElse(fwrite(linker->mapsBuffer, linker->mapsSize, 1, file) == 1);
 
 	size = 8 + modsSize;
 	size = htonl(size);

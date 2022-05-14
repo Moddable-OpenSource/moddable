@@ -92,6 +92,8 @@ typedef struct {
 #define XS_ATOM_CODE 0x434F4445 /* 'CODE' */
 #define XS_ATOM_DATA 0x44415441 /* 'DATA' */
 #define XS_ATOM_HOSTS 0x484F5354 /* 'HOST' */
+#define XS_ATOM_IDENTIFIERS 0x4944454E /* 'IDEN' */
+#define XS_ATOM_MAPS 0x4D415053 /* 'MAPS' */
 #define XS_ATOM_MODULES 0x4D4F4453 /* 'MODS' */
 #define XS_ATOM_NAME 0x4E414D45 /* 'NAME' */
 #define XS_ATOM_PATH 0x50415448 /* 'PATH' */
@@ -100,7 +102,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 11
-#define XS_MINOR_VERSION 8
+#define XS_MINOR_VERSION 9
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16

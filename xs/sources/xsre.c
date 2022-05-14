@@ -1825,8 +1825,12 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 					+ parser->assertionIndex * sizeof(txAssertionData)
 					+ parser->quantifierIndex * sizeof(txQuantifierData);
 		#ifdef mxRun
-			if (the)
+			if (the) {
 				*data = fxNewChunk(the, size);
+			#ifdef mxSnapshot
+				c_memset(*data, 0, size);
+			#endif
+			}
 			else
 		#endif
 				*data = c_malloc(size);
@@ -1841,6 +1845,9 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 		#ifdef mxRun
 			if (the) {
 				*code = fxNewChunk(the, parser->size);
+			#ifdef mxSnapshot
+				c_memset(*code, 0, parser->size);
+			#endif
 			}
 			else
 		#endif
@@ -7423,10 +7430,16 @@ static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txS
 	if (delta > 0) {
 		txSize qo = mxPtrDiff(*q - mxThis->value.string);
 		txSize ro = mxPtrDiff(*r - mxResult->value.string);
-		length = fxAddChunkSizes(the, length, delta);
-		mxResult->value.string = fxRenewChunk(the, mxResult->value.string, length);
+		txInteger sum = fxAddChunkSizes(the, length, delta);
+		txString string = fxRenewChunk(the, mxResult->value.string, sum);
+		if (!string) {
+			string = (txString)fxNewChunk(the, sum);
+			c_memcpy(string, mxResult->value.string, length);
+		}
 		*q = mxThis->value.string + qo;
-		*r = mxResult->value.string + ro;
+		*r = string + ro;
+		mxResult->value.string = string;
+		return sum;
 	}
 	return length;
 }

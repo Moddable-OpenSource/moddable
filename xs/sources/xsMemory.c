@@ -233,6 +233,9 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 		txSize capacity = (txSize)(chunk->temporary - data);
 	#ifdef mxSnapshot
 		chunk->dummy = 0;
+	#ifdef mxSnapshotRandomInit
+		arc4random_buf(data + sizeof(txChunk), offset);
+	#endif		
 		offset += sizeof(txChunk);
 		c_memset(data + offset, 0, capacity - offset);
 	#endif
@@ -1026,13 +1029,18 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_STACK_KIND:
 		fxCheckCStack(the);
 		if ((aSlot = theSlot->value.array.address)) {
-			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
-			while (aLength) {
-				fxMarkValue(the, aSlot);
-				aSlot++;
-				aLength--;
+			txChunk* chunk = (txChunk*)(((txByte*)aSlot) - sizeof(txChunk));
+			if (!(chunk->size & mxChunkFlag)) {
+				txIndex aLength = chunk->size / sizeof(txSlot);
+				if (aLength > theSlot->value.array.length)
+					aLength = theSlot->value.array.length;
+				while (aLength) {
+					fxMarkValue(the, aSlot);
+					aSlot++;
+					aLength--;
+				}
+				mxMarkChunk(theSlot->value.array.address);
 			}
-			mxMarkChunk(theSlot->value.array.address);
 		}
 		break;
 	case XS_ARRAY_BUFFER_KIND:

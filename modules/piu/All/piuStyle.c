@@ -158,6 +158,8 @@ void PiuStyleCreate(xsMachine* the)
 	self->color[2].a = 255;
 	self->color[3].a = 255;
 	if ((c > 0) && (xsTest(xsArg(0)))) {
+		if (xsFindResult(xsArg(0), xsID_archive))
+			self->archive = xsToReference(xsResult);
 		if (xsFindString(xsArg(0), xsID_font, &string)) {
     		const PiuStyleBuilder* builder;
 			xsStringValue p = string;
@@ -255,9 +257,9 @@ void PiuStyleCreate(xsMachine* the)
 		if (xsFindString(xsArg(0), xsID_decoration, &string)) {
 			if (!c_strcmp(string, "normal"))
 				self->flags |= piuStyleDecoration;
-      else if (!c_strcmp(string, "underline")) {
+      		else if (!c_strcmp(string, "underline")) {
 				self->flags |= piuStyleDecoration | piuStyleUnderline;
-      }
+      		}
 			else
 				xsErrorPrintf("invalid decoration");
 		}
@@ -411,6 +413,7 @@ PiuDimension PiuStyleGetHeight(PiuStyle* self, xsSlot* string)
 void PiuStyleMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PiuStyle self = it;
+	PiuMarkReference(the, self->archive);
 	PiuMarkHandle(the, self->font);
 }
 
@@ -430,8 +433,10 @@ void PiuStyleOverride(PiuStyle* self, PiuStyle* result)
 		else
 			(*result)->flags &= ~piuStyleItalicBit;
 	}
-	if (flags & piuStyleFamily)
+	if (flags & piuStyleFamily) {
+		(*result)->archive = (*self)->archive;
 		(*result)->family = (*self)->family;
+	}
 	if (flags & piuStyleAbsoluteSize)
 		(*result)->size = (*self)->size;
 	else if (flags & piuStylePercentageSize) {

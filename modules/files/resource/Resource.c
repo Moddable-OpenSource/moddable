@@ -22,7 +22,6 @@
 #include "string.h"
 #include "mc.xs.h"
 
-extern const void* fxGetArchiveData(xsMachine* the, char* path, size_t* size);
 extern const void* mcGetResource(xsMachine* the, char* path, size_t* size);
 
 void Resource_destructor(void *data)
@@ -33,10 +32,12 @@ void Resource_destructor(void *data)
 void Resource_constructor(xsMachine *the)
 {
 	xsStringValue path = xsToString(xsArg(0));
-	const void *data;
+	const void *data = NULL;
 	size_t size;
-
-	data = fxGetArchiveData(the, path, &size);
+	if ((xsToInteger(xsArgc) > 1) && xsTest(xsArg(1)))
+		data = fxGetArchiveData(the, xsGetHostData(xsArg(1)), path, &size);
+	if (!data)
+		data = fxGetArchiveData(the, the->archive, path, &size);
 	if (!data)
 		data = mcGetResource(the, path, &size);
 	if (!data)
@@ -48,9 +49,12 @@ void Resource_constructor(xsMachine *the)
 void Resource_exists(xsMachine *the)
 {
 	xsStringValue path = xsToString(xsArg(0));
-	const void *data;
+	const void *data = NULL;
 	size_t size;
-	data = fxGetArchiveData(the, path, &size);
+	if ((xsToInteger(xsArgc) > 1) && xsTest(xsArg(1)))
+		data = fxGetArchiveData(the, xsGetHostData(xsArg(1)), path, &size);
+	if (!data)
+		data = fxGetArchiveData(the, the->archive, path, &size);
 	if (!data)
 		data = mcGetResource(the, path, &size);
 	xsResult = data ? xsTrue : xsFalse;

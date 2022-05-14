@@ -187,7 +187,8 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-n: no namespace");
-				linker->name = fxNewLinkerString(linker, argv[argi], mxStringLength(argv[argi]));
+				linker->nameSize = mxStringLength(argv[argi]) + 1;
+				linker->name = fxNewLinkerString(linker, argv[argi], linker->nameSize - 1);
 			}
 			else if (!c_strcmp(argv[argi], "-o")) {
 				argi++;
@@ -258,8 +259,10 @@ int main(int argc, char* argv[])
 			output = fxRealDirectoryPath(linker, ".");
 		if (!base)
 			base = output;
-		if (!linker->name)
-			linker->name = fxNewLinkerString(linker, name, mxStringLength(name));
+		if (!linker->name) {
+			linker->nameSize = mxStringLength(name) + 1;
+			linker->name = fxNewLinkerString(linker, name, linker->nameSize - 1);
+		}
 
 		linker->freezeFlag = (linker->stripFlag || linker->firstPreload) ? 1 : 0;
 			
@@ -301,6 +304,7 @@ int main(int argc, char* argv[])
 				script = script->nextScript;
 			}
 			fxBufferSymbols(linker);
+			fxBufferMaps(linker);
 			
 			c_strcpy(path, output);
 			c_strcat(path, name);
