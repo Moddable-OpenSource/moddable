@@ -54,7 +54,7 @@ struct UDPPacketRecord {
 	uint16_t		port;
 	char			address[INET_ADDRSTRLEN];
 	int				byteLength;
-	uint8_t			data[1];
+	uint8_t			data[];
 };
 typedef struct UDPPacketRecord UDPPacketRecord;
 typedef struct UDPPacketRecord *UDPPacket;
@@ -267,7 +267,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 	byteLength = recvfrom(udp->skt, data, sizeof(data), MSG_DONTWAIT, (struct sockaddr *)&srcAddr, &srcAddrLen);
 	if (byteLength <= 0) return;
 
-	packet = malloc(sizeof(UDPPacketRecord) - 1 + byteLength);
+	packet = malloc(sizeof(UDPPacketRecord) + byteLength);
 	if (!packet) return;
 
 	packet->next = NULL;
