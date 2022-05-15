@@ -350,11 +350,11 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	slot = mxArgv(0);
 	if (slot->kind == XS_REFERENCE_KIND) {
 		slot = slot->value.reference->next;
-		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
+		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND || slot->kind == XS_HOST_KIND))
 			arrayBuffer = slot;
 	}
 	if (!arrayBuffer)
-		mxTypeError("argument is no ArrayBuffer instance");
+		mxTypeError("argument is no ArrayBuffer/HostBuffer instance");
 	bufferInfo = arrayBuffer->next;
 	limit = bufferInfo->value.bufferInfo.length;
 	offset = fxArgToByteLength(the, 1, 0);
