@@ -1,0 +1,22 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"creation": {
+		"stack": 1024,
+		"static": 65536
+	},
+	"modules": {
+		"*": [
+			"./mqtt",
+			"./main",
+			"./data"
+		],
+		"embedded:network/mqtt/client": "../mqttclient/mqttclient"
+	},
+	"preload": [
+		"mqtt",
+		"embedded:network/mqtt/client",
+		"data"
+	]
+}
