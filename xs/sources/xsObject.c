@@ -78,6 +78,7 @@ void fxBuildObject(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getOwnPropertyNames), 1, mxID(_getOwnPropertyNames), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getOwnPropertySymbols), 1, mxID(_getOwnPropertySymbols), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getPrototypeOf), 1, mxID(_getPrototypeOf), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_hasOwn), 2, mxID(_hasOwn), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_is), 2, mxID(_is), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_isExtensible), 1, mxID(_isExtensible), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_isFrozen), 1, mxID(_isFrozen), XS_DONT_ENUM_FLAG);
@@ -866,6 +867,25 @@ void fx_Object_getPrototypeOf(txMachine* the)
 	if ((mxArgc < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
 		mxTypeError("invalid object");
 	mxBehaviorGetPrototype(the, fxToInstance(the, mxArgv(0)), mxResult);
+}
+
+void fx_Object_hasOwn(txMachine* the)
+{
+	txSlot* instance;
+	txSlot* at;
+	if ((mxArgc < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
+		mxTypeError("invalid object");
+	instance = fxToInstance(the, mxArgv(0));
+	if (mxArgc < 2)
+		mxPushUndefined();
+	else
+		mxPushSlot(mxArgv(1));
+	at = fxAt(the, the->stack);
+	mxPushUndefined();
+	mxResult->value.boolean = mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack);
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxPop();
+	mxPop();
 }
 
 void fx_Object_is(txMachine* the)

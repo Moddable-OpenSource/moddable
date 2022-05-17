@@ -956,6 +956,7 @@ mxExport void fx_Object_getOwnPropertyDescriptors(txMachine* the);
 mxExport void fx_Object_getOwnPropertyNames(txMachine* the);
 mxExport void fx_Object_getOwnPropertySymbols(txMachine* the);
 mxExport void fx_Object_getPrototypeOf(txMachine* the);
+mxExport void fx_Object_hasOwn(txMachine* the);
 mxExport void fx_Object_is(txMachine* the);
 mxExport void fx_Object_isExtensible(txMachine* the);
 mxExport void fx_Object_isFrozen(txMachine* the);

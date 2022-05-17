@@ -1469,6 +1469,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"has",
 	"hasIndices",
 	"hasInstance",
+	"hasOwn",
 	"hasOwnProperty",
 	"hypot",
 	"id",

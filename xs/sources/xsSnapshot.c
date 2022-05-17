@@ -338,6 +338,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Object_getOwnPropertyNames,
 	fx_Object_getOwnPropertySymbols,
 	fx_Object_getPrototypeOf,
+	fx_Object_hasOwn,
 	fx_Object_is,
 	fx_Object_isExtensible,
 	fx_Object_isFrozen,
