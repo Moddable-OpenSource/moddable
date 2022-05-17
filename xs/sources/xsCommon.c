@@ -1353,6 +1353,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"callee",
 	"caller",
 	"catch",
+	"cause",
 	"cbrt",
 	"ceil",
 	"center",

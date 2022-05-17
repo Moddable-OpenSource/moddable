@@ -780,6 +780,7 @@ enum {
 	_callee,
 	_caller,
 	_catch,
+	_cause,
 	_cbrt,
 	_ceil,
 	_center,

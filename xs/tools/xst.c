@@ -944,7 +944,6 @@ void fxRunContext(txPool* pool, txContext* context)
  			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
  			||	!strcmp((char*)node->data.scalar.value, "class-fields-private-in")
  			||	!strcmp((char*)node->data.scalar.value, "class-static-block")
-			||	!strcmp((char*)node->data.scalar.value, "error-cause")
  			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
  			||	!strcmp((char*)node->data.scalar.value, "json-modules")
 #ifndef mxRegExpUnicodePropertyEscapes
