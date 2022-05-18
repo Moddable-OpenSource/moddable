@@ -3349,11 +3349,19 @@ void fxLabelNodeCode(void* it, void* param)
 	txCoder* coder = param;
 	txNode* statement = self->statement;
 	txTargetCode* breakTarget;
-// 	while (statement->description->token == XS_TOKEN_LABEL) {
-// 		((txLabelNode*)statement)->nextLabel = self;
-// 		self = (txLabelNode*)statement;
-// 		statement = self->statement;
-// 	}
+	while (statement->description->token == XS_TOKEN_LABEL) {
+		txLabelNode* former = (txLabelNode*)statement;
+		txLabelNode* current = self;
+		while (current) {
+			if (former->symbol && current->symbol && (former->symbol == current->symbol)) {
+				fxReportParserError(coder->parser, current->line, "duplicate label %s", current->symbol->string);
+			}
+			current = current->nextLabel;
+		}
+		former->nextLabel = self;
+		self = former;
+		statement = self->statement;
+	}
 	breakTarget = coder->firstBreakTarget;
 	while (breakTarget) {
 		txLabelNode* former = breakTarget->label;
