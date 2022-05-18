@@ -120,7 +120,7 @@ void xs_spi_constructor(xsMachine *the)
 	}
 
 	if ((kInvalidPin == mosi) && (kInvalidPin == miso))
-		xsUnknownError("mosi or miso required");
+		xsUnknownError("in or out required");
 
 #if ESP32
 	xsmcGet(xsVar(0), xsArg(0), xsID_port);
