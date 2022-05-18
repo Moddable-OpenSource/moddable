@@ -778,6 +778,12 @@ void fx_Proxy(txMachine* the)
 	proxy = instance->next;
 	if (!proxy || (proxy->kind != XS_PROXY_KIND))
 		mxTypeError("this is no proxy");
+#ifdef mxHostFunctionPrimitive
+	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(0));
+	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(1));
+#endif
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
 		mxTypeError("target is no object");
 	target = mxArgv(0)->value.reference;
@@ -796,6 +802,13 @@ void fx_Proxy_revocable(txMachine* the)
 	txSlot* property;
 	txSlot* instance;
 	txSlot* slot;
+	
+#ifdef mxHostFunctionPrimitive
+	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(0));
+	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(1));
+#endif
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
 		mxTypeError("target is no object");
 	target = mxArgv(0)->value.reference;
