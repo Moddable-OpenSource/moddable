@@ -3349,11 +3349,11 @@ void fxLabelNodeCode(void* it, void* param)
 	txCoder* coder = param;
 	txNode* statement = self->statement;
 	txTargetCode* breakTarget;
-	while (statement->description->token == XS_TOKEN_LABEL) {
-		((txLabelNode*)statement)->nextLabel = self;
-		self = (txLabelNode*)statement;
-		statement = self->statement;
-	}
+// 	while (statement->description->token == XS_TOKEN_LABEL) {
+// 		((txLabelNode*)statement)->nextLabel = self;
+// 		self = (txLabelNode*)statement;
+// 		statement = self->statement;
+// 	}
 	breakTarget = coder->firstBreakTarget;
 	while (breakTarget) {
 		txLabelNode* former = breakTarget->label;
