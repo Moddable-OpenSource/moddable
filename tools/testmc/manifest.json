@@ -101,6 +101,12 @@
 					"resolutions": [10, 11, 12],
 					"hzs": [10000, 200, 1]
 				},
+				"spi": {
+					"select": 18,
+					"ports": [1, 2],
+					"invalidPorts": [3, -1],
+					"hzs": [1000, 10000, 20000]
+				},
 			 	"invalidPins": [
 					-10,
 					500
