@@ -500,6 +500,8 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_GET_VARIABLE,
 		&&XS_CODE_GET_THIS_VARIABLE,
 		&&XS_CODE_GLOBAL,
+		&&XS_CODE_HAS_PRIVATE_1,
+		&&XS_CODE_HAS_PRIVATE_2,
 		&&XS_CODE_HOST,
 		&&XS_CODE_IMPORT,
 		&&XS_CODE_IMPORT_META,
@@ -2184,7 +2186,6 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_TYPE_ERROR, "get super %s: no prototype", (txID)offset);
 			slot = mxBehaviorGetProperty(the, slot, (txID)offset, index, XS_ANY);
 			goto XS_CODE_GET_ALL;
-			
 		mxCase(XS_CODE_GET_PRIVATE_2)
 			index = mxRunU2(1);
 			mxNextCode(3);
@@ -2439,6 +2440,31 @@ XS_CODE_JUMP:
 			mxStack++;
 			mxBreak;
 			
+		mxCase(XS_CODE_HAS_PRIVATE_2)
+			index = mxRunU2(1);
+			mxNextCode(3);
+			goto XS_CODE_HAS_PRIVATE;
+		mxCase(XS_CODE_HAS_PRIVATE_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_HAS_PRIVATE:
+#ifdef mxTrace
+			if (gxDoTrace) fxTraceIndex(the, index - 1);
+#endif
+			slot = (mxEnvironment - index);
+			if (mxStack->kind == XS_REFERENCE_KIND)
+				variable = mxStack->value.reference; 
+			else
+				mxRunDebug(XS_TYPE_ERROR, "in: no instance");
+			offset = slot->ID;
+			index = 0;
+			if (slot->value.closure->kind < 0)
+				mxRunDebugID(XS_TYPE_ERROR, "get %s: undefined private property", (txID)offset);
+			slot = gxDefaults.getPrivateProperty(the, variable, slot->value.closure->value.reference, (txID)offset);
+			mxStack->kind = XS_BOOLEAN_KIND;
+			mxStack->value.boolean = (slot) ? 1 : 0;
+			mxBreak;
+						
 	/* INSTANCES */	
 		mxCase(XS_CODE_ARRAY)
 // 			mxAllocStack(1);

@@ -279,7 +279,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_PARAMS_BINDING */ 0,
 	/* XS_TOKEN_PLUS */ 0,
 	/* XS_TOKEN_PRIVATE */ XS_TOKEN_IDENTIFIER_NAME,
-	/* XS_TOKEN_PRIVATE_IDENTIFIER */ 0,
+	/* XS_TOKEN_PRIVATE_IDENTIFIER */ XS_TOKEN_BEGIN_EXPRESSION,
 	/* XS_TOKEN_PRIVATE_MEMBER */ 0,
 	/* XS_TOKEN_PRIVATE_PROPERTY */ 0,
 	/* XS_TOKEN_PROGRAM */ 0,
@@ -1826,16 +1826,29 @@ void fxEqualExpression(txParser* parser)
 
 void fxRelationalExpression(txParser* parser)
 {
-	fxShiftExpression(parser);
-	if ((parser->flags & mxForFlag) && ((parser->token == XS_TOKEN_IN) || fxIsKeyword(parser, parser->ofSymbol)))
-		return;
-	while (gxTokenFlags[parser->token] & XS_TOKEN_RELATIONAL_EXPRESSION) {
-		txToken aToken = parser->token;
+	if (parser->token == XS_TOKEN_PRIVATE_IDENTIFIER) {
 		txInteger aLine = parser->line;
-		fxMatchToken(parser, aToken);
+		fxPushSymbol(parser, parser->symbol);
+		fxGetNextToken(parser);
+		fxMatchToken(parser, XS_TOKEN_IN);
+		if (parser->flags & mxForFlag)
+			fxReportParserError(parser, parser->line, "invalid %s", gxTokenNames[XS_TOKEN_IN]);
 		fxShiftExpression(parser);
 		fxCheckArrowFunction(parser, 2);
-		fxPushNodeStruct(parser, 2, aToken, aLine);
+		fxPushNodeStruct(parser, 2, XS_TOKEN_PRIVATE_IDENTIFIER, aLine);
+	}
+	else {
+		fxShiftExpression(parser);
+		if ((parser->flags & mxForFlag) && ((parser->token == XS_TOKEN_IN) || fxIsKeyword(parser, parser->ofSymbol)))
+			return;
+		while (gxTokenFlags[parser->token] & XS_TOKEN_RELATIONAL_EXPRESSION) {
+			txToken aToken = parser->token;
+			txInteger aLine = parser->line;
+			fxMatchToken(parser, aToken);
+			fxShiftExpression(parser);
+			fxCheckArrowFunction(parser, 2);
+			fxPushNodeStruct(parser, 2, aToken, aLine);
+		}
 	}
 }
 

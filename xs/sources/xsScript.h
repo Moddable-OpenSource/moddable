@@ -1139,6 +1139,7 @@ extern void fxOrExpressionNodeCode(void* it, void* param);
 extern void fxParamsNodeCode(void* it, void* param);
 extern void fxParamsBindingNodeCode(void* it, void* param); 
 extern void fxPostfixExpressionNodeCode(void* it, void* param); 
+extern void fxPrivateIdentifierNodeCode(void* it, void* param); 
 extern void fxPrivateMemberNodeCode(void* it, void* param); 
 extern void fxPrivateMemberNodeCodeAssign(void* it, void* param, txFlag flag); 
 extern void fxPrivateMemberNodeCodeDelete(void* it, void* param);

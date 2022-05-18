@@ -307,6 +307,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_CLOSURE_1:
 		case XS_CODE_GET_LOCAL_1:
 		case XS_CODE_GET_PRIVATE_1:
+		case XS_CODE_HAS_PRIVATE_1:
 		case XS_CODE_LET_CLOSURE_1:
 		case XS_CODE_LET_LOCAL_1:
 		case XS_CODE_NEW_PRIVATE_1:
@@ -444,6 +445,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_CLOSURE_1:
 		case XS_CODE_GET_LOCAL_1:
 		case XS_CODE_GET_PRIVATE_1:
+		case XS_CODE_HAS_PRIVATE_1:
 		case XS_CODE_LET_CLOSURE_1:
 		case XS_CODE_LET_LOCAL_1:
 		case XS_CODE_NEW_PRIVATE_1:
@@ -469,6 +471,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_CLOSURE_2:
 		case XS_CODE_GET_LOCAL_2:
 		case XS_CODE_GET_PRIVATE_2:
+		case XS_CODE_HAS_PRIVATE_2:
 		case XS_CODE_LET_CLOSURE_2:
 		case XS_CODE_LET_LOCAL_2:
 		case XS_CODE_NEW_PRIVATE_2:
@@ -669,6 +672,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_CLOSURE_1:
 		case XS_CODE_GET_LOCAL_1:
 		case XS_CODE_GET_PRIVATE_1:
+		case XS_CODE_HAS_PRIVATE_1:
 		case XS_CODE_LET_CLOSURE_1:
 		case XS_CODE_LET_LOCAL_1:
 		case XS_CODE_NEW_PRIVATE_1:
@@ -693,6 +697,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_CLOSURE_2:
 		case XS_CODE_GET_LOCAL_2:
 		case XS_CODE_GET_PRIVATE_2:
+		case XS_CODE_HAS_PRIVATE_2:
 		case XS_CODE_LET_CLOSURE_2:
 		case XS_CODE_LET_LOCAL_2:
 		case XS_CODE_NEW_PRIVATE_2:
@@ -863,6 +868,8 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_GET_LOCAL_2:
 		case XS_CODE_GET_PRIVATE_1:
 		case XS_CODE_GET_PRIVATE_2:
+		case XS_CODE_HAS_PRIVATE_1:
+		case XS_CODE_HAS_PRIVATE_2:
 		case XS_CODE_LET_CLOSURE_1:
 		case XS_CODE_LET_CLOSURE_2:
 		case XS_CODE_LET_LOCAL_1:
@@ -2513,7 +2520,7 @@ void fxClassNodeCode(void* it, void* param)
 				declaration = declaration->nextDeclareNode;
 			}
 		}
-		else {
+		else  {
 			txPrivatePropertyNode* property = (txPrivatePropertyNode*)item;
 			fxCoderAddIndex(param, 0, XS_CODE_CONST_CLOSURE_1, declaration->index);
 			declaration = declaration->nextDeclareNode;
@@ -3858,6 +3865,13 @@ void fxPostfixExpressionNodeCode(void* it, void* param)
 		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, value);
 		fxCoderUnuseTemporaryVariables(param, 1);
 	}
+}
+
+void fxPrivateIdentifierNodeCode(void* it, void* param) 
+{
+	txPrivateMemberNode* self = it;
+	fxNodeDispatchCode(self->reference, param);
+	fxCoderAddIndex(param, 0,  XS_CODE_HAS_PRIVATE_1, self->declaration->index);
 }
 
 void fxPrivateMemberNodeCode(void* it, void* param) 
