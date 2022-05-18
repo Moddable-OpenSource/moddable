@@ -1245,6 +1245,8 @@ void fxStatement(txParser* parser, txBoolean blockIt)
 		fxIfStatement(parser);
 		break;
 	case XS_TOKEN_RETURN:
+		if (!(parser->flags & (mxArrowFlag | mxFunctionFlag | mxGeneratorFlag)))
+			fxReportParserError(parser, parser->line, "invalid return");
 		fxReturnStatement(parser);
 		fxSemicolon(parser);
 		break;
@@ -2664,7 +2666,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 void fxFunctionExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol, txUnsigned flag)
 {
 	txUnsigned flags = parser->flags;
-	parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxTargetFlag | flag;
+	parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxFunctionFlag | mxTargetFlag | flag;
 	if ((parser->token == XS_TOKEN_IDENTIFIER) || ((flags & mxGeneratorFlag) && !(flags & mxStrictFlag) && (parser->token == XS_TOKEN_YIELD))) {
 		fxPushSymbol(parser, parser->symbol);
 		if (theSymbol)
