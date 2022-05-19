@@ -1371,13 +1371,7 @@ void fx_TypedArray(txMachine* the)
 			/* FUNCTION */
 			mxPush(mxArrayBufferConstructor);
 			/* TARGET */
-			if (sourceData->kind == XS_ARRAY_BUFFER_KIND) {
-				mxPushSlot(sourceBuffer);
-				mxGetID(mxID(_constructor));
-				fxToSpeciesConstructor(the, &mxArrayBufferConstructor);
-			}
-			else
-				mxPush(mxArrayBufferConstructor);
+			mxPush(mxArrayBufferConstructor);
 			/* RESULT */
 			mxPushUndefined();	
 			mxPushUninitialized();	
@@ -2160,6 +2154,8 @@ void fx_TypedArray_prototype_set(txMachine* the)
 	}
 	else {
 		txInteger count, index;
+		if (data->value.arrayBuffer.address == C_NULL)
+			mxTypeError("detached buffer");
 		mxPushSlot(mxArgv(0));
 		mxGetID(mxID(_length));
 		count = fxToInteger(the, the->stack);
