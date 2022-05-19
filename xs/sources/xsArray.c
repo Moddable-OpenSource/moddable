@@ -288,10 +288,24 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 		{
 			txSlot* address = array->value.array.address;
 			txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
+			txSlot* prototype = instance->value.instance.prototype;
 			if (array->value.array.length != size)
 				return C_NULL;
-			if (mutable && (instance->flag & XS_DONT_PATCH_FLAG))
+			if (mutable && ((instance->flag & XS_DONT_PATCH_FLAG) || (array->flag & XS_DONT_SET_FLAG)))
 				return C_NULL;
+			while (prototype) {
+				txSlot* property = prototype->next;
+				while (property) {
+					if (property->flag & XS_INTERNAL_FLAG) {
+						if ((property->kind == XS_ARRAY_KIND) && (property->value.array.address != C_NULL)) 
+							return C_NULL;
+					}
+					else 
+						break;
+					property = property->next;
+				}
+				prototype = prototype->value.instance.prototype;
+			}				
 			return array;
 		}
 	}
