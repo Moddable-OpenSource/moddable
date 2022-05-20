@@ -1073,6 +1073,9 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 	case XS_ENTRY_KIND:
 		slot->value.entry.slot = fxUnprojectSlot(the, snapshot, slot->value.entry.slot);
 		break;
+	case XS_ERROR_KIND:
+		slot->value.error.info = fxUnprojectSlot(the, snapshot, slot->value.error.info);
+		break;
 	case XS_HOME_KIND:
 		slot->value.home.object = fxUnprojectSlot(the, snapshot, slot->value.home.object);
 		slot->value.home.module = fxUnprojectSlot(the, snapshot, slot->value.home.module);
@@ -1480,6 +1483,8 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		buffer.value.entry.sum = slot->value.entry.sum;
 		break;
 	case XS_ERROR_KIND:
+		buffer.value.error.info = fxProjectSlot(the, snapshot->firstProjection, slot->value.error.info);
+		buffer.value.error.which = slot->value.error.which;
 		break;
 	case XS_HOME_KIND:
 		buffer.value.home.object = fxProjectSlot(the, snapshot->firstProjection, slot->value.home.object);
