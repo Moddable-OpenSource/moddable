@@ -544,6 +544,8 @@ class ApplicationBehavior extends DebugBehavior {
 					this.state = preferences.state;
 				if ("automaticInstruments" in preferences)
 					this.automaticInstruments = preferences.automaticInstruments;
+				if ("showExceptions" in preferences)
+					this.showExceptions = preferences.showExceptions;
 				if ("test262Context" in preferences)
 					this.test262Context.fromJSON(preferences.test262Context);
 				if (("visibleTabs" in preferences) && (preferences.visibleTabs.length == 4))
@@ -579,6 +581,7 @@ class ApplicationBehavior extends DebugBehavior {
 				port: this.port,
 				state: this.state,
 				automaticInstruments: this.automaticInstruments,
+				showExceptions: this.showExceptions,
 				test262Context: this.test262Context,
 				visibleTabs: this.visibleTabs,
 				serialDevicePath: this.serialDevicePath,
