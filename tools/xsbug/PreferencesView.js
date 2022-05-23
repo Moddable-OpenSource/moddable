@@ -127,6 +127,24 @@ class PreferencesColumnBehavior extends Behavior {
 				{
 					Template: PreferencesTable,
 					expanded: true,
+					name: "EXCEPTIONS",
+					items: [
+						{
+							Template: SwitchRow,
+							comment: "Show or hide exceptions in console/log pane as they occur",
+							name: "Show exceptions",
+							get value() {
+								return model.showExceptions;
+							},
+							set value(it) {
+								model.showExceptions = it;
+							},
+						},
+					],
+				},
+				{
+					Template: PreferencesTable,
+					expanded: true,
 					name: "LOCATIONS",
 					items: model.mappings.map((mapping, index) => ({
 						Template: LocationRow,
