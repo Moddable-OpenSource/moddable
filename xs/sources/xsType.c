@@ -117,6 +117,7 @@ txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
 			if (address) {
 				txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
 				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+				address = to->value.array.address;
 				c_memcpy(chunk, address, size * sizeof(txSlot));
 				to->value.array.address = chunk;
 				while (size) {
