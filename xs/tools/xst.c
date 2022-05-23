@@ -943,6 +943,7 @@ void fxRunContext(txPool* pool, txContext* context)
  			||	!strcmp((char*)node->data.scalar.value, "Temporal")
  			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
  			||	!strcmp((char*)node->data.scalar.value, "array-grouping")
+ 			||	!strcmp((char*)node->data.scalar.value, "decorators")
  			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
  			||	!strcmp((char*)node->data.scalar.value, "json-modules")
 #ifndef mxRegExpUnicodePropertyEscapes
