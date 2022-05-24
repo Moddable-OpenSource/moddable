@@ -95,13 +95,13 @@ The color used is dependent upon the dark/light theme that is selected.
 For example,
 
 ```js
-trace('This line will be default black (light mode) or white (dark mode) text\n');
-trace('<info>This line will be green (light) or blue (dark)\n');
-trace('<warn>This line will be blue (light) or red (dark)\n');
-trace('<error>This line will be red (light) or yellow (dark)\n');
+trace('This is a standard text line\n');
+trace('<info>This is an "<info>" line\n');
+trace('<warn>This is a "<warn>" line\n');
+trace('<error>This is an "<error>" line\n');
 
 trace('<info>You can use multiple tags in a single trace\n<warn>As long as the line ');
-trace('starts with the tag\nTags within lines are will appear inline <error> such as here.\n');
+trace('starts with the tag\n');
 ```
 
 ![](../assets/xsbug/colorize.png)
