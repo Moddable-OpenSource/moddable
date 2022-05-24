@@ -429,38 +429,50 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 			the->status = status;
 			state->value.integer = XS_NO_CODE;
 			fxRunID(the, generator, XS_NO_ID);
-			if (state->value.integer == XS_NO_CODE)
+			if (state->value.integer == XS_NO_CODE) {
 				state->value.integer = XS_CODE_END;
-			value = the->stack;
-			if (value->kind == XS_UNINITIALIZED_KIND) {
-				value->kind = XS_UNDEFINED_KIND;
-				state->value.integer = XS_CODE_END;
-				mxPushUndefined();
-				mxPushSlot(resolveYieldFunction);
-				mxCall();
-				mxPushUndefined();
-				mxRunCount(1);
-				mxPop();
-			}
-			else {
-				mxPush(mxPromiseConstructor);
-				mxDub();
-				mxGetID(mxID(_resolve));
-				mxCall();
-				mxPushSlot(value);
-				mxRunCount(1);
 				value = the->stack;
-#ifdef mxPromisePrint
-				fprintf(stderr, "fxAsyncGeneratorStep %d\n", value->value.reference->next->ID);
-#endif
-// 				if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
+				if (value->kind == XS_UNINITIALIZED_KIND)
+					value->kind = XS_UNDEFINED_KIND;
+                mxPushUndefined();
+                mxPushSlot(resolveYieldFunction);
+                mxCall();
+                mxPushSlot(value);
+                mxRunCount(1);
+                mxPop();
+			}
+			else {				
+				value = the->stack;
+// 				if (value->kind == XS_UNINITIALIZED_KIND) {
+// 					value->kind = XS_UNDEFINED_KIND;
 // 					state->value.integer = XS_CODE_END;
-				if (state->value.integer == XS_CODE_AWAIT) {
-					fxPromiseThen(the, value->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
-				}
-				else {
-					fxPromiseThen(the, value->value.reference, resolveYieldFunction, rejectYieldFunction, C_NULL, C_NULL);
-				}
+// 					mxPushUndefined();
+// 					mxPushSlot(resolveYieldFunction);
+// 					mxCall();
+// 					mxPushUndefined();
+// 					mxRunCount(1);
+// 					mxPop();
+// 				}
+// 				else {
+					mxPush(mxPromiseConstructor);
+					mxDub();
+					mxGetID(mxID(_resolve));
+					mxCall();
+					mxPushSlot(value);
+					mxRunCount(1);
+					value = the->stack;
+	#ifdef mxPromisePrint
+					fprintf(stderr, "fxAsyncGeneratorStep %d\n", value->value.reference->next->ID);
+	#endif
+	// 				if (mxPromiseStatus(value->value.reference)->value.integer == mxRejectedStatus)
+	// 					state->value.integer = XS_CODE_END;
+					if (state->value.integer == XS_CODE_AWAIT) {
+						fxPromiseThen(the, value->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
+					}
+					else {
+						fxPromiseThen(the, value->value.reference, resolveYieldFunction, rejectYieldFunction, C_NULL, C_NULL);
+					}
+// 				}
 			}
 			mxPop();
 		}
@@ -607,7 +619,8 @@ void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status)
 			state = generator->next->next;
 			queue = state->next;
 			if (((status == XS_RETURN_STATUS) || (status == XS_THROW_STATUS))
-				&& ((state->value.integer == XS_CODE_AWAIT) || (state->value.integer == XS_CODE_START_ASYNC_GENERATOR)))
+				&& (
+				/*(state->value.integer == XS_CODE_AWAIT) ||*/ (state->value.integer == XS_CODE_START_ASYNC_GENERATOR)))
 				state->value.integer = XS_CODE_END;
 			instance = property = fxNewInstance(the);
 			property = fxNextSlotProperty(the, property, resolveFunction, XS_NO_ID, XS_INTERNAL_FLAG);

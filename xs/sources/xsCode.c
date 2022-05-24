@@ -2751,6 +2751,7 @@ void fxDelegateNodeCode(void* it, void* param)
 		fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, result);
 		fxCoderAddByte(param, 0, XS_CODE_AWAIT);
 		fxCoderAddByte(param, 0, XS_CODE_THROW_STATUS);
+		fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, result);
 	}
 	
 	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, iterator);
@@ -3984,10 +3985,8 @@ void fxReturnNodeCode(void* it, void* param)
 			self->expression->flags |= mxTailRecursionFlag;
 		fxNodeDispatchCode(self->expression, param);
 		if ((self->flags & (mxAsyncFlag | mxGeneratorFlag)) == (mxAsyncFlag | mxGeneratorFlag)) {
-			txTargetCode* awaitReturnTarget = fxCoderCreateTarget(coder);
 			fxCoderAddByte(param, 0, XS_CODE_AWAIT);
-			fxCoderAddBranch(coder, 1, XS_CODE_BRANCH_STATUS_1, awaitReturnTarget);
-			fxCoderAdd(coder, 0, awaitReturnTarget);
+			fxCoderAddByte(coder, 0, XS_CODE_THROW_STATUS);
 		}
 		fxCoderAddByte(param, -1, XS_CODE_SET_RESULT);
 	}
@@ -4442,10 +4441,8 @@ void fxYieldNodeCode(void* it, void* param)
 	fxCoderAddByte(coder, 0, XS_CODE_YIELD);
 	fxCoderAddBranch(coder, 1, XS_CODE_BRANCH_STATUS_1, target);
 	if (async) {
-		txTargetCode* awaitReturnTarget = fxCoderCreateTarget(coder);
 		fxCoderAddByte(param, 0, XS_CODE_AWAIT);
-		fxCoderAddBranch(coder, 1, XS_CODE_BRANCH_STATUS_1, awaitReturnTarget);
-		fxCoderAdd(coder, 0, awaitReturnTarget);
+		fxCoderAddByte(coder, 0, XS_CODE_THROW_STATUS);
 	}
 	fxCoderAddByte(param, -1, XS_CODE_SET_RESULT);
 	fxCoderAdjustEnvironment(coder, coder->returnTarget);

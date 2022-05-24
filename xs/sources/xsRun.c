@@ -37,7 +37,7 @@
 
 #include "xsAll.h"
 
-//#define mxTrace 1
+#define mxTrace 1
 //#define mxTraceCall 1
 
 #define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
