@@ -102,7 +102,7 @@ class ConsoleCodeBehavior extends CodeBehavior {
 		super.onTouchEnded(code, id, x, y, ticks);
 		if ((this.mode == 0) && (code.selectionLength == 0)) {
 			let offset = code.findLineBreak(code.selectionOffset, false);
-			let color = this.colors.find(color => color.offset == offset);
+			let color = this.colors.find(color => color.offset == offset && color.path !== undefined);
 			if (color) {
 				model.selectFile(color.path, { line:color.line });
 			}
