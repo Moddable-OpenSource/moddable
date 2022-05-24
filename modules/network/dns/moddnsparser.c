@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021  Moddable Tech, Inc.
+ * Copyright (c) 2018-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -27,14 +27,12 @@
 static void *getPacket(xsMachine *the, uint8_t **end)
 {
 	void *result;
+	xsUnsignedValue length;
 
 	xsmcGet(xsResult, xsThis, xsID_buffer);
-	result = xsmcToArrayBuffer(xsResult);
-	//@@ also support host buffer... to avoid packet copy
-	if (end) {
-		uint32_t length = xsmcGetArrayBufferLength(xsResult);
+	xsmcGetBufferReadable(xsResult, (void **)&result, &length);
+	if (end)
 		*end = length + (uint8_t *)result;
-	}
 	return result;
 }
 
