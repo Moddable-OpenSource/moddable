@@ -250,7 +250,7 @@ class CodeBehavior extends _CodeBehavior {
 	onFileChanged(code) {
 		var path = this.data.path;
 		code.stop();
-		if (path.endsWith(".js"))
+		if (path.endsWith(".js") || path.endsWith(".ts"))
 			code.type = "js";
 		else if (path.endsWith(".json"))
 			code.type = "json";
