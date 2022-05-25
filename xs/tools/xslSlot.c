@@ -155,6 +155,19 @@ txInteger fxCheckAliases(txMachine* the)
 			global = global->next;
 		}
 	}
+	{
+		txSlot *heap, *slot, *limit;
+		heap = the->firstHeap;
+		while (heap) {
+			slot = heap + 1;
+			limit = heap->value.reference;
+			while (slot < limit) {
+				slot->flag &= ~XS_LEVEL_FLAG;
+				slot++;
+			}
+			heap = heap->next;
+		}
+	}
 	return list->errorCount;
 }
 
