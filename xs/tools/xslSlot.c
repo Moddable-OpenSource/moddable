@@ -162,7 +162,8 @@ txInteger fxCheckAliases(txMachine* the)
 			slot = heap + 1;
 			limit = heap->value.reference;
 			while (slot < limit) {
-				slot->flag &= ~XS_LEVEL_FLAG;
+				if (slot->kind == XS_INSTANCE_KIND)
+					slot->flag &= ~XS_LEVEL_FLAG;
 				slot++;
 			}
 			heap = heap->next;
