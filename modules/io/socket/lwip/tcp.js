@@ -23,6 +23,8 @@ class TCP @ "xs_tcp_destructor" {
 	close() @ "xs_tcp_close"
 	read() @ "xs_tcp_read"
 	write(byte) @ "xs_tcp_write"
+	get remoteAddress() @ "xs_tcp_get_remoteAddress"
+	get remotePort() @ "xs_tcp_get_remotePort"
 
 	get format() @ "xs_tcp_get_format"
 	set format() @ "xs_tcp_set_format"

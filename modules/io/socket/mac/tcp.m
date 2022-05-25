@@ -388,6 +388,27 @@ void xs_tcp_write(xsMachine *the)
 		xsUnknownError("write failed");
 }
 
+void xs_tcp_get_remoteAddress(xsMachine *the)
+{
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+	CFDataRef address = CFSocketCopyPeerAddress(tcp->cfSkt);
+	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
+	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
+
+	xsResult = xsStringBuffer(NULL, 40);
+	inet_ntop(addr.sin_family, &addr.sin_addr, xsmcToString(xsResult), 40);
+}
+
+void xs_tcp_get_remotePort(xsMachine *the)
+{
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+	CFDataRef address = CFSocketCopyPeerAddress(tcp->cfSkt);
+	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
+	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
+
+	xsmcSetInteger(xsResult, htons(addr.sin_port));
+}
+
 void xs_tcp_get_format(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);

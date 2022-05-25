@@ -389,6 +389,21 @@ void xs_tcp_write(xsMachine *the)
 	tcpTrigger(tcp, kTCPOutput);
 }
 
+void xs_tcp_get_remoteAddress(xsMachine *the)
+{
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+
+	xsResult = xsStringBuffer(NULL, 40);
+	ipaddr_ntoa_r(&tcp->skt->remote_ip, xsmcToString(xsResult), 40);
+}
+
+void xs_tcp_get_remotePort(xsMachine *the)
+{
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+
+	xsmcSetInteger(xsResult, tcp->skt->remote_port);
+}
+
 void xs_tcp_get_format(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
