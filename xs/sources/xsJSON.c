@@ -888,6 +888,8 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	else if ((aValue->kind == XS_REFERENCE_KIND) && !fxIsCallable(the, aValue)) {
 		mxTry(the) {
 			fxStringifyJSONName(the, theStringifier, theFlag);
+			if (anInstance->flag & XS_MARK_FLAG)
+				mxTypeError("read only value");
 			anInstance->flag |= XS_LEVEL_FLAG;
 			if (fxIsArray(the, anInstance)) {
 				fxStringifyJSONChars(the, theStringifier, "[", 1);
@@ -954,7 +956,8 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 			anInstance->flag &= ~XS_LEVEL_FLAG;
 		}
 		mxCatch(the) {
-			anInstance->flag &= ~XS_LEVEL_FLAG;
+			if (anInstance->flag & XS_LEVEL_FLAG)
+				anInstance->flag &= ~XS_LEVEL_FLAG;
 			fxJump(the);
 		}
 	}
