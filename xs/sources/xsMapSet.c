@@ -62,10 +62,10 @@ static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 
 static txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable);
-static txSlot* fxCheckWeakMapKey(txMachine* the);
+static txSlot* fxCheckWeakMapKey(txMachine* the, txBoolean mutable);
 
 static txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable);
-static txSlot* fxCheckWeakSetValue(txMachine* the);
+static txSlot* fxCheckWeakSetValue(txMachine* the, txBoolean mutable);
 
 static txBoolean fxDeleteWeakEntry(txMachine* the, txSlot* link, txSlot* slot); 
 static txSlot* fxGetWeakEntry(txMachine* the, txSlot* link, txSlot* slot);
@@ -992,12 +992,15 @@ txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	return C_NULL;
 }
 
-txSlot* fxCheckWeakMapKey(txMachine* the)
+txSlot* fxCheckWeakMapKey(txMachine* the, txBoolean mutable)
 {
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
-		if (slot->kind == XS_REFERENCE_KIND)
+		if (slot->kind == XS_REFERENCE_KIND) {
+			if (mutable && (slot->value.reference->flag & XS_MARK_FLAG))
+				mxTypeError("WeakMap key is read-only");
 			return slot;
+		}
 	}
 	return C_NULL;
 }
@@ -1069,7 +1072,7 @@ void fx_WeakMap(txMachine* the)
 void fx_WeakMap_prototype_delete(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
-	txSlot* key = fxCheckWeakMapKey(the);
+	txSlot* key = fxCheckWeakMapKey(the, XS_MUTABLE);
 	mxResult->value.boolean = (key) ? fxDeleteWeakEntry(the, instance->next, key->value.reference) : 0;
 	mxResult->kind = XS_BOOLEAN_KIND;
 }
@@ -1077,7 +1080,7 @@ void fx_WeakMap_prototype_delete(txMachine* the)
 void fx_WeakMap_prototype_get(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
-	txSlot* key = fxCheckWeakMapKey(the);
+	txSlot* key = fxCheckWeakMapKey(the, XS_IMMUTABLE);
 	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key->value.reference) : C_NULL;
 	if (result) {
 		txSlot* value = result->value.weakEntry.value;
@@ -1089,7 +1092,7 @@ void fx_WeakMap_prototype_get(txMachine* the)
 void fx_WeakMap_prototype_has(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
-	txSlot* key = fxCheckWeakMapKey(the);
+	txSlot* key = fxCheckWeakMapKey(the, XS_IMMUTABLE);
 	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key->value.reference) : C_NULL;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = (result) ? 1 : 0;
@@ -1098,7 +1101,7 @@ void fx_WeakMap_prototype_has(txMachine* the)
 void fx_WeakMap_prototype_set(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
-	txSlot* key = fxCheckWeakMapKey(the);
+	txSlot* key = fxCheckWeakMapKey(the, XS_MUTABLE);
 	if (!key)
 		mxTypeError("key is no object");
 	fxSetWeakEntry(the, instance->next, key->value.reference, (mxArgc > 1) ? mxArgv(1) : &mxUndefined);
@@ -1119,12 +1122,15 @@ txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	return C_NULL;
 }
 
-txSlot* fxCheckWeakSetValue(txMachine* the)
+txSlot* fxCheckWeakSetValue(txMachine* the, txBoolean mutable)
 {
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
-		if (slot->kind == XS_REFERENCE_KIND)
+		if (slot->kind == XS_REFERENCE_KIND) {
+			if (mutable && (slot->value.reference->flag & XS_MARK_FLAG))
+				mxTypeError("WeakSet value is read-only");
 			return slot;
+		}
 	}
 	return C_NULL;
 }
@@ -1191,7 +1197,7 @@ void fx_WeakSet(txMachine* the)
 void fx_WeakSet_prototype_add(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
-	txSlot* value = fxCheckWeakSetValue(the);
+	txSlot* value = fxCheckWeakSetValue(the, XS_MUTABLE);
 	if (!value)
 		mxTypeError("value is no object");
 	fxSetWeakEntry(the, instance->next, value->value.reference, &mxUndefined);
@@ -1201,7 +1207,7 @@ void fx_WeakSet_prototype_add(txMachine* the)
 void fx_WeakSet_prototype_has(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_IMMUTABLE);
-	txSlot* value = fxCheckWeakSetValue(the);
+	txSlot* value = fxCheckWeakSetValue(the, XS_IMMUTABLE);
 	txSlot* result = (value) ? fxGetWeakEntry(the, instance->next, value->value.reference) : C_NULL;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = (result) ? 1 : 0;
@@ -1210,7 +1216,7 @@ void fx_WeakSet_prototype_has(txMachine* the)
 void fx_WeakSet_prototype_delete(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
-	txSlot* value = fxCheckWeakSetValue(the);
+	txSlot* value = fxCheckWeakSetValue(the, XS_MUTABLE);
 	mxResult->value.boolean = (value) ? fxDeleteWeakEntry(the, instance->next, value->value.reference) : 0;
 	mxResult->kind = XS_BOOLEAN_KIND;
 }
