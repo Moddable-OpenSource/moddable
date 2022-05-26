@@ -449,6 +449,8 @@ class ApplicationBehavior extends DebugBehavior {
 				if (i > 1) {
 					let remote = s1.slice(0, c1 - i + 1).join(alien ? alienSeparator : separator);
 					let locale = s2.slice(0, c2 - i + 1).join(separator);
+					remote = remote.concat(alien ? alienSeparator : separator);
+					locale = locale.concat(separator);
 					var mappings = model.mappings;
 					mappings.unshift({alien, locale, remote});
 					mappings.slice(10);
