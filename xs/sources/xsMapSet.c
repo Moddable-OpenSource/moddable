@@ -916,6 +916,8 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 		else if (XS_NUMBER_KIND == kind) {
 			if (slot->value.number == 0)
 				slot->value.number = 0;
+			else if (c_isnan(slot->value.number))
+				slot->value.number = C_NAN;
 			sum = *((txU8*)&slot->value.number);
 		}
 		else if ((XS_BIGINT_KIND == kind) || (XS_BIGINT_X_KIND == kind)) {
