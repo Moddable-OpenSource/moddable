@@ -2710,7 +2710,6 @@ void fxDelegateNodeCode(void* it, void* param)
 	txTargetCode* catchTarget = fxCoderCreateTarget(param);
 	txTargetCode* rethrowTarget = fxCoderCreateTarget(param);
 	txTargetCode* returnTarget = fxCoderCreateTarget(param);
-	txTargetCode* noReturnTarget = fxCoderCreateTarget(param);
 	txTargetCode* normalTarget = fxCoderCreateTarget(param);
 	txTargetCode* doneTarget = fxCoderCreateTarget(param);
 	
