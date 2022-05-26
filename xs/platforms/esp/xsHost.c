@@ -872,13 +872,8 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #if INSTRUMENT_CPULOAD
 void IRAM_ATTR timer_group0_isr(void *para)
 {
-#if kCPUESP32S3
-	TIMERG0.int_st_timers.t0_int_st = 1;
-	TIMERG0.hw_timer[TIMER_0].config.tn_alarm_en = TIMER_ALARM_EN;
-#else
-	TIMERG0.kESP32TimerDef.t0 = 1;
-	TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
-#endif
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
 
 	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
 #if kTargetCPUCount > 1
