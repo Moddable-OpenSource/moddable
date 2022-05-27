@@ -79,7 +79,9 @@ let b1 = Hex.toBuffer("01:23:45:67:89:AB:CD:EF", ":");
 
 The hexadecimal digits may be uppercase or lowercase. If the optional separator argument is provided, it must appear between each pair of hexadecimal digits.
 
-### `static toString(buffer [, separator]);`
+The optional separator must be a single character in the 7-bit ASCII rangle
+
+### `static toString(buffer [[, separator], hexChars]);`
 
 The `toString` function converts a buffer to a hexadecimal encoded `String`.
 
@@ -89,6 +91,16 @@ let s0 = Hex.toString(buffer, ".");
 // s0 is 01.23.45.67.89.AB.CD.EF
 let s1 = Hex.toString(buffer);
 // s1 is 0123456789ABCDEF
+```
+
+The optional separator must be a single character in the 7-bit ASCII range.
+
+The optional `hexChars` argument may contain 16 characters to use for the hexadecimal encoding. The characters must be 7-bit ASCII:
+
+```js
+let buffer = Hex.toBuffer("0123456789abcdef");
+let s0 = Hex.toString(buffer, "-", "0123456789abwxyz");
+// s0 is 01-23-45-67-89-ab-wx-yz
 ```
 
 <a id="crc"></a>
