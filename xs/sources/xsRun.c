@@ -3431,11 +3431,10 @@ XS_CODE_JUMP:
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = C_NAN;
 					}
-#if mxIntegerDivideOverflowException
-					else if ((mxStack->value.integer == 1) || (mxStack->value.integer == -1)) {
-						if (slot->value.integer >= 0)
-							slot->value.integer = 0;
-						else {
+#ifdef mxMinusZero
+					else if ((slot->value.integer < 0) || (mxStack->value.integer < 0)) {
+						slot->value.integer %= mxStack->value.integer;
+						if (slot->value.integer == 0) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = -0.0;
 						}

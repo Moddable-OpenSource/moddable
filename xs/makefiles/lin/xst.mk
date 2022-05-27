@@ -57,6 +57,7 @@ C_OPTIONS = \
 	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \
 	-DmxStringNormalize=1 \
+	-DmxMinusZero=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
