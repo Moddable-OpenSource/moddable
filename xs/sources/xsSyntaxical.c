@@ -1626,10 +1626,12 @@ void fxTryStatement(txParser* parser)
 
 void fxVariableStatement(txParser* parser, txToken theToken)
 {
+	txBoolean commaFlag = 0;
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
 	fxMatchToken(parser, theToken);
 	while (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_BINDING) {
+		commaFlag = 0;
 		fxBinding(parser, theToken, 1);
 // 		if (parser->token == XS_TOKEN_ASSIGN) {
 // 			parser->flags &= ~mxForFlag;
@@ -1642,11 +1644,12 @@ void fxVariableStatement(txParser* parser, txToken theToken)
 		if (parser->token == XS_TOKEN_COMMA) {
 			parser->flags &= ~mxForFlag;
 			fxGetNextToken(parser);
+			commaFlag = 1;
 		}
 		else
 			break;
 	}
-	if (aCount == 0) {
+    if ((aCount == 0) || commaFlag) {
 		fxPushNULL(parser);
 		fxPushNULL(parser);
 		fxPushNodeStruct(parser, 2, theToken, aLine);
