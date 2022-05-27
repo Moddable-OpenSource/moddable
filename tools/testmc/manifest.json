@@ -32,6 +32,7 @@
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODULES)/base/modules/manifest.json",
 		"$(MODULES)/data/base64/manifest.json",
+		"$(MODULES)/data/hex/manifest.json",
 		"$(MODULES)/data/text/decoder/manifest.json",
 		"$(MODULES)/data/text/encoder/manifest.json",
 		"$(MODULES)/files/preference/manifest.json",
