@@ -2739,6 +2739,7 @@ void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSy
 
 void fxGroupExpression(txParser* parser, txUnsigned flag)
 {
+	txBoolean commaFlag = 0;
 	txInteger aCount = 0;
 	txInteger aLine;
 	txUnsigned formerAwaitingYieldingFlags = parser->flags & (mxAwaitingFlag | mxYieldingFlag);
@@ -2750,11 +2751,13 @@ void fxGroupExpression(txParser* parser, txUnsigned flag)
 	}
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
 	while (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION) {
+		commaFlag = 0;
 		fxAssignmentExpression(parser);
 		aCount++;
 		if (parser->token != XS_TOKEN_COMMA) 
 			break;
 		fxGetNextToken(parser);
+		commaFlag = 1;
 	}
 	if (parser->token == XS_TOKEN_SPREAD) {
 		fxRestBinding(parser, XS_TOKEN_ARG, 0);
@@ -2780,7 +2783,7 @@ void fxGroupExpression(txParser* parser, txUnsigned flag)
 		fxArrowExpression(parser, flag);
 	}
 	else {
-        if (aCount == 0) {
+        if ((aCount == 0) || commaFlag) {
             fxPushNULL(parser);
 			fxReportParserError(parser, parser->line, "missing expression");
         }
