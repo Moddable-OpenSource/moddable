@@ -1480,18 +1480,23 @@ void fxAwaitImport(txMachine* the, txBoolean defaultFlag)
 			stack->value.boolean = moduleID != XS_NO_ID;
 		}
 		else {
-			fxRunImportNow(the, realm, XS_NO_ID);
-			if (defaultFlag) {
-				defaultID = mxID(_default);
-				export = mxModuleExports(stack)->value.reference->next;
-				while (export) {
-					mxCheck(the, export->kind == XS_EXPORT_KIND);
-					if (export->ID == defaultID) {
-						stack->kind = export->value.export.closure->kind;
-						stack->value = export->value.export.closure->value;
-						break;
+			if (defaultFlag & XS_IMPORT_ASYNC) {
+				gxDefaults.runImport(the, realm, XS_NO_ID);
+			}
+			else {
+				fxRunImportNow(the, realm, XS_NO_ID);
+				if (defaultFlag & XS_IMPORT_DEFAULT) {
+					defaultID = mxID(_default);
+					export = mxModuleExports(stack)->value.reference->next;
+					while (export) {
+						mxCheck(the, export->kind == XS_EXPORT_KIND);
+						if (export->ID == defaultID) {
+							stack->kind = export->value.export.closure->kind;
+							stack->value = export->value.export.closure->value;
+							break;
+						}
+						export = export->next;
 					}
-					export = export->next;
 				}
 			}
 		}

@@ -1304,6 +1304,7 @@ typedef unsigned char xsAttribute;
 		XS_IMPORT_NAMESPACE = 0,
 		XS_IMPORT_DEFAULT = 1,
 		XS_IMPORT_PREFLIGHT = 2,
+		XS_IMPORT_ASYNC = 4,
 	};
 #endif
 
