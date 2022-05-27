@@ -3381,6 +3381,23 @@ XS_CODE_JUMP:
 			slot = mxStack + 1;
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
+				#ifdef mxMinusZero
+					if (slot->value.integer == 0) {
+						if (mxStack->value.integer < 0) {
+							slot->kind = XS_NUMBER_KIND;
+							slot->value.number = -0.0;
+						}
+					}
+					else if (mxStack->value.integer == 0) {
+						if (slot->value.integer < 0) {
+							slot->kind = XS_NUMBER_KIND;
+							slot->value.number = -0.0;
+						}
+						else
+							slot->value.integer = 0;
+					}
+					else {
+				#endif
 					#if __has_builtin(__builtin_mul_overflow)
 						if (__builtin_mul_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
@@ -3392,6 +3409,9 @@ XS_CODE_JUMP:
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
 					#endif
+				#ifdef mxMinusZero
+					}
+				#endif
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_NUMBER_KIND;
@@ -3431,15 +3451,15 @@ XS_CODE_JUMP:
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = C_NAN;
 					}
-#ifdef mxMinusZero
-					else if ((slot->value.integer < 0) || (mxStack->value.integer < 0)) {
+				#ifdef mxMinusZero
+					else if (slot->value.integer < 0) {
 						slot->value.integer %= mxStack->value.integer;
 						if (slot->value.integer == 0) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = -0.0;
 						}
 					}
-#endif
+				#endif
 					else
 						slot->value.integer %= mxStack->value.integer;
 				}
