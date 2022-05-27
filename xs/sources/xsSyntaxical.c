@@ -2670,7 +2670,9 @@ void fxFunctionExpression(txParser* parser, txInteger theLine, txSymbol** theSym
 {
 	txUnsigned flags = parser->flags;
 	parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxFunctionFlag | mxTargetFlag | flag;
-	if ((parser->token == XS_TOKEN_IDENTIFIER) || ((flags & mxGeneratorFlag) && !(flags & mxStrictFlag) && (parser->token == XS_TOKEN_YIELD))) {
+	if ((parser->token == XS_TOKEN_IDENTIFIER)
+			|| ((flags & mxGeneratorFlag) && !(flags & mxStrictFlag) && (parser->token == XS_TOKEN_YIELD))
+			|| ((theSymbol == C_NULL) && (parser->token == XS_TOKEN_AWAIT))) {
 		fxPushSymbol(parser, parser->symbol);
 		if (theSymbol)
 			*theSymbol = parser->symbol;
@@ -2713,7 +2715,8 @@ void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSy
 {
 	txUnsigned flags = parser->flags;
 	parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxGeneratorFlag | mxTargetFlag | flag;
-	if (parser->token == XS_TOKEN_IDENTIFIER) {
+	if ((parser->token == XS_TOKEN_IDENTIFIER)
+			|| ((theSymbol == C_NULL) && (parser->token == XS_TOKEN_AWAIT))) {
 		fxPushSymbol(parser, parser->symbol);
 		if (theSymbol)
 			*theSymbol = parser->symbol;
