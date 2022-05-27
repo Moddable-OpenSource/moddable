@@ -15,7 +15,7 @@
 import WebSocket from "WebSocket";
 import data from "data";
 
-const ws = new WebSocket("ws://10.0.1.11:8080/");
+const ws = new WebSocket("ws://websockets.chilkat.io/wsChilkatEcho.ashx");
 ws.binaryType = "arraybuffer";
 ws.addEventListener("open", event => {
 	ws.send("Hello");

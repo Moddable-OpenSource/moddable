@@ -24,7 +24,6 @@
 		use numbers for states instead of strings
 */
 
-import TCP from "embedded:io/socket/tcp";
 import Timer from "timer";
 
 const Overhead = 8;
@@ -83,18 +82,26 @@ class MQTTClient {
 		if (!this.#options.host) throw new Error("host required");
 
 		this.#state = "resolving";
-		System.resolve(this.#options.host, (host, address) => {
-			if (!address)
-				return void this.#onError?.();
+		
+		const dns = new options.dns.io(options.dns);
 
-			this.#socket = new TCP({
-				address,
-				port: this.#options.port ?? 1883,
-				onReadable: this.#onReadable.bind(this),
-				onWritable: this.#onWritable.bind(this),
-				onError: this.#onError.bind(this)
-			});
-			this.#state = "connecting";
+		dns.resolve({
+			host: this.#options.host, 
+		
+			onResolved: (host, address) => {
+				this.#socket = new options.socket.io({
+					...options.socket,
+					address,
+					port: this.#options.port ?? 80,
+					onReadable: this.#onReadable.bind(this),
+					onWritable: this.#onWritable.bind(this),
+					onError: this.#onError.bind(this)
+				});
+				this.#state = "connecting";
+			},
+			onError: (err) => {
+				this.#onError?.();
+			},
 		});
 	}
 	close() {

@@ -13,7 +13,6 @@
  */
 
 import Timer from "timer";
-import WebSocketClient from "embedded:network/websocket/client";
 
 const WSPublic = {
 	host: "websockets.chilkat.io",
@@ -26,7 +25,8 @@ const WSLocal = {
 };
 
 let counter = 0;
-const ws = new WebSocketClient({
+const ws = new device.network.ws.io({
+	...device.network.ws,
 	...WSPublic,
 	onReadable(count, options) {
 //		Timer.set(() => {
@@ -38,15 +38,15 @@ const ws = new WebSocketClient({
 	},
 	onWritable(count) {
 		if (0 === counter) {
-			this.write(ArrayBuffer.fromString("pong"), {opcode: WebSocketClient.pong});
-			this.write(ArrayBuffer.fromString("ping!"), {opcode: WebSocketClient.ping});
+			this.write(ArrayBuffer.fromString("pong"), {opcode: device.network.ws.io.pong});
+			this.write(ArrayBuffer.fromString("ping!"), {opcode: device.network.ws.io.ping});
 			this.write(ArrayBuffer.fromString("this is a test 1"));
 			this.write(ArrayBuffer.fromString("this is a test 2"), {binary: false, more: true});
 			this.write(ArrayBuffer.fromString("this is a test 3"), {binary: false});
-			this.write(ArrayBuffer.fromString("abcdefghijklmnopqrstuvwyxz".repeat(80)), {binary: false});
+// 			this.write(ArrayBuffer.fromString("abcdefghijklmnopqrstuvwyxz".repeat(80)), {binary: false});
 			this.write(ArrayBuffer.fromString("this is a test 4"), {binary: true});
-			this.write(ArrayBuffer.fromString("ping!!"), {opcode: WebSocketClient.ping});
-//			this.write(Uint16Array.of(0).buffer, {opcode: WebSocketClient.close});
+			this.write(ArrayBuffer.fromString("ping!!"), {opcode: device.network.ws.io.ping});
+//			this.write(Uint16Array.of(0).buffer, {opcode: device.network.ws.io.close});
 			counter = 1;
 
 			this.timer = Timer.repeat(() => {
@@ -56,7 +56,7 @@ const ws = new WebSocketClient({
 	},
 	onControl(opcode, data) {
 		switch (opcode) {
-			case WebSocketClient.close: 
+			case device.network.ws.io.close: 
 				trace("** Connection Closing **\n");
 				data = new Uint8Array(data);
 				const code = (data[0] << 8) | data[1];
@@ -67,11 +67,11 @@ const ws = new WebSocketClient({
 				delete this.timer;
 				break;
 
-			case WebSocketClient.ping:
+			case device.network.ws.io.ping:
 				trace("PING!\n");
 				break;
 
-			case WebSocketClient.pong:
+			case device.network.ws.io.pong:
 				trace("PONG!\n");
 				break;
 		}

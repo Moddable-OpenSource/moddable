@@ -18,7 +18,6 @@
  *
  */
  
-import TCP from "embedded:io/socket/tcp";
 import Timer from "timer";
 
 class HTTPClient {
@@ -135,18 +134,26 @@ class HTTPClient {
 		this.#host = host;
 		this.#onClose = onClose;
 
-		System.resolve(this.#host, (host, address) => {
-			if (!address)
-				return this.#onError?.();
+		const dns = new options.dns.io(options.dns);
 
-			this.#socket = new TCP({
-				address,
-				port: port ?? 80,
-				onReadable: this.#onReadable.bind(this),
-				onWritable: this.#onWritable.bind(this),
-				onError: this.#onError.bind(this)
-			});
+		dns.resolve({
+			host: this.#host, 
+		
+			onResolved: (host, address) => {
+				this.#socket = new options.socket.io({
+					...options.socket,
+					address,
+					port: port ?? 80,
+					onReadable: this.#onReadable.bind(this),
+					onWritable: this.#onWritable.bind(this),
+					onError: this.#onError.bind(this)
+				});
+			},
+			onError: (err) => {
+				this.#onError?.();
+			},
 		});
+			
 	}
 	close() {
 		this.#socket?.close();

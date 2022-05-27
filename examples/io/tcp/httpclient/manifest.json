@@ -4,10 +4,23 @@
 		"$(MODDABLE)/modules/data/text/decoder/manifest.json"
 	],
 	"modules": {
-		"*": "./main",
-		"embedded:network/http/request": "./../httpclient/httpclient"
+		"*": [ 
+			"./config",
+			"./main",
+			"$(MODULES)/network/dns/moddnsparser"
+		],
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"embedded:network/http/client": "./../httpclient/httpclient"
 	},
 	"preload": [
-		"embedded:network/http/request"
+		"config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
+		"embedded:network/http/client"
 	]
 }

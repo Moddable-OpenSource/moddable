@@ -8,15 +8,24 @@
 	},
 	"modules": {
 		"*": [
+			"./config",
+			"./data",
 			"./mqtt",
 			"./main",
-			"./data"
+			"$(MODULES)/network/dns/moddnsparser"
 		],
-		"embedded:network/mqtt/client": "../mqttclient/mqttclient"
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"embedded:network/mqtt/client": "./../mqttclient/mqttclient"
 	},
 	"preload": [
-		"mqtt",
-		"embedded:network/mqtt/client",
-		"data"
+		"config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
+		"embedded:network/mqtt/client"
 	]
 }

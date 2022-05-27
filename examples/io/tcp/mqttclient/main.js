@@ -12,10 +12,10 @@
  *
  */
 
-import MQTTClient from "embedded:network/mqtt/client";
 import Timer from "timer";
 
-const mqtt = new MQTTClient({
+const mqtt = new device.network.mqtt.io({
+	...device.network.mqtt,
 	host: "test.mosquitto.org",
 	port: 1883,
 	id: "ecma-419 mqtt test",
@@ -29,16 +29,16 @@ const mqtt = new MQTTClient({
 		retain: 0
 	},
 	onControl(msg) {
-		if (MQTTClient.CONNACK === msg.operation) {
+		if (device.network.mqtt.io.CONNACK === msg.operation) {
 			this.write(null, {
-				operation: MQTTClient.SUBSCRIBE,
+				operation: device.network.mqtt.io.SUBSCRIBE,
 				items: [
 					{topic: "foo/bar/+", QoS: 2},
 					{topic: "bar/foo"}
 				]
 			});
 			this.write(null, {
-				operation: MQTTClient.UNSUBSCRIBE,
+				operation: device.network.mqtt.io.UNSUBSCRIBE,
 				items: [
 					{topic: "frogs"},
 					{topic: "bar/foo"}
@@ -50,7 +50,7 @@ const mqtt = new MQTTClient({
 				QoS: 2
 			});
 			this.write(ArrayBuffer.fromString("ALL\n"));
-			this.write(null, {operation: MQTTClient.PINGREQ});
+			this.write(null, {operation: device.network.mqtt.io.PINGREQ});
 
 			this.remain = 16 * 1024;
 			this.counter = 0;
@@ -61,24 +61,24 @@ const mqtt = new MQTTClient({
 				id: 1234
 			});
 		}
-		if (MQTTClient.PUBACK === msg.operation) {
+		if (device.network.mqtt.io.PUBACK === msg.operation) {
 			trace(`PUBACK - ${msg.id}\n`);
 			if (1234 == msg.id) {
-//				this.write(null, {operation: MQTTClient.DISCONNECT});
+//				this.write(null, {operation: device.network.mqtt.io.DISCONNECT});
 //				this.close();
 			}
 		}
-		if (MQTTClient.PINGRESP === msg.operation)
+		if (device.network.mqtt.io.PINGRESP === msg.operation)
 			trace("Ping response\n");
-		if (MQTTClient.PUBREC === msg.operation)
+		if (device.network.mqtt.io.PUBREC === msg.operation)
 			trace(`PUBREC - ${msg.id}\n`);
-		if (MQTTClient.PUBREL === msg.operation)
+		if (device.network.mqtt.io.PUBREL === msg.operation)
 			trace(`PUBREL - ${msg.id}\n`);
-		if (MQTTClient.PUBCOMP === msg.operation)
+		if (device.network.mqtt.io.PUBCOMP === msg.operation)
 			trace(`PUBCOMP - ${msg.id}\n`);
-		if (MQTTClient.SUBACK === msg.operation)
+		if (device.network.mqtt.io.SUBACK === msg.operation)
 			trace(`SUBACK - ${msg.id}\n`);
-		if (MQTTClient.UNSUBACK === msg.operation)
+		if (device.network.mqtt.io.UNSUBACK === msg.operation)
 			trace(`UNSUBACK - ${msg.id}\n`);
 	},
 	onReadable(count, options) {

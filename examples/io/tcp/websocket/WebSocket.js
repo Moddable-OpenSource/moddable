@@ -18,8 +18,6 @@
  *
  */
  
-import WebSocketClient from "embedded:network/websocket/client";
-
 let urlRegExp = null;
 let authorityRegExp = null;
 function URLParts(url) {
@@ -62,14 +60,15 @@ class WebSocket {
 			throw new URIError("ws only");
 		this.#url = url;
 		this.#protocol = protocol;
-		this.#client = new WebSocketClient({
+		this.#client = new device.network.ws.io({
+			...device.network.ws,
 			host: parts.host,
 			port: parts.port,
 			path: parts.path,
 			protocol: protocol,
 			onControl: (opcode, data) => {
 				switch (opcode) {
-					case WebSocketClient.close: 
+					case device.network.ws.io.close: 
 						this.#state = 3;
 						data = new Uint8Array(data);
 						const event = {
@@ -81,11 +80,11 @@ class WebSocket {
 						this.#eventListeners.close.forEach(listener => listener.call(null, event));
 						break;
 
-					case WebSocketClient.ping:
+					case device.network.ws.io.ping:
 						trace("PING!\n");
 						break;
 
-					case WebSocketClient.pong:
+					case device.network.ws.io.pong:
 						trace("PONG!\n");
 						break;
 				}
@@ -216,7 +215,7 @@ class WebSocket {
 			data[0] = code >> 8;
 			data[1] = code & 0xFF;
 			data = data.buffer.concat(reason);
-			this.#write(data, { opcode: WebSocketClient.close });	
+			this.#write(data, { opcode: device.network.ws.io.close });	
 			this.#state = 2;
 		}
 	}

@@ -1,4 +1,3 @@
-import MQTTClient from "embedded:network/mqtt/client";
 import Timer from "timer";
 
 let urlRegExp = null;
@@ -91,10 +90,11 @@ export class Client {
 				this.#resubscribe = resubscribe;
 		}
 		this.#options = {
+			...device.network.mqtt,
 			host: parts.host, port: parts.port,
 			keepalive, id, user, password, will,
 			onControl: (msg) => {
-				if (msg.operation == MQTTClient.CONNACK) {
+				if (msg.operation == device.network.mqtt.io.CONNACK) {
 					this.#state = CONNECTED;
 					this.#wait = true;
 					this.#acks.forEach(ack => {
@@ -109,16 +109,16 @@ export class Client {
 					this.#acks = [];
 					acks = acks.filter(ack => {
 						if ((ack.operation == msg.operation) && (ack.id == msg.id)) {
-							if (ack.operation == MQTTClient.PUBREC) {
-								ack.operation = MQTTClient.PUBCOMP;
+							if (ack.operation == device.network.mqtt.io.PUBREC) {
+								ack.operation = device.network.mqtt.io.PUBCOMP;
 								delete ack.data;
 								delete ack.options;
 								delete ack.optionsLength;
-								// MQTTClient already sent PUBREL
+								// device.network.mqtt.io already sent PUBREL
 								return true;
 							}
 							if (ack.callback) {
-								if (ack.operation == MQTTClient.SUBACK) {
+								if (ack.operation == device.network.mqtt.io.SUBACK) {
 									const items = ack.items.map((item, index) => {
 										return {
 											qos: msg.payload[index],
@@ -238,7 +238,7 @@ export class Client {
 			}
 		};
 		this.#state = CONNECTING;
-		this.#client = new MQTTClient(this.#options);
+		this.#client = new device.network.mqtt.io(this.#options);
 	}
 	get connected() {
 		return this.#state == CONNECTED;
@@ -280,7 +280,7 @@ export class Client {
 		case CONNECTED:
 			this.#endCallback = callback;
 			this.#state = ENDING;
-// 			this.#write(null, { operation: MQTTClient.DISCONNECT }, 2);
+// 			this.#write(null, { operation: device.network.mqtt.io.DISCONNECT }, 2);
 			if (force)
 				this.#close();
 			else
@@ -321,16 +321,16 @@ export class Client {
 		else
 			data = ArrayBuffer.fromString(message);
 		topic = ArrayBuffer.fromString(topic);
-		options =  { operation: MQTTClient.PUBLISH, topic, id, QoS, retain, duplicate, byteLength:data.byteLength };
+		options =  { operation: device.network.mqtt.io.PUBLISH, topic, id, QoS, retain, duplicate, byteLength:data.byteLength };
 		let optionsLength = 5 + 2 + topic.byteLength;
 		if (QoS == 1) {
 			optionsLength += 2;
-			this.#acks.push({ operation:MQTTClient.PUBACK, id, callback, data, options, optionsLength });
+			this.#acks.push({ operation:device.network.mqtt.io.PUBACK, id, callback, data, options, optionsLength });
 			callback = undefined;
 		}
 		else if (QoS == 2) {
 			optionsLength += 2;
-			this.#acks.push({ operation:MQTTClient.PUBREC, id, callback, data, options, optionsLength });
+			this.#acks.push({ operation:device.network.mqtt.io.PUBREC, id, callback, data, options, optionsLength });
 			callback = undefined;
 		}
 		this.#write(data, options, optionsLength, callback);
@@ -345,7 +345,7 @@ export class Client {
 		case CLOSED:
  			this.#state = RECONNECTING;
    			this.#eventListeners.reconnect.forEach(listener => listener.call(null));
-			this.#client = new MQTTClient(this.#options);
+			this.#client = new device.network.mqtt.io(this.#options);
 			break;
 		case CONNECTING:
  			this.#state = RECONNECTING;
@@ -419,8 +419,8 @@ export class Client {
 				optionsLength += 2 + item.topic.byteLength + 1;
 			});
 			const id = ++this.#id;
-			this.#acks.push({ operation:MQTTClient.SUBACK, id, callback, items });
-			this.#write(null, { operation: MQTTClient.SUBSCRIBE, items, id }, optionsLength);
+			this.#acks.push({ operation:device.network.mqtt.io.SUBACK, id, callback, items });
+			this.#write(null, { operation: device.network.mqtt.io.SUBSCRIBE, items, id }, optionsLength);
 		}
 		else if (callback)
 			callback(null, items);
@@ -453,8 +453,8 @@ export class Client {
 				return items.find(item => item.key == subscription.key) == undefined;
 			});
 		}
-		this.#acks.push({ operation:MQTTClient.UNSUBACK, id, callback });
-		this.#write(null, { operation: MQTTClient.UNSUBSCRIBE, items, id }, optionsLength);
+		this.#acks.push({ operation:device.network.mqtt.io.UNSUBACK, id, callback });
+		this.#write(null, { operation: device.network.mqtt.io.UNSUBSCRIBE, items, id }, optionsLength);
 		return this;
 	}
 	#checkConnect() {
@@ -510,25 +510,25 @@ export class Client {
 			const callback = () => {
 				// ??  
 			};
-			this.#acks.push({ operation:MQTTClient.SUBACK, id, callback, items });
-			this.#write(null, { operation: MQTTClient.SUBSCRIBE, items, id }, optionsLength);
+			this.#acks.push({ operation:device.network.mqtt.io.SUBACK, id, callback, items });
+			this.#write(null, { operation: device.network.mqtt.io.SUBSCRIBE, items, id }, optionsLength);
 		}
 		acks.forEach(ack => {
-			if ((ack.operation == MQTTClient.SUBACK) || (ack.operation == MQTTClient.UNSUBACK)) {
+			if ((ack.operation == device.network.mqtt.io.SUBACK) || (ack.operation == device.network.mqtt.io.UNSUBACK)) {
 				if (ack.callback) {
 					ack.callback(new Error("MQTT client disconnected"));
 				}
 			}
 			if (republish) {
-				if ((ack.operation == MQTTClient.PUBACK) || (ack.operation == MQTTClient.PUBREC)) {
+				if ((ack.operation == device.network.mqtt.io.PUBACK) || (ack.operation == device.network.mqtt.io.PUBREC)) {
 					const { data, options, optionsLength } = ack;
 					this.#acks.push(ack);
 					this.#write(data, options, optionsLength);
 				}
-				else if (ack.operation == MQTTClient.PUBCOMP) {
+				else if (ack.operation == device.network.mqtt.io.PUBCOMP) {
 					const { id } = ack;
 					this.#acks.push(ack);
-					this.#write(null, { operation: MQTTClient.PUBREL, id }, 5 + 2);
+					this.#write(null, { operation: device.network.mqtt.io.PUBREL, id }, 5 + 2);
 				}
 			}
 		});
