@@ -1,7 +1,7 @@
 # Data
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 7, 2022
+Revised: May 28, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -79,7 +79,7 @@ let b1 = Hex.toBuffer("01:23:45:67:89:AB:CD:EF", ":");
 
 The hexadecimal digits may be uppercase or lowercase. If the optional separator argument is provided, it must appear between each pair of hexadecimal digits.
 
-The optional separator must be a single character in the 7-bit ASCII rangle
+The optional separator must be a single character in the 7-bit ASCII range.
 
 ### `static toString(buffer [[, separator], hexChars]);`
 
@@ -215,8 +215,10 @@ The following properties are supported in the options object:
 
 | Property | Description |
 | :---: | :--- |
-| `maxVersion` |  A number between 1 and 40 inclusive indicating the maximum version of the generated QR Code. The version number determines the amount of data the QR Code can contain. This property is optional and defaults to 40. |
+| `maxVersion` |  A number between 1 and 40 inclusive indicating the maximum version of the generated QR Code. The version number determines the amount of data the QR Code can contain. The implementation uses the mimumum version number possible for the size of the data provided. This property is optional and defaults to 40. |
 | `input` |  A `String` or buffer containing the data to encode into the QR Code. This property is required. |
+
+The `qrCode` function throws an exception if it detects invalid parameters or that there is not enough memory to generate the QR Code.
 
 ```js
 const code = qrCode({input: "Welcome to Moddable", maxVersion: 4});
