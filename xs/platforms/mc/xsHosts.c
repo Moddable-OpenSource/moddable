@@ -38,7 +38,6 @@
 #include "xsAll.h"
 #include "xs.h"
 #include "mc.defines.h"
-#include "mc.xs.h"
 
 #include "xsScript.h"
 #include "xsHosts.h"
@@ -499,7 +498,7 @@ static uint16_t gSetupPending = 0;
 #if MODDEF_MAIN_ASYNC
 static void setStepDoneFulfilled(xsMachine *the)
 {
-	xsResult = xsGet(xsArg(0), xsID_default);
+	xsResult = xsGet(xsArg(0), xsID("default"));
 		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
 			xsCallFunction0(xsResult, xsGlobal);
 }
@@ -521,7 +520,7 @@ static void setStepDone(txMachine *the)
 		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_ASYNC);
 		xsVar(0) = xsNewHostFunction(setStepDoneFulfilled, 1);
 		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
-		xsCall2(xsResult, xsID_then, xsVar(0), xsVar(1));
+		xsCall2(xsResult, xsID("then"), xsVar(0), xsVar(1));
 #else	
 		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
 		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
