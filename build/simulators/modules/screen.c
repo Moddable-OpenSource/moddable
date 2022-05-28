@@ -315,6 +315,24 @@ static int32_t modInstrumentationStackRemain(xsMachine *the)
 
 static uint16_t gSetupPending = 0;
 
+#if MODDEF_MAIN_ASYNC
+static void setStepDoneFulfilled(xsMachine *the)
+{
+	xsResult = xsGet(xsArg(0), xsID_default);
+	if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+		xsCallFunction0(xsResult, xsGlobal);
+
+	xsCollectGarbage();
+
+	txScreen* screen = the->host;
+	screen->start(screen, 5);
+}
+
+static void setStepDoneRejected(xsMachine *the)
+{
+}
+#endif
+
 static void setStepDone(txMachine *the)
 {
 	gSetupPending -= 1;
@@ -322,7 +340,13 @@ static void setStepDone(txMachine *the)
 		return;
 
 	xsBeginHost(the);
-	{
+#if MODDEF_MAIN_ASYNC
+		xsVars(2);
+		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_ASYNC);
+		xsVar(0) = xsNewHostFunction(setStepDoneFulfilled, 1);
+		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
+		xsCall2(xsResult, xsID_then, xsVar(0), xsVar(1));
+#else	
 		xsVars(1);
 		xsVar(0) = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
 		if (xsTest(xsVar(0))) {
@@ -334,11 +358,13 @@ static void setStepDone(txMachine *the)
 			}
 		}
 		xsCollectGarbage();
-	}
+#endif
 	xsEndHost(the);
 
+#if !MODDEF_MAIN_ASYNC
 	txScreen* screen = the->host;
 	screen->start(screen, 5);
+#endif
 }
 
 void fxScreenLaunch(txScreen* screen)
