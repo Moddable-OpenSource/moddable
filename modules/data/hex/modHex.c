@@ -18,6 +18,7 @@
  *
  */
 
+#include "xsPlatform.h"
 #include "xsmc.h"
 
 static const char *gHexUpper ICACHE_FLASH_ATTR = "0123456789ABCDEF";
