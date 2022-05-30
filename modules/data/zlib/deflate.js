@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+ 
+
 class Deflate @ "xs_deflate_destructor" {
 	err = 0;
 	chunks = [];
@@ -7,15 +28,7 @@ class Deflate @ "xs_deflate_destructor" {
 	}
 	close() @ "xs_deflate_close";
 
-	push(buffer, end = false) {
-		if (ArrayBuffer.isView(buffer)) {
-			if (buffer.byteOffset || (buffer.byteLength !== buffer.buffer.byteLength))
-				throw new Error;
-
-			buffer = buffer.buffer;
-		}
-		return push.call(this, buffer, end);
-	}
+	push(buffer, end) @ "xs_deflate_push";
 	onData(chunk) {
 		this.chunks.push(chunk);
 	}
@@ -42,6 +55,5 @@ class Deflate @ "xs_deflate_destructor" {
 }
 
 function build(options) @ "xs_deflate";
-function push(buffer, end) @ "xs_deflate_push";
 
 export default Deflate;
