@@ -1242,8 +1242,9 @@ void fxMarkWeakStuff(txMachine* the)
 				txSlot** listEntryAddress = &list->value.weakList.first;
 				while ((listEntry = *listEntryAddress)) {
 					txSlot* value = listEntry->value.weakEntry.value;
-					if (value->flag & XS_MARK_FLAG)
+					if ((value->flag & XS_MARK_FLAG) && (value->kind != XS_UNINITIALIZED_KIND)) {
 						listEntryAddress = &listEntry->next;
+					}
 					else {
 						listEntry->flag &= ~XS_MARK_FLAG;
 						*listEntryAddress = listEntry->next;

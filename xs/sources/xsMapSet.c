@@ -1229,6 +1229,7 @@ txBoolean fxDeleteWeakEntry(txMachine* the, txSlot* list, txSlot* key)
 		if (!(slot->flag & XS_INTERNAL_FLAG))
 			break;
 		if ((slot->kind == XS_WEAK_ENTRY_KIND) && (slot->value.weakEntry.check == list)) {
+			slot->value.weakEntry.value->kind = XS_UNINITIALIZED_KIND;
 			*address = slot->next;
 			return 1;
 		}			
