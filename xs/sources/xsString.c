@@ -339,7 +339,7 @@ void fx_String(txMachine* the)
 void fx_String_fromArrayBuffer(txMachine* the)
 {
 	txSlot* slot;
-	txSlot* arrayBuffer = C_NULL;
+	txSlot* arrayBuffer = C_NULL, *sharedArrayBuffer = C_NULL;
 	txSlot* bufferInfo;
 	txInteger limit, offset;
 	txInteger inLength, outLength = 0;
@@ -350,12 +350,18 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	slot = mxArgv(0);
 	if (slot->kind == XS_REFERENCE_KIND) {
 		slot = slot->value.reference->next;
-		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
-			arrayBuffer = slot;
+		if (slot) {
+			bufferInfo = slot->next;
+			if (slot->kind == XS_ARRAY_BUFFER_KIND)
+				arrayBuffer = slot;
+			else if (slot->kind == XS_HOST_KIND) {
+				if (!(slot->flag & XS_HOST_CHUNK_FLAG) && bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND))
+					sharedArrayBuffer = slot;
+			}
+		}
 	}
-	if (!arrayBuffer)
+	if (!arrayBuffer && !sharedArrayBuffer)
 		mxTypeError("argument is no ArrayBuffer instance");
-	bufferInfo = arrayBuffer->next;
 	limit = bufferInfo->value.bufferInfo.length;
 	offset = fxArgToByteLength(the, 1, 0);
 	if (limit < offset)
@@ -364,7 +370,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	if ((limit < (offset + inLength)) || ((offset + inLength) < offset))
 		mxRangeError("out of range byteLength %ld", inLength);
 
-	in = offset + (unsigned char *)arrayBuffer->value.arrayBuffer.address;
+	in = offset + (unsigned char *)(arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data);
 	while (inLength > 0) {
 		unsigned char first = c_read8(in++), clen;
 		if (first < 0x80){
@@ -397,7 +403,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	}
 
 	string = fxNewChunk(the, outLength + 1);
-	c_memcpy(string, offset + arrayBuffer->value.arrayBuffer.address, outLength);
+	c_memcpy(string, offset + (arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data), outLength);
 	string[outLength] = 0;
 	mxResult->value.string = string;
 	mxResult->kind = XS_STRING_KIND;
