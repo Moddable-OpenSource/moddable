@@ -232,7 +232,7 @@ class WebSocketClient {
 					return;
 
 				while (count) {
-					if (!options.tag) {
+					if (undefined === options.tag) {
 						this.#socket.format = "number";
 						let tag = options.tag = this.#socket.read();
 						count--;
