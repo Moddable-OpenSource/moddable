@@ -14,7 +14,8 @@
 
 import TextDecoder from "text/decoder"
 
-const http = new device.network.http.io({ 
+const HTTPClient = device.network.http.io;
+const http = new HTTPClient({ 
 	...device.network.http,
 	host: "example.com"
 });
@@ -30,7 +31,7 @@ for (let i = 0; i < 3; i++) {
 			this.decoder = new TextDecoder;
 		},
 		onReadable(count) {
-			trace(this.decoder.decode(this.read(count), {stream: true}), "\n"); 
+			trace(this.decoder.decode(this.read(count), {stream: true})); 
 		},
 		onDone() {
 			trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
