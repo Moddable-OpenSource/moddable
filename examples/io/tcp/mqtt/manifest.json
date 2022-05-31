@@ -3,7 +3,7 @@
 		"$(MODDABLE)/modules/io/manifest.json"
 	],
 	"creation": {
-		"stack": 1024,
+		"stack": 384,
 		"static": 65536
 	},
 	"modules": {
