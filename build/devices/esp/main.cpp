@@ -81,6 +81,11 @@ void setup()
 
 #ifdef mxDebug
 	gThe = modCloneMachine(0, 0, 0, 0, NULL);
+	if (!gThe) {
+		modLog("can't clone: no memory?");
+		while (true)
+			;
+	}
 
 	modRunMachineSetup(gThe);
 #else
