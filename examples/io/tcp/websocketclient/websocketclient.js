@@ -46,10 +46,10 @@ class WebSocketClient {
 		if (!this.#options.host) throw new Error("host required");
 
 		const dns = new options.dns.io(options.dns);
-
+		this.#state = "resolving";
 		dns.resolve({
 			host: this.#options.host, 
-		
+
 			onResolved: (host, address) => {
 				this.#socket = new options.socket.io({
 					...options.socket,
