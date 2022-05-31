@@ -24,15 +24,20 @@ const compressed2 = Uint8Array.of(
 	0x0e, 0x93, 0x76, 0x69, 0x9c, 0xac, 0xbe, 0xb3, 0x61, 0xdb, 0xb6, 0x6d, 0xdb, 0xb6, 0x6d, 0xdb,
 	0xb6, 0x6d, 0xdb, 0xb6, 0xbf, 0xfd, 0x01, 0x19, 0x00, 0x70, 0x01);
 
-trace("compressed1\n");
+trace("** compressed1 **\n");
 let inflator = new Inflate;
 inflator.push(compressed1.buffer, true);
 tracePacket(inflator.result);
 
-trace("compressed2\n");
+trace("\n** compressed2 **\n");
 inflator = new Inflate;
+inflator.onData = function(chunk) {
+	tracePacket(new Uint8Array(chunk));
+}
+inflator.onEnd = function() {
+	trace("** end **\n");
+}
 inflator.push(compressed2.buffer, true);
-tracePacket(inflator.result);
 
 function tracePacket(bytes) {
 	for (let i = 0; i < bytes.length; i += 16) {

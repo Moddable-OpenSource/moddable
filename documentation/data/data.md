@@ -1,7 +1,7 @@
 # Data
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: May 28, 2022
+Revised: May 31, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -12,7 +12,7 @@ Revised: May 28, 2022
 * [CRC](#crc)
 * [QRCode](#qrcode)
 * [Text](#text)
-* [zlib](#zlib)
+* [Inflate & Deflate (zlib)](#zlib)
 
 <a id="base64"></a>
 ## class Base64
@@ -136,7 +136,7 @@ The `CRC8` and `CRC16` functions take a number of options used to specify the CR
 
 The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8 and 16-bit integers for CRC16.
 
-The [crc example](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
+The [crc example](../../examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
 
 - `CRC-8` 
 - `CRC-8/CDMA2000` 
@@ -273,5 +273,7 @@ Include the modules' manifest to use them in a project:
 		"$(MODULES)/data/zlib/manifest_inflate.json"
 	]
 ```
+
+The [inflate example](../../examples/data/inflate/main.js) demonstrates how to decompress data as a one-shot operation and using the `onData` callback for streaming.
 
 > **Note**: A significant amount of memory is required for zlib decompresssion and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.
