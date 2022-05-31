@@ -841,10 +841,11 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				mxPushSlot(stepFunction);
 				mxCall();
 				if (mxArgc == 0)
-					mxPushUndefined();
-				else
+					mxRunCount(0);
+				else {
 					mxPushSlot(mxArgv(0));
-				mxRunCount(1);
+					mxRunCount(1);
+				}
 				slot = the->stack;
                 if (!mxIsReference(slot)) {
                     mxTypeError("no object");
