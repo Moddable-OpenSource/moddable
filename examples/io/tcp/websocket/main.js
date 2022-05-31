@@ -31,7 +31,7 @@ ws.addEventListener("message", event => {
 		trace(`onmessage binary ${data.byteLength}\n`);
 	else {
 		trace(`onmessage ${data}\n`);
-		if (data == "GOODBYE")
+		if (data.toUpperCase() == "GOODBYE")
 			ws.close(1000, "Done");
 	}
 });
