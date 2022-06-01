@@ -255,9 +255,9 @@ void fxCheckCStack(txMachine* the)
 {
     char x;
     char *stack = &x;
-//    if (stack <= the->stackLimit) {
-//    	fxAbort(the, XS_STACK_OVERFLOW_EXIT);
-//    }
+	if (stack <= the->stackLimit) {
+		fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+	}
 }
 
 void fxCollect(txMachine* the, txBoolean theFlag)

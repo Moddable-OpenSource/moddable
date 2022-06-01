@@ -2209,7 +2209,6 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 	Atom atom;
 	txU1* p;
 	txU1* q;
-	txU1* signature;
 	txID id;
 	txID c, i;
 	txFlag clean;
@@ -2246,7 +2245,6 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 		mxMapAtom(p);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
 		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-		signature = p;
 		p += XS_DIGEST_SIZE;
 		
 		self->bufferOffset = mxArchiveHeaderSize;
