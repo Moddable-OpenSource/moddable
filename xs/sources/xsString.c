@@ -403,7 +403,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	}
 
 	string = fxNewChunk(the, outLength + 1);
-	c_memcpy(string, offset + (arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data), outLength);
+	c_memcpy(string, offset + (arrayBuffer ? arrayBuffer->value.arrayBuffer.address : (txByte *)sharedArrayBuffer->value.host.data), outLength);
 	string[outLength] = 0;
 	mxResult->value.string = string;
 	mxResult->kind = XS_STRING_KIND;
