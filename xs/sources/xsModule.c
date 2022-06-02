@@ -2372,7 +2372,7 @@ void fx_StaticModuleRecord(txMachine* the)
 		script.symbolsBuffer = NULL;
 		script.symbolsSize = 0;
 		script.codeBuffer = code;
-		script.codeSize = size;
+		script.codeSize = (txSize)size;
 		script.hostsBuffer = NULL;
 		script.hostsSize = 0;
 		script.path = path;
