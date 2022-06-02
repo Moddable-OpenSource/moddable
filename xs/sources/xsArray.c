@@ -789,6 +789,7 @@ again:
 				j = hi - 1;
 				do {
 					while ((COMPARE(i) < 0) && (i <= j)) { CHECK; i++; }
+                    CHECK;
 					while ((COMPARE(j) > 0) && (i <= j)) { CHECK; j--; }
 					CHECK;
 					if (i < j) {
