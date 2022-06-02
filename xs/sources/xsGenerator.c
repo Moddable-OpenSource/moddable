@@ -134,7 +134,6 @@ txSlot* fxNewGeneratorInstance(txMachine* the)
 	txSlot* prototype;
 	txSlot* instance;
 	txSlot* property;
-	txSlot* slot;
 
 	prototype = (the->stack->kind == XS_REFERENCE_KIND) ? the->stack->value.reference : mxGeneratorPrototype.value.reference;
 
@@ -151,13 +150,6 @@ txSlot* fxNewGeneratorInstance(txMachine* the)
 	property->ID = XS_NO_ID;
     property->value.stack.length = 0;
     property->value.stack.address = C_NULL;
-	if (prototype) {
-		slot = prototype->next;
-		if (slot && (slot->kind == XS_STACK_KIND)) {
-			property->value.stack.length = slot->value.stack.length;
-			property->value.stack.address = slot->value.stack.address;
-		}
-	}
 	
     property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
@@ -521,7 +513,6 @@ txSlot* fxNewAsyncGeneratorInstance(txMachine* the)
 	txSlot* prototype;
 	txSlot* instance;
 	txSlot* property;
-	txSlot* slot;
 	txSlot* function;
 	txSlot* home;
 
@@ -540,13 +531,6 @@ txSlot* fxNewAsyncGeneratorInstance(txMachine* the)
 	property->ID = XS_NO_ID;
     property->value.stack.length = 0;
     property->value.stack.address = C_NULL;
-	if (prototype) {
-		slot = prototype->next;
-		if (slot && (slot->kind == XS_STACK_KIND)) {
-			property->value.stack.length = slot->value.stack.length;
-			property->value.stack.address = slot->value.stack.address;
-		}
-	}
 	
     property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
