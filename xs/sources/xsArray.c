@@ -1453,7 +1453,7 @@ void fx_Array_prototype_fill(txMachine* the)
 	else
 		mxPushUndefined();
 	value = the->stack;
-	if (array && (array->ID == XS_ARRAY_BEHAVIOR)) {
+	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
 		txIndex length = array->value.array.length;
 		txIndex start = (txIndex)fxArgToIndex(the, 1, 0, length);
 		txIndex end = (txIndex)fxArgToIndex(the, 2, length, length);
