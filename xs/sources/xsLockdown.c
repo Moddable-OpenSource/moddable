@@ -585,9 +585,7 @@ void fxVerifyError(txMachine* the, txSlot* path, txID id, txIndex index, txStrin
 {
 	txSlot* array;
 	txSlot* slot;
-	txSlot* current;
-	txSlot* next;
-	txSlot* previous;
+	txSlot* stack;
 	
 	array = mxResult->value.reference->next;
 	slot = fxNewSlot(the);
@@ -596,38 +594,55 @@ void fxVerifyError(txMachine* the, txSlot* path, txID id, txIndex index, txStrin
 	array->value.array.length++;
 	fxString(the, slot, "");
 	
-	current = path;
-	next = C_NULL;
-	previous = C_NULL;
-	while (current) {
-		next = current->next;
-		current->next = previous;
-		previous = current;
-		current = next;
+	stack = the->stack;
+	while (path) {
+		mxPushSlot(path);
+		path = path->next;
 	}
-	
-	path = previous;
-	current = path;
-	while (current) {
-		if (current->kind == XS_STRING_X_KIND) {
-			fxVerifyErrorString(the, slot, XS_NO_ID, 0, current->value.string);
+	while (the->stack < stack) {
+		if (the->stack->kind == XS_STRING_X_KIND) {
+			fxVerifyErrorString(the, slot, XS_NO_ID, 0, the->stack->value.string);
 		}
 		else {
-			fxVerifyErrorString(the, slot, current->value.at.id, current->value.at.index, C_NULL);
+			fxVerifyErrorString(the, slot, the->stack->value.at.id, the->stack->value.at.index, C_NULL);
 		}
-		current = current->next;
+		mxPop();
 	}
 	fxVerifyErrorString(the, slot, id, index, string);
 	
-	current = path;
-	next = C_NULL;
-	previous = C_NULL;
-	while (current) {
-		next = current->next;
-		current->next = previous;
-		previous = current;
-		current = next;
-	}
+	
+// 	current = path;
+// 	next = C_NULL;
+// 	previous = C_NULL;
+// 	while (current) {
+// 		next = current->next;
+// 		current->next = previous;
+// 		previous = current;
+// 		current = next;
+// 	}
+// 	
+// 	path = previous;
+// 	current = path;
+// 	while (current) {
+// 		if (current->kind == XS_STRING_X_KIND) {
+// 			fxVerifyErrorString(the, slot, XS_NO_ID, 0, current->value.string);
+// 		}
+// 		else {
+// 			fxVerifyErrorString(the, slot, current->value.at.id, current->value.at.index, C_NULL);
+// 		}
+// 		current = current->next;
+// 	}
+// 	fxVerifyErrorString(the, slot, id, index, string);
+// 	
+// 	current = path;
+// 	next = C_NULL;
+// 	previous = C_NULL;
+// 	while (current) {
+// 		next = current->next;
+// 		current->next = previous;
+// 		previous = current;
+// 		current = next;
+// 	}
 }
 
 void fxVerifyErrorString(txMachine* the, txSlot* slot, txID id, txIndex index, txString string)
@@ -845,6 +860,9 @@ void fxVerifyQueue(txMachine* the, txSlot* list, txSlot* path, txSlot* instance,
 	if (instance->flag & XS_LEVEL_FLAG)
 		return;
 	item = fxNewSlot(the);
+	item->value.list.first = C_NULL;
+	item->value.list.last = instance;
+	item->kind = XS_LIST_KIND;
 	list->value.list.last->next = item;
 	list->value.list.last = item;
 	
@@ -859,6 +877,4 @@ void fxVerifyQueue(txMachine* the, txSlot* list, txSlot* path, txSlot* instance,
 		name->kind = XS_AT_KIND;
 	}
 	name->next = path;
-	item->value.list.last = instance;
-	item->kind = XS_LIST_KIND;
 }
