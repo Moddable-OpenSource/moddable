@@ -321,6 +321,7 @@ struct sxPatternParser {
 	txInteger** code;
 	txByte* buffer;
 	
+	char* stackLimit;
 	c_jmp_buf jmp_buf;
 	char error[256];
 };
@@ -371,6 +372,7 @@ static void fxSequenceCode(txPatternParser* parser, void* it, txInteger directio
 static void fxWordBreakCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 static void fxWordContinueCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 
+static void fxPatternParserCheckStack(txPatternParser* parser);
 static void fxPatternParserInitialize(txPatternParser* parser);
 static txBoolean fxPatternParserDecimal(txPatternParser* parser, txU4* value);
 static void fxPatternParserError(txPatternParser* parser, txString format, ...);
@@ -412,6 +414,7 @@ enum {
 	mxInvalidUTF8,
 	mxNameOverflow,
 	mxNotEnoughMemory,
+	mxStackOverflow,
 	mxUnicodePropertyEscapeNotBuiltIn,
 	mxErrorCount
 };
@@ -431,6 +434,7 @@ static const txString gxErrors[mxErrorCount] ICACHE_XS6RO_ATTR = {
 	"invalid UTF-8",
 	"name overflow",
 	"not enough memory",
+	"stack oveflow",
 	"unicode property escape not built-in",
 };
 
@@ -1113,10 +1117,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 	void* former = NULL;
 	txSequence* formerBranch = NULL;
 	txInteger length;
-#ifdef mxRun
-	if (parser->the)
-		fxCheckCStack(parser->the);
-#endif
+	fxPatternParserCheckStack(parser);
 	while ((parser->character != C_EOF) && (parser->character != character)) {
 		txInteger currentIndex = parser->captureIndex;
 		void* term = NULL;
@@ -1432,10 +1433,7 @@ void fxQuantifierMeasure(txPatternParser* parser, void* it, txInteger direction)
 void fxSequenceMeasure(txPatternParser* parser, void* it, txInteger direction)
 {
 	txSequence* self = it;
-#ifdef mxRun
-	if (parser->the)
-		fxCheckCStack(parser->the);
-#endif
+	fxPatternParserCheckStack(parser);
 	if (direction == 1) {
 		(*self->left->dispatch.measure)(parser, self->left, direction);
 		self->step = self->left->step;
@@ -1640,6 +1638,14 @@ void fxWordContinueCode(txPatternParser* parser, void* it, txInteger direction, 
 }
 
 
+void fxPatternParserCheckStack(txPatternParser* parser)
+{
+    char x;
+    char *stack = &x;
+    if (stack <= parser->stackLimit)
+		fxPatternParserError(parser, gxErrors[mxStackOverflow]);
+}
+
 void fxPatternParserInitialize(txPatternParser* parser)
 {
 	c_memset(parser, 0, sizeof(txPatternParser));
@@ -1798,6 +1804,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 			fxPatternParserError(parser, gxErrors[mxInvalidFlags]);
 		parser->pattern = pattern;
 		parser->the = the;
+		parser->stackLimit = fxCStackLimit();
 		
 		fxPatternParserNext(parser);
 		term = fxDisjunctionParse(parser, C_EOF);
