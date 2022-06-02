@@ -7508,7 +7508,7 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 					else if (operand & 0x80)
 						d = c - it->delta;
 					else
-						d = (*conditionals[it->delta])(the, mxPtrDiff(p - string), c);
+						d = (*conditionals[it->delta])(the, mxPtrDiff(p - mxThis->value.string), c);
 					stringLength = fx_String_prototype_toCase_aux(the, &q, &r, stringLength, mxStringByteLength(d) - mxPtrDiff(q - p));
 					r = mxStringByteEncode(r, d);
 				}
