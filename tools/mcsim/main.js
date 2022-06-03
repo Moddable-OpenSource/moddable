@@ -47,11 +47,16 @@ const compartmentModuleMap = {
 const compartmentOptions = {
 	resolveHook(specifier, refererSpecifier) {
 		if (specifier[0] == '.') {
+			let separator = '/';
+			if (system.platform == "win") {
+				separator = '\\';
+				specifier = specifier.replaceAll('/', '\\');
+			}
 			let dot = 1;
-			let slash = refererSpecifier.lastIndexOf("/");
+			let slash = refererSpecifier.lastIndexOf(separator);
 			if (specifier[1] == '.') {
 				dot++;
-				slash = refererSpecifier.lastIndexOf("/", slash - 1);
+				slash = refererSpecifier.lastIndexOf(separator, slash - 1);
 			}
 			return refererSpecifier.slice(0, slash) + specifier.slice(dot);
 		}
@@ -99,7 +104,8 @@ let noDevice = {
 	ControlsTemplate: Container.template($ => ({
 		left:0, right:0, top:0, bottom:0,
 		contents:[
-			Button($, { string:"Locate..." }, {
+			Button($, { 
+				string:"Locate...",
 				Behavior: class extends ButtonBehavior {
 					onTap(container) {
 						container.bubble("doLocateSimulators");
