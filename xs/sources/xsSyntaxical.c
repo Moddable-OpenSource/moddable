@@ -3220,6 +3220,7 @@ void fxPropertyName(txParser* parser, txSymbol** theSymbol, txToken* theToken0, 
 void fxBinding(txParser* parser, txToken theToken, txFlag initializeIt)
 {
 	txInteger aLine = parser->line;
+	fxCheckParserStack(parser, aLine);
 	if (parser->token == XS_TOKEN_IDENTIFIER) {
 		fxCheckStrictSymbol(parser, parser->symbol);
 		if (((theToken == XS_TOKEN_CONST) || (theToken == XS_TOKEN_LET)) && (parser->symbol == parser->letSymbol))
