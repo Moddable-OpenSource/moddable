@@ -1954,6 +1954,7 @@ void fxPrefixExpression(txParser* parser)
 	if (gxTokenFlags[parser->token] & XS_TOKEN_PREFIX_EXPRESSION) {
 		txToken aToken = parser->token;
 		txInteger aLine = parser->line;
+		fxCheckParserStack(parser, aLine);
 		fxGetNextToken(parser);
 		fxPrefixExpression(parser);
 		fxCheckArrowFunction(parser, 1);
