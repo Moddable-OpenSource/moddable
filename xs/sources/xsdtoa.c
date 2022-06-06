@@ -6327,14 +6327,22 @@ void fxDelete_dtoa(void* dtoa)
 void fxDTOACleanup(txMachine* the, ThInfo* DTOA)
 {
 	if (DTOA->dirty) {
+		Bigint* b;
 		int i, c = Kmax +1 ;
 		for (i = 0; i < c; i++) {
-			Bigint* b = DTOA->Freelist[i];
+			b = DTOA->Freelist[i];
 			while(b) {
 				Bigint* next = b->next;
 				fxDTOAFree(b, DTOA);
 				b = next;
 			}
+		}
+
+		b = DTOA->P5s;
+		while(b) {
+			Bigint* next = b->next;
+			fxDTOAFree(b, DTOA);
+			b = next;
 		}
 	}
 }
