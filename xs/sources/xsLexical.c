@@ -1681,7 +1681,7 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 	else {
 		txEntity* entity = C_NULL;
 		int c = parser->character;
-		while ((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z'))) {
+		while ((p < q) && ((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')))) {
 			*p++ = c;
 			fxGetNextCharacter(parser);
 			c = parser->character;
