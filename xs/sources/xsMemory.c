@@ -232,7 +232,9 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 #else
 		txSize capacity = (txSize)(chunk->temporary - data);
 	#ifdef mxSnapshot
-		chunk->dummy = 0;
+		#if INTPTR_MAX == INT64_MAX
+			chunk->dummy = 0;
+		#endif
 	#ifdef mxSnapshotRandomInit
 		arc4random_buf(data + sizeof(txChunk), offset);
 	#endif		
