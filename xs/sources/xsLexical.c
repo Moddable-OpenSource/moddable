@@ -1284,18 +1284,16 @@ void fxGetNextTokenAux(txParser* parser)
 					else if (!c_strncmp(p, "# sourceMappingURL=", 19) || !c_strncmp(p, "@ sourceMappingURL=", 19)) {
 						p += 19;
 						q = p;
-						c = *q++;
-						while ((c != 0) && (c != 10) && (c != 13))
-							c = *q++;
+						while (((c = *q)) && (c != 10) && (c != 13))
+							q++;
 						*q = 0;
 						parser->name = fxNewParserString(parser, p, mxPtrDiff(q - p));
 					}
 					else if (!c_strncmp(p, "# sourceURL=", 12) || !c_strncmp(p, "@ sourceURL=", 12)) {
 						p += 12;
 						q = p;
-						c = *q++;
-						while ((c != 0) && (c != 10) && (c != 13))
-							c = *q++;
+						while (((c = *q)) && (c != 10) && (c != 13))
+							q++;
 						*q = 0;
 						parser->source = fxNewParserSymbol(parser, p);
 					}
