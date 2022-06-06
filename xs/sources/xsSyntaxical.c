@@ -1152,6 +1152,7 @@ void fxBody(txParser* parser)
 void fxBlock(txParser* parser)
 {
 	txInteger aLine = parser->line;
+	fxCheckParserStack(parser, aLine);
 	fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
 	fxStatements(parser);
 	fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
