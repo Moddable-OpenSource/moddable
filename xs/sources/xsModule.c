@@ -2279,11 +2279,11 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 	txSlot* meta = mxModuleInstanceMeta(module);
 	txSlot* closures = mxFunctionInstanceCode(instance)->value.code.closures;
 	txSlot* property;
-// 	if (mxIsReference(function)) {
-// 		instance = function->value.reference;
-// 		if (mxIsFunction(instance))
-// 			mxFunctionInstanceHome(instance)->value.home.module = module;
-// 	}
+ 	if (mxIsReference(function)) {
+ 		instance = function->value.reference;
+ 		if (mxIsFunction(instance))
+ 			mxFunctionInstanceHome(instance)->value.home.module = module;
+ 	}
 	closures->flag |= XS_DONT_PATCH_FLAG;
 	property = closures->next->next;
 	while (property) {
