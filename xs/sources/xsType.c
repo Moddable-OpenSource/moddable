@@ -1423,15 +1423,16 @@ void fxRunProgramEnvironment(txMachine* the)
 
 txSlot* fxNewRealmInstance(txMachine* the)
 {
-	txSlot* parent = the->stack + 8;
-	txSlot* global = the->stack + 7;
-	txSlot* moduleMap = the->stack + 6;
-	txSlot* own = the->stack + 5;
-	txSlot* closures = the->stack + 4;
-	txSlot* resolveHook = the->stack + 3;
-	txSlot* moduleMapHook = the->stack + 2;
-	txSlot* loadHook = the->stack + 1;
-	txSlot* loadNowHook = the->stack;
+	txSlot* parent = the->stack + 9;
+	txSlot* global = the->stack + 8;
+	txSlot* moduleMap = the->stack + 7;
+	txSlot* own = the->stack + 6;
+	txSlot* closures = the->stack + 5;
+	txSlot* resolveHook = the->stack + 4;
+	txSlot* moduleMapHook = the->stack + 3;
+	txSlot* loadHook = the->stack + 2;
+	txSlot* loadNowHook = the->stack + 1;
+	txSlot* importMetaHook = the->stack;
 	txSlot* realm = fxNewInstance(the);
 	txSlot* slot;
 	/* mxRealmGlobal */
@@ -1453,6 +1454,8 @@ txSlot* fxNewRealmInstance(txMachine* the)
 	slot = fxNextSlotProperty(the, slot, loadHook, XS_NO_ID, XS_GET_ONLY);
 	/* mxLoadNowHook */
 	slot = fxNextSlotProperty(the, slot, loadNowHook, XS_NO_ID, XS_GET_ONLY);
+	/* mxImportMetaHook */
+	slot = fxNextSlotProperty(the, slot, importMetaHook, XS_NO_ID, XS_GET_ONLY);
 	/* mxRealmParent */
 	slot = fxNextSlotProperty(the, slot, parent, XS_NO_ID, XS_GET_ONLY);
     parent->value.reference = realm;

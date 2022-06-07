@@ -1906,6 +1906,7 @@ void fx_Compartment(txMachine* the)
 	txSlot* global = C_NULL;
 	txSlot* closures = C_NULL;
 	txSlot* slot;
+	txSlot* target;
 	txSlot* own;
 	txInteger id;
 	
@@ -1923,7 +1924,6 @@ void fx_Compartment(txMachine* the)
 		mxPushReference(mxModuleInstanceInternal(module)->value.module.realm);
 		
 		// GLOBALS
-		
 		if (the->sharedMachine == C_NULL) {
 			txSlot* instance;
 			txSlot* property;
@@ -1989,80 +1989,79 @@ void fx_Compartment(txMachine* the)
 		}
 		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_global), XS_DONT_ENUM_FLAG);
 		slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
-		if (mxArgc > 0) {
-			mxPushUndefined();
-			mxPush(mxAssignObjectFunction);
-			mxCall();
-			mxPushReference(global);
+		
+		if ((mxArgc > 0) && (mxIsReference(mxArgv(0)))) {
 			mxPushSlot(mxArgv(0));
-			mxRunCount(2);
-            mxPop();
-		}
-		
+			mxGetID(fxID(the, "globals"));
+			slot = the->stack;
+			if (slot->kind != XS_UNDEFINED_KIND) {
+				mxPushUndefined();
+				mxPush(mxAssignObjectFunction);
+				mxCall();
+				mxPushReference(global);
+				mxPushSlot(slot);
+				mxRunCount(2);
+				mxPop();
+			}
+			mxPop(); // globals
+			
 		// MODULE MAP
-		
-		if ((mxArgc > 1) && (mxIsReference(mxArgv(1)))) {
-			txSlot* target;
-			txSlot* source;
-			txSlot* at;
-			txSlot* property;
 			target = fxNewInstance(the);
 			own = fxNewInstance(the);
-			mxPushSlot(mxArgv(1));
-			source = fxToInstance(the, the->stack);
-			at = fxNewInstance(the);
-			mxBehaviorOwnKeys(the, source, XS_EACH_NAME_FLAG, at);
-			mxTemporary(property);
-			while ((at = at->next)) {
-				if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
-					mxPushReference(source);
-					mxGetAll(at->value.at.id, at->value.at.index);
-					if (mxIsReference(the->stack)) { 
-						if (mxIsModule(the->stack->value.reference) || mxIsStaticModuleRecord(the->stack->value.reference)) {
+			mxPushSlot(mxArgv(0));
+			mxGetID(fxID(the, "moduleMap"));
+			slot = the->stack;
+			if (slot->kind != XS_UNDEFINED_KIND) {
+				txSlot* source;
+				txSlot* at;
+				txSlot* property;
+				source = fxToInstance(the, slot);
+				at = fxNewInstance(the);
+				mxBehaviorOwnKeys(the, source, XS_EACH_NAME_FLAG, at);
+				mxTemporary(property);
+				while ((at = at->next)) {
+					if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+						mxPushReference(source);
+						mxGetAll(at->value.at.id, at->value.at.index);
+						if (mxIsReference(the->stack)) { 
+							if (mxIsModule(the->stack->value.reference) || mxIsStaticModuleRecord(the->stack->value.reference)) {
+								target = target->next = fxNewSlot(the);
+								target->ID = at->value.at.id;
+								target->kind = the->stack->kind;
+								target->value = the->stack->value;
+							}
+							else {
+								txSlot* descriptor = the->stack;
+								mxPush(mxStaticModuleRecordConstructor);
+								mxNew();
+								mxPushSlot(descriptor);
+								mxRunCount(1);
+								mxPullSlot(descriptor);
+								target = target->next = fxNewSlot(the);
+								target->ID = at->value.at.id;
+								target->kind = the->stack->kind;
+								target->value = the->stack->value;
+							}
+						}
+						else if (mxIsStringPrimitive(the->stack)) {
 							target = target->next = fxNewSlot(the);
 							target->ID = at->value.at.id;
 							target->kind = the->stack->kind;
 							target->value = the->stack->value;
 						}
-						else {
-							txSlot* descriptor = the->stack;
-							mxPush(mxStaticModuleRecordConstructor);
-							mxNew();
-							mxPushSlot(descriptor);
-							mxRunCount(1);
-							mxPullSlot(descriptor);
-							target = target->next = fxNewSlot(the);
-							target->ID = at->value.at.id;
-							target->kind = the->stack->kind;
-							target->value = the->stack->value;
-						}
+						else
+							mxTypeError("no specifier");
+						mxPop();
 					}
-					else if (mxIsStringPrimitive(the->stack)) {
-						target = target->next = fxNewSlot(the);
-						target->ID = at->value.at.id;
-						target->kind = the->stack->kind;
-						target->value = the->stack->value;
-					}
-					else
-						mxTypeError("no specifier");
-					mxPop();
 				}
+				mxPop(); // property
+				mxPop(); // at
 			}
-			mxPop(); // property
-			mxPop(); // at
-			mxPop(); // source
-		}
-		else {
-			fxNewInstance(the);
-			fxNewInstance(the);
-		}
-		
-		// OPTIONS
-		
-		mxPushUndefined();
-		closures = fxNewEnvironmentInstance(the, C_NULL);
-		if ((mxArgc > 2) && (mxIsReference(mxArgv(2)))) {
-			mxPushSlot(mxArgv(2));
+			mxPop(); // moduleMap
+			
+			mxPushUndefined();
+			closures = fxNewEnvironmentInstance(the, C_NULL);
+			mxPushSlot(mxArgv(0));
 			mxGetID(fxID(the, "globalLexicals"));
 			slot = the->stack;
 			if (slot->kind != XS_UNDEFINED_KIND) {
@@ -2096,36 +2095,50 @@ void fx_Compartment(txMachine* the)
 			}
 			mxPop(); // globalLexicals
 	
-			mxPushSlot(mxArgv(2));
+			mxPushSlot(mxArgv(0));
 			mxGetID(fxID(the, "resolveHook"));
 			slot = the->stack;
 			if (slot->kind != XS_UNDEFINED_KIND) {
 				if (!fxIsCallable(the, slot))
 					mxTypeError("resolveHook is no function");
 			}
-            mxPushSlot(mxArgv(2));
+			mxPushSlot(mxArgv(0));
 			mxGetID(fxID(the, "moduleMapHook"));
 			slot = the->stack;
 			if (slot->kind != XS_UNDEFINED_KIND) {
 				if (!fxIsCallable(the, slot))
 					mxTypeError("moduleMapHook is no function");
 			}
-            mxPushSlot(mxArgv(2));
+			mxPushSlot(mxArgv(0));
 			mxGetID(fxID(the, "loadHook"));
 			slot = the->stack;
 			if (slot->kind != XS_UNDEFINED_KIND) {
 				if (!fxIsCallable(the, slot))
 					mxTypeError("loadHook is no function");
 			}
-            mxPushSlot(mxArgv(2));
+			mxPushSlot(mxArgv(0));
 			mxGetID(fxID(the, "loadNowHook"));
 			slot = the->stack;
 			if (slot->kind != XS_UNDEFINED_KIND) {
 				if (!fxIsCallable(the, slot))
 					mxTypeError("loadNowHook is no function");
 			}
+			mxPushSlot(mxArgv(0));
+			mxGetID(fxID(the, "importMetaHook"));
+			slot = the->stack;
+			if (slot->kind != XS_UNDEFINED_KIND) {
+				if (!fxIsCallable(the, slot))
+					mxTypeError("importMetaHook is no function");
+			}
 		}
 		else {
+			fxNewInstance(the);
+			fxNewInstance(the);
+	
+			mxPushUndefined();
+			closures = fxNewEnvironmentInstance(the, C_NULL);
+
+			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
