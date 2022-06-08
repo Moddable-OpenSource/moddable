@@ -1026,7 +1026,7 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 		xsResult = xsArg(1);
 	}
 	else {
-		xsmcSetArrayBuffer(xsResult, NULL, count);
+		xsmcSetArrayBufferResizable(xsResult, NULL, count, count);
 		result = xsmcToArrayBuffer(xsResult);
 	}
 
@@ -1093,7 +1093,7 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 	}
 //@@
 	if ((result - resultStart) != (int)countStart)
-		xsSetArrayBufferLength(xsResult, result - resultStart);
+		xsmcSetArrayBufferLength(xsResult, result - resultStart);
 }
 
 void xs_crypt_mode_setIV(xsMachine *the)
