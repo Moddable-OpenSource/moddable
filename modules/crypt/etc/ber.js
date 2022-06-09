@@ -45,7 +45,7 @@ export default class BER {
 		else if (buffer instanceof Uint8Array)
 			this.#a = buffer;
 		else
-			this.#a = new Uint8Array(0);
+			this.#a = new Uint8Array(new ArrayBuffer(0, {maxByteLength: 0x10000000}));
 	};
 	getTag() {
 		return this.#a[this.#i++];
@@ -143,9 +143,7 @@ export default class BER {
 
 	morebuf(n) {		//@@ rework as SSLStream
 		if (n < 128) n = 128;
-		let a = new Uint8Array(this.#a.length + n);
-		a.set(this.#a);
-		this.#a = a;
+		this.#a.buffer.resize(this.#a.length + n);
 	};
 	getc() {
 		return this.#a[this.#i++];
@@ -197,9 +195,15 @@ export default class BER {
 			b.putc(val ? 1 : 0);
 			break;
 		case 0x02:	// integer
-			let c = ArrayBuffer.fromBigInt(val, 0, true);	// signess = true
-			b.putLength(c.byteLength);
-			b.putChunk(c);
+			if (0n === val) {
+				b.putLength(1);
+				b.putc(0);
+			}
+			else {
+				const c = ArrayBuffer.fromBigInt(val, 0, true);	// signess = true
+				b.putLength(c.byteLength);
+				b.putChunk(c);
+			}
 			break;
 		case 0x03:	// bit string
 			b.putLength(val.byteLength + 1);
@@ -232,7 +236,7 @@ export default class BER {
 					t.putc((x >>> (n * 7)) | 0x80);
 				t.putc(x & 0x7f);
 			}
-			b.putLength(t.i);
+			b.putLength(t.#i);
 			b.putChunk(t.getBuffer());
 			break;
 		case 0x09:	// real -- not supported
@@ -306,7 +310,8 @@ export default class BER {
 			}
 			break;
 		}
-		return b.getBuffer();
+		b.#a.buffer.resize(b.#i);
+		return b.#a.buffer;
 	};
 	static decode(a) {
 		return this._decode(new BER(a));
