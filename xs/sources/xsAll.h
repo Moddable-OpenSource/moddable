@@ -1799,6 +1799,7 @@ mxExport void fx_Compartment_prototype_importNow(txMachine* the);
 mxExport void fx_Compartment_prototype_module(txMachine* the);
 
 mxExport void fx_StaticModuleRecord(txMachine* the);
+mxExport void fx_StaticModuleRecord_import(txMachine* the);
 mxExport void fx_StaticModuleRecord_initialize(txMachine* the);
 mxExport void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the);
 

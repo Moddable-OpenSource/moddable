@@ -2485,6 +2485,17 @@ txSlot* fxNewStaticModuleRecordInstance(txMachine* the)
  	return instance;
 }
 
+void fx_StaticModuleRecord_import(txMachine* the)
+{
+	txSlot* instance = mxFunction->value.reference;
+	txSlot* home = mxFunctionInstanceHome(instance);
+	txSlot* module = home->value.home.module;
+	txSlot* internal = mxModuleInstanceInternal(module);
+	mxPushSlot(mxArgv(0));
+	fxRunImport(the, internal->value.module.realm, internal->value.module.id);
+	mxPullSlot(mxResult);
+}
+
 void fx_StaticModuleRecord_initialize(txMachine* the)
 {
 	txSlot* instance = mxFunction->value.reference;
@@ -2494,11 +2505,11 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 	txSlot* meta = mxModuleInstanceMeta(module);
 	txSlot* closures = mxFunctionInstanceCode(instance)->value.code.closures;
 	txSlot* property;
- 	if (mxIsReference(function)) {
- 		instance = function->value.reference;
- 		if (mxIsFunction(instance))
- 			mxFunctionInstanceHome(instance)->value.home.module = module;
- 	}
+//  	if (mxIsReference(function)) {
+//  		instance = function->value.reference;
+//  		if (mxIsFunction(instance))
+//  			mxFunctionInstanceHome(instance)->value.home.module = module;
+//  	}
 	closures->flag |= XS_DONT_PATCH_FLAG;
 	property = closures->next->next;
 	while (property) {
@@ -2512,8 +2523,10 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 	mxCall();
 	/* ARGUMENTS */
 	mxPushReference(closures);
+	function = fxNewHostFunction(the, fx_StaticModuleRecord_import, 1, XS_NO_ID);
+	mxFunctionInstanceHome(function)->value.home.module = module;
 	mxPushSlot(meta);
-	mxRunCount(2);
+	mxRunCount(3);
 	mxPullSlot(mxResult);
 }
 
