@@ -38,7 +38,7 @@
 #include "xsAll.h"
 
 #ifndef mxReport
-#define mxReport 1
+#define mxReport 0
 #endif
 
 static void fxCompleteModule(txMachine* the, txSlot* module, txSlot* exception);
@@ -190,7 +190,7 @@ void fxBuildModule(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_evaluate), 1, mxID(_evaluate), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_import), 1, mxID(_import), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_importNow), 1, mxID(_importNow), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_module), 1, mxID(_module), XS_DONT_ENUM_FLAG);
+// 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Compartment_prototype_module), 1, mxID(_module), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Compartment", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxCompartmentPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
@@ -1846,10 +1846,11 @@ txBoolean fxModuleDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 	if (fxIsKeySymbol(the, id)) {
 		return (id == mxID(_Symbol_toStringTag)) ? 0 : 1;
 	}
-	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
-		mxReferenceError("module not initialized yet");
-	}
-	else {
+// 	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
+// 		mxReferenceError("module not initialized yet");
+// 	}
+// 	else
+	{
 		txSlot* exports = mxModuleInstanceExports(instance);
 		if (mxIsReference(exports)) {
 			txSlot* property = exports->value.reference->next;
@@ -1869,10 +1870,11 @@ txSlot* fxModuleFindProperty(txMachine* the, txSlot* instance, txID id, txIndex 
 		if (id == mxID(_Symbol_toStringTag))
 			return mxModulePrototype.value.reference->next;
 	}
-	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
-		mxReferenceError("module not initialized yet");
-	}
-	else {
+// 	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
+// 		mxReferenceError("module not initialized yet");
+// 	}
+// 	else
+	{
 		txSlot* exports = mxModuleInstanceExports(instance);
 		if (mxIsReference(exports)) {
 			txSlot* property = exports->value.reference->next;
@@ -1912,10 +1914,11 @@ txSlot* fxModuleGetProperty(txMachine* the, txSlot* instance, txID id, txIndex i
 		if (id == mxID(_Symbol_toStringTag))
 			return mxModulePrototype.value.reference->next;
 	}
-	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
-		return &mxModuleAccessor;
-	}
-	else {
+// 	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
+// 		return &mxModuleAccessor;
+// 	}
+// 	else
+	{
 		txSlot* exports = mxModuleInstanceExports(instance);
 		if (mxIsReference(exports)) {
 			txSlot* property = exports->value.reference->next;
@@ -1957,10 +1960,11 @@ txBoolean fxModuleHasProperty(txMachine* the, txSlot* instance, txID id, txIndex
 	if (fxIsKeySymbol(the, id)) {
 		return (id == mxID(_Symbol_toStringTag)) ? 1 : 0;
 	}
-	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
-		mxReferenceError("module not initialized yet");
-	}
-	else {
+// 	if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
+// 		mxReferenceError("module not initialized yet");
+// 	}
+// 	else
+	{
 		txSlot* exports = mxModuleInstanceExports(instance);
 		if (mxIsReference(exports)) {
 			txSlot* property = exports->value.reference->next;
@@ -1984,10 +1988,11 @@ txBoolean fxModuleIsExtensible(txMachine* the, txSlot* instance)
 void fxModuleOwnKeys(txMachine* the, txSlot* instance, txFlag flag, txSlot* keys)
 {
 	if (flag & XS_EACH_NAME_FLAG) {
-		if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
-			mxReferenceError("module not initialized yet");
-		}
-		else {
+// 		if (mxModuleInstanceStatus(instance) < XS_MODULE_STATUS_LINKED) {
+// 			mxReferenceError("module not initialized yet");
+// 		}
+// 		else
+		{
 			txSlot* exports = mxModuleInstanceExports(instance);
 			if (mxIsReference(exports)) {
 				txSlot* property = exports->value.reference->next;
@@ -2414,30 +2419,30 @@ void fx_Compartment_prototype_importNow(txMachine* the)
 	fxRunImportNow(the, realm, XS_NO_ID);
 	mxPullSlot(mxResult);
 }
-
-void fx_Compartment_prototype_module(txMachine* the)
-{
-	txSlot* program = fxCheckCompartmentInstance(the, mxThis);
-	txSlot* realm = mxModuleInstanceInternal(program)->value.module.realm;
-	txSlot* stack;
-	txID moduleID;
-	txSlot* module;
-	if (mxArgc > 0)
-		mxPushSlot(mxArgv(0));
-	else
-		mxPushUndefined();
-	stack = the->stack;
-	fxToString(the, stack);
-	moduleID = fxResolveSpecifier(the, realm, XS_NO_ID, stack);
-	module = fxGetModule(the, realm, moduleID);
-	if (!module) {
-		module = fxMapModule(the, realm, moduleID);
-	}
-	stack->value.reference = module->value.reference;
-	stack->kind = XS_REFERENCE_KIND;
-    the->stack = stack;
-	mxPullSlot(mxResult);
-}
+// 
+// void fx_Compartment_prototype_module(txMachine* the)
+// {
+// 	txSlot* program = fxCheckCompartmentInstance(the, mxThis);
+// 	txSlot* realm = mxModuleInstanceInternal(program)->value.module.realm;
+// 	txSlot* stack;
+// 	txID moduleID;
+// 	txSlot* module;
+// 	if (mxArgc > 0)
+// 		mxPushSlot(mxArgv(0));
+// 	else
+// 		mxPushUndefined();
+// 	stack = the->stack;
+// 	fxToString(the, stack);
+// 	moduleID = fxResolveSpecifier(the, realm, XS_NO_ID, stack);
+// 	module = fxGetModule(the, realm, moduleID);
+// 	if (!module) {
+// 		module = fxMapModule(the, realm, moduleID);
+// 	}
+// 	stack->value.reference = module->value.reference;
+// 	stack->kind = XS_REFERENCE_KIND;
+//     the->stack = stack;
+// 	mxPullSlot(mxResult);
+// }
 
 txSlot* fxCheckStaticModuleRecordInstance(txMachine* the, txSlot* slot)
 {
