@@ -251,6 +251,9 @@ void fxDuplicateModuleTransfers(txMachine* the, txSlot* srcModule, txSlot* dstMo
 	txSlot* transfer;
 	txSlot* aliases;
 	txSlot* function;
+	srcSlot = mxModuleInternal(srcModule);
+	dstSlot = mxModuleInternal(dstModule);
+	dstSlot->flag |= (srcSlot->flag & (XS_IMPORT_FLAG | XS_IMPORT_META_FLAG));
 	srcSlot = mxModuleTransfers(srcModule);
 	dstSlot = mxModuleTransfers(dstModule);
 	fxDuplicateInstance(the, srcSlot->value.reference);
@@ -2511,14 +2514,10 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 	txSlot* function = fxLastProperty(the, instance);
 	txSlot* home = mxFunctionInstanceHome(instance);
 	txSlot* module = home->value.home.module;
+	txSlot* internal = mxModuleInstanceInternal(module);
 	txSlot* meta = mxModuleInstanceMeta(module);
 	txSlot* closures = mxFunctionInstanceCode(instance)->value.code.closures;
 	txSlot* property;
-//  	if (mxIsReference(function)) {
-//  		instance = function->value.reference;
-//  		if (mxIsFunction(instance))
-//  			mxFunctionInstanceHome(instance)->value.home.module = module;
-//  	}
 	closures->flag |= XS_DONT_PATCH_FLAG;
 	property = closures->next->next;
 	while (property) {
@@ -2532,9 +2531,16 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 	mxCall();
 	/* ARGUMENTS */
 	mxPushReference(closures);
-	function = fxNewHostFunction(the, fx_StaticModuleRecord_import, 1, XS_NO_ID);
-	mxFunctionInstanceHome(function)->value.home.module = module;
-	mxPushSlot(meta);
+	if (internal->flag & XS_IMPORT_FLAG) {
+		function = fxNewHostFunction(the, fx_StaticModuleRecord_import, 1, XS_NO_ID);
+		mxFunctionInstanceHome(function)->value.home.module = module;
+	}
+	else
+		mxPushUndefined();
+	if (internal->flag & XS_IMPORT_META_FLAG)
+		mxPushSlot(meta);
+	else
+		mxPushUndefined();
 	mxRunCount(3);
 	mxPullSlot(mxResult);
 }
@@ -2636,16 +2642,6 @@ void fx_StaticModuleRecord(txMachine* the)
 		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
 			mxTypeError("no module");
 		mxPop();
-		return;
-	}
-	mxPop();
-
-	mxPushSlot(mxArgv(0));
-	mxGetID(fxID(the, "record"));
-	slot = the->stack;
-	if (!mxIsUndefined(slot)) {
-		fxCheckStaticModuleRecordInstance(the, slot);
-		fxDuplicateModuleTransfers(the, slot, mxResult);
 		return;
 	}
 	mxPop();
@@ -2919,6 +2915,27 @@ void fx_StaticModuleRecord(txMachine* the)
 		}
 		mxPop(); // array
 		mxPullSlot(mxModuleInstanceTransfers(instance));
+		
+		mxPushSlot(mxArgv(0));
+		mxGetID(mxID(_needsImport));
+		if (!mxIsUndefined(the->stack)) {
+			if (fxToBoolean(the, the->stack)) {
+				txSlot* internal = mxModuleInstanceInternal(instance);
+				internal->flag |= XS_IMPORT_FLAG;
+			}
+		}
+		mxPop(); // needsImport
+		
+		mxPushSlot(mxArgv(0));
+		mxGetID(mxID(_needsImportMeta));
+		if (!mxIsUndefined(the->stack)) {
+			if (fxToBoolean(the, the->stack)) {
+				txSlot* internal = mxModuleInstanceInternal(instance);
+				internal->flag |= XS_IMPORT_META_FLAG;
+			}
+		}
+		mxPop(); // _needsImportMeta
+		
 		return;
 	}
 	mxPop();
