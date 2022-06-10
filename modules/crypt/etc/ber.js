@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -78,12 +78,20 @@ export default class BER {
 		return this.#a.subarray(i, this.#i)
 	};
 	getInteger() {
-		if (this.getTag() != 2)
+		if (this.getTag() !== 2)
 			throw new Error("BER: not an integer");
 		const length = this.getLength();
 		const offset = this.#a.byteOffset + this.#i;
-		this.skip(length)
-		return BigInt.fromArrayBuffer(this.#a.buffer.slice(offset, offset + length));
+		if (this.peek() & 0x80) {
+			const c = this.getChunk(length).slice();		// copy. cannot modify source data.
+			for (let i = 0; i < length; i++)	// could use Logical.not
+				c[i] = ~c[i];
+			return -(BigInt.fromArrayBuffer(c.buffer) + 1n);
+		}
+		else {
+			this.skip(length)
+			return BigInt.fromArrayBuffer(this.#a.buffer.slice(offset, offset + length));
+		}
 	};
 	getBitString() {
 		let result;
@@ -141,7 +149,7 @@ export default class BER {
 		return this.#a.slice(0, this.#i).buffer;
 	};
 
-	morebuf(n) {		//@@ rework as SSLStream
+	morebuf(n) {
 		if (n < 128) n = 128;
 		this.#a.buffer.resize(this.#a.length + n);
 	};
@@ -185,9 +193,9 @@ export default class BER {
 		return n;
 	};
 	static encode(arr) {
-		let b = new BER();
-		let tag = arr[0];
-		let val = arr.length > 1 ? arr[1] : undefined;
+		const b = new BER;
+		const tag = arr[0];
+		const val = arr[1];
 		b.putTag(tag);
 		switch (tag) {
 		case 0x01:	// boolean
@@ -195,15 +203,29 @@ export default class BER {
 			b.putc(val ? 1 : 0);
 			break;
 		case 0x02:	// integer
-			if (0n === val) {
-				b.putLength(1);
-				b.putc(0);
+			let c = new Uint8Array(ArrayBuffer.fromBigInt(val));
+			if (val >= 0) {
+				if (c[0] & 0x80) {
+					b.putLength(c.byteLength + 1);
+					b.putc(0);
+				}
+				else
+					b.putLength(c.byteLength);
+				c = c.buffer;
 			}
 			else {
-				const c = ArrayBuffer.fromBigInt(val, 0, true);	// signess = true
-				b.putLength(c.byteLength);
-				b.putChunk(c);
+				for (let i = 0; i < c.length; i++)	// could use Logical.not
+					c[i] = ~c[i];
+				c = BigInt.fromArrayBuffer(c.buffer);
+				c = ArrayBuffer.fromBigInt(c + 1n);
+				if ((new Uint8Array(c)[0]) & 0x80)
+					b.putLength(c.byteLength);
+				else {
+					b.putLength(c.byteLength + 1);
+					b.putc(0xff);
+				}
 			}
+			b.putChunk(c);
 			break;
 		case 0x03:	// bit string
 			b.putLength(val.byteLength + 1);
@@ -364,10 +386,19 @@ export default class BER {
 			res = b.getc() != 0;
 			break;
 		case 0x02:	// integer
-			let chunk = b.getChunk(len);
-			let offset = chunk.byteOffset;
-			chunk = chunk.buffer.slice(offset, offset + chunk.byteLength);
-			res = BigInt.fromArrayBuffer(chunk);
+			if (b.peek() & 0x80) {
+				const c = b.getChunk(len).slice();		// copy. cannot modify source data.
+				for (let i = 0; i < c.length; i++)	// could use Logical.not
+					c[i] = ~c[i];
+				res = BigInt.fromArrayBuffer(c.buffer) + 1n;
+				res = -res;
+			}
+			else {
+				let chunk = b.getChunk(len);
+				const offset = chunk.byteOffset;
+				chunk = chunk.buffer.slice(offset, offset + chunk.byteLength);
+				res = BigInt.fromArrayBuffer(chunk);
+			}
 			break;
 		case 0x03:	{// bit string
 			let pad = b.getc();
