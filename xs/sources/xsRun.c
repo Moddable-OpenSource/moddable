@@ -4026,10 +4026,11 @@ XS_CODE_JUMP:
             mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_MODULE)
+			byte = mxRunU1(1);
 			mxSaveState;
-			fxPrepareModule(the);
+			fxPrepareModule(the, byte);
 			mxRestoreState;
-            mxNextCode(1);
+            mxNextCode(2);
 			mxBreak;
 			
 	/* EVAL, PROGRAM & WITH */

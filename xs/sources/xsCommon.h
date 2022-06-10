@@ -385,6 +385,8 @@ enum {
 	XS_METHOD_FLAG = 16,
 	XS_GETTER_FLAG = 32,
 	XS_SETTER_FLAG = 64,
+	XS_IMPORT_FLAG = 32,
+	XS_IMPORT_META_FLAG = 64,
 };
 
 enum {
@@ -957,6 +959,8 @@ enum {
 	_module,
 	_multiline,
 	_name,
+	_needsImport,
+	_needsImportMeta,
 	_new_target,
 	_next,
 	_normalize,

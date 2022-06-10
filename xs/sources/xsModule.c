@@ -200,6 +200,8 @@ void fxBuildModule(txMachine* the)
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_StaticModuleRecord_prototype_get_bindings), C_NULL, mxID(_bindings), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_StaticModuleRecord_prototype_get_needsImport), C_NULL, mxID(_needsImport), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_StaticModuleRecord_prototype_get_needsImportMeta), C_NULL, mxID(_needsImportMeta), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "StaticModuleRecord", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxStaticModuleRecordPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_StaticModuleRecord), 1, mxID(_StaticModuleRecord));
@@ -1309,7 +1311,7 @@ void fxOverrideModule(txMachine* the, txSlot* queue, txSlot* module, txSlot* rec
 	}
 }
 
-void fxPrepareModule(txMachine* the)
+void fxPrepareModule(txMachine* the, txFlag flag)
 {
 	txSlot* module = mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module;
 	txInteger c = the->stack->value.integer, i;
@@ -1317,6 +1319,8 @@ void fxPrepareModule(txMachine* the)
 	txSlot* result = the->stack + c;
 	txSlot* slot;
 	txSlot* property;
+	property = mxModuleInstanceInternal(module);	
+	property->flag |= flag;
 	slot = argument--;
 	property = mxModuleInstanceInitialize(module);	
 	property->kind = slot->kind;
@@ -3041,4 +3045,18 @@ void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the)
 	fxCacheArray(the, resultInstance);
 }
 
+void fx_StaticModuleRecord_prototype_get_needsImport(txMachine* the)
+{
+	txSlot* record = fxCheckStaticModuleRecordInstance(the, mxThis);
+	txFlag flag = mxModuleInstanceInternal(record)->flag;
+	mxResult->value.boolean = (flag & XS_IMPORT_FLAG) ? 1 : 0;
+	mxResult->kind = XS_BOOLEAN_KIND;
+}
 
+void fx_StaticModuleRecord_prototype_get_needsImportMeta(txMachine* the)
+{
+	txSlot* record = fxCheckStaticModuleRecordInstance(the, mxThis);
+	txFlag flag = mxModuleInstanceInternal(record)->flag;
+	mxResult->value.boolean = (flag & XS_IMPORT_META_FLAG) ? 1 : 0;
+	mxResult->kind = XS_BOOLEAN_KIND;
+}

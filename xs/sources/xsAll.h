@@ -1784,7 +1784,7 @@ extern void fxExecuteModulesFulfilled(txMachine* the);
 extern void fxExecuteModulesRejected(txMachine* the);
 extern void fxLoadModulesFulfilled(txMachine* the);
 extern void fxLoadModulesRejected(txMachine* the);
-extern void fxPrepareModule(txMachine* the);
+extern void fxPrepareModule(txMachine* the, txFlag flag);
 extern void fxPrepareTransfer(txMachine* the);
 extern void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
@@ -1801,6 +1801,8 @@ mxExport void fx_StaticModuleRecord(txMachine* the);
 mxExport void fx_StaticModuleRecord_import(txMachine* the);
 mxExport void fx_StaticModuleRecord_initialize(txMachine* the);
 mxExport void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the);
+mxExport void fx_StaticModuleRecord_prototype_get_needsImport(txMachine* the);
+mxExport void fx_StaticModuleRecord_prototype_get_needsImportMeta(txMachine* the);
 
 /* xsLockdown.c */
 #ifdef mxLockdown
