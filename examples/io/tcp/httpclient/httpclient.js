@@ -18,7 +18,6 @@
  *
  */
  
-import TCP from "embedded:io/socket/tcp";
 import Timer from "timer";
 
 class HTTPClient {
@@ -36,7 +35,7 @@ class HTTPClient {
 			if ("receiveBody" !== client.#state)
 				return undefined;
 						
-			let available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
+			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
 			if (count > available)
 				count = available;
 
@@ -74,9 +73,10 @@ class HTTPClient {
 				if (true !== client.#requestBody)
 					throw new Error("bad data");
 
+//@@ this may not be always correct... if last chunk has already flushed and onWritable called, this will never go out
 				client.#pendingWrite = ArrayBuffer.fromString("0000\r\n\r\n");
 				client.#requestBody = false;
-				return;
+				return (client.#writable > 8) ? (client.#writable - 8) : 0 
 			}
 
 			const byteLength = data.byteLength;
@@ -88,6 +88,8 @@ class HTTPClient {
 				client.#socket.write(ArrayBuffer.fromString(byteLength.toString(16).padStart(4, "0") + "\r\n"));
 				client.#socket.write(data);
 				client.#socket.write(ArrayBuffer.fromString("\r\n"));
+
+				return (client.#writable > 8) ? (client.#writable - 8) : 0 
 			}
 			else {
 				if ((byteLength > client.#writable) || (byteLength > client.#requestBody))
@@ -102,6 +104,8 @@ class HTTPClient {
 					client.#line = "";
 					client.#requestBody = false;
 				}
+
+				return client.#writable;
 			}
 		}
 	}
@@ -130,23 +134,30 @@ class HTTPClient {
 		this.#host = host;
 		this.#onClose = onClose;
 
-		System.resolve(this.#host, (host, address) => {
-			if (!address)
-				return this.#onError?.();
+		const dns = new options.dns.io(options.dns);
 
-			this.#socket = new TCP({
-				address,
-				port: port ?? 80,
-				onReadable: this.#onReadable.bind(this),
-				onWritable: this.#onWritable.bind(this),
-				onError: this.#onError.bind(this)
-			});
+		dns.resolve({
+			host: this.#host, 
+		
+			onResolved: (host, address) => {
+				this.#socket = new options.socket.io({
+					...options.socket,
+					address,
+					port: port ?? 80,
+					onReadable: this.#onReadable.bind(this),
+					onWritable: this.#onWritable.bind(this),
+					onError: this.#onError.bind(this)
+				});
+			},
+			onError: (err) => {
+				this.#onError?.();
+			},
 		});
+			
 	}
 	close() {
 		this.#socket?.close();
 		this.#socket = undefined;
-		if (this.#timer)
 			Timer.clear(this.#timer);
 		this.#timer = undefined;
 	}

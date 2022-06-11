@@ -818,7 +818,9 @@ void espInitInstrumentation(txMachine *the)
 	};
 
 	gIdles[0] = xTaskGetIdleTaskHandleForCPU(0);
+#if kTargetCPUCount > 1
 	gIdles[1] = xTaskGetIdleTaskHandleForCPU(1);
+#endif
 
 	timer_init(TIMER_GROUP_0, TIMER_0, &config);
 
@@ -870,13 +872,8 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #if INSTRUMENT_CPULOAD
 void IRAM_ATTR timer_group0_isr(void *para)
 {
-#if kCPUESP32S3
-	TIMERG0.int_st_timers.t0_int_st = 1;
-	TIMERG0.hw_timer[TIMER_0].config.tn_alarm_en = TIMER_ALARM_EN;
-#else
-	TIMERG0.kESP32TimerDef.t0 = 1;
-	TIMERG0.hw_timer[TIMER_0].config.alarm_en = TIMER_ALARM_EN;
-#endif
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
 
 	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
 #if kTargetCPUCount > 1
@@ -1362,7 +1359,7 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 	gPartition = esp_partition_find_first(0x40, 1,  NULL);
 	if (gPartition) {
 		if (ESP_OK == esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle)) {
-			if (fxMapArchive(preparation, (void *)gPartition, (void *)gPartition, kFlashSectorSize, spiRead, spiWrite))
+			if (fxMapArchive(C_NULL, preparation, (void *)gPartition, kFlashSectorSize, spiRead, spiWrite))
 				result = (void *)gPartitionAddress;
 		}
 	}
@@ -1403,7 +1400,7 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn; 
 
-	if (fxMapArchive(preparation, (void *)kModulesStart, kModulesStart, kFlashSectorSize, spiRead, spiWrite))
+	if (fxMapArchive(C_NULL, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
 		return kModulesStart;
 
 	return NULL;

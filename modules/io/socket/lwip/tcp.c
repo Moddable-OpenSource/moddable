@@ -26,6 +26,10 @@
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
 		while connecting cannot safely transfer native socket
+		
+		on ESP8266, data in flash needs to be spooled through RAM before sending to lwip
+		
+		//@@ why not using lwip _safe more??
 */
 
 #include "lwip/tcp.h"
@@ -383,6 +387,21 @@ void xs_tcp_write(xsMachine *the)
 		xsUnknownError("write failed");
 
 	tcpTrigger(tcp, kTCPOutput);
+}
+
+void xs_tcp_get_remoteAddress(xsMachine *the)
+{
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+
+	xsResult = xsStringBuffer(NULL, 40);
+	ipaddr_ntoa_r(&tcp->skt->remote_ip, xsmcToString(xsResult), 40);
+}
+
+void xs_tcp_get_remotePort(xsMachine *the)
+{
+	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+
+	xsmcSetInteger(xsResult, tcp->skt->remote_port);
 }
 
 void xs_tcp_get_format(xsMachine *the)

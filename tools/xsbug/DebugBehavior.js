@@ -523,7 +523,8 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.tag = "";
 		this.title = "";
 		
-		this.paths = {};
+		this.tagToPath = new Map;
+		this.pathToTag = new Map;
 		this.path = "";
 		this.line = 0;
 		this.frame = "";
@@ -576,14 +577,9 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	doBinaryCommandAux(command, id, payload) @ "PiuDebugMachine_doBinaryCommandAux"
 	doBreakpointCommand(command, path, line) {
-		const paths = this.paths;
-		for (let name in paths) {
-			const value = paths[name];
-			if (path == value) {
-				path = name;
-				break;
-			}
-		}
+		const pathTag = this.pathToTag.get(path);
+		if (pathTag !== undefined)
+			path = pathTag;
 		this.doCommand(command, path, line);
 	}
 	doCommand(command) @ "PiuDebugMachine_doCommand"
@@ -641,14 +637,16 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			const path = system.buildPath(model.evalDirectory, temporary, "js");
 			temporary++;
 			system.writeFileString(path, string);
-			this.paths[tag] = path;
+			this.tagToPath.set(tag, path);
+			this.pathToTag.set(path, tag);
 		}
 		catch {
 		}
 	}
 	onFileChanged(path, line) {
-		if (path in this.paths)
-			path = this.paths[path];
+		const tagPath = this.tagToPath.get(path);
+		if (tagPath !== undefined)
+			path = tagPath;
 		this.path = path;
 		this.line = line;
 		this.behavior.onFileChanged(this, path, line);
@@ -662,8 +660,9 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	onLogged(path, line, data) {
 		if (path && line) {
-			if (path in this.paths)
-				path = this.paths[path];
+			const tagPath = this.tagToPath.get(path);
+			if (tagPath !== undefined)
+				path = tagPath;
 			let color;
 			if (data.indexOf("breakpoint") >= 0)
 				color = 3;

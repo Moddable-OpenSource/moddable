@@ -1,7 +1,7 @@
 # Data
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 7, 2022
+Revised: May 31, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -12,7 +12,7 @@ Revised: March 7, 2022
 * [CRC](#crc)
 * [QRCode](#qrcode)
 * [Text](#text)
-* [zlib](#zlib)
+* [Inflate & Deflate (zlib)](#zlib)
 
 <a id="base64"></a>
 ## class Base64
@@ -79,7 +79,9 @@ let b1 = Hex.toBuffer("01:23:45:67:89:AB:CD:EF", ":");
 
 The hexadecimal digits may be uppercase or lowercase. If the optional separator argument is provided, it must appear between each pair of hexadecimal digits.
 
-### `static toString(buffer [, separator]);`
+The optional separator must be a single character in the 7-bit ASCII range.
+
+### `static toString(buffer [[, separator], hexChars]);`
 
 The `toString` function converts a buffer to a hexadecimal encoded `String`.
 
@@ -89,6 +91,16 @@ let s0 = Hex.toString(buffer, ".");
 // s0 is 01.23.45.67.89.AB.CD.EF
 let s1 = Hex.toString(buffer);
 // s1 is 0123456789ABCDEF
+```
+
+The optional separator must be a single character in the 7-bit ASCII range.
+
+The optional `hexChars` argument may contain 16 characters to use for the hexadecimal encoding. The characters must be 7-bit ASCII:
+
+```js
+let buffer = Hex.toBuffer("0123456789abcdef");
+let s0 = Hex.toString(buffer, "-", "0123456789abwxyz");
+// s0 is 01-23-45-67-89-ab-wx-yz
 ```
 
 <a id="crc"></a>
@@ -124,7 +136,7 @@ The `CRC8` and `CRC16` functions take a number of options used to specify the CR
 
 The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8 and 16-bit integers for CRC16.
 
-The [crc example](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
+The [crc example](../../examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
 
 - `CRC-8` 
 - `CRC-8/CDMA2000` 
@@ -203,8 +215,10 @@ The following properties are supported in the options object:
 
 | Property | Description |
 | :---: | :--- |
-| `maxVersion` |  A number between 1 and 40 inclusive indicating the maximum version of the generated QR Code. The version number determines the amount of data the QR Code can contain. This property is optional and defaults to 40. |
+| `maxVersion` |  A number between 1 and 40 inclusive indicating the maximum version of the generated QR Code. The version number determines the amount of data the QR Code can contain. The implementation uses the mimumum version number possible for the size of the data provided. This property is optional and defaults to 40. |
 | `input` |  A `String` or buffer containing the data to encode into the QR Code. This property is required. |
+
+The `qrCode` function throws an exception if it detects invalid parameters or that there is not enough memory to generate the QR Code.
 
 ```js
 const code = qrCode({input: "Welcome to Moddable", maxVersion: 4});
@@ -259,5 +273,7 @@ Include the modules' manifest to use them in a project:
 		"$(MODULES)/data/zlib/manifest_inflate.json"
 	]
 ```
+
+The [inflate example](../../examples/data/inflate/main.js) demonstrates how to decompress data as a one-shot operation and using the `onData` callback for streaming.
 
 > **Note**: A significant amount of memory is required for zlib decompresssion and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.

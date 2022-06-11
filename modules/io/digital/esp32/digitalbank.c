@@ -252,7 +252,8 @@ void xs_digitalbank_destructor(void *data)
 
 		for (pin = digital->bank ? 32 : 0; pin <= lastPin; pin++) {
 			if (digital->pins & (1 << (pin & 0x1f))) {
-				gpio_isr_handler_remove(pin);
+				if (digital->hasOnReadable)
+					gpio_isr_handler_remove(pin);
 				gpio_reset_pin(pin);
 			}
 		}

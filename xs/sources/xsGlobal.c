@@ -160,7 +160,7 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostFunction(the, mxCallback(fxThrowTypeError), 0, XS_NO_ID);
 	mxThrowTypeErrorFunction = *the->stack;
 	slot = the->stack->value.reference;
-	slot->flag |= XS_CAN_CONSTRUCT_FLAG | XS_DONT_PATCH_FLAG;
+	slot->flag |= XS_DONT_PATCH_FLAG;
 	slot = slot->next;
 	while (slot) {
 		slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;

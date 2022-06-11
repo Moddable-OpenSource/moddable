@@ -18,6 +18,12 @@
  *
  */
 
+/*
+	to do:
+	
+		allow multiple instances on the same bus
+*/
+
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "mc.xs.h"			// for xsID_* values
 #include "xsHost.h"			// esp platform support
@@ -70,30 +76,32 @@ void xs_spi_constructor(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_clock);
 	clock = builtinGetPin(the, &xsVar(0));
 	if (!builtinIsPinFree(clock))
-		xsRangeError("in use");
+		xsUnknownError("in use");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_hz);
 	hz = xsmcToInteger(xsVar(0));
+	if ((hz < 1) || (hz > 40000000))
+		xsRangeError("invalid hz");
 
 	if (xsmcHas(xsArg(0), xsID_out)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_out);
 		mosi = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(mosi))
-			xsRangeError("in use");
+			xsUnknownError("in use");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_in)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_in);
 		miso = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(miso))
-			xsRangeError("in use");
+			xsUnknownError("in use");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_select)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_select);
 		select = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(select))
-			xsRangeError("in use");
+			xsUnknownError("in use");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_active)) {
@@ -112,7 +120,7 @@ void xs_spi_constructor(xsMachine *the)
 	}
 
 	if ((kInvalidPin == mosi) && (kInvalidPin == miso))
-		xsRangeError("mosi or miso required");
+		xsUnknownError("in or out required");
 
 #if ESP32
 	xsmcGet(xsVar(0), xsArg(0), xsID_port);
@@ -135,7 +143,7 @@ void xs_spi_constructor(xsMachine *the)
 
 	spi = c_calloc(1, sizeof(SPIRecord));
 	if (!spi)
-		xsRangeError("no memory");
+		xsUnknownError("no memory");
 
 	xsmcSetHostData(xsThis, spi);
 	spi->obj = xsThis;
@@ -217,7 +225,7 @@ void xs_spi_read(xsMachine *the)
 	}
 	else {
 		int requested = xsmcToInteger(xsArg(0));
-		if ((requested < 0) || (requested > 65535))
+		if ((requested <= 0) || (requested > 65535))
 			xsRangeError("unsupported byteLength");
 		count = requested;
 		data = xsmcSetArrayBuffer(xsResult, NULL, count);

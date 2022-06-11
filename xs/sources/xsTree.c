@@ -1191,6 +1191,16 @@ static const txNodeDispatch gxPostfixExpressionNodeDispatch ICACHE_FLASH_ATTR = 
 	fxNodeCodeReference,
 	fxNodeCodeThis
 };
+static const txNodeDispatch gxPrivateIdentifierNodeDispatch ICACHE_FLASH_ATTR = {
+	fxPrivateMemberNodeDistribute,
+	fxPrivateMemberNodeBind,
+	fxNodeHoist,
+	fxPrivateIdentifierNodeCode,
+	fxNodeCodeAssign,
+	fxNodeCodeDelete,
+	fxNodeCodeReference,
+	fxNodeCodeThis
+};
 static const txNodeDispatch gxPrivateMemberNodeDispatch ICACHE_FLASH_ATTR = {
 	fxPrivateMemberNodeDistribute,
 	fxPrivateMemberNodeBind,
@@ -1611,7 +1621,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_PARAMS_BINDING, "ParamsBinding", sizeof(txParamsBindingNode), &gxParamsBindingNodeDispatch },
 	{ XS_CODE_PLUS, XS_TOKEN_PLUS, "Plus", sizeof(txUnaryExpressionNode), &gxUnaryExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PRIVATE, "", 0, NULL },
-	{ XS_NO_CODE, XS_TOKEN_PRIVATE_IDENTIFIER, "", 0, NULL },
+	{ XS_NO_CODE, XS_TOKEN_PRIVATE_IDENTIFIER, "PrivateIdenfifier", sizeof(txPrivateMemberNode), &gxPrivateIdentifierNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PRIVATE_MEMBER, "PrivateMember", sizeof(txPrivateMemberNode), &gxPrivateMemberNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PRIVATE_PROPERTY, "PrivateProperty", sizeof(txPrivatePropertyNode), &gxPrivatePropertyNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_PROGRAM, "Program", sizeof(txProgramNode), &gxProgramNodeDispatch },

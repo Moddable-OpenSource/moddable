@@ -18,7 +18,6 @@
  *
  */
  
-import TCP from "embedded:io/socket/tcp";
 import Timer from "timer";
 import Base64 from "base64";
 import Logical from "logical";
@@ -46,18 +45,25 @@ class WebSocketClient {
 
 		if (!this.#options.host) throw new Error("host required");
 
-		System.resolve(this.#options.host, (host, address) => {
-			if (!address)
-				return void this.#onError?.();
+		const dns = new options.dns.io(options.dns);
+		this.#state = "resolving";
+		dns.resolve({
+			host: this.#options.host, 
 
-			this.#socket = new TCP({
-				address,
-				port: this.#options.port ?? 80,
-				onReadable: this.#onReadable.bind(this),
-				onWritable: this.#onWritable.bind(this),
-				onError: this.#onError.bind(this)
-			});
-			this.#state = "connecting";
+			onResolved: (host, address) => {
+				this.#socket = new options.socket.io({
+					...options.socket,
+					address,
+					port: this.#options.port ?? 80,
+					onReadable: this.#onReadable.bind(this),
+					onWritable: this.#onWritable.bind(this),
+					onError: this.#onError.bind(this)
+				});
+				this.#state = "connecting";
+			},
+			onError: (err) => {
+				this.#onError?.();
+			},
 		});
 	}
 	close() {
@@ -226,7 +232,7 @@ class WebSocketClient {
 					return;
 
 				while (count) {
-					if (!options.tag) {
+					if (undefined === options.tag) {
 						this.#socket.format = "number";
 						let tag = options.tag = this.#socket.read();
 						count--;

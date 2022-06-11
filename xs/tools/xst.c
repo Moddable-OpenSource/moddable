@@ -153,7 +153,9 @@ static int main262(int argc, char* argv[]);
 #if FUZZILLI
 static int fuzz(int argc, char* argv[]);
 #endif
-
+#if OSSFUZZ
+static int fuzz_oss(const uint8_t *Data, size_t Size);
+#endif
 static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
@@ -196,6 +198,9 @@ static void fx_createRealm(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
+#if FUZZING || FUZZILLI
+static void fx_fillBuffer(txMachine *the);
+#endif
 static void fx_gc(xsMachine* the);
 static void fx_print(xsMachine* the);
 
@@ -229,7 +234,16 @@ static char *gxAbortStrings[] = {
 
 static txAgentCluster gxAgentCluster;
 
+#if OSSFUZZ
+int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+    fuzz_oss(Data, Size);
+    return 0;
+}
+
+int omain(int argc, char* argv[]) 
+#else
 int main(int argc, char* argv[]) 
+#endif
 {
 	txAgentCluster* agentCluster = &gxAgentCluster;
 	int argi;
@@ -312,6 +326,22 @@ int main(int argc, char* argv[])
 		{
 			xsVars(2);
 			xsTry {
+#if FUZZING
+				xsResult = xsNewHostFunction(fx_gc, 0);
+				xsSet(xsGlobal, xsID("gc"), xsResult);
+				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
+				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+
+				xsResult = xsNewHostFunction(fx_harden, 1);
+				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_lockdown, 0);
+				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_petrify, 1);
+				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_mutabilities, 1);
+				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+#endif
+
 				xsVar(0) = xsUndefined;
 				the->rejection = &xsVar(0);
 				for (argi = 1; argi < argc; argi++) {
@@ -909,13 +939,11 @@ void fxRunContext(txPool* pool, txContext* context)
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
  			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
- 			||	!strcmp((char*)node->data.scalar.value, "Object.hasOwn")
   			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
  			||	!strcmp((char*)node->data.scalar.value, "Temporal")
  			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
- 			||	!strcmp((char*)node->data.scalar.value, "class-fields-private-in")
- 			||	!strcmp((char*)node->data.scalar.value, "class-static-block")
-			||	!strcmp((char*)node->data.scalar.value, "error-cause")
+ 			||	!strcmp((char*)node->data.scalar.value, "array-grouping")
+ 			||	!strcmp((char*)node->data.scalar.value, "decorators")
  			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
  			||	!strcmp((char*)node->data.scalar.value, "json-modules")
 #ifndef mxRegExpUnicodePropertyEscapes
@@ -1377,7 +1405,21 @@ void fx_done(xsMachine* the)
 
 void fx_gc(xsMachine* the)
 {
+#if !FUZZING
 	xsCollectGarbage();
+#else
+	extern int gxStress;
+	xsResult = xsInteger(gxStress);
+
+	xsIntegerValue c = xsToInteger(xsArgc);
+	if (!c) {
+		xsCollectGarbage();
+		return;
+	}
+	
+	int count = xsToInteger(xsArg(0));
+	gxStress = (count < 0) ? count : -count;
+#endif
 }
 
 void fx_evalScript(xsMachine* the)
@@ -1532,11 +1574,6 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 #include <fcntl.h>
 #include <assert.h>
 
-#ifdef  __linux__
-#define S_IREAD __S_IREAD
-#define S_IWRITE __S_IWRITE
-#endif
-
 #define SHM_SIZE 0x100000
 #define MAX_EDGES ((SHM_SIZE - 4) * 8)
 
@@ -1554,7 +1591,7 @@ void __sanitizer_cov_reset_edgeguards()
 	for (uint32_t *x = __edges_start; x < __edges_stop && N < MAX_EDGES; x++)
 		*x = ++N;
 }
-
+#ifndef __linux__
 void __sanitizer_cov_trace_pc_guard_init(uint32_t *start, uint32_t *stop)
 {
 	// Avoid duplicate initialization
@@ -1606,6 +1643,7 @@ void __sanitizer_cov_trace_pc_guard(uint32_t *guard)
 	__shmem->edges[index / 8] |= 1 << (index % 8);
 	*guard = 0;
 }
+#endif
 
 #define REPRL_CRFD 100
 #define REPRL_CWFD 101
@@ -1702,12 +1740,26 @@ int fuzz(int argc, char* argv[])
 		{
 			xsTry {
 				xsVars(1);
+
+				// hardened javascript
+				xsResult = xsNewHostFunction(fx_harden, 1);
+				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_lockdown, 0);
+				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_petrify, 1);
+				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_mutabilities, 1);
+				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+
+				// fuzzilli
 				xsResult = xsNewHostFunction(fx_fuzzilli, 2);
 				xsSet(xsGlobal, xsID("fuzzilli"), xsResult);
 				xsResult = xsNewHostFunction(fx_gc, 0);
 				xsSet(xsGlobal, xsID("gc"), xsResult);
 				xsResult = xsNewHostFunction(fx_print, 1);
 				xsSet(xsGlobal, xsID("print"), xsResult);
+				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
+				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
 
 				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 				txStringCStream aStream;
@@ -1743,12 +1795,98 @@ int fuzz(int argc, char* argv[])
 		xsDeleteMachine(machine);
 		fxTerminateSharedCluster();
 
+		free(buffer);
+
 		__sanitizer_cov_reset_edgeguards();
 	}
 
 	return 0;
 }
- #endif 
+#endif 
+#if OSSFUZZ
+int fuzz_oss(const uint8_t *Data, size_t Size)
+{
+	xsCreation _creation = {
+		16 * 1024 * 1024, 	/* initialChunkSize */
+		16 * 1024 * 1024, 	/* incrementalChunkSize */
+		1 * 1024 * 1024, 	/* initialHeapCount */
+		1 * 1024 * 1024, 	/* incrementalHeapCount */
+		256 * 1024, 		/* stackCount */
+		256 * 1024, 		/* keyCount */
+		1993, 				/* nameModulo */
+		127, 				/* symbolModulo */
+		64 * 1024,			/* parserBufferSize */
+		1993,				/* parserTableModulo */
+	};
+	size_t script_size = 0;
+
+	char* buffer = (char *)malloc(Size + 1);
+	memcpy(buffer, Data, Size);
+	script_size = Size;
+
+	buffer[script_size] = 0;	// required when debugger active
+
+	xsCreation* creation = &_creation;
+	xsMachine* machine;
+	fxInitializeSharedCluster();
+	machine = xsCreateMachine(creation, "xst", NULL);
+
+	xsBeginHost(machine);
+	{
+		xsTry {
+			xsVars(1);
+
+			// hardened javascript
+			xsResult = xsNewHostFunction(fx_harden, 1);
+			xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+			xsResult = xsNewHostFunction(fx_lockdown, 0);
+			xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+			xsResult = xsNewHostFunction(fx_petrify, 1);
+			xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+			xsResult = xsNewHostFunction(fx_mutabilities, 1);
+			xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+
+			xsResult = xsNewHostFunction(fx_gc, 0);
+			xsSet(xsGlobal, xsID("gc"), xsResult);
+			xsResult = xsNewHostFunction(fx_print, 1);
+			xsSet(xsGlobal, xsID("print"), xsResult);
+
+			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
+			txStringCStream aStream;
+			aStream.buffer = buffer;
+			aStream.offset = 0;
+			aStream.size = script_size;
+			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+			mxPullSlot(mxResult);
+			fxRunLoop(the);
+		}
+		xsCatch {
+		}
+	}
+	xsEndHost(machine);
+	fflush(stdout);	
+	fflush(stderr);	
+	xsDeleteMachine(machine);
+	fxTerminateSharedCluster();
+	free(buffer);
+	return 0;
+}
+#endif 
+
+#if FUZZING || FUZZILLI
+
+void fx_fillBuffer(txMachine *the)
+{
+	xsIntegerValue seed = xsToInteger(xsArg(1));
+	xsIntegerValue length = xsGetArrayBufferLength(xsArg(0)), i;
+	uint8_t *buffer = xsToArrayBuffer(xsArg(0));
+	
+	for (i = 0; i < length; i++) {
+		seed = (uint64_t)seed * 48271 % 0x7fffffff;
+		*buffer++ = (uint8_t)seed;
+	}
+}
+#endif
 
 /* PLATFORM */
 
@@ -1995,7 +2133,7 @@ txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags)
 
 void fxConnect(txMachine* the)
 {
-#if FUZZILLI
+#if FUZZING || FUZZILLI || OSSFUZZ
 	return;
 #endif
 #ifdef mxMultipleThreads

@@ -321,6 +321,7 @@ struct sxPatternParser {
 	txInteger** code;
 	txByte* buffer;
 	
+	char* stackLimit;
 	c_jmp_buf jmp_buf;
 	char error[256];
 };
@@ -371,6 +372,7 @@ static void fxSequenceCode(txPatternParser* parser, void* it, txInteger directio
 static void fxWordBreakCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 static void fxWordContinueCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 
+static void fxPatternParserCheckStack(txPatternParser* parser);
 static void fxPatternParserInitialize(txPatternParser* parser);
 static txBoolean fxPatternParserDecimal(txPatternParser* parser, txU4* value);
 static void fxPatternParserError(txPatternParser* parser, txString format, ...);
@@ -412,6 +414,7 @@ enum {
 	mxInvalidUTF8,
 	mxNameOverflow,
 	mxNotEnoughMemory,
+	mxStackOverflow,
 	mxUnicodePropertyEscapeNotBuiltIn,
 	mxErrorCount
 };
@@ -431,6 +434,7 @@ static const txString gxErrors[mxErrorCount] ICACHE_XS6RO_ATTR = {
 	"invalid UTF-8",
 	"name overflow",
 	"not enough memory",
+	"stack oveflow",
 	"unicode property escape not built-in",
 };
 
@@ -1113,10 +1117,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 	void* former = NULL;
 	txSequence* formerBranch = NULL;
 	txInteger length;
-#ifdef mxRun
-	if (parser->the)
-		fxCheckCStack(parser->the);
-#endif
+	fxPatternParserCheckStack(parser);
 	while ((parser->character != C_EOF) && (parser->character != character)) {
 		txInteger currentIndex = parser->captureIndex;
 		void* term = NULL;
@@ -1157,6 +1158,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 					fxPatternParserNext(parser);
 				current = fxTermCreate(parser, sizeof(txCaptureReference), fxCaptureReferenceMeasure);
 				((txCaptureReference*)current)->captureIndex = value;
+				((txCaptureReference*)current)->name[0] = 0;
 				current = fxQuantifierParse(parser, current, currentIndex);
 			}
 			else {
@@ -1431,10 +1433,7 @@ void fxQuantifierMeasure(txPatternParser* parser, void* it, txInteger direction)
 void fxSequenceMeasure(txPatternParser* parser, void* it, txInteger direction)
 {
 	txSequence* self = it;
-#ifdef mxRun
-	if (parser->the)
-		fxCheckCStack(parser->the);
-#endif
+	fxPatternParserCheckStack(parser);
 	if (direction == 1) {
 		(*self->left->dispatch.measure)(parser, self->left, direction);
 		self->step = self->left->step;
@@ -1639,6 +1638,14 @@ void fxWordContinueCode(txPatternParser* parser, void* it, txInteger direction, 
 }
 
 
+void fxPatternParserCheckStack(txPatternParser* parser)
+{
+    char x;
+    char *stack = &x;
+    if (stack <= parser->stackLimit)
+		fxPatternParserError(parser, gxErrors[mxStackOverflow]);
+}
+
 void fxPatternParserInitialize(txPatternParser* parser)
 {
 	c_memset(parser, 0, sizeof(txPatternParser));
@@ -1797,6 +1804,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 			fxPatternParserError(parser, gxErrors[mxInvalidFlags]);
 		parser->pattern = pattern;
 		parser->the = the;
+		parser->stackLimit = fxCStackLimit();
 		
 		fxPatternParserNext(parser);
 		term = fxDisjunctionParse(parser, C_EOF);
@@ -1824,8 +1832,12 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 					+ parser->assertionIndex * sizeof(txAssertionData)
 					+ parser->quantifierIndex * sizeof(txQuantifierData);
 		#ifdef mxRun
-			if (the)
+			if (the) {
 				*data = fxNewChunk(the, size);
+			#ifdef mxSnapshot
+				c_memset(*data, 0, size);
+			#endif
+			}
 			else
 		#endif
 				*data = c_malloc(size);
@@ -1840,6 +1852,9 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 		#ifdef mxRun
 			if (the) {
 				*code = fxNewChunk(the, parser->size);
+			#ifdef mxSnapshot
+				c_memset(*code, 0, parser->size);
+			#endif
 			}
 			else
 		#endif
@@ -7300,7 +7315,7 @@ void* fxCharSetUnicodeProperty(txPatternParser* parser)
 	txString name = NULL;
 	txString value = NULL;
 	txString p = parser->error;
-	txString q = name + sizeof(parser->error) - 1;
+	txString q = p + sizeof(parser->error) - 1;
 	txInteger c;
 	txCharSetUnicodeProperty* it = NULL;
 	txCharSet* result = NULL;
@@ -7422,10 +7437,16 @@ static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txS
 	if (delta > 0) {
 		txSize qo = mxPtrDiff(*q - mxThis->value.string);
 		txSize ro = mxPtrDiff(*r - mxResult->value.string);
-		length = fxAddChunkSizes(the, length, delta);
-		mxResult->value.string = fxRenewChunk(the, mxResult->value.string, length);
+		txInteger sum = fxAddChunkSizes(the, length, delta);
+		txString string = fxRenewChunk(the, mxResult->value.string, sum);
+		if (!string) {
+			string = (txString)fxNewChunk(the, sum);
+			c_memcpy(string, mxResult->value.string, length);
+		}
 		*q = mxThis->value.string + qo;
-		*r = mxResult->value.string + ro;
+		*r = string + ro;
+		mxResult->value.string = string;
+		return sum;
 	}
 	return length;
 }
@@ -7487,7 +7508,7 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 					else if (operand & 0x80)
 						d = c - it->delta;
 					else
-						d = (*conditionals[it->delta])(the, mxPtrDiff(p - string), c);
+						d = (*conditionals[it->delta])(the, mxPtrDiff(p - mxThis->value.string), c);
 					stringLength = fx_String_prototype_toCase_aux(the, &q, &r, stringLength, mxStringByteLength(d) - mxPtrDiff(q - p));
 					r = mxStringByteEncode(r, d);
 				}

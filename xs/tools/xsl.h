@@ -106,6 +106,11 @@ struct sxLinker {
 	txU1 symbolsChecksum[16];
 	txSize symbolsSize;
 	
+	txID* map;
+	txSize mapIndex;
+	txID* mapsBuffer;
+	txSize mapsSize;
+	
 	txU4* bigintData;
 	txSize bigintSize;
 	
@@ -121,6 +126,8 @@ struct sxLinker {
 	txFlag promiseJobsFlag;
 	
 	txString name;
+	txSize nameSize;
+	
 
 	char main[1024];
 };
@@ -214,7 +221,7 @@ extern void fx_Uint8ClampedArray(txMachine* the);
 
 extern void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength);
 extern void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInteger baseLength);
-extern void fxBufferPaths(txLinker* linker);
+extern void fxBufferMaps(txLinker* linker);
 extern void fxBufferSymbols(txLinker* linker);
 extern void fxDefaultSymbols(txLinker* linker);
 extern txLinkerCallback* fxGetLinkerCallbackByAddress(txLinker* linker, txCallback which);

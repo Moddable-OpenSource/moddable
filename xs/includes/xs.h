@@ -109,6 +109,9 @@
 			#define mxImport extern
 		#endif
 
+		#if defined(__ets__)
+			typedef uint32_t size_t; 
+		#endif
 	#else 
 		#error unknown compiler
 	#endif
@@ -1301,6 +1304,7 @@ typedef unsigned char xsAttribute;
 		XS_IMPORT_NAMESPACE = 0,
 		XS_IMPORT_DEFAULT = 1,
 		XS_IMPORT_PREFLIGHT = 2,
+		XS_IMPORT_ASYNC = 4,
 	};
 #endif
 
@@ -1467,7 +1471,13 @@ mxImport xsBooleanValue fxIsProfiling(xsMachine*);
 mxImport void fxStartProfiling(xsMachine*);
 mxImport void fxStopProfiling(xsMachine*);
 	
-mxImport void* fxMapArchive(const unsigned char *, unsigned long, xsStringValue, xsCallbackAt);
+mxImport void* fxGetArchiveCode(xsMachine*, void*, xsStringValue, size_t*);
+mxImport xsIntegerValue fxGetArchiveCodeCount(xsMachine*, void*);
+mxImport void* fxGetArchiveCodeName(xsMachine*, void*, xsIntegerValue);
+mxImport void* fxGetArchiveData(xsMachine*, void*, xsStringValue, size_t*);
+mxImport xsIntegerValue fxGetArchiveDataCount(xsMachine*, void*);
+mxImport void* fxGetArchiveDataName(xsMachine*, void*, xsIntegerValue);
+
 mxImport void fxAwaitImport(xsMachine*, xsBooleanValue);
 
 mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);

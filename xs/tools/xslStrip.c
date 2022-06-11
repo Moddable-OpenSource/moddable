@@ -302,6 +302,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	
 	fxUnstripCallback(linker, fxArrayLengthGetter);
 	fxUnstripCallback(linker, fxArrayLengthSetter);
+	fxUnstripCallback(linker, fxModuleGetter);
 	fxUnstripCallback(linker, fxStringAccessorGetter);
 	fxUnstripCallback(linker, fxStringAccessorSetter);
 	fxUnstripCallback(linker, fxThrowTypeError);

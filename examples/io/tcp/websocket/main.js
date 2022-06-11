@@ -15,7 +15,7 @@
 import WebSocket from "WebSocket";
 import data from "data";
 
-const ws = new WebSocket("ws://10.0.1.11:8080/");
+const ws = new WebSocket("ws://websockets.chilkat.io/wsChilkatEcho.ashx");
 ws.binaryType = "arraybuffer";
 ws.addEventListener("open", event => {
 	ws.send("Hello");
@@ -31,7 +31,7 @@ ws.addEventListener("message", event => {
 		trace(`onmessage binary ${data.byteLength}\n`);
 	else {
 		trace(`onmessage ${data}\n`);
-		if (data == "GOODBYE")
+		if (data.toUpperCase() == "GOODBYE")
 			ws.close(1000, "Done");
 	}
 });

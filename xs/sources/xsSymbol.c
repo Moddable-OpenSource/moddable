@@ -81,12 +81,10 @@ txSlot* fxNewSymbolInstance(txMachine* the)
 
 void fx_Symbol(txMachine* the)
 {
-	txID id = the->keyIndex;
+	txID id;
 	txSlot* description;
 	if (mxTarget->kind != XS_UNDEFINED_KIND)
 		mxTypeError("new Symbol");
-	if (id == the->keyCount)
-		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
 		fxToString(the, mxArgv(0));
 		description = fxNewSlot(the);
@@ -95,6 +93,9 @@ void fx_Symbol(txMachine* the)
 	}
 	else
 		description = C_NULL;
+	id = the->keyIndex;
+	if (id == the->keyCount)
+		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 	the->keyArray[id - the->keyOffset] = description;
 	the->keyIndex++;
 	mxResult->kind = XS_SYMBOL_KIND;

@@ -75,7 +75,7 @@ void PiuLocalsCreate(xsMachine* the)
 		c_strcpy((*self)->language, "en");
 	c_strcpy(path, (*self)->name);
 	c_strcat(path, ".mhi");
-	(*self)->seeds = (int32_t *)fxGetResource(the, path, &size);
+	(*self)->seeds = (int32_t *)fxGetResource(the, NULL, path, &size);
 	if (!(*self)->seeds) {
 		xsURIError("locals name not found: %s", path);	
 	}
@@ -83,7 +83,7 @@ void PiuLocalsCreate(xsMachine* the)
 	c_strcat(path, ".");
 	c_strcat(path, (*self)->language);
 	c_strcat(path, ".mhr");
-	(*self)->results = (int32_t *)fxGetResource(the, path, &size);
+	(*self)->results = (int32_t *)fxGetResource(the, NULL, path, &size);
 	if (!(*self)->results) {
 		xsURIError("locals language not found: %s", path);	
 	}
@@ -130,7 +130,7 @@ void PiuLocals_set_language(xsMachine* the)
 	c_strcat(path, ".");
 	c_strcat(path, (*self)->language);
 	c_strcat(path, ".mhr");
-	(*self)->results = (int32_t *)fxGetResource(the, path, &size);
+	(*self)->results = (int32_t *)fxGetResource(the, NULL, path, &size);
 	if (!(*self)->results)
 		xsURIError("locals language not found: %s", path);	
 }

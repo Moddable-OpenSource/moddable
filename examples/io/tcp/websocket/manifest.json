@@ -9,17 +9,26 @@
 	},
 	"modules": {
 		"*": [
-			"./WebSocket",
+			"./config",
 			"./data",
+			"./WebSocket",
 			"./main",
+			"$(MODULES)/network/dns/moddnsparser",
 			"$(MODULES)/data/logical/*"
 		],
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
 		"embedded:network/websocket/client": "./../websocketclient/websocketclient"
 	},
 	"preload": [
+		"config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
 		"embedded:network/websocket/client",
-		"logical",
-		"WebSocket",
-		"data"
+		"logical"
 	]
 }

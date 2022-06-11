@@ -24,7 +24,7 @@ new Listener({
 				from: this.read(),
 				onReadable() {
 					const echo = this.read();
-					const msg = ArrayBuffer.fromString(`\r\n\r\nResponse ${++requests}. ${new Date}`);
+					const msg = ArrayBuffer.fromString(`\r\n\r\nResponse ${++requests}. ${new Date} ${this.remoteAddress}:${this.remotePort}`);
 
 					this.write(ArrayBuffer.fromString("HTTP/1.1 200 OK\r\n"));
 					this.write(ArrayBuffer.fromString("connection: close\r\n"));

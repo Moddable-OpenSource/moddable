@@ -7,11 +7,11 @@
 	"creation": {
 		"static": 65536,
 		"chunk": {
-			"initial": 1536,
+			"initial": 16384,
 			"incremental": 512
 		},
 		"heap": {
-			"initial": 512,
+			"initial": 2048,
 			"incremental": 64
 		},
 		"stack": 256,
@@ -31,8 +31,13 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODULES)/base/modules/manifest.json",
+		"$(MODULES)/data/base64/manifest.json",
+		"$(MODULES)/data/hex/manifest.json",
+		"$(MODULES)/data/qrcode/manifest.json",
 		"$(MODULES)/data/text/decoder/manifest.json",
 		"$(MODULES)/data/text/encoder/manifest.json",
+		"$(MODULES)/data/zlib/manifest_deflate.json",
+		"$(MODULES)/data/zlib/manifest_inflate.json",
 		"$(MODULES)/files/preference/manifest.json",
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
@@ -92,6 +97,20 @@
 					"hz": 100000,
 					"address": 53,
 					"unusedAddress": 99
+				},
+				"pwm": {
+					"from": true,
+					"pins": [18, 12, 13],
+					"ports": [4, 5],
+					"invalidPorts": [0, 1],
+					"resolutions": [10, 11, 12],
+					"hzs": [10000, 200, 1]
+				},
+				"spi": {
+					"select": 18,
+					"ports": [1, 2],
+					"invalidPorts": [3, -1],
+					"hzs": [1000, 10000, 20000]
 				},
 			 	"invalidPins": [
 					-10,

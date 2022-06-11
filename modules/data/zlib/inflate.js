@@ -1,42 +1,65 @@
+/*
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+ 
 class Inflate @ "xs_inflate_destructor" {
 	chunks = [];
 	strm = {};
 
 	constructor(options = {}) {
-		this.build(options);
+		build.call(this, options);
+		this.onData = onData;
+		this.onEnd = onEnd;
 	}
-	build(options) @ "xs_inflate";
 	close() @ "xs_inflate_close";
 
 	push(buffer, end) {
-		this.strm.avail_in = this._push(buffer, end);
+		this.strm.avail_in = push.call(this, buffer, end);
 	}
+}
 
-	_push(buffer, end) @ "xs_inflate_push";
+function build(options) @ "xs_inflate";
+function push(buffer, end) @ "xs_inflate_push";
 
-	onData(chunk) {
-		this.chunks.push(chunk);
-	}
-	onEnd(err) {
-		const chunks = this.chunks, length = chunks.length;
-		delete this.chunks;
+function onData(chunk) {
+	this.chunks.push(chunk);
+}
 
-		this.err = err;
-		if (err)
-			return;
+function onEnd(err) {
+	const chunks = this.chunks, length = chunks.length;
+	delete this.chunks;
 
-		// join chunks
-		let total = 0;
-		for (let i = 0; i < length; i++)
-			total += chunks[i].byteLength;
+	this.err = err;
+	if (err)
+		return;
 
-		this.result = new Uint8Array(total);
-		let offset = 0;
-		for (let i = 0; i < length; i++) {
-			const chunk = chunks[i];
-			this.result.set(new Uint8Array(chunk), offset);
-			offset += chunk.byteLength;
-		}
+	// join chunks
+	let total = 0;
+	for (let i = 0; i < length; i++)
+		total += chunks[i].byteLength;
+
+	this.result = new Uint8Array(total);
+	let offset = 0;
+	for (let i = 0; i < length; i++) {
+		const chunk = chunks[i];
+		this.result.set(new Uint8Array(chunk), offset);
+		offset += chunk.byteLength;
 	}
 }
 

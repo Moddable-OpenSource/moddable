@@ -58,8 +58,8 @@ const certificate = 11;
 const server_key_exchange = 12;
 const certificate_request = 13;
 const server_hello_done = 14;
-const certificate_verify = 15,
-const client_key_exchange = 16,
+const certificate_verify = 15;
+const client_key_exchange = 16;
 const finished = 20;
 
 const master_secret_label = "master secret";
@@ -373,7 +373,6 @@ const handshakeProtocol = {
 						break;
 					case extension_type.tls_max_fragment_length: {
 						es.writeChars(type, 2);
-						es.writeChars(2 + 1, 2);
 						es.writeChars(1, 2);
 						let j;
 						for (j = 1; j <= 4; j++) {

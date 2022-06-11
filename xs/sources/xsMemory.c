@@ -57,18 +57,23 @@
 #if mxStress
 int gxStress = 0;
 
-static int fxShouldStress() {
-	if (gxStress)
+static int fxShouldStress()
+{
+	if (!gxStress)
+		return 0;
+
+	if (gxStress > 0)
 		return 1;
-	else
-  		return (c_rand() < (C_RAND_MAX / 2)) ? 1 : 0;
+
+	gxStress += 1;
+	return 0 == gxStress;
 }
 #endif
 
 #define mxChunkFlag 0x80000000
 
 static txSize fxAdjustChunkSize(txMachine* the, txSize size);
-static void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size);
+static void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset);
 static void* fxFindChunk(txMachine* the, txSize size, txBoolean *once);
 static void* fxGrowChunk(txMachine* the, txSize size);
 static void* fxGrowChunks(txMachine* the, txSize theSize); 
@@ -162,6 +167,9 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 #ifdef mxNever
 	startTime(&gxLifeTime);
 #endif
+#if mxStress
+	gxStress = 0;
+#endif
 
 	the->currentChunksSize = 0;
 	the->peakChunksSize = 0;
@@ -214,12 +222,28 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->parserTableModulo = theCreation->parserTableModulo;
 }
 
-void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size)
+void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 {
 	if (chunk) {
 		txByte* data = (txByte*)chunk;
+#if mxNoChunks
 		chunk->size = size;
-		the->currentChunksSize += (txSize)(chunk->temporary - data);
+		the->currentChunksSize += size;
+#else
+		txSize capacity = (txSize)(chunk->temporary - data);
+	#ifdef mxSnapshot
+		#if INTPTR_MAX == INT64_MAX
+			chunk->dummy = 0;
+		#endif
+	#ifdef mxSnapshotRandomInit
+		arc4random_buf(data + sizeof(txChunk), offset);
+	#endif		
+		offset += sizeof(txChunk);
+		c_memset(data + offset, 0, capacity - offset);
+	#endif
+		chunk->size = size;
+		the->currentChunksSize += capacity;
+#endif
 		if (the->peakChunksSize < the->currentChunksSize)
 			the->peakChunksSize = the->currentChunksSize;
 		return data + sizeof(txChunk);
@@ -233,9 +257,9 @@ void fxCheckCStack(txMachine* the)
 {
     char x;
     char *stack = &x;
-    if (stack <= the->stackLimit) {
-    	fxAbort(the, XS_STACK_OVERFLOW_EXIT);
-    }
+	if (stack <= the->stackLimit) {
+		fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+	}
 }
 
 void fxCollect(txMachine* the, txBoolean theFlag)
@@ -1007,13 +1031,18 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_STACK_KIND:
 		fxCheckCStack(the);
 		if ((aSlot = theSlot->value.array.address)) {
-			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
-			while (aLength) {
-				fxMarkValue(the, aSlot);
-				aSlot++;
-				aLength--;
+			txChunk* chunk = (txChunk*)(((txByte*)aSlot) - sizeof(txChunk));
+			if (!(chunk->size & mxChunkFlag)) {
+				txIndex aLength = chunk->size / sizeof(txSlot);
+				if (aLength > theSlot->value.array.length)
+					aLength = theSlot->value.array.length;
+				while (aLength) {
+					fxMarkValue(the, aSlot);
+					aSlot++;
+					aLength--;
+				}
+				mxMarkChunk(theSlot->value.array.address);
 			}
-			mxMarkChunk(theSlot->value.array.address);
 		}
 		break;
 	case XS_ARRAY_BUFFER_KIND:
@@ -1215,8 +1244,9 @@ void fxMarkWeakStuff(txMachine* the)
 				txSlot** listEntryAddress = &list->value.weakList.first;
 				while ((listEntry = *listEntryAddress)) {
 					txSlot* value = listEntry->value.weakEntry.value;
-					if (value->flag & XS_MARK_FLAG)
+					if ((value->flag & XS_MARK_FLAG) && (value->kind != XS_UNINITIALIZED_KIND)) {
 						listEntryAddress = &listEntry->next;
+					}
 					else {
 						listEntry->flag &= ~XS_MARK_FLAG;
 						*listEntryAddress = listEntry->next;
@@ -1282,6 +1312,7 @@ txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b)
 
 void* fxNewChunk(txMachine* the, txSize size)
 {
+	txSize offset = size;
 	txChunk* chunk;
 	txBoolean once = 1;
 	size = fxAdjustChunkSize(the, size);
@@ -1289,11 +1320,12 @@ void* fxNewChunk(txMachine* the, txSize size)
 	if (!chunk) {
 		chunk = fxGrowChunk(the, size);
 	}
-	return fxCheckChunk(the, chunk, size);
+	return fxCheckChunk(the, chunk, size, offset);
 }
 
 void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 {
+	txSize offset = size;
 #if mxNoChunks
 	return fxNewChunk(the, size);
 #else
@@ -1311,7 +1343,7 @@ void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 			}
 		}
 	}
-	return fxCheckChunk(the, chunk, size);
+	return fxCheckChunk(the, chunk, size, offset);
 #endif
 }
 
@@ -1333,6 +1365,13 @@ again:
 		aSlot->next = C_NULL;
 		aSlot->ID = XS_NO_ID;
 		aSlot->flag = XS_NO_FLAG;
+	#ifdef mxSnapshot
+		#if mx32bitID
+			aSlot->dummy = 0;
+		#elif INTPTR_MAX == INT64_MAX
+			aSlot->dummy = 0;
+		#endif
+	#endif
 #if mxPoisonSlots
 		ASAN_UNPOISON_MEMORY_REGION(&aSlot->value, sizeof(aSlot->value));
 #endif
@@ -1364,8 +1403,10 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);
 	txChunk* aChunk = (txChunk*)aData;
 	size = fxAdjustChunkSize(the, size);
-	if (size <= aChunk->size)
+	if (size <= aChunk->size) {
+		aChunk->size = size;
 		return theData;
+	}
 	return C_NULL;
 #else
 	txByte* aData = ((txByte*)theData) - sizeof(txChunk);

@@ -187,6 +187,15 @@ txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i)
 		fxToString(the, mxArgv(i));
 		slot = fxNextSlotProperty(the, slot, mxArgv(i), mxID(_message), XS_DONT_ENUM_FLAG);
 	}
+	i++;
+	if ((mxArgc > i) && (mxArgv(i)->kind == XS_REFERENCE_KIND)) {
+		if (mxBehaviorHasProperty(the, mxArgv(i)->value.reference, mxID(_cause), 0)) {
+			mxPushSlot(mxArgv(i));
+			mxGetID(mxID(_cause));
+			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_cause), XS_DONT_ENUM_FLAG);
+			mxPop();
+		}
+	}
 	return slot;
 }
 

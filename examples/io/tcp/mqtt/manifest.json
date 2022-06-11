@@ -1,0 +1,31 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"creation": {
+		"stack": 384,
+		"static": 65536
+	},
+	"modules": {
+		"*": [
+			"./config",
+			"./data",
+			"./mqtt",
+			"./main",
+			"$(MODULES)/network/dns/moddnsparser"
+		],
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"embedded:network/mqtt/client": "./../mqttclient/mqttclient"
+	},
+	"preload": [
+		"config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
+		"embedded:network/mqtt/client"
+	]
+}

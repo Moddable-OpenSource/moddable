@@ -5,13 +5,24 @@
 		"$(MODDABLE)/modules/data/base64/manifest.json"
 	],
 	"modules": {
-		"*": [
+		"*": [ 
+			"./config",
 			"./main",
-			"$(MODULES)/data/logical/*"
+			"$(MODULES)/data/logical/*",
+			"$(MODULES)/network/dns/moddnsparser"
 		],
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
 		"embedded:network/websocket/client": "./websocketclient"
 	},
 	"preload": [
+		"config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
 		"embedded:network/websocket/client",
 		"logical"
 	]

@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+ 
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
@@ -33,16 +53,22 @@ void xs_deflate(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_windowBits)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_windowBits);
 		windowBits = xsmcToInteger(xsVar(0));
+		if ((15 != windowBits) && (-15 != windowBits))
+			xsRangeError("invalid windowBits");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_level)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_level);
 		level = xsmcToInteger(xsVar(0));
+		if ((level < -1) || (level > 10))
+			xsRangeError("invalid level");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_strategy)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_strategy);
 		strategy = xsmcToInteger(xsVar(0));
+		if ((strategy < 0) || (strategy > 4))
+			xsRangeError("invalid level");
 	}
 
 	zlib = c_malloc(sizeof(z_stream));
@@ -63,38 +89,49 @@ void xs_deflate(xsMachine *the)
 void xs_deflate_close(xsMachine *the)
 {
 	z_stream *zlib = xsmcGetHostData(xsThis);
-	xs_deflate_destructor(zlib);
-	xsmcSetHostData(xsThis, NULL);
+	if (zlib && xsmcGetHostDataValidate(xsThis, xs_deflate_destructor)) {
+		xs_deflate_destructor(zlib);
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+	}
 }
 
 void xs_deflate_push(xsMachine *the)
 {
-	z_stream *zlib = xsmcGetHostData(xsThis);
+	z_stream *zlib = xsmcGetHostDataValidate(xsThis, xs_deflate_destructor);
 	uint8_t output[1024];
 	int inputOffset = 0;
-	int inputRemaining;
-	int inputEnd = xsmcTest(xsArg(1));
+	xsUnsignedValue inputRemaining;
+	void *input;
+	int inputEnd = (xsmcArgc > 1) ? xsmcTest(xsArg(1)) : 0;
 	int status = Z_OK;
 	uint8_t isString = xsStringType == xsmcTypeOf(xsArg(0));
 
 	if (isString)
 		inputRemaining = c_strlen(xsmcToString(xsArg(0)));
 	else
-		inputRemaining = xsmcGetArrayBufferLength(xsArg(0));
+		xsmcGetBufferReadable(xsArg(0), &input, &inputRemaining);
 
-	while (0 != inputRemaining) {
+	while ((0 != inputRemaining) || (Z_OK == status)) {
 		zlib->next_out	= output;
 		zlib->avail_out	= sizeof(output);
 		zlib->total_out	= 0;
 
 		if (isString)
 			zlib->next_in = inputOffset + (uint8_t *)xsmcToString(xsArg(0));
-		else
-			zlib->next_in = inputOffset + (uint8_t *)xsmcToArrayBuffer(xsArg(0));
+		else {
+			xsUnsignedValue ignore;
+			xsmcGetBufferReadable(xsArg(0), &input, &ignore);
+			zlib->next_in = inputOffset + (uint8_t *)input;
+		}
 		zlib->avail_in = inputRemaining;
 		zlib->total_in = 0;
 
 		status = deflate(zlib, (inputEnd ? Z_FINISH : Z_NO_FLUSH));
+		if (Z_BUF_ERROR == status) {
+			status = Z_OK;
+			goto bail;
+		}
 		if ((Z_OK != status) && (Z_STREAM_END != status)) {
 			xs_deflate_close(the);
 

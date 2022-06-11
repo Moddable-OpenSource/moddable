@@ -92,6 +92,8 @@ typedef struct {
 #define XS_ATOM_CODE 0x434F4445 /* 'CODE' */
 #define XS_ATOM_DATA 0x44415441 /* 'DATA' */
 #define XS_ATOM_HOSTS 0x484F5354 /* 'HOST' */
+#define XS_ATOM_IDENTIFIERS 0x4944454E /* 'IDEN' */
+#define XS_ATOM_MAPS 0x4D415053 /* 'MAPS' */
 #define XS_ATOM_MODULES 0x4D4F4453 /* 'MODS' */
 #define XS_ATOM_NAME 0x4E414D45 /* 'NAME' */
 #define XS_ATOM_PATH 0x50415448 /* 'PATH' */
@@ -99,9 +101,9 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 11
-#define XS_MINOR_VERSION 7
-#define XS_PATCH_VERSION 1
+#define XS_MAJOR_VERSION 13
+#define XS_MINOR_VERSION 0
+#define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -238,6 +240,8 @@ enum {
 	XS_CODE_GET_THIS_VARIABLE,
 	XS_CODE_GET_VARIABLE,
 	XS_CODE_GLOBAL,
+	XS_CODE_HAS_PRIVATE_1,
+	XS_CODE_HAS_PRIVATE_2,
 	XS_CODE_HOST,
 	XS_CODE_IMPORT,
 	XS_CODE_IMPORT_META,
@@ -778,6 +782,7 @@ enum {
 	_callee,
 	_caller,
 	_catch,
+	_cause,
 	_cbrt,
 	_ceil,
 	_center,
@@ -894,6 +899,7 @@ enum {
 	_has,
 	_hasIndices,
 	_hasInstance,
+	_hasOwn,
 	_hasOwnProperty,
 	_hypot_,
 	_id,

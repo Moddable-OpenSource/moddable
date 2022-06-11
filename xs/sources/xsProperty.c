@@ -359,7 +359,6 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 				if (array->ID == XS_ARRAY_BEHAVIOR) {
 					txSize capacity = fxSizeToCapacity(the, size);
 					chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
-					c_memset(chunk + current, 0, capacity - size);
 				}
 				else
 			#endif
@@ -437,7 +436,6 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 					if (growable) {
 						txSize capacity = fxSizeToCapacity(the, size);
 						chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
-						c_memset(chunk + target, 0, capacity - size);
 					}
 					else
 				#endif
@@ -455,7 +453,6 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 			if (growable) {
 				txSize capacity = fxSizeToCapacity(the, size);
 				chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
-				c_memset(chunk + target, 0, capacity - size);
 			}
 			else
 		#endif

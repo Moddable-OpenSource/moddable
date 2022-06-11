@@ -299,6 +299,9 @@ struct sxBlock {
 
 struct sxChunk {
 	txSize size;
+#if INTPTR_MAX == INT64_MAX
+	txS4 dummy;
+#endif
 	txByte* temporary;
 };
 
@@ -677,9 +680,14 @@ mxExport void fxDemarshall(txMachine* the, void* theData, txBoolean alien);
 mxExport void* fxMarshall(txMachine* the, txBoolean alien);
 
 mxExport void fxBuildArchiveKeys(txMachine* the);
-mxExport void* fxGetArchiveCode(txMachine* the, txString path, txSize* size);
-mxExport void* fxGetArchiveData(txMachine* the, txString path, txSize* size);
-mxExport void* fxMapArchive(txPreparation* preparation, void* archive, void* stage, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
+mxExport void* fxGetArchiveCode(txMachine* the, void* archive, txString path, size_t* size);
+mxExport txInteger fxGetArchiveCodeCount(txMachine* the, void* archive);
+mxExport void* fxGetArchiveCodeName(txMachine* the, void* archive, txInteger index);
+mxExport void* fxGetArchiveData(txMachine* the, void* archive, txString path, size_t* size);
+mxExport txInteger fxGetArchiveDataCount(txMachine* the, void* archive);
+mxExport void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index);
+mxExport void* fxGetArchiveName(txMachine* the, void* archive);
+mxExport void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
 
@@ -948,6 +956,7 @@ mxExport void fx_Object_getOwnPropertyDescriptors(txMachine* the);
 mxExport void fx_Object_getOwnPropertyNames(txMachine* the);
 mxExport void fx_Object_getOwnPropertySymbols(txMachine* the);
 mxExport void fx_Object_getPrototypeOf(txMachine* the);
+mxExport void fx_Object_hasOwn(txMachine* the);
 mxExport void fx_Object_is(txMachine* the);
 mxExport void fx_Object_isExtensible(txMachine* the);
 mxExport void fx_Object_isFrozen(txMachine* the);
@@ -1377,6 +1386,7 @@ extern void fxCacheArray(txMachine* the, txSlot* theArray);
 extern void fxConstructArrayEntry(txMachine* the, txSlot* entry);
 extern txBoolean fxIsArray(txMachine* the, txSlot* instance);
 extern txSlot* fxNewArrayInstance(txMachine* the);
+extern void fxSortArrayItems(txMachine* the, txSlot* function, txSlot* array, txNumber LENGTH);
 extern txNumber fxToLength(txMachine* the, txSlot* slot);
 
 /* xsDataView.c */
@@ -1779,6 +1789,8 @@ extern void fxPrepareTransfer(txMachine* the);
 extern void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunImport(txMachine* the, txSlot* realm, txID id);
 
+mxExport void fxModuleGetter(txMachine* the);
+
 mxExport void fx_Compartment(txMachine* the);
 mxExport void fx_Compartment_prototype_get_globalThis(txMachine* the);
 mxExport void fx_Compartment_prototype_evaluate(txMachine* the);
@@ -1789,6 +1801,14 @@ mxExport void fx_Compartment_prototype_module(txMachine* the);
 mxExport void fx_StaticModuleRecord(txMachine* the);
 mxExport void fx_StaticModuleRecord_initialize(txMachine* the);
 mxExport void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the);
+
+/* xsLockdown.c */
+#ifdef mxLockdown
+mxExport void fx_harden(txMachine* the);
+mxExport void fx_lockdown(txMachine* the);
+mxExport void fx_petrify(txMachine* the);
+mxExport void fx_mutabilities(txMachine* the);
+#endif
 
 /* xsProfile.c */
 #ifdef mxProfile
@@ -1840,6 +1860,7 @@ enum {
 	XS_IMPORT_NAMESPACE = 0,
 	XS_IMPORT_DEFAULT = 1,
 	XS_IMPORT_PREFLIGHT = 2,
+	XS_IMPORT_ASYNC = 4,
 
 	XS_OWN = 0,
 	XS_ANY = 1,
@@ -2458,6 +2479,7 @@ enum {
 	mxOnResolvedPromiseFunctionStackIndex,
 	mxOnThenableFunctionStackIndex,
 	mxArrayLengthAccessorStackIndex,
+	mxModuleAccessorStackIndex,
 	mxProxyAccessorStackIndex,
 	mxStringAccessorStackIndex,
 	mxTypedArrayAccessorStackIndex,
@@ -2642,6 +2664,7 @@ enum {
 #define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
 #define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
 #define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
+#define mxModuleAccessor the->stackPrototypes[-1 - mxModuleAccessorStackIndex]
 #define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
 #define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]
 #define mxTypedArrayAccessor the->stackPrototypes[-1 - mxTypedArrayAccessorStackIndex]

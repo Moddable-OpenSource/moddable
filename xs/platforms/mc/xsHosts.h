@@ -32,7 +32,6 @@ extern "C" {
 extern xsMachine *modCloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint32_t keyCount, const char *name);
 extern void modRunMachineSetup(xsMachine *the);
 
-extern void modLoadModule(xsMachine *the, const char *name);
 extern char *modGetModAtom(xsMachine *the, uint32_t atomTypeIn, int *atomSizeOut);
 
 extern void *modInstallMods(/* txPreparation */ void *preparation, uint8_t *status);

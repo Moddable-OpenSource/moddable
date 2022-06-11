@@ -21,10 +21,6 @@
 #include "xsmc.h"
 #include "stddef.h"
 
-extern const void* fxGetArchiveData(xsMachine* the, char* path, size_t* size);
-extern xsIntegerValue fxGetArchiveDataCount(xsMachine* the);
-extern void* fxGetArchiveDataName(xsMachine* the, xsIntegerValue index);
-
 extern const char *mcGetResourceName(void* it, int i);
 extern int mcCountResources(void* it);
 
@@ -35,9 +31,9 @@ void Resource_index(xsMachine *the)
 	if (index < 0)
 		return;
 
-	archiveCount = fxGetArchiveDataCount(the);
+	archiveCount = fxGetArchiveDataCount(the, the->archive);
 	if (index < archiveCount)
-		xsmcSetString(xsResult, fxGetArchiveDataName(the, index));
+		xsmcSetString(xsResult, fxGetArchiveDataName(the, the->archive, index));
 	else {
 		xsIntegerValue count = mcCountResources(NULL);
 
@@ -56,7 +52,7 @@ void Resource_index(xsMachine *the)
 			if (!name)
 				return;
 
-			if (fxGetArchiveData(the, (char *)name, &size))
+			if (fxGetArchiveData(the, the->archive, (char *)name, &size))
 				continue;	// resource with same name in archive and host. only report once.
 
 			if (index) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -339,7 +339,7 @@ void fx_String(txMachine* the)
 void fx_String_fromArrayBuffer(txMachine* the)
 {
 	txSlot* slot;
-	txSlot* arrayBuffer = C_NULL;
+	txSlot* arrayBuffer = C_NULL, *sharedArrayBuffer = C_NULL;
 	txSlot* bufferInfo;
 	txInteger limit, offset;
 	txInteger inLength, outLength = 0;
@@ -350,12 +350,18 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	slot = mxArgv(0);
 	if (slot->kind == XS_REFERENCE_KIND) {
 		slot = slot->value.reference->next;
-		if (slot && (slot->kind == XS_ARRAY_BUFFER_KIND))
-			arrayBuffer = slot;
+		if (slot) {
+			bufferInfo = slot->next;
+			if (slot->kind == XS_ARRAY_BUFFER_KIND)
+				arrayBuffer = slot;
+			else if (slot->kind == XS_HOST_KIND) {
+				if (!(slot->flag & XS_HOST_CHUNK_FLAG) && bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND))
+					sharedArrayBuffer = slot;
+			}
+		}
 	}
-	if (!arrayBuffer)
+	if (!arrayBuffer && !sharedArrayBuffer)
 		mxTypeError("argument is no ArrayBuffer instance");
-	bufferInfo = arrayBuffer->next;
 	limit = bufferInfo->value.bufferInfo.length;
 	offset = fxArgToByteLength(the, 1, 0);
 	if (limit < offset)
@@ -364,7 +370,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	if ((limit < (offset + inLength)) || ((offset + inLength) < offset))
 		mxRangeError("out of range byteLength %ld", inLength);
 
-	in = offset + (unsigned char *)arrayBuffer->value.arrayBuffer.address;
+	in = offset + (unsigned char *)(arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data);
 	while (inLength > 0) {
 		unsigned char first = c_read8(in++), clen;
 		if (first < 0x80){
@@ -397,7 +403,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	}
 
 	string = fxNewChunk(the, outLength + 1);
-	c_memcpy(string, offset + arrayBuffer->value.arrayBuffer.address, outLength);
+	c_memcpy(string, offset + (txString)(arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data), outLength);
 	string[outLength] = 0;
 	mxResult->value.string = string;
 	mxResult->kind = XS_STRING_KIND;
@@ -792,6 +798,9 @@ void fx_String_prototype_indexOf(txMachine* the)
 	if ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) {
 		aNumber = fxToNumber(the, mxArgv(1));
 		anOffset = (c_isnan(aNumber)) ? 0 : (aNumber < 0) ? 0 : (aNumber > aLength) ? aLength : (txInteger)c_floor(aNumber);
+
+		aString = mxThis->value.string;
+		aSubString = mxArgv(0)->value.string;
 	}
 	if (anOffset + aSubLength <= aLength) {
 		anOffset = fxUnicodeToUTF8Offset(aString, anOffset);
@@ -872,6 +881,9 @@ void fx_String_prototype_lastIndexOf(txMachine* the)
 		anOffset += aSubLength;
 		if (anOffset > aLength)
 			anOffset = aLength;
+
+		aString = mxThis->value.string;
+		aSubString = mxArgv(0)->value.string;
 	}
 	if (anOffset - aSubLength >= 0) {
 		anOffset = fxUnicodeToUTF8Offset(aString, anOffset - aSubLength);
@@ -958,7 +970,7 @@ void fx_String_prototype_normalize(txMachine* the)
 		else
 			mxRangeError("invalid form");
 	}
-	mxMeterSome(fxUnicodeLength(string));
+	mxMeterSome(fxUnicodeLength(mxThis->value.string));
 	mxResult->value.string = mxThis->value.string;
 	mxResult->kind = XS_STRING_KIND;
 #ifdef mxStringNormalize
@@ -1079,7 +1091,7 @@ void fx_String_prototype_repeat(txMachine* the)
 		}
 	}
 	*result = 0;
-	string = mxThis->value.string;
+	string = mxThis->value.string;		//@@ unused!
 }
 
 void fx_String_prototype_replace(txMachine* the)
@@ -3261,14 +3273,15 @@ void fxNormalizeString(txMachine* the, txSlot* string, txFlag form)
 	txNormalizeBuffer _buffer;
 	txNormalizeBuffer* buffer = &_buffer;
 	txInteger source[mxSourceBufferCount];
-	txString p = string->value.string;
+	txString p;
 
 	mxPushUndefined();
 	buffer->slot = the->stack;
 	buffer->address = fxArrayBuffer(the, the->stack, C_NULL, 64, 0x7FFFFFFF);
 	buffer->count = 0;
 	buffer->starterIndex = 0;
-	
+
+	p = string->value.string;
 	for (;;) {
 		txInteger* sourceAddress = source;
 		txInteger sourceIndex = 0;
@@ -3296,6 +3309,7 @@ void fxNormalizeString(txMachine* the, txSlot* string, txFlag form)
 			stringLength += mxStringByteLength(buffer->address[resultIndex]);
 		stringLength++;
 		p = string->value.string = fxNewChunk(the, stringLength);
+		buffer->address = fxToArrayBuffer(the, the->stack);
 		for (resultIndex = 0; resultIndex < buffer->count; resultIndex++)
 			p = mxStringByteEncode(p, buffer->address[resultIndex]);
 		*p = 0;

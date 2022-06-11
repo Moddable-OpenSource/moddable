@@ -50,7 +50,6 @@ static txSlot* fxNewDataViewInstance(txMachine* the);
 
 static void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index, txSlot* item);
 static txSlot* fxCheckTypedArrayInstance(txMachine* the, txSlot* slot);
-static int fxCompareTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index);
 static txSlot* fxConstructTypedArray(txMachine* the);
 static txSlot* fxNewTypedArrayInstance(txMachine* the, txTypeDispatch* dispatch, txTypeAtomics* atomics);
 static void fxReduceTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index);
@@ -1238,32 +1237,6 @@ txSlot* fxCheckTypedArrayInstance(txMachine* the, txSlot* slot)
 	return C_NULL;
 }
 
-int fxCompareTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index)
-{
-	txSlot* slot = the->stack;
-	int result;
-	/* THIS */
-	mxPushUndefined();
-	/* FUNCTION */
-	mxPushSlot(function);
-	mxCall();
-	/* ARGUMENTS */
-	mxPushUndefined();
-	(*dispatch->value.typedArray.dispatch->getter)(the, data, view->value.dataView.offset + (index << dispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
-	mxPushSlot(slot);
-	mxRunCount(2);
-	if (the->stack->kind == XS_INTEGER_KIND)
-		result = the->stack->value.integer;
-	else {
-		txNumber number = fxToNumber(the, the->stack);
-		result = (number < 0) ? -1 :  (number > 0) ? 1 : 0;
-	}
-	mxPop();
-	if (data->value.arrayBuffer.address == C_NULL)
-		mxTypeError("detached buffer");
-	return result;
-}
-
 txSlot* fxConstructTypedArray(txMachine* the)
 {
 	txSlot* prototype;
@@ -1398,13 +1371,7 @@ void fx_TypedArray(txMachine* the)
 			/* FUNCTION */
 			mxPush(mxArrayBufferConstructor);
 			/* TARGET */
-			if (sourceData->kind == XS_ARRAY_BUFFER_KIND) {
-				mxPushSlot(sourceBuffer);
-				mxGetID(mxID(_constructor));
-				fxToSpeciesConstructor(the, &mxArrayBufferConstructor);
-			}
-			else
-				mxPush(mxArrayBufferConstructor);
+			mxPush(mxArrayBufferConstructor);
 			/* RESULT */
 			mxPushUndefined();	
 			mxPushUninitialized();	
@@ -2187,6 +2154,8 @@ void fx_TypedArray_prototype_set(txMachine* the)
 	}
 	else {
 		txInteger count, index;
+		if (data->value.arrayBuffer.address == C_NULL)
+			mxTypeError("detached buffer");
 		mxPushSlot(mxArgv(0));
 		mxGetID(mxID(_length));
 		count = fxToInteger(the, the->stack);
@@ -2198,9 +2167,8 @@ void fx_TypedArray_prototype_set(txMachine* the)
 			mxPushSlot(mxArgv(0));
 			mxGetIndex(index);
 			(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-			if (data->value.arrayBuffer.address == C_NULL)
-				mxTypeError("detached buffer");
-			(*dispatch->value.typedArray.dispatch->setter)(the, data, offset, the->stack, EndianNative);
+			if (data->value.arrayBuffer.address != C_NULL)
+                (*dispatch->value.typedArray.dispatch->setter)(the, data, offset, the->stack, EndianNative);
 			mxPop();
 			offset += delta;
 			index++;
@@ -2277,100 +2245,8 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 				mxTypeError("compare is no function");
 		}
 	}
-	if (function) {
-		/* like GCC qsort */
-		#define COMPARE(INDEX) \
-			fxCompareTypedArrayItem(the, function, dispatch, view, data, INDEX)
-		#define MOVE(FROM,TO) \
-			from = data->value.arrayBuffer.address + view->value.dataView.offset + ((FROM) * delta); \
-			to = data->value.arrayBuffer.address + view->value.dataView.offset + ((TO) * delta); \
-			for (k = 0; k < delta; k++) *to++ = *from++
-		#define PUSH(INDEX) \
-			mxPushUndefined(); \
-			(*dispatch->value.typedArray.dispatch->getter)(the, data, view->value.dataView.offset + ((INDEX) * delta), the->stack, EndianNative)
-		#define PULL(INDEX) \
-			(*dispatch->value.typedArray.dispatch->setter)(the, data, view->value.dataView.offset + ((INDEX) * delta), the->stack++, EndianNative)
-		if (length > 0) {
-			txInteger i, j, k;
-			txByte* from;
-			txByte* to;
-			if (length > mxSortThreshold) {
-				txInteger lo = 0, hi = length - 1;
-				txSortPartition stack[mxSortPartitionCount];
-				txSortPartition *top = stack + 1;
-				while (stack < top) {
-					txIndex mid = lo + ((hi - lo) >> 1);
-					PUSH(mid);
-					if (COMPARE(lo) > 0) {
-						MOVE(lo, mid);
-						PULL(lo);
-						PUSH(mid);
-					}
-					if (COMPARE(hi) < 0) {
-						MOVE(hi, mid);
-						PULL(hi);
-						PUSH(mid);
-						if (COMPARE(lo) > 0) {
-							MOVE(lo, mid);
-							PULL(lo);
-							PUSH(mid);
-						}
-					}
-					i = lo + 1;
-					j = hi - 1;
-					do {
-						while ((COMPARE(i) < 0) && (i <= j)) i++;
-						while ((COMPARE(j) > 0) && (i <= j)) j--;
-						if (i < j) {
-							PUSH(i);
-							MOVE(j, i);
-							PULL(j);
-							i++;
-							j--;
-						}
-						else if (i == j) {
-							i++;
-							j--;
-							break;
-						}
-					} while (i <= j);
-					if ((j - lo) <= mxSortThreshold) {
-						if ((hi - i) <= mxSortThreshold) {
-							top--;
-							lo = top->lo; 
-							hi = top->hi;
-						}
-						else {
-							lo = i;
-						}
-					}
-					else if ((hi - i) <= mxSortThreshold) {
-						hi = j;
-					}
-					else if ((j - lo) > (hi - i)) {
-						top->lo = lo;
-						top->hi = j; 
-						top++;
-						lo = i;
-					}
-					else {
-						top->lo = i;
-						top->hi = hi; 
-						top++;
-						hi = j;
-					}
-					mxPop();
-				}
-			}
-			for (i = 1; i < length; i++) {
-				PUSH(i);
-				for (j = i; (j > 0) && (COMPARE(j - 1) > 0); j--) {
-					MOVE(j - 1, j);
-				}	
-				PULL(j);
-			}
-		}
-	}
+	if (function)
+		fxSortArrayItems(the, function, C_NULL, length);
 	else
 		c_qsort(data->value.arrayBuffer.address, length, delta, dispatch->value.typedArray.dispatch->compare);
 	mxResult->kind = mxThis->kind;

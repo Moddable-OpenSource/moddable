@@ -82,7 +82,9 @@ fetch("http://httpbin.org/encoding/utf8")
 	return response.text();
 })
 .then(text => {
-	trace(text);
+	let c  = text.length;
+	for (let i = 0; i < c; i++)
+		trace(text[i]);
 	trace("\n");
 });
 

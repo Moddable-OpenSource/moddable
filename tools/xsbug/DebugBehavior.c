@@ -997,37 +997,32 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 		{6, 0xFE, 0xFC, 0x7FFFFFFF},
 		{0, 0, 0, 0},
 	};
-	PiuDebugUTF8Sequence* sequence;
 	txU1* p = (txU1*)theString;
 	txU4 c;
-	txS2 s, i;
 	while ((c = *p)) {
-		for (sequence = sequences; sequence->size; sequence++) {
-			if ((c & sequence->cmask) == sequence->cval)
-				break;
-		}
-		s = sequence->size;
-		if (s) {
-			for (i = 1; i < s; i++) {
-				txU1 d = p[i];
-				if ((d < 0x80) || (0xBF < d))
+		if (c & 0x80) {
+			const PiuDebugUTF8Sequence *sequence;
+			txU1* q = p + 1;
+			txS4 size;
+			for (sequence = sequences; sequence->size; sequence++) {
+				if ((c & sequence->cmask) == sequence->cval)
 					break;
-				c = (c << 6) | (d & 0x3F);
 			}
-		}
-		if (i == s) {
+			size = sequence->size - 1;
+			while (size > 0) {
+				size--;
+				c = (c << 6) | (*q++ & 0x3F);
+			}
 			c &= sequence->lmask;
-			if ((c < 0x0000D800) || ((0x0000DFFF < c) && (c < 0x00110000)))
-				p += s;
+			if (((0x00000000 < c) && (c < 0x0000D800)) || ((0x0000DFFF < c) && (c < 0x00110000)))
+				p = q;
 			else {
-                for (i = 0; i < s; i++)
-				    *p++ = '?';
+				while (p < q)
+					*p++ = '?';
 			}
 		}
-		else {
-			*p = 0;
-			break;
-		}
+		else
+			p++;
 	}
 }
 

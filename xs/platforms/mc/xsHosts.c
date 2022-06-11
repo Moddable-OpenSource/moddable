@@ -495,14 +495,18 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 
 static uint16_t gSetupPending = 0;
 
-void modLoadModule(txMachine *the, const char *name)
+#if MODDEF_MAIN_ASYNC
+static void setStepDoneFulfilled(xsMachine *the)
 {
-	xsBeginHost(the);
-		xsResult = xsAwaitImport(name, XS_IMPORT_DEFAULT);
+	xsResult = xsGet(xsArg(0), xsID("default"));
 		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
 			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(the);
 }
+
+static void setStepDoneRejected(xsMachine *the)
+{
+}
+#endif
 
 static void setStepDone(txMachine *the)
 {
@@ -510,7 +514,19 @@ static void setStepDone(txMachine *the)
 	if (gSetupPending)
 		return;
 
-	modLoadModule(the, ((txPreparation *)xsPreparationAndCreation(NULL))->main);
+	xsBeginHost(the);
+#if MODDEF_MAIN_ASYNC
+		xsVars(2);
+		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_ASYNC);
+		xsVar(0) = xsNewHostFunction(setStepDoneFulfilled, 1);
+		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
+		xsCall2(xsResult, xsID("then"), xsVar(0), xsVar(1));
+#else	
+		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+#endif
+	xsEndHost(the);
 }
 
 void modRunMachineSetup(txMachine *the)

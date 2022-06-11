@@ -13,7 +13,6 @@
  */
 
 import Timer from "timer";
-import WebSocketClient from "embedded:network/websocket/client";
 
 const WSPublic = {
 	host: "websockets.chilkat.io",
@@ -25,8 +24,10 @@ const WSLocal = {
 	port: 8080,
 };
 
+const WebSocketClient = device.network.ws.io;
 let counter = 0;
 const ws = new WebSocketClient({
+	...device.network.ws,
 	...WSPublic,
 	onReadable(count, options) {
 //		Timer.set(() => {
@@ -43,7 +44,7 @@ const ws = new WebSocketClient({
 			this.write(ArrayBuffer.fromString("this is a test 1"));
 			this.write(ArrayBuffer.fromString("this is a test 2"), {binary: false, more: true});
 			this.write(ArrayBuffer.fromString("this is a test 3"), {binary: false});
-			this.write(ArrayBuffer.fromString("abcdefghijklmnopqrstuvwyxz".repeat(80)), {binary: false});
+ 			this.write(ArrayBuffer.fromString("abcdefghijklmnopqrstuvwyxz".repeat(8)), {binary: false});
 			this.write(ArrayBuffer.fromString("this is a test 4"), {binary: true});
 			this.write(ArrayBuffer.fromString("ping!!"), {opcode: WebSocketClient.ping});
 //			this.write(Uint16Array.of(0).buffer, {opcode: WebSocketClient.close});

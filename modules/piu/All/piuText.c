@@ -34,6 +34,9 @@ enum {
 	piuTextReturn = 2,
 	piuTextEnd = 4,
 	piuTextWordBreak = 8,
+
+	piuTextStyled = 1 << 24,
+
 };
 
 typedef struct {
@@ -440,6 +443,7 @@ void PiuTextComputeStyles(PiuText* self, PiuApplication* application, PiuView* v
 	PiuTextOffset nodeOffset = sizeof(PiuTextBufferRecord);
 	PiuTextOffset nodeLimit = (PiuTextOffset)(*nodeBuffer)->current;
 	PiuStyle* style;
+	(*self)->flags |= piuTextStyled;
 	while (nodeOffset < nodeLimit) {
 		switch (KIND(nodeOffset)) {
 		case piuTextNodeBeginBlockKind:
@@ -476,6 +480,9 @@ void PiuTextComputeStyles(PiuText* self, PiuApplication* application, PiuView* v
 			#ifdef piuGPU
 				PiuStyleBind(node->computedStyle, application, view);
 			#endif
+			}
+			else {
+				(*self)->flags &= ~piuTextStyled;
 			}
 			nodeOffset += sizeof(PiuTextNodeBeginRecord);
 			} break;
@@ -688,7 +695,7 @@ void PiuTextFitHorizontally(void* it)
 		(*self)->bounds.width = (*self)->coordinates.width;
 	(*self)->textWidth = (*self)->bounds.width;
 	(*self)->textHeight = 0;
-	if ((*self)->textWidth)
+	if (((*self)->textWidth) && ((*self)->flags & piuTextStyled))
 		PiuTextFormat(self);
 	(*self)->flags &= ~(piuWidthChanged | piuContentsHorizontallyChanged);
 	if (!((*self)->coordinates.vertical & piuHeight)) {

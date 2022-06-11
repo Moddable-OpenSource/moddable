@@ -84,6 +84,8 @@ extern "C" {
 #undef xsGetArrayBufferMaxLength
 #undef xsmcGetArrayBufferMaxLength
 #define xsmcGetArrayBufferMaxLength(_SLOT) fxGetArrayBufferMaxLength(the, &(_SLOT))
+#undef xsSetArrayBufferLength
+#define xsmcSetArrayBufferLength(_SLOT,_LENGTH) fxSetArrayBufferLength(the, &_SLOT, _LENGTH)
 
 mxImport void _xsNewArray(xsMachine*, xsSlot*, xsIntegerValue);
 #define xsmcNewArray(_LENGTH)	(_xsNewArray(the, &the->scratch, _LENGTH), the->scratch)

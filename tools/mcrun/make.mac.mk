@@ -43,6 +43,8 @@ all: $(BIN_DIR)/mc.xsa
 	$(START_XSBUG) 
 	open -a $(SIMULATOR) $(BIN_DIR)/mc.xsa
 
+build: $(BIN_DIR)/mc.xsa
+
 $(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"
 	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
