@@ -1749,8 +1749,11 @@ export class Tool extends TOOL {
 				if (platformInclude) {
 					if (!("include" in manifest))
 						manifest.include = platformInclude;
-					else
-						manifest.include = manifest.include.concat(manifest.include, platformInclude);
+					else {
+						if ("string" === typeof manifest.include)
+							manifest.include = [manifest.include];
+						manifest.include = manifest.include.concat(platformInclude);
+					}
 				}
 			}
 		}
