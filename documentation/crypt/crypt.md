@@ -1,7 +1,7 @@
 # Crypt
-Copyright 2017 Moddable Tech, Inc.
+Copyright 2017-2022 Moddable Tech, Inc.
 
-Revised: November 7, 2017
+Revised: June 13, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -62,3 +62,45 @@ There are also blockSize and outputSize accessor/getter functions in addition to
 <!-- 11/7/2017 BSF
 BlockCipher, StreamCipher and Mode classes need to be documented. They are used in the cryptblockcipher example app.
 -->
+
+## class Transform
+
+The `Transform` class contains static methods to perform common transformations of certificate data.
+
+	import Transform from "crypt/transform";
+
+Whenever possible, transformation of data should not be performed at runtime because it uses additional time and memory. Instead, the data should be stored in the optimal format for the target device. These transformation functions are provided for situations where the transformation must be performed at runtime, such as some device provisioning flows.
+
+Add the `Transform` module in a manifest to use it in a project.
+
+```json
+"modules": {
+	"crypt/transform": "$(MODULES)/crypt/etc/transform"
+}
+```
+
+### static pemToDER(data)
+
+The `pemToDER` function transforms a certificate in PEM format (Base64 encoded ASCII) to [DER](https://en.wikipedia.org/wiki/X.690#DER_encoding) format (binary data). The input `data` may be a `String`, `ArrayBuffer`, or host buffer. The return value is an `ArrayBuffer`.
+
+For PEM files containing more than one certificate, `pemToDER` converts only the first certificate.
+
+This function is similar to the following `openssl` command line: 
+
+```
+openssl x509 -inform pem -in data.pem -out data.der -outform der
+```
+
+### static pemToPKC8(data)
+
+The `pemTOPKC8` function transforms a private key stored in PEM format (Base64 encoded ASCII) to [BER](https://en.wikipedia.org/wiki/X.690#BER_encoding) format (binary data). The input `data` may be a `String`, `ArrayBuffer`, or host buffer. The return value is an `ArrayBuffer`.
+
+### static pkcs8ToDER(data)
+
+The `pemTOPKC8` function transforms a private key stored as binary data in [BER](https://en.wikipedia.org/wiki/X.690#BER_encoding) format to [PKC8](https://datatracker.ietf.org/doc/html/rfc5208#section-5) ([DER](https://en.wikipedia.org/wiki/X.690#DER_encoding) binary data). The input `data` is an `ArrayBuffer` or host buffer. The return value is an `ArrayBuffer`.
+
+Using `pemToPKC8` and `pkcs8ToDER` is similar to the following `openssl` command line:
+
+```
+openssl pkcs8 -topk8 -in private_key.pem -inform pem -out private_key.pk8.der -outform der -nocrypt
+```
