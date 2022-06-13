@@ -1851,13 +1851,20 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 			xsResult = xsNewHostFunction(fx_print, 1);
 			xsSet(xsGlobal, xsID("print"), xsResult);
 
-			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 			txStringCStream aStream;
 			aStream.buffer = buffer;
 			aStream.offset = 0;
 			aStream.size = script_size;
+#ifdef OSSFUZZ_JSONPARSE
+			// json parse
+			xsResult = xsGet(xsGlobal, xsID("JSON"));
+			xsResult = xsCall1(xsResult, xsID("parse"), xsString(buffer));
+#else
+			// run script
+			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 			mxPullSlot(mxResult);
+#endif
 			fxRunLoop(the);
 		}
 		xsCatch {
