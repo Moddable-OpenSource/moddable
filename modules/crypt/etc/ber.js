@@ -431,7 +431,7 @@ export default class BER {
 		case 0x13:	// printable string
 		case 0x14:	// telex string
 		case 0x16:	// IA5 string
-			res = String.fromArrayBuffer(b.getChunk(len));
+			res = String.fromArrayBuffer(b.getChunk(len).slice().buffer);
 			break;
 		case 0x17:	// ITC time
 /*
