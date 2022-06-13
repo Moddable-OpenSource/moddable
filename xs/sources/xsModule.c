@@ -1047,6 +1047,14 @@ void fxLoadModulesFulfilled(txMachine* the)
 		if (!mxIsReference(descriptor))
 			mxTypeError("descriptor is no object");
 		mxPushSlot(descriptor);
+		if (mxIsModule(descriptor->value.reference)) {
+			fxOverrideModule(the, queue, module, descriptor->value.reference);
+			fxCompleteModule(the, module, C_NULL);
+			fxRunImportFulfilled(the, module, descriptor->value.reference);
+			goto done;
+		}
+			
+		mxPushSlot(descriptor);
 		mxGetID(fxID(the, "namespace"));
 		property = the->stack;
 		if (!mxIsUndefined(property)) {
@@ -1529,7 +1537,8 @@ void fxRunImport(txMachine* the, txSlot* realm, txID moduleID)
 				slot = fxNextSlotProperty(the, slot, fulfillFunction, XS_NO_ID, XS_NO_FLAG);
 				slot = fxNextSlotProperty(the, slot, rejectFunction, XS_NO_ID, XS_NO_FLAG);
 				if ((status == XS_MODULE_STATUS_NEW) || (status == XS_MODULE_STATUS_LOADED)) {
-					txSlot* queue = mxModuleQueue.value.reference;
+					txSlot* queue = fxNewInstance(the);
+// 					txSlot* queue = mxModuleQueue.value.reference;
 					if (fxQueueModule(the, queue, module))
 						fxLoadModules(the, queue);
 				}
