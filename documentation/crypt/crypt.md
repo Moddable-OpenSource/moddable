@@ -1,7 +1,7 @@
 # Crypt
 Copyright 2017-2022 Moddable Tech, Inc.
 
-Revised: June 13, 2022
+Revised: June 14, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -91,15 +91,13 @@ This function is similar to the following `openssl` command line:
 openssl x509 -inform pem -in data.pem -out data.der -outform der
 ```
 
-### static pemToPKC8(data)
+`pemToDER` looks for both `-----BEGIN CERTIFICATE-----` and `-----BEGIN RSA PRIVATE KEY-----` as delimeters.
 
-The `pemTOPKC8` function transforms a private key stored in PEM format (Base64 encoded ASCII) to [BER](https://en.wikipedia.org/wiki/X.690#BER_encoding) format (binary data). The input `data` may be a `String`, `ArrayBuffer`, or host buffer. The return value is an `ArrayBuffer`.
+### static privateKeyToPrivateKeyInfo(data[, oid])
 
-### static pkcs8ToDER(data)
+The `privateKeyToPrivateKeyInfo ` function transforms a Private Key to a Private Key Info (both in binary DER format). The input `data` is an `ArrayBuffer` or host buffer. The optional `oid` parameter is the Object ID for the key algorithm as an `Array`. If not provided, it defaults to the OID for `PKCS#1`, `[1, 2, 840, 113549, 1, 1, 1]`. The return value is an `ArrayBuffer`.
 
-The `pemTOPKC8` function transforms a private key stored as binary data in [BER](https://en.wikipedia.org/wiki/X.690#BER_encoding) format to [PKC8](https://datatracker.ietf.org/doc/html/rfc5208#section-5) ([DER](https://en.wikipedia.org/wiki/X.690#DER_encoding) binary data). The input `data` is an `ArrayBuffer` or host buffer. The return value is an `ArrayBuffer`.
-
-Using `pemToPKC8` and `pkcs8ToDER` is similar to the following `openssl` command line:
+Using `pemToDER` and `privateKeyToPrivateKeyInfo ` together is similar to the following `openssl` command line:
 
 ```
 openssl pkcs8 -topk8 -in private_key.pem -inform pem -out private_key.pk8.der -outform der -nocrypt

@@ -22,26 +22,34 @@ import Base64 from "base64";
 import BER from "ber";
 
 class Transform {
-	static pemToDER(source, head = "-----BEGIN CERTIFICATE-----", tail = "-----END CERTIFICATE-----") {
+	static pemToDER(source) {
 		if ("string" !== typeof source)
 			source = String.fromArrayBuffer(source);
 
-		const start = source.indexOf(head);
-		const end = (start < 0) ? -1 : source.indexOf(tail, start);
-		if ((start < 0) || (end < 0))
+		let start = source.indexOf("-----BEGIN CERTIFICATE-----"), end = -1, offset;
+		if (start >= 0) {
+			offset = 28;
+			end = source.indexOf("-----END CERTIFICATE-----", offset)
+		}
+		else {
+			start = source.indexOf("-----BEGIN RSA PRIVATE KEY-----");
+			if (start >= 0) {
+				offset = 32;
+				end = source.indexOf("-----END RSA PRIVATE KEY-----", offset)
+			}
+		}
+
+		if (end < 0)
 			throw new Error("no delimeter");
 
-		return Base64.decode(source.slice(start + head.length, end))
+		return Base64.decode(source.slice(start + offset, end));
 	}
-	static pemToPKC8(source) {
-		return this.pemToDER(source, "-----BEGIN RSA PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----");
-	}
-	static pkcs8ToDER(source) {	// https://datatracker.ietf.org/doc/html/rfc5208#section-5
+	static privateKeyToPrivateKeyInfo(source, id = [1, 2, 840, 113549, 1, 1, 1] /* // PKCS#1 OID */) {	// https://datatracker.ietf.org/doc/html/rfc5208#section-5
 		return BER.encode([
 				0x30,
 					[0x02, 0n],	// version
 					[0x30,	// privateKeyAlgorithm
-						[0x06, [1, 2, 840, 113549, 1, 1, 1]],	// PKCS#1 OID  
+						[0x06, id], 
 						[0x05]	// NULL
 					],
 					[0x04, source]		// privateKey
