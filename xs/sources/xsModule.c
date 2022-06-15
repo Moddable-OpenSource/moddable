@@ -886,7 +886,6 @@ importMeta:
 	}
 	mxPop(); // importMeta
 	
-done:
 	mxPop(); // property
 }
 
@@ -1074,8 +1073,9 @@ void fxLoadModulesFulfilled(txMachine* the)
 		property = the->stack;
 		if (!mxIsUndefined(property)) {
 			txSlot* aliasRealm;
-			txSlot* function;
-			txSlot* home;
+			txID aliasModuleID;
+			txSlot* aliasModule;
+			txID status;
 			if ((property->kind != XS_STRING_KIND) && (property->kind != XS_STRING_X_KIND))
 				mxTypeError("descriptor.specifier is no string");
 			mxPushSlot(descriptor);
@@ -1089,21 +1089,33 @@ void fxLoadModulesFulfilled(txMachine* the)
 				aliasRealm = internal->value.module.realm;
 			}
 			mxPop();
-			fxRunImport(the, aliasRealm, XS_NO_ID);
-			mxDub();
-			fxGetID(the, mxID(_then));
-			mxCall();
-			function = fxNewHostFunction(the, fxLoadModulesFulfilled, 1, XS_NO_ID);
-			home = mxFunctionInstanceHome(function);
-			home->value.home.object = queue;
-			home->value.home.module = module;
-
-			function = fxNewHostFunction(the, fxLoadModulesRejected, 1, XS_NO_ID);
-			home = mxFunctionInstanceHome(function);
-			home->value.home.object = queue;
-			home->value.home.module = module;
-			mxRunCount(2);
-			mxPop();
+			aliasModuleID = fxResolveSpecifier(the, aliasRealm, XS_NO_ID, property);
+//             if ((aliasRealm == realm) && (aliasModuleID == moduleID))
+//                 mxTypeError("descriptor.specifier is circular");
+                
+			aliasModule = fxGetModule(the, aliasRealm, aliasModuleID);
+			if (!aliasModule) {
+				aliasModule = fxMapModule(the, aliasRealm, aliasModuleID);
+			}
+			status = mxModuleStatus(aliasModule);
+			fxOverrideModule(the, queue, module, aliasModule->value.reference);
+			if (status == XS_MODULE_STATUS_ERROR) {
+				fxCompleteModule(the, module, C_NULL);
+				fxRunImportRejected(the, module);
+			}
+			else if (status == XS_MODULE_STATUS_EXECUTED) {
+				fxCompleteModule(the, module, C_NULL);
+				fxRunImportFulfilled(the, module, aliasModule->value.reference);
+			}
+			else {
+				txSlot* srcSlot = mxModuleInstanceFulfill(module);
+				txSlot* dstSlot = fxLastProperty(the, aliasModule->value.reference);
+				while (srcSlot) {
+					dstSlot = fxNextSlotProperty(the, dstSlot, srcSlot, XS_NO_ID, XS_NO_FLAG);
+					srcSlot = srcSlot->next;
+				}
+				fxQueueModule(the, queue, aliasModule);
+			}
 			goto done;
 		}
 		
@@ -1308,6 +1320,7 @@ void fxOverrideModule(txMachine* the, txSlot* queue, txSlot* module, txSlot* rec
 	txSlot* slot;
 	while ((slot = *address)) {
 		if (slot->value.reference == module) {
+//             slot->value.reference = record;
 			*address = slot->next;
 			break;
 		}
@@ -1537,8 +1550,8 @@ void fxRunImport(txMachine* the, txSlot* realm, txID moduleID)
 				slot = fxNextSlotProperty(the, slot, fulfillFunction, XS_NO_ID, XS_NO_FLAG);
 				slot = fxNextSlotProperty(the, slot, rejectFunction, XS_NO_ID, XS_NO_FLAG);
 				if ((status == XS_MODULE_STATUS_NEW) || (status == XS_MODULE_STATUS_LOADED)) {
-					txSlot* queue = fxNewInstance(the);
-// 					txSlot* queue = mxModuleQueue.value.reference;
+// 					txSlot* queue = fxNewInstance(the);
+					txSlot* queue = mxModuleQueue.value.reference;
 					if (fxQueueModule(the, queue, module))
 						fxLoadModules(the, queue);
 				}
