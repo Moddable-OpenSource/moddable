@@ -120,6 +120,7 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\esp_event\include \
 	-I$(IDF_PATH)\components\esp_eth\include \
 	-I$(IDF_PATH)\components\esp_hw_support\include \
+	-I$(IDF_PATH)\components\esp_hw_support\include\soc \
  	-I$(IDF_PATH)\components\esp_netif\include \
  	-I$(IDF_PATH)\components\esp_pm\include \
  	-I$(IDF_PATH)\components\esp_ringbuf\include \
@@ -222,7 +223,9 @@ XS_OBJ = \
 
 SDKCONFIG_H_DIR = $(BLD_DIR)\config
 
-!IF "$(ESP32_SUBCLASS)"=="esp32s3"
+!IF "$(ESP32_SUBCLASS)"=="esp32c3"
+ESP32_TARGET = 4
+!ELSEIF "$(ESP32_SUBCLASS)"=="esp32s3"
 ESP32_TARGET = 3
 !ELSEIF "$(ESP32_SUBCLASS)"=="esp32s2"
 ESP32_TARGET = 2
