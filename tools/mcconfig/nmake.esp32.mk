@@ -258,17 +258,17 @@ HEADERS = $(HEADERS) $(XS_HEADERS)
 
 TOOLS_BIN = 
 !IF "$(ESP32_SUBCLASS)"=="esp32c3"
-	CC = $(TOOLS_BIN)riscv32-esp-elf-gcc
-	CPP = $(TOOLS_BIN)riscv32-esp-elf-g++
-	LD = $(CPP)
-	AR = $(TOOLS_BIN)riscv32-esp-elf-ar
-	OBJCOPY = $(TOOLS_BIN)riscv32-esp-elf-objcopy
+CC = $(TOOLS_BIN)riscv32-esp-elf-gcc
+CPP = $(TOOLS_BIN)riscv32-esp-elf-g++
+LD = $(CPP)
+AR = $(TOOLS_BIN)riscv32-esp-elf-ar
+OBJCOPY = $(TOOLS_BIN)riscv32-esp-elf-objcopy
 !ELSE
-	CC = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-gcc
-	CPP = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-g++
-	LD = $(CPP)
-	AR = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-ar
-	OBJCOPY = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-objcopy
+CC = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-gcc
+CPP = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-g++
+LD = $(CPP)
+AR = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-ar
+OBJCOPY = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-objcopy
 !ENDIF
 
 AR_OPTIONS = crs
