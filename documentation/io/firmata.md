@@ -17,7 +17,7 @@ The implementation of Firmata in the Moddable SDK includes both a client and ser
 
 Implementing both the client and server allowed more uses of the IO class to be explored. The server implementation was developed against the Firmata.js client; the client implementation, against the server. The Firmata.js and Arduino Firmata server code were consulted to supplement the information in the protocol documentation. 
 
-> **Note:** To build and run the examples in this document, you must have already installed the Moddable SDK and followed the instructions to set up the build tools for the ESP8266 target from the [Getting Started document](../../../../../documentation/Moddable%20SDK%20-%20Getting%20Started.md).
+> **Note:** To build and run the examples in this document, you must have already installed the Moddable SDK and followed the instructions to set up the build tools for the ESP8266 target from the [Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md).
 
 ## Table of Contents
 
