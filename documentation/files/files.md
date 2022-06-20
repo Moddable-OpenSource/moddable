@@ -1,7 +1,7 @@
 # Files
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 23, 2022
+Revised: June 20, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -525,7 +525,7 @@ import Resource from "Resource";
 
 ### `constructor(path)`
 
-The `Resource` constructor takes a single argument, the resource path, and returns an `ArrayBuffer` or Host Buffer containing the resource data.
+The `Resource` constructor takes a single argument, the resource path, and returns a Host Buffer containing the resource data.
 
 ```js
 let resource = new Resource("logo.bmp");
