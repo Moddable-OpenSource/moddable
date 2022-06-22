@@ -542,7 +542,7 @@ char* fxCStackLimit()
     		void* stackAddr;
    			size_t stackSize;
 			if (pthread_attr_getstack(&attrs, &stackAddr, &stackSize) == 0) {
-				return (char*)stackAddr + (128 * 1024) + mxASANStackMargin;
+				return (char*)stackAddr - stackSize + (128 * 1024) + mxASANStackMargin;
 			}
 		}
 		return C_NULL;
