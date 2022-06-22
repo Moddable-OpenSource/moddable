@@ -1,0 +1,18 @@
+/*---
+description: https://github.com/Moddable-OpenSource/moddable/issues/58
+flags: [onlyStrict]
+---*/
+
+assert.sameValue("NaN", String(NaN));
+assert.sameValue("NaN", String(void 0 + 1));
+assert.sameValue("NaN", String(-NaN));
+
+assert.sameValue("0", String(.1e-900));
+assert.sameValue("-Infinity", String(-2e900));
+assert.sameValue("Infinity", String(1.2e100000000000000000000000000000000000));
+assert.sameValue("1.23e-117", String(0.000000000000000000000000000000000000000000000000000000000000000000123e-50));
+assert.sameValue("1.23e-17", String(0.000000000000000000000000000000000000000000000000000000000000000000123e50));
+assert.sameValue("0", String(0.000000000000000000000000000000000000000000000000000000000000000000123e-350));
+assert.sameValue("Infinity", String(0.000000000000000000000000000000000000000000000000000000000000000000123e390));
+assert.sameValue("1e-323", String(0.000000000000000000000000000000000000000000000000000000000000000000123e-256));
+assert.sameValue("2.225073858507201e-308", String(2.2250738585072011e-308));
