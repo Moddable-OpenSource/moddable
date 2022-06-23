@@ -225,8 +225,8 @@ class PreferencesColumnBehavior extends Behavior {
 						},
 						{
 							Template: SwitchRow,
-							comment: "Show Test262 tab",
-							name: "Test262",
+							comment: "Show Test tab",
+							name: "Test",
 							get value() {
 								return model.visibleTabs[3];
 							},

@@ -312,7 +312,7 @@ var Test262Tab = Container.template($ => ({
 		Container($, { 
 			top:0, bottom:0,
 			contents: [
-				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"TEST262" }),
+				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"TEST" }),
 			],
 		}),
 	],
