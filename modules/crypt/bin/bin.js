@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -66,23 +66,6 @@ const Bin = {
 		for (var i = 0; i < len1; i++)
 			r[i] = i1[i] ^ i2[i % len2];
 		return r.buffer;
-	},
-	encode(buf) @ "xs_bin_encode",
-	decode(str) @ "xs_bin_decode",
-	/**
-	 * generate ArrayBuffer with the value using minimum size but greater than 1
-	 * @param number val 			value to be encoded.
-	 * @param bool littleEndian		value will encoded in little endian or not.
-	 * @return ArrayBuffer
-	 */
-	num2bin(val, littleEndian=false) {
-		let blob = new ArrayBuffer(4);
-		let view = new DataView(blob);
-		view.setUint32(0, val, littleEndian);
-
-		let size = (val <= 0xff ? 1 : val <= 0xffff ? 2 : val <= 0xffffff ? 3 : 4);
-		let offset = littleEndian ? 0 : 4 - size;
-		return blob.slice(offset, offset + size);
 	},
 };
 

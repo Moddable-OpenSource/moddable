@@ -396,16 +396,23 @@ const handshakeProtocol = {
 						break;
 					case extension_type.tls_application_layer_protocol_negotiation: {
 						es.writeChars(type, 2);
-						let len = 0;
-						if (typeof ext == 'string') ext = ext.split(':');
-						for (let j = 0; j < ext.length; j++)
-							len += ext[j].length + 1;
-						es.writeChars(len + 2, 2);
-						es.writeChars(len, 2);
-						for (let j = 0; j < ext.length; j++) {
-							let name = ext[j];
-							es.writeChars(name.length, 1);
-							es.writeString(name);
+						let byteLength = 0;
+						const items = Array.isArray(ext) ? ext.slice() : [ext];
+						for (let j = 0; j < items.length; j++) {
+							let item = items[j];
+							if ("string" === typeof item)
+								items[j] = item = ArrayBuffer.fromString(item);
+							const length = item.byteLength;
+							if ((length < 1) || (length > 255))
+								throw new Error("invalid protocol");
+							byteLength += length + 1;
+						}
+						es.writeChars(byteLength + 2, 2);
+						es.writeChars(byteLength, 2);
+						for (let j = 0; j < items.length; j++) {
+							const item = items[j];
+							es.writeChars(item.byteLength, 1);
+							es.writeChunk(item);
 						}
 						}
 						break;

@@ -4321,7 +4321,7 @@ Called while this transition is running; called at least twice (with a `fraction
 [17]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
 [30]: ../../modules/piu/MC/piuImage.c "piuImage.c"
 [33]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
-[36]: ../../modules/piu/MC/piuTimeline.js "piuTimeline.js"
+[36]: ../../modules/piu/All/piuTimeline.js "piuTimeline.js"
 [37]: ../../modules/piu/MC/piuSound.c "piuSound.c"
 
 [18]: ../../examples/piu/balls "balls"

@@ -1,0 +1,36 @@
+/*---
+description: 
+flags: [onlyStrict, async]
+---*/
+
+class SampleBehavior extends $TESTMC.Behavior {
+    onDisplaying(die) {
+        die.fill()
+            .cut();
+        screen.checkImage("14e6edc6291901a47e0268a966b4d99e");
+       
+        die.empty()
+            .cut();
+        screen.checkImage("817a0ecd3bdedd0c64a77176d88dd8db");
+
+        $DONE();
+    }
+}
+
+const content = new Content(null, { 
+    left: 0, right: 0, top: 0, bottom: 0, 
+    skin: new Skin({ fill: "white" }),
+});
+
+const sampleDie = new Die(null, {
+    left: 0, right: 0, top: 0, bottom: 0,
+    contents: [ content ],
+    Behavior: SampleBehavior
+});
+
+new Application(null, {
+    skin: new Skin({  fill: "blue" }),
+    contents: [ sampleDie ]
+});
+
+$TESTMC.timeout(275, "`onDisplaying` should have been triggered");

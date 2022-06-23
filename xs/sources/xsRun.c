@@ -2602,6 +2602,8 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			variable = mxStack->value.reference;
 			slot = mxBehaviorGetProperty(the, variable, mxID(_raw), 0, XS_OWN);
+            if (!slot)
+				mxRunDebug(XS_TYPE_ERROR, "template: no raw");
 			variable->flag |= XS_DONT_PATCH_FLAG;
 			variable->next->flag |= XS_DONT_SET_FLAG;
 			slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG;
