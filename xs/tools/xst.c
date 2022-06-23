@@ -155,6 +155,7 @@ static int fuzz(int argc, char* argv[]);
 #endif
 #if OSSFUZZ
 static int fuzz_oss(const uint8_t *Data, size_t Size);
+static int force_no_leaks();
 #endif
 static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
@@ -235,7 +236,22 @@ static char *gxAbortStrings[] = {
 static txAgentCluster gxAgentCluster;
 
 #if OSSFUZZ
+int force_no_leaks(){
+  char* options = getenv("ASAN_OPTIONS");
+  if (options) {
+    char* ptr;
+    char* new_options = strdup(options);
+    // ptr = strstr(new_options, "detect_stack_use_after_return=1");
+    // if (ptr) ptr[30] = '0';
+    ptr = strstr(new_options, "detect_leaks=1");
+    if (ptr) ptr[13] = '0';
+    setenv("ASAN_OPTIONS", new_options, 1);
+    free(new_options);
+  }
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+	force_no_leaks();
     fuzz_oss(Data, Size);
     return 0;
 }
