@@ -578,7 +578,10 @@ let ssid = Preference.get(domain, "ssid");
 let password = Preference.get(domain, "psk");
 ```
 
-Limits on the length of key/domain names and preference values vary by target platform. On ESP8266, for example, they are limited to 32 bytes and 63 bytes, respectively.
+Limits on the length of key/domain names and preference values vary by target platform.
+
+ - On ESP8266, key/domain names are limited to 32 characters and values are limited to 63 bytes.
+ - On ESP32, the `Preference` class is backed by the ESP-IDF's [NVS Library](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html) which limits key/domain names to 15 characters and values to 4000 bytes.
 
 On embedded devices the storage space for preferences is limited. The amount depends on the device, but it can be as little as 4 KB. Consequently, applications should take care to keep their  preferences as small as practical.
 
