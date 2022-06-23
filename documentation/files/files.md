@@ -1,7 +1,7 @@
 # Files
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: June 20, 2022
+Revised: June 22, 2022
 
 **Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -578,7 +578,7 @@ let ssid = Preference.get(domain, "ssid");
 let password = Preference.get(domain, "psk");
 ```
 
-Preference values are limited to 63 bytes. Key and domain names are limited to 32 bytes.
+Limits on the length of key/domain names and preference values vary by target platform. On ESP8266, for example, they are limited to 32 bytes and 63 bytes, respectively.
 
 On embedded devices the storage space for preferences is limited. The amount depends on the device, but it can be as little as 4 KB. Consequently, applications should take care to keep their  preferences as small as practical.
 
