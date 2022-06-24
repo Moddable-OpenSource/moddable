@@ -525,6 +525,8 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size);
 	#define kCPUESP32C3 1
 	#define kTargetCPUCount 1
 	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
 #elif ESP32 == 3
 	#define kCPUESP32S3 1
 	#define kTargetCPUCount 2
