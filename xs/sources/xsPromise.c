@@ -653,8 +653,9 @@ void fxRejectPromise(txMachine* the)
 	if (slot->value.boolean)
 		return;
 	slot->value.boolean = 1;
-	slot = slot->next;
-	promise = slot->value.reference;
+	mxPushSlot(slot->next);
+	promise = the->stack->value.reference;
+	slot->next = C_NULL;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
@@ -695,8 +696,9 @@ void fxResolvePromise(txMachine* the)
 	if (slot->value.boolean)
 		return;
 	slot->value.boolean = 1;
-	slot = slot->next;
-	promise = slot->value.reference;
+	mxPushSlot(slot->next);
+	promise = the->stack->value.reference;
+	slot->next = C_NULL;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
