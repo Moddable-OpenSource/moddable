@@ -479,6 +479,7 @@ void fxOnRejectedPromise(txMachine* the)
 		mxCatch(the) {
 			*argument = mxException;
 			mxException = mxUndefined;
+			function = rejectFunction;
 		}
 	}
     if (function->kind == XS_REFERENCE_KIND) {
