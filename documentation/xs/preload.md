@@ -1,7 +1,5 @@
 # Using XS Preload to Optimize Applications
-
-Copyright 2019-2021 Moddable Tech, Inc.
-
+Copyright 2019-2021 Moddable Tech, Inc.<BR>
 Revised: June 7, 2021
 
 Preloading of modules is a unique feature of the XS JavaScript engine. Preloading executes parts of a JavaScript application during the the build process, before the application is downloaded to the target device. This has two major benefits:

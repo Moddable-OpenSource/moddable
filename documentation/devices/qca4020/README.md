@@ -1,5 +1,4 @@
 # Using the Moddable SDK with QCA4020
-
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
 Revised: December 1, 2020
 

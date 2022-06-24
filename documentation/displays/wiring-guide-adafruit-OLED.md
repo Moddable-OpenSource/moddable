@@ -1,6 +1,5 @@
 # Adafruit OLED Display Wiring Guide
-
-Copyright 2018 Moddable Tech, Inc.  
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: October 23, 2018
 
 ![](./images/adafruit-oled.jpg)

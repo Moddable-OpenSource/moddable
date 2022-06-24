@@ -1,6 +1,5 @@
 # Moddable SDK – Getting Started
 ### A guide to installing the Moddable SDK and building its tools
-
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
 Revised: May 4, 2022
 

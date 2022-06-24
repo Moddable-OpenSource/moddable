@@ -1,5 +1,4 @@
 # Moddable Zero Developer Guide
-
 Copyright 2019-2020 Moddable Tech, Inc.<BR>
 Revised: October 21, 2020
 

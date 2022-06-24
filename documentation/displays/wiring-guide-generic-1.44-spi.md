@@ -1,6 +1,5 @@
 # Generic 1.44" Display Wiring Guide
-
-Copyright 2018 Moddable Tech, Inc.  
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: December 10, 2018
 
 ![Generic SPI Display](images/generic-1.44-display.jpg)

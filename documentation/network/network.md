@@ -1,9 +1,6 @@
 # Networking
-
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
 Revised: March 8, 2022
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Table of Contents
 

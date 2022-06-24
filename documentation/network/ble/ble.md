@@ -1,8 +1,6 @@
 # BLE
-Copyright 2017-2022 Moddable Tech, Inc. <br/>
-Revised: June 20, 2022 <br/>
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: June 20, 2022
 
 ## About This Document
 This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, and Qualcomm QCA4020 devices.

@@ -1,5 +1,4 @@
 # Manifest
-
 Copyright 2017-2021 Moddable Tech, Inc.<BR>
 Revised: June 16, 2021
 

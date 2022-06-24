@@ -1,7 +1,6 @@
 # Testing the Moddable SDK
-
 Copyright 2020-2022 Moddable Tech, Inc.<BR>
-Revised: June 23, 2022
+Revised: June 24, 2022
 
 ## Table of Contents
 
@@ -15,7 +14,7 @@ Revised: June 23, 2022
 * [Writing Moddable SDK Tests](#writing-tests)
 
 <a id="intro"></a>
-# Introduction
+## Introduction
 This document explains how to run unit tests implemented in JavaScript in the Moddable SDK. There are three parts to running the tests:
 
 - **Tests**. The unit tests perform tests for success and failure conditions. They are implemented in JavaScript and their source code is stored in `.js` files.

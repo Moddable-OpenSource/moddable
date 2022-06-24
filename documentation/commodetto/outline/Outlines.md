@@ -1,8 +1,6 @@
 # Outlines
-
+Copyright 2020-2022 Moddable Tech, Inc.<BR>
 Revised: February 13, 2022
-
-Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Overview
 

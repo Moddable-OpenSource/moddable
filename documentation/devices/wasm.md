@@ -1,5 +1,4 @@
 # Wasm
-
 Copyright 2019-2022 Moddable Tech, Inc.<BR>
 Revised: January 27, 2022
 

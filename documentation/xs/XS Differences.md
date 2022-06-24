@@ -1,7 +1,5 @@
 # JavaScript language considerations on embedded devices using the XS engine
-
-Copyright 2018 Moddable Tech, Inc.
-
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: October 10, 2018
 
 ## Ultra-light JavaScript
