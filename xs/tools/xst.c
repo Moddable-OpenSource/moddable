@@ -320,6 +320,7 @@ int main(int argc, char* argv[])
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
+		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
  		fxBuildAgent(machine);
 		xsBeginHost(machine);
@@ -379,6 +380,7 @@ int main(int argc, char* argv[])
 			error = 1;
 		}
 		xsDeleteMachine(machine);
+		fxTerminateSharedCluster();
 	}
 	return error;
 }
