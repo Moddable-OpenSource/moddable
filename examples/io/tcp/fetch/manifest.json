@@ -24,6 +24,7 @@
 		"dns",
 		"dns/parser",
 		"dns/serializer",
-		"embedded:network/http/request"
+		"embedded:network/http/request",
+		"fetch"
 	]
 }
