@@ -1919,6 +1919,7 @@ void fxUnaryExpression(txParser* parser)
 	if (gxTokenFlags[parser->token] & XS_TOKEN_UNARY_EXPRESSION) {
 		txToken aToken = parser->token;
 		txInteger aLine = parser->line;
+		fxCheckParserStack(parser, aLine);
 		fxMatchToken(parser, aToken);
 		fxUnaryExpression(parser);
 		fxCheckArrowFunction(parser, 1);
