@@ -18,6 +18,7 @@ const dns = {
 globalThis.device = Object.freeze({
 	...globalThis.device,
 	network: {
+		...globalThis.device?.network,
 		mqtt: {
 			io: MQTTClient,
 			dns,

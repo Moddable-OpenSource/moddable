@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json"
+	],
+	"modules": {
+		"*": "./fetch"
+	},
+	"preload": [
+		"fetch"
+	]
+}
