@@ -1661,19 +1661,19 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 	*p++ = '&';
 	fxGetNextCharacter(parser);
 	if (parser->character == '#') {
-		*p++ = '#';
+		if (p < q) *p++ = '#';
 		fxGetNextCharacter(parser);
 		if (parser->character == 'x') {
-			*p++ = 'x';
+			if (p < q) *p++ = 'x';
 			fxGetNextCharacter(parser);
 			while (fxGetNextStringX(parser->character, &t)) {
-				*p++ = parser->character;
+				if (p < q) *p++ = parser->character;
 				fxGetNextCharacter(parser);
 			}
 		}
 		else {
 			while (fxGetNextStringD(parser->character, &t)) {
-				*p++ = parser->character;
+				if (p < q) *p++ = parser->character;
 				fxGetNextCharacter(parser);
 			}
 		}
@@ -1682,7 +1682,7 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 		txEntity* entity = C_NULL;
 		int c = parser->character;
 		while ((p < q) && ((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')))) {
-			*p++ = c;
+			if (p < q) *p++ = c;
 			fxGetNextCharacter(parser);
 			c = parser->character;
 		}
@@ -1691,7 +1691,7 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 		t = entity ? entity->value : 0;
 	}
 	if (parser->character == ';') {
-		*p++ = ';';
+		if (p < q) *p++ = ';';
 		fxGetNextCharacter(parser);
 		if (t)
 			p = fxUTF8Buffer(parser, t, r, q);
