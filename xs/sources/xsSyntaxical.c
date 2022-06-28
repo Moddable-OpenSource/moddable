@@ -1377,6 +1377,7 @@ void fxDebuggerStatement(txParser* parser)
 void fxDoStatement(txParser* parser)
 {
 	txInteger aLine = parser->line;
+	fxCheckParserStack(parser, aLine);
 	fxPushNULL(parser);
 	fxMatchToken(parser, XS_TOKEN_DO);
 	fxStatement(parser, 0);
