@@ -384,7 +384,7 @@ void xs_tcp_write(xsMachine *the)
 
 	CFSocketEnableCallBacks(tcp->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack);
 	int ret = write(tcp->skt, buffer, needed);
-	if (ret <= 0)
+	if (ret < 0)
 		xsUnknownError("write failed");
 }
 
