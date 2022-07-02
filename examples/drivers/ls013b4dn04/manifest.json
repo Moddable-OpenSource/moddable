@@ -1,11 +1,13 @@
 {
 	"include" : [
 		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",
-		"touch": ""
+		"touch": "",
+		"format": "Gray256"
 	},
 	"resources": {
 		"*": [
@@ -20,16 +22,10 @@
 		}
 	},
 	"modules": {
-		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
-		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
-		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
-		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
-		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"Resource": "$(MODDABLE)/modules/files/resource/Resource",
 		"*": "./main"
 	},
 	"preload": [
-		"commodetto/*",
 		"Resource",
 		"main"
 	],
@@ -38,12 +34,10 @@
 		"gecko": {
 			"modules": {
 				"*": [
-                    "$(MODULES)/base/instrumentation/*",
 					"$(BUILD)/devices/gecko/sleep/*"
 				]
 			},
 			"preload": [
-				"instrumentation",
 				"pins",
 				"spi",
 				"sleep"
