@@ -1,4 +1,4 @@
-# XS linker warnings
+# XS Linker Warnings
 Copyright 2019 Moddable Tech, Inc.<BR>
 Revised: November 9, 2019
 
