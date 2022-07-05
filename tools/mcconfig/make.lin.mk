@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -176,7 +176,7 @@ $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 	
-MAKEFLAGS += --jobs
+MAKEFLAGS += --jobs 8
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
