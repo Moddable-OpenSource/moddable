@@ -63,10 +63,10 @@ export class Client {
 		if (parts.scheme != "mqtt")
 			throw new URIError("mqtt only");
 		let keepalive = 60_000;
-		let id = "mqttxs_"  + Math.random().toString(16).substr(2, 8),
-		let user = undefined,
-		let password = undefined,
-		let will = null,
+		let id = "mqttxs_"  + Math.random().toString(16).substr(2, 8);
+		let user = undefined;
+		let password = undefined;
+		let will = null;
 		if (options) {
 			if ("clientId" in options)
 				id = clientId
