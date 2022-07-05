@@ -300,6 +300,7 @@ void PiuDebugBehaviorStart(PiuDebugBehavior self, int port)
  	g_object_unref(address);
  		
     g_socket_set_blocking(self->socket, FALSE);
+	signal(SIGPIPE, SIG_IGN);
   	self->source = g_socket_create_source(self->socket, G_IO_IN, NULL);
 	g_source_set_callback(self->source, (void*)PiuDebugBehaviorCallback, self, NULL);
 	g_source_set_priority(self->source, G_PRIORITY_DEFAULT);
