@@ -72,8 +72,10 @@ class WebSocketClient {
 		this.#socket = undefined;
 		Timer.clear(this.#options.closer);
 		Timer.clear(this.#options.timer);
+		Timer.clear(this.#options.pending);
 		delete this.#options.timer;
 		delete this.#options.closer;
+		delete this.#options.pending;
 	}
 	write(data, options) {
 		const byteLength = data.byteLength;
@@ -261,7 +263,9 @@ class WebSocketClient {
 						else
 							delete options.mask;
 						options.length = [length];
-						continue;
+						if (length)
+							continue;
+						// 0 length payload. process immediately
 					}
 					if ((126 === options.length[0]) && (options.length.length < 3)) {
 						options.length.push(this.#socket.read());
@@ -269,16 +273,19 @@ class WebSocketClient {
 						continue;
 					}
 					if (options.mask && options.mask.length < 4) {
+						//@@ it is an error for client to receieve a mask. this code applies to future server. client should fail here.
 						options.mask.push(this.#socket.read());
 						count--;
 						if (4 === options.mask.length)
 							options.mask = Uint8Array.from(options.mask);
-						continue;
+						if (options.length[0])
+							continue;
+						// 0 length payload. process immediately
 					}
 
 					if (options.control) {
 						if (true === options.control) {
-							options.length = options.length[0];		//@@ validate
+							options.length = options.length[0];		//@@ assert 1 === options.length
 							options.control = new Uint8Array(options.length);
 							options.control.position = 0;
 						}
@@ -305,21 +312,25 @@ class WebSocketClient {
 							else {						
 								options.close = 2;			// received request for clean close: reply
 
-								if (this.#writable < (control.length + 6)) {
-									options.pendingControl = control.buffer;
-									options.pendingControl.opcode = 8;
-								}
-								else
-									this.write(control.buffer, {opcode: 8});
+								options.pendingControl = control.buffer;
+								options.pendingControl.opcode = 8;
+
+								this.#options.pending ??= Timer.set(() => {
+									delete this.#options.pending;
+									this.#onWritable(this.#writable);
+								});
 							}
 						}
 						else if (9 === opcode) {	// ping
-							if (this.#writable < (control.length + 6)) {
+							if (!options.pendingControl && !(2 & options.close)) {
 								options.pendingControl = control.buffer;
 								options.pendingControl.opcode = 10;
+
+								this.#options.pending = Timer.set(() => {
+									delete this.#options.pending;
+									this.#onWritable(this.#writable);
+								});
 							}
-							else
-								this.write(control.buffer, {opcode: 10});
 						}
 						else if (10 === opcode)	// pong
 							;
@@ -348,7 +359,8 @@ class WebSocketClient {
 						this.#data = read = options.length;
 						delete options.ready;
 						delete options.length;
-						delete options.binary;
+						if (!more)
+							delete options.binary;
 						delete options.tag;
 					}
 					else {
@@ -412,12 +424,13 @@ class WebSocketClient {
 					if ((this.#options.pendingControl.byteLength + 6) > this.#writable)
 						return;
 					
+					Timer.clear(this.#options.pending);
+					this.#options.pending = undefined;
+
 					this.write(this.#options.pendingControl, {opcode: this.#options.pendingControl.opcode});
 					delete this.#options.pendingControl;
 				}
-				if (this.#writable <= 8)
-					return;
-				this.#options.onWritable?.call(this, this.#writable - 8);
+				this.#options.onWritable?.call(this, (this.#writable <= 8) ? 0 : (this.#writable - 8));
 				break;
 
 			default:
