@@ -63,7 +63,7 @@ class HTTPGet {
 				"",
 				"",
 			].join("\r\n")
-			target.#socket.write(ArrayBuffer.fromString(headers));
+			this.write(ArrayBuffer.fromString(headers));
 
 			target.#path = undefined;
 		}
