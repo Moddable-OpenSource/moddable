@@ -1108,15 +1108,12 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					break;
 				}
 
-				uint8_t buffer[65];
-				uint8_t type;
+				uint8_t *buffer = the->echoBuffer + the->echoOffset;
 				uint16_t byteCountOut;
-				if (!modPreferenceGet(domain, key, &buffer[0], buffer + 1, sizeof(buffer), &byteCountOut))
+				if (!modPreferenceGet(domain, key, buffer, buffer + 1, sizeof(the->echoBuffer) - (the->echoOffset + 1), &byteCountOut))
 					resultCode = -1;
-				else {
-					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
+				else
 					the->echoOffset += byteCountOut + 1;
-				}
 			}
 		}
 		break;
