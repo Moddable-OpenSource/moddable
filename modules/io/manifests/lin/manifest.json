@@ -8,11 +8,13 @@
 			"$(MODDABLE)/modules/io/common/builtinCommon"
 		],
 		"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/lin/tcp",
+		"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/lin/udp",
 		"embedded:io/serial": "$(MODDABLE)/modules/io/serial/lin/serial"
 	},
 	"preload": [
 		"system",
 		"embedded:io/socket/tcp",
+		"embedded:io/socket/udp",
 		"embedded:io/serial"
 	]
 }
