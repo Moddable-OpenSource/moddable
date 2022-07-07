@@ -918,7 +918,7 @@ void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y)
 	xsIntegerValue step;
 	PiuCoordinate lineLeft = 0;
 	PiuCoordinate lineRight = 0;
-	PiuTextLine previousLine, line = NULL, nextLine = LINE(lineOffset);
+	PiuTextLine line = NULL, nextLine = LINE(lineOffset);
 
 	void* link = NULL;
 	if (!((*self)->flags & piuActive))
@@ -926,7 +926,6 @@ void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y)
 	if ((x < 0) || (y < 0) || (x >= (*self)->bounds.width) || (y >= (*self)->bounds.height))
 		return NULL;
 	while (lineOffset < lineLimit) {
-		previousLine = line;
 		line = nextLine;
 		lineOffset += sizeof(PiuTextLineRecord);
 		nextLine = (lineOffset < lineLimit) ? LINE(lineOffset) : NULL;
