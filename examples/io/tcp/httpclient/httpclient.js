@@ -288,7 +288,7 @@ class HTTPClient {
 						break;
 				
 				case "sendRequest":
-					this.#pendingWrite = (this.#current.method ?? "GET") + " " + (this.#current.path ?? "/") + " HTTP/1.1\r\n";
+					this.#pendingWrite = (this.#current.method ?? "GET") + " " + (this.#current.path || "/") + " HTTP/1.1\r\n";
 					this.#pendingWrite += "host: " + this.#host + "\r\n";
 					this.#pendingWrite = ArrayBuffer.fromString(this.#pendingWrite);
 					this.#writePosition = 0;

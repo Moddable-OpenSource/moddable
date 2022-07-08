@@ -395,7 +395,7 @@ class WebSocketClient {
 				
 				const options = this.#options;
 				let message = [
-					`GET ${options.path ?? "/"} HTTP/1.1`, 
+					`GET ${options.path || "/"} HTTP/1.1`, 
 					`Host: ${options.host}`,
 					`Upgrade: websocket`,
 					`Connection: keep-alive, Upgrade`,
