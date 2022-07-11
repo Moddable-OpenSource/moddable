@@ -1096,6 +1096,11 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			fxEchoProperty(the, aProperty, theList, "(export)", -1, C_NULL);
 			aProperty = aProperty->next;
 			break;
+		case XS_PROGRAM_KIND:
+			aSlot = aProperty->value.module.realm;
+			fxEchoProperty(the, mxRealmGlobal(aSlot), theList, "(globals)", -1, C_NULL);
+			fxEchoProperty(the, mxOwnModules(aSlot), theList, "(modules)", -1, C_NULL);
+			break;
 		case XS_SET_KIND:
 			aProperty = aProperty->next;
 			anIndex = 0;
