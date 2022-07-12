@@ -1,5 +1,4 @@
-## Moddable SDK - Display Guides
-
+# Moddable SDK - Display Guides
 Copyright 2019 Moddable Tech, Inc.<BR>
 Revised: June 20, 2019
 

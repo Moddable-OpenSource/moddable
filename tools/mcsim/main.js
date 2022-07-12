@@ -682,7 +682,7 @@ class ColorsButtonBehavior extends ButtonBehavior {
 		const data = {
 			button: container,
 			items: [
-				{ title:"Lite Colors", value:0 },
+				{ title:"Light Colors", value:0 },
 				{ title:"Dark Colors", value:1 }
 			],
 		};

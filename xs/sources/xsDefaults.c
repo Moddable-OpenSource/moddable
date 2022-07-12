@@ -50,8 +50,13 @@ const txDefaults ICACHE_FLASH_ATTR gxDefaults  = {
 	fxRunEval,
 	fxRunEvalEnvironment,
 	fxRunProgramEnvironment,
+#ifdef mxMultipleThreads
+	C_NULL,
+	C_NULL,
+#else
 	fxInitializeSharedCluster,
 	fxTerminateSharedCluster,
+#endif
 	fxNewFunctionLength,
 	fxNewFunctionName,
 	fxRunImport,

@@ -1,5 +1,4 @@
 # Ethernet
-
 Copyright 2021 Moddable Tech, Inc.<BR>
 Revised: November 16, 2021
 

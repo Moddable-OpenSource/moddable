@@ -1,7 +1,5 @@
 # ROM Colors
-
-Copyright 2020 Moddable Tech, Inc.
-
+Copyright 2020 Moddable Tech, Inc.<BR>
 Revised: August 12, 2020
 
 ## Opportunity

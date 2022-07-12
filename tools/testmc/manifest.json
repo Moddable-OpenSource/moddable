@@ -162,6 +162,7 @@
 	"data": { 
 		"*": [
 			"$(MODDABLE)/examples/assets/images/image-info",
+			"$(MODULES)/crypt/data/ca34",
 			"$(MODULES)/crypt/data/ca222"
 		]
 	},

@@ -43,6 +43,10 @@ declare module "net" {
      * Gets the Wi-Fi [received signal strength](https://en.wikipedia.org/wiki/Received_signal_strength_indication) as a `Number`
      */
     get(what: "RSSI"): number;
+    /**
+     * Gets an Array of the DNS servers configured in the system
+     */
+    get(what: "DNS"): string[];
 
     /**
      * The resolve function performs performs an asynchronous DNS look-up for the specified host and invokes the callback to deliver the result.

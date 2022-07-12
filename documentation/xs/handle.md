@@ -1,10 +1,6 @@
 # Handle
-
-Copyright 2016-17 Moddable Tech, Inc.
-
+Copyright 2016-17 Moddable Tech, Inc.<BR>
 Revised: May 17, 2017
-
-Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 
 ## Objective

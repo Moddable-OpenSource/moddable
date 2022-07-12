@@ -1,5 +1,4 @@
 # Moddable One Developer Guide
-
 Copyright 2019-2022 Moddable Tech, Inc.<BR>
 Revised: March 22, 2022
 

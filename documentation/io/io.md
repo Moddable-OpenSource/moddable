@@ -1,9 +1,7 @@
 # TC53 IO: A New Take on JavaScript Input/Output on Microcontrollers 
-Author: Peter Hoddie<br/>
-Updated: April 7, 2021<br/>
+Author: Peter Hoddie<BR>
+Updated: April 7, 2021<BR>
 Copyright 2019-2021 Moddable Tech, Inc.
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 This document introduces work on Input/Output (IO) under development by Ecma TC53 in the IO Class Pattern proposal and describes an implementation of the proposal that uses the XS JavaScript engine on the ESP8266 microcontroller. (The implementation also supports ESP32, but this document is focused on ESP8266.)
 

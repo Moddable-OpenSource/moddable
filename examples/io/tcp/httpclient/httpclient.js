@@ -135,10 +135,9 @@ class HTTPClient {
 		this.#onClose = onClose;
 
 		const dns = new options.dns.io(options.dns);
-
 		dns.resolve({
 			host: this.#host, 
-		
+
 			onResolved: (host, address) => {
 				this.#socket = new options.socket.io({
 					...options.socket,
@@ -149,16 +148,15 @@ class HTTPClient {
 					onError: this.#onError.bind(this)
 				});
 			},
-			onError: (err) => {
+			onError: () => {
 				this.#onError?.();
-			},
+			}
 		});
-			
 	}
 	close() {
 		this.#socket?.close();
 		this.#socket = undefined;
-			Timer.clear(this.#timer);
+		Timer.clear(this.#timer);
 		this.#timer = undefined;
 	}
 	request(options) {

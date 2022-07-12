@@ -1,6 +1,5 @@
-## setup
-Copyright 2017-19 Moddable Tech, Inc.
-
+# Setup
+Copyright 2017-19 Moddable Tech, Inc.<BR>
 Revised: July 24, 2019
 
 ### Background

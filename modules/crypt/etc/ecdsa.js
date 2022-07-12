@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -66,21 +66,16 @@ export default class ECDSA {
 			var r = R.X;
 			var s = n.mul(n.add(e, n.mul(du, r)), n.mulinv(k));
 		} while (s == 0);
-		var sig = new Object;
-		sig.r = r;
-		sig.s = s;
-		return sig;
+		return {r, s};
 	};
 	sign(H, asn1) {
-		var sig = this._sign(H);
-		if (asn1) {
+		const sig = this._sign(H);
+		if (asn1)
 			return BER.encode([0x30, [0x02, sig.r], [0x02, sig.s]]);
-		}
-		else {
-			var os = new ArrayBuffer();
-			var l = this.orderSize;
-			return os.concat(PKCS1.I2OSP(sig.r, l), PKCS1.I2OSP(sig.s, l));
-		}
+
+		const os = new ArrayBuffer();
+		const l = this.orderSize;
+		return os.concat(PKCS1.I2OSP(sig.r, l), PKCS1.I2OSP(sig.s, l));
 	};
 	_verify(H, r, s) {
 		// u1 = e / s
@@ -97,8 +92,7 @@ export default class ECDSA {
 		var u2 = n.mul(r, s_inv);
 		// var R = ec.add(ec.mul(G, u1), ec.mul(Qu, u2));
 		var R = ec.mul2(G, u1, Qu, u2);
-		return R.X == r;
-
+		return R.X === r;
 	};
 	verify(H, sig, asn1) {
 		var r, s;
@@ -122,4 +116,3 @@ export default class ECDSA {
 		return i;
 	};
 };
-Object.freeze(ECDSA.prototype);

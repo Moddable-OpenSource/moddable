@@ -1,6 +1,5 @@
 # Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico
-
-Copyright 2021 Moddable Tech, Inc.  
+Copyright 2021 Moddable Tech, Inc.<BR>
 Revised: March 4, 2022
 
 ![](./images/spi-touch-display.jpg)

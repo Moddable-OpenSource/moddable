@@ -1,5 +1,4 @@
 # Using the Moddable SDK with ESP32
-
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
 Revised: April 22, 2022
 

@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"*": [ 
+			"$(MODULES)/network/dns/moddnsparser"
+		],
+		"httpclient/config": "./config",
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"embedded:network/http/client": "./../httpclient/httpclient"
+	},
+	"preload": [
+		"httpclient/config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
+		"embedded:network/http/client"
+	]
+}

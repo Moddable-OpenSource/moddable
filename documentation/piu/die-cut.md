@@ -1,10 +1,6 @@
 # Die Cut
-
-Copyright 2016 Moddable Tech, Inc.
-
+Copyright 2016 Moddable Tech, Inc.<BR>
 Revised: November 22, 2016
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Introduction
 
@@ -103,53 +99,53 @@ Both regions are initially empty.
 
 Prototype inherits from `Layout.prototype`.
 
-#####`Die.prototype.and(x, y, width, height)`
+##### `Die.prototype.and(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
 > 
 > Intersect the rectangle with the work region. Return this.
 
-#####`Die.prototype.attach(content)`
+##### `Die.prototype.attach(content)`
 
 > `content ` the `content` object to attach
 > 
 > Bind the `die` object to the content hierarchy by replacing the specified `content` object in the content's container with this `die` object and adding the `content` object to this `die` object.
 
-#####`Die.prototype.cut()`
+##### `Die.prototype.cut()`
 
 >  Copy the work region into the current region. Invalidate only the difference between the work and the clip regions.
 
-#####`Die.prototype.empty()`
+##### `Die.prototype.empty()`
 
 > Empty the work region. Return `this`
 
-#####`Die.prototype.detach()`
+##### `Die.prototype.detach()`
 
 > Unbind this `die` object from the content hierarchy by removing the first `content` object from this `die` object and replacing this `die` object in its container with the removed `content` object.
 
-#####`Die.prototype.fill()`
+##### `Die.prototype.fill()`
 
 > Set the work region to the bounds of this `die` object. Return `this`
 
-#####`Die.prototype.or(x, y, width, height)`
+##### `Die.prototype.or(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
 > 
 > Inclusively union the rectangle with the work region. Return `this`.
 
-#####`Die.prototype.set(x, y, width, height)`
+##### `Die.prototype.set(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
 > 
 > Set the work region to the rectangle. Return `this`.
 
-#####`Die.prototype.sub(x, y, width, height)`
+##### `Die.prototype.sub(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
 > 
 > Subtract the rectangle from the work region. Return `this`.
 
-#####`Die.prototype.xor(x, y, width, height)`
+##### `Die.prototype.xor(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
 > 

@@ -1,9 +1,7 @@
 # Exploring TC53 IO using Firmata
 Copyright 2019 Moddable Tech, Inc.<BR>
-Author: Peter Hoddie<br/>
-Revised: August 4, 2019<br/>
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Author: Peter Hoddie<BR>
+Revised: August 4, 2019
 
 The Moddable SDK contains an implementation of the Firmata protocol for communicating hardware control information between two devices, often a computer and  microcontroller. The implementation uses a new set of IO classes based on an active proposal to [Ecma TC53](https://www.ecma-international.org/memento/tc53.htm). The IO classes are based on a common IO pattern designed to provide access to hardware resources through a simple API that provides consistent behavior across a range of IO types while allowing efficient implementation on the most constrained hardware configurations capable of executing modern JavaScript.
 

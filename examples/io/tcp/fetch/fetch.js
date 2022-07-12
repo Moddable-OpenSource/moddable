@@ -34,8 +34,9 @@ function URLParts(url) {
 }
 
 let authorityRegExp = null;
-const clients = new Map();
+let clients;
 function Client(authority) {
+	clients ??= new Map;
 	let client = clients.get(authority);
 	if (!client) {
 		if (!authorityRegExp)
@@ -99,6 +100,7 @@ const statusTexts = {
 	504: "Gateway Timeout",
 	505: "HTTP Version Not Supported",
 };
+Object.freeze(statusTexts);
 
 class Headers extends Map {
 	delete(key) {

@@ -52,12 +52,25 @@ class Resolver {
 			throw new Error;
 
 		host = host.toString();
+		if ("localhost" === host)
+			host = "127.0.0.1";
+		
+		let parts = host.split(".");
+		let isAddress = false;
+		if (4 === parts.length) {
+			isAddress = true;
+			for (let i = 0; i < 4; i++) {
+				if (parseInt(parts[i]) != parts[i])
+					isAddress = false; 
+			}
+		}
 		const request = {
 			state: 0,
 			id: host.endsWith(".local") ? 0 : ((Math.random() * 65535) | 1),		//@@ collision
 			host,
 			onResolved,
-			onError
+			onError,
+			isAddress
 		}
 		this.#requests.push(request);
 		this.#timer ??= Timer.set(this.#task.bind(this), 0, 1000);
@@ -138,6 +151,12 @@ class Resolver {
 	#task() {
 		for (let i = 0, requests = this.#requests, servers = this.#servers; i < requests.length; i++) {
 			const request = requests[i];
+			if (request.isAddress) {
+				this.#remove(request);
+				request.onResolved?.call(this, request.host, request.host);
+				i -= 1;
+				continue;
+			}
 			const end = request.id ? servers.length * 5 : 5;
 			request.state += 1;
 			if (end === request.state) {
