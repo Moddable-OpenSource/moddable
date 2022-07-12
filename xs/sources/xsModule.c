@@ -1021,6 +1021,7 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 		goto namespace;
 	}
 	mxPop(); // property;
+	
 
 	mxPushSlot(descriptor);
 	mxGetID(fxID(the, "specifier"));
@@ -1064,6 +1065,45 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 		mxCheck(the, mxModuleStatus(module) == XS_MODULE_STATUS_LOADING);
 		mxModuleMeta(module)->value.reference->next = C_NULL; // delete loader
 	}
+	
+	mxPushSlot(mxArgv(0));
+	mxGetID(fxID(the, "archive"));
+	property = the->stack;
+	if (!mxIsUndefined(property)) {
+		void* archive = fxGetHostData(the, property);
+		txString path;
+		void* code;
+		size_t size;
+		txScript script;
+		mxPushSlot(mxArgv(0));
+		mxGetID(fxID(the, "path"));
+		property = the->stack;
+		path = fxToString(the, property);
+		code = fxGetArchiveCode(the, archive, path, &size);
+		if (code == C_NULL)
+			mxURIError("module not found: %s", path);
+		mxPop();
+		script.callback = NULL;
+		script.symbolsBuffer = NULL;
+		script.symbolsSize = 0;
+		script.codeBuffer = code;
+		script.codeSize = (txSize)size;
+		script.hostsBuffer = NULL;
+		script.hostsSize = 0;
+		script.path = path;
+		script.version[0] = XS_MAJOR_VERSION;
+		script.version[1] = XS_MINOR_VERSION;
+		script.version[2] = XS_PATCH_VERSION;
+		script.version[3] = 0;
+		mxPushClosure(mxResult);
+		fxRunScript(the, &script, mxResult, C_NULL, C_NULL, C_NULL, module->value.reference);
+		mxPop();
+		if (mxModuleExecute(module)->kind == XS_NULL_KIND)
+			mxTypeError("no module");
+		goto importMeta;
+	}
+	mxPop(); // property;
+	
 	mxPushSlot(descriptor);
 	mxGetID(fxID(the, "record"));
 	property = the->stack;
@@ -1072,6 +1112,7 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 			mxTypeError("descriptor.record is no object");
 		if (!mxIsStaticModuleRecord(property->value.reference))
 			mxTypeError("descriptor.record is no static module record");
+		fxDuplicateModuleTransfers(the, property, module);
 		goto importMeta;
 	}
 	mxPop(); // property
@@ -1081,10 +1122,10 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 	mxPushSlot(descriptor);
 	mxRunCount(1);
 	property = the->stack;
-importMeta:
 	fxDuplicateModuleTransfers(the, property, module);
-	mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
+importMeta:
 	mxPop(); // property
+	mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
 	
 	mxPushSlot(descriptor);
 	mxGetID(fxID(the, "importMeta"));
@@ -2385,43 +2426,27 @@ void fx_StaticModuleRecord(txMachine* the)
 	instance = fxNewStaticModuleRecordInstance(the);
 	mxPullSlot(mxResult);
 	if (mxArgc == 0)
-		mxTypeError("no descriptor");
-		
-// 	mxPushSlot(mxArgv(0));
-// 	mxGetID(fxID(the, "specifier"));
-// 	slot = the->stack;
-// 	if (slot->kind != XS_UNDEFINED_KIND) {
-// 		txSlot* internal = mxModuleInstanceInternal(instance);
-// 		fxToString(the, slot);
-// 		if (slot->kind == XS_STRING_X_KIND)
-// 			internal->value.module.id = fxNewNameX(the, slot->value.string);
-// 		else
-// 			internal->value.module.id = fxNewName(the, slot);
-// 	}
-// 	mxPop();
-// 
-// 	mxPushSlot(mxArgv(0));
-// 	mxGetID(fxID(the, "meta"));
-// 	slot = the->stack;
-// 	if (slot->kind != XS_UNDEFINED_KIND) {
-// 		txSlot* meta = mxModuleInstanceMeta(instance);
-// 		mxPushUndefined();
-// 		mxPush(mxAssignObjectFunction);
-// 		mxCall();
-// 		mxPushSlot(meta);
-// 		mxPushSlot(slot);
-// 		mxRunCount(2);
-// 		mxPop();
-// 	}
-// 	mxPop();
-		
+		mxTypeError("no options");
+				
 #ifdef mxParse
 	mxPushSlot(mxArgv(0));
-	mxGetID(fxID(the, "source"));
 	slot = the->stack;
-	if (slot->kind != XS_UNDEFINED_KIND) {
+	if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND))
+		goto source;
+#endif
+	if (!mxIsReference(mxArgv(0)))
+		mxTypeError("invalid options");
+	
+#ifdef mxParse
+	mxPushSlot(mxArgv(0));
+	if (mxHasID(fxID(the, "source"))) {
 		txStringStream stream;
 		txScript* script;
+		mxPushSlot(mxArgv(0));
+		mxGetID(fxID(the, "source"));
+		slot = the->stack;
+		fxToString(the, slot);
+source:		
 		stream.slot = slot;
 		stream.offset = 0;
 		stream.size = mxStringLength(fxToString(the, slot));
