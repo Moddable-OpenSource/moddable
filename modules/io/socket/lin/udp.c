@@ -42,6 +42,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <fcntl.h>
 
 #define kMaxPackets (100)
 #define kTaskInterval (20)
@@ -112,8 +113,10 @@ void xs_udp_constructor(xsMachine *the)
 	if (udp->skt < 0)
 		xsUnknownError("no socket");
 
+#if defined(SO_NOSIGPIPE)
 	int set = 1;
 	setsockopt(udp->skt, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#endif
 
 	fcntl(udp->skt, F_SETFL, O_NONBLOCK | fcntl(udp->skt, F_GETFL, 0));
 

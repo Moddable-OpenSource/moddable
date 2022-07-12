@@ -35,6 +35,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include <fcntl.h>
 
 #define kBufferSize (1536)
 #define kTaskInterval (20)
@@ -171,8 +172,10 @@ void xs_tcp_constructor(xsMachine *the)
 			if (tcp->skt < 0)
 				xsUnknownError("no socket");
 
+#if defined(SO_NOSIGPIPE)
 			int set = 1;
 			setsockopt(tcp->skt, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#endif
 
 			fcntl(tcp->skt, F_SETFL, O_NONBLOCK | fcntl(tcp->skt, F_GETFL, 0));
 
@@ -437,7 +440,7 @@ void tcpTask(modTimer timer, void *refcon, int refconSize)
 				tcp->bytesReadable += bytesRead;
 				tcpTrigger(tcp, kTCPReadable);
 			}
-			else {
+			else if (bytesRead < 0) {
 				tcp->error = 1;
 				if (0 == tcp->bytesReadable)
 					tcpTrigger(tcp, kTCPError);
