@@ -1693,9 +1693,10 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
 			
-			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
-			
 			fxNewInstance(the);
+			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
+			fxNewHostInstance(the);
+			
 			mxPushUndefined();
 			slot = fxLastProperty(the, fxNewEnvironmentInstance(the, C_NULL));
 			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@

@@ -408,7 +408,7 @@ void fxExecuteModulesRejected(txMachine* the)
 
 txSlot* fxGetModule(txMachine* the, txSlot* realm, txID moduleID)
 {
-	txSlot* result = mxBehaviorGetProperty(the, mxOwnModules(realm)->value.reference, moduleID, 0, XS_OWN);
+	txSlot* result = mxBehaviorGetProperty(the, mxOwnModules(realm)->value.reference, moduleID, 0, XS_ANY);
 	return result;
 }
 
@@ -1048,7 +1048,7 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 //             if ((aliasRealm == realm) && (aliasModuleID == moduleID))
 //                 mxTypeError("descriptor.specifier is circular");
 			
-        aliasModule = mxBehaviorGetProperty(the, aliasOwn, aliasModuleID, 0, XS_OWN);
+        aliasModule = mxBehaviorGetProperty(the, aliasOwn, aliasModuleID, 0, XS_ANY);
 		if (aliasModule) {
 			property = aliasModule;
 			goto namespace;
@@ -1066,7 +1066,7 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 		mxModuleMeta(module)->value.reference->next = C_NULL; // delete loader
 	}
 	
-	mxPushSlot(mxArgv(0));
+	mxPushSlot(descriptor);
 	mxGetID(fxID(the, "archive"));
 	property = the->stack;
 	if (!mxIsUndefined(property)) {
@@ -1075,7 +1075,7 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 		void* code;
 		size_t size;
 		txScript script;
-		mxPushSlot(mxArgv(0));
+		mxPushSlot(descriptor);
 		mxGetID(fxID(the, "path"));
 		property = the->stack;
 		path = fxToString(the, property);
@@ -1095,8 +1095,8 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 		script.version[1] = XS_MINOR_VERSION;
 		script.version[2] = XS_PATCH_VERSION;
 		script.version[3] = 0;
-		mxPushClosure(mxResult);
-		fxRunScript(the, &script, mxResult, C_NULL, C_NULL, C_NULL, module->value.reference);
+// 		mxPushClosure(module);
+		fxRunScript(the, &script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
 		mxPop();
 		if (mxModuleExecute(module)->kind == XS_NULL_KIND)
 			mxTypeError("no module");
@@ -1404,7 +1404,7 @@ void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* sc
 			slot->ID = mxID(_uri);
 			slot->flag |= XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 		}
-		mxPushClosure(module);
+// 		mxPushClosure(module);
 		fxRunScript(the, script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
 		mxPop();
 	}
@@ -2261,8 +2261,10 @@ void fx_Compartment(txMachine* the)
 		slot = own->next;
 		while (slot) {
 			txSlot* internal = mxModuleInternal(slot);
-			if (internal->value.module.realm == C_NULL)
-				internal->value.module.realm = realm;
+			if (internal->value.module.realm == C_NULL) {
+				if (!(internal->flag & XS_MARK_FLAG))
+					internal->value.module.realm = realm;
+			}
 			slot = slot->next;
 		}
 		
@@ -2451,7 +2453,7 @@ source:
 		stream.offset = 0;
 		stream.size = mxStringLength(fxToString(the, slot));
 		script = fxParseScript(the, &stream, fxStringGetter, mxDebugFlag);
-		mxPushClosure(mxResult);
+// 		mxPushClosure(mxResult);
 		fxRunScript(the, script, mxResult, C_NULL, C_NULL, C_NULL, instance);
 		mxPop();
 		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
@@ -2490,7 +2492,7 @@ source:
 		script.version[1] = XS_MINOR_VERSION;
 		script.version[2] = XS_PATCH_VERSION;
 		script.version[3] = 0;
-		mxPushClosure(mxResult);
+// 		mxPushClosure(mxResult);
 		fxRunScript(the, &script, mxResult, C_NULL, C_NULL, C_NULL, instance);
 		mxPop();
 		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)

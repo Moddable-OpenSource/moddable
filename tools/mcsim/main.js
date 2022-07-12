@@ -31,20 +31,21 @@ import * as ControlsPaneNamespace from "ControlsPane";
 import * as DevicePaneNamespace from "DevicePane";
 import * as assetsNamespace from "assets";
 
-const compartmentModuleMap = {
-	"piu/All": piuAllNamespace,
-	"piu/Buttons": piuButtonsNamespace,
-	"piu/PC": piuPCNamespace,
-	"piu/Screen": piuScreenNamespace,
-	"piu/Scrollbars": piuScrollbarsNamespace,
-	"piu/Sliders": piuSlidersNamespace,
-	"piu/Switches": piuSwitchesNamespace,
-	"BinaryMessage": BinaryMessageNamespace,
-	"ControlsPane": ControlsPaneNamespace,
-	"DevicePane": DevicePaneNamespace,
-	"assets": assetsNamespace,
-}
 const compartmentOptions = {
+	globals: { ...Object.getPrototypeOf(globalThis), ...globalThis },
+	modules: {
+		"piu/All": { namespace: piuAllNamespace },
+		"piu/Buttons": { namespace: piuButtonsNamespace },
+		"piu/PC": { namespace: piuPCNamespace },
+		"piu/Screen": { namespace: piuScreenNamespace },
+		"piu/Scrollbars": { namespace: piuScrollbarsNamespace },
+		"piu/Sliders": { namespace: piuSlidersNamespace },
+		"piu/Switches": { namespace: piuSwitchesNamespace },
+		"BinaryMessage": { namespace: BinaryMessageNamespace },
+		"ControlsPane": { namespace: ControlsPaneNamespace },
+		"DevicePane": { namespace: DevicePaneNamespace },
+		"assets": { namespace: assetsNamespace },
+	},
 	resolveHook(specifier, refererSpecifier) {
 		if (specifier[0] == '.') {
 			let separator = '/';
@@ -63,7 +64,7 @@ const compartmentOptions = {
 		return specifier;
 	},
 	loadNowHook(specifier) {
-		return { source:system.readFileString(specifier), meta:{ uri:specifier }, specifier };
+		return { source:system.readFileString(specifier), importMeta:{ uri:specifier } };
 	},
 }
 
@@ -271,7 +272,7 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment({...Object.getPrototypeOf(globalThis), ...globalThis}, compartmentModuleMap, compartmentOptions);
+						let compartment = new Compartment(compartmentOptions);
 						let device = compartment.importNow(info.path).default;
 						if (device && (("DeviceTemplate" in device) || ("DeviceTemplates" in device))) {
 							device.compartment = compartment;
