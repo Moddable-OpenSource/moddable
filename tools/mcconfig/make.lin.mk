@@ -19,6 +19,10 @@
 
 PKGCONFIG = $(shell which pkg-config)
 
+IMPLEMENTOR = $(shell grep -m 1 "CPU implementer" /proc/cpuinfo | cut -c 19-22)
+ARCH = $(shell grep -m 1 "CPU architecture" /proc/cpuinfo | cut -c 19-22)
+CHECK_ARCH = $(shell [ $1 -lt 8 ] && echo "YES")
+
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
@@ -99,6 +103,13 @@ ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 
+ifeq ("$(IMPLEMENTOR)","0x41")
+ifeq "$(call CHECK_ARCH, $(ARCH))" "YES"
+C_DEFINES += \
+	-DmxMisalignedSettersCrash=1
+endif
+endif
+
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 
@@ -134,6 +145,7 @@ VPATH += $(XS_DIRECTORIES)
 	
 all: precursor
 	$(shell nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+#	echo "gdb $(SIMULATOR)\nr $(BIN_DIR)/mc.so"
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 
