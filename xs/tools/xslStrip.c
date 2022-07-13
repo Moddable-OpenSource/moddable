@@ -244,6 +244,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			else if (!c_strcmp(name, "eval")) {
 				fxStripCallback(linker, fx_Compartment_prototype_evaluate);
 				fxStripCallback(linker, fx_Function);
+				fxStripCallback(linker, fx_StaticModuleRecord);
 				fxStripCallback(linker, fx_eval);
 				fxUnuseCode(XS_CODE_ARGUMENTS_SLOPPY);
 				fxUnuseCode(XS_CODE_EVAL);

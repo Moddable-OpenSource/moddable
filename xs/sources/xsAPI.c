@@ -1692,6 +1692,12 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
+			if (the->preparation) {
+				fxNewHostObject(the, C_NULL);
+				the->stack->value.reference->next->value.host.data = the->preparation;
+				slot = fxNextSlotProperty(the, slot, the->stack, fxID(the, "archive"), XS_DONT_ENUM_FLAG);
+				mxPop();
+			}
 			
 			fxNewInstance(the);
 			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
@@ -1704,6 +1710,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
 				sharedSlot = sharedSlot->next;
 			}
+			
+			
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();

@@ -4,7 +4,7 @@ flags: [onlyStrict]
 includes: [deepEqual.js]
 ---*/
 
-const smr = new StaticModuleRecord({ source:`
+const smr = new StaticModuleRecord(`
 	export var v0;	
 	export default 0
 	export { v0 as w0 };	
@@ -18,7 +18,7 @@ const smr = new StaticModuleRecord({ source:`
 	export { v2 as w2 } from "mod";
 	export * from "mod";
 	export * as ns2 from "mod";
-`});
+`);
 
 const bindings = [
 	{

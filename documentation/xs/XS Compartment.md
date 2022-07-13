@@ -44,7 +44,7 @@ A compartment can only provide to its child compartments the features provided b
 
 A static module record is an object that encapsulates informations necessary to build a module.
 
-In XS, a static module record contains the module bindings in a compressed form and the byte code of the function to initialize the module bindings.
+In XS, a static module record contains the module bindings in a compressed form and the byte codes of the function to initialize the module bindings.
 
 Static module records are immutable and reusable. In Moddable runtime, static module records can be stored in ROM.
 
@@ -82,7 +82,7 @@ To build a module namespace from a static module record.
 
 Compartments copy `importMeta` object properties into the module `import.meta` object like `Object.assign`. 
 
-As a shortcut, instead of a `record` property, XS also supports the properties of the options of the `StaticModuleRecord` constructor.
+As a shortcut, instead of a `record` property, XS also supports the properties of the options of the `StaticModuleRecord` constructor. The shortcut also allows XS to skip the creation of the static module record at runtime.
 
 #### descriptor with `specifier` and `compartment` properties
 

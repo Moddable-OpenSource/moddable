@@ -5,15 +5,15 @@ flags: [onlyStrict]
 
 const importMeta = { count: { foo:0, bar:0 } };
 
-const foo = { record: new StaticModuleRecord({ source:`
+const foo = { record: new StaticModuleRecord(`
 	export default "foo";
 	import.meta.count.foo++;
-`}), importMeta };
-const bar = { record: new StaticModuleRecord({ source:`
+`), importMeta };
+const bar = { record: new StaticModuleRecord(`
 	import foo from "foo";
 	export default foo + "bar";
 	import.meta.count.bar++;
-`}), importMeta };
+`), importMeta };
 const modules = { foo, bar };
 function loadNowHook(specifier) {
 	return modules[specifier];

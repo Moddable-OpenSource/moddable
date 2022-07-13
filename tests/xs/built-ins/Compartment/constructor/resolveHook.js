@@ -5,17 +5,17 @@ flags: [module]
 
 const c = new Compartment({
 	modules: {
-		a: { source:`
+		a: { record: new StaticModuleRecord(`
 			import b from "b";
 			export default "a" + b;
-		`},
-		b_a: { source:`
+		`)},
+		b_a: { record: new StaticModuleRecord(`
 			import c from "c";
 			export default "b" + c;
-		`},
-		c_b_a: { source:`
+		`)},
+		c_b_a: { record: new StaticModuleRecord(`
 			export default "c";
-		`},
+		`)},
 	},
 	resolveHook(specifier, referrerSpecifier) {
 		return specifier + "_" + referrerSpecifier;

@@ -5,16 +5,16 @@ flags: [onlyStrict]
 
 const importMeta = { count: { foo:0, bar:0 } };
 
-const foo = { record: new StaticModuleRecord({ source:`
+const foo = { record: new StaticModuleRecord(`
 	import.meta.count.foo++;
 	export default "foo";
 	throw new Error("foo");
-`}), importMeta};
-const bar = { record: new StaticModuleRecord({ source:`
+`), importMeta};
+const bar = { record: new StaticModuleRecord(`
 	import foo from "foo";
 	export default foo + "bar";
 	import.meta.count.bar++;
-`}), importMeta};
+`), importMeta};
 const modules = { foo, bar };
 
 const c1 = new Compartment({ modules });

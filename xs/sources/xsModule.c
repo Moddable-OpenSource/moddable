@@ -1004,6 +1004,340 @@ void fxLoadModulesRejected(txMachine* the)
 	fxLoadModules(the, queue);
 }
 
+void fxLoadVirtualStaticModuleRecord(txMachine* the, txSlot* record, txSlot* instance)
+{
+	txSlot* slot;
+	txSlot* function;
+	txSlot* property;
+	txSlot* transfers;
+	txSlot* transfer;
+	
+	mxPushSlot(record);
+	mxGetID(fxID(the, "initialize"));
+	slot = the->stack;
+	if (!mxIsUndefined(slot)) {
+		if (!fxIsCallable(the, slot))
+			mxTypeError("initialize is no function");
+	}
+	function = fxNewHostFunction(the, fx_StaticModuleRecord_initialize, 0, XS_NO_ID);
+	property = mxFunctionInstanceHome(function);
+	property->value.home.object = fxToInstance(the, record);
+	property->value.home.module = instance;
+	property = fxLastProperty(the, function);
+	property = fxNextSlotProperty(the, property, slot, XS_NO_ID, XS_INTERNAL_FLAG);
+	mxPullSlot(mxModuleInstanceExecute(instance));
+	mxPop(); // initialize
+			
+	mxPush(mxObjectPrototype);
+	transfers = fxNewObjectInstance(the);
+	transfer = fxLastProperty(the, transfers);
+	
+	mxPushSlot(record);
+	mxGetID(mxID(_bindings));
+	if (!mxIsUndefined(the->stack)) {
+		txSlot* array;
+		txInteger length, index;
+		
+		array = the->stack;
+		mxPushSlot(array);
+		mxGetID(mxID(_length));
+		length = fxToInteger(the, the->stack);
+		mxPop();
+		
+		for (index = 0; index < length; index++) {
+			txSlot* item;
+			txSlot* temporary;
+			txInteger from = 0;
+			txInteger export = 0;
+			txInteger import = 0;
+			txID nameID, asID;
+			txSlot* specifier = C_NULL;
+			txSlot* former;
+
+			mxPushSlot(array);
+			mxGetIndex(index);
+			item = the->stack;
+		
+			mxTemporary(temporary);
+		
+			mxPushSlot(item);
+			mxGetID(mxID(_from));
+			if (!mxIsUndefined(the->stack)) {
+				from++;
+				fxToString(the, the->stack);
+				mxPullSlot(temporary);
+				specifier = temporary;
+			}
+			else
+				mxPop();
+				
+			mxPushSlot(item);
+			mxGetID(fxID(the, "exportAllFrom"));
+			if (!mxIsUndefined(the->stack)) {
+				from++;
+				export++;
+				fxToString(the, the->stack);
+				mxPullSlot(temporary);
+				specifier = temporary;
+				nameID = XS_NO_ID;
+			}
+			else
+				mxPop();
+		
+			mxPushSlot(item);
+			mxGetID(fxID(the, "importAllFrom"));
+			if (!mxIsUndefined(the->stack)) {
+				from++;
+				import++;
+				fxToString(the, the->stack);
+				mxPullSlot(temporary);
+				specifier = temporary;
+				nameID = XS_NO_ID;
+			}
+			else
+				mxPop();
+		
+			mxPushSlot(item);
+			mxGetID(mxID(_export));
+			if (!mxIsUndefined(the->stack)) {
+				export++;
+				fxToString(the, the->stack);
+				nameID = fxNewName(the, the->stack);
+			}
+			mxPop();
+			
+			mxPushSlot(item);
+			mxGetID(mxID(_import));
+			if (!mxIsUndefined(the->stack)) {
+				import++;
+				fxToString(the, the->stack);
+				nameID = fxNewName(the, the->stack);
+			}
+			mxPop();
+		
+			mxPushSlot(item);
+			mxGetID(mxID(_as));
+			if (!mxIsUndefined(the->stack)) {
+				fxToString(the, the->stack);
+				asID = fxNewName(the, the->stack);
+			}
+			else
+				asID = nameID;
+			mxPop();
+				
+			if (from > 1)
+				mxSyntaxError("too many from");
+			else if (export > 1)
+				mxSyntaxError("too many export");
+			else if (import > 1)
+				mxSyntaxError("too many import");
+			else if (export && import)
+				mxSyntaxError("export and import");
+			else if (!export && !import)
+				mxSyntaxError("neither export nor import");
+			
+			if (export) {
+				if (asID != XS_NO_ID) {
+					former = transfers->next;
+					while (former) {
+						txSlot* aliases = mxTransferAliases(former);
+						if (!mxIsNull(aliases)) {
+							txSlot* alias = aliases->value.reference->next;
+							while (alias) {
+								if (alias->value.symbol == asID) {
+									fxIDToString(the, asID, the->nameBuffer, sizeof(the->nameBuffer));
+									mxSyntaxError("duplicate export %s", the->nameBuffer);
+								}
+								alias = alias->next;
+							}
+						}
+						former = former->next;
+					}
+					if (specifier) {
+						former = transfers->next;
+						while (former) {
+							txSlot* aliases = mxTransferAliases(former);
+							if (!mxIsNull(aliases)) {
+								txSlot* local = mxTransferLocal(former);
+								if (mxIsNull(local)) {
+									txSlot* from = mxTransferFrom(former);
+									if (!mxIsNull(from) && !c_strcmp(from->value.string, specifier->value.string)) {
+										txSlot* import = mxTransferImport(former);
+										if (mxIsNull(import)) {
+											if (nameID == XS_NO_ID) 
+												break;
+										}
+										else {
+											if (nameID == import->value.symbol)
+												break;
+										}
+									}
+								}
+							}
+							former = former->next;
+						}
+					}
+					else {
+						former = transfers->next;
+						while (former) {
+							txSlot* local = mxTransferLocal(former);
+							if ((local->kind == XS_SYMBOL_KIND) && (local->value.symbol == nameID))
+								break;
+							former = former->next;
+						}
+					}
+					if (former) {
+						txSlot* aliases = mxTransferAliases(former);
+						txSlot* alias;
+						if (mxIsNull(aliases)) {
+							mxPush(mxObjectPrototype);
+							alias = fxLastProperty(the, fxNewObjectInstance(the));
+							mxPullSlot(mxTransferAliases(former));
+						}
+						else {
+							alias = fxLastProperty(the, aliases->value.reference);
+						}
+						fxNextSymbolProperty(the, alias, asID, XS_NO_ID, XS_DONT_ENUM_FLAG);
+					}
+					else if (specifier) {
+						mxPushNull();
+						mxPushSlot(specifier);
+						if ((nameID != XS_NO_ID) || (asID != XS_NO_ID)) {
+							if (nameID != XS_NO_ID) 
+								mxPushSymbol(nameID);
+							else
+								mxPushNull();
+							if (asID != XS_NO_ID) 
+								mxPushSymbol(asID);
+							else			
+								mxPushSymbol(nameID);
+							mxPushInteger(4);
+						}
+						else {	
+							mxPushNull();
+							mxPushInteger(3);
+						}
+						fxPrepareTransfer(the);
+						transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
+						mxPop(); // transfer
+					}
+					else {
+						mxPushSymbol(nameID);
+						mxPushNull();
+						mxPushNull();
+						mxPushSymbol(asID);
+						mxPushInteger(4);
+						fxPrepareTransfer(the);
+						transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
+						mxPop(); // transfer
+					}
+				}
+				else if (specifier) {
+					former = transfers->next;
+					while (former) {
+						txSlot* from = mxTransferFrom(former);
+						if (!mxIsNull(from) && !c_strcmp(from->value.string, specifier->value.string)) {
+							txSlot* local = mxTransferLocal(former);
+							if (mxIsNull(local)) {
+								txSlot* import = mxTransferImport(former);
+								if (mxIsNull(import)) {
+									txSlot* aliases = mxTransferAliases(former);
+									if (mxIsNull(aliases)) {
+										mxSyntaxError("duplicate export *");
+									}
+								}
+							}
+						}
+						former = former->next;
+					}
+					mxPushNull();
+					mxPushSlot(specifier);
+					mxPushNull();
+					mxPushInteger(3);
+					fxPrepareTransfer(the);
+					transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
+					mxPop(); // transfer
+				}
+				else
+					mxSyntaxError("invalid export *");
+			}
+			else {
+				if (!specifier) {
+					if (asID == XS_NO_ID)
+						mxSyntaxError("invalid import *");
+					else {
+						fxIDToString(the, asID, the->nameBuffer, sizeof(the->nameBuffer));
+						mxSyntaxError("invalid import %s", the->nameBuffer);
+					}
+				}
+				else if (asID == XS_NO_ID)
+					mxSyntaxError("invalid import * from %s", specifier->value.string);
+			
+				former = transfers->next;
+				while (former) {
+					txSlot* local = mxTransferLocal(former);
+					if ((local->kind == XS_SYMBOL_KIND) && (local->value.symbol == asID)) {
+						txSlot* from = mxTransferFrom(former);
+						if (!mxIsNull(from)) {
+							fxIDToString(the, asID, the->nameBuffer, sizeof(the->nameBuffer));
+							mxSyntaxError("duplicate import %s", the->nameBuffer);
+						}
+						break;
+					}
+					former = former->next;
+				}
+				if (former) {
+					txSlot* from = mxTransferFrom(former);
+					mxPushSlot(specifier);
+					mxPullSlot(from);	
+					if (nameID != XS_NO_ID) {
+						txSlot* import = mxTransferImport(former);
+						import->kind = XS_SYMBOL_KIND;
+						import->value.symbol = nameID;
+					}
+				}
+				else {
+					mxPushSymbol(asID);
+					mxPushSlot(specifier);
+					if (nameID != XS_NO_ID)
+						mxPushSymbol(nameID);
+					else			
+						mxPushNull();
+					mxPushInteger(3);
+					fxPrepareTransfer(the);
+					transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
+					mxPop(); // transfer
+				}
+			}	
+
+			mxPop(); // temporary
+			mxPop(); // item
+		}
+	}
+	mxPop(); // bindings
+	mxPullSlot(mxModuleInstanceTransfers(instance));
+
+	mxPushSlot(record);
+	mxGetID(mxID(_needsImport));
+	if (!mxIsUndefined(the->stack)) {
+		if (fxToBoolean(the, the->stack)) {
+			txSlot* internal = mxModuleInstanceInternal(instance);
+			internal->flag |= XS_IMPORT_FLAG;
+		}
+	}
+	mxPop(); // needsImport
+	
+	mxPushSlot(record);
+	mxGetID(mxID(_needsImportMeta));
+	if (!mxIsUndefined(the->stack)) {
+		if (fxToBoolean(the, the->stack)) {
+			txSlot* internal = mxModuleInstanceInternal(instance);
+			internal->flag |= XS_IMPORT_META_FLAG;
+		}
+	}
+	mxPop(); // _needsImportMeta
+}
+
 void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot* module, txSlot* parent, txSlot* queue, txSlot* result, txSlot* descriptor)
 {
 	txSlot* property;
@@ -1079,25 +1413,64 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 		mxGetID(fxID(the, "path"));
 		property = the->stack;
 		path = fxToString(the, property);
-		code = fxGetArchiveCode(the, archive, path, &size);
-		if (code == C_NULL)
-			mxURIError("module not found: %s", path);
-		mxPop();
-		script.callback = NULL;
-		script.symbolsBuffer = NULL;
-		script.symbolsSize = 0;
-		script.codeBuffer = code;
-		script.codeSize = (txSize)size;
-		script.hostsBuffer = NULL;
-		script.hostsSize = 0;
-		script.path = path;
-		script.version[0] = XS_MAJOR_VERSION;
-		script.version[1] = XS_MINOR_VERSION;
-		script.version[2] = XS_PATCH_VERSION;
-		script.version[3] = 0;
+		
+		if (archive == the->preparation) {
+			code = fxGetArchiveCode(the, the->archive, path, &size);
+			if (code) {
+				txScript script;
+				script.callback = NULL;
+				script.symbolsBuffer = NULL;
+				script.symbolsSize = 0;
+				script.codeBuffer = code;
+				script.codeSize = (txSize)size;
+				script.hostsBuffer = NULL;
+				script.hostsSize = 0;
+				script.path = path;
+				script.version[0] = XS_MAJOR_VERSION;
+				script.version[1] = XS_MINOR_VERSION;
+				script.version[2] = XS_PATCH_VERSION;
+				script.version[3] = 0;
+				fxRunScript(the, &script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
+			}
+			else {
+				txPreparation* preparation = the->preparation;
+				txInteger c = preparation->scriptCount;
+				txScript* script = preparation->scripts;
+				while (c > 0) {
+					if (!c_strcmp(path, script->path)) {
+						break;
+					}
+					c--;
+					script++;
+				}
+				if (script)
+					fxRunScript(the, script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
+				else
+					mxURIError("module not found: %s", path);
+			}
+		}
+		else {
+			code = fxGetArchiveCode(the, archive, path, &size);
+			if (code == C_NULL)
+				mxURIError("module not found: %s", path);
+			mxPop();
+			script.callback = NULL;
+			script.symbolsBuffer = NULL;
+			script.symbolsSize = 0;
+			script.codeBuffer = code;
+			script.codeSize = (txSize)size;
+			script.hostsBuffer = NULL;
+			script.hostsSize = 0;
+			script.path = path;
+			script.version[0] = XS_MAJOR_VERSION;
+			script.version[1] = XS_MINOR_VERSION;
+			script.version[2] = XS_PATCH_VERSION;
+			script.version[3] = 0;
+			fxRunScript(the, &script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
+		}
 // 		mxPushClosure(module);
-		fxRunScript(the, &script, module, C_NULL, C_NULL, C_NULL, module->value.reference);
 		mxPop();
+		mxPop(); // path
 		if (mxModuleExecute(module)->kind == XS_NULL_KIND)
 			mxTypeError("no module");
 		goto importMeta;
@@ -1108,21 +1481,20 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 	mxGetID(fxID(the, "record"));
 	property = the->stack;
 	if (!mxIsUndefined(property)) {
+		if ((property->kind == XS_STRING_KIND) || (property->kind == XS_STRING_X_KIND))
+			mxTypeError("not implemented");
 		if (!mxIsReference(property))
 			mxTypeError("descriptor.record is no object");
-		if (!mxIsStaticModuleRecord(property->value.reference))
-			mxTypeError("descriptor.record is no static module record");
-		fxDuplicateModuleTransfers(the, property, module);
+		if (mxIsStaticModuleRecord(property->value.reference))
+			fxDuplicateModuleTransfers(the, property, module);
+		else
+			fxLoadVirtualStaticModuleRecord(the, property, module->value.reference);
 		goto importMeta;
 	}
 	mxPop(); // property
 	
-	mxPush(mxStaticModuleRecordConstructor);
-	mxNew();
-	mxPushSlot(descriptor);
-	mxRunCount(1);
-	property = the->stack;
-	fxDuplicateModuleTransfers(the, property, module);
+	mxTypeError("invalid descriptor");
+	
 importMeta:
 	mxPop(); // property
 	mxModuleStatus(module) = XS_MODULE_STATUS_LOADED;
@@ -2390,6 +2762,8 @@ void fx_StaticModuleRecord_initialize(txMachine* the)
 	txSlot* meta = mxModuleInstanceMeta(module);
 	txSlot* closures = mxFunctionInstanceCode(instance)->value.code.closures;
 	txSlot* property;
+	if (mxIsUndefined(function))
+		return;
 	closures->flag |= XS_DONT_PATCH_FLAG;
 	property = closures->next->next;
 	while (property) {
@@ -2421,6 +2795,8 @@ void fx_StaticModuleRecord(txMachine* the)
 {
 	txSlot* instance;
 	txSlot* slot;
+	txStringStream stream;
+	txScript* script;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: StaticModuleRecord");
 	mxPushSlot(mxTarget);
@@ -2428,410 +2804,21 @@ void fx_StaticModuleRecord(txMachine* the)
 	instance = fxNewStaticModuleRecordInstance(the);
 	mxPullSlot(mxResult);
 	if (mxArgc == 0)
-		mxTypeError("no options");
-				
-#ifdef mxParse
-	mxPushSlot(mxArgv(0));
-	slot = the->stack;
-	if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND))
-		goto source;
-#endif
-	if (!mxIsReference(mxArgv(0)))
-		mxTypeError("invalid options");
-	
-#ifdef mxParse
-	mxPushSlot(mxArgv(0));
-	if (mxHasID(fxID(the, "source"))) {
-		txStringStream stream;
-		txScript* script;
+		mxPushUndefined();
+	else		
 		mxPushSlot(mxArgv(0));
-		mxGetID(fxID(the, "source"));
-		slot = the->stack;
-		fxToString(the, slot);
-source:		
-		stream.slot = slot;
-		stream.offset = 0;
-		stream.size = mxStringLength(fxToString(the, slot));
-		script = fxParseScript(the, &stream, fxStringGetter, mxDebugFlag);
+	slot = the->stack;
+	stream.slot = slot;
+	stream.offset = 0;
+	stream.size = mxStringLength(fxToString(the, slot));
+	script = fxParseScript(the, &stream, fxStringGetter, mxDebugFlag);
 // 		mxPushClosure(mxResult);
-		fxRunScript(the, script, mxResult, C_NULL, C_NULL, C_NULL, instance);
-		mxPop();
-		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
-			mxTypeError("no module");
-		mxPop();
-		return;
-	}
+	fxRunScript(the, script, mxResult, C_NULL, C_NULL, C_NULL, instance);
 	mxPop();
-#endif
-	mxPushSlot(mxArgv(0));
-	mxGetID(fxID(the, "archive"));
-	slot = the->stack;
-	if (slot->kind != XS_UNDEFINED_KIND) {
-		void* archive = fxGetHostData(the, slot);
-		txString path;
-		void* code;
-		size_t size;
-		txScript script;
-		mxPushSlot(mxArgv(0));
-		mxGetID(fxID(the, "path"));
-		slot = the->stack;
-		path = fxToString(the, slot);
-		code = fxGetArchiveCode(the, archive, path, &size);
-		if (code == C_NULL)
-			mxURIError("module not found: %s", path);
-		mxPop();
-		script.callback = NULL;
-		script.symbolsBuffer = NULL;
-		script.symbolsSize = 0;
-		script.codeBuffer = code;
-		script.codeSize = (txSize)size;
-		script.hostsBuffer = NULL;
-		script.hostsSize = 0;
-		script.path = path;
-		script.version[0] = XS_MAJOR_VERSION;
-		script.version[1] = XS_MINOR_VERSION;
-		script.version[2] = XS_PATCH_VERSION;
-		script.version[3] = 0;
-// 		mxPushClosure(mxResult);
-		fxRunScript(the, &script, mxResult, C_NULL, C_NULL, C_NULL, instance);
-		mxPop();
-		if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
-			mxTypeError("no module");
-		mxPop();
-		return;
-	}
+	if (mxModuleInstanceExecute(instance)->kind == XS_NULL_KIND)
+		mxTypeError("no module");
 	mxPop();
-
-	mxPushSlot(mxArgv(0));
-	mxGetID(fxID(the, "initialize"));
-	slot = the->stack;
-	if (!mxIsUndefined(slot)) {
-		txSlot* transfers;
-		txSlot* transfer;
-		if (!fxIsCallable(the, slot))
-			mxTypeError("initialize is no function");
-			
-		transfers = fxNewHostFunction(the, fx_StaticModuleRecord_initialize, 0, XS_NO_ID);
-		mxFunctionInstanceHome(transfers)->value.home.object = fxToInstance(the, mxArgv(0));
-		transfer = fxLastProperty(the, transfers);
-		transfer = fxNextSlotProperty(the, transfer, mxArgv(0), XS_NO_ID, XS_INTERNAL_FLAG);
-		transfer = fxNextSlotProperty(the, transfer, slot, XS_NO_ID, XS_INTERNAL_FLAG);
-		mxPullSlot(mxModuleInstanceExecute(instance));
-			
-		mxPush(mxObjectPrototype);
-		transfers = fxNewObjectInstance(the);
-		transfer = fxLastProperty(the, transfers);
-		
-		mxPushSlot(mxArgv(0));
-		mxGetID(mxID(_bindings));
-		if (!mxIsUndefined(the->stack)) {
-			txSlot* array;
-			txInteger length, index;
-			
-			array = the->stack;
-			mxPushSlot(array);
-			mxGetID(mxID(_length));
-			length = fxToInteger(the, the->stack);
-			mxPop();
-			
-			for (index = 0; index < length; index++) {
-				txSlot* item;
-				txSlot* temporary;
-				txInteger from = 0;
-				txInteger export = 0;
-				txInteger import = 0;
-				txID nameID, asID;
-				txSlot* specifier = C_NULL;
-				txSlot* former;
-	
-				mxPushSlot(array);
-				mxGetIndex(index);
-				item = the->stack;
-			
-				mxTemporary(temporary);
-			
-				mxPushSlot(item);
-				mxGetID(mxID(_from));
-				if (!mxIsUndefined(the->stack)) {
-					from++;
-					fxToString(the, the->stack);
-					mxPullSlot(temporary);
-					specifier = temporary;
-				}
-				else
-					mxPop();
-					
-				mxPushSlot(item);
-				mxGetID(fxID(the, "exportAllFrom"));
-				if (!mxIsUndefined(the->stack)) {
-					from++;
-					export++;
-					fxToString(the, the->stack);
-					mxPullSlot(temporary);
-					specifier = temporary;
-					nameID = XS_NO_ID;
-				}
-				else
-					mxPop();
-			
-				mxPushSlot(item);
-				mxGetID(fxID(the, "importAllFrom"));
-				if (!mxIsUndefined(the->stack)) {
-					from++;
-					import++;
-					fxToString(the, the->stack);
-					mxPullSlot(temporary);
-					specifier = temporary;
-					nameID = XS_NO_ID;
-				}
-				else
-					mxPop();
-			
-				mxPushSlot(item);
-				mxGetID(mxID(_export));
-				if (!mxIsUndefined(the->stack)) {
-					export++;
-					fxToString(the, the->stack);
-					nameID = fxNewName(the, the->stack);
-				}
-				mxPop();
-				
-				mxPushSlot(item);
-				mxGetID(mxID(_import));
-				if (!mxIsUndefined(the->stack)) {
-					import++;
-					fxToString(the, the->stack);
-					nameID = fxNewName(the, the->stack);
-				}
-				mxPop();
-			
-				mxPushSlot(item);
-				mxGetID(mxID(_as));
-				if (!mxIsUndefined(the->stack)) {
-					fxToString(the, the->stack);
-					asID = fxNewName(the, the->stack);
-				}
-				else
-					asID = nameID;
-				mxPop();
-					
-				if (from > 1)
-					mxSyntaxError("too many from");
-				else if (export > 1)
-					mxSyntaxError("too many export");
-				else if (import > 1)
-					mxSyntaxError("too many import");
-				else if (export && import)
-					mxSyntaxError("export and import");
-				else if (!export && !import)
-					mxSyntaxError("neither export nor import");
-				
-				if (export) {
-					if (asID != XS_NO_ID) {
-						former = transfers->next;
-						while (former) {
-							txSlot* aliases = mxTransferAliases(former);
-							if (!mxIsNull(aliases)) {
-								txSlot* alias = aliases->value.reference->next;
-								while (alias) {
-									if (alias->value.symbol == asID) {
-										fxIDToString(the, asID, the->nameBuffer, sizeof(the->nameBuffer));
-										mxSyntaxError("duplicate export %s", the->nameBuffer);
-									}
-									alias = alias->next;
-								}
-							}
-							former = former->next;
-						}
-						if (specifier) {
-							former = transfers->next;
-							while (former) {
-								txSlot* aliases = mxTransferAliases(former);
-								if (!mxIsNull(aliases)) {
-									txSlot* local = mxTransferLocal(former);
-									if (mxIsNull(local)) {
-										txSlot* from = mxTransferFrom(former);
-										if (!mxIsNull(from) && !c_strcmp(from->value.string, specifier->value.string)) {
-											txSlot* import = mxTransferImport(former);
-											if (mxIsNull(import)) {
-												if (nameID == XS_NO_ID) 
-													break;
-											}
-											else {
-												if (nameID == import->value.symbol)
-													break;
-											}
-										}
-									}
-								}
-								former = former->next;
-							}
-						}
-						else {
-							former = transfers->next;
-							while (former) {
-								txSlot* local = mxTransferLocal(former);
-								if ((local->kind == XS_SYMBOL_KIND) && (local->value.symbol == nameID))
-									break;
-								former = former->next;
-							}
-						}
-						if (former) {
-							txSlot* aliases = mxTransferAliases(former);
-							txSlot* alias;
-							if (mxIsNull(aliases)) {
-								mxPush(mxObjectPrototype);
-								alias = fxLastProperty(the, fxNewObjectInstance(the));
-								mxPullSlot(mxTransferAliases(former));
-							}
-							else {
-								alias = fxLastProperty(the, aliases->value.reference);
-							}
-							fxNextSymbolProperty(the, alias, asID, XS_NO_ID, XS_DONT_ENUM_FLAG);
-						}
-						else if (specifier) {
-							mxPushNull();
-							mxPushSlot(specifier);
-							if ((nameID != XS_NO_ID) || (asID != XS_NO_ID)) {
-								if (nameID != XS_NO_ID) 
-									mxPushSymbol(nameID);
-								else
-									mxPushNull();
-								if (asID != XS_NO_ID) 
-									mxPushSymbol(asID);
-								else			
-									mxPushSymbol(nameID);
-								mxPushInteger(4);
-							}
-							else {	
-								mxPushNull();
-								mxPushInteger(3);
-							}
-							fxPrepareTransfer(the);
-							transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
-							mxPop(); // transfer
-						}
-						else {
-							mxPushSymbol(nameID);
-							mxPushNull();
-							mxPushNull();
-							mxPushSymbol(asID);
-							mxPushInteger(4);
-							fxPrepareTransfer(the);
-							transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
-							mxPop(); // transfer
-						}
-					}
-					else if (specifier) {
-						former = transfers->next;
-						while (former) {
-							txSlot* from = mxTransferFrom(former);
-							if (!mxIsNull(from) && !c_strcmp(from->value.string, specifier->value.string)) {
-								txSlot* local = mxTransferLocal(former);
-								if (mxIsNull(local)) {
-									txSlot* import = mxTransferImport(former);
-									if (mxIsNull(import)) {
-										txSlot* aliases = mxTransferAliases(former);
-										if (mxIsNull(aliases)) {
-											mxSyntaxError("duplicate export *");
-										}
-									}
-								}
-							}
-							former = former->next;
-						}
-						mxPushNull();
-						mxPushSlot(specifier);
-						mxPushNull();
-						mxPushInteger(3);
-						fxPrepareTransfer(the);
-						transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
-						mxPop(); // transfer
-					}
-					else
-						mxSyntaxError("invalid export *");
-				}
-				else {
-					if (!specifier) {
-						if (asID == XS_NO_ID)
-							mxSyntaxError("invalid import *");
-						else {
-							fxIDToString(the, asID, the->nameBuffer, sizeof(the->nameBuffer));
-							mxSyntaxError("invalid import %s", the->nameBuffer);
-						}
-					}
-					else if (asID == XS_NO_ID)
-						mxSyntaxError("invalid import * from %s", specifier->value.string);
-				
-					former = transfers->next;
-					while (former) {
-						txSlot* local = mxTransferLocal(former);
-						if ((local->kind == XS_SYMBOL_KIND) && (local->value.symbol == asID)) {
-							txSlot* from = mxTransferFrom(former);
-							if (!mxIsNull(from)) {
-								fxIDToString(the, asID, the->nameBuffer, sizeof(the->nameBuffer));
-								mxSyntaxError("duplicate import %s", the->nameBuffer);
-							}
-							break;
-						}
-						former = former->next;
-					}
-					if (former) {
-						txSlot* from = mxTransferFrom(former);
-						mxPushSlot(specifier);
-						mxPullSlot(from);	
-						if (nameID != XS_NO_ID) {
-							txSlot* import = mxTransferImport(former);
-							import->kind = XS_SYMBOL_KIND;
-							import->value.symbol = nameID;
-						}
-					}
-					else {
-						mxPushSymbol(asID);
-						mxPushSlot(specifier);
-						if (nameID != XS_NO_ID)
-							mxPushSymbol(nameID);
-						else			
-							mxPushNull();
-						mxPushInteger(3);
-						fxPrepareTransfer(the);
-						transfer = fxNextSlotProperty(the, transfer, the->stack, XS_NO_ID, XS_DONT_ENUM_FLAG);
-						mxPop(); // transfer
-					}
-				}	
-
-				mxPop(); // temporary
-				mxPop(); // item
-			}
-		}
-		mxPop(); // array
-		mxPullSlot(mxModuleInstanceTransfers(instance));
-		
-		mxPushSlot(mxArgv(0));
-		mxGetID(mxID(_needsImport));
-		if (!mxIsUndefined(the->stack)) {
-			if (fxToBoolean(the, the->stack)) {
-				txSlot* internal = mxModuleInstanceInternal(instance);
-				internal->flag |= XS_IMPORT_FLAG;
-			}
-		}
-		mxPop(); // needsImport
-		
-		mxPushSlot(mxArgv(0));
-		mxGetID(mxID(_needsImportMeta));
-		if (!mxIsUndefined(the->stack)) {
-			if (fxToBoolean(the, the->stack)) {
-				txSlot* internal = mxModuleInstanceInternal(instance);
-				internal->flag |= XS_IMPORT_META_FLAG;
-			}
-		}
-		mxPop(); // _needsImportMeta
-		
-		return;
-	}
 	mxPop();
-	
-	mxTypeError("invalid options");
 }
 
 void fx_StaticModuleRecord_prototype_get_bindings(txMachine* the)
