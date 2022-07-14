@@ -18,8 +18,8 @@ const modules = { foo, bar };
 
 const c1 = new Compartment({ modules });
 const c2 = new Compartment({ modules: {
-	foo: { specifier:"foo", compartment:c1 },
-	bar: { specifier:"bar", compartment:c1 },
+	foo: { namespace:"foo", compartment:c1 },
+	bar: { namespace:"bar", compartment:c1 },
 }});
 
 Promise.all([

@@ -23,7 +23,7 @@ const c1 = new Compartment({
 });
 const c2 = new Compartment({
 	async loadHook(specifier) {
-		return await { specifier, compartment:c1 };
+		return await { namespace:specifier, compartment:c1 };
 	}
 });
 

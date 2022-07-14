@@ -23,7 +23,7 @@ const c1 = new Compartment({
 });
 const c2 = new Compartment({
 	loadNowHook(specifier) {
-		return { specifier, compartment:c1 };
+		return { namespace:specifier, compartment:c1 };
 	}
 });
 

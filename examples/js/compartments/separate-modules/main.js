@@ -4,8 +4,8 @@ function test() {
 }
 let compartment = new Compartment({ 
 	modules: {
-		increment: { archive, path:"increment" },
-		mod: { archive, path:"mod" },
+		increment: { record:"increment" },
+		mod: { record:"mod" },
 	},
 });
 debugger
