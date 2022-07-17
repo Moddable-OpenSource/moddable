@@ -245,7 +245,7 @@ declare module "piu/MC" {
   interface TextureSkinDictionary extends Coordinates, Bounds {
     texture?: Texture;
     Texture?: TextureConstructor;
-    color?: Color;
+    color?: Color | Color[];
     states?: number;
     variants?: number;
     tiles?: Coordinates;
