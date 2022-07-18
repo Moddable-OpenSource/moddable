@@ -1,7 +1,6 @@
 # XS Compartment
 
-Revised: July 12, 2022
-
+Revised: July 18, 2022
 
 XS implements most of the [TC39 Compartment Proposal](https://github.com/tc39/proposal-compartments). Beware that the proposal is at en early stage and that the programming interface described in this document will likely evolve.
 
@@ -40,53 +39,28 @@ A parent compartment can create child compartments.
 
 A compartment can only provide to its child compartments the features provided by its parent compartment (and new features based on the features provided by its parent compartment).
 
-### Static Module Record
-
-A static module record is an object that encapsulates informations necessary to build a module.
-
-In XS, a static module record contains the module bindings in a compressed form and the byte codes of the function to initialize the module bindings.
-
-Static module records are immutable and reusable. In Moddable runtime, static module records can be stored in ROM.
-
-See the [`StaticModuleRecord`](#StaticModuleRecord) constructor for the various ways to create static module records.
-
 ### Module Descriptor
 
 Comparments can load and initialize module namespaces from module descriptors. Like property descriptors, module descriptors are ordinary objects with various forms. 
 
-#### descriptor with a `namespace` property
+#### descriptors with `record` and `importMeta` properties
 
-To reference an already available module namespace.
+- If fhe value of the `record` property is a string, the parent compartment loads the module but the compartment  itself initilaizes the module.
 
-	import * as foo from "foo"
-	const c = new Compartment({
-		modules: {
-			foo: { namespace: foo }
-		}
-	});
+- Else if the value of the `record` property is a [`StaticModuleRecord`](#StaticModuleRecord), the module is loaded and initialized from the static module record.
 
-- The value of the `namespace` property must be a module namespace.
+- Else the value of `record` property must be an object. The module is loaded and initialized from the object according to the [`VirtualStaticModuleRecord`](#VirtualStaticModuleRecord) protocol,
 
-#### descriptor with `record` and `importMeta` properties
+If the `importMeta` property is present, its value must be an object. The default `importMeta` object is an empty object.
 
-To build a module namespace from a static module record.
+Compartments copy the `importMeta` object properties into the module `import.meta` object like `Object.assign`. 
 
-	const c = new Compartment({
-		modules: {
-			foo: { record: new StaticModuleRecord("export default foo") }
-		}
-	});
+#### descriptors with `namespace` and `compartment` properties
 
-- The value of the `record` property must be a static module record.
-- If the `importMeta` property is present, its value must be an object. The default `importMeta` object is an empty object.
+- If fhe value of the `namespace` property is a string, the descriptor shares a module to be loaded and initialized by the compartment referred by the `compartment` property. 
 
-Compartments copy `importMeta` object properties into the module `import.meta` object like `Object.assign`. 
-
-As a shortcut, instead of a `record` property, XS also supports the properties of the options of the `StaticModuleRecord` constructor. The shortcut also allows XS to skip the creation of the static module record at runtime.
-
-#### descriptor with `specifier` and `compartment` properties
-
-To reference a module namespace to be loaded and initialized by another `compartment`. 
+	- If the `compartment` property is present, its value must be a compartment.
+	- If absent, the `compartment` property defaults to the compartment being constructed in the `modules` option, or being hooked in the `loadHook` and `loadNowHook` options.
 
 ```
 	const c1 = new Compartment({
@@ -96,15 +70,31 @@ To reference a module namespace to be loaded and initialized by another `compart
 	});
 	const c2 = new Compartment({
 		modules: {
-			foo: { specifier:"foo", compartment: c1 }
+			foo: { namespace:"foo", compartment: c1 }
+		}
+	});
+```	
+	
+- Else if the value of the `namespace ` property is a module namepace, the descriptor shares a module that is already available.
+
+```
+	import * as foo from "foo"
+	const c = new Compartment({
+		modules: {
+			foo: { namespace: foo }
 		}
 	});
 ```	
 
-- The value of the `specifier` property is coerced into a string.
-- If the `compartment` property is present, its value must be a compartment.
+- Else the value of `record` property must be an object. The module is loaded and initialized from the object according to the [`VirtualModuleNamespace`](#VirtualModuleNamespace) protocol.
+	
+#### descriptor with `archive` and `path` properties
 
-If absent, the `compartment` property defaults to the (real or virtual) host of the compartment being constructed in the `modules` option or being hooked in the `loadHook` and `loadNowHook` options.
+To construct a static module record from a **mod**. In Moddable runtime, mods are separate archives of modules and resources. 
+
+- The `archive` property must be an archive. 
+- The `path` property is coerced into a string. 
+
 
 ## Compartment Constructor
 
@@ -160,8 +150,6 @@ The `loadHook` option is an asynchronous function that takes a module specifier 
 
 The `loadHook` function is only called directly or indirectly by `Compartment.prototype.import` if the module map of the compartment has no entry for a module specifier.
 
-The `loadHook` function creates an entry in the the module map of the compartemnt.
-
 The `loadHook` function is useful if the module descriptor is unavailable when constructing the compartment, or to create a module descriptor dynamically. 
 
 A compartment keeps a reference to the `loadHook` function.
@@ -171,8 +159,6 @@ A compartment keeps a reference to the `loadHook` function.
 The `loadNowHook` option is a function that takes a module specifier and returns a module descriptor.
 
 The `loadNowHook` function is only called directly or indirectly by `Compartment.prototype.importNow` if the module map of the compartment has no entry for a module specifier.
-
-The `loadNowHook` function creates an entry in the the module map of the compartemnt.
 
 The `loadNowHook ` function is useful if the module descriptor is unavailable when constructing the compartment, or to create a module descriptor dynamically. 
 
@@ -236,102 +222,18 @@ The initial value of this property is the `"Compartment"` string.
 
 ## <a name="StaticModuleRecord"></a>StaticModuleRecord Constructor
 
-### StaticModuleRecord(options)
+### StaticModuleRecord(source)
 
 Returns a static module record.
 
-#### options with a `source` property
-
-To construct a static module record from a string parsed and compiled as a module. 
-
-- The `source` property is coerced into a string. 
+The source argument is coerced into a string, then parsed and compiled as a module. 
 
 XS does not keep a reference to the `source` string.
-
-	const smr = new StaticModuleRecord({ source: `
-		import x from "mod";
-		export let y = x;
-	` });
-	
-As a shortcut, if the `options` argument is a string, the behavior is the same.
  
 	const smr = new StaticModuleRecord(`
 		import x from "mod";
 		export let y = x;
 	`);
-
-#### options with `initialize`, `bindings`, `needsImport` and `needsImportMeta` properties
-
-To construct a static module record from its bindings and a function to initialize them.
-
-	const smr = new StaticModuleRecord({ 
-		bindings:[
-			{ import: "x", from: "mod" },
-			{ export: "y" },
-		], 
-		initialize($) {
-			$.y = $.x;
-		} 
-	});
-
-- The `initialize` property must be a function. 
-- If defined, the `bindings` property must be an array. The default is an empty array.
-- If defined, the `needsImport` property is coerced into a boolean. The default is `false`.
-- If defined, the `needsImportMeta` property is coerced into a boolean. The default is `false`.
-
-The `bindings` array allow the same expressiveness as import and export declarations without requiring a JavaScript parser. The constructor checks the declarations and can throw a `SyntaxError`. XS compresses the declarations and does not keep a reference to the `bindings` array.
-
-Once the module is loaded and linked, the compartment calls the `initialize` function with three arguments
-
-- `$`: the [module environment record](https://tc39.es/ecma262/#sec-module-environment-records),
-- `Import`: a function equivalent to the `import` call in a module body. The argument is `undefined` if `needsImport` was false.
-- `ImportMeta`: an object equivalent to the `import.meta` object in a module body. The argument is `undefined` if `needsImportMeta` was false.
-
-The module environment record is sealed: 
-
-- no properties can be created or deleted,
-- export properties are writable,
-- import properties are read-only,
-- there are no reexports properties.
-
-Like a module body, the `initialize` function can be asynchronous.
-
-	const smr = new StaticModuleRecord({ 
-		bindings:[
-			{ import: "x", from: "mod" },
-			{ export: "y" },
-			{ export: "z", from: "mod" },
-		], 
-		async initialize($, Import, ImportMeta) {
-			try {
-				$.z = 0;
-			}
-			catch {
-				// not extensible
-			}
-			try {
-				delete $.y;
-			}
-			catch {
-				// not allowed
-			}
-			try {
-				$.x = 0;
-			}
-			catch {
-				// constant
-			}
-		} 
-	});
-	
-#### options with `archive` and `path` properties
-
-To construct a static module record from a **mod**. In Moddable runtime, mods are separate archives of modules and resources. 
-
-- The `archive` property must be an archive. 
-- The `path` property is coerced into a string. 
-
-
 
 ## Properties of the StaticModuleRecord Prototype
 
@@ -424,6 +326,76 @@ Returns true if the static module record uses the `import` call.
 
 Returns true if the static module record uses the `import.meta` object.
 
-### StaticModuleRecord.prototype.[@@toStringTag]
+### [@@toStringTag]
 
 The initial value of this property is the `"StaticModuleRecord"` string.
+
+## <a name="VirtualStaticModuleRecord"></a>VirtualStaticModuleRecord Protocol
+
+To build a module from an object with `initialize`, `bindings`, `needsImport` and `needsImportMeta` properties
+
+- The `initialize` property must be a function. 
+- If defined, the `bindings` property must be an array. The default is an empty array.
+- If defined, the `needsImport` property is coerced into a boolean. The default is `false`.
+- If defined, the `needsImportMeta` property is coerced into a boolean. The default is `false`.
+
+The `bindings` array allow the same expressiveness as import and export declarations without requiring a JavaScript parser. Compartments check the declarations and can throw a `SyntaxError`.
+
+	const smr = new StaticModuleRecord({ 
+		bindings:[
+			{ import: "x", from: "mod" },
+			{ export: "y" },
+		], 
+		initialize($) {
+			$.y = $.x;
+		} 
+	});
+
+Once the module is loaded and linked, the compartment calls the `initialize` function with three arguments
+
+- `$`: the [module environment record](https://tc39.es/ecma262/#sec-module-environment-records),
+- `Import`: a function equivalent to the `import` call in a module body. The argument is `undefined` if `needsImport` was false.
+- `ImportMeta`: an object equivalent to the `import.meta` object in a module body. The argument is `undefined` if `needsImportMeta` was false.
+
+The module environment record is sealed: 
+
+- no properties can be created or deleted,
+- export properties are writable,
+- import properties are read-only,
+- there are no reexports properties.
+
+Like a module body, the `initialize` function can be asynchronous.
+
+	const smr = new StaticModuleRecord({ 
+		bindings:[
+			{ import: "x", from: "mod" },
+			{ export: "y" },
+			{ export: "z", from: "mod" },
+		], 
+		async initialize($, Import, ImportMeta) {
+			try {
+				$.z = 0;
+			}
+			catch {
+				// not extensible
+			}
+			try {
+				delete $.y;
+			}
+			catch {
+				// not allowed
+			}
+			try {
+				$.x = 0;
+			}
+			catch {
+				// constant
+			}
+		} 
+	});
+
+## <a name="VirtualModuleNamespace"></a> VirtualModuleNamespace Protocol
+
+To build a module from an object posing as a module namespace.
+
+Each own enumerable named property of the object becomes an exported property of the module. 
