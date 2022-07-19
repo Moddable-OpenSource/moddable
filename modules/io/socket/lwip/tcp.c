@@ -262,20 +262,20 @@ void removeTCPCallbacks(TCP tcp)
 
 void doClose(xsMachine *the, xsSlot *instance)
 {
-	TCP tcp = xsmcGetHostData(xsThis);
-	if (tcp && xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks)) {
-		tcp->triggerable = 0;
+	TCP tcp = xsmcGetHostData(*instance);
+	if (tcp && xsmcGetHostDataValidate(*instance, (void *)&xsTCPHooks)) {
 		removeTCPCallbacks(tcp);
+		tcp->triggerable = 0;
 
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
 		xsmcSetHostDestructor(*instance, NULL);
 #if TCP_ATOMICS
-		builtinCriticalSectionBegin();
 		modAtomicsExchange_n(&tcp->triggered, 0);
-		builtinCriticalSectionEnd();
 #else
+		builtinCriticalSectionBegin();
 		tcp->triggered = 0;
+		builtinCriticalSectionEnd();
 #endif
 		tcpRelease(tcp);
 	}
@@ -459,6 +459,9 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 	tcp->triggered = 0;
 	builtinCriticalSectionEnd();
 #endif
+	if (triggered & kTCPError)
+		triggered &= ~(kTCPOutput | kTCPWritable);
+
 	if ((triggered & kTCPOutput) && tcp->skt)
 		tcp_output(tcp->skt);
 
