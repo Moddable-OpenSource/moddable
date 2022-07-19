@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,6 +36,11 @@
  */
 
 #include "xsAll.h"
+
+#if MODDEF_XS_TEST
+	#undef MODDEF_XS_XSBUG_HOOKS
+	#define MODDEF_XS_XSBUG_HOOKS 1
+#endif
 
 #if defined(DEBUG_EFM)
 char _lastDebugStrBuffer[256];
@@ -214,7 +219,7 @@ void fxDebugCommand(txMachine* the)
 	}
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
-#if MODDEF_XS_TEST
+#if MODDEF_XS_XSBUG_HOOKS
 	if (the->debugTag == XS_IMPORT_TAG)
 		fxQueueJob(the, 2, C_NULL);
 	else if (the->debugTag == XS_SCRIPT_TAG)
@@ -222,7 +227,7 @@ void fxDebugCommand(txMachine* the)
 #endif
 }
 
-#if MODDEF_XS_TEST
+#if MODDEF_XS_XSBUG_HOOKS
 void fxDebugImport(txMachine* the, txSlot* module, txString path)
 {
 	if (!fxIsConnected(the))
@@ -630,7 +635,7 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_STEP_OUTSIDE_TAG;
 	else if (!c_strcmp(name, "toggle"))
 		the->debugTag = XS_TOGGLE_TAG;
-#if MODDEF_XS_TEST
+#if MODDEF_XS_XSBUG_HOOKS
 	else if (!c_strcmp(name, "import"))
 		the->debugTag = XS_IMPORT_TAG;
 	else if (!c_strcmp(name, "module"))
@@ -681,7 +686,7 @@ void fxDebugPopTag(txMachine* the)
 		break;
 	case XS_TOGGLE_TAG:
 		break;
-#if MODDEF_XS_TEST
+#if MODDEF_XS_XSBUG_HOOKS
 	case XS_IMPORT_TAG:
 		the->debugExit |= 2;
 		break;
@@ -747,8 +752,8 @@ void fxDebugPushTag(txMachine* the)
 		fxListModules(the);
 		fxEchoStop(the);
 		break;
-#if MODDEF_XS_TEST
-	case XS_IMPORT_TAG:
+#if MODDEF_XS_XSBUG_HOOKS
+	case XS_IMPORT_TAG: 
 		/* THIS */
 		mxPushUndefined();
 		/* FUNCTION */
@@ -788,7 +793,7 @@ void fxDebugPushTag(txMachine* the)
 
 void fxDebugScriptCDATA(txMachine* the, char c)
 {
-#if MODDEF_XS_TEST
+#if MODDEF_XS_XSBUG_HOOKS
 	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG)) {
 		txString string = the->stack[2].value.string;
 		txInteger size = the->stack[1].value.integer;
