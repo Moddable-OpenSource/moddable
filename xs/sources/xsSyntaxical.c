@@ -2440,6 +2440,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				if (parser->token == XS_TOKEN_LEFT_BRACE) {
 					txUnsigned flags = parser->flags;
 					parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxSuperFlag | mxTargetFlag | mxFieldFlag | mxAsyncFlag;
+					fxCheckParserStack(parser, aPropertyLine);
 					fxGetNextToken(parser);
 					fxStatements(parser);
 					fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
