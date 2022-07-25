@@ -1365,7 +1365,7 @@ void fxSetHostFunctionProperty(txMachine* the, txSlot* property, txCallback call
 	if (linker->stripFlag) {
 		property->kind = XS_HOST_FUNCTION_KIND;
 		property->value.hostFunction.builder = fxNewLinkerBuilder(linker, call, length, id);
-		property->value.hostFunction.IDs = (txID*)the->code;
+		property->value.hostFunction.IDs = NULL;
 	}
 	else {
 		txSlot* home = the->stack;
