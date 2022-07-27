@@ -342,6 +342,8 @@ int main(int argc, char* argv[])
 				xsResult = xsNewHostFunction(fx_mutabilities, 1);
 				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
 #endif
+				xsResult = xsNewHostFunction(fx_deepEqual, 2);
+				xsDefine(xsGlobal, xsID("deepEqual"), xsResult, xsDontEnum);
 
 				xsVar(0) = xsUndefined;
 				the->rejection = &xsVar(0);
@@ -555,6 +557,7 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_deepEqual, 2, xsID("deepEqual"), XS_DONT_ENUM_FLAG);
 
 	mxPop();
 	mxPop();

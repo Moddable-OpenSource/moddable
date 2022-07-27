@@ -782,6 +782,7 @@ extern void fxRunEval(txMachine* the);
 extern void fxRunForAwaitOf(txMachine* the);
 extern void fxRunID(txMachine* the, txSlot* generator, txInteger count);
 extern void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _target, txSlot* environment, txSlot* object, txSlot* module);
+extern txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b);
 extern txBoolean fxIsSameSlot(txMachine* the, txSlot* a, txSlot* b);
 extern txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean zero);
 
@@ -1810,6 +1811,11 @@ mxExport void fx_harden(txMachine* the);
 mxExport void fx_lockdown(txMachine* the);
 mxExport void fx_petrify(txMachine* the);
 mxExport void fx_mutabilities(txMachine* the);
+#endif
+
+/* xsDeepEqual.c */
+#ifdef mxDeepEqual
+mxExport void fx_deepEqual(txMachine* the);
 #endif
 
 /* xsProfile.c */
