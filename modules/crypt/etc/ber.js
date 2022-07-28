@@ -202,7 +202,7 @@ export default class BER {
 			b.putLength(1);
 			b.putc(val ? 1 : 0);
 			break;
-		case 0x02:	// integer
+		case 0x02: {	// integer
 			let c = new Uint8Array(ArrayBuffer.fromBigInt(val));
 			if (val >= 0) {
 				if (c[0] & 0x80) {
@@ -226,8 +226,8 @@ export default class BER {
 				}
 			}
 			b.putChunk(c);
-			break;
-		case 0x03:	// bit string
+			} break;
+		case 0x03: {	// bit string
 			b.putLength(val.byteLength + 1);
 			let pad = val.byteLength * 8 - arr[2];
 			b.putc(pad);
@@ -237,7 +237,7 @@ export default class BER {
 			}
 			else
 				b.putChunk(val);
-			break;
+			} break;
 		case 0x04:	// octet string
 			b.putLength(val.byteLength);
 			b.putChunk(val);
@@ -245,7 +245,7 @@ export default class BER {
 		case 0x05:	// null
 			b.putLength(0);
 			break;
-		case 0x06:	// object identifier
+		case 0x06: {	// object identifier
 			let t = new BER();
 			t.putc(val[0] * 40 + (val.length < 2 ? 0 : val[1]));
 			for (let i = 2; i < val.length; i++) {
@@ -260,7 +260,7 @@ export default class BER {
 			}
 			b.putLength(t.#i);
 			b.putChunk(t.getBuffer());
-			break;
+			} break;
 		case 0x09:	// real -- not supported
 			debugger;
 			break;
@@ -313,7 +313,7 @@ export default class BER {
 			b.putChunk(val);
 			break;
 		case 0x30:
-		case 0x31:
+		case 0x31: {
 			let len = 0;
 			let seq = [];
 			for (let i = 1; i < arr.length; i++) {
@@ -324,7 +324,7 @@ export default class BER {
 			b.putLength(len);
 			for (let i = 0; i < seq.length; i++)
 				b.putChunk(seq[i]);
-			break;
+			} break;
 		default:
 			if ((tag >> 6) == 2) {
 				b.putLength(val.byteLength);
