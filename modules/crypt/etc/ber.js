@@ -46,10 +46,10 @@ export default class BER {
 			this.#a = buffer;
 		else
 			this.#a = new Uint8Array(new ArrayBuffer(0, {maxByteLength: 0x10000000}));
-	};
+	}
 	getTag() {
 		return this.#a[this.#i++];
-	};
+	}
 	getLength() {
 		let length = this.#a[this.#i++];
 		if (length < 128)
@@ -64,19 +64,19 @@ export default class BER {
 			result = (result << 8) | this.#a[this.#i++];
 
 		return result;
-	};
+	}
 	peek() {
 		return this.#a[this.#i];
-	};
+	}
 	skip(length) {
 		this.#i += length;
-	};
+	}
 	next() {
 		const i = this.#i;
 		this.getTag();
 		this.skip(this.getLength());
 		return this.#a.subarray(i, this.#i)
-	};
+	}
 	getInteger() {
 		if (this.getTag() !== 2)
 			throw new Error("BER: not an integer");
@@ -92,7 +92,7 @@ export default class BER {
 			this.skip(length)
 			return BigInt.fromArrayBuffer(this.#a.buffer.slice(offset, offset + length));
 		}
-	};
+	}
 	getBitString() {
 		let result;
 		if (this.getTag() != 3)
@@ -102,19 +102,19 @@ export default class BER {
 		if (pad) {
 			result = new Uint8Array(length - 1);
 			for (let i = 0; i < length - 1; i++)
-				bs[i] = this.#a[this.#i++] >>> pad;
+				result[i] = this.#a[this.#i++] >>> pad;
 		}
 		else {
 			result = this.#a.subarray(this.#i, this.#i + length - 1);
 			this.#i += length;
 		}
 		return result;
-	};
+	}
 	getOctetString() {
 		if (this.getTag() != 0x04)
 			throw new Error("BER: not a octet string");
 		return this.getChunk(this.getLength());
-	};
+	}
 	getObjectIdentifier() {
 		if (this.getTag() !== 0x06)
 			throw new Error("BER: not an object identifier");
@@ -131,7 +131,7 @@ export default class BER {
 			oid.push((v << 7) | i);
 		}
 		return Uint32Array.from(oid);
-	};
+	}
 	getSequence() {
 		if (this.getTag() != 0x30)
 			throw new Error("BER: not a sequence");
@@ -139,31 +139,31 @@ export default class BER {
 		const result = this.#a.subarray(this.#i, + this.#i + length);
 		this.#i += length;
 		return result;
-	};
+	}
 	getChunk(n) {
 		const result = new Uint8Array(this.#a.buffer, this.#a.byteOffset + this.#i, n);
 		this.skip(n);
 		return result;
-	};
+	}
 	getBuffer() {
 		return this.#a.slice(0, this.#i).buffer;
-	};
+	}
 
 	morebuf(n) {
 		if (n < 128) n = 128;
 		this.#a.buffer.resize(this.#a.length + n);
-	};
+	}
 	getc() {
 		return this.#a[this.#i++];
-	};
+	}
 	putc(c) {
 		if (this.#i >= this.#a.length)
 			this.morebuf(1);
 		this.#a[this.#i++] = c;
-	};
+	}
 	putTag(tag) {
 		this.putc(tag);
-	};
+	}
 	putLength(len) {
 		if (len < 128)
 			this.putc(len);
@@ -176,13 +176,13 @@ export default class BER {
 			while (--lenlen >= 0)
 				this.putc(len >>> (lenlen << 3));
 		}
-	};
+	}
 	putChunk(c) {
 		if (this.#i + c.byteLength > this.#a.length)
 			this.morebuf(c.byteLength);
 		this.#a.set(new Uint8Array(c), this.#i);
 		this.#i += c.byteLength;
-	};
+	}
 	get i() {
 		return this.#i;
 	}
@@ -191,7 +191,7 @@ export default class BER {
 		if (n.length < 2)
 			return "0" + n;
 		return n;
-	};
+	}
 	static encode(arr) {
 		const b = new BER;
 		const tag = arr[0];
@@ -334,7 +334,7 @@ export default class BER {
 		}
 		b.#a.buffer.resize(b.#i);
 		return b.#a.buffer;
-	};
+	}
 	static decode(a) {
 		return this._decode(new BER(a));
 	}
@@ -356,7 +356,7 @@ export default class BER {
 			res = [res];
 		res.unshift(tag);
 		return res;
-	};
+	}
 	static decodeTag(tag, b, len) {
 		let res;
 		if ((tag >> 6) == 2) {	// context specific class
@@ -424,7 +424,6 @@ export default class BER {
 			break;
 		case 0x09:	// real -- not supported
 			throw new Error("BER: unsupported");
-			break;
 		case 0x07:	// object descriptor
 		case 0x0c:	// UTF8 string
 		case 0x12:	// numeric string
@@ -470,7 +469,5 @@ export default class BER {
 			break;
 		}
 		return res;
-	};
-};
-
-Object.freeze(BER.prototype);
+	}
+}
