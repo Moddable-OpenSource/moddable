@@ -26,6 +26,7 @@ class Client extends BLEClient {
         }
     }
     onConnected(device) {
+        this.device = device;
         device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
     onServices(services) {
@@ -35,6 +36,7 @@ class Client extends BLEClient {
         characteristics[0].readValue();        
     }
     onCharacteristicValue(characteristic, value) {
+        this.device.close();
         this.close();
         try {
             if (!CONFIG.CHARACTERISTIC.equals(characteristic.uuid))

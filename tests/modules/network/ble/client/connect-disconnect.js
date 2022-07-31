@@ -18,6 +18,7 @@ class Scanner extends BLEClient {
         }
     }
     onConnected(device) {
+        device.close();
         this.close();
         $DONE();
     }

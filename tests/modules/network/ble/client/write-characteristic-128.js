@@ -31,6 +31,7 @@ class Client extends BLEClient {
         }
     }
     onConnected(device) {
+        this.device = device;
         device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
     onServices(services) {
@@ -59,10 +60,13 @@ class Client extends BLEClient {
                 throw 'value mismatch'
             
             if (this.on == CONFIG.VALUES.length) {
+                this.device.close();
                 this.close();
                 $DONE();
             }
         } catch (error) {
+            this.device.close();
+            this.close();
             $DONE(error);
         }
     }

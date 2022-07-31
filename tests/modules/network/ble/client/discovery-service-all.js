@@ -24,6 +24,7 @@ class Client extends BLEClient {
         }
     }
     onConnected(device) {
+        this.device = device;
         device.discoverAllPrimaryServices();
     }
     onServices(services) {

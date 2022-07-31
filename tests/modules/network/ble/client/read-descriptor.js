@@ -26,6 +26,7 @@ class Client extends BLEClient {
         }
     }
     onConnected(device) {
+        this.device = device;
         device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
     onServices(services) {
@@ -50,11 +51,14 @@ class Client extends BLEClient {
 
             this.count++;
             if (this.count >= CONFIG.EXPECTED_DESCRIPTORS.length) {
+                this.device.close();
                 this.close();
                 $DONE();
             }
                 
         } catch (error) {
+            this.device.close();
+            this.close();
             $DONE(error);
         }
     }

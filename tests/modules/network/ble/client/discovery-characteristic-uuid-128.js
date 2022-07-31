@@ -24,12 +24,14 @@ class Client extends BLEClient {
         }
     }
     onConnected(device) {
+        this.device = device;
         device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
     onServices(services) {
         services[0].discoverCharacteristic(CONFIG.EXPECTED_CHARACTERISTICS[0]);
     }
     onCharacteristics(characteristics) {
+        this.device.close();
         this.close();
         try {
             if (characteristics.length !== 1)
