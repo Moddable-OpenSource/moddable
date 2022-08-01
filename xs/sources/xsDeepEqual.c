@@ -178,7 +178,6 @@ txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict)
 	txSlot** rightAddress;
 	txIndex rightCount;
 	txSize rightSize;
-	txBoolean simple = 1;
 	txSlot* slot = the->stack + 2;
 	while (slot < limit) {
 		if (slot->kind == XS_REFERENCE_KIND) {
