@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,7 +44,7 @@ import CertificateManager from "ssl/cert";
 import TLSError from "ssl/error";
 import Bin from "bin";
 import {minProtocolVersion, maxProtocolVersion, protocolVersion} from "ssl/constants";
-import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
+import {DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
 
 const maxFragmentSize = 16384	// maximum record layer framgment size (not a packet size): 2^14
 
@@ -82,11 +82,11 @@ class SSLSession {
 		this.applicationData = undefined;
 		this.cacheManager = (this.options.cache === undefined || this.options.cache) && cacheManager;
 		this.certificateManager = new CertificateManager(options);
-	};
+	}
 	initiateHandshake(s) {
 		this.connectionEnd = true;
 		this.handshakeProcess = handshakeProtocol.helloRequest.msgType;
-	};
+	}
 	handshake(s, n) {
 		let state = 0;
 		switch (this.handshakeProcess) {
@@ -121,7 +121,7 @@ class SSLSession {
 				this.doProtocol(s, handshakeProtocol.serverKeyExchange);
 				if (this.options.clientAuth)
 					// S -> C: CertificateRequest
-					this.doProtocol(s, handshakeProtocol.certificateRequest, options.clientAuth.cipherSuites, options.clientAuth.subjectDN);
+					this.doProtocol(s, handshakeProtocol.certificateRequest, this.options.clientAuth.cipherSuites, this.options.clientAuth.subjectDN);
 				// S -> C: ServerHelloDone
 				this.doProtocol(s, handshakeProtocol.serverHelloDone);
 			}
@@ -184,7 +184,7 @@ class SSLSession {
 		}
 		else
 			return false;
-	};
+	}
 	read(s, n) {
 		let applicationData = this.applicationData;
 		if (!applicationData || (0 == applicationData.byteLength) || (applicationData.position >= (applicationData.byteLength + applicationData.byteOffset))) {
@@ -210,24 +210,24 @@ class SSLSession {
 			return data;
 		}
 		return null;
-	};
+	}
 	write(s, data) {
 		if (data.byteLength > maxFragmentSize)
 			return -1;	// too large
 		this.startTrace("packetize");
 		s.write(recordProtocol.packetize(this, recordProtocol.application_data, data));
 		return data.length;
-	};
+	}
 	close(s) {
 		this.startTrace("packetize");
 		s.write(SSLAlert.packetize(this, 0, SSLAlert.close_notify));
-	};
+	}
 	doProtocol(s, protocol, param1, param2) {
 		this.startTrace("packetize");
 		let packet = protocol.packetize(this, param1, param2);
 		if (packet)
 			s.write(packet);
-	};
+	}
 	readPacket(s, available) {
 		let packetBuffer = this.packetBuffer;
 		if (packetBuffer.length < 5) {
@@ -265,15 +265,15 @@ class SSLSession {
 		}
 		this.packetBuffer = new Uint8Array;
 		return packetBuffer.buffer;
-	};
+	}
 	get bytesAvailable() {
 		return this.applicationData ? (this.applicationData.end - this.applicationData.position) : 0;
-	};
+	}
 	putData(data) {
 		this.applicationData = data;
 		data.position = data.byteOffset;
 		data.end = data.byteOffset + data.byteLength;
-	};
+	}
 
 	startTrace(direction) {
 		if (undefined === this.traceLevel)
@@ -281,7 +281,7 @@ class SSLSession {
 
 		this.traceLevel = 0;
 		this.traceDirection = direction;
-	};
+	}
 	traceProtocol(protocol) {
 		if (undefined === this.traceLevel)
 			return;
@@ -326,8 +326,6 @@ class SSLSession {
 		}
 		trace("FINISHED: " + algo + "-" + enc + "-" + mode + "-" + hash + "\n");
 	}
-};
-
-Object.freeze(SSLSession.prototype);
+}
 
 export default SSLSession;

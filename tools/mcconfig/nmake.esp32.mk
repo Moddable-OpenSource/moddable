@@ -120,6 +120,7 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\esp_event\include \
 	-I$(IDF_PATH)\components\esp_eth\include \
 	-I$(IDF_PATH)\components\esp_hw_support\include \
+	-I$(IDF_PATH)\components\esp_hw_support\include\soc \
  	-I$(IDF_PATH)\components\esp_netif\include \
  	-I$(IDF_PATH)\components\esp_pm\include \
  	-I$(IDF_PATH)\components\esp_ringbuf\include \
@@ -128,8 +129,8 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\esp_system\include \
  	-I$(IDF_PATH)\components\esp_timer\include \
  	-I$(IDF_PATH)\components\esp_wifi\include \
- 	-I$(IDF_PATH)\components\xtensa\include \
-	-I$(IDF_PATH)\components\xtensa\$(ESP32_SUBCLASS)\include \
+ 	-I$(IDF_PATH)\components\$(ESP_ARCH)\include \
+	-I$(IDF_PATH)\components\$(ESP_ARCH)\$(ESP32_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\freertos \
  	-I$(IDF_PATH)\components\freertos\include \
  	-I$(IDF_PATH)\components\freertos\include\freertos \
@@ -160,6 +161,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\porting\npl\freertos\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\port\include \
 	-I$(IDF_PATH)\components\soc\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\soc\$(ESP32_SUBCLASS)\include\soc \
 	-I$(IDF_PATH)\components\soc\include \
 	-I$(IDF_PATH)\components\soc\include\soc \
 	-I$(IDF_PATH)\components\spiffs\include \
@@ -221,7 +223,9 @@ XS_OBJ = \
 
 SDKCONFIG_H_DIR = $(BLD_DIR)\config
 
-!IF "$(ESP32_SUBCLASS)"=="esp32s3"
+!IF "$(ESP32_SUBCLASS)"=="esp32c3"
+ESP32_TARGET = 4
+!ELSEIF "$(ESP32_SUBCLASS)"=="esp32s3"
 ESP32_TARGET = 3
 !ELSEIF "$(ESP32_SUBCLASS)"=="esp32s2"
 ESP32_TARGET = 2
@@ -256,12 +260,19 @@ SDKCONFIG_H = $(SDKCONFIG_H_DIR)\sdkconfig.h
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
 TOOLS_BIN = 
-
+!IF "$(ESP32_SUBCLASS)"=="esp32c3"
+CC = $(TOOLS_BIN)riscv32-esp-elf-gcc
+CPP = $(TOOLS_BIN)riscv32-esp-elf-g++
+LD = $(CPP)
+AR = $(TOOLS_BIN)riscv32-esp-elf-ar
+OBJCOPY = $(TOOLS_BIN)riscv32-esp-elf-objcopy
+!ELSE
 CC = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-gcc
 CPP = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-g++
 LD = $(CPP)
 AR = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-ar
 OBJCOPY = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-objcopy
+!ENDIF
 
 AR_OPTIONS = crs
 
@@ -305,8 +316,6 @@ C_COMMON_FLAGS = -c -Os -g \
 	-Wl,-EL \
 	-fno-inline-functions \
 	-nostdlib \
-	-mlongcalls \
-	-mtext-section-literals \
 	-falign-functions=4 \
 	-MMD \
 	-fdata-sections \
@@ -318,6 +327,12 @@ C_COMMON_FLAGS = -c -Os -g \
 	-D BOOTLOADER_BUILD=1 \
 	-DESP_PLATFORM \
 	-MP
+
+!IF "$(ESP_ARCH)"!="riscv"
+C_COMMON_FLAGS = $(C_COMMON_FLAGS) \
+	-mlongcalls \
+	-mtext-section-literals \
+!ENDIF
 
 C_FLAGS = $(C_COMMON_FLAGS) \
 	-Wno-implicit-function-declaration \

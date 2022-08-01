@@ -1,9 +1,6 @@
 # AudioOut
-Copyright 2021 Moddable Tech, Inc.
-
+Copyright 2021 Moddable Tech, Inc.<BR>
 Revised: June 17, 2021
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.

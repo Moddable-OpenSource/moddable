@@ -1,5 +1,4 @@
 # M5Paper Developer Guide 
-
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
 Revised: March 22, 2022
 

@@ -1,7 +1,5 @@
 # XS Conformance
-
-Copyright 2016-2022 Moddable Tech, Inc.
-
+Copyright 2016-2022 Moddable Tech, Inc.<BR>
 Revised: June 1, 2022
 
 ## Caveat

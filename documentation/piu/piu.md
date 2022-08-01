@@ -1,5 +1,4 @@
 # Piu JavaScript Reference
-
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
 Revised: January 24, 2022
 
@@ -3505,7 +3504,7 @@ If there is a `texture` or `Texture` property in the dictionary, the constructor
 | Parameter | Type | Description |
 | --- | --- | :--- |
 | `bottom` | `number` | The skin's bottom tile (setting the `bottom` parameter in the created instance, and `bottom` in the created instance's `tiles` property)
-| `color` | `string` | If the texture has only an alpha bitmap, the value of the `color` property will be used to colorize the bitmap. Must be a string or array of strings of the form specified in the [Colors](colors) section of this document.
+| `color` | `string` or `array` | If the texture has only an alpha bitmap, the value of the `color` property will be used to colorize the bitmap. Must be a string or array of strings of the form specified in the [Color](#color) section of this document.
 | `left` | `number` | The skin's left tile (setting the `left` parameter in the created instance, and `left` in the created instance's `tiles` property)
 | `right` | `number` | The skin's right tile (setting the `right` parameter in the created instance, and `right` in the created instance's `tiles` property)
 | `states` | `number` | This skin's vertical offset between states, in pixels
@@ -3537,7 +3536,7 @@ All properties of a `skin` object are read-only, but you can change the style of
 | Name | Type | Default Value | Description |
 | --- | --- | --- | --- |
 | `bottom` | `number` | 0 | The skin's bottom tile
-| `color` | `string` | | If the texture has only an alpha bitmap, the value of the `color` property will be used to colorize the bitmap. Must be a string or array of strings of the form specified in the [Colors](colors) section of this document.
+| `color` | `string` | | If the texture has only an alpha bitmap, the value of the `color` property will be used to colorize the bitmap. Must be a string or array of strings of the form specified in the [Color](#color) section of this document.
 | `bounds` | `object` | | The portion of the `texture` object to extract, as an object with `x`, `y`, `width`, and `height` number properties, specified in pixels
 | `height` | `number` | | This skin's height, in pixels
 | `left` | `number` | 0 | The skin's left tile
@@ -4321,7 +4320,7 @@ Called while this transition is running; called at least twice (with a `fraction
 [17]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
 [30]: ../../modules/piu/MC/piuImage.c "piuImage.c"
 [33]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
-[36]: ../../modules/piu/MC/piuTimeline.js "piuTimeline.js"
+[36]: ../../modules/piu/All/piuTimeline.js "piuTimeline.js"
 [37]: ../../modules/piu/MC/piuSound.c "piuSound.c"
 
 [18]: ../../examples/piu/balls "balls"

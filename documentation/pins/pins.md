@@ -1,9 +1,6 @@
 # Pins
-
 Copyright 2017-21 Moddable Tech, Inc.<BR>
 Revised: February 18, 2021
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Table of Contents
 

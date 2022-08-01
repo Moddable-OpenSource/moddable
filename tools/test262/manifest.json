@@ -59,7 +59,7 @@
 			"modules": {
 				"*": [
 					"$(BUILD)/simulators/modules/screen",
-					"$(MODULES)/base/timer/timer",
+					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/lin/*"
 				]
 			}

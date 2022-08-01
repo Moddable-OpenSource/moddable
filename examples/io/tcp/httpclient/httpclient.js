@@ -135,10 +135,9 @@ class HTTPClient {
 		this.#onClose = onClose;
 
 		const dns = new options.dns.io(options.dns);
-
 		dns.resolve({
 			host: this.#host, 
-		
+
 			onResolved: (host, address) => {
 				this.#socket = new options.socket.io({
 					...options.socket,
@@ -149,16 +148,15 @@ class HTTPClient {
 					onError: this.#onError.bind(this)
 				});
 			},
-			onError: (err) => {
+			onError: () => {
 				this.#onError?.();
-			},
+			}
 		});
-			
 	}
 	close() {
 		this.#socket?.close();
 		this.#socket = undefined;
-			Timer.clear(this.#timer);
+		Timer.clear(this.#timer);
 		this.#timer = undefined;
 	}
 	request(options) {
@@ -290,7 +288,7 @@ class HTTPClient {
 						break;
 				
 				case "sendRequest":
-					this.#pendingWrite = (this.#current.method ?? "GET") + " " + (this.#current.path ?? "/") + " HTTP/1.1\r\n";
+					this.#pendingWrite = (this.#current.method ?? "GET") + " " + (this.#current.path || "/") + " HTTP/1.1\r\n";
 					this.#pendingWrite += "host: " + this.#host + "\r\n";
 					this.#pendingWrite = ArrayBuffer.fromString(this.#pendingWrite);
 					this.#writePosition = 0;

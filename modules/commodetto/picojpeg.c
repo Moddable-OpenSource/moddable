@@ -683,7 +683,7 @@ static uint8 readSOSMarker(void)
 {
    uint8 i;
    uint16 left = getBits1(16);
-   uint8 spectral_start, spectral_end, successive_high, successive_low;
+// uint8 spectral_start, spectral_end, successive_high, successive_low;
 
    gCompsInScan = (uint8)getBits1(8);
 
@@ -712,10 +712,10 @@ static uint8 readSOSMarker(void)
       gCompACTab[ci] = (c & 15);
    }
 
-   spectral_start  = (uint8)getBits1(8);
-   spectral_end    = (uint8)getBits1(8);
-   successive_high = (uint8)getBits1(4);
-   successive_low  = (uint8)getBits1(4);
+   /* spectral_start  = */ (void)getBits1(8);
+   /* spectral_end    = */ (void)getBits1(8);
+   /* successive_high = */ (void)getBits1(4);
+   /* successive_low  = */ (void)getBits1(4);
 
    left -= 3;
 

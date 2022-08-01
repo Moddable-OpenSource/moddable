@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,9 +36,7 @@
  */
 
 import config from "mc/config";
-import {AES, CBC, DES, DHE_RSA, ECDHE_RSA, GCM, MD5, NONE, NULL, RSA, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
-
-
+import {AES, CBC, DHE_RSA, ECDHE_RSA, GCM, RSA, SHA1, SHA256 /* , SHA384, TDES */} from "ssl/constants";
 
 const supportedCipherSuites = [
 	{
@@ -130,20 +128,20 @@ if (config.tls.DHE_RSA) {
 			ivSize: 8,	// explicit nonce size
 			saltSize: 4,	// implicit part
 		},
-		{
-			// TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 (RFC 5288)
-			value: [0x00, 0x9f],
-			isExportable: false,
-			keyExchangeAlgorithm: DHE_RSA,
-			cipherAlgorithm: AES,
-			cipherKeySize: 32,
-			cipherBlockSize: 16,
-			hashAlgorithm: SHA384,
-			hashSize: 48,
-			encryptionMode: GCM,
-			ivSize: 8,	// explicit nonce size
-			saltSize: 4,	// implicit part
-		}
+//		{
+//			// TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 (RFC 5288)
+//			value: [0x00, 0x9f],
+//			isExportable: false,
+//			keyExchangeAlgorithm: DHE_RSA,
+//			cipherAlgorithm: AES,
+//			cipherKeySize: 32,
+//			cipherBlockSize: 16,
+//			hashAlgorithm: SHA384,
+//			hashSize: 48,
+//			encryptionMode: GCM,
+//			ivSize: 8,	// explicit nonce size
+//			saltSize: 4,	// implicit part
+//		}
 	);
 }
 if (config.tls.ECDHE_RSA) {

@@ -1,9 +1,6 @@
 # DotStar display driver
-Copyright 2018 Moddable Tech, Inc.
-
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: January 3, 2018
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 The DotStar display controller drives strings of color LED lights. The displays are available from [Adafuit](https://learn.adafruit.com/adafruit-dotstar-leds/overview) in various lengths and configurations
 

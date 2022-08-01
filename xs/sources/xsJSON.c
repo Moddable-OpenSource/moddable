@@ -209,6 +209,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 	theParser->integer = 0;
 	theParser->number = 0;
 	theParser->string->value.string = mxEmptyString.value.string;
+	theParser->string->kind = mxEmptyString.kind;
 	theParser->token = XS_NO_JSON_TOKEN;
 	p = theParser->slot->value.string + theParser->offset;
 	while (theParser->token == XS_NO_JSON_TOKEN) {
@@ -358,6 +359,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 				}
 			}
 			s = theParser->string->value.string = fxNewChunk(the, size + 1);
+			theParser->string->kind = XS_STRING_KIND;
 			p = theParser->slot->value.string + offset;
 			if (escaped) {
 				for (;;) {

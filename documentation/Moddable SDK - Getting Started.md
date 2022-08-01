@@ -1,6 +1,5 @@
 # Moddable SDK – Getting Started
 ### A guide to installing the Moddable SDK and building its tools
-
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
 Revised: May 4, 2022
 
@@ -32,7 +31,7 @@ You will also learn how to open `xsbug`, the JavaScript source level debugger th
 
 Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.
 
-> For more information abut `xsbug`, see the [xsbug](xs/xsbug.md) documentation.
+> For more information abut `xsbug`, see the [xsbug](./xs/xsbug.md) documentation.
 
 
 #### Step 2: Install tools for your target platform(s)

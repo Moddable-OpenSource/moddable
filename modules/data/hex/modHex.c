@@ -60,6 +60,8 @@ void xs_hex_toString(xsMachine *the)
 	xsResult = xsStringBuffer(NULL, (length * 2) + (separator ? (length - 1) : 0));
 	string = xsmcToString(xsResult);
 	xsmcGetBufferReadable(xsArg(0), (void **)&bytes, &length);
+	if (argc > 2)
+		gHex = xsmcToString(xsArg(2));
 
 	for (i = 0; i < length; i++) {
 		uint8_t byte = c_read8(bytes++);

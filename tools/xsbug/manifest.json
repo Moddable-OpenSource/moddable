@@ -65,7 +65,7 @@
 					"$(PIU)/PC/lin/piu*"
 				],
 				"*": [
-					"$(MODDABLE)/modules/base/timer/timer",
+					"$(MODDABLE)/modules/base/timer/*",
 					"$(MODDABLE)/modules/base/timer/lin/*"
 				]
 			},

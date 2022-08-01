@@ -1,9 +1,6 @@
 # Data
-
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: May 31, 2022
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Revised: June 20, 2022
 
 ## Table of Contents
 
@@ -276,4 +273,4 @@ Include the modules' manifest to use them in a project:
 
 The [inflate example](../../examples/data/inflate/main.js) demonstrates how to decompress data as a one-shot operation and using the `onData` callback for streaming.
 
-> **Note**: A significant amount of memory is required for zlib decompresssion and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.
+> **Note**: A significant amount of memory is required for zlib decompression and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.

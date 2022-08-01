@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -47,13 +47,13 @@ class SSLStream {
 			this.#bytes = buffer;
 			this.#write = this.#bytes.length;
 		}
-		else
-			this.#bytes = new Uint8Array(32);
+		else {
+			this.#bytes = new Uint8Array(new ArrayBuffer(32, {maxByteLength: 0x10000000}));
+			this.#bytes.i = true;
+		}
 	}
 	morebuf(n) {
-		const bytes = new Uint8Array((this.#write + n + 31) & ~31);
-		bytes.set(this.#bytes);
-		this.#bytes = bytes;
+		this.#bytes.buffer.resize((this.#write + n + 31) & ~31);
 	}
 	writeChar(c) {
 		if (this.#write >= this.#bytes.length)
@@ -67,7 +67,7 @@ class SSLStream {
 			this.#bytes[this.#write++] = (v >>> (n * 8)) & 0xff;
 	}
 	writeChunk(a) {
-		let n = a.byteLength;
+		const n = a.byteLength;
 		if (n <= 0)
 			return;
 		if (this.#write + n > this.#bytes.length)
@@ -76,12 +76,13 @@ class SSLStream {
 		this.#write += n;
 	}
 	writeString(s) {
-		let n = s.length;
+		s = ArrayBuffer.fromString(s);
+		const n = s.byteLength;
 		if (n <= 0)
 			return;
 		if (this.#write + n > this.#bytes.length)
 			this.morebuf(n);
-		this.#bytes.set(new Uint8Array(ArrayBuffer.fromString(s)), this.#write);
+		this.#bytes.set(new Uint8Array(s), this.#write);
 		this.#write += n;
 	}
 	readChar() {
@@ -110,8 +111,14 @@ class SSLStream {
 		return result;
 	}
 	getChunk() {
-		const bytes = new Uint8Array(this.#bytes.buffer, this.#bytes.byteOffset, this.#write);
+		let bytes = this.#bytes;
 		this.#bytes = undefined;
+		if (bytes.i) {
+			delete bytes.i;
+			bytes.buffer.resize(this.#write); 
+		}
+		else
+			bytes = new Uint8Array(bytes.buffer, bytes.byteOffset, this.#write);
 		return bytes;
 	}
 	get bytesAvailable() {
@@ -123,8 +130,6 @@ class SSLStream {
 	close() {
 		this.#bytes = undefined;
 	}
-};
-
-Object.freeze(SSLStream.prototype);
+}
 
 export default SSLStream;

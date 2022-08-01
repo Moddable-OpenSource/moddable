@@ -264,14 +264,14 @@ class ApplicationBehavior extends Behavior {
 		this.selectDevice(application, -1);
 		
 		application.purge();
-			
+		const globals = {...Object.getPrototypeOf(globalThis), ...globalThis, Date, Math };
 		let iterator = new system.DirectoryIterator(this.devicesPath);
 		let info = iterator.next();
 		while (info) {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment({...Object.getPrototypeOf(globalThis), ...globalThis}, compartmentModuleMap, compartmentOptions);
+						let compartment = new Compartment(globals, compartmentModuleMap, compartmentOptions);
 						let device = compartment.importNow(info.path).default;
 						if (device && (("DeviceTemplate" in device) || ("DeviceTemplates" in device))) {
 							device.compartment = compartment;
@@ -682,7 +682,7 @@ class ColorsButtonBehavior extends ButtonBehavior {
 		const data = {
 			button: container,
 			items: [
-				{ title:"Lite Colors", value:0 },
+				{ title:"Light Colors", value:0 },
 				{ title:"Dark Colors", value:1 }
 			],
 		};

@@ -1,9 +1,6 @@
 # BLE
-Copyright 2017-20 Moddable Tech, Inc.
-
-Revised: January 15, 2021
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: June 20, 2022
 
 ## About This Document
 This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, Qualcomm QCA4020, and Nordic nRF52 devices.
@@ -1775,7 +1772,7 @@ Use the `clear` function to remove all peer devices from the whitelist.
 
 <a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform
-The `mcconfig` command line tool **automatically** configures the ESP-IDF [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults) BLE options required by the host app. The ESP-IDF supports both the Apache [NimBLE](http://mynewt.apache.org/latest/network/index.html#) Bluetooth LE [5.1-certified](https://launchstudio.bluetooth.com/ListingDetails/97856) open-source host and the dual-mode [Bluedroid](https://www.espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf) stack. NimBLE provides [several benefits](https://blog.moddable.com/blog/moddable-sdk-improvements-for-esp32-projects/) over Bluedroid, including smaller Flash/RAM footprint, fewer buffer copies, and faster builds. NimBLE is enabled by default by the Moddable SDK in ESP32 builds.
+The `mcconfig` command line tool **automatically** configures the ESP-IDF [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.defaults) BLE options required by the host app. The ESP-IDF supports both the Apache [NimBLE](http://mynewt.apache.org/latest/network/index.html#) Bluetooth LE [5.1-certified](https://launchstudio.bluetooth.com/ListingDetails/97856) open-source host and the dual-mode [Bluedroid](https://www.espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf) stack. NimBLE provides [several benefits](https://blog.moddable.com/blog/moddable-sdk-improvements-for-esp32-projects/) over Bluedroid, including smaller Flash/RAM footprint, fewer buffer copies, and faster builds. NimBLE is enabled by default by the Moddable SDK in ESP32 builds.
 
 >**Note:** BLE options can be further customized by the host app, if necessary, by providing a pathname to a directory containing custom sdkconfig defaults entries in the application manifest. Refer to the [manifest](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/manifest.md) documentation for details. For example, the `CONFIG_BT_NIMBLE_MAX_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
 
@@ -1789,7 +1786,7 @@ To build BLE apps using the legacy Bluedroid implementation, set the `ESP32_BLUE
 ## BLE Apps on Blue Gecko Platform
 Building and deploying BLE apps on Blue Gecko follow the same workflow outlined in our [Gecko developer documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md). For BLE apps, we recommend starting from the `soc-ibeacon` Simplicity Studio example project.
 
-The [make.blue.mk](../../../tools/mcconfig/geck0/make.blue.mk) makefile includes variables that define the Gecko target platform, kit and part. The makefile is configured by default to build apps for the Blue Gecko [EFR32BG13P632F512GM48](https://www.silabs.com/products/wireless/bluetooth/blue-gecko-bluetooth-low-energy-socs/device.efr32bg13p632f512gm48) Bluetooth low energy chip mounted on the [BRD4104A](https://www.silabs.com/documents/login/reference-manuals/brd4104a-rm.pdf) 2.4 GHz 10 dBm Radio Board. To configure the build for a different Blue Gecko target, change the makefile `GECKO_BOARD`, `GECKO_PART`, `HWKIT` and `HWINC` variables accordingly.
+The [make.blue.mk](../../../build/devices/gecko/targets/blue/make.blue.mk) makefile includes variables that define the Gecko target platform, kit and part. The makefile is configured by default to build apps for the Blue Gecko [EFR32BG13P632F512GM48](https://www.silabs.com/products/wireless/bluetooth/blue-gecko-bluetooth-low-energy-socs/device.efr32bg13p632f512gm48) Bluetooth low energy chip mounted on the [BRD4104A](https://www.silabs.com/documents/login/reference-manuals/brd4104a-rm.pdf) 2.4 GHz 10 dBm Radio Board. To configure the build for a different Blue Gecko target, change the makefile `GECKO_BOARD`, `GECKO_PART`, `HWKIT` and `HWINC` variables accordingly.
 
 To build the [scanner](../../../examples/network/ble/scanner) BLE app `xs_gecko.a` archive for Blue Gecko:
 

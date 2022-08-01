@@ -1,6 +1,5 @@
 # Generic 1.44" Display Wiring Guide
-
-Copyright 2018 Moddable Tech, Inc.  
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: December 10, 2018
 
 ![Generic SPI Display](images/generic-1.44-display.jpg)
@@ -13,7 +12,7 @@ Revised: December 10, 2018
 | **Type** | TFT LCD
 | **Interface** | SPI
 | **Drivers** | video [ST7735](../../documentation/drivers/st7735/st7735.md), no touch
-| **Availability** | [Generic 1.44" SPI Displays on eBay] (https://www.ebay.com/sch/i.html?_odkw=spi+display&_osacat=0&_from=R40&_trksid=p2045573.m570.l1313.TR0.TRC0.H0.Xspi+display+1.44%22.TRS1&_nkw=spi+display+1.44%22&_sacat=0)
+| **Availability** | [Generic 1.44" SPI Displays on eBay](https://www.ebay.com/sch/i.html?_odkw=spi+display&_osacat=0&_from=R40&_trksid=p2045573.m570.l1313.TR0.TRC0.H0.Xspi+display+1.44%22.TRS1&_nkw=spi+display+1.44%22&_sacat=0)
 | **Description** | These inexpensive displays are available on eBay and other resources.
 
 ## Moddable example code

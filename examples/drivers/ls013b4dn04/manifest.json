@@ -1,11 +1,13 @@
 {
 	"include" : [
 		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",
-		"touch": ""
+		"touch": "",
+		"format": "Gray256"
 	},
 	"resources": {
 		"*": [
@@ -31,7 +33,6 @@
 		"*": "./main"
 	},
 	"preload": [
-		"commodetto/*",
 		"Resource",
 		"main"
 	],
@@ -39,12 +40,10 @@
 		"gecko": {
 			"modules": {
 				"*": [
-                    "$(MODULES)/base/instrumentation/*",
 					"$(BUILD)/devices/gecko/sleep/*"
 				]
 			},
 			"preload": [
-				"instrumentation",
 				"pins",
 				"spi",
 				"sleep"

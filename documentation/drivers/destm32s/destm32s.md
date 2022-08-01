@@ -1,9 +1,6 @@
 # DESTM32S display driver
-Copyright 2017 Moddable Tech, Inc.
-
+Copyright 2017 Moddable Tech, Inc.<BR>
 Revised: December 30, 2017
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 The DESTM32S display controller drives three different ePaper displays. The displays are available from various sources, including Crystalfontz where we purchased our test units. They use a small adapter board (from [good-display.com](http://www.good-display.com/products_detail/productId=327.html)), though the display controller is part of the ePaper display itself (so called chip-on-glass).
 

@@ -246,13 +246,8 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 		break;
 #ifdef mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {
-		txByte* code = the->code;
-		the->code = (txByte*)(theSlot->value.hostFunction.IDs);
-		anInstance = fxNewHostFunction(the, theSlot->value.hostFunction.builder->callback, theSlot->value.hostFunction.builder->length, 
-			(theSlot->value.hostFunction.IDs && (theSlot->value.hostFunction.builder->id)) 
-				? theSlot->value.hostFunction.IDs[theSlot->value.hostFunction.builder->id]
-				: theSlot->value.hostFunction.builder->id);
-		the->code = code;
+		const txHostFunctionBuilder* builder = theSlot->value.hostFunction.builder;
+		anInstance = fxNewHostFunction(the, builder->callback, builder->length, builder->id);
 		mxPullSlot(theSlot);
 		} break;
 #endif

@@ -1,9 +1,6 @@
 # Files
-
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 23, 2022
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Revised: June 22, 2022
 
 ## Table of Contents
 
@@ -328,7 +325,7 @@ The SPIFFS file system requires some additional memory. Including SPIFFS in the 
 
 If the SPIFFS file system has not been initialized, it is formatted when first used. Initialization takes up to one minute.
 
-On ESP32, the SPIFFS partition size is specified in a partitions file with a partition of type `data` and subtype `spiffs`. The [default partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/partitions.csv) allocates a 64 KB partition for this purpose. A custom partition file can be specified by setting the `PARTITIONS_FILE` variable in the `build` section of the project manifest.
+On ESP32, the SPIFFS partition size is specified in a partitions file with a partition of type `data` and subtype `spiffs`. The [default partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/partitions.csv) allocates a 64 KB partition for this purpose. A custom partition file can be specified by setting the `PARTITIONS_FILE` variable in the `build` section of the project manifest.
 
 ```JSON
 "build": {
@@ -525,7 +522,7 @@ import Resource from "Resource";
 
 ### `constructor(path)`
 
-The `Resource` constructor takes a single argument, the resource path, and returns an `ArrayBuffer` or Host Buffer containing the resource data.
+The `Resource` constructor takes a single argument, the resource path, and returns a Host Buffer containing the resource data.
 
 ```js
 let resource = new Resource("logo.bmp");
@@ -578,7 +575,10 @@ let ssid = Preference.get(domain, "ssid");
 let password = Preference.get(domain, "psk");
 ```
 
-Preference values are limited to 63 bytes. Key and domain names are limited to 32 bytes.
+Limits on the length of key/domain names and preference values vary by target platform.
+
+ - On ESP8266, key/domain names are limited to 32 characters and values are limited to 63 bytes.
+ - On ESP32, the `Preference` class is backed by the ESP-IDF's [NVS Library](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html) which limits key/domain names to 15 characters and values to 4000 bytes.
 
 On embedded devices the storage space for preferences is limited. The amount depends on the device, but it can be as little as 4 KB. Consequently, applications should take care to keep their  preferences as small as practical.
 

@@ -43,6 +43,8 @@ struct sxSnapshot {
 	txByte* firstChunk;
 	txProjection* firstProjection;
 	txSlot* firstSlot;
+	txSize slotSize;
+	txSlot** slots;
 };
 
 extern txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theContext);

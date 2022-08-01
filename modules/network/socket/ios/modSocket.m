@@ -644,7 +644,7 @@ int doFlushWrite(xsSocket xss)
 	CFSocketEnableCallBacks(xss->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack);
 
 	ret = write(xss->skt, xss->writeBuf, xss->writeBytes);
-	if (ret <= 0)
+	if (ret < 0)
 		return -1;
 
 	modInstrumentationAdjust(NetworkBytesWritten, ret);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -41,6 +41,7 @@ import Crypt from "crypt";
 import X509 from "x509";
 import PKCS1_5 from "pkcs1_5";
 import DSA from "dsa";
+import ECDSA from "ecdsa";
 import Bin from "bin";
 import BER from "ber";
 import PKCS8 from "pkcs8"
@@ -55,10 +56,8 @@ class CertificateManager {
 		this.#verify = options.verify ?? true;
 		if (options.certificate)
 			this.register(options.certificate);
-		if (options.clientCertificates)
-			this.#clientCertificates = options.clientCertificates;
-		if (options.clientKey)
-			this.#clientKey = options.clientKey;
+		this.#clientCertificates = options.clientCertificates;
+		this.#clientKey = options.clientKey;
 	}
 	getCerts() {
 		// return the self certs
@@ -67,9 +66,9 @@ class CertificateManager {
 	getKey(cert) {
 		// look for the key corresponding to the cert
 		// first, search in the registed cert
-		for (var i = 0; i < this.#registeredCerts.length; i++) {
-			if (Bin.comp(this.#registeredCerts[i], cert) == 0) {
-				var x509 = X509.decode(this.#registeredCerts[i]);
+		for (let i = 0; i < this.#registeredCerts.length; i++) {
+			if (0 === Bin.comp(this.#registeredCerts[i], cert)) {
+				const x509 = X509.decode(this.#registeredCerts[i]);
 				return x509.spki;	// public key only
 			}
 		}
@@ -167,55 +166,61 @@ class CertificateManager {
 	}
 
 	_verify(spki, x509) {
-		let pk;
-		let hash;
-		let sig;
+		let pk, hash;
+		let sig = x509.sig;
 
 		switch (x509.algo.toString()) {
 		case "1,2,840,113549,1,1,4":	// PKCS-1 MD5 with RSA encryption
 			hash = "MD5";
 			pk = PKCS1_5;
-			sig = x509.sig;
 			break;
 		case "1,2,840,113549,1,1,5":	// PKCS-1 SHA1 with RSA encryption
 			hash = "SHA1";
 			pk = PKCS1_5;
-			sig = x509.sig;
 			break;
 		case "1,2,840,113549,1,1,11":	// PKCS-1 SHA256 with RSA encryption
 			hash = "SHA256";
 			pk = PKCS1_5;
-			sig = x509.sig;
 			break;
 		case "1,2,840,113549,1,1,12":	// PKCS-1 SHA384 with RSA encryption
 			hash = "SHA384";
 			pk = PKCS1_5;
-			sig = x509.sig;
 			break;
 		case "1,2,840,113549,1,1,13":	// PKCS-1 SHA512 with RSA encryption
 			hash = "SHA512";
 			pk = PKCS1_5;
-			sig = x509.sig;
 			break;
 		case "1,2,840,113549,1,1,14":	// PKCS-1 SHA224 with RSA encryption
 			hash = "SHA224";
 			pk = PKCS1_5;
-			sig = x509.sig;
 			break;
 		case "1,2,840,10040,4,3":
 		case "1,3,14,3,2,27": {
 			hash = "SHA1";
 			pk = DSA;
-			// needs to decode the sig value into <r, s>
+			// need to decode the sig value into <r, s>
 			const ber = new BER(x509.sig);
-			if (ber.getTag() === 0x30) {
-				ber.getLength();
-				sig = ber.getInteger().concat(ber.getInteger());
-			}
+			if (ber.getTag() !== 0x30)
+				throw new Error;
+			ber.getLength();
+			sig = (ArrayBuffer.fromBigInt(ber.getInteger())).concat(ArrayBuffer.fromBigInt(ber.getInteger()));				 
+			} break;
+		case "1,2,840,10045,4,3,1":
+		case "1,2,840,10045,4,3,2":
+		case "1,2,840,10045,4,3,3":
+		case "1,2,840,10045,4,3,4": {	// ECDSA with SHA224, SHA256, SHA384, SHA512
+			hash = ["SHA224", "SHA256", "SHA384", "SHA512"][x509.algo[6] - 1];
+			pk = ECDSA;
+			// need to decode the sig value into <r, s>
+			const ber = new BER(sig);
+			if (ber.getTag() !== 0x30)
+				throw new Error;
+			ber.getLength();
+			sig = (ArrayBuffer.fromBigInt(ber.getInteger())).concat(ArrayBuffer.fromBigInt(ber.getInteger()));
+			return (new pk(spki.pub, spki.curve, false, [] /* any oid */)).verify((new Crypt.Digest(hash)).process(x509.tbs), sig);
 			} break;
 		default:
 			throw new Error("Cert: unsupported algorithm: " + x509.algo.toString());
-			break;
 		}
 		return (new pk(spki, false, [] /* any oid */)).verify((new Crypt.Digest(hash)).process(x509.tbs), sig);
 	}
@@ -244,7 +249,5 @@ function getResource(name)
 {
 	return new Resource(name);
 }
-
-Object.freeze(CertificateManager.prototype);
 
 export default CertificateManager;

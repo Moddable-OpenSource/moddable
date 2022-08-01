@@ -1,10 +1,6 @@
-# XS linker warnings
-
-Copyright 2019 Moddable Tech, Inc.
-
+# XS Linker Warnings
+Copyright 2019 Moddable Tech, Inc.<BR>
 Revised: November 9, 2019
-
-Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Preload
 

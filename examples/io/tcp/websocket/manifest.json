@@ -1,34 +1,16 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/data/text/decoder/manifest.json",
-		"$(MODDABLE)/modules/data/base64/manifest.json"
+		"./manifest_websocket.json"
 	],
 	"creation": {
 		"static": 65536
 	},
 	"modules": {
 		"*": [
-			"./config",
-			"./data",
-			"./WebSocket",
 			"./main",
-			"$(MODULES)/network/dns/moddnsparser",
-			"$(MODULES)/data/logical/*"
-		],
-		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
-		"dns": "$(MODULES)/network/dns/dns",
-		"dns/parser": "$(MODULES)/network/dns/dnsparser",
-		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
-		"embedded:network/websocket/client": "./../websocketclient/websocketclient"
+			"./data"
+		]
 	},
-	"preload": [
-		"config",
-		"embedded:network/dns/resolver",
-		"dns",
-		"dns/parser",
-		"dns/serializer",
-		"embedded:network/websocket/client",
-		"logical"
-	]
+	"preload": "data"
 }

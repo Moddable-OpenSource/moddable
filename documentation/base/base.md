@@ -1,8 +1,6 @@
 # Base
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 8, 2022
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Revised: June 20, 2022
 
 ## Table of Contents
 
@@ -100,6 +98,13 @@ Timer.clear(aTimer);
 
 > **Note**: If `Timer.clear` is passed a value of `undefined` or `null` for the ID, no exception is generated.
 
+***
+
+### `Timer.unschedule(id)`
+
+The `unschedule` function makes a timer inelegible to run. Use `Timer.schedule` to make it eligible to run again, or `Timer.clear` to remove it permanently.
+
+Unscheduling a timer is prefered over scheduling a timer for a long time in the future when the next trigger time is unknown. Unscheduling and later rescheduling a timer may be more efficiently than clearing a timer and later allocating a new one.
 
 ***
 
@@ -227,7 +232,6 @@ Debug.gc(false);	// disable garbage collector
 ## class UUID
 
 - **Source code:** [uuid](../../modules/base/uuid)
-- **Relevant Examples:** [uuid](../../examples/base/uuid)
 
 The `UUID` class provides a single function to generate a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) string. 
 

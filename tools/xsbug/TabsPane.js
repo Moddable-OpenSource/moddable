@@ -200,7 +200,7 @@ class ColorsButtonBehavior extends ButtonBehavior {
 		const data = {
 			button: container,
 			items: [
-				{ title:"Lite Colors", value:0 },
+				{ title:"Light Colors", value:0 },
 				{ title:"Dark Colors", value:1 }
 			],
 		};
@@ -312,7 +312,7 @@ var Test262Tab = Container.template($ => ({
 		Container($, { 
 			top:0, bottom:0,
 			contents: [
-				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"TEST262" }),
+				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"TEST" }),
 			],
 		}),
 	],

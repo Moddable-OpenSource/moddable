@@ -1,6 +1,5 @@
 # DotStar Wiring Guide
-
-Copyright 2018 Moddable Tech, Inc.  
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: December 11, 2018
 
 ![Generic SPI Display](images/dotstar.jpg)

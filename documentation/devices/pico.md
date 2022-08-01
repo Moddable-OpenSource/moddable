@@ -1,5 +1,4 @@
 # Getting Started with Raspberry Pi Pico
-
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
 Revised: March 22, 2022
 

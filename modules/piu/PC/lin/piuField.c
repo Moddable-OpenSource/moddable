@@ -264,7 +264,10 @@ void PiuField_get_string(xsMachine *the)
 	if ((*self)->application) {
 		GtkWidget* gtkField = (*self)->gtkField;
 		xsStringValue string = (xsStringValue)gtk_entry_get_text(GTK_ENTRY(gtkField));
-		xsResult = xsString(string);
+		if (string)
+			xsResult = xsString(string);
+		else
+			xsResult = xsString("");
 	}
 	else if ((*self)->string)
 		xsResult = *((*self)->string);

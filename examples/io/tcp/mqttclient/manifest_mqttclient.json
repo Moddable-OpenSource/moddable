@@ -1,0 +1,21 @@
+{
+	"modules": {
+		"*": [ 
+			"$(MODULES)/network/dns/moddnsparser"
+		],
+		"mqttclient/config": "./config",
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"embedded:network/mqtt/client": "./mqttclient"
+	},
+	"preload": [
+		"mqttclient/config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
+		"embedded:network/mqtt/client"
+	]
+}

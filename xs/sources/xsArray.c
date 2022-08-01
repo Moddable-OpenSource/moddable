@@ -2327,9 +2327,13 @@ void fx_Array_prototype_sort(txMachine* the)
 				mxTypeError("compare is no function");
 		}
 	}
-	if (array)
-		array = fxCheckArrayItems(the, array, 0, array->value.array.length);
-	fxSortArrayItems(the, function, array, fxGetArrayLength(the, mxThis));
+	if (function)
+		fxSortArrayItems(the, function, C_NULL, fxGetArrayLength(the, mxThis));
+	else {
+		if (array)
+			array = fxCheckArrayItems(the, array, 0, array->value.array.length);
+		fxSortArrayItems(the, function, array, fxGetArrayLength(the, mxThis));
+	}
 	mxResult->kind = mxThis->kind;
 	mxResult->value = mxThis->value;
 }

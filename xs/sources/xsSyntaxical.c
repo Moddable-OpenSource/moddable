@@ -1377,6 +1377,7 @@ void fxDebuggerStatement(txParser* parser)
 void fxDoStatement(txParser* parser)
 {
 	txInteger aLine = parser->line;
+	fxCheckParserStack(parser, aLine);
 	fxPushNULL(parser);
 	fxMatchToken(parser, XS_TOKEN_DO);
 	fxStatement(parser, 0);
@@ -1919,6 +1920,7 @@ void fxUnaryExpression(txParser* parser)
 	if (gxTokenFlags[parser->token] & XS_TOKEN_UNARY_EXPRESSION) {
 		txToken aToken = parser->token;
 		txInteger aLine = parser->line;
+		fxCheckParserStack(parser, aLine);
 		fxMatchToken(parser, aToken);
 		fxUnaryExpression(parser);
 		fxCheckArrowFunction(parser, 1);
@@ -2438,6 +2440,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				if (parser->token == XS_TOKEN_LEFT_BRACE) {
 					txUnsigned flags = parser->flags;
 					parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxSuperFlag | mxTargetFlag | mxFieldFlag | mxAsyncFlag;
+					fxCheckParserStack(parser, aPropertyLine);
 					fxGetNextToken(parser);
 					fxStatements(parser);
 					fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);

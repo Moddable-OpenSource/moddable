@@ -1,10 +1,6 @@
 # XS Platforms
-
-Copyright 2016-2020 Moddable Tech, Inc.
-
+Copyright 2016-2020 Moddable Tech, Inc.<BR>
 Revised: September 2, 2020
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## History
 

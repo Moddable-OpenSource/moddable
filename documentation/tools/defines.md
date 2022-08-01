@@ -1,9 +1,6 @@
 # Using defines in manifests
-Copyright 2017 Moddable Tech, Inc.
-
+Copyright 2017 Moddable Tech, Inc.<BR>
 Revised: December 11, 2017
-
-Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Introduction
 

@@ -1,9 +1,6 @@
-# SecureSocket
-
-Copyright 2017-2021 Moddable Tech, Inc.<BR>
-Revised: May 24, 2021
-
-**Warning:** These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+# TLS (SecureSocket)
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: June 10, 2022
 
 ## Table of Contents
 
@@ -41,9 +38,7 @@ The `secure` dictionary may contain the following properties:
 | `trace` | `false` | If true, the TLS stack outputs a trace of its activity. This can be useful in diagnosing failures.
 | `verify` | `true` | If false, the certificate chain provided by the server is not verified. This should never be done in production systems but can be useful when debugging.
 | `tls_max_fragment_length` | N/A |  A number indicating the requested maximum fragment size. Unfortunately, many servers ignore this optional extension. When supported, can help reduce memory requirements.
-| `tls_server_name` | N/A | TBD
-| `tls_signature_algorithms` | N/A | TBD
-| `tls_application_layer_protocol_negotiation` | N/A | TBD
+| `tls_application_layer_protocol_negotiation` | N/A | Supports [RFC 7301](https://datatracker.ietf.org/doc/html/rfc7301). Either a `String` or `ArrayBuffer` value to indicate support for a single application layer protocol or an `Array` of one or more `String` and `ArrayBuffer` values to indicate support for multiple application layer protocols.
  
 In the following example, the TLS socket is created with support for version `0x303` of TLS, which corresponds to TLS 1.2.
 

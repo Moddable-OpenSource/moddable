@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -166,21 +166,23 @@ txBigInt *fxBigInt_mod_mod(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m
 
 txBigInt *fxBigInt_mod_mul(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b, txBigInt *m, pool_t *pool)
 {
-	txBigInt *c = pool_get(the, m->size * 2, pool);
+	txU2 mSize = m->size * 2;
+	txBigInt *c = pool_get(the, mSize, pool);
 
 	c = fxBigInt_mul(the, c, a, b);
 	fxBigInt_mod(the, r, c, m);
-	pool_put(c, m->size * 2);
+	pool_put(c, mSize);
 	return r;
 }
 
 txBigInt *fxBigInt_mod_square(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, pool_t *pool)
 {
-	txBigInt *c = pool_get(the, m->size * 2, pool);
+	txU2 mSize = m->size * 2;
+	txBigInt *c = pool_get(the, mSize, pool);
 
 	fxBigInt_sqr(the, c, a);
 	fxBigInt_mod(the, r, c, m);
-	pool_put(c, m->size * 2);
+	pool_put(c, mSize);
 	return r;
 }
 
@@ -488,11 +490,12 @@ static txBigInt *mont_mul(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *b,
 
 static txBigInt *mont_square(txMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u, pool_t *pool)
 {
-	txBigInt *t = pool_get(the, a->size * 2, pool);
+	txU2 aSize = a->size * 2;
+	txBigInt *t = pool_get(the, aSize, pool);
 
 	fxBigInt_sqr(the, t, a);
 	mont_reduction(the, r, t, m, u, pool);
-	pool_put(t, a->size * 2);
+	pool_put(t, aSize);
 	return r;
 }
 

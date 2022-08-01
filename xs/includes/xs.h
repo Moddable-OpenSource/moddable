@@ -109,7 +109,7 @@
 			#define mxImport extern
 		#endif
 
-		#if defined(__ets__)
+		#if defined(__ets__) && !ESP32
 			typedef uint32_t size_t; 
 		#endif
 	#else 

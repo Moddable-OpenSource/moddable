@@ -45,7 +45,12 @@
 	link locations
 */
 
-#if ESP32
+#if (ESP32 == 4)
+	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
+	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
+	#define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
+	#define ICACHE_XS6STRING_ATTR __attribute((section(".data"))) __attribute__((aligned(4)))
+#elif ESP32
 	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
 	#define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
@@ -181,8 +186,8 @@ extern int modTimersNext(void);
 #else
 	#define modCriticalSectionDeclare
 	extern portMUX_TYPE gCriticalMux;
-	#define modCriticalSectionBegin() vPortEnterCritical(&gCriticalMux)
-	#define modCriticalSectionEnd() vPortExitCritical(&gCriticalMux)
+	#define modCriticalSectionBegin() portENTER_CRITICAL(&gCriticalMux)
+	#define modCriticalSectionEnd() portEXIT_CRITICAL(&gCriticalMux)
 #endif
 
 /*
@@ -516,7 +521,13 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 /* CPU */
 
-#if ESP32 == 3
+#if ESP32 == 4
+	#define kCPUESP32C3 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
+#elif ESP32 == 3
 	#define kCPUESP32S3 1
 	#define kTargetCPUCount 2
 	#define kESP32TimerDef	int_clr
@@ -524,7 +535,7 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size);
 	#define kCPUESP32S2 1
 	#define kTargetCPUCount 1
 	#define kESP32TimerDef	int_clr
-#elif ESP32 == 1 
+#elif ESP32 == 1
 	#define kTargetCPUCount 2
 	#define kESP32TimerDef	int_clr_timers
 #else

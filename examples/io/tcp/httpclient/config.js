@@ -1,3 +1,5 @@
+import "system"		// system initializes globalThis.device. this ensures it runs before this module.
+
 import TCP from "embedded:io/socket/tcp";
 import UDP from "embedded:io/socket/udp";
 import Resolver from "embedded:network/dns/resolver/udp";
@@ -16,6 +18,7 @@ const dns = {
 globalThis.device = Object.freeze({
 	...globalThis.device,
 	network: {
+		...globalThis.device?.network,
 		http: {
 			io: HTTPClient,
 			dns,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -92,9 +92,6 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->first = C_NULL;
 	parser->console = console;
 	parser->stackLimit = fxCStackLimit();
-
-	parser->buffer = fxNewParserChunk(parser, bufferSize);
-	parser->bufferSize = bufferSize;
 	
 	parser->dtoa = fxNew_dtoa(NULL);
 	parser->symbolModulo = symbolModulo;
@@ -159,6 +156,9 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->errorSymbol = NULL;
 	parser->reportError = fxVReportError;
 	parser->reportWarning = fxVReportWarning;
+
+	parser->buffer = fxNewParserChunk(parser, bufferSize);
+	parser->bufferSize = bufferSize;
 }
 
 void* fxNewParserChunk(txParser* parser, txSize size)
@@ -181,10 +181,13 @@ void* fxNewParserChunkClear(txParser* parser, txSize size)
 
 txString fxNewParserString(txParser* parser, txString buffer, txSize size)
 {
-	txString result = fxNewParserChunk(parser, size + 1);
-	c_memcpy(result, buffer, size);
-	result[size] = 0;
-	return result;
+	if (parser->buffer) { 
+		txString result = fxNewParserChunk(parser, size + 1);
+		c_memcpy(result, buffer, size);
+		result[size] = 0;
+		return result;
+	}
+	return buffer;
 }
 
 txSymbol* fxNewParserSymbol(txParser* parser, txString theString)
