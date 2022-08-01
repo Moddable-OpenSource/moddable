@@ -325,7 +325,7 @@ The SPIFFS file system requires some additional memory. Including SPIFFS in the 
 
 If the SPIFFS file system has not been initialized, it is formatted when first used. Initialization takes up to one minute.
 
-On ESP32, the SPIFFS partition size is specified in a partitions file with a partition of type `data` and subtype `spiffs`. The [default partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/partitions.csv) allocates a 64 KB partition for this purpose. A custom partition file can be specified by setting the `PARTITIONS_FILE` variable in the `build` section of the project manifest.
+On ESP32, the SPIFFS partition size is specified in a partitions file with a partition of type `data` and subtype `spiffs`. The [default partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/partitions.csv) allocates a 64 KB partition for this purpose. A custom partition file can be specified by setting the `PARTITIONS_FILE` variable in the `build` section of the project manifest.
 
 ```JSON
 "build": {
