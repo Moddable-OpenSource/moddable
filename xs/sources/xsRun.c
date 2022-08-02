@@ -56,7 +56,6 @@ static void fxRunIn(txMachine* the);
 static void fxRunInstantiate(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
-static txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b);
 static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 static txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
 static txBoolean fxToNumericIntegerUnary(txMachine* the, txSlot* theSlot, txBigIntUnary op);
