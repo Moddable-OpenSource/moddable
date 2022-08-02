@@ -40,7 +40,7 @@ function test(title, options, fn) {
 			titles.push(msg);
 			msg = titles.join(": ");
 			assert.sameValue(deepEqual(a, b), isEqual, msg);
-			assert.sameValue(deepEqual(a, b, true), isStrictEqual, msg + " (strict)");
+			assert.sameValue(deepEqual(a, b, { strict:true }), isStrictEqual, msg + " (strict)");
 			titles.pop();
 		},
 		ok(result, comment) {
@@ -1153,7 +1153,7 @@ test('fake arrays: extra keys will be tested', { skip: !hasDunderProto || isBrok
   t.end();
 });
 
-test('circular references', { skip:true }, function (t) {
+test('circular references', function (t) {
   var b = {};
   b.b = b;
 

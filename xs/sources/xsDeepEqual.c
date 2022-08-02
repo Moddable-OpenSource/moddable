@@ -18,8 +18,12 @@ void fx_deepEqual(txMachine* the)
 		mxPushSlot(mxArgv(1));
 	else
 		mxPushUndefined();
-	if (mxArgc > 2)
-		strict = fxToBoolean(the, mxArgv(2));
+	if (mxArgc > 2) {
+		mxPushSlot(mxArgv(2));
+		mxGetID(fxID(the, "strict"));
+		strict = fxToBoolean(the, the->stack);
+		mxPop();
+	}
 	mxResult->value.boolean = fx_deepEqualSlots(the, limit, strict);
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxPop();
@@ -169,7 +173,6 @@ txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict)
 	txSlot* leftBase;
 	txSlot** leftAddress;
 	txIndex leftCount;
-	txSize leftSize;
 	txSlot* rightInstance = the->stack->value.reference;
 	const txBehavior* rightBehavior = mxBehavior(rightInstance);
 	txSlot* rightAt;
@@ -177,17 +180,37 @@ txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict)
 	txSlot* rightBase;
 	txSlot** rightAddress;
 	txIndex rightCount;
-	txSize rightSize;
-	txSlot* slot = the->stack + 2;
-	while (slot < limit) {
-		if (slot->kind == XS_REFERENCE_KIND) {
-			if (slot->value.reference == leftInstance)
-				return 0;
-			if (slot->value.reference == rightInstance)
-				return 0;
+	
+	leftBase = the->stack + 3;
+	leftCount = 1;
+	while (leftBase < limit) {
+		if (leftBase->kind == XS_REFERENCE_KIND) {
+			leftCount++;
+			if (leftBase->value.reference == leftInstance)
+				break;
 		}
-		slot++;
+		leftBase += 2;
 	}
+	if (leftBase >= limit)
+		leftCount = 0;
+	rightBase = the->stack + 2;
+	rightCount = 1;
+	while (rightBase < limit) {
+		if (rightBase->kind == XS_REFERENCE_KIND) {
+			rightCount++;
+			if (rightBase->value.reference == rightInstance)
+				break;
+		}
+		rightBase += 2;
+	}
+	if (leftBase < limit) {
+		 if (rightBase < limit)
+		 	return (leftCount == rightCount) ? 1 : 0;
+		 return 0;
+	}
+	else if (rightBase < limit)
+		return 0;
+			
 	if (leftInstance->ID) {
 		txSlot* alias = the->aliasArray[leftInstance->ID];
 		if (alias)
@@ -233,14 +256,10 @@ txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict)
 			case XS_CODE_X_KIND:
 				if ((rightBase->kind != XS_CODE_KIND) && (rightBase->kind != XS_CODE_X_KIND))
 					return 0;
-				leftSize = ((txChunk*)(((txByte*)(leftBase->value.code.address)) - sizeof(txChunk)))->size;
-				rightSize = ((txChunk*)(((txByte*)(leftBase->value.code.address)) - sizeof(txChunk)))->size;
-				if (leftSize != rightSize)
+				if (leftBase->value.code.address != rightBase->value.code.address)
 					return 0;
-				if (c_memcmp(leftBase->value.code.address, rightBase->value.code.address, leftSize))
+				if (leftBase->value.code.closures != rightBase->value.code.closures)
 					return 0;
-					
-				//?? closures
 				break;
 			case XS_DATE_KIND:
 				if (rightBase->kind != XS_DATE_KIND)
