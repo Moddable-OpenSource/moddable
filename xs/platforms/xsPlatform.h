@@ -531,6 +531,13 @@
 #ifndef c_strrchr
 	#define c_strrchr strrchr
 #endif
+#ifndef c_strcspn
+	#define c_strcspn strcspn
+#endif
+#ifndef c_strspn
+	#define c_strspn strspn
+#endif
+
 
 /* READ MEMORY */
 

@@ -356,6 +356,48 @@ char *espStrStr(const char *src, const char *search)
 	return NULL;
 }
 
+// modeled on newlib
+size_t espStrcspn(const char *str, const char *strCharSet)
+{
+	const char *s = str;
+
+	while (c_read8(str)) {
+		const char *cs = strCharSet;
+		char c;
+
+		while (c = c_read8(cs++)) {
+			if (c_read8(str) == c)
+				return str - s;
+		}
+
+		str++;
+	}
+
+	return str - s;
+}
+
+size_t espStrspn(const char *str, const char *strCharSet)
+{
+	const char *s = str;
+
+	while (c_read8(str)) {
+		const char *cs = strCharSet;
+		char c;
+
+		while (c = c_read8(cs++)) {
+			if (c_read8(str) == c)
+				break;
+		}
+
+		if (0 == c)
+			return str - s;
+
+		str++;
+	}
+
+	return str - s;
+}
+
 void espMemCpy(void *dst, const void *src, size_t count)
 {
 	const uint8_t *s = src;
