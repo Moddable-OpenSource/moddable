@@ -1906,7 +1906,7 @@ void fx_Compartment(txMachine* the)
 	txSlot* global = C_NULL;
 	txSlot* closures = C_NULL;
 	txSlot* slot;
-	txSlot* own;
+//	txSlot* own;
 	txInteger id;
 	
 	if (!module) module = mxProgram.value.reference;
@@ -2007,7 +2007,7 @@ void fx_Compartment(txMachine* the)
 			txSlot* at;
 			txSlot* property;
 			target = fxNewInstance(the);
-			own = fxNewInstance(the);
+			/* own = */ fxNewInstance(the);
 			mxPushSlot(mxArgv(1));
 			source = fxToInstance(the, the->stack);
 			at = fxNewInstance(the);

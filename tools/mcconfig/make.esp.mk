@@ -60,6 +60,10 @@ WIFI_SSID ?=
 WIFI_PSK ?= 
 DEBUG_IP ?= 
 
+# xsbug defaults
+XSBUG_HOST ?= localhost
+XSBUG_PORT ?= 5002
+
 # End user-configurable values. Derived values below.
 NET_CONFIG_FLAGS := 
 ifneq ($(WIFI_SSID),)
@@ -295,11 +299,11 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		LAUNCH = debug
 		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		START_SERIAL2XSBUG = $(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+		START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && $(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 	else
 		LAUNCH = debug
 		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		START_SERIAL2XSBUG = $(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+		START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && $(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 	endif
 else
 	LAUNCH = release

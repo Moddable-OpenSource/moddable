@@ -30,6 +30,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/base/deepEqual/manifest.json",
 		"$(MODULES)/base/modules/manifest.json",
 		"$(MODULES)/data/base64/manifest.json",
 		"$(MODULES)/data/hex/manifest.json",
