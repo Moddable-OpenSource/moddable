@@ -515,7 +515,7 @@ txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict)
 				*rightAddress = rightAt->next;
 				break;
 			}
-			rightAt = rightAt->next;
+            rightAddress = &(rightAt->next);
 		}
 		if (!rightAt)
 			return 0;
