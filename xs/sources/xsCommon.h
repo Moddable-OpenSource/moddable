@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,8 +44,10 @@
 	#define mx_dtoa 1
 #endif
 #if __GNUC__ >= 5
-	#undef __has_builtin
-	#define __has_builtin(x) 1
+	#if ESP32
+		#undef __has_builtin
+		#define __has_builtin(x) 1
+	#endif
 #elif !defined(__has_builtin)
 	#define __has_builtin(x) 0
 #endif
