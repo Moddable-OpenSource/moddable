@@ -22,6 +22,9 @@ HOST_OS := $(shell uname)
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 460800
 
+XSBUG_HOST ?= localhost
+XSBUG_PORT ?= 5002
+
 EXPECTED_ESP_IDF ?= v4.4
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
@@ -346,11 +349,11 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+		DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		DO_LAUNCH = bash -c "serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
+		DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
 	endif
 else
 	KILL_SERIAL_2_XSBUG = 

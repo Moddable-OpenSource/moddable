@@ -132,11 +132,14 @@ XSL = $(BUILD_DIR)/bin/mac/debug/xsl
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
+
+XSBUG_HOST ?= localhost
+XSBUG_PORT ?= 5002
 	
 all: precursor
 	$(KILL_SERIAL2XSBUG) 
-	$(START_XSBUG) 
-	open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+	$(START_XSBUG)
+	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 

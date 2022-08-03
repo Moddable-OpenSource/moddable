@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -158,10 +158,13 @@ void fxConnect(txMachine* the)
 	struct sockaddr_in address;
 	char name[C_PATH_MAX];
 	unsigned long flag;
+	char *hostname = "localhost";
+	if (getenv("XSBUG_HOST"))
+		hostname = getenv("XSBUG_HOST"); 
 
 	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
 		goto bail;
-	host = gethostbyname("localhost");
+	host = gethostbyname(hostname);
 	if (!host)
 		goto bail;
 	memset(&address, 0, sizeof(address));
@@ -169,8 +172,13 @@ void fxConnect(txMachine* the)
 	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
 	if (GetModuleFileName(NULL, name, sizeof(name)) && strstr(name, "xsbug"))
 		address.sin_port = htons(5003);
-	else
-		address.sin_port = htons(5002);
+	else {
+		int port = 5002;
+		char *portStr = getenv("XSBUG_PORT");
+		if (portStr)
+			port = atoi(portStr);
+		address.sin_port = htons(port);
+	}
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection == INVALID_SOCKET)
 		goto bail;
