@@ -25,7 +25,7 @@ static txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean 
 static txBoolean fx_deepEqualProperties(txMachine* the, txSlot* limit, txBoolean strict, txID id);
 static txBoolean fx_deepEqualSlots(txMachine* the, txSlot* limit, txBoolean strict);
 
-static txBoolean gxSpecialKinds[XS_STATIC_MODULE_RECORD_KIND + 1] = {
+static txBoolean ICACHE_RODATA_ATTR gxSpecialKinds[XS_STATIC_MODULE_RECORD_KIND + 1] = {
 	0, // XS_UNDEFINED_KIND
 	0, // XS_NULL_KIND
 	1, // XS_BOOLEAN_KIND
@@ -265,8 +265,8 @@ txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict)
 	// special objects
 	leftProperty = leftInstance->next;
 	rightProperty = rightInstance->next;
-	leftBase = (leftProperty && (leftProperty->flag & XS_INTERNAL_FLAG) && gxSpecialKinds[leftProperty->kind]) ? leftProperty : C_NULL;
-	rightBase = (rightProperty && (rightProperty->flag & XS_INTERNAL_FLAG) && gxSpecialKinds[rightProperty->kind]) ? rightProperty : C_NULL;
+	leftBase = (leftProperty && (leftProperty->flag & XS_INTERNAL_FLAG) && c_read8(&gxSpecialKinds[leftProperty->kind])) ? leftProperty : C_NULL;
+	rightBase = (rightProperty && (rightProperty->flag & XS_INTERNAL_FLAG) && c_read8(&gxSpecialKinds[rightProperty->kind])) ? rightProperty : C_NULL;
 	if (leftBase && (leftBase->kind == XS_ARRAY_KIND) && (leftBase->ID == XS_ORDINARY_BEHAVIOR))
 		leftBase = C_NULL;
 	if (rightBase && (rightBase->kind == XS_ARRAY_KIND) && (rightBase->ID == XS_ORDINARY_BEHAVIOR))
