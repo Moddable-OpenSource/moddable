@@ -1,6 +1,6 @@
 # Files
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: June 22, 2022
+Revised: August 5, 2022
 
 ## Table of Contents
 
@@ -10,6 +10,9 @@ Revised: June 22, 2022
 	* [File Iterator](#file-iterator)
 	* [File System](#file-system)
 	* [Host File System Configuration](#platforms)
+		* [SPIFFS](#spiffs)
+		* [FAT32](#fat32)
+		* [littlefs](#littlefs)
 * [Zip](#zip)
 * [Resource](#resource)
 * [Preference](#preference)
@@ -315,6 +318,7 @@ The properties available on the object returned by `info` vary based on the capa
 
 This section describes how the file system is implemented on some embedded hosts. This information is helpful for situations where the default file system configuration does not meet the needs of a particular project.
 
+<a id="spiffs"></a>
 #### SPIFFS -- ESP8266 & ESP32
 
 On ESP8266 and (by default) ESP32, the File module is implemented using the [SPIFFS](https://github.com/pellepl/spiffs) file system.
@@ -343,6 +347,7 @@ On ESP32, the SPIFFS file system is mounted at a specified path and all files/di
 }
 ```
 
+<a id="fat32"></a>
 #### FAT32 -- ESP32
 
 The `File` class implements an optional FAT32 file system for the ESP32. Unlike SPIFFS, FAT32 file systems are not flat: they have directory structures and long filenames (up to 255 characters).
@@ -397,6 +402,42 @@ By default, the FAT32 file system is mounted at `/mod`. To change the default ro
 	}
 }
 ```
+
+<a id="littlefs"></a>
+#### littlefs
+The [littlefs](https://github.com/littlefs-project/littlefs) file system is "a little fail-safe filesystem designed for microcontrollers." It provides a high reliability, hierarchical file system in a small code footprint (about 60 KB) using minimal memory (well under 1 KB) with a high degree of configurability. littlefs also supports long file names (up to 255 characters) and formats a new partition very quickly.
+
+The Moddable SDK supports littlefs using the APIs described above. To use littlefs, include its manifest. 
+
+```json
+"includes": {
+	"$MODDABLE/modules/files/file/manifest_littlefs.json"
+}
+```
+
+> **Note**: A project may use the littlefs manifest or the default file manifest (`$MODDABLE/modules/files/file/manifest.json`). Both cannot currently be included in the same project.
+
+On ESP32, littlefs uses the "storage" partition to hold the file system. On ESP8266, the file system is stored in the upper 3 MB of flash (the same area used by SPIFFS). On other devices, littlefs uses a 64 KB static memory buffer to hold the file system. This RAM disk mode allows littlefs to be used with the simulator.
+
+The littlefs implementation is thread safe on devices running FreeRTOS (ESP32) allowing littlefs to be used with Workers. Thread safety is irrelevant on ESP8266 as it runs as a single process. The thread safety support may be extended for other runtime environments.
+
+The littlefs implementation can be configured to trade-off performance and memory use. The default configuration in the Moddable SDK uses the least memory possible. For projects that make lightweight use of the file system, this offers adequate performance. To improve performance, the configuration may be changed in the project's manifest. The `read_size`, `prog_size`, `lookahead_size`, and `block_cycles` values are described in [`lfs.h`](https://github.com/littlefs-project/littlefs/blob/40dba4a556e0d81dfbe64301a6aa4e18ceca896c/lfs.h#L194-L230). Experimentation has shown that increasing the four `*_size` settings from 16 bytes to 512 gives a significant performance boost at the expense of 2 KB of RAM.
+
+```json
+	"defines": {
+		"file": {
+			"lfs": {
+				"read_size": 16,
+				"prog_size": 16,
+				"cache_size": 16,
+				"lookahead_size": 16,
+				"block_cycles": 500
+			}
+		}
+	},
+```
+
+When not in use (when all files and file iterators are closed), the littlefs implementation unmounts the file system. This releases all memory. This is the same behavior implemented by SPIFFS and FAT32.
 
 <a id="zip"></a>
 ## class ZIP
