@@ -3350,6 +3350,7 @@ void fxArrayBinding(txParser* parser, txToken theToken)
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
 	int elision = 1;
+	fxCheckParserStack(parser, aLine);
 	fxMatchToken(parser, XS_TOKEN_LEFT_BRACKET);
 	while ((parser->token == XS_TOKEN_COMMA) || (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_BINDING)) {
 		txInteger anItemLine = parser->line;
