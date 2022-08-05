@@ -1485,6 +1485,7 @@ void fxForStatement(txParser* parser)
 			fxPushNULL(parser);
 		}
 		fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
+		fxCheckParserStack(parser, aLine);
 		fxStatement(parser, 0);
 		fxPushNodeStruct(parser, 4, XS_TOKEN_FOR, aLine);
 	}
