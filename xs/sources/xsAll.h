@@ -1815,7 +1815,7 @@ mxExport void fx_mutabilities(txMachine* the);
 
 /* xsDeepEqual.c */
 #ifdef mxDeepEqual
-mxExport void fx_deepEqual(txMachine* the);
+mxExport void fx_structuredClone(txMachine* the);
 #endif
 
 /* xsProfile.c */

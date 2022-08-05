@@ -1,604 +1,434 @@
 #include "xsAll.h"		//@@ add copyright notice!
 #include "xsScript.h"
 
-static txBoolean fx_deepEqualEntries(txMachine* the, txSlot* limit, txBoolean strict, txBoolean paired);
-static txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict);
-static txBoolean fx_deepEqualProperties(txMachine* the, txSlot* limit, txBoolean strict, txID id);
-static txBoolean fx_deepEqualSlots(txMachine* the, txSlot* limit, txBoolean strict);
+typedef struct sx_structuredCloneLink tx_structuredCloneLink;
+typedef struct sx_structuredCloneList tx_structuredCloneList;
 
-void fx_deepEqual(txMachine* the)
+struct sx_structuredCloneLink {
+	tx_structuredCloneLink* previous;
+	tx_structuredCloneLink* next;
+	txID ID;
+	txIndex index;
+};
+
+struct sx_structuredCloneList {
+	tx_structuredCloneLink *first;
+	tx_structuredCloneLink* last;
+};
+
+static void fx_structuredCloneArray(txMachine* the, tx_structuredCloneList* list, txSlot* fromArray, txSlot* toArray);
+static void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txBoolean paired);
+static void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list);
+static void fx_structuredCloneSlot(txMachine* the, tx_structuredCloneList* list);
+static void fx_structuredCloneThrow(txMachine* the, tx_structuredCloneList* list, txString message);
+
+void fx_structuredClone(txMachine* the)
 {
-	txSlot* limit = the->stack;
-	txBoolean strict = 0;
+	tx_structuredCloneLink link = { C_NULL, C_NULL, mxID(_value), 0 };
+	tx_structuredCloneList list = { &link, &link };
+	fxVars(the, 3);
+	
+	mxPush(mxMapConstructor);
+	mxNew();
+	mxRunCount(0);
+	mxPullSlot(mxVarv(0));
+	
+	mxPushSlot(mxVarv(0));
+	mxGetID(mxID(_get));
+	mxPullSlot(mxVarv(1));
+	
+	mxPushSlot(mxVarv(0));
+	mxGetID(mxID(_set));
+	mxPullSlot(mxVarv(2));
+
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
 		mxPushUndefined();
-	if (mxArgc > 1)
-		mxPushSlot(mxArgv(1));
-	else
-		mxPushUndefined();
+	if (mxArgc > 1) {
+		// transferable?
+	}
 	if (mxArgc > 2) {
-		mxPushSlot(mxArgv(2));
-		mxGetID(fxID(the, "strict"));
-		strict = fxToBoolean(the, the->stack);
-		mxPop();
+		// options?
 	}
-	mxResult->value.boolean = fx_deepEqualSlots(the, limit, strict);
-	mxResult->kind = XS_BOOLEAN_KIND;
-	mxPop();
-	mxPop();
+	
+	fx_structuredCloneSlot(the, &list);
+	mxPullSlot(mxResult);
 }
 
-txBoolean fx_deepEqualEntries(txMachine* the, txSlot* limit, txBoolean strict, txBoolean paired)
+void fx_structuredCloneArray(txMachine* the, tx_structuredCloneList* list, txSlot* fromArray, txSlot* toArray) 
 {
-	txSlot* leftInstance = (the->stack + 1)->value.reference;
-	txSlot* letfTable = leftInstance->next;
-	txSlot* leftList = letfTable->next;
-	txSlot* leftProperty;
-	txSlot* rightInstance = the->stack->value.reference;
-	txSlot* rightTable = rightInstance->next;
-	txSlot* rightList = rightTable->next;
-	txSlot* rightProperty;
-	txSlot* rightBase;
-	txSlot** rightAddress;
-	txBoolean result;
-	if (leftList->next->value.integer != rightList->next->value.integer)
-		return 0;
-		
-	mxPushList();
-	rightBase = the->stack;
-	leftProperty = rightList->value.list.first;
-	rightAddress = &(rightBase->value.list.first);
-	while (leftProperty) {
-		rightProperty = *rightAddress = fxDuplicateSlot(the, leftProperty);
-		leftProperty = leftProperty->next;
-		rightAddress = &(rightProperty->next);
+	list->last->ID = XS_NO_ID;
+	toArray->flag = XS_INTERNAL_FLAG;
+	toArray->kind = XS_ARRAY_KIND;
+	toArray->value.array.address = C_NULL;
+	toArray->value.array.length = fromArray->value.array.length;
+	if (fromArray->value.array.address) {
+		txSize size = (((txChunk*)(((txByte*)fromArray->value.array.address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+		txSize fromOffset = 0, toOffset = 0;
+		toArray->value.array.address = fxNewChunk(the, size * sizeof(txSlot));
+		c_memset(toArray->value.array.address, 0, size * sizeof(txSlot));
+		while (fromOffset < size) {
+			txSlot* from = fromArray->value.array.address + fromOffset;
+			txSlot* to;
+			txIndex index = *((txIndex*)from);
+			if (!(from->flag & XS_DONT_ENUM_FLAG)) {
+				if (from->kind == XS_ACCESSOR_KIND) {
+					txSlot* instance = the->stack + 1;
+					mxPushSlot(instance);
+					mxGetIndex(index);
+				}
+				else
+					mxPushSlot(from);
+				list->last->index = index;
+				fx_structuredCloneSlot(the, list);
+				to = toArray->value.array.address + toOffset;
+				mxPullSlot(to);
+				*((txIndex*)to) = index;
+				toOffset++;
+			}
+			fromOffset++;
+		}
 	}
-			
-	leftProperty = leftList->value.list.first;
-	while (leftProperty) {
-		rightAddress = &(rightBase->value.list.first);
-		while ((rightProperty = *rightAddress)) {
-			mxPushSlot(leftProperty);
-			mxPushSlot(rightProperty);
-			result = fx_deepEqualSlots(the, limit, strict);
-			mxPop();
-			mxPop();
-			if (paired) {
-				if (result) {
-					mxPushSlot(leftProperty->next);
-					mxPushSlot(rightProperty->next);
-					result &= fx_deepEqualSlots(the, limit, strict);
-					mxPop();
-					mxPop();
-				}
-				if (result) {
-					*rightAddress = rightProperty->next->next;
-					break;
-				}
-				rightAddress = &(rightProperty->next->next);
-			}
-			else {
-				if (result) {
-					*rightAddress = rightProperty->next;
-					break;
-				}
-				rightAddress = &(rightProperty->next);
-			}
-		} 
-		if (!rightProperty)
-			return 0;
-		leftProperty = leftProperty->next;
+}
+
+void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txBoolean paired) 
+{
+	txSlot* fromTable;
+	txSlot* toTable;
+	txSlot* fromList;
+	txSlot* toList;
+	txSlot** address;
+
+	fromTable = from;
+
+	toTable = to->next = fxNewSlot(the);
+	toTable->flag = XS_INTERNAL_FLAG;
+	toTable->kind = fromTable->kind;
+	toTable->value.table.address = fxNewChunk(the, fromTable->value.table.length * sizeof(txSlot*));
+	toTable->value.table.length = fromTable->value.table.length;
+	c_memset(toTable->value.table.address, 0, toTable->value.table.length * sizeof(txSlot*));
+
+	fromList = fromTable->next;
+	
+	toList = toTable->next = fxNewSlot(the);
+	toList->flag = XS_INTERNAL_FLAG;
+	toList->kind = XS_LIST_KIND;
+	toList->value.list.first = C_NULL;
+	toList->value.list.last = C_NULL;
+
+	from = fromList->value.list.first;
+	address = &toList->value.list.first;
+	while (from) {
+		to = *address = fxNewSlot(the);
+		mxPushSlot(from);
+		fx_structuredCloneSlot(the, list);
+		mxPullSlot(to);
+		from = from->next;
+		address = &to->next;
+	}
+	toList->value.list.last = to;
+	
+	to = toList->value.list.first;
+	while (to) {
+		txSlot* entry = fxNewSlot(the);
+		txU4 sum = fxSumEntry(the, to);
+		txU4 index = sum & (toTable->value.table.length - 1);
+		address = &(toTable->value.table.address[index]);
+		entry->next = *address;
+		entry->kind = XS_ENTRY_KIND;
+		entry->value.entry.slot = to;
+		entry->value.entry.sum = sum;
+		*address = entry;
+		to = to->next;
 		if (paired)
-			leftProperty = leftProperty->next;
+			to = to->next;
 	}
-	mxPop();
-	return 1;
+	
+	toList->next = fxDuplicateSlot(the, fromList->next);
 }
 
-txBoolean gxSpecialKinds[XS_STATIC_MODULE_RECORD_KIND + 1] = {
-	0, // XS_UNDEFINED_KIND
-	0, // XS_NULL_KIND
-	1, // XS_BOOLEAN_KIND
-	0, // XS_INTEGER_KIND
-	1, // XS_NUMBER_KIND
-	1, // XS_STRING_KIND
-	1, // XS_STRING_X_KIND
-	1, // XS_SYMBOL_KIND
-	1, // XS_BIGINT_KIND
-	1, // XS_BIGINT_X_KIND
-	
-	0, // XS_REFERENCE_KIND
-	
-	0, // XS_CLOSURE_KIND 
-	0, // XS_FRAME_KIND
-
-	0, // XS_INSTANCE_KIND
-	
-	0, // XS_ARGUMENTS_SLOPPY_KIND
-	0, // XS_ARGUMENTS_STRICT_KIND
-	1, // XS_ARRAY_KIND
-	1, // XS_ARRAY_BUFFER_KIND
-	1, // XS_CALLBACK_KIND
-	1, // XS_CODE_KIND
-	1, // XS_CODE_X_KIND
-	1, // XS_DATE_KIND
-	1, // XS_DATA_VIEW_KIND
-	0, // XS_FINALIZATION_CELL_KIND
-	0, // XS_FINALIZATION_REGISTRY_KIND
-	0, // XS_GLOBAL_KIND
-	0, // XS_HOST_KIND
-	1, // XS_MAP_KIND
-	0, // XS_MODULE_KIND
-	0, // XS_PROGRAM_KIND
-	0, // XS_PROMISE_KIND
-	1, // XS_PROXY_KIND
-	1, // XS_REGEXP_KIND
-	1, // XS_SET_KIND
-	1, // XS_TYPED_ARRAY_KIND
-	0, // XS_WEAK_MAP_KIND
-	0, // XS_WEAK_REF_KIND
-	0, // XS_WEAK_SET_KIND
-
-	0, // XS_ACCESSOR_KIND
-	0, // XS_AT_KIND
-	0, // XS_ENTRY_KIND
-	1, // XS_ERROR_KIND
-	0, // XS_HOME_KIND
-	0, // XS_KEY_KIND
-	0, // XS_KEY_X_KIND
-	0, // XS_LIST_KIND
-	0, // XS_PRIVATE_KIND
-	0, // XS_STACK_KIND
-	0, // XS_VAR_KIND
-	1, // XS_CALLBACK_X_KIND
-#ifdef mxHostFunctionPrimitive
-	0, // XS_HOST_FUNCTION_KIND
-#endif
-	0, // XS_HOST_INSPECTOR_KIND
-	0, // XS_INSTANCE_INSPECTOR_KIND
-	0, // XS_EXPORT_KIND
-	0, // XS_WEAK_ENTRY_KIND
-	0, // XS_BUFFER_INFO_KIND
-	0, // XS_STATIC_MODULE_RECORD_KIND
-};
-
-txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean strict)
+void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list) 
 {
-	txSlot* leftInstance = (the->stack + 1)->value.reference;
-	const txBehavior* leftBehavior = mxBehavior(leftInstance);
-	txSlot* leftAt;
-	txSlot* leftProperty;
-	txSlot* leftBase;
-	txSlot** leftAddress;
-	txIndex leftCount;
-	txSlot* rightInstance = the->stack->value.reference;
-	const txBehavior* rightBehavior = mxBehavior(rightInstance);
-	txSlot* rightAt;
-	txSlot* rightProperty;
-	txSlot* rightBase;
-	txSlot** rightAddress;
-	txIndex rightCount;
+	tx_structuredCloneLink link = { C_NULL, C_NULL, XS_NO_ID, 0 };
+
+	txSlot* instance = the->stack->value.reference;
+	txSlot* result;
+	txSlot* from;
+	txSlot* to;
+	txSize size;
 	
-	leftBase = the->stack + 3;
-	leftCount = 1;
-	while (leftBase < limit) {
-		if (leftBase->kind == XS_REFERENCE_KIND) {
-			leftCount++;
-			if (leftBase->value.reference == leftInstance)
-				break;
-		}
-		leftBase += 2;
-	}
-	if (leftBase >= limit)
-		leftCount = 0;
-	rightBase = the->stack + 2;
-	rightCount = 1;
-	while (rightBase < limit) {
-		if (rightBase->kind == XS_REFERENCE_KIND) {
-			rightCount++;
-			if (rightBase->value.reference == rightInstance)
-				break;
-		}
-		rightBase += 2;
-	}
-	if (leftBase < limit) {
-		 if (rightBase < limit)
-		 	return (leftCount == rightCount) ? 1 : 0;
-		 return 0;
-	}
-	else if (rightBase < limit)
-		return 0;
-			
-	if (leftInstance->ID) {
-		txSlot* alias = the->aliasArray[leftInstance->ID];
-		if (alias)
-			leftInstance = alias;
-	}
-	if (rightInstance->ID) {
-		txSlot* alias = the->aliasArray[rightInstance->ID];
-		if (alias)
-			rightInstance = alias;
-	}	
-	leftProperty = leftInstance->next;
-	rightProperty = rightInstance->next;
-	leftBase = (leftProperty && (leftProperty->flag & XS_INTERNAL_FLAG) && gxSpecialKinds[leftProperty->kind]) ? leftProperty : C_NULL;
-	rightBase = (rightProperty && (rightProperty->flag & XS_INTERNAL_FLAG) && gxSpecialKinds[rightProperty->kind]) ? rightProperty : C_NULL;
-	if (leftBase && (leftBase->kind == XS_ARRAY_KIND) && (leftBase->ID == XS_ORDINARY_BEHAVIOR))
-		leftBase = C_NULL;
-	if (rightBase && (rightBase->kind == XS_ARRAY_KIND) && (rightBase->ID == XS_ORDINARY_BEHAVIOR))
-		rightBase = C_NULL;
-	if (leftBase) {
-		if (rightBase) {
-			switch (leftBase->kind) {
-			case XS_BIGINT_KIND:
-			case XS_BIGINT_X_KIND:
-				if ((rightBase->kind != XS_BIGINT_KIND) && (rightBase->kind != XS_BIGINT_X_KIND))
-					return 0;
-				if (!gxTypeBigInt.compare(the, 0, 1, 0, leftBase, rightBase))
-					return 0;
-				break;
-			case XS_BOOLEAN_KIND:
-				if (rightBase->kind != XS_BOOLEAN_KIND)
-					return 0;
-				if (leftBase->value.boolean != rightBase->value.boolean)
-					return 0;
-				break;
-			case XS_CALLBACK_KIND:
-			case XS_CALLBACK_X_KIND:
-				if ((rightBase->kind != XS_CALLBACK_KIND) && (rightBase->kind != XS_CALLBACK_X_KIND))
-					return 0;
-				if (leftBase->value.callback.address != rightBase->value.callback.address)
-					return 0;
-				break;
-			case XS_CODE_KIND:
-			case XS_CODE_X_KIND:
-				if ((rightBase->kind != XS_CODE_KIND) && (rightBase->kind != XS_CODE_X_KIND))
-					return 0;
-				if (leftBase->value.code.address != rightBase->value.code.address)
-					return 0;
-				if (leftBase->value.code.closures != rightBase->value.code.closures)
-					return 0;
-				break;
-			case XS_DATE_KIND:
-				if (rightBase->kind != XS_DATE_KIND)
-					return 0;
-				if (leftBase->value.number != rightBase->value.number)
-					return 0;
-				break;
-			case XS_ERROR_KIND:
-				if (rightBase->kind != XS_ERROR_KIND)
-					return 0;
-				if (!fx_deepEqualProperties(the, limit, 1, mxID(_name)))
-					return 0;
-				if (!fx_deepEqualProperties(the, limit, 1, mxID(_message)))
-					return 0;
-				break;
-			case XS_NUMBER_KIND:
-				if (rightBase->kind != XS_NUMBER_KIND)
-					return 0;
-				if (!((c_isnan(leftBase->value.number) && c_isnan(rightBase->value.number)) || ((leftBase->value.number == rightBase->value.number) && (c_signbit(leftBase->value.number) == c_signbit(rightBase->value.number)))))
-					return 0;
-				break;
-			case XS_REGEXP_KIND:
-				if (rightBase->kind != XS_REGEXP_KIND)
-					return 0;
-				if (!fx_deepEqualProperties(the, limit, 1, mxID(_lastIndex)))
-					return 0;
-				if (!fx_deepEqualProperties(the, limit, 1, mxID(_flags)))
-					return 0;
-				if (!fx_deepEqualProperties(the, limit, 1, mxID(_source)))
-					return 0;
-				break;
-			case XS_STRING_KIND:
-			case XS_STRING_X_KIND:
-				if ((rightBase->kind != XS_STRING_KIND) && (rightBase->kind != XS_STRING_X_KIND))
-					return 0;
-				if (c_strcmp(rightBase->value.string, rightBase->value.string))
-					return 0;
-				leftBehavior = gxBehaviors[0];
-				rightBehavior = gxBehaviors[0];
-				break;
-			case XS_SYMBOL_KIND:
-				if (rightBase->kind != XS_SYMBOL_KIND)
-					return 0;
-				if (leftBase->value.symbol != rightBase->value.symbol)
-					return 0;
-				break;
-				
-			case XS_ARRAY_KIND:
-				if (rightBase->kind == XS_PROXY_KIND) {
-					if (leftBase->ID != XS_ARRAY_BEHAVIOR)
-						return 0;
-				}
-				else {
-					if (rightBase->kind != XS_ARRAY_KIND)
-						return 0;
-					if (leftBase->ID != rightBase->ID)
-						return 0;
-				}
-				break;
-				
-			case XS_PROXY_KIND:
-				if (rightBase->kind == XS_ARRAY_KIND) {
-					if (rightBase->ID != XS_ARRAY_BEHAVIOR)
-						return 0;
-				}
-				else {
-					if (rightBase->kind != XS_PROXY_KIND)
-						return 0;
-				}
-				break;
-				
-			case XS_ARRAY_BUFFER_KIND:
-				if (rightBase->kind != XS_ARRAY_BUFFER_KIND)
-					return 0;
-				leftProperty = leftBase->next;
-				rightProperty = rightBase->next;
-				if (leftProperty->value.bufferInfo.length != rightProperty->value.bufferInfo.length)
-					return 0;
-				if (leftBase->value.arrayBuffer.address != C_NULL) {
-					if (rightBase->value.arrayBuffer.address != C_NULL) {
-						if (c_memcmp(leftBase->value.arrayBuffer.address, rightBase->value.arrayBuffer.address, leftProperty->value.bufferInfo.length))
-							return 0;
-					}
-					else
-						return 0;
-				}
-				else if (rightBase->value.arrayBuffer.address != C_NULL)
-					return 0;
-				break;
-			case XS_TYPED_ARRAY_KIND:
-				if (rightBase->kind != XS_TYPED_ARRAY_KIND)
-					return 0;
-				if (leftBase->value.typedArray.dispatch->constructorID != rightBase->value.typedArray.dispatch->constructorID)
-					return 0;
-				leftBehavior = gxBehaviors[0];
-				rightBehavior = gxBehaviors[0];
-				leftBase = leftBase->next;
-				rightBase = rightBase->next;
-				// continue
-			case XS_DATA_VIEW_KIND:
-				if (rightBase->kind != XS_DATA_VIEW_KIND)
-					return 0;
-				leftProperty = leftBase->next;
-				rightProperty = rightBase->next;
-				txSize leftSize = fxGetDataViewSize(the, leftBase, leftProperty);
-				txSize rightSize = fxGetDataViewSize(the, rightBase, rightProperty);
-				if (leftSize != rightSize)
-					return 0;
-				if (leftSize > 0) {
-					leftProperty = leftProperty->value.reference->next;
-					rightProperty = rightProperty->value.reference->next;
-					if (c_memcmp(leftProperty->value.arrayBuffer.address + leftBase->value.dataView.offset, rightProperty->value.arrayBuffer.address + rightBase->value.dataView.offset, leftSize))
-						return 0;
-				}
-				break;
-			case XS_MAP_KIND:
-				if (rightBase->kind != XS_MAP_KIND)
-					return 0;
-				if (!fx_deepEqualEntries(the, limit, strict, 1))
-					return 0;
-				break;
-			case XS_SET_KIND:
-				if (rightBase->kind != XS_SET_KIND)
-					return 0;
-				if (!fx_deepEqualEntries(the, limit, strict, 0))
-					return 0;
-				break;
-				
+	mxPushSlot(mxVarv(0));
+	mxPushSlot(mxVarv(1));
+	mxCall();
+	mxPushReference(instance);
+	mxRunCount(1);
+	if (mxIsReference(the->stack))
+		return;
+	mxPop();
+	
+	link.previous = list->last;
+	list->last->next = &link;
+	list->last = &link;
+	
+	result = fxNewInstance(the);
+	result->value.instance.prototype = mxObjectPrototype.value.reference;
+	
+	mxPushSlot(mxVarv(0));
+	mxPushSlot(mxVarv(2));
+	mxCall();
+	mxPushReference(instance);
+	mxPushReference(result);
+	mxRunCount(2);
+	mxPop();
+	
+	from = instance->next;
+	to = result;
+
+	if (from->flag & XS_INTERNAL_FLAG) {
+		switch (from->kind) {
+		case XS_BOOLEAN_KIND:
+			result->value.instance.prototype = mxBooleanPrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_NUMBER_KIND:
+			result->value.instance.prototype = mxNumberPrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_STRING_KIND:
+		case XS_STRING_X_KIND:
+			result->value.instance.prototype = mxStringPrototype.value.reference;
+			result->flag |= XS_EXOTIC_FLAG;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_BIGINT_KIND:
+		case XS_BIGINT_X_KIND:
+			result->value.instance.prototype = mxBigIntPrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_DATE_KIND:
+			result->value.instance.prototype = mxDatePrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_ERROR_KIND:
+// 			for (error = XS_EVAL_ERROR; error < XS_ERROR_COUNT, error++) {
+// 				if (instance->value.instance.prototype == mxErrorPrototype.value.references[error]) {
+// 					result->value.instance.prototype = mxErrorPrototype.value.references[error];
+// 				}
+// 			}
+// 			if (error == XS_ERROR_COUNT)
+// 				result->value.instance.prototype = mxErrorPrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+// 			fx_structuredCloneProperty(the, mxID(_message));
+// 			fx_structuredCloneProperty(the, mxID(_cause));
+			break;
+		case XS_REGEXP_KIND:
+			result->value.instance.prototype = mxRegExpPrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
+			to->value.integer = 0;
+			from = from->next;
+			break;
 		
-			default:
-				return 0;
+		case XS_ARRAY_KIND:
+			if (from->flag & XS_EXOTIC_FLAG) {
+				if ((from->ID == XS_ARGUMENTS_SLOPPY_BEHAVIOR) || (from->ID == XS_ARGUMENTS_STRICT_BEHAVIOR))
+					fx_structuredCloneThrow(the, list, "arguments");
+				result->value.instance.prototype = mxArrayPrototype.value.reference;
+				result->flag |= XS_EXOTIC_FLAG;
+			}
+			to = to->next = fxNewSlot(the);
+			fx_structuredCloneArray(the, list, from, to);
+			from = from->next;
+			break;
+		case XS_CALLBACK_KIND:
+		case XS_CALLBACK_X_KIND:
+		case XS_CODE_KIND:
+		case XS_CODE_X_KIND:
+			fx_structuredCloneThrow(the, list, "function");
+			break;
+		case XS_FINALIZATION_CELL_KIND:
+		case XS_FINALIZATION_REGISTRY_KIND:
+			fx_structuredCloneThrow(the, list, "finalization");
+			break;
+		case XS_MODULE_KIND:
+		case XS_PROGRAM_KIND:
+			fx_structuredCloneThrow(the, list, "module");
+			break;
+		case XS_PROMISE_KIND:
+			fx_structuredCloneThrow(the, list, "promise");
+			break;
+		case XS_WEAK_MAP_KIND:
+			fx_structuredCloneThrow(the, list, "weak map");
+			break;
+		case XS_WEAK_REF_KIND:
+			fx_structuredCloneThrow(the, list, "weak ref");
+			break;
+		case XS_WEAK_SET_KIND:
+			fx_structuredCloneThrow(the, list, "weak set");
+			break;
+		case XS_STACK_KIND:
+			fx_structuredCloneThrow(the, list, "generator");
+			break;
+		case XS_SYMBOL_KIND:
+			fx_structuredCloneThrow(the, list, "symbol");
+			break;
+
+		case XS_ARRAY_BUFFER_KIND:
+			result->value.instance.prototype = mxArrayBufferPrototype.value.reference;
+			if (!from->value.arrayBuffer.address)
+				fx_structuredCloneThrow(the, list, "detached array buffer");
+			to = to->next = fxDuplicateSlot(the, from);
+			size = from->next->value.bufferInfo.length;
+			to->value.arrayBuffer.address = fxNewChunk(the, size);
+			c_memcpy(to->value.arrayBuffer.address, from->value.arrayBuffer.address, size);
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_TYPED_ARRAY_KIND:
+			mxPush(the->stackPrototypes[-1 - from->value.typedArray.dispatch->constructorID]);
+			mxGetID(mxID(_prototype));
+			result->value.instance.prototype = fxToInstance(the, the->stack);
+			mxPop();
+			result->flag |= XS_EXOTIC_FLAG;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			to = to->next = fxNewSlot(the);
+			mxPushSlot(from);
+			fx_structuredCloneSlot(the, list);
+			mxPullSlot(to);
+			from = from->next;
+			break;
+		case XS_DATA_VIEW_KIND:
+			result->value.instance.prototype = mxDataViewPrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			to = to->next = fxNewSlot(the);
+			mxPushSlot(from);
+			fx_structuredCloneSlot(the, list);
+			mxPullSlot(to);
+			from = from->next;
+			break;
+			
+		case XS_MAP_KIND:
+			result->value.instance.prototype = mxMapPrototype.value.reference;
+			fx_structuredCloneEntries(the, list, from, to, 1);
+			from = from->next->next->next;
+			to = to->next->next->next;
+			break;
+		case XS_SET_KIND:
+			result->value.instance.prototype = mxSetPrototype.value.reference;
+			fx_structuredCloneEntries(the, list, from, to, 0);
+			from = from->next->next->next;
+			to = to->next->next->next;
+			break;
+			
+		default:
+			
+			break;
+		}
+	}
+	while (from) {
+		if (from->flag & XS_INTERNAL_FLAG) {
+			if (from->kind == XS_ARRAY_KIND) {
+				to = to->next = fxNewSlot(the);
+				fx_structuredCloneArray(the, list, from, to);
+			}
+		}
+		else
+			break;
+		from = from->next;
+	}	
+	
+	link.index = 0;
+	while (from) {
+		if (!(from->flag & XS_DONT_ENUM_FLAG) && fxIsKeyName(the, from->ID)) {
+			to = to->next = fxNewSlot(the);
+			if (from->kind == XS_ACCESSOR_KIND) {
+				mxPushReference(instance);
+				mxGetID(from->ID);
+			}
+			else
+				mxPushSlot(from);
+			link.ID = from->ID;
+			fx_structuredCloneSlot(the, list);
+			mxPullSlot(to);
+			to->ID = from->ID;
+		}
+		from = from->next;
+	}
+	list->last = link.previous;
+}
+
+void fx_structuredCloneSlot(txMachine* the, tx_structuredCloneList* list) 
+{
+	txSlot* slot = the->stack;
+	switch (slot->kind) {
+	case XS_UNDEFINED_KIND:
+	case XS_NULL_KIND:
+	case XS_BOOLEAN_KIND:
+	case XS_INTEGER_KIND:
+	case XS_NUMBER_KIND:
+	case XS_STRING_KIND:
+	case XS_STRING_X_KIND:
+	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
+		mxPushSlot(slot);
+		break;
+	case XS_SYMBOL_KIND:
+		fx_structuredCloneThrow(the, list, "symbol");
+		break;
+	case XS_REFERENCE_KIND:
+		fx_structuredCloneInstance(the, list);
+		break;
+#ifdef mxHostFunctionPrimitive
+	case XS_HOST_FUNCTION_KIND:
+		fx_structuredCloneThrow(the, list, "function");
+		break;
+#endif
+	default:
+		fx_structuredCloneThrow(the, list, "slot");
+		break;
+	}
+	mxPullSlot(slot);
+}
+
+void fx_structuredCloneThrow(txMachine* the, tx_structuredCloneList* list, txString message) 
+{
+	char buffer[128] = "";
+	txInteger i = 0;
+	txInteger c = sizeof(buffer);
+	tx_structuredCloneLink* link = list->first;
+	while (link) {
+		if (link->ID) {
+			txSlot* key = fxGetKey(the, link->ID);
+			if (key) {
+				txKind kind = mxGetKeySlotKind(key);
+				if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND)) {
+					if (i < c) i += c_snprintf(buffer + i, c - i, "%s%s", (link == list->first) ? "" : ".", key->value.string);
+				}
 			}
 		}
 		else {
-			if (leftBase->kind != XS_PROXY_KIND)
-				return 0;
+			if (i < c) i += c_snprintf(buffer + i, c - i, "[%d]", (int)link->index);
 		}
+		link = link->next;
 	}
-	else if (rightBase) {
-		if (rightBase->kind != XS_PROXY_KIND)
-			return 0;
-	}
-	if (!fx_deepEqualProperties(the, limit, 1, mxID(_Symbol_toStringTag)))
-		return 0;
-
-	if (strict) {
-		mxPushNull();
-		txBoolean leftResult = mxBehaviorGetPrototype(the, leftInstance, the->stack);
-		mxPushNull();
-		txBoolean rightResult = mxBehaviorGetPrototype(the, rightInstance, the->stack);
-		if (leftResult) {
-			if (rightResult) {
-				txSlot* left = the->stack + 1;
-				txSlot* right = the->stack;
-				if (left->value.reference != right->value.reference)
-					return 0;
-				mxPop();
-				mxPop();
-			}
-			else
-				return 0;
-		}
-		else if (rightResult)
-			return 0;
-	}
-
-	txFlag flag = XS_EACH_NAME_FLAG;
-	if (strict)
-		flag |= XS_EACH_SYMBOL_FLAG;
-		
-	leftBase = fxNewInstance(the);
-	(*leftBehavior->ownKeys)(the, leftInstance, flag, leftBase);
-	leftAddress = &(leftBase->next);
-	leftCount = 0;
-    mxPushUndefined();
-    leftProperty = the->stack;
-	while ((leftAt = *leftAddress)) {
-		if ((*leftBehavior->getOwnProperty)(the, leftInstance, leftAt->value.at.id, leftAt->value.at.index, leftProperty) && !(leftProperty->flag & XS_DONT_ENUM_FLAG)) {
-			leftCount++;
-			leftAddress = &(leftAt->next);
-		}
-		else
-			*leftAddress = leftAt->next;
-	}
-	mxPop(); // leftProperty
-	
-	rightBase = fxNewInstance(the);
-	(*rightBehavior->ownKeys)(the, rightInstance, flag, rightBase);
-	rightAddress = &(rightBase->next);
-	rightCount = 0;
-	mxPushUndefined();
-	rightProperty = the->stack;
-	while ((rightAt = *rightAddress)) {
-		if ((*rightBehavior->getOwnProperty)(the, rightInstance, rightAt->value.at.id, rightAt->value.at.index, rightProperty) && !(rightProperty->flag & XS_DONT_ENUM_FLAG)) {
-			rightCount++;
-			rightAddress = &(rightAt->next);
-		}
-		else
-			*rightAddress = rightAt->next;
-	}
-	mxPop(); // rightProperty
-
-	if (leftCount != rightCount)
-		return 0;
-	
-	leftAt = leftBase->next;
-	while (leftAt) {
-		rightAt = rightBase->next;
-		while (rightAt) {
-			if ((leftAt->value.at.id == rightAt->value.at.id) && (leftAt->value.at.index == rightAt->value.at.index))
-				break;
-			rightAt = rightAt->next;
-		}
-		if (!rightAt)
-			return 0;
-		mxPushReference(leftInstance);
-		mxGetAll(leftAt->value.at.id, leftAt->value.at.index);
-		mxPushReference(rightInstance);
-		mxGetAll(rightAt->value.at.id, rightAt->value.at.index);
-		if (!fx_deepEqualSlots(the, limit, strict))
-			return 0;
-        mxPop();
-        mxPop();
-		leftAt = leftAt->next;
-	}
-	mxPop(); // rightAt
-	mxPop(); // leftAt
-
-	return 1;
+	if (i < c)
+		i += c_snprintf(buffer + i, c - i, ": %s", message);
+	mxTypeError(buffer);
 }
 
-txBoolean fx_deepEqualProperties(txMachine* the, txSlot* limit, txBoolean strict, txID id)
-{
-	txSlot* left = the->stack + 1;
-	txSlot* right = the->stack;
-	txBoolean result;
-	mxPushSlot(left);
-	mxGetID(id);
-	mxPushSlot(right);
-	mxGetID(id);
-	result = fx_deepEqualSlots(the, limit, strict);
-	mxPop();
-	mxPop();
-	return result;
-}
-
-txBoolean fx_deepEqualSlots(txMachine* the, txSlot* limit, txBoolean strict)
-{
-	txSlot* left = the->stack + 1;
-	txSlot* right = the->stack;
-	txBoolean result = 0;
-again:
-	if (left->kind == right->kind) {
-		if ((XS_UNDEFINED_KIND == left->kind) || (XS_NULL_KIND == left->kind))
-			result = 1;
-		else if (XS_BOOLEAN_KIND == left->kind)
-			result = left->value.boolean == right->value.boolean;
-		else if (XS_INTEGER_KIND == left->kind)
-			result = left->value.integer == right->value.integer;
-		else if (XS_NUMBER_KIND == left->kind) {
-			if (strict)
-				result = ((c_isnan(left->value.number) && c_isnan(right->value.number)) || ((left->value.number == right->value.number) && (c_signbit(left->value.number) == c_signbit(right->value.number))));
-			else
-				result = ((c_isnan(left->value.number) && c_isnan(right->value.number)) || (left->value.number == right->value.number));
-			mxFloatingPointOp("fx_deepEqual");
-		}
-		else if ((XS_STRING_KIND == left->kind) || (XS_STRING_X_KIND == left->kind))
-			result = c_strcmp(left->value.string, right->value.string) == 0;
-		else if (XS_SYMBOL_KIND == left->kind)
-			result = left->value.symbol == right->value.symbol;
-		else if (XS_REFERENCE_KIND == left->kind) {
-			if (fxIsSameReference(the, left, right))
-				result = 1;
-			else
-				result = fx_deepEqualInstances(the, limit, strict);
-		}
-	#ifdef mxHostFunctionPrimitive
-		else if (XS_HOST_FUNCTION_KIND == left->kind)
-			result = left->value.hostFunction.builder == right->value.hostFunction.builder;
-	#endif
-		else if ((XS_BIGINT_KIND == left->kind) || (XS_BIGINT_X_KIND == left->kind))
-			result = gxTypeBigInt.compare(the, 0, 1, 0, left, right);
-		else
-			result = 0;
-	}
-	else if ((XS_INTEGER_KIND == left->kind) && (XS_NUMBER_KIND == right->kind)) {
-		if (strict) {
-			txNumber aNumber = left->value.integer;
-			result = (aNumber == right->value.number) && (signbit(aNumber) == signbit(right->value.number));
-		}
-		else
-			result = (!c_isnan(right->value.number)) && ((txNumber)(left->value.integer) == right->value.number);
-		mxFloatingPointOp("fx_deepEqual");
-	}
-	else if ((XS_NUMBER_KIND == left->kind) && (XS_INTEGER_KIND == right->kind)) {
-		if (strict) {
-			txNumber bNumber = right->value.integer;
-			result = (left->value.number == bNumber) && (signbit(left->value.number) == signbit(bNumber));
-		}
-		else
-			result = (!c_isnan(left->value.number)) && (left->value.number == (txNumber)(right->value.integer));
-		mxFloatingPointOp("fx_deepEqual");
-	}
-	else if ((XS_STRING_KIND == left->kind) && (XS_STRING_X_KIND == right->kind))
-		result = c_strcmp(left->value.string, right->value.string) == 0;
-	else if ((XS_STRING_X_KIND == left->kind) && (XS_STRING_KIND == right->kind))
-		result = c_strcmp(left->value.string, right->value.string) == 0;
-	else if (!strict) {
-		if ((left->kind == XS_UNDEFINED_KIND) && (right->kind == XS_NULL_KIND))
-			result = 1;
-		else if ((left->kind == XS_NULL_KIND) && (right->kind == XS_UNDEFINED_KIND))
-			result = 1;
-		else if (((XS_INTEGER_KIND == left->kind) || (XS_NUMBER_KIND == left->kind)) && ((right->kind == XS_STRING_KIND) || (right->kind == XS_STRING_X_KIND))) {
-			fxToNumber(the, right); 
-			goto again;
-		}
-		else if (((left->kind == XS_STRING_KIND) || (left->kind == XS_STRING_X_KIND)) && ((XS_INTEGER_KIND == right->kind) || (XS_NUMBER_KIND == right->kind))) {
-			fxToNumber(the, left);
-			goto again;
-		}
-		else if (XS_BOOLEAN_KIND == left->kind) {
-			fxToNumber(the, left);
-			goto again;
-		}
-		else if (XS_BOOLEAN_KIND == right->kind) {
-			fxToNumber(the, right);
-			goto again;
-		}
-		else if (((XS_BIGINT_KIND == left->kind) || (XS_BIGINT_X_KIND == left->kind)) && ((right->kind == XS_INTEGER_KIND) || (right->kind == XS_NUMBER_KIND) || (right->kind == XS_STRING_KIND) || (right->kind == XS_STRING_X_KIND))) {
-			result = gxTypeBigInt.compare(the, 0, 1, 0, left, right);
-		}
-		else if (((left->kind == XS_INTEGER_KIND) || (left->kind == XS_NUMBER_KIND) || (left->kind == XS_STRING_KIND) || (left->kind == XS_STRING_X_KIND)) && ((XS_BIGINT_KIND == right->kind) || (XS_BIGINT_X_KIND == right->kind))) {
-			result = gxTypeBigInt.compare(the, 0, 1, 0, right, left);
-		}
-		else
-			result = 0;
-	}
-	else 
-		result = 0;
-	return result;
-}
 
