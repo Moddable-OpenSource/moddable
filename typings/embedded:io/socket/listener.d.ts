@@ -22,10 +22,11 @@ declare module "embedded:io/socket/listener" {
   import TCP from "embedded:io/socket/tcp"
   class Listener {
     constructor(options: {
-      port: number,
+      port?: number;
+      address: string;
       onReadable?: (this: Listener, requests: number) => void;
+      format?: "socket/tcp";
     })
-
     read(): TCP
     get format(): "socket/tcp"
     set format(value: "socket/tcp")

@@ -19,31 +19,29 @@
 */
 
 declare module "embedded:io/socket/tcp" {
-  type TypedArray =
-    | Uint8Array
-    | Uint8ClampedArray
-    | Uint16Array
-    | Uint32Array
-    | Int8Array
-    | Int16Array
-    | Int32Array
-    | Float32Array
-    | Float64Array
-
+  import type { Buffer } from "embedded:io/_common";
   class TCP {
-    constructor(options: ({
+    constructor(options: ((({
       address: string;
-      port: number;
     } | {
+      host: string;
+    }) & {
+      port: number;
+    }) | {
       from: TCP;
     }) & {
       nodelay?: boolean;
       onReadable?: (this: TCP, bytes: number) => void;
       onWritable?: (this: TCP, bytes: number) => void;
-      onError?: () => void;
+      onError?: (this: TCP) => void;
+      format?: "number" | "buffer";
     })
-    write(value: number | ArrayBuffer | TypedArray): void;
-    read(bytes?: number): number | ArrayBuffer;
+    readonly remoteAddress: string | undefined;
+    readonly remotePort: number | undefined;
+    read(byteLength?: number): number | ArrayBuffer;
+    read(buffer: Buffer): void;
+    write(byteValue: number): void;
+    write(buffer: Buffer): void;
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
   }
