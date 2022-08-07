@@ -19,8 +19,8 @@
 */
 
 declare module "embedded:io/digital" {
-  import DigitalBank from "embedded:io/digitalbank"
-  type GPIO = number;
+  import type { PinSpecifier } from "embedded:io/_common";
+
   type Edge = number;
 
   type Mode =
@@ -31,16 +31,46 @@ declare module "embedded:io/digital" {
     | typeof Digital.Output
     | typeof Digital.OutputOpenDrain
 
-  class Digital extends DigitalBank {
+  class Digital {
+    static readonly Input: unknown
+    static readonly InputPullUp: unknown
+    static readonly InputPullDown: unknown
+    static readonly InputPullUpDown: unknown
+    static readonly Output: unknown
+    static readonly OutputOpenDrain: unknown
+    static readonly Rising: unknown;
+    static readonly Falling: unknown;
+
     constructor(options: {
-      pin: GPIO;
+      pin: PinSpecifier;
       mode: Mode;
+      onReadable: () => void;
+      /**
+       * @NOTE: `edge` is required when onReadable is specified
+       */
       edge: Edge;
-      onReadable?: () => void;
     });
-    static readonly Rising = 1;
-    static readonly Falling = 2;
+    constructor(options: {
+      pin: PinSpecifier;
+      mode: Mode;
+      /**
+       * @NOTE: `edge` is just ignored when onReadable is not specified
+       */
+      edge?: Edge;
+    })
+
+    write(value: 0 | 1): void;
     read(): 0 | 1;
+    close(): void;
+
+    pins: number;
+    mode: Mode;
+    rises?: number;
+    falls?: number;
+
+    get format(): "number"
+    set format(value: "number")
   }
-  export default Digital
+
+  export default Digital;
 }

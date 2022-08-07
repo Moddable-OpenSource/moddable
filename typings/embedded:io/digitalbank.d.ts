@@ -19,6 +19,7 @@
 */
 
 declare module "embedded:io/digitalbank" {
+  import type { PinSpecifier } from "embedded:io/_common"
   type Mode = 
     | typeof DigitalBank.Input
     | typeof DigitalBank.InputPullUp
@@ -28,15 +29,15 @@ declare module "embedded:io/digitalbank" {
     | typeof DigitalBank.OutputOpenDrain
 
   class DigitalBank {
-    static readonly Input = 0
-    static readonly InputPullUp = 1
-    static readonly InputPullDown = 2
-    static readonly InputPullUpDown = 3
-    static readonly Output = 8
-    static readonly OutputOpenDrain = 9
+    static readonly Input: unknown
+    static readonly InputPullUp: unknown
+    static readonly InputPullDown: unknown
+    static readonly InputPullUpDown: unknown
+    static readonly Output: unknown
+    static readonly OutputOpenDrain: unknown
 
     constructor(dictionary: {
-      pins: number,
+      pins: PinSpecifier,
       mode: Mode,
       rises?: number,
       falls?: number,
@@ -44,9 +45,8 @@ declare module "embedded:io/digitalbank" {
     })
 
     close(): void;
-    read(): void;
+    read(): number;
     write(value: number): void;
-    onReadable: (trigger: number) => void;
 
     pins: number;
     mode: Mode;
