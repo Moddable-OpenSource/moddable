@@ -18,10 +18,13 @@
 *
 */
 
+
 declare module "embedded:io/analog" {
+  import { PinSpecifier } from "embedded:io/_common";
   class Analog {
     constructor(options: {
-      pin: number;
+      pin: PinSpecifier;
+      resolution?: number;
       onReadable?: () => void;
     });
     readonly resolution: number;

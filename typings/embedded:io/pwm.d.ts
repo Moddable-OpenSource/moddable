@@ -18,13 +18,16 @@
 *
 */
 
+
 declare module "embedded:io/pwm" {
+  import { PinSpecifier } from "embedded:io/_common";
   class PWM {
     constructor(options: {
-      pin: number;
+      pin: PinSpecifier;
       hz?: number;
     });
     readonly resolution: number;
+    readonly hz: number;
     write(value: number): void;
     get format(): "number"
     set format(value: "number")
