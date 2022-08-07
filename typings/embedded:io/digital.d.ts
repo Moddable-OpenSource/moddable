@@ -44,22 +44,13 @@ declare module "embedded:io/digital" {
     constructor(options: {
       pin: PinSpecifier;
       mode: Mode;
+      format?: "number";
+    } & ({
       onReadable: () => void;
-      /**
-       * @NOTE: `edge` is required when onReadable is specified
-       */
       edge: Edge;
-      format?: "number";
-    });
-    constructor(options: {
-      pin: PinSpecifier;
-      mode: Mode;
-      /**
-       * @NOTE: `edge` is just ignored when onReadable is not specified
-       */
+    } | {
       edge?: Edge;
-      format?: "number";
-    })
+    }));
 
     write(value: number): void;
     read(): 0 | 1;
