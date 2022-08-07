@@ -355,46 +355,46 @@ $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 
 $(BIN_DIR)\buildclut.bat :
 	@echo # buildclut.bat
-	echo @$(BIN_DIR)\tools buildclut %%* 1> $(BIN_DIR)\buildclut.bat
+	echo @%~dp0\tools buildclut %%* 1> $(BIN_DIR)\buildclut.bat
 $(BIN_DIR)\cdv.bat :
 	@echo # cdv.bat
-	echo @$(BIN_DIR)\tools cdv %%* 1> $(BIN_DIR)\cdv.bat
+	echo @%~dp0\tools cdv %%* 1> $(BIN_DIR)\cdv.bat
 $(BIN_DIR)\colorcellencode.bat :
 	@echo # colorcellencode.bat
-	echo @$(BIN_DIR)\tools colorcellencode %%* 1> $(BIN_DIR)\colorcellencode.bat
+	echo @%~dp0\tools colorcellencode %%* 1> $(BIN_DIR)\colorcellencode.bat
 $(BIN_DIR)\compressbmf.bat :
 	@echo # compressbmf.bat
-	echo @$(BIN_DIR)\tools compressbmf %%* 1> $(BIN_DIR)\compressbmf.bat
+	echo @%~dp0\tools compressbmf %%* 1> $(BIN_DIR)\compressbmf.bat
 $(BIN_DIR)\image2cs.bat :
 	@echo # image2cs.bat
-	echo @$(BIN_DIR)\tools image2cs %%* 1> $(BIN_DIR)\image2cs.bat
+	echo @%~dp0\tools image2cs %%* 1> $(BIN_DIR)\image2cs.bat
 $(BIN_DIR)\mcbundle.bat :
 	@echo # mcbundle.bat
-	echo @$(BIN_DIR)\tools mcbundle %%* 1> $(BIN_DIR)\mcbundle.bat	
+	echo @%~dp0\tools mcbundle %%* 1> $(BIN_DIR)\mcbundle.bat	
 $(BIN_DIR)\mcconfig.bat :
 	@echo # mcconfig.bat
-	echo @$(BIN_DIR)\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat
+	echo @%~dp0\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat
 $(BIN_DIR)\mclocal.bat :
 	@echo # mclocal.bat
-	echo @$(BIN_DIR)\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
+	echo @%~dp0\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
 $(BIN_DIR)\mcrez.bat :
 	@echo # mcrez.bat
-	echo @$(BIN_DIR)\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
+	echo @%~dp0\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
 $(BIN_DIR)\mcrun.bat :
 	@echo # mcrun.bat
-	echo @$(BIN_DIR)\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
+	echo @%~dp0\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
 $(BIN_DIR)\png2bmp.bat :
 	@echo # png2bmp.bat
-	echo @$(BIN_DIR)\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat
+	echo @%~dp0\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat
 $(BIN_DIR)\rle4encode.bat :
 	@echo # rle4encode.bat
-	echo @$(BIN_DIR)\tools rle4encode %%* 1> $(BIN_DIR)\rle4encode.bat
+	echo @%~dp0\tools rle4encode %%* 1> $(BIN_DIR)\rle4encode.bat
 $(BIN_DIR)\wav2maud.bat :
 	@echo # wav2maud.bat
-	echo @$(BIN_DIR)\tools wav2maud %%* 1> $(BIN_DIR)\wav2maud.bat
+	echo @%~dp0\tools wav2maud %%* 1> $(BIN_DIR)\wav2maud.bat
 $(BIN_DIR)\bles2gatt.bat :
 	@echo # bles2gatt.bat
-	echo @$(BIN_DIR)\tools bles2gatt %%* 1> $(BIN_DIR)\bles2gatt.bat
+	echo @%~dp0\tools bles2gatt %%* 1> $(BIN_DIR)\bles2gatt.bat
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).*

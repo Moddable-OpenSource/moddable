@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,9 +36,7 @@
  */
 
 import config from "mc/config";
-import {AES, CBC, DES, DHE_RSA, ECDHE_RSA, GCM, MD5, NONE, NULL, RSA, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
-
-
+import {AES, CBC, DHE_RSA, ECDHE_RSA, GCM, RSA, SHA1, SHA256 /* , SHA384, TDES */} from "ssl/constants";
 
 const supportedCipherSuites = [
 	{

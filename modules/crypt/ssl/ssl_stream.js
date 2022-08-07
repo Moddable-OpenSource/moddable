@@ -130,6 +130,6 @@ class SSLStream {
 	close() {
 		this.#bytes = undefined;
 	}
-};
+}
 
 export default SSLStream;

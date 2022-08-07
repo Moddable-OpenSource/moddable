@@ -142,15 +142,17 @@ XSL = $(MODDABLE_TOOLS_DIR)/xsl
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
-	
-all: precursor
-	$(shell nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+
+XSBUG_HOST ?= localhost
+XSBUG_PORT ?= 5002
+
+all: precursor xsbug
+	$(shell XSBUG_PORT=$(XSBUG_PORT) ; XSBUG_HOST=$(XSBUG_HOST) ; nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 #	echo "gdb $(SIMULATOR)\nr $(BIN_DIR)/mc.so"
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 
 xsbug:
-	@echo "# starting xsbug"
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 
 build: precursor

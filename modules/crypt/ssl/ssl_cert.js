@@ -56,10 +56,8 @@ class CertificateManager {
 		this.#verify = options.verify ?? true;
 		if (options.certificate)
 			this.register(options.certificate);
-		if (options.clientCertificates)
-			this.#clientCertificates = options.clientCertificates;
-		if (options.clientKey)
-			this.#clientKey = options.clientKey;
+		this.#clientCertificates = options.clientCertificates;
+		this.#clientKey = options.clientKey;
 	}
 	getCerts() {
 		// return the self certs

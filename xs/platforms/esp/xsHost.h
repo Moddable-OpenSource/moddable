@@ -87,6 +87,8 @@ extern void espMemCpy(void *dst, const void *src, size_t count);
 extern int espMemCmp(const void *a, const void *b, size_t count);
 extern int espStrCmp(const char *ap, const char *bp);
 extern int espStrNCmp(const char *ap, const char *bp, size_t count);
+extern size_t espStrcspn(const char *str, const char *strCharSet);
+extern size_t espStrspn(const char *str, const char *strCharSet);
 
 extern void *espMallocUint32(int count);
 extern void espFreeUint32(void *t);
@@ -481,6 +483,13 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 #define c_strstr espStrStr
 #define c_strrchr espStrRChr
 #define c_isEmpty(s) (!c_read8(s))
+#if ESP32
+	#define c_strcspn strcspn
+	#define c_strspn strspn
+#else
+	#define c_strcspn espStrcspn
+	#define c_strspn espStrspn
+#endif
 
 /* 32-BIT MEMORY */
 

@@ -38,19 +38,17 @@
 import RNG from "rng";
 import PKCS1 from "pkcs1";
 import Mont from "mont";
-import EC from "ec";
-import Curve from "curve";
 import BER from "ber";
 
 export default class ECDSA {
-	constructor(key, curve, priv) {
+	constructor(key, curve /* , priv */) {
 		this.u = key;
 		this.G = curve.G;
 		this.orderSize = curve.orderSize;
 		this.n = new Mont({m: curve.n});
 		this.ec = curve.ec;
 		this.k = curve.k;	// just for a debugging purpose
-	};
+	}
 	_sign(H) {
 		// (r, s) = (k*G, (e + du*r) / k)
 		var ec = this.ec;
@@ -67,7 +65,7 @@ export default class ECDSA {
 			var s = n.mul(n.add(e, n.mul(du, r)), n.mulinv(k));
 		} while (s == 0);
 		return {r, s};
-	};
+	}
 	sign(H, asn1) {
 		const sig = this._sign(H);
 		if (asn1)
@@ -76,7 +74,7 @@ export default class ECDSA {
 		const os = new ArrayBuffer();
 		const l = this.orderSize;
 		return os.concat(PKCS1.I2OSP(sig.r, l), PKCS1.I2OSP(sig.s, l));
-	};
+	}
 	_verify(H, r, s) {
 		// u1 = e / s
 		// u2 = r / s
@@ -93,7 +91,7 @@ export default class ECDSA {
 		// var R = ec.add(ec.mul(G, u1), ec.mul(Qu, u2));
 		var R = ec.mul2(G, u1, Qu, u2);
 		return R.X === r;
-	};
+	}
 	verify(H, sig, asn1) {
 		var r, s;
 		if (asn1) {
@@ -108,11 +106,11 @@ export default class ECDSA {
 			s = PKCS1.OS2IP(sig.slice(l, l*2));
 		}
 		return this._verify(H, r, s);
-	};
+	}
 	static randint(max) {
 		var i = BigInt.fromArrayBuffer(RNG.get(BigInt.bitLength(max) >>> 3));
 		while (i >= max)
 			i >>>= 1;
 		return i;
-	};
-};
+	}
+}

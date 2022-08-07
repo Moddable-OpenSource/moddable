@@ -30,6 +30,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/base/deepEqual/manifest.json",
 		"$(MODULES)/base/modules/manifest.json",
 		"$(MODULES)/data/base64/manifest.json",
 		"$(MODULES)/data/hex/manifest.json",
@@ -42,7 +43,8 @@
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
-		"$(MODDABLE)/modules/network/websocket/manifest.json"
+		"$(MODDABLE)/modules/network/websocket/manifest.json",
+		"$(MODDABLE)/modules/network/ble/manifest_client.json"
 	],
 	"modules": {
 		"*": [
@@ -72,6 +74,15 @@
 		"http"
 	],
 	"strip": [],
+	"config" : {
+		"ble": {
+			"client": {
+				"timeout": 10000,
+				"targetDevice": "Moddable Test Server"
+			}
+			
+		}
+	},
 	"platforms": {
 		"esp": {
 			"error": "testmc is unsupported on esp8266"

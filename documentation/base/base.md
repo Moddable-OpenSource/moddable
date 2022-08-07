@@ -1,6 +1,6 @@
 # Base
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: June 20, 2022
+Revised: August 5, 2022
 
 ## Table of Contents
 
@@ -8,6 +8,7 @@ Revised: June 20, 2022
 * [Time](#time)
 * [Debug](#debug)
 * [UUID](#uuid)
+* [deepEqual](#deepequal)
 * [Instrumentation](#instrumentation)
 * [Console](#console)
 * [CLI](#cli)
@@ -248,6 +249,37 @@ The `UUID` function returns a new UUID formatted as a string.
 ```js
 let value = UUID();	// 1080B49C-59FC-4A32-A38B-DE7E80117842
 ```
+
+***
+
+<a id="deepequal"></a>
+## function deepEqual(a, b [,options])
+
+- **Source code:** [deepEqual](../../modules/base/deepEqual)
+- **Tests:** [deepEqual](../../tests/modules/base/deepEqual)
+
+The `deepEqual` function implements a deep comparison between two JavaScript object. 
+
+```js
+import deepEqual from "deepEqual";
+```
+
+There is no standard algorithm for deeply comparing two objects in JavaScript, and there are many possible correct approaches. The Moddable SDK adopts the behavior of `assert.deepEqual` and `assert.deepStrictEqual` from Node.js for its implementation of `deepEqual`.
+
+The `deepEqual` function has an optional third parameter, an options object. By default the `deepEqual` [comparison is not-strict](https://nodejs.org/api/assert.html#assertdeepequalactual-expected-message), similar to using `==` for comparisons. Passing `{strict: true}` for the options object uses [strict comparison](https://nodejs.org/api/assert.html#assertdeepstrictequalactual-expected-message), similar to using `===` for comparisons.
+
+```js
+const a = {a: 1, b: 0, c: "str"};
+const b = {a: 1, b: "0", c: "str"};
+deepEqual(a, b);		// true
+deepEqual(a, b, {strict: true});		// false
+
+```
+
+The known differences between the Moddable SDK implementation and Node.js will not impact most uses:
+
+- `WeakMap` and `WeakSet` using read-only objects as keys
+- XS does not call `valueOf` to compare boxed primitives
 
 ***
 

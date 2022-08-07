@@ -1260,6 +1260,7 @@ void fxSetWeakEntry(txMachine* the, txSlot* list, txSlot* key, txSlot* value)
 	txSlot** address = &slot->next;
 	txSlot* keyEntry;
 	txSlot* listEntry;
+	txSlot* closure;
 	while ((slot = *address)) {
 		if (!(slot->flag & XS_INTERNAL_FLAG))
 			break;
@@ -1271,26 +1272,35 @@ void fxSetWeakEntry(txMachine* the, txSlot* list, txSlot* key, txSlot* value)
 		}			
 		address = &slot->next;
 	}
+	
 	keyEntry = fxNewSlot(the);
 	mxPushClosure(keyEntry);
 	listEntry = fxNewSlot(the);
 	mxPushClosure(listEntry);
-	slot = fxNewSlot(the);
-	slot->kind = value->kind;
-	slot->value = value->value;
+	closure = fxNewSlot(the);
+	closure->kind = value->kind;
+	closure->value = value->value;
+	
+	slot = (key->flag & XS_EXOTIC_FLAG) ? key->next : key;
+	address = &slot->next;
+	while ((slot = *address)) {
+		if (!(slot->flag & XS_INTERNAL_FLAG))
+			break;
+		address = &slot->next;
+	}
 	
 	keyEntry->next = *address;
 	keyEntry->flag = XS_INTERNAL_FLAG;
 	keyEntry->kind = XS_WEAK_ENTRY_KIND;
 	keyEntry->value.weakEntry.check = list;
-	keyEntry->value.weakEntry.value = slot;
+	keyEntry->value.weakEntry.value = closure;
 	*address = keyEntry;
 	
 	listEntry->next = list->value.weakList.first;
 	listEntry->flag = XS_INTERNAL_FLAG;
 	listEntry->kind = XS_WEAK_ENTRY_KIND;
 	listEntry->value.weakEntry.check = key;
-	listEntry->value.weakEntry.value = slot;
+	listEntry->value.weakEntry.value = closure;
 	list->value.weakList.first = listEntry;
 	
 	mxPop();

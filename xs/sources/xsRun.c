@@ -56,7 +56,6 @@ static void fxRunIn(txMachine* the);
 static void fxRunInstantiate(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
-static txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b);
 static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 static txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
 static txBoolean fxToNumericIntegerUnary(txMachine* the, txSlot* theSlot, txBigIntUnary op);
@@ -830,7 +829,7 @@ XS_CODE_JUMP:
 						mxFrame = mxStack + 1 + offset + 1;
 						mxFrame->flag |= XS_C_FLAG;
 						mxScope = mxStack;
-						mxCode = (txByte*)slot->value.callback.IDs;
+						mxCode = C_NULL;
 						byte = XS_CODE_CALL;
 						mxSaveState;
 			#ifdef mxLink
@@ -883,7 +882,7 @@ XS_CODE_JUMP:
 				mxFrame = mxStack + 1 + offset + 1;
 				mxFrame->flag |= XS_C_FLAG;
 				mxScope = mxStack;
-				mxCode = (txByte*)slot->value.hostFunction.IDs;
+				mxCode = C_NULL;
 				byte = XS_CODE_CALL;
 				mxSaveState;
 #ifdef mxLink
@@ -4766,6 +4765,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 					p += mxStringLength((char*)p) + 1;
 				}
 				fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.callback.IDs);
+				the->stack->value.callback.IDs = C_NULL;
 			}	
 			else {
 				the->stack->value.callback.address = C_NULL;
@@ -4785,7 +4785,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				instance = fxNewFunctionInstance(the, closures ? mxID(_eval) : XS_NO_ID);
 				instance->next->kind = XS_CALLBACK_KIND;
 				instance->next->value.callback.address = script->callback;
-				instance->next->value.callback.IDs = property->value.callback.IDs;
+				instance->next->value.callback.IDs = C_NULL;
 				property = mxFunctionInstanceHome(instance);
 				property->value.home.object = object;
 				property->value.home.module = module;
