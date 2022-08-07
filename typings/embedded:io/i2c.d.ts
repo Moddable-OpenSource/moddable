@@ -18,30 +18,25 @@
 *
 */
 
-declare module "embedded:io/i2c" {
-  type TypedArray =
-    | Uint8Array
-    | Uint8ClampedArray
-    | Uint16Array
-    | Uint32Array
-    | Int8Array
-    | Int16Array
-    | Int32Array
-    | Float32Array
-    | Float64Array
 
+declare module "embedded:io/i2c" {
+  import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class I2C {
     constructor(options: {
-      data: number;
-      clock: number;
+      data: PinSpecifier;
+      clock: PinSpecifier;
       hz: number;
       address: number;
+      port?: PortSpecifier;
     });
     readonly resolution: number;
-    write(value: ArrayBuffer | TypedArray, stop?: boolean): void;
-    read(): ArrayBuffer;
+    
+    write(value: Buffer, stop?: boolean): void;
+    read(byteLength: number, stop?: boolean): ArrayBuffer;
+    read(buffer: Buffer, stop?: boolean): ArrayBuffer;
     get format(): "buffer"
     set format(value: "buffer")
   }
+
   export default I2C;
 }

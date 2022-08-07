@@ -19,28 +19,36 @@
 */
 
 declare module "embedded:io/serial" {
-  type TypedArray =
-    | Uint8Array
-    | Uint8ClampedArray
-    | Uint16Array
-    | Uint32Array
-    | Int8Array
-    | Int16Array
-    | Int32Array
-    | Float32Array
-    | Float64Array
-
+  import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class Serial {
     constructor(options: {
+      receive: PinSpecifier;
+      transmit: PinSpecifier
       baud: number;
+      flowControl?: "hardware" | "none";
+      dataTerminalReady?: PinSpecifier;
+      requestToSend?: PinSpecifier;
+      clearToSend?: PinSpecifier;
+      dataSetReady?: PinSpecifier;
+      port: PortSpecifier;
       onReadable?: (this: Serial, bytes: number) => void;
-      onWritable?: (this: Serial, byets: number) => void;
+      onWritable?: (this: Serial, bytes: number) => void;
     });
     readonly resolution: number;
-    write(value: number | ArrayBuffer | TypedArray, stop?: boolean): void;
-    read(bytes?: number): number | ArrayBuffer;
+    read(): number;
+    read(byteLength: number): ArrayBuffer;
+    read(buffer: Buffer): void;
+    write(value: number | Buffer): void;
+    flush(): void;
+    flush(input: number, output: number): void;
+    set(options: {
+      dataTerminalReady?: PinSpecifier;
+      requestToSend?: PinSpecifier;
+      break?: boolean;
+    })
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
   }
+
   export default Serial;
 }
