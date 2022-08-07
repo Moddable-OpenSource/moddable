@@ -26,6 +26,7 @@ declare module "embedded:io/pulsecount" {
       control: PinSpecifier;
       onReadable?: (this: PulseCount) => void;
       onError?: (this: PulseCount) => void;
+      format?: "number";
     });
     read(): number;
     write(count: number): void;

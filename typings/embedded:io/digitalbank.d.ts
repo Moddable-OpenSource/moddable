@@ -37,11 +37,13 @@ declare module "embedded:io/digitalbank" {
     static readonly OutputOpenDrain: unknown
 
     constructor(dictionary: {
-      pins: PinSpecifier,
-      mode: Mode,
-      rises?: number,
-      falls?: number,
+      pins: PinSpecifier;
+      mode: Mode;
+      rises?: number;
+      falls?: number;
+      bank?: number | string;
       onReadable?: (this: DigitalBank, trigger: number) => void;
+      format?: "number";
     })
 
     close(): void;

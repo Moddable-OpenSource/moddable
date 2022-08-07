@@ -28,6 +28,7 @@ declare module "embedded:io/i2c" {
       hz: number;
       address: number;
       port?: PortSpecifier;
+      format?: "buffer";
     });
     readonly resolution: number;
     

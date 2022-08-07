@@ -21,9 +21,13 @@
 declare module "embedded:io/serial" {
   import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class Serial {
-    constructor(options: {
+    constructor(options: ({
       receive: PinSpecifier;
-      transmit: PinSpecifier
+      transmit?: PinSpecifier;
+    } | {
+      recevice?: PinSpecifier;
+      transmit: PinSpecifier;
+    }) & {
       baud: number;
       flowControl?: "hardware" | "none";
       dataTerminalReady?: PinSpecifier;
@@ -33,9 +37,10 @@ declare module "embedded:io/serial" {
       port: PortSpecifier;
       onReadable?: (this: Serial, bytes: number) => void;
       onWritable?: (this: Serial, bytes: number) => void;
+      format?: "number" | "buffer";
     });
     readonly resolution: number;
-    read(): number;
+    read(): number | ArrayBuffer;
     read(byteLength: number): ArrayBuffer;
     read(buffer: Buffer): void;
     write(value: number | Buffer): void;
