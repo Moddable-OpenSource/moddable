@@ -19,29 +19,24 @@
 */
 
 declare module "embedded:io/socket/udp" {
-  type TypedArray =
-    | Uint8Array
-    | Uint8ClampedArray
-    | Uint16Array
-    | Uint32Array
-    | Int8Array
-    | Int16Array
-    | Int32Array
-    | Float32Array
-    | Float64Array
-
+  import type { Buffer } from "embedded:io/_common";
   class UDP {
     constructor(options: {
       port?: number;
+      address?: string;
       onReadable?: (this: UDP, packets: number) => void;
-      onWritable?: (this: UDP, bytes: number) => void;
       onError?: () => void;
-    })
-    write(address: string, port: number, packet: ArrayBuffer | TypedArray): void;
+      format?: "buffer";
+    } & ({} | {
+      multicast: string;
+      timeToLive: number;
+    }))
+    write(buffer: Buffer, address: string, port: number): void;
     read(): ArrayBuffer & {
       address: string;
       port: number;
     };
+    read(buffer: Buffer);
     get format(): "buffer"
     set format(value: "buffer")
   }
