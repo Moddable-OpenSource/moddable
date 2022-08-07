@@ -29,7 +29,8 @@ declare module "embedded:io/spi" {
       active?: 1 | 0;
       hz: number;
       mode?: number;
-      port: PortSpecifier;
+      port?: PortSpecifier;
+      format?: "buffer";
     })
     read(byteLength: number): ArrayBuffer;
     read(buffer: Buffer): void;
