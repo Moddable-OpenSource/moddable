@@ -19,14 +19,19 @@ struct sx_structuredCloneList {
 static void fx_structuredCloneArray(txMachine* the, tx_structuredCloneList* list, txSlot* fromArray, txSlot* toArray);
 static void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txBoolean paired);
 static void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list);
+static txSlot* fx_structuredCloneProperty(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txID id);
 static void fx_structuredCloneSlot(txMachine* the, tx_structuredCloneList* list);
 static void fx_structuredCloneThrow(txMachine* the, tx_structuredCloneList* list, txString message);
+static txBoolean fx_structuredCloneTransferable(txMachine* the, txSlot* instance);
 
 void fx_structuredClone(txMachine* the)
 {
 	tx_structuredCloneLink link = { C_NULL, C_NULL, mxID(_value), 0 };
 	tx_structuredCloneList list = { &link, &link };
-	fxVars(the, 3);
+	fxVars(the, 4);
+	
+	if (mxArgc == 0)
+		mxTypeError("no value");
 	
 	mxPush(mxMapConstructor);
 	mxNew();
@@ -40,27 +45,64 @@ void fx_structuredClone(txMachine* the)
 	mxPushSlot(mxVarv(0));
 	mxGetID(mxID(_set));
 	mxPullSlot(mxVarv(2));
-
-	if (mxArgc > 0)
-		mxPushSlot(mxArgv(0));
-	else
-		mxPushUndefined();
-	if (mxArgc > 1) {
-		// transferable?
-	}
-	if (mxArgc > 2) {
-		// options?
-	}
 	
+	mxPushList();
+	if (mxArgc > 1) {
+		mxPushSlot(mxArgv(1));
+		if (fxRunTest(the)) {
+			mxPushSlot(mxArgv(1));
+			if (mxHasID(mxID(_transfer))) {
+				txSlot* transferList = the->stack;
+				txSlot* transferArray;
+				txSlot* transferItem;
+				txSlot* transferArrayBuffer;
+				txSlot** transferAddress;
+				txSlot* transferLink;
+				txIndex c, i;
+				mxPushSlot(mxArgv(1));
+				mxGetID(mxID(_transfer));
+				transferArray = the->stack;
+				mxPushSlot(transferArray);
+				mxGetID(mxID(_length));
+				c = (txIndex)fxToInteger(the, the->stack);
+				mxPop();
+				for (i = 0; i < c; i++) {
+					mxPushSlot(transferArray);
+					mxGetIndex(i);
+					transferItem = the->stack;
+					if (!mxIsReference(transferItem))
+						mxTypeError("tranfer[%d]: no object", i);
+					transferArrayBuffer = transferItem->value.reference->next;
+					if (!transferArrayBuffer || (transferArrayBuffer->kind != XS_ARRAY_BUFFER_KIND))
+						mxTypeError("tranfer[%d]: no array buffer", i);
+					transferAddress = &transferList->value.list.first;
+					while ((transferLink = *transferAddress)) {
+						if (transferLink->value.reference == transferItem->value.reference)
+							mxTypeError("tranfer[%d]: duplicate", i);
+						transferAddress = &transferLink->next;
+					}
+					transferLink = *transferAddress = fxNewSlot(the);
+					transferLink->value.reference = transferItem->value.reference;
+					transferLink->kind = transferItem->kind;
+					mxPop();
+				}
+				transferList->value.list.last = transferLink;
+				mxPop();
+			}
+		}
+	}
+	mxPullSlot(mxVarv(3));
+
+	mxPushSlot(mxArgv(0));
 	fx_structuredCloneSlot(the, &list);
 	mxPullSlot(mxResult);
 }
 
 void fx_structuredCloneArray(txMachine* the, tx_structuredCloneList* list, txSlot* fromArray, txSlot* toArray) 
 {
-	list->last->ID = XS_NO_ID;
-	toArray->flag = XS_INTERNAL_FLAG;
-	toArray->kind = XS_ARRAY_KIND;
+    toArray->ID = fromArray->ID;
+    toArray->flag = fromArray->flag & (XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG);
+    toArray->kind = XS_ARRAY_KIND;
 	toArray->value.array.address = C_NULL;
 	toArray->value.array.length = fromArray->value.array.length;
 	if (fromArray->value.array.address) {
@@ -94,6 +136,9 @@ void fx_structuredCloneArray(txMachine* the, tx_structuredCloneList* list, txSlo
 
 void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txBoolean paired) 
 {
+	tx_structuredCloneLink link = { C_NULL, C_NULL, mxID(_entries), 0 };
+	tx_structuredCloneLink link0 = { C_NULL, C_NULL, XS_NO_ID, 0 };
+	tx_structuredCloneLink link1 = { C_NULL, C_NULL, XS_NO_ID, 0 };
 	txSlot* fromTable;
 	txSlot* toTable;
 	txSlot* fromList;
@@ -117,6 +162,18 @@ void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txS
 	toList->value.list.first = C_NULL;
 	toList->value.list.last = C_NULL;
 
+	link.previous = list->last;
+	list->last->next = &link;
+	list->last = &link;
+	link0.previous = list->last;
+	list->last->next = &link0;
+	list->last = &link0;
+	if (paired) {
+		link1.previous = list->last;
+		list->last->next = &link1;
+		list->last = &link1;
+	}
+
 	from = fromList->value.list.first;
 	address = &toList->value.list.first;
 	while (from) {
@@ -124,10 +181,24 @@ void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txS
 		mxPushSlot(from);
 		fx_structuredCloneSlot(the, list);
 		mxPullSlot(to);
+		
+		if (paired) {
+			if (link1.index) {
+				link0.index++;
+				link1.index = 0;
+			}
+			else
+				link1.index++;
+		}
+		else
+			link0.index++;
+		
 		from = from->next;
 		address = &to->next;
 	}
 	toList->value.list.last = to;
+	
+	list->last = link.previous;
 	
 	to = toList->value.list.first;
 	while (to) {
@@ -167,9 +238,6 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 		return;
 	mxPop();
 	
-	link.previous = list->last;
-	list->last->next = &link;
-	list->last = &link;
 	
 	result = fxNewInstance(the);
 	result->value.instance.prototype = mxObjectPrototype.value.reference;
@@ -185,7 +253,7 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 	from = instance->next;
 	to = result;
 
-	if (from->flag & XS_INTERNAL_FLAG) {
+	if (from && (from->flag & XS_INTERNAL_FLAG)) {
 		switch (from->kind) {
 		case XS_BOOLEAN_KIND:
 			result->value.instance.prototype = mxBooleanPrototype.value.reference;
@@ -204,50 +272,42 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 			to = to->next = fxDuplicateSlot(the, from);
 			from = from->next;
 			break;
+		case XS_SYMBOL_KIND:
+			fx_structuredCloneThrow(the, list, "symbol");
+			break;
 		case XS_BIGINT_KIND:
 		case XS_BIGINT_X_KIND:
 			result->value.instance.prototype = mxBigIntPrototype.value.reference;
 			to = to->next = fxDuplicateSlot(the, from);
 			from = from->next;
 			break;
-		case XS_DATE_KIND:
-			result->value.instance.prototype = mxDatePrototype.value.reference;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-			break;
-		case XS_ERROR_KIND:
-// 			for (error = XS_EVAL_ERROR; error < XS_ERROR_COUNT, error++) {
-// 				if (instance->value.instance.prototype == mxErrorPrototype.value.references[error]) {
-// 					result->value.instance.prototype = mxErrorPrototype.value.references[error];
-// 				}
-// 			}
-// 			if (error == XS_ERROR_COUNT)
-// 				result->value.instance.prototype = mxErrorPrototype.value.reference;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-// 			fx_structuredCloneProperty(the, mxID(_message));
-// 			fx_structuredCloneProperty(the, mxID(_cause));
-			break;
-		case XS_REGEXP_KIND:
-			result->value.instance.prototype = mxRegExpPrototype.value.reference;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-			to = to->next = fxDuplicateSlot(the, from);
-			to->value.integer = 0;
-			from = from->next;
-			break;
-		
+			
 		case XS_ARRAY_KIND:
-			if (from->flag & XS_EXOTIC_FLAG) {
+			if (instance->flag & XS_EXOTIC_FLAG) {
 				if ((from->ID == XS_ARGUMENTS_SLOPPY_BEHAVIOR) || (from->ID == XS_ARGUMENTS_STRICT_BEHAVIOR))
 					fx_structuredCloneThrow(the, list, "arguments");
 				result->value.instance.prototype = mxArrayPrototype.value.reference;
 				result->flag |= XS_EXOTIC_FLAG;
 			}
-			to = to->next = fxNewSlot(the);
-			fx_structuredCloneArray(the, list, from, to);
+			break;
+		case XS_ARRAY_BUFFER_KIND:
+			result->value.instance.prototype = mxArrayBufferPrototype.value.reference;
+			if (!from->value.arrayBuffer.address)
+				fx_structuredCloneThrow(the, list, "detached array buffer");
+			to = to->next = fxDuplicateSlot(the, from);
+			if (fx_structuredCloneTransferable(the, instance)) {
+				if (!(from->flag & XS_DONT_SET_FLAG)) {
+					from->value.arrayBuffer.address = C_NULL;
+					from->next->value.bufferInfo.length = 0;
+				}
+			}
+			else {
+				size = from->next->value.bufferInfo.length;
+				to->value.arrayBuffer.address = fxNewChunk(the, size);
+				c_memcpy(to->value.arrayBuffer.address, from->value.arrayBuffer.address, size);
+			}
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
 			from = from->next;
 			break;
 		case XS_CALLBACK_KIND:
@@ -256,16 +316,135 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 		case XS_CODE_X_KIND:
 			fx_structuredCloneThrow(the, list, "function");
 			break;
-		case XS_FINALIZATION_CELL_KIND:
-		case XS_FINALIZATION_REGISTRY_KIND:
-			fx_structuredCloneThrow(the, list, "finalization");
+		case XS_DATA_VIEW_KIND:
+			result->value.instance.prototype = mxDataViewPrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			mxPushSlot(from);
+			fx_structuredCloneSlot(the, list);
+			to = to->next = fxNewSlot(the);
+			mxPullSlot(to);
+			to->flag = XS_INTERNAL_FLAG;
+			from = from->next;
+			break;
+		case XS_DATE_KIND:
+			result->value.instance.prototype = mxDatePrototype.value.reference;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_ERROR_KIND:
+			result->value.instance.prototype = mxErrorPrototypes(from->value.error.which).value.reference;
+			to = to->next = fxDuplicateSlot(the, from); // info?
+			
+			link.previous = list->last;
+			list->last->next = &link;
+			list->last = &link;
+			
+			to = fx_structuredCloneProperty(the, list, from, to, mxID(_message));
+			to = fx_structuredCloneProperty(the, list, from, to, mxID(_cause));
+			if (from->value.error.which == XS_AGGREGATE_ERROR)
+				to = fx_structuredCloneProperty(the, list, from, to, mxID(_errors));
+				
+			list->last = link.previous;
+			
+			from = from->next;
+			break;
+		case XS_CLOSURE_KIND:
+			if (from->value.closure->kind == XS_FINALIZATION_REGISTRY_KIND)
+				fx_structuredCloneThrow(the, list, "finalization registry");
+			break;
+		case XS_GLOBAL_KIND:
+			fx_structuredCloneThrow(the, list, "globalThis");
+			break;
+		case XS_HOST_KIND: 
+			if (from->next->kind != XS_BUFFER_INFO_KIND)
+				fx_structuredCloneThrow(the, list, "host object");
+		
+			if (from->value.host.variant.destructor != fxReleaseSharedChunk)
+				fx_structuredCloneThrow(the, list, "host object");
+			to = to->next = fxDuplicateSlot(the, from);
+			to->value.host.data = fxRetainSharedChunk(from->value.host.data);
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			break;
+		case XS_MAP_KIND:
+			result->value.instance.prototype = mxMapPrototype.value.reference;
+			fx_structuredCloneEntries(the, list, from, to, 1);
+			from = from->next->next->next;
+			to = to->next->next->next;
 			break;
 		case XS_MODULE_KIND:
+			fx_structuredCloneThrow(the, list, "module namespace");
+			break;
 		case XS_PROGRAM_KIND:
-			fx_structuredCloneThrow(the, list, "module");
+			fx_structuredCloneThrow(the, list, "compartment");
 			break;
 		case XS_PROMISE_KIND:
 			fx_structuredCloneThrow(the, list, "promise");
+			break;
+		case XS_PROXY_KIND:
+			fx_structuredCloneThrow(the, list, "proxy");
+			break;
+		case XS_REGEXP_KIND:
+			result->value.instance.prototype = mxRegExpPrototype.value.reference;
+			{
+				txInteger flags = from->value.regexp.code[0];
+				char modifiers[7];
+				char* modifier = &modifiers[0];
+				if (flags & XS_REGEXP_D)
+					*modifier++ = 'd';
+				if (flags & XS_REGEXP_G)
+					*modifier++ = 'g';
+				if (flags & XS_REGEXP_I)
+					*modifier++ = 'i';
+				if (flags & XS_REGEXP_M)
+					*modifier++ = 'm';
+				if (flags & XS_REGEXP_S)
+					*modifier++ = 's';
+				if (flags & XS_REGEXP_U)
+					*modifier++ = 'u';
+				if (flags & XS_REGEXP_Y)
+					*modifier++ = 'y';
+				*modifier = 0;
+				
+				to = to->next = fxDuplicateSlot(the, from);
+				from = from->next;
+			
+				if (!fxCompileRegExp(the, from->value.key.string, modifiers, &to->value.regexp.code, &to->value.regexp.data, the->nameBuffer, sizeof(the->nameBuffer)))
+					mxSyntaxError("invalid regular expression: %s", the->nameBuffer);
+			}
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
+			to->value.integer = 0;
+			from = from->next;
+			break;
+		case XS_SET_KIND:
+			result->value.instance.prototype = mxSetPrototype.value.reference;
+			fx_structuredCloneEntries(the, list, from, to, 0);
+			from = from->next->next->next;
+			to = to->next->next->next;
+			break;
+		case XS_STACK_KIND:
+			fx_structuredCloneThrow(the, list, "generator");
+			break;
+		case XS_TYPED_ARRAY_KIND:
+			mxPush(the->stackPrototypes[-1 - (txInteger)from->value.typedArray.dispatch->constructorID]);
+			mxGetID(mxID(_prototype));
+			result->value.instance.prototype = fxToInstance(the, the->stack);
+			mxPop();
+			result->flag |= XS_EXOTIC_FLAG;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			to = to->next = fxDuplicateSlot(the, from);
+			from = from->next;
+			mxPushSlot(from);
+			fx_structuredCloneSlot(the, list);
+			to = to->next = fxNewSlot(the);
+			mxPullSlot(to);
+			to->flag = XS_INTERNAL_FLAG;
+			from = from->next;
 			break;
 		case XS_WEAK_MAP_KIND:
 			fx_structuredCloneThrow(the, list, "weak map");
@@ -276,70 +455,14 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 		case XS_WEAK_SET_KIND:
 			fx_structuredCloneThrow(the, list, "weak set");
 			break;
-		case XS_STACK_KIND:
-			fx_structuredCloneThrow(the, list, "generator");
-			break;
-		case XS_SYMBOL_KIND:
-			fx_structuredCloneThrow(the, list, "symbol");
-			break;
-
-		case XS_ARRAY_BUFFER_KIND:
-			result->value.instance.prototype = mxArrayBufferPrototype.value.reference;
-			if (!from->value.arrayBuffer.address)
-				fx_structuredCloneThrow(the, list, "detached array buffer");
-			to = to->next = fxDuplicateSlot(the, from);
-			size = from->next->value.bufferInfo.length;
-			to->value.arrayBuffer.address = fxNewChunk(the, size);
-			c_memcpy(to->value.arrayBuffer.address, from->value.arrayBuffer.address, size);
-			from = from->next;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-			break;
-		case XS_TYPED_ARRAY_KIND:
-			mxPush(the->stackPrototypes[-1 - from->value.typedArray.dispatch->constructorID]);
-			mxGetID(mxID(_prototype));
-			result->value.instance.prototype = fxToInstance(the, the->stack);
-			mxPop();
-			result->flag |= XS_EXOTIC_FLAG;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-			to = to->next = fxNewSlot(the);
-			mxPushSlot(from);
-			fx_structuredCloneSlot(the, list);
-			mxPullSlot(to);
-			from = from->next;
-			break;
-		case XS_DATA_VIEW_KIND:
-			result->value.instance.prototype = mxDataViewPrototype.value.reference;
-			to = to->next = fxDuplicateSlot(the, from);
-			from = from->next;
-			to = to->next = fxNewSlot(the);
-			mxPushSlot(from);
-			fx_structuredCloneSlot(the, list);
-			mxPullSlot(to);
-			from = from->next;
-			break;
-			
-		case XS_MAP_KIND:
-			result->value.instance.prototype = mxMapPrototype.value.reference;
-			fx_structuredCloneEntries(the, list, from, to, 1);
-			from = from->next->next->next;
-			to = to->next->next->next;
-			break;
-		case XS_SET_KIND:
-			result->value.instance.prototype = mxSetPrototype.value.reference;
-			fx_structuredCloneEntries(the, list, from, to, 0);
-			from = from->next->next->next;
-			to = to->next->next->next;
-			break;
-			
-		default:
-			
-			break;
 		}
 	}
+	link.previous = list->last;
+	list->last->next = &link;
+	list->last = &link;
+
+	link.ID = XS_NO_ID;
+	// skip weak entries and private properties
 	while (from) {
 		if (from->flag & XS_INTERNAL_FLAG) {
 			if (from->kind == XS_ARRAY_KIND) {
@@ -355,7 +478,6 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 	link.index = 0;
 	while (from) {
 		if (!(from->flag & XS_DONT_ENUM_FLAG) && fxIsKeyName(the, from->ID)) {
-			to = to->next = fxNewSlot(the);
 			if (from->kind == XS_ACCESSOR_KIND) {
 				mxPushReference(instance);
 				mxGetID(from->ID);
@@ -364,12 +486,32 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 				mxPushSlot(from);
 			link.ID = from->ID;
 			fx_structuredCloneSlot(the, list);
+			to = to->next = fxNewSlot(the);
 			mxPullSlot(to);
 			to->ID = from->ID;
 		}
 		from = from->next;
 	}
 	list->last = link.previous;
+}
+
+txSlot* fx_structuredCloneProperty(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txID id) 
+{
+	while (from) {
+		if (from->ID == id)
+			break;
+		from = from->next;
+	}
+	if (from && (from->kind != XS_ACCESSOR_KIND)) {
+		mxPushSlot(from);
+		list->last->ID = from->ID;
+		fx_structuredCloneSlot(the, list);
+		to = to->next = fxNewSlot(the);
+		mxPullSlot(to);
+		to->ID = id;
+		to->flag |= XS_DONT_ENUM_FLAG;
+	}
+	return to;
 }
 
 void fx_structuredCloneSlot(txMachine* the, tx_structuredCloneList* list) 
@@ -431,4 +573,15 @@ void fx_structuredCloneThrow(txMachine* the, tx_structuredCloneList* list, txStr
 	mxTypeError(buffer);
 }
 
+txBoolean fx_structuredCloneTransferable(txMachine* the, txSlot* instance) 
+{
+	txSlot* transferList = mxVarv(3);
+	txSlot* transferLink = transferList->value.list.first;
+	while (transferLink) {	
+		if (transferLink->value.reference == instance)
+			return 1;
+		transferLink = transferLink->next;
+	}
+	return 0;
+}
 
