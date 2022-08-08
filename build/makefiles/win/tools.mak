@@ -124,6 +124,7 @@ MODULES = \
 	$(MOD_DIR)\mclocal.xsb \
 	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcrez.xsb \
+	$(MOD_DIR)\nodered2mcu.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
 	$(MOD_DIR)\resampler.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
@@ -194,6 +195,7 @@ COMMANDS = \
 	$(BIN_DIR)\mcconfig.bat \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcrez.bat \
+	$(BIN_DIR)\nodered2mcu.bat \
 	$(BIN_DIR)\png2bmp.bat \
 	$(BIN_DIR)\rle4encode.bat \
 	$(BIN_DIR)\wav2maud.bat \
@@ -383,6 +385,9 @@ $(BIN_DIR)\mcrez.bat :
 $(BIN_DIR)\mcrun.bat :
 	@echo # mcrun.bat
 	echo @%~dp0\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
+$(BIN_DIR)\nodered2mcu.bat :
+	@echo # nodered2mcu.bat
+	echo @%~dp0\tools nodered2mcu %%* 1> $(BIN_DIR)\nodered2mcu.bat
 $(BIN_DIR)\png2bmp.bat :
 	@echo # png2bmp.bat
 	echo @%~dp0\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat

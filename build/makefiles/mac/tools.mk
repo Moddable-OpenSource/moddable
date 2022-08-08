@@ -128,6 +128,7 @@ MODULES = \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcrez.xsb \
+	$(MOD_DIR)/nodered2mcu.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/resampler.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
@@ -199,6 +200,7 @@ COMMANDS = \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mclocal \
 	$(BIN_DIR)/mcrez \
+	$(BIN_DIR)/nodered2mcu \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode \
 	$(BIN_DIR)/wav2maud \
@@ -344,6 +346,11 @@ $(BIN_DIR)/mcrun: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrun"
 	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
 	chmod +x $(BIN_DIR)/mcrun
+
+$(BIN_DIR)/nodered2mcu: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": nodered2mcu"
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools nodered2mcu "$$@"' > $(BIN_DIR)/nodered2mcu
+	chmod +x $(BIN_DIR)/nodered2mcu
 
 $(BIN_DIR)/png2bmp: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"

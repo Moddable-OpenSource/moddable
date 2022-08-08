@@ -81,21 +81,16 @@ class MakeFile extends MAKEFILE {
 	}
 	generateModulesDefinitions(tool) {
 		this.write("MODULES =");
-		for (var result of tool.cdvFiles) {
+		for (var result of [].concat(tool.nodered2mcuFiles, tool.cdvFiles)) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target + ".xsb");
 		}
-		for (var result of tool.jsFiles) {
+		for (var result of [].concat(tool.jsFiles, tool.tsFiles)) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
 		}	
-		for (var result of tool.tsFiles) {
-			this.write("\\\n\t$(MODULES_DIR)");
-			this.write(tool.slash);
-			this.write(result.target);
-		}
 		for (var result of tool.cFiles) {
 			var sourceParts = tool.splitPath(result.source);
 			this.write("\\\n\t$(TMP_DIR)");
@@ -893,14 +888,8 @@ export default class extends Tool {
 	filterPreload(preload) {
 		this.preloads = [];
 		if (preload.length) {
-			for (var jsFile of this.jsFiles) {
-				jsFile.preload = false;
-			}
-			for (var tsFile of this.tsFiles) {
-				tsFile.preload = false;
-			}
-			for (var cdvFile of this.cdvFiles) {
-				cdvFile.preload = false;
+			for (var file of [].concat(this.jsFiles, this.tsFiles, this.cdvFiles, this.nodered2mcuFiles)) {
+				file.preload = false;
 			}
 			for (var pattern of preload) {
 				pattern = this.resolvePrefix(pattern);
@@ -918,21 +907,14 @@ export default class extends Tool {
 				}
 				else {
 					pattern += ".xsb";
-					for (var result of this.jsFiles) {
+					for (var result of [].concat(this.jsFiles, this.tsFiles)) {
 						var target = result.target;
 						if (target == pattern) {
 							result.preload = true;
 							this.preloads.push(result.target);
 						}
 					}
-					for (var result of this.tsFiles) {
-						var target = result.target;
-						if (target == pattern) {
-							result.preload = true;
-							this.preloads.push(result.target);
-						}
-					}
-					for (var result of this.cdvFiles) {
+					for (var result of [].concat(this.cdvFiles, this.nodered2mcuFiles)) {
 						const target = result.target + ".xsb";
 						if (target == pattern) {
 							result.preload = true;
