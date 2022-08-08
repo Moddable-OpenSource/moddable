@@ -88,6 +88,7 @@ typedef struct {
 
 static void startLittlefs(xsMachine *the);
 static void stopLittlefs(void);
+static void lfs_error(xsMachine *the, int code);
 
 static xsLittleFS gLFS;
 
@@ -131,7 +132,7 @@ void xs_File(xsMachine *the)
 	if (err < 0) {
 		c_free(file);
 		stopLittlefs();
-		xsUnknownError("file not found");
+		lfs_error(the, err);
 	}
 	xsmcSetHostData(xsThis, file);
 	xsSetHostHooks(xsThis, &modLittlefsHooksFile);
@@ -172,7 +173,7 @@ void xs_file_read(xsMachine *the)
 
 	result = lfs_file_read(&gLFS->lfs, file, dst, dstLen);
 	if (result != dstLen)
-		xsUnknownError("file read failed");
+		lfs_error(the, result);
 }
 
 void xs_file_write(xsMachine *the)
@@ -210,12 +211,12 @@ void xs_file_write(xsMachine *the)
 
 			result = lfs_file_write(&gLFS->lfs, file, buffer, use);
 			if (result != use)
-				xsUnknownError("file write failed");
+				lfs_error(the, result);
 		}
 #else
 		result = lfs_file_write(&gLFS->lfs, file, src, srcLen);
 		if (result != (int)srcLen)
-			xsUnknownError("file write failed");
+			lfs_error(the, result);
 #endif
 	}
 }
@@ -233,7 +234,7 @@ void xs_file_get_length(xsMachine *the)
 	lfs_file_t *file = xsmcGetHostDataValidate(xsThis, (void *)&modLittlefsHooksFile);
 	lfs_soff_t size = lfs_file_size(&gLFS->lfs, file);
 	if (size < 0)
-		xsUnknownError("failed");
+		lfs_error(the, size);
 	xsmcSetInteger(xsResult, size);
 }
 
@@ -242,7 +243,7 @@ void xs_file_get_position(xsMachine *the)
 	lfs_file_t *file = xsmcGetHostDataValidate(xsThis, (void *)&modLittlefsHooksFile);
 	lfs_soff_t position = lfs_file_tell(&gLFS->lfs, file);
 	if (position < 0)
-		xsUnknownError("failed");
+		lfs_error(the, position);
 	xsmcSetInteger(xsResult, position);
 }
 
@@ -252,7 +253,7 @@ void xs_file_set_position(xsMachine *the)
 	lfs_soff_t position = xsmcToInteger(xsArg(0));
 	position = lfs_file_seek(&gLFS->lfs, file, position, LFS_SEEK_SET);
 	if (position < 0)
-		xsUnknownError("failed");
+		lfs_error(the, position);
 }
 
 void xs_file_delete(xsMachine *the)
@@ -341,7 +342,7 @@ void xs_directory_create(xsMachine *the)
 
 	if (result < 0) {
 		if (LFS_ERR_EXIST != result)
-			xsUnknownError("failed");
+			lfs_error(the, result);
 	}
 }
 
@@ -394,10 +395,11 @@ void xs_File_Iterator(xsMachine *the)
 		xsUnknownError("no memory for iterator");
 	}
 
-	if (lfs_dir_open(&gLFS->lfs, d, path) < 0) {
+	int result = lfs_dir_open(&gLFS->lfs, d, path);
+	if (result < 0) {
 		c_free(d);
 		stopLittlefs();
-		xsUnknownError("failed to open directory");
+		lfs_error(the, result);
 	}
 	xsmcSetHostData(xsThis, d);
 	xsSetHostHooks(xsThis, &modLittlefsHooksIterator);
@@ -449,7 +451,7 @@ void xs_file_system_info(xsMachine *the)
 	stopLittlefs();
 
 	if (used < 0)
-		xsUnknownError("system info failed");
+		lfs_error(the, used);
 
 	xsmcSetNewObject(xsResult);
 	xsmcVars(1);
@@ -458,6 +460,59 @@ void xs_file_system_info(xsMachine *the)
 	xsmcSetInteger(xsVar(0), used * block_size);
 	xsmcSet(xsResult, xsID_used, xsVar(0));
 }
+
+#ifdef mxDebug
+
+struct lfsError {
+	int32_t		code;
+	char		*msg;
+};
+
+const struct lfsError gLFSErrors[] ICACHE_RODATA_ATTR = {
+	{LFS_ERR_IO, "Error during device operation"},
+	{LFS_ERR_CORRUPT, "Corrupted"},
+	{LFS_ERR_NOENT, "No directory entry"},
+	{LFS_ERR_EXIST, "Entry already exists"},
+	{LFS_ERR_NOTDIR, "Entry is not a dir"},
+	{LFS_ERR_ISDIR, "Entry is a dir"},
+	{LFS_ERR_NOTEMPTY, "Dir is not empty"},
+	{LFS_ERR_BADF, "Bad file number"},
+	{LFS_ERR_FBIG, "File too large"},
+	{LFS_ERR_INVAL, "Invalid parameter"},
+	{LFS_ERR_NOSPC, "No space left on sdevice"},
+	{LFS_ERR_NOMEM, "No more memory available"},
+	{LFS_ERR_NOATTR, "No data/attr available"},
+	{LFS_ERR_NAMETOOLONG, "File name too long"},
+	{0, NULL}
+};
+
+void lfs_error(xsMachine *the, int code)
+{
+	const struct lfsError *e;
+
+	if (0 == code)
+		return;
+
+	for (e = gLFSErrors; e->code; e++) {
+		if (e->code == code)
+			xsUnknownError(e->msg);
+	}
+
+	xsUnknownError("LFS ERR");
+}
+
+#else
+
+void lfs_error(xsMachine *the, int code)
+{
+	char msg[64];
+	xsmcSetString(xsResult, "LFS_ERR: ");
+	xsResult = xsCall1(xsResult, xsID_concat, xsInteger(code));
+	xsmcToStringBuffer(xsResult, msg, sizeof(msg));
+	xsUnknownError(msg);
+}
+
+#endif
 
 #if MOD_LFS_RAMDISK
 
@@ -677,7 +732,7 @@ void startLittlefs(xsMachine *the)
 #endif
 
 	if (err)
-		xsUnknownError("mount failed");
+		lfs_error(the, err);
 }
 
 void stopLittlefs(void)
