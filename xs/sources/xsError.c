@@ -308,7 +308,26 @@ void fx_Error_prototype_get_stack(txMachine* the)
 		mxTypeError("this is no Error instance");
 	slot = mxThis->value.reference->next;
 	if (slot && (slot->kind == XS_ERROR_KIND)) {
-		fx_Error_toString(the);
+		fxStringX(the, mxResult, "");
+		mxPushSlot(mxThis);
+		mxGetID(mxID(_name));
+		if (the->stack->kind != XS_UNDEFINED_KIND)  {
+			fxToString(the, the->stack);
+			fxConcatString(the, mxResult, the->stack);
+		}
+		else
+			fxConcatStringC(the, mxResult, "Error");
+		mxPop();
+		mxPushSlot(mxThis);
+		mxGetID(mxID(_message));
+		if (the->stack->kind != XS_UNDEFINED_KIND) {
+			fxToString(the, the->stack);
+			if (!c_isEmpty(the->stack->value.string)) {
+				fxConcatStringC(the, mxResult, ": ");
+				fxConcatString(the, mxResult, the->stack);
+			}
+		}
+		mxPop();
 		slot = slot->value.reference;
 		if (slot) {
 			slot = slot->next;
