@@ -24,6 +24,10 @@ static void fx_structuredCloneSlot(txMachine* the, tx_structuredCloneList* list)
 static void fx_structuredCloneThrow(txMachine* the, tx_structuredCloneList* list, txString message);
 static txBoolean fx_structuredCloneTransferable(txMachine* the, txSlot* instance);
 
+#if 0
+static txID doNotStrip = xsID_Map;
+#endif
+
 void fx_structuredClone(txMachine* the)
 {
 	tx_structuredCloneLink link = { C_NULL, C_NULL, mxID(_value), 0 };
@@ -228,6 +232,8 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 	txSlot* from;
 	txSlot* to;
 	txSize size;
+	txSlot* toArray;
+	txSlot* toBase;
 	
 	mxPushSlot(mxVarv(0));
 	mxPushSlot(mxVarv(1));
@@ -461,36 +467,69 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 	list->last->next = &link;
 	list->last = &link;
 
-	link.ID = XS_NO_ID;
-	// skip weak entries and private properties
+	toArray = C_NULL;
 	while (from) {
 		if (from->flag & XS_INTERNAL_FLAG) {
 			if (from->kind == XS_ARRAY_KIND) {
-				to = to->next = fxNewSlot(the);
-				fx_structuredCloneArray(the, list, from, to);
+				toArray = to = to->next = fxDuplicateSlot(the, from);
+				if (from->value.array.address) {
+					size = (((txChunk*)(((txByte*)from->value.array.address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+					to->value.array.address = fxNewChunk(the, size * sizeof(txSlot));
+					c_memcpy(toArray->value.array.address, from->value.array.address, size * sizeof(txSlot));
+				}
 			}
+			// skip weak entries and private properties
 		}
 		else
 			break;
 		from = from->next;
 	}	
-	
-	link.index = 0;
+	toBase = to;
 	while (from) {
 		if (!(from->flag & XS_DONT_ENUM_FLAG) && fxIsKeyName(the, from->ID)) {
-			if (from->kind == XS_ACCESSOR_KIND) {
-				mxPushReference(instance);
-				mxGetID(from->ID);
-			}
-			else
-				mxPushSlot(from);
-			link.ID = from->ID;
-			fx_structuredCloneSlot(the, list);
-			to = to->next = fxNewSlot(the);
-			mxPullSlot(to);
-			to->ID = from->ID;
+			to = to->next = fxDuplicateSlot(the, from);
+			to->flag = XS_NO_FLAG;
 		}
 		from = from->next;
+	}	
+	
+	link.ID = XS_NO_ID;
+	if (toArray && toArray->value.array.address) {
+		txSize fromOffset = 0, toOffset = 0;
+		while (fromOffset < size) {
+			txSlot* fromItem = toArray->value.array.address + fromOffset;
+			txSlot* toItem;
+			txIndex index = *((txIndex*)fromItem);
+			if (!(fromItem->flag & XS_DONT_ENUM_FLAG)) {
+				if (fromItem->kind == XS_ACCESSOR_KIND) {
+					mxPushSlot(instance);
+					mxGetIndex(index);
+				}
+				else
+					mxPushSlot(fromItem);
+				link.index = index;
+				fx_structuredCloneSlot(the, list);
+				toItem = toArray->value.array.address + toOffset;
+				mxPullSlot(toItem);
+				*((txIndex*)toItem) = index;
+				toOffset++;
+			}
+			fromOffset++;
+		}
+	}
+	link.index = 0;
+	to = toBase->next;
+	while (to) {
+		if (to->kind == XS_ACCESSOR_KIND) {
+			mxPushReference(instance);
+			mxGetID(to->ID);
+		}
+		else
+			mxPushSlot(to);
+		link.ID = to->ID;
+		fx_structuredCloneSlot(the, list);
+		mxPullSlot(to);
+		to = to->next;
 	}
 	list->last = link.previous;
 }
