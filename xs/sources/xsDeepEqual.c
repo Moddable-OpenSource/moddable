@@ -16,7 +16,6 @@ struct sx_structuredCloneList {
 	tx_structuredCloneLink* last;
 };
 
-static void fx_structuredCloneArray(txMachine* the, tx_structuredCloneList* list, txSlot* fromArray, txSlot* toArray);
 static void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txBoolean paired);
 static void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list);
 static txSlot* fx_structuredCloneProperty(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txID id);
@@ -102,42 +101,6 @@ void fx_structuredClone(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
-void fx_structuredCloneArray(txMachine* the, tx_structuredCloneList* list, txSlot* fromArray, txSlot* toArray) 
-{
-    toArray->ID = fromArray->ID;
-    toArray->flag = fromArray->flag & (XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG);
-    toArray->kind = XS_ARRAY_KIND;
-	toArray->value.array.address = C_NULL;
-	toArray->value.array.length = fromArray->value.array.length;
-	if (fromArray->value.array.address) {
-		txSize size = (((txChunk*)(((txByte*)fromArray->value.array.address) - sizeof(txChunk)))->size) / sizeof(txSlot);
-		txSize fromOffset = 0, toOffset = 0;
-		toArray->value.array.address = fxNewChunk(the, size * sizeof(txSlot));
-		c_memset(toArray->value.array.address, 0, size * sizeof(txSlot));
-		while (fromOffset < size) {
-			txSlot* from = fromArray->value.array.address + fromOffset;
-			txSlot* to;
-			txIndex index = *((txIndex*)from);
-			if (!(from->flag & XS_DONT_ENUM_FLAG)) {
-				if (from->kind == XS_ACCESSOR_KIND) {
-					txSlot* instance = the->stack + 1;
-					mxPushSlot(instance);
-					mxGetIndex(index);
-				}
-				else
-					mxPushSlot(from);
-				list->last->index = index;
-				fx_structuredCloneSlot(the, list);
-				to = toArray->value.array.address + toOffset;
-				mxPullSlot(to);
-				*((txIndex*)to) = index;
-				toOffset++;
-			}
-			fromOffset++;
-		}
-	}
-}
-
 void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txSlot* from, txSlot* to, txBoolean paired) 
 {
 	tx_structuredCloneLink link = { C_NULL, C_NULL, mxID(_entries), 0 };
@@ -166,6 +129,15 @@ void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txS
 	toList->value.list.first = C_NULL;
 	toList->value.list.last = C_NULL;
 
+	from = fromList->value.list.first;
+	address = &toList->value.list.first;
+	while (from) {
+		to = *address = fxDuplicateSlot(the, from);
+		from = from->next;
+		address = &to->next;
+	}
+	toList->value.list.last = to;
+
 	link.previous = list->last;
 	list->last->next = &link;
 	list->last = &link;
@@ -177,15 +149,12 @@ void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txS
 		list->last->next = &link1;
 		list->last = &link1;
 	}
-
-	from = fromList->value.list.first;
-	address = &toList->value.list.first;
-	while (from) {
-		to = *address = fxNewSlot(the);
-		mxPushSlot(from);
+	
+	to = toList->value.list.first;
+	while (to) {
+		mxPushSlot(to);
 		fx_structuredCloneSlot(the, list);
 		mxPullSlot(to);
-		
 		if (paired) {
 			if (link1.index) {
 				link0.index++;
@@ -196,11 +165,8 @@ void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txS
 		}
 		else
 			link0.index++;
-		
-		from = from->next;
-		address = &to->next;
+		to = to->next;
 	}
-	toList->value.list.last = to;
 	
 	list->last = link.previous;
 	
