@@ -40,8 +40,8 @@ declare module "embedded:io/socket/tcp" {
     readonly remotePort: number | undefined;
     read(byteLength?: number): number | ArrayBuffer;
     read(buffer: Buffer): void;
-    write(byteValue: number): void;
-    write(buffer: Buffer): void;
+    write(value: number | Buffer): void;
+    close(): void;
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
   }

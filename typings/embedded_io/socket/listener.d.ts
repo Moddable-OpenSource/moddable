@@ -23,7 +23,7 @@ declare module "embedded:io/socket/listener" {
   class Listener {
     constructor(options: {
       port?: number;
-      address: string;
+      address?: string;
       onReadable?: (this: Listener, requests: number) => void;
       format?: "socket/tcp";
     })

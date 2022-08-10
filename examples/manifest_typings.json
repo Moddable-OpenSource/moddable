@@ -22,10 +22,13 @@
 			"$(TYPINGS)/piu/*"
 		],
 		"embedded:provider/*": [
-			"$(TYPINGS)/embedded:provider/*"
+			"$(TYPINGS)/embedded_provider/*"
 		],
 		"embedded:io/*": [
-			"$(TYPINGS)/embedded:io/*"
+			"$(TYPINGS)/embedded_io/*"
+		],
+		"embedded:io/socket/*": [
+			"$(TYPINGS)/embedded_io/socket/*"
 		]
 	}
 }
