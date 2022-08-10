@@ -32,6 +32,7 @@
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODULES)/base/deepEqual/manifest.json",
 		"$(MODULES)/base/modules/manifest.json",
+		"$(MODULES)/base/structuredClone/manifest.json",
 		"$(MODULES)/data/base64/manifest.json",
 		"$(MODULES)/data/hex/manifest.json",
 		"$(MODULES)/data/qrcode/manifest.json",

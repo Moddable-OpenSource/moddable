@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"*": "$(MODULES)/base/structuredClone/*"
+	},
+	"preload": "structuredClone"
+}
