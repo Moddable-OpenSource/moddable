@@ -479,7 +479,7 @@ const struct lfsError gLFSErrors[] ICACHE_RODATA_ATTR = {
 	{LFS_ERR_BADF, "Bad file number"},
 	{LFS_ERR_FBIG, "File too large"},
 	{LFS_ERR_INVAL, "Invalid parameter"},
-	{LFS_ERR_NOSPC, "No space left on sdevice"},
+	{LFS_ERR_NOSPC, "No space left on device"},
 	{LFS_ERR_NOMEM, "No more memory available"},
 	{LFS_ERR_NOATTR, "No data/attr available"},
 	{LFS_ERR_NAMETOOLONG, "File name too long"},
