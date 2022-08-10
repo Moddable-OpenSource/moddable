@@ -100,8 +100,19 @@ void xs_file_read(xsMachine *the)
 		dst = xsmcToString(xsResult);
 	}
 	else {
+		xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
+		s2 = &xsVar(0);
+		if (s1->data[2] == s2->data[2]) {	
 		xsmcSetArrayBuffer(xsResult, NULL, dstLen);
 		dst = xsmcToArrayBuffer(xsResult);
+	}
+		else {
+			xsUnsignedValue len;
+			xsmcGetBufferWritable(xsArg(0), (void **)&dst, &len);
+			if (((uint32_t)dstLen) > len)
+				dstLen = len;
+			xsResult = xsArg(0);
+		}
 	}
 
 	result = fread(dst, 1, dstLen, file);
@@ -131,8 +142,9 @@ void xs_file_write(xsMachine *the)
 			srcLen = 1;
 		}
 		else {
-			src = xsmcToArrayBuffer(xsArg(i));
-			srcLen = xsmcGetArrayBufferLength(xsArg(i));
+			xsUnsignedValue len;
+			xsmcGetBufferReadable(xsArg(i), (void **)&src, &len);
+			srcLen = len;
 		}
 
 		result = fwrite(src, 1, srcLen, file);
