@@ -135,19 +135,19 @@ void fx_structuredCloneEntries(txMachine* the, tx_structuredCloneList* list, txS
 	fromTable = from;
 
 	toTable = to->next = fxNewSlot(the);
-	toTable->flag = XS_INTERNAL_FLAG;
-	toTable->kind = fromTable->kind;
 	toTable->value.table.address = fxNewChunk(the, fromTable->value.table.length * sizeof(txSlot*));
 	toTable->value.table.length = fromTable->value.table.length;
 	c_memset(toTable->value.table.address, 0, toTable->value.table.length * sizeof(txSlot*));
+    toTable->kind = fromTable->kind;
+	toTable->flag = fromTable->flag;
 
 	fromList = fromTable->next;
 	
 	toList = toTable->next = fxNewSlot(the);
-	toList->flag = XS_INTERNAL_FLAG;
-	toList->kind = XS_LIST_KIND;
 	toList->value.list.first = C_NULL;
 	toList->value.list.last = C_NULL;
+	toList->kind = XS_LIST_KIND;
+	toList->flag = XS_INTERNAL_FLAG;
 
 	from = fromList->value.list.first;
 	address = &toList->value.list.first;
@@ -460,6 +460,7 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 				toArray = to = to->next = fxDuplicateSlot(the, from);
 				if (from->value.array.address) {
 					size = (((txChunk*)(((txByte*)from->value.array.address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+					to->value.array.address = C_NULL;
 					to->value.array.address = fxNewChunk(the, size * sizeof(txSlot));
 					c_memcpy(toArray->value.array.address, from->value.array.address, size * sizeof(txSlot));
 				}
@@ -501,6 +502,9 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 				toOffset++;
 			}
 			fromOffset++;
+		}
+		if (toOffset < size) {
+			c_memset(toArray->value.array.address + toOffset, 0, (size - toOffset) * sizeof(txSlot));
 		}
 	}
 	link.index = 0;

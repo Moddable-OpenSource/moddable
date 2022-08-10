@@ -1,7 +1,9 @@
 /*---
 description:
-flags: [onlyStrict]
+flags: [module]
 ---*/
+
+import structuredClone from "structuredClone";
 
 const ta0 = new Uint8Array([0,1,2]);
 const ta1 = structuredClone(ta0);

@@ -1,3 +1,6 @@
+import deepEqual from "deepEqual";
+import structuredClone from "structuredClone";
+
 const GLOBAL = globalThis;
 const NODE = null;
 
@@ -22,10 +25,10 @@ const QUnit = {
         assert.sameValue(f.length, expected, "arity");
       },
       deepEqual(actual, expected, message) {
-        assert.deepEqual(actual, expected, message);
+        assert(deepEqual(actual, expected), message);
       },
       isFunction(f, message) {
-        assert(f instanceof Function, message);
+        assert(Object(f) instanceof Function, message);
       },
       looksNative(f, message) {
         //??
@@ -65,6 +68,6 @@ function cloneObjectTest(assert, value, verifyFunc) {
   });
 }
 
-export { GLOBAL, NODE, from, assign, getPrototypeOf, keys, fromSource, QUnit, cloneTest, cloneObjectTest };
+export { structuredClone, GLOBAL, NODE, from, assign, getPrototypeOf, keys, fromSource, QUnit, cloneTest, cloneObjectTest };
 
 

@@ -3,6 +3,7 @@ description:
 flags: [module]
 ---*/
 
+import structuredClone from "structuredClone";
 import * as ns from "./clone_FIXTURE.js"
 
 function test() {

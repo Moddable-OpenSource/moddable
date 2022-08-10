@@ -1,10 +1,9 @@
 /*---
 description: adapted from https://github.com/web-platform-tests/wpt/tree/master/html/webappapis/structured-clone
 flags: [module]
-includes: [compareArray.js,deepEqual.js]
 ---*/
 
-import { self, assert_equals, assert_false, assert_not_equals, assert_true, assert_unreached, check, compare_primitive, compare_Array, compare_Object, enumerate_props } from "./webappapis-structured-clone_FIXTURE.js";
+import { structuredClone, self, assert_equals, assert_false, assert_not_equals, assert_true, assert_unreached, check, compare_primitive, compare_Array, compare_Object, enumerate_props } from "./webappapis-structured-clone_FIXTURE.js";
 
 check('primitive undefined', undefined, compare_primitive);
 check('primitive null', null, compare_primitive);

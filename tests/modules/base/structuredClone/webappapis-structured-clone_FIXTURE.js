@@ -1,3 +1,5 @@
+import structuredClone from "structuredClone";
+
 const self = globalThis;
 let description = "";
 
@@ -61,4 +63,4 @@ function enumerate_props(compare_func) {
   };
 }
 
-export { self, assert_equals, assert_false, assert_not_equals, assert_true, assert_unreached, check, compare_primitive, compare_Array, compare_Object, enumerate_props };
+export { structuredClone, self, assert_equals, assert_false, assert_not_equals, assert_true, assert_unreached, check, compare_primitive, compare_Array, compare_Object, enumerate_props };

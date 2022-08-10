@@ -1,10 +1,10 @@
 /*---
 description: adapted from https://github.com/zloirock/core-js/blob/master/tests/tests/web.structured-clone.js
 flags: [module]
-includes: [compareArray.js,deepEqual.js]
+includes: [compareArray.js]
 ---*/
 
-import { GLOBAL, NODE, from, assign, getPrototypeOf, keys, fromSource, QUnit, cloneTest, cloneObjectTest } from "./core-js-structured-clone_FIXTURE.js"
+import { structuredClone, GLOBAL, NODE, from, assign, getPrototypeOf, keys, fromSource, QUnit, cloneTest, cloneObjectTest } from "./core-js-structured-clone_FIXTURE.js"
 
 QUnit.test('identity', assert => {
   assert.isFunction(structuredClone, 'structuredClone is a function');

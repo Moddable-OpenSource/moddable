@@ -1,7 +1,9 @@
 /*---
 description:
-flags: [onlyStrict]
+flags: [module]
 ---*/
+
+import structuredClone from "structuredClone";
 
 {
   const s = Symbol('s');
