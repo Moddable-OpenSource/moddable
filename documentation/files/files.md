@@ -1,6 +1,6 @@
 # Files
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: August 5, 2022
+Revised: August 10, 2022
 
 ## Table of Contents
 
@@ -248,6 +248,8 @@ The constructor takes as its sole argument the path of the directory to iterate 
 let iterator = new Iterator(config.file.root);
 ```
 
+The iterator instance is a JavaScript [iterable object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...of) so it may be used in `for...of` loops. An example is provided below.
+
 ***
 
 #### `next()`
@@ -276,6 +278,17 @@ while (item = iterator.next()) {
 ```
 
 The iterator's `next` function returns an object.  If the object has a `length` property, it is a file; if there is no `length` property, it is a directory.
+
+This is a variation of the same example using a `for...of` loop.
+
+```js
+for (const item of (new Iterator(config.file.root))) {
+	if (undefined === item.length)
+		trace(`Directory: ${item.name}\n`);
+	else
+		trace(`File: ${item.name}, ${item.length} bytes\n`);
+}
+```
 
 ***
 
