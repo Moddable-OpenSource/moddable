@@ -6,110 +6,72 @@ includes: [compareArray.js]
 
 import { structuredClone, GLOBAL, NODE, from, assign, getPrototypeOf, keys, fromSource, QUnit, cloneTest, cloneObjectTest } from "./core-js-structured-clone_FIXTURE.js"
 
-// Map
-QUnit.test('Map', assert => {
-  cloneObjectTest(assert, new Map([[1, 2], [3, 4]]), (orig, clone) => {
-    assert.deepEqual(from(orig.keys()), from(clone.keys()));
-    assert.deepEqual(from(orig.values()), from(clone.values()));
-  });
-});
-
-// Set
-QUnit.test('Set', assert => {
-  cloneObjectTest(assert, new Set([1, 2, 3, 4]), (orig, clone) => {
-    assert.deepEqual(from(orig.values()), from(clone.values()));
-  });
-});
-
-// Error
-QUnit.test('Error', assert => {
-  const errors = [
-    ['Error', new Error()],
-    ['Error', new Error('abc', 'def', { cause: 42 })],
-    ['EvalError', new EvalError()],
-    ['EvalError', new EvalError('ghi', 'jkl', { cause: 42 })],
-    ['RangeError', new RangeError()],
-    ['RangeError', new RangeError('ghi', 'jkl', { cause: 42 })],
-    ['ReferenceError', new ReferenceError()],
-    ['ReferenceError', new ReferenceError('ghi', 'jkl', { cause: 42 })],
-    ['SyntaxError', new SyntaxError()],
-    ['SyntaxError', new SyntaxError('ghi', 'jkl', { cause: 42 })],
-    ['TypeError', new TypeError()],
-    ['TypeError', new TypeError('ghi', 'jkl', { cause: 42 })],
-    ['URIError', new URIError()],
-    ['URIError', new URIError('ghi', 'jkl', { cause: 42 })],
-    ['AggregateError', new AggregateError([1, 2])],
-    ['AggregateError', new AggregateError([1, 2], 42, { cause: 42 })],
+// Regular Expressions
+QUnit.test('RegExp', assert => {
+  const regexes = [
+    new RegExp(),
+    /abc/,
+    /abc/g,
+    /abc/i,
+    /abc/gi,
+    /abc/,
+    /abc/g,
+    /abc/i,
+    /abc/gi,
   ];
 
-  const compile = fromSource('WebAssembly.CompileError()');
-  const link = fromSource('WebAssembly.LinkError()');
-  const runtime = fromSource('WebAssembly.RuntimeError()');
+  const giuy = fromSource('/abc/giuy');
+  if (giuy) regexes.push(giuy);
 
-  if (compile && compile.name === 'CompileError') errors.push(['CompileError', compile]);
-  if (link && link.name === 'LinkError') errors.push(['LinkError', link]);
-  if (runtime && runtime.name === 'RuntimeError') errors.push(['RuntimeError', runtime]);
-
-  for (const [name, error] of errors) cloneObjectTest(assert, error, (orig, clone) => {
-    assert.same(orig.constructor, clone.constructor, `${ name }#constructor`);
-    assert.same(orig.name, clone.name, `${ name }#name`);
-    assert.same(orig.message, clone.message, `${ name }#message`);
-    assert.same(orig.stack, clone.stack, `${ name }#stack`);
-    assert.same(orig.cause, clone.cause, `${ name }#cause`);
-    assert.deepEqual(orig.errors, clone.errors, `${ name }#errors`);
+  for (const regex of regexes) cloneObjectTest(assert, regex, (orig, clone) => {
+    assert.same(orig.toString(), clone.toString(), `regex ${ regex }`);
   });
 });
 
-// Arrays
-QUnit.test('Array', assert => {
-  const arrays = [
-    [],
-    [1, 2, 3],
-    assign(
-      ['foo', 'bar'],
-      { 10: true, 11: false, 20: 123, 21: 456, 30: null }),
-    assign(
-      ['foo', 'bar'],
-      { a: true, b: false, foo: 123, bar: 456, '': null }),
-  ];
-
-  for (const array of arrays) cloneObjectTest(assert, array, (orig, clone) => {
-    assert.deepEqual(orig, clone, `array content should be same: ${ array }`);
-    assert.deepEqual(keys(orig), keys(clone), `array key should be same: ${ array }`);
-    for (const key of keys(orig)) {
-      assert.same(orig[key], clone[key], `Property ${ key }`);
-    }
+if (fromSource('ArrayBuffer.prototype.slice || DataView')) {
+  // ArrayBuffer
+  if (typeof Uint8Array == 'function') QUnit.test('ArrayBuffer', assert => { // Crashes
+    cloneObjectTest(assert, new Uint8Array([0, 1, 254, 255]).buffer, (orig, clone) => {
+      assert.arrayEqual(new Uint8Array(orig), new Uint8Array(clone));
+    });
   });
-});
 
-// Objects
-QUnit.test('Object', assert => {
-  cloneObjectTest(assert, { foo: true, bar: false }, (orig, clone) => {
-    assert.deepEqual(keys(orig), keys(clone));
-    for (const key of keys(orig)) {
-      assert.same(orig[key], clone[key], `Property ${ key }`);
-    }
-  });
-});
+  // TODO SharedArrayBuffer
 
-// Non-serializable types
-QUnit.test('Non-serializable types', assert => {
-  const nons = [
-    function () { return 1; },
-    Symbol('desc'),
-    GLOBAL,
-  ];
+  // Array Buffer Views
+  if (typeof Int8Array != 'undefined') {
+    QUnit.test('%TypedArray%', assert => {
+      const arrays = [
+        new Uint8Array([]),
+        new Uint8Array([0, 1, 254, 255]),
+        new Uint16Array([0x0000, 0x0001, 0xFFFE, 0xFFFF]),
+        new Uint32Array([0x00000000, 0x00000001, 0xFFFFFFFE, 0xFFFFFFFF]),
+        new Int8Array([0, 1, 254, 255]),
+        new Int16Array([0x0000, 0x0001, 0xFFFE, 0xFFFF]),
+        new Int32Array([0x00000000, 0x00000001, 0xFFFFFFFE, 0xFFFFFFFF]),
+        new Float32Array([-Infinity, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, Infinity, NaN]),
+        new Float64Array([-Infinity, -Number.MAX_VALUE, -Number.MIN_VALUE, 0, Number.MIN_VALUE, Number.MAX_VALUE, Infinity, NaN]),
+      ];
 
-  const event = fromSource('new Event("")');
-  const port = fromSource('new MessageChannel().port1');
+      if (typeof Uint8ClampedArray != 'undefined') {
+        arrays.push(new Uint8ClampedArray([0, 1, 254, 255]));
+      }
 
-  // NodeJS events are simple objects
-  if (event && !NODE) nons.push(event);
-  if (port) nons.push(port);
+      for (const array of arrays) cloneObjectTest(assert, array, (orig, clone) => {
+        assert.arrayEqual(orig, clone);
+      });
+    });
 
-  for (const it of nons) {
-    // native NodeJS `structuredClone` throws a `TypeError` on transferable non-serializable instead of `DOMException`
-    // https://github.com/nodejs/node/issues/40841
-    assert.throws(() => structuredClone(it));
+    if (typeof DataView != 'undefined') QUnit.test('DataView', assert => {
+      const array = new Int8Array([1, 2, 3, 4]);
+      const view = new DataView(array.buffer);
+
+      cloneObjectTest(assert, array, (orig, clone) => {
+        assert.same(orig.byteLength, clone.byteLength);
+        assert.same(orig.byteOffset, clone.byteOffset);
+        assert.arrayEqual(new Int8Array(view.buffer), array);
+      });
+    });
   }
-});
+}
+
