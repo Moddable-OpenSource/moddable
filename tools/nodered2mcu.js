@@ -184,7 +184,7 @@ export default class extends TOOL {
 				const getter = [];
 				getter.push(`function (msg) {`);
 				if ("true" === config.complete)
-					getter.push(`\t\t\tmsg;`);
+					getter.push(`\t\t\treturn msg;`);
 				else
 					getter.push(`\t\t\treturn msg.${config.complete};`);
 				getter.push(`\t\t}`);
