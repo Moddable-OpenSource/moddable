@@ -220,5 +220,11 @@ globalThis.$TESTMC = {
 Object.freeze([globalThis.$TESTMC, globalThis.$NETWORK], true);
 
 export default function() {
+	const former = globalThis.assert;
+	function assert(...args) {
+		former(...args);
+	}
+	Object.setPrototypeOf(assert, former);
+	globalThis.assert = assert;
 	$MAIN();
 }
