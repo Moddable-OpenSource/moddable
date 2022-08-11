@@ -98,7 +98,6 @@ OBJECTS = \
 	$(TMP_DIR)\xsDataView.o \
 	$(TMP_DIR)\xsDate.o \
 	$(TMP_DIR)\xsDebug.o \
-	$(TMP_DIR)\xsDeepEqual.o \
 	$(TMP_DIR)\xsDefaults.o \
 	$(TMP_DIR)\xsError.o \
 	$(TMP_DIR)\xsFunction.o \

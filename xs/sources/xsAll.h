@@ -1813,11 +1813,6 @@ mxExport void fx_petrify(txMachine* the);
 mxExport void fx_mutabilities(txMachine* the);
 #endif
 
-/* xsDeepEqual.c */
-#ifdef mxDeepEqual
-mxExport void fx_structuredClone(txMachine* the);
-#endif
-
 /* xsProfile.c */
 #ifdef mxProfile
 extern void fxBeginFunction(txMachine* the, txSlot* function);
