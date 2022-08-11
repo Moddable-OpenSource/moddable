@@ -121,11 +121,11 @@ class CertificateManager {
 			validity = X509.decodeTBS(x509.tbs).validity;
 			if (!((validity.from < now) && (now < validity.to))) {
 				trace("date validation failed on received certificate\n");
-				return false;
+				continue;
 			}
 
 			if (!this._verify(X509.decodeSPKI(certs[i + 1]), x509))
-				return false;
+				continue;
 			x509 = undefined;
 
 			let aki = X509.decodeAKI(certs[i + 1]);
@@ -148,8 +148,10 @@ class CertificateManager {
 
 		x509 = X509.decode(certs[length]);
 		validity = X509.decodeTBS(x509.tbs).validity;
-		if (!((validity.from < now) && (now < validity.to)))
-			throw new Error("date validation failed");
+		if (!((validity.from < now) && (now < validity.to))) {
+			trace("date validation failed\n");
+			return false;
+		}
 
 		spki = this.findCert("ca.ski", X509.decodeAKI(certs[length]));
 		if (spki && this._verify(spki, x509))
