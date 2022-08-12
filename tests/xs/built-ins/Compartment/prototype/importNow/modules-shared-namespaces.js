@@ -5,11 +5,11 @@ flags: [onlyStrict]
 
 const importMeta = { count: { foo:0, bar:0 } };
 
-const foo = { record: new StaticModuleRecord(`
+const foo = { source: new ModuleSource(`
 	export default "foo";
 	import.meta.count.foo++;
 `), importMeta };
-const bar = { record: new StaticModuleRecord(`
+const bar = { source: new ModuleSource(`
 	import foo from "foo";
 	export default foo + "bar";
 	import.meta.count.bar++;

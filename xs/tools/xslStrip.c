@@ -179,6 +179,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Map);
 			else if (!c_strcmp(name, "Math"))
 				fxUnuseSymbol(linker, mxID(_Math));
+			else if (!c_strcmp(name, "ModuleSource")) {
+				fxStripCallback(linker, fx_ModuleSource);
+				fxStripCallback(linker, fx_ModuleSource_prototype_get_bindings);
+				fxStripCallback(linker, fx_ModuleSource_prototype_get_needsImport);
+				fxStripCallback(linker, fx_ModuleSource_prototype_get_needsImportMeta);
+			}
 			else if (!c_strcmp(name, "Promise")) {
 				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_next);
 				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_return);
@@ -213,12 +219,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Set);
 			else if (!c_strcmp(name, "SharedArrayBuffer"))
 				fxStripCallback(linker, fx_SharedArrayBuffer);
-			else if (!c_strcmp(name, "StaticModuleRecord")) {
-				fxStripCallback(linker, fx_StaticModuleRecord);
-				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_bindings);
-				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_needsImport);
-				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_needsImportMeta);
-			}
 			else if (!c_strcmp(name, "Uint8Array")) {
 				fxUnuseSymbol(linker, mxID(_Uint8Array));
 				fxStripCallback(linker, fx_Uint8Array);
@@ -244,7 +244,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			else if (!c_strcmp(name, "eval")) {
 				fxStripCallback(linker, fx_Compartment_prototype_evaluate);
 				fxStripCallback(linker, fx_Function);
-				fxStripCallback(linker, fx_StaticModuleRecord);
+				fxStripCallback(linker, fx_ModuleSource);
 				fxStripCallback(linker, fx_eval);
 				fxUnuseCode(XS_CODE_ARGUMENTS_SLOPPY);
 				fxUnuseCode(XS_CODE_EVAL);

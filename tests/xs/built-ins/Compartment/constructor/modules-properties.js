@@ -26,7 +26,7 @@ const modules = Object.create(
 		},
 		foo: { 
 			enumerable: true,
-			value: { record: new StaticModuleRecord(`export default 0`) }
+			value: { source: new ModuleSource(`export default 0`) }
 		},
 		bar: { 
 			enumerable: true,

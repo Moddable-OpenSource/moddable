@@ -4,7 +4,7 @@ flags: [onlyStrict]
 includes: [propertyHelper.js]
 ---*/
 
-var descriptor = Object.getOwnPropertyDescriptor(StaticModuleRecord.prototype, 'needsImportMeta');
+var descriptor = Object.getOwnPropertyDescriptor(ModuleSource.prototype, 'needsImportMeta');
 
 assert.sameValue(
   typeof descriptor.get,
@@ -17,5 +17,5 @@ assert.sameValue(
   'typeof descriptor.set is undefined'
 );
 
-verifyNotEnumerable(StaticModuleRecord.prototype, 'needsImportMeta');
-verifyConfigurable(StaticModuleRecord.prototype, 'needsImportMeta');
+verifyNotEnumerable(ModuleSource.prototype, 'needsImportMeta');
+verifyConfigurable(ModuleSource.prototype, 'needsImportMeta');

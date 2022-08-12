@@ -3,33 +3,33 @@ description:
 flags: [async, onlyStrict]
 ---*/
 
-const foo = new StaticModuleRecord(`
+const foo = new ModuleSource(`
 	export default "foo";
 `);
-const bar = new StaticModuleRecord(`
+const bar = new ModuleSource(`
 	export * as foo from "foo";
 `);
 
 const c0 = new Compartment({ 
 // 	modules: {
-// 		foo: { record: foo },
-// 		bar: { record: bar },
+// 		foo: { source: foo },
+// 		bar: { source: bar },
 // 	},
 	async loadHook(specifier) {
-		if (specifier == "foo") return await { record:foo };
-		if (specifier == "bar") return await { record:bar };
+		if (specifier == "foo") return await { source:foo };
+		if (specifier == "bar") return await { source:bar };
 	}
 });
 
 c0.evaluate(`
 	const c1 = new Compartment({
 		async loadHook(specifier) {
-			return await { record:specifier };
+			return await { source:specifier };
 		}
 	});
 	const c2 = new Compartment({
 		async loadHook(specifier) {
-			return await { record:specifier };
+			return await { source:specifier };
 		}
 	});
 	Promise.all([

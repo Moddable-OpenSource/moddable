@@ -3,17 +3,17 @@ description:
 flags: [onlyStrict]
 ---*/
 
-const smr1 = new StaticModuleRecord(`
+const smr1 = new ModuleSource(`
 	import * as foo from "foo";
 `);
 assert.sameValue(smr1.needsImport, false, "needsImport");
 
-const smr2 = new StaticModuleRecord(`
+const smr2 = new ModuleSource(`
 	const foo = await import("foo");
 `);
 assert.sameValue(smr2.needsImport, true, "needsImport");
 
-const smr3 = new StaticModuleRecord(`
+const smr3 = new ModuleSource(`
 	async function foo() {
 		return await import("foo");
 	}

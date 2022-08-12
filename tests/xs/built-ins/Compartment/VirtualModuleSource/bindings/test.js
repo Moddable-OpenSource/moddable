@@ -3,7 +3,7 @@ description:
 flags: [async,onlyStrict]
 ---*/
 
-const smr = new StaticModuleRecord(`
+const foo = new ModuleSource(`
 	export default 0;
 	export let v1 = 1;
 	export let v2 = 2;
@@ -11,7 +11,7 @@ const smr = new StaticModuleRecord(`
 	export const x2 = 2;
 `);
 
-const vsmr = {
+const bar = {
 	bindings: [
 		{
 			export: "default"
@@ -26,31 +26,31 @@ const vsmr = {
 		{
 			import: "v1",
 			as: "w1",
-			from: "smr"
+			from: "foo"
 		},
 		{
 			export: "v2",
 			as: "w2",
-			from: "smr"
+			from: "foo"
 		},
 		{
 			import: "x1",
-			from: "smr"
+			from: "foo"
 		},
 		{
 			export: "x2",
-			from: "smr"
+			from: "foo"
 		},
 		{
-			importAllFrom: "smr",
+			importAllFrom: "foo",
 			as: "ns1"
 		},
 		{
-			exportAllFrom: "smr",
+			exportAllFrom: "foo",
 			as: "ns2"
 		}
 	],
-	initialize($, _import, importMeta) {
+	execute($, Import, ImportMeta) {
 		$.default = -1;
 		$.v0 = 0;
 	}
@@ -58,12 +58,12 @@ const vsmr = {
 
 const c1 = new Compartment({ 
 	modules: {
-		smr: { record:smr },
-		vsmr: { record:vsmr },
+		foo: { source:foo },
+		bar: { source:bar },
 	}
 });
 
-c1.import("vsmr")
+c1.import("bar")
 .then((ns) => {
 	assert.sameValue(ns.default, -1);
 	assert.sameValue(ns.v0, 0);

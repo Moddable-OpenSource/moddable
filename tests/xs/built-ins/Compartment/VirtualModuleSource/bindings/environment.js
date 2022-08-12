@@ -3,18 +3,18 @@ description:
 flags: [async,onlyStrict]
 ---*/
 
-const smr = new StaticModuleRecord(`
+const foo = new ModuleSource(`
 	export const x = 1;
 	export const z = 3;
 `);
 
-const vsmr = {
+const bar = {
 	bindings:[
-		{ import: "x", from: "smr" },
+		{ import: "x", from: "foo" },
 		{ export: "y" },
-		{ export: "z", from: "smr" },
+		{ export: "z", from: "foo" },
 	], 
-	async initialize($, Import, ImportMeta) {
+	async execute($, Import, ImportMeta) {
 		assert.throws(TypeError, () => {
 			$.z = 0;
 		});
@@ -30,12 +30,12 @@ const vsmr = {
 
 const c1 = new Compartment({ 
 	modules: {
-		smr: { record:smr },
-		vsmr: { record:vsmr },
+		foo: { source:foo },
+		bar: { source:bar },
 	}
 });
 
-c1.import("vsmr")
+c1.import("bar")
 .then((ns) => {
 	assert.sameValue(ns.x, undefined);
 	assert.sameValue(ns.y, 2);

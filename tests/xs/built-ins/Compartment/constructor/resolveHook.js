@@ -5,15 +5,15 @@ flags: [module]
 
 const c = new Compartment({
 	modules: {
-		a: { record: new StaticModuleRecord(`
+		a: { source: new ModuleSource(`
 			import b from "b";
 			export default "a" + b;
 		`)},
-		b_a: { record: new StaticModuleRecord(`
+		b_a: { source: new ModuleSource(`
 			import c from "c";
 			export default "b" + c;
 		`)},
-		c_b_a: { record: new StaticModuleRecord(`
+		c_b_a: { source: new ModuleSource(`
 			export default "c";
 		`)},
 	},

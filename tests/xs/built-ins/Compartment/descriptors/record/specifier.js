@@ -3,18 +3,18 @@ description:
 flags: [async,onlyStrict]
 ---*/
 
-const foo = new StaticModuleRecord(`
+const foo = new ModuleSource(`
 	export default "foo";
 `);
-const bar = new StaticModuleRecord(`
+const bar = new ModuleSource(`
 	import foo from "./foo";
 	export default foo + "bar";
 `);
 
 const c1 = new Compartment({ 
 	modules: {
-		"foo": { record: foo },
-		"bar": { record: bar, specifier:"BAR" },
+		"foo": { source: foo },
+		"bar": { source: bar, specifier:"BAR" },
 	},
 	resolveHook(specifier, referrerSpecifier) {
 		assert.sameValue(referrerSpecifier, "BAR");
