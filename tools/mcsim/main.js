@@ -31,43 +31,6 @@ import * as ControlsPaneNamespace from "ControlsPane";
 import * as DevicePaneNamespace from "DevicePane";
 import * as assetsNamespace from "assets";
 
-const compartmentOptions = {
-	globals: { ...Object.getPrototypeOf(globalThis), ...globalThis, Date, Math },
-	modules: {
-		"piu/All": { namespace: piuAllNamespace },
-		"piu/Buttons": { namespace: piuButtonsNamespace },
-		"piu/PC": { namespace: piuPCNamespace },
-		"piu/Screen": { namespace: piuScreenNamespace },
-		"piu/Scrollbars": { namespace: piuScrollbarsNamespace },
-		"piu/Sliders": { namespace: piuSlidersNamespace },
-		"piu/Switches": { namespace: piuSwitchesNamespace },
-		"BinaryMessage": { namespace: BinaryMessageNamespace },
-		"ControlsPane": { namespace: ControlsPaneNamespace },
-		"DevicePane": { namespace: DevicePaneNamespace },
-		"assets": { namespace: assetsNamespace },
-	},
-	resolveHook(specifier, refererSpecifier) {
-		if (specifier[0] == '.') {
-			let separator = '/';
-			if (system.platform == "win") {
-				separator = '\\';
-				specifier = specifier.replaceAll('/', '\\');
-			}
-			let dot = 1;
-			let slash = refererSpecifier.lastIndexOf(separator);
-			if (specifier[1] == '.') {
-				dot++;
-				slash = refererSpecifier.lastIndexOf(separator, slash - 1);
-			}
-			return refererSpecifier.slice(0, slash) + specifier.slice(dot);
-		}
-		return specifier;
-	},
-	loadNowHook(specifier) {
-		return { record:new ModuleSource(system.readFileString(specifier)), importMeta:{ uri:specifier } };
-	},
-}
-
 import {} from "piu/PC";
 
 import {
@@ -145,6 +108,44 @@ let noDevice = {
 
 class ApplicationBehavior extends Behavior {
 	onCreate(application) {
+		this.compartmentOptions = {
+			globals: { ...Object.getPrototypeOf(globalThis), ...globalThis, Date, Math },
+			modules: {
+				"piu/All": { namespace: piuAllNamespace },
+				"piu/Buttons": { namespace: piuButtonsNamespace },
+				"piu/PC": { namespace: piuPCNamespace },
+				"piu/Screen": { namespace: piuScreenNamespace },
+				"piu/Scrollbars": { namespace: piuScrollbarsNamespace },
+				"piu/Sliders": { namespace: piuSlidersNamespace },
+				"piu/Switches": { namespace: piuSwitchesNamespace },
+				"BinaryMessage": { namespace: BinaryMessageNamespace },
+				"ControlsPane": { namespace: ControlsPaneNamespace },
+				"DevicePane": { namespace: DevicePaneNamespace },
+				"assets": { namespace: assetsNamespace },
+			},
+			resolveHook(specifier, refererSpecifier) {
+				if (specifier[0] == '.') {
+					let separator = '/';
+					if (system.platform == "win") {
+						separator = '\\';
+						specifier = specifier.replaceAll('/', '\\');
+					}
+					let dot = 1;
+					let slash = refererSpecifier.lastIndexOf(separator);
+					if (specifier[1] == '.') {
+						dot++;
+						slash = refererSpecifier.lastIndexOf(separator, slash - 1);
+					}
+					return refererSpecifier.slice(0, slash) + specifier.slice(dot);
+				}
+				return specifier;
+			},
+			loadNowHook(specifier) {
+				return { source:new ModuleSource(system.readFileString(specifier)), importMeta:{ uri:specifier } };
+			},
+		};
+		
+		
 		let extension = (system.platform == "win") ? "dll" : "so";
 		global.model = this;
   		application.interval = 100;
@@ -271,7 +272,7 @@ class ApplicationBehavior extends Behavior {
 			if (!info.directory) {
 				if (info.name.endsWith(".js")) {
 					try {
-						let compartment = new Compartment(compartmentOptions);
+						let compartment = new Compartment(this.compartmentOptions);
 						let device = compartment.importNow(info.path).default;
 						if (device && (("DeviceTemplate" in device) || ("DeviceTemplates" in device))) {
 							device.compartment = compartment;
