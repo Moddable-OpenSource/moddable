@@ -70,6 +70,8 @@ void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *er
 
 	CFArrayRef cfArray = CFHostGetAddressing(cfHost, NULL);
 	xsBeginHost(the);
+    xsVars(2);
+    xsVar(0) = xsString(nr->name);
 	if (cfArray) {
 		NSData *address = CFArrayGetValueAtIndex(cfArray, CFArrayGetCount(cfArray) - 1);
 
@@ -81,10 +83,11 @@ void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *er
 		char ip[20];
 
 		snprintf(ip, sizeof(ip), "%d.%d.%d.%d", (int)bytes[4], (int)bytes[5], (int)bytes[6], (int)bytes[7]);	// almost surely not really correct
-		xsCallFunction2(nr->callback, xsGlobal, xsString(nr->name), xsString(ip));
+        xsVar(1) = xsString(ip);
+		xsCallFunction2(nr->callback, xsGlobal, xsVar(0), xsVar(1));
 	}
 	else
-		xsCallFunction1(nr->callback, xsGlobal, xsString(nr->name));
+		xsCallFunction1(nr->callback, xsGlobal, xsVar(0));
 	xsEndHost(the);
 
 	xsForget(nr->callback);

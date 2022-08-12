@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -125,11 +125,11 @@ void fxSourceMapLines(txParser* parser, txString mappings)
 {
 	enum { BEGIN, SOURCE, LINE, COLUMN, NAME, END };
 	txInteger generatedLine = 0;
-	txInteger generatedColumn = 0;
-	txInteger name = 0;
-	txInteger source = 0;
+//	txInteger generatedColumn = 0;
+//	txInteger name = 0;
+//	txInteger source = 0;
 	txInteger sourceLine = 0;
-	txInteger sourceColumn = 0;
+//	txInteger sourceColumn = 0;
 	txInteger state = BEGIN;
 	txString p = mappings;
 	char c;
@@ -139,7 +139,7 @@ void fxSourceMapLines(txParser* parser, txString mappings)
 			if ((state >= NAME) && (generatedLine < parser->line))
 				parser->lines[1 + generatedLine] = 1 + sourceLine;
 			generatedLine++;
-			generatedColumn = 0;
+//			generatedColumn = 0;
 			state = BEGIN;
 		}
 		else if (c == ',') {
@@ -152,11 +152,11 @@ void fxSourceMapLines(txParser* parser, txString mappings)
 			txInteger value = fxSourceMapValue(parser, &p);
 			switch(state) {
 			case BEGIN:
-				generatedColumn += value;
+//				generatedColumn += value;
 				state = SOURCE;
 				break;
 			case SOURCE:
-				source += value;
+//				source += value;
 				state = LINE;
 				break;
 			case LINE:
@@ -164,11 +164,11 @@ void fxSourceMapLines(txParser* parser, txString mappings)
 				state = COLUMN;
 				break;
 			case COLUMN:
-				sourceColumn += value;
+//				sourceColumn += value;
 				state = NAME;
 				break;
 			case NAME:
-				name += value;
+//				name += value;
 				state = END;
 				break;
 			}

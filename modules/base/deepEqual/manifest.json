@@ -1,0 +1,15 @@
+{
+	"modules": {
+		"*": "$(MODULES)/base/deepEqual/*"
+	},
+	"preload": "deepEqual",
+	"platforms": {
+		"esp": {
+			"recipes": {
+				"strings-in-flash-force-l32": [
+					"deepEqual*"
+				]
+			}
+		}
+	}
+}

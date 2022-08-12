@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -49,8 +49,6 @@ void modI2CUninit(modI2CConfiguration config)
 	}
 }
 
-// Note: The sendStop argument to modI2CRead and modI2CWrite is currently ignored due to ESP-IDF Issue #8248 (https://github.com/espressif/esp-idf/issues/8348).
-
 uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
 	int ret;
@@ -65,7 +63,8 @@ uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length,
 	if (length > 1)
 		i2c_master_read(cmd, buffer, length - 1, 0);
 	i2c_master_read(cmd, buffer + length - 1, 1, 1);
-	i2c_master_stop(cmd);
+	if (sendStop)
+		i2c_master_stop(cmd);
 	ret = i2c_master_cmd_begin(I2C_NUM_1, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
@@ -84,8 +83,8 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 	i2c_master_start(cmd);
 	i2c_master_write_byte(cmd, (config->address << 1) | I2C_MASTER_WRITE, 1);
 	i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
-
-	i2c_master_stop(cmd);
+	if (sendStop)
+		i2c_master_stop(cmd);
 	ret = i2c_master_cmd_begin(I2C_NUM_1, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 

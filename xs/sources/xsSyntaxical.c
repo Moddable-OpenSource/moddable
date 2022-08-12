@@ -1485,6 +1485,7 @@ void fxForStatement(txParser* parser)
 			fxPushNULL(parser);
 		}
 		fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
+		fxCheckParserStack(parser, aLine);
 		fxStatement(parser, 0);
 		fxPushNodeStruct(parser, 4, XS_TOKEN_FOR, aLine);
 	}
@@ -2440,6 +2441,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				if (parser->token == XS_TOKEN_LEFT_BRACE) {
 					txUnsigned flags = parser->flags;
 					parser->flags = (flags & (mxParserFlags | mxStrictFlag)) | mxSuperFlag | mxTargetFlag | mxFieldFlag | mxAsyncFlag;
+					fxCheckParserStack(parser, aPropertyLine);
 					fxGetNextToken(parser);
 					fxStatements(parser);
 					fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
@@ -3349,6 +3351,7 @@ void fxArrayBinding(txParser* parser, txToken theToken)
 	txInteger aCount = 0;
 	txInteger aLine = parser->line;
 	int elision = 1;
+	fxCheckParserStack(parser, aLine);
 	fxMatchToken(parser, XS_TOKEN_LEFT_BRACKET);
 	while ((parser->token == XS_TOKEN_COMMA) || (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_BINDING)) {
 		txInteger anItemLine = parser->line;

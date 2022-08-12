@@ -30,6 +30,9 @@ PLATFORM_DIR = $(MODDABLE)/build/devices/pico
 DEBUGGER_SPEED ?= 115200
 DEBUGGER_PORT ?= /dev/cu.SLAB_USBtoUART
 
+XSBUG_HOST ?= localhost
+XSBUG_PORT ?= 5002
+
 UF2_VOLUME_NAME ?= RPI-RP2
 PICO_VID ?= 2e8a
 PICO_PID ?= 000a
@@ -48,7 +51,7 @@ ifeq ($(HOST_OS),Darwin)
 	ifeq ($(DEBUG),1)
 		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 #	CONNECT_XSBUG=@echo "Connect to xsbug @ $(DEBUGGER_PORT)." ; serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
-		CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
+		CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; export XSBUG_PORT=$(XSBUG_PORT) ; export XSBUG_HOST=$(XSBUG_HOST) ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
 		NORESTART=-norestart
 #		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	else

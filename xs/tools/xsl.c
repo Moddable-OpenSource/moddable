@@ -372,6 +372,9 @@ int main(int argc, char* argv[])
 						}
 					}
 					xsCatch {
+						xsSlot errorStack = xsGet(xsException, mxID(_stack));
+						xsStringValue stackStr = xsToString(errorStack);
+						fprintf(stderr, "%s\n", stackStr);
 						xsStringValue message = xsToString(xsException);
 						fxReportLinkerError(linker, "%s", message);
 					}

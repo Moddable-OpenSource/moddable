@@ -95,14 +95,14 @@ class ConsoleCodeBehavior extends CodeBehavior {
 	onMouseMoved(code, x, y) {
 		let bounds = code.bounds;
 		let offset = code.findLineBreak(code.hitOffset(x - bounds.x, y - bounds.y), false);
-		let color = this.colors.find(color => color.offset == offset);
+		let color = this.colors.find(color => color.offset == offset && color.path !== undefined);
 		application.cursor = color ? cursors.link :  cursors.iBeam;
 	}
 	onTouchEnded(code, id, x, y, ticks) {
 		super.onTouchEnded(code, id, x, y, ticks);
 		if ((this.mode == 0) && (code.selectionLength == 0)) {
 			let offset = code.findLineBreak(code.selectionOffset, false);
-			let color = this.colors.find(color => color.offset == offset);
+			let color = this.colors.find(color => color.offset == offset && color.path !== undefined);
 			if (color) {
 				model.selectFile(color.path, { line:color.line });
 			}

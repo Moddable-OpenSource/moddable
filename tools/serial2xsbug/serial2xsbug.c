@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -118,7 +118,11 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		}
 	}
 	self->host = "localhost";
+	if (getenv("XSBUG_HOST"))
+		self->host = getenv("XSBUG_HOST");
 	self->port = 5002;
+	if (getenv("XSBUG_PORT"))
+		self->port = atoi(getenv("XSBUG_PORT"));
 	self->restartOnConnect = 1;
 	self->showPath = 0;
 	self->timeout = 5000;	// for showpath

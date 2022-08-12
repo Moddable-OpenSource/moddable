@@ -546,7 +546,7 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 			mxPushUndefined();
 			the->stack->kind = XS_HOST_FUNCTION_KIND;
 			the->stack->value.hostFunction.builder = builder;
-			the->stack->value.hostFunction.IDs = (txID*)(the->code);
+			the->stack->value.hostFunction.IDs = C_NULL;
 		#else
 			fxNewHostFunction(the, builder->callback, builder->length, (the->code && (builder->id)) ? ((txID*)(the->code))[builder->id] : builder->id);
 		#endif

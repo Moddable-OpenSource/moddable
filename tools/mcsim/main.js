@@ -32,7 +32,7 @@ import * as DevicePaneNamespace from "DevicePane";
 import * as assetsNamespace from "assets";
 
 const compartmentOptions = {
-	globals: { ...Object.getPrototypeOf(globalThis), ...globalThis },
+	globals: { ...Object.getPrototypeOf(globalThis), ...globalThis, Date, Math },
 	modules: {
 		"piu/All": { namespace: piuAllNamespace },
 		"piu/Buttons": { namespace: piuButtonsNamespace },
@@ -265,7 +265,6 @@ class ApplicationBehavior extends Behavior {
 		this.selectDevice(application, -1);
 		
 		application.purge();
-			
 		let iterator = new system.DirectoryIterator(this.devicesPath);
 		let info = iterator.next();
 		while (info) {

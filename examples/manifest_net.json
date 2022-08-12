@@ -43,11 +43,13 @@
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/lin/*",
 					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/lin/*"
+					"$(MODULES)/network/net/lin/*",
+					"$(MODULES)/network/sntp/*"
 				]
 			},
 			"preload": [
 				"socket",
+				"sntp",
 				"net"
 			]
 		},

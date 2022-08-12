@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -151,7 +151,10 @@ void fxConnect(txMachine* the)
 	struct hostent *host;
 	struct sockaddr_in address;
 	CFDataRef data = NULL;
-	host = gethostbyname("localhost");
+	char *hostname = "localhost";
+	if (getenv("XSBUG_HOST"))
+		hostname = getenv("XSBUG_HOST"); 
+	host = gethostbyname(hostname);
 	if (!host)
 		return;
 	memset(&address, 0, sizeof(address));
@@ -160,8 +163,13 @@ void fxConnect(txMachine* the)
 	CFStringRef identifier = CFBundleGetIdentifier(CFBundleGetMainBundle());
 	if (identifier && CFStringHasSuffix(identifier, CFSTR(".xsbug")))
 		address.sin_port = htons(5003);
-	else
-		address.sin_port = htons(5002);
+	else {
+		int port = 5002;
+		char *portStr = getenv("XSBUG_PORT");
+		if (portStr)
+			port = atoi(portStr);
+		address.sin_port = htons(port);
+	}
 	c_memset(&context, 0, sizeof(CFSocketContext));
 	context.info = (void*)the;
 	the->connection = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_STREAM, IPPROTO_TCP, kCFSocketReadCallBack, fxReadableCallback, &context);

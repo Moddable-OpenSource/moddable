@@ -10,7 +10,7 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "ft6206",
+		"touch": "M5StackCoreTouch",
 		"startupSound": "bflatmajor.maud",
 		"startupVibration": 600
 	},
@@ -90,14 +90,16 @@
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
-			"$(MODULES)/drivers/mpu6886/*"
+			"$(MODULES)/drivers/mpu6886/*",
+			"./M5StackCoreTouch"
 		]
 	},
 	"preload": [
 		"pins/audioout",
 		"setup/target",
 		"mpu6886",
-		"pins/smbus"
+		"pins/smbus",
+		"M5StackCoreTouch"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"

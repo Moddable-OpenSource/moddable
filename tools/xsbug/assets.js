@@ -128,8 +128,8 @@ const darkColors = {
 
 	"code": { "fill": "#2a2a2a", "color": "#fffffff0" },
 	"codeComment": { "color": "#00bff3" },
-	"codeKeyword": { "color": "#f26d7d" },
-	"codeLiteral": { "color": "#fff568" },
+	"codeKeyword": { "color": "#fff568" },
+	"codeLiteral": { "color": "#f26d7d" },
 	"codeResult": { "fill": "#fbf4bb" },
 	"codeSelection": { "fill": "#666e81" },
 	"error": { "color": "#262626" },

@@ -1102,6 +1102,11 @@ txSize fxUnicodeLength(txString theString)
 
 #define ONEMASK ((size_t)(-1) / 0xFF)
 
+#if defined(__has_feature)
+	#if __has_feature(address_sanitizer)
+		__attribute__((no_sanitize("address"))) 
+	#endif
+#endif
 txSize fxUnicodeLength(txString _s)
 {
 	const char * s;

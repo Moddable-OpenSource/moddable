@@ -260,8 +260,6 @@ esp_err_t initEthernet(void)
 
 	esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
 	gNetif = esp_netif_new(&netif_cfg);
-    
-    ESP_ERROR_CHECK(esp_eth_set_default_handlers(gNetif));
 
 	ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &doEthernetEvent, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &doIPEvent, NULL));

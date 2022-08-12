@@ -1658,7 +1658,7 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 {
 	txString r = p;
 	txU4 t = 0;
-	*p++ = '&';
+    if (p < q) *p++ = '&';
 	fxGetNextCharacter(parser);
 	if (parser->character == '#') {
 		if (p < q) *p++ = '#';
@@ -1687,7 +1687,8 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 			c = parser->character;
 		}
 		*p = 0;
-		entity = (txEntity*)bsearch(r + 1, gxEntities, XS_ENTITIES_COUNT, sizeof(txEntity), fxCompareEntities);
+        if (r < q)
+            entity = (txEntity*)bsearch(r + 1, gxEntities, XS_ENTITIES_COUNT, sizeof(txEntity), fxCompareEntities);
 		t = entity ? entity->value : 0;
 	}
 	if (parser->character == ';') {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -18,6 +18,10 @@
 #
 
 PKGCONFIG = $(shell which pkg-config)
+
+IMPLEMENTOR = $(shell grep -m 1 "CPU implementer" /proc/cpuinfo | cut -c 19-22)
+ARCH = $(shell grep -m 1 "CPU architecture" /proc/cpuinfo | cut -c 19-22)
+CHECK_ARCH = $(shell [ $1 -lt 8 ] && echo "YES")
 
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
@@ -99,6 +103,13 @@ ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 
+ifeq ("$(IMPLEMENTOR)","0x41")
+ifeq "$(call CHECK_ARCH, $(ARCH))" "YES"
+C_DEFINES += \
+	-DmxMisalignedSettersCrash=1
+endif
+endif
+
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 
@@ -131,14 +142,17 @@ XSL = $(MODDABLE_TOOLS_DIR)/xsl
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
-	
-all: precursor
-	$(shell nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+
+XSBUG_HOST ?= localhost
+XSBUG_PORT ?= 5002
+
+all: precursor xsbug
+	$(shell XSBUG_PORT=$(XSBUG_PORT) ; XSBUG_HOST=$(XSBUG_HOST) ; nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
+#	echo "gdb $(SIMULATOR)\nr $(BIN_DIR)/mc.so"
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 
 xsbug:
-	@echo "# starting xsbug"
 	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 
 build: precursor
@@ -176,7 +190,7 @@ $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 	
-MAKEFLAGS += --jobs
+MAKEFLAGS += --jobs 8
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif

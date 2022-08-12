@@ -1,0 +1,53 @@
+{
+	"service": {
+		"uuid": "6E400001-B5A3-F393-E0A9-E50E24DCCA9E",
+		"characteristics": {
+			"rx": {
+				"uuid": "6E400002-B5A3-F393-E0A9-E50E24DCCA9E",
+				"type": "String",
+				"maxBytes": 20,
+				"permissions": "write",
+				"properties": "write"
+			},
+			"tx": {
+				"uuid": "6E400003-B5A3-F393-E0A9-E50E24DCCA9E",
+				"type": "String",
+				"maxBytes": 20,
+				"permissions": "read",
+				"properties": "notify"
+			},
+			"descriptorTest": {
+				"uuid": "6E400004-B5A3-F393-E0A9-E50E24DCCA9E",
+				"type": "String",
+				"maxBytes": 20,
+				"permissions": "read",
+				"properties": "read",
+				"value": "test123",
+				"descriptors": {
+					"descriptor1": {
+						"uuid": "2908",
+						"maxBytes": 2,
+						"type": "Uint8Array",
+						"permissions": "read,write",
+						"properties": "read,write",
+						"value": [
+							3,
+							5
+						]
+					},
+					"descriptor2": {
+						"uuid": "6E400027-B5A3-F393-E0A9-E50E24DCCA9E",
+						"maxBytes": 2,
+						"type": "Uint8Array",
+						"permissions": "read,write",
+						"properties": "read,write",
+						"value": [
+							7,
+							9
+						]
+					}
+				}
+			}
+		}
+	}
+}

@@ -15,6 +15,9 @@
 		},
 		"mac": {
 			"include": "./manifests/mac/manifest.json"
+		},
+		"lin": {
+			"include": "./manifests/lin/manifest.json"
 		}
 	}
 }

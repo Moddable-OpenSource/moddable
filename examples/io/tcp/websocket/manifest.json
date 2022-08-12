@@ -11,5 +11,6 @@
 			"./main",
 			"./data"
 		]
-	}
+	},
+	"preload": "data"
 }

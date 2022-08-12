@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
-Revised: April 22, 2022
+Revised: August 8, 2022
 
 This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) and [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2) with the Moddable SDK.
 
@@ -142,7 +142,7 @@ Omitting the `-d` and `-i` options on the `mcconfig` command line selects a rele
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -157,22 +157,22 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` 
 	
 	If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
-4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout commit `c29343`:
+4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
 
 	```text
 	cd ~/esp32
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 
-	If you already have a clone of the ESP-IDF, update to commit `c29343`:
+	If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag`:
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 
@@ -314,12 +314,12 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 <a id="mac-update"></a>	
 ### Updating
 
-1. If you already have a clone of the ESP-IDF, update to commit `c29343`.
+1. If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag.
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 
@@ -330,7 +330,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	rm -rf esp-idf
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 	
@@ -387,7 +387,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 <a id="win"></a>	
 ## Windows
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="win-instructions"></a>
 ### Installing
@@ -402,7 +402,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` 
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
 
-	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.4 (release version)" option and clone into a a directory called `esp32\esp-idf` within your home folder.
+	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.4.2 (release version)" option and clone into a directory called `esp32\esp-idf` within your home folder.
 
 
 4. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, create an `esp32` directory in your home folder, either from File Explorer or a Command Prompt:
@@ -412,13 +412,13 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` 
     mkdir esp32
     ```
 
-5. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout commit `c29343`:
+5. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
 
     ```text
     cd %USERPROFILE%\esp32
     git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
     ```
 
@@ -439,8 +439,15 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` 
 	To identify the correct serial port, launch the Windows Device Manager. Open the "Ports (COM & LPT)" section, verify the "Silicon Labs CP210x USB to UART Bridge" is displayed, and note the associated COM port (e.g. COM3).
 
 8. Newly-set environment variables will not take effect in existing Command Prompt instances, so be sure to open a new Command Prompt instance after applying these changes.
+
+9. Run the ESP-IDF install batch file. This will configure utilities used by the ESP-IDF build for your machine.
+
+	```text
+	cd %IDF_PATH%
+	install.bat
+	```
 	
-9. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 4.4 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects with "ESP-IDF 4.4 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
+10. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 4.4 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects with "ESP-IDF 4.4 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
 	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
@@ -462,7 +469,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` 
 
 	> Note: These instructions assume you only have one copy of the ESP-IDF installed. `idf_cmd_init.bat` can also take an argument to specify a particular ESP-IDF installation, if necessary. This argument should be set up in the default "ESP-IDF 4.4 CMD" shortcut.
 
-10. In the "ESP-IDF 4.4 CMD" command prompt, verify the setup by building `helloworld` for your device target:
+11. In the "ESP-IDF 4.4 CMD" command prompt, verify the setup by building `helloworld` for your device target:
 
 	```text
 	cd %MODDABLE%\examples\helloworld
@@ -524,18 +531,18 @@ To ensure that your build environment is up to date, perform the following steps
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
     
-    If you choose to clone the ESP-IDF, select the `v4.4 (release version)` of the esp-idf.
+    If you choose to clone the ESP-IDF, select the `v4.4.2 (release version)` of the esp-idf.
 
-	If you use the installer to clone the ESP-IDF, please follow the instructions in the next step to update to commit `c29343`.
+	If you use the installer to clone the ESP-IDF, please follow the instructions in the next step to update to the `v4.4.2` tag.
 
 
-2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout commit `c29343`:
+2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
 
     ```text
     cd %USERPROFILE%\esp32
     git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
     ```
 
@@ -544,7 +551,7 @@ To ensure that your build environment is up to date, perform the following steps
 	```text
 	cd %IDF_PATH%
 	git fetch --all --tags
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 
@@ -553,8 +560,15 @@ To ensure that your build environment is up to date, perform the following steps
 3. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog, verify the `IDF_PATH` Windows environment variable is set correctly.
 
 	- `IDF_PATH` should have the value `C:\Users\<user>\esp32\esp-idf`
-		
-6. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2022" command line console:
+
+4. Run the ESP-IDF install batch file. This will configure utilities used by the ESP-IDF build for your machine.
+
+	```text
+	cd %IDF_PATH%
+	install.bat
+	```
+
+5. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2022" command line console:
 
     ```text
     cd %MODDABLE%\build
@@ -562,7 +576,7 @@ To ensure that your build environment is up to date, perform the following steps
     rmdir /S /Q tmp\esp32
     ```
 
-7. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 4.4 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects using "ESP-IDF 4.4 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
+6. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 4.4 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects using "ESP-IDF 4.4 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
 	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
@@ -585,7 +599,7 @@ To ensure that your build environment is up to date, perform the following steps
 	> Note: These instructions assume you only have one copy of the ESP-IDF installed. `idf_cmd_init.bat` can also take an argument to specify a particular ESP-IDF installation, if necessary. This argument should be set up in the default "ESP-IDF 4.4 CMD" shortcut.
 
 
-8. In the "ESP-IDF 4.4 CMD" command prompt, verify the setup by building `helloworld` for your device target:
+7. In the "ESP-IDF 4.4 CMD" command prompt, verify the setup by building `helloworld` for your device target:
 
 	```text
 	cd %MODDABLE%\examples\helloworld
@@ -595,7 +609,7 @@ To ensure that your build environment is up to date, perform the following steps
 <a id="esp32-linux"></a>
 ## Linux
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="lin-instructions"></a>
 ### Installing
@@ -627,22 +641,22 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4 on commit `c29343` 
 
 3. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
-4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout commit `c29343`:
+4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
 
 	```text
 	cd ~/esp32
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 
-	If you already have a clone of the ESP-IDF, update to commit `c29343` by using the [update instructions below](#lin-update).
+	If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag by using the [update instructions below](#lin-update).
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 
@@ -748,12 +762,12 @@ export UPLOAD_PORT=/dev/ttyUSB1
 <a id="lin-update"></a>	
 ### Updating
 
-1. If you already have a clone of the ESP-IDF, update to commit `c29343`.
+1. If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag.
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 
@@ -764,7 +778,7 @@ export UPLOAD_PORT=/dev/ttyUSB1
 	rm -rf esp-idf
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout c29343
+	git checkout v4.4.2
 	git submodule update --init --recursive
 	```
 

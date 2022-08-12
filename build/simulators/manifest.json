@@ -4,7 +4,7 @@
 			"./modules/screen",
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/$(PLATFORM)/*",
-			"$(MODULES)/base/timer/timer",
+			"$(MODULES)/base/timer/*",
 			"$(MODULES)/base/timer/$(PLATFORM)/*"
 		]
 	},
