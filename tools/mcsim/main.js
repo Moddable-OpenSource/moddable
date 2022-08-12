@@ -64,7 +64,7 @@ const compartmentOptions = {
 		return specifier;
 	},
 	loadNowHook(specifier) {
-		return { record:new StaticModuleRecord(system.readFileString(specifier)), importMeta:{ uri:specifier } };
+		return { record:new ModuleSource(system.readFileString(specifier)), importMeta:{ uri:specifier } };
 	},
 }
 
