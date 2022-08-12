@@ -4,8 +4,6 @@ Revised: July 18, 2022
 
 XS implements most of the [TC39 Compartment Proposal](https://github.com/tc39/proposal-compartments). Beware that the proposal is at en early stage and that the programming interface described in this document will likely evolve.
 
-XS implements compartments natively, without Module and Evaluators classes, and without modifying dynamic import. Maybe other proposals like the `module` construct will eventually justify such a dramatic evolution of the ECMAScript module machinery. But compartments do not.
-
 ## About
 
 In XS, the real host is the application that creates an XS machine to evaluate scripts and import modules.
@@ -40,6 +38,11 @@ A parent compartment can create child compartments.
 	`);
 
 A compartment can only provide to its child compartments the features provided by its parent compartment (and new features based on the features provided by its parent compartment).
+
+### Implementation
+
+XS implements compartments natively, without `Module` and `Evaluators` classes, and without modifying dynamic import. Maybe other proposals like the `module` construct will eventually justify such a dramatic evolution of the ECMAScript module machinery. But compartments do not.
+
 
 ## Built-ins
 
@@ -233,7 +236,7 @@ To construct a static module record from a **mod**. In Moddable runtime, mods ar
 
 ### <a name="ModuleBinding"></a> Module Binding
 
-A module binding is a plain object with properties that mimick the `import` and `export` constructs. There are many forms of module bindings. See the
+A module binding is an ordinary object with properties that mimick the `import` and `export` constructs. There are many forms of module bindings. See the
 [imports](https://tc39.es/ecma262/#table-import-forms-mapping-to-importentry-records) and [exports](https://tc39.es/ecma262/#table-export-forms-mapping-to-exportentry-records) tables.
 
 Most bindings can be represented as JSON-like objects with `export`, `import`, `as`, `from` properties. Except `*` bindings, which requires special forms because module namespace identifiers can be arbitrary.  
@@ -253,7 +256,7 @@ Most bindings can be represented as JSON-like objects with `export`, `import`, `
 
 ### <a name="VirtualModuleSource"></a> Virtual Module Source
 
-To build a module from an object with `execute`, `bindings`, `needsImport` and `needsImportMeta` properties
+A virtual module source is an ordinary object with `execute`, `bindings`, `needsImport` and `needsImportMeta` properties
 
 - The `execute` property must be a function. 
 - If defined, the `bindings` property must be an array of [module bindings](#ModuleBinding). The default is an empty array.
@@ -262,7 +265,7 @@ To build a module from an object with `execute`, `bindings`, `needsImport` and `
 
 The `bindings` array allow the same expressiveness as import and export declarations without requiring a JavaScript parser. Compartments check the declarations and can throw a `SyntaxError`.
 
-Once the module is loaded and linked, the compartment calls the `initialize` function with three arguments
+Once the module is loaded and linked, the compartment calls the `execute` function with three arguments
 
 - `$`: the [module environment record](https://tc39.es/ecma262/#sec-module-environment-records),
 - `Import`: a function equivalent to the `import` call in a module body. The argument is `undefined` if `needsImport` was false.
@@ -279,6 +282,6 @@ Like a module body, the `execute` function can be asynchronous.
 
 ### <a name="VirtualModuleNamespace"></a> Virtual Module Namespace
 
-To build a module from an object posing as a module namespace.
+A virtual module namespace is an ordinary object posing as a module namespace.
 
-Each own enumerable named property of the object becomes an exported property of the module. 
+When a compartment loads a virtual module namespace, each own enumerable named property of the object becomes an exported property of the module. 
