@@ -38,8 +38,8 @@ declare module "embedded:io/digital" {
     static readonly InputPullUpDown: unknown
     static readonly Output: unknown
     static readonly OutputOpenDrain: unknown
-    static readonly Rising: unknown;
-    static readonly Falling: unknown;
+    static readonly Rising: Edge;
+    static readonly Falling: Edge;
 
     constructor(options: {
       pin: PinSpecifier;
