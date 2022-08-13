@@ -1,6 +1,6 @@
 # Base
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: August 5, 2022
+Revised: August 13, 2022
 
 ## Table of Contents
 
@@ -84,6 +84,8 @@ Timer.repeat(id => {
 }, 1000);
 ```
 
+> **Note**: If the next trigger time is unknown, unscheduling a timer is preferred to scheduling for a long time in the future. Unscheduling and rescheduling a timer can more efficient than clearing a timer and later allocating a new one.
+
 ***
 
 ### `Timer.clear(id)`
@@ -98,14 +100,6 @@ Timer.clear(aTimer);
 > **Note**: Immediate and one shot timers are automatically cleared after invoking their callback function. There is no need to call `clear` except to cancel the timer before it fires.
 
 > **Note**: If `Timer.clear` is passed a value of `undefined` or `null` for the ID, no exception is generated.
-
-***
-
-### `Timer.unschedule(id)`
-
-The `unschedule` function makes a timer inelegible to run. Use `Timer.schedule` to make it eligible to run again, or `Timer.clear` to remove it permanently.
-
-Unscheduling a timer is prefered over scheduling a timer for a long time in the future when the next trigger time is unknown. Unscheduling and later rescheduling a timer may be more efficiently than clearing a timer and later allocating a new one.
 
 ***
 
