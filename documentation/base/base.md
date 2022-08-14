@@ -1,6 +1,6 @@
 # Base
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: August 13, 2022
+Revised: August 14, 2022
 
 ## Table of Contents
 
@@ -9,6 +9,7 @@ Revised: August 13, 2022
 * [Debug](#debug)
 * [UUID](#uuid)
 * [deepEqual](#deepequal)
+* [structuredClone](#structuredclone)
 * [Instrumentation](#instrumentation)
 * [Console](#console)
 * [CLI](#cli)
@@ -276,6 +277,27 @@ The known differences between the Moddable SDK implementation and Node.js will n
 - XS does not call `valueOf` to compare boxed primitives
 
 ***
+
+<a id="structuredclone"></a>
+## function structuredClone(object[, transferables])
+
+- **Source code:** [structuredClone](../../modules/base/structuredClone)
+- **Tests:** [structuredClone](../../tests/modules/base/structuredClone)
+
+The `structuredClone` function creates a deep copy of a JavaScript object. 
+
+```js
+import structuredClone from "structuredClone";
+```
+
+The `structuredClone` function in the Moddable SDK implements the [algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) defined by WHATWG for the web platform as much as practical, including circular references and the `transferables` option. 
+
+```js
+const a = {a: 1, b: Uint8Array.of(1, 2, 3,)}
+const aCopy = structuredClone(a);
+```
+
+The Moddable SDK implementation of `structuredClone` implements all [supported types](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm#supported_types) that are part of the JavaScript language standard. It does not, of course, clone object types that are part of the web platform and not present on embedded systems such as `DOMException`.
 
 <a id="instrumentation"></a>
 ## class Instrumentation
