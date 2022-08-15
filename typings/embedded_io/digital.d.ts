@@ -57,11 +57,6 @@ declare module "embedded:io/digital" {
     read(): 0 | 1;
     close(): void;
 
-    pins: number;
-    mode: Mode;
-    rises?: number;
-    falls?: number;
-
     get format(): "number"
     set format(value: "number")
   }
