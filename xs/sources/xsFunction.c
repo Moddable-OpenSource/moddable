@@ -385,7 +385,7 @@ void fx_Function_prototype_bind(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CALLBACK_KIND;
 	property->value.callback.address = fx_Function_prototype_bound;
-	property->value.callback.IDs = C_NULL;
+	property->value.callback.closures = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);

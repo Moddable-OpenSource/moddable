@@ -846,6 +846,13 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			}
 		}
 		break;
+	case XS_CALLBACK_KIND:
+		aSlot = theSlot->value.callback.closures;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
+		break;
 	case XS_CODE_KIND:
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
@@ -1051,8 +1058,11 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			mxMarkChunk(theSlot->value.arrayBuffer.address);
 		break;
 	case XS_CALLBACK_KIND:
-		if (theSlot->value.callback.IDs)
-			mxMarkChunk(theSlot->value.callback.IDs);
+		aSlot = theSlot->value.callback.closures;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_CODE_KIND:
 		mxMarkChunk(theSlot->value.code.address);
@@ -1074,6 +1084,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			if (theSlot->flag & XS_HOST_CHUNK_FLAG)
 				mxMarkChunk(theSlot->value.host.data);
 		}
+		break;
+	case XS_IDS_KIND:
+		if (theSlot->value.IDs)
+			mxMarkChunk(theSlot->value.IDs);
 		break;
 	case XS_PROXY_KIND:
 		aSlot = theSlot->value.proxy.handler;
@@ -1806,10 +1820,6 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 		if (theSlot->value.arrayBuffer.address)
 			mxSweepChunk(theSlot->value.arrayBuffer.address, txByte*);
 		break;
-	case XS_CALLBACK_KIND:
-		if (theSlot->value.callback.IDs)
-			mxSweepChunk(theSlot->value.callback.IDs, txID*);
-		break;
 	case XS_CODE_KIND:
 		mxSweepChunk(theSlot->value.code.address, txByte*);
 		break;
@@ -1823,6 +1833,10 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 			if (theSlot->flag & XS_HOST_CHUNK_FLAG)
 				mxSweepChunk(theSlot->value.host.data, void*);
 		}
+		break;
+	case XS_IDS_KIND:
+		if (theSlot->value.IDs)
+			mxSweepChunk(theSlot->value.IDs, txID*);
 		break;
 	case XS_REGEXP_KIND:
 		if (theSlot->value.regexp.code)

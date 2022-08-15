@@ -3,6 +3,10 @@ description:
 flags: [async,onlyStrict]
 ---*/
 
+function resolveHook(importSpecifier, referrerSpecifier) {
+	return importSpecifier;
+}
+
 const importMeta = { count: { foo:0, bar:0 } };
 
 const foo = { source: new ModuleSource(`
@@ -16,12 +20,14 @@ const bar = { source: new ModuleSource(`
 `), importMeta};
 const modules = { foo, bar };
 
-const c1 = new Compartment({ 
+const c1 = new Compartment({
+	resolveHook,
 	async loadHook(specifier) {
 		return await modules[specifier];
 	}
 });
 const c2 = new Compartment({
+	resolveHook,
 	async loadHook(specifier) {
 		return await { namespace:specifier, compartment:c1 };
 	}

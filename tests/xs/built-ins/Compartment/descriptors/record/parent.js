@@ -15,6 +15,9 @@ const c0 = new Compartment({
 // 		foo: { source: foo },
 // 		bar: { source: bar },
 // 	},
+	resolveHook(importSpecifier, referrerSpecifier) {
+		return importSpecifier;
+	},
 	async loadHook(specifier) {
 		if (specifier == "foo") return await { source:foo };
 		if (specifier == "bar") return await { source:bar };

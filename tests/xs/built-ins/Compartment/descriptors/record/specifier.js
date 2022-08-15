@@ -12,13 +12,13 @@ const bar = new ModuleSource(`
 `);
 
 const c1 = new Compartment({ 
+	resolveHook(importSpecifier, referrerSpecifier) {
+		assert.sameValue(referrerSpecifier, "BAR");
+		return "foo";
+	},
 	modules: {
 		"foo": { source: foo },
 		"bar": { source: bar, specifier:"BAR" },
-	},
-	resolveHook(specifier, referrerSpecifier) {
-		assert.sameValue(referrerSpecifier, "BAR");
-		return "foo";
 	}
 });
 

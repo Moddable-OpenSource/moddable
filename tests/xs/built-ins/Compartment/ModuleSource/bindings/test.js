@@ -1,10 +1,9 @@
 /*---
 description: 
 flags: [onlyStrict]
-includes: [deepEqual.js]
 ---*/
 
-const smr = new ModuleSource(`
+const source = new ModuleSource(`
 	export var v0;	
 	export default 0
 	export { v0 as w0 };	
@@ -19,6 +18,7 @@ const smr = new ModuleSource(`
 	export * from "mod";
 	export * as ns2 from "mod";
 `);
+const sourceBindingsString = JSON.stringify(source.bindings);
 
 const bindings = [
 	{
@@ -66,5 +66,6 @@ const bindings = [
 		as: "ns2"
 	}
 ];
+const bindingsString = JSON.stringify(bindings);
 
-assert.deepEqual(smr.bindings, bindings);
+assert.sameValue(sourceBindingsString, bindingsString);

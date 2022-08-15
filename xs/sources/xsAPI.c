@@ -601,7 +601,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CALLBACK_KIND;
 	property->value.callback.address = theCallback;
-	property->value.callback.IDs = C_NULL;
+	property->value.callback.closures = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);

@@ -3,6 +3,10 @@ description:
 flags: [onlyStrict]
 ---*/
 
+function resolveHook(importSpecifier, referrerSpecifier) {
+	return importSpecifier;
+}
+
 const importMeta = { count: { foo:0, bar:0 } };
 
 const foo = { source: new ModuleSource(`
@@ -16,8 +20,8 @@ const bar = { source: new ModuleSource(`
 `), importMeta };
 const modules = { foo, bar };
 
-const c1 = new Compartment({ modules });
-const c2 = new Compartment({ modules });
+const c1 = new Compartment({ resolveHook, modules });
+const c2 = new Compartment({ resolveHook, modules });
 
 const [ bar1, bar2, foo1, foo2 ] = [
 	c1.importNow("bar"),

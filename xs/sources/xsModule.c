@@ -128,7 +128,7 @@ enum {
 #define mxIsModule(THE_SLOT) \
 	(((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_MODULE_KIND))
 #define mxIsModuleSource(THE_SLOT) \
-	(((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_STATIC_MODULE_RECORD_KIND))
+	(((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_MODULE_SOURCE_KIND))
 
 #define mxModuleInstanceStatus(MODULE)		((MODULE)->next->next->ID)
 #define mxModuleStatus(MODULE) 				mxModuleInstanceStatus((MODULE)->value.reference)
@@ -415,7 +415,7 @@ void fxExecuteVirtualModuleSource(txMachine* the)
 	txSlot* module = home->value.home.module;
 	txSlot* internal = mxModuleInstanceInternal(module);
 	txSlot* meta = mxModuleInstanceMeta(module);
-	txSlot* closures = mxFunctionInstanceCode(instance)->value.code.closures;
+	txSlot* closures = mxFunctionInstanceCode(instance)->value.callback.closures;
 	txSlot* property;
 	if (mxIsUndefined(function))
 		return;
@@ -732,11 +732,21 @@ void fxLinkModules(txMachine* the, txSlot* queue)
 				transfer = transfer->next;
 			}
 			property = mxModuleInitialize(module);
-			if (property->kind == XS_REFERENCE_KIND)
-				property->value.reference->next->value.code.closures = closures;
+			if (property->kind == XS_REFERENCE_KIND) {
+				property = property->value.reference->next;
+				if ((property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND))
+					property->value.code.closures = closures;
+				else if (property->kind == XS_CALLBACK_KIND)
+					property->value.callback.closures = closures;
+			}
 			property = mxModuleExecute(module);
-			if (property->kind == XS_REFERENCE_KIND)
-				property->value.reference->next->value.code.closures = closures;
+			if (property->kind == XS_REFERENCE_KIND) {
+				property = property->value.reference->next;
+				if ((property->kind == XS_CODE_KIND) || (property->kind == XS_CODE_X_KIND))
+					property->value.code.closures = closures;
+				else if (property->kind == XS_CALLBACK_KIND)
+					property->value.callback.closures = closures;
+			}
 			mxPop();
 			if (count > 0) {
 				txSlot* instance = fxNewInstance(the);
@@ -2786,7 +2796,7 @@ txSlot* fxCheckModuleSourceInstance(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
 		txSlot* instance = slot->value.reference;
-		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_STATIC_MODULE_RECORD_KIND)) {
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_MODULE_SOURCE_KIND)) {
 			return instance;
 		}
 	}
@@ -2808,7 +2818,7 @@ txSlot* fxNewModuleSourceInstance(txMachine* the)
 	/* HOST */
 	slot = instance->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG;
-	slot->kind = XS_STATIC_MODULE_RECORD_KIND;
+	slot->kind = XS_MODULE_SOURCE_KIND;
 	slot->value.module.realm = C_NULL;
 	slot->value.module.id = XS_NO_ID;
 	/* EXPORTS */

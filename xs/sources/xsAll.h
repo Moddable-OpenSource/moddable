@@ -257,7 +257,7 @@ typedef union {
 	struct { txSlot* address; txIndex length; } array;
 	struct { txByte* address; void* detachKey; } arrayBuffer;
 	struct { txInteger length; txInteger maxLength; } bufferInfo;
-	struct { txCallback address; txID* IDs; } callback;
+	struct { txCallback address; txSlot* closures; } callback;
 	struct { txByte* address; txSlot* closures; } code;
 	struct { txInteger offset; txInteger size; } dataView;
 	struct { txSlot* info; txError which; } error;
@@ -288,6 +288,8 @@ typedef union {
 	struct { txSlot* slot; txInspectorNameLink* link; } instanceInspector;
 	struct { txSlot* closure; txSlot* module; } export;
 	struct { txSlot* check; txSlot* first; } private;
+	
+	txID* IDs;
 } txValue;
 
 struct sxBlock {
@@ -1995,7 +1997,8 @@ enum {
 	XS_EXPORT_KIND,
 	XS_WEAK_ENTRY_KIND,
 	XS_BUFFER_INFO_KIND,
-	XS_STATIC_MODULE_RECORD_KIND,
+	XS_MODULE_SOURCE_KIND,
+	XS_IDS_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,

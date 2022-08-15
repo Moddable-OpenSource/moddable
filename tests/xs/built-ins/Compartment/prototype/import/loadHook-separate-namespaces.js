@@ -3,6 +3,10 @@ description:
 flags: [async,onlyStrict]
 ---*/
 
+async function loadHook(specifier) {
+	return await modules[specifier];
+}
+
 const importMeta = { count: { foo:0, bar:0 } };
 
 const foo = { source: new ModuleSource(`
@@ -15,12 +19,12 @@ const bar = { source: new ModuleSource(`
 	import.meta.count.bar++;
 `), importMeta };
 const modules = { foo, bar };
-async function loadHook(specifier) {
-	return await modules[specifier];
+function resolveHook(importSpecifier, referrerSpecifier) {
+	return importSpecifier;
 }
 
-const c1 = new Compartment({ loadHook });
-const c2 = new Compartment({ loadHook });
+const c1 = new Compartment({ resolveHook, loadHook });
+const c2 = new Compartment({ resolveHook, loadHook });
 
 Promise.all([
 	c1.import("bar"),

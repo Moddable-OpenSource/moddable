@@ -204,7 +204,7 @@ The initial value of this property is the `"ModuleSource"` string.
 
 Comparments can load and initialize module namespaces from module descriptors. Like property descriptors, module descriptors are ordinary objects with various forms. 
 
-#### descriptors with `source` and `importMeta` properties
+#### descriptors with `source`, `importMeta` and `specifier` properties
 
 - If fhe value of the `source` property is a string, the parent compartment loads the module but the compartment itself initializes the module.
 
@@ -215,6 +215,8 @@ Comparments can load and initialize module namespaces from module descriptors. L
 If the `importMeta` property is present, its value must be an object. The default `importMeta` object is an empty object.
 
 Compartments copy the `importMeta` object properties into the module `import.meta` object like `Object.assign`. 
+
+If the `specifier` property is present, its value is coerced into a string and becomes the referrer specifier of the module.
 
 #### descriptors with `namespace` and `compartment` properties
 

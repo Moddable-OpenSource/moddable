@@ -1433,7 +1433,7 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
-	case XS_STATIC_MODULE_RECORD_KIND:
+	case XS_MODULE_SOURCE_KIND:
 		slot->value.module.realm = fxUnprojectSlot(the, snapshot, slot->value.module.realm);
 		break;
 		
@@ -1797,7 +1797,7 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
-	case XS_STATIC_MODULE_RECORD_KIND:
+	case XS_MODULE_SOURCE_KIND:
 		buffer.value.module.realm = fxProjectSlot(the, snapshot->firstProjection, slot->value.module.realm);
 		buffer.value.module.id = slot->value.module.id;
 		break;

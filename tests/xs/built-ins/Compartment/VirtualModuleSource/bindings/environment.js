@@ -29,6 +29,9 @@ const bar = {
 };
 
 const c1 = new Compartment({ 
+	resolveHook(importSpecifier, referrerSpecifier) {
+		return importSpecifier;
+	},
 	modules: {
 		foo: { source:foo },
 		bar: { source:bar },

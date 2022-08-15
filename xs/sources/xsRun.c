@@ -4757,21 +4757,20 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				txID c, i;
 				mxDecodeID(p, c);
 				the->stack->value.callback.address = C_NULL;
-				the->stack->value.callback.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
-				the->stack->kind = XS_CALLBACK_KIND;
-				the->stack->value.callback.IDs[0] = XS_NO_ID;
+				the->stack->value.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
+				the->stack->kind = XS_IDS_KIND;
+				the->stack->value.IDs[0] = XS_NO_ID;
 				for (i = 1; i < c; i++) {
 					txID id = fxNewNameC(the, (txString)p);
-					the->stack->value.callback.IDs[i] = id;
+					the->stack->value.IDs[i] = id;
 					p += mxStringLength((char*)p) + 1;
 				}
-				fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.callback.IDs);
-				the->stack->value.callback.IDs = C_NULL;
+				fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.IDs);
+				the->stack->value.IDs = C_NULL;
 			}	
 			else {
-				the->stack->value.callback.address = C_NULL;
-				the->stack->value.callback.IDs = C_NULL;
-				the->stack->kind = XS_CALLBACK_KIND;
+				the->stack->value.IDs = C_NULL;
+				the->stack->kind = XS_IDS_KIND;
 			}
 			if (script->callback) {
 				property = the->stack;
@@ -4786,7 +4785,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				instance = fxNewFunctionInstance(the, closures ? mxID(_eval) : XS_NO_ID);
 				instance->next->kind = XS_CALLBACK_KIND;
 				instance->next->value.callback.address = script->callback;
-				instance->next->value.callback.IDs = C_NULL;
+				instance->next->value.callback.closures = C_NULL;
 				property = mxFunctionInstanceHome(instance);
 				property->value.home.object = object;
 				property->value.home.module = module;

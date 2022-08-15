@@ -3,6 +3,10 @@ description:
 flags: [async,onlyStrict]
 ---*/
 
+function resolveHook(importSpecifier, referrerSpecifier) {
+	return importSpecifier;
+}
+
 const importMeta = { count: { foo:0, bar:0 } };
 
 const foo = { source: new ModuleSource(`
@@ -20,8 +24,8 @@ async function loadHook(specifier) {
 	return await modules[specifier];
 }
 
-const c1 = new Compartment({ loadHook });
-const c2 = new Compartment({ loadHook });
+const c1 = new Compartment({ resolveHook, loadHook });
+const c2 = new Compartment({ resolveHook, loadHook });
 
 Promise.allSettled([
 	c1.import("bar"),
