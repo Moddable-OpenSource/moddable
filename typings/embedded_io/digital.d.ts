@@ -47,7 +47,7 @@ declare module "embedded:io/digital" {
       format?: "number";
       target?: any;
     } & ({
-      onReadable: () => void;
+      onReadable: (this: Digital) => void;
       edge: Edge;
     } | {
       edge?: Edge;

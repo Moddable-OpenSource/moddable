@@ -25,7 +25,7 @@ declare module "embedded:io/analog" {
     constructor(options: {
       pin: PinSpecifier;
       resolution?: number;
-      onReadable?: () => void;
+      onReadable?: (this: Analog) => void;
       format?: "number";
     });
     readonly resolution: number;
