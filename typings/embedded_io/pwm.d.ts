@@ -26,6 +26,7 @@ declare module "embedded:io/pwm" {
       pin: PinSpecifier;
       hz?: number;
       format?: "number";
+      target?: any;
     });
     readonly resolution: number;
     readonly hz: number;

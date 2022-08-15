@@ -31,6 +31,7 @@ declare module "embedded:io/spi" {
       mode?: number;
       port?: PortSpecifier;
       format?: "buffer";
+      target?: any;
     })
     read(byteLength: number): ArrayBuffer;
     read(buffer: Buffer): void;

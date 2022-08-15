@@ -38,6 +38,7 @@ declare module "embedded:io/serial" {
       onReadable?: (this: Serial, bytes: number) => void;
       onWritable?: (this: Serial, bytes: number) => void;
       format?: "number" | "buffer";
+      target?: any;
     });
     readonly resolution: number;
     read(): number | ArrayBuffer;

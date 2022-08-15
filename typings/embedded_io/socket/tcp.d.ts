@@ -35,6 +35,7 @@ declare module "embedded:io/socket/tcp" {
       onWritable?: (this: TCP, bytes: number) => void;
       onError?: (this: TCP) => void;
       format?: "number" | "buffer";
+      target?: any;
     })
     readonly remoteAddress: string | undefined;
     readonly remotePort: number | undefined;

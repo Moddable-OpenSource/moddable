@@ -33,6 +33,7 @@ declare module "embedded:io/analog" {
     read(): number;
     get format(): "number"
     set format(value: "number")
+    target?: any;
   }
   export default Analog;
 }

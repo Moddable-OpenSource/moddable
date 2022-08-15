@@ -27,6 +27,7 @@ declare module "embedded:io/socket/udp" {
       onReadable?: (this: UDP, packets: number) => void;
       onError?: () => void;
       format?: "buffer";
+      target?: any;
     } & ({} | {
       multicast: string;
       timeToLive: number;

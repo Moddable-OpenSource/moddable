@@ -45,6 +45,7 @@ declare module "embedded:io/digital" {
       pin: PinSpecifier;
       mode: Mode;
       format?: "number";
+      target?: any;
     } & ({
       onReadable: () => void;
       edge: Edge;

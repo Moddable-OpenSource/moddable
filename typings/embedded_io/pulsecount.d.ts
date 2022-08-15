@@ -27,6 +27,7 @@ declare module "embedded:io/pulsecount" {
       onReadable?: (this: PulseCount) => void;
       onError?: (this: PulseCount) => void;
       format?: "number";
+      target?: any;
     });
     read(): number;
     write(count: number): void;

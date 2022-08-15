@@ -44,6 +44,7 @@ declare module "embedded:io/digitalbank" {
       bank?: number | string;
       onReadable?: (this: DigitalBank, trigger: number) => void;
       format?: "number";
+      target?: any;
     })
 
     close(): void;

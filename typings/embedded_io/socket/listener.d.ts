@@ -26,6 +26,7 @@ declare module "embedded:io/socket/listener" {
       address?: string;
       onReadable?: (this: Listener, requests: number) => void;
       format?: "socket/tcp";
+      target?: any;
     })
     read(): TCP
     get format(): "socket/tcp"
