@@ -141,6 +141,7 @@ export default class extends TOOL {
 				delete c.x;
 				delete c.y;
 				delete c.z;
+				delete c._mcu;
 
 				try {
 					this.prepareConfig(type, c);
@@ -560,6 +561,8 @@ export default class extends TOOL {
 				return parseFloat(value);
 			case "str":
 				return `"${value ?? ""}"`;
+			case "bin":
+				return `Uint8Array.of(${value.slice(1, value.length - 1)})`;
 			case "msg":
 				return `msg.${value}`;
 			case "flow":
