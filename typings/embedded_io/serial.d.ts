@@ -41,9 +41,10 @@ declare module "embedded:io/serial" {
       target?: any;
     });
     readonly resolution: number;
-    read(): number | ArrayBuffer;
-    read(byteLength: number): ArrayBuffer;
-    read(buffer: Buffer): void;
+    close(): void;
+    read(): number | ArrayBuffer | undefined;
+    read(byteLength: number): ArrayBuffer | undefined;
+    read(buffer: Buffer): number | undefined;
     write(value: number | Buffer): void;
     flush(): void;
     flush(input: number, output: number): void;
