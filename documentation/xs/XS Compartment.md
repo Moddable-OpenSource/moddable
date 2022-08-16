@@ -43,7 +43,6 @@ A compartment can only provide to its child compartments the features provided b
 
 XS implements compartments natively, without `Module` and `Evaluators` classes, and without modifying dynamic import. Maybe other proposals like the `module` construct will eventually justify such a dramatic evolution of the ECMAScript module machinery. But compartments do not.
 
-
 ## Built-ins
 
 ### Compartment Constructor
@@ -231,10 +230,10 @@ If the `specifier` property is present, its value is coerced into a string and b
 	
 #### descriptor with `archive` and `path` properties
 
-To construct a static module record from a **mod**. In Moddable runtime, mods are separate archives of modules and resources. 
+To construct a static module record from a [mod](./mods.md). In Moddable runtime, mods are separate archives of modules and resources. 
 
 - The `archive` property must be an archive. 
-- The `path` property is coerced into a string. 
+- The `path` property is coerced into a string then used to find the module in the archive.
 
 ### <a name="ModuleBinding"></a> Module Binding
 
