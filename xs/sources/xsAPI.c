@@ -2029,7 +2029,8 @@ void fxBuildArchiveKeys(txMachine* the)
 			p += sizeof(Atom);
 			c = (txID)c_read16(p);
 			p += 2;
-			for (i = 0; i < c; i++) {
+			p += mxStringLength((txString)p) + 1;
+			for (i = 1; i < c; i++) {
 				fxNewNameX(the, (txString)p);
 				p += mxStringLength((txString)p) + 1;
 			}
@@ -2287,7 +2288,9 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 			}
 			mxElseFatalCheck(p < q);
 			*p = 0;
-			if (the)
+			if (i == 0)
+				self->ids[i] = XS_NO_ID;
+			else if (the)
 				self->ids[i] = fxID(the, (txString)self->scratch);
 			else {
 				sum &= 0x7FFFFFFF;
