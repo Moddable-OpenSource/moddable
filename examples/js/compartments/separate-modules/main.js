@@ -4,11 +4,10 @@ function test() {
 }
 let compartment = new Compartment({ 
 	modules: {
-		increment: { record:"increment" },
-		mod: { record:"mod" },
+		increment: { source:"increment" },
+		mod: { source:"mod" },
 	},
 });
-debugger
 let modNS = compartment.importNow("mod");
 test();
 modNS.test();
