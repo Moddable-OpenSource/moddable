@@ -1692,9 +1692,9 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-			if (the->preparation) {
+			if (the->archive) {
 				fxNewHostObject(the, C_NULL);
-				the->stack->value.reference->next->value.host.data = the->preparation;
+				the->stack->value.reference->next->value.host.data = the->archive;
 				slot = fxNextSlotProperty(the, slot, the->stack, fxID(the, "archive"), XS_DONT_ENUM_FLAG);
 				mxPop();
 			}
