@@ -1185,9 +1185,14 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		c_memcpy(linker->slotData + linker->slotSize, slot->value.table.address, slot->value.table.length * sizeof(txSlot*));
 		linker->slotSize += slot->value.table.length;
 	} break;
-	case XS_MODULE_KIND: 
-	case XS_STATIC_MODULE_RECORD_KIND: {
+	case XS_MODULE_KIND:  {
 		fprintf(file, ".kind = XS_MODULE_KIND}, ");
+		fprintf(file, ".value = { .module = { ");
+		fxPrintAddress(the, file, slot->value.module.realm);
+		fprintf(file, ", %d } }", slot->value.module.id);
+	} break;
+	case XS_MODULE_SOURCE_KIND: {
+		fprintf(file, ".kind = XS_MODULE_SOURCE_KIND }, ");
 		fprintf(file, ".value = { .module = { ");
 		fxPrintAddress(the, file, slot->value.module.realm);
 		fprintf(file, ", %d } }", slot->value.module.id);

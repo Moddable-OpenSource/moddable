@@ -105,7 +105,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 13
-#define XS_MINOR_VERSION 0
+#define XS_MINOR_VERSION 1
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -388,6 +388,8 @@ enum {
 	XS_METHOD_FLAG = 16,
 	XS_GETTER_FLAG = 32,
 	XS_SETTER_FLAG = 64,
+	XS_IMPORT_FLAG = 32,
+	XS_IMPORT_META_FLAG = 64,
 };
 
 enum {
@@ -680,6 +682,7 @@ enum {
 	_JSON,
 	_Map,
 	_Math,
+	_ModuleSource,
 	_Number,
 	_Object,
 	_Promise,
@@ -690,7 +693,6 @@ enum {
 	_RegExp,
 	_Set,
 	_SharedArrayBuffer,
-	_StaticModuleRecord,
 	_String,
 	_Symbol,
 	_SyntaxError,
@@ -960,6 +962,8 @@ enum {
 	_module,
 	_multiline,
 	_name,
+	_needsImport,
+	_needsImportMeta,
 	_new_target,
 	_next,
 	_normalize,

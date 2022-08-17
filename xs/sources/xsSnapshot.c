@@ -69,7 +69,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#define mxCallbacksLength 495
+#define mxCallbacksLength 497
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -157,7 +157,6 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Compartment_prototype_get_globalThis,
 	fx_Compartment_prototype_import,
 	fx_Compartment_prototype_importNow,
-	fx_Compartment_prototype_module,
 	fx_Compartment,
 	fx_DataView_prototype_buffer_get,
 	fx_DataView_prototype_byteLength_get,
@@ -318,6 +317,10 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Math_tan,
 	fx_Math_tanh,
 	fx_Math_trunc,
+	fx_ModuleSource,
+	fx_ModuleSource_prototype_get_bindings,
+	fx_ModuleSource_prototype_get_needsImport,
+	fx_ModuleSource_prototype_get_needsImportMeta,
 	fx_Number_isFinite,
 	fx_Number_isInteger,
 	fx_Number_isNaN,
@@ -432,9 +435,6 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_SharedArrayBuffer_prototype_slice,
 	fx_SharedArrayBuffer,
 	fx_species_get,
-	fx_StaticModuleRecord,
-	fx_StaticModuleRecord_initialize,
-	fx_StaticModuleRecord_prototype_get_bindings,
 	fx_String_fromCharCode,
 	fx_String_fromCodePoint,
 	fx_String_prototype_at,
@@ -542,6 +542,8 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxArrayLengthSetter,
 	fxExecuteModulesFulfilled,
 	fxExecuteModulesRejected,
+	fxExecuteVirtualModuleSource,
+	fxExecuteVirtualModuleSourceImport,
 	fxInitializeRegExp,
 	fxLoadModulesFulfilled,
 	fxLoadModulesRejected,
@@ -1431,7 +1433,7 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
-	case XS_STATIC_MODULE_RECORD_KIND:
+	case XS_MODULE_SOURCE_KIND:
 		slot->value.module.realm = fxUnprojectSlot(the, snapshot, slot->value.module.realm);
 		break;
 		
@@ -1795,7 +1797,7 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
-	case XS_STATIC_MODULE_RECORD_KIND:
+	case XS_MODULE_SOURCE_KIND:
 		buffer.value.module.realm = fxProjectSlot(the, snapshot->firstProjection, slot->value.module.realm);
 		buffer.value.module.id = slot->value.module.id;
 		break;
