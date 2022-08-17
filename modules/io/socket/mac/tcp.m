@@ -618,7 +618,7 @@ static void listenerCallback(CFSocketRef socketRef, CFSocketCallBackType cbType,
 
 static void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static const xsHostHooks xsListenerHooks = {
-	xs_listener_destructor,
+	xs_listener_destructor_,
 	xs_listener_mark,
 	NULL
 };
