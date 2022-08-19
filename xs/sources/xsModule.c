@@ -1687,6 +1687,9 @@ void fxNewModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* module)
 	module->kind = the->stack->kind;
 	module->value = the->stack->value;
 	mxPop();
+#if mxInstrument
+	the->loadedModulesCount++;
+#endif
 }
 
 void fxOrderModule(txMachine* the, txSlot* queue, txSlot* order, txSlot* module)
