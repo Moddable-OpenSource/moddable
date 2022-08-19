@@ -903,6 +903,7 @@ void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg)
 
 	if (ipaddr) {
 		xss->connecting = 1;
+		socketUpUseCount(xss->the, xss);
 		tcp_connect_safe(xss->skt, ipaddr, xss->port, didConnect);
 	}
 	else
