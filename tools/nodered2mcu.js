@@ -542,7 +542,7 @@ export default class extends TOOL {
 
 				const headers = [];
 				for (const name in config.headers)
-					headers.push([name, config.headers[name]]);
+					headers.push([name.toLowerCase(), config.headers[name]]);
 				if (headers.length)
 					config.headers = headers;
 				else
