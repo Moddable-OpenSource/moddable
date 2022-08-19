@@ -98,6 +98,9 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		if (fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION)|| fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION) || fxIsCodeUsed(XS_CODE_IMPORT))
 			fxUnstripCallback(linker, fx_Promise);
 			
+		if (fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION))
+			fxUnstripCallback(linker, fx_AsyncIterator_asyncIterator);
+			
 		if (fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2))
 			fxUnstripCallback(linker, fx_BigInt);
 			
