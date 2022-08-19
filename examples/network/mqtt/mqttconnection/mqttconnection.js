@@ -61,12 +61,10 @@ class Connection {
 		this.#ready = false;
 		this.#closed = true;
 
-		if (this.#reconnect)
-			Timer.clear(this.#reconnect);
+		Timer.clear(this.#reconnect);
 		this.#reconnect = undefined;
 
-		if (this.#timeout)
-			Timer.clear(this.#timeout);
+		Timer.clear(this.#timeout);
 		this.#timeout = undefined;
 
 		mqtt?.close();
@@ -172,8 +170,7 @@ class Connection {
 	wait(wait) {
 		this.#wait = wait;
 		if (wait) {
-			if (this.#reconnect)
-				Timer.clear(this.#reconnect);
+			Timer.clear(this.#reconnect);
 			this.#reconnect = undefined;
 		}
 		else if (!this.#ready && !this.#timeout && !this.#reconnect)
