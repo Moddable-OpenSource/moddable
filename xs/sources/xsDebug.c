@@ -1832,26 +1832,39 @@ void fxListModules(txMachine* the)
 	txSlot* moduleMap = mxModuleMap(realm);
 	txSlot* instance = fxGetInstance(the, moduleMap);
 	txSlot* instanceInspector = fxToInstanceInspector(the, instance);
-	txSlot* module = mxOwnModules(realm)->value.reference->next;
+	txSlot* modules = mxOwnModules(realm)->value.reference;
+	txSlot* module;
 	fxEcho(the, "<grammar>");
-	fxEcho(the, "<node");
-	if (instanceInspector)
-		fxEchoFlags(the, "-", moduleMap->flag);
-	else
-		fxEchoFlags(the, "+", moduleMap->flag);
-	fxEcho(the, " name=\"(map)\"");
-	fxEchoAddress(the, instance);
-	if (instanceInspector) {
-		fxEcho(the, ">");
-		fxEchoInstance(the, instance, &aList);
-		fxEcho(the, "</node>");
+	if (instance->next) {
+		fxEcho(the, "<node");
+		if (instanceInspector)
+			fxEchoFlags(the, "-", moduleMap->flag);
+		else
+			fxEchoFlags(the, "+", moduleMap->flag);
+		fxEcho(the, " name=\"(map)\"");
+		fxEchoAddress(the, instance);
+		if (instanceInspector) {
+			fxEcho(the, ">");
+			fxEchoInstance(the, instance, &aList);
+			fxEcho(the, "</node>");
+		}
+		else
+			fxEcho(the, "/>");
 	}
-	else
-		fxEcho(the, "/>");
+	module = modules->next;
 	while (module) {
         if (mxIsReference(module))
             fxEchoModule(the, module, &aList);
 		module = module->next;
+	}
+	modules = modules->value.instance.prototype;
+	if (modules) {
+		module = modules->next;
+		while (module) {
+			if (mxIsReference(module))
+				fxEchoModule(the, module, &aList);
+			module = module->next;
+		}
 	}
 	fxEcho(the, "</grammar>");
 }
