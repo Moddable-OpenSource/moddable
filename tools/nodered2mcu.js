@@ -526,6 +526,28 @@ export default class extends TOOL {
 				property.push(`\t\t}`);
 				config.property = property.join("\n");
 			} break;
+			
+			case "http in": {
+				if (config.upload)
+					throw new Error("upload unimplemented");
+				
+				config.method = config.method.toUpperCase();
+
+				delete config.swaggerDoc;
+				delete config.upload;
+			} break;
+			
+			case "http response": {
+				config.statusCode = parseInt(config.statusCode);
+
+				const headers = [];
+				for (const name in config.headers)
+					headers.push([name, config.headers[name]]);
+				if (headers.length)
+					config.headers = headers;
+				else
+					delete config.headers;
+			} break;
 
 			case "rpi-gpio in": {
 				if (config.read || parseFloat(config.debounce))
