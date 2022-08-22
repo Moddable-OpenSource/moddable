@@ -1162,7 +1162,7 @@ The `advertisingData` and `scanResponseData` contain one or more properties corr
 | `completeUUID128List` | `array` | Array of UUID objects corresponding to *Complete List of 128 bit Service UUIDs*.
 | `shortName` | `string` | String corresponding to the *Shortened Local Name*.
 | `completeName` | `string` | String corresponding to the *Complete Local Name*.
-| `manufacturerSpecific` | `object` | Object corresponding to the *Manufacturer Specific Data*. The `identifier` property is a number corresponding to the *Company Identifier Code*. The `data` property is an array of numbers corresponding to additional manufacturer specific data.
+| `manufacturerSpecific` | `object` | Object corresponding to the *Manufacturer Specific Data*. The `identifier` property is a number corresponding to the *Company Identifier Code*. The `data` property is a `Uint8Array` of numbers corresponding to additional manufacturer specific data.
 | `txPowerLevel` | `number` | Number corresponding to the *TX Power Level*.
 | `connectionInterval` | `object` | Object corresponding to the *Slave Connection Interval Range*. The `intervalMin` property is a number corresponding to the minimum connection interval value. The `intervalMax` property is a number corresponding to the maximum connection interval value.
 | `solicitationUUID16List` | `array` | Array of UUID objects corresponding to the *List of 16 bit Service Solicitation UUIDs*.
