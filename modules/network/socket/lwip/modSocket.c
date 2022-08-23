@@ -252,7 +252,6 @@ void xs_socket(xsMachine *the)
 	xss->constructed = true;
 	xss->useCount = 1;
 	xsmcSetHostData(xsThis, xss);
-	xsRemember(xss->obj);
 
 	modInstrumentationAdjust(NetworkSockets, 1);
 
@@ -357,16 +356,22 @@ void xs_socket(xsMachine *the)
 	else if (kRAW == xss->kind)
 		raw_recv(xss->raw, didReceiveRAW, xss);
 
-	if ((kUDP == xss->kind) || (kRAW == xss->kind))
+	if ((kUDP == xss->kind) || (kRAW == xss->kind)) {
+		xsRemember(xss->obj);
 		return;
+	}
 
 	configureSocketTCP(the, xss);
 
+	socketUpUseCount(xss->the, xss);
+	xss->connecting = 1;
 	if (xsmcHas(xsArg(0), xsID_host)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_host);
 		xsmcToStringBuffer(xsVar(0), temp, sizeof(temp));
-		if (ERR_OK != dns_gethostbyname_safe(temp, &ipaddr, didFindDNS, xss))
+		if (ERR_OK != dns_gethostbyname_safe(temp, &ipaddr, didFindDNS, xss)) {
+			xsRemember(xss->obj);
 			return;
+		}
 	}
 	else
 	if (xsmcHas(xsArg(0), xsID_address)) {
@@ -377,11 +382,10 @@ void xs_socket(xsMachine *the)
 	else
 		xsUnknownError("invalid dictionary");
 
-	socketUpUseCount(the, xss);
-	xss->connecting = 1;
 	err = tcp_connect_safe(xss->skt, &ipaddr, port, didConnect);
 	if (err)
 		xsUnknownError("socket connect failed");
+	xsRemember(xss->obj);
 }
 
 static void closeSocket(xsSocket xss)
@@ -442,6 +446,11 @@ void xs_socket_close(xsMachine *the)
 
 	if (!(xss->pending & kPendingClose))
 		socketSetPending(xss, kPendingClose);
+
+	if (xss->connecting) {
+		xss->connecting = 0;
+		socketDownUseCount(the, xss);
+	}
 }
 
 void xs_socket_get(xsMachine *the)
@@ -901,11 +910,8 @@ void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg)
 {
 	xsSocket xss = arg;
 
-	if (ipaddr) {
-		xss->connecting = 1;
-		socketUpUseCount(xss->the, xss);
+	if (ipaddr && xss->connecting)
 		tcp_connect_safe(xss->skt, ipaddr, xss->port, didConnect);
-	}
 	else
 		socketSetPending(xss, kPendingError);
 }
@@ -930,13 +936,16 @@ err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 {
 	xsSocket xss = arg;
 
-	if (ERR_OK != err)
+	if ((ERR_OK != err) || !xss->connecting) {
 		socketSetPending(xss, kPendingError);
+
+		if (xss->connecting) {
+			xss->connecting = 0;
+			socketDownUseCount(xss->the, xss);
+		}
+	}
 	else
 		socketSetPending(xss, kPendingConnect);
-
-	xss->connecting = 0;
-	socketDownUseCount(xss->the, xss);
 
 	return ERR_OK;
 }
