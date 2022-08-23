@@ -15,7 +15,7 @@ const dns = {
 		io: UDP,
 	},
 };
-globalThis.device = Object.freeze({
+const device = {
 	...globalThis.device,
 	network: {
 		...globalThis.device?.network,
@@ -27,5 +27,10 @@ globalThis.device = Object.freeze({
 			},		
 		},
 	},
-}, true);
+}
+
+if (globalThis.device?.network?.http?.io)
+	device.network.http.io = globalThis.device.network.http.io; 
+
+globalThis.device = Object.freeze(device, true);
 

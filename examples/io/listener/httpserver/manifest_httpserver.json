@@ -6,7 +6,7 @@
 		"*": [ 
 			"$(MODULES)/network/dns/moddnsparser"
 		],
-		"httpclient/config": "./config",
+		"httpserver/config": "./config",
 		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
 		"dns": "$(MODULES)/network/dns/dns",
 		"dns/parser": "$(MODULES)/network/dns/dnsparser",
@@ -14,7 +14,7 @@
 		"embedded:network/http/server": "./httpserver"
 	},
 	"preload": [
-		"httpclient/config",
+		"httpserver/config",
 		"embedded:network/dns/resolver",
 		"dns",
 		"dns/parser",
