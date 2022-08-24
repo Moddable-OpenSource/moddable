@@ -910,8 +910,13 @@ void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg)
 {
 	xsSocket xss = arg;
 
-	if (ipaddr && xss->connecting)
-		tcp_connect_safe(xss->skt, ipaddr, xss->port, didConnect);
+	if (ipaddr && xss->connecting) {
+		err_t err = tcp_connect(xss->skt, ipaddr, xss->port, didConnect);
+		if (ERR_INPROGRESS == err)
+			err = ERR_OK;
+		if (err)
+			socketSetPending(xss, kPendingError);
+	}
 	else
 		socketSetPending(xss, kPendingError);
 }
@@ -936,16 +941,15 @@ err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err)
 {
 	xsSocket xss = arg;
 
-	if ((ERR_OK != err) || !xss->connecting) {
+	if ((ERR_OK != err) || !xss->connecting)
 		socketSetPending(xss, kPendingError);
-
-		if (xss->connecting) {
-			xss->connecting = 0;
-			socketDownUseCount(xss->the, xss);
-		}
-	}
 	else
 		socketSetPending(xss, kPendingConnect);
+
+	if (xss->connecting) {
+		xss->connecting = 0;
+		socketDownUseCount(xss->the, xss);
+	}
 
 	return ERR_OK;
 }
