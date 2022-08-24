@@ -13,7 +13,7 @@
  */
 
 import Timer from "timer";
-import RTC from "embedded:peripherals/RTC-MaximIntegrated/DS1307";
+import RTC from "embedded:RTC/DS1307";
 
 const rtc = new RTC({
             rtc: {

@@ -13,7 +13,7 @@
  */
 
 import Timer from "timer";
-import RTC from "embedded:peripherals/RTC-NXP/PCF8563";
+import RTC from "embedded:RTC/PCF8563";
 import config from "mc/config";
 
 trace(`Today's date: ${(new Date()).toGMTString()}\n`);
