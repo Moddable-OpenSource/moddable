@@ -1500,7 +1500,7 @@ uint8_t *espFindUnusedFlashStart(void)
 	}
 
 	pos += (uint32_t)kFlashStart;
-	return (uint8 *)(((SPI_FLASH_SEC_SIZE - 1) + pos) & ~(SPI_FLASH_SEC_SIZE - 1));
+	return (uint8 *)(((kFlashSectorSize - 1) + pos) & ~(kFlashSectorSize - 1));
 }
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
@@ -1581,7 +1581,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	toAlign = size & ~3;
 	if (toAlign) {
 		size -= toAlign;
-		if (((uintptr_t)src) & ~3) {	// src is not long aligned, copy through stack
+		if (3 & (uintptr_t)src) {	// src is not long aligned, copy through stack
 			while (toAlign) {
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
@@ -1619,11 +1619,11 @@ fail:
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
 {
-	if ((offset & (SPI_FLASH_SEC_SIZE - 1)) || (size & (SPI_FLASH_SEC_SIZE - 1)))
+	if ((offset & (kFlashSectorSize - 1)) || (size & (kFlashSectorSize - 1)))
 		return 0;
 
-	offset /= SPI_FLASH_SEC_SIZE;
-	size /= SPI_FLASH_SEC_SIZE;
+	offset /= kFlashSectorSize;
+	size /= kFlashSectorSize;
 	while (size--) {
 		int err;
 
