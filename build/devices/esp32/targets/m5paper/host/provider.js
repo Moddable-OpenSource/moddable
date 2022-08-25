@@ -151,7 +151,7 @@ const device = {
 			constructor(options) {
 				return new RTC({
 					...options,
-					rtc: {
+					clock: {
 						...device.I2C.default,
 						io: SMBus
 					}
