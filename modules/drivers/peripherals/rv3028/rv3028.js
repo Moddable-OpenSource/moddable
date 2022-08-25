@@ -35,11 +35,11 @@ class RV3028 {
 	#blockBuffer = new Uint8Array(4);
 
 	constructor(options) {
-		const { rtc } = options;
-		const io = this.#io = new rtc.io({
+		const { clock } = options;
+		const io = this.#io = new clock.io({
 			hz: 400_000,
 			address: 0x52,
-			...rtc
+			...clock
 		});
 
 		try {
@@ -56,13 +56,13 @@ class RV3028 {
 	}
 	configure(options) {
 	}
-	get enabled() {
-		return (this.#io.readByte(Register.STATUS) & Register.POWER_ON_RESET) ? false : true;
+	get configuration() {
+		return {};
 	}
 	get time() {
 		const reg = this.#blockBuffer;
 
-		if (!this.enabled)
+		if (this.#io.readByte(Register.STATUS) & Register.POWER_ON_RESET)
 			return undefined;
 
 		this.#io.readBlock(Register.UNIXTIME, reg);
