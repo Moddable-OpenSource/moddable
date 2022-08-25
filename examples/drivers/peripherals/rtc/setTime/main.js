@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -15,7 +15,7 @@
 import RTC from "embedded:RTC/DS1307";
 
 const rtc = new RTC({
-			rtc: {
+			clock: {
 				...device.I2C.default,
 				io: device.io.SMBus
 			}
