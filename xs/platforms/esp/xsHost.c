@@ -363,10 +363,10 @@ size_t espStrcspn(const char *str, const char *strCharSet)
 
 	while (c_read8(str)) {
 		const char *cs = strCharSet;
-		char c;
+		char c, sc = c_read8(str);
 
 		while (c = c_read8(cs++)) {
-			if (c_read8(str) == c)
+			if (sc == c)
 				return str - s;
 		}
 
@@ -382,10 +382,10 @@ size_t espStrspn(const char *str, const char *strCharSet)
 
 	while (c_read8(str)) {
 		const char *cs = strCharSet;
-		char c;
+		char c, sc = c_read8(str);
 
 		while (c = c_read8(cs++)) {
-			if (c_read8(str) == c)
+			if (sc == c)
 				break;
 		}
 
