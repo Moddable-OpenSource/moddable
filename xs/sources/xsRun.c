@@ -355,23 +355,29 @@ static void fxTraceString(txMachine* the, txString theString)
 #endif
 
 #ifdef mxTraceCall
-int depth = 0;
-
+int gxTraceCall = 0;
+static int depth = 0;
 static void fxTraceCallBegin(txMachine* the, txSlot* function)
 {
-	txSlot* slot = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), 0, XS_ANY);
-	int i;
-	for (i = 0; i < depth; i++)
-		fprintf(stderr, "\t");
-	if (slot && (slot->kind == XS_STRING_KIND) &&  (slot->kind == XS_STRING_X_KIND))
-		fprintf(stderr, " [%s]\n", slot->value.string);
-	else
-		fprintf(stderr, " [?]\n");
-	depth++;
+	if (gxTraceCall) {
+		txSlot* slot = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), 0, XS_ANY);
+		int i;
+		for (i = 0; i < depth; i++)
+			fprintf(stderr, "\t");
+		if (slot && ((slot->kind == XS_STRING_KIND) ||  (slot->kind == XS_STRING_X_KIND)))
+			fprintf(stderr, " [%s]\n", slot->value.string);
+		else
+			fprintf(stderr, " [?]\n");
+		depth++;
+	}
 }
 static void fxTraceCallEnd(txMachine* the, txSlot* function)
 {
-	depth--;
+	if (gxTraceCall) {
+		depth--;
+		if (depth < 0)
+			depth = 0;
+	}
 }
 #endif
 
@@ -814,6 +820,9 @@ XS_CODE_JUMP:
 						mxEnvironment = mxStack;
 						mxScope = mxStack;
 						mxCode = slot->value.code.address;
+			#ifdef mxTraceCall
+						fxTraceCallBegin(the, mxFrameFunction);
+			#endif
 						mxFirstCode();
 						mxBreak;
 					}
@@ -831,6 +840,9 @@ XS_CODE_JUMP:
 						mxScope = mxStack;
 						mxCode = C_NULL;
 						byte = XS_CODE_CALL;
+			#ifdef mxTraceCall
+						fxTraceCallBegin(the, mxFrameFunction);
+			#endif
 						mxSaveState;
 			#ifdef mxLink
 						if ((txU1*)slot->value.callback.address - (txU1*)the->fakeCallback < 0)
@@ -861,6 +873,9 @@ XS_CODE_JUMP:
 						mxScope = mxStack;
 						mxCode = C_NULL;
 						byte = XS_CODE_CALL;
+			#ifdef mxTraceCall
+						fxTraceCallBegin(the, mxFrameFunction);
+			#endif
 						mxSaveState;
 						fxRunProxy(the, variable);
 						mxRestoreState;
@@ -884,6 +899,9 @@ XS_CODE_JUMP:
 				mxScope = mxStack;
 				mxCode = C_NULL;
 				byte = XS_CODE_CALL;
+#ifdef mxTraceCall
+				fxTraceCallBegin(the, mxFrameFunction);
+#endif
 				mxSaveState;
 #ifdef mxLink
 				if ((txU1*)slot->value.hostFunction.builder->callback - (txU1*)the->fakeCallback < 0)
