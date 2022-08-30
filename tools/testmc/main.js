@@ -27,9 +27,9 @@ import Net from "net";
 import config from "mc/config";
 
 globalThis.$DO = function(f) {
-	return function() {
+	return function(...args) {
 		try {
-			f();
+			f(...args);
 			$DONE();
 		}
 		catch(e) {
@@ -159,9 +159,14 @@ globalThis.$NETWORK = {
 		assert(!!config.ssid, "Wi-Fi SSID missing");
 		return new Promise((resolve, reject) => {
 			trace(`Connecting to Wi-Fi SSID "${config.ssid}"...\n`);
+			let timer = Timer.set(() => {
+				$DONE("Wi-Fi connection attempt timed out");
+			}, $TESTMC.wifiConnectionTimeout);
 			new WiFi({ssid: config.ssid, password: config.password}, function(message) {
 				if (WiFi.gotIP === message) {
 					trace(`...connected.\n`);
+					Timer.clear(timer);
+					timer = undefined;
 					resolve();
 					this.close();
 				}
