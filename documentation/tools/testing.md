@@ -1,6 +1,6 @@
 # Testing the Moddable SDK
 Copyright 2020-2022 Moddable Tech, Inc.<BR>
-Revised: June 24, 2022
+Revised: August 31, 2022
 
 ## Table of Contents
 
@@ -11,7 +11,19 @@ Revised: June 24, 2022
 * [test262 Test App](#test262-app)
 * [testmc Test App](#testmc-app)
 * [Running Tests on the Simulator](#testing-on-simulator)
-* [Writing Moddable SDK Tests](#writing-tests)
+* [Writing Tests for the Moddable SDK](#writing-tests)
+	* [Structure of a Test](#writing-structure)
+	* [Importing Modules to Test](#writing-importing)
+	* [Pass or Fail?](#writing-pass-fail)
+	* [Asynchronous Tests](#writing-async)
+	* [Assertions](#writing-assert)
+	* [Test Fixtures](#writing-fixtures)
+	* [Keep Tests Small](#writing-small)
+	* [Minimize Assumptions about the Environment](#writing-assumptions)
+	* [Network Tests](#writing-network)
+	* [Graphics Tests](#writing-graphics)
+	* [Piu Touch Interaction Tests](#writing-touch)
+* [Reference for Writing Tests](#test-writing-reference)
 
 <a id="intro"></a>
 ## Introduction
@@ -182,11 +194,334 @@ The process of running on the simulator is the same in xsbug. When the simulator
 <img src="../assets/tools/testing/test-simulator.png" width=300>
 
 <a id="writing-tests"></a>
-## Writing Moddable SDK Tests
+## Writing Tests for the Moddable SDK
+Tests for the Moddable SDK are written in the same way as TEST262 tests. If you aren't yet familiar with how to write tests for TEST262, the following sections will get you started.
 
-The Moddable SDK tests are written in the same way as TEST262 tests. They require the same front-matter, for example, and use the same basic `assert` facility. Because the Moddable SDK is entirely module based, Moddable SDK tests only run in strict mode. Many of the tests run as modules, to be able to import other modules.
+<a id="writing-structure"></a>
+### Structure of a Test
+Each test file has two parts: the frontmatter and the test script. The frontmatter uses the [YAML](https://en.wikipedia.org/wiki/YAML) mark-up format. The frontmatter appears first and contains meta-data about the test. The test script follows the frontmatter.
 
-The testmc test app adds features to the runtime environment to make it easier to write test scripts. This is similar in concept to `$TEST262` global variable added by the TEST262 test harness. The following sections introduce the runtime features of testmc for tests.
+Here's a very basic test:
+
+```js
+/*---
+flags: [module]
+---*/
+assert.sameValue("Java" + "Script", "JavaScript");
+```
+
+The `module` flag tells the test runner that the test should loaded as an ECMAScript module, not a program.  If the `module` flag is not present, the test is run as a program. All tests written for the Moddable SDK should include the `module` flag because nearly all scripts in the Moddable SDK are executed as modules. 
+
+In addition to flags, the frontmatter may contain a short description of the test or a longer informational section:
+
+```
+/*---
+description: concatenation of two strings
+info: |
+  Two strings are concatenated together using
+  the plus operator to verify that the JavaScript
+  engine is correctly concatenating them
+  together.
+flags: [module]
+---*/
+```
+
+The frontmatter is required. If it is not present, the test script will not be executed. If the frontmatter is incorrect, the test script may not run correctly. 
+
+By convention, the copyright notice appears immediately before or after the frontmatter, but always before the test script.
+
+```
+/*---js
+description: https://github.com/Moddable-OpenSource/moddable/issues/452
+flags: [module]
+---*/
+
+// Copyright 2022 Moddable Tech, Inc. All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided.
+
+assert.sameValue("Java" + "Script", "JavaScript");
+```
+
+The `async` field is introduced below, for creating tests that run asynchronously. See the TEST262 documentation for a [reference guide](https://github.com/tc39/test262/blob/main/INTERPRETING.md#metadata) to the frontmatter fields.
+
+<a id="writing-importing"></a>
+### Importing Modules to Test
+The Moddable SDK contains an extensive collection of modules. You may write tests to verify the correct operation of those modules, or you may use those modules as part of your tests. To incorporate a module from the Moddable SDK into your test, simply import it.
+
+```js
+/*---
+flags: [module]
+---*/
+import structuredClone from "structuredClone";
+...
+```
+
+The `import` statement is available because the `module` flag is set in the frontmatter.
+
+The modules that are available to import from the Moddable SDK are determined by the testmc application. You can review its [manifest.json](https://github.com/Moddable-OpenSource/moddable/blob/public/tools/testmc/manifest.json#L29) file to see the modules it includes. If your tests need other modules, you can add them to the testmc manifest.
+
+<a id="writing-pass-fail"></a>
+### Pass or Fail?
+A test is considered to have passed if it runs to the end without generating an unhandled exception. A test is considered to have failed if it exits with an unhandled exception. The earlier example that confirmed that the concatenation of `"Java"` and `"Script"` is `"JavaScript"` passes because it does not throw an unhandled exception. The following test always fails because `undefined` is not an object.
+
+```js
+/*---
+flags: [module]
+---*/
+undefined.toString();
+```
+
+Sometimes a test wants to verify that a failure occurs. The preceding example is expected to fail with a `TypeError`.  There are several ways to do this. One convenient way is using the frontmatter. The frontmatter has an optional `negative` item which causes the test runner to consider the test to have failed if it exits with no error and to pass only if it exits with an unhandled exception of the expected type. This modified test passes, if a `TypeError` is thrown as required by the JavaScript language.
+
+```js
+/*---
+flags: [module]
+negative:
+  type: TypeError
+---*/
+undefined.toString();
+```
+
+<a id="writing-async"></a>
+### Asynchronous Tests
+Some tests must run asynchronously, including network operations, timers, and any test that uses Promises. The default way of determining that the test passed or failed does not work for asynchronous tests, because the test result is not known when the end of the test script is reached. The asynchronous operation must complete to know that the test has passed. Writing tests that run asynchronously is possible with a few changes to how the test is written. First, add the `async` flag to the frontmatter.
+
+```js
+/*---
+flags: [module,async]
+---*/
+```
+
+The test is not considered finished until the `$DONE` function is called by the tests. If `$DONE` is called with no arguments, the test is considered to have passed; if `$DONE` is called with an argument, the test is considered to have failed. Until `$DONE` is called, the test continues running. The following test shows an example:
+
+```js
+/*---
+flags: [module,async]
+---*/
+(Promise.resolve(123)).then(value => {
+	if (123 === value)
+		$DONE();
+	else
+		$DONE("unexpected value");
+});
+```
+
+You may have noticed that the above did not use the `assert.sameValue` function to test that `value` is equal to the expected `123`. That's because the test must call `$DONE` with the result of the test. To allow common asserts to be used in asynchronous tests, `testmc` provides the `$DO` function. Using `$DO` the test can be rewritten as follows:
+
+```js
+/*---
+flags: [module,async]
+---*/
+(Promise.resolve(123)).then($DO(value => {
+	assert.sameValue(value, 123);
+}));
+```
+
+The above test works if the promise is resolved. But, what if the promise was rejected instead? In that case, the test runs indefinitely because it has no rejection handler. To make it easy to detect asynchronous tests that are running for too long, `testmc` provides the `$TESTMC.timeout` function, which causes an asynchronous test to fail if it runs longer than the expected number of milliseconds.
+
+```js
+/*---
+flags: [module,async]
+---*/
+(Promise.resolve(123)).then($DO(value => {
+	assert.sameValue(value, 123);
+}));
+$TESTMC.timeout(500, "timeout on promise resolve");
+```
+
+Asynchronous tests are more difficult to write than synchronous tests, just as asynchronous code is more challenging to write than synchronous code When getting started, take care and try to follow the patterns of existing tests that already work. 
+
+<a id="writing-assert"></a>
+### Assertions
+The TEST262 runtime contains an `assert` global variable with a few basic assertions. Where possible, tests should use these for consistency and readability. All the assertion functions throw an exception if the expected condition is not met.
+
+The most basic assertion is the `assert` function, which throws if passed a false value:
+
+```js
+assert(false);					// throws
+assert(true);						// does not throw
+assert(1 === 3);				// throws
+assert(3 === 3);				// does not throw
+assert(Array.isArray(5), "expected Array");	// throws
+```
+
+Note that `assert` accepts an optional second parameter that contains a message describing the failure. These messages are helpful when reviewing test results to understand where a failure occurred.
+
+The `assert.sameValue` and `assert.notSameValue` are used to compare two JavaScript values, typically an expected value against an actual value. Like `assert`, there is an optional argument for a message that describes the test.
+
+```js
+assert.sameValue(result, 12, "expected result of 12");
+assert.notSameValue(result, 12, "expected result different from 12");
+```
+
+By convention the first argument to `assert.sameValue` and `assert.notSameValue` is the value generated by the test. The second value is the expected result of the test.
+
+The `assert.throws` function is used to confirm that an operation results in a specific error being thrown. The same result can be achieved using `try`/`catch` block, but the `assert.throws` function is more concise and readable. The first argument to `assert.throws` is the constructor of the expected error to be generated. The second argument is a function to execute; the function is expected to throw an instance of the error constructor passed in the first argument. The optional final argument is a message describing the failure, as with other assert functions.
+
+```js
+assert.throws(SyntaxError, () => Timer.delay(), "one argument required")
+```
+
+If `Timer.delay` throws a `SyntaxError`, the `assert.throws` catches the exception and returns, so the test passes. If `Timer.delay` does not throw the expected `SyntaxError`, `assert.throws` throws an exception which causes the test to fail.
+
+<a id="writing-fixtures"></a>
+### Test Fixtures
+When writing tests for a specific module, there is often some data or code that you want to share between the several tests that are split across several files. This shared data or code is referred to as a fixture. When writing tests for testmc, test fixtures are simply additional modules. Those modules can be imported by your test using an `import` statement.
+
+Consider a test that reads values from a temperature sensor. It wants to confirm that sensor readings taken back-to-back are stable, by comparing only the integer part and discarding the fractional portion. A test fixture could add a function to compare two values as integers. Here's the test fixture, stored in a file named "integerFixture.js" in the same directory as the tests that use it.
+
+```js
+assert.sameInteger = function (actual, expected, reason) {
+	actual = Math.round(actual);
+	expected = Math.round(expected);
+	if (actual !== expected)
+		throw new Error(reason ?? `sameInteger got ${actual}, but expected ${expected}`);
+}
+```
+
+This test fixture adds a `sameInteger` function to the `assert` global. The `assert.sameInteger` can then be used as usual:
+
+```js
+/*---
+flags: [module]
+---*/
+import "./integerFixture.js"
+const sensor = device.sensor.temperature;
+assert.sameInteger(sensor.sample().temperature, sensor.sample().temperature);
+```
+
+A text fixture may also export data. For example, a test fixture might provide an object for testing JSON serialization:
+
+```js
+export default {
+	a: 1,
+	b: "2",
+	c: {three: 3}
+}
+```
+
+Note that that test fixture modules are not tests, so they must not have the YAML frontmatter used to identify tests. They can, of course, still have a description and copyright notice using JavaScript comments.
+
+<a id="writing-small"></a>
+### Keep Tests Small
+The primary purpose of `testmc` is to run tests on a resource-constrained microcontroller. To achieve that, the tests themselves must be kept small. The source code to the test module and any test fixtures is downloaded to the microcontroller where they are compiled to byte-code by the XS JavaScript engine. The source code uses RAM as does the compiled byte-code. And, of course, the test requires memory to run. Most of the time this is not a problem. Out-of-memory exceptions have occurred when using large existing tests designed to run on computers rather than microcontrollers. Usually the problem can be solved by breaking the test up into several different source code files, using a test fixture for code and data shared across tests.
+
+A good rule of thumb is to keep the source code of the test script under 100 lines, and the total lines, including any fixtures, under 200. Some microcontrollers have quite a bit of memory, so much larger files will work. But, to ensure tests can run in as many environments as possible, they should be written to follow these guidelines.
+
+The tests in TEST262 itself are are often just a few lines of code. Keeping tests small is also convenient for debugging when a problem arises. If a test file contains hundreds of tests, it is more difficult to isolate and debug test failures. A test file that is focused on exercising a particular area provides a more easily understood result in the test logs.
+
+<a id="writing-assumptions"></a>
+### Minimize Assumptions about the Environment
+Each test is run in a fresh virtual machine. This helps to ensure consistent test results because each test executes independently of the tests that ran before it. But there are limits to how much a test can be isolated from those that ran earlier. 
+
+A test for the file system will create, delete, and modify files. Such tests should clean-up after themselves, by removing any temporary files. However, this is imperfect. If the test fails, it will not have a chance to clean-up. Therefore, in general tests should be written so they work even if previous tests did not properly clean-up.
+
+While each test is run in a separate virtual machine, the microcontroller itself does not reboot between each test because rebooting would make running a suite of tests much slower. When a virtual machine is closed, all resources it owns are freed. This releases all memory, closes all files, ends all network connections, etc. However, there is some state that remains. For example, the state of the network connection is not changed: if the microcontroller remains connected to Wi-Fi. This is convenient as it allows a sequence of network tests to run quickly without each test having to establish a Wi-Fi connection. However, a test written to assume Wi-Fi begins in a disconnected state may fail. Such a test should first explicitly disconnect from Wi-Fi.
+
+<a id="writing-network"></a>
+### Network Tests
+When writing tests that use the network, the first step is to make sure the microcontroller is connected to a network. The testmc runtime includes a `$NETWORK` global to help with network tests, and it includes a `connected` property that can be used to wait for a network connection to be available.
+
+```js
+/*---
+flags: [module,aync]
+---*/
+import {Client} from "http";
+await $NETWORK.connected;
+new Client(...);
+...
+```
+
+If a network connection cannot be established, the promise returned by `$NETWORK.connected` will be rejected, causing an exception to be thrown and the test to fail.
+
+See the reference section on the `$NETWORK` global below for additional support for network tests.
+
+<a id="writing-graphics"></a>
+### Graphics Tests
+When writing tests to validate the correct operation of graphics rendering operations, a common challenge is determining if the image is drawn correctly. A common solution is to store an image containing the expected result to compare against the rendered image. This approach is impractical when testing on microcontroller with limited storage space. Instead, testmc provides a function to generate a checksum for the rendered image. The checksum is just a handful of bytes and so can be easily incorporated into the test script itself. In addition, because the checksum is generated as the image is sent to the output device, it requires no additional memory to buffer the expected image.
+
+When running testmc, the standard `screen` global variable is extended to support checksums. Each time the display is updated, a checksum is automatically generated for the image drawn. The following test uses Poco to draw a 100 pixel square rectangle in blue, and confirms that it generates the expected checksum.
+
+```js
+/*---
+flags: [module]
+---*/
+import Poco from "commodetto/Poco";
+import Bitmap from "commodetto/Bitmap";
+
+assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+
+const render = new Poco(screen);
+const blue = render.makeColor(255, 0, 0);
+render.begin(0, 0, 100, 100);
+	render.fillRectangle(blue, 0, 0, render.width, render.height);
+render.end();
+
+assert.sameValue("bdae73e6e02019bdbc080589058c0135", screen.checksum, "100x100 blue square");
+```
+
+Notice that before drawing the test asserts that the screen used as an output renders 16-bit RGB565 little-endian pixels. That's because the checksum generated depends on the pixel format. If the screen uses a different pixel format, the checksum will not match. Test can be written to work with several different pixel formats by including the expected checksum for each pixel format.
+
+If the blue color is changed from `255, 0, 0` to `128, 0, 0` the checksums don't match. But, if the blue color is changed to `254, 0, 1`, the checksums still match. That is because 565 pixels ignore the low bits of the color. If the image is rendered with 24 or 32 bit pixels, there would be a mismatch because all the colors bits are used.
+
+Image checksums also work with screens generated by the Piu user interface framework. However, because Piu does not render immediately, a slightly different technique is required. The testmc application provides the `screen.checkImage` function to verify images rendered using Piu. The function allows Piu to render the update pending and then confirms that the image Piu rendered has the expected checksum.
+
+```js
+/*---
+description: 
+flags: [module]
+---*/
+import Bitmap from "commodetto/Bitmap";
+
+assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+
+const redSkin = new Skin({ fill: "red" });
+new Application(null, {
+	skin: new Skin({
+		fill: "white"
+	}),
+	contents: new Content(null, {
+		height: 100, width: 100,
+		skin: new Skin({ fill: "red" })
+	})
+});
+screen.checkImage("b2342b9d128b17b544c8a1e7c4ff652d");
+```
+
+<a id="writing-touch"></a>
+### Piu Touch Interaction Tests
+Testing the correct operation of applications with an interactive user interface is done by sending simulated touch events to the application. testmc extends the `screen` object with functions to send touch begin, touch moved, and touch end events. These events are routed to Piu and handled as usual. Because delivery of touch events is asynchronous, the functions used to send touch events for testing are asynchronous.
+
+The following test sends a touch begin event. The behavior confirms that the expected touch id and coordinates are received. If the touch began event is not received by the behavior within a half second, the test fails with a timeout.
+
+```js
+/*---
+description: 
+flags: [async, module]
+---*/
+class TouchTestBehavior extends $TESTMC.Behavior {
+	onTouchBegan(content, id, x, y) {
+		assert.sameValue(id, 0);
+		assert.sameValue(x, 10);
+		assert.sameValue(y, 20);
+		$DONE();
+	}	
+}
+
+new Application(null, {
+	active: true, Behavior: TouchTestBehavior
+});
+
+$TESTMC.timeout(500, "timeout for doTouchBegan");
+await screen.doTouchBegan(0, 10, 20);
+```
+
+When incorporating a Piu behavior in a test, the behavior's class should extend `$TESTMC.Behavior` instead of `Behavior`. This automatically wraps all methods to allow them to throw exceptions to fail the test and, consequently, for `assert` functions to be used as-is.
+
+<a id="test-writing-reference"></a>
+## Reference for Writing Tests
+The testmc application adds features to the runtime environment to support test scripts. This is the same idea as the `$TEST262` global variable added by the TEST262 test harness. The following sections introduce the runtime features of testmc available for tests to use.
 
 ### `$TESTMC` Global
 
@@ -296,6 +631,7 @@ These functions send touch input events as if they were generated by the touch s
 ```js
 await screen.doTouchBegan(0, 100, 100, Time.ticks);
 ```
+
 #### Test Configuration in `mc/config`
 The testmc manifest contains configuration values for on-device testing, such as hardware pin numbers and I/O ports. These values are used by tests, so that they may written to be independent of the device being tested. When running testmc on a new device, the configuration values for the device must be added to the manifest. 
 
