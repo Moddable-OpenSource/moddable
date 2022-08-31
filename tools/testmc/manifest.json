@@ -80,7 +80,7 @@
 		"ble": {
 			"client": {
 				"timeout": 10000,
-				"targetDevice": "Moddable Test Server"
+				"targetDevice": "Moddable Server"
 			}
 			
 		}
