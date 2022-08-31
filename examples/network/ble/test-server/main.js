@@ -30,7 +30,7 @@ class TestServer extends BLEServer {
 	}
 	onDisconnected() {
 		this.startAdvertising({
-			advertisingData: {flags: 6, completeName: this.deviceName, incompleteUUID16List: [HEART_RATE_SERVICE_UUID]}
+			advertisingData: {flags: 6, completeName: this.deviceName, incompleteUUID16List: [HEART_RATE_SERVICE_UUID], manufacturerSpecific: { identifier: 0x03, data: [1,2,3] }}
 		});
 	}
 	onCharacteristicNotifyEnabled(characteristic) {
