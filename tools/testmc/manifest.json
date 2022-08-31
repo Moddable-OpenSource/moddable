@@ -38,6 +38,7 @@
 		"$(MODULES)/data/qrcode/manifest.json",
 		"$(MODULES)/data/text/decoder/manifest.json",
 		"$(MODULES)/data/text/encoder/manifest.json",
+		"$(MODULES)/data/url/manifest.json",
 		"$(MODULES)/data/zlib/manifest_deflate.json",
 		"$(MODULES)/data/zlib/manifest_inflate.json",
 		"$(MODULES)/files/preference/manifest.json",

@@ -1,9 +1,10 @@
 {
 	"include": [
+		"$(MODDABLE)/modules/data/url/manifest.json",
 		"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json"
 	],
 	"modules": {
-		"*": ["./listen", "./url" ]
+		"*": "./listen"
 	},
 	"preload": [
 		"listen"
