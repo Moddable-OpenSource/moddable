@@ -45,8 +45,7 @@
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
-		"$(MODDABLE)/modules/network/websocket/manifest.json",
-		"$(MODDABLE)/modules/network/ble/manifest_client.json"
+		"$(MODDABLE)/modules/network/websocket/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -95,7 +94,8 @@
 			},
 			"include": [
 				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json"
+				"$(MODULES)/files/flash/manifest.json",
+				"$(MODDABLE)/modules/network/ble/manifest_client.json"
 			],
 			"modules": {
 				"~": [
