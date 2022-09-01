@@ -864,21 +864,21 @@ export default class extends Tool {
 		this.config = config;
 	}
 	filterCreation(creation) {
-		if (!creation.chunk) creation.chunk = { };
+		creation.chunk ??= {};
 		if (!creation.chunk.initial) creation.chunk.initial = 32768;
-		if (!creation.chunk.incremental) creation.chunk.incremental = 1024;
-		if (!creation.heap) creation.heap = { };
+		creation.chunk.incremental ??= 1024;
+		creation.heap ??= {};
 		if (!creation.heap.initial) creation.heap.initial = 2048;
-		if (!creation.heap.incremental) creation.heap.incremental = 64;
-		if (!creation.stack) creation.stack = 512;
-		if (!creation.keys) creation.keys = {};
+		creation.heap.incremental ??= 64;
+		creation.stack ??= 384;
+		creation.keys ??= {};
 		if (!creation.keys.available) creation.keys.available = 256;
 		if (!creation.keys.name) creation.keys.name = 127;
 		if (!creation.keys.symbol) creation.keys.symbol = 127;
-		if (!creation.parser) creation.parser = {};
+		creation.parser ??= {};
 		if (!creation.parser.buffer) creation.parser.buffer = 32768;
 		if (!creation.parser.table) creation.parser.table = 1993;
-		if (!creation.static) creation.static = 0;
+		creation.static ??= 0;
 		if (!creation.main) creation.main = "main";
 		if ((this.platform == "x-android") || (this.platform == "x-android-simulator") || (this.platform == "x-ios") || (this.platform == "x-ios-simulator")) {
 			creation.main = this.ipAddress;
