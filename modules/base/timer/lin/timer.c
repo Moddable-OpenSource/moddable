@@ -161,6 +161,9 @@ void modTimerRemove(modTimer timer)
 {
 	modTimer walker, prev = NULL;
 
+	if (NULL == timer)
+		return;
+
 	if (timer->g_timer) {
 		g_source_remove(timer->g_timer);
 		timer->g_timer = 0;
