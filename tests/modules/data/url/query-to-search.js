@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import URL from "url";
+import test from "./url_FIXTURE.js";
 
 const url = new URL("http://moddable.com/?x=0&y=1");
 const searchParams = url.searchParams;

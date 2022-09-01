@@ -3,41 +3,26 @@ description:
 flags: [module]
 ---*/
 
-import URL from "url";
+import test from "./url_FIXTURE.js";
 
-function test(url, base, success, expected) {
-	try {
-		let it = base ? new URL(url, new URL(base)) : new URL(url);
-		let actual = it.toString();
-		if (!success)
-  			throw new Test262Error("Expected failure but got «" + actual + "»");
-  		success = false;
-		assert.sameValue(actual, expected);
-  }
-  catch(e) {
-    if (success)
-  		throw new Test262Error("Expected «" + expected + "» but got ", e.name);
-  }
-}
+test("file:foo/bar0", undefined, true, "file:///foo/bar0");
+test("file:/foo/bar1", undefined, true, "file:///foo/bar1");
+test("file://foo/bar2", undefined, true, "file://foo/bar2");
+test("file:///foo/bar3", undefined, true, "file:///foo/bar3");
+test("file:////foo/bar4", undefined, true, "file:////foo/bar4");
 
-test("file:foo/bar", "", true, "file:///foo/bar");
-test("file:/foo/bar", "", true, "file:///foo/bar");
-test("file://foo/bar", "", true, "file://foo/bar");
-test("file:///foo/bar", "", true, "file:///foo/bar");
+test("file:C:/bar0", undefined, true, "file:///C:/bar0");
+test("file:/C:/bar1", undefined, true, "file:///C:/bar1");
+test("file://C:/bar2", undefined, true, "file:///C:/bar2");
+test("file:///C:/bar3", undefined, true, "file:///C:/bar3");
+test("file:////C:/bar4", undefined, true, "file:////C:/bar4");
 
-test("file:C:/bar1", "", true, "file:///C:/bar1");
-test("file:/C:/bar2", "", true, "file:///C:/bar2");
-test("file://C:/bar3", "", true, "file:///C:/bar3");
-test("file:///C:/bar4", "", true, "file:///C:/bar4");
-test("file:c:/bar1", "", true, "file:///c:/bar1");
-test("file:/c:/bar2", "", true, "file:///c:/bar2");
-test("file://c:/bar3", "", true, "file:///c:/bar3");
-test("file:///c:/bar4", "", true, "file:///c:/bar4");
+test("file:c:/bar0", undefined, true, "file:///c:/bar0");
+test("file:/c:/bar1", undefined, true, "file:///c:/bar1");
+test("file://c:/bar2", undefined, true, "file:///c:/bar2");
+test("file:///c:/bar3", undefined, true, "file:///c:/bar3");
+test("file:////c:/bar4", undefined, true, "file:////c:/bar4");
 
-test("file:///foo/bar", "", true, "file:///foo/bar");
-test("..", "file:///C:/demo", true, "file:///C:/");
-test("file://loc%61lhost/", "", true, "file:///");
-test("file:///C|/demo", "", true, "file:///C:/demo");
 
 test("foo1", "file:///", true, "file:///foo1");
 test("/foo2", "file:///", true, "file:///foo2");
@@ -54,7 +39,12 @@ test("file:foo", "file://example.com/", true, "file://example.com/foo");
 test("file:/foo", "file://example.com/", true, "file://example.com/foo");
 test("file://foo", "file://example.com/", true, "file://foo/");
 test("file:///foo", "file://example.com/", true, "file:///foo");
+
 test("file:\\foo", "file://example.com/", true, "file://example.com/foo");
 test("file:\\\\foo", "file://example.com/", true, "file://foo/");
 test("file:\\\\\\foo", "file://example.com/", true, "file:///foo");
 test("file:\\\\\\\\foo", "file://example.com/", true, "file:////foo");
+
+test("..", "file:///C:/demo", true, "file:///C:/");
+test("file://loc%61lhost/", undefined, true, "file:///");
+test("file:///C|/demo", undefined, true, "file:///C:/demo");

@@ -18,15 +18,17 @@
 #endif
 
 
-static txBoolean fx_parseURLCanHaveUserInfoPort(txMachine* the, txSlot* parts);
+static txBoolean fx_parseURLCanHaveUserInfoPort(txMachine* the, txSlot* parts, txInteger schemeIndex);
 static void fx_parseURLCopyPath(txMachine* the, txSlot* src, txSlot* dst);
 static txInteger fx_parseURLDecode(txMachine* the, txStringStream* stream);
-static txBoolean fx_parseURLEncode(txMachine* the, txInteger c, txStringStream* src, txStringStream* dst, const char* set);
+static void fx_parseURLEncode(txMachine* the, txInteger c, txStringStream* dst, const char* set);
 static txBoolean fx_parseURLHasOpaquePath(txMachine* the, txSlot* parts);
 static txBoolean fx_parseURLIsWindowsDriveLetter(txMachine* the, txString string, txBoolean startsWith);
 static void fx_parseURLPushPath(txMachine* the, txSlot* path, txStringStream* dst, txBoolean flag);
 static void fx_parseURLSetPart(txMachine* the, txSlot* target, txID id, txIndex index, txStringStream* dst); 
 static void fx_parseURLShortenPath(txMachine* the, txSlot* path);
+static txBoolean fx_parseURLNotSpecialHost(txMachine* the, txStringStream* dst);
+static txBoolean fx_parseURLSpecialHost(txMachine* the, txStringStream* dst);
 static txInteger fx_parseURLSpecialScheme(txMachine* the, txString scheme);
 static void fx_parseQueryPlus(txMachine* the, txSlot* string, txInteger from, txInteger to);
 static void fx_serializeQueryPlus(txMachine* the, txString theSet);
@@ -53,6 +55,30 @@ static const char ICACHE_RODATA_ATTR gxUserInfoSet[128] = {
 	 0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,	/* 5X  PQRSTUVWXYZ[\]^_  */
 	 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 6x  `abcdefghijklmno  */
 	 0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1 	/* 7X  pqrstuvwxyz{|}~   */
+};
+
+static const char ICACHE_RODATA_ATTR gxNotSpecialHostSet[128] = {
+  /* 0 1 2 3 4 5 6 7 8 9 A B C D E F */
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 0x                    */
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 1x                    */
+	 1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,	/* 2x   !"#$%&'()*+,-./  */
+	 0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,1,	/* 3x  0123456789:;<=>?  */
+	 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 4x  @ABCDEFGHIJKLMNO  */
+	 0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,	/* 5X  PQRSTUVWXYZ[\]^_  */
+	 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 6x  `abcdefghijklmno  */
+	 0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1 	/* 7X  pqrstuvwxyz{|}~   */
+};
+
+static const char ICACHE_RODATA_ATTR gxSpecialHostSet[128] = {
+  /* 0 1 2 3 4 5 6 7 8 9 A B C D E F */
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 0x                    */
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,	/* 1x                    */
+	 1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,	/* 2x   !"#$%&'()*+,-./  */
+	 0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,1,	/* 3x  0123456789:;<=>?  */
+	 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 4x  @ABCDEFGHIJKLMNO  */
+	 0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,	/* 5X  PQRSTUVWXYZ[\]^_  */
+	 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	/* 6x  `abcdefghijklmno  */
+	 0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1 	/* 7X  pqrstuvwxyz{|}~   */
 };
 
 static const char ICACHE_RODATA_ATTR gxPathSet[128] = {
@@ -126,35 +152,38 @@ enum {
 	SCHEME_STATE = 1,
 	USERNAME_STATE,
 	PASSWORD_STATE,
+	HOST_PORT_STATE,
 	HOST_STATE,
-	HOSTNAME_STATE,
 	PORT_STATE,
 	PATH_STATE,
 	QUERY_STATE,
 	FRAGMENT_STATE,
+	ORIGIN_STATE,
 };
 
 void fx_parseURL(txMachine* the) 
 {
-	
 	txStringStream _src;
 	txStringStream* src = &_src;
 	txStringStream _dst;
 	txStringStream* dst = &_dst;
 
+	txInteger override = 0;
+	txInteger overrideSchemeIndex = -1;
+	txBoolean overrideSpecial = 0;
+
 	txSlot* base = C_NULL;
 	txInteger baseSchemeIndex = -1;
-
-	txInteger override = 0;
+	txBoolean baseSpecial = 0;
+	
 	txSlot* result = C_NULL;
 	txInteger schemeIndex = -1;
-	
-	txBoolean isSpecial = 0;
-	txBoolean wasSpecial = 0;
+	txBoolean special = 0;
 
 	txIndex length;
 	txSize tmp;
 	txInteger c;
+	txInteger port;
     
     fxVars(the, 3);
 	src->slot = mxArgv(0);
@@ -172,31 +201,43 @@ void fx_parseURL(txMachine* the)
  		result = mxResult;
  		
    		override = fxToInteger(the, mxArgv(2));
-    	if (override == SCHEME_STATE) {
+ 		mxPushSlot(result);
+		mxGetID(xsID_scheme);
+		overrideSchemeIndex = fx_parseURLSpecialScheme(the, the->stack->value.string);
+		mxPop();
+		overrideSpecial = overrideSchemeIndex >= 0;
+
+   		if (override == SCHEME_STATE) {
 			goto SCHEME_START;
     	}
-    	if (override == USERNAME_STATE) {
-    		if (fx_parseURLCanHaveUserInfoPort(the, result))
+    	schemeIndex = overrideSchemeIndex;
+    	special = overrideSpecial;
+   		if (override == USERNAME_STATE) {
+    		if (fx_parseURLCanHaveUserInfoPort(the, result, schemeIndex))
 				goto USERNAME;
  			goto END;
     	}
     	if (override == PASSWORD_STATE) {
-    		if (fx_parseURLCanHaveUserInfoPort(the, result))
+    		if (fx_parseURLCanHaveUserInfoPort(the, result, schemeIndex))
 				goto PASSWORD;
  			goto END;
 		}
-    	if (override == HOST_STATE) {
+    	if (override == HOST_PORT_STATE) {
 	    	if (fx_parseURLHasOpaquePath(the, result))
  				goto END;
-			goto HOST;
+ 		    if (schemeIndex == 0)
+				goto FILE_HOST;
+			goto HOST_START;
      	}
-   		if (override == HOSTNAME_STATE) {
+   		if (override == HOST_STATE) {
 	    	if (fx_parseURLHasOpaquePath(the, result))
  				goto END;
-			goto HOST;
+ 		    if (schemeIndex == 0)
+				goto FILE_HOST;
+			goto HOST_START;
     	}
     	if (override == PORT_STATE) {
-     		if (fx_parseURLCanHaveUserInfoPort(the, result))
+     		if (fx_parseURLCanHaveUserInfoPort(the, result, schemeIndex))
    				goto PORT;
  			goto END;
     	}
@@ -208,7 +249,7 @@ void fx_parseURL(txMachine* the)
 			mxSetID(mxID(_length));
 			mxPop();
  			c = fx_parseURLDecode(the, src);
-   			if (c != '/')
+  			if ((c != '/') && (!special || (c != '\\')))
     			src->offset = 0;
   			goto PATH;
     	}
@@ -233,7 +274,7 @@ void fx_parseURL(txMachine* the)
    			goto FRAGMENT;
     	}
     	goto ERROR;
-   }
+	}
     else {
 		fxNewArray(the, 0);
 		mxPullSlot(mxResult);
@@ -270,17 +311,18 @@ void fx_parseURL(txMachine* the)
 			mxGetID(xsID_scheme);
 			baseSchemeIndex = fx_parseURLSpecialScheme(the, the->stack->value.string);
 			mxPop();
+			baseSpecial = baseSchemeIndex >= 0;
     	}
     }
 
 SCHEME_START:
 	c = fx_parseURLDecode(the, src);
 	if (('A' <= c) && (c <= 'Z')) {
-		fx_parseURLEncode(the, c - ('A' - 'a'), src, dst, gxEmptySet);
+		fx_parseURLEncode(the, c - ('A' - 'a'), dst, gxEmptySet);
 		goto SCHEME;
 	}
 	if (('a' <= c) && (c <= 'z')) {
-		fx_parseURLEncode(the, c, src, dst, gxEmptySet);
+		fx_parseURLEncode(the, c, dst, gxEmptySet);
 		goto SCHEME;
 	}
 	if (override)
@@ -292,41 +334,67 @@ SCHEME_START:
 SCHEME:
 	c = fx_parseURLDecode(the, src);
 	if (('A' <= c) && (c <= 'Z')) {
-		fx_parseURLEncode(the, c - ('A' - 'a'), src, dst, gxEmptySet);
+		fx_parseURLEncode(the, c - ('A' - 'a'), dst, gxEmptySet);
 		goto SCHEME;
 	}
 	if ((('a' <= c) && (c <= 'z')) || (c == '+') || (c == '-') || (c == '.')) {
-		fx_parseURLEncode(the, c, src, dst, gxEmptySet);
+		fx_parseURLEncode(the, c, dst, gxEmptySet);
 		goto SCHEME;
 	}
 	if ((c == ':') || (override && (c == C_EOF))) {
 		schemeIndex = fx_parseURLSpecialScheme(the, mxVarv(0)->value.string);
-    	isSpecial = schemeIndex >= 0;
+    	special = schemeIndex >= 0;
 		if (override) {
-    		mxPushSlot(result);
-    		mxGetID(xsID_scheme);
-    		wasSpecial = fx_parseURLSpecialScheme(the, the->stack->value.string) >= 0;
-    		mxPop();
-    		if (wasSpecial != isSpecial)
-    			return;
+    		txBoolean end = 0;
+    		if (overrideSpecial != special)
+    			goto END;
+    		if (schemeIndex == 0) {
+    			mxPushSlot(result);
+    			mxGetID(xsID_username);
+				end = the->stack->value.string[0] != 0;
+				mxPop();
+				if (end) goto END;
+				
+    			mxPushSlot(result);
+    			mxGetID(xsID_password);
+				end = the->stack->value.string[0] != 0;
+				mxPop();
+				if (end) goto END;
+				
+    			mxPushSlot(result);
+    			mxGetID(xsID_port);
+				end = !mxIsNull(the->stack);
+				mxPop();
+				if (end) goto END;
+    		}
+    		if ((overrideSchemeIndex == 0) && (schemeIndex != 0)) {
+    			mxPushSlot(result);
+    			mxGetID(xsID_host);
+				end = the->stack->value.string[0] == 0;
+				mxPop();
+				if (end) goto END;
+    		}
 		}
 		fx_parseURLSetPart(the, result, xsID_scheme, 0, dst);
 		if (override) {
-// 			if (isSpecial) { 
-//     			mxPushSlot(result);
-//     			mxGetID(xsID_port);
-// 				port = fxToInteger(the, the->stack);
-// 				mxPop();
-// 				if (port == gx_parseURLSpecialSchemePorts[special]) {
-// 				
-// 				}
-// 			}
+			if (special) { 
+    			mxPushSlot(result);
+    			mxGetID(xsID_port);
+				port = fxToInteger(the, the->stack);
+				mxPop();
+				if (port == gx_parseURLSpecialSchemePorts[schemeIndex]) {
+    				mxPushNull();
+    				mxPushSlot(result);
+    				mxSetID(xsID_port);
+					mxPop();
+				}
+			}
 			goto END;
 		}
 		if (schemeIndex == 0)
 			goto FILE_START;
-		if (isSpecial) {
-			if (base && (schemeIndex == baseSchemeIndex))
+		if (special) {
+			if (base && (baseSchemeIndex == schemeIndex))
     			goto RELATIVE;
 			goto AUTHORITY_START;
 		}
@@ -359,7 +427,7 @@ NO_SCHEME:
 	mxSetID(xsID_scheme);
 	mxPop();
 	schemeIndex = baseSchemeIndex;
-	isSpecial = schemeIndex >= 0;
+	special = baseSpecial;
 	if (schemeIndex == 0)
 		goto FILE_START;
 
@@ -385,9 +453,9 @@ NO_SCHEME:
 RELATIVE:
 	tmp = src->offset;
 	c = fx_parseURLDecode(the, src);
-	if ((c == '/') || (isSpecial && (c == '\\'))) {
+	if ((c == '/') || (special && (c == '\\'))) {
 		c = fx_parseURLDecode(the, src);
-		if ((c == '/') || (isSpecial && (c == '\\'))) {
+		if ((c == '/') || (special && (c == '\\'))) {
 			goto AUTHORITY_START;
 		}
 	}
@@ -416,7 +484,7 @@ RELATIVE:
 
 	tmp = src->offset;
 	c = fx_parseURLDecode(the, src);
-	if ((c == '/') || (isSpecial && (c == '\\'))) {
+	if ((c == '/') || (special && (c == '\\'))) {
 		goto PATH_START;
 	}
 	
@@ -438,96 +506,124 @@ RELATIVE:
 AUTHORITY_START:
 	tmp = src->offset;
 	c = fx_parseURLDecode(the, src);
-	if ((c == '/') || (isSpecial && (c == '\\')))
+	if ((c == '/') || (special && (c == '\\')))
 		goto AUTHORITY_START;
 	src->offset = tmp;
+	txInteger atOffset = -1;
+	txInteger colonOffset = -1;
 
 AUTHORITY:
 	c = fx_parseURLDecode(the, src);
-	if ((c == C_EOF) || (c == '/') || (isSpecial && (c == '\\')) || (c == '?') || (c == '#')) {
-		src->offset = tmp;
-		goto HOST;	
-	}
 	if (c == '@') {
+		atOffset = src->offset - 1;
+	}
+	else if (c == ':') {
+		if (colonOffset < 0)
+			colonOffset = src->offset - 1;
+	}
+	if ((c == C_EOF) || (c == '/') || (special && (c == '\\')) || (c == '?') || (c == '#')) {
+		txInteger endOffset = src->offset - 1;
 		src->offset = tmp;
-		goto USERNAME;	
+		if (atOffset >= 0) {
+			if ((colonOffset < 0) || (atOffset < colonOffset))
+				colonOffset = atOffset;
+			while (src->offset < colonOffset) {
+				c = fx_parseURLDecode(the, src);
+				fx_parseURLEncode(the, c, dst, gxUserInfoSet);
+			}
+			src->offset++;
+			fx_parseURLSetPart(the, result, xsID_username, 0, dst);
+			if (src->offset < atOffset) {
+				while (src->offset < atOffset) {
+					c = fx_parseURLDecode(the, src);
+					fx_parseURLEncode(the, c, dst, gxUserInfoSet);
+				}
+				src->offset++;
+				fx_parseURLSetPart(the, result, xsID_password, 0, dst);
+			}
+			if (src->offset == endOffset)
+				goto ERROR;
+		}
+		goto HOST_START;	
 	}
 	goto AUTHORITY;
 	
 USERNAME:
 	c = fx_parseURLDecode(the, src);
-	if (override && (c == C_EOF)) {
+	if (c == C_EOF) {
 		fx_parseURLSetPart(the, result, xsID_username, 0, dst);
 		goto END;
 	}
-	if (!override && (c == ':')) {
-		fx_parseURLSetPart(the, result, xsID_username, 0, dst);
-		goto PASSWORD;
-	}
-	if (!override && (c == '@')) {
-		fx_parseURLSetPart(the, result, xsID_username, 0, dst);
-		goto HOST;
-	}
-	if (fx_parseURLEncode(the, c, src, dst, gxUserInfoSet))
-		goto USERNAME;
-	goto ERROR;	
+	fx_parseURLEncode(the, c, dst, gxUserInfoSet);
+	goto USERNAME;
 	
 PASSWORD:
 	c = fx_parseURLDecode(the, src);
-	if (override && (c == C_EOF)) {
+	if (c == C_EOF) {
 		fx_parseURLSetPart(the, result, xsID_password, 0, dst);
 		goto END;
 	}
-	if (!override && (c == '@')) {
-		fx_parseURLSetPart(the, result, xsID_password, 0, dst);
-		goto HOST;
-	}
-	if (fx_parseURLEncode(the, c, src, dst, gxUserInfoSet))
-		goto PASSWORD;
-	goto ERROR;	
+	fx_parseURLEncode(the, c, dst, gxUserInfoSet);
+	goto PASSWORD;
 	
+HOST_START:
+	tmp = src->offset;
+
 HOST:
 	c = fx_parseURLDecode(the, src);
-	if (('A' <= c) && (c <= 'Z')) {
-		fx_parseURLEncode(the, c - ('A' - 'a'), src, dst, gxEmptySet);
-		goto HOST;
-	}
-	if ((('a' <= c) && (c <= 'z')) || (c == '-') || (c == '.')) {
-		fx_parseURLEncode(the, c, src, dst, gxEmptySet);
-		goto HOST;
-	}
 	if (c == ':') {
-		if (isSpecial && (dst->offset == 0))
+		if (special && (dst->offset == 0))
 			goto ERROR;
-		fx_parseURLSetPart(the, result, xsID_host, 0, dst);
-		if (override == HOSTNAME_STATE)
+		if (override == HOST_STATE)
 			goto END;
-		goto PORT;
-	}
-	if (override || (c == C_EOF) || (c == '/') || (isSpecial && (c == '\\')) || (c == '?') || (c == '#')) {
-		if (isSpecial && (dst->offset == 0))
-			goto ERROR;
-		fx_parseURLSetPart(the, result, xsID_host, 0, dst);
+		if ((special) ? fx_parseURLSpecialHost(the, dst) : fx_parseURLNotSpecialHost(the, dst)) {
+			fx_parseURLSetPart(the, result, xsID_host, 0, dst);
+			goto PORT;
+		}
 		if (override)
 			goto END;
-		if ((c == C_EOF) || (c == '/') || (isSpecial && (c == '\\')) || (c == '?') || (c == '#'))
-			goto PATH_START;
+		goto ERROR;
 	}
-	goto ERROR;
+	if ((c == C_EOF) || (c == '/') || (special && (c == '\\')) || (c == '?') || (c == '#')) {
+		if (special && (dst->offset == 0))
+			goto ERROR;
+		//@@
+		if ((special) ? fx_parseURLSpecialHost(the, dst) : fx_parseURLNotSpecialHost(the, dst)) {
+			fx_parseURLSetPart(the, result, xsID_host, 0, dst);
+			goto PATH_START;
+		}
+		if (override)
+			goto END;
+		goto ERROR;
+	}
+	fx_parseURLEncode(the, c, dst, gxEmptySet);
+	goto HOST;
 	
 PORT:
 	c = fx_parseURLDecode(the, src);
 	if (('0' <= c) && (c <= '9')) {
-		fx_parseURLEncode(the, c, src, dst, gxEmptySet);
+		fx_parseURLEncode(the, c, dst, gxEmptySet);
 		goto PORT;
 	}
-	if (override || (c == C_EOF) || (c == '/') || (isSpecial && (c == '\\')) || (c == '?') || (c == '#')) {
+	if (override || (c == C_EOF) || (c == '/') || (special && (c == '\\')) || (c == '?') || (c == '#')) {
 		if (dst->offset != 0) {
-			fx_parseURLSetPart(the, result, xsID_port, 0, dst);
+			mxPushSlot(dst->slot);
+			port = fxToInteger(the, the->stack);
+			mxPop();
+			if ((port < 0) || (65535 < port))
+				goto ERROR;
+			if (special && (port == gx_parseURLSpecialSchemePorts[schemeIndex])) {
+				mxPushNull();
+				mxPushSlot(result);
+				mxSetID(xsID_port);
+				mxPop();
+			}
+			else
+				fx_parseURLSetPart(the, result, xsID_port, 0, dst);
 		}
 		if (override)
 			goto END;
-		if ((c == C_EOF) || (c == '/') || (isSpecial && (c == '\\')) || (c == '?') || (c == '#'))
+		if ((c == C_EOF) || (c == '/') || (special && (c == '\\')) || (c == '?') || (c == '#'))
 			goto PATH_START;
 	}
 	goto ERROR;	
@@ -563,6 +659,7 @@ FILE_START:
 	mxPush(mxEmptyString);
 	mxPushSlot(result);
 	mxSetID(xsID_host);
+	mxPop();
 	goto PATH_START;
 	
 FILE_SLASH:
@@ -600,6 +697,7 @@ FILE_SLASH:
 	mxPush(mxEmptyString);
 	mxPushSlot(result);
 	mxSetID(xsID_host);
+	mxPop();
 	goto PATH_START;
 
 FILE_HOST:
@@ -609,21 +707,24 @@ FILE_HOST:
 			mxPush(mxEmptyString);
 			mxPushSlot(result);
 			mxSetID(xsID_host);
-			fx_parseURLPushPath(the,result, dst, 0);
+			mxPop();
+			fx_parseURLPushPath(the, result, dst, 0);
 			goto PATH;
 		}
-		if (!c_strcmp(dst->slot->value.string, "localhost")) {
-			dst->slot->value.string[0] = 0;
-			dst->offset = 0;
+		if (fx_parseURLSpecialHost(the, dst)) {
+			if (!c_strcmp(dst->slot->value.string, "localhost")) {
+				dst->slot->value.string[0] = 0;
+				dst->offset = 0;
+			}
+			fx_parseURLSetPart(the, result, xsID_host, 0, dst);
+			goto PATH_START;
 		}
-		fx_parseURLSetPart(the, result, xsID_host, 0, dst);
 		if (override)
 			goto END;
-		goto PATH_START;
+		goto ERROR;
 	}
-	if (fx_parseURLEncode(the, c, src, dst, gxEmptySet))
-		goto FILE_HOST;
-	goto ERROR;
+	fx_parseURLEncode(the, c, dst, gxEmptySet);
+	goto FILE_HOST;
 	
 PATH_START:
 	if (c == C_EOF)
@@ -639,7 +740,7 @@ PATH:
 		fx_parseURLPushPath(the, result, dst, 1);
 		goto END;
 	}
-	if ((c == '/') || (isSpecial && (c == '\\'))) {
+	if ((c == '/') || (special && (c == '\\'))) {
 		fx_parseURLPushPath(the, result, dst, 0);
 		goto PATH;
 	}
@@ -651,9 +752,8 @@ PATH:
 		fx_parseURLPushPath(the, result, dst, 1);
 		goto FRAGMENT;
 	}
-	if (fx_parseURLEncode(the, c, src, dst, gxPathSet))
-		goto PATH;
-	goto ERROR;	
+	fx_parseURLEncode(the, c, dst, gxPathSet);
+	goto PATH;
 	
 OPAQUE_PATH:
 	c = fx_parseURLDecode(the, src);
@@ -669,9 +769,8 @@ OPAQUE_PATH:
 		fx_parseURLSetPart(the, result, xsID_path, 0, dst);
 		goto FRAGMENT;
 	}
-	if (fx_parseURLEncode(the, c, src, dst, gxEmptySet))
-		goto OPAQUE_PATH;
-	goto ERROR;	
+	fx_parseURLEncode(the, c, dst, gxEmptySet);
+	goto OPAQUE_PATH;
 	
 QUERY:
 	c = fx_parseURLDecode(the, src);
@@ -683,9 +782,8 @@ QUERY:
 		fx_parseURLSetPart(the, result, xsID_query, 0, dst);
 		goto FRAGMENT;
 	}
-	if (fx_parseURLEncode(the, c, src, dst, gxQuerySet))
-		goto QUERY;
-	goto ERROR;
+	fx_parseURLEncode(the, c, dst, gxQuerySet);
+	goto QUERY;
 	
 FRAGMENT:
 	c = fx_parseURLDecode(the, src);
@@ -693,9 +791,8 @@ FRAGMENT:
 		fx_parseURLSetPart(the, result, xsID_fragment, 0, dst);
 		goto END;
 	}
-	if (fx_parseURLEncode(the, c, src, dst, gxFragmentSet))
-		goto FRAGMENT;
-	goto ERROR;
+	fx_parseURLEncode(the, c, dst, gxFragmentSet);
+	goto FRAGMENT;
 		
 ERROR:
 	mxURIError("invalid URL");
@@ -704,17 +801,18 @@ END:
 	return;
 }
 
-txBoolean fx_parseURLCanHaveUserInfoPort(txMachine* the, txSlot* parts)
+txBoolean fx_parseURLCanHaveUserInfoPort(txMachine* the, txSlot* parts, txInteger schemeIndex)
 {
-	txBoolean result;
-	mxPushSlot(parts);
-	mxGetID(xsID_scheme);
-	result = c_strcmp("file", the->stack->value.string) == 0;
-	mxPop();
-	if (result) {
+	txBoolean result = 1;
+	if (schemeIndex == 0)
+		result = 0;
+	else {
 		mxPushSlot(parts);
 		mxGetID(xsID_host);
-		result = the->stack->value.string[0] != 0;
+		if (mxIsNull(the->stack))
+			result = 0;
+		else if (the->stack->value.string[0] == 0)
+			result = 0;
 		mxPop();
 	}
 	return result;
@@ -748,16 +846,10 @@ txInteger fx_parseURLDecode(txMachine* the, txStringStream* stream)
 	return result;
 }
 
-txBoolean fx_parseURLEncode(txMachine* the, txInteger c, txStringStream* src, txStringStream* dst, const char* set)
+void fx_parseURLEncode(txMachine* the, txInteger c, txStringStream* dst, const char* set)
 {
 	txSize length;
 	txString string;
-	if (c == '%') {
-		string = src->slot->value.string + src->offset;
-		if (!fxParseHexEscape(&string, &c))
-			return 0;
-		src->offset = string - src->slot->value.string;
-	}
 	if (c < 0x80) {
 		if (c_read8(set + c))
 			length = 3;
@@ -816,13 +908,80 @@ txBoolean fx_parseURLEncode(txMachine* the, txInteger c, txStringStream* src, tx
 	}
 	dst->offset += length;
 	*string = 0;
-	return 1;
 }
 
 txBoolean fx_parseURLHasOpaquePath(txMachine* the, txSlot* parts)
 {
 	mxPushSlot(parts);
 	return mxHasID(xsID_path);
+}
+
+txBoolean fx_parseURLNotSpecialHost(txMachine* the, txStringStream* dst)
+{
+	txString p, q;
+	txInteger c;
+	p = dst->slot->value.string;
+	q = p + dst->offset;
+	while (p < q) {
+		c = *p;
+		if (c_read8(gxNotSpecialHostSet + c))
+			return 0;
+		p++;
+	}
+	return 1;
+}
+
+txBoolean fx_parseURLSpecialHost(txMachine* the, txStringStream* dst)
+{
+	txString p, q;
+	txInteger c;
+	txStringStream _src;
+	txStringStream* src = &_src;
+	txBoolean result = 0;
+	p = dst->slot->value.string;
+	q = p + dst->offset;
+	while (p < q) {
+		c = *p;
+		if (('A' <= c) && (c <= 'Z'))
+			*p = (char)c - ('A' - 'a');
+		else if (*p == '%')
+			break;
+		else if (c_read8(gxSpecialHostSet + c))
+			return 0;
+		p++;
+	}
+	if (p == q) 
+		return 1;
+	mxPush(mxGlobal);
+	mxDub();
+	mxGetID(mxID(_decodeURIComponent));
+	mxCall();
+	mxPushSlot(dst->slot);
+	mxRunCount(1);
+	src->slot = the->stack;
+	src->offset = 0;
+	src->size = 0;
+	dst->offset = 0;
+	dst->slot->value.string[0] = 0;
+	for (;;) {
+		c = fx_parseURLDecode(the, src);
+		if (c == C_EOF) {
+			result = 1;
+			break;
+		}
+		if (c < 0x80) {
+			if (c_read8(gxSpecialHostSet + c))
+				break;
+			if (('A' <= c) && (c <= 'Z'))
+				fx_parseURLEncode(the, c - ('A' - 'a'), dst, gxEmptySet);
+			else
+				fx_parseURLEncode(the, c, dst, gxEmptySet);
+		}
+		else
+			break;
+	}
+	mxPop();
+	return result;
 }
 
 txBoolean fx_parseURLIsWindowsDriveLetter(txMachine* the, txString string, txBoolean startsWith)
@@ -965,10 +1124,10 @@ void fx_serializeURL(txMachine* the)
     	if (override == PASSWORD_STATE) {
 			goto PASSWORD;
 		}
-    	if (override == HOST_STATE) {
+    	if (override == HOST_PORT_STATE) {
 			goto HOST;
      	}
-   		if (override == HOSTNAME_STATE) {
+   		if (override == HOST_STATE) {
 			goto HOST;
     	}
     	if (override == PORT_STATE) {
@@ -983,9 +1142,12 @@ void fx_serializeURL(txMachine* the)
     	if (override == FRAGMENT_STATE) {
    			goto FRAGMENT;
     	}
+    	if (override == ORIGIN_STATE) {
+   			goto ORIGIN;
+    	}
     	goto END;
 	}
-	
+
 SCHEME:
 	mxPushSlot(parts);
 	mxGetID(xsID_scheme);
@@ -1017,14 +1179,7 @@ SCHEME:
 		fxConcatStringC(the, result, "@");
 	}
 	fxConcatString(the, result, mxVarv(0));
-	mxPushSlot(parts);
-	mxGetID(xsID_port);
-	mxPullSlot(mxVarv(0));
-	if (mxIsNull(mxVarv(0)))
-		goto PATH;
-	fxConcatStringC(the, result, ":");
-	fxConcatString(the, result, mxVarv(0));
-	goto PATH;
+	goto PORT;
 	
 USERNAME:
 	mxPushSlot(parts);
@@ -1039,25 +1194,41 @@ PASSWORD:
 	fxConcatString(the, result, the->stack);
 	mxPop();
 	goto END;
-
-HOST:
+	
+ORIGIN:
 	mxPushSlot(parts);
 	mxGetID(xsID_host);
 	mxPullSlot(mxVarv(0));
 	if (mxIsNull(mxVarv(0)))
 		goto END;
+	mxPushSlot(parts);
+	mxGetID(xsID_scheme);
+	fxConcatString(the, result, the->stack);
+	mxPop();
+	fxConcatStringC(the, result, "://");
 	fxConcatString(the, result, mxVarv(0));
-	if (override == HOSTNAME_STATE)
+	goto PORT;
+
+HOST:
+	mxPushSlot(parts);
+	mxGetID(xsID_host);
+	mxPullSlot(mxVarv(0));
+	if (!mxIsNull(mxVarv(0)))
+		fxConcatString(the, result, mxVarv(0));
+	if (override == HOST_STATE)
 		goto END;
 
 PORT:
 	mxPushSlot(parts);
 	mxGetID(xsID_port);
 	mxPullSlot(mxVarv(0));
-	if (mxIsNull(mxVarv(0)))
+	if (!mxIsNull(mxVarv(0))) {
+		if (override != PORT_STATE)
+			fxConcatStringC(the, result, ":");
+		fxConcatString(the, result, mxVarv(0));
+	}
+	if ((override == HOST_PORT_STATE) || (override == PORT_STATE) || (override == ORIGIN_STATE))
 		goto END;
-	fxConcatString(the, result, mxVarv(0));
-	goto END;
 	
 PATH:
 	mxPushSlot(parts);

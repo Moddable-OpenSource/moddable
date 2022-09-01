@@ -20,10 +20,7 @@
 
 // https://url.spec.whatwg.org/#url-class
 
-function parseURL(url) @ "fx_parseURL"
-function serializeURL(url) @ "fx_serializeURL"
-function parseQuery(query) @ "fx_parseQuery"
-function serializeQuery(pairs) @ "fx_serializeQuery"
+if (globalThis.URL == undefined) {
 
 const SCHEME = 1;
 const USERNAME = 2;
@@ -204,6 +201,39 @@ class URLSearchParams {
 	}
 }
 
-export { URL, URLSearchParams }
-export default URL;
+globalThis.URL = URL;
+globalThis.URLSearchParams = URLSearchParams;
+
+}
+if (globalThis.Test262Error === undefined) {
+
+globalThis.Test262Error = class extends Error {};
+globalThis.assert = {
+	sameValue(actual, expected) {
+		if (actual != expected)
+			throw new Test262Error("Expected «" + expected + "» but got «" + actual + "»");
+	}
+}
+globalThis.print = function(...args) {
+	console.log(...args);
+}
+
+}
+
+function test(url, base, success, expected) {
+	try {
+		let it = base ? new URL(url, new URL(base)) : new URL(url);
+		let actual = it.toString();
+		if (!success)
+  			throw new Test262Error("Expected failure but got «" + actual + "»");
+  		success = false;
+		assert.sameValue(actual, expected);
+  }
+  catch(e) {
+    if (success)
+  		throw new Test262Error("Expected «" + expected + "» but got ", e.name);
+  }
+}
+
+export default test;
 
