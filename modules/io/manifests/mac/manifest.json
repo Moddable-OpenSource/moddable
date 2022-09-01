@@ -16,6 +16,7 @@
 		"system",
 		"embedded:io/socket/tcp",
 		"embedded:io/socket/udp",
+		"embedded:io/socket/listener",
 		"embedded:io/serial"
 	]
 }

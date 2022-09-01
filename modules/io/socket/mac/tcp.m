@@ -785,6 +785,9 @@ static void listenerCallback(CFSocketRef socketRef, CFSocketCallBackType cbType,
 			walker->next = lp;
 		}
 
+		if (!listener->onReadable)
+			return;
+
 		xsBeginHost(the);
 			xsmcSetInteger(xsResult, sockets);
 			xsCallFunction1(xsReference(listener->onReadable), listener->obj, xsResult);
