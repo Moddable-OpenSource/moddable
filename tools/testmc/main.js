@@ -25,6 +25,9 @@ import Timer from "timer";
 import WiFi from "wifi";
 import Net from "net";
 import config from "mc/config";
+import { URL, URLSearchParams } from "url";
+globalThis.URL = URL;
+globalThis.URLSearchParams = URLSearchParams;
 
 globalThis.$DO = function(f) {
 	return function(...args) {
