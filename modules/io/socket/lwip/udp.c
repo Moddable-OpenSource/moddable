@@ -261,5 +261,6 @@ void xs_udp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	UDP udp = it;
 
+	if (udp->onReadable)
 	(*markRoot)(the, udp->onReadable);
 }
