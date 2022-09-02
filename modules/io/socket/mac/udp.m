@@ -22,7 +22,6 @@
 
 	To do:
 
-		- port
 		- multicast
 */
  
@@ -99,46 +98,60 @@ void xs_udp_constructor(xsMachine *the)
 
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 
-//@@ port currently unused!
-	xsmcGet(xsVar(0), xsArg(0), xsID_port);
-	port = xsmcToInteger(xsVar(0));
-	if ((port < 0) || (port > 65535))
-		xsRangeError("invalid port");
-
-	udp = c_calloc(1, sizeof(UDPRecord));
-	if (!udp)
-		xsRangeError("no memory");
-	udp->skt = -1;
-
-	xsmcSetHostData(xsThis, udp);
-
-	CFSocketContext socketCtxt = {0, udp, NULL, NULL, NULL};
-	udp->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_DGRAM, IPPROTO_UDP, kCFSocketReadCallBack, socketCallback, &socketCtxt);
-	udp->skt = CFSocketGetNative(udp->cfSkt);
-	if (udp->skt < 0) {
-		CFSocketInvalidate(udp->cfSkt);
-		CFRelease(udp->cfSkt);
-		xsUnknownError("no socket");
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		port = xsmcToInteger(xsVar(0));
+		if ((port < 0) || (port > 65535))
+			xsRangeError("invalid port");
 	}
 
-	int set = 1;
-	setsockopt(udp->skt, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+	xsTry {
+		udp = c_calloc(1, sizeof(UDPRecord));
+		if (!udp)
+			xsRangeError("no memory");
+		udp->skt = -1;
 
-	fcntl(udp->skt, F_SETFL, O_NONBLOCK | fcntl(udp->skt, F_GETFL, 0));
+		xsmcSetHostData(xsThis, udp);
 
-	udp->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, udp->cfSkt, 0);
-	CFRunLoopAddSource(CFRunLoopGetCurrent(), udp->cfRunLoopSource, kCFRunLoopCommonModes);
+		CFSocketContext socketCtxt = {0, udp, NULL, NULL, NULL};
+		udp->cfSkt = CFSocketCreate(kCFAllocatorDefault, PF_INET, SOCK_DGRAM, IPPROTO_UDP, kCFSocketReadCallBack, socketCallback, &socketCtxt);
+		udp->skt = CFSocketGetNative(udp->cfSkt);
+		if (udp->skt < 0)
+			xsUnknownError("no socket");
 
-	xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
-	udp->the = the;
-	udp->obj = xsThis;
-	xsRemember(udp->obj);
-	udp->port = port;
-	udpHold(udp);
+		if (port) {
+			struct sockaddr_in address;
+			address.sin_family      = AF_INET;
+			address.sin_port        = htons(port);
+			address.sin_addr.s_addr = htonl(INADDR_ANY);
+			if (0 != bind(udp->skt, (struct sockaddr *) &address, sizeof(address)))
+				xsUnknownError("bind failed");
+		}
 
-	builtinInitializeTarget(the);
+		int set = 1;
+		setsockopt(udp->skt, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
 
-	udp->onReadable = onReadable;
+		fcntl(udp->skt, F_SETFL, O_NONBLOCK | fcntl(udp->skt, F_GETFL, 0));
+
+		udp->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, udp->cfSkt, 0);
+		CFRunLoopAddSource(CFRunLoopGetCurrent(), udp->cfRunLoopSource, kCFRunLoopCommonModes);
+
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
+		udp->the = the;
+		udp->obj = xsThis;
+		xsRemember(udp->obj);
+		udp->port = port;
+		udpHold(udp);
+
+		builtinInitializeTarget(the);
+
+		udp->onReadable = onReadable;
+	}
+	xsCatch {
+		xsmcSetHostData(xsThis, NULL);
+		xs_udp_destructor(udp);
+		xsThrow(xsException);
+	}
 }
 
 void xs_udp_destructor(void *data)
