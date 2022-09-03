@@ -38,6 +38,11 @@
 		"system"
 	],
 	"platforms": {
+		"esp32/esp32c3": {
+			"modules": {
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
+			}
+		},
 		"esp32/*": {
 			"modules": {
 				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",

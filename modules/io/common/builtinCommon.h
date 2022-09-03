@@ -28,11 +28,15 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 #define __COMMON__PINS__ 1
 #if ESP32
+#if kCPUESP32C3
+	#define kPinBanks (1)
+#else
 	#define kPinBanks (2)
+#endif
 
 	extern portMUX_TYPE gCommonCriticalMux;
-	#define builtinCriticalSectionBegin() vPortEnterCritical(&gCommonCriticalMux)
-	#define builtinCriticalSectionEnd() vPortExitCritical(&gCommonCriticalMux)
+	#define builtinCriticalSectionBegin() portENTER_CRITICAL(&gCommonCriticalMux)
+	#define builtinCriticalSectionEnd() portEXIT_CRITICAL(&gCommonCriticalMux)
 
 #elif defined(__ets__)
 	#include "Arduino.h"	// mostly to get xs_rsil
