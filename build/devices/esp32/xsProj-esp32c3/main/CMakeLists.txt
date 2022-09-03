@@ -32,6 +32,6 @@ if (DEBUGGER_SPEED)
 endif()
 
 add_prebuilt_library(xs_esp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-             PRIV_REQUIRES driver nvs_flash vfs spiffs fatfs bt)
+             PRIV_REQUIRES driver nvs_flash esp_adc_cal vfs spiffs fatfs bt)
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE xs_esp32)
