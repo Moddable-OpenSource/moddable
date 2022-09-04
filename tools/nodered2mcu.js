@@ -224,7 +224,7 @@ export default class extends TOOL {
 						config.statusVal = getter.join("\n");
 					}
 					else
-						throw new Error(`unimplemented statusType: ${statusType}`); 
+						throw new Error(`unimplemented statusType: ${config.statusType}`); 
 				}
 			} break;
 
@@ -405,6 +405,45 @@ export default class extends TOOL {
 
 				config.arraySplt = parseInt(config.arraySplt);
 			} break;
+			
+			case "trigger": {
+				config.op1 = config.op1 || "1";
+				config.op2 = config.op2 || "0";
+				config.op1type = config.op1type || "str";
+				config.op2type = config.op2type || "str";
+
+				if ((config.op1type === "num") && (!isNaN(config.op1))) { config.op1 = Number(config.op1); }
+				if ((config.op2type === "num") && (!isNaN(config.op2))) { config.op2 = Number(config.op2); }
+
+				config.op1Templated = (config.op1type === 'str' && config.op1.indexOf("{{") != -1);
+				config.op2Templated = (config.op2type === 'str' && config.op2.indexOf("{{") != -1);
+
+				if (config.op1type === 'val') {
+					if (config.op1 === 'true' || config.op1 === 'false') {
+						config.op1type = 'bool'
+					} else if (config.op1 === 'null') {
+						config.op1type = 'null';
+						config.op1 = null;
+					} else {
+						config.op1type = 'str';
+					}
+				}
+				if (config.op2type === 'val') {
+					if (config.op2 === 'true' || config.op2 === 'false') {
+						config.op2type = 'bool'
+					} else if (config.op2 === 'null') {
+						config.op2type = 'null';
+						config.op2 = null;
+					} else {
+						config.op2type = 'str';
+					}
+				}
+
+				if (config.op1type && ("pay" !== config.op1type) && ("payl" !== config.op1type) && (undefined !== config.op1))
+					config.__op1 = `function () {return ${this.resolveValue(config.op1type, config.op1)}}`;
+				if (config.op2type && ("pay" !== config.op2type) && ("payl" !== config.op2type) && (undefined !== config.op2))
+					config.__op2 = `function () {return ${this.resolveValue(config.op2type, config.op2)}}`;
+			} break;
 
 			case "range": {
 				const maxin = parseFloat(config.maxin);
@@ -418,7 +457,7 @@ export default class extends TOOL {
 
 				const range = [];
 				range.push(`function (msg) {`);
-				range.push(`\t\t\tlet value = msg.${property};`);
+				range.push(`\t\t\tlet value = msg${this.prepareProp(property)};`);
 				if ("clamp" === action) {
 					range.push(`\t\t\tif (value < ${minin})`);
 					range.push(`\t\t\t\tvalue = ${minin};`);
@@ -431,9 +470,9 @@ export default class extends TOOL {
 				}
 				range.push(`\t\t\tvalue = ((value - ${minin}) * ${scale}) + ${minout};`);
 				if (round)
-					range.push(`\t\t\tmsg.${property} = Math.round(value);`);
+					range.push(`\t\t\tmsg${this.prepareProp(property)} = Math.round(value);`);
 				else				
-					range.push(`\t\t\tmsg.${property} = value;`);
+					range.push(`\t\t\tmsg${this.prepareProp(property)} = value;`);
 				range.push(`\t\t\treturn msg;`);
 				range.push(`\t\t}`);
 				
@@ -652,6 +691,9 @@ export default class extends TOOL {
 		switch (type) {
 			case "bool":
 				return "true" === value;
+			case "nul":
+			case "null":
+				return null;
 			case "date":
 				return "Date.now()";
 			case "json":
