@@ -18,8 +18,8 @@
 *
 */
 
-declare module "commodetto/parseBMP" {
-  import Bitmap from "commodetto/Bitmap"
+import Bitmap from "commodetto/Bitmap"
 
-  export default function (bmp: HostBuffer): Bitmap
+declare module "commodetto/parseBMP" {
+  export default function(bmp: HostBuffer): Bitmap
 }
