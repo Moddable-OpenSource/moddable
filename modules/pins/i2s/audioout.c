@@ -476,7 +476,11 @@ void xs_audioout_build(xsMachine *the)
 
 	xTaskCreate(audioOutLoop, "audioOut", 2048 + XT_STACK_EXTRA_CLIB, out, 10, &out->task);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
-	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
+	#if MODDEF_AUDIOOUT_I2S_DAC
+		out->buffer32 = malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t));
+	#else
+		out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
+	#endif
 	if (!out->buffer32)
 		xsUnknownError("out of memory");
 #endif
@@ -1319,22 +1323,20 @@ void audioOutLoop(void *pvParameter)
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
 		int i = count;
 		int16_t *src = (int16_t *)out->buffer;
-		int32_t *dst = out->buffer32;
+		int16_t *dst = (int16_t *)out->buffer32;
 
 #if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL != 3 // one channel
-		while (i--) {
-			uint16_t s = (uint16_t)(*src++ ^ 0x8000);
-			*dst++ = (s << 16) | s;
-		}
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
+		while (i--)
+			*dst++ = (uint16_t)(*src++ ^ 0x8000);
+
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 2, &bytes_written, portMAX_DELAY);
 #else	// I2S_DAC_CHANNEL_BOTH_EN
 		while (i--) {
-			uint32_t s = (uint16_t)(*src++ ^ 0x8000);
-			s = (s << 16) | s;
+			uint16_t s = (uint16_t)(*src++ ^ 0x8000);
 			*dst++ = s;
 			*dst++ = s;
 		}
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 8, &bytes_written, portMAX_DELAY);
+		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
 #endif
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
