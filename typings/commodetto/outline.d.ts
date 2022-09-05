@@ -38,7 +38,7 @@ declare module "commodetto/outline" {
   interface FreeTypePath extends CommodettoPath {
     beginSubpath(x: number, y: number, open?: boolean): void
     conicTo(cx: number, cy: number, x: number, y: number): void
-    cubicTo(c1x: number, c1y: number, c2x: number, c2y: number, x, y: number): void
+    cubicTo(c1x: number, c1y: number, c2x: number, c2y: number, x: number, y: number): void
     endSubpath(): void
     lineTo(x: number, y: number): void
   }
