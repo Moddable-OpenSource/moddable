@@ -284,7 +284,11 @@ export default class extends TOOL {
 				config.props.forEach(property => {
 					const name = property.p;
 					const type = ("payload" === name) ? config.payloadType : property.vt;
-					let value = ("payload" === name) ? config.payload : property.v;
+					let value = property.v;
+					if ("payload" === name)
+						value = config.payload;
+					else if ("topic" === name)
+						value = config.topic;
 					value = this.resolveValue(type, value);
 					this.createPropPath(name, trigger, "\t\t\t");
 					trigger.push(`\t\t\tmsg${this.prepareProp(name)} = ${value};`);
@@ -400,10 +404,39 @@ export default class extends TOOL {
 			} break;
 
 			case "split": {
+				if (("splt" in config) && !config.spltType)		// historic: https://cookbook.nodered.org/basic/split-text
+					config.spltType = "str";
+				if (!config.arraySpltType) {		// 		// historic: https://cookbook.nodered.org/basic/split-text
+					config.arraySplt = 1;
+					config.arraySpltType = "len";
+				}
 				if (config.stream || ("len" !== config.arraySpltType) || ("str" !== config.spltType))
 					throw new Error("unimplemented split option");
 
+                config.splt = (config.splt || "\\n").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\\t/g,"\t").replace(/\\e/g,"\e").replace(/\\f/g,"\f").replace(/\\0/g,"\0");	// adapted from 17-split.js
 				config.arraySplt = parseInt(config.arraySplt);
+			} break;
+			
+			case "join": {
+				if ("reduce" === config.mode)
+					throw new Error("reduce unimplemented");
+
+				config.mode = config.mode||"auto";
+				config.property = config.property||"payload";
+				config.propertyType = config.propertyType||"msg";
+				if (config.propertyType === 'full') {
+					config.property = "payload";
+				}
+				config.key = config.key||"topic";
+				config.count = Number(config.count || 0);
+				config.joinerType = config.joinerType||"str";
+
+				if (config.joinerType === "str")
+					config.joiner = (config.joiner ?? "").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\\t/g,"\t").replace(/\\e/g,"\e").replace(/\\f/g,"\f").replace(/\\0/g,"\0");	// adapted from 17-split.js
+				
+				const property = config.property || "payload";
+				config.getter = `function (msg) {return msg${this.prepareProp(property)};}`;
+				config.setter = `function (msg, value) {msg${this.prepareProp(property)} = value;}`;
 			} break;
 			
 			case "trigger": {
@@ -414,9 +447,6 @@ export default class extends TOOL {
 
 				if ((config.op1type === "num") && (!isNaN(config.op1))) { config.op1 = Number(config.op1); }
 				if ((config.op2type === "num") && (!isNaN(config.op2))) { config.op2 = Number(config.op2); }
-
-				config.op1Templated = (config.op1type === 'str' && config.op1.indexOf("{{") != -1);
-				config.op2Templated = (config.op2type === 'str' && config.op2.indexOf("{{") != -1);
 
 				if (config.op1type === 'val') {
 					if (config.op1 === 'true' || config.op1 === 'false') {
@@ -438,6 +468,9 @@ export default class extends TOOL {
 						config.op2type = 'str';
 					}
 				}
+
+				config.op1Templated = (config.op1type === 'str' && config.op1.indexOf("{{") != -1);
+				config.op2Templated = (config.op2type === 'str' && config.op2.indexOf("{{") != -1);
 
 				if (config.op1type && ("pay" !== config.op1type) && ("payl" !== config.op1type) && (undefined !== config.op1))
 					config.__op1 = `function () {return ${this.resolveValue(config.op1type, config.op1)}}`;
@@ -699,6 +732,8 @@ export default class extends TOOL {
 			case "json":
 				return value;
 			case "num":
+				if ("" === value)		// historical: https://cookbook.nodered.org/basic/join-streams
+					return 0;
 				return parseFloat(value);
 			case "str":
 				return `${JSON.stringify(value ?? "")}`;
