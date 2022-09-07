@@ -41,7 +41,7 @@ class Request {
 		this.#options.done = done;			
 	}
 	close() {
-		this.#options?.done(this);
+		this.#options?.done?.(this);
 		this.#options = undefined;
 		this.#socket?.close();
 		this.#socket = undefined; 
@@ -72,6 +72,10 @@ class Request {
 		if (!result)
 			throw new Error;
 		this.#socket = this.#from = undefined;
+
+		this.#options?.done(this);
+		delete this.#options.done;
+
 		return new result.constructor({from: result});
 	}
 	read(count) {
@@ -345,8 +349,12 @@ class Request {
 	#done() {
 		const onDone = this.#options.onDone; 
 		this.#state = "done";
+		try {
+			onDone?.call(this);
+		}
+		catch {
+		}
 		this.close();
-		onDone?.call(this);
 	}
 	#reply() {		// request headers & request body received. time to reply.
 		this.#timer = undefined;
