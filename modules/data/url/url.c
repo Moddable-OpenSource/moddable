@@ -1183,8 +1183,6 @@ txBoolean fx_parseURLHostIPv6(txMachine* the, txStringStream* src, txInteger fro
 			fx_parseURLEncode(the, ':', dst);
 	}
 	fx_parseURLEncode(the, ']', dst);
-	*p = 0;
-	dst->offset = p - dst->slot->value.string;
 	return 1;
 }
 
