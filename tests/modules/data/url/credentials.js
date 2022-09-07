@@ -40,8 +40,4 @@ url.username = " #/:;<=>?@[\\]^{\}";
 url.password = "%%%à";
 assert.sameValue(url.href, "http://%20%23%2F%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%7B%7D:%%%%C3%A0@www.moddable.com/");
 
-try {
-	url = new URL("hello://www.moddable.com@");
-}
-catch(e) {
-}
+assert.throws(TypeError, () => new URL("hello://www.moddable.com@"));

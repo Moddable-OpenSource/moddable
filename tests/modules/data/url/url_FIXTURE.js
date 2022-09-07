@@ -1,3 +1,5 @@
+/*
+
 if (globalThis.URL == undefined) {
 	// for xst
 	const SCHEME = 1;
@@ -190,6 +192,18 @@ if (globalThis.Test262Error === undefined) {
 		sameValue(actual, expected) {
 			if (actual != expected)
 				throw new Test262Error("Expected «" + expected + "» but got «" + actual + "»");
+		},
+		throws(constructor, f) {
+			const expected = constructor.prototype.name;
+			try {
+				const actual = f();
+  				throw new Test262Error("Expected «" + expected + "» but got «" + actual + "»");
+			}
+			catch (e) {
+				const actual = e.name;
+				if (actual != expected) 
+  					throw new Test262Error("Expected «" + expected + "» but got «" + actual + "»");
+			}
 		}
 	}
 	globalThis.print = function(...args) {
@@ -197,16 +211,62 @@ if (globalThis.Test262Error === undefined) {
 	}
 }
 
+*/
+const keys = [
+    "href",
+    "protocol",
+    "username",
+    "password",
+    "host",
+    "hostname",
+    "port",
+    "pathname",
+    "search",
+    "hash",
+];
+
+function runTest(test) {
+	try {
+		const url = new URL(test.input, test.base);
+		if (test.failure) {
+  			throw new Test262Error("Expected failure but got «" + url.href + "»");
+		}
+		for (let key of keys) {
+			let actual = url[key];
+			let expected = test[key];
+			assert.sameValue(actual, expected);
+		}
+	}
+	catch(e) {
+		if (e.constructor == URIError)
+			print(test.input, e.message);
+		if (e.constructor == Test262Error)
+			throw e;
+		if (!test.failure)
+			throw new Test262Error("Expected «" + test.href + "» but got «" + e.name + "»");
+	}
+}
+
+function runTests(tests) {
+	for (let test of tests) {
+		if (typeof(test) == "object")
+			runTest(test);
+	}
+}
+
+export { runTests };
+
 function test(url, base, success, expected) {
 	try {
-		let it = base ? new URL(url, new URL(base)) : new URL(url);
-		let actual = it.toString();
+		let it = base ? new URL(url, base) : new URL(url);
+		let actual = it.href;
 		if (!success)
   			throw new Test262Error("Expected failure but got «" + actual + "»");
-  		success = false;
 		assert.sameValue(actual, expected);
   }
   catch(e) {
+    if (e.constructor == Test262Error)
+    	throw e;
     if (success)
   		throw new Test262Error("Expected «" + expected + "» but got ", e.name);
   }

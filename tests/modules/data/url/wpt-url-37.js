@@ -1,0 +1,195 @@
+/*---
+description: https://github.com/web-platform-tests/wpt/url/resources/urltestdata.json
+flags: [module]
+---*/
+
+import { runTests } from "./url_FIXTURE.js";
+
+const tests = [
+	{
+		"input": "file://spider///",
+		"base": "about:blank",
+		"href": "file://spider///",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "spider",
+		"hostname": "spider",
+		"port": "",
+		"pathname": "///",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "file:\\\\localhost//",
+		"base": "about:blank",
+		"href": "file:////",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "file:///localhost//cat",
+		"base": "about:blank",
+		"href": "file:///localhost//cat",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/localhost//cat",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "file://\\/localhost//cat",
+		"base": "about:blank",
+		"href": "file:////localhost//cat",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//localhost//cat",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "file://localhost//a//../..//",
+		"base": "about:blank",
+		"href": "file://///",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "///",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "/////mouse",
+		"base": "file:///elephant",
+		"href": "file://///mouse",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "///mouse",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "\\//pig",
+		"base": "file://lion/",
+		"href": "file:///pig",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/pig",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "\\/localhost//pig",
+		"base": "file://lion/",
+		"href": "file:////pig",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//pig",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "//localhost//pig",
+		"base": "file://lion/",
+		"href": "file:////pig",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//pig",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "/..//localhost//pig",
+		"base": "file://lion/",
+		"href": "file://lion//localhost//pig",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "lion",
+		"hostname": "lion",
+		"port": "",
+		"pathname": "//localhost//pig",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "file://",
+		"base": "file://ape/",
+		"href": "file:///",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/",
+		"search": "",
+		"hash": ""
+	},
+	"# File URLs with non-empty hosts",
+	{
+		"input": "/rooibos",
+		"base": "file://tea/",
+		"href": "file://tea/rooibos",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "tea",
+		"hostname": "tea",
+		"port": "",
+		"pathname": "/rooibos",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "/?chai",
+		"base": "file://tea/",
+		"href": "file://tea/?chai",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "tea",
+		"hostname": "tea",
+		"port": "",
+		"pathname": "/",
+		"search": "?chai",
+		"hash": ""
+	},
+	"# Windows drive letter handling with the 'file:' base URL"
+];
+
+runTests(tests);
