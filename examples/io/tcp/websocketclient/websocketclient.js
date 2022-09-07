@@ -43,7 +43,20 @@ class WebSocketClient {
 			protocol: options.protocol
 		};
 
-		if (!this.#options.host) throw new Error("host required");
+		if (!this.#options.host) {
+			const socket = options.socket;
+			if (!socket)
+				throw new Error("host required");
+			
+			this.#socket = new socket.constructor({
+				from: socket,
+				onReadable: this.#onReadable.bind(this),
+				onWritable: this.#onWritable.bind(this),
+				onError: this.#onError.bind(this)
+			});
+			this.#state = "connected";
+			return;
+		}
 
 		const dns = new options.dns.io(options.dns);
 		this.#state = "resolving";
