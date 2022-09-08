@@ -106,7 +106,7 @@ typedef struct {
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 13
 #define XS_MINOR_VERSION 1
-#define XS_PATCH_VERSION 0
+#define XS_PATCH_VERSION 1
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -477,6 +477,7 @@ enum {
 	XS_REGEXP_Y = 1 << 6,
 	XS_REGEXP_D = 1 << 7,
 };
+mxExport txInteger* fxAllocateRegExpData(void* the, txInteger* code);
 mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString errorBuffer, txInteger errorSize);
 mxExport void fxDeleteRegExp(void* the, txInteger* code, txInteger* data);
 mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger offset);

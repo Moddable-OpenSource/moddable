@@ -451,6 +451,7 @@ void fx_RegExp_prototype_exec(txMachine* the)
 	txSlot* instance = fxCheckRegExpInstance(the, mxThis);
 	txSlot* regexp = instance->next;
 	txSlot* argument;
+	txSlot* temporary;
 	txNumber lastIndex;
 	txInteger flags;
 	txBoolean globalFlag;
@@ -465,6 +466,15 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		mxPushUndefined();
 	fxToString(the, the->stack);
 	argument = the->stack;
+	
+	if (regexp->value.regexp.data == C_NULL) {
+		mxTemporary(temporary);
+		temporary->value.regexp.code = C_NULL;
+		temporary->value.regexp.data = fxAllocateRegExpData(the, regexp->value.regexp.code);
+		temporary->kind = XS_REGEXP_KIND;
+	}
+	else
+		temporary = regexp;
 
 	mxPushSlot(mxThis);
 	mxGetID(mxID(_lastIndex));
@@ -479,7 +489,7 @@ void fx_RegExp_prototype_exec(txMachine* the)
 	stickyFlag = (flags & XS_REGEXP_Y) ? 1 : 0;
 	hasIndicesFlag = (flags & XS_REGEXP_D) ? 1 : 0;
 	offset = (globalFlag || stickyFlag) ? fxUnicodeToUTF8Offset(argument->value.string, (txInteger)lastIndex) : 0;
-	if ((offset >= 0) && fxMatchRegExp(the, regexp->value.regexp.code, regexp->value.regexp.data, argument->value.string, offset)) {
+	if ((offset >= 0) && fxMatchRegExp(the, regexp->value.regexp.code, temporary->value.regexp.data, argument->value.string, offset)) {
 		txSlot* resultArray;
 		txSlot* resultItem;
 		txSlot* indicesArray;
@@ -492,7 +502,7 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		txInteger index;
 		txInteger length;
 		if (globalFlag || stickyFlag) {
-			index = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[1]);
+			index = fxUTF8ToUnicodeOffset(argument->value.string, temporary->value.regexp.data[1]);
 			mxPushInteger(index);
 			mxPushSlot(mxThis);
 			mxSetID(mxID(_lastIndex));
@@ -516,12 +526,12 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		}
 		count = regexp->value.regexp.code[1];
 		for (index = 0; index < count; index++) {
-			txInteger start = regexp->value.regexp.data[2 * index];
+			txInteger start = temporary->value.regexp.data[2 * index];
 			resultItem = resultItem->next = fxNewSlot(the);
 			if (hasIndicesFlag)
 				indicesItem = indicesItem->next = fxNewSlot(the);
 			if (start >= 0) {
-				txInteger end = regexp->value.regexp.data[(2 * index) + 1];
+				txInteger end = temporary->value.regexp.data[(2 * index) + 1];
 				length = end - start;
 				resultItem->value.string = (txString)fxNewChunk(the, length + 1);
 				c_memcpy(resultItem->value.string, argument->value.string + start, length);
@@ -536,7 +546,8 @@ void fx_RegExp_prototype_exec(txMachine* the)
 				}
 			}
 			if (namedFlag) {
-				txID name = (txID)(regexp->value.regexp.code[2 + index]);
+				txInteger tmp = regexp->value.regexp.code[2 + index];
+				txID name = (txID)tmp;
 				if (name != XS_NO_ID) {
 					resultProperty = resultProperty->next = fxNewSlot(the);
 					resultProperty->value = resultItem->value;
@@ -570,7 +581,7 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		resultItem = resultItem->next = fxNewSlot(the);
 		resultItem->ID = mxID(_index);
 		resultItem->kind = XS_INTEGER_KIND;
-		resultItem->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, regexp->value.regexp.data[0]);
+		resultItem->value.integer = fxUTF8ToUnicodeOffset(argument->value.string, temporary->value.regexp.data[0]);
 		resultItem = resultItem->next = fxNewSlot(the);
 		resultItem->ID = mxID(_input);
 		resultItem->value.string = argument->value.string;

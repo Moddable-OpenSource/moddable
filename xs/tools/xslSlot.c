@@ -96,6 +96,9 @@ enum {
 	else \
 		list->first = C_NULL; \
 	list->last = name.previous
+	
+#define mxRegExpSize(SLOT) \
+	(((txChunk*)(((txByte*)SLOT->value.regexp.code) - sizeof(txChunk)))->size / sizeof(txInteger))
 
 txSlot* fxBuildHostConstructor(txMachine* the, txCallback call, txInteger length, txInteger id)
 {
@@ -304,9 +307,6 @@ void fxCheckInstanceAliases(txMachine* the, txSlot* instance, txAliasIDList* lis
 				fxCheckInstanceAliases(the, property->value.proxy.target, list);
 				mxPopLink(propertyLink);
 			}
-		}
-		else if (property->kind == XS_REGEXP_KIND) {
-			fxCheckAliasesError(the, list, 2);
 		}
 		else if (property->kind == XS_STACK_KIND) {
 			fxCheckAliasesError(the, list, 3);
@@ -625,6 +625,7 @@ void fxPetrifyInstance(txMachine* the, txSlot* instance)
 		case XS_ARRAY_BUFFER_KIND:
 		case XS_DATE_KIND:
 		case XS_MAP_KIND:
+		case XS_REGEXP_KIND:
 		case XS_SET_KIND:
 		case XS_WEAK_MAP_KIND:
 		case XS_WEAK_SET_KIND:
@@ -690,6 +691,9 @@ txInteger fxPrepareHeap(txMachine* the)
 				}
 				else if (slot->kind == XS_BIGINT_KIND) {
 					linker->bigintSize += slot->value.bigint.size;
+				}
+				else if (slot->kind == XS_REGEXP_KIND) {
+					linker->regexpSize += mxRegExpSize(slot);
 				}
 				else if (slot->kind == XS_INSTANCE_KIND) {
 					txSlot *property = slot->next;
@@ -1217,7 +1221,12 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 	case XS_REGEXP_KIND: {
 		fprintf(file, ".kind = XS_REGEXP_KIND}, ");
-		fprintf(file, ".value = { .regexp = { (txInteger*)NULL, (txInteger*)NULL } } ");
+		fprintf(file, ".value = { .regexp = { (txInteger*)&gxRegExpData[%d], (txInteger*)NULL } } ", linker->regexpSize);
+		{
+			txSize size = mxRegExpSize(slot);
+			c_memcpy(linker->regexpData + linker->regexpSize, slot->value.regexp.code, size * sizeof(txInteger));
+			linker->regexpSize += size;
+		}
 	} break;
 	case XS_SET_KIND: {
 		fprintf(file, ".kind = XS_SET_KIND}, ");
