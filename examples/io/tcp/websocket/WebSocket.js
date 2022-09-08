@@ -54,18 +54,27 @@ class WebSocket {
 	#url = "";
 	#writable = 0;
 	
-	constructor(url, protocol) {
-		const parts = URLParts(url);
-		if (parts.scheme != "ws")
-			throw new URIError("ws only");
-		this.#url = url;
-		this.#protocol = protocol;
+	constructor(url, protocol, socket) {
+		let options;
+		if (url instanceof device.network.ws.socket.io)
+			options = { socket:url };
+		else {
+			const parts = URLParts(url);
+			if (parts.scheme != "ws")
+				throw new URIError("ws only");
+			this.#url = url;
+			if (protocol)
+				this.#protocol = protocol;
+			options = {
+				...device.network.ws,
+				host: parts.host,
+				port: parts.port,
+				path: parts.path,
+				protocol: protocol
+			}
+		}
 		this.#client = new device.network.ws.io({
-			...device.network.ws,
-			host: parts.host,
-			port: parts.port,
-			path: parts.path,
-			protocol: protocol,
+			...options,
 			onControl: (opcode, data) => {
 				switch (opcode) {
 					case device.network.ws.io.close: 
