@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Moddable Tech, Inc.
+ * Copyright (c) 2018-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1345,22 +1345,14 @@ void audioOutLoop(void *pvParameter)
 #if MODDEF_AUDIOOUT_I2S_DAC
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
 		int i = count;
-		int16_t *src = (int16_t *)out->buffer;
-		int16_t *dst = (int16_t *)out->buffer32;
+		uint16_t *src = (uint16_t *)out->buffer;
+		uint32_t *dst = out->buffer32;
 
-#if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL != 3 // one channel
-		while (i--)
-			*dst++ = (uint16_t)(*src++ ^ 0x8000);
-
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 2, &bytes_written, portMAX_DELAY);
-#else	// I2S_DAC_CHANNEL_BOTH_EN
 		while (i--) {
-			uint16_t s = (uint16_t)(*src++ ^ 0x8000);
-			*dst++ = s;
-			*dst++ = s;
+			uint32_t s = *src++ ^ 0x8000;
+			*dst++ = (s << 16) | s;
 		}
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
-#endif
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
