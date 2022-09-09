@@ -196,6 +196,10 @@ export default class extends TOOL {
 	}
 	prepareConfig(type, config) {
 		switch (type) {
+			case "complete": {
+				delete config.uncaught;
+			} break;
+
 			case "debug": {
 				if ("jsonata" === config.targetType)
 					throw new Error("unimplemented");
@@ -244,8 +248,12 @@ export default class extends TOOL {
 				else
 					delete config.libs;
 
-				if (config.func)
+				if (config.func) {
 					config.func = `function (msg, ${params}) {\n${libs}${config.func}\n}`;
+
+					 if (!/node\.done\s*\(\s*\)/.test(config.func))		// from 10-function.js.. first order approximiation of what it does
+						config.doDone = true;
+				}
 				else 
 					delete config.func;
 
@@ -295,6 +303,7 @@ export default class extends TOOL {
 				});
 
 				trigger.push(`\t\t\tthis.send(msg);`);
+				trigger.push(`\t\t\tthis.done(msg);`);
 				trigger.push(`\t\t}`);
 				config.trigger = trigger.join("\n");
 
@@ -327,7 +336,7 @@ export default class extends TOOL {
 
 			case "change": {
 				const change = [];
-				change.push(`function (msg) {`);
+				change.push(`function (msg, done) {`);
 
 				config.rules.forEach(rule => {
 					if ("set" === rule.t) {
@@ -391,6 +400,7 @@ export default class extends TOOL {
 					}
 				});
 
+				change.push(`\t\t\tdone();`);
 				change.push(`\t\t\treturn msg;`);
 				change.push(`\t\t}`);
 				config.onMessage = change.join("\n");
@@ -433,10 +443,9 @@ export default class extends TOOL {
 
 				if (config.joinerType === "str")
 					config.joiner = (config.joiner ?? "").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\\t/g,"\t").replace(/\\e/g,"\e").replace(/\\f/g,"\f").replace(/\\0/g,"\0");	// adapted from 17-split.js
-				
-				const property = config.property || "payload";
-				config.getter = `function (msg) {return msg${this.prepareProp(property)};}`;
-				config.setter = `function (msg, value) {msg${this.prepareProp(property)} = value;}`;
+
+				config.getter = `function (msg) {return msg${this.prepareProp(config.property)};}`;
+				config.setter = `function (msg, value) {msg${this.prepareProp(config.property)} = value;}`;
 			} break;
 			
 			case "trigger": {
@@ -489,7 +498,7 @@ export default class extends TOOL {
 				const round = config.round;
 
 				const range = [];
-				range.push(`function (msg) {`);
+				range.push(`function (msg, done) {`);
 				range.push(`\t\t\tlet value = msg${this.prepareProp(property)};`);
 				if ("clamp" === action) {
 					range.push(`\t\t\tif (value < ${minin})`);
@@ -506,6 +515,7 @@ export default class extends TOOL {
 					range.push(`\t\t\tmsg${this.prepareProp(property)} = Math.round(value);`);
 				else				
 					range.push(`\t\t\tmsg${this.prepareProp(property)} = value;`);
+				range.push(`\t\t\tdone();`);
 				range.push(`\t\t\treturn msg;`);
 				range.push(`\t\t}`);
 				
@@ -637,7 +647,7 @@ export default class extends TOOL {
 					}
 					doSwitch.push(`\t\t\t}`);
 				});
-
+				// switch does not support done()
 				doSwitch.push(`\t\t\treturn result;`);
 				doSwitch.push(`\t\t}`);
 				config.onMessage = doSwitch.join("\n");
