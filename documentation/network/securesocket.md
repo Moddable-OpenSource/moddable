@@ -1,6 +1,6 @@
 # TLS (SecureSocket)
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: June 10, 2022
+Revised: August 22, 2022
 
 ## Table of Contents
 
@@ -8,6 +8,9 @@ Revised: June 10, 2022
 	* [Use with HTTPS](#https)
 	* [Use with WSS](#websockets)
 	* [TLS Certificates](#certificates)
+		* [Using a Built-in Certificate](#certificate-bulitin)
+		* [Providing a Certificate](#certificate-providing)
+		* [Updating Certificate Store](#certificate-update)
 	* [Memory](#memory)
 * [Configuration](#configuration)
 
@@ -97,7 +100,9 @@ let ws = new Client({
 
 TLS Certificates are used to encrypt the data you send to a server. `SecureSocket` objects use certificates in DER (binary) format.
 
-The certificate store is located in the [`modules/crypt/data` folder](../../modules/crypt/data) of the Moddable SDK. Not every certificate is used by every application, so it would be a waste of limited flash memory to include all of them by default. Instead, certificates are explicitly included in the `resources` section of manifests.
+<a id="certificate-bulitin"></a>
+#### Using a Built-in Certificate
+The certificate store is located in the [`modules/crypt/data` directory](../../modules/crypt/data) of the Moddable SDK. Not every certificate is used by every application, so it would be a waste of limited flash memory to include all of them by default. Instead, certificates are explicitly included in the `resources` section of manifests.
 
 ```text
 "resources": {
@@ -133,8 +138,10 @@ let request = new Request({
 	secure: {certificate: new Resource("ca109.der")}
 });
 ```
-			
-Note that you do not have to use the certificates included in the Moddable SDK. You may pass any valid certificate in DER format in the SecureSocket’s dictionary:
+
+<a id="certificate-providing"></a>
+#### Providing a Certificate
+You do not have to use the certificates included in the Moddable SDK. You may pass any valid certificate in DER format in the SecureSocket’s dictionary:
 
 ```js
 let request = new Request({
@@ -142,6 +149,10 @@ let request = new Request({
     secure: {certificate: new Resource("mycert.der")} 
 });
 ```
+
+<a id="certificate-update"></a>
+#### Updating Certificate Store
+The certificate store may be updated with new and revised certificates in `$MODDABLE/modules/crypt/data`. Certificates are numbered sequentially starting with `ca0.der`. The certificate store index `ca.ski` must be rebuilt after adding or updating certificates . To update the index, run the `mcprintski` tool with no arguments. The `ca.ski` index file is updated in place. (This tool is currently only available on macOS. Windows and Linux could be supported with updates to their tool makefiles.)
 
 <a id="memory"></a>
 ### Memory

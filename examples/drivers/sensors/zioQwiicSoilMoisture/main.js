@@ -26,6 +26,6 @@ const sensor = new Moisture({
 Timer.repeat(() => {
 	const sample = sensor.sample();
 
-	trace(`Moisture: ${1023 - sample.value}\n`);
+	trace(`Moisture: ${sample.moisture}\n`);
 }, 2000);
 

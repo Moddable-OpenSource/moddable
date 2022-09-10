@@ -116,6 +116,8 @@ struct sxCoder {
 	txInteger line;
 	txBoolean programFlag;
 	txBoolean evalFlag;
+	txBoolean importFlag;
+	txBoolean importMetaFlag;
 	txClassNode* classNode;
 	txTargetCode* chainTarget;
 };
@@ -241,6 +243,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
 		case XS_CODE_BEGIN_STRICT_FIELD:
+		case XS_CODE_MODULE:
 			size += 2;
 			break;
 
@@ -406,6 +409,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
 		case XS_CODE_BEGIN_STRICT_FIELD:
+		case XS_CODE_MODULE:
 			size += 2;
 			break;
 		case XS_CODE_LINE:
@@ -653,6 +657,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT_BASE:
 		case XS_CODE_BEGIN_STRICT_DERIVED:
 		case XS_CODE_BEGIN_STRICT_FIELD:
+		case XS_CODE_MODULE:
 		case XS_CODE_RESERVE_1:
 		case XS_CODE_RETRIEVE_1:
 		case XS_CODE_UNWIND_1:
@@ -827,6 +832,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_BEGIN_STRICT_DERIVED:
 		case XS_CODE_BEGIN_STRICT_FIELD:
 		case XS_CODE_LINE:
+		case XS_CODE_MODULE:
 			fprintf(stderr, "%s %d\n", gxCodeNames[code->id], ((txIndexCode*)code)->index);
 			break;
 			
@@ -3325,13 +3331,17 @@ void fxImportNodeCode(void* it, void* param)
 
 void fxImportCallNodeCode(void* it, void* param)
 {
+	txCoder* coder = param;
 	txStatementNode* self = it;
 	fxNodeDispatchCode(self->expression, param);
+	coder->importFlag = 1;
 	fxCoderAddByte(param, 0, XS_CODE_IMPORT);
 }
 
 void fxImportMetaNodeCode(void* it, void* param)
 {
+	txCoder* coder = param;
+	coder->importMetaFlag = 1;
 	fxCoderAddByte(param, 1, XS_CODE_IMPORT_META);
 }
 
@@ -3489,6 +3499,7 @@ void fxModuleNodeCode(void* it, void* param)
 	txDeclareNode* declaration;
 	txInteger count;
 	txSymbol* name = /*(coder->parser->flags & mxDebugFlag) ? self->path :*/ C_NULL;
+	txFlag flag = 0;
 	
 	coder->line = -1;
 	coder->programFlag = 0;
@@ -3565,7 +3576,11 @@ void fxModuleNodeCode(void* it, void* param)
 	
 	count = 2 + fxScopeCodeSpecifierNodes(self->scope, coder);
 	fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, count);
-	fxCoderAddByte(coder, 0 - count, XS_CODE_MODULE);
+	if (coder->importFlag)
+		flag |= XS_IMPORT_FLAG;
+	if (coder->importMetaFlag)
+		flag |= XS_IMPORT_META_FLAG;
+	fxCoderAddIndex(coder, 0 - count, XS_CODE_MODULE, flag);
 	fxCoderAddByte(coder, -1, XS_CODE_SET_RESULT);
 	fxCoderAddByte(coder, 0, XS_CODE_END);
 }

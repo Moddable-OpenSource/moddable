@@ -81,21 +81,16 @@ class MakeFile extends MAKEFILE {
 	}
 	generateModulesDefinitions(tool) {
 		this.write("MODULES =");
-		for (var result of tool.cdvFiles) {
+		for (var result of [].concat(tool.nodered2mcuFiles, tool.cdvFiles)) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target + ".xsb");
 		}
-		for (var result of tool.jsFiles) {
+		for (var result of [].concat(tool.jsFiles, tool.tsFiles)) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
 			this.write(result.target);
 		}	
-		for (var result of tool.tsFiles) {
-			this.write("\\\n\t$(MODULES_DIR)");
-			this.write(tool.slash);
-			this.write(result.target);
-		}
 		for (var result of tool.cFiles) {
 			var sourceParts = tool.splitPath(result.source);
 			this.write("\\\n\t$(TMP_DIR)");
@@ -891,21 +886,21 @@ export default class extends Tool {
 		this.config = config;
 	}
 	filterCreation(creation) {
-		if (!creation.chunk) creation.chunk = { };
+		creation.chunk ??= {};
 		if (!creation.chunk.initial) creation.chunk.initial = 32768;
-		if (!creation.chunk.incremental) creation.chunk.incremental = 1024;
-		if (!creation.heap) creation.heap = { };
+		creation.chunk.incremental ??= 1024;
+		creation.heap ??= {};
 		if (!creation.heap.initial) creation.heap.initial = 2048;
-		if (!creation.heap.incremental) creation.heap.incremental = 64;
-		if (!creation.stack) creation.stack = 512;
-		if (!creation.keys) creation.keys = {};
+		creation.heap.incremental ??= 64;
+		creation.stack ??= 384;
+		creation.keys ??= {};
 		if (!creation.keys.available) creation.keys.available = 256;
 		if (!creation.keys.name) creation.keys.name = 127;
 		if (!creation.keys.symbol) creation.keys.symbol = 127;
-		if (!creation.parser) creation.parser = {};
+		creation.parser ??= {};
 		if (!creation.parser.buffer) creation.parser.buffer = 32768;
 		if (!creation.parser.table) creation.parser.table = 1993;
-		if (!creation.static) creation.static = 0;
+		creation.static ??= 0;
 		if (!creation.main) creation.main = "main";
 		if ((this.platform == "x-android") || (this.platform == "x-android-simulator") || (this.platform == "x-ios") || (this.platform == "x-ios-simulator")) {
 			creation.main = this.ipAddress;
@@ -915,14 +910,8 @@ export default class extends Tool {
 	filterPreload(preload) {
 		this.preloads = [];
 		if (preload.length) {
-			for (var jsFile of this.jsFiles) {
-				jsFile.preload = false;
-			}
-			for (var tsFile of this.tsFiles) {
-				tsFile.preload = false;
-			}
-			for (var cdvFile of this.cdvFiles) {
-				cdvFile.preload = false;
+			for (var file of [].concat(this.jsFiles, this.tsFiles, this.cdvFiles, this.nodered2mcuFiles)) {
+				file.preload = false;
 			}
 			for (var pattern of preload) {
 				pattern = this.resolvePrefix(pattern);
@@ -940,21 +929,14 @@ export default class extends Tool {
 				}
 				else {
 					pattern += ".xsb";
-					for (var result of this.jsFiles) {
+					for (var result of [].concat(this.jsFiles, this.tsFiles)) {
 						var target = result.target;
 						if (target == pattern) {
 							result.preload = true;
 							this.preloads.push(result.target);
 						}
 					}
-					for (var result of this.tsFiles) {
-						var target = result.target;
-						if (target == pattern) {
-							result.preload = true;
-							this.preloads.push(result.target);
-						}
-					}
-					for (var result of this.cdvFiles) {
+					for (var result of [].concat(this.cdvFiles, this.nodered2mcuFiles)) {
 						const target = result.target + ".xsb";
 						if (target == pattern) {
 							result.preload = true;

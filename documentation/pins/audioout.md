@@ -1,6 +1,6 @@
 # AudioOut
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: June 17, 2021
+Copyright 2021-2022 Moddable Tech, Inc.<BR>
+Revised: September 8, 2022
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -234,7 +234,7 @@ Audio samples immediately follow the header. If there are two channels, the chan
 IMA ADPCM are based on the algorithm described in "Recommended Practices for Enhancing Digital Audio Compatibility in Multimedia Systems" Revision 3.00 from October 21, 1992. Audio compression is approximately 4:1 for 16 bit samples. Only single channel audio is supported. Each compressed chunk contains 129 samples and uses 68 bytes. Chunks are decompressed one at a time, on demand during playback to minimize in-memory buffers.
 
 ## Manifest defines
-The `audioOut` module is be configured at build time.
+The `audioOut` module is configured at build time.
 
 ### Defines for all targets
 - `MODDEF_AUDIOOUT_STREAMS` -- maximum number of simultaneous audio streams. The maximum is 4 and the default is 4.
@@ -247,6 +247,9 @@ The `audioOut` module is be configured at build time.
 - `MODDEF_AUDIOOUT_I2S_LR_PIN` -- The I2S LR pin. The default is 25.
 - `MODDEF_AUDIOOUT_I2S_DATAOUT_PIN` -- The I2S data pin. The default is 22.
 - `MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE` - Number of bits per sample to transmit over I2S, either 16 or 32. Default is 16.
+- `MODDEF_AUDIOOUT_I2S_DAC` - Enable built-in Digital-to-Analog (DAC) output. Set to 1 to enable DAC. Default is 0.
+- `MODDEF_AUDIOOUT_I2S_DAC_CHANNEL` - Controls DAC output - left (1), right (2), or both (3). Defaults to both.
+- `MODDEF_AUDIOOUT_I2S_PDM` - Enable built-in PDM encoder. Set to 1 to enable PDM. Default is 0.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.

@@ -215,6 +215,7 @@ global.system = {
 	
 	fileExists(path) @ "PiuSystem_fileExists",
 	getFileInfo(path) @ "PiuSystem_getFileInfo",
+	getSymbolicLinkInfo(path) @ "PiuSystem_getSymbolicLinkInfo",
 	
 	readFileBuffer(path) @ "PiuSystem_readFileBuffer",
 	readFileString(path) @ "PiuSystem_readFileString",

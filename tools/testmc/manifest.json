@@ -32,19 +32,20 @@
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODULES)/base/deepEqual/manifest.json",
 		"$(MODULES)/base/modules/manifest.json",
+		"$(MODULES)/base/structuredClone/manifest.json",
 		"$(MODULES)/data/base64/manifest.json",
 		"$(MODULES)/data/hex/manifest.json",
 		"$(MODULES)/data/qrcode/manifest.json",
 		"$(MODULES)/data/text/decoder/manifest.json",
 		"$(MODULES)/data/text/encoder/manifest.json",
+		"$(MODULES)/data/url/manifest.json",
 		"$(MODULES)/data/zlib/manifest_deflate.json",
 		"$(MODULES)/data/zlib/manifest_inflate.json",
 		"$(MODULES)/files/preference/manifest.json",
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
-		"$(MODDABLE)/modules/network/websocket/manifest.json",
-		"$(MODDABLE)/modules/network/ble/manifest_client.json"
+		"$(MODDABLE)/modules/network/websocket/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -78,7 +79,7 @@
 		"ble": {
 			"client": {
 				"timeout": 10000,
-				"targetDevice": "Moddable Test Server"
+				"targetDevice": "Moddable Server"
 			}
 			
 		}
@@ -93,7 +94,8 @@
 			},
 			"include": [
 				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json"
+				"$(MODULES)/files/flash/manifest.json",
+				"$(MODDABLE)/modules/network/ble/manifest_client.json"
 			],
 			"modules": {
 				"~": [
@@ -174,6 +176,7 @@
 		"*": [
 			"$(MODDABLE)/examples/assets/images/image-info",
 			"$(MODULES)/crypt/data/ca34",
+			"$(MODULES)/crypt/data/ca35",
 			"$(MODULES)/crypt/data/ca222"
 		]
 	},

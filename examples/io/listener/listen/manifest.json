@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/io/listener/listen/manifest_listen.json"
+	],
+	"creation": {
+		"static": 65536
+	},
+	"modules": {
+		"*": "./main"
+	}
+}

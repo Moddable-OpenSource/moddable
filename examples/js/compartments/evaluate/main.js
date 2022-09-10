@@ -3,7 +3,9 @@ let l = 0;
 var v = 0;
 globalThis.g = 0;
 
-const compartment = new Compartment({ e:0 });
+const compartment = new Compartment({
+	globals: { e:0 }
+});
 const globals = compartment.globalThis;
 
 compartment.evaluate(`

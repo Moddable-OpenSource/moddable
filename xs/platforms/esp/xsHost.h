@@ -93,6 +93,10 @@ extern size_t espStrspn(const char *str, const char *strCharSet);
 extern void *espMallocUint32(int count);
 extern void espFreeUint32(void *t);
 
+#if ESP32
+	#define modGetLargestMalloc(bytes) (heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
+#endif
+
 /*
 	report
 */

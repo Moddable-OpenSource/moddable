@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"url": "./url"
+	},
+	"preload": [
+		"url"
+	]
+}

@@ -61,11 +61,13 @@ const mxImportCommand = 12;
 const mxScriptCommand = 13;
 const mxModuleCommand = 14;
 const serialConnectStrings = ["Connect", "Disconnect", "Connecting...", "Installing..."];
+const consoleColorCodes = [{ code: "<info>", color: 3 }, { code: "<warn>", color: 1 }, { code: "<error>", color: 2 }];
 
 export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	constructor(application) @ "PiuDebugBehaviorCreate"
 	onCreate(application) {
 		this.automaticInstruments = true;
+		this.showExceptions = true;
 		this.breakpoints = {
 			expanded: true,
 			items: [],
@@ -659,6 +661,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.behavior.test262Context.onImport(this, path);
 	}
 	onLogged(path, line, data) {
+		let showLog = true;
 		if (path && line) {
 			const tagPath = this.tagToPath.get(path);
 			if (tagPath !== undefined)
@@ -668,15 +671,36 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 				color = 3;
 			else if ((data.indexOf("debugger") >= 0) || (data.indexOf("step") >= 0))
 				color = 1;
-			else
+			else {
 				color = 2;
-			this.consoleLines.push({ path, line, offset:this.consoleText.length, color }); 
-			this.behavior.consoleLines.push({ path, line, offset:this.behavior.consoleText.length, color }); 
-			data = path + " (" + line + ") " + data;
+				showLog = this.behavior.showExceptions;
+			}
+			if (showLog) {
+				this.consoleLines.push({ path, line, offset:this.consoleText.length, color }); 
+				this.behavior.consoleLines.push({ path, line, offset:this.behavior.consoleText.length, color }); 
+				data = path + " (" + line + ") " + data;
+			} 
+			if (showLog) {
+				this.onLoggedAux(this, data);
+				this.onLoggedAux(this.behavior, data);
+				this.behavior.onLogged(this);
+			}
+		} else {
+			let lines = data.split(/(?<=[\n])/);
+			lines.forEach((line) => {
+				if (this.consoleText.endsWith('\n')) {
+					let colorCode = consoleColorCodes.find((colorCode) => line.startsWith(colorCode.code));
+					if (colorCode) {
+						line = line.slice(colorCode.code.length);
+						this.consoleLines.push({ path: undefined, line: undefined, offset:this.consoleText.length, color: colorCode.color }); 
+						this.behavior.consoleLines.push({ path: undefined, line: undefined, offset:this.behavior.consoleText.length, color: colorCode.color }); 
+					}
+				}
+				this.onLoggedAux(this, line);
+				this.onLoggedAux(this.behavior, line);
+			});
+			this.behavior.onLogged(this);
 		}
-		this.onLoggedAux(this, data);
-		this.onLoggedAux(this.behavior, data);
-		this.behavior.onLogged(this);
 	}
 	onLoggedAux(target, data) {
 		let text = target.consoleText + data;

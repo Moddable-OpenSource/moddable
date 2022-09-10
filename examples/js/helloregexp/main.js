@@ -12,6 +12,8 @@
  *
  */
 
+import tests from "tests";
+
 let re = /(\w+)\s(\w+)/;
 let str = 'John Smith';
 let newstr = str.replace(re, '$2, $1');
@@ -26,9 +28,8 @@ let myArray = str.match(re);
 trace(myArray + "\n");
 
 
-function execute(pattern, flags, string, expected) {
-	trace("### /" + pattern + "/" + flags + ".exec(\"" + string + "\") // " + expected + "\n");
-	let regexp = new RegExp(pattern, flags);
+function execute({ regexp, string, expected }) {
+	trace("### /" + regexp.source + "/" + regexp.flags + ".exec(\"" + string + "\") // " + expected + "\n");
 	let results = regexp.exec(string);
 	let output = "[";
 	if (results) {
@@ -56,26 +57,5 @@ function execute(pattern, flags, string, expected) {
   }
 }
 
-execute("a|ab", "", "abc", '["a"]');
-execute("((a)|(ab))((c)|(bc))", "", "abc", '["abc", "a", "a", undefined, "bc", undefined, "bc"]');
-execute("a[a-z]{2,4}", "", "abcdefghi", '["abcde"]');
-execute("a[a-z]{2,4}?", "", "abcdefghi", '["abc"]');
-execute("(aa|aabaac|ba|b|c)*", "", "aabaac", '["aaba", "ba"]');
-execute("(z)((a+)?(b+)?(c))*", "", "zaacbbbcac", '["zaacbbbcac", "z", "ac", "a", undefined, "c"]');
-execute("(a*)*", "", "b", '["", ""]');
-execute("(a*)b\\1+", "", "baaaac", '["b", ""]');
-execute("(?=(a+))", "", "baaabac", '["", "aaa"]');
-execute("(?=(a+))a*b\\1", "", "baaabac", '["aba", "a"]');
-execute("(.*?)a(?!(a+)b\\2c)\\2(.*)", "", "baaabaac", '["baaabaac", "ba", undefined, "abaac"]');
-execute("(?<=\\$)\\d+(\\.\\d*)?", "", "$10.53", '["10.53", ".53"]');
-execute("(?<!\\$)\\d+(?:\\.\\d*)", "", "x10.53", '["10.53"]');
-execute("(?<=\\$\\d+\\.)\\d+", "", "$10.53", '["53"]');
-execute("(?<=(\\d+)(\\d+))$", "", "1053", '["", "1", "053"]');
-execute("^(\\d+)(\\d+)", "", "1053", '["1053", "105", "3"]');
-execute("(?<=\\1(.))bcd", "", "aabcd", '["bcd", "a"]');
-execute("(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})", "u", "2015-01-02", '["2015-01-02", "2015", "01", "02"]');
-execute("^(?<half>.*).\\k<half>$", "u", "a*a", '["a*a", "a"]');
-execute("^(?<half>.*).\\k<half>$", "u", "a*b", '[]');
-execute("^(?<part>.*).\\k<part>.\\1$", "", "a*a*a", '["a*a*a", "a"]');
-execute("^(?<part>.*).\\k<part>.\\1$", "", "a*a*b", '[]');
-execute("\\k<part>", "", "k<part>", '["k<part>"]');
+for (let test of tests)
+	execute(test);

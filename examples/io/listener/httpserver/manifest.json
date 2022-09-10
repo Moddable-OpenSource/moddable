@@ -1,0 +1,8 @@
+{
+	"include": [
+		"./manifest_httpserver.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

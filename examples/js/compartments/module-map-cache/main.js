@@ -13,10 +13,11 @@ let proxy = new Proxy({
 }, {
 	get(target, key) {
 		counts[key]++;
-		return target[key];
+		return { namespace: target[key] };
 	}
 });
-let compartment = new Compartment({}, proxy, {
+let compartment = new Compartment({
+	modules: proxy,
 	resolveHook(specifier, refererSpecifier) {
 		return specifier;
 	},

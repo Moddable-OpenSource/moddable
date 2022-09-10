@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -775,6 +775,9 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 {
 	xsMachine *the = (*self)->the;
+	if (idle == (*self)->idle)
+		return;
+	(*self)->idle = idle;
 	if (idle) {
 		xsCall1(xsReference((*self)->screen), xsID_start, xsNumber(idle));
 	}

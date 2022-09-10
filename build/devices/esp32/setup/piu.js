@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -155,20 +155,16 @@ class Screen extends config.Screen {
 		const timer = this.#timer;
 		if (!timer) return;
 
-		if (interval <= 5)
+		if (interval < 5)
 			interval = 5;
-		if (timer.interval === interval)
-			return;
 
 		Timer.schedule(timer, interval, interval);
-		timer.interval = interval;
 	}
 	stop() {
 		const timer = this.#timer;
 		if (!timer) return;
 
 		Timer.schedule(timer);
-		delete timer.interval;
 	}
 	animateColors(clut) {
 		this.clut = clut;

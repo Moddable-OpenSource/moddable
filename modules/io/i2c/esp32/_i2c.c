@@ -180,8 +180,6 @@ void _xs_i2c_close(xsMachine *the)
 	}
 }
 
-// Note: The stop bit argument to read and write is currently ignored due to ESP-IDF Issue #8248 (https://github.com/espressif/esp-idf/issues/8348).
-
 void _xs_i2c_read(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
@@ -214,7 +212,8 @@ void _xs_i2c_read(xsMachine *the)
 			i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
 		i2c_master_read(cmd, ((uint8_t *)buffer) + length - 1, 1, I2C_MASTER_NACK);
 	}
-	i2c_master_stop(cmd);
+	if (stop)
+		i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
@@ -248,7 +247,8 @@ void _xs_i2c_write(xsMachine *the)
 		i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
 	}
 
-	i2c_master_stop(cmd);
+	if (stop)
+		i2c_master_stop(cmd);
 	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 

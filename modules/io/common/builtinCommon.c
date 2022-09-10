@@ -24,7 +24,13 @@
 #include "xsHost.h"
 #include "builtinCommon.h"
 
-#if ESP32
+#if kCPUESP32C3
+	portMUX_TYPE gCommonCriticalMux = portMUX_INITIALIZER_UNLOCKED;
+
+	static uint32_t gDigitalAvailable[kPinBanks] = {
+		0x3FFFFF,		//@@
+	};
+#elif ESP32
 	portMUX_TYPE gCommonCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 
 	static uint32_t gDigitalAvailable[kPinBanks] = {

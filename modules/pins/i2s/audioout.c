@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Moddable Tech, Inc.
+ * Copyright (c) 2018-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -73,11 +73,15 @@
 #ifndef MODDEF_AUDIOOUT_I2S_PDM
 	#define MODDEF_AUDIOOUT_I2S_PDM (0)
 #elif !defined(__ets__)
-	#error "PDM on ESP8266 only"
+	#error "PDM on ESP8266 & ESP32 only"
 #elif MODDEF_AUDIOOUT_I2S_PDM == 0
 	// esp8266 direct i2s output
-#elif (MODDEF_AUDIOOUT_I2S_PDM != 32) && (MODDEF_AUDIOOUT_I2S_PDM != 64) && (MODDEF_AUDIOOUT_I2S_PDM != 128)
+#elif !ESP32 && (MODDEF_AUDIOOUT_I2S_PDM != 32) && (MODDEF_AUDIOOUT_I2S_PDM != 64) && (MODDEF_AUDIOOUT_I2S_PDM != 128)
 	#error "invalid PDM oversampling"
+#endif
+
+#if ESP32 && MODDEF_AUDIOOUT_I2S_PDM && !defined(MODDEF_AUDIOOUT_I2S_PDM_PIN) 
+	#error must define MODDEF_AUDIOOUT_I2S_PDM_PIN
 #endif
 
 #if MODDEF_AUDIOOUT_STREAMS > 4
@@ -476,7 +480,11 @@ void xs_audioout_build(xsMachine *the)
 
 	xTaskCreate(audioOutLoop, "audioOut", 2048 + XT_STACK_EXTRA_CLIB, out, 10, &out->task);
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
-	out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
+	#if MODDEF_AUDIOOUT_I2S_DAC
+		out->buffer32 = malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t));
+	#else
+		out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
+	#endif
 	if (!out->buffer32)
 		xsUnknownError("out of memory");
 #endif
@@ -1227,7 +1235,26 @@ void audioOutLoop(void *pvParameter)
 	modAudioOut out = pvParameter;
 	uint8_t installed = false, stopped = true;
 
-#if !MODDEF_AUDIOOUT_I2S_DAC
+#if MODDEF_AUDIOOUT_I2S_PDM
+	i2s_config_t i2s_config = {
+		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_PDM,
+		.sample_rate = out->sampleRate,
+		.bits_per_sample = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE,
+		.channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT /* I2S_CHANNEL_FMT_RIGHT_LEFT */,
+		.communication_format = I2S_COMM_FORMAT_STAND_I2S,
+		.dma_buf_count = 2,
+		.dma_buf_len = sizeof(out->buffer) / out->bytesPerFrame,		// dma_buf_len is in frames, not bytes
+		.use_apll = 0,
+		.intr_alloc_flags = 0
+	};
+	i2s_pin_config_t pin_config = {
+		.bck_io_num = I2S_PIN_NO_CHANGE,
+		.ws_io_num = I2S_PIN_NO_CHANGE,
+		.data_out_num = MODDEF_AUDIOOUT_I2S_PDM_PIN,
+		.data_in_num = I2S_PIN_NO_CHANGE,
+		.mck_io_num = I2S_PIN_NO_CHANGE
+	};
+#elif !MODDEF_AUDIOOUT_I2S_DAC
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX,	// Only TX
 		.sample_rate = out->sampleRate,
@@ -1294,7 +1321,7 @@ void audioOutLoop(void *pvParameter)
 
 		if (!installed) {
 			i2s_driver_install(MODDEF_AUDIOOUT_I2S_NUM, &i2s_config, 0, NULL);
-#if !MODDEF_AUDIOOUT_I2S_DAC
+#if !MODDEF_AUDIOOUT_I2S_DAC || MODDEF_AUDIOOUT_I2S_PDM
 			i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
 #else
 			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
@@ -1318,24 +1345,14 @@ void audioOutLoop(void *pvParameter)
 #if MODDEF_AUDIOOUT_I2S_DAC
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
 		int i = count;
-		int16_t *src = (int16_t *)out->buffer;
-		int32_t *dst = out->buffer32;
+		uint16_t *src = (uint16_t *)out->buffer;
+		uint32_t *dst = out->buffer32;
 
-#if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL != 3 // one channel
 		while (i--) {
-			uint16_t s = (uint16_t)(*src++ ^ 0x8000);
+			uint32_t s = *src++ ^ 0x8000;
 			*dst++ = (s << 16) | s;
 		}
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
-#else	// I2S_DAC_CHANNEL_BOTH_EN
-		while (i--) {
-			uint32_t s = (uint16_t)(*src++ ^ 0x8000);
-			s = (s << 16) | s;
-			*dst++ = s;
-			*dst++ = s;
-		}
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 8, &bytes_written, portMAX_DELAY);
-#endif
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE

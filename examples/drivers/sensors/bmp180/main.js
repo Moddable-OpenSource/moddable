@@ -12,7 +12,7 @@
  *
  */
 
-import BMP180 from "embedded:sensor/AtmosphericPressure-Temperature/BMP180";
+import BMP180 from "embedded:sensor/Barometer-Temperature/BMP180";
 import Timer from "timer";
 
 const sensor = new BMP180({ sensor: device.I2C.default });

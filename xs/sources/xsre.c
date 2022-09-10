@@ -1772,6 +1772,28 @@ void fxPatternParserTerminate(txPatternParser* parser)
 	parser->first = NULL;
 }
 
+txInteger* fxAllocateRegExpData(void* the, txInteger* code)
+{
+	txInteger captureCount = code[1];
+	txInteger assertionCount = code[2 + captureCount];
+	txInteger quantifierCount = code[2 + captureCount + 1];
+	txInteger size = captureCount * sizeof(txCaptureData)
+					+ assertionCount * sizeof(txAssertionData)
+					+ quantifierCount * sizeof(txQuantifierData);
+	txInteger* data;
+#ifdef mxRun
+	if (the) {
+		data = fxNewChunk(the, size);
+	#ifdef mxSnapshot
+		c_memset(*data, 0, size);
+	#endif
+	}
+	else
+#endif
+		data = c_malloc(size);
+	return data;
+}
+
 txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString messageBuffer, txInteger messageSize)
 {
 	txBoolean result = 1;
@@ -1852,9 +1874,9 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 		#ifdef mxRun
 			if (the) {
 				*code = fxNewChunk(the, parser->size);
-			#ifdef mxSnapshot
+// 			#ifdef mxSnapshot
 				c_memset(*code, 0, parser->size);
-			#endif
+// 			#endif
 			}
 			else
 		#endif

@@ -461,17 +461,17 @@ void reportTrigger(TCP tcp)
 
 	tcp->triggered = 0;
 
-	if ((triggered & kTCPReadable) && tcp->bytesReadable) {
-		xsBeginHost(the);
-			xsmcSetInteger(xsResult, tcp->bytesReadable);
-			xsCallFunction1(xsReference(tcp->onReadable), tcp->obj, xsResult);
-		xsEndHost(the);
-	}
-
 	if ((triggered & kTCPWritable) && tcp->bytesWritable && !tcp->error) {
 		xsBeginHost(the);
 			xsmcSetInteger(xsResult, tcp->bytesWritable);
 			xsCallFunction1(xsReference(tcp->onWritable), tcp->obj, xsResult);
+		xsEndHost(the);
+	}
+
+	if ((triggered & kTCPReadable) && tcp->bytesReadable) {
+		xsBeginHost(the);
+			xsmcSetInteger(xsResult, tcp->bytesReadable);
+			xsCallFunction1(xsReference(tcp->onReadable), tcp->obj, xsResult);
 		xsEndHost(the);
 	}
 
@@ -497,4 +497,199 @@ void tcpTrigger(TCP tcp, uint8_t trigger)
 		tcpHold(tcp);
 	
 	tcp->triggered |= trigger;
+}
+
+/*
+	Listener
+ */
+
+struct ListenerPendingRecord {
+	struct ListenerPendingRecord	*next;
+    int								skt;
+};
+typedef struct ListenerPendingRecord ListenerPendingRecord;
+typedef struct ListenerPendingRecord *ListenerPending;
+
+struct ListenerRecord {
+
+	xsSlot				obj;
+	ListenerPending		pending;
+
+	xsMachine			*the;
+	xsSlot				*onReadable;
+//	xsSlot				*onError;
+
+	int					skt;
+	modTimer			task;
+};
+typedef struct ListenerRecord ListenerRecord;
+typedef struct ListenerRecord *Listener;
+
+static void listenerTask(modTimer timer, void *refcon, int refconSize);
+
+static void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static const xsHostHooks xsListenerHooks = {
+	xs_listener_destructor_,
+	xs_listener_mark,
+	NULL
+};
+
+void xs_listener_constructor(xsMachine *the)
+{
+	Listener listener;
+	uint16_t port = 0;
+	xsSlot *onReadable;
+
+	xsmcVars(1);
+
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		port = (uint16_t)xsmcToInteger(xsVar(0));
+	}
+
+	onReadable = builtinGetCallback(the, xsID_onReadable);
+	// hasOnError
+
+	if (kIOFormatSocketTCP != builtinInitializeFormat(the, kIOFormatSocketTCP))
+		xsRangeError("unimplemented");
+
+	xsTry {
+		struct sockaddr_in address = { 0 };
+
+		listener = c_calloc(sizeof(ListenerRecord), 1);
+		listener->the = the;
+		listener->obj = xsThis;
+		xsmcSetHostData(xsThis, listener);
+		xsRemember(listener->obj);
+
+		listener->task = modTimerAdd(kTaskInterval, kTaskInterval, listenerTask, &listener, sizeof(listener));
+
+		listener->skt = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+		if (-1 == listener->skt)
+			xsUnknownError("create socket failed");
+
+		fcntl(listener->skt, F_SETFL, O_NONBLOCK | fcntl(listener->skt, F_GETFL, 0));
+
+		int yes = 1;
+		setsockopt(listener->skt, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes));
+
+		address.sin_family = AF_INET;
+		address.sin_port = htons(port);
+		if (-1 == bind(listener->skt, (struct sockaddr *)&address, sizeof(address)))
+			xsUnknownError("bind socket failed");
+
+		if (-1 == listen(listener->skt, SOMAXCONN))
+			xsUnknownError("listen failed");
+
+		builtinInitializeTarget(the);
+
+		listener->onReadable = onReadable;
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
+	}
+	xsCatch {
+		xsmcSetHostData(xsThis, NULL);
+		xs_listener_destructor_(listener);
+		xsThrow(xsException);
+	}
+}
+
+void xs_listener_destructor_(void *data)
+{
+	Listener listener = data;
+	if (!data) return;
+
+	if (listener->task) {
+		modTimerRemove(listener->task);
+		listener->task = NULL;
+	}
+
+	if (listener->skt) {
+		close(listener->skt);
+		listener->skt = 0;
+	}
+
+	while (listener->pending) {
+		ListenerPending pending = listener->pending;
+		listener->pending = pending->next;
+		close(pending->skt);
+		c_free(pending);
+	}
+
+	c_free(listener);
+}
+
+void xs_listener_close_(xsMachine *the)
+{
+	Listener listener = xsmcGetHostData(xsThis);
+	if (listener && xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks)) {
+		xsForget(listener->obj);
+		xs_listener_destructor_(listener);
+		xsmcSetHostData(xsThis, NULL);
+	}
+}
+
+void xs_listener_read(xsMachine *the)
+{
+	Listener listener = xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks);
+	ListenerPending pending;
+	TCP tcp;
+
+	pending = listener->pending;
+	if (!pending)
+		return;
+
+	listener->pending = pending->next;
+
+	xsResult = xsArg(0);
+	tcp = xsmcGetHostDataValidate(xsResult, (void *)&xsTCPHooks);
+
+	tcp->skt = pending->skt;
+	c_free(pending);
+}
+
+void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	Listener listener = it;
+
+	if (listener->onReadable)
+		(*markRoot)(the, listener->onReadable);
+}
+
+static void listenerTask(modTimer timer, void *refcon, int refconSize)
+{
+	Listener listener = *(Listener *)refcon;
+	int sockets = 0;
+
+	while (true) {
+		int skt = accept(listener->skt, NULL, NULL);
+		if (skt <= 0)
+			break;
+
+		ListenerPending lp = c_calloc(sizeof(ListenerPendingRecord), 1);
+		lp->skt = skt;
+		
+		if (NULL == listener->pending)
+			listener->pending = lp;
+		else {
+			ListenerPending walker = listener->pending;
+			while (walker->next)
+				walker = walker->next;
+			walker->next = lp;
+		}
+
+		sockets++;
+	}
+
+	if (!sockets || !listener->onReadable)
+		return;
+
+	ListenerPending walker;
+	for (walker = listener->pending, sockets = 0; walker; walker = walker->next)
+		sockets++;
+
+	xsMachine *the = listener->the;
+	xsBeginHost(the);
+		xsmcSetInteger(xsResult, sockets);
+		xsCallFunction1(xsReference(listener->onReadable), listener->obj, xsResult);
+	xsEndHost(the);
 }

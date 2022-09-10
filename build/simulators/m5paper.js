@@ -81,9 +81,8 @@ class MockupBehavior extends DeviceBehavior {
     } else if ('digital' in json) {
       const { pin, value } = json.digital;
       const POWER_INFO_NAME = `POWER_INFO_${pin}`;
-      const behaviors = model.DEVICE.first.behavior;
-      if (POWER_INFO_NAME in behaviors) {
-        behaviors[POWER_INFO_NAME].string = value ? "On" : "Off";
+      if (POWER_INFO_NAME in this) {
+        this[POWER_INFO_NAME].string = value ? "On" : "Off";
       }
     }
   }

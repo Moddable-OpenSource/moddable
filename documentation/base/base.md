@@ -1,6 +1,6 @@
 # Base
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: June 20, 2022
+Revised: August 14, 2022
 
 ## Table of Contents
 
@@ -8,6 +8,8 @@ Revised: June 20, 2022
 * [Time](#time)
 * [Debug](#debug)
 * [UUID](#uuid)
+* [deepEqual](#deepequal)
+* [structuredClone](#structuredclone)
 * [Instrumentation](#instrumentation)
 * [Console](#console)
 * [CLI](#cli)
@@ -83,6 +85,8 @@ Timer.repeat(id => {
 }, 1000);
 ```
 
+> **Note**: If the next trigger time is unknown, unscheduling a timer is preferred to scheduling for a long time in the future. Unscheduling and rescheduling a timer can more efficient than clearing a timer and later allocating a new one.
+
 ***
 
 ### `Timer.clear(id)`
@@ -97,14 +101,6 @@ Timer.clear(aTimer);
 > **Note**: Immediate and one shot timers are automatically cleared after invoking their callback function. There is no need to call `clear` except to cancel the timer before it fires.
 
 > **Note**: If `Timer.clear` is passed a value of `undefined` or `null` for the ID, no exception is generated.
-
-***
-
-### `Timer.unschedule(id)`
-
-The `unschedule` function makes a timer inelegible to run. Use `Timer.schedule` to make it eligible to run again, or `Timer.clear` to remove it permanently.
-
-Unscheduling a timer is prefered over scheduling a timer for a long time in the future when the next trigger time is unknown. Unscheduling and later rescheduling a timer may be more efficiently than clearing a timer and later allocating a new one.
 
 ***
 
@@ -250,6 +246,58 @@ let value = UUID();	// 1080B49C-59FC-4A32-A38B-DE7E80117842
 ```
 
 ***
+
+<a id="deepequal"></a>
+## function deepEqual(a, b [,options])
+
+- **Source code:** [deepEqual](../../modules/base/deepEqual)
+- **Tests:** [deepEqual](../../tests/modules/base/deepEqual)
+
+The `deepEqual` function implements a deep comparison between two JavaScript object. 
+
+```js
+import deepEqual from "deepEqual";
+```
+
+There is no standard algorithm for deeply comparing two objects in JavaScript, and there are many possible correct approaches. The Moddable SDK adopts the behavior of `assert.deepEqual` and `assert.deepStrictEqual` from Node.js for its implementation of `deepEqual`.
+
+The `deepEqual` function has an optional third parameter, an options object. By default the `deepEqual` [comparison is not-strict](https://nodejs.org/api/assert.html#assertdeepequalactual-expected-message), similar to using `==` for comparisons. Passing `{strict: true}` for the options object uses [strict comparison](https://nodejs.org/api/assert.html#assertdeepstrictequalactual-expected-message), similar to using `===` for comparisons.
+
+```js
+const a = {a: 1, b: 0, c: "str"};
+const b = {a: 1, b: "0", c: "str"};
+deepEqual(a, b);		// true
+deepEqual(a, b, {strict: true});		// false
+
+```
+
+The known differences between the Moddable SDK implementation and Node.js will not impact most uses:
+
+- `WeakMap` and `WeakSet` using read-only objects as keys
+- XS does not call `valueOf` to compare boxed primitives
+
+***
+
+<a id="structuredclone"></a>
+## function structuredClone(object[, transferables])
+
+- **Source code:** [structuredClone](../../modules/base/structuredClone)
+- **Tests:** [structuredClone](../../tests/modules/base/structuredClone)
+
+The `structuredClone` function creates a deep copy of a JavaScript object. 
+
+```js
+import structuredClone from "structuredClone";
+```
+
+The `structuredClone` function in the Moddable SDK implements the [algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) defined by WHATWG for the web platform as much as practical, including circular references and the `transferables` option. 
+
+```js
+const a = {a: 1, b: Uint8Array.of(1, 2, 3,)}
+const aCopy = structuredClone(a);
+```
+
+The Moddable SDK implementation of `structuredClone` implements all [supported types](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm#supported_types) that are part of the JavaScript language standard. It does not, of course, clone object types that are part of the web platform and not present on embedded systems such as `DOMException`.
 
 <a id="instrumentation"></a>
 ## class Instrumentation

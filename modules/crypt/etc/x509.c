@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,7 +36,7 @@
  */
 
 #include "xsPlatform.h"
-#include "xs.h"
+#include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
 static int
@@ -184,28 +184,35 @@ x509_decode(unsigned char **pp, size_t *szp, unsigned int *extid, size_t extidle
 	return 0;
 }
 
-extern void resolveBuffer(xsMachine *the, xsSlot *slot, uint8_t **data, uint32_t *count);
-
 void
 xs_x509_decodeExtension(xsMachine *the)
 {
 	unsigned char *p, *savep;
 	size_t sz;
-	uint32_t count;
-	int idlen = xsToInteger(xsGet(xsArg(1), xsID_length));
+	xsUnsignedValue count;
+	int idlen;
 	unsigned int extid[32];
 	int i;
 
-	for (i = 0; i < idlen; i++)
-		extid[i] = xsToInteger(xsGetIndex(xsArg(1), i));
-	resolveBuffer(the, &xsArg(0), &p, &count);
+	xsmcVars(1);
+	xsmcGet(xsVar(0), xsArg(1), xsID_length);
+	idlen = xsmcToInteger(xsVar(0));
+	if (idlen > (int)sizeof(extid))
+		xsUnknownError("too long");
+
+	for (i = 0; i < idlen; i++) {
+		xsmcGetIndex(xsVar(0), xsArg(1), i);
+		extid[i] = xsmcToInteger(xsVar(0));
+	}
+
+	xsmcGetBufferReadable(xsArg(0), (void **)&p, &count);
 	sz = count;
 	savep = p;
 	if (x509_decode(&p, &sz, extid, idlen, 0)) {
 		int offset = p - savep;
-		xsResult = xsArrayBuffer(NULL, sz);
-		resolveBuffer(the, &xsArg(0), &p, NULL);
-		c_memcpy(xsToArrayBuffer(xsResult), p + offset, sz);
+		xsmcSetArrayBuffer(xsResult, NULL, sz);
+		xsmcGetBufferReadable(xsArg(0), (void **)&p, &count);
+		c_memcpy(xsmcToArrayBuffer(xsResult), p + offset, sz);
 	}
 }
 
@@ -216,14 +223,14 @@ xs_x509_decodeSPKI(xsMachine *the)
 	size_t sz;
 	uint32_t count;
 
-	resolveBuffer(the, &xsArg(0), &p, &count);
+	xsmcGetBufferReadable(xsArg(0), (void **)&p, &count);
 	sz = count;
 	savep = p;
 
 	if (x509_decode(&p, &sz, NULL, 0, 1)) {
 		int offset = p - savep;
-		xsResult = xsArrayBuffer(NULL, sz);
-		resolveBuffer(the, &xsArg(0), &p, NULL);
-		c_memcpy(xsToArrayBuffer(xsResult), p + offset, sz);
+		xsmcSetArrayBuffer(xsResult, NULL, sz);
+		xsmcGetBufferReadable(xsArg(0), (void **)&p, &count);
+		c_memcpy(xsmcToArrayBuffer(xsResult), p + offset, sz);
 	}
 }

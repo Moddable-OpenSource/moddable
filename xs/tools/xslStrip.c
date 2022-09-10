@@ -98,6 +98,9 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		if (fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION)|| fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION) || fxIsCodeUsed(XS_CODE_IMPORT))
 			fxUnstripCallback(linker, fx_Promise);
 			
+		if (fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION))
+			fxUnstripCallback(linker, fx_AsyncIterator_asyncIterator);
+			
 		if (fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2))
 			fxUnstripCallback(linker, fx_BigInt);
 			
@@ -179,6 +182,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Map);
 			else if (!c_strcmp(name, "Math"))
 				fxUnuseSymbol(linker, mxID(_Math));
+			else if (!c_strcmp(name, "ModuleSource")) {
+				fxStripCallback(linker, fx_ModuleSource);
+				fxStripCallback(linker, fx_ModuleSource_prototype_get_bindings);
+				fxStripCallback(linker, fx_ModuleSource_prototype_get_needsImport);
+				fxStripCallback(linker, fx_ModuleSource_prototype_get_needsImportMeta);
+			}
 			else if (!c_strcmp(name, "Promise")) {
 				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_next);
 				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_return);
@@ -213,10 +222,6 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Set);
 			else if (!c_strcmp(name, "SharedArrayBuffer"))
 				fxStripCallback(linker, fx_SharedArrayBuffer);
-			else if (!c_strcmp(name, "StaticModuleRecord")) {
-				fxStripCallback(linker, fx_StaticModuleRecord);
-				fxStripCallback(linker, fx_StaticModuleRecord_prototype_get_bindings);
-			}
 			else if (!c_strcmp(name, "Uint8Array")) {
 				fxUnuseSymbol(linker, mxID(_Uint8Array));
 				fxStripCallback(linker, fx_Uint8Array);
@@ -242,6 +247,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			else if (!c_strcmp(name, "eval")) {
 				fxStripCallback(linker, fx_Compartment_prototype_evaluate);
 				fxStripCallback(linker, fx_Function);
+				fxStripCallback(linker, fx_ModuleSource);
 				fxStripCallback(linker, fx_eval);
 				fxUnuseCode(XS_CODE_ARGUMENTS_SLOPPY);
 				fxUnuseCode(XS_CODE_EVAL);
@@ -517,11 +523,11 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxRunEval,\n");
 	else
 		fprintf(file, "\tfxDeadStrip,\n");
-	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsCodeUsed(XS_CODE_EVAL_TAIL) || !fxIsCallbackStripped(linker, fx_eval) || !fxIsCallbackStripped(linker, fx_Compartment_prototype_evaluate))
+	if (fxIsCodeUsed(XS_CODE_EVAL) || fxIsCodeUsed(XS_CODE_EVAL_TAIL) || !fxIsCallbackStripped(linker, fx_eval))
 		fprintf(file, "\tfxRunEvalEnvironment,\n");
 	else
 		fprintf(file, "\tfxDeadStrip,\n");
-	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT))
+	if (fxIsCodeUsed(XS_CODE_PROGRAM_ENVIRONMENT) || !fxIsCallbackStripped(linker, fx_Compartment_prototype_evaluate))
 		fprintf(file, "\tfxRunProgramEnvironment,\n");
 	else
 		fprintf(file, "\tfxDeadStrip,\n");

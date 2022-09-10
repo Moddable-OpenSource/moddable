@@ -401,20 +401,20 @@ int main262(int argc, char* argv[])
 	fxCreateMutex(&(pool.countMutex));
 	fxCreateMutex(&(pool.resultMutex));
 	{
-// 	#if mxWindows
-// 	#elif mxMacOSX
-// 		pthread_attr_t attr; 
-// 		pthread_t self = pthread_self();
-//    		size_t size = pthread_get_stacksize_np(self);
-//    		pthread_attr_init(&attr);
-//    		pthread_attr_setstacksize(&attr, size);
-// 	#elif mxLinux
-// 	#endif	
+	#if mxWindows
+	#elif mxMacOSX
+		pthread_attr_t attr; 
+		pthread_t self = pthread_self();
+   		size_t size = pthread_get_stacksize_np(self);
+   		pthread_attr_init(&attr);
+   		pthread_attr_setstacksize(&attr, size);
+	#elif mxLinux
+	#endif	
 		for (argi = 0; argi < mxPoolSize; argi++) {
 		#if mxWindows
 			pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
-// 		#elif mxMacOSX
-// 			pthread_create(&(pool.threads[argi]), &attr, &fxRunFileThread, &pool);
+		#elif mxMacOSX
+			pthread_create(&(pool.threads[argi]), &attr, &fxRunFileThread, &pool);
 		#else
 			pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
 		#endif

@@ -25,7 +25,7 @@ DEBUGGER_SPEED ?= 460800
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
-EXPECTED_ESP_IDF ?= v4.4
+EXPECTED_ESP_IDF ?= v4.4.2
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -191,6 +191,7 @@ struct PiuViewStruct {
 	uint8_t blend;
 	uint8_t updating;
 	PiuTick idleTicks;
+	PiuInterval idle;
 	// cache references to accelerate the update loop
 	xsSlot* screen;
 	xsSlot* pixels;

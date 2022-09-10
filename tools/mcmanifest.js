@@ -385,6 +385,11 @@ export class MakeFile extends FILE {
 	}
 	generateModulesDefinitions(tool) {
 		this.write("MODULES =");
+		for (var result of tool.nodered2mcuFiles) {
+			this.write("\\\n\t$(MODULES_DIR)");
+			this.write(tool.slash);
+			this.write(result.target + ".xsb");
+		}
 		for (var result of tool.cdvFiles) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
@@ -405,6 +410,21 @@ export class MakeFile extends FILE {
 	}
 	generateModulesRules(tool) {
 		const generatedTS = [];
+
+		for (let result of tool.nodered2mcuFiles) {
+			let source = result.source;
+			let target = result.target;
+			const extension = ".js";
+			const output = "$(MODULES_DIR)" + tool.slash + target + extension;
+			this.line(output, ": ", source);
+			this.echo(tool, "nodered2mcu ", target);
+			this.line("\tnodered2mcu ", source, " -o $(@D)");
+
+			tool.jsFiles.push({
+				source: tool.modulesPath + tool.slash + target + extension,
+				target: target + ".xsb"
+			});
+		}
 
 		for (let result of tool.cdvFiles) {
 			let source = result.source;
@@ -1156,6 +1176,10 @@ class ModulesRule extends Rule {
 				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
 			}
 		}
+		else if (parts.extension == ".json") {
+			if ("nodered2mcu" === query.transform)
+				this.appendFile(tool.nodered2mcuFiles, target, source, include);
+		}
 	}
 	appendTarget(target) {
 		this.appendFolder(this.tool.jsFolders, target);
@@ -1877,6 +1901,9 @@ export class Tool extends TOOL {
 		
 		this.cdvFiles = [];
 		this.cdvFiles.already = {};
+		
+		this.nodered2mcuFiles = [];
+		this.nodered2mcuFiles.already = {};
 
 		this.resourcesFiles = [];
 		this.resourcesFiles.already = {};

@@ -110,12 +110,12 @@ void PiuSystem_getFileInfo(xsMachine* the)
 void PiuFile_getFileInfoAux(xsMachine* the, NSURL* url)
 {
 	NSDate* date = nil;
-	NSNumber* number = nil;
 	NSString* string = nil;
+	NSNumber* number = nil;
 	xsResult = xsNewObject();
 	xsDefine(xsResult, xsID_path, xsString([url fileSystemRepresentation]), xsDefault);
 	[url getResourceValue:&string forKey:NSURLLocalizedNameKey error:NULL];
-	xsDefine(xsResult, xsID_name, xsString([string UTF8String]), xsDefault);
+    xsDefine(xsResult, xsID_name, xsString([string UTF8String]), xsDefault);
 	[url getResourceValue:&date forKey:NSURLContentModificationDateKey error:NULL];
 	xsDefine(xsResult, xsID_date, xsNumber(1000 * [date timeIntervalSince1970]), xsDefault);
 	[url getResourceValue:&number forKey:NSURLIsDirectoryKey error:NULL];
@@ -123,6 +123,10 @@ void PiuFile_getFileInfoAux(xsMachine* the, NSURL* url)
 		xsDefine(xsResult, xsID_directory, xsTrue, xsDefault);
 	}
 	else {
+		[url getResourceValue:&number forKey:NSURLIsSymbolicLinkKey error:NULL];
+		if ([number boolValue]) {
+			xsDefine(xsResult, xsID_symbolicLink, xsTrue, xsDefault);
+		}
 		[url getResourceValue:&number forKey:NSURLFileSizeKey error:NULL];
 		xsDefine(xsResult, xsID_size, xsInteger([number intValue]), xsDefault);
 	}
@@ -147,6 +151,15 @@ void PiuSystem_getPathName(xsMachine* the)
 	NSString* path = [NSString stringWithUTF8String:xsToString(xsArg(0))];
 	NSString* name =  [path lastPathComponent];
 	xsResult = xsString([name UTF8String]);
+}
+
+void PiuSystem_getSymbolicLinkInfo(xsMachine* the)
+{
+	NSString* path = [NSString stringWithUTF8String:xsToString(xsArg(0))];
+	if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
+		NSURL* url = [NSURL fileURLWithPath:path];
+		PiuFile_getFileInfoAux(the, [url URLByResolvingSymlinksInPath]);
+	}
 }
 
 void PiuSystem_readFileBuffer(xsMachine* the)
@@ -226,7 +239,7 @@ void PiuSystem_DirectoryIteratorCreate(xsMachine* the)
 {
 	NSString* path = [NSString stringWithUTF8String:xsToString(xsArg(0))];
 	NSURL* url = [NSURL fileURLWithPath:path];
-	NSArray *keys = [NSArray arrayWithObjects: NSURLContentModificationDateKey, NSURLFileSizeKey, NSURLIsDirectoryKey, NSURLLocalizedNameKey, nil];
+	NSArray *keys = [NSArray arrayWithObjects: NSURLContentModificationDateKey, NSURLFileSizeKey, NSURLIsDirectoryKey, NSURLLocalizedNameKey, NSURLIsSymbolicLinkKey, nil];
 	NSDirectoryEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtURL:url includingPropertiesForKeys:keys
 		options:(NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsHiddenFiles) errorHandler:NULL];
 	xsSetHostData(xsThis, enumerator);

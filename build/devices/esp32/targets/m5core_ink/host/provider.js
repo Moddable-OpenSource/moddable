@@ -27,7 +27,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
-import RTC from "embedded:peripherals/RTC-NXP/PCF8563"
+import RTC from "embedded:RTC/PCF8563"
 
 import Timer from "timer";
 
@@ -188,7 +188,7 @@ const device = {
 			constructor(options) {
 				return new RTC({
 					...options,
-					rtc: {
+					clock: {
 						...device.I2C.default,
 						io: SMBus
 					},

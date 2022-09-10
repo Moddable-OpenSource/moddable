@@ -77,7 +77,7 @@ static void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize of
 static void* fxFindChunk(txMachine* the, txSize size, txBoolean *once);
 static void* fxGrowChunk(txMachine* the, txSize size);
 static void* fxGrowChunks(txMachine* the, txSize theSize); 
-static void fxGrowSlots(txMachine* the, txSize theCount); 
+/* static */ void fxGrowSlots(txMachine* the, txSize theCount); 
 static void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
 static void fxMarkFinalizationRegistry(txMachine* the, txSlot* registry);
 static void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMachine*, txSlot*));
@@ -504,8 +504,13 @@ void* fxGrowChunks(txMachine* the, txSize size)
 	txByte* buffer;
 	txBlock* block = C_NULL;
 
+	if (!the->minimumChunksSize && the->firstBlock) {
+		fxReport(the, "# Chunk allocation: %d bytes failed in fixed size heap\n", size);
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	}
+
 	if (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG)) {
-		txSize modulo = size % the->minimumChunksSize;
+		txSize modulo = size % (the->minimumChunksSize ? the->minimumChunksSize : 16);
 		if (modulo)
 			size = fxAddChunkSizes(the, size, the->minimumChunksSize - modulo);
 	}
@@ -547,6 +552,8 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 		fxReport(the, "# Slot allocation: failed for %ld bytes\n", theCount * sizeof(txSlot));
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
+	if ((void *)-1 == aHeap)
+		return;
 
 	if ((aHeap + theCount) == the->firstHeap) {
 		*aHeap = *(the->firstHeap);
@@ -846,6 +853,13 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			}
 		}
 		break;
+	case XS_CALLBACK_KIND:
+		aSlot = theSlot->value.callback.closures;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
+		break;
 	case XS_CODE_KIND:
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
@@ -1051,8 +1065,11 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			mxMarkChunk(theSlot->value.arrayBuffer.address);
 		break;
 	case XS_CALLBACK_KIND:
-		if (theSlot->value.callback.IDs)
-			mxMarkChunk(theSlot->value.callback.IDs);
+		aSlot = theSlot->value.callback.closures;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_CODE_KIND:
 		mxMarkChunk(theSlot->value.code.address);
@@ -1074,6 +1091,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			if (theSlot->flag & XS_HOST_CHUNK_FLAG)
 				mxMarkChunk(theSlot->value.host.data);
 		}
+		break;
+	case XS_IDS_KIND:
+		if (theSlot->value.IDs)
+			mxMarkChunk(theSlot->value.IDs);
 		break;
 	case XS_PROXY_KIND:
 		aSlot = theSlot->value.proxy.handler;
@@ -1351,7 +1372,7 @@ void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 txSlot* fxNewSlot(txMachine* the) 
 {
 	txSlot* aSlot;
-	txBoolean once = 1;
+	txBoolean once = 1, allocate;
 	
 #if mxStress
 	if (fxShouldStress()) {
@@ -1387,13 +1408,19 @@ again:
 		fxCollect(the, 0);
 
 		isThrashing = ((the->collectFlag & XS_TRASHING_FLAG) != 0);
-		if (wasThrashing && isThrashing)
-			fxGrowSlots(the, !(the->collectFlag & XS_SKIPPED_COLLECT_FLAG) ? the->minimumHeapCount : 64);
+		allocate = wasThrashing && isThrashing;
 
 		once = 0;
 	}
 	else
+		allocate = 1;
+	if (allocate) {
+		if (!the->minimumHeapCount) {
+			fxReport(the, "# Slot allocation: failed in fixed size heap\n");
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		}
 		fxGrowSlots(the, !(the->collectFlag & XS_SKIPPED_COLLECT_FLAG) ? the->minimumHeapCount : 64);
+	}
 	goto again;
 	return C_NULL;
 }
@@ -1806,10 +1833,6 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 		if (theSlot->value.arrayBuffer.address)
 			mxSweepChunk(theSlot->value.arrayBuffer.address, txByte*);
 		break;
-	case XS_CALLBACK_KIND:
-		if (theSlot->value.callback.IDs)
-			mxSweepChunk(theSlot->value.callback.IDs, txID*);
-		break;
 	case XS_CODE_KIND:
 		mxSweepChunk(theSlot->value.code.address, txByte*);
 		break;
@@ -1823,6 +1846,10 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 			if (theSlot->flag & XS_HOST_CHUNK_FLAG)
 				mxSweepChunk(theSlot->value.host.data, void*);
 		}
+		break;
+	case XS_IDS_KIND:
+		if (theSlot->value.IDs)
+			mxSweepChunk(theSlot->value.IDs, txID*);
 		break;
 	case XS_REGEXP_KIND:
 		if (theSlot->value.regexp.code)

@@ -42,7 +42,24 @@ struct AnalogRecord {
 typedef struct AnalogRecord AnalogRecord;
 typedef struct AnalogRecord *Analog;
 
-#if kCPUESP32S2
+#if kCPUESP32C3
+	#define ADC_RESOLUTION (12)
+	#define ADC_WIDTH ADC_WIDTH_BIT_12
+	#define ADC_ATTEN ADC_ATTEN_DB_11
+
+	static const uint8_t gADCMap[ADC1_CHANNEL_MAX] = {		// ADC1 channel to GPIO
+		0,
+		1,
+		2,
+		3,
+		4
+	};
+
+	static const uint8_t gADC2Map[ADC2_CHANNEL_MAX] = {		// ADC2 channel to GPIO
+		5
+	};
+
+#elif kCPUESP32S2
 	#define ADC_RESOLUTION (13)
 	#define ADC_WIDTH ADC_WIDTH_BIT_13
 	#define ADC_ATTEN ADC_ATTEN_DB_11

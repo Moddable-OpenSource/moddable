@@ -22,7 +22,6 @@
 
 	To do:
 
-		- port
 		- multicast
 */
  
@@ -96,42 +95,59 @@ void xs_udp_constructor(xsMachine *the)
 
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 
-//@@ port currently unused!
-	xsmcGet(xsVar(0), xsArg(0), xsID_port);
-	port = xsmcToInteger(xsVar(0));
-	if ((port < 0) || (port > 65535))
-		xsRangeError("invalid port");
+	if (xsmcHas(xsArg(0), xsID_port)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_port);
+		port = xsmcToInteger(xsVar(0));
+		if ((port < 0) || (port > 65535))
+			xsRangeError("invalid port");
+	}
 
-	udp = c_calloc(1, sizeof(UDPRecord));
-	if (!udp)
-		xsRangeError("no memory");
-	udp->skt = -1;
+	xsTry {
+		udp = c_calloc(1, sizeof(UDPRecord));
+		if (!udp)
+			xsRangeError("no memory");
+		udp->skt = -1;
 
-	xsmcSetHostData(xsThis, udp);
+		xsmcSetHostData(xsThis, udp);
 
-	udp->skt = socket(AF_INET, SOCK_DGRAM, 0);
-	if (udp->skt < 0)
-		xsUnknownError("no socket");
+		udp->skt = socket(AF_INET, SOCK_DGRAM, 0);
+		if (udp->skt < 0)
+			xsUnknownError("no socket");
 
-#if defined(SO_NOSIGPIPE)
-	int set = 1;
-	setsockopt(udp->skt, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
-#endif
+		if (port) {
+			struct sockaddr_in address;
+			address.sin_family      = AF_INET;
+			address.sin_port        = htons(port);
+			address.sin_addr.s_addr = htonl(INADDR_ANY);
+			if (0 != bind(udp->skt, (struct sockaddr *) &address, sizeof(address)))
+				xsUnknownError("bind failed");
+		}
 
-	fcntl(udp->skt, F_SETFL, O_NONBLOCK | fcntl(udp->skt, F_GETFL, 0));
+	#if defined(SO_NOSIGPIPE)
+		int set = 1;
+		setsockopt(udp->skt, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+	#endif
 
-	udp->task = modTimerAdd(kTaskInterval, kTaskInterval, udpTask, &udp, sizeof(udp));
+		fcntl(udp->skt, F_SETFL, O_NONBLOCK | fcntl(udp->skt, F_GETFL, 0));
 
-	xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
-	udp->the = the;
-	udp->obj = xsThis;
-	xsRemember(udp->obj);
-	udp->port = port;
-	udpHold(udp);
+		udp->task = modTimerAdd(kTaskInterval, kTaskInterval, udpTask, &udp, sizeof(udp));
 
-	builtinInitializeTarget(the);
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
+		udp->the = the;
+		udp->obj = xsThis;
+		xsRemember(udp->obj);
+		udp->port = port;
+		udpHold(udp);
 
-	udp->onReadable = onReadable;
+		builtinInitializeTarget(the);
+
+		udp->onReadable = onReadable;
+	}
+	xsCatch {
+		xsmcSetHostData(xsThis, NULL);
+		xs_udp_destructor(udp);
+		xsThrow(xsException);
+	}
 }
 
 void xs_udp_destructor(void *data)

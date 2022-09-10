@@ -355,23 +355,29 @@ static void fxTraceString(txMachine* the, txString theString)
 #endif
 
 #ifdef mxTraceCall
-int depth = 0;
-
+int gxTraceCall = 0;
+static int depth = 0;
 static void fxTraceCallBegin(txMachine* the, txSlot* function)
 {
-	txSlot* slot = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), 0, XS_ANY);
-	int i;
-	for (i = 0; i < depth; i++)
-		fprintf(stderr, "\t");
-	if (slot && (slot->kind == XS_STRING_KIND) &&  (slot->kind == XS_STRING_X_KIND))
-		fprintf(stderr, " [%s]\n", slot->value.string);
-	else
-		fprintf(stderr, " [?]\n");
-	depth++;
+	if (gxTraceCall) {
+		txSlot* slot = mxBehaviorGetProperty(the, function->value.reference, mxID(_name), 0, XS_ANY);
+		int i;
+		for (i = 0; i < depth; i++)
+			fprintf(stderr, "\t");
+		if (slot && ((slot->kind == XS_STRING_KIND) ||  (slot->kind == XS_STRING_X_KIND)))
+			fprintf(stderr, " [%s]\n", slot->value.string);
+		else
+			fprintf(stderr, " [?]\n");
+		depth++;
+	}
 }
 static void fxTraceCallEnd(txMachine* the, txSlot* function)
 {
-	depth--;
+	if (gxTraceCall) {
+		depth--;
+		if (depth < 0)
+			depth = 0;
+	}
 }
 #endif
 
@@ -814,6 +820,9 @@ XS_CODE_JUMP:
 						mxEnvironment = mxStack;
 						mxScope = mxStack;
 						mxCode = slot->value.code.address;
+			#ifdef mxTraceCall
+						fxTraceCallBegin(the, mxFrameFunction);
+			#endif
 						mxFirstCode();
 						mxBreak;
 					}
@@ -831,6 +840,9 @@ XS_CODE_JUMP:
 						mxScope = mxStack;
 						mxCode = C_NULL;
 						byte = XS_CODE_CALL;
+			#ifdef mxTraceCall
+						fxTraceCallBegin(the, mxFrameFunction);
+			#endif
 						mxSaveState;
 			#ifdef mxLink
 						if ((txU1*)slot->value.callback.address - (txU1*)the->fakeCallback < 0)
@@ -861,6 +873,9 @@ XS_CODE_JUMP:
 						mxScope = mxStack;
 						mxCode = C_NULL;
 						byte = XS_CODE_CALL;
+			#ifdef mxTraceCall
+						fxTraceCallBegin(the, mxFrameFunction);
+			#endif
 						mxSaveState;
 						fxRunProxy(the, variable);
 						mxRestoreState;
@@ -884,6 +899,9 @@ XS_CODE_JUMP:
 				mxScope = mxStack;
 				mxCode = C_NULL;
 				byte = XS_CODE_CALL;
+#ifdef mxTraceCall
+				fxTraceCallBegin(the, mxFrameFunction);
+#endif
 				mxSaveState;
 #ifdef mxLink
 				if ((txU1*)slot->value.hostFunction.builder->callback - (txU1*)the->fakeCallback < 0)
@@ -4027,10 +4045,11 @@ XS_CODE_JUMP:
             mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_MODULE)
+			byte = mxRunU1(1);
 			mxSaveState;
-			fxPrepareModule(the);
+			fxPrepareModule(the, byte);
 			mxRestoreState;
-            mxNextCode(1);
+            mxNextCode(2);
 			mxBreak;
 			
 	/* EVAL, PROGRAM & WITH */
@@ -4756,21 +4775,20 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				txID c, i;
 				mxDecodeID(p, c);
 				the->stack->value.callback.address = C_NULL;
-				the->stack->value.callback.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
-				the->stack->kind = XS_CALLBACK_KIND;
-				the->stack->value.callback.IDs[0] = XS_NO_ID;
+				the->stack->value.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
+				the->stack->kind = XS_IDS_KIND;
+				the->stack->value.IDs[0] = XS_NO_ID;
 				for (i = 1; i < c; i++) {
 					txID id = fxNewNameC(the, (txString)p);
-					the->stack->value.callback.IDs[i] = id;
+					the->stack->value.IDs[i] = id;
 					p += mxStringLength((char*)p) + 1;
 				}
-				fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.callback.IDs);
-				the->stack->value.callback.IDs = C_NULL;
+				fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.IDs);
+				the->stack->value.IDs = C_NULL;
 			}	
 			else {
-				the->stack->value.callback.address = C_NULL;
-				the->stack->value.callback.IDs = C_NULL;
-				the->stack->kind = XS_CALLBACK_KIND;
+				the->stack->value.IDs = C_NULL;
+				the->stack->kind = XS_IDS_KIND;
 			}
 			if (script->callback) {
 				property = the->stack;
@@ -4785,7 +4803,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				instance = fxNewFunctionInstance(the, closures ? mxID(_eval) : XS_NO_ID);
 				instance->next->kind = XS_CALLBACK_KIND;
 				instance->next->value.callback.address = script->callback;
-				instance->next->value.callback.IDs = C_NULL;
+				instance->next->value.callback.closures = C_NULL;
 				property = mxFunctionInstanceHome(instance);
 				property->value.home.object = object;
 				property->value.home.module = module;

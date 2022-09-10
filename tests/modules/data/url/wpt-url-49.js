@@ -1,0 +1,177 @@
+/*---
+description: https://github.com/web-platform-tests/wpt/url/resources/urltestdata.json
+flags: [module]
+---*/
+
+import { runTests } from "./url_FIXTURE.js";
+
+const tests = [
+	{
+		"input": "a!@$*=/foo.html",
+		"base": "file:///some/dir/bar.html",
+		"href": "file:///some/dir/a!@$*=/foo.html",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/some/dir/a!@$*=/foo.html",
+		"search": "",
+		"hash": ""
+	},
+	"First and subsequent scheme chars - allowed",
+	{
+		"input": "a1234567890-+.:foo/bar",
+		"base": "http://example.com/dir/file",
+		"href": "a1234567890-+.:foo/bar",
+		"protocol": "a1234567890-+.:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "foo/bar",
+		"search": "",
+		"hash": ""
+	},
+	"https://bugzilla.mozilla.org/show_bug.cgi?id=1647058",
+	{
+		"input": "#link",
+		"base": "https://example.org/##link",
+		"href": "https://example.org/#link",
+		"protocol": "https:",
+		"username": "",
+		"password": "",
+		"host": "example.org",
+		"hostname": "example.org",
+		"port": "",
+		"pathname": "/",
+		"search": "",
+		"hash": "#link"
+	},
+	"UTF-8 percent-encode of C0 control percent-encode set and supersets",
+	{
+		"input": "non-special:cannot-be-a-base-url-\u0000\u0001\u001f\u001e~",
+		"base": "about:blank",
+		"hash": "",
+		"host": "",
+		"hostname": "",
+		"href": "non-special:cannot-be-a-base-url-%00%01%1F%1E~%7F%C2%80",
+		"origin": "null",
+		"password": "",
+		"pathname": "cannot-be-a-base-url-%00%01%1F%1E~%7F%C2%80",
+		"port": "",
+		"protocol": "non-special:",
+		"search": "",
+		"username": ""
+	},
+	{
+		"input": "https://www.example.com/path{path.html?query'=query#fragment<fragment",
+		"base": "about:blank",
+		"hash": "#fragment%3C%7Ffragment",
+		"host": "www.example.com",
+		"hostname": "www.example.com",
+		"href": "https://www.example.com/path%7B%7Fpath.html?query%27%7F=query#fragment%3C%7Ffragment",
+		"origin": "https://www.example.com",
+		"password": "",
+		"pathname": "/path%7B%7Fpath.html",
+		"port": "",
+		"protocol": "https:",
+		"search": "?query%27%7F=query",
+		"username": ""
+	},
+	{
+		"input": "https://user:pass[@foo/bar",
+		"base": "http://example.org",
+		"hash": "",
+		"host": "foo",
+		"hostname": "foo",
+		"href": "https://user:pass%5B%7F@foo/bar",
+		"origin": "https://foo",
+		"password": "pass%5B%7F",
+		"pathname": "/bar",
+		"port": "",
+		"protocol": "https:",
+		"search": "",
+		"username": "user"
+	},
+	"Tests for the distinct percent-encode sets",
+	{
+		"input": "foo:// !\"$%&'()*+,-.;<=>@[\\]^_`{|}~@host/",
+		"base": "about:blank",
+		"hash": "",
+		"host": "host",
+		"hostname": "host",
+		"href": "foo://%20!%22$%&'()*+,-.%3B%3C%3D%3E%40%5B%5C%5D%5E_%60%7B%7C%7D~@host/",
+		"origin": "null",
+		"password": "",
+		"pathname": "/",
+		"port": "",
+		"protocol": "foo:",
+		"search": "",
+		"username": "%20!%22$%&'()*+,-.%3B%3C%3D%3E%40%5B%5C%5D%5E_%60%7B%7C%7D~"
+	},
+	{
+		"input": "wss:// !\"$%&'()*+,-.;<=>@[]^_`{|}~@host/",
+		"base": "about:blank",
+		"hash": "",
+		"host": "host",
+		"hostname": "host",
+		"href": "wss://%20!%22$%&'()*+,-.%3B%3C%3D%3E%40%5B%5D%5E_%60%7B%7C%7D~@host/",
+		"origin": "wss://host",
+		"password": "",
+		"pathname": "/",
+		"port": "",
+		"protocol": "wss:",
+		"search": "",
+		"username": "%20!%22$%&'()*+,-.%3B%3C%3D%3E%40%5B%5D%5E_%60%7B%7C%7D~"
+	},
+	{
+		"input": "foo://joe: !\"$%&'()*+,-.:;<=>@[\\]^_`{|}~@host/",
+		"base": "about:blank",
+		"hash": "",
+		"host": "host",
+		"hostname": "host",
+		"href": "foo://joe:%20!%22$%&'()*+,-.%3A%3B%3C%3D%3E%40%5B%5C%5D%5E_%60%7B%7C%7D~@host/",
+		"origin": "null",
+		"password": "%20!%22$%&'()*+,-.%3A%3B%3C%3D%3E%40%5B%5C%5D%5E_%60%7B%7C%7D~",
+		"pathname": "/",
+		"port": "",
+		"protocol": "foo:",
+		"search": "",
+		"username": "joe"
+	},
+	{
+		"input": "wss://joe: !\"$%&'()*+,-.:;<=>@[]^_`{|}~@host/",
+		"base": "about:blank",
+		"hash": "",
+		"host": "host",
+		"hostname": "host",
+		"href": "wss://joe:%20!%22$%&'()*+,-.%3A%3B%3C%3D%3E%40%5B%5D%5E_%60%7B%7C%7D~@host/",
+		"origin": "wss://host",
+		"password": "%20!%22$%&'()*+,-.%3A%3B%3C%3D%3E%40%5B%5D%5E_%60%7B%7C%7D~",
+		"pathname": "/",
+		"port": "",
+		"protocol": "wss:",
+		"search": "",
+		"username": "joe"
+	},
+	{
+		"input": "foo://!\"$%&'()*+,-.;=_`{}~/",
+		"base": "about:blank",
+		"hash": "",
+		"host": "!\"$%&'()*+,-.;=_`{}~",
+		"hostname": "!\"$%&'()*+,-.;=_`{}~",
+		"href": "foo://!\"$%&'()*+,-.;=_`{}~/",
+		"origin": "null",
+		"password": "",
+		"pathname": "/",
+		"port": "",
+		"protocol": "foo:",
+		"search": "",
+		"username": ""
+	}
+];
+
+runTests(tests);

@@ -372,6 +372,9 @@ int main(int argc, char* argv[])
 						}
 					}
 					xsCatch {
+						xsSlot errorStack = xsGet(xsException, mxID(_stack));
+						xsStringValue stackStr = xsToString(errorStack);
+						fprintf(stderr, "%s\n", stackStr);
 						xsStringValue message = xsToString(xsException);
 						fxReportLinkerError(linker, "%s", message);
 					}
@@ -479,6 +482,7 @@ int main(int argc, char* argv[])
 				fxPrepareProjection(the);
 		
 			linker->bigintSize = 0;
+			linker->regexpSize = 0;
 			linker->slotSize = 0;
 			count = fxPrepareHeap(the);
 			if (linker->freezeFlag) {
@@ -548,6 +552,12 @@ int main(int argc, char* argv[])
 				linker->bigintData = fxNewLinkerChunk(linker, linker->bigintSize * sizeof(txU4));
 				linker->bigintSize = 0;
 			}
+			if (linker->regexpSize) {
+				fprintf(file, "#define mxRegExpCount %d\n", (int)linker->regexpSize);
+				fprintf(file, "static const txInteger gxRegExpData[mxRegExpCount];\n");
+				linker->regexpData = fxNewLinkerChunk(linker, linker->regexpSize * sizeof(txU4));
+				linker->regexpSize = 0;
+			}
 			if (linker->slotSize) {
 				fprintf(file, "#define mxSlotCount %d\n", (int)linker->slotSize);
 				fprintf(file, "static const txSlot* const gxSlotData[mxSlotCount] ICACHE_FLASH1_ATTR;\n");
@@ -614,6 +624,19 @@ int main(int argc, char* argv[])
 					else
 						fprintf(file, "\n\t");
 					fprintf(file, "0x%8.8X,", linker->bigintData[count]);
+					count++;
+				}
+				fprintf(file, "\n};\n\n");
+			}
+			if (linker->regexpSize) {
+				count = 0;
+				fprintf(file, "static const txInteger gxRegExpData[mxRegExpCount] = {");
+				while (count < linker->regexpSize) {
+					if (count % 8)
+						fprintf(file, " ");
+					else
+						fprintf(file, "\n\t");
+					fprintf(file, "0x%8.8X,", linker->regexpData[count]);
 					count++;
 				}
 				fprintf(file, "\n};\n\n");

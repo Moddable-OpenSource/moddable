@@ -601,7 +601,7 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CALLBACK_KIND;
 	property->value.callback.address = theCallback;
-	property->value.callback.IDs = C_NULL;
+	property->value.callback.closures = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
@@ -1500,6 +1500,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
+			mxPushUndefined();
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
 
@@ -1691,10 +1692,17 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-			
-			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
+			if (the->archive) {
+				fxNewHostObject(the, C_NULL);
+				the->stack->value.reference->next->value.host.data = the->archive;
+				slot = fxNextSlotProperty(the, slot, the->stack, fxID(the, "archive"), XS_DONT_ENUM_FLAG);
+				mxPop();
+			}
 			
 			fxNewInstance(the);
+			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
+			fxNewHostInstance(the);
+			
 			mxPushUndefined();
 			slot = fxLastProperty(the, fxNewEnvironmentInstance(the, C_NULL));
 			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
@@ -1702,6 +1710,9 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
 				sharedSlot = sharedSlot->next;
 			}
+			
+			
+			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
@@ -2018,7 +2029,8 @@ void fxBuildArchiveKeys(txMachine* the)
 			p += sizeof(Atom);
 			c = (txID)c_read16(p);
 			p += 2;
-			for (i = 0; i < c; i++) {
+			p += mxStringLength((txString)p) + 1;
+			for (i = 1; i < c; i++) {
 				fxNewNameX(the, (txString)p);
 				p += mxStringLength((txString)p) + 1;
 			}
@@ -2276,7 +2288,9 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 			}
 			mxElseFatalCheck(p < q);
 			*p = 0;
-			if (the)
+			if (i == 0)
+				self->ids[i] = XS_NO_ID;
+			else if (the)
 				self->ids[i] = fxID(the, (txString)self->scratch);
 			else {
 				sum &= 0x7FFFFFFF;

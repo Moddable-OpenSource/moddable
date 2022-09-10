@@ -69,10 +69,8 @@ trace("\n");
 
 // directory iterator
 // Note: The SPIFFS file system used on the ESP8266 is a flat file system with no directories
-let iterator = new Iterator(root);
-let item;
-while (item = iterator.next()) {
-	if (undefined == item.length)
+for (const item of (new Iterator(root))) {
+	if (undefined === item.length)
 		trace(`${item.name.padEnd(32)} directory\n`);
 	else
 		trace(`${item.name.padEnd(32)} file          ${item.length} bytes\n`);

@@ -71,7 +71,8 @@ class ZIOQWIICMOISTURE {
 		let accum = 0;
 		for (let i=0; i<this.#averaging; i++)
 			accum += this.#io.readWord(Register.GET_VALUE, 0);
-		return { value: (accum / this.#averaging) };
+		accum /= this.#averaging;
+		return { moisture: (1024 - accum) / 1024 };
 	}
 	#ledOn() {
 		this.#io.sendByte(Register.LED_ON);
