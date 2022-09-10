@@ -43,7 +43,7 @@ class BlinkAppBehavior extends Behavior {
 				}
 			}
 		});
-		this.led = new Host.LED;
+		this.led = new Host.LED.Default;
 	}
 	onTimeChanged(column) {
 		this.state = !this.state;

@@ -23,7 +23,7 @@
 
 static modBLEConnection gConnections = NULL;
 
-modBLEConnection modBLEConnectionFindByConnectionID(uint16_t id)
+modBLEConnection modBLEConnectionFindByConnectionID(int16_t id)
 {
 	modBLEConnection walker;
 	modCriticalSectionDeclare;

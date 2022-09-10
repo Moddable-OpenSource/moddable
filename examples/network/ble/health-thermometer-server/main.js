@@ -44,7 +44,8 @@ class HealthThermometerService extends BLEServer {
 		this.stopMeasurements();
 	}
 	get temperature() {
-		this.temp += 0.1;
+		if (98.5 > this.temp)
+			this.temp += 0.1;
 		let flags = 0x01;		// fahrenheit
 		let exponent = 0xFD;	// -1
 		let mantissa = Math.round(this.temp * 1000);
@@ -55,8 +56,6 @@ class HealthThermometerService extends BLEServer {
 	startMeasurements(characteristic) {
 		this.timer = Timer.repeat(id => {
 			this.notifyValue(characteristic, this.temperature);
-			if (98.5 < this.temp)
-				this.stopMeasurements();
 		}, 250);
 	}
 	stopMeasurements() {

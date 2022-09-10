@@ -11,6 +11,10 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+/*
+ *     This app should be built with rotation set to 90 degrees:
+ *     mcconfig -d -m -p esp -r 90
+ */
 
 import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";

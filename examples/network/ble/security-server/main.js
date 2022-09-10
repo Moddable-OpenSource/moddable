@@ -90,7 +90,8 @@ class SecureHealthThermometerServer extends BLEServer {
 		trace(`device ${params.address} bond deleted\n`);
 	}
 	get temperature() {
-		this.temp += 0.1;
+		if (98.5 > this.temp)
+			this.temp += 0.1;
 		let flags = 0x01;		// fahrenheit
 		let exponent = 0xFD;	// -1
 		let mantissa = Math.round(this.temp * 1000);
@@ -100,11 +101,8 @@ class SecureHealthThermometerServer extends BLEServer {
 	}
 	startMeasurements() {
 		this.timer = Timer.repeat(id => {
-			if (this.characteristic) {
+			if (this.characteristic)
 				this.notifyValue(this.characteristic, this.temperature);
-				if (98.5 < this.temp)
-					this.stopMeasurements();
-			}
 		}, 250);
 	}
 	stopMeasurements() {
