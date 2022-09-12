@@ -1785,7 +1785,7 @@ txInteger* fxAllocateRegExpData(void* the, txInteger* code)
 	if (the) {
 		data = fxNewChunk(the, size);
 	#ifdef mxSnapshot
-		c_memset(*data, 0, size);
+		c_memset(data, 0, size);
 	#endif
 	}
 	else
