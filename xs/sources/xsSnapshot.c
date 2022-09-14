@@ -1181,8 +1181,8 @@ void fxReadMapSet(txMachine* the, txSlot* table, txBoolean paired)
 	while (key) {
 		txU4 sum = fxSumEntry(the, key);
 		txU4 index = sum & (table->value.table.length - 1);
-		txSlot** address = &(table->value.table.address[index]);
 		txSlot*  entry = fxNewSlot(the);
+		txSlot** address = &(table->value.table.address[index]);
 		entry->next = *address;
 		entry->kind = XS_ENTRY_KIND;
 		entry->value.entry.slot = key;
