@@ -1375,9 +1375,9 @@ void fx_WeakRef_prototype_deref(txMachine* the)
 	txSlot* instance = fxCheckWeakRefInstance(the, mxThis);
 	txSlot* target = instance->next->value.weakRef.target;
 	if (target) {
-		fxKeepDuringJobs(the, target);
 		mxResult->value.reference = target;
 		mxResult->kind = XS_REFERENCE_KIND;
+		fxKeepDuringJobs(the, target);
 	}
 }
 
