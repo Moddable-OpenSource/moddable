@@ -116,6 +116,7 @@ endif
 
 # LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
 LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
+LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc
 
 BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
 COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
