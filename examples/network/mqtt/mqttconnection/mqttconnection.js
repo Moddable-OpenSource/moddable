@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2022  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -24,7 +24,7 @@
 
 		- tries to reconnect on connection dropped (0.5 second delay)
 		- 10 second timeout on establishing connection (until onReady)
-		- call wait(false) if no network connection to turn off reconnect attempts and wait(true) to restart
+		- call wait(true) if no network connection to turn off reconnect attempts and wait(true) to restart
 		- onConnected and onReady called on each reconnection
 		- onClose may be called more than once between connections
 		- subscriptions are retained and automatically resubscribed on reconnect. set options.subscribe to false to disable. 
