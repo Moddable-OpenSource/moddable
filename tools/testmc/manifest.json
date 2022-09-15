@@ -44,6 +44,7 @@
 		"$(MODULES)/files/preference/manifest.json",
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
+		"$(MODDABLE)/modules/network/http/manifest.json",
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
 		"$(MODDABLE)/modules/network/websocket/manifest.json"
 	],
@@ -56,8 +57,7 @@
 			"./testworker",
 			"./testsharedworker",
 			"./testthrowworker",
-			"$(MODULES)/base/instrumentation/*",
-			"$(MODULES)/network/http/*"
+			"$(MODULES)/base/instrumentation/*"
 		],
 		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
 		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
@@ -71,8 +71,7 @@
 		"hosttest",
 		"harness",
 		"commodetto/*",
-		"instrumentation",
-		"http"
+		"instrumentation"
 	],
 	"strip": [],
 	"config" : {
@@ -90,12 +89,20 @@
 		},
 		"esp32": {
 			"defines": {
-				"XS_TEST": 1
+				"XS_TEST": 1,
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
 			},
 			"include": [
 				"$(MODULES)/base/worker/manifest.json",
 				"$(MODULES)/files/flash/manifest.json",
-				"$(MODDABLE)/modules/network/ble/manifest_client.json"
+				"$(MODDABLE)/modules/network/ble/manifest_client.json",
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
 			],
 			"modules": {
 				"~": [
@@ -147,6 +154,9 @@
 			"build": {
 				"SIMULATOR": "$(BUILD)/bin/mac/debug/mcsim.app"
 			},
+			"include": [
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
 			"modules": {
 				"*": [
 					"$(BUILD)/simulators/modules/screen",
@@ -155,6 +165,15 @@
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mac/*"
 				]
+			},
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
 			}
 		},
 		"win": {
