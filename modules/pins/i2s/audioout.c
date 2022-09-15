@@ -33,6 +33,9 @@
 #ifndef MODDEF_AUDIOOUT_BITSPERSAMPLE
 	#define MODDEF_AUDIOOUT_BITSPERSAMPLE (16)
 #endif
+#ifndef MODDEF_AUDIOOUT_NUMCHANNELS
+	#define MODDEF_AUDIOOUT_NUMCHANNELS (1)
+#endif
 #ifndef MODDEF_AUDIOOUT_QUEUELENGTH
 	#define MODDEF_AUDIOOUT_QUEUELENGTH (8)
 #endif
@@ -315,11 +318,13 @@ void xs_audioout_destructor(void *data)
 	UnregisterClass("modAudioWindowClass", NULL);
 #elif ESP32
 	out->state = kStateClosing;
-	xTaskNotify(out->task, kStateClosing, eSetValueWithOverwrite);
-	while (kStateClosing == out->state)
-		modDelayMilliseconds(1);
+	if (out->task) {
+		xTaskNotify(out->task, kStateClosing, eSetValueWithOverwrite);
+		while (kStateClosing == out->state)
+			modDelayMilliseconds(1);
 
-	vSemaphoreDelete(out->mutex);
+		vSemaphoreDelete(out->mutex);
+	}
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	if (out->buffer32)
 		heap_caps_free(out->buffer32);
@@ -350,6 +355,9 @@ void xs_audioout(xsMachine *the)
 	int streamCount = 0;
 
 	xsmcVars(1);
+
+	if (xsReferenceType != xsmcTypeOf(xsArg(0)))
+		xsSyntaxError("no options");
 
 	if (xsmcHas(xsArg(0), xsID_sampleRate)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_sampleRate);
@@ -410,6 +418,10 @@ void xs_audioout(xsMachine *the)
 
 	for (i = 0; i < streamCount; i++)
 		out->stream[i].volume = 256 / MODDEF_AUDIOOUT_VOLUME_DIVIDER;
+
+#if defined(__APPLE__)
+	out->runLoop = CFRunLoopGetCurrent();
+#endif
 }
 
 void xs_audioout_build(xsMachine *the)
@@ -435,8 +447,6 @@ void xs_audioout_build(xsMachine *the)
 	desc.mSampleRate = out->sampleRate;
 
 	pthread_mutex_init(&out->mutex, NULL);
-
-	out->runLoop = CFRunLoopGetCurrent();
 
 	err = AudioQueueNewOutput(&desc, audioQueueCallback, out, NULL, NULL, 0, &out->audioQueue);
 	if (noErr != err)
@@ -597,7 +607,7 @@ void xs_audioout_enqueue(xsMachine *the)
 	uint16_t sampleRate;
 	uint8_t numChannels;
 	uint8_t bitsPerSample;
-	uint8_t sampleFormat;
+	uint8_t sampleFormat = kSampleFormatUncompressed;
 	modAudioOutStream stream;
 	modAudioQueueElement element;
 	int activeStreamCount = out->activeStreamCount;
@@ -971,7 +981,11 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 		pthread_mutex_unlock(&out->mutex);
 
 		xsmcSetInteger(xsVar(0), id);
-		xsCall1(out->obj, xsID_callback, xsVar(0));
+		xsTry {
+			xsCall1(out->obj, xsID_callback, xsVar(0));
+		}
+		xsCatch {
+		}
 	}
 
 	xsEndHost(out->the);
@@ -1469,7 +1483,11 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 		doUnlock(out);
 
 		xsmcSetInteger(xsVar(0), id);
-		xsCall1(out->obj, xsID_callback, xsVar(0));
+		xsTry {
+			xsCall1(out->obj, xsID_callback, xsVar(0));
+		}
+		xsCatch {
+		}
 	}
 
 	xsEndHost(out->the);
