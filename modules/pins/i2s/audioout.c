@@ -159,6 +159,9 @@ typedef struct {
 			int32_t				count;
 			OUTPUTSAMPLETYPE	value;
 		} tone;
+		struct {
+			uint32_t			remaining;
+		} silence;
 	};
 } modAudioQueueElementRecord, *modAudioQueueElement;
 
@@ -595,6 +598,7 @@ enum {
 	kSampleFormatIMA = 1,
 	kSampleFormatSBC = 2,
 	kSampleFormatTone = 3,
+	kSampleFormatSilence = 4
 };
 
 void xs_audioout_enqueue(xsMachine *the)
@@ -781,6 +785,7 @@ void xs_audioout_enqueue(xsMachine *the)
 					value = 32767 >> 2;
 #endif
 				}
+				sampleFormat = kSampleFormatTone;
 			}
 			else {
 				count = xsmcToInteger(xsArg(2));
@@ -788,6 +793,8 @@ void xs_audioout_enqueue(xsMachine *the)
 					xsUnknownError("invalid count");
 				frequency = 1;
 				value = 0;
+				sampleFormat = kSampleFormatSilence;
+
 			}
 
 			if (NULL == stream->decompressed) {
@@ -795,23 +802,30 @@ void xs_audioout_enqueue(xsMachine *the)
 				if (NULL == stream->decompressed)
 					xsUnknownError("out of memory");
 
-				stream->format = kSampleFormatTone;
+				stream->format = sampleFormat;
 				stream->compressedBytesPerChunk = 0;
 			}
 
 			doLock(out);
 
 			element = &stream->element[stream->elementCount];
-			element->samples = stream->decompressed;
-			element->sampleCount = kToneSamplesPerChunk;
 			element->position = 0;
+			element->sampleFormat = sampleFormat;
+			element->samples = stream->decompressed;
 			element->repeat = (count < 0) ? -1 : 1;
-			element->sampleFormat = kSampleFormatTone;
 
-			element->tone.position = 0;
-			element->tone.max = (uint32_t)(32768.0 * (xsNumberValue)out->sampleRate / frequency);		// 16.16 fixed
-			element->tone.value = value;
-			element->tone.count = count;
+			if (kSampleFormatTone == sampleFormat) {
+				element->sampleCount = kToneSamplesPerChunk;
+
+				element->tone.position = 0;
+				element->tone.max = (uint32_t)(32768.0 * (xsNumberValue)out->sampleRate / frequency);		// 16.16 fixed
+				element->tone.value = value;
+				element->tone.count = count;
+			}
+			else {
+				element->sampleCount = 0;
+				element->silence.remaining = count;
+			}
 
 			goto enqueueSamples;
 		}
@@ -1867,6 +1881,17 @@ int streamDecompressNext(modAudioOutStream stream)
 		}
 		element->tone.value = value;
 		element->tone.position = position;
+	}
+	else if (kSampleFormatSilence == stream->format) {
+		uint32_t use = element->silence.remaining;
+		if (!use) return 0;
+
+		if (use > kToneSamplesPerChunk)
+			use = kToneSamplesPerChunk;
+		element->silence.remaining -= use;
+		element->sampleCount = use;
+
+		c_memset(stream->decompressed, 0, use * 2); 
 	}
 
 	element->position = 0;
