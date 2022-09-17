@@ -388,7 +388,26 @@ export default class extends TOOL {
 				else
 					change.push(`function (msg) {`);
 
+				let createdTemp = false;
 				config.rules.forEach(rule => {
+					let doDelete;
+
+					if (("delete" === rule.t) || ("move" == rule.t)) {
+						if ("msg" === rule.pt) {
+							doDelete = `\t\t\tdelete msg${this.prepareProp(rule.p)}`;
+
+							// force bizarre behavior where moving a property to itself on msg deletes the property (why?)
+							if ((rule.p === rule.to) && ("msg" === rule.tot))
+								rule.t = "delete"
+						}
+						else if ("flow" === rule.pt)
+							doDelete = `\t\t\tthis.flow.delete("${rule.p}");`;
+						else if ("global" === rule.pt)
+							doDelete = `\t\t\tglobalContext.delete("${rule.p}");`;
+						else
+							throw new Error(`unexpected delete type: ${rule.pt}`);
+					}
+
 					if ("set" === rule.t) {
 						let value = this.resolveValue(rule.tot, rule.to);
 						if (rule.dc)
@@ -425,29 +444,30 @@ export default class extends TOOL {
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
 					else if ("move" === rule.t) {
+						// GET, DELETE, SET
 						const value = this.resolveValue(rule.pt, rule.p);
+						if (createdTemp)
+							change.push(`\t\t\ttemp = ${value};`);
+						else {
+							change.push(`\t\t\tlet temp = ${value};`);
+							createdTemp = true;
+						}
+						change.push(doDelete);
+
 						if ("msg" === rule.tot) {
 							this.createPropPath(rule.to, change, "\t\t\t");
-							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = ${value};`);
+							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = temp;`);
 						}
 						else if ("flow" === rule.tot)
-							change.push(`\t\t\tthis.flow.set("${rule.to}", ${value});`);
+							change.push(`\t\t\tthis.flow.set("${rule.to}", temp);`);
 						else if ("global" === rule.tot)
-							change.push(`\t\t\tglobalContext.set("${rule.to}", ${value});`);
+							change.push(`\t\t\tglobalContext.set("${rule.to}", temp);`);
 						else
 							throw new Error(`unexpected move type: ${rule.pt}`);
 					}
 
-					if (("delete" === rule.t) || ("move" == rule.t)) {
-						if ("msg" === rule.pt)
-							change.push(`\t\t\tdelete msg${this.prepareProp(rule.p)}`);
-						else if ("flow" === rule.pt)
-							change.push(`\t\t\tthis.flow.delete("${rule.p}");`);
-						else if ("global" === rule.pt)
-							change.push(`\t\t\tglobalContext.delete("${rule.p}");`);
-						else
-							throw new Error(`unexpected delete type: ${rule.pt}`);
-					}
+					if ("delete" === rule.t)
+						change.push(doDelete);
 				});
 
 				if (dones)
@@ -536,6 +556,33 @@ export default class extends TOOL {
 					config.__op1 = `function () {return ${this.resolveValue(config.op1type, config.op1)}}`;
 				if (config.op2type && ("pay" !== config.op2type) && ("payl" !== config.op2type) && (undefined !== config.op2))
 					config.__op2 = `function () {return ${this.resolveValue(config.op2type, config.op2)}}`;
+			} break;
+
+			case "sort": {
+				if (config.as_num)
+					config.as_num = true;
+				else
+					delete config.as_num;
+
+				let target_prop = config.target || "payload";
+				let target_is_prop = (config.targetType === 'msg');
+				let key_is_exp = target_is_prop ? (config.msgKeyType === "jsonata") : (config.seqKeyType === "jsonata");
+				let key_prop = config.seqKey || "payload";
+				let key_exp = target_is_prop ? config.msgKey : config.seqKey;
+				config.dir = (config.order === "descending") ? -1 : +1;
+				config.target_is_prop = target_is_prop;
+				config.key_is_exp = key_is_exp;
+				if (key_is_exp)  {
+					config.getter = `function (msg) {return msg${this.prepareProp(key_exp)};}`;
+					config.setter = `function (msg, value) {msg${this.prepareProp(key_exp)} = value;}`;
+				}
+				else {
+					const prop = target_is_prop ? target_prop : key_prop;
+					config.getter = `function (msg) {return msg${this.prepareProp(prop)};}`;
+					config.setter = `function (msg, value) {msg${this.prepareProp(prop)} = value;}`;
+				}
+				
+				delete config.order;
 			} break;
 
 			case "range": {
