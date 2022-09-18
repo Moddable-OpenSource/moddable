@@ -225,19 +225,18 @@ void fxAddUnhandledRejection(txMachine* the, txSlot* promise)
 void fxCheckUnhandledRejections(txMachine* the, txBoolean atExit)
 {
 	txSlot* list = &mxUnhandledPromises;
+	txSlot** address = &list->value.reference->next;
+	txSlot* slot;
 	if (atExit) {
-		txSlot* slot = list->value.reference->next;
-		while (slot) {
+		while ((slot = *address)) {
 			slot = slot->next;
+			*address = slot->next;
 			mxException.value = slot->value;
 			mxException.kind = slot->kind;
 			fxAbort(the, XS_UNHANDLED_REJECTION_EXIT);
-			slot = slot->next;
 		}
 	}
 	else {
-		txSlot** address = &list->value.reference->next;
-		txSlot* slot;
 		while ((slot = *address)) {
 			if (slot->value.weakRef.target == C_NULL) {
 				slot = slot->next;
