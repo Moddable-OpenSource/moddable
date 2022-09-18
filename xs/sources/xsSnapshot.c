@@ -1263,7 +1263,8 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 	
 			fxReadAtom(the, snapshot, &atom, "HEAP");
 			mxThrowIf((*snapshot->read)(snapshot->stream, the->freeHeap, atom.atomSize));
-			the->freeHeap = the->freeHeap + (atom.atomSize / sizeof(txSlot));
+			the->currentHeapCount = (atom.atomSize / sizeof(txSlot));
+			the->freeHeap = the->freeHeap + the->currentHeapCount;
 	
             slot = the->firstHeap + 1;
 			while (slot < the->freeHeap) {
@@ -1902,6 +1903,7 @@ void fxWriteStack(txMachine* the, txSnapshot* snapshot)
 int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 {
 	txSlot* heap;
+	txSize heapCount;
 	txSlot* stack;
 	txSlot** slots;
 	txSize size;
@@ -1920,6 +1922,14 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		snapshot->error = 0;
 		fxCollectGarbage(the);
 		fxUnlinkChunks(the);
+		
+		heap = the->firstHeap;
+		heapCount = 0;
+		while (heap) {
+			heapCount++;
+			heap = heap->next;
+		}
+		fprintf(stderr, "fxWriteSnapshot %d\n", heapCount);
 		
 		fxIndexSlots(the, snapshot);
 	
@@ -1943,7 +1953,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	
 		creation.initialChunkSize = the->maximumChunksSize;
 		creation.incrementalChunkSize = the->minimumChunksSize;
-		creation.initialHeapCount = the->maximumHeapCount;
+		creation.initialHeapCount = the->maximumHeapCount - heapCount + 1;
 		creation.incrementalHeapCount = the->minimumHeapCount;
 		creation.stackCount = (txSize)(the->stackTop - the->stackBottom);
 		creation.keyCount = the->keyCount;
