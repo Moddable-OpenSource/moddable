@@ -237,6 +237,9 @@ void fxReceive(txMachine* the)
 {
 	if (the->connection != INVALID_SOCKET) {
 	again:
+		if (0 == sizeof(the->debugBuffer) - the->debugOffset - 1)
+			return;
+
 		int count = recv(the->connection, the->debugBuffer + the->debugOffset, sizeof(the->debugBuffer) - the->debugOffset - 1, 0);
 		if (count <= 0) {
 			if (WSAEWOULDBLOCK == WSAGetLastError()) {

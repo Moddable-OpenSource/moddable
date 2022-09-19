@@ -221,6 +221,7 @@ C_OPTIONS = \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
 	/D mxFewGlobalsTable=1 \
+	/D mxMessageWindowClass=\"fxMessageWindowClassX\" \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \
 	/I$(XS_DIR)\sources \

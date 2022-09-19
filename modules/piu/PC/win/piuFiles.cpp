@@ -388,7 +388,7 @@ void PiuSystem_writeFileBuffer(xsMachine* the)
 	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
-		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		buffer = xsToArrayBuffer(xsArg(1));
 		size = (DWORD)xsGetArrayBufferLength(xsArg(1));
@@ -412,7 +412,7 @@ void PiuSystem_writeFileString(xsMachine* the)
 	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
-		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		buffer = xsToString(xsArg(1));
 		size = (DWORD)c_strlen(buffer);

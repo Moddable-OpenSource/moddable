@@ -371,7 +371,16 @@ void PiuScreenQuit(PiuScreen* self)
 		(*self)->archiveFile = INVALID_HANDLE_VALUE;
 	}
 	if ((*self)->library) {
+		wchar_t path[MAX_PATH];
+		HANDLE file;
+		GetModuleFileNameW((*self)->library, path, 1024);
 		FreeLibrary((*self)->library);
+		file = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		while (file == INVALID_HANDLE_VALUE) {
+			Sleep(1);
+			file = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		}
+		CloseHandle(file);
 		(*self)->library = NULL;
 	}
 	InvalidateRect((*self)->control, NULL, FALSE);
