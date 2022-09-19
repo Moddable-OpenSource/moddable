@@ -1574,6 +1574,16 @@ void doUnlock(modAudioOut out)
 void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 {
 	uint8_t bytesPerFrame = out->bytesPerFrame;
+	int i;
+
+	for (i = 0; i < out->activeStreamCount; i++) {
+		modAudioOutStream stream = out->activeStream[i];
+		modAudioQueueElement element = stream->element;
+		if ((0 == element->repeat) && (0 == element->sampleCount)) {		// volume or callback 
+			endOfElement(out, stream);
+			i = -1;		// active streams could have changed, start again 
+		}
+	}
 
 	while (samplesToGenerate) {
 		switch (out->activeStreamCount) {
@@ -1777,7 +1787,8 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 			return;
 	}
 
-	element->position = 0;
+	if (element->position > 0)
+		element->position = 0;
 	element->compressed.remaining = element->compressed.total;
 	element->compressed.data = element->compressed.initial;
 
@@ -1790,7 +1801,7 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 			}
 		}
 	}
-	else
+	else if (element->repeat)
 		element->repeat -= 1;
 
 	while (0 == element->repeat) {
@@ -1872,12 +1883,12 @@ int streamDecompressNext(modAudioOutStream stream)
 		position = element->tone.position;
 		max = element->tone.max;
 		while (remain--) {
+			*out++ = value;
 			position += 0x10000;
 			if (position >= max) {
 				value = -value;
 				position &= 0x0FFFF;
 			}
-			*out++ = value;
 		}
 		element->tone.value = value;
 		element->tone.position = position;
