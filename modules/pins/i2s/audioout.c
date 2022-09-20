@@ -1882,6 +1882,7 @@ int streamDecompressNext(modAudioOutStream stream)
 		value = element->tone.value;
 		position = element->tone.position;
 		max = element->tone.max;
+		element->sampleCount = remain; 
 		while (remain--) {
 			*out++ = value;
 			position += 0x10000;
