@@ -761,6 +761,9 @@ bail:
 static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
+	if (!gBLE)
+		return;
+
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(desc->conn_handle);
 	
