@@ -608,6 +608,7 @@ void xs_audioout_enqueue(xsMachine *the)
 	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume, i;
 	uint8_t kind;
 	uint8_t *buffer;
+	xsUnsignedValue bufferLength;
 	uint16_t sampleRate;
 	uint8_t numChannels;
 	uint8_t bitsPerSample;
@@ -644,7 +645,9 @@ void xs_audioout_enqueue(xsMachine *the)
 				}
 			}
 
-			buffer = xsmcGetHostData(xsArg(2));
+			if (xsBufferNonrelocatable != xsmcGetBufferReadable(xsArg(2), (void **)&buffer, &bufferLength))
+				xsUnknownError("non-relocatable block required");
+
 			if (kKindSamples == kind) {
 				if (('m' != c_read8(buffer + 0)) || ('a' != c_read8(buffer + 1)) || (1 != c_read8(buffer + 2)))
 					xsUnknownError("bad header");
