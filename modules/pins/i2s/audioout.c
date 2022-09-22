@@ -660,11 +660,12 @@ void xs_audioout_enqueue(xsMachine *the)
 				if ((kSampleFormatUncompressed == sampleFormat) && (bitsPerSample != out->bitsPerSample))
 					xsUnknownError("format doesn't match output");
 				if ((sampleRate != out->sampleRate) || (numChannels != out->numChannels))
-					xsUnknownError("format doesn't match output");
+					xsUnknownError("rate/channels doesn't match output");
 				if ((kSampleFormatUncompressed != sampleFormat) && (kSampleFormatIMA != sampleFormat) && (kSampleFormatSBC != sampleFormat))
 					xsUnknownError("unsupported compression");
 
 				buffer += 12;
+				bufferLength -= 12;
 
 				if (sampleOffset >= bufferSamples)
 					xsUnknownError("invalid offset");
@@ -678,6 +679,9 @@ void xs_audioout_enqueue(xsMachine *the)
 
 				sampleFormat = kSampleFormatUncompressed;
 			}
+
+			if ((sampleOffset < 0) || (((xsUnsignedValue)sampleOffset) >= bufferLength) || (((xsUnsignedValue)samplesToUse) > ((bufferLength - sampleOffset) / out->bytesPerFrame)))
+				xsUnknownError("buffer too small");
 
 			doLock(out);
 
