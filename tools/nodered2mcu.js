@@ -104,7 +104,7 @@ export default class extends TOOL {
 	transformFlows(flows) {
 		const parts = [];
 
-		// if no flows, create one (useful for running flow snippets (e.g. https://cookbook.nodered.org/)
+		// if no flows, create one. useful for running flow snippets (e.g. https://cookbook.nodered.org/).
 		if (!flows.some(config => ("tab" === config.type) && config.z)) {
 			const z = flows[0].z;
 			if (flows.every(config => z === config.z)) {
@@ -392,13 +392,13 @@ export default class extends TOOL {
 				config.rules.forEach(rule => {
 					let doDelete;
 
-					if (("delete" === rule.t) || ("move" == rule.t)) {
+					if (("delete" === rule.t) || ("move" === rule.t)) {
 						if ("msg" === rule.pt) {
-							doDelete = `\t\t\tdelete msg${this.prepareProp(rule.p)}`;
+							// moving a property to itself is no-op
+							if (("move" === rule.t) && (rule.p === rule.to) && ("msg" === rule.tot))
+								return;
 
-							// force bizarre behavior where moving a property to itself on msg deletes the property (why?)
-							if ((rule.p === rule.to) && ("msg" === rule.tot))
-								rule.t = "delete"
+							doDelete = `\t\t\tdelete msg${this.prepareProp(rule.p)}`;
 						}
 						else if ("flow" === rule.pt)
 							doDelete = `\t\t\tthis.flow.delete("${rule.p}");`;
@@ -510,7 +510,7 @@ export default class extends TOOL {
 				}
 				config.key = config.key||"topic";
 				config.count = Number(config.count || 0);
-				config.joinerType = config.joinerType||"str";
+				config.joinerType = config.joinerType || "str";
 
 				if (config.joinerType === "str")
 					config.joiner = (config.joiner ?? "").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\\t/g,"\t").replace(/\\e/g,"\e").replace(/\\f/g,"\f").replace(/\\0/g,"\0");	// adapted from 17-split.js
@@ -633,9 +633,6 @@ export default class extends TOOL {
 			} break;
 
 			case "switch": {
-				if (config.repair)
-					throw new Error("unimplemented");
-
 				const value = this.resolveValue(config.propertyType, config.property);
 				const checkAll = "true" === config.checkall;
 				const outputCount = config.wires.length;
@@ -645,7 +642,7 @@ export default class extends TOOL {
 				const doSwitch = [];
 				doSwitch.push(`function (msg) {`);
 				doSwitch.push(`\t\t\tlet value = ${value};`);
-				doSwitch.push(`\t\t\tconst result = new Array(${"null, ".repeat(outputCount)});`);
+				doSwitch.push(`\t\t\tconst result = [${"null, ".repeat(outputCount)}];`);
 				if (usesPrevious) {
 					doSwitch.push(`\t\t\tconst previous = this.previous;`);
 					doSwitch.push(`\t\t\tthis.previous = value;`);
@@ -751,7 +748,7 @@ export default class extends TOOL {
 				});
 				doSwitch.push(`\t\t\treturn result;`);
 				doSwitch.push(`\t\t}`);
-				config.onMessage = doSwitch.join("\n");
+				config[config.repair ? "compare" : "onMessage"] = doSwitch.join("\n");
 
 				delete config.property;
 				delete config.propertyType;
