@@ -23,77 +23,8 @@ maud.sampleFormat = SampleFormat.Uncompressed;
 
 const mixer = new Mixer({streams: 1, sampleRate: sampleRate, numChannels: 1});
 
-// confirm initial MAUD header is valid
-mixer.enqueue(0, Mixer.Samples, samples.buffer);
-mixer.enqueue(0, Mixer.Flush);
 
-// tag
-maud.tag = "  ";
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.tag = "MA";
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.tag = "mb";
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.tag = "ma";
-
-// version
-maud.version = 3;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.version = 0;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.version = 1;
-
-// bitsPerSample
-maud.bitsPerSample = 0;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.bitsPerSample = 8;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.bitsPerSample = 16;
-
-// sampleRate
-maud.sampleRate = 1;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.sampleRate = sampleRate + 1;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.sampleRate = sampleRate;
-
-// numChannels
-maud.numChannels = 3;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.numChannels = -1;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.numChannels = 0;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.numChannels = 1;
-
-// sampleFormat
-maud.sampleFormat = -1;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.sampleFormat = SampleFormat.Tone + 1;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-maud.sampleFormat = SampleFormat.Uncompressed;
-
-// bufferSamples
-maud.bufferSamples = -1;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.bufferSamples = 0;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.bufferSamples = bufferSamples + 1;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.bufferSamples = 32768;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-maud.bufferSamples = 65536;
-assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer))
-
-// mixing (adatped from generate-rawsamples)
+// mixing (adapted from generate-rawsamples)
 
 assert.throws(TypeError, () => mixer.enqueue(0, Mixer.Samples, new Int16Array(16), 1, 0, 16));
 assert.throws(TypeError, () => mixer.enqueue(0, Mixer.Samples, new Int16Array(new SharedArrayBuffer(16 * 2)), 1, 0, 16));
@@ -146,4 +77,3 @@ function verifyOutput(expected) {
 	for (let i = 0, count = expected.length; i < count; i++)
 		assert.sameValue(actual[i], expected[i]);
 }
-

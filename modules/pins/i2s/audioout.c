@@ -1815,7 +1815,7 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 		if (0 == element->sampleCount) {
 			if (element->position < 0)
 				queueCallback(out, (xsIntegerValue)(uintptr_t)element->samples);
-			else
+			else if (NULL == element->samples)
 				setStreamVolume(out, stream, element->position);
 		}
 
@@ -1837,7 +1837,7 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 
 void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume)
 {
-	stream->volume /= MODDEF_AUDIOOUT_VOLUME_DIVIDER;
+	volume /= MODDEF_AUDIOOUT_VOLUME_DIVIDER;
 	if (stream->volume == volume)
 		return;
 
