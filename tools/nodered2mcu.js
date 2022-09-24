@@ -771,6 +771,27 @@ export default class extends TOOL {
 				config.property = property.join("\n");
 			} break;
 
+			case "csv": {
+				config.template = (config.temp || "");
+				config.sep = (config.sep || ',').replace("\\t","\t").replace("\\n","\n").replace("\\r","\r");
+				config.quo = '"';
+				config.ret = (config.ret || "\n").replace("\\n","\n").replace("\\r","\r");
+				config.winflag = (config.ret === "\r\n");
+				config.lineend = "\n";
+				config.multi = config.multi || "one";
+				config.hdrin = config.hdrin || false;
+				config.hdrout = config.hdrout || "none";
+				config.skip = parseInt(config.skip || 0);
+				config.parsestrings = config.strings;
+				config.include_empty_strings = config.include_empty_strings || false;
+				config.include_null_values = config.include_null_values || false;
+				if (config.parsestrings === undefined) { config.parsestrings = true; }
+				if (config.hdrout === false) { config.hdrout = "none"; }
+				if (config.hdrout === true) { config.hdrout = "all"; }
+
+				delete config.temp;
+			} break;
+
 			case "template": {
 				config.output ??= "str";
 				if (("json" !== config.output) && ("str" !== config.output))
