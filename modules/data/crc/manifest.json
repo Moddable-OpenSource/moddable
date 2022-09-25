@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"*": [
+			"./crc"
+		]
+	},
+	"preload": "crc"
+}
