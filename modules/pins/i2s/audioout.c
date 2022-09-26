@@ -154,7 +154,7 @@ typedef struct {
 	int8_t		reserved;
 	union {
 		struct {
-			uint16_t	remaining;
+			uint32_t	remaining;
 			uint16_t	total;
 			uint8_t		*data;
 			uint8_t		*initial;
@@ -173,11 +173,9 @@ typedef struct {
 
 typedef struct {
 	uint16_t		volume;				// 8.8 fixed
-	uint8_t			reserved;
-	uint8_t			format;
+	uint16_t		reserved;
 	int16_t			*decompressed;
 	void			*decompressor;		//@@ merge into decompressed block
-	uint16_t		compressedBytesPerChunk;		//@@ merge into decompressed block
 	int				elementCount;
 	modAudioQueueElementRecord	element[MODDEF_AUDIOOUT_QUEUELENGTH];
 } modAudioOutStreamRecord, *modAudioOutStream;
@@ -669,6 +667,9 @@ void xs_audioout_enqueue(xsMachine *the)
 					xsUnknownError("rate/channels doesn't match output");
 				if ((kSampleFormatUncompressed != sampleFormat) && (kSampleFormatIMA != sampleFormat) && (kSampleFormatSBC != sampleFormat))
 					xsUnknownError("unsupported compression");
+				
+				if ((kSampleFormatSBC == sampleFormat) && (sampleOffset || (-1 != samplesToUse))) 
+					xsUnknownError("no offset/use for SBC");
 
 				buffer += 12;
 				bufferLength -= 12;
@@ -694,15 +695,15 @@ void xs_audioout_enqueue(xsMachine *the)
 				samplesInBuffer = (bufferLength / kIMABytesPerChunk) * kIMASamplesPerChunk;
 				samplesInBuffer -= sampleOffset;
 			}
-			else if (kSampleFormatSBC == sampleFormat) {
-				samplesInBuffer = (bufferLength / 64) * kSBCSamplesPerChunk;		//@@ must look into bitstream to get this value!!!!
-				samplesInBuffer -= sampleOffset;
-			}
+			else if (kSampleFormatSBC == sampleFormat)
+				;
 			else
 				xsUnknownError("unhandled compression");
 
-			if ((sampleOffset < 0) || (((xsUnsignedValue)sampleOffset) >= bufferLength) || (((xsUnsignedValue)samplesToUse) > samplesInBuffer))
-				xsUnknownError("buffer too small");
+			if (kSampleFormatSBC != sampleFormat) {
+				if ((sampleOffset < 0) || (((xsUnsignedValue)sampleOffset) >= bufferLength) || (((xsUnsignedValue)samplesToUse) > samplesInBuffer))
+					xsUnknownError("buffer too small");
+			}
 
 			doLock(out);
 
@@ -729,27 +730,23 @@ void xs_audioout_enqueue(xsMachine *the)
 				element->compressed.remaining = element->compressed.total;
 			}
 			else if (kSampleFormatSBC == sampleFormat) {
-				if (NULL == stream->decompressed) {
-					if (NULL == stream->decompressor) {
-						stream->decompressor = c_malloc(sizeof(SBC_Decode));
-						if (NULL == stream->decompressor)
-							xsUnknownError("out of memory");
-						stream->format = kSampleFormatSBC;		//@@
-						sbc_init((SBC_Decode *)stream->decompressor);
-					}
+				if (NULL == stream->decompressor) {
+					stream->decompressor = c_malloc(sizeof(SBC_Decode));
+					if (NULL == stream->decompressor)
+						xsUnknownError("out of memory");
+					sbc_init((SBC_Decode *)stream->decompressor);
+				}
 
+				if (NULL == stream->decompressed) {
 					stream->decompressed = c_malloc(kDecompressBufferSize);
 					if (NULL == stream->decompressed)
 						xsUnknownError("out of memory");
-
-					stream->compressedBytesPerChunk = sbc_decoder((SBC_Decode *)stream->decompressor, buffer, 512 /* @@ */, stream->decompressed, kSBCSamplesPerChunk * sizeof(int16_t), NULL);
 				}
 				element->samples = stream->decompressed;
 				element->sampleCount = kSBCSamplesPerChunk;
-				// calculations quantize to chunk boundaries
-				element->compressed.initial = buffer + ((sampleOffset / stream->compressedBytesPerChunk) * stream->compressedBytesPerChunk);
+				element->compressed.initial = buffer;
 				element->compressed.data = element->compressed.initial;
-				element->compressed.total = samplesToUse / kSBCSamplesPerChunk;
+				element->compressed.total = bufferLength;
 				element->compressed.remaining = element->compressed.total;
 			}
 			else
@@ -1872,7 +1869,7 @@ int streamDecompressNext(modAudioOutStream stream)
 
 		int bytesUsed = sbc_decoder((SBC_Decode *)stream->decompressor, element->compressed.data, 512 /* @@ imperfect */, stream->decompressed, kSBCSamplesPerChunk * sizeof(int16_t), NULL);
 
-		element->compressed.remaining -= 1;
+		element->compressed.remaining -= bytesUsed;
 		element->compressed.data += bytesUsed;
 	}
 	else if (kSampleFormatTone == element->sampleFormat) {
