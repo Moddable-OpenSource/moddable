@@ -196,7 +196,8 @@
 			"$(MODDABLE)/examples/assets/images/image-info",
 			"$(MODULES)/crypt/data/ca34",
 			"$(MODULES)/crypt/data/ca35",
-			"$(MODULES)/crypt/data/ca222"
+			"$(MODULES)/crypt/data/ca222",
+			"./assets/bflatmajor-ima"
 		]
 	},
 	"resources": {

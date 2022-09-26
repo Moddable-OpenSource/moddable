@@ -128,6 +128,9 @@ export default class extends TOOL {
 	}
 
 	run() {
+		const imaSamplesPerChunk = 129;
+		const imaOutput = "ima" === this.output.format;
+
 		let outputFile = new FILE(this.outputPath, "wb");
 
 		let header = new DataView(new ArrayBuffer(12));
@@ -137,14 +140,16 @@ export default class extends TOOL {
 		header.setUint8(3, this.output.bitsPerSample);
 		header.setUint16(4, this.output.sampleRate, true);		// little-endian
 		header.setUint8(6, this.output.numChannels);
-		header.setUint8(7, ("ima" === this.output.format) ? 1 : 0);		// sample format
-		header.setUint32(8, Math.floor((this.wav.samples / this.wav.sampleRate) * this.output.sampleRate), true)
+		header.setUint8(7, imaOutput ? 1 : 0);		// sample format
+		let sampleCount = Math.floor((this.wav.samples / this.wav.sampleRate) * this.output.sampleRate);
+		if (imaOutput)
+			sampleCount = Math.idiv(sampleCount, imaSamplesPerChunk) * imaSamplesPerChunk;		// quantize
+		header.setUint32(8, sampleCount, true)
 		outputFile.writeBuffer(header.buffer);
 
 		let resampled = this.resampler.outputBuffer;
 		let finalSamples = (8 === this.output.bitsPerSample) ? new Int8Array(this.wavSamples.length) : new Int16Array(this.wavSamples.length);
 
-		const imaSamplesPerChunk = 129;
 		let imaBuffer = new Int16Array(imaSamplesPerChunk);
 		imaBuffer.samplesInBuffer = 0;
 
@@ -179,7 +184,7 @@ export default class extends TOOL {
 				let byteLength = use * ((this.output.bitsPerSample * this.output.numChannels) >> 3);
 				outputFile.writeBuffer(finalSamples.buffer.slice(0, byteLength));
 			}
-			else if ("ima" === this.output.format) {
+			else if (imaOutput) {
 				let pos = 0;
 				while (pos < use) {
 					let needed = imaSamplesPerChunk - imaBuffer.samplesInBuffer;
