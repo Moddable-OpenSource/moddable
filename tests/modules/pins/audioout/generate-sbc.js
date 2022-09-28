@@ -34,18 +34,20 @@ const mixer = new Mixer({streams: 1, sampleRate, numChannels: 1});
 let digest = new Digest("MD5");
 
 mixer.enqueue(0, Mixer.Samples, samples);
-for (let i = 0; i < buffers + 2; i++) {
-	const result = mixer.mix(samplesPerChunk);
-	digest.write(result);
-}
+for (let i = 0; i < buffers + 2; i++)
+	digest.write(mixer.mix(samplesPerChunk));
 verifyChecksum("ee5e70299c0730db30d833c2a207496e");
 
 mixer.enqueue(0, Mixer.Samples, samples);
-for (let i = 0; i < buffers + 2; i++) {
-	const result = mixer.mix(samplesPerChunk);
-	digest.write(result);
-}
+for (let i = 0; i < buffers + 2; i++)
+	digest.write(mixer.mix(samplesPerChunk));
 verifyChecksum("3817f2551ce7fcf4de5596ed32ad1bbb");		// decoder keeps some state... so not quite identical second time!
+
+mixer.enqueue(0, Mixer.Flush);
+mixer.enqueue(0, Mixer.Samples, samples);
+for (let i = 0; i < buffers + 2; i++)
+	digest.write(mixer.mix(samplesPerChunk));
+verifyChecksum("ee5e70299c0730db30d833c2a207496e");		// flush resets the decoder state
 
 mixer.enqueue(0, Mixer.Samples, samples);
 for (let i = 0; i < buffers + 2; i += 1) {
@@ -62,17 +64,6 @@ while (remain > samplesPerChunk) {
 }
 digest.write(mixer.mix(remain));
 verifyChecksum("3817f2551ce7fcf4de5596ed32ad1bbb");
-
-
-//
-//mixer.enqueue(0, Mixer.Samples, samples);
-//for (let i = 0; i < 16384; i += 1024) {
-//	let foo = new Int16Array(mixer.mix(1024));
-//	for (let j = 0; j < 1024; j++)
-//		trace((i + j), ": ", foo[j], "\n")
-//}	
-//
-
 
 function verifyChecksum(expected) {
 	const bytes = new Uint8Array(digest.close());

@@ -1900,7 +1900,7 @@ int streamDecompressNext(modAudioOutStream stream)
 			position += 0x10000;
 			if (position >= max) {
 				value = -value;
-				position &= 0x0FFFF;
+				position -= max;
 			}
 		}
 		element->tone.value = value;
