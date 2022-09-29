@@ -43,6 +43,7 @@
 #include "mc.defines.h"
 #include "xs.h"
 #include "xsHosts.h"
+#include "xsHost.h"
 #include "pico/sem.h"
 
 #ifdef mxDebug
@@ -715,6 +716,15 @@ printf("unknown cmdID: %d\n");
 }
 
 #endif /* mxDebug */
+
+uint8_t fxInNetworkDebugLoop(txMachine *the)
+{
+#ifdef mxDebug
+	return the->DEBUG_LOOP && the->connection && (kSerialConnection != the->connection);
+#else
+	return 0;
+#endif
+}
 
 uint32_t pico_memory_remaining() {
 	return (1024);

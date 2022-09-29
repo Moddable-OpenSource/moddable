@@ -1,0 +1,22 @@
+{
+	"build": {
+		"USE_WIFI": "1"
+	},
+	"include": [
+		"$(MODULES)/drivers/led/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "",
+		"touch": ""
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 4,
+			"scl_pin": 5
+		}
+	}
+}

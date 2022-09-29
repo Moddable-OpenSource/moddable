@@ -16,6 +16,14 @@
                 ]
             }
         },
+        "pico/pico_w": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/*",
+                    "$(MODULES)/network/wifi/pico/*"
+                ]
+            }
+        },
         "lin": {
             "modules": {
                 "*": [

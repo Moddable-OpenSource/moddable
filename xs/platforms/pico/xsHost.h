@@ -187,10 +187,10 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
  */
 
 #if defined(__XS__)
-    void modMachineTaskInit(xsMachine *the);
-    void modMachineTaskUninit(xsMachine *the);
-    void modMachineTaskWait(xsMachine *the);
-    void modMachineTaskWake(xsMachine *the);
+	void modMachineTaskInit(xsMachine *the);
+	void modMachineTaskUninit(xsMachine *the);
+	void modMachineTaskWait(xsMachine *the);
+	void modMachineTaskWake(xsMachine *the);
 #endif
 
 #define MOD_TASKS (false)

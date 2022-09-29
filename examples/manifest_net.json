@@ -37,6 +37,24 @@
 				"net"
 			]
 		},
+		"pico/pico_w": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/pico/*",
+					"$(MODULES)/network/sntp/*"
+				],
+				"setup/network": "$(BUILD)/devices/pico/setup/network"
+			},
+			"preload": [
+				"socket",
+				"setup/network",
+				"sntp",
+				"net"
+			]
+		},
 		"lin": {
 			"modules": {
 				"*": [

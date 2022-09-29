@@ -51,6 +51,11 @@
 	typedef uint16_t uint16;
 
 	typedef ip_addr_t ip_addr;
+#elif CYW43_LWIP
+	typedef int8_t int8;
+	typedef uint8_t uint8;
+	typedef int16_t int16;
+	typedef uint16_t uint16;
 #else
 	#define IP_ADDR4 IP4_ADDR
 #endif
@@ -141,7 +146,7 @@ static void socketMsgError(xsSocket xss);
 static void socketMsgDataReceived(xsSocket xss);
 static void socketMsgDataSent(xsSocket xss);
 
-#if ESP32
+#if ESP32 || CYW43_LWIP
 	static void didFindDNS(const char *name, const ip_addr_t *ipaddr, void *arg);
 #else
 	static void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg);
@@ -151,7 +156,7 @@ static err_t didConnect(void * arg, struct tcp_pcb * tpcb, err_t err);
 static err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err);
 static err_t didSend(void *arg, struct tcp_pcb *pcb, u16_t len);
 static void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
-#if ESP32
+#if ESP32 || CYW43_LWIP
 	static u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr);
 #else
 	static u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr);
@@ -342,6 +347,8 @@ void xs_socket(xsMachine *the)
 					igmp_joingroup(&info.ip.addr, &multicastIP);
 			}
 			(xss->udp)->mcast_ip4 = multicastIP.u_addr.ip4;
+	#elif CYW43_LWIP
+			//@@ MDK - multicast
 	#else
 			struct ip_info staIpInfo;
 			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
@@ -870,11 +877,11 @@ callback:
 
 	if (kTCP == xss->kind) {
 
-#if !ESP32
+#if !ESP32 && !CYW43_LWIP
 		system_soft_wdt_stop();		//@@
 #endif
 		xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataReceived), xsInteger(xss->buflen));
-#if !ESP32
+#if !ESP32 && !CYW43_LWIP
 		system_soft_wdt_restart();		//@@
 #endif
 	}
@@ -902,7 +909,7 @@ void socketMsgDataSent(xsSocket xss)
 }
 
 
-#if ESP32
+#if ESP32 || CYW43_LWIP
 void didFindDNS(const char *name, const ip_addr_t *ipaddr, void *arg)
 #else
 void didFindDNS(const char *name, ip_addr_t *ipaddr, void *arg)
@@ -1068,7 +1075,7 @@ void didReceiveUDP(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 	socketSetPending(xss, kPendingReceive);
 }
 
-#if ESP32
+#if ESP32 || CYW43_LWIP
 u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr)
 #else
 u8_t didReceiveRAW(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr)
@@ -1139,7 +1146,7 @@ void xs_listener(xsMachine *the)
 void xs_listener_destructor(void *data)
 {
 	xsListener xsl = data;
-	uint8 i;
+	uint8_t i;
 
 	if (!xsl) return;
 
@@ -1171,7 +1178,7 @@ void xs_listener_close(xsMachine *the)
 static void listenerMsgNew(xsListener xsl)
 {
 	xsMachine *the = xsl->the;
-	uint8 i;
+	uint8_t i;
 
 	// service all incoming sockets currently in the list
 	for (i = 0; i < kListenerPendingSockets; i++) {
@@ -1193,7 +1200,7 @@ err_t didAccept(void * arg, struct tcp_pcb * newpcb, err_t err)
 {
 	xsListener xsl = arg;
 	xsSocket xss;
-	uint8 i;
+	uint8_t i;
 
 	tcp_accepted(xsl->skt);
 
