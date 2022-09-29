@@ -79,8 +79,11 @@
 			"client": {
 				"timeout": 10000,
 				"targetDevice": "Moddable Server"
+			},
+			"server": {
+				"timeout": 20000,
+				"deviceName": "testmc Server"
 			}
-			
 		}
 	},
 	"platforms": {
@@ -102,12 +105,21 @@
 				"$(MODULES)/base/worker/manifest.json",
 				"$(MODULES)/files/flash/manifest.json",
 				"$(MODDABLE)/modules/network/ble/manifest_client.json",
+				"$(MODDABLE)/modules/network/ble/manifest_server.json",
 				"$(MODDABLE)/modules/pins/i2s/manifest.json"
 			],
 			"modules": {
 				"~": [
 					"$(BUILD)/devices/esp32/setup/piu",
 					"$(BUILD)/devices/esp32/setup/network"
+				],
+				"*": [
+					"./BLE-server/*"
+				]
+			},
+			"ble": {
+				"*": [
+					"./BLE-server/bleservices/*"
 				]
 			},
 			"config": {
