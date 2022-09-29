@@ -92,6 +92,8 @@ void xs_wifi_set_mode(xsMachine *the)
 	int mode = xsmcToInteger(xsArg(0));
 
 	if (WIFI_OFF == mode) {
+		modLog_transmit("cyw43_arch_deinit\n");
+		cyw43_arch_deinit();
 	}
 
 	if (gWiFiMode == mode)
@@ -254,7 +256,12 @@ void xs_wifi_scan(xsMachine *the)
 				return;
 			}
 			modMessagePostToMachine(gScan->the, NULL, 0, scanResultRcvd, NULL);
+			break;
 		}
+#if CYW43_LWIP
+		cyw43_arch_poll();
+#endif
+		modDelayMilliseconds(250);
 	}
 
 	xsRemember(gScan->callback);
@@ -454,6 +461,7 @@ void xs_wifi_set_onNotify(xsMachine *the)
 
 void xs_wifi_accessPoint(xsMachine *the)
 {
+modLog_transmit("xs_wifi_accessPoint - not implemented\n");
 /* not yet
     struct softap_config config;
 	char *str;
@@ -542,3 +550,4 @@ void xs_wifi_accessPoint(xsMachine *the)
         xsUnknownError("IP config bad when starting Wi-Fi!\n");
 */
 }
+
