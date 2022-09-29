@@ -30,6 +30,8 @@ assert.throws(TypeError, () => mixer.enqueue(0, Mixer.Samples, new Int16Array(16
 assert.throws(TypeError, () => mixer.enqueue(0, Mixer.Samples, new Int16Array(new SharedArrayBuffer(16 * 2)), 1, 0, 16));
 assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, new ArrayBuffer(16), 1, 0, 16));
 assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, new Int8Array(16), 1, 0, 16));
+assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer, 0, 0, samples.length));
+assert.throws(Error, () => mixer.enqueue(0, Mixer.Samples, samples.buffer, -1, 0, samples.length));
 
 mixer.enqueue(0, Mixer.Samples, samples.buffer, 1, 0, samples.length);
 verifyOutput(samples);

@@ -7,7 +7,7 @@ import {Mixer} from "pins/audioout"
 import Resource from "Resource";
 import {Digest} from "crypt";
 
-const maud = new Resource("bflatmajor-ima.maud");
+const maud = new Resource("bflatmajor-ima-12000.maud");
 const imaSamplesPerChunk = 129;
 const imaChunkSize = 68;
 const buffers = Math.idiv(maud.byteLength - 12, imaChunkSize);

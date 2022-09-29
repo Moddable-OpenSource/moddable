@@ -640,8 +640,11 @@ void xs_audioout_enqueue(xsMachine *the)
 			if (argc > 3) {
 				if ((xsNumberType == xsmcTypeOf(xsArg(3))) && (C_INFINITY == xsmcToNumber(xsArg(3))))
 					repeat = -1;
-				else
+				else {
 					repeat = xsmcToInteger(xsArg(3));
+					if (repeat <= 0)
+						xsUnknownError("invalid repeat");
+				}
 				if (argc > 4) {
 					sampleOffset = xsmcToInteger(xsArg(4));
 					if (argc > 5)

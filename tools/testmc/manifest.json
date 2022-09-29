@@ -197,7 +197,8 @@
 			"$(MODULES)/crypt/data/ca34",
 			"$(MODULES)/crypt/data/ca35",
 			"$(MODULES)/crypt/data/ca222",
-			"./assets/bflatmajor-ima",
+			"./assets/bflatmajor-ima-12000",
+			"./assets/bflatmajor-ima-16000",
 			"./assets/bflatmajor-sbc"
 		]
 	},
