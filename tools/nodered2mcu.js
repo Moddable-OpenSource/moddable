@@ -141,7 +141,7 @@ export default class extends TOOL {
 		parts.push(`\tlet flow, node, nodes;`);
 
 		flows.forEach(config => {
-			if ("tab" !== config.type)
+			if (("tab" !== config.type) || config.disabled)
 				return;
 
 			parts.push(`\tflow = createFlow("${config.id}", ${JSON.stringify(config.name ?? "")})`);
@@ -160,7 +160,7 @@ export default class extends TOOL {
 
 		parts.push(`\tflows = flows.values();`);
 		flows.forEach(config => {
-			if ("tab" !== config.type)
+			if (("tab" !== config.type) || config.disabled)
 				return;
 
 			parts.push(`\tflow = flows.next().value;	// ${config.id}`);
@@ -244,6 +244,11 @@ export default class extends TOOL {
 			case "complete": {
 				delete config.uncaught;
 				delete config.scope;
+			} break;
+
+			case "comment": {
+				delete config.info;
+				//@@ could delete comment nodes entirely. they are inert. but they can be referenced by Complete and Catch scopes...
 			} break;
 
 			case "debug": {
