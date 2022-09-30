@@ -2044,7 +2044,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (dot) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
-		c_strcpy(path, fxGetKeyName(the, moduleID));
+		c_strncpy(path, fxGetKeyName(the, moduleID), C_PATH_MAX - 1);
+		path[C_PATH_MAX - 1] = 0;
 		slash = c_strrchr(path, mxSeparator);
 		if (!slash)
 			return XS_NO_ID;
@@ -2083,7 +2084,8 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 #else
 	txUnsigned flags = 0;
 #endif
-	c_strcpy(path, fxGetKeyName(the, moduleID));
+	c_strncpy(path, fxGetKeyName(the, moduleID), C_PATH_MAX - 1);
+	path[C_PATH_MAX - 1] = 0;
 	if (c_realpath(path, real)) {
 		script = fxLoadScript(the, real, flags);
 		if (script)
