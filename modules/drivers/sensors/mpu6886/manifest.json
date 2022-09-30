@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/Accelerometer-Gyroscope/MPU6886": "$(MODDABLE)/modules/drivers/sensors/mpu6886/mpu6886"
+	},
+	"preload": [
+		"embedded:sensor/Accelerometer-Gyroscope/MPU6886"
+	]
+}
+
