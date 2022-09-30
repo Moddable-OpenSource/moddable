@@ -1070,17 +1070,19 @@ void fxLoadVirtualModuleNamespace(txMachine* the, txSlot* object, txSlot* module
 	mxBehaviorOwnKeys(the, object, XS_EACH_NAME_FLAG, at);
 	mxTemporary(property);
 	while ((at = at->next)) {
-		if (mxBehaviorGetOwnProperty(the, object, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
-			mxPushReference(object);
-			mxGetAll(at->value.at.id, at->value.at.index);
-			export = export->next = fxNewSlot(the);
-			export->ID = at->value.at.id;
-			export->kind = XS_EXPORT_KIND;
-			export->value.export.closure = fxNewSlot(the);
-			export->value.export.closure->kind = the->stack->kind;
-			export->value.export.closure->value = the->stack->value;
-			export->value.export.module = module;
-			mxPop();
+		if (at->value.at.id != XS_NO_ID) {
+			if (mxBehaviorGetOwnProperty(the, object, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+				mxPushReference(object);
+				mxGetAll(at->value.at.id, at->value.at.index);
+				export = export->next = fxNewSlot(the);
+				export->ID = at->value.at.id;
+				export->kind = XS_EXPORT_KIND;
+				export->value.export.closure = fxNewSlot(the);
+				export->value.export.closure->kind = the->stack->kind;
+				export->value.export.closure->value = the->stack->value;
+				export->value.export.module = module;
+				mxPop();
+			}
 		}
 	}
 	mxPop();
