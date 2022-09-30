@@ -40,8 +40,6 @@ void xs_net_get(xsMachine *the)
 {
 	const char *prop = xsToString(xsArg(0));
 
-modLog_transmit("xs_net_get:");
-modLog_transmit(prop);
 	if (0 == c_strcmp(prop, "IP")) {
 		char addrStr[40];
 		if (!netif_is_up(netif_list))

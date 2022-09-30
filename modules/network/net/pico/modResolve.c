@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -52,8 +52,6 @@ void xs_net_resolve(xsMachine *the)
 	char *name = xsToString(xsArg(0));
 	int nameLen = c_strlen(name);
 
-modLog_transmit("xs_net_resolve\n");
-modLog_transmit(name);
 	nr = c_malloc(sizeof(xsNetResolveRecord) + nameLen);
 	if (!nr)
 		xsUnknownError("out of memory");
@@ -91,48 +89,31 @@ void resolveNext(void)
 		nr = gResolve;
 		if (nr) {
 			if (nr->started)
-{
-modLog_transmit("resolveNext - resolution in progress.");
 				nr = NULL;
-}
 			else
 				nr->started = 1;
 		}
 	modCriticalSectionEnd();
 	if (!nr) return;
 
-modLog_transmit("resolveNext: dns_gethost_by_name of");
-modLog_transmit(nr->name);
 	err = dns_gethostbyname(nr->name, &nr->ipaddr, didResolve, nr);
 	if (ERR_OK == err) {
-modLog_transmit(" gethostbyname returns OK");
 		nr->resolved = 1;
 		modMessagePostToMachine(nr->the, NULL, 0, resolvedImmediate, nr);
 	}
 	else if (ERR_INPROGRESS == err)
-{
-modLog_transmit(" gethostbyname returns INPROGRESS");
 		;
-}
 	else
-{
-modLog_transmit(" gethostbyname returns error: ");
-modLogInt(err);
 		modMessagePostToMachine(nr->the, NULL, 0, resolvedImmediate, nr);
-}
 }
 
 void didResolve(const char *name, const ip_addr_t *ipaddr, void *arg)
 {
 	xsNetResolve nr = arg;
 	if (ipaddr) {
-modLog_transmit("didResolve - found");
 		nr->ipaddr = *ipaddr;
 		nr->resolved = 1;
 	}
-else {
-modLog_transmit("didResolve - notfound");
-}
 	modMessagePostToMachine(nr->the, NULL, 0, resolvedImmediate, nr);
 }
 
@@ -140,7 +121,6 @@ void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messa
 {
 	xsNetResolve nr = refcon;
 
-modLog_transmit("resolvedImmediate\n");
 	xsBeginHost(nr->the);
 
 	if (nr->resolved) {
