@@ -1,0 +1,44 @@
+{
+	"build": {
+		"IO": "$(MODDABLE)/modules/io"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/pins/digital/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(IO)/common/builtinCommon",
+			"$(IO)/digital/$(PLATFORM)/*"
+		],
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+
+		"embedded:io/digital": "$(IO)/digital/digital",
+		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
+
+		"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
+		"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
+		"embedded:io/socket/listener": "$(IO)/socket/lwip/listener",
+
+		"system": "$(IO)/system/*"
+	},
+	"preload": [
+		"embedded:*",
+		"system"
+	],
+	"platforms": {
+		"pico/pico_w": {
+			"modules": {
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
+			}
+		},
+		"pico": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
+			}
+		},
+		"...": {
+			"error": "pico manifest"
+		}
+	}
+}

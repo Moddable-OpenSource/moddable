@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -50,6 +50,13 @@
 		(1 << 14) |
 		(1 << 15) |
 		(1 << 16)
+	};
+#elif defined(PICO_BUILD)
+    critical_section_t gCommonCriticalMux;
+
+	static uint8_t builtinInitialized = 0;
+	static uint32_t gDigitalAvailable[kPinBanks] = {
+		0x3FFFFFFF		//@@
 	};
 #endif
 
@@ -176,4 +183,14 @@ uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot)
 
 	return (uint32_t)value;
 }
+
+#if defined(PICO_BUILD)
+uint8_t builtinInitIO()
+{
+	if (!builtinInitialized) {
+		critical_section_init(&gCommonCriticalMux);
+		builtinInitialized = 1;
+	}
+}
+#endif
 

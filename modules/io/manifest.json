@@ -13,6 +13,9 @@
 		"esp32": {
 			"include": "./manifests/esp32/manifest.json"
 		},
+		"pico": {
+			"include": "./manifests/pico/manifest.json"
+		},
 		"mac": {
 			"include": "./manifests/mac/manifest.json"
 		},

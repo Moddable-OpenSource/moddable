@@ -45,6 +45,14 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 	#define builtinCriticalSectionBegin() xt_rsil(0)
 	#define builtinCriticalSectionEnd() xt_rsil(15)
+#elif defined(PICO_BUILD)
+	#include "pico/critical_section.h"
+	#define kPinBanks	(1)
+	#define kLastPin	(29)
+
+	extern critical_section_t gCommonCriticalMux;
+	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
+	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
 #else
 	#undef __COMMON__PINS__
 #endif

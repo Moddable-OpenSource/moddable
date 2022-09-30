@@ -90,7 +90,7 @@ void xs_system_resolve(xsMachine *the)
 {
 	xsNetResolve nr;
 	char *name = xsmcToString(xsArg(0));
-	int nameLen = espStrLen(name);
+	int nameLen = c_strlen(name);
 
 	nr = malloc(sizeof(xsNetResolveRecord) + nameLen);
 	if (!nr)
