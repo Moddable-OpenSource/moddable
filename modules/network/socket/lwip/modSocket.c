@@ -52,6 +52,7 @@
 
 	typedef ip_addr_t ip_addr;
 #elif CYW43_LWIP
+	#include "lwip/igmp.h"
 	typedef int8_t int8;
 	typedef uint8_t uint8;
 	typedef int16_t int16;
@@ -349,6 +350,11 @@ void xs_socket(xsMachine *the)
 			(xss->udp)->mcast_ip4 = multicastIP.u_addr.ip4;
 	#elif CYW43_LWIP
 			//@@ MDK - multicast
+			struct netif *netif;
+			netif = netif_get_by_index(0);
+			ifaddr.addr = netif->ip_addr.addr;
+			igmp_joingroup(&ifaddr, &multicastIP);
+			(xss->udp)->mcast_ip4 = multicastIP;
 	#else
 			struct ip_info staIpInfo;
 			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF

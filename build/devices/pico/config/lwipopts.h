@@ -18,4 +18,7 @@
 #define LWIP_TCPIP_CORE_LOCKING_INPUT 1
 #endif
 
+#define LWIP_MULTICAST_TX_OPTIONS	1
+#define LWIP_IGMP 1
+
 #endif

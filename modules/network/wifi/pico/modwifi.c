@@ -25,6 +25,8 @@
 
 #include "pico/cyw43_arch.h"
 
+#include "modTimer.h"
+
 void wlanMakeCallback(uint32_t val);
 
 enum {
@@ -78,6 +80,9 @@ enum {
 	WIFI_AP = 2
 };
 int gWiFiMode = WIFI_OFF;
+
+static modTimer gMonitorWiFiTimer = NULL;
+void wifiMonitorCallback(modTimer timer, void *refcon, int refconSize);
 
 static void deleteScanResults() {
 	apScanRecord *rec;
@@ -322,11 +327,14 @@ void xs_wifi_connect(xsMachine *the)
 	}
 */
 
-	int err = cyw43_arch_wifi_connect_timeout_ms(ssid, password, CYW43_AUTH_WPA2_AES_PSK, 10000);
+	int err = cyw43_arch_wifi_connect_async(ssid, password, CYW43_AUTH_WPA2_AES_PSK);
 	if (0 == err) {
 		c_strcpy(gSSID, ssid);
-		wlanMakeCallback(STATION_CONNECTED);
-		wlanMakeCallback(STATION_GOT_IP);
+		if (!gMonitorWiFiTimer) {
+			gMonitorWiFiTimer = modTimerAdd(250, 250, wifiMonitorCallback, NULL, 0);
+		}
+//		wlanMakeCallback(STATION_CONNECTED);
+//		wlanMakeCallback(STATION_GOT_IP);
 	}
 	else {
 		gSSID[0] = 0;
@@ -379,6 +387,45 @@ void wlanMakeCallback(uint32_t val)
 	xsWiFi walker;
 	for (walker = gWiFi; NULL != walker; walker = walker->next)
 		modMessagePostToMachine(walker->the, &val, 4, wifiEventPending, walker);
+}
+
+int lastLinkStatus = CYW43_LINK_DOWN;
+void wifiMonitorCallback(modTimer timer, void *refcon, int refconSize)
+{
+	int status;
+	int do_disconnect = 0;
+
+	status = cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA);
+	if (status != lastLinkStatus) {
+		switch (status) {
+			case CYW43_LINK_DOWN:
+				do_disconnect = 1;
+				break;
+			case CYW43_LINK_JOIN:
+				wlanMakeCallback(STATION_CONNECTED);
+				break;
+			case CYW43_LINK_NOIP:
+				break;
+			case CYW43_LINK_UP:
+				wlanMakeCallback(STATION_GOT_IP);
+				break;
+			case CYW43_LINK_FAIL:
+				do_disconnect = 1;
+				break;
+			case CYW43_LINK_NONET:
+				do_disconnect = 1;
+				break;
+			case CYW43_LINK_BADAUTH:
+				do_disconnect = 1;
+				break;
+		}
+		lastLinkStatus = status;
+	}
+
+	if (do_disconnect) {
+		gWiFiStatus = STATION_DISCONNECTED;
+		wlanMakeCallback(gWiFiStatus);
+	}
 }
 
 void xs_wifi_destructor(void *data)

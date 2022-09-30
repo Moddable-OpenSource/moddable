@@ -1,6 +1,6 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: March 22, 2022
+Revised: September 29, 2022
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -34,9 +34,10 @@ This document describes how to start building Moddable applications for the Rasp
 - [Reference Documents](#reference)
 
 <a id="about-pico"></a>
-## About Raspberry Pi Pico
+## About Raspberry Pi Pico and Pico W
 
 <img src="../assets/devices/pi-pico.png" width="300">
+<img src="../assets/devices/pi-pico_w.png" height="300">
 
 Please see the [Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/) for details.
 
@@ -78,6 +79,7 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 | <img src="../assets/devices/pi-pico.png" width=220><BR>Rasberry Pi<BR>Pico | `pico` | LED, 26 External pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pi-pico_w.png" height=180><BR>Rasberry Pi<BR>Pico W | `pico/pico_w` | Wi-Fi Connectivity, LED, 26 External pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
 | <img src="../assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display | `pico/pico_display`<BR>`simulator/pico_display` | **1.4" IPS display**<BR>135 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display](https://pimoroni.com/picodisplay)</li> |
 | <img src="../assets/devices/pico-display-2.png" width=300></a><BR>Pimoroni<BR>Pico Display 2 | `pico/pico_display_2`<BR>`simulator/pico_display_2` | **2.0" IPS display**<BR>320 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display 2](https://shop.pimoroni.com/products/pico-display-pack-2-0)</li> |
 | <img src="../assets/devices/pico-lcd-1.3.png" width=300></a><BR>Waveshare<BR>Pico LCD 1.3 | `pico/pico_lcd_1.3` | **1.3" IPS display**<BR>240 x 240<BR>16-bit color<BR>4 buttons<BR>1 joystick | <li>[Waveshare Pico LCD 1.3](https://www.waveshare.com/wiki/Pico-LCD-1.3)</li> |

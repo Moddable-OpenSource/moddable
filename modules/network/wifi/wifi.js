@@ -28,10 +28,10 @@ export default class WiFi @ "xs_wifi_destructor" {
 	set onNotify() @ "xs_wifi_set_onNotify";
 
 	build(dictionary, onNotify) {
-		if (onNotify)
-			this.onNotify = onNotify;
 		if (dictionary)
 			WiFi.connect(dictionary);
+		if (onNotify)
+			this.onNotify = onNotify;
 	}
 
 	static set mode() @ "xs_wifi_set_mode";
