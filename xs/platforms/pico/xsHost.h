@@ -356,6 +356,8 @@ extern void pico_reboot(uint32_t kind);
 #define c_strstr strstr
 #define c_strrchr strrchr
 #define c_isEmpty(s) (!c_read8(s))
+#define c_strcspn strcspn
+#define c_strspn strspn
 
 /* ERROR */
 
