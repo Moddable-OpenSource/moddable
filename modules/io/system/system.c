@@ -55,6 +55,8 @@ void xs_system_restart(xsMachine *the)
 	esp_restart();
 #elif defined(__ets__)
 	system_restart();
+#elif defined(PICO_BUILD)
+	pico_reset();
 #endif
 
 	while (1)
@@ -64,7 +66,7 @@ void xs_system_restart(xsMachine *the)
 /*
 	adapted from modResolve.c
 */
-
+#if ESP32 || defined(__ets__) || CYW43_LWIP
 #include "lwip/tcp.h"
 
 typedef struct xsNetResolveRecord xsNetResolveRecord;
@@ -184,3 +186,9 @@ void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messa
 
 	resolveNext();
 }
+
+#else
+void xs_system_resolve(xsMachine *the)
+{
+}
+#endif

@@ -2,9 +2,6 @@
 	"build": {
 		"USE_WIFI": "1"
 	},
-	"include": [
-		"$(MODULES)/drivers/led/manifest.json"
-	],
 	"modules": {
 		"setup/target": "./setup-target"
 	},

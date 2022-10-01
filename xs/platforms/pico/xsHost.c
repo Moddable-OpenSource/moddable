@@ -476,6 +476,7 @@ int modMessageService(xsMachine *the, int maxDelayMS)
 
 		if (best_effort_wfe_or_timeout(until))
 			break;
+		tight_loop_contents();
 	}
 #else
 	while (!gMessageQueue && !best_effort_wfe_or_timeout(until))

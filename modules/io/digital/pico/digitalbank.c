@@ -52,6 +52,7 @@ enum {
 struct DigitalRecord {
 	uint32_t	pins;
 	xsSlot		obj;
+	uint8_t		bank;
 	uint8_t		hasOnReadable;
 	uint8_t		isInput;
 	uint8_t		useCount;
@@ -72,6 +73,7 @@ static void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t m
 static void xs_digitalbank_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static Digital gDigitals;	// pins with onReadable callbacks
+static uint8_t callback_installed = 0;
 
 static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 	xs_digitalbank_destructor,
@@ -84,11 +86,22 @@ void xs_digitalbank_constructor(xsMachine *the)
 	Digital digital;
 	int mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
-	uint8_t isInput = 1;
+	uint8_t bank = 0, isInput = 1;
 	xsSlot *onReadable;
 	xsSlot tmp;
 
 	builtinInitIO();
+
+#if kPinBanks > 1
+	if (xsmcHas(xsArg(0), xsID_bank)) {
+		uint32_t b;
+		xsmcGet(tmp, xsArg(0), xsID_bank);
+		b = (uint32_t)xsmcToInteger(tmp);
+		if (b >= kPinBanks)
+			xsUnknownError("invalid bank");
+		bank = (uint8_t)b;
+	}
+#endif
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
 	pins = xsmcToInteger(tmp);
@@ -99,26 +112,29 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	xsmcGet(tmp, xsArg(0), xsID_mode);
 	mode = builtinGetSignedInteger(the, &tmp);
-	if (!(((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) ||
+	if ((1 == bank) && !((kDigitalInput == mode) || (kDigitalOutput == mode)))
+		xsRangeError("invalid mode");
+	else if (!(((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) ||
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
-	onReadable = builtinGetCallback(the, xsID_onReadable);
-	if (onReadable) {
-		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
-			xsRangeError("invalid mode");
+	if (0 == bank) {
+		onReadable = builtinGetCallback(the, xsID_onReadable);
+		if (onReadable) {
+			if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
+				xsRangeError("invalid mode");
 
-		if (xsmcHas(xsArg(0), xsID_rises)) {
-			xsmcGet(tmp, xsArg(0), xsID_rises);
-			rises = xsmcToInteger(tmp) & pins;
+			if (xsmcHas(xsArg(0), xsID_rises)) {
+				xsmcGet(tmp, xsArg(0), xsID_rises);
+				rises = xsmcToInteger(tmp) & pins;
+			}
+			if (xsmcHas(xsArg(0), xsID_falls)) {
+				xsmcGet(tmp, xsArg(0), xsID_falls);
+				falls = xsmcToInteger(tmp) & pins;
+			}
+			if (!rises & !falls)
+				xsRangeError("invalid edges");
 		}
-		if (xsmcHas(xsArg(0), xsID_falls)) {
-			xsmcGet(tmp, xsArg(0), xsID_falls);
-			falls = xsmcToInteger(tmp) & pins;
-		}
-
-		if (!rises & !falls)
-			xsRangeError("invalid edges");
 	}
 
 	builtinInitializeTarget(the);
@@ -136,71 +152,94 @@ void xs_digitalbank_constructor(xsMachine *the)
 	digital->useCount = 1;
 	xsRemember(digital->obj);
 
-	gpio_init_mask(pins);
+	if (0 == bank) {
+		gpio_init_mask(pins);
 
-	for (pin = 0; pin <= kLastPin; pin++) {
-		if (!(pins & (1 << (pin & 0x1f))))
-			continue;
+		for (pin = 0; pin <= 31; pin++) {
+			if (!(pins & (1 << (pin & 0x1f))))
+				continue;
 
-		switch (mode) {
-			case kDigitalInput:
-				gpio_set_dir(pin, false);
-				break;
-			case kDigitalInputPullUp:
-				gpio_set_dir(pin, false);
-				gpio_set_pulls(pin, true, false);
-				break;
-			case kDigitalInputPullDown:
-				gpio_set_dir(pin, false);
-				gpio_set_pulls(pin, false, true);
-				break;
-			case kDigitalInputPullUpDown:
-				gpio_set_dir(pin, false);
-				gpio_set_pulls(pin, true, true);
-				break;
+			switch (mode) {
+				case kDigitalInput:
+					gpio_set_dir(pin, false);
+					break;
+				case kDigitalInputPullUp:
+					gpio_set_dir(pin, false);
+					gpio_set_pulls(pin, true, false);
+					break;
+				case kDigitalInputPullDown:
+					gpio_set_dir(pin, false);
+					gpio_set_pulls(pin, false, true);
+					break;
+				case kDigitalInputPullUpDown:
+					gpio_set_dir(pin, false);
+					gpio_set_pulls(pin, true, true);
+					break;
 
-			case kDigitalOutput:
-				gpio_set_dir(pin, true);
-				isInput = 0;
-				break;
-			case kDigitalOutputOpenDrain:
-				gpio_set_dir(pin, true);
-				isInput = 0;
-				break;
+				case kDigitalOutput:
+					gpio_set_dir(pin, true);
+					isInput = 0;
+					break;
+				case kDigitalOutputOpenDrain:
+					gpio_set_dir(pin, true);
+					isInput = 0;
+					break;
+			}
 		}
-	}
 
-	if (onReadable) {
-		xsSlot tmp;
+		if (onReadable) {
+			xsSlot tmp;
 
-		digital->the = the;
-		digital->rises = rises;
-		digital->falls = falls;
-		digital->triggered = 0;
+			digital->the = the;
+			digital->rises = rises;
+			digital->falls = falls;
+			digital->triggered = 0;
 
-		digital->onReadable = onReadable;
+			digital->onReadable = onReadable;
 
-		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
+			xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
 			builtinCriticalSectionBegin();
 				digital->next = gDigitals;
 				gDigitals = digital;
 			builtinCriticalSectionEnd();
 
-			for (pin = 0; pin <= kLastPin; pin++) {
+			for (pin = 0; pin <= 31; pin++) {
 				uint32_t mask = 1 << (pin & 0x1f);
 				if (pins & mask) {
-					gpio_set_irq_enabled_with_callback(pin,
-						(digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0
-						| (digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0,
-						true, digitalISR);
+					if (callback_installed)
+						gpio_set_irq_enabled(pin,
+							((digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0)
+							| ((digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0),
+							true);
+					else {
+						gpio_set_irq_enabled_with_callback(pin,
+							((digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0)
+							| ((digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0),
+							true, digitalISR);
+						callback_installed = 1;
+					}
 				}
 			}
+		}
 	}
+#if CYW43_LWIP
+	else {		// bank 1
+		switch (mode) {
+			case kDigitalInput:
+				break;
+			case kDigitalOutput:
+				isInput = 0;
+				break;
+		}
+	}
+#endif
+
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
 	digital->pins = pins;
+	digital->bank = bank;
 	digital->hasOnReadable = onReadable ? 1 : 0;
 	digital->isInput = isInput;
 	builtinUsePins(0, pins);
@@ -225,13 +264,13 @@ void xs_digitalbank_destructor(void *data)
 		}
 	}
 
-	if (digital->pins) {
+	if ((0 == digital->bank) && digital->pins) {
 		int pin;
 
 		if (digital->hasOnReadable)
 			gpio_remove_raw_irq_handler_masked(digital->pins, digitalISR);
 
-		for (pin = 0; pin <= kLastPin; pin++) {
+		for (pin = 0; pin <= 31; pin++) {
 			if (digital->pins & (1 << (pin & 0x1f))) {
 				gpio_disable_pulls(pin);
 				gpio_deinit(pin);
@@ -270,13 +309,21 @@ void xs_digitalbank_close(xsMachine *the)
 void xs_digitalbank_read(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	uint32_t result;
+	uint32_t result = 0;
 
 	if (!digital->isInput)
 		xsUnknownError("unimplemented");
 
-	result = gpio_get_all();
-	result &= digital->pins;
+	if (0 == digital->bank) {
+		result = gpio_get_all();
+		result &= digital->pins;
+	}
+#if CYW43_LWIP
+	else {
+		if (cyw43_arch_gpio_get(CYW43_WL_GPIO_LED_PIN))
+			result |= (1 << 0);
+	}
+#endif
 
 	xsmcSetInteger(xsResult, result & digital->pins);
 }
@@ -291,16 +338,21 @@ void xs_digitalbank_write(xsMachine *the)
 
 	value = xsmcToInteger(xsArg(0));
 
-	gpio_put_masked(digital->pins, value);
+	if (0 == digital->bank)
+		gpio_put_masked(digital->pins, value);
+#if CYW43_LWIP
+	else
+		cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, value);
+#endif
 }
 
 void digitalISR(uint gpio, uint32_t events)
 {
 	Digital walker;
 	uint8_t doUpdate = 0;
-	uint8_t pin;
+	uint32_t pin;
 
-	pin = 1 << (pin & 0x1F);
+	pin = 1 << (gpio & 0x1F);
 
 	for (walker = gDigitals; walker; walker = walker->next) {
 		if (!(pin & walker->pins))

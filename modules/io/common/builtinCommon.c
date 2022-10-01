@@ -56,7 +56,12 @@
 
 	static uint8_t builtinInitialized = 0;
 	static uint32_t gDigitalAvailable[kPinBanks] = {
-		0x3FFFFFFF		//@@
+		0x3FFFFFFF,		//@@
+#if CYW43_LWIP
+		0x00000001		//@@
+#else
+		0x00000000		//@@
+#endif
 	};
 #endif
 

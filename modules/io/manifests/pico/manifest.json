@@ -16,10 +16,6 @@
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
 
-		"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
-		"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
-		"embedded:io/socket/listener": "$(IO)/socket/lwip/listener",
-
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
@@ -28,6 +24,14 @@
 	],
 	"platforms": {
 		"pico/pico_w": {
+			"modules": {
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
+				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
+				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
+				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
+			}
+		},
+		"pico/*": {
 			"modules": {
 				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
 			}
