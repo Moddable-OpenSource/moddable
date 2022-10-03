@@ -9,12 +9,15 @@
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
-			"$(IO)/digital/$(PLATFORM)/*"
+			"$(IO)/digital/$(PLATFORM)/*",
+			"$(IO)/i2c/$(PLATFORM)/*"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
+		"embedded:io/i2c": "$(IO)/i2c/_i2c",
+		"embedded:io/smbus": "$(IO)/i2c/smbus",
 
 		"system": "$(IO)/system/*"
 	},
