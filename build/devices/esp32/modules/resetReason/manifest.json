@@ -1,0 +1,14 @@
+{
+	"modules": {
+		"resetReason": "./*"
+	},
+	"preload": [
+		"resetReason"
+	],
+    "platforms": {
+		"esp32": {},
+		"...": {
+			"error": "resetReason is not supported on this platform"
+		}
+	}
+}
