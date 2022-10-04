@@ -14,16 +14,9 @@ const device = {
 	},
 	io: { Digital, DigitalBank, I2C, SMBus },
 	pin: {
-		button: 15,
-		buttonA: 15,
-		buttonB: 17,
-		buttonX: 19,
-		buttonY: 21,
-		buttonUP: 2,
-		buttonDOWN: 18,
-		buttonLEFT: 16,
-		buttonRIGHT: 20,
-		buttonCENTER: 3,
+		button: 6,
+		buttonA: 6,
+		buttonB: 7,
 		led: 25
 	}
 };
