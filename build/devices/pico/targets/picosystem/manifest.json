@@ -1,0 +1,91 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/drivers/st7789/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "st7789",
+		"touch": "",
+		"led": 14,
+		"led_r": 14,
+		"led_g": 13,
+		"led_b": 15,
+		"button": 18,
+		"btn_a": 18,
+		"btn_b": 19,
+		"btn_x": 17,
+		"btn_y": 16,
+		"btn_up": 23,
+		"btn_down": 20,
+		"btn_left": 22,
+		"btn_right": 21,
+		"vsync": 8,
+		"audio": 11,
+		"charge_led": 2,
+		"charging": 24,
+		"battery_level": 26
+	},
+	"defines": {
+		"buttons": {
+			"a_pin": 18,
+			"b_pin": 19,
+			"x_pin": 17,
+			"y_pin": 16,
+			"up_pin": 23,
+			"down_pin": 20,
+			"left_pin": 22,
+			"right_pin": 21
+		},
+		"spi": {
+			"mosi_pin": 7,
+			"sck_pin": 6,
+			"buffersize": 960
+		},
+		"ili9341": {
+			"hz": 8000000,
+			"width": 240,
+			"height": 240,
+			"cs_pin": 5,
+			"dc_pin": 9,
+			"rst_pin": 4,
+			"spi_port": 0,
+			"backlight_pin": 12,
+			"backlight_on": 1,
+			"xcolumn_offset": 52,
+			"xrow_offset": 40,
+			"xregisters": [
+				"0x01, 0,",
+				"0xff, 5,",
+				"0x36, 1, 0x04,",
+				"0x35, 1, 0x00,",
+				"0xc6, 5, 0x0c, 0x0c, 0x00, 0x33, 0x33,",
+				"0x3a, 1, 0x03,",
+				"0x26, 1, 0x01,",
+
+				"0xb7, 1, 0x14,",
+				"0xbb, 1, 0x25,",
+				"0xc0, 1, 0x2c,",
+				"0xc2, 1, 0x01,",
+				"0xc3, 1, 0x12,",
+				"0xc4, 1, 0x20,",
+				"0xd0, 2, 0xa4, 0xa1,",
+				"0xc6, 1, 0x1e,",
+				"0xe0, 14, 0xd0, 0x04, 0x0d, 0x11, 0x13, 0x2b, 0x3f, 0x54, 0x4c, 0x18, 0x0d, 0x0b, 0x1f, 0x23,",
+				"0xe1, 14, 0xd0, 0x04, 0x0c, 0x11, 0x13, 0x2c, 0x3f, 0x44, 0x51, 0x2f, 0x1f, 0x1f, 0x20, 0x23,",
+				"0x21, 0,",
+				"0xff, 115,",
+				"0x11, 0,",
+				"0x29, 0,",
+				"0x2a, 4, 0x00, 0x00, 0x00, 0xef,",
+				"0x2b, 4, 0x00, 0x00, 0x00, 0xef,",
+				"0x2c, 0,",
+				"0xff, 0,"
+			]
+		}
+	}
+}
