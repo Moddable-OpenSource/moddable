@@ -295,6 +295,8 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_malloc/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_clocks/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_resets/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_watchdog/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_xosc/include	\
@@ -333,8 +335,6 @@ INC_DIRS += \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/cyw43_driver \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_lwip/include \
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma/include	\
 	$(PICO_SDK_DIR)/lib/cyw43-driver/src	\
 	$(PICO_SDK_DIR)/lib/cyw43-driver/firmware	\
 	$(PICO_SDK_DIR)/lib/lwip/src/include
@@ -406,6 +406,8 @@ HEADERS += $(XS_HEADERS)
 
 PICO_OBJ = \
 	$(LIB_DIR)/stdlib.c.o \
+	$(LIB_DIR)/dma.c.o	\
+	$(LIB_DIR)/pio.c.o	\
 	$(LIB_DIR)/adc.c.o \
 	$(LIB_DIR)/gpio.c.o \
 	$(LIB_DIR)/i2c.c.o \
@@ -527,8 +529,6 @@ PICO_OBJ += \
 	$(LIB_DIR)/cyw43_ctrl.c.o	\
 	$(LIB_DIR)/cyw43_ll.c.o	\
 	$(LIB_DIR)/cyw43_stats.c.o	\
-	$(LIB_DIR)/dma.c.o	\
-	$(LIB_DIR)/pio.c.o	\
 	$(LIB_DIR)/nosys.c.o	\
 	$(LIB_DIR)/cyw43_arch_poll.c.o
 
@@ -539,6 +539,8 @@ endif
 
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdlib			\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma			\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_adc			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm			\
@@ -591,17 +593,21 @@ PICO_SRC_DIRS += \
 	$(PICO_SDK_DIR)/lib/lwip/src/core/ipv4				\
 	$(PICO_SDK_DIR)/lib/lwip/src/api					\
 	$(PICO_SDK_DIR)/lib/lwip/src/netif					\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma			\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_lwip			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch		\
 	$(PICO_SDK_DIR)/src/rp2_common/cyw43_driver			\
 
-PIO_STUFF = \
+PIO_STUFF += \
 	$(TMP_DIR)/cyw43_bus_pio_spi.pio.h
 
 
 endif
+
+PIO_STUFF += \
+	$(TMP_DIR)/ws2812.pio.h
+
+PICO_SRC_DIRS += \
+	$(BUILD_DIR)/devices/pico/pio  \
 
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/msc			\
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/dfu			\
@@ -811,7 +817,7 @@ MEM_USAGE = \
 	 print "\# Memory usage\n";\
 	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
 
-VPATH += $(PICO_SRC_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
+VPATH += $(PICO_SRC_DIRS) $(PIO_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 .PHONY: all	
 .SUFFIXES:
@@ -957,6 +963,11 @@ $(LIB_DIR)/pico_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/pico_divider/divider
 
 $(TMP_DIR)/cyw43_bus_pio_spi.pio.h: $(PICO_SDK_DIR)/src/rp2_common/cyw43_driver/cyw43_bus_pio_spi.pio
 	$(PIOASM) -o c-sdk $< $@
+
+$(TMP_DIR)/%.pio.h: %.pio
+	@echo "# compile pio: " $(<F)
+	$(PIOASM) -o c-sdk $< $@
+
 
 CYW43_FW_FILE=43439A0-7.95.49.00.combined
 CYW43_FW_PATH=$(PICO_SDK_DIR)/lib/cyw43-driver/firmware

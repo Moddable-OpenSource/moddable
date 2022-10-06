@@ -18,6 +18,11 @@
 				"*": "$(MODULES)/drivers/neopixel/esp32/*"
 			}
 		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/drivers/neopixel/pico/*"
+			}
+		},
 		"...": {
 			"error": "unsupported platform"
 		}
