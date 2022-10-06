@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,27 +18,20 @@
  *
  */
 
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
+class Analog @ "xs_analog_destructor_" {
+	constructor(options) @ "xs_analog_constructor_"
+	close() @ "xs_analog_close_"
+	read() @ "xs_analog_read_"
 
-const device = {
-	io: { Digital, DigitalBank },
-	pin: {
-		button: 18,
-		buttonA: 18,
-		buttonB: 19,
-		buttonX: 17,
-		buttonY: 16,
-		buttonUP: 23,
-		buttonDOWN: 20,
-		buttonLEFT: 22,
-		buttonRIGHT: 21,
-		led: 14,
-		led_r: 14,
-		led_g: 13,
-		led_b: 15
+	get resolution() @ "xs_analog_get_resolution_"
+
+	get format() {
+		return "number";
 	}
-};
+	set format(value) {
+		if ("number" !== value)
+			throw new RangeError;
+	}
+}
 
-export default device;
-
+export default Analog;
