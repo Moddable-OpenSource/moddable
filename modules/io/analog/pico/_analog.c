@@ -26,6 +26,9 @@
 #include "xsHost.h"			// esp platform support
 #include "mc.xs.h"			// for xsID_* values
 
+#include "hardware/gpio.h"
+#include "hardware/adc.h"
+
 #include "builtinCommon.h"
 
 struct AnalogRecord {

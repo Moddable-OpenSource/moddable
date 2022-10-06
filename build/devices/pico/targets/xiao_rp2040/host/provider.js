@@ -18,7 +18,7 @@
  *
  */
 
-Import Analog from "embedded:io/analog";
+import Analog from "embedded:io/analog";
 import Digital from "embedded:io/digital";
 import DigitalBank from "embedded:io/digitalbank";
 import I2C from "embedded:io/i2c";
