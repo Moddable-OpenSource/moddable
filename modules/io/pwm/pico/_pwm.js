@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,33 +18,22 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import SMBus from "embedded:io/smbus";
+class PWM @"xs_pwm_destructor_" {
+    constructor(dictionary) @ "xs_pwm_constructor_"
+    close() @ "xs_pwm_close_"
+    write() @ "xs_pwm_write_"
+    
+    get hz() @ "xs_pwm_get_hz_"
+    get resolution() @ "xs_pwm_get_resolution_"
 
-const device = {
-	I2C: {
-		default: {
-			io: I2C,
-			data: 6,
-			clock: 7,
-			port: 1
-		}
-	},
-	Analog: {
-		default: {
-			io: Analog,
-			pin: 26
-		}
-	},
-	io: { Analog, Digital, DigitalBank, I2C, PWM, SMBus },
-	pin: {
-		led: 25
-	}
-};
+    get format() {
+        return "number";
+    }
 
-export default device;
+    set format(value) {
+        if ("number" !== value)
+            throw new RangeError;
+    }
+}
 
+export default PWM;

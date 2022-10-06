@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,9 +20,10 @@
 
 import Digital from "embedded:io/digital";
 import DigitalBank from "embedded:io/digitalbank";
+import PWM from "embedded:io/pwm";
 
 const device = {
-	io: { Digital, DigitalBank },
+	io: { Digital, DigitalBank, PWM },
 	pin: {
 		button: 18,
 		buttonA: 18,
