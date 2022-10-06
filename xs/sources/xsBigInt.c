@@ -747,6 +747,9 @@ txBigInt* fxStringToBigInt(txMachine* the, txSlot* slot, txFlag whole)
 		sign = 1;
 		p++;
 	}
+	else if (c == '+') {
+		p++;
+	}
 	offset = mxPtrDiff(p - s);
 	while (((c = *p)) && ('0' <= c) && (c <= '9'))
 		p++;
