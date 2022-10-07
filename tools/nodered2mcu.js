@@ -666,7 +666,7 @@ export default class extends TOOL {
 							case "object":
 							case "undefined":
 							case "null":
-								test = `${config.v} === typeof value`;
+								test = `"${config.v}" === typeof value`;
 								break;
 							case "array":
 								test = `Array.isArray(value)`;
