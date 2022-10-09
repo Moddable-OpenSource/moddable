@@ -474,7 +474,7 @@ Object.freeze(KeyboardBehavior.prototype);
 class KeyboardFieldBehavior extends Behavior {
 	onCreate(container, $, data) {
 		container.duration = 500;
-		this.string = data.string;
+		this.string = data.string ?? "";
 		this.password = data.password;
 		container.last.skin = new Skin({ fill:container.style.color })
 	}
