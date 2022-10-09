@@ -158,6 +158,8 @@ export default class extends TOOL {
 
 		parts.push(``) 
 
+		const nodes = flows.filter(config => !config.d && ("tab" !== config.type)).map(config => config.id);
+
 		parts.push(`\tflows = flows.values();`);
 		flows.forEach(config => {
 			if (("tab" !== config.type) || config.disabled)
@@ -202,7 +204,7 @@ export default class extends TOOL {
 						errors = flows.filter(config => (config.z === z) && config.uncaught && !config.d && (config.type === "catch"));
 					errors = errors.map(config => config.id);
 				
-					this.prepareNode(type, c, dones.length ? dones : undefined, errors.length ? errors : undefined);
+					this.prepareNode(type, c, dones.length ? dones : undefined, errors.length ? errors : undefined, nodes);
 					let configuration = ["{"];
 					for (const name in c) {
 						const value = c[name];
@@ -234,7 +236,7 @@ export default class extends TOOL {
 		
 		return parts.join("\n");
 	}
-	prepareNode(type, config, dones, errors) {
+	prepareNode(type, config, dones, errors, nodes) {
 		switch (type) {
 			case "catch": {
 				delete config.uncaught;
@@ -762,6 +764,19 @@ export default class extends TOOL {
 				delete config.repair;
 				delete config.outputs;
 			} break;
+
+			case "link call":
+			case "link out": {
+				let length = config.links.length;
+				const links = config.links;
+				config.links = config.links?.filter(link => nodes.includes(link));	// remove broken links
+				if (length !== config.links.length)
+					debugger;
+			} break;
+
+			case "link in":
+				delete config.links;
+				break;
 
 			case "json": {
 				if (!config.action)
