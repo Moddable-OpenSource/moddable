@@ -365,9 +365,6 @@ SDKCONFIGPATH ?= $(PROJ_DIR)
 SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.defaults
 SDKCONFIG_H = $(SDKCONFIG_H_DIR)/sdkconfig.h
 
-
-.NOTPARALLEL: $(SDKCONFIG_H)
-
 all: precursor
 	$(KILL_SERIAL_2_XSBUG)
 	$(DO_XSBUG)
@@ -510,31 +507,31 @@ $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 	
-$(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+$(TMP_DIR)/xsPlatform.c.o: xsPlatform.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h $(SDKCONFIG_H) 
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 	
-$(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+$(TMP_DIR)/xsHost.c.o: xsHost.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h $(SDKCONFIG_H) 
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
-$(TMP_DIR)/xsHosts.c.o: xsHosts.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h
+$(TMP_DIR)/xsHosts.c.o: xsHosts.c $(XS_HEADERS) $(TMP_DIR)/mc.defines.h $(TMP_DIR)/mc.format.h $(TMP_DIR)/mc.rotation.h $(SDKCONFIG_H) 
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
-$(LIB_DIR)/%.c.o: %.c
+$(LIB_DIR)/%.c.o: %.c $(SDKCONFIG_H) 
 	@echo "# cc" $(<F) "(strings in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 
-$(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
+$(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c $(SDKCONFIG_H) 
 	@echo "# cc" $(<F) "(slots in flash)"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 	
-$(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
+$(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST) $(SDKCONFIG_H) 
 	@echo "# xsl modules"
 	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
-$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
+$(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST) $(SDKCONFIG_H) 
 	@echo "# mcrez resources"
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p $(ESP32_SUBCLASS) -r mc.resources.c
 	
