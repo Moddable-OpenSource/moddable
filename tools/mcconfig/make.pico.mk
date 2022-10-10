@@ -466,6 +466,7 @@ PICO_OBJ = \
 	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o \
  	$(LIB_DIR)/hardware_divider.S.o \
 	$(LIB_DIR)/pico_divider.S.o \
+ 	$(LIB_DIR)/uart.c.o \
  	$(LIB_DIR)/unique_id.c.o
 
 #	$(LIB_DIR)/divider.S.o \

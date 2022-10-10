@@ -18,11 +18,37 @@
  *
  */
 
+import Analog from "embedded:io/analog";
 import Digital from "embedded:io/digital";
 import DigitalBank from "embedded:io/digitalbank";
+import I2C from "embedded:io/i2c";
+import PWM from "embedded:io/pwm";
+import Serial from "embedded:io/serial";
+import SMBus from "embedded:io/smbus";
 
 const device = {
-	io: { Digital, DigitalBank },
+	I2C: {
+		default: {
+			io: I2C,
+			data: 4,
+			clock: 5,
+			port: 0
+		}
+	},
+	Serial: {
+		default: {
+			io: Serial,
+			receive: 13,
+			transmit: 12
+		}
+	},
+	Analog: {
+		default: {
+			io: Analog,
+			pin: 26
+		}
+	},
+	io: { Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus },
 	pin: {
 		led: 25
 	}
