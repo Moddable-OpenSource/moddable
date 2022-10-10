@@ -102,9 +102,9 @@ void modSPIInit(modSPIConfiguration config)
 
 	if (!gSPIInited++) {
 
-		gPrevHz = 64000000;
-//		spi_init(config->spi_inst, config->hz);
-		spi_init(config->spi_inst, 64000000);
+		gPrevHz = config->hz;
+		spi_init(config->spi_inst, config->hz);
+//		spi_init(config->spi_inst, 64000000);
 		configSPI(config);
 
 		if (-1 != MODDEF_SPI_MISO_PIN)
