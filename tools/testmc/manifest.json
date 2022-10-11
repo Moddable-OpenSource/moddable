@@ -86,7 +86,8 @@
 				"timeout": 20000,
 				"deviceName": "testmc Server"
 			}
-		}
+		},
+		"startupSound": ""
 	},
 	"platforms": {
 		"esp": {
