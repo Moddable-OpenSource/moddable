@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -75,8 +75,8 @@ export default class Sound {
 		if (!Resource.exists(path, archive))
 			throw new URIError("Sound: " + it.path + " not found!");
 		this.buffer = new Resource(path, archive);
-		this.offset = it.offset || 0;
-		this.size = it.size || -1;
+		this.offset = it.offset ?? 0;
+		this.size = it.size ?? -1;
 	}
 	play(stream = 0, repeat = 1, callback) {
 		const audioOut = Sound.private.audioOut ?? Sound.open();
@@ -99,9 +99,8 @@ export default class Sound {
 			audioOut.enqueue(stream, AudioOut.Samples, this.buffer, repeat, this.offset, this.size);
 		}
 
-		if (callback) {
-			Sound.private.callbacks[stream] = callback;
+		Sound.private.callbacks[stream] = callback;
+		if (callback)
 			audioOut.enqueue(stream, AudioOut.Callback, stream);
-		}
 	}
 }

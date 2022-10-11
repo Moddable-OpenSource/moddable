@@ -609,10 +609,10 @@ void xs_audioout_enqueue(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostData(xsThis);
 	int streamIndex, argc = xsmcArgc;
-	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume, i;
+	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume, i, samplesInBuffer;
 	uint8_t kind;
 	uint8_t *buffer;
-	xsUnsignedValue bufferLength, samplesInBuffer;
+	xsUnsignedValue bufferLength;
 	uint16_t sampleRate;
 	uint8_t numChannels;
 	uint8_t bitsPerSample;
@@ -691,11 +691,15 @@ void xs_audioout_enqueue(xsMachine *the)
 			}
 
 			if (kSampleFormatUncompressed == sampleFormat) {
-				samplesInBuffer = bufferLength - sampleOffset;
-				samplesInBuffer = samplesInBuffer / out->bytesPerFrame;
+				samplesInBuffer = bufferLength / out->bytesPerFrame;
+				if (sampleOffset >= samplesInBuffer)
+					xsUnknownError("buffer too small");
+				samplesInBuffer -= sampleOffset;
 			}
 			else if (kSampleFormatIMA == sampleFormat) {
 				samplesInBuffer = (bufferLength / kIMABytesPerChunk) * kIMASamplesPerChunk;
+				if (sampleOffset >= samplesInBuffer)
+					xsUnknownError("buffer too small");
 				samplesInBuffer -= sampleOffset;
 			}
 			else if (kSampleFormatSBC == sampleFormat)
@@ -704,7 +708,7 @@ void xs_audioout_enqueue(xsMachine *the)
 				xsUnknownError("unhandled compression");
 
 			if (kSampleFormatSBC != sampleFormat) {
-				if ((sampleOffset < 0) || (((xsUnsignedValue)sampleOffset) >= bufferLength) || (((xsUnsignedValue)samplesToUse) > samplesInBuffer))
+				if (samplesToUse > samplesInBuffer)
 					xsUnknownError("buffer too small");
 			}
 
