@@ -78,4 +78,5 @@ function verifyOutput(expected) {
 	assert.sameValue(actual.length, expected.length);
 	for (let i = 0, count = expected.length; i < count; i++)
 		assert.sameValue(actual[i], expected[i]);
+	$262.gc();
 }

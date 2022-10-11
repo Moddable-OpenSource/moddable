@@ -34,4 +34,5 @@ function verifyOutput(count, expected) {
 			value = -value;
 		assert.sameValue(value, expected);
 	}
+	$262.gc();
 }

@@ -73,4 +73,5 @@ function verifyChecksum(expected) {
 	assert.sameValue(checksum.join(""), expected);
 	
 	digest.reset();
+	$262.gc();
 }
