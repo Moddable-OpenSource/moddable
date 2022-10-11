@@ -1010,7 +1010,7 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 
 		out->pendingCallbackCount -= 1;
 		if (out->pendingCallbackCount)
-			c_memcpy(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
+			c_memmove(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
 		pthread_mutex_unlock(&out->mutex);
 
 		xsmcSetInteger(xsVar(0), id);
@@ -1511,7 +1511,7 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 
 		out->pendingCallbackCount -= 1;
 		if (out->pendingCallbackCount)
-			c_memcpy(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
+			c_memmove(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
 
 		doUnlock(out);
 
@@ -1622,7 +1622,7 @@ void audioMix(modAudioOut out, int samplesToGenerate, OUTPUTSAMPLETYPE *output)
 
 				OUTPUTSAMPLETYPE *s0 = (OUTPUTSAMPLETYPE *)((element->position * bytesPerFrame) + (uint8_t *)element->samples);
 				if (!out->applyVolume) {
-					c_memcpy(output, s0, use * bytesPerFrame);
+					c_memmove(output, s0, use * bytesPerFrame);
 					output = (OUTPUTSAMPLETYPE *)((use * bytesPerFrame) + (uint8_t *)output);
 				}
 				else {
@@ -1833,7 +1833,7 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 
 		stream->elementCount -= 1;
 		if (stream->elementCount) {
-			c_memcpy(element, element + 1, sizeof(modAudioQueueElementRecord) * stream->elementCount);
+			c_memmove(element, element + 1, sizeof(modAudioQueueElementRecord) * stream->elementCount);
 			if (element->repeat) {		// first element has audio. if compressed, decompress first chunk
 				if (element->sampleFormat != kSampleFormatUncompressed)
 					streamDecompressNext(stream);
