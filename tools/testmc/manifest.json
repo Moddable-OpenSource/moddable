@@ -64,14 +64,16 @@
 		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
 		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
 		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
-		"commodetto/checksumOut": "./commodettoChecksumOut"
+		"commodetto/checksumOut": "./commodettoChecksumOut",
+        "piu/Sound": "$(MODULES)/piu/MC/piuSound"
 	},
 	"preload": [
 		"main",
 		"hosttest",
 		"harness",
 		"commodetto/*",
-		"instrumentation"
+		"instrumentation",
+		"piu/Sound"
 	],
 	"strip": [],
 	"config" : {
