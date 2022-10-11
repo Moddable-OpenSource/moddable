@@ -124,12 +124,12 @@ void PiuShapeDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate y, 
 	if ((*self)->fillOutline) {
 		xsResult = xsReference((*self)->fillOutline);
 		outline = xsGetHostData(xsResult);
-		PocoOutlineFill((*view)->poco, (*self)->fillColor, (*self)->fillBlend, xsGetHostData(xsResult), x, y);
+		PocoOutlineFill((*view)->poco, (*self)->fillColor, (*self)->fillBlend, outline, x, y);
 	}
 	if ((*self)->strokeOutline) {
 		xsResult = xsReference((*self)->strokeOutline);
 		outline = xsGetHostData(xsResult);
-		PocoOutlineFill((*view)->poco, (*self)->strokeColor, (*self)->strokeBlend, xsGetHostData(xsResult), x, y);
+		PocoOutlineFill((*view)->poco, (*self)->strokeColor, (*self)->strokeBlend, outline, x, y);
 	}
 	xsEndHost((*self)->the);
 }
