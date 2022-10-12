@@ -53,14 +53,16 @@ static uint8_t usingPins(uint32_t data, uint32_t clock);
 
 uint8_t checkValidI2C(uint32_t data, uint32_t clock, uint8_t port)
 {
-	if (clock != data + 1)
-		return 0;
+//	if (clock != data + 1)
+//		return 0;
 
 	if ((port == 0)
-		&& (data == 0 || data == 4 || data == 8 || data == 12 || data == 16 || data == 20))
+		&& (data == 0 || data == 4 || data == 8 || data == 12 || data == 16 || data == 20 || data == 24 || data == 28)
+		&& (clock == 1 || clock == 5 || clock == 9 || clock == 13 || clock == 17 || clock == 21 || clock == 25 || clock == 29))
 			return 1;
 	else if ((port == 1)
-		&& (data == 2 || data == 6 || data == 10 || data == 14 || data == 18 || data == 26))
+		&& (data == 2 || data == 6 || data == 10 || data == 14 || data == 18 || data == 22 || data == 26)
+		&& (clock == 3 || clock == 7 || clock == 11 || clock == 15 || clock == 19 || clock == 23 || clock == 27))
 			return 1;
 	return 0;
 }
