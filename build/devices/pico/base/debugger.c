@@ -40,7 +40,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 void tud_cdc_rx_cb(uint8_t itf)
 {
 //	modMessagePostToMachineFromISR(NULL, (modMessageDeliver)fxReceiveLoop, NULL);
-	modMessagePostToMachine(NULL, NULL, 0xfffff, (modMessageDeliver)fxReceiveLoop, NULL);
+	modMessagePostToMachine(NULL, NULL, 0xffff, (modMessageDeliver)fxReceiveLoop, NULL);
 }
 
 #endif
