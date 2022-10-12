@@ -73,10 +73,10 @@ for (let i = 0; i < expected.length; i++) {
 }
 
 function verifyOutput(expected) {
-	const result = mixer.mix(expected.length);
+	const result = new ArrayBuffer(expected.length * 2);
+	mixer.mix(result);
 	const actual = new Int16Array(result);
 	assert.sameValue(actual.length, expected.length);
 	for (let i = 0, count = expected.length; i < count; i++)
 		assert.sameValue(actual[i], expected[i]);
-	$262.gc();
 }

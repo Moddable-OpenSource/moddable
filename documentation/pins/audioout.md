@@ -1,6 +1,6 @@
 # AudioOut
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: September 8, 2022
+Revised: October 12, 2022
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -214,6 +214,38 @@ audio.enqueue(0, AudioOut.Volume, 128);
 ```
 
 Values for the volume command range from 0 for silent, to 256 for full volume.
+
+## class Mixer
+The `Mixer` class provides access to the four-channel mixer and audio decompressors used by the `AudioOut`. This is useful for processing audio for other purposes, such as network streaming.
+
+```js
+import {Mixer} from "pins/i2s";
+```
+
+The mixer has the same API foundation as `AudioOut`, including `enqueue`. The mixer does not implement `start` or `stop` methods but instead provides a `mix` function which is used to pull samples that have been queued.
+
+### mix(sampleCount)
+### mix(buffer)
+The `mix` function can be called in two ways. First, when passed an integer count of the number of samples to mix, it returns a host buffer that contains the samples. Second, when passed a buffer (`ArrayBuffer`, `SharedArrayBuffer`, `Uint8Array`, `Int8Array`, `DataView`), it mixes the samples directly to the provided buffer.
+
+#### Output tone to new buffer
+The following code mixes 600 samples of a 440 Hz tone to a new buffer.
+
+```js
+const mixer = new Mixer({streams: 1, sampleRate: 12000, numChannels: 1});
+mixer.enqueue(0, Mixer.Tone, 440);
+const samples = mixer.mix(600);
+```
+
+#### Output tone to existing buffer
+The following code mixes 600 samples of a 440 Hz tone to an existing buffer.
+
+```js
+const samples = new ArrayBuffer(600 * 2);
+const mixer = new Mixer({streams: 1, sampleRate: 12000, numChannels: 1});
+mixer.enqueue(0, Mixer.Tone, 440);
+mixer.mix(samples);
+```
 
 ## MAUD format
 The `maud` format, "Moddable Audio", is a simple audio format intended to be compact and trivially parsed. The `enqueue` function of `AudioOut` class accepts samples in the `maud` format. The `wav2maud` tool in the Moddable SDK converts WAV files to `maud` resources.

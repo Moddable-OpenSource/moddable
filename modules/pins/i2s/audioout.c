@@ -934,20 +934,33 @@ void xs_audioout_enqueue(xsMachine *the)
 void xs_audioout_mix(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
-	int samplesNeeded = xsmcToInteger(xsArg(0));
-	int bytesNeeded = samplesNeeded * out->bytesPerFrame;
-	void *result = c_malloc(bytesNeeded);
+	int samplesNeeded;
+	void *result;
 
-	if (!result)
-		xsUnknownError("no memory");
+	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+		xsUnsignedValue bytesAvailable;
+		xsmcGetBufferReadable(xsArg(0), (void **)&result, &bytesAvailable);
+		samplesNeeded = bytesAvailable / out->bytesPerFrame;
+	}
+	else {
+		samplesNeeded = xsmcToInteger(xsArg(0));
+		if (samplesNeeded < 0)
+			xsRangeError("invalid count");
+		
+		int bytesNeeded = samplesNeeded * out->bytesPerFrame;
+		result = c_malloc(bytesNeeded);
+		if (!result)
+			xsUnknownError("no memory");
+
+		xsResult = xsNewHostObject(c_free);
+		xsmcSetHostBuffer(xsResult, result, bytesNeeded);
+
+		xsmcVars(1);
+		xsmcSetInteger(xsVar(0), bytesNeeded);
+		xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
+	}
 
 	audioMix(out, samplesNeeded, result);
-	xsResult = xsNewHostObject(c_free);
-	xsmcSetHostBuffer(xsResult, result, bytesNeeded);
-
-	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), bytesNeeded);
-	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDefault);
 }
 
 void xs_audioout_length(xsMachine *the)
