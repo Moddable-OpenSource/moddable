@@ -276,6 +276,11 @@ static void endOfElement(modAudioOut out, modAudioOutStream stream);
 static void setStreamVolume(modAudioOut out, modAudioOutStream stream, int volume);
 static int streamDecompressNext(modAudioOutStream stream);
 
+static const xsHostHooks ICACHE_RODATA_ATTR xsAudioOutHooks = {
+	xs_audioout_destructor,
+	NULL,
+	NULL
+};
 
 #if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
 	#define MIXSAMPLETYPE int16_t
@@ -411,6 +416,7 @@ void xs_audioout(xsMachine *the)
 	if (!out)
 		xsUnknownError("no memory");
 	xsmcSetHostData(xsThis, out);
+	xsSetHostHooks(xsThis, (void *)&xsAudioOutHooks);
 
 	out->the = the;
 	out->obj = xsThis;
@@ -433,7 +439,7 @@ void xs_audioout(xsMachine *the)
 
 void xs_audioout_build(xsMachine *the)
 {
-	modAudioOut out = xsmcGetHostData(xsThis);
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 
 #if defined(__APPLE__)
 	OSStatus err;
@@ -522,8 +528,6 @@ static void downUseCount(modAudioOut out)
 	if (out->useCount > 0)
 		return;
 
-	xsmcSetHostData(out->obj, NULL);
-
 	if (out->built)
 		xsForget(out->obj);
 
@@ -533,14 +537,16 @@ static void downUseCount(modAudioOut out)
 void xs_audioout_close(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostData(xsThis);
-	if (!out) return;
-
-	downUseCount(out);
+	if (out && xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks)) {
+		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
+		downUseCount(out);
+	}
 }
 
 void xs_audioout_start(xsMachine *the)
 {
-	modAudioOut out = xsmcGetHostData(xsThis);
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 
 #if MODDEF_AUDIOOUT_I2S_PDM
 	out->prevSample = 0;
@@ -571,7 +577,7 @@ void xs_audioout_start(xsMachine *the)
 
 void xs_audioout_stop(xsMachine *the)
 {
-	modAudioOut out = xsmcGetHostData(xsThis);
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 
 #if defined(__APPLE__)
 	AudioQueueStop(out->audioQueue, true);
@@ -607,7 +613,7 @@ enum {
 
 void xs_audioout_enqueue(xsMachine *the)
 {
-	modAudioOut out = xsmcGetHostData(xsThis);
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 	int streamIndex, argc = xsmcArgc;
 	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume, i, samplesInBuffer;
 	uint8_t kind;
@@ -927,7 +933,7 @@ void xs_audioout_enqueue(xsMachine *the)
 
 void xs_audioout_mix(xsMachine *the)
 {
-	modAudioOut out = xsmcGetHostData(xsThis);
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 	int samplesNeeded = xsmcToInteger(xsArg(0));
 	int bytesNeeded = samplesNeeded * out->bytesPerFrame;
 	void *result = c_malloc(bytesNeeded);
@@ -946,7 +952,7 @@ void xs_audioout_mix(xsMachine *the)
 
 void xs_audioout_length(xsMachine *the)
 {
-	modAudioOut out = xsmcGetHostData(xsThis);
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 	int streamIndex = xsmcToInteger(xsArg(0));
 	if ((streamIndex < 0) || (streamIndex >= out->streamCount))
 		xsRangeError("invalid stream");
