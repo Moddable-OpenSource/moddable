@@ -766,13 +766,9 @@ export default class extends TOOL {
 			} break;
 
 			case "link call":
-			case "link out": {
-				let length = config.links.length;
-				const links = config.links;
+			case "link out":
 				config.links = config.links?.filter(link => nodes.includes(link));	// remove broken links
-				if (length !== config.links.length)
-					debugger;
-			} break;
+				break;
 
 			case "link in":
 				delete config.links;
@@ -866,6 +862,77 @@ export default class extends TOOL {
 				else
 					delete config.level;
 
+			} break;
+			
+			case "random": {
+				let low = config.low ? Number(config.low) : undefined;
+				let high = config.high ? Number(config.high) : undefined;
+				const integer = "true" === config.inte;
+				const property = config.property ?? "payload";
+				const random = [];
+
+				if (((undefined !== low) && isNaN(low)) || ((undefined !== high) && isNaN(high)))
+					throw new Error("invalid value for low and/or high");
+
+				if (integer) {
+					if (undefined !== low)
+						low = Math.ceil(low);
+					if (undefined !== high)
+						high = Math.floor(high);
+				}
+
+				let value;
+				random.push(`function (msg) {`);
+				if ((undefined !== low) && (undefined !== high)) {
+					if (low > high) {
+						const t = high;
+						high = low;
+						low = t;
+					}
+
+					if (integer)
+						value = `Math.round(Math.random() * ${high - low + 1} + ${low - 0.5})`;
+					else
+						value = `(Math.random() * ${high - low}) + ${low}`;
+				}
+				else {
+					if (undefined !== low)
+						random.push(`\t\t\tlet low = ${low};`);
+					else {
+						random.push(`\t\t\tlet low = Number(msg.from ?? 1);`);
+						random.push(`\t\t\tif (isNaN(low)) return this.error("invalid low");`);
+					}
+
+					if (undefined !== high)
+						random.push(`\t\t\tlet high = ${high};`);
+					else {
+						random.push(`\t\t\tlet high = Number(msg.to ?? 10);`);
+						random.push(`\t\t\tif (isNaN(high)) return this.error("invalid high");`);
+					}
+
+					random.push(`\t\t\tif (low > high) {`);
+					random.push(`\t\t\t\tconst t = high;`);
+					random.push(`\t\t\t\thigh = low;`);
+					random.push(`\t\t\t\tlow = t;`);
+					random.push(`\t\t\t}`);
+					
+					if (integer) {
+						random.push(`\t\t\tlow  = Math.ceil(low);`);
+						value = `Math.round(Math.random() * (Math.floor(high) - low + 1) + low - 0.5)`;
+					}
+					else
+						value = `(Math.random() * (high - low)) + low`;
+				}
+				random.push(`\t\t\tmsg${this.prepareProp(property)} = ${value};`);
+
+				random.push(`\t\t\treturn msg;`);
+				random.push(`\t\t}`);
+				config.onMessage = random.join("\n");
+
+				delete config.low;
+				delete config.high;
+				delete config.inte;
+				delete config.property;
 			} break;
 		}
 
