@@ -46,6 +46,22 @@ const NoDoneNodes = [
 	"switch",
 ];
 
+// nodes that don't report status
+const NoStatusNodes = [
+	"catch",
+	"change",
+	"comment",
+	"complete",
+	"inject",
+	"link call",
+	"link in",
+	"link out",
+	"range",
+	"split",
+	"status",
+	"switch"
+];
+
 export default class extends TOOL {
 	constructor(argv) {
 		super(argv);
@@ -185,6 +201,14 @@ export default class extends TOOL {
 				delete c._mcu;
 
 				try {
+					// enabled status nodes for this node
+					const statuses = flows.filter(config => {
+						if ((config.z !== z) || config.d || (config.type !== "status"))
+							return;
+
+						return !config.scope || config.scope.includes(id);
+					}).map(config => config.id);
+
 					// enabled completion nodes for this node
 					const dones = flows.filter(config => {
 						if ((config.z !== z) || config.d || (config.type !== "complete"))
@@ -203,8 +227,8 @@ export default class extends TOOL {
 					if (0 === errors.length)
 						errors = flows.filter(config => (config.z === z) && config.uncaught && !config.d && (config.type === "catch"));
 					errors = errors.map(config => config.id);
-				
-					this.prepareNode(type, c, dones.length ? dones : undefined, errors.length ? errors : undefined, nodes);
+
+					this.prepareNode(type, c, dones.length ? dones : undefined, errors.length ? errors : undefined, statuses.length ? statuses : undefined, nodes);
 					let configuration = ["{"];
 					for (const name in c) {
 						const value = c[name];
@@ -236,8 +260,12 @@ export default class extends TOOL {
 		
 		return parts.join("\n");
 	}
-	prepareNode(type, config, dones, errors, nodes) {
+	prepareNode(type, config, dones, errors, statuses, nodes) {
 		switch (type) {
+			case "status": {
+				delete config.scope;
+			} break;
+
 			case "catch": {
 				delete config.uncaught;
 				delete config.scope;
@@ -868,7 +896,7 @@ export default class extends TOOL {
 				let low = config.low ? Number(config.low) : undefined;
 				let high = config.high ? Number(config.high) : undefined;
 				const integer = "true" === config.inte;
-				const property = config.property ?? "payload";
+				const property = config.property || "payload";
 				const random = [];
 
 				if (((undefined !== low) && isNaN(low)) || ((undefined !== high) && isNaN(high)))
@@ -938,6 +966,9 @@ export default class extends TOOL {
 
 		if (dones && !NoDoneNodes.includes(type))
 			config.dones = dones;
+
+		if (statuses && !NoStatusNodes.includes(type))
+			config.statuses = statuses;
 
 		if (errors && !NoErrorNodes.includes(type))
 			config.errors = errors;
