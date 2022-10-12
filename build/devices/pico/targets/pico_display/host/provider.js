@@ -24,6 +24,7 @@ import DigitalBank from "embedded:io/digitalbank";
 import I2C from "embedded:io/i2c";
 import PWM from "embedded:io/pwm";
 import SMBus from "embedded:io/smbus";
+import SPI from "embedded:io/spi";
 
 const device = {
 	I2C: {
@@ -34,13 +35,21 @@ const device = {
 			port: 0
 		}
 	},
+	SPI: {
+		default: {
+			io: SPI,
+			clock: 18,
+			out: 19,
+			port: 0
+		}
+	},
 	Analog: {
 		default: {
 			io: Analog,
 			pin: 26
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PWM, SMBus },
+	io: { Analog, Digital, DigitalBank, I2C, PWM, SMBus, SPI },
 	pin: {
 		button: 16,
 		buttonA: 16,

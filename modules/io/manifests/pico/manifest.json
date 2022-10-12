@@ -4,13 +4,15 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/pins/digital/manifest.json"
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
 			"$(IO)/digital/$(PLATFORM)/*",
-			"$(IO)/i2c/$(PLATFORM)/*"
+			"$(IO)/i2c/$(PLATFORM)/*",
+			"$(IO)/spi/$(PLATFORM)/*"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
@@ -21,6 +23,7 @@
 		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"embedded:io/smbus": "$(IO)/i2c/smbus",
+		"embedded:io/spi": "$(IO)/spi/spi",
 
 		"system": "$(IO)/system/*"
 	},
