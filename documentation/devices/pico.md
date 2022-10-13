@@ -1,20 +1,17 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: September 29, 2022
+Revised: October 13, 2022
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
 > Note: The Pico port is solid and mostly complete. Possible future work includes:
 > 
 > - Mods
-> - TC53 IO
-> - PWM output
 > - Audio
 > - JavaScript Atomics
 > - Web Workers making use of the second core
 > - PIO integration
 > - Building on Windows
-
 
 ## Table of Contents
 
@@ -70,7 +67,7 @@ A list of available Pico subplatforms and their platform identifiers is provided
 The Raspberry Pi Pico has the following features:
 
 - RP2040 microcontroller running up to 133 MHz
-- Dual-core Arm Cortex M0+
+- Dual-core ARM Cortex M0+
 - 264 KB RAM
 - 2 MB flash
 
@@ -78,12 +75,19 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| <img src="../assets/devices/pi-pico.png" width=220><BR>Rasberry Pi<BR>Pico | `pico` | LED, 26 External pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
-| <img src="../assets/devices/pi-pico_w.png" height=180><BR>Rasberry Pi<BR>Pico W | `pico/pico_w` | Wi-Fi Connectivity, LED, 26 External pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
-| <img src="../assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display | `pico/pico_display`<BR>`simulator/pico_display` | **1.4" IPS display**<BR>135 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display](https://pimoroni.com/picodisplay)</li> |
-| <img src="../assets/devices/pico-display-2.png" width=300></a><BR>Pimoroni<BR>Pico Display 2 | `pico/pico_display_2`<BR>`simulator/pico_display_2` | **2.0" IPS display**<BR>320 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display 2](https://shop.pimoroni.com/products/pico-display-pack-2-0)</li> |
-| <img src="../assets/devices/pico-lcd-1.3.png" width=300></a><BR>Waveshare<BR>Pico LCD 1.3 | `pico/pico_lcd_1.3` | **1.3" IPS display**<BR>240 x 240<BR>16-bit color<BR>4 buttons<BR>1 joystick | <li>[Waveshare Pico LCD 1.3](https://www.waveshare.com/wiki/Pico-LCD-1.3)</li> |
-| <img src="../assets/devices/pico-ili9341.png" width=85></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
+| <img src="../assets/devices/pi-pico.png" width=220><BR>Rasberry Pi<BR>Pico | `pico` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pi-pico_w.png" width=65><BR>Rasberry Pi<BR>Pico W | `pico/pico_w` | Wi-Fi, LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pico-display.png" width=80></a><BR>Pimoroni<BR>Pico Display | `pico/pico_display`<BR>`simulator/pico_display` | **1.4" IPS display**<BR>135 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display](https://pimoroni.com/picodisplay)</li> |
+| <img src="../assets/devices/pico-display-2.png" width=200></a><BR>Pimoroni<BR>Pico Display 2 | `pico/pico_display_2`<BR>`simulator/pico_display_2` | **2.0" IPS display**<BR>320 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display 2](https://shop.pimoroni.com/products/pico-display-pack-2-0)</li> |
+| <img src="../assets/devices/pico-lcd-1.3.png" width=220></a><BR>Waveshare<BR>Pico LCD 1.3 | `pico/pico_lcd_1.3` | **1.3" IPS display**<BR>240 x 240<BR>16-bit color<BR>4 buttons<BR>1 joystick | <li>[Waveshare Pico LCD 1.3](https://www.waveshare.com/wiki/Pico-LCD-1.3)</li> |
+| <img src="../assets/devices/pico-adafruit-itsyBitsy-rp2040.png" width=220></a><BR>Adafruit<BR>ItsyBitsy RP2040 | `pico/itsybitsy` | Neopixel, 1 button | <li>[Adafruit product page](https://www.adafruit.com/product/4888)</li> |
+| <img src="../assets/devices/pico-lilygo-t-display-rp2040.png" width=220></a><BR>LILYGO<BR>T-Display RP240 | `pico/lilygo_t_display` | **1.14" ST7789**, 2 buttons, red LED | <li>[LilyGO T-Display GitHub repository](https://github.com/Xinyuan-LilyGO/LILYGO-T-display-RP2040)</li> |
+| <img src="../assets/devices/pico-pimoroni-picoSystem.png" width=220></a><BR>Pimoroni<BR>PicoSystem | `pico/picosystem` | **1.54" IPS LCD**, 240 x 240, D-pad & 4 buttons, RGB LED | <li>[Pimoroni product page](https://shop.pimoroni.com/products/picosystem?variant=32369546985555)</li> |
+| <img src="../assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=220></a><br>Sparkfun<br>Pro Micro RP2040 | `pico/pro_micro` | Qwiic/STEMMA connector, Neopixel | <li>[Sparkfun product page](https://www.sparkfun.com/products/18288)</li> |
+| <img src="../assets/devices/pico-adafruit-qt-py-rp2040.png" width=150></a><br>Adafruit<br>QT Py | `pico/qtpy` | STEMMA/Qwiic connector, Neopixel, 1 button | <li>[Adafruit product page](https://www.adafruit.com/product/4900)</li> |
+| <img src="../assets/devices/pico-pimoroni-tiny-2040.png"width=150></a><br>Pimoroni<br>Tiny 2040 | `pico/tiny2040` | RGB LED, 1 button| <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2040?variant=39560012234835)</li> |
+| <img src="../assets/devices/pico-seeed-studio-xiao-rf2040.png"width=150></a><br>Seeed Studio<br>XIAO RP2040 | `pico/xiao_rp2040` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html)</li> |
+| <img src="../assets/devices/pico-ili9341.png" width=140></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
