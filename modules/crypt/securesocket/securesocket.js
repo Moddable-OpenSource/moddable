@@ -74,7 +74,7 @@ class SecureSocket {
 						if (this.handshaking)
 							this.messageHandler(0);
 						else {
-							if (value > 128)			//@@ 128 is guess at TLS overhead
+							if (value > 128)			//@@ 128 is an estimate of TLS overhead
 								this.callback(3, value - 128)
 						}
 						break;
