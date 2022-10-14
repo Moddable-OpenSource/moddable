@@ -600,6 +600,7 @@ static xsIntegerValue xs_outline_arcToCubic(xsMachine* the, xsNumberValue theta,
 		return 0;
 	c = c_ceil(c_fabs(delta) / (C_M_PI / 2));
 	if (c < 1) c = 1;
+	else if (c > 4) c = 4;
 	delta /= c;
 	for (i = 0, p = points; i < c; i++) {
 		xsNumberValue ratio, x1, y1, x2, y2;
