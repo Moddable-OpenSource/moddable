@@ -253,8 +253,5 @@ int fxStringCGetter(void* theStream)
 void fxJump(txMachine* the)
 {
 	txJump* aJump = the->firstJump;
-#ifdef mxProfile
-	fxJumpFrames(the, the->frame, aJump->frame);
-#endif	
 	c_longjmp(aJump->buffer, 1);
 }

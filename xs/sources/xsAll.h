@@ -290,6 +290,9 @@ typedef union {
 	struct { txSlot* check; txSlot* first; } private;
 	
 	txID* IDs;
+#ifdef mxProfile
+	struct { void* node; txID file; txInteger line; } profile;
+#endif
 } txValue;
 
 struct sxBlock {
@@ -378,11 +381,6 @@ struct sxInspectorNameLink {
 struct sxInspectorNameList {
 	txInspectorNameLink *first;
 	txInspectorNameLink* last;
-};
-
-struct sxProfileRecord {
-	txInteger delta;
-	txInteger profileID;
 };
 
 struct sxMachine {
@@ -488,18 +486,7 @@ struct sxMachine {
 	txU4 meterInterval;
 #endif
 #ifdef mxProfile
-	txString profileDirectory;
-	void* profileFile;
-	txInteger profileID;
-	#if mxWindows
-		LARGE_INTEGER profileFrequency;
-		LARGE_INTEGER profileCounter;
-	#else
-		c_timeval profileTV;
-	#endif
-	txProfileRecord* profileBottom;
-	txProfileRecord* profileCurrent;
-	txProfileRecord* profileTop;
+	void* profiler;
 #endif
 };
 
@@ -1818,13 +1805,14 @@ mxExport void fx_mutabilities(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
-extern void fxBeginFunction(txMachine* the, txSlot* function);
-extern void fxBeginGC(txMachine* the);
-extern void fxEndFunction(txMachine* the, txSlot* function);
-extern void fxEndGC(txMachine* the);
-extern void fxJumpFrames(txMachine* the, txSlot* from, txSlot* to);
+extern void fxCreateProfiler(txMachine* the);
+extern void fxDeleteProfiler(txMachine* the);
+extern void fxEnterGC(txMachine* the);
+extern void fxLeaveGC(txMachine* the);
+extern void fxProfilerLine(txMachine* the, txSlot* frame, txID file, txInteger line);
 #endif
-mxExport txS1 fxIsProfiling(txMachine* the);
+
+mxExport txBoolean fxIsProfiling(txMachine* the);
 mxExport void fxStartProfiling(txMachine* the);
 mxExport void fxStopProfiling(txMachine* the);
 
@@ -1999,6 +1987,7 @@ enum {
 	XS_BUFFER_INFO_KIND,
 	XS_MODULE_SOURCE_KIND,
 	XS_IDS_KIND,
+	XS_PROFILE_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,

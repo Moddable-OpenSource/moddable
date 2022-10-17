@@ -619,9 +619,10 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	/* PROFILE */
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
+	property->kind = XS_PROFILE_KIND;
+	property->value.profile.node = C_NULL;
+	property->value.profile.file = XS_NO_ID;
+	property->value.profile.line = 0;
 #endif
 
 	/* LENGTH */
@@ -1377,16 +1378,10 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 		#ifdef mxDebug
 			the->name = theName;
 		#endif
-		#ifdef mxProfile
-			the->profileID = 1;
-			the->profileBottom = c_malloc(XS_PROFILE_COUNT * sizeof(txProfileRecord));
-			if (!the->profileBottom)
-				fxJump(the);
-			the->profileCurrent = the->profileBottom;
-			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
-		#endif
-
 			fxAllocate(the, theCreation);
+		#ifdef mxProfile
+			fxCreateProfiler(the);
+		#endif
 
             c_memset(the->nameTable, 0, the->nameModulo * sizeof(txSlot *));
 			c_memset(the->symbolTable, 0, the->symbolModulo * sizeof(txSlot *));
@@ -1539,9 +1534,6 @@ void fxDeleteMachine(txMachine* the)
 #endif
 
 	if (!(the->shared)) {
-	#ifdef mxProfile
-		fxStopProfiling(the);
-	#endif
 	#ifdef mxFrequency
 		fxReportFrequency(the);
 	#endif
@@ -1574,20 +1566,10 @@ void fxDeleteMachine(txMachine* the)
 		aSlot = aSlot->next;
 	}
 #endif
+#ifdef mxProfile
+	fxDeleteProfiler(the);
+#endif
 	fxDelete_dtoa(the->dtoa);
-	if (!(the->shared)) {
-	#ifdef mxProfile
-		if (the->profileBottom) {
-			c_free(the->profileBottom);
-			the->profileBottom = C_NULL;
-			the->profileCurrent = C_NULL;
-			the->profileTop = C_NULL;
-		}
-		if (the->profileDirectory) {
-			c_free(the->profileDirectory);
-		}
-	#endif
-	}
 	fxDeleteMachinePlatform(the);
 	fxFree(the);
 	c_free(the);
@@ -1627,14 +1609,8 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			the->name = theName;
 		#endif
 		#ifdef mxProfile
-			the->profileID = theMachine->profileID;
-			the->profileBottom = c_malloc(XS_PROFILE_COUNT * sizeof(txProfileRecord));
-			if (!the->profileBottom)
-				fxJump(the);
-			the->profileCurrent = the->profileBottom;
-			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
+			fxCreateProfiler(the);
 		#endif
-
 			fxAllocate(the, theCreation);
 
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
@@ -1816,14 +1792,6 @@ void fxShareMachine(txMachine* the)
 		fxCollectGarbage(the);
 		fxShare(the);
 		the->shared = 1;
-	#ifdef mxProfile
-		if (the->profileBottom) {
-			c_free(the->profileBottom);
-			the->profileBottom = C_NULL;
-			the->profileCurrent = C_NULL;
-			the->profileTop = C_NULL;
-		}
-	#endif
 	}
 }
 

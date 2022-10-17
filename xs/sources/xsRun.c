@@ -699,9 +699,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 #ifdef mxTraceCall
 		fxTraceCallBegin(the, mxFrameFunction);
 #endif
-#ifdef mxProfile
-		fxBeginFunction(the, mxFrameFunction);
-#endif
 XS_CODE_JUMP:
 		mxFirstCode();
 	}
@@ -854,6 +851,9 @@ XS_CODE_JUMP:
 							fxRunDerived(the);
 						(*(slot->value.callback.address))(the);
 						mxRestoreState;
+					#ifdef mxProfile
+						fxProfilerLine(the, mxFrame, XS_NO_ID, 0);
+					#endif
 						if (slot->flag & XS_BASE_FLAG)
 							goto XS_CODE_END_BASE_ALL;
 						if (slot->flag & XS_DERIVED_FLAG)
@@ -1004,9 +1004,6 @@ XS_CODE_JUMP:
 #ifdef mxTraceCall
 			fxTraceCallEnd(the, mxFrameFunction);
 #endif
-#ifdef mxProfile
-			fxEndFunction(the, mxFrameFunction);
-#endif
 #ifdef mxInstrument
 			if (the->stackPeak > mxStack)
 				the->stackPeak = mxStack;
@@ -1029,9 +1026,6 @@ XS_CODE_JUMP:
 			mxFirstCode();
 			mxBreak;
 		mxCase(XS_CODE_RETURN)
-#ifdef mxProfile
-			fxEndFunction(the, mxFrameFunction);
-#endif
 			mxStack = mxFrameEnd;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
@@ -3998,10 +3992,18 @@ XS_CODE_JUMP:
 			mxEnvironment->ID = count;
 		#endif
 			mxNextCode(1 + sizeof(txID));
+			count = mxRunS2(1);
+		#ifdef mxProfile
+			slot = mxFunctionInstanceProfile(mxFrameFunction->value.reference);
+			slot->value.profile.file = mxEnvironment->ID;
+			slot->value.profile.line = count;
+		#endif
+			goto XS_CODE_LINE_ALL;
 			mxBreak;
 		mxCase(XS_CODE_LINE)
 		#ifdef mxDebug
 			count = mxRunS2(1);
+		XS_CODE_LINE_ALL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, count);
 #endif
@@ -4016,6 +4018,9 @@ XS_CODE_JUMP:
 				fxDebugLine(the, mxEnvironment->ID, count);
 				mxRestoreState;
 			}
+		#endif
+		#ifdef mxProfile
+			fxProfilerLine(the, mxFrame, mxEnvironment->ID, count);
 		#endif
 			mxNextCode(3);
 			mxBreak;

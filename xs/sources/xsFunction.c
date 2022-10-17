@@ -157,9 +157,10 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	/* PROFILE */
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
+	property->kind = XS_PROFILE_KIND;
+	property->value.profile.node = C_NULL;
+	property->value.profile.file = XS_NO_ID;
+	property->value.profile.line = 0;
 #endif
 		
 	/* LENGTH */
