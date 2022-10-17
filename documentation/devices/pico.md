@@ -85,8 +85,8 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 | <img src="../assets/devices/pico-pimoroni-picoSystem.png" width=220></a><BR>Pimoroni<BR>PicoSystem | `pico/picosystem` | **1.54" IPS LCD**, 240 x 240, D-pad & 4 buttons, RGB LED | <li>[Pimoroni product page](https://shop.pimoroni.com/products/picosystem?variant=32369546985555)</li> |
 | <img src="../assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=220></a><br>Sparkfun<br>Pro Micro RP2040 | `pico/pro_micro` | Qwiic/STEMMA connector, Neopixel | <li>[Sparkfun product page](https://www.sparkfun.com/products/18288)</li> |
 | <img src="../assets/devices/pico-adafruit-qt-py-rp2040.png" width=150></a><br>Adafruit<br>QT Py | `pico/qtpy` | STEMMA/Qwiic connector, Neopixel, 1 button | <li>[Adafruit product page](https://www.adafruit.com/product/4900)</li> |
-| <img src="../assets/devices/pico-pimoroni-tiny-2040.png"width=150></a><br>Pimoroni<br>Tiny 2040 | `pico/tiny2040` | RGB LED, 1 button| <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2040?variant=39560012234835)</li> |
-| <img src="../assets/devices/pico-seeed-studio-xiao-rf2040.png"width=150></a><br>Seeed Studio<br>XIAO RP2040 | `pico/xiao_rp2040` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html)</li> |
+| <img src="../assets/devices/pico-pimoroni-tiny-2040.png" width=150></a><br>Pimoroni<br>Tiny 2040 | `pico/tiny2040` | RGB LED, 1 button| <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2040?variant=39560012234835)</li> |
+| <img src="../assets/devices/pico-seeed-studio-xiao-rf2040.png" width=150></a><br>Seeed Studio<br>XIAO RP2040 | `pico/xiao_rp2040` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html)</li> |
 | <img src="../assets/devices/pico-ili9341.png" width=140></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
 
 <a id="setup"></a>
