@@ -23,6 +23,7 @@
 
 GOAL ?= debug
 NAME = serial2xsbug
+MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
