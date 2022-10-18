@@ -37,11 +37,20 @@
 
 #include "xsAll.h"
 #if mxMacOSX
-#include <mach/mach_time.h>
-#define mxProfileTime() mach_absolute_time()
+#include <time.h>
+#define mxProfileTime() clock_gettime_nsec_np(CLOCK_MONOTONIC)
 #endif
 
 #ifdef mxProfile
+
+txU8 fxMicrosecondsToTicks(txU8 microseconds)
+{
+	return microseconds * 1000;
+}
+txU8 fxTicksToMicroseconds(txU8 ticks)
+{
+	return ticks / 1000;
+}
 
 typedef struct sxProfiler txProfiler;
 typedef struct sxProfilerRecord txProfilerRecord;
@@ -69,7 +78,7 @@ struct sxProfilerRecord {
 	txID functionID;
 	txID file;
 	txInteger line;
-	txInteger ticks;
+	txInteger hitCount;
 	txInteger calleeCount;
 	txU4* callees;
 };
@@ -126,11 +135,11 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 		txU8 delta = profiler->delta;
 		txU8 former = profiler->former;
 
-		record->ticks++;
+		record->hitCount++;
 		fxPushProfilerSample(the, record->recordID, when - former);
 		when += delta;
 		while (when < time) {
-			record->ticks++;
+			record->hitCount++;
 			fxPushProfilerSample(the, record->recordID, delta);
 			when += delta;
 		}
@@ -145,7 +154,7 @@ void fxCreateProfiler(txMachine* the)
 	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
 	if (profiler == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-	profiler->delta = 1000;
+	profiler->delta = fxMicrosecondsToTicks(1000);
 	profiler->former = mxProfileTime();
 	profiler->when = profiler->former + profiler->delta;
 	profiler->start = profiler->former;
@@ -301,7 +310,7 @@ txProfilerRecord* fxNewProfilerRecord(txMachine* the, txU4 recordIndex)
 	if (record == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	record->recordID = recordIndex;
-	record->ticks = 0;
+	record->hitCount = 0;
 	record->constructorID = XS_NO_ID;
 	record->prototypeID = XS_NO_ID;
 	record->functionID = XS_NO_ID;
@@ -376,7 +385,7 @@ void fxPrintProfiler(txMachine* the)
 					fprintf(file, "%s", key->value.key.string);
 				}
 			}
-			fprintf(file, "\",\"lineNumber\":%d,\"columnNumber\":-1},\"hitCount\":%d,\"children\":[", record->line - 1, record->ticks);
+			fprintf(file, "\",\"lineNumber\":%d,\"columnNumber\":-1},\"hitCount\":%d,\"children\":[", record->line - 1, record->hitCount);
 			txInteger calleeIndex = 0;
 			while (calleeIndex < record->calleeCount) {
 				if (calleeIndex > 0)
@@ -388,7 +397,7 @@ void fxPrintProfiler(txMachine* the)
 		}
 		recordIndex++;
 	}
-	fprintf(file, "],\"startTime\":%lld,\"endTime\":%lld,\"samples\":[", profiler->start, profiler->when);
+	fprintf(file, "],\"startTime\":%llu,\"endTime\":%llu,\"samples\":[", fxTicksToMicroseconds(profiler->start), fxTicksToMicroseconds(profiler->when));
 	{
 		txU8 sampleIndex = 0;
 		while (sampleIndex < profiler->sampleIndex) {
@@ -406,7 +415,7 @@ void fxPrintProfiler(txMachine* the)
 			txProfilerSample* sample = profiler->samples + sampleIndex;
 			if (sampleIndex > 0)
 				fprintf(file, ",");
-			fprintf(file, "%d", sample->delta);
+			fprintf(file, "%llu", fxTicksToMicroseconds(sample->delta));
 			sampleIndex++;
 		}
 	}
