@@ -620,9 +620,10 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_PROFILE_KIND;
-	property->value.profile.node = C_NULL;
+	property->value.profile.id = the->profileID;
 	property->value.profile.file = XS_NO_ID;
 	property->value.profile.line = 0;
+	the->profileID++;
 #endif
 
 	/* LENGTH */
@@ -1378,10 +1379,10 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 		#ifdef mxDebug
 			the->name = theName;
 		#endif
-			fxAllocate(the, theCreation);
 		#ifdef mxProfile
-			fxCreateProfiler(the);
+			the->profileID = 2;
 		#endif
+			fxAllocate(the, theCreation);
 
             c_memset(the->nameTable, 0, the->nameModulo * sizeof(txSlot *));
 			c_memset(the->symbolTable, 0, the->symbolModulo * sizeof(txSlot *));
@@ -1566,9 +1567,6 @@ void fxDeleteMachine(txMachine* the)
 		aSlot = aSlot->next;
 	}
 #endif
-#ifdef mxProfile
-	fxDeleteProfiler(the);
-#endif
 	fxDelete_dtoa(the->dtoa);
 	fxDeleteMachinePlatform(the);
 	fxFree(the);
@@ -1609,7 +1607,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			the->name = theName;
 		#endif
 		#ifdef mxProfile
-			fxCreateProfiler(the);
+			the->profileID = 2;
 		#endif
 			fxAllocate(the, theCreation);
 
@@ -1860,6 +1858,9 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 
 txMachine* fxBeginHost(txMachine* the)
 {
+#ifdef mxProfile
+	fxCheckProfiler(the, C_NULL);
+#endif
 	mxOverflow(-7);
 	/* THIS */
 	(--the->stack)->next = C_NULL;

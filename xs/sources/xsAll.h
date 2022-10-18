@@ -291,7 +291,7 @@ typedef union {
 	
 	txID* IDs;
 #ifdef mxProfile
-	struct { void* node; txID file; txInteger line; } profile;
+	struct { txU4 id; txID file; txInteger line; } profile;
 #endif
 } txValue;
 
@@ -486,6 +486,7 @@ struct sxMachine {
 	txU4 meterInterval;
 #endif
 #ifdef mxProfile
+	txU4 profileID;
 	void* profiler;
 #endif
 };
@@ -1805,11 +1806,7 @@ mxExport void fx_mutabilities(txMachine* the);
 
 /* xsProfile.c */
 #ifdef mxProfile
-extern void fxCreateProfiler(txMachine* the);
-extern void fxDeleteProfiler(txMachine* the);
-extern void fxEnterGC(txMachine* the);
-extern void fxLeaveGC(txMachine* the);
-extern void fxProfilerLine(txMachine* the, txSlot* frame, txID file, txInteger line);
+extern void fxCheckProfiler(txMachine* the, txSlot* frame);
 #endif
 
 mxExport txBoolean fxIsProfiling(txMachine* the);

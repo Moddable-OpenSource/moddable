@@ -275,9 +275,6 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 		return;
 	}
 
-#ifdef mxProfile
-	fxEnterGC(the);
-#endif
 	if (theFlag) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the);
@@ -368,7 +365,7 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 	the->garbageCollectionCount++;
 #endif
 #ifdef mxProfile
-	fxLeaveGC(the);
+	fxCheckProfiler(the, C_NULL);
 #endif
 }
 

@@ -852,7 +852,7 @@ XS_CODE_JUMP:
 						(*(slot->value.callback.address))(the);
 						mxRestoreState;
 					#ifdef mxProfile
-						fxProfilerLine(the, mxFrame, XS_NO_ID, 0);
+						fxCheckProfiler(the, mxFrame);
 					#endif
 						if (slot->flag & XS_BASE_FLAG)
 							goto XS_CODE_END_BASE_ALL;
@@ -4020,7 +4020,7 @@ XS_CODE_JUMP:
 			}
 		#endif
 		#ifdef mxProfile
-			fxProfilerLine(the, mxFrame, mxEnvironment->ID, count);
+			fxCheckProfiler(the, mxFrame);
 		#endif
 			mxNextCode(3);
 			mxBreak;
