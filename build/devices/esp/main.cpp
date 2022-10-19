@@ -25,6 +25,7 @@
 #include "xsHost.h"
 #include "xsHosts.h"
 #include "modTimer.h"
+#include "modInstrumentation.h"
 
 extern "C" {
 	#include "user_interface.h"		// to get system_soft_wdt_feed
@@ -96,7 +97,7 @@ void setup()
 
 void loop(void)
 {
-#if mxDebug
+#ifdef mxDebug
 	fxReceiveLoop();
 #endif
 
@@ -107,6 +108,7 @@ void loop(void)
 		if (delayMS)
 			modDelayMilliseconds(delayMS);
 	}
+	modInstrumentationAdjust(Turns, +1);
 }
 
 /*
