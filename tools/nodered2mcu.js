@@ -194,7 +194,7 @@ export default class extends TOOL {
 				if (config.d)
 					return;
 
-				const {type, id, name, ...c} = {...config};
+				const {type, id, /* name, */ ...c} = {...config};
 				delete c.x;
 				delete c.y;
 				delete c.z;
