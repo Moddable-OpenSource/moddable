@@ -19,7 +19,7 @@
  */
 
 /*
-	Analog - uing ESP-IDF
+	Analog - using ESP-IDF
 */
 
 #include "xsmc.h"			// xs bindings for microcontroller
@@ -59,9 +59,10 @@ typedef struct AnalogRecord *Analog;
 		5
 	};
 
-#elif kCPUESP32S2
-	#define ADC_RESOLUTION (13)
-	#define ADC_WIDTH ADC_WIDTH_BIT_13
+#elif kCPUESP32S2 || kCPUESP32S3
+
+	#define ADC_RESOLUTION SOC_ADC_MAX_BITWIDTH		// (13)
+	#define ADC_WIDTH SOC_ADC_MAX_BITWIDTH			// ADC_WIDTH_BIT_13
 	#define ADC_ATTEN ADC_ATTEN_DB_11
 
 	static const uint8_t gADCMap[ADC1_CHANNEL_MAX] = {		// ADC1 channel to GPIO
