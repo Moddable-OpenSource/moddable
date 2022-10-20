@@ -187,7 +187,8 @@ txScript* fxParserCode(txParser* parser)
 	coder.parser = parser;
 	if (parser->errorCount == 0) {
 		mxTryParser(parser) {
-			fxNodeDispatchCode(parser->root, &coder);
+			txNode* self = parser->root;
+			(*self->description->dispatch->code)(parser->root, &coder);
 		}
 		mxCatchParser(parser) {
 		}
@@ -3189,9 +3190,11 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, fxCoderCountParameters(coder, self->params));
 	else
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_SLOPPY, fxCoderCountParameters(coder, self->params));
+	coder->path = C_NULL;
+	if (self->line >= 0)
+		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (self->scopeCount)
 		fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
-	coder->path = C_NULL;
 	fxScopeCodeRetrieve(self->scope, param);
 	fxScopeCodingParams(self->scope, param);
 	if (self->flags & mxBaseFlag) {
@@ -3518,9 +3521,11 @@ void fxModuleNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
 		fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
+		coder->path = C_NULL;
+		if (self->line >= 0)
+			fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 		if (self->scopeCount)
 			fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
-		coder->path = C_NULL;
 		fxScopeCodeRetrieve(self->scope, param);
 		declaration = self->scope->firstDeclareNode;
 		while (declaration) {
@@ -3554,10 +3559,11 @@ void fxModuleNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
 	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 	fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
-
+	coder->path = C_NULL;
+	if (self->line >= 0)
+		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (self->scopeCount)
 		fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
-	coder->path = C_NULL;
 	fxScopeCodeRetrieve(self->scope, param);
 	
 	if (self->flags & mxAwaitingFlag)
@@ -3953,6 +3959,8 @@ void fxProgramNodeCode(void* it, void* param)
 	else
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_SLOPPY, 0);
 	coder->path = C_NULL;
+	if (self->line >= 0)
+		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (coder->parser->flags & mxEvalFlag) {
 		coder->evalFlag = 1;
 		fxScopeCodingEval(self->scope, param);

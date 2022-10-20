@@ -290,9 +290,6 @@ typedef union {
 	struct { txSlot* check; txSlot* first; } private;
 	
 	txID* IDs;
-#ifdef mxProfile
-	struct { txU4 id; txID file; txInteger line; } profile;
-#endif
 } txValue;
 
 struct sxBlock {
@@ -1984,7 +1981,6 @@ enum {
 	XS_BUFFER_INFO_KIND,
 	XS_MODULE_SOURCE_KIND,
 	XS_IDS_KIND,
-	XS_PROFILE_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,

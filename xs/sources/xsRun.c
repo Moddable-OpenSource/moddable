@@ -3992,18 +3992,10 @@ XS_CODE_JUMP:
 			mxEnvironment->ID = count;
 		#endif
 			mxNextCode(1 + sizeof(txID));
-			count = mxRunS2(1);
-		#ifdef mxProfile
-			slot = mxFunctionInstanceProfile(mxFrameFunction->value.reference);
-			slot->value.profile.file = mxEnvironment->ID;
-			slot->value.profile.line = count;
-		#endif
-			goto XS_CODE_LINE_ALL;
 			mxBreak;
 		mxCase(XS_CODE_LINE)
 		#ifdef mxDebug
 			count = mxRunS2(1);
-		XS_CODE_LINE_ALL:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, count);
 #endif

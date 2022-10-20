@@ -50,6 +50,7 @@ C_OPTIONS = \
 	/D mxLockdown=1 \
 	/D mxNoConsole=1 \
 	/D mxParse=1 \
+	/D mxProfile=1 \
 	/D mxRun=1 \
 	/D mxSloppy=1 \
 	/D mxSnapshot=1 \

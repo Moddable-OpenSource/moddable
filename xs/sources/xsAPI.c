@@ -619,10 +619,8 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	/* PROFILE */
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_PROFILE_KIND;
-	property->value.profile.id = the->profileID;
-	property->value.profile.file = XS_NO_ID;
-	property->value.profile.line = 0;
+	property->kind = XS_INTEGER_KIND;
+	property->value.integer = the->profileID;
 	the->profileID++;
 #endif
 

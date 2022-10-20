@@ -36,20 +36,46 @@
  */
 
 #include "xsAll.h"
-#if mxMacOSX
-#include <time.h>
-#define mxProfileTime() clock_gettime_nsec_np(CLOCK_MONOTONIC)
-#endif
 
 #ifdef mxProfile
 
+txU8 fxGetTicks()
+{
+#if mxMacOSX
+	return clock_gettime_nsec_np(CLOCK_MONOTONIC);
+#elif mxWindows
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	return counter.QuadPart;
+#else
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	return (tv.tv_sec * 1000000ULL) + tv.tv_usec;
+#endif
+}
 txU8 fxMicrosecondsToTicks(txU8 microseconds)
 {
+#if mxMacOSX
 	return microseconds * 1000;
+#elif mxWindows
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	return (frequency.QuadPart * microseconds) / 1000000ULL;
+#else
+	return microseconds;
+#endif
 }
 txU8 fxTicksToMicroseconds(txU8 ticks)
 {
+#if mxMacOSX
 	return ticks / 1000;
+#elif mxWindows
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	return (1000000ULL * ticks) / frequency.QuadPart;
+#else
+	return ticks;
+#endif
 }
 
 typedef struct sxProfiler txProfiler;
@@ -92,6 +118,7 @@ static void fxCreateProfiler(txMachine* the);
 static void fxDeleteProfiler(txMachine* the);
 static void fxPrintID(txMachine* the, FILE* file, txID id);
 static void fxPrintProfiler(txMachine* the);
+static void fxPrintString(txMachine* the, FILE* file, txString theString);
 static void fxPushProfilerSample(txMachine* the, txU4 recordID, txU4 delta);
 static txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame);
 static void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txU4 recordID);
@@ -103,7 +130,7 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 	if (!profiler)
 		return;
 	txU8 when = profiler->when;
-	txU8 time = mxProfileTime();
+	txU8 time = fxGetTicks();
 	if (when < time) {
 		txProfilerRecord* callee = C_NULL;
 		txProfilerRecord* record = C_NULL;
@@ -136,11 +163,11 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 		txU8 former = profiler->former;
 
 		record->hitCount++;
-		fxPushProfilerSample(the, record->recordID, when - former);
+		fxPushProfilerSample(the, record->recordID, (txU4)(when - former));
 		when += delta;
 		while (when < time) {
 			record->hitCount++;
-			fxPushProfilerSample(the, record->recordID, delta);
+			fxPushProfilerSample(the, record->recordID, (txU4)delta);
 			when += delta;
 		}
 			
@@ -154,8 +181,8 @@ void fxCreateProfiler(txMachine* the)
 	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
 	if (profiler == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-	profiler->delta = fxMicrosecondsToTicks(1000);
-	profiler->former = mxProfileTime();
+	profiler->delta = (txU4)fxMicrosecondsToTicks(1000);
+	profiler->former = fxGetTicks();
 	profiler->when = profiler->former + profiler->delta;
 	profiler->start = profiler->former;
 	
@@ -166,7 +193,7 @@ void fxCreateProfiler(txMachine* the)
 		
 	profiler->sampleCount = 1024;
 	profiler->sampleIndex = 0;
-	profiler->samples = (txProfilerSample*)c_malloc(profiler->sampleCount * sizeof(txProfilerSample));
+	profiler->samples = (txProfilerSample*)c_malloc((size_t)(profiler->sampleCount * sizeof(txProfilerSample)));
 	if (profiler->samples == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	profiler->host = fxNewProfilerRecord(the, 0);
@@ -200,7 +227,7 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 		function = function->value.reference;
 		if (mxIsFunction(function)) {
 			txSlot* profile = mxFunctionInstanceProfile(function);
-			txU4 recordID = profile->value.profile.id;
+			txU4 recordID = profile->value.integer;
 			txProfilerRecord* record = C_NULL;
 			if (recordID < profiler->recordCount)
 				record = profiler->records[recordID];
@@ -246,8 +273,20 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 					}
 				}
 			}
-			record->file = profile->value.profile.file;
-			record->line = profile->value.profile.line;
+			txSlot* code = mxFunctionInstanceCode(function);
+			if ((code->kind == XS_CODE_KIND) || (code->kind == XS_CODE_X_KIND)) {
+				txByte* p = code->value.code.address + 2;
+				if (*p == XS_CODE_FILE) {
+					txID file;
+					txS2 line;
+					p++;
+					mxDecodeID(p, file);
+					p++;
+					mxDecode2(p, line);
+					record->file = file;
+					record->line = line;
+				}
+			}
 			return record;
 		}
 	}
@@ -327,11 +366,13 @@ void fxPrintID(txMachine* the, FILE* file, txID id)
 	txSlot* key = fxGetKey(the, id);
 	if (key) {
 		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
-			fprintf(file, "%s", key->value.key.string);
+			fxPrintString(the, file,  key->value.key.string);
 			return;
 		}
 		if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
-			fprintf(file, "[%s]", key->value.string);
+			fprintf(file, "[");
+			fxPrintString(the, file, key->value.string);
+			fprintf(file, "]");
 			return;
 		}
 	}
@@ -379,12 +420,8 @@ void fxPrintProfiler(txMachine* the)
 				fprintf(file, "(garbage collector)");
 
 			fprintf(file, "\",\"scriptId\":\"0\",\"url\":\"");
-			if (record->file != XS_NO_ID) {
-				txSlot* key = fxGetKey(the, record->file);
-				if (key) {
-					fprintf(file, "%s", key->value.key.string);
-				}
-			}
+			if (record->file != XS_NO_ID)
+				fxPrintID(the, file, record->file);
 			fprintf(file, "\",\"lineNumber\":%d,\"columnNumber\":-1},\"hitCount\":%d,\"children\":[", record->line - 1, record->hitCount);
 			txInteger calleeIndex = 0;
 			while (calleeIndex < record->calleeCount) {
@@ -423,6 +460,36 @@ void fxPrintProfiler(txMachine* the)
 	fclose(file);
 }
 
+void fxPrintString(txMachine* the, FILE* file, txString theString)
+{
+	char buffer[16];
+	for (;;) {
+		txInteger character;
+		char *p;
+		theString = mxStringByteDecode(theString, &character);
+		if (character == C_EOF)
+			break;
+		p = buffer;
+		if ((character < 32) || ((0xD800 <= character) && (character <= 0xDFFF))) {
+			*p++ = '\\'; 
+			*p++ = 'u'; 
+			p = fxStringifyUnicodeEscape(p, character, '\\');
+		}
+		else if (character == '"') {
+			*p++ = '\\';
+			*p++ = '"';
+		}
+		else if (character == '\\') {
+			*p++ = '\\';
+			*p++ = '\\';
+		}
+		else
+			p = mxStringByteEncode(p, character);
+		*p = 0;
+		fprintf(file, "%s", buffer);
+	}
+}
+
 void fxPushProfilerSample(txMachine* the, txU4 recordID, txU4 delta)
 {
 	txProfiler* profiler = the->profiler;
@@ -431,7 +498,7 @@ void fxPushProfilerSample(txMachine* the, txU4 recordID, txU4 delta)
 	txProfilerSample* sample;
 	if (sampleIndex == sampleCount) {
 		sampleCount += 1024;
-		profiler->samples = (txProfilerSample*)c_realloc(profiler->samples, sampleCount * sizeof(txProfilerSample));
+		profiler->samples = (txProfilerSample*)c_realloc(profiler->samples, (size_t)(sampleCount * sizeof(txProfilerSample)));
 		if (profiler->samples == C_NULL)
 			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		profiler->sampleCount = sampleCount;
@@ -473,7 +540,7 @@ void fxStopProfiling(txMachine* the)
 		return;	
 	if (the->frame)
 		fxAbort(the, XS_FATAL_CHECK_EXIT);
-	profiler->stop = mxProfileTime();
+	profiler->stop = fxGetTicks();
 	fxPrintProfiler(the);
 	fxDeleteProfiler(the);
 #endif

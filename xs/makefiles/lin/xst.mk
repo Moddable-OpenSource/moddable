@@ -53,6 +53,7 @@ C_OPTIONS = \
 	-DmxLockdown=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
+	-DmxProfile=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
 	-DmxSnapshot=1 \
