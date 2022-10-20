@@ -19,8 +19,9 @@
 
 
 file(TO_CMAKE_PATH "$ENV{MODDABLE}" ENV_MODDABLE)
+file(TO_CMAKE_PATH "${TMP_DIR}" C_TMP_DIR)
 set(COMPONENT_SRCS "main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${TMP_DIR})
+set(COMPONENT_ADD_INCLUDEDIRS ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${C_TMP_DIR})
 
 register_component()
 
