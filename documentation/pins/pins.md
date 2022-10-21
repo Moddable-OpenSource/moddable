@@ -1,6 +1,6 @@
 # Pins
-Copyright 2017-21 Moddable Tech, Inc.<BR>
-Revised: February 18, 2021
+Copyright 2017-22 Moddable Tech, Inc.<BR>
+Revised: October 20, 2022
 
 ## Table of Contents
 
@@ -232,9 +232,13 @@ The Analog class provides only static functions. It is not instantiated.
 
 ### `static read(pin)`
 
-The `read` function samples the value of the specified pin, returning a value from 0 to 1023. Pin numbers are device dependent.
+The `read` function samples the value of the specified pin, returning a value from 0 to 1023. 
 
-The following example samples an analog temperature sensor, converting the result to celsius degrees. The ESP8266 NodeMCU board has a single analog input pin, analog pin number 0.
+Pin numbers are device dependent:
+ - The ESP8266 NodeMCU board has a single analog input pin, analog pin number 0.
+ - On the ESP32, use the analog channel number, not the associated GPIO number. You can find GPIO number to analog channel mappings for ESP32 and ESP32-S2 in the [ESP-IDF ADC documentation](https://docs.espressif.com/projects/esp-idf/en/v4.2-beta1/esp32/api-reference/peripherals/adc.html#_CPPv414adc1_channel_t). Only ADC1 is supported on the ESP32.
+
+The following example samples an analog temperature sensor, converting the result to celsius degrees. 
 
 	let temperature = (Analog.read(0) / 1023) * 330 - 50;
 	trace(`Temperature is ${temperature} degrees celsius\n`);
