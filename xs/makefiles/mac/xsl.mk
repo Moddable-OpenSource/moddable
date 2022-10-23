@@ -40,6 +40,7 @@
 
 GOAL ?= debug
 NAME = xsl
+MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif

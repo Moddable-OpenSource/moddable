@@ -549,7 +549,7 @@ void xs_wifi_accessPoint(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
 	str = xsmcToString(xsVar(0));
 	ap->ssid_len = c_strlen(str);
-	if (ap->ssid_len > (sizeof(ap->ssid) - 1))
+	if (ap->ssid_len > sizeof(ap->ssid))
 		xsUnknownError("ssid too long - 32 bytes max");
 	c_memcpy(ap->ssid, str, ap->ssid_len);
 
@@ -557,7 +557,7 @@ void xs_wifi_accessPoint(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_password)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_password);
 		str = xsmcToString(xsVar(0));
-		if (c_strlen(str) > (sizeof(ap->password) - 1))
+		if (c_strlen(str) > sizeof(ap->password))
 			xsUnknownError("password too long - 64 bytes max");
 		if (c_strlen(str) < 8)
 			xsUnknownError("password too short - 8 bytes min");

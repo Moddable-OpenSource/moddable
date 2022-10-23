@@ -89,6 +89,7 @@
 	#if ESP32
 		(char *)"SPI flash erases",
 	#endif
+		(char *)"Turns",
 		(char *)"System bytes free",
 	#if ESP32
 		#if kTargetCPUCount == 1
@@ -113,6 +114,7 @@
 	#if ESP32
 		(char *)" sectors",
 	#endif
+		(char *)" turns",
 		(char *)" bytes",
 	#if ESP32
 		(char *)" percent",
@@ -893,6 +895,9 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
+	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
+        values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;     // ignore the turn that generates instrumentation
+
 	fxSampleInstrumentation(the, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
@@ -901,6 +906,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
+	modInstrumentationSet(Turns, 0);
 #if ESP32
 	modInstrumentationSet(SPIFlashErases, 0);
 #endif

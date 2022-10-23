@@ -1076,11 +1076,11 @@ void fxLoadVirtualModuleNamespace(txMachine* the, txSlot* object, txSlot* module
 				mxGetAll(at->value.at.id, at->value.at.index);
 				export = export->next = fxNewSlot(the);
 				export->ID = at->value.at.id;
-				export->kind = XS_EXPORT_KIND;
 				export->value.export.closure = fxNewSlot(the);
 				export->value.export.closure->kind = the->stack->kind;
 				export->value.export.closure->value = the->stack->value;
 				export->value.export.module = module;
+				export->kind = XS_EXPORT_KIND;
 				mxPop();
 			}
 		}

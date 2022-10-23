@@ -23,6 +23,7 @@
 
 GOAL ?= debug
 NAME = tools
+MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
