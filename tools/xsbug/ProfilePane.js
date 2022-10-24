@@ -226,8 +226,11 @@ class ProfileTableBehavior extends TableBehavior {
 		const order = data.order;
 		const total = data.total;
 		if (order == calleesOrder) {
-			const record = data.records[0];
-			column.add(new ProfileRecordTable({ depth, order, total, ...record }));
+			const records = data.records;
+			if (records.length) {
+				const record = data.records[0];
+				column.add(new ProfileRecordTable({ depth, order, total, ...record }));
+			}
 		}
 		else {
 			const records = data.records.filter(record => record.hitCount > 0);
