@@ -546,9 +546,12 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 			mxPushUndefined();
 			the->stack->kind = XS_HOST_FUNCTION_KIND;
 			the->stack->value.hostFunction.builder = builder;
-			the->stack->value.hostFunction.IDs = C_NULL;
+		#ifdef mxProfile
+			the->stack->value.hostFunction.profileID = the->profileID;
+			the->profileID++;
+		#endif
 		#else
-			fxNewHostFunction(the, builder->callback, builder->length, (the->code && (builder->id)) ? ((txID*)(the->code))[builder->id] : builder->id);
+			fxNewHostFunction(the, builder->callback, builder->length, builder->id);
 		#endif
 		}
 		else
@@ -605,6 +608,10 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
+#ifdef mxProfile
+	property->ID = the->profileID;
+	the->profileID++;
+#endif
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
@@ -614,15 +621,6 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	}
 	else
 		property->value.home.module = C_NULL;
-
-#ifdef mxProfile
-	/* PROFILE */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
-#endif
 
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
@@ -1605,7 +1603,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			the->name = theName;
 		#endif
 		#ifdef mxProfile
-			the->profileID = 2;
+			the->profileID = theMachine->profileID;
 		#endif
 			fxAllocate(the, theCreation);
 
@@ -1736,6 +1734,10 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 	root->freeHeap = &preparation->heap[preparation->heapCount - 1];
 	root->aliasCount = (txID)preparation->aliasCount;
 	
+#ifdef mxProfile
+	root->profileID = (txID)preparation->profileID;
+#endif
+	
 	if (!creation)
 		creation = &preparation->creation;
 	return fxCloneMachine(creation, root, name, context);
@@ -1744,9 +1746,6 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 void fxShareMachine(txMachine* the)
 {
 	if (!(the->shared)) {
-	#ifdef mxProfile
-		fxStopProfiling(the);
-	#endif
 	#ifdef mxDebug
 		fxLogout(the);
 	#endif

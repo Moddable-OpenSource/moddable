@@ -282,7 +282,7 @@ typedef union {
 	struct { txSlot* first; txSlot* last; } list;
 	struct { txSlot* realm; txID id; } module;
 #ifdef mxHostFunctionPrimitive
-	struct { const txHostFunctionBuilder* builder; txID* IDs; } hostFunction;
+	struct { const txHostFunctionBuilder* builder; txID profileID; } hostFunction;
 #endif
 	struct { txSlot* cache; txSlot* instance; } hostInspector;
 	struct { txSlot* slot; txInspectorNameLink* link; } instanceInspector;
@@ -483,7 +483,7 @@ struct sxMachine {
 	txU4 meterInterval;
 #endif
 #ifdef mxProfile
-	txU4 profileID;
+	txID profileID;
 	void* profiler;
 #endif
 };
@@ -521,6 +521,8 @@ struct sxPreparation {
 
 	txSize scriptCount;
 	txScript* scripts;
+	
+	txID profileID;
 	
 	txCreation creation;
 	txString main;
@@ -810,6 +812,11 @@ extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* 
 		the->floatingPointOps += 1
 #else
 	#define mxFloatingPointOp(operation)
+#endif
+#ifdef mxProfile	
+extern void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code);
+extern void fxSendProfilerSample(txMachine* the, txID* ids, txInteger delta);
+extern void fxSendProfilerTime(txMachine* the, txString name, txU8 when);
 #endif
 
 /* xsType.c */
@@ -2318,9 +2325,6 @@ enum {
 
 #define mxFunctionInstanceCode(INSTANCE) 		((INSTANCE)->next)
 #define mxFunctionInstanceHome(INSTANCE) 		((INSTANCE)->next->next)
-#ifdef mxProfile
-#define mxFunctionInstanceProfile(INSTANCE) 	((INSTANCE)->next->next->next)
-#endif
 
 #define mxRealmGlobal(REALM)			((REALM)->next)
 #define mxRealmClosures(REALM)			((REALM)->next->next)

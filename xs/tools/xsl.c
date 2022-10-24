@@ -405,9 +405,12 @@ int main(int argc, char* argv[])
 
 					fxDuplicateInstance(the, mxDateConstructor.value.reference);
 					callback = mxCallback(fx_Date_secure);
-					fxNewLinkerBuilder(linker, callback, 7, mxID(_Date));
 					property = mxFunctionInstanceCode(the->stack->value.reference);
 					property->value.callback.address = callback;
+					property = mxFunctionInstanceHome(the->stack->value.reference);
+					property->ID = the->profileID;
+					the->profileID++;
+					fxNewLinkerBuilder(linker, callback, 7, mxID(_Date));
 		
 					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_now), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Date_now_secure), 0, mxID(_now));
@@ -687,6 +690,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "\t(txSlot**)gxSymbols,\n");
 			fprintf(file, "\tmxScriptsCount,\n");
 			fprintf(file, "\t(txScript*)gxScripts,\n");
+			fprintf(file, "\t%d,\n", the->profileID);
 			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
 				linker->creation.initialChunkSize,
 				linker->creation.incrementalChunkSize,

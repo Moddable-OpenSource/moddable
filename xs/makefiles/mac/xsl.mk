@@ -72,6 +72,7 @@ C_OPTIONS =\
 	-I$(TLS_DIR)\
 	-I$(TMP_DIR)\
 	-DmxLink=1\
+	-DmxProfile=1\
 	-DmxRun=1
 C_OPTIONS +=\
 	-DmxNoFunctionLength=1\

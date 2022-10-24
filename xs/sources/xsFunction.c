@@ -143,6 +143,10 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
+#ifdef mxProfile
+	property->ID = the->profileID;
+	the->profileID++;
+#endif
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
@@ -152,15 +156,6 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	}
 	else
 		property->value.home.module = C_NULL;
-
-#ifdef mxProfile
-	/* PROFILE */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
-#endif
 		
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)

@@ -149,6 +149,8 @@ enum {
 	XS_STEP_INSIDE_TAG,
 	XS_STEP_OUTSIDE_TAG,
 	XS_TOGGLE_TAG,
+	XS_START_PROFILING_TAG,
+	XS_STOP_PROFILING_TAG,
 	XS_UNKNOWN_TAG
 };
 
@@ -627,12 +629,16 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_SET_ALL_BREAKPOINTS_TAG;
 	else if (!c_strcmp(name, "set-breakpoint"))
 		the->debugTag = XS_SET_BREAKPOINT_TAG;
+	else if (!c_strcmp(name, "start-profiling"))
+		the->debugTag = XS_START_PROFILING_TAG;
 	else if (!c_strcmp(name, "step"))
 		the->debugTag = XS_STEP_TAG;
 	else if (!c_strcmp(name, "step-inside"))
 		the->debugTag = XS_STEP_INSIDE_TAG;
 	else if (!c_strcmp(name, "step-outside"))
 		the->debugTag = XS_STEP_OUTSIDE_TAG;
+	else if (!c_strcmp(name, "stop-profiling"))
+		the->debugTag = XS_STOP_PROFILING_TAG;
 	else if (!c_strcmp(name, "toggle"))
 		the->debugTag = XS_TOGGLE_TAG;
 #if MODDEF_XS_XSBUG_HOOKS
@@ -675,6 +681,9 @@ void fxDebugPopTag(txMachine* the)
 	case XS_SET_BREAKPOINT_TAG:
 		the->debugExit |= 1;
 		break;
+	case XS_START_PROFILING_TAG:
+		the->debugExit |= 1;
+		break;
 	case XS_STEP_TAG:
 		the->debugExit |= 2;
 		break;
@@ -683,6 +692,9 @@ void fxDebugPopTag(txMachine* the)
 		break;
 	case XS_STEP_OUTSIDE_TAG:
 		the->debugExit |= 2;
+		break;
+	case XS_STOP_PROFILING_TAG:
+		the->debugExit |= 1;
 		break;
 	case XS_TOGGLE_TAG:
 		break;
@@ -732,8 +744,8 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_SET_ALL_BREAKPOINTS_TAG:
 		break;
-	case XS_SET_BREAKPOINT_TAG:
-		fxSetBreakpoint(the, the->pathValue, the->lineValue);
+	case XS_START_PROFILING_TAG:
+		fxStartProfiling(the);
 		break;
 	case XS_STEP_TAG:
 		fxStep(the);
@@ -743,6 +755,9 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_STEP_OUTSIDE_TAG:
 		fxStepOutside(the);
+		break;
+	case XS_STOP_PROFILING_TAG:
+		fxStopProfiling(the);
 		break;
 	case XS_TOGGLE_TAG:
 		fxToggle(the, (txSlot*)the->idValue);
@@ -1028,9 +1043,6 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			if ((aProperty->kind == XS_HOME_KIND) && (aProperty->value.home.object))
 				fxEchoPropertyInstance(the, theList, "(home)", -1, C_NULL, XS_NO_ID, aProperty->flag, aProperty->value.home.object);
 			aProperty = aProperty->next;
-		#ifdef mxProfile
-			aProperty = aProperty->next;
-		#endif
 			break;
 		case XS_ARRAY_BUFFER_KIND:
 			aProperty = aProperty->next;
@@ -1897,6 +1909,7 @@ void fxLogout(txMachine* the)
 {
 	if (!fxIsConnected(the))
 		return;
+	fxStopProfiling(the);
 	fxDisconnect(the);
 }
 
@@ -2393,6 +2406,87 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 		c_printf("%d", xsInstrumentValues[i]);
 	}
 	c_printf("\n");
+#endif
+}
+
+#endif /* mxInstruments */
+
+#ifdef mxProfile
+void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code)
+{
+#ifdef mxDebug
+	if (fxIsConnected(the)) {
+		fxEchoStart(the);
+		if (id == 0) {
+			fxEcho(the, "<pr name=\"(host)\" value=\"0\"");
+		}
+		else if (id == 1) {
+			fxEcho(the, "<pr name=\"(garbage collector)\" value=\"1\"");
+		}
+		else {
+			fxEcho(the, "<pr name=\"");
+			fxEchoFrameName(the, frame);
+			fxEcho(the, "\" value=\"");
+			fxEchoInteger(the, id);
+			fxEcho(the, "\"");
+		}
+		if (code) {
+			if ((code->kind == XS_CODE_KIND) || (code->kind == XS_CODE_X_KIND)) {
+				txByte* p = code->value.code.address + 2;
+				if (*p == XS_CODE_FILE) {
+					txID file;
+					txS2 line;
+					p++;
+					mxDecodeID(p, file);
+					p++;
+					mxDecode2(p, line);
+					fxEchoPathLine(the, fxGetKeyName(the, file), line);
+				}
+			}
+		}
+		fxEcho(the, "/>");
+		fxEchoStop(the);
+	}
+#endif
+}
+
+void fxSendProfilerSample(txMachine* the, txID* ids, txInteger delta)
+{
+#ifdef mxDebug
+	if (fxIsConnected(the)) {
+		txInteger id;
+		fxEchoStart(the);
+		fxEcho(the, "<ps>");
+		fxEchoInteger(the, delta);
+		while ((id = *ids++)) {
+			fxEcho(the, ",");
+			fxEchoInteger(the, id);
+		}
+		fxEcho(the, ",");
+		fxEchoInteger(the, 0);
+		fxEcho(the, "</ps>");
+		fxEchoStop(the);
+	}
+#endif
+}
+
+void fxSendProfilerTime(txMachine* the, txString name, txU8 when)
+{
+#ifdef mxDebug
+	if (fxIsConnected(the)) {
+		int shift;
+		fxEchoStart(the);
+		fxEcho(the, "<pt name=\"");
+		fxEchoString(the, name);
+		fxEcho(the, "\" value=\"@");
+		shift = (8 * sizeof(when)) - 4;
+		while (shift >= 0) {
+			fxEchoCharacter(the, c_read8(gxHexaDigits + ((when >> shift) & 0x0F)));
+			shift -= 4;
+		}
+		fxEcho(the, "\"/>");
+		fxEchoStop(the);
+	}
 #endif
 }
 #endif

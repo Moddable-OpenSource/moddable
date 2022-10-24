@@ -84,6 +84,26 @@ again:
 	return C_NULL;
 }
 
+void fxBufferFunctionID(txMachine* the, txString buffer, txSize size, txID id)
+{
+	if (id != XS_NO_ID) {
+		txSlot* key = fxGetKey(the, id);
+		if (key) {
+			if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
+				c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
+				return;
+			}
+			if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
+				c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
+				c_strncat(buffer, key->value.string, size - mxStringLength(buffer) - 1);
+				c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
+				return;
+			}
+		}
+	}
+	c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
+}
+
 void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* frame, txString suffix)
 {
 	txSlot* target = frame + 2; 
@@ -116,10 +136,14 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 			fxBufferFunctionName(the, buffer, size, function, "");
 		}
 	}
+	else if (function->kind == XS_HOST_FUNCTION_KIND) {
+		fxBufferFunctionID(the, buffer, size, function->value.hostFunction.builder->id);
+	}
 	else
 		c_strncat(buffer, "(host)", size - mxStringLength(buffer) - 1);
 	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 }
+
 
 void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* function, txString suffix)
 {

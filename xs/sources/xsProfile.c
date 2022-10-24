@@ -78,6 +78,138 @@ txU8 fxTicksToMicroseconds(txU8 ticks)
 #endif
 }
 
+#ifdef mxInstrument	
+
+typedef struct sxProfiler txProfiler;
+
+struct sxProfiler {
+	txU8 former;
+	txU8 when;
+	txU8 start;
+	txU8 stop;
+	txU4 delta;
+	txInteger recordCount;
+	txByte* records;
+	txInteger sampleCount;
+	txID* samples;
+};
+
+static void fxCreateProfiler(txMachine* the);
+static void fxDeleteProfiler(txMachine* the);
+static txID fxFrameToProfilerID(txMachine* the, txSlot* frame);
+
+void fxCheckProfiler(txMachine* the, txSlot* frame)
+{
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
+		return;
+	txU8 when = profiler->when;
+	txU8 time = fxGetTicks();
+	if (when < time) {
+		txID* samples = profiler->samples;
+	
+		if (!frame) {
+			frame = the->frame;
+			if (frame)
+				*samples++ = 1;
+		}
+		while (frame) {
+			txInteger id = fxFrameToProfilerID(the, frame);
+			if (id)
+				*samples++ = id;
+			frame = frame->next;
+		}
+		*samples++ = 0;
+		
+		txU8 delta = profiler->delta;
+		txU8 former = profiler->former;
+
+		fxSendProfilerSample(the, profiler->samples, (txU4)fxTicksToMicroseconds(when - former));
+		when += delta;
+		while (when < time) {
+			fxSendProfilerSample(the, profiler->samples, (txU4)fxTicksToMicroseconds(delta));
+			when += delta;
+		}
+			
+		profiler->former = time;
+		profiler->when = when;
+	}
+}
+
+void fxCreateProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
+	if (profiler == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	profiler->delta = (txU4)fxMicrosecondsToTicks(10000);
+	profiler->former = fxGetTicks();
+	profiler->when = profiler->former + profiler->delta;
+	
+	profiler->recordCount = 128;
+	profiler->records = c_calloc(1, profiler->recordCount);
+	if (profiler->records == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		
+	profiler->sampleCount = the->stackTop - the->stackBottom;
+	profiler->samples = (txID*)c_malloc((size_t)(profiler->sampleCount * sizeof(txID)));
+	if (profiler->samples == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+
+	fxSendProfilerTime(the, "start", fxTicksToMicroseconds(profiler->former));
+	fxSendProfilerRecord(the, C_NULL, 0, C_NULL);
+	fxSendProfilerRecord(the, C_NULL, 1, C_NULL);
+	profiler->records[0] = 0x03;
+}
+
+void fxDeleteProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler;
+	fxSendProfilerTime(the, "stop", fxTicksToMicroseconds(fxGetTicks()));
+	c_free(profiler->samples);
+	c_free(profiler->records);
+	c_free(profiler);
+	the->profiler = C_NULL;
+}
+
+txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
+{
+	txProfiler* profiler = the->profiler;
+	txSlot* function = frame + 3;
+	txSlot* code = C_NULL;
+	txID id = XS_NO_ID;
+	if (function->kind == XS_REFERENCE_KIND) {
+		function = function->value.reference;
+		if (mxIsFunction(function)) {
+			code = mxFunctionInstanceCode(function);
+			id = mxFunctionInstanceHome(function)->ID;
+		}
+	}
+	else if (function->kind == XS_HOST_FUNCTION_KIND)
+		id = function->value.hostFunction.profileID;
+	if (id != XS_NO_ID) {		
+		txInteger recordIndex = id >> 3;
+		txInteger recordMask = 1 << (id & 0x07);
+		txInteger recordCount = profiler->recordCount;
+		if (recordIndex >= recordCount) {
+			while (recordIndex >= recordCount)
+				recordCount += 128;
+			profiler->records = c_realloc(profiler->records, recordCount);
+			if (profiler->records == C_NULL)
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			c_memset(profiler->records + profiler->recordCount, 0, (recordCount - profiler->recordCount));
+			profiler->recordCount = recordCount;
+		}
+		else if (profiler->records[recordIndex] & recordMask)
+			return id;
+		profiler->records[recordIndex] |= recordMask;
+		fxSendProfilerRecord(the, frame, id, code);
+		return id;
+	}
+	return 0;
+}
+
+#else
+
 typedef struct sxProfiler txProfiler;
 typedef struct sxProfilerRecord txProfilerRecord;
 typedef struct sxProfilerSample txProfilerSample;
@@ -98,7 +230,7 @@ struct sxProfiler {
 };
 
 struct sxProfilerRecord {
-	txU4 recordID;
+	txID recordID;
 	txID constructorID;
 	txID prototypeID;
 	txID functionID;
@@ -106,11 +238,11 @@ struct sxProfilerRecord {
 	txInteger line;
 	txInteger hitCount;
 	txInteger calleeCount;
-	txU4* callees;
+	txID* callees;
 };
 
 struct sxProfilerSample {
-	txU4 recordID;
+	txID recordID;
 	txU4 delta;
 };
 
@@ -119,10 +251,10 @@ static void fxDeleteProfiler(txMachine* the);
 static void fxPrintID(txMachine* the, FILE* file, txID id);
 static void fxPrintProfiler(txMachine* the);
 static void fxPrintString(txMachine* the, FILE* file, txString theString);
-static void fxPushProfilerSample(txMachine* the, txU4 recordID, txU4 delta);
+static void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta);
 static txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame);
-static void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txU4 recordID);
-static txProfilerRecord* fxNewProfilerRecord(txMachine* the, txU4 recordIndex);
+static void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID);
+static txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID);
 
 void fxCheckProfiler(txMachine* the, txSlot* frame)
 {
@@ -203,6 +335,7 @@ void fxCreateProfiler(txMachine* the)
 void fxDeleteProfiler(txMachine* the)
 {
 	txProfiler* profiler = the->profiler;
+	fxPrintProfiler(the);
 	c_free(profiler->samples);
 	txU4 recordIndex = 0;
 	while (recordIndex < profiler->recordCount) {
@@ -226,8 +359,8 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 	if (function->kind == XS_REFERENCE_KIND) {
 		function = function->value.reference;
 		if (mxIsFunction(function)) {
-			txSlot* profile = mxFunctionInstanceProfile(function);
-			txU4 recordID = profile->value.integer;
+			txSlot* home = mxFunctionInstanceHome(function);
+			txID recordID = home->ID;
 			txProfilerRecord* record = C_NULL;
 			if (recordID < profiler->recordCount)
 				record = profiler->records[recordID];
@@ -235,7 +368,7 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 				return record;
 			record = fxNewProfilerRecord(the, recordID);
 			record->functionID = mxFunctionInstanceCode(function)->ID;
-			txSlot* home = mxFunctionInstanceHome(function)->value.home.object;
+			home = mxFunctionInstanceHome(function)->value.home.object;
 			if (home) {
 				if (mxIsFunction(home)) {
 					record->constructorID = mxFunctionInstanceCode(home)->ID;
@@ -293,52 +426,50 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 	return C_NULL;
 }
 
-void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txU4 recordID)
+void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID)
 {
 	txInteger count = record->calleeCount;
 	if (count == 0) {
-		record->callees = c_malloc(sizeof(txU4));
+		record->callees = c_malloc(sizeof(txID));
 		if (record->callees == C_NULL)
 			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		record->calleeCount = 1;
 		record->callees[0] = recordID;
 		return;
 	}
-	txInteger cmp = -1;
     txInteger min = 0;
 	txInteger max = count;
 	txInteger mid;
-	txU4* callee;
+	txID* callee = record->callees;
 	while (min < max) {
 		mid = (min + max) >> 1;
 		callee = record->callees + mid;
-		cmp = recordID - *callee;
-		if (cmp < 0)
+		if (recordID < *callee)
 			max = mid;
-		else if (cmp > 0)
+		else if (recordID > *callee)
 			min = mid + 1;
 		else
 			return;
 	}
-	if (cmp > 0)
+	if (recordID > *callee)
 		mid++;
 	record->calleeCount++;
-	record->callees = c_realloc(record->callees, record->calleeCount * sizeof(txU4));
+	record->callees = c_realloc(record->callees, record->calleeCount * sizeof(txID));
 	if (record->callees == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	callee = record->callees + mid;
 	if (mid < count)
-		c_memmove(callee + 1, callee, (count - mid) * sizeof(txU4));
+		c_memmove(callee + 1, callee, (count - mid) * sizeof(txID));
 	*callee = recordID;
 }
 
-txProfilerRecord* fxNewProfilerRecord(txMachine* the, txU4 recordIndex)
+txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID)
 {
 	txProfiler* profiler = the->profiler;
 	txU4 recordCount = profiler->recordCount;
 	txProfilerRecord* record;
-	if (recordIndex >= recordCount) {
-		recordCount = recordIndex + 1;
+	if (recordID >= recordCount) {
+		recordCount = recordID + 1;
 		profiler->records = (txProfilerRecord**)c_realloc(profiler->records, recordCount * sizeof(txProfilerRecord*));
 		if (profiler->records == C_NULL)
 			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
@@ -348,7 +479,7 @@ txProfilerRecord* fxNewProfilerRecord(txMachine* the, txU4 recordIndex)
 	record = c_malloc(sizeof(txProfilerRecord));
 	if (record == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-	record->recordID = recordIndex;
+	record->recordID = recordID;
 	record->hitCount = 0;
 	record->constructorID = XS_NO_ID;
 	record->prototypeID = XS_NO_ID;
@@ -357,7 +488,7 @@ txProfilerRecord* fxNewProfilerRecord(txMachine* the, txU4 recordIndex)
 	record->line = 0;
 	record->calleeCount = 0;
 	record->callees = C_NULL;
-	profiler->records[recordIndex] = record;
+	profiler->records[recordID] = record;
 	return record;
 }
 
@@ -490,7 +621,7 @@ void fxPrintString(txMachine* the, FILE* file, txString theString)
 	}
 }
 
-void fxPushProfilerSample(txMachine* the, txU4 recordID, txU4 delta)
+void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta)
 {
 	txProfiler* profiler = the->profiler;
 	txU8 sampleCount = profiler->sampleCount;
@@ -509,7 +640,9 @@ void fxPushProfilerSample(txMachine* the, txU4 recordID, txU4 delta)
 	profiler->sampleIndex = sampleIndex + 1;
 }
 
-#endif
+#endif /* mxIntruments */
+
+#endif /* mxProfile */
 
 txBoolean fxIsProfiling(txMachine* the)
 {
@@ -540,8 +673,6 @@ void fxStopProfiling(txMachine* the)
 		return;	
 	if (the->frame)
 		fxAbort(the, XS_FATAL_CHECK_EXIT);
-	profiler->stop = fxGetTicks();
-	fxPrintProfiler(the);
 	fxDeleteProfiler(the);
 #endif
 }
