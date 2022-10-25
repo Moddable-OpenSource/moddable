@@ -117,7 +117,7 @@ export default class extends TOOL {
 
 	transformFlows(flows) {
 		const parts = [];
-		const imports = new Map(["nodered", ""]);		// ensure that globalThis.RED is available
+		const imports = new Map([["nodered", ""]]);		// ensure that globalThis.RED is available
 
 		// if no flows, create one. useful for running flow snippets (e.g. https://cookbook.nodered.org/).
 		if (!flows.some(config => ("tab" === config.type) && config.z)) {
@@ -229,6 +229,7 @@ export default class extends TOOL {
 				delete c.x;
 				delete c.y;
 				delete c.z;
+				delete c.outputLabels;
 				delete c._mcu;
 
 				try {
