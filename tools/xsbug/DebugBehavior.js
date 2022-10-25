@@ -107,6 +107,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			this.alienSeparatorRegexp = /\\/g;
 		}
 		this.port = 5002;
+		this.profileOnStart = 0;
 		const platform = system.platform;
 		if (platform == "lin")
 			this.serialDevicePath = "/dev/ttyUSB0";
@@ -486,6 +487,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	toggleBreakOnStart(it) {
 		this.breakOnStart = it;
 	}
+	toggleProfileOnStart(it) {
+		this.profileOnStart = it;
+	}
 	unmapPath(path, flag) {
 		for (let mapping of this.mappings) {
 			if (path.startsWith(mapping.locale)) {
@@ -753,6 +757,8 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			this.doCommand(mxSetAllBreakpointsCommand, items.filter(
 				item => item.enabled
 			), behavior.breakOnStart, behavior.breakOnExceptions);
+			if (behavior.profileOnStart)
+				this.doCommand(mxStartProfilingCommand);
 		}
 		else if (this.broken) {
 			this.framesView.expanded = true;

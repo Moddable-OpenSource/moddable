@@ -452,7 +452,7 @@ void PiuDebugMachineCallback(CFSocketRef socketRef, CFSocketCallBackType cbType,
 		int length = recv(CFSocketGetNative(self->socket), self->buffer, XS_BUFFER_COUNT, 0);
 		if (length > 0) {
 			self->buffer[length] = 0;
-			fprintf(stderr, "%s", self->buffer);
+			//fprintf(stderr, "%s", self->buffer);
 			xsBeginHost(self->the);
 			{
 				xsVars(4);

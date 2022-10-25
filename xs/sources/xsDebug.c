@@ -744,6 +744,9 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_SET_ALL_BREAKPOINTS_TAG:
 		break;
+	case XS_SET_BREAKPOINT_TAG:
+		fxSetBreakpoint(the, the->pathValue, the->lineValue);
+		break;
 	case XS_START_PROFILING_TAG:
 		fxStartProfiling(the);
 		break;

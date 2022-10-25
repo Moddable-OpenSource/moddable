@@ -1789,6 +1789,7 @@ void fxPrepareModule(txMachine* the, txFlag flag)
 	property = mxModuleInstanceExecute(module);	
 	property->kind = slot->kind;
 	property->value = slot->value;
+	mxFunctionInstanceCode(slot->value.reference)->ID = mxModuleInstanceInternal(module)->value.module.id;
 	slot = &mxHosts;	
 	property = mxModuleInstanceHosts(module);	
 	property->kind = slot->kind;

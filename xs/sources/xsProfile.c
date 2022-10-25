@@ -659,8 +659,8 @@ void fxStartProfiling(txMachine* the)
 	txProfiler* profiler = the->profiler;
 	if (profiler)
 		return;	
-	if (the->frame)
-		fxAbort(the, XS_FATAL_CHECK_EXIT);
+// 	if (the->frame)
+// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
 	fxCreateProfiler(the);
 #endif
 }
@@ -671,8 +671,8 @@ void fxStopProfiling(txMachine* the)
 	txProfiler* profiler = the->profiler;
 	if (!profiler)
 		return;	
-	if (the->frame)
-		fxAbort(the, XS_FATAL_CHECK_EXIT);
+// 	if (the->frame)
+// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
 	fxDeleteProfiler(the);
 #endif
 }

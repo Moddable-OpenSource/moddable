@@ -81,8 +81,10 @@ class DebugPaneBehavior extends Behavior {
 			let data = this.data;
 			spinner.empty(0);
 			column.empty(0);
-			column.add(ProfileTable(machine.profile, {}));
-			column.add(InstrumentTable(data, {}));
+			if (machine.instrumentsView.lines.length > 0) {
+				column.add(ProfileTable(machine.profile, {}));
+				column.add(InstrumentTable(data, {}));
+			}
 			if (machine.broken) {
 				column.add(CallTable(data, {}));
 				column.add(DebugTable(data, { Behavior:LocalsTableBehavior }));

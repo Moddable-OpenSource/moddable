@@ -185,7 +185,25 @@ class PreferencesColumnBehavior extends Behavior {
 						},
 					],
 				},
-					{
+				{
+					Template: PreferencesTable,
+					expanded: true,
+					name: "PROFILE",
+					items: [
+						{
+							Template: SwitchRow,
+							comment: "Profile when the debuggee starts",
+							name: "On Start",
+							get value() {
+								return model.profileOnStart;
+							},
+							set value(it) {
+								model.toggleProfileOnStart(it);
+							},
+						},
+					],
+				},
+				{
 					Template: PreferencesTable,
 					expanded: true,
 					name: "SERIAL",

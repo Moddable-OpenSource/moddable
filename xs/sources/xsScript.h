@@ -1045,6 +1045,7 @@ extern void fxPostfixExpressionNodeBind(void* it, void* param);
 extern void fxPrivateMemberNodeBind(void* it, void* param);
 extern void fxProgramNodeBind(void* it, void* param); 
 extern void fxProgramNodeHoist(void* it, void* param); 
+extern void fxPropertyNodeHoist(void* it, void* param);
 extern void fxSpreadNodeBind(void* it, void* param);
 extern void fxStatementNodeHoist(void* it, void* param);
 extern void fxStringNodeHoist(void* it, void* param);

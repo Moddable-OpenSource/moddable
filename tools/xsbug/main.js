@@ -374,16 +374,18 @@ class ApplicationBehavior extends DebugBehavior {
 		if (path.endsWith(".js") || path.endsWith(".json") || path.endsWith(".ts") || path.endsWith(".xml") || path.endsWith(".xs"))
 			this.selectFile(path);
 		else if (path.endsWith(".bin")) {
-			this.showTab(2, true);
-			this.selectMachine(null, 2);
+			this.showTab(3, true);
+			this.selectMachine(null, 3);
 			this.serial.doInstallApp(path);
 		}
 		else if (path.endsWith(".xsa")) {
-			this.showTab(2, true);
-			this.selectMachine(null, 2);
+			this.showTab(3, true);
+			this.selectMachine(null, 3);
 			this.serial.doInstallMod(path);
 		}
 		else if (path.endsWith(".cpuprofile")) {
+			this.showTab(2, true);
+			this.selectMachine(null, 2);
 			path = path.valueOf();
 			let profile = this.profiles.find(profile => profile.path == path);
 			if (!profile) {
@@ -396,6 +398,7 @@ class ApplicationBehavior extends DebugBehavior {
 		try {
 			profile = new Profile(null, path);
 			this.profiles.push(profile);
+			this.profiles.sort((a, b) => a.name.localeCompare(b.name));
 			application.distribute("onProfilesChanged");
 		}
 		catch(e) {
@@ -521,8 +524,6 @@ class ApplicationBehavior extends DebugBehavior {
 			application.distribute("onStateChanged", state);
 		}
 	}
-	selectProfile(profile) {
-	}
 
 	readPreferences() {
 		try {
@@ -579,6 +580,8 @@ class ApplicationBehavior extends DebugBehavior {
 						this.path = preferences.path;
 				if ("port" in preferences)
 					this.port = preferences.port;
+				if ("profileOnStart" in preferences)
+					this.profileOnStart = preferences.profileOnStart;
 				if ("state" in preferences)
 					this.state = preferences.state;
 				if ("automaticInstruments" in preferences)
@@ -618,6 +621,7 @@ class ApplicationBehavior extends DebugBehavior {
 				mappings: this.mappings,
 				path: this.path,
 				port: this.port,
+				profileOnStart: this.profileOnStart,
 				state: this.state,
 				automaticInstruments: this.automaticInstruments,
 				showExceptions: this.showExceptions,

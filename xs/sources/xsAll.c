@@ -136,9 +136,11 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 			fxBufferFunctionName(the, buffer, size, function, "");
 		}
 	}
+#ifdef mxHostFunctionPrimitive
 	else if (function->kind == XS_HOST_FUNCTION_KIND) {
 		fxBufferFunctionID(the, buffer, size, function->value.hostFunction.builder->id);
 	}
+#endif
 	else
 		c_strncat(buffer, "(host)", size - mxStringLength(buffer) - 1);
 	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
