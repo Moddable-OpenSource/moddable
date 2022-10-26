@@ -143,10 +143,8 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
-#ifdef mxProfile
 	property->ID = the->profileID;
 	the->profileID++;
-#endif
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;

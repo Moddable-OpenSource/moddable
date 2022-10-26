@@ -482,8 +482,8 @@ struct sxMachine {
 	txU4 meterIndex;
 	txU4 meterInterval;
 #endif
-#ifdef mxProfile
 	txID profileID;
+#if defined(mxInstrument) || defined(mxProfile)
 	void* profiler;
 #endif
 };
@@ -678,6 +678,10 @@ mxExport void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger ind
 mxExport void* fxGetArchiveName(txMachine* the, void* archive);
 mxExport void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
 
+mxExport txBoolean fxIsProfiling(txMachine* the);
+mxExport void fxStartProfiling(txMachine* the);
+mxExport void fxStopProfiling(txMachine* the);
+
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
 
 #ifdef mxMetering
@@ -738,11 +742,6 @@ extern txBoolean fxIsConnected(txMachine* the);
 extern txBoolean fxIsReadable(txMachine* the);
 extern void fxReceive(txMachine* the);
 extern void fxSend(txMachine* the, txBoolean more);
-#endif
-#ifdef mxProfile
-extern void fxCloseProfileFile(txMachine* the);
-extern void fxOpenProfileFile(txMachine* the, char* theName);
-extern void fxWriteProfileFile(txMachine* the, void* theBuffer, txInteger theSize);
 #endif
 
 /* xsDefaults.c */
@@ -807,16 +806,14 @@ mxExport void fxReportWarning(txMachine* the, txString thePath, txInteger theLin
 #ifdef mxInstrument	
 extern void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units);
 extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values);
+extern void fxCheckProfiler(txMachine* the, txSlot* frame);
+extern void fxCreateProfiler(txMachine* the);
+extern void fxDeleteProfiler(txMachine* the);
 #define mxFloatingPointOp(operation) \
 		/* fprintf(stderr, "float: %s\n", operation); */ \
 		the->floatingPointOps += 1
 #else
-	#define mxFloatingPointOp(operation)
-#endif
-#ifdef mxProfile	
-extern void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code);
-extern void fxSendProfilerSample(txMachine* the, txID* ids, txInteger delta);
-extern void fxSendProfilerTime(txMachine* the, txString name, txU8 when);
+#define mxFloatingPointOp(operation)
 #endif
 
 /* xsType.c */
@@ -1811,11 +1808,9 @@ mxExport void fx_mutabilities(txMachine* the);
 /* xsProfile.c */
 #ifdef mxProfile
 extern void fxCheckProfiler(txMachine* the, txSlot* frame);
+extern void fxCreateProfiler(txMachine* the);
+extern void fxDeleteProfiler(txMachine* the);
 #endif
-
-mxExport txBoolean fxIsProfiling(txMachine* the);
-mxExport void fxStartProfiling(txMachine* the);
-mxExport void fxStopProfiling(txMachine* the);
 
 enum {
 	XS_NO_ERROR = 0,

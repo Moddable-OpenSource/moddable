@@ -67,7 +67,6 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsNumber.c.o \
 	$(LIB_DIR)/xsObject.c.o \
 	$(LIB_DIR)/xsPlatforms.c.o \
-	$(LIB_DIR)/xsProfile.c.o \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \
@@ -99,7 +98,7 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
 	-DkPocoRotation=$(ROTATION)
 ifeq ($(INSTRUMENT),1)
-	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1 -DmxProfile=1
+	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 
 C_INCLUDES += $(DIRECTORIES)

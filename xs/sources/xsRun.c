@@ -851,9 +851,9 @@ XS_CODE_JUMP:
 							fxRunDerived(the);
 						(*(slot->value.callback.address))(the);
 						mxRestoreState;
-					#ifdef mxProfile
+			#if defined(mxInstrument) || defined(mxProfile)
 						fxCheckProfiler(the, mxFrame);
-					#endif
+			#endif
 						if (slot->flag & XS_BASE_FLAG)
 							goto XS_CODE_END_BASE_ALL;
 						if (slot->flag & XS_DERIVED_FLAG)
@@ -4011,7 +4011,7 @@ XS_CODE_JUMP:
 				mxRestoreState;
 			}
 		#endif
-		#ifdef mxProfile
+		#if defined(mxInstrument) || defined(mxProfile)
 			fxCheckProfiler(the, mxFrame);
 		#endif
 			mxNextCode(3);

@@ -39,177 +39,6 @@
 
 #ifdef mxProfile
 
-txU8 fxGetTicks()
-{
-#if mxMacOSX
-	return clock_gettime_nsec_np(CLOCK_MONOTONIC);
-#elif mxWindows
-	LARGE_INTEGER counter;
-	QueryPerformanceCounter(&counter);
-	return counter.QuadPart;
-#else
-	c_timeval tv;
-	c_gettimeofday(&tv, NULL);
-	return (tv.tv_sec * 1000000ULL) + tv.tv_usec;
-#endif
-}
-txU8 fxMicrosecondsToTicks(txU8 microseconds)
-{
-#if mxMacOSX
-	return microseconds * 1000;
-#elif mxWindows
-	LARGE_INTEGER frequency;
-	QueryPerformanceFrequency(&frequency);
-	return (frequency.QuadPart * microseconds) / 1000000ULL;
-#else
-	return microseconds;
-#endif
-}
-txU8 fxTicksToMicroseconds(txU8 ticks)
-{
-#if mxMacOSX
-	return ticks / 1000;
-#elif mxWindows
-	LARGE_INTEGER frequency;
-	QueryPerformanceFrequency(&frequency);
-	return (1000000ULL * ticks) / frequency.QuadPart;
-#else
-	return ticks;
-#endif
-}
-
-#ifdef mxInstrument	
-
-typedef struct sxProfiler txProfiler;
-
-struct sxProfiler {
-	txU8 former;
-	txU8 when;
-	txU8 start;
-	txU8 stop;
-	txU4 delta;
-	txInteger recordCount;
-	txByte* records;
-	txInteger sampleCount;
-	txID* samples;
-};
-
-static void fxCreateProfiler(txMachine* the);
-static void fxDeleteProfiler(txMachine* the);
-static txID fxFrameToProfilerID(txMachine* the, txSlot* frame);
-
-void fxCheckProfiler(txMachine* the, txSlot* frame)
-{
-	txProfiler* profiler = the->profiler;
-	if (!profiler)
-		return;
-	txU8 when = profiler->when;
-	txU8 time = fxGetTicks();
-	if (when < time) {
-		txID* samples = profiler->samples;
-	
-		if (!frame) {
-			frame = the->frame;
-			if (frame)
-				*samples++ = 1;
-		}
-		while (frame) {
-			txInteger id = fxFrameToProfilerID(the, frame);
-			if (id)
-				*samples++ = id;
-			frame = frame->next;
-		}
-		*samples++ = 0;
-		
-		txU8 delta = profiler->delta;
-		txU8 former = profiler->former;
-
-		fxSendProfilerSample(the, profiler->samples, (txU4)fxTicksToMicroseconds(when - former));
-		when += delta;
-		while (when < time) {
-			fxSendProfilerSample(the, profiler->samples, (txU4)fxTicksToMicroseconds(delta));
-			when += delta;
-		}
-			
-		profiler->former = time;
-		profiler->when = when;
-	}
-}
-
-void fxCreateProfiler(txMachine* the)
-{
-	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
-	if (profiler == C_NULL)
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-	profiler->delta = (txU4)fxMicrosecondsToTicks(10000);
-	profiler->former = fxGetTicks();
-	profiler->when = profiler->former + profiler->delta;
-	
-	profiler->recordCount = 128;
-	profiler->records = c_calloc(1, profiler->recordCount);
-	if (profiler->records == C_NULL)
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-		
-	profiler->sampleCount = the->stackTop - the->stackBottom;
-	profiler->samples = (txID*)c_malloc((size_t)(profiler->sampleCount * sizeof(txID)));
-	if (profiler->samples == C_NULL)
-		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-
-	fxSendProfilerTime(the, "start", fxTicksToMicroseconds(profiler->former));
-	fxSendProfilerRecord(the, C_NULL, 0, C_NULL);
-	fxSendProfilerRecord(the, C_NULL, 1, C_NULL);
-	profiler->records[0] = 0x03;
-}
-
-void fxDeleteProfiler(txMachine* the)
-{
-	txProfiler* profiler = the->profiler;
-	fxSendProfilerTime(the, "stop", fxTicksToMicroseconds(fxGetTicks()));
-	c_free(profiler->samples);
-	c_free(profiler->records);
-	c_free(profiler);
-	the->profiler = C_NULL;
-}
-
-txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
-{
-	txProfiler* profiler = the->profiler;
-	txSlot* function = frame + 3;
-	txSlot* code = C_NULL;
-	txID id = XS_NO_ID;
-	if (function->kind == XS_REFERENCE_KIND) {
-		function = function->value.reference;
-		if (mxIsFunction(function)) {
-			code = mxFunctionInstanceCode(function);
-			id = mxFunctionInstanceHome(function)->ID;
-		}
-	}
-	else if (function->kind == XS_HOST_FUNCTION_KIND)
-		id = function->value.hostFunction.profileID;
-	if (id != XS_NO_ID) {		
-		txInteger recordIndex = id >> 3;
-		txInteger recordMask = 1 << (id & 0x07);
-		txInteger recordCount = profiler->recordCount;
-		if (recordIndex >= recordCount) {
-			while (recordIndex >= recordCount)
-				recordCount += 128;
-			profiler->records = c_realloc(profiler->records, recordCount);
-			if (profiler->records == C_NULL)
-				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-			c_memset(profiler->records + profiler->recordCount, 0, (recordCount - profiler->recordCount));
-			profiler->recordCount = recordCount;
-		}
-		else if (profiler->records[recordIndex] & recordMask)
-			return id;
-		profiler->records[recordIndex] |= recordMask;
-		fxSendProfilerRecord(the, frame, id, code);
-		return id;
-	}
-	return 0;
-}
-
-#else
-
 typedef struct sxProfiler txProfiler;
 typedef struct sxProfilerRecord txProfilerRecord;
 typedef struct sxProfilerSample txProfilerSample;
@@ -246,15 +75,16 @@ struct sxProfilerSample {
 	txU4 delta;
 };
 
-static void fxCreateProfiler(txMachine* the);
-static void fxDeleteProfiler(txMachine* the);
+static txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame);
+static txU8 fxGetTicks();
+static void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID);
+static txU8 fxMicrosecondsToTicks(txU8 microseconds);
 static void fxPrintID(txMachine* the, FILE* file, txID id);
 static void fxPrintProfiler(txMachine* the);
 static void fxPrintString(txMachine* the, FILE* file, txString theString);
 static void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta);
-static txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame);
-static void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID);
 static txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID);
+static txU8 fxTicksToMicroseconds(txU8 ticks);
 
 void fxCheckProfiler(txMachine* the, txSlot* frame)
 {
@@ -426,6 +256,21 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 	return C_NULL;
 }
 
+txU8 fxGetTicks()
+{
+#if mxMacOSX
+	return clock_gettime_nsec_np(CLOCK_MONOTONIC);
+#elif mxWindows
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	return counter.QuadPart;
+#else
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	return (tv.tv_sec * 1000000ULL) + tv.tv_usec;
+#endif
+}
+
 void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID)
 {
 	txInteger count = record->calleeCount;
@@ -461,6 +306,19 @@ void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recor
 	if (mid < count)
 		c_memmove(callee + 1, callee, (count - mid) * sizeof(txID));
 	*callee = recordID;
+}
+
+txU8 fxMicrosecondsToTicks(txU8 microseconds)
+{
+#if mxMacOSX
+	return microseconds * 1000;
+#elif mxWindows
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	return (frequency.QuadPart * microseconds) / 1000000ULL;
+#else
+	return microseconds;
+#endif
 }
 
 txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID)
@@ -640,39 +498,17 @@ void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta)
 	profiler->sampleIndex = sampleIndex + 1;
 }
 
-#endif /* mxIntruments */
+txU8 fxTicksToMicroseconds(txU8 ticks)
+{
+#if mxMacOSX
+	return ticks / 1000;
+#elif mxWindows
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	return (1000000ULL * ticks) / frequency.QuadPart;
+#else
+	return ticks;
+#endif
+}
 
 #endif /* mxProfile */
-
-txBoolean fxIsProfiling(txMachine* the)
-{
-#ifdef mxProfile
-	return (the->profiler) ? 1 : 0;
-#else
-	return 0;
-#endif
-}
-
-void fxStartProfiling(txMachine* the)
-{
-#ifdef mxProfile
-	txProfiler* profiler = the->profiler;
-	if (profiler)
-		return;	
-// 	if (the->frame)
-// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
-	fxCreateProfiler(the);
-#endif
-}
-
-void fxStopProfiling(txMachine* the)
-{
-#ifdef mxProfile
-	txProfiler* profiler = the->profiler;
-	if (!profiler)
-		return;	
-// 	if (the->frame)
-// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
-	fxDeleteProfiler(the);
-#endif
-}

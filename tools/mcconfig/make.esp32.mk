@@ -182,7 +182,6 @@ XS_OBJ = \
 	$(LIB_DIR)/xsModule.c.o \
 	$(LIB_DIR)/xsNumber.c.o \
 	$(LIB_DIR)/xsObject.c.o \
-	$(LIB_DIR)/xsProfile.c.o \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \
@@ -261,7 +260,7 @@ ifeq ($(DEBUG),1)
 	C_DEFINES += -DmxDebug=1
 endif
 ifeq ($(INSTRUMENT),1)
-	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1 -DmxProfile=1
+	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_DIR),-I$(dir))

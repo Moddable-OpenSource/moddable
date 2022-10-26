@@ -72,7 +72,6 @@ C_OPTIONS =\
 	-I$(TLS_DIR)\
 	-I$(TMP_DIR)\
 	-DmxLink=1\
-	-DmxProfile=1\
 	-DmxRun=1
 C_OPTIONS +=\
 	-DmxNoFunctionLength=1\
@@ -123,7 +122,6 @@ OBJECTS = \
 	$(TMP_DIR)/xsNumber.o \
 	$(TMP_DIR)/xsObject.o \
 	$(TMP_DIR)/xsPlatforms.o \
-	$(TMP_DIR)/xsProfile.o \
 	$(TMP_DIR)/xsPromise.o \
 	$(TMP_DIR)/xsProperty.o \
 	$(TMP_DIR)/xsProxy.o \

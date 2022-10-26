@@ -364,7 +364,7 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 #ifdef mxInstrument
 	the->garbageCollectionCount++;
 #endif
-#ifdef mxProfile
+#if defined(mxInstrument) || defined(mxProfile)
 	fxCheckProfiler(the, C_NULL);
 #endif
 }

@@ -2412,9 +2412,142 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 #endif
 }
 
-#endif /* mxInstruments */
+typedef struct sxProfiler txProfiler;
+struct sxProfiler {
+	txU8 former;
+	txU8 when;
+	txU8 start;
+	txU8 stop;
+	txU4 delta;
+	txInteger recordCount;
+	txByte* records;
+	txInteger sampleCount;
+	txID* samples;
+};
 
-#ifdef mxProfile
+static txID fxFrameToProfilerID(txMachine* the, txSlot* frame);
+static txU8 fxGetMicroSeconds();
+static void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code);
+static void fxSendProfilerSample(txMachine* the, txID* ids, txInteger delta);
+static void fxSendProfilerTime(txMachine* the, txString name, txU8 when);
+
+void fxCheckProfiler(txMachine* the, txSlot* frame)
+{
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
+		return;
+	txU8 when = profiler->when;
+	txU8 time = fxGetMicroSeconds();
+	if (when < time) {
+		txID* samples = profiler->samples;
+	
+		if (!frame) {
+			frame = the->frame;
+			if (frame)
+				*samples++ = 1;
+		}
+		while (frame) {
+			txInteger id = fxFrameToProfilerID(the, frame);
+			if (id)
+				*samples++ = id;
+			frame = frame->next;
+		}
+		*samples++ = 0;
+		
+		txU8 delta = profiler->delta;
+		txU8 former = profiler->former;
+
+		fxSendProfilerSample(the, profiler->samples, (txU4)(when - former));
+		when += delta;
+		while (when < time) {
+			fxSendProfilerSample(the, profiler->samples, (txU4)delta);
+			when += delta;
+		}
+			
+		profiler->former = time;
+		profiler->when = when;
+	}
+}
+
+void fxCreateProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
+	if (profiler == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	profiler->delta = 10000;
+	profiler->former = fxGetMicroSeconds();
+	profiler->when = profiler->former + profiler->delta;
+	
+	profiler->recordCount = 128;
+	profiler->records = c_calloc(1, profiler->recordCount);
+	if (profiler->records == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		
+	profiler->sampleCount = (the->stackTop - the->stackBottom) >> 3;
+	profiler->samples = (txID*)c_malloc((size_t)(profiler->sampleCount * sizeof(txID)));
+	if (profiler->samples == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+
+	fxSendProfilerTime(the, "start", profiler->former);
+	fxSendProfilerRecord(the, C_NULL, 0, C_NULL);
+	fxSendProfilerRecord(the, C_NULL, 1, C_NULL);
+	profiler->records[0] = 0x03;
+}
+
+void fxDeleteProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler;
+	fxSendProfilerTime(the, "stop", fxGetMicroSeconds());
+	c_free(profiler->samples);
+	c_free(profiler->records);
+	c_free(profiler);
+	the->profiler = C_NULL;
+}
+
+txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
+{
+	txProfiler* profiler = the->profiler;
+	txSlot* function = frame + 3;
+	txSlot* code = C_NULL;
+	txID id = XS_NO_ID;
+	if (function->kind == XS_REFERENCE_KIND) {
+		function = function->value.reference;
+		if (mxIsFunction(function)) {
+			code = mxFunctionInstanceCode(function);
+			id = mxFunctionInstanceHome(function)->ID;
+		}
+	}
+	else if (function->kind == XS_HOST_FUNCTION_KIND)
+		id = function->value.hostFunction.profileID;
+	if (id != XS_NO_ID) {		
+		txInteger recordIndex = id >> 3;
+		txInteger recordMask = 1 << (id & 0x07);
+		txInteger recordCount = profiler->recordCount;
+		if (recordIndex >= recordCount) {
+			while (recordIndex >= recordCount)
+				recordCount += 128;
+			profiler->records = c_realloc(profiler->records, recordCount);
+			if (profiler->records == C_NULL)
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			c_memset(profiler->records + profiler->recordCount, 0, (recordCount - profiler->recordCount));
+			profiler->recordCount = recordCount;
+		}
+		else if (profiler->records[recordIndex] & recordMask)
+			return id;
+		profiler->records[recordIndex] |= recordMask;
+		fxSendProfilerRecord(the, frame, id, code);
+		return id;
+	}
+	return 0;
+}
+
+txU8 fxGetMicroSeconds()
+{
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	return (tv.tv_sec * 1000000ULL) + tv.tv_usec;
+}
+
 void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code)
 {
 #ifdef mxDebug
@@ -2492,4 +2625,5 @@ void fxSendProfilerTime(txMachine* the, txString name, txU8 when)
 	}
 #endif
 }
-#endif
+
+#endif /* mxInstruments */
