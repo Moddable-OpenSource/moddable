@@ -45,6 +45,7 @@ class ProfileRecord {
 		this.line = line;
 		this.hitCount = 0;
 		this.duration = 0;
+		this.propagated = false;
 		this.propagation = 0;
 		this.callees = [];
 		this.callees.expanded = id == 0;
@@ -58,12 +59,13 @@ class ProfileRecord {
 	propagate(delta) {
 		if (this.propagated)
 			return;
-		this.propagated = true;
 		this.propagation += delta;
 		const callersCount = this.callers.length;
 		if (callersCount) {
+			this.propagated = true;
 			delta /= callersCount;
 			this.callers.forEach(record => record.propagate(delta));
+			this.propagated = false;
 		}
 	}
 	insertCallee(callee) {
@@ -133,9 +135,6 @@ export class Profile {
 		return this.records[id];
 	}
 	propagate() {
-		this.records.forEach(record => {
-			record.propagated = false;
-		});
 		let total = 0;
 		this.records.forEach(record => { 
 			if (record.hitCount) {
@@ -311,6 +310,7 @@ class ProfileButtonBehavior extends ButtonBehavior {
 	}
 	onTap(container) {
 		const machine = this.data.machine;
+		container.active = false;
 		if (machine.profiling)
 			machine.doStopProfiling();
 		else
