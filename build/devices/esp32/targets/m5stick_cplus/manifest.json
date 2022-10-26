@@ -75,13 +75,15 @@
 		"*": [
 			"$(MODULES)/pins/digital/monitor/*",
 			"$(MODULES)/pins/digital/monitor/esp32/*",
-			"$(MODULES)/drivers/mpu6886/*"
+			"$(MODULES)/drivers/mpu6886/*",
+			"$(MODULES)/drivers/sh200q/*"
 		],
-		"setup/target": "./setup-target"
+		"setup/target": "../m5stick_c/setup-target"
 	},
 	"preload": [
 		"monitor",
 		"setup/target",
-		"mpu6886"
+		"mpu6886",
+		"sh200q"
 	]
 }
