@@ -47,7 +47,7 @@ class ProfileRecord {
 		this.duration = 0;
 		this.propagation = 0;
 		this.callees = [];
-		this.callees.expanded = true;
+		this.callees.expanded = id == 0;
 		this.callers = [];
 		this.callers.expanded = false;
 	}
@@ -56,6 +56,9 @@ class ProfileRecord {
 		this.duration += delta;
 	}
 	propagate(delta) {
+		if (this.propagated)
+			return;
+		this.propagated = true;
 		this.propagation += delta;
 		const callersCount = this.callers.length;
 		if (callersCount) {
@@ -130,6 +133,9 @@ export class Profile {
 		return this.records[id];
 	}
 	propagate() {
+		this.records.forEach(record => {
+			record.propagated = false;
+		});
 		let total = 0;
 		this.records.forEach(record => { 
 			if (record.hitCount) {
@@ -332,7 +338,7 @@ class ProfileRecordTableBehavior extends TableBehavior {
 				return result;
 			});
 			for (let item of items) {
-				if (item.callees.length)
+				if ((item.callees.length) && (depth < 8))
 					column.add(new ProfileRecordTable(item));
 				else
 					column.add(new ProfileRecordRow(item));
@@ -347,7 +353,7 @@ class ProfileRecordTableBehavior extends TableBehavior {
 				return result;
 			});
 			for (let item of items) {
-				if (item.callers.length)
+				if ((item.callers.length) && (depth < 8))
 					column.add(new ProfileRecordTable(item));
 				else
 					column.add(new ProfileRecordRow(item));
