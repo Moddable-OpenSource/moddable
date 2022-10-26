@@ -44,8 +44,8 @@ typedef struct sxProfilerRecord txProfilerRecord;
 typedef struct sxProfilerSample txProfilerSample;
 
 struct sxProfiler {
-	txU8 former;
 	txU8 when;
+	txU8 former;
 	txU8 start;
 	txU8 stop;
 	txU4 delta;
@@ -165,6 +165,7 @@ void fxCreateProfiler(txMachine* the)
 void fxDeleteProfiler(txMachine* the)
 {
 	txProfiler* profiler = the->profiler;
+	profiler->stop = fxGetTicks();
 	fxPrintProfiler(the);
 	c_free(profiler->samples);
 	txU4 recordIndex = 0;
@@ -496,6 +497,25 @@ void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta)
 	sample->recordID = recordID;
 	sample->delta = delta;
 	profiler->sampleIndex = sampleIndex + 1;
+}
+
+void fxResumeProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
+		return;
+	txU8 delta = fxGetTicks() - profiler->stop;
+	profiler->when += delta;
+	profiler->former += delta;
+	profiler->start += delta;
+}
+
+void fxSuspendProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
+		return;
+	profiler->stop = fxGetTicks();
 }
 
 txU8 fxTicksToMicroseconds(txU8 ticks)

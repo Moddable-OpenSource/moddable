@@ -803,7 +803,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			this.profiling = true;
 			application.distribute("onMachineChanged", this);
 		}
-		else {
+		else if (name == "stop") {
 			this.profiling = false;
 			application.distribute("onMachineChanged", this);
 		}

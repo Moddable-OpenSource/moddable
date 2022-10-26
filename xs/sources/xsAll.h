@@ -809,6 +809,8 @@ extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* 
 extern void fxCheckProfiler(txMachine* the, txSlot* frame);
 extern void fxCreateProfiler(txMachine* the);
 extern void fxDeleteProfiler(txMachine* the);
+extern void fxResumeProfiler(txMachine* the);
+extern void fxSuspendProfiler(txMachine* the);
 #define mxFloatingPointOp(operation) \
 		/* fprintf(stderr, "float: %s\n", operation); */ \
 		the->floatingPointOps += 1
@@ -1810,6 +1812,8 @@ mxExport void fx_mutabilities(txMachine* the);
 extern void fxCheckProfiler(txMachine* the, txSlot* frame);
 extern void fxCreateProfiler(txMachine* the);
 extern void fxDeleteProfiler(txMachine* the);
+extern void fxResumeProfiler(txMachine* the);
+extern void fxSuspendProfiler(txMachine* the);
 #endif
 
 enum {

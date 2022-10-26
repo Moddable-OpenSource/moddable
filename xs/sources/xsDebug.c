@@ -279,6 +279,9 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	if (the->onBreak)
 		(the->onBreak)(the, 1);
 #endif
+#if defined(mxInstrument) || defined(mxProfile)
+	fxSuspendProfiler(the);
+#endif
 
 	fxEchoStart(the);
 	frame = the->frame;
@@ -319,6 +322,9 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	mxHostInspectors.value.list.first = C_NULL;
 	mxHostInspectors.value.list.last = C_NULL;
 
+#if defined(mxInstrument) || defined(mxProfile)
+	fxResumeProfiler(the);
+#endif
 #ifdef mxInstrument
 	if (the->onBreak)
 		(the->onBreak)(the, 0);
@@ -2412,17 +2418,21 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 #endif
 }
 
+#define mxProfilerSampleCount 8
+
 typedef struct sxProfiler txProfiler;
 struct sxProfiler {
-	txU8 former;
 	txU8 when;
+	txU8 former;
 	txU8 start;
 	txU8 stop;
-	txU4 delta;
-	txInteger recordCount;
+	txU4 interval;
+	txSize recordCount;
 	txByte* records;
-	txInteger sampleCount;
+	txSize sampleIndex;
+	txSize sampleSize;
 	txID* samples;
+	txU4 deltas[mxProfilerSampleCount];
 };
 
 static txID fxFrameToProfilerID(txMachine* the, txSlot* frame);
@@ -2439,8 +2449,13 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 	txU8 when = profiler->when;
 	txU8 time = fxGetMicroSeconds();
 	if (when < time) {
-		txID* samples = profiler->samples;
-	
+		txSize sampleIndex = profiler->sampleIndex;
+		txSize sampleSize = profiler->sampleSize;
+		txID* samples = profiler->samples + (sampleIndex * sampleSize);
+		txU4 interval = profiler->interval;
+		profiler->deltas[sampleIndex] =  (txU4)(time - profiler->former);
+		profiler->former = time;
+		profiler->when = time + interval - (time % interval);
 		if (!frame) {
 			frame = the->frame;
 			if (frame)
@@ -2453,19 +2468,18 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 			frame = frame->next;
 		}
 		*samples++ = 0;
-		
-		txU8 delta = profiler->delta;
-		txU8 former = profiler->former;
-
-		fxSendProfilerSample(the, profiler->samples, (txU4)(when - former));
-		when += delta;
-		while (when < time) {
-			fxSendProfilerSample(the, profiler->samples, (txU4)delta);
-			when += delta;
+		sampleIndex++;
+		if (sampleIndex == mxProfilerSampleCount) {
+			sampleIndex = 0;
+			samples = profiler->samples;
+			while (sampleIndex < mxProfilerSampleCount) {
+				fxSendProfilerSample(the, samples, profiler->deltas[sampleIndex]);
+				sampleIndex++;
+				samples += sampleSize;
+			}
+			sampleIndex = 0;
 		}
-			
-		profiler->former = time;
-		profiler->when = when;
+		profiler->sampleIndex = sampleIndex;
 	}
 }
 
@@ -2474,17 +2488,18 @@ void fxCreateProfiler(txMachine* the)
 	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
 	if (profiler == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-	profiler->delta = 10000;
+	profiler->interval = 1250;
 	profiler->former = fxGetMicroSeconds();
-	profiler->when = profiler->former + profiler->delta;
+	profiler->when = profiler->former + profiler->interval;
 	
 	profiler->recordCount = 128;
 	profiler->records = c_calloc(1, profiler->recordCount);
 	if (profiler->records == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-		
-	profiler->sampleCount = (the->stackTop - the->stackBottom) >> 3;
-	profiler->samples = (txID*)c_malloc((size_t)(profiler->sampleCount * sizeof(txID)));
+
+	profiler->sampleIndex = 0;
+	profiler->sampleSize = (the->stackTop - the->stackBottom) >> 3;
+	profiler->samples = (txID*)c_malloc((size_t)(mxProfilerSampleCount * profiler->sampleSize * sizeof(txID)));
 	if (profiler->samples == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
@@ -2546,6 +2561,18 @@ txU8 fxGetMicroSeconds()
 	c_timeval tv;
 	c_gettimeofday(&tv, NULL);
 	return (tv.tv_sec * 1000000ULL) + tv.tv_usec;
+}
+
+void fxResumeProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
+		return;
+	txU8 delta = fxGetMicroSeconds();
+	fxSendProfilerTime(the, "resume", delta);
+	delta -= profiler->stop;
+	profiler->when += delta;
+	profiler->former += delta;
 }
 
 void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code)
@@ -2624,6 +2651,15 @@ void fxSendProfilerTime(txMachine* the, txString name, txU8 when)
 		fxEchoStop(the);
 	}
 #endif
+}
+
+void fxSuspendProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
+		return;
+	profiler->stop = fxGetMicroSeconds();
+	fxSendProfilerTime(the, "suspend", profiler->stop);
 }
 
 #endif /* mxInstruments */
