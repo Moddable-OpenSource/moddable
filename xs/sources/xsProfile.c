@@ -48,7 +48,7 @@ struct sxProfiler {
 	txU8 former;
 	txU8 start;
 	txU8 stop;
-	txU4 delta;
+	txU4 interval;
 	txU4 recordCount;
 	txProfilerRecord** records;
 	txU8 sampleCount;
@@ -121,16 +121,16 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 		else
 			record = profiler->host;
 			
-		txU8 delta = profiler->delta;
+		txU4 interval = profiler->interval;
 		txU8 former = profiler->former;
 
 		record->hitCount++;
 		fxPushProfilerSample(the, record->recordID, (txU4)(when - former));
-		when += delta;
+		when += interval;
 		while (when < time) {
 			record->hitCount++;
-			fxPushProfilerSample(the, record->recordID, (txU4)delta);
-			when += delta;
+			fxPushProfilerSample(the, record->recordID, interval);
+			when += interval;
 		}
 			
 		profiler->former = time;
@@ -143,9 +143,9 @@ void fxCreateProfiler(txMachine* the)
 	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
 	if (profiler == C_NULL)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
-	profiler->delta = (txU4)fxMicrosecondsToTicks(1000);
+	profiler->interval = (txU4)fxMicrosecondsToTicks(1250);
 	profiler->former = fxGetTicks();
-	profiler->when = profiler->former + profiler->delta;
+	profiler->when = profiler->former + profiler->interval;
 	profiler->start = profiler->former;
 	
 	profiler->recordCount = 2;
