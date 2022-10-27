@@ -163,7 +163,7 @@ export default class extends TOOL {
 			let changed;
 
 			nodes.forEach(config => {
-				config.wires.forEach(output => {
+				config.wires?.forEach(output => {
 					for (let i = 0; i < output.length; i++) {
 						const wire = output[i];
 						const target = nodes.get(wire);
@@ -233,8 +233,8 @@ export default class extends TOOL {
 				delete c._mcu;
 
 				try {
-					// remove wires that connect to missing nodes=
-					for (let i = 0; i < config.wires.length; i++)
+					// remove wires that connect to missing nodes
+					for (let i = 0, length = config.wires?.length ?? 0; i < length; i++)
 						config.wires[i] = config.wires[i].filter(wire => nodes.has(wire));
 
 					// enabled status nodes for this node
@@ -718,7 +718,7 @@ export default class extends TOOL {
 			case "switch": {
 				const value = this.resolveValue(config.propertyType, config.property);
 				const checkAll = "true" === config.checkall;
-				const outputCount = config.wires.length;
+				const outputCount = config.wires?.length ?? 0;
 				const hasElse = checkAll && config.rules.find(config => "else" === config.t);
 				const usesPrevious = config.rules.find(config => ("prev" === config.v2t) || ("prev" == config.vt));
 
