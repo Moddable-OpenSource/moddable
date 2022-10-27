@@ -35,7 +35,13 @@
  *       limitations under the License.
  */
 
+#define _GNU_SOURCE
 #include "xsAll.h"
+#if mxMacOSX || mxLinux
+#include <dlfcn.h>
+#endif
+
+static void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address);
 
 txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix)
 {
@@ -84,26 +90,6 @@ again:
 	return C_NULL;
 }
 
-void fxBufferFunctionID(txMachine* the, txString buffer, txSize size, txID id)
-{
-	if (id != XS_NO_ID) {
-		txSlot* key = fxGetKey(the, id);
-		if (key) {
-			if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
-				c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
-				return;
-			}
-			if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
-				c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, key->value.string, size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
-				return;
-			}
-		}
-	}
-	c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
-}
-
 void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* frame, txString suffix)
 {
 	txSlot* target = frame + 2; 
@@ -138,7 +124,7 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 	}
 #ifdef mxHostFunctionPrimitive
 	else if (function->kind == XS_HOST_FUNCTION_KIND) {
-		fxBufferFunctionID(the, buffer, size, function->value.hostFunction.builder->id);
+		fxBufferFunctionNameAddress(the, buffer, size, function->value.hostFunction.builder->id, function->value.hostFunction.builder->callback);
 	}
 #endif
 	else
@@ -146,39 +132,54 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 }
 
-
 void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* function, txString suffix)
 {
 	txSlot* slot = mxFunctionInstanceCode(function);
-	if (slot->ID != XS_NO_ID) {
-		txSlot* key = fxGetKey(the, slot->ID);
+	if ((slot->kind == XS_CODE_KIND) || (slot->kind == XS_CODE_X_KIND))
+		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, C_NULL);
+	else
+		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, slot->value.callback.address);
+    c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+}
+
+void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address)
+{
+	if (id != XS_NO_ID) {
+		txSlot* key = fxGetKey(the, id);
 		if (key) {
 			if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
 				c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 				return;
 			}
 			if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
 				c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
 				c_strncat(buffer, key->value.string, size - mxStringLength(buffer) - 1);
 				c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 				return;
 			}
 		}
 	}
-	c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
-	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+	if (address) {
+		c_strncat(buffer, "@", size - mxStringLength(buffer) - 1);
+#if mxMacOSX || mxLinux
+		Dl_info info;
+		if (dladdr(address, &info) && info.dli_sname)
+			c_strncat(buffer, info.dli_sname, size - mxStringLength(buffer) - 1);
+		else
+#endif
+			c_strncat(buffer, "anonymous", size - mxStringLength(buffer) - 1);
+	}
+	else
+		c_strncat(buffer, "(anonymous)", size - mxStringLength(buffer) - 1);
 }
 
 void fxBufferObjectName(txMachine* the, txString buffer, txSize size, txSlot* object, txString suffix)
 {
 	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), 0, XS_ANY);
-	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string))
+	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string)) {
 		c_strncat(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
-	else
-		c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
-	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+		c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+	}
 }
 
 txString fxConcatString(txMachine* the, txSlot* a, txSlot* b)
