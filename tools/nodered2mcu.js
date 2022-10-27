@@ -189,6 +189,29 @@ export default class extends TOOL {
 			}
 		}
 
+		// remove group nodes with empty environments
+		//  (this is unobservable except for the NR_NODE_PATH environment variable)
+		for (let i = 0; i < flows.length; i++) {
+			const config = flows[i];
+			if (("group" === config.type) && !config.env?.length) {
+				const g = config.g;
+				const id = config.id;
+				nodes.delete(config.id);
+				flows.splice(i, 1);
+				i -= 1;
+
+				for (let j = 0; j < flows.length; j++) {
+					const config = flows[j];
+					if (config.g === id) {		// this node referenced deleted group
+						if (g)
+							config.g = g;		// reference enclosing group
+						else
+							delete config.g;	// no longer in a group
+					}
+				}
+			}
+		}
+
 		parts.push(`function build(flows, createFlow, createNode) {`);
 		parts.push(`\tlet flow, node, nodes;`);
 
@@ -196,7 +219,14 @@ export default class extends TOOL {
 			if (("tab" !== config.type) || config.disabled)
 				return;
 
-			parts.push(`\tflow = createFlow("${config.id}", ${JSON.stringify(config.name ?? "")})`);
+			const createFlow = `\tflow = createFlow("${config.id}", ${JSON.stringify(config.label ?? "")}`;
+			if (!config.env?.length)
+				parts.push(`${createFlow});`);
+			else {
+				parts.push(`${createFlow}, {`);
+				parts.push(...this.prepareEnv(config.env));
+				parts.push(`\t});`);
+			}
 
 			const z = config.id;
 			flows.forEach(config => {
@@ -225,6 +255,7 @@ export default class extends TOOL {
 
 				parts.push(`\tnode = nodes.next().value;	// ${config.type} - ${config.id}`);
 
+				const name = config.name;
 				const {type, id, /* name, */ ...c} = {...config};
 				delete c.x;
 				delete c.y;
@@ -270,6 +301,9 @@ export default class extends TOOL {
 						const value = c[name];
 						if (("string" === typeof value) && value.startsWith("function ("))
 							configuration.push(`\t\t${name}: ${value},`);
+						else
+						if (("string" === typeof value) && value.startsWith("[[JSON]]"))
+							configuration.push(`\t\t${name}: ${value.slice(8)},`);
 						else
 							configuration.push(`\t\t${name}: ${JSON.stringify(value)},`);
 					}
@@ -326,6 +360,16 @@ export default class extends TOOL {
 				delete config.scope;
 			} break;
 
+			case "group": {
+				const env = this.prepareEnv(config.env);
+				config.env = `[[JSON]]{\n` + env.join("\n") + "\n}"
+			
+				delete config.nodes;
+				delete config.style;
+				delete config.w;
+				delete config.h;
+			} break;
+
 			case "debug": {
 				if ("jsonata" === config.targetType)
 					throw new Error("unimplemented");
@@ -359,7 +403,7 @@ export default class extends TOOL {
 			} break;
 
 			case "function": {
-				const params = "node, context, flow, global, libs"
+				const params = "node, context, flow, global, libs, env"
 
 				let libs = "";
 				if (config.libs?.length) {
@@ -1059,6 +1103,30 @@ export default class extends TOOL {
 				return `this.flow.get("${value}")`;
 			case "global":
 				return `globalContext.get("${value}")`;
+			case "env": {
+				let offset = 0;
+				do {
+					offset = value.indexOf("${", offset);
+					if (offset < 0)
+						break;
+					let end = value.indexOf("}", offset);
+					if (end < 0)
+						break;
+					const name = value.slice(offset + 2, end);
+					const substitute = `this.getSetting("${name}")`;
+					value = value.slice(0, offset + 2) +
+							substitute +
+							value.slice(end);
+					end += substitute.length - name.length;
+					offset = end + 1;
+				} while (true);
+				
+				if (value.indexOf("${", offset) < 0)
+					return `this.getSetting("${value}")`;
+				if (value.startsWith("${") && value.endsWith("}") && (value.indexOf("${", 2) < 0))
+					return value.slice(2, -1);
+				return "`" + value + "`";
+				}
 			default:
 				throw new Error(`cannot resolve type "${type}"`);
 		}
@@ -1092,5 +1160,28 @@ export default class extends TOOL {
 				code.push(`${indent}msg${path} ??= {};`);
 			}
 		}
+	}
+	prepareEnv(env) {
+		const parts = [];
+
+		env.forEach(env => {
+			const value = this.resolveValue(env.type, env.value);
+			const name = regexIdentifierNameES6.test(env.name) ? `${env.name}` : `["${env.name}"]`; 
+			switch (env.type) {
+				case "str":
+				case "num":
+				case "bool":
+				case "bin":
+					parts.push(`\t\t${name}: ${value},`);
+					break;
+				case "json":
+					let t = JSON.parse(value);
+					t = JSON.stringify(t, null, "\t");
+					parts.push(`\t\t${name}: ${t},`);
+					break;
+			}					
+		});
+		
+		return parts;
 	}
 }
