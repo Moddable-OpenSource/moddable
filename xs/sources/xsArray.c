@@ -87,8 +87,8 @@ void fxBuildArray(txMachine* the)
 	txSlot* property;
 	txSlot* unscopable;
 	
-	fxNewHostFunction(the, mxCallback(fxArrayLengthGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxArrayLengthSetter), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxArrayLengthGetter), 0, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxArrayLengthSetter), 1, XS_NO_ID, XS_NO_ID);
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;

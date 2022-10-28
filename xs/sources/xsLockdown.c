@@ -41,7 +41,7 @@
 void fxSetHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id)
 {
 	txSlot* home = the->stack;
-	txSlot* function = fxNewHostFunction(the, call, length, id);
+	txSlot* function = fxNewHostFunction(the, call, length, id, XS_NO_ID);
 	txSlot* slot = mxFunctionInstanceHome(function);
 	slot->value.home.object = home->value.reference;
 	property->kind = the->stack->kind;

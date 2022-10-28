@@ -35,7 +35,12 @@
  *       limitations under the License.
  */
 
+
+#define _GNU_SOURCE
 #include "xsAll.h"
+#if mxMacOSX || mxLinux
+#include <dlfcn.h>
+#endif
 
 #ifdef mxProfile
 
@@ -63,6 +68,7 @@ struct sxProfilerRecord {
 	txID constructorID;
 	txID prototypeID;
 	txID functionID;
+	txCallback functionAddress;
 	txID file;
 	txInteger line;
 	txInteger hitCount;
@@ -190,6 +196,7 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 	if (function->kind == XS_REFERENCE_KIND) {
 		function = function->value.reference;
 		if (mxIsFunction(function)) {
+			txSlot* code = mxFunctionInstanceCode(function);
 			txSlot* home = mxFunctionInstanceHome(function);
 			txID recordID = home->ID;
 			txProfilerRecord* record = C_NULL;
@@ -198,8 +205,8 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 			if (record)
 				return record;
 			record = fxNewProfilerRecord(the, recordID);
-			record->functionID = mxFunctionInstanceCode(function)->ID;
-			home = mxFunctionInstanceHome(function)->value.home.object;
+			record->functionID = code->ID;
+			home = home->value.home.object;
 			if (home) {
 				if (mxIsFunction(home)) {
 					record->constructorID = mxFunctionInstanceCode(home)->ID;
@@ -237,7 +244,6 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 					}
 				}
 			}
-			txSlot* code = mxFunctionInstanceCode(function);
 			if ((code->kind == XS_CODE_KIND) || (code->kind == XS_CODE_X_KIND)) {
 				txByte* p = code->value.code.address + 2;
 				if (*p == XS_CODE_FILE) {
@@ -250,7 +256,10 @@ txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 					record->file = file;
 					record->line = line;
 				}
+				record->functionAddress = C_NULL;
 			}
+			else
+				record->functionAddress = code->value.callback.address;
 			return record;
 		}
 	}
@@ -393,7 +402,11 @@ void fxPrintProfiler(txMachine* the)
 			if (recordIndex > 0)
 				fprintf(file, ",");
 			fprintf(file, "{\"id\":%d,\"callFrame\":{\"functionName\":\"", record->recordID);
-			if (record->functionID != XS_NO_ID) {
+			if (recordIndex == 0)
+				fprintf(file, "(host)");
+			else if (recordIndex == 1)
+				fprintf(file, "(garbage collector)");
+			else if (record->functionID != XS_NO_ID) {
 				if (record->constructorID != XS_NO_ID) {
 					fxPrintID(the, file, record->constructorID);
 					fprintf(file, ".");
@@ -404,10 +417,17 @@ void fxPrintProfiler(txMachine* the)
 				}
 				fxPrintID(the, file, record->functionID);
 			}
-			else if (recordIndex == 0)
-				fprintf(file, "(host)");
-			else if (recordIndex == 1)
-				fprintf(file, "(garbage collector)");
+			else if (record->functionAddress) {
+#if mxMacOSX || mxLinux
+				Dl_info info;
+				if (dladdr(record->functionAddress, &info) && info.dli_sname)
+					fprintf(file, "@%s",info.dli_sname );
+				else
+#endif
+					fprintf(file, "@anonymous");
+			}
+			else
+				fprintf(file, "(anonymous)");
 
 			fprintf(file, "\",\"scriptId\":\"0\",\"url\":\"");
 			if (record->file != XS_NO_ID)
@@ -530,5 +550,7 @@ txU8 fxTicksToMicroseconds(txU8 ticks)
 	return ticks;
 #endif
 }
+
+
 
 #endif /* mxProfile */

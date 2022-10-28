@@ -374,6 +374,7 @@ enum {
 	XS_CODE_WITH,
 	XS_CODE_WITHOUT,
 	XS_CODE_YIELD,
+	XS_CODE_PROFILE,
 	XS_CODE_COUNT
 };
 
@@ -453,6 +454,7 @@ txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
 
 /* ? */
 mxExport char* fxCStackLimit();
+mxExport txID fxGenerateProfileID(void* console);
 mxExport void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path);
 mxExport void fxVReport(void* console, txString theFormat, c_va_list theArguments);
 mxExport void fxVReportError(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);

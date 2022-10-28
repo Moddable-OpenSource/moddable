@@ -277,7 +277,8 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_VOID */ "void",
 	/* XS_CODE_WITH */ "with",
 	/* XS_CODE_WITHOUT */ "without",
-	/* XS_CODE_YIELD */ "yield"
+	/* XS_CODE_YIELD */ "yield",
+	/* XS_CODE_PROFILE */ "profile"
 };
 
 const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
@@ -516,7 +517,12 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_VOID */,
 	1 /* XS_CODE_WITH */,
 	1 /* XS_CODE_WITHOUT */,
-	1 /* XS_CODE_YIELD */
+	1 /* XS_CODE_YIELD */,
+#ifdef mx32bitID
+	5 /* XS_CODE_PROFILE */
+#else
+	3 /* XS_CODE_PROFILE */
+#endif
 };
 
 #if mxUseDefaultCStackLimit

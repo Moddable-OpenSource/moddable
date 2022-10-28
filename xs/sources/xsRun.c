@@ -636,6 +636,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_WITH,
 		&&XS_CODE_WITHOUT,
 		&&XS_CODE_YIELD,
+		&&XS_CODE_PROFILE,
 	};
 	register void * const *bytes = gxBytes;
 #endif
@@ -2692,6 +2693,12 @@ XS_CODE_JUMP:
 			mxSaveState;
 			gxDefaults.newGeneratorFunctionInstance(the,(txID) offset);
 			mxRestoreState;
+			mxNextCode(1 + sizeof(txID));
+			mxBreak;
+		mxCase(XS_CODE_PROFILE)
+			offset = mxRunID(1);
+			variable = mxFunctionInstanceHome(mxStack->value.reference);
+			variable->ID = offset;
 			mxNextCode(1 + sizeof(txID));
 			mxBreak;
 		mxCase(XS_CODE_NAME)
@@ -4833,6 +4840,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 			instance->next->value.code.address = script->codeBuffer;
 			instance->next->value.code.closures = closures;
 			property = mxFunctionInstanceHome(instance);
+			property->ID = fxGenerateProfileID(the);
 			property->value.home.object = object;
 			property->value.home.module = module;
 			/* TARGET */

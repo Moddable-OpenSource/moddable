@@ -247,8 +247,8 @@ void fxBuildDataView(txMachine* the)
 	mxDataViewConstructor = *the->stack;
 	mxPop();
 	
-	fxNewHostFunction(the, mxCallback(fxTypedArrayGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxTypedArraySetter), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxTypedArrayGetter), 0, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxTypedArraySetter), 1, XS_NO_ID, XS_NO_ID);
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;

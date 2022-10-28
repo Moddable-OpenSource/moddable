@@ -274,6 +274,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_SUPER:
 		case XS_CODE_SET_VARIABLE:
 		case XS_CODE_SYMBOL:
+		case XS_CODE_PROFILE:
 			size += 1 + sizeof(txID);
 			break;
 			
@@ -442,6 +443,9 @@ txScript* fxParserCode(txParser* parser)
 			symbol = ((txSymbolCode*)code)->symbol;
 			if (symbol && symbol->string)
 				symbol->usage++;
+			size += 1 + sizeof(txID);
+			break;
+		case XS_CODE_PROFILE:
 			size += 1 + sizeof(txID);
 			break;
 			
@@ -646,6 +650,10 @@ txScript* fxParserCode(txParser* parser)
 				id = symbol->ID;
 			else
 				id = XS_NO_ID;
+			mxEncodeID(p, id);
+			break;
+		case XS_CODE_PROFILE:
+			id = fxGenerateProfileID(parser->console);
 			mxEncodeID(p, id);
 			break;
 			
@@ -3179,6 +3187,8 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
 	else
 		fxCoderAddSymbol(param, 1, XS_CODE_CONSTRUCTOR_FUNCTION, name);
+	if (coder->parser->flags & mxDebugFlag)
+		fxCoderAddByte(param, 0, XS_CODE_PROFILE);
 	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 	if (self->flags & mxFieldFlag)
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT_FIELD, fxCoderCountParameters(coder, self->params));
@@ -3519,6 +3529,8 @@ void fxModuleNodeCode(void* it, void* param)
 	}
 	if (count) {
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
+		if (coder->parser->flags & mxDebugFlag)
+			fxCoderAddByte(param, 0, XS_CODE_PROFILE);
 		fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
 		coder->path = C_NULL;
@@ -3557,6 +3569,8 @@ void fxModuleNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 1, XS_CODE_ASYNC_FUNCTION, name);
 	else
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
+	if (coder->parser->flags & mxDebugFlag)
+		fxCoderAddByte(param, 0, XS_CODE_PROFILE);
 	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 	fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
 	coder->path = C_NULL;

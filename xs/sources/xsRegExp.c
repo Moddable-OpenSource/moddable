@@ -76,7 +76,7 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	mxPop();
-	fxNewHostFunction(the, mxCallback(fxInitializeRegExp), 2, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxInitializeRegExp), 2, XS_NO_ID, XS_NO_ID);
 	mxInitializeRegExpFunction = *the->stack;
 	
 	mxPush(mxIteratorPrototype);

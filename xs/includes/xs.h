@@ -916,11 +916,11 @@ struct xsHostBuilderRecord {
 	fxPop())
 	
 #define xsNewHostFunction(_CALLBACK,_LENGTH) \
-	(fxNewHostFunction(the, _CALLBACK, _LENGTH, xsNoID), \
+	(fxNewHostFunction(the, _CALLBACK, _LENGTH, xsNoID, xsNoID), \
 	fxPop())
 	
 #define xsNewHostFunctionObject(_CALLBACK,_LENGTH, _NAME) \
-	(fxNewHostFunction(the, _CALLBACK, _LENGTH, _NAME), \
+	(fxNewHostFunction(the, _CALLBACK, _LENGTH, _NAME, xsNoID), \
 	fxPop())
 
 #define xsNewHostInstance(_PROTOTYPE) \
@@ -1197,7 +1197,7 @@ struct xsCreationRecord {
 };
 
 #define xsCreateMachine(_CREATION,_NAME,_CONTEXT) \
-	fxCreateMachine(_CREATION, _NAME, _CONTEXT)
+	fxCreateMachine(_CREATION, _NAME, _CONTEXT, xsNoID)
 	
 #define xsDeleteMachine(_THE) \
 	fxDeleteMachine(_THE)
@@ -1251,7 +1251,7 @@ struct xsCreationRecord {
 	} while(1)
 
 enum {	
-	xsNoID = -1,
+	xsNoID = 0,
 	xsDefault = 0,
 	xsDontDelete = 2,
 	xsDontEnum = 4,
@@ -1373,7 +1373,7 @@ mxImport void fxArrayCacheItem(xsMachine*, xsSlot*, xsSlot*);
 
 mxImport void fxBuildHosts(xsMachine*, xsIntegerValue, xsHostBuilder*);
 mxImport void fxNewHostConstructor(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue);
-mxImport void fxNewHostFunction(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue);
+mxImport void fxNewHostFunction(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue, xsIntegerValue);
 mxImport void fxNewHostInstance(xsMachine*);
 mxImport xsSlot* fxNewHostObject(xsMachine*, xsDestructor);
 mxImport xsIntegerValue fxGetHostBufferLength(xsMachine*, xsSlot*);
@@ -1430,7 +1430,7 @@ mxImport void fxBubble(xsMachine*, xsIntegerValue, void*, xsIntegerValue, xsStri
 mxImport void fxDebugger(xsMachine*, xsStringValue, xsIntegerValue);
 mxImport void fxReport(xsMachine*, xsStringValue, ...);
 
-mxImport xsMachine* fxCreateMachine(xsCreation*, xsStringValue, void*);
+mxImport xsMachine* fxCreateMachine(xsCreation*, xsStringValue, void*, xsIdentifier);
 mxImport void fxDeleteMachine(xsMachine*);
 mxImport xsMachine* fxCloneMachine(xsCreation*, xsMachine*, xsStringValue, void*);
 mxImport xsMachine* fxPrepareMachine(xsCreation*, void*, xsStringValue, void*, void*);

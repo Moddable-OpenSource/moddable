@@ -2191,6 +2191,14 @@ void fxReportWarning(txMachine* the, txString thePath, txInteger theLine, txStri
 #endif
 }
 
+txID fxGenerateProfileID(void* console)
+{
+	txMachine* the = console;
+	txID id = the->profileID;
+	the->profileID++;
+	return id;
+}
+
 void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path)
 {
 	txMachine* the = console;

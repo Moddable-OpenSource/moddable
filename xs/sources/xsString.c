@@ -91,8 +91,8 @@ void fxBuildString(txMachine* the)
 {
 	txSlot* slot;
 	
-	fxNewHostFunction(the, mxCallback(fxStringAccessorGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxStringAccessorSetter), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxStringAccessorGetter), 0, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxStringAccessorSetter), 1, XS_NO_ID, XS_NO_ID);
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;

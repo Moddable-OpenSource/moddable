@@ -549,7 +549,7 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 			the->stack->value.hostFunction.profileID = the->profileID;
 			the->profileID++;
 		#else
-			fxNewHostFunction(the, builder->callback, builder->length, builder->id);
+			fxNewHostFunction(the, builder->callback, builder->length, builder->id, XS_NO_ID);
 		#endif
 		}
 		else
@@ -570,7 +570,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 
 	fxToInstance(the, the->stack);
 	aStack = the->stack;
-	instance = fxNewHostFunction(the, theCallback, theLength, name);
+	instance = fxNewHostFunction(the, theCallback, theLength, name, XS_NO_ID);
 	instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 	property = fxLastProperty(the, instance);
 	fxNextSlotProperty(the, property, aStack, mxID(_prototype), XS_GET_ONLY);
@@ -583,7 +583,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 	return instance;
 }
 
-txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theLength, txInteger name)
+txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theLength, txInteger name, txInteger profileID)
 {
 	txSlot* instance;
 	txSlot* property;
@@ -606,8 +606,10 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
-	property->ID = the->profileID;
-	the->profileID++;
+	if (profileID != XS_NO_ID)
+		property->ID = profileID;
+	else
+		property->ID = fxGenerateProfileID(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
@@ -1344,7 +1346,7 @@ void fxDebugger(txMachine* the, txString thePath, txInteger theLine)
 
 const txByte gxNoCode[3] ICACHE_FLASH_ATTR = { XS_CODE_BEGIN_STRICT, 0, XS_CODE_END };
 
-txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext)
+txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext, txID profileID)
 {
 	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
 	if (the) {
@@ -1371,7 +1373,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 		#ifdef mxDebug
 			the->name = theName;
 		#endif
-			the->profileID = 2;
+			the->profileID = (profileID != XS_NO_ID) ? profileID : mxBaseProfileID;
 			fxAllocate(the, theCreation);
 
             c_memset(the->nameTable, 0, the->nameModulo * sizeof(txSlot *));

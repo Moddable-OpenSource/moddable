@@ -77,7 +77,7 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
 	txSlot *function, *home = the->stack, *slot;
-	function = fxNewHostFunction(the, call, length, id);
+	function = fxNewHostFunction(the, call, length, id, XS_NO_ID);
 	slot = mxFunctionInstanceHome(function);
 	slot->value.home.object = home->value.reference;
 	property = property->next = fxNewSlot(the);

@@ -86,7 +86,7 @@ struct sxLinker {
 	
 	txLinkerResource* firstResource;
 	
-	txMachine* realm;
+	txID profileID;
 	txLinkerScript* currentScript;
 	txLinkerScript* firstScript;
 	txSize scriptCount;

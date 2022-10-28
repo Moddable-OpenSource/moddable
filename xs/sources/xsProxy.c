@@ -78,8 +78,8 @@ void fxBuildProxy(txMachine* the)
 {
 	txSlot* slot;
 
-	fxNewHostFunction(the, mxCallback(fxProxyGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxProxySetter), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxProxyGetter), 0, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxProxySetter), 1, XS_NO_ID, XS_NO_ID);
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
@@ -828,7 +828,7 @@ void fx_Proxy_revocable(txMachine* the)
 	slot->value.proxy.handler = handler;
 	property = fxNextSlotProperty(the, property, the->stack, mxID(_proxy), XS_GET_ONLY);
 	
-	slot = fxLastProperty(the, fxNewHostFunction(the, mxCallback(fx_Proxy_revoke), 0, XS_NO_ID));
+	slot = fxLastProperty(the, fxNewHostFunction(the, mxCallback(fx_Proxy_revoke), 0, XS_NO_ID, XS_NO_ID));
 	slot = fxNextSlotProperty(the, slot, the->stack + 1, mxID(_proxy), XS_GET_ONLY);
 	property = fxNextSlotProperty(the, property, the->stack, mxID(_revoke), XS_GET_ONLY);
 	
