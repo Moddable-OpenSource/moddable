@@ -37,7 +37,7 @@
 
 // MODEL
 
-class ProfileRecord {
+class ProfileRecord @ "PiuProfileDelete" {
 	constructor(id, name, path, line) {
 		this.id = id;
 		this.name = name || "(anonymous)";
@@ -49,32 +49,62 @@ class ProfileRecord {
 		this.propagation = 0;
 		this.callees = [];
 		this.callees.expanded = id == 0;
+		this.callees.sorted = false;
 		this.callers = [];
 		this.callers.expanded = false;
+		this.callers.sorted = false;
 	}
 	hit(delta) {
 		this.hitCount++;
 		this.duration += delta;
 	}
-	propagate(delta) {
-		if (this.propagated)
-			return;
-		this.propagation += delta;
-		const callersCount = this.callers.length;
-		if (callersCount) {
-			this.propagated = true;
-			delta /= callersCount;
-			this.callers.forEach(record => record.propagate(delta));
-			this.propagated = false;
-		}
-	}
+// 	propagate(delta, callee) {
+// 		if (this.propagated) {
+// 			this.removeCallee(callee);
+// 			callee.removeCaller(this);
+// 			return;
+// 		}
+// 		this.propagation += delta;
+// 		const callersCount = this.callers.length;
+// 		if (callersCount) {
+// 			this.propagated = true;
+// 			delta /= callersCount;
+// 			if (delta >= 1)
+// 				this.callers.forEach(record => {
+// 					return record.propagate(delta, this)
+// 				});
+// 			this.propagated = false;
+// 		}
+// 	}
+
+	createCache(length)  @ "PiuProfile_createCache"
+	deleteCache()  @ "PiuProfile_deleteCache"
+	fillCache(callers, index)  @ "PiuProfile_fillCache"
+	propagate(duration)  @ "PiuProfile_propagate"
+	
 	insertCallee(callee) {
-		if (this.callees.indexOf(callee) < 0)
-			this.callees.push(callee);
+		const callees = this.callees;
+		const index = callees.indexOf(callee);
+		if (index < 0)
+			callees.push(callee);
 	}
 	insertCaller(caller) {
-		if (this.callers.indexOf(caller) < 0)
+		const callers = this.callers;
+		const index = callers.indexOf(caller);
+		if (index < 0)
 			this.callers.push(caller);
+	}
+	removeCallee(callee) {
+		const callees = this.callees;
+		const index = callees.indexOf(callee);
+		if (index >= 0)
+			callees.splice(index, 1);
+	}
+	removeCaller(caller) {
+		const callers = this.callers;
+		const index = callers.indexOf(caller);
+		if (index >= 0)
+			callers.splice(index, 1);
 	}
 }
 
@@ -83,11 +113,18 @@ const callersOrder = "callers";
 
 export class Profile {
 	constructor(machine, path) {
-		this.expanded = true;
 		this.machine = machine;
-		this.order = callersOrder;
 		this.path = path;
-		this.records = [];
+		this.records = new Map;
+		
+		this.expanded = true;
+		this.order = callersOrder;
+
+		this.hits = [];
+		this.host = null;
+		this.sorted = false;
+		this.total = 0;
+		
 		if (path) {
 			const string = system.readFileString(path);
 			const json = JSON.parse(string);
@@ -97,20 +134,22 @@ export class Profile {
 				const id = node.id;
 				const { functionName, url, lineNumber } = node.callFrame;
 				const record = new ProfileRecord(id, functionName, url, lineNumber + 1);
-				records[id] = record;
+				records.set(id, record);
 			});
 			nodes.forEach(node => {
-				const caller = records[node.id];
+				const caller = records.get(node.id);
 				node.children.forEach(id => {
-					const callee = records[id];
-					caller.insertCallee(callee);
-					callee.insertCaller(caller);
+					const callee = records.get(id);
+					if (callee != caller) {
+						caller.insertCallee(callee);
+						callee.insertCaller(caller);
+					}
 				});
 			});
 			const length = Math.min(samples.length, timeDeltas.length);
 			for (let index = 0; index < length; index++) {
 				const sample = samples[index];
-				const record = records[sample];
+				const record = records.get(sample);
 				record.hit(timeDeltas[index]);
 			}
 			this.name = system.getPathName(path);
@@ -121,32 +160,57 @@ export class Profile {
 		}
 	}
 	clear() {
+		this.hits = [];
+		this.host = null;
+		this.sorted = false;
+		this.total = 0;
 		this.records.forEach(record => {
+			record.callees.sorted = false;
+			record.callers.sorted = false;
 			record.propagation = 0;
 		});
-		this.total = 0;
 	}
 	empty() {
-		this.records = [];
+		this.records = new Map;
+		this.hits = [];
+		this.host = null;
+		this.sorted = false;
 		this.total = 0;
 		application.distribute("onProfileChanged", this);
 	}
 	getRecord(id) {
-		return this.records[id];
+		return this.records.get(id);
 	}
 	propagate() {
+		this.records.forEach(record => {
+			record.createCache(record.callers.length);
+		});
+		this.records.forEach(record => {
+			record.callers.forEach((caller, index) => record.fillCache(caller, index));
+		});
+
+		let hits = this.hits;
 		let total = 0;
-		this.records.forEach(record => { 
+		this.records.forEach(record => {
 			if (record.hitCount) {
+				hits.push(record);
 				record.propagate(record.duration);
 				total += record.duration;
 			}
+			if (record.id == 0) {
+				this.host = record;
+			}
 		});
 		this.total = total;
+		
+		this.records.forEach(record => {
+			record.deleteCache();
+		});
+		
 		application.distribute("onProfileChanged", this);
 	}
 	setRecord(id, name, path, line) {
-		this.records[id] = new ProfileRecord(id, name, path, line);
+		this.records.set(id, new ProfileRecord(id, name, path, line));
 	}
 	
 };
@@ -231,25 +295,28 @@ class ProfileTableBehavior extends TableBehavior {
 		const order = data.order;
 		const total = data.total;
 		if (order == calleesOrder) {
-			const records = data.records;
-			if (records.length) {
-				const record = data.records[0];
-				column.add(new ProfileRecordTable({ depth, order, total, ...record }));
-			}
+			const record = data.host;
+			if (record)
+				column.add(new ProfileRecordTable({ depth, order, record, total }));
 		}
 		else {
-			const records = data.records.filter(record => record.hitCount > 0);
-			records.sort((a, b) => {
-				let result = b.hitCount - a.hitCount;
-				if (!result) 
-					result = a.name.localeCompare(b.name);
-				return result;
-			});
+			const records = data.hits;
+			if (!data.sorted) {
+				records.sort((a, b) => {
+					let result = b.duration - a.duration;
+					if (!result) 
+						result = a.name.localeCompare(b.name);
+					if (!result) 
+						result = a.id - b.id;
+					return result;
+				});
+				data.sorted = true;
+			}
 			records.forEach(record => {
 				if (record.callers.length)
-					column.add(new ProfileRecordTable({ depth, order, total, ...record }));
+					column.add(new ProfileRecordTable({ depth, order, record, total }));
 				else
-					column.add(new ProfileRecordRow({ depth, order, total, ...record }));
+					column.add(new ProfileRecordRow({ depth, order, record, total }));
 			});
 		}
 		
@@ -321,48 +388,37 @@ class ProfileButtonBehavior extends ButtonBehavior {
 class ProfileRecordTableBehavior extends TableBehavior {
 	onCreate(column, data) {
 		this.data = data;
-		if (data[data.order].expanded)
+		if (data.record[data.order].expanded) {
 			this.onExpanded(column);
+		}
 	}
 	onExpanded(column) {
 		const data = this.data;
 		const depth = data.depth + 1;
 		const order = data.order;
 		const total = data.total;
-		if (order == calleesOrder) {
-			const items = data.callees.map(record => { return { depth, order, total, ...record }});
-			items.sort((a, b) => {
+		const records = data.record[order];
+		if (!records.sorted) {
+			records.sort((a, b) => {
 				let result = b.propagation - a.propagation;
 				if (!result) 
 					result = a.name.localeCompare(b.name);
-				return result;
-			});
-			for (let item of items) {
-				if ((item.callees.length) && (depth < 8))
-					column.add(new ProfileRecordTable(item));
-				else
-					column.add(new ProfileRecordRow(item));
-			}
-		}
-		else {
-			const items = data.callers.map(record => { return { depth, order, total, ...record }});
-			items.sort((a, b) => {
-				let result = b.propagation - a.propagation;
 				if (!result) 
-					result = a.name.localeCompare(b.name);
+					result = a.id - b.id;
 				return result;
 			});
-			for (let item of items) {
-				if ((item.callers.length) && (depth < 8))
-					column.add(new ProfileRecordTable(item));
-				else
-					column.add(new ProfileRecordRow(item));
-			}
+			records.sorted = true;
 		}
+		records.forEach(record => {
+			if (record[order].length)
+				column.add(new ProfileRecordTable({ depth, order, record, total }));
+			else
+				column.add(new ProfileRecordRow({ depth, order, record, total }));
+		});
 	}
 	toggle(column) {
 		const data = this.data;
-		const records = data[data.order];
+		const records = data.record[data.order];
 		records.expanded = !records.expanded;
 		column.bubble("onOrderChanged");
 	}
@@ -453,8 +509,8 @@ var ProfileRecordHeader = Row.template(function($) { return {
 	Behavior: ProfileRecordHeaderBehavior,
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),
-		Content($, { width:20, skin:skins.glyphs, variant:$[$.order].expanded ? 3 : 1 }),
-		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
+		Content($, { width:20, skin:skins.glyphs, variant:$.record[$.order].expanded ? 3 : 1 }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.record.name }),
 		ProfileDurationContainers[$.order].call(undefined, $, {}),
 		Content($, { width:10 }),
 	],
@@ -466,7 +522,7 @@ var ProfileRecordRow = Row.template(function($) { return {
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),
 		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:styles.tableRow, string:$.name }),
+		Label($, { left:0, right:0, style:styles.tableRow, string:$.record.name }),
 		ProfileDurationContainers[$.order].call(undefined, $, {}),
 		Content($, { width:10 }),
 	],
@@ -477,18 +533,18 @@ var ProfileDurationContainers = {
 		width:100, height:rowHeight,
 		contents: [
 			Content($, { left:0, right:0, height:2, bottom:1, skin:skins.profilePercent }),
-			Content($, { right:0, width:Math.round((100 * $.propagation) / $.total), height:2, bottom:1, skin:skins.profilePercent, state:1 }),
-			Label($, { left:0, width:50, top:0, bottom:3, style:styles.profileLight, string:Math.round(($.duration / 1000)) + " ms" }),
-			Label($, { left:50, width:50, top:0, bottom:4, style:styles.profileNormal, string:Math.round(($.propagation / 1000)) + " ms" }),
+			Content($, { right:0, width:Math.round((100 * $.record.propagation) / $.total), height:2, bottom:1, skin:skins.profilePercent, state:1 }),
+			Label($, { left:0, width:50, top:0, bottom:3, style:styles.profileLight, string:Math.round(($.record.duration / 1000)) + " ms" }),
+			Label($, { left:50, width:50, top:0, bottom:4, style:styles.profileNormal, string:Math.round(($.record.propagation / 1000)) + " ms" }),
 		],
 	}}),
 	callers: Container.template(function($) { return {
 		width:100, height:rowHeight,
 		contents: [
 			Content($, { left:0, right:0, height:2, bottom:1, skin:skins.profilePercent }),
-			Content($, { left:0, width:Math.round((100 * $.duration) / $.total), height:2, bottom:1, skin:skins.profilePercent, state:1 }),
-			Label($, { left:0, width:50, top:0, bottom:4, style:styles.profileNormal, string:Math.round(($.duration / 1000)) + " ms" }),
-			Label($, { left:50, width:50, top:0, bottom:3, style:styles.profileLight, string:Math.round(($.propagation / 1000)) + " ms" }),
+			Content($, { left:0, width:Math.round((100 * $.record.duration) / $.total), height:2, bottom:1, skin:skins.profilePercent, state:1 }),
+			Label($, { left:0, width:50, top:0, bottom:4, style:styles.profileNormal, string:Math.round(($.record.duration / 1000)) + " ms" }),
+			Label($, { left:50, width:50, top:0, bottom:3, style:styles.profileLight, string:Math.round(($.record.propagation / 1000)) + " ms" }),
 		],
 	}})
 };

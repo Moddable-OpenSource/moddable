@@ -775,7 +775,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	onProfileRecord(name, value, path, line) {
 // 		trace(`onProfileRecord ${name} ${value} ${path} ${line}\n`);
-		this.profile.setRecord(value, name, path, line);
+		this.profile.setRecord(parseInt(value), name, path, line);
 	}
 	onProfileSample(data) {
 // 		trace(`onProfileSample ${data}\n`);

@@ -112,8 +112,8 @@ static void PiuSystem_open(xsMachine* the, xsBooleanValue flag)
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 	xsStringValue string;
 	if ((argc > 0) && xsTest(xsArg(0))) {
-		if (xsFindString(xsArg(0), xsID_fileType, &string))
-			[openPanel setAllowedContentTypes: [NSArray arrayWithObject:[NSString stringWithUTF8String:string]]];
+// 		if (xsFindString(xsArg(0), xsID_fileType, &string))
+// 			[openPanel setAllowedContentTypes: [NSArray arrayWithObject:[NSString stringWithUTF8String:string]]];
 		if (xsFindString(xsArg(0), xsID_message, &string))
 			[openPanel setMessage:[NSString stringWithUTF8String:string]];
 		if (xsFindString(xsArg(0), xsID_name, &string))
