@@ -18,7 +18,7 @@
 #
 
 ifeq ($(DEBUG),1)
-	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/debug/xsbug.app -g
+	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 else
 	START_XSBUG =
