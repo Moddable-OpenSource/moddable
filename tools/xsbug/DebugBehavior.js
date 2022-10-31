@@ -779,19 +779,22 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	onProfileSample(data) {
 // 		trace(`onProfileSample ${data}\n`);
-		const values = data.split(",").map(item => parseInt(item));
-		const delta = values[0];
+		const samples = data.split(".");
 		const profile = this.profile;
-		let callee = profile.getRecord(values[1]);
-		callee.hit(delta);
-		let index = 2;
-		let count = values.length;
-		while (index < count) {
-			let caller = profile.getRecord(values[index]);
-			callee.insertCaller(caller);
-			caller.insertCallee(callee);
-			callee = caller;
-			index++;
+		for (let i = 0, length = samples.length; i < length; i++) {
+			const values = samples[i].split(",").map(item => parseInt(item, 36));
+			const delta = values[0];
+			let callee = profile.getRecord(values[1]);
+			callee.hit(delta);
+			let index = 2;
+			let count = values.length;
+			while (index < count) {
+				let caller = profile.getRecord(values[index]);
+				callee.insertCaller(caller);
+				caller.insertCallee(callee);
+				callee = caller;
+				index++;
+			}
 		}
 		profile.clear();
 		profile.propagate();

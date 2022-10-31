@@ -161,7 +161,7 @@ enum {
 	XS_UNKNOWN_ATTRIBUTE
 };
 
-static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
+static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 void fxCheck(txMachine* the, txString thePath, txInteger theLine)
 {
@@ -2443,10 +2443,11 @@ struct sxProfiler {
 	txU4 deltas[mxProfilerSampleCount];
 };
 
+static void fxEchoUnsigned(txMachine* the, txUnsigned value, txInteger radix);
 static txID fxFrameToProfilerID(txMachine* the, txSlot* frame);
 static txU8 fxGetMicroSeconds();
 static void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code);
-static void fxSendProfilerSample(txMachine* the, txID* ids, txInteger delta);
+static void fxSendProfilerSamples(txMachine* the, txProfiler* profiler);
 static void fxSendProfilerTime(txMachine* the, txString name, txU8 when);
 
 void fxCheckProfiler(txMachine* the, txSlot* frame)
@@ -2461,7 +2462,7 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 		txSize sampleSize = profiler->sampleSize;
 		txID* samples = profiler->samples + (sampleIndex * sampleSize);
 		txU4 interval = profiler->interval;
-		profiler->deltas[sampleIndex] =  (txU4)(time - profiler->former);
+		profiler->deltas[sampleIndex] = (txU4)(time - profiler->former);
 		profiler->former = time;
 		profiler->when = time + interval - (time % interval);
 		if (!frame) {
@@ -2470,7 +2471,7 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 				*samples++ = 1;
 		}
 		while (frame) {
-			txInteger id = fxFrameToProfilerID(the, frame);
+			txID id = fxFrameToProfilerID(the, frame);
 			if (id)
 				*samples++ = id;
 			frame = frame->next;
@@ -2478,13 +2479,7 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 		*samples++ = 0;
 		sampleIndex++;
 		if (sampleIndex == mxProfilerSampleCount) {
-			sampleIndex = 0;
-			samples = profiler->samples;
-			while (sampleIndex < mxProfilerSampleCount) {
-				fxSendProfilerSample(the, samples, profiler->deltas[sampleIndex]);
-				sampleIndex++;
-				samples += sampleSize;
-			}
+			fxSendProfilerSamples(the, profiler);
 			sampleIndex = 0;
 		}
 		profiler->sampleIndex = sampleIndex;
@@ -2525,6 +2520,18 @@ void fxDeleteProfiler(txMachine* the)
 	c_free(profiler->records);
 	c_free(profiler);
 	the->profiler = C_NULL;
+}
+
+void fxEchoUnsigned(txMachine* the, txUnsigned value, txInteger radix)
+{
+	char buffer[256];
+	char *p = &buffer[sizeof(buffer) - 1];
+	*p-- = 0;
+	do {
+		*p-- = c_read8(gxHexaDigits + (value % radix));
+		value /= radix;
+	} while (value);
+	fxEcho(the, p + 1);
 }
 
 txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
@@ -2621,21 +2628,33 @@ void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code)
 #endif
 }
 
-void fxSendProfilerSample(txMachine* the, txID* ids, txInteger delta)
+void fxSendProfilerSamples(txMachine* the, txProfiler* profiler)
 {
 #ifdef mxDebug
 	if (fxIsConnected(the)) {
-		txInteger id;
+		txID* samples = profiler->samples;
+		txSize sampleSize = profiler->sampleSize;
+		txSize sampleIndex = 0;
+		txID* ids;
+		txID id;
 		fxEchoStart(the);
 		fxEcho(the, "<ps>");
-		fxEchoInteger(the, delta);
-		while ((id = *ids++)) {
-			fxEcho(the, ",");
-			fxEchoInteger(the, id);
+		for (;;) {
+			fxEchoUnsigned(the, profiler->deltas[sampleIndex], 36);
+			ids = samples;
+			while ((id = *ids++)) {
+				fxEcho(the, ",");
+				fxEchoUnsigned(the, id, 36);
+			}
+			sampleIndex++;
+			if (sampleIndex < mxProfilerSampleCount) 
+				fxEcho(the, ",0.");
+			else {
+				fxEcho(the, ",0</ps>");
+				break;
+			}
+			samples += sampleSize;
 		}
-		fxEcho(the, ",");
-		fxEchoInteger(the, 0);
-		fxEcho(the, "</ps>");
 		fxEchoStop(the);
 	}
 #endif
