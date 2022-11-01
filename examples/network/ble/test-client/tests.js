@@ -248,6 +248,22 @@ class AdvertisementProperties extends Test {
     }
 }
 
+class Whitelist extends Test {
+    startTest(device) {
+        device.discoverPrimaryService(HEART_RATE_SERVICE_UUID);
+    }
+    onServices(services) {
+        if (services?.[0]?.uuid?.equals(HEART_RATE_SERVICE_UUID))
+            services[0].discoverCharacteristic(uuid`2A38`);
+    }
+    onCharacteristics(characteristics) {
+        if (characteristics?.[0]?.uuid?.equals(uuid`2A38`)) {
+            this.char = characteristics[0];
+            this.char.writeWithoutResponse(Math.floor(Math.random() * 128) + 1);
+        }
+    }
+}
+
 export default [
     ConnectDisconnectTest,      //0
     ReadGAP,                    //1
@@ -256,5 +272,6 @@ export default [
     ReadDescriptor,             //4
     ReadStaticCharacteristic,   //5
     ReadDynamicCharacteristic,  //6
-    AdvertisementProperties     //7
+    AdvertisementProperties,    //7
+    Whitelist                   //8
 ]
