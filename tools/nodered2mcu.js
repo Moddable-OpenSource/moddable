@@ -194,7 +194,7 @@ export default class extends TOOL {
 		}
 
 		// remove group nodes with empty environments
-		//  (this is unobservable except for the NR_NODE_PATH environment variable)
+		//  (unobservable except for NR_GROUP_NAME & NR_GROUP_ID environment variables)
 		for (let i = 0; i < flows.length; i++) {
 			const config = flows[i];
 			if (("group" === config.type) && !config.env?.length) {
@@ -1218,16 +1218,16 @@ export default class extends TOOL {
 		}
 	}
 	getSetting(name, node, flows) {		//@@ subflows
-		let id;
+		const type = node.type;
 
-		if ("tab" == node.type) {
+		if ("tab" == type) {
 			if ("NR_FLOW_NAME" === name)
 				return node.label;
 			if (("NR_FLOW_ID" === name) || ("NR_NODE_PATH" === name))
 				return node.id;
 			return this.getEnv(node.env, name);
 		}
-		else if ("group" === node.type) {
+		else if ("group" === type) {
 			if ("NR_GROUP_NAME" == name)
 				return node.label;
 			if ("NR_GROUP_ID" == name)
@@ -1236,21 +1236,19 @@ export default class extends TOOL {
 			const v = this.getEnv(node.env, name);
 			if (v)
 				return v;
-
-			id = node.g ?? node.z;		// parent
 		}
 		else {		// regular node
 			if ("NR_NODE_NAME" === name)
 				return node.name;
 			if ("NR_NODE_ID" === name)
 				return node.id;
-			id = node.g ?? node.z;		// parent
 		}
 
+		const id = node.g ?? node.z;		// parent
 		if (id) {
 			const parent = flows.find(config => config.id === id);
 
-			if ("NR_NODE_PATH" == name)
+			if (("NR_NODE_PATH" == name) && ("tab" == type))
 				return this.getSetting(name, parent, flows) + "/" + node.id; 
 
 			return this.getSetting(name, parent, flows);
