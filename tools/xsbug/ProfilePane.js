@@ -427,7 +427,7 @@ class ProfileRecordTableBehavior extends TableBehavior {
 class ProfileRecordHeaderBehavior extends HeaderBehavior {
 	onTap(row) {
 		super.onTap(row);
-		const { path, line } = this.data;
+		const { path, line } = this.data.record;
 		if (path)
 			model.selectFile(path, { line });
 	}
@@ -435,7 +435,7 @@ class ProfileRecordHeaderBehavior extends HeaderBehavior {
 
 class ProfileRecordRowBehavior extends HeaderBehavior {
 	onTap(row) {
-		const { path, line } = this.data;
+		const { path, line } = this.data.record;
 		if (path)
 			model.selectFile(path, { line });
 	}
