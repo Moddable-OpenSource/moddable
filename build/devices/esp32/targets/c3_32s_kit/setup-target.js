@@ -1,6 +1,8 @@
 import config from "mc/config";
 import Timer from "timer";
 import Button from "button";
+import LED from "led";
+import Digital from "pins/digital";
 
 class Flash {
 	constructor(options) {
@@ -32,5 +34,6 @@ globalThis.Host = Object.freeze({
 }, true);
 
 export default function (done) {
+	Digital.write(19, 0);		// turn off white LED
 	done?.();
 }

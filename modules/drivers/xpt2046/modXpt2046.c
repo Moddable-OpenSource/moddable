@@ -274,6 +274,13 @@ void xpt2046GetPosition(xpt2046 xpt, uint16_t *x, uint16_t *y)
 	if (*y < 0) *y = 0;
 	if (*y > (MODDEF_XPT2046_HEIGHT - 1)) *y = MODDEF_XPT2046_HEIGHT - 1;
 #endif
+#if MODDEF_XPT2046_FLIPX
+	*x = MODDEF_XPT2046_WIDTH - *x;
+#endif
+#if MODDEF_XPT2046_FLIPY
+	*y = MODDEF_XPT2046_HEIGHT - *y;
+#endif
+
 
 	modSPITxRx(&xpt->spiConfig, (uint8_t *)&zero, sizeof(zero));
 

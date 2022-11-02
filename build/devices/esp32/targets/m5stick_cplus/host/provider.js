@@ -78,3 +78,7 @@ const device = {
 };
 
 export default device;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 968fe02408be0343a64c2b627266cb85af316267
