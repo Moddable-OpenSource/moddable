@@ -286,6 +286,8 @@ int main(int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-f"))
 			option = 5;
 #endif
+		else if (!strcmp(argv[argi], "-j"))
+			option = 6;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -353,10 +355,33 @@ int main(int argc, char* argv[])
 						xsResult = xsString(argv[argi]);
 						xsCall1(xsVar(1), xsID("evalScript"), xsResult);
 					}
-					else {	
+					else {
 						if (!c_realpath(argv[argi], path))
 							xsURIError("file not found: %s", argv[argi]);
 						dot = strrchr(path, '.');
+						if (option == 6) {
+							FILE* file = fopen(path, "r");
+							if (!file)
+								xsUnknownError("can't open file");
+							fseek(file, 0, SEEK_END);
+							size_t size = ftell(file);
+							fseek(file, 0, SEEK_SET);
+							char *buffer = malloc(size + 1);
+							if (!buffer)
+								xsUnknownError("not enough memory");
+							if (size != fread(buffer, 1, size, file))	
+								xsUnknownError("can't read file");
+							buffer[size] = 0;
+							fclose(file);
+							xsTry {
+								xsResult = xsGet(xsGlobal, xsID("JSON"));
+								xsResult = xsCall1(xsResult, xsID("parse"), xsString(buffer));
+							}
+							xsCatch {
+								c_free(buffer);
+							}
+						}
+						else
 						if (((option == 0) && dot && !c_strcmp(dot, ".mjs")) || (option == 2))
 							fxRunModuleFile(the, path);
 						else
@@ -631,9 +656,10 @@ void fxPrintResult(txPool* pool, txResult* result, int c)
 
 void fxPrintUsage()
 {
-	printf("xst [-h] [-e] [-m] [-s] [-t] [-u] [-v] strings...\n");
+	printf("xst [-h] [-e] [-j] [-m] [-s] [-t] [-u] [-v] strings...\n");
 	printf("\t-h: print this help message\n");
 	printf("\t-e: eval strings\n");
+	printf("\t-j: strings are paths to JSON\n");
 	printf("\t-m: strings are paths to modules\n");
 	printf("\t-s: strings are paths to scripts\n");
 	printf("\t-t: strings are paths to test262 cases or directories\n");
