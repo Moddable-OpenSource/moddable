@@ -118,8 +118,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
+	onReadable = builtinGetCallback(the, xsID_onReadable);
 	if (0 == bank) {
-		onReadable = builtinGetCallback(the, xsID_onReadable);
 		if (onReadable) {
 			if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
 				xsRangeError("invalid mode");
@@ -135,6 +135,10 @@ void xs_digitalbank_constructor(xsMachine *the)
 			if (!rises & !falls)
 				xsRangeError("invalid edges");
 		}
+	}
+	else if (1 == bank) {
+		if (((kDigitalInput != mode) && (kDigitalOutput != mode)) || onReadable)
+			xsRangeError("invalid mode");
 	}
 
 	builtinInitializeTarget(the);
@@ -225,6 +229,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	}
 #if CYW43_LWIP
 	else {		// bank 1
+		pico_use_cyw43();
 		switch (mode) {
 			case kDigitalInput:
 				break;
@@ -235,14 +240,13 @@ void xs_digitalbank_constructor(xsMachine *the)
 	}
 #endif
 
-
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
 	digital->pins = pins;
 	digital->bank = bank;
 	digital->hasOnReadable = onReadable ? 1 : 0;
 	digital->isInput = isInput;
-	builtinUsePins(0, pins);
+	builtinUsePins(bank, pins);
 }
 
 void xs_digitalbank_destructor(void *data)
@@ -277,7 +281,11 @@ void xs_digitalbank_destructor(void *data)
 			}
 		}
 
-		builtinFreePins(0, digital->pins);
+		builtinFreePins(digital->bank, digital->pins);
+	}
+	else if (1 == digital->bank && digital->pins) {
+		pico_unuse_cyw43();
+		builtinFreePins(digital->bank, digital->pins);
 	}
 
 	builtinCriticalSectionEnd();

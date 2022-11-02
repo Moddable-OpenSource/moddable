@@ -706,3 +706,22 @@ void pico_get_mac(uint8_t *id_out)		// 64 bit identifier
 	flash_get_unique_id(id_out);
 }
 
+#if CYW43_LWIP
+static uint32_t sCYW43_useCount = 0;
+int pico_use_cyw43() {
+	int err = 0;
+	if (0 == sCYW43_useCount++) {
+		err = cyw43_arch_init();
+		if (err) {
+			sCYW43_useCount--;
+			return err;
+		}
+	}
+	return 0;
+}
+
+void pico_unuse_cyw43() {
+	if (0 == --sCYW43_useCount)
+		cyw43_arch_deinit();
+}
+#endif

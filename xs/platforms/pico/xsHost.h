@@ -419,6 +419,11 @@ extern void pico_get_mac(uint8_t *id_out);		// 64 bit identifier
 
 uint32_t pico_get_reset_reason(void);
 
+#if CYW43_LWIP
+int pico_use_cyw43();
+void pico_unuse_cyw43();
+#endif
+
 #ifdef __cplusplus
 }
 #endif

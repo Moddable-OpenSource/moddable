@@ -96,17 +96,15 @@ void xs_wifi_set_mode(xsMachine *the)
 {
 	int mode = xsmcToInteger(xsArg(0));
 
-	if (WIFI_OFF == mode) {
-		modLog_transmit("cyw43_arch_deinit\n");
-		cyw43_arch_deinit();
-	}
+	if (WIFI_OFF == mode)
+		pico_unuse_cyw43();
 
 	if (gWiFiMode == mode)
 		return;
 
-	int err = cyw43_arch_init();
+	int err = pico_use_cyw43();
 	if (err) {
-		modLog_transmit("cyw43_arch_init failed:");
+		modLog_transmit("pico_use_cyw43 failed:");
 		modLogInt(err);
 	}
 
@@ -443,10 +441,6 @@ void xs_wifi_destructor(void *data)
 		}
 
 		c_free(wifi);
-
-		if (NULL == gWiFi) {
-//			cyw43_arch_deinit();
-		}
 	}
 }
 
