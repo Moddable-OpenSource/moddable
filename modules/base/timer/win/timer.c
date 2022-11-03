@@ -124,7 +124,7 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 			;
 		walker->next = timer;
 	}
-
+ 
 	modCriticalSectionEnd();
 
 	modInstrumentationAdjust(Timers, +1);
@@ -153,7 +153,11 @@ uint16_t modTimerGetID(modTimer timer)
 
 int modTimerGetSecondInterval(modTimer timer)
 {
-	return timer->secondInterval;
+	if (timer->idEvent) {
+		return timer->secondInterval;
+	} else {
+		return -1;
+	}
 }
 
 void *modTimerGetRefcon(modTimer timer)
