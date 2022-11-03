@@ -1638,7 +1638,7 @@ void fx_String_prototype_iterator_next(txMachine* the)
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
 	txSlot* length = index->next;
-	txSlot* value = result->value.reference->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
 	txSlot* done = value->next;
 	if (index->value.integer < length->value.integer) {
 		txInteger character, size;

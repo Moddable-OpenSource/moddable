@@ -2605,7 +2605,7 @@ void fx_ArrayIterator_prototype_next(txMachine* the)
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
-	txSlot* value = result->value.reference->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
 	txSlot* done = value->next;
 	if (!done->value.boolean) {
 		txInteger kind = index->next->value.integer;

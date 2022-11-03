@@ -205,6 +205,16 @@ txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id)
 	return C_NULL;
 }
 
+txSlot* fxCheckIteratorResult(txMachine* the, txSlot* result) 
+{
+	txSlot* value = result->value.reference->next;
+	while (value && (value->flag & XS_INTERNAL_FLAG))
+		value = value->next;
+	mxCheck(the, (value != C_NULL) && (value->ID == mxID(_value)));
+	mxCheck(the, (value->next != C_NULL) && (value->next->ID == mxID(_done)));
+	return value;
+}
+
 txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value)
 {
 	mxPushSlot(iterator);

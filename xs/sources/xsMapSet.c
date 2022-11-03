@@ -420,7 +420,7 @@ void fx_MapIterator_prototype_next(txMachine* the)
 	txSlot* iterable = result->next;
 	mxResult->kind = result->kind;
 	mxResult->value = result->value;
-	result = result->value.reference->next;
+	result = fxCheckIteratorResult(the, result);
 	if (result->next->value.boolean == 0) {
 		txSlot* list = iterable->next;
 		txInteger kind = list->next->value.integer;
@@ -666,7 +666,7 @@ void fx_SetIterator_prototype_next(txMachine* the)
 	txSlot* iterable = result->next;
 	mxResult->kind = result->kind;
 	mxResult->value = result->value;
-	result = result->value.reference->next;
+	result = fxCheckIteratorResult(the, result);
 	if (result->next->value.boolean == 0) {
 		txSlot* list = iterable->next;
 		txInteger kind = list->next->value.integer;
