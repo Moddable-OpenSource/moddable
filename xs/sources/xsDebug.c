@@ -2426,14 +2426,20 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 #endif
 }
 
+#if defined(modMicrosecondsInstrumented) || defined(modMicroseconds)
+	typedef txU4 txMicroseconds;
+#else
+	typedef txU8 txMicroseconds;
+#endif
+
 #define mxProfilerSampleCount 8
 
 typedef struct sxProfiler txProfiler;
 struct sxProfiler {
-	txU8 when;
-	txU8 former;
-	txU8 start;
-	txU8 stop;
+	txMicroseconds when;
+	txMicroseconds former;
+	txMicroseconds start;
+	txMicroseconds stop;
 	txU4 interval;
 	txSize recordCount;
 	txByte* records;
@@ -2445,18 +2451,18 @@ struct sxProfiler {
 
 static void fxEchoUnsigned(txMachine* the, txUnsigned value, txInteger radix);
 static txID fxFrameToProfilerID(txMachine* the, txSlot* frame);
-static txU8 fxGetMicroSeconds();
+static txMicroseconds fxGetMicroSeconds();
 static void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code);
 static void fxSendProfilerSamples(txMachine* the, txProfiler* profiler);
-static void fxSendProfilerTime(txMachine* the, txString name, txU8 when);
+static void fxSendProfilerTime(txMachine* the, txString name, txMicroseconds when);
 
 void fxCheckProfiler(txMachine* the, txSlot* frame)
 {
 	txProfiler* profiler = the->profiler;
 	if (!profiler)
 		return;
-	txU8 when = profiler->when;
-	txU8 time = fxGetMicroSeconds();
+	txMicroseconds when = profiler->when;
+	txMicroseconds time = fxGetMicroSeconds();
 	if (when < time) {
 		txSize sampleIndex = profiler->sampleIndex;
 		txSize sampleSize = profiler->sampleSize;
@@ -2571,11 +2577,17 @@ txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
 	return 0;
 }
 
-txU8 fxGetMicroSeconds()
+txMicroseconds fxGetMicroSeconds()
 {
+#if defined(modMicrosecondsInstrumented)
+	return modMicrosecondsInstrumentation();
+#elif defined(modMicroseconds)
+	return modMicroseconds();
+#else
 	c_timeval tv;
 	c_gettimeofday(&tv, NULL);
 	return (tv.tv_sec * 1000000ULL) + tv.tv_usec;
+#endif
 }
 
 void fxResumeProfiler(txMachine* the)
@@ -2583,7 +2595,7 @@ void fxResumeProfiler(txMachine* the)
 	txProfiler* profiler = the->profiler;
 	if (!profiler)
 		return;
-	txU8 delta = fxGetMicroSeconds();
+	txMicroseconds delta = fxGetMicroSeconds();
 	fxSendProfilerTime(the, "resume", delta);
 	delta -= profiler->stop;
 	profiler->when += delta;
@@ -2660,7 +2672,7 @@ void fxSendProfilerSamples(txMachine* the, txProfiler* profiler)
 #endif
 }
 
-void fxSendProfilerTime(txMachine* the, txString name, txU8 when)
+void fxSendProfilerTime(txMachine* the, txString name, txMicroseconds when)
 {
 #ifdef mxDebug
 	if (fxIsConnected(the)) {
