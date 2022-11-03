@@ -29,6 +29,12 @@
                 "UPLOAD_SPEED": "1500000",
                 "DEBUGGER_SPEED": "1500000"
             }
+        },
+        "esp32/m5stick_cplus": {
+            "build": {
+                "UPLOAD_SPEED": "1500000",
+                "DEBUGGER_SPEED": "1500000"
+            }
         }
 	}
 }

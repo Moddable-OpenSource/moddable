@@ -22,6 +22,7 @@ const devices = [
 	{ platform:"esp32/m5stack_fire", id:"com.m5stack.fire", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5stack", id:"com.m5stack", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5stick_c", id:"com.m5stick.c", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
+	{ platform:"esp32/m5stick_cplus", id:"com.m5stick.cplus", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/moddable_two", id:"com.moddable.two", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/moddable_display_2", id:"com.moddable.display_2", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/nodemcu", id:"com.nodemcu.esp32", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
