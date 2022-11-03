@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -41,6 +41,7 @@ import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
+import config from "mc/config";
 
 function setRTCTimeLocal() {
 	let d = new Date();
@@ -52,7 +53,7 @@ function setRTCTimeLocal() {
 }
 
 const render = new Poco(screen, {
-	rotation: 90
+	rotation: config.rotation
 });
 
 let white = render.makeColor(255, 255, 255);

@@ -4,9 +4,6 @@
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
 	],
-	"config": {
-		"rotation": 90
-	},
 	"modules": {
 		"*": "./main",
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
@@ -27,8 +24,21 @@
 	"bundle": {
 		"id": "tech.moddable.m5stickc-pedometer",
 		"devices": [
-			"esp32/m5stick_c"
+			"esp32/m5stick_c",
+			"esp32/m5stick_cplus"
 		],
 		"icon": "./icon.png"
+	},
+	"platforms": {
+		"esp32/m5stick_c" :{
+			"config": {
+				"rotation":90
+			}
+		},
+		"esp32/m5stick_cplus":{
+			"config": {
+				"rotation":0
+			}
+		}
 	}
 }
