@@ -34,6 +34,7 @@ struct modTimerRecord {
 	int firstInterval;
 	int secondInterval;
 	int8_t useCount;
+	uint8_t rescheduled;
 	modTimerCallback cb;
 	uint32_t refconSize;
 	char refcon[1];
@@ -56,13 +57,14 @@ static void modCriticalSectionEnd()
 
 static void modTimerExecuteOne(modTimer timer)
 {
+	timer->rescheduled = 0;
 	timer->useCount++;
 	(timer->cb)(timer, timer->refcon, timer->refconSize);
 	timer->useCount--;
 
 	if ((timer->useCount <= 0) || (0 == timer->secondInterval))
 		modTimerRemove(timer);
-	else if (timer->firstInterval != timer->secondInterval) {
+	else if (timer->firstInterval != timer->secondInterval && !(timer->rescheduled)) {
 		modTimerReschedule(timer, timer->secondInterval, timer->secondInterval);
 	}
 }
@@ -138,6 +140,7 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 	timer->secondInterval = secondInterval;
 
 	timer->idEvent = SetTimer(NULL, timer->id, firstInterval, TimerProc);
+	timer->rescheduled = 1;
 }
 
 void modTimerUnschedule(modTimer timer)
