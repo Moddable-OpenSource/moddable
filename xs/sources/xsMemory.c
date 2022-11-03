@@ -1642,8 +1642,7 @@ void fxSweep(txMachine* the)
 				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
 				if (temporary) {
 					temporary += sizeof(txChunk);
-					aSize = mxPtrDiff(temporary - current);
-					*aCodeAddress = *aCodeAddress + aSize;
+					*aCodeAddress += temporary - current;
 				}
 			}
 		}
