@@ -70,20 +70,30 @@ void fx_lockdown(txMachine* the)
 	mxProgram.value.reference->flag |= XS_DONT_MARSHALL_FLAG;
 
 	property = mxBehaviorSetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	property->kind = mxThrowTypeErrorFunction.kind;
-	property->value = mxThrowTypeErrorFunction.value;
+	if (property) {
+		property->kind = mxThrowTypeErrorFunction.kind;
+		property->value = mxThrowTypeErrorFunction.value;
+	}
 	property = mxBehaviorSetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	property->kind = mxThrowTypeErrorFunction.kind;
-	property->value = mxThrowTypeErrorFunction.value;
+	if (property) {
+		property->kind = mxThrowTypeErrorFunction.kind;
+		property->value = mxThrowTypeErrorFunction.value;
+	}
 	property = mxBehaviorSetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	property->kind = mxThrowTypeErrorFunction.kind;
-	property->value = mxThrowTypeErrorFunction.value;
+	if (property) {
+		property->kind = mxThrowTypeErrorFunction.kind;
+		property->value = mxThrowTypeErrorFunction.value;
+	}
 	property = mxBehaviorSetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	property->kind = mxThrowTypeErrorFunction.kind;
-	property->value = mxThrowTypeErrorFunction.value;
+	if (property) {
+		property->kind = mxThrowTypeErrorFunction.kind;
+		property->value = mxThrowTypeErrorFunction.value;
+	}
 	property = mxBehaviorSetProperty(the, mxCompartmentPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	property->kind = mxThrowTypeErrorFunction.kind;
-	property->value = mxThrowTypeErrorFunction.value;
+	if (property) {
+		property->kind = mxThrowTypeErrorFunction.kind;
+		property->value = mxThrowTypeErrorFunction.value;
+	}
 
 	instance = fxNewArray(the, _Compartment);
 	property = the->stackPrototypes - 1;
@@ -107,8 +117,10 @@ void fx_lockdown(txMachine* the)
 	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_now), 0, XS_OWN);
 	fxSetHostFunctionProperty(the, property, mxCallback(fx_Date_now_secure), 0, mxID(_now));
 	property = mxBehaviorSetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	property->kind = the->stack->kind;
-	property->value = the->stack->value;
+	if (property) {
+		property->kind = mxThrowTypeErrorFunction.kind;
+		property->value = mxThrowTypeErrorFunction.value;
+	}
 	mxPull(instance->next->value.array.address[_Date]);
 	
 	fxDuplicateInstance(the, mxMathObject.value.reference);
