@@ -360,25 +360,36 @@ int main(int argc, char* argv[])
 							xsURIError("file not found: %s", argv[argi]);
 						dot = strrchr(path, '.');
 						if (option == 6) {
-							FILE* file = fopen(path, "r");
-							if (!file)
-								xsUnknownError("can't open file");
-							fseek(file, 0, SEEK_END);
-							size_t size = ftell(file);
-							fseek(file, 0, SEEK_SET);
-							char *buffer = malloc(size + 1);
-							if (!buffer)
-								xsUnknownError("not enough memory");
-							if (size != fread(buffer, 1, size, file))	
-								xsUnknownError("can't read file");
-							buffer[size] = 0;
-							fclose(file);
+							FILE* file = C_NULL;
+							char *buffer = C_NULL;
 							xsTry {
-								xsResult = xsGet(xsGlobal, xsID("JSON"));
-								xsResult = xsCall1(xsResult, xsID("parse"), xsString(buffer));
+								file = fopen(path, "r");
+								if (!file)
+									xsUnknownError("can't open file");
+								fseek(file, 0, SEEK_END);
+								size_t size = ftell(file);
+								fseek(file, 0, SEEK_SET);
+								buffer = malloc(size + 1);
+								if (!buffer)
+									xsUnknownError("not enough memory");
+								if (size != fread(buffer, 1, size, file))	
+									xsUnknownError("can't read file");
+								buffer[size] = 0;
+								fclose(file);
+								file = C_NULL;
+								xsResult = xsArrayBuffer(buffer, size);
+								c_free(buffer);
+								buffer = C_NULL;
+								xsVar(1) = xsNew0(xsGlobal, xsID("TextDecoder"));
+								xsResult = xsCall1(xsVar(1), xsID("decode"), xsResult);
+								xsVar(1) = xsGet(xsGlobal, xsID("JSON"));
+								xsResult = xsCall1(xsVar(1), xsID("parse"), xsResult);
 							}
 							xsCatch {
-								c_free(buffer);
+								if (buffer)
+									c_free(buffer);
+								if (file)
+									fclose(file);
 							}
 						}
 						else
@@ -1879,15 +1890,18 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 			xsResult = xsNewHostFunction(fx_print, 1);
 			xsSet(xsGlobal, xsID("print"), xsResult);
 
+#ifdef OSSFUZZ_JSONPARSE
+			modInstallTextDecoder(the);
+			xsResult = xsArrayBuffer(buffer, script_size);
+			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
+			xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
+			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
+			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
+#else
 			txStringCStream aStream;
 			aStream.buffer = buffer;
 			aStream.offset = 0;
 			aStream.size = script_size;
-#ifdef OSSFUZZ_JSONPARSE
-			// json parse
-			xsResult = xsGet(xsGlobal, xsID("JSON"));
-			xsResult = xsCall1(xsResult, xsID("parse"), xsString(buffer));
-#else
 			// run script
 			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
