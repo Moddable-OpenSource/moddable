@@ -10,7 +10,8 @@
 	],
 	"config": {
 		"screen": "st7789",
-		"touch": ""
+		"touch": "",
+		"rotation": 270
 	},
 	"defines": {
 		"i2c": {

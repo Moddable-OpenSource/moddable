@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,8 +16,9 @@ import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
+import config from "mc/config";
 
-let render = new Poco(screen);
+let render = new Poco(screen, {rotation:config?.rotation});
 
 let white = render.makeColor(255, 255, 255);
 let blue = render.makeColor(0, 0, 255);
