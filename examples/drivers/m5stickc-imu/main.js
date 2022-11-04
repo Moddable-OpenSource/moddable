@@ -18,13 +18,11 @@ import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import config from "mc/config";
 
-const rotation = config?.rotation ?? screen.rotation;
-const width = (rotation / 90) % 2 ? screen.height: screen.width;
-const height =(rotation / 90) % 2 ? screen.width: screen.height;
 const GYRO_SCALER = 0.002;
 
+let render = new Poco(screen, {rotation: config?.rotation ?? screen.rotation});
+const width = render.width, height = render.height;
 
-let render = new Poco(screen, {width, height, rotation});
 let font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
 
 let ball = parseBMP(new Resource("ball-color.bmp"));
