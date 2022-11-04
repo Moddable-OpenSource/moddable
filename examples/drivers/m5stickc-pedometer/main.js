@@ -24,10 +24,7 @@ const STARTING_STEPS = 123;
 const GOAL = 200;
 const SHAKEVALUE = 3;
 
-const rotation = config.rotation;
-const width = (rotation / 90) % 2 ? screen.height: screen.width;
-const height =(rotation / 90) % 2 ? screen.width: screen.height;
-let render = new Poco(screen, {width, height, rotation});
+let render = new Poco(screen, {rotation: config.rotation});
 
 const black = render.makeColor(0, 0, 0);
 const white = render.makeColor(255, 255, 255);
