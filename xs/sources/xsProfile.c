@@ -74,6 +74,7 @@ struct sxProfilerRecord {
 	txInteger hitCount;
 	txInteger calleeCount;
 	txID* callees;
+	txInteger flags;
 };
 
 struct sxProfilerSample {
@@ -90,6 +91,7 @@ static void fxPrintProfiler(txMachine* the);
 static void fxPrintString(txMachine* the, FILE* file, txString theString);
 static void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta);
 static txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID);
+static txID fxRemoveProfilerCycle(txMachine* the, txProfiler* profiler, txID recordID);
 static txU8 fxTicksToMicroseconds(txU8 ticks);
 
 void fxCheckProfiler(txMachine* the, txSlot* frame)
@@ -126,21 +128,11 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 			fxInsertProfilerCallee(the, profiler->host, callee->recordID);
 		else
 			record = profiler->host;
-			
 		txU4 interval = profiler->interval;
-		txU8 former = profiler->former;
-
 		record->hitCount++;
-		fxPushProfilerSample(the, record->recordID, (txU4)(when - former));
-		when += interval;
-		while (when < time) {
-			record->hitCount++;
-			fxPushProfilerSample(the, record->recordID, interval);
-			when += interval;
-		}
-			
+		fxPushProfilerSample(the, record->recordID, (txU4)(time - profiler->former));
 		profiler->former = time;
-		profiler->when = when;
+		profiler->when = time + interval - (time % interval);
 	}
 }
 
@@ -171,7 +163,7 @@ void fxCreateProfiler(txMachine* the)
 void fxDeleteProfiler(txMachine* the)
 {
 	txProfiler* profiler = the->profiler;
-	profiler->stop = fxGetTicks();
+	profiler->stop = profiler->when;
 	fxPrintProfiler(the);
 	c_free(profiler->samples);
 	txU4 recordIndex = 0;
@@ -356,6 +348,7 @@ txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID)
 	record->line = 0;
 	record->calleeCount = 0;
 	record->callees = C_NULL;
+	record->flags = 0;
 	profiler->records[recordID] = record;
 	return record;
 }
@@ -381,13 +374,15 @@ void fxPrintID(txMachine* the, FILE* file, txID id)
 void fxPrintProfiler(txMachine* the)
 {
 	// https://chromedevtools.github.io/devtools-protocol/tot/Profiler/#type-Profile
-
 	txProfiler* profiler = the->profiler;
 	FILE* file;
     time_t timer;
     struct tm* tm_info;
     char buffer[22];
     char name[36];
+    
+	fxRemoveProfilerCycle(the, profiler, 0);
+    
     timer = time(NULL);
     tm_info = localtime(&timer);
     strftime(buffer, 22, "XS-%y-%m-%d-%H-%M-%S-", tm_info);
@@ -405,7 +400,7 @@ void fxPrintProfiler(txMachine* the)
 			if (recordIndex == 0)
 				fprintf(file, "(host)");
 			else if (recordIndex == 1)
-				fprintf(file, "(garbage collector)");
+				fprintf(file, "(gc)");
 			else if (record->functionID != XS_NO_ID) {
 				if (record->constructorID != XS_NO_ID) {
 					fxPrintID(the, file, record->constructorID);
@@ -424,20 +419,25 @@ void fxPrintProfiler(txMachine* the)
 					fprintf(file, "@%s",info.dli_sname );
 				else
 #endif
-					fprintf(file, "@anonymous");
+					fprintf(file, "@anonymous-%d", record->recordID);
 			}
 			else
-				fprintf(file, "(anonymous)");
+				fprintf(file, "(anonymous-%d)", record->recordID);
 
 			fprintf(file, "\",\"scriptId\":\"0\",\"url\":\"");
 			if (record->file != XS_NO_ID)
 				fxPrintID(the, file, record->file);
 			fprintf(file, "\",\"lineNumber\":%d,\"columnNumber\":-1},\"hitCount\":%d,\"children\":[", record->line - 1, record->hitCount);
 			txInteger calleeIndex = 0;
+			txBoolean comma = 0;
 			while (calleeIndex < record->calleeCount) {
-				if (calleeIndex > 0)
-					fprintf(file, ",");
-				fprintf(file, "%d", record->callees[calleeIndex]);
+				txID recordID = record->callees[calleeIndex];
+				if (recordID != XS_NO_ID) {
+					if (comma)
+						fprintf(file, ",");
+					fprintf(file, "%d", recordID);
+					comma = 1;
+				}
 				calleeIndex++;
 			}
 			fprintf(file, "]}");
@@ -517,6 +517,25 @@ void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta)
 	sample->recordID = recordID;
 	sample->delta = delta;
 	profiler->sampleIndex = sampleIndex + 1;
+}
+
+txID fxRemoveProfilerCycle(txMachine* the, txProfiler* profiler, txID recordID)
+{
+	txProfilerRecord* record = profiler->records[recordID];
+	if (record->flags & 1)
+		return XS_NO_ID;
+	if (record->flags & 2)
+		return recordID;
+	record->flags |= 3;
+	txInteger calleeIndex = 0;
+	while (calleeIndex < record->calleeCount) {
+		txID calleeID = record->callees[calleeIndex];
+		if (calleeID)
+			record->callees[calleeIndex] = fxRemoveProfilerCycle(the, profiler, calleeID);
+		calleeIndex++;
+	}	
+	record->flags &= ~1;
+	return recordID;
 }
 
 void fxResumeProfiler(txMachine* the)

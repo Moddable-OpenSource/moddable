@@ -122,13 +122,14 @@ export class Profile {
 
 		this.hits = [];
 		this.host = null;
+		this.hostID = 0;
 		this.sorted = false;
 		this.total = 0;
 		
 		if (path) {
 			const string = system.readFileString(path);
 			const json = JSON.parse(string);
-			const { nodes, samples, timeDeltas } = json;
+			const { nodes, startTime, endTime, samples, timeDeltas } = json;
 			const records = this.records;
 			nodes.forEach(node => {
 				const id = node.id;
@@ -137,21 +138,33 @@ export class Profile {
 				records.set(id, record);
 			});
 			nodes.forEach(node => {
-				const caller = records.get(node.id);
-				node.children.forEach(id => {
-					const callee = records.get(id);
-					if (callee != caller) {
-						caller.insertCallee(callee);
-						callee.insertCaller(caller);
-					}
-				});
+				const children = node.children;
+				if (children && children.length) {
+					const caller = records.get(node.id);
+					children.forEach(id => {
+						const callee = records.get(id);
+						if (callee != caller) {
+							caller.insertCallee(callee);
+							callee.insertCaller(caller);
+						}
+					});
+				}
 			});
 			const length = Math.min(samples.length, timeDeltas.length);
-			for (let index = 0; index < length; index++) {
-				const sample = samples[index];
+			
+			let time = startTime + timeDeltas[0];
+			for (let index = 1; index < length; index++) {
+				const delta = timeDeltas[index]
+				const sample = samples[index - 1];
 				const record = records.get(sample);
-				record.hit(timeDeltas[index]);
+				record.hit(delta);
+				time += delta;
 			}
+			const sample = samples[length - 1];
+			const record = records.get(sample);
+			record.hit(endTime - time);
+			
+			this.hostID = nodes[0].id;
 			this.name = system.getPathName(path);
 			this.propagate();
 		}
@@ -197,7 +210,7 @@ export class Profile {
 				record.propagate(record.duration);
 				total += record.duration;
 			}
-			if (record.id == 0) {
+			if (record.id == this.hostID) {
 				this.host = record;
 			}
 		});
