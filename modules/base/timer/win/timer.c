@@ -62,7 +62,7 @@ static void modTimerExecuteOne(modTimer timer)
 	(timer->cb)(timer, timer->refcon, timer->refconSize);
 	timer->useCount--;
 
-	if ((timer->useCount <= 0) || (0 == timer->secondInterval))
+	if ((timer->useCount <= 0) || (0 == modTimerGetSecondInterval(timer)))
 		modTimerRemove(timer);
 	else if (timer->firstInterval != timer->secondInterval && !(timer->rescheduled)) {
 		modTimerReschedule(timer, timer->secondInterval, timer->secondInterval);
@@ -147,6 +147,7 @@ void modTimerUnschedule(modTimer timer)
 {
 	KillTimer(NULL, timer->idEvent);
 	timer->idEvent = 0;
+	timer->rescheduled = 1;
 }
 
 uint16_t modTimerGetID(modTimer timer)
