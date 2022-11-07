@@ -1806,8 +1806,12 @@ int fuzz(int argc, char* argv[])
 }
 #endif 
 #if OSSFUZZ
-int fuzz_oss(const uint8_t *Data, size_t Size)
-{
+static xsMachine* machine;
+
+int LLVMFuzzerInitialize(int *argc, char ***argv) {
+	// add options to argv here if necessary...
+
+	// static initialize once so forked processes have initialized state
 	xsCreation _creation = {
 		16 * 1024 * 1024, 	/* initialChunkSize */
 		16 * 1024 * 1024, 	/* incrementalChunkSize */
@@ -1820,6 +1824,16 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
+
+	xsCreation* creation = &_creation;
+	fxInitializeSharedCluster();
+	machine = xsCreateMachine(creation, "xst", NULL);
+
+	return 0;
+}
+
+int fuzz_oss(const uint8_t *Data, size_t Size)
+{
 	size_t script_size = 0;
 
 	char* buffer = (char *)malloc(Size + 1);
@@ -1827,11 +1841,6 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 	script_size = Size;
 
 	buffer[script_size] = 0;	// required when debugger active
-
-	xsCreation* creation = &_creation;
-	xsMachine* machine;
-	fxInitializeSharedCluster();
-	machine = xsCreateMachine(creation, "xst", NULL);
 
 	xsBeginHost(machine);
 	{
@@ -1875,8 +1884,8 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 	xsEndHost(machine);
 	fflush(stdout);	
 	fflush(stderr);	
-	xsDeleteMachine(machine);
-	fxTerminateSharedCluster();
+	// xsDeleteMachine(machine);
+	// fxTerminateSharedCluster();
 	free(buffer);
 	return 0;
 }
