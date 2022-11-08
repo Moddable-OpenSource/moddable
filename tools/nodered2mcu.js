@@ -973,10 +973,8 @@ export default class extends TOOL {
 			} break;
 
 			case "rpi-gpio in": {
-				if (parseFloat(config.debounce))
-					throw new Error("unimplemented");
-				
 				config.pin = parseInt(config.pin);
+				config.debounce = parseFloat(config.debounce || 25);		// matches GPIOInNode in 36-rpi-gpio.js
 			} break;
 
 			case "rpi-gpio out": {
@@ -990,7 +988,6 @@ export default class extends TOOL {
 					config.level = parseInt(config.level);
 				else
 					delete config.level;
-
 			} break;
 			
 			case "random": {
