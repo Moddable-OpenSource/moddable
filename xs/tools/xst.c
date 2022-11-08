@@ -676,7 +676,7 @@ void fxPrintUsage()
 	printf("\t-t: strings are paths to test262 cases or directories\n");
 	printf("\t-u: print unhandled exceptions and rejections\n");
 	printf("\t-v: print XS version\n");
-	printf("without -e, -m, -s, or -t:\n");
+	printf("without -e, -j, -m, -s, or -t:\n");
 	printf("\tif ../harness exists, strings are paths to test262 cases or directories\n");
 	printf("\telse if the extension is .mjs, strings are paths to modules\n");
 	printf("\telse strings are paths to scripts\n");
@@ -1738,12 +1738,12 @@ int fuzz(int argc, char* argv[])
 		c_exit(-1);
 	}
 	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
+		1 * 1024 * 1024, 	/* initialChunkSize */
+		1 * 1024 * 1024, 	/* incrementalChunkSize */
+		32768, 				/* initialHeapCount */
+		32768,			 	/* incrementalHeapCount */
+		64 * 1024,	 		/* stackCount */
+		8 * 1024,			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1846,12 +1846,12 @@ int fuzz(int argc, char* argv[])
 int fuzz_oss(const uint8_t *Data, size_t Size)
 {
 	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
+		1 * 1024 * 1024, 	/* initialChunkSize */
+		1 * 1024 * 1024, 	/* incrementalChunkSize */
+		32768, 				/* initialHeapCount */
+		32768,			 	/* incrementalHeapCount */
+		64 * 1024,	 		/* stackCount */
+		8 * 1024,			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
