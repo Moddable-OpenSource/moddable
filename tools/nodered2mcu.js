@@ -407,6 +407,8 @@ export default class extends TOOL {
 					else
 						throw new Error(`unimplemented statusType: ${config.statusType}`); 
 				}
+
+				config.active = !!config.active;
 			} break;
 
 			case "function": {
@@ -971,7 +973,7 @@ export default class extends TOOL {
 			} break;
 
 			case "rpi-gpio in": {
-				if (config.read || parseFloat(config.debounce))
+				if (parseFloat(config.debounce))
 					throw new Error("unimplemented");
 				
 				config.pin = parseInt(config.pin);
