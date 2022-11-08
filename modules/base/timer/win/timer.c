@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,6 +22,7 @@
 
 #include "modTimer.h"
 #include "modInstrumentation.h"
+#include "mmsystem.h"
 
 typedef struct modTimerRecord modTimerRecord;
 typedef modTimerRecord *modTimer;
@@ -35,6 +36,7 @@ struct modTimerRecord {
 	int secondInterval;
 	int8_t useCount;
 	uint8_t rescheduled;
+	uint8_t repeating;
 	modTimerCallback cb;
 	uint32_t refconSize;
 	char refcon[1];
@@ -44,6 +46,17 @@ static modTimer gTimers = NULL;
 static txS2 gTimerID = 1;		//@@ could id share with other libraries that need unique ID?
 static BOOLEAN initializedCriticalSection = FALSE;
 static CRITICAL_SECTION gCS;
+
+static void modTimerExecuteOne(modTimer timer);
+static modTimer modTimerFindNative(UINT_PTR idEvent);
+
+static VOID CALLBACK TimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2) {
+	modTimer timer;
+
+	timer = modTimerFindNative(uTimerID);
+	if (timer)
+		modTimerExecuteOne(timer);
+}
 
 static void modCriticalSectionBegin()
 {
@@ -64,8 +77,9 @@ static void modTimerExecuteOne(modTimer timer)
 
 	if ((timer->useCount <= 0) || (0 == modTimerGetSecondInterval(timer)))
 		modTimerRemove(timer);
-	else if (timer->firstInterval != timer->secondInterval && !(timer->rescheduled)) {
-		modTimerReschedule(timer, timer->secondInterval, timer->secondInterval);
+	else if (!(timer->repeating) && timer->secondInterval > 0 && !(timer->rescheduled)) {
+		timer->repeating = true;
+		timer->idEvent = timeSetEvent(timer->secondInterval, 1, TimerProc, timer->id, TIME_PERIODIC);
 	}
 }
 
@@ -84,21 +98,14 @@ static modTimer modTimerFindNative(UINT_PTR idEvent)
 	return walker;
 }
 
-static VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-	modTimer timer;
-
-	timer = modTimerFindNative(idEvent);
-	if (timer)
-		modTimerExecuteOne(timer);
-}
-
 modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
-	modTimer timer;
+	modTimer timer;	
 
 	if (!initializedCriticalSection) {
 		InitializeCriticalSection(&gCS);
 		initializedCriticalSection = TRUE;
+		MMRESULT result = timeBeginPeriod(1);
 	}
 
 	timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
@@ -109,11 +116,19 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	timer->firstInterval = firstInterval;
 	timer->secondInterval = secondInterval;
 	timer->useCount = 1;
+	timer->repeating = 0;
 	timer->cb = cb;
 	timer->refconSize = refconSize;
 	c_memmove(timer->refcon, refcon, refconSize);
 
-	timer->idEvent = SetTimer(NULL, timer->id, firstInterval, TimerProc);
+	// timer->idEvent = SetTimer(NULL, timer->id, firstInterval, TimerProc);
+	if (firstInterval == 0)
+		firstInterval = 1;
+	timer->idEvent = timeSetEvent(firstInterval, 1, TimerProc, timer->id, TIME_ONESHOT);
+	if (!(timer->idEvent)) {
+		c_free(timer);
+		return NULL;
+	} 
 
 	modCriticalSectionBegin();
 
@@ -139,15 +154,23 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 	timer->firstInterval = firstInterval;
 	timer->secondInterval = secondInterval;
 
-	timer->idEvent = SetTimer(NULL, timer->id, firstInterval, TimerProc);
+	if (timer->idEvent)
+		timeKillEvent(timer->idEvent);
+	
+	if (firstInterval == 0)
+		firstInterval = 1;
+		
+	timer->idEvent = timeSetEvent(firstInterval, 1, TimerProc, timer->id, TIME_ONESHOT);
 	timer->rescheduled = 1;
+	timer->repeating = 0;
 }
 
 void modTimerUnschedule(modTimer timer)
 {
-	KillTimer(NULL, timer->idEvent);
+	timeKillEvent(timer->idEvent);
 	timer->idEvent = 0;
 	timer->rescheduled = 1;
+	timer->repeating = 0;
 }
 
 uint16_t modTimerGetID(modTimer timer)
@@ -187,7 +210,7 @@ void modTimerRemove(modTimer timer)
 				else
 					prev->next = walker->next;
 				if (timer->idEvent)
-					KillTimer(NULL, timer->idEvent);
+					timeKillEvent(timer->idEvent);
 				c_free(timer);
 				modInstrumentationAdjust(Timers, -1);
 			}
