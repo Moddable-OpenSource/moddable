@@ -283,10 +283,12 @@ void xs_digitalbank_destructor(void *data)
 
 		builtinFreePins(digital->bank, digital->pins);
 	}
+#if CYW43_LWIP
 	else if (1 == digital->bank && digital->pins) {
 		pico_unuse_cyw43();
 		builtinFreePins(digital->bank, digital->pins);
 	}
+#endif
 
 	builtinCriticalSectionEnd();
 
