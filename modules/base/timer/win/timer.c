@@ -105,7 +105,6 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	if (!initializedCriticalSection) {
 		InitializeCriticalSection(&gCS);
 		initializedCriticalSection = TRUE;
-		MMRESULT result = timeBeginPeriod(1);
 	}
 
 	timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
@@ -129,6 +128,8 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 		c_free(timer);
 		return NULL;
 	} 
+
+	timeBeginPeriod(1);
 
 	modCriticalSectionBegin();
 
@@ -202,6 +203,7 @@ void modTimerRemove(modTimer timer)
 		if (timer == walker) {
 			timer->id = 0;		// can't be found again by script
 			timer->cb = NULL;
+			timeEndPeriod(1);
 
 			timer->useCount--;
 			if (timer->useCount <= 0) {
@@ -223,5 +225,7 @@ void modTimerRemove(modTimer timer)
 
 void modTimerDelayMS(uint32_t ms)
 {
+	timeBeginPeriod(1);
 	Sleep(ms);
+	timeEndPeriod(1);
 }
