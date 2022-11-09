@@ -420,9 +420,10 @@ void i2cDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLen
 
 					xsmcSetInteger(xsVar(1), transaction->bufferLength);
 					xsmcGetBufferWritable(transaction->readBuffer, &buffer, &length);
-					if (length != transaction->bufferLength)
-						xsUnknownError("read buffer size changed");
-					c_memmove(buffer, transaction->buffer, transaction->bufferLength);
+					if (transaction->bufferLength <= length)
+						c_memmove(buffer, transaction->buffer, transaction->bufferLength);
+					else
+						xsmcSetInteger(xsVar(0), -3);		// buffer now too small to hold result
 				}
 				else
 					xsmcSetArrayBuffer(xsVar(1), transaction->buffer, transaction->bufferLength);
