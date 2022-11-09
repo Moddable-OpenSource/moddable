@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -74,7 +74,7 @@ class CCS811  {
 		const io = this.#io = new options.sensor.io({
 			hz: 400_000,
 			address: 0x5A,
-			sendStop: true,
+			stop: true,
 			...options.sensor
 		});
 

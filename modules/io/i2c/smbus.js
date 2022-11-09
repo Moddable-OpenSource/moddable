@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -29,7 +29,7 @@ class SMBus {
 
     constructor(options) {
         this.#io = new I2C(options);
-		if (options.sendStop)
+		if (options.stop)
 			this.#stop = true;
     }
     close() {
@@ -105,22 +105,22 @@ class SMBus {
 		const io = this.#io, buffer = this.#byteBuffer;
 
 		buffer[0] = command;
-		io.write(buffer, this.#stop);
+		io.write(buffer);
 	}
 
 	receiveByte() {
 		const io = this.#io, buffer = this.#byteBuffer;
 
-		io.read(buffer, this.#stop);
+		io.read(buffer);
 		return (buffer[0]);
 	}
 
 	readQuick() {
-		this.#io.read(0, this.#stop);
+		this.#io.read(0);
 	}
 
 	writeQuick() {
-		this.#io.write(new ArrayBuffer, this.#stop);
+		this.#io.write(new ArrayBuffer);
 	}
 
 	get format() {
