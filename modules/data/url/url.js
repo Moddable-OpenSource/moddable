@@ -129,6 +129,7 @@ class URLSearchParams {
 	#parts = null;
 	constructor(it = "", parts = null) {
 		if (typeof(it) == "object") {
+			this.#pairs = [];
 			if (Array.isArray(it)) {
 				for (let item of it) {
 					if (item.length != 2)
