@@ -353,12 +353,12 @@ enum {
 	kOperationClose,
 	kOperationWrite,
 	kOperationRead,
-	kOperationReadByte,
-	kOperationReadWord,
-	kOperationWriteByte,
-	kOperationWriteWord,
-	kOperationReadBlock,
-	kOperationWriteBlock,
+	kOperationReadUint8,
+	kOperationReadUint16,
+	kOperationWriteUint8,
+	kOperationWriteUint16,
+	kOperationReadBuffer,
+	kOperationWriteBuffer,
 	kOperationSendByte,
 	kOperationReceiveByte,
 	kOperationWriteQuick,
@@ -401,9 +401,9 @@ void i2cDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLen
 
 		switch (operation) {
 			case kOperationWrite:
-			case kOperationWriteByte:
-			case kOperationWriteWord:
-			case kOperationWriteBlock:
+			case kOperationWriteUint8:
+			case kOperationWriteUint16:
+			case kOperationWriteBuffer:
 			case kOperationSendByte:
 			case kOperationWriteQuick:
 			case kOperationReadQuick:
@@ -413,7 +413,7 @@ void i2cDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLen
 				break;
 			
 			case kOperationRead:
-			case kOperationReadBlock:
+			case kOperationReadBuffer:
 				if (transaction->hasReadBuffer) {
 					void *buffer;
 					xsUnsignedValue length;
@@ -430,13 +430,13 @@ void i2cDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLen
 				xsCallFunction2(transaction->callback, obj, xsVar(0), xsVar(1));
 				break;
 
-			case kOperationReadByte:
+			case kOperationReadUint8:
 			case kOperationReceiveByte:
 				xsmcSetInteger(xsVar(1), transaction->buffer[0]);
 				xsCallFunction2(transaction->callback, obj, xsVar(0), xsVar(1));
 				break;
 			
-			case kOperationReadWord:
+			case kOperationReadUint16:
 				xsmcSetInteger(xsVar(1), *(uint16_t *)transaction->buffer);
 				xsCallFunction2(transaction->callback, obj, xsVar(0), xsVar(1));
 				break;
@@ -739,14 +739,14 @@ void _xs_smbusasync_close(xsMachine *the)
 	asyncclose(the, _xs_smbusasync_destructor);
 }
 
-void _xs_smbusasync_readByte(xsMachine *the)
+void _xs_smbusasync_readUint8(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
 	int reg = xsmcToInteger(xsArg(0));
 
 	// set-up transaction record
-	transaction = newSMBusTransaction(the, i2c, kOperationReadByte, sizeof(uint8_t), (xsmcArgc > 1) ? 1 : -1, reg);
+	transaction = newSMBusTransaction(the, i2c, kOperationReadUint8, sizeof(uint8_t), (xsmcArgc > 1) ? 1 : -1, reg);
 
 	// build command
 	i2c_cmd_handle_t cmd = transaction->cmd;
@@ -758,7 +758,7 @@ void _xs_smbusasync_readByte(xsMachine *the)
 	queueTransaction(transaction);
 }
 
-void _xs_smbusasync_readWord(xsMachine *the)
+void _xs_smbusasync_readUint16(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
@@ -777,7 +777,7 @@ void _xs_smbusasync_readWord(xsMachine *the)
 	}
 
 	// set-up transaction record
-	transaction = newSMBusTransaction(the, i2c, kOperationReadWord, sizeof(uint16_t), callbackIndex, reg);
+	transaction = newSMBusTransaction(the, i2c, kOperationReadUint16, sizeof(uint16_t), callbackIndex, reg);
 
 	// build command
 	i2c_cmd_handle_t cmd = transaction->cmd;
@@ -796,7 +796,7 @@ void _xs_smbusasync_readWord(xsMachine *the)
 	queueTransaction(transaction);
 }
 
-void _xs_smbusasync_writeByte(xsMachine *the)
+void _xs_smbusasync_writeUint8(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
@@ -804,7 +804,7 @@ void _xs_smbusasync_writeByte(xsMachine *the)
 	int byte = xsmcToInteger(xsArg(1));
 
 	// set-up transaction record
-	transaction = newSMBusTransaction(the, i2c, kOperationWriteByte, 0, (xsmcArgc > 2) ? 2 : -1, reg);
+	transaction = newSMBusTransaction(the, i2c, kOperationWriteUint8, 0, (xsmcArgc > 2) ? 2 : -1, reg);
 
 	// build command
 	i2c_cmd_handle_t cmd = transaction->cmd;
@@ -816,7 +816,7 @@ void _xs_smbusasync_writeByte(xsMachine *the)
 	queueTransaction(transaction);
 }
 
-void _xs_smbusasync_writeWord(xsMachine *the)
+void _xs_smbusasync_writeUint16(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
@@ -836,7 +836,7 @@ void _xs_smbusasync_writeWord(xsMachine *the)
 	}
 
 	// set-up transaction record
-	transaction = newSMBusTransaction(the, i2c, kOperationWriteWord, 0, callbackIndex, reg);
+	transaction = newSMBusTransaction(the, i2c, kOperationWriteUint16, 0, callbackIndex, reg);
 
 	// build command
 	i2c_cmd_handle_t cmd = transaction->cmd;
@@ -855,7 +855,7 @@ void _xs_smbusasync_writeWord(xsMachine *the)
 	queueTransaction(transaction);
 }
 
-void _xs_smbusasync_readBlock(xsMachine *the)
+void _xs_smbusasync_readBuffer(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
@@ -866,7 +866,7 @@ void _xs_smbusasync_readBlock(xsMachine *the)
 	xsmcGetBufferWritable(xsArg(1), &buffer, &length);
 
 	// set-up transaction record
-	transaction = newSMBusTransaction(the, i2c, kOperationReadBlock, length, (xsmcArgc > 2) ? 2 : -1, reg);
+	transaction = newSMBusTransaction(the, i2c, kOperationReadBuffer, length, (xsmcArgc > 2) ? 2 : -1, reg);
 	transaction->hasReadBuffer = true;
 	transaction->readBuffer = xsArg(1);
 	xsRemember(transaction->readBuffer);
@@ -885,7 +885,7 @@ void _xs_smbusasync_readBlock(xsMachine *the)
 	queueTransaction(transaction);
 }
 
-void _xs_smbusasync_writeBlock(xsMachine *the)
+void _xs_smbusasync_writeBuffer(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
@@ -896,7 +896,7 @@ void _xs_smbusasync_writeBlock(xsMachine *the)
 	xsmcGetBufferReadable(xsArg(1), &buffer, &length);
 
 	// set-up transaction record
-	transaction = newSMBusTransaction(the, i2c, kOperationWriteBlock, length, (xsmcArgc > 2) ? 2 : -1, reg);
+	transaction = newSMBusTransaction(the, i2c, kOperationWriteBuffer, length, (xsmcArgc > 2) ? 2 : -1, reg);
 	c_memmove(transaction->buffer, buffer, length);
 
 	// build command
