@@ -11,7 +11,10 @@
 		"dns": "$(MODULES)/network/dns/dns",
 		"dns/parser": "$(MODULES)/network/dns/dnsparser",
 		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
-		"embedded:network/http/server": "./httpserver"
+		"embedded:network/http/server": "./httpserver",
+		"embedded:network/http/server/options/serversendevents": "./options/serversendevents",
+		"embedded:network/http/server/options/webpage": "./options/webpage",
+		"embedded:network/http/server/options/websocket": "./options/websocket"
 	},
 	"preload": [
 		"httpserver/config",
@@ -19,6 +22,9 @@
 		"dns",
 		"dns/parser",
 		"dns/serializer",
-		"embedded:network/http/server"
+		"embedded:network/http/server",
+		"embedded:network/http/server/options/serversendevents",
+		"embedded:network/http/server/options/webpage",
+		"embedded:network/http/server/options/websocket"
 	]
 }
