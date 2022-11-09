@@ -46,6 +46,8 @@ extern "C" {
 
 #undef xsTypeOf
 #define xsmcTypeOf(_SLOT)	fxTypeOf(the, &_SLOT)
+#undef xsIsCallable
+#define xsmcIsCallable(_SLOT)	fxIsCallable(the, &_SLOT)
 
 #undef xsToBoolean
 #undef xsToInteger

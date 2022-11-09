@@ -217,6 +217,9 @@ typedef char xsType;
 #define xsTypeOf(_SLOT) \
 	(the->scratch = (_SLOT), \
 	fxTypeOf(the, &(the->scratch)))
+#define xsIsCallable(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxIsCallable(the, &(the->scratch)))
 
 /* Primitives */
 
@@ -1333,6 +1336,7 @@ extern "C" {
 #endif
 
 mxImport xsType fxTypeOf(xsMachine*, xsSlot*);
+mxImport xsBooleanValue fxIsCallable(xsMachine*, xsSlot*);
 
 mxImport void fxUndefined(xsMachine*, xsSlot*);
 mxImport void fxNull(xsMachine*, xsSlot*);

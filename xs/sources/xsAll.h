@@ -988,7 +988,7 @@ mxExport void fx_Function_prototype_toString(txMachine* the);
 extern void fxBuildFunction(txMachine* the);
 extern void fxDefaultFunctionPrototype(txMachine* the);
 extern txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultPrototype);
-extern txBoolean fxIsCallable(txMachine* the, txSlot* slot);
+mxExport txBoolean fxIsCallable(txMachine* the, txSlot* slot);
 extern txBoolean fxIsFunction(txMachine* the, txSlot* slot);
 extern txSlot* fxNewFunctionInstance(txMachine* the, txID name);
 extern txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length);
