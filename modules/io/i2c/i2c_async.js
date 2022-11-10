@@ -18,7 +18,7 @@
  *
  */
 
-import I2C from "embedded:io/i2c"
+import I2C from "embedded:implementation/i2csync"
 
 I2C.Async = class @ "_xs_i2casync_destructor" {
 	constructor(options) @ "_xs_i2casync_constructor"
@@ -26,3 +26,5 @@ I2C.Async = class @ "_xs_i2casync_destructor" {
 	read(count) @ "_xs_i2casync_read"
 	write(buffer) @ "_xs_i2casync_write"
 }
+
+export default I2C;

@@ -18,7 +18,7 @@
  *
 */
 
-import SMBus from "embedded:io/smbus"
+import SMBus from "embedded:implementation/smbussync"
 
 SMBus.Async = class @ "_xs_smbusasync_destructor" {
 	constructor(options) @ "_xs_smbusasync_constructor"
@@ -45,3 +45,5 @@ SMBus.Async = class @ "_xs_smbusasync_destructor" {
 			throw new Error;
 	}
 }
+
+export default SMBus;
