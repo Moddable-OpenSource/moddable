@@ -4,7 +4,6 @@
 	],
 	"modules": {
 		"*": [
-			"./main",
 			"$(MODULES)/network/dns/moddnsparser"
 		],
 		"embedded:network/dns/resolver/udp": "./dns",
