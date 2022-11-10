@@ -191,6 +191,7 @@ export class Profile {
 		this.records = new Map;
 		this.hits = [];
 		this.host = null;
+		this.expanded = true;
 		this.sorted = false;
 		this.total = 0;
 		application.distribute("onProfileChanged", this);
