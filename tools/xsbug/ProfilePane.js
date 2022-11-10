@@ -43,6 +43,10 @@ class ProfileRecord @ "PiuProfileDelete" {
 		this.name = name || "(anonymous)";
 		this.path = path;
 		this.line = line;
+		if (path)
+			this.where = system.getPathName(path) + " (" + line +")";
+		else
+			this.where = "";
 		this.hitCount = 0;
 		this.duration = 0;
 		this.propagated = false;
@@ -438,15 +442,36 @@ class ProfileRecordTableBehavior extends TableBehavior {
 };
 
 class ProfileRecordHeaderBehavior extends HeaderBehavior {
-	onTap(row) {
-		super.onTap(row);
-		const { path, line } = this.data.record;
-		if (path)
-			model.selectFile(path, { line });
+	onMouseEntered(row, x, y) {
+		super.onMouseEntered(row, x, y);
+		row.distribute("onRowEntered");
+	}
+	onMouseExited(row, x, y) {
+		super.onMouseExited(row, x, y);
+		row.distribute("onRowExited");
 	}
 };
 
-class ProfileRecordRowBehavior extends HeaderBehavior {
+class ProfileRecordRowBehavior extends RowBehavior {
+	onMouseEntered(row, x, y) {
+		super.onMouseEntered(row, x, y);
+		row.distribute("onRowEntered");
+	}
+	onMouseExited(row, x, y) {
+		super.onMouseExited(row, x, y);
+		row.distribute("onRowExited");
+	}
+	onTap(row) {
+	}
+};
+
+class ProfileRecordButtonBehavior extends ButtonBehavior {
+	onRowEntered(button) {
+		button.visible = true;
+	}
+	onRowExited(button) {
+		button.visible = false;
+	}
 	onTap(row) {
 		const { path, line } = this.data.record;
 		if (path)
@@ -507,6 +532,8 @@ var ProfileHeader = Row.template(function($) { return {
 
 var ProfileFooter = Row.template(function($) { return {
 	left:0, right:0, height:3, skin:skins.tableFooter,
+	contents: [
+	],
 }});
 
 var ProfileRecordTable = Column.template(function($) { return {
@@ -523,7 +550,21 @@ var ProfileRecordHeader = Row.template(function($) { return {
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),
 		Content($, { width:20, skin:skins.glyphs, variant:$.record[$.order].expanded ? 3 : 1 }),
-		Label($, { left:0, right:0, style:styles.tableRow, string:$.record.name }),
+		Container($, { 
+			left:0, right:0, top:0, bottom:0, clip:true,
+			contents: [
+				Label($, { left:0, style:styles.tableRow, string:$.record.name }),
+				$.record.where ?
+					Container($, {
+						right:0, visible:false, active:true, Behavior:ProfileRecordButtonBehavior,
+						contents: [
+							RoundContent($, { left:0, right:0, top:1, bottom:1, border:1, radius:4, skin:skins.profileWhere, state:1 }),
+							Label($, { top:1, bottom:1, style:styles.profileWhere, string:$.record.where }),
+						],
+					}) : null,
+			],
+		}),
+		Content($, { width:10 }),
 		ProfileDurationContainers[$.order].call(undefined, $, {}),
 		Content($, { width:10 }),
 	],
@@ -534,8 +575,22 @@ var ProfileRecordRow = Row.template(function($) { return {
 	Behavior: ProfileRecordRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + (($.depth - 1) * 20) }),
-		Content($, { width:20 }),
-		Label($, { left:0, right:0, style:styles.tableRow, string:$.record.name }),
+        Content($, { width:20 }),
+		Container($, { 
+			left:0, right:0, top:0, bottom:0, clip:true,
+			contents: [
+				Label($, { left:0, style:styles.tableRow, string:$.record.name }),
+				$.record.where ?
+					Container($, {
+						right:0, visible:false, active:true, Behavior:ProfileRecordButtonBehavior,
+						contents: [
+							RoundContent($, { left:0, right:0, top:1, bottom:1, border:1, radius:4, skin:skins.profileWhere, state:1 }),
+							Label($, { top:1, bottom:1, style:styles.profileWhere, string:$.record.where }),
+						],
+					}) : null,
+			],
+		}),
+		Content($, { width:10 }),
 		ProfileDurationContainers[$.order].call(undefined, $, {}),
 		Content($, { width:10 }),
 	],

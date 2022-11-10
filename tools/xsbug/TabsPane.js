@@ -132,7 +132,7 @@ class BubblesTabBehavior extends TabBehavior {
 	}
 };
 
-class SerialTabBehavior extends TabBehavior {
+class ProfileTabBehavior extends TabBehavior {
 	isSelected(container) {
 		return (model.currentMachine == null) && (model.currentTab == 2);
 	}
@@ -147,7 +147,7 @@ class SerialTabBehavior extends TabBehavior {
 	}
 };
 
-class Test262TabBehavior extends TabBehavior {
+class SerialTabBehavior extends TabBehavior {
 	isSelected(container) {
 		return (model.currentMachine == null) && (model.currentTab == 3);
 	}
@@ -159,6 +159,21 @@ class Test262TabBehavior extends TabBehavior {
 	}
 	select(container) {
 		model.selectMachine(null, 3);
+	}
+};
+
+class Test262TabBehavior extends TabBehavior {
+	isSelected(container) {
+		return (model.currentMachine == null) && (model.currentTab == 4);
+	}
+	onCreate(container) {
+		this.onMachineSelected(container, model.currentMachine, model.currentTab);
+	}
+	onMachineSelected(container, machine, tab) {
+		this.changeState(container, (machine == null) && (tab == 4) ? 0 : 1);
+	}
+	select(container) {
+		model.selectMachine(null, 4);
 	}
 };
 
@@ -297,7 +312,7 @@ var BubblesTab = Container.template($ => ({
 }));
 
 var ProfileTab = Container.template($ => ({
-	top:0, bottom:0, skin:skins.tab, active:true, Behavior:SerialTabBehavior,
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:ProfileTabBehavior,
 	contents: [
 		Container($, { 
 			top:0, bottom:0,
