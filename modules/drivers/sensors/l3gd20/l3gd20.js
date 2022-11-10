@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -88,7 +88,7 @@ class L3GD20 {
 
 		this.#onError = options.onError;
 
-		const id = io.readByte(Register.WHO_AM_I);
+		const id = io.readUint8(Register.WHO_AM_I);
 		if (0xD4 != id && 0xD7 != id) {
             this.#onError?.("unexpected sensor");
 			this.close();
@@ -104,7 +104,7 @@ class L3GD20 {
 				edge: alert.io.Falling,
 				onReadable: () => this.#onAlert()
 			});
-			io.writeByte(Register.CTRL6, Config.Interrupt.ACTIVE_LOW);
+			io.writeUint8(Register.CTRL6, Config.Interrupt.ACTIVE_LOW);
 		}
 
 		this.configure({});
@@ -133,44 +133,44 @@ class L3GD20 {
 
 		if (undefined !== options.alert) {
 			const alert = options.alert;
-			let cfg = io.readByte(Register.IG_CFG);
+			let cfg = io.readUint8(Register.IG_CFG);
 
-//			io.writeByte(Register.CTRL2, 0x01);			// HP filter INT1
-			io.writeByte(Register.CTRL3, 0b1010_0000);	// enable INT1, active low
+//			io.writeUint8(Register.CTRL2, 0x01);			// HP filter INT1
+			io.writeUint8(Register.CTRL3, 0b1010_0000);	// enable INT1, active low
 			cfg |= 0b0110_1010;			// latch INT1, xyz hi
-			io.writeByte(Register.IG_CFG, cfg);
+			io.writeUint8(Register.IG_CFG, cfg);
 
 			if (undefined !== alert.threshold) {
 				const val = alert.threshold / Divider[this.#range];
-				io.writeWord(Register.IG_THS_XH, val & 0x7F, true);
-				io.writeWord(Register.IG_THS_YH, val & 0x7F, true);
-				io.writeWord(Register.IG_THS_ZH, val & 0x7F, true);
+				io.writeUint16(Register.IG_THS_XH, val & 0x7F, true);
+				io.writeUint16(Register.IG_THS_YH, val & 0x7F, true);
+				io.writeUint16(Register.IG_THS_ZH, val & 0x7F, true);
 			}
 			if (undefined !== alert.duration)
-				io.writeByte(Register.IG_DURATION, alert.duration & 0x7F);
+				io.writeUint8(Register.IG_DURATION, alert.duration & 0x7F);
 		}
 		else {
-			io.writeByte(Register.CTRL2, 0x00);		// HP filter INT1
-			io.writeByte(Register.CTRL3, 0x00);		// interrupt to INT1
+			io.writeUint8(Register.CTRL2, 0x00);		// HP filter INT1
+			io.writeUint8(Register.CTRL3, 0x00);		// interrupt to INT1
 		}
 
 		// CTRL4 - Full Scale, Block data update, big endian, High res
-		io.writeByte(Register.CTRL4, this.#range << 4);
+		io.writeUint8(Register.CTRL4, this.#range << 4);
 
 // CTRL2, 3, 4, 6, reference, IG_THS, IG_DURATON, IG_CFG, CTRL5, CTRL1
 		// CTRL1 - Enable axes, normal mode @ rate
 		if (this.#sleep)
-			io.writeByte(Register.CTRL1, 0b1000 | (this.#rate << 6) | (this.#bandwidth << 4));
+			io.writeUint8(Register.CTRL1, 0b1000 | (this.#rate << 6) | (this.#bandwidth << 4));
 		else
-			io.writeByte(Register.CTRL1, this.#gyroEnabled | 0b1000 | (this.#rate << 6) | (this.#bandwidth << 4));
+			io.writeUint8(Register.CTRL1, this.#gyroEnabled | 0b1000 | (this.#rate << 6) | (this.#bandwidth << 4));
 
 		if (this.#low_odr)
-			io.writeByte(Register.LOW_ODR, this.#low_odr ? 1 : 0);
+			io.writeUint8(Register.LOW_ODR, this.#low_odr ? 1 : 0);
 			
 
 	}
 	status() {
-		return this.#io.readByte(Register.IG_SRC);
+		return this.#io.readUint8(Register.IG_SRC);
 	}
 	close() {
 		this.#monitor?.close();
@@ -187,16 +187,16 @@ class L3GD20 {
 
 		if (this.#gyroEnabled) {
 			if (this.#sleep) {
-				ctrl1 = io.readByte(Register.CTRL1);
-				io.writeByte(Register.CTRL1, ctrl1 | this.#gyroEnabled);
+				ctrl1 = io.readUint8(Register.CTRL1);
+				io.writeUint8(Register.CTRL1, ctrl1 | this.#gyroEnabled);
 				Timer.delay(100);
 			}
-			io.readBlock(Register.OUT_X_L | 0x80, values);
+			io.readBuffer(Register.OUT_X_L | 0x80, values);
 			ret.x = values[0] * div;
 			ret.y = values[1] * div;
 			ret.z = values[2] * div;
 			if (this.#sleep)
-				io.writeByte(Register.CTRL1, ctrl1);
+				io.writeUint8(Register.CTRL1, ctrl1);
 		}
 
 		return ret;

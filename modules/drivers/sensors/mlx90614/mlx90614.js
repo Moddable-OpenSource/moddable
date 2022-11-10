@@ -67,7 +67,7 @@ class MLX90614 {
 		const io = this.#io;
 		const vBuf = this.#valueBuffer;
 		const pBuf = this.#pecBuffer;
-		io.readBlock(reg, vBuf);
+		io.readBuffer(reg, vBuf);
 
 		pBuf[0] = this.#address << 1;
 		pBuf[1] = reg;
