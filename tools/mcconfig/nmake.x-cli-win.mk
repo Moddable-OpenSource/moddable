@@ -131,7 +131,7 @@ C_FLAGS = $(XS_C_FLAGS)
 
 RC_OPTIONS = /nologo
 
-LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib Iphlpapi.lib
+LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib Iphlpapi.lib winmm.lib
 	
 LINK_OPTIONS = /incremental:no /nologo /subsystem:console
 !IF "$(DEBUG)"=="1"
