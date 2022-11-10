@@ -1,8 +1,7 @@
 {
 	"include": [
 		"./manifest_httpserver.json",
-		"$(MODDABLE)/examples/io/tcp/websocket/manifest_websocket.json",
-		"$(MODDABLE)/modules/crypt/digest/manifest.json"
+		"$(MODDABLE)/examples/io/tcp/websocket/manifest_websocket.json"
 	],
 	"modules": {
 		"*": "./main"

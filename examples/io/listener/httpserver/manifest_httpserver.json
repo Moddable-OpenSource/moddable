@@ -1,6 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json"
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/crypt/digest/manifest.json"
 	],
 	"modules": {
 		"*": [ 
