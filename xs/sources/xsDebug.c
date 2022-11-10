@@ -2611,7 +2611,7 @@ void fxSendProfilerRecord(txMachine* the, txSlot* frame, txID id, txSlot* code)
 			fxEcho(the, "<pr name=\"(host)\" value=\"0\"");
 		}
 		else if (id == 1) {
-			fxEcho(the, "<pr name=\"(garbage collector)\" value=\"1\"");
+			fxEcho(the, "<pr name=\"(gc)\" value=\"1\"");
 		}
 		else {
 			fxEcho(the, "<pr name=\"");

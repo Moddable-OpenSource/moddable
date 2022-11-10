@@ -41,7 +41,7 @@
 #include <dlfcn.h>
 #endif
 
-static void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address);
+static void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address, txID profileID);
 
 txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix)
 {
@@ -124,7 +124,7 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 	}
 #ifdef mxHostFunctionPrimitive
 	else if (function->kind == XS_HOST_FUNCTION_KIND) {
-		fxBufferFunctionNameAddress(the, buffer, size, function->value.hostFunction.builder->id, function->value.hostFunction.builder->callback);
+		fxBufferFunctionNameAddress(the, buffer, size, function->value.hostFunction.builder->id, function->value.hostFunction.builder->callback, function->value.hostFunction.profileID);
 	}
 #endif
 	else
@@ -135,15 +135,17 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* function, txString suffix)
 {
 	txSlot* slot = mxFunctionInstanceCode(function);
+	txSlot* home = mxFunctionInstanceHome(function);
 	if ((slot->kind == XS_CODE_KIND) || (slot->kind == XS_CODE_X_KIND))
-		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, C_NULL);
+		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, C_NULL, home->ID);
 	else
-		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, slot->value.callback.address);
+		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, slot->value.callback.address, home->ID);
     c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 }
 
-void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address)
+void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address, txID profileID)
 {
+	txInteger length;
 	if (id != XS_NO_ID) {
 		txSlot* key = fxGetKey(the, id);
 		if (key) {
@@ -165,12 +167,20 @@ void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, t
 		Dl_info info;
 		if (dladdr(address, &info) && info.dli_sname)
 			c_strncat(buffer, info.dli_sname, size - mxStringLength(buffer) - 1);
-		else
+		else 
 #endif
-			c_strncat(buffer, "anonymous", size - mxStringLength(buffer) - 1);
+		{
+			c_strncat(buffer, "anonymous-", size - mxStringLength(buffer) - 1);
+			length = mxStringLength(buffer);
+			fxIntegerToString(the->dtoa, profileID, buffer + length, size - length - 1);
+		}
 	}
-	else
-		c_strncat(buffer, "(anonymous)", size - mxStringLength(buffer) - 1);
+	else {
+		c_strncat(buffer, "(anonymous-", size - mxStringLength(buffer) - 1);
+		length = mxStringLength(buffer);
+		fxIntegerToString(the->dtoa, profileID, buffer + length, size - length - 1);
+		c_strncat(buffer, ")", size - mxStringLength(buffer) - 1);
+	}
 }
 
 void fxBufferObjectName(txMachine* the, txString buffer, txSize size, txSlot* object, txString suffix)
