@@ -3,6 +3,7 @@ Copyright 2017-2022 Moddable Tech, Inc.<BR>
 Revised: June 14, 2022
 
 
+<a id="digest"></a>
 ## class Digest (Crypt)
 
 The Digest class creates cryptographic hashes using a variety of algorithms.
@@ -60,6 +61,7 @@ There are also blockSize and outputSize accessor/getter functions in addition to
 BlockCipher, StreamCipher and Mode classes need to be documented. They are used in the cryptblockcipher example app.
 -->
 
+<a id="transform"></a>
 ## class Transform
 
 The `Transform` class contains static methods to perform common transformations of certificate data.
@@ -76,6 +78,7 @@ Add the `Transform` module in a manifest to use it in a project.
 }
 ```
 
+<a id="transform-pemToDER"></a>
 ### static pemToDER(data)
 
 The `pemToDER` function transforms a certificate in PEM format (Base64 encoded ASCII) to [DER](https://en.wikipedia.org/wiki/X.690#DER_encoding) format (binary data). The input `data` may be a `String`, `ArrayBuffer`, or host buffer. The return value is an `ArrayBuffer`.
@@ -90,6 +93,7 @@ openssl x509 -inform pem -in data.pem -out data.der -outform der
 
 `pemToDER` looks for both `-----BEGIN CERTIFICATE-----` and `-----BEGIN RSA PRIVATE KEY-----` as delimeters.
 
+<a id="transform-privateKeyToPrivateKeyInfo"></a>
 ### static privateKeyToPrivateKeyInfo(data[, oid])
 
 The `privateKeyToPrivateKeyInfo ` function transforms a Private Key to a Private Key Info (both in binary DER format). The input `data` is an `ArrayBuffer` or host buffer. The optional `oid` parameter is the Object ID for the key algorithm as an `Array`. If not provided, it defaults to the OID for `PKCS#1`, `[1, 2, 840, 113549, 1, 1, 1]`. The return value is an `ArrayBuffer`.

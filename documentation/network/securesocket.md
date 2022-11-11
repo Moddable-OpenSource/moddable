@@ -11,6 +11,7 @@ Revised: November 11, 2022
 	* [TLS Certificates](#certificates)
 		* [Using a Built-in Certificate](#certificate-bulitin)
 		* [Providing a Certificate](#certificate-providing)
+		* [Converting PEM to DER](#converting-pem)
 		* [Updating Certificate Store](#certificate-update)
 	* [Memory](#memory)
 * [Configuration](#configuration)
@@ -172,6 +173,20 @@ let request = new Request({
     } 
 });
 ```
+
+<a id="converting-pem"></a>
+#### Converting PEM to DER
+The `SecureSocket` implementation requires certificates to be provided in DER (binary) format. If you have a certificate in PEM (a Base64 encoded) format, you need to convert it to DER. 
+
+Whenever possible, convert the PEM file to DER format before adding it to your project. There are many tools that can perform the conversion. A reliable choice is `openssl`. The following command line works for many certificates (substitute your PEM file path for `data.pem` and the desired output file path for `data.der`):
+
+```
+openssl x509 -inform pem -in data.pem -out data.der -outform der
+``` 
+
+
+Sometimes there is no choices but to convert the PEM to DER at runtime. For example, during provisioning you might receive a certificate in PEM format from a service, and later you need to use that certificate to establish a TLS connection. The Moddable SDK provides the [`pemtoDER`](../crypt/crypt.md#transform-pemToDER) and [`privateKeyToPrivateKeyInfo`](../crypt/crypt.md#transform-privateKeyToPrivateKeyInfo) functions for these situations. These functions are part of the Crypt `Transform` class.
+
 
 <a id="certificate-update"></a>
 #### Updating Certificate Store
