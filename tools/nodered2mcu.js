@@ -36,7 +36,6 @@ const NoErrorNodes = [
 	"complete",
 	"debug",
 	"inject",
-	"link call",
 	"link in",
 	"link out",
 	"switch",
@@ -46,7 +45,7 @@ const NoErrorNodes = [
 
 // nodes that don't call done
 const NoDoneNodes = [
-	"switch",
+	"switch",	// does call node.error()
 ];
 
 // nodes that don't report status
@@ -896,6 +895,8 @@ export default class extends TOOL {
 
 			case "link call":
 			case "link out":
+				if ("link call" === type)
+					config.timeout = parseFloat(config.timeout ?? 0) * 1000;
 				config.links = config.links?.filter(link => nodes.has(link));	// remove broken links
 				break;
 
