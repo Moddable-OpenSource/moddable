@@ -84,12 +84,12 @@ void xs_onewire_write(xsMachine *the)
 
 void xs_onewire_select(xsMachine *the)
 {
-  modOneWire onewire = xsmcGetHostData(xsThis);
+//  modOneWire onewire = xsmcGetHostData(xsThis);
 }
 
 void xs_onewire_search(xsMachine *the)
 {
-  modOneWire onewire = xsmcGetHostData(xsThis);
+//  modOneWire onewire = xsmcGetHostData(xsThis);
 
   xsmcVars(1);
   xsResult = xsNewArray(0);
@@ -106,14 +106,14 @@ void xs_onewire_search(xsMachine *the)
 
 void xs_onewire_isPresent(xsMachine *the)
 {
-  modOneWire onewire = xsmcGetHostData(xsThis);
+//  modOneWire onewire = xsmcGetHostData(xsThis);
 
-  uint8_t *id;
+//  uint8_t *id;
 
   if (8 != xsmcGetArrayBufferLength(xsArg(0)))
     xsUnknownError("invalid id");
 
-  id = xsmcToArrayBuffer(xsArg(0));
+//  id = xsmcToArrayBuffer(xsArg(0));
 
   if (0 == rand() % 2)
   {
@@ -175,7 +175,7 @@ void xs_onewire_crc(xsMachine *the)
 
 void xs_onewire_read(xsMachine *the)
 {
-  modOneWire onewire = xsmcGetHostData(xsThis);
+//  modOneWire onewire = xsmcGetHostData(xsThis);
 
   int argc = xsmcArgc;
   if (argc == 0)
