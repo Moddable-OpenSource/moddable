@@ -196,6 +196,9 @@
 			"build": {
 				"SIMULATOR": "$(BUILD)/bin/win/debug/mcsim.exe"
 			},
+			"include": [
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
 			"modules": {
 				"*": [
 					"$(BUILD)/simulators/modules/screen",
