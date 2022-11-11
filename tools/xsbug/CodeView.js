@@ -270,7 +270,7 @@ class CodeBehavior extends _CodeBehavior {
 		code.container.scrollTo(0, 0);
 	}
 	onReveal(code) {
-		code.container.reveal(code.selectionBounds);
+		code.container.reveal(code.selectionBounds, true);
 	}
 	onSelected(code) {
 		code.bubble("onCodeSelected");
