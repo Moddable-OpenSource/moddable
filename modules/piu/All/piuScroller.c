@@ -33,7 +33,7 @@ static void PiuScrollerPlaceContentVertically(void* it, PiuContent* content);
 static void PiuScrollerMeasureHorizontally(void* it);
 static void PiuScrollerMeasureVertically(void* it);
 static void PiuScrollerReflow(void* it, PiuFlags flags);
-static void PiuScrollerReveal(PiuScroller* self, PiuRectangle bounds, xsBooleanValue center);
+static void PiuScrollerReveal(PiuScroller* self, PiuRectangle bounds, xsBooleanValue centerVertically, xsBooleanValue centerHorizontally);
 static void PiuScrollerScrollBy(PiuScroller* self, PiuCoordinate dx, PiuCoordinate dy);
 static void PiuScrollerUpdate(void* it, PiuView* view, PiuRectangle area);
 
@@ -322,14 +322,14 @@ void PiuScrollerReflow(void* it, PiuFlags flags)
 	PiuContainerReflow(it, flags);
 }
 
-void PiuScrollerReveal(PiuScroller* self, PiuRectangle bounds, xsBooleanValue center) 
+void PiuScrollerReveal(PiuScroller* self, PiuRectangle bounds, xsBooleanValue centerVertically, xsBooleanValue centerHorizontally) 
 {
 	PiuCoordinate start, stop, min, max, x, y;
 	start = bounds->y - (*self)->delta.y;
 	stop = start + bounds->height;
 	min = 0;
 	max = (*self)->bounds.height;
-	if (center) {
+	if (centerVertically) {
 		y = (start + stop - max) / 2;
 	}
 	else {
@@ -348,7 +348,7 @@ void PiuScrollerReveal(PiuScroller* self, PiuRectangle bounds, xsBooleanValue ce
 	stop = start + bounds->width;
 	min = 0;
 	max = (*self)->bounds.width;
-	if (center) {
+	if (centerHorizontally) {
 		x = (start + stop - max) / 2;
 	}
 	else {
@@ -542,12 +542,13 @@ void PiuScroller_reveal(xsMachine* the)
 			if (xsFindInteger(xsArg(0), xsID_width, &width)) {
 				if (xsFindInteger(xsArg(0), xsID_height, &height)) {
 					PiuRectangleRecord bounds;
-					xsBooleanValue center = (xsToInteger(xsArgc) > 1) ? xsToBoolean(xsArg(1)) : 0;
+					xsBooleanValue centerVertically = (xsToInteger(xsArgc) > 1) ? xsToBoolean(xsArg(1)) : 0;
+					xsBooleanValue centerHorizontally = (xsToInteger(xsArgc) > 2) ? xsToBoolean(xsArg(2)) : 0;
 					bounds.x = (PiuCoordinate)x;
 					bounds.y = (PiuCoordinate)y;
 					bounds.width = (PiuDimension)width;
 					bounds.height = (PiuDimension)height;
-					PiuScrollerReveal(self, &bounds, center);
+					PiuScrollerReveal(self, &bounds, centerVertically, centerHorizontally);
 				}
 			}
 		}
