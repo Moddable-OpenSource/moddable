@@ -83,22 +83,30 @@ const txBehavior ICACHE_FLASH_ATTR gxArrayBehavior = {
 
 void fxBuildArray(txMachine* the)
 {
+	txSlot* instance;
 	txSlot* slot;
 	txSlot* property;
 	txSlot* unscopable;
 	
-	fxNewHostFunction(the, mxCallback(fxArrayLengthGetter), 0, XS_NO_ID, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxArrayLengthSetter), 1, XS_NO_ID, XS_NO_ID);
+	mxPush(mxObjectPrototype);
+	instance = fxNewArrayInstance(the);
+
+	fxNewHostFunction(the, mxCallback(fxArrayLengthGetter), 0, mxID(_length), XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
+	fxNewHostFunction(the, mxCallback(fxArrayLengthSetter), 1, mxID(_length), XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
 	the->stack->value.accessor.getter = (the->stack + 2)->value.reference;
 	the->stack->value.accessor.setter = (the->stack + 1)->value.reference;
 	mxPull(mxArrayLengthAccessor);
-	the->stack += 2;
+	mxPop();
+	mxPop();
 
-	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewArrayInstance(the));
+	slot = fxLastProperty(the, instance);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_concat), 1, mxID(_concat), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_copyWithin), 2, mxID(_copyWithin), XS_DONT_ENUM_FLAG);
