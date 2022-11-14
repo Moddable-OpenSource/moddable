@@ -861,16 +861,21 @@ void _xs_smbusasync_readBuffer(xsMachine *the)
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
 	int reg = xsmcToInteger(xsArg(0));
-	void *buffer;
+	void *buffer = NULL;
 	xsUnsignedValue length;
 
-	xsmcGetBufferWritable(xsArg(1), &buffer, &length);
+	if (xsReferenceType == xsmcTypeOf(xsArg(1)))
+		xsmcGetBufferWritable(xsArg(1), &buffer, &length);
+	else
+		length = xsmcToInteger(xsArg(1));
 
 	// set-up transaction record
 	transaction = newSMBusTransaction(the, i2c, kOperationReadBuffer, length, (xsmcArgc > 2) ? 2 : -1, reg);
-	transaction->hasReadBuffer = true;
-	transaction->readBuffer = xsArg(1);
-	xsRemember(transaction->readBuffer);
+	if (buffer) {
+		transaction->hasReadBuffer = true;
+		transaction->readBuffer = xsArg(1);
+		xsRemember(transaction->readBuffer);
+	}
 
 	// build command
 	i2c_cmd_handle_t cmd = transaction->cmd;
