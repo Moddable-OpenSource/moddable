@@ -306,6 +306,7 @@ class ProfileTableBehavior extends TableBehavior {
 		this.data = data;
 		if (data.expanded)
 			this.onExpanded(column);
+		this.selectingFile = false;
 	}
 	onExpanded(column) {
 		const data = this.data;
@@ -345,8 +346,16 @@ class ProfileTableBehavior extends TableBehavior {
 		this.onExpanded(column);
 	}
 	onProfileChanged(column, profile) {
+		if (this.selectingFile)
+			return;
 		if (this.data == profile)
 			this.onOrderChanged(column);
+	}
+	onSelectFileEntered(container) {
+		this.selectingFile = true;
+	}
+	onSelectFileExited(container) {
+		this.selectingFile = false;
 	}
 };
 
@@ -467,6 +476,14 @@ class ProfileRecordRowBehavior extends RowBehavior {
 };
 
 class ProfileRecordButtonBehavior extends ButtonBehavior {
+	onMouseEntered(button, x, y) {
+		button.bubble("onSelectFileEntered");
+		super.onMouseEntered(button, x, y);
+	}
+	onMouseExited(button, x, y) {
+		super.onMouseExited(button, x, y);
+		button.bubble("onSelectFileExited");
+	}
 	onRowEntered(button) {
 		button.visible = true;
 	}
