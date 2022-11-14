@@ -1848,7 +1848,8 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 txMachine* fxBeginHost(txMachine* the)
 {
 #if defined(mxInstrument) || defined(mxProfile)
-	fxCheckProfiler(the, C_NULL);
+	if (the->frame == C_NULL)
+		fxCheckProfiler(the, C_NULL);
 #endif
 	mxOverflow(-7);
 	/* THIS */
