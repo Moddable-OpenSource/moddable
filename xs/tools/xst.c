@@ -380,7 +380,7 @@ int main(int argc, char* argv[])
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
  		if (profiling)
-			fxStopProfiling(machine);
+			fxStopProfiling(machine, C_NULL);
 		if (machine->abortStatus) {
 			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
 			fprintf(stderr, "Error: %s\n", why);

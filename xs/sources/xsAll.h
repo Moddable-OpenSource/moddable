@@ -680,7 +680,7 @@ mxExport void* fxMapArchive(txMachine* the, txPreparation* preparation, void* ar
 
 mxExport txBoolean fxIsProfiling(txMachine* the);
 mxExport void fxStartProfiling(txMachine* the);
-mxExport void fxStopProfiling(txMachine* the);
+mxExport void fxStopProfiling(txMachine* the, void* stream);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
 
@@ -808,7 +808,7 @@ extern void fxDescribeInstrumentation(txMachine* the, txInteger count, txString*
 extern void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values);
 extern void fxCheckProfiler(txMachine* the, txSlot* frame);
 extern void fxCreateProfiler(txMachine* the);
-extern void fxDeleteProfiler(txMachine* the);
+extern void fxDeleteProfiler(txMachine* the, void* stream);
 extern void fxResumeProfiler(txMachine* the);
 extern void fxSuspendProfiler(txMachine* the);
 #define mxFloatingPointOp(operation) \
@@ -1811,7 +1811,7 @@ mxExport void fx_mutabilities(txMachine* the);
 #ifdef mxProfile
 extern void fxCheckProfiler(txMachine* the, txSlot* frame);
 extern void fxCreateProfiler(txMachine* the);
-extern void fxDeleteProfiler(txMachine* the);
+extern void fxDeleteProfiler(txMachine* the, void* stream);
 extern void fxResumeProfiler(txMachine* the);
 extern void fxSuspendProfiler(txMachine* the);
 #endif

@@ -87,7 +87,7 @@ static txU8 fxGetTicks();
 static void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID);
 static txU8 fxMicrosecondsToTicks(txU8 microseconds);
 static void fxPrintID(txMachine* the, FILE* file, txID id);
-static void fxPrintProfiler(txMachine* the);
+static void fxPrintProfiler(txMachine* the, void* stream);
 static void fxPrintString(txMachine* the, FILE* file, txString theString);
 static void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta);
 static txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID);
@@ -160,11 +160,11 @@ void fxCreateProfiler(txMachine* the)
 	profiler->gc = fxNewProfilerRecord(the, 1);
 }
 
-void fxDeleteProfiler(txMachine* the)
+void fxDeleteProfiler(txMachine* the, void* stream)
 {
 	txProfiler* profiler = the->profiler;
 	profiler->stop = profiler->when;
-	fxPrintProfiler(the);
+	fxPrintProfiler(the, stream);
 	c_free(profiler->samples);
 	txU4 recordIndex = 0;
 	while (recordIndex < profiler->recordCount) {
@@ -371,23 +371,25 @@ void fxPrintID(txMachine* the, FILE* file, txID id)
 	fprintf(file, "?");
 }
 
-void fxPrintProfiler(txMachine* the)
+void fxPrintProfiler(txMachine* the, void* stream)
 {
 	// https://chromedevtools.github.io/devtools-protocol/tot/Profiler/#type-Profile
 	txProfiler* profiler = the->profiler;
-	FILE* file;
-    time_t timer;
-    struct tm* tm_info;
+	FILE* file = stream;
     char buffer[22];
     char name[36];
     
 	fxRemoveProfilerCycle(the, profiler, 0);
     
-    timer = time(NULL);
-    tm_info = localtime(&timer);
-    strftime(buffer, 22, "XS-%y-%m-%d-%H-%M-%S-", tm_info);
-    sprintf(name, "%s%03llu.cpuprofile", buffer, (profiler->stop / 1000) % 1000);
-	file = fopen(name, "w");
+    if (!file) {
+    	time_t timer;
+    	struct tm* tm_info;
+		timer = time(NULL);
+		tm_info = localtime(&timer);
+		strftime(buffer, 22, "XS-%y-%m-%d-%H-%M-%S-", tm_info);
+		sprintf(name, "%s%03llu.cpuprofile", buffer, (profiler->stop / 1000) % 1000);
+		file = fopen(name, "w");
+	}
 	
 	fprintf(file, "{\"nodes\":[");
 	txU4 recordIndex = 0;

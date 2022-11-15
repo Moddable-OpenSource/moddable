@@ -2486,14 +2486,14 @@ void fxStartProfiling(txMachine* the)
 #endif
 }
 
-void fxStopProfiling(txMachine* the)
+void fxStopProfiling(txMachine* the, void* stream)
 {
 #if defined(mxInstrument) || defined(mxProfile)
 	if (!the->profiler)
 		return;	
 // 	if (the->frame)
 // 		fxAbort(the, XS_FATAL_CHECK_EXIT);
-	fxDeleteProfiler(the);
+	fxDeleteProfiler(the, stream);
 #endif
 }
 

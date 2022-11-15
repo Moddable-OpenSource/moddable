@@ -766,7 +766,7 @@ void fxDebugPushTag(txMachine* the)
 		fxStepOutside(the);
 		break;
 	case XS_STOP_PROFILING_TAG:
-		fxStopProfiling(the);
+		fxStopProfiling(the, C_NULL);
 		break;
 	case XS_TOGGLE_TAG:
 		fxToggle(the, (txSlot*)the->idValue);
@@ -1918,7 +1918,7 @@ void fxLogout(txMachine* the)
 {
 	if (!fxIsConnected(the))
 		return;
-	fxStopProfiling(the);
+	fxStopProfiling(the, C_NULL);
 	fxDisconnect(the);
 }
 
@@ -2518,7 +2518,7 @@ void fxCreateProfiler(txMachine* the)
 	profiler->records[0] = 0x03;
 }
 
-void fxDeleteProfiler(txMachine* the)
+void fxDeleteProfiler(txMachine* the, void* stream)
 {
 	txProfiler* profiler = the->profiler;
 	fxSendProfilerTime(the, "stop", fxGetMicroSeconds());

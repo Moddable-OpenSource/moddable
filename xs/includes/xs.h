@@ -1297,7 +1297,7 @@ typedef unsigned char xsAttribute;
 #define xsStartProfiling() \
 	fxStartProfiling(the)
 #define xsStopProfiling() \
-	fxStopProfiling(the)
+	fxStopProfiling(the, C_NULL)
 
 #ifndef __XSALL__
 	enum {
@@ -1469,7 +1469,7 @@ mxImport void* fxMarshall(xsMachine*, xsBooleanValue);
 
 mxImport xsBooleanValue fxIsProfiling(xsMachine*);
 mxImport void fxStartProfiling(xsMachine*);
-mxImport void fxStopProfiling(xsMachine*);
+mxImport void fxStopProfiling(xsMachine*, void*);
 	
 mxImport void* fxGetArchiveCode(xsMachine*, void*, xsStringValue, size_t*);
 mxImport xsIntegerValue fxGetArchiveCodeCount(xsMachine*, void*);
