@@ -1312,6 +1312,15 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 	onParsing() {
 		this.machine?.onParsing();
 	}
+	onProfileRecord(name, value, path, line) {
+		this.machine?.onProfileRecord(name, value, path, line);
+	}
+	onProfileSample(data) {
+		this.machine?.onProfileSample(data);
+	}
+	onProfileTime(name, value) {
+		this.machine?.onProfileTime(name, value);
+	}
 	onSampled(samples) {
 		this.machine?.onSampled(samples);
 	}
