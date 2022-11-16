@@ -2553,8 +2553,10 @@ txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
 			id = mxFunctionInstanceHome(function)->ID;
 		}
 	}
+#ifdef mxHostFunctionPrimitive
 	else if (function->kind == XS_HOST_FUNCTION_KIND)
 		id = function->value.hostFunction.profileID;
+#endif
 	if (id != XS_NO_ID) {		
 		txInteger recordIndex = id >> 3;
 		txInteger recordMask = 1 << (id & 0x07);
