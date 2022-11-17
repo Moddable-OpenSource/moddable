@@ -35,6 +35,7 @@ XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
 COMMODETTO = $(MODDABLE)/modules/commodetto
+DATA = $(MODDABLE)/modules/data
 INSTRUMENTATION = $(MODDABLE)/modules/base/instrumentation
 TOOLS = $(MODDABLE)/tools
 
@@ -120,6 +121,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
+	$(MOD_DIR)/wavreader.xsb \
 	$(MOD_DIR)/file.xsb \
 	$(MOD_DIR)/cdv.xsb \
 	$(MOD_DIR)/colorcellencode.xsb \
@@ -163,6 +165,7 @@ PRELOADS =\
 	-p commodetto/Poco.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
 	-p file.xsb
@@ -247,7 +250,7 @@ XSC = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsc
 XSID = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsid
 XSL = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsl
 	
-VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(TOOLS)
+VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/wavreader $(TOOLS)
 
 build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(BIN_DIR) $(BIN_DIR)/$(NAME)
 
@@ -288,6 +291,10 @@ $(TMP_DIR)/mc.xs.c: $(MODULES)
 $(MOD_DIR)/commodetto/%.xsb: $(COMMODETTO)/commodetto%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(XSC) $< -c -d -e -o $(MOD_DIR)/commodetto -r $*
+
+$(MOD_DIR)/%.xsb: $(DATA)/wavreader/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
 
 $(MOD_DIR)/%.xsb: $(TOOLS)/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
