@@ -1554,7 +1554,7 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 		xsmcSetInteger(xsVar(0), id);
 		xsTry {
 			xsmcGet(xsResult, out->obj, xsID_callbacks);
-			if (xsUndefined !== xsmcTypeOf(xsResult)) {
+			if (xsUndefinedType != xsmcTypeOf(xsResult)) {
 				xsmcGetIndex(xsResult, xsResult, stream);
 				if (xsmcIsCallable(xsResult))
 					xsCallFunction1(xsResult, out->obj, xsVar(0));
