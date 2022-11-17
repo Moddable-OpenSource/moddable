@@ -1,6 +1,6 @@
 # AudioOut
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: October 12, 2022
+Revised: November 17, 2022
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -199,6 +199,17 @@ audio.enqueue(0, AudioOut.Callback, 2);
 audio.callback = id => trace(`finished playing buffer ${id}\n`);
 ```
 
+Instead of a single callback function that is called for all streams, a separate callback for each stream maybe provided using the `callbacks` property:
+
+```js
+audio.callbacks = [
+	id => trace(`finished playing buffer ${id} from stream 0\n`),
+	id => trace(`finished playing buffer ${id} from stream 1\n`)
+];
+```
+
+If both the `callback` and `callbacks` property are set, only the the `callbacks` property is used.
+
 #### Dequeuing audio samples
 All of the samples and callbacks enqueued on a specified stream may be dequeued by calling `enqueue` with only the `stream` parameter:
 
@@ -285,4 +296,3 @@ The `audioOut` module is configured at build time.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.
-* 
