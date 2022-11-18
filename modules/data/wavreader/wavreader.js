@@ -20,7 +20,6 @@
 
 class WavReader {
 	constructor(buffer) {
-	debugger;
 		this.wav = new DataView(buffer);
 		this.position = 0;
 		this.waveSize = buffer.byteLength;

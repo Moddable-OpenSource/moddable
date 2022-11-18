@@ -34,10 +34,24 @@ class HTTPClient {
 			
 			if ("receiveBody" !== client.#state)
 				return undefined;
-						
+
+			let buffer;
+			if ("object" === typeof count) {
+				buffer = count;
+				count = buffer.byteLength;
+			}			
 			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
-			if (count > available)
+			if (count > available) {
 				count = available;
+				if (buffer) {
+					if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
+						throw new Error("invalid buffer");
+					if (ArrayBuffer.isView(buffer))
+						buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+					else
+						buffer = new Uint8Array(buffer, 0, count);
+				}
+			}
 
 			client.#readable -= count;
 			if (undefined === client.#chunk)
@@ -45,7 +59,7 @@ class HTTPClient {
 			else
 				client.#chunk -= count;
 
-			const result = client.#socket.read(count);
+			const result = client.#socket.read(buffer ?? count);
 
 			if (0 === client.#chunk) {
 				client.#line = "";
