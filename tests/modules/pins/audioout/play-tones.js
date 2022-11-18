@@ -47,15 +47,20 @@ const tones = [
 const beat = 1200;
 
 const out = new AudioOut({streams: 2, sampleRate: 12000, numChannels: 1});
-out.callback = function(value) {
-	if (0 === (value & 0xffff)) {
-		out.remain -= 1;
-		if (0 === out.remain)
+out.callbacks = [
+	function(value) {
+		if (value)
+			next(0);
+		else if (0 === --out.remain)
+			$DONE();
+	},
+	function(value) {
+		if (value)
+			next(1);
+		else if (0 === --out.remain)
 			$DONE();
 	}
-	else
-		next(value >> 16);
-}
+];
 out.remain = tones.length;
 
 next(0);
@@ -73,5 +78,5 @@ function next(stream) {
 		out.enqueue(stream, AudioOut.Tone, tone[0], tone[1] * beat);
 	else
 		out.enqueue(stream, AudioOut.Silence, tone[1] * beat);
-	out.enqueue(stream, AudioOut.Callback, tones[stream].length | (stream << 16));
+	out.enqueue(stream, AudioOut.Callback, tones[stream].length);
 }
