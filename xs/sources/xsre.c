@@ -7363,6 +7363,8 @@ void* fxCharSetUnicodeProperty(txPatternParser* parser)
 	}
 	*p = 0;
 	if (c == '=') {
+		if (p == q)
+			fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
 		p++;
 		fxPatternParserNext(parser);
 		c = parser->character;
