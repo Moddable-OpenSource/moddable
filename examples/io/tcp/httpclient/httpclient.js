@@ -90,7 +90,7 @@ class HTTPClient {
 //@@ this may not be always correct... if last chunk has already flushed and onWritable called, this will never go out
 				client.#pendingWrite = ArrayBuffer.fromString("0000\r\n\r\n");
 				client.#requestBody = false;
-				return (client.#writable > 8) ? (client.#writable - 8) : 0 
+				return 0;		// request done. can't write more. 
 			}
 
 			const byteLength = data.byteLength;
@@ -172,6 +172,9 @@ class HTTPClient {
 		this.#socket = undefined;
 		Timer.clear(this.#timer);
 		this.#timer = undefined;
+		this.#current = undefined;
+		this.#requests.length = 0;
+		this.#state = "closed";
 	}
 	request(options) {
 		options = {...options};
@@ -237,8 +240,9 @@ class HTTPClient {
 							this.#remaining = undefined;		// ignore content-length if chunked
 							
 						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers);
-						this.#headers = undefined;
+						if (!this.#current) return;			// closed in callback
 
+						this.#headers = undefined;
 						this.#state = "receiveBody";
 						this.#line = (undefined == this.#chunk) ? undefined : "";
 					}
@@ -346,6 +350,9 @@ class HTTPClient {
 						this.#line = "";
 					}
 					break;
+				
+				case "closed":
+					return;
 			}
 			
 			if (!this.#pendingWrite || !this.#writable)
