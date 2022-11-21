@@ -47,7 +47,7 @@ class HTTPClient {
 					if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
 						throw new Error("invalid buffer");
 					if (ArrayBuffer.isView(buffer))
-						buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+						buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, count);
 					else
 						buffer = new Uint8Array(buffer, 0, count);
 				}
