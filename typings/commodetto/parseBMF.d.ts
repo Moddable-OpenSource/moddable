@@ -27,7 +27,7 @@ declare module "commodetto/parseBMF" {
     ascent: number
     position: number
     charCount: number,
-	bitmap: Bitmap
+    bitmap: Bitmap
   }
     
   export default function (bmp: BufferLike): Font
