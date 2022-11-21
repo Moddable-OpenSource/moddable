@@ -122,12 +122,12 @@ void Tool_readGIF(xsMachine* the)
 	uint8_t byte;
 	uint16_t globalWidth;
 	uint16_t globalHeight;
-	uint8_t backgroundColorIndex;
+//	uint8_t backgroundColorIndex;
 	
 	uint8_t count;
 	
 	uint16_t delay = 0;
-	uint8_t disposalMethod = 0;
+//	uint8_t disposalMethod = 0;
 	uint8_t transparentColorFlag = 0;
 	uint8_t transparentColorIndex = 0;
 	
@@ -159,7 +159,7 @@ void Tool_readGIF(xsMachine* the)
 	globalHeight = pad(globalHeight, 4);
 	
 	byte = BYTE;
-	backgroundColorIndex = BYTE;
+	/* backgroundColorIndex = */ BYTE;
 	bytes++;
 	if (byte & 0x80) {
 		int c = 2 << (byte & 0x07), i;
@@ -189,7 +189,7 @@ void Tool_readGIF(xsMachine* the)
 			if (byte == 0xF9) {
 				bytes++;
 				byte = BYTE;
-				disposalMethod = ((byte & 0x1C) >> 2);
+//				disposalMethod = ((byte & 0x1C) >> 2);
 				transparentColorFlag = byte & 0x01;
 				delay = BYTE;
 				delay += BYTE << 8;
