@@ -898,7 +898,7 @@ export default class extends TOOL {
 				config.links = config.links?.filter(link => nodes.has(link));	// remove broken links
 				if ("link call" === type) {
 					config.timeout = parseFloat(config.timeout || 30) * 1000;		// logic from 60_link.js
-					if (isNaN(timeout))
+					if (isNaN(config.timeout))
 						config.timeout = 30_000;
 				}
 				else if ("return" === config.mode)
