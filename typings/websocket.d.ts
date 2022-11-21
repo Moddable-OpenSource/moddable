@@ -18,9 +18,9 @@
 *
 */
 
-import type {TCPSocketOptions, ListenerOptions} from "socket";
-
 declare module "websocket" {
+  import type {TCPSocketOptions, ListenerOptions} from "socket";
+
   export type WebSocketClientOptions = TCPSocketOptions & {
     path?: string,
     protocol?: string,

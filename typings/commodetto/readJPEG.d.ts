@@ -18,22 +18,22 @@
 *
 */
 
-import Bitmap from "commodetto/Bitmap"
-
 declare module "commodetto/readJPEG" {
+  import Bitmap from "commodetto/Bitmap"
+
   type Block = Bitmap & {
     x: number,
     y: number
   }
 
   class JPEG {
-    constructor(buffer: (BufferLike), options?: {pixelFormat: number})
+    constructor(buffer: (BufferLike), options?: { pixelFormat: number })
 
     read(): Block
     push(buffer: BufferLike): void
 
     readonly ready: boolean
   }
-}
 
-export {JPEG as default};
+  export {JPEG as default};
+}

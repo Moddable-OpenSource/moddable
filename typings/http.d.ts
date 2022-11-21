@@ -18,9 +18,9 @@
 *
 */
 
-import type {TCPSocketOptions, ListenerOptions} from "socket";
-
 declare module "http" {
+  import type {TCPSocketOptions, ListenerOptions} from "socket";
+
   type RequestError = -1;
   type RequestBodyFragment = 0;
   type RequestStatusCode = 1;
@@ -28,6 +28,7 @@ declare module "http" {
   type RequestAllHeaders = 3;
   type RequestResponseFragment = 4;
   type RequestAllResponse = 5;
+
   export type RequestStatus = (
     RequestError |
     RequestBodyFragment |
@@ -37,6 +38,7 @@ declare module "http" {
     RequestResponseFragment |
     RequestAllResponse
   );
+
   export type HTTPRequestOptions = TCPSocketOptions | {
     host?: string,
     address?: string,
@@ -47,6 +49,7 @@ declare module "http" {
     body?: boolean | string | ArrayBuffer,
     response?: typeof String | typeof ArrayBuffer
   }
+
   // TODO: better
   export type HTTPRequestCallback = (message: RequestStatus, val1?: any, val2?: any) => void | number | boolean | string | ArrayBuffer;
 
@@ -59,7 +62,7 @@ declare module "http" {
       until?: number
     ): T extends typeof String ? string : ArrayBuffer;
     callback: HTTPRequestCallback
-    
+
     static readonly requestFragment: RequestBodyFragment;
     static readonly status: RequestStatusCode;
     static readonly header: RequestHeaderReceived;
@@ -94,29 +97,29 @@ declare module "http" {
   export type HTTPServerOptions = ListenerOptions;
   // TODO: better
   export type HTTPServerCallback = (this: Request, message: ServerMessages, val1?: any, val2?: any) => void | number | boolean | string |
-        ArrayBuffer | {status?: number, reason?: string, headers?: string[], body: true | string | ArrayBuffer};
+    ArrayBuffer | { status?: number, reason?: string, headers?: string[], body: true | string | ArrayBuffer };
 
   export class Server {
-      constructor(
-        options?: HTTPServerOptions
-      );
-      close();
-      read(): number;
-      read<T extends typeof String | typeof ArrayBuffer>(
-        type: T,
-        until?: number
-      ): T extends typeof String ? string : ArrayBuffer;
-      callback: HTTPServerCallback
-    
-      static readonly connection: ServerConnection;
-      static readonly status: ServerStatus;
-      static readonly header: ServerHeader;
-      static readonly headersComplete: ServerHeadersComplete;
-      static readonly requestFragment: ServerRequestFragment;
-      static readonly requestComplete: ServerRequestComplete;
-      static readonly prepareResponse: ServerPrepareResponse;
-      static readonly responseFragment: ServerResponseFragment;
-      static readonly responseComplete: ServerResponseComplete;
-      static readonly error: ServerError;
+    constructor(
+      options?: HTTPServerOptions
+    );
+    close(): void;
+    read(): number;
+    read<T extends typeof String | typeof ArrayBuffer>(
+      type: T,
+      until?: number
+    ): T extends typeof String ? string : ArrayBuffer;
+    callback: HTTPServerCallback
+
+    static readonly connection: ServerConnection;
+    static readonly status: ServerStatus;
+    static readonly header: ServerHeader;
+    static readonly headersComplete: ServerHeadersComplete;
+    static readonly requestFragment: ServerRequestFragment;
+    static readonly requestComplete: ServerRequestComplete;
+    static readonly prepareResponse: ServerPrepareResponse;
+    static readonly responseFragment: ServerResponseFragment;
+    static readonly responseComplete: ServerResponseComplete;
+    static readonly error: ServerError;
   }
 }
