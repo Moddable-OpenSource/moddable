@@ -21,6 +21,9 @@
 		"piu/*": [
 			"$(TYPINGS)/piu/*"
 		],
+		"text/*": [
+			"$(TYPINGS)/text/*"
+		],
 		"embedded:provider/*": [
 			"$(TYPINGS)/embedded_provider/*"
 		],
