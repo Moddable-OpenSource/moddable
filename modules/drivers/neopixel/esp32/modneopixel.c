@@ -100,7 +100,7 @@ void xs_neopixel(xsMachine *the)
 	np = c_calloc(sizeof(xsNeoPixelRecord) + ((length - 1) * sizeof(uint32_t)), 1);
 	if (!np)
 		xsUnknownError("no memory");
-	xsmcSetHostData(xsThis, &np->pixels);
+	xsmcSetHostBuffer(xsThis, &np->pixels, length * sizeof(uint32_t));
 
 	px = &np->px;
 	px->pixels = (void *)np->pixels;
@@ -201,7 +201,7 @@ void xs_neopixel_setPixel(xsMachine *the)
 	uint32_t color = xsmcToInteger(xsArg(1));
 
 	if ((index >= np->px.pixel_count) || (index < 0))
-		xsRangeError("invalid");
+		return;
 
 	setPixel(np, (uint16_t)index, color);
 }
@@ -216,10 +216,13 @@ void xs_neopixel_fill(xsMachine *the)
 	if (argc > 1) {
 		index = xsmcToInteger(xsArg(1));
 		if ((index < 0) || (index >= count))
-			xsRangeError("invalid");
+			return;
 
-		if (argc > 2)
+		if (argc > 2) {
 			count = xsmcToInteger(xsArg(2));
+			if (count <= 0)
+				return;
+		}
 
 		if ((index + count) > np->px.pixel_count)
 			count = np->px.pixel_count - index;
