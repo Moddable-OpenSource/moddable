@@ -48,6 +48,10 @@ char _debugStrBuffer[256];
 #endif
 static void fxVReportException(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 
+#if defined(mxInstrument) || defined (mxDebug)	
+static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+#endif
+
 #ifdef mxDebug
 static void fxClearAllBreakpoints(txMachine* the);
 static void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine);
@@ -160,8 +164,6 @@ enum {
 	XS_PATH_ATTRIBUTE,
 	XS_UNKNOWN_ATTRIBUTE
 };
-
-static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 void fxCheck(txMachine* the, txString thePath, txInteger theLine)
 {
@@ -2703,4 +2705,4 @@ void fxSuspendProfiler(txMachine* the)
 	fxSendProfilerTime(the, "suspend", profiler->stop);
 }
 
-#endif /* mxInstruments */
+#endif /* mxInstrument */
