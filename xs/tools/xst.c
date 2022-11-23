@@ -248,6 +248,7 @@ int main(int argc, char* argv[])
 	txAgentCluster* agentCluster = &gxAgentCluster;
 	int argi;
 	int option = 0;
+	int profiling = 0;
 	char path[C_PATH_MAX];
 	char* dot;
 #if mxWindows
@@ -278,6 +279,8 @@ int main(int argc, char* argv[])
 			option = 1;
 		else if (!strcmp(argv[argi], "-m"))
 			option = 2;
+		else if (!strcmp(argv[argi], "-p"))
+			profiling = 1;
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
@@ -325,6 +328,8 @@ int main(int argc, char* argv[])
 		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
  		fxBuildAgent(machine);
+ 		if (profiling)
+			fxStartProfiling(machine);
 		xsBeginHost(machine);
 		{
 			xsVars(2);
@@ -410,6 +415,8 @@ int main(int argc, char* argv[])
 		}
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+ 		if (profiling)
+			fxStopProfiling(machine, C_NULL);
 		if (machine->abortStatus) {
 			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
 			fprintf(stderr, "Error: %s\n", why);
@@ -2039,8 +2046,8 @@ void fxRunModuleFile(txMachine* the, txString path)
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();
-	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
-	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
+	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID, XS_NO_ID);
 	mxRunCount(2);
 	mxPop();
 }

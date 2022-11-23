@@ -59,7 +59,6 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsNumber.c.o \
 	$(LIB_DIR)/xsObject.c.o \
 	$(LIB_DIR)/xsPlatforms.c.o \
-	$(LIB_DIR)/xsProfile.c.o \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \

@@ -1239,7 +1239,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 		#else
 			mxAssert(byte == (txByte)sizeof(txSlot), "snapshot: invalid architecture %d\n", byte);
 		#endif
-		
+	
 			fxReadAtom(the, snapshot, &atom, "SIGN");
 			mxAssert(atom.atomSize == snapshot->signatureLength, "snapshot: invalid signature length %d\n", atom.atomSize);
 			signature = snapshot->signature;
@@ -1253,6 +1253,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			fxReadAtom(the, snapshot, &atom, "CREA");
 			mxThrowIf((*snapshot->read)(snapshot->stream, &creation, sizeof(txCreation)));
 			fxAllocate(the, &creation);
+			mxThrowIf((*snapshot->read)(snapshot->stream, &(the->profileID), sizeof(txID)));
 	
 			snapshot->firstChunk = the->firstBlock->current;
 			snapshot->firstSlot = the->firstHeap;
@@ -2002,11 +2003,12 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		mxThrowIf((*snapshot->write)(snapshot->stream, "SIGN", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, snapshot->signature, snapshot->signatureLength));
 
-		size = 8 + sizeof(txCreation);
+		size = 8 + sizeof(txCreation) + sizeof(txID);
 		size = htonl(size);
 		mxThrowIf((*snapshot->write)(snapshot->stream, &size, 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, "CREA", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, &creation, sizeof(txCreation)));
+		mxThrowIf((*snapshot->write)(snapshot->stream, &(the->profileID), sizeof(txID)));
 
 		size = 8 + chunkSize;
 		size = htonl(size);

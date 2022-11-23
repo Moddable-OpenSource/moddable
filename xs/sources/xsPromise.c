@@ -73,13 +73,13 @@ void fxBuildPromise(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_resolve), 1, mxID(_resolve), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	mxPop();
-	fxNewHostFunction(the, mxCallback(fxOnRejectedPromise), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxOnRejectedPromise), 1, XS_NO_ID, XS_NO_ID);
 	mxOnRejectedPromiseFunction = *the->stack;
 	mxPop();
-	fxNewHostFunction(the, mxCallback(fxOnResolvedPromise), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxOnResolvedPromise), 1, XS_NO_ID, XS_NO_ID);
 	mxOnResolvedPromiseFunction = *the->stack;
 	mxPop();
-	fxNewHostFunction(the, mxCallback(fxOnThenable), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxOnThenable), 1, XS_NO_ID, XS_NO_ID);
 	mxOnThenableFunction = *the->stack;
 	mxPop();
 }
@@ -141,7 +141,7 @@ txSlot* fxNewPromiseCapability(txMachine* the, txSlot* resolveFunction, txSlot* 
 	txSlot* slot;
 	txSlot* function;
 	mxNew();
-	resolveFunction->value.reference = fxNewHostFunction(the, fxNewPromiseCapabilityCallback, 2, XS_NO_ID);
+	resolveFunction->value.reference = fxNewHostFunction(the, fxNewPromiseCapabilityCallback, 2, XS_NO_ID, mxNewPromiseCapabilityCallbackProfileID);
 	resolveFunction->kind = XS_REFERENCE_KIND;
     mxRunCount(1);
     capability = resolveFunction->value.reference;
@@ -440,7 +440,7 @@ txSlot* fxNewCombinePromisesFunction(txMachine* the, txInteger which, txSlot* al
 	txSlot* result;
 	txSlot* instance;
 	txSlot* property;
-	result = fxNewHostFunction(the, fxCombinePromisesCallback, 1, XS_NO_ID);
+	result = fxNewHostFunction(the, fxCombinePromisesCallback, 1, XS_NO_ID, mxCombinePromisesCallbackProfileID);
 	instance = fxNewInstance(the);
 	property = fxNextIntegerProperty(the, instance, which, XS_NO_ID, XS_NO_FLAG);
 	property = property->next = fxNewSlot(the);
@@ -612,8 +612,8 @@ void fxPushPromiseFunctions(txMachine* the, txSlot* promise)
 	txSlot* reject;
 	txSlot* object;
 	txSlot* slot;
-	resolve = fxNewHostFunction(the, fxResolvePromise, 1, XS_NO_ID);
-	reject = fxNewHostFunction(the, fxRejectPromise, 1, XS_NO_ID);
+	resolve = fxNewHostFunction(the, fxResolvePromise, 1, XS_NO_ID, mxResolvePromiseProfileID);
+	reject = fxNewHostFunction(the, fxRejectPromise, 1, XS_NO_ID, mxRejectPromiseProfileID);
 	slot = object = fxNewInstance(the);
 	slot = object->next = fxNewSlot(the);
 	slot->kind = XS_BOOLEAN_KIND;
@@ -960,7 +960,7 @@ void fx_Promise_prototype_finally(txMachine* the)
 	mxCall();
 	if (mxArgc > 0) {
 		if (mxIsReference(mxArgv(0)) && mxIsCallable(mxArgv(0)->value.reference)) {
-			txSlot* function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID);
+			txSlot* function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID, mx_Promise_prototype_finallyAuxProfileID);
 			txSlot* object = fxNewInstance(the);
 			txSlot* slot = object->next = fxNewSlot(the);
 			slot->kind = XS_REFERENCE_KIND;
@@ -975,7 +975,7 @@ void fx_Promise_prototype_finally(txMachine* the)
 			slot->value.home.object = object;
 			mxPop();
 			
-			function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID);
+			function = fxNewHostFunction(the, fx_Promise_prototype_finallyAux, 1, XS_NO_ID, mx_Promise_prototype_finallyAuxProfileID);
 			object = fxNewInstance(the);
 			slot = object->next = fxNewSlot(the);
 			slot->kind = XS_REFERENCE_KIND;
@@ -1045,9 +1045,9 @@ void fx_Promise_prototype_finallyAux(txMachine* the)
 	mxCall();
 	
 	if (success->value.boolean)
-		function = fxNewHostFunction(the, fx_Promise_prototype_finallyReturn, 0, XS_NO_ID);
+		function = fxNewHostFunction(the, fx_Promise_prototype_finallyReturn, 0, XS_NO_ID, mx_Promise_prototype_finallyReturnProfileID);
 	else
-		function = fxNewHostFunction(the, fx_Promise_prototype_finallyThrow, 0, XS_NO_ID);
+		function = fxNewHostFunction(the, fx_Promise_prototype_finallyThrow, 0, XS_NO_ID, mx_Promise_prototype_finallyThrowProfileID);
 	object = fxNewInstance(the);
 	slot = object->next = fxNewSlot(the);
 	slot->kind = mxArgv(0)->kind;

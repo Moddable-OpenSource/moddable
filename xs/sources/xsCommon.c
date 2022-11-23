@@ -277,7 +277,8 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_VOID */ "void",
 	/* XS_CODE_WITH */ "with",
 	/* XS_CODE_WITHOUT */ "without",
-	/* XS_CODE_YIELD */ "yield"
+	/* XS_CODE_YIELD */ "yield",
+	/* XS_CODE_PROFILE */ "profile"
 };
 
 const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
@@ -516,7 +517,12 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_VOID */,
 	1 /* XS_CODE_WITH */,
 	1 /* XS_CODE_WITHOUT */,
-	1 /* XS_CODE_YIELD */
+	1 /* XS_CODE_YIELD */,
+#ifdef mx32bitID
+	5 /* XS_CODE_PROFILE */
+#else
+	3 /* XS_CODE_PROFILE */
+#endif
 };
 
 #if mxUseDefaultCStackLimit
@@ -537,15 +543,18 @@ char* fxCStackLimit()
    		size_t stackSize = pthread_get_stacksize_np(self);
 		return (char*)stackAddr - stackSize + (128 * 1024) + mxASANStackMargin;
 	#elif mxLinux
+		char* result = C_NULL;
 		pthread_attr_t attrs;
+		pthread_attr_init(&attrs);
 		if (pthread_getattr_np(pthread_self(), &attrs) == 0) {
     		void* stackAddr;
    			size_t stackSize;
 			if (pthread_attr_getstack(&attrs, &stackAddr, &stackSize) == 0) {
-				return (char*)stackAddr + (128 * 1024) + mxASANStackMargin;
+				result = (char*)stackAddr + (128 * 1024) + mxASANStackMargin;
 			}
 		}
-		return C_NULL;
+		pthread_attr_destroy(&attrs);
+		return result;
 	#else
 		return C_NULL;
 	#endif

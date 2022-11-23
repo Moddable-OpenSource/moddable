@@ -796,6 +796,16 @@ void fxStatementNodeHoist(void* it, void* param)
 	fxNodeDispatchHoist(self->expression, param);
 }
 
+void fxPropertyNodeHoist(void* it, void* param) 
+{
+	txPropertyNode* self = it;
+	if (self->value) {
+		if (self->value->description->token == XS_TOKEN_HOST)
+			((txHostNode*)(self->value))->symbol = self->symbol;
+		fxNodeDispatchHoist(self->value, param);
+	}
+}
+
 void fxStringNodeHoist(void* it, void* param)
 {
 	txStringNode* self = it;

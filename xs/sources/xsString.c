@@ -89,20 +89,29 @@ const txBehavior ICACHE_FLASH_ATTR gxStringBehavior = {
 
 void fxBuildString(txMachine* the)
 {
+	txSlot* instance;
+	txSlot* property;
 	txSlot* slot;
 	
-	fxNewHostFunction(the, mxCallback(fxStringAccessorGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxStringAccessorSetter), 1, XS_NO_ID);
+	mxPush(mxObjectPrototype);
+	instance = fxNewStringInstance(the);
+	
+	fxNewHostFunction(the, mxCallback(fxStringAccessorGetter), 0, XS_NO_ID, XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
+	fxNewHostFunction(the, mxCallback(fxStringAccessorSetter), 1, XS_NO_ID, XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
 	the->stack->value.accessor.getter = (the->stack + 2)->value.reference;
 	the->stack->value.accessor.setter = (the->stack + 1)->value.reference;
 	mxPull(mxStringAccessor);
-	the->stack += 2;
+	mxPop();
+	mxPop();
 	
-	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewStringInstance(the));
+	slot = fxLastProperty(the, instance);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_charAt), 1, mxID(_charAt), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_charCodeAt), 1, mxID(_charCodeAt), XS_DONT_ENUM_FLAG);

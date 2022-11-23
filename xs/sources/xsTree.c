@@ -1234,7 +1234,7 @@ static const txNodeDispatch gxProgramNodeDispatch ICACHE_FLASH_ATTR = {
 static const txNodeDispatch gxPropertyNodeDispatch ICACHE_FLASH_ATTR = {
 	fxPropertyNodeDistribute,
 	fxNodeBind,
-	fxNodeHoist,
+	fxPropertyNodeHoist,
 	fxNodeCode,
 	fxNodeCodeAssign,
 	fxNodeCodeDelete,

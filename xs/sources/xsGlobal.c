@@ -157,7 +157,7 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostConstructor(the, mxCallback(fx_Enumerator), 0, XS_NO_ID);
 	mxPull(mxEnumeratorFunction);
 	
-	fxNewHostFunction(the, mxCallback(fxThrowTypeError), 0, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxThrowTypeError), 0, XS_NO_ID, XS_NO_ID);
 	mxThrowTypeErrorFunction = *the->stack;
 	slot = the->stack->value.reference;
 	slot->flag |= XS_DONT_PATCH_FLAG;
