@@ -431,6 +431,10 @@ gboolean PiuDebugMachineCallback(GSocket *socket, GIOCondition condition, gpoint
 		{
 			xsVars(4);
 			PiuDebugMachineParse(self, self->buffer, length);
+			
+			xsResult = xsGet(xsGlobal, xsID_application);
+			PiuApplication* application = PIU(Application, xsResult);
+			PiuApplicationAdjust(application);
 		}
 		xsEndHost();
 	}
@@ -484,6 +488,10 @@ LRESULT CALLBACK PiuDebugMachineWindowProc(HWND window, UINT message, WPARAM wPa
 				{
 					xsVars(4);
 					PiuDebugMachineParse(self, self->buffer, length);
+					
+					xsResult = xsGet(xsGlobal, xsID_application);
+					PiuApplication* application = PIU(Application, xsResult);
+					PiuApplicationAdjust(application);
 				}
 				xsEndHost(self->the);
 				return TRUE;
