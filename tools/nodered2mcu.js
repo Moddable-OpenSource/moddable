@@ -985,8 +985,16 @@ export default class extends TOOL {
 			case "mqtt out": {
 				if ("" === config.topic)
 					delete config.topic;
-				config.retain = (true === config.retain) || ("true" === config.retain);
-				config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
+
+				if ("" === config.retain)
+					delete config.retain;
+				else
+					config.retain = (true === config.retain) || ("true" === config.retain);
+
+				if ("" === config.qos)
+					delete config.qos;
+				else
+					config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
 			} break;
 
 			case "rpi-gpio in": {
@@ -1007,6 +1015,24 @@ export default class extends TOOL {
 					delete config.level;
 			} break;
 			
+			case "rpi-neopixels": {	// from node-red-nodes/hardware/neopixel/neopixel.js 
+				config.pixels = parseInt(config.pixels || 1);
+				config.bgnd = config.bgnd || "0,0,0";
+				config.fgnd = config.fgnd || "128,128,128";
+				config.mode = config.mode || "pcent";
+				config.rgb = config.rgb || "rgb";
+				config.gamma = config.gamma;
+				if (config.gamma === undefined) { config.gamma = true; }
+				config.gpio = config.gpio || 18;
+				config.channel = 0;
+				if (config.gpio == 13 || config.gpio == 19) { config.channel = 1; }
+				config.brightness = Number(config.brightness || 100);
+				config.wipe = Number(config.wipe || 40);
+				if (config.wipe < 0) { config.wipe = 0; }
+				if (config.brightness < 0) { config.brightness = 0; }
+				if (config.brightness > 100) { config.brightness = 100; }
+			} break;
+
 			case "random": {
 				let low = config.low ? Number(config.low) : undefined;
 				let high = config.high ? Number(config.high) : undefined;
