@@ -330,7 +330,10 @@ void PiuScrollerReveal(PiuScroller* self, PiuRectangle bounds, xsBooleanValue ce
 	min = 0;
 	max = (*self)->bounds.height;
 	if (centerVertically) {
-		y = (start + stop - max) / 2;
+		if ((stop > max) || (start < min))
+			y = (start + stop - max) / 2;
+		else
+			y = 0;
 	}
 	else {
 		if (stop > max) {
@@ -349,7 +352,10 @@ void PiuScrollerReveal(PiuScroller* self, PiuRectangle bounds, xsBooleanValue ce
 	min = 0;
 	max = (*self)->bounds.width;
 	if (centerHorizontally) {
-		x = (start + stop - max) / 2;
+		if ((stop > max) || (start < min))
+			x = (start + stop - max) / 2;
+		else
+			x = 0;
 	}
 	else {
 		if (stop > max) {
