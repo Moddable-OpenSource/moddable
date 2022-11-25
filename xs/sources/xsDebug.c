@@ -2428,7 +2428,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 #endif
 }
 
-#if defined(modMicrosecondsInstrumented) || defined(modMicroseconds)
+#if defined(modMicrosecondsInstrumentation) || defined(modMicroseconds)
 	typedef txU4 txMicroseconds;
 #else
 	typedef txU8 txMicroseconds;
@@ -2440,7 +2440,7 @@ typedef struct sxProfiler txProfiler;
 struct sxProfiler {
 	txMicroseconds when;
 	txMicroseconds former;
-	txMicroseconds start;
+//	txMicroseconds start;
 	txMicroseconds stop;
 	txU4 interval;
 	txSize recordCount;
@@ -2583,7 +2583,7 @@ txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
 
 txMicroseconds fxGetMicroSeconds()
 {
-#if defined(modMicrosecondsInstrumented)
+#if defined(modMicrosecondsInstrumentation)
 	return modMicrosecondsInstrumentation();
 #elif defined(modMicroseconds)
 	return modMicroseconds();
