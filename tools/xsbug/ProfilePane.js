@@ -614,14 +614,22 @@ var ProfileRecordRow = Row.template(function($) { return {
 	],
 }});
 
+function toDurationString(duration) {
+	duration = Math.round((duration / 1000));
+	if (duration < 60000)
+		return duration + " ms";
+	duration = Math.round((duration / 1000));
+	return duration + " s";
+}
+
 var ProfileDurationContainers = {
 	callees: Container.template(function($) { return {
 		width:100, height:rowHeight,
 		contents: [
 			Content($, { left:0, right:0, height:2, bottom:1, skin:skins.profilePercent }),
 			Content($, { right:0, width:Math.round((100 * $.record.propagation) / $.total), height:2, bottom:1, skin:skins.profilePercent, state:1 }),
-			Label($, { left:0, width:50, top:0, bottom:3, style:styles.profileLight, string:Math.round(($.record.duration / 1000)) + " ms" }),
-			Label($, { left:50, width:50, top:0, bottom:4, style:styles.profileNormal, string:Math.round(($.record.propagation / 1000)) + " ms" }),
+			Label($, { left:0, width:50, top:0, bottom:3, style:styles.profileLight, string:toDurationString($.record.duration) }),
+			Label($, { left:50, width:50, top:0, bottom:4, style:styles.profileNormal, string:toDurationString($.record.propagation) }),
 		],
 	}}),
 	callers: Container.template(function($) { return {
@@ -629,8 +637,8 @@ var ProfileDurationContainers = {
 		contents: [
 			Content($, { left:0, right:0, height:2, bottom:1, skin:skins.profilePercent }),
 			Content($, { left:0, width:Math.round((100 * $.record.duration) / $.total), height:2, bottom:1, skin:skins.profilePercent, state:1 }),
-			Label($, { left:0, width:50, top:0, bottom:4, style:styles.profileNormal, string:Math.round(($.record.duration / 1000)) + " ms" }),
-			Label($, { left:50, width:50, top:0, bottom:3, style:styles.profileLight, string:Math.round(($.record.propagation / 1000)) + " ms" }),
+			Label($, { left:0, width:50, top:0, bottom:4, style:styles.profileNormal, string:toDurationString($.record.duration) }),
+			Label($, { left:50, width:50, top:0, bottom:3, style:styles.profileLight, string:toDurationString($.record.propagation) }),
 		],
 	}})
 };
