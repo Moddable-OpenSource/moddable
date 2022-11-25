@@ -977,6 +977,17 @@ export default class extends TOOL {
 				else
 					delete config.headers;
 			} break;
+		
+			case "mqtt in": {
+				config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
+			} break;
+
+			case "mqtt out": {
+				if ("" === config.topic)
+					delete config.topic;
+				config.retain = (true === config.retain) || ("true" === config.retain);
+				config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
+			} break;
 
 			case "rpi-gpio in": {
 				config.pin = parseInt(config.pin);
