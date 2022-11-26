@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -192,6 +192,23 @@ void xs_neopixel_close(xsMachine *the)
 	if (!np) return;
 	xs_neopixel_destructor(np);
 	xsmcSetHostData(xsThis, NULL);
+}
+
+void xs_neopixel_getPixel(xsMachine *the)
+{
+	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
+	int index = xsmcToInteger(xsArg(0));
+
+	if ((index >= np->px.pixel_count) || (index < 0))
+		return;
+
+	if (24 == np->px.nbits) {
+		uint8_t *p = (index * 3) + (uint8_t *)np->pixels;
+		int color = (p[0] << 16) | (p[1] << 8) | p[2];
+		xsmcSetInteger(xsResult, color);
+	}
+	else
+		xsmcSetInteger(xsResult, np->pixels[index]);
 }
 
 void xs_neopixel_setPixel(xsMachine *the)
