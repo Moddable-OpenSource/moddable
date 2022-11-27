@@ -21,8 +21,8 @@
 declare module "text/encoder" {
 
     interface TextEncoderEncodeIntoResult {
-        read?: number;
-        written?: number;
+        read: number;
+        written: number;
     }
     interface TextEncoder {
         encode(input: string | number): Uint8Array;
