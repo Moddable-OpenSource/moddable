@@ -1,6 +1,6 @@
 # Files
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: August 10, 2022
+Revised: November 28, 2022
 
 ## Table of Contents
 
@@ -597,7 +597,7 @@ if (Resource.exists(path))
 
 ***
 
-### `slice(begin[, end])`
+### `slice(begin[[, end], copy])`
 
 The `slice` function returns a portion of the resource in an `ArrayBuffer`. The default value of `end` is the resource size.
 
@@ -606,6 +606,8 @@ let resource = new Resource("table.dat");
 let buffer1 = resource.slice(5);		// Get a buffer starting from offset 5
 let buffer2 = resource.slice(0, 10);	// Get a buffer of the first 10 bytes
 ```
+
+The optional `copy` argument defaults to `true`. If it is set to `false`, the return value is a read-only `HostBuffer` that references the original resource data. This option is useful for creating a reference to a portion of the resource data without copying it to RAM.
 
 ***
 
