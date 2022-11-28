@@ -102,15 +102,21 @@ void modSPIInit(modSPIConfiguration config)
 
 	if (!gSPIInited++) {
 
-		gPrevHz = 64000000;
-//		spi_init(config->spi_inst, config->hz);
-		spi_init(config->spi_inst, 64000000);
+		gPrevHz = config->hz;
+		spi_init(config->spi_inst, config->hz);
+//		spi_init(config->spi_inst, 64000000);
 		configSPI(config);
 
-		if (-1 != MODDEF_SPI_MISO_PIN)
-			gpio_set_function(MODDEF_SPI_MISO_PIN, GPIO_FUNC_SPI);
-		gpio_set_function(MODDEF_SPI_MOSI_PIN, GPIO_FUNC_SPI);
-		gpio_set_function(MODDEF_SPI_SCK_PIN, GPIO_FUNC_SPI);
+		config->clock_pin = (254 == config->clock_pin) ? MODDEF_SPI_SCK_PIN : config->clock_pin;
+		config->mosi_pin = (254 == config->mosi_pin) ? MODDEF_SPI_MOSI_PIN : config->mosi_pin;
+		config->miso_pin = (254 == config->miso_pin) ? MODDEF_SPI_MISO_PIN : config->miso_pin;
+
+		if (0xff != config->clock_pin)
+			gpio_set_function(config->clock_pin, GPIO_FUNC_SPI);
+		if (0xff != config->mosi_pin)
+			gpio_set_function(config->mosi_pin, GPIO_FUNC_SPI);
+		if (0xff != config->miso_pin)
+			gpio_set_function(config->miso_pin, GPIO_FUNC_SPI);
 
 		gSPITxBuffer = c_malloc(MODDEF_SPI_BUFFERSIZE);
 		gSPIInited = true;
@@ -407,11 +413,6 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 	}
 
 	ret = spi_write_read_blocking(config->spi_inst, data, (uint8_t*)gSPITxBuffer, count);
-	if (ret != count) {
-		xsBeginHost(config->the);
-		xsTraceLeft("spiTxRx - strange return", "spi");
-		xsEndHost(config->the);
-	}
 
 	c_memcpy(data, gSPITxBuffer, count);
 }

@@ -4,6 +4,7 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json"
 	],
 	"platforms": {
 		"esp": {
@@ -14,6 +15,9 @@
 		},
 		"nrf52": {
 			"include": "./manifests/nrf52/manifest.json"
+		},
+		"pico": {
+			"include": "./manifests/pico/manifest.json"
 		},
 		"mac": {
 			"include": "./manifests/mac/manifest.json"

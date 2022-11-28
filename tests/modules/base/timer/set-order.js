@@ -16,11 +16,11 @@ for (let i = goal.length - 1; i >= 0; i--)
 	Timer.set(() => reverse.push(goal[i]), goal[i]);
 
 Timer.set($DO(() => {
-	assert.sameValue(forward.length, goal.length);
-	assert.sameValue(reverse.length, goal.length);
+	assert.sameValue(forward.length, goal.length, "forward length");
+	assert.sameValue(reverse.length, goal.length, "reverse length");
 
 	for (let i =  0; i < goal.length; i++) {
-		assert.sameValue(forward[i], goal[i]);
-		assert.sameValue(reverse[i], goal[i]);
+		assert.sameValue(forward[i], goal[i], `forward[${i}]`);
+		assert.sameValue(reverse[i], goal[i], `reverse[${i}]`);
 	}
-}), 20);
+}), 25);

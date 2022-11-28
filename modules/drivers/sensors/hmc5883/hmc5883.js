@@ -90,7 +90,7 @@ class HMC5883 {
 		this.#onError = options.onError;
 
 		const ID = new Uint8Array(3);
-		io.readBlock(Register.ID_A, ID);
+		io.readBuffer(Register.ID_A, ID);
 		if (ID[0] !== 72 || ID[1] !== 52 || ID[2] !== 51) {
 			this.#onError("unexpected sensor");
 			this.close();
@@ -109,9 +109,9 @@ class HMC5883 {
 		}
 
 		// reset to defaults
-		io.writeByte(Register.CONFIG_A, 0b0001_0000);
-		io.writeByte(Register.CONFIG_B, 0b0010_0000);
-		io.writeByte(Register.MODE, 0b0000_0001);
+		io.writeUint8(Register.CONFIG_A, 0b0001_0000);
+		io.writeUint8(Register.CONFIG_B, 0b0010_0000);
+		io.writeUint8(Register.MODE, 0b0000_0001);
 	}
 
 	configure(options) {
@@ -128,14 +128,14 @@ class HMC5883 {
 				default: this.#averaging = 0; break;
 			}
 
-		io.writeByte(Register.CONFIG_A, this.#averaging | this.#rate << 2);
+		io.writeUint8(Register.CONFIG_A, this.#averaging | this.#rate << 2);
 
 		if (undefined !== options.mode)
-			io.writeByte(Register.MODE, options.mode & 0b11);
+			io.writeUint8(Register.MODE, options.mode & 0b11);
 
 		if (undefined !== options.gain) {
 			this.#gain = options.gain & 0b111;
-			io.writeByte(Register.CONFIG_B, this.#gain << 5);
+			io.writeUint8(Register.CONFIG_B, this.#gain << 5);
 		}
 
 		switch (this.#gain) {
@@ -181,7 +181,7 @@ class HMC5883 {
 		let ret = {};
 
 		// data registers configured in XZY order
-		io.readBlock(Register.DATA_X_MSB, vBuf);
+		io.readBuffer(Register.DATA_X_MSB, vBuf);
 		ret.x = this.#twoC16(vBuf[0], vBuf[1]) / this.#gauss_xy * 0.1;
 		ret.z = this.#twoC16(vBuf[1], vBuf[3]) / this.#gauss_z * 0.1;
 		ret.y = this.#twoC16(vBuf[4], vBuf[5]) / this.#gauss_xy * 0.1;

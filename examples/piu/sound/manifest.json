@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json"
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/pins/i2s/manifest.json"
 	],
 	"config": {
 		"rotation": 90,
@@ -10,9 +11,6 @@
 	"modules": {
 		"*": [
 			"./main"
-		],
-		"pins/*": [
-			"$(MODULES)/pins/i2s/*"
 		],
 		"piu/Sound": [
 			"$(MODULES)/piu/MC/piuSound"

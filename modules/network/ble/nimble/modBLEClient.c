@@ -204,7 +204,8 @@ void xs_ble_client_destructor(void *data)
 		if (kBLEConnectionTypeClient == connection->type) {
 			xsMachine *the = connection->the;
 			ble_gap_terminate(connection->id, BLE_ERR_REM_USER_CONN_TERM);
-			xsForget(connection->objConnection);
+			if (the)
+				xsForget(connection->objConnection);
 			modBLEConnectionRemove(connection);
 		}
 		connection = next;
@@ -760,6 +761,9 @@ bail:
 static void disconnectEvent(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	struct ble_gap_conn_desc *desc = (struct ble_gap_conn_desc *)message;
+	if (!gBLE)
+		return;
+
 	xsBeginHost(gBLE->the);
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(desc->conn_handle);
 	

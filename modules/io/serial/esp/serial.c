@@ -222,22 +222,40 @@ void xs_serial_set_format(xsMachine *the)
 void xs_serial_read(xsMachine *the)
 {
 	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
-	int count;
+	int available;
 
-	count = getBytesReadable();
-	if (0 == count)
+	available = getBytesReadable();
+	if (0 == available)
 		return;
 
 	if (kIOFormatNumber == serial->format)
 		xsmcSetInteger(xsResult, USF(UART_NR));
 	else {
 		uint8_t *buffer;
-		int requested = xsmcArgc ? xsmcToInteger(xsArg(0)) : 0x7FFFFFFF;
-		if (requested > count)
-			requested = count;
+		int requested;
+		xsUnsignedValue byteLength;
+		uint8_t allocate = 1;
+		
+		if (0 == xsmcArgc)
+			requested = available;
+		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+			xsResult = xsArg(0);
+			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
+			requested = (int)byteLength;
+			if (requested > available)
+				requested = available;
+			allocate = 0;
+			xsmcSetInteger(xsResult, requested);
+		}
+		else
+			requested = xsmcToInteger(xsArg(0));
 
-		xsmcSetArrayBuffer(xsResult, NULL, requested);
-		buffer = xsmcToArrayBuffer(xsResult);
+		if (requested <= 0) 
+			xsUnknownError("invalid");
+
+		if (allocate)
+			buffer = xsmcSetArrayBuffer(xsResult, NULL, requested);
+
 		while (requested--)
 			*buffer++ = USF(UART_NR);
 	}

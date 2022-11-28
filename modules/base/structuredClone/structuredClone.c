@@ -349,10 +349,7 @@ void fx_structuredCloneInstance(txMachine* the, tx_structuredCloneList* list)
 			fx_structuredCloneThrow(the, list, "globalThis");
 			break;
 		case XS_HOST_KIND: 
-			if (from->next->kind != XS_BUFFER_INFO_KIND)
-				fx_structuredCloneThrow(the, list, "host object");
-		
-			if (from->value.host.variant.destructor != fxReleaseSharedChunk)
+			if ((from->next == C_NULL) || (from->next->kind != XS_BUFFER_INFO_KIND) || (from->value.host.variant.destructor != fxReleaseSharedChunk))
 				fx_structuredCloneThrow(the, list, "host object");
 			to = to->next = fxDuplicateSlot(the, from);
 			to->value.host.data = fxRetainSharedChunk(from->value.host.data);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -24,6 +24,8 @@ XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2>
 PICO_ROOT ?= $(HOME)/pico
 PICO_SDK_DIR ?= $(HOME)/pico/pico-sdk
 PICO_GCC_ROOT ?= /usr/local
+
+PIOASM ?= $(HOME)/pico/pico-sdk/build/pioasm/pioasm
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/pico
 
@@ -84,16 +86,6 @@ endif
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
-
-ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/pico/debug/lib
-else
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/pico/instrument/lib
-	else
-		LIB_DIR = $(BUILD_DIR)/tmp/pico/release/lib
-	endif
-endif
 
 ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs 8
@@ -275,9 +267,10 @@ LDFLAGS += \
 
 
 LIB_FILES += \
-	-lc -lnosys -lm \
+	-lc -lnosys -lm 
 
 INC_DIRS = \
+	$(TMP_DIR)	\
 	$(PICO_SDK_DIR)/src/common/pico_stdlib/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_adc/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio/include	\
@@ -302,6 +295,8 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_malloc/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_clocks/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_resets/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_watchdog/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_xosc/include	\
@@ -335,6 +330,15 @@ INC_DIRS = \
 
 #	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
 
+ifeq ($(USE_WIFI),1)
+INC_DIRS += \
+	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/cyw43_driver \
+	$(PICO_SDK_DIR)/src/rp2_common/pico_lwip/include \
+	$(PICO_SDK_DIR)/lib/cyw43-driver/src	\
+	$(PICO_SDK_DIR)/lib/cyw43-driver/firmware	\
+	$(PICO_SDK_DIR)/lib/lwip/src/include
+endif
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHosts.c.o \
@@ -402,6 +406,8 @@ HEADERS += $(XS_HEADERS)
 
 PICO_OBJ = \
 	$(LIB_DIR)/stdlib.c.o \
+	$(LIB_DIR)/dma.c.o	\
+	$(LIB_DIR)/pio.c.o	\
 	$(LIB_DIR)/adc.c.o \
 	$(LIB_DIR)/gpio.c.o \
 	$(LIB_DIR)/i2c.c.o \
@@ -460,6 +466,7 @@ PICO_OBJ = \
 	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o \
  	$(LIB_DIR)/hardware_divider.S.o \
 	$(LIB_DIR)/pico_divider.S.o \
+ 	$(LIB_DIR)/uart.c.o \
  	$(LIB_DIR)/unique_id.c.o
 
 #	$(LIB_DIR)/divider.S.o \
@@ -467,8 +474,74 @@ PICO_OBJ = \
 #	$(LIB_DIR)/msc_device.c.o \
 #	$(LIB_DIR)/stdio_uart.c.o \
 
+ifeq ($(USE_WIFI),1)
+LWIP_OBJ = \
+	$(LIB_DIR)/cyw43_lwip.c.o	\
+	$(LIB_DIR)/def.c.o	\
+	$(LIB_DIR)/dns.c.o	\
+	$(LIB_DIR)/init.c.o	\
+	$(LIB_DIR)/inet_chksum.c.o	\
+	$(LIB_DIR)/ip.c.o	\
+	$(LIB_DIR)/mem.c.o	\
+	$(LIB_DIR)/memp.c.o	\
+	$(LIB_DIR)/netif.c.o	\
+	$(LIB_DIR)/pbuf.c.o	\
+	$(LIB_DIR)/raw.c.o	\
+	$(LIB_DIR)/stats.c.o	\
+	$(LIB_DIR)/sys.c.o	\
+	$(LIB_DIR)/altcp.c.o	\
+	$(LIB_DIR)/altcp_alloc.c.o	\
+	$(LIB_DIR)/altcp_tcp.c.o	\
+	$(LIB_DIR)/tcp.c.o	\
+	$(LIB_DIR)/tcp_in.c.o	\
+	$(LIB_DIR)/tcp_out.c.o	\
+	$(LIB_DIR)/udp.c.o	\
+	$(LIB_DIR)/random.c.o	\
+	$(LIB_DIR)/acd.c.o	\
+	$(LIB_DIR)/autoip.c.o	\
+	$(LIB_DIR)/dhcp.c.o	\
+	$(LIB_DIR)/etharp.c.o	\
+	$(LIB_DIR)/icmp.c.o	\
+	$(LIB_DIR)/igmp.c.o	\
+	$(LIB_DIR)/ip4_frag.c.o	\
+	$(LIB_DIR)/ip4.c.o	\
+	$(LIB_DIR)/ip4_addr.c.o	\
+	$(LIB_DIR)/api_lib.c.o	\
+	$(LIB_DIR)/api_msg.c.o	\
+	$(LIB_DIR)/err.c.o	\
+	$(LIB_DIR)/if_api.c.o	\
+	$(LIB_DIR)/netbuf.c.o	\
+	$(LIB_DIR)/netdb.c.o	\
+	$(LIB_DIR)/netifapi.c.o	\
+	$(LIB_DIR)/sockets.c.o	\
+	$(LIB_DIR)/tcpip.c.o	\
+	$(LIB_DIR)/ethernet.c.o	\
+	$(LIB_DIR)/bridgeif.c.o	\
+	$(LIB_DIR)/bridgeif_fdb.c.o	\
+	$(LIB_DIR)/slipif.c.o	\
+	$(LIB_DIR)/zepif.c.o	\
+	$(LIB_DIR)/timeouts.c.o	\
+	$(LIB_DIR)/cyw43_resource.o
+
+PICO_OBJ += \
+	$(LWIP_OBJ)	\
+	$(LIB_DIR)/cyw43_arch.c.o	\
+	$(LIB_DIR)/cyw43_bus_pio_spi.c.o	\
+	$(LIB_DIR)/cyw43_ctrl.c.o	\
+	$(LIB_DIR)/cyw43_ll.c.o	\
+	$(LIB_DIR)/cyw43_stats.c.o	\
+	$(LIB_DIR)/nosys.c.o	\
+	$(LIB_DIR)/cyw43_arch_poll.c.o
+
+
+#	$(LIB_DIR)/cyw43_arch_threadsafe_background.c.o
+
+endif
+
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdlib			\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma			\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_adc			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm			\
@@ -513,6 +586,30 @@ PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id
 
+ifeq ($(USE_WIFI),1)
+PICO_SRC_DIRS += \
+	$(PICO_SDK_DIR)/lib/cyw43-driver/src				\
+	$(PICO_SDK_DIR)/lib/cyw43-driver					\
+	$(PICO_SDK_DIR)/lib/lwip/src/core					\
+	$(PICO_SDK_DIR)/lib/lwip/src/core/ipv4				\
+	$(PICO_SDK_DIR)/lib/lwip/src/api					\
+	$(PICO_SDK_DIR)/lib/lwip/src/netif					\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_lwip			\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch		\
+	$(PICO_SDK_DIR)/src/rp2_common/cyw43_driver			\
+
+PIO_STUFF += \
+	$(TMP_DIR)/cyw43_bus_pio_spi.pio.h
+
+
+endif
+
+PIO_STUFF += \
+	$(TMP_DIR)/ws2812.pio.h
+
+PICO_SRC_DIRS += \
+	$(BUILD_DIR)/devices/pico/pio  \
+
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/msc			\
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/dfu			\
 #	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart		\
@@ -530,7 +627,8 @@ OBJECTS += \
 	$(PICO_OBJ)
 
 OTHER_STUFF += \
-	env_vars
+	env_vars	\
+	pio_stuff
 
 
 TOOLS_BIN = $(PICO_GCC_ROOT)/bin
@@ -604,7 +702,6 @@ PICO_C_DEFINES= \
 	-DLIB_PICO_TIME=1	\
 	-DLIB_PICO_UNIQUE_ID=1	\
 	-DLIB_PICO_UTIL=1	\
-	-DPICO_BOARD=\"pico\"	\
 	-DPICO_BUILD=1	\
 	-DPICO_COPY_TO_RAM=0	\
 	-DPICO_CXX_ENABLE_EXCEPTIONS=0	\
@@ -615,8 +712,21 @@ PICO_C_DEFINES= \
 	-DPICO_TARGET_NAME=\"$(NAME)\"	\
 	-DPICO_USE_BLOCKED_RAM=0
 
-#	-DPICO_STDIO_UART=1	\
-#	-DPICO_BOOT2_NAME=\"boot_w25q080\"	\
+ifeq ($(USE_WIFI),1)
+PICO_C_DEFINES += \
+	-DCYW43_LWIP=1				\
+	-DLIB_PICO_CYW43_ARCH=1		\
+	-DPICO_BOARD=\"pico_w\"		\
+	-DPICO_CYW43_ARCH_POLL=1
+
+#	-DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1
+
+BOARD_INCLUDE = -include $(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h
+else
+PICO_C_DEFINES += \
+	-DPICO_BOARD=\"pico\"
+BOARD_INCLUDE = -include $(PICO_SDK_DIR)/src/boards/include/boards/pico.h
+endif
 
 C_DEFINES = \
 	$(PICO_C_DEFINES) \
@@ -651,14 +761,14 @@ ifeq ($(DEBUG),1)
 		-DmxDebug=1 \
 		-g3 \
 		-Os
-	C_FLAGS += $(HW_DEBUG_OPT)
-	ASM_FLAGS += $(HW_DEBUG_OPT)
+	C_FLAGS += $(HW_DEBUG_OPT) $(BOARD_INCLUDE)
+	ASM_FLAGS += $(HW_DEBUG_OPT) $(BOARD_INCLUDE)
 else
 	C_DEFINES += \
 		-DNDEBUG	\
 		-Os
-	C_FLAGS += $(HW_OPT)
-	ASM_FLAGS += $(HW_OPT)
+	C_FLAGS += $(HW_OPT) $(BOARD_INCLUDE)
+	ASM_FLAGS += $(HW_OPT) $(BOARD_INCLUDE)
 endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
@@ -708,7 +818,7 @@ MEM_USAGE = \
 	 print "\# Memory usage\n";\
 	 print sprintf("\#  %-6s %6d bytes\n" x 2 ."\n", "Ram:", $$r, "Flash:", $$f);'
 
-VPATH += $(PICO_SRC_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
+VPATH += $(PICO_SRC_DIRS) $(PIO_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 .PHONY: all	
 .SUFFIXES:
@@ -741,6 +851,8 @@ env_vars:
 ifndef PICO_SDK_DIR
 	$(error PICO_SDK_DIR environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/ for details.)
 endif
+
+pio_stuff: $(PIO_STUFF)
 
 $(MODDABLE_TOOLS_DIR)/findUSBLinux: $(PLATFORM_DIR)/config/findUSBLinux
 	cp $(PLATFORM_DIR)/config/findUSBLinux $(MODDABLE_TOOLS_DIR)
@@ -850,6 +962,30 @@ $(LIB_DIR)/pico_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/pico_divider/divider
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $(LIB_DIR)/pico_divider.S.o
 #	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
 
+$(TMP_DIR)/cyw43_bus_pio_spi.pio.h: $(PICO_SDK_DIR)/src/rp2_common/cyw43_driver/cyw43_bus_pio_spi.pio
+	$(PIOASM) -o c-sdk $< $@
+
+$(TMP_DIR)/%.pio.h: %.pio
+	@echo "# compile pio: " $(<F)
+	$(PIOASM) -o c-sdk $< $@
+
+
+CYW43_FW_FILE=43439A0-7.95.49.00.combined
+CYW43_FW_PATH=$(PICO_SDK_DIR)/lib/cyw43-driver/firmware
+CYW43_FW_SYM=43439A0_7_95_49_00
+
+$(LIB_DIR)/cyw43_resource.o: $(CYW43_FW_PATH)
+	cd $(CYW43_FW_PATH) &&		\
+	$(OBJCOPY) -I binary -O elf32-littlearm -B arm \
+		--readonly-text --rename-section .data=.big_const,contents,alloc,load,readonly,data \
+		--redefine-sym _binary_$(CYW43_FW_SYM)_combined_start=fw_$(CYW43_FW_SYM)_start \
+		--redefine-sym _binary_$(CYW43_FW_SYM)_combined_end=fw_$(CYW43_FW_SYM)_end \
+		--redefine-sym _binary_$(CYW43_FW_SYM)_combined_size=fw_$(CYW43_FW_SYM)_size \
+		$(CYW43_FW_FILE)	\
+		$@
+
+##@@ force to 1 while porting
+# MAKEFLAGS_JOBS = --jobs 1
 MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent

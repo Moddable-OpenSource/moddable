@@ -152,15 +152,6 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	}
 	else
 		property->value.home.module = C_NULL;
-
-#ifdef mxProfile
-	/* PROFILE */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
-#endif
 		
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
@@ -640,13 +631,13 @@ txSlot* fxNewAsyncInstance(txMachine* the)
 	mxPop();
 	mxPop();
 	
-	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID);
+	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID, mxResolveAwaitProfileID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
-	function = fxNewHostFunction(the, fxRejectAwait, 1, XS_NO_ID);
+	function = fxNewHostFunction(the, fxRejectAwait, 1, XS_NO_ID, mxRejectAwaitProfileID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);

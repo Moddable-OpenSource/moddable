@@ -1478,6 +1478,7 @@ void fxAssertionCode(txPatternParser* parser, void* it, txInteger direction, txI
 		*buffer++ = self->term->step;
 		*buffer++ = self->assertionIndex;
 	}
+	fxPatternParserCheckStack(parser);
 	(*self->term->dispatch.code)(parser, self->term, self->direction, self->completion);
 	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->completion);
 	if (self->not) {
@@ -1501,6 +1502,7 @@ void fxCaptureCode(txPatternParser* parser, void* it, txInteger direction, txInt
 		*buffer++ = cxCaptureBackwardStep;
 	*buffer++ = self->term->step;
 	*buffer++ = self->captureIndex;
+	fxPatternParserCheckStack(parser);
 	(*self->term->dispatch.code)(parser, self->term, direction, self->completion);
 	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->completion);
 	if (direction == 1)
@@ -1553,6 +1555,7 @@ void fxDisjunctionCode(txPatternParser* parser, void* it, txInteger direction, t
 	*buffer++ = cxDisjunctionStep;
 	*buffer++ = self->left->step;
 	*buffer++ = self->right->step;
+	fxPatternParserCheckStack(parser);
 	(*self->left->dispatch.code)(parser, self->left, direction, sequel);
 	(*self->right->dispatch.code)(parser, self->right, direction, sequel);
 }
@@ -1600,6 +1603,7 @@ void fxQuantifierCode(txPatternParser* parser, void* it, txInteger direction, tx
 	*buffer++ = sequel;
 	*buffer++ = self->captureIndex + 1;
 	*buffer++ = self->captureIndex + self->captureCount;
+	fxPatternParserCheckStack(parser);
 	(*self->term->dispatch.code)(parser, self->term, direction, self->completion);
 	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->completion);
 	*buffer++ = cxQuantifierCompletion;
@@ -1611,6 +1615,7 @@ void fxQuantifierCode(txPatternParser* parser, void* it, txInteger direction, tx
 void fxSequenceCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
 {
 	txSequence* self = it;
+	fxPatternParserCheckStack(parser);
 	if (direction == 1) {
 		(*self->left->dispatch.code)(parser, self->left, direction, self->right->step);
 		(*self->right->dispatch.code)(parser, self->right, direction, sequel);
@@ -1785,7 +1790,7 @@ txInteger* fxAllocateRegExpData(void* the, txInteger* code)
 	if (the) {
 		data = fxNewChunk(the, size);
 	#ifdef mxSnapshot
-		c_memset(*data, 0, size);
+		c_memset(data, 0, size);
 	#endif
 	}
 	else
@@ -7358,6 +7363,8 @@ void* fxCharSetUnicodeProperty(txPatternParser* parser)
 	}
 	*p = 0;
 	if (c == '=') {
+		if (p == q)
+			fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
 		p++;
 		fxPatternParserNext(parser);
 		c = parser->character;

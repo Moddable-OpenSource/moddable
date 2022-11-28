@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(MODULES)/pins/smbus/manifest.json"
+		"$(MODULES)/pins/smbus/manifest.json",
+		"$(MODULES)/drivers/sensors/mpu6886/manifest.json"
 	],
 	"build": {
 		"UPLOAD_SPEED": "1500000",

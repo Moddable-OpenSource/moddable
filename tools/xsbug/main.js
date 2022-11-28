@@ -77,6 +77,11 @@ import {
 } from "PreferencesView";
 
 import {
+	Profile,
+	ProfilePane,
+} from "ProfilePane";
+
+import {
 	SerialPane,
 } from "SerialPane";
 
@@ -177,6 +182,8 @@ class ApplicationBehavior extends DebugBehavior {
 			expanded: true,
 			items: [],
 		};
+		this.profiles = [
+		];
 		
 		this.search = {
 			expanded:false,
@@ -189,7 +196,7 @@ class ApplicationBehavior extends DebugBehavior {
 		
 		this.test262Context = new Test262Context;
 		
-		this.visibleTabs = [ true, true, false, false ];
+		this.visibleTabs = [ true, true, false, false, false ];
 		
 		this.path = undefined;
 		this.state = undefined;
@@ -246,6 +253,8 @@ class ApplicationBehavior extends DebugBehavior {
 // 						application.distribute("onBubblesChanged", items);
 					}
 					else if (tab == 2)
+						container.replace(container.first, new ProfilePane(this));
+					else if (tab == 3)
 						container.replace(container.first, new SerialPane(this));
 					else
 						container.replace(container.first, new Test262Pane(this));
@@ -285,8 +294,9 @@ class ApplicationBehavior extends DebugBehavior {
 		let info = system.getFileInfo(path);
 		if (info.directory)
 			application.defer("doOpenDirectoryCallback", new String(path));
-		else
+		else {
 			application.defer("doOpenFileCallback", new String(path));
+		}
 	}
 	onPathChanged(application, path) {
 		application.invalidateMenus();
@@ -364,15 +374,36 @@ class ApplicationBehavior extends DebugBehavior {
 		if (path.endsWith(".js") || path.endsWith(".json") || path.endsWith(".ts") || path.endsWith(".xml") || path.endsWith(".xs"))
 			this.selectFile(path);
 		else if (path.endsWith(".bin")) {
-			this.showTab(2, true);
-			this.selectMachine(null, 2);
+			this.showTab(3, true);
+			this.selectMachine(null, 3);
 			this.serial.doInstallApp(path);
 		}
 		else if (path.endsWith(".xsa")) {
-			this.showTab(2, true);
-			this.selectMachine(null, 2);
+			this.showTab(3, true);
+			this.selectMachine(null, 3);
 			this.serial.doInstallMod(path);
 		}
+		else if (path.endsWith(".cpuprofile")) {
+			this.showTab(2, true);
+			this.selectMachine(null, 2);
+			path = path.valueOf();
+			let profile = this.profiles.find(profile => profile.path == path);
+			if (!profile) {
+				this.doOpenProfile(path);
+			}
+		}
+	}
+	doOpenProfile(path) {
+		let profile;
+		try {
+			profile = new Profile(null, path);
+			this.profiles.push(profile);
+			this.profiles.sort((a, b) => a.name.localeCompare(b.name));
+			application.distribute("onProfilesChanged");
+		}
+		catch(e) {
+		}
+		return profile;
 	}
 	doCloseDirectory(path) {
 		let items = this.homes.items;
@@ -405,6 +436,13 @@ class ApplicationBehavior extends DebugBehavior {
 		this.state = undefined;
 		this.doOpenView();
 		application.distribute("onPathChanged", this.path);
+	}
+	doCloseProfile(profile) {
+		const index = this.profiles.indexOf(profile);
+		if (index >= 0) {
+			this.profiles.splice(index, 1);
+			application.distribute("onProfilesChanged");
+		}
 	}
 /* HELP MENU */
 	canSupport() {
@@ -542,6 +580,8 @@ class ApplicationBehavior extends DebugBehavior {
 						this.path = preferences.path;
 				if ("port" in preferences)
 					this.port = preferences.port;
+				if ("profileOnStart" in preferences)
+					this.profileOnStart = preferences.profileOnStart;
 				if ("state" in preferences)
 					this.state = preferences.state;
 				if ("automaticInstruments" in preferences)
@@ -550,7 +590,7 @@ class ApplicationBehavior extends DebugBehavior {
 					this.showExceptions = preferences.showExceptions;
 				if ("test262Context" in preferences)
 					this.test262Context.fromJSON(preferences.test262Context);
-				if (("visibleTabs" in preferences) && (preferences.visibleTabs.length == 4))
+				if (("visibleTabs" in preferences) && (preferences.visibleTabs.length == 5))
 					this.visibleTabs = preferences.visibleTabs;
 				if ("serialDevicePath" in preferences)
 					this.serialDevicePath = preferences.serialDevicePath;
@@ -581,6 +621,7 @@ class ApplicationBehavior extends DebugBehavior {
 				mappings: this.mappings,
 				path: this.path,
 				port: this.port,
+				profileOnStart: this.profileOnStart,
 				state: this.state,
 				automaticInstruments: this.automaticInstruments,
 				showExceptions: this.showExceptions,
@@ -610,7 +651,8 @@ var MainContainer = Container.template($ => ({
 						$.currentMachine ?  DebugPane($, {}) : 
 							$.currentTab == 0 ?  FilePane($, {}) : 
 							$.currentTab == 1 ?  MessagePane($, {}) : 
-							$.currentTab == 2 ?  SerialPane($, {}) : Test262Pane($, {})
+							$.currentTab == 2 ?  ProfilePane($, {}) : 
+							$.currentTab == 3 ?  SerialPane($, {}) : Test262Pane($, {})
 // 					
 // 						FilePane($, {}),
 					]

@@ -58,8 +58,10 @@ class TabsPaneBehavior extends Behavior {
 		if (model.visibleTabs[1])
 			row.add(new BubblesTab(null));
 		if (model.visibleTabs[2])
-			row.add(new SerialTab(null));
+			row.add(new ProfileTab(null));
 		if (model.visibleTabs[3])
+			row.add(new SerialTab(null));
+		if (model.visibleTabs[4])
 			row.add(new Test262Tab(null));
 		machines.forEach(machine => row.add(new MachineTab(machine)));
 		this.onMeasureHorizontally(layout);
@@ -130,7 +132,7 @@ class BubblesTabBehavior extends TabBehavior {
 	}
 };
 
-class SerialTabBehavior extends TabBehavior {
+class ProfileTabBehavior extends TabBehavior {
 	isSelected(container) {
 		return (model.currentMachine == null) && (model.currentTab == 2);
 	}
@@ -145,7 +147,7 @@ class SerialTabBehavior extends TabBehavior {
 	}
 };
 
-class Test262TabBehavior extends TabBehavior {
+class SerialTabBehavior extends TabBehavior {
 	isSelected(container) {
 		return (model.currentMachine == null) && (model.currentTab == 3);
 	}
@@ -157,6 +159,21 @@ class Test262TabBehavior extends TabBehavior {
 	}
 	select(container) {
 		model.selectMachine(null, 3);
+	}
+};
+
+class Test262TabBehavior extends TabBehavior {
+	isSelected(container) {
+		return (model.currentMachine == null) && (model.currentTab == 4);
+	}
+	onCreate(container) {
+		this.onMachineSelected(container, model.currentMachine, model.currentTab);
+	}
+	onMachineSelected(container, machine, tab) {
+		this.changeState(container, (machine == null) && (tab == 4) ? 0 : 1);
+	}
+	select(container) {
+		model.selectMachine(null, 4);
 	}
 };
 
@@ -290,6 +307,18 @@ var BubblesTab = Container.template($ => ({
 					label.string = model.bubbles.items.length;
 				}
 			},
+		}),
+	],
+}));
+
+var ProfileTab = Container.template($ => ({
+	top:0, bottom:0, skin:skins.tab, active:true, Behavior:ProfileTabBehavior,
+	contents: [
+		Container($, { 
+			top:0, bottom:0,
+			contents: [
+				Label($, { top:0, bottom:0, style:styles.tabTest262, string:"PROFILE" }),
+			],
 		}),
 	],
 }));

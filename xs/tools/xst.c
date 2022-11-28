@@ -248,6 +248,7 @@ int main(int argc, char* argv[])
 	txAgentCluster* agentCluster = &gxAgentCluster;
 	int argi;
 	int option = 0;
+	int profiling = 0;
 	char path[C_PATH_MAX];
 	char* dot;
 #if mxWindows
@@ -278,6 +279,8 @@ int main(int argc, char* argv[])
 			option = 1;
 		else if (!strcmp(argv[argi], "-m"))
 			option = 2;
+		else if (!strcmp(argv[argi], "-p"))
+			profiling = 1;
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
@@ -286,6 +289,8 @@ int main(int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-f"))
 			option = 5;
 #endif
+		else if (!strcmp(argv[argi], "-j"))
+			option = 6;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -323,6 +328,8 @@ int main(int argc, char* argv[])
 		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
  		fxBuildAgent(machine);
+ 		if (profiling)
+			fxStartProfiling(machine);
 		xsBeginHost(machine);
 		{
 			xsVars(2);
@@ -353,10 +360,44 @@ int main(int argc, char* argv[])
 						xsResult = xsString(argv[argi]);
 						xsCall1(xsVar(1), xsID("evalScript"), xsResult);
 					}
-					else {	
+					else {
 						if (!c_realpath(argv[argi], path))
 							xsURIError("file not found: %s", argv[argi]);
 						dot = strrchr(path, '.');
+						if (option == 6) {
+							FILE* file = C_NULL;
+							char *buffer = C_NULL;
+							xsTry {
+								file = fopen(path, "r");
+								if (!file)
+									xsUnknownError("can't open file");
+								fseek(file, 0, SEEK_END);
+								size_t size = ftell(file);
+								fseek(file, 0, SEEK_SET);
+								buffer = malloc(size + 1);
+								if (!buffer)
+									xsUnknownError("not enough memory");
+								if (size != fread(buffer, 1, size, file))	
+									xsUnknownError("can't read file");
+								buffer[size] = 0;
+								fclose(file);
+								file = C_NULL;
+								xsResult = xsArrayBuffer(buffer, size);
+								c_free(buffer);
+								buffer = C_NULL;
+								xsVar(1) = xsNew0(xsGlobal, xsID("TextDecoder"));
+								xsResult = xsCall1(xsVar(1), xsID("decode"), xsResult);
+								xsVar(1) = xsGet(xsGlobal, xsID("JSON"));
+								xsResult = xsCall1(xsVar(1), xsID("parse"), xsResult);
+							}
+							xsCatch {
+								if (buffer)
+									c_free(buffer);
+								if (file)
+									fclose(file);
+							}
+						}
+						else
 						if (((option == 0) && dot && !c_strcmp(dot, ".mjs")) || (option == 2))
 							fxRunModuleFile(the, path);
 						else
@@ -374,6 +415,8 @@ int main(int argc, char* argv[])
 		}
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+ 		if (profiling)
+			fxStopProfiling(machine, C_NULL);
 		if (machine->abortStatus) {
 			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
 			fprintf(stderr, "Error: %s\n", why);
@@ -631,15 +674,16 @@ void fxPrintResult(txPool* pool, txResult* result, int c)
 
 void fxPrintUsage()
 {
-	printf("xst [-h] [-e] [-m] [-s] [-t] [-u] [-v] strings...\n");
+	printf("xst [-h] [-e] [-j] [-m] [-s] [-t] [-u] [-v] strings...\n");
 	printf("\t-h: print this help message\n");
 	printf("\t-e: eval strings\n");
+	printf("\t-j: strings are paths to JSON\n");
 	printf("\t-m: strings are paths to modules\n");
 	printf("\t-s: strings are paths to scripts\n");
 	printf("\t-t: strings are paths to test262 cases or directories\n");
 	printf("\t-u: print unhandled exceptions and rejections\n");
 	printf("\t-v: print XS version\n");
-	printf("without -e, -m, -s, or -t:\n");
+	printf("without -e, -j, -m, -s, or -t:\n");
 	printf("\tif ../harness exists, strings are paths to test262 cases or directories\n");
 	printf("\telse if the extension is .mjs, strings are paths to modules\n");
 	printf("\telse strings are paths to scripts\n");
@@ -1701,12 +1745,12 @@ int fuzz(int argc, char* argv[])
 		c_exit(-1);
 	}
 	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
+		1 * 1024 * 1024, 	/* initialChunkSize */
+		1 * 1024 * 1024, 	/* incrementalChunkSize */
+		32768, 				/* initialHeapCount */
+		32768,			 	/* incrementalHeapCount */
+		64 * 1024,	 		/* stackCount */
+		8 * 1024,			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1809,12 +1853,12 @@ int fuzz(int argc, char* argv[])
 int fuzz_oss(const uint8_t *Data, size_t Size)
 {
 	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
+		1 * 1024 * 1024, 	/* initialChunkSize */
+		1 * 1024 * 1024, 	/* incrementalChunkSize */
+		32768, 				/* initialHeapCount */
+		32768,			 	/* incrementalHeapCount */
+		64 * 1024,	 		/* stackCount */
+		8 * 1024,			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1853,21 +1897,24 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 			xsResult = xsNewHostFunction(fx_print, 1);
 			xsSet(xsGlobal, xsID("print"), xsResult);
 
+#ifdef OSSFUZZ_JSONPARSE
+			modInstallTextDecoder(the);
+			xsResult = xsArrayBuffer(buffer, script_size);
+			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
+			xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
+			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
+			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
+#else
 			txStringCStream aStream;
 			aStream.buffer = buffer;
 			aStream.offset = 0;
 			aStream.size = script_size;
-#ifdef OSSFUZZ_JSONPARSE
-			// json parse
-			xsResult = xsGet(xsGlobal, xsID("JSON"));
-			xsResult = xsCall1(xsResult, xsID("parse"), xsString(buffer));
-#else
 			// run script
 			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
 			mxPullSlot(mxResult);
-#endif
 			fxRunLoop(the);
+#endif
 		}
 		xsCatch {
 		}
@@ -1999,8 +2046,8 @@ void fxRunModuleFile(txMachine* the, txString path)
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();
-	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
-	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
+	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID, XS_NO_ID);
 	mxRunCount(2);
 	mxPop();
 }
@@ -2044,7 +2091,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (dot) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
-		c_strcpy(path, fxGetKeyName(the, moduleID));
+		c_strncpy(path, fxGetKeyName(the, moduleID), C_PATH_MAX - 1);
+		path[C_PATH_MAX - 1] = 0;
 		slash = c_strrchr(path, mxSeparator);
 		if (!slash)
 			return XS_NO_ID;
@@ -2083,7 +2131,8 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 #else
 	txUnsigned flags = 0;
 #endif
-	c_strcpy(path, fxGetKeyName(the, moduleID));
+	c_strncpy(path, fxGetKeyName(the, moduleID), C_PATH_MAX - 1);
+	path[C_PATH_MAX - 1] = 0;
 	if (c_realpath(path, real)) {
 		script = fxLoadScript(the, real, flags);
 		if (script)

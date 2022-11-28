@@ -57,6 +57,8 @@
 		static uint16_t gCPUCounts[kTargetCPUCount * 2];
 		static TaskHandle_t gIdles[kTargetCPUCount];
 		static void IRAM_ATTR timer_group0_isr(void *para);
+
+		volatile uint32_t gCPUTime = 1;
 	#endif
 
 	#include "freertos/task.h"
@@ -89,6 +91,7 @@
 	#if ESP32
 		(char *)"SPI flash erases",
 	#endif
+		(char *)"Turns",
 		(char *)"System bytes free",
 	#if ESP32
 		#if kTargetCPUCount == 1
@@ -113,6 +116,7 @@
 	#if ESP32
 		(char *)" sectors",
 	#endif
+		(char *)" turns",
 		(char *)" bytes",
 	#if ESP32
 		(char *)" percent",
@@ -868,7 +872,7 @@ void espInitInstrumentation(txMachine *the)
 
 	timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
 
-	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / (config.divider * 1000));
+	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / (config.divider * 800));
 	timer_enable_intr(TIMER_GROUP_0, TIMER_0);
 	timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *)TIMER_0, ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_IRAM, NULL);
 
@@ -893,6 +897,9 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
+	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
+        values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;     // ignore the turn that generates instrumentation
+
 	fxSampleInstrumentation(the, espInstrumentCount, values);
 
 	modInstrumentationSet(PixelsDrawn, 0);
@@ -901,6 +908,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(PiuCommandListUsed, 0);
 	modInstrumentationSet(NetworkBytesRead, 0);
 	modInstrumentationSet(NetworkBytesWritten, 0);
+	modInstrumentationSet(Turns, 0);
 #if ESP32
 	modInstrumentationSet(SPIFlashErases, 0);
 #endif
@@ -921,6 +929,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
 #if kTargetCPUCount > 1
 	gCPUCounts[2 + (xTaskGetCurrentTaskHandleForCPU(1) == gIdles[1])] += 1;
 #endif
+
+	gCPUTime += 1250;
 }
 #endif
 #endif

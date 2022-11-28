@@ -1,15 +1,17 @@
 # TLS (SecureSocket)
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: August 22, 2022
+Revised: November 11, 2022
 
 ## Table of Contents
 
 * [SecureSocket](#securesocket)
-	* [Use with HTTPS](#https)
-	* [Use with WSS](#websockets)
+	* [Use with HTTP client (`https:`)](#https)
+	* [Use with WebSocket client (`wss:`)](#websockets)
+	* [Use with MQTT client (`mqtts:`)](#mqtts)
 	* [TLS Certificates](#certificates)
 		* [Using a Built-in Certificate](#certificate-bulitin)
 		* [Providing a Certificate](#certificate-providing)
+		* [Converting PEM to DER](#converting-pem)
 		* [Updating Certificate Store](#certificate-update)
 	* [Memory](#memory)
 * [Configuration](#configuration)
@@ -38,37 +40,29 @@ The `secure` dictionary may contain the following properties:
 | :---: | :---: | :--- |
 | `protocolVersion` | `0x302` (TLS 1.1) | The minimum version of the TLS protocol to implement, in hex.<BR><BR>- `0x303` is TLS 1.2<BR>- `0x302` is TLS 1.1<BR>- `0x301` is TLS 1.0
 | `certificate` | N/A |  a certificate in DER (binary) format contained in an `ArrayBuffer`, `Uint8Array`, or host buffer
-| `trace` | `false` | If true, the TLS stack outputs a trace of its activity. This can be useful in diagnosing failures.
-| `verify` | `true` | If false, the certificate chain provided by the server is not verified. This should never be done in production systems but can be useful when debugging.
+| `trace` | `false` | If `true`, the TLS stack outputs a trace of its activity. This can be useful in diagnosing failures.
+| `verify` | `true` | If `false`, the certificate chain provided by the server is not verified. This should never be done in production systems but can be useful when debugging.
 | `tls_max_fragment_length` | N/A |  A number indicating the requested maximum fragment size. Unfortunately, many servers ignore this optional extension. When supported, can help reduce memory requirements.
-| `tls_application_layer_protocol_negotiation` | N/A | Supports [RFC 7301](https://datatracker.ietf.org/doc/html/rfc7301). Either a `String` or `ArrayBuffer` value to indicate support for a single application layer protocol or an `Array` of one or more `String` and `ArrayBuffer` values to indicate support for multiple application layer protocols.
- 
+| `applicationLayerProtocolNegotiation` | N/A | Supports [RFC 7301](https://datatracker.ietf.org/doc/html/rfc7301). Either a `String` or `ArrayBuffer` value to indicate support for a single application layer protocol or an `Array` of one or more `String` and `ArrayBuffer` values to indicate support for multiple application layer protocols.
+| `clientKey` | N/A |  a key in DER (binary) format contained in an `ArrayBuffer`, `Uint8Array`, or host buffer
+| `clientCertificates ` | N/A |  an array of one or more client certificates in DER (binary) format contained in an `ArrayBuffer`, `Uint8Array`, or host buffer
+
 In the following example, the TLS socket is created with support for version `0x303` of TLS, which corresponds to TLS 1.2.
 
 ```js
 let socket = new SecureSocket({
 	host: "www.example.com", 
 	port: 443,
-	secure: {protocolVersion: 0x303}
+	secure: {
+		protocolVersion: 0x303
+	}
 });
 ```
 
 <a id="https"></a>
-### Use with HTTPS
+### Use with HTTP client (`https:`)
 
-The HTTP `Client` class accepts an optional `Socket` property in the dictionary of its constructor. Set this property to `SecureSocket` to make an HTTPS request:
-
-```js
-let request = new Request({
-	host: "www.howsmyssl.com", 
-	path: "/",
-	response: String, 
-	Socket: SecureSocket, 
-	port: 443
-});
-```
-
-The `secure` property may also be provided:
+The HTTP `Client` class accepts an optional `Socket` property in the dictionary of its constructor. Set this property to `SecureSocket` to make an HTTPS request. The `secure` property may be provided to configure the TLS connection:
 
 ```js
 let request = new Request({
@@ -77,21 +71,47 @@ let request = new Request({
 	response: String, 
 	Socket: SecureSocket, 
 	port: 443,
-	secure: {trace: true, protocolVersion: 0x303}
+	secure: {
+		trace: true,
+		protocolVersion: 0x303
+	}
 });
 ```
 
 <a id="websockets"></a>
-### Use with WSS
+### Use with WebSocket client (`wss:`)
 
-The WebSockets `Client` class accepts an optional `Socket` property in the dictionary of its constructor. Set this property to `SecureSocket` to make an WSS request. The `secure` property may also be provided:
+The WebSocket `Client` class accepts an optional `Socket` property in the dictionary of its constructor. Set this property to `SecureSocket` to make an WSS request. The `secure` property may be provided to configure the TLS connection:
 
 ```js
 let ws = new Client({
 	host: "echo.websocket.org", 
 	port: 443,
 	Socket: SecureSocket, 
-	secure: {protocolVersion: 0x302}
+	secure: {
+		protocolVersion: 0x302
+	}
+});
+```
+
+<a id="mqtts"></a>
+### Use with MQTT client (`mqtts:`)
+
+The MQTT `Client` class accepts an optional `Socket` property in the dictionary of its constructor. Set this property to `SecureSocket` to establish a secure MQTT connection. The `secure` property may be provided to configure the TLS connection:
+
+```js
+const mqtt = new MQTT({
+	host: "iot.aws.com,
+	id: "unique mqtt client id",
+	port: 8883,
+	Socket: SecureSocket,
+	secure: {
+		protocolVersion: 0x303,
+		applicationLayerProtocolNegotiation: "mqtt",
+		certificate: new Resource("AmazonRootCA1.der"),
+		clientKey: new Resource("device.key.der"),
+		clientCertificates: [new Resource("device.crt.a.der")]
+	},
 });
 ```
 
@@ -135,7 +155,9 @@ let request = new Request({
 	response: String, 
 	Socket: SecureSocket, 
 	port: 443,
-	secure: {certificate: new Resource("ca109.der")}
+	secure: {
+		certificate: new Resource("ca109.der")
+	}
 });
 ```
 
@@ -146,9 +168,25 @@ You do not have to use the certificates included in the Moddable SDK. You may pa
 ```js
 let request = new Request({
     ...
-    secure: {certificate: new Resource("mycert.der")} 
+    secure: {
+    	certificate: new Resource("mycert.der")
+    } 
 });
 ```
+
+<a id="converting-pem"></a>
+#### Converting PEM to DER
+The `SecureSocket` implementation requires certificates to be provided in DER (binary) format. If you have a certificate in PEM (a Base64 encoded) format, you need to convert it to DER. 
+
+Whenever possible, convert the PEM file to DER format before adding it to your project. There are many tools that can perform the conversion. A reliable choice is `openssl`. The following command line works for many certificates (substitute your PEM file path for `data.pem` and the desired output file path for `data.der`):
+
+```
+openssl x509 -inform pem -in data.pem -out data.der -outform der
+``` 
+
+
+Sometimes there is no choices but to convert the PEM to DER at runtime. For example, during provisioning you might receive a certificate in PEM format from a service, and later you need to use that certificate to establish a TLS connection. The Moddable SDK provides the [`pemtoDER`](../crypt/crypt.md#transform-pemToDER) and [`privateKeyToPrivateKeyInfo`](../crypt/crypt.md#transform-privateKeyToPrivateKeyInfo) functions for these situations. These functions are part of the Crypt `Transform` class.
+
 
 <a id="certificate-update"></a>
 #### Updating Certificate Store

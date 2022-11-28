@@ -1,0 +1,12 @@
+{
+	"modules": {
+		"pins/audioout": "$(MODULES)/pins/i2s/audioout",
+		"*": [
+			"./sbc_decoder",
+			"./dvi_adpcm_decode"
+		]
+	},
+	"preload": [
+		"pins/audioout"
+	]
+}

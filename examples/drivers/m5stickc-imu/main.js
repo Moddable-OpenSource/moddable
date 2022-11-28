@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,14 +16,13 @@ import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
-import ILI9341 from "ili9341";
+import config from "mc/config";
 
-let pixelsOut = new ILI9341({});
-const width = pixelsOut.width;
-const height = pixelsOut.height;
 const GYRO_SCALER = 0.002;
 
-let render = new Poco(pixelsOut);
+let render = new Poco(screen, {rotation: config?.rotation ?? screen.rotation});
+const width = render.width, height = render.height;
+
 let font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
 
 let ball = parseBMP(new Resource("ball-color.bmp"));

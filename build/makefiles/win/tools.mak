@@ -33,6 +33,7 @@ BUILD_DIR = ..\..
 !ENDIF
 
 COMMODETTO = $(MODDABLE)\modules\commodetto
+DATA = $(MODDABLE)\modules\data
 INSTRUMENTATION = $(MODDABLE)\modules\base\instrumentation
 TOOLS = $(MODDABLE)\tools
 
@@ -112,6 +113,7 @@ MODULES = \
 	$(MOD_DIR)\commodetto\ReadJPEG.xsb \
 	$(MOD_DIR)\commodetto\ReadPNG.xsb \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
+	$(MOD_DIR)\wavreader.xsb \
 	$(MOD_DIR)\file.xsb \
 	$(MOD_DIR)\buildclut.xsb \
 	$(MOD_DIR)\cdv.xsb \
@@ -157,6 +159,7 @@ PRELOADS =\
 	-p commodetto\Poco.xsb\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
 	-p file.xsb
@@ -221,6 +224,7 @@ C_OPTIONS = \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
 	/D mxFewGlobalsTable=1 \
+	/D mxMessageWindowClass=\"fxMessageWindowClassX\" \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \
 	/I$(XS_DIR)\sources \
@@ -331,6 +335,9 @@ $(MOD_DIR)\commodetto\ReadPNG.xsb : $(COMMODETTO)\commodettoReadPNG.js
 $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
+$(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
 {$(TOOLS)\}.js{$(MOD_DIR)\}.xsb:
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $< -c -d -e -o $(MOD_DIR)

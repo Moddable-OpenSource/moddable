@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -18,15 +18,13 @@ import Resource from "Resource";
 import loadJPEG from "commodetto/loadJPEG";
 import Timer from "timer";
 import ILI9341 from "ili9341";
+import config from "mc/config";
 
 const STARTING_STEPS = 123;
 const GOAL = 200;
 const SHAKEVALUE = 3;
 
-let pixelsOut = new ILI9341({});
-const width = pixelsOut.width;
-const height = pixelsOut.height;
-const render = new Poco(pixelsOut, {rotation: 90});
+let render = new Poco(screen, {rotation: config.rotation});
 
 const black = render.makeColor(0, 0, 0);
 const white = render.makeColor(255, 255, 255);

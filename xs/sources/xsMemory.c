@@ -248,7 +248,7 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 			the->peakChunksSize = the->currentChunksSize;
 		return data + sizeof(txChunk);
 	}
-	fxReport(the, "# Chunk allocation: failed for %ld bytes\n", size);
+	fxReport(the, "# Chunk allocation: failed for %ld bytes\n", (long)size);
 	fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	return C_NULL;
 }
@@ -275,9 +275,6 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 		return;
 	}
 
-#ifdef mxProfile
-	fxBeginGC(the);
-#endif
 	if (theFlag) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the);
@@ -352,8 +349,14 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 	if (theFlag)
 		fxReport(the, "# Chunk collection: reserved %ld used %ld peak %ld bytes\n", 
 			(long)the->maximumChunksSize, (long)the->currentChunksSize, (long)the->peakChunksSize);
-	fxReport(the, "# Slot collection: reserved %ld used %ld peak %ld bytes %ld\n",
-		(long)(the->maximumHeapCount * sizeof(txSlot)),
+	aCount = 0;
+	aSlot = the->firstHeap;
+	while (aSlot) {
+		aCount++;
+		aSlot = aSlot->next;
+	}
+	fxReport(the, "# Slot collection: reserved %ld used %ld peak %ld bytes %d\n",
+		(long)((the->maximumHeapCount - aCount) * sizeof(txSlot)),
 		(long)(the->currentHeapCount * sizeof(txSlot)),
 		(long)(the->peakHeapCount * sizeof(txSlot)),
 		the->collectFlag & XS_TRASHING_FLAG);
@@ -361,8 +364,8 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 #ifdef mxInstrument
 	the->garbageCollectionCount++;
 #endif
-#ifdef mxProfile
-	fxEndGC(the);
+#if defined(mxInstrument) || defined(mxProfile)
+	fxCheckProfiler(the, C_NULL);
 #endif
 }
 
@@ -536,7 +539,7 @@ void* fxGrowChunks(txMachine* the, txSize size)
 		the->maximumChunksSize += size;
 	#if mxReport
 		fxReport(the, "# Chunk allocation: reserved %ld used %ld peak %ld bytes\n", 
-			the->maximumChunksSize, the->currentChunksSize, the->peakChunksSize);
+			(long)the->maximumChunksSize, (long)the->currentChunksSize, (long)the->peakChunksSize);
 	#endif
 	}
 	return block;
@@ -1462,6 +1465,9 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 				aBlock->current += delta;
 				aChunk->temporary = aBlock->current;
 				aChunk->size = size;
+			#ifdef mxSnapshot
+				c_memset(aData + capacity, 0, delta);
+			#endif
 			#ifdef mxNever
 				gxRenewChunkCases[1]++;
 			#endif
@@ -1633,8 +1639,7 @@ void fxSweep(txMachine* the)
 				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
 				if (temporary) {
 					temporary += sizeof(txChunk);
-					aSize = mxPtrDiff(temporary - current);
-					*aCodeAddress = *aCodeAddress + aSize;
+					*aCodeAddress += temporary - current;
 				}
 			}
 		}

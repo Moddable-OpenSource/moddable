@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -54,7 +54,7 @@ enum {
 	/* SPI flash */
 	kModInstrumentationSPIFlashErases,
 #endif
-#if nrf52 || PICO_BUILD
+#if PICO_BUILD || defined(__ets__) || ESP32 || nrf52
 	/* turns */
 	kModInstrumentationTurns,
 #endif

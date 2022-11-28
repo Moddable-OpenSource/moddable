@@ -14,7 +14,8 @@
 	"bundle": {
 		"id": "tech.moddable.m5stickc-imu",
 		"devices": [
-			"esp32/m5stick_c"
+			"esp32/m5stick_c",
+			"esp32/m5stick_cplus"
 		],
 		"icon": "./icon.png"
 	}

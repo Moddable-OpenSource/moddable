@@ -111,7 +111,7 @@ txSlot* fxBuildHostFunction(txMachine* the, txCallback call, txInteger length, t
 {
 	txLinker* linker = (txLinker*)(the->context);
 	fxNewLinkerBuilder(linker, call, length, id);
-	return fxNewHostFunction(the, call, length, id);
+	return fxNewHostFunction(the, call, length, id, XS_NO_ID);
 }
 
 txInteger fxCheckAliases(txMachine* the) 
@@ -490,7 +490,7 @@ void fxLinkerScriptCallback(txMachine* the)
 						mxPushUndefined();
 						the->stack->kind = XS_HOST_FUNCTION_KIND;
 						the->stack->value.hostFunction.builder = builder;
-						the->stack->value.hostFunction.IDs = NULL;
+						the->stack->value.hostFunction.profileID = fxGenerateProfileID(the);
 					}
 					fxArrayCacheItem(the, the->stack + 1, the->stack);
 					mxPop();
@@ -582,14 +582,14 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 	txSlot *getter = NULL, *setter = NULL, *home = the->stack, *slot;
 	if (get) {
 		fxNewLinkerBuilder(linker, get, 0, id);
-		getter = fxNewHostFunction(the, get, 0, XS_NO_ID);
+		getter = fxNewHostFunction(the, get, 0, XS_NO_ID, XS_NO_ID);
 		slot = mxFunctionInstanceHome(getter);
 		slot->value.home.object = home->value.reference;
 		fxRenameFunction(the, getter, id, 0, XS_NO_ID, "get ");
 	}
 	if (set) {
 		fxNewLinkerBuilder(linker, set, 1, id);
-		setter = fxNewHostFunction(the, set, 1, XS_NO_ID);
+		setter = fxNewHostFunction(the, set, 1, XS_NO_ID, XS_NO_ID);
 		slot = mxFunctionInstanceHome(setter);
 		slot->value.home.object = home->value.reference;
 		fxRenameFunction(the, setter, id, 0, XS_NO_ID, "set ");
@@ -1338,7 +1338,7 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 #ifdef mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {
 		fprintf(file, ".kind = XS_HOST_FUNCTION_KIND}, ");
-		fprintf(file, ".value = { .hostFunction = { %s, NULL } }", fxGetBuilderName(the, slot->value.hostFunction.builder));
+		fprintf(file, ".value = { .hostFunction = { %s, %d } }", fxGetBuilderName(the, slot->value.hostFunction.builder), slot->value.hostFunction.profileID);
 	} break;
 #endif
 	default:
@@ -1379,11 +1379,11 @@ void fxSetHostFunctionProperty(txMachine* the, txSlot* property, txCallback call
 	if (linker->stripFlag) {
 		property->kind = XS_HOST_FUNCTION_KIND;
 		property->value.hostFunction.builder = fxNewLinkerBuilder(linker, call, length, id);
-		property->value.hostFunction.IDs = NULL;
+		property->value.hostFunction.profileID = fxGenerateProfileID(the);
 	}
 	else {
 		txSlot* home = the->stack;
-		txSlot* function = fxNewHostFunction(the, call, length, id);
+		txSlot* function = fxNewHostFunction(the, call, length, id, XS_NO_ID);
 		txSlot* slot = mxFunctionInstanceHome(function);
 		slot->value.home.object = home->value.reference;
 		property->kind = the->stack->kind;

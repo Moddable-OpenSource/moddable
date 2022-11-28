@@ -39,6 +39,11 @@ const device = {
 			io: I2C,
 			data: 21,
 			clock: 22
+		},
+		hat: {
+			io: I2C,
+			data: 0,
+			clock: 26
 		}
 	},
 	Serial: {

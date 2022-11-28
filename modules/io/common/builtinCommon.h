@@ -51,6 +51,13 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 	#define builtinCriticalSectionBegin() vPortEnterCritical()
 	#define builtinCriticalSectionEnd() vPortExitCritical()
+#elif defined(PICO_BUILD)
+	#include "pico/critical_section.h"
+	#define kPinBanks	(2)
+
+	extern critical_section_t gCommonCriticalMux;
+	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
+	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
 #else
 	#undef __COMMON__PINS__
 #endif
@@ -88,5 +95,8 @@ uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 	#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
 #endif
 
+#if defined(PICO_BUILD)
+uint8_t builtinInitIO(void);
+#endif
 
 #endif

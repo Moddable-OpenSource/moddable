@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -158,7 +158,7 @@ class PAJ7620U2 {
 
     this.#selectBank(0);
 
-    const partid = this.#io.readWord(REGISTERS.PART_ID_LOW);
+    const partid = this.#io.readUint16(REGISTERS.PART_ID_LOW);
     if (partid != 0x7620) throw new Error("ERR_IC_VERSION");
 
     this.#initializeDeviceSettings();
@@ -179,7 +179,7 @@ class PAJ7620U2 {
     this.#selectBank(1);
 
     if ("enabled" in options) {
-      io.writeByte(REGISTERS.OPERATION_ENABLE, Number(options.enabled));
+      io.writeUint8(REGISTERS.OPERATION_ENABLE, Number(options.enabled));
     }
 
     if ("invert" in options) {
@@ -190,7 +190,7 @@ class PAJ7620U2 {
 
     let value = options.flip;
     if (value) {
-      let data = io.readByte(REGISTERS.LENS_ORIENTATION);
+      let data = io.readUint8(REGISTERS.LENS_ORIENTATION);
 
       if ("h" === value) {
         data ^= 1 << (io.invert ? 1 : 0);
@@ -199,7 +199,7 @@ class PAJ7620U2 {
       } else if ("hv" === value) {
         data ^= 0b11;
       }
-      io.writeByte(REGISTERS.LENS_ORIENTATION, data);
+      io.writeUint8(REGISTERS.LENS_ORIENTATION, data);
     }
     this.#selectBank(0);
   }
@@ -210,19 +210,19 @@ class PAJ7620U2 {
   }
 
   #selectBank(bank) {
-    this.#io.writeByte(REGISTERS.BANK_SEL, bank);
+    this.#io.writeUint8(REGISTERS.BANK_SEL, bank);
   }
 
   #initializeDeviceSettings() {
     INIT_REGISTERS.forEach((reg) => {
-      this.#io.writeByte(reg.addr, reg.val);
+      this.#io.writeUint8(reg.addr, reg.val);
     });
     this.#selectBank(0);
   }
 
   #setGestureMode() {
     GESTURE_MODE_REGISTERS.forEach((reg) => {
-      this.#io.writeByte(reg.addr, reg.val);
+      this.#io.writeUint8(reg.addr, reg.val);
     });
     this.#selectBank(0);
   }
@@ -237,7 +237,7 @@ class PAJ7620U2 {
     let result = gesture;
 
     Timer.delay(ENTRY_TIME);
-    let res0 = this.#io.readByte(REGISTERS.GES_RESULT_0);
+    let res0 = this.#io.readUint8(REGISTERS.GES_RESULT_0);
 
     if (res0 == GESTURE_FLAG.FORWARD) {
       Timer.delay(EXIT_TIME);
@@ -252,12 +252,12 @@ class PAJ7620U2 {
 
   #getGesture() {
     const io = this.#io;
-    let res1 = io.readByte(REGISTERS.GES_RESULT_1);
+    let res1 = io.readUint8(REGISTERS.GES_RESULT_1);
     if (res1 == GESTURE_FLAG.WAVE) {
       return "Wave";
     }
 
-    let res0 = io.readByte(REGISTERS.GES_RESULT_0);
+    let res0 = io.readUint8(REGISTERS.GES_RESULT_0);
     if (!res0) {
       return undefined;
     }

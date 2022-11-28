@@ -474,12 +474,14 @@ Object.freeze(KeyboardBehavior.prototype);
 class KeyboardFieldBehavior extends Behavior {
 	onCreate(container, $, data) {
 		container.duration = 500;
-		this.string = "";
+		this.string = data.string ?? "";
 		this.password = data.password;
+		container.last.skin = new Skin({ fill:container.style.color })
 	}
 	onDisplaying(container) {
 		this.field = container.first;
 		this.cursor = container.last;
+		this.onKeyUp(container, "");
 	}
 	onFinished(container) {
 		let field = this.field;
@@ -506,7 +508,7 @@ class KeyboardFieldBehavior extends Behavior {
 			this.string += key;
 		let length = this.string.length;
 		if (password && length) {
-			if (key != '\b') {
+			if ((key != '\b') && (key != '')) {
 				cursor.stop();
 				cursor.visible = false;
 				field.string = "*".repeat(length - 1) + this.string.charAt(length - 1);
@@ -534,7 +536,7 @@ const KeyboardField = Container.template($ => ({
 		Label($, { left:0, right:0, top:0, bottom:0 }),
 		Content($, {
 			left:0, width:1, top:5, bottom:5,
-			visible:false, skin:new Skin({ fill:"black" }),
+			visible:false,
 			Behavior: class extends Behavior {
 				onDisplaying(content) {
 					content.interval = 500;

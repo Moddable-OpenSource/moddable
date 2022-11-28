@@ -295,12 +295,15 @@ void xs_serial_read(xsMachine *the)
 			xsResult = xsArg(0);
 			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
 			requested = (int)byteLength;
+			if (requested > available)
+				requested = available;
 			allocate = 0;
+			xsmcSetInteger(xsResult, requested);
 		}
 		else
 			requested = xsmcToInteger(xsArg(0));
 
-		if ((requested <= 0) || (requested > available)) 
+		if (requested <= 0) 
 			xsUnknownError("invalid");
 
 		if (allocate)

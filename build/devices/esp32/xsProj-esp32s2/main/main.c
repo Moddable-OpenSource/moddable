@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -156,6 +156,7 @@ void loop_task(void *pvParameter)
 	while (true) {
 		modTimersExecute();
 		modMessageService(gThe, modTimersNext());
+		modInstrumentationAdjust(Turns, +1);
 	}
 }
 
@@ -168,7 +169,7 @@ void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
-#if mxDebug
+#ifdef mxDebug
 	if (gThe) {
 		while (0 != (c = c_read8(msg++)))
 			fx_putc(gThe, c);

@@ -22,6 +22,7 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "xsHost.h"         // platform support
 
+#if defined(SOC_PCNT_SUPPORTED)
 #include "builtinCommon.h"
 
 #include "driver/pcnt.h"
@@ -292,3 +293,12 @@ void pulsecountDeliver(void *the, void *refcon, uint8_t *message, uint16_t messa
 		xsCallFunction0(xsReference(pc->onReadable), pc->obj);
 	xsEndHost(pc->the);
 }
+
+#else 		//  ! SOC_PCNT_SUPPORTED
+void xs_pulsecount_destructor_(void *data) {}
+void xs_pulsecount_constructor_(xsMachine *the) {}
+void xs_pulsecount_mark_(xsMachine* the, void *it, xsMarkRoot markRoot) {}
+void xs_pulsecount_close_(xsMachine *the) {}
+void xs_pulsecount_read_(xsMachine *the) {}
+void xs_pulsecount_write_(xsMachine *the) {}
+#endif

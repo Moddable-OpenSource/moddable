@@ -177,9 +177,11 @@ enum {
 	mxSelectCommand,
 	mxSetAllBreakpointsCommand,
 	mxSetBreakpointCommand,
+	mxStartProfilingCommand,
 	mxStepCommand,
 	mxStepInCommand,
 	mxStepOutCommand,
+	mxStopProfilingCommand,
 	mxToggleCommand,
 	mxImportCommand,
 	mxScriptCommand,
@@ -429,6 +431,10 @@ gboolean PiuDebugMachineCallback(GSocket *socket, GIOCondition condition, gpoint
 		{
 			xsVars(4);
 			PiuDebugMachineParse(self, self->buffer, length);
+			
+			xsResult = xsGet(xsGlobal, xsID_application);
+			PiuApplication* application = PIU(Application, xsResult);
+			PiuApplicationAdjust(application);
 		}
 		xsEndHost();
 	}
@@ -450,7 +456,7 @@ void PiuDebugMachineCallback(CFSocketRef socketRef, CFSocketCallBackType cbType,
 		int length = recv(CFSocketGetNative(self->socket), self->buffer, XS_BUFFER_COUNT, 0);
 		if (length > 0) {
 			self->buffer[length] = 0;
-// 			fprintf(stderr, "%s", self->buffer);
+			//fprintf(stderr, "%s", self->buffer);
 			xsBeginHost(self->the);
 			{
 				xsVars(4);
@@ -482,6 +488,10 @@ LRESULT CALLBACK PiuDebugMachineWindowProc(HWND window, UINT message, WPARAM wPa
 				{
 					xsVars(4);
 					PiuDebugMachineParse(self, self->buffer, length);
+					
+					xsResult = xsGet(xsGlobal, xsID_application);
+					PiuApplication* application = PIU(Application, xsResult);
+					PiuApplicationAdjust(application);
 				}
 				xsEndHost(self->the);
 				return TRUE;
@@ -1078,6 +1088,13 @@ void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName)
 	else if (strcmp(theName, "eval") == 0) {
 		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
 	}
+	else if (strcmp(theName, "pr") == 0) {
+	}
+	else if (strcmp(theName, "ps") == 0) {
+		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+	}
+	else if (strcmp(theName, "pt") == 0) {
+	}
 }
 
 void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
@@ -1159,6 +1176,23 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 		xsResult = xsGet(self->itemSlot, xsID_data);
 		(void)xsCall2(self->thisSlot, xsID_onEval, xsVar(0), xsResult);
 	}
+	else if (strcmp(theName, "pr") == 0) {
+		xsVar(0) = xsGet(self->itemSlot, xsID_name);
+		xsVar(1) = xsGet(self->itemSlot, xsID_value);
+		xsVar(2) = xsGet(self->itemSlot, xsID_path);
+		xsVar(3) = xsGet(self->itemSlot, xsID_line);
+		(void)xsCall4(self->thisSlot, xsID_onProfileRecord, xsVar(0), xsVar(1), xsVar(2), xsVar(3));
+	}
+	else if (strcmp(theName, "ps") == 0) {
+		self->logging = 0;
+		xsResult = xsGet(self->itemSlot, xsID_data);
+		(void)xsCall1(self->thisSlot, xsID_onProfileSample, xsResult);
+	}
+	else if (strcmp(theName, "pt") == 0) {
+		xsVar(0) = xsGet(self->itemSlot, xsID_name);
+		xsVar(1) = xsGet(self->itemSlot, xsID_value);
+		(void)xsCall2(self->thisSlot, xsID_onProfileTime, xsVar(0), xsVar(1));
+	}
 	self->itemSlot = xsUndefined;
 }
 
@@ -1215,6 +1249,13 @@ void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName)
 	}
 	else if (strcmp(theName, "eval") == 0) {
 		self->logging = 1;
+	}
+	else if (strcmp(theName, "pr") == 0) {
+	}
+	else if (strcmp(theName, "ps") == 0) {
+		self->logging = 1;
+	}
+	else if (strcmp(theName, "pt") == 0) {
 	}
 }
 
@@ -1340,6 +1381,12 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 				c_strcat(buffer, "\" line=\"1\"/>");
 			else
 				c_strcat(buffer, "\" line=\"0\"/>");
+			break;
+		case mxStartProfilingCommand:
+			c_strcat(buffer, "<start-profiling/>");
+			break;
+		case mxStopProfilingCommand:
+			c_strcat(buffer, "<stop-profiling/>");
 			break;
 		}
 		c_strcat(buffer, "\15\12");

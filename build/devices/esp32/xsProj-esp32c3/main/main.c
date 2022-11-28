@@ -51,9 +51,7 @@
 #include "xsHost.h"
 #include "xsHosts.h"
 
-#ifndef MODDEF_XS_TEST
-	#define MODDEF_XS_TEST	1
-#endif
+#include "mc.defines.h"
 
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
@@ -130,6 +128,7 @@ void loop_task(void *pvParameter)
 		while (gThe) {
 			modTimersExecute();
 			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
 		}
 
 		xsDeleteMachine(the);
@@ -137,6 +136,7 @@ void loop_task(void *pvParameter)
 		while (true) {
 			modTimersExecute();
 			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
 		}
 #endif
 	}
@@ -151,7 +151,7 @@ void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
-#if mxDebug
+#ifdef mxDebug
 	if (gThe) {
 		while (0 != (c = c_read8(msg++)))
 			fx_putc(gThe, c);

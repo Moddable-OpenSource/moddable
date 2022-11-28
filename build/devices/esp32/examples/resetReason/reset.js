@@ -1,0 +1,1 @@
+export default function reset() @ "xs_esp32_reset_now";

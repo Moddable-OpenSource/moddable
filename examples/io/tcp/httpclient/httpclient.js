@@ -34,10 +34,24 @@ class HTTPClient {
 			
 			if ("receiveBody" !== client.#state)
 				return undefined;
-						
+
+			let buffer;
+			if ("object" === typeof count) {
+				buffer = count;
+				count = buffer.byteLength;
+			}			
 			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
-			if (count > available)
+			if (count > available) {
 				count = available;
+				if (buffer) {
+					if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
+						throw new Error("invalid buffer");
+					if (ArrayBuffer.isView(buffer))
+						buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, count);
+					else
+						buffer = new Uint8Array(buffer, 0, count);
+				}
+			}
 
 			client.#readable -= count;
 			if (undefined === client.#chunk)
@@ -45,7 +59,7 @@ class HTTPClient {
 			else
 				client.#chunk -= count;
 
-			const result = client.#socket.read(count);
+			const result = client.#socket.read(buffer ?? count);
 
 			if (0 === client.#chunk) {
 				client.#line = "";
@@ -76,7 +90,7 @@ class HTTPClient {
 //@@ this may not be always correct... if last chunk has already flushed and onWritable called, this will never go out
 				client.#pendingWrite = ArrayBuffer.fromString("0000\r\n\r\n");
 				client.#requestBody = false;
-				return (client.#writable > 8) ? (client.#writable - 8) : 0 
+				return 0;		// request done. can't write more. 
 			}
 
 			const byteLength = data.byteLength;
@@ -158,6 +172,9 @@ class HTTPClient {
 		this.#socket = undefined;
 		Timer.clear(this.#timer);
 		this.#timer = undefined;
+		this.#current = undefined;
+		this.#requests.length = 0;
+		this.#state = "closed";
 	}
 	request(options) {
 		options = {...options};
@@ -223,8 +240,9 @@ class HTTPClient {
 							this.#remaining = undefined;		// ignore content-length if chunked
 							
 						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers);
-						this.#headers = undefined;
+						if (!this.#current) return;			// closed in callback
 
+						this.#headers = undefined;
 						this.#state = "receiveBody";
 						this.#line = (undefined == this.#chunk) ? undefined : "";
 					}
@@ -332,6 +350,9 @@ class HTTPClient {
 						this.#line = "";
 					}
 					break;
+				
+				case "closed":
+					return;
 			}
 			
 			if (!this.#pendingWrite || !this.#writable)

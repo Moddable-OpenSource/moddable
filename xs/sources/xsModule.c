@@ -163,7 +163,7 @@ void fxBuildModule(txMachine* the)
 {
 	txSlot* slot;
 	
-	fxNewHostFunction(the, mxCallback(fxModuleGetter), 0, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxModuleGetter), 0, XS_NO_ID, XS_NO_ID);
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
@@ -305,12 +305,12 @@ void fxExecuteModules(txMachine* the, txSlot* queue)
 							mxGetID(mxID(_then));
 							mxCall();
 					
-							function = fxNewHostFunction(the, fxExecuteModulesFulfilled, 1, XS_NO_ID);
+							function = fxNewHostFunction(the, fxExecuteModulesFulfilled, 1, XS_NO_ID, mxExecuteModulesFulfilledProfileID);
 							home = mxFunctionInstanceHome(function);
 							home->value.home.object = queue;
 							home->value.home.module = module->value.reference;
 	
-							function = fxNewHostFunction(the, fxExecuteModulesRejected, 1, XS_NO_ID);
+							function = fxNewHostFunction(the, fxExecuteModulesRejected, 1, XS_NO_ID, mxExecuteModulesRejectedProfileID);
 							home = mxFunctionInstanceHome(function);
 							home->value.home.object = queue;
 							home->value.home.module = module->value.reference;
@@ -433,7 +433,7 @@ void fxExecuteVirtualModuleSource(txMachine* the)
 	/* ARGUMENTS */
 	mxPushReference(closures);
 	if (internal->flag & XS_IMPORT_FLAG) {
-		function = fxNewHostFunction(the, fxExecuteVirtualModuleSourceImport, 1, XS_NO_ID);
+		function = fxNewHostFunction(the, fxExecuteVirtualModuleSourceImport, 1, XS_NO_ID, mxExecuteVirtualModuleSourceImportProfileID);
 		mxFunctionInstanceHome(function)->value.home.module = module;
 	}
 	else
@@ -918,12 +918,12 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 						mxGetID(mxID(_then));
 						mxCall();
 		
-						function = fxNewHostFunction(the, fxLoadModulesFulfilled, 1, XS_NO_ID);
+						function = fxNewHostFunction(the, fxLoadModulesFulfilled, 1, XS_NO_ID, mxLoadModulesFulfilledProfileID);
 						home = mxFunctionInstanceHome(function);
 						home->value.home.object = queue;
 						home->value.home.module = module->value.reference;
 
-						function = fxNewHostFunction(the, fxLoadModulesRejected, 1, XS_NO_ID);
+						function = fxNewHostFunction(the, fxLoadModulesRejected, 1, XS_NO_ID, mxLoadModulesRejectedProfileID);
 						home = mxFunctionInstanceHome(function);
 						home->value.home.object = queue;
 						home->value.home.module = module->value.reference;
@@ -1070,17 +1070,19 @@ void fxLoadVirtualModuleNamespace(txMachine* the, txSlot* object, txSlot* module
 	mxBehaviorOwnKeys(the, object, XS_EACH_NAME_FLAG, at);
 	mxTemporary(property);
 	while ((at = at->next)) {
-		if (mxBehaviorGetOwnProperty(the, object, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
-			mxPushReference(object);
-			mxGetAll(at->value.at.id, at->value.at.index);
-			export = export->next = fxNewSlot(the);
-			export->ID = at->value.at.id;
-			export->kind = XS_EXPORT_KIND;
-			export->value.export.closure = fxNewSlot(the);
-			export->value.export.closure->kind = the->stack->kind;
-			export->value.export.closure->value = the->stack->value;
-			export->value.export.module = module;
-			mxPop();
+		if (at->value.at.id != XS_NO_ID) {
+			if (mxBehaviorGetOwnProperty(the, object, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+				mxPushReference(object);
+				mxGetAll(at->value.at.id, at->value.at.index);
+				export = export->next = fxNewSlot(the);
+				export->ID = at->value.at.id;
+				export->value.export.closure = fxNewSlot(the);
+				export->value.export.closure->kind = the->stack->kind;
+				export->value.export.closure->value = the->stack->value;
+				export->value.export.module = module;
+				export->kind = XS_EXPORT_KIND;
+				mxPop();
+			}
 		}
 	}
 	mxPop();
@@ -1103,7 +1105,7 @@ void fxLoadVirtualModuleSource(txMachine* the, txSlot* record, txSlot* instance)
 		if (!fxIsCallable(the, slot))
 			mxTypeError("execute is no function");
 	}
-	function = fxNewHostFunction(the, fxExecuteVirtualModuleSource, 0, XS_NO_ID);
+	function = fxNewHostFunction(the, fxExecuteVirtualModuleSource, 0, XS_NO_ID, mxExecuteVirtualModuleSourceProfileID);
 	property = mxFunctionInstanceHome(function);
 	property->value.home.object = fxToInstance(the, record);
 	property->value.home.module = instance;
@@ -1787,6 +1789,7 @@ void fxPrepareModule(txMachine* the, txFlag flag)
 	property = mxModuleInstanceExecute(module);	
 	property->kind = slot->kind;
 	property->value = slot->value;
+	mxFunctionInstanceCode(slot->value.reference)->ID = mxModuleInstanceInternal(module)->value.module.id;
 	slot = &mxHosts;	
 	property = mxModuleInstanceHosts(module);	
 	property->kind = slot->kind;

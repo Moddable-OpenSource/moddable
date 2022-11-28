@@ -1,0 +1,91 @@
+{
+	"build": {
+		"UPLOAD_SPEED": "1500000",
+		"DEBUGGER_SPEED": "1500000"
+	},
+	"include": [
+		"$(MODDABLE)/modules/drivers/st7789/manifest.json",
+		"$(MODDABLE)/modules/drivers/axp192/manifest.json",
+		"$(MODDABLE)/modules/pins/smbus/manifest.json"
+	],
+	"config": {
+		"screen": "st7789",
+		"touch": "",
+		"rotation": 270
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 21,
+			"scl_pin": 22
+		},
+		"spi": {
+			"mosi_pin": 15,
+			"sck_pin": 13
+		},
+		"ili9341": {
+			"hz": 27000000,
+			"width": 240,
+			"height": 135,
+			"cs_pin": 5,
+			"dc_pin": 23,
+			"rst_pin": 18,
+			"column_offset": 40,
+			"row_offset": 53,
+			"spi_port": "VSPI_HOST",
+			"registers": [
+                 "0x01, 0,",
+                 "kDelayMS, 150,",
+                 "0x11, 0,",
+                 "kDelayMS, 255,",
+                 "0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,",
+                 "0xB6, 2, 0x0A, 0x82,",
+                 "0xB7, 1, 0x35,",
+                 "0xBB, 1, 0x28,",
+                 "kDelayMS, 10,",
+                 "0xC0, 1, 0x0C,",
+                 "0xC2, 2, 0x01, 0xFF,",
+                 "0xC3, 1, 0x10,",
+                 "0xC4, 1, 0x20,",
+                 "0xC6, 1, 0x0F,",
+                 "0x20, 0,",
+                 "0x36, 1, 0x78,",
+                 "0x3A, 1, 0x55,",
+                 "0x2A, 4, 0x00, 0x00, 0x01, 0x3F,",
+                 "0x2B, 4, 0x00, 0x00, 0x00, 0xE5,",
+                 "0x21, 0,",
+                 "0xE0, 14, 0xD0, 0x00, 0x02, 0x07, 0x0A, 0x28, 0x32, 0x44, 0x42, 0x06, 0x0E, 0x12, 0x14, 0x17,",
+                 "0xE1, 14, 0xD0, 0x00, 0x02, 0x07, 0x0a, 0x28, 0x31, 0x54, 0x47, 0x0E, 0x1C, 0x17, 0x1B, 0x1E,",
+                 "0x13, 0,",
+                 "kDelayMS, 10,",
+                 "0x29, 0,",
+                 "kDelayMS, 100,",
+                 "kDelayMS, 0"
+            ]
+		},
+		"audioIn": {
+			"sampleRate": 11025,
+			"bitsPerSample": 16,
+			"i2s": {
+				"lr_pin": 0,
+				"datain": 34,
+				"pdm": 1
+			}
+		}
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/pins/digital/monitor/*",
+			"$(MODULES)/pins/digital/monitor/esp32/*",
+			"$(MODULES)/drivers/mpu6886/*",
+			"$(MODULES)/drivers/sh200q/*"
+		],
+		"setup/target": "../m5stick_c/setup-target"
+	},
+	"preload": [
+		"monitor",
+		"setup/target",
+		"mpu6886",
+		"sh200q"
+	]
+}
+

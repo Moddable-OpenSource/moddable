@@ -12,8 +12,8 @@
  *
  */
 
-import fetch from "fetch";
-import { Headers, URLSearchParams } from "fetch";
+import { fetch, Headers } from "fetch";
+import { URLSearchParams } from "url";
 
 const headers = new Headers([
     ['Content-Type', 'application/x-www-form-urlencoded;charset=UTF-8'],

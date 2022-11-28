@@ -30,7 +30,7 @@ declare module "commodetto/PixelsOut" {
       count: number
     ): void;
 
-    adaptInvalid(area: {x: number, y: number, width: number, height: number}): void;
+    adaptInvalid(area: { x: number, y: number, width: number, height: number }): void;
     pixelsToBytes(count: number): number;
     /**
      * The width of the PixelsOut instance in pixels.
@@ -62,5 +62,6 @@ declare module "commodetto/PixelsOut" {
      */
     clut: unknown;
   }
+
   export {PixelsOut as default};
 }

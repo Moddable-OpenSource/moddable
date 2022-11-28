@@ -187,6 +187,7 @@ void* fxToArrayBuffer(txMachine* the, txSlot* slot)
 
 void fxBuildDataView(txMachine* the)
 {
+	txSlot* instance;
     txSlot* slot;
 	txInteger index;
 	const txTypeDispatch *dispatch;
@@ -247,8 +248,15 @@ void fxBuildDataView(txMachine* the)
 	mxDataViewConstructor = *the->stack;
 	mxPop();
 	
-	fxNewHostFunction(the, mxCallback(fxTypedArrayGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxTypedArraySetter), 1, XS_NO_ID);
+	mxPush(mxObjectPrototype);
+	instance = fxNewObjectInstance(the);
+	
+	fxNewHostFunction(the, mxCallback(fxTypedArrayGetter), 0, XS_NO_ID, XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
+	fxNewHostFunction(the, mxCallback(fxTypedArraySetter), 1, XS_NO_ID, XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
@@ -257,8 +265,8 @@ void fxBuildDataView(txMachine* the)
 	mxPull(mxTypedArrayAccessor);
 	mxPop();
 	mxPop();
-	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	
+	slot = fxLastProperty(the, instance);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_TypedArray_prototype_buffer_get), C_NULL, mxID(_buffer), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_TypedArray_prototype_byteLength_get), C_NULL, mxID(_byteLength), XS_DONT_ENUM_FLAG);

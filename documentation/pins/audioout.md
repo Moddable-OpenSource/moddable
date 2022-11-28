@@ -1,6 +1,6 @@
 # AudioOut
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: September 8, 2022
+Revised: November 17, 2022
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -199,6 +199,17 @@ audio.enqueue(0, AudioOut.Callback, 2);
 audio.callback = id => trace(`finished playing buffer ${id}\n`);
 ```
 
+Instead of a single callback function that is called for all streams, a separate callback for each stream maybe provided using the `callbacks` property:
+
+```js
+audio.callbacks = [
+	id => trace(`finished playing buffer ${id} from stream 0\n`),
+	id => trace(`finished playing buffer ${id} from stream 1\n`)
+];
+```
+
+If both the `callback` and `callbacks` property are set, only the the `callbacks` property is used.
+
 #### Dequeuing audio samples
 All of the samples and callbacks enqueued on a specified stream may be dequeued by calling `enqueue` with only the `stream` parameter:
 
@@ -214,6 +225,38 @@ audio.enqueue(0, AudioOut.Volume, 128);
 ```
 
 Values for the volume command range from 0 for silent, to 256 for full volume.
+
+## class Mixer
+The `Mixer` class provides access to the four-channel mixer and audio decompressors used by the `AudioOut`. This is useful for processing audio for other purposes, such as network streaming.
+
+```js
+import {Mixer} from "pins/i2s";
+```
+
+The mixer has the same API foundation as `AudioOut`, including `enqueue`. The mixer does not implement `start` or `stop` methods but instead provides a `mix` function which is used to pull samples that have been queued.
+
+### mix(sampleCount)
+### mix(buffer)
+The `mix` function can be called in two ways. First, when passed an integer count of the number of samples to mix, it returns a host buffer that contains the samples. Second, when passed a buffer (`ArrayBuffer`, `SharedArrayBuffer`, `Uint8Array`, `Int8Array`, `DataView`), it mixes the samples directly to the provided buffer.
+
+#### Output tone to new buffer
+The following code mixes 600 samples of a 440 Hz tone to a new buffer.
+
+```js
+const mixer = new Mixer({streams: 1, sampleRate: 12000, numChannels: 1});
+mixer.enqueue(0, Mixer.Tone, 440);
+const samples = mixer.mix(600);
+```
+
+#### Output tone to existing buffer
+The following code mixes 600 samples of a 440 Hz tone to an existing buffer.
+
+```js
+const samples = new ArrayBuffer(600 * 2);
+const mixer = new Mixer({streams: 1, sampleRate: 12000, numChannels: 1});
+mixer.enqueue(0, Mixer.Tone, 440);
+mixer.mix(samples);
+```
 
 ## MAUD format
 The `maud` format, "Moddable Audio", is a simple audio format intended to be compact and trivially parsed. The `enqueue` function of `AudioOut` class accepts samples in the `maud` format. The `wav2maud` tool in the Moddable SDK converts WAV files to `maud` resources.
@@ -253,4 +296,3 @@ The `audioOut` module is configured at build time.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.
-* 

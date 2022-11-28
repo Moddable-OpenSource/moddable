@@ -1,0 +1,46 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/monitor/manifest.json"
+	],
+	"build": {
+		"UPLOAD_SPEED": "1500000",
+		"DEBUGGER_SPEED": "1500000"
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/neopixel/*",
+			"$(MODULES)/drivers/neopixel/esp32/*",
+
+			"$(MODULES)/pins/audioin/*",
+			"$(MODULES)/pins/audioin/esp32/*",
+
+			"../m5stack_fire/m5button"
+		],
+		"pins/audioout": "$(MODULES)/pins/i2s/*",
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"audioin",
+		"m5button",
+		"neopixel",
+		"setup/target"
+	],
+	"defines": {
+		"audioIn": {
+			"sampleRate": 11025,
+			"bitsPerSample": 16,
+			"i2s": {
+				"bck_pin": 0,
+				"lr_pin": 5,
+				"datain": 19,
+				"pdm": 1
+			}
+		},
+		"neopixel": {
+			"length": 1,
+			"pin": 27,
+			"order": "#GRB",
+			"rmt_channel": "RMT_CHANNEL_0"
+		}
+	}
+}

@@ -158,6 +158,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	{
 		char c;
 		slash = name;
+		if (!c_strncmp(name, "xsbug://", 8))
+			slash += 8;
 		while ((c = *slash)) {
 			if (c == '/')
 				*slash = '\\';

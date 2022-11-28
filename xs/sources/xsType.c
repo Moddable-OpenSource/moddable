@@ -112,12 +112,13 @@ txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
 	to = result;
 	while (from) {
 		to = to->next = fxDuplicateSlot(the, from);
-		if (to->kind == XS_ARRAY_KIND) {
-			txSlot* address = to->value.array.address;
+		if (from->kind == XS_ARRAY_KIND) {
+			txSlot* address = from->value.array.address;
+			to->value.array.address = C_NULL;
 			if (address) {
 				txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
 				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
-				address = to->value.array.address;
+				address = from->value.array.address;
 				c_memcpy(chunk, address, size * sizeof(txSlot));
 				to->value.array.address = chunk;
 				while (size) {
@@ -247,7 +248,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 #ifdef mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {
 		const txHostFunctionBuilder* builder = theSlot->value.hostFunction.builder;
-		anInstance = fxNewHostFunction(the, builder->callback, builder->length, builder->id);
+		anInstance = fxNewHostFunction(the, builder->callback, builder->length, builder->id, theSlot->value.hostFunction.profileID);
 		mxPullSlot(theSlot);
 		} break;
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -78,7 +78,7 @@ int32_t modInstrumentationGet_(void *the, uint8_t what)
 
 void modInstrumentationAdjust_(uint8_t what, int32_t value)
 {
-	if (what <= kModInstrumentationCallbacksBegin)
+	if (what < kModInstrumentationCallbacksBegin)
 		gInstrumentationValues[what] += value;
 }
 

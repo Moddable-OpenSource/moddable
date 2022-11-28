@@ -1,0 +1,39 @@
+{
+	"service": {
+		"uuid": "180D",
+		"characteristics": {
+			"bpm": {
+				"uuid": "2A37",
+				"maxBytes": 2,
+				"type": "Array",
+				"permissions": "read,write",
+				"properties": "notify,writeNoResponse"
+			},
+			"location": {
+				"uuid": "2A38",
+				"maxBytes": 1,
+				"type": "Uint8",
+				"permissions": "read,write",
+				"properties": "read,writeNoResponse"
+			},
+			"simpleDesc": {
+				"uuid": "2A4D",
+				"maxBytes": 1,
+				"type": "Uint8",
+				"permissions": "read",
+				"properties": "read",
+				"value": 25,
+				"descriptors": {
+					"shortDesc": {
+						"uuid": "2908",
+						"maxBytes": 1,
+						"type": "Uint8",
+						"permissions": "read",
+						"properties": "read",
+						"value": 3
+					}
+				}
+			}
+		}
+	}
+}

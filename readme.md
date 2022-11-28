@@ -1,7 +1,7 @@
 # Moddable SDK
 
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 21, 2022
+Revised: October 13, 2022
 
 ## Modern software development for microcontrollers
 
@@ -101,7 +101,7 @@ To use the Moddable SDK with ESP32-based devices, you need to:
 1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
 2. Install [ESP32 tools](./documentation/devices/esp32.md)
 
-The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platforms) built on ESP32, including the devices shown below.
+The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platforms) built on ESP32, ESP32-S2, ESP32-S3, and ESP32-C3, including the devices shown below.
 
 | | | |
 | :---: | :---: | :---: |
@@ -119,11 +119,13 @@ To use the Moddable SDK with Pico devices, you need to:
 1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
 2. Install [Pico tools](./documentation/devices/pico.md)
 
-The Moddable SDK supports devices built with the Raspberry Pi Pico, including the devices shown below:
+The Moddable SDK supports [many devices](./documentation/devices/pico.md#platforms) built with the Raspberry Pi Pico, including the boards shown below:
 
 | | | |
 | :---: | :---: | :---: |
-| <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pi-pico.png" width=125></a><BR>Raspberry Pi<BR>Pico | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display |  <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-ili9341.png" width=85></a><BR>ili9341 
+| <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pi-pico_w.png" width=65></a><BR>Raspberry Pi<BR>Pico W | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-ili9341.png" width=120></a><BR>ili9341
+| <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-adafruit-qt-py-rp2040.png" width=85></a><BR>Adafruit QT Py | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=160></a><BR>Sparkfun Pro Micro | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-lilygo-t-display-rp2040.png" width=160></a><BR> LILYGO T-Display
+
 
 ### Gecko by Silicon Labs
 

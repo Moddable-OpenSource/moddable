@@ -82,7 +82,11 @@ static const uint32_t SBC_proto_8[] = {
 #define UNROLL
 
 // Don't inline otherwise you will run out of arm registers for the snappy unrolled filters
- __attribute__ ((noinline))
+#ifdef _WIN32
+__declspec(noinline)
+#else
+__attribute__ ((noinline))
+#endif
 static void synthesize8(int32_t* v, uint8_t* offset, int32_t* src, OUTPUTSAMPLETYPE* dst)
 {
 	int i;

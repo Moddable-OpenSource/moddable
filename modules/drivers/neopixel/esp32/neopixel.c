@@ -397,7 +397,7 @@ void startOnChannel(pixel_settings_t *px, int channel) {
 	gOnChannel[channel] = px;
 
 	// set the pin (on demand)
-	rmt_set_pin(px->rmtChannel, RMT_MODE_TX, px->pin);
+	rmt_set_gpio(px->rmtChannel, RMT_MODE_TX, px->pin, false);
 
 #if ! MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
 	rmt_register_tx_end_callback(doneOnChannel, 0);

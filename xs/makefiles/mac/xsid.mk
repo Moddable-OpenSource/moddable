@@ -22,6 +22,7 @@
 
 GOAL ?= debug
 NAME = xsid
+MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif

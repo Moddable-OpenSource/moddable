@@ -23,6 +23,7 @@
 
 GOAL ?= debug
 NAME = tools
+MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
@@ -32,6 +33,7 @@ BUILD_DIR ?= $(realpath ../..)
 
 COMMODETTO = $(MODDABLE)/modules/commodetto
 CRYPT = $(MODDABLE)/modules/crypt
+DATA = $(MODDABLE)/modules/data
 INSTRUMENTATION = $(MODDABLE)/modules/base/instrumentation
 TOOLS = $(MODDABLE)/tools
 
@@ -117,6 +119,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
+	$(MOD_DIR)/wavreader.xsb \
 	$(MOD_DIR)/ber.xsb \
 	$(MOD_DIR)/crypt.xsb \
 	$(MOD_DIR)/curve.xsb \
@@ -177,6 +180,7 @@ PRELOADS =\
 	-p commodetto/Poco.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p ber.xsb\
 	-p crypt.xsb\
 	-p curve.xsb\
@@ -281,7 +285,7 @@ XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid
 XSL = $(BUILD_DIR)/bin/mac/$(GOAL)/xsl
 	
-VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(CRYPT)/etc $(CRYPT)/digest ${CRYPT}/digest/kcl ${CRYPT}/arith $(TOOLS)
+VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/wavreader $(CRYPT)/etc $(CRYPT)/digest ${CRYPT}/digest/kcl ${CRYPT}/arith $(TOOLS)
 
 build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(MOD_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME) $(COMMANDS) $(BIN_DIR)/README.txt
 
@@ -330,6 +334,10 @@ $(MOD_DIR)/%.xsb: $(CRYPT)/digest/%.js
 	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
 
 $(MOD_DIR)/%.xsb: $(CRYPT)/etc/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
+$(MOD_DIR)/%.xsb: $(DATA)/wavreader/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
 

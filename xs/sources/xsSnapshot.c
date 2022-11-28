@@ -1181,8 +1181,8 @@ void fxReadMapSet(txMachine* the, txSlot* table, txBoolean paired)
 	while (key) {
 		txU4 sum = fxSumEntry(the, key);
 		txU4 index = sum & (table->value.table.length - 1);
-		txSlot** address = &(table->value.table.address[index]);
 		txSlot*  entry = fxNewSlot(the);
+		txSlot** address = &(table->value.table.address[index]);
 		entry->next = *address;
 		entry->kind = XS_ENTRY_KIND;
 		entry->value.entry.slot = key;
@@ -1239,7 +1239,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 		#else
 			mxAssert(byte == (txByte)sizeof(txSlot), "snapshot: invalid architecture %d\n", byte);
 		#endif
-		
+	
 			fxReadAtom(the, snapshot, &atom, "SIGN");
 			mxAssert(atom.atomSize == snapshot->signatureLength, "snapshot: invalid signature length %d\n", atom.atomSize);
 			signature = snapshot->signature;
@@ -1253,6 +1253,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			fxReadAtom(the, snapshot, &atom, "CREA");
 			mxThrowIf((*snapshot->read)(snapshot->stream, &creation, sizeof(txCreation)));
 			fxAllocate(the, &creation);
+			mxThrowIf((*snapshot->read)(snapshot->stream, &(the->profileID), sizeof(txID)));
 	
 			snapshot->firstChunk = the->firstBlock->current;
 			snapshot->firstSlot = the->firstHeap;
@@ -1263,7 +1264,8 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 	
 			fxReadAtom(the, snapshot, &atom, "HEAP");
 			mxThrowIf((*snapshot->read)(snapshot->stream, the->freeHeap, atom.atomSize));
-			the->freeHeap = the->freeHeap + (atom.atomSize / sizeof(txSlot));
+			the->currentHeapCount = (atom.atomSize / sizeof(txSlot));
+			the->freeHeap = the->freeHeap + the->currentHeapCount;
 	
             slot = the->firstHeap + 1;
 			while (slot < the->freeHeap) {
@@ -1902,6 +1904,7 @@ void fxWriteStack(txMachine* the, txSnapshot* snapshot)
 int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 {
 	txSlot* heap;
+	txSize heapCount;
 	txSlot* stack;
 	txSlot** slots;
 	txSize size;
@@ -1920,6 +1923,14 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		snapshot->error = 0;
 		fxCollectGarbage(the);
 		fxUnlinkChunks(the);
+		
+		heap = the->firstHeap;
+		heapCount = 0;
+		while (heap) {
+			heapCount++;
+			heap = heap->next;
+		}
+		fprintf(stderr, "fxWriteSnapshot %d\n", heapCount);
 		
 		fxIndexSlots(the, snapshot);
 	
@@ -1943,7 +1954,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	
 		creation.initialChunkSize = the->maximumChunksSize;
 		creation.incrementalChunkSize = the->minimumChunksSize;
-		creation.initialHeapCount = the->maximumHeapCount;
+		creation.initialHeapCount = the->maximumHeapCount - heapCount + 1;
 		creation.incrementalHeapCount = the->minimumHeapCount;
 		creation.stackCount = (txSize)(the->stackTop - the->stackBottom);
 		creation.keyCount = the->keyCount;
@@ -1992,11 +2003,12 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		mxThrowIf((*snapshot->write)(snapshot->stream, "SIGN", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, snapshot->signature, snapshot->signatureLength));
 
-		size = 8 + sizeof(txCreation);
+		size = 8 + sizeof(txCreation) + sizeof(txID);
 		size = htonl(size);
 		mxThrowIf((*snapshot->write)(snapshot->stream, &size, 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, "CREA", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, &creation, sizeof(txCreation)));
+		mxThrowIf((*snapshot->write)(snapshot->stream, &(the->profileID), sizeof(txID)));
 
 		size = 8 + chunkSize;
 		size = htonl(size);
