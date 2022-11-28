@@ -1,6 +1,6 @@
 # AudioOut
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: November 17, 2022
+Revised: November 28, 2022
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -149,6 +149,8 @@ The enqueue function has several different functions, all related to the audio q
 
 All invocations of the `enqueue` function include the first parameter, the target stream number, a value from 0 to one less than the number of streams configured using the constructor.
 
+The `length` function returns the number of unused queue entries of a stream.
+
 #### Enqueuing audio samples
 Audio samples to play may be provided either as a MAUD audio resource or as raw audio samples. In both cases, the samples must be in the same format as the audio output (e.g. have the same sample rate, bits per sample, and number of channels).
 
@@ -225,6 +227,17 @@ audio.enqueue(0, AudioOut.Volume, 128);
 ```
 
 Values for the volume command range from 0 for silent, to 256 for full volume.
+
+### length(stream)
+
+The `length` function returns the number of unused queue entries of the specified stream. This information can be used to determine if the stream is currently able to accept additional calls to `enqueue`.
+
+```js
+if (audio.length(0) >= 2) {
+	audio.enqueue(0, AudioOut.Tone, 440, 1000);
+	audio.enqueue(0, AudioOut.Tone, 330, 1000);
+}
+```
 
 ## class Mixer
 The `Mixer` class provides access to the four-channel mixer and audio decompressors used by the `AudioOut`. This is useful for processing audio for other purposes, such as network streaming.
