@@ -67,7 +67,7 @@ declare module 'pins/audioout' {
     public static readonly Silence: MixerSilence
   }
 
-  type AudioOutCallback = (value?: number) => void
+  type AudioOutCallback = (value: number) => void
   class AudioOut extends Mixer {
       start(): void
       stop(): void
