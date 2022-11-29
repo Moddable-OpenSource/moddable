@@ -184,7 +184,6 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	brew update
 	brew install python3 cmake ninja dfu-util
 	brew upgrade python3 cmake ninja dfu-util
-	sudo easy_install pip
 	pip install pyserial
 	```
 
@@ -342,7 +341,6 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	brew update
 	brew install python cmake ninja
 	brew upgrade python cmake ninja
-	sudo easy_install pip
 	pip install pyserial
 	```	
 		
