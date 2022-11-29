@@ -199,6 +199,8 @@ else
   MODULES += $(MOD_DIR)/mcrun.xsb
 endif 
 
+TOOLS_VERSION ?= $(shell cat $(MODDABLE)/tools/VERSION)
+
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
@@ -209,7 +211,8 @@ C_DEFINES = \
 	-DmxNoFunctionLength=1 \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1
+	-DmxFewGlobalsTable=1 \
+	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
@@ -301,6 +304,7 @@ $(MOD_DIR)/%.xsb: $(TOOLS)/%.js
 	$(XSC) -c -d -e $< -o $(MOD_DIR)
 
 $(OBJECTS): $(XS_HEADERS) $(HEADERS) | $(TMP_DIR)/mc.xs.c
+$(TMP_DIR)/tool.c.o : $(MODDABLE)/tools/VERSION
 $(TMP_DIR)/%.c.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -o $@
