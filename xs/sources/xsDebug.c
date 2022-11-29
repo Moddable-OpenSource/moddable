@@ -2465,7 +2465,7 @@ void fxCheckProfiler(txMachine* the, txSlot* frame)
 		return;
 	txMicroseconds when = profiler->when;
 	txMicroseconds time = fxGetMicroSeconds();
-	if (when < time) {
+	if (when <= time) {
 		txSize sampleIndex = profiler->sampleIndex;
 		txSize sampleSize = profiler->sampleSize;
 		txID* samples = profiler->samples + (sampleIndex * sampleSize);

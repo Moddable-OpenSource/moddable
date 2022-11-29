@@ -58,7 +58,7 @@
 		static TaskHandle_t gIdles[kTargetCPUCount];
 		static void IRAM_ATTR timer_group0_isr(void *para);
 
-		volatile uint32_t gCPUTime = 1;
+		volatile uint32_t gCPUTime;
 	#endif
 
 	#include "freertos/task.h"
