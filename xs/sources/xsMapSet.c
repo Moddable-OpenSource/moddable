@@ -174,7 +174,7 @@ void fxBuildMapSet(txMachine* the)
 	/* FINALIZATION REGISTRY */
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
+//	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_register), 2, mxID(_register), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_unregister), 1, mxID(_unregister), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "FinalizationRegistry", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
@@ -1433,6 +1433,9 @@ void fx_FinalizationRegistry(txMachine* the)
 	registry->value.finalizationRegistry.callback = slot;
 }
 
+
+#if 0
+// removed from FinalizationRegistry specification
 void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 {
 	txSlot* instance;
@@ -1464,6 +1467,7 @@ void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 		}
 	}
 }
+#endif
 
 void fx_FinalizationRegistry_prototype_register(txMachine* the)
 {
