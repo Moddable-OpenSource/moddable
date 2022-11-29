@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -38,6 +38,8 @@ export class FILE @ "FILE_prototype_destructor" {
 
 export class TOOL {
 	constructor(argv) {
+		const command = argv.join(" ");
+
 		this.errorCount = 0;
 		this.warningCount = 0;
 		if ((argv.length == 2) && (argv[1] == inline)) {
@@ -47,6 +49,25 @@ export class TOOL {
 			argv.length = 1;
 			args.forEach(arg => argv.push(arg));
 		}
+		
+		let path = this.getenv("MODDABLE") + "/tools/VERSION";
+		if ("win" === this.currentPlatform)
+			path = path.replaceAll("/", "\\");
+		const version = this.readFileString(path);
+		if (version === this.getToolsVersion())
+			return;
+
+		const msg = [
+			"Moddable SDK binary tools and sources mismatch!",
+			"",
+			`Run this command line once to rebuild the binary tools and resume your "${argv[0]}" command:`,
+			""
+		];
+		if ("win" === this.currentPlatform)
+			msg.push(`   pushd %MODDABLE%\\build\\makefiles\\win && build clean && build && popd && ${command}`, "");
+		else
+			msg.push(`   pushd $MODDABLE/build/makefiles/${this.currentPlatform} && make clean && make && popd && ${command}`, "");
+		throw new Error(msg.join("\n"));
 	}
 	get ipAddress() @ "Tool_prototype_get_ipAddress";
 	get currentDirectory() @ "Tool_prototype_get_currentDirectory";
@@ -59,6 +80,7 @@ export class TOOL {
 	execute(command) @ "Tool_prototype_execute";
 	getenv(name) @ "Tool_prototype_getenv";
 	getFileSize(path) @ "Tool_prototype_getFileSize";
+	getToolsVersion(path) @ "Tool_prototype_getToolsVersion";
 	hash(d, string) @  "Tool_prototype_fsvhash";
 	isDirectoryOrFile(path) @ "Tool_prototype_isDirectoryOrFile"; // -1: directory, 0: none, 1: file
 	joinPath(parts) @ "Tool_prototype_joinPath";

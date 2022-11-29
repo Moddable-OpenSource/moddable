@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -597,6 +597,13 @@ void Tool_prototype_getFileSize(xsMachine* the)
 			fclose(file);
 		xsThrow(xsException);
 	}
+}
+
+void Tool_prototype_getToolsVersion(xsMachine *the)
+{
+#ifdef kModdableToolsVersion
+	xsResult = xsString(kModdableToolsVersion);
+#endif
 }
 
 void Tool_prototype_joinPath(xsMachine* the)
