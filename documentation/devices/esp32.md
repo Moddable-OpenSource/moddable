@@ -144,7 +144,7 @@ Omitting the `-d` and `-i` options on the `mcconfig` command line selects a rele
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -159,22 +159,22 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`
 	
 	If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
-4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
+4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.3` tag:
 
 	```text
 	cd ~/esp32
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
-	If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag`:
+	If you already have a clone of the ESP-IDF, update to the `v4.4.3` tag`:
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
@@ -316,12 +316,12 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 <a id="mac-update"></a>	
 ### Updating
 
-1. If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag.
+1. If you already have a clone of the ESP-IDF, update to the `v4.4.3` tag.
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
@@ -332,7 +332,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	rm -rf esp-idf
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 	
@@ -389,7 +389,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 <a id="win"></a>	
 ## Windows
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="win-instructions"></a>
 ### Installing
@@ -404,7 +404,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
 
-	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.4.2 (release version)" option and clone into a directory called `esp32\esp-idf` within your home folder.
+	The installer will offer to clone the ESP-IDF git repository for you. If you choose this option, select the "v4.4.3 (release version)" option and clone into a directory called `esp32\esp-idf` within your home folder.
 
 
 4. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, create an `esp32` directory in your home folder, either from File Explorer or a Command Prompt:
@@ -414,13 +414,13 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`
     mkdir esp32
     ```
 
-5. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
+5. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.3` tag:
 
     ```text
     cd %USERPROFILE%\esp32
     git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
     ```
 
@@ -533,18 +533,18 @@ To ensure that your build environment is up to date, perform the following steps
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
     
-    If you choose to clone the ESP-IDF, select the `v4.4.2 (release version)` of the esp-idf.
+    If you choose to clone the ESP-IDF, select the `v4.4.3 (release version)` of the esp-idf.
 
-	If you use the installer to clone the ESP-IDF, please follow the instructions in the next step to update to the `v4.4.2` tag.
+	If you use the installer to clone the ESP-IDF, please follow the instructions in the next step to update to the `v4.4.3` tag.
 
 
-2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
+2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.3` tag:
 
     ```text
     cd %USERPROFILE%\esp32
     git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
     ```
 
@@ -553,7 +553,7 @@ To ensure that your build environment is up to date, perform the following steps
 	```text
 	cd %IDF_PATH%
 	git fetch --all --tags
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
@@ -611,7 +611,7 @@ To ensure that your build environment is up to date, perform the following steps
 <a id="esp32-linux"></a>
 ## Linux
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
 
 <a id="lin-instructions"></a>
 ### Installing
@@ -643,22 +643,22 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.2 (commit `1b16ef6`
 
 3. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
 
-4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.2` tag:
+4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.3` tag:
 
 	```text
 	cd ~/esp32
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
-	If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag by using the [update instructions below](#lin-update).
+	If you already have a clone of the ESP-IDF, update to the `v4.4.3` tag by using the [update instructions below](#lin-update).
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
@@ -764,12 +764,12 @@ export UPLOAD_PORT=/dev/ttyUSB1
 <a id="lin-update"></a>	
 ### Updating
 
-1. If you already have a clone of the ESP-IDF, update to the `v4.4.2` tag.
+1. If you already have a clone of the ESP-IDF, update to the `v4.4.3` tag.
 
 	```text
 	cd ~/esp32/esp-idf
 	git fetch --all --tags
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
@@ -780,7 +780,7 @@ export UPLOAD_PORT=/dev/ttyUSB1
 	rm -rf esp-idf
 	git clone --recursive https://github.com/espressif/esp-idf.git
 	cd esp-idf
-	git checkout v4.4.2
+	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
 
