@@ -32,6 +32,9 @@ XS_DIR = ..\..\..\xs
 BUILD_DIR = ..\..
 !ENDIF
 
+TOOLS_VERSION = \
+!INCLUDE $(MODDABLE)\tools\VERSION
+
 COMMODETTO = $(MODDABLE)\modules\commodetto
 DATA = $(MODDABLE)\modules\data
 INSTRUMENTATION = $(MODDABLE)\modules\base\instrumentation
@@ -225,6 +228,7 @@ C_OPTIONS = \
 	/D mxHostFunctionPrimitive=1 \
 	/D mxFewGlobalsTable=1 \
 	/D mxMessageWindowClass=\"fxMessageWindowClassX\" \
+	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\" \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \
 	/I$(XS_DIR)\sources \
@@ -352,6 +356,7 @@ $(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
 	@echo # xsid $(@F)
 	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
+$(TMP_DIR)\tool.o : $(MODDABLE)\tools\VERSION
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
