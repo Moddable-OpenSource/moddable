@@ -55,6 +55,7 @@ declare module 'pins/audioout' {
     public enqueue(stream: number, kind: MixerSilence, samples: number): void
     
     public mix(samplesNeeded: number): HostBuffer
+    public mix(buffer: BufferLike): void
 
     public length(stream: number): number
   
@@ -67,7 +68,7 @@ declare module 'pins/audioout' {
     public static readonly Silence: MixerSilence
   }
 
-  type AudioOutCallback = (value?: number) => void
+  type AudioOutCallback = (value: number) => void
   class AudioOut extends Mixer {
       start(): void
       stop(): void
