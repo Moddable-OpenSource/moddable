@@ -54,13 +54,16 @@ class WebSocket {
 	#url = "";
 	#writable = 0;
 	
-	constructor(url, protocol, socket) {
+	constructor(url, protocol) {
 		let options;
-		if (url instanceof device.network.ws.socket.io)
-			options = { socket:url };
-		else {
+		if (url instanceof Object) {
+			options = url;
+			url = options.url;
+			protocol = options.protocol;
+		}
+		if (url) {
 			const parts = URLParts(url);
-			if (parts.scheme != "ws")
+			if (parts.scheme !== "ws")
 				throw new URIError("ws only");
 			this.#url = url;
 			if (protocol)

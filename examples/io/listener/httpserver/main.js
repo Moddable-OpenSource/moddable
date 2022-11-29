@@ -113,7 +113,7 @@ Hullo SSE
 router.set("/ws", { 
 	...WebSocketHandshake, 
 	onDone() {
-		const ws = new WebSocket(this.detach());
+		const ws = new WebSocket({socket: this.detach()});
 		ws.addEventListener("open", event => {
 			ws.send("HELLO");
 		});
