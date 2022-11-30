@@ -29,7 +29,7 @@ USE_USB ?= 0
 USB_VENDOR_ID ?= beef
 USB_PRODUCT_ID ?= 1cee
 
-EXPECTED_ESP_IDF ?= v4.4.2
+EXPECTED_ESP_IDF ?= v4.4.3
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
