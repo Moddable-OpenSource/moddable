@@ -304,11 +304,13 @@ void cdc_rx_callback(int itf, cdcacm_event_t *event) {
 
 	i = 0;
 
+#if mxDebug
 	if (0 == usbEvtPending++) {
 		xQueueSendToBackFromISR(usbDbgQueue, &i, &xTaskWoken);
 		if (xTaskWoken == pdTRUE)
 			portYIELD_FROM_ISR();
 	}
+#endif
 }
 
 void setupDebuggerUSB() {
@@ -327,8 +329,10 @@ void setupDebuggerUSB() {
 	rx_fifo_buffer = c_malloc(1024);
 	fifo_init(&rx_fifo, rx_fifo_buffer, 1024);
 
+#if mxDebug
 	usbDbgQueue = xQueueCreate(8, sizeof(uint32_t));
 	xTaskCreate(debug_task, "debug", 2048, usbDbgQueue, 8, NULL);
+#endif
 
 	ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 
