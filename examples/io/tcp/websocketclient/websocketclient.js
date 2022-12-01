@@ -290,8 +290,10 @@ class WebSocketClient {
 						//@@ it is an error for client to receieve a mask. this code applies to future server. client should fail here.
 						options.mask.push(this.#socket.read());
 						count--;
-						if (4 === options.mask.length)
-							options.mask = Uint8Array.from(options.mask);
+						if (4 !== options.mask.length)
+							continue;
+
+						options.mask = Uint8Array.from(options.mask);
 						if (options.length[0])
 							continue;
 						// 0 length payload. process immediately
