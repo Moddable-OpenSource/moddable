@@ -245,7 +245,7 @@ else
 	C_FLAGS += -D_RELEASE=1 -O3
 endif
 
-LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread
+LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread -ldl
 
 LINK_FLAGS = -fPIC
 
