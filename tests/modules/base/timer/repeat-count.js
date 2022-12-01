@@ -13,7 +13,7 @@ let timer = Timer.set(id => {
 
 Timer.set(() => {
     Timer.clear(timer);
-    if (count === 33) {
+    if (count === 34) {
         $DONE();
     } else {
         $DONE(`wrong count: ${count}`);
