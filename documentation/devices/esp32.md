@@ -1,8 +1,8 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
-Revised: August 8, 2022
+Revised: November 30, 2022
 
-This document provides a guide to building apps for the [ESP32](https://www.espressif.com/en/products/socs/esp32) and [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2) with the Moddable SDK.
+This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), and [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3).
 
 ## Table of Contents
 
@@ -11,6 +11,7 @@ This document provides a guide to building apps for the [ESP32](https://www.espr
 	* [ESP32](#platforms-esp32)
 	* [ESP32-S2](#platforms-esp32-s2)
 	* [ESP32-S3](#platforms-esp32-s3)
+	* [ESP32-C3](#platforms-esp32-c3)
 	* [Specifying ESP32 Subclass in Manifest](#platforms-manifest)
 * [Build Types](#builds)
 	* [Debug](#build-debug)
@@ -103,9 +104,39 @@ The Moddable SDK supports two ESP32-S2 development kits from Espressif. The foll
 <a id="platforms-esp32-s3"></a>
 ### ESP32-S3
 
-ESP32-S3 is the successor to the original ESP32. It is currently under development and no developments boards are commercially availble.
+ESP32-S3 is the successor to the original ESP32. It has the following features:
 
-The `esp32/esp32s3` build target can be used to build projects targeting the ESP32-S3.
+- 240 MHz processor
+- Wi-Fi
+- BLE
+- 512 KB RAM
+- External PSRAM support
+- 8 MB flash on popular modules
+
+Moddable SDK support for ESP32-S3 has been tested with the ESP32-S3-DevKitC-1-N8 development kit:
+
+| Name | Platform identifier | Links |
+| :---: | :--- | :--- |
+|  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
+
+
+<a id="platforms-esp32-c3"></a>
+### ESP32-C3
+
+ESP32-C3 has the following features:
+
+- 160 MHz RISC-V MCU
+- Wi-Fi
+- BLE
+- 400 KB RAM
+- 4 MB flash on popular modules
+
+The Moddable SDK supports three ESP32-C3 development kits:
+
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+|  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/_images/esp32-c3-devkitm-1-v1-isometric.png" width=125><BR>ESP32-C3-DevKitM-1 | `esp32/esp32c3` |  | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html)</li> |
+| AI Thinker ESP-C3-32S-Kit <BR> (1 MB and 2 MB versions) | `esp32/c3_32s_kit` <BR> `esp32/c3_32s_kit_2m`| RGB LED  | <li>[Product specification](https://docs.ai-thinker.com/_media/esp32/docs/esp-c3-32s-kit-v1.0_specification.pdf)</li> |
 
 <a id="platforms-manifest"></a>
 ### Specifying ESP32 Subclass in Manifest
