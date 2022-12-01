@@ -19,6 +19,11 @@
 
 HOST_OS = win
 
+!IF "$(IDF_PATH)"==""
+!MESSAGE %IDF_PATH% not set. See set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md
+!ERROR
+!ENDIF
+
 !IF "$(EXPECTED_ESP_IDF)"==""
 EXPECTED_ESP_IDF = v4.4.3
 !ENDIF
@@ -61,6 +66,16 @@ IDF_VERSION = \
 !ENDIF
 !ELSE
 !MESSAGE Could not detect ESP-IDF version.
+!ENDIF
+
+!IF "$(IDF_VERSION)"==""
+!MESSAGE Could not detect ESP-IDF version at %IDF_PATH%: $(IDF_PATH).
+!ERROR
+!ENDIF
+
+!IF "$(IDF_PYTHON_ENV_PATH)"==""
+!MESSAGE IDF_PYTHON_ENV_PATH not set. Try running: %IDF_PATH%\\export.bat 
+!ERROR
 !ENDIF
 
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj-$(ESP32_SUBCLASS)
@@ -489,7 +504,7 @@ idfVersionCheck:
 xidfVersionCheck:
 	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION)
 	if %ERRORLEVEL% NEQ 0 (
-		echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"
+		echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"
 		exit 1
 	)
 
