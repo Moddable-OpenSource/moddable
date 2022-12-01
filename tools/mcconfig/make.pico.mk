@@ -29,6 +29,9 @@ PIOASM ?= $(HOME)/pico/pico-sdk/build/pioasm/pioasm
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/pico
 
+TOOLS_BIN = $(PICO_GCC_ROOT)/bin
+TOOLS_PREFIX = arm-none-eabi-
+
 DEBUGGER_SPEED ?= 115200
 DEBUGGER_PORT ?= /dev/cu.SLAB_USBtoUART
 
@@ -40,6 +43,26 @@ PICO_VID ?= 2e8a
 PICO_PID ?= 000a
 
 UF2CONV = $(PICO_SDK_DIR)/build/elf2uf2/elf2uf2
+
+# spot-check installation
+ifeq ($(wildcard $(PICO_ROOT)),)
+$(error Pico tools directory not found at $$PICO_ROOT: $(PICO_ROOT). Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
+endif
+ifeq ($(wildcard $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc),)
+$(error Pico GCC tools for "$(TOOLS_PREFIX)" not found at $$PICO_GCC_ROOT/bin: $(PICO_GCC_ROOT). Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
+endif
+ifeq ($(wildcard $(PICO_SDK_DIR)),)
+$(error Pico SDK directory not found at $$PICO_SDK_DIR: $(PICO_SDK_DIR). Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
+endif
+ifeq ($(wildcard $(PICO_ROOT)/pico-examples),)
+$(error Pico examples directory not found at $(PICO_ROOT)/pico-examples. Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
+endif
+ifeq ($(wildcard $(PIOASM)),)
+$(error Pico pioasm not found at $$PIOASM: $(PIOASM). Update instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
+endif
+ifeq ($(shell which cmake),)
+$(error cmake not found. Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
+endif
 
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH)
@@ -630,9 +653,6 @@ OTHER_STUFF += \
 	env_vars	\
 	pio_stuff
 
-
-TOOLS_BIN = $(PICO_GCC_ROOT)/bin
-TOOLS_PREFIX = arm-none-eabi-
 
 CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
