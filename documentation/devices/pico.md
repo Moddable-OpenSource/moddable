@@ -1,6 +1,6 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: October 13, 2022
+Revised: December 1, 2022
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -18,15 +18,15 @@ This document describes how to start building Moddable applications for the Rasp
 - [About Raspberry Pi Pico](#about-pico)
 - [Overview](#overview)
 - [Platforms](#platforms)
-- MacOS
- - [SDK and Host Environment Setup - macOS](#macos-setup)
- - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
-- Windows
- - [SDK and Host Environment Setup - Windows](#windows-setup)
- - [Building and Deploying apps - Windows](#windows-building-and-deploying-apps)
-- Linux
- - [SDK and Host Environment Setup - Linux](#linux-setup)
- - [Building and Deploying apps - Linux](#linux-building-and-deploying-apps)
+- [macOS](#mac)
+  - [SDK and Host Environment Setup - macOS](#macos-setup)
+  - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
+- [Windows](#win)
+  - [SDK and Host Environment Setup - Windows](#windows-setup)
+  - [Building and Deploying apps - Windows](#windows-building-and-deploying-apps)
+- [Linux](#lin)
+  - [SDK and Host Environment Setup - Linux](#linux-setup)
+  - [Building and Deploying apps - Linux](#linux-building-and-deploying-apps)
 - [Debugging Native Code](#debugging-native-code)
 - [Reference Documents](#reference)
 
@@ -92,16 +92,16 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 <a id="setup"></a>
 ## SDK and Host Environment Setup
 
-<a id="macos-setup"></a>
+<a id="mac"></a>
 
 ### macOS Setup
+
+> Most of steps these are condensed from the [Raspberry Pi Pico C SDK][picosdkdoc] document. Refer to the document for details.
 
 1. The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the [Host environment setup](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md#host-mac) section for macOS.
 
 
 2. Set up the Pico SDK
-> The next steps are condensed from the [Raspberry Pi Pico C SDK][picosdkdoc] document. Refer to the document for complete instructions.
-
 	Create a `pico` directory in your home directory at `~/pico` for required third party SDKs and tools.
 
 	```text
@@ -184,7 +184,7 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 >    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
 
 
-<a id="windows-setup"></a>
+<a id="win"></a>
 
 ### Windows Setup
 
@@ -196,17 +196,18 @@ Not yet available.
 Not yet available.
 
 
-<a id="linux-setup"></a>
+<a id="lin"></a>
 
 ### Linux setup
 
 > Note: This setup was performed on a Ubuntu 20 VM using VirtualBox.
 
+> Most of steps these are condensed from the [Raspberry Pi Pico C SDK][picosdkdoc] document. Refer to the document for details.
+
 1. The [Moddable SDK Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md) describes how to configure the host build environment and install the required SDKs, drivers, and development tools. Follow the instructions in the [Host environment setup](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/Moddable%20SDK%20-%20Getting%20Started.md#lin-instructions) section for Linux.
 
 
 2. Set up the Pico SDK
-> The next steps are condensed from the [Raspberry Pi Pico C SDK][picosdkdoc] document. Refer to the document for complete instructions.
 
 	Create a `pico` directory in your home directory at `~/pico` for required third party SDKs and tools.
 
