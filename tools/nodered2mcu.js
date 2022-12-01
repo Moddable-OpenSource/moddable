@@ -41,6 +41,7 @@ const NoErrorNodes = [
 	"switch",
 	"status",
 	"trigger",
+	"rpi-neopixels"
 ];
 
 // nodes that don't call done
