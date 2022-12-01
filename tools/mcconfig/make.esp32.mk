@@ -54,10 +54,18 @@ endif
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp32
 
+ifeq ($(IDF_PATH),)
+$(error $$IDF_PATH not set. See set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md)
+endif
+
 IDF_VERSION := $(shell bash -c "cd $(IDF_PATH) && git describe --always --abbrev=0")
 
-ifeq ($(IDF_VERSION),)
-$(warning Could not detect ESP-IDF version.)
+ifeq ($(IDF_VERSION),) 
+$(error Could not detect ESP-IDF version at $$IDF_PATH: $(IDF_PATH).)
+endif
+
+ifeq ($(IDF_PYTHON_ENV_PATH),)
+$(error IDF_PYTHON_ENV_PATH not set. Try running: source $$IDF_PATH/export.sh )
 endif
 
 unexport LDFLAGS
@@ -477,7 +485,7 @@ else
 endif
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
+	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
 
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
