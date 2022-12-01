@@ -4,7 +4,7 @@ if len(sys.argv) < 3:
 	print("Not enough parameters")
 	sys.exit(1)
 
-update = "  See update instrucitons at: https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md"
+update = "  See update instructions at: https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md"
 expected = sys.argv[1]
 given = sys.argv[2]
 
