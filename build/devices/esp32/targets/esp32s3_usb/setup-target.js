@@ -65,7 +65,7 @@ const phases = Object.freeze([
 ], true);
 
 export default function (done) {
-	if (config.led.rainbow){
+	if (config.led?.rainbow){
 		const neopixel = new Host.LED.Default;
 		const STEP = 3;
 		
