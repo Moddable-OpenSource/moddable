@@ -38,7 +38,7 @@ export class FILE @ "FILE_prototype_destructor" {
 
 export class TOOL {
 	constructor(argv) {
-		const command = argv.join(" ");
+		let command = argv.slice();
 
 		this.errorCount = 0;
 		this.warningCount = 0;
@@ -57,17 +57,23 @@ export class TOOL {
 		if (version === this.getToolsVersion())
 			return;
 
-		const msg = [
-			"Moddable SDK binary tools and sources mismatch!",
-			"",
-			`Run this command line once to rebuild the binary tools and resume your "${argv[0]}" command:`,
-			""
-		];
-		if ("win" === this.currentPlatform)
-			msg.push(`   pushd %MODDABLE%\\build\\makefiles\\win && build clean && build && popd && ${command}`, "");
-		else
-			msg.push(`   pushd $MODDABLE/build/makefiles/${this.currentPlatform} && make clean && make && popd && ${command}`, "");
-		throw new Error(msg.join("\n"));
+		trace("Moddable SDK tools mismatch between binary and source! Rebuilding tools.\n");
+
+		command = command.map(item => {
+			item = item.replaceAll('"', '\\"');
+			item = (item.indexOf(" ") < 0) ? item : `"${item}"`;
+			return item;
+		});
+		command = command.join(" ");
+		if ("win" === this.currentPlatform) {
+			command = `pushd %MODDABLE%\\build\\makefiles\\win && build clean && build && popd && ${command}`;
+			this.then("cmd", "/C", command);
+		}
+		else {
+			command = `pushd $MODDABLE/build/makefiles/${this.currentPlatform} && make clean && make && popd && ${command}`;
+			this.then("bash", "-c", command);
+		}
+		this.run = function() {};
 	}
 	get ipAddress() @ "Tool_prototype_get_ipAddress";
 	get currentDirectory() @ "Tool_prototype_get_currentDirectory";
