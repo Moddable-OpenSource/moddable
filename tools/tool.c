@@ -162,9 +162,7 @@ int main(int argc, char* argv[])
 		xsDeleteMachine(machine);
 		if (!error && then) {
 		#if mxWindows
-			error =_spawnvp(_P_WAIT, then[0], then);
-			if (error < 0)
-				fprintf(stderr, "### Cannot execute %s!\n", then[0]);
+			_spawnvp(_P_NOWAIT, then[0], then);
 		#else
 			execvp(then[0], then);
 		#endif
