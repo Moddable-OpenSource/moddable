@@ -1452,7 +1452,7 @@ export class Tool extends TOOL {
 				let parts = name.split("/");
 				if ("esp8266" === parts[0])
 					parts[0] = "esp";
-				else if ((parts[0] == "sim") || (parts[0] == "simulator") || (parts[0] == "screentest"))
+				else if ((parts[0] == "sim") || (parts[0] == "simulator"))
 					parts[0] = this.currentPlatform;
 				this.platform = parts[0];
 				if (parts[1]) {
