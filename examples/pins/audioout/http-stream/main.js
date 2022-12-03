@@ -14,35 +14,68 @@
 
 import AudioOut from "pins/audioout"
 import WavStreamer from "wavstreamer";
+import SBCStreamer from "sbcstreamer";
 
 function calculatePower(samplea) @ "xs_calculatePower";
 
 const audio = new AudioOut({});
 
-new WavStreamer({
-	http: device.network.http,
-	host: "localhost",
-	path: "/example_16bit_mono_11025hz.wav",
-	audio: {
-		out: audio,
-		stream: 0,
-		sampleRate: 11025
-	},
-	onPlayed(buffer) {
-		const power = calculatePower(buffer);
-		trace(`power ${Math.round(power)}\n`);
-	},
-	onReady(state) {
-		trace(`Ready: ${state}\n`);
-		if (state)
-			audio.start();
-		else
-			audio.stop();
-	},
-	onError(e) {
-		trace("ERROR: ", e, "\n");
-	},
-	onDone() {
-		trace("DONE\n");
-	}
-});
+function streamWav() {
+	new WavStreamer({
+		http: device.network.http,
+		host: "test.moddable.com",
+		path: "/audio/ChristmasMusic/jingle.wav",
+		audio: {
+			out: audio,
+			stream: 0,
+			sampleRate: 16000
+		},
+		onPlayed(buffer) {
+			const power = calculatePower(buffer);
+			trace(`WAV power ${Math.round(power)}\n`);
+		},
+		onReady(state) {
+			trace(`WAV Ready: ${state}\n`);
+			if (state)
+				audio.start();
+			else
+				audio.stop();
+		},
+		onError(e) {
+			trace("WAV ERROR: ", e, "\n");
+		},
+		onDone() {
+			trace("WAV Done\n");
+			streamSBC();
+		}
+	});
+}
+
+function streamSBC() {
+	new SBCStreamer({
+		http: device.network.http,
+		host: "test.moddable.com",
+		path: "/audio/ChristmasMusic/jesu.sbc",
+		audio: {
+			out: audio,
+			stream: 0,
+			sampleRate: 16000
+		},
+		onReady(state) {
+			trace(`SBC Ready: ${state}\n`);
+			if (state)
+				audio.start();
+			else
+				audio.stop();
+		},
+		onError(e) {
+			trace("SBC ERROR: ", e, "\n");
+		},
+		onDone() {
+			trace("SBC Done\n");
+			streamWav();
+		}
+	});
+}
+
+streamWav();

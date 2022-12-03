@@ -22,30 +22,13 @@
 	],
 	"defines": {
 		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 16000,
 			"queueLength": 24
 		}
 	},
 	"config": {
 		"startupSound": false
-	},
-	"platforms": {
-		"mac": {
-			"defines": {
-				"audioOut": {
-					"bitsPerSample": 16,
-					"numChannels": 1,
-					"sampleRate": 11025
-				}
-			}
-		},
-		"esp32": {
-			"defines": {
-				"audioOut": {
-					"bitsPerSample": 16,
-					"numChannels": 1,
-					"sampleRate": 11025
-				}
-			}
-		}
 	}
 }
