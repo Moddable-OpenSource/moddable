@@ -1,6 +1,6 @@
 # AudioOut
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: November 28, 2022
+Revised: December 4, 2022
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -238,6 +238,26 @@ if (audio.length(0) >= 2) {
 	audio.enqueue(0, AudioOut.Tone, 330, 1000);
 }
 ```
+
+### Properties
+
+All properties of the audioOut instance are read-only.
+
+#### sampleRate
+
+The sample rate of the instance as a number.
+
+#### bitsPerSample
+
+The number of bits per sample of the instance as a number.
+
+#### channelCount
+
+The number of channels output by the instance as a number.
+
+#### streams
+
+The maximum number of simultaneous streams supported by the instance as a number.
 
 ## class Mixer
 The `Mixer` class provides access to the four-channel mixer and audio decompressors used by the `AudioOut`. This is useful for processing audio for other purposes, such as network streaming.

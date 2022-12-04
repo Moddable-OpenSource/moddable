@@ -27,8 +27,7 @@ function streamWav() {
 		path: "/audio/ChristmasMusic/jingle.wav",
 		audio: {
 			out: audio,
-			stream: 0,
-			sampleRate: 16000
+			stream: 0
 		},
 		onPlayed(buffer) {
 			const power = calculatePower(buffer);
@@ -58,8 +57,7 @@ function streamSBC() {
 		path: "/audio/ChristmasMusic/jesu.sbc",
 		audio: {
 			out: audio,
-			stream: 0,
-			sampleRate: 16000
+			stream: 0
 		},
 		onReady(state) {
 			trace(`SBC Ready: ${state}\n`);

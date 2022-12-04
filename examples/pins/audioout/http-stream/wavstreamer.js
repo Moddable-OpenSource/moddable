@@ -55,8 +55,7 @@ class WavStreamer {
 
 	constructor(options) {
 		const waveHeaderBytes = options.waveHeaderBytes ?? 512;
-		const sampleRate = options.audio.sampleRate;
-		this.#targetBytesQueued = sampleRate * this.#bytesPerSample;
+		this.#targetBytesQueued = options.audio.out.sampleRate * this.#bytesPerSample;
 		this.#bytesPerBlock = Math.idiv(this.#targetBytesQueued, 8);
 		if (this.#bytesPerBlock % this.#bytesPerSample)
 			throw new Error("invalid bytesPerBlock")
@@ -98,7 +97,7 @@ class WavStreamer {
 						else if (part.startsWith("channels="))
 							channels = parseInt(part.substring(9));
 					}
-					if (sampleRate !== rate) {
+					if (this.#audio.sampleRate !== rate) {
 						this.#callbacks.onError?.("invalid audio/L16");
 						this.#http.close();
 						this.#http = this.#request = undefined;
@@ -125,9 +124,9 @@ class WavStreamer {
 					let error;
 					if (1 !== wav.audioFormat)
 						error = "format";
-					else if (sampleRate !== wav.sampleRate)
+					else if (this.#audio.sampleRate !== wav.sampleRate)
 						error = "sampleRate";
-					else if (16 !== wav.bitsPerSample)
+					else if (this.#audio.bitsPerSample !== wav.bitsPerSample)
 						error = "bitsPerSample";
 					else if ((1 !== wav.numChannels) && (2 !== wav.numChannels))
 						error = "channels";

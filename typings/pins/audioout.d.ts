@@ -59,6 +59,11 @@ declare module 'pins/audioout' {
 
     public length(stream: number): number
   
+    public readonly sampleRate: number
+    public readonly bitsPerSample: number
+    public readonly numChannels: number
+    public readonly streams: number
+
     public static readonly Samples: MixerSamples
     public static readonly Flush: MixerFlush
     public static readonly Callback: MixerCallback

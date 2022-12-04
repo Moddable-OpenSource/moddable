@@ -1,6 +1,6 @@
 # Audio Streamers
 Copyright 2022 Moddable Tech, Inc.<BR>
-Revised: November 20, 2022
+Revised: December 4, 2022
 
 The `WavStream` and `SBCStream` classes plays audio streams delivered over HTTP. The `WavStream` class plays uncompressed WAV audio files and `Audio/L16`; the `SBCStream` class plays [SBC compressed](https://en.wikipedia.org/wiki/SBC_%28codec%29) audio. SBC is a low-complexity format used primarily by Bluetooth. Its relatively high quality and simple decoder make it well suited for microcontrollers. 
 
@@ -24,15 +24,14 @@ new WavStream({
 	host: "www.example.com",
 	path: "/myaudio_11025.wav",
 	audio: {
-		out: audio,
-		sampleRate: 11025
+		out: audio
 	}
 });
 
 audio.start();
 ```
 
-To stream SBC instead, change the constructor from `WavStream` to `SBCStream` and update the `path` and `sampleRate` properties for the SBC audio stream.
+To stream SBC instead, change the constructor from `WavStream` to `SBCStream` and update the `path` property for the SBC audio stream.
 
 The streamer API provides several callbacks to manage the streaming session, including notification of streaming stalls and playback completion. The callbacks are documented below as part of the options object of the constructor.
 
@@ -68,14 +67,13 @@ Streaming stalls are inevitable. When the streamers run out of audio to play, th
 
 ### `constructor(options)`
 
-The options object may contain the following properties. The `http`, `host`, `path`, `audio.out`, and `audio.sampleRate` properties are required.
+The options object may contain the following properties. The `http`, `host`, `path`, and `audio.out` properties are required.
 
 - `http` - the HTTP client configuration. This usually comes from the host provider at `device.network.http`
 - `host` - the HTTP host to connect to stream from
 - `port` - the remote port to connect to
 - `path` - the path of the HTTP resource to stream
 - `audio.out` - the audio output instance to play the audio on
-- `audio.sampleRate` - the expected sample rate of the WAV file
 - `audio.stream` - the stream number of the audio output to use to play the audio. Defaults to `0`.
 - `waveHeaderBytes` - the number of bytes to buffer before parsing the WAV header. Defaults to `512` (only supported by `WavStream`)
 - `onPlayed(buffer)` - callback function invoked after the audio output is done with an audio buffer. The audio is uncompressed for `WavStream` and SBC compressed for `SBCStream`. This callback is useful for calculating the RMS of uncompressed audio that is playing.

@@ -621,7 +621,7 @@ void xs_audioout_enqueue(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 	int streamIndex, argc = xsmcArgc;
-	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume, i, samplesInBuffer;
+	int repeat = 1, sampleOffset = 0, samplesToUse = -1, volume, i, samplesInBuffer;
 	uint8_t kind;
 	uint8_t *buffer;
 	xsUnsignedValue bufferLength;
@@ -675,7 +675,7 @@ void xs_audioout_enqueue(xsMachine *the)
 				sampleRate = c_read16(buffer + 4);
 				numChannels = c_read8(buffer + 6);
 				sampleFormat = c_read8(buffer + 7);
-				bufferSamples = c_read32(buffer + 8);
+				int bufferSamples = c_read32(buffer + 8);
 				if ((kSampleFormatUncompressed == sampleFormat) && (bitsPerSample != out->bitsPerSample))
 					xsUnknownError("format doesn't match output");
 				if ((sampleRate != out->sampleRate) || (numChannels != out->numChannels))
@@ -696,8 +696,9 @@ void xs_audioout_enqueue(xsMachine *the)
 					samplesToUse = bufferSamples - sampleOffset;
 			}
 			else {
-				if (samplesToUse <= 0)
-					xsUnknownError("samplesToUse required");
+				int bufferSamples = bufferLength / out->bytesPerFrame;
+				if ((samplesToUse < 0) || ((sampleOffset + samplesToUse) > bufferSamples))
+					samplesToUse = bufferSamples - sampleOffset;
 
 				sampleFormat = kSampleFormatUncompressed;
 			}
@@ -978,6 +979,31 @@ void xs_audioout_length(xsMachine *the)
 
 	xsmcSetInteger(xsResult, MODDEF_AUDIOOUT_QUEUELENGTH - out->stream[streamIndex].elementCount);
 }
+
+void xs_audioout_get_sampleRate(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->sampleRate);
+}
+
+void xs_audioout_get_numChannels(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->numChannels);
+}
+
+void xs_audioout_get_bitsPerSample(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->bitsPerSample);
+}
+
+void xs_audioout_get_streams(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->streamCount);
+}
+
 
 // note: updateActiveStreams relies on caller to lock mutex
 void updateActiveStreams(modAudioOut out)
