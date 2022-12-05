@@ -252,11 +252,7 @@ void xs_socket(xsMachine *the)
 	else
 		xsUnknownError("host required in dictionary");
 
-	CFHostClientContext context;
-	context.version = 0;
-	context.retain = nil;
-	context.release = nil;
-	context.copyDescription = nil;
+	CFHostClientContext context = {0};
 	context.info = xss;
 
 	CFHostSetClient(cfHost, resolved, &context);
