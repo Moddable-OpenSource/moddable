@@ -560,9 +560,9 @@ export default class extends TOOL {
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
 					else if ("change" === rule.t) {
+						const from = this.resolveValue(rule.fromt, rule.from);
+						const to = this.resolveValue(rule.tot, rule.to);
 						if ("msg" === rule.pt) {
-							const from = this.resolveValue(rule.fromt, rule.from);
-							const to = this.resolveValue(rule.tot, rule.to);
 							this.createPropPath(rule.p, change, "\t\t\t");
 							if ("re" === rule.fromt)
 								change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = msg${this.prepareProp(rule.p)}.toString().replace(${from}, ${to});`);
@@ -1022,7 +1022,6 @@ export default class extends TOOL {
 				config.fgnd = config.fgnd || "128,128,128";
 				config.mode = config.mode || "pcent";
 				config.rgb = config.rgb || "rgb";
-				config.gamma = config.gamma;
 				if (config.gamma === undefined) { config.gamma = true; }
 				config.gpio = config.gpio || 18;
 				config.channel = 0;

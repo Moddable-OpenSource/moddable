@@ -35,7 +35,7 @@ new Listener({
 					this.write(msg);
 
 					this.close();
-				},
+				}
 			});
 		}
 	}
