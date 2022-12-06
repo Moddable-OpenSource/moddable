@@ -33,8 +33,6 @@
 
 import WavReader from "data/wavreader";
 
-const bytesPerSample = 2;
-
 class WavStreamer {
 	#audio;
 	#stream;
@@ -48,7 +46,7 @@ class WavStreamer {
 	#targetBytesQueued;
 	#bytesPerSample = 2;
 	#bytesPerBlock;
-	#callbacks = [];
+	#callbacks = {};
 	#pending = [];
 	#swap;		// endian swap
 	#channels;	// 1 or 2

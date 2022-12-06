@@ -33,7 +33,7 @@ class SBCStreamer {
 	#bytesPerBlock;
 	#bytesQueued = 0;
 	#targetBytesQueued;
-	#callbacks = [];
+	#callbacks = {};
 	#bytes;
 
 	constructor(options) {
@@ -200,7 +200,7 @@ class SBCStreamer {
 		const frequency = (header[1] >> 6) & 0x03;
 		const blocks = [4, 8, 12, 16][(header[1] >> 4) & 0x03];
 		const mode = (header[1] >> 2) & 0x03;
-		const allocation = (header[1] >> 1) & 0x01;
+		// const allocation = (header[1] >> 1) & 0x01;
 		const subbands = (header[1] & 0x01) ? 8 : 4;
 
 		// https://android.googlesource.com/platform/system/bt/+/master/embdrv/sbc/decoder/srce/bitalloc.c
