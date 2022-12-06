@@ -1757,6 +1757,8 @@ int fuzz(int argc, char* argv[])
 		1993,				/* parserTableModulo */
 	};
 
+	fxInitializeSharedCluster();
+
 	while (1) {
 		char action[4];
 		ssize_t nread = read(REPRL_CRFD, action, 4);
@@ -1778,10 +1780,7 @@ int fuzz(int argc, char* argv[])
 		}
 		buffer[script_size] = 0;	// required when debugger active
 
-		xsCreation* creation = &_creation;
-		xsMachine* machine;
-		fxInitializeSharedCluster();
-		machine = xsCreateMachine(creation, "xst", NULL);
+		xsMachine* machine = xsCreateMachine(&_creation, "xst", NULL);
 		xsBeginHost(machine);
 		{
 			xsTry {
@@ -1818,33 +1817,29 @@ int fuzz(int argc, char* argv[])
 				fxRunLoop(the);
 			}
 			xsCatch {
-				fprintf(stderr, "%s\n", xsToString(xsException));
-				exit(-1);
+				machine->abortStatus = XS_UNHANDLED_EXCEPTION_EXIT;
 			}
 		}
-		fxCheckUnhandledRejections(machine, 1);
+//		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
-		if (machine->abortStatus) {
-			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
-			fprintf(stderr, "Error: %s\n", why);
-		}
-		if (machine->abortStatus != 0) {
-			fprintf(stderr, "Failed to eval_buf reprl\n");
-		}
-		fflush(stdout);		//@@
-		fflush(stderr);		//@@
+//		if (machine->abortStatus) {
+//			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+//			fprintf(stderr, "Error: %s\n", why);
+//		}
 		int status = (machine->abortStatus & 0xff) << 8;
 		if (write(REPRL_CWFD, &status, 4) != 4) {
 			fprintf(stderr, "Erroring writing return value over REPRL_CWFD\n");
+			exit(-1);
 		}
 
 		xsDeleteMachine(machine);
-		fxTerminateSharedCluster();
 
 		free(buffer);
 
 		__sanitizer_cov_reset_edgeguards();
 	}
+
+	fxTerminateSharedCluster();
 
 	return 0;
 }
