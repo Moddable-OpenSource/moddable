@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2021  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,9 +24,14 @@ import Timer from "timer";
 import Net from "net";
 import WiFi from "wifi";
 
-const status = ["idle", "connecting", "wrong password", "no ap found", "connect fail", "got ip"];
-
 CLI.install(function(command, parts) {
+	if ("help" === command)
+		;
+	else if ("wifi" === command)
+		command = parts.shift();
+	else
+		return false;
+
 	switch (command) {
 		case "net":
 			this.line(`  IP Address: ${Net.get("IP")}`);
@@ -34,7 +39,6 @@ CLI.install(function(command, parts) {
 			this.line(`  BSSID: ${Net.get("BSSID")}`);
 			this.line(`  RSSI: ${Net.get("RSSI")}`);
 			this.line(`  MAC Address: ${Net.get("MAC")}`);
-			this.line(`  Connection status: ${status[WiFi.status]}`);
 			break;
 
 		case "connect": {
@@ -46,31 +50,33 @@ CLI.install(function(command, parts) {
 			else
 				throw new Error("bad arguments");
 
+			this.line(`Trying to connect to "${dictionary.ssid}"...`)
 			this.suspend();
 			this.monitor = new WiFi(dictionary, msg => {
-				if ("gotIP" === msg) {
+				if (WiFi.gotIP === msg) {
 					this.line(`  IP address ${Net.get("IP")}`);
 
 					if (this.monitor.timer)
 						Timer.clear(this.monitor.timer);
+					this.monitor.close();
 					delete this.monitor;
 					this.resume();
 				}
-				else if ("connect" === msg)
+				else if (WiFi.connected === msg)
 					this.line(`  Wi-Fi connected to "${Net.get("SSID")}"`);
 			});
-			this.monitor.timer = Timer.set(id => {
+			this.monitor.timer = Timer.set(() => {
 				delete this.monitor.timer;
 				this.line("  * connect timed out *")
 				this.monitor.close();
 				delete this.monitor;
 				this.resume();
-			}, 10 * 1000);
+			}, 15 * 1000);
 			}
 			break;
 
 		case "disconnect":
-			WiFi.connect();
+			WiFi.disconnect();
 			break;
 
 		case "scan":
@@ -85,7 +91,7 @@ CLI.install(function(command, parts) {
 						this.line("SSID".padEnd(32), "Security".padEnd(20), "RSSI".padEnd(10), "Channel".padEnd(10), "Hidden".padEnd(10));
 						header = true;
 					}
-					this.line(ap.ssid.padEnd(32), (ap.authentication || "").padEnd(20), ap.rssi.toString().padEnd(10), ap.channel.toString().padEnd(10), ap.hidden.toString());
+					this.line(ap.ssid.padEnd(32), (ap.authentication ?? "").padEnd(20), ap.rssi.toString().padEnd(10), ap.channel.toString().padEnd(10), ap.hidden.toString());
 				}
 				else {
 					this.resume();
@@ -97,10 +103,10 @@ CLI.install(function(command, parts) {
 			break;
 
 		case "help":
-			this.line("connect ssid [password] - connect to network ssid using optional password");
-			this.line("disconnect - disconnect from Wi-Fi network");
-			this.line("net - show network configuration includig SSID, MAC, and IP");
-			this.line("scan - list visible Wi-Fi access points");
+			this.line("wifi connect ssid [password] - connect to network ssid using optional password");
+			this.line("wifi disconnect - disconnect from Wi-Fi network");
+			this.line("wifi net - show network configuration including SSID, MAC, and IP");
+			this.line("wifi scan - list visible Wi-Fi access points");
 			break;
 
 		default:
