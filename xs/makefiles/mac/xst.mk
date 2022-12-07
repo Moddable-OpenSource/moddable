@@ -41,10 +41,10 @@ TMP_DIR = $(BUILD_DIR)/tmp/mac/$(GOAL)/$(NAME)
 MACOS_ARCH ?= 
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.10
 
-FUZZILLI ?= 0
+FUZZILLI ?= 1
 OSSFUZZ ?= 0
 OSSFUZZ_JSONPARSE ?= 0
-FUZZING ?= 0
+FUZZING ?= 1
 
 C_OPTIONS = \
 	-fno-common \
@@ -90,7 +90,8 @@ ifeq ($(GOAL),debug)
 	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 
 	ifneq ($(FUZZING),0)
-		C_OPTIONS += -DmxStress=1 -DmxNoChunks=1
+		C_OPTIONS += -DmxNoChunks=1
+		C_OPTIONS += -DmxStress=1
 		C_OPTIONS += -DFUZZING=1
 	endif
 	ifneq ($(OSSFUZZ),0)
