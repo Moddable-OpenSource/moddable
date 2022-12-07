@@ -41,10 +41,10 @@ TMP_DIR = $(BUILD_DIR)/tmp/mac/$(GOAL)/$(NAME)
 MACOS_ARCH ?= 
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.10
 
-FUZZILLI ?= 1
+FUZZILLI ?= 0
 OSSFUZZ ?= 0
 OSSFUZZ_JSONPARSE ?= 0
-FUZZING ?= 1
+FUZZING ?= 0
 
 C_OPTIONS = \
 	-fno-common \
