@@ -278,6 +278,11 @@ class VL6180 {
     };
   }
 
+  close() {
+    this.#io.close();
+    this.#io = undefined;
+  }
+
   #setupRead(register) { //Not quite SMB.
     let lowByte = register & 0xFF;
     let highByte = (register >> 8) & 0xFF;
