@@ -909,11 +909,20 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 						txSlot* home;
 						done = 0;
 						mxModuleStatus(module) = XS_MODULE_STATUS_LOADING;
+						
+						mxPush(mxPromiseConstructor);
+						mxDub();
+						mxGetID(mxID(_resolve));
+						mxCall();
+						
 						mxPushUndefined();
 						mxPushSlot(loadHook);
 						mxCall();
 						fxPushKeyString(the, moduleID);
 						mxRunCount(1);
+						
+						mxRunCount(1);
+						
 						mxDub();
 						mxGetID(mxID(_then));
 						mxCall();
