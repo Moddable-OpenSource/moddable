@@ -944,7 +944,7 @@ void fxArrayLengthSetter(txMachine* the)
 	}
 	if (!instance)
 		return;
-	if (instance && (instance->ID)) {
+	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (!alias)
 			alias = fxAliasInstance(the, instance);
