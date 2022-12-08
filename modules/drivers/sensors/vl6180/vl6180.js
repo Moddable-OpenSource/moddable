@@ -53,17 +53,48 @@ const Register = Object.freeze({
   SYSRANGE__CROSSTALK_COMPENSATION_RATE:    0x01E,
   SYSRANGE__CROSSTALK_VALID_HEIGHT:         0x021,
   SYSRANGE__EARLY_CONVERGENCE_ESTIMATE:     0x022
-
 });
 
 const MAX_RANGE = 254;
 const MAX_RANGE_CM = 25.4;
 
+const initializationData = Object.freeze([
+  0x0207, 0x01,
+  0x0208, 0x01,
+  0x0096, 0x00,
+  0x0097, 0xfd,
+  0x00e3, 0x00,
+  0x00e4, 0x04,
+  0x00e5, 0x02,
+  0x00e6, 0x01,
+  0x00e7, 0x03,
+  0x00f5, 0x02,
+  0x00d9, 0x05,
+  0x00db, 0xce,
+  0x00dc, 0x03,
+  0x00dd, 0xf8,
+  0x009f, 0x00,
+  0x00a3, 0x3c,
+  0x00b7, 0x00,
+  0x00bb, 0x3c,
+  0x00b2, 0x09,
+  0x00ca, 0x09,
+  0x0198, 0x01,
+  0x01b0, 0x17,
+  0x01ad, 0x00,
+  0x00ff, 0x05,
+  0x0100, 0x05,
+  0x0199, 0x05,
+  0x01a6, 0x1b,
+  0x01ac, 0x3e,
+  0x01a7, 0x1f,
+  0x0030, 0x00
+]);
+
 class VL6180 {
   #io;
-  #onError;
   #rangingMode = 0;
-  #rangingFrequency = 10;
+  #rangingFrequency = 90;
   #averagingSamplePeriod = 48;
   #maxConvergenceTime = 49;
   #crosstalkCompensationRate = 0;
@@ -80,16 +111,29 @@ class VL6180 {
       hz: 400_000,
       ...options
     });
-
-    this.#onError = options.onError;
     
-    if (!(this.#checkIdentification())) {
-      this.#onError?.("unexpected sensor");
+    let idCheck = false;
+
+    try {
+      idCheck = (0xB4 === this.#readByte(Register.IDENTIFICATION__MODEL_ID));
+    } catch (e) {
       this.close();
-      return;
+      throw new Error("I2C error in ID check");
     }
 
-    this.#initialize();
+    if (!idCheck) {
+      this.close();
+      throw new Error("unexpected sensor");
+    }
+
+    //mandatory settings from VL6180 Application Note
+    for (let i = 0; i < initializationData.length; i += 2) 
+      this.#writeByte(initializationData[i], initializationData[i+1]);
+    
+    //recommended default settings from VL6180 Application Note not covered by configure()
+    this.#writeByte(Register.SYSRANGE__VHV_REPEAT_RATE, 0xFF); // sets the # of range measurements after which auto calibration of system is performed
+    this.#writeByte(Register.SYSALS__INTEGRATION_PERIOD, 0x63); // Set ALS integration time to 100ms
+    this.#writeByte(Register.SYSRANGE__VHV_RECALIBRATE, 0x01); // perform a single temperature calibration of the ranging sensor 
 
     this.configure( {
       averagingSamplePeriod: 0x30,
@@ -106,7 +150,7 @@ class VL6180 {
 
     if (undefined !== rangingMode) {
       if (rangingMode < 0 || rangingMode > 1)
-        throw "invalid rangingMode";
+        throw new Error("invalid rangingMode");
 
       if (rangingMode === 1 && this.#rangingMode === 0) {
         this.#writeByte(Register.SYSRANGE__START, 0x03);
@@ -118,7 +162,7 @@ class VL6180 {
 
     if (undefined !== rangingFrequency) {
       if (rangingFrequency < 10 || rangingFrequency >= 2550)
-        throw "rangingFrequency out of range"
+        throw new Error("rangingFrequency out of range");
       
       const registerFrequency = Math.floor(rangingFrequency / 10);
       
@@ -128,14 +172,14 @@ class VL6180 {
 
     if (undefined !== averagingSamplePeriod) {
       if (averagingSamplePeriod < 0 || averagingSamplePeriod > 255)
-        throw "averagingSamplePeriod out of range";
+        throw new Error("averagingSamplePeriod out of range");
       this.#averagingSamplePeriod = averagingSamplePeriod;
       this.#writeByte(Register.READOUT__AVERAGING_SAMPLE_PERIOD, averagingSamplePeriod);
     }
 
     if (undefined !== maxConvergenceTime) {
       if (maxConvergenceTime < 1 || maxConvergenceTime > 63)
-        throw "maxConvergenceTime out of range";
+        throw new Error("maxConvergenceTime out of range");
       this.#maxConvergenceTime = maxConvergenceTime;
       this.#writeByte(Register.SYSRANGE__MAX_CONVERGENCE_TIME, maxConvergenceTime);
     }
@@ -157,7 +201,7 @@ class VL6180 {
 
     if (undefined !== enableSampleReadyPolling) {
       if (enableSampleReadyPolling !== true && enableSampleReadyPolling !== false)
-        throw "enableSampleReadyPolling must be a Boolean";
+        throw new Error("enableSampleReadyPolling must be a Boolean");
 
       this.#enableSampleReadyPolling = enableSampleReadyPolling;
       this.#writeByte(Register.SYSTEM__MODE_GPIO1, enableSampleReadyPolling ?  0x10 : 0x00);
@@ -184,15 +228,15 @@ class VL6180 {
       } else if (analogueGain === 1) {
         value = 0x46;
       } else {
-        throw "invalid analogueGain";
+        throw new Error("invalid analogueGain");
       }
       this.#analogueGain = analogueGain;
-      this.#writeByte(Register.SYSALS__ANALOGUE_GAIN, 0x46);
+      this.#writeByte(Register.SYSALS__ANALOGUE_GAIN, value);
     }
 
     if (undefined !== alsMode) {
       if (alsMode < 0 || alsMode > 1)
-        throw "invalid alsMode";
+        throw new Error("invalid alsMode");
       
       if (alsMode === 1 && this.#alsMode === 0) {
         this.#writeByte(Register.SYSALS__START, 0x03);
@@ -205,7 +249,7 @@ class VL6180 {
 
     if (undefined !== alsFrequency) {
       if (alsFrequency < 10 || alsFrequency > 2550)
-        throw "alsFrequency out of range";
+        throw new Error("alsFrequency out of range");
       
       const registerFrequency = Math.floor(alsFrequency / 10);
     
@@ -279,7 +323,7 @@ class VL6180 {
   }
 
   close() {
-    this.#io.close();
+    this.#io?.close();
     this.#io = undefined;
   }
 
@@ -305,53 +349,6 @@ class VL6180 {
     let lowByte = register & 0xFF;
     let highByte = register >> 8;
     this.#io.write(Uint8Array.of(highByte, lowByte, value));
-  }
-  
-  #checkIdentification(){
-    let id = this.#readByte(Register.IDENTIFICATION__MODEL_ID);
-    if (id === 0xB4)
-      return true;
-    return false;
-  }
-  
-  #initialize(){ 
-    //mandatory settings from VL6180 Application Note
-    this.#writeByte(0x0207, 0x01);
-    this.#writeByte(0x0208, 0x01);
-    this.#writeByte(0x0096, 0x00);
-    this.#writeByte(0x0097, 0xfd);
-    this.#writeByte(0x00e3, 0x00);
-    this.#writeByte(0x00e4, 0x04);
-    this.#writeByte(0x00e5, 0x02);
-    this.#writeByte(0x00e6, 0x01);
-    this.#writeByte(0x00e7, 0x03);
-    this.#writeByte(0x00f5, 0x02);
-    this.#writeByte(0x00d9, 0x05);
-    this.#writeByte(0x00db, 0xce);
-    this.#writeByte(0x00dc, 0x03);
-    this.#writeByte(0x00dd, 0xf8);
-    this.#writeByte(0x009f, 0x00);
-    this.#writeByte(0x00a3, 0x3c);
-    this.#writeByte(0x00b7, 0x00);
-    this.#writeByte(0x00bb, 0x3c);
-    this.#writeByte(0x00b2, 0x09);
-    this.#writeByte(0x00ca, 0x09);
-    this.#writeByte(0x0198, 0x01);
-    this.#writeByte(0x01b0, 0x17);
-    this.#writeByte(0x01ad, 0x00);
-    this.#writeByte(0x00ff, 0x05);
-    this.#writeByte(0x0100, 0x05);
-    this.#writeByte(0x0199, 0x05);
-    this.#writeByte(0x01a6, 0x1b);
-    this.#writeByte(0x01ac, 0x3e);
-    this.#writeByte(0x01a7, 0x1f);
-    this.#writeByte(0x0030, 0x00);
-    
-    //recommended default settings from VL6180 Application Note not covered by configure()
-    this.#writeByte(Register.SYSRANGE__VHV_REPEAT_RATE, 0xFF); // sets the # of range measurements after which auto calibration of system is performed
-    this.#writeByte(Register.SYSALS__INTEGRATION_PERIOD, 0x63); // Set ALS integration time to 100ms
-    this.#writeByte(Register.SYSRANGE__VHV_RECALIBRATE, 0x01); // perform a single temperature calibration of the ranging sensor 
-    
   }
 }
 
