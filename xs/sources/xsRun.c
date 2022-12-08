@@ -180,7 +180,7 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 
 #define mxToInteger(SLOT) \
 	if (XS_INTEGER_KIND != (SLOT)->kind) { \
-		if (XS_SYMBOL_KIND <= (SLOT)->kind) { \
+		if (XS_STRING_KIND <= (SLOT)->kind) { \
 			mxSaveState; \
 			fxToInteger(the, SLOT); \
 			mxRestoreState; \
@@ -191,7 +191,7 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 	
 #define mxToNumber(SLOT) \
 	if (XS_NUMBER_KIND != (SLOT)->kind) { \
-		if (XS_SYMBOL_KIND <= (SLOT)->kind) { \
+		if (XS_STRING_KIND <= (SLOT)->kind) { \
 			mxSaveState; \
 			fxToNumber(the, SLOT); \
 			mxRestoreState; \
@@ -3762,19 +3762,19 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_NULL_KIND) && (mxStack->kind == XS_UNDEFINED_KIND))
 					offset = 1;
 				else if (((XS_INTEGER_KIND == slot->kind) || (XS_NUMBER_KIND == slot->kind)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND))) {
-					fxToNumber(the, mxStack); 
+					mxToNumber(mxStack); 
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((XS_INTEGER_KIND == mxStack->kind) || (XS_NUMBER_KIND == mxStack->kind))) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == slot->kind) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == mxStack->kind) {
-					fxToNumber(the, mxStack);
+					mxToNumber(mxStack);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND)) && mxIsReference(mxStack)) {
@@ -3857,19 +3857,19 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_NULL_KIND) && (mxStack->kind == XS_UNDEFINED_KIND))
 					offset = 0;
 				else if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((XS_INTEGER_KIND == mxStack->kind) || (XS_NUMBER_KIND == mxStack->kind))) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)) && ((XS_INTEGER_KIND == slot->kind) || (XS_NUMBER_KIND == slot->kind))) {
-					fxToNumber(the, mxStack); 
+					mxToNumber(mxStack); 
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == slot->kind) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == mxStack->kind) {
-					fxToNumber(the, mxStack);
+					mxToNumber(mxStack);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND)) && mxIsReference(mxStack)) {
