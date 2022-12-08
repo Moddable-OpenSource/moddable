@@ -138,7 +138,7 @@ class SMBus {
 	}
 	writeByte(register, byte) {
 		trace("writeByte renamed to writeUint8\n");
-		this.writeUint8(register);
+		this.writeUint8(register, byte);
 	}
 	readWord(...args) {
 		trace("readWord renamed to readUint16\n");
