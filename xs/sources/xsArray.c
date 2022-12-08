@@ -907,11 +907,13 @@ void fxArrayLengthGetter(txMachine* the)
 	while (instance) {
 		if (instance->flag & XS_EXOTIC_FLAG) {
 			array = instance->next;
-			if (array->ID == XS_ARRAY_BEHAVIOR)
+			if ((array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR))
 				break;
 		}
 		instance = fxGetPrototype(the, instance);
 	}
+	if (!instance)
+		return;
 	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
@@ -940,7 +942,9 @@ void fxArrayLengthSetter(txMachine* the)
 		}
 		instance = fxGetPrototype(the, instance);
 	}
-	if (instance->ID) {
+	if (!instance)
+		return;
+	if (instance && (instance->ID)) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (!alias)
 			alias = fxAliasInstance(the, instance);
