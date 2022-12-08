@@ -1192,7 +1192,7 @@ txBigInt *fxBigInt_lsl(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		if (a->sign) {
 			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
             if (b->data[0])
-                r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+                r = fxBigInt_uadd(the, C_NULL, r, (txBigInt *)&gxBigIntOne);
 			r->sign = 1;
 		}
 		else
@@ -1244,7 +1244,7 @@ txBigInt *fxBigInt_lsr(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		if (a->sign) {
 			r = fxBigInt_ulsr1(the, r, a, b->data[0]);
             if (b->data[0])
-                r = fxBigInt_uadd(the, r, r, (txBigInt *)&gxBigIntOne);
+                r = fxBigInt_uadd(the, C_NULL, r, (txBigInt *)&gxBigIntOne);
 			r->sign = 1;
 		}
 		else
