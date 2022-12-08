@@ -1023,7 +1023,7 @@ void fxLoadModulesFrom(txMachine* the, txSlot* queue, txSlot* module, txBoolean 
 						mxTypeError("async module");
 				}
 				else if (status == XS_MODULE_STATUS_ERROR) {
-					mxPushSlot(mxModuleMeta(module));
+					mxPushSlot(mxModuleInstanceMeta(module));
 					mxPull(mxException);
 					fxJump(the);
 				}
