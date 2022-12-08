@@ -1144,6 +1144,8 @@ txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment)
 txBoolean fxEnvironmentDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask) 
 {
 	txSlot* property = fxOrdinarySetProperty(the, instance, id, index, XS_OWN);
+	if (!property)
+		return 0;
 	property->flag = slot->flag & mask;
 	property->kind = slot->kind;
 	property->value = slot->value;
