@@ -1861,7 +1861,7 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 	};
 	size_t script_size = 0;
 
-	char* buffer = (char *)malloc(Size + 1);
+	char* buffer = (char *)malloc(Size + Size + 1);	// (massively) over-allocate to have space if UTF-8 encoding expands
 	memcpy(buffer, Data, Size);
 	script_size = Size;
 
@@ -1876,6 +1876,15 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 	{
 		xsTry {
 			xsVars(1);
+			modInstallTextDecoder(the);
+			xsResult = xsArrayBuffer(buffer, script_size);
+			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
+			xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
+#ifdef OSSFUZZ_JSONPARSE
+			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
+			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
+#else
+			xsToStringBuffer(xsResult, buffer, Size + Size + 1);
 
 			// hardened javascript
 			xsResult = xsNewHostFunction(fx_harden, 1);
@@ -1892,18 +1901,10 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 			xsResult = xsNewHostFunction(fx_print, 1);
 			xsSet(xsGlobal, xsID("print"), xsResult);
 
-#ifdef OSSFUZZ_JSONPARSE
-			modInstallTextDecoder(the);
-			xsResult = xsArrayBuffer(buffer, script_size);
-			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
-			xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
-			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
-			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
-#else
 			txStringCStream aStream;
 			aStream.buffer = buffer;
 			aStream.offset = 0;
-			aStream.size = script_size;
+			aStream.size = strlen(buffer);
 			// run script
 			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
@@ -1915,8 +1916,6 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 		}
 	}
 	xsEndHost(machine);
-	fflush(stdout);	
-	fflush(stderr);	
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	free(buffer);
