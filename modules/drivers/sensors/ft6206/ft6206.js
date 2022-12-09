@@ -107,6 +107,11 @@ class FT6206  {
 				io.area = true;
 		}
 	}
+	get configuration() {
+		return {
+			interrupt: !!this.#io.interrupt
+		}
+	}
 	sample() {
 		const io = this.#io;
 
