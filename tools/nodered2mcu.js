@@ -312,6 +312,9 @@ export default class extends TOOL {
 						if (("string" === typeof value) && value.startsWith("[[JSON]]"))
 							configuration.push(`\t\t${name}: ${value.slice(8)},`);
 						else
+						if (value instanceof Uint8Array)
+							configuration.push(`\t\t${name}: Uint8Array.of(${value.toString()}),`);
+						else
 							configuration.push(`\t\t${name}: ${JSON.stringify(value)},`);
 					}
 					
@@ -627,11 +630,26 @@ export default class extends TOOL {
 					config.arraySplt = 1;
 					config.arraySpltType = "len";
 				}
-				if (config.stream || ("len" !== config.arraySpltType) || ("str" !== config.spltType))
-					throw new Error("unimplemented split option");
+
+				config.arraySplt = parseInt(config.arraySplt);
 
                 config.splt = (config.splt || "\\n").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\\t/g,"\t").replace(/\\e/g,"\e").replace(/\\f/g,"\f").replace(/\\0/g,"\0");	// adapted from 17-split.js
-				config.arraySplt = parseInt(config.arraySplt);
+				switch (config.spltType) {
+					case "bin":
+						if (config.splt.startsWith("["))
+							config.splt = Uint8Array.from(JSON.parse(config.splt));
+						else
+							config.splt = new Uint8Array(ArrayBuffer.fromString(config.splt));
+						break;
+					case "str":
+						break;
+					case "len":
+						config.splt = parseInt(config.splt);
+						break;
+					default:
+						throw new Error("unrecognized spltType: " + config.spltType);
+						break;
+				}
 			} break;
 			
 			case "join": {
