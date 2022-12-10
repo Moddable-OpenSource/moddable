@@ -154,7 +154,7 @@ static int main262(int argc, char* argv[]);
 static int fuzz(int argc, char* argv[]);
 #endif
 #if OSSFUZZ
-static int fuzz_oss(const uint8_t *Data, size_t Size);
+static int fuzz_oss(const uint8_t *Data, size_t script_size);
 #endif
 static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
@@ -1845,7 +1845,7 @@ int fuzz(int argc, char* argv[])
 }
 #endif 
 #if OSSFUZZ
-int fuzz_oss(const uint8_t *Data, size_t Size)
+int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
 	xsCreation _creation = {
 		1 * 1024 * 1024, 	/* initialChunkSize */
@@ -1859,11 +1859,9 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
-	size_t script_size = 0;
-
-	char* buffer = (char *)malloc(Size + Size + 1);	// (massively) over-allocate to have space if UTF-8 encoding expands
-	memcpy(buffer, Data, Size);
-	script_size = Size;
+	size_t buffer_size = script_size + script_size + script_size + 1;			// (massively) over-allocate to have space if UTF-8 encoding expands (1 byte invalid byte becomes a 3-byte UTF-8 sequence)
+	char* buffer = (char *)malloc(buffer_size);
+	memcpy(buffer, Data, script_size);
 
 	buffer[script_size] = 0;	// required when debugger active
 
@@ -1884,7 +1882,7 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
 			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
 #else
-			xsToStringBuffer(xsResult, buffer, Size + Size + 1);
+			xsToStringBuffer(xsResult, buffer, buffer_size);
 
 			// hardened javascript
 			xsResult = xsNewHostFunction(fx_harden, 1);
