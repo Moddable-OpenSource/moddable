@@ -810,28 +810,40 @@ extern char **environ;
 void Tool_prototype_spawn(xsMachine* the)
 {
 	xsIntegerValue c = xsToInteger(xsArgc), i;
-	char **argv;
-#if mxWindows
-#else
-	pid_t pid;
-	int status;
-#endif
-	for (i = 0; i < c; i++)
-		xsToString(xsArg(i));
-	argv = malloc(sizeof(char *)*(c + 1));
-	xsElseThrow(argv);
-	for (i = 0; i < c; i++)
-		argv[i] = xsToString(xsArg(i));
-	argv[i] = C_NULL;
-#if mxWindows
-	_spawnvp(_P_WAIT, argv[0], argv);
-#else
-	status = posix_spawnp(&pid, argv[0], NULL, NULL, argv, environ);
-	xsElseThrow(status == 0);
-	do {
-		xsElseThrow(waitpid(pid, &status, 0) != -1);
-	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-#endif
+	char **argv = NULL;
+	xsTry {
+	#if mxWindows
+	#else
+		pid_t pid;
+	#endif
+		int status;
+		for (i = 0; i < c; i++)
+			xsToString(xsArg(i));
+		argv = malloc(sizeof(char *)*(c + 1));
+		xsElseThrow(argv);
+		for (i = 0; i < c; i++)
+			argv[i] = xsToString(xsArg(i));
+		argv[i] = C_NULL;
+	#if mxWindows
+		status = _spawnvp(_P_WAIT, argv[0], argv);
+		xsElseThrow(status != -1);
+	#else
+		status = posix_spawnp(&pid, argv[0], NULL, NULL, argv, environ);
+		xsElseThrow(status == 0);
+		do {
+			xsElseThrow(waitpid(pid, &status, 0) != -1);
+		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		status = WEXITSTATUS(status);
+	#endif
+		free(argv);
+		argv = NULL;
+		xsResult = xsInteger(status);
+	}
+	xsCatch {
+		if (argv)
+			free(argv);
+		xsThrow(xsException);
+	}
 }
 
 void Tool_prototype_splitPath(xsMachine* the)
