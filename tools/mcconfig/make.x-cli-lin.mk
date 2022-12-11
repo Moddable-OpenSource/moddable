@@ -17,13 +17,15 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+PKGCONFIG = $(shell which pkg-config)
+
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
 	$(XS_DIR)/platforms \
 	$(XS_DIR)/sources
 
 XS_HEADERS = \
-	$(XS_DIR)/platforms/mac_xs.h \
+	$(XS_DIR)/platforms/lin_xs.h \
 	$(XS_DIR)/platforms/xsPlatform.h \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsmc.h \
@@ -32,7 +34,7 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsScript.h
 
 XS_OBJECTS = \
-	$(LIB_DIR)/mac_xs.c.o \
+	$(LIB_DIR)/lin_xs.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -83,7 +85,7 @@ TOOLS_VERSION ?= $(shell cat $(MODDABLE)/tools/VERSION)
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
-	-DXSPLATFORM=\"mac_xs.h\" \
+	-DXSPLATFORM=\"lin_xs.h\" \
 	-DmxRun=1 \
 	-DmxParse=1 \
 	-DmxNoFunctionLength=1 \
@@ -91,30 +93,29 @@ C_DEFINES = \
 	-DmxHostFunctionPrimitive=1 \
 	-DmxFewGlobalsTable=1 \
 	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
+C_DEFINES += \
+	-Wno-misleading-indentation \
+	-Wno-implicit-fallthrough \
+	-Wno-empty-body
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
-# XS_C_FLAGS = -c -arch i386
-XS_C_FLAGS = -c
+C_FLAGS = -fPIC -shared -c  $(shell $(PKGCONFIG) --cflags gio-2.0)
 ifeq ($(DEBUG),)
-	XS_C_FLAGS += -D_RELEASE=1 -O3
+	C_FLAGS += -D_RELEASE=1 -O3
 else
-	XS_C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
-#	C_FLAGS += -DMC_MEMORY_DEBUG=1
+	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 endif
-C_FLAGS = $(XS_C_FLAGS)
  
-LIBRARIES = -framework CoreFoundation
-# LIBRARIES = -framework CoreFoundation -lcurl -lpng16
+LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread -ldl
 
-# LINK_FLAGS = -arch i386
-LINK_FLAGS = 
+LINK_FLAGS = -fPIC
 
-XSC = $(BUILD_DIR)/bin/mac/debug/xsc
-XSID = $(BUILD_DIR)/bin/mac/debug/xsid
-XSL = $(BUILD_DIR)/bin/mac/debug/xsl
+XSC = $(BUILD_DIR)/bin/lin/debug/xsc
+XSID = $(BUILD_DIR)/bin/lin/debug/xsid
+XSL = $(BUILD_DIR)/bin/lin/debug/xsl
 	
 VPATH += $(XS_DIRECTORIES)
 
@@ -131,10 +132,6 @@ clean:
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
-
-$(BIN_DIR)/Info.plist: $(MAIN_DIR)/mac/main.plist
-	cp -rf $< $@
-	echo APPLTINY > $(BIN_DIR)/PkgInfo
 	
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(OBJECTS)
 	@echo "# cc" $(@F)
@@ -143,7 +140,7 @@ $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(OBJECTS)
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c
 	@echo "# cc" $(<F)
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(XS_C_FLAGS) $< -o $@
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@
 	
 $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 	@echo "# cc" $(<F)

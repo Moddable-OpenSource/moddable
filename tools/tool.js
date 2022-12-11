@@ -53,9 +53,9 @@ export class TOOL {
 		let path = this.getenv("MODDABLE") + "/tools/VERSION";
 		if ("win" === this.currentPlatform)
 			path = path.replaceAll("/", "\\");
-		const fileVersion = this.readFileString(path);
+		const fileVersion = (this.isDirectoryOrFile(path) == 1) ? this.readFileString(path) : undefined;
 		const toolsVersion = this.getToolsVersion();
-		if (!toolsVersion || (fileVersion === toolsVersion))
+		if (!fileVersion || !toolsVersion || (fileVersion === toolsVersion))
 			return;
 
 		trace("Moddable SDK tools mismatch between binary and source! Rebuilding tools.\n");
@@ -100,6 +100,7 @@ export class TOOL {
 	resolveFilePath(message) @ "Tool_prototype_resolveFilePath";
 	resolvePath(message) @ "Tool_prototype_resolvePath";
 	setenv(name, value) @ "Tool_prototype_setenv";
+	spawn(path) @ "Tool_prototype_spawn";
 	splitPath(path) @ "Tool_prototype_splitPath";
 	strlen(string) @  "Tool_prototype_strlen";
 	then() @  "Tool_prototype_then";

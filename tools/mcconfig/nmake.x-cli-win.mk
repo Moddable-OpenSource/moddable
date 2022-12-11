@@ -86,6 +86,9 @@ DIRECTORIES = $(DIRECTORIES) $(XS_DIRECTORIES)
 	
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
+TOOLS_VERSION = \
+!INCLUDE $(MODDABLE)\tools\VERSION
+
 C_DEFINES = \
 	/D XS_ARCHIVE=1 \
 	/D INCLUDE_XSPLATFORM=1 \
@@ -95,7 +98,8 @@ C_DEFINES = \
 	/D mxNoFunctionLength=1 \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
-	/D mxFewGlobalsTable=1
+	/D mxFewGlobalsTable=1 \
+	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\"
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) \
 	/D MODINSTRUMENTATION=1 \

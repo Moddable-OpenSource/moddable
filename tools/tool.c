@@ -33,9 +33,11 @@
 	#include <dirent.h>
 	#include <sys/stat.h>
     #include <sys/types.h>
+    #include <sys/wait.h>
     #include <ifaddrs.h>
     #include <netdb.h>
 	#include <unistd.h>
+	#include <spawn.h>
 	#define mxSeparator '/'
 #endif
 
@@ -797,6 +799,38 @@ void Tool_prototype_setenv(xsMachine* the)
 	if (c > 2)
 		overwrite = xsToInteger(xsArg(2));
 	setenv(name, value, overwrite);
+#endif
+}
+
+#if mxWindows
+#else
+extern char **environ;
+#endif
+
+void Tool_prototype_spawn(xsMachine* the)
+{
+	xsIntegerValue c = xsToInteger(xsArgc), i;
+	char **argv;
+#if mxWindows
+#else
+	pid_t pid;
+	int status;
+#endif
+	for (i = 0; i < c; i++)
+		xsToString(xsArg(i));
+	argv = malloc(sizeof(char *)*(c + 1));
+	xsElseThrow(argv);
+	for (i = 0; i < c; i++)
+		argv[i] = xsToString(xsArg(i));
+	argv[i] = C_NULL;
+#if mxWindows
+	_spawnvp(_P_WAIT, argv[0], argv);
+#else
+	status = posix_spawnp(&pid, argv[0], NULL, NULL, argv, environ);
+	xsElseThrow(status == 0);
+	do {
+		xsElseThrow(waitpid(pid, &status, 0) != -1);
+	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 #endif
 }
 
