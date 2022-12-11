@@ -1,0 +1,14 @@
+{
+	"include": [
+		"./manifest_streamer.json"
+	],
+	"resources": {
+		"*": "../../../assets/sounds/bflatmajor"
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"../http-stream/calculatePower"
+		]
+	}
+}
