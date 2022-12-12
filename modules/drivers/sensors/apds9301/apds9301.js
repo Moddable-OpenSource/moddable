@@ -18,14 +18,14 @@
  *
  */
 /*
-	APDS-9301 Ambient Light Sensor
+    APDS-9301 Ambient Light Sensor
     Datasheet: https://docs.broadcom.com/docs/AV02-2315EN
 */
 
 import Timer from "timer";
 
 const Register = Object.freeze({
-	CONTROL:        0x00,
+  CONTROL:        0x00,
   TIMING:         0x01,
   THRESHLOWLOW:   0x02,
   THRESHHIGHLOW:  0x04,
@@ -64,7 +64,7 @@ class Sensor {
   #configuration = {}
 
   constructor(options){
-    const io = this.#io = new options.sensor.io({
+    this.#io = new options.sensor.io({
       hz: 400_000,
       address: 0x39,
       ...options.sensor
@@ -74,7 +74,7 @@ class Sensor {
     try {
       this.#writeByte(Register.CONTROL, Control.POWEROFF);
       this.#writeByte(Register.CONTROL, Control.POWERON, true);
-    } catch (error) {
+    } catch {
       this.close();
       throw new Error("reset failed");
     }
@@ -83,7 +83,7 @@ class Sensor {
 
     try {
       idCheck = (0x50 === this.#readByte(Register.ID));
-    } catch (error) {
+    } catch {
       this.close();
       throw new Error("i2c error during id check");
     }
@@ -116,37 +116,38 @@ class Sensor {
   
   configure(options){
     const {highGain, manualTime, integrationTime, thresholdLow, thresholdHigh, thresholdPersistence} = options;
+    const configuration = this.#configuration;
     
     // Timing
     if (highGain !== undefined)
-      this.#configuration.highGain = (highGain === true);
+      configuration.highGain = (highGain === true);
 
     if (manualTime !== undefined)
-      this.#configuration.manualTime = manualTime;
+      configuration.manualTime = manualTime;
 
     if (integrationTime !== undefined) {
       if (integrationTime !== 13.7 && integrationTime !== 101 && integrationTime !== 402)
-        throw new Error("invalid integration time");
-      this.#configuration.integrationTime = integrationTime;
+        throw new RangeError("invalid integration time");
+      configuration.integrationTime = integrationTime;
     }
 
     if (highGain !== undefined || manualTime !== undefined || integrationTime !== undefined) {
       let timing = 0;
 
-      if (this.#configuration.highGain)
+      if (configuration.highGain)
         timing |= Timing.GAINBIT;
 
-      if (this.#configuration.manualTime > 0) {
+      if (configuration.manualTime > 0) {
         timing |= Timing.INTEGMANUAL;
       } else {
-        if (this.#configuration.integrationTime === 13.7) {
+        if (configuration.integrationTime === 13.7) {
           timing |= Timing.INTEG137;
-        } else if (this.#configuration.integrationTime === 101) {
+        } else if (configuration.integrationTime === 101) {
           timing |= Timing.INTEG101;
-        } else if (this.#configuration.integrationTime === 402) {
+        } else if (configuration.integrationTime === 402) {
           timing |= Timing.INTEG402;
         } else {
-          throw new Error("invalid integration time");
+          throw new RangeError("invalid integration time");
         }
       }
 
@@ -154,44 +155,45 @@ class Sensor {
     }
     
     // Alert Thresholds
-    if (thresholdLow !== undefined) {
-      if (thresholdLow < 0 || thresholdLow > 0xFFFF)
-        throw new Error("invalid thresholdLow");
-      this.#configuration.thresholdLow = thresholdLow;
-      this.#writeWord(Register.THRESHLOWLOW, thresholdLow, true);
-    }
-
-    if (thresholdHigh !== undefined) {
-      if (thresholdHigh < 0 || thresholdHigh > 0xFFFF)
-        throw new Error("invalid thresholdHigh");
-      this.#configuration.thresholdHigh = thresholdHigh;
-
-      this.#writeWord(Register.THRESHHIGHLOW, thresholdHigh, true);
-    }
-
-    if (thresholdPersistence !== undefined) {
-      if (thresholdPersistence < 0 || thresholdPersistence > 15)
-        throw new Error("invalid thresholdPersistence");
-      this.#configuration.thresholdPersistence = thresholdPersistence;
-    }
-
     if (thresholdHigh !== undefined || thresholdLow !== undefined || thresholdPersistence !== undefined) {
-      if (thresholdHigh === 0xFFFF && thresholdLow === 0) {
-        this.#writeByte(Register.INTERRUPT, this.#configuration.thresholdPersistence & 0b1111, true);
+      if (thresholdLow !== undefined) {
+        if (thresholdLow < 0 || thresholdLow > 0xFFFF)
+          throw new RangeError("invalid thresholdLow");
+        configuration.thresholdLow = thresholdLow;
+        this.#writeWord(Register.THRESHLOWLOW, thresholdLow, true);
+      }
+
+      if (thresholdHigh !== undefined) {
+        if (thresholdHigh < 0 || thresholdHigh > 0xFFFF)
+          throw new RangeError("invalid thresholdHigh");
+        configuration.thresholdHigh = thresholdHigh;
+        this.#writeWord(Register.THRESHHIGHLOW, thresholdHigh, true);
+      }
+
+      if (thresholdPersistence !== undefined) {
+        if (thresholdPersistence < 0 || thresholdPersistence > 15)
+          throw new RangeError("invalid thresholdPersistence");
+        configuration.thresholdPersistence = thresholdPersistence;
+      }
+ 
+      if (configuration.thresholdHigh === 0xFFFF && configuration.thresholdLow === 0) {
+        this.#writeByte(Register.INTERRUPT, configuration.thresholdPersistence & 0b1111, true);
       } else {
-        this.#writeByte(Register.INTERRUPT, 0b00010000 | (this.#configuration.thresholdPersistence & 0b1111), true);
+        this.#writeByte(Register.INTERRUPT, 0b00010000 | (configuration.thresholdPersistence & 0b1111), true);
       }
     }
   }
 
   sample(){
-    if (this.#configuration.manualTime) {
+    const configuration = this.#configuration;
+
+    if (configuration.manualTime) {
       let value = 0b00001011;
-      if (this.#configuration.highGain)
+      if (configuration.highGain)
         value |= Timing.GAINBIT;
       this.#writeByte(Register.TIMING, value);
       value = value & 0b11110111;
-      Timer.delay(this.#configuration.manualTime);
+      Timer.delay(configuration.manualTime);
       this.#writeByte(Register.TIMING, value);
     }
 
@@ -201,8 +203,8 @@ class Sensor {
     const ratio = ch1/ch0;
     let scaler = 1;
     
-    if (this.#configuration.manualTime === 0) {
-      switch (this.#configuration.integrationTime){
+    if (configuration.manualTime === 0) {
+      switch (configuration.integrationTime){
         case Timing.INTEG137:
           if (ch0 >= 5047 || ch1 >= 5047) return {overflow: true};
           scaler = 1/0.034;
@@ -218,18 +220,18 @@ class Sensor {
       }
     }else {
       if (ch0 >= 65535 || ch1 >= 65535) return {overflow: true};
-      const t = (this.#configuration.manualTime * 0.800653);
+      const t = (configuration.manualTime * 0.800653);
       scaler = 1 / (t / 322);
     }
     
-    if (!this.#configuration.highGain)
+    if (!configuration.highGain)
       scaler *= 16;
     
     const rawCH0 = ch0;
     ch0 *= scaler;
     ch1 *= scaler;
   
-	  let luxVal;
+    let luxVal;
     
     if (ratio <= 0.5)
       luxVal = (0.0304 * ch0) - ((0.062 * ch0) * (Math.pow(ratio, 1.4)));
@@ -251,10 +253,12 @@ class Sensor {
   }
 
   close() {
-    if (this.#io !== undefined)
+    if (this.#io) {
       this.#writeByte(Register.CONTROL, Control.POWEROFF);
-    this.#io?.close();
+      this.#io.close();
+    }
     this.#monitor?.close();
+    this.#monitor = this.#io = undefined;
   }
 
   get configuration() {
@@ -271,31 +275,31 @@ class Sensor {
 
   //I2C Commands. APDS-9301 uses a slightly modified SMB-style protocol.
 
-  #readByte(register, setClearBit = false) {
+  #readByte(register, setClearBit) {
     let command = register | Command.COMMAND;
     if (setClearBit)
-      command = command | Command.CLEARINT;
+      command |= Command.CLEARINT;
     return this.#io.readUint8(command);
   }
 
-  #writeByte(register, value, setClearBit = false) {
+  #writeByte(register, value, setClearBit) {
     let command = register | Command.COMMAND;
     if (setClearBit)
-      command = command | Command.CLEARINT;
+      command |= Command.CLEARINT;
     return this.#io.writeUint8(command, value);
   }
 
-  #readWord(register, setClearBit = false) {
+  #readWord(register, setClearBit) {
     let command = register | Command.COMMAND | Command.WORD;
     if (setClearBit)
-      command = command | Command.CLEARINT;
+      command |= Command.CLEARINT;
     return this.#io.readUint16(command);
   }
 
-  #writeWord(register, value, setClearBit = false) {
+  #writeWord(register, value, setClearBit) {
     let command = register | Command.COMMAND | Command.WORD;
     if (setClearBit)
-      command = command | Command.CLEARINT;
+      command |= Command.CLEARINT;
     return this.#io.writeUint16(command, value);
   }
 }
