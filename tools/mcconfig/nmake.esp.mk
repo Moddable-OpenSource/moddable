@@ -54,7 +54,7 @@ UPLOAD_RESET = nodemcu
 UPLOAD_VERB = -v
 !ENDIF
 
-START_SERIAL2XSBUG= $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+START_SERIAL2XSBUG= set XSBUG_PORT=$(XSBUG_PORT) && set XSBUG_HOST=$(XSBUG_HOST) && $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
 START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 
