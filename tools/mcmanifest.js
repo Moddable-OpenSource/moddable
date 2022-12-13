@@ -20,6 +20,7 @@
 
 import { FILE, TOOL } from "tool";
 import UncodeRanges from "unicode-ranges";
+import URL from "url";
 
 var formatNames = {
 	gray16: "gray16",
@@ -1621,18 +1622,62 @@ export class Tool extends TOOL {
 			this.createDirectory(path)
 		}
 	}
-	includeManifest(name) {
+	includeManifest(it) {
 		var currentDirectory = this.currentDirectory;
-		var path = this.resolveFilePath(name);
+		if ("string" == typeof it) {
+			this.includeManifestPath(this.resolveVariable(it));
+		}
+		else {
+			let { git, include = "manifest.json" } = it;
+			if (!git)
+				throw new Error("no git!");
+			let repo = this.resolveVariable(git);
+			if (this.windows)
+				repo = repo.replace(/\\/g, "/");
+			let url = new URL(repo);
+			let parts = url.pathname.split("/").slice(1);
+			let name = parts.pop();
+			if (name.endsWith(".git"))
+				name = name.slice(0, -4);
+			
+			let path = this.outputPath + this.slash + "tmp";
+			this.createDirectory(path);
+			path += this.slash + "repos";
+			this.createDirectory(path);
+			path += this.slash + url.hostname;
+			this.createDirectory(path);
+			for (let part of parts) {
+				path += this.slash + part;
+				this.createDirectory(path);
+			}
+			this.currentDirectory = path;
+			path += this.slash + name;
+			if (this.isDirectoryOrFile(path) == 0) {
+				this.report("# git clone " + repo);
+				this.spawn("git", "clone", repo);
+			}
+			else {
+				this.currentDirectory = path;
+				this.report("# git pull " + name);
+				this.spawn("git", "pull");
+			}
+			if (include instanceof Array)
+				include.forEach(it => this.includeManifestPath(path + this.slash + this.resolveVariable(it)));
+			else
+				this.includeManifestPath(path + this.slash + this.resolveVariable(include));
+		}
+		this.currentDirectory = currentDirectory;
+	}
+	includeManifestPath(include) {
+		let path = this.resolveFilePath(include);
 		if (!path)
-			throw new Error("'" + name + "': manifest not found!");
+			throw new Error("'" + include + "': manifest not found!");
 		if (!this.manifests.already[path]) {
 			var parts = this.splitPath(path);
 			this.currentDirectory = parts.directory;
 			var manifest = this.parseManifest(path);
 			manifest.directory = parts.directory;
 		}
-		this.currentDirectory = currentDirectory;
 	}
 	matchPlatform(platforms, name, simple) {
 		let parts = name.split("/");
@@ -1781,9 +1826,9 @@ export class Tool extends TOOL {
 		}
 		if ("include" in manifest) {
 			if (manifest.include instanceof Array)
-				manifest.include.forEach(include => this.includeManifest(this.resolveVariable(include)));
+				manifest.include.forEach(include => this.includeManifest(include));
 			else
-				this.includeManifest(this.resolveVariable(manifest.include));
+				this.includeManifest(manifest.include);
 		}
 		this.manifests.push(manifest);
 		return manifest;

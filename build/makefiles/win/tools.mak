@@ -137,6 +137,7 @@ MODULES = \
 	$(MOD_DIR)\unicode-ranges.xsb \
 	$(MOD_DIR)\wav2maud.xsb \
 	$(MOD_DIR)\bles2gatt.xsb \
+	$(MOD_DIR)\url.xsb \
 	$(TMP_DIR)\commodettoBitmap.xsi \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
@@ -150,7 +151,8 @@ MODULES = \
 	$(TMP_DIR)\image2cs.xsi \
 	$(TMP_DIR)\miniz.xsi \
 	$(TMP_DIR)\modInstrumentation.xsi \
-	$(TMP_DIR)\tool.xsi
+	$(TMP_DIR)\tool.xsi \
+	$(TMP_DIR)\url.xsi
 PRELOADS =\
 	-p commodetto\Bitmap.xsb\
 	-p commodetto\BMPOut.xsb\
@@ -165,7 +167,8 @@ PRELOADS =\
 	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
-	-p file.xsb
+	-p file.xsb\
+	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 
 HEADERS =\
@@ -189,7 +192,8 @@ OBJECTS = \
 	$(TMP_DIR)\miniz.o \
 	$(TMP_DIR)\modInstrumentation.o \
 	$(TMP_DIR)\tool.o \
-	$(TMP_DIR)\wav2maud.o
+	$(TMP_DIR)\wav2maud.o \
+	$(TMP_DIR)\url.o
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
@@ -339,6 +343,9 @@ $(MOD_DIR)\commodetto\ReadPNG.xsb : $(COMMODETTO)\commodettoReadPNG.js
 $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
+$(MOD_DIR)\url.xsb : $(DATA)\url\url.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
 $(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
@@ -355,6 +362,9 @@ $(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
 {$(TOOLS)\}.c{$(TMP_DIR)\}.xsi:
 	@echo # xsid $(@F)
 	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
+{$(DATA)\url\}.c{$(TMP_DIR)\}.xsi:
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
 $(TMP_DIR)\tool.o : $(MODDABLE)\tools\VERSION
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
@@ -363,6 +373,8 @@ $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 {$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TOOLS)\}.c{$(TMP_DIR)\}.o:
+	cl $< $(C_OPTIONS) /Fo$@
+{$(DATA)\url\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TMP_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
