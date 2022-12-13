@@ -16,7 +16,7 @@
                 ]
             }
         },
-        "pico/pico_w": {
+        "pico": {
             "modules": {
                 "*": [
                     "$(MODULES)/network/wifi/*",
@@ -24,8 +24,6 @@
                 ]
             }
         },
-        "pico": {
-		},
         "lin": {
             "modules": {
                 "*": [

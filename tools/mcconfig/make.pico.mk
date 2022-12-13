@@ -353,7 +353,6 @@ INC_DIRS = \
 
 #	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
 
-ifeq ($(USE_WIFI),1)
 INC_DIRS += \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/cyw43_driver \
@@ -361,7 +360,6 @@ INC_DIRS += \
 	$(PICO_SDK_DIR)/lib/cyw43-driver/src	\
 	$(PICO_SDK_DIR)/lib/cyw43-driver/firmware	\
 	$(PICO_SDK_DIR)/lib/lwip/src/include
-endif
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHosts.c.o \
@@ -497,7 +495,6 @@ PICO_OBJ = \
 #	$(LIB_DIR)/msc_device.c.o \
 #	$(LIB_DIR)/stdio_uart.c.o \
 
-ifeq ($(USE_WIFI),1)
 LWIP_OBJ = \
 	$(LIB_DIR)/cyw43_lwip.c.o	\
 	$(LIB_DIR)/def.c.o	\
@@ -559,8 +556,6 @@ PICO_OBJ += \
 
 #	$(LIB_DIR)/cyw43_arch_threadsafe_background.c.o
 
-endif
-
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdlib			\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma			\
@@ -609,7 +604,6 @@ PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id
 
-ifeq ($(USE_WIFI),1)
 PICO_SRC_DIRS += \
 	$(PICO_SDK_DIR)/lib/cyw43-driver/src				\
 	$(PICO_SDK_DIR)/lib/cyw43-driver					\
@@ -624,8 +618,6 @@ PICO_SRC_DIRS += \
 PIO_STUFF += \
 	$(TMP_DIR)/cyw43_bus_pio_spi.pio.h
 
-
-endif
 
 PIO_STUFF += \
 	$(TMP_DIR)/ws2812.pio.h
@@ -732,21 +724,22 @@ PICO_C_DEFINES= \
 	-DPICO_TARGET_NAME=\"$(NAME)\"	\
 	-DPICO_USE_BLOCKED_RAM=0
 
-ifeq ($(USE_WIFI),1)
 PICO_C_DEFINES += \
 	-DCYW43_LWIP=1				\
 	-DLIB_PICO_CYW43_ARCH=1		\
-	-DPICO_BOARD=\"pico_w\"		\
 	-DPICO_CYW43_ARCH_POLL=1
 
 #	-DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1
 
-BOARD_INCLUDE = -include $(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h
+ifeq ($(WIFI_GPIO),1)
+PICO_C_DEFINES += \
+	-DPICO_BOARD=\"pico_w\"		\
+	-DWIFI_GPIO=1
 else
 PICO_C_DEFINES += \
 	-DPICO_BOARD=\"pico\"
-BOARD_INCLUDE = -include $(PICO_SDK_DIR)/src/boards/include/boards/pico.h
 endif
+BOARD_INCLUDE = -include $(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h
 
 C_DEFINES = \
 	$(PICO_C_DEFINES) \

@@ -227,7 +227,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 			}
 		}
 	}
-#if CYW43_LWIP
+#if WIFI_GPIO
 	else {		// bank 1
 		pico_use_cyw43();
 		switch (mode) {
@@ -283,7 +283,7 @@ void xs_digitalbank_destructor(void *data)
 
 		builtinFreePins(digital->bank, digital->pins);
 	}
-#if CYW43_LWIP
+#if WIFI_GPIO
 	else if (1 == digital->bank && digital->pins) {
 		pico_unuse_cyw43();
 		builtinFreePins(digital->bank, digital->pins);
@@ -328,7 +328,7 @@ void xs_digitalbank_read(xsMachine *the)
 		result = gpio_get_all();
 		result &= digital->pins;
 	}
-#if CYW43_LWIP
+#if WIFI_GPIO
 	else {
 		if (cyw43_arch_gpio_get(CYW43_WL_GPIO_LED_PIN))
 			result |= (1 << 0);
@@ -350,7 +350,7 @@ void xs_digitalbank_write(xsMachine *the)
 
 	if (0 == digital->bank)
 		gpio_put_masked(digital->pins, value);
-#if CYW43_LWIP
+#if WIFI_GPIO
 	else
 		cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, value);
 #endif

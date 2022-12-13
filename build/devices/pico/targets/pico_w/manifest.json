@@ -1,9 +1,9 @@
 {
-	"build": {
-		"USE_WIFI": "1"
-	},
 	"modules": {
 		"setup/target": "./setup-target"
+	},
+	"build": {
+		"WIFI_GPIO":"1"
 	},
 	"preload": "setup/target",
 	"config": {
