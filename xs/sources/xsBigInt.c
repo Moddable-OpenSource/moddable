@@ -162,6 +162,7 @@ void fx_BigInt_asIntN(txMachine* the)
 			result = fxBigInt_usub(the, C_NULL, bits, result);
 		if (index && fxBigInt_comp(result, fxBigInt_ulsl1(the, C_NULL, (txBigInt *)&gxBigIntOne, index - 1)) >= 0)
 			result = fxBigInt_sub(the, C_NULL, result, bits);
+		result = fxBigInt_fit(the, result);
 	}
 	mxResult->value.bigint = *result;
 	mxResult->kind = XS_BIGINT_KIND;
@@ -187,6 +188,7 @@ void fx_BigInt_asUintN(txMachine* the)
 		result = fxBigInt_uand(the, C_NULL, arg, mask);
 		if ((arg->sign) && !fxBigInt_iszero(result))
 			result = fxBigInt_usub(the, C_NULL, bits, result);
+		result = fxBigInt_fit(the, result);
 	}
 	mxResult->value.bigint = *result;
 	mxResult->kind = XS_BIGINT_KIND;
