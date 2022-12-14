@@ -1611,7 +1611,8 @@ namespace:
 		if (mxIsModuleSource(property->value.reference))
 			fxDuplicateModuleTransfers(the, property, module);
 		else
-			fxLoadVirtualModuleSource(the, property, module->value.reference);
+			mxTypeError("descriptor.source is object");
+// 			fxLoadVirtualModuleSource(the, property, module->value.reference);
 		goto importMeta;
 	}
 	mxPop(); // property
