@@ -1,0 +1,6 @@
+{
+	"include": "./tls_common.json",
+	"modules": {
+		"ssl/session": "$(MODULES)/crypt/ssl/session_419"
+	}
+}

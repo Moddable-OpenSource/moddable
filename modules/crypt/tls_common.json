@@ -1,0 +1,59 @@
+{
+	"modules":{
+		"ssl/*": "$(MODULES)/crypt/ssl/ssl_*",
+		"*": [
+			"$(MODULES)/crypt/arith/*",
+			"$(MODULES)/crypt/bin/*",
+			"$(MODULES)/crypt/digest/*",
+			"$(MODULES)/crypt/digest/kcl/*",
+			"$(MODULES)/crypt/securesocket/*",
+			"$(MODULES)/data/base64/*",
+			"$(MODULES)/data/hex/*",
+			"$(MODULES)/files/resource/*"
+		],
+		"ber": "$(MODULES)/crypt/etc/ber",
+		"curve": "$(MODULES)/crypt/etc/curve",
+		"dsa": "$(MODULES)/crypt/etc/dsa",
+		"ecdsa": "$(MODULES)/crypt/etc/ecdsa",
+		"gcm": "$(MODULES)/crypt/etc/gcm",
+		"hmac": "$(MODULES)/crypt/etc/hmac",
+		"pkcs1_5": "$(MODULES)/crypt/etc/pkcs1_5",
+		"pkcs1": "$(MODULES)/crypt/etc/pkcs1",
+		"pkcs8": "$(MODULES)/crypt/etc/pkcs8",
+		"rng": "$(MODULES)/crypt/etc/rng",
+		"rsa": "$(MODULES)/crypt/etc/rsa",
+		"x509": "$(MODULES)/crypt/etc/x509"
+	},
+	"preload": [
+		"securesocket",
+		"ssl",
+		"ssl/*",
+		"crypt",
+		"base64",
+		"hex",
+		"Resource",
+		"ber",
+		"curve",
+		"dsa",
+		"ecdsa",
+		"gcm",
+		"hmac",
+		"pkcs1_5",
+		"pkcs1",
+		"pkcs8",
+		"rng",
+		"rsa",
+		"x509"
+	],
+	"config": {
+		"tls": {
+			"DHE_RSA": true,
+			"ECDHE_RSA": true
+		}
+	},
+	"resources":{
+		"*": [
+			"$(MODULES)/crypt/data/ca"
+		]
+	}
+}

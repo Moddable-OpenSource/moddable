@@ -92,6 +92,7 @@ class MQTTClient {
 				this.#socket = new options.socket.io({
 					...options.socket,
 					address,
+					host,
 					port: this.#options.port ?? 80,
 					onReadable: this.#onReadable.bind(this),
 					onWritable: this.#onWritable.bind(this),
