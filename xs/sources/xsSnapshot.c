@@ -69,7 +69,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#define mxCallbacksLength 497
+#define mxCallbacksLength 496
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -242,7 +242,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_escape,
 	fx_eval,
 	fx_EvalError,
-	fx_FinalizationRegistry_prototype_cleanupSome,
+	// fx_FinalizationRegistry_prototype_cleanupSome,
 	fx_FinalizationRegistry_prototype_register,
 	fx_FinalizationRegistry_prototype_unregister,
 	fx_FinalizationRegistry,

@@ -1661,7 +1661,7 @@ mxExport void fx_WeakSet_prototype_has(txMachine* the);
 mxExport void fx_WeakRef(txMachine* the);
 mxExport void fx_WeakRef_prototype_deref(txMachine* the);
 mxExport void fx_FinalizationRegistry(txMachine* the);
-mxExport void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the);
+//mxExport void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the);
 mxExport void fx_FinalizationRegistry_prototype_register(txMachine* the);
 mxExport void fx_FinalizationRegistry_prototype_unregister(txMachine* the);
 
