@@ -23,10 +23,6 @@ class PulseWidth @ "xs_pulsewidth_destructor" {
 	close() @ "xs_pulsewidth_close";
 	read() @ "xs_pulsewidth_read";
 
-    write() {
-        throw new Error("write is not supported by PulseWidth");
-    }
-
     get format() {
         return "number";
     }

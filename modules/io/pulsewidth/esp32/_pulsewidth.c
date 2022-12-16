@@ -46,6 +46,9 @@ struct PulseWidthRecord {
 	uint32_t    value;
     uint8_t     channel;
     uint8_t     mode;
+    uint8_t     hasOnReadable;
+
+    // Allocated only if onReadable callback present
 	xsMachine	*the;
 	xsSlot		*onReadable;
 };
@@ -53,10 +56,10 @@ typedef struct PulseWidthRecord PulseWidthRecord;
 typedef struct PulseWidthRecord *PulseWidth;
 
 static bool pw_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg);
-void pulseWidthDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void pulseWidthDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 void xs_pulsewidth_destructor(void *data);
 void xs_pulsewidth_mark(xsMachine* the, void *it, xsMarkRoot markRoot);
-uint8_t mcpwmFromChannel(uint8_t channel, mcpwm_unit_t *unit, mcpwm_io_signals_t *signal, mcpwm_capture_signal_t *select);
+static uint8_t mcpwmFromChannel(uint8_t channel, mcpwm_unit_t *unit, mcpwm_io_signals_t *signal, mcpwm_capture_signal_t *select);
 
 static uint8_t gFreeMCPWM = 0b00111111;
 
@@ -104,11 +107,9 @@ void xs_pulsewidth_constructor(xsMachine *the)
 
 	if (!builtinIsPinFree(pin))
         xsRangeError("in use");
-
-	onReadable = builtinGetCallback(the, xsID_onReadable);
-    if (!onReadable)
-        xsUnknownError("onReadable callback required");
-
+    
+    onReadable = builtinGetCallback(the, xsID_onReadable);
+    
 	builtinInitializeTarget(the);
 
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
@@ -119,7 +120,7 @@ void xs_pulsewidth_constructor(xsMachine *the)
     if (!channel)
         xsRangeError("all mcpwm channels used");
 
-    pw = c_malloc(sizeof(PulseWidthRecord));
+    pw = c_malloc(onReadable ? sizeof(PulseWidthRecord) : offsetof(PulseWidthRecord, the));
 	if (!pw)
 		xsRangeError("no memory");
 
@@ -128,10 +129,14 @@ void xs_pulsewidth_constructor(xsMachine *the)
 	xsmcSetHostData(xsThis, pw);
 	pw->pin = pin;
 	pw->obj = xsThis;
-    pw->the = the;
-	pw->onReadable = onReadable;
     pw->channel = channel;
     pw->mode = mode;
+    pw->hasOnReadable = onReadable ? 1 : 0;
+
+    if (onReadable) {
+        pw->the = the;
+	    pw->onReadable = onReadable;
+    }
 
 	xsRemember(pw->obj);    
     
@@ -193,14 +198,19 @@ void xs_pulsewidth_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
 {
 	PulseWidth pw = it;
 
-	(*markRoot)(the, pw->onReadable);
+    if (pw->hasOnReadable)
+	    (*markRoot)(the, pw->onReadable);
 }
 
 void xs_pulsewidth_read(xsMachine *the)
 {
     PulseWidth pw = xsmcGetHostDataValidate(xsThis, (void *)&xsPulseWidthHooks);
 
+    if (!pw->value)
+        return;
+
     float pulse_width_us = pw->value * (1000000.0 / rtc_clk_apb_freq_get());
+    pw->value = 0;
 
     xsmcSetNumber(xsResult, pulse_width_us);
 }
@@ -231,13 +241,15 @@ static bool pw_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, 
                 if (cap_val_begin_of_sample) {
                     pw->value = edata->cap_value - cap_val_begin_of_sample;
                     cap_val_begin_of_sample = 0;
-                    modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
+                    if (pw->hasOnReadable)
+                        modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
                 }
                 break;
             case kPulseWidthRisingToRising:
                 if (cap_val_begin_of_sample) {
                     pw->value = edata->cap_value - cap_val_begin_of_sample;
-                    modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
+                    if (pw->hasOnReadable)
+                        modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
                 }
                 cap_val_begin_of_sample = edata->cap_value;
                 break;
@@ -251,13 +263,15 @@ static bool pw_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, 
                 if (cap_val_begin_of_sample) {
                     pw->value = edata->cap_value - cap_val_begin_of_sample;
                     cap_val_begin_of_sample = 0;
-                    modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
+                    if (pw->hasOnReadable)
+                        modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
                 }
                 break;
             case kPulseWidthFallingToFalling:
                 if (cap_val_begin_of_sample) {
                     pw->value = edata->cap_value - cap_val_begin_of_sample;
-                    modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
+                    if (pw->hasOnReadable)
+                        modMessagePostToMachineFromISR(pw->the, pulseWidthDeliver, pw);
                 }
                 cap_val_begin_of_sample = edata->cap_value;
                 break;
@@ -267,7 +281,7 @@ static bool pw_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, 
     return false;
 }
 
-void pulseWidthDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+static void pulseWidthDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	PulseWidth pw = refcon;
 
@@ -276,7 +290,7 @@ void pulseWidthDeliver(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsEndHost(pw->the);
 }
 
-uint8_t mcpwmFromChannel(uint8_t channel, mcpwm_unit_t *unit, mcpwm_io_signals_t *signal, mcpwm_capture_signal_t *select)
+static uint8_t mcpwmFromChannel(uint8_t channel, mcpwm_unit_t *unit, mcpwm_io_signals_t *signal, mcpwm_capture_signal_t *select)
 {
     uint8_t x = channel;
     uint8_t result;
