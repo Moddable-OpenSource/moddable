@@ -93,7 +93,8 @@
 	int promiseJobs; \
 	void* timerJobs; \
 	int abortStatus; \
-	void* rejection;
+	void* rejection; \
+	void *script;		// txScript*
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1

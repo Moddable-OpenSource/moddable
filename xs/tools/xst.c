@@ -1811,17 +1811,21 @@ int fuzz(int argc, char* argv[])
 				aStream.buffer = buffer;
 				aStream.offset = 0;
 				aStream.size = script_size;
-				fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+				the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
+				fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+				the->script = NULL;
 				mxPullSlot(mxResult);
 
 				fxRunLoop(the);
 			}
 			xsCatch {
-				machine->abortStatus = XS_UNHANDLED_EXCEPTION_EXIT;
+				the->script = NULL;
+				the->abortStatus = XS_UNHANDLED_EXCEPTION_EXIT;
 			}
 		}
 //		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+		fxDeleteScript(machine->script);
 //		if (machine->abortStatus) {
 //			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
 //			fprintf(stderr, "Error: %s\n", why);
@@ -1905,15 +1909,19 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 			aStream.size = strlen(buffer);
 			// run script
 			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
-			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+			the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
+			fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+			the->script = NULL;
 			mxPullSlot(mxResult);
 			fxRunLoop(the);
 #endif
 		}
 		xsCatch {
+			the->script = NULL;
 		}
 	}
 	xsEndHost(machine);
+	fxDeleteScript(machine->script);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	free(buffer);
