@@ -58,7 +58,7 @@ export class TOOL {
 		if (fileVersion === toolsVersion)
 			return;
 
-		trace("Moddable SDK tools mismatch between binary and source! Rebuilding tools.\n");
+		trace(`Moddable SDK tools mismatch between binary (${toolsVersion}) and source (${fileVersion})! Rebuilding tools.\n`);
 
 		command = command.map(item => {
 			item = item.replaceAll('"', '\\"');
