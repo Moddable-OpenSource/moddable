@@ -238,6 +238,7 @@ void fxCacheArray(txMachine* the, txSlot* instance)
 		txSlot* dstSlot = address;
 		txIndex index = 0;
 		while (srcSlot) {
+			dstSlot->next = C_NULL;
 			*((txIndex*)dstSlot) = index;	
 			dstSlot->ID = XS_NO_ID;
 			dstSlot->flag = XS_NO_FLAG;
