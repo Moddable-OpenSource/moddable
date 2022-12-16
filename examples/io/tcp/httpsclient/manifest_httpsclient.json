@@ -11,10 +11,5 @@
 	"preload": [
 		"httpsclient/config",
 		"embedded:network/http/client"
-	],
-	"data": { 
-		"*": [
-			"$(MODULES)/crypt/data/*"
-		]
-	}
+	]
 }

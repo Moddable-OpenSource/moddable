@@ -8,5 +8,10 @@
 	},
 	"modules": {
 		"*": "./main"
+	},
+	"data": { 
+		"*": [
+			"$(MODULES)/crypt/data/ca222"
+		]
 	}
 }
