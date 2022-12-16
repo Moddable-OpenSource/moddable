@@ -1640,8 +1640,7 @@ export class Tool extends TOOL {
 			if (name.endsWith(".git"))
 				name = name.slice(0, -4);
 			
-			let path = this.outputPath + this.slash + "tmp";
-			this.createDirectory(path);
+			let path = this.createDirectories(this.outputPath, "tmp", this.environment.NAME);
 			path += this.slash + "repos";
 			this.createDirectory(path);
 			path += this.slash + url.hostname;
@@ -1654,13 +1653,15 @@ export class Tool extends TOOL {
 			path += this.slash + name;
 			if (this.isDirectoryOrFile(path) == 0) {
 				this.report("# git clone " + repo);
-				this.spawn("git", "clone", repo);
+				const result = this.spawn("git", "clone", repo);
+				if (result != 0)
+					throw new Error("git failed!");
 			}
-			else {
-				this.currentDirectory = path;
-				this.report("# git pull " + name);
-				this.spawn("git", "pull");
-			}
+// 			else {
+// 				this.currentDirectory = path;
+// 				this.report("# git pull " + name);
+// 				this.spawn("git", "pull");
+// 			}
 			if (include instanceof Array)
 				include.forEach(it => this.includeManifestPath(path + this.slash + this.resolveVariable(it)));
 			else

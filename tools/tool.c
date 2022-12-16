@@ -826,7 +826,6 @@ void Tool_prototype_spawn(xsMachine* the)
 		argv[i] = C_NULL;
 	#if mxWindows
 		status = _spawnvp(_P_WAIT, argv[0], argv);
-		xsElseThrow(status != -1);
 	#else
 		status = posix_spawnp(&pid, argv[0], NULL, NULL, argv, environ);
 		xsElseThrow(status == 0);
