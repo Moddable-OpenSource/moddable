@@ -23,20 +23,34 @@ import URL from "url";
 let clients;
 function Client(url) {
 	clients ??= new Map;
-	let authority = url.host;
-	let client = clients.get(authority);
+	let origin = url.origin;
+	let client = clients.get(origin);
 	if (!client) {
+		const protocol = url.protocol;
 		const host = url.hostname;
-		const port = url.port || 80;
-		client = new device.network.http.io({ 
-			...device.network.http,
-			host, 
-			port,  
-			onClose() {
-				clients.delete(authority);
-			}
-		});
-		clients.set(authority, client);
+		if (protocol == "http:") {
+			const port = url.port || 80;
+			client = new device.network.http.io({ 
+				...device.network.http,
+				host, 
+				port,  
+				onClose() {
+					clients.delete(authority);
+				}
+			});
+		}
+		else {
+			const port = url.port || 443;
+			client = new device.network.https.io({ 
+				...device.network.https,
+				host, 
+				port,  
+				onClose() {
+					clients.delete(authority);
+				}
+			});
+		}
+		clients.set(origin, client);
 	}
 	return client;
 }
@@ -162,8 +176,8 @@ class Response {
 function fetch(href, info = {}) {
 	return new Promise((resolveResponse, rejectResponse) => {
 		const url = new URL(href);
-		if (url.protocol != "http:")
-			rejectResponse(new URLError("only http"));
+		if ((url.protocol != "http:") && (url.protocol != "https:"))
+			rejectResponse(new URLError("only http or https"));
 		const responseBody = new Promise((resolveBody, rejectBody) => {
 			let path = url.pathname;
 			let query = url.search;

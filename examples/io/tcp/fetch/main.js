@@ -26,6 +26,8 @@ const body = new URLSearchParams([
 	["Input", "This is no input!"]
 ]);
 
+// HTTP
+
 fetch("http://httpbin.org/post", { method:"POST", headers, body })
 .then(response => {
 	trace(`\n${response.url} ${response.status} ${response.statusText}\n\n`);
@@ -88,4 +90,67 @@ fetch("http://httpbin.org/encoding/utf8")
 	trace("\n");
 });
 
+// HTTPS
+
+fetch("https://httpbin.org/post", { method:"POST", headers, body })
+.then(response => {
+	trace(`\n${response.url} ${response.status} ${response.statusText}\n\n`);
+	response.headers.forEach((value, key) => trace(`${key}: ${value}\n`));
+	trace("\n");
+	return response.json();
+})
+.then(json => {
+	trace(JSON.stringify(json, null, "\t"));
+	trace("\n");
+});
+
+fetch("https://httpbin.org/put", { method:"PUT", body:"This is no data!" })
+.then(response => {
+	trace(`\n${response.url} ${response.status} ${response.statusText}\n\n`);
+	response.headers.forEach((value, key) => trace(`${key}: ${value}\n`));
+	trace("\n");
+	return response.json();
+})
+.then(json => {
+	trace(JSON.stringify(json, null, "\t"));
+	trace("\n");
+});
+
+fetch("https://httpbin.org/gzip")
+.then(response => {
+	trace(`\n${response.url} ${response.status} ${response.statusText}\n\n`);
+	response.headers.forEach((value, key) => trace(`${key}: ${value}\n`));
+	trace("\n");
+	return response.arrayBuffer();
+})
+.then(arrayBuffer => {
+	const array = new Uint8Array(arrayBuffer);
+	trace(array + "\n");
+});
+
+fetch("https://httpbin.org/json")
+.then(response => {
+	trace(`\n${response.url} ${response.status} ${response.statusText}\n\n`);
+	response.headers.forEach((value, key) => trace(`${key}: ${value}\n`));
+	trace("\n");
+	return response.json();
+})
+.then(json => {
+	trace(JSON.stringify(json, null, "\t"));
+	trace("\n");
+});
+
+fetch("https://httpbin.org/encoding/utf8")
+.then(response => {
+	trace(`\n${response.url} ${response.status} ${response.statusText}\n\n`);
+	response.headers.forEach((value, key) => trace(`${key}: ${value}\n`));
+	trace("\n");
+	return response.text();
+})
+.then(text => {
+	let c  = text.length;
+	for (let i = 0; i < c; i++)
+		trace(text[i]);
+	trace("\n");
+});
 
