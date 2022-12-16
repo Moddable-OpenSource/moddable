@@ -31,19 +31,19 @@ class Sensor {
   #onAlert;
 
   constructor(options){
-    const {outputIO, inputIO, onAlert} = options;
+    const {trigger, echo, onAlert, triggerPin, echoPin} = options;
 
     this.#onAlert = onAlert;
 
-    this.#output = new outputIO({
-      mode:outputIO.Output,
-      pin: options.output
+    this.#output = new trigger({
+      mode: trigger.Output,
+      pin: triggerPin
     });
 
-    this.#input = new inputIO({
-      pin: options.input,
-      mode: inputIO.RisingToFalling,
-      pullUpDown: inputIO.PullDown,
+    this.#input = new echo({
+      pin: echoPin,
+      mode: echo.RisingToFalling,
+      pullUpDown: echo.PullDown,
       onReadable: () => this.#onEcho()
     });
 
@@ -54,10 +54,8 @@ class Sensor {
     const {sampleRate} = options;
 
     if (undefined !== sampleRate) {
-      if (this.#timer !== undefined) {
-        Timer.clear(this.#timer);
-        this.#timer = undefined;
-      }
+      Timer.clear(this.#timer);
+      this.#timer = undefined;
         
       if (sampleRate !== 0) {
         this.#timer = Timer.repeat(() => {
@@ -73,10 +71,9 @@ class Sensor {
   }
 
   close() {
-    if (this.#timer !== undefined) {
-      Timer.clear(this.#timer);
-      this.#timer = undefined;
-    }
+    Timer.clear(this.#timer);
+    this.#timer = undefined;
+    
     this.#input?.close()
     this.#output?.close();
     this.#input = this.#output = undefined;
@@ -86,7 +83,10 @@ class Sensor {
     const value = this.#input.read();
 
     if (value > 35000) {
+      const doAlert = (this.#reading !== Number.POSITIVE_INFINITY);
       this.#reading = Number.POSITIVE_INFINITY;
+      if (doAlert)
+        this.#onAlert?.(this.#reading);  
     } else {
       this.#reading = value / 58;
       this.#onAlert?.(this.#reading);
