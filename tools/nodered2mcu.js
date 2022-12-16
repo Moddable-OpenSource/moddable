@@ -123,6 +123,13 @@ export default class extends TOOL {
 		const parts = [];
 		const imports = new Map([["nodered", ""]]);		// ensure that globalThis.RED is available
 
+		// must be an array with at least one element
+		if (!Array.isArray(flows))
+			throw new Error("JSON input is not an array");
+
+		if (!flows.length)
+			throw new Error("no nodes");
+
 		// if no flows, create one. useful for running flow snippets (e.g. https://cookbook.nodered.org/).
 		if (!flows.some(config => ("tab" === config.type) && config.z)) {
 			const z = flows[0].z;
@@ -830,6 +837,9 @@ export default class extends TOOL {
 								doSwitch.push(`\t\t\t}`);
 								test = `value`;
 								break;
+							case "buffer":
+								test = `value instanceof Uint8Array`;
+								break;
 							default:
 								throw new Error(`unimplemented istype: ${config.v}`);
 						}
@@ -871,6 +881,12 @@ export default class extends TOOL {
 								break;
 							case "nnull":
 								test = `null !== value`;
+								break;							
+							case "empty":
+								test = `this.empty(value)`;
+								break;							
+							case "nempty":
+								test = `!this.empty(value)`;
 								break;							
 							case "hask":
 								test = `("object" === typeof value) && (${v} in value)`;
@@ -1014,6 +1030,18 @@ export default class extends TOOL {
 					delete config.qos;
 				else
 					config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
+			} break;
+
+			case "tcp in": {
+				if ("" !== config.port)
+					config.port = parseInt(config.port);
+				if ("" === config.topic)
+					delete config.topic;
+			} break;
+
+			case "tcp out": {
+				if ("" !== config.port)
+					config.port = parseInt(config.port);
 			} break;
 
 			case "rpi-gpio in": {
@@ -1241,11 +1269,11 @@ export default class extends TOOL {
 				case "bin":
 					parts.push(`\t\t${name}: ${value},`);
 					break;
-				case "json":
+				case "json": {
 					let t = JSON.parse(value);
 					t = JSON.stringify(t, null, "\t");
 					parts.push(`\t\t${name}: ${t},`);
-					break;
+					} break;
 			}					
 		});
 		
