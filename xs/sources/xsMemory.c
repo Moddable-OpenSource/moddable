@@ -1354,10 +1354,10 @@ void* fxNewChunk(txMachine* the, txSize size)
 
 void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 {
-	txSize offset = size;
 #if mxNoChunks
 	return fxNewChunk(the, size);
 #else
+	txSize offset = size;
 	txChunk* chunk;
 	txBoolean once = 1;
 	size = fxAdjustChunkSize(the, size);
