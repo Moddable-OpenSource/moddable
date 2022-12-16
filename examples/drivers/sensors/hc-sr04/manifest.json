@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/hc-sr04/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}
