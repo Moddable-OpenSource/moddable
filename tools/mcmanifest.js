@@ -1628,44 +1628,55 @@ export class Tool extends TOOL {
 			this.includeManifestPath(this.resolveVariable(it));
 		}
 		else {
-			let { git, include = "manifest.json" } = it;
+			let { git, branch, tag, include = "manifest.json" } = it;
 			if (!git)
 				throw new Error("no git!");
 			let repo = this.resolveVariable(git);
 			if (this.windows)
 				repo = repo.replace(/\\/g, "/");
 			let url = new URL(repo);
-			let parts = url.pathname.split("/").slice(1);
-			let name = parts.pop();
-			if (name.endsWith(".git"))
-				name = name.slice(0, -4);
 			
+			let directory = "repos/" + url.hostname + url.pathname;
+			if (directory.endsWith(".git"))
+				directory = directory.slice(0, -4);
+			if (branch)
+				directory += "/" + branch;
+			if (tag)
+				directory += "/" + tag;
+			
+			let parts = directory.split("/");
 			let path = this.createDirectories(this.outputPath, "tmp", this.environment.NAME);
-			path += this.slash + "repos";
-			this.createDirectory(path);
-			path += this.slash + url.hostname;
-			this.createDirectory(path);
-			for (let part of parts) {
-				path += this.slash + part;
-				this.createDirectory(path);
-			}
-			this.currentDirectory = path;
-			path += this.slash + name;
-			if (this.isDirectoryOrFile(path) == 0) {
+			directory = path + this.slash + parts.join(this.slash);
+			
+			if (this.isDirectoryOrFile(directory) == 0) {
+				for (let part of parts) {
+					path += this.slash + part;
+					this.createDirectory(path);
+				}
+				this.currentDirectory = path;
 				this.report("# git clone " + repo);
-				const result = this.spawn("git", "clone", repo);
+				let result;
+				if (branch)
+					result = this.spawn("git", "clone", "-b", branch, repo, ".");
+				else
+					result = this.spawn("git", "clone", repo, ".");
 				if (result != 0)
 					throw new Error("git failed!");
+				if (tag) {
+					result = this.spawn("git", "-c", "advice.detachedHead=false", "checkout", tag);
+					if (result != 0)
+						throw new Error("git failed!");
+				}
 			}
 // 			else {
-// 				this.currentDirectory = path;
+// 				this.currentDirectory = directory;
 // 				this.report("# git pull " + name);
 // 				this.spawn("git", "pull");
 // 			}
 			if (include instanceof Array)
-				include.forEach(it => this.includeManifestPath(path + this.slash + this.resolveVariable(it)));
+				include.forEach(it => this.includeManifestPath(directory + this.slash + this.resolveVariable(it)));
 			else
-				this.includeManifestPath(path + this.slash + this.resolveVariable(include));
+				this.includeManifestPath(directory + this.slash + this.resolveVariable(include));
 		}
 		this.currentDirectory = currentDirectory;
 	}
