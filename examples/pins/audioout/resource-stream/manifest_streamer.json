@@ -5,8 +5,7 @@
 	],
 	"modules": {
 		"*": [
-			"./resourcestreamer",
-			"../http-stream/calculatePower"
+			"./resourcestreamer"
 		],
 		"pins/*": [
 			"$(MODULES)/pins/i2s/*"
