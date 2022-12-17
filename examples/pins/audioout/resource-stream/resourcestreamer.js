@@ -19,8 +19,11 @@
  */
 
 /*
-	Streaming from resource
-*/
+ * Streaming from local audio samples.
+ * 
+ *   Streaming is not needed for playback: the full resource could be queued.
+ *   ResourceStreamer is convenient for interoperability with other Streamer classes that have onPlayed callback, etc.
+ */
 import Resource from "Resource";
 
 class ResourceStreamer {
