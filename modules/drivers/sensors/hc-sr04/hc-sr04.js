@@ -27,7 +27,11 @@ class Sensor {
   #input;
   #output;
   #timer;
-  #reading;
+  #reading = {
+    near: false,
+    distance: null,
+    max: 400
+  }
   #onAlert;
 
   constructor(options){
@@ -83,12 +87,14 @@ class Sensor {
     const value = this.#input.read();
 
     if (value > 35000) {
-      const doAlert = (this.#reading !== Number.POSITIVE_INFINITY);
-      this.#reading = Number.POSITIVE_INFINITY;
+      const doAlert = (this.#reading.near !== false);
+      this.#reading.near = false;
+      this.#reading.distance = null;
       if (doAlert)
         this.#onAlert?.(this.#reading);  
     } else {
-      this.#reading = value / 58;
+      this.#reading.near = true;
+      this.#reading.distance = value / 58;
       this.#onAlert?.(this.#reading);
     }
   }

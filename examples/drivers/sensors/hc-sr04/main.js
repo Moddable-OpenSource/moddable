@@ -20,6 +20,10 @@ let sensor = new SR04({
 	echo: device.io.PulseWidth,
 	trigger: device.io.Digital,
 	onAlert: value => {
-		trace(`Distance: ${value} cm\n`);
+		if (value.near) {
+			trace(`Distance: ${value.distance} cm\n`);
+		} else {
+			trace(`Out of range (beyond ${value.max} cm)\n`);
+		}
 	}
 });
