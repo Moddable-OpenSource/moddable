@@ -35,7 +35,8 @@ function Client(url) {
 				host, 
 				port,  
 				onClose() {
-					clients.delete(authority);
+					clients.delete(origin);
+					this.close();
 				}
 			});
 		}
@@ -46,7 +47,8 @@ function Client(url) {
 				host, 
 				port,  
 				onClose() {
-					clients.delete(authority);
+					clients.delete(origin);
+					this.close();
 				}
 			});
 		}

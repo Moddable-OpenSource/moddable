@@ -164,6 +164,7 @@ class HTTPClient {
 				});
 			},
 			onError: () => {
+				this.#state = "error";
 				this.#onError?.();
 			}
 		});
@@ -361,6 +362,7 @@ class HTTPClient {
 		} while (true);
 	}
 	#onError() {
+		this.#state = "error";
 		this.#onClose?.();
 	}
 	#done() {
