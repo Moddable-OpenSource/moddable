@@ -13,12 +13,17 @@
  */
 
 import SR04 from "embedded:sensor/Proximity/HC-SR04";
+import config from "mc/config";
 
 let sensor = new SR04({	
-	triggerPin: 13,
-	echoPin: 12,
-	echo: device.io.PulseWidth,
-	trigger: device.io.Digital,
+	trigger: {
+		pin: config.triggerPin,
+		io: device.io.Digital,
+	},
+	sensor: {
+		pin: config.echoPin,
+		io: device.io.PulseWidth
+	},
 	onAlert: value => {
 		if (value.near) {
 			trace(`Distance: ${value.distance} cm\n`);

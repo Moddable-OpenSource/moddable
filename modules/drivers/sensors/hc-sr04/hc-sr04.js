@@ -35,19 +35,20 @@ class Sensor {
   #onAlert;
 
   constructor(options){
-    const {trigger, echo, onAlert, triggerPin, echoPin} = options;
+
+    const {trigger, sensor, onAlert} = options;
 
     this.#onAlert = onAlert;
 
-    this.#output = new trigger({
-      mode: trigger.Output,
-      pin: triggerPin
+    this.#output = new trigger.io({
+      mode: trigger.io.Output,
+      pin: trigger.pin
     });
 
-    this.#input = new echo({
-      pin: echoPin,
-      mode: echo.RisingToFalling,
-      pullUpDown: echo.PullDown,
+    this.#input = new sensor.io({
+      pin: sensor.pin,
+      mode: sensor.io.RisingToFalling,
+      pullUpDown: sensor.io.PullDown,
       onReadable: () => this.#onEcho()
     });
 

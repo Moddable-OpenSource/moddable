@@ -5,5 +5,16 @@
 	],
 	"modules": {
 		"*": "./main"
+	},
+	"platforms": {
+		"esp32": {
+			"config": {
+				"triggerPin": 13,
+				"echoPin": 12
+			}
+		},
+		"...": {
+			"error": "pulse width unsupported"
+		}
 	}
 }
