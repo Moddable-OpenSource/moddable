@@ -1619,7 +1619,7 @@ XS_URL_ORIGIN:
 	mxPushSlot(parts);
 	mxGetID(xsID_host);
 	mxPullSlot(mxVarv(0));
-	if (mxVarv(0)->value.string[0])
+	if (!mxVarv(0)->value.string[0])
 		goto XS_URL_END;
 	mxPushSlot(parts);
 	mxGetID(xsID_scheme);
