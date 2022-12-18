@@ -2530,6 +2530,7 @@ void fxDeleteProfiler(txMachine* the, void* stream)
 	the->profiler = C_NULL;
 }
 
+#ifdef mxDebug
 void fxEchoUnsigned(txMachine* the, txUnsigned value, txInteger radix)
 {
 	char buffer[256];
@@ -2541,6 +2542,7 @@ void fxEchoUnsigned(txMachine* the, txUnsigned value, txInteger radix)
 	} while (value);
 	fxEcho(the, p + 1);
 }
+#endif
 
 txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
 {
