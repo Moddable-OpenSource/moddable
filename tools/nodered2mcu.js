@@ -1033,15 +1033,33 @@ export default class extends TOOL {
 			} break;
 
 			case "tcp in": {
-				if ("" !== config.port)
+				if ((undefined === config.port) || ("" === config.port))
+					delete config.port;
+				else
 					config.port = parseInt(config.port);
 				if ("" === config.topic)
 					delete config.topic;
+				if ("" === config.tls)
+					delete config.tls;
+				if (!config.trim)
+					delete config.trim;
+				if (!config.base64)
+					delete config.base64;
+				if (config.newline)
+				   config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
 			} break;
 
 			case "tcp out": {
-				if ("" !== config.port)
+				if ((undefined === config.port) || ("" === config.port))
+					delete config.port;
+				else
 					config.port = parseInt(config.port);
+				if ("" === config.tls)
+					delete config.tls;
+				if (!config.base64)
+					delete config.base64;
+				if (config.newline)
+				   config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
 			} break;
 
 			case "rpi-gpio in": {
