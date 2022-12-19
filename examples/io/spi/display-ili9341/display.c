@@ -31,6 +31,14 @@
 extern void modDigitalBankWrite(void *bank, uint32_t value);
 extern xsHostHooks xsDigitalBankHooks;
 
+static void xs_display_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
+
+static const xsHostHooks ICACHE_RODATA_ATTR xsDisplayHooks = {
+	xs_display_destructor,
+	xs_display_mark,
+	NULL
+};
+
 static void displayBegin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
 static void displaySend(PocoPixel *pixels, int byteCount, void *refCon);
 static void displayEnd(void *refcon);
@@ -49,7 +57,8 @@ enum {
 	kDisplayFlagHaveInvert = 1 << 2,
 	kDisplayFlagFirstFrame = 1 << 3,
 	kDisplayFlagTransformPixels = 1 << 4,
-	kDisplayFlagDCIsBank = 1 << 5
+	kDisplayFlagDCIsBank = 1 << 5,
+	kDisplayFlagAsync = 1 << 6
 };
 
 struct DisplayRecord {
@@ -64,6 +73,7 @@ struct DisplayRecord {
 		void					*bank;
 	} dc;
 	xsSlot						*state;
+	xsSlot						*async;
 	uint8_t						flags;
 	uint8_t						rotation;
 	CommodettoDimension			x;
@@ -88,10 +98,11 @@ void xs_display_destructor(void *data)
 void xs_display_initialize(xsMachine* the)
 {
 	if (xsmcArgc) {
-		Display disp = c_malloc(sizeof(DisplayRecord));
+		Display disp = c_calloc(1, sizeof(DisplayRecord));
 		if (!disp)
 			xsUnknownError("no memory");
 		xsmcSetHostData(xsThis, disp);
+		xsSetHostHooks(xsThis, (xsHostHooks *)&xsDisplayHooks);
 
 		disp->spi = xsmcGetHostDataValidate(xsArg(0), xs_spi_destructor);
 		disp->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
@@ -108,7 +119,7 @@ void xs_display_initialize(xsMachine* the)
 	}
 	else {
 		Display disp = xsmcGetHostData(xsThis);
-		if (disp && xsmcGetHostDataValidate(xsThis, xs_display_destructor)) {
+		if (disp && xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks)) {
 			xs_display_destructor(disp);
 			xsmcSetHostData(xsThis, NULL);
 			xsmcSetHostDestructor(xsThis, NULL);
@@ -118,7 +129,7 @@ void xs_display_initialize(xsMachine* the)
 
 void xs_display_configure(xsMachine *the)
 {
-	Display disp = xsmcGetHostDataValidate(xsThis, xs_display_destructor);
+	Display disp = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 	xsIntegerValue value;
 
 	switch (xsmcToInteger(xsArg(0))) {
@@ -142,12 +153,18 @@ void xs_display_configure(xsMachine *the)
 			disp->x = xsmcToInteger(xsArg(1));
 			disp->y = xsmcToInteger(xsArg(2));
 			break;
+		case 4:
+			if (xsmcTest(xsArg(1)))
+				disp->flags |= kDisplayFlagAsync;
+			else
+				disp->flags &= ~kDisplayFlagAsync;
+			break;
 	}
 }
 
 void xs_display_begin(xsMachine* the)
 {
-	Display disp = xsmcGetHostDataValidate(xsThis, xs_display_destructor);
+	Display disp = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 	xsSlot tmp;
 	xsIntegerValue x, y, w, h;
 	CommodettoDimension tw, th;
@@ -180,24 +197,32 @@ void xs_display_begin(xsMachine* the)
 		xsRangeError("bad coordinates");
 
 	displayBegin(disp, (CommodettoCoordinate)x, (CommodettoCoordinate)y, (CommodettoDimension)w, (CommodettoDimension)h);
+
+	disp->async = NULL;
 }
 
 void xs_display_send(xsMachine* the)
 {
-	Display disp = xsmcGetHostDataValidate(xsThis, xs_display_destructor);
+	Display disp = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 	void *data;
 	xsUnsignedValue count;
-
-	xsmcGetBufferReadable(xsArg(0), &data, &count);
+	uint8_t nonrelocatable = xsBufferNonrelocatable == xsmcGetBufferReadable(xsArg(0), &data, &count);
 	if (count > 65535)
 		xsRangeError("unsupported byteLength");
+
+	if (nonrelocatable && (kDisplayFlagAsync & disp->flags)) {
+		count = (xsUnsignedValue)(-(int)count);
+		disp->async = xsToReference(xsArg(0));
+	}
+	else
+		disp->async = NULL;
 
 	displaySend((PocoPixel *)data, count, disp);
 }
 
 void xs_display_end(xsMachine* the)
 {
-	Display disp = xsmcGetHostDataValidate(xsThis, xs_display_destructor);
+	Display disp = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 	displayEnd(disp);
 }
 
@@ -208,7 +233,7 @@ void xs_display_adaptInvalid(xsMachine* the)
 
 void xs_display_command(xsMachine *the)
 {
-	Display disp = xsmcGetHostDataValidate(xsThis, xs_display_destructor);
+	Display disp = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 	xsIntegerValue command;
 	uint8_t data[32];
 	int argc = xsmcArgc, i;
@@ -240,13 +265,13 @@ void xs_display_command(xsMachine *the)
 
 void xs_display_get_width(xsMachine *the)
 {
-	Display disp = xsmcGetHostDataValidate(xsThis, xs_display_destructor);
+	Display disp = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 	xsmcSetInteger(xsResult, (disp->rotation & 1) ? disp->height : disp->width);
 }
 
 void xs_display_get_height(xsMachine *the)
 {
-	Display disp = xsmcGetHostDataValidate(xsThis, xs_display_destructor);
+	Display disp = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 	xsmcSetInteger(xsResult, (disp->rotation & 1) ? disp->width : disp->height);
 }
 
@@ -286,6 +311,13 @@ void displayBegin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 void displaySend(PocoPixel *pixels, int byteCount, void *refCon)
 {
 	Display disp = refCon;
+
+	if (byteCount < 0) {
+		byteCount = -byteCount;
+		modSPISetSync(disp->spi, (kDisplayFlagAsync & disp->flags) ? false : true);
+	}
+	else
+		modSPISetSync(disp->spi, true);
 
 	if (disp->flags & kDisplayFlagTransformPixels) {
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
@@ -330,4 +362,12 @@ void displayCommand(Display disp, uint8_t command, const uint8_t *data, uint16_t
 		displaySetDC(disp, 1);
         modSPITxRx(disp->spi, (uint8_t *)data, count);
     }
+}
+
+void xs_display_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	Display disp = it;
+
+	if (disp->async)
+		(*markRoot)(the, disp->async);
 }

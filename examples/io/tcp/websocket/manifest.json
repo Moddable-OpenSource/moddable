@@ -1,25 +1,16 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/data/text/decoder/manifest.json",
-		"$(MODDABLE)/modules/data/base64/manifest.json"
+		"./manifest_websocket.json"
 	],
 	"creation": {
 		"static": 65536
 	},
 	"modules": {
 		"*": [
-			"./WebSocket",
-			"./data",
 			"./main",
-			"$(MODULES)/data/logical/*"
-		],
-		"embedded:network/websocket/client": "./../websocketclient/websocketclient"
+			"./data"
+		]
 	},
-	"preload": [
-		"embedded:network/websocket/client",
-		"logical",
-		"WebSocket",
-		"data"
-	]
+	"preload": "data"
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -926,6 +926,9 @@ void xs_crypt_mode_encrypt(xsMachine *the)
 	resolveBuffer(the, &xsArg(0), &data, NULL);
 	result = resultStart = xsmcToArrayBuffer(xsResult);
 
+	mode = xsmcGetHostChunk(xsThis);
+	cipher = *mode->cipherH;
+
 	if (kCryptModeECB == mode->kind) {
 		while (count >= blockSize) {
 			xs_crypt_cipher_process(cipher, data, result);
@@ -1026,13 +1029,16 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 		xsResult = xsArg(1);
 	}
 	else {
-		xsmcSetArrayBuffer(xsResult, NULL, count);
+		xsmcSetArrayBufferResizable(xsResult, NULL, count, count);
 		result = xsmcToArrayBuffer(xsResult);
 	}
 
 	resultStart = result;
 	countStart = count;
 	resolveBuffer(the, &xsArg(0), &data, NULL);
+
+	mode = xsmcGetHostChunk(xsThis);
+	cipher = *mode->cipherH;
 
 	if (kCryptModeECB == mode->kind) {
 		while (count >= (uint32_t)blockSize) {
@@ -1093,7 +1099,7 @@ void xs_crypt_mode_decrypt(xsMachine *the)
 	}
 //@@
 	if ((result - resultStart) != (int)countStart)
-		xsSetArrayBufferLength(xsResult, result - resultStart);
+		xsmcSetArrayBufferLength(xsResult, result - resultStart);
 }
 
 void xs_crypt_mode_setIV(xsMachine *the)

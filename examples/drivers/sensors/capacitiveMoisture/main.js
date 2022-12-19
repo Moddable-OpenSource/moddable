@@ -13,7 +13,7 @@
  */
 
 import device from "embedded:provider/builtin";
-import Moisture from "embedded:sensor/Moisture/Capacitive";
+import Moisture from "embedded:sensor/SoilMoistureSensor/Capacitive";
 import Timer from "timer";
 
 const sensor = new Moisture({
@@ -25,5 +25,5 @@ sensor.configure({
 });
 
 Timer.repeat(id => {
-	trace(`${sensor.sample().value.toFixed(2)}\n`);
+	trace(`${sensor.sample().moisture.toFixed(2)}\n`);
 }, 2000);

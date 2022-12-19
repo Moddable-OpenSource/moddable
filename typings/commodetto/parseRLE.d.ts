@@ -18,8 +18,8 @@
 *
 */
 
-import Bitmap from "commodetto/Bitmap"
-
 declare module "commodetto/parseRLE" {
-  export default function(bmp: HostBuffer): Bitmap
+  import Bitmap from "commodetto/Bitmap"
+
+  export default function (bmp: HostBuffer): Bitmap
 }

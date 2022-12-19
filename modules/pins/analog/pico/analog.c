@@ -38,7 +38,7 @@ void xs_analog_read(xsMachine *the)
 	adc_init();
 	adc_gpio_init(pin);
 	adc_select_input(pin-26);	// ADC inputs 0-3 (GPIO 26-29)
-	int value = adc_read();		// 0 to 1023
+	int value = adc_read() / 4;		// 0 to 1023
 	xsResult = xsInteger(value);
 }
 

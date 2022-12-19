@@ -1,9 +1,9 @@
 {
 	"modules": {
-		"embedded:sensor/AtmosphericPressure-Temperature/BMP280": "$(MODDABLE)/modules/drivers/sensors/bmp280/bmp280"
+		"embedded:sensor/Barometer-Temperature/BMP280": "$(MODDABLE)/modules/drivers/sensors/bmp280/bmp280"
 	},
 	"preload": [
-		"embedded:sensor/AtmosphericPressure-Temperature/BMP280"
+		"embedded:sensor/Barometer-Temperature/BMP280"
 	]
 }
 

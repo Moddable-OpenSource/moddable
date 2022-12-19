@@ -1,10 +1,10 @@
 {
 	"include": "$(MODDABLE)/modules/io/manifest.json",
 	"modules": {
-		"embedded:peripherals/RTC-NXP/PCF8563": "$(MODDABLE)/modules/drivers/peripherals/pcf8563/pcf8563"
+		"embedded:RTC/PCF8563": "$(MODDABLE)/modules/drivers/peripherals/pcf8563/pcf8563"
 	},
 	"preload": [
-		"embedded:peripherals/RTC-NXP/PCF8563"
+		"embedded:RTC/PCF8563"
 	]
 }
 

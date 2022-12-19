@@ -264,7 +264,6 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 	txSerialTool self = refcon;
     io_service_t usbDevice;
     while ((usbDevice = IOIteratorNext(iterator))) {
-		kern_return_t kr;
 		CFTypeRef typeRef, vendorRef, productRef;
 		int vendorID = 0, productID = 0;
 		int match = 0;
@@ -313,7 +312,7 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 			}
 		}
 
-		kr = IOObjectRelease(usbDevice);
+		IOObjectRelease(usbDevice);
 	}
 }
 

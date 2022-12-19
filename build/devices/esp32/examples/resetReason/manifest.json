@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/build/devices/esp32/modules/resetReason/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"./reset"
+		]
+	}
+}

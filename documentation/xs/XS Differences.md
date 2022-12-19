@@ -1,7 +1,5 @@
 # JavaScript language considerations on embedded devices using the XS engine
-
-Copyright 2018 Moddable Tech, Inc.
-
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: October 10, 2018
 
 ## Ultra-light JavaScript
@@ -73,7 +71,7 @@ For applications that expect to be customized or updated with separate modules, 
 
 ## Use native code
 
-That may seem contradictory when talking about a JavaScript engine! But the simplicity of [XS in C](./XS%20in$20C.md), the C programming interface of XS, has always been essential to develop efficient applications.
+That may seem contradictory when talking about a JavaScript engine! But the simplicity of [XS in C](./XS%20in%20C.md), the C programming interface of XS, has always been essential to develop efficient applications.
 
 Web development often claims to be "pure" Javascript while it is in fact relying on the huge amount of native code required to implement web browsers. The reality is of course that web development is restricted to JavaScript on the client side.
 

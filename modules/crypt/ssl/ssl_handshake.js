@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -48,7 +48,6 @@ import DSA from "dsa";
 import ECDSA from "ecdsa";
 import Curve from "curve";
 import {Digest} from "crypt";
-import X509 from "x509";
 import {CERT_RSA, CERT_DSA, DH_ANON, DH_DSS, DH_RSA, DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, supportedCompressionMethods} from "ssl/constants";
 
 const hello_request = 0;
@@ -58,8 +57,8 @@ const certificate = 11;
 const server_key_exchange = 12;
 const certificate_request = 13;
 const server_hello_done = 14;
-const certificate_verify = 15,
-const client_key_exchange = 16,
+const certificate_verify = 15;
+const client_key_exchange = 16;
 const finished = 20;
 
 const master_secret_label = "master secret";
@@ -172,7 +171,6 @@ const handshakeProtocol = {
 			break;
 		default:
 			throw new TLSError("handshake: unknown type: " + tbuf[0]);
-			break;
 		}
 		s.unpacketize(session, body ? new SSLStream(body) : undefined);
 
@@ -283,9 +281,9 @@ const handshakeProtocol = {
 			if (msgType === client_hello) {
 				session.clientRandom = random;
 				session.clientSessionID = sessionID;
-				for (var nsuites = s.readChars(2) / 2; --nsuites >= 0;) {
-					var c1 = s.readChar();
-					var c2 = s.readChar();
+				for (let nsuites = s.readChars(2) / 2; --nsuites >= 0;) {
+					let c1 = s.readChar();
+					let c2 = s.readChar();
 					suites.push([c1, c2]);
 				}
 				// select the most suitable one
@@ -295,8 +293,8 @@ const handshakeProtocol = {
 			else {
 				session.serverRandom = random;
 				session.serverSessionID = sessionID;
-				var c1 = s.readChar();
-				var c2 = s.readChar();
+				let c1 = s.readChar();
+				let c2 = s.readChar();
 				suites.push([c1, c2]);
 				compressionMethods.push(s.readChar());
 			}
@@ -305,8 +303,8 @@ const handshakeProtocol = {
 			if (msgType === server_hello && s.byteAvailable) {
 				let type = s.readChars(2);
 				switch (type) {
-				case extension_type.tls_signature_algorithms:
-					let len = s.readChars(2);
+				case extension_type.tls_signature_algorithms: {
+					/* let len = */ s.readChars(2);
 					let n = s.readChars(2);
 					session.signature_algorithms = [];
 					for (let i = 0; i < n; i++) {
@@ -314,7 +312,7 @@ const handshakeProtocol = {
 						let sig = s.readChar();
 						session.signature_algorithms.push({hash, sig});
 					}
-					break;
+					} break;
 				default:
 					break;
 				}
@@ -373,7 +371,6 @@ const handshakeProtocol = {
 						break;
 					case extension_type.tls_max_fragment_length: {
 						es.writeChars(type, 2);
-						es.writeChars(2 + 1, 2);
 						es.writeChars(1, 2);
 						let j;
 						for (j = 1; j <= 4; j++) {
@@ -397,16 +394,23 @@ const handshakeProtocol = {
 						break;
 					case extension_type.tls_application_layer_protocol_negotiation: {
 						es.writeChars(type, 2);
-						let len = 0;
-						if (typeof ext == 'string') ext = ext.split(':');
-						for (let j = 0; j < ext.length; j++)
-							len += ext[j].length + 1;
-						es.writeChars(len + 2, 2);
-						es.writeChars(len, 2);
-						for (let j = 0; j < ext.length; j++) {
-							let name = ext[j];
-							es.writeChars(name.length, 1);
-							es.writeString(name);
+						let byteLength = 0;
+						const items = Array.isArray(ext) ? ext.slice() : [ext];
+						for (let j = 0; j < items.length; j++) {
+							let item = items[j];
+							if ("string" === typeof item)
+								items[j] = item = ArrayBuffer.fromString(item);
+							const length = item.byteLength;
+							if ((length < 1) || (length > 255))
+								throw new Error("invalid protocol");
+							byteLength += length + 1;
+						}
+						es.writeChars(byteLength + 2, 2);
+						es.writeChars(byteLength, 2);
+						for (let j = 0; j < items.length; j++) {
+							const item = items[j];
+							es.writeChars(item.byteLength, 1);
+							es.writeChunk(item);
 						}
 						}
 						break;
@@ -554,7 +558,7 @@ const handshakeProtocol = {
 			switch (session.chosenCipher.keyExchangeAlgorithm) {
 			case DHE_DSS:
 			case DHE_RSA:
-			case ECDHE_RSA:
+			case ECDHE_RSA: {
 				let tbs = new SSLStream();
 				let dhparams = {};
 				if (session.chosenCipher.keyExchangeAlgorithm == ECDHE_RSA) {
@@ -601,7 +605,7 @@ const handshakeProtocol = {
 				default:
 				case this.none: break;
 				case this.md5: hash = new Digest("MD5"); break;
-				case this.sha1: hash = new Digest("SHA1");; break;
+				case this.sha1: hash = new Digest("SHA1"); break;
 				case this.sha224: hash = new Digest("SHA224"); break;
 				case this.sha256: hash = new Digest("SHA256"); break;
 				case this.sha384: hash = new Digest("SHA384"); break;
@@ -623,7 +627,7 @@ const handshakeProtocol = {
 					}
 				}
 				hash = v = sig = tbs = null;
-				break;
+				} break;
 			case RSA:
 				// no server key exchange info
 				break;
@@ -632,8 +636,7 @@ const handshakeProtocol = {
 			case DH_RSA:
 			default:
 				// not supported
-				throw new TLSError("serverKeyExchange: unsupported algorithm: " + algo);
-				break;
+				throw new TLSError("serverKeyExchange: unsupported algorithm: " + session.chosenCipher.keyExchangeAlgorithm);
 			}
 		},
 		packetize(session) {
@@ -642,7 +645,7 @@ const handshakeProtocol = {
 			switch (session.chosenCipher.keyExchangeAlgorithm) {
 			case DHE_DSS:
 			case DHE_RSA:
-			case DH_ANON:
+			case DH_ANON: {
 				let s = new SSLStream();
 				let dh = session.certificateManager.getDH();
 				let mod = new Mont({m: dh.p, method: Mont.SW});
@@ -684,10 +687,10 @@ const handshakeProtocol = {
 					}
 					switch (sig_algo) {
 					default:
-					case this.anonymous: throw new TLSError("serverKeyExchange: no signature algorithm"); break;
-					case this.rsa: pk = Crypt.PKCS1_5; break;
-					case this.dsa: pk = Crypt.DSA; break;
-					case this.ecdsa: pk = Crypt.ECDSA; break;
+					case this.anonymous: throw new TLSError("serverKeyExchange: no signature algorithm");
+					case this.rsa: pk = PKCS1_5; break;
+					case this.dsa: pk = DSA; break;
+					case this.ecdsa: pk = ECDSA; break;
 					}
 					let key = session.certificateManager.getKey(/* self */);
 					let sig = new pk(key, true, oid);
@@ -700,7 +703,7 @@ const handshakeProtocol = {
 				}
 				session.dh = dh;
 				pkt = handshakeProtocol.packetize(session, server_key_exchange, s);
-				break;
+				} break;
 			case RSA:
 				// no server key exchange info
 				break;
@@ -755,7 +758,7 @@ const handshakeProtocol = {
 			session.traceProtocol(this);
 			var s = new SSLStream();
 			s.writeChar(types.length);
-			for (var i = 0; i < types.length; i++) {
+			for (let i = 0; i < types.length; i++) {
 				switch (types[i]) {
 				case CERT_RSA:
 					s.writeChar(this.rsa_sign);
@@ -766,10 +769,10 @@ const handshakeProtocol = {
 				}
 			}
 			var ttlSize = 0;
-			for (var i = 0; i < authorities.length; i++)
+			for (let i = 0; i < authorities.length; i++)
 				ttlSize += authorities[i].length + 2;
 			s.writeChars(ttlSize, 2);
-			for (var i = 0; i < authorities.length; i++) {
+			for (let i = 0; i < authorities.length; i++) {
 				s.writeChars(authorities[i].length, 2);
 				s.writeChunk(authorities[i]);
 			}
@@ -809,7 +812,7 @@ const handshakeProtocol = {
 				if (!session.myCert)
 					throw new TLSError("clientKeyExchange: no cert");	// out of sequence
 				var key = session.certificateManager.getKey(/* self */);
-				var rsa = new Crypt.PKCS1_5(key, true);
+				var rsa = new PKCS1_5(key, true);
 				var plain = rsa.decrypt(cipher);
 				// the first 2 bytes must be client_version
 				var version = new Uint8Array(plain);
@@ -823,17 +826,16 @@ const handshakeProtocol = {
 			case DHE_RSA:
 			case DH_ANON:
 			case DH_DSS:
-			case DH_RSA:
+			case DH_RSA: {
 				// implicit DH is not supported
 				let dh = session.dh;
 				let y = BigInt.fromArrayBuffer(cipher);
 				let mod = new Mont({m: dh.p, method: Mont.SW});
 				y = mod.exp(y, dh.x);
 				preMasterSecret = ArrayBuffer.fromBigInt(y);
-				break;
+				} break;
 			default:
 				throw new TLSError("clientKeyExchange: unsupported algorithm");
-				break;
 			}
 			return this.generateMasterSecret(session, preMasterSecret);		// tail call optimization
 		},
@@ -855,7 +857,7 @@ const handshakeProtocol = {
 			case DHE_RSA:
 			case DH_ANON:
 			case DH_DSS:
-			case DH_RSA:
+			case DH_RSA: {
 				// we don't support fixed key DH in cert so should send DH anyway
 				if (!session.dhparams)
 					throw new TLSError("clientKeyExchange: no DH params");
@@ -872,7 +874,7 @@ const handshakeProtocol = {
 				y = BigInt.fromArrayBuffer(dh.dh_Ys);
 				y = mod.exp(y, x);
 				preMasterSecret = ArrayBuffer.fromBigInt(y);
-				break;
+				} break;
 			case ECDHE_RSA:
 				if (!session.dhparams)
 					throw new TLSError("clientKeyExchange: no DH params");
@@ -891,7 +893,6 @@ const handshakeProtocol = {
 				break;
 			default:
 				throw new TLSError("clientKeyExchange: unsupported algorithm");
-				break;
 			}
 			this.generateMasterSecret(session, preMasterSecret);
 			return handshakeProtocol.packetize(session, client_key_exchange, s);
@@ -903,16 +904,15 @@ const handshakeProtocol = {
 		msgType: certificate_verify,
 		calculateDigest(session) {
 			return handshakeDigestResult(session,
-						     session.protocolVersion >= 0x303 ? SHA256 :
-						     (session.chosenCipher.keyExchangeAlgorithm == RSA ? MD5 | SHA1 : SHA1));
+						session.protocolVersion >= 0x303 ? SHA256 :
+						(session.chosenCipher.keyExchangeAlgorithm == RSA ? MD5 | SHA1 : SHA1));
 		},
 		unpacketize(session, s) {
 			session.traceProtocol(this);
-			var n = s.readChars(2);
-			var sig = s.readChunk(n);
+			const sig = s.readChunk(s.readChars(2));
 			if (session.chosenCipher.keyExchangeAlgorithm == RSA) {
-				var key = session.certificateManager.getKey(session.peerCert);
-				var rsa = new Crypt.PKCS1_5(key);
+				const key = session.certificateManager.getKey(session.peerCert);
+				const rsa = new PKCS1_5(key);
 				if (!rsa.verify(this.calculateDigest(session), sig))
 					throw new TLSError("certificateVerify: auth err");
 			}
@@ -921,12 +921,14 @@ const handshakeProtocol = {
 		},
 		packetize(session, cert) {
 			session.traceProtocol(this);
-			if (session.chosenCipher.keyExchangeAlgorithm == RSA) {
+			const s = new SSLStream;
+			const keyExchangeAlgorithm = session.chosenCipher.keyExchangeAlgorithm;
+			if ((keyExchangeAlgorithm === RSA) || (keyExchangeAlgorithm === ECDHE_RSA)) {
 				if (!session.myCert)
 					throw new TLSError("certificateVerify: no cert");	// out of sequence
-				var key = session.certificateManager.getKey(cert);
+				const key = session.certificateManager.getKey(cert);
 
-				var s = new SSLStream(), rsa, sig;
+				let rsa;
 				if (session.protocolVersion >= 0x303) {
 					rsa = new PKCS1_5(key, true, [2, 16, 840, 1, 101, 3, 4, 2, 1]);
 					s.writeChars(4, 1);	// hash algorithm SHA256
@@ -936,7 +938,7 @@ const handshakeProtocol = {
 					rsa = new PKCS1_5(key, true);
 				}
 
-				sig = rsa.sign(this.calculateDigest(session));
+				const sig = rsa.sign(this.calculateDigest(session));
 				s.writeChars(sig.byteLength, 2);
 				s.writeChunk(sig);
 			}

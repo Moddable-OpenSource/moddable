@@ -22,6 +22,7 @@ declare module "Resource" {
   class Resource extends HostBuffer {
     constructor(path: string);
     slice(begin: number, end?: number): ArrayBuffer;
+    slice(begin: number, end?: number, copy?: boolean): HostBuffer;
     static exists(path: string): boolean;
   }
 

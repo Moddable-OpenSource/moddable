@@ -114,7 +114,10 @@ void PiuSystem_getFileInfoAux(xsMachine* the, char *path)
 			xsDefine(xsResult, xsID_directory, xsTrue, xsDefault);
 		}
 		else {
-			xsDefine(xsResult, xsID_size, xsNumber((double)_stat.st_mode), xsDefault);
+			if (S_ISLNK(_stat.st_mode)) {
+				xsDefine(xsResult, xsID_symbolicLink, xsTrue, xsDefault);
+			}
+			xsDefine(xsResult, xsID_size, xsNumber((double)_stat.st_size), xsDefault);
 		}
 	}
 }
@@ -158,6 +161,23 @@ void PiuSystem_getPathName(xsMachine* the)
 	else
 		xsResult = xsString("");
 	free(result);
+}
+
+void PiuSystem_getSymbolicLinkInfo(xsMachine* the)
+{
+	xsStringValue from = xsToString(xsArg(0));
+	char to[PATH_MAX];
+	ssize_t size = readlink(from, to, PATH_MAX);
+	xsElseThrow(size >= 0);
+	if (size == PATH_MAX)
+		fxThrowMessage(the, NULL, 0, XS_UNKNOWN_ERROR, "%s", strerror(ENOMEM));
+	to[size] = 0;
+	PiuSystem_getFileInfoAux(the, to);
+	if (xsTest(xsResult)) {
+		xsStringValue slash = c_strrchr(to, '/');
+		xsDefine(xsResult, xsID_name, xsString(slash + 1), xsDefault);
+		xsDefine(xsResult, xsID_path, xsString(to), xsDefault);
+	}
 }
 
 void PiuSystem_preferenceAux(xsMachine* the)
@@ -217,7 +237,9 @@ void PiuSystem_readFileString(xsMachine* the)
 void PiuSystem_readPreferenceString(xsMachine* the)
 {
 	PiuSystem_preferenceAux(the);
-	PiuSystem_readFileString(the);
+	PiuSystem_fileExists(the);
+	if (xsTest(xsResult))
+		PiuSystem_readFileString(the);
 }
 
 void PiuSystem_renameDirectory(xsMachine* the)
@@ -324,13 +346,18 @@ void PiuSystem_DirectoryIterator_next(xsMachine* the)
 			xsUnknownError(error->message);
 		xsSetHostData(xsThis, iterator);
 	}
+again:
 	name = (char*)g_dir_read_name(iterator);
 	if (name) {
 		strcat(path, "/");
 		strcat(path, name);
 		PiuSystem_getFileInfoAux(the, path);
-		xsDefine(xsResult, xsID_name, xsString(name), xsDefault);
-		xsDefine(xsResult, xsID_path, xsString(path), xsDefault);
+		if (xsTest(xsResult)) {
+			xsDefine(xsResult, xsID_name, xsString(name), xsDefault);
+			xsDefine(xsResult, xsID_path, xsString(path), xsDefault);
+		}
+		else
+			goto again;
 	}
 }
 

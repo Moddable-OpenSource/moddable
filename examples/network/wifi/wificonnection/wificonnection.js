@@ -81,13 +81,11 @@ class Connection extends WiFi {
 			}
 
 			if (WiFi.connected === msg) {
-				if (this.#reconnect)
-					Timer.clear(this.#reconnect);
+				Timer.clear(this.#reconnect);
 				this.#reconnect = undefined;
 			}
 			else if (WiFi.gotIP === msg) {
-				if (this.#connecting)
-					Timer.clear(this.#connecting);
+				Timer.clear(this.#connecting);
 				this.#connecting = undefined;
 				this.#index = 0;
 			}
@@ -106,12 +104,10 @@ class Connection extends WiFi {
 		this.#options = options;
 	}
 	close() {
-		if (this.#reconnect)
-			Timer.clear(this.#reconnect);
+		Timer.clear(this.#reconnect);
 		this.#reconnect = undefined;
 
-		if (this.#connecting)
-			Timer.clear(this.#connecting);
+		Timer.clear(this.#connecting);
 		this.#connecting = undefined;
 
 		WiFi.disconnect();

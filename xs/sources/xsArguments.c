@@ -79,8 +79,6 @@ txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count)
 	txIndex index;
 	txSlot* address;
 	txIndex length = (txIndex)mxArgc;
-	txByte* code = the->code;
-	the->code = C_NULL;
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	array = instance->next = fxNewSlot(the);
@@ -92,7 +90,6 @@ txSlot* fxNewArgumentsSloppyInstance(txMachine* the, txIndex count)
 	property = fxNextNumberProperty(the, array, length, mxID(_length), XS_DONT_ENUM_FLAG);
 	property = fxNextSlotProperty(the, property, mxFunction, mxID(_callee), XS_DONT_ENUM_FLAG);
 	property = fxNextSlotProperty(the, property, &mxArrayIteratorFunction, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
-	the->code = code;
 	fxSetIndexSize(the, array, length, XS_CHUNK);
 	index = 0;
 	address = array->value.array.address;
@@ -187,8 +184,6 @@ txSlot* fxNewArgumentsStrictInstance(txMachine* the, txIndex count)
 	txIndex index;
 	txSlot* address;
 	txIndex length = (txIndex)mxArgc;
-	txByte* code = the->code;
-	the->code = C_NULL;
 	instance = fxNewObjectInstance(the);
 	instance->flag |= XS_EXOTIC_FLAG;
 	array = instance->next = fxNewSlot(the);
@@ -206,7 +201,6 @@ txSlot* fxNewArgumentsStrictInstance(txMachine* the, txIndex count)
 	property->kind = XS_ACCESSOR_KIND;
 	property->value.accessor.getter = function;
 	property->value.accessor.setter = function;
-	the->code = code;
 	fxSetIndexSize(the, array, length, XS_CHUNK);
 	index = 0;
 	address = array->value.array.address;

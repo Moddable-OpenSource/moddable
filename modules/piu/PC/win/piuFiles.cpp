@@ -177,6 +177,9 @@ void PiuSystem_getFileInfoAux(xsMachine* the, LPWIN32_FIND_DATAW data)
 		xsDefine(xsResult, xsID_directory, xsTrue, xsDefault);
 	}
 	else {
+		wchar_t* dot = wcsrchr(data->cFileName, '.');
+		if (dot && !wcscmp(dot, L".lnk"))
+			xsDefine(xsResult, xsID_symbolicLink, xsTrue, xsDefault);
 		value = data->nFileSizeHigh;
 		value = (value << 32) + data->nFileSizeLow;
 		xsDefine(xsResult, xsID_size, xsNumber((double)value), xsDefault);
@@ -242,6 +245,41 @@ void PiuSystem_getPathName(xsMachine* the)
 			free(path);
 		xsThrow(xsException);
 	}
+}
+
+void PiuSystem_getSymbolicLinkInfo(xsMachine* the)
+{
+	HRESULT hr;
+	wchar_t* from = NULL;
+	IShellLinkW *iShellLink = NULL;
+	IPersistFile* iPersistFile = NULL;
+	wchar_t to[MAX_PATH];
+	WIN32_FIND_DATAW data;
+	xsTry {
+		from = xsToStringCopyW(xsArg(0));
+		hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&iShellLink);
+		if (!SUCCEEDED(hr)) goto bail;
+		hr = iShellLink->QueryInterface(IID_IPersistFile, (LPVOID*)&iPersistFile);
+		if (!SUCCEEDED(hr)) goto bail;
+		hr = iPersistFile->Load(from, STGM_READ);
+		if (!SUCCEEDED(hr)) goto bail;
+   		hr = iShellLink->Resolve((HWND) 0, 0);
+		if (!SUCCEEDED(hr)) goto bail;
+   		hr = iShellLink->GetPath(&to[0], MAX_PATH, &data, SLGP_SHORTPATH);
+		if (!SUCCEEDED(hr)) goto bail;
+		PiuSystem_getFileInfoAux(the, &data);
+		xsDefine(xsResult, xsID_name, xsStringW(data.cFileName), xsDefault);
+		xsDefine(xsResult, xsID_path, xsStringW(to), xsDefault);
+	}
+	xsCatch {
+	}
+bail:
+	if (from != NULL)
+		free(from);
+	if (iPersistFile)
+		iPersistFile->Release();
+	if (iShellLink)
+		iShellLink->Release();
 }
 
 void PiuSystem_readFileBuffer(xsMachine* the)
@@ -350,7 +388,7 @@ void PiuSystem_writeFileBuffer(xsMachine* the)
 	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
-		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		buffer = xsToArrayBuffer(xsArg(1));
 		size = (DWORD)xsGetArrayBufferLength(xsArg(1));
@@ -374,7 +412,7 @@ void PiuSystem_writeFileString(xsMachine* the)
 	DWORD size, result;
 	xsTry {
 		path = xsToStringCopyW(xsArg(0));
-		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		xsElseThrow(file != INVALID_HANDLE_VALUE);
 		buffer = xsToString(xsArg(1));
 		size = (DWORD)c_strlen(buffer);

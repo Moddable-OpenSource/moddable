@@ -20,9 +20,13 @@
 
 #include "xsmc.h"
 #include "xsHost.h"
-#if mxNoFunctionLength
+#ifdef kPocoRotation
+	// Moddable SDK
 	#include "mc.xs.h"			// for xsID_ values
+
+	#define VALIDATE 1
 #else
+	// xst, xsnap, etc
 	#include <stdbool.h>
 
 	#define xsID_ignoreBOM (xsID("ignoreBOM"))
@@ -53,11 +57,12 @@ void xs_textdecoder(xsMachine *the)
 	if (argc && c_strcmp(xsmcToString(xsArg(0)), "utf-8"))
 		xsRangeError("unsupported encoding");
 
-#if !mxNoFunctionLength
+#if !VALIDATE
 	xsmcGet(xsResult, xsTarget, xsID("prototype"));
 	xsResult = xsNewHostInstance(xsResult);
 	xsThis = xsResult;
 	xsmcSetHostDestructor(xsThis, NULL);
+	c_memset(&decoder, 0, sizeof(decoder));
 #endif
 
 	decoder.ignoreBOM = false;
@@ -109,7 +114,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	else
 		src = srcEnd = NULL;
 
-#if mxNoFunctionLength
+#if VALIDATE
 	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 #else
 	td = xsmcGetHostChunk(xsThis);
@@ -221,7 +226,7 @@ void xs_textdecoder_decode(xsMachine *the)
 	else
 		src = srcEnd = NULL;
 
-#if mxNoFunctionLength
+#if VALIDATE
 	td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 #else
 	td = xsmcGetHostChunk(xsThis);
@@ -381,7 +386,7 @@ void xs_textdecoder_get_encoding(xsMachine *the)
 
 void xs_textdecoder_get_ignoreBOM(xsMachine *the)
 {
-#if mxNoFunctionLength
+#if VALIDATE
 	modTextDecoder td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 #else
 	modTextDecoder td = xsmcGetHostChunk(xsThis);
@@ -391,7 +396,7 @@ void xs_textdecoder_get_ignoreBOM(xsMachine *the)
 
 void xs_textdecoder_get_fatal(xsMachine *the)
 {
-#if mxNoFunctionLength
+#if VALIDATE
 	modTextDecoder td = xsmcGetHostChunkValidate(xsThis, xs_textdecoder_destructor);
 #else
 	modTextDecoder td = xsmcGetHostChunk(xsThis);
@@ -399,7 +404,7 @@ void xs_textdecoder_get_fatal(xsMachine *the)
 	xsmcSetBoolean(xsResult, td->fatal);
 }
 
-#if !mxNoFunctionLength
+#if !VALIDATE
 void modInstallTextDecoder(xsMachine *the)
 {
 	#define kPrototype (0)

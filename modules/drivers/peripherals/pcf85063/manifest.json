@@ -1,0 +1,10 @@
+{
+	"include": "$(MODDABLE)/modules/io/manifest.json",
+	"modules": {
+		"embedded:RTC/PCF85063": "$(MODDABLE)/modules/drivers/peripherals/pcf85063/pcf85063"
+	},
+	"preload": [
+		"embedded:RTC/PCF85063"
+	]
+}
+

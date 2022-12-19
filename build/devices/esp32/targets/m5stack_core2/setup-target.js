@@ -1,9 +1,30 @@
+/*
+ * Copyright (c) 2020-2022  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+ 
 import AXP192 from "axp192";
 import MPU6886 from "mpu6886";
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
 import Timer from "timer";
 import config from "mc/config";
+import I2C from "pins/i2c";
 
 const INTERNAL_I2C = Object.freeze({
 	sda: 21,
@@ -27,7 +48,27 @@ globalThis.Host = {
   }
 }
 
+class M5Core2Button {		// M5StackCoreTouch calls write when button changes 
+	#value = 0;
+	read() {
+		return this.#value;
+	}
+	write(value) {
+		if (this.#value === value)
+			return;
+		this.#value = value;
+		this.onChanged?.();
+	}
+}
+
 export default function (done) {
+	// buttons
+	globalThis.button = {
+		a: new M5Core2Button,
+		b: new M5Core2Button,
+		c: new M5Core2Button,
+	};
+
 	// power
 	globalThis.power = new Power();
 
@@ -68,7 +109,11 @@ export default function (done) {
   }
 
   // accelerometer and gyrometer
-  try {
+  const test = new I2C({...INTERNAL_I2C, address: 0x68, throw: false});
+  test.write(0x75, false);
+  const ok = test.read(1);
+  test.close();
+  if (undefined !== ok) {
     state.accelerometerGyro = new MPU6886(INTERNAL_I2C);
 
     globalThis.accelerometer = {
@@ -125,8 +170,6 @@ export default function (done) {
       if (undefined !== state.gyroTimerID) Timer.clear(state.gyroTimerID);
       delete state.gyroTimerID;
     };
-  } catch (e) {
-    trace(`Error initializing: ${e}\n`);
   }
 
   // autorotate

@@ -673,7 +673,8 @@ void PiuScreen_writePNG(xsMachine* the)
 	CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big | kCGImageAlphaNoneSkipLast, provider, nil, NO, kCGRenderingIntentDefault);
     CFStringRef path = CFStringCreateWithCString(NULL, xsToString(xsArg(0)), kCFStringEncodingUTF8);
 	CFURLRef url = CFURLCreateWithFileSystemPath(NULL, path, kCFURLPOSIXPathStyle, false);
-	CGImageDestinationRef destination = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, NULL);
+    CFStringRef type = CFStringCreateWithCString(NULL, "public:png", kCFStringEncodingUTF8);
+	CGImageDestinationRef destination = CGImageDestinationCreateWithURL(url, type, 1, NULL);
     CGImageDestinationAddImage(destination, image, NULL);
 	CGImageDestinationFinalize(destination);
 }

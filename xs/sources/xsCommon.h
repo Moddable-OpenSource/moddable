@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,9 +44,12 @@
 	#define mx_dtoa 1
 #endif
 #if __GNUC__ >= 5
-	#undef __has_builtin
-	#define __has_builtin(x) 1
-#elif !defined(__has_builtin)
+	#if ESP32
+		#undef __has_builtin
+		#define __has_builtin(x) 1
+	#endif
+#endif
+#if !defined(__has_builtin)
 	#define __has_builtin(x) 0
 #endif
 
@@ -92,6 +95,8 @@ typedef struct {
 #define XS_ATOM_CODE 0x434F4445 /* 'CODE' */
 #define XS_ATOM_DATA 0x44415441 /* 'DATA' */
 #define XS_ATOM_HOSTS 0x484F5354 /* 'HOST' */
+#define XS_ATOM_IDENTIFIERS 0x4944454E /* 'IDEN' */
+#define XS_ATOM_MAPS 0x4D415053 /* 'MAPS' */
 #define XS_ATOM_MODULES 0x4D4F4453 /* 'MODS' */
 #define XS_ATOM_NAME 0x4E414D45 /* 'NAME' */
 #define XS_ATOM_PATH 0x50415448 /* 'PATH' */
@@ -99,9 +104,9 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 11
-#define XS_MINOR_VERSION 7
-#define XS_PATCH_VERSION 1
+#define XS_MAJOR_VERSION 13
+#define XS_MINOR_VERSION 2
+#define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -238,6 +243,8 @@ enum {
 	XS_CODE_GET_THIS_VARIABLE,
 	XS_CODE_GET_VARIABLE,
 	XS_CODE_GLOBAL,
+	XS_CODE_HAS_PRIVATE_1,
+	XS_CODE_HAS_PRIVATE_2,
 	XS_CODE_HOST,
 	XS_CODE_IMPORT,
 	XS_CODE_IMPORT_META,
@@ -367,6 +374,7 @@ enum {
 	XS_CODE_WITH,
 	XS_CODE_WITHOUT,
 	XS_CODE_YIELD,
+	XS_CODE_PROFILE,
 	XS_CODE_COUNT
 };
 
@@ -381,6 +389,8 @@ enum {
 	XS_METHOD_FLAG = 16,
 	XS_GETTER_FLAG = 32,
 	XS_SETTER_FLAG = 64,
+	XS_IMPORT_FLAG = 32,
+	XS_IMPORT_META_FLAG = 64,
 };
 
 enum {
@@ -444,6 +454,7 @@ txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
 
 /* ? */
 mxExport char* fxCStackLimit();
+mxExport txID fxGenerateProfileID(void* console);
 mxExport void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path);
 mxExport void fxVReport(void* console, txString theFormat, c_va_list theArguments);
 mxExport void fxVReportError(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
@@ -468,6 +479,7 @@ enum {
 	XS_REGEXP_Y = 1 << 6,
 	XS_REGEXP_D = 1 << 7,
 };
+mxExport txInteger* fxAllocateRegExpData(void* the, txInteger* code);
 mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString errorBuffer, txInteger errorSize);
 mxExport void fxDeleteRegExp(void* the, txInteger* code, txInteger* data);
 mxExport txInteger fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString subject, txInteger offset);
@@ -673,6 +685,7 @@ enum {
 	_JSON,
 	_Map,
 	_Math,
+	_ModuleSource,
 	_Number,
 	_Object,
 	_Promise,
@@ -683,7 +696,6 @@ enum {
 	_RegExp,
 	_Set,
 	_SharedArrayBuffer,
-	_StaticModuleRecord,
 	_String,
 	_Symbol,
 	_SyntaxError,
@@ -778,6 +790,7 @@ enum {
 	_callee,
 	_caller,
 	_catch,
+	_cause,
 	_cbrt,
 	_ceil,
 	_center,
@@ -894,6 +907,7 @@ enum {
 	_has,
 	_hasIndices,
 	_hasInstance,
+	_hasOwn,
 	_hasOwnProperty,
 	_hypot_,
 	_id,
@@ -951,6 +965,8 @@ enum {
 	_module,
 	_multiline,
 	_name,
+	_needsImport,
+	_needsImportMeta,
 	_new_target,
 	_next,
 	_normalize,

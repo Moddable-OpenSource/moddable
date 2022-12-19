@@ -1,7 +1,5 @@
 # Using XS Preload to Optimize Applications
-
-Copyright 2019-2021 Moddable Tech, Inc.
-
+Copyright 2019-2021 Moddable Tech, Inc.<BR>
 Revised: June 7, 2021
 
 Preloading of modules is a unique feature of the XS JavaScript engine. Preloading executes parts of a JavaScript application during the the build process, before the application is downloaded to the target device. This has two major benefits:
@@ -239,6 +237,7 @@ Many of the basic JavaScript types and objects may be created at build time allo
 - Number
 - Object
 - Promise
+- RegExp
 - Set
 - String
 - Symbol
@@ -252,7 +251,6 @@ These objects cannot be stored in flash memory:
 
 - AsyncGenerator
 - Generator
-- RegExp
 - SharedArrayBuffer
 
 In the future XS may support storing additional built-in objects in flash memory. For details on built-in objects stored in flash memory see the [XS Linker Warnings](./XS%20linker%20warnings.md) document. 

@@ -38,6 +38,7 @@
 import BER from "ber";
 import ECPoint from "ecp"
 import Curve from "curve";
+import {Digest} from "crypt";
 
 const X509 = {
 	decode(buf) {
@@ -156,7 +157,9 @@ const X509 = {
 		let spk = this.getSPK(buf);
 		if (!spk)
 			throw new Error("x509: no SPK!?");
-		return (new Crypt.SHA1()).process(spk);
+		const digest = new Digest("SHA1");
+		digest.write(spk);
+		return digest.close();
 	},
 	decodeAKI(buf) {
 		let aki = this.decodeExtension(buf, [2, 5, 29, 35]);

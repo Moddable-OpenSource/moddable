@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -34,19 +34,21 @@ void xs_qrcode(xsMachine *the)
 	uint8_t *module;
 	int maxVersion = qrcodegen_VERSION_MAX;
 
+	xsmcVars(3);
+
+	if (xsmcHas(xsArg(0), xsID_maxVersion)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_maxVersion);
+		maxVersion = xsmcToInteger(xsVar(0));
+		if ((maxVersion > qrcodegen_VERSION_MAX) || (maxVersion < qrcodegen_VERSION_MIN))
+			xsRangeError("invalid");
+	}
+
+	bufferSize = qrcodegen_BUFFER_LEN_FOR_VERSION(maxVersion);
+	qr0 = c_malloc(bufferSize << 1);
+	if (!qr0)
+		xsUnknownError("no memory");
+
 	xsTry {
-		xsmcVars(3);
-
-		if (xsmcHas(xsArg(0), xsID_maxVersion)) {
-			xsmcGet(xsVar(0), xsArg(0), xsID_maxVersion);
-			maxVersion = xsmcToInteger(xsVar(0));
-		}
-
-		bufferSize = qrcodegen_BUFFER_LEN_FOR_VERSION(maxVersion);
-		qr0 = c_malloc(bufferSize << 1);
-		if (!qr0)
-			xsUnknownError("no memory");
-
 		xsmcGet(xsVar(0), xsArg(0), xsID_input);
 		type = xsmcTypeOf(xsVar(0));
 		if (xsStringType == type) {
@@ -58,6 +60,8 @@ void xs_qrcode(xsMachine *the)
 			xsUnsignedValue dataSize;
 
 			xsmcGetBufferReadable(xsVar(0), &data, &dataSize);
+			if (dataSize > bufferSize)
+				xsUnknownError("invalid");
 			c_memcpy(qr0 + bufferSize, data, dataSize);
 			ok = qrcodegen_encodeBinary(qr0 + bufferSize, dataSize, qr0,
 					qrcodegen_Ecc_MEDIUM, qrcodegen_VERSION_MIN, maxVersion, qrcodegen_Mask_AUTO, true);
@@ -78,11 +82,12 @@ void xs_qrcode(xsMachine *the)
 			for (x = 0; x < size; x++)
 				*module++ = qrcodegen_getModule(qr0, x, y);
 		}
+
+		c_free(qr0);
 	}
 	xsCatch {
-		xsResult = xsUndefined;
-	}
-
-	if (qr0)
 		c_free(qr0);
+
+		xsThrow(xsException);
+	}
 }

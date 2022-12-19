@@ -9,6 +9,7 @@
 		"esp32/m5atom_lite": {},
 		"esp32/m5atom_echo": {},
 		"esp32/m5atom_matrix": {},
+		"esp32/m5atom_u": {},
 		"...": {
 			"error": "esp32/m5atom_* only"
 		}

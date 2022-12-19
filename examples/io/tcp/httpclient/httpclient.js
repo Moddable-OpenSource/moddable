@@ -18,7 +18,6 @@
  *
  */
  
-import TCP from "embedded:io/socket/tcp";
 import Timer from "timer";
 
 class HTTPClient {
@@ -35,10 +34,24 @@ class HTTPClient {
 			
 			if ("receiveBody" !== client.#state)
 				return undefined;
-						
-			let available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
-			if (count > available)
+
+			let buffer;
+			if ("object" === typeof count) {
+				buffer = count;
+				count = buffer.byteLength;
+			}			
+			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
+			if (count > available) {
 				count = available;
+				if (buffer) {
+					if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
+						throw new Error("invalid buffer");
+					if (ArrayBuffer.isView(buffer))
+						buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, count);
+					else
+						buffer = new Uint8Array(buffer, 0, count);
+				}
+			}
 
 			client.#readable -= count;
 			if (undefined === client.#chunk)
@@ -46,7 +59,7 @@ class HTTPClient {
 			else
 				client.#chunk -= count;
 
-			const result = client.#socket.read(count);
+			const result = client.#socket.read(buffer ?? count);
 
 			if (0 === client.#chunk) {
 				client.#line = "";
@@ -74,9 +87,10 @@ class HTTPClient {
 				if (true !== client.#requestBody)
 					throw new Error("bad data");
 
+//@@ this may not be always correct... if last chunk has already flushed and onWritable called, this will never go out
 				client.#pendingWrite = ArrayBuffer.fromString("0000\r\n\r\n");
 				client.#requestBody = false;
-				return;
+				return 0;		// request done. can't write more. 
 			}
 
 			const byteLength = data.byteLength;
@@ -88,6 +102,8 @@ class HTTPClient {
 				client.#socket.write(ArrayBuffer.fromString(byteLength.toString(16).padStart(4, "0") + "\r\n"));
 				client.#socket.write(data);
 				client.#socket.write(ArrayBuffer.fromString("\r\n"));
+
+				return (client.#writable > 8) ? (client.#writable - 8) : 0 
 			}
 			else {
 				if ((byteLength > client.#writable) || (byteLength > client.#requestBody))
@@ -102,6 +118,8 @@ class HTTPClient {
 					client.#line = "";
 					client.#requestBody = false;
 				}
+
+				return client.#writable;
 			}
 		}
 	}
@@ -130,25 +148,35 @@ class HTTPClient {
 		this.#host = host;
 		this.#onClose = onClose;
 
-		System.resolve(this.#host, (host, address) => {
-			if (!address)
-				return this.#onError?.();
+		const dns = new options.dns.io(options.dns);
+		dns.resolve({
+			host: this.#host, 
 
-			this.#socket = new TCP({
-				address,
-				port: port ?? 80,
-				onReadable: this.#onReadable.bind(this),
-				onWritable: this.#onWritable.bind(this),
-				onError: this.#onError.bind(this)
-			});
+			onResolved: (host, address) => {
+				this.#socket = new options.socket.io({
+					...options.socket,
+					address,
+					host,
+					port: port ?? 80,
+					onReadable: this.#onReadable.bind(this),
+					onWritable: this.#onWritable.bind(this),
+					onError: this.#onError.bind(this)
+				});
+			},
+			onError: () => {
+				this.#state = "error";
+				this.#onError?.();
+			}
 		});
 	}
 	close() {
 		this.#socket?.close();
 		this.#socket = undefined;
-		if (this.#timer)
-			Timer.clear(this.#timer);
+		Timer.clear(this.#timer);
 		this.#timer = undefined;
+		this.#current = undefined;
+		this.#requests.length = 0;
+		this.#state = "closed";
 	}
 	request(options) {
 		options = {...options};
@@ -214,8 +242,9 @@ class HTTPClient {
 							this.#remaining = undefined;		// ignore content-length if chunked
 							
 						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers);
-						this.#headers = undefined;
+						if (!this.#current) return;			// closed in callback
 
+						this.#headers = undefined;
 						this.#state = "receiveBody";
 						this.#line = (undefined == this.#chunk) ? undefined : "";
 					}
@@ -279,7 +308,7 @@ class HTTPClient {
 						break;
 				
 				case "sendRequest":
-					this.#pendingWrite = (this.#current.method ?? "GET") + " " + (this.#current.path ?? "/") + " HTTP/1.1\r\n";
+					this.#pendingWrite = (this.#current.method ?? "GET") + " " + (this.#current.path || "/") + " HTTP/1.1\r\n";
 					this.#pendingWrite += "host: " + this.#host + "\r\n";
 					this.#pendingWrite = ArrayBuffer.fromString(this.#pendingWrite);
 					this.#writePosition = 0;
@@ -323,6 +352,9 @@ class HTTPClient {
 						this.#line = "";
 					}
 					break;
+				
+				case "closed":
+					return;
 			}
 			
 			if (!this.#pendingWrite || !this.#writable)
@@ -330,6 +362,7 @@ class HTTPClient {
 		} while (true);
 	}
 	#onError() {
+		this.#state = "error";
 		this.#onClose?.();
 	}
 	#done() {

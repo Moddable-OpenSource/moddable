@@ -1,0 +1,32 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/crypt/digest/manifest.json",
+		"$(MODDABLE)/modules/data/base64/manifest.json"
+	],
+	"modules": {
+		"*": [ 
+			"$(MODULES)/network/dns/moddnsparser"
+		],
+		"httpserver/config": "./config",
+		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
+		"dns": "$(MODULES)/network/dns/dns",
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"embedded:network/http/server": "./httpserver",
+		"embedded:network/http/server/options/serversendevents": "./options/serversendevents",
+		"embedded:network/http/server/options/webpage": "./options/webpage",
+		"embedded:network/http/server/options/websocket": "./options/websocket"
+	},
+	"preload": [
+		"httpserver/config",
+		"embedded:network/dns/resolver",
+		"dns",
+		"dns/parser",
+		"dns/serializer",
+		"embedded:network/http/server",
+		"embedded:network/http/server/options/serversendevents",
+		"embedded:network/http/server/options/webpage",
+		"embedded:network/http/server/options/websocket"
+	]
+}

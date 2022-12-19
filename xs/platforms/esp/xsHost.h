@@ -45,7 +45,12 @@
 	link locations
 */
 
-#if ESP32
+#if (ESP32 == 4)
+	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
+	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
+	#define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
+	#define ICACHE_XS6STRING_ATTR __attribute((section(".data"))) __attribute__((aligned(4)))
+#elif ESP32
 	#define ICACHE_RODATA_ATTR __attribute__((section(".rodata")))
 	#define ICACHE_XS6RO_ATTR __attribute__((section(".rodata.xs6ro"))) __attribute__((aligned(4)))
 	#define ICACHE_XS6RO2_ATTR __attribute__((section(".rodata.xs6ro2"))) __attribute__((aligned(4)))
@@ -82,9 +87,15 @@ extern void espMemCpy(void *dst, const void *src, size_t count);
 extern int espMemCmp(const void *a, const void *b, size_t count);
 extern int espStrCmp(const char *ap, const char *bp);
 extern int espStrNCmp(const char *ap, const char *bp, size_t count);
+extern size_t espStrcspn(const char *str, const char *strCharSet);
+extern size_t espStrspn(const char *str, const char *strCharSet);
 
 extern void *espMallocUint32(int count);
 extern void espFreeUint32(void *t);
+
+#if ESP32
+	#define modGetLargestMalloc(bytes) (heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
+#endif
 
 /*
 	report
@@ -156,6 +167,9 @@ extern uint8_t ESP_setBaud(int baud);
 	#define modMilliseconds() ((uint32_t)xTaskGetTickCount())
 	#define modMicroseconds() ((uint32_t)esp_timer_get_time())
 
+	extern volatile uint32_t gCPUTime;
+	#define modMicrosecondsInstrumentation() (gCPUTime)
+
 	#define modDelayMilliseconds(ms) vTaskDelay(ms)
 	#define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
 
@@ -181,8 +195,8 @@ extern int modTimersNext(void);
 #else
 	#define modCriticalSectionDeclare
 	extern portMUX_TYPE gCriticalMux;
-	#define modCriticalSectionBegin() vPortEnterCritical(&gCriticalMux)
-	#define modCriticalSectionEnd() vPortExitCritical(&gCriticalMux)
+	#define modCriticalSectionBegin() portENTER_CRITICAL(&gCriticalMux)
+	#define modCriticalSectionEnd() portEXIT_CRITICAL(&gCriticalMux)
 #endif
 
 /*
@@ -476,6 +490,13 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 #define c_strstr espStrStr
 #define c_strrchr espStrRChr
 #define c_isEmpty(s) (!c_read8(s))
+#if ESP32
+	#define c_strcspn strcspn
+	#define c_strspn strspn
+#else
+	#define c_strcspn espStrcspn
+	#define c_strspn espStrspn
+#endif
 
 /* 32-BIT MEMORY */
 
@@ -516,7 +537,13 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 /* CPU */
 
-#if ESP32 == 3
+#if ESP32 == 4
+	#define kCPUESP32C3 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
+#elif ESP32 == 3
 	#define kCPUESP32S3 1
 	#define kTargetCPUCount 2
 	#define kESP32TimerDef	int_clr
@@ -524,7 +551,7 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size);
 	#define kCPUESP32S2 1
 	#define kTargetCPUCount 1
 	#define kESP32TimerDef	int_clr
-#elif ESP32 == 1 
+#elif ESP32 == 1
 	#define kTargetCPUCount 2
 	#define kESP32TimerDef	int_clr_timers
 #else

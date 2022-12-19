@@ -77,7 +77,7 @@ txSlot* fxNextHostAccessorProperty(txMachine* the, txSlot* property, txCallback 
 txSlot* fxNextHostFunctionProperty(txMachine* the, txSlot* property, txCallback call, txInteger length, txID id, txFlag flag)
 {
 	txSlot *function, *home = the->stack, *slot;
-	function = fxNewHostFunction(the, call, length, id);
+	function = fxNewHostFunction(the, call, length, id, XS_NO_ID);
 	slot = mxFunctionInstanceHome(function);
 	slot->value.home.object = home->value.reference;
 	property = property->next = fxNewSlot(the);
@@ -359,7 +359,6 @@ txSlot* fxSetIndexProperty(txMachine* the, txSlot* instance, txSlot* array, txIn
 				if (array->ID == XS_ARRAY_BEHAVIOR) {
 					txSize capacity = fxSizeToCapacity(the, size);
 					chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
-					c_memset(chunk + current, 0, capacity - size);
 				}
 				else
 			#endif
@@ -437,7 +436,6 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 					if (growable) {
 						txSize capacity = fxSizeToCapacity(the, size);
 						chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
-						c_memset(chunk + target, 0, capacity - size);
 					}
 					else
 				#endif
@@ -455,7 +453,6 @@ void fxSetIndexSize(txMachine* the, txSlot* array, txIndex target, txBoolean gro
 			if (growable) {
 				txSize capacity = fxSizeToCapacity(the, size);
 				chunk = (txSlot*)fxNewGrowableChunk(the, size, capacity);
-				c_memset(chunk + target, 0, capacity - size);
 			}
 			else
 		#endif

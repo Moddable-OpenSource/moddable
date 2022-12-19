@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -740,23 +740,23 @@ void PiuViewFillTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 				xx = x;
 				ww = w;
 				while (ww >= sw) {
-					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, xx, y, sx, sy, sw, sh);
+					PocoGrayBitmapDraw(poco, mask, color, blend, xx, y, sx, sy, sw, sh);
 					xx += sw;
 					ww -= sw;
 				}
 				if (ww)
-					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, xx, y, sx, sy, ww, sh);
+					PocoGrayBitmapDraw(poco, mask, color, blend, xx, y, sx, sy, ww, sh);
 				y += sh;
 				h -= sh;
 			}
 			if (h) {
 				while (w >= sw) {
-					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, x, y, sx, sy, sw, h);
+					PocoGrayBitmapDraw(poco, mask, color, blend, x, y, sx, sy, sw, h);
 					x += sw;
 					w -= sw;
 				}
 				if (w)
-					PocoGrayBitmapDraw(poco, mask, color, kPocoOpaque, x, y, sx, sy, w, h);
+					PocoGrayBitmapDraw(poco, mask, color, blend, x, y, sx, sy, w, h);
 			}
 		}
 	}
@@ -775,6 +775,9 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 {
 	xsMachine *the = (*self)->the;
+	if (idle == (*self)->idle)
+		return;
+	(*self)->idle = idle;
 	if (idle) {
 		xsCall1(xsReference((*self)->screen), xsID_start, xsNumber(idle));
 	}

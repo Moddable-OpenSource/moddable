@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -63,12 +63,12 @@ void xs_securesocket_read(xsMachine *the)
 	srcBytes = end - position;
 	if (!srcBytes) {
 		if (0 == argc)
-			xsResult = xsInteger(0);
+			xsmcSetInteger(xsResult, 0);
 		return;
 	}
 
 	if (0 == argc) {
-		xsResult = xsInteger(srcBytes);
+		xsmcSetInteger(xsResult, srcBytes);
 		return;
 	}
 
@@ -151,16 +151,24 @@ void xs_securesocket_write(xsMachine *the)
 {
 	int argc = xsmcArgc;
 	uint8_t *dst;
-	uint16_t available, needed = 0, outputOffset = 0;
+	int available;
+	uint16_t needed = 0, outputOffset = 0;
 	unsigned char pass, arg;
 
-	available = 1024;		//@@
+	xsmcVars(3);
+
+	xsmcGet(xsVar(2), xsThis, xsID_sock);
+	xsResult = xsCall0(xsVar(2), xsID_write);
+
+	available = xsmcToInteger(xsResult);
+	if (available < 128)		// 128 is an estimate of TLS overhead
+		available = 0;
+	else
+		available -= 128;
 	if (0 == argc) {
-		xsResult = xsInteger(available);
+		xsmcSetInteger(xsResult, available);
 		return;
 	}
-
-	xsmcVars(3);
 
 	for (pass = 0; pass < 2; pass++ ) {
 		if (1 == pass)
@@ -211,6 +219,5 @@ void xs_securesocket_write(xsMachine *the)
 	}
 
 	xsmcGet(xsVar(1), xsThis, xsID_ssl);
-	xsmcGet(xsVar(2), xsThis, xsID_sock);
 	xsCall2(xsVar(1), xsID_write, xsVar(2), xsVar(0));
 }

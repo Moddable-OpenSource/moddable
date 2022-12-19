@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -29,6 +29,11 @@ endif
 XS_DIR ?= $(realpath ../..)
 BUILD_DIR ?= $(realpath ../../../build)
 
+FUZZILLI ?= 0
+OSSFUZZ ?= 0
+OSSFUZZ_JSONPARSE ?= 0
+FUZZING ?= 0
+
 BIN_DIR = $(BUILD_DIR)/bin/lin/$(GOAL)
 INC_DIR = $(XS_DIR)/includes
 PLT_DIR = $(XS_DIR)/platforms
@@ -38,19 +43,23 @@ TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
 MACOS_ARCH ?= -arch i386
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
+LINK_OPTIONS = -rdynamic
 
 C_OPTIONS = \
 	-fno-common \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
 	-DmxDebug=1 \
+	-DmxLockdown=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
+	-DmxProfile=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
 	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \
 	-DmxStringNormalize=1 \
+	-DmxMinusZero=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
@@ -61,14 +70,35 @@ C_OPTIONS += \
 	-Wno-misleading-indentation \
 	-Wno-implicit-fallthrough
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+	C_OPTIONS += -DmxASANStackMargin=131072
+	ifneq ($(FUZZING),0)
+		C_OPTIONS += -DmxStress=1
+		C_OPTIONS += -DFUZZING=1
+	endif
+	ifneq ($(OSSFUZZ),0)
+		C_OPTIONS += -DOSSFUZZ=1
+		C_OPTIONS += $(CFLAGS)
+		LINK_OPTIONS += $(CXXFLAGS)
+		ifneq ($(OSSFUZZ_JSONPARSE),0)
+			C_OPTIONS += -DOSSFUZZ_JSONPARSE=1
+		endif
+	else
+		C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter 
+		LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+		C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+	endif
+
+	ifneq ($(FUZZILLI),0)
+		C_OPTIONS += -DFUZZILLI=1 -fsanitize-coverage=trace-pc-guard
+	endif
 else
 	C_OPTIONS += -DmxMultipleThreads=1 -O3
 endif
 
 LIBRARIES = -ldl -lm -lpthread -latomic
-
-LINK_OPTIONS = -rdynamic
+ifneq ($(FUZZING),0)
+	LIBRARIES += -lrt
+endif
 
 OBJECTS = \
 	$(TMP_DIR)/xsAll.o \
@@ -90,6 +120,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsGlobal.o \
 	$(TMP_DIR)/xsJSON.o \
 	$(TMP_DIR)/xsLexical.o \
+	$(TMP_DIR)/xsLockdown.o \
 	$(TMP_DIR)/xsMapSet.o \
 	$(TMP_DIR)/xsMarshall.o \
 	$(TMP_DIR)/xsMath.o \
@@ -143,8 +174,13 @@ $(BIN_DIR):
 
 $(BIN_DIR)/$(NAME): $(OBJECTS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
-	$(CC) $(LINK_OPTIONS) $(OBJECTS) $(LIBRARIES) -o $@
-	
+ifneq ($(OSSFUZZ),0)
+	@echo $(CXX) $(LIB_FUZZING_ENGINE) $(LINK_OPTIONS) $(OBJECTS) $(LIBRARIES) -o $@
+	$(CXX) $(LIB_FUZZING_ENGINE) $(LINK_OPTIONS) $(OBJECTS) $(LIBRARIES) -o $@
+else
+		$(CC) $(LINK_OPTIONS) $(OBJECTS) $(LIBRARIES) -o $@
+endif
+
 $(OBJECTS): $(TLS_DIR)/xst.h
 $(OBJECTS): $(PLT_DIR)/xsPlatform.h
 $(OBJECTS): $(SRC_DIR)/xsCommon.h
@@ -152,6 +188,7 @@ $(OBJECTS): $(SRC_DIR)/xsAll.h
 $(OBJECTS): $(SRC_DIR)/xsScript.h
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
+	@echo $(CC) $< $(C_OPTIONS) -c -o $@
 	$(CC) $< $(C_OPTIONS) -c -o $@
 
 clean:

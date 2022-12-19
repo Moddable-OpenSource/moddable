@@ -460,10 +460,18 @@ export default class extends Tool {
 			file = new MakeFile(path);
 			file.generate(this);
 			if (this.make) {
-				if (this.windows)
-					this.then("nmake", "/nologo", "/f", path);
-				else
-					this.then("make", "-f", path);
+				if (this.buildTarget) {
+					if (this.windows)
+						this.then("nmake", "/nologo", "/f", path, this.buildTarget);
+					else 
+						this.then("make", "-f", path, this.buildTarget);
+				}
+				else {
+					if (this.windows)
+						this.then("nmake", "/nologo", "/f", path);
+					else
+						this.then("make", "-f", path);
+				}
 			}
 		}
 		else {

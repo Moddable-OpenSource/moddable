@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/io/tcp/websocketclient/manifest_websocketclient.json"
+	],
+	"modules": {
+		"*": "./WebSocket"
+	},
+	"preload": [
+		"WebSocket"
+	]
+}

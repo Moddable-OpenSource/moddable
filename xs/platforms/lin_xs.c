@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -145,7 +145,10 @@ void fxConnect(txMachine* the)
 	struct sockaddr_in address;
 	int fd = -1;
 	int	flag;
-	host = gethostbyname("localhost");
+	char *hostname = "localhost";
+	if (getenv("XSBUG_HOST"))
+		hostname = getenv("XSBUG_HOST"); 
+	host = gethostbyname(hostname);
 	if (!host)
 		goto bail;
 	memset(&address, 0, sizeof(address));
@@ -153,8 +156,13 @@ void fxConnect(txMachine* the)
 	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
 	if (strstr(program_invocation_name, "xsbug"))
 		address.sin_port = htons(5003);
-	else
-		address.sin_port = htons(5002);
+	else {
+		int port = 5002;
+		char *portStr = getenv("XSBUG_PORT");
+		if (portStr)
+			port = atoi(portStr);
+		address.sin_port = htons(port);
+	}
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		return;
@@ -233,9 +241,12 @@ void fxReceive(txMachine* the)
 		GError* error = NULL;
 		gssize count;
 	again:
+		if (0 == sizeof(the->debugBuffer) - the->debugOffset - 1)
+			return;
+
 		count = g_socket_receive(the->socket, the->debugBuffer + the->debugOffset, sizeof(the->debugBuffer) - the->debugOffset - 1, NULL, &error);
 		if (count <= 0) {
-			if (error->code == G_IO_ERROR_WOULD_BLOCK) {
+			if (error && (error->code == G_IO_ERROR_WOULD_BLOCK)) {
 				g_clear_error(&error);
 				if (the->debugOffset == 0)
 					goto again;

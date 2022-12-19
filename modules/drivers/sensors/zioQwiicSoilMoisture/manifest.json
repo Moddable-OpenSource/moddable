@@ -1,9 +1,9 @@
 {
 	"modules": {
-		"embedded:sensor/Moisture/ZIOQWIICMOISTURE": "$(MODDABLE)/modules/drivers/sensors/zioQwiicSoilMoisture/zioQwiicSoilMoisture"
+		"embedded:sensor/SoilMoistureSensor/ZIOQWIICMOISTURE": "$(MODDABLE)/modules/drivers/sensors/zioQwiicSoilMoisture/zioQwiicSoilMoisture"
 	},
 	"preload": [
-		"embedded:sensor/Moisture/ZIOQWIICMOISTURE"
+		"embedded:sensor/SoilMoistureSensor/ZIOQWIICMOISTURE"
 	]
 }
 

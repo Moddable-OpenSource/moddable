@@ -7,11 +7,11 @@
 	"creation": {
 		"static": 65536,
 		"chunk": {
-			"initial": 1536,
+			"initial": 16384,
 			"incremental": 512
 		},
 		"heap": {
-			"initial": 512,
+			"initial": 2048,
 			"incremental": 64
 		},
 		"stack": 256,
@@ -30,12 +30,22 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/base/deepEqual/manifest.json",
 		"$(MODULES)/base/modules/manifest.json",
+		"$(MODULES)/base/structuredClone/manifest.json",
+		"$(MODULES)/data/base64/manifest.json",
+		"$(MODULES)/data/crc/manifest.json",
+		"$(MODULES)/data/hex/manifest.json",
+		"$(MODULES)/data/qrcode/manifest.json",
 		"$(MODULES)/data/text/decoder/manifest.json",
 		"$(MODULES)/data/text/encoder/manifest.json",
+		"$(MODULES)/data/url/manifest.json",
+		"$(MODULES)/data/zlib/manifest_deflate.json",
+		"$(MODULES)/data/zlib/manifest_inflate.json",
 		"$(MODULES)/files/preference/manifest.json",
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
+		"$(MODDABLE)/modules/network/http/manifest.json",
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
 		"$(MODDABLE)/modules/network/websocket/manifest.json"
 	],
@@ -48,15 +58,15 @@
 			"./testworker",
 			"./testsharedworker",
 			"./testthrowworker",
-			"$(MODULES)/base/instrumentation/*",
-			"$(MODULES)/network/http/*"
+			"$(MODULES)/base/instrumentation/*"
 		],
 		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
 		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
 		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
 		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
 		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
-		"commodetto/checksumOut": "./commodettoChecksumOut"
+		"commodetto/checksumOut": "./commodettoChecksumOut",
+        "piu/Sound": "$(MODULES)/piu/MC/piuSound"
 	},
 	"preload": [
 		"main",
@@ -64,25 +74,56 @@
 		"harness",
 		"commodetto/*",
 		"instrumentation",
-		"http"
+		"piu/Sound"
 	],
 	"strip": [],
+	"config" : {
+		"ble": {
+			"client": {
+				"timeout": 10000,
+				"targetDevice": "Moddable Server"
+			},
+			"server": {
+				"timeout": 20000,
+				"deviceName": "testmc Server"
+			}
+		},
+		"startupSound": ""
+	},
 	"platforms": {
 		"esp": {
 			"error": "testmc is unsupported on esp8266"
 		},
 		"esp32": {
 			"defines": {
-				"XS_TEST": 1
+				"XS_TEST": 1,
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
 			},
 			"include": [
 				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json"
+				"$(MODULES)/files/flash/manifest.json",
+				"$(MODDABLE)/modules/network/ble/manifest_client.json",
+				"$(MODDABLE)/modules/network/ble/manifest_server.json",
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
 			],
 			"modules": {
 				"~": [
 					"$(BUILD)/devices/esp32/setup/piu",
 					"$(BUILD)/devices/esp32/setup/network"
+				],
+				"*": [
+					"./BLE-server/*"
+				]
+			},
+			"ble": {
+				"*": [
+					"./BLE-server/bleservices/*"
 				]
 			},
 			"config": {
@@ -92,6 +133,20 @@
 					"hz": 100000,
 					"address": 53,
 					"unusedAddress": 99
+				},
+				"pwm": {
+					"from": true,
+					"pins": [18, 12, 13],
+					"ports": [4, 5],
+					"invalidPorts": [0, 1],
+					"resolutions": [10, 11, 12],
+					"hzs": [10000, 200, 1]
+				},
+				"spi": {
+					"select": 18,
+					"ports": [1, 2],
+					"invalidPorts": [3, -1],
+					"hzs": [1000, 10000, 20000]
 				},
 			 	"invalidPins": [
 					-10,
@@ -115,6 +170,9 @@
 			"build": {
 				"SIMULATOR": "$(BUILD)/bin/mac/debug/mcsim.app"
 			},
+			"include": [
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
 			"modules": {
 				"*": [
 					"$(BUILD)/simulators/modules/screen",
@@ -123,12 +181,24 @@
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mac/*"
 				]
+			},
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
 			}
 		},
 		"win": {
 			"build": {
 				"SIMULATOR": "$(BUILD)/bin/win/debug/mcsim.exe"
 			},
+			"include": [
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
 			"modules": {
 				"*": [
 					"$(BUILD)/simulators/modules/screen",
@@ -143,7 +213,12 @@
 	"data": { 
 		"*": [
 			"$(MODDABLE)/examples/assets/images/image-info",
-			"$(MODULES)/crypt/data/ca222"
+			"$(MODULES)/crypt/data/ca34",
+			"$(MODULES)/crypt/data/ca35",
+			"$(MODULES)/crypt/data/ca222",
+			"./assets/bflatmajor-ima-12000",
+			"./assets/bflatmajor-ima-16000",
+			"./assets/bflatmajor-sbc"
 		]
 	},
 	"resources": {

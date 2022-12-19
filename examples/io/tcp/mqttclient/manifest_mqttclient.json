@@ -1,0 +1,14 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json"
+	],
+	"modules": {
+		"mqttclient/config": "./config",
+		"embedded:network/mqtt/client": "./mqttclient"
+	},
+	"preload": [
+		"mqttclient/config",
+		"embedded:network/mqtt/client"
+	]
+}

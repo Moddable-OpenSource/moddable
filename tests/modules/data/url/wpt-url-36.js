@@ -1,0 +1,208 @@
+/*---
+description: https://github.com/web-platform-tests/wpt/url/resources/urltestdata.json
+flags: [module]
+---*/
+
+import { runTests } from "./url_FIXTURE.js";
+
+const tests = [
+	{
+		"input": "//d:",
+		"base": "file:///C:/a/b",
+		"href": "file:///d:",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/d:",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "//d:/..",
+		"base": "file:///C:/a/b",
+		"href": "file:///d:/",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/d:/",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "..",
+		"base": "file:///ab:/",
+		"href": "file:///",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "..",
+		"base": "file:///1:/",
+		"href": "file:///",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "",
+		"base": "file:///test?test#test",
+		"href": "file:///test?test",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/test",
+		"search": "?test",
+		"hash": ""
+	},
+	{
+		"input": "file:",
+		"base": "file:///test?test#test",
+		"href": "file:///test?test",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/test",
+		"search": "?test",
+		"hash": ""
+	},
+	{
+		"input": "?x",
+		"base": "file:///test?test#test",
+		"href": "file:///test?x",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/test",
+		"search": "?x",
+		"hash": ""
+	},
+	{
+		"input": "file:?x",
+		"base": "file:///test?test#test",
+		"href": "file:///test?x",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/test",
+		"search": "?x",
+		"hash": ""
+	},
+	{
+		"input": "#x",
+		"base": "file:///test?test#test",
+		"href": "file:///test?test#x",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/test",
+		"search": "?test",
+		"hash": "#x"
+	},
+	{
+		"input": "file:#x",
+		"base": "file:///test?test#test",
+		"href": "file:///test?test#x",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/test",
+		"search": "?test",
+		"hash": "#x"
+	},
+	"# File URLs and many (back)slashes",
+	{
+		"input": "file:\\\\//",
+		"base": "about:blank",
+		"href": "file:////",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "file:\\\\\\\\",
+		"base": "about:blank",
+		"href": "file:////",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "file:\\\\\\\\?fox",
+		"base": "about:blank",
+		"href": "file:////?fox",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//",
+		"search": "?fox",
+		"hash": ""
+	},
+	{
+		"input": "file:\\\\\\\\#guppy",
+		"base": "about:blank",
+		"href": "file:////#guppy",
+		"protocol": "file:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//",
+		"search": "",
+		"hash": "#guppy"
+	}
+];
+
+runTests(tests);

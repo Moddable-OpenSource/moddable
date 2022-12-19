@@ -1,0 +1,14 @@
+{
+    "service": {
+        "uuid": "b1bc973f-14be-41e4-8e44-d261dce243fb",
+        "characteristics": {
+            "result": {
+                "uuid": "b901519a-f888-491a-af84-50868305caf3",
+                "type": "String",
+                "permissions": "write",
+                "properties": "write,writeNoResponse",
+                "maxBytes": 60
+            }
+        }
+    }
+}

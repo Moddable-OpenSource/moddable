@@ -25,6 +25,7 @@
 #include "xsHost.h"
 #include "xsHosts.h"
 #include "modTimer.h"
+#include "modInstrumentation.h"
 
 extern "C" {
 	#include "user_interface.h"		// to get system_soft_wdt_feed
@@ -81,6 +82,11 @@ void setup()
 
 #ifdef mxDebug
 	gThe = modCloneMachine(0, 0, 0, 0, NULL);
+	if (!gThe) {
+		modLog("can't clone: no memory?");
+		while (true)
+			;
+	}
 
 	modRunMachineSetup(gThe);
 #else
@@ -91,7 +97,7 @@ void setup()
 
 void loop(void)
 {
-#if mxDebug
+#ifdef mxDebug
 	fxReceiveLoop();
 #endif
 
@@ -102,6 +108,7 @@ void loop(void)
 		if (delayMS)
 			modDelayMilliseconds(delayMS);
 	}
+	modInstrumentationAdjust(Turns, +1);
 }
 
 /*

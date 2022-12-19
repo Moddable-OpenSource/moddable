@@ -277,6 +277,8 @@ void fxScreenKey(txScreen* screen, int kind, char* string, int modifiers, double
 	}
 }
 
+#ifdef mxInstrument
+
 static int32_t modInstrumentationSlotHeapSize(xsMachine *the)
 {
 	return the->currentHeapCount * sizeof(txSlot);
@@ -309,7 +311,27 @@ static int32_t modInstrumentationStackRemain(xsMachine *the)
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
 
+#endif
+
 static uint16_t gSetupPending = 0;
+
+#if MODDEF_MAIN_ASYNC
+static void setStepDoneFulfilled(xsMachine *the)
+{
+	xsResult = xsGet(xsArg(0), xsID_default);
+	if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+		xsCallFunction0(xsResult, xsGlobal);
+
+	xsCollectGarbage();
+
+	txScreen* screen = the->host;
+	screen->start(screen, 5);
+}
+
+static void setStepDoneRejected(xsMachine *the)
+{
+}
+#endif
 
 static void setStepDone(txMachine *the)
 {
@@ -318,7 +340,13 @@ static void setStepDone(txMachine *the)
 		return;
 
 	xsBeginHost(the);
-	{
+#if MODDEF_MAIN_ASYNC
+		xsVars(2);
+		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_ASYNC);
+		xsVar(0) = xsNewHostFunction(setStepDoneFulfilled, 1);
+		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
+		xsCall2(xsResult, xsID_then, xsVar(0), xsVar(1));
+#else	
 		xsVars(1);
 		xsVar(0) = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
 		if (xsTest(xsVar(0))) {
@@ -330,18 +358,20 @@ static void setStepDone(txMachine *the)
 			}
 		}
 		xsCollectGarbage();
-	}
+#endif
 	xsEndHost(the);
 
+#if !MODDEF_MAIN_ASYNC
 	txScreen* screen = the->host;
 	screen->start(screen, 5);
+#endif
 }
 
 void fxScreenLaunch(txScreen* screen)
 {
 	static xsStringValue signature = PIU_DOT_SIGNATURE;
 	txPreparation* preparation = xsPreparation();
-	void* archive = (screen->archive) ? fxMapArchive(preparation, screen->archive, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
+	void* archive = (screen->archive) ? fxMapArchive(C_NULL, preparation, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
 	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, archive);
 	if (!screen->machine)
 		return;	

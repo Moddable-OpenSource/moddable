@@ -147,6 +147,8 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_GET_THIS_VARIABLE */ "get_this_variable",
 	/* XS_CODE_GET_VARIABLE */ "get_variable",
 	/* XS_CODE_GLOBAL */ "global",
+	/* XS_CODE_HAS_PRIVATE_1 */ "has_private",
+	/* XS_CODE_HAS_PRIVATE_2 */ "has_private_2",
 	/* XS_CODE_HOST */ "host",
 	/* XS_CODE_IMPORT */ "import",
 	/* XS_CODE_IMPORT_META */ "import.meta",
@@ -275,7 +277,8 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_VOID */ "void",
 	/* XS_CODE_WITH */ "with",
 	/* XS_CODE_WITHOUT */ "without",
-	/* XS_CODE_YIELD */ "yield"
+	/* XS_CODE_YIELD */ "yield",
+	/* XS_CODE_PROFILE */ "profile"
 };
 
 const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
@@ -384,6 +387,8 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	0 /* XS_CODE_GET_THIS_VARIABLE */,
 	0 /* XS_CODE_GET_VARIABLE */,
 	1 /* XS_CODE_GLOBAL */,
+	2 /* XS_CODE_HAS_PRIVATE_1 */,
+	3 /* XS_CODE_HAS_PRIVATE_2 */,
 	3 /* XS_CODE_HOST */,
 	1 /* XS_CODE_IMPORT */,
 	1 /* XS_CODE_IMPORT_META */,
@@ -403,7 +408,7 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	3 /* XS_CODE_LET_LOCAL_2 */,
 	3 /* XS_CODE_LINE */,
 	1 /* XS_CODE_MINUS */,
-	1 /* XS_CODE_MODULE */,
+	2 /* XS_CODE_MODULE */,
 	1 /* XS_CODE_MODULO */,
 	1 /* XS_CODE_MORE */,
 	1 /* XS_CODE_MORE_EQUAL */,
@@ -512,7 +517,12 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_VOID */,
 	1 /* XS_CODE_WITH */,
 	1 /* XS_CODE_WITHOUT */,
-	1 /* XS_CODE_YIELD */
+	1 /* XS_CODE_YIELD */,
+#ifdef mx32bitID
+	5 /* XS_CODE_PROFILE */
+#else
+	3 /* XS_CODE_PROFILE */
+#endif
 };
 
 #if mxUseDefaultCStackLimit
@@ -561,17 +571,20 @@ char* fxCStackLimit()
 		pthread_t self = pthread_self();
     	void* stackAddr = pthread_get_stackaddr_np(self);
    		size_t stackSize = pthread_get_stacksize_np(self);
-		return (char*)stackAddr - stackSize + (16 * 1024) + mxASANStackMargin;
+		return (char*)stackAddr - stackSize + (128 * 1024) + mxASANStackMargin;
 	#elif mxLinux
+		char* result = C_NULL;
 		pthread_attr_t attrs;
+		pthread_attr_init(&attrs);
 		if (pthread_getattr_np(pthread_self(), &attrs) == 0) {
     		void* stackAddr;
    			size_t stackSize;
 			if (pthread_attr_getstack(&attrs, &stackAddr, &stackSize) == 0) {
-				return (char*)stackAddr + (16 * 1024) + mxASANStackMargin;
+				result = (char*)stackAddr + (128 * 1024) + mxASANStackMargin;
 			}
 		}
-		return C_NULL;
+		pthread_attr_destroy(&attrs);
+		return result;
 	#else
 		return C_NULL;
 	#endif
@@ -1128,6 +1141,11 @@ txSize fxUnicodeLength(txString theString)
 
 #define ONEMASK ((size_t)(-1) / 0xFF)
 
+#if defined(__has_feature)
+	#if __has_feature(address_sanitizer)
+		__attribute__((no_sanitize("address"))) 
+	#endif
+#endif
 txSize fxUnicodeLength(txString _s)
 {
 	const char * s;
@@ -1278,6 +1296,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"JSON",
 	"Map",
 	"Math",
+	"ModuleSource",
 	"Number",
 	"Object",
 	"Promise",
@@ -1288,7 +1307,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"RegExp",
 	"Set",
 	"SharedArrayBuffer",
-	"StaticModuleRecord",
 	"String",
 	"Symbol",
 	"SyntaxError",
@@ -1383,6 +1401,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"callee",
 	"caller",
 	"catch",
+	"cause",
 	"cbrt",
 	"ceil",
 	"center",
@@ -1499,6 +1518,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"has",
 	"hasIndices",
 	"hasInstance",
+	"hasOwn",
 	"hasOwnProperty",
 	"hypot",
 	"id",
@@ -1556,6 +1576,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"module",
 	"multiline",
 	"name",
+	"needsImport",
+	"needsImportMeta",
 	"new.target",
 	"next",
 	"normalize",

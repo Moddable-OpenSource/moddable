@@ -1,0 +1,20 @@
+{
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"build": {
+		"WIFI_GPIO":"1"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "",
+		"touch": ""
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 2,
+			"scl_pin": 3,
+			"port": 1
+		}
+	}
+}

@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/AmbientLight-Proximity/VL6180": "$(MODDABLE)/modules/drivers/sensors/vl6180/vl6180"
+	},
+	"preload": [
+		"embedded:sensor/AmbientLight-Proximity/VL6180"
+	]
+}

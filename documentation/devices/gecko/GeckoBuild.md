@@ -1,5 +1,4 @@
 # Using the Moddable SDK with Gecko
-
 Copyright 2016-2020 Moddable Tech, Inc.<BR>
 Revised: December 1, 2020
 

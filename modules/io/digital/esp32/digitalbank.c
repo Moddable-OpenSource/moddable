@@ -252,7 +252,8 @@ void xs_digitalbank_destructor(void *data)
 
 		for (pin = digital->bank ? 32 : 0; pin <= lastPin; pin++) {
 			if (digital->pins & (1 << (pin & 0x1f))) {
-				gpio_isr_handler_remove(pin);
+				if (digital->hasOnReadable)
+					gpio_isr_handler_remove(pin);
 				gpio_reset_pin(pin);
 			}
 		}
@@ -297,10 +298,14 @@ void xs_digitalbank_read(xsMachine *the)
 
 	gpio_dev_t *hw = &GPIO;
 
+#if kCPUESP32C3
+	result = hw->in.data;
+#else
     if (digital->bank)
         result = hw->in1.data;
     else
         result = hw->in;
+#endif
 
 	xsmcSetInteger(xsResult, result & digital->pins);
 }
@@ -316,6 +321,10 @@ void xs_digitalbank_write(xsMachine *the)
 	gpio_dev_t *hw = &GPIO;
 	value = xsmcToInteger(xsArg(0)) & digital->pins;
 
+#if kCPUESP32C3
+	hw->out_w1ts.out_w1ts = value;
+	hw->out_w1tc.out_w1tc = ~value & digital->pins;
+#else
 	if (digital->bank) {
 		hw->out1_w1ts.data = value;
 		hw->out1_w1tc.data = ~value & digital->pins;
@@ -324,6 +333,7 @@ void xs_digitalbank_write(xsMachine *the)
 		hw->out_w1ts = value;
 		hw->out_w1tc = ~value & digital->pins;
 	}
+#endif
 }
 
 void IRAM_ATTR digitalISR(void *refcon)
@@ -375,10 +385,14 @@ uint32_t modDigitalBankRead(Digital digital)
 {
 	gpio_dev_t *hw = &GPIO;
 
+#if kCPUESP32C3
+	return hw->in.data & digital->pins;
+#else
     if (digital->bank)
         return hw->in1.data & digital->pins;
 
 	return hw->in & digital->pins;
+#endif
 }
 
 //@@ verify write is allowed
@@ -387,6 +401,10 @@ void modDigitalBankWrite(Digital digital, uint32_t value)
 	gpio_dev_t *hw = &GPIO;
 	value &= digital->pins;
 
+#if kCPUESP32C3
+	hw->out_w1ts.out_w1ts = value;
+	hw->out_w1tc.out_w1tc = ~value & digital->pins;
+#else
 	if (digital->bank) {
 		hw->out1_w1ts.data = value;
 		hw->out1_w1tc.data = ~value & digital->pins;
@@ -395,4 +413,5 @@ void modDigitalBankWrite(Digital digital, uint32_t value)
 		hw->out_w1ts = value;
 		hw->out_w1tc = ~value & digital->pins;
 	}
+#endif
 }

@@ -1,0 +1,16 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/ble/manifest_server.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"ble":{
+		"*": [
+			"./bleservices/*"
+		]
+	}
+}

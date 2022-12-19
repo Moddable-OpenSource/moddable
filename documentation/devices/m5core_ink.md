@@ -1,5 +1,4 @@
 # M5Core Ink Developer Guide
-
 Copyright 2021 Moddable Tech, Inc.<BR>
 Revised: November 2, 2021
 

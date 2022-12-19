@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,7 +12,7 @@
  *
  */
 
-import BMP280 from "embedded:sensor/AtmosphericPressure-Temperature/BMP280";
+import BMP280 from "embedded:sensor/Barometer-Temperature/BMP280";
 import Timer from "timer";
 
 const sensor = new BMP280({ sensor: device.I2C.default });

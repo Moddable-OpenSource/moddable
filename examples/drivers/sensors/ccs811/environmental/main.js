@@ -12,7 +12,7 @@
  *
  */
 
-import Sensor from "embedded:sensor/AirQuality/CCS811";
+import Sensor from "embedded:sensor/CarbonDioxideGasSensor-VOCSensor/CCS811";
 import Humidity from "embedded:sensor/Humidity-Temperature/SI7020";
 import Timer from "timer";
 
@@ -38,7 +38,7 @@ Timer.repeat(() => {
 	});
 
 	const sample = sensor.sample();
-	trace(`eCO2: ${sample.eCO2} ppm, VOC: ${sample.TVOC} ppb\n`);
+	trace(`eCO2: ${sample.carbonDioxideGasSensor.CO2} ppm, VOC: ${sample.vocSensor.tvoc} ppb\n`);
 
 }, 10000);
 

@@ -57,12 +57,15 @@ void modGPIOUninit(modGPIOConfiguration config)
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
 	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
+	gpio_reset_pin(config->pin);
 
 	switch (mode) {
 		case kModGPIOOutput:
 		case kModGPIOOutputOpenDrain:
+#if ESP32 == 1		// old ESP32's had a limitation
 			if (config->pin >= GPIO_NUM_34)		// pins 34-39 are input only
 				return -1;
+#endif
 
 			gpio_pad_select_gpio(config->pin);
 			gpio_set_direction(config->pin, (kModGPIOOutputOpenDrain == mode) ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT);

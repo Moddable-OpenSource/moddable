@@ -1,9 +1,6 @@
 # BLE
-Copyright 2017-20 Moddable Tech, Inc.
-
-Revised: January 15, 2021
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
+Revised: June 20, 2022
 
 ## About This Document
 This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, Qualcomm QCA4020, and Nordic nRF52 devices.
@@ -15,7 +12,7 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 * [Using BLE](#usingble)
 * [BLE Client](#bleclient)
 	* [Class BLEClient](#classbleclient)
-	* [Class Device](#classdevice)
+	* [Class Client](#classclient)
 	* [Class Service](#classservice)
 	* [Class Characteristic](#classcharacteristic)
 	* [Class Descriptor](#classdescriptor)
@@ -186,7 +183,7 @@ The `params` object contains the following properties:
 
 | Property | Type | Description |
 | --- | --- | :--- |
-| `active` | `boolean` | Set `true` for active scanning, `false` for passing scanning. Default is `true`.
+| `active` | `boolean` | Set `true` for active scanning, `false` for passive scanning. Default is `true`.
 | `duplicates` | `boolean` | Set `true` to receive all advertising packets, `false` to filter out multiple advertising packets received from the same peripheral device. Default is `true`.
 | `filterPolicy` | `number` | Filter policy applied to scan. Default is `GAP.ScanFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
 | `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`. 
@@ -195,7 +192,7 @@ The `params` object contains the following properties:
 The `filterPolicy` parameter can be one of the following:
 
 | Name | Description |
-| --- | :--- | 
+| --- | :--- |
 | `GAP.ScanFilterPolicy.NONE` | No filtering.
 | `GAP.ScanFilterPolicy.WHITELIST` | Receive advertisements only from whitelist devices.
 | `GAP.ScanFilterPolicy.NOT_RESOLVED_DIRECTED` | Receive all undirected advertisements and all directed advertisements where the initiator address is a resolvable private address.
@@ -234,7 +231,7 @@ class Scanner extends BLEClient {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onDiscovered` callback function is called one or more times for each peripheral device discovered. 
 
@@ -259,7 +256,7 @@ The `stopScanning` function disables scanning for nearby peripherals.
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `connect` function initiates a connection request between the `BLEClient` and a target peripheral `device`.
 
@@ -278,9 +275,19 @@ onConnected(device) {
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onConnected` callback function is called when the client connects to a target peripheral `device`.
+
+***
+
+#### `onDisconnected(device)`
+
+| Argument | Type | Description |
+| --- | --- | :--- | 
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
+
+The `onDisconnected` callback is called when the connection is closed.
 
 ***
 
@@ -319,9 +326,9 @@ onReady() {
 
 > **Note:** The `BLEClient` object hosts all callbacks for classes used with `BLEClient`.
 
-<a id="classdevice"></a>
-## Class Device
-An instance of the `Device` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Device` class instance directly, applications do call `Device` class functions to perform GATT service/characteristic discovery, negotiate a higher MTU and close the peripheral connection.
+<a id="classclient"></a>
+## Class Client
+An instance of the `Client` class is instantiated by `BLEClient` and provided to the host app in the `BLEClient` `onDiscovered` and `onConnected` callbacks. While applications never instantiate a `Client` class instance directly, applications do call `Client` class functions to perform GATT service/characteristic discovery, negotiate a higher MTU and close the peripheral connection.
 
 ### Properties
 
@@ -348,7 +355,7 @@ Use the `exchangeMTU ` function to request a higher MTU once the peripheral conn
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 | `mtu` | `number` | Exchanged MTU value |
 
 The `onMTUExchanged` callback function is called when the MTU exchange procedure has been completed.
@@ -376,7 +383,7 @@ Use the `readRSSI` function to read the connected peripheral's signal strength.
 
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 | `rssi` | `number` | Received signal strength |
 
 The `onRSSI` callback function is called when the peripheral signal strength is read.
@@ -466,15 +473,6 @@ onDisconnected() {
 	trace("connection closed\n");
 }
 ```
-
-***
-
-#### `onDisconnected(device)`
-| Argument | Type | Description |
-| --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
-
-The `onDisconnected` callback is called when the connection is closed.
 
 <a id="classservice"></a>
 ## Class Service
@@ -1138,7 +1136,7 @@ The `params` object contains the following properties:
 | --- | --- | :--- |
 | `advertisingData` | `object` | Object containing advertisement data properties.
 | `connectable` | `boolean` | Optional property to specify connectable mode. Set to `true` to specify unidirected connectable mode; `false` to specify non-connectable mode. Defaults to `true`.
-| `discoverable` | `object` | Optional property to specify discoverable mode. Set to `true` to use the general discovery procedure; `false` to specify non-discoverable. Defaults to `true`.
+| `discoverable` | `boolean` | Optional property to specify discoverable mode. Set to `true` to use the general discovery procedure; `false` to specify non-discoverable. Defaults to `true`.
 | `fast` | `boolean` | Optional property to specify the GAP advertisement interval. Set to `true` to specify TGAP(adv\_fast\_interval1); `false` to specify TGAP(adv\_slow\_interval). Defaults to `true`.
 | `filterPolicy` | `number` | Optional property to apply a filter policy. Defaults to `GAP.AdvFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
 | `notify` | `boolean` | Optional property to notify application after each advertising data packet sent. Defaults to `false`.
@@ -1167,13 +1165,13 @@ The `advertisingData` and `scanResponseData` contain one or more properties corr
 | `completeUUID128List` | `array` | Array of UUID objects corresponding to *Complete List of 128 bit Service UUIDs*.
 | `shortName` | `string` | String corresponding to the *Shortened Local Name*.
 | `completeName` | `string` | String corresponding to the *Complete Local Name*.
-| `manufacturerSpecific` | `object` | Object corresponding to the *Manufacturer Specific Data*. The `identifier` property is a number corresponding to the *Company Identifier Code*. The `data` property is an array of numbers corresponding to additional manufacturer specific data.
+| `manufacturerSpecific` | `object` | Object corresponding to the *Manufacturer Specific Data*. The `identifier` property is a number corresponding to the *Company Identifier Code*. The `data` property is a `Uint8Array` of numbers corresponding to additional manufacturer specific data.
 | `txPowerLevel` | `number` | Number corresponding to the *TX Power Level*.
 | `connectionInterval` | `object` | Object corresponding to the *Slave Connection Interval Range*. The `intervalMin` property is a number corresponding to the minimum connection interval value. The `intervalMax` property is a number corresponding to the maximum connection interval value.
 | `solicitationUUID16List` | `array` | Array of UUID objects corresponding to the *List of 16 bit Service Solicitation UUIDs*.
 | `solicitationUUID128List ` | `array` | Array of UUID objects corresponding to the *List of 128 bit Service Solicitation UUIDs*.
-| `serviceDataUUID16` | `array` | Object corresponding to the *Service Data - 16 bit UUID*. The `uuid` property is an object corresponding to the 16-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
-| `serviceDataUUID128` | `array` | Object corresponding to the *Service Data - 128 bit UUID*. The `uuid` property is an object corresponding to the 128-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
+| `serviceDataUUID16` | `object` | Object corresponding to the *Service Data - 16 bit UUID*. The `uuid` property is an object corresponding to the 16-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
+| `serviceDataUUID128` | `object` | Object corresponding to the *Service Data - 128 bit UUID*. The `uuid` property is an object corresponding to the 128-bit Service UUID. The `data` property is an array of numbers corresponding to additional service data.
 | `appearance` | `number` | Number corresponding to the *Appearance*.
 | `publicAddress` | `object` | Address object corresponding to the *Public Target Address*.
 | `randomAddress` | `object` | Address object corresponding to the *Random Target Address*.
@@ -1374,7 +1372,7 @@ onDisconnected(device) {
 #### `onConnected(device)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onConnected` callback function is called when a client connects to the `BLEServer`.
 
@@ -1383,7 +1381,7 @@ The `onConnected` callback function is called when a client connects to the `BLE
 #### `onDisconnected(device)`
 | Argument | Type | Description |
 | --- | --- | :--- | 
-| `device` | `object` | A `device` object. See the section [Class Device](#classdevice) for more information. |
+| `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onDisconnected` callback function is called when the client connection is closed.
 
@@ -1764,7 +1762,7 @@ Use the `clear` function to remove all peer devices from the whitelist.
 
 <a id="esp32platform"></a>
 ## BLE Apps on ESP32 Platform
-The `mcconfig` command line tool **automatically** configures the ESP-IDF [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/sdkconfig.defaults) BLE options required by the host app. The ESP-IDF supports both the Apache [NimBLE](http://mynewt.apache.org/latest/network/index.html#) Bluetooth LE [5.1-certified](https://launchstudio.bluetooth.com/ListingDetails/97856) open-source host and the dual-mode [Bluedroid](https://www.espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf) stack. NimBLE provides [several benefits](https://blog.moddable.com/blog/moddable-sdk-improvements-for-esp32-projects/) over Bluedroid, including smaller Flash/RAM footprint, fewer buffer copies, and faster builds. NimBLE is enabled by default by the Moddable SDK in ESP32 builds.
+The `mcconfig` command line tool **automatically** configures the ESP-IDF [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.defaults) BLE options required by the host app. The ESP-IDF supports both the Apache [NimBLE](http://mynewt.apache.org/latest/network/index.html#) Bluetooth LE [5.1-certified](https://launchstudio.bluetooth.com/ListingDetails/97856) open-source host and the dual-mode [Bluedroid](https://www.espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf) stack. NimBLE provides [several benefits](https://blog.moddable.com/blog/moddable-sdk-improvements-for-esp32-projects/) over Bluedroid, including smaller Flash/RAM footprint, fewer buffer copies, and faster builds. NimBLE is enabled by default by the Moddable SDK in ESP32 builds.
 
 >**Note:** BLE options can be further customized by the host app, if necessary, by providing a pathname to a directory containing custom sdkconfig defaults entries in the application manifest. Refer to the [manifest](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/manifest.md) documentation for details. For example, the `CONFIG_BT_NIMBLE_MAX_CONNECTIONS` value can be increased to support more than one BLE client connection. This value should match the `max_connections` value in the application manifest.
 
@@ -1778,7 +1776,7 @@ To build BLE apps using the legacy Bluedroid implementation, set the `ESP32_BLUE
 ## BLE Apps on Blue Gecko Platform
 Building and deploying BLE apps on Blue Gecko follow the same workflow outlined in our [Gecko developer documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md). For BLE apps, we recommend starting from the `soc-ibeacon` Simplicity Studio example project.
 
-The [make.blue.mk](../../../tools/mcconfig/geck0/make.blue.mk) makefile includes variables that define the Gecko target platform, kit and part. The makefile is configured by default to build apps for the Blue Gecko [EFR32BG13P632F512GM48](https://www.silabs.com/products/wireless/bluetooth/blue-gecko-bluetooth-low-energy-socs/device.efr32bg13p632f512gm48) Bluetooth low energy chip mounted on the [BRD4104A](https://www.silabs.com/documents/login/reference-manuals/brd4104a-rm.pdf) 2.4 GHz 10 dBm Radio Board. To configure the build for a different Blue Gecko target, change the makefile `GECKO_BOARD`, `GECKO_PART`, `HWKIT` and `HWINC` variables accordingly.
+The [make.blue.mk](../../../build/devices/gecko/targets/blue/make.blue.mk) makefile includes variables that define the Gecko target platform, kit and part. The makefile is configured by default to build apps for the Blue Gecko [EFR32BG13P632F512GM48](https://www.silabs.com/products/wireless/bluetooth/blue-gecko-bluetooth-low-energy-socs/device.efr32bg13p632f512gm48) Bluetooth low energy chip mounted on the [BRD4104A](https://www.silabs.com/documents/login/reference-manuals/brd4104a-rm.pdf) 2.4 GHz 10 dBm Radio Board. To configure the build for a different Blue Gecko target, change the makefile `GECKO_BOARD`, `GECKO_PART`, `HWKIT` and `HWINC` variables accordingly.
 
 To build the [scanner](../../../examples/network/ble/scanner) BLE app `xs_gecko.a` archive for Blue Gecko:
 

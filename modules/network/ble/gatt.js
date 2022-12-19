@@ -20,6 +20,49 @@
 
 import {Bytes, typedValueToBuffer, typedBufferToValue} from "btutils";
 
+class ClientCallback {
+	static onService(params) {
+		if (!params)
+			this.ble.onServices(this.services);
+		else {
+			params.uuid = new Bytes(params.uuid);
+			params.connection = this.connection;
+			params.ble = this.ble;
+			this.services.push(new Service(params));
+		}
+	}
+	static onCharacteristicNotificationEnabled(params) {
+		const characteristic = this._findCharacteristicByHandle(params.handle);
+		if (characteristic)
+			this.ble.onCharacteristicNotificationEnabled(characteristic);
+	}
+	static onCharacteristicNotificationDisabled(params) {
+		const characteristic = this._findCharacteristicByHandle(params.handle);
+		if (characteristic)
+			this.ble.onCharacteristicNotificationDisabled(characteristic);		
+	}
+	static onCharacteristicNotification(params) {
+		const characteristic = this._findCharacteristicByHandle(params.handle);
+		if (characteristic)
+			this.ble.onCharacteristicNotification(characteristic, typedBufferToValue(characteristic.type, params.value));		
+	}
+	static onCharacteristicValue(params) {
+		const characteristic = this._findCharacteristicByHandle(params.handle);
+		if (characteristic)
+			this.ble.onCharacteristicValue(characteristic, typedBufferToValue(characteristic.type, params.value));		
+	}
+	static onDescriptorValue(params) {
+		const descriptor = this._findDescriptorByHandle(params.handle);
+		if (descriptor)
+			this.ble.onDescriptorValue(descriptor, typedBufferToValue(descriptor.type, params.value));		
+	}
+	static onDescriptorWritten(params) {
+		let descriptor = this._findDescriptorByHandle(params.handle);
+		if (descriptor)
+			this.ble.onDescriptorWritten(descriptor);		
+	}
+}
+		
 class Client {
 	constructor(dictionary) {
 		for (let property in dictionary) {
@@ -77,10 +120,16 @@ class Client {
 	_disconnect() @ "xs_gap_connection_disconnect"
 	
 	_findCharacteristicByHandle(handle) {
-		let service = this.services.find(service => (handle >= service.start && handle <= service.end));
-		if (service) {
-			let characteristic = service.characteristics.find(characteristic => handle == characteristic.handle);
-			return characteristic;
+		for (let i = 0, services = this.services, length = services.length; i < length; i++) {
+			const service = services[i];
+			if ((handle < service.start) || (handle > service.end))
+				continue;
+			
+			for (let j = 0, characteristics = service.characteristics, length = characteristics.length; j < length; j++) {
+				if (handle === characteristics[j].handle)
+					return characteristics[j];
+			}
+			return;
 		}
 	}
 	
@@ -102,60 +151,7 @@ class Client {
 
 	callback(event, params) {
 		//trace(`Client callback ${event}\n`);
-		switch(event) {
-			case "onService":
-				if (!params)
-					this.ble.onServices(this.services);
-				else {
-					params.uuid = new Bytes(params.uuid);
-					params.connection = this.connection;
-					params.ble = this.ble;
-					this.services.push(new Service(params));
-				}
-				break;
-			case "onCharacteristicNotificationEnabled": {
-				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic)
-					return this.ble.onCharacteristicNotificationEnabled(characteristic);		
-				break;
-			}
-			case "onCharacteristicNotificationDisabled": {
-				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic)
-					return this.ble.onCharacteristicNotificationDisabled(characteristic);		
-				break;
-			}
-			case "onCharacteristicNotification": {
-				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic) {
-					params.value = typedBufferToValue(characteristic.type, params.value);
-					return this.ble.onCharacteristicNotification(characteristic, params.value);		
-				}
-				break;
-			}
-			case "onCharacteristicValue": {
-				let characteristic = this._findCharacteristicByHandle(params.handle);
-				if (characteristic) {
-					params.value = typedBufferToValue(characteristic.type, params.value);
-					return this.ble.onCharacteristicValue(characteristic, params.value);		
-				}
-				break;
-			}
-			case "onDescriptorValue": {
-				let descriptor = this._findDescriptorByHandle(params.handle);
-				if (descriptor) {
-					params.value = typedBufferToValue(descriptor.type, params.value);
-					return this.ble.onDescriptorValue(descriptor, params.value);		
-				}
-				break;
-			}
-			case "onDescriptorWritten": {
-				let descriptor = this._findDescriptorByHandle(params.handle);
-				if (descriptor)
-					return this.ble.onDescriptorWritten(descriptor);		
-				break;
-			}
-		}
+		ClientCallback[event].call(this, params);
 	}
 };
 Object.freeze(Client.prototype);

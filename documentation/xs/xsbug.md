@@ -81,3 +81,27 @@ The **Break** preferences panel toggles the **Break On Start** and **Break On Ex
 The **Instruments** preferences panel allows you to select whether you want the instrumentation panel to automatically show while all virtual machines are running and hide when a virtual machine breaks.
 
 The **Network** preferences panel displays the interfaces **xsbug** is listening on, and provides an edit field to change the port number **xsbug** is listening with. The default port number is **5002**. Changing the port number kills all connected virtual machines.
+
+## Colorizing console/log with trace
+
+You can colorize your output in the console/log pane when using `trace` on a per-line basis by using a tag at the start a line.  Available tags are:
+
+* `<info>`
+* `<warn>`
+* `<error>`
+
+The color used is dependent upon the dark/light theme that is selected.
+
+For example,
+
+```js
+trace('This is a standard text line\n');
+trace('<info>This is an "<info>" line\n');
+trace('<warn>This is a "<warn>" line\n');
+trace('<error>This is an "<error>" line\n');
+
+trace('<info>You can use multiple tags in a single trace\n<warn>As long as the line ');
+trace('starts with the tag\n');
+```
+
+![](../assets/xsbug/colorize.png)

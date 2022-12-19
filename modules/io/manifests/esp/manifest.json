@@ -1,0 +1,55 @@
+{
+	"build": {
+		"IO": "$(MODDABLE)/modules/io"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/spi/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(IO)/common/builtinCommon",
+			"$(IO)/digital/$(PLATFORM)/*",
+			"$(IO)/i2c/$(PLATFORM)/*",
+			"$(IO)/spi/$(PLATFORM)/*"
+		],
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+
+		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
+		"embedded:io/digital": "$(IO)/digital/digital",
+		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
+		"embedded:io/i2c": "$(IO)/i2c/_i2c",
+		"embedded:io/smbus": "$(IO)/i2c/smbus",
+		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
+		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
+		"embedded:io/spi": "$(IO)/spi/spi",
+
+		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
+
+		"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
+		"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
+		"embedded:io/socket/listener": "$(IO)/socket/lwip/listener",
+
+		"system": "$(IO)/system/*"
+	},
+	"preload": [
+		"embedded:*",
+		"system"
+	],
+	"platforms": {
+		"esp/*": {
+			"modules": {
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
+			}
+		},
+		"esp": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
+			}
+		},
+		"...": {
+			"error": "ESP8266 manifest"
+		}
+	}
+}

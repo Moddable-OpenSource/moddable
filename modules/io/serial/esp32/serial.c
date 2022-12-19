@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -39,6 +39,21 @@
 #include "hal/uart_types.h"
 //#include "soc/uart_caps.h"
 #include "soc/uart_struct.h"
+
+// local versions of UART register management to avoid issues with uart.c
+#define uart_disable_intr_mask(dev, disable_mask) _uart_disable_intr_mask(dev, disable_mask)
+#define uart_enable_intr_mask(dev, enable_mask) _uart_enable_intr_mask(dev, enable_mask)
+#define uart_enable_rx_intr(dev) _uart_enable_rx_intr(dev)
+#define uart_disable_rx_intr(dev) _uart_disable_rx_intr(dev)
+#define uart_disable_tx_intr(dev) _uart_disable_tx_intr(dev)
+#define uart_enable_tx_intr(dev, enable, thresh) _uart_enable_tx_intr(dev, enable, thresh)
+
+static void _uart_disable_intr_mask(uart_dev_t *dev, uint32_t disable_mask);
+static void _uart_enable_intr_mask(uart_dev_t *dev, uint32_t enable_mask);
+static void _uart_enable_rx_intr(uart_dev_t *dev);
+static void _uart_disable_rx_intr(uart_dev_t *dev);
+static void _uart_disable_tx_intr(uart_dev_t *dev);
+static void _uart_enable_tx_intr(uart_dev_t *dev, int enable, int thresh);
 
 typedef struct SerialRecord SerialRecord;
 typedef struct SerialRecord *Serial;
@@ -180,21 +195,21 @@ void xs_serial_constructor(xsMachine *the)
 		if (hasReadable) {
 			serial->onReadable = onReadable;
 
-			uart_enable_rx_intr(uart);
-			uart_set_rx_timeout(uart, 4);
+			uart_enable_rx_intr(serial->uart_reg);
+			uart_set_rx_timeout(serial->uart, 4);
 		}
 		else {
-			uart_disable_rx_intr(uart);
+			uart_disable_rx_intr(serial->uart_reg);
 			serial->onReadable = NULL;
 		}
 
 		if (hasWritable) {
 			serial->onWritable = onWritable;
 
-			uart_enable_tx_intr(uart, 1, kTransmitTreshold);
+			uart_enable_tx_intr(serial->uart_reg, 1, kTransmitTreshold);
 		}
 		else {
-			uart_disable_tx_intr(uart);
+			uart_disable_tx_intr(serial->uart_reg);
 			serial->onWritable = NULL;
 		}
 	}
@@ -212,8 +227,8 @@ void xs_serial_destructor(void *data)
 	Serial serial = data;
 	if (!serial) return;
 
-	uart_disable_tx_intr(serial->uart);
-	uart_disable_rx_intr(serial->uart);
+	uart_disable_tx_intr(serial->uart_reg);
+	uart_disable_rx_intr(serial->uart_reg);
 
 	uart_isr_free(serial->uart);
 
@@ -280,12 +295,15 @@ void xs_serial_read(xsMachine *the)
 			xsResult = xsArg(0);
 			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
 			requested = (int)byteLength;
+			if (requested > available)
+				requested = available;
 			allocate = 0;
+			xsmcSetInteger(xsResult, requested);
 		}
 		else
 			requested = xsmcToInteger(xsArg(0));
 
-		if ((requested <= 0) || (requested > available)) 
+		if (requested <= 0) 
 			xsUnknownError("invalid");
 
 		if (allocate)
@@ -295,7 +313,7 @@ void xs_serial_read(xsMachine *the)
 	}
 
 	if (serial->onReadable)
-		uart_enable_rx_intr(serial->uart);
+		uart_enable_rx_intr(serial->uart_reg);
 }
 
 void xs_serial_write(xsMachine *the)
@@ -325,7 +343,7 @@ void xs_serial_write(xsMachine *the)
 
 	if (serial->onWritable && !serial->txInterruptEnabled) {
 		serial->txInterruptEnabled = 1;
-		uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
+		uart_enable_tx_intr(serial->uart_reg, 1, kTransmitTreshold);
 	}
 }
 
@@ -347,13 +365,13 @@ void ICACHE_RAM_ATTR serial_isr(void * arg)
 		post |= (0 == serial->isWritable);
 		serial->isWritable = 1;
 		serial->txInterruptEnabled = 0;
-		uart_disable_tx_intr(serial->uart);
+		uart_disable_tx_intr(serial->uart_reg);
 	}
 
 	if ((status & (UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL)) && serial->onReadable) {
 		post |= (0 == serial->isReadable);
 		serial->isReadable = 1;
-		uart_disable_rx_intr(serial->uart);
+		uart_disable_rx_intr(serial->uart_reg);
 	}
 
 	if (post) {
@@ -382,7 +400,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 				xsCallFunction1(xsReference(serial->onReadable), serial->obj, xsResult);
 			xsEndHost(the);
 		}
-		uart_enable_rx_intr(serial->uart);
+		uart_enable_rx_intr(serial->uart_reg);
 	}
 
 	if (serial->isWritable) {
@@ -408,4 +426,60 @@ void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		(*markRoot)(the, serial->onReadable);
 	if (serial->onWritable)
 		(*markRoot)(the, serial->onWritable);
+}
+
+/*
+	functions below mirror functons of same names in ESP-IDF uart.c
+	
+	ESP-IDF v4.4 introduced p_uart_obj which made it impossible to use the functions in uart.c
+		without also using the uart driver
+	
+	https://github.com/Moddable-OpenSource/moddable/issues/931
+*/
+
+static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+void _uart_disable_intr_mask(uart_dev_t *dev, uint32_t disable_mask)
+{
+    portENTER_CRITICAL(&spinlock);
+    uart_ll_disable_intr_mask(dev, disable_mask);
+    portEXIT_CRITICAL(&spinlock);
+}
+
+void _uart_enable_intr_mask(uart_dev_t *dev, uint32_t enable_mask)
+{
+    portENTER_CRITICAL(&spinlock);
+    uart_ll_clr_intsts_mask(dev, enable_mask);
+    uart_ll_ena_intr_mask(dev, enable_mask);
+    portEXIT_CRITICAL(&spinlock);
+}
+
+void _uart_enable_rx_intr(uart_dev_t *dev)
+{
+    _uart_enable_intr_mask(dev, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+}
+
+void _uart_disable_rx_intr(uart_dev_t *dev)
+{
+    _uart_disable_intr_mask(dev, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+}
+
+void _uart_disable_tx_intr(uart_dev_t *dev)
+{
+    _uart_disable_intr_mask(dev, UART_INTR_TXFIFO_EMPTY);
+}
+
+void _uart_enable_tx_intr(uart_dev_t *dev, int enable, int thresh)
+{
+    if (enable == 0) {
+		portENTER_CRITICAL(&spinlock);
+        uart_ll_disable_intr_mask(dev, UART_INTR_TXFIFO_EMPTY);
+		portEXIT_CRITICAL(&spinlock);
+    } else {
+        uart_ll_clr_intsts_mask(dev, UART_INTR_TXFIFO_EMPTY);
+		portENTER_CRITICAL(&spinlock);
+        uart_ll_set_txfifo_empty_thr(dev, thresh);
+        uart_ll_ena_intr_mask(dev, UART_INTR_TXFIFO_EMPTY);
+		portEXIT_CRITICAL(&spinlock);
+    }
 }

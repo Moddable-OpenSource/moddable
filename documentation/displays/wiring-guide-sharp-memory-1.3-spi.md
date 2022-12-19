@@ -1,6 +1,5 @@
 # Sharp Memory Screen 1.3" Wiring Guide
-
-Copyright 2018 Moddable Tech, Inc.  
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: December 10, 2018
 
 ![Sharp Memory Display 1.3"](images/sharp-memory-display-1.3.jpg)

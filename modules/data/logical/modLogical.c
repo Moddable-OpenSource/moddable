@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -32,10 +32,9 @@ static void xs_logical_op(xsMachine *the, int operation)
 	int srcType = xsmcTypeOf(xsArg(1));
 	uint8_t scratch;
 	uint8_t *src, *dst;
-	uint32_t srcLen, dstLen, i = 0;
+	xsUnsignedValue srcLen, dstLen, i = 0;
 
-	dst = xsmcToArrayBuffer(xsArg(0));
-	dstLen = xsmcGetArrayBufferLength(xsArg(0));
+	xsmcGetBufferWritable(xsArg(0), (void **)&dst, &dstLen);
 
 	switch (srcType) {
 		case xsIntegerType:
@@ -51,8 +50,7 @@ static void xs_logical_op(xsMachine *the, int operation)
 			break;
 
 		case xsReferenceType:
-			src = xsmcToArrayBuffer(xsArg(1));
-			srcLen = xsmcGetArrayBufferLength(xsArg(1));
+			xsmcGetBufferReadable(xsArg(1), (void **)&src, &srcLen);
 			break;
 
 		default:

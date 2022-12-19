@@ -59,7 +59,6 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsNumber.c.o \
 	$(LIB_DIR)/xsObject.c.o \
 	$(LIB_DIR)/xsPlatforms.c.o \
-	$(LIB_DIR)/xsProfile.c.o \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \
@@ -79,6 +78,8 @@ XS_OBJECTS = \
 	
 HEADERS += $(XS_HEADERS)
 
+TOOLS_VERSION ?= $(shell cat $(MODDABLE)/tools/VERSION)
+
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
@@ -88,7 +89,8 @@ C_DEFINES = \
 	-DmxNoFunctionLength=1 \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1
+	-DmxFewGlobalsTable=1 \
+	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
@@ -104,7 +106,8 @@ else
 endif
 C_FLAGS = $(XS_C_FLAGS)
  
-LIBRARIES = -framework CoreFoundation -lcurl -lpng16
+LIBRARIES = -framework CoreFoundation
+# LIBRARIES = -framework CoreFoundation -lcurl -lpng16
 
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = 

@@ -1,0 +1,34 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32c3",
+		"UPLOAD_SPEED": "460800"
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "",
+		"led": {
+			"pin": 19
+		}
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 8,
+			"scl_pin": 9,
+			"port": "I2C_NUM_0"
+		},
+		"spi": {
+			"miso_pin":2,
+			"mosi_pin":7,
+			"sck_pin": 6
+		}
+	}
+}

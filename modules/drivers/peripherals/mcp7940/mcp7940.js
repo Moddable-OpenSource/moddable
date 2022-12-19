@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -35,11 +35,11 @@ class MCP7940 {
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const { rtc } = options;
-		const io = this.#io = new rtc.io({
+		const { clock } = options;
+		const io = this.#io = new clock.io({
 			hz: 400_000,
 			address: 0x6F,
-			...rtc
+			...clock
 		});
 
 		try {
@@ -56,8 +56,8 @@ class MCP7940 {
 	}
 	configure(options) {
 	}
-	get enabled() {
-		return (this.#io.readByte(Register.DAY) & Register.ENABLED_BIT) ? true : false;
+	get configuration() {
+		return {};
 	}
 	get time() {
 		const io = this.#io;

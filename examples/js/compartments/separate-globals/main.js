@@ -6,9 +6,9 @@ globalThis.test = function() {
     trace("app " + increment() + "\n");
 }
 const modules = {
-	mod: new StaticModuleRecord({ archive:"mod" }),
+	mod: { source:"mod" },
 };
-let compartment = new Compartment({}, {}, {
+let compartment = new Compartment({
 	resolveHook(specifier, refererSpecifier) {
 		return specifier;
 	},

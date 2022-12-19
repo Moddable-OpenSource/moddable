@@ -152,15 +152,6 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	}
 	else
 		property->value.home.module = C_NULL;
-
-#ifdef mxProfile
-	/* PROFILE */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
-#endif
 		
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
@@ -370,8 +361,13 @@ void fx_Function_prototype_bind(txMachine* the)
 	txSize c = mxArgc, i;
 
 	fxCheckCallable(the, mxThis);
-    mxPushReference(function->value.instance.prototype);
-	instance = fxNewObjectInstance(the);
+	mxPushNull();
+	if (mxBehaviorGetPrototype(the, function, the->stack))
+		instance = fxNewObjectInstance(the);
+	else {
+		mxPop();
+		instance = fxNewInstance(the);
+	}
 	instance->flag |= function->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
     mxPullSlot(mxResult);
     	
@@ -380,7 +376,7 @@ void fx_Function_prototype_bind(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CALLBACK_KIND;
 	property->value.callback.address = fx_Function_prototype_bound;
-	property->value.callback.IDs = C_NULL;
+	property->value.callback.closures = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
@@ -635,13 +631,13 @@ txSlot* fxNewAsyncInstance(txMachine* the)
 	mxPop();
 	mxPop();
 	
-	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID);
+	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID, mxResolveAwaitProfileID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
-	function = fxNewHostFunction(the, fxRejectAwait, 1, XS_NO_ID);
+	function = fxNewHostFunction(the, fxRejectAwait, 1, XS_NO_ID, mxRejectAwaitProfileID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);

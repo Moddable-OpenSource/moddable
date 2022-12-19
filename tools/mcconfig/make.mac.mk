@@ -67,7 +67,6 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsNumber.c.o \
 	$(LIB_DIR)/xsObject.c.o \
 	$(LIB_DIR)/xsPlatforms.c.o \
-	$(LIB_DIR)/xsProfile.c.o \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \
@@ -116,6 +115,7 @@ endif
 
 # LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
 LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
+LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc
 
 BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
 COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
@@ -132,11 +132,14 @@ XSL = $(BUILD_DIR)/bin/mac/debug/xsl
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
+
+XSBUG_HOST ?= localhost
+XSBUG_PORT ?= 5002
 	
 all: precursor
 	$(KILL_SERIAL2XSBUG) 
-	$(START_XSBUG) 
-	open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+	$(START_XSBUG)
+	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 

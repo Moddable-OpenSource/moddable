@@ -1,18 +1,17 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json"
+		"$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json"
 	],
 	"creation": {
+		"stack": 1024,
 		"static": 65536
 	},
 	"modules": {
-		"*": [
-			"./fetch",
-			"./main"
-		],
-		"embedded:network/http/request": "./../httpclient/httpclient"
+		"*": "./main"
 	},
-	"preload": [
-		"embedded:network/http/request"
-	]
+	"data": { 
+		"*": [
+			"$(MODULES)/crypt/data/ca222"
+		]
+	}
 }

@@ -1,0 +1,195 @@
+/*---
+description: https://github.com/web-platform-tests/wpt/url/resources/urltestdata.json
+flags: [module]
+---*/
+
+import { runTests } from "./url_FIXTURE.js";
+
+const tests = [
+	{
+		"input": "non-spec:/a/..//",
+		"base": "about:blank",
+		"href": "non-spec:/.//",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "non-spec:/.//path",
+		"base": "about:blank",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "non-spec:/..//path",
+		"base": "about:blank",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "non-spec:/a/..//path",
+		"base": "about:blank",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "/.//path",
+		"base": "non-spec:/p",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "/..//path",
+		"base": "non-spec:/p",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "..//path",
+		"base": "non-spec:/p",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "a/..//path",
+		"base": "non-spec:/p",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "",
+		"base": "non-spec:/..//p",
+		"href": "non-spec:/.//p",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//p",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "path",
+		"base": "non-spec:/..//p",
+		"href": "non-spec:/.//path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "//path",
+		"search": "",
+		"hash": ""
+	},
+	"Do not serialize /. in path",
+	{
+		"input": "../path",
+		"base": "non-spec:/.//p",
+		"href": "non-spec:/path",
+		"protocol": "non-spec:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "/path",
+		"search": "",
+		"hash": ""
+	},
+	"# percent encoded hosts in non-special-URLs",
+	{
+		"input": "non-special://%E2%80%A0/",
+		"base": "about:blank",
+		"href": "non-special://%E2%80%A0/",
+		"protocol": "non-special:",
+		"username": "",
+		"password": "",
+		"host": "%E2%80%A0",
+		"hostname": "%E2%80%A0",
+		"port": "",
+		"pathname": "/",
+		"search": "",
+		"hash": ""
+	},
+	{
+		"input": "non-special://H%4fSt/path",
+		"base": "about:blank",
+		"href": "non-special://H%4fSt/path",
+		"protocol": "non-special:",
+		"username": "",
+		"password": "",
+		"host": "H%4fSt",
+		"hostname": "H%4fSt",
+		"port": "",
+		"pathname": "/path",
+		"search": "",
+		"hash": ""
+	}
+];
+
+runTests(tests);

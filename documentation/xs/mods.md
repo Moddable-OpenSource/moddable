@@ -1,9 +1,8 @@
 # Mods - User Installed Extensions
+Copyright 2020-2022 Moddable Tech, Inc.<BR>
+Revised: June 22, 2022
 
-Copyright 2020-2021 Moddable Tech, Inc.<BR>
-Revised: November 23, 2021
-
-Mods are scripts that users can install on their IoT products to add new features and change existing behaviors. A mod is one or more JavaScript modules together with assets like images, audio, and certificates. A mod augments the software of a product without changing the factory installed firmware. To minimize safety, security, and privacy risks, products may sandbox mods using Secure EMCAScript. Mods are a new core feature of the Moddable SDK supported by the XS JavaScript engine.
+Mods are scripts that users can install on their IoT products to add new features and change existing behaviors. A mod is one or more JavaScript modules together with assets like images, audio, and certificates. A mod augments the software of a product without changing the factory installed firmware. To minimize safety, security, and privacy risks, products may sandbox mods using Secure ECMAScript (aka Hardened JavaScript). Mods are a new core feature of the Moddable SDK supported by the XS JavaScript engine.
 
 Mods are simple to create but the technology behind them is complex. This article introduces the fundamentals of mods, how to create mods, and how to implement support for running mods in projects. Mods run on microcontrollers with constrained resources which in turn puts constraints on mods. This article describes some of these limitations to help authors of mods and mod hosts make the best tradeoffs for their projects.
 

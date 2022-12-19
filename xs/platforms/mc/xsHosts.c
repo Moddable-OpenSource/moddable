@@ -57,59 +57,17 @@ extern void *xsPreparationAndCreation(xsCreation **creation);
 	XS memory 
 */
 
-static void *mc_xs_chunk_allocator(txMachine* the, size_t size)
-{
-	txBlock* block = the->firstBlock;
-	if (block) {	// reduce size by number of free bytes in current chunk heap
-		txSize grow = size - sizeof(txBlock) - (block->limit - block->current);
-		if (the->heap_ptr + grow <= the->heap_pend) {
-			the->heap_ptr += grow;
-			block->limit = (txByte*)the->heap_ptr - size; // fxGrowChunks adds theSize
-			the->maximumChunksSize += grow - (size - sizeof(txBlock));		 // fxGrowChunks adds theSize - sizeof(txBlocK)
-			return block->limit;
-		}
-	}
-	else if (the->heap_ptr + size <= the->heap_pend) {
-		void *ptr = the->heap_ptr;
-		the->heap_ptr += size;
-		return ptr;
-	}
-
-	return NULL;
-}
-
-static void mc_xs_chunk_disposer(txMachine* the, void *data)
-{
-	/* @@ too lazy but it should work... */
-	if ((uint8_t *)data < the->heap_ptr)
-		the->heap_ptr = data;
-
-	if (the->heap_ptr == the->heap) {
-		if (the->context) {
-			uint8_t **context = the->context;
-			context[0] = NULL;
-		}
-		c_free(the->heap);		// VM is terminated
-	}
-}
-
 static void *mc_xs_slot_allocator(txMachine* the, size_t size)
 {
-	if (the->heap_pend - size >= the->heap_ptr) {
-		void *ptr = the->heap_pend - size;
-		the->heap_pend -= size;
-		return ptr;
-	}
+	if (the->heap_pend - size < the->heap_ptr)
+		return NULL;
 
-	return NULL;
+	void *ptr = the->heap_pend - size;
+	the->heap_pend -= size;
+	return ptr;
 }
 
-static void mc_xs_slot_disposer(txMachine *the, void *data)
-{
-	/* nothing to do */
-}
-
-void* fxAllocateChunks(txMachine* the, txSize theSize)
+void *fxAllocateChunks(txMachine* the, txSize theSize)
 {
 	if ((NULL == the->stack) && (NULL == the->heap)) {
 		// initialization
@@ -123,17 +81,68 @@ void* fxAllocateChunks(txMachine* the, txSize theSize)
 	if (NULL == the->heap)
 		return c_malloc(theSize);
 
-	return mc_xs_chunk_allocator(the, theSize);
+	txBlock* block = the->firstBlock;
+	if (block) {	// reduce size by number of free bytes in current chunk heap
+		txSize grow = theSize - sizeof(txBlock) - (block->limit - block->current);
+		if (the->heap_ptr + grow <= the->heap_pend) {
+			the->heap_ptr += grow;
+			block->limit = (txByte*)the->heap_ptr - theSize; // fxGrowChunks adds theSize
+			the->maximumChunksSize += grow - (theSize - sizeof(txBlock));		 // fxGrowChunks adds theSize - sizeof(txBlocK)
+			return block->limit;
+		}
+	}
+	else if (the->heap_ptr + theSize <= the->heap_pend) {
+		void *ptr = the->heap_ptr;
+		the->heap_ptr += theSize;
+		return ptr;
+	}
+
+	return NULL;
 }
 
-txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
+txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 {
-	txSlot* result;
+	txSize needed = theCount * sizeof(txSlot);
 
-	if (NULL == the->heap)
-		return (txSlot*)c_malloc(theCount * sizeof(txSlot));
+	if (NULL == the->heap) {
+#ifndef modGetLargestMalloc
+		return c_malloc(needed);
+#else
+		extern void fxGrowSlots(txMachine* the, txSize theCount); 
+		static uint8_t *pending;		//@@ not thread safe...
 
-	result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
+		if (NULL == the->stack)
+			return c_malloc(needed);
+
+		if (pending) {
+			txSlot *result = (txSlot *)pending;
+			pending = NULL;
+			return result;
+		}
+
+		while (needed) {
+			size_t largest = modGetLargestMalloc() & ~0x0F;
+			if (largest > needed)
+				largest = needed;
+			pending = c_malloc(largest);
+			if (!pending) 
+				return NULL;
+
+			fxGrowSlots(the, largest / sizeof(txSlot));
+
+#ifdef mxDebug
+			if (pending)
+				fxAbort(the, XS_FATAL_CHECK_EXIT);
+#endif
+
+			needed -= largest;
+		}
+
+		return (void *)-1;
+#endif
+	}
+
+	txSlot *result = (txSlot *)mc_xs_slot_allocator(the, needed);
 	if (!result && the->firstBlock) {
 #ifdef mxDebug
 		fxReport(the, "# Slot allocation: failed. trying to make room...\n");
@@ -146,7 +155,7 @@ txSlot* fxAllocateSlots(txMachine* the, txSize theCount)
 		the->heap_ptr = the->firstBlock->current;
 		the->firstBlock->limit = the->firstBlock->current;
 
-		result = (txSlot *)mc_xs_slot_allocator(the, theCount * sizeof(txSlot));
+		result = (txSlot *)mc_xs_slot_allocator(the, needed);
 	}
 
 	return result;
@@ -156,8 +165,19 @@ void fxFreeChunks(txMachine* the, void* theChunks)
 {
 	if (NULL == the->heap)
 		c_free(theChunks);
-	else
-		mc_xs_chunk_disposer(the, theChunks);
+	else {
+		/* @@ too lazy but it should work... */
+		if ((uint8_t *)theChunks < the->heap_ptr)
+			the->heap_ptr = theChunks;
+
+		if (the->heap_ptr == the->heap) {
+			if (the->context) {
+				uint8_t **context = the->context;
+				context[0] = NULL;
+			}
+			c_free(the->heap);		// VM is terminated
+		}
+	}
 }
 
 void fxFreeSlots(txMachine* the, void* theSlots)
@@ -165,7 +185,7 @@ void fxFreeSlots(txMachine* the, void* theSlots)
 	if (NULL == the->heap)
 		c_free(theSlots);
 	else
-		mc_xs_slot_disposer(the, theSlots);
+		; /* nothing to do */
 }
 
 void fxBuildKeys(txMachine* the)
@@ -495,14 +515,18 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 
 static uint16_t gSetupPending = 0;
 
-void modLoadModule(txMachine *the, const char *name)
+#if MODDEF_MAIN_ASYNC
+static void setStepDoneFulfilled(xsMachine *the)
 {
-	xsBeginHost(the);
-		xsResult = xsAwaitImport(name, XS_IMPORT_DEFAULT);
+	xsResult = xsGet(xsArg(0), xsID("default"));
 		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
 			xsCallFunction0(xsResult, xsGlobal);
-	xsEndHost(the);
 }
+
+static void setStepDoneRejected(xsMachine *the)
+{
+}
+#endif
 
 static void setStepDone(txMachine *the)
 {
@@ -510,7 +534,19 @@ static void setStepDone(txMachine *the)
 	if (gSetupPending)
 		return;
 
-	modLoadModule(the, ((txPreparation *)xsPreparationAndCreation(NULL))->main);
+	xsBeginHost(the);
+#if MODDEF_MAIN_ASYNC
+		xsVars(2);
+		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_ASYNC);
+		xsVar(0) = xsNewHostFunction(setStepDoneFulfilled, 1);
+		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
+		xsCall2(xsResult, xsID("then"), xsVar(0), xsVar(1));
+#else	
+		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
+		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+			xsCallFunction0(xsResult, xsGlobal);
+#endif
+	xsEndHost(the);
 }
 
 void modRunMachineSetup(txMachine *the)

@@ -78,8 +78,8 @@ void fxBuildProxy(txMachine* the)
 {
 	txSlot* slot;
 
-	fxNewHostFunction(the, mxCallback(fxProxyGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxProxySetter), 1, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxProxyGetter), 0, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxProxySetter), 1, XS_NO_ID, XS_NO_ID);
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
@@ -778,6 +778,12 @@ void fx_Proxy(txMachine* the)
 	proxy = instance->next;
 	if (!proxy || (proxy->kind != XS_PROXY_KIND))
 		mxTypeError("this is no proxy");
+#ifdef mxHostFunctionPrimitive
+	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(0));
+	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(1));
+#endif
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
 		mxTypeError("target is no object");
 	target = mxArgv(0)->value.reference;
@@ -796,6 +802,13 @@ void fx_Proxy_revocable(txMachine* the)
 	txSlot* property;
 	txSlot* instance;
 	txSlot* slot;
+	
+#ifdef mxHostFunctionPrimitive
+	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(0));
+	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))
+		fxToInstance(the, mxArgv(1));
+#endif
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
 		mxTypeError("target is no object");
 	target = mxArgv(0)->value.reference;
@@ -815,7 +828,7 @@ void fx_Proxy_revocable(txMachine* the)
 	slot->value.proxy.handler = handler;
 	property = fxNextSlotProperty(the, property, the->stack, mxID(_proxy), XS_GET_ONLY);
 	
-	slot = fxLastProperty(the, fxNewHostFunction(the, mxCallback(fx_Proxy_revoke), 0, XS_NO_ID));
+	slot = fxLastProperty(the, fxNewHostFunction(the, mxCallback(fx_Proxy_revoke), 0, XS_NO_ID, XS_NO_ID));
 	slot = fxNextSlotProperty(the, slot, the->stack + 1, mxID(_proxy), XS_GET_ONLY);
 	property = fxNextSlotProperty(the, property, the->stack, mxID(_revoke), XS_GET_ONLY);
 	

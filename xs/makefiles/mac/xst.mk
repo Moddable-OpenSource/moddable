@@ -22,6 +22,7 @@
 
 GOAL ?= debug
 NAME = xst
+MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif
@@ -41,6 +42,9 @@ MACOS_ARCH ?=
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.10
 
 FUZZILLI ?= 0
+OSSFUZZ ?= 0
+OSSFUZZ_JSONPARSE ?= 0
+FUZZING ?= 0
 
 C_OPTIONS = \
 	-fno-common \
@@ -49,13 +53,16 @@ C_OPTIONS = \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
 	-DmxDebug=1 \
+	-DmxLockdown=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
+	-DmxProfile=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
 	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \
 	-DmxStringNormalize=1 \
+	-DmxMinusZero=1 \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
@@ -79,9 +86,22 @@ ifneq ("x$(SDKROOT)", "x")
 endif
 
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -DmxASANStackMargin=65536 -fsanitize=address -fno-omit-frame-pointer
+	C_OPTIONS += -DmxASANStackMargin=131072 -fsanitize=address -fno-omit-frame-pointer -fsanitize-blacklist=xst_no_asan.txt
 	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 
+	ifneq ($(FUZZING),0)
+		C_OPTIONS += -DmxNoChunks=1
+		C_OPTIONS += -DmxStress=1
+		C_OPTIONS += -DFUZZING=1
+	endif
+	ifneq ($(OSSFUZZ),0)
+		C_OPTIONS += -DOSSFUZZ=1
+		C_OPTIONS += $(CFLAGS)
+		LINK_OPTIONS += $(CXXFLAGS)
+		ifneq ($(OSSFUZZ_JSONPARSE),0)
+			C_OPTIONS += -DOSSFUZZ_JSONPARSE=1
+		endif
+	endif
 	ifneq ($(FUZZILLI),0)
 		C_OPTIONS += -DFUZZILLI=1 -fsanitize-coverage=trace-pc-guard
 	endif
@@ -107,6 +127,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsGlobal.o \
 	$(TMP_DIR)/xsJSON.o \
 	$(TMP_DIR)/xsLexical.o \
+	$(TMP_DIR)/xsLockdown.o \
 	$(TMP_DIR)/xsMapSet.o \
 	$(TMP_DIR)/xsMarshall.o \
 	$(TMP_DIR)/xsMath.o \
@@ -160,8 +181,12 @@ $(BIN_DIR):
 
 $(BIN_DIR)/$(NAME): $(OBJECTS)
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
+ifneq ($(OSSFUZZ),0)
+	$(CXX) $(LIB_FUZZING_ENGINE) $(LINK_OPTIONS) $(LIBRARIES) $(OBJECTS) -o $@
+else
 	$(CC) $(LINK_OPTIONS) $(LIBRARIES) $(OBJECTS) -o $@
-	
+endif
+
 $(OBJECTS): $(TLS_DIR)/xst.h
 $(OBJECTS): $(PLT_DIR)/xsPlatform.h
 $(OBJECTS): $(SRC_DIR)/xsCommon.h

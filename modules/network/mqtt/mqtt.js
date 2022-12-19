@@ -278,7 +278,7 @@ export default class Client {
 					break;
 
 				case 0x31:
-					parse.topic = buffer[position++];
+					parse.topic |= buffer[position++];
 					parse.length -= parse.topic + 2;
 					if (0 === parse.topic)
 						return this.fail("empty topic");
@@ -554,7 +554,6 @@ export default class Client {
 
 	}
 	close() {
-		if (this.#timer)
 			Timer.clear(this.#timer);
 		this.#timer = undefined;
 

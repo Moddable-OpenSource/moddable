@@ -250,7 +250,7 @@ class CodeBehavior extends _CodeBehavior {
 	onFileChanged(code) {
 		var path = this.data.path;
 		code.stop();
-		if (path.endsWith(".js"))
+		if (path.endsWith(".js") || path.endsWith(".ts") || path.endsWith(".mjs"))
 			code.type = "js";
 		else if (path.endsWith(".json"))
 			code.type = "json";
@@ -270,7 +270,7 @@ class CodeBehavior extends _CodeBehavior {
 		code.container.scrollTo(0, 0);
 	}
 	onReveal(code) {
-		code.container.reveal(code.selectionBounds);
+		code.container.reveal(code.selectionBounds, true);
 	}
 	onSelected(code) {
 		code.bubble("onCodeSelected");

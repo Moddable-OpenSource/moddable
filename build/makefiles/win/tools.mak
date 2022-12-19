@@ -32,7 +32,11 @@ XS_DIR = ..\..\..\xs
 BUILD_DIR = ..\..
 !ENDIF
 
+TOOLS_VERSION = \
+!INCLUDE $(MODDABLE)\tools\VERSION
+
 COMMODETTO = $(MODDABLE)\modules\commodetto
+DATA = $(MODDABLE)\modules\data
 INSTRUMENTATION = $(MODDABLE)\modules\base\instrumentation
 TOOLS = $(MODDABLE)\tools
 
@@ -112,6 +116,7 @@ MODULES = \
 	$(MOD_DIR)\commodetto\ReadJPEG.xsb \
 	$(MOD_DIR)\commodetto\ReadPNG.xsb \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
+	$(MOD_DIR)\wavreader.xsb \
 	$(MOD_DIR)\file.xsb \
 	$(MOD_DIR)\buildclut.xsb \
 	$(MOD_DIR)\cdv.xsb \
@@ -124,6 +129,7 @@ MODULES = \
 	$(MOD_DIR)\mclocal.xsb \
 	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcrez.xsb \
+	$(MOD_DIR)\nodered2mcu.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
 	$(MOD_DIR)\resampler.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
@@ -131,6 +137,7 @@ MODULES = \
 	$(MOD_DIR)\unicode-ranges.xsb \
 	$(MOD_DIR)\wav2maud.xsb \
 	$(MOD_DIR)\bles2gatt.xsb \
+	$(MOD_DIR)\url.xsb \
 	$(TMP_DIR)\commodettoBitmap.xsi \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
@@ -144,7 +151,8 @@ MODULES = \
 	$(TMP_DIR)\image2cs.xsi \
 	$(TMP_DIR)\miniz.xsi \
 	$(TMP_DIR)\modInstrumentation.xsi \
-	$(TMP_DIR)\tool.xsi
+	$(TMP_DIR)\tool.xsi \
+	$(TMP_DIR)\url.xsi
 PRELOADS =\
 	-p commodetto\Bitmap.xsb\
 	-p commodetto\BMPOut.xsb\
@@ -156,9 +164,11 @@ PRELOADS =\
 	-p commodetto\Poco.xsb\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
-	-p file.xsb
+	-p file.xsb\
+	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 
 HEADERS =\
@@ -182,7 +192,8 @@ OBJECTS = \
 	$(TMP_DIR)\miniz.o \
 	$(TMP_DIR)\modInstrumentation.o \
 	$(TMP_DIR)\tool.o \
-	$(TMP_DIR)\wav2maud.o
+	$(TMP_DIR)\wav2maud.o \
+	$(TMP_DIR)\url.o
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
@@ -194,6 +205,7 @@ COMMANDS = \
 	$(BIN_DIR)\mcconfig.bat \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcrez.bat \
+	$(BIN_DIR)\nodered2mcu.bat \
 	$(BIN_DIR)\png2bmp.bat \
 	$(BIN_DIR)\rle4encode.bat \
 	$(BIN_DIR)\wav2maud.bat \
@@ -219,6 +231,8 @@ C_OPTIONS = \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
 	/D mxFewGlobalsTable=1 \
+	/D mxMessageWindowClass=\"fxMessageWindowClassX\" \
+	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\" \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \
 	/I$(XS_DIR)\sources \
@@ -329,6 +343,12 @@ $(MOD_DIR)\commodetto\ReadPNG.xsb : $(COMMODETTO)\commodettoReadPNG.js
 $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
+$(MOD_DIR)\url.xsb : $(DATA)\url\url.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
+$(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
 {$(TOOLS)\}.js{$(MOD_DIR)\}.xsb:
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $< -c -d -e -o $(MOD_DIR)
@@ -342,7 +362,11 @@ $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 {$(TOOLS)\}.c{$(TMP_DIR)\}.xsi:
 	@echo # xsid $(@F)
 	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
+{$(DATA)\url\}.c{$(TMP_DIR)\}.xsi:
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
+$(TMP_DIR)\tool.o : $(MODDABLE)\tools\VERSION
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
@@ -350,51 +374,56 @@ $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TOOLS)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
+{$(DATA)\url\}.c{$(TMP_DIR)\}.o:
+	cl $< $(C_OPTIONS) /Fo$@
 {$(TMP_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 
 $(BIN_DIR)\buildclut.bat :
 	@echo # buildclut.bat
-	echo @$(BIN_DIR)\tools buildclut %%* 1> $(BIN_DIR)\buildclut.bat
+	echo @%~dp0\tools buildclut %%* 1> $(BIN_DIR)\buildclut.bat
 $(BIN_DIR)\cdv.bat :
 	@echo # cdv.bat
-	echo @$(BIN_DIR)\tools cdv %%* 1> $(BIN_DIR)\cdv.bat
+	echo @%~dp0\tools cdv %%* 1> $(BIN_DIR)\cdv.bat
 $(BIN_DIR)\colorcellencode.bat :
 	@echo # colorcellencode.bat
-	echo @$(BIN_DIR)\tools colorcellencode %%* 1> $(BIN_DIR)\colorcellencode.bat
+	echo @%~dp0\tools colorcellencode %%* 1> $(BIN_DIR)\colorcellencode.bat
 $(BIN_DIR)\compressbmf.bat :
 	@echo # compressbmf.bat
-	echo @$(BIN_DIR)\tools compressbmf %%* 1> $(BIN_DIR)\compressbmf.bat
+	echo @%~dp0\tools compressbmf %%* 1> $(BIN_DIR)\compressbmf.bat
 $(BIN_DIR)\image2cs.bat :
 	@echo # image2cs.bat
-	echo @$(BIN_DIR)\tools image2cs %%* 1> $(BIN_DIR)\image2cs.bat
+	echo @%~dp0\tools image2cs %%* 1> $(BIN_DIR)\image2cs.bat
 $(BIN_DIR)\mcbundle.bat :
 	@echo # mcbundle.bat
-	echo @$(BIN_DIR)\tools mcbundle %%* 1> $(BIN_DIR)\mcbundle.bat	
+	echo @%~dp0\tools mcbundle %%* 1> $(BIN_DIR)\mcbundle.bat	
 $(BIN_DIR)\mcconfig.bat :
 	@echo # mcconfig.bat
-	echo @$(BIN_DIR)\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat
+	echo @%~dp0\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat
 $(BIN_DIR)\mclocal.bat :
 	@echo # mclocal.bat
-	echo @$(BIN_DIR)\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
+	echo @%~dp0\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
 $(BIN_DIR)\mcrez.bat :
 	@echo # mcrez.bat
-	echo @$(BIN_DIR)\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
+	echo @%~dp0\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
 $(BIN_DIR)\mcrun.bat :
 	@echo # mcrun.bat
-	echo @$(BIN_DIR)\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
+	echo @%~dp0\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat
+$(BIN_DIR)\nodered2mcu.bat :
+	@echo # nodered2mcu.bat
+	echo @%~dp0\tools nodered2mcu %%* 1> $(BIN_DIR)\nodered2mcu.bat
 $(BIN_DIR)\png2bmp.bat :
 	@echo # png2bmp.bat
-	echo @$(BIN_DIR)\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat
+	echo @%~dp0\tools png2bmp %%* 1> $(BIN_DIR)\png2bmp.bat
 $(BIN_DIR)\rle4encode.bat :
 	@echo # rle4encode.bat
-	echo @$(BIN_DIR)\tools rle4encode %%* 1> $(BIN_DIR)\rle4encode.bat
+	echo @%~dp0\tools rle4encode %%* 1> $(BIN_DIR)\rle4encode.bat
 $(BIN_DIR)\wav2maud.bat :
 	@echo # wav2maud.bat
-	echo @$(BIN_DIR)\tools wav2maud %%* 1> $(BIN_DIR)\wav2maud.bat
+	echo @%~dp0\tools wav2maud %%* 1> $(BIN_DIR)\wav2maud.bat
 $(BIN_DIR)\bles2gatt.bat :
 	@echo # bles2gatt.bat
-	echo @$(BIN_DIR)\tools bles2gatt %%* 1> $(BIN_DIR)\bles2gatt.bat
+	echo @%~dp0\tools bles2gatt %%* 1> $(BIN_DIR)\bles2gatt.bat
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).*

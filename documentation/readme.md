@@ -1,5 +1,4 @@
-## Moddable SDK – Documentation Overview
-
+# Moddable SDK – Documentation Overview
 Copyright 2019-2022 Moddable Tech, Inc.<BR>
 Revised: March 18, 2020
 

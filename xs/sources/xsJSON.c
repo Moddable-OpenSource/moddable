@@ -209,6 +209,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 	theParser->integer = 0;
 	theParser->number = 0;
 	theParser->string->value.string = mxEmptyString.value.string;
+	theParser->string->kind = mxEmptyString.kind;
 	theParser->token = XS_NO_JSON_TOKEN;
 	p = theParser->slot->value.string + theParser->offset;
 	while (theParser->token == XS_NO_JSON_TOKEN) {
@@ -358,6 +359,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 				}
 			}
 			s = theParser->string->value.string = fxNewChunk(the, size + 1);
+			theParser->string->kind = XS_STRING_KIND;
 			p = theParser->slot->value.string + offset;
 			if (escaped) {
 				for (;;) {
@@ -888,6 +890,8 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 	else if ((aValue->kind == XS_REFERENCE_KIND) && !fxIsCallable(the, aValue)) {
 		mxTry(the) {
 			fxStringifyJSONName(the, theStringifier, theFlag);
+			if (anInstance->flag & XS_MARK_FLAG)
+				mxTypeError("read only value");
 			anInstance->flag |= XS_LEVEL_FLAG;
 			if (fxIsArray(the, anInstance)) {
 				fxStringifyJSONChars(the, theStringifier, "[", 1);
@@ -954,7 +958,8 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 			anInstance->flag &= ~XS_LEVEL_FLAG;
 		}
 		mxCatch(the) {
-			anInstance->flag &= ~XS_LEVEL_FLAG;
+			if (anInstance->flag & XS_LEVEL_FLAG)
+				anInstance->flag &= ~XS_LEVEL_FLAG;
 			fxJump(the);
 		}
 	}

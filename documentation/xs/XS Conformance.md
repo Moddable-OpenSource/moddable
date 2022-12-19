@@ -1,8 +1,6 @@
 # XS Conformance
-
-Copyright 2016-2021 Moddable Tech, Inc.
-
-Revised: January 29, 2022
+Copyright 2016-2022 Moddable Tech, Inc.<BR>
+Revised: June 1, 2022
 
 ## Caveat
 
@@ -59,13 +57,13 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.48%** of the language tests and **90.03%** of the built-ins tests. Mostly because of `Temporal`, XS skips **9.84%** of the built-ins tests.
+Currently, on macOS, XS passes **99.64%** of the language tests and **87.13%** of the built-ins tests. Mostly because of `Temporal`, XS skips **12.75%** of the built-ins tests.
 
 Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
 ### Language
 
-     42293/42512 (186) language
+     42595/42746 (118) language
          460/460 arguments-object
              43/43 mapped
              8/8 unmapped
@@ -100,10 +98,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              336/336 direct
              116/118 indirect
          3/3 export
-         20034/20158 (99) expressions
+         20244/20339 (70) expressions
              95/95 addition
              104/104 array
-             639/641 (2) arrow-function
+             643/643 arrow-function
                  10/10 arrow
                  454/454 dstr
                  5/5 forbidden-ext
@@ -134,7 +132,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              59/59 bitwise-or
              59/59 bitwise-xor
              170/171 call
-             8006/8008 (2) class
+             8010/8017 (7) class
                  42/42 accessor-name-inst
                  42/42 accessor-name-static
                  191/191 async-gen-method
@@ -153,8 +151,12 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      5/5 forbidden-ext
                          2/2 b1
                          3/3 b2
+                 0/5 (5) decorator
+                     0/5 (5) syntax
+                         0/1 (1) class-valid
+                         0/4 (4) valid
                  3840/3840 dstr
-                 2839/2839 elements
+                 2839/2841 (2) elements
                      156/156 async-gen-private-method
                      156/156 async-gen-private-method-static
                      24/24 async-private-method
@@ -164,11 +166,11 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      20/20 gen-private-method-static
                      40/40 private-accessor-name
                      10/10 private-methods
-                     498/498 syntax
+                     498/499 (1) syntax
                          444/444 early-errors
                              192/192 delete
                              56/56 invalid-names
-                         54/54 valid
+                         54/55 (1) valid
                  55/55 gen-method
                      5/5 forbidden-ext
                          2/2 b1
@@ -188,7 +190,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  72/72 subclass-builtins
              46/46 coalesce
              11/11 comma
-             690/690 compound-assignment
+             786/786 compound-assignment
              10/10 concatenation
              42/42 conditional
              99/99 delete
@@ -204,13 +206,13 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  216/216 usage
              93/93 equals
              88/88 exponentiation
-             476/482 (2) function
+             480/484 function
                  372/372 dstr
                  8/8 early-errors
                  5/5 forbidden-ext
                      2/2 b1
                      3/3 b2
-             538/544 (2) generators
+             542/546 generators
                  372/372 dstr
                  5/5 forbidden-ext
                      2/2 b1
@@ -220,22 +222,22 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              16/16 grouping
              27/27 import.meta
                  23/23 syntax
-             31/50 (19) in
+             69/69 in
              85/85 instanceof
              89/89 left-shift
              89/89 less-than
              93/93 less-than-or-equal
              34/34 logical-and
-             90/90 logical-assignment
+             132/132 logical-assignment
              38/38 logical-not
              34/34 logical-or
              79/79 modulus
              79/79 multiplication
              118/118 new
              28/28 new.target
-             2230/2241 (9) object
+             2248/2250 object
                  1122/1122 dstr
-                 545/551 (6) method-definition
+                 557/557 method-definition
                      20/20 forbidden-ext
                          8/8 b1
                          12/12 b2
@@ -263,7 +265,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
          281/281 function-code
          85/85 future-reserved-words
          73/73 global-code
-         19/21 (1) identifier-resolution
+         21/22 identifier-resolution
          471/471 identifiers
          4/16 (12) import
          50/50 keywords
@@ -288,7 +290,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
          22/22 rest-parameters
          2/2 source-text
          160/160 statementList
-         17494/17544 (45) statements
+         17584/17596 (7) statements
              133/133 async-function
                  5/5 forbidden-ext
                      2/2 b1
@@ -300,8 +302,8 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      3/3 b2
              40/40 block
                  8/8 early-errors
-             38/39 (1) break
-             8576/8605 (27) class
+             40/40 break
+             8630/8639 (7) class
                  42/42 accessor-name-inst
                  42/42 accessor-name-static
                  4/4 arguments
@@ -321,9 +323,13 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      5/5 forbidden-ext
                          2/2 b1
                          3/3 b2
+                 0/5 (5) decorator
+                     0/5 (5) syntax
+                         0/1 (1) class-valid
+                         0/4 (4) valid
                  130/130 definition
                  3840/3840 dstr
-                 3046/3046 elements
+                 3046/3048 (2) elements
                      156/156 async-gen-private-method
                      156/156 async-gen-private-method-static
                      24/24 async-private-method
@@ -333,11 +339,11 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      20/20 gen-private-method-static
                      40/40 private-accessor-name
                      10/10 private-methods
-                     498/498 syntax
+                     498/499 (1) syntax
                          444/444 early-errors
                              192/192 delete
                              56/56 invalid-names
-                         54/54 valid
+                         54/55 (1) valid
                  55/55 gen-method
                      5/5 forbidden-ext
                          2/2 b1
@@ -383,10 +389,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  16/16 super
                  26/26 syntax
                      4/4 early-errors
-             267/269 (2) const
+             271/271 const
                  186/186 dstr
                  50/50 syntax
-             44/46 (2) continue
+             48/48 continue
              4/4 debugger
              70/70 do-while
              4/4 empty
@@ -398,7 +404,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  49/49 dstr
              1416/1416 for-of
                  1095/1095 dstr
-             779/781 (2) function
+             783/783 function
                  372/372 dstr
                  8/8 early-errors
                  5/5 forbidden-ext
@@ -410,8 +416,8 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      2/2 b1
                      3/3 b2
              125/125 if
-             35/36 (1) labeled
-             283/285 (2) let
+             37/37 labeled
+             287/287 let
                  186/186 dstr
                  60/60 syntax
              31/31 return
@@ -419,10 +425,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  127/127 syntax
                      127/127 redeclaration
              28/28 throw
-             383/386 (2) try
+             387/388 try
                  186/186 dstr
-             297/303 (6) variable
-                 186/190 (4) dstr
+             309/309 variable
+                 194/194 dstr
              72/72 while
              170/170 with
          211/211 types
@@ -438,16 +444,16 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
 
 ### Built-ins
 
-     32907/36548 (3597) built-ins
-         5549/5561 Array
+     33011/37884 (4833) built-ins
+         5583/5596 (1) Array
              8/8 Symbol.species
              90/90 from
              58/58 isArray
              58/58 length
              32/32 of
-             5203/5215 prototype
+             5237/5250 (1) prototype
                  2/2 Symbol.iterator
-                 4/4 Symbol.unscopables
+                 6/7 (1) Symbol.unscopables
                  22/22 at
                  135/137 concat
                  76/76 copyWithin
@@ -468,19 +474,19 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  18/18 keys
                  389/389 lastIndexOf
                  421/423 map
-                 38/38 pop
-                 40/40 push
+                 46/46 pop
+                 48/48 push
                  511/511 reduce
                  509/511 reduceRight
                  34/34 reverse
-                 32/32 shift
+                 40/40 shift
                  134/136 slice
                  428/428 some
                  99/99 sort
                  160/162 splice
                  14/14 toLocaleString
                  22/22 toString
-                 34/34 unshift
+                 42/42 unshift
                  18/18 values
          300/300 ArrayBuffer
              8/8 Symbol.species
@@ -496,16 +502,16 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              6/6 Symbol.toStringTag
              40/40 next
          2/2 AsyncArrowFunction
-         48/52 AsyncFromSyncIteratorPrototype
-             12/14 next
-             18/20 return
+         52/52 AsyncFromSyncIteratorPrototype
+             14/14 next
+             20/20 return
              18/18 throw
          36/36 AsyncFunction
          46/46 AsyncGeneratorFunction
              12/12 prototype
-         90/90 AsyncGeneratorPrototype
+         96/96 AsyncGeneratorPrototype
              22/22 next
-             32/32 return
+             38/38 return
              32/32 throw
          8/8 AsyncIteratorPrototype
              8/8 Symbol.asyncIterator
@@ -574,10 +580,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  46/46 setUint16
                  46/46 setUint32
                  42/42 setUint8
-         1536/1536 Date
+         1540/1540 Date
              44/44 UTC
              12/12 now
-             24/24 parse
+             26/26 parse
              1304/1304 prototype
                  36/36 Symbol.toPrimitive
                  14/14 constructor
@@ -624,7 +630,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  22/22 toTimeString
                  28/28 toUTCString
                  22/22 valueOf
-         76/79 (3) Error
+         82/82 Error
              54/54 prototype
                  4/4 constructor
                  2/2 message
@@ -720,8 +726,8 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              10/10 tanh
              24/24 trunc
          10/10 NaN
-         230/232 (2) NativeErrors
-             48/49 (1) AggregateError
+         234/234 NativeErrors
+             50/50 AggregateError
                  12/12 prototype
              30/30 EvalError
                  10/10 prototype
@@ -753,7 +759,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  34/34 toPrecision
                  180/180 toString
                  22/22 valueOf
-         6618/6680 (62) Object
+         6742/6742 Object
              74/74 assign
              640/640 create
              1262/1262 defineProperties
@@ -766,7 +772,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              90/90 getOwnPropertyNames
              24/24 getOwnPropertySymbols
              78/78 getPrototypeOf
-             0/62 (62) hasOwn
+             124/124 hasOwn
              12/12 internals
                  12/12 DefineOwnProperty
              42/42 is
@@ -881,9 +887,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  36/36 values
          22/22 SetIteratorPrototype
              20/20 next
-         0/58 (58) ShadowRealm
-             0/50 (50) prototype
-                 0/36 (36) evaluate
+         0/64 (64) ShadowRealm
+             0/5 (5) WrappedFunction
+             0/51 (51) prototype
+                 0/37 (37) evaluate
                  0/12 (12) importValue
          202/202 SharedArrayBuffer
              156/156 prototype
@@ -892,10 +899,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  18/18 growable
                  20/20 maxByteLength
                  64/64 slice
-         2325/2325 String
+         2323/2325 String
              30/30 fromCharCode
              22/22 fromCodePoint
-             2030/2030 prototype
+             2028/2030 prototype
                  12/12 Symbol.iterator
                  22/22 at
                  60/60 charAt
@@ -907,7 +914,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  54/54 includes
                  94/94 indexOf
                  48/48 lastIndexOf
-                 26/26 localeCompare
+                 24/26 localeCompare
                  88/88 match
                  40/40 matchAll
                  28/28 normalize
@@ -954,39 +961,40 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              4/4 toPrimitive
              4/4 toStringTag
              4/4 unscopables
-         0/3333 (3333) Temporal
-             0/373 (373) Calendar
-                 0/12 (12) from
-                 0/355 (355) prototype
-                     0/33 (33) dateAdd
-                     0/18 (18) dateFromFields
-                     0/25 (25) dateUntil
-                     0/20 (20) day
-                     0/19 (19) dayOfWeek
-                     0/19 (19) dayOfYear
-                     0/19 (19) daysInMonth
-                     0/19 (19) daysInWeek
-                     0/19 (19) daysInYear
+         0/4629 (4629) Temporal
+             0/571 (571) Calendar
+                 0/15 (15) from
+                 0/550 (550) prototype
+                     0/46 (46) dateAdd
+                     0/19 (19) dateFromFields
+                     0/37 (37) dateUntil
+                     0/32 (32) day
+                     0/31 (31) dayOfWeek
+                     0/31 (31) dayOfYear
+                     0/31 (31) daysInMonth
+                     0/31 (31) daysInWeek
+                     0/31 (31) daysInYear
                      0/13 (13) fields
-                     0/1 (1) id
-                     0/15 (15) inLeapYear
-                     0/8 (8) mergeFields
-                     0/21 (21) month
-                     0/21 (21) monthCode
-                     0/11 (11) monthDayFromFields
-                     0/15 (15) monthsInYear
-                     0/5 (5) toJSON
+                     0/2 (2) id
+                     0/28 (28) inLeapYear
+                     0/11 (11) mergeFields
+                     0/33 (33) month
+                     0/33 (33) monthCode
+                     0/18 (18) monthDayFromFields
+                     0/28 (28) monthsInYear
+                     0/6 (6) toJSON
                      0/6 (6) toString
-                     0/16 (16) weekOfYear
-                     0/20 (20) year
-                     0/11 (11) yearMonthFromFields
-             0/326 (326) Duration
-                 0/29 (29) compare
-                 0/14 (14) from
-                 0/265 (265) prototype
-                     0/7 (7) abs
-                     0/40 (40) add
-                     0/2 (2) blank
+                     0/1 (1) toStringTag
+                     0/31 (31) weekOfYear
+                     0/32 (32) year
+                     0/18 (18) yearMonthFromFields
+             0/441 (441) Duration
+                 0/44 (44) compare
+                 0/19 (19) from
+                 0/357 (357) prototype
+                     0/9 (9) abs
+                     0/58 (58) add
+                     0/3 (3) blank
                      0/2 (2) days
                      0/2 (2) hours
                      0/2 (2) microseconds
@@ -994,60 +1002,61 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/2 (2) minutes
                      0/2 (2) months
                      0/2 (2) nanoseconds
-                     0/7 (7) negated
-                     0/52 (52) round
+                     0/8 (8) negated
+                     0/68 (68) round
                      0/2 (2) seconds
                      0/2 (2) sign
-                     0/40 (40) subtract
-                     0/7 (7) toJSON
+                     0/58 (58) subtract
+                     0/9 (9) toJSON
                      0/6 (6) toLocaleString
-                     0/24 (24) toString
-                     0/40 (40) total
-                     0/6 (6) valueOf
+                     0/34 (34) toString
+                     0/1 (1) toStringTag
+                     0/51 (51) total
+                     0/7 (7) valueOf
                      0/2 (2) weeks
-                     0/11 (11) with
+                     0/22 (22) with
                      0/2 (2) years
-             0/252 (252) Instant
-                 0/8 (8) compare
-                 0/10 (10) from
+             0/318 (318) Instant
+                 0/14 (14) compare
+                 0/18 (18) from
                  0/7 (7) fromEpochMicroseconds
                  0/7 (7) fromEpochMilliseconds
                  0/7 (7) fromEpochNanoseconds
                  0/7 (7) fromEpochSeconds
-                 0/199 (199) prototype
-                     0/14 (14) add
+                 0/251 (251) prototype
+                     0/17 (17) add
                      0/3 (3) epochMicroseconds
                      0/3 (3) epochMilliseconds
                      0/3 (3) epochNanoseconds
                      0/3 (3) epochSeconds
-                     0/10 (10) equals
-                     0/21 (21) round
-                     0/27 (27) since
-                     0/14 (14) subtract
-                     0/9 (9) toJSON
+                     0/15 (15) equals
+                     0/22 (22) round
+                     0/35 (35) since
+                     0/17 (17) subtract
+                     0/10 (10) toJSON
                      0/7 (7) toLocaleString
-                     0/32 (32) toString
+                     0/46 (46) toString
                      0/1 (1) toStringTag
-                     0/10 (10) toZonedDateTime
-                     0/8 (8) toZonedDateTimeISO
-                     0/26 (26) until
+                     0/16 (16) toZonedDateTime
+                     0/11 (11) toZonedDateTimeISO
+                     0/34 (34) until
                      0/6 (6) valueOf
-             0/124 (124) Now
-                 0/8 (8) instant
-                 0/8 (8) plainDate
-                 0/6 (6) plainDateISO
-                 0/30 (30) plainDateTime
-                 0/22 (22) plainDateTimeISO
-                 0/8 (8) plainTimeISO
+             0/167 (167) Now
+                 0/9 (9) instant
+                 0/16 (16) plainDate
+                 0/11 (11) plainDateISO
+                 0/37 (37) plainDateTime
+                 0/26 (26) plainDateTimeISO
+                 0/13 (13) plainTimeISO
                  0/7 (7) timeZone
                  0/2 (2) toStringTag
-                 0/20 (20) zonedDateTime
-                 0/13 (13) zonedDateTimeISO
-             0/369 (369) PlainDate
-                 0/19 (19) compare
-                 0/26 (26) from
-                 0/312 (312) prototype
-                     0/21 (21) add
+                 0/27 (27) zonedDateTime
+                 0/17 (17) zonedDateTimeISO
+             0/500 (500) PlainDate
+                 0/30 (30) compare
+                 0/40 (40) from
+                 0/416 (416) prototype
+                     0/29 (29) add
                      0/2 (2) calendar
                      0/3 (3) day
                      0/3 (3) dayOfWeek
@@ -1055,40 +1064,41 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/2 (2) daysInMonth
                      0/3 (3) daysInWeek
                      0/2 (2) daysInYear
-                     0/23 (23) equals
+                     0/34 (34) equals
                      0/9 (9) getISOFields
                      0/2 (2) inLeapYear
                      0/3 (3) month
                      0/2 (2) monthCode
                      0/3 (3) monthsInYear
-                     0/40 (40) since
-                     0/21 (21) subtract
-                     0/6 (6) toJSON
+                     0/64 (64) since
+                     0/29 (29) subtract
+                     0/7 (7) toJSON
                      0/7 (7) toLocaleString
-                     0/18 (18) toPlainDateTime
-                     0/8 (8) toPlainMonthDay
-                     0/8 (8) toPlainYearMonth
-                     0/14 (14) toString
-                     0/24 (24) toZonedDateTime
-                     0/42 (42) until
+                     0/27 (27) toPlainDateTime
+                     0/9 (9) toPlainMonthDay
+                     0/10 (10) toPlainYearMonth
+                     0/16 (16) toString
+                     0/1 (1) toStringTag
+                     0/35 (35) toZonedDateTime
+                     0/63 (63) until
                      0/7 (7) valueOf
                      0/3 (3) weekOfYear
-                     0/19 (19) with
-                     0/10 (10) withCalendar
+                     0/21 (21) with
+                     0/13 (13) withCalendar
                      0/3 (3) year
-             0/423 (423) PlainDateTime
-                 0/17 (17) compare
-                 0/24 (24) from
-                 0/365 (365) prototype
-                     0/19 (19) add
+             0/670 (670) PlainDateTime
+                 0/30 (30) compare
+                 0/49 (49) from
+                 0/569 (569) prototype
+                     0/30 (30) add
                      0/2 (2) calendar
                      0/3 (3) day
-                     0/2 (2) dayOfWeek
-                     0/2 (2) dayOfYear
-                     0/2 (2) daysInMonth
-                     0/2 (2) daysInWeek
-                     0/2 (2) daysInYear
-                     0/19 (19) equals
+                     0/3 (3) dayOfWeek
+                     0/3 (3) dayOfYear
+                     0/3 (3) daysInMonth
+                     0/3 (3) daysInWeek
+                     0/3 (3) daysInYear
+                     0/31 (31) equals
                      0/9 (9) getISOFields
                      0/2 (2) hour
                      0/2 (2) inLeapYear
@@ -1097,110 +1107,115 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/2 (2) minute
                      0/3 (3) month
                      0/2 (2) monthCode
-                     0/2 (2) monthsInYear
+                     0/3 (3) monthsInYear
                      0/2 (2) nanosecond
-                     0/20 (20) round
+                     0/37 (37) round
                      0/2 (2) second
-                     0/43 (43) since
-                     0/19 (19) subtract
-                     0/6 (6) toJSON
+                     0/73 (73) since
+                     0/30 (30) subtract
+                     0/8 (8) toJSON
                      0/7 (7) toLocaleString
                      0/7 (7) toPlainDate
-                     0/8 (8) toPlainMonthDay
-                     0/6 (6) toPlainTime
-                     0/8 (8) toPlainYearMonth
-                     0/24 (24) toString
-                     0/20 (20) toZonedDateTime
-                     0/43 (43) until
-                     0/6 (6) valueOf
-                     0/2 (2) weekOfYear
-                     0/17 (17) with
-                     0/9 (9) withCalendar
-                     0/16 (16) withPlainDate
-                     0/17 (17) withPlainTime
+                     0/9 (9) toPlainMonthDay
+                     0/7 (7) toPlainTime
+                     0/9 (9) toPlainYearMonth
+                     0/39 (39) toString
+                     0/1 (1) toStringTag
+                     0/28 (28) toZonedDateTime
+                     0/76 (76) until
+                     0/7 (7) valueOf
+                     0/3 (3) weekOfYear
+                     0/31 (31) with
+                     0/14 (14) withCalendar
+                     0/38 (38) withPlainDate
+                     0/29 (29) withPlainTime
                      0/3 (3) year
-             0/133 (133) PlainMonthDay
-                 0/22 (22) from
-                 0/98 (98) prototype
+             0/163 (163) PlainMonthDay
+                 0/34 (34) from
+                 0/113 (113) prototype
                      0/2 (2) calendar
                      0/4 (4) day
-                     0/13 (13) equals
+                     0/22 (22) equals
                      0/9 (9) getISOFields
                      0/1 (1) month
                      0/3 (3) monthCode
-                     0/7 (7) toJSON
+                     0/8 (8) toJSON
                      0/6 (6) toLocaleString
                      0/13 (13) toPlainDate
-                     0/13 (13) toString
+                     0/15 (15) toString
+                     0/1 (1) toStringTag
                      0/7 (7) valueOf
-                     0/19 (19) with
-             0/306 (306) PlainTime
-                 0/14 (14) compare
-                 0/22 (22) from
-                 0/256 (256) prototype
-                     0/15 (15) add
-                     0/2 (2) calendar
-                     0/16 (16) equals
+                     0/21 (21) with
+             0/469 (469) PlainTime
+                 0/24 (24) compare
+                 0/42 (42) from
+                 0/388 (388) prototype
+                     0/21 (21) add
+                     0/3 (3) calendar
+                     0/25 (25) equals
                      0/9 (9) getISOFields
                      0/2 (2) hour
                      0/2 (2) microsecond
                      0/2 (2) millisecond
                      0/2 (2) minute
                      0/2 (2) nanosecond
-                     0/20 (20) round
+                     0/34 (34) round
                      0/2 (2) second
-                     0/34 (34) since
-                     0/15 (15) subtract
-                     0/6 (6) toJSON
+                     0/59 (59) since
+                     0/21 (21) subtract
+                     0/7 (7) toJSON
                      0/7 (7) toLocaleString
-                     0/16 (16) toPlainDateTime
-                     0/21 (21) toString
-                     0/26 (26) toZonedDateTime
-                     0/33 (33) until
-                     0/6 (6) valueOf
-                     0/17 (17) with
-             0/247 (247) PlainYearMonth
-                 0/10 (10) compare
-                 0/16 (16) from
-                 0/209 (209) prototype
-                     0/22 (22) add
+                     0/29 (29) toPlainDateTime
+                     0/32 (32) toString
+                     0/1 (1) toStringTag
+                     0/42 (42) toZonedDateTime
+                     0/59 (59) until
+                     0/7 (7) valueOf
+                     0/19 (19) with
+             0/379 (379) PlainYearMonth
+                 0/23 (23) compare
+                 0/36 (36) from
+                 0/303 (303) prototype
+                     0/32 (32) add
                      0/2 (2) calendar
-                     0/2 (2) daysInMonth
-                     0/2 (2) daysInYear
-                     0/11 (11) equals
+                     0/3 (3) daysInMonth
+                     0/3 (3) daysInYear
+                     0/25 (25) equals
                      0/9 (9) getISOFields
                      0/2 (2) inLeapYear
                      0/3 (3) month
                      0/2 (2) monthCode
-                     0/2 (2) monthsInYear
-                     0/40 (40) since
-                     0/22 (22) subtract
-                     0/6 (6) toJSON
+                     0/3 (3) monthsInYear
+                     0/56 (56) since
+                     0/32 (32) subtract
+                     0/7 (7) toJSON
                      0/6 (6) toLocaleString
-                     0/12 (12) toPlainDate
-                     0/10 (10) toString
-                     0/29 (29) until
-                     0/6 (6) valueOf
-                     0/17 (17) with
+                     0/13 (13) toPlainDate
+                     0/15 (15) toString
+                     0/1 (1) toStringTag
+                     0/55 (55) until
+                     0/7 (7) valueOf
+                     0/23 (23) with
                      0/3 (3) year
-             0/141 (141) TimeZone
-                 0/12 (12) from
-                 0/122 (122) prototype
-                     0/25 (25) getInstantFor
-                     0/8 (8) getNextTransition
-                     0/9 (9) getOffsetNanosecondsFor
-                     0/15 (15) getOffsetStringFor
-                     0/20 (20) getPlainDateTimeFor
-                     0/19 (19) getPossibleInstantsFor
-                     0/8 (8) getPreviousTransition
-                     0/3 (3) id
-                     0/8 (8) toJSON
+             0/189 (189) TimeZone
+                 0/15 (15) from
+                 0/167 (167) prototype
+                     0/35 (35) getInstantFor
+                     0/11 (11) getNextTransition
+                     0/12 (12) getOffsetNanosecondsFor
+                     0/18 (18) getOffsetStringFor
+                     0/31 (31) getPlainDateTimeFor
+                     0/28 (28) getPossibleInstantsFor
+                     0/11 (11) getPreviousTransition
+                     0/4 (4) id
+                     0/9 (9) toJSON
                      0/6 (6) toString
-             0/634 (634) ZonedDateTime
-                 0/17 (17) compare
-                 0/31 (31) from
-                 0/577 (577) prototype
-                     0/18 (18) add
+                     0/1 (1) toStringTag
+             0/757 (757) ZonedDateTime
+                 0/29 (29) compare
+                 0/45 (45) from
+                 0/669 (669) prototype
+                     0/20 (20) add
                      0/2 (2) calendar
                      0/8 (8) day
                      0/6 (6) dayOfWeek
@@ -1212,7 +1227,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/3 (3) epochMilliseconds
                      0/3 (3) epochNanoseconds
                      0/3 (3) epochSeconds
-                     0/20 (20) equals
+                     0/32 (32) equals
                      0/16 (16) getISOFields
                      0/7 (7) hour
                      0/7 (7) hoursInDay
@@ -1226,37 +1241,38 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      0/7 (7) nanosecond
                      0/7 (7) offset
                      0/6 (6) offsetNanoseconds
-                     0/29 (29) round
+                     0/31 (31) round
                      0/7 (7) second
-                     0/43 (43) since
+                     0/58 (58) since
                      0/12 (12) startOfDay
-                     0/18 (18) subtract
+                     0/20 (20) subtract
                      0/2 (2) timeZone
                      0/6 (6) toInstant
-                     0/13 (13) toJSON
+                     0/15 (15) toJSON
                      0/7 (7) toLocaleString
                      0/10 (10) toPlainDate
                      0/13 (13) toPlainDateTime
-                     0/13 (13) toPlainMonthDay
+                     0/14 (14) toPlainMonthDay
                      0/12 (12) toPlainTime
-                     0/13 (13) toPlainYearMonth
-                     0/37 (37) toString
-                     0/42 (42) until
+                     0/14 (14) toPlainYearMonth
+                     0/48 (48) toString
+                     0/1 (1) toStringTag
+                     0/57 (57) until
                      0/6 (6) valueOf
                      0/6 (6) weekOfYear
-                     0/30 (30) with
-                     0/9 (9) withCalendar
-                     0/22 (22) withPlainDate
-                     0/22 (22) withPlainTime
-                     0/9 (9) withTimeZone
+                     0/32 (32) with
+                     0/12 (12) withCalendar
+                     0/34 (34) withPlainDate
+                     0/30 (30) withPlainTime
+                     0/12 (12) withTimeZone
                      0/7 (7) year
              0/2 (2) toStringTag
          28/28 ThrowTypeError
-         2512/2516 TypedArray
+         2506/2508 TypedArray
              8/8 Symbol.species
              28/28 from
              14/14 of
-             2454/2458 prototype
+             2448/2450 prototype
                  2/2 Symbol.iterator
                  36/36 Symbol.toStringTag
                      18/18 BigInt
@@ -1308,14 +1324,14 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      38/38 BigInt
                  40/40 reverse
                      12/12 BigInt
-                 206/206 set
-                     100/100 BigInt
+                 204/204 set
+                     98/98 BigInt
                  162/162 slice
                      72/72 BigInt
                  82/82 some
                      32/32 BigInt
-                 66/68 sort
-                     22/22 BigInt
+                 62/62 sort
+                     20/20 BigInt
                  124/124 subarray
                      54/54 BigInt
                  72/72 toLocaleString
@@ -1324,7 +1340,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                      2/2 BigInt
                  32/32 values
                      8/8 BigInt
-         1476/1476 TypedArrayConstructors
+         1406/1406 TypedArrayConstructors
              24/24 BigInt64Array
                  8/8 prototype
              24/24 BigUint64Array
@@ -1347,18 +1363,18 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  8/8 prototype
              22/22 Uint8ClampedArray
                  8/8 prototype
-             260/260 ctors
+             222/222 ctors
                  106/106 buffer-arg
                  24/24 length-arg
                  14/14 no-args
                  52/52 object-arg
-                 64/64 typedarray-arg
-             258/258 ctors-bigint
+                 24/24 typedarray-arg
+             226/226 ctors-bigint
                  104/104 buffer-arg
                  24/24 length-arg
                  14/14 no-args
                  62/62 object-arg
-                 54/54 typedarray-arg
+                 22/22 typedarray-arg
              112/112 from
                  54/54 BigInt
              428/428 internals
@@ -1514,7 +1530,7 @@ To be investigated.
 One realm.
 	
 	built-ins/Array/prototype/reduceRight/length-near-integer-limit.js
-	built-ins/AsyncFromSyncIteratorPrototype/next/absent-value-not-passed.js	built-ins/AsyncFromSyncIteratorPrototype/return/absent-value-not-passed.js
+	built-ins/String/prototype/localeCompare/15.5.4.9_CE.js
 	built-ins/JSON/stringify/replacer-function-object-deleted-property.js
 	
 To be investigated.
@@ -1523,24 +1539,17 @@ To be investigated.
 	built-ins/TypedArray/prototype/map/callbackfn-resize.js
 
 Invalid tests.
-
-	built-ins/TypedArray/prototype/sort/sorted-values.js
-	built-ins/TypedArray/prototype/sortstability.js
-	
-Sorting typed arrays is unstable.	
 	
 ### Skipped cases
 
 `xst` skips cases with the following features:
 
 - `Atomics.waitAsync`
-- `Object.hasOwn`
 - `ShadowRealm`
 - `Temporal`
 - `arbitrary-module-namespace-names`
-- `class-fields-private-in`
-- `class-static-block`
-- `error-cause`
+- `array-grouping`
+- `decorators`
 - `import-assertions`
 - `json-modules`
 

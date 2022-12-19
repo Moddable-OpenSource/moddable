@@ -20,6 +20,18 @@
 		],
 		"piu/*": [
 			"$(TYPINGS)/piu/*"
+		],
+		"text/*": [
+			"$(TYPINGS)/text/*"
+		],
+		"embedded:provider/*": [
+			"$(TYPINGS)/embedded_provider/*"
+		],
+		"embedded:io/*": [
+			"$(TYPINGS)/embedded_io/*"
+		],
+		"embedded:io/socket/*": [
+			"$(TYPINGS)/embedded_io/socket/*"
 		]
 	}
 }

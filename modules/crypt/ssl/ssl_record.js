@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -140,7 +140,7 @@ const recordProtocol = {
 			if (cipher) {
 				switch (session.chosenCipher.encryptionMode) {
 				case NONE:
-				case CBC:
+				case CBC: {
 					let cipherBlockSize = session.chosenCipher.cipherBlockSize;
 					let hashSize = session.chosenCipher.hashSize;
 					if (version >= 0x302 && cipherBlockSize > 0) { // 3.2 or higher && block cipher
@@ -159,8 +159,8 @@ const recordProtocol = {
 						if (Bin.comp(mac, this.calculateMac(cipher.hmac, session.readSeqNum, type, version, fragment)) != 0)
 							throw new TLSError("recordProtocol: auth failed");
 					}
-					break;
-				case GCM:
+					} break;
+				case GCM: {
 					let nonce = s.readChunk(session.chosenCipher.ivSize);
 					fragmentLen -= session.chosenCipher.ivSize;
 					nonce = cipher.iv.concat(nonce);
@@ -170,7 +170,7 @@ const recordProtocol = {
 						// @@ should send an alert
 						throw new TLSError("recordProtocol auth failed");
 					}
-					break;
+					} break;
 				}
 				session.readSeqNum++;
 			}
@@ -230,7 +230,7 @@ const recordProtocol = {
 			return stream.getChunk();
 		},
 	},
-};
+}
 
 Object.freeze(recordProtocol, true);
 

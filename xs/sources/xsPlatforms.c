@@ -158,6 +158,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	{
 		char c;
 		slash = name;
+		if (!c_strncmp(name, "xsbug://", 8))
+			slash += 8;
 		while ((c = *slash)) {
 			if (c == '/')
 				*slash = '\\';
@@ -198,8 +200,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	if (preparation) {
 		txInteger c = preparation->scriptCount;
 		txScript* script = preparation->scripts;
-		txSize size;
-		if (fxGetArchiveCode(the, path, &size))
+		size_t size;
+		if (fxGetArchiveCode(the, the->archive, path, &size))
 			return fxNewNameC(the, path);
 		while (c > 0) {
 			if (!c_strcmp(path, script->path))
@@ -229,15 +231,15 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
 	txString path = fxGetKeyName(the, moduleID);
 	txByte* code;
-	txSize size;
-	code = fxGetArchiveCode(the, path, &size);
+	size_t size;
+	code = fxGetArchiveCode(the, the->archive, path, &size);
 	if (code) {
 		txScript script;
 		script.callback = NULL;
 		script.symbolsBuffer = NULL;
 		script.symbolsSize = 0;
 		script.codeBuffer = code;
-		script.codeSize = size;
+		script.codeSize = (txSize)size;
 		script.hostsBuffer = NULL;
 		script.hostsSize = 0;
 		script.path = path;
@@ -403,11 +405,11 @@ uint32_t modMilliseconds()
 {
 	c_timeval tv;
 	c_gettimeofday(&tv, NULL);
-#if (mxWasm || mxWindows || mxMacOSX)
+// #if (mxWasm || mxWindows || mxMacOSX)
 	return (uint32_t)(uint64_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
-#else
-	return (uint32_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
-#endif
+// #else
+// 	return (uint32_t)(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec) / 1000.0));
+// #endif
 }
 #endif
 

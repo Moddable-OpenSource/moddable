@@ -26,6 +26,8 @@
 		},
 		"esp32/moddable_two": {
 		},
+		"pico": {
+		},
 		"...": {
 			"error": "Untested on this platform"
 		}

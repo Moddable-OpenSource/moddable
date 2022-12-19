@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -32,16 +32,16 @@ const Register = Object.freeze({
 });
 
 
-class DS3231 {
+class DS1307 {
 	#io;
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const { rtc } = options;
-		const io = this.#io = new rtc.io({
+		const { clock } = options;
+		const io = this.#io = new clock.io({
 			hz: 400_000,
 			address: 0x68,
-			...rtc
+			...clock
 		});
 
 		try {
@@ -58,8 +58,8 @@ class DS3231 {
 	}
 	configure(options) {
 	}
-	get enabled() {
-		return (this.#io.readByte(0) & Register.ENABLE_BIT) ? false : true;
+	get configuration() {
+		return {};
 	}
 	get time() {
 		const io = this.#io;
@@ -111,5 +111,5 @@ function bcdToDec(b) {
 	return v;
 }
 
-Object.freeze(DS3231.prototype);
-export default DS3231;
+Object.freeze(DS1307.prototype);
+export default DS1307;

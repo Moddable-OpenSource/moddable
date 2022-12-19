@@ -1,0 +1,8 @@
+{
+	"include": [
+		"./manifest_dns.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

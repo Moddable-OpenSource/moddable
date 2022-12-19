@@ -429,7 +429,7 @@ PiuBoolean PiuRegionXOR(PiuRegion* region0, PiuRegion* region1, PiuRegion* regio
 	
 	PiuCoordinate* current1 = (*region1)->data;
 	PiuCoordinate* limit1 = current1 + *current1;
-	PiuCoordinate left1, top1, right1, bottom1;	
+	PiuCoordinate left1, right1;	
 	PiuCoordinate* span1 = NULL;	
 	PiuCoordinate segmentCount1 = 0;	
 	PiuCoordinate* segment1;	
@@ -437,7 +437,7 @@ PiuBoolean PiuRegionXOR(PiuRegion* region0, PiuRegion* region1, PiuRegion* regio
 	
 	PiuCoordinate* current2 = (*region2)->data;
 	PiuCoordinate* limit2 = current2 + *current2;
-	PiuCoordinate left2, top2, right2, bottom2;	
+	PiuCoordinate left2, right2;	
 	PiuCoordinate* span2 = NULL;	
 	PiuCoordinate segmentCount2 = 0;	
 	PiuCoordinate* segment2;	
@@ -448,14 +448,14 @@ PiuBoolean PiuRegionXOR(PiuRegion* region0, PiuRegion* region1, PiuRegion* regio
 	
 	current1++;
 	left1 = *current1++;
-	top1 = *current1++;
+	current1++;
 	right1 = left1 + *current1++;
-	bottom1 = top1 + *current1++;
+	current1++;
 	current2++;
 	left2 = *current2++;
-	top2 = *current2++;
+	current2++;
 	right2 = left2 + *current2++;
-	bottom2 = top2 + *current2++;
+	current2++;
 
 	if (current1 == limit1)
 		return PiuRegionCopy(region0, region2);

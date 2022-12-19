@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,7 +23,7 @@
 
 	https://www.alldatasheet.com/datasheet-pdf/pdf/535561/AKM/AK8963.html
 
-	sample value in MicroTesla T
+	sample value in microtesla
 */
 
 import Timer from "timer";
@@ -78,7 +78,7 @@ class AK8963 {
 		this.#dataView = new DataView(this.#values);
 
 		try {
-			if (0x48 !== io.readByte(0)) {
+			if (0x48 !== io.readUint8(0)) {
 				this.close();
 				return undefined;
 			}
@@ -89,19 +89,19 @@ class AK8963 {
 		}
 
 		// reset
-		io.writeByte(REGISTERS.MAG_CNTL2, 0b0000_0001);
+		io.writeUint8(REGISTERS.MAG_CNTL2, 0b0000_0001);
 
 		// powerdown
-		io.writeByte(REGISTERS.MAG_CNTL2, 0b0000_0000);
+		io.writeUint8(REGISTERS.MAG_CNTL2, 0b0000_0000);
 		// read fuseROM
-		io.writeByte(REGISTERS.MAG_CNTL2, 0b0000_1111);
+		io.writeUint8(REGISTERS.MAG_CNTL2, 0b0000_1111);
 		const coef = new Uint8Array(3);
-		io.readBlock(REGISTERS.MAG_ASAX, coef);
+		io.readBuffer(REGISTERS.MAG_ASAX, coef);
 		this.#coefX = (coef[0] - 128) / 256.0 + 1;
 		this.#coefY = (coef[1] - 128) / 256.0 + 1;
 		this.#coefZ = (coef[2] - 128) / 256.0 + 1;
 		// powerdown
-		io.writeByte(REGISTERS.MAG_CNTL2, 0b0000_0000);
+		io.writeUint8(REGISTERS.MAG_CNTL2, 0b0000_0000);
 	}
 
 	close() {
@@ -118,22 +118,19 @@ class AK8963 {
 			else
 				this.#res = 4912.0 / 8190.0;
 			this.#mode = options.mode & 0b1111;
-            io.writeByte(REGISTERS.MAG_CNTL1, this.#mode | (this.#range << 4));
+            io.writeUint8(REGISTERS.MAG_CNTL1, this.#mode | (this.#range << 4));
 		}
 	}
 	sample() {
 		const io = this.#io;
 		let ret = {};
 
-		const rdy = io.readByte(REGISTERS.MAG_ST1);
+		const rdy = io.readUint8(REGISTERS.MAG_ST1);
 		if (rdy & 0b01) {
-			io.readBlock(REGISTERS.MAG_XOUT, this.#values);
+			io.readBuffer(REGISTERS.MAG_XOUT, this.#values);
 			ret.x = this.#dataView.getInt16(0) * this.#coefX * this.#res;	// µT/LSB
 			ret.y = this.#dataView.getInt16(2) * this.#coefY * this.#res;
 			ret.z = this.#dataView.getInt16(4) * this.#coefZ * this.#res;
-			ret.x /= 1_000_000;					// µT -> T
-			ret.y /= 1_000_000;
-			ret.z /= 1_000_000;
 		}
 
 		return ret;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -100,7 +100,7 @@ void xs_neopixel(xsMachine *the)
 	np = c_calloc(sizeof(xsNeoPixelRecord) + ((length - 1) * sizeof(uint32_t)), 1);
 	if (!np)
 		xsUnknownError("no memory");
-	xsmcSetHostData(xsThis, &np->pixels);
+	xsmcSetHostBuffer(xsThis, &np->pixels, length * sizeof(uint32_t));
 
 	px = &np->px;
 	px->pixels = (void *)np->pixels;
@@ -194,6 +194,23 @@ void xs_neopixel_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
+void xs_neopixel_getPixel(xsMachine *the)
+{
+	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
+	int index = xsmcToInteger(xsArg(0));
+
+	if ((index >= np->px.pixel_count) || (index < 0))
+		return;
+
+	if (24 == np->px.nbits) {
+		uint8_t *p = (index * 3) + (uint8_t *)np->pixels;
+		int color = (p[0] << 16) | (p[1] << 8) | p[2];
+		xsmcSetInteger(xsResult, color);
+	}
+	else
+		xsmcSetInteger(xsResult, np->pixels[index]);
+}
+
 void xs_neopixel_setPixel(xsMachine *the)
 {
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
@@ -201,7 +218,7 @@ void xs_neopixel_setPixel(xsMachine *the)
 	uint32_t color = xsmcToInteger(xsArg(1));
 
 	if ((index >= np->px.pixel_count) || (index < 0))
-		xsRangeError("invalid");
+		return;
 
 	setPixel(np, (uint16_t)index, color);
 }
@@ -216,10 +233,13 @@ void xs_neopixel_fill(xsMachine *the)
 	if (argc > 1) {
 		index = xsmcToInteger(xsArg(1));
 		if ((index < 0) || (index >= count))
-			xsRangeError("invalid");
+			return;
 
-		if (argc > 2)
+		if (argc > 2) {
 			count = xsmcToInteger(xsArg(2));
+			if (count <= 0)
+				return;
+		}
 
 		if ((index + count) > np->px.pixel_count)
 			count = np->px.pixel_count - index;
@@ -265,9 +285,9 @@ void xs_neopixel_byteLength_get(xsMachine *the)
 void xs_neopixel_makeRGB(xsMachine *the)
 {
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
-	int r = xsmcToInteger(xsArg(0)) << np->redShift;
-	int g = xsmcToInteger(xsArg(1)) << np->greenShift;
-	int b = xsmcToInteger(xsArg(2)) << np->blueShift;
+	int r = (xsmcToInteger(xsArg(0)) & 0xFF) << np->redShift;
+	int g = (xsmcToInteger(xsArg(1)) & 0xFF) << np->greenShift;
+	int b = (xsmcToInteger(xsArg(2)) & 0xFF) << np->blueShift;
 
 	if (24 == np->px.nbits)
 		xsmcSetInteger(xsResult, r | g | b);

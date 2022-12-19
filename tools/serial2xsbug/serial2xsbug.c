@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -118,7 +118,11 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		}
 	}
 	self->host = "localhost";
+	if (getenv("XSBUG_HOST"))
+		self->host = getenv("XSBUG_HOST");
 	self->port = 5002;
+	if (getenv("XSBUG_PORT"))
+		self->port = atoi(getenv("XSBUG_PORT"));
 	self->restartOnConnect = 1;
 	self->showPath = 0;
 	self->timeout = 5000;	// for showpath
@@ -334,15 +338,15 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 {
 	uint8_t *buffer = bufferIn;
 	uint16_t resultId = (buffer[1] << 8) | buffer[2];
-	uint16_t resultCode = (buffer[3] << 8) | buffer[4];
+	int16_t resultCode = (buffer[3] << 8) | buffer[4];
 
 	if (resultCode) {
-		fprintf(stderr, "### fxCommandReceived: remote operation failed with resultCode %d\n", resultCode);
+		fprintf(stderr, "### fxCommandReceived: remote operation id %#04x failed with resultCode %d\n", (int)resultId, (int)resultCode);
 		exit(-1);
 	}
 #if mxTraceCommands
 	else
-		fprintf(stderr, "### fxCommandReceived: remote operation SUCCESS with resultCode %d\n", resultCode);
+		fprintf(stderr, "### fxCommandReceived: remote operation id %#04x SUCCESS with resultCode %d\n", (int)resultId, (int)resultCode);
 #endif
 
 	if (0xff02 == resultId) {	// uninstall

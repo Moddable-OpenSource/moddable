@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -27,45 +27,64 @@ import Net from "net";
 import Timer from "timer";
 
 class SNTP extends Socket {
+	#callback;
+	#retry;
+	#timer;
+	#address;
+
 	constructor(dictionary, callback) {
 		super({kind: "UDP"});
-		this.client = callback;
+		this.#callback = callback;
+		this.#timer = Timer.repeat(() => {
+			if (!--this.#retry)
+				return this.failed("no response from SNTP server");
+
+			this.write();
+			this.#callback(SNTP.retry);
+		}, 5000);
 		this.start(dictionary.host);
 	}
 	start(host) {
+		this.#retry = 5;
+
 		Net.resolve(host, (host, address) => {
-			if (!this.timer) return;	// resolution completed after SNTP closed
+			if (!this.#timer) return;	// resolution completed after SNTP closed
 
 			if (address) {
-				this.address = address;
-				this.write(address, 123, this.packet());
-				Timer.schedule(this.timer, 5000, 5000);
+				this.#address = address;
+				this.write();
+				Timer.schedule(this.#timer, 5000, 5000);
 			}
 			else
 				this.failed("cannot resolve " + host);
 		});
-
-		if (this.timer)
-			Timer.schedule(this.timer, 5000 * 10, 5000 * 10);
-		else
-			this.timer = Timer.repeat(timer.bind(this), 5000 * 10);
-		this.count = 5;		// maximum retransmit attempts
 	}
 	failed(message) {
-		let host = this.client(SNTP.error, message);
-		if (host)
+		const host = this.#callback(SNTP.error, message);
+		if (host) {
+			Timer.schedule(this.#timer, 5000, 5000);
 			this.start(host);
+		}
 		else
 			this.close();
 	}
+	write() {
+		if (!this.#address)
+			return;
 
+		try {
+			super.write(this.#address, 123, packet());
+		}
+		catch {
+			trace("SNTP: ignore UDP write fail\n")
+		}
+	}
 	close() {
-		Timer.clear(this.timer);
-		delete this.timer;
+		Timer.clear(this.#timer);
+		this.#timer = undefined;
 
 		super.close();
 	}
-
 	callback(message, value) {
 		if (2 !== message)
 			return;
@@ -73,32 +92,24 @@ class SNTP extends Socket {
 		if (48 !== value)
 			this.failed("unexpected SNTP packet length");
 		else
-		if (0x24 !== this.read(Number))
+		if (4 !== (7 & this.read(Number)))	// NTP serrver mode
 			this.failed("unexpected SNTP packet first byte");
+		else if (0 === this.read(Number))
+			return;	// Kiss-o'-Death - "...KoD packets have no protocol significance and are discarded after inspection"
 		else {
-			this.read(null, 39);
-			this.client(SNTP.time, this.toNumber(this.read(Number), this.read(Number), this.read(Number), this.read(Number)));
+			this.read(null, 38);
+			const time = toNumber(this.read(Number), this.read(Number), this.read(Number), this.read(Number));
 			this.close();
+			return this.#callback(SNTP.time, time);
 		}
 	}
 
-	packet() @ "xs_sntp_packet";
-	toNumber() @ "xs_sntp_toNumber";
-};
-
-function timer() {
-	this.count -= 1;
-	if (!this.count)
-		return this.failed("no response from SNTP server");
-
-	this.write(this.address, 123, this.packet());
-	this.client(SNTP.retry);		// retrying
+	static time = 1;
+	static retry = 2;
+	static error = -1;
 }
 
-SNTP.time = 1;
-SNTP.retry = 2;
-SNTP.error = -1;
-
-Object.freeze(SNTP.prototype);
+function packet() @ "xs_sntp_packet";
+function toNumber() @ "xs_sntp_toNumber";
 
 export default SNTP;

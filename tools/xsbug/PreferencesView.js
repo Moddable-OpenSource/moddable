@@ -127,6 +127,24 @@ class PreferencesColumnBehavior extends Behavior {
 				{
 					Template: PreferencesTable,
 					expanded: true,
+					name: "EXCEPTIONS",
+					items: [
+						{
+							Template: SwitchRow,
+							comment: "Show or hide exceptions in console/log pane as they occur",
+							name: "Show exceptions",
+							get value() {
+								return model.showExceptions;
+							},
+							set value(it) {
+								model.showExceptions = it;
+							},
+						},
+					],
+				},
+				{
+					Template: PreferencesTable,
+					expanded: true,
 					name: "LOCATIONS",
 					items: model.mappings.map((mapping, index) => ({
 						Template: LocationRow,
@@ -167,7 +185,25 @@ class PreferencesColumnBehavior extends Behavior {
 						},
 					],
 				},
-					{
+				{
+					Template: PreferencesTable,
+					expanded: true,
+					name: "PROFILE",
+					items: [
+						{
+							Template: SwitchRow,
+							comment: "Profile when the debuggee starts",
+							name: "On Start",
+							get value() {
+								return model.profileOnStart;
+							},
+							set value(it) {
+								model.toggleProfileOnStart(it);
+							},
+						},
+					],
+				},
+				{
 					Template: PreferencesTable,
 					expanded: true,
 					name: "SERIAL",
@@ -214,8 +250,8 @@ class PreferencesColumnBehavior extends Behavior {
 						},
 						{
 							Template: SwitchRow,
-							comment: "Show Serial tab",
-							name: "Serial",
+							comment: "Show Profile tab",
+							name: "Profile",
 							get value() {
 								return model.visibleTabs[2];
 							},
@@ -225,13 +261,24 @@ class PreferencesColumnBehavior extends Behavior {
 						},
 						{
 							Template: SwitchRow,
-							comment: "Show Test262 tab",
-							name: "Test262",
+							comment: "Show Serial tab",
+							name: "Serial",
 							get value() {
 								return model.visibleTabs[3];
 							},
 							set value(it) {
 								model.showTab(3, it);
+							},
+						},
+						{
+							Template: SwitchRow,
+							comment: "Show Test tab",
+							name: "Test",
+							get value() {
+								return model.visibleTabs[4];
+							},
+							set value(it) {
+								model.showTab(4, it);
 							},
 						},
 					],

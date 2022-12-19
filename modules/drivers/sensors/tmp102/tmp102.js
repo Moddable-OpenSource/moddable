@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -66,17 +66,17 @@ class TMP102  {
 		}
 
 		// reset to default values (7.5.3 of datasheet)
-		io.writeWord(Register.CONFIG, 0b0110_0000_1010_0000, true);
+		io.writeUint16(Register.CONFIG, 0b0110_0000_1010_0000, true);
 
 		// THigh = +80C TLow = +75C (7.5.4)
-		io.writeWord(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
-		io.writeWord(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
+		io.writeUint16(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
+		io.writeUint16(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
 	}
 
 	configure(options) {
 		const io = this.#io;
 
-		let config = io.readWord(Register.CONFIG, true) & 0b1111_1111_1110_0000;
+		let config = io.readUint16(Register.CONFIG, true) & 0b1111_1111_1110_0000;
 
 		if (undefined !== options.extendedRange)
 			this.#extendedRange = options.extendedRange;
@@ -100,11 +100,11 @@ class TMP102  {
 
 		if (undefined !== options.highTemperature) {
 			const value = (options.highTemperature / 0.0625) << this.#shift;
-			io.writeWord(Register.TEMP_HIGH, value, true);
+			io.writeUint16(Register.TEMP_HIGH, value, true);
 		}
 		if (undefined !== options.lowTemperature) {
 			const value = (options.lowTemperature / 0.0625) << this.#shift;
-			io.writeWord(Register.TEMP_LOW, value, true);
+			io.writeUint16(Register.TEMP_LOW, value, true);
 		}
 
 		if (undefined !== options.thermostatMode) {
@@ -142,12 +142,12 @@ class TMP102  {
 			}
 		}
 
-		io.writeWord(Register.CONFIG, config, true);
+		io.writeUint16(Register.CONFIG, config, true);
 	}
 
 	close() {
 		if ("ready" === this.#status) {
-			this.#io.writeWord(Register.CONFIG, SHUTDOWN_MODE, true);	// shut down device
+			this.#io.writeUint16(Register.CONFIG, SHUTDOWN_MODE, true);	// shut down device
 			this.#status = undefined;
 		}
 
@@ -163,13 +163,13 @@ class TMP102  {
 
 	sample() {
 		const io = this.#io;
-		const conf = io.readWord(Register.CONFIG, true);
+		const conf = io.readUint16(Register.CONFIG, true);
 		if (conf & SHUTDOWN_MODE) { // if in shutdown mode, set ONE_SHOT
-			io.writeByte(Register.CONFIG, conf & ONE_SHOT);
+			io.writeUint8(Register.CONFIG, conf & ONE_SHOT);
 			Timer.delay(35);		// wait for new reading to be available
 		}
 
-		let value = (this.#twoC16(io.readWord(Register.TEMP_READ, true)) >> this.#shift) * 0.0625;
+		let value = (this.#twoC16(io.readUint16(Register.TEMP_READ, true)) >> this.#shift) * 0.0625;
 		return { temperature: value, alert: (conf & ALERT_BIT) == (conf & POLARITY_BIT) };
 	}
 }

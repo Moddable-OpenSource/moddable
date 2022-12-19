@@ -36,8 +36,8 @@
 -->
 
 # XS in C
-
 Revised: June 23, 2021  
+
 **See end of document for [copyright and license](#license)**
 
 ## About This Document

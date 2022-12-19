@@ -24,6 +24,11 @@
 #include <dlfcn.h>
 #endif
 
+static void fxIndexInstance(txMachine* the, txSnapshot* snapshot, txSlot* theCurrent);
+static void fxIndexReference(txMachine* the, txSnapshot* snapshot, txSlot* theSlot);
+static void fxIndexSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot);
+static void fxIndexSlots(txMachine* the, txSnapshot* snapshot);
+
 static void fxLinkChunks(txMachine* the);
 
 static void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* chunkSize);
@@ -33,11 +38,11 @@ static void fxMeasureChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* ad
 static txCallback fxProjectCallback(txMachine* the, txSnapshot* snapshot, txCallback callback);
 static void* fxProjectChunk(txMachine* the, void* address);
 static txSlot* fxProjectSlot(txMachine* the, txProjection* firstProjection, txSlot* slot);
-static void fxProjectTable(txMachine* the, txSnapshot* snapshot, txSlot* table);
 static txTypeAtomics* fxProjectTypeAtomics(txMachine* the, txTypeAtomics* atomics);
 static txTypeDispatch* fxProjectTypeDispatch(txMachine* the, txTypeDispatch* dispatch);
 
 static void fxReadAtom(txMachine* the, txSnapshot* snapshot, Atom* atom, txString type);
+static void fxReadMapSet(txMachine* the, txSlot* table, txBoolean paired);
 static void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag);
 static void fxReadSlotArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length);
 static void fxReadSlotTable(txMachine* the, txSnapshot* snapshot, txSlot** address, txSize length);
@@ -47,10 +52,10 @@ static void fxUnlinkChunks(txMachine* the);
 #define mxUnprojectChunk(ADDRESS) (snapshot->firstChunk + ((size_t)ADDRESS));
 static txCallback fxUnprojectCallback(txMachine* the, txSnapshot* snapshot, txCallback callback);
 static txSlot* fxUnprojectSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot);
-static void fxUnprojectTable(txMachine* the, txSnapshot* snapshot, txSlot* table);
 
 static void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot);
-static void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length);
+static void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length, txFlag flag);
+static void fxWriteChunkBigInt(txMachine* the, txSnapshot* snapshot, void* address, txSize size);
 static void fxWriteChunkData(txMachine* the, txSnapshot* snapshot, void* address);
 static void fxWriteChunkTable(txMachine* the, txSnapshot* snapshot, txSlot** address, txSize length);
 static void fxWriteChunkZero(txMachine* the, txSnapshot* snapshot, txSize size);
@@ -64,7 +69,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#define mxCallbacksLength 493
+#define mxCallbacksLength 496
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -152,7 +157,6 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Compartment_prototype_get_globalThis,
 	fx_Compartment_prototype_import,
 	fx_Compartment_prototype_importNow,
-	fx_Compartment_prototype_module,
 	fx_Compartment,
 	fx_DataView_prototype_buffer_get,
 	fx_DataView_prototype_byteLength_get,
@@ -238,7 +242,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_escape,
 	fx_eval,
 	fx_EvalError,
-	fx_FinalizationRegistry_prototype_cleanupSome,
+	// fx_FinalizationRegistry_prototype_cleanupSome,
 	fx_FinalizationRegistry_prototype_register,
 	fx_FinalizationRegistry_prototype_unregister,
 	fx_FinalizationRegistry,
@@ -313,6 +317,10 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Math_tan,
 	fx_Math_tanh,
 	fx_Math_trunc,
+	fx_ModuleSource,
+	fx_ModuleSource_prototype_get_bindings,
+	fx_ModuleSource_prototype_get_needsImport,
+	fx_ModuleSource_prototype_get_needsImportMeta,
 	fx_Number_isFinite,
 	fx_Number_isInteger,
 	fx_Number_isNaN,
@@ -337,6 +345,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Object_getOwnPropertyNames,
 	fx_Object_getOwnPropertySymbols,
 	fx_Object_getPrototypeOf,
+	fx_Object_hasOwn,
 	fx_Object_is,
 	fx_Object_isExtensible,
 	fx_Object_isFrozen,
@@ -426,9 +435,6 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_SharedArrayBuffer_prototype_slice,
 	fx_SharedArrayBuffer,
 	fx_species_get,
-	fx_StaticModuleRecord,
-	fx_StaticModuleRecord_initialize,
-	fx_StaticModuleRecord_prototype_get_bindings,
 	fx_String_fromCharCode,
 	fx_String_fromCodePoint,
 	fx_String_prototype_at,
@@ -536,9 +542,12 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fxArrayLengthSetter,
 	fxExecuteModulesFulfilled,
 	fxExecuteModulesRejected,
+	fxExecuteVirtualModuleSource,
+	fxExecuteVirtualModuleSourceImport,
 	fxInitializeRegExp,
 	fxLoadModulesFulfilled,
 	fxLoadModulesRejected,
+	fxModuleGetter,
 	fxOnRejectedPromise,
 	fxOnResolvedPromise,
 	fxOnThenable,
@@ -562,6 +571,400 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 };
 extern const txTypeDispatch gxTypeDispatches[];
 extern const txTypeAtomics gxTypeAtomics[];
+
+void fxIndexInstance(txMachine* the, txSnapshot* snapshot, txSlot* theCurrent)
+{
+	txSlot* aProperty;
+	txSlot* aTemporary;
+
+	mxCheck(the, theCurrent->kind == XS_INSTANCE_KIND);
+	aProperty = theCurrent;
+	theCurrent->value.instance.garbage = C_NULL;
+	for (;;) {
+		if (aProperty) {
+			if (!(aProperty->flag & XS_MARK_FLAG)) {
+				fxIndexSlot(the, snapshot, aProperty);
+				
+				switch (aProperty->kind) {
+				case XS_INSTANCE_KIND:
+					aTemporary = aProperty->value.instance.prototype;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aProperty->value.instance.prototype = theCurrent;
+						theCurrent = aTemporary;
+						theCurrent->value.instance.garbage = aProperty;
+						aProperty = theCurrent;
+					}
+					else
+						aProperty = aProperty->next;
+					break;
+				case XS_REFERENCE_KIND:
+					aTemporary = aProperty->value.reference;
+					if (!(aTemporary->flag & XS_MARK_FLAG)) {
+						aProperty->value.reference = theCurrent;
+						theCurrent = aTemporary;
+						theCurrent->value.instance.garbage = aProperty;
+						aProperty = theCurrent;
+					}
+					else
+						aProperty = aProperty->next;
+					break;
+					
+				case XS_PROXY_KIND:
+					aTemporary = aProperty->value.proxy.handler;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aProperty->flag |= XS_INSPECTOR_FLAG;
+						aProperty->value.proxy.handler = theCurrent;
+						theCurrent = aTemporary;
+						theCurrent->value.instance.garbage = aProperty;
+						aProperty = theCurrent;
+					}
+					else {
+						aTemporary = aProperty->value.proxy.target;
+						if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+							aProperty->value.proxy.target = theCurrent;
+							theCurrent = aTemporary;
+							theCurrent->value.instance.garbage = aProperty;
+							aProperty = theCurrent;
+						}
+						else
+							aProperty = aProperty->next;
+					}
+					break;
+					
+				case XS_CLOSURE_KIND:
+					aTemporary = aProperty->value.closure;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						fxIndexSlot(the, snapshot, aTemporary); 
+						if (aTemporary->kind == XS_REFERENCE_KIND) {
+							aTemporary = aTemporary->value.reference;
+							if (!(aTemporary->flag & XS_MARK_FLAG)) {
+								aProperty->value.closure->value.reference = theCurrent;
+								theCurrent = aTemporary;
+								theCurrent->value.instance.garbage = aProperty;
+								aProperty = theCurrent;
+						
+							}
+						}
+						else {
+							fxIndexReference(the, snapshot, aTemporary);
+							aProperty = aProperty->next;
+						}
+					}
+					else
+						aProperty = aProperty->next;
+					break;
+					
+				default:
+					fxIndexReference(the, snapshot, aProperty);
+					aProperty = aProperty->next;
+					break;	
+				}
+			}
+			else
+				aProperty = aProperty->next;
+		}
+		else if (theCurrent->value.instance.garbage) {
+			aProperty = theCurrent->value.instance.garbage;
+			theCurrent->value.instance.garbage = C_NULL;
+			switch (aProperty->kind) {
+			case XS_INSTANCE_KIND:
+				aTemporary = aProperty->value.instance.prototype;
+				aProperty->value.instance.prototype = theCurrent;
+				theCurrent = aTemporary;
+				aProperty = aProperty->next;
+				break;
+			case XS_REFERENCE_KIND:
+				aTemporary = aProperty->value.reference;
+				aProperty->value.reference = theCurrent;
+				theCurrent = aTemporary;
+				aProperty = aProperty->next;
+				break;
+			case XS_PROXY_KIND:
+				if (aProperty->flag & XS_INSPECTOR_FLAG) {
+					aProperty->flag &= ~XS_INSPECTOR_FLAG;
+					aTemporary = aProperty->value.proxy.handler;
+					aProperty->value.proxy.handler = theCurrent;
+					theCurrent = aTemporary;
+					
+					aTemporary = aProperty->value.proxy.target;
+					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
+						aProperty->value.proxy.target = theCurrent;
+						theCurrent = aTemporary;
+						theCurrent->value.instance.garbage = aProperty;
+						aProperty = theCurrent;
+					}
+					else {
+						aProperty = aProperty->next;
+					}
+				}
+				else {
+					aTemporary = aProperty->value.proxy.target;
+					aProperty->value.proxy.target = theCurrent;
+					theCurrent = aTemporary;
+					aProperty = aProperty->next;
+				}
+				break;
+			case XS_CLOSURE_KIND:
+				aTemporary = aProperty->value.closure->value.reference;
+				aProperty->value.closure->value.reference = theCurrent;
+				theCurrent = aTemporary;
+				aProperty = aProperty->next;
+				break;
+			}
+		}
+		else
+			break;
+	}
+}
+
+void fxIndexReference(txMachine* the, txSnapshot* snapshot, txSlot* theSlot)
+{
+	txSlot* aSlot;
+	switch (theSlot->kind) {
+	case XS_REFERENCE_KIND:
+		aSlot = theSlot->value.reference;
+		if (!(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		break;
+	case XS_CLOSURE_KIND:
+		aSlot = theSlot->value.closure;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG))) {
+			fxIndexSlot(the, snapshot, aSlot); 
+			fxIndexReference(the, snapshot, aSlot);
+		}
+		break;
+	case XS_INSTANCE_KIND:
+		if (!(theSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, theSlot);
+		break;
+	case XS_ACCESSOR_KIND:
+		aSlot = theSlot->value.accessor.getter;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		aSlot = theSlot->value.accessor.setter;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		break;
+	case XS_ARGUMENTS_SLOPPY_KIND:
+	case XS_ARGUMENTS_STRICT_KIND:
+	case XS_ARRAY_KIND:
+	case XS_STACK_KIND:
+		fxCheckCStack(the);
+		if ((aSlot = theSlot->value.array.address)) {
+			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
+			while (aLength) {
+				fxIndexReference(the, snapshot, aSlot);
+				aSlot++;
+				aLength--;
+			}
+		}
+		break;
+	case XS_CODE_KIND:
+	case XS_CODE_X_KIND:
+		aSlot = theSlot->value.code.closures;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
+			fxIndexInstance(the, snapshot, aSlot);
+		}
+		break;
+	case XS_HOME_KIND:
+		aSlot = theSlot->value.home.object;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
+			fxIndexInstance(the, snapshot, aSlot);
+		}
+		aSlot = theSlot->value.home.module;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
+			fxIndexInstance(the, snapshot, aSlot);
+		}
+		break;
+	case XS_MODULE_KIND:
+	case XS_PROGRAM_KIND:
+		fxCheckCStack(the);
+		aSlot = theSlot->value.module.realm;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		break;
+	case XS_EXPORT_KIND:
+		aSlot = theSlot->value.export.closure;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxIndexSlot(the, snapshot, aSlot); 
+			fxIndexReference(the, snapshot, aSlot);
+		}
+		aSlot = theSlot->value.export.module;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		break;
+	case XS_HOST_KIND:
+		// ??
+		break;
+	case XS_PROXY_KIND:
+		aSlot = theSlot->value.proxy.handler;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		aSlot = theSlot->value.proxy.target;
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		break;
+		
+	case XS_ERROR_KIND:
+		aSlot = theSlot->value.error.info;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxIndexInstance(the, snapshot, aSlot);
+		break;
+	case XS_LIST_KIND:
+		aSlot = theSlot->value.list.first;
+		while (aSlot) {
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				fxIndexSlot(the, snapshot, aSlot);
+				fxIndexReference(the, snapshot, aSlot);
+			}
+			aSlot = aSlot->next;
+		}
+		break;
+		
+	case XS_PRIVATE_KIND:
+		aSlot = theSlot->value.private.check;
+		if (!(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		aSlot = theSlot->value.private.first;
+		while (aSlot) {
+			fxIndexSlot(the, snapshot, aSlot);
+			fxIndexReference(the, snapshot, aSlot);
+			aSlot = aSlot->next;
+		}
+		break;
+
+	case XS_WEAK_MAP_KIND:
+	case XS_WEAK_SET_KIND:
+		aSlot = theSlot->value.weakList.first;
+		while (aSlot) {
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				fxIndexSlot(the, snapshot, aSlot);
+				fxIndexReference(the, snapshot, aSlot);
+			}
+			aSlot = aSlot->next;
+		}
+		break;
+	case XS_WEAK_ENTRY_KIND:
+		aSlot = theSlot->value.weakEntry.check;
+		if (aSlot->flag & XS_MARK_FLAG) {
+			aSlot = theSlot->value.weakEntry.value;
+			if (!(aSlot->flag & XS_MARK_FLAG)) {
+				fxIndexSlot(the, snapshot, aSlot); 
+				fxIndexReference(the, snapshot, aSlot);
+			}
+		}
+		break;
+	case XS_FINALIZATION_REGISTRY_KIND:
+		aSlot = theSlot->value.finalizationRegistry.callback;
+		if (aSlot) {
+			fxIndexSlot(the, snapshot, aSlot);
+			fxIndexReference(the, snapshot, aSlot);
+			aSlot = aSlot->next;
+			while (aSlot) {
+				fxIndexSlot(the, snapshot, aSlot);
+				fxIndexReference(the, snapshot, aSlot); // holdings
+				aSlot = aSlot->next;
+				if (aSlot) {
+					fxIndexSlot(the, snapshot, aSlot);
+					// weak target and token
+					aSlot = aSlot->next;
+				}
+			}
+		}
+		break;
+		
+	case XS_HOST_INSPECTOR_KIND:
+		aSlot = theSlot->value.hostInspector.cache;
+		if (!(aSlot->flag & XS_MARK_FLAG))
+			fxIndexInstance(the, snapshot, aSlot);
+		break;	
+	}
+}
+
+void fxIndexSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot)
+{
+	slot->flag |= XS_MARK_FLAG;
+	txProjection* projection = snapshot->firstProjection;
+	while (projection) {
+		txSlot* heap = projection->heap;
+		txSlot* limit = projection->limit;
+		if ((heap < slot) && (slot < limit)) {
+			projection->indexes[slot - heap] = snapshot->slotSize;
+			snapshot->slotSize++;
+			return;
+		}
+		projection = projection->nextProjection;
+	}
+}
+
+void fxIndexSlots(txMachine* the, txSnapshot* snapshot)
+{
+	txSlot* heap;
+	txSlot* limit;
+	txProjection** projectionAddress = &(snapshot->firstProjection);
+	txProjection* projection;
+	txSlot* slot;
+	txSlot** slotAddress;
+	txID id;
+	size_t* indexAddress;
+
+	heap = the->firstHeap;
+	while (heap) {
+		limit = heap->value.reference;
+		projection = c_calloc(sizeof(txProjection) + (limit - heap - 1) * sizeof(size_t), 1);
+		if (!projection) { snapshot->error = C_ENOMEM; fxJump(the); }
+		projection->heap = heap;
+		projection->limit = limit;
+		*projectionAddress = projection;
+		projectionAddress = &projection->nextProjection;
+		heap = heap->next;
+	}
+	
+	snapshot->slotSize = 1;
+	slotAddress = the->keyArray;
+	id = the->keyIndex;
+	while (id) {
+		if ((slot = *slotAddress)) {
+			fxIndexSlot(the, snapshot, slot);
+			fxIndexReference(the, snapshot, slot);
+		}
+		slotAddress++;
+		id--;
+	}	
+	slot = the->stackTop;
+	while (slot > the->stack) {
+        slot--;
+		fxIndexReference(the, snapshot, slot);
+	}
+	
+	snapshot->slots = c_calloc(sizeof(txSlot*) * snapshot->slotSize, 1);
+	if (!snapshot->slots) { snapshot->error = C_ENOMEM; fxJump(the); }
+	projection = snapshot->firstProjection;
+	while (projection) {
+		heap = projection->heap;
+		limit = projection->limit;
+		slot = heap + 1;
+		indexAddress = &projection->indexes[1];
+		while (slot < limit) {
+			if (slot->flag & XS_MARK_FLAG) {
+				slot->flag &= ~XS_MARK_FLAG; 
+				snapshot->slots[*indexAddress] = slot;
+			}
+			slot++;
+			indexAddress++;
+		}
+		projection = projection->nextProjection;
+	}
+	
+	slot = the->stackTop;
+	while (slot > the->stack) {
+        slot--;
+		slot->flag &= ~XS_MARK_FLAG; 
+	}
+}
 
 void fxLinkChunks(txMachine* the)
 {
@@ -739,45 +1142,6 @@ txSlot* fxProjectSlot(txMachine* the, txProjection* firstProjection, txSlot* slo
 	return address;
 }
 
-void fxProjectTable(txMachine* the, txSnapshot* snapshot, txSlot* table) 
-{
-	txSlot* first = C_NULL;
-	txSlot** last = &first;
-	txSlot** address = table->value.table.address;
-	txSize length = table->value.table.length;
-	txU4 modulo;
-	while (length > 0) {
-		txSlot* slot = *address;
-		if (slot) {
-			*last = slot;
-			last = &slot->next;
-			while ((slot = *last)) {
-				last = &slot->next;
-			}
-		}
-		address++;
-		length--;
-	}
-	address = table->value.table.address;
-	length = table->value.table.length;
-	c_memset(address, 0, length * sizeof(txSlot*));
-	while (first) {
-		txSlot* slot = first->value.entry.slot;
-		if (slot->kind == XS_REFERENCE_KIND) {
-			txSlot buffer;
-			buffer.kind = XS_REFERENCE_KIND;
-			buffer.value.reference = fxProjectSlot(the, snapshot->firstProjection, slot->value.reference);
-			first->value.entry.sum = fxSumEntry(the, &buffer);
-		}
-		modulo = first->value.entry.sum % length;
-		slot = first->next;
-		first->next = C_NULL;
-		first->next = *(address + modulo);
-		*(address + modulo) = first;
-		first = slot;
-	}
-}
-
 txTypeDispatch* fxProjectTypeDispatch(txMachine* the, txTypeDispatch* dispatch) 
 {
 	size_t i = 0;
@@ -808,6 +1172,26 @@ void fxReadAtom(txMachine* the, txSnapshot* snapshot, Atom* atom, txString type)
 	mxThrowIf((*snapshot->read)(snapshot->stream, atom, sizeof(Atom)));
 	atom->atomSize = ntohl(atom->atomSize) - 8;
 	mxAssert((check[0] == type[0]) && (check[1] == type[1]) && (check[2] == type[2]) && (check[3] == type[3]), "snapshot: invalid atom %s\n", type);
+}
+
+void fxReadMapSet(txMachine* the, txSlot* table, txBoolean paired)
+{
+	txSlot* list = table->next;
+	txSlot* key = list->value.list.first;
+	while (key) {
+		txU4 sum = fxSumEntry(the, key);
+		txU4 index = sum & (table->value.table.length - 1);
+		txSlot*  entry = fxNewSlot(the);
+		txSlot** address = &(table->value.table.address[index]);
+		entry->next = *address;
+		entry->kind = XS_ENTRY_KIND;
+		entry->value.entry.slot = key;
+		entry->value.entry.sum = sum;
+		*address = entry;
+		key = key->next;
+		if (paired)
+			key = key->next;
+	}
 }
 
 txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theContext)
@@ -855,7 +1239,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 		#else
 			mxAssert(byte == (txByte)sizeof(txSlot), "snapshot: invalid architecture %d\n", byte);
 		#endif
-		
+	
 			fxReadAtom(the, snapshot, &atom, "SIGN");
 			mxAssert(atom.atomSize == snapshot->signatureLength, "snapshot: invalid signature length %d\n", atom.atomSize);
 			signature = snapshot->signature;
@@ -869,17 +1253,20 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			fxReadAtom(the, snapshot, &atom, "CREA");
 			mxThrowIf((*snapshot->read)(snapshot->stream, &creation, sizeof(txCreation)));
 			fxAllocate(the, &creation);
+			mxThrowIf((*snapshot->read)(snapshot->stream, &(the->profileID), sizeof(txID)));
 	
 			snapshot->firstChunk = the->firstBlock->current;
 			snapshot->firstSlot = the->firstHeap;
 	
 			fxReadAtom(the, snapshot, &atom, "BLOC");
 			mxThrowIf((*snapshot->read)(snapshot->stream, the->firstBlock->current, atom.atomSize));
+			the->currentChunksSize = atom.atomSize;
 			the->firstBlock->current += atom.atomSize;
 	
 			fxReadAtom(the, snapshot, &atom, "HEAP");
 			mxThrowIf((*snapshot->read)(snapshot->stream, the->freeHeap, atom.atomSize));
-			the->freeHeap = the->freeHeap + (atom.atomSize / sizeof(txSlot));
+			the->currentHeapCount = (atom.atomSize / sizeof(txSlot));
+			the->freeHeap = the->freeHeap + the->currentHeapCount;
 	
             slot = the->firstHeap + 1;
 			while (slot < the->freeHeap) {
@@ -891,8 +1278,10 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			while (slot < the->freeHeap) {
 				switch (slot->kind) {
 				case XS_MAP_KIND:
+					fxReadMapSet(the, slot, 1);
+					break;
 				case XS_SET_KIND:
-					fxUnprojectTable(the, snapshot, slot);
+					fxReadMapSet(the, slot, 0);
 					break;
 				}
 				slot++;
@@ -1047,7 +1436,7 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
-	case XS_STATIC_MODULE_RECORD_KIND:
+	case XS_MODULE_SOURCE_KIND:
 		slot->value.module.realm = fxUnprojectSlot(the, snapshot, slot->value.module.realm);
 		break;
 		
@@ -1068,6 +1457,9 @@ void fxReadSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag)
 		break;
 	case XS_ENTRY_KIND:
 		slot->value.entry.slot = fxUnprojectSlot(the, snapshot, slot->value.entry.slot);
+		break;
+	case XS_ERROR_KIND:
+		slot->value.error.info = fxUnprojectSlot(the, snapshot, slot->value.error.info);
 		break;
 	case XS_HOME_KIND:
 		slot->value.home.object = fxUnprojectSlot(the, snapshot, slot->value.home.object);
@@ -1152,41 +1544,6 @@ txSlot* fxUnprojectSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 	return slot;
 }
 
-void fxUnprojectTable(txMachine* the, txSnapshot* snapshot, txSlot* table) 
-{
-	txSlot* first = C_NULL;
-	txSlot** last = &first;
-	txSlot** address = table->value.table.address;
-	txSize length = table->value.table.length;
-	txU4 modulo;
-	while (length > 0) {
-		txSlot* slot = *address;
-		if (slot) {
-			*last = slot;
-			last = &slot->next;
-			while ((slot = *last)) {
-				last = &slot->next;
-			}
-		}
-		address++;
-		length--;
-	}
-	address = table->value.table.address;
-	length = table->value.table.length;
-	c_memset(address, 0, length * sizeof(txSlot*));
-	while (first) {
-		txSlot* slot = first->value.entry.slot;
-		if (slot->kind == XS_REFERENCE_KIND)
-			first->value.entry.sum = fxSumEntry(the, slot);
-		modulo = first->value.entry.sum % length;
-		slot = first->next;
-		first->next = C_NULL;
-		first->next = *(address + modulo);
-		*(address + modulo) = first;
-		first = slot;
-	}
-}
-
 void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 {
 	switch (slot->kind) {
@@ -1194,14 +1551,17 @@ void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 		fxWriteChunkData(the, snapshot, slot->value.string);
 		break;
 	case XS_BIGINT_KIND:
-		fxWriteChunkData(the, snapshot, slot->value.bigint.data);
+		fxWriteChunkBigInt(the, snapshot, slot->value.bigint.data, slot->value.bigint.size);
 		break;
 	case XS_ARGUMENTS_SLOPPY_KIND:
 	case XS_ARGUMENTS_STRICT_KIND:
 	case XS_ARRAY_KIND:
+		if (slot->value.array.address)
+			fxWriteChunkArray(the, snapshot, slot->value.array.address, slot->value.array.length, 2);
+		break;
 	case XS_STACK_KIND:
 		if (slot->value.array.address)
-			fxWriteChunkArray(the, snapshot, slot->value.array.address, slot->value.array.length);
+			fxWriteChunkArray(the, snapshot, slot->value.array.address, slot->value.array.length, 0);
 		break;
 	case XS_ARRAY_BUFFER_KIND:
 		if (slot->value.arrayBuffer.address)
@@ -1235,7 +1595,7 @@ void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 	}
 }
 
-void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length)
+void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, txSize length, txFlag flag)
 {
 	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
 	if (chunk->size & mxChunkFlag) {
@@ -1247,7 +1607,7 @@ void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, tx
 		chunk->temporary = temporary;
 		size = chunk->size - sizeof(txChunk);
 		while (size > 0) {
-			fxWriteSlot(the, snapshot, address, 0);
+			fxWriteSlot(the, snapshot, address, flag);
 			address++;
 			size -= sizeof(txSlot);
 		}
@@ -1258,6 +1618,20 @@ void fxWriteChunkArray(txMachine* the, txSnapshot* snapshot, txSlot* address, tx
 			address++;
 			size -= sizeof(txSlot);
 		}
+	}
+}
+
+void fxWriteChunkBigInt(txMachine* the, txSnapshot* snapshot, void* address, txSize size)
+{
+	txChunk* chunk = (txChunk*)(((txByte*)(address)) - sizeof(txChunk));
+	if (chunk->size & mxChunkFlag) {
+		txByte* temporary = chunk->temporary;
+		size <<= 2;
+		chunk->size &= ~mxChunkFlag;
+		chunk->temporary = C_NULL;
+		mxThrowIf((*snapshot->write)(snapshot->stream, chunk, sizeof(txChunk) + size));
+		chunk->temporary = temporary;
+		fxWriteChunkZero(the, snapshot, chunk->size - sizeof(txChunk) - size);
 	}
 }
 
@@ -1298,24 +1672,20 @@ void fxWriteChunkZero(txMachine* the, txSnapshot* snapshot, txSize size)
 
 void fxWriteChunks(txMachine* the, txSnapshot* snapshot)
 {
-	txSlot* heap;
-	txSlot* stack;
-	stack = the->stackTop - 1;
+	size_t slotSize = snapshot->slotSize;
+	txSlot** slots = snapshot->slots;
+	txSlot* stack = the->stackTop - 1;
 	while (stack >= the->stack) {
 		fxWriteChunk(the, snapshot, stack);
 		stack--;
 	}
-	heap = the->firstHeap;
-	while (heap) {
-			txSlot* slot = heap + 1;
-			txSlot* limit = heap->value.reference;
-		while (slot < limit) {
-			if (!(slot->flag & XS_MARK_FLAG)) {
-				fxWriteChunk(the, snapshot, slot);
-			}
-			slot++;
-		}
-		heap = heap->next;
+	slotSize--;
+	slots++;
+	while (slotSize) {
+		txSlot* slot = *slots;
+		fxWriteChunk(the, snapshot, slot);
+		slotSize--;
+		slots++;
 	}
 }
 
@@ -1323,10 +1693,10 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 {
 	txSlot buffer;
 	c_memset(&buffer, 0, sizeof(buffer));
-	if (flag)
+	if (flag == 1)
 		buffer.next = fxProjectSlot(the, snapshot->firstProjection, slot->next);
-	else
-		buffer.next = slot->next;
+	else if (flag == 2)
+		*((txIndex*)&buffer) = *((txIndex*)slot);
 	buffer.ID = slot->ID;
 	buffer.flag = slot->flag;
 	buffer.kind = slot->kind;
@@ -1430,7 +1800,7 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
-	case XS_STATIC_MODULE_RECORD_KIND:
+	case XS_MODULE_SOURCE_KIND:
 		buffer.value.module.realm = fxProjectSlot(the, snapshot->firstProjection, slot->value.module.realm);
 		buffer.value.module.id = slot->value.module.id;
 		break;
@@ -1460,6 +1830,8 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		buffer.value.entry.sum = slot->value.entry.sum;
 		break;
 	case XS_ERROR_KIND:
+		buffer.value.error.info = fxProjectSlot(the, snapshot->firstProjection, slot->value.error.info);
+		buffer.value.error.which = slot->value.error.which;
 		break;
 	case XS_HOME_KIND:
 		buffer.value.home.object = fxProjectSlot(the, snapshot->firstProjection, slot->value.home.object);
@@ -1509,17 +1881,15 @@ void fxWriteSlotTable(txMachine* the, txSnapshot* snapshot, txSlot** address, tx
 
 void fxWriteSlots(txMachine* the, txSnapshot* snapshot)
 {
-	txSlot* heap = the->firstHeap;
-	while (heap) {
-		txSlot* slot = heap + 1;
-		txSlot* limit = heap->value.reference;
-		while (slot < limit) {
-			if (!(slot->flag & XS_MARK_FLAG)) {
-				fxWriteSlot(the, snapshot, slot, 1);
-			}
-			slot++;
-		}
-		heap = heap->next;
+	size_t slotSize = snapshot->slotSize;
+	txSlot** slots = snapshot->slots;
+	slotSize--;
+	slots++;
+	while (slotSize) {
+		txSlot* slot = *slots;
+		fxWriteSlot(the, snapshot, slot, 1);
+		slotSize--;
+		slots++;
 	}
 }
 
@@ -1535,7 +1905,9 @@ void fxWriteStack(txMachine* the, txSnapshot* snapshot)
 int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 {
 	txSlot* heap;
+	txSize heapCount;
 	txSlot* stack;
+	txSlot** slots;
 	txSize size;
 	txByte byte;
 	txProjection** projectionAddress = &(snapshot->firstProjection);
@@ -1543,7 +1915,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	txSize chunkSize = 0;
 	txSize namesSize = the->nameModulo * sizeof(txSlot*);
 	txSize keysSize = the->keyIndex * sizeof(txSlot*);
-	txSize slotSize = 1;
+	txSize slotSize = 0;
 	txSize stackSize = (txSize)((the->stackTop - the->stack) * sizeof(txSlot));
 	txSize symbolsSize = the->symbolModulo * sizeof(txSlot*);
 	txCreation creation;
@@ -1553,61 +1925,36 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		fxCollectGarbage(the);
 		fxUnlinkChunks(the);
 		
-		heap = the->freeHeap;
+		heap = the->firstHeap;
+		heapCount = 0;
 		while (heap) {
-			heap->flag |= XS_MARK_FLAG;
+			heapCount++;
 			heap = heap->next;
 		}
+		
+		fxIndexSlots(the, snapshot);
 	
 		stack = the->stackTop - 1;
 		while (stack >= the->stack) {
 			fxMeasureSlot(the, snapshot, stack, &chunkSize);
 			stack--;
 		}
-		heap = the->firstHeap;
-		while (heap) {
-			txSlot* slot = heap + 1;
-			txSlot* limit = heap->value.reference;
-			projection = c_calloc(sizeof(txProjection) + (limit - slot) * sizeof(size_t), 1);
-			if (!projection) { snapshot->error = C_ENOMEM; fxJump(the); }
-			projection->heap = heap;
-			projection->limit = limit;
-			*projectionAddress = projection;
-			projectionAddress = &projection->nextProjection;
-			while (slot < limit) {
-				if (!(slot->flag & XS_MARK_FLAG)) {
-					projection->indexes[slot - heap] = slotSize;
-					slotSize++;
-					fxMeasureSlot(the, snapshot, slot, &chunkSize);
-				}
-				slot++;
-			}
-			heap = heap->next;
-		}
+		slotSize = snapshot->slotSize;
+		slots = snapshot->slots;
 		slotSize--;
-		slotSize *= sizeof(txSlot);
-		
-		heap = the->firstHeap;
-		while (heap) {
-			txSlot* slot = heap + 1;
-			txSlot* limit = heap->value.reference;
-			while (slot < limit) {
-				if (!(slot->flag & XS_MARK_FLAG)) {
-					switch (slot->kind) {
-					case XS_MAP_KIND:
-					case XS_SET_KIND:
-						fxProjectTable(the, snapshot, slot);
-						break;
-					}
-				}
-				slot++;
-			}
-			heap = heap->next;
+		slots++;
+		while (slotSize) {
+			txSlot* slot = *slots;
+			fxMeasureSlot(the, snapshot, slot, &chunkSize);
+			slotSize--;
+			slots++;
 		}
+
+		slotSize = (snapshot->slotSize - 1) * sizeof(txSlot);
 	
 		creation.initialChunkSize = the->maximumChunksSize;
 		creation.incrementalChunkSize = the->minimumChunksSize;
-		creation.initialHeapCount = the->maximumHeapCount;
+		creation.initialHeapCount = the->maximumHeapCount - heapCount + 1;
 		creation.incrementalHeapCount = the->minimumHeapCount;
 		creation.stackCount = (txSize)(the->stackTop - the->stackBottom);
 		creation.keyCount = the->keyCount;
@@ -1656,11 +2003,12 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		mxThrowIf((*snapshot->write)(snapshot->stream, "SIGN", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, snapshot->signature, snapshot->signatureLength));
 
-		size = 8 + sizeof(txCreation);
+		size = 8 + sizeof(txCreation) + sizeof(txID);
 		size = htonl(size);
 		mxThrowIf((*snapshot->write)(snapshot->stream, &size, 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, "CREA", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, &creation, sizeof(txCreation)));
+		mxThrowIf((*snapshot->write)(snapshot->stream, &(the->profileID), sizeof(txID)));
 
 		size = 8 + chunkSize;
 		size = htonl(size);
@@ -1697,28 +2045,12 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		mxThrowIf((*snapshot->write)(snapshot->stream, &size, 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, "SYMB", 4));
 		fxWriteSlotTable(the, snapshot, the->symbolTable, the->symbolModulo);
-		
-		heap = the->firstHeap;
-		while (heap) {
-			txSlot* slot = heap + 1;
-			txSlot* limit = heap->value.reference;
-			while (slot < limit) {
-				if (!(slot->flag & XS_MARK_FLAG)) {
-					switch (slot->kind) {
-					case XS_MAP_KIND:
-					case XS_SET_KIND:
-						fxUnprojectTable(the, snapshot, slot);
-						break;
-					}
-				}
-				slot++;
-			}
-			heap = heap->next;
-		}
 	}
 	mxCatch(the) {
 		
 	}
+	if (snapshot->slots)
+		c_free(snapshot->slots);
 	
 	projectionAddress = &(snapshot->firstProjection);
 	while ((projection = *projectionAddress)) {
@@ -1736,5 +2068,3 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	
 	return (snapshot->error) ? 0 : 1;
 }
-
-

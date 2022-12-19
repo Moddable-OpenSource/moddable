@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -62,7 +62,7 @@ class URM09 {
 			...options.sensor
 		});
 
-		if (io.readByte(Register.PRODUCT_ID) !== 0x01)
+		if (io.readUint8(Register.PRODUCT_ID) !== 0x01)
 			throw new Error("unexpected sensor");
 	}
 	configure(options) {
@@ -73,15 +73,15 @@ class URM09 {
 			this.#mode = options.mode & 0b1;
 
 		const config = (this.#range << 4) | (this.#mode << 7);
-//		this.#io.writeByte(Register.CONFIG, this.#mode | this.range);
-		this.#io.writeByte(Register.CONFIG, config);
+//		this.#io.writeUint8(Register.CONFIG, this.#mode | this.range);
+		this.#io.writeUint8(Register.CONFIG, config);
 	}
 	sample() {
 		const io = this.#io;
 		let ret = { proximity: {}, thermometer: {}};
 
 		if ((this.#mode & Config.CONTINUOUS) !== Config.CONTINUOUS) {
-			io.writeByte(Register.COMMAND, CMD_READ_ONCE);
+			io.writeUint8(Register.COMMAND, CMD_READ_ONCE);
 			Timer.delay(READ_DELAY[this.#range]);
 		}
 		switch (this.#range) {
@@ -90,12 +90,12 @@ class URM09 {
 			case Config.RANGE_150CM: ret.proximity.max = 150; break;
 		}
 
-		ret.proximity.distance = io.readWord(Register.DISTANCE_MSB, true);
+		ret.proximity.distance = io.readUint16(Register.DISTANCE_MSB, true);
 		if (ret.proximity.distance == 0xffff)
 			ret.proximity.distance = null;
 		if (ret.proximity.distance <= ret.proximity.max)
 			ret.proximity.near = true;
-		ret.thermometer.temperature = io.readWord(Register.TEMP_MSB, true) / 10;
+		ret.thermometer.temperature = io.readUint16(Register.TEMP_MSB, true) / 10;
 
 		return ret;
 	}

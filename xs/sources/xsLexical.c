@@ -1284,18 +1284,16 @@ void fxGetNextTokenAux(txParser* parser)
 					else if (!c_strncmp(p, "# sourceMappingURL=", 19) || !c_strncmp(p, "@ sourceMappingURL=", 19)) {
 						p += 19;
 						q = p;
-						c = *q++;
-						while ((c != 0) && (c != 10) && (c != 13))
-							c = *q++;
+						while (((c = *q)) && (c != 10) && (c != 13))
+							q++;
 						*q = 0;
 						parser->name = fxNewParserString(parser, p, mxPtrDiff(q - p));
 					}
 					else if (!c_strncmp(p, "# sourceURL=", 12) || !c_strncmp(p, "@ sourceURL=", 12)) {
 						p += 12;
 						q = p;
-						c = *q++;
-						while ((c != 0) && (c != 10) && (c != 13))
-							c = *q++;
+						while (((c = *q)) && (c != 10) && (c != 13))
+							q++;
 						*q = 0;
 						parser->source = fxNewParserSymbol(parser, p);
 					}
@@ -1660,22 +1658,22 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 {
 	txString r = p;
 	txU4 t = 0;
-	*p++ = '&';
+    if (p < q) *p++ = '&';
 	fxGetNextCharacter(parser);
 	if (parser->character == '#') {
-		*p++ = '#';
+		if (p < q) *p++ = '#';
 		fxGetNextCharacter(parser);
 		if (parser->character == 'x') {
-			*p++ = 'x';
+			if (p < q) *p++ = 'x';
 			fxGetNextCharacter(parser);
 			while (fxGetNextStringX(parser->character, &t)) {
-				*p++ = parser->character;
+				if (p < q) *p++ = parser->character;
 				fxGetNextCharacter(parser);
 			}
 		}
 		else {
 			while (fxGetNextStringD(parser->character, &t)) {
-				*p++ = parser->character;
+				if (p < q) *p++ = parser->character;
 				fxGetNextCharacter(parser);
 			}
 		}
@@ -1683,17 +1681,18 @@ txString fxGetNextEntity(txParser* parser, txString p, txString q)
 	else {
 		txEntity* entity = C_NULL;
 		int c = parser->character;
-		while ((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z'))) {
-			*p++ = c;
+		while ((p < q) && ((('0' <= c) && (c <= '9')) || (('A' <= c) && (c <= 'Z')) || (('a' <= c) && (c <= 'z')))) {
+			if (p < q) *p++ = c;
 			fxGetNextCharacter(parser);
 			c = parser->character;
 		}
 		*p = 0;
-		entity = (txEntity*)bsearch(r + 1, gxEntities, XS_ENTITIES_COUNT, sizeof(txEntity), fxCompareEntities);
+        if (r < q)
+            entity = (txEntity*)bsearch(r + 1, gxEntities, XS_ENTITIES_COUNT, sizeof(txEntity), fxCompareEntities);
 		t = entity ? entity->value : 0;
 	}
 	if (parser->character == ';') {
-		*p++ = ';';
+		if (p < q) *p++ = ';';
 		fxGetNextCharacter(parser);
 		if (t)
 			p = fxUTF8Buffer(parser, t, r, q);

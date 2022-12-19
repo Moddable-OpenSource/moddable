@@ -1,0 +1,15 @@
+{
+	"modules": {
+		"*": "$(MODULES)/base/structuredClone/*"
+	},
+	"preload": "structuredClone",
+	"platforms": {
+		"esp": {
+			"recipes": {
+				"strings-in-flash-force-l32": [
+					"structuredClone*"
+				]
+			}
+		}
+	}
+}

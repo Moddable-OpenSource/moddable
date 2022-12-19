@@ -1,9 +1,6 @@
 # Data
-
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 7, 2022
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Revised: September 8, 2022
 
 ## Table of Contents
 
@@ -11,8 +8,9 @@ Revised: March 7, 2022
 * [Hex](#hex)
 * [CRC](#crc)
 * [QRCode](#qrcode)
-* [Text](#text)
-* [zlib](#zlib)
+* [TextDecoder & Text Encoder](#text)
+* [Inflate & Deflate (zlib)](#zlib)
+* [URL & URLSearchParams](#url)
 
 <a id="base64"></a>
 ## class Base64
@@ -79,7 +77,9 @@ let b1 = Hex.toBuffer("01:23:45:67:89:AB:CD:EF", ":");
 
 The hexadecimal digits may be uppercase or lowercase. If the optional separator argument is provided, it must appear between each pair of hexadecimal digits.
 
-### `static toString(buffer [, separator]);`
+The optional separator must be a single character in the 7-bit ASCII range.
+
+### `static toString(buffer [[, separator], hexChars]);`
 
 The `toString` function converts a buffer to a hexadecimal encoded `String`.
 
@@ -89,6 +89,16 @@ let s0 = Hex.toString(buffer, ".");
 // s0 is 01.23.45.67.89.AB.CD.EF
 let s1 = Hex.toString(buffer);
 // s1 is 0123456789ABCDEF
+```
+
+The optional separator must be a single character in the 7-bit ASCII range.
+
+The optional `hexChars` argument may contain 16 characters to use for the hexadecimal encoding. The characters must be 7-bit ASCII:
+
+```js
+let buffer = Hex.toBuffer("0123456789abcdef");
+let s0 = Hex.toString(buffer, "-", "0123456789abwxyz");
+// s0 is 01-23-45-67-89-ab-wx-yz
 ```
 
 <a id="crc"></a>
@@ -124,7 +134,7 @@ The `CRC8` and `CRC16` functions take a number of options used to specify the CR
 
 The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8 and 16-bit integers for CRC16.
 
-The [crc example](https://github.com/Moddable-OpenSource/moddable/blob/public/examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
+The [crc example](../../examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
 
 - `CRC-8` 
 - `CRC-8/CDMA2000` 
@@ -203,8 +213,10 @@ The following properties are supported in the options object:
 
 | Property | Description |
 | :---: | :--- |
-| `maxVersion` |  A number between 1 and 40 inclusive indicating the maximum version of the generated QR Code. The version number determines the amount of data the QR Code can contain. This property is optional and defaults to 40. |
+| `maxVersion` |  A number between 1 and 40 inclusive indicating the maximum version of the generated QR Code. The version number determines the amount of data the QR Code can contain. The implementation uses the minimum version number possible for the size of the data provided. This property is optional and defaults to 40. |
 | `input` |  A `String` or buffer containing the data to encode into the QR Code. This property is required. |
+
+The `qrCode` function throws an exception if it detects invalid parameters or that there is not enough memory to generate the QR Code.
 
 ```js
 const code = qrCode({input: "Welcome to Moddable", maxVersion: 4});
@@ -237,9 +249,9 @@ Include the modules' manifest to use them in a project:
 	]
 ```
 
-The `TextDecoder` implements the [TextDecoder class](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder) as [specified by WhatWG](https://encoding.spec.whatwg.org/#interface-textdecoder). It accepts only UTF-8 input data.
+The `TextDecoder` implements the [TextDecoder class](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder) as [specified by WHATWG](https://encoding.spec.whatwg.org/#interface-textdecoder). It accepts only UTF-8 input data.
 
-The `TextEncoder` implements the [TextEncoder class](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) as [specified by WhatWG](https://encoding.spec.whatwg.org/#interface-textencoder). The implementation includes `encodeInto()`.
+The `TextEncoder` implements the [TextEncoder class](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) as [specified by WHATWG](https://encoding.spec.whatwg.org/#interface-textencoder). The implementation includes `encodeInto()`.
 
 <a id="zlib"></a>
 ## zlib: class Inflate and class Deflate
@@ -260,4 +272,29 @@ Include the modules' manifest to use them in a project:
 	]
 ```
 
-> **Note**: A significant amount of memory is required for zlib decompresssion and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.
+The [inflate example](../../examples/data/inflate/main.js) demonstrates how to decompress data as a one-shot operation and using the `onData` callback for streaming.
+
+> **Note**: A significant amount of memory is required for zlib decompression and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.
+
+<a id="url"></a>
+## class URL and class URLSearchParams 
+The `URL` and `URLSearchParams` classes provide utilities for working with URLs and their search parameters. 
+
+```js
+import URL from "url";
+import {URL, URLSearchParams} from "url";
+```
+
+Include the module's manifest to use it in a project:
+
+```json
+	"include": [
+		"$(MODULES)/data/url/manifest.json"
+	]
+```
+
+`URL` implements the [URL class](https://developer.mozilla.org/en-US/docs/Web/API/URL) as [specified by WHATWG](https://url.spec.whatwg.org/#url-class). The implementation fully conforms to the standard with two exceptions: [Punycode](https://en.wikipedia.org/wiki/Punycode) and [IDNA](https://www.unicode.org/reports/tr46/) support are unimplemented. These are used primarily for the display and safe handling of user-entered URLs in browsers, which are not generally a concern on embedded systems. With some effort (and increase in code size), the implementation could support both.
+
+`URLSearchParams` implements the [URLSearchParams class](https://developer.mozilla.org/en-US/docs/Web/API/URL) as [specified by WHATWG](https://url.spec.whatwg.org/#urlsearchparams).
+
+[Tests for both](https://github.com/Moddable-OpenSource/moddable/tree/public/tests/modules/data/url) are included in the Moddable SDK. They are based on the tests used to validate these APIs in web browsers.

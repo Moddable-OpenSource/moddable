@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -28,6 +28,8 @@ class NeoPixel @ "xs_neopixel_destructor" {
 
 	setPixel(index, color) @ "xs_neopixel_setPixel";
 	fill(color, index, count) @ "xs_neopixel_fill";
+
+	getPixel(index) @ "xs_neopixel_getPixel";
 
 	set brightness(value) @ "xs_neopixel_brightness_set";
 	get brightness() @ "xs_neopixel_brightness_get";

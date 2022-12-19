@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,17 +38,30 @@ void xs_hex_toString(xsMachine *the)
 
 	if (argc > 1) {
 		char *str = xsmcToString(xsArg(1));
-		separator = c_read8(str);
+		int len = c_strlen(str); 
+		if (len) {
+			if (len > 1)
+				xsUnknownError("invalid separator");
+			separator = c_read8(str);
+			if (!separator || (0x80 & separator))
+				xsUnknownError("invalid separator");
+		}
 		if (argc > 2) {
 			gHex = xsmcToString(xsArg(2));
-			if (c_strlen(gHex) < 16)
+			if (16 != c_strlen(gHex))
 				xsUnknownError("bad string");
+			for (i = 0; i < 16; i++) {			// 7-bit ASCII, not UTF-8
+				if (!gHex[i] || (0x80 & gHex[i]))
+					xsUnknownError("bad string");
+			}
 		}
 	}
 
 	xsResult = xsStringBuffer(NULL, (length * 2) + (separator ? (length - 1) : 0));
 	string = xsmcToString(xsResult);
 	xsmcGetBufferReadable(xsArg(0), (void **)&bytes, &length);
+	if (argc > 2)
+		gHex = xsmcToString(xsArg(2));
 
 	for (i = 0; i < length; i++) {
 		uint8_t byte = c_read8(bytes++);
@@ -69,7 +82,14 @@ void xs_hex_toBuffer(xsMachine *the)
 
 	if (argc > 1) {
 		char *str = xsmcToString(xsArg(1));
-		separator = c_read8(str);
+		length = c_strlen(str);
+		if (length) {
+			if (length > 1)
+				xsUnknownError("invalid separator");
+			separator = c_read8(str);
+			if (!separator || (0x80 & separator))
+				xsUnknownError("invalid separator");
+		}
 	}
 
 	string = xsmcToString(xsArg(0));

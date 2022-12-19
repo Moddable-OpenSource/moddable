@@ -128,8 +128,8 @@ const darkColors = {
 
 	"code": { "fill": "#2a2a2a", "color": "#fffffff0" },
 	"codeComment": { "color": "#00bff3" },
-	"codeKeyword": { "color": "#f26d7d" },
-	"codeLiteral": { "color": "#fff568" },
+	"codeKeyword": { "color": "#fff568" },
+	"codeLiteral": { "color": "#f26d7d" },
 	"codeResult": { "fill": "#fbf4bb" },
 	"codeSelection": { "fill": "#666e81" },
 	"error": { "color": "#262626" },
@@ -301,7 +301,14 @@ function buildTheme($, codeFont) {
 		new Skin({ texture:textures.glyphs, color:$.messages[0].fill, x:0, y:56, width:16, height:8, variants:80 }),	
 	];
 	styles.message = new Style({ font:codeFont, color:[$.code.color, $.codeKeyword.color, $.codeLiteral.color, $.codeComment.color], top:5, bottom:5, horizontal:"left" });
-		
+
+	// PROFILE	
+	styles.profileLight = new Style({ font:"light 10px", color:$.tableRow.color, horizontal:"right", vertical:"bottom" });
+	styles.profileNormal = new Style({ font:"10px", color:$.tableRow.color, horizontal:"right", vertical:"bottom" });
+	skins.profilePercent = new Skin({ fill:[$.tableHeader.stroke,$.callRow.fill]  });
+	skins.profileWhere = new Skin({ fill:$.button.fill, stroke:$.button.stroke, borders: { left:1, right:1, top:1, bottom:1 }});
+	styles.profileWhere = new Style({ font:"light 10px", color:$.button.color, left:5, right:5, bottom:1 });
+
 	// SERIAL
 	skins.progressBar = new Skin({ fill:$.progressBar.fill });
 	

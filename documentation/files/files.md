@@ -1,9 +1,6 @@
 # Files
-
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 23, 2022
-
-**Warning**: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
+Revised: November 28, 2022
 
 ## Table of Contents
 
@@ -13,6 +10,9 @@ Revised: March 23, 2022
 	* [File Iterator](#file-iterator)
 	* [File System](#file-system)
 	* [Host File System Configuration](#platforms)
+		* [SPIFFS](#spiffs)
+		* [FAT32](#fat32)
+		* [littlefs](#littlefs)
 * [Zip](#zip)
 * [Resource](#resource)
 * [Preference](#preference)
@@ -248,6 +248,8 @@ The constructor takes as its sole argument the path of the directory to iterate 
 let iterator = new Iterator(config.file.root);
 ```
 
+The iterator instance is a JavaScript [iterable object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...of) so it may be used in `for...of` loops. An example is provided below.
+
 ***
 
 #### `next()`
@@ -276,6 +278,17 @@ while (item = iterator.next()) {
 ```
 
 The iterator's `next` function returns an object.  If the object has a `length` property, it is a file; if there is no `length` property, it is a directory.
+
+This is a variation of the same example using a `for...of` loop.
+
+```js
+for (const item of (new Iterator(config.file.root))) {
+	if (undefined === item.length)
+		trace(`Directory: ${item.name}\n`);
+	else
+		trace(`File: ${item.name}, ${item.length} bytes\n`);
+}
+```
 
 ***
 
@@ -318,6 +331,7 @@ The properties available on the object returned by `info` vary based on the capa
 
 This section describes how the file system is implemented on some embedded hosts. This information is helpful for situations where the default file system configuration does not meet the needs of a particular project.
 
+<a id="spiffs"></a>
 #### SPIFFS -- ESP8266 & ESP32
 
 On ESP8266 and (by default) ESP32, the File module is implemented using the [SPIFFS](https://github.com/pellepl/spiffs) file system.
@@ -328,7 +342,7 @@ The SPIFFS file system requires some additional memory. Including SPIFFS in the 
 
 If the SPIFFS file system has not been initialized, it is formatted when first used. Initialization takes up to one minute.
 
-On ESP32, the SPIFFS partition size is specified in a partitions file with a partition of type `data` and subtype `spiffs`. The [default partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj/partitions.csv) allocates a 64 KB partition for this purpose. A custom partition file can be specified by setting the `PARTITIONS_FILE` variable in the `build` section of the project manifest.
+On ESP32, the SPIFFS partition size is specified in a partitions file with a partition of type `data` and subtype `spiffs`. The [default partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/partitions.csv) allocates a 64 KB partition for this purpose. A custom partition file can be specified by setting the `PARTITIONS_FILE` variable in the `build` section of the project manifest.
 
 ```JSON
 "build": {
@@ -346,6 +360,7 @@ On ESP32, the SPIFFS file system is mounted at a specified path and all files/di
 }
 ```
 
+<a id="fat32"></a>
 #### FAT32 -- ESP32
 
 The `File` class implements an optional FAT32 file system for the ESP32. Unlike SPIFFS, FAT32 file systems are not flat: they have directory structures and long filenames (up to 255 characters).
@@ -400,6 +415,42 @@ By default, the FAT32 file system is mounted at `/mod`. To change the default ro
 	}
 }
 ```
+
+<a id="littlefs"></a>
+#### littlefs
+The [littlefs](https://github.com/littlefs-project/littlefs) file system is "a little fail-safe filesystem designed for microcontrollers." It provides a high reliability, hierarchical file system in a small code footprint (about 60 KB) using minimal memory (well under 1 KB) with a high degree of configurability. littlefs also supports long file names (up to 255 characters) and formats a new partition very quickly.
+
+The Moddable SDK supports littlefs using the APIs described above. To use littlefs, include its manifest. 
+
+```json
+"includes": {
+	"$MODDABLE/modules/files/file/manifest_littlefs.json"
+}
+```
+
+> **Note**: A project may use the littlefs manifest or the default file manifest (`$MODDABLE/modules/files/file/manifest.json`). Both cannot currently be included in the same project.
+
+On ESP32, littlefs uses the "storage" partition to hold the file system. On ESP8266, the file system is stored in the upper 3 MB of flash (the same area used by SPIFFS). On other devices, littlefs uses a 64 KB static memory buffer to hold the file system. This RAM disk mode allows littlefs to be used with the simulator.
+
+The littlefs implementation is thread safe on devices running FreeRTOS (ESP32) allowing littlefs to be used with Workers. Thread safety is irrelevant on ESP8266 as it runs as a single process. The thread safety support may be extended for other runtime environments.
+
+The littlefs implementation can be configured to trade-off performance and memory use. The default configuration in the Moddable SDK uses the least memory possible. For projects that make lightweight use of the file system, this offers adequate performance. To improve performance, the configuration may be changed in the project's manifest. The `read_size`, `prog_size`, `lookahead_size`, and `block_cycles` values are described in [`lfs.h`](https://github.com/littlefs-project/littlefs/blob/40dba4a556e0d81dfbe64301a6aa4e18ceca896c/lfs.h#L194-L230). Experimentation has shown that increasing the four `*_size` settings from 16 bytes to 512 gives a significant performance boost at the expense of 2 KB of RAM.
+
+```json
+	"defines": {
+		"file": {
+			"lfs": {
+				"read_size": 16,
+				"prog_size": 16,
+				"cache_size": 16,
+				"lookahead_size": 16,
+				"block_cycles": 500
+			}
+		}
+	},
+```
+
+When not in use (when all files and file iterators are closed), the littlefs implementation unmounts the file system. This releases all memory. This is the same behavior implemented by SPIFFS and FAT32.
 
 <a id="zip"></a>
 ## class ZIP
@@ -525,7 +576,7 @@ import Resource from "Resource";
 
 ### `constructor(path)`
 
-The `Resource` constructor takes a single argument, the resource path, and returns an `ArrayBuffer` or Host Buffer containing the resource data.
+The `Resource` constructor takes a single argument, the resource path, and returns a Host Buffer containing the resource data.
 
 ```js
 let resource = new Resource("logo.bmp");
@@ -546,7 +597,7 @@ if (Resource.exists(path))
 
 ***
 
-### `slice(begin[, end])`
+### `slice(begin[[, end], copy])`
 
 The `slice` function returns a portion of the resource in an `ArrayBuffer`. The default value of `end` is the resource size.
 
@@ -555,6 +606,8 @@ let resource = new Resource("table.dat");
 let buffer1 = resource.slice(5);		// Get a buffer starting from offset 5
 let buffer2 = resource.slice(0, 10);	// Get a buffer of the first 10 bytes
 ```
+
+The optional `copy` argument defaults to `true`. If it is set to `false`, the return value is a read-only `HostBuffer` that references the original resource data. This option is useful for creating a reference to a portion of the resource data without copying it to RAM.
 
 ***
 
@@ -578,7 +631,10 @@ let ssid = Preference.get(domain, "ssid");
 let password = Preference.get(domain, "psk");
 ```
 
-Preference values are limited to 63 bytes. Key and domain names are limited to 32 bytes.
+Limits on the length of key/domain names and preference values vary by target platform.
+
+ - On ESP8266, key/domain names are limited to 32 characters and values are limited to 63 bytes.
+ - On ESP32, the `Preference` class is backed by the ESP-IDF's [NVS Library](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html) which limits key/domain names to 15 characters and values to 4000 bytes.
 
 On embedded devices the storage space for preferences is limited. The amount depends on the device, but it can be as little as 4 KB. Consequently, applications should take care to keep their  preferences as small as practical.
 

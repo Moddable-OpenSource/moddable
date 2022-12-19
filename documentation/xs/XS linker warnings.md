@@ -1,10 +1,6 @@
-# XS linker warnings
-
-Copyright 2019 Moddable Tech, Inc.
-
+# XS Linker Warnings
+Copyright 2019 Moddable Tech, Inc.<BR>
 Revised: November 9, 2019
-
-Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
 ## Preload
 
@@ -130,7 +126,7 @@ Most instances of built-ins classes can be preloaded but cannot be aliased. Once
 | Number | Yes | No | - |
 | Promise | Yes | No | - |
 | Proxy | Yes | No | revoke |
-| RegExp\* | No | No | 
+| RegExp | Yes | No | 
 | Set | Yes | No | add, clear, delete |
 | String | Yes | No | - |
 | Symbol | Yes | No | - |
@@ -141,5 +137,5 @@ Most instances of built-ins classes can be preloaded but cannot be aliased. Once
 
 * Instances of ArrayBuffer are mostly accessed thru instances of DataView and TypedArray. Currently the endianness at build time has to be the same as the endianness at run time.
 * Since classes are instances of Function, static properties and static private properties of preloaded classes are read-only.
-* The XS linker reports errors when instances of AsyncGenerator, Generator or RegExp are preloaded.
+* The XS linker reports errors when instances of AsyncGenerator or Generator are preloaded.
 * For preloaded instances of TypedArray, integer-indexed assignment also throws a type error.

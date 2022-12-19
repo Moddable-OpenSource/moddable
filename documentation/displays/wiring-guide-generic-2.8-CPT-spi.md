@@ -1,6 +1,5 @@
 #  BuyDisplay 2.8" CTP Display Wiring Guide - ESP8266
-
-Copyright 2018 Moddable Tech, Inc.  
+Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: December 6, 2018
 
 ![Generic SPI Display](images/spi_serial_2.8_inch_320x240_tft_lcd_display_module_ili9341_arduino_stm32_1.jpg)
@@ -15,7 +14,7 @@ Revised: December 6, 2018
 | **Type** | TFT LCD
 | **Interface** | SPI
 | **Drivers** | video [ILI9341](../../documentation/drivers/ili9341/ili9341.md), touch FT6206
-| **Availability** | [2.8" BuyDisplay CTP display] (http://www.buydisplay.com/default/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module)
+| **Availability** | [2.8" BuyDisplay CTP display](http://www.buydisplay.com/default/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module)
 | **Description** | This BuyDisplay screen is highly configurable and can be ordered with varying touch modules, main power voltage and connection types. This sample is for the 3.3v CTP version.
 
 ## Configuration

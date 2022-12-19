@@ -1,12 +1,15 @@
 import * as increment from "increment";
-const mod = "mod"
-let compartment1 = new Compartment({}, { 
-	increment,
-	mod
+let compartment1 = new Compartment({ 
+	modules: {
+		increment: { namespace: increment },
+		mod: { source: "mod" },
+	}
 });
-let compartment2 = new Compartment({}, { 
-	increment,
-	mod
+let compartment2 = new Compartment({ 
+	modules: {
+		increment: { namespace: increment },
+		mod: { source: "mod" },
+	}
 });
 
 let modNS1 = compartment1.importNow("mod")

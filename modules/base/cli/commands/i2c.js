@@ -20,6 +20,7 @@
 
 import CLI from "cli";
 import SMBus from "pins/smbus";
+import I2C from "pins/i2c";
 
 CLI.install(function(command, parts) {
 	switch (command) {
@@ -27,7 +28,6 @@ CLI.install(function(command, parts) {
 			if (parts.length < 1)
 				throw new Error("missing read/write/scan");
 			let address = parseInt(parts[1]);
-			let i2c = new SMBus({address});
 			let mode = parts[0].toLowerCase();
 			if ("read" === mode) {
 				if (parts.length < 2)
@@ -59,14 +59,14 @@ CLI.install(function(command, parts) {
 				for (let address = 1; address < 128; address++) {
 					let i2c;
 					try {
-						i2c = new SMBus({address});
-						i2c.readByte(0);
-					 	this.line("Found: 0x", address.toString(16));
+						i2c = new I2C({address, throw: false});
+						i2c.write(0, false);			// set register
+						if (i2c.read(1))
+							this.line("Found: 0x", address.toString(16));
 					}
-					catch (e) {
+					catch {
 					}
-					if (i2c)
-						i2c.close();
+					i2c?.close();
 				}
 			}
 			else

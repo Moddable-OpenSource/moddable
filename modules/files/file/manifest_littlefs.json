@@ -1,0 +1,34 @@
+{
+	"modules": {
+		"file": "$(MODULES)/files/file/*",
+		"*": [
+			"$(MODULES)/files/file/littlefs/*"
+		]
+	},
+	"preload": "file",
+	"config": {
+		"file": {
+			"root": "/"
+		}
+	},
+	"defines": {
+		"file": {
+			"lfs": {
+				"read_size": 16,
+				"prog_size": 16,
+				"cache_size": 16,
+				"lookahead_size": 16,
+				"block_cycles": 500
+			}
+		}
+	},
+	"platforms":{
+		"esp32": {
+			"defines": {
+				"file": {
+					"partition": "#storage"
+				}
+			}
+		}
+	}
+}

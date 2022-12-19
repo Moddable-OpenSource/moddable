@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -35,11 +35,11 @@ class PCF8523 {
 	#blockBuffer = new Uint8Array(7);
 
 	constructor(options) {
-		const { rtc } = options;
-		const io = this.#io = new rtc.io({
+		const { clock } = options;
+		const io = this.#io = new clock.io({
 			hz: 400_000,
 			address: 0x68,
-			...rtc
+			...clock
 		});
 
 		try {
@@ -56,8 +56,8 @@ class PCF8523 {
 	}
 	configure(options) {
 	}
-	get enabled() {
-		return (this.#io.readByte(Register.CTRL1) & Register.STOP_BIT) ? false : true;
+	get configuration() {
+		return {};
 	}
 	get time() {
 		const io = this.#io;
@@ -68,6 +68,10 @@ class PCF8523 {
 		if (reg[0] & Register.VALID_BIT) {
 			// if high bit of seconds is set, then time is uncertain
 			return undefined;
+		}
+
+		if (this.#io.readByte(Register.CTRL1) & Register.STOP_BIT) {
+			return undefined; // disabled
 		}
 
 		// yr, mo, day, hr, min, sec

@@ -141,6 +141,8 @@ class Display @ "xs_display_destructor" {
 		}
 		if ("adaptiveBrightnessMinimum" in options)
 			this.command(0x5e, options.adaptiveBrightnessMinimum);
+		if ("async" in options)
+			configure.call(this, 4, options.async);
 	}
 	begin(options) @ "xs_display_begin"
 	send(buffer) @ "xs_display_send"
@@ -161,6 +163,7 @@ function configure() @ "xs_display_configure";
 	1 - format
 	2 - rotation
 	3 - position
+	4 - async
 */
 
 export default Display;

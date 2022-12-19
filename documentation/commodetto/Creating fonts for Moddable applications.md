@@ -1,7 +1,5 @@
 # Creating fonts for applications built on the Moddable SDK
-
-Copyright 2017-2022 Moddable Tech, Inc.
-
+Copyright 2017-2022 Moddable Tech, Inc.<BR>
 Revised: January 7, 2022
 
 Moddable uses the [BMFont](http://www.angelcode.com/products/bmfont/doc/file_format.html) format for fonts

@@ -564,6 +564,8 @@ void fx_Date_parse(txMachine* the)
 	}
    if (dt.year < 0)
        goto fail;
+	if ((yearSign < 0) && (dt.year == 0))
+       goto fail;
 	if (dt.month < 0)
 		dt.month = 0;
 	if (dt.date < 0)

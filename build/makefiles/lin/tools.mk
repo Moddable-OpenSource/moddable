@@ -32,6 +32,7 @@ XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
 COMMODETTO = $(MODDABLE)/modules/commodetto
+DATA = $(MODDABLE)/modules/data
 INSTRUMENTATION = $(MODDABLE)/modules/base/instrumentation
 TOOLS = $(MODDABLE)/tools
 
@@ -117,6 +118,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
+	$(MOD_DIR)/wavreader.xsb \
 	$(MOD_DIR)/file.xsb \
 	$(MOD_DIR)/buildclut.xsb \
 	$(MOD_DIR)/cdv.xsb \
@@ -129,6 +131,7 @@ MODULES = \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcrez.xsb \
+	$(MOD_DIR)/nodered2mcu.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/resampler.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
@@ -136,6 +139,7 @@ MODULES = \
 	$(MOD_DIR)/unicode-ranges.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
+	$(MOD_DIR)/url.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -150,7 +154,8 @@ MODULES = \
 	$(TMP_DIR)/image2cs.c.xsi \
 	$(TMP_DIR)/miniz.c.xsi \
 	$(TMP_DIR)/modInstrumentation.c.xsi \
-	$(TMP_DIR)/tool.c.xsi
+	$(TMP_DIR)/tool.c.xsi \
+	$(TMP_DIR)/url.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -162,9 +167,11 @@ PRELOADS =\
 	-p commodetto/Poco.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
-	-p file.xsb
+	-p file.xsb\
+	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 
 HEADERS = \
@@ -188,7 +195,8 @@ OBJECTS = \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
 	$(TMP_DIR)/tool.c.o \
-	$(TMP_DIR)/wav2maud.c.o
+	$(TMP_DIR)/wav2maud.c.o \
+	$(TMP_DIR)/url.c.o
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
@@ -200,6 +208,7 @@ COMMANDS = \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mclocal \
 	$(BIN_DIR)/mcrez \
+	$(BIN_DIR)/nodered2mcu \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode \
 	$(BIN_DIR)/wav2maud \
@@ -210,7 +219,9 @@ else
   MODULES += $(MOD_DIR)/mcrun.xsb
   COMMANDS += $(BIN_DIR)/mcrun
 endif 
-	
+
+TOOLS_VERSION ?= $(shell cat $(MODDABLE)/tools/VERSION)
+
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
@@ -221,7 +232,8 @@ C_DEFINES = \
 	-DmxNoFunctionLength=1 \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1
+	-DmxFewGlobalsTable=1 \
+	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 C_DEFINES += \
 	-Wno-misleading-indentation \
 	-Wno-implicit-fallthrough \
@@ -237,7 +249,7 @@ else
 	C_FLAGS += -D_RELEASE=1 -O3
 endif
 
-LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread
+LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread -ldl
 
 LINK_FLAGS = -fPIC
 
@@ -245,7 +257,7 @@ XSC = $(BUILD_DIR)/bin/lin/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/lin/$(GOAL)/xsid
 XSL = $(BUILD_DIR)/bin/lin/$(GOAL)/xsl
 
-VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(TOOLS)
+VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/url $(DATA)/wavreader $(TOOLS)
 
 build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(BIN_DIR) $(BIN_DIR)/$(NAME) $(COMMANDS)
 
@@ -285,11 +297,20 @@ $(MOD_DIR)/commodetto/%.xsb: $(COMMODETTO)/commodetto%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR)/commodetto -r $*
 
+$(MOD_DIR)/%.xsb: $(DATA)/url/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
+$(MOD_DIR)/%.xsb: $(DATA)/wavreader/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
 $(MOD_DIR)/%.xsb: $(TOOLS)/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc -c -d -e $< -o $(MOD_DIR)
 
 $(OBJECTS): $(XS_HEADERS) $(HEADERS) | $(TMP_DIR)/mc.xs.c
+$(TMP_DIR)/tool.c.o : $(MODDABLE)/tools/VERSION
 $(TMP_DIR)/%.c.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -o $@
@@ -300,72 +321,77 @@ $(TMP_DIR)/%.c.xsi: %.c
 
 $(BIN_DIR)/buildclut: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": buildclut"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
 	chmod +x $(BIN_DIR)/buildclut
 
 $(BIN_DIR)/cdv: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": cdv"
-	echo '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools cdv "$$@"' > $(BIN_DIR)/cdv
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools cdv "$$@"' > $(BIN_DIR)/cdv
 	chmod +x $(BIN_DIR)/cdv
 
 $(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
 	chmod +x $(BIN_DIR)/colorcellencode
 
 $(BIN_DIR)/compressbmf: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": compressbmf"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
 	chmod +x $(BIN_DIR)/compressbmf
 
 $(BIN_DIR)/image2cs: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": image2cs"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
 	chmod +x $(BIN_DIR)/image2cs
 
 $(BIN_DIR)/mcbundle: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcbundle"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcbundle "$$@"' > $(BIN_DIR)/mcbundle
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcbundle "$$@"' > $(BIN_DIR)/mcbundle
 	chmod +x $(BIN_DIR)/mcbundle
 
 $(BIN_DIR)/mcconfig: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcconfig"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
 	chmod +x $(BIN_DIR)/mcconfig
 
 $(BIN_DIR)/mclocal: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
 
 $(BIN_DIR)/mcrez: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
 
 $(BIN_DIR)/mcrun: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrun"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
 	chmod +x $(BIN_DIR)/mcrun
 
 $(BIN_DIR)/png2bmp: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
+
+$(BIN_DIR)/nodered2mcu: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": nodered2mcu"
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools nodered2mcu "$$@"' > $(BIN_DIR)/nodered2mcu
+	chmod +x $(BIN_DIR)/nodered2mcu
 
 $(BIN_DIR)/rle4encode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": rle4encode"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
 	chmod +x $(BIN_DIR)/rle4encode
 
 $(BIN_DIR)/wav2maud: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": wav2maud"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
 	chmod +x $(BIN_DIR)/wav2maud
 
 $(BIN_DIR)/bles2gatt: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": bles2gatt"
-	printf '#!/bin/bash\n$$MODDABLE/build/bin/lin/'$(GOAL)'/tools bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
+	@echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
 	chmod +x $(BIN_DIR)/bles2gatt
 
 clean:

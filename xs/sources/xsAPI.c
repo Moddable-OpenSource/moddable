@@ -546,9 +546,10 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 			mxPushUndefined();
 			the->stack->kind = XS_HOST_FUNCTION_KIND;
 			the->stack->value.hostFunction.builder = builder;
-			the->stack->value.hostFunction.IDs = (txID*)(the->code);
+			the->stack->value.hostFunction.profileID = the->profileID;
+			the->profileID++;
 		#else
-			fxNewHostFunction(the, builder->callback, builder->length, (the->code && (builder->id)) ? ((txID*)(the->code))[builder->id] : builder->id);
+			fxNewHostFunction(the, builder->callback, builder->length, builder->id, XS_NO_ID);
 		#endif
 		}
 		else
@@ -569,7 +570,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 
 	fxToInstance(the, the->stack);
 	aStack = the->stack;
-	instance = fxNewHostFunction(the, theCallback, theLength, name);
+	instance = fxNewHostFunction(the, theCallback, theLength, name, XS_NO_ID);
 	instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 	property = fxLastProperty(the, instance);
 	fxNextSlotProperty(the, property, aStack, mxID(_prototype), XS_GET_ONLY);
@@ -582,7 +583,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 	return instance;
 }
 
-txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theLength, txInteger name)
+txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theLength, txInteger name, txInteger profileID)
 {
 	txSlot* instance;
 	txSlot* property;
@@ -601,10 +602,14 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_CALLBACK_KIND;
 	property->value.callback.address = theCallback;
-	property->value.callback.IDs = C_NULL;
+	property->value.callback.closures = C_NULL;
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
+	if (profileID != XS_NO_ID)
+		property->ID = profileID;
+	else
+		property->ID = fxGenerateProfileID(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
@@ -614,15 +619,6 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	}
 	else
 		property->value.home.module = C_NULL;
-
-#ifdef mxProfile
-	/* PROFILE */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
-#endif
 
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
@@ -1350,7 +1346,7 @@ void fxDebugger(txMachine* the, txString thePath, txInteger theLine)
 
 const txByte gxNoCode[3] ICACHE_FLASH_ATTR = { XS_CODE_BEGIN_STRICT, 0, XS_CODE_END };
 
-txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext)
+txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext, txID profileID)
 {
 	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
 	if (the) {
@@ -1377,15 +1373,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 		#ifdef mxDebug
 			the->name = theName;
 		#endif
-		#ifdef mxProfile
-			the->profileID = 1;
-			the->profileBottom = c_malloc(XS_PROFILE_COUNT * sizeof(txProfileRecord));
-			if (!the->profileBottom)
-				fxJump(the);
-			the->profileCurrent = the->profileBottom;
-			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
-		#endif
-
+			the->profileID = (profileID != XS_NO_ID) ? profileID : mxBaseProfileID;
 			fxAllocate(the, theCreation);
 
             c_memset(the->nameTable, 0, the->nameModulo * sizeof(txSlot *));
@@ -1500,6 +1488,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
+			mxPushUndefined();
 			mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = fxNewRealmInstance(the);
 			mxPop();
 
@@ -1538,9 +1527,6 @@ void fxDeleteMachine(txMachine* the)
 #endif
 
 	if (!(the->shared)) {
-	#ifdef mxProfile
-		fxStopProfiling(the);
-	#endif
 	#ifdef mxFrequency
 		fxReportFrequency(the);
 	#endif
@@ -1574,19 +1560,6 @@ void fxDeleteMachine(txMachine* the)
 	}
 #endif
 	fxDelete_dtoa(the->dtoa);
-	if (!(the->shared)) {
-	#ifdef mxProfile
-		if (the->profileBottom) {
-			c_free(the->profileBottom);
-			the->profileBottom = C_NULL;
-			the->profileCurrent = C_NULL;
-			the->profileTop = C_NULL;
-		}
-		if (the->profileDirectory) {
-			c_free(the->profileDirectory);
-		}
-	#endif
-	}
 	fxDeleteMachinePlatform(the);
 	fxFree(the);
 	c_free(the);
@@ -1625,15 +1598,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 		#ifdef mxDebug
 			the->name = theName;
 		#endif
-		#ifdef mxProfile
 			the->profileID = theMachine->profileID;
-			the->profileBottom = c_malloc(XS_PROFILE_COUNT * sizeof(txProfileRecord));
-			if (!the->profileBottom)
-				fxJump(the);
-			the->profileCurrent = the->profileBottom;
-			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
-		#endif
-
 			fxAllocate(the, theCreation);
 
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
@@ -1691,10 +1656,17 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-			
-			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
+			if (the->archive) {
+				fxNewHostObject(the, C_NULL);
+				the->stack->value.reference->next->value.host.data = the->archive;
+				slot = fxNextSlotProperty(the, slot, the->stack, fxID(the, "archive"), XS_DONT_ENUM_FLAG);
+				mxPop();
+			}
 			
 			fxNewInstance(the);
+			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
+			fxNewHostInstance(the);
+			
 			mxPushUndefined();
 			slot = fxLastProperty(the, fxNewEnvironmentInstance(the, C_NULL));
 			sharedSlot = theMachine->stackTop[-1 - mxExceptionStackIndex].value.reference->next->next; //@@
@@ -1702,6 +1674,9 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 				slot = slot->next = fxDuplicateSlot(the, sharedSlot);
 				sharedSlot = sharedSlot->next;
 			}
+			
+			
+			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
 			mxPushUndefined();
@@ -1753,6 +1728,8 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 	root->freeHeap = &preparation->heap[preparation->heapCount - 1];
 	root->aliasCount = (txID)preparation->aliasCount;
 	
+	root->profileID = (txID)preparation->profileID;
+	
 	if (!creation)
 		creation = &preparation->creation;
 	return fxCloneMachine(creation, root, name, context);
@@ -1761,9 +1738,6 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 void fxShareMachine(txMachine* the)
 {
 	if (!(the->shared)) {
-	#ifdef mxProfile
-		fxStopProfiling(the);
-	#endif
 	#ifdef mxDebug
 		fxLogout(the);
 	#endif
@@ -1805,14 +1779,6 @@ void fxShareMachine(txMachine* the)
 		fxCollectGarbage(the);
 		fxShare(the);
 		the->shared = 1;
-	#ifdef mxProfile
-		if (the->profileBottom) {
-			c_free(the->profileBottom);
-			the->profileBottom = C_NULL;
-			the->profileCurrent = C_NULL;
-			the->profileTop = C_NULL;
-		}
-	#endif
 	}
 }
 
@@ -1881,6 +1847,10 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 
 txMachine* fxBeginHost(txMachine* the)
 {
+#if defined(mxInstrument) || defined(mxProfile)
+	if (the->frame == C_NULL)
+		fxCheckProfiler(the, C_NULL);
+#endif
 	mxOverflow(-7);
 	/* THIS */
 	(--the->stack)->next = C_NULL;
@@ -1926,13 +1896,13 @@ txMachine* fxBeginHost(txMachine* the)
 
 void fxEndHost(txMachine* the)
 {
+    if (the->frame->next == C_NULL) {
+        fxEndJob(the);
+    }
 	the->stack = the->frame + 5;
 	the->scope = the->frame->value.frame.scope;
 	the->code = the->frame->value.frame.code;
 	the->frame = the->frame->next;
-	if (the->frame == C_NULL) {
-		fxEndJob(the);
-	}
 }
 
 void fxEndJob(txMachine* the)
@@ -1957,8 +1927,8 @@ void fxExitToHost(txMachine* the)
 }
 
 typedef struct {
-	txU1* src;
-	txU1* dst;
+	txMachine* machine;
+	txU1* archive;
 	txArchiveRead read;
 	txArchiveWrite write;
 	txU1* buffer;
@@ -1971,6 +1941,8 @@ typedef struct {
 	size_t bufferSize;
 	size_t scratchSize;
 	txID* ids;
+	txID* map;
+	txID* maps;
 	c_jmp_buf jmp_buf;
 	txBoolean dirty;
 } txMapper;
@@ -1998,7 +1970,7 @@ static void fxMapperStep(txMapper* self);
 #define mxElseNotEnoughMemory(_ASSERTION) mxElseStatus(_ASSERTION, XS_NOT_ENOUGH_MEMORY_EXIT)
 #define mxElseInstall(_ASSERTION) if (!(_ASSERTION)) goto install
 
-#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
+#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
 
 void fxBuildArchiveKeys(txMachine* the)
 {
@@ -2016,7 +1988,8 @@ void fxBuildArchiveKeys(txMachine* the)
 			p += sizeof(Atom);
 			c = (txID)c_read16(p);
 			p += 2;
-			for (i = 0; i < c; i++) {
+			p += mxStringLength((txString)p) + 1;
+			for (i = 1; i < c; i++) {
 				fxNewNameX(the, (txString)p);
 				p += mxStringLength((txString)p) + 1;
 			}
@@ -2024,58 +1997,104 @@ void fxBuildArchiveKeys(txMachine* the)
 	}
 }
 
-void* fxGetArchiveCode(txMachine* the, txString path, txSize* size)
+static txU1 *fxGetArchiveModules(txMachine *the, void* archive, txU4 *size)
 {
 	txPreparation* preparation = the->preparation;
-	if (preparation) {
-		txU1* p = the->archive;
-		if (p) {
-			txU4 atomSize;
-			txU1* q;
-			p += mxArchiveHeaderSize;
-			// NAME
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// SYMB
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// MODS
-			atomSize = c_read32be(p);
-			q = p + atomSize;
-			p += sizeof(Atom);
-			while (p < q) {
-				// PATH
-				atomSize = c_read32be(p);
-				if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
-					p += atomSize;
-					atomSize = c_read32be(p);
-					*size = atomSize - sizeof(Atom);
-					return p + sizeof(Atom);
-				}
-				p += atomSize;
-				// CODE
-				atomSize = c_read32be(p);
-				p += atomSize;
-			}
-		}
-	}
-	return C_NULL;
-}
-
-static txU1 *fxGetArchiveResources(txMachine *the, txU4 *size)
-{
-	txPreparation* preparation = the->preparation;
-	txU1* p = the->archive;
-
+	txU1* p = archive;
 	if (!preparation || !p) {
 		*size = 0;
 		return NULL;
 	}
-
 	p += mxArchiveHeaderSize;
 	// NAME
 	p += c_read32be(p);
 	// SYMB
+	p += c_read32be(p);
+	// IDEN
+	p += c_read32be(p);
+	// MAPS
+	p += c_read32be(p);
+	// MODS
+	*size = c_read32be(p) - sizeof(Atom);
+	return p + sizeof(Atom);
+}
+
+void* fxGetArchiveCode(txMachine* the, void* archive, txString path, size_t* size)
+{
+	txU4 atomSize;
+	txU1 *p = fxGetArchiveModules(the, archive, &atomSize), *q;
+	if (!p)
+		return NULL; 
+	q = p + atomSize;
+	while (p < q) {
+		// PATH
+		atomSize = c_read32be(p);
+		if (!c_strcmp(path, (txString)(p + sizeof(Atom)))) {
+			p += atomSize;
+			atomSize = c_read32be(p);
+			*size = atomSize - sizeof(Atom);
+			return p + sizeof(Atom);
+		}
+		p += atomSize;
+		// CODE
+		atomSize = c_read32be(p);
+		p += atomSize;
+	}
+	return C_NULL;
+}
+
+txInteger fxGetArchiveCodeCount(txMachine* the, void* archive)
+{
+	txInteger count = 0;
+	txU4 size;
+	txU1 *p = fxGetArchiveModules(the, archive, &size);
+	if (p) {
+		txU1 *q = p + size;
+		while (p < q) {
+			// PATH
+			p += c_read32be(p);
+			// CODE
+			p += c_read32be(p);
+			count += 1;
+		}
+	}
+	return count;
+}
+
+void* fxGetArchiveCodeName(txMachine* the, void* archive, txInteger index)
+{
+	txU4 atomSize;
+	txU1 *p = fxGetArchiveModules(the, archive, &atomSize), *q;
+	if (!p)
+		return NULL;
+	q = p + atomSize;
+	while (p < q) {
+		// PATH
+		if (!index--)
+			return (txString)(p + sizeof(Atom));
+		p += c_read32be(p);
+		// CODE
+		p += c_read32be(p);
+	}
+	return C_NULL;
+}
+
+static txU1 *fxGetArchiveResources(txMachine *the, void* archive, txU4 *size)
+{
+	txPreparation* preparation = the->preparation;
+	txU1* p = archive;
+	if (!preparation || !p) {
+		*size = 0;
+		return NULL;
+	}
+	p += mxArchiveHeaderSize;
+	// NAME
+	p += c_read32be(p);
+	// SYMB
+	p += c_read32be(p);
+	// IDEN
+	p += c_read32be(p);
+	// MAPS
 	p += c_read32be(p);
 	// MODS
 	p += c_read32be(p);
@@ -2084,32 +2103,12 @@ static txU1 *fxGetArchiveResources(txMachine *the, txU4 *size)
 	return p + sizeof(Atom);
 }
 
-txInteger fxGetArchiveDataCount(txMachine* the)
-{
-	txInteger count = 0;
-	txU4 size;
-	txU1 *p = fxGetArchiveResources(the, &size);
-	if (p) {
-		txU1 *q = p + size;
-		while (p < q) {
-			// PATH
-			p += c_read32be(p);
-			// DATA
-			p += c_read32be(p);
-			count += 1;
-		}
-	}
-
-	return count;
-}
-
-void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
+void* fxGetArchiveData(txMachine* the, void* archive, txString path, size_t* size)
 {
 	txU4 atomSize;
-	txU1 *p = fxGetArchiveResources(the, &atomSize), *q;
+	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
 	if (!p)
 		return NULL; 
-
 	q = p + atomSize;
 	while (p < q) {
 		// PATH
@@ -2125,17 +2124,33 @@ void* fxGetArchiveData(txMachine* the, txString path, txSize* size)
 		atomSize = c_read32be(p);
 		p += atomSize;
 	}
-
 	return C_NULL;
 }
 
-void* fxGetArchiveDataName(txMachine* the, txInteger index)
+txInteger fxGetArchiveDataCount(txMachine* the, void* archive)
+{
+	txInteger count = 0;
+	txU4 size;
+	txU1 *p = fxGetArchiveResources(the, archive, &size);
+	if (p) {
+		txU1 *q = p + size;
+		while (p < q) {
+			// PATH
+			p += c_read32be(p);
+			// DATA
+			p += c_read32be(p);
+			count += 1;
+		}
+	}
+	return count;
+}
+
+void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index)
 {
 	txU4 atomSize;
-	txU1 *p = fxGetArchiveResources(the, &atomSize), *q;
+	txU1 *p = fxGetArchiveResources(the, archive, &atomSize), *q;
 	if (!p)
 		return NULL;
-
 	q = p + atomSize;
 	while (p < q) {
 		// PATH
@@ -2145,27 +2160,34 @@ void* fxGetArchiveDataName(txMachine* the, txInteger index)
 		// DATA
 		p += c_read32be(p);
 	}
-
 	return C_NULL;
 }
 
-void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t bufferSize, txArchiveRead read, txArchiveWrite write)
+void* fxGetArchiveName(txMachine* the, void* archive)
+{
+	txU1* p = archive;
+	if (!p)
+		return NULL;
+	p += mxArchiveHeaderSize;
+	// NAME
+	return p + sizeof(Atom);
+}
+
+void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, size_t bufferSize, txArchiveRead read, txArchiveWrite write)
 {
 	txMapper mapper;
 	txMapper* self = &mapper;
 	Atom atom;
 	txU1* p;
 	txU1* q;
-	txU1* flag;
-	txU1* signature;
-	txU1* checksum;
 	txID id;
 	txID c, i;
+	txFlag clean;
 
 	c_memset(self, 0, sizeof(txMapper));
 	if (c_setjmp(self->jmp_buf) == 0) {
-		self->src = src;
-		self->dst = dst;
+		self->machine = the;
+		self->archive = archive;
 		self->read = read;
 		self->write = write;
 		
@@ -2175,12 +2197,12 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		self->bufferSize = bufferSize;
 		self->buffer = self->scratch + self->scratchSize;
 		
-		mxElseFatalCheck(self->read(self->src, 0, self->buffer, mxArchiveHeaderSize));
+		mxElseFatalCheck(self->read(self->archive, 0, self->buffer, mxArchiveHeaderSize));
 	
 		p = self->buffer;
 		mxMapAtom(p);
 		if (atom.atomType != XS_ATOM_ARCHIVE) {
-			self->dst = NULL;
+			self->archive = NULL;
 			goto bail;
 		}
 		self->size = atom.atomSize;
@@ -2190,60 +2212,16 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		mxElseFatalCheck(*p++ == XS_MAJOR_VERSION);
 		mxElseFatalCheck(*p++ == XS_MINOR_VERSION);
 		p++;
-		flag = p;
 		p++;
 		mxMapAtom(p);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_SIGNATURE);
 		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-		signature = p;
 		p += XS_DIGEST_SIZE;
-		mxMapAtom(p);
-		mxElseFatalCheck(atom.atomType == XS_ATOM_CHECKSUM);
-		mxElseFatalCheck(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-	
-		checksum = preparation->checksum;
-		if (self->src == self->dst) {
-			if (*flag) {
-				if (c_memcmp(p, checksum, XS_DIGEST_SIZE) != 0)
-					self->dst = NULL;
-				goto bail;
-			}
-		}
-		else {
-			mxElseFatalCheck(self->read(self->dst, 0, self->scratch, mxArchiveHeaderSize));
-			q = self->scratch;
-			mxMapAtom(q);
-			mxElseInstall(atom.atomType == XS_ATOM_ARCHIVE);
-			mxElseInstall(self->size == (size_t)atom.atomSize);
-			mxMapAtom(q);
-			mxElseInstall(atom.atomType == XS_ATOM_VERSION);
-			mxElseInstall(atom.atomSize == sizeof(Atom) + 4);
-			mxElseInstall(*q++ == XS_MAJOR_VERSION);
-			mxElseInstall(*q++ == XS_MINOR_VERSION);
-			q++;
-			q++;
-			mxMapAtom(q);
-			mxElseInstall(atom.atomType == XS_ATOM_SIGNATURE);
-			mxElseInstall(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-			mxElseInstall(c_memcmp(q, signature, XS_DIGEST_SIZE) == 0);
-			q += XS_DIGEST_SIZE;
-			mxMapAtom(q);
-			mxElseInstall(atom.atomType == XS_ATOM_CHECKSUM);
-			mxElseInstall(atom.atomSize == sizeof(Atom) + XS_DIGEST_SIZE);
-			mxElseInstall(c_memcmp(q, checksum, XS_DIGEST_SIZE) == 0);
-			goto bail;
-		}
-
-	install:
-		*flag = 1;
-		c_memcpy(p, checksum, XS_DIGEST_SIZE);
-        p += XS_DIGEST_SIZE;
-		self->dirty = 1;
 		
 		self->bufferOffset = mxArchiveHeaderSize;
 		if (self->bufferSize > self->size)
 			self->bufferSize = self->size;
-		mxElseFatalCheck(self->read(self->src, mxArchiveHeaderSize, p, self->bufferSize - mxArchiveHeaderSize));
+		mxElseFatalCheck(self->read(self->archive, mxArchiveHeaderSize, p, self->bufferSize - mxArchiveHeaderSize));
 	
 		fxMapperReadAtom(self, &atom);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_NAME);
@@ -2269,23 +2247,68 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 			}
 			mxElseFatalCheck(p < q);
 			*p = 0;
-			sum &= 0x7FFFFFFF;
-			modulo = sum % preparation->nameModulo;
-			result = preparation->names[modulo];
-			while (result != C_NULL) {
-				if (result->value.key.sum == sum)
-					if (c_strcmp(result->value.key.string, (txString)self->scratch) == 0)
-						break;
-				result = result->next;
-			}
-			if (result)
-				self->ids[i] = result->ID;
+			if (i == 0)
+				self->ids[i] = XS_NO_ID;
+			else if (the)
+				self->ids[i] = fxID(the, (txString)self->scratch);
 			else {
-				self->ids[i] = id;
-				id++;
+				sum &= 0x7FFFFFFF;
+				modulo = sum % preparation->nameModulo;
+				result = preparation->names[modulo];
+				while (result != C_NULL) {
+					if (result->value.key.sum == sum)
+						if (c_strcmp(result->value.key.string, (txString)self->scratch) == 0)
+							break;
+					result = result->next;
+				}
+				if (result)
+					self->ids[i] = result->ID;
+				else {
+					self->ids[i] = id;
+					id++;
+				}
 			}
 		}
-
+		
+		fxMapperReadAtom(self, &atom);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_IDENTIFIERS);
+		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
+		i = 0;
+		clean = 1;
+		while (self->bufferOffset < self->bufferLoop) {
+			txID id = self->ids[i];
+			txU1 low = (txU1)(id & 0x00FF);
+			txU1 high =  (txU1)(id >> 8);
+			if (self->bufferOffset == self->bufferSize)
+				fxMapperStep(self);
+			if (*(self->buffer + self->bufferOffset) != low) {
+				*(self->buffer + self->bufferOffset) = low;
+				self->dirty = 1;
+				clean = 0;
+			}
+			self->bufferOffset++;
+			if (self->bufferOffset == self->bufferSize)
+				fxMapperStep(self);
+			if (*(self->buffer + self->bufferOffset) != high) {
+				*(self->buffer + self->bufferOffset) = high;
+				self->dirty = 1;
+				clean = 0;
+			}
+			self->bufferOffset++;
+			i++;
+		}
+		if (clean)
+			goto bail;
+		
+		fxMapperReadAtom(self, &atom);
+		mxElseFatalCheck(atom.atomType == XS_ATOM_MAPS);
+		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
+		self->maps = self->map = c_malloc((self->bufferLoop - self->bufferOffset));
+		mxElseFatalCheck(self->maps != C_NULL);
+		while (self->bufferOffset < self->bufferLoop)
+			*self->map++ = fxMapperRead2(self);
+		self->map = self->maps;
+		
 		fxMapperReadAtom(self, &atom);
 		mxElseFatalCheck(atom.atomType == XS_ATOM_MODULES);
 		self->bufferLoop = self->bufferOffset - sizeof(Atom) + atom.atomSize;
@@ -2315,8 +2338,8 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		}
 	
 		if (self->bufferOffset) {
-			if ((self->src != self->dst) || self->dirty) {
-				mxElseFatalCheck(self->write(self->dst, self->offset, self->buffer, self->bufferOffset));
+			if (self->dirty) {
+				mxElseFatalCheck(self->write(self->archive, self->offset, self->buffer, self->bufferOffset));
 				self->dirty = 0;
 			}
 		}
@@ -2330,48 +2353,32 @@ void* fxMapArchive(txPreparation* preparation, void* src, void* dst, size_t buff
 		self->buffer[5] = 'S';
 		self->buffer[6] = '_';
 		self->buffer[7] = 'E';
-		self->write(self->dst, 0, self->buffer, 9);
-		self->dst = C_NULL;
+		self->write(self->archive, 0, self->buffer, 9);
+		self->archive = C_NULL;
 	}
 bail:
 	if (self->ids)
 		c_free(self->ids);
+	if (self->maps)
+		c_free(self->maps);
 	if (self->scratch)
 		c_free(self->scratch);
-	return self->dst;
+	return self->archive;
 }
 
 void fxMapperMapID(txMapper* self)
 {
-	txU1* low;
-	txU1* high;
-	txID id;
+	txID id = self->ids[*(self->map++)];
 	if (self->bufferOffset == self->bufferSize)
 		fxMapperStep(self);
-	low = self->buffer + self->bufferOffset;
+	*(self->buffer + self->bufferOffset) = (txU1)(id & 0x00FF);
 	self->bufferOffset++;
-	
-	if (self->bufferOffset == self->bufferSize) {
-		self->read(self->src, self->offset, self->scratch, 1);
-		high = self->scratch;
-	}
-	else
-		high = self->buffer + self->bufferOffset;
-	
-	id = (*high << 8) | *low;
-	if (id != XS_NO_ID) {
-		id = self->ids[id];
-	}
-	*low = id & 0x00FF;
 	self->dirty = 1;
-	
-	if (self->bufferOffset == self->bufferSize) {
+	if (self->bufferOffset == self->bufferSize)
 		fxMapperStep(self);
-		high = self->buffer;
-	}
-	*high = id >> 8;
-	self->dirty = 1;
+	*(self->buffer + self->bufferOffset) = (txU1)(id >> 8);
 	self->bufferOffset++;
+	self->dirty = 1;
 }
 
 void fxMapperMapIDs(txMapper* self)
@@ -2444,8 +2451,8 @@ void fxMapperSkip(txMapper* self, size_t size)
 
 void fxMapperStep(txMapper* self)
 {
-	if ((self->src != self->dst) || self->dirty) {
-		mxElseFatalCheck(self->write(self->dst, self->offset, self->buffer, self->bufferSize));
+	if (self->dirty) {
+		mxElseFatalCheck(self->write(self->archive, self->offset, self->buffer, self->bufferSize));
 		self->dirty = 0;
 	}
 	self->offset += self->bufferSize;
@@ -2455,8 +2462,39 @@ void fxMapperStep(txMapper* self)
 	if (self->bufferSize > self->size)
 		self->bufferSize = self->size;
 	if (self->bufferSize > 0)
-		mxElseFatalCheck(self->read(self->src, self->offset, self->buffer, self->bufferSize));
+		mxElseFatalCheck(self->read(self->archive, self->offset, self->buffer, self->bufferSize));
 	self->bufferOffset = 0;
+}
+
+txBoolean fxIsProfiling(txMachine* the)
+{
+#if defined(mxInstrument) || defined(mxProfile)
+	return (the->profiler) ? 1 : 0;
+#else
+	return 0;
+#endif
+}
+
+void fxStartProfiling(txMachine* the)
+{
+#if defined(mxInstrument) || defined(mxProfile)
+	if (the->profiler)
+		return;	
+// 	if (the->frame)
+// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
+	fxCreateProfiler(the);
+#endif
+}
+
+void fxStopProfiling(txMachine* the, void* stream)
+{
+#if defined(mxInstrument) || defined(mxProfile)
+	if (!the->profiler)
+		return;	
+// 	if (the->frame)
+// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
+	fxDeleteProfiler(the, stream);
+#endif
 }
 
 #ifdef mxFrequency

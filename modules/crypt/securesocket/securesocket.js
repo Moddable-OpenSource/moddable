@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -37,7 +37,6 @@
 
 import {Socket} from "socket";
 import Session from "ssl/session";
-import TLSError from "ssl/error";
 
 class SecureSocket {
 	constructor(dict) {
@@ -75,7 +74,7 @@ class SecureSocket {
 						if (this.handshaking)
 							this.messageHandler(0);
 						else {
-							if (value > 128)			//@@ 128 is guess at TLS overhead
+							if (value > 128)			//@@ 128 is an estimate of TLS overhead
 								this.callback(3, value - 128)
 						}
 						break;
@@ -106,7 +105,7 @@ class SecureSocket {
 	messageHandler(bytesAvailable) {
 		if (this.handshaking) {
 			if (this.ssl.handshake(this.sock, bytesAvailable)) {
-				this.handshaking = false;
+				delete this.handshaking;
 				this.callback(1);
 			}
 			return;

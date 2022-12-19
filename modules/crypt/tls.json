@@ -1,37 +1,6 @@
 {
-	"modules":{
-		"ssl/*": "$(MODULES)/crypt/ssl/ssl_*",
-		"*": [
-			"$(MODULES)/crypt/arith/*",
-			"$(MODULES)/crypt/bin/*",
-			"$(MODULES)/crypt/digest/*",
-			"$(MODULES)/crypt/digest/kcl/*",
-			"$(MODULES)/crypt/etc/*",
-			"$(MODULES)/crypt/securesocket/*",
-			"$(MODULES)/data/base64/*",
-			"$(MODULES)/data/hex/*",
-			"$(MODULES)/files/resource/*"
-		]
-	},
-	"preload": [
-		"rng",
-		"securesocket",
-		"ssl",
-		"ssl/*",
-		"crypt",
-		"base64",
-		"hex",
-		"Resource"
-	],
-	"config": {
-		"tls": {
-			"DHE_RSA": true,
-			"ECDHE_RSA": true
-		}
-	},
-	"resources":{
-		"*": [
-			"$(MODULES)/crypt/data/ca"
-		]
+	"include": "./tls_common.json",
+	"modules": {
+		"ssl/session": "$(MODULES)/crypt/ssl/session_original"
 	}
 }

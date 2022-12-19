@@ -103,7 +103,7 @@ void xs_base64_decode(xsMachine *the)
 	uint8_t		aFlag = 0;
 	uint8_t		aByte;
 	uint8_t		aBuffer[4];
-	uint8_t		*dst;
+	uint8_t		*dst, *dstStart;
 
 	src = (uint8_t *)xsmcToString(xsArg(0));
 	srcSize = c_strlen((char *)src);
@@ -115,8 +115,8 @@ void xs_base64_decode(xsMachine *the)
 		dstSize--;
 	srcIndex = 0;
 
-	xsmcSetArrayBuffer(xsResult, NULL, dstSize);
-	dst = xsmcToArrayBuffer(xsResult);
+	xsmcSetArrayBufferResizable(xsResult, NULL, dstSize, dstSize);
+	dst = dstStart = xsmcToArrayBuffer(xsResult);
 
 	src = (uint8_t *)xsmcToString(xsArg(0));	// refresh pointer
 
@@ -165,6 +165,8 @@ void xs_base64_decode(xsMachine *the)
 		if (aFlag)
 			break;
 	}
+
+	xsmcSetArrayBufferLength(xsResult, dst - dstStart);
 }
 
 void modInstallBase64(xsMachine *the)

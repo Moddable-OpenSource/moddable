@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -67,6 +67,7 @@ static void xs_timer_callback(modTimer timer, void *refcon, int refconSize)
 	if (ts->callback && (0 == modTimerGetSecondInterval(timer))) {
 		xsForget(ts->self);
 		xsmcSetHostData(ts->self, NULL);
+		xsmcSetHostDestructor(ts->self, NULL);
 	}
 }
 
@@ -85,7 +86,7 @@ static void createTimer(xsMachine *the, int interval, int repeat)
 
 	xsmcSetHostData(ts.self, timer);
 	xsSetHostHooks(ts.self, &modTimerHooks);
-	xsResult = xsAccess(ts.self);
+	xsResult = ts.self;
 }
 
 void xs_timer_set(xsMachine *the)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,6 +28,10 @@
 	#define MODDEF_I2C_PULLUPS	1
 #endif
 
+#if !defined(MODDEF_I2C_PORT)
+	#define MODDEF_I2C_PORT	I2C_NUM_1
+#endif
+
 // N.B. Cannot save pointer to modI2CConfiguration as it is allowed to move (stored in relocatable block)
 
 static uint8_t modI2CActivate(modI2CConfiguration config);
@@ -44,12 +48,10 @@ void modI2CInit(modI2CConfiguration config)
 void modI2CUninit(modI2CConfiguration config)
 {
 	if (gHz) {
-		i2c_driver_delete(I2C_NUM_1);
+		i2c_driver_delete(MODDEF_I2C_PORT);
 		gHz = 0;
 	}
 }
-
-// Note: The sendStop argument to modI2CRead and modI2CWrite is currently ignored due to ESP-IDF Issue #8248 (https://github.com/espressif/esp-idf/issues/8348).
 
 uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
@@ -65,8 +67,9 @@ uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length,
 	if (length > 1)
 		i2c_master_read(cmd, buffer, length - 1, 0);
 	i2c_master_read(cmd, buffer + length - 1, 1, 1);
-	i2c_master_stop(cmd);
-	ret = i2c_master_cmd_begin(I2C_NUM_1, cmd, 1000 / portTICK_RATE_MS);
+	if (sendStop)
+		i2c_master_stop(cmd);
+	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
 	return (ESP_OK == ret) ? 0 : 1;
@@ -84,9 +87,9 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 	i2c_master_start(cmd);
 	i2c_master_write_byte(cmd, (config->address << 1) | I2C_MASTER_WRITE, 1);
 	i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
-
-	i2c_master_stop(cmd);
-	ret = i2c_master_cmd_begin(I2C_NUM_1, cmd, 1000 / portTICK_RATE_MS);
+	if (sendStop)
+		i2c_master_stop(cmd);
+	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_RATE_MS);
 	i2c_cmd_link_delete(cmd);
 
 	return (ESP_OK == ret) ? 0 : 1;
@@ -113,7 +116,7 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 		return 0;
 
 	if (gHz) {
-		i2c_driver_delete(I2C_NUM_1);
+		i2c_driver_delete(MODDEF_I2C_PORT);
 		gHz = 0;
 	}
 
@@ -126,12 +129,12 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 	conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
 #endif
 	conf.clk_flags = 0;
-	if (ESP_OK != i2c_param_config(I2C_NUM_1, &conf)) {
+	if (ESP_OK != i2c_param_config(MODDEF_I2C_PORT, &conf)) {
 		modLog("i2c_param_config fail");
 		return 1;
 	}
 
-	if (ESP_OK != i2c_driver_install(I2C_NUM_1, conf.mode, 0, 0, 0)) {
+	if (ESP_OK != i2c_driver_install(MODDEF_I2C_PORT, conf.mode, 0, 0, 0)) {
 		modLog("i2c_driver_install fail");
 		return 1;
 	}
@@ -142,7 +145,7 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 
 	if (config->timeout == 0) config->timeout = DEFAULT_ESP32_I2C_TIMEOUT;
 	if (config->timeout != gTimeout){
-		i2c_set_timeout(I2C_NUM_1, config->timeout);
+		i2c_set_timeout(MODDEF_I2C_PORT, config->timeout);
 		gTimeout = config->timeout;
 	}
 

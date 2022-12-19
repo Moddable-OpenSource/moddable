@@ -987,11 +987,6 @@ void fxConnectTo(txMachine *the, struct tcp_pcb *pcb)
 	the->connection = pcb;
 }
 
-static void doLoadModule(modTimer timer, void *refcon, int refconSize)
-{
-	modLoadModule((txMachine *)*(uintptr_t *)refcon, sizeof(uintptr_t) + (uint8_t *)refcon);
-}
-
 void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 {
 	uint16_t resultID = 0;
@@ -1028,11 +1023,11 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #if ESP32
 			const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
 			if (!partition || (ESP_OK != esp_partition_write(partition, 0, erase, sizeof(erase))))
-				resultCode = -1;
+				resultCode = -2;
 #else
 			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 			if (!modSPIWrite(offset, sizeof(erase), erase))
-				resultCode = -1;
+				resultCode = -2;
 #endif
 			} break;
 
@@ -1041,7 +1036,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			cmd += 4, cmdLen -= 4;
 #if ESP32
 			const esp_partition_t *partition = esp_partition_find_first(0x40, 1,  NULL);
-			resultCode = -1;
+			resultCode = -3;
 			if (partition) {
 				int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
 				if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
@@ -1054,7 +1049,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 #else
 			if ((offset + cmdLen) > (kModulesEnd - kModulesStart)) {
-				resultCode = -1;
+				resultCode = -3;
 				break;
 			}
 
@@ -1067,7 +1062,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				modSPIErase((firstSector + 1) * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE * (lastSector - firstSector));	// crosses into a new sector
 
 			if (!modSPIWrite(offset, cmdLen, cmd))
-				resultCode = -1;
+				resultCode = -3;
 #endif
 			}
 			break;
@@ -1090,7 +1085,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				cmdLen -= 1;
 
 				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
-					resultCode = -1;
+					resultCode = -5;
 			}
 			}
 			break;
@@ -1113,15 +1108,12 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					break;
 				}
 
-				uint8_t buffer[65];
-				uint8_t type;
+				uint8_t *buffer = the->echoBuffer + the->echoOffset;
 				uint16_t byteCountOut;
-				if (!modPreferenceGet(domain, key, &buffer[0], buffer + 1, sizeof(buffer), &byteCountOut))
-					resultCode = -1;
-				else {
-					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
+				if (!modPreferenceGet(domain, key, buffer, buffer + 1, sizeof(the->echoBuffer) - (the->echoOffset + 1), &byteCountOut))
+					resultCode = -6;
+				else
 					the->echoOffset += byteCountOut + 1;
-				}
 			}
 		}
 		break;
@@ -1140,20 +1132,6 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
 #endif
 			break;
-
-		case 10: {
-				uintptr_t bytes[16];
-				bytes[0] = (uintptr_t)the;
-				if (cmdLen > (sizeof(uintptr_t) * 15)) {
-					resultCode = -1;
-					goto bail;
-				}
-
-				c_strcpy((void *)(bytes + 1), cmd);
-				modTimerAdd(0, 0, doLoadModule, bytes, cmdLen + sizeof(uintptr_t));
-			}
-			break;
-
 
 		case 11:
 			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
@@ -1236,7 +1214,11 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 		default:
-			resultCode = -1;
+#if MODDEF_XS_MODS
+			resultCode = -7;
+#else
+			resultCode = -8;
+#endif
 			break;
 	}
 

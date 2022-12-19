@@ -1,7 +1,5 @@
 # MCP230XX
-
-Copyright 2017 Moddable Tech, Inc.
-
+Copyright 2017 Moddable Tech, Inc.<BR>
 Revised: Dec 21, 2017
 
 The [MCP23008](http://www.microchip.com/wwwproducts/en/MCP23008) device provides 8-bit, general purpose, parallel I/O expansion for I2C bus applications. (Description from MCP23008 product page)

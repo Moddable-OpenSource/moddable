@@ -1,6 +1,4 @@
-
 # NeoStrand driver
-
 Copyright 2018 Moddable Tech, Inc.
 
 The NeoStrand driver is a subclass of the [NeoPixel](http://blog.moddable.com/blog/neopixels/) driver to add an effects engine for dynamic color displays with strings or strips of NeoPixel (WS2811/WS2812-like) LEDs.

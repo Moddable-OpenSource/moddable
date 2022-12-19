@@ -18,40 +18,41 @@
  *
  */
  
-import HTTPRequest from "embedded:network/http/request";
+import URL from "url";
 
-let urlRegExp = null;
-function URLParts(url) {
-	if (!urlRegExp)
-		urlRegExp = new RegExp("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
-	const urlParts = url.match(urlRegExp);
-	return {
-    	scheme:urlParts[2],
-    	authority:urlParts[4],
-		path:urlParts[5],
-    	query:urlParts[7],
-		fragment:urlParts[9],
-	}
-}
-
-let authorityRegExp = null;
-const clients = new Map();
-function Client(authority) {
-	let client = clients.get(authority);
+let clients;
+function Client(url) {
+	clients ??= new Map;
+	let origin = url.origin;
+	let client = clients.get(origin);
 	if (!client) {
-		if (!authorityRegExp)
-			authorityRegExp = new RegExp("^([^:]+)(:(.*))?");
-		const authorityParts = authority.match(authorityRegExp);
-		const host = authorityParts[1];
-		const port = authorityParts[3] ?? 80;
-		client = new HTTPRequest({ 
-			host, 
-			port,  
-			onClose() {
-				clients.delete(authority);
-			}
-		});
-		clients.set(authority, client);
+		const protocol = url.protocol;
+		const host = url.hostname;
+		if (protocol == "http:") {
+			const port = url.port || 80;
+			client = new device.network.http.io({ 
+				...device.network.http,
+				host, 
+				port,  
+				onClose() {
+					clients.delete(origin);
+					this.close();
+				}
+			});
+		}
+		else {
+			const port = url.port || 443;
+			client = new device.network.https.io({ 
+				...device.network.https,
+				host, 
+				port,  
+				onClose() {
+					clients.delete(origin);
+					this.close();
+				}
+			});
+		}
+		clients.set(origin, client);
 	}
 	return client;
 }
@@ -99,6 +100,7 @@ const statusTexts = {
 	504: "Gateway Timeout",
 	505: "HTTP Version Not Supported",
 };
+Object.freeze(statusTexts);
 
 class Headers extends Map {
 	delete(key) {
@@ -112,21 +114,6 @@ class Headers extends Map {
 	}
 	set(key, value) {
 		return super.set(key.toString().toLowerCase(), value.toString());
-	}
-}
-
-class URLSearchParams extends Map {
-	constructor(map) {
-		super(map);
-	}
-	toString() {
-		const result = [];
-		for (let [key, value] of this) {
-		  key = encodeURIComponent(key);
-		  value = encodeURIComponent(value);
-		  result.push(key + "=" + value);
-		}
-		return result.join("&");
 	}
 }
 
@@ -188,15 +175,16 @@ class Response {
 	}
 }
 
-function fetch(url, info = {}) {
+function fetch(href, info = {}) {
 	return new Promise((resolveResponse, rejectResponse) => {
-		const parts = URLParts(url);
-		if (parts.scheme != "http")
-			rejectResponse(new URLError("only http"));
+		const url = new URL(href);
+		if ((url.protocol != "http:") && (url.protocol != "https:"))
+			rejectResponse(new URLError("only http or https"));
 		const responseBody = new Promise((resolveBody, rejectBody) => {
-			let path = parts.path ?? "/";
-			if (parts.query)
-				path += "?" + parts.query;
+			let path = url.pathname;
+			let query = url.search;
+			if (query)
+				path += query;
 			let method = info.method;
 			let headers = info.headers;
 			let body = info.body;
@@ -221,7 +209,7 @@ function fetch(url, info = {}) {
 					}
 				}
 			}
-			const client = Client(parts.authority);
+			const client = Client(url);
 			let buffer = null;
 			client.request({
 				method,
@@ -258,7 +246,7 @@ function fetch(url, info = {}) {
 	});
 }
 
-export { Headers, URLSearchParams }
+export { fetch, Headers }
 export default fetch;
 
 

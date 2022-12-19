@@ -48,7 +48,8 @@ class CapacitiveMoisture {
 		for (let i=0; i<this.#averaging; i++)
 			adc += io.read();
 		adc /= this.#averaging;
-		return { value: adc }
+		adc = (1024 - adc) / 1024; // value between 0-1 with 1 being the most wet
+		return { moisture: adc }
 	}
 }
 
