@@ -89,14 +89,14 @@ void PiuSystem_open(xsMachine* the, GtkFileChooserAction action)
 		}
 	}
 	dialog = gtk_file_chooser_dialog_new((message) ? message : prompt, (*view)->gtkWindow, action, "Cancel", GTK_RESPONSE_CANCEL, prompt, GTK_RESPONSE_ACCEPT, NULL);
-	if ((argc > 0) && xsTest(xsArg(0))) {
-		if (xsFindString(xsArg(0), xsID_fileType, &string)) {
-			filter = gtk_file_filter_new();
-			gtk_file_filter_set_name(filter, string);
-			gtk_file_filter_add_pattern(filter, string);	
-			gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
-		}	
-	}
+// 	if ((argc > 0) && xsTest(xsArg(0))) {
+// 		if (xsFindString(xsArg(0), xsID_fileType, &string)) {
+// 			filter = gtk_file_filter_new();
+// 			gtk_file_filter_set_name(filter, string);
+// 			gtk_file_filter_add_pattern(filter, string);	
+// 			gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+// 		}	
+// 	}
 	if (name)
 		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), name);
 	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
