@@ -1627,7 +1627,7 @@ export class Tool extends TOOL {
 		if ("string" == typeof it) {
 			this.includeManifestPath(this.resolveVariable(it));
 		}
-		else {
+		else if (this.buildTarget != "clean") {
 			let { git, branch, tag, include = "manifest.json" } = it;
 			if (!git)
 				throw new Error("no git!");
