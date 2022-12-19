@@ -56,8 +56,8 @@ void modGPIOUninit(modGPIOConfiguration config)
 
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
-	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
 	gpio_reset_pin(config->pin);
+	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
 
 	switch (mode) {
 		case kModGPIOOutput:

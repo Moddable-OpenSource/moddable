@@ -188,7 +188,7 @@ void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messa
 }
 
 #else
-
-void xs_system_resolve(xsMachine *the) {}
-
+void xs_system_resolve(xsMachine *the)
+{
+}
 #endif

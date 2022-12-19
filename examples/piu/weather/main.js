@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -11,7 +11,7 @@
  *   Mountain View, CA 94042, USA.
  *
  */
- 
+
 import {} from "piu/MC";
 import { Request } from "http";
 import Timeline from "piu/Timeline";

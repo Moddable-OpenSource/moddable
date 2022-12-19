@@ -68,6 +68,8 @@
 		0x00000000		//@@
 #endif
 	};
+#else
+	#error - unsupported platform
 #endif
 
 #if __COMMON__PINS__

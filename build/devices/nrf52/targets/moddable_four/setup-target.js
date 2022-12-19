@@ -42,12 +42,14 @@ globalThis.Host = {
 			});
 		}
 	},
-	LED: class {
-		constructor(options) {
-			return new LED({
-				...options,
-				pin: config.led1_pin,
-			});
+	LED: {
+		Default: class {
+			constructor(options) {
+				return new LED({
+					...options,
+					pin: config.led1_pin,
+				});
+			}
 		}
 	},
 	Button: class {

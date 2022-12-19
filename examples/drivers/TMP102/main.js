@@ -14,18 +14,16 @@
 
 import TMP102 from "tmp102";
 import Timer from "timer";
-// import Digital from "pins/digital";
-//import Monitor from "pins/digital/monitor";
+import Digital from "pins/digital";
+import Monitor from "pins/digital/monitor";
 
 const sensor = new TMP102;
-/*
 sensor.configure({
 	alert: {
 		above: sensor.sample().temperature + 1,
 	},
 	hz: 4,
 });
-*/
 
 let last, alert;
 Timer.repeat(id => {
@@ -34,11 +32,9 @@ Timer.repeat(id => {
 		trace(`Celsius temperature: ${value}\n`);
 		last = value;
 	}
-}, 1000);
+}, 100);
 
-/*
 (new Monitor({pin: 13, mode: Digital.InputPullUp, edge: Monitor.Rising | Monitor.Falling})).onChanged = function() {
 	trace(`Alert: ${this.read()}\n`);
 	sensor.configure({alert: {}});	// disable alerts
 }
-*/

@@ -23,11 +23,14 @@ const base = import.meta.uri;
 const ledSkin = { texture:{ base, path:"moddable_four/led.png" }, x:0, y:0, width:160, height:160 };
 
 class MockupBehavior extends DeviceBehavior {
-	onBackButtonDown(container) {
-		this.postJSON(container, { button:1 });
+	onAbort(container, status) {
+		if (this.reloadOnAbort) {
+			application.defer("doReloadFile");
+			return true;
+		}
 	}
-	onBackButtonUp(container) {
-		this.postJSON(container, { button:0 });
+	onReloadOnAbortChanged(container, data) {
+		this.reloadOnAbort = data.value;
 	}
 	onCreate(container, device) {
 		super.onCreate(container, device);
@@ -35,12 +38,7 @@ class MockupBehavior extends DeviceBehavior {
 		container.interval = 250;
 		this.push = 0;
 		this.turn = 0;
-	}
-	onEnterButtonDown(container) {
-		this.postJSON(container, { jogdial: { push:1 } });
-	}
-	onEnterButtonUp(container) {
-		this.postJSON(container, { jogdial: { push:0 } });
+		this.reloadOnAbort = false;
 	}
 	onKeyDown(container, key) {
 		const code = key.charCodeAt(0);
@@ -67,6 +65,10 @@ class MockupBehavior extends DeviceBehavior {
 	onJSON(container, json) {
 		if ("led" in json)
 			container.distribute("onLEDChanged", json.led);
+		else if ("xsbug" in json) {
+			if (json.xsbug == "abort")
+				application.defer("doReloadFile");
+		}
 	}
 	onPushCWJogDialDown(container) {
 		container.start();
@@ -107,6 +109,18 @@ class MockupBehavior extends DeviceBehavior {
 	onTurnCCWJogDialUp(container) {
 		container.stop();
 	}
+	onBackButtonDown(container) {
+		this.postJSON(container, { button:1 });
+	}
+	onBackButtonUp(container) {
+		this.postJSON(container, { button:0 });
+	}
+	onEnterButtonDown(container) {
+		this.postJSON(container, { jogdial: { push:1 } });
+	}
+	onEnterButtonUp(container) {
+		this.postJSON(container, { jogdial: { push:0 } });
+	}
 }
 
 class LEDBehavior extends Behavior {
@@ -144,6 +158,13 @@ export default {
 // 					{ eventDown:"onPushCCWJogDialDown", eventUp:"onPushCCWJogDialUp", label:"Push CCW" },
 // 				],
 // 			}),
+			SwitchRow({
+				event: "onReloadOnAbortChanged",
+				label: "Reload On Abort",
+				on: "Yes",
+				off: "No",
+				value: false
+			}),
 		]
 	})),
 	DeviceTemplates: {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -105,30 +105,30 @@ let DragApplication = Application.template($ => ({
 			}
 		}
 		doMoveTo(content, x, y) {
-			x += content.x;
-			y += content.y;
-			if (x > application.width)
-				x = application.width - 1;
-			else if (x < 0)
-				x = 0;
-			if (y > application.height)
-				y = application.height - 1;
-			else if (y < 0)
-				y = 0;
-			content.position = {x, y};			
+			let _x = content.x + x;
+			let _y = content.y + y;
+			if (_x > application.width)
+				_x = application.width - 1;
+			else if (_x < 0)
+				_x = 0;
+			if (_y > application.height)
+				_y = application.height - 1;
+			else if (_y < 0)
+				_y = 0;
+			content.position = {x:_x, y:_y};			
 		}
 	},
 	contents: [
 		Container($, {
-			left:10, right:10, top:10, bottom:10, skin:bordersSkin,
+			left:18, right:18, top:18, bottom:18, skin:bordersSkin,
 			contents: [
 				Container($, {
 					left:2, right:2, top:2, bottom:2, clip:true,
 					contents: [
-						Label($, { left:10, top:10, width:40, height:40, skin:buttonSkin, string:"1", active:true, Behavior:DragBehavior }),
-						Label($, { right:10, top:10, width:40, height:40, skin:buttonSkin, string:"2", active:true, Behavior:DragBehavior }),
-						Label($, { right:10, bottom:10, width:40, height:40, skin:buttonSkin, string:"3", active:true, Behavior:DragBehavior }),
-						Label($, { left:10, bottom:10, width:40, height:40, skin:buttonSkin, string:"4", active:true, Behavior:DragBehavior }),
+						Label($, { left:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 1", active:true, Behavior:DragBehavior }),
+						Label($, { right:10, top:10, width:120, height:40, skin:buttonSkin, string:"Drag 2 ", active:true, Behavior:DragBehavior }),
+						Label($, { right:10, bottom:10, width:120, height:40, skin:buttonSkin, string:"Drag 3", active:true, Behavior:DragBehavior }),
+						Label($, { left:10, bottom:10, width:120, height:40, skin:buttonSkin, string:"Drag 4", active:true, Behavior:DragBehavior }),
 					],
 				}),
 			],

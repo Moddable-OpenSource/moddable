@@ -69,9 +69,6 @@
 #ifndef MODDEF_ILI9341_ROW_OFFSET
 	#define MODDEF_ILI9341_ROW_OFFSET 0
 #endif
-#ifndef MODDEF_DISPLAY_POWER_PORT
-	#define MODDEF_DISPLAY_POWER_PORT NULL
-#endif
 
 #ifdef MODDEF_ILI9341_CS_PIN
 	#define SCREEN_CS_ACTIVE	modGPIOWrite(&sd->cs, 0)
@@ -102,18 +99,12 @@
 		SCREEN_RST_DEACTIVE;
 #define SCREEN_RST_UNINIT		modGPIOUninit(&sd->rst);
 
-#define SCREEN_POWER_ACTIVE		modGPIOWrite(&sd->power, 1)
-#define SCREEN_POWER_DEACTIVE	modGPIOWrite(&sd->power, 0)
-#define SCREEN_POWER_INIT		modGPIOInit(&sd->power, MODDEF_DISPLAY_POWER_PORT, MODDEF_DISPLAY_POWER_PIN, kModGPIOOutput); \
-		SCREEN_POWER_DEACTIVE;
-
 #ifndef ILI9341_GRAM_WIDTH
 	#define ILI9341_GRAM_WIDTH		MODDEF_ILI9341_WIDTH
 #endif
 #ifndef ILI9341_GRAM_HEIGHT
 	#define ILI9341_GRAM_HEIGHT		MODDEF_ILI9341_HEIGHT
 #endif
-
 
 #define ILI9341_GRAM_X_OFFSET  ILI9341_GRAM_WIDTH - MODDEF_ILI9341_WIDTH
 #define ILI9341_GRAM_Y_OFFSET  ILI9341_GRAM_HEIGHT - MODDEF_ILI9341_HEIGHT
@@ -132,9 +123,6 @@ typedef struct {
 	modGPIOConfigurationRecord	dc;
 #ifdef MODDEF_ILI9341_RST_PIN
 	modGPIOConfigurationRecord	rst;
-#endif
-#ifdef MODDEF_DISPLAY_POWER_PIN
-	modGPIOConfigurationRecord	power;
 #endif
 #ifdef MODDEF_ILI9341_BACKLIGHT_PIN
 	modGPIOConfigurationRecord	backlight;
@@ -555,11 +543,6 @@ void ili9341Init(spiDisplay sd)
 {
 	uint8_t data[16] __attribute__((aligned(4)));
 	const uint8_t *cmds;
-
-#ifdef MODDEF_DISPLAY_POWER_PIN
-	SCREEN_POWER_ACTIVE;
-	modDelayMilliseconds(10);
-#endif
 
 #ifdef MODDEF_ILI9341_RST_PIN
 	SCREEN_RST_ACTIVE;

@@ -118,7 +118,7 @@ struct modBLEConnectionRecord {
 
 void modBLEConnectionAdd(modBLEConnection connection);
 void modBLEConnectionRemove(modBLEConnection connection);
-modBLEConnection modBLEConnectionFindByConnectionID(uint16_t conn_id);
+modBLEConnection modBLEConnectionFindByConnectionID(int16_t conn_id);
 modBLEConnection modBLEConnectionFindByAddress(uint8_t *address);
 modBLEConnection modBLEConnectionFindByAddressAndType(uint8_t *address, uint8_t addressType);
 modBLEConnection modBLEConnectionGetFirst(void);

@@ -13,6 +13,9 @@
 		"esp32": {
 			"include": "./manifests/esp32/manifest.json"
 		},
+		"nrf52": {
+			"include": "./manifests/nrf52/manifest.json"
+		},
 		"pico": {
 			"include": "./manifests/pico/manifest.json"
 		},
