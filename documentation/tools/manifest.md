@@ -158,19 +158,19 @@ The default value of the `"include"` property is `"manifest.json"`. The `"includ
 		"URL":"https://github.com/moddable"
 	},
 	"include": [
-	    {
+		{
 			"git":"$(URL)/test0.git"
 		},
-	    { 
-	    	"git":"$(URL)/test1.git", 
-	    	"include":"modules/test1/manifest.json"
+		{ 
+			"git":"$(URL)/test1.git", 
+			"include":"modules/test1/manifest.json"
 		},
-	    { 
-	    	"git":"$(URL)/test23.git", 
-	    	"include": [
-	    		"test2/module.json",
-	    		"test3/module.json"
-	    	]
+		{ 
+			"git":"$(URL)/test23.git", 
+			"include": [
+				"test2/module.json",
+				"test3/module.json"
+			]
 		}
 	]
 }
