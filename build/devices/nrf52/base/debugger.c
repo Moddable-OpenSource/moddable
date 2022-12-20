@@ -24,15 +24,15 @@
 
 #include "mc.defines.h"
 
+#if !USE_DEBUGGER_USBD
+
 #include "nrfx_uarte.h"
 #include "app_fifo.h"
-
-#if !USE_DEBUGGER_USBD
 
 #ifdef mxDebug
 
 #define DEBUGGER_STACK	2048
-#define kDebuggerTaskPriority	(tskIDLE_PRIORITY + 1)
+#define kDebuggerTaskPriority	5		// (tskIDLE_PRIORITY + 1)
 
 #ifndef MODDEF_DEBUGGER_RX_PIN
 	#define MODDEF_DEBUGGER_RX_PIN	31

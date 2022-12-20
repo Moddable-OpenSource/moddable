@@ -43,7 +43,7 @@ xsMachine *gThe = NULL;        // main VM
 void loop_task(void *pvParameter);
 
 #define kStack ((10 * 1024) / sizeof(StackType_t))
-#define kTaskPriority	(tskIDLE_PRIORITY + 1)
+#define kTaskPriority	6	// (tskIDLE_PRIORITY + 1)
 
 void xs_setup(void)
 {
