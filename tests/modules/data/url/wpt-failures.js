@@ -264,6 +264,21 @@ const tests = [
     "base": "about:blank",
     "failure": true
   },
+	{
+		"input": "blob:https://example.com:443/",
+		"base": "about:blank",
+		"href": "blob:https://example.com:443/",
+		"origin": "https://example.com",
+		"protocol": "blob:",
+		"username": "",
+		"password": "",
+		"host": "",
+		"hostname": "",
+		"port": "",
+		"pathname": "https://example.com:443/",
+		"search": "",
+		"hash": ""
+	},
 ];
 
 
