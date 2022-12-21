@@ -240,6 +240,8 @@ class HTTPClient {
 					else {					
 						if (undefined !== this.#chunk)
 							this.#remaining = undefined;		// ignore content-length if chunked
+						else if (undefined === this.#remaining)
+							this.#remaining = Infinity;
 							
 						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers);
 						if (!this.#current) return;			// closed in callback

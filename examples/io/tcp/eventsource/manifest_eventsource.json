@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/url/manifest.json",
+		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json"
+	],
+	"modules": {
+		"*": "./eventsource"
+	},
+	"preload": [
+		"eventsource"
+	]
+}
