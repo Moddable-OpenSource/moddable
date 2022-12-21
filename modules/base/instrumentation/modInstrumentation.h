@@ -64,7 +64,7 @@ enum {
 	/* system */
 	kModInstrumentationSystemFreeMemory,
 
-#if ESP32
+#if nrf52 || ESP32
 	/* CPU utilization */
 	kModInstrumentationCPU0,
 	#if kTargetCPUCount > 1

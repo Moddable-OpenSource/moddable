@@ -56,10 +56,25 @@
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
 
+	#define INSTRUMENT_CPULOAD 1
+	#define kTargetCPUCount 1
+
+	#if INSTRUMENT_CPULOAD
+		#include "nrf_drv_timer.h"
+
+		static uint32_t gCPUCounts[kTargetCPUCount * 2];
+		static TaskHandle_t gIdles[kTargetCPUCount];
+		static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context);
+
+		volatile uint32_t gCPUTime;
+		static nrf_drv_timer_t cpuTimer = NRF_DRV_TIMER_INSTANCE(3);
+		#define CPUTIMER_US 800
+	#endif
+
 	static void espInitInstrumentation(txMachine *the);
 	static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
 
-	#define espInstrumentCount kModInstrumentationSystemFreeMemory - kModInstrumentationPixelsDrawn + 1
+	#define espInstrumentCount kModInstrumentationSlotHeapSize - kModInstrumentationPixelsDrawn
 	static char* const espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)"Pixels drawn",
 		(char *)"Frames drawn",
@@ -72,6 +87,7 @@
 		(char *)"Piu command List used",
 		(char *)"Event loop",
 		(char *)"System bytes free",
+		(char *)"CPU",
 	};
 
 	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
@@ -86,6 +102,7 @@
 		(char *)" bytes",
 		(char *)" turns",
 		(char *)" bytes",
+		(char *)" percent",
 	};
 
 	SemaphoreHandle_t gInstrumentMutex;
@@ -254,6 +271,18 @@ static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 	return (int32_t)nrf52_memory_remaining();
 }
 
+#if INSTRUMENT_CPULOAD
+static int32_t modInstrumentationCPU0(void *theIn)
+{
+	int32_t result, total = (gCPUCounts[0] + gCPUCounts[1]);
+	if (!total)
+		return 0;
+	result = (100 * gCPUCounts[0]) / total;
+	gCPUCounts[0] = gCPUCounts[1] = 0;
+	return result;
+}
+#endif
+
 void espInitInstrumentation(txMachine *the)
 {
 #if MODDEF_XS_TEST
@@ -274,6 +303,20 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
 
 	gInstrumentMutex = xSemaphoreCreateMutex();
+
+#if INSTRUMENT_CPULOAD
+	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
+
+	nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
+	nrf_drv_timer_init(&cpuTimer, &timer_cfg, cpuTimerHandler);
+	uint32_t ticks = nrf_drv_timer_us_to_ticks(&cpuTimer, CPUTIMER_US);
+	nrf_drv_timer_extended_compare(&cpuTimer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
+
+	gIdles[0] = xTaskGetIdleTaskHandle();
+
+	nrf_drv_timer_clear(&cpuTimer);
+	nrf_drv_timer_enable(&cpuTimer);
+#endif
 }
 
 extern SemaphoreHandle_t gDebugMutex;
@@ -287,7 +330,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 
 	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
 
-	for (what = kModInstrumentationPixelsDrawn; what <= kModInstrumentationSystemFreeMemory; what++)
+	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
 	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
@@ -307,6 +350,17 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	xSemaphoreGive(gInstrumentMutex);
 }
 
+#if INSTRUMENT_CPULOAD
+static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context)
+{
+	switch (event_type) {
+		case NRF_TIMER_EVENT_COMPARE0:
+			gCPUCounts[0 + (xTaskGetCurrentTaskHandle() == gIdles[0])] += 1;
+			gCPUTime += 1250;
+			break;
+	}
+}
+#endif
 #endif
 
 /*
