@@ -313,6 +313,8 @@ export default class extends TOOL {
 					let configuration = ["{"];
 					for (const name in c) {
 						const value = c[name];
+						if ("name" === name)
+							continue;
 						if (("string" === typeof value) && value.startsWith("function ("))
 							configuration.push(`\t\t${name}: ${value},`);
 						else
@@ -440,7 +442,7 @@ export default class extends TOOL {
 				if (config.func) {
 					config.func = `function (msg, ${params}) {\n${libs}${config.func}\n}`;
 
-					 if (dones && !/node\.done\s*\(\s*\)/.test(config.func))		// from 10-function.js.. first order approximiation of what it does
+					if (dones && !/node\.done\s*\(\s*\)/.test(config.func))		// from 10-function.js.. first order approximiation of what it does
 						config.doDone = true;
 				}
 				else 
@@ -464,7 +466,7 @@ export default class extends TOOL {
 				trigger.push(`function () {`);
 				trigger.push(`\t\t\tconst msg = {};`);
 
- 				if (!config.props) {		// convert older style config
+				if (!config.props) {		// convert older style config
 					config.props = [{
 						p: "payload",
 						payload: config.payload,
@@ -655,7 +657,6 @@ export default class extends TOOL {
 						break;
 					default:
 						throw new Error("unrecognized spltType: " + config.spltType);
-						break;
 				}
 			} break;
 			
@@ -1046,7 +1047,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-				   config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
 			} break;
 
 			case "tcp out": {
@@ -1059,7 +1060,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-				   config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
 			} break;
 
 			case "rpi-gpio in": {
