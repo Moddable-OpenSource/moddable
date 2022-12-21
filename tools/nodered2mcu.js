@@ -1213,9 +1213,26 @@ export default class extends TOOL {
 			case "msg":
 				return `msg${this.prepareProp(value)}`;
 			case "flow":
-				return `this.flow.get("${value}")`;
-			case "global":
-				return `globalContext.get("${value}")`;
+			case "global": {
+				let suffix = "";
+				let i = value.indexOf("[");
+				let j = value.indexOf(".");
+				if ((i > 0) || (j > 0)) {
+					let first;
+					if ((i > 0) && (j < 0))
+						first = i;
+					else if ((j > 0) && (i < 0))
+						first = j;
+					else
+						first = Math.min(i, j);
+					suffix = value.slice(first);
+					value = value.slice(0, first);		//@@ if "." may need to check regexIdentifierNameES6
+				}
+					
+				if ("flow" === type)
+					return `this.flow.get("${value}")${suffix}`;
+				return `globalContext.get("${value}")${suffix}`;
+				}
 			case "env": {
 				let offset = 0;
 				do {
@@ -1254,8 +1271,40 @@ export default class extends TOOL {
 		return this.resolveValue(type, value);
 	}
 	splitProp(prop) {
-		const parts = prop.split(".");
+		let parts = [], start = 0, depth = 0;
+		for (let position = 0; position < prop.length; position++) {
+			const c = prop[position];
+			if (position === (prop.length - 1)) {
+				parts.push(prop.slice(start));
+				break;
+			}
+
+			if ((0 === depth) && ("." === c)) {
+				if (start !== position)
+					parts.push(prop.slice(start, position));
+				start = position + 1;
+			}
+			else
+			if ("[" === c) {
+				if (0 === depth) {
+					parts.push(prop.slice(start, position));
+					start = position;
+				}
+				depth += 1;
+			}
+			else
+			if ("]" === c) {
+				depth -= 1;
+				if (0 === depth) {
+					parts.push(prop.slice(start, position + 1));
+					start = position + 1;
+				}
+			}
+		}
+
 		return parts.map(part => {
+			if (part.startsWith("["))
+				return part;
 			const identifier = regexIdentifierNameES6.test(part);
 			if (identifier)
 				return "." + part;

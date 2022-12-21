@@ -64,6 +64,8 @@ sample code bearing this copyright.
 #include "driver/rmt.h"
 #include "driver/gpio.h"
 
+#include "xsHost.h"			// esp platform support
+
 // bus reset: duration of low phase [us]
 #define OW_DURATION_RESET 480
 // overall slot duration
@@ -383,6 +385,9 @@ static owb_status _init(owb_rmt_driver_info *info, uint8_t gpio_num,
     }
 
     // attach GPIO to previous pin
+#if kCPUESP32C3
+        GPIO.enable_w1ts.val = (0x1 << gpio_num);
+#else
     if (gpio_num < 32)
     {
         GPIO.enable_w1ts = (0x1 << gpio_num);
@@ -391,6 +396,7 @@ static owb_status _init(owb_rmt_driver_info *info, uint8_t gpio_num,
     {
         GPIO.enable1_w1ts.data = (0x1 << (gpio_num - 32));
     }
+#endif
 
     // attach RMT channels to new gpio pin
     // ATTENTION: set pin for rx first since gpio_output_disable() will

@@ -200,6 +200,8 @@ static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 #if FUZZING || FUZZILLI
 static void fx_fillBuffer(txMachine *the);
+void fx_nop(xsMachine *the);
+void fx_assert_throws(xsMachine *the);
 #endif
 static void fx_gc(xsMachine* the);
 static void fx_print(xsMachine* the);
@@ -1877,7 +1879,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	xsBeginHost(machine);
 	{
 		xsTry {
-			xsVars(1);
+			xsVars(2);
 			modInstallTextDecoder(the);
 			xsResult = xsArrayBuffer(buffer, script_size);
 			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
@@ -1903,6 +1905,14 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 			xsResult = xsNewHostFunction(fx_print, 1);
 			xsSet(xsGlobal, xsID("print"), xsResult);
 
+			// test262 stubs
+			xsVar(0) = xsNewHostFunction(fx_nop, 1);
+			xsDefine(xsGlobal, xsID("assert"), xsVar(0), xsDontEnum);
+			xsDefine(xsVar(0), xsID("sameValue"), xsVar(0), xsDontEnum);
+			xsDefine(xsVar(0), xsID("notSameValue"), xsVar(0), xsDontEnum);
+			xsVar(1) = xsNewHostFunction(fx_assert_throws, 1);
+			xsDefine(xsVar(0), xsID("throws"), xsVar(1), xsDontEnum);
+			
 			txStringCStream aStream;
 			aStream.buffer = buffer;
 			aStream.offset = 0;
@@ -1942,6 +1952,20 @@ void fx_fillBuffer(txMachine *the)
 		*buffer++ = (uint8_t)seed;
 	}
 }
+
+void fx_nop(xsMachine *the)
+{
+}
+
+void fx_assert_throws(xsMachine *the)
+{
+	mxTry(the) {
+		xsCallFunction0(xsArg(1), xsGlobal);
+	}
+	mxCatch(the) {
+	}
+}
+
 #endif
 
 /* PLATFORM */

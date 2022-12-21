@@ -245,7 +245,7 @@ class Sensor {
       luxVal = 0;
   
     return {
-      lux: luxVal,
+      illuminance: luxVal,
       raw: rawCH0,
       scaled: ch0,
       ir: ch1

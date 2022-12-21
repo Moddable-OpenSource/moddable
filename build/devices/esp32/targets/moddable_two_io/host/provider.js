@@ -28,6 +28,7 @@ import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
 import Touch from "embedded:sensor/touch/FT6x06";
+import PulseWidth from "embedded:io/pulsewidth";
 
 class Backlight {
 	#io;
@@ -141,7 +142,7 @@ const device = {
 			pin: 33
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
+	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 0,
 		led: 2,

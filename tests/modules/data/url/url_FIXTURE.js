@@ -223,6 +223,7 @@ const keys = [
     "pathname",
     "search",
     "hash",
+    "origin",
 ];
 
 function runTest(test) {
@@ -232,9 +233,11 @@ function runTest(test) {
   			throw new Test262Error("Expected failure but got «" + url.href + "»");
 		}
 		for (let key of keys) {
-			let actual = url[key];
-			let expected = test[key];
-			assert.sameValue(actual, expected);
+			if (key in test) {
+				let actual = url[key];
+				let expected = test[key];
+				assert.sameValue(actual, expected);
+			}
 		}
 	}
 	catch(e) {

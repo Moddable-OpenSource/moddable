@@ -58,6 +58,8 @@ const Register = Object.freeze({
 const MAX_RANGE = 254;
 const MAX_RANGE_CM = 25.4;
 
+const LUX_PER_COUNT = 0.32;
+
 const initializationData = Object.freeze([
   0x0207, 0x01,
   0x0208, 0x01,
@@ -102,8 +104,13 @@ class VL6180 {
   #earlyConvergenceEstimate = 0;
   #enableSampleReadyPolling = false;
   #analogueGain = 1;
+  #internalGain = LUX_PER_COUNT / 1.01;
   #alsMode = 0;
   #alsFrequency = 2550;
+  #wordBuffer;
+  #byteBuffer;
+  #wordView;
+  #byteView;
   
   constructor(options){
     const io = this.#io = new options.io({
@@ -111,6 +118,12 @@ class VL6180 {
       hz: 400_000,
       ...options
     });
+
+    this.#wordBuffer = new ArrayBuffer(2);
+    this.#wordView = new DataView(this.#wordBuffer);
+
+    this.#byteBuffer = new ArrayBuffer(1);
+    this.#byteView = new DataView(this.#byteBuffer);
     
     let idCheck = false;
 
@@ -132,7 +145,7 @@ class VL6180 {
     
     //recommended default settings from VL6180 Application Note not covered by configure()
     this.#writeByte(Register.SYSRANGE__VHV_REPEAT_RATE, 0xFF); // sets the # of range measurements after which auto calibration of system is performed
-    this.#writeByte(Register.SYSALS__INTEGRATION_PERIOD, 0x63); // Set ALS integration time to 100ms
+    this.#writeWord(Register.SYSALS__INTEGRATION_PERIOD, 0x63); // Set ALS integration time to 100ms
     this.#writeByte(Register.SYSRANGE__VHV_RECALIBRATE, 0x01); // perform a single temperature calibration of the ranging sensor 
 
     this.configure( {
@@ -209,27 +222,36 @@ class VL6180 {
     }
 
     if (undefined !== analogueGain) {
-      let value;
+      let value, internalGain;
 
       if (analogueGain === 40) {
         value = 0x47;
+        internalGain = LUX_PER_COUNT / 40;
       } else if (analogueGain === 20) {
         value = 0x40;
+        internalGain = LUX_PER_COUNT / 20;
       } else if (analogueGain === 10) {
         value = 0x41;
+        internalGain = LUX_PER_COUNT / 10.32;
       } else if (analogueGain === 5) {
         value = 0x42;
+        internalGain = LUX_PER_COUNT / 5.21;
       } else if (analogueGain === 2.5) {
         value = 0x43;
+        internalGain = LUX_PER_COUNT / 2.6;
       } else if (analogueGain === 1.67) {
         value = 0x44;
+        internalGain = LUX_PER_COUNT / 1.72;
       } else if (analogueGain === 1.25) {
         value = 0x45;
+        internalGain = LUX_PER_COUNT / 1.28;
       } else if (analogueGain === 1) {
         value = 0x46;
+        internalGain = LUX_PER_COUNT / 1.01;
       } else {
         throw new Error("invalid analogueGain");
       }
+      this.#internalGain = internalGain;
       this.#analogueGain = analogueGain;
       this.#writeByte(Register.SYSALS__ANALOGUE_GAIN, value);
     }
@@ -307,7 +329,7 @@ class VL6180 {
     while (!(thresholdEvent & 0b100000)) {
       thresholdEvent = this.#readByte(Register.RESULT__INTERRUPT_STATUS_GPIO);
     }
-    let illuminance = this.#readWord(Register.RESULT__ALS_VAL) * 0.31683; // 0.32 / 1.01
+    const illuminance = this.#readWord(Register.RESULT__ALS_VAL) * this.#internalGain;
     this.#writeByte(Register.SYSTEM__INTERRUPT_CLEAR, 0x07);
     
     return {
@@ -328,27 +350,37 @@ class VL6180 {
   }
 
   #setupRead(register) { //Not quite SMB.
-    let lowByte = register & 0xFF;
-    let highByte = (register >> 8) & 0xFF;
-    this.#io.write(Uint8Array.of(highByte, lowByte), true);
+    this.#wordView.setUint16(0, register, false);
+    this.#io.write(this.#wordBuffer);
   }
 
   #readByte(register) {
     this.#setupRead(register);
+    this.#io.read(this.#byteBuffer);
 
-    return new Uint8Array(this.#io.read(1))[0];
+    return this.#byteView.getUint8(0);
   }
 
   #readWord(register) {
     this.#setupRead(register);;
+    this.#io.read(this.#wordBuffer);
 
-    return new Uint16Array(this.#io.read(2))[0];
+    return this.#wordView.getUint16(0, false);
   }
 
   #writeByte(register, value) {
     let lowByte = register & 0xFF;
     let highByte = register >> 8;
     this.#io.write(Uint8Array.of(highByte, lowByte, value));
+  }
+
+  #writeWord(register, value) {
+    let lowByte = register & 0xFF;
+    let highByte = (register >> 8) & 0xFF;
+    let lowValue = value & 0xFF;
+    let highValue = (value >> 8) & 0xFF;
+
+    this.#io.write(Uint8Array.of(highByte, lowByte, highValue, lowValue));
   }
 }
 

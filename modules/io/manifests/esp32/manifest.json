@@ -48,13 +48,15 @@
 		"esp32/*": {
 			"modules": {
 				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
+				"embedded:io/pulsewidth": "$(IO)/pulsewidth/$(PLATFORM)/*"
 			}
 		},
 		"esp32": {
 			"modules": {
 				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
+				"embedded:io/pulsewidth": "$(IO)/pulsewidth/$(PLATFORM)/*"
 			}
 		},
 		"...": {
