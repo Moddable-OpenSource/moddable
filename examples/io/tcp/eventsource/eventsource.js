@@ -20,6 +20,7 @@
 
 // https://html.spec.whatwg.org/#server-sent-events
 
+import Timer from "timer";
 import URL from "url";
 
 const CR = -1;
@@ -31,47 +32,113 @@ const VALUE = 4;
 
 class EventSource {
 	#client = null;
+	#config;
 	#data = "";
 	#eventHandlers = { error:null, open:null, message:null };
 	#eventListeners = {};
 	#eventType = "";
+	#host;
 	#lastEventID = "";
-	#origin = "null";
+	#origin;
+	#path;
+	#port;
 	#readystate = this.CLOSED;
-	#reconnectionTime = 5000;
-	#url = 25;
+	#reconnectionTime = 10000;
+	#url;
 	
 	constructor(href, options) {
 		const url = new URL(href);
 		const protocol = url.protocol;
-		const host = url.hostname;
+		this.#host = url.hostname;
 		let config, port;
 		if (protocol == "http:") {
-			config = device.network.http;
-			port = url.port || 80;
+			this.#config = device.network.http;
+			this.#port = url.port || 80;
 		}
 		else if (protocol == "https:") {
-			config = device.network.https;
-			port = url.port || 443;
+			this.#config = device.network.https;
+			this.#port = url.port || 443;
 		}
 		else
 			throw new URLError("only http or https")
+		this.#origin = url.origin;
+		let path = url.pathname;
+		let query = url.search;
+		if (query)
+			path += query;
+		this.#path = path;
+		this.#url = url.href;
+		this.#connect();
+	}
+	get readystate() {
+		return this.#readystate;
+	}
+	get onerror() {
+		return this.#eventHandlers.error;
+	}
+	set onerror(handler) {
+		this.#setEventHandler("error", handler);
+	}
+	get onopen() {
+		return this.#eventHandlers.open;
+	}
+	set onopen(handler) {
+		this.#setEventHandler("open", handler);
+	}
+	get onmessage() {
+		return this.#eventHandlers.message;
+	}
+	set onmessage(handler) {
+		this.#setEventHandler("message", handler);
+	}
+	get url() {
+		return this.#url;
+	}
+	addEventListener(type, listener) {
+		let listeners = this.#eventListeners[type];
+		if (!listeners)
+			listeners = this.#eventListeners[type] = [];
+		listeners.push(listener);
+	}
+	close() {
+		if (this.#client) {
+			this.#client.close();
+			this.#client = null;
+		}
+	}
+	removeEventListener(type, listener) {
+		let listeners = this.#eventListeners[type];
+		if (listeners) {
+			let index = listeners.find(item => item === listener);
+			if (index >= 0)
+				listeners.splice(index, 1);
+		}
+	}
+	#callEventListeners(event) {
+		let listeners = this.#eventListeners[event.type];
+		if (listeners)
+			listeners.forEach(listener => listener.call(null, event));
+	}
+	#connect() {
+		const config = this.#config;
+		const host = this.#host;
+		const port = this.#port;
+		const path = this.#path;
+		this.#readystate = this.CONNECTING;
 		const client = this.#client = new config.io({ 
 			...config,
 			host, 
 			port,  
 			onClose: () => {
+				this.#client = null;
 				this.#readystate = this.CLOSED;
+				Timer.set(() => { this.#connect() }, this.#reconnectionTime)
 			},
 			onError: () => {
-				const event = { type:"error" };
-				this.#callEventListeners(event);
+				this.#client = null;
+				this.#onError();
 			}
 		});
-		let path = url.pathname;
-		let query = url.search;
-		if (query)
-			path += query;
 		let headers = new Map();
 		headers.set("accept", "text/event-stream");
 		let buffer = null;
@@ -89,8 +156,7 @@ class EventSource {
 				}
 				else {
 					client.close();
-					const event = { type:"error" };
-					this.#callEventListeners(event);
+					this.#onError();
 				}
 			},
 			onReadable: (count) => {
@@ -166,55 +232,6 @@ class EventSource {
 				}
 			},
 		});
-		this.#readystate = this.CONNECTING;
-		this.#origin = url.origin;
-		this.#url = url.href;
-	}
-	get readystate() {
-		return this.#readystate;
-	}
-	get onerror() {
-		return this.#eventHandlers.error;
-	}
-	set onerror(handler) {
-		this.#setEventHandler("error", handler);
-	}
-	get onopen() {
-		return this.#eventHandlers.open;
-	}
-	set onopen(handler) {
-		this.#setEventHandler("open", handler);
-	}
-	get onmessage() {
-		return this.#eventHandlers.message;
-	}
-	set onmessage(handler) {
-		this.#setEventHandler("message", handler);
-	}
-	get url() {
-		return this.#url;
-	}
-	addEventListener(type, listener) {
-		let listeners = this.#eventListeners[type];
-		if (!listeners)
-			listeners = this.#eventListeners[type] = [];
-		listeners.push(listener);
-	}
-	close() {
-		this.#client.close();
-	}
-	removeEventListener(type, listener) {
-		let listeners = this.#eventListeners[event];
-		if (listeners) {
-			let index = listeners.find(item => item === listener);
-			if (index >= 0)
-				listeners.splice(index, 1);
-		}
-	}
-	#callEventListeners(event) {
-		let listeners = this.#eventListeners[event.type];
-		if (listeners)
-			listeners.forEach(listener => listener.call(null, event));
 	}
 	#dispatchEvent() {
 		let type = this.#eventType;
@@ -231,6 +248,12 @@ class EventSource {
 			const event = { type, data, origin, lastEventID };
 			this.#callEventListeners(event);
 		}
+	}
+	#onError() {
+		this.#client = null;
+		this.#readystate = this.CLOSED;
+		const event = { type:"error" };
+		this.#callEventListeners(event);
 	}
 	#processField(name, value) {
 		switch (name) {
