@@ -4177,7 +4177,8 @@ txSymbol* fxJSXNamespace(txParser* parser, txSymbol* namespace, txSymbol* name)
 {
 	txSize namespaceLength = namespace->length;
 	txSize nameLength = name->length;
-	txString string = fxNewParserChunk(parser, namespaceLength + 1 + nameLength + 1);
-	sprintf(string, "%s:%s", namespace->string, name->string);
+	txSize length = namespaceLength + 1 + nameLength + 1;
+	txString string = fxNewParserChunk(parser, length);
+	snprintf(string, length, "%s:%s", namespace->string, name->string);
 	return fxNewParserSymbol(parser, string);
 }

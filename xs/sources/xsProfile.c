@@ -387,7 +387,7 @@ void fxPrintProfiler(txMachine* the, void* stream)
 		timer = time(NULL);
 		tm_info = localtime(&timer);
 		strftime(buffer, 22, "XS-%y-%m-%d-%H-%M-%S-", tm_info);
-		sprintf(name, "%s%03llu.cpuprofile", buffer, (profiler->stop / 1000) % 1000);
+		snprintf(name, sizeof(name), "%s%03llu.cpuprofile", buffer, (profiler->stop / 1000) % 1000);
 		file = fopen(name, "w");
 	}
 	
