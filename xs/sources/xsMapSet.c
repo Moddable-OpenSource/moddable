@@ -907,7 +907,8 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 	}
 	else {
 		if (XS_REFERENCE_KIND == kind) {
-			sum = slot->value.reference - the->firstHeap; //(txSlot*)NULL;
+			txSlot* base = C_NULL;
+			sum = slot->value.reference - base;
 		}
 		else if (XS_INTEGER_KIND == kind) {
 			fxToNumber(the, slot);
