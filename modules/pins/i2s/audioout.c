@@ -1411,6 +1411,8 @@ void audioOutLoop(void *pvParameter)
 			uint32_t newState;
 
 			if (!stopped) {
+				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);		// maybe use auto_clear in the future
+
 #if MODDEF_AUDIOOUT_I2S_DAC
 				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
 #else
