@@ -509,7 +509,7 @@ export default class extends TOOL {
 
 					imports.set("Timer", "timer");
 					if (repeat)
-						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay ?? 0}, ${repeat});`);
+						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay ?? repeat}, ${repeat});`);
 					else
 						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay});`);
 
@@ -878,10 +878,10 @@ export default class extends TOOL {
 								test = `false === value`;
 								break;
 							case "null":
-								test = `null === value`;
+								test = `((null === value) || (undefined === value))`;
 								break;
 							case "nnull":
-								test = `null !== value`;
+								test = `!((null === value) || (undefined === value))`;
 								break;							
 							case "empty":
 								test = `this.empty(value)`;
@@ -1340,6 +1340,7 @@ export default class extends TOOL {
 				case "json": {
 					let t = JSON.parse(value);
 					t = JSON.stringify(t, null, "\t");
+					t = t.split("\n").map((line, i) => (i ? "\t\t" : "") + line).join("\n");	// indent multi-line JSON
 					parts.push(`\t\t${name}: ${t},`);
 					} break;
 			}					
