@@ -576,20 +576,14 @@ export default class extends TOOL {
 						const to = this.resolveValue(rule.tot, rule.to);
 						if ("msg" === rule.pt) {
 							this.createPropPath(rule.p, change, "\t\t\t");
-							if ("re" === rule.fromt)
-								change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = msg${this.prepareProp(rule.p)}.toString().replace(${from}, ${to});`);
-							else
-								change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = msg${this.prepareProp(rule.p)}.toString().replaceAll(${from}, ${to});`);
+							change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = this.change(msg${this.prepareProp(rule.p)}, ${from}, ${JSON.stringify(rule.fromt)}, ${to});`);
 						}
 						else if (("flow" === rule.pt) || ("global" === rule.pt)) {
 							const which = ("flow" === rule.pt) ? "flow" : "globalContext";
-							if ("re" === rule.fromt)
-								change.push(`\t\t\tthis.${which}.set("${rule.p}", this.${which}.get("${rule.p}").toString().replace(${from}, ${to}));`);
-							else
-								change.push(`\t\t\tthis.${which}.set("${rule.p}", this.${which}.get("${rule.p}").toString().replaceAll(${from}, ${to}));`);
+							change.push(`\t\t\tthis.${which}.set("${rule.p}", this.change(this.${which}.get("${rule.p}"), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
 						}
 						else
-							throw new Error(`unexpected set type: ${rule.pt}`);
+							throw new Error(`unexpected change type: ${rule.pt}`);
 					}
 					else if ("move" === rule.t) {
 						// GET, DELETE, SET
