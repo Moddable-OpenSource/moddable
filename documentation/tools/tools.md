@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: November 7, 2022
+Revised: December 22, 2022
 
 ## About this Document
 
@@ -104,7 +104,7 @@ There are a few important differences between `mcrun` and `mcconfig`:
 ### Arguments
 
 ```text
-mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+mcrun [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 ```
 
 The command line arguments to `mcrun` are nearly identical to those for `mcconfig`, except that `mcrun` does not support the `-t` option. See the [`mcconfig` Arguments](#mcconfig-arguments) section for a description of each argument.
@@ -143,7 +143,7 @@ mcrez files... [-o output] [-r name] [-p platform]
 For instance:
 
 ```shell
-cd $MODDABLE/piu/examples/balls
+cd $MODDABLE/examples/piu/balls
 png2bmp balls.png -o ~/Desktop
 ```
 
