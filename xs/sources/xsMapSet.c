@@ -1637,9 +1637,10 @@ void fxCleanupFinalizationRegistries(txMachine* the)
 	txSlot* closure;
 	while ((closure = *address)) {
 		txSlot* registry = closure->value.closure;
-		fx_FinalizationRegistryCleanup(the, registry, C_NULL);
-		if (registry->value.finalizationRegistry.callback->next == C_NULL)
-			*address = closure->next;
+		if (registry->value.finalizationRegistry.flags & XS_FINALIZATION_REGISTRY_CHANGED) {
+			fx_FinalizationRegistryCleanup(the, registry, C_NULL);
+			address = &(mxFinalizationRegistries.value.reference->next);
+		}
 		else
 			address = &(closure->next);
 	}
