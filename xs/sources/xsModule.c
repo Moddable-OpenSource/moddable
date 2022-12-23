@@ -2017,56 +2017,60 @@ void fxRunImport(txMachine* the, txSlot* realm, txID moduleID)
 
 void fxRunImportFulfilled(txMachine* the, txSlot* module, txSlot* with)
 {
-	txSlot* stack = the->stack;
-	txSlot* slot = mxModuleInstanceFulfill(module);
-	while (slot) {
-		mxPushSlot(slot);
-		slot = slot->next;
-		slot = slot->next;
+	if (mxModuleInstanceMeta(module)->next) {
+		txSlot* stack = the->stack;
+		txSlot* slot = mxModuleInstanceFulfill(module);
+		while (slot) {
+			mxPushSlot(slot);
+			slot = slot->next;
+			slot = slot->next;
+		}
+		mxModuleInstanceMeta(module)->next = C_NULL;
+		slot = stack;
+		while (slot > the->stack) {
+			slot--;
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPushSlot(slot);
+			mxCall();
+			/* ARGUMENTS */
+			mxPushReference(with);
+			mxRunCount(1);
+			mxPop();
+		}
+		the->stack = stack;
 	}
-	mxModuleInstanceMeta(module)->next = C_NULL;
-	slot = stack;
-	while (slot > the->stack) {
-		slot--;
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPushSlot(slot);
-		mxCall();
-		/* ARGUMENTS */
-		mxPushReference(with);
-		mxRunCount(1);
-		mxPop();
-	}
-	the->stack = stack;
 }
 
 void fxRunImportRejected(txMachine* the, txSlot* module, txSlot* with)
 {
-	txSlot* stack = the->stack;
-	txSlot* slot = mxModuleInstanceFulfill(module);
-	txSlot* exception;
-	while (slot) {
-		slot = slot->next;
-		mxPushSlot(slot);
-		slot = slot->next;
+	if (mxModuleInstanceMeta(module)->next) {
+		txSlot* stack = the->stack;
+		txSlot* slot = mxModuleInstanceFulfill(module);
+		txSlot* exception;
+		while (slot) {
+			slot = slot->next;
+			mxPushSlot(slot);
+			slot = slot->next;
+		}
+		mxModuleInstanceMeta(module)->next = C_NULL;
+		exception = mxModuleInstanceMeta(with);
+		slot = stack;
+		while (slot > the->stack) {
+			slot--;
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPushSlot(slot);
+			mxCall();
+			/* ARGUMENTS */
+			mxPushSlot(exception);
+			mxRunCount(1);
+			mxPop();
+		}
+		the->stack = stack;
 	}
-	mxModuleInstanceMeta(module)->next = C_NULL;
-	exception = mxModuleInstanceMeta(with);
-    slot = stack;
-	while (slot > the->stack) {
-		slot--;
-		/* THIS */
-		mxPushUndefined();
-		/* FUNCTION */
-		mxPushSlot(slot);
-		mxCall();
-		/* ARGUMENTS */
-		mxPushSlot(exception);
-		mxRunCount(1);
-		mxPop();
-	}
-	the->stack = stack;
 }
 
 /* NOW */
