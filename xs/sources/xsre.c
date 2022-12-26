@@ -1675,6 +1675,10 @@ void fxPatternParserError(txPatternParser* parser, txString format, ...)
     if (offset > 80) {
         pattern += offset - 80;
         offset = 80;
+		while (0x80 & *pattern) {
+			pattern++;
+			offset--;
+		}
     }
 	while (offset) {
 		*error++ = c_read8(pattern++);
