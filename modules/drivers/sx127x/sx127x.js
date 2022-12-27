@@ -174,8 +174,8 @@ class LoRa_SX127x {
 		// check version of chip, retrying for a while; this basically ensures we have access to our ST127x chip
 		let i = 0;
 		while (i++ < MAX_INIT_RETRIES) {
-			let version = this.#register.VERSION;
-			if (version == 0x12) break;
+			const version = this.#register.VERSION;
+			if ((version === 0x12) || (version === 0x13)) break;
 			Timer.delay(2);
 		}
 		if (i >= MAX_INIT_RETRIES + 1) throw Error("Not Found");
