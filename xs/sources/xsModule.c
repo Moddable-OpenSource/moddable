@@ -905,39 +905,39 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 						mxReportModuleQueue("LOAD");
 					}
 					else {
+						txSlot* promise;
 						txSlot* function;
 						txSlot* home;
+						txSlot* resolveLoadFunction;
+						txSlot* rejectLoadFunction;
 						done = 0;
 						mxModuleStatus(module) = XS_MODULE_STATUS_LOADING;
-						
-						mxPush(mxPromiseConstructor);
-						mxDub();
-						mxGetID(mxID(_resolve));
-						mxCall();
 						
 						mxPushUndefined();
 						mxPushSlot(loadHook);
 						mxCall();
 						fxPushKeyString(the, moduleID);
 						mxRunCount(1);
-						
-						mxRunCount(1);
-						
-						mxDub();
-						mxGetID(mxID(_then));
-						mxCall();
-		
+						promise = the->stack->value.reference;
+						if (!mxIsPromise(promise))
+							mxTypeError("loadHook returned no promise");
+
 						function = fxNewHostFunction(the, fxLoadModulesFulfilled, 1, XS_NO_ID, mxLoadModulesFulfilledProfileID);
 						home = mxFunctionInstanceHome(function);
 						home->value.home.object = queue;
 						home->value.home.module = module->value.reference;
+						resolveLoadFunction = the->stack;
 
 						function = fxNewHostFunction(the, fxLoadModulesRejected, 1, XS_NO_ID, mxLoadModulesRejectedProfileID);
 						home = mxFunctionInstanceHome(function);
 						home->value.home.object = queue;
 						home->value.home.module = module->value.reference;
-	
-						mxRunCount(2);
+						rejectLoadFunction = the->stack;
+					
+						fxPromiseThen(the, promise, resolveLoadFunction, rejectLoadFunction, C_NULL, C_NULL);
+						
+						mxPop();
+						mxPop();
 						mxPop();
 					}
 				}
