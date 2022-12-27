@@ -67,7 +67,7 @@
  */
 
 import Timer from "timer";
-import Registers from "st127x_registers";
+import Registers from "sx127x_registers";
 
 // max retries during init to look for the chip; takes 2ms per lookup so 100 = 200ms delay before failing
 const MAX_INIT_RETRIES = 100;
@@ -92,7 +92,7 @@ const RF_MID_BAND_THRESHOLD = 525;
 const RSSI_OFFSET_HF_PORT = 157;
 const RSSI_OFFSET_LF_PORT = 164;
 
-class LoRa_ST127x {
+class LoRa_SX127x {
 	#options; // copy of the dictionary passed to the constructor
 	#runtimeOptions = {}; // runtime options, from constructor(options) and set(options)
 	#spi; // embedded:io/spi instance
@@ -809,4 +809,4 @@ class LoRa_ST127x {
 	// }
 }
 
-export default LoRa_ST127x;
+export default LoRa_SX127x;
