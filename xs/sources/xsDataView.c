@@ -611,6 +611,7 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 	newByteLength = fxArgToByteLength(the, 0, 0);
 	if (newByteLength > maxByteLength)
 		mxRangeError("newLength > maxByteLength");
+	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	chunk = (txByte*)fxRenewChunk(the, arrayBuffer->value.arrayBuffer.address, newByteLength);
 	if (!chunk) {
 		chunk = (txByte*)fxNewChunk(the, newByteLength);
