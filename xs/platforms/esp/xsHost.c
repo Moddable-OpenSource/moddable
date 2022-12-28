@@ -1128,13 +1128,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
 
-#if CONFIG_TASK_WDT
+#if CONFIG_ESP_TASK_WDT
 	modWatchDogReset();
-	if (maxDelayMS >= (CONFIG_TASK_WDT_TIMEOUT_S * 1000)) {
-		#if CONFIG_TASK_WDT_TIMEOUT_S <= 1
+	if (maxDelayMS >= (CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000)) {
+		#if CONFIG_ESP_TASK_WDT_TIMEOUT_S <= 1
 			maxDelayMS = 500;
 		#else
-			maxDelayMS = (CONFIG_TASK_WDT_TIMEOUT_S - 1) * 1000;
+			maxDelayMS = (CONFIG_ESP_TASK_WDT_TIMEOUT_S - 1) * 1000;
 		#endif
 	}
 #endif
