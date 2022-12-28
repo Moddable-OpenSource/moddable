@@ -15,7 +15,7 @@
 import Touch from "embedded:sensor/touch/FT6x06";
 
 const touch = new Touch({
-			i2c: {
+			sensor: {
 				...device.I2C.default,
 				io: device.io.SMBus
 			} });

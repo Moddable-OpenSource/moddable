@@ -154,7 +154,7 @@ const device = {
 		Touch: class {
 			constructor(options) {
 				const result = new Touch({
-					i2c: {
+					sensor: {
 						...device.I2C.default,
 						io: device.io.SMBus
 					},

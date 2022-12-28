@@ -21,11 +21,11 @@ class FT6206  {
 	#onSample;
 
 	constructor(options) {
-		const {i2c, reset, interrupt, onSample, target, onError} = options;
-		const io = this.#io = new i2c.io.Async({
+		const {sensor, reset, interrupt, onSample, target, onError} = options;
+		const io = this.#io = new sensor.io.Async({
 			hz: 100_000,
 			address: 0x38,
-			...i2c
+			...sensor
 		});
 		this.#onError = onError;
 		this.#onSample = onSample;
