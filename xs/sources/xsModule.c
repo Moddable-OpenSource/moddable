@@ -1525,18 +1525,22 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 			goto namespace;
 		}
 		else {
+			txSlot* instance = module->value.reference;
 			if (!mxIsReference(property))
 				mxTypeError("descriptor.namespace is no object");
 			if (mxIsModule(property->value.reference))
 				goto namespace;
-			fxLoadVirtualModuleNamespace(the, property->value.reference, module->value.reference);
-			mxModuleStatus(module) = XS_MODULE_STATUS_EXECUTED;
-			if (result) {
+			fxLoadVirtualModuleNamespace(the, property->value.reference, instance);
+			txID status = mxModuleInstanceStatus(instance);
+			if ((status == XS_MODULE_STATUS_NEW) || (status == XS_MODULE_STATUS_LOADING)) {
+				mxModuleInstanceStatus(instance) = XS_MODULE_STATUS_EXECUTED;
+				if (result) {
 			
-			}
-			else {
-				fxCompleteModule(the, module->value.reference, C_NULL);
-				fxRunImportFulfilled(the, module->value.reference, module->value.reference);
+				}
+				else {
+					fxCompleteModule(the, instance, C_NULL);
+					fxRunImportFulfilled(the, instance, instance);
+				}
 			}
 			goto done;
 		}
