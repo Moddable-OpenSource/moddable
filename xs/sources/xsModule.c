@@ -420,6 +420,7 @@ void fxExecuteVirtualModuleSource(txMachine* the)
 	if (mxIsUndefined(function))
 		return;
 	closures->flag |= XS_DONT_PATCH_FLAG;
+	closures->value.instance.prototype = C_NULL;
 	property = closures->next->next;
 	while (property) {
 		property->flag |= XS_DONT_DELETE_FLAG;
@@ -842,9 +843,8 @@ void fxLinkTransfer(txMachine* the, txSlot* module, txID importID, txSlot* trans
 			else {
 				from = mxTransferFrom(export);
 				import = mxTransferImport(export);
-				if ((from->value.reference != mxTransferFrom(transfer)->value.reference) || (import->value.symbol != mxTransferImport(transfer)->value.symbol))
-					fxLinkTransfer(the, from, import->value.symbol, transfer);
-                else {
+				if (((from->value.reference == module->value.reference) && (import->value.symbol == importID))
+					|| ((from->value.reference == mxTransferFrom(transfer)->value.reference) && (import->value.symbol == mxTransferImport(transfer)->value.symbol))) {
 					txString path = C_NULL;
 					txInteger line = 0;
 				#ifdef mxDebug
@@ -856,7 +856,8 @@ void fxLinkTransfer(txMachine* the, txSlot* module, txID importID, txSlot* trans
 				#endif	
 					fxIDToString(the, importID, the->nameBuffer, sizeof(the->nameBuffer));
 					fxThrowMessage(the, path, line, XS_SYNTAX_ERROR, "import %s circular", the->nameBuffer);
-                }
+				}
+				fxLinkTransfer(the, from, import->value.symbol, transfer);
 			}
 		}
 	}
@@ -1410,6 +1411,42 @@ void fxLoadVirtualModuleSource(txMachine* the, txSlot* record, txSlot* instance)
 		}
 	}
 	mxPop(); // bindings
+
+#if mxReport
+	{
+		fxIDToString(the, mxModuleInstanceInternal(instance)->value.module.id, the->nameBuffer, sizeof(the->nameBuffer));
+		fprintf(stderr, "### %s\n", the->nameBuffer);
+		txSlot* transfer = the->stack->value.reference->next;
+		while (transfer) {
+			txSlot* local = mxTransferLocal(transfer);
+			txSlot* from = mxTransferFrom(transfer);
+			txSlot* import = mxTransferImport(transfer);
+			txSlot* aliases = mxTransferAliases(transfer);
+			if (local->kind != XS_NULL_KIND) {
+				fxIDToString(the, local->value.symbol, the->nameBuffer, sizeof(the->nameBuffer));
+				fprintf(stderr, " local %s", the->nameBuffer);
+			}
+			if (from->kind != XS_NULL_KIND) {
+				fprintf(stderr, " from %s", from->value.string);
+			}
+			if (import->kind != XS_NULL_KIND) {
+				fxIDToString(the, import->value.symbol, the->nameBuffer, sizeof(the->nameBuffer));
+				fprintf(stderr, " import %s", the->nameBuffer);
+			}
+			if (!mxIsNull(aliases)) {
+				txSlot* alias = aliases->value.reference->next;
+				while (alias) {
+					fxIDToString(the, alias->value.symbol, the->nameBuffer, sizeof(the->nameBuffer));
+					fprintf(stderr, " alias %s", the->nameBuffer);
+					alias = alias->next;
+				}
+			}
+			fprintf(stderr, "\n");
+			transfer = transfer->next;
+		}
+	}
+#endif
+	
 	mxPullSlot(mxModuleInstanceTransfers(instance));
 
 	mxPushSlot(record);
@@ -1520,6 +1557,11 @@ namespace:
 					mxPull(mxException);
 					fxJump(the);
 				}
+				else if (status == XS_MODULE_STATUS_EXECUTED) {
+				}
+				else {
+					fxQueueModule(the, queue, property);
+				}
 			}
 			else {
 				if (status == XS_MODULE_STATUS_ERROR) {
@@ -1611,8 +1653,8 @@ namespace:
 		if (mxIsModuleSource(property->value.reference))
 			fxDuplicateModuleTransfers(the, property, module);
 		else
-			mxTypeError("descriptor.source is object");
-// 			fxLoadVirtualModuleSource(the, property, module->value.reference);
+// 			mxTypeError("descriptor.source is object");
+			fxLoadVirtualModuleSource(the, property, module->value.reference);
 		goto importMeta;
 	}
 	mxPop(); // property
@@ -2675,7 +2717,7 @@ void fx_Compartment(txMachine* the)
 				mxBehaviorOwnKeys(the, source, XS_EACH_NAME_FLAG, at);
 				mxTemporary(property);
 				while ((at = at->next)) {
-					if (mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
+					if ((at->value.at.id != XS_NO_ID) && mxBehaviorGetOwnProperty(the, source, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 						mxPushReference(source);
 						mxGetAll(at->value.at.id, at->value.at.index);
 						target = target->next = fxNewSlot(the);

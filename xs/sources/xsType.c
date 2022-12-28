@@ -1180,11 +1180,13 @@ txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIn
 		while (result) {
 			if (result->ID == id) {
 				result = result->value.closure;
-				alias = result->ID;
-				if (alias) {
-					txSlot* slot = the->aliasArray[alias];
-					if (slot)
-						result = slot;
+				if (result) {
+					alias = result->ID;
+					if (alias) {
+						txSlot* slot = the->aliasArray[alias];
+						if (slot)
+							result = slot;
+					}	
 				}	
 				return result;
 			}
