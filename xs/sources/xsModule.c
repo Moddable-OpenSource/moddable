@@ -919,6 +919,8 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 						mxCall();
 						fxPushKeyString(the, moduleID);
 						mxRunCount(1);
+                        if (!mxIsReference(the->stack))
+                            mxTypeError("loadHook returned no object");
 						promise = the->stack->value.reference;
 						if (!mxIsPromise(promise))
 							mxTypeError("loadHook returned no promise");
