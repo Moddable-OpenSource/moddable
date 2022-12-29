@@ -838,11 +838,15 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_ACCESSOR_KIND:
 		aSlot = theSlot->value.accessor.getter;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		aSlot = theSlot->value.accessor.setter;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkReference);
+		}
 		break;
 	case XS_ARGUMENTS_SLOPPY_KIND:
 	case XS_ARGUMENTS_STRICT_KIND:
