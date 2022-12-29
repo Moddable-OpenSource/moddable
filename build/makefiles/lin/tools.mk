@@ -21,6 +21,7 @@
 % : %.c
 %.o : %.c
 
+SHELL = /bin/dash
 GOAL ?= debug
 NAME = tools
 ifneq ($(VERBOSE),1)
