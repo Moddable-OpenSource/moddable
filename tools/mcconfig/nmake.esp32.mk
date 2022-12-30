@@ -414,16 +414,16 @@ precursor: idfVersionCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP3
 	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
 
 debug: precursor
-	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
 	-cd $(PROJ_DIR) & python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) build flash -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR="$(TMP_DIR)" -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS="$(SDKCONFIG_FILE)"
-	-copy $(BLD_DIR)\xs_esp32.map $(BIN_DIR)\.
-	-copy $(BLD_DIR)\xs_esp32.bin $(BIN_DIR)\.
-	-copy $(BLD_DIR)\partition_table\partition-table.bin $(BIN_DIR)\.
-	-copy $(BLD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\.
-	-copy $(PARTITIONS_PATH) $(BIN_DIR)\.
-	-copy $(BLD_DIR)\ota_data_initial.bin $(BIN_DIR)\.
+	-copy $(BLD_DIR)\xs_esp32.map $(BIN_DIR)\. > nul 2>&1
+	-copy $(BLD_DIR)\xs_esp32.bin $(BIN_DIR)\. > nul 2>&1
+	-copy $(BLD_DIR)\partition_table\partition-table.bin $(BIN_DIR)\. > nul 2>&1
+	-copy $(BLD_DIR)\bootloader\bootloader.bin $(BIN_DIR)\. > nul 2>&1
+	-copy $(PARTITIONS_PATH) $(BIN_DIR)\. > nul 2>&1
+	-copy $(BLD_DIR)\ota_data_initial.bin $(BIN_DIR)\. > nul 2>&1
 	$(START_SERIAL2XSBUG)
 
 release: precursor
