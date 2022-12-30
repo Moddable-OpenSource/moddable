@@ -64,10 +64,6 @@ ifeq ($(IDF_VERSION),)
 $(error Could not detect ESP-IDF version at $$IDF_PATH: $(IDF_PATH).)
 endif
 
-ifeq ($(IDF_PYTHON_ENV_PATH),)
-$(error IDF_PYTHON_ENV_PATH not set. Try running: source $$IDF_PATH/export.sh )
-endif
-
 unexport LDFLAGS
 unexport LD_LIBRARY_PATH
 unexport CPPFLAGS
