@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -24,9 +24,19 @@
 !ENDIF
 
 !IF "$(DEBUG)"=="1"
+!IF "$(XSBUG_LOG)"=="1"
+START_XSBUG = 
+!ELSE
 START_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+!ENDIF
 !ELSE
 START_XSBUG =
+!ENDIF
+
+!IF "$(XSBUG_LOG)"=="1"
+START_COMMAND = cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
+!ELSE
+START_COMMAND = start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
 !ENDIF
 
 XS_DIRECTORIES = \
@@ -155,7 +165,7 @@ XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
 all: build
 	$(START_XSBUG)
-	start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
+	$(START_COMMAND)
 
 build: $(LIB_DIR) $(BIN_DIR)\mc.dll
 
