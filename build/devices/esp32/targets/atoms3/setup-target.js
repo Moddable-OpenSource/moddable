@@ -1,4 +1,6 @@
 import Digital from "pins/digital";
+//import Monitor from "monitor";
+import M5Button from "m5button";
 import config from "mc/config";
 import Timer from "timer";
 import Button from "button";
@@ -24,8 +26,9 @@ globalThis.Host = Object.freeze({
 
 export default function (done) {
         globalThis.button = {
-                a: new Button(41)
+                a: new M5Button(41)
         };
+        button.a.onChanged = nop;
 
         const sensor = new MPU6886;
         globalThis.accelerometer = new Accelerometer(sensor);
@@ -33,6 +36,8 @@ export default function (done) {
 
         done();
 }
+
+function nop() {}
 
 class Accelerometer {
         #sensor;
@@ -50,7 +55,7 @@ class Accelerometer {
                         this.#sensor.configure({ operation: "accelerometer" });
                         const sample = this.#sensor.sample();
                         if (sample)
-                                this.onreading(sample);
+                                this.onreading({x: sample.x, y: -sample.y, z: -sample.z});
                 }, frequency);
         }
         stop() {
@@ -76,7 +81,7 @@ class Gyro {
                         this.#sensor.configure({ operation: "gyroscope" });
                         const sample = this.#sensor.sample();
                         if (sample)
-                                this.onreading({x: -sample.y, y: -sample.x, z: sample.z});
+                                this.onreading({x: -sample.y, y: -sample.x, z: -sample.z});
                 }, frequency);
         }
         stop() {

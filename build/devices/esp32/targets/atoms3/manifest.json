@@ -6,19 +6,23 @@
         },
         "include": [
                 "$(MODULES)/pins/smbus/manifest.json",
+                "$(MODULES)/pins/digital/manifest.json",
+                "$(MODULES)/pins/digital/monitor/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
                 "$(MODULES)/drivers/button/manifest.json",
                 "$(MODULES)/drivers/sensors/mpu6886/manifest.json"
         ],
         "modules": {
 		"*": [
-                        "$(MODULES)/drivers/mpu6886/*"
+                        "$(MODULES)/drivers/mpu6886/*",
+                        "../m5stack_fire/m5button"
                 ],
                 "setup/target": "./setup-target"
         },
         "preload": [
                 "setup/target",
-                "mpu6886"
+                "mpu6886",
+                "m5button"
         ],
         "config": {
                 "screen": "ili9341",
