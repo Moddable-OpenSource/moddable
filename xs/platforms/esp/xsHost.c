@@ -57,6 +57,8 @@
 		static uint16_t gCPUCounts[kTargetCPUCount * 2];
 		static TaskHandle_t gIdles[kTargetCPUCount];
 		static void IRAM_ATTR timer_group0_isr(void *para);
+
+		volatile uint32_t gCPUTime;
 	#endif
 
 	#include "freertos/task.h"
@@ -870,7 +872,7 @@ void espInitInstrumentation(txMachine *the)
 
 	timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
 
-	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / (config.divider * 1000));
+	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / (config.divider * 800));
 	timer_enable_intr(TIMER_GROUP_0, TIMER_0);
 	timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *)TIMER_0, ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_IRAM, NULL);
 
@@ -927,6 +929,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
 #if kTargetCPUCount > 1
 	gCPUCounts[2 + (xTaskGetCurrentTaskHandleForCPU(1) == gIdles[1])] += 1;
 #endif
+
+	gCPUTime += 1250;
 }
 #endif
 #endif
@@ -1124,13 +1128,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
 
-#if CONFIG_TASK_WDT
+#if CONFIG_ESP_TASK_WDT
 	modWatchDogReset();
-	if (maxDelayMS >= (CONFIG_TASK_WDT_TIMEOUT_S * 1000)) {
-		#if CONFIG_TASK_WDT_TIMEOUT_S <= 1
+	if (maxDelayMS >= (CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000)) {
+		#if CONFIG_ESP_TASK_WDT_TIMEOUT_S <= 1
 			maxDelayMS = 500;
 		#else
-			maxDelayMS = (CONFIG_TASK_WDT_TIMEOUT_S - 1) * 1000;
+			maxDelayMS = (CONFIG_ESP_TASK_WDT_TIMEOUT_S - 1) * 1000;
 		#endif
 	}
 #endif

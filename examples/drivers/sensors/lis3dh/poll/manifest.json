@@ -1,5 +1,8 @@
 {
-	"include": "$(MODDABLE)/modules/drivers/sensors/lis3dh/manifest.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/lis3dh/manifest.json"
+	],
 	"modules": {
 		"*": "./main"
 	}

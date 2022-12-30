@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/AmbientLight/APDS9301": "$(MODDABLE)/modules/drivers/sensors/apds9301/apds9301"
+	},
+	"preload": [
+		"embedded:sensor/AmbientLight/APDS9301"
+	]
+}

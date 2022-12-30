@@ -32,6 +32,7 @@ XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
 COMMODETTO = $(MODDABLE)/modules/commodetto
+DATA = $(MODDABLE)/modules/data
 INSTRUMENTATION = $(MODDABLE)/modules/base/instrumentation
 TOOLS = $(MODDABLE)/tools
 
@@ -117,6 +118,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
+	$(MOD_DIR)/wavreader.xsb \
 	$(MOD_DIR)/file.xsb \
 	$(MOD_DIR)/buildclut.xsb \
 	$(MOD_DIR)/cdv.xsb \
@@ -137,6 +139,7 @@ MODULES = \
 	$(MOD_DIR)/unicode-ranges.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
+	$(MOD_DIR)/url.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -151,7 +154,8 @@ MODULES = \
 	$(TMP_DIR)/image2cs.c.xsi \
 	$(TMP_DIR)/miniz.c.xsi \
 	$(TMP_DIR)/modInstrumentation.c.xsi \
-	$(TMP_DIR)/tool.c.xsi
+	$(TMP_DIR)/tool.c.xsi \
+	$(TMP_DIR)/url.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -163,9 +167,11 @@ PRELOADS =\
 	-p commodetto/Poco.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
-	-p file.xsb
+	-p file.xsb\
+	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 
 HEADERS = \
@@ -189,7 +195,8 @@ OBJECTS = \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
 	$(TMP_DIR)/tool.c.o \
-	$(TMP_DIR)/wav2maud.c.o
+	$(TMP_DIR)/wav2maud.c.o \
+	$(TMP_DIR)/url.c.o
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
@@ -212,7 +219,9 @@ else
   MODULES += $(MOD_DIR)/mcrun.xsb
   COMMANDS += $(BIN_DIR)/mcrun
 endif 
-	
+
+TOOLS_VERSION ?= $(shell cat $(MODDABLE)/tools/VERSION)
+
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
@@ -223,7 +232,8 @@ C_DEFINES = \
 	-DmxNoFunctionLength=1 \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1
+	-DmxFewGlobalsTable=1 \
+	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 C_DEFINES += \
 	-Wno-misleading-indentation \
 	-Wno-implicit-fallthrough \
@@ -239,7 +249,7 @@ else
 	C_FLAGS += -D_RELEASE=1 -O3
 endif
 
-LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread
+LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread -ldl
 
 LINK_FLAGS = -fPIC
 
@@ -247,7 +257,7 @@ XSC = $(BUILD_DIR)/bin/lin/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/lin/$(GOAL)/xsid
 XSL = $(BUILD_DIR)/bin/lin/$(GOAL)/xsl
 
-VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(TOOLS)
+VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/url $(DATA)/wavreader $(TOOLS)
 
 build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(BIN_DIR) $(BIN_DIR)/$(NAME) $(COMMANDS)
 
@@ -287,11 +297,20 @@ $(MOD_DIR)/commodetto/%.xsb: $(COMMODETTO)/commodetto%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR)/commodetto -r $*
 
+$(MOD_DIR)/%.xsb: $(DATA)/url/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
+$(MOD_DIR)/%.xsb: $(DATA)/wavreader/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
 $(MOD_DIR)/%.xsb: $(TOOLS)/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc -c -d -e $< -o $(MOD_DIR)
 
 $(OBJECTS): $(XS_HEADERS) $(HEADERS) | $(TMP_DIR)/mc.xs.c
+$(TMP_DIR)/tool.c.o : $(MODDABLE)/tools/VERSION
 $(TMP_DIR)/%.c.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -o $@

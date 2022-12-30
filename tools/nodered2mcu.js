@@ -36,17 +36,17 @@ const NoErrorNodes = [
 	"complete",
 	"debug",
 	"inject",
-	"link call",
 	"link in",
 	"link out",
 	"switch",
 	"status",
 	"trigger",
+	"rpi-neopixels"
 ];
 
 // nodes that don't call done
 const NoDoneNodes = [
-	"switch",
+	"switch",	// does call node.error()
 ];
 
 // nodes that don't report status
@@ -122,6 +122,13 @@ export default class extends TOOL {
 	transformFlows(flows) {
 		const parts = [];
 		const imports = new Map([["nodered", ""]]);		// ensure that globalThis.RED is available
+
+		// must be an array with at least one element
+		if (!Array.isArray(flows))
+			throw new Error("JSON input is not an array");
+
+		if (!flows.length)
+			throw new Error("no nodes");
 
 		// if no flows, create one. useful for running flow snippets (e.g. https://cookbook.nodered.org/).
 		if (!flows.some(config => ("tab" === config.type) && config.z)) {
@@ -306,11 +313,16 @@ export default class extends TOOL {
 					let configuration = ["{"];
 					for (const name in c) {
 						const value = c[name];
+						if ("name" === name)
+							continue;
 						if (("string" === typeof value) && value.startsWith("function ("))
 							configuration.push(`\t\t${name}: ${value},`);
 						else
 						if (("string" === typeof value) && value.startsWith("[[JSON]]"))
 							configuration.push(`\t\t${name}: ${value.slice(8)},`);
+						else
+						if (value instanceof Uint8Array)
+							configuration.push(`\t\t${name}: Uint8Array.of(${value.toString()}),`);
 						else
 							configuration.push(`\t\t${name}: ${JSON.stringify(value)},`);
 					}
@@ -407,6 +419,8 @@ export default class extends TOOL {
 					else
 						throw new Error(`unimplemented statusType: ${config.statusType}`); 
 				}
+
+				config.active = !!config.active;
 			} break;
 
 			case "function": {
@@ -428,7 +442,7 @@ export default class extends TOOL {
 				if (config.func) {
 					config.func = `function (msg, ${params}) {\n${libs}${config.func}\n}`;
 
-					 if (dones && !/node\.done\s*\(\s*\)/.test(config.func))		// from 10-function.js.. first order approximiation of what it does
+					if (dones && !/node\.done\s*\(\s*\)/.test(config.func))		// from 10-function.js.. first order approximiation of what it does
 						config.doDone = true;
 				}
 				else 
@@ -452,7 +466,7 @@ export default class extends TOOL {
 				trigger.push(`function () {`);
 				trigger.push(`\t\t\tconst msg = {};`);
 
- 				if (!config.props) {		// convert older style config
+				if (!config.props) {		// convert older style config
 					config.props = [{
 						p: "payload",
 						payload: config.payload,
@@ -495,7 +509,7 @@ export default class extends TOOL {
 
 					imports.set("Timer", "timer");
 					if (repeat)
-						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay ?? 0}, ${repeat});`);
+						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay ?? repeat}, ${repeat});`);
 					else
 						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay});`);
 
@@ -558,24 +572,18 @@ export default class extends TOOL {
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
 					else if ("change" === rule.t) {
+						const from = this.resolveValue(rule.fromt, rule.from);
+						const to = this.resolveValue(rule.tot, rule.to);
 						if ("msg" === rule.pt) {
-							const from = this.resolveValue(rule.fromt, rule.from);
-							const to = this.resolveValue(rule.tot, rule.to);
 							this.createPropPath(rule.p, change, "\t\t\t");
-							if ("re" === rule.fromt)
-								change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = msg${this.prepareProp(rule.p)}.toString().replace(${from}, ${to});`);
-							else
-								change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = msg${this.prepareProp(rule.p)}.toString().replaceAll(${from}, ${to});`);
+							change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = this.change(msg${this.prepareProp(rule.p)}, ${from}, ${JSON.stringify(rule.fromt)}, ${to});`);
 						}
 						else if (("flow" === rule.pt) || ("global" === rule.pt)) {
 							const which = ("flow" === rule.pt) ? "flow" : "globalContext";
-							if ("re" === rule.fromt)
-								change.push(`\t\t\tthis.${which}.set("${rule.p}", this.${which}.get("${rule.p}").toString().replace(${from}, ${to}));`);
-							else
-								change.push(`\t\t\tthis.${which}.set("${rule.p}", this.${which}.get("${rule.p}").toString().replaceAll(${from}, ${to}));`);
+							change.push(`\t\t\tthis.${which}.set("${rule.p}", this.change(this.${which}.get("${rule.p}"), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
 						}
 						else
-							throw new Error(`unexpected set type: ${rule.pt}`);
+							throw new Error(`unexpected change type: ${rule.pt}`);
 					}
 					else if ("move" === rule.t) {
 						// GET, DELETE, SET
@@ -625,11 +633,25 @@ export default class extends TOOL {
 					config.arraySplt = 1;
 					config.arraySpltType = "len";
 				}
-				if (config.stream || ("len" !== config.arraySpltType) || ("str" !== config.spltType))
-					throw new Error("unimplemented split option");
+
+				config.arraySplt = parseInt(config.arraySplt);
 
                 config.splt = (config.splt || "\\n").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\\t/g,"\t").replace(/\\e/g,"\e").replace(/\\f/g,"\f").replace(/\\0/g,"\0");	// adapted from 17-split.js
-				config.arraySplt = parseInt(config.arraySplt);
+				switch (config.spltType) {
+					case "bin":
+						if (config.splt.startsWith("["))
+							config.splt = Uint8Array.from(JSON.parse(config.splt));
+						else
+							config.splt = new Uint8Array(ArrayBuffer.fromString(config.splt));
+						break;
+					case "str":
+						break;
+					case "len":
+						config.splt = parseInt(config.splt);
+						break;
+					default:
+						throw new Error("unrecognized spltType: " + config.spltType);
+				}
 			} break;
 			
 			case "join": {
@@ -810,6 +832,9 @@ export default class extends TOOL {
 								doSwitch.push(`\t\t\t}`);
 								test = `value`;
 								break;
+							case "buffer":
+								test = `value instanceof Uint8Array`;
+								break;
 							default:
 								throw new Error(`unimplemented istype: ${config.v}`);
 						}
@@ -847,10 +872,16 @@ export default class extends TOOL {
 								test = `false === value`;
 								break;
 							case "null":
-								test = `null === value`;
+								test = `((null === value) || (undefined === value))`;
 								break;
 							case "nnull":
-								test = `null !== value`;
+								test = `!((null === value) || (undefined === value))`;
+								break;							
+							case "empty":
+								test = `this.empty(value)`;
+								break;							
+							case "nempty":
+								test = `!this.empty(value)`;
 								break;							
 							case "hask":
 								test = `("object" === typeof value) && (${v} in value)`;
@@ -895,6 +926,13 @@ export default class extends TOOL {
 			case "link call":
 			case "link out":
 				config.links = config.links?.filter(link => nodes.has(link));	// remove broken links
+				if ("link call" === type) {
+					config.timeout = parseFloat(config.timeout || 30) * 1000;		// logic from 60_link.js
+					if (isNaN(config.timeout))
+						config.timeout = 30_000;
+				}
+				else if ("return" === config.mode)
+					delete config.links;
 				break;
 
 			case "link in":
@@ -969,12 +1007,59 @@ export default class extends TOOL {
 				else
 					delete config.headers;
 			} break;
+		
+			case "mqtt in": {
+				config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
+			} break;
+
+			case "mqtt out": {
+				if ("" === config.topic)
+					delete config.topic;
+
+				if ("" === config.retain)
+					delete config.retain;
+				else
+					config.retain = (true === config.retain) || ("true" === config.retain);
+
+				if ("" === config.qos)
+					delete config.qos;
+				else
+					config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
+			} break;
+
+			case "tcp in": {
+				if ((undefined === config.port) || ("" === config.port))
+					delete config.port;
+				else
+					config.port = parseInt(config.port);
+				if ("" === config.topic)
+					delete config.topic;
+				if ("" === config.tls)
+					delete config.tls;
+				if (!config.trim)
+					delete config.trim;
+				if (!config.base64)
+					delete config.base64;
+				if (config.newline)
+					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+			} break;
+
+			case "tcp out": {
+				if ((undefined === config.port) || ("" === config.port))
+					delete config.port;
+				else
+					config.port = parseInt(config.port);
+				if ("" === config.tls)
+					delete config.tls;
+				if (!config.base64)
+					delete config.base64;
+				if (config.newline)
+					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+			} break;
 
 			case "rpi-gpio in": {
-				if (config.read || parseFloat(config.debounce))
-					throw new Error("unimplemented");
-				
 				config.pin = parseInt(config.pin);
+				config.debounce = parseFloat(config.debounce || 25);		// matches GPIOInNode in 36-rpi-gpio.js
 			} break;
 
 			case "rpi-gpio out": {
@@ -988,9 +1073,25 @@ export default class extends TOOL {
 					config.level = parseInt(config.level);
 				else
 					delete config.level;
-
 			} break;
 			
+			case "rpi-neopixels": {	// from node-red-nodes/hardware/neopixel/neopixel.js 
+				config.pixels = parseInt(config.pixels || 1);
+				config.bgnd = config.bgnd || "0,0,0";
+				config.fgnd = config.fgnd || "128,128,128";
+				config.mode = config.mode || "pcent";
+				config.rgb = config.rgb || "rgb";
+				if (config.gamma === undefined) { config.gamma = true; }
+				config.gpio = config.gpio || 18;
+				config.channel = 0;
+				if (config.gpio == 13 || config.gpio == 19) { config.channel = 1; }
+				config.brightness = Number(config.brightness || 100);
+				config.wipe = Number(config.wipe || 40);
+				if (config.wipe < 0) { config.wipe = 0; }
+				if (config.brightness < 0) { config.brightness = 0; }
+				if (config.brightness > 100) { config.brightness = 100; }
+			} break;
+
 			case "random": {
 				let low = config.low ? Number(config.low) : undefined;
 				let high = config.high ? Number(config.high) : undefined;
@@ -1107,9 +1208,26 @@ export default class extends TOOL {
 			case "msg":
 				return `msg${this.prepareProp(value)}`;
 			case "flow":
-				return `this.flow.get("${value}")`;
-			case "global":
-				return `globalContext.get("${value}")`;
+			case "global": {
+				let suffix = "";
+				let i = value.indexOf("[");
+				let j = value.indexOf(".");
+				if ((i > 0) || (j > 0)) {
+					let first;
+					if ((i > 0) && (j < 0))
+						first = i;
+					else if ((j > 0) && (i < 0))
+						first = j;
+					else
+						first = Math.min(i, j);
+					suffix = value.slice(first);
+					value = value.slice(0, first);		//@@ if "." may need to check regexIdentifierNameES6
+				}
+					
+				if ("flow" === type)
+					return `this.flow.get("${value}")${suffix}`;
+				return `globalContext.get("${value}")${suffix}`;
+				}
 			case "env": {
 				let offset = 0;
 				do {
@@ -1148,8 +1266,40 @@ export default class extends TOOL {
 		return this.resolveValue(type, value);
 	}
 	splitProp(prop) {
-		const parts = prop.split(".");
+		let parts = [], start = 0, depth = 0;
+		for (let position = 0; position < prop.length; position++) {
+			const c = prop[position];
+			if (position === (prop.length - 1)) {
+				parts.push(prop.slice(start));
+				break;
+			}
+
+			if ((0 === depth) && ("." === c)) {
+				if (start !== position)
+					parts.push(prop.slice(start, position));
+				start = position + 1;
+			}
+			else
+			if ("[" === c) {
+				if (0 === depth) {
+					parts.push(prop.slice(start, position));
+					start = position;
+				}
+				depth += 1;
+			}
+			else
+			if ("]" === c) {
+				depth -= 1;
+				if (0 === depth) {
+					parts.push(prop.slice(start, position + 1));
+					start = position + 1;
+				}
+			}
+		}
+
 		return parts.map(part => {
+			if (part.startsWith("["))
+				return part;
 			const identifier = regexIdentifierNameES6.test(part);
 			if (identifier)
 				return "." + part;
@@ -1181,11 +1331,12 @@ export default class extends TOOL {
 				case "bin":
 					parts.push(`\t\t${name}: ${value},`);
 					break;
-				case "json":
+				case "json": {
 					let t = JSON.parse(value);
 					t = JSON.stringify(t, null, "\t");
+					t = t.split("\n").map((line, i) => (i ? "\t\t" : "") + line).join("\n");	// indent multi-line JSON
 					parts.push(`\t\t${name}: ${t},`);
-					break;
+					} break;
 			}					
 		});
 		

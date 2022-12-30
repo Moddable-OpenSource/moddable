@@ -65,7 +65,6 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsNumber.o \
 	$(LIB_DIR)\xsObject.o \
 	$(LIB_DIR)\xsPlatforms.o \
-	$(LIB_DIR)\xsProfile.o \
 	$(LIB_DIR)\xsPromise.o \
 	$(LIB_DIR)\xsProperty.o \
 	$(LIB_DIR)\xsProxy.o \
@@ -133,7 +132,7 @@ C_FLAGS = $(XS_C_FLAGS)
 
 RC_OPTIONS = /nologo
 
-LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib gdiplus.lib ole32.lib shell32.lib
+LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib gdiplus.lib ole32.lib shell32.lib winmm.lib
 
 LINK_OPTIONS = /incremental:no /nologo /MANIFEST:EMBED
 !IF "$(DEBUG)"=="1"

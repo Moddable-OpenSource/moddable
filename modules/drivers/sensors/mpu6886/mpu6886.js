@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Daisuke Sato, Wilberforce, Moddable Tech, Inc.
+ * Copyright (c) 2020-2022 Daisuke Sato, Wilberforce, Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -91,35 +91,35 @@ class MPU6886  {
 
         this.#view = new DataView(new ArrayBuffer(14));
         this.operation = "gyroscope";
-        if (io.readByte(REGISTERS.WHO_AM_I) != EXPECTED_WHO_AM_I)
+        if (io.readUint8(REGISTERS.WHO_AM_I) != EXPECTED_WHO_AM_I)
 			throw new Error("unrecognized")
 
         Timer.delay(1);
 
-        io.writeByte(REGISTERS.PWR_MGMT_1, 0x00)
+        io.writeUint8(REGISTERS.PWR_MGMT_1, 0x00)
         Timer.delay(10);
-        io.writeByte(REGISTERS.PWR_MGMT_1, 0x80)
+        io.writeUint8(REGISTERS.PWR_MGMT_1, 0x80)
         Timer.delay(10);
-        io.writeByte(REGISTERS.PWR_MGMT_1, 0x01)
+        io.writeUint8(REGISTERS.PWR_MGMT_1, 0x01)
         Timer.delay(10);
 
-        io.writeByte(REGISTERS.ACCEL_CONFIG, 0x10)
+        io.writeUint8(REGISTERS.ACCEL_CONFIG, 0x10)
         Timer.delay(1);
-        io.writeByte(REGISTERS.GYRO_CONFIG, 0x18)
+        io.writeUint8(REGISTERS.GYRO_CONFIG, 0x18)
         Timer.delay(1);
-        io.writeByte(REGISTERS.CONFIG, 0x01)
+        io.writeUint8(REGISTERS.CONFIG, 0x01)
         Timer.delay(1);
-        io.writeByte(REGISTERS.SMPLRT_DIV, 0x05)
+        io.writeUint8(REGISTERS.SMPLRT_DIV, 0x05)
         Timer.delay(1);
-        io.writeByte(REGISTERS.INT_ENABLE, 0x00)
+        io.writeUint8(REGISTERS.INT_ENABLE, 0x00)
         Timer.delay(1);
-        io.writeByte(REGISTERS.ACCEL_CONFIG2, 0x00)
+        io.writeUint8(REGISTERS.ACCEL_CONFIG2, 0x00)
         Timer.delay(1);
-        io.writeByte(REGISTERS.USER_CTRL, 0x00)
+        io.writeUint8(REGISTERS.USER_CTRL, 0x00)
         Timer.delay(1);
-        io.writeByte(REGISTERS.INT_PIN_CFG, 0x22)
+        io.writeUint8(REGISTERS.INT_PIN_CFG, 0x22)
         Timer.delay(1);
-        io.writeByte(REGISTERS.INT_ENABLE, 0x01)
+        io.writeUint8(REGISTERS.INT_ENABLE, 0x01)
         Timer.delay(1);
 
         Timer.delay(100);
@@ -142,7 +142,7 @@ class MPU6886  {
     }
     sample() {
 		const view = this.#view;
-        this.#io.readBlock(REGISTERS.ACCEL_XOUT_H, view);
+        this.#io.readBuffer(REGISTERS.ACCEL_XOUT_H, view);
     
 		return {
 			accelerometer: {

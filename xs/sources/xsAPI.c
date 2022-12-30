@@ -546,9 +546,10 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 			mxPushUndefined();
 			the->stack->kind = XS_HOST_FUNCTION_KIND;
 			the->stack->value.hostFunction.builder = builder;
-			the->stack->value.hostFunction.IDs = C_NULL;
+			the->stack->value.hostFunction.profileID = the->profileID;
+			the->profileID++;
 		#else
-			fxNewHostFunction(the, builder->callback, builder->length, (the->code && (builder->id)) ? ((txID*)(the->code))[builder->id] : builder->id);
+			fxNewHostFunction(the, builder->callback, builder->length, builder->id, XS_NO_ID);
 		#endif
 		}
 		else
@@ -569,7 +570,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 
 	fxToInstance(the, the->stack);
 	aStack = the->stack;
-	instance = fxNewHostFunction(the, theCallback, theLength, name);
+	instance = fxNewHostFunction(the, theCallback, theLength, name, XS_NO_ID);
 	instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 	property = fxLastProperty(the, instance);
 	fxNextSlotProperty(the, property, aStack, mxID(_prototype), XS_GET_ONLY);
@@ -582,7 +583,7 @@ txSlot* fxNewHostConstructor(txMachine* the, txCallback theCallback, txInteger t
 	return instance;
 }
 
-txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theLength, txInteger name)
+txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theLength, txInteger name, txInteger profileID)
 {
 	txSlot* instance;
 	txSlot* property;
@@ -605,6 +606,10 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 
 	/* HOME */
 	property = property->next = fxNewSlot(the);
+	if (profileID != XS_NO_ID)
+		property->ID = profileID;
+	else
+		property->ID = fxGenerateProfileID(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOME_KIND;
 	property->value.home.object = C_NULL;
@@ -614,15 +619,6 @@ txSlot* fxNewHostFunction(txMachine* the, txCallback theCallback, txInteger theL
 	}
 	else
 		property->value.home.module = C_NULL;
-
-#ifdef mxProfile
-	/* PROFILE */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
-#endif
 
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
@@ -1314,6 +1310,11 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
     va_start(arguments, format);
     c_vsnprintf(message + length, sizeof(message) - length, format, arguments);
     va_end(arguments);
+
+	length = c_strlen(message) - 1;
+	while (length && (0x80 & message[length]))
+		message[length--] = 0;
+
 	if ((error <= XS_NO_ERROR) || (XS_ERROR_COUNT <= error))
 		error = XS_UNKNOWN_ERROR;
 
@@ -1350,7 +1351,7 @@ void fxDebugger(txMachine* the, txString thePath, txInteger theLine)
 
 const txByte gxNoCode[3] ICACHE_FLASH_ATTR = { XS_CODE_BEGIN_STRICT, 0, XS_CODE_END };
 
-txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext)
+txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext, txID profileID)
 {
 	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
 	if (the) {
@@ -1377,15 +1378,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 		#ifdef mxDebug
 			the->name = theName;
 		#endif
-		#ifdef mxProfile
-			the->profileID = 1;
-			the->profileBottom = c_malloc(XS_PROFILE_COUNT * sizeof(txProfileRecord));
-			if (!the->profileBottom)
-				fxJump(the);
-			the->profileCurrent = the->profileBottom;
-			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
-		#endif
-
+			the->profileID = (profileID != XS_NO_ID) ? profileID : mxBaseProfileID;
 			fxAllocate(the, theCreation);
 
             c_memset(the->nameTable, 0, the->nameModulo * sizeof(txSlot *));
@@ -1539,9 +1532,6 @@ void fxDeleteMachine(txMachine* the)
 #endif
 
 	if (!(the->shared)) {
-	#ifdef mxProfile
-		fxStopProfiling(the);
-	#endif
 	#ifdef mxFrequency
 		fxReportFrequency(the);
 	#endif
@@ -1575,19 +1565,6 @@ void fxDeleteMachine(txMachine* the)
 	}
 #endif
 	fxDelete_dtoa(the->dtoa);
-	if (!(the->shared)) {
-	#ifdef mxProfile
-		if (the->profileBottom) {
-			c_free(the->profileBottom);
-			the->profileBottom = C_NULL;
-			the->profileCurrent = C_NULL;
-			the->profileTop = C_NULL;
-		}
-		if (the->profileDirectory) {
-			c_free(the->profileDirectory);
-		}
-	#endif
-	}
 	fxDeleteMachinePlatform(the);
 	fxFree(the);
 	c_free(the);
@@ -1626,15 +1603,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 		#ifdef mxDebug
 			the->name = theName;
 		#endif
-		#ifdef mxProfile
 			the->profileID = theMachine->profileID;
-			the->profileBottom = c_malloc(XS_PROFILE_COUNT * sizeof(txProfileRecord));
-			if (!the->profileBottom)
-				fxJump(the);
-			the->profileCurrent = the->profileBottom;
-			the->profileTop = the->profileBottom + XS_PROFILE_COUNT;
-		#endif
-
 			fxAllocate(the, theCreation);
 
             c_memcpy(the->nameTable, theMachine->nameTable, the->nameModulo * sizeof(txSlot *));
@@ -1764,6 +1733,8 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 	root->freeHeap = &preparation->heap[preparation->heapCount - 1];
 	root->aliasCount = (txID)preparation->aliasCount;
 	
+	root->profileID = (txID)preparation->profileID;
+	
 	if (!creation)
 		creation = &preparation->creation;
 	return fxCloneMachine(creation, root, name, context);
@@ -1772,9 +1743,6 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 void fxShareMachine(txMachine* the)
 {
 	if (!(the->shared)) {
-	#ifdef mxProfile
-		fxStopProfiling(the);
-	#endif
 	#ifdef mxDebug
 		fxLogout(the);
 	#endif
@@ -1816,14 +1784,6 @@ void fxShareMachine(txMachine* the)
 		fxCollectGarbage(the);
 		fxShare(the);
 		the->shared = 1;
-	#ifdef mxProfile
-		if (the->profileBottom) {
-			c_free(the->profileBottom);
-			the->profileBottom = C_NULL;
-			the->profileCurrent = C_NULL;
-			the->profileTop = C_NULL;
-		}
-	#endif
 	}
 }
 
@@ -1892,6 +1852,10 @@ void fxAccess(txMachine* the, txSlot* theSlot)
 
 txMachine* fxBeginHost(txMachine* the)
 {
+#if defined(mxInstrument) || defined(mxProfile)
+	if (the->frame == C_NULL)
+		fxCheckProfiler(the, C_NULL);
+#endif
 	mxOverflow(-7);
 	/* THIS */
 	(--the->stack)->next = C_NULL;
@@ -2505,6 +2469,37 @@ void fxMapperStep(txMapper* self)
 	if (self->bufferSize > 0)
 		mxElseFatalCheck(self->read(self->archive, self->offset, self->buffer, self->bufferSize));
 	self->bufferOffset = 0;
+}
+
+txBoolean fxIsProfiling(txMachine* the)
+{
+#if defined(mxInstrument) || defined(mxProfile)
+	return (the->profiler) ? 1 : 0;
+#else
+	return 0;
+#endif
+}
+
+void fxStartProfiling(txMachine* the)
+{
+#if defined(mxInstrument) || defined(mxProfile)
+	if (the->profiler)
+		return;	
+// 	if (the->frame)
+// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
+	fxCreateProfiler(the);
+#endif
+}
+
+void fxStopProfiling(txMachine* the, void* stream)
+{
+#if defined(mxInstrument) || defined(mxProfile)
+	if (!the->profiler)
+		return;	
+// 	if (the->frame)
+// 		fxAbort(the, XS_FATAL_CHECK_EXIT);
+	fxDeleteProfiler(the, stream);
+#endif
 }
 
 #ifdef mxFrequency

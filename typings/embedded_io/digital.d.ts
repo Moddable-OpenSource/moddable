@@ -53,7 +53,7 @@ declare module "embedded:io/digital" {
       edge?: Edge;
     }));
 
-    write(value: number): void;
+    write(value: 0 | 1): void;
     read(): 0 | 1;
     close(): void;
 

@@ -3,9 +3,15 @@
 		"$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json"
 	],
 	"creation": {
+		"stack": 1024,
 		"static": 65536
 	},
 	"modules": {
 		"*": "./main"
+	},
+	"data": { 
+		"*": [
+			"$(MODULES)/crypt/data/ca222"
+		]
 	}
 }

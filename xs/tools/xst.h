@@ -22,7 +22,7 @@
 #define __XST__
 
 #if defined(_MSC_VER)
-	#if defined(_M_IX86) || defined(_M_X64)
+	#if defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64) || defined(_M_ARM64EC)
 		#undef mxLittleEndian
 		#define mxLittleEndian 1
 		#undef mxWindows
@@ -93,7 +93,8 @@
 	int promiseJobs; \
 	void* timerJobs; \
 	int abortStatus; \
-	void* rejection;
+	void* rejection; \
+	void *script;		// txScript*
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1

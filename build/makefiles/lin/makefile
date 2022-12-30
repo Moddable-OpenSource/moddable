@@ -38,7 +38,6 @@ debug:
 	make -f $(XS_DIR)/makefiles/lin/xsid.mk
 	make -f $(XS_DIR)/makefiles/lin/xsl.mk
 	make -f serial2xsbug.mk
-	make -f simulator.mk
 	make -f tools.mk
 	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
 	$(MODDABLE)/build/bin/lin/debug/mcconfig -d -m -p x-lin $(MODDABLE)/tools/mcsim/manifest.json
@@ -48,7 +47,6 @@ release:
 	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsid.mk
 	make GOAL=release -f $(XS_DIR)/makefiles/lin/xsl.mk
 	make GOAL=release -f serial2xsbug.mk
-	make GOAL=release -f simulator.mk
 	make GOAL=release -f tools.mk
 	$(MODDABLE)/build/bin/lin/release/mcconfig -m -p x-lin $(MODDABLE)/tools/xsbug/manifest.json
 	$(MODDABLE)/build/bin/lin/release/mcconfig -m -p x-lin $(MODDABLE)/tools/mcsim/manifest.json
@@ -58,11 +56,9 @@ clean:
 	make clean -f $(XS_DIR)/makefiles/lin/xsid.mk
 	make clean -f $(XS_DIR)/makefiles/lin/xsl.mk
 	make clean -f serial2xsbug.mk
-	make clean -f simulator.mk
 	make clean -f tools.mk
 	rm -rf $(MODDABLE)/build/bin $(MODDABLE)/build/tmp
 	
 install:
-	make install -f simulator.mk
 	make install -f $(BUILD_DIR)/tmp/lin/release/xsbug/makefile
 	make install -f $(BUILD_DIR)/tmp/lin/release/mcsim/makefile

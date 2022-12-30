@@ -40,13 +40,13 @@
 void fxBuildObject(txMachine* the)
 {
 	txSlot* slot;
-	fxNewHostFunction(the, mxCallback(fx_Object_assign), 2, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fx_Object_assign), 2, XS_NO_ID, XS_NO_ID);
 	mxAssignObjectFunction = *the->stack;
 	mxPop();
-	fxNewHostFunction(the, mxCallback(fx_Object_copy), 2, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fx_Object_copy), 2, XS_NO_ID, XS_NO_ID);
 	mxCopyObjectFunction = *the->stack;
 	mxPop();
-	fxNewHostFunction(the, mxCallback(fxOrdinaryToPrimitive), 2, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxOrdinaryToPrimitive), 2, XS_NO_ID, XS_NO_ID);
 	mxOrdinaryToPrimitiveFunction = *the->stack;
 	mxPop();
 	

@@ -92,10 +92,12 @@ class SNTP extends Socket {
 		if (48 !== value)
 			this.failed("unexpected SNTP packet length");
 		else
-		if (0x24 !== this.read(Number))
+		if (4 !== (7 & this.read(Number)))	// NTP serrver mode
 			this.failed("unexpected SNTP packet first byte");
+		else if (0 === this.read(Number))
+			return;	// Kiss-o'-Death - "...KoD packets have no protocol significance and are discarded after inspection"
 		else {
-			this.read(null, 39);
+			this.read(null, 38);
 			const time = toNumber(this.read(Number), this.read(Number), this.read(Number), this.read(Number));
 			this.close();
 			return this.#callback(SNTP.time, time);

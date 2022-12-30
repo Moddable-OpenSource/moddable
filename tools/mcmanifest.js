@@ -20,6 +20,7 @@
 
 import { FILE, TOOL } from "tool";
 import UncodeRanges from "unicode-ranges";
+import URL from "url";
 
 var formatNames = {
 	gray16: "gray16",
@@ -1389,7 +1390,6 @@ export class Tool extends TOOL {
 		this.mainPath = null;
 		this.make = false;
 		this.manifestPath = null;
-		this.mcsim = true;
 		this.outputPath = null;
 		this.platform = null;
 		this.rotation = undefined;
@@ -1453,14 +1453,8 @@ export class Tool extends TOOL {
 				let parts = name.split("/");
 				if ("esp8266" === parts[0])
 					parts[0] = "esp";
-				else if ((parts[0] == "sim") || (parts[0] == "simulator")) {
+				else if ((parts[0] == "sim") || (parts[0] == "simulator"))
 					parts[0] = this.currentPlatform;
-					this.mcsim = true;
-				}
-				else if ((parts[0] == "screentest")) {
-					parts[0] = this.currentPlatform;
-					this.mcsim = false;
-				}
 				this.platform = parts[0];
 				if (parts[1]) {
 					this.subplatform = parts[1];
@@ -1594,24 +1588,13 @@ export class Tool extends TOOL {
 			this.format = null;
 		else if (!this.format)
 			this.format = "UNDEFINED";
-		if (this.mcsim) {
-			if (this.platform == "mac")
-				this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/mcsim.app";
-			else if (this.platform == "win")
-				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
-			else if (this.platform == "lin")
-				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
-			this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
-		}
-		else {
-			if (this.platform == "mac")
-				this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/Screen Test.app";
-			else if (this.platform == "win")
-				this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\simulator.exe";
-			else if (this.platform == "lin")
-				this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/simulator";
-            this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulator";
-		}
+		if (this.platform == "mac")
+			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/mcsim.app";
+		else if (this.platform == "win")
+			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
+		else if (this.platform == "lin")
+			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
+		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 	}
 	concatProperties(object, properties, flag) {
 		if (properties) {
@@ -1639,18 +1622,74 @@ export class Tool extends TOOL {
 			this.createDirectory(path)
 		}
 	}
-	includeManifest(name) {
+	includeManifest(it) {
 		var currentDirectory = this.currentDirectory;
-		var path = this.resolveFilePath(name);
+		if ("string" == typeof it) {
+			this.includeManifestPath(this.resolveVariable(it));
+		}
+		else if (this.buildTarget != "clean") {
+			let { git, branch, tag, include = "manifest.json" } = it;
+			if (!git)
+				throw new Error("no git!");
+			let repo = this.resolveVariable(git);
+			if (this.windows)
+				repo = repo.replace(/\\/g, "/");
+			let url = new URL(repo);
+			
+			let directory = "repos/" + url.hostname + url.pathname;
+			if (directory.endsWith(".git"))
+				directory = directory.slice(0, -4);
+			if (branch)
+				directory += "/" + branch;
+			if (tag)
+				directory += "/" + tag;
+			
+			let parts = directory.split("/");
+			let path = this.createDirectories(this.outputPath, "tmp", this.environment.NAME);
+			directory = path + this.slash + parts.join(this.slash);
+			
+			if (this.isDirectoryOrFile(directory) == 0) {
+				for (let part of parts) {
+					path += this.slash + part;
+					this.createDirectory(path);
+				}
+				this.currentDirectory = path;
+				this.report("# git clone " + repo);
+				let result;
+				if (branch)
+					result = this.spawn("git", "clone", "-b", branch, repo, ".");
+				else
+					result = this.spawn("git", "clone", repo, ".");
+				if (result != 0)
+					throw new Error("git failed!");
+				if (tag) {
+					result = this.spawn("git", "-c", "advice.detachedHead=false", "checkout", tag);
+					if (result != 0)
+						throw new Error("git failed!");
+				}
+			}
+// 			else {
+// 				this.currentDirectory = directory;
+// 				this.report("# git pull " + name);
+// 				this.spawn("git", "pull");
+// 			}
+			if (include instanceof Array)
+				include.forEach(it => this.includeManifestPath(directory + this.slash + this.resolveVariable(it)));
+			else
+				this.includeManifestPath(directory + this.slash + this.resolveVariable(include));
+		}
+		this.currentDirectory = currentDirectory;
+	}
+	includeManifestPath(include) {
+		let path = this.resolveFilePath(include);
 		if (!path)
-			throw new Error("'" + name + "': manifest not found!");
+			throw new Error("'" + include + "': manifest not found!");
 		if (!this.manifests.already[path]) {
 			var parts = this.splitPath(path);
 			this.currentDirectory = parts.directory;
 			var manifest = this.parseManifest(path);
 			manifest.directory = parts.directory;
 		}
-		this.currentDirectory = currentDirectory;
 	}
 	matchPlatform(platforms, name, simple) {
 		let parts = name.split("/");
@@ -1799,9 +1838,9 @@ export class Tool extends TOOL {
 		}
 		if ("include" in manifest) {
 			if (manifest.include instanceof Array)
-				manifest.include.forEach(include => this.includeManifest(this.resolveVariable(include)));
+				manifest.include.forEach(include => this.includeManifest(include));
 			else
-				this.includeManifest(this.resolveVariable(manifest.include));
+				this.includeManifest(manifest.include);
 		}
 		this.manifests.push(manifest);
 		return manifest;

@@ -237,7 +237,9 @@ void PiuSystem_readFileString(xsMachine* the)
 void PiuSystem_readPreferenceString(xsMachine* the)
 {
 	PiuSystem_preferenceAux(the);
-	PiuSystem_readFileString(the);
+	PiuSystem_fileExists(the);
+	if (xsTest(xsResult))
+		PiuSystem_readFileString(the);
 }
 
 void PiuSystem_renameDirectory(xsMachine* the)

@@ -38,7 +38,6 @@ debug:
 	make -f $(XS_DIR)/makefiles/mac/xsid.mk
 	make -f $(XS_DIR)/makefiles/mac/xsl.mk
 	make -f serial2xsbug.mk
-	make -f simulator.mk
 	make -f tools.mk
 	$(MODDABLE)/build/bin/mac/debug/mcconfig -d -m -p x-mac $(MODDABLE)/tools/xsbug/manifest.json
 	$(MODDABLE)/build/bin/mac/debug/mcconfig -d -m -p x-mac $(MODDABLE)/tools/mcsim/manifest.json
@@ -48,7 +47,6 @@ release:
 	make GOAL=release -f $(XS_DIR)/makefiles/mac/xsid.mk
 	make GOAL=release -f $(XS_DIR)/makefiles/mac/xsl.mk
 	make GOAL=release -f serial2xsbug.mk
-	make GOAL=release -f simulator.mk
 	make GOAL=release -f tools.mk
 	$(MODDABLE)/build/bin/mac/release/mcconfig -m -p x-mac $(MODDABLE)/tools/xsbug/manifest.json
 	$(MODDABLE)/build/bin/mac/release/mcconfig -m -p x-mac $(MODDABLE)/tools/mcsim/manifest.json
@@ -58,6 +56,5 @@ clean:
 	make clean -f $(XS_DIR)/makefiles/mac/xsid.mk
 	make clean -f $(XS_DIR)/makefiles/mac/xsl.mk
 	make clean -f serial2xsbug.mk
-	make clean -f simulator.mk
 	make clean -f tools.mk
 	rm -rf $(MODDABLE)/build/bin $(MODDABLE)/build/tmp

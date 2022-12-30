@@ -1,0 +1,15 @@
+{
+	"include": [
+		"../httpclient/manifest_httpclient.json",
+		"../tlssocket/manifest.json",
+		"$(MODDABLE)/modules/crypt/tls_419.json"
+	],
+	"modules": {
+		"httpsclient/config": "./config",
+		"embedded:network/http/client": "./../httpclient/httpclient"
+	},
+	"preload": [
+		"httpsclient/config",
+		"embedded:network/http/client"
+	]
+}

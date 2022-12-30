@@ -33,14 +33,25 @@ int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint
 {
 	int result;
 
+#if WIFI_GPIO
+	if (pin == 32) {
+		if ((mode != kModGPIOInput) && (mode != kModGPIOOutput)) {
+			config->pin = kUninitializedPin;
+			return -1;
+		}
+		pico_use_cyw43();
+	}
+	else
+#endif
 	if ((pin > 29) || port) {
 		config->pin = kUninitializedPin;
 		return -1;
 	}
+	else
+		gpio_init(pin);
 
 	config->pin = pin;
 
-	gpio_init(config->pin);
 	result = modGPIOSetMode(config, mode);
 	if (result) {
 		config->pin = kUninitializedPin;
@@ -52,11 +63,21 @@ int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint
 
 void modGPIOUninit(modGPIOConfiguration config)
 {
+#if WIFI_GPIO
+	if (config->pin == 32) {
+		pico_unuse_cyw43();
+	}
+	else
+#endif
 	config->pin = kUninitializedPin;
 }
 
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
+#if WIFI_GPIO
+	if (config->pin == 32)
+		return 0;
+#endif
 	gpio_set_function(config->pin, GPIO_FUNC_SIO);
 
 	switch (mode) {
@@ -87,10 +108,23 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 
 uint8_t modGPIORead(modGPIOConfiguration config)
 {
+#if WIFI_GPIO
+	if (config->pin == 32) {
+		if (cyw43_arch_gpio_get(CYW43_WL_GPIO_LED_PIN))
+			return 1;
+		else
+			return 0;
+	}
+#endif
 	return gpio_get(config->pin);
 }
 
 void modGPIOWrite(modGPIOConfiguration config, uint8_t value)
 {
+#if WIFI_GPIO
+	if (config->pin == 32) {
+		cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, value);
+	}
+#endif
 	gpio_put(config->pin, value);
 }

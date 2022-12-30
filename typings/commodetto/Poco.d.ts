@@ -58,7 +58,7 @@ declare module "commodetto/Poco" {
     drawMonochrome(monochrome: object, fore: number | undefined, back: number | undefined, x: number, y: number, sx: number, sy: number, sw: number, sh: number): void
 
     drawGray(bits: Bitmap, color: number, x: number, y: number): void
-    drawGray(bits: Bitmap, color: number, x: number, y: number, sx: number, sy): void
+    drawGray(bits: Bitmap, color: number, x: number, y: number, sx: number, sy: number): void
     drawGray(bits: Bitmap, color: number, x: number, y: number, sx: number, sy: number, sw: number, sh: number): void
     drawGray(bits: Bitmap, color: number, x: number, y: number, sx: number, sy: number, sw: number, sh: number, blend: number): void
 
@@ -68,7 +68,7 @@ declare module "commodetto/Poco" {
     fillPattern(bits: Bitmap, x: number, y: number, w: number, h: number): void
     fillPattern(bits: Bitmap, x: number, y: number, w: number, h: number, sx: number, sy: number, sw: number, sh: number): void
   
-  	drawFrame(frame: ArrayBuffer | HostBuffer, stream: {width: number, height: number}, x: number, y: number): void
+    drawFrame(frame: ArrayBuffer | HostBuffer, stream: { width: number, height: number }, x: number, y: number): void
 
     drawText(text: string, font: Font, color: number, x: number, y: number, width?: number): void
     getTextWidth(text: string, font: Font): number
@@ -88,7 +88,7 @@ declare module "commodetto/Poco" {
     pixels?: number,
     displayListLength?: number,
     rotation?: (0 | 90 | 180 | 270)
-}
+  }
 
   export interface PocoConstructor {
     new(pixelsOut: PixelsOut, options?: PocoDictionary): PocoPrototype
@@ -97,8 +97,8 @@ declare module "commodetto/Poco" {
   var Poco: PocoConstructor
 
   global {
-		const screen: PixelsOut
-	}
+    const screen: PixelsOut
+  }
 
   export default Poco
 }

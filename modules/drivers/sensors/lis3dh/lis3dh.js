@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -102,7 +102,7 @@ class LIS3DH {
 
 		this.#onError = options.onError;
 
-		if (0x33 !== io.readByte(Register.WHOAMI)) {
+		if (0x33 !== io.readUint8(Register.WHOAMI)) {
 			this.#onError("unexpected sensor");
 			this.close();
 			return;
@@ -117,7 +117,7 @@ class LIS3DH {
 				edge: alert.io.Falling,
 				onReadable: () => this.#onAlert()
 			});
-			io.writeByte(Register.CTRL6, Config.Interrupt.ACTIVE_LOW);
+			io.writeUint8(Register.CTRL6, Config.Interrupt.ACTIVE_LOW);
         }
 
 		this.configure({});
@@ -139,34 +139,34 @@ class LIS3DH {
 			this.#lowPower = options.lowPower ? 0b1000 : 0;
 
 		// CTRL1 - Enable axes, normal mode @ rate
-		io.writeByte(Register.CTRL1, this.#accelEnabled | this.#lowPower | (this.#rate << 4));
+		io.writeUint8(Register.CTRL1, this.#accelEnabled | this.#lowPower | (this.#rate << 4));
 
 		// CTRL4 - Full Scale, Block data update, big endian, High res
-		io.writeByte(Register.CTRL4, 0x88 | (this.#range << 4));
+		io.writeUint8(Register.CTRL4, 0x88 | (this.#range << 4));
 
 		if (undefined !== options.alert) {
 			const alert = options.alert;
 
 			if (undefined !== alert.mode) {
 				if (alert.mode === Config.Alert.MOVEMENT) {
-					io.writeByte(Register.CTRL2, 0b0000_0001);	// HP filter
-					io.writeByte(Register.CTRL3, 0b0100_0000);
-					io.writeByte(Register.CTRL5, 0b0000_1000);  // latch INT1
-					io.writeByte(Register.INT1CFG, 0b0010_1010); // enable xh,yh,zh
+					io.writeUint8(Register.CTRL2, 0b0000_0001);	// HP filter
+					io.writeUint8(Register.CTRL3, 0b0100_0000);
+					io.writeUint8(Register.CTRL5, 0b0000_1000);  // latch INT1
+					io.writeUint8(Register.INT1CFG, 0b0010_1010); // enable xh,yh,zh
 				}
 			}
 			if (undefined !== alert.threshold)
-				io.writeByte(Register.INT1THS, alert.threshold & 0x7F);
+				io.writeUint8(Register.INT1THS, alert.threshold & 0x7F);
 
 			if (undefined !== alert.duration)
-				io.writeByte(Register.INT1DUR, alert.duration & 0x7F);
+				io.writeUint8(Register.INT1DUR, alert.duration & 0x7F);
         }
 		else {
 			// CTRL2 - Filter
-			io.writeByte(Register.CTRL2, 0);
+			io.writeUint8(Register.CTRL2, 0);
 
 			// CTRL3 - Interrupt1
-			io.writeByte(Register.CTRL3, 0);
+			io.writeUint8(Register.CTRL3, 0);
 		}
 
 		if (this.#range === Config.Range.RANGE_16_G)
@@ -181,7 +181,7 @@ class LIS3DH {
 		this.#multiplier *= Gconversion;
 	}
 	status() {
-		return this.#io.readByte(Register.INT1SRC);
+		return this.#io.readUint8(Register.INT1SRC);
 	}
 	close() {
 		this.#monitor?.close();
@@ -195,7 +195,7 @@ class LIS3DH {
 		let ret = {};
 
 		if (this.#accelEnabled) {
-			io.readBlock(Register.OUT_X_L | 0x80, values);
+			io.readBuffer(Register.OUT_X_L | 0x80, values);
 			ret.x = values[0] * multiplier;
 			ret.y = values[1] * multiplier;
 			ret.z = values[2] * multiplier;

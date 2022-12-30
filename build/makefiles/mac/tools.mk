@@ -33,6 +33,7 @@ BUILD_DIR ?= $(realpath ../..)
 
 COMMODETTO = $(MODDABLE)/modules/commodetto
 CRYPT = $(MODDABLE)/modules/crypt
+DATA = $(MODDABLE)/modules/data
 INSTRUMENTATION = $(MODDABLE)/modules/base/instrumentation
 TOOLS = $(MODDABLE)/tools
 
@@ -118,6 +119,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
+	$(MOD_DIR)/wavreader.xsb \
 	$(MOD_DIR)/ber.xsb \
 	$(MOD_DIR)/crypt.xsb \
 	$(MOD_DIR)/curve.xsb \
@@ -146,6 +148,7 @@ MODULES = \
 	$(MOD_DIR)/unicode-ranges.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
+	$(MOD_DIR)/url.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -166,7 +169,8 @@ MODULES = \
 	$(TMP_DIR)/modular.c.xsi \
 	$(TMP_DIR)/mont.c.xsi \
 	$(TMP_DIR)/tool.c.xsi \
-	$(TMP_DIR)/x509.c.xsi
+	$(TMP_DIR)/x509.c.xsi \
+	$(TMP_DIR)/url.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -178,6 +182,7 @@ PRELOADS =\
 	-p commodetto/Poco.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p ber.xsb\
 	-p crypt.xsb\
 	-p curve.xsb\
@@ -188,7 +193,8 @@ PRELOADS =\
 	-p x509.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
-	-p file.xsb
+	-p file.xsb\
+	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 
 HEADERS = \
@@ -225,7 +231,8 @@ OBJECTS = \
 	$(TMP_DIR)/fips197.c.o \
 	$(TMP_DIR)/ghash.c.o \
 	$(TMP_DIR)/rc.c.o \
-	$(TMP_DIR)/rfc1321.c.o
+	$(TMP_DIR)/rfc1321.c.o \
+	$(TMP_DIR)/url.c.o
 
 COMMANDS = \
 	$(BIN_DIR)/buildclut \
@@ -250,6 +257,8 @@ else
   COMMANDS += $(BIN_DIR)/mcrun
 endif 
 
+TOOLS_VERSION ?= $(shell cat $(MODDABLE)/tools/VERSION)
+
 C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
@@ -260,7 +269,8 @@ C_DEFINES = \
 	-DmxNoFunctionLength=1 \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1
+	-DmxFewGlobalsTable=1 \
+	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
@@ -282,7 +292,7 @@ XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid
 XSL = $(BUILD_DIR)/bin/mac/$(GOAL)/xsl
 	
-VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(CRYPT)/etc $(CRYPT)/digest ${CRYPT}/digest/kcl ${CRYPT}/arith $(TOOLS)
+VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(CRYPT)/etc $(CRYPT)/digest ${CRYPT}/digest/kcl ${CRYPT}/arith $(DATA)/url $(DATA)/wavreader $(TOOLS)
 
 build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(MOD_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME) $(COMMANDS) $(BIN_DIR)/README.txt
 
@@ -334,11 +344,20 @@ $(MOD_DIR)/%.xsb: $(CRYPT)/etc/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
 
+$(MOD_DIR)/%.xsb: $(DATA)/url/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
+$(MOD_DIR)/%.xsb: $(DATA)/wavreader/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
 $(MOD_DIR)/%.xsb: $(TOOLS)/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc -c -d -e $< -o $(MOD_DIR)
 
 $(OBJECTS): $(XS_HEADERS) $(HEADERS) | $(TMP_DIR)/mc.xs.c
+$(TMP_DIR)/tool.c.o : $(MODDABLE)/tools/VERSION
 $(TMP_DIR)/%.c.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c -o $@

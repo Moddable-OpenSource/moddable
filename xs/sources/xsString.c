@@ -89,20 +89,29 @@ const txBehavior ICACHE_FLASH_ATTR gxStringBehavior = {
 
 void fxBuildString(txMachine* the)
 {
+	txSlot* instance;
+	txSlot* property;
 	txSlot* slot;
 	
-	fxNewHostFunction(the, mxCallback(fxStringAccessorGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxStringAccessorSetter), 1, XS_NO_ID);
+	mxPush(mxObjectPrototype);
+	instance = fxNewStringInstance(the);
+	
+	fxNewHostFunction(the, mxCallback(fxStringAccessorGetter), 0, XS_NO_ID, XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
+	fxNewHostFunction(the, mxCallback(fxStringAccessorSetter), 1, XS_NO_ID, XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
 	the->stack->value.accessor.getter = (the->stack + 2)->value.reference;
 	the->stack->value.accessor.setter = (the->stack + 1)->value.reference;
 	mxPull(mxStringAccessor);
-	the->stack += 2;
+	mxPop();
+	mxPop();
 	
-	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewStringInstance(the));
+	slot = fxLastProperty(the, instance);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_charAt), 1, mxID(_charAt), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_charCodeAt), 1, mxID(_charCodeAt), XS_DONT_ENUM_FLAG);
@@ -170,7 +179,7 @@ txSlot* fxNewStringInstance(txMachine* the)
 
 void fxStringAccessorGetter(txMachine* the)
 {
-	txSlot* string;
+	txSlot* string = C_NULL;
 	txID id = the->scratch.value.at.id;
 	txIndex index = the->scratch.value.at.index;
 	if ((mxThis->kind == XS_STRING_KIND) || (mxThis->kind == XS_STRING_X_KIND))
@@ -178,27 +187,28 @@ void fxStringAccessorGetter(txMachine* the)
 	else {
 		txSlot* instance = fxToInstance(the, mxThis);
 		while (instance) {
-			if (instance->flag & XS_EXOTIC_FLAG) {
+			if ((instance->flag & XS_EXOTIC_FLAG) && (instance->next->ID == XS_STRING_BEHAVIOR)) {
 				string = instance->next;
-				if (string->ID == XS_STRING_BEHAVIOR)
-					break;
+				break;
 			}
 			instance = fxGetPrototype(the, instance);
 		}
 	}
-	if (id == mxID(_length)) {
-		mxResult->value.integer = fxUnicodeLength(string->value.string);
-		mxResult->kind = XS_INTEGER_KIND;
-	}
-	else {
-		txInteger from = fxUnicodeToUTF8Offset(string->value.string, index);
-		if (from >= 0) {
-			txInteger to = from + fxUnicodeToUTF8Offset(string->value.string + from, 1);
-			if (to >= 0) {
-				mxResult->value.string = fxNewChunk(the, to - from + 1);
-				c_memcpy(mxResult->value.string, string->value.string + from, to - from);
-				mxResult->value.string[to - from] = 0;
-				mxResult->kind = XS_STRING_KIND;
+	if (string) {
+		if (id == mxID(_length)) {
+			mxResult->value.integer = fxUnicodeLength(string->value.string);
+			mxResult->kind = XS_INTEGER_KIND;
+		}
+		else {
+			txInteger from = fxUnicodeToUTF8Offset(string->value.string, index);
+			if (from >= 0) {
+				txInteger to = from + fxUnicodeToUTF8Offset(string->value.string + from, 1);
+				if (to >= 0) {
+					mxResult->value.string = fxNewChunk(the, to - from + 1);
+					c_memcpy(mxResult->value.string, string->value.string + from, to - from);
+					mxResult->value.string[to - from] = 0;
+					mxResult->kind = XS_STRING_KIND;
+				}
 			}
 		}
 	}
@@ -1638,7 +1648,7 @@ void fx_String_prototype_iterator_next(txMachine* the)
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
 	txSlot* length = index->next;
-	txSlot* value = result->value.reference->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
 	txSlot* done = value->next;
 	if (index->value.integer < length->value.integer) {
 		txInteger character, size;

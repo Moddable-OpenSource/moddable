@@ -105,8 +105,8 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 13
-#define XS_MINOR_VERSION 1
-#define XS_PATCH_VERSION 1
+#define XS_MINOR_VERSION 2
+#define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -374,6 +374,7 @@ enum {
 	XS_CODE_WITH,
 	XS_CODE_WITHOUT,
 	XS_CODE_YIELD,
+	XS_CODE_PROFILE,
 	XS_CODE_COUNT
 };
 
@@ -453,6 +454,7 @@ txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
 
 /* ? */
 mxExport char* fxCStackLimit();
+mxExport txID fxGenerateProfileID(void* console);
 mxExport void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txString path);
 mxExport void fxVReport(void* console, txString theFormat, c_va_list theArguments);
 mxExport void fxVReportError(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -33,9 +33,11 @@
 	#include <dirent.h>
 	#include <sys/stat.h>
     #include <sys/types.h>
+    #include <sys/wait.h>
     #include <ifaddrs.h>
     #include <netdb.h>
 	#include <unistd.h>
+	#include <spawn.h>
 	#define mxSeparator '/'
 #endif
 
@@ -162,9 +164,7 @@ int main(int argc, char* argv[])
 		xsDeleteMachine(machine);
 		if (!error && then) {
 		#if mxWindows
-			error =_spawnvp(_P_WAIT, then[0], then);
-			if (error < 0)
-				fprintf(stderr, "### Cannot execute %s!\n", then[0]);
+			_spawnvp(_P_NOWAIT, then[0], then);
 		#else
 			execvp(then[0], then);
 		#endif
@@ -599,6 +599,13 @@ void Tool_prototype_getFileSize(xsMachine* the)
 	}
 }
 
+void Tool_prototype_getToolsVersion(xsMachine *the)
+{
+#ifdef kModdableToolsVersion
+	xsResult = xsString(kModdableToolsVersion);
+#endif
+}
+
 void Tool_prototype_joinPath(xsMachine* the)
 {
 	char path[PATH_MAX];
@@ -793,6 +800,49 @@ void Tool_prototype_setenv(xsMachine* the)
 		overwrite = xsToInteger(xsArg(2));
 	setenv(name, value, overwrite);
 #endif
+}
+
+#if mxWindows
+#else
+extern char **environ;
+#endif
+
+void Tool_prototype_spawn(xsMachine* the)
+{
+	xsIntegerValue c = xsToInteger(xsArgc), i;
+	char **argv = NULL;
+	xsTry {
+	#if mxWindows
+	#else
+		pid_t pid;
+	#endif
+		int status;
+		for (i = 0; i < c; i++)
+			xsToString(xsArg(i));
+		argv = malloc(sizeof(char *)*(c + 1));
+		xsElseThrow(argv);
+		for (i = 0; i < c; i++)
+			argv[i] = xsToString(xsArg(i));
+		argv[i] = C_NULL;
+	#if mxWindows
+		status = _spawnvp(_P_WAIT, argv[0], argv);
+	#else
+		status = posix_spawnp(&pid, argv[0], NULL, NULL, argv, environ);
+		xsElseThrow(status == 0);
+		do {
+			xsElseThrow(waitpid(pid, &status, 0) != -1);
+		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		status = WEXITSTATUS(status);
+	#endif
+		free(argv);
+		argv = NULL;
+		xsResult = xsInteger(status);
+	}
+	xsCatch {
+		if (argv)
+			free(argv);
+		xsThrow(xsException);
+	}
 }
 
 void Tool_prototype_splitPath(xsMachine* the)

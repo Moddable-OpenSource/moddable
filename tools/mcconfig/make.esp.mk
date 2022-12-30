@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2022  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -28,6 +28,23 @@ ESP_TOOLS_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
 ARDUINO_ESP8266 = $(ARDUINO_ROOT)/cores/esp8266
 TOOLS_ROOT ?= $(ESP_BASE)/toolchain/$(HOST_OS)
 PLATFORM_DIR = $(MODDABLE)/build/devices/esp
+
+# spot-check installation
+ifeq ($(wildcard $(ESP_BASE)),)
+$(error ESP8266 tools directory not found at $$ESP_BASE: $(ESP_BASE). Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp8266.md)
+endif
+ifeq ($(wildcard $(ARDUINO_ROOT)),)
+$(error ESP8266 code Arduino $(ESP_SDK_RELEASE) not found at $$ARDUINO_ROOT: $(ARDUINO_ROOT). Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp8266.md)
+endif
+ifeq ($(wildcard $(ESPRESSIF_SDK_ROOT)),)
+$(error ESP8266 RTOS SDK not found at $$ESPRESSIF_SDK_ROOT: $(ESPRESSIF_SDK_ROOT). Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp8266.md)
+endif
+ifeq ($(wildcard $(TOOLS_ROOT)),)
+$(error Xtensa lx106 architecture GCC toolchain directory not found at $$TOOLS_ROOT: $(TOOLS_ROOT). Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp8266.md)
+endif
+ifeq ($(shell which python),)
+$(error Python not found. Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp8266.md)
+endif
 
 # serial port configuration
 UPLOAD_SPEED ?= 921600
@@ -175,7 +192,6 @@ XS_OBJ = \
 	$(LIB_DIR)/xsNumber.c.o \
 	$(LIB_DIR)/xsObject.c.o \
 	$(LIB_DIR)/xsPlatforms.c.o \
-	$(LIB_DIR)/xsProfile.c.o \
 	$(LIB_DIR)/xsPromise.c.o \
 	$(LIB_DIR)/xsProperty.c.o \
 	$(LIB_DIR)/xsProxy.c.o \

@@ -1675,6 +1675,10 @@ void fxPatternParserError(txPatternParser* parser, txString format, ...)
     if (offset > 80) {
         pattern += offset - 80;
         offset = 80;
+		while (0x80 & *pattern) {
+			pattern++;
+			offset--;
+		}
     }
 	while (offset) {
 		*error++ = c_read8(pattern++);
@@ -7363,6 +7367,8 @@ void* fxCharSetUnicodeProperty(txPatternParser* parser)
 	}
 	*p = 0;
 	if (c == '=') {
+		if (p == q)
+			fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
 		p++;
 		fxPatternParserNext(parser);
 		c = parser->character;

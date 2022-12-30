@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -63,20 +63,20 @@ class LM75 {
 		}
 
 		// reset to default values (7.4.2 of datasheet)
-		io.writeByte(Register.LM75_CONF, 0);
+		io.writeUint8(Register.LM75_CONF, 0);
 		
 
 		// Tth(ots) = +80C Thys = +75C (7.9)
 		this.#TOS = 80;
-		io.writeWord(Register.LM75_TOS, 160 << 7, true);	// half degrees
+		io.writeUint16(Register.LM75_TOS, 160 << 7, true);	// half degrees
 		this.#THYST = 75;
-		io.writeWord(Register.LM75_THYST, 150 << 7, true);	// half degrees
+		io.writeUint16(Register.LM75_THYST, 150 << 7, true);	// half degrees
 	}
 
 	configure(options) {
 		const io = this.#io;
 
-		let conf = io.readByte(Register.LM75_CONF) & 0b0001_1111;
+		let conf = io.readUint8(Register.LM75_CONF) & 0b0001_1111;
 
 		if (undefined !== options.shutdownMode) {
 			conf &= ~0b1;
@@ -89,13 +89,13 @@ class LM75 {
 		const highT = options.highTemperature;
 		if (undefined !== highT) {
 			const value = (((highT > 125) ? 125 : (highT < -55) ? -55 : highT) * 2) | 0;	// half degrees
-			io.writeWord(Register.LM75_TOS, value << 7, true);
+			io.writeUint16(Register.LM75_TOS, value << 7, true);
 			this.#TOS = value/2;
 		}
 		const lowT = options.lowTemperature;
 		if (undefined !== lowT) {
 			const value = (((lowT > 125) ? 125 : (lowT < -55) ? -55 : lowT) * 2) | 0;		// half degrees
-			io.writeWord(Register.LM75_THYST, value << 7, true);
+			io.writeUint16(Register.LM75_THYST, value << 7, true);
 			this.#THYST = value/2;
 		}
 
@@ -124,12 +124,12 @@ class LM75 {
 			}
 		}
 
-		io.writeByte(Register.LM75_CONF, conf);
+		io.writeUint8(Register.LM75_CONF, conf);
 	}
 
 	close() {
 		if ("ready" === this.#status) {
-			this.#io.writeByte(Register.LM75_CONF, 1);		// shut down device
+			this.#io.writeUint8(Register.LM75_CONF, 1);		// shut down device
 			this.#status = undefined;
 		}
 
@@ -146,16 +146,16 @@ class LM75 {
 	sample() {
 		let ret = {};
 		const io = this.#io;
-		const conf = io.readByte(Register.LM75_CONF);
+		const conf = io.readUint8(Register.LM75_CONF);
 		if (conf & 1) {	// if in shutdown mode, turn it on
-			io.writeByte(Register.LM75_CONF, conf & 0b1111_1110);
+			io.writeUint8(Register.LM75_CONF, conf & 0b1111_1110);
 			Timer.delay(100);		// wait for new reading to be available
 		}
 			
-		let value = io.readWord(Register.LM75_TEMP, true);
+		let value = io.readUint16(Register.LM75_TEMP, true);
 
 		if (conf & 1)	// if was in shutdown mode, turn it back off
-			io.writeByte(Register.LM75_CONF, conf);
+			io.writeUint8(Register.LM75_CONF, conf);
 
 		value = (this.#twoC16(value) >> 5) * 0.125;
 		ret.temperature = value;

@@ -174,7 +174,7 @@ void fxBuildMapSet(txMachine* the)
 	/* FINALIZATION REGISTRY */
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
+//	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_cleanupSome), 0, mxID(_cleanupSome), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_register), 2, mxID(_register), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_FinalizationRegistry_prototype_unregister), 1, mxID(_unregister), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "FinalizationRegistry", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
@@ -420,7 +420,7 @@ void fx_MapIterator_prototype_next(txMachine* the)
 	txSlot* iterable = result->next;
 	mxResult->kind = result->kind;
 	mxResult->value = result->value;
-	result = result->value.reference->next;
+	result = fxCheckIteratorResult(the, result);
 	if (result->next->value.boolean == 0) {
 		txSlot* list = iterable->next;
 		txInteger kind = list->next->value.integer;
@@ -666,7 +666,7 @@ void fx_SetIterator_prototype_next(txMachine* the)
 	txSlot* iterable = result->next;
 	mxResult->kind = result->kind;
 	mxResult->value = result->value;
-	result = result->value.reference->next;
+	result = fxCheckIteratorResult(the, result);
 	if (result->next->value.boolean == 0) {
 		txSlot* list = iterable->next;
 		txInteger kind = list->next->value.integer;
@@ -907,7 +907,8 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 	}
 	else {
 		if (XS_REFERENCE_KIND == kind) {
-			sum = slot->value.reference - the->firstHeap; //(txSlot*)NULL;
+			txSlot* base = C_NULL;
+			sum = slot->value.reference - base;
 		}
 		else if (XS_INTEGER_KIND == kind) {
 			fxToNumber(the, slot);
@@ -1433,6 +1434,9 @@ void fx_FinalizationRegistry(txMachine* the)
 	registry->value.finalizationRegistry.callback = slot;
 }
 
+
+#if 0
+// removed from FinalizationRegistry specification
 void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 {
 	txSlot* instance;
@@ -1464,6 +1468,7 @@ void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 		}
 	}
 }
+#endif
 
 void fx_FinalizationRegistry_prototype_register(txMachine* the)
 {
@@ -1632,9 +1637,10 @@ void fxCleanupFinalizationRegistries(txMachine* the)
 	txSlot* closure;
 	while ((closure = *address)) {
 		txSlot* registry = closure->value.closure;
-		fx_FinalizationRegistryCleanup(the, registry, C_NULL);
-		if (registry->value.finalizationRegistry.callback->next == C_NULL)
-			*address = closure->next;
+		if (registry->value.finalizationRegistry.flags & XS_FINALIZATION_REGISTRY_CHANGED) {
+			fx_FinalizationRegistryCleanup(the, registry, C_NULL);
+			address = &(mxFinalizationRegistries.value.reference->next);
+		}
 		else
 			address = &(closure->next);
 	}

@@ -55,10 +55,9 @@ class Resolver {
 		if ("localhost" === host)
 			host = "127.0.0.1";
 		
-		let parts = host.split(".");
-		let isAddress = false;
-		if (4 === parts.length) {
-			isAddress = true;
+		const parts = host.split(".");
+		let isAddress = 4 === parts.length;
+		if (isAddress) {
 			for (let i = 0; i < 4; i++) {
 				if (parseInt(parts[i]) != parts[i])
 					isAddress = false; 

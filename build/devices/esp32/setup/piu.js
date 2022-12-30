@@ -61,45 +61,47 @@ class Screen extends config.Screen {
 			return;
 		}
 
-		const touch = new Touch;
+		const onSample = () => {
+			const touch = this.#touch;
+			const points = touch.sample();
+			let mask = (1 << touchCount) - 1;
+			for (let i = 0, length = points?.length ?? 0; i < length; i++) {
+				const point = points[i];
+				const id = point.id;
+				const last = touch.points[id];
+
+				mask ^= 1 << id;
+				this.rotate?.(point);
+				if (last) {
+					last.x = point.x;
+					last.y = point.y;
+					touch.context.onTouchMoved(id, point.x, point.y, Time.ticks);
+				}
+				else {
+					touch.points[id] = {x: point.x, y: point.y};
+					touch.context.onTouchBegan(id, point.x, point.y, Time.ticks);
+				}
+			}
+
+			for (let i = 0; mask; i += 1, mask >>= 1) {
+				if (mask & 1) {
+					const last = touch.points[i];
+					if (last) {
+						touch.points[i] = undefined;
+						touch.context.onTouchEnded(i, last.x, last.y, Time.ticks);
+					}
+				}
+			}
+		};
+
+		const touch = new Touch({onSample});
 		this.#touch = touch;
 		this.#touch.context = value;
 
 		if (touch.sample) {	// ECMA-419 driver
 			touch.points = new Array(touchCount);
-
-			touch.timer = Timer.repeat(() => {
-				const touch = this.#touch;
-				const points = touch.sample();
-				let mask = (1 << touchCount) - 1;
-				for (let i = 0, length = points?.length ?? 0; i < length; i++) {
-					const point = points[i];
-					const id = point.id;
-					const last = touch.points[id];
-
-					mask ^= 1 << id;
-					this.rotate?.(point);
-					if (last) {
-						last.x = point.x;
-						last.y = point.y;
-						touch.context.onTouchMoved(id, point.x, point.y, Time.ticks);
-					}
-					else {
-						touch.points[id] = {x: point.x, y: point.y};
-						touch.context.onTouchBegan(id, point.x, point.y, Time.ticks);
-					}
-				}
-
-				for (let i = 0; mask; i += 1, mask >>= 1) {
-					if (mask & 1) {
-						const last = touch.points[i];
-						if (last) {
-							touch.points[i] = undefined;
-							touch.context.onTouchEnded(i, last.x, last.y, Time.ticks);
-						}
-					}
-				}
-			}, 16);
+			if (!touch.configuration?.interrupt)
+				touch.timer = Timer.repeat(onSample, 16);
 		}
 		else {		// legacy driver
 			touch.points = [];

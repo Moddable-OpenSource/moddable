@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -93,7 +93,7 @@ class MPU6050 {
 
 		this.#xlView = new DataView(this.#xlRaw);
 		this.#gyroView = new DataView(this.#gyroRaw);
-		const gxlID = io.readByte(REGISTERS.WHO_AM_I) & 0b01111110;
+		const gxlID = io.readUint8(REGISTERS.WHO_AM_I) & 0b01111110;
 		if (gxlID != EXPECTED_WHO_AM_I) {
 			this.#onError?.("unexpected sensor");
 			this.close();
@@ -101,9 +101,9 @@ class MPU6050 {
 		}
 
 		// device reset
-		io.writeByte(REGISTERS.PWR_MGMT_1, 0b1000_0000);
+		io.writeUint8(REGISTERS.PWR_MGMT_1, 0b1000_0000);
 		Timer.delay(150);
-		io.writeByte(REGISTERS.PWR_MGMT_1, 0b0000_0001);
+		io.writeUint8(REGISTERS.PWR_MGMT_1, 0b0000_0001);
 		Timer.delay(150);
 
 		const {alert, onAlert} = options;
@@ -117,8 +117,8 @@ class MPU6050 {
 			});
 
 			// active low, open drain, no latch, i2c bypass
-			io.writeByte(REGISTERS.INT_CONFIG, 0b1101_0010);
-			io.writeByte(REGISTERS.INT_ENABLE, 0b0000_0001);
+			io.writeUint8(REGISTERS.INT_CONFIG, 0b1101_0010);
+			io.writeUint8(REGISTERS.INT_ENABLE, 0b0000_0001);
 		}
 	}
 	configure(options) {
@@ -126,19 +126,19 @@ class MPU6050 {
 
 		if (undefined !== options.range) {
 			this.#range = options.range | 0b11;
-			io.writeByte(REGISTERS.ACCEL_CONFIG, this.#range << 3);
+			io.writeUint8(REGISTERS.ACCEL_CONFIG, this.#range << 3);
 		}
 
 		if (undefined !== options.gyroRange) {
 			this.#gyroRange = options.gyroRange | 0b11;
-			io.writeByte(REGISTERS.GYRO_CONFIG, this.#gyroRange << 3);
+			io.writeUint8(REGISTERS.GYRO_CONFIG, this.#gyroRange << 3);
 		}
 
 		if (undefined !== options.sampleRateDivider)
-			io.writeByte(REGISTERS.SAMPLERATE_DIV, options.sampleRateDivider & 0xff);
+			io.writeUint8(REGISTERS.SAMPLERATE_DIV, options.sampleRateDivider & 0xff);
 
 		if (undefined !== options.lowPassFilter)
-			io.writeByte(REGISTERS.DLPF_CONFIG, options.lowPassFilter & 0b111);
+			io.writeUint8(REGISTERS.DLPF_CONFIG, options.lowPassFilter & 0b111);
 	}
 	close() {
 		this.#monitor?.close();
@@ -150,7 +150,7 @@ class MPU6050 {
 		const io = this.#io;
 		let ret = { accelerometer: {}, gyroscope: {} };
 
-		io.readBlock(REGISTERS.ACCEL_XOUT, this.#xlRaw);
+		io.readBuffer(REGISTERS.ACCEL_XOUT, this.#xlRaw);
 		ret.accelerometer.x = this.#xlView.getInt16(0) / ACCEL_SCALER[this.#range];
 		ret.accelerometer.y = this.#xlView.getInt16(2) / ACCEL_SCALER[this.#range];
 		ret.accelerometer.z = this.#xlView.getInt16(4) / ACCEL_SCALER[this.#range];
@@ -158,7 +158,7 @@ class MPU6050 {
 		ret.accelerometer.y *= Gconversion;
 		ret.accelerometer.z *= Gconversion;
 
-		io.readBlock(REGISTERS.GYRO_XOUT, this.#gyroRaw);
+		io.readBuffer(REGISTERS.GYRO_XOUT, this.#gyroRaw);
 		ret.gyroscope.x = this.#gyroView.getInt16(0) / GYRO_SCALER[this.#gyroRange];
 		ret.gyroscope.y = this.#gyroView.getInt16(2) / GYRO_SCALER[this.#gyroRange];
 		ret.gyroscope.z = this.#gyroView.getInt16(4) / GYRO_SCALER[this.#gyroRange];

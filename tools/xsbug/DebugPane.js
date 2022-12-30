@@ -81,7 +81,10 @@ class DebugPaneBehavior extends Behavior {
 			let data = this.data;
 			spinner.empty(0);
 			column.empty(0);
-			column.add(InstrumentTable(data, {}));
+			if (machine.instrumentsView.lines.length > 0) {
+				column.add(ProfileTable(machine.profile, {}));
+				column.add(InstrumentTable(data, {}));
+			}
 			if (machine.broken) {
 				column.add(CallTable(data, {}));
 				column.add(DebugTable(data, { Behavior:LocalsTableBehavior }));
@@ -409,6 +412,10 @@ import {
 	VerticalScrollbar,
 } from "piu/Scrollbars";
 
+import {
+	ProfileTable,
+} from "ProfilePane";
+
 export var DebugPane = Container.template($ => ({
 	left:0, right:0, top:0, bottom:0, skin:skins.paneBackground, 
 	Behavior: DebugPaneBehavior,
@@ -428,13 +435,13 @@ export var DebugPane = Container.template($ => ({
 			]
 		}),
 		Content($, { left:0, right:0, top:26, height:1, skin:skins.paneSeparator, }),
-		DebugToolsHeader(model, { }),
+		DebugToolsHeader(model, { top:0 }),
 		Container($, { left:0, right:0, top:27, bottom:0 }),
 	]
 }));
 
 var DebugToolsHeader = Row.template($ => ({
-	left:4, top:0, height:headerHeight,
+	left:4, right:4, height:headerHeight,
 	contents: [
 		DebugToolButton($, { name:"Abort", variant:0 }),
 		DebugToolButton($, { name:"Break", variant:12 }),

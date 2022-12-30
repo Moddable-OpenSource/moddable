@@ -1,6 +1,5 @@
 {
 	"config": {
-		"rotation": 90,
 		"sntp": "pool.ntp.org"
 	},
 	"include": [
@@ -26,5 +25,17 @@
 		"bm8563",
 		"rtc",
 		"smbus"
-	]	
+	],
+	"platforms": {
+		"esp32/m5stick_c" :{
+			"config": {
+				"rotation":90
+			}
+		},
+		"esp32/m5stick_cplus":{
+			"config": {
+				"rotation":0
+			}
+		}
+	}
 }

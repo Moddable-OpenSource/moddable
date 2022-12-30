@@ -37,7 +37,7 @@
 				"net"
 			]
 		},
-		"pico/pico_w": {
+		"pico": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
@@ -54,10 +54,6 @@
 				"sntp",
 				"net"
 			]
-		},
-		"pico/*" : {
-		},
-		"pico" : {
 		},
 		"lin": {
 			"modules": {

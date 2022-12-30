@@ -89,5 +89,8 @@ uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 	#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
 #endif
 
+#if defined(PICO_BUILD)
+uint8_t builtinInitIO(void);
+#endif
 
 #endif

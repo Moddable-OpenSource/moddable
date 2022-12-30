@@ -2209,6 +2209,8 @@ void fxLiteralExpression(txParser* parser, txUnsigned flag)
 // 				}
 			}
 		}
+		if (aSymbol == parser->awaitSymbol)
+			parser->flags |= mxAwaitingFlag;
 		if ((!parser->crlf) && (parser->token == XS_TOKEN_ARROW)) {
 			fxCheckStrictSymbol(parser, aSymbol);
 			if (flags && (aSymbol == parser->awaitSymbol))
@@ -2752,47 +2754,60 @@ void fxGeneratorExpression(txParser* parser, txInteger theLine, txSymbol** theSy
 void fxGroupExpression(txParser* parser, txUnsigned flag)
 {
 	txBoolean commaFlag = 0;
+	txBoolean spreadFlag = 0;
 	txInteger aCount = 0;
 	txInteger aLine;
 	txUnsigned formerAwaitingYieldingFlags = parser->flags & (mxAwaitingFlag | mxYieldingFlag);
-	txUnsigned former;
 	parser->flags &= ~(mxAwaitingFlag | mxYieldingFlag);
-	if (flag) {
-		former = parser->flags & flag;
-		parser->flags |= flag;
-	}
 	fxMatchToken(parser, XS_TOKEN_LEFT_PARENTHESIS);
-	while (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION) {
+	while ((parser->token == XS_TOKEN_SPREAD) || (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION)) {
+		aLine = parser->line;
 		commaFlag = 0;
-		fxAssignmentExpression(parser);
+		if (parser->token == XS_TOKEN_SPREAD) {
+			fxGetNextToken(parser);
+			fxAssignmentExpression(parser);
+			fxPushNodeStruct(parser, 1, XS_TOKEN_SPREAD, aLine);
+			spreadFlag = 1;
+		}
+		else
+			fxAssignmentExpression(parser);
 		aCount++;
 		if (parser->token != XS_TOKEN_COMMA) 
 			break;
 		fxGetNextToken(parser);
 		commaFlag = 1;
 	}
-	if (parser->token == XS_TOKEN_SPREAD) {
-		fxRestBinding(parser, XS_TOKEN_ARG, 0);
-		aCount++;
-	}
 	aLine = parser->line;
 	fxMatchToken(parser, XS_TOKEN_RIGHT_PARENTHESIS);
-	if (flag) {
-		if (!former)
-			parser->flags &= ~flag;
-	}
 	if ((!parser->crlf) && (parser->token == XS_TOKEN_ARROW)) {
 		fxPushNodeList(parser, aCount);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, aLine);
+		if (commaFlag && spreadFlag)
+			fxReportParserError(parser, parser->line, "invalid parameters");
 		if (!fxParametersBindingFromExpressions(parser, parser->root))
 			fxReportParserError(parser, parser->line, "no parameters");
 		fxCheckStrictBinding(parser, parser->root);
 		parser->root->flags |= flag;
-		if (parser->flags & mxAwaitingFlag)
-			fxReportParserError(parser, parser->line, "invalid await");
+		if (parser->flags & mxAwaitingFlag) {
+			if (flag || (parser->flags & mxAsyncFlag))
+				fxReportParserError(parser, parser->line, "invalid await");
+			else
+				formerAwaitingYieldingFlags |= mxAwaitingFlag;
+		}
 		if (parser->flags & mxYieldingFlag)
 			fxReportParserError(parser, parser->line, "invalid yield");
 		fxArrowExpression(parser, flag);
+	}
+	else if (flag) {
+		fxPushNodeList(parser, aCount);
+		fxPushNodeStruct(parser, 1, XS_TOKEN_PARAMS, aLine);
+		if (spreadFlag)
+			parser->root->flags |= mxSpreadFlag;
+		
+		fxPushSymbol(parser, parser->asyncSymbol);
+		fxPushNodeStruct(parser, 1, XS_TOKEN_ACCESS, aLine);
+		fxSwapNodes(parser);
+		fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
 	}
 	else {
         if ((aCount == 0) || commaFlag) {
@@ -3613,15 +3628,9 @@ txNode* fxParametersBindingFromExpressions(txParser* parser, txNode* theNode)
 	while ((item = *address)) {
 		txToken aToken = (item && item->description) ? item->description->token : XS_NO_TOKEN;
 		if (aToken == XS_TOKEN_SPREAD) {
-			if ((!(item->next)) && ((txSpreadNode*)item)->expression && (((txSpreadNode*)item)->expression->description->token == XS_TOKEN_ACCESS)) {
-				parser->flags |= mxNotSimpleParametersFlag;
-				item->description = &gxTokenDescriptions[XS_TOKEN_REST_BINDING];
-				((txRestBindingNode*)item)->binding = fxBindingFromExpression(parser, ((txSpreadNode*)item)->expression, XS_TOKEN_ARG);
-				break;
-			}
-			return NULL;
-		}
-		if (aToken == XS_TOKEN_REST_BINDING) {
+			binding = (txBindingNode*)fxRestBindingFromExpression(parser, item, XS_TOKEN_ARG, 0);
+			if (!binding)
+				return NULL;
 			parser->flags |= mxNotSimpleParametersFlag;
 			break;
 		}
@@ -4177,7 +4186,8 @@ txSymbol* fxJSXNamespace(txParser* parser, txSymbol* namespace, txSymbol* name)
 {
 	txSize namespaceLength = namespace->length;
 	txSize nameLength = name->length;
-	txString string = fxNewParserChunk(parser, namespaceLength + 1 + nameLength + 1);
-	sprintf(string, "%s:%s", namespace->string, name->string);
+	txSize length = namespaceLength + 1 + nameLength + 1;
+	txString string = fxNewParserChunk(parser, length);
+	snprintf(string, length, "%s:%s", namespace->string, name->string);
 	return fxNewParserSymbol(parser, string);
 }

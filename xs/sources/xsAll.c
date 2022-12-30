@@ -35,7 +35,13 @@
  *       limitations under the License.
  */
 
+#define _GNU_SOURCE
 #include "xsAll.h"
+#if mxMacOSX || mxLinux
+#include <dlfcn.h>
+#endif
+
+static void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address, txID profileID);
 
 txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix)
 {
@@ -116,6 +122,11 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 			fxBufferFunctionName(the, buffer, size, function, "");
 		}
 	}
+#ifdef mxHostFunctionPrimitive
+	else if (function->kind == XS_HOST_FUNCTION_KIND) {
+		fxBufferFunctionNameAddress(the, buffer, size, function->value.hostFunction.builder->id, function->value.hostFunction.builder->callback, function->value.hostFunction.profileID);
+	}
+#endif
 	else
 		c_strncat(buffer, "(host)", size - mxStringLength(buffer) - 1);
 	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
@@ -124,35 +135,61 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 void fxBufferFunctionName(txMachine* the, txString buffer, txSize size, txSlot* function, txString suffix)
 {
 	txSlot* slot = mxFunctionInstanceCode(function);
-	if (slot->ID != XS_NO_ID) {
-		txSlot* key = fxGetKey(the, slot->ID);
+	txSlot* home = mxFunctionInstanceHome(function);
+	if ((slot->kind == XS_CODE_KIND) || (slot->kind == XS_CODE_X_KIND))
+		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, C_NULL, home->ID);
+	else
+		fxBufferFunctionNameAddress(the, buffer, size, slot->ID, slot->value.callback.address, home->ID);
+    c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+}
+
+void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address, txID profileID)
+{
+	txInteger length;
+	if (id != XS_NO_ID) {
+		txSlot* key = fxGetKey(the, id);
 		if (key) {
 			if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
 				c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 				return;
 			}
 			if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
 				c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
 				c_strncat(buffer, key->value.string, size - mxStringLength(buffer) - 1);
 				c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 				return;
 			}
 		}
 	}
-	c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
-	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+	if (address) {
+		c_strncat(buffer, "@", size - mxStringLength(buffer) - 1);
+#if mxMacOSX || mxLinux
+		Dl_info info;
+		if (dladdr(address, &info) && info.dli_sname)
+			c_strncat(buffer, info.dli_sname, size - mxStringLength(buffer) - 1);
+		else 
+#endif
+		{
+			c_strncat(buffer, "anonymous-", size - mxStringLength(buffer) - 1);
+			length = mxStringLength(buffer);
+			fxIntegerToString(the->dtoa, profileID, buffer + length, size - length - 1);
+		}
+	}
+	else {
+		c_strncat(buffer, "(anonymous-", size - mxStringLength(buffer) - 1);
+		length = mxStringLength(buffer);
+		fxIntegerToString(the->dtoa, profileID, buffer + length, size - length - 1);
+		c_strncat(buffer, ")", size - mxStringLength(buffer) - 1);
+	}
 }
 
 void fxBufferObjectName(txMachine* the, txString buffer, txSize size, txSlot* object, txString suffix)
 {
 	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), 0, XS_ANY);
-	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string))
+	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string)) {
 		c_strncat(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
-	else
-		c_strncat(buffer, "?", size - mxStringLength(buffer) - 1);
-	c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+		c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
+	}
 }
 
 txString fxConcatString(txMachine* the, txSlot* a, txSlot* b)
@@ -253,8 +290,5 @@ int fxStringCGetter(void* theStream)
 void fxJump(txMachine* the)
 {
 	txJump* aJump = the->firstJump;
-#ifdef mxProfile
-	fxJumpFrames(the, the->frame, aJump->frame);
-#endif	
 	c_longjmp(aJump->buffer, 1);
 }

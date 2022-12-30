@@ -98,8 +98,6 @@ static
 
 static void debug_task(void *pvParameter)
 {
-	extern uint8_t fxIsConnected(xsMachine* the);
-
 	while (true) {
 		uart_event_t event;
 
@@ -114,7 +112,7 @@ static void debug_task(void *pvParameter)
 
 void loop_task(void *pvParameter)
 {
-#if CONFIG_TASK_WDT
+#if CONFIG_ESP_TASK_WDT
 	esp_task_wdt_add(NULL);
 #endif
 

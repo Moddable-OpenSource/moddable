@@ -18,7 +18,9 @@ import Timer from "timer";
 import Net from "net";
 
 const resolver = new Resolver({
-	socket: UDP,
+	socket: {
+		io: UDP
+	},
 	servers: Net.get("DNS") ?? ["8.8.8.8", "1.1.1.1"]
 });
 

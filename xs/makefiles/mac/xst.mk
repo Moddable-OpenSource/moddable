@@ -56,6 +56,7 @@ C_OPTIONS = \
 	-DmxLockdown=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \
+	-DmxProfile=1 \
 	-DmxRun=1 \
 	-DmxSloppy=1 \
 	-DmxSnapshot=1 \
@@ -85,10 +86,11 @@ ifneq ("x$(SDKROOT)", "x")
 endif
 
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -DmxASANStackMargin=131072 -fsanitize=address -fno-omit-frame-pointer
+	C_OPTIONS += -DmxASANStackMargin=131072 -fsanitize=address -fno-omit-frame-pointer -fsanitize-blacklist=xst_no_asan.txt
 	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
 
 	ifneq ($(FUZZING),0)
+		C_OPTIONS += -DmxNoChunks=1
 		C_OPTIONS += -DmxStress=1
 		C_OPTIONS += -DFUZZING=1
 	endif

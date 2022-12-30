@@ -34,6 +34,7 @@
 		"$(MODULES)/base/modules/manifest.json",
 		"$(MODULES)/base/structuredClone/manifest.json",
 		"$(MODULES)/data/base64/manifest.json",
+		"$(MODULES)/data/crc/manifest.json",
 		"$(MODULES)/data/hex/manifest.json",
 		"$(MODULES)/data/qrcode/manifest.json",
 		"$(MODULES)/data/text/decoder/manifest.json",
@@ -195,6 +196,9 @@
 			"build": {
 				"SIMULATOR": "$(BUILD)/bin/win/debug/mcsim.exe"
 			},
+			"include": [
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
 			"modules": {
 				"*": [
 					"$(BUILD)/simulators/modules/screen",

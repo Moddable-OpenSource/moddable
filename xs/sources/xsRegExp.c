@@ -76,7 +76,7 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	mxPop();
-	fxNewHostFunction(the, mxCallback(fxInitializeRegExp), 2, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxInitializeRegExp), 2, XS_NO_ID, XS_NO_ID);
 	mxInitializeRegExpFunction = *the->stack;
 	
 	mxPush(mxIteratorPrototype);
@@ -731,7 +731,7 @@ void fx_RegExp_prototype_matchAll_next(txMachine* the)
 #if mxRegExp
 	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_RegExp));
 	txSlot* result = iterator->next;
-	txSlot* value = result->value.reference->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
 	txSlot* done = value->next;
 	txSlot* matcher = result->next;
 	txSlot* argument = matcher->next;
@@ -775,6 +775,7 @@ void fx_RegExp_prototype_matchAll_next(txMachine* the)
 			done->value.boolean = 0;
 			complete->value.boolean = 1;
 		}
+		mxPop();
 	}
 	mxResult->kind = result->kind;
 	mxResult->value = result->value;

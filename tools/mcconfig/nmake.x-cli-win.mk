@@ -65,7 +65,6 @@ XS_OBJECTS = \
 	$(LIB_DIR)\xsNumber.o \
 	$(LIB_DIR)\xsObject.o \
 	$(LIB_DIR)\xsPlatforms.o \
-	$(LIB_DIR)\xsProfile.o \
 	$(LIB_DIR)\xsPromise.o \
 	$(LIB_DIR)\xsProperty.o \
 	$(LIB_DIR)\xsProxy.o \
@@ -87,6 +86,9 @@ DIRECTORIES = $(DIRECTORIES) $(XS_DIRECTORIES)
 	
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
+TOOLS_VERSION = \
+!INCLUDE $(MODDABLE)\tools\VERSION
+
 C_DEFINES = \
 	/D XS_ARCHIVE=1 \
 	/D INCLUDE_XSPLATFORM=1 \
@@ -96,7 +98,8 @@ C_DEFINES = \
 	/D mxNoFunctionLength=1 \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
-	/D mxFewGlobalsTable=1
+	/D mxFewGlobalsTable=1 \
+	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\"
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) \
 	/D MODINSTRUMENTATION=1 \
@@ -131,7 +134,7 @@ C_FLAGS = $(XS_C_FLAGS)
 
 RC_OPTIONS = /nologo
 
-LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib Iphlpapi.lib
+LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib Iphlpapi.lib winmm.lib
 	
 LINK_OPTIONS = /incremental:no /nologo /subsystem:console
 !IF "$(DEBUG)"=="1"

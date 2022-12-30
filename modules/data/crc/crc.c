@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Moddable Tech, Inc.
+ * Copyright (c) 2021-2022 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -41,20 +41,16 @@ static void make_crc8_table(uint8_t polynomial, uint8_t *crc8_table)
 	}
 }
 
-static uint8_t checksum8(uint8_t *bytes, uint32_t length, uint8_t *crc8_table, uint8_t initial, uint8_t refIn, uint8_t refOut, uint8_t xorOut) {
-	uint8_t c = initial;
+static uint8_t checksum8(uint8_t *bytes, uint32_t length, uint8_t *crc8_table, uint8_t crc, uint8_t refIn) {
 	uint32_t i;
 
-	for (i=0; i<length; i++)
+	for (i=0; i<length; i++) {
+		uint8_t b = bytes[i];
 		if (refIn)
-			c = crc8_table[(c ^ reflect8(bytes[i])) % 256];
-		else
-			c = crc8_table[(c ^ bytes[i]) % 256];
-
-	if (refOut)
-		return reflect8(c) ^ xorOut;
-	else
-		return c ^ xorOut;
+			b = reflect8(b);
+		crc = crc8_table[(crc ^ b) % 256];
+	}
+	return crc;
 }
 
 typedef struct {
@@ -109,9 +105,13 @@ void xs_crc8_checksum(xsMachine *the)
 	uint32_t length;
 
 	xsmcGetBufferReadable(xsArg(0), (void **)&data, &length);
-	crc8->initial = checksum8(data, length, crc8->table, crc8->initial, crc8->reflectInput, crc8->reflectOutput, crc8->xorOutput);
+	crc8->initial = checksum8(data, length, crc8->table, crc8->initial, crc8->reflectInput);
 
-	xsmcSetInteger(xsResult, crc8->initial);
+	uint8_t crc = crc8->initial;
+	if (crc8->reflectOutput)
+		crc = reflect8(crc);
+
+	xsmcSetInteger(xsResult, crc ^ crc8->xorOutput);
 }
 
 
@@ -132,23 +132,17 @@ static void make_crc16_table(uint16_t polynomial, uint16_t *crc16_table) {
 	}
 }
 
-static uint16_t checksum16(uint8_t *bytes, uint32_t length, uint16_t *crc16_table, uint16_t initial, uint8_t refIn, uint8_t refOut, uint16_t xorOut) {
+static uint16_t checksum16(uint8_t *bytes, uint32_t length, uint16_t *crc16_table, uint16_t crc, uint8_t refIn) {
 	uint32_t i;
-	uint16_t crc = initial;
-	uint8_t b;
 
 	for (i=0; i<length; i++) {
-		b = bytes[i];
+		uint8_t b = bytes[i];
 		if (refIn)
 			b = reflect8(b);
 		crc = crc ^ (b << 8);
 		crc = ((crc << 8) ^ crc16_table[crc >> 8]);
 	}
-	if (refOut) {
-		return ((reflect8(crc & 0xff) << 8) | (reflect8(crc >> 8))) ^ xorOut;
-	}
-	else
-		return crc ^ xorOut;
+	return crc;
 }
 
 typedef struct {
@@ -202,7 +196,10 @@ void xs_crc16_checksum(xsMachine *the)
 	uint32_t length;
 
 	xsmcGetBufferReadable(xsArg(0), (void **)&data, &length);
-	crc16->initial = checksum16(data, length, crc16->table, crc16->initial, crc16->reflectInput, crc16->reflectOutput, crc16->xorOutput);
+	crc16->initial = checksum16(data, length, crc16->table, crc16->initial, crc16->reflectInput);
 
-	xsmcSetInteger(xsResult, crc16->initial);
+	uint16_t crc = crc16->initial; 
+	if (crc16->reflectOutput)
+		crc = (reflect8(crc & 0xff) << 8) | reflect8(crc >> 8);
+	xsmcSetInteger(xsResult, crc ^ crc16->xorOutput);
 }

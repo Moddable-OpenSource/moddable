@@ -127,7 +127,6 @@ OBJECTS = \
 	$(TMP_DIR)\xsNumber.o \
 	$(TMP_DIR)\xsObject.o \
 	$(TMP_DIR)\xsPlatforms.o \
-	$(TMP_DIR)\xsProfile.o \
 	$(TMP_DIR)\xsPromise.o \
 	$(TMP_DIR)\xsProperty.o \
 	$(TMP_DIR)\xsProxy.o \

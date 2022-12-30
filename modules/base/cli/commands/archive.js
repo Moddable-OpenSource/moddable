@@ -45,8 +45,9 @@ CLI.install(function(command, parts) {
 						bytes = new Uint8Array(archive.read(position, 2));
 						position += 2;
 						let count = (bytes[0] << 8) | bytes[1];
+						count = (count >> 8) | ((count & 0xFF) << 8);
 						while (count--) {
-							let name = readString(archive, position);
+							const name = readString(archive, position);
 							position += name.length + 1;
 							this.line(` ${name}`);
 						}

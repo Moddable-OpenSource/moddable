@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -67,7 +67,7 @@ class TMP117 {
 
 		this.#onError = options.onError;
 
-		let conf = io.readWord(Register.TMP117_CHIPID, true);
+		let conf = io.readUint16(Register.TMP117_CHIPID, true);
 		if (0x117 != (conf & 0x0fff)) {
 			this.#onError?.("unexpected sensor");
 			this.#io.close();
@@ -75,9 +75,9 @@ class TMP117 {
 			return;
 		}
 
-		conf = io.readWord(Register.TMP117_CONF, true);
+		conf = io.readUint16(Register.TMP117_CONF, true);
 		conf |= ConfigMask.SOFT_RESET;		// softreset
-		io.writeWord(Register.TMP117_CONF, conf, true);
+		io.writeUint16(Register.TMP117_CONF, conf, true);
 		
 		const {alert, onAlert} = options;
 		if (alert && onAlert) {
@@ -91,17 +91,17 @@ class TMP117 {
 		}
 
 		// Reset to default: DataSheet 7.6.3
-		io.writeWord(Register.TMP117_CONF, 0b0000_0010_0010_0000, true);
+		io.writeUint16(Register.TMP117_CONF, 0b0000_0010_0010_0000, true);
 
 		// DataSheet 7.6.4, 7.6.5
-		io.writeWord(Register.TMP117_THI, 0b0110_0000_0000_0000, true);
-		io.writeWord(Register.TMP117_TLO, 0b1000_0000_0000_0000, true);
+		io.writeUint16(Register.TMP117_THI, 0b0110_0000_0000_0000, true);
+		io.writeUint16(Register.TMP117_TLO, 0b1000_0000_0000_0000, true);
 
 		this.#status = "ready";
 	}
 	configure(options) {
 		const io = this.#io;
-		let conf = io.readWord(Register.TMP117_CONF, true);
+		let conf = io.readUint16(Register.TMP117_CONF, true);
 
 		if (undefined !== options.shutdownMode) {
 			conf &= ~ConfigMask.MODE;
@@ -114,10 +114,10 @@ class TMP117 {
 		}
 
 		if (undefined !== options.highTemperature)
-			io.writeWord(Register.TMP117_THI, (options.highTemperature / .0078125) | 0, true);
+			io.writeUint16(Register.TMP117_THI, (options.highTemperature / .0078125) | 0, true);
 
 		if (undefined !== options.lowTemperature)
-			io.writeWord(Register.TMP117_TLO, (options.lowTemperature / .0078125) | 0, true);
+			io.writeUint16(Register.TMP117_TLO, (options.lowTemperature / .0078125) | 0, true);
 
 		if (undefined !== options.thermostatMode) {
 			conf &= ~ConfigMask.THERM;
@@ -148,15 +148,15 @@ class TMP117 {
 			}
 		}
 
-		io.writeWord(Register.TMP117_CONF, conf, true);
+		io.writeUint16(Register.TMP117_CONF, conf, true);
 	}
 	close() {
 		if ("ready" === this.#status) {
 			const io = this.#io;
-			let conf = io.readWord(Register.TMP117_CONF, true);
+			let conf = io.readUint16(Register.TMP117_CONF, true);
 			conf &= ~ConfigMask.MODE;
 			conf |= SHUTDOWN_MODE;
-			io.writeWord(Register.TMP117_CONF, conf, true);
+			io.writeUint16(Register.TMP117_CONF, conf, true);
 			this.#status = undefined;
 		}
 		this.#monitor?.close();
@@ -169,18 +169,18 @@ class TMP117 {
 	}
 	sample() {
 		const io = this.#io;
-		let conf = io.readWord(Register.TMP117_CONF, true);
+		let conf = io.readUint16(Register.TMP117_CONF, true);
 		if ((conf & ConfigMask.MODE) == SHUTDOWN_MODE) {
 			conf |= ONE_SHOT;
-			io.writeWord(Register.TMP117_CONF, conf, true);
+			io.writeUint16(Register.TMP117_CONF, conf, true);
 			Timer.delay(ONE_SHOT_DELAY[(conf & ConfigMask.AVE) >> 5]);
 			conf &= ~ConfigMask.MODE;
-			io.writeWord(Register.TMP117_CONF, conf | SHUTDOWN_MODE, true);
+			io.writeUint16(Register.TMP117_CONF, conf | SHUTDOWN_MODE, true);
 		}
 
-		let value = this.#twoC16(io.readWord(Register.TMP117_TEMP, true)) * 0.0078125;
+		let value = this.#twoC16(io.readUint16(Register.TMP117_TEMP, true)) * 0.0078125;
 
-		conf = io.readWord(Register.TMP117_CONF, true);
+		conf = io.readUint16(Register.TMP117_CONF, true);
 		let alert = 0;
 		if (conf & HIGH_ALERT)
 			alert |= 0b01;

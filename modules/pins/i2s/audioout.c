@@ -181,6 +181,12 @@ typedef struct {
 } modAudioOutStreamRecord, *modAudioOutStream;
 
 typedef struct {
+	xsIntegerValue		id;
+	xsIntegerValue		stream;
+} modAudioOutPendingCallbackRecord, *modAudioOutPendingCallback;
+
+
+typedef struct {
 	xsMachine				*the;
 	xsSlot					obj;
 
@@ -241,8 +247,8 @@ typedef struct {
 	int32_t					error;
 #endif
 
-	int						pendingCallbackCount;
-	xsIntegerValue			pendingCallbacks[MODDEF_AUDIOOUT_QUEUELENGTH];
+	int									pendingCallbackCount;
+	modAudioOutPendingCallbackRecord	pendingCallbacks[MODDEF_AUDIOOUT_QUEUELENGTH];
 
 	modAudioOutStreamRecord	stream[1];		// must be last
 } modAudioOutRecord, *modAudioOut;
@@ -250,7 +256,7 @@ typedef struct {
 static void updateActiveStreams(modAudioOut out);
 #if defined(__APPLE__)
 	static void audioQueueCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
-	static void queueCallback(modAudioOut out, xsIntegerValue id);
+	static void queueCallback(modAudioOut out, xsIntegerValue id, xsIntegerValue stream);
 	static void invokeCallbacks(CFRunLoopTimerRef timer, void *info);
 #elif defined(_WIN32)
 	static LRESULT CALLBACK modAudioWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -265,7 +271,7 @@ static void updateActiveStreams(modAudioOut out);
 #endif
 #if defined(__ets__) || ESP32 || defined(_WIN32)
 	void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-	void queueCallback(modAudioOut out, xsIntegerValue id);
+	void queueCallback(modAudioOut out, xsIntegerValue id, xsIntegerValue stream);
 #endif
 
 static void doLock(modAudioOut out);
@@ -615,7 +621,7 @@ void xs_audioout_enqueue(xsMachine *the)
 {
 	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
 	int streamIndex, argc = xsmcArgc;
-	int repeat = 1, sampleOffset = 0, samplesToUse = -1, bufferSamples, volume, i, samplesInBuffer;
+	int repeat = 1, sampleOffset = 0, samplesToUse = -1, volume, i, samplesInBuffer;
 	uint8_t kind;
 	uint8_t *buffer;
 	xsUnsignedValue bufferLength;
@@ -669,7 +675,7 @@ void xs_audioout_enqueue(xsMachine *the)
 				sampleRate = c_read16(buffer + 4);
 				numChannels = c_read8(buffer + 6);
 				sampleFormat = c_read8(buffer + 7);
-				bufferSamples = c_read32(buffer + 8);
+				int bufferSamples = c_read32(buffer + 8);
 				if ((kSampleFormatUncompressed == sampleFormat) && (bitsPerSample != out->bitsPerSample))
 					xsUnknownError("format doesn't match output");
 				if ((sampleRate != out->sampleRate) || (numChannels != out->numChannels))
@@ -690,8 +696,9 @@ void xs_audioout_enqueue(xsMachine *the)
 					samplesToUse = bufferSamples - sampleOffset;
 			}
 			else {
-				if (samplesToUse <= 0)
-					xsUnknownError("samplesToUse required");
+				int bufferSamples = bufferLength / out->bytesPerFrame;
+				if ((samplesToUse < 0) || ((sampleOffset + samplesToUse) > bufferSamples))
+					samplesToUse = bufferSamples - sampleOffset;
 
 				sampleFormat = kSampleFormatUncompressed;
 			}
@@ -868,7 +875,7 @@ void xs_audioout_enqueue(xsMachine *the)
 
 			for (i = 0, element = stream->element; i < elementCount; i++, element++) {
 				if ((0 == element->repeat) && (element->position < 0) && (0 == element->sampleCount))
-					queueCallback(out, (xsIntegerValue)(uintptr_t)element->samples);
+					queueCallback(out, (xsIntegerValue)(uintptr_t)element->samples, streamIndex);
 			}
 
 			if (stream->decompressed)
@@ -973,6 +980,31 @@ void xs_audioout_length(xsMachine *the)
 	xsmcSetInteger(xsResult, MODDEF_AUDIOOUT_QUEUELENGTH - out->stream[streamIndex].elementCount);
 }
 
+void xs_audioout_get_sampleRate(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->sampleRate);
+}
+
+void xs_audioout_get_numChannels(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->numChannels);
+}
+
+void xs_audioout_get_bitsPerSample(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->bitsPerSample);
+}
+
+void xs_audioout_get_streams(xsMachine *the)
+{
+	modAudioOut out = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
+	xsmcSetInteger(xsResult, out->streamCount);
+}
+
+
 // note: updateActiveStreams relies on caller to lock mutex
 void updateActiveStreams(modAudioOut out)
 {
@@ -1022,19 +1054,27 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 	upUseCount(out);
 
 	while (out->pendingCallbackCount) {
-		int id;
+		xsIntegerValue id, stream;
 
 		pthread_mutex_lock(&out->mutex);
-		id = out->pendingCallbacks[0];
+		id = out->pendingCallbacks[0].id;
+		stream = out->pendingCallbacks[0].stream;
 
 		out->pendingCallbackCount -= 1;
 		if (out->pendingCallbackCount)
-			c_memmove(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
+			c_memmove(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(modAudioOutPendingCallbackRecord));
 		pthread_mutex_unlock(&out->mutex);
 
 		xsmcSetInteger(xsVar(0), id);
 		xsTry {
-			xsCall1(out->obj, xsID_callback, xsVar(0));
+			xsmcGet(xsResult, out->obj, xsID_callbacks);
+			if (xsUndefinedType != xsmcTypeOf(xsResult)) {
+				xsmcGetIndex(xsResult, xsResult, stream);
+				if (xsmcIsCallable(xsResult))
+					xsCallFunction1(xsResult, out->obj, xsVar(0));
+			}
+			else
+				xsCall1(out->obj, xsID_callback, xsVar(0));
 		}
 		xsCatch {
 		}
@@ -1046,10 +1086,11 @@ void invokeCallbacks(CFRunLoopTimerRef timer, void *info)
 }
 
 // note: queueCallback relies on caller to lock mutex
-void queueCallback(modAudioOut out, xsIntegerValue id)
+void queueCallback(modAudioOut out, xsIntegerValue id, xsIntegerValue stream)
 {
 	if (out->pendingCallbackCount < MODDEF_AUDIOOUT_QUEUELENGTH) {
-		out->pendingCallbacks[out->pendingCallbackCount++] = id;
+		out->pendingCallbacks[out->pendingCallbackCount].id = id;
+		out->pendingCallbacks[out->pendingCallbackCount++].stream = stream;
 
 		if (1 == out->pendingCallbackCount) {
 			CFRunLoopTimerContext context = {0};
@@ -1370,6 +1411,8 @@ void audioOutLoop(void *pvParameter)
 			uint32_t newState;
 
 			if (!stopped) {
+				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);		// maybe use auto_clear in the future
+
 #if MODDEF_AUDIOOUT_I2S_DAC
 				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
 #else
@@ -1522,21 +1565,30 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 	upUseCount(out);
 
 	while (out->pendingCallbackCount) {
-		int id;
+		xsIntegerValue id;
+		xsIntegerValue stream;
 
 		doLock(out);
 
-		id = out->pendingCallbacks[0];
+		id = out->pendingCallbacks[0].id;
+		stream = out->pendingCallbacks[0].stream;
 
 		out->pendingCallbackCount -= 1;
 		if (out->pendingCallbackCount)
-			c_memmove(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(xsIntegerValue));
+			c_memmove(out->pendingCallbacks, out->pendingCallbacks + 1, out->pendingCallbackCount * sizeof(modAudioOutPendingCallbackRecord));
 
 		doUnlock(out);
 
 		xsmcSetInteger(xsVar(0), id);
 		xsTry {
-			xsCall1(out->obj, xsID_callback, xsVar(0));
+			xsmcGet(xsResult, out->obj, xsID_callbacks);
+			if (xsUndefinedType != xsmcTypeOf(xsResult)) {
+				xsmcGetIndex(xsResult, xsResult, stream);
+				if (xsmcIsCallable(xsResult))
+					xsCallFunction1(xsResult, out->obj, xsVar(0));
+			}
+			else
+				xsCall1(out->obj, xsID_callback, xsVar(0));
 		}
 		xsCatch {
 		}
@@ -1548,10 +1600,11 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 }
 
 // note: queueCallback relies on caller to lock mutex
-void queueCallback(modAudioOut out, xsIntegerValue id)
+void queueCallback(modAudioOut out, xsIntegerValue id, xsIntegerValue stream)
 {
 	if (out->pendingCallbackCount < MODDEF_AUDIOOUT_QUEUELENGTH) {
-		out->pendingCallbacks[out->pendingCallbackCount++] = id;
+		out->pendingCallbacks[out->pendingCallbackCount].id = id;
+		out->pendingCallbacks[out->pendingCallbackCount++].stream = stream;
 
 		if (1 == out->pendingCallbackCount)
 #if defined(_WIN32)
@@ -1845,7 +1898,7 @@ void endOfElement(modAudioOut out, modAudioOutStream stream)
 	while (0 == element->repeat) {
 		if (0 == element->sampleCount) {
 			if (element->position < 0)
-				queueCallback(out, (xsIntegerValue)(uintptr_t)element->samples);
+				queueCallback(out, (xsIntegerValue)(uintptr_t)element->samples, stream - out->stream);
 			else if (NULL == element->samples)
 				setStreamVolume(out, stream, element->position);
 		}

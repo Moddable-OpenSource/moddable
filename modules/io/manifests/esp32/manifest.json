@@ -19,8 +19,10 @@
 		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
-		"embedded:io/i2c": "$(IO)/i2c/_i2c",
-		"embedded:io/smbus": "$(IO)/i2c/smbus",
+		"embedded:io/i2c": "$(IO)/i2c/i2c_async",
+		"embedded:implementation/i2csync": "$(IO)/i2c/_i2c",
+		"embedded:io/smbus": "$(IO)/i2c/smbus_async",
+		"embedded:implementation/smbussync": "$(IO)/i2c/smbus",
 		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"embedded:io/spi": "$(IO)/spi/spi",
@@ -46,13 +48,15 @@
 		"esp32/*": {
 			"modules": {
 				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
+				"embedded:io/pulsewidth": "$(IO)/pulsewidth/$(PLATFORM)/*"
 			}
 		},
 		"esp32": {
 			"modules": {
 				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*"
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
+				"embedded:io/pulsewidth": "$(IO)/pulsewidth/$(PLATFORM)/*"
 			}
 		},
 		"...": {

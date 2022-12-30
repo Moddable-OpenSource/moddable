@@ -20,9 +20,9 @@
 
  interface Trace {
 	(...log: (string | number | boolean)[]):void;
-	left(log: string | ArrayBuffer, conversation?: string):void;
-	center(log: string | ArrayBuffer, conversation?: string):void;
-	right(log: string | ArrayBuffer, conversation?: string):void;
+	left(log: string | ArrayBufferLike, conversation?: string):void;
+	center(log: string | ArrayBufferLike, conversation?: string):void;
+	right(log: string | ArrayBufferLike, conversation?: string):void;
 }
 declare const trace:Trace;
 
@@ -53,7 +53,7 @@ interface JSON {
 }
 
 interface StringConstructor {
-	fromArrayBuffer(buffer: ArrayBuffer): string;
+	fromArrayBuffer(buffer: ArrayBufferLike): string;
 }
 
 interface ArrayBufferConstructor {
@@ -62,12 +62,12 @@ interface ArrayBufferConstructor {
 }
 
 interface ArrayBuffer {
-	concat(...buffers: ArrayBuffer[]): ArrayBuffer;
+	concat(...buffers: ArrayBufferLike[]): ArrayBuffer;
 }
 
 interface BigIntConstructor {
 	bitLength(value: BigInt): number
-	fromArrayBuffer(buffer: ArrayBuffer): BigInt
+	fromArrayBuffer(buffer: ArrayBufferLike): BigInt
 }
 
 // Compartment?

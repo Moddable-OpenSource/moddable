@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -37,10 +37,10 @@ class FT6206  {
 			Timer.delay(150);
 		}
 
-		if (17 !== io.readByte(0xA8))
+		if (17 !== io.readUint8(0xA8))
 			throw new Error("unexpected vendor");
 
-		const id = io.readByte(0xA3);
+		const id = io.readUint8(0xA3);
 		if ((6 !== id) && (100 !== id))
 			throw new Error("unexpected chip");
 
@@ -70,13 +70,13 @@ class FT6206  {
 		const io = this.#io;
 
 		if ("threshold" in options)
-			io.writeByte(0x80, options.threshold);
+			io.writeUint8(0x80, options.threshold);
 
 		if ("active" in options)
-			io.writeByte(0x86, options.active ? 0 : 1);
+			io.writeUint8(0x86, options.active ? 0 : 1);
 
 		if ("timeout" in options)
-			io.writeByte(0x87, options.timeout);
+			io.writeUint8(0x87, options.timeout);
 
 		let value = options.flip;
 		if (value) {
@@ -107,14 +107,19 @@ class FT6206  {
 				io.area = true;
 		}
 	}
+	get configuration() {
+		return {
+			interrupt: !!this.#io.interrupt
+		}
+	}
 	sample() {
 		const io = this.#io;
 
-		const length = io.readByte(0x02) & 0x0F;			// number of touches
+		const length = io.readUint8(0x02) & 0x0F;			// number of touches
 		if (0 === length)
 			return;
 
-		const data = io.readBlock(0x03, io.buffer);
+		const data = io.readBuffer(0x03, io.buffer);
 		const result = new Array(length);
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;

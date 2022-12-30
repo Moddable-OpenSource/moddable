@@ -1616,11 +1616,17 @@ XS_URL_PASSWORD:
 	goto XS_URL_END;
 	
 XS_URL_ORIGIN:
+	if (schemeIndex < 0) {
+		fxConcatStringC(the, result, "null");
+		goto XS_URL_END;
+	}
 	mxPushSlot(parts);
 	mxGetID(xsID_host);
 	mxPullSlot(mxVarv(0));
-	if (mxVarv(0)->value.string[0])
+	if (!mxVarv(0)->value.string[0]) {
+		fxConcatStringC(the, result, "null");
 		goto XS_URL_END;
+	}
 	mxPushSlot(parts);
 	mxGetID(xsID_scheme);
 	fxConcatString(the, result, the->stack);

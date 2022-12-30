@@ -32,7 +32,11 @@ XS_DIR = ..\..\..\xs
 BUILD_DIR = ..\..
 !ENDIF
 
+TOOLS_VERSION = \
+!INCLUDE $(MODDABLE)\tools\VERSION
+
 COMMODETTO = $(MODDABLE)\modules\commodetto
+DATA = $(MODDABLE)\modules\data
 INSTRUMENTATION = $(MODDABLE)\modules\base\instrumentation
 TOOLS = $(MODDABLE)\tools
 
@@ -112,6 +116,7 @@ MODULES = \
 	$(MOD_DIR)\commodetto\ReadJPEG.xsb \
 	$(MOD_DIR)\commodetto\ReadPNG.xsb \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
+	$(MOD_DIR)\wavreader.xsb \
 	$(MOD_DIR)\file.xsb \
 	$(MOD_DIR)\buildclut.xsb \
 	$(MOD_DIR)\cdv.xsb \
@@ -132,6 +137,7 @@ MODULES = \
 	$(MOD_DIR)\unicode-ranges.xsb \
 	$(MOD_DIR)\wav2maud.xsb \
 	$(MOD_DIR)\bles2gatt.xsb \
+	$(MOD_DIR)\url.xsb \
 	$(TMP_DIR)\commodettoBitmap.xsi \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
@@ -145,7 +151,8 @@ MODULES = \
 	$(TMP_DIR)\image2cs.xsi \
 	$(TMP_DIR)\miniz.xsi \
 	$(TMP_DIR)\modInstrumentation.xsi \
-	$(TMP_DIR)\tool.xsi
+	$(TMP_DIR)\tool.xsi \
+	$(TMP_DIR)\url.xsi
 PRELOADS =\
 	-p commodetto\Bitmap.xsb\
 	-p commodetto\BMPOut.xsb\
@@ -157,9 +164,11 @@ PRELOADS =\
 	-p commodetto\Poco.xsb\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
+	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
-	-p file.xsb
+	-p file.xsb\
+	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
 
 HEADERS =\
@@ -183,7 +192,8 @@ OBJECTS = \
 	$(TMP_DIR)\miniz.o \
 	$(TMP_DIR)\modInstrumentation.o \
 	$(TMP_DIR)\tool.o \
-	$(TMP_DIR)\wav2maud.o
+	$(TMP_DIR)\wav2maud.o \
+	$(TMP_DIR)\url.o
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
@@ -222,6 +232,7 @@ C_OPTIONS = \
 	/D mxHostFunctionPrimitive=1 \
 	/D mxFewGlobalsTable=1 \
 	/D mxMessageWindowClass=\"fxMessageWindowClassX\" \
+	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\" \
 	/I$(XS_DIR)\includes \
 	/I$(XS_DIR)\platforms \
 	/I$(XS_DIR)\sources \
@@ -332,6 +343,12 @@ $(MOD_DIR)\commodetto\ReadPNG.xsb : $(COMMODETTO)\commodettoReadPNG.js
 $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
+$(MOD_DIR)\url.xsb : $(DATA)\url\url.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
+$(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
 {$(TOOLS)\}.js{$(MOD_DIR)\}.xsb:
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $< -c -d -e -o $(MOD_DIR)
@@ -345,13 +362,19 @@ $(MOD_DIR)\commodetto\RLE4Out.xsb : $(COMMODETTO)\commodettoRLE4Out.js
 {$(TOOLS)\}.c{$(TMP_DIR)\}.xsi:
 	@echo # xsid $(@F)
 	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
+{$(DATA)\url\}.c{$(TMP_DIR)\}.xsi:
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
+$(TMP_DIR)\tool.o : $(MODDABLE)\tools\VERSION
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 {$(COMMODETTO)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TOOLS)\}.c{$(TMP_DIR)\}.o:
+	cl $< $(C_OPTIONS) /Fo$@
+{$(DATA)\url\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@
 {$(TMP_DIR)\}.c{$(TMP_DIR)\}.o:
 	cl $< $(C_OPTIONS) /Fo$@

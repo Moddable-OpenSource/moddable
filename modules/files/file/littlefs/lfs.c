@@ -871,11 +871,11 @@ static int lfs_dir_traverse(lfs_t *lfs,
                 };
                 sp += 1;
 
-                dir = dir;
-                off = off;
-                ptag = ptag;
-                attrs = attrs;
-                attrcount = attrcount;
+//                dir = dir;
+//                off = off;
+//                ptag = ptag;
+//                attrs = attrs;
+//                attrcount = attrcount;
                 tmask = 0;
                 ttag = 0;
                 begin = 0;

@@ -248,7 +248,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 #ifdef mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {
 		const txHostFunctionBuilder* builder = theSlot->value.hostFunction.builder;
-		anInstance = fxNewHostFunction(the, builder->callback, builder->length, builder->id);
+		anInstance = fxNewHostFunction(the, builder->callback, builder->length, builder->id, theSlot->value.hostFunction.profileID);
 		mxPullSlot(theSlot);
 		} break;
 #endif
@@ -1144,6 +1144,8 @@ txSlot* fxNewEnvironmentInstance(txMachine* the, txSlot* environment)
 txBoolean fxEnvironmentDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask) 
 {
 	txSlot* property = fxOrdinarySetProperty(the, instance, id, index, XS_OWN);
+	if (!property)
+		return 0;
 	property->flag = slot->flag & mask;
 	property->kind = slot->kind;
 	property->value = slot->value;
@@ -1178,11 +1180,13 @@ txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIn
 		while (result) {
 			if (result->ID == id) {
 				result = result->value.closure;
-				alias = result->ID;
-				if (alias) {
-					txSlot* slot = the->aliasArray[alias];
-					if (slot)
-						result = slot;
+				if (result) {
+					alias = result->ID;
+					if (alias) {
+						txSlot* slot = the->aliasArray[alias];
+						if (slot)
+							result = slot;
+					}	
 				}	
 				return result;
 			}

@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"sensor/touch": "./ft6206_async"
+	},
+	"preload": [
+		"sensor/touch"
+	]
+}

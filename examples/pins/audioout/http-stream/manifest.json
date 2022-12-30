@@ -1,0 +1,34 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
+		"$(MODDABLE)/modules/data/wavreader//manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"./sbcstreamer",
+			"./wavstreamer",
+			"./calculatePower"
+		],
+		"pins/*": [
+			"$(MODULES)/pins/i2s/*"
+		]
+	},
+	"preload": [
+		"sbcstreamer",
+		"wavstreamer"
+	],
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 16000,
+			"queueLength": 24
+		}
+	},
+	"config": {
+		"startupSound": false
+	}
+}

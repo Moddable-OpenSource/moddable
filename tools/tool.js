@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -38,6 +38,8 @@ export class FILE @ "FILE_prototype_destructor" {
 
 export class TOOL {
 	constructor(argv) {
+		let command = argv.slice();
+
 		this.errorCount = 0;
 		this.warningCount = 0;
 		if ((argv.length == 2) && (argv[1] == inline)) {
@@ -47,6 +49,32 @@ export class TOOL {
 			argv.length = 1;
 			args.forEach(arg => argv.push(arg));
 		}
+		
+		let path = this.getenv("MODDABLE") + "/tools/VERSION";
+		if ("win" === this.currentPlatform)
+			path = path.replaceAll("/", "\\");
+		const fileVersion = (this.isDirectoryOrFile(path) == 1) ? this.readFileString(path) : undefined;
+		const toolsVersion = this.getToolsVersion();
+		if (fileVersion === toolsVersion)
+			return;
+
+		trace(`Moddable SDK tools mismatch between binary (${toolsVersion}) and source (${fileVersion})! Rebuilding tools.\n`);
+
+		command = command.map(item => {
+			item = item.replaceAll('"', '\\"');
+			item = (item.indexOf(" ") < 0) ? item : `"${item}"`;
+			return item;
+		});
+		command = command.join(" ");
+		if ("win" === this.currentPlatform) {
+			command = `pushd %MODDABLE%\\build\\makefiles\\win && build clean && build && popd && ${command}`;
+			this.then("cmd", "/C", command);
+		}
+		else {
+			command = `pushd $MODDABLE/build/makefiles/${this.currentPlatform} && make clean && make && popd && ${command}`;
+			this.then("bash", "-c", command);
+		}
+		this.run = function() {};
 	}
 	get ipAddress() @ "Tool_prototype_get_ipAddress";
 	get currentDirectory() @ "Tool_prototype_get_currentDirectory";
@@ -59,6 +87,7 @@ export class TOOL {
 	execute(command) @ "Tool_prototype_execute";
 	getenv(name) @ "Tool_prototype_getenv";
 	getFileSize(path) @ "Tool_prototype_getFileSize";
+	getToolsVersion(path) @ "Tool_prototype_getToolsVersion";
 	hash(d, string) @  "Tool_prototype_fsvhash";
 	isDirectoryOrFile(path) @ "Tool_prototype_isDirectoryOrFile"; // -1: directory, 0: none, 1: file
 	joinPath(parts) @ "Tool_prototype_joinPath";
@@ -71,6 +100,7 @@ export class TOOL {
 	resolveFilePath(message) @ "Tool_prototype_resolveFilePath";
 	resolvePath(message) @ "Tool_prototype_resolvePath";
 	setenv(name, value) @ "Tool_prototype_setenv";
+	spawn(path) @ "Tool_prototype_spawn";
 	splitPath(path) @ "Tool_prototype_splitPath";
 	strlen(string) @  "Tool_prototype_strlen";
 	then() @  "Tool_prototype_then";

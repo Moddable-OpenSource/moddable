@@ -183,7 +183,7 @@ The `params` object contains the following properties:
 
 | Property | Type | Description |
 | --- | --- | :--- |
-| `active` | `boolean` | Set `true` for active scanning, `false` for passing scanning. Default is `true`.
+| `active` | `boolean` | Set `true` for active scanning, `false` for passive scanning. Default is `true`.
 | `duplicates` | `boolean` | Set `true` to receive all advertising packets, `false` to filter out multiple advertising packets received from the same peripheral device. Default is `true`.
 | `filterPolicy` | `number` | Filter policy applied to scan. Default is `GAP.ScanFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
 | `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`. 

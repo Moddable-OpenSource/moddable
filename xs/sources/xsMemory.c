@@ -275,9 +275,6 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 		return;
 	}
 
-#ifdef mxProfile
-	fxBeginGC(the);
-#endif
 	if (theFlag) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the);
@@ -367,8 +364,8 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 #ifdef mxInstrument
 	the->garbageCollectionCount++;
 #endif
-#ifdef mxProfile
-	fxEndGC(the);
+#if defined(mxInstrument) || defined(mxProfile)
+	fxCheckProfiler(the, C_NULL);
 #endif
 }
 
@@ -515,7 +512,7 @@ void* fxGrowChunks(txMachine* the, txSize size)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	}
 
-	if (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG)) {
+	if ((the->firstBlock != C_NULL) && (!(the->collectFlag & XS_SKIPPED_COLLECT_FLAG))) {
 		txSize modulo = size % (the->minimumChunksSize ? the->minimumChunksSize : 16);
 		if (modulo)
 			size = fxAddChunkSizes(the, size, the->minimumChunksSize - modulo);
@@ -537,8 +534,8 @@ void* fxGrowChunks(txMachine* the, txSize size)
 			block->limit = buffer + size;
 			block->temporary = C_NULL;
 			the->firstBlock = block;
+			size -= sizeof(txBlock);
 		}
-		size -= sizeof(txBlock);
 		the->maximumChunksSize += size;
 	#if mxReport
 		fxReport(the, "# Chunk allocation: reserved %ld used %ld peak %ld bytes\n", 
@@ -580,6 +577,7 @@ void fxGrowSlots(txMachine* the, txSize theCount)
     while (theCount--) {
 		txSlot* next = aSlot + 1;
 		aSlot->next = next;
+		aSlot->flag = XS_NO_FLAG;
 		aSlot->kind = XS_UNDEFINED_KIND;
 	#if mxPoisonSlots
 		ASAN_POISON_MEMORY_REGION(&aSlot->value, sizeof(aSlot->value));
@@ -587,6 +585,7 @@ void fxGrowSlots(txMachine* the, txSize theCount)
         aSlot = next;
     }
 	aSlot->next = the->freeHeap;
+	aSlot->flag = XS_NO_FLAG;
 	aSlot->kind = XS_UNDEFINED_KIND;
 #if mxPoisonSlots
 	ASAN_POISON_MEMORY_REGION(&aSlot->value, sizeof(aSlot->value));
@@ -852,6 +851,8 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		fxCheckCStack(the);
 		if ((aSlot = theSlot->value.array.address)) {
 			txIndex aLength = (((txChunk*)(((txByte*)aSlot) - sizeof(txChunk)))->size) / sizeof(txSlot);
+			if (aLength > theSlot->value.array.length)
+				aLength = theSlot->value.array.length;
 			while (aLength) {
 				fxMarkReference(the, aSlot);
 				aSlot++;
@@ -1353,10 +1354,10 @@ void* fxNewChunk(txMachine* the, txSize size)
 
 void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 {
-	txSize offset = size;
 #if mxNoChunks
 	return fxNewChunk(the, size);
 #else
+	txSize offset = size;
 	txChunk* chunk;
 	txBoolean once = 1;
 	size = fxAdjustChunkSize(the, size);
@@ -1642,8 +1643,7 @@ void fxSweep(txMachine* the)
 				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
 				if (temporary) {
 					temporary += sizeof(txChunk);
-					aSize = mxPtrDiff(temporary - current);
-					*aCodeAddress = *aCodeAddress + aSize;
+					*aCodeAddress += temporary - current;
 				}
 			}
 		}

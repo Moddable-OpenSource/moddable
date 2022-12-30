@@ -11,6 +11,7 @@
 	},
 	"platforms": {
 		"esp32/m5stick_c": {},
+		"esp32/m5stick_cplus":{},
 		"...": {
 			"error": "unsupported"
 		}

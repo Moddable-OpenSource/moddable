@@ -154,7 +154,7 @@ static int main262(int argc, char* argv[]);
 static int fuzz(int argc, char* argv[]);
 #endif
 #if OSSFUZZ
-static int fuzz_oss(const uint8_t *Data, size_t Size);
+static int fuzz_oss(const uint8_t *Data, size_t script_size);
 #endif
 static void fxBuildAgent(xsMachine* the);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
@@ -200,6 +200,8 @@ static void fx_done(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 #if FUZZING || FUZZILLI
 static void fx_fillBuffer(txMachine *the);
+void fx_nop(xsMachine *the);
+void fx_assert_throws(xsMachine *the);
 #endif
 static void fx_gc(xsMachine* the);
 static void fx_print(xsMachine* the);
@@ -248,6 +250,7 @@ int main(int argc, char* argv[])
 	txAgentCluster* agentCluster = &gxAgentCluster;
 	int argi;
 	int option = 0;
+	int profiling = 0;
 	char path[C_PATH_MAX];
 	char* dot;
 #if mxWindows
@@ -278,6 +281,8 @@ int main(int argc, char* argv[])
 			option = 1;
 		else if (!strcmp(argv[argi], "-m"))
 			option = 2;
+		else if (!strcmp(argv[argi], "-p"))
+			profiling = 1;
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
 		else if (!strcmp(argv[argi], "-t"))
@@ -286,6 +291,8 @@ int main(int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-f"))
 			option = 5;
 #endif
+		else if (!strcmp(argv[argi], "-j"))
+			option = 6;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -323,6 +330,8 @@ int main(int argc, char* argv[])
 		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
  		fxBuildAgent(machine);
+ 		if (profiling)
+			fxStartProfiling(machine);
 		xsBeginHost(machine);
 		{
 			xsVars(2);
@@ -353,10 +362,44 @@ int main(int argc, char* argv[])
 						xsResult = xsString(argv[argi]);
 						xsCall1(xsVar(1), xsID("evalScript"), xsResult);
 					}
-					else {	
+					else {
 						if (!c_realpath(argv[argi], path))
 							xsURIError("file not found: %s", argv[argi]);
 						dot = strrchr(path, '.');
+						if (option == 6) {
+							FILE* file = C_NULL;
+							char *buffer = C_NULL;
+							xsTry {
+								file = fopen(path, "r");
+								if (!file)
+									xsUnknownError("can't open file");
+								fseek(file, 0, SEEK_END);
+								size_t size = ftell(file);
+								fseek(file, 0, SEEK_SET);
+								buffer = malloc(size + 1);
+								if (!buffer)
+									xsUnknownError("not enough memory");
+								if (size != fread(buffer, 1, size, file))	
+									xsUnknownError("can't read file");
+								buffer[size] = 0;
+								fclose(file);
+								file = C_NULL;
+								xsResult = xsArrayBuffer(buffer, size);
+								c_free(buffer);
+								buffer = C_NULL;
+								xsVar(1) = xsNew0(xsGlobal, xsID("TextDecoder"));
+								xsResult = xsCall1(xsVar(1), xsID("decode"), xsResult);
+								xsVar(1) = xsGet(xsGlobal, xsID("JSON"));
+								xsResult = xsCall1(xsVar(1), xsID("parse"), xsResult);
+							}
+							xsCatch {
+								if (buffer)
+									c_free(buffer);
+								if (file)
+									fclose(file);
+							}
+						}
+						else
 						if (((option == 0) && dot && !c_strcmp(dot, ".mjs")) || (option == 2))
 							fxRunModuleFile(the, path);
 						else
@@ -374,6 +417,8 @@ int main(int argc, char* argv[])
 		}
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+ 		if (profiling)
+			fxStopProfiling(machine, C_NULL);
 		if (machine->abortStatus) {
 			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
 			fprintf(stderr, "Error: %s\n", why);
@@ -631,15 +676,16 @@ void fxPrintResult(txPool* pool, txResult* result, int c)
 
 void fxPrintUsage()
 {
-	printf("xst [-h] [-e] [-m] [-s] [-t] [-u] [-v] strings...\n");
+	printf("xst [-h] [-e] [-j] [-m] [-s] [-t] [-u] [-v] strings...\n");
 	printf("\t-h: print this help message\n");
 	printf("\t-e: eval strings\n");
+	printf("\t-j: strings are paths to JSON\n");
 	printf("\t-m: strings are paths to modules\n");
 	printf("\t-s: strings are paths to scripts\n");
 	printf("\t-t: strings are paths to test262 cases or directories\n");
 	printf("\t-u: print unhandled exceptions and rejections\n");
 	printf("\t-v: print XS version\n");
-	printf("without -e, -m, -s, or -t:\n");
+	printf("without -e, -j, -m, -s, or -t:\n");
 	printf("\tif ../harness exists, strings are paths to test262 cases or directories\n");
 	printf("\telse if the extension is .mjs, strings are paths to modules\n");
 	printf("\telse strings are paths to scripts\n");
@@ -1701,17 +1747,19 @@ int fuzz(int argc, char* argv[])
 		c_exit(-1);
 	}
 	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
+		1 * 1024 * 1024, 	/* initialChunkSize */
+		1 * 1024 * 1024, 	/* incrementalChunkSize */
+		32768, 				/* initialHeapCount */
+		32768,			 	/* incrementalHeapCount */
+		64 * 1024,	 		/* stackCount */
+		8 * 1024,			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
+
+	fxInitializeSharedCluster();
 
 	while (1) {
 		char action[4];
@@ -1734,10 +1782,7 @@ int fuzz(int argc, char* argv[])
 		}
 		buffer[script_size] = 0;	// required when debugger active
 
-		xsCreation* creation = &_creation;
-		xsMachine* machine;
-		fxInitializeSharedCluster();
-		machine = xsCreateMachine(creation, "xst", NULL);
+		xsMachine* machine = xsCreateMachine(&_creation, "xst", NULL);
 		xsBeginHost(machine);
 		{
 			xsTry {
@@ -1768,63 +1813,61 @@ int fuzz(int argc, char* argv[])
 				aStream.buffer = buffer;
 				aStream.offset = 0;
 				aStream.size = script_size;
-				fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+				the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
+				fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+				the->script = NULL;
 				mxPullSlot(mxResult);
 
 				fxRunLoop(the);
 			}
 			xsCatch {
-				fprintf(stderr, "%s\n", xsToString(xsException));
-				exit(-1);
+				the->script = NULL;
+				the->abortStatus = XS_UNHANDLED_EXCEPTION_EXIT;
 			}
 		}
-		fxCheckUnhandledRejections(machine, 1);
+//		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
-		if (machine->abortStatus) {
-			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
-			fprintf(stderr, "Error: %s\n", why);
-		}
-		if (machine->abortStatus != 0) {
-			fprintf(stderr, "Failed to eval_buf reprl\n");
-		}
-		fflush(stdout);		//@@
-		fflush(stderr);		//@@
+		fxDeleteScript(machine->script);
+//		if (machine->abortStatus) {
+//			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+//			fprintf(stderr, "Error: %s\n", why);
+//		}
 		int status = (machine->abortStatus & 0xff) << 8;
 		if (write(REPRL_CWFD, &status, 4) != 4) {
 			fprintf(stderr, "Erroring writing return value over REPRL_CWFD\n");
+			exit(-1);
 		}
 
 		xsDeleteMachine(machine);
-		fxTerminateSharedCluster();
 
 		free(buffer);
 
 		__sanitizer_cov_reset_edgeguards();
 	}
 
+	fxTerminateSharedCluster();
+
 	return 0;
 }
 #endif 
 #if OSSFUZZ
-int fuzz_oss(const uint8_t *Data, size_t Size)
+int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
 	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
+		1 * 1024 * 1024, 	/* initialChunkSize */
+		1 * 1024 * 1024, 	/* incrementalChunkSize */
+		32768, 				/* initialHeapCount */
+		32768,			 	/* incrementalHeapCount */
+		64 * 1024,	 		/* stackCount */
+		8 * 1024,			/* keyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
 		1993,				/* parserTableModulo */
 	};
-	size_t script_size = 0;
-
-	char* buffer = (char *)malloc(Size + 1);
-	memcpy(buffer, Data, Size);
-	script_size = Size;
+	size_t buffer_size = script_size + script_size + script_size + 1;			// (massively) over-allocate to have space if UTF-8 encoding expands (1 byte invalid byte becomes a 3-byte UTF-8 sequence)
+	char* buffer = (char *)malloc(buffer_size);
+	memcpy(buffer, Data, script_size);
 
 	buffer[script_size] = 0;	// required when debugger active
 
@@ -1836,7 +1879,16 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 	xsBeginHost(machine);
 	{
 		xsTry {
-			xsVars(1);
+			xsVars(2);
+			modInstallTextDecoder(the);
+			xsResult = xsArrayBuffer(buffer, script_size);
+			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
+			xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
+#ifdef OSSFUZZ_JSONPARSE
+			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
+			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
+#else
+			xsToStringBuffer(xsResult, buffer, buffer_size);
 
 			// hardened javascript
 			xsResult = xsNewHostFunction(fx_harden, 1);
@@ -1853,28 +1905,33 @@ int fuzz_oss(const uint8_t *Data, size_t Size)
 			xsResult = xsNewHostFunction(fx_print, 1);
 			xsSet(xsGlobal, xsID("print"), xsResult);
 
+			// test262 stubs
+			xsVar(0) = xsNewHostFunction(fx_nop, 1);
+			xsDefine(xsGlobal, xsID("assert"), xsVar(0), xsDontEnum);
+			xsDefine(xsVar(0), xsID("sameValue"), xsVar(0), xsDontEnum);
+			xsDefine(xsVar(0), xsID("notSameValue"), xsVar(0), xsDontEnum);
+			xsVar(1) = xsNewHostFunction(fx_assert_throws, 1);
+			xsDefine(xsVar(0), xsID("throws"), xsVar(1), xsDontEnum);
+			
 			txStringCStream aStream;
 			aStream.buffer = buffer;
 			aStream.offset = 0;
-			aStream.size = script_size;
-#ifdef OSSFUZZ_JSONPARSE
-			// json parse
-			xsResult = xsGet(xsGlobal, xsID("JSON"));
-			xsResult = xsCall1(xsResult, xsID("parse"), xsString(buffer));
-#else
+			aStream.size = strlen(buffer);
 			// run script
 			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
-			fxRunScript(the, fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+			the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
+			fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+			the->script = NULL;
 			mxPullSlot(mxResult);
 			fxRunLoop(the);
 #endif
 		}
 		xsCatch {
+			the->script = NULL;
 		}
 	}
 	xsEndHost(machine);
-	fflush(stdout);	
-	fflush(stderr);	
+	fxDeleteScript(machine->script);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	free(buffer);
@@ -1895,6 +1952,20 @@ void fx_fillBuffer(txMachine *the)
 		*buffer++ = (uint8_t)seed;
 	}
 }
+
+void fx_nop(xsMachine *the)
+{
+}
+
+void fx_assert_throws(xsMachine *the)
+{
+	mxTry(the) {
+		xsCallFunction0(xsArg(1), xsGlobal);
+	}
+	mxCatch(the) {
+	}
+}
+
 #endif
 
 /* PLATFORM */
@@ -1999,8 +2070,8 @@ void fxRunModuleFile(txMachine* the, txString path)
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();
-	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID);
-	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID);
+	fxNewHostFunction(the, fxFulfillModuleFile, 1, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, fxRejectModuleFile, 1, XS_NO_ID, XS_NO_ID);
 	mxRunCount(2);
 	mxPop();
 }

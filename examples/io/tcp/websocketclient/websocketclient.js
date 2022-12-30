@@ -40,7 +40,8 @@ class WebSocketClient {
 			host: options.host ?? options.address,
 			path: options.path,
 			port: options.port,
-			protocol: options.protocol
+			protocol: options.protocol,
+			headers: options.headers
 		};
 
 		if (!this.#options.host) {
@@ -67,6 +68,7 @@ class WebSocketClient {
 				this.#socket = new options.socket.io({
 					...options.socket,
 					address,
+					host,
 					port: this.#options.port ?? 80,
 					onReadable: this.#onReadable.bind(this),
 					onWritable: this.#onWritable.bind(this),
@@ -289,8 +291,10 @@ class WebSocketClient {
 						//@@ it is an error for client to receieve a mask. this code applies to future server. client should fail here.
 						options.mask.push(this.#socket.read());
 						count--;
-						if (4 === options.mask.length)
-							options.mask = Uint8Array.from(options.mask);
+						if (4 !== options.mask.length)
+							continue;
+
+						options.mask = Uint8Array.from(options.mask);
 						if (options.length[0])
 							continue;
 						// 0 length payload. process immediately
@@ -415,13 +419,20 @@ class WebSocketClient {
 					`Sec-WebSocket-Version: 13`,
 					`Sec-WebSocket-Key: ${Base64.encode(key.buffer)}`
 				];
-				if (options.protocol) {
+				if (options.protocol)
 					message.push(`Sec-WebSocket-Protocol: ${options.protocol}`);
-					delete options.protocol;
+
+				if (options.headers) {
+					for (const [header, value] of options.headers)
+						message.push(`${header}: ${value}`);
 				}
-				//@@ add caller headers
+
+				delete options.protocol;
+				delete options.headers;
+
 				message.push("", "");
 
+				//@@ if headers exceed count, send in pieces
 				message = ArrayBuffer.fromString(message.join("\r\n"));
 				this.#socket.write(message); 
 				this.#writable -= message.byteLength;

@@ -157,7 +157,7 @@ void fxBuildGlobal(txMachine* the)
 	fxNewHostConstructor(the, mxCallback(fx_Enumerator), 0, XS_NO_ID);
 	mxPull(mxEnumeratorFunction);
 	
-	fxNewHostFunction(the, mxCallback(fxThrowTypeError), 0, XS_NO_ID);
+	fxNewHostFunction(the, mxCallback(fxThrowTypeError), 0, XS_NO_ID, XS_NO_ID);
 	mxThrowTypeErrorFunction = *the->stack;
 	slot = the->stack->value.reference;
 	slot->flag |= XS_DONT_PATCH_FLAG;
@@ -203,6 +203,16 @@ txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id)
 	}
 	mxTypeError("this is no iterator");
 	return C_NULL;
+}
+
+txSlot* fxCheckIteratorResult(txMachine* the, txSlot* result) 
+{
+	txSlot* value = result->value.reference->next;
+	while (value && (value->flag & XS_INTERNAL_FLAG))
+		value = value->next;
+	mxCheck(the, (value != C_NULL) && (value->ID == mxID(_value)));
+	mxCheck(the, (value->next != C_NULL) && (value->next->ID == mxID(_done)));
+	return value;
 }
 
 txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value)

@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/ssd1306/manifest_i2c.json",
-		"$(MODULES)/drivers/st127x/manifest.json"
+		"$(MODULES)/drivers/sx127x/manifest.json"
 	],
 	"config": {
 		"screen": "ssd1306",

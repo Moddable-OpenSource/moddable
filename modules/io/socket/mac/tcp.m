@@ -206,11 +206,7 @@ void xs_tcp_constructor(xsMachine *the)
 			cfHost = CFHostCreateWithName(kCFAllocatorDefault, host);
 			CFRelease(host);
 
-			CFHostClientContext context;
-			context.version = 0;
-			context.retain = nil;
-			context.release = nil;
-			context.copyDescription = nil;
+			CFHostClientContext context = {0};
 			context.info = tcp;
 
 			CFHostSetClient(cfHost, resolved, &context);

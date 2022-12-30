@@ -187,7 +187,8 @@ txScript* fxParserCode(txParser* parser)
 	coder.parser = parser;
 	if (parser->errorCount == 0) {
 		mxTryParser(parser) {
-			fxNodeDispatchCode(parser->root, &coder);
+			txNode* self = parser->root;
+			(*self->description->dispatch->code)(parser->root, &coder);
 		}
 		mxCatchParser(parser) {
 		}
@@ -273,6 +274,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_SUPER:
 		case XS_CODE_SET_VARIABLE:
 		case XS_CODE_SYMBOL:
+		case XS_CODE_PROFILE:
 			size += 1 + sizeof(txID);
 			break;
 			
@@ -441,6 +443,9 @@ txScript* fxParserCode(txParser* parser)
 			symbol = ((txSymbolCode*)code)->symbol;
 			if (symbol && symbol->string)
 				symbol->usage++;
+			size += 1 + sizeof(txID);
+			break;
+		case XS_CODE_PROFILE:
 			size += 1 + sizeof(txID);
 			break;
 			
@@ -645,6 +650,10 @@ txScript* fxParserCode(txParser* parser)
 				id = symbol->ID;
 			else
 				id = XS_NO_ID;
+			mxEncodeID(p, id);
+			break;
+		case XS_CODE_PROFILE:
+			id = fxGenerateProfileID(parser->console);
 			mxEncodeID(p, id);
 			break;
 			
@@ -3178,6 +3187,8 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
 	else
 		fxCoderAddSymbol(param, 1, XS_CODE_CONSTRUCTOR_FUNCTION, name);
+	if (coder->parser->flags & mxDebugFlag)
+		fxCoderAddByte(param, 0, XS_CODE_PROFILE);
 	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 	if (self->flags & mxFieldFlag)
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT_FIELD, fxCoderCountParameters(coder, self->params));
@@ -3189,9 +3200,11 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, fxCoderCountParameters(coder, self->params));
 	else
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_SLOPPY, fxCoderCountParameters(coder, self->params));
+	coder->path = C_NULL;
+	if (self->line >= 0)
+		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (self->scopeCount)
 		fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
-	coder->path = C_NULL;
 	fxScopeCodeRetrieve(self->scope, param);
 	fxScopeCodingParams(self->scope, param);
 	if (self->flags & mxBaseFlag) {
@@ -3516,11 +3529,15 @@ void fxModuleNodeCode(void* it, void* param)
 	}
 	if (count) {
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
+		if (coder->parser->flags & mxDebugFlag)
+			fxCoderAddByte(param, 0, XS_CODE_PROFILE);
 		fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
+		coder->path = C_NULL;
+		if (self->line >= 0)
+			fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 		if (self->scopeCount)
 			fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
-		coder->path = C_NULL;
 		fxScopeCodeRetrieve(self->scope, param);
 		declaration = self->scope->firstDeclareNode;
 		while (declaration) {
@@ -3552,12 +3569,15 @@ void fxModuleNodeCode(void* it, void* param)
 		fxCoderAddSymbol(param, 1, XS_CODE_ASYNC_FUNCTION, name);
 	else
 		fxCoderAddSymbol(param, 1, XS_CODE_FUNCTION, name);
+	if (coder->parser->flags & mxDebugFlag)
+		fxCoderAddByte(param, 0, XS_CODE_PROFILE);
 	fxCoderAddBranch(param, 0, XS_CODE_CODE_1, target);
 	fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, 0);
-
+	coder->path = C_NULL;
+	if (self->line >= 0)
+		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (self->scopeCount)
 		fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
-	coder->path = C_NULL;
 	fxScopeCodeRetrieve(self->scope, param);
 	
 	if (self->flags & mxAwaitingFlag)
@@ -3953,6 +3973,8 @@ void fxProgramNodeCode(void* it, void* param)
 	else
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_SLOPPY, 0);
 	coder->path = C_NULL;
+	if (self->line >= 0)
+		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (coder->parser->flags & mxEvalFlag) {
 		coder->evalFlag = 1;
 		fxScopeCodingEval(self->scope, param);

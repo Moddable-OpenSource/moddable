@@ -18,6 +18,8 @@
  *
  */
  
+ import Timer from "timer"
+ 
 let urlRegExp = null;
 let authorityRegExp = null;
 function URLParts(url) {
@@ -53,14 +55,19 @@ class WebSocket {
 	#state = 0;
 	#url = "";
 	#writable = 0;
+	#keepalive;
 	
-	constructor(url, protocol, socket) {
-		let options;
-		if (url instanceof device.network.ws.socket.io)
-			options = { socket:url };
-		else {
+	constructor(url, protocol) {
+		let options, keepalive;
+		if (url instanceof Object) {
+			options = url;
+			url = options.url;
+			protocol = options.protocol;
+			keepalive = options.keepalive; 
+		}
+		if (url) {
 			const parts = URLParts(url);
-			if (parts.scheme != "ws")
+			if (parts.scheme !== "ws")
 				throw new URIError("ws only");
 			this.#url = url;
 			if (protocol)
@@ -77,7 +84,7 @@ class WebSocket {
 			...options,
 			onControl: (opcode, data) => {
 				switch (opcode) {
-					case device.network.ws.io.close: 
+					case this.#client.constructor.close: 
 						this.#state = 3;
 						data = new Uint8Array(data);
 						const event = {
@@ -89,12 +96,13 @@ class WebSocket {
 						this.#eventListeners.close.forEach(listener => listener.call(null, event));
 						break;
 
-					case device.network.ws.io.ping:
+					case this.#client.constructor.ping:
 						trace("PING!\n");
 						break;
 
-					case device.network.ws.io.pong:
-						trace("PONG!\n");
+					case this.#client.constructor.pong:
+						if (this.#keepalive)
+							this.#keepalive.pong = true;
 						break;
 				}
 			},
@@ -175,6 +183,30 @@ class WebSocket {
     			this.#eventListeners.error.forEach(listener => listener.call(null, event));
 			}
 		});
+		
+		if (keepalive) {
+			this.#keepalive = Timer.repeat(timer => {
+				if (!timer.pong) {
+					this.#state = 3;
+					const event = {
+						message: "no pong response to keepalive" 
+					};
+					trace(event.message, "\n");
+					this.onerror(event);
+					this.#eventListeners.error.forEach(listener => listener.call(null, event));
+					this.close();
+					return;
+				}
+
+				if (this.#writable) {
+					this.#writable = this.#client.write(new ArrayBuffer, {opcode: this.#client.constructor.ping});
+					timer.pong = false;
+				}
+				else
+					Timer.schedule(timer, 5000, keepalive);
+			}, keepalive);
+			this.#keepalive.pong = true;
+		}
 	}
 	
 	get binaryType() {
@@ -206,6 +238,9 @@ class WebSocket {
 		listeners.push(listener);
 	}
 	close(code, reason) {
+		Timer.clear(this.#keepalive);
+		this.#keepalive = undefined;
+
 		if (code === undefined) {
 			code = 1000;
 			reason = "";
@@ -224,7 +259,7 @@ class WebSocket {
 			data[0] = code >> 8;
 			data[1] = code & 0xFF;
 			data = data.buffer.concat(reason);
-			this.#write(data, { opcode: device.network.ws.io.close });	
+			this.#write(data, { opcode: this.#client.constructor.close });	
 			this.#state = 2;
 		}
 	}

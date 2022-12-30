@@ -20,7 +20,7 @@
  
 import Timer from "timer";
 
-class Request {
+class Connection {
 	#server;
 	#socket;
 	#from;
@@ -33,6 +33,7 @@ class Request {
 	#remaining;
 	#chunk;
 	#options = {};
+	#route;
 	#timer;
 
 	constructor(server, from, done) {
@@ -378,12 +379,34 @@ class Request {
 
 		this.#onWritable(this.#writable);
 	}
+	get route() {
+		return this.#route;
+	}
+	set route(route) {
+		this.#route = route;
+		this.#options.onRequest = route.onRequest; 
+		this.#options.onReadable = route.onReadable; 
+		this.#options.onResponse = route.onResponse; 
+		this.#options.onWritable = route.onWritable; 
+		this.#options.onDone = route.onDone 
+		this.#options.onError = route.onError; 
+		if (this.#state == "receiveHeader") {
+			this.#options.onRequest?.call(this, {
+				method: this.#options.method,
+				path: this.#options.path,
+				headers: this.#options.headers							
+			});
+		}
+		else {
+			// error?
+		}
+	}
 }
 
 class HTTPServer {
-	#listener;
 	#onConnect;
-	#requests = new Set;
+	#listener;
+	#connections = new Set;
 
 	constructor(options) {
 		this.#onConnect = options.onConnect;
@@ -394,8 +417,8 @@ class HTTPServer {
 			onReadable(count) {
 				while (count--) {
 					try {
-						const request = new Request(this, this.read(), request => this.target.#requests.delete(request));
-						this.target.#onConnect(request);
+						const connection = new Connection(this, this.read(), connection => this.target.#connections.delete(connection));
+						this.target.#onConnect(connection);
 					}
 					catch {
 						trace("igoring error!");
@@ -405,8 +428,8 @@ class HTTPServer {
 		});
 	}
 	close() {
-		this.#requests?.forEach(request => request.close());
-		this.#requests = undefined;
+		this.#connections?.forEach(connection => connection.close());
+		this.#connections = undefined;
 		this.#listener?.close();
 		this.#listener = undefined;
 	}

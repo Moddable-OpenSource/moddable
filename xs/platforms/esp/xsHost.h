@@ -167,6 +167,9 @@ extern uint8_t ESP_setBaud(int baud);
 	#define modMilliseconds() ((uint32_t)xTaskGetTickCount())
 	#define modMicroseconds() ((uint32_t)esp_timer_get_time())
 
+	extern volatile uint32_t gCPUTime;
+	#define modMicrosecondsInstrumentation() (gCPUTime)
+
 	#define modDelayMilliseconds(ms) vTaskDelay(ms)
 	#define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
 
@@ -251,7 +254,7 @@ double __ieee754_fmod_patch(double x, double y);
 #if !ESP32
 	#define modWatchDogReset() system_soft_wdt_feed()
 #else
-	#if CONFIG_TASK_WDT
+	#if CONFIG_ESP_TASK_WDT
 		#define modWatchDogReset() esp_task_wdt_reset()
 	#else
 		#define modWatchDogReset()

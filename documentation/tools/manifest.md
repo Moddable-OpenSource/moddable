@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: September 2, 2022
+Revised: December 19, 2022
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -11,6 +11,7 @@ A manifest is a JSON file that describes the modules and resources necessary to 
 * [Properties](#properties)
 	* [`build`](#build)
 	* [`include`](#include)
+		* [Including git repositories](#include-git)
 	* [`creation`](#creation)
 	* [`defines`](#defines)
 	* [`config`](#config)
@@ -137,6 +138,67 @@ Each example application in the Moddable SDK includes at least one of the manife
 - `manifest_piu.json` is for applications that use the [Piu application framework](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md). It includes all the modules needed to use Piu. The screen and touch drivers are provided elsewhere, typically by the manifest of the target device itself, to keep the Piu manifest device independent.
 
 Several touch, display, and sensor [drivers](../../modules/drivers) and some [networking modules](../../modules/network) also have manifests to make it easier to incorporate them into your projects.
+
+<a id="include-git"></a>
+#### Including Git Repositories
+A manifest may directly include git repositories. The repositories are cloned as part of the build process and stored with the project's temporary build files.
+
+> **Note**: This feature is experimental. While the intent is to keep the manifest JSON as-is for including git repositories, changes may be made based on feedback from experience using the feature.
+
+Each git repository to fetch is specified by an object in the `include` array of a manifest:
+
+- The object must have a `"git"` property, which is the git URL of the repo.
+- The object can have an `"include"` property, which is the path of the manifest to include.
+
+The default value of the `"include"` property is `"manifest.json"`. The `"include"` property can also be an array of paths in order to include several manifests from the same repository.
+
+```json
+{
+	"build": {
+		"URL":"https://github.com/moddable"
+	},
+	"include": [
+		{
+			"git":"$(URL)/test0.git"
+		},
+		{ 
+			"git":"$(URL)/test1.git", 
+			"include":"modules/test1/manifest.json"
+		},
+		{ 
+			"git":"$(URL)/test23.git", 
+			"include": [
+				"test2/module.json",
+				"test3/module.json"
+			]
+		}
+	]
+}
+```
+
+When processing a manifest, **mcconfig** and **mcrun** clone or pull the repositories into the `repos` directory in the project's temporary build files.
+
+Specific branches and tags are accessed using the optional `branch` and `tag` properties:
+
+```json
+    {
+		"git":"$(URL)/test0.git",
+		"branch":"feature-test"
+	},
+    {
+		"git":"$(URL)/test1.git",
+		"tag":"3.5.0"
+	},
+    {
+		"git":"$(URL)/test2.git",
+		"tag":"3.5.0",
+		"branch":"feature-test"
+	},
+```
+
+The hostname, pathname. branch, and tag are included in the path where the cloned repositories are stored to avoid conflicts.
+
+> **Note**: Cloned repositories are deleted when the project is cleaned (`mcconfig -d -m -t clean`). Therefore, the cloned repositories should not be edited.
 
 ***
 

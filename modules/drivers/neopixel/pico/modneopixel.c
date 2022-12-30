@@ -183,6 +183,23 @@ void xs_neopixel_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
+void xs_neopixel_getPixel(xsMachine *the)
+{
+	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
+	int index = xsmcToInteger(xsArg(0));
+
+	if ((index >= np->length) || (index < 0))
+		return;
+
+	if (24 == np->nbits) {
+		uint8_t *p = (index * 3) + (uint8_t *)np->pixels;
+		int color = (p[0] << 16) | (p[1] << 8) | p[2];
+		xsmcSetInteger(xsResult, color);
+	}
+	else
+		xsmcSetInteger(xsResult, np->pixels[index]);
+}
+
 void xs_neopixel_setPixel(xsMachine *the)
 {
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
@@ -254,9 +271,9 @@ void xs_neopixel_byteLength_get(xsMachine *the)
 void xs_neopixel_makeRGB(xsMachine *the)
 {
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
-	int r = xsmcToInteger(xsArg(0)) << np->redShift;
-	int g = xsmcToInteger(xsArg(1)) << np->greenShift;
-	int b = xsmcToInteger(xsArg(2)) << np->blueShift;
+	int r = (xsmcToInteger(xsArg(0)) & 0xFF) << np->redShift;
+	int g = (xsmcToInteger(xsArg(1)) & 0xFF) << np->greenShift;
+	int b = (xsmcToInteger(xsArg(2)) & 0xFF) << np->blueShift;
 
 	if (24 == np->nbits)
 		xsmcSetInteger(xsResult, r | g | b);

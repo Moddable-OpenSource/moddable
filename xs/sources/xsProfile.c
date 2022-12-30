@@ -35,393 +35,543 @@
  *       limitations under the License.
  */
 
+
+#define _GNU_SOURCE
 #include "xsAll.h"
+#if mxMacOSX || mxLinux
+#include <dlfcn.h>
+#endif
 
 #ifdef mxProfile
 
-static void fxRecordProfiling(txMachine* the, txInteger theFlag, txInteger theID);
-static void fxStartProfilingAux(txMachine* the, txSlot* theFrame);
-static int fxSubtractTV(c_timeval *result, c_timeval *x, c_timeval *y);
-static void fxWriteProfileBOM(txMachine* the);
-static void fxWriteProfileGrammar(txMachine* the, txSlot* theProperty, txSlot* theList);
-static void fxWriteProfileGrammarArray(txMachine* the, txSlot* theProperty, txSlot* theList);
-static void fxWriteProfileProperty(txMachine* the, txSlot* theProperty, txSlot* theList, txInteger theIndex);
-static void fxWriteProfileRecords(txMachine* the);
-static void fxWriteProfileSymbols(txMachine* the);
+typedef struct sxProfiler txProfiler;
+typedef struct sxProfilerRecord txProfilerRecord;
+typedef struct sxProfilerSample txProfilerSample;
 
-enum {
-	XS_PROFILE_BEGIN = 0x40000000,
-	XS_PROFILE_END = 0x80000000,
-	XS_PROFILE_SECOND = 0xC0000000
+struct sxProfiler {
+	txU8 when;
+	txU8 former;
+	txU8 start;
+	txU8 stop;
+	txU4 interval;
+	txU4 recordCount;
+	txProfilerRecord** records;
+	txU8 sampleCount;
+	txU8 sampleIndex;
+	txProfilerSample* samples;
+	txProfilerRecord* host;
+	txProfilerRecord* gc;
 };
 
-void fxBeginFunction(txMachine* the, txSlot* aSlot)
-{
-	if (!the->profileFile)
-		return;
-	if (!mxIsReference(aSlot))
-		return;
-	aSlot = fxGetInstance(the, aSlot);
-	if (!mxIsFunction(aSlot))
-		return;
-	aSlot = mxFunctionInstanceProfile(aSlot);
-	if (aSlot->kind != XS_INTEGER_KIND)
-		return;
-	fxRecordProfiling(the, 	XS_PROFILE_BEGIN, aSlot->value.integer);
-}
+struct sxProfilerRecord {
+	txID recordID;
+	txID constructorID;
+	txID prototypeID;
+	txID functionID;
+	txCallback functionAddress;
+	txID file;
+	txInteger line;
+	txInteger hitCount;
+	txInteger calleeCount;
+	txID* callees;
+	txInteger flags;
+};
 
-void fxBeginGC(txMachine* the)
-{
-	if (!the->profileFile)
-		return;
-	fxRecordProfiling(the, 	XS_PROFILE_BEGIN, 0);
-}
+struct sxProfilerSample {
+	txID recordID;
+	txU4 delta;
+};
 
-void fxEndFunction(txMachine* the, txSlot* aSlot)
-{
-	if (!the->profileFile)
-		return;
-	if (!mxIsReference(aSlot))
-		return;
-	aSlot = fxGetInstance(the, aSlot);
-	if (!mxIsFunction(aSlot))
-		return;
-	aSlot = mxFunctionInstanceProfile(aSlot);
-	if (aSlot->kind != XS_INTEGER_KIND)
-		return;
-	fxRecordProfiling(the, 	XS_PROFILE_END, aSlot->value.integer);
-}
+static txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame);
+static txU8 fxGetTicks();
+static void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID);
+static txU8 fxMicrosecondsToTicks(txU8 microseconds);
+static void fxPrintID(txMachine* the, FILE* file, txID id);
+static void fxPrintProfiler(txMachine* the, void* stream);
+static void fxPrintString(txMachine* the, FILE* file, txString theString);
+static void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta);
+static txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID);
+static txID fxRemoveProfilerCycle(txMachine* the, txProfiler* profiler, txID recordID);
+static txU8 fxTicksToMicroseconds(txU8 ticks);
 
-void fxEndGC(txMachine* the)
+void fxCheckProfiler(txMachine* the, txSlot* frame)
 {
-	if (!the->profileFile)
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
 		return;
-	fxRecordProfiling(the, 	XS_PROFILE_END, 0);
-}
-
-void fxJumpFrames(txMachine* the, txSlot* from, txSlot* to)
-{
-	while (from != to) {
-		fxEndFunction(the, from + 3);
-		from = from->next;
+	txU8 when = profiler->when;
+	txU8 time = fxGetTicks();
+	if (when < time) {
+		txProfilerRecord* callee = C_NULL;
+		txProfilerRecord* record = C_NULL;
+		if (frame) {
+			record = fxFrameToProfilerRecord(the, frame);
+			frame = frame->next;
+		}
+		else {
+			frame = the->frame;
+			if (frame)
+				record = profiler->gc;
+		}
+		if (record) {
+			callee = record;
+			while (frame) {
+				txProfilerRecord* parent = fxFrameToProfilerRecord(the, frame);
+				if (parent) {
+					fxInsertProfilerCallee(the, parent, callee->recordID);
+					callee = parent;
+				}
+				frame = frame->next;
+			}
+		}
+		if (callee)
+			fxInsertProfilerCallee(the, profiler->host, callee->recordID);
+		else
+			record = profiler->host;
+		txU4 interval = profiler->interval;
+		record->hitCount++;
+		fxPushProfilerSample(the, record->recordID, (txU4)(time - profiler->former));
+		profiler->former = time;
+		profiler->when = time + interval - (time % interval);
 	}
 }
 
-void fxRecordProfiling(txMachine* the, txInteger theFlag, txInteger theID)
+void fxCreateProfiler(txMachine* the)
 {
-	txProfileRecord* aRecord = the->profileCurrent;
-	c_timeval deltaTV;
-#if mxWindows
-	LARGE_INTEGER counter;
-	LARGE_INTEGER delta;
-	LARGE_INTEGER million;
+	txProfiler* profiler = the->profiler = c_malloc(sizeof(txProfiler));
+	if (profiler == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	profiler->interval = (txU4)fxMicrosecondsToTicks(1250);
+	profiler->former = fxGetTicks();
+	profiler->when = profiler->former + profiler->interval;
+	profiler->start = profiler->former;
+	
+	profiler->recordCount = 2;
+	profiler->records = (txProfilerRecord**)c_calloc(sizeof(txProfilerRecord*), profiler->recordCount);
+	if (profiler->records == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		
+	profiler->sampleCount = 1024;
+	profiler->sampleIndex = 0;
+	profiler->samples = (txProfilerSample*)c_malloc((size_t)(profiler->sampleCount * sizeof(txProfilerSample)));
+	if (profiler->samples == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	profiler->host = fxNewProfilerRecord(the, 0);
+	profiler->gc = fxNewProfilerRecord(the, 1);
+}
 
+void fxDeleteProfiler(txMachine* the, void* stream)
+{
+	txProfiler* profiler = the->profiler;
+	profiler->stop = profiler->when;
+	fxPrintProfiler(the, stream);
+	c_free(profiler->samples);
+	txU4 recordIndex = 0;
+	while (recordIndex < profiler->recordCount) {
+		txProfilerRecord* record = profiler->records[recordIndex];
+		if (record) {
+			if (record->callees)
+				c_free(record->callees);
+			c_free(record);
+		}
+		recordIndex++;
+	}	
+	c_free(profiler->records);
+	c_free(profiler);
+	the->profiler = C_NULL;
+}
+
+txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
+{
+	txProfiler* profiler = the->profiler;
+	txSlot* function = frame + 3;
+	if (function->kind == XS_REFERENCE_KIND) {
+		function = function->value.reference;
+		if (mxIsFunction(function)) {
+			txSlot* code = mxFunctionInstanceCode(function);
+			txSlot* home = mxFunctionInstanceHome(function);
+			txID recordID = home->ID;
+			txProfilerRecord* record = C_NULL;
+			if (recordID < profiler->recordCount)
+				record = profiler->records[recordID];
+			if (record)
+				return record;
+			record = fxNewProfilerRecord(the, recordID);
+			record->functionID = code->ID;
+			home = home->value.home.object;
+			if (home) {
+				if (mxIsFunction(home)) {
+					record->constructorID = mxFunctionInstanceCode(home)->ID;
+				}
+				else {
+					txSlot* property = home->next;
+					while (property && (property->flag & XS_INTERNAL_FLAG))
+						property = property->next;
+					while (property) {
+						if (property->ID == mxID(_constructor))
+							break;
+						property = property->next;
+					}
+					if (property) {
+						if (property->kind == XS_REFERENCE_KIND) {
+							property = property->value.reference;
+							if (mxIsFunction(property)) {
+								record->constructorID = mxFunctionInstanceCode(property)->ID;
+								record->prototypeID = mxID(_prototype);
+							}
+						}
+					}
+					else {
+						property = home->next;
+						while (property) {
+							if (property->ID == mxID(_Symbol_toStringTag))
+								break;
+							property = property->next;
+						}
+						if (property) {
+							if ((property->kind == XS_STRING_KIND) || (property->kind == XS_STRING_X_KIND)) {
+								record->prototypeID = fxFindName(the, property->value.string);
+							}
+						}
+					}
+				}
+			}
+			if ((code->kind == XS_CODE_KIND) || (code->kind == XS_CODE_X_KIND)) {
+				txByte* p = code->value.code.address + 2;
+				if (*p == XS_CODE_FILE) {
+					txID file;
+					txS2 line;
+					p++;
+					mxDecodeID(p, file);
+					p++;
+					mxDecode2(p, line);
+					record->file = file;
+					record->line = line;
+				}
+				record->functionAddress = C_NULL;
+			}
+			else
+				record->functionAddress = code->value.callback.address;
+			return record;
+		}
+	}
+	return C_NULL;
+}
+
+txU8 fxGetTicks()
+{
+#if mxMacOSX
+	return clock_gettime_nsec_np(CLOCK_MONOTONIC);
+#elif mxWindows
+	LARGE_INTEGER counter;
 	QueryPerformanceCounter(&counter);
-	delta.QuadPart = counter.QuadPart - the->profileCounter.QuadPart;
-	if (delta.QuadPart <= 0)
-		delta.QuadPart = 1;
-	million.HighPart = 0;
-	million.LowPart = 1000000;
-	delta.QuadPart = (million.QuadPart * delta.QuadPart) / the->profileFrequency.QuadPart;
-	deltaTV.tv_sec = (long)(delta.QuadPart / million.QuadPart);
-	deltaTV.tv_usec = (long)(delta.QuadPart % million.QuadPart);
-	the->profileCounter = counter;
+	return counter.QuadPart;
 #else
 	c_timeval tv;
 	c_gettimeofday(&tv, NULL);
-	fxSubtractTV(&deltaTV, &tv, &(the->profileTV));
-	the->profileTV = tv;
+	return (tv.tv_sec * 1000000ULL) + tv.tv_usec;
 #endif
-	if (deltaTV.tv_sec) {
-		aRecord->profileID = deltaTV.tv_sec;
-		aRecord->delta = XS_PROFILE_SECOND;
-		aRecord++;
-		if (aRecord == the->profileTop) {
-			the->profileCurrent = aRecord;
-			fxWriteProfileRecords(the);
-			aRecord = the->profileCurrent;
-		}
-	}
-	aRecord->profileID = theID;
-	aRecord->delta = theFlag | deltaTV.tv_usec;
-	aRecord++;
-	if (aRecord == the->profileTop) {
-		the->profileCurrent = aRecord;
-		fxWriteProfileRecords(the);
-		aRecord = the->profileCurrent;
-	}
-	the->profileCurrent = aRecord;
 }
 
-void fxStartProfilingAux(txMachine* the, txSlot* theFrame)
+void fxInsertProfilerCallee(txMachine* the, txProfilerRecord* record, txID recordID)
 {
-	if (theFrame) {
-		fxStartProfilingAux(the, theFrame->next);
-		fxBeginFunction(the, theFrame + 3);
-	}
-}
-
-int fxSubtractTV(c_timeval *result, c_timeval *x, c_timeval *y)
-{
-  /* Perform the carry for the later subtraction by updating Y. */
-  if (x->tv_usec < y->tv_usec) {
-    int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
-    y->tv_usec -= 1000000 * nsec;
-    y->tv_sec += nsec;
-  }
-  if (x->tv_usec - y->tv_usec > 1000000) {
-    int nsec = (x->tv_usec - y->tv_usec) / 1000000;
-    y->tv_usec += 1000000 * nsec;
-    y->tv_sec -= nsec;
-  }
-     
-  /* Compute the time remaining to wait.
-     `tv_usec' is certainly positive. */
-  result->tv_sec = x->tv_sec - y->tv_sec;
-  result->tv_usec = x->tv_usec - y->tv_usec;
-     
-  /* Return 1 if result is negative. */
-  return x->tv_sec < y->tv_sec;
-}
-
-void fxWriteProfileBOM(txMachine* the)
-{
-	txID BOM = 0xFF00;
-	
-	fxWriteProfileFile(the, &BOM, sizeof(BOM));
-}
-
-void fxWriteProfileGrammar(txMachine* the, txSlot* theProperty, txSlot* theList)
-{
-	txSlot* anInstance;
-	
-	while (theProperty) {
-		if (theProperty->kind == XS_REFERENCE_KIND) {
-			anInstance = fxGetInstance(the, theProperty);
-			if ((!(anInstance->next)) || (anInstance->next->kind != XS_ARRAY_KIND))
-				fxWriteProfileProperty(the, theProperty, theList, -1);
-		}
-		theProperty = theProperty->next;
-	}
-}
-
-void fxWriteProfileGrammarArray(txMachine* the, txSlot* theProperty, txSlot* theList)
-{
-	txSlot* anInstance;
-	
-	while (theProperty) {
-		if (theProperty->kind == XS_REFERENCE_KIND) {
-			anInstance = fxGetInstance(the, theProperty);
-			if ((anInstance->next) && (anInstance->next->kind == XS_ARRAY_KIND))
-				fxWriteProfileProperty(the, theProperty, theList, -1);
-		}
-		theProperty = theProperty->next;
-	}
-}
-
-#define mxNameSize 256
-
-int TABS = 0;
-int TAB;
-void fxWriteProfileProperty(txMachine* the, txSlot* theProperty, txSlot* theList, txInteger theIndex)
-{
-	txSlot* anInstance;
-	txSlot* aSlot;
-	char aName[mxNameSize];
-	txSlot aKey;
-	txSlot* aProperty;
-	txInteger aCount;
-	txInteger anIndex;
-	
-	if (theProperty->kind != XS_REFERENCE_KIND)
+	txInteger count = record->calleeCount;
+	if (count == 0) {
+		record->callees = c_malloc(sizeof(txID));
+		if (record->callees == C_NULL)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		record->calleeCount = 1;
+		record->callees[0] = recordID;
 		return;
-	anInstance = fxGetInstance(the, theProperty);
-	if (anInstance->flag & XS_MARK_FLAG)
-		return;
-	anInstance->flag |= XS_MARK_FLAG;
+	}
+    txInteger min = 0;
+	txInteger max = count;
+	txInteger mid;
+	txID* callee = record->callees;
+	while (min < max) {
+		mid = (min + max) >> 1;
+		callee = record->callees + mid;
+		if (recordID < *callee)
+			max = mid;
+		else if (recordID > *callee)
+			min = mid + 1;
+		else
+			return;
+	}
+	if (recordID > *callee)
+		mid++;
+	record->calleeCount++;
+	record->callees = c_realloc(record->callees, record->calleeCount * sizeof(txID));
+	if (record->callees == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	callee = record->callees + mid;
+	if (mid < count)
+		c_memmove(callee + 1, callee, (count - mid) * sizeof(txID));
+	*callee = recordID;
+}
+
+txU8 fxMicrosecondsToTicks(txU8 microseconds)
+{
+#if mxMacOSX
+	return microseconds * 1000;
+#elif mxWindows
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	return (frequency.QuadPart * microseconds) / 1000000ULL;
+#else
+	return microseconds;
+#endif
+}
+
+txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID)
+{
+	txProfiler* profiler = the->profiler;
+	txU4 recordCount = profiler->recordCount;
+	txProfilerRecord* record;
+	if (recordID >= recordCount) {
+		recordCount = recordID + 1;
+		profiler->records = (txProfilerRecord**)c_realloc(profiler->records, recordCount * sizeof(txProfilerRecord*));
+		if (profiler->records == C_NULL)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		c_memset(profiler->records + profiler->recordCount, 0, (recordCount - profiler->recordCount) * sizeof(txProfilerRecord*));
+		profiler->recordCount = recordCount;
+	}
+	record = c_malloc(sizeof(txProfilerRecord));
+	if (record == C_NULL)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	record->recordID = recordID;
+	record->hitCount = 0;
+	record->constructorID = XS_NO_ID;
+	record->prototypeID = XS_NO_ID;
+	record->functionID = XS_NO_ID;
+	record->file = XS_NO_ID;
+	record->line = 0;
+	record->calleeCount = 0;
+	record->callees = C_NULL;
+	record->flags = 0;
+	profiler->records[recordID] = record;
+	return record;
+}
+
+void fxPrintID(txMachine* the, FILE* file, txID id)
+{
+	txSlot* key = fxGetKey(the, id);
+	if (key) {
+		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
+			fxPrintString(the, file,  key->value.key.string);
+			return;
+		}
+		if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
+			fprintf(file, "[");
+			fxPrintString(the, file, key->value.string);
+			fprintf(file, "]");
+			return;
+		}
+	}
+	fprintf(file, "?");
+}
+
+void fxPrintProfiler(txMachine* the, void* stream)
+{
+	// https://chromedevtools.github.io/devtools-protocol/tot/Profiler/#type-Profile
+	txProfiler* profiler = the->profiler;
+	FILE* file = stream;
+    char buffer[22];
+    char name[36];
+    
+	fxRemoveProfilerCycle(the, profiler, 0);
+    
+    if (!file) {
+    	time_t timer;
+    	struct tm* tm_info;
+		timer = time(NULL);
+		tm_info = localtime(&timer);
+		strftime(buffer, 22, "XS-%y-%m-%d-%H-%M-%S-", tm_info);
+		snprintf(name, sizeof(name), "%s%03llu.cpuprofile", buffer, (profiler->stop / 1000) % 1000);
+		file = fopen(name, "w");
+	}
 	
-	aName[0] = 0;
-	if (theIndex >= 0) {
-		c_strcat(aName, "[");
-		fxIntegerToString(the->dtoa, theIndex, aName + 1, mxNameSize - 3);
-		c_strcat(aName, "]");
-	}	
-	else {
-		aSlot = fxGetKey(the, theProperty->ID);
-		if (aSlot) {
-			c_strcat(aName, ".");
-			c_strncat(aName, aSlot->value.key.string, mxNameSize - mxStringLength(aName) - 1);
+	fprintf(file, "{\"nodes\":[");
+	txU4 recordIndex = 0;
+	while (recordIndex < profiler->recordCount) {
+		txProfilerRecord* record = profiler->records[recordIndex];
+		if (record) {
+			if (recordIndex > 0)
+				fprintf(file, ",");
+			fprintf(file, "{\"id\":%d,\"callFrame\":{\"functionName\":\"", record->recordID);
+			if (recordIndex == 0)
+				fprintf(file, "(host)");
+			else if (recordIndex == 1)
+				fprintf(file, "(gc)");
+			else if (record->functionID != XS_NO_ID) {
+				if (record->constructorID != XS_NO_ID) {
+					fxPrintID(the, file, record->constructorID);
+					fprintf(file, ".");
+				}
+				if (record->prototypeID != XS_NO_ID) {
+					fxPrintID(the, file, record->prototypeID);
+					fprintf(file, ".");
+				}
+				fxPrintID(the, file, record->functionID);
+			}
+			else if (record->functionAddress) {
+#if mxMacOSX || mxLinux
+				Dl_info info;
+				if (dladdr(record->functionAddress, &info) && info.dli_sname)
+					fprintf(file, "@%s",info.dli_sname );
+				else
+#endif
+					fprintf(file, "@anonymous-%d", record->recordID);
+			}
+			else
+				fprintf(file, "(anonymous-%d)", record->recordID);
+
+			fprintf(file, "\",\"scriptId\":\"0\",\"url\":\"");
+			if (record->file != XS_NO_ID)
+				fxPrintID(the, file, record->file);
+			fprintf(file, "\",\"lineNumber\":%d,\"columnNumber\":-1},\"hitCount\":%d,\"children\":[", record->line - 1, record->hitCount);
+			txInteger calleeIndex = 0;
+			txBoolean comma = 0;
+			while (calleeIndex < record->calleeCount) {
+				txID recordID = record->callees[calleeIndex];
+				if (recordID != XS_NO_ID) {
+					if (comma)
+						fprintf(file, ",");
+					fprintf(file, "%d", recordID);
+					comma = 1;
+				}
+				calleeIndex++;
+			}
+			fprintf(file, "]}");
+		}
+		recordIndex++;
+	}
+	fprintf(file, "],\"startTime\":%llu,\"endTime\":%llu,\"samples\":[", fxTicksToMicroseconds(profiler->start), fxTicksToMicroseconds(profiler->when));
+	{
+		txU8 sampleIndex = 0;
+		while (sampleIndex < profiler->sampleIndex) {
+			txProfilerSample* sample = profiler->samples + sampleIndex;
+			if (sampleIndex > 0)
+				fprintf(file, ",");
+			fprintf(file, "%d", sample->recordID);
+			sampleIndex++;
+		}
+	}
+	fprintf(file, "],\"timeDeltas\":[");
+	{
+		txU8 sampleIndex = 0;
+		while (sampleIndex < profiler->sampleIndex) {
+			txProfilerSample* sample = profiler->samples + sampleIndex;
+			if (sampleIndex > 0)
+				fprintf(file, ",");
+			fprintf(file, "%llu", fxTicksToMicroseconds(sample->delta));
+			sampleIndex++;
+		}
+	}
+	fprintf(file, "]}");
+	fclose(file);
+}
+
+void fxPrintString(txMachine* the, FILE* file, txString theString)
+{
+	char buffer[16];
+	for (;;) {
+		txInteger character;
+		char *p;
+		theString = mxStringByteDecode(theString, &character);
+		if (character == C_EOF)
+			break;
+		p = buffer;
+		if ((character < 32) || ((0xD800 <= character) && (character <= 0xDFFF))) {
+			*p++ = '\\'; 
+			*p++ = 'u'; 
+			p = fxStringifyUnicodeEscape(p, character, '\\');
+		}
+		else if (character == '"') {
+			*p++ = '\\';
+			*p++ = '"';
+		}
+		else if (character == '\\') {
+			*p++ = '\\';
+			*p++ = '\\';
 		}
 		else
-			c_strcat(aName, "[]");
-	}
-	aName[mxNameSize - 1] = 0;
-	theList->value.list.last->value.key.string = aName;
-		
-	aKey.next = C_NULL;	
-	aKey.value.key.string = C_NULL;	
-	aKey.value.key.sum = 0;	
-
-	anInstance->value.instance.garbage = theList->value.list.last;
-	theList->value.list.last->next = &aKey;
-	theList->value.list.last = &aKey;
-
-	if ((aProperty = anInstance->next)) {
-		switch (aProperty->kind) {
-		case XS_CALLBACK_KIND:
-		case XS_CODE_KIND:
-			aSlot = mxBehaviorGetProperty(the, anInstance, mxID(_prototype), 0, XS_ANY);
-			if (aSlot && (aSlot->kind == XS_REFERENCE_KIND)) {
-				aSlot->ID = mxID(_prototype);
-				fxWriteProfileProperty(the, aSlot, theList, -1);
-				aSlot->ID = XS_NO_ID;
-			}
-			aProperty = aSlot;
-			aSlot = mxFunctionInstanceProfile(anInstance);
-			if (aSlot->kind == XS_INTEGER_KIND) {
-				txInteger id = aSlot->value.integer;
-				fxWriteProfileFile(the, &id, sizeof(txInteger));
-				aSlot = theList->value.list.first;
-				while (aSlot) {
-					if (aSlot->value.key.string) {
-						fxWriteProfileFile(the, aSlot->value.key.string, mxStringLength(aSlot->value.key.string));
-					}
-					aSlot = aSlot->next;
-				}
-				fxWriteProfileFile(the, &(aName[mxNameSize - 1]), sizeof(char));
-			}
-			break;
-		case XS_ARRAY_KIND:
-			aSlot = aProperty->value.array.address;
-			aCount = aProperty->value.array.length;
-			for (anIndex = 0; anIndex < aCount; anIndex++) {
-				if (aSlot->ID)
-					fxWriteProfileProperty(the, aSlot, theList, anIndex);
-				aSlot++;
-			}
-			aProperty = aProperty->next;
-			break;
-		}
-	}
-	
-	fxWriteProfileGrammar(the, aProperty, theList);
-	fxWriteProfileGrammarArray(the, aProperty, theList);
-	
-	theList->value.list.last = anInstance->value.instance.garbage;
-	theList->value.list.last->next = C_NULL;
-	theList->value.list.last->value.key.string = C_NULL;
-	anInstance->value.instance.garbage = C_NULL;
-}
-
-void fxWriteProfileRecords(txMachine* the)
-{
-	fxWriteProfileFile(the, the->profileBottom, (the->profileCurrent - the->profileBottom) * sizeof(txProfileRecord));
-	the->profileCurrent = the->profileBottom;
-}
-
-void fxWriteProfileSymbols(txMachine* the)
-{
-	char aName[255];
-	txInteger aProfileID;
-	txSlot aKey;
-	txSlot aList;
-	txSlot* anInstance;
-	txSlot* aProperty;
-	txSlot* aSlot;
-	txSlot* bSlot;
-	txSlot* cSlot;
-	
-	fxWriteProfileFile(the, &(the->profileID), sizeof(txInteger));
-	c_strcpy(aName, "(gc)");
-	aProfileID = 0;
-	fxWriteProfileFile(the, &aProfileID, sizeof(txInteger));
-	fxWriteProfileFile(the, aName, mxStringLength(aName) + 1);
-
-	aKey.next = C_NULL;	
-	aKey.value.key.string = C_NULL;	
-	aKey.value.key.sum = 0;
-		
-	aList.value.list.first = &aKey; 
-	aList.value.list.last = &aKey; 
-
-	anInstance = mxGlobal.value.reference;
-	anInstance->flag |= XS_MARK_FLAG; 
-	
-	aProperty = anInstance->next->next;
-	fxWriteProfileGrammar(the, aProperty, &aList);
-	fxWriteProfileGrammarArray(the, aProperty, &aList);
-
-	aSlot = the->firstHeap;
-	while (aSlot) {
-		bSlot = aSlot + 1;
-		cSlot = aSlot->value.reference;
-		while (bSlot < cSlot) {
-			bSlot->flag &= ~XS_MARK_FLAG; 
-			bSlot++;
-		}
-		aSlot = aSlot->next;
-	}
-	if (the->sharedMachine) {
-		aSlot = the->sharedMachine->firstHeap;
-		while (aSlot) {
-			bSlot = aSlot + 1;
-			cSlot = aSlot->value.reference;
-			while (bSlot < cSlot) {
-				bSlot->flag &= ~XS_MARK_FLAG; 
-				bSlot++;
-			}
-			aSlot = aSlot->next;
-		}
+			p = mxStringByteEncode(p, character);
+		*p = 0;
+		fprintf(file, "%s", buffer);
 	}
 }
 
-#endif
-
-txS1 fxIsProfiling(txMachine* the)
+void fxPushProfilerSample(txMachine* the, txID recordID, txU4 delta)
 {
-#ifdef mxProfile
-	return (the->profileFile) ? 1 : 0;
-#else
-	return 0;
-#endif
+	txProfiler* profiler = the->profiler;
+	txU8 sampleCount = profiler->sampleCount;
+	txU8 sampleIndex = profiler->sampleIndex;
+	txProfilerSample* sample;
+	if (sampleIndex == sampleCount) {
+		sampleCount += 1024;
+		profiler->samples = (txProfilerSample*)c_realloc(profiler->samples, (size_t)(sampleCount * sizeof(txProfilerSample)));
+		if (profiler->samples == C_NULL)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		profiler->sampleCount = sampleCount;
+	}
+	sample = profiler->samples + sampleIndex;
+	sample->recordID = recordID;
+	sample->delta = delta;
+	profiler->sampleIndex = sampleIndex + 1;
 }
 
-void fxStartProfiling(txMachine* the)
+txID fxRemoveProfilerCycle(txMachine* the, txProfiler* profiler, txID recordID)
 {
-#ifdef mxProfile
-	if (the->profileFile)
+	txProfilerRecord* record = profiler->records[recordID];
+	if (record->flags & 1)
+		return XS_NO_ID;
+	if (record->flags & 2)
+		return recordID;
+	record->flags |= 3;
+	txInteger calleeIndex = 0;
+	while (calleeIndex < record->calleeCount) {
+		txID calleeID = record->callees[calleeIndex];
+		if (calleeID)
+			record->callees[calleeIndex] = fxRemoveProfilerCycle(the, profiler, calleeID);
+		calleeIndex++;
+	}	
+	record->flags &= ~1;
+	return recordID;
+}
+
+void fxResumeProfiler(txMachine* the)
+{
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
 		return;
-	fxOpenProfileFile(the, "xsprofile.records.out");
-	fxWriteProfileBOM(the);
-#if mxWindows
-	QueryPerformanceFrequency(&the->profileFrequency);
-	QueryPerformanceCounter(&the->profileCounter);
-#else
-	c_gettimeofday(&(the->profileTV), NULL);
-#endif	
-	fxStartProfilingAux(the, the->frame);
-#endif
+	txU8 delta = fxGetTicks() - profiler->stop;
+	profiler->when += delta;
+	profiler->former += delta;
+	profiler->start += delta;
 }
 
-void fxStopProfiling(txMachine* the)
+void fxSuspendProfiler(txMachine* the)
 {
-#ifdef mxProfile
-	txSlot* aFrame;
-
-	if (!the->profileFile)
+	txProfiler* profiler = the->profiler;
+	if (!profiler)
 		return;
-		
-	aFrame = the->frame;
-	while (aFrame) {
-		fxEndFunction(the, aFrame + 3);
-		aFrame = aFrame->next;
-	}
-	fxRecordProfiling(the, 	0, -1);
-	fxWriteProfileRecords(the);
-	fxCloseProfileFile(the);
-	fxOpenProfileFile(the, "xsprofile.symbols.out");
-	fxWriteProfileBOM(the);
-	fxWriteProfileSymbols(the);
-	fxCloseProfileFile(the);
+	profiler->stop = fxGetTicks();
+}
+
+txU8 fxTicksToMicroseconds(txU8 ticks)
+{
+#if mxMacOSX
+	return ticks / 1000;
+#elif mxWindows
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	return (1000000ULL * ticks) / frequency.QuadPart;
+#else
+	return ticks;
 #endif
 }
+
+
+
+#endif /* mxProfile */

@@ -19,7 +19,12 @@
  */
 
 declare module "worker" {
-	class Worker  {
+	export interface Self {
+		onmessage(message: any): void;
+		postMessage(message: any): void;
+	}
+
+	class Worker implements Self  {
 		constructor(module: string, options?: object)
 		terminate(): void;
 
@@ -29,11 +34,6 @@ declare module "worker" {
 
 	export class SharedWorker {
 		constructor(module: string, options?: object)
-	}
-
-	interface Self {
-		onmessage(message: any): void;
-		postMessage(message: any): void;
 	}
 
 	global {

@@ -224,8 +224,8 @@ void _xsbug_import_(txMachine* the)
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();
-	fxNewHostFunction(the, _xsbug_importFulfilled, 1, XS_NO_ID);
-	fxNewHostFunction(the, _xsbug_importRejected, 1, XS_NO_ID);
+	fxNewHostFunction(the, _xsbug_importFulfilled, 1, XS_NO_ID, XS_NO_ID);
+	fxNewHostFunction(the, _xsbug_importRejected, 1, XS_NO_ID, XS_NO_ID);
 	mxRunCount(2);
 	mxPop();
 	if (xsTest(xsArg(1)))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -74,16 +74,16 @@ class CCS811  {
 		const io = this.#io = new options.sensor.io({
 			hz: 400_000,
 			address: 0x5A,
-			sendStop: true,
+			stop: true,
 			...options.sensor
 		});
 
 		this.#onError = options.onError
 
-		io.writeBlock(Register.SW_RESET, Uint8Array.of(0x11, 0xE5, 0x72, 0x8A));
+		io.writeBuffer(Register.SW_RESET, Uint8Array.of(0x11, 0xE5, 0x72, 0x8A));
 		Timer.delay(100);
 
-		if (io.readByte(Register.HW_ID) != HW_ID_CODE) {
+		if (io.readUint8(Register.HW_ID) != HW_ID_CODE) {
 			this.#onError?.("unexpected sensor");
 			this.close();
 			return;
@@ -110,7 +110,7 @@ class CCS811  {
 			humidity = (humidity * 512.0 + 0.5) & 0xffff;
 			temperature = ((temperature + 25.0) * 512.0 + 0.5) & 0xffff;
 
-			this.#io.writeBlock(Register.ENV_DATA, Uint8Array.of(
+			this.#io.writeBuffer(Register.ENV_DATA, Uint8Array.of(
 					(humidity >> 8) & 0xff, humidity & 0xff,
 					(temperature >> 8) & 0xff, temperature & 0xff));
 		}
@@ -136,7 +136,7 @@ class CCS811  {
 	}
 	#writeMode() {
 		let mode = this.#measMode;
-		this.#io.writeByte(Register.MEAS_MODE, mode);
+		this.#io.writeUint8(Register.MEAS_MODE, mode);
 	}
 	get #measMode() {
 		return (this.#mode.INT_THRESH | this.#mode.INT_DATARDY | this.#mode.DRIVE_MODE);
@@ -147,10 +147,10 @@ class CCS811  {
 		this.#status.APP_VALID	= stat & 0b0001_0000;
 		this.#status.FW_MODE	= stat & 0b1000_0000;
 		if (this.#status.ERROR)
-			this.#status.error_detail = this.#io.readByte(Register.ERROR_ID);
+			this.#status.error_detail = this.#io.readUint8(Register.ERROR_ID);
 	}
 	#readStatus() {
-		let stat = this.#io.readByte(Register.STATUS);
+		let stat = this.#io.readUint8(Register.STATUS);
 		this.#setStatus(stat);
 	}
 	get available() {
@@ -168,7 +168,7 @@ class CCS811  {
 		const vBuf = this.#valueBuffer;
 		if (!this.available)
 			return false;
-		io.readBlock(Register.ALG_RESULT, vBuf);
+		io.readBuffer(Register.ALG_RESULT, vBuf);
 		ret.carbonDioxideGasSensor = {C02: (vBuf[0] << 8) | vBuf[1] };
 		ret.vocSensor = {tvoc: (vBuf[2] << 8) | vBuf[3]};
 		ret.current = vBuf[6] >> 2;

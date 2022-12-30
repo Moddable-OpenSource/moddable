@@ -20,14 +20,5 @@
 	"resources": {
 		"*": "./ball",
 		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
-	},
-	"platforms": {
-		"esp/moddable_one": {
-		},
-		"esp32/moddable_two": {
-		},
-		"...": {
-			"error": "Untested on this platform"
-		}
 	}
 }

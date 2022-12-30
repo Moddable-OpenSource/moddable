@@ -83,22 +83,30 @@ const txBehavior ICACHE_FLASH_ATTR gxArrayBehavior = {
 
 void fxBuildArray(txMachine* the)
 {
+	txSlot* instance;
 	txSlot* slot;
 	txSlot* property;
 	txSlot* unscopable;
 	
-	fxNewHostFunction(the, mxCallback(fxArrayLengthGetter), 0, XS_NO_ID);
-	fxNewHostFunction(the, mxCallback(fxArrayLengthSetter), 1, XS_NO_ID);
+	mxPush(mxObjectPrototype);
+	instance = fxNewArrayInstance(the);
+
+	fxNewHostFunction(the, mxCallback(fxArrayLengthGetter), 0, mxID(_length), XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
+	fxNewHostFunction(the, mxCallback(fxArrayLengthSetter), 1, mxID(_length), XS_NO_ID);
+	property = mxFunctionInstanceHome(the->stack->value.reference);
+	property->value.home.object = instance;
 	mxPushUndefined();
 	the->stack->flag = XS_DONT_DELETE_FLAG;
 	the->stack->kind = XS_ACCESSOR_KIND;
 	the->stack->value.accessor.getter = (the->stack + 2)->value.reference;
 	the->stack->value.accessor.setter = (the->stack + 1)->value.reference;
 	mxPull(mxArrayLengthAccessor);
-	the->stack += 2;
+	mxPop();
+	mxPop();
 
-	mxPush(mxObjectPrototype);
-	slot = fxLastProperty(the, fxNewArrayInstance(the));
+	slot = fxLastProperty(the, instance);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_at), 1, mxID(_at), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_concat), 1, mxID(_concat), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_copyWithin), 2, mxID(_copyWithin), XS_DONT_ENUM_FLAG);
@@ -230,6 +238,7 @@ void fxCacheArray(txMachine* the, txSlot* instance)
 		txSlot* dstSlot = address;
 		txIndex index = 0;
 		while (srcSlot) {
+			dstSlot->next = C_NULL;
 			*((txIndex*)dstSlot) = index;	
 			dstSlot->ID = XS_NO_ID;
 			dstSlot->flag = XS_NO_FLAG;
@@ -899,11 +908,13 @@ void fxArrayLengthGetter(txMachine* the)
 	while (instance) {
 		if (instance->flag & XS_EXOTIC_FLAG) {
 			array = instance->next;
-			if (array->ID == XS_ARRAY_BEHAVIOR)
+			if ((array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR))
 				break;
 		}
 		instance = fxGetPrototype(the, instance);
 	}
+	if (!instance)
+		return;
 	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
@@ -932,6 +943,8 @@ void fxArrayLengthSetter(txMachine* the)
 		}
 		instance = fxGetPrototype(the, instance);
 	}
+	if (!instance)
+		return;
 	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (!alias)
@@ -2605,7 +2618,7 @@ void fx_ArrayIterator_prototype_next(txMachine* the)
 	txSlot* result = iterator->next;
 	txSlot* iterable = result->next;
 	txSlot* index = iterable->next;
-	txSlot* value = result->value.reference->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
 	txSlot* done = value->next;
 	if (!done->value.boolean) {
 		txInteger kind = index->next->value.integer;

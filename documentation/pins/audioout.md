@@ -1,6 +1,6 @@
 # AudioOut
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: October 12, 2022
+Revised: December 4, 2022
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -149,6 +149,8 @@ The enqueue function has several different functions, all related to the audio q
 
 All invocations of the `enqueue` function include the first parameter, the target stream number, a value from 0 to one less than the number of streams configured using the constructor.
 
+The `length` function returns the number of unused queue entries of a stream.
+
 #### Enqueuing audio samples
 Audio samples to play may be provided either as a MAUD audio resource or as raw audio samples. In both cases, the samples must be in the same format as the audio output (e.g. have the same sample rate, bits per sample, and number of channels).
 
@@ -199,6 +201,17 @@ audio.enqueue(0, AudioOut.Callback, 2);
 audio.callback = id => trace(`finished playing buffer ${id}\n`);
 ```
 
+Instead of a single callback function that is called for all streams, a separate callback for each stream maybe provided using the `callbacks` property:
+
+```js
+audio.callbacks = [
+	id => trace(`finished playing buffer ${id} from stream 0\n`),
+	id => trace(`finished playing buffer ${id} from stream 1\n`)
+];
+```
+
+If both the `callback` and `callbacks` property are set, only the the `callbacks` property is used.
+
 #### Dequeuing audio samples
 All of the samples and callbacks enqueued on a specified stream may be dequeued by calling `enqueue` with only the `stream` parameter:
 
@@ -214,6 +227,37 @@ audio.enqueue(0, AudioOut.Volume, 128);
 ```
 
 Values for the volume command range from 0 for silent, to 256 for full volume.
+
+### length(stream)
+
+The `length` function returns the number of unused queue entries of the specified stream. This information can be used to determine if the stream is currently able to accept additional calls to `enqueue`.
+
+```js
+if (audio.length(0) >= 2) {
+	audio.enqueue(0, AudioOut.Tone, 440, 1000);
+	audio.enqueue(0, AudioOut.Tone, 330, 1000);
+}
+```
+
+### Properties
+
+All properties of the audioOut instance are read-only.
+
+#### sampleRate
+
+The sample rate of the instance as a number.
+
+#### bitsPerSample
+
+The number of bits per sample of the instance as a number.
+
+#### channelCount
+
+The number of channels output by the instance as a number.
+
+#### streams
+
+The maximum number of simultaneous streams supported by the instance as a number.
 
 ## class Mixer
 The `Mixer` class provides access to the four-channel mixer and audio decompressors used by the `AudioOut`. This is useful for processing audio for other purposes, such as network streaming.
@@ -285,4 +329,3 @@ The `audioOut` module is configured at build time.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.
-* 

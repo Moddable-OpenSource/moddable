@@ -152,15 +152,6 @@ txSlot* fxNewFunctionInstance(txMachine* the, txID name)
 	}
 	else
 		property->value.home.module = C_NULL;
-
-#ifdef mxProfile
-	/* PROFILE */
-	property = property->next = fxNewSlot(the);
-	property->flag = XS_INTERNAL_FLAG;
-	property->kind = XS_INTEGER_KIND;
-	property->value.integer = the->profileID;
-	the->profileID++;
-#endif
 		
 	/* LENGTH */
 	if (gxDefaults.newFunctionLength)
@@ -640,13 +631,13 @@ txSlot* fxNewAsyncInstance(txMachine* the)
 	mxPop();
 	mxPop();
 	
-	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID);
+	function = fxNewHostFunction(the, fxResolveAwait, 1, XS_NO_ID, mxResolveAwaitProfileID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPop();
 	
-	function = fxNewHostFunction(the, fxRejectAwait, 1, XS_NO_ID);
+	function = fxNewHostFunction(the, fxRejectAwait, 1, XS_NO_ID, mxRejectAwaitProfileID);
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = instance;
     property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
@@ -710,18 +701,36 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 			mxPop();
 		}
 		else {
-			/* THIS */
+			if (mxIsReference(value) && mxIsPromise(value->value.reference)) {
+				mxDub();
+				mxGetID(mxID(_constructor));
+				if (fxIsSameValue(the, &mxPromiseConstructor, the->stack, 0)) {
+					mxPop();
+					fxPromiseThen(the, value->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
+					goto exit;
+				}
+				mxPop();
+			}
+			mxTemporary(resolveFunction);
+			mxTemporary(rejectFunction);
 			mxPush(mxPromiseConstructor);
+			fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+#ifdef mxPromisePrint
+			fprintf(stderr, "fxStepAsync %d\n", the->stack->value.reference->next->ID);
+#endif
+			fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
+			/* THIS */
+			mxPushUndefined();
 			/* FUNCTION */
-			mxDub();
-			mxGetID(mxID(_resolve));
+			mxPushSlot(resolveFunction);
 			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(value);
+			/* COUNT */
 			mxRunCount(1);
-			fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
 			mxPop();
 		}
+exit:			
 		mxPop();
 	}
 	mxCatch(the) {

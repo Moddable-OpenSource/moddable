@@ -1,12 +1,12 @@
-
 import sys
 
 if len(sys.argv) < 3:
 	print("Not enough parameters")
 	sys.exit(1)
 
-given = sys.argv[1]
-expected = sys.argv[2]
+update = "  See update instructions at: https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md"
+expected = sys.argv[1]
+given = sys.argv[2]
 
 g = given.split(".")
 if len(g) < 3:
@@ -18,15 +18,17 @@ if len(e) < 3:
 if g[0] == e[0]:
 	if g[1] == e[1]:
 		if g[2] == e[2]:
-#			print("versions are the same.")
+			print("Using recommended ESP-IDF " + given)
 			sys.exit(0)
 		else:
-#			print("major and minor versions are the same, it should work.")
+			print("Recommend using ESP-IDF " + expected + " (found " + given + ")")
+			print(update)
 			sys.exit(0);
 	else:
-#		print("minor versions differ. Please update.");
+		print("*** Update required to ESP-IDF " + expected + " (found " + given + ")")
+		print(update)
 		sys.exit(1);
 else:
-#	print("major versions differ. Please update.");
+	print("*** Update required to ESP-IDF " + expected + " (found " + given + ")")
+	print(update)
 	sys.exit(1);
-

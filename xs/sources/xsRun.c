@@ -180,7 +180,7 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 
 #define mxToInteger(SLOT) \
 	if (XS_INTEGER_KIND != (SLOT)->kind) { \
-		if (XS_SYMBOL_KIND <= (SLOT)->kind) { \
+		if (XS_STRING_KIND <= (SLOT)->kind) { \
 			mxSaveState; \
 			fxToInteger(the, SLOT); \
 			mxRestoreState; \
@@ -191,7 +191,7 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 	
 #define mxToNumber(SLOT) \
 	if (XS_NUMBER_KIND != (SLOT)->kind) { \
-		if (XS_SYMBOL_KIND <= (SLOT)->kind) { \
+		if (XS_STRING_KIND <= (SLOT)->kind) { \
 			mxSaveState; \
 			fxToNumber(the, SLOT); \
 			mxRestoreState; \
@@ -636,6 +636,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_WITH,
 		&&XS_CODE_WITHOUT,
 		&&XS_CODE_YIELD,
+		&&XS_CODE_PROFILE,
 	};
 	register void * const *bytes = gxBytes;
 #endif
@@ -698,9 +699,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		mxStack->value = the->scratch.value;
 #ifdef mxTraceCall
 		fxTraceCallBegin(the, mxFrameFunction);
-#endif
-#ifdef mxProfile
-		fxBeginFunction(the, mxFrameFunction);
 #endif
 XS_CODE_JUMP:
 		mxFirstCode();
@@ -854,6 +852,9 @@ XS_CODE_JUMP:
 							fxRunDerived(the);
 						(*(slot->value.callback.address))(the);
 						mxRestoreState;
+			#if defined(mxInstrument) || defined(mxProfile)
+						fxCheckProfiler(the, mxFrame);
+			#endif
 						if (slot->flag & XS_BASE_FLAG)
 							goto XS_CODE_END_BASE_ALL;
 						if (slot->flag & XS_DERIVED_FLAG)
@@ -1004,9 +1005,6 @@ XS_CODE_JUMP:
 #ifdef mxTraceCall
 			fxTraceCallEnd(the, mxFrameFunction);
 #endif
-#ifdef mxProfile
-			fxEndFunction(the, mxFrameFunction);
-#endif
 #ifdef mxInstrument
 			if (the->stackPeak > mxStack)
 				the->stackPeak = mxStack;
@@ -1029,9 +1027,6 @@ XS_CODE_JUMP:
 			mxFirstCode();
 			mxBreak;
 		mxCase(XS_CODE_RETURN)
-#ifdef mxProfile
-			fxEndFunction(the, mxFrameFunction);
-#endif
 			mxStack = mxFrameEnd;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
@@ -2700,6 +2695,12 @@ XS_CODE_JUMP:
 			mxRestoreState;
 			mxNextCode(1 + sizeof(txID));
 			mxBreak;
+		mxCase(XS_CODE_PROFILE)
+			offset = mxRunID(1);
+			variable = mxFunctionInstanceHome(mxStack->value.reference);
+			variable->ID = offset;
+			mxNextCode(1 + sizeof(txID));
+			mxBreak;
 		mxCase(XS_CODE_NAME)
 			offset = mxRunID(1);
 #ifdef mxTrace
@@ -3761,19 +3762,19 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_NULL_KIND) && (mxStack->kind == XS_UNDEFINED_KIND))
 					offset = 1;
 				else if (((XS_INTEGER_KIND == slot->kind) || (XS_NUMBER_KIND == slot->kind)) && ((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND))) {
-					fxToNumber(the, mxStack); 
+					mxToNumber(mxStack); 
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((XS_INTEGER_KIND == mxStack->kind) || (XS_NUMBER_KIND == mxStack->kind))) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == slot->kind) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == mxStack->kind) {
-					fxToNumber(the, mxStack);
+					mxToNumber(mxStack);
 					goto XS_CODE_EQUAL_AGAIN;
 				}
 				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND)) && mxIsReference(mxStack)) {
@@ -3856,19 +3857,19 @@ XS_CODE_JUMP:
 				else if ((slot->kind == XS_NULL_KIND) && (mxStack->kind == XS_UNDEFINED_KIND))
 					offset = 0;
 				else if (((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && ((XS_INTEGER_KIND == mxStack->kind) || (XS_NUMBER_KIND == mxStack->kind))) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (((mxStack->kind == XS_STRING_KIND) || (mxStack->kind == XS_STRING_X_KIND)) && ((XS_INTEGER_KIND == slot->kind) || (XS_NUMBER_KIND == slot->kind))) {
-					fxToNumber(the, mxStack); 
+					mxToNumber(mxStack); 
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == slot->kind) {
-					fxToNumber(the, slot);
+					mxToNumber(slot);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (XS_BOOLEAN_KIND == mxStack->kind) {
-					fxToNumber(the, mxStack);
+					mxToNumber(mxStack);
 					goto XS_CODE_NOT_EQUAL_AGAIN;
 				}
 				else if (((slot->kind == XS_INTEGER_KIND) || (slot->kind == XS_NUMBER_KIND) || (slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND) || (slot->kind == XS_SYMBOL_KIND) || (slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND)) && mxIsReference(mxStack)) {
@@ -4016,6 +4017,9 @@ XS_CODE_JUMP:
 				fxDebugLine(the, mxEnvironment->ID, count);
 				mxRestoreState;
 			}
+		#endif
+		#if defined(mxInstrument) || defined(mxProfile)
+			fxCheckProfiler(the, mxFrame);
 		#endif
 			mxNextCode(3);
 			mxBreak;
@@ -4836,6 +4840,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 			instance->next->value.code.address = script->codeBuffer;
 			instance->next->value.code.closures = closures;
 			property = mxFunctionInstanceHome(instance);
+			property->ID = fxGenerateProfileID(the);
 			property->value.home.object = object;
 			property->value.home.module = module;
 			/* TARGET */

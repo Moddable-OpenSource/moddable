@@ -5,7 +5,9 @@
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODDABLE)/modules/pins/i2c/manifest.json",
-		"$(MODDABLE)/modules/files/file/manifest.json"
+		"$(MODDABLE)/modules/files/file/manifest.json",
+		"$(MODDABLE)/modules/files/flash/manifest.json",
+		"$(MODDABLE)/modules/base/modules/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -33,15 +35,12 @@
 				"pins/digital": "$(MODULES)/pins/digital/digital",
 				"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 				"*": [
-					"$(MODULES)/files/flash/*",
-					"$(MODULES)/files/flash/esp/*",
 					"$(MODULES)/drivers/lis3dh/*"
 				]
 			},
 			"preload": [
 				"pins/*",
 				"file",
-				"flash",
 				"lis3dh"
 			]
 		},
@@ -49,14 +48,11 @@
 			"modules": {
 				"cli/archive": "$(MODULES)/base/cli/commands/archive",
 				"*": [
-					"$(MODULES)/files/flash/*",
-					"$(MODULES)/files/flash/esp32/*"
 				]
 			},
 			"preload": [
 				"pins/*",
-				"file",
-				"flash"
+				"file"
 			]
 		}
 	}

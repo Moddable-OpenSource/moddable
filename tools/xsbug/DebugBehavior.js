@@ -36,6 +36,9 @@
  */
 
 import Timer from "timer";
+import {
+	Profile,
+} from "ProfilePane";
 
 export const mxFramesView = 0;
 export const mxLocalsView = 1;
@@ -53,13 +56,15 @@ const mxLogoutCommand = 4;
 const mxSelectCommand = 5;
 const mxSetAllBreakpointsCommand = 6;
 const mxSetBreakpointCommand = 7;
-const mxStepCommand = 8;
-const mxStepInCommand = 9;
-const mxStepOutCommand = 10;
-const mxToggleCommand = 11;
-const mxImportCommand = 12;
-const mxScriptCommand = 13;
-const mxModuleCommand = 14;
+const mxStartProfilingCommand = 8;
+const mxStepCommand = 9;
+const mxStepInCommand = 10;
+const mxStepOutCommand = 11;
+const mxStopProfilingCommand = 12;
+const mxToggleCommand = 13;
+const mxImportCommand = 14;
+const mxScriptCommand = 15;
+const mxModuleCommand = 16;
 const serialConnectStrings = ["Connect", "Disconnect", "Connecting...", "Installing..."];
 const consoleColorCodes = [{ code: "<info>", color: 3 }, { code: "<warn>", color: 1 }, { code: "<error>", color: 2 }];
 
@@ -102,6 +107,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			this.alienSeparatorRegexp = /\\/g;
 		}
 		this.port = 5002;
+		this.profileOnStart = 0;
 		const platform = system.platform;
 		if (platform == "lin")
 			this.serialDevicePath = "/dev/ttyUSB0";
@@ -230,7 +236,6 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		let machine = this.currentMachine;
 		return machine && machine.broken;
 	}
-
 	doAbort() {
 		let machine = this.currentMachine;
 		machine.doCommand(mxAbortCommand);
@@ -482,6 +487,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	toggleBreakOnStart(it) {
 		this.breakOnStart = it;
 	}
+	toggleProfileOnStart(it) {
+		this.profileOnStart = it;
+	}
 	unmapPath(path, flag) {
 		for (let mapping of this.mappings) {
 			if (path.startsWith(mapping.locale)) {
@@ -506,6 +514,8 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.broken = false;
 		this.once = false;
 		this.parsing = false;
+		this.profile = new Profile(this);
+		this.profiling = false;
 		this.running = true;
 		this.timeout = 0;
 		
@@ -593,6 +603,12 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	doModule(path, wait) {
 		this.doCommand(mxModuleCommand, path, wait, system.readFileBuffer(path));
+	}
+	doStartProfiling() {
+		this.doCommand(mxStartProfilingCommand);
+	}
+	doStopProfiling() {
+		this.doCommand(mxStopProfilingCommand);
 	}
 	doScript(path, wait) {
 		this.doCommand(mxScriptCommand, path, wait, system.readFileBuffer(path));
@@ -741,6 +757,8 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			this.doCommand(mxSetAllBreakpointsCommand, items.filter(
 				item => item.enabled
 			), behavior.breakOnStart, behavior.breakOnExceptions);
+			if (behavior.profileOnStart)
+				this.doCommand(mxStartProfilingCommand);
 		}
 		else if (this.broken) {
 			this.framesView.expanded = true;
@@ -754,6 +772,44 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	}
 	onParsing() {
 		this.parsing = true;
+	}
+	onProfileRecord(name, value, path, line) {
+// 		trace(`onProfileRecord ${name} ${value} ${path} ${line}\n`);
+		this.profile.setRecord(parseInt(value), name, path, line);
+	}
+	onProfileSample(data) {
+// 		trace(`onProfileSample ${data}\n`);
+		const samples = data.split(".");
+		const profile = this.profile;
+		for (let i = 0, length = samples.length; i < length; i++) {
+			const values = samples[i].split(",").map(item => parseInt(item, 36));
+			const delta = values[0];
+			let callee = profile.getRecord(values[1]);
+			callee.hit(delta);
+			let index = 2;
+			let count = values.length;
+			while (index < count) {
+				let caller = profile.getRecord(values[index]);
+				callee.insertCaller(caller);
+				caller.insertCallee(callee);
+				callee = caller;
+				index++;
+			}
+		}
+		profile.clear();
+		profile.propagate();
+	}
+	onProfileTime(name, value) {
+// 		trace(`onProfileTime ${name} ${value}\n`);
+		if (name == "start") {
+			this.profile.empty();
+			this.profiling = true;
+			application.distribute("onMachineChanged", this);
+		}
+		else if (name == "stop") {
+			this.profiling = false;
+			application.distribute("onMachineChanged", this);
+		}
 	}
 	onSampled(data) {
 		var samples = data.split(",");
@@ -1255,6 +1311,15 @@ class DebugSerial @ "PiuDebugSerialDelete" {
 	}
 	onParsing() {
 		this.machine?.onParsing();
+	}
+	onProfileRecord(name, value, path, line) {
+		this.machine?.onProfileRecord(name, value, path, line);
+	}
+	onProfileSample(data) {
+		this.machine?.onProfileSample(data);
+	}
+	onProfileTime(name, value) {
+		this.machine?.onProfileTime(name, value);
 	}
 	onSampled(samples) {
 		this.machine?.onSampled(samples);

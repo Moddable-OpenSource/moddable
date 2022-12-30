@@ -1,0 +1,45 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./resourcestreamer"
+		],
+		"pins/*": [
+			"$(MODULES)/pins/i2s/*"
+		]
+	},
+	"preload": [
+		"resourcestreamer"
+	],
+	"defines": {
+		"audioOut": {
+			"queueLength": 24
+		}
+	},
+	"config": {
+		"startupSound": false
+	},
+	"platforms": {
+		"mac": {
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 11025
+				}
+			}
+		},
+		"esp32": {
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 11025
+				}
+			}
+		}
+	}
+}
