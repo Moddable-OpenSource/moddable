@@ -28,7 +28,6 @@ export default function (done) {
         globalThis.button = {
                 a: new M5Button(41)
         };
-        button.a.onChanged = nop;
 
         const sensor = new MPU6886;
         globalThis.accelerometer = new Accelerometer(sensor);
@@ -36,8 +35,6 @@ export default function (done) {
 
         done();
 }
-
-function nop() {}
 
 class Accelerometer {
         #sensor;
