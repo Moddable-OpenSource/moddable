@@ -63,4 +63,8 @@ server.listen(portIn, () => {
    console.log(`xsbug-log listening on port ${portIn}. ^C to exit.`);
 });
 
-// exec()...
+let command = process.argv[2];
+for (let i = 3; i < process.argv.length; i++) 
+	command += ` ${process.argv[i]}`;
+
+exec(command);
