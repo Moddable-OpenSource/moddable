@@ -73,11 +73,6 @@ IDF_VERSION = \
 !ERROR
 !ENDIF
 
-!IF "$(IDF_PYTHON_ENV_PATH)"==""
-!MESSAGE IDF_PYTHON_ENV_PATH not set. Try running: %IDF_PATH%\\export.bat 
-!ERROR
-!ENDIF
-
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)\devices\esp32\xsProj-$(ESP32_SUBCLASS)
 
 !IF "$(UPLOAD_PORT)"==""

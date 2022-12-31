@@ -344,8 +344,8 @@ void fxExecuteModules(txMachine* the, txSlot* queue)
 		module = module->next;
 	}
 	if (done) {
-		mxReportModuleQueue("INIT");
 		queue->next = C_NULL;
+		mxReportModuleQueue("DONE");
 	}
 }
 
@@ -880,6 +880,9 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 {
 	txSlot* module = queue->next;
 	txBoolean done = 1;
+	if (queue->flag & XS_LEVEL_FLAG)
+		return;
+	queue->flag |= XS_LEVEL_FLAG;
 	mxReportModuleQueue("LOAD");
 	while (module) {
 		if (mxModuleStatus(module) == XS_MODULE_STATUS_NEW) {
@@ -919,6 +922,8 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 						mxCall();
 						fxPushKeyString(the, moduleID);
 						mxRunCount(1);
+                        if (!mxIsReference(the->stack))
+                            mxTypeError("loadHook returned no object");
 						promise = the->stack->value.reference;
 						if (!mxIsPromise(promise))
 							mxTypeError("loadHook returned no promise");
@@ -969,6 +974,7 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 		}
 		module = module->next;
 	}
+	queue->flag &= ~XS_LEVEL_FLAG;
 	if (done) {
 		mxTry(the) {
 			fxLinkModules(the, queue);

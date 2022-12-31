@@ -1166,7 +1166,7 @@ export default class extends Tool {
 				if (!this.getenv("IDF_PATH"))
 					throw new Error ("$IDF_PATH not set. See set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md");
 
-				if (!this.getenv("IDF_PYTHON_ENV_PATH")) {		// IDF installed but not sourced
+				if (this.spawn(this.windows ? "where" : "which", "idf.py") !== 0) { // IDF installed but not sourced
 					if (this.windows)
 						cmd = ["cmd", "/C", `set IDF_EXPORT_QUIET=1 && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\\idf_cmd_init.bat" && popd && ${cmd.join(" ")}`];
 					else
