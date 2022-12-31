@@ -22,41 +22,54 @@ const net = require('node:net');
 const { exec } = require('node:child_process');
 const { Machine } = require('./xsbug-machine.js');
 
-const portIn = process.env.XSBUG_PORT || 5002;
-let log = "";
-let connections = 0;
-const view = {};
+class LogMachine extends Machine {
+	view = {};
+	log = "";
 
-const server = net.createServer(target => { 
-	connections++;
-	target.setEncoding("utf8");
-	target.on('end', () => {
-		if (0 === --connections)
-			process.exit(0);
-	});
+	onTitleChanged(title, tag) {
+		super.onTitleChanged(title, tag);
+		
+		if (title && (title !== "mcsim"))
+			console.log(`# Connected to "${title}"`);
 
-	const machine = new Machine(target, target);
-	machine.doSetAllBreakpoint([], false, true);		// break on exceptions
-	machine.onLogged = function(path, line, data) {
-		log += data;
-		if (log.endsWith("\n")) {
-			console.log(log.slice(0, log.length - 1));
-			log = "";
+		this.doSetAllBreakpoint([], false, true);		// break on exceptions
+	}
+	onLogged(path, line, data) {
+		this.log += data;
+		if (this.log.endsWith("\n")) {
+			console.log(this.log.slice(0, this.log.length - 1));
+			this.log = "";
 		}
 	};
-	machine.onBroken = function(path, line, text) {
-		view.frames.forEach((frame, index) => {
+	onBroken(path, line, text) {
+		this.view.frames.forEach((frame, index) => {
 			let line = "  #" + index + ": " + frame.name;
 			if (frame.path)
 				line += " " + frame.path + ":" + frame.line
 			console.log(line);
 		});
 
-		this.doGo();
+		super.onBroken(path, line, text);
 	};
-	machine.onViewChanged = function(name, items) {
-		view[name] = items;
+	onViewChanged(name, items) {
+		this.view[name] = items;
 	};
+}
+
+const portIn = process.env.XSBUG_PORT || 5002;
+let connections = 0;
+
+const server = net.createServer(target => { 
+	connections++;
+	target.setEncoding("utf8");
+	target.on('end', () => {
+		if (target.machine.title && ("mcsim" !== target.machine.title))
+			console.log(`# Disconnected from "${target.machine.title}"`);
+		if (0 === --connections)
+			process.exit(0);
+	});
+
+	target.machine = new LogMachine(target, target);
 });
 
 server.listen(portIn, () => { 
