@@ -1,5 +1,9 @@
 {
-  "dependencies": {
-    "saxophone": "^0.8.0"
-  }
+	"name": "xsbug-log",
+	"dependencies": {
+		"saxophone": "^0.8.0"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
 }
