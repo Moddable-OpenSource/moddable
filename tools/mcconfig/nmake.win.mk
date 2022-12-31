@@ -23,9 +23,12 @@
 !CMDSWITCHES +S
 !ENDIF
 
+KILL_XSBUG = 
+
 !IF "$(DEBUG)"=="1"
 !IF "$(XSBUG_LOG)"=="1"
-START_XSBUG = 
+START_XSBUG =
+KILL_XSBUG = -tasklist /nh /fi "imagename eq xsbug.exe" | (find /i "xsbug.exe" > nul) && taskkill /f /t /im "xsbug.exe" >nul 2>&1 
 !ELSE
 START_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
 !ENDIF
@@ -164,6 +167,7 @@ XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
 all: build
+	$(KILL_XSBUG)
 	$(START_XSBUG)
 	$(START_COMMAND)
 

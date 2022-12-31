@@ -421,6 +421,7 @@ deploy:
 xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL_2_XSBUG)
+	$(KILL_XSBUG)
 	$(DO_XSBUG)
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
 	$(DO_LAUNCH)
