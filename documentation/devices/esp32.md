@@ -113,11 +113,14 @@ ESP32-S3 is the successor to the original ESP32. It has the following features:
 - External PSRAM support
 - 8 MB flash on popular modules
 
-Moddable SDK support for ESP32-S3 has been tested with the ESP32-S3-DevKitC-1-N8 development kit:
+The Moddable SDK supports devices built on ESP32-S3. The following table lists each device, its platform identifier, a list of key features specific to the device, and links to additional resources.
 
-| Name | Platform identifier | Links |
-| :---: | :--- | :--- |
-|  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+|  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | |<li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
+|  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` |  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
+|  <img src="./../assets/devices/adafruit-esp32-s3-tft-feather.png" width=125><BR>Adafruit ESP32-S3 TFT Feather | `esp32/s3_tft_feather` | 1.14" TFT display<BR> 240 x 135 16-bit color | <li>[Product page](https://www.adafruit.com/product/5483)</li>|
+|<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/atoms3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
 
 
 <a id="platforms-esp32-c3"></a>
