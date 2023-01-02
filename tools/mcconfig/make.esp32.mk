@@ -28,6 +28,8 @@ XSBUG_PORT ?= 5002
 USE_USB ?= 0
 USB_VENDOR_ID ?= beef
 USB_PRODUCT_ID ?= 1cee
+PROGRAMMING_VID ?= 303a
+PROGRAMMING_PID ?= 1001
 
 EXPECTED_ESP_IDF ?= v4.4.3
 
@@ -373,15 +375,32 @@ ifeq ($(DEBUG),1)
 			DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		endif
+
+		ifeq ($(XSBUG_LOG),1)
+			DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
+		endif
+
+	### Linux
 	else
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
-		LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
+		ifeq ($(USE_USB),1)
+#			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1"
+			DO_LAUNCH = bash -c "PATH=$(PLATFORM_DIR)/config:$(PATH) ; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
+			PROGRAMMING_MODE = bash -c "PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
+		else
+			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
+
+			ifeq ($(XSBUG_LOG),1)
+				DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
+			else
+				DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
+			endif
+
+		endif
 	endif
 
 	ifeq ($(XSBUG_LOG),1)
-		DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
 		KILL_XSBUG = $(shell pkill -f xsbug)
 		DO_XSBUG = 
 	endif
@@ -408,6 +427,7 @@ all: precursor
 	-cp $(PARTITIONS_PATH) $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR) 2> /dev/null
 	-cp $(BLD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
+	$(PROGRAMMING_MODE)
 	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
 	cd $(PROJ_DIR); \
