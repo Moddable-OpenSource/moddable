@@ -40,7 +40,7 @@ class LogMachine extends Machine {
 			console.log(this.log.slice(0, this.log.length - 1));
 			this.log = "";
 		}
-	};
+	}
 	onBroken(path, line, text) {
 		this.view.frames.forEach((frame, index) => {
 			let line = "  #" + index + ": " + frame.name;
@@ -50,10 +50,10 @@ class LogMachine extends Machine {
 		});
 
 		super.onBroken(path, line, text);
-	};
+	}
 	onViewChanged(name, items) {
 		this.view[name] = items;
-	};
+	}
 }
 
 const portIn = process.env.XSBUG_PORT || 5002;
@@ -73,7 +73,7 @@ const server = net.createServer(target => {
 });
 
 server.listen(portIn, () => { 
-   console.log(`xsbug-log listening on port ${portIn}. ^C to exit.`);
+   console.log(`# xsbug-log listening on port ${portIn}. ^C to exit.`);
 });
 
 let command = process.argv[2];
