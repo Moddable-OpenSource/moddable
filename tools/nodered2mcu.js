@@ -954,9 +954,9 @@ export default class extends TOOL {
 
 			case "csv": {
 				config.template = (config.temp || "");
-				config.sep = (config.sep || ',').replace("\\t","\t").replace("\\n","\n").replace("\\r","\r");
+				config.sep = (config.sep || ',').replaceAll("\\t","\t").replaceAll("\\n","\n").replaceAll("\\r","\r");
 				config.quo = '"';
-				config.ret = (config.ret || "\n").replace("\\n","\n").replace("\\r","\r");
+				config.ret = (config.ret || "\n").replaceAll("\\n","\n").replaceAll("\\r","\r");
 				config.winflag = (config.ret === "\r\n");
 				config.lineend = "\n";
 				config.multi = config.multi || "one";
@@ -1041,7 +1041,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
 			} break;
 
 			case "tcp out": {
@@ -1054,7 +1054,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
 			} break;
 
 			case "rpi-gpio in": {
