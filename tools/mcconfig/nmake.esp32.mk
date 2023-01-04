@@ -346,7 +346,10 @@ C_COMMON_FLAGS = -c -Os -g \
 	-DESP_PLATFORM \
 	-MP
 
-!IF "$(ESP_ARCH)"!="riscv"
+!IF "$(ESP_ARCH)"=="riscv"
+C_COMMON_FLAGS = $(C_COMMON_FLAGS) \
+	-march=rv32imc
+!ELSE
 C_COMMON_FLAGS = $(C_COMMON_FLAGS) \
 	-mlongcalls \
 	-mtext-section-literals \

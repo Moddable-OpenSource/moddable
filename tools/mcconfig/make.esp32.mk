@@ -299,7 +299,10 @@ C_COMMON_FLAGS ?= -c -Os -g \
 	-DESP_PLATFORM \
 	-MP
 
-ifneq ("$(ESP_ARCH)","riscv")
+ifeq ("$(ESP_ARCH)","riscv")
+C_COMMON_FLAGS +=	\
+	-march=rv32imc
+else
 C_COMMON_FLAGS +=	\
  	-mlongcalls \
 	-mtext-section-literals
