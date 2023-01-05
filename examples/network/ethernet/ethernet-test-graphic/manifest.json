@@ -6,7 +6,8 @@
 	],
 	"modules": {
 		"~": [
-			"$(MODDABLE)/modules/network/ethernet/esp32/setup/ethernet"
+			"$(MODDABLE)/modules/network/ethernet/esp32/setup/ethernet",
+			"$(BUILD)/devices/esp32/setup/network"
 		],
 		"*": [
 			"./main"
