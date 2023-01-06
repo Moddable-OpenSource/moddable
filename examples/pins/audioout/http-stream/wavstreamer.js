@@ -188,7 +188,7 @@ class WavStreamer {
 		this.#audio.enqueue(this.#stream, this.#audio.constructor.Flush);
 		this.#audio.callbacks[this.#stream] = null;
 		
-		this.#http.close();
+		this.#http?.close();
 		this.#http = this.#audio = this.#playing = this.#pending = undefined;
 	}
 	#fillQueue() {

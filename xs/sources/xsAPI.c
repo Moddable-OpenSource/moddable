@@ -1310,6 +1310,11 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
     va_start(arguments, format);
     c_vsnprintf(message + length, sizeof(message) - length, format, arguments);
     va_end(arguments);
+
+	length = c_strlen(message) - 1;
+	while (length && (0x80 & message[length]))
+		message[length--] = 0;
+
 	if ((error <= XS_NO_ERROR) || (XS_ERROR_COUNT <= error))
 		error = XS_UNKNOWN_ERROR;
 

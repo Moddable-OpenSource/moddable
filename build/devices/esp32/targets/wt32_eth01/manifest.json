@@ -1,0 +1,23 @@
+{
+	"build": {
+		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/wt32_eth01/sdkconfig"
+	},
+    "include": [
+        "$(MODDABLE)/modules/io/manifest.json"
+    ],
+	"defines": {
+		"ethernet": {
+            "internal": {
+                "phy": {
+                    "address": 1,
+                    "reset": 16,
+                    "LAN87XX": 1
+                },
+                "mac": {
+                    "MDC": 23,
+                    "MDIO": 18
+                }
+            }
+        }
+	}
+}

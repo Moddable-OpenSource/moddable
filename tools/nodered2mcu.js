@@ -313,6 +313,8 @@ export default class extends TOOL {
 					let configuration = ["{"];
 					for (const name in c) {
 						const value = c[name];
+						if ("name" === name)
+							continue;
 						if (("string" === typeof value) && value.startsWith("function ("))
 							configuration.push(`\t\t${name}: ${value},`);
 						else
@@ -440,7 +442,7 @@ export default class extends TOOL {
 				if (config.func) {
 					config.func = `function (msg, ${params}) {\n${libs}${config.func}\n}`;
 
-					 if (dones && !/node\.done\s*\(\s*\)/.test(config.func))		// from 10-function.js.. first order approximiation of what it does
+					if (dones && !/node\.done\s*\(\s*\)/.test(config.func))		// from 10-function.js.. first order approximiation of what it does
 						config.doDone = true;
 				}
 				else 
@@ -464,7 +466,7 @@ export default class extends TOOL {
 				trigger.push(`function () {`);
 				trigger.push(`\t\t\tconst msg = {};`);
 
- 				if (!config.props) {		// convert older style config
+				if (!config.props) {		// convert older style config
 					config.props = [{
 						p: "payload",
 						payload: config.payload,
@@ -507,7 +509,7 @@ export default class extends TOOL {
 
 					imports.set("Timer", "timer");
 					if (repeat)
-						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay ?? 0}, ${repeat});`);
+						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay ?? repeat}, ${repeat});`);
 					else
 						initialize.push(`\t\t\tTimer.set(() => this.trigger(), ${delay});`);
 
@@ -574,20 +576,14 @@ export default class extends TOOL {
 						const to = this.resolveValue(rule.tot, rule.to);
 						if ("msg" === rule.pt) {
 							this.createPropPath(rule.p, change, "\t\t\t");
-							if ("re" === rule.fromt)
-								change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = msg${this.prepareProp(rule.p)}.toString().replace(${from}, ${to});`);
-							else
-								change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = msg${this.prepareProp(rule.p)}.toString().replaceAll(${from}, ${to});`);
+							change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = this.change(msg${this.prepareProp(rule.p)}, ${from}, ${JSON.stringify(rule.fromt)}, ${to});`);
 						}
 						else if (("flow" === rule.pt) || ("global" === rule.pt)) {
 							const which = ("flow" === rule.pt) ? "flow" : "globalContext";
-							if ("re" === rule.fromt)
-								change.push(`\t\t\tthis.${which}.set("${rule.p}", this.${which}.get("${rule.p}").toString().replace(${from}, ${to}));`);
-							else
-								change.push(`\t\t\tthis.${which}.set("${rule.p}", this.${which}.get("${rule.p}").toString().replaceAll(${from}, ${to}));`);
+							change.push(`\t\t\tthis.${which}.set("${rule.p}", this.change(this.${which}.get("${rule.p}"), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
 						}
 						else
-							throw new Error(`unexpected set type: ${rule.pt}`);
+							throw new Error(`unexpected change type: ${rule.pt}`);
 					}
 					else if ("move" === rule.t) {
 						// GET, DELETE, SET
@@ -655,7 +651,6 @@ export default class extends TOOL {
 						break;
 					default:
 						throw new Error("unrecognized spltType: " + config.spltType);
-						break;
 				}
 			} break;
 			
@@ -877,10 +872,10 @@ export default class extends TOOL {
 								test = `false === value`;
 								break;
 							case "null":
-								test = `null === value`;
+								test = `((null === value) || (undefined === value))`;
 								break;
 							case "nnull":
-								test = `null !== value`;
+								test = `!((null === value) || (undefined === value))`;
 								break;							
 							case "empty":
 								test = `this.empty(value)`;
@@ -959,9 +954,9 @@ export default class extends TOOL {
 
 			case "csv": {
 				config.template = (config.temp || "");
-				config.sep = (config.sep || ',').replace("\\t","\t").replace("\\n","\n").replace("\\r","\r");
+				config.sep = (config.sep || ',').replaceAll("\\t","\t").replaceAll("\\n","\n").replaceAll("\\r","\r");
 				config.quo = '"';
-				config.ret = (config.ret || "\n").replace("\\n","\n").replace("\\r","\r");
+				config.ret = (config.ret || "\n").replaceAll("\\n","\n").replaceAll("\\r","\r");
 				config.winflag = (config.ret === "\r\n");
 				config.lineend = "\n";
 				config.multi = config.multi || "one";
@@ -1046,7 +1041,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-				   config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
 			} break;
 
 			case "tcp out": {
@@ -1059,7 +1054,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-				   config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
 			} break;
 
 			case "rpi-gpio in": {
@@ -1339,6 +1334,7 @@ export default class extends TOOL {
 				case "json": {
 					let t = JSON.parse(value);
 					t = JSON.stringify(t, null, "\t");
+					t = t.split("\n").map((line, i) => (i ? "\t\t" : "") + line).join("\n");	// indent multi-line JSON
 					parts.push(`\t\t${name}: ${t},`);
 					} break;
 			}					

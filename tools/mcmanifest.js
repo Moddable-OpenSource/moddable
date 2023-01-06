@@ -365,6 +365,9 @@ export class MakeFile extends FILE {
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("XSBUG_HOST = ", tool.xsbug?.host ?? "localhost");
 		this.line("XSBUG_PORT = ", tool.xsbug?.port ?? 5002);
+
+		if (tool.xsbugLog)
+			this.line("XSBUG_LOG = 1");
 		
 		this.line("");
 
@@ -1514,6 +1517,9 @@ export class Tool extends TOOL {
 					host: name[0],
 					port: name[1]
 				};
+				break;
+			case "-l":
+				this.xsbugLog = true;
 				break;
 			default:
 				name = argv[argi];

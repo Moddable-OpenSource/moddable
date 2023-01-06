@@ -113,10 +113,10 @@ class VL6180 {
   #byteView;
   
   constructor(options){
-    const io = this.#io = new options.io({
+    const io = this.#io = new options.sensor.io({
       address: 0x29,
       hz: 400_000,
-      ...options
+      ...options.sensor
     });
 
     this.#wordBuffer = new ArrayBuffer(2);

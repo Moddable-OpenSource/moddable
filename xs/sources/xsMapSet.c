@@ -907,7 +907,8 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 	}
 	else {
 		if (XS_REFERENCE_KIND == kind) {
-			sum = slot->value.reference - the->firstHeap; //(txSlot*)NULL;
+			txSlot* base = C_NULL;
+			sum = slot->value.reference - base;
 		}
 		else if (XS_INTEGER_KIND == kind) {
 			fxToNumber(the, slot);
@@ -1636,9 +1637,10 @@ void fxCleanupFinalizationRegistries(txMachine* the)
 	txSlot* closure;
 	while ((closure = *address)) {
 		txSlot* registry = closure->value.closure;
-		fx_FinalizationRegistryCleanup(the, registry, C_NULL);
-		if (registry->value.finalizationRegistry.callback->next == C_NULL)
-			*address = closure->next;
+		if (registry->value.finalizationRegistry.flags & XS_FINALIZATION_REGISTRY_CHANGED) {
+			fx_FinalizationRegistryCleanup(the, registry, C_NULL);
+			address = &(mxFinalizationRegistries.value.reference->next);
+		}
 		else
 			address = &(closure->next);
 	}

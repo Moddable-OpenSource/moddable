@@ -13,11 +13,11 @@
 					"$(MODULES)/network/net/esp/*",
 					"$(MODULES)/network/sntp/*"
 				],
-				"setup/network": "$(ETHERNET)/esp32/setup/ethernet"
+				"setup/ethernet": "$(ETHERNET)/esp32/setup/ethernet"
 			},
 			"preload": [
 				"socket",
-				"setup/network",
+				"setup/ethernet",
 				"sntp",
 				"net"
 			]

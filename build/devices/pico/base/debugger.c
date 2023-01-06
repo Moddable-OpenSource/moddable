@@ -52,7 +52,7 @@ void setupDebugger()
 
 	for (i=0; i<=19; i++) {
 		if (tud_cdc_connected()) {
-			printf("pico-usb-connected.\r\n");
+			// printf("pico-usb-connected.\r\n");
 			break;
 		}
 

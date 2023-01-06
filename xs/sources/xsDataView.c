@@ -611,6 +611,7 @@ void fx_ArrayBuffer_prototype_resize(txMachine* the)
 	newByteLength = fxArgToByteLength(the, 0, 0);
 	if (newByteLength > maxByteLength)
 		mxRangeError("newLength > maxByteLength");
+	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	chunk = (txByte*)fxRenewChunk(the, arrayBuffer->value.arrayBuffer.address, newByteLength);
 	if (!chunk) {
 		chunk = (txByte*)fxNewChunk(the, newByteLength);
@@ -648,6 +649,7 @@ void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 	txSlot* resultBuffer;
 	fxConstructArrayBufferResult(the, C_NULL, newByteLength);
 	resultBuffer = fxCheckArrayBufferDetached(the, mxResult, XS_MUTABLE);
+	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address, (newByteLength < oldByteLength) ? newByteLength : oldByteLength);
 	if (newByteLength > oldByteLength)
 		c_memset(resultBuffer->value.arrayBuffer.address + oldByteLength, 0, newByteLength - oldByteLength);
@@ -2125,7 +2127,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		txInteger sourceOffset = sourceView->value.dataView.offset;	
 		txSlot* sourceData = sourceBuffer->value.reference->next;
 		txInteger limit = offset + (sourceLength * delta);
-		if ((target < 0) || (length - sourceLength < target))
+		if (/* (target < 0) || */ (length - sourceLength < target))		//@@ target can never be negative?
 			mxRangeError("invalid offset");
 		if (data == sourceData) {
 			txSlot* resultBuffer;
@@ -2168,7 +2170,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		mxGetID(mxID(_length));
 		count = fxToInteger(the, the->stack);
 		mxPop();
-		if ((target < 0) || (length - count < target))
+		if (/* (target < 0) || */ (length - count < target))		//@@ target cannot be negative?
 			mxRangeError("invalid offset");
 		index = 0;
 		while (index < count) {

@@ -1179,12 +1179,16 @@ txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIn
 		txSlot* result = instance->next->next;
 		while (result) {
 			if (result->ID == id) {
-				result = result->value.closure;
-				alias = result->ID;
-				if (alias) {
-					txSlot* slot = the->aliasArray[alias];
-					if (slot)
-						result = slot;
+				if (result->kind == XS_CLOSURE_KIND) {
+					result = result->value.closure;
+					if (result) {
+						alias = result->ID;
+						if (alias) {
+							txSlot* slot = the->aliasArray[alias];
+							if (slot)
+								result = slot;
+						}	
+					}	
 				}	
 				return result;
 			}
@@ -1215,16 +1219,18 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 		txSlot* result = instance->next->next;
 		while (result) {
 			if (result->ID == id) {
-				result = result->value.closure;
-				if (result->flag & XS_DONT_SET_FLAG)
-					mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
-				alias = result->ID;
-				if (alias) {
-					result = the->aliasArray[alias];
-					if (!result) {
-						result = fxNewSlot(the);
-						the->aliasArray[alias] = result;
-					}
+				if (result->kind == XS_CLOSURE_KIND) {
+					result = result->value.closure;
+					if (result->flag & XS_DONT_SET_FLAG)
+						mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
+					alias = result->ID;
+					if (alias) {
+						result = the->aliasArray[alias];
+						if (!result) {
+							result = fxNewSlot(the);
+							the->aliasArray[alias] = result;
+						}
+					}	
 				}	
 				return result;
 			}

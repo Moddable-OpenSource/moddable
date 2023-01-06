@@ -1,0 +1,19 @@
+#!/bin/bash
+
+vid=$1
+pid=$2
+serial=$( findUSBLinux $vid $pid cdc_acm )
+
+if [ -z "$serial" ];
+then
+	echo -n "Hold BOOT button and press/release the RESET button"
+	while [ -z "$serial"  ]; do
+		echo -n "."
+		sleep 1
+		serial=$( findUSBLinux $vid $pid cdc_acm )
+	done
+else
+	echo "Triggering serial port $serial."
+	serial2xsbug $serial 921600 8N1 -programming
+fi
+

@@ -701,18 +701,36 @@ void fxStepAsync(txMachine* the, txSlot* instance, txFlag status)
 			mxPop();
 		}
 		else {
-			/* THIS */
+			if (mxIsReference(value) && mxIsPromise(value->value.reference)) {
+				mxDub();
+				mxGetID(mxID(_constructor));
+				if (fxIsSameValue(the, &mxPromiseConstructor, the->stack, 0)) {
+					mxPop();
+					fxPromiseThen(the, value->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
+					goto exit;
+				}
+				mxPop();
+			}
+			mxTemporary(resolveFunction);
+			mxTemporary(rejectFunction);
 			mxPush(mxPromiseConstructor);
+			fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+#ifdef mxPromisePrint
+			fprintf(stderr, "fxStepAsync %d\n", the->stack->value.reference->next->ID);
+#endif
+			fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
+			/* THIS */
+			mxPushUndefined();
 			/* FUNCTION */
-			mxDub();
-			mxGetID(mxID(_resolve));
+			mxPushSlot(resolveFunction);
 			mxCall();
 			/* ARGUMENTS */
 			mxPushSlot(value);
+			/* COUNT */
 			mxRunCount(1);
-			fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
 			mxPop();
 		}
+exit:			
 		mxPop();
 	}
 	mxCatch(the) {

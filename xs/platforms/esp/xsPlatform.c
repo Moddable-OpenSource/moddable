@@ -752,6 +752,8 @@ void fxReceiveLoop(void)
 
 	mxDebugMutexTake();
 
+	modWatchDogReset();
+
 	while (true) {
 		int c = ESP_getc();
 		if (-1 == c)

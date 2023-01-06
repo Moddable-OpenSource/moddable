@@ -18,11 +18,11 @@ class FT6206  {
 	#io;
 
 	constructor(options) {
-		const {i2c, reset, interrupt, onSample, target} = options;
-		const io = this.#io = new i2c.io({
+		const {sensor, reset, interrupt, onSample, target} = options;
+		const io = this.#io = new sensor.io({
 			hz: 100_000,
 			address: 0x38,
-			...i2c
+			...sensor
 		});
 		io.buffer = new Uint8Array(12);		// two touch points
 

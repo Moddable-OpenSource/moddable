@@ -179,7 +179,7 @@ txSlot* fxNewStringInstance(txMachine* the)
 
 void fxStringAccessorGetter(txMachine* the)
 {
-	txSlot* string;
+	txSlot* string = C_NULL;
 	txID id = the->scratch.value.at.id;
 	txIndex index = the->scratch.value.at.index;
 	if ((mxThis->kind == XS_STRING_KIND) || (mxThis->kind == XS_STRING_X_KIND))
@@ -187,27 +187,28 @@ void fxStringAccessorGetter(txMachine* the)
 	else {
 		txSlot* instance = fxToInstance(the, mxThis);
 		while (instance) {
-			if (instance->flag & XS_EXOTIC_FLAG) {
+			if ((instance->flag & XS_EXOTIC_FLAG) && (instance->next->ID == XS_STRING_BEHAVIOR)) {
 				string = instance->next;
-				if (string->ID == XS_STRING_BEHAVIOR)
-					break;
+				break;
 			}
 			instance = fxGetPrototype(the, instance);
 		}
 	}
-	if (id == mxID(_length)) {
-		mxResult->value.integer = fxUnicodeLength(string->value.string);
-		mxResult->kind = XS_INTEGER_KIND;
-	}
-	else {
-		txInteger from = fxUnicodeToUTF8Offset(string->value.string, index);
-		if (from >= 0) {
-			txInteger to = from + fxUnicodeToUTF8Offset(string->value.string + from, 1);
-			if (to >= 0) {
-				mxResult->value.string = fxNewChunk(the, to - from + 1);
-				c_memcpy(mxResult->value.string, string->value.string + from, to - from);
-				mxResult->value.string[to - from] = 0;
-				mxResult->kind = XS_STRING_KIND;
+	if (string) {
+		if (id == mxID(_length)) {
+			mxResult->value.integer = fxUnicodeLength(string->value.string);
+			mxResult->kind = XS_INTEGER_KIND;
+		}
+		else {
+			txInteger from = fxUnicodeToUTF8Offset(string->value.string, index);
+			if (from >= 0) {
+				txInteger to = from + fxUnicodeToUTF8Offset(string->value.string + from, 1);
+				if (to >= 0) {
+					mxResult->value.string = fxNewChunk(the, to - from + 1);
+					c_memcpy(mxResult->value.string, string->value.string + from, to - from);
+					mxResult->value.string[to - from] = 0;
+					mxResult->kind = XS_STRING_KIND;
+				}
 			}
 		}
 	}

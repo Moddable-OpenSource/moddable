@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
-Copyright 2016-2022 Moddable Tech, Inc.<BR>
-Revised: November 30, 2022
+Copyright 2016-2023 Moddable Tech, Inc.<BR>
+Revised: January 1, 2023
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), and [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3).
 
@@ -98,7 +98,7 @@ The Moddable SDK supports two ESP32-S2 development kits from Espressif. The foll
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-|  <img src="https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png" width=125><BR>Kaluga | `esp32/kaluga` |  **3.2" LCD display**<BR>320 x 240 QVGA<BR>16-bit color<BR><BR>2 MB SRAM<BR>Speaker and Audio Playback<BR>Touch Pad Panel<BR>NeoPixel LED | <li>[Moddable blog post](https://blog.moddable.com/blog/espidf42/)</li><li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit.html)</li> |
+|  <img src="https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png" width=125><BR>Kaluga | `esp32/kaluga` | **3.2" LCD display**<BR>320 x 240 QVGA<BR>16-bit color<BR><BR>2 MB SRAM<BR>Speaker and Audio Playback<BR>Touch Pad Panel<BR>NeoPixel LED | <li>[Moddable blog post](https://blog.moddable.com/blog/espidf42/)</li><li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit.html)</li> |
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/_images/esp32-s2-saola-1-v1.2-isometric.png" width=125><BR>Saola<BR>(WROOM & WROVER versions) | `esp32/saola_wroom` <BR> `esp32/saola_wrover`| NeoPixel LED<BR>2 MB SRAM (WROVER version only)| <li>[Moddable blog post](https://blog.moddable.com/blog/espidf42/)</li><li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)</li> |
 
 <a id="platforms-esp32-s3"></a>
@@ -106,18 +106,21 @@ The Moddable SDK supports two ESP32-S2 development kits from Espressif. The foll
 
 ESP32-S3 is the successor to the original ESP32. It has the following features:
 
-- 240 MHz processor
+- 240 MHz processor (two cores)
 - Wi-Fi
 - BLE
 - 512 KB RAM
 - External PSRAM support
 - 8 MB flash on popular modules
 
-Moddable SDK support for ESP32-S3 has been tested with the ESP32-S3-DevKitC-1-N8 development kit:
+The Moddable SDK supports devices built on ESP32-S3. The following table lists each device, its platform identifier, a list of key features specific to the device, and links to additional resources.
 
-| Name | Platform identifier | Links |
-| :---: | :--- | :--- |
-|  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+|  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | |<li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
+|  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` |  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
+|  <img src="./../assets/devices/adafruit-esp32-s3-tft-feather.png" width=125><BR>Adafruit ESP32-S3 TFT Feather | `esp32/s3_tft_feather` | 1.14" TFT display<BR> 240 x 135 16-bit color | <li>[Product page](https://www.adafruit.com/product/5483)</li>|
+|<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/atoms3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
 
 
 <a id="platforms-esp32-c3"></a>

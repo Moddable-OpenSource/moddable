@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: November 7, 2022
+Revised: December 30, 2022
 
 ## About this Document
 
@@ -66,6 +66,7 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 - `-d`: to build a debug instrumented version.
 - `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See [png2bmp](#png2bmp) for more detail.
 - `-i`: to build a release instrumented version.
+- `-l`: to log xsbug console output to the terminal rather than to xsbug (see note below).
 - `-m`: to run `make` automatically, otherwise **mcconfig** just generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
 - `-p platform`: to select the platform. Consult the documentation for your device target for its platform identifier. The supported values include: `esp`, `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `sim/moddable_one`, `sim/moddable_two`, `sim/moddable_three`, and `wasm`.  Defaults to the host build platform:`mac`, `win` or `lin`. 
@@ -77,6 +78,8 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
   - `screen=screen_driver` and `touch=touch_driver`: to specify a screen or touch driver. See the [examples readme](../../examples/readme.md) for more information on screen and touch driver configuration.
 
 > **Note**: To generate a release build, exclude both `-d` and `-i` from the command line.
+
+> **Note**: The `-l` option requires Node.js on your build system. You must also first run `npm install` in `$MODDABLE/tools/xsbug-log`.
 
 <a id="buildtargets"></a>
 **Build Targets**
@@ -104,7 +107,7 @@ There are a few important differences between `mcrun` and `mcconfig`:
 ### Arguments
 
 ```text
-mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+mcrun [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 ```
 
 The command line arguments to `mcrun` are nearly identical to those for `mcconfig`, except that `mcrun` does not support the `-t` option. See the [`mcconfig` Arguments](#mcconfig-arguments) section for a description of each argument.
@@ -143,7 +146,7 @@ mcrez files... [-o output] [-r name] [-p platform]
 For instance:
 
 ```shell
-cd $MODDABLE/piu/examples/balls
+cd $MODDABLE/examples/piu/balls
 png2bmp balls.png -o ~/Desktop
 ```
 
