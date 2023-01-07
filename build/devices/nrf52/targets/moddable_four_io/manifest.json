@@ -4,6 +4,7 @@
 		"FTDI_TRACE": "-DUSE_FTDI_TRACE=0"
 	},
 	"include": [
+		"$(MODULES)/io/manifest.json",
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
 		"$(MODULES)/pins/digital/monitor/manifest.json",
 		"$(MODULES)/drivers/jogdial/manifest.json",

@@ -44,14 +44,12 @@ class SecureHealthThermometerClient extends BLEClient {
 		}
 		if (found) {
 			this.stopScanning();
-			trace(`connecting to device ${device.address}\n`);
 			this.connect(device);
 		}
 	}
 	onAuthenticated(params) {
 		this.authenticated = true;
 		this.bonded = params.bonded;
-		trace(`onAuthenticated, bonded = ${this.bonded}\n`);
 		this.characteristic?.enableNotifications();
 	}
 	onConnected(device) {
