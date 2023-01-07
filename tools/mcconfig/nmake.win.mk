@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022 Moddable Tech, Inc.
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -130,7 +130,8 @@ C_FLAGS = \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
 	/D HAVE_MEMMOVE=1 \
-	/nologo
+	/nologo \
+	/MP
 !IF "$(DEBUG)"=="1"
 C_FLAGS = $(C_FLAGS) \
 	/D _DEBUG \
@@ -194,10 +195,14 @@ $(BIN_DIR)\mc.dll: $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(
 	link $(LINK_OPTIONS) $(LINK_LIBRARIES) $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) /implib:$(TMP_DIR)\mc.lib /out:$@
 	
 $(XS_OBJECTS) : $(XS_HEADERS)
-{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< /Fo$@
-{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
-	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< /Fo$@
+{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o::
+	cd $(LIB_DIR)
+	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $<
+	rename *.obj *.o
+{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o::
+	cd $(LIB_DIR)
+	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $<
+	rename *.obj *.o
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\mc.xs.c /Fo$@
