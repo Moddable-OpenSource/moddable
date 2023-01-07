@@ -62,7 +62,8 @@ C_OPTIONS = \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
 	/I$(TLS_DIR)\yaml \
-	/nologo
+	/nologo \
+	/MP
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
 	/D _DEBUG \
@@ -167,18 +168,30 @@ $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h
 $(OBJECTS) : $(SRC_DIR)\xsScript.h
 
-{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(TLS_DIR)\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(TLS_DIR)\yaml\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(MODDABLE)/modules/data/text/decoder\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(MODDABLE)/modules/data/text/encoder\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(MODDABLE)/modules/data/base64\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
+{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(TLS_DIR)\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(TLS_DIR)\yaml\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(MODDABLE)\modules\datatext\decoder\}.c{$(TMP_DIR)\}.o:
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(MODDABLE)\modules\data\text\encoder\}.c{$(TMP_DIR)\}.o:
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(MODDABLE)\modules\data\base64\}.c{$(TMP_DIR)\}.o:
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe

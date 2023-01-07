@@ -195,7 +195,7 @@ class LIS3DH {
 		let ret = {};
 
 		if (this.#accelEnabled) {
-			io.readBuffer(Register.OUT_X_L | 0x80, values);
+			io.readBuffer(Register.OUT_X_L | 0x80, values.buffer);
 			ret.x = values[0] * multiplier;
 			ret.y = values[1] * multiplier;
 			ret.z = values[2] * multiplier;

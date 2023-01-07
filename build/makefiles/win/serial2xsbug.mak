@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -40,7 +40,8 @@ C_OPTIONS = \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
 	/I$(TMP_DIR) \
-	/nologo
+	/nologo \
+	/MP
 	
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
@@ -86,8 +87,10 @@ $(BIN_DIR)\$(NAME).exe : $(OBJECTS)
 		/out:$(BIN_DIR)\$(NAME).exe
 
 $(OBJECTS) : $(SRC_DIR)\serial2xsbug.h
-{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
+{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe

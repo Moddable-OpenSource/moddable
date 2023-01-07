@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -67,7 +67,7 @@ export class TOOL {
 		});
 		command = command.join(" ");
 		if ("win" === this.currentPlatform) {
-			command = `pushd %MODDABLE%\\build\\makefiles\\win && build clean && build && popd && ${command}`;
+			command = `wmic process where "name='tools.exe'" delete >nul 2>&1 & pushd %MODDABLE%\\build\\makefiles\\win && build clean && build && popd && ${command}`;
 			this.then("cmd", "/C", command);
 		}
 		else {
