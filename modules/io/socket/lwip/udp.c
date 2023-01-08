@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -33,6 +33,7 @@
 
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "xsHost.h"
+#include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_* values
 
 #include "builtinCommon.h"
@@ -112,6 +113,8 @@ void xs_udp_constructor(xsMachine *the)
 	udp->onReadable = onReadable;
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
+
+	modInstrumentationAdjust(NetworkSockets, +1);
 }
 
 void xs_udp_destructor(void *data)
@@ -129,6 +132,8 @@ void xs_udp_destructor(void *data)
 	}
 
 	c_free(data);
+
+	modInstrumentationAdjust(NetworkSockets, +1);
 }
 
 void xs_udp_close(xsMachine *the)
@@ -191,6 +196,8 @@ void xs_udp_write(xsMachine *the)
 	udp_sendto_safe(udp->skt, buffer, byteLength, &dst, port, &err);
 	if (ERR_OK != err)
 		xsUnknownError("UDP send failed");
+
+	modInstrumentationAdjust(NetworkBytesWritten, byteLength);
 }
 
 void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
@@ -215,6 +222,8 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 	packet->pb = p;
 	packet->port = port;
 	packet->address = *addr;
+
+	modInstrumentationAdjust(NetworkBytesRead, p->len);
 
 	builtinCriticalSectionBegin();
 	if (udp->packets) {
@@ -262,5 +271,5 @@ void xs_udp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	UDP udp = it;
 
 	if (udp->onReadable)
-	(*markRoot)(the, udp->onReadable);
+		(*markRoot)(the, udp->onReadable);
 }
