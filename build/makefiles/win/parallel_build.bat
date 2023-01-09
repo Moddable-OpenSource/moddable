@@ -21,6 +21,14 @@ REM
 SET BUILD_DIR=%MODDABLE%\build
 SET XS_DIR=%MODDABLE%\xs
 
+IF "%1%"=="clean" (
+    echo Cleaning...
+    rmdir /S /Q %BUILD_DIR%\tmp
+    rmdir /S /Q %BUILD_DIR%\bin
+    echo Done.
+    EXIT /B 0
+)
+
 @echo This multi-processor build will open several CMD windows for parallel builds. Do not press any keys until the build is complete.
 @echo If you experience any issues with this build, please use build.bat instead to view the build output.
 (
