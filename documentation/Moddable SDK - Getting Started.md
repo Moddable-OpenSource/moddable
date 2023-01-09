@@ -1,7 +1,7 @@
 # Moddable SDK – Getting Started
 ### A guide to installing the Moddable SDK and building its tools
-Copyright 2016-2022 Moddable Tech, Inc.<BR>
-Revised: May 4, 2022
+Copyright 2016-2023 Moddable Tech, Inc.<BR>
+Revised: January 9, 2023
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
@@ -216,6 +216,8 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 	- Variable Value (add to the existing list): `%USERPROFILE%\Projects\moddable\build\bin\win\release`
 
 	> Note: The `%USERPROFILE%\Projects\moddable\build\bin\win\release` directory will be created in the next step. It is safe to set the environment variable now or to come back after Step 6 to add it to the `Path`.
+
+	> Note: Make sure you open a new Command Prompt after setting the environment variables. The new environment settings will not take effect in existing Command Prompt instances.
 	
 6. Launch the "x86 Native Tools Command Prompt for VS 2022" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
@@ -224,7 +226,8 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 	build
 	```
 	
-	> Note: Make sure you open a new Command Prompt after setting the environment variables above. The new environment settings will not take effect in existing Command Prompt instances.
+	> Note: There is an alternative build batch file called `parallel_build.bat` that can be used on multi-core systems to significantly speed up the Moddable SDK build. It is, however, more difficult to see diagnostic error messages when using this batch file. If `build.bat` works correctly on your system, consider using `parallel_build.bat` for future Moddable SDK builds.
+	
 
 7. Launch the `xsbug` debugger from the command line:
 
@@ -289,6 +292,8 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	cd %MODDABLE%\build\makefiles\win
 	build
 	```
+
+	> Note: There is an alternative build batch file called `parallel_build.bat` that can be used on multi-core systems to significantly speed up the Moddable SDK build. It is, however, more difficult to see diagnostic error messages when using this batch file. If `build.bat` works correctly on your system, consider using `parallel_build.bat` for future Moddable SDK builds.
 		
 4. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
