@@ -133,7 +133,7 @@ void xs_udp_destructor(void *data)
 
 	c_free(data);
 
-	modInstrumentationAdjust(NetworkSockets, +1);
+	modInstrumentationAdjust(NetworkSockets, -1);
 }
 
 void xs_udp_close(xsMachine *the)
