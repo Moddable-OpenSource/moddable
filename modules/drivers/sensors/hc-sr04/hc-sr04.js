@@ -48,8 +48,8 @@ class Sensor {
 
     this.#input = new sensor.io({
       pin: sensor.pin,
-      mode: sensor.io.RisingToFalling,
-      pullUpDown: sensor.io.PullDown,
+      edges: sensor.io.RisingToFalling,
+      mode: sensor.io.InputPullDown,
       onReadable: () => this.#onEcho()
     });
 
