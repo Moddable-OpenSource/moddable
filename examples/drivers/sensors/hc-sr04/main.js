@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Moddable Tech, Inc.
+ * Copyright (c) 2022-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -24,11 +24,15 @@ let sensor = new SR04({
 		pin: config.echoPin,
 		io: device.io.PulseWidth
 	},
-	onAlert: value => {
-		if (value.near) {
-			trace(`Distance: ${value.distance} cm\n`);
-		} else {
-			trace(`Out of range (beyond ${value.max} cm)\n`);
+	onAlert: () => {
+		const value = sensor.sample();
+
+		if (value !== undefined) {
+			if (value.near) {
+				trace(`Distance: ${value.distance} cm\n`);
+			} else {
+				trace(`Out of range (beyond ${value.max} cm)\n`);
+			}
 		}
 	}
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Moddable Tech, Inc.
+ * Copyright (c) 2022-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -33,6 +33,7 @@ class Sensor {
     max: 400
   }
   #onAlert;
+  #readingStale = true;
 
   constructor(options){
 
@@ -52,27 +53,32 @@ class Sensor {
       onReadable: () => this.#onEcho()
     });
 
-    this.configure({sampleRate: 500});
+    this.configure({interval: 500});
   }
   
   configure(options = {}){
-    const {sampleRate} = options;
+    const {interval} = options;
 
-    if (undefined !== sampleRate) {
+    if (undefined !== interval) {
       Timer.clear(this.#timer);
       this.#timer = undefined;
         
-      if (sampleRate !== 0) {
+      if (interval !== 0) {
         this.#timer = Timer.repeat(() => {
           this.#output.write(1);
           this.#output.write(0);          
-        }, sampleRate);
+        }, interval);
       }
     }
   }
 
   sample(){
-    return this.#reading;
+    if (!this.#readingStale) {
+      this.#readingStale = true;
+      return this.#reading;
+    }
+
+    return undefined;
   }
 
   close() {
@@ -86,17 +92,18 @@ class Sensor {
 
   #onEcho() {
     const value = this.#input.read();
+    this.#readingStale = false;
 
     if (value > 35000) {
       const doAlert = (this.#reading.near !== false);
       this.#reading.near = false;
       this.#reading.distance = null;
       if (doAlert)
-        this.#onAlert?.(this.#reading);  
+        this.#onAlert?.();  
     } else {
       this.#reading.near = true;
       this.#reading.distance = value / 58;
-      this.#onAlert?.(this.#reading);
+      this.#onAlert?.();
     }
   }
 
