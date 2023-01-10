@@ -34,18 +34,14 @@ class Sensor {
   }
   #onAlert;
   #readingStale = true;
+  #suppressDuplicates = false;
 
   constructor(options){
 
     const {trigger, sensor, onAlert} = options;
 
     this.#onAlert = onAlert;
-
-    this.#output = new trigger.io({
-      mode: trigger.io.Output,
-      pin: trigger.pin
-    });
-
+    
     this.#input = new sensor.io({
       pin: sensor.pin,
       edges: sensor.io.RisingToFalling,
@@ -53,13 +49,23 @@ class Sensor {
       onReadable: () => this.#onEcho()
     });
 
-    this.configure({interval: 500});
+    if (trigger !== undefined) {
+      this.#output = new trigger.io({
+        mode: trigger.io.Output,
+        pin: trigger.pin
+      });
+      
+      this.configure({interval: 500, suppressDuplicates: true});
+    }
   }
   
   configure(options = {}){
-    const {interval} = options;
+    const {interval, suppressDuplicates} = options;
 
     if (undefined !== interval) {
+      if (this.#output === undefined)
+        throw new Error("Configuring interval is only available on instances constructed with a trigger pin.");
+
       Timer.clear(this.#timer);
       this.#timer = undefined;
         
@@ -69,6 +75,10 @@ class Sensor {
           this.#output.write(0);          
         }, interval);
       }
+    }
+
+    if (undefined !== suppressDuplicates) {
+      this.#suppressDuplicates = suppressDuplicates;
     }
   }
 
@@ -95,7 +105,7 @@ class Sensor {
     this.#readingStale = false;
 
     if (value > 35000) {
-      const doAlert = (this.#reading.near !== false);
+      const doAlert = (!(this.#suppressDuplicates) || (this.#reading.near !== false));
       this.#reading.near = false;
       this.#reading.distance = null;
       if (doAlert)
