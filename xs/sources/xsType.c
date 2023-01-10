@@ -111,20 +111,22 @@ txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
 	from = instance->next;
 	to = result;
 	while (from) {
-		to = to->next = fxDuplicateSlot(the, from);
-		if (from->kind == XS_ARRAY_KIND) {
-			txSlot* address = from->value.array.address;
-			to->value.array.address = C_NULL;
-			if (address) {
-				txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
-				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
-				address = from->value.array.address;
-				c_memcpy(chunk, address, size * sizeof(txSlot));
-				to->value.array.address = chunk;
-				while (size) {
-					chunk->flag &= ~XS_MARK_FLAG;
-					chunk++;
-					size--;
+		if (from->kind != XS_WEAK_ENTRY_KIND) {
+			to = to->next = fxDuplicateSlot(the, from);
+			if (from->kind == XS_ARRAY_KIND) {
+				txSlot* address = from->value.array.address;
+				to->value.array.address = C_NULL;
+				if (address) {
+					txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+					txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+					address = from->value.array.address;
+					c_memcpy(chunk, address, size * sizeof(txSlot));
+					to->value.array.address = chunk;
+					while (size) {
+						chunk->flag &= ~XS_MARK_FLAG;
+						chunk++;
+						size--;
+					}
 				}
 			}
 		}
