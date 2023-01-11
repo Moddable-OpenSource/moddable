@@ -205,6 +205,7 @@ void _xs_i2c_read(xsMachine *the)
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsResult = xsArg(0);
 		xsmcGetBufferWritable(xsResult, &buffer, &length);
+		xsmcSetInteger(xsResult, length);
 	}
 	else {
  		length = xsmcToInteger(xsArg(0));
