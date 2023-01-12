@@ -362,8 +362,6 @@ export default class extends TOOL {
 		return parts.join("\n");
 	}
 	prepareNode(type, config, dones, errors, statuses, nodes, imports) {
-		let deleteName = true;
-
 		switch (type) {
 			case "status": {
 				delete config.scope;
@@ -1270,14 +1268,7 @@ export default class extends TOOL {
 				delete config.inte;
 				delete config.property;
 			} break;
-			
-			default:
-				deleteName = false;
-				break;
 		}
-
-		if (deleteName)
-			delete config.name;		// name is needed for compatibilty with some Node-RED node implementations that needlessly set it directly (historical)
 
 		if (dones && !NoDoneNodes.includes(type))
 			config.dones = dones;
@@ -1298,6 +1289,9 @@ export default class extends TOOL {
 			else
 				delete config.wires;
 		}
+
+		// name not needed in config, as passed to constructor
+		delete config.name;
 	}
 	resolveValue(type, value) {
 		switch (type) {
