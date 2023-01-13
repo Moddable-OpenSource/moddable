@@ -154,6 +154,36 @@ static int main262(int argc, char* argv[]);
 static int fuzz(int argc, char* argv[]);
 #endif
 #if OSSFUZZ
+#ifdef mxMetering
+
+#define xsBeginMetering(_THE, _CALLBACK, _STEP) \
+	do { \
+		xsJump __HOST_JUMP__; \
+		__HOST_JUMP__.nextJump = (_THE)->firstJump; \
+		__HOST_JUMP__.stack = (_THE)->stack; \
+		__HOST_JUMP__.scope = (_THE)->scope; \
+		__HOST_JUMP__.frame = (_THE)->frame; \
+		__HOST_JUMP__.environment = NULL; \
+		__HOST_JUMP__.code = (_THE)->code; \
+		__HOST_JUMP__.flag = 0; \
+		(_THE)->firstJump = &__HOST_JUMP__; \
+		if (setjmp(__HOST_JUMP__.buffer) == 0) { \
+			fxBeginMetering(_THE, _CALLBACK, _STEP)
+
+#define xsEndMetering(_THE) \
+			fxEndMetering(_THE); \
+		} \
+		(_THE)->stack = __HOST_JUMP__.stack, \
+		(_THE)->scope = __HOST_JUMP__.scope, \
+		(_THE)->frame = __HOST_JUMP__.frame, \
+		(_THE)->code = __HOST_JUMP__.code, \
+		(_THE)->firstJump = __HOST_JUMP__.nextJump; \
+		break; \
+	} while(1)
+#else
+	#define xsBeginMetering(_THE, _CALLBACK, _STEP)
+	#define xsEndMetering(_THE)
+#endif
 static int fuzz_oss(const uint8_t *Data, size_t script_size);
 #endif
 static void fxBuildAgent(xsMachine* the);
@@ -1851,6 +1881,16 @@ int fuzz(int argc, char* argv[])
 }
 #endif 
 #if OSSFUZZ
+static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
+{
+	// some test262 fail at 2147483800
+	if (index > 1000000) {
+		fprintf(stderr, "Computation limits reached (index %u). Exiting...\n", index);
+		return 0;
+	}
+	return 1;
+}
+
 int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
 	xsCreation _creation = {
@@ -1876,61 +1916,65 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	fxInitializeSharedCluster();
 	machine = xsCreateMachine(creation, "xst", NULL);
 
-	xsBeginHost(machine);
+	xsBeginMetering(machine, xsWithinComputeLimit, 10000);
 	{
-		xsTry {
-			xsVars(2);
-			modInstallTextDecoder(the);
-			xsResult = xsArrayBuffer(buffer, script_size);
-			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
-			xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
-#ifdef OSSFUZZ_JSONPARSE
-			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
-			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
-#else
-			xsToStringBuffer(xsResult, buffer, buffer_size);
+		xsBeginHost(machine);
+		{
+			xsTry {
+				xsVars(2);
+				modInstallTextDecoder(the);
+				xsResult = xsArrayBuffer(buffer, script_size);
+				xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
+				xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
+	#ifdef OSSFUZZ_JSONPARSE
+				xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
+				xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
+	#else
+				xsToStringBuffer(xsResult, buffer, buffer_size);
 
-			// hardened javascript
-			xsResult = xsNewHostFunction(fx_harden, 1);
-			xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
-			xsResult = xsNewHostFunction(fx_lockdown, 0);
-			xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
-			xsResult = xsNewHostFunction(fx_petrify, 1);
-			xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
-			xsResult = xsNewHostFunction(fx_mutabilities, 1);
-			xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+				// hardened javascript
+				xsResult = xsNewHostFunction(fx_harden, 1);
+				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_lockdown, 0);
+				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_petrify, 1);
+				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_mutabilities, 1);
+				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
 
-			xsResult = xsNewHostFunction(fx_gc, 0);
-			xsSet(xsGlobal, xsID("gc"), xsResult);
-			xsResult = xsNewHostFunction(fx_print, 1);
-			xsSet(xsGlobal, xsID("print"), xsResult);
+				xsResult = xsNewHostFunction(fx_gc, 0);
+				xsSet(xsGlobal, xsID("gc"), xsResult);
+				xsResult = xsNewHostFunction(fx_print, 1);
+				xsSet(xsGlobal, xsID("print"), xsResult);
 
-			// test262 stubs
-			xsVar(0) = xsNewHostFunction(fx_nop, 1);
-			xsDefine(xsGlobal, xsID("assert"), xsVar(0), xsDontEnum);
-			xsDefine(xsVar(0), xsID("sameValue"), xsVar(0), xsDontEnum);
-			xsDefine(xsVar(0), xsID("notSameValue"), xsVar(0), xsDontEnum);
-			xsVar(1) = xsNewHostFunction(fx_assert_throws, 1);
-			xsDefine(xsVar(0), xsID("throws"), xsVar(1), xsDontEnum);
-			
-			txStringCStream aStream;
-			aStream.buffer = buffer;
-			aStream.offset = 0;
-			aStream.size = strlen(buffer);
-			// run script
-			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
-			the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
-			fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
-			the->script = NULL;
-			mxPullSlot(mxResult);
-			fxRunLoop(the);
-#endif
+				// test262 stubs
+				xsVar(0) = xsNewHostFunction(fx_nop, 1);
+				xsDefine(xsGlobal, xsID("assert"), xsVar(0), xsDontEnum);
+				xsDefine(xsVar(0), xsID("sameValue"), xsVar(0), xsDontEnum);
+				xsDefine(xsVar(0), xsID("notSameValue"), xsVar(0), xsDontEnum);
+				xsVar(1) = xsNewHostFunction(fx_assert_throws, 1);
+				xsDefine(xsVar(0), xsID("throws"), xsVar(1), xsDontEnum);
+				
+				txStringCStream aStream;
+				aStream.buffer = buffer;
+				aStream.offset = 0;
+				aStream.size = strlen(buffer);
+				// run script
+				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
+				the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
+				fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+				the->script = NULL;
+				mxPullSlot(mxResult);
+				fxRunLoop(the);
+	#endif
+			}
+			xsCatch {
+				the->script = NULL;
+			}
 		}
-		xsCatch {
-			the->script = NULL;
-		}
+		xsEndHost(machine);
 	}
-	xsEndHost(machine);
+	xsEndMetering(machine);
 	fxDeleteScript(machine->script);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
