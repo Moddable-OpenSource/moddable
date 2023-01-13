@@ -1268,6 +1268,16 @@ export default class extends TOOL {
 				delete config.inte;
 				delete config.property;
 			} break;
+			
+			case "ui_button": {
+				const value = this.resolveValue(config.payloadType, config.payload);
+				const setter = [
+					`function (msg) {`,
+					`\t\t\tmsg.payload = ${value};`,
+					`\t\t}`,
+				];
+				config.setter = setter.join("\n");
+			} break;
 		}
 
 		if (dones && !NoDoneNodes.includes(type))
