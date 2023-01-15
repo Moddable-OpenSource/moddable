@@ -64,8 +64,10 @@ class Screen extends config.Screen {
 		const onSample = () => {
 			const touch = this.#touch;
 			const points = touch.sample();
+			if (!points) return;
+
 			let mask = (1 << touchCount) - 1;
-			for (let i = 0, length = points?.length ?? 0; i < length; i++) {
+			for (let i = 0, length = points.length; i < length; i++) {
 				const point = points[i];
 				const id = point.id;
 				const last = touch.points[id];

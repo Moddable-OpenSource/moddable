@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,6 +29,7 @@
 #include "esp_netif.h"
 
 #include "ethernet.h"
+#include "esp_eth_phy.h"
 
 #include "modSPI.h"
 
@@ -39,8 +40,11 @@ int8_t	gEthernetIP = 0;		// 0x01 == IP4, 0x02 == IP6
 esp_netif_t *gNetif = NULL;
 
 static esp_err_t initEthernet(void);
+
+#ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
 static spi_device_handle_t init_spi();
 static void uninit_spi(spi_device_handle_t);
+#endif
 
 void xs_ethernet_start(xsMachine *the)
 {
@@ -228,28 +232,60 @@ esp_err_t initEthernet(void)
 	spi_device_handle_t spi_handle;
 	uint8_t macaddr[6];
 	esp_err_t err = ESP_OK;
+	esp_eth_mac_t *mac;
+	esp_eth_phy_t *phy;
+	esp_eth_handle_t eth_handle;
 
 	if (gEthernetState > 0) return err;
 
+	esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
+	gNetif = esp_netif_new(&netif_cfg);
+
+#ifdef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
+	eth_mac_config_t mac_config =  ETH_MAC_DEFAULT_CONFIG();
+	eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+
+	phy_config.phy_addr = MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS;
+	phy_config.reset_gpio_num = MODDEF_ETHERNET_INTERNAL_PHY_RESET;
+	mac_config.smi_mdc_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDC;
+	mac_config.smi_mdio_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDIO;
+	mac = esp_eth_mac_new_esp32(&mac_config);
+#if MODDEF_ETHERNET_INTERNAL_PHY_IP101
+    phy = esp_eth_phy_new_ip101(&phy_config);
+#elif MODDEF_ETHERNET_INTERNAL_PHY_RTL8201
+    phy = esp_eth_phy_new_rtl8201(&phy_config);
+#elif MODDEF_ETHERNET_INTERNAL_PHY_LAN87XX
+    phy = esp_eth_phy_new_lan87xx(&phy_config);
+#elif MODDEF_ETHERNET_INTERNAL_PHY_DP83848
+    phy = esp_eth_phy_new_dp83848(&phy_config);
+#elif MODDEF_ETHERNET_INTERNAL_PHY_KSZ8041
+    phy = esp_eth_phy_new_ksz8041(&phy_config);
+#elif MODDEF_ETHERNET_INTERNAL_PHY_KSZ8081
+    phy = esp_eth_phy_new_ksz8081(&phy_config);
+#endif
+#else
 	if (gEthernetState < -1) {
 		gpio_install_isr_service(0);
 		gEthernetState = -1;
 	}
 		
 	spi_handle = init_spi();
-	esp_eth_mac_t *mac = mod_ethernet_get_mac(spi_handle, MODDEF_ETHERNET_INT_PIN);
-	esp_eth_phy_t *phy = mod_ethernet_get_phy();
-
+	mac = mod_ethernet_get_mac(spi_handle, MODDEF_ETHERNET_INT_PIN);
+	phy = mod_ethernet_get_phy();
+#endif
+	
 	esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-	esp_eth_handle_t eth_handle = NULL;
+	eth_handle = NULL;
 	err = esp_eth_driver_install(&eth_config, &eth_handle);
 	if (err != ESP_OK) {
 		if (mac)
 			mac->del(mac);
 		if (phy)
 			phy->del(phy);
+#ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
 		if (spi_handle)
 			uninit_spi(spi_handle);
+#endif
 		return err;
 	}
 
@@ -257,9 +293,6 @@ esp_err_t initEthernet(void)
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
 	gEthernetState = 1;
-
-	esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
-	gNetif = esp_netif_new(&netif_cfg);
 
 	ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &doEthernetEvent, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &doIPEvent, NULL));
@@ -273,6 +306,8 @@ esp_err_t initEthernet(void)
 	return err;
 }
 
+
+#ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
 static spi_device_handle_t init_spi() {
 	spi_device_handle_t spi_handle = NULL;
 
@@ -328,4 +363,4 @@ static void uninit_spi(spi_device_handle_t spi_handle) {
 	modSPIUninit(&config);
 #endif
 }
-
+#endif

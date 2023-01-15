@@ -301,21 +301,25 @@ void fxExecuteModules(txMachine* the, txSlot* queue)
 						if (mxIsReference(result) && mxIsPromise(result->value.reference)) {
 							txSlot* function;
 							txSlot* home;
-							mxDub();
-							mxGetID(mxID(_then));
-							mxCall();
-					
+							txSlot* resolveExecuteFunction;
+							txSlot* rejectExecuteFunction;
+							
 							function = fxNewHostFunction(the, fxExecuteModulesFulfilled, 1, XS_NO_ID, mxExecuteModulesFulfilledProfileID);
 							home = mxFunctionInstanceHome(function);
 							home->value.home.object = queue;
 							home->value.home.module = module->value.reference;
+							resolveExecuteFunction = the->stack;
 	
 							function = fxNewHostFunction(the, fxExecuteModulesRejected, 1, XS_NO_ID, mxExecuteModulesRejectedProfileID);
 							home = mxFunctionInstanceHome(function);
 							home->value.home.object = queue;
 							home->value.home.module = module->value.reference;
+							rejectExecuteFunction = the->stack;
 				
-							mxRunCount(2);
+							fxPromiseThen(the, result->value.reference, resolveExecuteFunction, rejectExecuteFunction, C_NULL, C_NULL);
+						
+							mxPop();
+							mxPop();
 							mxPop();
 							done = 0;
 						}
@@ -2217,7 +2221,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 							moduleID = internal->value.module.id;
 							realm = internal->value.module.realm;
 							mxModuleStatus(module) = XS_MODULE_STATUS_LOADING;
-							mxPushSlot(module);
+							mxPushUndefined();
 							mxPushSlot(loadNowHook);
 							mxCall();
 							fxPushKeyString(the, moduleID);
@@ -2227,6 +2231,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 							mxPop(); // descriptor
 						}
 					}
+                    mxReportModuleQueue("LOAD");
                     module = queue->next;
 				}
 				else if (mxModuleStatus(module) == XS_MODULE_STATUS_LOADED) {

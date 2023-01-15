@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -313,8 +313,6 @@ export default class extends TOOL {
 					let configuration = ["{"];
 					for (const name in c) {
 						const value = c[name];
-						if ("name" === name)
-							continue;
 						if (("string" === typeof value) && value.startsWith("function ("))
 							configuration.push(`\t\t${name}: ${value},`);
 						else
@@ -364,6 +362,8 @@ export default class extends TOOL {
 		return parts.join("\n");
 	}
 	prepareNode(type, config, dones, errors, statuses, nodes, imports) {
+		let deleteName = true;
+
 		switch (type) {
 			case "status": {
 				delete config.scope;
@@ -954,9 +954,9 @@ export default class extends TOOL {
 
 			case "csv": {
 				config.template = (config.temp || "");
-				config.sep = (config.sep || ',').replace("\\t","\t").replace("\\n","\n").replace("\\r","\r");
+				config.sep = (config.sep || ',').replaceAll("\\t","\t").replaceAll("\\n","\n").replaceAll("\\r","\r");
 				config.quo = '"';
-				config.ret = (config.ret || "\n").replace("\\n","\n").replace("\\r","\r");
+				config.ret = (config.ret || "\n").replaceAll("\\n","\n").replaceAll("\\r","\r");
 				config.winflag = (config.ret === "\r\n");
 				config.lineend = "\n";
 				config.multi = config.multi || "one";
@@ -1041,7 +1041,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
 			} break;
 
 			case "tcp out": {
@@ -1054,7 +1054,7 @@ export default class extends TOOL {
 				if (!config.base64)
 					delete config.base64;
 				if (config.newline)
-					config.newline = (config.newline).replace("\\n","\n").replace("\\r","\r").replace("\\t","\t");
+					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
 			} break;
 
 			case "rpi-gpio in": {
@@ -1090,6 +1090,114 @@ export default class extends TOOL {
 				if (config.wipe < 0) { config.wipe = 0; }
 				if (config.brightness < 0) { config.brightness = 0; }
 				if (config.brightness > 100) { config.brightness = 100; }
+			} break;
+			
+			case "sensor": {
+				if (config.io && !config.options) {		// convert original config to new
+					config.options = {
+						sensor: {
+							io: config.io,
+							bus: config.bus ?? "default"
+						}
+					};
+					delete config.io;
+				}
+			
+				let options = {}, construct;
+				const initialize = [];
+				initialize.push(`function () {`);
+
+				if (config.options.reference)
+					construct = config.options.reference;
+				else {
+					imports.set("Modules", "modules");
+					initialize.push(`\t\t\tconst Sensor = Modules.importNow("${config.module}")`);
+					construct = "Sensor";
+				}
+				initialize.push(`\t\t\tconst sensor = new ${construct}({`);
+
+				if (config.options) {
+					for (const name in config.options) {
+						const option = config.options[name];
+						if (undefined === option.io)
+							continue;
+
+						switch (option.io) {
+							case "Analog": {
+								let pin = parseInt(option.pin);
+								if (Number.isNaN(pin))
+									pin = option.pin;
+								initialize.push(`\t\t\t\t${name}: {`);
+								initialize.push(`\t\t\t\t\tio: device.io.Analog,`);
+								initialize.push(`\t\t\t\t\tpin: ${pin},`);
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							case "Digital": {
+								let pin = parseInt(option.pin);
+								if (Number.isNaN(pin))
+									pin = option.pin;
+								initialize.push(`\t\t\t\t${name}: {`);
+								initialize.push(`\t\t\t\t\tio: device.io.Digital,`);
+								initialize.push(`\t\t\t\t\tmode: device.io.Digital.${option.mode},`);
+								initialize.push(`\t\t\t\t\tpin: ${pin},`);
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							case "I2C":
+							case "SMBus": {
+								initialize.push(`\t\t\t\t${name}: {`);
+								if (option.bus || ((undefined === option.data) && (undefined === option.clock))) {
+									initialize.push(`\t\t\t\t\t...device.I2C.${option.bus || "default"},`);
+									if ("SMBus" === option.io)
+										initialize.push(`\t\t\t\t\tio: device.io.SMBus,`);
+								}
+								else {
+									initialize.push(`\t\t\t\t\tio: device.io.${option.io},`);
+
+									let data = parseInt(option.data), clock = parseInt(option.clock);
+									if (Number.isNaN(data))
+										data = option.data;
+									if (Number.isNaN(clock))
+										clock = option.clock;
+
+									initialize.push(`\t\t\t\t\tdata: ${data},`);
+									initialize.push(`\t\t\t\t\tclock: ${clock},`);
+								}
+
+								if (undefined !== option.address)
+									initialize.push(`\t\t\t\t\taddress: ${option.address},`);
+
+								if (undefined !== option.hz)
+									initialize.push(`\t\t\t\t\thz: ${option.hz},`);
+
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							default:
+								throw new Error(`Unknown io ${option.io}`);
+						}
+					}
+
+					for (const name in config.options) {
+						const option = config.options[name];
+						if (option.callback)
+							initialize.push(`\t\t\t\t${option.callback}: () => {const msg = this.onMessage({callback: "${name}"}); if (msg) this.send(msg);},`);
+					}
+				}
+
+				initialize.push(`\t\t\t});`);
+
+				if (config.configuration) {
+					const configuration = JSON.parse(config.configuration);
+					initialize.push(`\t\t\tsensor.configure(${JSON.stringify(configuration)});`);
+				}
+
+				initialize.push(`\t\t\treturn sensor;`);
+				initialize.push(`\t\t}`);
+				config.initialize = initialize.join("\n");
+
+				delete config.module;
+				delete config.platform;
+				delete config.options;
+				delete config.configuration;
 			} break;
 
 			case "random": {
@@ -1162,7 +1270,14 @@ export default class extends TOOL {
 				delete config.inte;
 				delete config.property;
 			} break;
+			
+			default:
+				deleteName = false;
+				break;
 		}
+
+		if (deleteName)
+			delete config.name;		// name is needed for compatibilty with some Node-RED node implementations that needlessly set it directly (historical)
 
 		if (dones && !NoDoneNodes.includes(type))
 			config.dones = dones;

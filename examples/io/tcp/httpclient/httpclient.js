@@ -142,7 +142,7 @@ class HTTPClient {
 	#onClose;
 	
 	constructor(options) {
-		const {host, address, port, onClose} = options;
+		const {host, address, port, onClose} = options;		//@@ onError?? 
 
 		if (!host) throw new Error("host required");
 		this.#host = host;
@@ -153,15 +153,21 @@ class HTTPClient {
 			host: this.#host, 
 
 			onResolved: (host, address) => {
-				this.#socket = new options.socket.io({
-					...options.socket,
-					address,
-					host,
-					port: port ?? 80,
-					onReadable: this.#onReadable.bind(this),
-					onWritable: this.#onWritable.bind(this),
-					onError: this.#onError.bind(this)
-				});
+				try {
+					this.#socket = new options.socket.io({
+						...options.socket,
+						address,
+						host,
+						port: port ?? 80,
+						onReadable: this.#onReadable.bind(this),
+						onWritable: this.#onWritable.bind(this),
+						onError: this.#onError.bind(this)
+					});
+				}
+				catch {
+					this.#state = "error";
+					this.#onError?.();
+				}
 			},
 			onError: () => {
 				this.#state = "error";

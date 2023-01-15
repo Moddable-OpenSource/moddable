@@ -65,18 +65,23 @@ class WebSocketClient {
 			host: this.#options.host, 
 
 			onResolved: (host, address) => {
-				this.#socket = new options.socket.io({
-					...options.socket,
-					address,
-					host,
-					port: this.#options.port ?? 80,
-					onReadable: this.#onReadable.bind(this),
-					onWritable: this.#onWritable.bind(this),
-					onError: this.#onError.bind(this)
-				});
-				this.#state = "connecting";
+				try {
+					this.#state = "connecting";
+					this.#socket = new options.socket.io({
+						...options.socket,
+						address,
+						host,
+						port: this.#options.port ?? 80,
+						onReadable: this.#onReadable.bind(this),
+						onWritable: this.#onWritable.bind(this),
+						onError: this.#onError.bind(this)
+					});
+				}
+				catch {
+					this.#onError?.();
+				}
 			},
-			onError: (err) => {
+			onError: () => {
 				this.#onError?.();
 			},
 		});

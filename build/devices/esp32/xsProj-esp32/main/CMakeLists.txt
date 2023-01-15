@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Moddable Tech, Inc.
+# Copyright (c) 2022-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -36,7 +36,7 @@ if (INSTRUMENT EQUAL "1")
 endif()
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-             PRIV_REQUIRES driver nvs_flash esp_adc_cal vfs spiffs fatfs bt)
+             PRIV_REQUIRES driver nvs_flash esp_adc_cal vfs spiffs fatfs bt esp_eth)
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE xsesp32)
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021 Moddable Tech, Inc.
+# Copyright (c) 2016-2022 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -17,12 +17,22 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+
 ifeq ($(DEBUG),1)
-	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+	ifeq ($(XSBUG_LOG),1)
+		START_XSBUG = 
+		KILL_XSBUG = $(shell pkill -f xsbug)
+		START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+	else
+		KILL_XSBUG = 
+		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+	endif	
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 else
 	START_XSBUG =
 	KILL_SERIAL2XSBUG =
+	KILL_XSBUG = 
 endif
 
 XS_DIRECTORIES = \
@@ -138,8 +148,9 @@ XSBUG_PORT ?= 5002
 	
 all: precursor
 	$(KILL_SERIAL2XSBUG) 
+	$(KILL_XSBUG)
 	$(START_XSBUG)
-	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+	$(START_SIMULATOR)
 
 precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
 

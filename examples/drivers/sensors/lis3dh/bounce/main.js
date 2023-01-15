@@ -22,11 +22,11 @@ import ILI9341 from "ili9341";
 import device from "embedded:provider/builtin";
 import Accelerometer from "embedded:sensor/Accelerometer/LIS3DH";
 
-debugger;
-
 let pixelsOut = new ILI9341({});
 const width = pixelsOut.width;
 const height = pixelsOut.height;
+
+const SCALE = 9.80665;		// 1G = 9.80665 m/s
 
 let render = new Poco(pixelsOut);
 let font = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
@@ -71,8 +71,8 @@ Timer.repeat(() => {
 		drawBar("Z", values.z, 0, font.height * 2, width, font.height);
 	render.end();
 
-	ball.vx = (ball.vx + values.y) * 0.98;
-	ball.vy = (ball.vy + values.x) * 0.98;
+	ball.vx = (ball.vx + (values.y / SCALE));
+	ball.vy = (ball.vy + (values.x / SCALE));
 	let x = ball.x + ball.vx;
 	let y = ball.y + ball.vy;
 	if (x < 0) {
@@ -104,7 +104,7 @@ function formatValue(value) {
 
 function drawBar(label, value, x, y, width, height) {
 	const halfWidth = width >> 1;
-	const barWidth = (value * halfWidth) | 0;
+	const barWidth = ((value / SCALE) * halfWidth) | 0;
 
 	if (value > 0)
 		render.fillRectangle(barColor, x + halfWidth, y, barWidth, height);

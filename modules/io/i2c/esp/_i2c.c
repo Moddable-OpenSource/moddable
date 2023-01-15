@@ -183,6 +183,7 @@ void _xs_i2c_read(xsMachine *the)
 	else {
 		xsResult = xsArg(0);
 		xsmcGetBufferWritable(xsResult, &buffer, &length);
+		xsmcSetInteger(xsResult, length);
 	}
 
 	i2cActivate(i2c);

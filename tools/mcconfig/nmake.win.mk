@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -23,10 +23,23 @@
 !CMDSWITCHES +S
 !ENDIF
 
+KILL_XSBUG = 
+
 !IF "$(DEBUG)"=="1"
+!IF "$(XSBUG_LOG)"=="1"
+START_XSBUG =
+KILL_XSBUG = -tasklist /nh /fi "imagename eq xsbug.exe" | (find /i "xsbug.exe" > nul) && taskkill /f /t /im "xsbug.exe" >nul 2>&1 
+!ELSE
 START_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+!ENDIF
 !ELSE
 START_XSBUG =
+!ENDIF
+
+!IF "$(XSBUG_LOG)"=="1"
+START_COMMAND = cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
+!ELSE
+START_COMMAND = start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
 !ENDIF
 
 XS_DIRECTORIES = \
@@ -117,7 +130,8 @@ C_FLAGS = \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
 	/D HAVE_MEMMOVE=1 \
-	/nologo
+	/nologo \
+	/MP
 !IF "$(DEBUG)"=="1"
 C_FLAGS = $(C_FLAGS) \
 	/D _DEBUG \
@@ -154,8 +168,9 @@ XSID = $(BUILD_DIR)\bin\win\debug\xsid
 XSL = $(BUILD_DIR)\bin\win\debug\xsl
 	
 all: build
+	$(KILL_XSBUG)
 	$(START_XSBUG)
-	start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
+	$(START_COMMAND)
 
 build: $(LIB_DIR) $(BIN_DIR)\mc.dll
 
@@ -180,10 +195,14 @@ $(BIN_DIR)\mc.dll: $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(
 	link $(LINK_OPTIONS) $(LINK_LIBRARIES) $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) /implib:$(TMP_DIR)\mc.lib /out:$@
 	
 $(XS_OBJECTS) : $(XS_HEADERS)
-{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< /Fo$@
-{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
-	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< /Fo$@
+{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o::
+	cd $(LIB_DIR)
+	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $<
+	rename *.obj *.o
+{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o::
+	cd $(LIB_DIR)
+	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $<
+	rename *.obj *.o
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
 	cl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\mc.xs.c /Fo$@

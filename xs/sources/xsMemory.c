@@ -929,6 +929,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 	case XS_LIST_KIND:
+		fxCheckCStack(the);
 		aSlot = theSlot->value.list.first;
 		while (aSlot) {
 			if (!(aSlot->flag & XS_MARK_FLAG)) {
