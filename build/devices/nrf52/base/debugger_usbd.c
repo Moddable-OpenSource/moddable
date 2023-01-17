@@ -109,7 +109,7 @@ static uint8_t m_tx_buffer[kTXBufferSize];
 static int16_t m_tx_buffer_index = 0;
 
 static char m_rx_buffer[1];
-NRF_QUEUE_DEF(uint8_t, m_rx_queue, 2048, NRF_QUEUE_MODE_OVERFLOW);
+NRF_QUEUE_DEF(uint8_t, m_rx_queue, 2*NRF_DRV_USBD_EPSIZE, NRF_QUEUE_MODE_OVERFLOW);
 
 static volatile uint8_t m_usb_connected = false;
 
@@ -131,7 +131,7 @@ static TaskHandle_t m_usbd_thread;
 #define usbMutexGive() xSemaphoreGive(gUSBMutex)
 static SemaphoreHandle_t gUSBMutex = NULL;
 
-static void debug_task(void *pvParameter);
+static void usb_debug_task(void *pvParameter);
 #define DEBUG_TASK_PRIORITY		2
 static QueueHandle_t uartQueue;
 
@@ -147,7 +147,7 @@ void setupDebugger(void)
 		gUSBMutex = xSemaphoreCreateMutex();
 
 	uartQueue = xQueueCreate(5, sizeof(uint32_t));
-	xTaskCreate(debug_task, "debug", configMINIMAL_STACK_SIZE, uartQueue, 4, NULL);
+	xTaskCreate(usb_debug_task, "debug", configMINIMAL_STACK_SIZE, uartQueue, 4, NULL);
 
 	app_usbd_serial_num_generate();
 
@@ -174,7 +174,7 @@ void flushDebugger()
 	}
 }
 
-static void debug_task(void *pvParameter)
+static void usb_debug_task(void *pvParameter)
 {
 	while (true) {
 		uint32_t event;
@@ -260,37 +260,37 @@ void usbd_user_ev_handler(app_usbd_event_type_t event)
 {
 	switch(event) {
 		case APP_USBD_EVT_STOPPED:
-    		ftdiTrace("APP_USBD_EVT_STOPPED");
+//    		ftdiTrace("APP_USBD_EVT_STOPPED");
 			app_usbd_disable();
 			break;
 
 		case APP_USBD_EVT_STARTED:
-    		ftdiTrace("APP_USBD_EVT_STARTED");
+//    		ftdiTrace("APP_USBD_EVT_STARTED");
 			break;
 
 		case APP_USBD_EVT_POWER_DETECTED:
-    		ftdiTrace("APP_USBD_EVT_POWER_DETECTED");
+//    		ftdiTrace("APP_USBD_EVT_POWER_DETECTED");
 			if (!nrf_drv_usbd_is_enabled()) {
-    			ftdiTrace("calling app_usbd_enable");
+//    			ftdiTrace("calling app_usbd_enable");
 				app_usbd_enable();
 			}
-			else
-    			ftdiTrace("usbd already enabled");
+//			else
+//    			ftdiTrace("usbd already enabled");
 			break;
 
 		case APP_USBD_EVT_POWER_REMOVED:
-    		ftdiTrace("APP_USBD_EVT_POWER_REMOVED");
+//    		ftdiTrace("APP_USBD_EVT_POWER_REMOVED");
 			app_usbd_stop();
 			break;
 
 		case APP_USBD_EVT_POWER_READY:
-    		ftdiTrace("APP_USBD_EVT_POWER_READY");
+//    		ftdiTrace("APP_USBD_EVT_POWER_READY");
 			if (!nrf_drv_usbd_is_enabled()) {
-    			ftdiTrace("calling app_usbd_enable");
+//    			ftdiTrace("calling app_usbd_enable");
 				app_usbd_enable();
 			}
-			else
-    			ftdiTrace("usbd already enabled");
+//			else
+//    			ftdiTrace("usbd already enabled");
 			app_usbd_start();
 			break;
 
@@ -306,7 +306,7 @@ void usbd_user_ev_handler(app_usbd_event_type_t event)
 			break;
 
 		case APP_USBD_EVT_DRV_RESET:
-    		ftdiTrace("APP_USBD_EVT_DRV_RESET");
+//    		ftdiTrace("APP_USBD_EVT_DRV_RESET");
 			break;
 
 		default:
@@ -473,7 +473,7 @@ static void vendor_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usb
         case APP_USBD_VENDOR_USER_EVT_PORT_OPEN: {
             // Setup the first transfer.
             // This case is triggered when a remote device connects to the port.
-			ftdiTrace("APP_USBD_VENDOR_USER_EVT_PORT_OPEN");
+//			ftdiTrace("APP_USBD_VENDOR_USER_EVT_PORT_OPEN");
 // queue up a read
             app_usbd_vendor_read(&m_app_vendor, m_vendor_rx_buffer, 1);
 //			m_vendor_rx_buffer_pos = 1;	// gets inc'd in RX_DONE
@@ -581,14 +581,14 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN: {
 			// Setup the first transfer.
 			// This case is triggered when a remote device connects to the port.
-    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN");
+//    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN");
 			app_usbd_cdc_acm_read(&m_app_cdc_acm, m_rx_buffer, 1);
 			m_usb_connected = true;
 			break;
         }
 
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE: {
-    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_RX_DONE");
+//    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_RX_DONE");
 
     		// The first byte is already in the buffer due to app_usbd_cdc_acm_read()
     		// in the APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN event.
@@ -606,10 +606,10 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
 				nrf_queue_in(&m_rx_queue, &m_rx_buffer[0], 1);
 				++count;
 			}
-    		ftdiTraceAndInt("Read bytes =", count);
-			ftdiTraceHex(m_rx_buffer, count);
+//    		ftdiTraceAndInt("Read bytes =", count);
+//			ftdiTraceHex(m_rx_buffer, count);
 
-			// let the debug_task know that there is data to process
+			// let the usb_debug_task know that there is data to process
 			uint32_t val = 1;
 			if (pdPASS != xQueueSend(uartQueue, (void*)&val, (TickType_t)10) ) {
 				ftdiTrace("Send to uartQueue failed\n");
@@ -626,40 +626,46 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
         }
         
         case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
-    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE");
+//    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE");
     		m_usb_connected = false;
         	break;
         	
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE: {
 //    		ftdiTrace("APP_USBD_CDC_ACM_USER_EVT_TX_DONE");
+			usbMutexTake();
 			if (NULL != gTxBufferList) {
 				txBuffer buffer = gTxBufferList;
 				gTxBufferList = gTxBufferList->next;
 				c_free(buffer);
 			}
+			usbMutexGive();
 			
     		if (!m_usb_connected || m_vendor_usb_connected)
     			break;
     		
 			if (NULL == gTxBufferList && m_tx_buffer_index > 0) {
 				// data remaining
+				usbMutexTake();
 				txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_tx_buffer_index, 1);
-				if (NULL == buffer)
+				if (NULL == buffer) {
+					usbMutexGive();
 					return;
+				}
 				buffer->size = m_tx_buffer_index;
 				c_memmove(&buffer->buffer[0], m_tx_buffer, buffer->size);
-//ftdiTraceAndInt("sending incomplete buffer sized:", buffer->size);
-//ftdiTraceHex(buffer->buffer, buffer->size);
 				m_tx_buffer_index = 0;
+//ftdiTraceAndInt("sending remaining buffer sized:", buffer->size);
+//ftdiTraceHex(buffer->buffer, buffer->size);
 				gTxBufferList = buffer;
+				usbMutexGive();
 			}
 
 			ret = sendNextBuffer();
 			if (0 != ret)
-    			ftdiTrace("sendNextBuffer failed");
+    			ftdiTrace("FAIL-sendNextBuffer");
         	break;
         }
-        	
+
         default:
             break;
     }
@@ -672,6 +678,7 @@ void ESP_putc(int c)
 	uint8_t ch = c;
 
 	if (m_vendor_usb_connected) {
+		usbMutexTake();
 		m_vendor_tx_buffer[m_vendor_tx_buffer_index++] = ch;
 	
 		// Flush buffer at end of message or when we've reached the buffer size limit
@@ -679,13 +686,15 @@ void ESP_putc(int c)
 			uint8_t doSend = (NULL == gVendorTxBufferList);
 
 			txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_vendor_tx_buffer_index, 1);
-			if (NULL == buffer) return;
+			if (NULL == buffer) {
+				usbMutexGive();
+				return;
+			}
 		
 			buffer->size = m_vendor_tx_buffer_index;
 			c_memmove(&buffer->buffer[0], m_vendor_tx_buffer, buffer->size);
 			m_vendor_tx_buffer_index = 0;
 
-			usbMutexTake();
 			if (!gVendorTxBufferList)
 				gVendorTxBufferList = buffer;
 			else {
@@ -694,17 +703,14 @@ void ESP_putc(int c)
 					;
 				walker->next = buffer;
 			}
-			usbMutexGive();
 
-			if (doSend) {
+			if (doSend)
 				sendNextVendorBuffer();
-			}
-			else {
-				ftdiTrace("queuing buffer");
-			}
 		}
+		usbMutexGive();
 	}
 	else if (m_usb_connected) {
+		usbMutexTake();
 		m_tx_buffer[m_tx_buffer_index++] = ch;
 	
 		// Flush buffer at end of message or when we've reached the buffer size limit
@@ -712,11 +718,15 @@ void ESP_putc(int c)
 			uint8_t doSend = (NULL == gTxBufferList);
 		
 			txBuffer buffer = c_calloc(sizeof(txBufferRecord) + m_tx_buffer_index, 1);
-			if (NULL == buffer) return;
+			if (NULL == buffer) {
+				usbMutexGive();
+				return;
+			}
 		
 			buffer->size = m_tx_buffer_index;
 			c_memmove(&buffer->buffer[0], m_tx_buffer, buffer->size);
 			m_tx_buffer_index = 0;
+
 			if (!gTxBufferList)
 				gTxBufferList = buffer;
 			else {
@@ -726,13 +736,10 @@ void ESP_putc(int c)
 				walker->next = buffer;
 			}
 
-			if (doSend) {
+			if (doSend)
 				sendNextBuffer();
-			}
-			else {
-//				ftdiTrace("queuing buffer");
-			}
 		}
+		usbMutexGive();
 	}
 }
 
