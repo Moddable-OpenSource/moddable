@@ -99,6 +99,11 @@ class MQTTClient {
 						onWritable: this.#onWritable.bind(this),
 						onError: this.#onError.bind(this)
 					});
+					
+					this.#options.connecting = Timer.set(() => {
+						delete this.#options.connecting; 
+						this.#onError();
+					}, 30_000);		//@@ configurable
 				}
 				catch {
 					this.#onError?.();
@@ -113,6 +118,7 @@ class MQTTClient {
 		Timer.clear(this.#options?.pending.timer);
 		Timer.clear(this.#options?.timer);
 		Timer.clear(this.#options?.keepalive);
+		Timer.clear(this.#options?.connecting);
 		this.#state = "closed";
 		this.#socket?.close();
 		this.#socket = undefined;
@@ -583,6 +589,9 @@ class MQTTClient {
 		const socket = this.#socket;
 		const state = this.#state;
 		if ("connecting" === state) {
+			Timer.clear(options.connecting);
+			delete options.connecting;
+
 			const keepalive = Math.round(options.keepalive / 1000);
 			const id = makeStringBuffer(options.id);
 			const user = makeStringBuffer(options.user);

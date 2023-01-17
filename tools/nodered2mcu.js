@@ -362,8 +362,6 @@ export default class extends TOOL {
 		return parts.join("\n");
 	}
 	prepareNode(type, config, dones, errors, statuses, nodes, imports) {
-		let deleteName = true;
-
 		switch (type) {
 			case "status": {
 				delete config.scope;
@@ -1271,13 +1269,73 @@ export default class extends TOOL {
 				delete config.property;
 			} break;
 			
-			default:
-				deleteName = false;
+			case "ui_button": {
+				const setter = [];
+				setter.push(`function (target, msg) {`);
+				if (config.payload)
+					setter.push(`\t\t\ttarget.payload = ${this.resolveValue(config.payloadType, config.payload)};`);
+				if (config.topic) {
+					setter.push(`\t\t\tconst topic = ${this.resolveValue(config.topicType, config.topic)};`);
+					setter.push(`\t\t\tif (undefined !== topic)`);
+					setter.push(`\t\t\t\ttarget.topic = topic;`);
+				}
+				setter.push(`\t\t}`);
+				config.setter = setter.join("\n");
+
+				delete config.topic; 
+				delete config.topicType; 
+				delete config.payload; 
+				delete config.payloadType; 
+
+				this.prepareUI(config);
+			} break;
+
+			case "ui_switch": {
+				const topic = config.topic ? `, topic: ${this.resolveValue(config.topicType, config.topic)}` : ""; 
+				const options = [];
+				options.push(`function (msg) {`);
+				options.push(`\t\t\treturn [`);
+				options.push(`\t\t\t\t{payload: ${this.resolveValue(config.offvalueType, config.offvalue)}${topic}},`);
+				options.push(`\t\t\t\t{payload: ${this.resolveValue(config.onvalueType, config.onvalue)}${topic}}`);
+				options.push(`\t\t\t];`);
+				options.push(`\t\t}`);
+				config.options = options.join("\n");
+				
+				delete config.topic; 
+				delete config.topicType; 
+				delete config.offvalue; 
+				delete config.offvalueType; 
+				delete config.onvalue; 
+				delete config.onvalueType; 
+
+				this.prepareUI(config);
+			} break;
+
+			case "ui_colour_picker":
+			case "ui_text_input":
+			case "ui_numeric":
+			case "ui_slider": {
+				const topic = [];
+				topic.push(`function (msg) {`);
+				topic.push(`\t\t\treturn ${config.topic ? this.resolveValue(config.topicType, config.topic) : ""};`); 
+				topic.push(`\t\t}`);
+				config.topic = topic.join("\n");
+				delete config.topicType;
+				
+				this.prepareUI(config);
+			} break;
+			
+			case "ui_chart":
+			case "ui_guage":
+			case "ui_group":
+			case "ui_spacer":
+			case "ui_text":
+			case "ui_text_input":
+			case "ui_template":
+			case "ui_toast":
+				this.prepareUI(config);
 				break;
 		}
-
-		if (deleteName)
-			delete config.name;		// name is needed for compatibilty with some Node-RED node implementations that needlessly set it directly (historical)
 
 		if (dones && !NoDoneNodes.includes(type))
 			config.dones = dones;
@@ -1298,6 +1356,9 @@ export default class extends TOOL {
 			else
 				delete config.wires;
 		}
+
+		// name not needed in config, as passed to constructor
+		delete config.name;
 	}
 	resolveValue(type, value) {
 		switch (type) {
@@ -1432,6 +1493,22 @@ export default class extends TOOL {
 				code.push(`${indent}msg${path} ??= {};`);
 			}
 		}
+	}
+	prepareUI(config) {
+		if (config.width)
+			config.width = parseInt(config.width);
+		if (config.height)
+			config.height = parseInt(config.height);
+		if (config.min)
+			config.min = parseInt(config.min);
+		if (config.max)
+			config.max = parseInt(config.max);
+		if (config.displayTime)
+			config.displayTime = parseInt(config.displayTime);
+		if ("" === config.className)
+			delete config.className;
+		delete config.tooltip;
+			
 	}
 	prepareEnv(env) {
 		const parts = [];
