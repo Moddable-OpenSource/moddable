@@ -77,7 +77,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 	> **Note:** Other versions of the GNU tools may work, but `8-2018-q4-major` is the version we currently support.
 	
-5. On **M1** Mac, Download the prerelease [aarch64-macos](https://github.com/SeanMollet/arm-none-eabi-gcc-aarch64-macosx/releases/tag/11.2.3) version of the GNU Arm Embedded Toolchain.
+5. On **M1** Mac, Download version [AArch32 bare-metal target (arm-none-eabi)](https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-darwin-arm64-arm-none-eabi.tar.xz) version of the GNU Arm Embedded Toolchain.
 
 	You will also need some items from `brew`:
 
@@ -148,9 +148,9 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	Make sure you're using a data-sync capable cable, not one that is power-only.
 
-2. Put the device into programming mode by double-tapping the RESET button or by holding the BOOT button while tapping RESET.
+2. Put the device into programming mode by double-tapping the RESET button or by holding the button while tapping RESET.
 
-	Programming mode is indicated by the LED indicator staying lit at boot time. A disk named `MODDABLE4` will also appear on your desktop.
+	Programming mode is indicated by the LED indicator blinking at boot time. A disk named `MODDABLE4` will also appear on your desktop.
 
 	![Moddable Four disk](../assets/devices/moddable-four-M4-disk.png)
 
