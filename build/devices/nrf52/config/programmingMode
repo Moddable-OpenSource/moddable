@@ -4,10 +4,16 @@ VENDOR_ID=$1
 PRODUCT_ID=$2
 VOLUME_NAME=$3
 
-if [[ ! -d $VOLUME_NAME ]]
+if [[ ! -d ${VOLUME_NAME} ]]
 then 
-	echo "If led is not blinking, please double-tap the reset button to enter programming mode."
-	serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} 921600 8N1 -programming
+	DEVICE_NAME=`serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} -showPath`
+	if [[ "timeout" != "${DEVICE_NAME}" ]]
+	then
+		echo -n "Setting programming mode. "
+		serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} 921600 8N1 -programming
+	else
+		echo "Double-tap the reset button. "
+	fi
 	echo -n "Waiting for ${VOLUME_NAME}."
 	while [[ ! -d "${VOLUME_NAME}" ]]; do
 		echo -n "."
