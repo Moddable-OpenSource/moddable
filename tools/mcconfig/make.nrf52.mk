@@ -97,7 +97,12 @@ else
 endif
 
 NRF52_GNU_VERSION ?= 12.2.1
-NRF52_GCC_ROOT ?= $(NRF_ROOT)/arm-gnu-toolchain-12.2.rel1-darwin-$(HOST_CPU)-arm-none-eabi
+
+ifeq ($(HOST_OS),Darwin)
+	NRF52_GCC_ROOT ?= $(NRF_ROOT)/arm-gnu-toolchain-12.2.rel1-darwin-$(HOST_CPU)-arm-none-eabi
+else
+	NRF52_GCC_ROOT ?= $(NRF_ROOT)/arm-gnu-toolchain-12.2.rel1-$(HOST_CPU)-arm-none-eabi
+endif
 
 NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
 UF2CONV ?= $(NRF_ROOT)/uf2conv.py
