@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -103,6 +103,14 @@ class BMP280 extends aHostObject {
 		Timer.delay(10);
 
 		this.#initialize();
+
+		this.configure({
+			mode: Config.Mode.NORMAL,
+			temperatureSampling: Config.Sampling.X2,
+			pressureSampling: Config.Sampling.X16,
+			filter: Config.Filter.X16,
+			standbyDuration: Config.Standby.MS_500
+		});
 	}
 	configure(options) {
 		const io = this.#io;
