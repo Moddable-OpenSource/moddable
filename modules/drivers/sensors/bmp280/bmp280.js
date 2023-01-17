@@ -92,7 +92,8 @@ class BMP280 extends aHostObject {
 
 		bBuf[0] = Register.BMP280_CHIPID;
 		io.write(bBuf);
-		if (0x58 !== io.read(bBuf)[0]) {
+		io.read(bBuf);
+		if (0x58 !== bBuf[0]) {
 			this.close();
 			throw new Error("unexpected sensor");
 		}
