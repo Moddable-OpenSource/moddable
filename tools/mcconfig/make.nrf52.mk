@@ -18,6 +18,7 @@
 #
 
 HOST_OS := $(shell uname)
+HOST_CPU := $(shell uname -m)
 
 XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2> /dev/null)
 
@@ -96,13 +97,7 @@ else
 endif
 
 NRF52_GNU_VERSION ?= 12.2.1
-NRF52_GCC_ROOT ?= $(NRF_ROOT)/arm-gnu-toolchain-12.2.rel1-darwin-arm64-arm-none-eabi
-# NRF52_GNU_VERSION ?= 10.2.1
-# NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-10-2021-q2-preview
-#NRF52_GNU_VERSION ?= 8.2.1
-#NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-8-2018-q4-major
-# NRF52_GNU_VERSION ?= 7.2.1
-# NRF52_GCC_ROOT ?= $(NRF_ROOT)/gcc-arm-none-eabi-7-2017-q4-major
+NRF52_GCC_ROOT ?= $(NRF_ROOT)/arm-gnu-toolchain-12.2.rel1-darwin-$(HOST_CPU)-arm-none-eabi
 
 NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
 UF2CONV ?= $(NRF_ROOT)/uf2conv.py
