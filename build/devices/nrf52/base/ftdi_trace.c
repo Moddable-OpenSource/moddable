@@ -28,6 +28,7 @@ void setupSerial();
 void serial_put(uint8_t *buffer, uint32_t len);
 
 #if USE_FTDI_TRACE 
+
 static uint8_t ftBuf[128];
 
 static void ftdiTx(uint8_t *buffer)
@@ -38,14 +39,14 @@ static void ftdiTx(uint8_t *buffer)
 void ftdiTraceInit()
 {
 	setupSerial();
-	ftdiTx("setupSerial\n");
+	ftdiTrace("--ftdiTraceInit complete--");
 }
 
 
 void ftdiTrace(const char *msg)
 {
-//	snprintf(ftBuf, sizeof(ftBuf), "%s\n", msg);
-	snprintf(ftBuf, sizeof(ftBuf), "[%p] %s\n", xTaskGetCurrentTaskHandle(), msg);
+	snprintf(ftBuf, sizeof(ftBuf), "%s\n", msg);
+//	snprintf(ftBuf, sizeof(ftBuf), "[%p] %s\n", xTaskGetCurrentTaskHandle(), msg);
 	ftdiTx(ftBuf);
 }
 
@@ -69,8 +70,8 @@ void ftdiTraceAndHex2(const char *msg, int i, int j)
 
 void ftdiTraceAndInt(const char *msg, int i)
 {
-//	snprintf(ftBuf, sizeof(ftBuf), "%s %d\n", msg, i);
-	snprintf(ftBuf, sizeof(ftBuf), "[%p] %s %d\n", xTaskGetCurrentTaskHandle(), msg, i);
+	snprintf(ftBuf, sizeof(ftBuf), "%s %d\n", msg, i);
+//	snprintf(ftBuf, sizeof(ftBuf), "[%p] %s %d\n", xTaskGetCurrentTaskHandle(), msg, i);
 	ftdiTx(ftBuf);
 }
 
@@ -86,7 +87,8 @@ void ftdiTraceInt(int i)
 	ftdiTx(ftBuf);
 }
 
-void ftdiTraceInt2(int i, int j) {
+void ftdiTraceInt2(int i, int j)
+{
 	snprintf(ftBuf, sizeof(ftBuf), "%d %d\n", i, j);
 	ftdiTx(ftBuf);
 }
@@ -100,23 +102,26 @@ void ftdiTraceChar(int c)
 	ftdiTx(ftBuf);
 }
 
-void ftdiTraceAndAddress(uint8_t *data, void *p) {
+void ftdiTraceAndAddress(uint8_t *data, void *p)
+{
 	snprintf(ftBuf, sizeof(ftBuf), "%s 0x%08x\n", data, p);
 	ftdiTx(ftBuf);
 }
 
-void ftdiTraceAnd2Address(uint8_t *data, void *p, void *p2) {
+void ftdiTraceAnd2Address(uint8_t *data, void *p, void *p2)
+{
 	snprintf(ftBuf, sizeof(ftBuf), "%s 0x%08x 0x%08x\n", data, p, p2);
 	ftdiTx(ftBuf);
 }
 
-void ftdiTraceAddress(void *p) {
+void ftdiTraceAddress(void *p)
+{
 	snprintf(ftBuf, sizeof(ftBuf), "0x%08x\n", p);
 	ftdiTx(ftBuf);
 }
 
-void ftdiTraceHex(uint8_t *data, int num) {
-
+void ftdiTraceHex(uint8_t *data, int num)
+{
 	int i, pos = 0;
 	for (i=0; i<num; i++) {
 		if (isprint(data[i]))
@@ -130,14 +135,15 @@ void ftdiTraceHex(uint8_t *data, int num) {
 			pos = 0;
 		}
 	}
-	if (i%16 != 0) {
+	if (i%32 != 0) {
 		ftBuf[pos++] = '\n';
 		ftBuf[pos++] = '\0';
 		ftdiTx(ftBuf);
 	}
 }
 
-void ftdiTraceAndbmReq(const char *msg, uint8_t val) {
+void ftdiTraceAndbmReq(const char *msg, uint8_t val)
+{
 	int dir, type, recip;
 	int pos = 0;
 	dir = val >> 7;
@@ -172,7 +178,8 @@ void ftdiTraceAndbmReq(const char *msg, uint8_t val) {
 	ftdiTx(ftBuf);
 }
 
-void ftdiTraceAndCtx(const char *msg, app_usbd_vendor_ctx_t *ctx) {
+void ftdiTraceAndCtx(const char *msg, app_usbd_vendor_ctx_t *ctx)
+{
 	ftdiTrace(msg);
 
 	snprintf(ftBuf, sizeof(ftBuf), "   - line_state: %d\n", ctx->line_state);

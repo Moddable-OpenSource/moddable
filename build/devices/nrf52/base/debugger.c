@@ -24,7 +24,7 @@
 
 #include "mc.defines.h"
 
-#if !USE_DEBUGGER_USBD
+#if !USE_DEBUGGER_USBD || USE_FTDI_TRACE
 
 #include "nrfx_uarte.h"
 #include "app_fifo.h"
@@ -97,7 +97,7 @@ uint32_t fillBufFromFifo(app_fifo_t *fifo, uint8_t *buf, uint32_t bufSize) {
 	return i;
 }
 
-static void uarte_handler(nrfx_uarte_event_t *p_event, void *p_context)
+static void uarte_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 {
 	nrfx_err_t	err;
 	uint8_t		data;
@@ -175,7 +175,11 @@ static void debug_task(void *pvParameter) {
 }
 
 //---------
+#if USE_FTDI_TRACE
+void setupSerial() {
+#else
 void setupDebugger() {
+#endif
 	ret_code_t err;
 
 	nrfx_uarte_config_t uart_config = {
@@ -205,6 +209,12 @@ void setupDebugger() {
 	xTaskCreate(debug_task, "debug", DEBUGGER_STACK/sizeof(StackType_t), (void*)&gDebuggerUARTE, kDebuggerTaskPriority, NULL);
 }
 
+#if USE_FTDI_TRACE
+void serial_put(uint8_t *buf, uint32_t len) {
+	nrfx_uarte_tx(&gDebuggerUARTE, buf, len);
+}
+
+#else
 void flushDebugger() {
 }
 
@@ -215,7 +225,7 @@ void ESP_putc(int c) {
 
 	ch = c;
 	if (fifo_length(&m_tx_fifo) > m_tx_fifo.buf_size_mask)
-		nrf52_delay(50);	// drain a little
+		nrf52_delay(5);	// drain a little
 	if (fifo_length(&m_tx_fifo) > m_tx_fifo.buf_size_mask)
 		DIE("ESP_putc waiting");
 
@@ -238,6 +248,7 @@ int ESP_getc(void) {
 
 	return -1;
 }
+#endif	// ! USE_FTDI_TRACE
 
 #else
 
