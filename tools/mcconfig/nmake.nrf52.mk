@@ -32,8 +32,14 @@ NRF_ROOT = $(USERPROFILE)\nrf5
 !ENDIF
 
 !IF "$(NRF52_GCC_ROOT)"==""
-NRF52_GCC_ROOT = $(NRF_ROOT)\gcc-arm-none-eabi-7-2017-q4-major-win32
+NRF52_GCC_ROOT = $(NRF_ROOT)\arm-gnu-toolchain-12.2.rel1-mingw-w64-i686-arm-none-eabi
 !ENDIF
+!IF "$(NRF52_GNU_VERSION)"==""
+NRF52_GNU_VERSION = 12.2.1
+!ENDIF
+
+NRF52_SDK_ROOT = $(NRF52_SDK_PATH)
+
 
 !IF "$(M4_VID)"==""
 M4_VID = BEEF
@@ -42,9 +48,6 @@ M4_VID = BEEF
 !IF "$(M4_PID)"==""
 M4_PID = CAFE
 !ENDIF
-
-NRF52_SDK_ROOT = $(NRF52_SDK_PATH)
-NRF52_GNU_VERSION = 7.2.1
 
 NRFJPROG = "c:\Program Files\Nordic Semiconductor\nrf-command-line-tools\bin\nrfjprog"
 UF2CONV = $(NRF_ROOT)\uf2conv.py
@@ -244,6 +247,7 @@ XS_INCLUDES = \
 	-iprefix $(XS_DIR)\ \
 	-iwithprefix includes \
 	-iwithprefix sources \
+	-iwithprefix platforms\mc \
 	-iwithprefix platforms\nrf52 \
 	-iwithprefix ..\modules\files\preference \
 	-iwithprefix ..\modules\base\instrumentation \
@@ -367,8 +371,6 @@ NRF_LIBRARIES_OBJ = \
 	$(LIB_DIR)\nrf_fprintf_format.o \
 	$(LIB_DIR)\nrf_fstorage_sd.o \
 	$(LIB_DIR)\nrf_fstorage.o \
-	$(LIB_DIR)\nrf_libuarte_drv.o \
-	$(LIB_DIR)\nrf_libuarte_async.o \
 	$(LIB_DIR)\nrf_memobj.o \
 	$(LIB_DIR)\nrf_queue.o \
 	$(LIB_DIR)\nrf_ringbuf.o \
@@ -376,6 +378,9 @@ NRF_LIBRARIES_OBJ = \
 	$(LIB_DIR)\nrf_strerror.o \
 	$(LIB_DIR)\nrf_twi_mngr.o \
 	$(LIB_DIR)\nrf_twi_sensor.o
+
+#	$(LIB_DIR)\nrf_libuarte_drv.o
+#	$(LIB_DIR)\nrf_libuarte_async.o
 
 NRF_LOG_OBJ = \
 	$(LIB_DIR)\nrf_log_backend_rtt.o \
@@ -404,10 +409,11 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)\debugger_usbd.o \
 	$(TMP_DIR)\ftdi_trace.o \
 	$(TMP_DIR)\main.o \
-	$(TMP_DIR)\nrf52_serial.o \
 	$(TMP_DIR)\systemclock.o \
 	$(TMP_DIR)\xsmain.o \
 	$(TMP_DIR)\app_usbd_vendor.o
+
+#	$(TMP_DIR)\nrf52_serial.o 
 
 STARTUP_OBJ = \
 	$(LIB_DIR)\gcc_startup_nrf52840.o \
@@ -678,6 +684,8 @@ $(TMP_DIR):
 
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
+
+$(LIB_DIR)\buildinfo.h:
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(LIB_DIR)\buildinfo.h
 	
 $(BIN_DIR)\xs_nrf52.bin: $(TMP_DIR)\xs_nrf52.hex
@@ -694,7 +702,7 @@ $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo link to .out file
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
-$(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
+$(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(LIB_DIR)\buildinfo.h
 	@echo # buildinfo
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
