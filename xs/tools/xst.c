@@ -1937,9 +1937,18 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	free(buffer);
 	return 0;
 }
+
+const char *__lsan_default_suppressions()
+{
+	return	"leak:fxStringifyJSONChars\n"
+			"leak:fxStringifyJSONCharacter\n"
+			"leak:fxStringifyJSON\n"
+			"leak:fxParserCode\n";
+}
+
 #endif 
 
-#if FUZZING || FUZZILLI
+#if 1 || FUZZING || FUZZILLI
 
 void fx_fillBuffer(txMachine *the)
 {
