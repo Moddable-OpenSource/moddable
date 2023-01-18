@@ -25,6 +25,7 @@ This document describes how to start building Moddable applications for Moddable
 		- [Debugging Native Code with SEGGER Embedded Studio](#debugging-native-code-with-segger)
 		- [Debugging Native Code with GDB](#debugging-native-code-with-gdb)	<!--- [Debugging Native and Script Code](#debugging-native-and-script-code)-->
 	- [Bootloader](#bootloader)
+	- [nRF5 SDK modifications](#nrf5-sdk-mods)
 
 <a id="about-moddable-four"></a>
 ## About Moddable Four
@@ -82,7 +83,7 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	`brew install gmp mpfr libmpc isl libelf`
 	 -->
 
-5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file into the `nrf5` directory.
+5. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/uf2conv.py) tool. Move or copy the `uf2conv.py` file into the `nrf5` directory.
 
 	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
 	
@@ -91,52 +92,17 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 	chmod 755 uf2conv.py 
 	```
 
-6. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+6. Download the [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip) with Moddable Four modifications.
+	
+	Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
 
-	- Select `v17.0.2` from the nRF5 SDK versions section.
-
-		![](../assets/devices/nrf5-sdk-versions.png)
-
-	- Uncheck all SoftDevices.
-
-		![](../assets/devices/softdevices.png)
-
-	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
-
-		![](../assets/devices/nrf5-sdk-selected.png)
-
-	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
+	> See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
 
 7. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
 	```text
 	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK_17.0.2_d674dde
 	```
-
-8. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
-
-	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
-
-	```text
-	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards
-	```
-
-	- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
-
-	```c
-	#elif defined (BOARD_MODDABLE_FOUR)
-	  #include "moddable_four.h"
-	```
-
-9. Add `SPIM3` support:
-
-	The nRF5 SDK has a file `integration/nrfx/legacy/apply_old_config.h` that needs a small change. Add `|| NRFX_SPIM3_ENABLED` after the `NRFX_SPIM2_ENABLED` as shown in the line below:
-
-	```text
-	#define NRFX_SPIM_ENABLED \
-    (SPI_ENABLED && (NRFX_SPIM0_ENABLED || NRFX_SPIM1_ENABLED || NRFX_SPIM2_ENABLED || NRFX_SPIM3_ENABLED))
-	```
-
 
 <a id="macOS-building-and-deploying-apps"></a>
 #### Building and Deploying Apps
@@ -182,25 +148,15 @@ After you've setup your macOS host environment, take the following steps to inst
 	cd nrf5
 	```
 
-3. Download version 12.2.1 [`AArch32 bare-metal target (arm-none-eabi`](https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-mingw-w64-i686-arm-none-eabi.zip) of the GNU Arm Embedded Toolchain from the [Arm Developer](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) website. Uncompress the archive and move the `arm-gnu-toolchain-12.2.rel1-mingw-w64-i686-arm-none-eabi` directory into the `nrf5` directory.
+3. Download version 12.2.1 [`AArch32 bare-metal target (arm-none-eabi)`](https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-mingw-w64-i686-arm-none-eabi.zip) of the GNU Arm Embedded Toolchain from the [Arm Developer](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) website. Uncompress the archive and move the `arm-gnu-toolchain-12.2.rel1-mingw-w64-i686-arm-none-eabi` directory into the `nrf5` directory.
 
-4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file from the extracted `uf2conv` directory into the `nrf5` directory.
+4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/uf2conv.py) tool. Move or copy the `uf2conv.py` file into the `nrf5` directory.
 
-5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+5. Download the [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip) with Moddable Four modifications.
 
-	- Select `v17.0.2` from the nRF5 SDK versions section.
+	Unzip the archive and copy the `nRF5_SDK_17_0_2_d674dde` directory into the `nrf5` directory.
 
-		![](../assets/devices/nrf5-sdk-versions.png)
-
-	- Uncheck all SoftDevices.
-
-		![](../assets/devices/softdevices.png)
-
-	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
-
-		![](../assets/devices/nrf5-sdk-selected.png)
-
-	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_17_0_2_d674dde` directory into the `nrf5` directory.
+	> See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
 
 6. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
 
@@ -216,31 +172,6 @@ After you've setup your macOS host environment, take the following steps to inst
 	C:\Python27
 	C:\Python27\Scripts
 	```
-
-9. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
-
-	- The `moddable_four.h` board definition file is found in `%MODDABLE%\build\devices\nrf52\config\moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components\boards\` directory.
-
-	```text
-	copy %MODDABLE%\build\devices\nrf52\config\moddable_four.h %NRF52_SDK_PATH%\components\boards
-	```
-
-	- Modify the `%NRF52_SDK_PATH%\components\boards.h` file, adding the following before `#elif defined(BOARD_CUSTOM)`:
-
-	```c
-	#elif defined (BOARD_MODDABLE_FOUR)
-	  #include "moddable_four.h"
-	```
-
-10. Add `SPIM3` support:
-
-	The nRF5 SDK has a file `integration\nrfx\legacy\apply_old_config.h` that needs a small change. Add `|| NRFX_SPIM3_ENABLED` after the `NRFX_SPIM2_ENABLED` as shown in the line below:
-
-	```text
-	#define NRFX_SPIM_ENABLED \
-    (SPI_ENABLED && (NRFX_SPIM0_ENABLED || NRFX_SPIM1_ENABLED || NRFX_SPIM2_ENABLED || NRFX_SPIM3_ENABLED))
-	```
-
 
 <a id="windows-building-and-deploying-apps"></a>
 #### Building and Deploying Apps
@@ -288,61 +219,19 @@ After you've setup your Windows host environment, take the following steps to in
 
 3. Download version 12.2.1 [AArch32 bare-metal target (arm-none-eabi)](https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi.tar.xz) of the GNU Arm Embedded Toolchain from the [Arm Developer](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) website. Uncompress the archive and move the `arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi` directory into the `nrf5` directory.
 
-4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](http://test.moddable.com/private/nrf52/uf2conv.zip) tool. Unzip the archive and copy the `uf2conv.py` file into the `nrf5` directory.
+4. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/adafruit/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. `uf2conv.py` is a Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/uf2conv.py) tool. Move or copy the `uf2conv.py` file into the `nrf5` directory.
 
-	Use `chmod` to change the access permissions of `uf2conv` to make it executable.
-	
-	```text
-	cd ~/nrf5
-	chmod 755 uf2conv.py 
-	```
+5. Download the [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip) with Moddable Four modifications.
 
-5. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+	Unzip the archive and copy the `nRF5_SDK_17_0_2_d674dde` directory into the `nrf5` directory.
 
-	- Select `v17.0.2` from the nRF5 SDK versions section.
-
-		![](../assets/devices/nrf5-sdk-versions.png)
-
-	- Uncheck all SoftDevices.
-
-		![](../assets/devices/softdevices.png)
-
-	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
-
-		![](../assets/devices/nrf5-sdk-selected.png)
-
-	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
+	> See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
 
 6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 	
 	```text
 	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK_17.0.2_d674dde
 	```
-
-7. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
-
-	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
-
-	```text
-	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards
-	```
-
-	- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
-
-	```c
-	#elif defined (BOARD_MODDABLE_FOUR)
-	  #include "moddable_four.h"
-	```
-
-8. Add `SPIM3` support:
-
-	The nRF5 SDK has a file `integration/nrfx/legacy/apply_old_config.h` that needs a small change. Add `|| NRFX_SPIM3_ENABLED` after the `NRFX_SPIM2_ENABLED` as shown in the line below:
-
-	```text
-	#define NRFX_SPIM_ENABLED \
-    (SPI_ENABLED && (NRFX_SPIM0_ENABLED || NRFX_SPIM1_ENABLED || NRFX_SPIM2_ENABLED || NRFX_SPIM3_ENABLED))
-	```
-
 
 <a id="linux-building-and-deploying-apps"></a>
 #### Building and Deploying Apps
@@ -636,3 +525,57 @@ In the unlikely event that you need to build a bootloader, take the following st
 
 7. Remove the board from the programmer. It is now ready for use.
 
+----
+
+<a id="nrf5-sdk-mods"></a>
+### nRF5 SDK modifications
+
+Moddable Four requires a few small adjustments to the Nordic nRF5 SDK. You can use the prepared SDK at [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip).
+
+Or you can make your own by following these steps to modify the SDK:
+
+1. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
+
+	- Select `v17.0.2` from the nRF5 SDK versions section.
+
+		![](../assets/devices/nrf5-sdk-versions.png)
+
+	- Uncheck all SoftDevices.
+
+		![](../assets/devices/softdevices.png)
+
+	- Click the **Download Files** button at the bottom of the page. You should see the same selection as in the image below.
+
+		![](../assets/devices/nrf5-sdk-selected.png)
+
+	The downloaded archive is named `DeviceDownload.zip`. Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
+
+2. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
+	
+	```text
+	export NRF_SDK_DIR=$HOME/nrf5/nRF5_SDK_17.0.2_d674dde
+	```
+
+3. Add a board definition file for the Moddable Four to the Nordic nRF5 SDK. The board definition file includes Moddable Four LED, button and pin definitions. To add the Moddable Four board definition file, take the following steps:
+
+	- The `moddable_four.h` board definition file is found in `$MODDABLE/build/devices/nrf52/config/moddable_four.h`. Copy the `moddable_four.h` file to the Nordic nRF5 SDK `components/boards/` directory.
+
+	```text
+	cp $MODDABLE/build/devices/nrf52/config/moddable_four.h $NRF_SDK_DIR/components/boards
+	```
+
+	- Modify `$NRF_SDK_DIR/components/boards/boards.h`, adding the following before `#elif defined(BOARD_CUSTOM)`:
+
+	```c
+	#elif defined (BOARD_MODDABLE_FOUR)
+	  #include "moddable_four.h"
+	```
+
+4. Add `SPIM3` support:
+
+	The nRF5 SDK has a file `integration/nrfx/legacy/apply_old_config.h` that needs a small change. Add `|| NRFX_SPIM3_ENABLED` after the `NRFX_SPIM2_ENABLED` as shown in the line below:
+
+	```text
+	#define NRFX_SPIM_ENABLED \
+    (SPI_ENABLED && (NRFX_SPIM0_ENABLED || NRFX_SPIM1_ENABLED || NRFX_SPIM2_ENABLED || NRFX_SPIM3_ENABLED))
+	```
