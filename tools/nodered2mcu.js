@@ -1024,6 +1024,38 @@ export default class extends TOOL {
 				else
 					config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
 			} break;
+			
+			case "mqtt-broker": {
+				const index = config.broker.indexOf("://");
+				if ("" === config.broker)
+					config.broker = "localhost";
+				else if (-1 !== index) {
+					const scheme = config.broker.slice(0, index);
+					switch (scheme) {
+						case "ws":
+						case "wss":
+							throw new Error("MQTT websocket tunnel unimplemented")
+							break;
+
+						case "mqtt":
+							break;
+
+						case "mqtts":
+							throw new Error("MQTT TLS unimplemented")
+							break;
+						
+						default:
+							// Node-RED ignores all unrecognized schemes.
+							break;
+					}
+					
+					config.broker = config.broker.slice(index + 3);
+				}
+				 
+				config.port = config.port ? parseInt(config.port) : 1883;
+				config.keepalive = (parseInt(config.keepalive) || 60) * 1000;
+
+			} break;
 
 			case "tcp in": {
 				if ((undefined === config.port) || ("" === config.port))
