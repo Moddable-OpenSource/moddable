@@ -74,8 +74,11 @@ class BMP180 extends aHostObject {
 
 		bBuf[0] = Register.BMP180_CHIPID;
 		io.write(bBuf);
-		if (0x55 !== io.read(bBuf)[0])
+		io.read(bBuf);
+		if (0x55 !== bBuf[0]) {
+			this.close();
 			throw new Error("unexpected sensor");
+		}
 
 		wBuf[0] = Register.BMP180_RESET;
 		wBuf[1] = Register.CMD_RESET;
@@ -90,7 +93,7 @@ class BMP180 extends aHostObject {
 	#close() @ "xs_bmp180_close";
 	close() {
 		this.#close();
-		this.#io.close();
+		this.#io?.close();
 		this.#io = undefined;
 	}
 	sample() {
@@ -154,6 +157,5 @@ class BMP180 extends aHostObject {
 		return this.#twoC16(this.#readUInt(reg));
 	}
 }
-Object.freeze(BMP180.prototype);
 
 export { BMP180 as default, BMP180, Config };

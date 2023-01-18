@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Moddable Tech, Inc.
+ * Copyright (c) 2022-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -45,7 +45,7 @@ struct PulseWidthRecord {
 	xsSlot		obj;
 	uint32_t    value;
     uint8_t     channel;
-    uint8_t     mode;
+    uint8_t     edges;
     uint8_t     hasOnReadable;
 
     // Allocated only if onReadable callback present
@@ -77,8 +77,8 @@ void xs_pulsewidth_constructor(xsMachine *the)
 	xsSlot tmp;
     int result;
     uint8_t channel;
-    int mode;
-    int pullUpDown = kPulseWidthFloating;
+    int edges;
+    int mode = kPulseWidthFloating;
 
     mcpwm_unit_t unit;
     mcpwm_io_signals_t signal;
@@ -90,19 +90,19 @@ void xs_pulsewidth_constructor(xsMachine *the)
     if (!xsmcHas(xsArg(0), xsID_pin))
 		xsRangeError("pin required");
 
-    if (!xsmcHas(xsArg(0), xsID_mode))
-        xsRangeError("mode required");
+    if (!xsmcHas(xsArg(0), xsID_edges))
+        xsRangeError("edges required");
 
-    xsmcGet(xsVar(0), xsArg(0), xsID_mode);
-	mode = xsmcToInteger(xsVar(0));
+    xsmcGet(xsVar(0), xsArg(0), xsID_edges);
+	edges = xsmcToInteger(xsVar(0));
 
     xsmcGet(xsVar(0), xsArg(0), xsID_pin);
 	pin = builtinGetPin(the, &xsVar(0));
 
 
-    if (xsmcHas(xsArg(0), xsID_pullUpDown)) {
-        xsmcGet(xsVar(0), xsArg(0), xsID_pullUpDown);
-	    pullUpDown = xsmcToInteger(xsVar(0));
+    if (xsmcHas(xsArg(0), xsID_mode)) {
+        xsmcGet(xsVar(0), xsArg(0), xsID_mode);
+	    mode = xsmcToInteger(xsVar(0));
     }
 
 	if (!builtinIsPinFree(pin))
@@ -130,7 +130,7 @@ void xs_pulsewidth_constructor(xsMachine *the)
 	pw->pin = pin;
 	pw->obj = xsThis;
     pw->channel = channel;
-    pw->mode = mode;
+    pw->edges = edges;
     pw->hasOnReadable = onReadable ? 1 : 0;
 
     if (onReadable) {
@@ -142,9 +142,9 @@ void xs_pulsewidth_constructor(xsMachine *the)
     
     mcpwm_gpio_init(unit, signal, pin);
 
-    if (pullUpDown == kPulseWidthPullDown) {
+    if (mode == kPulseWidthPullDown) {
         gpio_pulldown_en(pin);
-    } else if (pullUpDown == kPulseWidthPullUp) {
+    } else if (mode == kPulseWidthPullUp) {
         gpio_pullup_en(pin);
     } else {
         gpio_pulldown_dis(pin);
@@ -158,10 +158,10 @@ void xs_pulsewidth_constructor(xsMachine *the)
         .user_data = pw
     };
 
-    if (mode == kPulseWidthFallingToFalling)
+    if (edges == kPulseWidthFallingToFalling)
         conf.cap_edge = MCPWM_NEG_EDGE;
 
-    if (mode == kPulseWidthRisingToRising)
+    if (edges == kPulseWidthRisingToRising)
         conf.cap_edge = MCPWM_POS_EDGE;
 
     mcpwm_capture_enable_channel(unit, select, &conf);
@@ -233,7 +233,7 @@ static bool pw_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, 
     PulseWidth pw = (PulseWidth)arg;
 
     if (edata->cap_edge == MCPWM_POS_EDGE) {
-        switch (pw->mode) {
+        switch (pw->edges) {
             case kPulseWidthRisingToFalling:
                 cap_val_begin_of_sample = edata->cap_value;
                 break;
@@ -255,7 +255,7 @@ static bool pw_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, 
                 break;
         }
     } else {
-        switch (pw->mode) {
+        switch (pw->edges) {
             case kPulseWidthFallingToRising:
                 cap_val_begin_of_sample = edata->cap_value;
                 break;

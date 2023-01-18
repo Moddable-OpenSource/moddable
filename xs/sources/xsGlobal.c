@@ -407,7 +407,7 @@ void fx_Enumerator_next(txMachine* the)
 txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index) 
 {
 	txBoolean result = fxOrdinaryDeleteProperty(the, instance, id, index);
-	if (id && (id < XS_INTRINSICS_COUNT) && result) {
+	if ((XS_SYMBOL_ID_COUNT <= id) && (id < XS_INTRINSICS_COUNT) && result) {
 		txSlot* globals = instance->next;
 		globals->value.table.address[id] = C_NULL;
 	}
@@ -417,7 +417,7 @@ txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag) 
 {
 	txSlot* result = C_NULL;
-	if (id && (id < XS_INTRINSICS_COUNT)) {
+	if ((XS_SYMBOL_ID_COUNT <= id) && (id < XS_INTRINSICS_COUNT)) {
 		txSlot* globals = instance->next;
 		result = globals->value.table.address[id];
 		if (!result) {
@@ -433,7 +433,7 @@ txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex i
 txSlot* fxGlobalSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag) 
 {
 	txSlot* result = C_NULL;
-	if (id && (id < XS_INTRINSICS_COUNT)) {
+	if ((XS_SYMBOL_ID_COUNT <= id) && (id < XS_INTRINSICS_COUNT)) {
 		txSlot* globals = instance->next;
 		result = globals->value.table.address[id];
 		if (!result) {

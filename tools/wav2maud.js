@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -126,7 +126,7 @@ export default class extends TOOL {
 		if ((1 !== this.wav.numChannels) && (2 !== this.wav.numChannels))
 			throw new Error("unsupported channels");
 
-		this.wavSamples = new Float32Array(1024 * this.wav.numChannels);
+		this.wavSamples = new Float32Array(8192 * this.wav.numChannels);
 
 		this.resampler = new Resampler(this.wav.sampleRate, this.output.sampleRate, this.wav.numChannels, this.wavSamples);
 
@@ -160,11 +160,13 @@ export default class extends TOOL {
 		let imaBuffer = new Int16Array(imaSamplesPerChunk);
 		imaBuffer.samplesInBuffer = 0;
 
+		let totalOut = 0;
 		while (this.wav.samples) {
 			// get next buffer of samples
 			let use = this.wavSamples.length / this.wav.numChannels;
 			if (use > this.wav.samples)
 				use = this.wav.samples;
+			use = Math.min(1024, use);
 			this.wav.getSamples(this.wavSamples, use);
 
 			// apply output sample rate
@@ -190,6 +192,7 @@ export default class extends TOOL {
 			if ("uncompressed" === this.output.format) {
 				let byteLength = use * ((this.output.bitsPerSample * this.output.numChannels) >> 3);
 				outputFile.writeBuffer(finalSamples.buffer.slice(0, byteLength));
+				totalOut += use;
 			}
 			else if (imaOutput) {
 				let pos = 0;
@@ -207,8 +210,20 @@ export default class extends TOOL {
 					outputFile.writeBuffer(this.compressIMA(imaBuffer.buffer, imaSamplesPerChunk));
 					imaBuffer.samplesInBuffer = 0;
 					pos += needed;
+					totalOut += imaSamplesPerChunk;
 				}
 			}
+		}
+		
+		if (totalOut > sampleCount)
+			trace("too much output!\n");
+		else if (totalOut < sampleCount) {
+			if ("uncompressed" === this.output.format) {
+				const needed = (sampleCount - totalOut) * ((this.output.bitsPerSample * this.output.numChannels) >> 3);
+				outputFile.writeBuffer(new ArrayBuffer(needed));
+			}
+			else
+				trace("IMA padding needed!\n");
 		}
 
 		// if IMA, may be a partial buffer pending

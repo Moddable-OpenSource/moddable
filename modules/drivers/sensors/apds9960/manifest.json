@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/AmbientLight-Gesture-Proximity/APDS9960": "$(MODDABLE)/modules/drivers/sensors/apds9960/apds9960"
+	},
+	"preload": [
+		"embedded:sensor/AmbientLight-Gesture-Proximity/APDS9960"
+	]
+}

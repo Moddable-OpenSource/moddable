@@ -2221,7 +2221,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 							moduleID = internal->value.module.id;
 							realm = internal->value.module.realm;
 							mxModuleStatus(module) = XS_MODULE_STATUS_LOADING;
-							mxPushSlot(module);
+							mxPushUndefined();
 							mxPushSlot(loadNowHook);
 							mxCall();
 							fxPushKeyString(the, moduleID);
@@ -2231,6 +2231,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 							mxPop(); // descriptor
 						}
 					}
+                    mxReportModuleQueue("LOAD");
                     module = queue->next;
 				}
 				else if (mxModuleStatus(module) == XS_MODULE_STATUS_LOADED) {

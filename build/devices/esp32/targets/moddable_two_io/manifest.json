@@ -4,14 +4,13 @@
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODULES)/pins/pwm/manifest.json",
 		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/led/manifest.json"
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/sensors/ft6206/manifest.json"
 	],
 	"modules": {
-		"setup/target": "./setup-target",
-		"embedded:sensor/touch/FT6x06": "$(MODULES)/drivers/sensors/ft6206/ft6206"
+		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"embedded:sensor/touch/FT6x06",
 		"setup/target"
 	],
 	"config": {

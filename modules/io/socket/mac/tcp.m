@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -485,7 +485,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 		if (data) {
 			// connection failed
 			tcpTrigger(tcp, kTCPError);
-			return;
+			goto done;
 		}
 		cbType |= kCFSocketWriteCallBack;
 	}
@@ -497,7 +497,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 			tcp->readPosition = 0;
 		}
 		int bytesRead = read(tcp->skt, tcp->readBuf + tcp->bytesReadable, kBufferSize - tcp->bytesReadable);
-		if (bytesRead > 0)
+		if (bytesRead >= 0)
 			tcp->bytesReadable += bytesRead;
 		else {
 			tcp->error = 1;

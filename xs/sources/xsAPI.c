@@ -1912,10 +1912,10 @@ void fxEndHost(txMachine* the)
 
 void fxEndJob(txMachine* the)
 {
-	if (mxDuringJobs.kind == XS_REFERENCE_KIND)
-		mxDuringJobs.value.reference->next = C_NULL;
 	if (gxDefaults.cleanupFinalizationRegistries)
 		gxDefaults.cleanupFinalizationRegistries(the);
+	if (mxDuringJobs.kind == XS_REFERENCE_KIND)
+		mxDuringJobs.value.reference->next = C_NULL;
 	fxCheckUnhandledRejections(the, 0);
 }
 

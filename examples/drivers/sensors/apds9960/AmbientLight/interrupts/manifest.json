@@ -1,0 +1,21 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/apds9960/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"platforms": {
+		"esp": {
+			"config": {
+				"interrupt_pin": 13
+			}
+		},
+		"esp32": {
+			"config": {
+				"interrupt_pin": 13
+			}
+		}
+	}
+}

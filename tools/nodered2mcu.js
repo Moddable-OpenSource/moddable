@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -313,8 +313,6 @@ export default class extends TOOL {
 					let configuration = ["{"];
 					for (const name in c) {
 						const value = c[name];
-						if ("name" === name)
-							continue;
 						if (("string" === typeof value) && value.startsWith("function ("))
 							configuration.push(`\t\t${name}: ${value},`);
 						else
@@ -1026,6 +1024,38 @@ export default class extends TOOL {
 				else
 					config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
 			} break;
+			
+			case "mqtt-broker": {
+				const index = config.broker.indexOf("://");
+				if ("" === config.broker)
+					config.broker = "localhost";
+				else if (-1 !== index) {
+					const scheme = config.broker.slice(0, index);
+					switch (scheme) {
+						case "ws":
+						case "wss":
+							throw new Error("MQTT websocket tunnel unimplemented")
+							break;
+
+						case "mqtt":
+							break;
+
+						case "mqtts":
+							throw new Error("MQTT TLS unimplemented")
+							break;
+						
+						default:
+							// Node-RED ignores all unrecognized schemes.
+							break;
+					}
+					
+					config.broker = config.broker.slice(index + 3);
+				}
+				 
+				config.port = config.port ? parseInt(config.port) : 1883;
+				config.keepalive = (parseInt(config.keepalive) || 60) * 1000;
+
+			} break;
 
 			case "tcp in": {
 				if ((undefined === config.port) || ("" === config.port))
@@ -1090,6 +1120,114 @@ export default class extends TOOL {
 				if (config.wipe < 0) { config.wipe = 0; }
 				if (config.brightness < 0) { config.brightness = 0; }
 				if (config.brightness > 100) { config.brightness = 100; }
+			} break;
+			
+			case "sensor": {
+				if (config.io && !config.options) {		// convert original config to new
+					config.options = {
+						sensor: {
+							io: config.io,
+							bus: config.bus ?? "default"
+						}
+					};
+					delete config.io;
+				}
+			
+				let options = {}, construct;
+				const initialize = [];
+				initialize.push(`function () {`);
+
+				if (config.options.reference)
+					construct = config.options.reference;
+				else {
+					imports.set("Modules", "modules");
+					initialize.push(`\t\t\tconst Sensor = Modules.importNow("${config.module}")`);
+					construct = "Sensor";
+				}
+				initialize.push(`\t\t\tconst sensor = new ${construct}({`);
+
+				if (config.options) {
+					for (const name in config.options) {
+						const option = config.options[name];
+						if (undefined === option.io)
+							continue;
+
+						switch (option.io) {
+							case "Analog": {
+								let pin = parseInt(option.pin);
+								if (Number.isNaN(pin))
+									pin = option.pin;
+								initialize.push(`\t\t\t\t${name}: {`);
+								initialize.push(`\t\t\t\t\tio: device.io.Analog,`);
+								initialize.push(`\t\t\t\t\tpin: ${pin},`);
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							case "Digital": {
+								let pin = parseInt(option.pin);
+								if (Number.isNaN(pin))
+									pin = option.pin;
+								initialize.push(`\t\t\t\t${name}: {`);
+								initialize.push(`\t\t\t\t\tio: device.io.Digital,`);
+								initialize.push(`\t\t\t\t\tmode: device.io.Digital.${option.mode},`);
+								initialize.push(`\t\t\t\t\tpin: ${pin},`);
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							case "I2C":
+							case "SMBus": {
+								initialize.push(`\t\t\t\t${name}: {`);
+								if (option.bus || ((undefined === option.data) && (undefined === option.clock))) {
+									initialize.push(`\t\t\t\t\t...device.I2C.${option.bus || "default"},`);
+									if ("SMBus" === option.io)
+										initialize.push(`\t\t\t\t\tio: device.io.SMBus,`);
+								}
+								else {
+									initialize.push(`\t\t\t\t\tio: device.io.${option.io},`);
+
+									let data = parseInt(option.data), clock = parseInt(option.clock);
+									if (Number.isNaN(data))
+										data = option.data;
+									if (Number.isNaN(clock))
+										clock = option.clock;
+
+									initialize.push(`\t\t\t\t\tdata: ${data},`);
+									initialize.push(`\t\t\t\t\tclock: ${clock},`);
+								}
+
+								if (undefined !== option.address)
+									initialize.push(`\t\t\t\t\taddress: ${option.address},`);
+
+								if (undefined !== option.hz)
+									initialize.push(`\t\t\t\t\thz: ${option.hz},`);
+
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							default:
+								throw new Error(`Unknown io ${option.io}`);
+						}
+					}
+
+					for (const name in config.options) {
+						const option = config.options[name];
+						if (option.callback)
+							initialize.push(`\t\t\t\t${option.callback}: () => {const msg = this.onMessage({callback: "${name}"}); if (msg) this.send(msg);},`);
+					}
+				}
+
+				initialize.push(`\t\t\t});`);
+
+				if (config.configuration) {
+					const configuration = JSON.parse(config.configuration);
+					initialize.push(`\t\t\tsensor.configure(${JSON.stringify(configuration)});`);
+				}
+
+				initialize.push(`\t\t\treturn sensor;`);
+				initialize.push(`\t\t}`);
+				config.initialize = initialize.join("\n");
+
+				delete config.module;
+				delete config.platform;
+				delete config.options;
+				delete config.configuration;
 			} break;
 
 			case "random": {
@@ -1162,6 +1300,73 @@ export default class extends TOOL {
 				delete config.inte;
 				delete config.property;
 			} break;
+			
+			case "ui_button": {
+				const setter = [];
+				setter.push(`function (target, msg) {`);
+				if (config.payload)
+					setter.push(`\t\t\ttarget.payload = ${this.resolveValue(config.payloadType, config.payload)};`);
+				if (config.topic) {
+					setter.push(`\t\t\tconst topic = ${this.resolveValue(config.topicType, config.topic)};`);
+					setter.push(`\t\t\tif (undefined !== topic)`);
+					setter.push(`\t\t\t\ttarget.topic = topic;`);
+				}
+				setter.push(`\t\t}`);
+				config.setter = setter.join("\n");
+
+				delete config.topic; 
+				delete config.topicType; 
+				delete config.payload; 
+				delete config.payloadType; 
+
+				this.prepareUI(config);
+			} break;
+
+			case "ui_switch": {
+				const topic = config.topic ? `, topic: ${this.resolveValue(config.topicType, config.topic)}` : ""; 
+				const options = [];
+				options.push(`function (msg) {`);
+				options.push(`\t\t\treturn [`);
+				options.push(`\t\t\t\t{payload: ${this.resolveValue(config.offvalueType, config.offvalue)}${topic}},`);
+				options.push(`\t\t\t\t{payload: ${this.resolveValue(config.onvalueType, config.onvalue)}${topic}}`);
+				options.push(`\t\t\t];`);
+				options.push(`\t\t}`);
+				config.options = options.join("\n");
+				
+				delete config.topic; 
+				delete config.topicType; 
+				delete config.offvalue; 
+				delete config.offvalueType; 
+				delete config.onvalue; 
+				delete config.onvalueType; 
+
+				this.prepareUI(config);
+			} break;
+
+			case "ui_colour_picker":
+			case "ui_text_input":
+			case "ui_numeric":
+			case "ui_slider": {
+				const topic = [];
+				topic.push(`function (msg) {`);
+				topic.push(`\t\t\treturn ${config.topic ? this.resolveValue(config.topicType, config.topic) : ""};`); 
+				topic.push(`\t\t}`);
+				config.topic = topic.join("\n");
+				delete config.topicType;
+				
+				this.prepareUI(config);
+			} break;
+			
+			case "ui_chart":
+			case "ui_guage":
+			case "ui_group":
+			case "ui_spacer":
+			case "ui_text":
+			case "ui_text_input":
+			case "ui_template":
+			case "ui_toast":
+				this.prepareUI(config);
+				break;
 		}
 
 		if (dones && !NoDoneNodes.includes(type))
@@ -1183,6 +1388,9 @@ export default class extends TOOL {
 			else
 				delete config.wires;
 		}
+
+		// name not needed in config, as passed to constructor
+		delete config.name;
 	}
 	resolveValue(type, value) {
 		switch (type) {
@@ -1317,6 +1525,22 @@ export default class extends TOOL {
 				code.push(`${indent}msg${path} ??= {};`);
 			}
 		}
+	}
+	prepareUI(config) {
+		if (config.width)
+			config.width = parseInt(config.width);
+		if (config.height)
+			config.height = parseInt(config.height);
+		if (config.min)
+			config.min = parseInt(config.min);
+		if (config.max)
+			config.max = parseInt(config.max);
+		if (config.displayTime)
+			config.displayTime = parseInt(config.displayTime);
+		if ("" === config.className)
+			delete config.className;
+		delete config.tooltip;
+			
 	}
 	prepareEnv(env) {
 		const parts = [];
