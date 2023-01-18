@@ -61,7 +61,7 @@ class Sensor {
   }
 
   constructor(options){
-    this.#io = new options.sensor.io({
+    const io = new options.sensor.io({
       hz: 400_000,
       address: 0x39,
       ...options.sensor
@@ -69,12 +69,14 @@ class Sensor {
 
     // Reset
     try {
-      this.#io.writeUint8(Register.ENABLE, 0x00);
-      this.#io.writeUint8(Register.ENABLE, 0x01);
+      io.writeUint8(Register.ENABLE, 0x00);
+      io.writeUint8(Register.ENABLE, 0x01);
     } catch {
-      this.close();
+      io.close();
       throw new Error("reset failed");
     }
+
+    this.#io = io;
 
     let idCheck = false;
 
