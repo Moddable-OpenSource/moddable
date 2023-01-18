@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,8 +25,6 @@
 	Datasheet: https://www.st.com/resource/en/datasheet/lis3dh.pdf
 
 */
-
-import Timer from "timer";
 
 const Register = Object.freeze({
 	WHOAMI: 0x0F,
@@ -84,7 +82,6 @@ const Gconversion = 9.80665;
 class LIS3DH {
 	#io;
 	#onAlert;
-	#onError;
 	#monitor;
 	#values = new Int16Array(3);
 	#multiplier = (1 / 16380) * Gconversion;
@@ -94,23 +91,26 @@ class LIS3DH {
 	#lowPower = 0;
 
 	constructor(options) {
-		const io = this.#io = new options.sensor.io({
+		const io = new options.sensor.io({
 			hz: 400_000,
 			address: 0x18,
 			...options.sensor
 		});
 
-		this.#onError = options.onError;
+		try {
+			if (0x33 !== io.readUint8(Register.WHOAMI))
+				throw new Error("unexpected sensor");
 
-		if (0x33 !== io.readUint8(Register.WHOAMI)) {
-			this.#onError("unexpected sensor");
-			this.close();
-			return;
+			this.#io = io;
+		}
+		catch (e) {
+			io.close();
+			throw e;
 		}
 
 		const {alert, onAlert} = options;
 		if (alert && onAlert) {
-			this.#onAlert = options.onAlert;
+			this.#onAlert = onAlert;
 			this.#monitor = new alert.io({
 				mode: alert.io.InputPullUp,
 				...alert,
@@ -185,9 +185,8 @@ class LIS3DH {
 	}
 	close() {
 		this.#monitor?.close();
-		this.#monitor = undefined;
-		this.#io.close();
-		this.#io = undefined;
+		this.#io?.close();
+		this.#io = this.#monitor = undefined;
 	}
 	sample() {
 		const io = this.#io;
@@ -204,6 +203,5 @@ class LIS3DH {
 		return ret;
 	}
 }
-Object.freeze(LIS3DH.prototype);
 
 export default LIS3DH;
