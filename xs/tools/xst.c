@@ -1883,8 +1883,15 @@ int fuzz(int argc, char* argv[])
 #if OSSFUZZ
 static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
 {
-	// some test262 fail at 2147483800
-	if (index > 1000000) {
+	#ifdef mxFuzzMeter
+		static const xsUnsignedValue mxFuzzMeterLimit = mxFuzzMeter;
+	#elif
+		// highest rate for test262 corpus was 2147483800
+		static const xsUnsignedValue mxFuzzMeterLimit = 214748380;
+	#endif
+	// may be useful to print current index for debugging
+	fprintf(stderr, "Current index: %u\n", index);
+	if (index > mxFuzzMeterLimit) {
 		fprintf(stderr, "Computation limits reached (index %u). Exiting...\n", index);
 		return 0;
 	}
@@ -1916,7 +1923,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	fxInitializeSharedCluster();
 	machine = xsCreateMachine(creation, "xst", NULL);
 
-	xsBeginMetering(machine, xsWithinComputeLimit, 10000);
+	xsBeginMetering(machine, xsWithinComputeLimit, 1);
 	{
 		xsBeginHost(machine);
 		{
