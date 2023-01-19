@@ -374,9 +374,8 @@ void xs_tcp_write(xsMachine *the)
 		return;
 	}
 
-	if (kIOFormatBuffer == tcp->format) {
+	if (kIOFormatBuffer == tcp->format)
 		xsmcGetBufferReadable(xsArg(0), &buffer, &needed);
-	}
 	else {
 		needed = 1;
 		value = (uint8_t)xsmcToInteger(xsArg(0));
@@ -386,8 +385,11 @@ void xs_tcp_write(xsMachine *the)
 	if (needed > tcp_sndbuf(tcp->skt))
 		xsUnknownError("would block");
 
-	if (ERR_OK != tcp_write_safe(tcp->skt, buffer, needed, TCP_WRITE_FLAG_COPY | TCP_WRITE_FLAG_MORE))
-		xsUnknownError("write failed");
+	if (ERR_OK != tcp_write_safe(tcp->skt, buffer, needed, TCP_WRITE_FLAG_COPY | TCP_WRITE_FLAG_MORE)) {
+		xsTrace("tcp write failed");
+		tcpTrigger(tcp, kTCPError);
+		return;
+	}
 
 	tcpTrigger(tcp, kTCPOutput);
 
