@@ -1051,7 +1051,7 @@ export default class extends TOOL {
 					
 					config.broker = config.broker.slice(index + 3);
 				}
-				 
+
 				config.port = config.port ? parseInt(config.port) : 1883;
 				config.keepalive = (parseInt(config.keepalive) || 60) * 1000;
 
@@ -1121,9 +1121,15 @@ export default class extends TOOL {
 				if (config.brightness < 0) { config.brightness = 0; }
 				if (config.brightness > 100) { config.brightness = 100; }
 			} break;
-			
+
+			case "mcu_clock":
 			case "sensor": {
-				if (config.io && !config.options) {		// convert original config to new
+				const kinds = {
+					mcu_clock: ["RTC", "rtc"],
+					sensor: ["Sensor", "sensor"]
+				}[type];
+
+				if (config.io && !config.options) {		// convert original sensor config to new
 					config.options = {
 						sensor: {
 							io: config.io,
@@ -1133,7 +1139,7 @@ export default class extends TOOL {
 					delete config.io;
 				}
 			
-				let options = {}, construct;
+				let construct;
 				const initialize = [];
 				initialize.push(`function () {`);
 
@@ -1141,10 +1147,10 @@ export default class extends TOOL {
 					construct = config.options.reference;
 				else {
 					imports.set("Modules", "modules");
-					initialize.push(`\t\t\tconst Sensor = Modules.importNow("${config.module}")`);
-					construct = "Sensor";
+					construct = kinds[0];
+					initialize.push(`\t\t\tconst ${construct} = Modules.importNow("${config.module}")`);
 				}
-				initialize.push(`\t\t\tconst sensor = new ${construct}({`);
+				initialize.push(`\t\t\tconst ${kinds[1]} = new ${construct}({`);
 
 				if (config.options) {
 					for (const name in config.options) {
@@ -1215,12 +1221,12 @@ export default class extends TOOL {
 
 				initialize.push(`\t\t\t});`);
 
-				if (config.configuration) {
+				if (config.configuration && ("{}" !== config.configuration)) {
 					const configuration = JSON.parse(config.configuration);
-					initialize.push(`\t\t\tsensor.configure(${JSON.stringify(configuration)});`);
+					initialize.push(`\t\t\t${kinds[1]}.configure(${JSON.stringify(configuration)});`);
 				}
 
-				initialize.push(`\t\t\treturn sensor;`);
+				initialize.push(`\t\t\treturn ${kinds[1]};`);
 				initialize.push(`\t\t}`);
 				config.initialize = initialize.join("\n");
 
@@ -1358,7 +1364,7 @@ export default class extends TOOL {
 			} break;
 			
 			case "ui_chart":
-			case "ui_guage":
+			case "ui_gauge":
 			case "ui_group":
 			case "ui_spacer":
 			case "ui_text":
