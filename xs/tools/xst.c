@@ -154,36 +154,6 @@ static int main262(int argc, char* argv[]);
 static int fuzz(int argc, char* argv[]);
 #endif
 #if OSSFUZZ
-#ifdef mxMetering
-
-#define xsBeginMetering(_THE, _CALLBACK, _STEP) \
-	do { \
-		xsJump __HOST_JUMP__; \
-		__HOST_JUMP__.nextJump = (_THE)->firstJump; \
-		__HOST_JUMP__.stack = (_THE)->stack; \
-		__HOST_JUMP__.scope = (_THE)->scope; \
-		__HOST_JUMP__.frame = (_THE)->frame; \
-		__HOST_JUMP__.environment = NULL; \
-		__HOST_JUMP__.code = (_THE)->code; \
-		__HOST_JUMP__.flag = 0; \
-		(_THE)->firstJump = &__HOST_JUMP__; \
-		if (setjmp(__HOST_JUMP__.buffer) == 0) { \
-			fxBeginMetering(_THE, _CALLBACK, _STEP)
-
-#define xsEndMetering(_THE) \
-			fxEndMetering(_THE); \
-		} \
-		(_THE)->stack = __HOST_JUMP__.stack, \
-		(_THE)->scope = __HOST_JUMP__.scope, \
-		(_THE)->frame = __HOST_JUMP__.frame, \
-		(_THE)->code = __HOST_JUMP__.code, \
-		(_THE)->firstJump = __HOST_JUMP__.nextJump; \
-		break; \
-	} while(1)
-#else
-	#define xsBeginMetering(_THE, _CALLBACK, _STEP)
-	#define xsEndMetering(_THE)
-#endif
 static int fuzz_oss(const uint8_t *Data, size_t script_size);
 #endif
 static void fxBuildAgent(xsMachine* the);
@@ -1881,22 +1851,24 @@ int fuzz(int argc, char* argv[])
 }
 #endif 
 #if OSSFUZZ
+
+#if mxMetering
+#ifndef mxFuzzMeter
+	// highest rate for test262 corpus was 2147483800
+	#define mxFuzzMeter (214748380)
+#endif
+
 static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
 {
-	#ifdef mxFuzzMeter
-		static const xsUnsignedValue mxFuzzMeterLimit = mxFuzzMeter;
-	#elif
-		// highest rate for test262 corpus was 2147483800
-		static const xsUnsignedValue mxFuzzMeterLimit = 214748380;
-	#endif
 	// may be useful to print current index for debugging
-	fprintf(stderr, "Current index: %u\n", index);
-	if (index > mxFuzzMeterLimit) {
-		fprintf(stderr, "Computation limits reached (index %u). Exiting...\n", index);
+//	fprintf(stderr, "Current index: %u\n", index);
+	if (index > mxFuzzMeter) {
+//		fprintf(stderr, "Computation limits reached (index %u). Exiting...\n", index);
 		return 0;
 	}
 	return 1;
 }
+#endif
 
 int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
