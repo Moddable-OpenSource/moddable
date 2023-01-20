@@ -1346,7 +1346,7 @@ void fx_TypedArray(txMachine* the)
 			info = fxGetBufferInfo(the, mxArgv(0));
 			if (size >= 0) {
 				txInteger delta = size << shift;
-				txInteger end = offset + delta;
+				txInteger end = fxAddChunkSizes(the, offset, delta);
 				if ((info->value.bufferInfo.length < end) || (end < offset))
 					mxRangeError("out of range length %ld", size);
 				size = delta;
