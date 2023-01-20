@@ -43,7 +43,7 @@ class RV3028 {
 		});
 
 		try {
-			io..readUint8(0);
+			io.readUint8(0);
 		}
 		catch (e) {
 			io.close();
@@ -62,7 +62,7 @@ class RV3028 {
 	get time() {
 		const reg = this.#blockBuffer;
 
-		if (this.#io..readUint8(Register.STATUS) & Register.POWER_ON_RESET)
+		if (this.#io.readUint8(Register.STATUS) & Register.POWER_ON_RESET)
 			return undefined;
 
 		this.#io.readBuffer(Register.UNIXTIME, reg);

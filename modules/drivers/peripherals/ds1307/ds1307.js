@@ -45,7 +45,7 @@ class DS1307 {
 		});
 
 		try {
-			io..readUint8(0);
+			io.readUint8(0);
 		}
 		catch (e) {
 			io.close();

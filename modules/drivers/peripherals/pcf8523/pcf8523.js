@@ -43,7 +43,7 @@ class PCF8523 {
 		});
 
 		try {
-			io..readUint8(0);
+			io.readUint8(0);
 		}
 		catch(e) {
 			io.close();
@@ -70,7 +70,7 @@ class PCF8523 {
 			return undefined;
 		}
 
-		if (this.#io..readUint8(Register.CTRL1) & Register.STOP_BIT) {
+		if (this.#io.readUint8(Register.CTRL1) & Register.STOP_BIT) {
 			return undefined; // disabled
 		}
 

@@ -52,7 +52,7 @@ class PCF85063 {
 		});
 
 		try {
-			io..readUint8(0);
+			io.readUint8(0);
 		}
 		catch(e) {
 			io.close();
@@ -106,10 +106,10 @@ class PCF85063 {
 		let now = new Date(this.time);
 
 		now.setUTCSeconds(0);
-		now.setUTCMinutes( bcdToDec(io..readUint8(Register.ALARM_MINUTES) & 0x7f) );
-		now.setUTCHours( bcdToDec(io..readUint8(Register.ALARM_HOURS) & 0x3f) );
+		now.setUTCMinutes( bcdToDec(io.readUint8(Register.ALARM_MINUTES) & 0x7f) );
+		now.setUTCHours( bcdToDec(io.readUint8(Register.ALARM_HOURS) & 0x3f) );
 
-		let date = bcdToDec(io..readUint8(Register.ALARM_DAY) & 0x3f);
+		let date = bcdToDec(io.readUint8(Register.ALARM_DAY) & 0x3f);
 		if (date < now.getUTCDate()) {
 			let month = now.getUTCMonth() + 1;
 			if (month > 11) {
@@ -131,7 +131,7 @@ class PCF85063 {
 		if (b[0] & Register.VALID_BIT) // if high bit of seconds is set, then time is uncertain
 			return;
 
-		if (this.#io..readUint8(Register.CTRL1)) // not enabled
+		if (this.#io.readUint8(Register.CTRL1)) // not enabled
 			return undefined;
 
 		// yr, mo, day, hr, min, sec

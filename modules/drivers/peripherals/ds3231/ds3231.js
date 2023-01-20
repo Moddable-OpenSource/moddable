@@ -43,7 +43,7 @@ class DS3231 {
 		});
 
 		try {
-			io..readUint8(0);
+			io.readUint8(0);
 		}
 		catch (e) {
 			io.close();
@@ -62,7 +62,7 @@ class DS3231 {
 	}
 	get time() {
 		const reg = this.#blockBuffer;
-		if (this.#io..readUint8(Register.CONTROL) & Register.ENABLE_BIT)
+		if (this.#io.readUint8(Register.CONTROL) & Register.ENABLE_BIT)
 			return undefined;
 
 		this.#io.readBuffer(Register.TIME, reg);
@@ -91,7 +91,7 @@ class DS3231 {
 
 		io.writeBuffer(Register.TIME, b);
 
-		let c = io..readUint8(Register.CONTROL) & ~Register.ENABLE_BIT;	// enabled LOW
+		let c = io.readUint8(Register.CONTROL) & ~Register.ENABLE_BIT;	// enabled LOW
 		io.writeUint8(Register.CONTROL, c);
 	}
 }

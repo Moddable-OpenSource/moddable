@@ -43,7 +43,7 @@ class MCP7940 {
 		});
 
 		try {
-			io..readUint8(0);
+			io.readUint8(0);
 		}
 		catch (e) {
 			io.close();
@@ -99,7 +99,7 @@ class MCP7940 {
 		b[6] = decToBcd(year % 100);
 
 		// stop the oscillator
-		let ST = io..readUint8(Register.TIME);
+		let ST = io.readUint8(Register.TIME);
 		if (ST & Register.ENABLE_BIT) {
 			ST &= ~Register.ENABLE_BIT;
 			io.writeUint8(Register.TIME, ST);
