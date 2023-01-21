@@ -94,7 +94,7 @@ class MQTTClient {
 						...options.socket,
 						address,
 						host,
-						port: this.#options.port ?? 80,
+						port: this.#options.port ?? 1883,
 						onReadable: this.#onReadable.bind(this),
 						onWritable: this.#onWritable.bind(this),
 						onError: this.#onError.bind(this)
