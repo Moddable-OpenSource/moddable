@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Moddable Tech, Inc.
+ * Copyright (c) 2019-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -398,7 +398,12 @@ void i2cDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLen
 	if (transaction->hasCallback) {
 		xsBeginHost(the);
 		xsmcVars(2);
-		xsmcSetInteger(xsVar(0), transaction->err);
+		if (transaction->err) {
+			xsmcSetInteger(xsVar(0), transaction->err);
+			xsVar(0) = xsNew1(xsGlobal, xsID_Error, xsVar(0));
+		}
+		else
+			xsmcSetNull(xsVar(0));
 
 		switch (operation) {
 			case kOperationWrite:
@@ -423,8 +428,10 @@ void i2cDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLen
 					xsmcGetBufferWritable(transaction->readBuffer, &buffer, &length);
 					if (transaction->bufferLength <= length)
 						c_memmove(buffer, transaction->buffer, transaction->bufferLength);
-					else
-						xsmcSetInteger(xsVar(0), -3);		// buffer now too small to hold result
+					else {			// buffer now too small to hold result
+						xsmcSetInteger(xsVar(0), -3);
+						xsVar(0) = xsNew1(xsGlobal, xsID_Error, xsVar(0));
+					}
 				}
 				else
 					xsmcSetArrayBuffer(xsVar(1), transaction->buffer, transaction->bufferLength);
