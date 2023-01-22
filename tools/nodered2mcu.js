@@ -1399,8 +1399,7 @@ export default class extends TOOL {
 			case "ui_button": {
 				const setter = [];
 				setter.push(`function (target, msg) {`);
-				if (config.payload)
-					setter.push(`\t\t\ttarget.payload = ${this.resolveValue(config.payloadType, config.payload)};`);
+				setter.push(`\t\t\ttarget.payload = ${this.resolveValue(config.payloadType, config.payload)};`);
 				if (config.topic) {
 					setter.push(`\t\t\tconst topic = ${this.resolveValue(config.topicType, config.topic)};`);
 					setter.push(`\t\t\tif (undefined !== topic)`);
@@ -1497,6 +1496,8 @@ export default class extends TOOL {
 			case "date":
 				return "Date.now()";
 			case "json":
+				if (!value)
+					throw new Error("missing value");
 				return value;
 			case "num":
 				if ("" === value)		// historical: https://cookbook.nodered.org/basic/join-streams
@@ -1507,11 +1508,15 @@ export default class extends TOOL {
 			case "re":
 				return `/${value}/`;
 			case "bin":
+				if (!value)
+					return `Uint8Array.of()`; 
 				return `Uint8Array.of(${value.slice(1, value.length - 1)})`;
 			case "msg":
 				return `msg${this.prepareProp(value)}`;
 			case "flow":
 			case "global": {
+				if (!value)
+					throw new Error(`missing name`);
 				let suffix = "";
 				let i = value.indexOf("[");
 				let j = value.indexOf(".");
