@@ -85,21 +85,21 @@ class Ping extends Socket {
 	}
 	callback(message, value, address) {
 		if (2 !== message) return;
-		this.#reply = true;
 		if (76 !== value)
-			return this.failed("Unexpected packet length");
+			return;		// not expected size
 
 		// Ignore IP header
 		this.read(null, 20);
 
 		// ICMP header
 		const values = new Uint8Array(this.read(ArrayBuffer, 56));
-		if (values[0] != 0 || values[1] != 0)
-			return this.failed("Response is not an echo reply");
+		if (values[0] || values[1])
+			return;		// not an echo reply
 		const checksum = (values[2] << 8) + values[3];
 		const identifier = (values[4] << 8) + values[5];
 		if (identifier !== this.#identifier)
 			return;		// not for this instance
+		this.#reply = true;
 		const icmp_seq = (values[6] << 8) + values[7];
 		if (!Ping.validate_checksum(identifier, icmp_seq, checksum))
 			this.failed("Invalid checksum for icmp_seq "+icmp_seq);
