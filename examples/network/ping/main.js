@@ -24,9 +24,11 @@ let ping = new Ping({host: HOST, id: ID, interval: INTERVAL}, (message, value, e
 			break;
 		case 1:
 			trace(`${value} bytes from ${etc.address}: icmp_seq=${etc.icmp_seq}\n`);
+			if (etc.icmp_seq >= 20)
+				ping.close();
 			break;
 		case 2:
-			trace(`Request timeout for icmp_seq ${ping.icmp_seq}\n`);
+			trace(`Request timeout for icmp_seq ${etc.icmp_seq}\n`);
 			break;
 	}
 });

@@ -47,6 +47,7 @@
 		"$(MODDABLE)/modules/crypt/tls.json",
 		"$(MODDABLE)/modules/network/http/manifest.json",
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
+		"$(MODDABLE)/modules/network/ping/manifest.json",
 		"$(MODDABLE)/modules/network/websocket/manifest.json"
 	],
 	"modules": {
