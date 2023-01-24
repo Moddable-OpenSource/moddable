@@ -632,10 +632,20 @@ void fx_ArrayBuffer_prototype_slice(txMachine* the)
 	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
 	txInteger stop = (txInteger)fxArgToIndex(the, 1, length, length);
 	txSlot* resultBuffer;
+	txSlot* resultInfo;
 	if (stop < start) 
 		stop = start;
 	fxConstructArrayBufferResult(the, C_NULL, stop - start);
 	resultBuffer = fxCheckArrayBufferDetached(the, mxResult, XS_MUTABLE);
+	resultInfo = resultBuffer->next;
+	if (fxIsSameValue(the, mxThis, mxResult, 0))
+		mxTypeError("this == result");
+	if (resultInfo->value.bufferInfo.length < stop - start)
+		mxTypeError("too small result");
+	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_IMMUTABLE);
+	bufferInfo = arrayBuffer->next;
+	if (bufferInfo->value.bufferInfo.length < stop)
+		mxTypeError("too small this");
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address + start, stop - start);
 }
 
