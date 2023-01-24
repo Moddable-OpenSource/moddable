@@ -7,19 +7,15 @@ import {Request} from "http";
 
 await $NETWORK.connected;
 
-const request = new Request({host: "www.example.com", path: "/", response: String});
+const request = new Request({host: "www.example.com", path: "/", response: ArrayBuffer});
 request.callback = function(message, value, etc) {
 	if (Request.responseFragment === message)
 		$DONE("unexpected fragment");
-	else if (Request.status === message) {
-		if (200 !== value)
-			$DONE("unexpected http result code " + value)
-	}
 	else if (Request.responseComplete == message) {
-		if ("string" !== typeof value)
-			$DONE("unexpected response type " + (typeof value))
-		else
+		if (value instanceof ArrayBuffer)
 			$DONE();
+		else
+			$DONE("response not ArrayBuffer");
 	}
 	else if (message < 0)
 		$DONE(message)

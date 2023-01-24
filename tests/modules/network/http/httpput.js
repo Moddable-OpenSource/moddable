@@ -7,7 +7,12 @@ import {Request} from "http";
 
 await $NETWORK.connected;
 
-const request = new Request({host: "www.example.com", path: "/", response: String});
+const body = "This is no data!";
+
+const request = new Request({host: "httpbin.org", path: "/put", method: "PUT",
+	body,
+	response: String,
+});
 request.callback = function(message, value, etc) {
 	if (Request.responseFragment === message)
 		$DONE("unexpected fragment");
@@ -18,8 +23,13 @@ request.callback = function(message, value, etc) {
 	else if (Request.responseComplete == message) {
 		if ("string" !== typeof value)
 			$DONE("unexpected response type " + (typeof value))
-		else
-			$DONE();
+		else {
+			value = JSON.parse(value);
+			if (value.data === body)
+				$DONE();
+			else
+				$DONE("bad response");
+		}
 	}
 	else if (message < 0)
 		$DONE(message)

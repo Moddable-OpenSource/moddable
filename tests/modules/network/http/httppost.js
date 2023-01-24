@@ -4,10 +4,23 @@ flags: [async, module]
 ---*/
 
 import {Request} from "http";
+import { URLSearchParams } from "url";
 
 await $NETWORK.connected;
 
-const request = new Request({host: "www.example.com", path: "/", response: String});
+const body = new URLSearchParams([
+	["Date", Date()],
+	["Input", "This is no input!"]
+]);
+
+const request = new Request({host: "httpbin.org", path: "/post", method: "POST",
+	headers: [
+		'Content-Type', 'application/x-www-form-urlencoded;charset=UTF-8',
+		"Date", Date(),
+	],
+	body: body.toString(),
+	response: String,
+});
 request.callback = function(message, value, etc) {
 	if (Request.responseFragment === message)
 		$DONE("unexpected fragment");
@@ -18,8 +31,14 @@ request.callback = function(message, value, etc) {
 	else if (Request.responseComplete == message) {
 		if ("string" !== typeof value)
 			$DONE("unexpected response type " + (typeof value))
-		else
-			$DONE();
+		else {
+			value = JSON.parse(value);
+			if ((value.form.Date !== body.get("Date")) ||
+				(value.form.Input !== body.get("Input")))
+				$DONE("bad response");
+			else
+				$DONE();
+		}
 	}
 	else if (message < 0)
 		$DONE(message)
