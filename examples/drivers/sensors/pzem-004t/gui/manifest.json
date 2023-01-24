@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/pzem-004t/manifest.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"config": {
+		"receive": 26,
+		"transmit": 27,
+		"port": 2
+	},
+	"resources":{
+		"*-mask": [
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28"
+		]
+	}
+}
