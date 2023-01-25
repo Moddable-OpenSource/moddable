@@ -4935,9 +4935,10 @@ void fxRunUsing(txMachine* the)
 	txSlot* resource = the->stack;
 	fxBeginHost(the);
 	mxPushSlot(resource);
-	mxGetID(mxID(_Symbol_dispose));
-	if (!fxIsCallable(the, the->stack)) {
-		mxTypeError("no dispose method");
+	if (!mxIsNull(resource) && !mxIsUndefined(resource)) {
+		mxGetID(mxID(_Symbol_dispose));
+		if (!fxIsCallable(the, the->stack))
+			mxTypeError("no [Symbol.dispose] method");
 	}
 	mxPullSlot(resource);
 	fxEndHost(the);
