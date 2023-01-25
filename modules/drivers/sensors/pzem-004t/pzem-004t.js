@@ -35,7 +35,17 @@ const Registers = Object.freeze({
 
 const Commands = Object.freeze({
     READ: 0x04,
-    RESET_ENERGY: 0x42
+    RESET_ENERGY: 0x42,
+    ERROR: 0x84,
+    RESET_ERROR: 0xC2
+});
+
+const States = Object.freeze({
+    DONE: 0,
+    WAITING: -1,
+    HAVE_ADDRESS: -2,
+    READ: -3,
+    ERROR: -4
 });
 
 const DEFAULT_BUS_ADDRESS = 0xF8;
@@ -46,17 +56,16 @@ export default class PZEM0004T {
     #crcView = new DataView(this.#outBuffer, 0, 6);
     #inBuffer = new ArrayBuffer(32);
     #inView = new DataView(this.#inBuffer);
-    #fullReadCRC = new DataView(this.#inBuffer, 0, 23);
     #writeable = 0;
     #ready = false;
     #io;
     #crc;
     #sampleCallback;
-    #onReady;
+    #state = -1;
+    #onInBuffer = 0;
 
     constructor(options) {
         this.#crc = new CRC16(0x8005, 0xFFFF, true, true, 0x0000);
-        this.#onReady = options.onReady;
         
         this.#io =  new options.sensor.io({
             baud: 9600,
@@ -71,21 +80,72 @@ export default class PZEM0004T {
                 }
             },
             onReadable: bytes => {
-                let error, result;
+                let result, value;
 
+                this.#io.format = "number";
                 try {
-                    result = this.#doRead();
-                    error = result.error;
-                } catch (e) {
-                    error = "exception while reading";
-                }
-                if (error !== undefined) {
-                    this.#sampleCallback?.(new Error(error));
-                } else if (result.sample) {
-                    this.#sampleCallback?.(null, result.sample);
+                    value = this.#io.read();
+                    while ((value !== undefined && result === undefined)){
+                        // trace(`${value.toString(16)}\n`);
+                        this.#inView.setUint8(this.#onInBuffer++, value);
+                        switch (this.#state) {
+                            case States.WAITING:
+                                this.#state = States.HAVE_ADDRESS;
+                                break;
+                            case States.HAVE_ADDRESS:
+                                if (value === Commands.READ) {
+                                    this.#state = States.READ;
+                                } else if (value === Commands.ERROR) {
+                                    this.#state = States.ERROR;
+                                } else if (value === Commands.RESET_ENERGY) {
+                                    this.#state = 1;
+                                } else { // unknown status code
+                                    result = {error: "unknown status code"};
+                                }
+                                break;
+                            case States.READ:
+                                this.#state = value + 1;
+                                break;
+                            case States.ERROR:
+                                this.#state = 1;
+                                break;
+                            case States.DONE:
+                                this.#crc.reset();
+                                const inCRCView = new DataView(this.#inBuffer, 0, this.#onInBuffer - 2);
+                                const calculatedCRC = this.#crc.checksum(inCRCView);
+                                const busCRC = this.#inView.getUint16(this.#onInBuffer - 2, true);
+                                if (calculatedCRC === busCRC) {
+                                    result = this.#handleData();
+                                } else {
+                                    debugger;
+                                    result = {error: "bad CRC check"};
+                                }
+    
+                                this.#onInBuffer = 0;
+                                this.#state = States.WAITING;
+                                break;
+                            default:
+                                this.#state--;
+                                break;
+                        }
+                        value = this.#io.read();
+                    }
+                } catch (error) {
+                    result = {error: "Serial IO error"};
                 }
                 
-                this.#sampleCallback = undefined;
+                if (result) {
+                    const {error, sample, resetEnergy} = result;
+                    if (error) {
+                        this.#sampleCallback?.(new Error(error));
+                    } else {
+                        this.#sampleCallback?.(null, sample);
+                    }
+
+                    if (resetEnergy)
+                        trace(`Received reset energy ACK\n`);
+                    this.#sampleCallback = undefined;
+                }                
             }
         });
     }
@@ -126,25 +186,14 @@ export default class PZEM0004T {
         }
     }
     
-    //@@ There is a bad simplifying assumption here that the serial buffer always contains all of the data we need. Seems to work in practice, but not safe.
     //@@ Todo: read address & read alarm values
-    #doRead() {
-        const b = this.#io.read(this.#inBuffer);
+    #handleData() {
         const view = this.#inView;
 
-        if (b < 3)
-            return {error: "invalid read"};
-        
         const status = view.getUint8(1);
         const length = view.getUint8(2);
 
-        if (status === Commands.READ && length === 20) { // value case
-            this.#crc.reset();
-            const calculatedCRC = this.#crc.checksum(this.#fullReadCRC);
-            const busCRC = view.getUint16(23, true);
-            if (calculatedCRC !== busCRC)
-                return {error: "bad CRC"};
-
+        if (status === Commands.READ && length === 20) { // full read value case
             const voltage = (view.getUint16(3, false)) / 10;
             const current = ((view.getUint16(7, false) << 16) | view.getUint16(5, false)) / 1000;
             const power = ((view.getUint16(11, false) << 16) | view.getUint16(9, false)) / 10;
@@ -154,8 +203,10 @@ export default class PZEM0004T {
             const alarmStatus = (view.getUint16(21, false) === 0xFFFF);
 
             return {sample: {voltage, current, power, energy, frequency, powerFactor, alarmStatus}};
-        } else if (status === 0x84) { // error case
+        } else if (status === Commands.ERROR) { // error case
             return {error: `error code: ${view.getUint8(3)}`};
+        } else if (status === Commands.RESET_ENERGY) {
+            return {resetEnergy: true};
         } else { // unknown case
             return {error: "invalid read code"};
         }
@@ -174,6 +225,7 @@ export default class PZEM0004T {
         const checksum = this.#crc.checksum(toCRC);
         toSend.setUint16(2, checksum, true);
         
+        this.#io.format = "buffer";
         this.#io.write(buffer);
     }
 
@@ -192,6 +244,7 @@ export default class PZEM0004T {
         const checksum = this.#crc.checksum(this.#crcView);
         this.#outView.setUint16(6, checksum, true);  
 
+        this.#io.format = "buffer";
         this.#io.write(this.#outBuffer);
     }
 }
