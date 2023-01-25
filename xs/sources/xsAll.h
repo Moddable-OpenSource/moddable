@@ -1032,6 +1032,7 @@ mxExport void fx_AggregateError(txMachine* the);
 mxExport void fx_EvalError(txMachine* the);
 mxExport void fx_RangeError(txMachine* the);
 mxExport void fx_ReferenceError(txMachine* the);
+mxExport void fx_SuppressedError(txMachine* the);
 mxExport void fx_SyntaxError(txMachine* the);
 mxExport void fx_TypeError(txMachine* the);
 mxExport void fx_URIError(txMachine* the);
@@ -1827,6 +1828,7 @@ enum {
 	XS_TYPE_ERROR,
 	XS_URI_ERROR,
 	XS_AGGREGATE_ERROR,
+	XS_SUPPRESSED_ERROR,
 	XS_ERROR_COUNT
 };
 
@@ -2444,6 +2446,7 @@ enum {
 	mxTypeErrorPrototypeStackIndex,
 	mxURIErrorPrototypeStackIndex,
 	mxAggregateErrorPrototypeStackIndex,
+	mxSuppressedErrorPrototypeStackIndex,
 	
 	mxSymbolPrototypeStackIndex,
 	mxArrayBufferPrototypeStackIndex,
@@ -2571,6 +2574,7 @@ enum {
 #define mxSharedArrayBufferConstructor the->stackPrototypes[-1 - _SharedArrayBuffer]
 #define mxModuleSourceConstructor the->stackPrototypes[-1 - _ModuleSource]
 #define mxStringConstructor the->stackPrototypes[-1 - _String]
+#define mxSuppressedErrorConstructor the->stackPrototypes[-1 - _SuppressedError]
 #define mxSymbolConstructor the->stackPrototypes[-1 - _Symbol]
 #define mxSyntaxErrorConstructor the->stackPrototypes[-1 - _SyntaxError]
 #define mxTypeErrorConstructor the->stackPrototypes[-1 - _TypeError]
@@ -2616,6 +2620,7 @@ enum {
 #define mxTypeErrorPrototype the->stackPrototypes[-1 - mxTypeErrorPrototypeStackIndex]
 #define mxURIErrorPrototype the->stackPrototypes[-1 - mxURIErrorPrototypeStackIndex]
 #define mxAggregateErrorPrototype the->stackPrototypes[-1 - mxAggregateErrorPrototypeStackIndex]
+#define mxSuppressedErrorPrototype the->stackPrototypes[-1 - mxSuppressedErrorPrototypeStackIndex]
 
 #define mxSymbolPrototype the->stackPrototypes[-1 - mxSymbolPrototypeStackIndex]
 #define mxArrayBufferPrototype the->stackPrototypes[-1 - mxArrayBufferPrototypeStackIndex]

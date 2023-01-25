@@ -567,6 +567,7 @@ struct sxScope {
 	txInteger closureNodeCount;
 	txInteger declareNodeCount;
 	txInteger defineNodeCount;
+	txInteger disposableNodeCount;
 	txInteger nativeNodeCount;
 	txDeclareNode* firstDeclareNode;
 	txDeclareNode* lastDeclareNode;
@@ -711,6 +712,7 @@ struct sxParser {
 	txSymbol* toStringSymbol;
 	txSymbol* undefinedSymbol;
 	txSymbol* uriSymbol;
+	txSymbol* usingSymbol;
 	txSymbol* valueSymbol;
 	txSymbol* withSymbol;
 	txSymbol* yieldSymbol;
@@ -887,6 +889,7 @@ enum {
 	XS_TOKEN_UNDEFINED,
 	XS_TOKEN_UNSIGNED_RIGHT_SHIFT,
 	XS_TOKEN_UNSIGNED_RIGHT_SHIFT_ASSIGN,
+	XS_TOKEN_USING,
 	XS_TOKEN_VAR,
 	XS_TOKEN_VOID,
 	XS_TOKEN_WHILE,

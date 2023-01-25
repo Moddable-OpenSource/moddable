@@ -92,6 +92,15 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextStringXProperty(the, slot, "SuppressedError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
+	mxSuppressedErrorPrototype = *the->stack;
+	instance = fxBuildHostConstructor(the, mxCallback(fx_SuppressedError), 2, mxID(_SuppressedError));
+	instance->value.instance.prototype = prototype;
+	mxSuppressedErrorConstructor = *the->stack;
+	mxPop();
+	mxPush(mxErrorPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "SyntaxError", mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxSyntaxErrorPrototype = *the->stack;
@@ -284,6 +293,13 @@ void fx_RangeError(txMachine* the)
 void fx_ReferenceError(txMachine* the)
 {
 	fx_Error_aux(the, XS_REFERENCE_ERROR, 0);
+}
+
+void fx_SuppressedError(txMachine* the)
+{
+	txSlot* property = fx_Error_aux(the, XS_SUPPRESSED_ERROR, 2);
+	property = fxNextSlotProperty(the, property, mxArgv(0), mxID(_error), XS_DONT_ENUM_FLAG);
+	property = fxNextSlotProperty(the, property, mxArgv(1), mxID(_suppressed), XS_DONT_ENUM_FLAG);
 }
 
 void fx_SyntaxError(txMachine* the)

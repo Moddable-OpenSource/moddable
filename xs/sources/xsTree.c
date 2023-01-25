@@ -1669,6 +1669,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_CODE_UNDEFINED, XS_TOKEN_UNDEFINED, "Undefined", sizeof(txNode), &gxUndefinedNodeDispatch },
 	{ XS_CODE_UNSIGNED_RIGHT_SHIFT, XS_TOKEN_UNSIGNED_RIGHT_SHIFT, "UnsignedRightShift", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
 	{ XS_CODE_UNSIGNED_RIGHT_SHIFT, XS_TOKEN_UNSIGNED_RIGHT_SHIFT_ASSIGN, "UnsignedRightShiftAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_USING, "Using", sizeof(txDeclareNode), &gxDeclareNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_VAR, "Var", sizeof(txDeclareNode), &gxDeclareNodeDispatch },
 	{ XS_CODE_VOID, XS_TOKEN_VOID, "Void", sizeof(txUnaryExpressionNode), &gxUnaryExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_WHILE, "While", sizeof(txWhileNode), &gxWhileNodeDispatch },
@@ -1705,6 +1706,7 @@ void fxNodePrintTree(void* it, void* param)
 		case XS_TOKEN_CONST: 
 		case XS_TOKEN_DEFINE: 
 		case XS_TOKEN_LET: 
+		case XS_TOKEN_USING: 
 		case XS_TOKEN_VAR: 
 			fxDeclareDefineNodePrintNode(it); 
 			break;
