@@ -14,7 +14,7 @@
 			"initial": 2048,
 			"incremental": 64
 		},
-		"stack": 256,
+		"stack": 384,
 		"keys": {
 			"available": 2048,
 			"name": 127,
@@ -216,10 +216,12 @@
 			"$(MODDABLE)/examples/assets/images/image-info",
 			"$(MODULES)/crypt/data/ca34",
 			"$(MODULES)/crypt/data/ca35",
+			"$(MODULES)/crypt/data/ca109",
 			"$(MODULES)/crypt/data/ca222",
 			"./assets/bflatmajor-ima-12000",
 			"./assets/bflatmajor-ima-16000",
-			"./assets/bflatmajor-sbc"
+			"./assets/bflatmajor-sbc",
+			"./assets/mosquitto.org"
 		]
 	},
 	"resources": {
