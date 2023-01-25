@@ -22,7 +22,6 @@ const request = new Request({host: "httpbin.org", path: "/post", method: "POST",
 });
 request.callback = function(message, value, etc) {
 	if (Request.requestFragment === message) {
-trace(remainingParts, "\n");
 		if (0 === remainingParts--)
 			return;
 		return bodyPart;
