@@ -86,7 +86,6 @@ export default class PZEM0004T {
                 try {
                     value = this.#io.read();
                     while ((value !== undefined && result === undefined)){
-                        // trace(`${value.toString(16)}\n`);
                         this.#inView.setUint8(this.#onInBuffer++, value);
                         switch (this.#state) {
                             case States.WAITING:
@@ -117,7 +116,6 @@ export default class PZEM0004T {
                                 if (calculatedCRC === busCRC) {
                                     result = this.#handleData();
                                 } else {
-                                    debugger;
                                     result = {error: "bad CRC check"};
                                 }
     
