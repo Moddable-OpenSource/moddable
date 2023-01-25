@@ -60,7 +60,7 @@ export class Request {
 
 		this.method = dictionary.method;
 		this.path = dictionary.path;
-		this.host = dictionary.host ? dictionary.host : (dictionary.address + ":" + dictionary.port);
+		this.host = dictionary.host ? dictionary.host : dictionary.address;
 		if (dictionary.headers)
 			this.headers = dictionary.headers;
 		if (dictionary.body)
@@ -120,32 +120,8 @@ export class Request {
 		delete this.buffers;
 		delete this.callback;
 		delete this.done;
-		delete this.suspended;
 		delete this.server;
 		this.state = 11;
-	}
-	suspend(value) {
-		this.socket.suspend(value);
-		if (value)
-			this.suspended = true;
-		else {
-			this.suspended = Timer.set(id => {
-				if (id !== this.suspended) return;
-
-				delete this.suspended;
-
-				let value = this.socket.read();
-				if (value)
-					this.socket.callback(2, value);
-
-				if (this.suspended || !this.socket)
-					return;		// read callback can suspend
-
-				value = this.socket.write();
-				if (value)
-					this.socket.callback(3, value);
-			});
-		}
 	}
 };
 Request.requestFragment = 0;
@@ -170,7 +146,7 @@ function callback(message, value) {
 		parts.push("Connection: close\r\n");
 
 		let length, host = this.host;
-		for (let i = 0; i < (this.headers ? this.headers.length : 0); i += 2) {
+		for (let i = 0; i < (this.headers?.length ?? 0); i += 2) {
 			let name = this.headers[i].toString();
 			parts.push(`${name}: `, this.headers[i + 1].toString(), "\r\n");
 			name = name.toLowerCase();
@@ -264,7 +240,7 @@ function callback(message, value) {
 
 			this.callback(Request.status, parseInt(status[1]));
 
-			if ((this.state >= 11) || !socket.read() || this.suspended)
+			if ((this.state >= 11) || !socket.read())
 				return;
 		}
 
@@ -302,10 +278,6 @@ function callback(message, value) {
 						}
 						return;
 					}
-
-					if (this.suspended)
-						return;
-
 					break;
 				}
 
@@ -326,7 +298,7 @@ function callback(message, value) {
 						return done.call(this);
 				}
 
-				if ((this.state >= 11) || this.suspended)
+				if (this.state >= 11)
 					return;
 			}
 		}
@@ -385,9 +357,6 @@ function callback(message, value) {
 
 					if (0 === this.chunk)
 						this.line = 2;	// should be two more bytes to read (CR/LF)... skip them when they become available
-
-					if (this.suspended)
-						return;
 				}
 			}
 			else if (undefined !== this.total) {
