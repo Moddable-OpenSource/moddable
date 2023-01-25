@@ -66,23 +66,21 @@ export default class PZEM0004T {
                 this.#writeable = bytes;
                 if (!this.#ready && bytes >= 8) {
                     this.#ready = true;
-                    this.#onReady?.();
+                    if (this.#sampleCallback !== undefined)
+                        this.#readRegisters(Registers.VOLTAGE, 10);            
                 }
             },
             onReadable: bytes => {
-                let error = false;
-                let message, result;
+                let error, result;
 
                 try {
                     result = this.#doRead();
                     error = result.error;
-                    message = result.message ?? "invalid read";
                 } catch (e) {
-                    error = true;
-                    message = "exception while reading";
+                    error = "exception while reading";
                 }
-                if (error) {
-                    this.#sampleCallback?.(new Error(message));
+                if (error !== undefined) {
+                    this.#sampleCallback?.(new Error(error));
                 } else if (result.sample) {
                     this.#sampleCallback?.(null, result.sample);
                 }
@@ -93,8 +91,14 @@ export default class PZEM0004T {
     }
 
     sample(callback) {
+        if (this.#sampleCallback !== undefined)
+            throw new Error("sample pending");
+        if (callback === undefined)
+            throw new Error("sample callback required");
+
         this.#sampleCallback = callback;
-        this.#readRegisters(Registers.VOLTAGE, 10);
+        if (this.#ready)
+            this.#readRegisters(Registers.VOLTAGE, 10);
     }
 
     // @@ TODO: set alarm
@@ -107,10 +111,8 @@ export default class PZEM0004T {
     close(closeCallback) {
         this.#io?.close();
         this.#io = undefined;
-        if (closeCallback !== undefined)
-            Timer.set(() => {
-                closeCallback(null);
-            }, 0);
+        if (closeCallback)
+            Timer.set(() => closeCallback(null));
     }
 
     get configuration() {
@@ -131,7 +133,7 @@ export default class PZEM0004T {
         const view = this.#inView;
 
         if (b < 3)
-            return {error: true};
+            return {error: "invalid read"};
         
         const status = view.getUint8(1);
         const length = view.getUint8(2);
@@ -141,7 +143,7 @@ export default class PZEM0004T {
             const calculatedCRC = this.#crc.checksum(this.#fullReadCRC);
             const busCRC = view.getUint16(23, true);
             if (calculatedCRC !== busCRC)
-                return {error: true, message: "bad CRC"};
+                return {error: "bad CRC"};
 
             const voltage = (view.getUint16(3, false)) / 10;
             const current = ((view.getUint16(7, false) << 16) | view.getUint16(5, false)) / 1000;
@@ -151,11 +153,11 @@ export default class PZEM0004T {
             const powerFactor = view.getUint16(19, false) / 100;
             const alarmStatus = (view.getUint16(21, false) === 0xFFFF);
 
-            return {error: false, sample: {voltage, current, power, energy, frequency, powerFactor, alarmStatus}};
+            return {sample: {voltage, current, power, energy, frequency, powerFactor, alarmStatus}};
         } else if (status === 0x84) { // error case
-            return {error: true, message: `error code: ${view.getUint8(3)}`};
+            return {error: `error code: ${view.getUint8(3)}`};
         } else { // unknown case
-            return {error: true};
+            return {error: "invalid read code"};
         }
     }
 
