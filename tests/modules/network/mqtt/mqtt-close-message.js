@@ -4,6 +4,7 @@ flags: [async, module]
 ---*/
 
 import Client from "mqtt";
+import Timer from "timer";
 
 await $NETWORK.connected;
 
@@ -18,12 +19,23 @@ const mqtt = new Client({
 mqtt.onReady = function() {
 	this.subscribe(`${topic}/#`);
 	this.publish(`${topic}/value`, random);
+	this.publish(`${topic}/value`, random + "a");
+	this.publish(`${topic}/value`, random + "b");
+	this.publish(`${topic}/value`, random + "c");
+	this.publish(`${topic}/value`, random + "d");
 };
 mqtt.onMessage = function(aTopic, body) {
-	$DO(() => {
-		assert.sameValue(aTopic, `${topic}/value`);
-		assert.sameValue(random, String.fromArrayBuffer(body));
-	})();
+	body = String.fromArrayBuffer(body);
+	if (!this.closed) {
+		if (body === (random + "b")) {
+			this.close();
+			this.closed = true;
+			Timer.set(() => $DONE(), 1000);
+		}
+	}
+	else
+		$DONE("unexpected onMessage");
+
 };
 mqtt.onClose = function() {
 	$DONE("connection failed");
