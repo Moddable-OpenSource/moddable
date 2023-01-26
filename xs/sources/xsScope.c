@@ -921,14 +921,22 @@ void fxCatchNodeBind(void* it, void* param)
 		fxNodeDispatchBind(self->parameter, param);
 		fxScopeBinding(self->statementScope, param);
 		fxScopeBindDefineNodes(self->statementScope, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxNodeDispatchBind(self->statement, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxScopeBound(self->statementScope, param);
 		fxScopeBound(self->scope, param);
 	}
 	else {
 		fxScopeBinding(self->statementScope, param);
 		fxScopeBindDefineNodes(self->statementScope, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxNodeDispatchBind(self->statement, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxScopeBound(self->statementScope, param);
 	}
 }
@@ -1029,6 +1037,8 @@ void fxForNodeBind(void* it, void* param)
 	txForNode* self = it;
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPushVariables(param, 2);
 	if (self->initialization)
 		fxNodeDispatchBind(self->initialization, param);
 	if (self->expression)
@@ -1036,20 +1046,22 @@ void fxForNodeBind(void* it, void* param)
 	if (self->iteration)
 		fxNodeDispatchBind(self->iteration, param);
 	fxNodeDispatchBind(self->statement, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPopVariables(param, 2);
 	fxScopeBound(self->scope, param);
 }
 
 void fxForInForOfNodeBind(void* it, void* param) 
 {
 	txForInForOfNode* self = it;
-	fxBinderPushVariables(param, 5);
+	fxBinderPushVariables(param, 6);
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
 	fxNodeDispatchBind(self->reference, param);
 	fxNodeDispatchBind(self->expression, param);
 	fxNodeDispatchBind(self->statement, param);
 	fxScopeBound(self->scope, param);
-	fxBinderPopVariables(param, 5);
+	fxBinderPopVariables(param, 6);
 }
 
 void fxFunctionNodeBind(void* it, void* param) 
@@ -1258,7 +1270,11 @@ void fxSwitchNodeBind(void* it, void* param)
 	fxNodeDispatchBind(self->expression, param);
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPushVariables(param, 2);
 	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPopVariables(param, 2);
 	fxScopeBound(self->scope, param);
 }
 
