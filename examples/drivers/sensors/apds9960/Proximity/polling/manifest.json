@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/apds9960/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}
