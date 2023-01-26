@@ -19,7 +19,7 @@
  */
 /*
     Broadcom APDS-9960 Proximity, Ambient Light, RGB, and Gesture Sensor
-    Driver currently supports only Ambient Light
+    Driver currently supports only Ambient Light and Proximity
     Datasheet: https://docs.broadcom.com/docs/AV02-4191EN
 */
 
@@ -30,11 +30,14 @@ const Register = Object.freeze({
   ENABLE: 0x80,
   ATIME: 0x81,
   WTIME: 0x83,
+  PILT: 0x89,
+  PIHT: 0x8B,
   CONTROLONE: 0x8F,
   ID: 0x92,
   STATUS: 0x93,
   CDATAL: 0x94,
-  CDATAH: 0x95
+  CDATAH: 0x95,
+  PDATA: 0x9C
 });
 
 class Sensor {
@@ -112,23 +115,31 @@ class Sensor {
     this.configure({
       on: true,
       enableALS: true,
+      enableProximity: true,
+      proximityGain: 2,
       alsIntegrationCycles: 10,
       alsGain: 1,
       alsThresholdLow: 0,
       alsThresholdHigh: 0xFFFF,
       alsThresholdPersistence: 1,
-      proximityThresholdPersistence: 1
+      proximityThresholdPersistence: 3,
+      proximityThresholdHigh: 0xFF,
+      proximityThresholdLow: 0
     });
   }
   
   configure(options){
-    const {enableALS, on, alsIntegrationCycles, alsGain, proximityGain, alsThresholdHigh, alsThresholdLow, alsThresholdPersistence, proximityThresholdPersistence} = options;
+    const {enableALS, on, alsIntegrationCycles, alsGain, proximityGain, alsThresholdHigh, alsThresholdLow, alsThresholdPersistence, proximityThresholdPersistence, enableProximity, proximityThresholdLow, proximityThresholdHigh} = options;
     const configuration = this.#configuration;
     const enabled = this.#configuration.enabled
     const io = this.#io;
     
     if (enableALS !== undefined) {
       configuration.enabled.AEN = enableALS;
+    }
+
+    if (enableProximity !== undefined) {
+      configuration.enabled.PEN = enableProximity;
     }
 
     if (on !== undefined) {
@@ -212,6 +223,20 @@ class Sensor {
       io.writeUint16(Register.AIHTL, alsThresholdHigh);
     }
 
+    if (proximityThresholdLow !== undefined) {
+      if (proximityThresholdLow < 0 || proximityThresholdLow > 0xFF)
+        throw new RangeError("invalid proximityThresholdLow");
+      configuration.proximityThresholdLow = proximityThresholdLow;
+      io.writeUint8(Register.PILT, proximityThresholdLow);
+    }
+
+    if (proximityThresholdHigh !== undefined) {
+      if (proximityThresholdHigh < 0 || proximityThresholdHigh > 0xFF)
+        throw new RangeError("invalid proximityThresholdHigh");
+      configuration.proximityThresholdHigh = proximityThresholdHigh;
+      io.writeUint8(Register.PIHT, proximityThresholdHigh);
+    }
+
     if (proximityThresholdPersistence !== undefined || alsThresholdPersistence !== undefined) {
       let APERS, PPERS;
       if (alsThresholdPersistence !== undefined) {
@@ -239,10 +264,19 @@ class Sensor {
       } else {
         configuration.enabled.AIEN = true;
       }
-      this.#io.readUint8(0xE7); // clear interrupts
+      this.#io.readUint8(0xE6); // clear interrupts
     }
 
-    if (on !== undefined || enableALS !== undefined || alsThresholdLow !== undefined || alsThresholdHigh !== undefined) {
+    if (proximityThresholdHigh !== undefined || proximityThresholdLow !== undefined) {
+      if (configuration.proximityThresholdHigh === 0xFF && configuration.proximityThresholdLow === 0) {
+        configuration.enabled.PIEN = false;
+      } else {
+        configuration.enabled.PIEN = true;
+      }
+      this.#io.readUint8(0xE4); // clear interrupts
+    }
+
+    if (on !== undefined || enableALS !== undefined || alsThresholdLow !== undefined || alsThresholdHigh !== undefined || proximityThresholdHigh !== undefined || proximityThresholdLow !== undefined) {
       let e = 0;
 
       if (enabled.GEN)
@@ -283,16 +317,23 @@ class Sensor {
     let result = {};
 
     if (enabled.AEN && status & 0x01) {
-      this.#io.readBuffer(Register.CDATAL, this.#alsBlock);
-      trace(`Clear: ${this.#alsView.getUint16(0, true)}\n`);
+      io.readBuffer(Register.CDATAL, this.#alsBlock);
 
-      // APDS-9960 datasheet offers no guidance on converting from raw values to Lux, so Lux is not provided in this driver's sample.
+      // APDS-9960 datasheet offers no guidance on converting from raw values to Lux, so "illuminance" is not provided in this driver's sample.
       // Values are instead [0,1] from darkness to max saturation, based on current settings.
       result.lightmeter = {
         clear: this.#alsView.getUint16(0, true) / this.#maxCount,
         red: this.#alsView.getUint16(2, true) / this.#maxCount,
         green: this.#alsView.getUint16(4, true) / this.#maxCount,
         blue: this.#alsView.getUint16(6, true) / this.#maxCount
+      }
+    }
+    
+    // APDS-9960 datasheet offers no guidance on converting from raw values to distance, so "distance" is not provided in this driver's sample.
+    // `proximity` value is [0,1] from nothing sensed to proximity sensor saturated
+    if (enabled.PEN && status & 0b00000010) {
+      result.proximity = {
+        proximity: io.readUint8(Register.PDATA)
       }
     }
 
