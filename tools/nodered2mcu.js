@@ -399,7 +399,7 @@ export default class extends TOOL {
 
 			case "debug": {
 				if ("jsonata" === config.targetType)
-					throw new Error("unimplemented");
+					throw new Error("jsonata unimplemented");
 
 				const getter = [];
 				getter.push(`function (msg) {`);
@@ -1160,7 +1160,45 @@ export default class extends TOOL {
 				if (config.wipe < 0) { config.wipe = 0; }
 				if (config.brightness < 0) { config.brightness = 0; }
 				if (config.brightness > 100) { config.brightness = 100; }
+				
+				config.type = "mcu_neopixels";
+				config.foreground = config.fgnd;
+				config.background = config.bgnd;
+//				config.pin = config.gpio;			// gpio was never really used on rpi-neopixels, so just ignore it. projects should use mcu_neopixels.
+				config.length = config.pixels;
+				config.order = config.rgb.toUpperCase();
+				config.mode = ["", "pcent", "pixels", "pcentneedle", "pixelsneedle", "shiftu", "shiftd"].indexOf(config.mode);
+
+				delete config.gpio;
+				delete config.fgnd;
+				delete config.bgnd;
+				delete config.gamma;
+				delete config.pixels;
+				delete config.rgb;
+				delete config.channel;
+
+				return this.prepareNode(config.type, config, dones, errors, statuses, nodes, imports);
 			} break;
+
+			case "mcu_neopixels":
+				if (parseInt(config.pin) == config.pin)
+					config.pin = parseInt(config.pin);
+				if ("" === config.pin)
+					delete config.pin;
+				if (parseInt(config.length) == config.length)
+					config.length = parseInt(config.length);
+				if (!config.length)
+					config.length = 1;
+				if (config.brightness)
+					config.brightness = parseFloat(config.brightness);
+				if (config.wipe)
+					config.wipe = parseFloat(config.wipe);
+				if (!config.background)
+					config.background = "#000000";
+				if (!config.foreground)
+					config.foreground = "#ffffff";
+				config.mode = ["pcent", "pcent", "pixels", "pcentneedle", "pixelsneedle", "shiftu", "shiftd"][config.mode];
+				break;
 
 			case "mcu_analog":
 				if (parseInt(config.pin) == config.pin)
@@ -1187,7 +1225,6 @@ export default class extends TOOL {
 				config.debounce = config.debounce ? parseFloat(config.debounce) : 0;
 				if (!config.initial)
 					delete config.initial; 
-					
 				break;
 
 			case "mcu_digital_out":
@@ -1201,11 +1238,47 @@ export default class extends TOOL {
 					delete config.initial;
 				break;
 
+			case "mcu_pulse_width":
+				if (parseInt(config.pin) == config.pin)
+					config.pin = parseInt(config.pin);
+				break;
+
 			case "mcu_pulse_count":
 				if (parseInt(config.signal) == config.signal)
 					config.signal = parseInt(config.signal);
 				if (parseInt(config.control) == config.control)
 					config.control = parseInt(config.control);
+				break;
+
+			case "mcu_i2c_in":
+			case "mcu_i2c_out":
+				if (undefined != config.options.clock) {
+					if (parseInt(config.options.clock) == config.options.clock)
+						config.options.clock = parseInt(config.options.clock);
+				}
+				if (undefined != config.options.data) {
+					if (parseInt(config.options.data) == config.options.data)
+						config.options.data = parseInt(config.options.data);
+				}
+				if (isNaN(config.options.hz))
+					config.options.hz = 100_000;
+				else
+					config.options.hz = parseInt(config.options.hz);
+				if (isNaN(config.options.address))
+					delete config.options.address; 
+				else
+					config.options.address = parseInt(config.options.address);
+				if (isNaN(config.command))
+					delete config.command; 
+				else
+					config.command = parseInt(config.command);
+				if (config.byte)
+					config.byte = parseInt(config.byte);
+				else
+					delete config.byte;		//@@ check default behavior in RPi code
+				
+				if ("mcu_i2c_out" === type)
+					config.getter = `function (msg) {return ${this.resolveValue(config.payloadType, config.payload)}}`;
 				break;
 
 			case "mcu_clock":
@@ -1256,13 +1329,14 @@ export default class extends TOOL {
 								initialize.push(`\t\t\t\t\tpin: ${pin},`);
 								initialize.push(`\t\t\t\t},`);
 								} break;
-							case "Digital": {
+							case "Digital":
+							case "PulseWidth": {
 								let pin = parseInt(option.pin);
 								if (Number.isNaN(pin))
 									pin = option.pin;
 								initialize.push(`\t\t\t\t${name}: {`);
-								initialize.push(`\t\t\t\t\tio: device.io.Digital,`);
-								initialize.push(`\t\t\t\t\tmode: device.io.Digital.${option.mode},`);
+								initialize.push(`\t\t\t\t\tio: device.io.${option.io},`);
+								initialize.push(`\t\t\t\t\tmode: device.io.${option.io}.${option.mode},`);
 								initialize.push(`\t\t\t\t\tpin: ${pin},`);
 								initialize.push(`\t\t\t\t},`);
 								} break;
@@ -1292,6 +1366,24 @@ export default class extends TOOL {
 
 								if (undefined !== option.hz)
 									initialize.push(`\t\t\t\t\thz: ${option.hz},`);
+
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							case "Serial": {
+								initialize.push(`\t\t\t\t${name}: {`);
+								initialize.push(`\t\t\t\t\tio: device.io.${option.io},`);
+
+								let receive = parseInt(option.receive), transmit = parseInt(option.transmit);
+								if (Number.isNaN(receive))
+									receive = option.receive;
+								if (Number.isNaN(transmit))
+									transmit = option.transmit;
+
+								initialize.push(`\t\t\t\t\ttransmit: ${transmit},`);
+								initialize.push(`\t\t\t\t\treceive: ${receive},`);
+
+								if (undefined !== option.baud)
+									initialize.push(`\t\t\t\t\tbaud: ${parseInt(option.baud)},`);
 
 								initialize.push(`\t\t\t\t},`);
 								} break;
