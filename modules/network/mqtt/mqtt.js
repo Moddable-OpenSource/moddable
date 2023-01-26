@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -484,6 +484,8 @@ export default class Client {
 
 		msg.set(header, position);
 		msg[position + 7] |= (user.length ? 0x80 : 0) | (password.length ? 0x40 : 0) | (will.length ? 0x04 : 0) | ((will.length && connect.will.retain) ? 32 : 0);
+		if (will.length)
+			msg[position + 7] |= ((connect.will.quality ?? 0) & 3) << 3; 
 		position += header.length;
 
 		msg.set(id, position); position += id.length;
@@ -500,6 +502,9 @@ export default class Client {
 		return msg.buffer;
 	}
 	dispatch(msg) {
+		if (this.state <= 0)
+			return;
+
 		if (1 === this.state) {
 			if (msg.code !== CONNACK)
 				return this.fail(`received message type '${msg.code}' when expecting CONNACK`);
@@ -553,13 +558,11 @@ export default class Client {
 		}
 
 	}
-	close() {
-			Timer.clear(this.#timer);
-		this.#timer = undefined;
-
+	close(immediate) {
 		if (this.ws) {
 			try {
-				this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
+				if (!immediate)
+					this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
 			}
 			catch {
 			}
@@ -571,7 +574,10 @@ export default class Client {
 			delete this.ws;
 		}
 
-		this.state = 0;
+		Timer.clear(this.#timer);
+		this.#timer = undefined;
+
+		this.state = -1;
 	}
 	keepalive() {
 		const now = Date.now();
@@ -595,7 +601,6 @@ export default class Client {
 		this.close();
 	}
 }
-Object.freeze(Client.prototype);
 
 function ws_callback(state, message) {
 	switch (state) {
@@ -686,9 +691,9 @@ function makeStringBuffer(string) {
 function getRemainingLength(length) {
 	if (length < 128)
 		return 1;
-	else if (length < 16384)
+	if (length < 16384)
 		return 2;
-	else if (length < 2097152)
+	if (length < 2097152)
 		return 3;
 	return 4;
 }
