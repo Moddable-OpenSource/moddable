@@ -1281,9 +1281,11 @@ export default class extends TOOL {
 					config.getter = `function (msg) {return ${this.resolveValue(config.payloadType, config.payload)}}`;
 				break;
 
+			case "sensor":
+				config.type = "mcu_sensor";
+				// fall through
 			case "mcu_clock":
-			case "mcu_sensor":
-			case "sensor": {
+			case "mcu_sensor": {
 				const kinds = {
 					mcu_clock: ["RTC", "rtc"],
 					sensor: ["Sensor", "sensor"],
