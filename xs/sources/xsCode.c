@@ -2782,6 +2782,8 @@ void fxDeclareNodeCode(void* it, void* param)
 		fxNodeDispatchCodeAssign(self, param, 0);
 		fxCoderAddByte(coder, -1, XS_CODE_POP);
 	}
+	else if (self->description->token == XS_TOKEN_USING)
+		fxReportParserError(coder->parser, self->line, "invalid using");
 }
 
 void fxDeclareNodeCodeAssign(void* it, void* param, txFlag flag) 
