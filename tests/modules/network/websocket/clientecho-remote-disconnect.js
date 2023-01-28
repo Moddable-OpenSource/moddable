@@ -4,7 +4,6 @@ flags: [async, module]
 ---*/
 
 import {Client} from "websocket"
-import Timer from "timer"
 
 await $NETWORK.connected;
 
@@ -16,17 +15,20 @@ const ws = new Client({
 ws.callback = function(message, value) {
 	switch (message) {
 		case Client.connect:
+			this.counter = 0;
 			break;
 
 		case Client.handshake:
-			for (let i = 0; i < 10; i++)
-				this.write(i.toString());
+			this.write(this.counter.toString());
+			this.counter += 1;
 			break;
 
 		case Client.receive:
-			for (let i = 10; i < 20; i++)
-				this.write(i.toString());
-			this.expectDisconnect = true;
+			if (!this.expectDisconnect) {
+				this.write(this.counter.toString());
+				this.counter += 1;
+				this.expectDisconnect = this.counter >= 16;
+			}
 			break;
 
 		case Client.disconnect:
