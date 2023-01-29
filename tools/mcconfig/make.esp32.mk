@@ -109,17 +109,22 @@ INC_DIRS = \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
  	$(IDF_PATH)/components/driver/include \
+ 	$(IDF_PATH)/components/driver/deprecated \
  	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
  	$(IDF_PATH)/components/esp_common/include \
  	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
  	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
+ 	$(IDF_PATH)/components/esp_adc/include \
+ 	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include \
+ 	$(IDF_PATH)/components/esp_app_format/include \
  	$(IDF_PATH)/components/esp_event/include \
  	$(IDF_PATH)/components/esp_eth/include \
  	$(IDF_PATH)/components/esp_hw_support/include \
  	$(IDF_PATH)/components/esp_hw_support/include/soc \
  	$(IDF_PATH)/components/esp_netif/include \
+ 	$(IDF_PATH)/components/esp_partition/include \
  	$(IDF_PATH)/components/esp_pm/include \
  	$(IDF_PATH)/components/esp_ringbuf/include \
  	$(IDF_PATH)/components/esp_rom/include \
@@ -129,6 +134,11 @@ INC_DIRS = \
  	$(IDF_PATH)/components/esp_wifi/include \
  	$(IDF_PATH)/components/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/$(ESP32_SUBCLASS)/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos \
+	$(IDF_PATH)/components/freertos/esp_additions/include \
+	$(IDF_PATH)/components/freertos/esp_additions/include/freertos \
  	$(IDF_PATH)/components/freertos \
  	$(IDF_PATH)/components/freertos/include \
  	$(IDF_PATH)/components/freertos/include/freertos \
@@ -491,7 +501,7 @@ else
 endif
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
+#	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
 
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
@@ -558,7 +568,7 @@ $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST) $(SDKCONFIG_H)
 	@echo "# mcrez resources"
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p $(ESP32_SUBCLASS) -r mc.resources.c
 	
-MAKEFLAGS += $(MAKEFLAGS_JOBS)
+# MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,6 +40,8 @@
 #if CONFIG_BT_ENABLED
 	#include "esp_bt.h"
 #endif
+
+#include "driver/uart.h"
 
 #include "modInstrumentation.h"
 #include "esp_system.h"		// to get system_get_free_heap_size, etc.
@@ -439,7 +441,14 @@ void app_main() {
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
-//	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
+	uartConfig.source_clk = UART_SCLK_DEFAULT;
+
+#ifdef mxDebug
+	QueueHandle_t uartQueue;
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
+#else
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
+#endif
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)
@@ -449,11 +458,7 @@ void app_main() {
 		printf("uart_set_pin err %d\r\n", err);
 
 #ifdef mxDebug
-	QueueHandle_t uartQueue;
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
-#else
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 
 #endif	// ! USE_USB

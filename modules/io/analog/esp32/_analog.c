@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -28,24 +28,28 @@
 
 #include "builtinCommon.h"
 
-#include "driver/adc.h"
-#include "esp_adc_cal/include/esp_adc_cal.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
 
-#define V_REF 1100
+//#define V_REF 1100
 
 struct AnalogRecord {
 	xsSlot		obj;
 	uint32_t	pin;
 	uint8_t 	port;
 	uint8_t		channel;
+	adc_oneshot_unit_handle_t handle;
 };
 typedef struct AnalogRecord AnalogRecord;
 typedef struct AnalogRecord *Analog;
 
 #if kCPUESP32C3
+/*
 	#define ADC_RESOLUTION (12)
 	#define ADC_WIDTH ADC_WIDTH_BIT_12
 	#define ADC_ATTEN ADC_ATTEN_DB_11
+*/
 
 	static const uint8_t gADCMap[ADC1_CHANNEL_MAX] = {		// ADC1 channel to GPIO
 		0,
@@ -61,11 +65,13 @@ typedef struct AnalogRecord *Analog;
 
 #elif kCPUESP32S2 || kCPUESP32S3
 
+/*
 	#define ADC_RESOLUTION SOC_ADC_MAX_BITWIDTH		// (13)
 	#define ADC_WIDTH SOC_ADC_MAX_BITWIDTH			// ADC_WIDTH_BIT_13
 	#define ADC_ATTEN ADC_ATTEN_DB_11
+*/
 
-	static const uint8_t gADCMap[ADC1_CHANNEL_MAX] = {		// ADC1 channel to GPIO
+	static const uint8_t gADCMap[SOC_ADC_CHANNEL_NUM(0)] = {		// ADC1 channel to GPIO
 		1,
 		2,
 		3,
@@ -78,7 +84,7 @@ typedef struct AnalogRecord *Analog;
 		10
 	};
 
-	static const uint8_t gADC2Map[ADC2_CHANNEL_MAX] = {		// ADC2 channel to GPIO
+	static const uint8_t gADC2Map[SOC_ADC_CHANNEL_NUM(1)] = {		// ADC2 channel to GPIO
 		11,
 		12,
 		13,
@@ -92,11 +98,13 @@ typedef struct AnalogRecord *Analog;
 	};
 
 #else
+/*
 	#define ADC_RESOLUTION (10)
 	#define ADC_WIDTH ADC_WIDTH_BIT_10
 	#define ADC_ATTEN ADC_ATTEN_DB_11
+*/
 
-	static const uint8_t gADCMap[ADC1_CHANNEL_MAX] = {		// ADC1 channel to GPIO
+	static const uint8_t gADCMap[SOC_ADC_CHANNEL_NUM(0)] = {		// ADC1 channel to GPIO
 		36,
 		37,
 		38,
@@ -107,7 +115,7 @@ typedef struct AnalogRecord *Analog;
 		35
 	};
 
-	static const uint8_t gADC2Map[ADC2_CHANNEL_MAX] = {		// ADC2 channel to GPIO
+	static const uint8_t gADC2Map[SOC_ADC_CHANNEL_NUM(1)] = {		// ADC2 channel to GPIO
 		4,
 		0,
 		2,
@@ -121,7 +129,13 @@ typedef struct AnalogRecord *Analog;
 	};
 #endif
 
-static esp_adc_cal_characteristics_t gADC1Characteristics, gADC2Characteristics;
+static adc_cali_handle_t gADC1_cali_handle, gADC2_cali_handle;
+static int gADC1_caliCount = 0, gADC2_caliCount = 0;
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+static adc_cali_curve_fitting_config_t gADC1_cali_config, gADC2_cali_config;
+#else
+static adc_cali_line_fitting_config_t gADC1_cali_config, gADC2_cali_config;
+#endif
 
 void xs_analog_constructor_(xsMachine *the)
 {
@@ -137,7 +151,7 @@ void xs_analog_constructor_(xsMachine *the)
     if (!builtinIsPinFree(pin))
 		xsRangeError("in use");
 
-	for (i = 0; i < ADC1_CHANNEL_MAX; i++) {
+	for (i = 0; i < SOC_ADC_CHANNEL_NUM(0); i++) {
 		if (gADCMap[i] == pin) {
 			channel = i;
 			port = 1;
@@ -146,7 +160,7 @@ void xs_analog_constructor_(xsMachine *the)
 	}
 
 	if (channel < 0) {
-		for (i = 0; i < ADC2_CHANNEL_MAX; i++) {
+		for (i = 0; i < SOC_ADC_CHANNEL_NUM(1); i++) {
 			if (gADC2Map[i] == pin) {
 				channel = i;
 				port = 2;
@@ -162,17 +176,26 @@ void xs_analog_constructor_(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
-	if (port == 1 && !gADC1Characteristics.vref) {
-		adc1_config_width(ADC_WIDTH);
-		esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN, ADC_WIDTH, V_REF, &gADC1Characteristics);
-	} else if (port == 2 && !gADC2Characteristics.vref) {
-		esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN, ADC_WIDTH, V_REF, &gADC2Characteristics);
-	}
+	if (port == 1 && ADC_UNIT_1 != gADC1_cali_config.unit_id) {
+		gADC1_cali_config.unit_id = ADC_UNIT_1;
+		gADC1_cali_config.bitwidth = ADC_BITWIDTH_DEFAULT;
+		gADC1_cali_config.atten = ADC_ATTEN_DB_11;
 
-	if (port == 1) {
-		adc1_config_channel_atten(channel, ADC_ATTEN);
-	} else if (port == 2) {
-		adc2_config_channel_atten(channel, ADC_ATTEN);
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+		adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+#else
+		adc_cali_create_scheme_line_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+#endif
+	} else if (port == 2 && ADC_UNIT_2 != gADC2_cali_config.unit_id) {
+		gADC2_cali_config.unit_id = ADC_UNIT_2;
+		gADC2_cali_config.bitwidth = ADC_BITWIDTH_DEFAULT;
+		gADC2_cali_config.atten = ADC_ATTEN_DB_11;
+
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+		adc_cali_create_scheme_curve_fitting(&gADC2_cali_config, &gADC2_cali_handle);
+#else
+		adc_cali_create_scheme_line_fitting(&gADC2_cali_config, &gADC2_cali_handle);
+#endif
 	}
 
 	analog = c_malloc(sizeof(AnalogRecord));
@@ -187,6 +210,22 @@ void xs_analog_constructor_(xsMachine *the)
 	analog->channel = channel;
 
     builtinUsePin(pin);
+
+	adc_oneshot_unit_init_cfg_t unit_cfg;
+	adc_oneshot_chan_cfg_t config = {
+		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.atten = ADC_ATTEN_DB_11,
+	};
+
+	if (port == 1) {
+		unit_cfg.unit_id = ADC_UNIT_1;
+	} else if (port == 2) {
+		unit_cfg.unit_id = ADC_UNIT_2;
+	}
+	unit_cfg.ulp_mode = ADC_ULP_MODE_DISABLE;
+
+	adc_oneshot_new_unit(&unit_cfg, &analog->handle);
+	adc_oneshot_config_channel(analog->handle, channel, &config);
 }
 
 void xs_analog_destructor_(void *data)
@@ -195,6 +234,24 @@ void xs_analog_destructor_(void *data)
 	if (!analog)
 		return;
 
+	adc_oneshot_del_unit(analog->handle);
+
+	if (1 == analog->port) {
+		if (0 >= --gADC1_caliCount)
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+			adc_cali_delete_scheme_curve_fitting(&gADC1_cali_handle);
+#else
+			adc_cali_delete_scheme_line_fitting(&gADC1_cali_handle);
+#endif
+	}
+	else {
+		if (0 >= --gADC2_caliCount)
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+			adc_cali_delete_scheme_curve_fitting(&gADC2_cali_handle);
+#else
+			adc_cali_delete_scheme_line_fitting(&gADC2_cali_handle);
+#endif
+	}
     builtinFreePin(analog->pin);
 
 	c_free(analog);
@@ -213,23 +270,21 @@ void xs_analog_close_(xsMachine *the)
 
 void xs_analog_read_(xsMachine *the)
 {
-	uint32_t millivolts;
+	int millivolts;
+	int reading;
 	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
 
+	adc_oneshot_read(analog->handle, analog->channel, &reading);
 	if (analog->port == 1) {
-		millivolts = esp_adc_cal_raw_to_voltage(adc1_get_raw(analog->channel), &gADC1Characteristics);
+		adc_cali_raw_to_voltage(gADC1_cali_handle, reading, &millivolts);
 	} else if (analog->port == 2) {
-		int reading;
-		if (ESP_OK != adc2_get_raw(analog->channel, ADC_WIDTH, &reading))
-			xsUnknownError("ADC2 read timed out"); // can happen routinely if Wi-Fi or BLE is in use
-
-		millivolts = esp_adc_cal_raw_to_voltage(reading, &gADC2Characteristics);
+		adc_cali_raw_to_voltage(gADC2_cali_handle, reading, &millivolts);
 	}
 
-	xsmcSetInteger(xsResult, (millivolts * ((1 << ADC_RESOLUTION) - 1)) / 3300);
+	xsmcSetInteger(xsResult, (millivolts * ((1 << ADC_BITWIDTH_DEFAULT) - 1)) / 3300);
 }
 
 void xs_analog_get_resolution_(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, ADC_RESOLUTION);
+	xsmcSetInteger(xsResult, ADC_BITWIDTH_DEFAULT);
 }

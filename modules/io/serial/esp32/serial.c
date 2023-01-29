@@ -40,6 +40,7 @@
 //#include "soc/uart_caps.h"
 #include "soc/uart_struct.h"
 
+#if 0
 // local versions of UART register management to avoid issues with uart.c
 #define uart_disable_intr_mask(dev, disable_mask) _uart_disable_intr_mask(dev, disable_mask)
 #define uart_enable_intr_mask(dev, enable_mask) _uart_enable_intr_mask(dev, enable_mask)
@@ -54,6 +55,7 @@ static void _uart_enable_rx_intr(uart_dev_t *dev);
 static void _uart_disable_rx_intr(uart_dev_t *dev);
 static void _uart_disable_tx_intr(uart_dev_t *dev);
 static void _uart_enable_tx_intr(uart_dev_t *dev, int enable, int thresh);
+#endif
 
 typedef struct SerialRecord SerialRecord;
 typedef struct SerialRecord *Serial;
@@ -230,7 +232,7 @@ void xs_serial_destructor(void *data)
 	uart_disable_tx_intr(serial->uart_reg);
 	uart_disable_rx_intr(serial->uart_reg);
 
-	uart_isr_free(serial->uart);
+//	uart_isr_free(serial->uart);
 
 	if (UART_PIN_NO_CHANGE != serial->transmit)
 		builtinFreePin(serial->transmit);
@@ -437,6 +439,8 @@ void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	https://github.com/Moddable-OpenSource/moddable/issues/931
 */
 
+#if 0
+
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 void _uart_disable_intr_mask(uart_dev_t *dev, uint32_t disable_mask)
@@ -483,3 +487,6 @@ void _uart_enable_tx_intr(uart_dev_t *dev, int enable, int thresh)
 		portEXIT_CRITICAL(&spinlock);
     }
 }
+
+#endif
+

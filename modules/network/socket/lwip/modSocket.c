@@ -340,13 +340,22 @@ void xs_socket(xsMachine *the)
 		if (ttl) {
 			ip_addr_t ifaddr;
 	#if ESP32
-			uint8_t ifc;
+//			uint8_t ifc;
+			esp_netif_t *ifc = NULL;
 
+			do {
+				esp_netif_ip_info_t info = {0};
+				if (ESP_OK == esp_netif_get_ip_info(ifc, &info))
+					igmp_joingroup(&info.ip.addr, &multicastIP);
+			} while (ifc != NULL);
+
+/*
 			for (ifc = 0; ifc <= TCPIP_ADAPTER_IF_ETH; ifc++) {
 				tcpip_adapter_ip_info_t info = {0};
 				if (ESP_OK == tcpip_adapter_get_ip_info(ifc, &info))
 					igmp_joingroup(&info.ip.addr, &multicastIP);
 			}
+*/
 			(xss->udp)->mcast_ip4 = multicastIP.u_addr.ip4;
 	#elif CYW43_LWIP
 			//@@ MDK - multicast

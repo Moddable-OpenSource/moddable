@@ -224,7 +224,7 @@ void _xs_i2c_read(xsMachine *the)
 	}
 	if (stop)
 		i2c_master_stop(cmd);
-	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 
 	xSemaphoreGive(gI2CMutex);
@@ -258,7 +258,7 @@ void _xs_i2c_write(xsMachine *the)
 
 	if (stop)
 		i2c_master_stop(cmd);
-	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 
 	xSemaphoreGive(gI2CMutex);
@@ -478,7 +478,7 @@ static void i2cTask(void *pvParameter)
 			else if (kOperationCancelled == transaction->operation)
 				transaction->err = -2;
 			else if (i2cActivate(transaction->i2c)) {
-				transaction->err = i2c_master_cmd_begin(transaction->i2c->port, transaction->cmd, 1000 / portTICK_RATE_MS);
+				transaction->err = i2c_master_cmd_begin(transaction->i2c->port, transaction->cmd, 1000 / portTICK_PERIOD_MS);
 				xSemaphoreGive(gI2CMutex);
 			}
 			else

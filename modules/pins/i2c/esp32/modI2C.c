@@ -69,7 +69,7 @@ uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length,
 	i2c_master_read(cmd, buffer + length - 1, 1, 1);
 	if (sendStop)
 		i2c_master_stop(cmd);
-	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_RATE_MS);
+	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 
 	return (ESP_OK == ret) ? 0 : 1;
@@ -89,7 +89,7 @@ uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t 
 	i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
 	if (sendStop)
 		i2c_master_stop(cmd);
-	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_RATE_MS);
+	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 
 	return (ESP_OK == ret) ? 0 : 1;

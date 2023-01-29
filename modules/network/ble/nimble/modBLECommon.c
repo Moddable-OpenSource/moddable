@@ -74,17 +74,18 @@ int modBLEPlatformInitialize(void)
 
 	ble_hs_cfg.reset_cb = nimble_on_reset;
 
-	esp_err_t err = _esp_nimble_hci_and_controller_init();
+//	esp_err_t err = _esp_nimble_hci_and_controller_init();
 	
-	if (ESP_OK == err) {
+//	if (ESP_OK == err) {
 		nimble_port_init();
 	
 		ble_store_config_init();
 		
 		nimble_port_freertos_init(ble_host_task);
-	}
+//	}
 
-	return err;
+//	return err;
+	return 0;
 }
 
 int modBLEPlatformTerminate(void)
@@ -97,7 +98,7 @@ int modBLEPlatformTerminate(void)
 	int rc = nimble_port_stop();
 	if (0 == rc) {
 		nimble_port_deinit();
-		esp_nimble_hci_and_controller_deinit();
+//		esp_nimble_hci_and_controller_deinit();
 	}
 	
 	return rc;

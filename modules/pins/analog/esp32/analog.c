@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,41 +21,84 @@
 #include "xs.h"
 #include "xsHost.h"
 
-#include "driver/adc.h"
-#include "esp_adc_cal/include/esp_adc_cal.h"
-
-#define V_REF 1100
-
-#if kCPUESP32C3
-	#define ADC_WIDTH ADC_WIDTH_BIT_12
-	#define ADC_ATTEN ADC_ATTEN_DB_11
-#elif kCPUESP32S2
-	#define ADC_WIDTH ADC_WIDTH_BIT_13
-	#define ADC_ATTEN ADC_ATTEN_DB_11
-#else
-	#define ADC_WIDTH ADC_WIDTH_BIT_10
-	#define ADC_ATTEN ADC_ATTEN_DB_11
-#endif
+#include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
 
 void xs_analog_read(xsMachine *the)
 {
 	int channel = xsToInteger(xsArg(0));
-	if (channel < 0 || channel >= ADC1_CHANNEL_MAX)
+	if (channel < 0 || channel >= SOC_ADC_MAX_CHANNEL_NUM)
 		xsRangeError("invalid analog channel number");
 
-	if (ESP_OK != adc1_config_width(ADC_WIDTH))
-		xsUnknownError("can't configure precision for ADC1 peripheral");
+	adc_oneshot_unit_handle_t adc_handle;
+	adc_oneshot_unit_init_cfg_t adc_unit_config = {
+		.unit_id = ADC_UNIT_2,
+		.ulp_mode = ADC_ULP_MODE_DISABLE,
+	};
 
-	if (ESP_OK != adc1_config_channel_atten(channel, ADC_ATTEN))
-		xsUnknownError("can't configure attenuation for requested channel on ADC1 peripheral");
+	if (ESP_OK != adc_oneshot_new_unit(&adc_unit_config, &adc_handle))	
+		xsUnknownError("adc_oneshot_new_unit failed");
 
-	esp_adc_cal_characteristics_t characteristics;
-	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN, ADC_WIDTH, V_REF, &characteristics);
+	adc_oneshot_chan_cfg_t adc_config = {
+		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.atten = ADC_ATTEN_DB_11,
+	};
+	
+	if (ESP_OK != adc_oneshot_config_channel(adc_handle, channel, &adc_config)) {
+		xsLog("adc_oneshot_config_channel failed");
+		goto bail;
+	}
 
-	uint32_t reading = adc1_get_raw(channel);
-	uint32_t millivolts = esp_adc_cal_raw_to_voltage(reading, &characteristics);
-	uint32_t linear_value = c_round(millivolts / 3300.0 * 1023.0);
+	int reading;
+	int millivolts;
+	if (ESP_OK != adc_oneshot_read(adc_handle, channel, &reading)) {
+		xsLog("adc_oneshot_read failed");
+		goto bail;
+	}
+xsLog("adc_oneshot_read - channel %d, reading %d\n", channel, reading);
+
+	adc_cali_handle_t cali_handle;
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+	adc_cali_curve_fitting_config_t cali_config = {
+		.unit_id = ADC_UNIT_2,
+		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.atten = ADC_ATTEN_DB_11,
+	};
+	if (ESP_OK != adc_cali_create_scheme_curve_fitting(&cali_config, &cali_handle)) {
+		xsLog("cali_create_scheme_curve_fitting failed");
+		goto bail2;
+	}
+#else
+	adc_cali_line_fitting_config_t cali_config = {
+		.unit_id = ADC_UNIT_2,
+		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.atten = ADC_ATTEN_DB_11,
+	};
+	if (ESP_OK != adc_cali_create_scheme_line_fitting(&cali_config, &cali_handle)) {
+		xsLog("cali_create_scheme_line_fitting failed");
+		goto bail2;
+	}
+#endif
+
+	if (ESP_OK != adc_cali_raw_to_voltage(cali_handle, reading, &millivolts)) {
+		xsLog("cali_raw_to_voltage failed");
+		goto bail2;
+	}
+
+	double max = (double)((1 << ADC_BITWIDTH_DEFAULT) - 1);
+	uint32_t linear_value = c_round(millivolts / 3300.0 * max);
 
 	xsResult = xsInteger(linear_value);
+
+bail2:
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+	adc_cali_delete_scheme_curve_fitting(cali_handle);
+#else
+	adc_cali_delete_scheme_line_fitting(cali_handle);
+#endif
+
+bail:
+	adc_oneshot_del_unit(adc_handle);
 }
 
