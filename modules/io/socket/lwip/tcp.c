@@ -62,6 +62,7 @@ struct TCPRecord {
 	uint8_t			triggerable;
 	uint8_t			triggered;
 	int8_t			useCount;
+	uint8_t			error;
 	uint8_t			format;
 	xsMachine		*the;
 	xsSlot			*onReadable;
@@ -352,8 +353,11 @@ void xs_tcp_read(xsMachine *the)
 				tcp_recved_safe(tcp->skt, buffer->pb->tot_len);
 				pbuf_free_safe(buffer->pb);
 				c_free(buffer);
-				if (NULL == tcp->buffers)
+				if (NULL == tcp->buffers) {
+					if (tcp->error)
+						tcpTrigger(tcp, kTCPError);
 					break;
+				}
 			}
 		}
 	}
@@ -369,10 +373,8 @@ void xs_tcp_write(xsMachine *the)
 	void *buffer;
 	uint8_t value;
 
-	if (!tcp->skt) {
-		xsTrace("write to closed socket\n");
+	if (tcp->error || !tcp->skt)
 		return;
-	}
 
 	if (kIOFormatBuffer == tcp->format)
 		xsmcGetBufferReadable(xsArg(0), &buffer, &needed);
@@ -466,8 +468,10 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 	tcp->triggered = 0;
 	builtinCriticalSectionEnd();
 #endif
-	if (triggered & kTCPError)
+	if (triggered & kTCPError) {
 		triggered &= ~(kTCPOutput | kTCPWritable);
+		tcp->error = true;
+	}
 
 	if ((triggered & kTCPOutput) && tcp->skt)
 		tcp_output_safe(tcp->skt);
@@ -485,7 +489,9 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 		xsEndHost(the);
 	}
 
-	if (!(triggered & kTCPError)) {
+	if (tcp->buffers && tcp->error)
+		;		// error delivered after receive buffers empty
+	else if (!tcp->error) {
 		if ((triggered & tcp->triggerable & kTCPWritable) && tcp->skt) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, tcp_sndbuf(tcp->skt));
