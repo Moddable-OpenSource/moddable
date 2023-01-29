@@ -1281,15 +1281,14 @@ export default class extends TOOL {
 					config.getter = `function (msg) {return ${this.resolveValue(config.payloadType, config.payload)}}`;
 				break;
 
-			case "sensor":
-				config.type = "mcu_sensor";
+			case "mcu_sensor":
+				type = config.type = "sensor";
 				// fall through
 			case "mcu_clock":
-			case "mcu_sensor": {
+			case "sensor": {
 				const kinds = {
 					mcu_clock: ["RTC", "rtc"],
 					sensor: ["Sensor", "sensor"],
-					mcu_sensor: ["Sensor", "sensor"]
 				}[type];
 
 				if (config.io && !config.options) {		// convert original sensor config to new
@@ -1383,6 +1382,13 @@ export default class extends TOOL {
 
 								initialize.push(`\t\t\t\t\ttransmit: ${transmit},`);
 								initialize.push(`\t\t\t\t\treceive: ${receive},`);
+								
+								if ((undefined !== option.port) && ("" !== option.port)) {
+									let port = parseInt(option.port);
+									if (Number.isNaN(port))
+										port = option.port;
+									initialize.push(`\t\t\t\t\tport: ${port},`);
+								}
 
 								if (undefined !== option.baud)
 									initialize.push(`\t\t\t\t\tbaud: ${parseInt(option.baud)},`);
