@@ -27,7 +27,7 @@ class HTTPClient {
 		constructor(client) {
 			this.#client = client;
 		}
-		read(count) {
+		read(count = this.#client.#readable) {
 			const client = this.#client;
 			if (client.#current.request !== this)
 				throw new Error("bad state");
@@ -70,8 +70,10 @@ class HTTPClient {
 					});
 				}
 			}
-			else if (0 === client.#remaining)
+			else if (0 === client.#remaining) {
+				client.#state = "receivedBody"; 
 				client.#timer = Timer.set(client.#done.bind(client));
+			}
 
 			return result;
 		}
@@ -142,7 +144,7 @@ class HTTPClient {
 	#onClose;
 	
 	constructor(options) {
-		const {host, address, port, onClose} = options;		//@@ onError?? 
+		const {host, address, port, onClose} = options; 
 
 		if (!host) throw new Error("host required");
 		this.#host = host;
@@ -370,8 +372,27 @@ class HTTPClient {
 		} while (true);
 	}
 	#onError() {
+		if (("receivedBody" === this.#state) && this.#timer) {		// completion not reported yet. report before handling error.
+			Timer.clear(this.#timer);
+			this.#done();
+		}
+
 		this.#state = "error";
-		this.#onClose?.();
+
+		try {
+			const current = this.#current;
+			this.#current = undefined;
+			current?.onDone?.call(current.request);
+
+			while (this.#requests.length) {
+				const request = this.#requests.shift(); 
+				request.onDone?.call(request.request);
+			}
+			this.#onClose?.();
+		}
+		catch {
+		}
+		this.close();
 	}
 	#done() {
 		this.#timer = undefined;
