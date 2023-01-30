@@ -45,11 +45,8 @@ typedef struct AnalogRecord AnalogRecord;
 typedef struct AnalogRecord *Analog;
 
 #if kCPUESP32C3
-/*
 	#define ADC_RESOLUTION (12)
-	#define ADC_WIDTH ADC_WIDTH_BIT_12
-	#define ADC_ATTEN ADC_ATTEN_DB_11
-*/
+	#define ADC_WIDTH 		ADC_BITWIDTH_12
 
 	static const uint8_t gADCMap[ADC1_CHANNEL_MAX] = {		// ADC1 channel to GPIO
 		0,
@@ -65,11 +62,13 @@ typedef struct AnalogRecord *Analog;
 
 #elif kCPUESP32S2 || kCPUESP32S3
 
-/*
-	#define ADC_RESOLUTION SOC_ADC_MAX_BITWIDTH		// (13)
-	#define ADC_WIDTH SOC_ADC_MAX_BITWIDTH			// ADC_WIDTH_BIT_13
-	#define ADC_ATTEN ADC_ATTEN_DB_11
-*/
+#if kCPUESP32S2
+	#define ADC_RESOLUTION (13)
+	#define ADC_WIDTH 		ADC_BITWIDTH_13
+#elif kCPUESP32S3
+	#define ADC_RESOLUTION (12)
+	#define ADC_WIDTH 		ADC_BITWIDTH_12
+#endif
 
 	static const uint8_t gADCMap[SOC_ADC_CHANNEL_NUM(0)] = {		// ADC1 channel to GPIO
 		1,
@@ -98,11 +97,8 @@ typedef struct AnalogRecord *Analog;
 	};
 
 #else
-/*
-	#define ADC_RESOLUTION (10)
-	#define ADC_WIDTH ADC_WIDTH_BIT_10
-	#define ADC_ATTEN ADC_ATTEN_DB_11
-*/
+	#define ADC_RESOLUTION (12)
+	#define ADC_WIDTH 		ADC_BITWIDTH_12
 
 	static const uint8_t gADCMap[SOC_ADC_CHANNEL_NUM(0)] = {		// ADC1 channel to GPIO
 		36,
@@ -178,7 +174,7 @@ void xs_analog_constructor_(xsMachine *the)
 
 	if (port == 1 && ADC_UNIT_1 != gADC1_cali_config.unit_id) {
 		gADC1_cali_config.unit_id = ADC_UNIT_1;
-		gADC1_cali_config.bitwidth = ADC_BITWIDTH_DEFAULT;
+		gADC1_cali_config.bitwidth = ADC_WIDTH;
 		gADC1_cali_config.atten = ADC_ATTEN_DB_11;
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
@@ -188,7 +184,7 @@ void xs_analog_constructor_(xsMachine *the)
 #endif
 	} else if (port == 2 && ADC_UNIT_2 != gADC2_cali_config.unit_id) {
 		gADC2_cali_config.unit_id = ADC_UNIT_2;
-		gADC2_cali_config.bitwidth = ADC_BITWIDTH_DEFAULT;
+		gADC2_cali_config.bitwidth = ADC_WIDTH;
 		gADC2_cali_config.atten = ADC_ATTEN_DB_11;
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
@@ -213,7 +209,7 @@ void xs_analog_constructor_(xsMachine *the)
 
 	adc_oneshot_unit_init_cfg_t unit_cfg;
 	adc_oneshot_chan_cfg_t config = {
-		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.bitwidth = ADC_WIDTH,
 		.atten = ADC_ATTEN_DB_11,
 	};
 
@@ -259,7 +255,7 @@ void xs_analog_destructor_(void *data)
 
 void xs_analog_close_(xsMachine *the)
 {
-	Analog analog = xsmcGetHostData(xsThis);;
+	Analog analog = xsmcGetHostData(xsThis);
 	if (analog && xsmcGetHostDataValidate(xsThis, xs_analog_destructor_)) {
 		xsForget(analog->obj);
 		xs_analog_destructor_(analog);
@@ -281,10 +277,10 @@ void xs_analog_read_(xsMachine *the)
 		adc_cali_raw_to_voltage(gADC2_cali_handle, reading, &millivolts);
 	}
 
-	xsmcSetInteger(xsResult, (millivolts * ((1 << ADC_BITWIDTH_DEFAULT) - 1)) / 3300);
+	xsmcSetInteger(xsResult, (millivolts * ((1 << ADC_RESOLUTION) - 1)) / 3300);
 }
 
 void xs_analog_get_resolution_(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, ADC_BITWIDTH_DEFAULT);
+	xsmcSetInteger(xsResult, ADC_RESOLUTION);
 }

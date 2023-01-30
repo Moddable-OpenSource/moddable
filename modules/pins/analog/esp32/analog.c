@@ -25,6 +25,14 @@
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
 
+#if kCPUESP32C3 || kCPUESP32S3 || kCPUESP32
+	#define ADC_RESOLUTION	ADC_BITWIDTH_12
+#elif kCPUESP32S2
+	#define ADC_RESOLUTION	ADC_BITWIDTH_13
+#else
+	#error unknown CPU type
+#endif
+	
 void xs_analog_read(xsMachine *the)
 {
 	int channel = xsToInteger(xsArg(0));
@@ -41,7 +49,7 @@ void xs_analog_read(xsMachine *the)
 		xsUnknownError("adc_oneshot_new_unit failed");
 
 	adc_oneshot_chan_cfg_t adc_config = {
-		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.bitwidth = ADC_RESOLUTION,
 		.atten = ADC_ATTEN_DB_11,
 	};
 	
@@ -56,13 +64,12 @@ void xs_analog_read(xsMachine *the)
 		xsLog("adc_oneshot_read failed");
 		goto bail;
 	}
-xsLog("adc_oneshot_read - channel %d, reading %d\n", channel, reading);
 
 	adc_cali_handle_t cali_handle;
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
 	adc_cali_curve_fitting_config_t cali_config = {
 		.unit_id = ADC_UNIT_2,
-		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.bitwidth = ADC_RESOLUTION,
 		.atten = ADC_ATTEN_DB_11,
 	};
 	if (ESP_OK != adc_cali_create_scheme_curve_fitting(&cali_config, &cali_handle)) {
@@ -72,7 +79,7 @@ xsLog("adc_oneshot_read - channel %d, reading %d\n", channel, reading);
 #else
 	adc_cali_line_fitting_config_t cali_config = {
 		.unit_id = ADC_UNIT_2,
-		.bitwidth = ADC_BITWIDTH_DEFAULT,
+		.bitwidth = ADC_RESOLUTION,
 		.atten = ADC_ATTEN_DB_11,
 	};
 	if (ESP_OK != adc_cali_create_scheme_line_fitting(&cali_config, &cali_handle)) {
@@ -86,7 +93,7 @@ xsLog("adc_oneshot_read - channel %d, reading %d\n", channel, reading);
 		goto bail2;
 	}
 
-	double max = (double)((1 << ADC_BITWIDTH_DEFAULT) - 1);
+	double max = (double)((1 << ADC_RESOLUTION) - 1);
 	uint32_t linear_value = c_round(millivolts / 3300.0 * max);
 
 	xsResult = xsInteger(linear_value);
