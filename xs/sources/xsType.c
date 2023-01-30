@@ -111,20 +111,22 @@ txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance)
 	from = instance->next;
 	to = result;
 	while (from) {
-		to = to->next = fxDuplicateSlot(the, from);
-		if (from->kind == XS_ARRAY_KIND) {
-			txSlot* address = from->value.array.address;
-			to->value.array.address = C_NULL;
-			if (address) {
-				txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
-				txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
-				address = from->value.array.address;
-				c_memcpy(chunk, address, size * sizeof(txSlot));
-				to->value.array.address = chunk;
-				while (size) {
-					chunk->flag &= ~XS_MARK_FLAG;
-					chunk++;
-					size--;
+		if (from->kind != XS_WEAK_ENTRY_KIND) {
+			to = to->next = fxDuplicateSlot(the, from);
+			if (from->kind == XS_ARRAY_KIND) {
+				txSlot* address = from->value.array.address;
+				to->value.array.address = C_NULL;
+				if (address) {
+					txSize size = (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot);
+					txSlot* chunk = (txSlot*)fxNewChunk(the, size * sizeof(txSlot));
+					address = from->value.array.address;
+					c_memcpy(chunk, address, size * sizeof(txSlot));
+					to->value.array.address = chunk;
+					while (size) {
+						chunk->flag &= ~XS_MARK_FLAG;
+						chunk++;
+						size--;
+					}
 				}
 			}
 		}
@@ -1179,12 +1181,16 @@ txSlot* fxEnvironmentGetProperty(txMachine* the, txSlot* instance, txID id, txIn
 		txSlot* result = instance->next->next;
 		while (result) {
 			if (result->ID == id) {
-				result = result->value.closure;
-				alias = result->ID;
-				if (alias) {
-					txSlot* slot = the->aliasArray[alias];
-					if (slot)
-						result = slot;
+				if (result->kind == XS_CLOSURE_KIND) {
+					result = result->value.closure;
+					if (result) {
+						alias = result->ID;
+						if (alias) {
+							txSlot* slot = the->aliasArray[alias];
+							if (slot)
+								result = slot;
+						}	
+					}	
 				}	
 				return result;
 			}
@@ -1215,16 +1221,18 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 		txSlot* result = instance->next->next;
 		while (result) {
 			if (result->ID == id) {
-				result = result->value.closure;
-				if (result->flag & XS_DONT_SET_FLAG)
-					mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
-				alias = result->ID;
-				if (alias) {
-					result = the->aliasArray[alias];
-					if (!result) {
-						result = fxNewSlot(the);
-						the->aliasArray[alias] = result;
-					}
+				if (result->kind == XS_CLOSURE_KIND) {
+					result = result->value.closure;
+					if (result->flag & XS_DONT_SET_FLAG)
+						mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
+					alias = result->ID;
+					if (alias) {
+						result = the->aliasArray[alias];
+						if (!result) {
+							result = fxNewSlot(the);
+							the->aliasArray[alias] = result;
+						}
+					}	
 				}	
 				return result;
 			}

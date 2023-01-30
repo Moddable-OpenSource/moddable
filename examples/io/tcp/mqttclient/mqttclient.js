@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -54,7 +54,7 @@ const NumberFormat = "number";
 class MQTTClient {
 	#socket;
 	#options;
-	#state;
+	#state = "resolving";
 	#writable = 0;		// to socket
 	#readable = 0;		// from socket
 	#payload = 0;		// from current message
@@ -63,44 +63,53 @@ class MQTTClient {
 
 	constructor(options) {
 		this.#options = {
-			onReadable: options.onReadable,
-			onWritable: options.onWritable,
-			onControl: options.onControl,
-			onClose: options.onClose,
-			onError: options.onError,
 			host: options.host ?? options.address,
 			port: options.port,
 			id: options.id ?? "",
-			user: options.user,
-			password: options.password,
 			clean: options.clean ?? true,
-			will: options.will,
 			keepalive: options.keepalive ?? 0,
 			pending: []
 		};
 
 		if (!this.#options.host) throw new Error("host required");
 
-		this.#state = "resolving";
+		let value;
+		if (value = options.onReadable) this.#options.onReadable = value; 
+		if (value = options.onWritable) this.#options.onWritable = value; 
+		if (value = options.onControl) this.#options.onControl = value; 
+		if (value = options.onClose) this.#options.onClose = value; 
+		if (value = options.onError) this.#options.onError = value; 
+		if (value = options.user) this.#options.user = value; 
+		if (value = options.password) this.#options.password = value; 
+		if (value = options.will) this.#options.will = value; 
 		
 		const dns = new options.dns.io(options.dns);
-
 		dns.resolve({
 			host: this.#options.host, 
-		
+
 			onResolved: (host, address) => {
-				this.#socket = new options.socket.io({
-					...options.socket,
-					address,
-					host,
-					port: this.#options.port ?? 80,
-					onReadable: this.#onReadable.bind(this),
-					onWritable: this.#onWritable.bind(this),
-					onError: this.#onError.bind(this)
-				});
-				this.#state = "connecting";
+				try {
+					this.#state = "connecting";
+					this.#socket = new options.socket.io({
+						...options.socket,
+						address,
+						host,
+						port: this.#options.port ?? 1883,
+						onReadable: this.#onReadable.bind(this),
+						onWritable: this.#onWritable.bind(this),
+						onError: this.#onError.bind(this)
+					});
+					
+					this.#options.connecting = Timer.set(() => {
+						delete this.#options.connecting; 
+						this.#onError();
+					}, 30_000);		//@@ configurable
+				}
+				catch {
+					this.#onError?.();
+				}
 			},
-			onError: (err) => {
+			onError: () => {
 				this.#onError?.();
 			},
 		});
@@ -109,6 +118,7 @@ class MQTTClient {
 		Timer.clear(this.#options?.pending.timer);
 		Timer.clear(this.#options?.timer);
 		Timer.clear(this.#options?.keepalive);
+		Timer.clear(this.#options?.connecting);
 		this.#state = "closed";
 		this.#socket?.close();
 		this.#socket = undefined;
@@ -579,6 +589,9 @@ class MQTTClient {
 		const socket = this.#socket;
 		const state = this.#state;
 		if ("connecting" === state) {
+			Timer.clear(options.connecting);
+			delete options.connecting;
+
 			const keepalive = Math.round(options.keepalive / 1000);
 			const id = makeStringBuffer(options.id);
 			const user = makeStringBuffer(options.user);
@@ -649,15 +662,19 @@ class MQTTClient {
 				this.#options.onWritable?.call(this, this.#writable - Overhead);
 		}
 	}
-	#onError() {
+	#onError(msg) {
+		trace("mqttClient error: ", msg ?? "unknown", "\n");
 		this.#options.onError?.call(this);
 		this.close();
 	} 
 	#parsed(msg) {
 		const operation = msg.operation;
 // 		traceOperation(false, operation);
-		if (MQTTClient.CONNACK === operation)
+		if (MQTTClient.CONNACK === operation) {
+			if (msg.returnCode)
+				return void this.#onError("connection rejected")
 			this.#state = "connected";
+		}
 		else if ((MQTTClient.PUBREC === operation) || (MQTTClient.PUBREL === operation)) {
 			this.#queue({
 				operation: (MQTTClient.PUBREC === operation) ? MQTTClient.PUBREL : MQTTClient.PUBCOMP,

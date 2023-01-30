@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -240,7 +240,8 @@ C_OPTIONS = \
 	/I$(INSTRUMENTATION) \
 	/I$(TOOLS) \
 	/I$(TMP_DIR) \
-	/nologo
+	/nologo \
+	/MP
 	
 !IF "$(GOAL)"=="debug"
 C_OPTIONS = $(C_OPTIONS) \
@@ -295,12 +296,18 @@ $(BIN_DIR)\tools.exe : $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(OBJECTS)
 		/out:$(BIN_DIR)\tools.exe
 
 $(XS_OBJECTS) : $(XS_HEADERS)
-{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o:
-	cl $(C_OPTIONS) $< /Fo$@
-{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o:
-	cl $(C_OPTIONS) $< /Fo$@
-{$(XS_DIR)\tools\}.c{$(LIB_DIR)\}.o:
-	cl $(C_OPTIONS) $< /Fo$@
+{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o::
+	cd $(LIB_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o::
+	cd $(LIB_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(XS_DIR)\tools\}.c{$(LIB_DIR)\}.o::
+	cd $(LIB_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
 
 $(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
 	cl $(C_OPTIONS) $(TMP_DIR)\mc.xs.c /Fo$@
@@ -368,16 +375,26 @@ $(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
 
 $(TMP_DIR)\tool.o : $(MODDABLE)\tools\VERSION
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
-{$(COMMODETTO)\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(TOOLS)\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(DATA)\url\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
-{$(TMP_DIR)\}.c{$(TMP_DIR)\}.o:
-	cl $< $(C_OPTIONS) /Fo$@
+{$(COMMODETTO)\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(TOOLS)\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(DATA)\url\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
+{$(TMP_DIR)\}.c{$(TMP_DIR)\}.o::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+	rename *.obj *.o
 
 $(BIN_DIR)\buildclut.bat :
 	@echo # buildclut.bat

@@ -636,6 +636,10 @@ void fx_ArrayBuffer_prototype_slice(txMachine* the)
 		stop = start;
 	fxConstructArrayBufferResult(the, C_NULL, stop - start);
 	resultBuffer = fxCheckArrayBufferDetached(the, mxResult, XS_MUTABLE);
+	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_IMMUTABLE);
+	bufferInfo = arrayBuffer->next;
+	if (bufferInfo->value.bufferInfo.length < stop)
+		mxTypeError("resized this");
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address + start, stop - start);
 }
 
@@ -649,6 +653,7 @@ void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 	txSlot* resultBuffer;
 	fxConstructArrayBufferResult(the, C_NULL, newByteLength);
 	resultBuffer = fxCheckArrayBufferDetached(the, mxResult, XS_MUTABLE);
+	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address, (newByteLength < oldByteLength) ? newByteLength : oldByteLength);
 	if (newByteLength > oldByteLength)
 		c_memset(resultBuffer->value.arrayBuffer.address + oldByteLength, 0, newByteLength - oldByteLength);
@@ -1345,7 +1350,7 @@ void fx_TypedArray(txMachine* the)
 			info = fxGetBufferInfo(the, mxArgv(0));
 			if (size >= 0) {
 				txInteger delta = size << shift;
-				txInteger end = offset + delta;
+				txInteger end = fxAddChunkSizes(the, offset, delta);
 				if ((info->value.bufferInfo.length < end) || (end < offset))
 					mxRangeError("out of range length %ld", size);
 				size = delta;
@@ -2126,7 +2131,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		txInteger sourceOffset = sourceView->value.dataView.offset;	
 		txSlot* sourceData = sourceBuffer->value.reference->next;
 		txInteger limit = offset + (sourceLength * delta);
-		if ((target < 0) || (length - sourceLength < target))
+		if (/* (target < 0) || */ (length - sourceLength < target))		//@@ target can never be negative?
 			mxRangeError("invalid offset");
 		if (data == sourceData) {
 			txSlot* resultBuffer;
@@ -2169,7 +2174,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		mxGetID(mxID(_length));
 		count = fxToInteger(the, the->stack);
 		mxPop();
-		if ((target < 0) || (length - count < target))
+		if (/* (target < 0) || */ (length - count < target))		//@@ target cannot be negative?
 			mxRangeError("invalid offset");
 		index = 0;
 		while (index < count) {

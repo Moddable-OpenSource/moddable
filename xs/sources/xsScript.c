@@ -194,8 +194,8 @@ txSymbol* fxNewParserSymbol(txParser* parser, txString theString)
 {
 	txString aString;
 	txSize aLength;
-	txSize aSum;
-	txSize aModulo;
+	txU4 aSum;
+	txU4 aModulo;
 	txSymbol* aSymbol;
 	
 	aString = theString;

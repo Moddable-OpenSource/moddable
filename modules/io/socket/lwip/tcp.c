@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,22 +22,21 @@
 	TCP socket - uing lwip low level callback API
 
 	To do:
-		ASCII
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
 		while connecting cannot safely transfer native socket
 		
 		on ESP8266, data in flash needs to be spooled through RAM before sending to lwip
-		
-		//@@ why not using lwip _safe more??
 */
 
 #include "lwip/tcp.h"
 
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "xsHost.h"		// esp platform support
+#include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_* values
 #include "builtinCommon.h"
+#include "modLwipSafe.h"
 
 struct TCPBufferRecord {
 	struct TCPBufferRecord *next;
@@ -63,6 +62,7 @@ struct TCPRecord {
 	uint8_t			triggerable;
 	uint8_t			triggered;
 	int8_t			useCount;
+	uint8_t			error;
 	uint8_t			format;
 	xsMachine		*the;
 	xsSlot			*onReadable;
@@ -159,13 +159,13 @@ void xs_tcp_constructor(xsMachine *the)
 			if ((port < 0) || (port > 65535))
 				xsRangeError("invalid port");
 
-			skt = tcp_new();
+			skt = tcp_new_safe();
 			if (!skt)
 				xsRangeError("no socket");
 
 			skt->so_options |= SOF_REUSEADDR;
-			if (tcp_bind(skt, IP_ADDR_ANY, 0)) {
-				tcp_close(skt);
+			if (tcp_bind_safe(skt, IP_ADDR_ANY, 0)) {
+				tcp_close_safe(skt);
 				xsUnknownError("bind failed");
 			}
 
@@ -178,9 +178,11 @@ void xs_tcp_constructor(xsMachine *the)
 		tcp = c_calloc(1, offsetof(TCPRecord, onReadable));
 
 	if (!tcp) {
-		tcp_close(skt);
+		tcp_close_safe(skt);
 		xsRangeError("no memory");
 	}
+
+	modInstrumentationAdjust(NetworkSockets, +1);
 
 	xsmcSetHostData(xsThis, tcp);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
@@ -218,7 +220,7 @@ void xs_tcp_constructor(xsMachine *the)
 		tcp_sent(skt, tcpSent);
 
 	if (connect) {
-		if (tcp_connect(skt, &address, port, tcpConnect))
+		if (tcp_connect_safe(skt, &address, port, tcpConnect))
 			xsUnknownError("connect error");
 	}
 	else if (triggered)
@@ -233,7 +235,7 @@ void xs_tcp_destructor(void *data)
 	if (tcp->skt) {
 		removeTCPCallbacks(tcp);
 
-		tcp_close(tcp->skt);
+		tcp_close_safe(tcp->skt);
 #if !ESP32
 		tcp_abort(tcp->skt);
 #endif
@@ -242,11 +244,13 @@ void xs_tcp_destructor(void *data)
 	while (tcp->buffers) {
 		TCPBuffer buffer = tcp->buffers;
 		tcp->buffers = buffer->next;
-		pbuf_free(buffer->pb);
+		pbuf_free_safe(buffer->pb);
 		c_free(buffer);
 	}
 
 	c_free(data);
+
+	modInstrumentationAdjust(NetworkSockets, -1);
 }
 
 void removeTCPCallbacks(TCP tcp)
@@ -346,11 +350,14 @@ void xs_tcp_read(xsMachine *the)
 			buffer->fragmentOffset = 0;
 			if (NULL == buffer->fragment) {
 				tcp->buffers = buffer->next;
-				tcp_recved(tcp->skt, buffer->pb->tot_len);
-				pbuf_free(buffer->pb);
+				tcp_recved_safe(tcp->skt, buffer->pb->tot_len);
+				pbuf_free_safe(buffer->pb);
 				c_free(buffer);
-				if (NULL == tcp->buffers)
+				if (NULL == tcp->buffers) {
+					if (tcp->error)
+						tcpTrigger(tcp, kTCPError);
 					break;
+				}
 			}
 		}
 	}
@@ -366,14 +373,11 @@ void xs_tcp_write(xsMachine *the)
 	void *buffer;
 	uint8_t value;
 
-	if (!tcp->skt) {
-		xsTrace("write to closed socket\n");
+	if (tcp->error || !tcp->skt)
 		return;
-	}
 
-	if (kIOFormatBuffer == tcp->format) {
+	if (kIOFormatBuffer == tcp->format)
 		xsmcGetBufferReadable(xsArg(0), &buffer, &needed);
-	}
 	else {
 		needed = 1;
 		value = (uint8_t)xsmcToInteger(xsArg(0));
@@ -383,10 +387,15 @@ void xs_tcp_write(xsMachine *the)
 	if (needed > tcp_sndbuf(tcp->skt))
 		xsUnknownError("would block");
 
-	if (ERR_OK != tcp_write(tcp->skt, buffer, needed, TCP_WRITE_FLAG_COPY | TCP_WRITE_FLAG_MORE))
-		xsUnknownError("write failed");
+	if (ERR_OK != tcp_write_safe(tcp->skt, buffer, needed, TCP_WRITE_FLAG_COPY | TCP_WRITE_FLAG_MORE)) {
+		xsTrace("tcp write failed");
+		tcpTrigger(tcp, kTCPError);
+		return;
+	}
 
 	tcpTrigger(tcp, kTCPOutput);
+
+	modInstrumentationAdjust(NetworkBytesWritten, needed);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -459,11 +468,13 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 	tcp->triggered = 0;
 	builtinCriticalSectionEnd();
 #endif
-	if (triggered & kTCPError)
+	if (triggered & kTCPError) {
 		triggered &= ~(kTCPOutput | kTCPWritable);
+		tcp->error = true;
+	}
 
 	if ((triggered & kTCPOutput) && tcp->skt)
-		tcp_output(tcp->skt);
+		tcp_output_safe(tcp->skt);
 
 	if ((triggered & tcp->triggerable & kTCPReadable) && tcp->buffers) {
 		TCPBuffer walker;
@@ -478,7 +489,9 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 		xsEndHost(the);
 	}
 
-	if (!(triggered & kTCPError)) {
+	if (tcp->buffers && tcp->error)
+		;		// error delivered after receive buffers empty
+	else if (!tcp->error) {
 		if ((triggered & tcp->triggerable & kTCPWritable) && tcp->skt) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, tcp_sndbuf(tcp->skt));
@@ -539,6 +552,8 @@ err_t tcpReceive(void *arg, struct tcp_pcb *pcb, struct pbuf *pb, err_t err)
 	buffer->bytes = pb->tot_len;
 	buffer->fragment = pb;
 	buffer->fragmentOffset = 0;
+
+	modInstrumentationAdjust(NetworkBytesRead, buffer->bytes);
 
 	if (tcp->buffers) {
 		TCPBuffer walker;
@@ -661,20 +676,20 @@ void xs_listener_constructor(xsMachine *the)
 		xsUnknownError("no socket");
 
 	skt->so_options |= SOF_REUSEADDR;
-	if (tcp_bind(skt, &address, port)) {
-		tcp_close(skt);
+	if (tcp_bind_safe(skt, &address, port)) {
+		tcp_close_safe(skt);
 		xsUnknownError("socket bind");
 	}
 
-	skt = tcp_listen(skt);
+	skt = tcp_listen_safe(skt);
 	if (!skt) {
-		tcp_close(skt);
+		tcp_close_safe(skt);
 		xsRangeError("no memory");
 	}
 
 	listener = c_calloc(1, sizeof(ListenerRecord));
 	if (!listener) {
-		tcp_close(skt);
+		tcp_close_safe(skt);
 		xsRangeError("no memory");
 	}
 
@@ -699,12 +714,12 @@ void xs_listener_destructor_(void *data)
 	if (!data) return;
 
 	tcp_accept(listener->skt, NULL);
-	tcp_close(listener->skt);
+	tcp_close_safe(listener->skt);
 
 	while (listener->pending) {
 		ListenerPending pending = listener->pending;
 		listener->pending = pending->next;
-		tcp_close(pending->skt);
+		tcp_close_safe(pending->skt);
 		c_free(pending);
 	}
 

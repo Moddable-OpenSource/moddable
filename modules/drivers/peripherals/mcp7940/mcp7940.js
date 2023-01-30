@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Moddable Tech, Inc.
+ * Copyright (c) 2021-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -43,7 +43,7 @@ class MCP7940 {
 		});
 
 		try {
-			io.readByte(0);
+			io.readUint8(0);
 		}
 		catch (e) {
 			io.close();
@@ -63,7 +63,7 @@ class MCP7940 {
 		const io = this.#io;
 		const reg = this.#blockBuffer;
 
-		io.readBlock(Register.TIME, reg);
+		io.readBuffer(Register.TIME, reg);
 
 		if (0 == (reg[3] & Register.ENABLED_BIT)) {
 			// if OSCRUN is low, then time is uncertain
@@ -99,13 +99,13 @@ class MCP7940 {
 		b[6] = decToBcd(year % 100);
 
 		// stop the oscillator
-		let ST = io.readByte(Register.TIME);
+		let ST = io.readUint8(Register.TIME);
 		if (ST & Register.ENABLE_BIT) {
 			ST &= ~Register.ENABLE_BIT;
-			io.writeByte(Register.TIME, ST);
+			io.writeUint8(Register.TIME, ST);
 		}
 
-		io.writeBlock(Register.TIME, b);		// enable is included
+		io.writeBuffer(Register.TIME, b);		// enable is included
 	}
 }
 

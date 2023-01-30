@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,17 +12,17 @@
  *
  */
 
-import Timer from "timer";		//@@
+import Timer from "timer";
 
 class FT6206  {
 	#io;
 
 	constructor(options) {
-		const {i2c, reset, interrupt, onSample, target} = options;
-		const io = this.#io = new i2c.io({
+		const {sensor, reset, interrupt, onSample, target} = options;
+		const io = this.#io = new sensor.io({
 			hz: 100_000,
 			address: 0x38,
-			...i2c
+			...sensor
 		});
 		io.buffer = new Uint8Array(12);		// two touch points
 
@@ -115,18 +115,21 @@ class FT6206  {
 	sample() {
 		const io = this.#io;
 
-		const length = io.readUint8(0x02) & 0x0F;			// number of touches
-		if (0 === length)
-			return;
+		const length = Math.min(io.readUint8(0x02) & 0x0F, io.length ?? 2);			// number of touches
+		if (0 === length) {
+			if (io.none)
+				return;
+			io.none = true;
+			return [];
+		}
+		delete io.none;
 
-		const data = io.readBuffer(0x03, io.buffer);
+		const data = io.buffer;
+		const count = io.readBuffer(0x03, data);
 		const result = new Array(length);
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;
 			const id = data[offset + 2] >> 4;
-			if (id && (1 === io.length))
-				continue;
-
 			let x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
 			let y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
 
@@ -136,13 +139,20 @@ class FT6206  {
 			if (io.flipY)
 				y = 320 - y;
 
-			result[i] = {x, y, id};
+			const j = {x, y, id};
 
 			if (io.weight)
-				result[i].weight = data[offset + 4];
+				j.weight = data[offset + 4];
 
 			if (io.area)
-				result[i].area = data[offset + 5] >> 4;
+				j.area = data[offset + 5] >> 4;
+
+			if (1 === io.length) {
+				j.id = 0;
+				result[0] = j;
+				break;
+			}
+			result[i] = j;
 		}
 
 		return result;

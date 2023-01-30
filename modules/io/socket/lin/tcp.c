@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,6 +20,7 @@
  
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_* values
+#include "modInstrumentation.h"
 
 #include "modTimer.h"
 
@@ -99,6 +100,8 @@ void xs_tcp_constructor(xsMachine *the)
 	if (!tcp)
 		xsRangeError("no memory");
 	tcp->skt = -1;
+
+	modInstrumentationAdjust(NetworkSockets, +1);
 
 	xsmcSetHostData(xsThis, tcp);
 
@@ -230,8 +233,10 @@ void xs_tcp_destructor(void *data)
 		close(tcp->skt);
 		tcp->skt = -1;
 	}
-	
+
 	free(tcp);
+
+	modInstrumentationAdjust(NetworkSockets, -1);
 }
 
 void doClose(xsMachine *the, xsSlot *instance)
@@ -318,9 +323,8 @@ void xs_tcp_write(xsMachine *the)
 		return;
 	}
 
-	if (kIOFormatBuffer == tcp->format) {
+	if (kIOFormatBuffer == tcp->format)
 		xsmcGetBufferReadable(xsArg(0), &buffer, &needed);
-	}
 	else {
 		needed = 1;
 		value = (uint8_t)xsmcToInteger(xsArg(0));
@@ -333,8 +337,13 @@ void xs_tcp_write(xsMachine *the)
 	tcp->bytesWritable -= needed;
 
 	int ret = write(tcp->skt, buffer, needed);
-	if (ret < 0)
-		xsUnknownError("write failed");
+	if (ret < 0) {
+		xsTrace("write failed");
+		tcpTrigger(tcp, kTCPError);
+		return;
+	}
+
+	modInstrumentationAdjust(NetworkBytesWritten, needed);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -439,6 +448,7 @@ void tcpTask(modTimer timer, void *refcon, int refconSize)
 			if (bytesRead > 0) {
 				tcp->bytesReadable += bytesRead;
 				tcpTrigger(tcp, kTCPReadable);
+				modInstrumentationAdjust(NetworkBytesRead, bytesRead);
 			}
 			else if (bytesRead < 0) {
 				tcp->error = 1;

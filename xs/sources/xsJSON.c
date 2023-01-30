@@ -559,6 +559,7 @@ void fxParseJSONValue(txMachine* the, txJSONParser* theParser)
 void fxReviveJSON(txMachine* the, txSlot* reviver)
 {
 	txSlot* reference = the->stack;
+	mxCheckCStack();
 	if (mxIsReference(reference)) {
 		txSlot* instance = reference->value.reference;
 		if (fxIsArray(the, instance)) {

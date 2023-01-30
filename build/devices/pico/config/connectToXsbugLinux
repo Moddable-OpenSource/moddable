@@ -8,6 +8,11 @@ done
 
 sleep 2
 
-${MODDABLE}/build/bin/lin/release/serial2xsbug ${port} 921600 8N1 $3
 
-# -dtr $3
+if [[ "$3" == "" ]]
+then
+	${MODDABLE}/build/bin/lin/release/serial2xsbug ${port} 115200 8N1
+else
+	cd ${MODDABLE}/tools/xsbug-log && node xsbug-log ${MODDABLE}/build/bin/lin/release/serial2xsbug ${port} 115200 8N1
+fi
+

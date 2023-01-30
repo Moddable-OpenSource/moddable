@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -27,7 +27,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
-import Touch from "embedded:sensor/touch/GT911";
+import Touch from "embedded:sensor/Touch/GT911";
 import HumidityTemperature from "embedded:sensor/Humidity-Temperature/SHT3x"
 import RTC from "embedded:RTC/PCF8563"
 
@@ -80,7 +80,7 @@ class M5PaperTouch extends Touch {
 		i2c.close();
 		
 		const o = {
-			i2c: {...device.I2C.default, address},
+			sensor: {...device.I2C.default, address},
 			interrupt: {
 				io: Digital,
 				mode: Digital.Input,

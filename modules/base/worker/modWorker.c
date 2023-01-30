@@ -425,7 +425,7 @@ void workerLoop(void *pvParameter)
 {
 	modWorker worker = (modWorker)pvParameter;
 
-#if CONFIG_TASK_WDT
+#if CONFIG_ESP_TASK_WDT
 	esp_task_wdt_add(NULL);
 #endif
 

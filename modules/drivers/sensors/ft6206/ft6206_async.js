@@ -21,11 +21,11 @@ class FT6206  {
 	#onSample;
 
 	constructor(options) {
-		const {i2c, reset, interrupt, onSample, target, onError} = options;
-		const io = this.#io = new i2c.io.Async({
+		const {sensor, reset, interrupt, onSample, target, onError} = options;
+		const io = this.#io = new sensor.io.Async({
 			hz: 100_000,
 			address: 0x38,
-			...i2c
+			...sensor
 		});
 		this.#onError = onError;
 		this.#onSample = onSample;
@@ -159,8 +159,14 @@ class FT6206  {
 			if (!length) {
 				if (!this.#io.interrupt)
 					Timer.schedule(this.#timer, 17, 17);
+				if (this.#io.none)
+					return;
+				this.#io.sample = [];
+				this.#io.none = true;
+				this.#onSample?.();
 				return;
 			}
+			delete this.#io.none;
 			this.#io.readBuffer(0x03, this.#io.buffer, () => {
 				const io = this.#io, data = io.buffer;
 				const result = new Array(length);

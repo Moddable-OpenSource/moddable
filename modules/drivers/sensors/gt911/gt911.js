@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -24,11 +24,11 @@ class GT911 {
 	#io;
 
 	constructor(options) {
-		const {i2c, interrupt, onSample, config} = options;
-		const io = this.#io = new i2c.io({
+		const {sensor, interrupt, onSample, config} = options;
+		const io = this.#io = new sensor.io({
 			hz: 200_000,		// ....data sheet warns about speeds over 200_000
 			address: 0x5D,
-			...i2c
+			...sensor
 		});
 
 		// check id
@@ -103,32 +103,28 @@ class GT911 {
 		const io = this.#io;
 
 		io.write(Uint8Array.of(0x81, 0x4E)); 		// GOODIX_READ_COOR_ADDR
-		const status = io.read(new Uint8Array(1))[0];
-		let touchCount, data
-		if (0x80 & status) {		// ready
-			touchCount = status & 0b0000_1111;
-			if (touchCount)
-				this.#io.last = data = io.read(new Uint8Array(touchCount << 3));
-		}
-		else {						// not read, use previous
-			data = this.#io.last;
-			if (data)
-				touchCount = data.length >> 3;
-		}
+		const status = (new Uint8Array(io.read(1)))[0];
+		if (!(0x80 & status))	// not-ready
+			return;
+
+		const touchCount = status & 0b0000_1111;
 		if (!touchCount) {
 			delete this.#io.last;
 			io.write(Uint8Array.of(0x81, 0x4E, 0));	// ready for next reading
-			return;
+			return [];
 		}
+
+		const data = this.#io.last = new Uint8Array(touchCount << 3);
+		io.read(data);
 
 		const result = new Array(touchCount);
 		for (let i = 0; i < touchCount; i++) {
 			const offset = i * 8;
 			const id = data[offset];
 
-			let x = (data[offset + 1] | (data[offset + 2] << 8));
-			let y = (data[offset + 3] | (data[offset + 4] << 8));
-			let size = (data[offset + 5] | (data[offset + 6] << 8));
+			const x = (data[offset + 1] | (data[offset + 2] << 8));
+			const y = (data[offset + 3] | (data[offset + 4] << 8));
+			const size = (data[offset + 5] | (data[offset + 6] << 8));
 
 			result[i] = {x, y, id, size};
 		}

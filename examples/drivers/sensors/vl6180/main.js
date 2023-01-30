@@ -18,8 +18,10 @@ import Timer from "timer";
 import VL6180 from "embedded:sensor/AmbientLight-Proximity/VL6180";
 
 let sensor = new VL6180({
-	...device.I2C.default,
-	io: device.io.I2C	
+	sensor: {
+		...device.I2C.default,
+		io: device.io.I2C	
+	}
 });
 
 trace(`Sensor configuration is: ${JSON.stringify(sensor.configuration)}\n`);

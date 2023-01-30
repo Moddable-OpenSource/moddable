@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -25,7 +25,19 @@ import Net from "net";
 import SNTP from "sntp";
 
 export default function (done) {	
-    Ethernet.start();
+
+    if (config.ssid !== undefined) {
+		trace("Skipping Ethernet setup because Wi-Fi SSID is configured.\n");
+		return done();
+	}
+
+    try {
+        Ethernet.start();
+    } catch (error) {
+        trace(`Ethernet hardware not found.\n`);
+        return done();
+    }
+
     globalThis.ethernet = {connected: false};
     trace(`Waiting for Ethernet link.\n`);
     let monitor = new Ethernet(function (msg, code) {

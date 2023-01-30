@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -27,7 +27,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
-import Touch from "embedded:sensor/touch/FT6x06";
+import Touch from "embedded:sensor/Touch/FT6x06";
 import PulseWidth from "embedded:io/pulsewidth";
 
 class Backlight {
@@ -154,7 +154,7 @@ const device = {
 		Touch: class {
 			constructor(options) {
 				const result = new Touch({
-					i2c: {
+					sensor: {
 						...device.I2C.default,
 						io: device.io.SMBus
 					},

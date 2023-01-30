@@ -18,20 +18,17 @@ if len(e) < 3:
 if g[0] == e[0]:
 	if g[1] == e[1]:
 		if g[2] == e[2]:
-#			print("versions are the same.")
+			print("Using recommended ESP-IDF " + given)
 			sys.exit(0)
 		else:
-			if g[2] != e[2]:
-				print("Recommend using ESP-IDF " + expected + " (found " + given + ")")
-				print(update)
+			print("Recommend using ESP-IDF " + expected + " (found " + given + ")")
+			print(update)
 			sys.exit(0);
 	else:
-#		print("minor versions differ. Please update.");
-		print("*** Update required to ESP-IDF " + expected)
+		print("*** Update required to ESP-IDF " + expected + " (found " + given + ")")
 		print(update)
 		sys.exit(1);
 else:
-#	print("major versions differ. Please update.");
-	print("*** Update required to ESP-IDF " + expected)
+	print("*** Update required to ESP-IDF " + expected + " (found " + given + ")")
 	print(update)
 	sys.exit(1);

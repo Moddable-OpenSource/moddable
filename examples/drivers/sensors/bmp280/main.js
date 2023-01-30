@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Moddable Tech, Inc.
+ * Copyright (c) 2021-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -16,14 +16,6 @@ import BMP280 from "embedded:sensor/Barometer-Temperature/BMP280";
 import Timer from "timer";
 
 const sensor = new BMP280({ sensor: device.I2C.default });
-
-sensor.configure({
-	mode: 3,					// NORMAL
-	temperatureSampling: 2,		// X2
-	pressureSampling: 5,		// X16
-	filter: 4,					// X16
-	standbyDuration: 4			// MS_500
-});
 		
 function CtoF(c) { return (c*1.8)+32; }
 function PatoInHg(Pa) { return Pa * 0.0002953; }

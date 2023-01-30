@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -32,8 +32,7 @@ const device = {
 		default: {
 			io: I2C,
 			data: 4,
-			clock: 5,
-			port: 0
+			clock: 5
 		}
 	},
 	Serial: {

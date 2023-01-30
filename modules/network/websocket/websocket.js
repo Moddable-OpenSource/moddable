@@ -105,10 +105,11 @@ export class Client {
 	close() {
 		this.socket?.close();
 		delete this.socket;
-		
-		if (this.timer)
-			Timer.clear(this.timer);
+
+		Timer.clear(this.timer);
 		delete this.timer;
+		
+		this.state = 4;
 	}
 };
 
@@ -120,6 +121,8 @@ function callback(message, value) {
 			throw new Error("socket connected but ws not in connecting state");
 
 		this.callback(Client.connect);		// connected socket
+		if (4 === this.state)
+			return;
 
 		let key = new Uint8Array(16);
 		for (let i = 0; i < 16; i++)
@@ -161,15 +164,19 @@ function callback(message, value) {
 	}
 
 	if (2 == message) {		// data available to read
-		if (1 == this.state) {
+		if (1 === this.state) {
 			let line = socket.read(String, "\n");
-			if ("HTTP/1.1 101" !== line.substring(0,12))
-				throw new Error("web socket upgrade failed");
+			if ("HTTP/1.1 101" !== line.substring(0,12)) {
+				trace("web socket upgrade failed\n");
+				this.callback(Client.disconnect);
+				this.close();
+				return;
+			}
 			this.state = 2;
 			this.line = undefined;
 			this.flags = 0;
 		}
-		if (2 == this.state) {
+		if (2 === this.state) {
 			while (true) {
 				let line = socket.read(String, "\n");
 				if (!line)
@@ -189,6 +196,8 @@ trace("partial header!!\n");		//@@ untested
 				if ("\r\n" == line) {							// empty line is end of headers
 					if (7 == this.flags) {
 						this.callback(Client.handshake);		// websocket handshake complete
+						if (4 === this.state)
+							return;
 						this.state = 3;							// ready to receive
 						value = socket.read();
 					}
@@ -221,7 +230,7 @@ trace("partial header!!\n");		//@@ untested
 				}
 			}
 		}
-		if (3 == this.state) {		// receive message
+		if (3 === this.state) {		// receive message
 			while (value) {
 				let tag = socket.read(Number);
 				let length = socket.read(Number);
@@ -334,7 +343,7 @@ function server(message, value, etc) {
 	if (!socket) return;
 
 	if (2 == message) {
-		if ((1 == this.state) || (2 == this.state)) {
+		if ((1 === this.state) || (2 === this.state)) {
 			while (true) {
 				let line = socket.read(String, "\n");
 				if (!line)
@@ -388,7 +397,7 @@ trace("partial header!!\n");		//@@ untested
 					return;
 				}
 
-				if (1 == this.state) {
+				if (1 === this.state) {
 					// parse status line: GET / HTTP/1.1
 					line = line.split(" ");
 					if (line.length < 3)
@@ -401,7 +410,7 @@ trace("partial header!!\n");		//@@ untested
 					this.state = 2;
 					this.flags = 0;
 				}
-				else if (2 == this.state) {
+				else if (2 === this.state) {
 					let position = line.indexOf(":");
 					let name = line.substring(0, position).trim().toLowerCase();
 					let data = line.substring(position + 1).trim();

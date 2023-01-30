@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Moddable Tech, Inc.
+ * Copyright (c) 2019-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -51,19 +51,18 @@ static I2C gI2CActive = NULL;
 static uint8_t i2cActivate(I2C i2c);
 static uint8_t usingPins(uint32_t data, uint32_t clock);
 
-uint8_t checkValidI2C(uint32_t data, uint32_t clock, uint8_t port)
+uint8_t checkValidI2C(uint32_t data, uint32_t clock, uint8_t *port)
 {
-//	if (clock != data + 1)
-//		return 0;
-
-	if ((port == 0)
-		&& (data == 0 || data == 4 || data == 8 || data == 12 || data == 16 || data == 20 || data == 24 || data == 28)
-		&& (clock == 1 || clock == 5 || clock == 9 || clock == 13 || clock == 17 || clock == 21 || clock == 25 || clock == 29))
+	if ((data == 0 || data == 4 || data == 8 || data == 12 || data == 16 || data == 20 || data == 24 || data == 28) &&
+		 (clock == 1 || clock == 5 || clock == 9 || clock == 13 || clock == 17 || clock == 21 || clock == 25 || clock == 29)) {
+			*port = 0;
 			return 1;
-	else if ((port == 1)
-		&& (data == 2 || data == 6 || data == 10 || data == 14 || data == 18 || data == 22 || data == 26)
-		&& (clock == 3 || clock == 7 || clock == 11 || clock == 15 || clock == 19 || clock == 23 || clock == 27))
+	}
+	if ((data == 2 || data == 6 || data == 10 || data == 14 || data == 18 || data == 22 || data == 26) &&
+		 (clock == 3 || clock == 7 || clock == 11 || clock == 15 || clock == 19 || clock == 23 || clock == 27)) {
+			*port = 1;
 			return 1;
+	}
 	return 0;
 }
 
@@ -73,7 +72,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	int data, clock, hz, address;
 	int timeout = 200;
 	uint8_t pullup = 1;
-	int port = 0;
+	uint8_t port;
 
 	xsmcVars(1);
 
@@ -120,14 +119,7 @@ void _xs_i2c_constructor(xsMachine *the)
 		pullup = xsmcToBoolean(xsVar(0)) ? 1 : 0;
 	}
 
-	if (xsmcHas(xsArg(0), xsID_port)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		port = xsmcToInteger(xsVar(0));
-		if ((port < 0) || (port > 1))		//@@
-			xsRangeError("invalid port");
-	}
-
-	if (!checkValidI2C(data, clock, port))
+	if (!checkValidI2C(data, clock, &port))
 		xsUnknownError("invalid configuration");
 
 	builtinInitializeTarget(the);
@@ -147,7 +139,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->address = address;
 	i2c->timeout = timeout;
 	i2c->pullup = pullup;
-	i2c->port = (uint8_t)port;
+	i2c->port = port;
 	if (port == 0)
 		i2c->inst = i2c0;
 	else
@@ -228,6 +220,7 @@ void _xs_i2c_read(xsMachine *the)
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsResult = xsArg(0);
 		xsmcGetBufferWritable(xsResult, &buffer, &length);
+		xsmcSetInteger(xsResult, length);
 	}
 	else {
  		length = xsmcToInteger(xsArg(0));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -25,12 +25,13 @@ import Net from "net";
 import SNTP from "sntp";
 
 export default function (done) {
-	WiFi.mode = 1;
 
 	if (!config.ssid) {
 		trace("No Wi-Fi SSID\n");
 		return done();
 	}
+
+	WiFi.mode = 1;
 
 	let monitor = new WiFi({ssid: config.ssid, password: config.password}, function(msg, code) {
 	   switch (msg) {

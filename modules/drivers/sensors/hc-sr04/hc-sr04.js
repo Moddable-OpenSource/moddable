@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Moddable Tech, Inc.
+ * Copyright (c) 2022-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -33,46 +33,62 @@ class Sensor {
     max: 400
   }
   #onAlert;
+  #readingStale = true;
+  #suppressDuplicates = false;
 
   constructor(options){
 
     const {trigger, sensor, onAlert} = options;
 
     this.#onAlert = onAlert;
-
-    this.#output = new trigger.io({
-      mode: trigger.io.Output,
-      pin: trigger.pin
-    });
-
+    
     this.#input = new sensor.io({
       pin: sensor.pin,
-      mode: sensor.io.RisingToFalling,
-      pullUpDown: sensor.io.PullDown,
+      edges: sensor.io.RisingToFalling,
+      mode: sensor.io.InputPullDown,
       onReadable: () => this.#onEcho()
     });
 
-    this.configure({sampleRate: 500});
+    if (trigger !== undefined) {
+      this.#output = new trigger.io({
+        mode: trigger.io.Output,
+        pin: trigger.pin
+      });
+      
+      this.configure({interval: 500, suppressDuplicates: true});
+    }
   }
   
   configure(options = {}){
-    const {sampleRate} = options;
+    const {interval, suppressDuplicates} = options;
 
-    if (undefined !== sampleRate) {
+    if (undefined !== interval) {
+      if (this.#output === undefined)
+        throw new Error("Configuring interval is only available on instances constructed with a trigger pin.");
+
       Timer.clear(this.#timer);
       this.#timer = undefined;
         
-      if (sampleRate !== 0) {
+      if (interval !== 0) {
         this.#timer = Timer.repeat(() => {
           this.#output.write(1);
           this.#output.write(0);          
-        }, sampleRate);
+        }, interval);
       }
+    }
+
+    if (undefined !== suppressDuplicates) {
+      this.#suppressDuplicates = suppressDuplicates;
     }
   }
 
   sample(){
-    return this.#reading;
+    if (!this.#readingStale) {
+      this.#readingStale = true;
+      return this.#reading;
+    }
+
+    return undefined;
   }
 
   close() {
@@ -86,17 +102,18 @@ class Sensor {
 
   #onEcho() {
     const value = this.#input.read();
+    this.#readingStale = false;
 
     if (value > 35000) {
-      const doAlert = (this.#reading.near !== false);
+      const doAlert = (!(this.#suppressDuplicates) || (this.#reading.near !== false));
       this.#reading.near = false;
       this.#reading.distance = null;
       if (doAlert)
-        this.#onAlert?.(this.#reading);  
+        this.#onAlert?.();  
     } else {
       this.#reading.near = true;
       this.#reading.distance = value / 58;
-      this.#onAlert?.(this.#reading);
+      this.#onAlert?.();
     }
   }
 
