@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -93,8 +93,9 @@ ifeq ($(INSTRUMENT),1)
 endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
+MACOS_ARCH ?=
 # XS_C_FLAGS = -c -arch i386
-XS_C_FLAGS = -c
+XS_C_FLAGS = -c $(MACOS_ARCH)
 ifeq ($(DEBUG),)
 	XS_C_FLAGS += -D_RELEASE=1 -O3
 else
@@ -106,7 +107,7 @@ C_FLAGS = $(XS_C_FLAGS)
 LIBRARIES = -framework CoreFoundation -framework CoreServices -framework Cocoa
 
 # LINK_FLAGS = -arch i386 -ObjC
-LINK_FLAGS = -ObjC
+LINK_FLAGS = -ObjC $(MACOS_ARCH)
 
 MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
 XSC = $(BUILD_DIR)/bin/mac/debug/xsc

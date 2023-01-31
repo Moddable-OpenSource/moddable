@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -275,8 +275,12 @@ ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(INSTRUMENTATION) $(COMMODETTO) ${CRYPT}/etc ${CRYPT}/arith ${CRYPT}/digest ${CRYPT}/digest/kcl $(TOOLS) $(TMP_DIR),-I$(dir))
+
+MACOS_ARCH ?=
+
 # C_FLAGS = -c -arch i386
-C_FLAGS = -c
+C_FLAGS = -c $(MACOS_ARCH)
+
 ifeq ($(GOAL),debug)
 	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
@@ -286,7 +290,7 @@ endif
 LIBRARIES = -framework CoreServices
 
 # LINK_FLAGS = -arch i386
-LINK_FLAGS =
+LINK_FLAGS = $(MACOS_ARCH)
 
 XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid
