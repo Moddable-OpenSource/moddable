@@ -33,7 +33,9 @@ let sensor = new APDS9960({
 sensor.configure({
 	alsThresholdLow: 1,
 	alsThresholdHigh: 7000,
-	alsThresholdPersistence: 5
+	alsThresholdPersistence: 5,
+	enableProximity: false,
+	enableGesture: false
 });
 
 trace(`Sensor configuration is: ${JSON.stringify(sensor.configuration)}\n`);

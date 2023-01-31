@@ -33,11 +33,20 @@ const Register = Object.freeze({
   PILT: 0x89,
   PIHT: 0x8B,
   CONTROLONE: 0x8F,
+  CONFIGTWO: 0x90,
   ID: 0x92,
   STATUS: 0x93,
   CDATAL: 0x94,
   CDATAH: 0x95,
-  PDATA: 0x9C
+  PDATA: 0x9C,
+  GPENTH: 0xA0,
+  GEXTH: 0xA1,
+  GFLVL: 0xAE,
+  GSTATUS: 0xAF,
+  GFIFO_U: 0xFC,
+  GFIFO_D: 0xFD,
+  GFIFO_L: 0xFE,
+  GIFIO_R: 0xFF
 });
 
 class Sensor {
@@ -116,6 +125,7 @@ class Sensor {
       on: true,
       enableALS: true,
       enableProximity: true,
+      enableGesture: true,
       proximityGain: 2,
       alsIntegrationCycles: 10,
       alsGain: 1,
@@ -124,26 +134,43 @@ class Sensor {
       alsThresholdPersistence: 1,
       proximityThresholdPersistence: 3,
       proximityThresholdHigh: 0xFF,
-      proximityThresholdLow: 0
+      proximityThresholdLow: 0,
+      gestureThresholdEnter: 10,
+      gestureThresholdExit: 3,
+      enableWait: true,
+      waitTime: 2.78,
+      LEDBoost: 200
     });
   }
   
   configure(options){
-    const {enableALS, on, alsIntegrationCycles, alsGain, proximityGain, alsThresholdHigh, alsThresholdLow, alsThresholdPersistence, proximityThresholdPersistence, enableProximity, proximityThresholdLow, proximityThresholdHigh} = options;
+    const {
+          enableALS, on, alsIntegrationCycles, alsGain, proximityGain, alsThresholdHigh, 
+          alsThresholdLow, alsThresholdPersistence, proximityThresholdPersistence, enableProximity, 
+          proximityThresholdLow, proximityThresholdHigh, enableGesture, gestureThresholdEnter, gestureThresholdExit,
+          enableWait, waitTime, LEDBoost} = options;
     const configuration = this.#configuration;
     const enabled = this.#configuration.enabled
     const io = this.#io;
     
     if (enableALS !== undefined) {
-      configuration.enabled.AEN = enableALS;
+      enabled.AEN = enableALS;
     }
 
     if (enableProximity !== undefined) {
-      configuration.enabled.PEN = enableProximity;
+      enabled.PEN = enableProximity;
+    }
+
+    if (enableGesture !== undefined) {
+      enabled.GEN = enableGesture;
+    }
+
+    if (enableWait !== undefined) {
+      enabled.WEN = enableWait
     }
 
     if (on !== undefined) {
-      configuration.enabled.PON = on;
+      enabled.PON = on;
     }
 
     if (alsGain !== undefined) {
@@ -152,6 +179,27 @@ class Sensor {
 
     if (proximityGain !== undefined) {
       configuration.proximityGain = proximityGain;
+    }
+
+    if (waitTime !== undefined) { // does not yet support WAITLONG
+      const closestValid = Math.round(waitTime / 2.78) * 2.78;
+
+      if (closestValid < 2.78 || closestValid > 712)
+        throw new RangeError("invalid waitTime setting");
+
+      configuration.waitTime = closestValid;
+      const value = 256 - Math.round(waitTime / 2.78);
+      io.writeUint8(Register.WTIME, value);
+    }
+
+    if (LEDBoost !== undefined) {
+      if (LEDBoost !== 100 && LEDBoost !== 150 && LEDBoost !== 200 && LEDBoost !== 300)
+        throw new RangeError("invalid LED boost");
+      
+      configuration.LEDBoost = LEDBoost;
+      const field = (LEDBoost === 100 ? 0 : Math.floor(LEDBoost / 100)) << 4;
+      const value = 0b00000001 | field;
+      io.writeUint8(Register.CONFIGTWO, value);
     }
 
     if (alsGain !== undefined || proximityGain !== undefined) {
@@ -264,7 +312,7 @@ class Sensor {
       } else {
         configuration.enabled.AIEN = true;
       }
-      this.#io.readUint8(0xE6); // clear interrupts
+      io.readUint8(0xE7); // clear interrupts
     }
 
     if (proximityThresholdHigh !== undefined || proximityThresholdLow !== undefined) {
@@ -273,7 +321,24 @@ class Sensor {
       } else {
         configuration.enabled.PIEN = true;
       }
-      this.#io.readUint8(0xE4); // clear interrupts
+      io.readUint8(0xE7); // clear interrupts
+    }
+
+    if (gestureThresholdEnter !== undefined) {
+      if (gestureThresholdEnter < 0 || gestureThresholdEnter > 0xFF)
+        throw new RangeError("invalid gestureThresholdEnter");
+      if (gestureThresholdEnter & 0b00010000)
+        throw new RangeError("Note: Bit 4 must be set to 0");
+      configuration.gestureThresholdEnter = gestureThresholdEnter;
+      io.writeUint8(Register.GPENTH, gestureThresholdEnter);
+    }
+
+    if (gestureThresholdExit !== undefined) {
+      if (gestureThresholdExit < 0 || gestureThresholdExit > 0xFF)
+        throw new RangeError("invalid gestureThresholdExit");
+
+      configuration.gestureThresholdExit = gestureThresholdExit;
+      io.writeUint8(Register.GEXTH, gestureThresholdExit);
     }
 
     if (on !== undefined || enableALS !== undefined || alsThresholdLow !== undefined || alsThresholdHigh !== undefined || proximityThresholdHigh !== undefined || proximityThresholdLow !== undefined) {
@@ -337,7 +402,55 @@ class Sensor {
       }
     }
 
-    return result;
+    if (enabled.GEN) {
+      const gStatus = io.readUint8(Register.GSTATUS);
+      if (gStatus & 0x01) {
+        const count = io.readUint8(Register.GFLVL);
+        const data = io.readBuffer(Register.GFIFO_U, count * 4);
+        const view = new DataView(data);
+
+        if (count >= 4) {
+          let first = [-1, -1, -1, -1];
+          // let last = [-1, -1, -1, -1];  // not yet used
+          const enter = configuration.gestureThresholdEnter;
+          const exit = configuration.gestureThresholdExit;
+
+          for (let i = 0; i < count; i++) {
+            for (let j = 0; j < 4; j++) {
+              const value = view.getUint8((4*i) + j);
+
+              if (value >= enter && (first[j] == -1))
+                first[j] = i;
+
+              // if (value >= exit && (first[j] !== -1))
+              //   last[j] = i;
+            }
+          }
+          
+          if (first.every(element => { return element >= 0; })) {
+            const deltaUpDown = first[0] - first[1];
+            const deltaLeftRight = first[2] - first[3];
+
+            if (Math.abs(deltaUpDown) > Math.abs(deltaLeftRight)) {
+              if (deltaUpDown < 0) {
+                result.gestureDetector = {gesture: "DOWN"};
+              } else {
+                result.gestureDetector = {gesture: "UP"};
+              }
+            } else {
+              if (deltaLeftRight < 0) {
+                result.gestureDetector = {gesture: "RIGHT"};
+              } else {
+                result.gestureDetector = {gesture: "LEFT"};
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (Object.keys(result).length > 0)
+      return result;
   }
 
   close() {

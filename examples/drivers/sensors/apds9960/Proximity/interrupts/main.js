@@ -32,6 +32,7 @@ let sensor = new APDS9960({
 
 sensor.configure({
 	enableALS: false,
+	enableGesture: false,
 	enableProximity: true,
 	proximityGain: 2,
 	proximityThresholdHigh: 100,
