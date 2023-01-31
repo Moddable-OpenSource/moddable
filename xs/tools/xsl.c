@@ -808,6 +808,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 				return XS_NO_ID;
 		}
 		*slash = 0;
+		if ((c_strlen(buffer) + c_strlen(name + dot)) >= sizeof(buffer))
+			mxRangeError("path too long");
 		c_strcat(buffer, name + dot);
 	}
 	else
