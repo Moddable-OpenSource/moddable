@@ -449,13 +449,7 @@ void fx_DisposableStack_prototype_adopt(txMachine* the)
 	fxDisposableStackPush(the, property);
 	property->value.disposableStack.stack->flag |= XS_BASE_FLAG;
 	mxPop();
-	mxPop();
-}
-
-void fx_DisposableStack_prototype_aux(txMachine* the)
-{
-	
-	
+	mxPullSlot(mxResult);
 }
 
 void fx_DisposableStack_prototype_defer(txMachine* the)
@@ -557,7 +551,7 @@ void fx_DisposableStack_prototype_use(txMachine* the)
 	txSlot* instance = fxCheckDisposableStackInstance(the, mxThis, 1, 1);
 	txSlot* property = instance->next;
 	txSlot* resource;
-	if (mxArgc > 0) 
+	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
 		mxPushUndefined();
@@ -568,7 +562,7 @@ void fx_DisposableStack_prototype_use(txMachine* the)
 		fxDisposableStackPush(the, property);
 		mxPop();
 	}
-	mxPop();
+	mxPullSlot(mxResult);
 }
 
 void fxDisposableStackPush(txMachine* the, txSlot* property)
@@ -577,7 +571,7 @@ void fxDisposableStackPush(txMachine* the, txSlot* property)
 	txSlot* resource = dispose + 1;
 	txSlot** address = &property->value.disposableStack.stack;
 	txSlot* slot;
-	if (!fxIsCallable(the, the->stack))
+	if (!fxIsCallable(the, dispose))
 		mxTypeError("dispose is no function");
 		
 	slot = fxNewSlot(the);
