@@ -32,6 +32,7 @@ const Register = Object.freeze({
   WTIME: 0x83,
   PILT: 0x89,
   PIHT: 0x8B,
+  PROX_PULSE: 0x8E,
   CONTROLONE: 0x8F,
   CONFIGTWO: 0x90,
   ID: 0x92,
@@ -39,8 +40,11 @@ const Register = Object.freeze({
   CDATAL: 0x94,
   CDATAH: 0x95,
   PDATA: 0x9C,
+  POFFSET_UR: 0x9D,
+  POFFSET_DL: 0x9E,
   GPENTH: 0xA0,
   GEXTH: 0xA1,
+  GPULSE: 0xA6,
   GFLVL: 0xAE,
   GSTATUS: 0xAF,
   GFIFO_U: 0xFC,
@@ -135,11 +139,17 @@ class Sensor {
       proximityThresholdPersistence: 3,
       proximityThresholdHigh: 0xFF,
       proximityThresholdLow: 0,
-      gestureThresholdEnter: 10,
-      gestureThresholdExit: 3,
+      gestureThresholdEnter: 70,
+      gestureThresholdExit: 10,
       enableWait: true,
       waitTime: 2.78,
-      LEDBoost: 200
+      LEDBoost: 100,
+      proximityPulseLength: 32,
+      proximityPulseCount:16,
+      proximityOffsetUR: 0,
+      proximityOffsetDL: 0,
+      gesturePulseLength: 32,
+      gesturePulseCount: 16
     });
   }
   
@@ -148,7 +158,8 @@ class Sensor {
           enableALS, on, alsIntegrationCycles, alsGain, proximityGain, alsThresholdHigh, 
           alsThresholdLow, alsThresholdPersistence, proximityThresholdPersistence, enableProximity, 
           proximityThresholdLow, proximityThresholdHigh, enableGesture, gestureThresholdEnter, gestureThresholdExit,
-          enableWait, waitTime, LEDBoost} = options;
+          enableWait, waitTime, LEDBoost, proximityPulseLength, proximityPulseCount, proximityOffsetUR, proximityOffsetDL,
+          gesturePulseLength, gesturePulseCount} = options;
     const configuration = this.#configuration;
     const enabled = this.#configuration.enabled
     const io = this.#io;
@@ -179,6 +190,47 @@ class Sensor {
 
     if (proximityGain !== undefined) {
       configuration.proximityGain = proximityGain;
+    }
+
+    if (proximityPulseLength !== undefined) {
+      if (proximityPulseLength !== 4 && proximityPulseLength !== 8 && proximityPulseLength !== 16 && proximityPulseLength !== 32)
+        throw new RangeError("invalid proximityPulseLength");
+
+      configuration.proximityPulseLength = proximityPulseLength;
+    }
+
+    if (proximityPulseCount !== undefined) {
+      if (proximityPulseCount < 1 || proximityPulseCount > 64)
+        throw new RangeError("invalid proximityPulseCount");
+
+      configuration.proximityPulseCount = proximityPulseCount;
+    }
+
+    if (proximityPulseLength !== undefined || proximityPulseCount !== undefined) {
+      const LENfield = (configuration.proximityPulseLength == 32 ? 3 : Math.floor(configuration.proximityPulseLength / 8)) << 6;
+      const PULSEfield = configuration.proximityPulseCount - 1;
+      const reg = LENfield | PULSEfield;
+      io.writeUint8(Register.PROX_PULSE, reg);
+    }
+
+    if (proximityOffsetUR !== undefined) {
+      if (proximityOffsetUR < -127 || proximityOffsetUR > 127)
+        throw new RangeError("invalid proximityOffsetUR");
+
+      let reg = Math.abs(proximityOffsetUR);
+      if (proximityOffsetUR < 0)
+        reg |= 0b10000000;
+      io.writeUint8(Register.POFFSET_UR);
+    }
+
+    if (proximityOffsetDL !== undefined) {
+      if (proximityOffsetDL < -127 || proximityOffsetDL > 127)
+        throw new RangeError("invalid proximityOffsetDL");
+
+      let reg = Math.abs(proximityOffsetDL);
+      if (proximityOffsetDL < 0)
+        reg |= 0b10000000;
+      io.writeUint8(Register.POFFSET_DL);
     }
 
     if (waitTime !== undefined) { // does not yet support WAITLONG
@@ -255,6 +307,26 @@ class Sensor {
       io.writeUint8(Register.ATIME, regValue);
     }
 
+    if (gesturePulseLength !== undefined) {
+      if (gesturePulseLength !== 4 && gesturePulseLength !== 8 && gesturePulseLength !== 16 && gesturePulseLength !== 32)
+        throw new RangeError("invalid gesturePulseLength");
+
+      configuration.gesturePulseLength = gesturePulseLength;
+    }
+
+    if (gesturePulseCount !== undefined) {
+      if (gesturePulseCount < 1 || gesturePulseCount > 64)
+        throw new RangeError("invalid gesturePulseCount");
+
+      configuration.gesturePulseCount = gesturePulseCount;
+    }
+
+    if (gesturePulseLength !== undefined || gesturePulseCount !== undefined) {
+      const LENfield = (configuration.gesturePulseLength == 32 ? 3 : Math.floor(configuration.gesturePulseLength / 8)) << 6;
+      const PULSEfield = configuration.gesturePulseCount - 1;
+      const reg = LENfield | PULSEfield;
+      io.writeUint8(Register.GPULSE, reg);
+    }
 
     // Alert Thresholds
     if (alsThresholdLow !== undefined) {
@@ -395,10 +467,10 @@ class Sensor {
     }
     
     // APDS-9960 datasheet offers no guidance on converting from raw values to distance, so "distance" is not provided in this driver's sample.
-    // `proximity` value is [0,1] from nothing sensed to proximity sensor saturated
+    // `proximity` value is [0,1] from nothing sensed to max saturation
     if (enabled.PEN && status & 0b00000010) {
       result.proximity = {
-        proximity: io.readUint8(Register.PDATA)
+        proximity: (io.readUint8(Register.PDATA)  / 0xFF)
       }
     }
 
@@ -433,15 +505,15 @@ class Sensor {
 
             if (Math.abs(deltaUpDown) > Math.abs(deltaLeftRight)) {
               if (deltaUpDown < 0) {
-                result.gestureDetector = {gesture: "DOWN"};
-              } else {
                 result.gestureDetector = {gesture: "UP"};
+              } else {
+                result.gestureDetector = {gesture: "DOWN"};
               }
             } else {
               if (deltaLeftRight < 0) {
-                result.gestureDetector = {gesture: "RIGHT"};
-              } else {
                 result.gestureDetector = {gesture: "LEFT"};
+              } else {
+                result.gestureDetector = {gesture: "RIGHT"};
               }
             }
           }
