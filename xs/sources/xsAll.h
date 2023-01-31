@@ -272,6 +272,7 @@ typedef union {
 	struct { txSlot* target; txSlot* link; } weakRef;
 	struct { txSlot* callback; txUnsigned flags; } finalizationRegistry;
 	struct { txSlot* target; txSlot* token; } finalizationCell;
+	struct { txSlot* stack; txBoolean disposed; } disposableStack;
 	
 	struct { txSlot* getter; txSlot* setter; } accessor;
 	struct { txU4 index; txID id; } at;
@@ -1040,6 +1041,14 @@ mxExport void fx_Error_prototype_get_stack(txMachine* the);
 
 extern void fxBuildError(txMachine* the);
 extern void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame);
+
+mxExport void fx_DisposableStack(txMachine* the);
+mxExport void fx_DisposableStack_prototype_get_disposed(txMachine* the);
+mxExport void fx_DisposableStack_prototype_adopt(txMachine* the);
+mxExport void fx_DisposableStack_prototype_defer(txMachine* the);
+mxExport void fx_DisposableStack_prototype_dispose(txMachine* the);
+mxExport void fx_DisposableStack_prototype_move(txMachine* the);
+mxExport void fx_DisposableStack_prototype_use(txMachine* the);
 
 /* xsNumber.c */
 mxExport void fx_isFinite(txMachine* the);
@@ -1990,6 +1999,7 @@ enum {
 	XS_BUFFER_INFO_KIND,
 	XS_MODULE_SOURCE_KIND,
 	XS_IDS_KIND,
+	XS_DISPOSABLE_STACK_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,
@@ -2464,6 +2474,7 @@ enum {
 	mxModuleSourcePrototypeStackIndex,
 	mxWeakRefPrototypeStackIndex,
 	mxFinalizationRegistryPrototypeStackIndex,
+	mxDisposableStackPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
 	mxAssignObjectFunctionStackIndex,
@@ -2548,6 +2559,7 @@ enum {
 #define mxCompartmentConstructor the->stackPrototypes[-1 - _Compartment]
 #define mxDataViewConstructor the->stackPrototypes[-1 - _DataView]
 #define mxDateConstructor the->stackPrototypes[-1 - _Date]
+#define mxDisposableStackConstructor the->stackPrototypes[-1 - _DisposableStack]
 #define mxErrorConstructor the->stackPrototypes[-1 - _Error]
 #define mxEvalErrorConstructor the->stackPrototypes[-1 - _EvalError]
 #define mxFinalizationRegistryConstructor the->stackPrototypes[-1 - _FinalizationRegistry]
@@ -2638,6 +2650,7 @@ enum {
 #define mxModuleSourcePrototype the->stackPrototypes[-1 - mxModuleSourcePrototypeStackIndex]
 #define mxWeakRefPrototype the->stackPrototypes[-1 - mxWeakRefPrototypeStackIndex]
 #define mxFinalizationRegistryPrototype the->stackPrototypes[-1 - mxFinalizationRegistryPrototypeStackIndex]
+#define mxDisposableStackPrototype the->stackPrototypes[-1 - mxDisposableStackPrototypeStackIndex]
 
 #define mxEmptyCode the->stackPrototypes[-1 - mxEmptyCodeStackIndex]
 #define mxEmptyString the->stackPrototypes[-1 - mxEmptyStringStackIndex]

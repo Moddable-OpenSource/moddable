@@ -142,6 +142,14 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Date);
 				fxStripCallback(linker, fx_Date_secure);
 			}
+			else if (!c_strcmp(name, "DisposableStack")) {
+				fxStripCallback(linker, fx_DisposableStack);
+				fxStripCallback(linker, fx_DisposableStack_prototype_get_disposed);
+				fxStripCallback(linker, fx_DisposableStack_prototype_adopt);
+				fxStripCallback(linker, fx_DisposableStack_prototype_dispose);
+				fxStripCallback(linker, fx_DisposableStack_prototype_move);
+				fxStripCallback(linker, fx_DisposableStack_prototype_use);
+			}
 			else if (!c_strcmp(name, "FinalizationRegistry"))
 				fxStripCallback(linker, fx_FinalizationRegistry);
 			else if (!c_strcmp(name, "Float32Array")) {
@@ -334,6 +342,9 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Date_prototype_toString);
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);
+	}
+	if (fxIsCallbackStripped(linker, fx_DisposableStack)) {
+		fxStripClass(linker, the, &mxDisposableStackConstructor);
 	}
 	if (fxIsCallbackStripped(linker, fx_FinalizationRegistry)) {
 		fxStripClass(linker, the, &mxFinalizationRegistryConstructor);
