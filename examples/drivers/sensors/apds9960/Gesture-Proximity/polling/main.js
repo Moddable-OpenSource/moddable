@@ -24,6 +24,7 @@ let sensor = new APDS9960({
 
 sensor.configure({
 	enableALS: false,
+	enableGesture: true,
 	enableProximity: true,
 	proximityGain: 2
 });
@@ -34,4 +35,4 @@ trace(`Sensor identification is: ${JSON.stringify(sensor.identification)}\n`);
 Timer.repeat(() => {
 	const sample = sensor.sample();
 	trace(`${JSON.stringify(sample)}\n`);
-}, 1000);
+}, 200);
