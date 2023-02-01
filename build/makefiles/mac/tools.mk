@@ -277,9 +277,10 @@ endif
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(INSTRUMENTATION) $(COMMODETTO) ${CRYPT}/etc ${CRYPT}/arith ${CRYPT}/digest ${CRYPT}/digest/kcl $(TOOLS) $(TMP_DIR),-I$(dir))
 
 MACOS_ARCH ?=
+MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
 
 # C_FLAGS = -c -arch i386
-C_FLAGS = -c $(MACOS_ARCH)
+C_FLAGS = -c $(MACOS_ARCH) $(MACOS_VERSION_MIN)
 
 ifeq ($(GOAL),debug)
 	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
@@ -290,7 +291,7 @@ endif
 LIBRARIES = -framework CoreServices
 
 # LINK_FLAGS = -arch i386
-LINK_FLAGS = $(MACOS_ARCH)
+LINK_FLAGS = $(MACOS_ARCH) $(MACOS_VERSION_MIN)
 
 XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid

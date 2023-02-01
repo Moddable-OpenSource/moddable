@@ -94,8 +94,10 @@ endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 MACOS_ARCH ?=
+MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
+
 # XS_C_FLAGS = -c -arch i386
-XS_C_FLAGS = -c $(MACOS_ARCH)
+XS_C_FLAGS = -c $(MACOS_ARCH) $(MACOS_VERSION_MIN)
 ifeq ($(DEBUG),)
 	XS_C_FLAGS += -D_RELEASE=1 -O3
 else
@@ -107,7 +109,7 @@ C_FLAGS = $(XS_C_FLAGS)
 LIBRARIES = -framework CoreFoundation -framework CoreServices -framework Cocoa
 
 # LINK_FLAGS = -arch i386 -ObjC
-LINK_FLAGS = -ObjC $(MACOS_ARCH)
+LINK_FLAGS = -ObjC $(MACOS_ARCH) $(MACOS_VERSION_MIN)
 
 MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
 XSC = $(BUILD_DIR)/bin/mac/debug/xsc
