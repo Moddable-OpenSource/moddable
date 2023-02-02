@@ -1,6 +1,6 @@
 # Setup
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: June 27, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: February 1, 2023
 
 ## Background
 The use of JavaScript on a minimal MCU requires an extremely lightweight runtime. One obvious way to keep the runtime small is to only include functionality which is required by the application being run. For example, while a modern Linux, macOS, or Windows distribution includes drivers for a wide variety of displays to support whatever the user may connect, an efficient MCU distribution only includes a single display driver to support the built-in display of the device. Consequently, each device configuration (MCU + display + network capabilities, etc) is distinct.
@@ -10,7 +10,7 @@ While an infinite number of hardware configurations with supporting software fra
 In some deployments, the configuration and instantiation is performed by the application. Often however, it is convenient to share these tasks for a given hardware configuration across applications. This is the case with example code, which should be kept as simple and focused as possible, and early versions of device applications which can accept the default configuration.
 
 ### setup module
-The configuration and instantiation may be implemented in one or more setup modules. All setup modules run before the main module, preparing the environment the main module requires. For example, there are two primary set-up modules for Moddable Zero. The `setup/network` module establishes a Wi-Fi connection, retrieves an IP address, and sets the real time clock. The `setup/piu` module instantiates the display and touch drivers and binds them to the global variable `screen`.
+The configuration and instantiation may be implemented in one or more setup modules. Set up modules are identified by having a module specified that begins with `setup/`. All setup modules run before the main module, preparing the environment the main module requires. For example, there are two primary set-up modules for Moddable Zero. The `setup/network` module establishes a Wi-Fi connection, retrieves an IP address, and sets the real time clock. The `setup/piu` module instantiates the display and touch drivers and binds them to the global variable `screen`.
 
 Usually applications do not need to explicitly include the setup modules in their manifest as they are included by the manifests that require them. For example the `example/manifest_network.json` manifest includes `setup/network`, and the `example/manifest_piu.json` manifest includes `setup/piu`.
 
