@@ -166,13 +166,13 @@ The `-d` option on the `mcconfig` command line selects a debug build.
 
 <a id="build-instrumented"></a>
 ### Instrumented
-A debug build is used for debugging native code. In an instrumented build, the ESP-IDF logging is enabled and the GDB stub is present. The JavaScript debugger is disabled. The instrumentation data usually available in xsbug in output to the serial console once a second.
+A debug build is used for debugging native code. In an instrumented build, the ESP-IDF logging is enabled and the GDB stub is present. The JavaScript debugger is disabled. The instrumentation data usually available in xsbug is output to the serial console once a second.
 
 The `-i` option on the `mcconfig` command line selects an instrumented build.
 
 <a id="build-release"></a>
 ### Release
-A release build is for for production. In a release build, the ESP-IDF logging is disabled, the GDB stub is not present, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed.
+A release build is for production. In a release build, the ESP-IDF logging is disabled, the GDB stub is not present, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed.
 
 Omitting the `-d` and `-i` options on the `mcconfig` command line selects a release. Note that `-r` specifies rotation rather than selecting a release build.
 
