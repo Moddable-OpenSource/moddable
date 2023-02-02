@@ -180,8 +180,8 @@ $(OBJECTS) : $(SRC_DIR)\xsScript.h
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
 	rename *.obj *.o
-{$(MODDABLE)\modules\datatext\decoder\}.c{$(TMP_DIR)\}.o:
-	cd $(TMP_DIR)
+{$(MODDABLE)\modules\data\text\decoder\}.c{$(TMP_DIR)\}.o:
+	cd $(TMP_DIR) 
 	cl $< $(C_OPTIONS)
 	rename *.obj *.o
 {$(MODDABLE)\modules\data\text\encoder\}.c{$(TMP_DIR)\}.o:
