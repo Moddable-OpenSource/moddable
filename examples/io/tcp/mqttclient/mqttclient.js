@@ -712,7 +712,7 @@ class MQTTClient {
 		if ((options.last + (interval + (interval >> 1))) < now)
 			return void this.#onError("time out"); // no response in too long
 
-		for (let i = 0, queue = this.#queue, length = queue.length; i < length; i++) {
+		for (let i = 0, queue = this.#options.pending, length = queue.length; i < length; i++) {
 			if (queue[i].keepalive && (MQTTClient.PINGREQ === queue[i].operation))
 				return void this.#onError("time out"); // unsent keepalive ping, exit
 		}
