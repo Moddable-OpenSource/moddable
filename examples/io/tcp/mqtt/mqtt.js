@@ -69,7 +69,7 @@ export class Client {
 		let will = null;
 		if (options) {
 			if ("clientId" in options)
-				id = clientId
+				id = options.clientId
 			if ("keepalive" in options)
 				keepalive = 1000 * options.keepalive
 			if ("password" in options)
@@ -85,9 +85,9 @@ export class Client {
 				};
 			}
 			if ("reconnectPeriod" in options)
-				this.#reconnectPeriod = reconnectPeriod;
+				this.#reconnectPeriod = options.reconnectPeriod
 			if ("resubscribe" in options)
-				this.#resubscribe = resubscribe;
+				this.#resubscribe = options.resubscribe
 		}
 		this.#options = {
 			...device.network.mqtt,
