@@ -142,25 +142,32 @@ void fxOpenSerial(txSerialTool self)
 	case 38400: speed = B38400; break;
 	case 19200: speed = B19200; break;
 	case 9600: speed = B9600; break;
-	default: speed = self->baud; break;
+	default: speed = BOTHER; break;
 	}
-	term.c_cflag = speed | CS8 | CLOCAL | CREAD;
-	term.c_ispeed = speed;
-	term.c_ospeed = speed;
+	// we need a raw terminal, start with zeroed termios and set all fields
+	// it's possible that using tcgetattr and then overriding everything is safer, hard to tell
+	memset(&term, 0, sizeof(term));
+	term.c_cflag = CS8 | CLOCAL | CREAD;
 	term.c_iflag = IGNPAR;
-	term.c_oflag &= ~ONLCR;
+	term.c_oflag = 0;
 	term.c_lflag = 0;
 	term.c_cc[VTIME] = 0;
 	term.c_cc[VMIN] = 1;
+	cfsetspeed(&term, speed == BOTHER ? B115200 : speed); // adjust below in case of BOTHER
 	mxThrowElse(tcsetattr(self->serialConnection, TCSANOW, &term) == 0);
 	tcflush(self->serialConnection, TCIFLUSH);
+
+	// prevent interference by ModemManager, et. al.
+	ioctl(self->serialConnection, TIOCEXCL, NULL);
+
+	// handle non-standard speeds
 	if (speed == BOTHER) {
 		struct termios2 tio2;
 		ioctl(self->serialConnection, TCGETS2, &tio2);
-		term.c_cflag &= ~CBAUD;
-		term.c_cflag |= BOTHER;
-		term.c_ispeed = self->baud;
-		term.c_ospeed = self->baud;
+		tio2.c_cflag &= ~CBAUD;
+		tio2.c_cflag |= BOTHER;
+		tio2.c_ispeed = self->baud;
+		tio2.c_ospeed = self->baud;
 		ioctl(self->serialConnection, TCSETS2, &tio2);
 	}
 	usleep(5000);

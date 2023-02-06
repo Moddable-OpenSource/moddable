@@ -338,7 +338,9 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 		aSlot++;
 	}
 	
-	if (!theFlag) {
+	if (theFlag) 
+		the->collectFlag &= ~XS_TRASHING_FLAG;
+	else  {
 		if ((the->maximumHeapCount - the->currentHeapCount) < the->minimumHeapCount)
 				the->collectFlag |= XS_TRASHING_FLAG;
 			else
@@ -564,7 +566,7 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 		theCount -= 1;
 	}
 	else {
-		the->maximumHeapCount += theCount;
+		the->maximumHeapCount += theCount - 1;
 		aHeap->next = the->firstHeap;
 		aHeap->ID = 0;
 		aHeap->flag = 0;

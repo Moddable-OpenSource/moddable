@@ -2173,6 +2173,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	else
 		slash = path;
 	*slash = 0;
+	if ((c_strlen(path) + c_strlen(name + dot)) >= sizeof(path))
+		xsRangeError("path too long");
 	c_strcat(path, name + dot);
 	return fxNewNameC(the, path);
 }

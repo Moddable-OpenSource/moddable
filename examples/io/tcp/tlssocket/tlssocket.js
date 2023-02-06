@@ -145,8 +145,10 @@ class TLSSocket {
 		}
 
 		const data = this.#session.read(this.#socket);
-		if (!data)
+		if (undefined === data)		// nothing to read
 			return;
+		if (null === data)		// closed
+			return void this.#onError();
 		data.position = 0;
 		const readable = data.byteLength;
 		if (!readable)
