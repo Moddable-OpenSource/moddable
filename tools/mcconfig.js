@@ -762,6 +762,7 @@ export default class extends Tool {
 		}
 		else
 			this.fragmentPath = path;
+		this.nativeCode = true;
 	}
 	createDirectories(path, first, last) {
 		this.createDirectory(path);
