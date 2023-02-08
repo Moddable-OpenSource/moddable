@@ -1851,6 +1851,25 @@ int fuzz(int argc, char* argv[])
 }
 #endif 
 #if OSSFUZZ
+
+#if mxMetering
+#ifndef mxFuzzMeter
+	// highest rate for test262 corpus was 2147483800
+	#define mxFuzzMeter (214748380)
+#endif
+
+static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
+{
+	// may be useful to print current index for debugging
+//	fprintf(stderr, "Current index: %u\n", index);
+	if (index > mxFuzzMeter) {
+//		fprintf(stderr, "Computation limits reached (index %u). Exiting...\n", index);
+		return 0;
+	}
+	return 1;
+}
+#endif
+
 int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
 	xsCreation _creation = {
@@ -1876,70 +1895,83 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	fxInitializeSharedCluster();
 	machine = xsCreateMachine(creation, "xst", NULL);
 
-	xsBeginHost(machine);
+	xsBeginMetering(machine, xsWithinComputeLimit, 1);
 	{
-		xsTry {
-			xsVars(2);
-			modInstallTextDecoder(the);
-			xsResult = xsArrayBuffer(buffer, script_size);
-			xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
-			xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
-#ifdef OSSFUZZ_JSONPARSE
-			xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
-			xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
-#else
-			xsToStringBuffer(xsResult, buffer, buffer_size);
+		xsBeginHost(machine);
+		{
+			xsTry {
+				xsVars(2);
+				modInstallTextDecoder(the);
+				xsResult = xsArrayBuffer(buffer, script_size);
+				xsVar(0) = xsNew0(xsGlobal, xsID("TextDecoder"));
+				xsResult = xsCall1(xsVar(0), xsID("decode"), xsResult);
+	#ifdef OSSFUZZ_JSONPARSE
+				xsVar(0) = xsGet(xsGlobal, xsID("JSON"));
+				xsResult = xsCall1(xsVar(0), xsID("parse"), xsResult);
+	#else
+				xsToStringBuffer(xsResult, buffer, buffer_size);
 
-			// hardened javascript
-			xsResult = xsNewHostFunction(fx_harden, 1);
-			xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
-			xsResult = xsNewHostFunction(fx_lockdown, 0);
-			xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
-			xsResult = xsNewHostFunction(fx_petrify, 1);
-			xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
-			xsResult = xsNewHostFunction(fx_mutabilities, 1);
-			xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+				// hardened javascript
+				xsResult = xsNewHostFunction(fx_harden, 1);
+				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_lockdown, 0);
+				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_petrify, 1);
+				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
+				xsResult = xsNewHostFunction(fx_mutabilities, 1);
+				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
 
-			xsResult = xsNewHostFunction(fx_gc, 0);
-			xsSet(xsGlobal, xsID("gc"), xsResult);
-			xsResult = xsNewHostFunction(fx_print, 1);
-			xsSet(xsGlobal, xsID("print"), xsResult);
+				xsResult = xsNewHostFunction(fx_gc, 0);
+				xsSet(xsGlobal, xsID("gc"), xsResult);
+				xsResult = xsNewHostFunction(fx_print, 1);
+				xsSet(xsGlobal, xsID("print"), xsResult);
 
-			// test262 stubs
-			xsVar(0) = xsNewHostFunction(fx_nop, 1);
-			xsDefine(xsGlobal, xsID("assert"), xsVar(0), xsDontEnum);
-			xsDefine(xsVar(0), xsID("sameValue"), xsVar(0), xsDontEnum);
-			xsDefine(xsVar(0), xsID("notSameValue"), xsVar(0), xsDontEnum);
-			xsVar(1) = xsNewHostFunction(fx_assert_throws, 1);
-			xsDefine(xsVar(0), xsID("throws"), xsVar(1), xsDontEnum);
-			
-			txStringCStream aStream;
-			aStream.buffer = buffer;
-			aStream.offset = 0;
-			aStream.size = strlen(buffer);
-			// run script
-			txSlot* realm = mxProgram.value.reference->next->value.module.realm;
-			the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
-			fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
-			the->script = NULL;
-			mxPullSlot(mxResult);
-			fxRunLoop(the);
-#endif
+				// test262 stubs
+				xsVar(0) = xsNewHostFunction(fx_nop, 1);
+				xsDefine(xsGlobal, xsID("assert"), xsVar(0), xsDontEnum);
+				xsDefine(xsVar(0), xsID("sameValue"), xsVar(0), xsDontEnum);
+				xsDefine(xsVar(0), xsID("notSameValue"), xsVar(0), xsDontEnum);
+				xsVar(1) = xsNewHostFunction(fx_assert_throws, 1);
+				xsDefine(xsVar(0), xsID("throws"), xsVar(1), xsDontEnum);
+				
+				txStringCStream aStream;
+				aStream.buffer = buffer;
+				aStream.offset = 0;
+				aStream.size = strlen(buffer);
+				// run script
+				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
+				the->script = fxParseScript(the, &aStream, fxStringCGetter, mxProgramFlag | mxDebugFlag);
+				fxRunScript(the, the->script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+				the->script = NULL;
+				mxPullSlot(mxResult);
+				fxRunLoop(the);
+	#endif
+			}
+			xsCatch {
+				the->script = NULL;
+			}
 		}
-		xsCatch {
-			the->script = NULL;
-		}
+		xsEndHost(machine);
 	}
-	xsEndHost(machine);
+	xsEndMetering(machine);
 	fxDeleteScript(machine->script);
 	xsDeleteMachine(machine);
 	fxTerminateSharedCluster();
 	free(buffer);
 	return 0;
 }
+
+const char *__lsan_default_suppressions()
+{
+	return	"leak:fxStringifyJSONChars\n"
+			"leak:fxStringifyJSONCharacter\n"
+			"leak:fxStringifyJSON\n"
+			"leak:fxParserCode\n";
+}
+
 #endif 
 
-#if FUZZING || FUZZILLI
+#if 1 || FUZZING || FUZZILLI
 
 void fx_fillBuffer(txMachine *the)
 {
@@ -1993,8 +2025,8 @@ void fxRunLoop(txMachine* the)
 	txJob* job;
 	txJob** address;
 	
-	fxEndJob(the);
 	for (;;) {
+		fxEndJob(the);
 		while (the->promiseJobs) {
 			while (the->promiseJobs) {
 				the->promiseJobs = 0;
@@ -2141,6 +2173,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	else
 		slash = path;
 	*slash = 0;
+	if ((c_strlen(path) + c_strlen(name + dot)) >= sizeof(path))
+		xsRangeError("path too long");
 	c_strcat(path, name + dot);
 	return fxNewNameC(the, path);
 }

@@ -14,8 +14,6 @@
 
 import Timer from "timer";
 
-const none = Object.freeze([]);
-
 class FT6206  {
 	#io;
 
@@ -118,8 +116,13 @@ class FT6206  {
 		const io = this.#io;
 
 		const length = Math.min(io.readUint8(0x02) & 0x0F, io.length ?? 2);			// number of touches
-		if (0 === length)
-			return none;
+		if (0 === length) {
+			if (io.none)
+				return;
+			io.none = true;
+			return [];
+		}
+		delete io.none;
 
 		const data = io.buffer;
 		const count = io.readBuffer(0x03, data);

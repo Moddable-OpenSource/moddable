@@ -1181,7 +1181,8 @@ void fxRunPromiseJobs(txMachine* the)
 			}
 			mxRunCount(count - 6);
 			mxPop();
-// 			fxEndJob(the);
+			if (mxDuringJobs.kind == XS_REFERENCE_KIND)
+				mxDuringJobs.value.reference->next = C_NULL;
 		}
 		mxCatch(the) {
 			fxAbort(the, XS_UNHANDLED_EXCEPTION_EXIT);

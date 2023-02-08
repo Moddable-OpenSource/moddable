@@ -375,7 +375,7 @@ PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)\partitions.csv
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)\partition_table\$(PARTITIONS_BIN)
 
-!IF [fc $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv > nul] == 1
+!IF [fc $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv > nul 2> nul] == 1
 !IF [copy /Y $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv] == 0
 !IF [copy /b $(PROJ_DIR)\partitions.csv+,, $(PROJ_DIR)\partitions.csv] == 0
 !ENDIF

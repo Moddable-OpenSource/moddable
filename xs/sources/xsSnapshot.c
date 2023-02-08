@@ -1318,20 +1318,21 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			fxLinkChunks(the);
 
 			{
-            	txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
-            	txSlot* slot = mxRealmTemplateCache(realm);
-				slot = slot->value.reference->next;
-				while (slot) {
-					txString name = fxGetKeyName(the, slot->ID);
-					if (name) {
-						txString hash = c_strrchr(name, '#');
-						if (hash) {
-							txInteger tag = (txInteger)fxStringToNumber(the->dtoa, hash + 1, 1);
-							if (the->tag <= tag)
-								the->tag = tag + 1;
+				txID keyIndex = 0;
+				while (keyIndex < the->keyIndex) {
+					txSlot* slot = the->keyArray[keyIndex];
+					if (slot->kind == XS_KEY_KIND) {
+						txString name = slot->value.key.string;
+						if (name) {
+							txString hash = c_strrchr(name, '#');
+							if (hash) {
+								txInteger tag = (txInteger)fxStringToNumber(the->dtoa, hash + 1, 1);
+								if (the->tag <= tag)
+									the->tag = tag + 1;
+							}
 						}
 					}
-					slot = slot->next;
+					keyIndex++;
 				}
 			}
 
@@ -1905,7 +1906,6 @@ void fxWriteStack(txMachine* the, txSnapshot* snapshot)
 int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 {
 	txSlot* heap;
-	txSize heapCount;
 	txSlot* stack;
 	txSlot** slots;
 	txSize size;
@@ -1924,13 +1924,6 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		snapshot->error = 0;
 		fxCollectGarbage(the);
 		fxUnlinkChunks(the);
-		
-		heap = the->firstHeap;
-		heapCount = 0;
-		while (heap) {
-			heapCount++;
-			heap = heap->next;
-		}
 		
 		fxIndexSlots(the, snapshot);
 	
@@ -1954,7 +1947,7 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	
 		creation.initialChunkSize = the->maximumChunksSize;
 		creation.incrementalChunkSize = the->minimumChunksSize;
-		creation.initialHeapCount = the->maximumHeapCount - heapCount + 1;
+		creation.initialHeapCount = the->maximumHeapCount + 1;
 		creation.incrementalHeapCount = the->minimumHeapCount;
 		creation.stackCount = (txSize)(the->stackTop - the->stackBottom);
 		creation.keyCount = the->keyCount;

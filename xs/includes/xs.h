@@ -1253,6 +1253,38 @@ struct xsCreationRecord {
 		break; \
 	} while(1)
 
+#ifdef mxMetering
+
+#define xsBeginMetering(_THE, _CALLBACK, _STEP) \
+	do { \
+		xsJump __HOST_JUMP__; \
+		__HOST_JUMP__.nextJump = (_THE)->firstJump; \
+		__HOST_JUMP__.stack = (_THE)->stack; \
+		__HOST_JUMP__.scope = (_THE)->scope; \
+		__HOST_JUMP__.frame = (_THE)->frame; \
+		__HOST_JUMP__.environment = NULL; \
+		__HOST_JUMP__.code = (_THE)->code; \
+		__HOST_JUMP__.flag = 0; \
+		(_THE)->firstJump = &__HOST_JUMP__; \
+		if (setjmp(__HOST_JUMP__.buffer) == 0) { \
+			fxBeginMetering(_THE, _CALLBACK, _STEP)
+
+#define xsEndMetering(_THE) \
+			fxEndMetering(_THE); \
+		} \
+		(_THE)->stack = __HOST_JUMP__.stack, \
+		(_THE)->scope = __HOST_JUMP__.scope, \
+		(_THE)->frame = __HOST_JUMP__.frame, \
+		(_THE)->code = __HOST_JUMP__.code, \
+		(_THE)->firstJump = __HOST_JUMP__.nextJump; \
+		break; \
+	} while(1)
+
+#else
+	#define xsBeginMetering(_THE, _CALLBACK, _STEP)
+	#define xsEndMetering(_THE)
+#endif
+
 enum {	
 	xsNoID = 0,
 	xsDefault = 0,

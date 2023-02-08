@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/Temperature/AMG88xx": "$(MODDABLE)/modules/drivers/sensors/amg88xx/amg88xx"
+	},
+	"preload": [
+		"embedded:sensor/Temperature/AMG88xx"
+	]
+}
+

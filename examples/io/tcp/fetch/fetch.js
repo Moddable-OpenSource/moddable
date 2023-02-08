@@ -34,7 +34,7 @@ function Client(url) {
 				...device.network.http,
 				host, 
 				port,  
-				onClose() {
+				onError() {
 					clients.delete(origin);
 					this.close();
 				}
@@ -46,7 +46,7 @@ function Client(url) {
 				...device.network.https,
 				host, 
 				port,  
-				onClose() {
+				onError() {
 					clients.delete(origin);
 					this.close();
 				}
@@ -238,7 +238,7 @@ function fetch(href, info = {}) {
 							this.write();
 					}
 				},
-				onDone() {
+				onDone(error) {
 					resolveBody(buffer);
 				}
 			});

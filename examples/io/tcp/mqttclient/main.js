@@ -20,8 +20,6 @@ const mqtt = new MQTTClient({
 	host: "test.mosquitto.org",
 	port: 1883,
 	id: "ecma-419 mqtt test",
-	user: "rw",
-	password: "readwrite",
 	keepalive: 60_000,		// keepalive is optional for MQTT, but a non-zero value is required by test.mosquitto.org!
 	will: {
 		topic: "foo/bar/will",

@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/hc-sr04/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"platforms": {
+		"esp32": {
+			"config": {
+				"triggerPins": [13, 14, 27],
+				"echoPin": 12
+			}
+		},
+		"...": {
+			"error": "pulse width unsupported"
+		}
+	}
+}

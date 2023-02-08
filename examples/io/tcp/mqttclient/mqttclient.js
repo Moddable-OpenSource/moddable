@@ -94,7 +94,7 @@ class MQTTClient {
 						...options.socket,
 						address,
 						host,
-						port: this.#options.port ?? 80,
+						port: this.#options.port ?? 1883,
 						onReadable: this.#onReadable.bind(this),
 						onWritable: this.#onWritable.bind(this),
 						onError: this.#onError.bind(this)
@@ -662,15 +662,19 @@ class MQTTClient {
 				this.#options.onWritable?.call(this, this.#writable - Overhead);
 		}
 	}
-	#onError() {
+	#onError(msg) {
+		trace("mqttClient error: ", msg ?? "unknown", "\n");
 		this.#options.onError?.call(this);
 		this.close();
 	} 
 	#parsed(msg) {
 		const operation = msg.operation;
 // 		traceOperation(false, operation);
-		if (MQTTClient.CONNACK === operation)
+		if (MQTTClient.CONNACK === operation) {
+			if (msg.returnCode)
+				return void this.#onError("connection rejected")
 			this.#state = "connected";
+		}
 		else if ((MQTTClient.PUBREC === operation) || (MQTTClient.PUBREL === operation)) {
 			this.#queue({
 				operation: (MQTTClient.PUBREC === operation) ? MQTTClient.PUBREL : MQTTClient.PUBCOMP,

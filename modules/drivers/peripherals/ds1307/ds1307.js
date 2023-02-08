@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Moddable Tech, Inc.
+ * Copyright (c) 2021-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -45,7 +45,7 @@ class DS1307 {
 		});
 
 		try {
-			io.readByte(0);
+			io.readUint8(0);
 		}
 		catch (e) {
 			io.close();
@@ -65,7 +65,7 @@ class DS1307 {
 		const io = this.#io;
 		const reg = this.#blockBuffer;
 
-		io.readBlock(Register.TIME, reg);
+		io.readBuffer(Register.TIME, reg);
 
 		if (0 != (reg[0] & Register.ENABLE_BIT)) {
 			return undefined;
@@ -93,7 +93,7 @@ class DS1307 {
 		b[5] = decToBcd(now.getUTCMonth() + 1);
 		b[6] = decToBcd(year - 1970);
 
-		this.#io.writeBlock(Register.TIME, b);
+		this.#io.writeBuffer(Register.TIME, b);
 	}
 }
 

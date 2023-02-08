@@ -57,37 +57,45 @@ void xs_neopixel_destructor(void *data)
 void xs_neopixel(xsMachine *the)
 {
 	xsNeoPixel np;
-	int pin, length, wstype;
+	int pin = -1, length = 0, wstype;
 	pixel_settings_t *px;
-	char *order;
+	char *order = NULL;
 	uint8_t shift;
 
 	xsmcVars(3);
+	if (xsmcHas(xsArg(0), xsID_length)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_length);
+		length = xsmcToInteger(xsVar(0));
+	}
 #ifdef MODDEF_NEOPIXEL_LENGTH
-	length = MODDEF_NEOPIXEL_LENGTH;
-#else
-	xsmcGet(xsVar(0), xsArg(0), xsID_length);
-	length = xsmcToInteger(xsVar(0));
+	else
+		length = MODDEF_NEOPIXEL_LENGTH;
+#endif
 	if (!length)
 		xsRangeError("no pixels");
-#endif
 
+	if (xsmcHas(xsArg(0), xsID_pin)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_pin);
+		pin = xsmcToInteger(xsVar(0));
+	}
 #ifdef MODDEF_NEOPIXEL_PIN
-	pin = MODDEF_NEOPIXEL_PIN;
-#else
-	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
-	pin = xsmcToInteger(xsVar(0));
-#endif
-
-#ifdef MODDEF_NEOPIXEL_ORDER
-	order = MODDEF_NEOPIXEL_ORDER;
-#else
-	xsmcGet(xsVar(0), xsArg(0), xsID_order);
-	if (xsmcTest(xsVar(0)))
-		order = xsmcToString(xsVar(0));
 	else
-		order = "GRB";
+		pin = MODDEF_NEOPIXEL_PIN;
 #endif
+	if (pin < 0)
+		xsRangeError("no pin");
+
+	if (xsmcHas(xsArg(0), xsID_order)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_order);
+		if (xsmcTest(xsVar(0)))
+			order = xsmcToString(xsVar(0));
+	}
+#ifdef MODDEF_NEOPIXEL_ORDER
+	else
+		order = MODDEF_NEOPIXEL_ORDER;
+#endif
+	if (!order)
+		order = "GRB";
 
 	wstype = c_strlen(order);
 	if (3 == wstype)

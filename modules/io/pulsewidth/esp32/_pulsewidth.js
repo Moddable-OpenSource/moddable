@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Moddable Tech, Inc.
+ * Copyright (c) 2022-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -36,9 +36,9 @@ class PulseWidth @ "xs_pulsewidth_destructor" {
 PulseWidth.Rising = 1;
 PulseWidth.Falling = 2;
 
-PulseWidth.Floating = 0;
-PulseWidth.PullUp = 1;
-PulseWidth.PullDown = 2;
+PulseWidth.Input = 0;
+PulseWidth.InputPullUp = 1;
+PulseWidth.InputPullDown = 2;
 
 PulseWidth.RisingToFalling = 1;
 PulseWidth.FallingToRising = 2;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -38,7 +38,7 @@ TLS_DIR = $(XS_DIR)/tools
 TMP_DIR = $(BUILD_DIR)/tmp/mac/$(GOAL)/$(NAME)
 
 # MACOS_ARCH ?= -arch i386
-MACOS_ARCH ?= 
+MACOS_ARCH ?=
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
 
 C_OPTIONS =\
