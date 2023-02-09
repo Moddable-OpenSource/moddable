@@ -1,6 +1,6 @@
 # Manifest
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: December 19, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: February 9, 2023
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -220,7 +220,8 @@ The `creation` object defines the creation parameters of the XS machine that wil
 	},
 	"stack": 256,
 	"keys": {
-		"available": 32,
+		"initial": 32,
+		"incremental": 0,
 		"name": 53,
 		"symbol": 3
 	},
@@ -230,6 +231,7 @@ The `creation` object defines the creation parameters of the XS machine that wil
 
 These values correspond to machine allocation values [described](../xs/XS%20in%20C.md#machine-allocation) in the XS in C documentation (the sole exception is the `main` property, which is the module specifier of the module to load following the [set-up phase](../base/setup.md)). Take care when changing these values as configuring them improperly can result in an unstable or unusable system. Bigger values are not always better, especially on devices with limited resources.
 
+#### `static` memory allocations
 The `static` property is the most important for microcontrollers. It is the total number of bytes that can be used by the JavaScript language runtime, including the stack, objects, byte-code, strings, etc. It is allocated as a single block of memory to minimize bookkeeping overhead and to allow the runtime to dynamically manage areas for fixed size slots and variable sized chunks. The `static` property also imposes a strict limit on the memory allocated by the language runtime to guarantee that scripts cannot exceed their memory budget (if they could, a script could take memory required by the host OS leading to failures and instabilities).
 
 The `static` property is ignored by the simulator. The simulator falls back to on-demand memory allocation. Since computers have nearly infinite memory compared to microcontrollers, this isn't a problem.
@@ -248,6 +250,11 @@ Using this approach, the memory allocator on the microcontroller allocates the f
 - one or more memory blocks for the slot heap
 
 > **Note**: The microcontroller runtime could be enhanced to allocate the chunk heap across multiple memory blocks; to-date this has not been necessary. The chunk heap is allocated before the stack and slot heap, allowing it to allocate the largest possible contiguous free block.
+
+#### `keys`
+the VM allocates space for `keys.initial` runtime keys when the VM is initialized. For embedded projects, this number should be small as most keys are allocated when building, not at runtime. To prevent more keys than this being allocated at runtime, set `keys.incremental` to `0`. To allow additional keys to be allocated, provide a non-zero value for `keys.incremental`.
+
+The `keys` property previously contained an `available` property for the total number of keys that could be allocated at runtime. If `keys.initial` is not provided, the value of `keys.available` is used with `keys.incremental` of `0`.
 
 ***
 
