@@ -112,7 +112,7 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 					aSymbolLength = aSymbolLength & mxSymbolMask;
 					id = the->keyIndex;
 					if (id == the->keyCount)
-						fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+						fxGrowKeys(the, 1);
 					if (aSymbolLength > 1) {
 						aSlot = fxNewSlot(the);
 						aSlot->kind = XS_STRING_KIND;

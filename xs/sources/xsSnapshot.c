@@ -1254,6 +1254,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			mxThrowIf((*snapshot->read)(snapshot->stream, &creation, sizeof(txCreation)));
 			fxAllocate(the, &creation);
 			mxThrowIf((*snapshot->read)(snapshot->stream, &(the->profileID), sizeof(txID)));
+			mxThrowIf((*snapshot->read)(snapshot->stream, &(the->tag), sizeof(txInteger)));
 	
 			snapshot->firstChunk = the->firstBlock->current;
 			snapshot->firstSlot = the->firstHeap;
@@ -1316,25 +1317,6 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
             the->collectFlag = XS_COLLECTING_FLAG;
 
 			fxLinkChunks(the);
-
-			{
-				txID keyIndex = 0;
-				while (keyIndex < the->keyIndex) {
-					txSlot* slot = the->keyArray[keyIndex];
-					if (slot->kind == XS_KEY_KIND) {
-						txString name = slot->value.key.string;
-						if (name) {
-							txString hash = c_strrchr(name, '#');
-							if (hash) {
-								txInteger tag = (txInteger)fxStringToNumber(the->dtoa, hash + 1, 1);
-								if (the->tag <= tag)
-									the->tag = tag + 1;
-							}
-						}
-					}
-					keyIndex++;
-				}
-			}
 
 		#ifdef mxDebug
 			fxLogin(the);
@@ -1950,7 +1932,8 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		creation.initialHeapCount = the->maximumHeapCount + 1;
 		creation.incrementalHeapCount = the->minimumHeapCount;
 		creation.stackCount = (txSize)(the->stackTop - the->stackBottom);
-		creation.keyCount = the->keyCount;
+		creation.initialKeyCount = the->keyCount;
+		creation.incrementalKeyCount = the->keyDelta;
 		creation.nameModulo = the->nameModulo;
 		creation.symbolModulo = the->symbolModulo;
 		creation.parserBufferSize = the->parserBufferSize;
@@ -1996,12 +1979,13 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 		mxThrowIf((*snapshot->write)(snapshot->stream, "SIGN", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, snapshot->signature, snapshot->signatureLength));
 
-		size = 8 + sizeof(txCreation) + sizeof(txID);
+		size = 8 + sizeof(txCreation) + sizeof(txID) + sizeof(txInteger);
 		size = htonl(size);
 		mxThrowIf((*snapshot->write)(snapshot->stream, &size, 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, "CREA", 4));
 		mxThrowIf((*snapshot->write)(snapshot->stream, &creation, sizeof(txCreation)));
 		mxThrowIf((*snapshot->write)(snapshot->stream, &(the->profileID), sizeof(txID)));
+		mxThrowIf((*snapshot->write)(snapshot->stream, &(the->tag), sizeof(txInteger)));
 
 		size = 8 + chunkSize;
 		size = htonl(size);

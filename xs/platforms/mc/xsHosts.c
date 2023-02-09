@@ -481,7 +481,7 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 			creation.initialHeapCount = slotCount;
 		
 		if (keyCount)
-			creation.keyCount = keyCount;
+			creation.initialKeyCount = keyCount;
 
 		context[0] = c_malloc(allocation);
 		if (NULL == context[0]) {

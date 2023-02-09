@@ -89,7 +89,8 @@ int main(int argc, char* argv[])
 		4 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024,	/* incrementalHeapCount */
 		1024 * 16,			/* stackCount */
-		2048 * 4,			/* keyCount */
+		2048 * 4,			/* initialKeyCount */
+		0,					/* incrementalKeyCount */
 		1993,				/* nameModulo */
 		127,				/* symbolModulo */
 		32 * 1024,			/* parserBufferSize */
@@ -168,13 +169,14 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-c: no creation");
-				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s", 
+				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s", 
 					&linker->creation.initialChunkSize,
 					&linker->creation.incrementalChunkSize,
 					&linker->creation.initialHeapCount,
 					&linker->creation.incrementalHeapCount,
 					&linker->creation.stackCount,
-					&linker->creation.keyCount,
+					&linker->creation.initialKeyCount,
+					&linker->creation.incrementalKeyCount,
 					&linker->creation.nameModulo,
 					&linker->creation.symbolModulo,
 					&linker->creation.parserBufferSize,
@@ -692,13 +694,14 @@ int main(int argc, char* argv[])
 			fprintf(file, "\tmxScriptsCount,\n");
 			fprintf(file, "\t(txScript*)gxScripts,\n");
 			fprintf(file, "\t%d,\n", the->profileID);
-			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
+			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
 				linker->creation.initialChunkSize,
 				linker->creation.incrementalChunkSize,
 				linker->creation.initialHeapCount,
 				linker->creation.incrementalHeapCount,
 				linker->creation.stackCount,
-				linker->creation.keyCount,
+				linker->creation.initialKeyCount,
+				linker->creation.incrementalKeyCount,
 				linker->creation.nameModulo,
 				linker->creation.symbolModulo,
 				linker->creation.parserBufferSize,

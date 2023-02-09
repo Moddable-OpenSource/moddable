@@ -410,6 +410,7 @@ struct sxMachine {
 	txID* colors;
 	txSlot** keyArray;
 	txID keyCount;
+	txID keyDelta;
 	txID keyIndex;
 	txID keyOffset;
 	txSlot** keyArrayHost;
@@ -494,7 +495,8 @@ struct sxCreation {
 	txSize initialHeapCount; /* xs.h */
 	txSize incrementalHeapCount; /* xs.h */
 	txSize stackCount; /* xs.h */
-	txSize keyCount; /* xs.h */
+	txSize initialKeyCount; /* xs.h */
+	txSize incrementalKeyCount; /* xs.h */
 	txSize nameModulo; /* xs.h */
 	txSize symbolModulo; /* xs.h */
 	txSize parserBufferSize; /* xs.h */
@@ -781,6 +783,7 @@ extern void fxAllocate(txMachine* the, txCreation* theCreation);
 extern void fxCollect(txMachine* the, txBoolean theFlag);
 mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
 extern void fxFree(txMachine* the);
+extern void fxGrowKeys(txMachine* the, txID theCount);
 extern txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b);
 mxExport void* fxNewChunk(txMachine* the, txSize theSize);
 mxExport void* fxNewGrowableChunk(txMachine* the, txSize size, txSize overflow);

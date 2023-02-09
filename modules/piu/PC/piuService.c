@@ -282,7 +282,7 @@ txMachine* ServiceThreadMain(void* context)
 	c_memset(root, 0, sizeof(txMachine));
 	root->preparation = preparation;
 	root->keyArray = preparation->keys;
-	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
+	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.initialKeyCount;
 	root->keyIndex = (txID)preparation->keyCount;
 	root->nameModulo = preparation->nameModulo;
 	root->nameTable = preparation->names;

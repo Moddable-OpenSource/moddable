@@ -199,9 +199,10 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 
 	fxGrowSlots(the, theCreation->initialHeapCount);
 
-	the->keyCount = (txID)theCreation->keyCount;
+	the->keyCount = (txID)theCreation->initialKeyCount;
+	the->keyDelta = (txID)theCreation->incrementalKeyCount;
 	the->keyIndex = 0;
-	the->keyArray = (txSlot **)c_malloc_uint32(theCreation->keyCount * sizeof(txSlot*));
+	the->keyArray = (txSlot **)c_malloc_uint32(theCreation->initialKeyCount * sizeof(txSlot*));
 	if (!the->keyArray)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
@@ -545,6 +546,21 @@ void* fxGrowChunks(txMachine* the, txSize size)
 	#endif
 	}
 	return block;
+}
+
+void fxGrowKeys(txMachine* the, txID theCount) 
+{
+	if (the->keyDelta > 0) {
+		txID keyDelta = (theCount > the->keyDelta) ? theCount : the->keyDelta;
+		txID keyCount = (the->keyCount + keyDelta) - the->keyOffset;
+		txSlot** keyArray = c_realloc(the->keyArray, keyCount * sizeof(txSlot*));
+		if (keyArray == C_NULL)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		the->keyArray = keyArray;
+		the->keyCount = keyCount + the->keyOffset;
+	}
+	else 
+		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
 }
 
 void fxGrowSlots(txMachine* the, txSize theCount) 
