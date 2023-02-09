@@ -1428,7 +1428,7 @@ void fx_TypedArray(txMachine* the)
 	}
 	else {
         txInteger length = fxArgToByteLength(the, 0, 0);
-        if (length & (((1 << shift) - 1) << (32 - shift)))
+        if (length > (0x7FFFFFFF >> shift))
 			mxRangeError("out of range byteLength");
         length <<= shift;
 		mxPush(mxArrayBufferConstructor);
