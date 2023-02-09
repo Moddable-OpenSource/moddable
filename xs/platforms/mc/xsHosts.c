@@ -147,7 +147,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 #ifdef mxDebug
 		fxReport(the, "# Slot allocation: failed. trying to make room...\n");
 #endif
-		fxCollect(the, 1);	/* expecting memory from the chunk pool */
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);	/* expecting memory from the chunk pool */
 #ifdef mxDebug
 		fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
 #endif

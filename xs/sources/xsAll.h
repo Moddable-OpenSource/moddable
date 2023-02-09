@@ -780,7 +780,7 @@ extern txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean z
 extern txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b);
 extern void fxCheckCStack(txMachine* the);
 extern void fxAllocate(txMachine* the, txCreation* theCreation);
-extern void fxCollect(txMachine* the, txBoolean theFlag);
+extern void fxCollect(txMachine* the, txFlag theFlag);
 mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
 extern void fxFree(txMachine* the);
 extern void fxGrowKeys(txMachine* the, txID theCount);
@@ -1909,9 +1909,11 @@ enum {
 	XS_GET_ONLY = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG,
 
 	/* collect flags */
-	XS_COLLECTING_FLAG = 1,
-	XS_TRASHING_FLAG = 2,
-	XS_SKIPPED_COLLECT_FLAG = 4,
+	XS_COMPACT_FLAG = 1,
+	XS_ORGANIC_FLAG = 2,
+	XS_COLLECTING_FLAG = 4,
+	XS_TRASHING_FLAG = 8,
+	XS_SKIPPED_COLLECT_FLAG = 16,
 	XS_HOST_CHUNK_FLAG = 32,
 	XS_HOST_HOOKS_FLAG = 64,
 	

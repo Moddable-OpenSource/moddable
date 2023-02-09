@@ -263,7 +263,7 @@ void fxCheckCStack(txMachine* the)
 	}
 }
 
-void fxCollect(txMachine* the, txBoolean theFlag)
+void fxCollect(txMachine* the, txFlag theFlag)
 {
 	txSize aCount;
 	txSlot* freeSlot;
@@ -275,8 +275,9 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 		the->collectFlag |= XS_SKIPPED_COLLECT_FLAG;
 		return;
 	}
+	the->collectFlag |= theFlag & XS_ORGANIC_FLAG;
 
-	if (theFlag) {
+	if (theFlag & XS_COMPACT_FLAG) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the);
 		fxSweep(the);
@@ -347,6 +348,7 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 			else
 				the->collectFlag &= ~XS_TRASHING_FLAG;
 	}
+	the->collectFlag &= ~XS_ORGANIC_FLAG;
 	
 #if mxReport
 	if (theFlag)
@@ -391,7 +393,7 @@ void* fxFindChunk(txMachine* the, txSize size, txBoolean *once)
 #if mxStress
 	if (fxShouldStress()) {
 		if (*once) {
-			fxCollect(the, 1);
+			fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
 			*once = 0;
 		}
 	}
@@ -415,7 +417,7 @@ again:
 		block = block->nextBlock;
 	}
 	if (*once) {
-		fxCollect(the, 1);
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
 		*once = 0;
 		goto again;
 	}
@@ -1008,9 +1010,20 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		}
 		break;
 	case XS_WEAK_REF_KIND:
-		if (theSlot->value.weakRef.target) {
+		aSlot = theSlot->value.weakRef.target;
+		if (aSlot) {
+	#ifdef mxSnapshot
+			if (the->collectFlag & XS_ORGANIC_FLAG) {
+				fxMarkReference(the, aSlot);
+			}
+			else {
+				theSlot->value.weakRef.link = the->firstWeakRefLink;
+				the->firstWeakRefLink = theSlot;
+			}
+	#else
 			theSlot->value.weakRef.link = the->firstWeakRefLink;
 			the->firstWeakRefLink = theSlot;
+	#endif
 		}
 		break;
 	case XS_FINALIZATION_REGISTRY_KIND:
@@ -1250,9 +1263,20 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		}
 		break;
 	case XS_WEAK_REF_KIND:
-		if (theSlot->value.weakRef.target) {
+		aSlot = theSlot->value.weakRef.target;
+		if (aSlot) {
+	#ifdef mxSnapshot
+			if (the->collectFlag & XS_ORGANIC_FLAG) {
+				fxMarkValue(the, aSlot);
+			}
+			else {
+				theSlot->value.weakRef.link = the->firstWeakRefLink;
+				the->firstWeakRefLink = theSlot;
+			}
+	#else
 			theSlot->value.weakRef.link = the->firstWeakRefLink;
 			the->firstWeakRefLink = theSlot;
+	#endif
 		}
 		break;
 	case XS_FINALIZATION_REGISTRY_KIND:
@@ -1406,7 +1430,7 @@ txSlot* fxNewSlot(txMachine* the)
 	
 #if mxStress
 	if (fxShouldStress()) {
-		fxCollect(the, 1);
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
 		once = 0;
 	}
 #endif
@@ -1435,7 +1459,7 @@ again:
 	if (once) {
 		txBoolean wasThrashing = ((the->collectFlag & XS_TRASHING_FLAG) != 0), isThrashing;
 
-		fxCollect(the, 0);
+		fxCollect(the, XS_ORGANIC_FLAG);
 
 		isThrashing = ((the->collectFlag & XS_TRASHING_FLAG) != 0);
 		allocate = wasThrashing && isThrashing;
