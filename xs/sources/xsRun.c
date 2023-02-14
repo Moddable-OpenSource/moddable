@@ -113,12 +113,11 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #define mxFrameArgv(THE_INDEX) (mxFrame - 2 - (THE_INDEX))
 
 #define mxRestoreState { \
-	txSlot** it = (txSlot**)the; \
-	mxStack = *it++; \
-	mxScope = *it++; \
-	mxFrame = *it++; \
+	mxStack = the->stack; \
+	mxScope = the->scope; \
+	mxFrame = the->frame; \
 	mxEnvironment = mxFrameToEnvironment(mxFrame); \
-	mxCode = *((txByte**)it); \
+	mxCode = the->code; \
 }
 #if defined(mxFrequency)
 	#define mxSaveState { \
@@ -130,11 +129,10 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 	}
 #else
 	#define mxSaveState { \
-		txSlot** it = (txSlot**)the; \
-		*it++ = mxStack; \
-		*it++ =	mxScope; \
-		*it++ = mxFrame; \
-		*it = (txSlot*)mxCode; \
+		the->stack = mxStack; \
+		the->scope = mxScope; \
+		the->frame = mxFrame; \
+		the->code = mxCode; \
 	}
 #endif
 
