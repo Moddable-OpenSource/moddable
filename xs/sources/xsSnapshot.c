@@ -1527,6 +1527,120 @@ txSlot* fxUnprojectSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 	return slot;
 }
 
+int fxUseSnapshot(txMachine* the, txSnapshot* snapshot)
+{
+	Atom atom;
+	txByte byte;
+	txCreation creation;
+	txID profileID;
+	txInteger tag;
+	txByte* buffer;
+	txSize size;
+	txSlot* slot;
+	mxTry(the) {
+		snapshot->error = 0;
+		
+		fxReadAtom(the, snapshot, &atom, "XS_M");
+		fxReadAtom(the, snapshot, &atom, "VERS");
+		mxThrowIf((*snapshot->read)(snapshot->stream, &byte, 1));
+		mxThrowIf((*snapshot->read)(snapshot->stream, &byte, 1));
+		mxThrowIf((*snapshot->read)(snapshot->stream, &byte, 1));
+		mxThrowIf((*snapshot->read)(snapshot->stream, &byte, 1));
+		fxReadAtom(the, snapshot, &atom, "SIGN");
+		while (atom.atomSize) {
+			mxThrowIf((*snapshot->read)(snapshot->stream, &byte, 1));
+			atom.atomSize--;
+		}
+		fxReadAtom(the, snapshot, &atom, "CREA");
+		mxThrowIf((*snapshot->read)(snapshot->stream, &creation, sizeof(txCreation)));
+		mxThrowIf((*snapshot->read)(snapshot->stream, &profileID, sizeof(txID)));
+		mxThrowIf((*snapshot->read)(snapshot->stream, &tag, sizeof(txInteger)));
+		
+		buffer = (txByte*)the->firstBlock;
+		size = the->firstBlock->limit - buffer;
+		c_memset(buffer, 0, size);
+		the->firstBlock->current = buffer + sizeof(txBlock);
+		the->firstBlock->limit = buffer + size;
+
+		the->freeHeap = slot = the->firstHeap + 1;
+		size = the->maximumHeapCount - 1;
+	    while (size--) {
+			txSlot* next = slot + 1;
+			slot->next = next;
+			slot->flag = XS_NO_FLAG;
+			slot->kind = XS_UNDEFINED_KIND;
+			slot = next;
+		}
+		slot->next = C_NULL;
+		slot->flag = XS_NO_FLAG;
+		slot->kind = XS_UNDEFINED_KIND;
+		the->firstWeakListLink = C_NULL;
+
+		snapshot->firstChunk = the->firstBlock->current;
+		snapshot->firstSlot = the->firstHeap;
+		
+		fxReadAtom(the, snapshot, &atom, "BLOC");
+		mxThrowIf((*snapshot->read)(snapshot->stream, the->firstBlock->current, atom.atomSize));
+		the->currentChunksSize = atom.atomSize;
+		the->firstBlock->current += atom.atomSize;
+
+		fxReadAtom(the, snapshot, &atom, "HEAP");
+		mxThrowIf((*snapshot->read)(snapshot->stream, the->freeHeap, atom.atomSize));
+		the->currentHeapCount = (atom.atomSize / sizeof(txSlot));
+		the->freeHeap = the->freeHeap + the->currentHeapCount;
+
+		slot = the->firstHeap + 1;
+		while (slot < the->freeHeap) {
+			fxReadSlot(the, snapshot, slot, 1);
+			slot++;
+		}
+			
+		slot = the->firstHeap + 1;
+		while (slot < the->freeHeap) {
+			switch (slot->kind) {
+			case XS_MAP_KIND:
+				fxReadMapSet(the, slot, 1);
+				break;
+			case XS_SET_KIND:
+				fxReadMapSet(the, slot, 0);
+				break;
+			}
+			slot++;
+		}
+
+		fxReadAtom(the, snapshot, &atom, "STAC");
+		the->stack = the->stackTop - (atom.atomSize / sizeof(txSlot));
+		mxThrowIf((*snapshot->read)(snapshot->stream, the->stack, atom.atomSize));
+
+		slot = the->stack;
+		while (slot < the->stackTop) {
+			fxReadSlot(the, snapshot, slot, 0);
+			slot++;
+		}
+
+		fxReadAtom(the, snapshot, &atom, "KEYS");
+		the->keyIndex = atom.atomSize / sizeof(txSlot*);
+		mxThrowIf((*snapshot->read)(snapshot->stream, the->keyArray, atom.atomSize));
+		fxReadSlotTable(the, snapshot, the->keyArray, the->keyIndex);
+
+		fxReadAtom(the, snapshot, &atom, "NAME");
+		the->nameModulo = atom.atomSize / sizeof(txSlot*);
+		mxThrowIf((*snapshot->read)(snapshot->stream, the->nameTable, atom.atomSize));
+		fxReadSlotTable(the, snapshot, the->nameTable, the->nameModulo);
+
+		fxReadAtom(the, snapshot, &atom, "SYMB");
+		the->symbolModulo = atom.atomSize / sizeof(txSlot*);
+		mxThrowIf((*snapshot->read)(snapshot->stream, the->symbolTable, atom.atomSize));
+		fxReadSlotTable(the, snapshot, the->symbolTable, the->symbolModulo);
+	
+		fxLinkChunks(the);
+	}
+	mxCatch(the) {
+		
+	}
+	return (snapshot->error) ? 0 : 1;
+}
+
 void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot)
 {
 	switch (slot->kind) {
