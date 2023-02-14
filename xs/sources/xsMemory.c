@@ -441,13 +441,6 @@ void fxFree(txMachine* the)
 	if (the->keyArray)
 		c_free_uint32(the->keyArray);
 	the->keyArray = C_NULL;
-
-	if (the->stackBottom)
-		fxFreeSlots(the, the->stackBottom);
-	the->stackBottom = C_NULL;
-	the->stackTop = C_NULL;
-	the->stackPrototypes = C_NULL;
-	the->stack = C_NULL;
 	
 	while (the->firstHeap) {
 		aHeap = the->firstHeap;
@@ -455,6 +448,13 @@ void fxFree(txMachine* the)
 		fxFreeSlots(the, aHeap);
 	}
 	the->firstHeap = C_NULL;
+
+	if (the->stackBottom)
+		fxFreeSlots(the, the->stackBottom);
+	the->stackBottom = C_NULL;
+	the->stackTop = C_NULL;
+	the->stackPrototypes = C_NULL;
+	the->stack = C_NULL;
 	
 #if mxNoChunks
 	{
@@ -577,11 +577,19 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 	}
 	if ((void *)-1 == aHeap)
 		return;
-
-	if ((aHeap + theCount) == the->firstHeap) {
+		
+	if (the->firstHeap && (the->firstHeap->value.reference == aHeap)) {
+		the->firstHeap->value.reference = aHeap + theCount;
+		the->maximumHeapCount += theCount;		
+		theCount -= 1;
+		aSlot = aHeap;
+	}
+	else if ((aHeap + theCount) == the->firstHeap) {
 		*aHeap = *(the->firstHeap);
 		the->maximumHeapCount += theCount;
 		theCount -= 1;
+		the->firstHeap = aHeap;
+		aSlot = aHeap + 1;
 	}
 	else {
 		the->maximumHeapCount += theCount - 1;
@@ -591,9 +599,9 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 		aHeap->kind = 0;
 		aHeap->value.reference = aHeap + theCount;
 		theCount -= 2;
+		the->firstHeap = aHeap;
+		aSlot = aHeap + 1;
 	}
-	the->firstHeap = aHeap;
-	aSlot = aHeap + 1;
     while (theCount--) {
 		txSlot* next = aSlot + 1;
 		aSlot->next = next;
