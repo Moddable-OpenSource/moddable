@@ -27,12 +27,12 @@ declare module "console" {
    * The `Console` class implements a serial terminal for debugging and diagnostic purposes.
    */
   export class Console {
-    receive(): void
-    write(): void
-    resume(): void
-    suspend(): void
-    prompt(): void
-    line(...items: any): void
+      receive(): number;
+      write(...items: string[]): void;
+      resume(): void;
+      suspend(): void;
+      prompt(): void;
+      line(...items: string[]): void;
   }
 
   export { Console as default };
