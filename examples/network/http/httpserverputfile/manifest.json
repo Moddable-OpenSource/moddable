@@ -2,13 +2,12 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/files/file/manifest.json"
+		"$(MODULES)/files/file/manifest.json",
+		"$(MODULES)/network/http/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"./main",
-			"$(MODULES)/network/http/*"
+			"./main"
 		]
-	},
-	"preload": "http"
+	}
 }

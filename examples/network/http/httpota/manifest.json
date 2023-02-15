@@ -1,17 +1,14 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json"
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/network/http/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"./main",
-			"$(MODULES)/network/http/*"
+			"./main"
 		]
 	},
-	"preload": [
-		"http"
-	],
 	"platforms": {
 		"esp32": {
 			"build": {
