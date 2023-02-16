@@ -26,7 +26,8 @@ let sensor = new APDS9960({
 	},
 	onAlert: () => {
 		const sample = sensor.sample();
-		trace(`Alert! ${JSON.stringify(sample)}\n`);
+		if (sample !== undefined)
+			trace(`Alert! ${JSON.stringify(sample)}\n`);
 	}
 });
 
