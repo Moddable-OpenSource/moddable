@@ -63,7 +63,7 @@ class MQTTClient {
 
 	constructor(options) {
 		this.#options = {
-			host: options.host ?? options.address,
+			host: options.host,
 			port: options.port,
 			id: options.id ?? "",
 			clean: options.clean ?? true,
