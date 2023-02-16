@@ -3,8 +3,8 @@
 		"$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json"
 	],
 	"creation": {
-		"stack": 1024,
-		"static": 65536
+		"stack": 384,
+		"static": 73728
 	},
 	"modules": {
 		"*": "./main"
