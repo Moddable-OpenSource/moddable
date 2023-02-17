@@ -199,9 +199,10 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 
 	fxGrowSlots(the, theCreation->initialHeapCount);
 
-	the->keyCount = (txID)theCreation->keyCount;
+	the->keyCount = (txID)theCreation->initialKeyCount;
+	the->keyDelta = (txID)theCreation->incrementalKeyCount;
 	the->keyIndex = 0;
-	the->keyArray = (txSlot **)c_malloc_uint32(theCreation->keyCount * sizeof(txSlot*));
+	the->keyArray = (txSlot **)c_malloc_uint32(theCreation->initialKeyCount * sizeof(txSlot*));
 	if (!the->keyArray)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 
@@ -262,7 +263,7 @@ void fxCheckCStack(txMachine* the)
 	}
 }
 
-void fxCollect(txMachine* the, txBoolean theFlag)
+void fxCollect(txMachine* the, txFlag theFlag)
 {
 	txSize aCount;
 	txSlot* freeSlot;
@@ -274,8 +275,9 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 		the->collectFlag |= XS_SKIPPED_COLLECT_FLAG;
 		return;
 	}
+	the->collectFlag |= theFlag & XS_ORGANIC_FLAG;
 
-	if (theFlag) {
+	if (theFlag & XS_COMPACT_FLAG) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the);
 		fxSweep(the);
@@ -346,6 +348,7 @@ void fxCollect(txMachine* the, txBoolean theFlag)
 			else
 				the->collectFlag &= ~XS_TRASHING_FLAG;
 	}
+	the->collectFlag &= ~XS_ORGANIC_FLAG;
 	
 #if mxReport
 	if (theFlag)
@@ -390,7 +393,7 @@ void* fxFindChunk(txMachine* the, txSize size, txBoolean *once)
 #if mxStress
 	if (fxShouldStress()) {
 		if (*once) {
-			fxCollect(the, 1);
+			fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
 			*once = 0;
 		}
 	}
@@ -414,7 +417,7 @@ again:
 		block = block->nextBlock;
 	}
 	if (*once) {
-		fxCollect(the, 1);
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
 		*once = 0;
 		goto again;
 	}
@@ -438,13 +441,6 @@ void fxFree(txMachine* the)
 	if (the->keyArray)
 		c_free_uint32(the->keyArray);
 	the->keyArray = C_NULL;
-
-	if (the->stackBottom)
-		fxFreeSlots(the, the->stackBottom);
-	the->stackBottom = C_NULL;
-	the->stackTop = C_NULL;
-	the->stackPrototypes = C_NULL;
-	the->stack = C_NULL;
 	
 	while (the->firstHeap) {
 		aHeap = the->firstHeap;
@@ -452,6 +448,13 @@ void fxFree(txMachine* the)
 		fxFreeSlots(the, aHeap);
 	}
 	the->firstHeap = C_NULL;
+
+	if (the->stackBottom)
+		fxFreeSlots(the, the->stackBottom);
+	the->stackBottom = C_NULL;
+	the->stackTop = C_NULL;
+	the->stackPrototypes = C_NULL;
+	the->stack = C_NULL;
 	
 #if mxNoChunks
 	{
@@ -547,6 +550,21 @@ void* fxGrowChunks(txMachine* the, txSize size)
 	return block;
 }
 
+void fxGrowKeys(txMachine* the, txID theCount) 
+{
+	if (the->keyDelta > 0) {
+		txID keyDelta = (theCount > the->keyDelta) ? theCount : the->keyDelta;
+		txID keyCount = (the->keyCount + keyDelta) - the->keyOffset;
+		txSlot** keyArray = c_realloc(the->keyArray, keyCount * sizeof(txSlot*));
+		if (keyArray == C_NULL)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		the->keyArray = keyArray;
+		the->keyCount = keyCount + the->keyOffset;
+	}
+	else 
+		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+}
+
 void fxGrowSlots(txMachine* the, txSize theCount) 
 {
 	txSlot* aHeap;
@@ -559,11 +577,19 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 	}
 	if ((void *)-1 == aHeap)
 		return;
-
-	if ((aHeap + theCount) == the->firstHeap) {
+		
+	if (the->firstHeap && (the->firstHeap->value.reference == aHeap)) {
+		the->firstHeap->value.reference = aHeap + theCount;
+		the->maximumHeapCount += theCount;		
+		theCount -= 1;
+		aSlot = aHeap;
+	}
+	else if ((aHeap + theCount) == the->firstHeap) {
 		*aHeap = *(the->firstHeap);
 		the->maximumHeapCount += theCount;
 		theCount -= 1;
+		the->firstHeap = aHeap;
+		aSlot = aHeap + 1;
 	}
 	else {
 		the->maximumHeapCount += theCount - 1;
@@ -573,9 +599,9 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 		aHeap->kind = 0;
 		aHeap->value.reference = aHeap + theCount;
 		theCount -= 2;
+		the->firstHeap = aHeap;
+		aSlot = aHeap + 1;
 	}
-	the->firstHeap = aHeap;
-	aSlot = aHeap + 1;
     while (theCount--) {
 		txSlot* next = aSlot + 1;
 		aSlot->next = next;
@@ -992,9 +1018,20 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		}
 		break;
 	case XS_WEAK_REF_KIND:
-		if (theSlot->value.weakRef.target) {
+		aSlot = theSlot->value.weakRef.target;
+		if (aSlot) {
+	#ifdef mxSnapshot
+			if (the->collectFlag & XS_ORGANIC_FLAG) {
+				fxMarkReference(the, aSlot);
+			}
+			else {
+				theSlot->value.weakRef.link = the->firstWeakRefLink;
+				the->firstWeakRefLink = theSlot;
+			}
+	#else
 			theSlot->value.weakRef.link = the->firstWeakRefLink;
 			the->firstWeakRefLink = theSlot;
+	#endif
 		}
 		break;
 	case XS_FINALIZATION_REGISTRY_KIND:
@@ -1234,9 +1271,20 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		}
 		break;
 	case XS_WEAK_REF_KIND:
-		if (theSlot->value.weakRef.target) {
+		aSlot = theSlot->value.weakRef.target;
+		if (aSlot) {
+	#ifdef mxSnapshot
+			if (the->collectFlag & XS_ORGANIC_FLAG) {
+				fxMarkValue(the, aSlot);
+			}
+			else {
+				theSlot->value.weakRef.link = the->firstWeakRefLink;
+				the->firstWeakRefLink = theSlot;
+			}
+	#else
 			theSlot->value.weakRef.link = the->firstWeakRefLink;
 			the->firstWeakRefLink = theSlot;
+	#endif
 		}
 		break;
 	case XS_FINALIZATION_REGISTRY_KIND:
@@ -1390,7 +1438,7 @@ txSlot* fxNewSlot(txMachine* the)
 	
 #if mxStress
 	if (fxShouldStress()) {
-		fxCollect(the, 1);
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
 		once = 0;
 	}
 #endif
@@ -1419,7 +1467,7 @@ again:
 	if (once) {
 		txBoolean wasThrashing = ((the->collectFlag & XS_TRASHING_FLAG) != 0), isThrashing;
 
-		fxCollect(the, 0);
+		fxCollect(the, XS_ORGANIC_FLAG);
 
 		isThrashing = ((the->collectFlag & XS_TRASHING_FLAG) != 0);
 		allocate = wasThrashing && isThrashing;

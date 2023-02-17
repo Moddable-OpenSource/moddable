@@ -122,7 +122,7 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 |  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` |  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
 |  <img src="./../assets/devices/adafruit-esp32-s3-tft-feather.png" width=125><BR>Adafruit ESP32-S3 TFT Feather | `esp32/s3_tft_feather` | 1.14" TFT display<BR> 240 x 135 16-bit color | <li>[Product page](https://www.adafruit.com/product/5483)</li>|
 |<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/atoms3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
-
+|<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/atoms3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
 
 <a id="platforms-esp32-c3"></a>
 ### ESP32-C3
@@ -166,13 +166,13 @@ The `-d` option on the `mcconfig` command line selects a debug build.
 
 <a id="build-instrumented"></a>
 ### Instrumented
-A debug build is used for debugging native code. In an instrumented build, the ESP-IDF logging is enabled and the GDB stub is present. The JavaScript debugger is disabled. The instrumentation data usually available in xsbug in output to the serial console once a second.
+A debug build is used for debugging native code. In an instrumented build, the ESP-IDF logging is enabled and the GDB stub is present. The JavaScript debugger is disabled. The instrumentation data usually available in xsbug is output to the serial console once a second.
 
 The `-i` option on the `mcconfig` command line selects an instrumented build.
 
 <a id="build-release"></a>
 ### Release
-A release build is for for production. In a release build, the ESP-IDF logging is disabled, the GDB stub is not present, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed.
+A release build is for production. In a release build, the ESP-IDF logging is disabled, the GDB stub is not present, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed.
 
 Omitting the `-d` and `-i` options on the `mcconfig` command line selects a release. Note that `-r` specifies rotation rather than selecting a release build.
 

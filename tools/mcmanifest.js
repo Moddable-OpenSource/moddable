@@ -469,7 +469,7 @@ export class MakeFile extends FILE {
 				options += " -p";
 			if (tool.debug)
 				options += " -d";
-			if (tool.config)
+			if (tool.nativeCode)
 				options += " -c";
 			this.line("\t$(XSC) ", source, options, " -e -o $(@D) -r ", targetParts.name);
 		}
@@ -507,7 +507,7 @@ export class MakeFile extends FILE {
 					options += " -p";
 				if (tool.debug)
 					options += " -d";
-				if (tool.config)
+				if (tool.nativeCode)
 					options += " -c";
 				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
 				if (tool.windows)

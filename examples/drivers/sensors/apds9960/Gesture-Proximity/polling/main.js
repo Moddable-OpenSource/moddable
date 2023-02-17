@@ -34,5 +34,6 @@ trace(`Sensor identification is: ${JSON.stringify(sensor.identification)}\n`);
 
 Timer.repeat(() => {
 	const sample = sensor.sample();
-	trace(`${JSON.stringify(sample)}\n`);
+	if (sample?.gestureDetector?.gesture !== undefined)
+		trace(`Gesture: ${JSON.stringify(sample.gestureDetector.gesture)}\n`);
 }, 200);

@@ -236,9 +236,6 @@ void xs_tcp_destructor(void *data)
 		removeTCPCallbacks(tcp);
 
 		tcp_close_safe(tcp->skt);
-#if !ESP32
-		tcp_abort(tcp->skt);
-#endif
 	}
 
 	while (tcp->buffers) {
@@ -388,7 +385,7 @@ void xs_tcp_write(xsMachine *the)
 		xsUnknownError("would block");
 
 	if (ERR_OK != tcp_write_safe(tcp->skt, buffer, needed, TCP_WRITE_FLAG_COPY | TCP_WRITE_FLAG_MORE)) {
-		xsTrace("tcp write failed");
+		xsTrace("tcp write failed\n");
 		tcpTrigger(tcp, kTCPError);
 		return;
 	}

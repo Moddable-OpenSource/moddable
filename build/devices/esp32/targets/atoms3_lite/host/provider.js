@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -23,58 +23,42 @@ import Digital from "embedded:io/digital";
 import DigitalBank from "embedded:io/digitalbank";
 import I2C from "embedded:io/i2c";
 import PulseCount from "embedded:io/pulsecount";
+import PulseWidth from "embedded:io/pulsewidth";
 import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
-import PulseWidth from "embedded:io/pulsewidth";
 
 const device = {
 	I2C: {
 		default: {
 			io: I2C,
-			data: 32,
-			clock: 33
+			data: 2,
+			clock: 1
 		},
 		internal: {
 			io: I2C,
-			data: 21,
-			clock: 22
-		},
-		hat: {
-			io: I2C,
-			data: 0,
-			clock: 26
-		}
-	},
-	Serial: {
-		default: {
-			io: Serial,
-			port: 1,
-			receive: 3,
-			transmit: 1
+			data: 38,
+			clock: 39
 		}
 	},
 	SPI: {
 		default: {
 			io: SPI,
-			clock: 13,
-			out: 15,
-			port: 1
+			port: 3,
+			clock: 17,
+			out: 21
 		}
 	},
 	Analog: {
 		default: {
 			io: Analog,
-			pin: 36
+			pin: 8
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
-		button: 37,
-		led: 10,
-		displayDC: 23,
-		displaySelect: 5
+		button: 41,
 	}
 };
 

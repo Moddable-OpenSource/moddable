@@ -1,6 +1,6 @@
 # Tools
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: December 30, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: February 3, 2023
 
 ## About this Document
 
@@ -29,7 +29,7 @@ To build the tools themselves, and to build and run apps in the Moddable simulat
 For example:
 
 ```shell
-cd $MODDABLE/piu/examples/balls
+cd $MODDABLE/examples/piu/balls
 mcconfig -d -m
 ```
 

@@ -1216,12 +1216,11 @@ typedef modMessageRecord *modMessage;
 struct modMessageRecord {
 	modMessage			next;
 	xsMachine			*the;
+	uint16_t			length;
+	uint8_t				isStatic;		// this doubles as a flag to indicate entry is use gMessagePool
 	modMessageDeliver	callback;
 	void				*refcon;
-	uint16_t			length;
-	uint8_t				marked;
-	uint8_t				isStatic;		// this doubles as a flag to indicate entry is use gMessagePool
-	char				message[1];
+	char				message[];
 };
 
 static modMessage gMessageQueue;
@@ -1231,7 +1230,6 @@ extern void esp_schedule();
 static void appendMessage(modMessage msg)
 {
 	msg->next = NULL;
-	msg->marked = 0;
 
 	modCriticalSectionBegin();
 	if (NULL == gMessageQueue) {
@@ -1308,23 +1306,17 @@ int modMessagePostToMachineFromPool(xsMachine *the, modMessageDeliver callback, 
 
 int modMessageService(void)
 {
-	modMessage msg = gMessageQueue;
-	while (msg) {
-		msg->marked = 1;
-		msg = msg->next;
-	}
-
+	modMessage msg;
+	modCriticalSectionBegin();
 	msg = gMessageQueue;
-	while (msg && msg->marked) {
-		modMessage next;
+	gMessageQueue = NULL;
+	modCriticalSectionEnd();
+
+	while (msg) {
+		modMessage next = msg->next;
 
 		if (msg->callback)
 			(msg->callback)(msg->the, msg->refcon, msg->message, msg->length);
-
-		modCriticalSectionBegin();
-		next = msg->next;
-		gMessageQueue = next;
-		modCriticalSectionEnd();
 
 		if (msg->isStatic)
 			msg->isStatic = 0;		// return to pool

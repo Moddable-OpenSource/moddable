@@ -1268,14 +1268,14 @@ export default class extends TOOL {
 					delete config.options.address; 
 				else
 					config.options.address = parseInt(config.options.address);
-				if (isNaN(config.command))
+				if (isNaN(config.command) || ("" === config.command))
 					delete config.command; 
 				else
 					config.command = parseInt(config.command);
-				if (config.byte)
-					config.byte = parseInt(config.byte);
+				if (config.bytes)
+					config.bytes = parseInt(config.bytes);
 				else
-					delete config.byte;		//@@ check default behavior in RPi code
+					delete config.bytes;		//@@ check default behavior in RPi code
 				
 				if ("mcu_i2c_out" === type)
 					config.getter = `function (msg) {return ${this.resolveValue(config.payloadType, config.payload)}}`;

@@ -144,7 +144,7 @@ class HTTPClient {
 	#onError;
 	
 	constructor(options) {
-		const {host, address, port, onError} = options; 
+		const {host, port, onError} = options; 
 
 		if (!host) throw new Error("host required");
 		this.#host = host;

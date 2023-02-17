@@ -1744,7 +1744,7 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 							mxGetID(name);
 							if (!mxIsUndefined(the->stack)) {
 								fxToString(the, the->stack);
-								l += mxStringLength(the->stack->value.string);
+								l = fxAddChunkSizes(the, l, mxStringLength(the->stack->value.string));
 							}
 							mxPop();
 						}
@@ -1778,7 +1778,7 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 					if ((0 < i) && (i <= count)) {
 						capture = (captures + count - i);
 						if (capture->kind != XS_UNDEFINED_KIND)
-							l += mxStringLength(capture->value.string);
+							l = fxAddChunkSizes(the, l, mxStringLength(capture->value.string));
 						flag = 1;
 					}
 					else {

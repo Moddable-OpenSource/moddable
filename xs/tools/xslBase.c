@@ -211,7 +211,8 @@ void fxInitializeLinker(txLinker* linker)
 	linker->creation.initialHeapCount = 2048;
 	linker->creation.incrementalHeapCount = 64;
 	linker->creation.stackCount = 512;
-	linker->creation.keyCount = 256;
+	linker->creation.initialKeyCount = 256;
+	linker->creation.incrementalKeyCount = 0;
 	linker->creation.nameModulo = 127;
 	linker->creation.symbolModulo = 127;
 	c_strcpy(linker->main, "main");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -55,5 +55,4 @@ let BallApplication = Application.template($ => ({
 	]
 }));
 
-export default new BallApplication(null, { displayListLength:4096, touchCount:0 });
-
+export default new BallApplication(null, { touchCount:0, pixels: screen.width * 4 });
