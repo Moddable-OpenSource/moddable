@@ -1997,7 +1997,7 @@ void fx_nop(xsMachine *the)
 void fx_assert_throws(xsMachine *the)
 {
 	mxTry(the) {
-		if (xsArgc >= 2)
+		if (xsToInteger(xsArgc) >= 2)
 			xsCallFunction0(xsArg(1), xsGlobal);
 	}
 	mxCatch(the) {
