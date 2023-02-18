@@ -1023,10 +1023,16 @@ export default class extends TOOL {
 			} break;
 		
 			case "mqtt in": {
+				if (!nodes.has(config.broker))
+					throw new Error(`mqtt broker id "${config.broker}" not found`);
+					
 				config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
 			} break;
 
 			case "mqtt out": {
+				if (!nodes.has(config.broker))
+					throw new Error(`mqtt broker id "${config.broker}" not found`);
+
 				if ("" === config.topic)
 					delete config.topic;
 
