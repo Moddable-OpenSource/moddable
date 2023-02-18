@@ -221,6 +221,12 @@ export default class extends TOOL {
 				}
 			}
 		}
+		
+		// check for ui_base (required for all other ui_* nodes)
+		nodes.forEach(config => {
+			if ("ui_base" === config.type)
+				nodes.ui_base = config;
+		});
 
 		// replace ${Environment} variables
 		flows.forEach((config, i) => this.applyEnv(flows, i, flows[i], flows));
@@ -1513,7 +1519,7 @@ export default class extends TOOL {
 				delete config.payload; 
 				delete config.payloadType; 
 
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 
 			case "ui_switch": {
@@ -1534,7 +1540,7 @@ export default class extends TOOL {
 				delete config.onvalue; 
 				delete config.onvalueType; 
 
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 
 			case "ui_colour_picker":
@@ -1548,7 +1554,7 @@ export default class extends TOOL {
 				config.topic = topic.join("\n");
 				delete config.topicType;
 				
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 			
 			case "ui_chart":
@@ -1559,7 +1565,7 @@ export default class extends TOOL {
 			case "ui_text_input":
 			case "ui_template":
 			case "ui_toast":
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 				break;
 		}
 
@@ -1726,7 +1732,10 @@ export default class extends TOOL {
 			}
 		}
 	}
-	prepareUI(config) {
+	prepareUI(config, nodes) {
+		if (!nodes.ui_base)
+			throw new Error("ui_base node not found. required for dashboard nodes.")
+
 		if (config.width)
 			config.width = parseInt(config.width);
 		if (config.height)
