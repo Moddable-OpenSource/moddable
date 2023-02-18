@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -135,7 +135,7 @@ struct PocoCommandRecord {
 #define PocoReturnIfNoSpace(DISPLAY_LIST_POSITION, bytes) \
 	if (((char *)poco->displayListEnd - (char *)(DISPLAY_LIST_POSITION)) < (int)(bytes)) {	\
 		poco->flags |= kPocoFlagErrorDisplayListOverflow;										\
-		pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->displayListEnd - (char *)poco->displayList);							\
+		pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->next - (char *)poco->displayList);							\
 		return;																		\
 	}
 
@@ -3395,7 +3395,7 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 {
 	PocoCoordinate yMin, yMax;
 	int16_t rowBytes;
-	int16_t displayLines, displayLinesAlt;
+	int16_t displayLines;
 	PocoCommand displayList, displayListEnd;
 	PocoCommand walker;
 	PocoPixel *pixelsAlt;
@@ -3404,11 +3404,13 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		return 4;
 	poco->flags &= ~kPocoFlagDidBegin;
 
+	if (poco->stackDepth) {
+		poco->displayListEnd += poco->stackDepth * sizeof(PocoRectangleRecord); 
+		return 2;
+	}
+
 	if (poco->flags & kPocoFlagErrorDisplayListOverflow)
 		return 1;
-
-	if (poco->stackDepth)
-		return 2;
 
 	if (poco->flags & kPocoFlagErrorStackProblem)
 		return 3;
@@ -3420,19 +3422,26 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 
 	rowBytes = ((poco->w * kPocoPixelSize) + 7) >> 3;
 	poco->rowBytes = rowBytes;
-
-	displayLines = byteLength / rowBytes;
+ 
+	int canAsync = ((byteLength >> 1) >= rowBytes) && (kPocoFlagDoubleBuffer & poco->flags);
+	if (canAsync)
+		displayLines = (byteLength >> 1) / rowBytes;
+	else
+		displayLines = byteLength / rowBytes;
 	if (displayLines <= 0) return 4;
 
-	if ((displayLines >= 2) && (kPocoFlagDoubleBuffer & poco->flags)) {
-		displayLinesAlt = displayLines >> 1;
-		displayLines -= displayLinesAlt;
-		pixelsAlt = (PocoPixel *)((displayLines * rowBytes) + (char *)pixels);
+	if (canAsync) {
+		pixelsAlt = (PocoPixel *)((byteLength >> 1) + (char *)pixels);
 		if (3 & (uintptr_t)pixelsAlt)
 			pixelsAlt = (PocoPixel *)((4 + (uintptr_t)pixelsAlt) & ~3);
+		
+		if (kPocoFlagBuffer & poco->flags) {
+			PocoPixel *tp = pixels;
+			pixels = pixelsAlt;
+			pixelsAlt = tp;
+		}
 	}
 	else {
-		displayLinesAlt = 0;
 		pixelsAlt = NULL;
 	}
 
@@ -3482,17 +3491,13 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		}
 
 		if (pixelsAlt) {
-			int16_t tdl;
-			PocoPixel *tp = pixels;
-
 			(pixelReceiver)(pixels, -(rowBytes * (yMax - yMin)), refCon);		// negative length means async
 
+			PocoPixel *tp = pixels;
 			pixels = pixelsAlt;
 			pixelsAlt = tp;
 
-			tdl = displayLines;
-			displayLines = displayLinesAlt;
-			displayLinesAlt = tdl;
+			poco->flags ^= kPocoFlagBuffer;
 		}
 		else {
 			(pixelReceiver)(pixels, rowBytes * (yMax - yMin), refCon);
@@ -3524,18 +3529,18 @@ int PocoDrawingEndFrameBuffer(Poco poco)
 
 int PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
-	PocoRectangle clip;
 	PocoCoordinate xMax, yMax;
-
-	if (poco->pixelsLength < (int)(sizeof(PocoRectangleRecord) * (poco->stackDepth + 1))) {
+	PocoRectangle clip = (PocoRectangle)(poco->displayListEnd - sizeof(PocoRectangleRecord)); 
+	if ((char *)clip < (char *)poco->next) {
 		poco->flags |= kPocoFlagErrorStackProblem;
-		pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->displayListEnd - (char *)poco->displayList);
+		pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->next - (char *)poco->displayList);
 		return 0;
 	}
 
 	rotateCoordinatesAndDimensions(poco->width, poco->height, x, y, w, h);
 
-	clip = ((PocoRectangle)poco->pixels) + poco->stackDepth++;
+	poco->stackDepth++;
+	poco->displayListEnd = (char *)clip;
 
 	// save current clip
 	clip->x = poco->x;
@@ -3583,14 +3588,12 @@ int PocoClipPush(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w,
 
 void PocoClipPop(Poco poco)
 {
-	PocoRectangle clip;
+	PocoRectangle clip = (PocoRectangle)poco->displayListEnd;
 
 	if (0 == poco->stackDepth) {
 		poco->flags |= kPocoFlagErrorStackProblem;
 		return;
 	}
-
-	clip = ((PocoRectangle)poco->pixels) + --poco->stackDepth;
 
 	poco->x = clip->x;
 	poco->y = clip->y;
@@ -3598,24 +3601,26 @@ void PocoClipPop(Poco poco)
 	poco->h = clip->h;
 	poco->xMax = clip->x + clip->w;
 	poco->yMax = clip->y + clip->h;
+	
+	poco->displayListEnd = (char *)(clip + 1);
+	poco->stackDepth--;
 }
 
 void PocoOriginPush(Poco poco, PocoCoordinate x, PocoCoordinate y)
 {
-	PocoRectangle clip;
-
-	if (poco->pixelsLength < (int)(sizeof(PocoRectangleRecord) * (poco->stackDepth + 1))) {
+	PocoRectangle clip = (PocoRectangle)(poco->displayListEnd - sizeof(PocoRectangleRecord)); 
+	if ((char *)clip < (char *)poco->next) {
 		poco->flags |= kPocoFlagErrorStackProblem;
-		pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->displayListEnd - (char *)poco->displayList);
+		pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->next - (char *)poco->displayList);
 		return;
 	}
 
-	clip = ((PocoRectangle)poco->pixels) + poco->stackDepth++;
+	poco->stackDepth++;
+	poco->displayListEnd = (char *)clip;
 
 	// save current origin
 	clip->x = poco->xOrigin;
 	clip->y = poco->yOrigin;
-	clip->w = clip->h = ~0;
 
 	// apply new origin
 	poco->xOrigin += x;
@@ -3624,17 +3629,18 @@ void PocoOriginPush(Poco poco, PocoCoordinate x, PocoCoordinate y)
 
 void PocoOriginPop(Poco poco)
 {
-	PocoRectangle clip;
+	PocoRectangle clip = (PocoRectangle)poco->displayListEnd;
 
 	if (0 == poco->stackDepth) {
 		poco->flags |= kPocoFlagErrorStackProblem;
 		return;
 	}
 
-	clip = ((PocoRectangle)poco->pixels) + --poco->stackDepth;
-
 	poco->xOrigin = clip->x;
 	poco->yOrigin = clip->y;
+
+	poco->displayListEnd = (char *)(clip + 1);
+	poco->stackDepth--;
 }
 
 
