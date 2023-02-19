@@ -389,8 +389,8 @@ ifeq ($(DEBUG),1)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 		ifeq ($(USE_USB),1)
 #			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1"
-			DO_LAUNCH = bash -c "PATH=$(PLATFORM_DIR)/config:$(PATH) ; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
-			PROGRAMMING_MODE = bash -c "PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
+			DO_LAUNCH = bash -c "PATH=$(PLATFORM_DIR)/config:\"$(PATH) \""; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
+			PROGRAMMING_MODE = bash -c "PATH=$(PLATFORM_DIR)/config:\"$(PATH)\"" ; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
 		else
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
 
