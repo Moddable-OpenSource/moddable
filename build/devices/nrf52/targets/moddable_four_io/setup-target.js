@@ -37,8 +37,11 @@ globalThis.Host = {
 	Accelerometer: class {
 		constructor(options) {
 			return new LIS3DH({
-				...options,
-				address: 0x19,
+				sensor: {
+					...device.I2C.default,
+					io: device.io.SMBus,
+// 					address: 0x19,
+				}
 			});
 		}
 	},
