@@ -966,7 +966,7 @@ void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint1
 {
 	if (!gBLE) return;
 	
-	ble_gatts_evt_write_t const * write = (ble_gatts_evt_write_t const *)write;
+	ble_gatts_evt_write_t const * write = (ble_gatts_evt_write_t const *)message;
 	const char_name_table *char_name;
 	uint8_t buffer[UUID_LEN_128];
 	uint16_t uuid_length;
