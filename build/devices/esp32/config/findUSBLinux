@@ -11,22 +11,11 @@ for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
         syspath="${sysdevpath%/dev}"
         devname="$(udevadm info -q name -p $syspath)"
         [[ "$devname" == "bus/"* ]] && exit
-        if [[ "$syspath" == "/sys/bus/usb/devices/usb"?"/"?"-"?"/"?"-"?":1.0/"* ]]
-        then
-#               echo "wsl"
-                syspath2=${syspath%/*/*}
-        eval "$(udevadm info -q property --export -p $syspath2)"
-#       [[ "$ID_VENDOR_ID" != "$1" || "$ID_MODEL_ID" != "$2" ]] && exit
-        [[ "$PRODUCT" != "$1/$2"* ]] && exit
-        [[ "$3" != "" && "$DRIVER" != "$3" ]] && exit
-        echo "/dev/$devname"
-        else
 # echo "$(udevadm info -q property --export -p $syspath)"
         eval "$(udevadm info -q property --export -p $syspath)"
 	[[ "$ID_VENDOR_ID" != "$1" || "$ID_MODEL_ID" != "$2" ]] && exit
 	[[ "$3" != "" && "$ID_USB_DRIVER" != "$3" ]] && exit
         echo "/dev/$devname"
-	fi
     )
 done
 
