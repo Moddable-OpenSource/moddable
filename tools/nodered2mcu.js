@@ -561,9 +561,9 @@ export default class extends TOOL {
 							doDelete = `\t\t\tdelete msg${this.prepareProp(rule.p)}`;
 						}
 						else if ("flow" === rule.pt)
-							doDelete = `\t\t\tthis.flow.delete("${rule.p}");`;
+							doDelete = `\t\t\tthis.flow.delete(${this.makeStorageArgs(rule.p)});`;
 						else if ("global" === rule.pt)
-							doDelete = `\t\t\tglobalContext.delete("${rule.p}");`;
+							doDelete = `\t\t\tglobalContext.delete${this.makeStorageArgs(rule.p)};`;
 						else
 							throw new Error(`unexpected delete type: ${rule.pt}`);
 					}
@@ -579,9 +579,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = ${value};`);
 						}
 						else if ("flow" === rule.pt)
-							change.push(`\t\t\tthis.flow.set("${rule.p}", ${value});`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.p)}, ${value});`);
 						else if ("global" === rule.pt)
-							change.push(`\t\t\tglobalContext.set("${rule.p}", ${value});`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.p)}, ${value});`);
 						else
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
@@ -594,7 +594,7 @@ export default class extends TOOL {
 						}
 						else if (("flow" === rule.pt) || ("global" === rule.pt)) {
 							const which = ("flow" === rule.pt) ? "flow" : "globalContext";
-							change.push(`\t\t\tthis.${which}.set("${rule.p}", this.change(this.${which}.get("${rule.p}"), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
+							change.push(`\t\t\tthis.${which}.set(${this.makeStorageArgs(rule.p)}, this.change(this.${which}.get(${this.makeStorageArgs(rule.p)}), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
 						}
 						else
 							throw new Error(`unexpected change type: ${rule.pt}`);
@@ -615,9 +615,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = temp;`);
 						}
 						else if ("flow" === rule.tot)
-							change.push(`\t\t\tthis.flow.set("${rule.to}", temp);`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else if ("global" === rule.tot)
-							change.push(`\t\t\tglobalContext.set("${rule.to}", temp);`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else
 							throw new Error(`unexpected move type: ${rule.pt}`);
 					}
@@ -1645,8 +1645,8 @@ export default class extends TOOL {
 				}
 					
 				if ("flow" === type)
-					return `this.flow.get("${value}")${suffix}`;
-				return `globalContext.get("${value}")${suffix}`;
+					return `this.flow.get(${this.makeStorageArgs(value)})${suffix}`;
+				return `globalContext.get(${this.makeStorageArgs(value)})${suffix}`;
 				}
 			case "env": {
 				let offset = 0;
@@ -1857,5 +1857,14 @@ export default class extends TOOL {
 			default:
 				throw new Error(`environment type "${env.type}" unsupported on "${name}"`);
 		}
+	}
+	makeStorageArgs(value) {
+		if (value.startsWith("#:(") && value.includes("::")) {
+			value = value.split("::");
+			if ("#:(file)" !== value[0])
+				throw new Error("unsupported storage " + value[0]);
+			return `"${value[1]}", "file"`;
+		}
+		return `"${value}"`;
 	}
 }
