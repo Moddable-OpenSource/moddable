@@ -40,7 +40,6 @@ globalThis.Host = {
 				sensor: {
 					...device.I2C.default,
 					io: device.io.SMBus,
-// 					address: 0x19,
 				}
 			});
 		}
