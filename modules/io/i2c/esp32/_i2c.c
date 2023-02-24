@@ -279,8 +279,10 @@ uint8_t i2cActivate(I2C i2c)
 	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
 
 	if ((i2c == gI2CActive) ||
-		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
+		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup))) {
+		xSemaphoreGive(gI2CMutex);
 		return 1;
+	}
 
 	if (gI2CActive) {
 		i2c_driver_delete(gI2CActive->port);
