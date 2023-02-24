@@ -117,6 +117,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/esp_eth/include \
  	$(IDF_PATH)/components/esp_hw_support/include \
  	$(IDF_PATH)/components/esp_hw_support/include/soc \
+	$(IDF_PATH)/components/esp_lcd/include \
  	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_pm/include \
  	$(IDF_PATH)/components/esp_ringbuf/include \
