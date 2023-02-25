@@ -796,6 +796,9 @@ export class MakeFile extends FILE {
 		for (var result of tool.outlineFontFiles) {
 			var source = result.source;
 			
+			if (!tool.getenv("FONTBM"))
+				throw new Error("$(FONTBM) environemnt variable not set");
+			
 			result.faces.forEach(face => {
 				const name = face.name + "-" + face.size;
 
