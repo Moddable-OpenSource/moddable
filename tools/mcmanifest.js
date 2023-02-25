@@ -1663,7 +1663,7 @@ export class Tool extends TOOL {
 					this.createDirectory(path);
 				}
 				this.currentDirectory = path;
-				this.report("# git clone " + repo);
+				this.report("# git clone " + repo + " to path " + path);
 				let result;
 				if (branch)
 					result = this.spawn("git", "clone", "-b", branch, repo, ".");
