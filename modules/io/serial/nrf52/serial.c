@@ -74,7 +74,7 @@ struct SerialRecord {
 	uint8_t		postedMessage;
 };
 
-static void io_uart_handler(nrfx_uarte_event_t *p_event, void *p_context);
+static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context);
 static void serialDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
@@ -99,7 +99,7 @@ void xs_serial_constructor(xsMachine *the)
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
 	xsSlot *onReadable, *onWritable;
-	int transmitPin = kInvalidPin, receivePin = kInvalidPin;
+	int transmitPin = kInvalidPin, receivePin = kInvalidPin, port = 0;
 
 	xsmcVars(1);
 
@@ -118,6 +118,11 @@ void xs_serial_constructor(xsMachine *the)
 	}
 	else if (kInvalidPin == transmitPin)
 		xsUnknownError("invalid");
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_port);
+	port = xsmcToInteger(xsVar(0));
+	if ((port < 0) || (port > 3))
+		xsUnknownError("invalid port");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
@@ -390,7 +395,7 @@ void xs_serial_purge(xsMachine *the)
 	serial->transmitPosition = 0;
 }
 
-static void io_uart_handler(nrfx_uarte_event_t *p_event, void *p_context)
+static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 {
 	Serial serial = p_context;
 	uint8_t post = 0;
