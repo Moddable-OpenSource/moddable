@@ -74,9 +74,9 @@ struct sxKeyword {
 struct sxSymbol {
 	txSymbol* next;
 	txID ID;
-	txInteger length;
+	txSize length;
 	txString string;
-	txSize sum;
+	txU4 sum;
 	txInteger usage;
 };
 

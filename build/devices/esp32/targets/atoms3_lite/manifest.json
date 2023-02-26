@@ -1,0 +1,39 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "1",
+		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/atoms3_lite/sdkconfig"
+	},
+	"include": [
+		"$(MODULES)/pins/smbus/manifest.json",
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/neopixel/*",
+			"$(MODULES)/drivers/neopixel/esp32/*",
+			"../m5stack_fire/m5button"
+		],
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel",
+		"m5button"
+	],
+	"defines": {
+		"i2c": {
+			"sda_pin": 38,
+			"scl_pin": 39
+		},
+		"neopixel": {
+			"length": 1,
+			"pin": 35,
+			"order": "#GRB",
+			"rmt_channel": "RMT_CHANNEL_0"
+		}
+	}
+}
+

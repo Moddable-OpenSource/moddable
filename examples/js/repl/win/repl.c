@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 	c_memset(machine, 0, sizeof(txMachine));
 	machine->preparation = preparation;
 	machine->keyArray = preparation->keys;
-	machine->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
+	machine->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.initialKeyCount;
 	machine->keyIndex = (txID)preparation->keyCount;
 	machine->nameModulo = preparation->nameModulo;
 	machine->nameTable = preparation->names;

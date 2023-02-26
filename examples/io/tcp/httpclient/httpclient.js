@@ -27,7 +27,7 @@ class HTTPClient {
 		constructor(client) {
 			this.#client = client;
 		}
-		read(count) {
+		read(count = this.#client.#readable) {
 			const client = this.#client;
 			if (client.#current.request !== this)
 				throw new Error("bad state");
@@ -70,8 +70,10 @@ class HTTPClient {
 					});
 				}
 			}
-			else if (0 === client.#remaining)
+			else if (0 === client.#remaining) {
+				client.#state = "receivedBody"; 
 				client.#timer = Timer.set(client.#done.bind(client));
+			}
 
 			return result;
 		}
@@ -139,14 +141,14 @@ class HTTPClient {
 	#requestBody;
 	#chunk;
 	#timer;
-	#onClose;
+	#onError;
 	
 	constructor(options) {
-		const {host, address, port, onClose} = options;		//@@ onError?? 
+		const {host, port, onError} = options; 
 
 		if (!host) throw new Error("host required");
 		this.#host = host;
-		this.#onClose = onClose;
+		this.#onError = onError;
 
 		const dns = new options.dns.io(options.dns);
 		dns.resolve({
@@ -161,17 +163,17 @@ class HTTPClient {
 						port: port ?? 80,
 						onReadable: this.#onReadable.bind(this),
 						onWritable: this.#onWritable.bind(this),
-						onError: this.#onError.bind(this)
+						onError: this.#error.bind(this)
 					});
 				}
-				catch {
+				catch (e) {
 					this.#state = "error";
-					this.#onError?.();
+					this.#error?.(e);
 				}
 			},
-			onError: () => {
+			onError: e => {
 				this.#state = "error";
-				this.#onError?.();
+				this.#error?.(e);
 			}
 		});
 	}
@@ -369,15 +371,34 @@ class HTTPClient {
 				break;
 		} while (true);
 	}
-	#onError() {
+	#error(e) {
+		if (("receivedBody" === this.#state) && this.#timer) {		// completion not reported yet. report before handling error.
+			Timer.clear(this.#timer);
+			this.#done();
+		}
+
 		this.#state = "error";
-		this.#onClose?.();
+
+		try {
+			const current = this.#current;
+			this.#current = undefined;
+			current?.onDone?.call(current.request, new Error);
+
+			while (this.#requests.length) {
+				const request = this.#requests.shift(); 
+				request.onDone?.call(request.request, new Error);
+			}
+			this.#onError?.(e);
+		}
+		catch {
+		}
+		this.close();
 	}
 	#done() {
 		this.#timer = undefined;
 
 		this.#state = "connected";
-		this.#current.onDone?.call(this.#current.request);
+		this.#current.onDone?.call(this.#current.request, null);
 		this.#next();
 		if (this.#current)
 			this.#onWritable(this.#writable);

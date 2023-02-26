@@ -636,6 +636,10 @@ void fx_ArrayBuffer_prototype_slice(txMachine* the)
 		stop = start;
 	fxConstructArrayBufferResult(the, C_NULL, stop - start);
 	resultBuffer = fxCheckArrayBufferDetached(the, mxResult, XS_MUTABLE);
+	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_IMMUTABLE);
+	bufferInfo = arrayBuffer->next;
+	if (bufferInfo->value.bufferInfo.length < stop)
+		mxTypeError("resized this");
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address + start, stop - start);
 }
 
@@ -1346,7 +1350,7 @@ void fx_TypedArray(txMachine* the)
 			info = fxGetBufferInfo(the, mxArgv(0));
 			if (size >= 0) {
 				txInteger delta = size << shift;
-				txInteger end = offset + delta;
+				txInteger end = fxAddChunkSizes(the, offset, delta);
 				if ((info->value.bufferInfo.length < end) || (end < offset))
 					mxRangeError("out of range length %ld", size);
 				size = delta;
@@ -1424,7 +1428,7 @@ void fx_TypedArray(txMachine* the)
 	}
 	else {
         txInteger length = fxArgToByteLength(the, 0, 0);
-        if (length & (((1 << shift) - 1) << (32 - shift)))
+        if (length > (0x7FFFFFFF >> shift))
 			mxRangeError("out of range byteLength");
         length <<= shift;
 		mxPush(mxArrayBufferConstructor);

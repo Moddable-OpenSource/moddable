@@ -1,5 +1,5 @@
 <!--
- | Copyright (c) 2016-2021  Moddable Tech, Inc.
+ | Copyright (c) 2016-2023  Moddable Tech, Inc.
  |
  |   This file is part of the Moddable SDK Runtime.
  | 
@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: June 23, 2021  
+Revised: February 9, 2023
 
 **See end of document for [copyright and license](#license)**
 
@@ -1862,9 +1862,12 @@ typedef struct {
 	xsIntegerValue initialHeapCount;
 	xsIntegerValue incrementalHeapCount;
 	xsIntegerValue stackCount;
-	xsIntegerValue keyCount;
+	xsIntegerValue initialKeyCount;
+	xsIntegerValue incrementalKeyCount;
 	xsIntegerValue nameModulo;
 	xsIntegerValue symbolModulo;
+	xsIntegerValue parserBufferSize;
+	xsIntegerValue parserTableModulo;
 	xsIntegerValue staticSize;
 } xsCreation;
 ```
@@ -1892,7 +1895,7 @@ Regarding the parameters of the machine that are specified in the `xsCreation` s
 
 - A machine uses a heap and a stack of slots. The `initialHeapCount` is the initial number of slots allocated to the heap. The `incrementalHeapCount` tells the runtime how to increase the number of slots allocated to the heap. The `stackCount` is the number of slots allocated to the stack. Note that these values are all slots, not bytes.
 
-- A symbol binds a string value and an identifier; see [`xsID`](#xs-id). The `keyCount` is the number of symbols the machine will use. The `symbolModulo` is the size of the hash table the machine will use for symbols.  The `nameModulo` is the size of the hash table the machine will use for symbol names. 
+- A symbol binds a string value and an identifier; see [`xsID`](#xs-id). The `initialKeyCount` is the number of symbols the machine will allocate at initialization. When the keys are exhausted `incrementalKeyCount` keys are added; if `incrementalKeyCount` is 0, the VM aborts when the keys are exhausted. `symbolModulo` is the size of the hash table the machine will use for symbols.  The `nameModulo` is the size of the hash table the machine will use for symbol names. 
 
 - Some XS hosts attempt to grow the slot and chunk heaps without limit at runtime to accommodate the memory needs of the hosted scripts; others limit the maximum memory that may be allocated to the machine. For the latter, the `staticSize` defines the total number of bytes that may be allocated for the combination of chunks and slots, which includes the stack. In general, only hosts running on resource constrained devices implement `staticSize`.
 

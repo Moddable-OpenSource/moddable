@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022 Moddable Tech, Inc.
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -114,8 +114,9 @@ endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 
+MACOS_ARCH ?=
 # C_FLAGS = -c -arch i386
-C_FLAGS = -c
+C_FLAGS = -c $(MACOS_ARCH)
 ifeq ($(DEBUG),)
 	C_FLAGS += -D_RELEASE=1 -O3
 else
@@ -124,8 +125,7 @@ else
 endif
 
 # LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
-LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
-LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc
+LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc $(MACOS_ARCH)
 
 BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
 COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf

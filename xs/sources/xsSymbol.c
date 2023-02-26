@@ -95,7 +95,7 @@ void fx_Symbol(txMachine* the)
 		description = C_NULL;
 	id = the->keyIndex;
 	if (id == the->keyCount)
-		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+		fxGrowKeys(the, 1);
 	the->keyArray[id - the->keyOffset] = description;
 	the->keyIndex++;
 	mxResult->kind = XS_SYMBOL_KIND;
@@ -130,7 +130,7 @@ void fx_Symbol_for(txMachine* the)
 	if (result == C_NULL) {
 		id = the->keyIndex;
 		if (id == the->keyCount)
-			fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+			fxGrowKeys(the, 1);
 		result = fxNewSlot(the);
 		result->next = the->symbolTable[modulo];
 		result->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
@@ -313,7 +313,7 @@ txID fxNewName(txMachine* the, txSlot* theSlot)
 
 	id = the->keyIndex;
 	if (id == the->keyCount)
-		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+		fxGrowKeys(the, 1);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;
@@ -353,7 +353,7 @@ txID fxNewNameC(txMachine* the, txString theString)
 
 	id = the->keyIndex;
 	if (id == the->keyCount)
-		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+		fxGrowKeys(the, 1);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;
@@ -395,7 +395,7 @@ txID fxNewNameX(txMachine* the, txString theString)
 
 	id = the->keyIndex;
 	if (id == the->keyCount)
-		fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+		fxGrowKeys(the, 1);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
 	result->flag = XS_DONT_ENUM_FLAG;

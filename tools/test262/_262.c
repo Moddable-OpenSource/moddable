@@ -184,7 +184,7 @@ void _xsbug_main(txMachine* the)
 	root = &(gxAgentCluster.root);
 	root->preparation = preparation;
 	root->keyArray = preparation->keys;
-	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.keyCount;
+	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.initialKeyCount;
 	root->keyIndex = (txID)preparation->keyCount;
 	root->nameModulo = preparation->nameModulo;
 	root->nameTable = preparation->names;
@@ -482,7 +482,8 @@ void* _262_agent_start_aux(void* it)
 		512, 				/* initialHeapCount */
 		64, 				/* incrementalHeapCount */
 		256, 				/* stackCount */
-		1024, 				/* keyCount */
+		1024, 				/* initialKeyCount */
+		0,	 				/* incrementalKeyCount */
 		127, 				/* nameModulo */
 		127,				/* symbolModulo */
 		2048,				/* parserBufferSize */

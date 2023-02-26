@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Moddable Tech, Inc.
+ * Copyright (c) 2021-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -52,7 +52,7 @@ class PCF8563 {
 		});
 
 		try {
-			io.readByte(0);
+			io.readUint8(0);
 		}
 		catch(e) {
 			io.close();
@@ -66,7 +66,7 @@ class PCF8563 {
 				...interrupt,
 				edge: interrupt.io.Falling,
 				onReadable: () => {
-					this.#io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
+					this.#io.writeUint8(Register.CTRL2, 0);	//  clear alarm, disable interrupt
 					this.#onAlarm();
 				}
 			});
@@ -85,7 +85,7 @@ class PCF8563 {
 			let now = this.time;
 	
 			if (!time) {
-				io.writeByte(Register.CTRL2, 0);	//  clear alarm, disable interrupt
+				io.writeUint8(Register.CTRL2, 0);	//  clear alarm, disable interrupt
 				return;
 			}
 
@@ -94,27 +94,27 @@ class PCF8563 {
 	
 			let future = new Date(time);
 			future.setUTCSeconds(0);
-			io.writeByte(Register.ALARM_MINUTES, decToBcd(future.getUTCMinutes()));
-			io.writeByte(Register.ALARM_HOURS, decToBcd(future.getUTCHours()));
-			io.writeByte(Register.ALARM_DAY, decToBcd(future.getUTCDate()));
-			io.writeByte(Register.ALARM_WEEKDAY, 0x80);		// disable
+			io.writeUint8(Register.ALARM_MINUTES, decToBcd(future.getUTCMinutes()));
+			io.writeUint8(Register.ALARM_HOURS, decToBcd(future.getUTCHours()));
+			io.writeUint8(Register.ALARM_DAY, decToBcd(future.getUTCDate()));
+			io.writeUint8(Register.ALARM_WEEKDAY, 0x80);		// disable
 	
-			io.writeByte(Register.CTRL2, 0b0001_0010);	// pulse interrupt, clear alarm, enable interrupt
+			io.writeUint8(Register.CTRL2, 0b0001_0010);	// pulse interrupt, clear alarm, enable interrupt
 		}
 	}
 	get configuration() {
 		let io = this.#io;
 		let now = new Date(this.time);
 
-		const alarmStatus = io.readByte(Register.CTRL2) & 0b0000_0010;
+		const alarmStatus = io.readUint8(Register.CTRL2) & 0b0000_0010;
 		if (!alarmStatus)
 			return {alarm: 0}; // alarm is disabled
 
 		now.setUTCSeconds(0);
-		now.setUTCMinutes( bcdToDec(io.readByte(Register.ALARM_MINUTES) & 0x7f) );
-		now.setUTCHours( bcdToDec(io.readByte(Register.ALARM_HOURS) & 0x3f) );
+		now.setUTCMinutes( bcdToDec(io.readUint8(Register.ALARM_MINUTES) & 0x7f) );
+		now.setUTCHours( bcdToDec(io.readUint8(Register.ALARM_HOURS) & 0x3f) );
 
-		let date = bcdToDec(io.readByte(Register.ALARM_DAY) & 0x3f);
+		let date = bcdToDec(io.readUint8(Register.ALARM_DAY) & 0x3f);
 		if (date < now.getUTCDate()) {
 			let month = now.getUTCMonth() + 1;
 			if (month > 11) {
@@ -131,12 +131,12 @@ class PCF8563 {
 		const io = this.#io;
 		const reg = this.#blockBuffer;
 
-		io.readBlock(Register.TIME, reg);
+		io.readBuffer(Register.TIME, reg);
 
 		if (reg[0] & Register.VALID_BIT) // if high bit of seconds is set, then time is uncertain
 			return undefined;
 
-		if (this.#io.readByte(Register.CTRL1) & 0b0010_0000) // check if disabled
+		if (this.#io.readUint8(Register.CTRL1) & 0b0010_0000) // check if disabled
 			return undefined;
 
 		// yr, mo, day, hr, min, sec
@@ -166,9 +166,9 @@ class PCF8563 {
 		b[5] = decToBcd(now.getUTCMonth() + 1) | (year > 2099 ? Register.CENTURY_BIT : 0);
 		b[6] = decToBcd(year % 100);
 
-		io.writeBlock(Register.TIME, b);
+		io.writeBuffer(Register.TIME, b);
 
-		io.writeWord(Register.CTRL1, 0);			// enable
+		io.writeUint16(Register.CTRL1, 0);			// enable
 	}
 }
 

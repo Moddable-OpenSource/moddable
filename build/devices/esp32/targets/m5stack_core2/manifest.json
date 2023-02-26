@@ -1,7 +1,7 @@
 {
 	"build": {
 		"UPLOAD_SPEED": "1500000",
-		"DEBUGGER_SPEED": "921600"
+		"DEBUGGER_SPEED": "1500000"
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",

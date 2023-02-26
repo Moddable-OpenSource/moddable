@@ -159,8 +159,14 @@ class FT6206  {
 			if (!length) {
 				if (!this.#io.interrupt)
 					Timer.schedule(this.#timer, 17, 17);
+				if (this.#io.none)
+					return;
+				this.#io.sample = [];
+				this.#io.none = true;
+				this.#onSample?.();
 				return;
 			}
+			delete this.#io.none;
 			this.#io.readBuffer(0x03, this.#io.buffer, () => {
 				const io = this.#io, data = io.buffer;
 				const result = new Array(length);

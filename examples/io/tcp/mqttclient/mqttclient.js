@@ -63,7 +63,7 @@ class MQTTClient {
 
 	constructor(options) {
 		this.#options = {
-			host: options.host ?? options.address,
+			host: options.host,
 			port: options.port,
 			id: options.id ?? "",
 			clean: options.clean ?? true,
@@ -94,7 +94,7 @@ class MQTTClient {
 						...options.socket,
 						address,
 						host,
-						port: this.#options.port ?? 80,
+						port: this.#options.port ?? 1883,
 						onReadable: this.#onReadable.bind(this),
 						onWritable: this.#onWritable.bind(this),
 						onError: this.#onError.bind(this)
@@ -712,7 +712,7 @@ class MQTTClient {
 		if ((options.last + (interval + (interval >> 1))) < now)
 			return void this.#onError("time out"); // no response in too long
 
-		for (let i = 0, queue = this.#queue, length = queue.length; i < length; i++) {
+		for (let i = 0, queue = this.#options.pending, length = queue.length; i < length; i++) {
 			if (queue[i].keepalive && (MQTTClient.PINGREQ === queue[i].operation))
 				return void this.#onError("time out"); // unsent keepalive ping, exit
 		}

@@ -22,6 +22,11 @@ let sensor = new APDS9960({
 	}
 });
 
+sensor.configure({
+	enableGesture: false,
+	enableProximity: false
+});
+
 trace(`Sensor configuration is: ${JSON.stringify(sensor.configuration)}\n`);
 trace(`Sensor identification is: ${JSON.stringify(sensor.identification)}\n`);
 

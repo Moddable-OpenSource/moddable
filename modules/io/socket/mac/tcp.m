@@ -20,6 +20,7 @@
  
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_* values
+#include "modInstrumentation.h"
 
 #include "builtinCommon.h"
 
@@ -103,6 +104,8 @@ void xs_tcp_constructor(xsMachine *the)
 	if (!tcp)
 		xsRangeError("no memory");
 	tcp->skt = -1;
+
+	modInstrumentationAdjust(NetworkSockets, +1);
 
 	xsmcSetHostData(xsThis, tcp);
 
@@ -278,6 +281,8 @@ void xs_tcp_destructor(void *data)
 	}
 	
 	free(tcp);
+
+	modInstrumentationAdjust(NetworkSockets, -1);
 }
 
 void doClose(xsMachine *the, xsSlot *instance)
@@ -365,9 +370,8 @@ void xs_tcp_write(xsMachine *the)
 		return;
 	}
 
-	if (kIOFormatBuffer == tcp->format) {
+	if (kIOFormatBuffer == tcp->format)
 		xsmcGetBufferReadable(xsArg(0), &buffer, &needed);
-	}
 	else {
 		needed = 1;
 		value = (uint8_t)xsmcToInteger(xsArg(0));
@@ -381,8 +385,13 @@ void xs_tcp_write(xsMachine *the)
 
 	CFSocketEnableCallBacks(tcp->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack);
 	int ret = write(tcp->skt, buffer, needed);
-	if (ret < 0)
-		xsUnknownError("write failed");
+	if (ret < 0) {
+		xsTrace("write failed");
+		tcpTrigger(tcp, kTCPError);
+		return;
+	}
+
+	modInstrumentationAdjust(NetworkBytesWritten, needed);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -497,15 +506,18 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 			tcp->readPosition = 0;
 		}
 		int bytesRead = read(tcp->skt, tcp->readBuf + tcp->bytesReadable, kBufferSize - tcp->bytesReadable);
-		if (bytesRead >= 0)
+		if (bytesRead > 0) {
 			tcp->bytesReadable += bytesRead;
-		else {
+			if (bytesRead)
+				tcpTrigger(tcp, kTCPReadable);
+		}
+		else {		// bytes read 0 indicates connection closed
 			tcp->error = 1;
 			if (0 == tcp->bytesReadable)
 				tcpTrigger(tcp, kTCPError);
 			goto done;
 		}
-		tcpTrigger(tcp, kTCPReadable);
+		modInstrumentationAdjust(NetworkBytesRead, bytesRead);
 
 		if (tcp->bytesReadable == kBufferSize)
 			CFSocketDisableCallBacks(tcp->cfSkt, kCFSocketReadCallBack);
