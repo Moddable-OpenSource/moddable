@@ -29,8 +29,39 @@ class MockupBehavior extends DeviceBehavior {
 			return true;
 		}
 	}
-	onReloadOnAbortChanged(container, data) {
-		this.reloadOnAbort = data.value;
+	onAccelerometerChanged(container) {
+		const { x, y, z } = this;
+		this.postJSON(container, { accelerometer: { x, y, z } });
+	}
+	onAccelerometerFlat(container) {
+		this.x = 0;
+		this.y = 0;
+		this.z = 9.81;
+		const xSlider = this.X;
+		const ySlider = this.Y;
+		const zSlider = this.Z;
+		xSlider.behavior.data.value = 0;
+		xSlider.behavior.onDataChanged(xSlider);
+		xSlider.behavior.onValueChanging(xSlider);
+		ySlider.behavior.data.value = 0;
+		ySlider.behavior.onDataChanged(ySlider);
+		ySlider.behavior.onValueChanging(ySlider);
+		zSlider.behavior.data.value = 100;
+		zSlider.behavior.onDataChanged(zSlider);
+		zSlider.behavior.onValueChanging(zSlider);
+		this.onAccelerometerChanged(container);
+	}
+	onAccelerometerXChanged(container, data) {
+		this.x = data.value * 9.81 / 100;
+		this.onAccelerometerChanged(container);
+	}
+	onAccelerometerYChanged(container, data) {
+		this.y = data.value * 9.81 / 100;
+		this.onAccelerometerChanged(container);
+	}
+	onAccelerometerZChanged(container, data) {
+		this.z = data.value * 9.81 / 100;
+		this.onAccelerometerChanged(container);
 	}
 	onCreate(container, device) {
 		super.onCreate(container, device);
@@ -38,6 +69,9 @@ class MockupBehavior extends DeviceBehavior {
 		container.interval = 250;
 		this.push = 0;
 		this.turn = 0;
+		this.x = 0;
+		this.y = 0;
+		this.z = 1;
 		this.reloadOnAbort = false;
 	}
 	onKeyDown(container, key) {
@@ -88,6 +122,9 @@ class MockupBehavior extends DeviceBehavior {
 	onPushCCWJogDialUp(container) {
 		container.stop();
 	}
+	onReloadOnAbortChanged(container, data) {
+		this.reloadOnAbort = data.value;
+	}
 	onTimeChanged(container) {
 		this.postJSON(container, { jogdial: { push:this.push, turn:this.turn }});
 	}
@@ -116,10 +153,10 @@ class MockupBehavior extends DeviceBehavior {
 		this.postJSON(container, { button:0 });
 	}
 	onEnterButtonDown(container) {
-		this.postJSON(container, { jogdial: { push:1 } });
+		this.postJSON(container, { jogdial: { push:0 } });
 	}
 	onEnterButtonUp(container) {
-		this.postJSON(container, { jogdial: { push:0 } });
+		this.postJSON(container, { jogdial: { push:1 } });
 	}
 }
 
@@ -158,6 +195,42 @@ export default {
 // 					{ eventDown:"onPushCCWJogDialDown", eventUp:"onPushCCWJogDialUp", label:"Push CCW" },
 // 				],
 // 			}),
+			ButtonsRow({ 
+				label: "Accelerometer",
+				buttons: [
+					{ event:"onAccelerometerFlat", label:"Flat" },
+				],
+			}),
+			SliderRow({ 
+				name: "X",
+				event: "onAccelerometerXChanged",
+				label: "     X",
+				min: -100,
+				max: 100,
+				step: 1,
+				unit: "%",
+				value: 0
+			}),
+			SliderRow({ 
+				name: "Y",
+				event: "onAccelerometerYChanged",
+				label: "     Y",
+				min: -100,
+				max: 100,
+				step: 1,
+				unit: "%",
+				value: 0
+			}),
+			SliderRow({ 
+				name: "Z",
+				event: "onAccelerometerZChanged",
+				label: "     Z",
+				min: -100,
+				max: 100,
+				step: 1,
+				unit: "%",
+				value: 100
+			}),
 			SwitchRow({
 				event: "onReloadOnAbortChanged",
 				label: "Reload On Abort",

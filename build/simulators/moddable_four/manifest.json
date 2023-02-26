@@ -5,6 +5,7 @@
 	"modules": {
 		"*": [
 			"../modules/control",
+			"../modules/accelerometer",
 			"../modules/button",
 			"../modules/jogdial",
 			"../modules/led",
@@ -13,6 +14,7 @@
 	},
 	"preload": [
 		"control",
+		"accelerometer",
 		"button",
 		"jogdial",
 		"led",
