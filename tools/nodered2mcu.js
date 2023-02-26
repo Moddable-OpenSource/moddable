@@ -579,9 +579,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = ${value};`);
 						}
 						else if ("flow" === rule.pt)
-							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.p)}, ${value});`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.p, value)});`);
 						else if ("global" === rule.pt)
-							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.p)}, ${value});`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.p, value)});`);
 						else
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
@@ -594,7 +594,8 @@ export default class extends TOOL {
 						}
 						else if (("flow" === rule.pt) || ("global" === rule.pt)) {
 							const which = ("flow" === rule.pt) ? "flow" : "globalContext";
-							change.push(`\t\t\tthis.${which}.set(${this.makeStorageArgs(rule.p)}, this.change(this.${which}.get(${this.makeStorageArgs(rule.p)}), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
+							const value = `this.change(this.${which}.get(${this.makeStorageArgs(rule.p)}), ${from}, ${JSON.stringify(rule.fromt)}, ${to})`;
+							change.push(`\t\t\tthis.${which}.set(${this.makeStorageArgs(rule.p, value)});`);
 						}
 						else
 							throw new Error(`unexpected change type: ${rule.pt}`);
@@ -615,9 +616,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = temp;`);
 						}
 						else if ("flow" === rule.tot)
-							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to)}, temp);`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to, temp)});`);
 						else if ("global" === rule.tot)
-							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to)}, temp);`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to, temp)});`);
 						else
 							throw new Error(`unexpected move type: ${rule.pt}`);
 					}
@@ -1858,13 +1859,17 @@ export default class extends TOOL {
 				throw new Error(`environment type "${env.type}" unsupported on "${name}"`);
 		}
 	}
-	makeStorageArgs(value) {
-		if (value.startsWith("#:(") && value.includes("::")) {
-			value = value.split("::");
-			if ("#:(file)" !== value[0])
-				throw new Error("unsupported storage " + value[0]);
-			return `"${value[1]}", "file"`;
+	makeStorageArgs(name, value) {
+		if (name.startsWith("#:(") && name.includes("::")) {
+			name = name.split("::");
+			if ("#:(file)" !== name[0])
+				throw new Error("unsupported storage " + name[0]);
+			if (undefined !== value)
+				return `"${name[1]}", ${value}, "file"`;
+			return `"${name[1]}", "file"`;
 		}
-		return `"${value}"`;
+		if (undefined !== value)
+			return `"${name}", ${value}`;
+		return `"${name}"`;
 	}
 }
