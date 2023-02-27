@@ -35,7 +35,7 @@ declare module "file" {
     ): T extends typeof String ? string : InstanceType<T>;
 
     write(
-      value: ArrayBuffer | string,
+      value: ArrayBufferLike | ArrayBuffer | string,
       ...moreValues: (ArrayBuffer | string)[]
     ): void;
 
