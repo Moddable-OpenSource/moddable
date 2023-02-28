@@ -1185,8 +1185,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
 		aSlot = theSlot->value.module.realm;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_EXPORT_KIND:
 		aSlot = theSlot->value.export.closure;
