@@ -796,6 +796,9 @@ export class MakeFile extends FILE {
 		for (var result of tool.outlineFontFiles) {
 			var source = result.source;
 			
+			if (!tool.getenv("FONTBM"))
+				throw new Error("$(FONTBM) environemnt variable not set");
+			
 			result.faces.forEach(face => {
 				const name = face.name + "-" + face.size;
 
@@ -1660,7 +1663,7 @@ export class Tool extends TOOL {
 					this.createDirectory(path);
 				}
 				this.currentDirectory = path;
-				this.report("# git clone " + repo);
+				this.report("# git clone " + repo + " to path " + path);
 				let result;
 				if (branch)
 					result = this.spawn("git", "clone", "-b", branch, repo, ".");
