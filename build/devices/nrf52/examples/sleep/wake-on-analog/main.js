@@ -23,7 +23,7 @@ import {Sleep} from "sleep";
 import Timer from "timer";
 
 const wakeup_pin = 5;		// AIN5
-const led = new Host.LED;
+const led = new Host.LED.Default;
 
 led.write(1);
 

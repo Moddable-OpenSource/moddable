@@ -27,7 +27,7 @@ import {Range, DataRate} from "lis3dh";
 import config from "mc/config";
 
 const wakeup_pin = config.lis3dh_int1_pin;
-const led = new Host.LED;
+const led = new Host.LED.Default;
 
 // configure accelerometer to generate an interrupt on the wakeup pin
 let sensor = new Host.Accelerometer({

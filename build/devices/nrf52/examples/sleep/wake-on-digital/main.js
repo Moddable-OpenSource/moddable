@@ -24,7 +24,7 @@ import Timer from "timer";
 import config from "mc/config";
 
 const wakeup_pin = config.button1_pin;
-const led = new Host.LED;
+const led = new Host.LED.Default;
  
 led.write(1);
 

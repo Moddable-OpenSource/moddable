@@ -25,14 +25,15 @@ import Timer from "timer";
 import config from "mc/config";
 
 const wakeup_pin = config.button1_pin;
-const led = new Host.LED;
+const led = new Host.LED.Default;
 
 // Turn on LED upon wakeup
 led.write(1);
 
 let digital = new Digital({
 	pin: wakeup_pin,
-	mode: Digital.InputPullUp | Digital.WakeOnFall,
+	mode: Digital.InputPullUp,
+	wakeEdge: Digital.WakeOnFall,
 	onWake() {
 	}
 });

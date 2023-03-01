@@ -15,7 +15,7 @@
 import {Sleep} from "sleep";
 import Timer from "timer";
 
-const led = new Host.LED;
+const led = new Host.LED.Default;
 
 let state = 1;
 Timer.repeat(() => {
