@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -66,7 +66,6 @@ static uint8_t usingPins(uint32_t data, uint32_t clock);
 #endif
 
 static const nrf_drv_twi_t gTwi = NRF_DRV_TWI_INSTANCE(MODDEF_I2C_INTERFACE);
-static volatile bool m_xfer_done = false;
 static BaseType_t gTWITask = 0;
 static QueueHandle_t gTWIQueue = NULL;
 
@@ -98,20 +97,17 @@ static void twi_handler(nrf_drv_twi_evt_t const *p_event, void *p_context)
 		xQueueSendFromISR(gTWIQueue, &msg, NULL);
 }
 
-static uint8_t waitForComplete(uint32_t timeout)
+static void waitForComplete(xsMachine *the, uint32_t timeout)
 {
 	uint32_t msg = 0;
 	if (xQueueReceive(gTWIQueue, (void*)&msg, timeout)) {
 		switch (msg) {
 			case TWI_READ_COMPLETE:
 			case TWI_WRITE_COMPLETE:
-				m_xfer_done = true;
-				break;
-			default:
-				m_xfer_done = true;
-				break;
+				return;
 		}
 	}
+	xsUnknownError("i2c error");
 }
 
 void _xs_i2c_constructor(xsMachine *the)
@@ -285,8 +281,8 @@ void _xs_i2c_read(xsMachine *the)
 		stop = xsmcToBoolean(xsArg(1));;
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
-		xsResult = xsArg(0);
-		xsmcGetBufferWritable(xsResult, &buffer, &length);
+		xsmcGetBufferWritable(xsArg(0), &buffer, &length);
+		xsmcSetInteger(xsResult, length);
 	}
 	else {
 		length = xsmcToInteger(xsArg(0));
@@ -303,7 +299,7 @@ void _xs_i2c_read(xsMachine *the)
 		modLog("I2CErr rx");
 	}
 	else
-		waitForComplete(i2c->timeout);
+		waitForComplete(the, i2c->timeout);
 
 }
 
@@ -330,7 +326,7 @@ void _xs_i2c_write(xsMachine *the)
 		modLog("I2CErr tx");
 	}
 	else
-		waitForComplete(i2c->timeout);
+		waitForComplete(the, i2c->timeout);
 
 }
 
