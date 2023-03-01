@@ -110,6 +110,8 @@ extern uint32_t *dbl_reset_mem;
 #define MOD_TIME_RESTORE_MEM	0x200041F0		// uint32_t + c_timeval
 #define MOD_WAKEUP_REASON_MEM	0x200041E8		// uint32_t + uint32_t
 
+#define BOOTLOADER_VER_MEM      0x200041D0  	// uint32_t
+
 /* reset */
 #define REBOOT_FAST_RESET		0x4ee5677e
 #define REBOOT_TO_PROGRAMMING	0xbeefcafe
@@ -132,6 +134,7 @@ uint32_t nrf52_get_reset_reason(void);
 
 uint8_t nrf52_softdevice_enabled(void);
 
+#define nrf52_bootloaderVersion()	(*((uint32_t*)BOOTLOADER_VER_MEM))
 
 /*
     timer
