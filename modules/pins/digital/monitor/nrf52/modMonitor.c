@@ -45,7 +45,7 @@ typedef struct {
 
 static void digitalMonitorISR(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 static void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
-static void wakeableDigitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+static void wakeableMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static modDigitalMonitor gMonitors = NULL;
 
@@ -172,7 +172,7 @@ void xs_digital_monitor(xsMachine *the)
 			}
 			xsmcGet(wake.onWake, xsArg(0), xsID_onWake);
 			xsRemember(wake.onWake);
-			modMessagePostToMachine(the, (uint8_t*)&wake, sizeof(wake), wakeableDigitalDeliver, NULL);
+			modMessagePostToMachine(the, (uint8_t*)&wake, sizeof(wake), wakeableMonitorDeliver, NULL);
 		}
 	}
 }
@@ -280,7 +280,7 @@ void digitalMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t m
 	xsEndHost(the);
 }
 
-void wakeableDigitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+void wakeableMonitorDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	modDigitalWakeConfiguration wake = (modDigitalWakeConfiguration)message;
 
