@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: January 9, 2023
+Revised: March 3, 2023
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), and [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3).
 
@@ -121,8 +121,8 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | |<li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
 |  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` |  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
 |  <img src="./../assets/devices/adafruit-esp32-s3-tft-feather.png" width=125><BR>Adafruit ESP32-S3 TFT Feather | `esp32/s3_tft_feather` | 1.14" TFT display<BR> 240 x 135 16-bit color | <li>[Product page](https://www.adafruit.com/product/5483)</li>|
-|<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/atoms3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
-|<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/atoms3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
+|<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/m5atom_s3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
+|<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/m5atom_s3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
 
 <a id="platforms-esp32-c3"></a>
 ### ESP32-C3
