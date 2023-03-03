@@ -43,9 +43,9 @@ class WebSocketClient {
 		if (attach) {
 			this.#socket = new attach.constructor({
 				from: attach,
-				onReadable: this.#onReadable.bind(this),
-				onWritable: this.#onWritable.bind(this),
-				onError: this.#onError.bind(this)
+				onReadable: count => this.#onReadable(count),
+				onWritable: count => this.#onWritable(count),
+				onError: () => this.#onError()
 			});
 			this.#state = "connected";
 			return;
@@ -70,9 +70,9 @@ class WebSocketClient {
 						address,
 						host,
 						port: this.#options.port,
-						onReadable: this.#onReadable.bind(this),
-						onWritable: this.#onWritable.bind(this),
-						onError: this.#onError.bind(this)
+						onReadable: count => this.#onReadable(count),
+						onWritable: count => this.#onWritable(count),
+						onError: () => this.#onError()
 					});
 				}
 				catch {

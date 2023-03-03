@@ -72,14 +72,14 @@ class Resolver {
 			isAddress
 		}
 		this.#requests.push(request);
-		this.#timer ??= Timer.set(this.#task.bind(this), 0, 1000);
+		this.#timer ??= Timer.set(() => this.#task(), 0, 1000);
 	} 
 	#send(request) {
 		const packet = new Serializer({query: true, recursionDesired: true, opcode: DNS.OPCODE.QUERY, id: request.id});
 		packet.add(DNS.SECTION.QUESTION, request.host, DNS.RR.A, DNS.CLASS.IN);
 
 		try {
-			this.#timer ??= Timer.repeat(this.#task.bind(this), 1000);
+			this.#timer ??= Timer.repeat(() => this.#task(), 1000);
 
 			this.#socket ??= new (this.#UDP.io)({
 				target: this,
