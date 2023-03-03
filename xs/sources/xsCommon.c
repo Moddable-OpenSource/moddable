@@ -527,6 +527,10 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 
 #if mxUseDefaultCStackLimit
 
+#if defined(__ets__) && !defined(ESP32)
+	#include "cont.h"
+#endif
+
 #ifndef mxASANStackMargin
 	#define mxASANStackMargin 0
 #endif
@@ -555,6 +559,9 @@ char* fxCStackLimit()
 		}
 		pthread_attr_destroy(&attrs);
 		return result;
+	#elif defined(__ets__) && !defined(ESP32)
+		extern cont_t g_cont;
+		return 192 + (char *)g_cont.stack;
 	#else
 		return C_NULL;
 	#endif
