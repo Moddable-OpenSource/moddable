@@ -107,15 +107,12 @@ INC_DIRS = \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
  	$(IDF_PATH)/components/driver/include \
- 	$(IDF_PATH)/components/driver/deprecated \
  	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
  	$(IDF_PATH)/components/esp_common/include \
  	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
  	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
- 	$(IDF_PATH)/components/esp_adc/include \
- 	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/esp_app_format/include \
  	$(IDF_PATH)/components/esp_event/include \
  	$(IDF_PATH)/components/esp_eth/include \
@@ -180,7 +177,11 @@ INC_DIRS = \
  	$(IDF_PATH)/components/spi_flash/include \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
- 	$(IDF_PATH)/components/tinyusb/additions/include
+ 	$(IDF_PATH)/components/tinyusb/additions/include \
+ 	$(IDF_PATH)/components/esp_adc/include \
+ 	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include \
+
+# 	$(IDF_PATH)/components/driver/deprecated \
 	
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
