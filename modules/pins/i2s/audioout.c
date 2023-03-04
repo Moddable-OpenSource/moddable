@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 Moddable Tech, Inc.
+ * Copyright (c) 2018-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -119,7 +119,12 @@
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 	#include "freertos/semphr.h"
-	#include "driver/i2s.h"
+#ifdef MODDEF_AUDIOOUT_I2S_PDM
+	#include "driver/i2s_pdm.h"
+	#include "driver/i2s_std.h"
+#else
+	#error
+#endif
 
 	enum {
 		kStateIdle = 0,
@@ -226,6 +231,8 @@ typedef struct {
 #elif ESP32
 	SemaphoreHandle_t 		mutex;
 	TaskHandle_t			task;
+
+	i2s_chan_handle_t 		tx_handle;
 
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
@@ -573,9 +580,11 @@ void xs_audioout_start(xsMachine *the)
 	xTaskNotify(out->task, kStatePlaying, eSetValueWithOverwrite);
 #elif defined(__ets__)
 	#if MODDEF_AUDIOOUT_I2S_PDM
-		i2s_begin(doRenderSamples, out, out->sampleRate * (MODDEF_AUDIOOUT_I2S_PDM >> 5));
+//		i2s_begin(doRenderSamples, out, out->sampleRate * (MODDEF_AUDIOOUT_I2S_PDM >> 5));
+		#error
 	#else
-		i2s_begin(doRenderSamples, out, out->sampleRate);
+//		i2s_begin(doRenderSamples, out, out->sampleRate);
+		#error
 	#endif
 	out->i2sActive = true;
 #endif
@@ -1362,29 +1371,68 @@ void audioOutLoop(void *pvParameter)
 		.mck_io_num = I2S_PIN_NO_CHANGE
 	};
 #elif !MODDEF_AUDIOOUT_I2S_DAC
-	i2s_config_t i2s_config = {
-		.mode = I2S_MODE_MASTER | I2S_MODE_TX,	// Only TX
-		.sample_rate = out->sampleRate,
-		.bits_per_sample = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE,
-#if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
-		.channel_format = (1 == out->numChannels) ? I2S_CHANNEL_FMT_ONLY_LEFT : I2S_CHANNEL_FMT_RIGHT_LEFT,	// 2-channels
-		.communication_format = I2S_COMM_FORMAT_STAND_I2S,
+	// I2S_CHANNEL_DEFAULT_CONFIG(i2s_num, i2s_role)
+	i2s_chan_config_t chan_cfg = {
+		.id = MODDEF_AUDIOOUT_I2S_NUM,
+		.role = I2S_ROLE_MASTER,
+		.dma_desc_num = 6,
+		.dma_frame_num = 240,
+		.auto_clear = true,		// This is different from I2S_CHANNEL_DEFAULT_CONFIG
+	};
+	i2s_new_channel(&chan_cfg, &out->tx_handle, NULL);
+
+	i2s_std_config_t i2s_config = {
+		.gpio_cfg = {
+			.mclk = I2S_GPIO_UNUSED,
+			.bclk = MODDEF_AUDIOOUT_I2S_BCK_PIN,
+			.ws = MODDEF_AUDIOOUT_I2S_LR_PIN,
+			.dout = MODDEF_AUDIOOUT_I2S_DATAOUT_PIN,
+			.din = I2S_GPIO_UNUSED,
+			.invert_flags = {
+				.mclk_inv = false,
+				.bclk_inv = false,
+				.ws_inv = false,
+			},
+		},
+	};
+
+	// I2S_STD_CLK_DEFAULT_CONFIG(sampleRate) (i2s_std.h)
+	i2s_config.clk_cfg.sample_rate_hz = out->sampleRate;
+	i2s_config.clk_cfg.clk_src = I2S_CLK_SRC_DEFAULT;
+	i2s_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_256;
+
+	// I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bitwidth, mode) (i2s_std.h)
+#if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 32
+	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_32BIT;
+	i2s_config.slot_cfg.ws_width = I2S_DATA_BIT_WIDTH_32BIT;
+	i2s_config.slot_cfg.msb_right = false;
+#elif MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
+	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_16BIT;
+	i2s_config.slot_cfg.ws_width = I2S_DATA_BIT_WIDTH_16BIT;
+	i2s_config.slot_cfg.msb_right = true;
 #else
-		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT /* I2S_CHANNEL_FMT_RIGHT_LEFT */,	// 2-channels
-		.communication_format = I2S_COMM_FORMAT_STAND_I2S /* | I2S_COMM_FORMAT_I2S_MSB */,
+	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_8BIT;
+	i2s_config.slot_cfg.ws_width = I2S_DATA_BIT_WIDTH_8BIT;
+	i2s_config.slot_cfg.msb_right = true;
 #endif
-		.dma_buf_count = 2,
-		.dma_buf_len = sizeof(out->buffer) / out->bytesPerFrame,		// dma_buf_len is in frames, not bytes
-		.use_apll = 0,
-		.intr_alloc_flags = 0
-	};
-	i2s_pin_config_t pin_config = {
-		.bck_io_num = MODDEF_AUDIOOUT_I2S_BCK_PIN,
-		.ws_io_num = MODDEF_AUDIOOUT_I2S_LR_PIN,
-		.data_out_num = MODDEF_AUDIOOUT_I2S_DATAOUT_PIN,
-		.data_in_num = I2S_PIN_NO_CHANGE	// unused
-	};
+	i2s_config.slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO;
+#if MODDEF_AUDIOOUT_NUMCHANNELS == 2
+	i2s_config.slot_cfg.slot_mode = I2S_SLOT_MODE_STEREO;
+	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_BOTH;
 #else
+	i2s_config.slot_cfg.slot_mode = I2S_SLOT_MODE_MONO;
+	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
+#endif
+	i2s_config.slot_cfg.ws_pol = false;
+	i2s_config.slot_cfg.bit_shift = false;
+
+	esp_err_t ret;
+	i2s_channel_init_std_mode(out->tx_handle, &i2s_config);
+	i2s_channel_reconfig_std_slot(out->tx_handle, &i2s_config.slot_cfg);
+	i2s_channel_reconfig_std_clock(out->tx_handle, &i2s_config.clk_cfg);
+
+#else
+modLog("audioOutLoop DAC - untested");
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 		.sample_rate = out->sampleRate,
@@ -1411,12 +1459,14 @@ void audioOutLoop(void *pvParameter)
 			uint32_t newState;
 
 			if (!stopped) {
-				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);		// maybe use auto_clear in the future
+//				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);		// maybe use auto_clear in the future
+				// use auto_clear in idfv5
 
 #if MODDEF_AUDIOOUT_I2S_DAC
+				modLog("i2s_set_dac_mode");
 				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
 #else
-				i2s_stop(MODDEF_AUDIOOUT_I2S_NUM);
+				i2s_channel_disable(out->tx_handle);
 #endif
 				stopped = true;
 			}
@@ -1429,9 +1479,8 @@ void audioOutLoop(void *pvParameter)
 		}
 
 		if (!installed) {
-			i2s_driver_install(MODDEF_AUDIOOUT_I2S_NUM, &i2s_config, 0, NULL);
 #if !MODDEF_AUDIOOUT_I2S_DAC || MODDEF_AUDIOOUT_I2S_PDM
-			i2s_set_pin(MODDEF_AUDIOOUT_I2S_NUM, &pin_config);
+			i2s_channel_enable(out->tx_handle);
 #else
 			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
 #endif
@@ -1441,7 +1490,7 @@ void audioOutLoop(void *pvParameter)
 		else if (stopped) {
 			stopped = false;
 #if !MODDEF_AUDIOOUT_I2S_DAC
-			i2s_start(MODDEF_AUDIOOUT_I2S_NUM);
+			i2s_channel_enable(out->tx_handle);
 #else
 			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
 #endif
@@ -1461,9 +1510,10 @@ void audioOutLoop(void *pvParameter)
 			uint32_t s = *src++ ^ 0x8000;
 			*dst++ = (s << 16) | s;
 		}
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
+		modLog("i2s_write dac");
+		i2s_channel_write(out->tx_handle, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
+		i2s_channel_write(out->tx_handle, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
 		int i = count;
@@ -1473,14 +1523,17 @@ void audioOutLoop(void *pvParameter)
 		while (i--)
 			*dst++ = *src++ << 16;
 
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
+		modLog("i2s_write 32bit");
+		i2s_channel_write(out->tx_handle, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif
 	}
 
-	if (installed)
-		i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
+	if (out->tx_handle) {
+		i2s_del_channel(out->tx_handle);
+		out->tx_handle = NULL;
+	}
 
 	out->state = kStateTerminated;
 
