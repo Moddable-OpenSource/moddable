@@ -95,9 +95,9 @@ class MQTTClient {
 						address,
 						host,
 						port: this.#options.port ?? 1883,
-						onReadable: this.#onReadable.bind(this),
-						onWritable: this.#onWritable.bind(this),
-						onError: this.#onError.bind(this)
+						onReadable: count => this.#onReadable(count),
+						onWritable: count => this.#onWritable(count),
+						onError: error => this.#onError(error)
 					});
 					
 					this.#options.connecting = Timer.set(() => {
@@ -640,7 +640,7 @@ class MQTTClient {
 			delete options.will;
 
 			if (keepalive) {
-				options.keepalive = Timer.repeat(this.#keepalive.bind(this), keepalive * 500);
+				options.keepalive = Timer.repeat(() => this.#keepalive(), keepalive * 500);
 				options.keepalive.interval = keepalive * 1000;
 				options.last = Date.now();
 			}

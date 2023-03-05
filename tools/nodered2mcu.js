@@ -221,6 +221,12 @@ export default class extends TOOL {
 				}
 			}
 		}
+		
+		// check for ui_base (required for all other ui_* nodes)
+		nodes.forEach(config => {
+			if ("ui_base" === config.type)
+				nodes.ui_base = config;
+		});
 
 		// replace ${Environment} variables
 		flows.forEach((config, i) => this.applyEnv(flows, i, flows[i], flows));
@@ -555,9 +561,9 @@ export default class extends TOOL {
 							doDelete = `\t\t\tdelete msg${this.prepareProp(rule.p)}`;
 						}
 						else if ("flow" === rule.pt)
-							doDelete = `\t\t\tthis.flow.delete("${rule.p}");`;
+							doDelete = `\t\t\tthis.flow.delete(${this.makeStorageArgs(rule.p)});`;
 						else if ("global" === rule.pt)
-							doDelete = `\t\t\tglobalContext.delete("${rule.p}");`;
+							doDelete = `\t\t\tglobalContext.delete${this.makeStorageArgs(rule.p)};`;
 						else
 							throw new Error(`unexpected delete type: ${rule.pt}`);
 					}
@@ -573,9 +579,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = ${value};`);
 						}
 						else if ("flow" === rule.pt)
-							change.push(`\t\t\tthis.flow.set("${rule.p}", ${value});`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.p, value)});`);
 						else if ("global" === rule.pt)
-							change.push(`\t\t\tglobalContext.set("${rule.p}", ${value});`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.p, value)});`);
 						else
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
@@ -588,7 +594,8 @@ export default class extends TOOL {
 						}
 						else if (("flow" === rule.pt) || ("global" === rule.pt)) {
 							const which = ("flow" === rule.pt) ? "flow" : "globalContext";
-							change.push(`\t\t\tthis.${which}.set("${rule.p}", this.change(this.${which}.get("${rule.p}"), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
+							const value = `this.change(this.${which}.get(${this.makeStorageArgs(rule.p)}), ${from}, ${JSON.stringify(rule.fromt)}, ${to})`;
+							change.push(`\t\t\tthis.${which}.set(${this.makeStorageArgs(rule.p, value)});`);
 						}
 						else
 							throw new Error(`unexpected change type: ${rule.pt}`);
@@ -609,9 +616,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = temp;`);
 						}
 						else if ("flow" === rule.tot)
-							change.push(`\t\t\tthis.flow.set("${rule.to}", temp);`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to, temp)});`);
 						else if ("global" === rule.tot)
-							change.push(`\t\t\tglobalContext.set("${rule.to}", temp);`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to, temp)});`);
 						else
 							throw new Error(`unexpected move type: ${rule.pt}`);
 					}
@@ -1017,10 +1024,16 @@ export default class extends TOOL {
 			} break;
 		
 			case "mqtt in": {
+				if (!nodes.has(config.broker))
+					throw new Error(`mqtt broker id "${config.broker}" not found`);
+					
 				config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
 			} break;
 
 			case "mqtt out": {
+				if (!nodes.has(config.broker))
+					throw new Error(`mqtt broker id "${config.broker}" not found`);
+
 				if ("" === config.topic)
 					delete config.topic;
 
@@ -1513,7 +1526,7 @@ export default class extends TOOL {
 				delete config.payload; 
 				delete config.payloadType; 
 
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 
 			case "ui_switch": {
@@ -1534,7 +1547,7 @@ export default class extends TOOL {
 				delete config.onvalue; 
 				delete config.onvalueType; 
 
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 
 			case "ui_colour_picker":
@@ -1548,7 +1561,7 @@ export default class extends TOOL {
 				config.topic = topic.join("\n");
 				delete config.topicType;
 				
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 			
 			case "ui_chart":
@@ -1559,7 +1572,7 @@ export default class extends TOOL {
 			case "ui_text_input":
 			case "ui_template":
 			case "ui_toast":
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 				break;
 		}
 
@@ -1633,8 +1646,8 @@ export default class extends TOOL {
 				}
 					
 				if ("flow" === type)
-					return `this.flow.get("${value}")${suffix}`;
-				return `globalContext.get("${value}")${suffix}`;
+					return `this.flow.get(${this.makeStorageArgs(value)})${suffix}`;
+				return `globalContext.get(${this.makeStorageArgs(value)})${suffix}`;
 				}
 			case "env": {
 				let offset = 0;
@@ -1726,7 +1739,10 @@ export default class extends TOOL {
 			}
 		}
 	}
-	prepareUI(config) {
+	prepareUI(config, nodes) {
+		if (!nodes.ui_base)
+			throw new Error("ui_base node not found. required for dashboard nodes.")
+
 		if (config.width)
 			config.width = parseInt(config.width);
 		if (config.height)
@@ -1842,5 +1858,18 @@ export default class extends TOOL {
 			default:
 				throw new Error(`environment type "${env.type}" unsupported on "${name}"`);
 		}
+	}
+	makeStorageArgs(name, value) {
+		if (name.startsWith("#:(") && name.includes("::")) {
+			name = name.split("::");
+			if ("#:(file)" !== name[0])
+				throw new Error("unsupported storage " + name[0]);
+			if (undefined !== value)
+				return `"${name[1]}", ${value}, "file"`;
+			return `"${name[1]}", "file"`;
+		}
+		if (undefined !== value)
+			return `"${name}", ${value}`;
+		return `"${name}"`;
 	}
 }

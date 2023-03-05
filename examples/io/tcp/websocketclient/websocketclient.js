@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -37,27 +37,25 @@ class WebSocketClient {
 			onControl: options.onControl,
 			onClose: options.onClose,
 			onError: options.onError,
-			host: options.host ?? options.address,
-			path: options.path,
-			port: options.port,
-			protocol: options.protocol,
-			headers: options.headers
 		};
 
-		if (!this.#options.host) {
-			const socket = options.socket;
-			if (!socket)
-				throw new Error("host required");
-			
-			this.#socket = new socket.constructor({
-				from: socket,
-				onReadable: this.#onReadable.bind(this),
-				onWritable: this.#onWritable.bind(this),
-				onError: this.#onError.bind(this)
+		const attach = options.attach;
+		if (attach) {
+			this.#socket = new attach.constructor({
+				from: attach,
+				onReadable: count => this.#onReadable(count),
+				onWritable: count => this.#onWritable(count),
+				onError: () => this.#onError()
 			});
 			this.#state = "connected";
 			return;
 		}
+
+		this.#options.host = options.host; 
+		this.#options.path = options.path; 
+		this.#options.port = options.port ?? 80; 
+		this.#options.protocol = options.protocol; 
+		this.#options.headers = options.headers; 
 
 		const dns = new options.dns.io(options.dns);
 		this.#state = "resolving";
@@ -71,10 +69,10 @@ class WebSocketClient {
 						...options.socket,
 						address,
 						host,
-						port: this.#options.port ?? 80,
-						onReadable: this.#onReadable.bind(this),
-						onWritable: this.#onWritable.bind(this),
-						onError: this.#onError.bind(this)
+						port: this.#options.port,
+						onReadable: count => this.#onReadable(count),
+						onWritable: count => this.#onWritable(count),
+						onError: () => this.#onError()
 					});
 				}
 				catch {

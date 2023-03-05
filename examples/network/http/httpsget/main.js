@@ -15,7 +15,7 @@
 import {Request} from "http"
 import SecureSocket from "securesocket";
 
-let request = new Request({host: "www.mozilla.org", path: "/", response: String,
+let request = new Request({host: "www.example.com", path: "/", response: String,
 		port: 443, Socket: SecureSocket});
 request.callback = function(message, value, etc)
 {
