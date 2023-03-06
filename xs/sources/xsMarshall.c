@@ -458,7 +458,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		aBuffer.symbolSize = sizeof(txSize) + sizeof(txID);
 		aBuffer.symbolMap = c_calloc(mapSize, sizeof(txID));
 		if (mapSize && !aBuffer.symbolMap)
-			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			mxUnknownError("out of memory");
         the->stack->ID = XS_NO_ID;
         aBuffer.stack = the->stack;
 		fxMeasureSlot(the, the->stack, &aBuffer, alien);
@@ -467,7 +467,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		mxMarshallAlign(aBuffer.size, aBuffer.symbolSize);
 		aBuffer.base = aBuffer.current = (txByte *)c_malloc(aBuffer.size);
 		if (!aBuffer.base)
-			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			mxUnknownError("out of memory");
 		*((txSize*)(aBuffer.current)) = aBuffer.size;
 		aBuffer.current += sizeof(txSize);
 		*((txID*)(aBuffer.current)) = aBuffer.symbolCount;
@@ -554,11 +554,11 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 			}
 			aSlot = aSlot->next;
 		}
-		if (aBuffer.base) {
+		if (aBuffer.base)
 			c_free(aBuffer.base);
-			aBuffer.base = C_NULL;
-		}
-		break;
+		if (aBuffer.symbolMap)
+			c_free(aBuffer.symbolMap);
+		fxJump(the);
 	}
 	mxPop();
 	c_free(aBuffer.symbolMap);
@@ -881,7 +881,10 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		theSlot->value.instance.garbage = C_NULL;
 		aSlot = theSlot->next;
 		while (aSlot) {
-			mxPushAt(aSlot->ID, 0);
+			if (aSlot->flag & XS_INTERNAL_FLAG)
+				mxPushUndefined();
+			else
+				mxPushAt(aSlot->ID, 0);
 			fxMeasureSlot(the, aSlot, theBuffer, alien);
 			mxPop();
 			aSlot = aSlot->next;
