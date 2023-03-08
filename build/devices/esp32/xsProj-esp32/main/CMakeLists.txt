@@ -23,6 +23,14 @@ file(TO_CMAKE_PATH "${TMP_DIR}" C_TMP_DIR)
 set(COMPONENT_SRCS "main.c")
 set(COMPONENT_ADD_INCLUDEDIRS ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${C_TMP_DIR})
 
+set(REQUIRES_LIST driver nvs_flash esp_adc_cal vfs spiffs fatfs bt esp_eth)
+
+if (MATTER_BUILD EQUAL "1")
+    set(COMPONENT_ADD_INCLUDEDIRS ${COMPONENT_ADD_INCLUDEDIRS} ${ENV_MODDABLE}/modules/network/matter/esp32/inc)
+    set(COMPONENT_PRIV_INCLUDEDIRS ${ENV_MODDABLE}/modules/network/matter/esp32/inc)
+    set(REQUIRES_LIST ${REQUIRES_LIST} device chip esp_matter route_hook app_reset)
+endif()
+
 register_component()
 
 if (mxDebug EQUAL "1")
@@ -36,7 +44,12 @@ if (INSTRUMENT EQUAL "1")
 endif()
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-             PRIV_REQUIRES driver nvs_flash esp_adc_cal vfs spiffs fatfs bt esp_eth)
+             PRIV_REQUIRES ${REQUIRES_LIST})
+
+if (MATTER_BUILD EQUAL "1")
+    set_property(TARGET ${COMPONENT_LIB} PROPERTY CXX_STANDARD 14)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-DCHIP_HAVE_CONFIG_H")
+endif()
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE xsesp32)
 

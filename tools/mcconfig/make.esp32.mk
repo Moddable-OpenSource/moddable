@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -37,6 +37,12 @@ EXPECTED_ESP_IDF ?= v4.4.3
 # values include esp32, esp32s3 and esp32s2
 ESP32_SUBCLASS ?= esp32
 # $(warning ESP32_SUBCLASS $(ESP32_SUBCLASS))
+
+ifeq ("$(MATTER_BUILD)","1")
+	MATTER_DEFINE=-D MATTER_BUILD=1
+else
+	MATTER_DEFINE=
+endif
 
 ifeq ("$(ESP32_SUBCLASS)","esp32c3")
 	ESP_ARCH = riscv
@@ -98,7 +104,6 @@ else
 endif
 endif
 
-
 INC_DIRS = \
  	$(IDF_PATH)/components \
  	$(IDF_PATH)/components/bootloader_support/include \
@@ -158,7 +163,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/nimble/include \
  	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/npl/freertos/include \
  	$(IDF_PATH)/components/bt/host/nimble/port/include \
-        $(IDF_PATH)/components/soc/$(ESP32_SUBCLASS) \
+    $(IDF_PATH)/components/soc/$(ESP32_SUBCLASS) \
  	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include/soc \
  	$(IDF_PATH)/components/soc/include \
@@ -172,7 +177,7 @@ INC_DIRS = \
  	$(IDF_PATH)/components/tcpip_adapter/include \
  	$(IDF_PATH)/components/tcpip_adapter \
  	$(IDF_PATH)/components/tinyusb/additions/include
-	
+
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
@@ -272,13 +277,28 @@ C_DEFINES = \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkPocoRotation=$(ROTATION) 
 ifeq ($(DEBUG),1)
 	C_DEFINES += -DmxDebug=1
 endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
+ifeq ("$(MATTER_BUILD)","1")
+	C_DEFINES += -DCHIP_HAVE_CONFIG_H=1 \
+	-DCHIP_ADDRESS_RESOLVE_IMPL_INCLUDE_HEADER=\"lib/address_resolve/AddressResolve_DefaultImpl.h\" \
+	-DCHIP_ERROR_LOGGING=1 \
+	-DZAP_GENERATED_PATH=${MODDABLE}/modules/network/matter/esp32/inc/zap-generated
+	INC_DIRS += $(ESP_MATTER_PATH)/components/esp_matter \
+	$(ESP_MATTER_PATH)/components/esp_matter_console \
+	$(ESP_MATTER_PATH)/connectedhomeip/connectedhomeip/src \
+	$(ESP_MATTER_PATH)/connectedhomeip/connectedhomeip/third_party/nlassert/repo/include \
+	$(ESP_MATTER_PATH)/connectedhomeip/connectedhomeip/third_party/nlio/repo/include \
+	$(ESP_MATTER_PATH)/connectedhomeip/connectedhomeip/src/include \
+	$(ESP_MATTER_PATH)/connectedhomeip/connectedhomeip/zzz_generated/app-common \
+	$(ESP_MATTER_PATH)/components/esp_matter/zap_common
+endif
+
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_DIR),-I$(dir))
 
@@ -357,11 +377,11 @@ else
 	SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
 endif
 
-BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION)
-BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
+BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION) $(MATTER_DEFINE)
+BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" $(MATTER_DEFINE)
 BUILD_ERR = "ESP-IDF Build Failed"
 DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
-IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION)
+IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION) $(MATTER_DEFINE)
 RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
