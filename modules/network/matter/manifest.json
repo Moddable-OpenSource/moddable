@@ -1,0 +1,19 @@
+{
+    "platforms": {
+        "esp32": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/matter/*",
+                    "$(MODULES)/network/matter/esp32/*",
+                    "$(MODULES)/network/matter/esp32/inc/*"
+                ]
+            }
+        },
+        "...": {
+            "error": "matter - unsupported platform"
+        }
+    },
+    "preload": [
+        "matter"
+    ]
+}
