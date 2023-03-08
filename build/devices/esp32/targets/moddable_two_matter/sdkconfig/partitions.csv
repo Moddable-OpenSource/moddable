@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
+#
+#   This file is part of the Moddable SDK Tools.
+# 
+#   The Moddable SDK Tools is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+# 
+#   The Moddable SDK Tools is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+
+# Name,   Type, SubType, Offset,  Size, Flags
+# Note: Firmware partition offset needs to be 64K aligned, initial 36K (9 sectors) are reserved for bootloader and partition table
+esp_secure_cert,  0x3F, ,0xd000,    0x2000, ,  # Never mark this as an encrypted partition
+nvs,      data, nvs,     0x10000,   0x6000,
+nvs_keys, data, nvs_keys,,          0x1000,
+otadata,  data, ota,     ,          0x2000
+phy_init, data, phy,     ,          0x1000,
+ota_0,    app,  ota_0,   0x20000,   0x1E0000,
+ota_1,    app,  ota_1,   0x200000,  0x1E0000,
+fctry,    data, nvs,     0x3E0000,  0x6000
