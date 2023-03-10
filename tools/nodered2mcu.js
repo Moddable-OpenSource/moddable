@@ -1246,8 +1246,12 @@ export default class extends TOOL {
 					config.pin = parseInt(config.pin);
 				config.edge = parseInt(config.edge);
 				config.debounce = config.debounce ? parseFloat(config.debounce) : 0;
+				if (!config.debounce)
+					delete config.debounce;
 				if (!config.initial)
-					delete config.initial; 
+					delete config.initial;
+				if (!config.invert)
+					delete config.invert;
 				break;
 
 			case "mcu_digital_out":
@@ -1259,6 +1263,8 @@ export default class extends TOOL {
 					config.initial = 0;
 				else
 					delete config.initial;
+				if (!config.invert)
+					delete config.invert;
 				break;
 
 			case "mcu_pulse_width":
@@ -1302,6 +1308,9 @@ export default class extends TOOL {
 				
 				if ("mcu_i2c_out" === type)
 					config.getter = `function (msg) {return ${this.resolveValue(config.payloadType, config.payload)}}`;
+
+				delete config.payload;
+				delete config.payloadType;
 				break;
 
 			case "mcu_sensor":
