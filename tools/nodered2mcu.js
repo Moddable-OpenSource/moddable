@@ -106,7 +106,14 @@ export default class extends TOOL {
 		const source = this.readFileString(this.sourcePath);
 		let flows = JSON.parse(source);
 
-		flows = this.transformFlows(flows);
+		let credentials;
+		if (this.sourcePath.toLowerCase().endsWith(".json")) {
+			const path = this.sourcePath.slice(0, -5) + "_cred_mcu.json";
+			if (this.resolveFilePath(path))
+				credentials = JSON.parse(this.readFileString(path)).credentials;
+		}
+
+		flows = this.transformFlows(flows, credentials);
 
 		const parts = this.splitPath(this.sourcePath);
 		parts.extension = ".js";
@@ -119,7 +126,7 @@ export default class extends TOOL {
 		output.close();
 	}
 
-	transformFlows(flows) {
+	transformFlows(flows, credentials) {
 		const imports = new Map([["nodered", ""]]);		// ensure that globalThis.RED is available
 
 		// must be an array with at least one element
@@ -245,6 +252,9 @@ export default class extends TOOL {
 			flows.forEach(config => {
 				if (config.z !== z)
 					return;
+
+				if (credentials?.[config.id])
+					config.credentials = credentials[config.id];
 
 				const name = config.name;
 				let {type, id, /* name, */ ...c} = {...config};
