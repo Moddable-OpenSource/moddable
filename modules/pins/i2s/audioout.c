@@ -1402,20 +1402,27 @@ void audioOutLoop(void *pvParameter)
 	i2s_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_256;
 
 	// I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bitwidth, mode) (i2s_std.h)
+	int msb_right = true;
 #if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 32
 	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_32BIT;
 	i2s_config.slot_cfg.ws_width = I2S_DATA_BIT_WIDTH_32BIT;
-	i2s_config.slot_cfg.msb_right = false;
+	msb_right = false;
 #elif MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
 	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_16BIT;
 	i2s_config.slot_cfg.ws_width = I2S_DATA_BIT_WIDTH_16BIT;
-	i2s_config.slot_cfg.msb_right = true;
 #else
 	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_8BIT;
 	i2s_config.slot_cfg.ws_width = I2S_DATA_BIT_WIDTH_8BIT;
-	i2s_config.slot_cfg.msb_right = true;
 #endif
 	i2s_config.slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO;
+#if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
+	i2s_config.slot_cfg.msb_right = msb_right;
+#else
+	i2s_config.slot_cfg.left_align = false;
+	i2s_config.slot_cfg.big_endian = false;
+	i2s_config.slot_cfg.bit_order_lsb = false;
+#endif
+
 #if MODDEF_AUDIOOUT_NUMCHANNELS == 2
 	i2s_config.slot_cfg.slot_mode = I2S_SLOT_MODE_STEREO;
 	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_BOTH;
