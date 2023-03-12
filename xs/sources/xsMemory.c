@@ -1037,6 +1037,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 	case XS_FINALIZATION_REGISTRY_KIND:
 		aSlot = theSlot->value.finalizationRegistry.callback;
 		if (aSlot) {
+			fxCheckCStack(the);
 			aSlot->flag |= XS_MARK_FLAG;
 			fxMarkReference(the, aSlot);
 			aSlot = aSlot->next;
