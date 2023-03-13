@@ -73,6 +73,7 @@ The options object may contain the following properties. The `http`, `host`, `pa
 - `host` - the HTTP host to connect to stream from
 - `port` - the remote port to connect to
 - `path` - the path of the HTTP resource to stream
+- `request` - an optional object that can contain additional [HTTP request](../../../../documentation/network/network.md#http-request) options such as `method`, `headers`, `body` etc. These options will be passed directly to the HTTP client. If not specified, default options will be used.
 - `audio.out` - the audio output instance to play the audio on
 - `audio.stream` - the stream number of the audio output to use to play the audio. Defaults to `0`.
 - `waveHeaderBytes` - the number of bytes to buffer before parsing the WAV header. Defaults to `512` (only supported by `WavStream`)
