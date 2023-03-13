@@ -23,6 +23,7 @@
 #include <ets_sys.h>
 #include <osapi.h>
 #include <gpio.h>
+#include "esp8266_peri.h"
 
 #include "modGPIO.h"
 
@@ -68,17 +69,15 @@ static const uint8_t gPixMuxValue[] ICACHE_RODATA_ATTR = {
 	gpio
 */
 
-//@@ what else needs to be initialized here?
-#define GPCD   2  // DRIVER 0: normal, 1: open drain
-
 #define GPIO_INIT_OUTPUT(index, opendrain) \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) |= (1 << index);					/* enable for write */ \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~((opendrain ? 0 : 1) << GPCD);	/* normal (not open-drain) */
+		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) |= (1 << index); \
+		GPC(index) = (GPC(index) & (0xF << GPCI)); \
+		if (opendrain) {GPC(index) |= (1 << GPCD);}
 
-//@@ test THIS!!
 #define GPIO_INIT_INPUT(index) \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) &= ~(1 << index);					/* disable write (e.g. read) */ \
-		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x28 + (index << 2)) &= ~(1 << GPCD);	/* normal (not open-drain) */
+		*(volatile uint32_t *)(PERIPHS_GPIO_BASEADDR + 0x10) &= ~(1 << index); \
+		GPEC = (1 << index); \
+		GPC(index) = (GPC(index) & (0xF << GPCI)) | (1 << GPCD);
 
 #define GPIO_CLEAR(index) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, 1 << index))
 #define GPIO_SET(index) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, 1 << index))
