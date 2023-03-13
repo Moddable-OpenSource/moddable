@@ -573,7 +573,7 @@ export default class extends TOOL {
 						else if ("flow" === rule.pt)
 							doDelete = `\t\t\tthis.flow.delete(${this.makeStorageArgs(rule.p)});`;
 						else if ("global" === rule.pt)
-							doDelete = `\t\t\tglobalContext.delete${this.makeStorageArgs(rule.p)};`;
+							doDelete = `\t\t\tglobalContext.delete(${this.makeStorageArgs(rule.p)});`;
 						else
 							throw new Error(`unexpected delete type: ${rule.pt}`);
 					}
@@ -626,9 +626,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = temp;`);
 						}
 						else if ("flow" === rule.tot)
-							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to, temp)});`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else if ("global" === rule.tot)
-							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to, temp)});`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else
 							throw new Error(`unexpected move type: ${rule.pt}`);
 					}
@@ -1588,7 +1588,6 @@ export default class extends TOOL {
 			case "ui_group":
 			case "ui_spacer":
 			case "ui_text":
-			case "ui_text_input":
 			case "ui_template":
 			case "ui_toast":
 				this.prepareUI(config, nodes);
@@ -1822,7 +1821,7 @@ export default class extends TOOL {
 		}
 
 		for (let name in value) {
-			if (value.hasOwnProperty(name))
+			if (Object.hasOwn(value, name))
 				this.applyEnv(value, name, node, flows);
 		}
 	}
