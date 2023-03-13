@@ -1,0 +1,52 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODULES)/pins/pwm/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/sensors/ft6206/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "ili9341",
+		"backlight": 18
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 21,
+			"scl_pin": 22
+		},
+		"spi": {
+			"miso_pin": 12,
+			"mosi_pin": 13,
+			"sck_pin": 14
+		},
+		"ili9341": {
+			"hz": 40000000,
+			"cs_pin": 15,
+			"dc_pin": 2,
+			"spi_port": "HSPI_HOST",
+			"registers_append": [
+				"0x36, 1, 0xF0,",
+				"0x21, 0,",
+				"0xE0, 14, 0xD0, 0x08, 0x11, 0x08, 0x0C, 0x15, 0x39, 0x33, 0x50, 0x36, 0x13, 0x14, 0x29, 0x2d,",
+				"0xE1, 14, 0xD0, 0x08, 0x11, 0x08, 0x06, 0x06, 0x39, 0x44, 0x51, 0x0b, 0x16, 0x14, 0x2f, 0x31,"
+			]
+		},
+		"ft6206": {
+			"threshold": 20,
+			"flipX": false,
+			"flipY": false,
+			"raw_left": 10,
+			"raw_right": 232,
+			"raw_top": 8,
+			"raw_bottom": 315
+		}
+	}
+}
