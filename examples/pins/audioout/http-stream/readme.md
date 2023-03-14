@@ -1,6 +1,6 @@
 # Audio Streamers
-Copyright 2022 Moddable Tech, Inc.<BR>
-Revised: December 4, 2022
+Copyright 2022-2023 Moddable Tech, Inc.<BR>
+Revised: March 13, 2023
 
 The `WavStream` and `SBCStream` classes plays audio streams delivered over HTTP. The `WavStream` class plays uncompressed WAV audio files and `Audio/L16`; the `SBCStream` class plays [SBC compressed](https://en.wikipedia.org/wiki/SBC_%28codec%29) audio. SBC is a low-complexity format used primarily by Bluetooth. Its relatively high quality and simple decoder make it well suited for microcontrollers. 
 
@@ -45,7 +45,7 @@ Uncompressed audio streams are the data portion of a WAVE file with the sample r
 The following command line allows ffmpeg to be used as simple server for testing Audio/L16 streaming:
 
 ```
-ffmpeg -i bflatmajor.wav -listen 1 -content_type "audio/L16;rate=11025&channels=2" -f s16be -ar 11025 -acodec pcm_s16be http://127.0.0.1:8080
+ffmpeg -i bflatmajor.wav -listen 1 -content_type "audio/L16;rate=11025&channels=1" -f s16be -ar 11025 -acodec -ac 1 pcm_s16be http://127.0.0.1:8080
 ```
 
 ### SBC streams
@@ -77,6 +77,7 @@ The options object may contain the following properties. The `http`, `host`, `pa
 - `audio.out` - the audio output instance to play the audio on
 - `audio.stream` - the stream number of the audio output to use to play the audio. Defaults to `0`.
 - `waveHeaderBytes` - the number of bytes to buffer before parsing the WAV header. Defaults to `512` (only supported by `WavStream`)
+- `bufferDuration` - the duration in milliseconds of audio to buffer during playback. Playback starts when this target is reached. Defaults to `1000` milliseconds.
 - `onPlayed(buffer)` - callback function invoked after the audio output is done with an audio buffer. The audio is uncompressed for `WavStream` and SBC compressed for `SBCStream`. This callback is useful for calculating the RMS of uncompressed audio that is playing.
 - `onReady(ready)` - callback function invoked with `true` when there is enough audio buffered to be able to begin playback and `false` when there is an audio buffer underflow that causes playback to pause
 - `onError(e)` - callback function invoked on a fatal error, such as the remote endpoint disconnecting
