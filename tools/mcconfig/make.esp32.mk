@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -366,8 +366,6 @@ RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
 
-KILL_XSBUG = 
-
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
@@ -405,7 +403,6 @@ ifeq ($(DEBUG),1)
 	endif
 
 	ifeq ($(XSBUG_LOG),1)
-		KILL_XSBUG = $(shell pkill -f xsbug)
 		DO_XSBUG = 
 	endif
 
@@ -421,7 +418,6 @@ SDKCONFIG_H = $(SDKCONFIG_H_DIR)/sdkconfig.h
 
 all: precursor
 	$(KILL_SERIAL_2_XSBUG)
-	$(KILL_XSBUG)
 	$(DO_XSBUG)
 	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
 	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null
@@ -445,7 +441,6 @@ deploy:
 xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL_2_XSBUG)
-	$(KILL_XSBUG)
 	$(DO_XSBUG)
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
 	$(DO_LAUNCH)

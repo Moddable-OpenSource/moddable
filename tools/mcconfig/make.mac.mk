@@ -22,17 +22,14 @@ START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_H
 ifeq ($(DEBUG),1)
 	ifeq ($(XSBUG_LOG),1)
 		START_XSBUG = 
-		KILL_XSBUG = $(shell pkill -f xsbug)
 		START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 	else
-		KILL_XSBUG = 
 		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	endif	
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 else
 	START_XSBUG =
 	KILL_SERIAL2XSBUG =
-	KILL_XSBUG = 
 endif
 
 XS_DIRECTORIES = \
@@ -148,7 +145,6 @@ XSBUG_PORT ?= 5002
 	
 all: precursor
 	$(KILL_SERIAL2XSBUG) 
-	$(KILL_XSBUG)
 	$(START_XSBUG)
 	$(START_SIMULATOR)
 

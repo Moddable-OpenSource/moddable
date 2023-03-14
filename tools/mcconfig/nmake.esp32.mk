@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -91,8 +91,6 @@ PORT_COMMAND = -p $(UPLOAD_PORT)
 
 PROJ_DIR = $(TMP_DIR)\xsProj-$(ESP32_SUBCLASS)
 
-KILL_XSBUG = 
-
 !IF "$(DEBUG)"=="1"
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
@@ -110,7 +108,6 @@ DEPLOY_CMD = python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -
 !ENDIF
 
 !IF "$(XSBUG_LOG)"=="1"
-KILL_XSBUG = -tasklist /nh /fi "imagename eq xsbug.exe" | (find /i "xsbug.exe" > nul) && taskkill /f /t /im "xsbug.exe" >nul 2>&1 
 START_SERIAL2XSBUG = echo Launching app... & set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1 
 START_XSBUG =
 !ENDIF
@@ -426,7 +423,6 @@ precursor: idfVersionCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP3
 
 debug: precursor
 	$(KILL_SERIAL2XSBUG)
-	$(KILL_XSBUG)
 	$(START_XSBUG)
 	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
 	-cd $(PROJ_DIR) & python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) build flash -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR="$(TMP_DIR)" -D mxDebug=1 -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS="$(SDKCONFIG_FILE)"
@@ -451,7 +447,6 @@ release: precursor
 
 prepare:
 	$(KILL_SERIAL2XSBUG)
-	$(KILL_XSBUG)
 	$(START_XSBUG)
 	if exist $(BLD_DIR)\xs_esp32.elf del $(BLD_DIR)\xs_esp32.elf
 	if not exist $(BLD_DIR) mkdir $(BLD_DIR)
@@ -471,7 +466,6 @@ build: precursor prepare
 
 xsbug:
 	$(KILL_SERIAL2XSBUG)
-	$(KILL_XSBUG)
 	$(START_XSBUG)
 	$(START_SERIAL2XSBUG)
 
