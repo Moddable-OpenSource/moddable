@@ -59,12 +59,27 @@
 		},
 		"esp32": {
 			"include": "$(BUILD)/devices/esp32/manifest.json",
+			"creation": {
+				"static": 0,
+				"chunk": {
+					"initial": 78848,
+					"incremental": 0
+				},
+				"heap": {
+					"initial": 4928,
+					"incremental": 0
+				}
+			},
 			"modules": {
 				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
 			}
 		},
 		"pico": {
-			"include": "$(BUILD)/devices/pico/manifest.json"
+			"include": "$(BUILD)/devices/pico/manifest.json",
+			"creation": {
+				"static": 131072,
+				"stack": 512
+			}
 		},
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"
