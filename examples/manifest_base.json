@@ -68,7 +68,8 @@
 				"heap": {
 					"initial": 4928,
 					"incremental": 0
-				}
+				},
+				"stack": 512
 			},
 			"modules": {
 				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
