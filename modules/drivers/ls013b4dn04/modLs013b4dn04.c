@@ -158,8 +158,11 @@ void xs_LS013B4DN04(xsMachine *the)
 
 	ls->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
 
-#if MODDEF_LS013B4DN04_DITHER && MODDEF_LS013B4DN04_UPDATEALL
-	ls->flags = MODDEF_LS013B4DN04_UPDATEALL ? 2 : 0;
+#if MODDEF_LS013B4DN04_DITHER
+	ls->flags |= 1;
+	#if MODDEF_LS013B4DN04_UPDATEALL
+		ls->flags |= 2;
+	#endif
 #endif
 
 #if MODDEF_LS013B4DN04_PULSE
