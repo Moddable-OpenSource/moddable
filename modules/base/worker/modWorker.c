@@ -78,6 +78,8 @@ static void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *mess
 static int workerStart(modWorker worker);
 static void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength);
 
+static void doModMessagePostToMachine(xsMachine *the, xsMachine *targetThe, uint8_t *message, modMessageDeliver callback, void *refcon);
+
 static modWorker gWorkers;
 
 static void xs_emptyworker_destructor(void *data) {
@@ -182,7 +184,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 #ifdef INC_FREERTOS_H
 			worker->task = target->task;
 #endif
-			modMessagePostToMachine(worker->the, NULL, 0, (modMessageDeliver)workerDeliverConnect, worker);
+			doModMessagePostToMachine(the, worker->the, NULL, (modMessageDeliver)workerDeliverConnect, worker);
 			goto done;
 		}
 	}
@@ -287,8 +289,7 @@ void xs_worker_postfrominstantiator(xsMachine *the)
 		xsUnknownError("worker closing");
 
 	message = xsMarshall(xsArg(0));
-	if (modMessagePostToMachine(worker->the, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
-		xsUnknownError("post from instantiator failed");
+	doModMessagePostToMachine(the, worker->the, message, (modMessageDeliver)workerDeliverMarshall, worker);
 }
 
 void xs_worker_postfromworker(xsMachine *the)
@@ -300,20 +301,21 @@ void xs_worker_postfromworker(xsMachine *the)
 		xsUnknownError("worker closing");
 
 	message = xsMarshall(xsArg(0));
-	if (modMessagePostToMachine(worker->parent, (uint8_t *)&message, sizeof(message), (modMessageDeliver)workerDeliverMarshall, worker))
-		xsUnknownError("post from worker failed");
+	doModMessagePostToMachine(the, worker->parent, message, (modMessageDeliver)workerDeliverMarshall, worker);
 }
 
 void xs_worker_close(xsMachine *the)
 {
 	modWorker worker = xsmcGetHostDataValidate(xsThis, (void *)xs_emptyworker_destructor);
-	modMessagePostToMachine(worker->parent, NULL, 0, (modMessageDeliver)workerTerminate, worker);
+	doModMessagePostToMachine(the, worker->parent, NULL, (modMessageDeliver)workerTerminate, worker);
 }
 
 void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, uint16_t messageLength)
 {
-	if (worker->closing)
+	if (worker->closing) {
+		c_free(*(char **)message);
 		return;
+	}
 
 	xsBeginHost(the);
 
@@ -417,6 +419,33 @@ void workerTerminate(xsMachine *the, modWorker worker, uint8_t *message, uint16_
 	xsmcSetHostDestructor(worker->owner, NULL);
 
 	xs_worker_destructor(worker);
+}
+
+void doModMessagePostToMachine(xsMachine *the, xsMachine *targetThe, uint8_t *message, modMessageDeliver callback, void *refcon)
+{
+	char *error;
+	int result;
+
+	if (message) {
+		result = modMessagePostToMachine(targetThe, (uint8_t *)&message, sizeof(message), callback, refcon);
+		if (!result)
+			return;
+		c_free(message);
+	}
+	else {
+		result = modMessagePostToMachine(targetThe, NULL, 0, callback, refcon);
+		if (!result)
+			return;
+	}
+
+	if (-1 == result)
+		error = "no memory";
+	else if (-2 == result)
+		error = "timeout";
+	else
+		error = "unknown";
+
+	xsUnknownError(error);
 }
 
 #ifdef INC_FREERTOS_H
