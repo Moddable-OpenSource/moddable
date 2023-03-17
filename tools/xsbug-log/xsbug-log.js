@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -18,9 +18,23 @@
  *
  */
 
-const net = require('node:net');
-const { exec } = require('node:child_process');
-const { Machine } = require('./xsbug-machine.js');
+let net, exec, machine;
+
+try {
+	net = require('node:net');
+	exec = require('node:child_process').exec;
+	Machine = require('./xsbug-machine.js').Machine;
+}
+catch (e) {
+	if ("MODULE_NOT_FOUND" === e.code) {
+		console.log("xsbug-log: missing modules! Did you npm install?");
+		console.log("   cd $MODDABLE/tools/xsbug-log");
+		console.log("   npm install");
+	}
+	else
+		console.log("xsbug-log start-up error: " + e);
+	process.exit();
+}
 
 class LogMachine extends Machine {
 	view = {};

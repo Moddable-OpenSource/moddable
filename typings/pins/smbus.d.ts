@@ -36,7 +36,8 @@ declare module 'pins/smbus' {
     public read(count: number, buffer?: ArrayBuffer): void
     public write(first: any, ...valuesOrStop: (number | string | (number | string)[] | TypedArray | boolean)[]): void
     public readByte(register: number): number
-    public readWord(register: number): number
+    public readWord(register: number): number;
+    public readWord(register: number, bigEndian: boolean): number;
     public readBlock(register: number, count: number, buffer?: ArrayBuffer): Uint8Array
     public writeByte(register: number, value: number): void
     public writeWord(register: number, value: number): void

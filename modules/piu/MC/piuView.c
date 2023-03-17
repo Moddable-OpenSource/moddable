@@ -193,6 +193,7 @@ void PiuViewBegin(PiuView* self)
 	h = poco->height;
 	rotateCoordinatesAndDimensions(poco->width, poco->height, x, y, w, h);
 	
+	poco->next = (PocoCommand)poco->displayList;
 	poco->flags &= ~(kPocoFlagErrorDisplayListOverflow | kPocoFlagErrorStackProblem | kPocoFlagGCDisabled);
 	poco->stackDepth = 0;
 	poco->xOrigin = poco->yOrigin = 0;

@@ -48,6 +48,7 @@ const UNSUBSCRIBE = 0xA0;
 
 export default class Client {
 	#timer;
+	#messages;
 
 	constructor(dictionary) {
 		this.state = 0;
@@ -515,48 +516,40 @@ export default class Client {
 			this.state = 2;
 		}
 
-		switch (msg.code) {
-			case CONNECT:
+		this.#messages ??= [];
+		this.#messages.push(msg);
+		this.#messages.timer ??= Timer.set(() => {
+			const messages = this.#messages;
+			this.#messages = undefined; 
+			for (let i = 0; i < messages.length; i++) {
+				const msg = messages[i];
 				try {
-					return this.onAccept(msg.connect);
+					switch (msg.code) {
+						case CONNECT:
+							this.onAccept(msg.connect);
+							break;
+						case CONNACK:
+							this.onReady();
+							break;
+						case SUBSCRIBE:
+							this.onSubscribe?.(msg.topic, msg.qos);
+							break;
+						case UNSUBSCRIBE:
+							this.onUnsubscribe?.(msg.topic);
+							break;
+						case PUBLISH:
+							this.onMessage?.(msg.topic, msg.payload);
+							break;
+						default:
+							if (msg.code)
+								this.fail(`unhandled or no-op message type '${msg.code}'`);
+							break;
+					}
 				}
 				catch {
 				}
-				break;
-			case CONNACK:
-				try {
-					this.onReady();
-				}
-				catch {
-				}
-				break;
-			case SUBSCRIBE:
-				try {
-					return this.onSubscribe?.(msg.topic, msg.qos);
-				}
-				catch {
-				}
-				break;
-			case UNSUBSCRIBE:
-				try {
-					this.onUnsubscribe?.(msg.topic);
-				}
-				catch {
-				}
-				break;
-			case PUBLISH:
-				try {
-					this.onMessage?.(msg.topic, msg.payload);
-				}
-				catch {
-				}
-				break;
-			default:
-				if (msg.code)
-					this.fail(`unhandled or no-op message type '${msg.code}'`);
-				break;
-		}
-
+			}
+		});
 	}
 	close(immediate) {
 		if (this.ws) {
@@ -576,6 +569,9 @@ export default class Client {
 
 		Timer.clear(this.#timer);
 		this.#timer = undefined;
+		
+		Timer.clear(this.#messages?.timer);
+		this.#messages = undefined;
 
 		this.state = -1;
 	}

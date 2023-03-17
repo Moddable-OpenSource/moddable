@@ -23,7 +23,8 @@ import Timer from "timer"
 const d = new Display({
 	display: {
 		...device.SPI.default,
-		select: device.pin.displaySelect
+		select: device.pin.displaySelect,
+		active: 0
 	},
 	dc: {
 		io: device.io.Digital,
@@ -36,7 +37,7 @@ d.configure({
 	async: true
 });
 
-//@@ patch in a two properties for Poco compatibility
+//@@ patch in two properties for Poco compatibility
 d.pixelsToBytes = function(pixels) {
 	return pixels << 1;
 }

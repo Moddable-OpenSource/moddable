@@ -264,6 +264,7 @@ C_DEFINES = \
 	-DARDUINO_ARCH_ESP8266 \
 	-DWINBUILD=1 \
 	-DESP8266 \
+	-DCONT_STACKSIZE=4608 \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
