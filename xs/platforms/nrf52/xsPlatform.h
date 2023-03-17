@@ -140,8 +140,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		uint8_t debugConnectionVerified; \
 		uint8_t	wsState; \
 		uint8_t	wsFin; \
-		uint16_t wLength; \
-		uint16_t wSendStart; \
+		uint16_t wsLength; \
+		uint16_t wsSendStart; \
 		uint8_t	wsMask[4]; \
 		uint8_t	*wsCmd; \
 		uint8_t	*wsCmdPtr; \
@@ -164,6 +164,8 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	uint8_t *heap_ptr; \
 	uint8_t *heap_pend; \
 	void *msgQueue; \
+	void *dbgQueue; \
+	void *queues; \
 	void *task; \
 	void *waiterCondition; \
 	void *waiterData; \

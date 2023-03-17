@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -83,7 +83,6 @@ void fxReceiveLoop(void);
 #endif
 
 int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
-// int modMessagePostToMachineFromPool(txMachine *the, modMessageDeliver callback, void *refcon);
 int modMessageService(void);
 
 void modMachineTaskInit(txMachine *the);
@@ -115,6 +114,7 @@ void fxDeleteMachinePlatform(txMachine* the)
 #ifdef mxInstrument
 	modInstrumentMachineEnd(the);
 #endif
+
 	modMachineTaskUninit(the);
 }
 
@@ -250,11 +250,30 @@ void fxAbort(txMachine* the, int status)
 
 #ifdef mxDebug
 
+static void initializeConnection(txMachine *the)
+{
+	the->connection = NULL;
+	c_memset(the->readers, 0, sizeof(the->readers));
+	the->readerOffset = 0;
+	the->inPrintf = 0;
+	the->debugNotifyOutstanding = 0;
+	the->DEBUG_LOOP = 0;
+	the->wsState = 0;
+	the->wsSendStart = 1;
+	while (the->debugFragments) {
+		void *tmp = the->debugFragments;
+		the->debugFragments = the->debugFragments->next;
+		c_free(tmp);
+	}
+}
+
 static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
 
 void fxConnect(txMachine* the)
 {
 	extern unsigned char gXSBUG[4];
+
+	initializeConnection(the);
 
 	if (isSerialIP(gXSBUG)) {
 		static txBoolean once = false;
@@ -282,8 +301,10 @@ void fxConnect(txMachine* the)
 void fxDisconnect(txMachine* the)
 {
 	if (the->connection) {
+		mxDebugMutexTake();
 		fx_putpi(the, '-', true);
 		the->debugConnectionVerified = 0;
+		mxDebugMutexGive();
 		//@@ clear debug fragments?
 	}
 	the->connection = (txSocket)NULL;
@@ -567,6 +588,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 	switch (cmdID) {
 		case 1:		// restart
+			the->wsState = 18;
 			break;
 
 //#if MODDEF_XS_MODS
@@ -615,9 +637,10 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				uint8_t prefType = c_read8(value++);
 				cmdLen -= 1;
 				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
-					resultCode = -1;
+					resultCode = -5;
 			}
-			} break;
+			}
+			break;
 
 		case 6: {		// get preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
@@ -640,7 +663,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				uint8_t type;
 				uint16_t byteCountOut;
 				if (!modPreferenceGet(domain, key, &buffer[0], buffer + 1, sizeof(buffer), &byteCountOut))
-					resultCode = -1;
+					resultCode = -6;
 				else {
 					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
 					the->echoOffset += byteCountOut + 1;
@@ -650,12 +673,14 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		break;
 
 		case 9:
+#if !MODDEF_XS_DONTINITIALIZETIME
 			if (cmdLen >= 4)
 				modSetTime(c_read32be(cmd + 0));
 			if (cmdLen >= 8)
 				modSetTimeZone(c_read32be(cmd + 4));
 			if (cmdLen >= 12)
 				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
+#endif
 			break;
 
 		case 11:
@@ -682,12 +707,19 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			} break;
 
 #if MODDEF_XS_MODS
-		case 15:
+		case 15: {
+			uint32_t transferSize = 4096;
+
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
-			break;
+
+			the->echoBuffer[the->echoOffset++] = transferSize >> 24;
+			the->echoBuffer[the->echoOffset++] = transferSize >> 16;
+			the->echoBuffer[the->echoOffset++] = transferSize >>  8;
+			the->echoBuffer[the->echoOffset++] = transferSize;
+			} break;
 
 		case 16: {
 			int atomSize;
@@ -697,6 +729,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				the->echoOffset += atomSize;
 			}
 			} break;
+#endif
 
 		case 17:
 			the->echoBuffer[the->echoOffset++] = 'n';
@@ -705,13 +738,17 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->echoBuffer[the->echoOffset++] = '5';
 			the->echoBuffer[the->echoOffset++] = '2';
 			break;
-#endif
 
 		default:
-			resultCode = -3;
+#if MODDEF_XS_MODS
+			resultCode = -7;
+#else
+			resultCode = -8;
+#endif
 			break;
 	}
 
+// bail:
 	if (resultID) {
 		the->echoBuffer[3] = resultCode >> 8;
 		the->echoBuffer[4] = resultCode & 0xff;
