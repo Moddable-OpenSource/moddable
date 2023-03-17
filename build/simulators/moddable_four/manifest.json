@@ -9,6 +9,7 @@
 			"../modules/button",
 			"../modules/jogdial",
 			"../modules/led",
+			"../modules/power",
 			"./host"
 		]
 	},
@@ -18,6 +19,7 @@
 		"button",
 		"jogdial",
 		"led",
+		"power",
 		"host"
 	]
 }
