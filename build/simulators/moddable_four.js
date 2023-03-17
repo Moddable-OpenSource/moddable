@@ -5,6 +5,7 @@ import {
 import {
 	ControlsColumn,
 	ButtonsRow,
+	InfoRow,
 	PopupRow,
 	SliderRow,
 	StatusRow,
@@ -30,6 +31,8 @@ class MockupBehavior extends DeviceBehavior {
 		}
 	}
 	onAccelerometerChanged(container) {
+		if (this.sleeping)
+			return;
 		const { x, y, z } = this;
 		this.postJSON(container, { accelerometer: { x, y, z } });
 	}
@@ -51,6 +54,10 @@ class MockupBehavior extends DeviceBehavior {
 		zSlider.behavior.onValueChanging(zSlider);
 		this.onAccelerometerChanged(container);
 	}
+	onAccelerometerShake(container) {
+		if (this.sleeping)
+			this.onWake(container, "accelerometer");
+	}
 	onAccelerometerXChanged(container, data) {
 		this.x = data.value * 9.81 / 100;
 		this.onAccelerometerChanged(container);
@@ -63,6 +70,15 @@ class MockupBehavior extends DeviceBehavior {
 		this.z = data.value * 9.81 / 100;
 		this.onAccelerometerChanged(container);
 	}
+	onConfigure(container) {
+		if (this.sleeping) {
+			this.postJSON(container, { retain: this.retain, wakenWith: this.wakenWith });
+			
+			this.retain = [];
+			this.sleeping = false;
+			this.wakenWith = "";
+		}
+	}
 	onCreate(container, device) {
 		super.onCreate(container, device);
 		container.duration = 0;
@@ -73,6 +89,12 @@ class MockupBehavior extends DeviceBehavior {
 		this.y = 0;
 		this.z = 1;
 		this.reloadOnAbort = false;
+		
+		this.retain = [];
+		this.sleeping = false;
+		this.wakenWith = "";
+	}
+	onFinished(container) {
 	}
 	onKeyDown(container, key) {
 		const code = key.charCodeAt(0);
@@ -99,64 +121,118 @@ class MockupBehavior extends DeviceBehavior {
 	onJSON(container, json) {
 		if ("led" in json)
 			container.distribute("onLEDChanged", json.led);
+		else if ("sleep" in json) {
+			this.sleeping = true;
+			this.retain = json.retain;
+			const control = this.SLEEP_RETAIN;
+			control.string = "[" + json.retain + "]";
+			this.wakeWith = json.wakeWith;
+			if (json.sleep) {
+				let timer = this.SLEEP_TIMER;
+				timer.duration = json.sleep;
+				timer.time = 0;
+				timer.start();
+			}
+		}
 		else if ("xsbug" in json) {
 			if (json.xsbug == "abort")
 				application.defer("doReloadFile");
 		}
 	}
 	onPushCWJogDialDown(container) {
+		if (this.sleeping)
+			return;
 		container.start();
 		this.postJSON(container, { jogdial: { push:1, turn:4 } });
 		this.push = 1;
 		this.turn = 1;
 	}
 	onPushCWJogDialUp(container) {
+		if (this.sleeping)
+			return;
 		container.stop();
 	}
 	onPushCCWJogDialDown(container) {
+		if (this.sleeping)
+			return;
 		container.start();
 		this.postJSON(container, { jogdial: { push:1, turn:-4 } });
 		this.push = 1;
 		this.turn = -1;
 	}
 	onPushCCWJogDialUp(container) {
+		if (this.sleeping)
+			return;
 		container.stop();
 	}
 	onReloadOnAbortChanged(container, data) {
 		this.reloadOnAbort = data.value;
 	}
+	onSleepTimerChanged(container) {
+	}
+	onSleepTimerFinished(container) {
+		this.onWake(container, "timer");
+	}
 	onTimeChanged(container) {
 		this.postJSON(container, { jogdial: { push:this.push, turn:this.turn }});
 	}
 	onTurnCWJogDialDown(container) {
+		if (this.sleeping)
+			return;
 		container.start();
 		this.postJSON(container, { jogdial: { push:0, turn:4 } });
 		this.push = 0;
 		this.turn = 1;
 	}
 	onTurnCWJogDialUp(container) {
+		if (this.sleeping)
+			return;
 		container.stop();
 	}
 	onTurnCCWJogDialDown(container) {
+		if (this.sleeping)
+			return;
 		container.start();
 		this.postJSON(container, { jogdial: { push:0, turn:-4 } });
 		this.push = 0;
 		this.turn = -1;
 	}
 	onTurnCCWJogDialUp(container) {
+		if (this.sleeping)
+			return;
 		container.stop();
 	}
 	onBackButtonDown(container) {
+		if (this.sleeping)
+			return;
 		this.postJSON(container, { button:1 });
 	}
 	onBackButtonUp(container) {
+		if (this.sleeping) {
+			this.onWake(container, "button");
+			return;
+		}
 		this.postJSON(container, { button:0 });
 	}
 	onEnterButtonDown(container) {
+		if (this.sleeping)
+			return;
 		this.postJSON(container, { jogdial: { push:0 } });
 	}
 	onEnterButtonUp(container) {
+		if (this.sleeping) {
+			this.onWake(container, "jogdial");
+			return;
+		}
 		this.postJSON(container, { jogdial: { push:1 } });
+	}
+	onWake(container, wakenWith) {
+		let timer = this.SLEEP_TIMER;
+		timer.stop();
+		timer.duration = 0;
+		timer.time = 0;
+		this.wakenWith = wakenWith;
+		application.defer("doReloadFile");
 	}
 }
 
@@ -199,6 +275,7 @@ export default {
 				label: "Accelerometer",
 				buttons: [
 					{ event:"onAccelerometerFlat", label:"Flat" },
+					{ event:"onAccelerometerShake", label:"Shake" },
 				],
 			}),
 			SliderRow({ 
@@ -230,6 +307,18 @@ export default {
 				step: 1,
 				unit: "%",
 				value: 100
+			}),
+			TimerRow({ 
+				name: "SLEEP_TIMER",
+				label: "Sleep",
+				interval: 100,
+				tick: "onSleepTimerChanged",
+				event: "onSleepTimerFinished",
+			}),
+			InfoRow({
+				name: "SLEEP_RETAIN",
+				label: "     Retain",
+				value: "",
 			}),
 			SwitchRow({
 				event: "onReloadOnAbortChanged",

@@ -22,7 +22,7 @@ class Sleep {
 	static getRetainedValue(index) @ "xs_sleep_get_retained_value";
 	static setRetainedValue(index, value) @ "xs_sleep_set_retained_value";
 	
-	static set powerMode() @ "xs_sleep_set_power_mode";
+	static set powerMode(it) @ "xs_sleep_set_power_mode";
 
 	static deep(ms) @ "xs_sleep_deep";
 	
