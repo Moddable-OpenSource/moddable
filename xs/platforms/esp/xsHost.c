@@ -1148,17 +1148,14 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 		if (!queue)
 			break;
 
-		// xQueueSelectFromSet seems to require emptying the queue before it will generate another notification
-		while (true) {
-			if (!xQueueReceive(queue, &msg, 0))
-				break;
+		if (!xQueueReceive(queue, &msg, 0))
+			break;
 
-			(msg.callback)(the, msg.refcon, msg.message, msg.length);
-			if (msg.message)
-				c_free(msg.message);
+		(msg.callback)(the, msg.refcon, msg.message, msg.length);
+		if (msg.message)
+			c_free(msg.message);
 
-			maxDelayMS = 0;
-		}
+		maxDelayMS = 0;
 	}
 #else
 	while (xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
@@ -1181,14 +1178,16 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	#define MODDEF_TASK_QUEUELENGTH (10)
 #endif
 
+#define kDebugQueueLength (4)
+
 void modMachineTaskInit(xsMachine *the)
 {
 	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(MODDEF_TASK_QUEUELENGTH, sizeof(modMessageRecord));
 #ifdef mxDebug
-	the->dbgQueue = xQueueCreate(4, sizeof(modMessageRecord));
+	the->dbgQueue = xQueueCreate(kDebugQueueLength, sizeof(modMessageRecord));
 
-	the->queues = xQueueCreateSet(2);
+	the->queues = xQueueCreateSet(MODDEF_TASK_QUEUELENGTH + kDebugQueueLength);
 	xQueueAddToSet(the->msgQueue, the->queues);
 	xQueueAddToSet(the->dbgQueue, the->queues);
 #endif
