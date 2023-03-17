@@ -73,7 +73,17 @@
 			"include": "$(BUILD)/devices/qca4020/manifest.json"
 		},
 		"nrf52": {
-			"include": "$(BUILD)/devices/nrf52/manifest.json"
+			"include": "$(BUILD)/devices/nrf52/manifest.json",
+			"creation": {
+				"static": 131072,
+				"chunk": {
+					"initial": 32768
+				},
+				"heap": {
+					"initial": 2048
+				},
+				"stack": 512
+			}
 		},
 		"lin": {
 			"include": "$(BUILD_SIMULATOR)/manifest.json"
