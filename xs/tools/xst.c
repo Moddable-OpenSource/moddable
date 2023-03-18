@@ -237,7 +237,16 @@ static char *gxAbortStrings[] = {
 static txAgentCluster gxAgentCluster;
 
 #if OSSFUZZ
+static int lsan_disabled = 0;
+
+// allow toggling ASAN leak-checking
+__attribute__((used))
+int __lsan_is_turned_off() {
+	return lsan_disabled;
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+	lsan_disabled = 0;
     fuzz_oss(Data, Size);
     return 0;
 }
@@ -1966,14 +1975,6 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	return 0;
 }
 
-const char *__lsan_default_suppressions()
-{
-	return	"leak:fxStringifyJSONChars\n"
-			"leak:fxStringifyJSONCharacter\n"
-			"leak:fxStringifyJSON\n"
-			"leak:fxParserCode\n";
-}
-
 #endif 
 
 #if 1 || FUZZING || FUZZILLI
@@ -2128,6 +2129,10 @@ void fxAbort(txMachine* the, int status)
 	if (the->abortStatus) // xsEndHost calls fxAbort!
 		return;
 	if (status) {
+// disable leak checking
+#if OSSFUZZ
+		lsan_disabled = 1;
+#endif
 		the->abortStatus = status;
 		fxExitToHost(the);
 	}
