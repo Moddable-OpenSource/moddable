@@ -252,7 +252,7 @@ void fxAbort(txMachine* the, int status)
 
 static void initializeConnection(txMachine *the)
 {
-	the->connection = NULL;
+	the->connection = (txSocket)NULL;
 	c_memset(the->readers, 0, sizeof(the->readers));
 	the->readerOffset = 0;
 	the->inPrintf = 0;
