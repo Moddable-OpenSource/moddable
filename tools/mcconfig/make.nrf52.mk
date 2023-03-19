@@ -501,8 +501,6 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_atomic.c.o \
 	$(LIB_DIR)/nrf_balloc.c.o \
 	$(LIB_DIR)/app_fifo.c.o \
-	$(LIB_DIR)/nrf_fprintf.c.o \
-	$(LIB_DIR)/nrf_fprintf_format.c.o \
 	$(LIB_DIR)/nrf_fstorage_sd.c.o \
 	$(LIB_DIR)/nrf_fstorage.c.o \
 	$(LIB_DIR)/nrf_memobj.c.o \
@@ -513,6 +511,8 @@ NRF_LIBRARIES = \
 	$(LIB_DIR)/nrf_twi_mngr.c.o \
 	$(LIB_DIR)/nrf_twi_sensor.c.o
 
+#	$(LIB_DIR)/nrf_fprintf.c.o \
+#	$(LIB_DIR)/nrf_fprintf_format.c.o \
 #	$(LIB_DIR)/nrf_libuarte_drv.c.o
 #	$(LIB_DIR)/nrf_libuarte_async.c.o
 
@@ -636,7 +636,6 @@ C_FLAGS=\
 	-fomit-frame-pointer \
 	-fshort-enums \
 	-gdwarf-3 \
-	-gpubnames \
 	-mcpu=$(HWCPU) \
 	-mfloat-abi=hard \
 	-mlittle-endian \
@@ -647,17 +646,20 @@ C_FLAGS=\
 	-munaligned-access \
 	-nostdinc
 
+#	-gpubnames \
+
 
 ifeq ($(DEBUG),1)
 	C_DEFINES += \
 		$(DEBUGGER_USBD) \
 		-DDEBUG=1 \
 		-DmxDebug=1 \
-		-DDEBUG_NRF \
-		-g3 \
+		-g1 \
 		-Os
+#		-DDEBUG_NRF 
 	C_FLAGS += $(HW_DEBUG_OPT)
-	ASM_FLAGS += $(HW_DEBUG_OPT) -DDEBUG_NRF
+	ASM_FLAGS += $(HW_DEBUG_OPT) \
+#		-DDEBUG_NRF
 else
 	C_DEFINES += \
 		-DUSE_DEBUGGER_USBD=1 \
