@@ -38,6 +38,10 @@
  *
  */
 
+/*
+ * Modified 2020-2023 for Moddable Tech, Inc.
+ */
+
 #include <stdint.h>
 #include <string.h>
 #include "app_error.h"
@@ -119,7 +123,7 @@ static void timer_init(void)
 	static void watchdog_init(void)
 	{
 		nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
-		
+
 		nrf_drv_clock_lfclk_request(NULL);
 
 		// If the WDT is enabled (but not expired), after a soft reset (NVIC_SystemReset) the RTC no longer runs.
@@ -127,7 +131,7 @@ static void timer_init(void)
 		// The workaround is to start the low frequency clock here before initializing the WDT driver.
 		// Reference: https://devzone.nordicsemi.com/f/nordic-q-a/65361/rtc-stops-running-after-soft-reset-with-wdt-enabled
 		nrfx_clock_lfclk_start();
-		
+
 		ret_code_t err_code = nrf_drv_wdt_init(&config, wdt_event_handler);
 		APP_ERROR_CHECK(err_code);
 		NRF_WDT->CONFIG = 0;	// pause on sleep and halt
@@ -152,27 +156,32 @@ int main(void)
 
 	// Grab the reset reason early. Because the reset reason register is cumulative, clear it now.
 	nrf52_set_reset_reason(NRF_POWER->RESETREAS);
+	nrf52_set_boot_latch(NRF_P0->LATCH);
+	NRF_P0->DETECTMODE = 0;
+	NRF_P0->LATCH = 0xFFFFFFFF;
+	NRF_P1->LATCH = 0xFFFFFFFF;
+
 //	NRF_POWER->RESETREAS = 0xFFFFFFFF;
 	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;	// A field is cleared by writing `1` to it
 
 	watchdog_init();
 
-    // Activate deep sleep mode.
-    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+	// Activate deep sleep mode.
+	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
 #if NRF_LOG_ENABLED
-    if (pdPASS != xTaskCreate(logger_thread, "LOGGER", 256, NULL, 1, &m_logger_thread))
-    {
-        APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
-    }
+	if (pdPASS != xTaskCreate(logger_thread, "LOGGER", 256, NULL, 1, &m_logger_thread))
+	{
+		APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
+	}
 #endif
 
 	xs_setup();
 	vTaskStartScheduler();
-   
+
     for (;;)
     {
-        APP_ERROR_HANDLER(NRF_ERROR_FORBIDDEN);
+		APP_ERROR_HANDLER(NRF_ERROR_FORBIDDEN);
     }
 }
 
