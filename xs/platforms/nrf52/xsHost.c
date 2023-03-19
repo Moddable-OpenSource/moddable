@@ -455,17 +455,14 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 		if (!queue)
 			break;
 
-		// xQueueSelectFromSet seems to require emptying the queue before it will generate another notification
-		while (true) {
-			if (!xQueueReceive(queue, &msg, 0))
-				break;
+		if (!xQueueReceive(queue, &msg, 0))
+			break;
 
-			(msg.callback)(the, msg.refcon, msg.message, msg.length);
-			if (msg.message)
-				c_free(msg.message);
+		(msg.callback)(the, msg.refcon, msg.message, msg.length);
+		if (msg.message)
+			c_free(msg.message);
 
-			maxDelayMS = 0;
-		}
+		maxDelayMS = 0;
 	}
 #else
 	while (xQueueReceive(the->msgQueue, &msg, ((uint64_t)maxDelayMS << 10) / 1000)) {
@@ -488,6 +485,8 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	#define MODDEF_TASK_QUEUELENGTH	(10)
 #endif
 
+#define kDebugQueueLength (4)
+
 static SemaphoreHandle_t gFlashMutex;
 
 void modMachineTaskInit(xsMachine *the)
@@ -495,9 +494,9 @@ void modMachineTaskInit(xsMachine *the)
 	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(MODDEF_TASK_QUEUELENGTH, sizeof(modMessageRecord));
 #ifdef mxDebug
-	the->dbgQueue = xQueueCreate(4, sizeof(modMessageRecord));
+	the->dbgQueue = xQueueCreate(kDebugQueueLength, sizeof(modMessageRecord));
 
-	the->queues = xQueueCreateSet(MODDEF_TASK_QUEUELENGTH + 4);
+	the->queues = xQueueCreateSet(MODDEF_TASK_QUEUELENGTH + kDebugQueueLength);
 	xQueueAddToSet(the->msgQueue, the->queues);
 	xQueueAddToSet(the->dbgQueue, the->queues);
 #endif
@@ -883,6 +882,23 @@ uint32_t nrf52_get_reset_reason(void)
 {
 	return gResetReason;
 }
+
+static uint32_t gBootLatch = 0;
+void nrf52_set_boot_latch(uint32_t bootLatch)
+{
+	gBootLatch = bootLatch;
+}
+
+uint32_t nrf52_get_boot_latch(uint32_t pin)
+{
+	return (gBootLatch & (1 << pin));
+}
+
+void nrf52_clear_boot_latch(uint32_t pin)
+{
+	gBootLatch &= ~(1 << pin);
+}
+
 
 uint8_t nrf52_softdevice_enabled(void)
 {
