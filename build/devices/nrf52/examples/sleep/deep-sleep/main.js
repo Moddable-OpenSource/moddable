@@ -20,7 +20,7 @@
 import {Sleep, ResetReason} from "sleep";
 import Timer from "timer";
 
-const led = new Host.LED;
+const led = new Host.LED.Default;
 
 // Turn on LED upon wakeup
 led.write(1);
