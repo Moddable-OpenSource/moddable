@@ -132,6 +132,10 @@ extern void nrf52_get_mac(uint8_t *mac);
 void nrf52_set_reset_reason(uint32_t resetReason);
 uint32_t nrf52_get_reset_reason(void);
 
+void nrf52_set_boot_latch(uint32_t bootLatch);
+uint32_t nrf52_get_boot_latch(uint32_t pin);
+void nrf52_clear_boot_latch(uint32_t pin);
+
 uint8_t nrf52_softdevice_enabled(void);
 
 #define nrf52_bootloaderVersion()	(*((uint32_t*)BOOTLOADER_VER_MEM))
