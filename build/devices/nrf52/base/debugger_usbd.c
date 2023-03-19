@@ -92,7 +92,8 @@ APP_USBD_VENDOR_GLOBAL_DEF(
 #define USBD_PRIORITY			5			// 1
 #define USB_THREAD_MAX_BLOCK_TIME portMAX_DELAY
 
-#define kTXBufferSize 2048
+// #define kTXBufferSize 2048
+#define kTXBufferSize 512
 
 typedef struct txBufferRecord txBufferRecord;
 typedef txBufferRecord *txBuffer;
