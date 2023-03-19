@@ -128,8 +128,8 @@ uint8_t modGPIODidWake(modGPIOConfiguration config, uint8_t pin)
 {
 	// Check for wake from System OFF sleep
 	if (kResetReasonGPIO == nrf52_get_reset_reason()) {
-		if (nrf_gpio_pin_latch_get(pin)) {
-			nrf_gpio_pin_latch_clear(pin);
+		if (nrf52_get_boot_latch(pin)) {
+			nrf52_clear_boot_latch(pin);
 			return 1;
 		}
 	}
