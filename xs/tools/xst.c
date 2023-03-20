@@ -236,6 +236,11 @@ static char *gxAbortStrings[] = {
 
 static txAgentCluster gxAgentCluster;
 
+static xsBooleanValue xsAlwaysWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
+{
+	return 1;
+}
+
 #if OSSFUZZ
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     fuzz_oss(Data, Size);
@@ -333,6 +338,9 @@ int main(int argc, char* argv[])
  		fxBuildAgent(machine);
  		if (profiling)
 			fxStartProfiling(machine);
+		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
+		{
+
 		xsBeginHost(machine);
 		{
 			xsVars(2);
@@ -418,6 +426,8 @@ int main(int argc, char* argv[])
 		}
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+		}
+		xsEndMetering(machine);
  		if (profiling)
 			fxStopProfiling(machine, C_NULL);
 		if (machine->abortStatus) {
@@ -1766,6 +1776,7 @@ int fuzz(int argc, char* argv[])
 	fxInitializeSharedCluster();
 
 	while (1) {
+		int error = 0;
 		char action[4];
 		ssize_t nread = read(REPRL_CRFD, action, 4);
 		fflush(0);		//@@
@@ -1787,6 +1798,8 @@ int fuzz(int argc, char* argv[])
 		buffer[script_size] = 0;	// required when debugger active
 
 		xsMachine* machine = xsCreateMachine(&_creation, "xst", NULL);
+		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
+		{
 		xsBeginHost(machine);
 		{
 			xsTry {
@@ -1826,17 +1839,17 @@ int fuzz(int argc, char* argv[])
 			}
 			xsCatch {
 				the->script = NULL;
-				the->abortStatus = XS_UNHANDLED_EXCEPTION_EXIT;
+				error = 1;
 			}
 		}
-//		fxCheckUnhandledRejections(machine, 1);
+		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+		}
+		xsEndMetering(machine);
 		fxDeleteScript(machine->script);
-//		if (machine->abortStatus) {
-//			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
-//			fprintf(stderr, "Error: %s\n", why);
-//		}
 		int status = (machine->abortStatus & 0xff) << 8;
+		if (!status && error)
+			status = XS_UNHANDLED_EXCEPTION_EXIT << 8;
 		if (write(REPRL_CWFD, &status, 4) != 4) {
 			fprintf(stderr, "Erroring writing return value over REPRL_CWFD\n");
 			exit(-1);
@@ -2125,14 +2138,12 @@ void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 
 void fxAbort(txMachine* the, int status)
 {
-	if (the->abortStatus) // xsEndHost calls fxAbort!
-		return;
-	if (status) {
-		the->abortStatus = status;
-		fxExitToHost(the);
-	}
-	else
+	if (XS_DEBUGGER_EXIT == status)
 		c_exit(1);
+
+	if (!the->abortStatus)
+		the->abortStatus = status;
+	fxExitToHost(the);
 }
 
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
