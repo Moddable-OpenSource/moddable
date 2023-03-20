@@ -654,7 +654,7 @@ ifeq ($(DEBUG),1)
 		$(DEBUGGER_USBD) \
 		-DDEBUG=1 \
 		-DmxDebug=1 \
-		-g1 \
+		-g2 \
 		-Os
 #		-DDEBUG_NRF 
 	C_FLAGS += $(HW_DEBUG_OPT)
