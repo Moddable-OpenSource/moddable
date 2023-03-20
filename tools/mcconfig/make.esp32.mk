@@ -379,7 +379,7 @@ ifeq ($(DEBUG),1)
 		endif
 
 		ifeq ($(XSBUG_LOG),1)
-			DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) node xsbug-log $(LOG_LAUNCH)
+			DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
 		endif
 
 	### Linux
@@ -394,7 +394,7 @@ ifeq ($(DEBUG),1)
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
 
 			ifeq ($(XSBUG_LOG),1)
-				DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) node xsbug-log $(LOG_LAUNCH)
+				DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
 			else
 				DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
 			endif
