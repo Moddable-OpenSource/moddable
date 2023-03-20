@@ -156,7 +156,10 @@ int main(void)
 
 	// Grab the reset reason early. Because the reset reason register is cumulative, clear it now.
 	nrf52_set_reset_reason(NRF_POWER->RESETREAS);
-	nrf52_set_boot_latch(NRF_P0->LATCH);
+	if (MOD_GPIO_WAKE_MAGIC == ((uint32_t *)MOD_WAKEUP_REASON_MEM)[0])
+		nrf52_set_boot_latch(((uint32_t *)MOD_WAKEUP_REASON_MEM)[1]);
+	else
+		nrf52_set_boot_latch(NRF_P0->LATCH);
 	NRF_P0->DETECTMODE = 0;
 	NRF_P0->LATCH = 0xFFFFFFFF;
 	NRF_P1->LATCH = 0xFFFFFFFF;
