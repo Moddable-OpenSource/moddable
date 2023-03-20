@@ -894,6 +894,11 @@ uint32_t nrf52_get_boot_latch(uint32_t pin)
 	return (gBootLatch & (1 << pin));
 }
 
+uint32_t nrf52_get_boot_latches()
+{
+	return gBootLatch;
+}
+
 void nrf52_clear_boot_latch(uint32_t pin)
 {
 	gBootLatch &= ~(1 << pin);

@@ -27,6 +27,7 @@ class Sleep {
 	static deep(ms) @ "xs_sleep_deep";
 	
 	static get resetReason() @ "xs_sleep_get_reset_reason";
+	static getLatch(pin) @ "xs_sleep_get_latch";
 	
 	static setup() @ "xs_sleep_setup";
 };
