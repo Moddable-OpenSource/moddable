@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -1875,6 +1875,14 @@ int fuzz(int argc, char* argv[])
 	#define mxFuzzMeter (214748380)
 #endif
 
+static int lsan_disabled;
+
+// allow toggling ASAN leak-checking
+__attribute__((used)) int __lsan_is_turned_off()
+{
+	return lsan_disabled;
+}
+
 static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
 {
 	// may be useful to print current index for debugging
@@ -1889,6 +1897,8 @@ static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue i
 
 int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
+	lsan_disabled = 0;
+
 	xsCreation _creation = {
 		1 * 1024 * 1024, 	/* initialChunkSize */
 		1 * 1024 * 1024, 	/* incrementalChunkSize */
@@ -1977,14 +1987,6 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	fxTerminateSharedCluster();
 	free(buffer);
 	return 0;
-}
-
-const char *__lsan_default_suppressions()
-{
-	return	"leak:fxStringifyJSONChars\n"
-			"leak:fxStringifyJSONCharacter\n"
-			"leak:fxStringifyJSON\n"
-			"leak:fxParserCode\n";
 }
 
 #endif 
@@ -2143,6 +2145,11 @@ void fxAbort(txMachine* the, int status)
 
 	if (!the->abortStatus)
 		the->abortStatus = status;
+
+ #if OSSFUZZ
+	lsan_disabled = 1;		// disable leak checking
+ #endif
+
 	fxExitToHost(the);
 }
 
