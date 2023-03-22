@@ -861,6 +861,7 @@ void fxLinkTransfer(txMachine* the, txSlot* module, txID importID, txSlot* trans
 					fxIDToString(the, importID, the->nameBuffer, sizeof(the->nameBuffer));
 					fxThrowMessage(the, path, line, XS_SYNTAX_ERROR, "import %s circular", the->nameBuffer);
 				}
+				fxCheckCStack(the);
 				fxLinkTransfer(the, from, import->value.symbol, transfer);
 			}
 		}
