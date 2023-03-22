@@ -1302,6 +1302,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			aSlot = aSlot->next;
 			while (aSlot) {
 				aSlot->flag |= XS_MARK_FLAG;
+                fxCheckCStack(the);
 				fxMarkValue(the, aSlot); // holdings
 				aSlot = aSlot->next;
 				if (aSlot) {
