@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -108,6 +108,10 @@ struct ls013b4dn04Record {
 	uint8_t		*pixelBuffer;
 	uint16_t	bufferSize;
 
+#if kPocoFrameBuffer
+	uint8_t		*pixels;
+#endif
+
 #if MODDEF_LS013B4DN04_DITHER
 	uint8_t				ditherPhase;
 	uint8_t				flags;			// 1 dither, 2 update all
@@ -125,7 +129,12 @@ static void ls013b4dn04ChipSelect(uint8_t active, modSPIConfiguration config);
 static void ls_clear(ls013b4dn04 ls);
 static void ls013b4dn04Hold(ls013b4dn04 ls);
 
-static uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
+#if !kPocoFrameBuffer
+	static uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
+#else
+	static void ls013b4dn0BeginFrameBuffer(void *refcon, CommodettoPixel **pixels, int16_t *rowBytes);
+	static void ls013b4dn04EndFrameBuffer(void *refcon);
+#endif
 static void ls013b4dn04Send(PocoPixel *data, int count, void *refCon);
 static void ls013b4dn04End(void *refcon);
 static void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid);
@@ -133,13 +142,24 @@ static void ls013b4dn04AdaptInvalid(void *refcon, CommodettoRectangle invalid);
 	static void pulseScreen(modTimer timer, void *refcon, int refconSize);
 #endif
 
-static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
-	(PixelsOutBegin)ls013b4dn04Begin,
-	ls013b4dn04End,
-	ls013b4dn04End,
-	ls013b4dn04Send,
-	ls013b4dn04AdaptInvalid
-};
+#if !kPocoFrameBuffer
+	static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
+		(PixelsOutBegin)ls013b4dn04Begin,
+		ls013b4dn04End,
+		ls013b4dn04End,
+		ls013b4dn04Send,
+		ls013b4dn04AdaptInvalid
+	};
+#else
+	static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
+		NULL,
+		ls013b4dn04EndFrameBuffer,
+		ls013b4dn04EndFrameBuffer,		//@@ continue
+		NULL,
+		NULL,
+		ls013b4dn0BeginFrameBuffer
+	};
+#endif
 
 void xs_LS013B4DN04(xsMachine *the)
 {
@@ -152,6 +172,14 @@ void xs_LS013B4DN04(xsMachine *the)
 	ls = c_calloc(1, sizeof(ls013b4dn04Record));
 	if (!ls)
 		xsUnknownError("out of memory");
+
+#if kPocoFrameBuffer
+	ls->pixels = c_malloc(MODDEF_LS013B4DN04_WIDTH * MODDEF_LS013B4DN04_HEIGHT);
+	if (!ls->pixels) {
+		c_free(ls);
+		xsUnknownError("out of memory");
+	}
+#endif
 
 	xsmcSetHostData(xsThis, ls);
 	ls->bytesPerLine = 2 + (MODDEF_LS013B4DN04_WIDTH / 8);
@@ -212,6 +240,18 @@ uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordin
 
 	return 0;
 }
+
+#if kPocoFrameBuffer
+void ls013b4dn0BeginFrameBuffer(void *refcon, CommodettoPixel **pixels, int16_t *rowBytes)
+{
+	ls013b4dn04 ls = refcon;
+
+	ls013b4dn04Begin(ls, 0, 0, MODDEF_LS013B4DN04_WIDTH, MODDEF_LS013B4DN04_HEIGHT);
+	
+	*pixels = ls->pixels;
+	*rowBytes = MODDEF_LS013B4DN04_WIDTH;
+}
+#endif
 
 void xs_ls013b4dn04_begin(xsMachine *the)
 {
@@ -371,6 +411,16 @@ void xs_ls013b4dn04_send(xsMachine *the)
 	(ls->dispatch->doSend)((PocoPixel *)data, count, ls);
 }
 
+#if kPocoFrameBuffer
+void ls013b4dn04EndFrameBuffer(void *refcon)
+{
+	ls013b4dn04 ls = refcon;
+
+	ls013b4dn04Send(ls->pixels, MODDEF_LS013B4DN04_WIDTH * MODDEF_LS013B4DN04_HEIGHT, ls);
+	ls013b4dn04End(ls);
+}
+#endif
+
 void ls013b4dn04End(void *refcon)
 {
 	ls013b4dn04 ls = refcon;
@@ -403,6 +453,10 @@ void xs_ls013b4dn04_destructor(void *data)
 #if MODDEF_LS013B4DN04_PULSE
 	if (ls->timer)
 		modTimerRemove(ls->timer);
+#endif
+#if kPocoFrameBuffer
+	if (ls->pixels)
+		c_free(ls->pixels);
 #endif
 	c_free(data);
 }
@@ -474,6 +528,15 @@ void xs_ls013b4dn04_dither_set(xsMachine *the)
 		ls->flags = (xsBooleanType == type) ? 3 : (flags & 3);
 	else
 		ls->flags = 0;
+#endif
+}
+
+void xs_ls013b4dn04_frameBuffer_get(xsMachine *the)
+{
+#if kPocoFrameBuffer
+	xsmcSetTrue(xsResult);
+#else
+	xsmcSetFalse(xsResult);
 #endif
 }
 
