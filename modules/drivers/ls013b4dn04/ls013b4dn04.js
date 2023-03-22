@@ -46,6 +46,7 @@ export default class LS013B4DN04 @ "xs_ls013b4dn04_destructor" {
 	get dither() @ "xs_ls013b4dn04_dither_get";
 	set dither(value) @ "xs_ls013b4dn04_dither_set";
 
+	get frameBuffer() @ "xs_ls013b4dn04_frameBuffer_get";
 	get c_dispatch() @ "xs_ls013b4dn04_get_c_dispatch";
 }
 
