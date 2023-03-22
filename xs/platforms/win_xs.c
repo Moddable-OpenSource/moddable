@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -68,6 +68,10 @@ LRESULT CALLBACK fxMessageWindowProc(HWND window, UINT message, WPARAM wParam, L
 			c_free(job);
 			job = next;
 		}	
+	} break;
+	case WM_MODTIMER: {
+		txMachine* the = (txMachine*)GetWindowLongPtr(window, 0);
+		(*((timerCallback)wParam))(lParam);
 	} break;
 #ifdef mxDebug
 	case WM_XSBUG: {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,6 +38,7 @@ struct modTimerRecord {
 	uint8_t rescheduled;
 	uint8_t repeating;
 	modTimerCallback cb;
+	HWND window;
 	uint32_t refconSize;
 	char refcon[1];
 };
@@ -49,13 +50,14 @@ static CRITICAL_SECTION gCS;
 
 static void modTimerExecuteOne(modTimer timer);
 static modTimer modTimerFindNative(UINT_PTR idEvent);
+void modTimerWindowCallback(LPARAM timer);
 
 static VOID CALLBACK TimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2) {
 	modTimer timer;
 
 	timer = modTimerFindNative(uTimerID);
 	if (timer)
-		modTimerExecuteOne(timer);
+		SendMessage(timer->window, WM_MODTIMER, (WPARAM)&modTimerWindowCallback, (LPARAM)timer);
 }
 
 static void modCriticalSectionBegin()
@@ -66,6 +68,11 @@ static void modCriticalSectionBegin()
 static void modCriticalSectionEnd()
 {
 	LeaveCriticalSection(&gCS);
+}
+
+void modTimerWindowCallback(LPARAM t) {
+	modTimer timer = (modTimer)t;
+	modTimerExecuteOne(timer);
 }
 
 static void modTimerExecuteOne(modTimer timer)
@@ -98,7 +105,7 @@ static modTimer modTimerFindNative(UINT_PTR idEvent)
 	return walker;
 }
 
-modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
+modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize, HWND targetWindow)
 {
 	modTimer timer;	
 
@@ -117,10 +124,10 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	timer->useCount = 1;
 	timer->repeating = 0;
 	timer->cb = cb;
+	timer->window = targetWindow;
 	timer->refconSize = refconSize;
 	c_memmove(timer->refcon, refcon, refconSize);
 
-	// timer->idEvent = SetTimer(NULL, timer->id, firstInterval, TimerProc);
 	if (firstInterval == 0)
 		firstInterval = 1;
 	timer->idEvent = timeSetEvent(firstInterval, 1, TimerProc, timer->id, TIME_ONESHOT);

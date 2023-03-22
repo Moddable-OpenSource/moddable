@@ -79,7 +79,11 @@ static void createTimer(xsMachine *the, int interval, int repeat)
 	ts.the = the;
 	ts.callback = xsToReference(xsArg(0));
 	ts.self = xsNewHostObject(NULL);
+#if mxWindows
+	timer = modTimerAdd(interval, repeat, xs_timer_callback, &ts, sizeof(ts), the->window);
+#else
 	timer = modTimerAdd(interval, repeat, xs_timer_callback, &ts, sizeof(ts));
+#endif
 	if (!timer)
 		xsUnknownError("add failed");
 	xsRemember(((modTimerScript)modTimerGetRefcon(timer))->self);
