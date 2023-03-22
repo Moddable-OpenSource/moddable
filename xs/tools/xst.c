@@ -2142,10 +2142,10 @@ void fxAbort(txMachine* the, int status)
 {
 	if (XS_DEBUGGER_EXIT == status)
 		c_exit(1);
-
-	if (!the->abortStatus)
-		the->abortStatus = status;
-
+	if (the->abortStatus) // xsEndHost calls fxAbort!
+		return;
+		
+	the->abortStatus = status;
  #if OSSFUZZ
 	lsan_disabled = 1;		// disable leak checking
  #endif
