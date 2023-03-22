@@ -182,6 +182,8 @@ void xs_poco_begin(xsMachine *the)
 		if (pixelsOutDispatch)
 			(pixelsOutDispatch->doBeginFrameBuffer)(poco->outputRefcon, &pixels, &rowBytes);
 		else {
+			xsUnsignedValue dataSize;
+
 #if MODDEF_DISPLAY_VERSION == 2
 			*(int *)0 = 0;		// to do
 #else
@@ -193,13 +195,13 @@ void xs_poco_begin(xsMachine *the)
 			xsmcSetInteger(xsVar(4), poco->h);
 			xsResult = xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
 #endif
-			pixels = xsmcGetHostBuffer(xsResult);
+			xsmcGetBufferWritable(xsResult, (void *)&pixels, &dataSize);
 
-			xsmcSetInteger(xsResult, xsmcGetHostBufferLength(xsResult));
+			xsmcSetInteger(xsResult, dataSize);
 #if (0 == kPocoRotation) || (180 == kPocoRotation)
-			rowBytes = (int16_t)(xsmcToInteger(xsVar(0)) / poco->height);
+			rowBytes = (int16_t)(dataSize / poco->height);
 #elif (90 == kPocoRotation) || (270 == kPocoRotation)
-			rowBytes = (int16_t)(xsmcToInteger(xsVar(0)) / poco->width);
+			rowBytes = (int16_t)(dataSize / poco->width);
 #endif
 		}
 
