@@ -672,6 +672,8 @@ ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 
+# C_DEFINES += -DkPocoFrameBuffer=1
+
 cr := '\n'
 sp :=  
 sp += 
