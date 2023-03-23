@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2023  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -30,7 +30,7 @@ typedef struct {
 	PocoPixel 	*pixels;
 	uint16_t	*palette;
 	uint16_t	rowPixels;
-	PocoPixel	keyColor;
+	uint16_t	keyColor;
 	uint8_t		phase;
 	uint8_t		flip;
 } GIFRecord, *GIF;
@@ -52,9 +52,9 @@ void xs_poco_drawGIF(xsMachine *the)
 	PocoDimension sx, sy, sw, sh;
 	int16_t d;
 	CommodettoBitmap cb;
-	PocoPixel *pixels;
+	uint16_t *pixels;
 	uint8_t hasKeyColor = false;
-	PocoPixel keyColor;
+	uint16_t keyColor;
 	uint16_t *palette = NULL;
 	uint8_t flipH = 0, flipV = 0;
 
@@ -62,7 +62,7 @@ void xs_poco_drawGIF(xsMachine *the)
 		hasKeyColor = xsmcTypeOf(xsArg(3));
 		hasKeyColor = (xsIntegerType == hasKeyColor) || (xsNumberType == hasKeyColor);
 		if (hasKeyColor)
-			keyColor = (PocoPixel)xsmcToInteger(xsArg(3));
+			keyColor = (uint16_t)xsmcToInteger(xsArg(3));
 		
 		if ((xsmcArgc >= 5) && xsmcTest(xsArg(4))) {
 			char *flip = xsmcToString(xsArg(4));
@@ -78,7 +78,7 @@ void xs_poco_drawGIF(xsMachine *the)
 	if (!cb->havePointer)
 		xsUnknownError("unsupported");
 
-	pixels = (PocoPixel *)cb->bits.data;
+	pixels = (uint16_t *)cb->bits.data;
 	if ((kCommodettoBitmapCLUT256 == cb->format) || (kCommodettoBitmapCLUT32 == cb->format)) {
 		//@@ check signature
 		palette = pixels + 2;
@@ -146,7 +146,7 @@ void xs_poco_drawGIF(xsMachine *the)
 		else
 			pixels = (uint16_t *)(((sy * rowBytes) + dx) + (uint8_t *)pixels);
 	}
-	gif.pixels = pixels;
+	gif.pixels = (PocoPixel *)pixels;
 	gif.palette = palette;
 	gif.rowPixels = cb->w;
 	gif.flip = (flipH ? 1 : 0) | (flipV ? 2 : 0);
@@ -177,6 +177,8 @@ void xs_poco_drawGIF(xsMachine *the)
 	}						\
 	if (2 & gif->flip)		\
 		srcRowPixels = -srcRowPixels;
+
+#if kPocoPixelFormat == kCommodettoBitmapRGB565LE
 
 void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
@@ -461,3 +463,305 @@ void doGIFKeyCLUT32(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w,
 
 	gif->pixels = (uint16_t *)src;
 }
+
+#elif kPocoPixelFormat == kCommodettoBitmapGray256
+
+// (r + g + g + b) * 2
+#define RGB565toGray256(p) (((p >> 11) + ((p >> 5) & 0x3f) + (p & 0x1f)) << 1)
+
+static const uint8_t Gray4ToGray8[16] = {
+	0x00,
+	0x11,
+	0x22,
+	0x33,
+	0x44,
+	0x55,
+	0x66,
+	0x77,
+	0x88,
+	0x99,
+	0xAA,
+	0xBB,
+	0xCC,
+	0xDD,
+	0xEE,
+	0xFF
+};
+
+void doGIFGray16(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+{
+	GIF gif = (GIF)refcon;
+	uint8_t *src = (uint8_t *)gif->pixels;
+	PocoCoordinate srcRowPixels = (gif->rowPixels + 1) >> 1;
+	SETUP_FLIP
+
+	do {
+		uint8_t *s = src;
+		PocoPixel *d = dst;
+		int count = w;
+
+		if (gif->keyColor) {		// using keyColor for phase
+			*d = Gray4ToGray8[*s++ & 0x0F];
+			d += xStep;
+			count--;
+		}
+
+		while (count >= 2) {
+			uint8_t pixels = *s++;
+			count -= 2;
+			d[0] = Gray4ToGray8[(pixels & 0xF0) >> 4];
+			d[1] = Gray4ToGray8[pixels & 0x0F];
+			d += xStep + xStep;
+		}
+
+		if (count)
+			*d = Gray4ToGray8[(*s++ & 0xF0) >> 4];
+
+		dst = (PocoPixel *)(poco->rowBytes + (char *)dst);
+		src += srcRowPixels;
+	} while (--h);
+
+	gif->pixels = (PocoPixel *)src;
+}
+
+void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+{
+	GIF gif = (GIF)refcon;
+	uint16_t *src = (uint16_t *)gif->pixels;
+	PocoCoordinate srcRowPixels = gif->rowPixels;
+	SETUP_FLIP
+
+	do {
+		uint16_t *s = src;
+		PocoPixel *d = dst;
+		int count = w;
+		do {
+			uint16_t p = *s++;
+			*d = RGB565toGray256(p);
+			d += xStep;
+		} while (--count);
+
+		dst = (PocoPixel *)(poco->rowBytes + (char *)dst);
+		src += srcRowPixels;
+	} while (--h);
+
+	gif->pixels = (PocoPixel *)src;
+}
+
+void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+{
+	GIF gif = (GIF)refcon;
+	uint8_t *src = (uint8_t *)gif->pixels;
+	uint16_t *palette = gif->palette;
+	PocoCoordinate srcRowPixels = gif->rowPixels;
+	SETUP_FLIP
+
+	do {
+		uint8_t *s = src;
+		PocoPixel *d = dst;
+		int count = w;
+		do {
+			uint16_t p = palette[*s++];
+			*d = RGB565toGray256(p);
+			d += xStep;
+		} while (--count);
+
+		dst = (PocoPixel *)(poco->rowBytes + (uintptr_t)dst);
+		src += srcRowPixels;
+	} while (--h);
+
+	gif->pixels = (PocoPixel *)src;
+}
+
+void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+{
+	GIF gif = (GIF)refcon;
+	uint16_t *src = (uint16_t *)gif->pixels;
+	PocoCoordinate srcRowPixels = gif->rowPixels;
+	uint16_t keyColor = gif->keyColor;
+	SETUP_FLIP
+
+	do {
+		uint16_t *s = src;
+		PocoPixel *d = dst;
+		int count = w;
+		do {
+			uint16_t pixel = *s++;
+			if (keyColor != pixel)
+				*d = RGB565toGray256(pixel);
+			d += xStep;
+		} while (--count);
+
+		dst = (PocoPixel *)(poco->rowBytes + (char *)dst);
+		src += srcRowPixels;
+	} while (--h);
+
+	gif->pixels = (PocoPixel *)src;
+}
+
+void doGIFKeyCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+{
+	GIF gif = (GIF)refcon;
+	uint8_t *src = (uint8_t *)gif->pixels;
+	uint16_t *palette = gif->palette;
+	PocoCoordinate srcRowPixels = gif->rowPixels;
+	uint8_t keyColor = (uint8_t)gif->keyColor;
+	SETUP_FLIP
+
+	do {
+		uint8_t *s = src;
+		PocoPixel *d = dst;
+		int count = w;
+		do {
+			uint8_t pixel = *s++;
+			if (keyColor != pixel) {
+				uint16_t p = palette[pixel];
+				*d = RGB565toGray256(p);
+			}
+			d += xStep;
+		} while (--count);
+
+		dst = (PocoPixel *)(poco->rowBytes + (char *)dst);
+		src += srcRowPixels;
+	} while (--h);
+
+	gif->pixels = (PocoPixel *)src;
+}
+
+void doGIFCLUT32(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+{
+	GIF gif = (GIF)refcon;
+	uint8_t *src = (uint8_t *)gif->pixels;
+	uint16_t *palette = gif->palette;
+	PocoCoordinate srcRowPixels = ((gif->rowPixels + 7) >> 3) * 5;
+	SETUP_FLIP
+
+	do {
+		uint8_t *s = src;
+		PocoPixel *d = dst;
+		int count = w;
+		uint8_t phase = gif->phase;
+
+		do {
+			uint8_t pixel;
+			uint16_t p;
+
+			switch (phase++) {
+				case 0:
+					pixel = s[0] >> 3;
+					break;
+
+				case 1:
+					pixel = ((s[0] & 0x07) << 2) | (s[1] >> 6);
+					break;
+
+				case 2:
+					pixel = (s[1] >> 1) & 0x1F;
+					break;
+
+				case 3:
+					pixel = ((s[1] & 1) << 4) | (s[2] >> 4);
+					break;
+
+				case 4:
+					pixel = ((s[2] & 0x0F) << 1) | (s[3] >> 7);
+					break;
+
+				case 5:
+					pixel = (s[3] >> 2) & 0x1F;
+					break;
+
+				case 6:
+					pixel = ((s[3] & 0x03) << 3) | ((s[4] >> 5) & 0x07);
+					break;
+
+				case 7:
+					pixel = s[4] & 0x1F;
+					phase = 0;
+					s += 5;
+					break;
+			}
+
+			p = palette[pixel];
+			*d = RGB565toGray256(p);
+			d += xStep;
+		} while (--count);
+
+		dst = (PocoPixel *)(poco->rowBytes + (char *)dst);
+		src += srcRowPixels;
+	} while (--h);
+
+	gif->pixels = (PocoPixel *)src;
+}
+
+void doGIFKeyCLUT32(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+{
+	GIF gif = (GIF)refcon;
+	uint8_t *src = (uint8_t *)gif->pixels;
+	uint16_t *palette = gif->palette;
+	PocoCoordinate srcRowPixels = ((gif->rowPixels + 7) >> 3) * 5;
+	uint8_t keyColor = (uint8_t)gif->keyColor;
+	SETUP_FLIP
+
+	do {
+		uint8_t *s = src;
+		PocoPixel *d = dst;
+		int count = w;
+		uint8_t phase = gif->phase;
+
+		do {
+			uint8_t pixel;
+
+			switch (phase++) {
+				case 0:
+					pixel = s[0] >> 3;
+					break;
+
+				case 1:
+					pixel = ((s[0] & 0x07) << 2) | (s[1] >> 6);
+					break;
+
+				case 2:
+					pixel = (s[1] >> 1) & 0x1F;
+					break;
+
+				case 3:
+					pixel = ((s[1] & 1) << 4) | (s[2] >> 4);
+					break;
+
+				case 4:
+					pixel = ((s[2] & 0x0F) << 1) | (s[3] >> 7);
+					break;
+
+				case 5:
+					pixel = (s[3] >> 2) & 0x1F;
+					break;
+
+				case 6:
+					pixel = ((s[3] & 0x03) << 3) | ((s[4] >> 5) & 0x07);
+					break;
+
+				case 7:
+					pixel = s[4] & 0x1F;
+					phase = 0;
+					s += 5;
+					break;
+			}
+
+			if (keyColor != pixel) {
+				uint16_t p = palette[pixel]; 
+				*d = RGB565toGray256(p);
+			}
+			d += xStep;
+		} while (--count);
+
+		dst = (PocoPixel *)(poco->rowBytes + (char *)dst);
+		src += srcRowPixels;
+	} while (--h);
+
+	gif->pixels = (PocoPixel *)src;
+}
+
+#else
+	#error unsupported pixel format
+#endif
