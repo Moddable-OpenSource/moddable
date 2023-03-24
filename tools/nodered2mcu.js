@@ -263,6 +263,7 @@ export default class extends TOOL {
 				delete c.z;
 				delete c.outputLabels;
 				delete c._mcu;
+				delete c.moddable_manifest;
 
 				try {
 					// remove wires that connect to missing nodes
