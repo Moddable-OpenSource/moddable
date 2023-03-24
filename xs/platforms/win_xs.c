@@ -69,10 +69,6 @@ LRESULT CALLBACK fxMessageWindowProc(HWND window, UINT message, WPARAM wParam, L
 			job = next;
 		}	
 	} break;
-	case WM_MODTIMER: {
-		txMachine* the = (txMachine*)GetWindowLongPtr(window, 0);
-		(*((timerCallback)wParam))(lParam);
-	} break;
 #ifdef mxDebug
 	case WM_XSBUG: {
 		txMachine* the = (txMachine*)GetWindowLongPtr(window, 0);

@@ -51,13 +51,16 @@ static CRITICAL_SECTION gCS;
 static void modTimerExecuteOne(modTimer timer);
 static modTimer modTimerFindNative(UINT_PTR idEvent);
 void modTimerWindowCallback(LPARAM timer);
+static void destroyTimer(modTimer timer);
+static void createTimerWindow(modTimer timer);
+LRESULT CALLBACK modTimerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
 static VOID CALLBACK TimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2) {
 	modTimer timer;
 
 	timer = modTimerFindNative(uTimerID);
 	if (timer)
-		SendMessage(timer->window, WM_MODTIMER, (WPARAM)&modTimerWindowCallback, (LPARAM)timer);
+		SendMessage(timer->window, WM_MODTIMER, 0, (LPARAM)timer);
 }
 
 static void modCriticalSectionBegin()
@@ -105,7 +108,7 @@ static modTimer modTimerFindNative(UINT_PTR idEvent)
 	return walker;
 }
 
-modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize, HWND targetWindow)
+modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
 	modTimer timer;	
 
@@ -114,7 +117,7 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 		initializedCriticalSection = TRUE;
 	}
 
-	timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
+	timer = c_calloc(1, sizeof(modTimerRecord) + refconSize - 1);
 	if (!timer) return NULL;
 
 	timer->next = NULL;
@@ -124,7 +127,7 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	timer->useCount = 1;
 	timer->repeating = 0;
 	timer->cb = cb;
-	timer->window = targetWindow;
+	createTimerWindow(timer);
 	timer->refconSize = refconSize;
 	c_memmove(timer->refcon, refcon, refconSize);
 
@@ -132,7 +135,7 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 		firstInterval = 1;
 	timer->idEvent = timeSetEvent(firstInterval, 1, TimerProc, timer->id, TIME_ONESHOT);
 	if (!(timer->idEvent)) {
-		c_free(timer);
+		destroyTimer(timer);
 		return NULL;
 	} 
 
@@ -220,7 +223,7 @@ void modTimerRemove(modTimer timer)
 					prev->next = walker->next;
 				if (timer->idEvent)
 					timeKillEvent(timer->idEvent);
-				c_free(timer);
+				destroyTimer(timer);
 				modInstrumentationAdjust(Timers, -1);
 			}
 			break;
@@ -235,4 +238,35 @@ void modTimerDelayMS(uint32_t ms)
 	timeBeginPeriod(1);
 	Sleep(ms);
 	timeEndPeriod(1);
+}
+
+LRESULT CALLBACK modTimerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_MODTIMER: {
+			modTimerWindowCallback(lParam);
+			return 0;
+		} break;
+		default: 
+			return DefWindowProc(window, message, wParam, lParam);
+	}	
+}
+
+static void createTimerWindow(modTimer timer)
+{
+	WNDCLASSEX wcex = {0};
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.cbWndExtra = sizeof(modTimer);
+	wcex.lpfnWndProc = modTimerWindowProc;
+	wcex.lpszClassName = "modTimerWindowClass";
+	RegisterClassEx(&wcex);
+	timer->window = CreateWindowEx(0, wcex.lpszClassName, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+	SetWindowLongPtr(timer->window, 0, (LONG_PTR)timer);
+}
+
+static void destroyTimer(modTimer timer)
+{
+	if (timer->window)
+		DestroyWindow(timer->window);
+	c_free(timer);
 }

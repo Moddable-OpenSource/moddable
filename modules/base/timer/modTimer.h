@@ -32,12 +32,7 @@ typedef struct modTimerRecord modTimerRecord;
 typedef struct modTimerRecord *modTimer;
 
 typedef void (*modTimerCallback)(modTimer timer, void *refcon, int refconSize);
-
-#if mxWindows
-extern modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize, HWND targetWindow);
-#else
 extern modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize);
-#endif
 extern void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval);
 extern uint16_t modTimerGetID(modTimer timer);
 extern int modTimerGetSecondInterval(modTimer timer);

@@ -101,6 +101,4 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	#define MODDEF_XS_TEST 1
 #endif
 
-typedef void (*timerCallback)(LPARAM lParam);
-
 #endif /* __WIN_XS__ */
