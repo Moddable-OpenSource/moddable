@@ -64,6 +64,11 @@ nRF52840 has the following features:
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 | <img src="./../assets/devices/moddable-four.png" width=125><BR>Moddable Four | `nrf52/moddable_four`<BR>`simulator/moddable_four` | - **1.28" 128x128 Monochrome**<BR>- Sharp Mirror display<BR>- BLE<BR>- Jogdial<BR>- Accelerometer<BR>- Button and LED<BR>- CR2032 coin-cell power<BR>- 12 External GPIO pins  | <li>[Moddable Four developer guide](./moddable-four.md)</li><li>[Moddable product page](https://www.moddable.com/purchase.php)</li> |
+| <img src="./../assets/devices/nrf52-pca10056.png" width=125><BR>Nordic nRF52840 DK pca10056 | `nrf52/dk` | - 4 LEDs<BR>- 4 Buttons<BR>- All pins accessible<BR>- BLE<BR>- CR2032 coin-cell power  | <li>[Product page](https://www.nordicsemi.com/Products/Development-hardware/nrf52840-dk)</li> |
+| <img src="./../assets/devices/nrf52-sparkfun.png" width=125><BR>Sparkfun Pro nRF52840 Mini | `nrf52/sparkfun` | - 1 LED<BR>- 1 Button<BR>- BLE<BR>- JST Power connector<BR>- Qwiic connector<BR>- 17 GPIO pins  | <li>[Product page](https://www.sparkfun.com/products/15025)</li> |
+| <img src="./../assets/devices/nrf52-makerdiary.png" width=125><BR>Makerdiary nRF58240 MDK | `nrf52/makerdiary` | - 1  3-color LED<BR>- 1 Button<BR>- BLE<BR>- 12 GPIO pins  | <li>[Product page](https://makerdiary.com/products/nrf52840-mdk-usb-dongle)</li> |
+| <img src="./../assets/devices/nrf52-xiao.png" width=125><BR>Seeed Studio XIAO nRF52840 | `nrf52/xiao` | - 1 3-color LED<BR>- 1 Button<BR>- BLE<BR>- 11 GPIO pins  | <li>[Product page](https://www.seeedstudio.com/Seeed-XIAO-BLE-nRF52840-p-5201.html)</li> |
+| <img src="./../assets/devices/nrf52-itsybitsy.png" width=125><BR>Adafruit ItsyBitsy nRF52840 Express | `nrf52/itsybitsy` | - 1 LED<BR>- 1 Button<BR>- BLE<BR>- 21 GPIO pins  | <li>[Product page](https://www.adafruit.com/product/4481)</li> |
 
 <a id="builds"></a>
 ## Build Types
