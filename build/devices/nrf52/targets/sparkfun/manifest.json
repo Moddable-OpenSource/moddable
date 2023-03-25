@@ -1,39 +1,38 @@
 {
+    "build": {
+        "USE_USB": "1",
+        "UF2_VOLUME_NAME": "MODDABLEnRF"
+    },
 	"modules": {
-		"setup/target": "./setup-target",
+		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"setup/target",
+		"setup/target"
 	],
 	"config": {
 		"screen": "",
 		"touch": "",
 
-		"rotation": 0,
-		"format": "RGB565LE",
-		"autobacklight": false,
-
 		"led1_pin": 7,
-		"led2_pin": 14,
-
 		"button1_pin": 13
 	},
 	"defines": {
-		"debugger": {
+		"xdebugger": {
 			"tx_pin": "NRF_GPIO_PIN_MAP(0,30)",
 			"rx_pin": "NRF_GPIO_PIN_MAP(0,31)",
-			"baud": "NRF_UART_BAUDRATE_115200",
+			"baud": "NRF_UART_BAUDRATE_115200"
 		},
 		"spi": {
-			"max_speed": "8MBps",
-			"mosi_pin": "NRF_GPIO_PIN_MAP(0,2)",
-			"miso_pin": "NRF_GPIO_PIN_MAP(0,26)",
-			"sck_pin": "NRF_GPIO_PIN_MAP(0,27)",
-			"sel": "NRF_GPIO_PIN_MAP(1,13)"
+            "interface": "3",
+            "hz": "2000000",
+			"mosi_pin": "19",
+			"miso_pin": "20",
+			"sck_pin": "22"
 		},
 		"i2c": {
-			"scl_pin": 27,
-			"sda_pin": 26,
+            "interface": "0",
+			"scl_pin": 11,
+			"sda_pin": 8
 		}
 	}
 }
