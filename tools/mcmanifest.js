@@ -1753,7 +1753,7 @@ export class Tool extends TOOL {
 				const flows = JSON.parse(this.readFileString(source));
 				flows.forEach((node, i) => {
 					if (node.moddable_manifest)
-						this.parseManifest(source + "#" + i, {...node.moddable_manifest, directory: this.currentDirectory});	// path is synthetic
+						this.parseManifest(source, {...node.moddable_manifest, directory: this.currentDirectory});
 				});
 			}
 		});
