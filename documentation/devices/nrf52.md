@@ -1,9 +1,9 @@
 # Using the Moddable SDK with nRF52840
 
 Copyright 2021-2023 Moddable Tech, Inc.
-Revised: March 22, 2023
+Revised: March 25, 2023
 
-This document provides a guide to building apps for the nRF52840 SoC from Nordic with the Moddable SDK.
+This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
 ## Table of Contents
 
@@ -35,18 +35,18 @@ Before you can build applications, you need to:
 - Install the Moddable SDK and build its tools
 - Install the required drivers and development tools for the nRF52840 platform
 
-The instructions below will have you verify your setup by running the `helloworld` example on your device using `mcconfig`, a command line tool that builds and runs Moddable applications.
+The instructions below will have you verify your setup by running the `helloworld` example on your device using `mcconfig`, the command line tool to build and run applications using the Moddable SDK.
 
 > See the [Tools documentation](./../tools/tools.md) for more information about `mcconfig`
 
 
-When building with `mcconfig`, you specify your device target by providing the **platform identifier** of your development board to the `-p` argument. For example, use the following command to build for Moddable Four:
+To build for Moddable Four,  run `mcconfig` with `nrf52/moddable_four` for the **platform identifier**:
 
 ```text
 mcconfig -d -m -p nrf52/moddable_four
 ```
 
-A list of available nRF52840 subplatforms and their platform identifiers is provided in the **Platforms** section below.
+A list of available nRF52840 subplatforms and their platform identifiers is in the **Platforms** section below.
 
 <a id="platforms"></a>
 ## Platforms
@@ -72,7 +72,7 @@ nRF52840 has the following features:
 
 <a id="builds"></a>
 ## Build Types
-The nRF52 supports three kinds of builds: debug, instrumented, and release. Each is appropriate for different stages in the product development process. You select which kind of build you want from the command line.
+The nRF52 supports three kinds of builds: debug, instrumented, and release. Each is appropriate for different stages in the product development process. You select which kind of build you want from the command line when running `mcconfig`.
     
 <a id="build-debug"></a>
 ### Debug
@@ -90,14 +90,14 @@ The `-i` option on the `mcconfig` command line selects an instrumented build.
 ### Release
 A release build is for production. In a release build, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed.
 
-Omitting the `-d` and `-i` options on the `mcconfig` command line selects a release. Note that `-r` specifies rotation rather than selecting a release build.
+Omitting both the `-d` and `-i` options on the `mcconfig` command line selects a release. Note that `-r` specifies display rotation rather than selecting a release build.
 
 
 <a id="setup"></a>
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build for nrf52 currently uses Nordic nRF5 SDK v17.0.2.
+The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -106,9 +106,9 @@ The Moddable SDK build for nrf52 currently uses Nordic nRF5 SDK v17.0.2.
 
 2. Create an `nrf5` directory in your home directory at `~/nrf5 ` for required third party SDKs and tools.
 
-3. If you use macOS Catalina (version 10.15), add an exemption to allow Terminal (or your alternate terminal application of choice) to run software locally that does not meet the system's security policy. Without this setting, the precompiled GNU Arm Embedded Toolchain you will download in the next step will not be permitted to run.
+3. If you use macOS Catalina (version 10.15) or later, add an exemption to allow Terminal (or your alternate terminal application of choice) to run software locally that does not meet the system's security policy. Without this setting, the precompiled GNU Arm Embedded Toolchain downloaded in the next step will not be permitted to run.
 
-    To set the security policy exemption for Terminal, go into the Security & Privacy System Preferences, select the Privacy tab, choose Developer Tools from the list on the left, and then tick the checkbox for Terminal or the alternate terminal application from which you will be building Moddable SDK apps. The end result should look like this:
+    To set the security policy exemption for Terminal, go to Security & Privacy System Preferences, select the Privacy tab, choose Developer Tools from the list on the left, and then tick the checkbox for Terminal or the alternate terminal application from which you will be building Moddable SDK apps. The end result should look like this:
 
     ![Catalina Developer Options](../assets/getting-started/catalina-security.png)
 
@@ -274,7 +274,7 @@ In your application manifest, you can change the `HEAP_SIZE` allocation:
 <a id="debugging-native-code"></a>
 ## Debugging Native Code
 
-As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md). For native code source level debugging, developers can use [GDB](https://www.gnu.org/software/gdb/documentation/).
+As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md). For native code source level debugging, you can use [GDB](https://www.gnu.org/software/gdb/documentation/).
 
 Debugging native code on the Moddable Four requires a [Nordic nRF52840-DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK), [Segger J-Link Plus](https://www.segger.com/products/debug-probes/j-link/models/j-link-plus/) or compatible device.
 
@@ -378,21 +378,17 @@ Resets core & peripherals via SYSRESETREQ & VECTRESET bit.
 <a id="bootloader"></a>
 ## Bootloader
 
-Applications using the Moddable SDK running on the nrf52 SoC typically use a modified [Adafruit nRF52 Bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device.
+Applications using the Moddable SDK running on the nRF52 SoC typically use a modified [Adafruit nRF52 Bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device.
 
 ### Programming mode
 
-Moddable tools will put the device into programming mode automatically if the device has been programmed with a debug version of an app.
+If the device has a debug build of a Moddable SDK app installed, the Moddable tools can automatically set the device to programming mode so you do not have to manually reset the board.
 
-Otherwise **double-tap** the reset button on the device to put it into programming mode. The on-board LED will blink every second and a USB disk named **MODDABLE4** will appear on your desktop.
+Otherwise **double-tap** the reset button on the device to put it into programming mode. The on-board LED blinks every second and a USB disk named **MODDABLE4** appears on your desktop.
 
-Drag a `.uf2` file to the device to program it.
+Drag a `.uf2` file to the **MODDABLE4** disk to program it.
 
-> Note: The bootloader can be updated in a similar fashion.
-
-> Note: When the device has a debug version of a Moddable app loaded on it, the Moddable tools can set the device to auto-program so you do not have to reset the board.
-
-
+> Note: The bootloader can be updated in the same way.
 
 <a id="install-bootloader"></a>
 ### Installing the bootloader
@@ -444,7 +440,7 @@ You can now program the device.
 ----
         
 <a id="nrf5-sdk-mods"></a>
-## nRF5 SDK modifications 
+## nRF5 SDK Modifications 
 
 Moddable Four requires a few small adjustments to the Nordic nRF5 SDK. You can use the prepared SDK at [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip).
 
