@@ -416,6 +416,7 @@ NRF_BLE_OBJECTS = \
 	$(LIB_DIR)/gatts_cache_manager.c.o \
 	$(LIB_DIR)/id_manager.c.o \
 	$(LIB_DIR)/nrf_ble_gatt.c.o \
+	$(LIB_DIR)/nrf_ble_lesc.c.o \
 	$(LIB_DIR)/nrf_ble_qwr.c.o \
 	$(LIB_DIR)/nrf_ble_scan.c.o \
 	$(LIB_DIR)/peer_data_storage.c.o \
