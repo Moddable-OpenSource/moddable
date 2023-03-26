@@ -364,6 +364,7 @@ export class MakeFile extends FILE {
 		this.line("LIB_DIR = ", tool.libPath);
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("XSBUG_HOST = ", tool.xsbug?.host ?? "localhost");
+		this.line("XSBUG_PORT = ", tool.xsbug?.port ?? 5002);
 		if (tool.xsbugLog)
 			this.line("XSBUG_LOG = 1");
 		
