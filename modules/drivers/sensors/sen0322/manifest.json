@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/OxygenGasSensor-OSensor/SEN0322": "$(MODDABLE)/modules/drivers/sensors/sen0322/sen0322"
+	},
+	"preload": [
+		"embedded:sensor/OxygenGasSensor-OSensor/SEN0322"
+	]
+}
+
