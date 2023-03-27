@@ -133,7 +133,7 @@ To use the Moddable SDK with nRF52840 devices, you need to:
 
 1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
 2. Install [nRF5 tools](./documentation/devices/nrf52.md)
-3. Install [a bootloader](./documentation/devices/nrf52.md#install-bootloader)
+3. Install [a bootloader](./documentation/devices/nrf52.md#install-bootloader). This is not necessary for the Moddable Four as the bootloader is pre-installed on Moddable Four.
 
 The Moddable SDK supports [many devices](./documentation/devices/nrf52.md#platforms) built with the nRF52840, including the boards shown below:
 
@@ -141,6 +141,10 @@ The Moddable SDK supports [many devices](./documentation/devices/nrf52.md#platfo
 | :---: | :---: | :---: |
 | <a href="./documentation/devices/moddable-four.md"><img src="./documentation/assets/devices/moddable-four.png" width=125></a><BR>Moddable Four<sup>[[10](#footnotes4)]</sup> | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-pca10056.png" width=125></a><BR>Nordic DK pca10056 | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-sparkfun.png" width=125></a><BR>Sparkfun Pro nRF52840 |
 | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-makerdiary.png" width=125></a><BR>Makerdiary nRF52840 MDK | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-xiao.png" width=125></a><BR>seeed XIAO-nRF52840 | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-itsybitsy.png" width=125></a><BR>Adafruit ItsyBitsy nRF52840 |
+
+<a id="footnotes4"></a>
+> <sup>[10]</sup> *See also: [Moddable Four Developer Guide](./documentation/devices/moddable-four.md), Moddable [product page](https://www.moddable.com/product)*<BR>
+
 
 ### Gecko by Silicon Labs
 

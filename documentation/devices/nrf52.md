@@ -254,7 +254,9 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 <a id="troubleshooting"></a>
 # Troubleshooting
 
-### `region RAM overflowed with stack`
+### Stack overflow
+
+	region RAM overflowed with stack
 
 If you are building an application and the link fails with an error `arm-none-eabi/bin/ld: region RAM overflowed with stack`, you will need to reduce the amount of RAM allocated to the heap.
 
@@ -264,9 +266,18 @@ In your application manifest, you can change the `HEAP_SIZE` allocation:
 
 ```text
     "build": {
-        "HEAP_SIZE": "0x34000"
+        "HEAP_SIZE": "0x30000"
      }
 ```
+
+### Application too large
+
+	ld: region FLASH overflowed with .data and user data
+	section '.text' will not fit in region 'FLASH'
+	ld: region `FLASH' overflowed by 2285384 bytes
+
+If you are building an application and the link fails with an error like those above, your application is too large. Reduce the size of the application resources or restructure your code.
+
 
 <a id="advanced"></a>
 # Advanced
@@ -313,7 +324,7 @@ GDB communicates with the nRF58240 device via a J-Link connection in the nRF5284
 
 1. [Install the nRF Command Line Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools). Make sure the `JLinkGDBServer` is somewhere in your `$PATH`.
 
-2. Create a GDB startup command text file `.gdbinit` in your home directory with the following contents:
+2. Create a GDB startup command text file `gdb_cmds.txt` in the `nrf5` directory with the following contents:
 
     ```text
     target remote localhost:2331
