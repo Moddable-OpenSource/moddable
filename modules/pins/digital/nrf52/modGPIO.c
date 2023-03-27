@@ -133,18 +133,7 @@ uint8_t modGPIODidWake(modGPIOConfiguration config, uint8_t pin)
 			return 1;
 		}
 	}
-	
-	// Check for wake from System ON sleep
-	uint32_t wakeupMagic = ((uint32_t *)MOD_WAKEUP_REASON_MEM)[0];
-	uint32_t wakeupLatch = ((uint32_t *)MOD_WAKEUP_REASON_MEM)[1];
-	if (MOD_GPIO_WAKE_MAGIC == wakeupMagic) {
-		if ((1L << pin) & wakeupLatch) {
-			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = 0;
-			NRF_P0->LATCH = 1L << pin;
-			return 1;
-		}
-	}
-	
+
 	return 0;
 }
 

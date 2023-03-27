@@ -181,6 +181,7 @@ void xs_sleep_deep(xsMachine *the)
 
 		// Clear GPIO P0 latch register to clear any pending digital input pins
 		NRF_P0->LATCH = 0xFFFFFFFF;
+		NRF_P1->LATCH = 0xFFFFFFFF;
 		
 		// Enable LPCOMP if configured
 		if (NRF_LPCOMP->INTENSET & (LPCOMP_INTENSET_UP_Msk | LPCOMP_INTENSET_DOWN_Msk | LPCOMP_INTENSET_CROSS_Msk)) {
@@ -341,10 +342,12 @@ void sleep_wake_on_timer()
 
     // If no RTC event pending, check for wake-up from configured digital/analog interrupt sources
     if (!nrf_rtc_event_pending(portNRF_RTC_REG, NRF_RTC_EVENT_COMPARE_0)) {
-    	if (0 != NRF_P0->LATCH) {
+    	if ((0 != NRF_P0->LATCH) || (0 != NRF_P1->LATCH)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_GPIO_WAKE_MAGIC;
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = NRF_P0->LATCH;
+			((uint32_t *)MOD_WAKEUP_REASON_MEM)[2] = NRF_P1->LATCH;
 			NRF_P0->LATCH = 0xFFFFFFFF;	// clear
+			NRF_P1->LATCH = 0xFFFFFFFF;	// clear
     	}
     	else if (nrf_lpcomp_event_check(NRF_LPCOMP_EVENT_UP) && nrf_lpcomp_int_enable_check(LPCOMP_INTENSET_UP_Msk)) {
 			((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = MOD_ANALOG_WAKE_MAGIC;

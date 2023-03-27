@@ -883,25 +883,35 @@ uint32_t nrf52_get_reset_reason(void)
 	return gResetReason;
 }
 
-static uint32_t gBootLatch = 0;
-void nrf52_set_boot_latch(uint32_t bootLatch)
+static uint32_t gBootLatches[2] = {0};
+void nrf52_set_boot_latches(uint32_t bootLatch1, uint32_t bootLatch2)
 {
-	gBootLatch = bootLatch;
+	gBootLatches[0] = bootLatch1;
+	gBootLatches[1] = bootLatch2;
 }
 
 uint32_t nrf52_get_boot_latch(uint32_t pin)
 {
-	return (gBootLatch & (1 << pin));
+	if (pin < 32)
+		return (gBootLatches[0] & (1 << pin));
+
+	pin -= 32;
+	return (gBootLatches[1] & (1 << pin));
 }
 
-uint32_t nrf52_get_boot_latches()
+uint32_t *nrf52_get_boot_latches()
 {
-	return gBootLatch;
+	return gBootLatches;
 }
 
 void nrf52_clear_boot_latch(uint32_t pin)
 {
-	gBootLatch &= ~(1 << pin);
+	if (pin < 32)
+		gBootLatches[0] &= ~(1 << pin);
+	else {
+		pin -= 32;
+		gBootLatches[1] &= ~(1 << pin);
+	}
 }
 
 
